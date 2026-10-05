@@ -19,6 +19,7 @@ import csv
 import datetime
 import gzip
 import io
+import itertools
 import json
 import os
 import re
@@ -55,6 +56,8 @@ csv.field_size_limit(10_000_000)
 #   id        -> igual ao que a app ja usa (cp, stcp, metro_porto, carris, ...)
 #   mdb       -> palavras para encontrar o espelho no Mobility Database
 #   ckan      -> conjunto de dados do portal do Porto (vai buscar o mais recente)
+#   calendario_semanal -> se o ficheiro mais recente tiver no máximo N dias e as datas
+#                         do calendário já tiverem passado, usa o horário semanal
 # ---------------------------------------------------------------------------
 SEED_FEEDS = [
     {"id": "metro_lisboa", "operator_name": "Metro de Lisboa", "mode": "Metro",
@@ -80,11 +83,11 @@ SEED_FEEDS = [
      "url": "https://www.tcbarreiro.pt/front/files/sample_gtfs/GTFS-TCB_24.zip",
      "mdb": ["barreiro"]},
     {"id": "stcp", "operator_name": "STCP (Porto)", "mode": "Autocarro",
-     "ckan": "horarios-paragens-e-rotas-em-formato-gtfs-stcp",
+     "ckan": "horarios-paragens-e-rotas-em-formato-gtfs-stcp", "calendario_semanal": 180,
      "url": "https://opendata.porto.digital/dataset/5275c986-592c-43f5-8f87-aabbd4e4f3a4/resource/909b291f-f8ba-4b6f-947a-5ace986bd75f/download/gtfs_feed.zip",
      "mdb": ["transportes colectivos do porto", "stcp"]},
     {"id": "metro_porto", "operator_name": "Metro do Porto", "mode": "Metro",
-     "ckan": "horarios-paragens-e-rotas-em-formato-gtfs",
+     "ckan": "horarios-paragens-e-rotas-em-formato-gtfs", "calendario_semanal": 365,
      "url": None,
      "mdb": ["metro do porto"]},
     {"id": "tub_braga", "operator_name": "TUB Braga", "mode": "Autocarro",
@@ -101,6 +104,7 @@ SEED_FEEDS = [
      "mdb": ["mobiave", "famalicao"]},
     {"id": "smtuc", "operator_name": "SMTUC (Coimbra)", "mode": "Autocarro",
      "url": "https://dados.gov.pt/pt/datasets/r/bdae1dd0-74e5-4c52-8234-b7cb1cf5bee2",
+     "mirror": "https://files.mobilitydatabase.org/mdb-2992/latest.zip",
      "mdb": ["smtuc", "transportes urbanos de coimbra"]},
     {"id": "vamus", "operator_name": "Vamus Algarve", "mode": "Autocarro",
      "url": "https://drive.google.com/uc?export=download&id=1CM8O4ndsfSJhka42SxFUZ9eB-wE10NqX",
@@ -127,7 +131,14 @@ DISCOVERY_SKIP = [
     "transportes colectivos do porto", "stcp", "metro do porto", "transportes urbanos de braga",
     "guimabus", "tuba", "mobiave", "smtuc", "transportes urbanos de coimbra", "vamus",
     "proximo", "giro", "sobe e desce", "horarios do funchal", "flixbus",
+    "metropolitanos de lisboa",
 ]
+
+# Só se guardam viagens que funcionam entre ontem e daqui a WINDOW_DAYS dias
+# (a base é refeita todos os dias). Isto mantém o ficheiro pequeno.
+WINDOW_DAYS = 14
+# Dias a prolongar o horário semanal quando o operador não atualiza as datas.
+EXTEND_DAYS = 60
 
 ROUTE_TYPE_MODE = {0: "Elétrico", 1: "Metro", 2: "Comboio", 3: "Autocarro", 4: "Barco",
                    5: "Elétrico", 6: "Teleférico", 7: "Funicular", 11: "Autocarro", 12: "Comboio"}
@@ -283,8 +294,6 @@ CREATE INDEX IF NOT EXISTS idx_trips_route ON trips (route_id);
 CREATE INDEX IF NOT EXISTS idx_trips_feed ON trips (feed_id);
 CREATE INDEX IF NOT EXISTS idx_trips_service ON trips (feed_id, service_id);
 CREATE INDEX IF NOT EXISTS idx_stop_times_stop ON stop_times (stop_id, departure_secs);
-CREATE INDEX IF NOT EXISTS idx_stop_times_trip ON stop_times (trip_id);
-CREATE INDEX IF NOT EXISTS idx_stop_times_feed ON stop_times (feed_id);
 CREATE INDEX IF NOT EXISTS idx_stop_times_trip_seq ON stop_times (trip_id, stop_sequence);
 CREATE INDEX IF NOT EXISTS idx_calendar_lookup ON calendar (feed_id, service_id);
 CREATE INDEX IF NOT EXISTS idx_cal_dates_feed_date ON calendar_dates (feed_id, date);
@@ -353,9 +362,15 @@ def gtfs_rows(zf, filename):
         return
     with zf.open(member) as raw:
         text = io.TextIOWrapper(raw, encoding="utf-8-sig", errors="replace", newline="")
-        reader = csv.reader(text)
+        first = text.readline()
+        if not first:
+            return
+        delim = max([",", ";", "\t", "|"], key=first.count)
+        if first.count(delim) == 0:
+            delim = ","
+        reader = csv.reader(itertools.chain([first], text), delimiter=delim)
         try:
-            header = [h.strip().lower() for h in next(reader)]
+            header = [h.strip().strip('"').lower() for h in next(reader)]
         except StopIteration:
             return
         width = len(header)
@@ -367,8 +382,18 @@ def gtfs_rows(zf, filename):
             yield {header[i]: rec[i].strip() for i in range(width)}
 
 
-def ingest_gtfs(conn, feed_id, zip_bytes):
+def window_days(today_dt):
+    """Lista (AAAAMMDD, dia_da_semana 0=segunda) de ontem até hoje+WINDOW_DAYS."""
+    out = []
+    for i in range(-1, WINDOW_DAYS + 1):
+        d = today_dt + datetime.timedelta(days=i)
+        out.append((d.strftime("%Y%m%d"), d.weekday()))
+    return out
+
+
+def ingest_gtfs(conn, feed_id, zip_bytes, today_dt, extend_calendar=False):
     """Grava um GTFS na base de dados (dentro de um SAVEPOINT). Devolve estatisticas."""
+    today = today_dt.strftime("%Y%m%d")
     with zipfile.ZipFile(io.BytesIO(zip_bytes)) as zf:
         names = {os.path.basename(n).lower() for n in zf.namelist()}
         missing = [f for f in ("stops.txt", "routes.txt", "trips.txt", "stop_times.txt") if f not in names]
@@ -377,6 +402,54 @@ def ingest_gtfs(conn, feed_id, zip_bytes):
 
         p = feed_id + ":"
         route_types = {}
+
+        # 1) Calendário primeiro (é pequeno), para saber que serviços funcionam nos próximos dias.
+        cal = {}
+        for r in gtfs_rows(zf, "calendar.txt"):
+            sid = r.get("service_id")
+            if not sid:
+                continue
+            days = tuple(to_int(r.get(k)) for k in
+                         ("monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"))
+            cal[sid] = [days, r.get("start_date") or "", r.get("end_date") or ""]
+        adds, removes, cal_dates = {}, {}, []
+        for r in gtfs_rows(zf, "calendar_dates.txt"):
+            sid, date = r.get("service_id"), r.get("date")
+            if not sid or not date:
+                continue
+            etype = to_int(r.get("exception_type"), 1)
+            cal_dates.append((feed_id, sid, date, etype))
+            (adds if etype == 1 else removes).setdefault(date, set()).add(sid)
+
+        all_dates = [v[1] for v in cal.values() if v[1]] + [v[2] for v in cal.values() if v[2]] + list(adds)
+        v_from = min(all_dates) if all_dates else None
+        v_until = max(all_dates) if all_dates else None
+        expired = bool(v_until and v_until < today)
+
+        extended = False
+        if expired and extend_calendar and cal:
+            # O operador publica ficheiros novos mas não atualiza as datas: prolonga o horário
+            # semanal que estava em vigor no fim do calendário.
+            ends = [v[2] for v in cal.values() if v[2]]
+            if ends:
+                last_end = max(ends)
+                new_end = (today_dt + datetime.timedelta(days=EXTEND_DAYS)).strftime("%Y%m%d")
+                for v in cal.values():
+                    if v[2] == last_end:
+                        v[2] = new_end
+                extended = True
+                expired = False
+
+        active = None
+        if cal or adds:
+            active = set()
+            for ymd, wd in window_days(today_dt):
+                on = {sid for sid, (days, start, end) in cal.items() if start <= ymd <= end and days[wd]}
+                on |= adds.get(ymd, set())
+                on -= removes.get(ymd, set())
+                active |= on
+
+        kept_trips = set()
 
         def stops():
             for r in gtfs_rows(zf, "stops.txt"):
@@ -404,14 +477,18 @@ def ingest_gtfs(conn, feed_id, zip_bytes):
                 tid = r.get("trip_id")
                 if not tid:
                     continue
-                yield (p + tid, feed_id, p + (r.get("route_id") or ""), r.get("service_id") or None,
+                service = r.get("service_id") or None
+                if active is not None and service not in active:
+                    continue
+                kept_trips.add(tid)
+                yield (p + tid, feed_id, p + (r.get("route_id") or ""), service,
                        r.get("trip_headsign") or None, to_int(r.get("direction_id"), 0))
 
         def stop_times():
             for r in gtfs_rows(zf, "stop_times.txt"):
                 tid = r.get("trip_id")
                 sid = r.get("stop_id")
-                if not tid or not sid:
+                if not tid or not sid or tid not in kept_trips:
                     continue
                 arr = secs(r.get("arrival_time"))
                 dep = secs(r.get("departure_time"))
@@ -422,23 +499,9 @@ def ingest_gtfs(conn, feed_id, zip_bytes):
                 yield (feed_id, p + tid, p + sid, arr, dep, to_int(r.get("stop_sequence"), 0),
                        to_int(r.get("pickup_type"), 0))
 
-        def calendar():
-            for r in gtfs_rows(zf, "calendar.txt"):
-                sid = r.get("service_id")
-                if not sid:
-                    continue
-                yield (feed_id, sid, to_int(r.get("monday")), to_int(r.get("tuesday")),
-                       to_int(r.get("wednesday")), to_int(r.get("thursday")), to_int(r.get("friday")),
-                       to_int(r.get("saturday")), to_int(r.get("sunday")),
-                       r.get("start_date") or "", r.get("end_date") or "")
-
-        def calendar_dates():
-            for r in gtfs_rows(zf, "calendar_dates.txt"):
-                sid = r.get("service_id")
-                date = r.get("date")
-                if not sid or not date:
-                    continue
-                yield (feed_id, sid, date, to_int(r.get("exception_type"), 1))
+        def calendar_rows():
+            for sid, (days, start, end) in cal.items():
+                yield (feed_id, sid, *days, start, end)
 
         def frequencies():
             for r in gtfs_rows(zf, "frequencies.txt"):
@@ -446,7 +509,7 @@ def ingest_gtfs(conn, feed_id, zip_bytes):
                 start = secs(r.get("start_time"))
                 end = secs(r.get("end_time"))
                 headway = to_int(r.get("headway_secs"), 0)
-                if not tid or start is None or end is None or headway <= 0:
+                if not tid or tid not in kept_trips or start is None or end is None or headway <= 0:
                     continue
                 yield (feed_id, p + tid, start, end, headway, to_int(r.get("exact_times"), 0))
 
@@ -457,12 +520,12 @@ def ingest_gtfs(conn, feed_id, zip_bytes):
                 "routes": insert_many(conn, "routes", routes()),
                 "trips": insert_many(conn, "trips", trips()),
                 "stop_times": insert_many(conn, "stop_times", stop_times()),
-                "calendar": insert_many(conn, "calendar", calendar()),
-                "calendar_dates": insert_many(conn, "calendar_dates", calendar_dates()),
+                "calendar": insert_many(conn, "calendar", calendar_rows()),
+                "calendar_dates": insert_many(conn, "calendar_dates", iter(cal_dates)),
                 "frequencies": insert_many(conn, "frequencies", frequencies()),
             }
-            if stats["stops"] == 0 or stats["stop_times"] == 0:
-                raise ValueError("o ficheiro não tem paragens ou horários")
+            if stats["stops"] == 0:
+                raise ValueError("o ficheiro não tem paragens (formato não reconhecido)")
             conn.execute("RELEASE feed")
         except Exception:
             conn.execute("ROLLBACK TO feed")
@@ -470,19 +533,9 @@ def ingest_gtfs(conn, feed_id, zip_bytes):
             raise
 
     main_type = max(route_types, key=route_types.get) if route_types else 3
-    stats["mode"] = ROUTE_TYPE_MODE.get(main_type, "Autocarro")
+    stats.update({"mode": ROUTE_TYPE_MODE.get(main_type, "Autocarro"), "valid_from": v_from,
+                  "valid_until": v_until, "expired": expired, "extended": extended})
     return stats
-
-
-def feed_validity(conn, feed_id):
-    row = conn.execute(
-        "SELECT MIN(d), MAX(d) FROM ("
-        " SELECT start_date AS d FROM calendar WHERE feed_id = ? AND start_date <> ''"
-        " UNION ALL SELECT end_date FROM calendar WHERE feed_id = ? AND end_date <> ''"
-        " UNION ALL SELECT date FROM calendar_dates WHERE feed_id = ? AND exception_type = 1)",
-        (feed_id, feed_id, feed_id),
-    ).fetchone()
-    return (row[0], row[1]) if row else (None, None)
 
 
 def delete_feed(conn, feed_id):
@@ -559,6 +612,8 @@ def catalog_mirror(catalog, keywords, exclude=None):
     for r in catalog:
         if (r.get("data_type") or "").lower() != "gtfs":
             continue
+        if (r.get("status") or "").lower() in ("deprecated", "inactive"):
+            continue
         name = norm((r.get("provider") or "") + " " + (r.get("name") or ""))
         if exclude and any(x in name for x in exclude):
             continue
@@ -580,9 +635,9 @@ def resolve_ckan_latest(dataset):
         day = f"{match.group(3)}-{match.group(2)}-{match.group(1)}" if match else (res.get("created") or "")[:10]
         candidates.append((day, res.get("created") or "", url))
     if not candidates:
-        return None
+        return None, None
     candidates.sort()
-    return candidates[-1][2]
+    return candidates[-1][2], candidates[-1][0]
 
 
 def discovered_feeds(catalog, seed_urls):
@@ -619,15 +674,22 @@ def discovered_feeds(catalog, seed_urls):
 # ---------------------------------------------------------------------------
 # Processamento
 # ---------------------------------------------------------------------------
-def process_feed(conn, feed, today, have_prev):
+def process_feed(conn, feed, today_dt, have_prev):
     fid = feed["id"]
     origin = feed.get("source_origin", "seed")
     urls = []
+    recent_resource = False
     if feed.get("ckan"):
         try:
-            latest = resolve_ckan_latest(feed["ckan"])
+            latest, day = resolve_ckan_latest(feed["ckan"])
             if latest:
                 urls.append(latest)
+                try:
+                    age = (today_dt.date() - datetime.date.fromisoformat(day)).days
+                    recent_resource = age <= int(feed.get("calendario_semanal") or 0)
+                except (TypeError, ValueError):
+                    recent_resource = False
+                log(f"  {fid}: ficheiro mais recente no portal do Porto: {day}")
         except Exception as err:  # noqa: BLE001
             log(f"  {fid}: não consegui ver o ficheiro mais recente no portal do Porto ({err})")
     for u in (feed.get("url"), feed.get("mirror")):
@@ -642,26 +704,33 @@ def process_feed(conn, feed, today, have_prev):
     }
 
     errors = []
-    for url in urls:
+    for i, url in enumerate(urls):
         try:
             body, status, ms = download_zip(url)
             log_fetch(conn, fid, url, status, len(body), ms, f"Download concluído ({len(body) // 1024} KB)")
             delete_feed(conn, fid)
-            stats = ingest_gtfs(conn, fid, body)
-            v_from, v_until = feed_validity(conn, fid)
-            expired = bool(v_until and v_until < today)
+            # Só prolonga o horário semanal se for o ficheiro mais recente do portal (publicado há pouco).
+            extend = bool(feed.get("calendario_semanal") and recent_resource and i == 0)
+            stats = ingest_gtfs(conn, fid, body, today_dt, extend_calendar=extend)
+            note = None
+            if stats["extended"]:
+                note = (f"O operador não atualizou as datas do calendário (terminam em "
+                        f"{ymd_to_iso(stats['valid_until'])}); a usar o horário semanal em vigor.")
+            elif not stats["expired"] and stats["stop_times"] == 0:
+                note = f"Sem serviço nos próximos {WINDOW_DAYS} dias."
             row = dict(base)
             row.update({
                 "url": url, "mode": feed.get("mode") or stats["mode"],
-                "status": "horário expirado" if expired else "OK", "progress": "OK",
+                "status": "horário expirado" if stats["expired"] else "OK", "progress": "OK",
                 "lines_count": stats["routes"], "stops_count": stats["stops"], "trips_count": stats["trips"],
-                "valid_from": ymd_to_iso(v_from), "valid_until": ymd_to_iso(v_until),
-                "last_ok": now_iso(), "last_error": None,
+                "valid_from": ymd_to_iso(stats["valid_from"]), "valid_until": ymd_to_iso(stats["valid_until"]),
+                "last_ok": now_iso(), "last_error": note,
             })
             upsert_feed(conn, row)
             conn.commit()
+            flag = " (EXPIRADO)" if stats["expired"] else (" (horário semanal prolongado)" if stats["extended"] else "")
             log(f"  OK  {fid}: {stats['routes']} linhas, {stats['stops']} paragens, "
-                f"{stats['stop_times']} horários{' (EXPIRADO)' if expired else ''}")
+                f"{stats['trips']} viagens, {stats['stop_times']} horários{flag}")
             return row
         except Exception as err:  # noqa: BLE001
             errors.append(f"{url} -> {err}" if str(url) not in str(err) else str(err))
@@ -742,8 +811,8 @@ def process_carris_metropolitana(conn, have_prev):
 
 def main():
     started = time.time()
-    today = datetime.datetime.now(LISBON).strftime("%Y%m%d")
-    log(f"PAROU.PT - construção da base de dados ({today})")
+    today_dt = datetime.datetime.now(LISBON).replace(tzinfo=None)
+    log(f"PAROU.PT - construção da base de dados ({today_dt:%Y-%m-%d})")
 
     for path in (OUT_DB, OUT_GZ):
         if os.path.exists(path):
@@ -776,7 +845,7 @@ def main():
     results = []
     for i, feed in enumerate(feeds, 1):
         log(f"[{i}/{len(feeds)}] {feed['operator_name']}")
-        results.append(process_feed(conn, feed, today, have_prev))
+        results.append(process_feed(conn, feed, today_dt, have_prev))
     results.append(process_carris_metropolitana(conn, have_prev))
 
     try:
@@ -828,7 +897,7 @@ def main():
             "id": r.get("id"), "operator_name": r.get("operator_name"), "status": r.get("status"),
             "lines": r.get("lines_count") or 0, "stops": r.get("stops_count") or 0,
             "trips": r.get("trips_count") or 0, "valid_until": r.get("valid_until"),
-            "last_error": r.get("last_error"),
+            "url": r.get("url"), "last_error": r.get("last_error"),
         } for r in results],
         "duration_s": int(time.time() - started),
     }
@@ -839,6 +908,8 @@ def main():
     log(f"Concluído em {manifest['duration_s']} s: {len(ok)}/{len(results)} operadores OK, "
         f"{totals[0]} linhas, {totals[1]} paragens, {totals[3]} horários.")
     log(f"gtfs.db: {manifest['db_bytes'] // 1048576} MB | gtfs.db.gz: {manifest['gz_bytes'] // 1048576} MB")
+    if manifest["db_bytes"] > 900 * 1048576:
+        log("AVISO: a base de dados tem mais de 900 MB; a app vai precisar de bastante memória.")
 
 
 if __name__ == "__main__":
