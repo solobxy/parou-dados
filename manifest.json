@@ -1,13 +1,13 @@
 {
-  "built_at": "2026-10-05T18:49:20.646019+00:00",
-  "db_bytes": 3383050240,
-  "gz_bytes": 482266585,
+  "built_at": "2026-10-05T19:07:44.343033+00:00",
+  "db_bytes": 360460288,
+  "gz_bytes": 84741766,
   "totals": {
-    "lines": 3205,
-    "stops": 47487,
-    "trips": 466859,
-    "stop_times": 14466038,
-    "operators": 30,
+    "lines": 2322,
+    "stops": 34829,
+    "trips": 89528,
+    "stop_times": 2644696,
+    "operators": 29,
     "operators_ok": 22
   },
   "feeds": [
@@ -17,8 +17,9 @@
       "status": "OK",
       "lines": 4,
       "stops": 74,
-      "trips": 5106,
+      "trips": 2553,
       "valid_until": "2026-12-31",
+      "url": "https://www.metrolisboa.pt/google_transit/googleTransit.zip",
       "last_error": null
     },
     {
@@ -27,8 +28,9 @@
       "status": "OK",
       "lines": 176,
       "stops": 2344,
-      "trips": 88107,
+      "trips": 31367,
       "valid_until": "2026-12-31",
+      "url": "https://gateway.carris.pt/gateway/gtfs/api/v2.11/GTFS",
       "last_error": null
     },
     {
@@ -37,8 +39,9 @@
       "status": "OK",
       "lines": 174,
       "stops": 454,
-      "trips": 1702,
+      "trips": 1581,
       "valid_until": "2026-12-12",
+      "url": "https://publico.cp.pt/gtfs/gtfs.zip",
       "last_error": null
     },
     {
@@ -49,6 +52,7 @@
       "stops": 14,
       "trips": 260,
       "valid_until": "2027-03-14",
+      "url": "https://www.fertagus.pt/GTFSTMLzip/Fertagus_GTFS.zip",
       "last_error": null
     },
     {
@@ -59,6 +63,7 @@
       "stops": 10,
       "trips": 938,
       "valid_until": "2028-12-31",
+      "url": "https://files.mobilitydatabase.org/mdb-2921/latest.zip",
       "last_error": null
     },
     {
@@ -67,8 +72,9 @@
       "status": "OK",
       "lines": 3,
       "stops": 19,
-      "trips": 2067,
+      "trips": 348,
       "valid_until": "2030-12-25",
+      "url": "https://mts.pt/imt/MTS-20240129.zip",
       "last_error": null
     },
     {
@@ -77,8 +83,9 @@
       "status": "OK",
       "lines": 75,
       "stops": 279,
-      "trips": 2465,
+      "trips": 1601,
       "valid_until": "2026-12-31",
+      "url": "https://files.mobilitydatabase.org/mdb-3186/latest.zip",
       "last_error": null
     },
     {
@@ -89,7 +96,8 @@
       "stops": 2502,
       "trips": 25181,
       "valid_until": "2025-12-31",
-      "last_error": null
+      "url": "https://files.mobilitydatabase.org/mdb-2148/latest.zip",
+      "last_error": "Hoje falhou, mantidos os dados de 2026-10-05T18:46:52.349497+00:00: https://opendata.porto.digital/dataset/5275c986-592c-43f5-8f87-aabbd4e4f3a4/resource/909b291f-f8ba-4b6f-947a-5ace986bd75f/download/gtfs_feed.zip -> HTTP Error 404: NOT FOUND"
     },
     {
       "id": "metro_porto",
@@ -99,7 +107,8 @@
       "stops": 85,
       "trips": 2939,
       "valid_until": "2024-12-31",
-      "last_error": null
+      "url": "https://files.mobilitydatabase.org/mdb-2147/latest.zip",
+      "last_error": "Hoje falhou, mantidos os dados de 2026-10-05T18:46:54.280016+00:00: sem link"
     },
     {
       "id": "tub_braga",
@@ -109,6 +118,7 @@
       "stops": 2011,
       "trips": 3730,
       "valid_until": "2027-02-01",
+      "url": "https://www.tub.pt/developer/gtfs/feed/tub.zip",
       "last_error": null
     },
     {
@@ -117,8 +127,9 @@
       "status": "OK",
       "lines": 59,
       "stops": 1522,
-      "trips": 2213,
+      "trips": 2012,
       "valid_until": "2026-12-31",
+      "url": "https://map.mobility.ubiwhere.com/dataset/ee6d46e4-9f19-4f4a-ab93-1a3cd69df349/resource/08f1ee6c-2d3f-4fb3-a861-5d6fb347a6d4/download/gtfs_gui.zip",
       "last_error": null
     },
     {
@@ -127,8 +138,9 @@
       "status": "horário expirado",
       "lines": 60,
       "stops": 1626,
-      "trips": 739,
+      "trips": 0,
       "valid_until": "2024-12-31",
+      "url": "https://map.mobility.ubiwhere.com/dataset/1842a15c-1aec-4f65-8e29-e57c8b4cbd74/resource/a595ee4b-bf86-4323-b1f4-7e3b3eb00e5e/download/gtfs_bar.zip",
       "last_error": null
     },
     {
@@ -137,18 +149,20 @@
       "status": "horário expirado",
       "lines": 90,
       "stops": 2452,
-      "trips": 2690,
+      "trips": 0,
       "valid_until": "2025-12-31",
+      "url": "https://map.mobility.ubiwhere.com/dataset/fe6015e4-86c7-437a-8d31-10759fe21a1d/resource/7ac67ef8-015c-42e8-9546-f6f0be956270/download/gtfs_vnf.zip",
       "last_error": null
     },
     {
       "id": "smtuc",
       "operator_name": "SMTUC (Coimbra)",
-      "status": "horário expirado",
-      "lines": 331,
-      "stops": 1375,
-      "trips": 3090,
-      "valid_until": "2025-12-31",
+      "status": "OK",
+      "lines": 396,
+      "stops": 1519,
+      "trips": 4416,
+      "valid_until": "2026-12-31",
+      "url": "https://files.mobilitydatabase.org/mdb-2992/latest.zip",
       "last_error": null
     },
     {
@@ -157,8 +171,9 @@
       "status": "OK",
       "lines": 72,
       "stops": 2851,
-      "trips": 1308,
+      "trips": 1114,
       "valid_until": "2027-12-31",
+      "url": "https://drive.google.com/uc?export=download&id=1CM8O4ndsfSJhka42SxFUZ9eB-wE10NqX",
       "last_error": null
     },
     {
@@ -167,8 +182,9 @@
       "status": "OK",
       "lines": 14,
       "stops": 189,
-      "trips": 745,
+      "trips": 593,
       "valid_until": "2027-12-31",
+      "url": "https://drive.google.com/uc?export=download&id=1xNHjM7yl-SS1jCkGrvIBBlOhUkFfNBjY",
       "last_error": null
     },
     {
@@ -177,8 +193,9 @@
       "status": "OK",
       "lines": 11,
       "stops": 232,
-      "trips": 611,
+      "trips": 541,
       "valid_until": "2026-12-31",
+      "url": "https://drive.google.com/uc?export=download&id=1tkKV40lQlFcLiJhq8SwZQdxNVjFclRCA",
       "last_error": null
     },
     {
@@ -189,6 +206,7 @@
       "stops": 51,
       "trips": 27,
       "valid_until": "2027-12-31",
+      "url": "https://drive.google.com/uc?export=download&id=1C2KBOVsbm__ymWDgU1bXGbP0Gv3D2yo5",
       "last_error": null
     },
     {
@@ -197,8 +215,9 @@
       "status": "OK",
       "lines": 164,
       "stops": 1742,
-      "trips": 10656,
+      "trips": 5329,
       "valid_until": "2026-11-30",
+      "url": "https://www.horariosdofunchal.pt/googletransit.zip",
       "last_error": null
     },
     {
@@ -207,18 +226,9 @@
       "status": "OK",
       "lines": 99,
       "stops": 1082,
-      "trips": 3821,
+      "trips": 3815,
       "valid_until": "2027-12-31",
-      "last_error": null
-    },
-    {
-      "id": "mdb-3412",
-      "operator_name": "Transportes Metropolitanos de Lisboa (TML)",
-      "status": "OK",
-      "lines": 948,
-      "stops": 12802,
-      "trips": 306579,
-      "valid_until": "2027-07-01",
+      "url": "https://files.mobilitydatabase.org/mdb-1272/latest.zip",
       "last_error": null
     },
     {
@@ -229,6 +239,7 @@
       "stops": 8,
       "trips": 16,
       "valid_until": "2026-12-31",
+      "url": "https://files.mobilitydatabase.org/tld-4257/latest.zip",
       "last_error": null
     },
     {
@@ -237,8 +248,9 @@
       "status": "OK",
       "lines": 10,
       "stops": 306,
-      "trips": 614,
+      "trips": 347,
       "valid_until": "2026-12-31",
+      "url": "https://files.mobilitydatabase.org/tld-4316/latest.zip",
       "last_error": null
     },
     {
@@ -247,8 +259,9 @@
       "status": "OK",
       "lines": 16,
       "stops": 477,
-      "trips": 887,
+      "trips": 552,
       "valid_until": "2026-12-31",
+      "url": "https://files.mobilitydatabase.org/tld-4317/latest.zip",
       "last_error": null
     },
     {
@@ -257,8 +270,9 @@
       "status": "OK",
       "lines": 7,
       "stops": 141,
-      "trips": 239,
+      "trips": 139,
       "valid_until": "2026-12-31",
+      "url": "https://files.mobilitydatabase.org/tld-4318/latest.zip",
       "last_error": null
     },
     {
@@ -269,6 +283,7 @@
       "stops": 87,
       "trips": 129,
       "valid_until": "2027-12-31",
+      "url": "https://files.mobilitydatabase.org/tld-4319/latest.zip",
       "last_error": null
     },
     {
@@ -279,7 +294,8 @@
       "stops": 0,
       "trips": 0,
       "valid_until": null,
-      "last_error": "https://files.mobilitydatabase.org/tld-7825/latest.zip -> o ficheiro não tem paragens ou horários | https://drive.google.com/uc?export=download&id=1v9eGjezOzbaBQi-Aa5c15tZXcSiiDwqA -> o ficheiro não tem paragens ou horários"
+      "url": "https://files.mobilitydatabase.org/tld-7825/latest.zip",
+      "last_error": "https://files.mobilitydatabase.org/tld-7825/latest.zip -> o ficheiro não tem paragens (formato não reconhecido) | https://drive.google.com/uc?export=download&id=1v9eGjezOzbaBQi-Aa5c15tZXcSiiDwqA -> o ficheiro não tem paragens (formato não reconhecido)"
     },
     {
       "id": "tld-7876",
@@ -289,7 +305,8 @@
       "stops": 0,
       "trips": 0,
       "valid_until": null,
-      "last_error": "https://files.mobilitydatabase.org/tld-7876/latest.zip -> o ficheiro não tem paragens ou horários | https://drive.google.com/uc?export=download&id=192Qat2jJKyv5hhO8T3eVT70M5NB0dtXC -> o ficheiro não tem paragens ou horários"
+      "url": "https://files.mobilitydatabase.org/tld-7876/latest.zip",
+      "last_error": "https://files.mobilitydatabase.org/tld-7876/latest.zip -> o ficheiro não tem paragens (formato não reconhecido) | https://drive.google.com/uc?export=download&id=192Qat2jJKyv5hhO8T3eVT70M5NB0dtXC -> o ficheiro não tem paragens (formato não reconhecido)"
     },
     {
       "id": "tld-7877",
@@ -299,7 +316,8 @@
       "stops": 0,
       "trips": 0,
       "valid_until": null,
-      "last_error": "https://files.mobilitydatabase.org/tld-7877/latest.zip -> o ficheiro não tem paragens ou horários | https://drive.google.com/uc?export=download&id=1NqcOk8IrlV73TBonJAxpzIUTjaAjF27M -> o ficheiro não tem paragens ou horários"
+      "url": "https://files.mobilitydatabase.org/tld-7877/latest.zip",
+      "last_error": "https://files.mobilitydatabase.org/tld-7877/latest.zip -> o ficheiro não tem paragens (formato não reconhecido) | https://drive.google.com/uc?export=download&id=1NqcOk8IrlV73TBonJAxpzIUTjaAjF27M -> o ficheiro não tem paragens (formato não reconhecido)"
     },
     {
       "id": "carris_metropolitana",
@@ -309,8 +327,9 @@
       "stops": 12752,
       "trips": 0,
       "valid_until": null,
+      "url": "https://api.carrismetropolitana.pt/v2",
       "last_error": null
     }
   ],
-  "duration_s": 307
+  "duration_s": 147
 }
