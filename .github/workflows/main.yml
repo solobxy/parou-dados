@@ -1,0 +1,38 @@
+name: Dados PAROU.PT
+
+on:
+  schedule:
+    - cron: "30 3 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  construir:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Construir a base de dados
+        run: python construir_dados.py
+
+      - name: Publicar na release "dados"
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release view dados >/dev/null 2>&1 || gh release create dados --title "Dados PAROU.PT" --notes "Base de dados de horários, atualizada todos os dias."
+          gh release upload dados gtfs.db.gz manifest.json --clobber
+
+      - name: Guardar o resumo no repositório
+        run: |
+          git config user.name "parou-dados"
+          git config user.email "actions@users.noreply.github.com"
+          git add manifest.json
+          git commit -m "Dados de $(date -u +%Y-%m-%d)" || echo "Sem alterações"
+          git push
