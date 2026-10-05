@@ -1,0 +1,316 @@
+{
+  "built_at": "2026-10-05T18:49:20.646019+00:00",
+  "db_bytes": 3383050240,
+  "gz_bytes": 482266585,
+  "totals": {
+    "lines": 3205,
+    "stops": 47487,
+    "trips": 466859,
+    "stop_times": 14466038,
+    "operators": 30,
+    "operators_ok": 22
+  },
+  "feeds": [
+    {
+      "id": "metro_lisboa",
+      "operator_name": "Metro de Lisboa",
+      "status": "OK",
+      "lines": 4,
+      "stops": 74,
+      "trips": 5106,
+      "valid_until": "2026-12-31",
+      "last_error": null
+    },
+    {
+      "id": "carris",
+      "operator_name": "Carris (Lisboa)",
+      "status": "OK",
+      "lines": 176,
+      "stops": 2344,
+      "trips": 88107,
+      "valid_until": "2026-12-31",
+      "last_error": null
+    },
+    {
+      "id": "cp",
+      "operator_name": "CP - Comboios de Portugal",
+      "status": "OK",
+      "lines": 174,
+      "stops": 454,
+      "trips": 1702,
+      "valid_until": "2026-12-12",
+      "last_error": null
+    },
+    {
+      "id": "fertagus",
+      "operator_name": "Fertagus",
+      "status": "OK",
+      "lines": 3,
+      "stops": 14,
+      "trips": 260,
+      "valid_until": "2027-03-14",
+      "last_error": null
+    },
+    {
+      "id": "transtejo_soflusa",
+      "operator_name": "Transtejo Soflusa",
+      "status": "OK",
+      "lines": 5,
+      "stops": 10,
+      "trips": 938,
+      "valid_until": "2028-12-31",
+      "last_error": null
+    },
+    {
+      "id": "mts",
+      "operator_name": "Metro Transportes do Sul",
+      "status": "OK",
+      "lines": 3,
+      "stops": 19,
+      "trips": 2067,
+      "valid_until": "2030-12-25",
+      "last_error": null
+    },
+    {
+      "id": "tcb_barreiro",
+      "operator_name": "TCB Barreiro",
+      "status": "OK",
+      "lines": 75,
+      "stops": 279,
+      "trips": 2465,
+      "valid_until": "2026-12-31",
+      "last_error": null
+    },
+    {
+      "id": "stcp",
+      "operator_name": "STCP (Porto)",
+      "status": "horário expirado",
+      "lines": 73,
+      "stops": 2502,
+      "trips": 25181,
+      "valid_until": "2025-12-31",
+      "last_error": null
+    },
+    {
+      "id": "metro_porto",
+      "operator_name": "Metro do Porto",
+      "status": "horário expirado",
+      "lines": 7,
+      "stops": 85,
+      "trips": 2939,
+      "valid_until": "2024-12-31",
+      "last_error": null
+    },
+    {
+      "id": "tub_braga",
+      "operator_name": "TUB Braga",
+      "status": "OK",
+      "lines": 80,
+      "stops": 2011,
+      "trips": 3730,
+      "valid_until": "2027-02-01",
+      "last_error": null
+    },
+    {
+      "id": "guimabus",
+      "operator_name": "Guimabus (Guimarães)",
+      "status": "OK",
+      "lines": 59,
+      "stops": 1522,
+      "trips": 2213,
+      "valid_until": "2026-12-31",
+      "last_error": null
+    },
+    {
+      "id": "tuba_barcelos",
+      "operator_name": "TUBA Barcelos",
+      "status": "horário expirado",
+      "lines": 60,
+      "stops": 1626,
+      "trips": 739,
+      "valid_until": "2024-12-31",
+      "last_error": null
+    },
+    {
+      "id": "mobiave",
+      "operator_name": "Mobiave (Famalicão)",
+      "status": "horário expirado",
+      "lines": 90,
+      "stops": 2452,
+      "trips": 2690,
+      "valid_until": "2025-12-31",
+      "last_error": null
+    },
+    {
+      "id": "smtuc",
+      "operator_name": "SMTUC (Coimbra)",
+      "status": "horário expirado",
+      "lines": 331,
+      "stops": 1375,
+      "trips": 3090,
+      "valid_until": "2025-12-31",
+      "last_error": null
+    },
+    {
+      "id": "vamus",
+      "operator_name": "Vamus Algarve",
+      "status": "OK",
+      "lines": 72,
+      "stops": 2851,
+      "trips": 1308,
+      "valid_until": "2027-12-31",
+      "last_error": null
+    },
+    {
+      "id": "proximo_faro",
+      "operator_name": "Próximo (Faro)",
+      "status": "OK",
+      "lines": 14,
+      "stops": 189,
+      "trips": 745,
+      "valid_until": "2027-12-31",
+      "last_error": null
+    },
+    {
+      "id": "giro",
+      "operator_name": "GIRO",
+      "status": "OK",
+      "lines": 11,
+      "stops": 232,
+      "trips": 611,
+      "valid_until": "2026-12-31",
+      "last_error": null
+    },
+    {
+      "id": "sobe_desce_tavira",
+      "operator_name": "Sobe e Desce (Tavira)",
+      "status": "OK",
+      "lines": 2,
+      "stops": 51,
+      "trips": 27,
+      "valid_until": "2027-12-31",
+      "last_error": null
+    },
+    {
+      "id": "horarios_funchal",
+      "operator_name": "Horários do Funchal",
+      "status": "OK",
+      "lines": 164,
+      "stops": 1742,
+      "trips": 10656,
+      "valid_until": "2026-11-30",
+      "last_error": null
+    },
+    {
+      "id": "mdb-1272",
+      "operator_name": "Cascais Próxima, E.M., S.A. (MobiCascais)",
+      "status": "OK",
+      "lines": 99,
+      "stops": 1082,
+      "trips": 3821,
+      "valid_until": "2027-12-31",
+      "last_error": null
+    },
+    {
+      "id": "mdb-3412",
+      "operator_name": "Transportes Metropolitanos de Lisboa (TML)",
+      "status": "OK",
+      "lines": 948,
+      "stops": 12802,
+      "trips": 306579,
+      "valid_until": "2027-07-01",
+      "last_error": null
+    },
+    {
+      "id": "tld-4257",
+      "operator_name": "AUTNA SL",
+      "status": "OK",
+      "lines": 1,
+      "stops": 8,
+      "trips": 16,
+      "valid_until": "2026-12-31",
+      "last_error": null
+    },
+    {
+      "id": "tld-4316",
+      "operator_name": "A Onda - Mobilidade Urbana",
+      "status": "OK",
+      "lines": 10,
+      "stops": 306,
+      "trips": 614,
+      "valid_until": "2026-12-31",
+      "last_error": null
+    },
+    {
+      "id": "tld-4317",
+      "operator_name": "Vai e Vem - Circuito Urbano",
+      "status": "OK",
+      "lines": 16,
+      "stops": 477,
+      "trips": 887,
+      "valid_until": "2026-12-31",
+      "last_error": null
+    },
+    {
+      "id": "tld-4318",
+      "operator_name": "Apanha-me! - Transportes Urbanos",
+      "status": "OK",
+      "lines": 7,
+      "stops": 141,
+      "trips": 239,
+      "valid_until": "2026-12-31",
+      "last_error": null
+    },
+    {
+      "id": "tld-4319",
+      "operator_name": "Circuito Olhão",
+      "status": "OK",
+      "lines": 4,
+      "stops": 87,
+      "trips": 129,
+      "valid_until": "2027-12-31",
+      "last_error": null
+    },
+    {
+      "id": "tld-7825",
+      "operator_name": "RMTEJO II - Transportes Rodoviários de Passageiros",
+      "status": "ERROR",
+      "lines": 0,
+      "stops": 0,
+      "trips": 0,
+      "valid_until": null,
+      "last_error": "https://files.mobilitydatabase.org/tld-7825/latest.zip -> o ficheiro não tem paragens ou horários | https://drive.google.com/uc?export=download&id=1v9eGjezOzbaBQi-Aa5c15tZXcSiiDwqA -> o ficheiro não tem paragens ou horários"
+    },
+    {
+      "id": "tld-7876",
+      "operator_name": "RDL RODOVIÁRIA DO LIS II",
+      "status": "ERROR",
+      "lines": 0,
+      "stops": 0,
+      "trips": 0,
+      "valid_until": null,
+      "last_error": "https://files.mobilitydatabase.org/tld-7876/latest.zip -> o ficheiro não tem paragens ou horários | https://drive.google.com/uc?export=download&id=192Qat2jJKyv5hhO8T3eVT70M5NB0dtXC -> o ficheiro não tem paragens ou horários"
+    },
+    {
+      "id": "tld-7877",
+      "operator_name": "RDL RODOVIÁRIA DO LIS",
+      "status": "ERROR",
+      "lines": 0,
+      "stops": 0,
+      "trips": 0,
+      "valid_until": null,
+      "last_error": "https://files.mobilitydatabase.org/tld-7877/latest.zip -> o ficheiro não tem paragens ou horários | https://drive.google.com/uc?export=download&id=1NqcOk8IrlV73TBonJAxpzIUTjaAjF27M -> o ficheiro não tem paragens ou horários"
+    },
+    {
+      "id": "carris_metropolitana",
+      "operator_name": "Carris Metropolitana",
+      "status": "OK",
+      "lines": 717,
+      "stops": 12752,
+      "trips": 0,
+      "valid_until": null,
+      "last_error": null
+    }
+  ],
+  "duration_s": 307
+}
