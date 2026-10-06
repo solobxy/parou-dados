@@ -17,6 +17,7 @@ escreve manifest.json.
 
 import csv
 import datetime
+import email.utils
 import gzip
 import io
 import itertools
@@ -46,7 +47,6 @@ BATCH = 50000
 MAX_ZIP_BYTES = 300 * 1024 * 1024
 
 MDB_CATALOG = "https://files.mobilitydatabase.org/feeds_v2.csv"
-PORTO_CKAN = "https://opendata.porto.digital/api/3/action/package_show?id="
 CM_API = "https://api.carrismetropolitana.pt/v2"
 
 csv.field_size_limit(10_000_000)
@@ -55,7 +55,7 @@ csv.field_size_limit(10_000_000)
 # OPERADORES (lista inicial com links confirmados)
 #   id        -> igual ao que a app ja usa (cp, stcp, metro_porto, carris, ...)
 #   mdb       -> palavras para encontrar o espelho no Mobility Database
-#   ckan      -> conjunto de dados do portal do Porto (vai buscar o mais recente)
+#   ckan_apis -> portais de dados do Porto (vai buscar o ficheiro mais recente)
 #   calendario_semanal -> se o ficheiro mais recente tiver no máximo N dias e as datas
 #                         do calendário já tiverem passado, usa o horário semanal
 # ---------------------------------------------------------------------------
@@ -82,13 +82,19 @@ SEED_FEEDS = [
     {"id": "tcb_barreiro", "operator_name": "TCB Barreiro", "mode": "Autocarro",
      "url": "https://www.tcbarreiro.pt/front/files/sample_gtfs/GTFS-TCB_24.zip",
      "mdb": ["barreiro"]},
-    {"id": "stcp", "operator_name": "STCP (Porto)", "mode": "Autocarro",
-     "ckan": "horarios-paragens-e-rotas-em-formato-gtfs-stcp", "calendario_semanal": 180,
-     "url": "https://opendata.porto.digital/dataset/5275c986-592c-43f5-8f87-aabbd4e4f3a4/resource/909b291f-f8ba-4b6f-947a-5ace986bd75f/download/gtfs_feed.zip",
+    {"id": "stcp", "operator_name": "STCP (Porto)", "mode": "Autocarro", "calendario_semanal": 180,
+     "ckan_apis": [
+         "https://dadosabertos.cm-porto.pt/api/3/action/package_show?id=horarios-paragens-e-rotas-stcp",
+         "https://opendata.porto.digital/api/3/action/package_show?id=horarios-paragens-e-rotas-em-formato-gtfs-stcp",
+     ],
+     "url": "https://dadosabertos.cm-porto.pt/dataset/71490e40-9e19-11f1-84ed-6abdb6d5cf34/resource/51340c18-0ef5-4895-b099-cf7247ea54f4/download/gtfs_feed.zip",
      "mdb": ["transportes colectivos do porto", "stcp"]},
-    {"id": "metro_porto", "operator_name": "Metro do Porto", "mode": "Metro",
-     "ckan": "horarios-paragens-e-rotas-em-formato-gtfs", "calendario_semanal": 365,
-     "url": None,
+    {"id": "metro_porto", "operator_name": "Metro do Porto", "mode": "Metro", "calendario_semanal": 365,
+     "ckan_apis": [
+         "https://dadosabertos.cm-porto.pt/api/3/action/package_show?id=horarios-paragens-e-rotas-metro-porto",
+         "https://opendata.porto.digital/api/3/action/package_show?id=horarios-paragens-e-rotas-em-formato-gtfs",
+     ],
+     "url": "https://dadosabertos.cm-porto.pt/dataset/713a680c-9e19-11f1-84ed-6abdb6d5cf34/resource/28a13723-2af1-4bbb-a2b1-f8b08df8c7e4/download/___",
      "mdb": ["metro do porto"]},
     {"id": "tub_braga", "operator_name": "TUB Braga", "mode": "Autocarro",
      "url": "https://www.tub.pt/developer/gtfs/feed/tub.zip",
@@ -161,11 +167,16 @@ def norm(text):
     return text.lower()
 
 
-def http_get(url, timeout=180, insecure=False):
+def http_get_full(url, timeout=180, insecure=False):
     req = urllib.request.Request(url, headers={"User-Agent": UA, "Accept": "*/*"})
     context = ssl._create_unverified_context() if insecure else None  # noqa: S323
     with urllib.request.urlopen(req, timeout=timeout, context=context) as resp:
-        return resp.status, resp.read()
+        return resp.status, resp.read(), dict(resp.headers)
+
+
+def http_get(url, timeout=180, insecure=False):
+    status, body, _ = http_get_full(url, timeout=timeout, insecure=insecure)
+    return status, body
 
 
 def is_ssl_error(err):
@@ -174,18 +185,27 @@ def is_ssl_error(err):
 
 
 def download_zip(url):
-    """Descarrega e valida um ZIP. Devolve (bytes, http_status, duracao_ms)."""
+    """Descarrega e valida um ZIP. Devolve (bytes, http_status, duracao_ms, data_do_ficheiro)."""
     t0 = time.time()
     last_err = None
     insecure = False
     for attempt in range(3):
         try:
-            status, body = http_get(url, insecure=insecure)
+            status, body, headers = http_get_full(url, insecure=insecure)
             if len(body) > MAX_ZIP_BYTES:
                 raise ValueError(f"ficheiro demasiado grande ({len(body) // 1048576} MB)")
+            if len(body) == 0:
+                raise ValueError("o ficheiro está vazio (0 bytes)")
             if body[:2] != b"PK":
                 raise ValueError("o servidor devolveu uma página em vez de um ficheiro ZIP")
-            return body, status, int((time.time() - t0) * 1000)
+            file_day = None
+            modified = headers.get("Last-Modified") or headers.get("last-modified")
+            if modified:
+                try:
+                    file_day = email.utils.parsedate_to_datetime(modified).date().isoformat()
+                except (TypeError, ValueError):
+                    file_day = None
+            return body, status, int((time.time() - t0) * 1000), file_day
         except Exception as err:  # noqa: BLE001
             last_err = err
             if is_ssl_error(err) and not insecure:
@@ -360,8 +380,11 @@ def gtfs_rows(zf, filename):
             break
     if member is None:
         return
+    with zf.open(member) as probe:
+        start = probe.read(4)
+    encoding = "utf-16" if start[:2] in (b"\xff\xfe", b"\xfe\xff") else "utf-8-sig"
     with zf.open(member) as raw:
-        text = io.TextIOWrapper(raw, encoding="utf-8-sig", errors="replace", newline="")
+        text = io.TextIOWrapper(raw, encoding=encoding, errors="replace", newline="")
         first = text.readline()
         if not first:
             return
@@ -370,7 +393,8 @@ def gtfs_rows(zf, filename):
             delim = ","
         reader = csv.reader(itertools.chain([first], text), delimiter=delim)
         try:
-            header = [h.strip().strip('"').lower() for h in next(reader)]
+            header = [re.sub(r"[^a-z0-9_]", "", h.replace("\ufeff", "").strip().lower().replace(" ", "_"))
+                      for h in next(reader)]
         except StopIteration:
             return
         width = len(header)
@@ -394,11 +418,17 @@ def window_days(today_dt):
 def ingest_gtfs(conn, feed_id, zip_bytes, today_dt, extend_calendar=False):
     """Grava um GTFS na base de dados (dentro de um SAVEPOINT). Devolve estatisticas."""
     today = today_dt.strftime("%Y%m%d")
+    with zipfile.ZipFile(io.BytesIO(zip_bytes)) as outer:
+        names = {os.path.basename(n).lower() for n in outer.namelist()}
+        inner = [n for n in outer.namelist() if n.lower().endswith(".zip")]
+        if "stops.txt" not in names and inner:
+            zip_bytes = outer.read(inner[0])  # o GTFS vem dentro de outro ZIP
     with zipfile.ZipFile(io.BytesIO(zip_bytes)) as zf:
         names = {os.path.basename(n).lower() for n in zf.namelist()}
         missing = [f for f in ("stops.txt", "routes.txt", "trips.txt", "stop_times.txt") if f not in names]
         if missing:
-            raise ValueError("ficheiros GTFS em falta: " + ", ".join(missing))
+            raise ValueError("ficheiros GTFS em falta: " + ", ".join(missing)
+                             + f" (o ZIP tem: {', '.join(sorted(names))[:200]})")
 
         p = feed_id + ":"
         route_types = {}
@@ -525,7 +555,9 @@ def ingest_gtfs(conn, feed_id, zip_bytes, today_dt, extend_calendar=False):
                 "frequencies": insert_many(conn, "frequencies", frequencies()),
             }
             if stats["stops"] == 0:
-                raise ValueError("o ficheiro não tem paragens (formato não reconhecido)")
+                member = next((n for n in zf.namelist() if os.path.basename(n).lower() == "stops.txt"), None)
+                head = zf.read(member)[:160] if member else b""
+                raise ValueError(f"o ficheiro não tem paragens (formato não reconhecido; início de stops.txt: {head!r})")
             conn.execute("RELEASE feed")
         except Exception:
             conn.execute("ROLLBACK TO feed")
@@ -622,22 +654,29 @@ def catalog_mirror(catalog, keywords, exclude=None):
     return None
 
 
-def resolve_ckan_latest(dataset):
-    _, body = http_get(PORTO_CKAN + dataset, timeout=60)
+def resource_day(res):
+    match = re.search(r"(\d{1,2})[-_.](\d{1,2})[-_.](\d{4})", (res.get("name") or "") + " " + (res.get("url") or ""))
+    if match:
+        try:
+            return datetime.date(int(match.group(3)), int(match.group(2)), int(match.group(1))).isoformat()
+        except ValueError:
+            pass
+    return (res.get("last_modified") or res.get("created") or "")[:10] or None
+
+
+def resolve_ckan_candidates(api_url):
+    """Devolve [(url, dia)] dos ficheiros GTFS do conjunto de dados, do mais recente para o mais antigo."""
+    _, body = http_get(api_url, timeout=60)
     resources = json.loads(body)["result"]["resources"]
-    candidates = []
+    out = []
     for res in resources:
         url = res.get("url") or ""
         fmt = (res.get("format") or "").lower()
-        if not (url.lower().endswith(".zip") or fmt in ("zip", "gtfs")):
+        if not (url.lower().endswith(".zip") or "zip" in fmt or "gtfs" in fmt or "/download/" in url):
             continue
-        match = re.search(r"(\d{2})-(\d{2})-(\d{4})", res.get("name") or "")
-        day = f"{match.group(3)}-{match.group(2)}-{match.group(1)}" if match else (res.get("created") or "")[:10]
-        candidates.append((day, res.get("created") or "", url))
-    if not candidates:
-        return None, None
-    candidates.sort()
-    return candidates[-1][2], candidates[-1][0]
+        out.append((url, resource_day(res)))
+    out.sort(key=lambda item: item[1] or "", reverse=True)
+    return out[:6]
 
 
 def discovered_feeds(catalog, seed_urls):
@@ -677,24 +716,22 @@ def discovered_feeds(catalog, seed_urls):
 def process_feed(conn, feed, today_dt, have_prev):
     fid = feed["id"]
     origin = feed.get("source_origin", "seed")
-    urls = []
-    recent_resource = False
-    if feed.get("ckan"):
+    candidates = []  # (url, dia_do_ficheiro)
+    for api in feed.get("ckan_apis", []):
         try:
-            latest, day = resolve_ckan_latest(feed["ckan"])
-            if latest:
-                urls.append(latest)
-                try:
-                    age = (today_dt.date() - datetime.date.fromisoformat(day)).days
-                    recent_resource = age <= int(feed.get("calendario_semanal") or 0)
-                except (TypeError, ValueError):
-                    recent_resource = False
-                log(f"  {fid}: ficheiro mais recente no portal do Porto: {day}")
+            found = resolve_ckan_candidates(api)
+            log(f"  {fid}: {len(found)} ficheiros no portal ({api.split('/')[2]}), "
+                f"mais recente: {found[0][1] if found else '-'}")
+            candidates.extend(c for c in found if c[0] not in [x[0] for x in candidates])
+            if found:
+                break
         except Exception as err:  # noqa: BLE001
-            log(f"  {fid}: não consegui ver o ficheiro mais recente no portal do Porto ({err})")
+            log(f"  {fid}: portal {api.split('/')[2]} indisponível ({err})")
     for u in (feed.get("url"), feed.get("mirror")):
-        if u and u not in urls:
-            urls.append(u)
+        if u and u not in [x[0] for x in candidates]:
+            candidates.append((u, None))
+    urls = [c[0] for c in candidates]
+    days = dict(candidates)
 
     base = {
         "id": fid, "operator_name": feed["operator_name"], "mode": feed.get("mode") or "Autocarro",
@@ -704,13 +741,20 @@ def process_feed(conn, feed, today_dt, have_prev):
     }
 
     errors = []
-    for i, url in enumerate(urls):
+    for url in urls:
         try:
-            body, status, ms = download_zip(url)
+            body, status, ms, file_day = download_zip(url)
             log_fetch(conn, fid, url, status, len(body), ms, f"Download concluído ({len(body) // 1024} KB)")
             delete_feed(conn, fid)
-            # Só prolonga o horário semanal se for o ficheiro mais recente do portal (publicado há pouco).
-            extend = bool(feed.get("calendario_semanal") and recent_resource and i == 0)
+            # Só prolonga o horário semanal se o ficheiro foi publicado há pouco (pelo nome ou pela data do servidor).
+            extend = False
+            limit = int(feed.get("calendario_semanal") or 0)
+            day = days.get(url) or file_day
+            if limit and day:
+                try:
+                    extend = (today_dt.date() - datetime.date.fromisoformat(day[:10])).days <= limit
+                except ValueError:
+                    extend = False
             stats = ingest_gtfs(conn, fid, body, today_dt, extend_calendar=extend)
             note = None
             if stats["extended"]:
