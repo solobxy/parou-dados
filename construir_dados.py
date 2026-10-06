@@ -17,6 +17,7 @@ escreve manifest.json.
 
 import csv
 import datetime
+import difflib
 import email.utils
 import gzip
 import io
@@ -494,6 +495,43 @@ def ingest_gtfs(conn, feed_id, zip_bytes, today_dt, extend_calendar=False, max_b
         v_until = max(all_dates) if all_dates else None
         expired = bool(v_until and v_until < today)
 
+        # Viagens por serviço (trips.txt) e associação de serviços com nomes quase iguais:
+        # alguns operadores escrevem o serviço de forma diferente no calendário e nas viagens
+        # (ex.: STCP "UTIL ECOLAR:..." no calendário). Sem isto essas viagens nunca ficam ativas.
+        svc_trips = {}
+        for r in gtfs_rows(zf, "trips.txt"):
+            sid = r.get("service_id")
+            if sid:
+                svc_trips[sid] = svc_trips.get(sid, 0) + 1
+        known = set(cal) | {x for v in adds.values() for x in v} | {x for v in removes.values() for x in v}
+        aliases = {}
+        if known:
+            def _norm(x):
+                x = unicodedata.normalize("NFKD", x).encode("ascii", "ignore").decode().upper()
+                return re.sub(r"[^A-Z0-9]", "", x)
+            known_norm = {k: _norm(k) for k in known}
+            for orphan in [x for x in svc_trips if x not in known]:
+                on = _norm(orphan)
+                scored = sorted(((difflib.SequenceMatcher(None, on, kn).ratio(), k) for k, kn in known_norm.items()),
+                                reverse=True)
+                best = scored[0]
+                second = scored[1][0] if len(scored) > 1 else 0.0
+                if best[0] >= 0.88 and best[0] - second >= 0.04:
+                    aliases[orphan] = best[1]
+        for orphan, target in aliases.items():
+            if target in cal:
+                cal[orphan] = [cal[target][0], cal[target][1], cal[target][2]]
+            for date, sids in adds.items():
+                if target in sids:
+                    sids.add(orphan)
+                    cal_dates.append((feed_id, orphan, date, 1))
+            for date, sids in removes.items():
+                if target in sids:
+                    sids.add(orphan)
+                    cal_dates.append((feed_id, orphan, date, 2))
+        known_after = known | set(aliases)
+        sem_calendario = sorted(((n, x) for x, n in svc_trips.items() if x not in known_after), reverse=True)[:10]
+
         def active_on(ymd, wd):
             on = {sid for sid, (days, start, end) in cal.items() if start <= ymd <= end and days[wd]}
             on |= adds.get(ymd, set())
@@ -510,7 +548,7 @@ def ingest_gtfs(conn, feed_id, zip_bytes, today_dt, extend_calendar=False, max_b
                 continue
             if v_until and ymd > v_until and not extend_calendar:
                 continue
-            if active_on(ymd, wd):
+            if any(svc_trips.get(x) for x in active_on(ymd, wd)):
                 continue
             day = datetime.date(int(ymd[:4]), int(ymd[4:6]), int(ymd[6:8]))
             holiday = feriado_nacional(day)
@@ -524,9 +562,9 @@ def ingest_gtfs(conn, feed_id, zip_bytes, today_dt, extend_calendar=False, max_b
                 ref_ymd = (day - datetime.timedelta(days=back)).strftime("%Y%m%d")
                 if v_from and ref_ymd < v_from:
                     break
-                on = active_on(ref_ymd, ref_wd)
+                on = {x for x in active_on(ref_ymd, ref_wd) if svc_trips.get(x)}
                 if on:
-                    candidates.append((len(on), ref_ymd, on))
+                    candidates.append((sum(svc_trips[x] for x in on), ref_ymd, on))
                     if len(candidates) >= 4:
                         break
             if not candidates:
@@ -639,7 +677,8 @@ def ingest_gtfs(conn, feed_id, zip_bytes, today_dt, extend_calendar=False, max_b
     main_type = max(route_types, key=route_types.get) if route_types else 3
     stats.update({"mode": ROUTE_TYPE_MODE.get(main_type, "Autocarro"), "valid_from": v_from,
                   "valid_until": v_until, "expired": expired, "extended": extended,
-                  "filled_days": filled_days, "past_end": bool(v_until and v_until < today)})
+                  "filled_days": filled_days, "past_end": bool(v_until and v_until < today),
+                  "aliases": aliases, "sem_calendario": [{"service": x, "viagens": n} for n, x in sem_calendario]})
     return stats
 
 
@@ -873,6 +912,7 @@ def process_feed(conn, feed, today_dt, have_prev):
                 "lines_count": stats["routes"], "stops_count": stats["stops"], "trips_count": stats["trips"],
                 "valid_from": ymd_to_iso(stats["valid_from"]), "valid_until": ymd_to_iso(stats["valid_until"]),
                 "last_ok": now_iso(), "last_error": note,
+                "_aliases": stats["aliases"], "_sem_calendario": stats["sem_calendario"],
             })
             upsert_feed(conn, row)
             conn.commit()
@@ -1099,6 +1139,8 @@ def main():
             "lines": r.get("lines_count") or 0, "stops": r.get("stops_count") or 0,
             "trips": r.get("trips_count") or 0, "valid_until": r.get("valid_until"),
             "url": r.get("url"), "last_error": r.get("last_error"),
+            "servicos_associados": r.get("_aliases") or None,
+            "servicos_sem_calendario": r.get("_sem_calendario") or None,
             "viagens_hoje": saude["hoje"].get(r.get("id"), 0),
             "viagens_amanha": saude["amanha"].get(r.get("id"), 0),
         } for r in results],
