@@ -957,6 +957,58 @@ def process_carris_metropolitana(conn, have_prev):
         return row
 
 
+DIAS_COLUNA = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"]
+
+
+def viagens_ativas(conn, dia):
+    """Viagens por operador ativas num dia, com EXATAMENTE a mesma regra que a app usa."""
+    ymd, col = dia.strftime("%Y%m%d"), DIAS_COLUNA[dia.weekday()]
+    sql = f"""
+        SELECT t.feed_id, COUNT(*) FROM trips t
+        WHERE ((t.feed_id, t.service_id) IN (
+            SELECT feed_id, service_id FROM calendar WHERE start_date <= '{ymd}' AND end_date >= '{ymd}' AND {col} = 1
+            UNION SELECT feed_id, service_id FROM calendar_dates WHERE date = '{ymd}' AND exception_type = 1
+            EXCEPT SELECT feed_id, service_id FROM calendar_dates WHERE date = '{ymd}' AND exception_type = 2)
+          OR t.feed_id NOT IN (SELECT feed_id FROM calendar UNION SELECT feed_id FROM calendar_dates))
+        GROUP BY t.feed_id"""
+    return {fid: n for fid, n in conn.execute(sql)}
+
+
+def verificar_saude(conn, today_dt):
+    """Verificação diária escrita no manifest: viagens ativas hoje/amanhã e o calendário do Porto."""
+    hoje = today_dt.date()
+    amanha = hoje + datetime.timedelta(days=1)
+    out = {"data_hoje": hoje.isoformat(), "data_amanha": amanha.isoformat(),
+           "hoje": {}, "amanha": {}, "porto": {}}
+    try:
+        out["hoje"] = viagens_ativas(conn, hoje)
+        out["amanha"] = viagens_ativas(conn, amanha)
+    except sqlite3.Error as err:
+        log(f"AVISO: verificação de viagens falhou: {err}")
+    for fid in ("stcp", "metro_porto"):
+        try:
+            ymd = hoje.strftime("%Y%m%d")
+            out["porto"][fid] = {
+                "calendar": [dict(zip(["service", "inicio", "fim", "seg", "ter", "qua", "qui", "sex", "sab", "dom"], r))
+                             for r in conn.execute(
+                                 "SELECT service_id, start_date, end_date, monday, tuesday, wednesday, thursday, friday,"
+                                 " saturday, sunday FROM calendar WHERE feed_id = ? ORDER BY end_date DESC LIMIT 12", (fid,))],
+                "datas_soltas": dict(zip(["primeira", "ultima", "total"], conn.execute(
+                    "SELECT MIN(date), MAX(date), COUNT(*) FROM calendar_dates WHERE feed_id = ?", (fid,)).fetchone())),
+                "servicos_com_data_hoje": [r[0] for r in conn.execute(
+                    "SELECT service_id FROM calendar_dates WHERE feed_id = ? AND date = ? AND exception_type = 1 LIMIT 12",
+                    (fid, ymd))],
+                "viagens_por_servico": [dict(zip(["service", "viagens"], r)) for r in conn.execute(
+                    "SELECT service_id, COUNT(*) FROM trips WHERE feed_id = ? GROUP BY service_id ORDER BY 2 DESC LIMIT 12",
+                    (fid,))],
+            }
+        except sqlite3.Error as err:
+            out["porto"][fid] = {"erro": str(err)}
+    for fid in ("stcp", "metro_porto"):
+        log(f"Verificação {fid}: {out['hoje'].get(fid, 0)} viagens hoje, {out['amanha'].get(fid, 0)} amanhã")
+    return out
+
+
 def main():
     started = time.time()
     today_dt = datetime.datetime.now(LISBON).replace(tzinfo=None)
@@ -1023,6 +1075,7 @@ def main():
         "SELECT (SELECT COUNT(*) FROM routes), (SELECT COUNT(*) FROM stops), (SELECT COUNT(*) FROM trips),"
         " (SELECT COUNT(*) FROM stop_times)").fetchone()
     integrity = conn.execute("PRAGMA quick_check").fetchone()[0]
+    saude = verificar_saude(conn, today_dt)
     conn.close()
 
     if integrity != "ok":
@@ -1046,7 +1099,11 @@ def main():
             "lines": r.get("lines_count") or 0, "stops": r.get("stops_count") or 0,
             "trips": r.get("trips_count") or 0, "valid_until": r.get("valid_until"),
             "url": r.get("url"), "last_error": r.get("last_error"),
+            "viagens_hoje": saude["hoje"].get(r.get("id"), 0),
+            "viagens_amanha": saude["amanha"].get(r.get("id"), 0),
         } for r in results],
+        "verificacao": {"data_hoje": saude["data_hoje"], "data_amanha": saude["data_amanha"],
+                        "porto": saude["porto"]},
         "duration_s": int(time.time() - started),
     }
     with open(OUT_MANIFEST, "w", encoding="utf-8") as fh:
