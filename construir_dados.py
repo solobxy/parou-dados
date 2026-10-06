@@ -56,8 +56,9 @@ csv.field_size_limit(10_000_000)
 #   id        -> igual ao que a app ja usa (cp, stcp, metro_porto, carris, ...)
 #   mdb       -> palavras para encontrar o espelho no Mobility Database
 #   ckan_apis -> portais de dados do Porto (vai buscar o ficheiro mais recente)
-#   calendario_semanal -> se o ficheiro mais recente tiver no máximo N dias e as datas
-#                         do calendário já tiverem passado, usa o horário semanal
+#   calendario_semanal -> o portal tem vários ficheiros de vários anos: descarrega todos,
+#                         escolhe o que tem o calendário mais recente e, se as datas já
+#                         passaram há no máximo N dias, usa o horário semanal (com nota)
 # ---------------------------------------------------------------------------
 SEED_FEEDS = [
     {"id": "metro_lisboa", "operator_name": "Metro de Lisboa", "mode": "Metro",
@@ -82,19 +83,21 @@ SEED_FEEDS = [
     {"id": "tcb_barreiro", "operator_name": "TCB Barreiro", "mode": "Autocarro",
      "url": "https://www.tcbarreiro.pt/front/files/sample_gtfs/GTFS-TCB_24.zip",
      "mdb": ["barreiro"]},
-    {"id": "stcp", "operator_name": "STCP (Porto)", "mode": "Autocarro", "calendario_semanal": 180,
+    {"id": "stcp", "operator_name": "STCP (Porto)", "mode": "Autocarro", "calendario_semanal": 730,
      "ckan_apis": [
          "https://dadosabertos.cm-porto.pt/api/3/action/package_show?id=horarios-paragens-e-rotas-stcp",
          "https://opendata.porto.digital/api/3/action/package_show?id=horarios-paragens-e-rotas-em-formato-gtfs-stcp",
      ],
      "url": "https://dadosabertos.cm-porto.pt/dataset/71490e40-9e19-11f1-84ed-6abdb6d5cf34/resource/51340c18-0ef5-4895-b099-cf7247ea54f4/download/gtfs_feed.zip",
+     "mirror": "https://files.mobilitydatabase.org/mdb-2148/latest.zip",
      "mdb": ["transportes colectivos do porto", "stcp"]},
-    {"id": "metro_porto", "operator_name": "Metro do Porto", "mode": "Metro", "calendario_semanal": 365,
+    {"id": "metro_porto", "operator_name": "Metro do Porto", "mode": "Metro", "calendario_semanal": 730,
      "ckan_apis": [
          "https://dadosabertos.cm-porto.pt/api/3/action/package_show?id=horarios-paragens-e-rotas-metro-porto",
          "https://opendata.porto.digital/api/3/action/package_show?id=horarios-paragens-e-rotas-em-formato-gtfs",
      ],
      "url": "https://dadosabertos.cm-porto.pt/dataset/713a680c-9e19-11f1-84ed-6abdb6d5cf34/resource/28a13723-2af1-4bbb-a2b1-f8b08df8c7e4/download/___",
+     "mirror": "https://files.mobilitydatabase.org/mdb-2147/latest.zip",
      "mdb": ["metro do porto"]},
     {"id": "tub_braga", "operator_name": "TUB Braga", "mode": "Autocarro",
      "url": "https://www.tub.pt/developer/gtfs/feed/tub.zip",
@@ -415,14 +418,32 @@ def window_days(today_dt):
     return out
 
 
-def ingest_gtfs(conn, feed_id, zip_bytes, today_dt, extend_calendar=False):
-    """Grava um GTFS na base de dados (dentro de um SAVEPOINT). Devolve estatisticas."""
-    today = today_dt.strftime("%Y%m%d")
+def unwrap_zip(zip_bytes):
+    """Se o GTFS vier dentro de outro ZIP, devolve o ZIP de dentro."""
     with zipfile.ZipFile(io.BytesIO(zip_bytes)) as outer:
         names = {os.path.basename(n).lower() for n in outer.namelist()}
         inner = [n for n in outer.namelist() if n.lower().endswith(".zip")]
         if "stops.txt" not in names and inner:
-            zip_bytes = outer.read(inner[0])  # o GTFS vem dentro de outro ZIP
+            return outer.read(inner[0])
+    return zip_bytes
+
+
+def calendar_end(zip_bytes):
+    """Última data (AAAAMMDD) em que o ficheiro tem serviço, lida só do calendário."""
+    best = ""
+    with zipfile.ZipFile(io.BytesIO(unwrap_zip(zip_bytes))) as zf:
+        for r in gtfs_rows(zf, "calendar.txt"):
+            best = max(best, r.get("end_date") or "")
+        for r in gtfs_rows(zf, "calendar_dates.txt"):
+            if to_int(r.get("exception_type"), 1) == 1:
+                best = max(best, r.get("date") or "")
+    return best
+
+
+def ingest_gtfs(conn, feed_id, zip_bytes, today_dt, extend_calendar=False):
+    """Grava um GTFS na base de dados (dentro de um SAVEPOINT). Devolve estatisticas."""
+    today = today_dt.strftime("%Y%m%d")
+    zip_bytes = unwrap_zip(zip_bytes)
     with zipfile.ZipFile(io.BytesIO(zip_bytes)) as zf:
         names = {os.path.basename(n).lower() for n in zf.namelist()}
         missing = [f for f in ("stops.txt", "routes.txt", "trips.txt", "stop_times.txt") if f not in names]
@@ -557,6 +578,8 @@ def ingest_gtfs(conn, feed_id, zip_bytes, today_dt, extend_calendar=False):
             if stats["stops"] == 0:
                 member = next((n for n in zf.namelist() if os.path.basename(n).lower() == "stops.txt"), None)
                 head = zf.read(member)[:160] if member else b""
+                if b"stop_id" in head:
+                    raise ValueError("o operador publicou o ficheiro sem paragens (lista de paragens vazia)")
                 raise ValueError(f"o ficheiro não tem paragens (formato não reconhecido; início de stops.txt: {head!r})")
             conn.execute("RELEASE feed")
         except Exception:
@@ -676,7 +699,7 @@ def resolve_ckan_candidates(api_url):
             continue
         out.append((url, resource_day(res)))
     out.sort(key=lambda item: item[1] or "", reverse=True)
-    return out[:6]
+    return out[:10]
 
 
 def discovered_feeds(catalog, seed_urls):
@@ -741,18 +764,45 @@ def process_feed(conn, feed, today_dt, have_prev):
     }
 
     errors = []
-    for url in urls:
+    limit = int(feed.get("calendario_semanal") or 0)
+
+    def attempts():
+        """Devolve (url, bytes, status, ms, fim_do_calendario) pela ordem a tentar."""
+        if not limit:
+            for url in urls:
+                try:
+                    body, status, ms, _ = download_zip(url)
+                    yield url, body, status, ms, None
+                except Exception as err:  # noqa: BLE001
+                    errors.append(f"{url} -> {err}" if str(url) not in str(err) else str(err))
+                    log_fetch(conn, fid, url, 0, 0, 0, "Falha", str(err))
+            return
+        # Porto: os portais têm ficheiros de vários anos e as datas dos metadados não são fiáveis.
+        # Descarrega todos e ordena pelo fim do calendário (o mais recente primeiro).
+        got = []
+        for url in urls:
+            try:
+                body, status, ms, file_day = download_zip(url)
+                end = calendar_end(body)
+                log(f"  {fid}: calendário até {ymd_to_iso(end) or '?'} <- {url}")
+                got.append((end, days.get(url) or file_day or "", url, body, status, ms))
+            except Exception as err:  # noqa: BLE001
+                errors.append(f"{url} -> {err}" if str(url) not in str(err) else str(err))
+                log_fetch(conn, fid, url, 0, 0, 0, "Falha", str(err))
+        got.sort(key=lambda g: (g[0], g[1]), reverse=True)
+        for end, _, url, body, status, ms in got:
+            yield url, body, status, ms, end
+
+    for url, body, status, ms, end in attempts():
         try:
-            body, status, ms, file_day = download_zip(url)
             log_fetch(conn, fid, url, status, len(body), ms, f"Download concluído ({len(body) // 1024} KB)")
             delete_feed(conn, fid)
-            # Só prolonga o horário semanal se o ficheiro foi publicado há pouco (pelo nome ou pela data do servidor).
+            # Prolonga o horário semanal se as datas do operador passaram há no máximo `limit` dias.
             extend = False
-            limit = int(feed.get("calendario_semanal") or 0)
-            day = days.get(url) or file_day
-            if limit and day:
+            if limit and end:
                 try:
-                    extend = (today_dt.date() - datetime.date.fromisoformat(day[:10])).days <= limit
+                    end_day = datetime.date(int(end[:4]), int(end[4:6]), int(end[6:8]))
+                    extend = (today_dt.date() - end_day).days <= limit
                 except ValueError:
                     extend = False
             stats = ingest_gtfs(conn, fid, body, today_dt, extend_calendar=extend)
