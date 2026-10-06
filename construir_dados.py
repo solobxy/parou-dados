@@ -409,6 +409,23 @@ def gtfs_rows(zf, filename):
             yield {header[i]: rec[i].strip() for i in range(width)}
 
 
+def feriado_nacional(day):
+    """Feriados nacionais de Portugal (fixos + Sexta-feira Santa, Páscoa e Corpo de Deus)."""
+    if (day.month, day.day) in {(1, 1), (4, 25), (5, 1), (6, 10), (8, 15), (10, 5), (11, 1), (12, 1), (12, 8), (12, 25)}:
+        return True
+    y = day.year
+    a, b, c = y % 19, y // 100, y % 100
+    d, e = b // 4, b % 4
+    f = (b + 8) // 25
+    g = (b - f + 1) // 3
+    h = (19 * a + b - d - g + 15) % 30
+    i, k = c // 4, c % 4
+    l = (32 + 2 * e + 2 * i - h - k) % 7
+    m = (a + 11 * h + 22 * l) // 451
+    pascoa = datetime.date(y, (h + l - 7 * m + 114) // 31, ((h + l - 7 * m + 114) % 31) + 1)
+    return (day - pascoa).days in (-2, 0, 60)
+
+
 def window_days(today_dt):
     """Lista (AAAAMMDD, dia_da_semana 0=segunda) de ontem até hoje+WINDOW_DAYS."""
     out = []
@@ -496,12 +513,18 @@ def ingest_gtfs(conn, feed_id, zip_bytes, today_dt, extend_calendar=False, max_b
             if active_on(ymd, wd):
                 continue
             day = datetime.date(int(ymd[:4]), int(ymd[4:6]), int(ymd[6:8]))
+            holiday = feriado_nacional(day)
+            if holiday and not (v_until and ymd > v_until):
+                # Dentro da validade, um feriado sem serviço é decisão do operador: não se inventa.
+                continue
+            ref_wd = 6 if holiday else wd  # feriado com calendário acabado: usa o horário de domingo
+            first_back = (day.weekday() - ref_wd) % 7 or 7
             candidates = []
-            for back in range(7, max_back_days + 1, 7):
+            for back in range(first_back, max_back_days + 1, 7):
                 ref_ymd = (day - datetime.timedelta(days=back)).strftime("%Y%m%d")
                 if v_from and ref_ymd < v_from:
                     break
-                on = active_on(ref_ymd, wd)
+                on = active_on(ref_ymd, ref_wd)
                 if on:
                     candidates.append((len(on), ref_ymd, on))
                     if len(candidates) >= 4:
