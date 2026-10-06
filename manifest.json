@@ -1,14 +1,14 @@
 {
-  "built_at": "2026-10-06T00:49:23.618990+00:00",
-  "db_bytes": 262021120,
-  "gz_bytes": 58200897,
+  "built_at": "2026-10-06T00:58:15.680709+00:00",
+  "db_bytes": 306384896,
+  "gz_bytes": 68072868,
   "totals": {
     "lines": 2320,
     "stops": 34875,
-    "trips": 62278,
-    "stop_times": 1698609,
+    "trips": 71714,
+    "stop_times": 2036879,
     "operators": 29,
-    "operators_ok": 23
+    "operators_ok": 26
   },
   "feeds": [
     {
@@ -91,13 +91,13 @@
     {
       "id": "stcp",
       "operator_name": "STCP (Porto)",
-      "status": "horário expirado",
+      "status": "OK",
       "lines": 71,
       "stops": 2548,
-      "trips": 0,
+      "trips": 7137,
       "valid_until": "2026-09-23",
       "url": "https://dadosabertos.cm-porto.pt/dataset/71490e40-9e19-11f1-84ed-6abdb6d5cf34/resource/51340c18-0ef5-4895-b099-cf7247ea54f4/download/gtfs_feed.zip",
-      "last_error": null
+      "last_error": "O operador não atualizou as datas do calendário (terminam em 2026-09-23); a usar o horário semanal em vigor."
     },
     {
       "id": "metro_porto",
@@ -135,24 +135,24 @@
     {
       "id": "tuba_barcelos",
       "operator_name": "TUBA Barcelos",
-      "status": "horário expirado",
+      "status": "OK",
       "lines": 60,
       "stops": 1626,
-      "trips": 0,
+      "trips": 739,
       "valid_until": "2024-12-31",
       "url": "https://map.mobility.ubiwhere.com/dataset/1842a15c-1aec-4f65-8e29-e57c8b4cbd74/resource/a595ee4b-bf86-4323-b1f4-7e3b3eb00e5e/download/gtfs_bar.zip",
-      "last_error": null
+      "last_error": "O operador não atualizou as datas do calendário (terminam em 2024-12-31); a usar o horário semanal em vigor."
     },
     {
       "id": "mobiave",
       "operator_name": "Mobiave (Famalicão)",
-      "status": "horário expirado",
+      "status": "OK",
       "lines": 90,
       "stops": 2452,
-      "trips": 0,
+      "trips": 1560,
       "valid_until": "2025-12-31",
       "url": "https://map.mobility.ubiwhere.com/dataset/fe6015e4-86c7-437a-8d31-10759fe21a1d/resource/7ac67ef8-015c-42e8-9546-f6f0be956270/download/gtfs_vnf.zip",
-      "last_error": null
+      "last_error": "O operador não atualizou as datas do calendário (terminam em 2025-12-31); a usar o horário semanal em vigor."
     },
     {
       "id": "smtuc",
@@ -331,5 +331,5 @@
       "last_error": null
     }
   ],
-  "duration_s": 154
+  "duration_s": 174
 }
