@@ -1,7 +1,7 @@
 {
-  "built_at": "2026-10-06T17:40:10.920688+00:00",
-  "db_bytes": 313765888,
-  "gz_bytes": 69521901,
+  "built_at": "2026-10-06T18:03:57.152781+00:00",
+  "db_bytes": 313761792,
+  "gz_bytes": 69522846,
   "totals": {
     "lines": 2320,
     "stops": 34875,
@@ -74,7 +74,7 @@
       "stops": 19,
       "trips": 348,
       "valid_until": "2030-12-25",
-      "url": "https://mts.pt/imt/MTS-20240129.zip",
+      "url": "https://files.mobilitydatabase.org/mdb-2408/latest.zip",
       "last_error": "O operador não atualizou as datas do calendário para alguns dias (4 dias sem horário publicado); a usar o horário semanal mais recente."
     },
     {
@@ -207,7 +207,7 @@
       "trips": 27,
       "valid_until": "2027-12-31",
       "url": "https://drive.google.com/uc?export=download&id=1C2KBOVsbm__ymWDgU1bXGbP0Gv3D2yo5",
-      "last_error": "O operador não atualizou as datas do calendário para alguns dias (1 dias sem horário publicado); a usar o horário semanal mais recente."
+      "last_error": null
     },
     {
       "id": "horarios_funchal",
@@ -284,7 +284,7 @@
       "trips": 129,
       "valid_until": "2027-12-31",
       "url": "https://files.mobilitydatabase.org/tld-4319/latest.zip",
-      "last_error": "O operador não atualizou as datas do calendário para alguns dias (1 dias sem horário publicado); a usar o horário semanal mais recente."
+      "last_error": null
     },
     {
       "id": "tld-7825",
@@ -331,5 +331,5 @@
       "last_error": null
     }
   ],
-  "duration_s": 173
+  "duration_s": 373
 }
