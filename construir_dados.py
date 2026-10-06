@@ -440,7 +440,7 @@ def calendar_end(zip_bytes):
     return best
 
 
-def ingest_gtfs(conn, feed_id, zip_bytes, today_dt, extend_calendar=False):
+def ingest_gtfs(conn, feed_id, zip_bytes, today_dt, extend_calendar=False, max_back_days=60):
     """Grava um GTFS na base de dados (dentro de um SAVEPOINT). Devolve estatisticas."""
     today = today_dt.strftime("%Y%m%d")
     zip_bytes = unwrap_zip(zip_bytes)
@@ -477,44 +477,45 @@ def ingest_gtfs(conn, feed_id, zip_bytes, today_dt, extend_calendar=False):
         v_until = max(all_dates) if all_dates else None
         expired = bool(v_until and v_until < today)
 
-        extended = False
-        if expired and extend_calendar and cal:
-            # O operador publica ficheiros novos mas não atualiza as datas: prolonga o horário
-            # semanal que estava em vigor no fim do calendário.
-            ends = [v[2] for v in cal.values() if v[2]]
-            if ends:
-                last_end = max(ends)
-                new_end = (today_dt + datetime.timedelta(days=EXTEND_DAYS)).strftime("%Y%m%d")
-                for v in cal.values():
-                    if v[2] == last_end:
-                        v[2] = new_end
-                extended = True
-                expired = False
-        elif expired and extend_calendar and adds:
-            # Só há datas soltas (calendar_dates.txt): repete, para cada dia da semana, o dia
-            # mais completo das últimas 4 semanas do ficheiro (evita copiar um feriado).
-            by_date = {d: sids - removes.get(d, set()) for d, sids in adds.items()}
-            last = max(by_date)
-            last_day = datetime.date(int(last[:4]), int(last[4:6]), int(last[6:8]))
-            ref = {}
-            for d, sids in by_date.items():
-                try:
-                    day = datetime.date(int(d[:4]), int(d[4:6]), int(d[6:8]))
-                except ValueError:
-                    continue
-                if not sids or (last_day - day).days > 27:
-                    continue
-                key = (len(sids), d)
-                if day.weekday() not in ref or key > ref[day.weekday()][0]:
-                    ref[day.weekday()] = (key, sids)
-            for ymd, wd in window_days(today_dt):
-                if ymd > last and wd in ref:
-                    for sid in ref[wd][1]:
-                        adds.setdefault(ymd, set()).add(sid)
-                        cal_dates.append((feed_id, sid, ymd, 1))
-            if ref:
-                extended = True
-                expired = False
+        def active_on(ymd, wd):
+            on = {sid for sid, (days, start, end) in cal.items() if start <= ymd <= end and days[wd]}
+            on |= adds.get(ymd, set())
+            on -= removes.get(ymd, set())
+            return on
+
+        # Dias da janela em que o operador inteiro não tem serviço publicado (calendário acabado
+        # ou com buracos): usa o mesmo dia da semana mais recente que tinha serviço, escolhendo o
+        # mais completo de até 4 semanas (evita copiar um feriado). Feeds expirados só são
+        # preenchidos se extend_calendar (operadores marcados com calendario_semanal).
+        filled_days = 0
+        for ymd, wd in window_days(today_dt):
+            if v_from and ymd < v_from:
+                continue
+            if v_until and ymd > v_until and not extend_calendar:
+                continue
+            if active_on(ymd, wd):
+                continue
+            day = datetime.date(int(ymd[:4]), int(ymd[4:6]), int(ymd[6:8]))
+            candidates = []
+            for back in range(7, max_back_days + 1, 7):
+                ref_ymd = (day - datetime.timedelta(days=back)).strftime("%Y%m%d")
+                if v_from and ref_ymd < v_from:
+                    break
+                on = active_on(ref_ymd, wd)
+                if on:
+                    candidates.append((len(on), ref_ymd, on))
+                    if len(candidates) >= 4:
+                        break
+            if not candidates:
+                continue
+            best = max(candidates, key=lambda c: (c[0], c[1]))
+            for sid in best[2]:
+                adds.setdefault(ymd, set()).add(sid)
+                cal_dates.append((feed_id, sid, ymd, 1))
+            filled_days += 1
+        extended = filled_days > 0
+        if extended:
+            expired = False
 
         active = None
         if cal or adds:
@@ -614,7 +615,8 @@ def ingest_gtfs(conn, feed_id, zip_bytes, today_dt, extend_calendar=False):
 
     main_type = max(route_types, key=route_types.get) if route_types else 3
     stats.update({"mode": ROUTE_TYPE_MODE.get(main_type, "Autocarro"), "valid_from": v_from,
-                  "valid_until": v_until, "expired": expired, "extended": extended})
+                  "valid_until": v_until, "expired": expired, "extended": extended,
+                  "filled_days": filled_days, "past_end": bool(v_until and v_until < today)})
     return stats
 
 
@@ -830,11 +832,15 @@ def process_feed(conn, feed, today_dt, have_prev):
                     extend = (today_dt.date() - end_day).days <= limit
                 except ValueError:
                     extend = False
-            stats = ingest_gtfs(conn, fid, body, today_dt, extend_calendar=extend)
+            stats = ingest_gtfs(conn, fid, body, today_dt, extend_calendar=extend,
+                                max_back_days=limit if limit else 60)
             note = None
-            if stats["extended"]:
+            if stats["extended"] and stats["past_end"]:
                 note = (f"O operador não atualizou as datas do calendário (terminam em "
                         f"{ymd_to_iso(stats['valid_until'])}); a usar o horário semanal em vigor.")
+            elif stats["extended"]:
+                note = ("O operador não atualizou as datas do calendário para alguns dias "
+                        f"({stats['filled_days']} dias sem horário publicado); a usar o horário semanal mais recente.")
             elif not stats["expired"] and stats["stop_times"] == 0:
                 note = f"Sem serviço nos próximos {WINDOW_DAYS} dias."
             row = dict(base)
