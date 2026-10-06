@@ -105,10 +105,10 @@ SEED_FEEDS = [
     {"id": "guimabus", "operator_name": "Guimabus (Guimarães)", "mode": "Autocarro",
      "url": "https://map.mobility.ubiwhere.com/dataset/ee6d46e4-9f19-4f4a-ab93-1a3cd69df349/resource/08f1ee6c-2d3f-4fb3-a861-5d6fb347a6d4/download/gtfs_gui.zip",
      "mdb": ["guimabus", "guimaraes"]},
-    {"id": "tuba_barcelos", "operator_name": "TUBA Barcelos", "mode": "Autocarro",
+    {"id": "tuba_barcelos", "operator_name": "TUBA Barcelos", "mode": "Autocarro", "calendario_semanal": 730,
      "url": "https://map.mobility.ubiwhere.com/dataset/1842a15c-1aec-4f65-8e29-e57c8b4cbd74/resource/a595ee4b-bf86-4323-b1f4-7e3b3eb00e5e/download/gtfs_bar.zip",
      "mdb": ["tuba", "barcelos"]},
-    {"id": "mobiave", "operator_name": "Mobiave (Famalicão)", "mode": "Autocarro",
+    {"id": "mobiave", "operator_name": "Mobiave (Famalicão)", "mode": "Autocarro", "calendario_semanal": 730,
      "url": "https://map.mobility.ubiwhere.com/dataset/fe6015e4-86c7-437a-8d31-10759fe21a1d/resource/7ac67ef8-015c-42e8-9546-f6f0be956270/download/gtfs_vnf.zip",
      "mdb": ["mobiave", "famalicao"]},
     {"id": "smtuc", "operator_name": "SMTUC (Coimbra)", "mode": "Autocarro",
@@ -488,6 +488,31 @@ def ingest_gtfs(conn, feed_id, zip_bytes, today_dt, extend_calendar=False):
                 for v in cal.values():
                     if v[2] == last_end:
                         v[2] = new_end
+                extended = True
+                expired = False
+        elif expired and extend_calendar and adds:
+            # Só há datas soltas (calendar_dates.txt): repete, para cada dia da semana, o dia
+            # mais completo das últimas 4 semanas do ficheiro (evita copiar um feriado).
+            by_date = {d: sids - removes.get(d, set()) for d, sids in adds.items()}
+            last = max(by_date)
+            last_day = datetime.date(int(last[:4]), int(last[4:6]), int(last[6:8]))
+            ref = {}
+            for d, sids in by_date.items():
+                try:
+                    day = datetime.date(int(d[:4]), int(d[4:6]), int(d[6:8]))
+                except ValueError:
+                    continue
+                if not sids or (last_day - day).days > 27:
+                    continue
+                key = (len(sids), d)
+                if day.weekday() not in ref or key > ref[day.weekday()][0]:
+                    ref[day.weekday()] = (key, sids)
+            for ymd, wd in window_days(today_dt):
+                if ymd > last and wd in ref:
+                    for sid in ref[wd][1]:
+                        adds.setdefault(ymd, set()).add(sid)
+                        cal_dates.append((feed_id, sid, ymd, 1))
+            if ref:
                 extended = True
                 expired = False
 
