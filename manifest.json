@@ -1,14 +1,14 @@
 {
-  "built_at": "2026-10-06T00:36:20.296673+00:00",
-  "db_bytes": 306708480,
-  "gz_bytes": 70942124,
+  "built_at": "2026-10-06T00:49:23.618990+00:00",
+  "db_bytes": 262021120,
+  "gz_bytes": 58200897,
   "totals": {
-    "lines": 2323,
-    "stops": 34816,
-    "trips": 74420,
-    "stop_times": 2141170,
+    "lines": 2320,
+    "stops": 34875,
+    "trips": 62278,
+    "stop_times": 1698609,
     "operators": 29,
-    "operators_ok": 24
+    "operators_ok": 23
   },
   "feeds": [
     {
@@ -91,24 +91,24 @@
     {
       "id": "stcp",
       "operator_name": "STCP (Porto)",
-      "status": "OK",
-      "lines": 73,
-      "stops": 2490,
-      "trips": 13008,
-      "valid_until": "2022-12-31",
-      "url": "https://dadosabertos.cm-porto.pt/dataset/71490e40-9e19-11f1-84ed-6abdb6d5cf34/resource/267240a6-59c0-4f0e-84d9-048304f4b596/download/gtfs-stcp.zip",
-      "last_error": "O operador não atualizou as datas do calendário (terminam em 2022-12-31); a usar o horário semanal em vigor."
+      "status": "horário expirado",
+      "lines": 71,
+      "stops": 2548,
+      "trips": 0,
+      "valid_until": "2026-09-23",
+      "url": "https://dadosabertos.cm-porto.pt/dataset/71490e40-9e19-11f1-84ed-6abdb6d5cf34/resource/51340c18-0ef5-4895-b099-cf7247ea54f4/download/gtfs_feed.zip",
+      "last_error": null
     },
     {
       "id": "metro_porto",
       "operator_name": "Metro do Porto",
       "status": "OK",
-      "lines": 8,
-      "stops": 84,
-      "trips": 4,
-      "valid_until": "2023-05-31",
-      "url": "https://dadosabertos.cm-porto.pt/dataset/713a680c-9e19-11f1-84ed-6abdb6d5cf34/resource/5f3b20da-38d1-4480-8e53-9e3282e85606/download/gtfs_metro_07_22.zip",
-      "last_error": "O operador não atualizou as datas do calendário (terminam em 2023-05-31); a usar o horário semanal em vigor."
+      "lines": 7,
+      "stops": 85,
+      "trips": 870,
+      "valid_until": "2026-12-25",
+      "url": "https://dadosabertos.cm-porto.pt/dataset/713a680c-9e19-11f1-84ed-6abdb6d5cf34/resource/28a13723-2af1-4bbb-a2b1-f8b08df8c7e4/download/___",
+      "last_error": null
     },
     {
       "id": "tub_braga",
@@ -295,7 +295,7 @@
       "trips": 0,
       "valid_until": null,
       "url": "https://files.mobilitydatabase.org/tld-7825/latest.zip",
-      "last_error": "https://files.mobilitydatabase.org/tld-7825/latest.zip -> o ficheiro não tem paragens (formato não reconhecido; início de stops.txt: b'stop_id,stop_code,stop_name,stop_desc,stop_lat,stop_lon,zone_id,stop_url,location_type,parent_station,stop_timezone,wheelchair_boarding,platform_code\\r\\n,,,,,,,,,') | https://drive.google.com/uc?export=download&id=1v9eGjezOzbaBQi-Aa5c15tZXcSiiDwqA -> o ficheiro não tem paragens (formato não reconhecido; início de stops.txt: b'stop_id,stop_code,stop_name,stop_desc,stop_lat,stop_lon,zone_id,stop_url,location_type,parent_station,stop_timezone,wheelchair_boarding,platform_code\\r\\n,,,,,,,,,')"
+      "last_error": "https://files.mobilitydatabase.org/tld-7825/latest.zip -> o operador publicou o ficheiro sem paragens (lista de paragens vazia) | https://drive.google.com/uc?export=download&id=1v9eGjezOzbaBQi-Aa5c15tZXcSiiDwqA -> o operador publicou o ficheiro sem paragens (lista de paragens vazia)"
     },
     {
       "id": "tld-7876",
@@ -306,7 +306,7 @@
       "trips": 0,
       "valid_until": null,
       "url": "https://files.mobilitydatabase.org/tld-7876/latest.zip",
-      "last_error": "https://files.mobilitydatabase.org/tld-7876/latest.zip -> o ficheiro não tem paragens (formato não reconhecido; início de stops.txt: b'stop_id,stop_code,stop_name,stop_desc,stop_lat,stop_lon,zone_id,stop_url,location_type,parent_station,stop_timezone,wheelchair_boarding,platform_code\\r\\n,,,,,,,,,') | https://drive.google.com/uc?export=download&id=192Qat2jJKyv5hhO8T3eVT70M5NB0dtXC -> o ficheiro não tem paragens (formato não reconhecido; início de stops.txt: b'stop_id,stop_code,stop_name,stop_desc,stop_lat,stop_lon,zone_id,stop_url,location_type,parent_station,stop_timezone,wheelchair_boarding,platform_code\\r\\n,,,,,,,,,')"
+      "last_error": "https://files.mobilitydatabase.org/tld-7876/latest.zip -> o operador publicou o ficheiro sem paragens (lista de paragens vazia) | https://drive.google.com/uc?export=download&id=192Qat2jJKyv5hhO8T3eVT70M5NB0dtXC -> o operador publicou o ficheiro sem paragens (lista de paragens vazia)"
     },
     {
       "id": "tld-7877",
@@ -317,7 +317,7 @@
       "trips": 0,
       "valid_until": null,
       "url": "https://files.mobilitydatabase.org/tld-7877/latest.zip",
-      "last_error": "https://files.mobilitydatabase.org/tld-7877/latest.zip -> o ficheiro não tem paragens (formato não reconhecido; início de stops.txt: b'stop_id,stop_code,stop_name,stop_desc,stop_lat,stop_lon,zone_id,stop_url,location_type,parent_station,stop_timezone,wheelchair_boarding,platform_code\\r\\n,,,,,,,,,') | https://drive.google.com/uc?export=download&id=1NqcOk8IrlV73TBonJAxpzIUTjaAjF27M -> o ficheiro não tem paragens (formato não reconhecido; início de stops.txt: b'stop_id,stop_code,stop_name,stop_desc,stop_lat,stop_lon,zone_id,stop_url,location_type,parent_station,stop_timezone,wheelchair_boarding,platform_code\\r\\n,,,,,,,,,')"
+      "last_error": "https://files.mobilitydatabase.org/tld-7877/latest.zip -> o operador publicou o ficheiro sem paragens (lista de paragens vazia) | https://drive.google.com/uc?export=download&id=1NqcOk8IrlV73TBonJAxpzIUTjaAjF27M -> o operador publicou o ficheiro sem paragens (lista de paragens vazia)"
     },
     {
       "id": "carris_metropolitana",
@@ -331,5 +331,5 @@
       "last_error": null
     }
   ],
-  "duration_s": 120
+  "duration_s": 154
 }
