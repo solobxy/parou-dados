@@ -1,0 +1,96 @@
+== Medições
+Dados prontos: 21:37:36
+21:37:56 /api/transit/nearby?lat=38.7253&lon=-9.15&radius=1000 -> 200 2.447846s 143902B
+21:37:58 /api/transit/nearby?lat=38.7253&lon=-9.15&radius=1000 -> 200 1.225049s 146366B
+21:37:59 /api/transit/nearby?lat=38.7139&lon=-9.1394&radius=1000 -> 200 0.365385s 152265B
+21:38:00 /api/transit/nearby?lat=41.1486&lon=-8.5856&radius=1000 -> 200 0.122714s 79913B
+21:38:00 /api/transit/nearby?lat=40.2033&lon=-8.4103&radius=1000 -> 200 0.173434s 170855B
+21:38:00 /api/lines?near=38.7139,-9.1394&r=800 -> 200 0.205392s 34278B
+21:39:10 (depois de 70 s) Lisboa -> 200 1.880260s
+
+== Bloqueios e SQL lento
+[SQL lento] 390 ms :: PRAGMA quick_check
+[SQL lento] 394 ms :: PRAGMA quick_check;
+[Bloqueio] servidor parado 1045 ms (2026-10-07T21:37:35.991Z)
+
+== Perfil de CPU
+== Mais tempo próprio (ms)
+    2280 st.<computed> medir.mjs:8
+     317 rename :0
+     294 (garbage collector) :0
+     251 processCallback node:zlib:512
+     170 writeBuffer :0
+     160 runCallSync node_modules/tsx/node_modules/esbuild/lib/main.js:2428
+     137 DatabaseSync.prepare medir.mjs:4
+      44 parseJSONFromBytes node:internal/deps/undici/undici:5894
+      39 partsOffset node_modules/luxon/build/es6/luxon.mjs:432
+      31 TLSSocket.getPeerCertificate node:internal/tls/wrap:1226
+      30 createUnsafeBuffer node:internal/buffer:1082
+      27 wrapSafe node:internal/modules/cjs/loader:1671
+      25 fetchParams.controller.resume node:internal/deps/undici/undici:11421
+      24 decode node:internal/encoding:442
+      23 compileSourceTextModule node:internal/modules/esm/utils:344
+      22 TLSSocket._start node:internal/tls/wrap:1179
+      21 processTicksAndRejections node:internal/process/task_queues:71
+      20 runMicrotasks :0
+      20 FSReqCallback :0
+      19 write node:fs:806
+      17 (anónima) server.main.ts:1
+      16 compileForInternalLoader node:internal/bootstrap/realm:385
+      16 nextTick node:internal/process/task_queues:111
+      14 SecureContext node:internal/tls/common:72
+      13 zs node_modules/tsx/dist/register-B1c7OH6V.cjs:7
+
+== Mais tempo total, incluindo o que chamam (ms), só código da app
+    1892 (anónima) server.main.ts:1
+    1167 atualizarDados src/server/dadosProntos.ts:7
+     889 getNearbyUnifiedStops src/server/stopsEngine.ts:1
+     859 getLinesServingStop src/server/db/gtfsDatabase.ts:282
+     727 nextDepartures src/server/departureEngine.ts:1
+     399 getFeedCalendarBounds src/server/db/gtfsDatabase.ts:133
+     396 reloadDatabaseConnection src/server/db/gtfsDatabase.ts:1
+     395 checkFileIntegrity src/server/db/gtfsDatabase.ts:1
+     391 baseValida src/server/dadosProntos.ts:7
+     389 isFeedOutdated src/server/departureEngine.ts:1
+     200 getLinesNear src/server/linesEngine.ts:10
+     127 (anónima) src/server/linesEngine.ts:15
+      62 getDatabase src/server/db/gtfsDatabase.ts:1
+      57 getActiveServiceIds src/server/db/gtfsDatabase.ts:245
+      56 queryDeparturesForStop src/server/db/gtfsDatabase.ts:251
+      41 getMaxStopSequence src/server/db/gtfsDatabase.ts:282
+      29 (anónima) src/server/dadosProntos.ts:7
+      24 getFrequenciesForTrip src/server/db/gtfsDatabase.ts:282
+      22 getAllFeeds src/server/db/gtfsDatabase.ts:133
+      20 getAppState src/server/db/gtfsDatabase.ts:133
+      20 runAllPublicSourcesIngestion src/server/ingestionEngine.ts:1
+      19 fetchWithTimeout src/server/ingestionEngine.ts:1
+
+== Registo da app (fim)
+◇ injected env (0) from .env // tip: ◈ encrypted .env [www.dotenvx.com]
+(node:2419) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+[PAROU.PT Server] A escutar imediatamente em http://0.0.0.0:3000
+[Polling Engine] Agendador iniciado: 60s para fontes tempo-real (GTFS-RT, Alertas Centrais) e 5 min por defeito para as restantes.
+[PAROU.PT Startup] Gestão de base de dados delegada exclusivamente a parou-dados (dadosProntos).
+[Polling Engine] Probing inicial de fontes públicas em curso...
+[SQLite DB] Base de dados sem feeds. A registar feeds oficiais do catálogo...
+[SQLite DB] 29 feeds registados com sucesso.
+[SQLite DB] Ligação só-leitura reaberta com sucesso no gtfs.db íntegro e caches limpas.
+[SQLite DB] Erro ao gravar app_state: Error: attempt to write a readonly database
+    at st.<computed> [as run] (file:///home/runner/work/parou-dados/parou-dados/app/medir.mjs:8:67)
+    at setAppState (/home/runner/work/parou-dados/parou-dados/app/src/server/db/gtfsDatabase.ts:483:79)
+    at atualizarDados (/home/runner/work/parou-dados/parou-dados/app/src/server/dadosProntos.ts:187:24)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5) {
+  code: 'ERR_SQLITE_ERROR',
+  errcode: 8,
+  errstr: 'attempt to write a readonly database'
+}
+[Dados prontos] Base de 2026-10-07T18:21:55.621352+00:00 ativa (26/29 operadores).
+[Catalog Engine] Probing inicial do catálogo nacional de transportes...
+[Central Alerts] Probing inicial do Centro de Alertas...
+[Central Alerts Engine] A sincronizar alertas oficiais de todas as fontes reais...
+[Central Alerts Engine] Sincronização concluída. Total: 167 alertas auditados.
+[GTFS Engine] A sincronizar Carris Metropolitana através de API v2 oficial...
+[GTFS Engine] Carris Metropolitana sincronizada em 516ms: 717 linhas, 12752 paragens, 318 veículos em tempo real.
+[Central Alerts Engine] A sincronizar alertas oficiais de todas as fontes reais...
+[Central Alerts Engine] Sincronização concluída. Total: 167 alertas auditados.
