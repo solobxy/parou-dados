@@ -1,0 +1,153 @@
+== Serviços
+active
+active
+active
+== Node
+v22.23.3
+v22.23.3
+== Estado do servidor
+Atualizado: 2026-10-07T21:10:23Z
+Versão em uso: 94e0fefcc93d559b0dc2e96c9b50819dd3cd5baa
+Última tentativa: versão 94e0fef instalada às 21:10 UTC
+App: active  Caddy: active
+Node: v22.23.3
+Memória (MB): total 15989, usada 1328, disponível 14661
+Disco: 62G usados de 145G (43%)
+Base de horários: 4096 bytes, Oct 7 21:10
+Ligado desde: 2026-10-07 21:07:45
+
+--- Últimas linhas da app ---
+Started parou.service - PAROU.PT.
+== Espera pelos dados (últimas)
+21:10:24 {"isLoading":true,"totalOperators":29,"loadedOperators":26,"currentOperator":"","currentFeedId":"","message":"A carregar horários… 26/29","updatedAt":"2026-10-07T21:10:23.342Z","dataset_bu
+21:10:34 {"isLoading":false,"totalOperators":29,"loadedOperators":26,"currentOperator":"","currentFeedId":"","message":"Todos os operadores carregados","updatedAt":"2026-10-07T21:10:28.520Z","dataset_
+== Pedidos
+/health [1] -> 200 0.000644s 2B | OK
+/health [2] -> 200 0.000620s 2B | OK
+/api/transit/loading-status [1] -> 200 0.000649s 236B | {"isLoading":false,"totalOperators":29,"loadedOperators":26,"currentOperator":"","currentFeedId":"",
+/api/transit/loading-status [2] -> 200 0.000670s 236B | {"isLoading":false,"totalOperators":29,"loadedOperators":26,"currentOperator":"","currentFeedId":"",
+/api/transit/nearby?lat=38.7253&lon=-9.15&radius=1000 [1] -> 200 32.476667s 148215B | {"stops":[{"id":"metro_lisboa:MP","name":"Marquês de Pombal","operatorId":"metro_lisboa","operatorN
+/api/transit/nearby?lat=38.7253&lon=-9.15&radius=1000 [2] -> 200 1.657731s 148215B | {"stops":[{"id":"metro_lisboa:MP","name":"Marquês de Pombal","operatorId":"metro_lisboa","operatorN
+/api/transit/nearby?lat=38.7139&lon=-9.1394&radius=1000 [1] -> 200 30.878245s 152613B | {"stops":[{"id":"carris:902","name":"Rossio","operatorId":"carris","operatorName":"Carris (Lisboa)",
+/api/transit/nearby?lat=38.7139&lon=-9.1394&radius=1000 [2] -> 200 0.194087s 152613B | {"stops":[{"id":"carris:902","name":"Rossio","operatorId":"carris","operatorName":"Carris (Lisboa)",
+/api/transit/nearby?lat=41.1486&lon=-8.5856&radius=1000 [1] -> 200 1.891809s 78277B | {"stops":[{"id":"stcp:CMP2","name":"CAMPANHÃ","operatorId":"stcp","operatorName":"STCP (Porto)","tr
+/api/transit/nearby?lat=41.1486&lon=-8.5856&radius=1000 [2] -> 200 0.029322s 78277B | {"stops":[{"id":"stcp:CMP2","name":"CAMPANHÃ","operatorId":"stcp","operatorName":"STCP (Porto)","tr
+/api/lines?near=41.1486,-8.5856&r=800 [1] -> 200 0.060956s 25127B | {"lines":[{"id":"stcp:205","code":"205","name":"CAMPANHÃ-CASTELO DO QUEIJO","color":"#187EC2","mode
+/api/lines?near=41.1486,-8.5856&r=800 [2] -> 200 0.001259s 25127B | {"lines":[{"id":"stcp:205","code":"205","name":"CAMPANHÃ-CASTELO DO QUEIJO","color":"#187EC2","mode
+/api/lines?page=1 [1] -> 200 0.011179s 10037B | {"lines":[{"id":"sobe_desce_tavira:0001","code":"0001","name":"Linha Azul","color":"#004869","mode":
+/api/lines?page=1 [2] -> 200 0.010656s 10037B | {"lines":[{"id":"sobe_desce_tavira:0001","code":"0001","name":"Linha Azul","color":"#004869","mode":
+/ [1] -> 200 0.002631s 16955B | <!doctype html> <html lang="pt-PT" dir="ltr">   <head>     <script type="text/javascript">(function(
+/ [2] -> 200 0.001237s 16955B | <!doctype html> <html lang="pt-PT" dir="ltr">   <head>     <script type="text/javascript">(function(
+== Pedidos em paralelo (10 x Perto Lisboa + 10 x estado)
+estado 1 200 0.000774s
+estado 10 200 0.002860s
+estado 2 200 0.001119s
+estado 3 000 60.002585s
+estado 4 000 60.001613s
+estado 5 000 60.001648s
+estado 6 000 60.002062s
+estado 7 000 60.002602s
+estado 8 000 60.002944s
+estado 9 000 60.002940s
+perto 1 000 60.002935s
+perto 10 000 60.001826s
+perto 2 000 60.002042s
+perto 3 200 50.712620s
+perto 4 000 60.002245s
+perto 5 000 60.002254s
+perto 6 000 60.003060s
+perto 7 000 60.002544s
+perto 8 000 60.002895s
+perto 9 000 60.002720s
+== Caddy
+# PAROU.PT - Caddy (https automático com Let's Encrypt)
+# 51-57-83-99.sslip.io é substituído pelo endereço <ip-com-tracos>.sslip.io do servidor,
+# que serve para testar antes de o domínio parou.pt apontar para aqui.
+
+51-57-83-99.sslip.io {
+	encode zstd gzip
+	handle /_estado-servidor {
+		root * /var/lib/parou-estado
+		rewrite * /estado.txt
+		header Content-Type "text/plain; charset=utf-8"
+		header Cache-Control "no-store"
+		file_server
+	}
+	reverse_proxy 127.0.0.1:3000
+}
+== Memória
+               total        used        free      shared  buff/cache   available
+Mem:           15989        1126        8056          44        7197       14862
+Swap:           3071           0        3071
+== Fim da instalação
++ useradd --system --create-home --home-dir /opt/parou --shell /usr/sbin/nologin parou
++ mkdir -p /opt/parou/releases /var/lib/parou /var/lib/parou-estado
++ chown -R parou:parou /opt/parou /var/lib/parou
++ '[' '!' -d /opt/parou/servidor/.git ']'
++ git clone -q https://github.com/solobxy/parou-dados.git /opt/parou/servidor
+++ curl -fsS -m 5 http://169.254.169.254/hetzner/v1/metadata/public-ipv4
+curl: (22) The requested URL returned error: 404
+++ curl -fsS -m 5 https://api.ipify.org
++ IP=51.57.83.99
++ echo HOST_TESTE=51-57-83-99.sslip.io
++ cat
++ cp /opt/parou/servidor/servidor/parou.service /etc/systemd/system/parou.service
++ cp /opt/parou/servidor/servidor/parou-atualizar.service /etc/systemd/system/parou-atualizar.service
++ cp /opt/parou/servidor/servidor/parou-atualizar.timer /etc/systemd/system/parou-atualizar.timer
++ install -m 755 /opt/parou/servidor/servidor/parou-atualizar /usr/local/bin/parou-atualizar
++ systemctl daemon-reload
++ systemctl enable parou.service
+Created symlink /etc/systemd/system/multi-user.target.wants/parou.service → /etc/systemd/system/parou.service.
++ '[' -z 1 ']'
++ FORCAR=1
++ /usr/local/bin/parou-atualizar
++ systemctl enable --now parou-atualizar.timer
+Created symlink /etc/systemd/system/timers.target.wants/parou-atualizar.timer → /etc/systemd/system/parou-atualizar.timer.
++ echo 'PAROU.PT instalado. Teste: https://51-57-83-99.sslip.io'
+PAROU.PT instalado. Teste: https://51-57-83-99.sslip.io
+== Registo da app
+Started parou.service - PAROU.PT.
+◇ injected env (0) from .env // tip: ◈ encrypted .env [www.dotenvx.com]
+(node:3721) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+[PAROU.PT Server] A escutar imediatamente em http://0.0.0.0:3000
+[Polling Engine] Agendador iniciado: 60s para fontes tempo-real (GTFS-RT, Alertas Centrais) e 5 min por defeito para as restantes.
+[PAROU.PT Startup] Gestão de base de dados delegada exclusivamente a parou-dados (dadosProntos).
+[Polling Engine] Probing inicial de fontes públicas em curso...
+[SQLite DB] Base de dados sem feeds. A registar feeds oficiais do catálogo...
+[SQLite DB] 29 feeds registados com sucesso.
+[SQLite DB] Ligação só-leitura reaberta com sucesso no gtfs.db íntegro e caches limpas.
+[SQLite DB] Erro ao gravar app_state: Error: attempt to write a readonly database
+    at setAppState (/opt/parou/releases/94e0fefcc93d559b0dc2e96c9b50819dd3cd5baa/src/server/db/gtfsDatabase.ts:483:79)
+    at atualizarDados (/opt/parou/releases/94e0fefcc93d559b0dc2e96c9b50819dd3cd5baa/src/server/dadosProntos.ts:187:24)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5) {
+  code: 'ERR_SQLITE_ERROR',
+  errcode: 8,
+  errstr: 'attempt to write a readonly database'
+}
+[Dados prontos] Base de 2026-10-07T18:21:55.621352+00:00 ativa (26/29 operadores).
+[Catalog Engine] Probing inicial do catálogo nacional de transportes...
+[Central Alerts Engine] A sincronizar alertas oficiais de todas as fontes reais...
+[Central Alerts] Probing inicial do Centro de Alertas...
+[Central Alerts Engine] A sincronizar alertas oficiais de todas as fontes reais...
+[Central Alerts Engine] A sincronizar alertas oficiais de todas as fontes reais...
+[Central Alerts Engine] Sincronização concluída. Total: 167 alertas auditados.
+[Central Alerts Engine] Sincronização concluída. Total: 167 alertas auditados.
+[GTFS Engine] A sincronizar Carris Metropolitana através de API v2 oficial...
+[Central Alerts Engine] Sincronização concluída. Total: 167 alertas auditados.
+== Última compilação
+dist/assets/index-CC1p_AKq.js   1,460.70 kB │ gzip: 442.62 kB
+
+✓ built in 503ms
+[plugin builtin:vite-reporter] 
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rolldownOptions.output.codeSplitting to improve chunking: https://rolldown.rs/reference/OutputOptions.codeSplitting
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+
+PWA v1.3.0
+mode      generateSW
+precache  8 entries (1503.02 KiB)
+files generated
+  dist/sw.js
+  dist/workbox-9c191d2f.js
