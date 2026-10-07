@@ -1,0 +1,106 @@
+name: Perfil da app
+
+# Corre a app (solobxy/parou) numa máquina do GitHub com a base de dados real e
+# mede onde se gasta o tempo no pedido "Perto": regista consultas SQL lentas,
+# bloqueios do servidor e um perfil de CPU. Resultado no ramo "perfil-app".
+
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: "Commit ou ramo de solobxy/parou"
+        required: false
+        default: "main"
+
+permissions:
+  contents: write
+
+jobs:
+  perfil:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: solobxy/parou
+          ref: ${{ inputs.ref }}
+          path: app
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Instalar dependências
+        working-directory: app
+        run: npm ci --no-audit --no-fund --legacy-peer-deps || npm install --no-audit --no-fund --legacy-peer-deps
+
+      - name: Correr a app e medir
+        working-directory: app
+        run: |
+          cat > medir.mjs <<'EOF'
+          import { DatabaseSync } from 'node:sqlite';
+          process.on('SIGUSR2', () => process.exit(0));
+          const orig = DatabaseSync.prototype.prepare;
+          DatabaseSync.prototype.prepare = function (sql) {
+            const st = orig.call(this, sql);
+            for (const m of ['all', 'get', 'run']) {
+              const f = st[m].bind(st);
+              st[m] = (...a) => { const t = performance.now(); try { return f(...a); } finally { const ms = performance.now() - t; if (ms > 150) console.log(`[SQL lento] ${ms.toFixed(0)} ms :: ${String(sql).replace(/\s+/g, ' ').slice(0, 220)}`); } };
+            }
+            return st;
+          };
+          let ultimo = performance.now();
+          setInterval(() => { const agora = performance.now(); const atraso = agora - ultimo - 200; if (atraso > 400) console.log(`[Bloqueio] servidor parado ${atraso.toFixed(0)} ms (${new Date().toISOString()})`); ultimo = agora; }, 200).unref();
+          EOF
+          mkdir -p dados prof
+          NODE_ENV=production PORT=3000 PAROU_DATA_DIR=$PWD/dados node --cpu-prof --cpu-prof-dir=$PWD/prof --import ./medir.mjs --import tsx server.ts > app.log 2>&1 &
+          echo $! > pid
+          for i in $(seq 1 60); do curl -s -m 5 http://127.0.0.1:3000/api/transit/loading-status | grep -q '"isLoading":false' && break; sleep 5; done
+          echo "Dados prontos: $(date -u +%H:%M:%S)" > medicoes.txt
+          sleep 20
+          for c in "/api/transit/nearby?lat=38.7253&lon=-9.15&radius=1000" "/api/transit/nearby?lat=38.7253&lon=-9.15&radius=1000" \
+                   "/api/transit/nearby?lat=38.7139&lon=-9.1394&radius=1000" "/api/transit/nearby?lat=41.1486&lon=-8.5856&radius=1000" \
+                   "/api/transit/nearby?lat=40.2033&lon=-8.4103&radius=1000" "/api/lines?near=38.7139,-9.1394&r=800"; do
+            echo "$(date -u +%H:%M:%S) $c -> $(curl -s -o /dev/null -w '%{http_code} %{time_total}s %{size_download}B' -m 120 "http://127.0.0.1:3000$c")" >> medicoes.txt
+          done
+          sleep 70
+          echo "$(date -u +%H:%M:%S) (depois de 70 s) Lisboa -> $(curl -s -o /dev/null -w '%{http_code} %{time_total}s' -m 120 'http://127.0.0.1:3000/api/transit/nearby?lat=38.7139&lon=-9.1394&radius=1000')" >> medicoes.txt
+          kill -USR2 $(cat pid); sleep 5
+          cat > resumo.mjs <<'EOF'
+          import fs from 'node:fs';
+          const f = fs.readdirSync('prof').find((x) => x.endsWith('.cpuprofile'));
+          if (!f) { console.log('sem perfil'); process.exit(0); }
+          const p = JSON.parse(fs.readFileSync('prof/' + f, 'utf8'));
+          const porId = new Map(p.nodes.map((n) => [n.id, n]));
+          const pai = new Map(); for (const n of p.nodes) for (const c of n.children || []) pai.set(c, n.id);
+          const dt = new Map(); for (let i = 0; i < p.samples.length; i++) dt.set(p.samples[i], (dt.get(p.samples[i]) || 0) + (p.timeDeltas[i] || 0) / 1000);
+          const nome = (n) => { const c = n.callFrame; return `${c.functionName || '(anónima)'} ${c.url.replace(/^.*\/app\//, '')}:${c.lineNumber + 1}`; };
+          const proprio = new Map(), total = new Map();
+          for (const [id, ms] of dt) {
+            const n = porId.get(id); proprio.set(nome(n), (proprio.get(nome(n)) || 0) + ms);
+            const vistos = new Set(); let cur = id;
+            while (cur != null) { const k = nome(porId.get(cur)); if (!vistos.has(k)) { total.set(k, (total.get(k) || 0) + ms); vistos.add(k); } cur = pai.get(cur); }
+          }
+          const top = (m, n) => [...m.entries()].filter(([k]) => !k.startsWith('(idle)') && !k.startsWith('(program)') && !k.startsWith('(root)')).sort((a, b) => b[1] - a[1]).slice(0, n);
+          console.log('== Mais tempo próprio (ms)'); for (const [k, v] of top(proprio, 25)) console.log(v.toFixed(0).padStart(8), k);
+          console.log('\n== Mais tempo total, incluindo o que chamam (ms), só código da app');
+          for (const [k, v] of top(total, 200).filter(([k]) => k.includes('src/server') || k.includes('server.main')).slice(0, 30)) console.log(v.toFixed(0).padStart(8), k);
+          EOF
+          node resumo.mjs > perfil.txt 2>&1 || true
+          {
+            echo "== Medições"; cat medicoes.txt
+            echo; echo "== Bloqueios e SQL lento"; grep -E "Bloqueio|SQL lento" app.log | head -60
+            echo; echo "== Perfil de CPU"; cat perfil.txt
+            echo; echo "== Registo da app (fim)"; grep -vE "Bloqueio|SQL lento" app.log | tail -n 40 | cut -c1-250
+          } > ../resultado.txt
+          cat ../resultado.txt
+
+      - name: Guardar o resultado
+        if: always()
+        run: |
+          mkdir pub && cp resultado.txt pub/ 2>/dev/null || echo "sem resultado" > pub/resultado.txt
+          cd pub && git init -q -b perfil-app
+          git config user.name "parou-dados"
+          git config user.email "actions@users.noreply.github.com"
+          git add -A && git commit -q -m "Perfil $(date -u +%Y-%m-%dT%H:%MZ)"
+          git push -q -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" perfil-app
