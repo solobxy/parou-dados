@@ -54,6 +54,7 @@ cat > /etc/parou.env <<'EOF'
 NODE_ENV=production
 PORT=3000
 PAROU_DATA_DIR=/var/lib/parou
+TZ=Europe/Lisbon
 EOF
 
 # 5. Serviços: a app, a atualização automática e o atualizador
