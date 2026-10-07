@@ -10,6 +10,10 @@ on:
         description: "Commit ou ramo de solobxy/parou"
         required: false
         default: "main"
+      ficheiros:
+        description: "Expressão para filtrar os erros de tipos (ficheiros mexidos)"
+        required: false
+        default: "PertoView|AlertasView|alertasEngine|linesEngine|MobileNav|Header|App.tsx|PortugalMap|useUserLocation|HorariosView|transitFormatter"
 
 permissions:
   contents: write
@@ -43,6 +47,21 @@ jobs:
           for i in $(seq 1 60); do curl -s -m 5 http://127.0.0.1:3000/api/transit/loading-status | grep -q '"isLoading":false' && break; sleep 5; done
           curl -s http://127.0.0.1:3000/api/transit/loading-status
 
+      - name: Verificar tipos (ficheiros mexidos)
+        working-directory: app
+        continue-on-error: true
+        run: |
+          npx tsc --noEmit -p . > ../tipos-todos.txt 2>&1 || true
+          grep -E "${{ inputs.ficheiros }}" ../tipos-todos.txt > ../tipos.txt || echo "sem erros de tipos nesses ficheiros" > ../tipos.txt
+          echo "total de linhas de erro no projeto: $(wc -l < ../tipos-todos.txt)" >> ../tipos.txt
+
+      - name: Respostas da API
+        run: |
+          mkdir -p cap
+          curl -s -m 60 "http://127.0.0.1:3000/api/alertas?area=PRT" -o cap/alertas-porto.json || true
+          curl -s -m 60 "http://127.0.0.1:3000/api/alertas?lat=38.7253&lon=-9.15" -o cap/alertas-lisboa.json || true
+          curl -s -m 60 "http://127.0.0.1:3000/api/lines?near=41.1522,-8.5042&r=800" -o cap/linhas-spc.json || true
+
       - name: Tirar capturas
         run: |
           mkdir -p cap && cd cap && npm init -y >/dev/null && npm i --no-audit --no-fund playwright@1 >/dev/null && npx playwright install --with-deps chromium >/dev/null
@@ -52,29 +71,34 @@ jobs:
           const browser = await chromium.launch();
           const telemovel = { viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true, locale: 'pt-PT', timezoneId: 'Europe/Lisbon' };
           const registo = [];
-          async function captura(nome, opcoes, caminho, acao) {
+          async function captura(nome, opcoes, caminho, acao, espera = 7000) {
             const ctx = await browser.newContext({ ...telemovel, ...opcoes });
             const page = await ctx.newPage();
             page.on('console', (m) => { if (m.type() === 'error') registo.push(`[${nome}] consola: ${m.text().slice(0, 200)}`); });
             page.on('pageerror', (e) => registo.push(`[${nome}] erro: ${String(e).slice(0, 300)}`));
-            await page.goto(base + caminho, { waitUntil: 'networkidle', timeout: 60000 }).catch((e) => registo.push(`[${nome}] goto: ${e}`));
-            await page.waitForTimeout(6000);
+            await page.goto(base + caminho, { waitUntil: 'load', timeout: 60000 }).catch((e) => registo.push(`[${nome}] goto: ${String(e).slice(0, 200)}`));
+            await page.waitForTimeout(espera);
             if (acao) { try { await acao(page); } catch (e) { registo.push(`[${nome}] ação: ${String(e).slice(0, 200)}`); } await page.waitForTimeout(4000); }
             await page.screenshot({ path: `${nome}.png` });
+            if (nome.includes('alertas')) await page.screenshot({ path: `${nome}-inteira.png`, fullPage: true });
             await ctx.close();
           }
           const porto = { geolocation: { latitude: 41.1462, longitude: -8.6110 }, permissions: ['geolocation'] };
           const spc = { geolocation: { latitude: 41.1435, longitude: -8.4947 }, permissions: ['geolocation'] };
           await captura('01-perto-sem-localizacao', {}, '/');
-          await captura('02-perto-porto', porto, '/');
-          await captura('03-perto-sao-pedro-da-cova', spc, '/');
+          await captura('02-perto-porto', porto, '/', null, 10000);
+          await captura('03-perto-sao-pedro-da-cova', spc, '/', null, 10000);
           await captura('04-perto-paragem-aberta', porto, '/', async (p) => {
             const el = p.locator('[data-teste="paragem-perto"]').first();
             if (await el.count()) await el.click(); else await p.locator('.custom-stop-marker-icon').first().click({ force: true });
+          }, 10000);
+          await captura('05-perto-localizacao-recusada', {}, '/', async (p) => {
+            await p.locator('[data-teste="ativar-localizacao"]').first().click();
           });
-          await captura('05-alertas', porto, '/alertas');
-          await captura('06-horarios', porto, '/transportes');
-          await captura('07-mapa', porto, '/mapa');
+          await captura('06-alertas-porto', porto, '/alertas', null, 9000);
+          await captura('07-alertas-sem-localizacao', {}, '/alertas', null, 9000);
+          await captura('08-horarios-spc', spc, '/transportes', null, 10000);
+          await captura('09-mapa', porto, '/mapa');
           await browser.close();
           (await import('node:fs')).writeFileSync('registo.txt', registo.join('\n') || 'sem erros');
           EOF
@@ -83,7 +107,7 @@ jobs:
       - name: Guardar
         if: always()
         run: |
-          mkdir pub && cp cap/*.png cap/registo.txt pub/ 2>/dev/null || true
+          mkdir pub && cp cap/*.png cap/*.json cap/registo.txt tipos.txt pub/ 2>/dev/null || true
           tail -n 60 app/app.log > pub/app.log 2>/dev/null || true
           cd pub && git init -q -b capturas
           git config user.name "parou-dados"; git config user.email "actions@users.noreply.github.com"
