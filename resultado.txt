@@ -1,0 +1,45 @@
+===== A: 10 pedidos simples em paralelo =====
+19:58:13 [A7] /api/transit/loading-status?x=7 -> 200 0.487058s 236B | "updatedAt":"2026-10-07T19:56:24.727Z"
+19:58:14 [A8] /api/transit/loading-status?x=8 -> 200 0.713085s 236B | "updatedAt":"2026-10-07T19:56:24.727Z"
+19:58:14 [A20] /api/transit/loading-status?x=20 -> 200 0.703704s 236B | "updatedAt":"2026-10-07T19:56:24.727Z"
+19:58:14 [A5] /api/transit/loading-status?x=5 -> 200 0.725708s 236B | "updatedAt":"2026-10-07T19:56:24.727Z"
+19:58:14 [A19] /api/transit/loading-status?x=19 -> 200 0.730913s 236B | "updatedAt":"2026-10-07T19:56:24.727Z"
+19:58:14 [A16] /api/transit/loading-status?x=16 -> 200 0.746426s 236B | "updatedAt":"2026-10-07T19:56:24.727Z"
+19:58:14 [A3] /api/transit/loading-status?x=3 -> 200 0.748892s 236B | "updatedAt":"2026-10-07T19:56:24.727Z"
+19:58:14 [A13] /api/transit/loading-status?x=13 -> 200 0.735830s 236B | "updatedAt":"2026-10-07T19:56:24.727Z"
+19:58:14 [A14] /api/transit/loading-status?x=14 -> 200 0.753728s 236B | "updatedAt":"2026-10-07T19:56:24.727Z"
+19:58:14 [A4] /api/transit/loading-status?x=4 -> 200 0.752877s 236B | "updatedAt":"2026-10-07T19:56:24.727Z"
+19:58:14 [A11] /api/transit/loading-status?x=11 -> 200 0.748849s 236B | "updatedAt":"2026-10-07T19:56:24.727Z"
+19:58:14 [A1] /api/transit/loading-status?x=1 -> 200 0.754729s 236B | "updatedAt":"2026-10-07T19:56:24.727Z"
+19:58:14 [A15] /api/transit/loading-status?x=15 -> 200 0.766574s 236B | "updatedAt":"2026-10-07T19:56:24.727Z"
+19:58:14 [A17] /api/transit/loading-status?x=17 -> 200 0.771387s 236B | "updatedAt":"2026-10-07T19:56:24.727Z"
+19:58:14 [A6] /api/transit/loading-status?x=6 -> 200 0.789689s 236B | "updatedAt":"2026-10-07T19:56:24.727Z"
+19:58:14 [A9] /api/transit/loading-status?x=9 -> 200 0.849179s 236B | "updatedAt":"2026-10-07T19:56:24.727Z"
+19:58:14 [A18] /api/transit/loading-status?x=18 -> 200 0.850947s 236B | "updatedAt":"2026-10-07T19:56:24.727Z"
+19:58:14 [A12] /api/transit/loading-status?x=12 -> 200 0.845015s 236B | "updatedAt":"2026-10-07T19:56:24.727Z"
+19:58:14 [A10] /api/transit/loading-status?x=10 -> 200 0.873567s 236B | "updatedAt":"2026-10-07T19:56:24.727Z"
+19:58:14 [A2] /api/transit/loading-status?x=2 -> 200 0.878846s 236B | "updatedAt":"2026-10-07T19:56:24.727Z"
+===== B: pedido lento + pedidos simples ao mesmo tempo =====
+19:58:21 [B2] /api/transit/loading-status?y=2 -> 429 0.444978s 14B | Rate exceeded.
+19:58:22 [B3] /api/transit/loading-status?y=3 -> 429 0.485387s 14B | Rate exceeded.
+19:58:39 [B5] /api/transit/loading-status?y=5 -> 429 15.608344s 14B | Rate exceeded.
+19:58:39 [B4] /api/transit/loading-status?y=4 -> 429 16.610608s 14B | Rate exceeded.
+19:58:59 [B-lento] /api/transit/nearby?lat=38.7253&lon=-9.15&radius=1000&_t=15175 -> 000 40.002089s 0Bfalhou | 
+19:59:00 [B1] /api/transit/loading-status?y=1 -> 000 40.002574s 0Bfalhou | 
+===== C: pedidos do telemóvel, um de cada vez =====
+19:59:21 [C1-estado] /api/transit/loading-status -> 429 16.462013s 14B | Rate exceeded.
+19:59:22 [C1-perto-porto] /api/transit/nearby?lat=41.1486&lon=-8.5856&radius=1000&_t=25381 -> 429 0.439915s 14B | Rate exceeded.
+19:59:38 [C1-perto-lisboa] /api/transit/nearby?lat=38.7139&lon=-9.1394&radius=1000&_t=28751 -> 429 16.215750s 14B | Rate exceeded.
+19:59:38 [C1-linhas] /api/lines?near=41.1486,-8.5856&r=800 -> 429 0.447806s 14B | Rate exceeded.
+19:59:49 [C2-estado] /api/transit/loading-status -> 429 0.459478s 14B | Rate exceeded.
+20:00:05 [C2-perto-porto] /api/transit/nearby?lat=41.1486&lon=-8.5856&radius=1000&_t=2759 -> 200 15.958623s 90878B | {"stops":[{"id":"stcp:CMP2","name":"CAMPANHÃ","operatorId":"stcp","operatorName":"STCP (Porto)","transportMode":"Autoca
+20:00:45 [C2-perto-lisboa] /api/transit/nearby?lat=38.7139&lon=-9.1394&radius=1000&_t=15515 -> 000 40.002181s 0Bfalhou | 
+20:01:01 [C2-linhas] /api/lines?near=41.1486,-8.5856&r=800 -> 429 15.946439s 14B | Rate exceeded.
+20:01:27 [C3-estado] /api/transit/loading-status -> 429 16.276011s 14B | Rate exceeded.
+20:01:44 [C3-perto-porto] /api/transit/nearby?lat=41.1486&lon=-8.5856&radius=1000&_t=21123 -> 429 16.469969s 14B | Rate exceeded.
+20:01:46 [C3-perto-lisboa] /api/transit/nearby?lat=38.7139&lon=-9.1394&radius=1000&_t=3342 -> 200 2.520295s 156275B | {"stops":[{"id":"carris:902","name":"Rossio","operatorId":"carris","operatorName":"Carris (Lisboa)","transportMode":"Aut
+20:01:47 [C3-linhas] /api/lines?near=41.1486,-8.5856&r=800 -> 200 0.527682s 26336B | {"lines":[{"id":"stcp:205","code":"205","name":"CAMPANHÃ-CASTELO DO QUEIJO","color":"#187EC2","mode":"Autocarro","opera
+20:01:57 [C4-estado] /api/transit/loading-status -> 200 0.465736s 236B | "updatedAt":"2026-10-07T19:56:24.727Z"
+20:02:04 [C4-perto-porto] /api/transit/nearby?lat=41.1486&lon=-8.5856&radius=1000&_t=29652 -> 200 6.362070s 93009B | {"stops":[{"id":"stcp:CMP2","name":"CAMPANHÃ","operatorId":"stcp","operatorName":"STCP (Porto)","transportMode":"Autoca
+20:02:05 [C4-perto-lisboa] /api/transit/nearby?lat=38.7139&lon=-9.1394&radius=1000&_t=23179 -> 200 1.166190s 155850B | {"stops":[{"id":"carris:902","name":"Rossio","operatorId":"carris","operatorName":"Carris (Lisboa)","transportMode":"Aut
+20:02:05 [C4-linhas] /api/lines?near=41.1486,-8.5856&r=800 -> 200 0.447632s 26336B | {"lines":[{"id":"stcp:205","code":"205","name":"CAMPANHÃ-CASTELO DO QUEIJO","color":"#187EC2","mode":"Autocarro","opera
