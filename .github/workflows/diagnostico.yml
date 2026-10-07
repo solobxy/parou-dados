@@ -26,11 +26,11 @@ jobs:
           : > "$out"
           pedir() { # $1 = etiqueta, $2 = caminho
             r=$(curl -s -o "/tmp/c_$1.txt" -w "%{http_code} %{time_total}s %{size_download}B" --max-time 40 "$base$2" || echo "falhou")
-            echo "$(date -u +%H:%M:%S) [$1] $2 -> $r | $(head -c 120 /tmp/c_$1.txt 2>/dev/null | tr '\n' ' ')" >> "$out"
+            echo "$(date -u +%H:%M:%S) [$1] $2 -> $r | $(grep -o '"updatedAt":"[^"]*"' /tmp/c_$1.txt 2>/dev/null || head -c 120 /tmp/c_$1.txt 2>/dev/null | tr '\n' ' ')" >> "$out"
           }
 
           echo "===== A: 10 pedidos simples em paralelo =====" >> "$out"
-          for i in $(seq 1 10); do pedir "A$i" "/api/transit/loading-status?x=$i" & done; wait
+          for i in $(seq 1 20); do pedir "A$i" "/api/transit/loading-status?x=$i" & done; wait
           sleep 5
 
           echo "===== B: pedido lento + pedidos simples ao mesmo tempo =====" >> "$out"
@@ -41,7 +41,7 @@ jobs:
           sleep 5
 
           echo "===== C: pedidos do telemóvel, um de cada vez =====" >> "$out"
-          for volta in $(seq 1 8); do
+          for volta in $(seq 1 4); do
             pedir "C$volta-estado" "/api/transit/loading-status"
             pedir "C$volta-perto-porto" "/api/transit/nearby?lat=41.1486&lon=-8.5856&radius=1000&_t=$RANDOM"
             pedir "C$volta-perto-lisboa" "/api/transit/nearby?lat=38.7139&lon=-9.1394&radius=1000&_t=$RANDOM"
