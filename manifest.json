@@ -1,12 +1,12 @@
 {
-  "built_at": "2026-10-06T19:56:06.032620+00:00",
-  "db_bytes": 341184512,
-  "gz_bytes": 75633290,
+  "built_at": "2026-10-07T10:34:17.291195+00:00",
+  "db_bytes": 315723776,
+  "gz_bytes": 69221118,
   "totals": {
     "lines": 2320,
     "stops": 34875,
-    "trips": 80209,
-    "stop_times": 2309405,
+    "trips": 73906,
+    "stop_times": 2129723,
     "operators": 29,
     "operators_ok": 26
   },
@@ -32,7 +32,7 @@
       "status": "OK",
       "lines": 176,
       "stops": 2344,
-      "trips": 31367,
+      "trips": 25092,
       "valid_until": "2026-12-31",
       "url": "https://gateway.carris.pt/gateway/gtfs/api/v2.11/GTFS",
       "last_error": null,
@@ -47,13 +47,13 @@
       "status": "OK",
       "lines": 174,
       "stops": 454,
-      "trips": 1580,
+      "trips": 1577,
       "valid_until": "2026-12-12",
       "url": "https://publico.cp.pt/gtfs/gtfs.zip",
       "last_error": null,
       "servicos_associados": null,
       "servicos_sem_calendario": null,
-      "viagens_hoje": 1319,
+      "viagens_hoje": 1321,
       "viagens_amanha": 1321
     },
     {
@@ -140,7 +140,7 @@
       "trips": 2941,
       "valid_until": "2026-12-25",
       "url": "https://dadosabertos.cm-porto.pt/dataset/713a680c-9e19-11f1-84ed-6abdb6d5cf34/resource/28a13723-2af1-4bbb-a2b1-f8b08df8c7e4/download/___",
-      "last_error": "O operador não atualizou as datas do calendário para alguns dias (15 dias sem horário publicado); a usar o horário semanal mais recente.",
+      "last_error": "O operador não atualizou as datas do calendário para alguns dias (16 dias sem horário publicado); a usar o horário semanal mais recente.",
       "servicos_associados": null,
       "servicos_sem_calendario": null,
       "viagens_hoje": 1153,
@@ -173,8 +173,8 @@
       "last_error": null,
       "servicos_associados": null,
       "servicos_sem_calendario": null,
-      "viagens_hoje": 982,
-      "viagens_amanha": 978
+      "viagens_hoje": 978,
+      "viagens_amanha": 982
     },
     {
       "id": "tuba_barcelos",
@@ -188,8 +188,8 @@
       "last_error": "O operador não atualizou as datas do calendário (terminam em 2024-12-31); a usar o horário semanal em vigor.",
       "servicos_associados": null,
       "servicos_sem_calendario": null,
-      "viagens_hoje": 485,
-      "viagens_amanha": 479
+      "viagens_hoje": 479,
+      "viagens_amanha": 488
     },
     {
       "id": "mobiave",
@@ -233,8 +233,8 @@
       "last_error": null,
       "servicos_associados": null,
       "servicos_sem_calendario": null,
-      "viagens_hoje": 691,
-      "viagens_amanha": 688
+      "viagens_hoje": 688,
+      "viagens_amanha": 693
     },
     {
       "id": "proximo_faro",
@@ -302,7 +302,7 @@
       "status": "OK",
       "lines": 99,
       "stops": 1082,
-      "trips": 3815,
+      "trips": 3790,
       "valid_until": "2027-12-31",
       "url": "https://files.mobilitydatabase.org/mdb-1272/latest.zip",
       "last_error": null,
@@ -448,15 +448,15 @@
     }
   ],
   "verificacao": {
-    "data_hoje": "2026-10-06",
-    "data_amanha": "2026-10-07",
+    "data_hoje": "2026-10-07",
+    "data_amanha": "2026-10-08",
     "porto": {
       "stcp": {
         "calendar": [],
         "datas_soltas": {
           "primeira": "20260901",
-          "ultima": "20261020",
-          "total": 39
+          "ultima": "20261021",
+          "total": 37
         },
         "servicos_com_data_hoje": [
           "UTIL FERIAS:FLUXO 3 20260831"
@@ -626,16 +626,16 @@
         "datas_soltas": {
           "primeira": "20260101",
           "ultima": "20261225",
-          "total": 392
+          "total": 399
         },
         "servicos_com_data_hoje": [
+          "FU",
+          "CU",
+          "BU",
           "EU",
           "BexpU",
-          "FU",
-          "DU",
           "AU",
-          "BU",
-          "CU"
+          "DU"
         ],
         "viagens_por_servico": [
           {
@@ -690,5 +690,5 @@
       }
     }
   },
-  "duration_s": 158
+  "duration_s": 186
 }
