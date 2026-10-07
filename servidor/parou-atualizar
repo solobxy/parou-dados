@@ -6,4 +6,5 @@ exec 9>/run/parou-atualizar.lock
 flock -n 9 || exit 0
 git -C /opt/parou/servidor fetch -q origin main && git -C /opt/parou/servidor reset -q --hard origin/main || true
 install -m 755 /opt/parou/servidor/servidor/atualizar.sh /run/parou-atualizar.sh
-exec /run/parou-atualizar.sh
+# /run não permite executar ficheiros diretamente (noexec), por isso corre-o com o bash
+exec bash /run/parou-atualizar.sh

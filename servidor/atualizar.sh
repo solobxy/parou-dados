@@ -42,6 +42,11 @@ if ! cmp -s /tmp/Caddyfile.novo /etc/caddy/Caddyfile; then
   fi
 fi
 
+# O próprio atualizador, se mudou no repositório
+if ! cmp -s "$SERV/parou-atualizar" /usr/local/bin/parou-atualizar; then
+  install -m 755 "$SERV/parou-atualizar" /usr/local/bin/parou-atualizar
+fi
+
 # Serviços do systemd, se mudaram no repositório
 for f in parou.service parou-atualizar.service parou-atualizar.timer; do
   if ! cmp -s "$SERV/$f" "/etc/systemd/system/$f"; then
