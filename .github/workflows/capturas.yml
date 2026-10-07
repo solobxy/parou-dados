@@ -58,7 +58,7 @@ jobs:
       - name: Respostas da API
         run: |
           mkdir -p cap
-          curl -s -m 60 "http://127.0.0.1:3000/api/alertas?area=PRT" -o cap/alertas-porto.json || true
+          curl -s -m 60 "http://127.0.0.1:3000/api/alertas?area=PTO" -o cap/alertas-porto.json || true
           curl -s -m 60 "http://127.0.0.1:3000/api/alertas?lat=38.7253&lon=-9.15" -o cap/alertas-lisboa.json || true
           curl -s -m 60 "http://127.0.0.1:3000/api/lines?near=41.1522,-8.5042&r=800" -o cap/linhas-spc.json || true
 
@@ -89,11 +89,11 @@ jobs:
           await captura('02-perto-porto', porto, '/', null, 10000);
           await captura('03-perto-sao-pedro-da-cova', spc, '/', null, 10000);
           await captura('04-perto-paragem-aberta', porto, '/', async (p) => {
-            const el = p.locator('[data-teste="paragem-perto"]').first();
+            const el = p.locator('[data-teste="paragem-perto"]:visible').first();
             if (await el.count()) await el.click(); else await p.locator('.custom-stop-marker-icon').first().click({ force: true });
           }, 10000);
           await captura('05-perto-localizacao-recusada', {}, '/', async (p) => {
-            await p.locator('[data-teste="ativar-localizacao"]').first().click();
+            await p.locator('[data-teste="ativar-localizacao"]:visible').first().click();
           });
           await captura('06-alertas-porto', porto, '/alertas', null, 9000);
           await captura('07-alertas-sem-localizacao', {}, '/alertas', null, 9000);
