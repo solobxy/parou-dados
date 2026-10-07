@@ -1,0 +1,15 @@
+# PAROU.PT - Caddy (https automático com Let's Encrypt)
+# {HOST_TESTE} é substituído pelo endereço <ip-com-tracos>.sslip.io do servidor,
+# que serve para testar antes de o domínio parou.pt apontar para aqui.
+
+{HOST_TESTE} {
+	encode zstd gzip
+	handle /_estado-servidor {
+		root * /var/lib/parou-estado
+		rewrite * /estado.txt
+		header Content-Type "text/plain; charset=utf-8"
+		header Cache-Control "no-store"
+		file_server
+	}
+	reverse_proxy 127.0.0.1:3000
+}

@@ -1,0 +1,71 @@
+name: Ensaio da instalação do servidor
+
+# Corre o servidor/instalar.sh numa máquina Ubuntu 24.04 do GitHub, como se fosse o
+# servidor novo, e testa a app instalada. Guarda o resultado no ramo "ensaio-servidor".
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  ensaio:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    steps:
+      - name: Instalar como no servidor
+        run: |
+          curl -fsSL "https://raw.githubusercontent.com/${{ github.repository }}/${{ github.sha }}/servidor/instalar.sh" -o instalar.sh
+          sudo PAROU_ENSAIO=1 bash instalar.sh > instalacao.log 2>&1 || echo "instalar.sh terminou com erro" >> instalacao.log
+          tail -n 60 instalacao.log
+
+      - name: Esperar pela app e pelos dados
+        run: |
+          out=resultado.txt
+          {
+            echo "== Serviços"; systemctl is-active parou caddy parou-atualizar.timer || true
+            echo "== Node"; node --version; /usr/bin/env node --version
+            echo "== Estado do servidor"; cat /var/lib/parou-estado/estado.txt 2>/dev/null | head -12
+          } > $out
+          for i in $(seq 1 60); do
+            s=$(curl -s -m 5 http://127.0.0.1:3000/api/transit/loading-status || true)
+            echo "$(date -u +%H:%M:%S) $s" | cut -c1-200 >> esperas.txt
+            echo "$s" | grep -q '"isLoading":false' && break
+            sleep 10
+          done
+          echo "== Espera pelos dados (últimas)" >> $out; tail -n 3 esperas.txt >> $out
+          echo "== Pedidos" >> $out
+          for c in "/health" "/api/transit/loading-status" \
+                   "/api/transit/nearby?lat=38.7253&lon=-9.15&radius=1000" \
+                   "/api/transit/nearby?lat=38.7139&lon=-9.1394&radius=1000" \
+                   "/api/transit/nearby?lat=41.1486&lon=-8.5856&radius=1000" \
+                   "/api/lines?near=41.1486,-8.5856&r=800" "/api/lines?page=1" "/"; do
+            for n in 1 2; do
+              r=$(curl -s -o corpo.txt -w "%{http_code} %{time_total}s %{size_download}B" -m 60 "http://127.0.0.1:3000$c" || echo falhou)
+              echo "$c [$n] -> $r | $(head -c 100 corpo.txt | tr '\n' ' ')" >> $out
+            done
+          done
+          echo "== Pedidos em paralelo (10 x Perto Lisboa + 10 x estado)" >> $out
+          for i in $(seq 1 10); do
+            curl -s -o /dev/null -w "perto $i %{http_code} %{time_total}s\n" -m 60 "http://127.0.0.1:3000/api/transit/nearby?lat=38.72$i&lon=-9.15&radius=1000" >> paralelo.txt &
+            curl -s -o /dev/null -w "estado $i %{http_code} %{time_total}s\n" -m 60 "http://127.0.0.1:3000/api/transit/loading-status?p=$i" >> paralelo.txt &
+          done
+          wait; sort paralelo.txt >> $out
+          echo "== Caddy" >> $out; sudo cat /etc/caddy/Caddyfile >> $out
+          echo "== Memória" >> $out; free -m >> $out
+          echo "== Fim da instalação" >> $out; tail -n 25 instalacao.log >> $out
+          echo "== Registo da app" >> $out; sudo journalctl -u parou -n 40 --no-pager -o cat | cut -c1-250 >> $out
+          echo "== Última compilação" >> $out; sudo tail -n 15 /var/lib/parou-estado/ultima-compilacao.log >> $out 2>/dev/null || true
+          cat $out
+
+      - name: Guardar o resultado
+        if: always()
+        run: |
+          mkdir pub && cp resultado.txt pub/ 2>/dev/null || echo "sem resultado" > pub/resultado.txt
+          cp instalacao.log pub/ 2>/dev/null || true
+          cd pub && git init -q -b ensaio-servidor
+          git config user.name "parou-dados"
+          git config user.email "actions@users.noreply.github.com"
+          git add -A && git commit -q -m "Ensaio $(date -u +%Y-%m-%dT%H:%MZ)"
+          git push -q -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" ensaio-servidor
