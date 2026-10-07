@@ -23,10 +23,12 @@ if [ ! -f /swapfile ]; then
 fi
 
 # 2. Pacotes: git, firewall, Caddy (repositório do Ubuntu) e Node.js 22 (NodeSource)
-apt-get update
-apt-get install -y ca-certificates curl gnupg git ufw caddy xz-utils
+# No primeiro arranque o Ubuntu pode estar a instalar atualizações: espera pela vez em vez de falhar
+APT="apt-get -o DPkg::Lock::Timeout=1200"
+$APT update
+$APT install -y ca-certificates curl gnupg git ufw caddy xz-utils
 if curl -fsSL https://deb.nodesource.com/setup_22.x -o /root/nodesource_setup.sh; then
-  bash /root/nodesource_setup.sh && apt-get install -y nodejs || true
+  bash /root/nodesource_setup.sh && $APT install -y nodejs || true
 fi
 # Se o NodeSource falhar, instala o Node.js 22 oficial a partir de nodejs.org
 if ! node -e "process.exit(Number(process.versions.node.split('.')[0]) >= 22 ? 0 : 1)" 2>/dev/null; then

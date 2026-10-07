@@ -1,0 +1,143 @@
+name: Servidor (Hetzner)
+
+# Gere o servidor próprio na Hetzner através da API (segredo HCLOUD_TOKEN).
+#   estado   - mostra o servidor e corre um diagnóstico por SSH
+#   recriar  - apaga o servidor "parou" e cria um novo (CX23, Ubuntu 24.04) com a chave SSH
+#              deste repositório e a instalação automática; acompanha a instalação até ao fim
+#   comando  - corre um comando no servidor por SSH
+# O resultado fica no ramo "servidor-resultado", em resultado.txt.
+#
+# A chave SSH privada fica em servidor/chave-ssh.enc, cifrada com o HCLOUD_TOKEN
+# (quem não tem o token não a consegue ler; quem tem o token já controla o servidor).
+
+on:
+  workflow_dispatch:
+    inputs:
+      acao:
+        description: "estado, recriar ou comando"
+        required: true
+        default: "estado"
+      comando:
+        description: "Comando a correr no servidor (só para acao=comando)"
+        required: false
+        default: "uptime"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: servidor
+  cancel-in-progress: false
+
+jobs:
+  servidor:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      HCLOUD_TOKEN: ${{ secrets.HCLOUD_TOKEN }}
+      API: https://api.hetzner.cloud/v1
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Preparar
+        run: |
+          if [ -z "$HCLOUD_TOKEN" ]; then echo "Falta o segredo HCLOUD_TOKEN" | tee resultado.txt; exit 1; fi
+          echo "== $(date -u +%Y-%m-%dT%H:%M:%SZ) acao=${{ inputs.acao }}" > resultado.txt
+          h() { curl -fsS -H "Authorization: Bearer $HCLOUD_TOKEN" -H "Content-Type: application/json" "$@"; }
+          declare -f h > funcs.sh
+          # Chave SSH: usa a do repositório ou cria uma nova
+          mkdir -p ~/.ssh && chmod 700 ~/.ssh
+          if [ -f servidor/chave-ssh.enc ]; then
+            openssl enc -d -aes-256-cbc -pbkdf2 -iter 200000 -pass env:HCLOUD_TOKEN -in servidor/chave-ssh.enc -out ~/.ssh/id_ed25519
+            chmod 600 ~/.ssh/id_ed25519
+            cp servidor/chave-ssh.pub ~/.ssh/id_ed25519.pub
+          else
+            ssh-keygen -q -t ed25519 -N "" -C "github-parou" -f ~/.ssh/id_ed25519
+            openssl enc -aes-256-cbc -pbkdf2 -iter 200000 -salt -pass env:HCLOUD_TOKEN -in ~/.ssh/id_ed25519 -out servidor/chave-ssh.enc
+            cp ~/.ssh/id_ed25519.pub servidor/chave-ssh.pub
+            git config user.name "parou-dados"; git config user.email "actions@users.noreply.github.com"
+            git add servidor/chave-ssh.enc servidor/chave-ssh.pub
+            git commit -q -m "Chave SSH do servidor (cifrada)" && git pull -q --rebase && git push -q
+          fi
+          printf 'Host *\n  StrictHostKeyChecking no\n  UserKnownHostsFile /dev/null\n  LogLevel ERROR\n  ConnectTimeout 15\n' > ~/.ssh/config
+
+      - name: Recriar o servidor
+        if: inputs.acao == 'recriar'
+        run: |
+          source funcs.sh
+          PUB=$(cat ~/.ssh/id_ed25519.pub)
+          # Regista a chave SSH na Hetzner (reaproveita se já existir)
+          KID=$(h "$API/ssh_keys?name=github-parou" | jq -r '.ssh_keys[0].id // empty')
+          if [ -n "$KID" ] && [ "$(h "$API/ssh_keys/$KID" | jq -r .ssh_key.public_key)" != "$PUB" ]; then
+            h -X DELETE "$API/ssh_keys/$KID"; KID=""
+          fi
+          if [ -z "$KID" ]; then
+            KID=$(h -X POST "$API/ssh_keys" -d "$(jq -n --arg k "$PUB" '{name:"github-parou", public_key:$k}')" | jq -r .ssh_key.id)
+          fi
+          echo "Chave SSH na Hetzner: $KID" >> resultado.txt
+          # Apaga o servidor antigo
+          for id in $(h "$API/servers?name=parou" | jq -r '.servers[].id'); do
+            echo "A apagar o servidor $id" >> resultado.txt
+            h -X DELETE "$API/servers/$id" > /dev/null
+          done
+          sleep 20
+          # Cria o novo (tenta Nuremberga, Falkenstein e Helsínquia)
+          UD=$(printf '#cloud-config\nruncmd:\n  - curl -fsSL https://raw.githubusercontent.com/solobxy/parou-dados/main/servidor/instalar.sh -o /root/instalar.sh\n  - bash /root/instalar.sh\n')
+          for loc in nbg1 fsn1 hel1; do
+            BODY=$(jq -n --arg ud "$UD" --arg loc "$loc" --argjson k "$KID" \
+              '{name:"parou", server_type:"cx23", image:"ubuntu-24.04", location:$loc, ssh_keys:[$k], user_data:$ud, public_net:{enable_ipv4:true, enable_ipv6:true}}')
+            R=$(curl -sS -H "Authorization: Bearer $HCLOUD_TOKEN" -H "Content-Type: application/json" -X POST "$API/servers" -d "$BODY")
+            IP=$(echo "$R" | jq -r '.server.public_net.ipv4.ip // empty')
+            if [ -n "$IP" ]; then echo "Servidor criado em $loc com o IP $IP" >> resultado.txt; break; fi
+            echo "Não deu em $loc: $(echo "$R" | jq -c .error)" >> resultado.txt
+          done
+          [ -n "$IP" ] || exit 1
+          echo "$IP" > ip.txt
+          # Espera pelo SSH e acompanha a instalação
+          for i in $(seq 1 60); do ssh root@$IP true 2>/dev/null && break; sleep 10; done
+          for i in $(seq 1 120); do
+            if ssh root@$IP "grep -q 'PAROU.PT instalado' /var/log/parou-instalar.log 2>/dev/null"; then echo "Instalação terminada." >> resultado.txt; break; fi
+            if ssh root@$IP "cloud-init status 2>/dev/null | grep -qE 'done|error'"; then echo "cloud-init terminou: $(ssh root@$IP cloud-init status)" >> resultado.txt; break; fi
+            sleep 15
+          done
+
+      - name: Diagnóstico ou comando
+        if: always()
+        run: |
+          source funcs.sh
+          IP=$(cat ip.txt 2>/dev/null || h "$API/servers?name=parou" | jq -r '.servers[0].public_net.ipv4.ip // empty')
+          echo "IP: $IP" >> resultado.txt
+          [ -n "$IP" ] || exit 0
+          if [ "${{ inputs.acao }}" = "comando" ]; then
+            CMD=$(cat <<'FIM'
+          ${{ inputs.comando }}
+          FIM
+            )
+          else
+            CMD='echo "== Sistema"; lsb_release -ds; uptime; free -m | head -2; df -h / | tail -1
+                 echo "== cloud-init"; cloud-init status --long 2>&1 | head -8
+                 echo "== Serviços"; systemctl is-active parou caddy parou-atualizar.timer
+                 echo "== Estado"; cat /var/lib/parou-estado/estado.txt 2>/dev/null | head -12
+                 echo "== Fim da instalação"; tail -n 40 /var/log/parou-instalar.log 2>/dev/null
+                 echo "== Erros do cloud-init"; grep -iE "error|fail" /var/log/cloud-init-output.log 2>/dev/null | tail -n 15
+                 echo "== App"; journalctl -u parou -n 30 --no-pager -o cat 2>/dev/null | cut -c1-250
+                 echo "== Pedidos locais"; for c in /health /api/transit/loading-status "/api/transit/nearby?lat=38.7253&lon=-9.15&radius=1000"; do curl -s -o /dev/null -w "$c %{http_code} %{time_total}s\n" -m 60 "http://127.0.0.1:3000$c"; done
+                 echo "== Caddy"; journalctl -u caddy -n 10 --no-pager -o cat 2>/dev/null | cut -c1-250'
+          fi
+          echo "== Saída no servidor" >> resultado.txt
+          ssh root@$IP "$CMD" >> resultado.txt 2>&1 || echo "(o comando terminou com erro ou não houve ligação SSH)" >> resultado.txt
+          echo "== Teste de fora" >> resultado.txt
+          H="${IP//./-}.sslip.io"
+          for u in "https://$H/health" "https://$H/api/transit/loading-status"; do
+            curl -s -o /dev/null -w "$u %{http_code} %{time_total}s\n" -m 30 "$u" >> resultado.txt 2>&1 || echo "$u falhou" >> resultado.txt
+          done
+          cat resultado.txt
+
+      - name: Guardar o resultado
+        if: always()
+        run: |
+          mkdir pub && cp resultado.txt pub/ && cd pub && git init -q -b servidor-resultado
+          git config user.name "parou-dados"
+          git config user.email "actions@users.noreply.github.com"
+          git add -A && git commit -q -m "Servidor ${{ inputs.acao }} $(date -u +%Y-%m-%dT%H:%MZ)"
+          git push -q -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" servidor-resultado
