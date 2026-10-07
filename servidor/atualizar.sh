@@ -55,6 +55,12 @@ for f in parou.service parou-atualizar.service parou-atualizar.timer; do
   fi
 done
 
+# Fuso horário de Portugal para a app (horas locais, "hoje", feriados)
+if ! grep -q '^TZ=' /etc/parou.env 2>/dev/null; then
+  echo 'TZ=Europe/Lisbon' >> /etc/parou.env
+  systemctl restart parou || true
+fi
+
 # 2. App
 NOVO=$(git ls-remote "$REPO" refs/heads/main | cut -f1)
 ATUAL=$(cat $BASE/atual/.versao 2>/dev/null || true)
