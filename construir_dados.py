@@ -46,6 +46,7 @@ UA = ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like
 LISBON = ZoneInfo("Europe/Lisbon")
 BATCH = 50000
 MAX_ZIP_BYTES = 300 * 1024 * 1024
+AVISO_DIAS = 14  # avisa quando a validade de um feed acaba dentro deste numero de dias
 
 MDB_CATALOG = "https://files.mobilitydatabase.org/feeds_v2.csv"
 CM_API = "https://api.carrismetropolitana.pt/v2"
@@ -252,6 +253,22 @@ def ymd_to_iso(ymd):
     if ymd and len(ymd) == 8 and ymd.isdigit():
         return f"{ymd[:4]}-{ymd[4:6]}-{ymd[6:]}"
     return None
+
+
+def estado_validade(valid_until, hoje):
+    """Devolve (estado, dias) para o manifest: caducado, a_caducar, ok ou desconhecido."""
+    if not valid_until:
+        return "desconhecido", None
+    try:
+        fim = datetime.date.fromisoformat(str(valid_until)[:10])
+    except ValueError:
+        return "desconhecido", None
+    dias = (fim - hoje).days
+    if dias < 0:
+        return "caducado", dias
+    if dias <= AVISO_DIAS:
+        return "a_caducar", dias
+    return "ok", dias
 
 
 # ---------------------------------------------------------------------------
@@ -913,6 +930,7 @@ def process_feed(conn, feed, today_dt, have_prev):
                 "valid_from": ymd_to_iso(stats["valid_from"]), "valid_until": ymd_to_iso(stats["valid_until"]),
                 "last_ok": now_iso(), "last_error": note,
                 "_aliases": stats["aliases"], "_sem_calendario": stats["sem_calendario"],
+                "_prolongado": bool(stats["extended"]),
             })
             upsert_feed(conn, row)
             conn.commit()
@@ -1019,12 +1037,34 @@ def verificar_saude(conn, today_dt):
     hoje = today_dt.date()
     amanha = hoje + datetime.timedelta(days=1)
     out = {"data_hoje": hoje.isoformat(), "data_amanha": amanha.isoformat(),
-           "hoje": {}, "amanha": {}, "porto": {}}
+           "hoje": {}, "amanha": {}, "porto": {},
+           "dias_uteis_verificados": 0, "dias_uteis_sem_servico": {}}
     try:
         out["hoje"] = viagens_ativas(conn, hoje)
         out["amanha"] = viagens_ativas(conn, amanha)
     except sqlite3.Error as err:
         log(f"AVISO: verificação de viagens falhou: {err}")
+    # Dias úteis (sem feriados) dos próximos 7 dias em que cada operador não tem nenhuma viagem.
+    # Apanha ficheiros que dizem ser válidos mas cujo horário de semana já acabou.
+    try:
+        com_viagens = {r[0] for r in conn.execute("SELECT DISTINCT feed_id FROM trips")}
+        uteis, sem = 0, {}
+        for k in range(7):
+            dia = hoje + datetime.timedelta(days=k)
+            if dia.weekday() >= 5 or feriado_nacional(dia):
+                continue
+            uteis += 1
+            ativos = viagens_ativas(conn, dia)
+            for fid in com_viagens:
+                if not ativos.get(fid):
+                    sem[fid] = sem.get(fid, 0) + 1
+        out["dias_uteis_verificados"] = uteis
+        out["dias_uteis_sem_servico"] = sem
+        for fid, n in sorted(sem.items()):
+            if uteis >= 3 and n >= uteis - 1:
+                log(f"AVISO: {fid} não tem viagens em {n} dos {uteis} dias úteis dos próximos 7 dias")
+    except sqlite3.Error as err:
+        log(f"AVISO: verificação dos dias úteis falhou: {err}")
     for fid in ("stcp", "metro_porto"):
         try:
             ymd = hoje.strftime("%Y%m%d")
@@ -1128,23 +1168,31 @@ def main():
     with open(OUT_DB, "rb") as src, gzip.open(OUT_GZ, "wb", compresslevel=6) as dst:
         shutil.copyfileobj(src, dst)
 
+    hoje = today_dt.date()
+    validades = {r.get("id"): estado_validade(r.get("valid_until"), hoje) for r in results}
+
     manifest = {
         "built_at": built_at,
         "db_bytes": os.path.getsize(OUT_DB),
         "gz_bytes": os.path.getsize(OUT_GZ),
         "totals": {"lines": totals[0], "stops": totals[1], "trips": totals[2], "stop_times": totals[3],
-                   "operators": len(results), "operators_ok": len(ok)},
+                   "operators": len(results), "operators_ok": len(ok),
+                   "operators_desatualizados": sum(1 for e, _ in validades.values() if e == "caducado")},
         "feeds": [{
             "id": r.get("id"), "operator_name": r.get("operator_name"), "status": r.get("status"),
             "lines": r.get("lines_count") or 0, "stops": r.get("stops_count") or 0,
             "trips": r.get("trips_count") or 0, "valid_until": r.get("valid_until"),
+            "validade": validades[r.get("id")][0], "dias_validade": validades[r.get("id")][1],
+            "horario_prolongado": bool(r.get("_prolongado")),
             "url": r.get("url"), "last_error": r.get("last_error"),
             "servicos_associados": r.get("_aliases") or None,
             "servicos_sem_calendario": r.get("_sem_calendario") or None,
             "viagens_hoje": saude["hoje"].get(r.get("id"), 0),
             "viagens_amanha": saude["amanha"].get(r.get("id"), 0),
+            "dias_uteis_sem_servico": saude["dias_uteis_sem_servico"].get(r.get("id"), 0),
         } for r in results],
         "verificacao": {"data_hoje": saude["data_hoje"], "data_amanha": saude["data_amanha"],
+                        "dias_uteis_verificados": saude["dias_uteis_verificados"],
                         "porto": saude["porto"]},
         "duration_s": int(time.time() - started),
     }
