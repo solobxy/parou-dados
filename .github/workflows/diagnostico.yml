@@ -1,8 +1,12 @@
 name: Diagnóstico da app
 
-# Só corre quando é lançado à mão. Faz à app os mesmos pedidos que o telemóvel faz,
-# várias vezes seguidas, e guarda o resultado (código HTTP, tempo, tamanho e início
-# da resposta) no ramo "diagnostico", em resultado.txt.
+# Só corre quando é lançado à mão. Testa a app de fora e guarda o resultado
+# no ramo "diagnostico", em resultado.txt.
+#  - Parte A: 10 pedidos simples ao mesmo tempo (mostra se o alojamento atende
+#    vários pedidos em paralelo ou um de cada vez).
+#  - Parte B: um pedido lento a decorrer e, ao mesmo tempo, pedidos simples
+#    (mostra se um pedido lento bloqueia os outros).
+#  - Parte C: os pedidos que o telemóvel faz, várias vezes seguidas.
 
 on:
   workflow_dispatch:
@@ -13,31 +17,41 @@ permissions:
 jobs:
   testar:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     steps:
-      - name: Pedir os endereços da app
+      - name: Testar a app
         run: |
           base="https://paroupt.ai.studio"
           out="$PWD/resultado.txt"
           : > "$out"
-          for volta in $(seq 1 12); do
-            echo "===== Volta $volta ($(date -u +%H:%M:%S) UTC) =====" >> "$out"
-            for caminho in \
-              "/api/transit/loading-status" \
-              "/api/transit/nearby?lat=41.1486&lon=-8.5856&radius=500&_t=$RANDOM" \
-              "/api/lines?near=41.1486,-8.5856&r=800" \
-              "/api/lines?page=1" \
-              "/api/transit/nearby?lat=38.7139&lon=-9.1394&radius=500&_t=$RANDOM"; do
-              res=$(curl -s -D cab.txt -o corpo.txt -w "%{http_code} %{time_total}s %{size_download}B" --max-time 30 "$base$caminho" || echo "falhou(curl $?)")
-              extra=$(grep -iE "^(retry-after|x-cloud-trace|server|via|x-served-by|content-type):" cab.txt 2>/dev/null | tr -d '\r' | tr '\n' ' ')
-              echo "--- $caminho -> $res | $extra" >> "$out"
-              head -c 220 corpo.txt 2>/dev/null | tr '\n' ' ' >> "$out"; echo >> "$out"
-            done
-            sleep 8
+          pedir() { # $1 = etiqueta, $2 = caminho
+            r=$(curl -s -o "/tmp/c_$1.txt" -w "%{http_code} %{time_total}s %{size_download}B" --max-time 40 "$base$2" || echo "falhou")
+            echo "$(date -u +%H:%M:%S) [$1] $2 -> $r | $(head -c 120 /tmp/c_$1.txt 2>/dev/null | tr '\n' ' ')" >> "$out"
+          }
+
+          echo "===== A: 10 pedidos simples em paralelo =====" >> "$out"
+          for i in $(seq 1 10); do pedir "A$i" "/api/transit/loading-status?x=$i" & done; wait
+          sleep 5
+
+          echo "===== B: pedido lento + pedidos simples ao mesmo tempo =====" >> "$out"
+          pedir "B-lento" "/api/transit/nearby?lat=38.7253&lon=-9.15&radius=1000&_t=$RANDOM" &
+          sleep 1
+          for i in $(seq 1 5); do pedir "B$i" "/api/transit/loading-status?y=$i" & sleep 1; done
+          wait
+          sleep 5
+
+          echo "===== C: pedidos do telemóvel, um de cada vez =====" >> "$out"
+          for volta in $(seq 1 8); do
+            pedir "C$volta-estado" "/api/transit/loading-status"
+            pedir "C$volta-perto-porto" "/api/transit/nearby?lat=41.1486&lon=-8.5856&radius=1000&_t=$RANDOM"
+            pedir "C$volta-perto-lisboa" "/api/transit/nearby?lat=38.7139&lon=-9.1394&radius=1000&_t=$RANDOM"
+            pedir "C$volta-linhas" "/api/lines?near=41.1486,-8.5856&r=800"
+            sleep 10
           done
           cat "$out"
 
       - name: Guardar o resultado no ramo diagnostico
+        if: always()
         run: |
           mkdir pub && cd pub && git init -q -b diagnostico
           cp ../resultado.txt .
