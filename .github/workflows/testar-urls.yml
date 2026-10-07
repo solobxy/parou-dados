@@ -1,0 +1,36 @@
+name: Testar endereços
+
+# Pede uma lista de endereços a partir de uma máquina do GitHub e guarda o código,
+# o tempo e o início da resposta no ramo "testar-urls".
+
+on:
+  workflow_dispatch:
+    inputs:
+      urls:
+        description: "Endereços separados por espaço"
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  testar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Testar
+        env:
+          URLS: ${{ inputs.urls }}
+        run: |
+          for u in $URLS; do
+            r=$(curl -s -L -o corpo -w "%{http_code} %{time_total}s %{size_download}B" -m 90 "$u" || echo falhou)
+            echo "--- $u -> $r" >> resultado.txt
+            head -c 1500 corpo >> resultado.txt 2>/dev/null; echo >> resultado.txt
+          done
+          cat resultado.txt
+      - name: Guardar
+        if: always()
+        run: |
+          mkdir pub && cp resultado.txt pub/ && cd pub && git init -q -b testar-urls
+          git config user.name "parou-dados"; git config user.email "actions@users.noreply.github.com"
+          git add -A && git commit -q -m "Teste" && git push -q -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" testar-urls
