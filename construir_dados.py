@@ -336,6 +336,11 @@ CREATE INDEX IF NOT EXISTS idx_trips_feed ON trips (feed_id);
 CREATE INDEX IF NOT EXISTS idx_trips_service ON trips (feed_id, service_id);
 CREATE INDEX IF NOT EXISTS idx_stop_times_stop ON stop_times (stop_id, departure_secs);
 CREATE INDEX IF NOT EXISTS idx_stop_times_trip_seq ON stop_times (trip_id, stop_sequence);
+-- A app cria estes dois índices ao abrir a base. Se forem criados lá, ficam sem estatísticas
+-- (o ANALYZE só corre aqui) e o SQLite passa a usar o índice por feed_id em consultas por viagem,
+-- o que torna as partidas ~100x mais lentas. Criados aqui antes do ANALYZE, ficam com estatísticas.
+CREATE INDEX IF NOT EXISTS idx_stop_times_trip ON stop_times (trip_id);
+CREATE INDEX IF NOT EXISTS idx_stop_times_feed ON stop_times (feed_id);
 CREATE INDEX IF NOT EXISTS idx_calendar_lookup ON calendar (feed_id, service_id);
 CREATE INDEX IF NOT EXISTS idx_cal_dates_feed_date ON calendar_dates (feed_id, date);
 CREATE INDEX IF NOT EXISTS idx_freq_trip ON frequencies (feed_id, trip_id);
