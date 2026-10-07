@@ -72,13 +72,16 @@ jobs:
             h -X DELETE "$API/ssh_keys/$KID"; KID=""
           fi
           if [ -z "$KID" ]; then
-            KID=$(h -X POST "$API/ssh_keys" -d "$(jq -n --arg k "$PUB" '{name:"github-parou", public_key:$k}')" | jq -r .ssh_key.id)
+            R=$(curl -sS -H "Authorization: Bearer $HCLOUD_TOKEN" -H "Content-Type: application/json" -X POST "$API/ssh_keys" -d "$(jq -n --arg k "$PUB" '{name:"github-parou", public_key:$k}')")
+            KID=$(echo "$R" | jq -r '.ssh_key.id // empty')
+            if [ -z "$KID" ]; then echo "ERRO ao registar a chave SSH: $(echo "$R" | jq -c .error)" >> resultado.txt; exit 1; fi
           fi
           echo "Chave SSH na Hetzner: $KID" >> resultado.txt
           # Apaga o servidor antigo
           for id in $(h "$API/servers?name=parou" | jq -r '.servers[].id'); do
             echo "A apagar o servidor $id" >> resultado.txt
-            h -X DELETE "$API/servers/$id" > /dev/null
+            R=$(curl -sS -H "Authorization: Bearer $HCLOUD_TOKEN" -X DELETE "$API/servers/$id")
+            if echo "$R" | jq -e .error >/dev/null 2>&1; then echo "ERRO ao apagar: $(echo "$R" | jq -c .error)" >> resultado.txt; exit 1; fi
           done
           sleep 20
           # Cria o novo (tenta Nuremberga, Falkenstein e Helsínquia)
