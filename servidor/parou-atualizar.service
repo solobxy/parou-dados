@@ -1,0 +1,9 @@
+[Unit]
+Description=PAROU.PT - verificar código novo no GitHub e atualizar
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/parou-atualizar
+TimeoutStartSec=25min

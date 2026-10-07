@@ -1,0 +1,9 @@
+#!/bin/bash
+# Atualiza os scripts do servidor a partir do GitHub e corre o atualizar.sh mais recente.
+# Copia-o primeiro para /run, para o git nunca mexer num script que está a correr.
+set -euo pipefail
+exec 9>/run/parou-atualizar.lock
+flock -n 9 || exit 0
+git -C /opt/parou/servidor fetch -q origin main && git -C /opt/parou/servidor reset -q --hard origin/main || true
+install -m 755 /opt/parou/servidor/servidor/atualizar.sh /run/parou-atualizar.sh
+exec /run/parou-atualizar.sh
