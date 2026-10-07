@@ -1,0 +1,41 @@
+name: Sondar o servidor
+
+# Testa de fora o servidor próprio: portas abertas, http, https e a página de estado.
+# Guarda o resultado no ramo "sondar-servidor".
+
+on:
+  workflow_dispatch:
+    inputs:
+      ip:
+        description: "IPv4 do servidor"
+        required: true
+        default: "2.31.13.85"
+
+permissions:
+  contents: write
+
+jobs:
+  sondar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Sondar
+        run: |
+          ip="${{ inputs.ip }}"; host="${ip//./-}.sslip.io"; out=resultado.txt
+          echo "$(date -u +%H:%M:%S) UTC  servidor $ip  ($host)" > $out
+          for p in 22 80 443; do (timeout 5 bash -c "echo > /dev/tcp/$ip/$p" && echo "porta $p: aberta" || echo "porta $p: fechada") >> $out; done
+          for u in "http://$ip/" "http://$host/" "https://$host/_estado-servidor" "https://$host/health" "https://$host/api/transit/loading-status" "https://$host/api/transit/nearby?lat=38.7253&lon=-9.15&radius=1000" "https://$host/api/lines?near=41.1486,-8.5856&r=800" "https://$host/"; do
+            r=$(curl -s -o corpo.txt -w "%{http_code} %{time_total}s %{size_download}B" -m 40 "$u" 2>&1 || echo "falhou")
+            echo "--- $u -> $r" >> $out
+            head -c 1500 corpo.txt >> $out 2>/dev/null; echo >> $out
+          done
+          cat $out
+
+      - name: Guardar o resultado
+        if: always()
+        run: |
+          mkdir pub && cp resultado.txt pub/ && cd pub && git init -q -b sondar-servidor
+          git config user.name "parou-dados"
+          git config user.email "actions@users.noreply.github.com"
+          git add -A && git commit -q -m "Sondagem $(date -u +%Y-%m-%dT%H:%MZ)"
+          git push -q -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" sondar-servidor
