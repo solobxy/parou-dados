@@ -67,7 +67,9 @@ if ! runuser -u parou -- env HOME=$BASE NODE_OPTIONS=--max-old-space-size=2048 b
   set -e
   git clone -q --depth 1 '$REPO' '$DIR'
   cd '$DIR'
-  npm ci --no-audit --no-fund || npm install --no-audit --no-fund
+  # O package-lock.json do AI Studio tem conflitos de versões (o AI Studio instala com o bun);
+  # --legacy-peer-deps instala na mesma, como o bun faz.
+  npm ci --no-audit --no-fund --legacy-peer-deps || npm install --no-audit --no-fund --legacy-peer-deps
   npm run build
   test -f dist/index.html
 " > "$LOG" 2>&1; then
