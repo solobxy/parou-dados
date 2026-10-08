@@ -1,0 +1,78 @@
+10:02:57 UTC  servidor 2.31.13.85  (2-31-13-85.sslip.io)
+porta 22: aberta
+porta 80: aberta
+porta 443: aberta
+--- http://2.31.13.85/ -> 308 0.246323s 0B
+
+--- http://2-31-13-85.sslip.io/ -> 308 0.366178s 0B
+
+--- https://2-31-13-85.sslip.io/_estado-servidor -> 200 0.522462s 3818B
+Atualizado: 2026-10-08T10:00:41Z
+Versão em uso: b35e2133afe6ececc336f3fe8ddf11295cde0415
+Última tentativa: versão b35e213 instalada às 10:00 UTC
+App: active  Caddy: active
+Node: v22.23.3
+Memória (MB): total 3819, usada 550, disponível 3268
+Disco: 6.4G usados de 38G (18%)
+Base de horários: 315731968 bytes, Oct 7 21:42
+Ligado desde: 2026-10-07 21:27:37
+
+--- Últimas linhas da app ---
+[GTFS Engine] A sincronizar Carris Metropolitana através de API v2 oficial...
+[GTFS Engine] Carris Metropolitana sincronizada em 343ms: 717 linhas, 12752 paragens, 748 veículos em tempo real.
+[Central Alerts Engine] A sincronizar alertas oficiais de todas as fontes reais...
+[Central Alerts Engine] Sincronização concluída. Total: 168 alertas auditados.
+[GTFS Engine] A sincronizar Carris Metropolitana através de API v2 oficial...
+[GTFS Engine] Carris Metropolitana sincronizada em 329ms: 717 linhas, 12752 paragens, 751 veículos em tempo real.
+[Central Alerts Engine] A sincronizar alertas oficiais de todas as fontes reais...
+[Central Alerts Engine] Sincronização concluída. Total: 168 alertas auditados.
+[Polling Engine 5 min] Sincronização periódica geral das fontes...
+[Alertas] rss:https://24.sapo.pt/rss: HTTP 403 em https://24.sapo.pt/rss
+[GTFS Engine] A sincronizar Carris Metropolitana através de API v2 oficial...
+[GTFS Engine] Carris Metropolitana sincronizada em 367ms: 717 linhas, 12752 paragens, 753 veículos em tempo real.
+[Central Alerts Engine] A sincronizar alertas oficiai
+--- https://2-31-13-85.sslip.io/health -> 200 0.511638s 2B
+OK
+--- https://2-31-13-85.sslip.io/api/transit/loading-status -> 200 0.510551s 236B
+{"isLoading":false,"totalOperators":29,"loadedOperators":26,"currentOperator":"","currentFeedId":"","message":"Todos os operadores carregados","updatedAt":"2026-10-08T10:00:43.490Z","dataset_built_at":"2026-10-07T18:21:55.621352+00:00"}
+--- https://2-31-13-85.sslip.io/api/transit/nearby?lat=38.7253&lon=-9.15&radius=1000 -> 200 2.259123s 156247B
+{"stops":[{"id":"metro_lisboa:MP","name":"Marquês de Pombal","operatorId":"metro_lisboa","operatorName":"Metro de Lisboa","transportMode":"Metro","latitude":38.72488,"longitude":-9.150807,"lat":38.72488,"lon":-9.150807,"locality":"Portugal","district":"Portugal","distanceMeters":84,"formattedDistance":"84 m","walkingMinutes":1,"lines":[{"code":"Az","name":"Azul","color":"#6699cc","destination":""},{"code":"Am","name":"Amarela","color":"#ffcc00","destination":"","frequencyMinutes":3}],"nextDepartures":[{"lineCode":"Am","lineName":"Amarela","lineColor":"#ffcc00","destination":"Odivelas","operatorName":"Metro de Lisboa","operatorId":"metro_lisboa","transportMode":"Metro","departureTime":"11:05 · Programado · daqui a ~3 min","displayText":"11:05 · Programado · daqui a ~3 min","scheduledTime":"11:05","etaMinutes":3,"departureMinutes":3,"isRealtime":false,"state":"PROGRAMADO","statusDescription":"Horário oficial programado"},{"lineCode":"Am","lineName":"Amarela","lineColor":"#ffcc00","destination":"Rato","operatorName":"Metro de Lisboa","operatorId":"metro_lisboa","transportMode":"Metro","departureTime":"11:08 · Programado · daqui a ~6 min","displayText":"11:08 · Programado · daqui a ~6 min","scheduledTime":"11:08","etaMinutes":6,"departureMinutes":6,"isRealtime":false,"state":"PROGRAMADO","statusDescription":"Horário oficial programado"},{"lineCode":"Az","lineName":"Azul","lineColor":"#6699cc","destination":"Santa Apolónia","operatorName":"Metro de Lisboa","operatorId"
+--- https://2-31-13-85.sslip.io/api/lines?near=41.1486,-8.5856&r=800 -> 200 1.120515s 32428B
+{"lines":[{"id":"stcp:205","code":"205","name":"CAMPANHÃ-CASTELO DO QUEIJO","color":"#187EC2","mode":"Autocarro","operator":"STCP","operator_id":"stcp","feed_id":"stcp","nearest_stop":{"id":"stcp:CMP2","name":"CAMPANHÃ","distance_meters":40,"lat":41.148467,"lon":-8.586038},"destinations":["Cast. Queijo"],"first_departure":"11:01","last_departure":"15:07","departures":[{"direction_id":0,"destination":"Cast. Queijo","stop_name":"CAMPANHÃ","time":"11:29","state":"Tempo Real","countdown_minutes":26,"displayText":"daqui a 26 min"},{"direction_id":0,"destination":"Cast. Queijo","stop_name":"CAMPANHÃ","time":"12:00","state":"Programado","countdown_minutes":57,"displayText":"daqui a 57 min","aviso_horario":"horário possivelmente desatualizado"},{"direction_id":1,"destination":"Campanhã","stop_name":"NOEDA","time":"11:19","state":"Tempo Real","countdown_minutes":16,"displayText":"daqui a 16 min"},{"direction_id":1,"destination":"Campanhã","stop_name":"NOEDA","time":"11:49","state":"Tempo Real","countdown_minutes":46,"displayText":"daqui a 46 min"}]},{"id":"cp:Marco_Penafiel","code":"Marco","name":"Linha do Marco → Penafiel","color":"#0000FF","mode":"Comboio","operator":"CP – Comboios de Portugal","operator_id":"cp","feed_id":"cp","nearest_stop":{"id":"cp:94_2006","name":"Porto Campanha","distance_meters":65,"lat":41.14871926,"lon":-8.584835348},"destinations":["Penafiel"],"first_departure":"11:05","last_departure":"14:05","departures":[{"direction_id":0,"destination":"Penaf
+--- https://2-31-13-85.sslip.io/ -> 200 0.659052s 17084B
+<!doctype html>
+<html lang="pt-PT" dir="ltr">
+  <head>
+    <script type="text/javascript">(function() {
+  const levels = ['log', 'info', 'warn', 'error', 'debug'];
+  levels.forEach(function(level) {
+    const orig = console[level];
+    console[level] = function(...args) {
+      for (let i = 0; i < args.length; i++) {
+        const arg = args[i];
+        if (typeof arg === 'string') {
+          if (arg.includes('[vite]') || arg.includes('[hmr]') || arg.includes('WebSocket') || arg.includes('websocket') || arg.includes('ws://') || arg.includes('wss://')) {
+            return;
+          }
+        } else if (arg && typeof arg === 'object' && typeof arg.message === 'string') {
+          if (arg.message.includes('[vite]') || arg.message.includes('[hmr]') || arg.message.includes('WebSocket') || arg.message.includes('websocket')) {
+            return;
+          }
+        }
+      }
+      if (orig) orig.apply(console, args);
+    };
+  });
+
+  window.addEventListener('error', function(e) {
+    const msg = e && e.message ? String(e.message) : '';
+    const src = e && e.filename ? String(e.filename) : '';
+    if (msg.includes('vite') || msg.includes('WebSocket') || msg.includes('websocket') || src.includes('@vite')) {
+      e.preventDefault();
+      e.stopImmediatePropagation();
+    }
+  }, true);
+
+  window.addEventListener('unhandledrejection', function(e) {
+    const reason = e && e.reason ? String(e.reason.message || e.reason) : '';
+    if (reason.includes('vite') || reason.includes('WebS
