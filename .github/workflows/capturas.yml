@@ -43,7 +43,7 @@ jobs:
         working-directory: app
         run: |
           mkdir -p dados
-          NODE_ENV=production PORT=3000 PAROU_DATA_DIR=$PWD/dados TZ=Europe/Lisbon nohup node --import tsx server.ts > app.log 2>&1 &
+          NODE_ENV=production PORT=3000 PAROU_DATA_DIR=$PWD/dados TZ=Europe/Lisbon FOGOS_TESTE=1 nohup node --import tsx server.ts > app.log 2>&1 &
           for i in $(seq 1 60); do curl -s -m 5 http://127.0.0.1:3000/api/transit/loading-status | grep -q '"isLoading":false' && break; sleep 5; done
           curl -s http://127.0.0.1:3000/api/transit/loading-status
 
