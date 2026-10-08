@@ -1,0 +1,8 @@
+[27-404] consola: Failed to load resource: the server responded with a status of 404 (Not Found)
+[instalavel] erros: []
+[instalavel] manifesto: http://127.0.0.1:3000/manifest.webmanifest erros=[]
+[instalavel] service worker: {"controlado":true,"ativo":true,"ambito":"http://127.0.0.1:3000/"}
+[11] ao abrir: scrollY=0 doc=844 janela=844 cabecalho_top=0
+[11] depois de deslizar: scrollY=0 doc=844 janela=844 cabecalho_top=0
+[11] depois de voltar: url=http://127.0.0.1:3000/ painel=0
+[12] favoritos depois de apagar o browser: linhas=["stcp:801","metro_porto:D"] favoritos=[{"id":"line-stcp:801","type":"linha","category":"transportes","title":"801 test

@@ -1,0 +1,8 @@
+chave VAPID: BNKPqnblp9QW…
+ligação ao serviço de push: 200
+registo: 200 updates.push.services.mozilla.com
+subscrever: 200 {"ok":true}
+pedir teste: 200 {"ok":true}
+NOTIFICAÇÃO RECEBIDA E DECIFRADA: {"title":"PAROU · notificações ligadas","body":"Vais receber aqui greves, avisos de mau tempo e perturbações graves nos distritos que escolheste.","url":"/alertas","tag":"parou-teste"}
+estado: {"subscricoes":1,"ultimoCiclo":null,"candidatosAgora":[{"titulo":"Incêndio · Gondomar","corpo":"Covelo · Em Curso · 64 operacionais, 2 meios aéreos (Fogos.pt)","distritos":["Porto"],"urgente":true}]}
+[Push] Chaves VAPID novas criadas

@@ -1,0 +1,17 @@
+<link rel="manifest" href="/manifest.webmanifest">
+registerSW.js
+apple-touch-icon.png
+assets
+badge-96.png
+favicon.svg
+icon-192.png
+icon-512.png
+icon-maskable-512.png
+icon.svg
+index.html
+manifest.webmanifest
+og-image.png
+registerSW.js
+sw-push-handler.js
+sw.js
+workbox-9c191d2f.js
