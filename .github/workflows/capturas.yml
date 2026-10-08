@@ -69,6 +69,72 @@ jobs:
           curl -s -m 30 "http://127.0.0.1:3000/manifest.webmanifest" -o cap/manifest.json || true
           (grep -o '<link[^>]*manifest[^>]*>' app/dist/index.html; grep -o 'registerSW[^"]*' app/dist/index.html; ls app/dist | head -40) > cap/dist.txt 2>&1 || true
 
+      - name: Teste das notificações push (serviço real da Mozilla)
+        continue-on-error: true
+        run: |
+          mkdir -p cap
+          cat > push-e2e.mjs <<'EOF'
+          import crypto from 'crypto';
+          import fs from 'fs';
+          const base = 'http://127.0.0.1:3000';
+          const out = [];
+          const log = (...a) => { out.push(a.join(' ')); console.log(...a); };
+          try {
+            const { chave } = await (await fetch(base + '/api/push/chave')).json();
+            log('chave VAPID:', chave ? chave.slice(0, 12) + '…' : 'NENHUMA');
+            const ws = new WebSocket('wss://push.services.mozilla.com/');
+            const fila = [];
+            let acordar = null;
+            ws.onmessage = (e) => { fila.push(JSON.parse(e.data)); if (acordar) acordar(); };
+            const proxima = (tipo, ms = 20000) => new Promise((res, rej) => {
+              const t = setTimeout(() => rej(new Error('sem resposta: ' + tipo)), ms);
+              const ver = () => { const i = fila.findIndex((m) => m.messageType === tipo); if (i >= 0) { clearTimeout(t); acordar = null; res(fila.splice(i, 1)[0]); } };
+              acordar = ver; ver();
+            });
+            await new Promise((res, rej) => { ws.onopen = res; ws.onerror = rej; });
+            ws.send(JSON.stringify({ messageType: 'hello', use_webpush: true, broadcasts: {} }));
+            const hello = await proxima('hello');
+            log('ligação ao serviço de push:', hello.status);
+            const channelID = crypto.randomUUID();
+            ws.send(JSON.stringify({ messageType: 'register', channelID, key: chave }));
+            const reg = await proxima('register');
+            log('registo:', reg.status, reg.pushEndpoint ? new URL(reg.pushEndpoint).host : '');
+            const ua = crypto.createECDH('prime256v1'); ua.generateKeys();
+            const auth = crypto.randomBytes(16);
+            const subscricao = { endpoint: reg.pushEndpoint, keys: { p256dh: ua.getPublicKey().toString('base64url'), auth: auth.toString('base64url') } };
+            let r = await fetch(base + '/api/push/subscrever', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ subscricao, distritos: ['Porto'] }) });
+            log('subscrever:', r.status, await r.text());
+            r = await fetch(base + '/api/push/teste', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ endpoint: reg.pushEndpoint }) });
+            log('pedir teste:', r.status, await r.text());
+            const n = await proxima('notification');
+            ws.send(JSON.stringify({ messageType: 'ack', updates: [{ channelID: n.channelID, version: n.version }] }));
+            const corpo = Buffer.from(n.data, 'base64url');
+            const salt = corpo.subarray(0, 16);
+            const idlen = corpo[20];
+            const asPub = corpo.subarray(21, 21 + idlen);
+            const cifrado = corpo.subarray(21 + idlen);
+            const hmac = (k, d) => crypto.createHmac('sha256', k).update(d).digest();
+            const prkKey = hmac(auth, ua.computeSecret(asPub));
+            const ikm = hmac(prkKey, Buffer.concat([Buffer.from('WebPush: info\0', 'latin1'), ua.getPublicKey(), asPub, Buffer.from([1])]));
+            const prk = hmac(salt, ikm);
+            const cek = hmac(prk, Buffer.from('Content-Encoding: aes128gcm\0\x01', 'latin1')).subarray(0, 16);
+            const nonce = hmac(prk, Buffer.from('Content-Encoding: nonce\0\x01', 'latin1')).subarray(0, 12);
+            const d = crypto.createDecipheriv('aes-128-gcm', cek, nonce);
+            d.setAuthTag(cifrado.subarray(cifrado.length - 16));
+            const claro = Buffer.concat([d.update(cifrado.subarray(0, cifrado.length - 16)), d.final()]);
+            log('NOTIFICAÇÃO RECEBIDA E DECIFRADA:', claro.subarray(0, claro.lastIndexOf(2)).toString('utf8'));
+            r = await fetch(base + '/api/push/estado');
+            log('estado:', (await r.text()).slice(0, 1500));
+            ws.close();
+          } catch (err) {
+            log('FALHOU:', err?.message || err);
+          }
+          fs.writeFileSync('cap/push.txt', out.join('\n') + '\n');
+          process.exit(0);
+          EOF
+          timeout 90 node push-e2e.mjs || true
+          grep -i "push" app/app.log | tail -20 >> cap/push.txt || true
+
       - name: Tirar capturas
         run: |
           mkdir -p cap && cd cap && npm init -y >/dev/null && npm i --no-audit --no-fund playwright@1 >/dev/null && npx playwright install --with-deps chromium >/dev/null
