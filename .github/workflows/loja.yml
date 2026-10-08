@@ -1,0 +1,79 @@
+name: Imagens para a Play Store
+
+# Tira as capturas de ecrã da app (1080x1920, como pede a Play Store) a partir do site em
+# produção e faz a imagem de destaque (1024x500). Resultado na release "loja".
+
+on:
+  workflow_dispatch:
+    inputs:
+      site:
+        description: "Endereço do site"
+        required: false
+        default: "https://2-31-13-85.sslip.io"
+
+permissions:
+  contents: write
+
+jobs:
+  loja:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Capturas
+        run: |
+          mkdir loja && cd loja && npm init -y >/dev/null && npm i --no-audit --no-fund playwright@1 >/dev/null && npx playwright install --with-deps chromium >/dev/null
+          cat > fazer.mjs <<'FIM'
+          import { chromium } from 'playwright';
+          const base = process.env.SITE;
+          const browser = await chromium.launch();
+          const tel = { viewport: { width: 360, height: 640 }, deviceScaleFactor: 3, isMobile: true, hasTouch: true, locale: 'pt-PT', timezoneId: 'Europe/Lisbon' };
+          const porto = { geolocation: { latitude: 41.1462, longitude: -8.6110 }, permissions: ['geolocation'] };
+          const lisboa = { geolocation: { latitude: 38.7107, longitude: -9.1365 }, permissions: ['geolocation'] };
+          async function cap(nome, op, caminho, acao, espera = 9000) {
+            const ctx = await browser.newContext({ ...tel, ...op });
+            const p = await ctx.newPage();
+            await p.goto(base + caminho, { waitUntil: 'load', timeout: 60000 });
+            await p.waitForTimeout(espera);
+            if (acao) { try { await acao(p); } catch (e) { console.log(nome, e.message); } await p.waitForTimeout(3500); }
+            await p.screenshot({ path: `${nome}.png` });
+            await ctx.close();
+          }
+          await cap('1-perto-porto', porto, '/');
+          await cap('2-paragem', porto, '/', async (p) => {
+            const el = p.locator('[data-teste="paragem-perto"]:visible').first();
+            if (await el.count()) await el.click(); else await p.locator('.custom-stop-marker-icon').first().click({ force: true });
+          });
+          await cap('3-perto-lisboa', lisboa, '/');
+          await cap('4-horarios', porto, '/transportes');
+          await cap('5-alertas', porto, '/alertas');
+          await cap('6-mapa', porto, '/mapa');
+          // Imagem de destaque 1024x500
+          const ctx = await browser.newContext({ viewport: { width: 1024, height: 500 } });
+          const p = await ctx.newPage();
+          await p.setContent(`<!doctype html><html><head><link href="https://fonts.googleapis.com/css2?family=Barlow:wght@500;700&family=Barlow+Condensed:wght@700&display=swap" rel="stylesheet"></head>
+          <body style="margin:0;width:1024px;height:500px;background:#111111;display:flex;align-items:center;font-family:Barlow,sans-serif;overflow:hidden">
+            <div style="padding:0 0 0 80px;display:flex;align-items:center;gap:44px">
+              <svg width="190" height="190" viewBox="0 0 100 100"><path d="M12 0H80L100 20V88Q100 100 88 100H12Q0 100 0 88V12Q0 0 12 0Z" fill="#FFFFFF"/><path d="M34 80V25H56L66 35V57H52" fill="none" stroke="#111111" stroke-width="10"/><circle cx="49" cy="57" r="6.5" fill="#FF6B1A" stroke="#FFFFFF" stroke-width="3"/></svg>
+              <div>
+                <div style="font-family:'Barlow Condensed';font-weight:700;font-size:108px;letter-spacing:4px;color:#FFFFFF;line-height:1">PAROU</div>
+                <div style="font-size:34px;font-weight:500;color:#FFFFFF;margin-top:14px;line-height:1.2">O que passa perto de ti,<br><span style="color:#FF6B1A;font-weight:700">em tempo real.</span></div>
+                <div style="font-size:20px;color:#9A9A9A;margin-top:18px">Autocarros · Metro · Comboios · Alertas · Gratuita</div>
+              </div>
+            </div>
+          </body></html>`);
+          await p.waitForTimeout(2500);
+          await p.screenshot({ path: 'destaque-1024x500.png' });
+          await browser.close();
+          FIM
+          SITE="${{ inputs.site }}" node fazer.mjs
+          ls -la *.png
+      - name: Publicar
+        working-directory: loja
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release view loja -R ${{ github.repository }} >/dev/null 2>&1 || gh release create loja -R ${{ github.repository }} --title "Imagens para a Play Store" --notes "Capturas 1080x1920 e imagem de destaque 1024x500."
+          gh release upload loja -R ${{ github.repository }} *.png --clobber
