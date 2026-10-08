@@ -1,0 +1,1 @@
+--- https://paragens.amp.pt/geoserver/paragens/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=paragens:paragens_geoserver&outputFormat=application/json&srsName=EPSG:4326&maxFeatures=5 -> 000 90.002602s 0Bfalhou
