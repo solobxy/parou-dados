@@ -67,6 +67,24 @@ jobs:
           curl -s -m 60 "http://127.0.0.1:3000/api/mapa" -o cap/mapa.json || true
           curl -s -m 60 "http://127.0.0.1:3000/api/incendios" -o cap/incendios.json || true
           curl -s -m 30 "http://127.0.0.1:3000/manifest.webmanifest" -o cap/manifest.json || true
+          # SEO: estados, metadados e sitemaps das páginas públicas
+          {
+            for u in / /linhas /linhas/stcp /linhas/carris-metropolitana /paragens/stcp /greves /pesquisa?q=801 /sitemap.xml /sitemap-paginas.xml /isto-nao-existe /transportes /favoritos /linha/stcp:801 /paragem/stcp:PSL1; do
+              r=$(curl -s -o corpo.html -w "%{http_code} %{time_total}s %{size_download}B %{redirect_url}" -m 60 "http://127.0.0.1:3000$u")
+              echo "== $u -> $r"
+              grep -o '<title>[^<]*</title>' corpo.html | head -1
+              grep -o '<meta name="description" content="[^"]*"' corpo.html | head -1
+              grep -o '<link rel="canonical" href="[^"]*"' corpo.html | head -1
+              grep -o '<meta name="robots" content="[^"]*"' corpo.html | head -1
+            done
+            echo "== robots (parou.pt)"; curl -s -H 'Host: parou.pt' http://127.0.0.1:3000/robots.txt
+            echo "== sitemap-linhas (início)"; curl -s -m 60 http://127.0.0.1:3000/sitemap-linhas.xml | head -c 1500; echo
+            echo "== contagem de endereços"; curl -s -m 60 http://127.0.0.1:3000/sitemap-linhas.xml | grep -c '<loc>'; curl -s -m 120 http://127.0.0.1:3000/sitemap-paragens-1.xml | grep -c '<loc>'
+            L=$(curl -s -m 60 http://127.0.0.1:3000/sitemap-linhas.xml | grep -o '<loc>[^<]*</loc>' | sed 's/<[^>]*>//g' | sed 's#https://parou.pt##' | shuf -n 25 --random-source=<(yes))
+            P=$(curl -s -m 120 http://127.0.0.1:3000/sitemap-paragens-1.xml | grep -o '<loc>[^<]*</loc>' | sed 's/<[^>]*>//g' | sed 's#https://parou.pt##' | shuf -n 25 --random-source=<(yes))
+            echo "== amostra (25 linhas + 25 paragens)"
+            for u in $L $P; do curl -s -o /dev/null -w "%{http_code} %{time_total}s $u\n" -m 60 "http://127.0.0.1:3000$u"; done
+          } > cap/seo.txt 2>&1 || true
           (grep -o '<link[^>]*manifest[^>]*>' app/dist/index.html; grep -o 'registerSW[^"]*' app/dist/index.html; ls app/dist | head -40) > cap/dist.txt 2>&1 || true
 
       - name: Teste das notificações push (serviço real da Mozilla)
@@ -153,7 +171,7 @@ jobs:
             await page.waitForTimeout(espera);
             if (acao) { try { await acao(page); } catch (e) { registo.push(`[${nome}] ação: ${String(e).slice(0, 200)}`); } await page.waitForTimeout(4000); }
             await page.screenshot({ path: `${nome}.png` });
-            if (nome.includes('alertas') || nome.includes('privacidade')) await page.screenshot({ path: `${nome}-inteira.png`, fullPage: true });
+            if (nome.includes('alertas') || nome.includes('privacidade') || nome.includes('seo')) await page.screenshot({ path: `${nome}-inteira.png`, fullPage: true });
             await ctx.close();
           }
           const porto = { geolocation: { latitude: 41.1462, longitude: -8.6110 }, permissions: ['geolocation'] };
@@ -198,6 +216,13 @@ jobs:
           await captura('25-reportar', porto, '/mapa', async (p) => { await p.locator('button:has-text("Reportar")').first().click(); }, 6000);
           await captura('26-linha', porto, '/transportes', async (p) => { await p.locator('text=Linhas').first().scrollIntoViewIfNeeded(); await p.locator('h3:has-text("Linha Azul")').first().click(); }, 8000);
           await captura('27-404', {}, '/isto-nao-existe', null, 4000);
+          // Páginas públicas (SEO)
+          await captura('30-seo-linhas', {}, '/linhas', null, 3000);
+          await captura('31-seo-linha-stcp', {}, '/linhas/stcp', async (p) => { await p.locator('ul.lista a').first().click(); }, 3000);
+          await captura('32-seo-linha-cm', {}, '/linhas/carris-metropolitana', async (p) => { await p.locator('ul.lista a').nth(40).click(); }, 3000);
+          await captura('33-seo-paragem', {}, '/paragens/metro-de-lisboa', async (p) => { await p.locator('ul.lista a').nth(20).click(); }, 3000);
+          await captura('34-seo-paragem-cm', {}, '/paragens/carris-metropolitana', async (p) => { await p.locator('ul.lista a').nth(120).click(); }, 3000);
+          await captura('35-seo-greves', {}, '/greves', null, 3000);
           // O Chrome considera a PAROU instalável? (sem isto não aparece o pedido "Instalar app")
           {
             const ctx = await browser.newContext({ ...telemovel });
