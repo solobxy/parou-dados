@@ -3,6 +3,8 @@ name: Dados PAROU.PT
 on:
   schedule:
     - cron: "30 3 * * *"
+    # Segunda volta à tarde: se a da manhã falhar ou atrasar, os horários não ficam velhos
+    - cron: "17 15 * * *"
   workflow_dispatch:
 
 permissions:
