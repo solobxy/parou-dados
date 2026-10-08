@@ -321,6 +321,12 @@ CREATE TABLE IF NOT EXISTS frequencies (
   exact_times INTEGER DEFAULT 0
 );
 CREATE TABLE IF NOT EXISTS app_state (key TEXT PRIMARY KEY, value TEXT);
+-- Linhas que passam em cada paragem, para operadores sem horários na base (ex.: UNIR, cujos
+-- horários a app vai buscar à AMP a partir do telemóvel). direction_id e stop_sequence quando há.
+CREATE TABLE IF NOT EXISTS stop_routes (
+  feed_id TEXT NOT NULL, stop_id TEXT NOT NULL, route_id TEXT NOT NULL, direction_id INTEGER DEFAULT 0,
+  stop_sequence INTEGER, PRIMARY KEY (stop_id, route_id, direction_id)
+);
 """
 
 SCHEMA_INDEXES = """
@@ -347,6 +353,7 @@ CREATE INDEX IF NOT EXISTS idx_stop_times_feed ON stop_times (feed_id) WHERE 0;
 CREATE INDEX IF NOT EXISTS idx_calendar_lookup ON calendar (feed_id, service_id);
 CREATE INDEX IF NOT EXISTS idx_cal_dates_feed_date ON calendar_dates (feed_id, date);
 CREATE INDEX IF NOT EXISTS idx_freq_trip ON frequencies (feed_id, trip_id);
+CREATE INDEX IF NOT EXISTS idx_stop_routes_route ON stop_routes (route_id, direction_id, stop_sequence);
 """
 
 DATA_TABLES = {
@@ -1023,6 +1030,85 @@ def process_carris_metropolitana(conn, have_prev):
         return row
 
 
+UNIR_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "unir")
+UNIR_COR = "#002B49"
+
+
+def process_unir(conn):
+    """Rede UNIR (Área Metropolitana do Porto): paragens e linhas da AMP.
+
+    Os servidores da AMP só respondem a ligações de Portugal, por isso os dados vêm de ficheiros
+    deste repositório (unir/), obtidos a partir de um telemóvel em Portugal. Os horários não ficam
+    na base: a app pede as partidas à AMP diretamente do telemóvel de quem a usa.
+    """
+    fid = "unir"
+    base = {"id": fid, "operator_name": "UNIR", "mode": "Autocarro", "feed_type": "amp",
+            "source_origin": "seed", "url": "https://paragens.amp.pt/", "auth_type": "none",
+            "license_url": "https://www.unirmobilidade.pt/"}
+    try:
+        with open(os.path.join(UNIR_DIR, "paragens.json"), encoding="utf-8") as fh:
+            dados = json.load(fh)
+        paragens = dados.get("paragens") or []
+        if len(paragens) < 1000:
+            raise ValueError(f"só {len(paragens)} paragens no ficheiro")
+        nomes = {}
+        caminho_linhas = os.path.join(UNIR_DIR, "linhas.json")
+        if os.path.exists(caminho_linhas):
+            with open(caminho_linhas, encoding="utf-8") as fh:
+                nomes = {str(k): v for k, v in (json.load(fh).get("linhas") or {}).items()}
+        sequencias = {}
+        caminho_seq = os.path.join(UNIR_DIR, "sequencias.json")
+        if os.path.exists(caminho_seq):
+            with open(caminho_seq, encoding="utf-8") as fh:
+                for chave, lista in (json.load(fh).get("sequencias") or {}).items():
+                    for i, cod in enumerate(lista):
+                        sequencias[(chave, cod)] = i + 1
+        delete_feed(conn, fid)
+        conn.execute("DELETE FROM stop_routes WHERE feed_id = ?", (fid,))
+        linhas = set()
+        ligacoes = []
+        for p in paragens:
+            cod = str(p.get("c") or "").strip()
+            if not cod:
+                continue
+            for linha, sentido in p.get("l") or []:
+                linha = str(linha).strip()
+                if not linha:
+                    continue
+                linhas.add(linha)
+                ligacoes.append((fid, f"unir:{cod}", f"unir:{linha}", int(sentido or 0),
+                                 sequencias.get((f"{linha}_{int(sentido or 0)}", cod))))
+        insert_many(conn, "stops", (
+            (f"unir:{p['c']}", fid, p.get("n") or p.get("a") or f"Paragem {p['c']}",
+             float(p["la"]), float(p["lo"]), p.get("m") or "", None, 0)
+            for p in paragens if p.get("c")
+        ))
+        insert_many(conn, "routes", (
+            (f"unir:{l}", fid, l, (nomes.get(l) or {}).get("nome") or "", 3, (nomes.get(l) or {}).get("cor") or UNIR_COR)
+            for l in sorted(linhas)
+        ))
+        conn.executemany("INSERT OR REPLACE INTO stop_routes (feed_id, stop_id, route_id, direction_id, stop_sequence)"
+                         " VALUES (?, ?, ?, ?, ?)", ligacoes)
+        meta = dados.get("meta") or {}
+        log_fetch(conn, fid, "unir/paragens.json", 200, 0, 0,
+                  f"{len(linhas)} linhas e {len(paragens)} paragens (AMP, obtido em {meta.get('obtido', '?')})")
+        row = dict(base)
+        row.update({"status": "OK", "progress": "OK", "lines_count": len(linhas), "stops_count": len(paragens),
+                    "trips_count": 0, "realtime_entities": "Partidas da AMP (pedidas pelo telemóvel)",
+                    "valid_from": meta.get("obtido"), "last_ok": now_iso(), "last_fetch_at": now_iso()})
+        upsert_feed(conn, row)
+        conn.commit()
+        log(f"  OK  {fid}: {len(linhas)} linhas, {len(paragens)} paragens (ficheiro da AMP de {meta.get('obtido', '?')})")
+        return row
+    except Exception as err:  # noqa: BLE001
+        log(f"  ERRO {fid}: {err}")
+        row = dict(base)
+        row.update({"status": "ERROR", "progress": f"ERROR: {err}", "last_error": str(err), "last_fetch_at": now_iso()})
+        upsert_feed(conn, row)
+        conn.commit()
+        return row
+
+
 DIAS_COLUNA = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"]
 
 
@@ -1129,12 +1215,13 @@ def main():
             feeds.append(feed)
             seen_ids.add(feed["id"])
 
-    log(f"Operadores a carregar: {len(feeds)} + Carris Metropolitana (API)")
+    log(f"Operadores a carregar: {len(feeds)} + Carris Metropolitana (API) + UNIR (AMP)")
     results = []
     for i, feed in enumerate(feeds, 1):
         log(f"[{i}/{len(feeds)}] {feed['operator_name']}")
         results.append(process_feed(conn, feed, today_dt, have_prev))
     results.append(process_carris_metropolitana(conn, have_prev))
+    results.append(process_unir(conn))
 
     try:
         conn.execute("DETACH DATABASE prev")
