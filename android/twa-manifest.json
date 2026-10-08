@@ -1,0 +1,50 @@
+{
+  "packageId": "pt.parou.app",
+  "host": "parou.pt",
+  "name": "PAROU — Transportes em tempo real",
+  "launcherName": "PAROU",
+  "display": "standalone",
+  "orientation": "portrait",
+  "themeColor": "#FFFFFF",
+  "themeColorDark": "#111111",
+  "navigationColor": "#FFFFFF",
+  "navigationColorDark": "#111111",
+  "navigationDividerColor": "#E6E6E3",
+  "navigationDividerColorDark": "#111111",
+  "backgroundColor": "#FFFFFF",
+  "enableNotifications": true,
+  "startUrl": "/?origem=android",
+  "iconUrl": "https://2-31-13-85.sslip.io/icon-512.png",
+  "maskableIconUrl": "https://2-31-13-85.sslip.io/icon-maskable-512.png",
+  "monochromeIconUrl": "",
+  "splashScreenFadeOutDuration": 300,
+  "signingKey": {
+    "path": "./upload.keystore",
+    "alias": "parou"
+  },
+  "appVersionName": "1.0.0",
+  "appVersionCode": 1,
+  "shortcuts": [],
+  "generatorApp": "bubblewrap-cli",
+  "webManifestUrl": "https://2-31-13-85.sslip.io/manifest.webmanifest",
+  "fallbackType": "customtabs",
+  "features": {
+    "locationDelegation": {
+      "enabled": true
+    }
+  },
+  "alphaDependencies": {
+    "enabled": false
+  },
+  "enableSiteSettingsShortcut": true,
+  "isChromeOSOnly": false,
+  "isMetaQuest": false,
+  "fullScopeUrl": "https://parou.pt/",
+  "minSdkVersion": 21,
+  "fingerprints": [],
+  "additionalTrustedOrigins": [],
+  "retainedBundles": [],
+  "protocolHandlers": [],
+  "fileHandlers": [],
+  "appVersion": "1.0.0"
+}
