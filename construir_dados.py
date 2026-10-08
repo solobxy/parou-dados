@@ -1031,7 +1031,7 @@ def process_carris_metropolitana(conn, have_prev):
 
 
 UNIR_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "unir")
-UNIR_COR = "#002B49"
+UNIR_COR = "#CE9926"  # amarelo-torrado dos autocarros UNIR
 
 
 def process_unir(conn):
