@@ -1,9 +1,22 @@
 # PAROU.PT - Caddy (https automático com Let's Encrypt)
-# {HOST_TESTE} é substituído pelo endereço <ip-com-tracos>.sslip.io do servidor,
-# que serve para testar antes de o domínio parou.pt apontar para aqui.
+# {HOST_TESTE} é substituído pelo endereço <ip-com-tracos>.sslip.io do servidor (para testes).
+# Os blocos do parou.pt só entram quando o domínio já aponta para este servidor (o
+# atualizador confirma o DNS a cada 2 min): assim o certificado é pedido logo à primeira.
 
-{HOST_TESTE} {
+(app) {
 	encode zstd gzip
+	header {
+		Strict-Transport-Security "max-age=31536000"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		Permissions-Policy "geolocation=(self), camera=(), microphone=()"
+		-Server
+	}
+	reverse_proxy 127.0.0.1:3000
+}
+
+# Endereço de testes: tem também a página de estado do servidor (não aparece no parou.pt)
+{HOST_TESTE} {
 	handle /_estado-servidor {
 		root * /var/lib/parou-estado
 		rewrite * /estado.txt
@@ -11,5 +24,17 @@
 		header Cache-Control "no-store"
 		file_server
 	}
-	reverse_proxy 127.0.0.1:3000
+	import app
 }
+
+# INICIO parou.pt
+parou.pt {
+	import app
+}
+# FIM parou.pt
+
+# INICIO www.parou.pt
+www.parou.pt {
+	redir https://parou.pt{uri} permanent
+}
+# FIM www.parou.pt
