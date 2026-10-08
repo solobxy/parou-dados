@@ -64,6 +64,14 @@ for f in parou.service parou-atualizar.service parou-atualizar.timer; do
   fi
 done
 
+# Registos do servidor: no máximo 30 dias (como diz a política de privacidade) e 500 MB
+mkdir -p /etc/systemd/journald.conf.d
+printf '[Journal]\nMaxRetentionSec=30day\nSystemMaxUse=500M\n' > /tmp/parou-journald.conf
+if ! cmp -s /tmp/parou-journald.conf /etc/systemd/journald.conf.d/parou.conf; then
+  cp /tmp/parou-journald.conf /etc/systemd/journald.conf.d/parou.conf
+  systemctl restart systemd-journald || true
+fi
+
 # Fuso horário de Portugal para a app (horas locais, "hoje", feriados)
 if ! grep -q '^TZ=' /etc/parou.env 2>/dev/null; then
   echo 'TZ=Europe/Lisbon' >> /etc/parou.env
