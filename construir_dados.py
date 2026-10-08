@@ -1079,12 +1079,13 @@ def process_unir(conn):
                 ligacoes.append((fid, f"unir:{cod}", f"unir:{linha}", int(sentido or 0),
                                  sequencias.get((f"{linha}_{int(sentido or 0)}", cod))))
         insert_many(conn, "stops", (
-            (f"unir:{p['c']}", fid, p.get("n") or p.get("a") or f"Paragem {p['c']}",
+            (f"unir:{p['c']}", fid, " ".join(str(p.get("n") or p.get("a") or f"Paragem {p['c']}").split()),
              float(p["la"]), float(p["lo"]), p.get("m") or "", None, 0)
             for p in paragens if p.get("c")
         ))
         insert_many(conn, "routes", (
-            (f"unir:{l}", fid, l, (nomes.get(l) or {}).get("nome") or "", 3, (nomes.get(l) or {}).get("cor") or UNIR_COR)
+            (f"unir:{l}", fid, l, (nomes.get(l) or {}).get("nome") or "", int((nomes.get(l) or {}).get("tipo") or 3),
+             (nomes.get(l) or {}).get("cor") or UNIR_COR)
             for l in sorted(linhas)
         ))
         conn.executemany("INSERT OR REPLACE INTO stop_routes (feed_id, stop_id, route_id, direction_id, stop_sequence)"
