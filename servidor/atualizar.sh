@@ -25,6 +25,7 @@ escrever_estado() {
     echo "Disco: $(df -h / | awk 'NR==2 {print $3 " usados de " $2 " (" $5 ")"}')"
     echo "Base de horários: $(ls -la /var/lib/parou/gtfs.db 2>/dev/null | awk '{print $5 " bytes, " $6 " " $7 " " $8}')"
     echo "Ligado desde: $(uptime -s)"
+    echo "Reinícios pela vigia: $(tail -n 3 /var/lib/parou-estado/reinicios.log 2>/dev/null | tr '\n' ';' || true)"
     echo
     echo "--- Últimas linhas da app ---"
     journalctl -u parou -n 40 --no-pager -o cat 2>/dev/null | cut -c1-300
@@ -83,8 +84,26 @@ NOVO=$(git ls-remote "$REPO" refs/heads/main | cut -f1)
 ATUAL=$(cat $BASE/atual/.versao 2>/dev/null || true)
 if [ -z "$NOVO" ]; then escrever_estado "não consegui ler o GitHub"; exit 0; fi
 if [ "$NOVO" = "$ATUAL" ] && [ -z "${FORCAR:-}" ]; then
-  # Sem código novo: só garante que a app está a correr e atualiza o estado de 10 em 10 minutos
+  # Sem código novo: garante que a app e o Caddy estão a correr e a responder
+  systemctl is-active --quiet caddy || systemctl start caddy
   systemctl is-active --quiet parou || systemctl start parou
+  # Vigia: se a app está "ligada" mas não responde (bloqueada) em 2 verificações
+  # seguidas (~4 min), reinicia-a. Uma falha isolada (ex.: a arrancar) não conta.
+  FALHAS=/var/lib/parou-estado/falhas-health
+  if curl -fsS -m 10 http://127.0.0.1:3000/health >/dev/null 2>&1; then
+    rm -f "$FALHAS"
+  else
+    N=$(( $(cat "$FALHAS" 2>/dev/null || echo 0) + 1 ))
+    echo "$N" > "$FALHAS"
+    if [ "$N" -ge 2 ]; then
+      systemctl restart parou
+      rm -f "$FALHAS"
+      echo "$(date -u +%Y-%m-%dT%H:%M:%SZ) app não respondia; reiniciada" >> /var/lib/parou-estado/reinicios.log
+      tail -n 50 /var/lib/parou-estado/reinicios.log > /var/lib/parou-estado/reinicios.tmp && mv /var/lib/parou-estado/reinicios.tmp /var/lib/parou-estado/reinicios.log
+      escrever_estado "a app não respondia; reiniciei-a às $(date -u +%H:%M) UTC"
+      exit 0
+    fi
+  fi
   if [ -z "$(find "$ESTADO" -mmin -10 2>/dev/null)" ]; then escrever_estado; fi
   exit 0
 fi
