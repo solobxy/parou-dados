@@ -123,6 +123,15 @@ jobs:
           await captura('07-alertas-sem-localizacao', {}, '/alertas', null, 9000);
           await captura('08-horarios-spc', spc, '/transportes', null, 10000);
           await captura('09-mapa', porto, '/mapa');
+          // Auditoria: modais e páginas menos usadas
+          await captura('20-entrar', {}, '/transportes', async (p) => { await p.locator('button:has-text("Entrar")').first().click(); }, 5000);
+          await captura('21-notificacoes', {}, '/transportes', async (p) => { await p.locator('header button[aria-label*="otifica"], header button:has(svg.lucide-bell)').first().click(); }, 5000);
+          await captura('22-ocorrencias', {}, '/ocorrencias', null, 6000);
+          await captura('23-catalogo', {}, '/catalogo', null, 6000);
+          await captura('24-cobertura', {}, '/cobertura', null, 8000);
+          await captura('25-reportar', porto, '/mapa', async (p) => { await p.locator('button:has-text("Reportar")').first().click(); }, 6000);
+          await captura('26-linha', porto, '/transportes', async (p) => { await p.locator('text=Linhas').first().scrollIntoViewIfNeeded(); await p.locator('h3:has-text("Linha Azul")').first().click(); }, 8000);
+          await captura('27-404', {}, '/isto-nao-existe', null, 4000);
           await captura('14-privacidade', {}, '/privacidade', null, 5000);
           await captura('15-sobre', {}, '/sobre', null, 5000);
           await captura('16-favoritos', {}, '/favoritos', null, 6000);
