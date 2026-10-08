@@ -99,6 +99,30 @@ jobs:
           await captura('07-alertas-sem-localizacao', {}, '/alertas', null, 9000);
           await captura('08-horarios-spc', spc, '/transportes', null, 10000);
           await captura('09-mapa', porto, '/mapa');
+          // GPS lento (5 s) para ver se o Perto se lembra da posição ao trocar de separador e ao reabrir
+          {
+            const ctx = await browser.newContext({ ...telemovel, ...spc });
+            await ctx.addInitScript(() => {
+              const g = navigator.geolocation;
+              const cp = g.getCurrentPosition.bind(g), wp = g.watchPosition.bind(g);
+              g.getCurrentPosition = (ok, err, o) => cp((p) => setTimeout(() => ok(p), 5000), err, o);
+              g.watchPosition = (ok, err, o) => wp((p) => setTimeout(() => ok(p), 5000), err, o);
+            });
+            const page = await ctx.newPage();
+            page.on('pageerror', (e) => registo.push(`[10] erro: ${String(e).slice(0, 300)}`));
+            const nav = (r) => page.locator(`nav[aria-label="Navegação inferior"] button[aria-label="${r}"]`);
+            try {
+              await page.goto(base + '/', { waitUntil: 'load', timeout: 60000 });
+              await page.waitForTimeout(14000);
+              await page.screenshot({ path: '10a-perto-antes.png' });
+              await nav('Horários').click(); await page.waitForTimeout(3000);
+              await nav('Perto').click(); await page.waitForTimeout(700);
+              await page.screenshot({ path: '10b-perto-ao-voltar.png' });
+              await page.reload({ waitUntil: 'load' }); await page.waitForTimeout(2500);
+              await page.screenshot({ path: '10c-perto-ao-reabrir.png' });
+            } catch (e) { registo.push(`[10] ${String(e).slice(0, 300)}`); }
+            await ctx.close();
+          }
           await browser.close();
           (await import('node:fs')).writeFileSync('registo.txt', registo.join('\n') || 'sem erros');
           EOF
