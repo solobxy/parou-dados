@@ -87,7 +87,7 @@ jobs:
             await page.waitForTimeout(espera);
             if (acao) { try { await acao(page); } catch (e) { registo.push(`[${nome}] ação: ${String(e).slice(0, 200)}`); } await page.waitForTimeout(4000); }
             await page.screenshot({ path: `${nome}.png` });
-            if (nome.includes('alertas')) await page.screenshot({ path: `${nome}-inteira.png`, fullPage: true });
+            if (nome.includes('alertas') || nome.includes('privacidade')) await page.screenshot({ path: `${nome}-inteira.png`, fullPage: true });
             await ctx.close();
           }
           const porto = { geolocation: { latitude: 41.1462, longitude: -8.6110 }, permissions: ['geolocation'] };
@@ -123,6 +123,9 @@ jobs:
           await captura('07-alertas-sem-localizacao', {}, '/alertas', null, 9000);
           await captura('08-horarios-spc', spc, '/transportes', null, 10000);
           await captura('09-mapa', porto, '/mapa');
+          await captura('14-privacidade', {}, '/privacidade', null, 5000);
+          await captura('15-sobre', {}, '/sobre', null, 5000);
+          await captura('16-favoritos', {}, '/favoritos', null, 6000);
           // GPS lento (5 s) para ver se o Perto se lembra da posição ao trocar de separador e ao reabrir
           {
             const ctx = await browser.newContext({ ...telemovel, ...spc });
