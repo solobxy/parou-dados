@@ -88,13 +88,23 @@ jobs:
 
       - name: Compilar (.aab e .apk)
         working-directory: android
-        env:
-          BUBBLEWRAP_KEYSTORE_PASSWORD: ${{ env.KS_PASS }}
-          BUBBLEWRAP_KEY_PASSWORD: ${{ env.KS_PASS }}
         run: |
           exec > >(tee -a $GITHUB_WORKSPACE/registo-android.txt) 2>&1
           set -e
-          yes "" | bubblewrap build --skipPwaValidation --manifest=./twa-manifest.json 2>&1 | tail -30
+          echo "sdk.dir=$ANDROID_HOME" > local.properties
+          yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses >/dev/null 2>&1 || true
+          chmod +x gradlew
+          ./gradlew --no-daemon -q bundleRelease assembleRelease 2>&1 | grep -v "^\s*at " | tail -60
+          AAB=$(ls app/build/outputs/bundle/release/*.aab | head -1)
+          APK=$(ls app/build/outputs/apk/release/*.apk | head -1)
+          echo "AAB=$AAB APK=$APK"
+          # Assinar com a chave de envio
+          cp "$AAB" app-release-bundle.aab
+          jarsigner -sigalg SHA256withRSA -digestalg SHA-256 -keystore upload.keystore -storepass "$KS_PASS" -keypass "$KS_PASS" app-release-bundle.aab parou
+          BT=$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)
+          "$BT/zipalign" -f -p 4 "$APK" alinhado.apk
+          "$BT/apksigner" sign --ks upload.keystore --ks-pass "pass:$KS_PASS" --key-pass "pass:$KS_PASS" --ks-key-alias parou --out app-release-signed.apk alinhado.apk
+          "$BT/apksigner" verify app-release-signed.apk && echo "APK assinado e verificado"
           ls -la *.aab *.apk
 
       - name: assetlinks.json
