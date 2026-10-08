@@ -66,6 +66,8 @@ jobs:
           curl -s -m 60 "http://127.0.0.1:3000/api/transit/nearby?lat=38.7107&lon=-9.1365&radius=1000" -o cap/perto-baixa.json || true
           curl -s -m 60 "http://127.0.0.1:3000/api/mapa" -o cap/mapa.json || true
           curl -s -m 60 "http://127.0.0.1:3000/api/incendios" -o cap/incendios.json || true
+          curl -s -m 30 "http://127.0.0.1:3000/manifest.webmanifest" -o cap/manifest.json || true
+          (grep -o '<link[^>]*manifest[^>]*>' app/dist/index.html; grep -o 'registerSW[^"]*' app/dist/index.html; ls app/dist | head -40) > cap/dist.txt 2>&1 || true
 
       - name: Tirar capturas
         run: |
@@ -206,7 +208,7 @@ jobs:
       - name: Guardar
         if: always()
         run: |
-          mkdir pub && cp cap/*.png cap/*.json cap/registo.txt tipos.txt pub/ 2>/dev/null || true
+          mkdir pub && cp cap/*.png cap/*.json cap/*.txt tipos.txt pub/ 2>/dev/null || true
           tail -n 60 app/app.log > pub/app.log 2>/dev/null || true
           cd pub && git init -q -b capturas
           git config user.name "parou-dados"; git config user.email "actions@users.noreply.github.com"
