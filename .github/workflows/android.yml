@@ -94,7 +94,8 @@ jobs:
           echo "sdk.dir=$ANDROID_HOME" > local.properties
           yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses >/dev/null 2>&1 || true
           chmod +x gradlew
-          ./gradlew --no-daemon -q bundleRelease assembleRelease 2>&1 | grep -v "^\s*at " | tail -60
+          ./gradlew --no-daemon --stacktrace bundleRelease assembleRelease > $GITHUB_WORKSPACE/gradle.txt 2>&1 || { grep -v "^\s*at " $GITHUB_WORKSPACE/gradle.txt | tail -80; exit 1; }
+          tail -15 $GITHUB_WORKSPACE/gradle.txt
           AAB=$(ls app/build/outputs/bundle/release/*.aab | head -1)
           APK=$(ls app/build/outputs/apk/release/*.apk | head -1)
           echo "AAB=$AAB APK=$APK"
@@ -130,6 +131,7 @@ jobs:
         if: always()
         run: |
           mkdir pub && cp registo-android.txt pub/ 2>/dev/null || echo "sem registo" > pub/registo-android.txt
+          cp gradle.txt pub/ 2>/dev/null || true
           ls android >> pub/registo-android.txt 2>&1 || true
           cd pub && git init -q -b android-resultado
           git config user.name "parou-dados"; git config user.email "actions@users.noreply.github.com"
