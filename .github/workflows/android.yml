@@ -1,0 +1,103 @@
+name: App Android (Google Play)
+
+# Gera a app Android da PAROU (Trusted Web Activity: a app abre o parou.pt em ecrã inteiro,
+# com localização e notificações do Android) com o Bubblewrap da Google.
+# Resultado: release "android" com o .aab (para a Play Store) e o .apk (para instalar e testar),
+# e a impressão digital SHA-256 para o ficheiro /.well-known/assetlinks.json do site.
+# A chave de assinatura fica cifrada em android/upload.keystore.enc (palavra-passe = HCLOUD_TOKEN).
+
+on:
+  workflow_dispatch:
+    inputs:
+      versao:
+        description: "Versão (ex.: 1.0.0)"
+        required: false
+        default: "1.0.0"
+      codigo:
+        description: "Número da versão (sobe 1 em cada envio para a Play Store)"
+        required: false
+        default: "1"
+
+permissions:
+  contents: write
+
+jobs:
+  android:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    env:
+      HCLOUD_TOKEN: ${{ secrets.HCLOUD_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Chave de assinatura (cria uma se ainda não existir)
+        working-directory: android
+        run: |
+          set -e
+          if [ -f upload.keystore.enc ] && [ -f chave.json.enc ]; then
+            openssl enc -d -aes-256-cbc -pbkdf2 -iter 200000 -pass env:HCLOUD_TOKEN -in upload.keystore.enc -out upload.keystore
+            openssl enc -d -aes-256-cbc -pbkdf2 -iter 200000 -pass env:HCLOUD_TOKEN -in chave.json.enc -out chave.json
+          else
+            PASS=$(openssl rand -hex 20)
+            keytool -genkeypair -v -keystore upload.keystore -alias parou -keyalg RSA -keysize 4096 -validity 10000 \
+              -storepass "$PASS" -keypass "$PASS" -dname "CN=PAROU, O=PAROU.PT, L=Porto, C=PT"
+            printf '{"storePass":"%s","keyPass":"%s","alias":"parou"}' "$PASS" "$PASS" > chave.json
+            openssl enc -aes-256-cbc -pbkdf2 -iter 200000 -salt -pass env:HCLOUD_TOKEN -in upload.keystore -out upload.keystore.enc
+            openssl enc -aes-256-cbc -pbkdf2 -iter 200000 -salt -pass env:HCLOUD_TOKEN -in chave.json -out chave.json.enc
+            git config user.name "parou-dados"; git config user.email "actions@users.noreply.github.com"
+            git add upload.keystore.enc chave.json.enc
+            git commit -q -m "App Android: chave de assinatura (cifrada)" && git pull -q --rebase && git push -q
+          fi
+          echo "KS_PASS=$(jq -r .storePass chave.json)" >> $GITHUB_ENV
+          echo "::add-mask::$(jq -r .storePass chave.json)"
+          keytool -list -v -keystore upload.keystore -alias parou -storepass "$(jq -r .storePass chave.json)" | grep -E "SHA256:" | head -1 | sed 's/.*SHA256: //' > sha256.txt
+          echo "SHA-256: $(cat sha256.txt)"
+
+      - name: Gerar o projeto Android
+        working-directory: android
+        run: |
+          set -e
+          mkdir -p ~/.bubblewrap
+          printf '{"jdkPath":"%s","androidSdkPath":"%s"}' "$JAVA_HOME" "$ANDROID_HOME" > ~/.bubblewrap/config.json
+          jq --arg v "${{ inputs.versao }}" --argjson c "${{ inputs.codigo }}" --arg fp "$(cat sha256.txt)" \
+            '.appVersionName=$v | .appVersion=$v | .appVersionCode=$c | .fingerprints=[{"name":"upload","value":$fp}]' \
+            twa-manifest.json > twa.tmp && mv twa.tmp twa-manifest.json
+          npm i -g @bubblewrap/cli@1 >/dev/null 2>&1
+          yes "" | bubblewrap update --skipVersionUpgrade --manifest=./twa-manifest.json 2>&1 | tail -20 || true
+          ls
+
+      - name: Compilar (.aab e .apk)
+        working-directory: android
+        env:
+          BUBBLEWRAP_KEYSTORE_PASSWORD: ${{ env.KS_PASS }}
+          BUBBLEWRAP_KEY_PASSWORD: ${{ env.KS_PASS }}
+        run: |
+          set -e
+          yes "" | bubblewrap build --skipPwaValidation --manifest=./twa-manifest.json 2>&1 | tail -30
+          ls -la *.aab *.apk
+
+      - name: assetlinks.json
+        working-directory: android
+        run: |
+          jq -n --arg fp "$(cat sha256.txt)" '[{"relation":["delegate_permission/common.handle_all_urls"],"target":{"namespace":"android_app","package_name":"pt.parou.app","sha256_cert_fingerprints":[$fp]}}]' > assetlinks.json
+          cat assetlinks.json
+
+      - name: Publicar na release "android"
+        working-directory: android
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cp app-release-bundle.aab "PAROU-${{ inputs.versao }}.aab"
+          cp app-release-signed.apk "PAROU-${{ inputs.versao }}.apk"
+          gh release view android >/dev/null 2>&1 || gh release create android --title "App Android" --notes "App Android da PAROU (Trusted Web Activity)."
+          gh release upload android "PAROU-${{ inputs.versao }}.aab" "PAROU-${{ inputs.versao }}.apk" assetlinks.json sha256.txt --clobber
+          gh release edit android --notes "Versão ${{ inputs.versao }} (código ${{ inputs.codigo }}). SHA-256 da chave de envio: $(cat sha256.txt)"
