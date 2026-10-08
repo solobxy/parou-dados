@@ -61,6 +61,8 @@ jobs:
           curl -s -m 60 "http://127.0.0.1:3000/api/alertas?area=PTO" -o cap/alertas-porto.json || true
           curl -s -m 60 "http://127.0.0.1:3000/api/alertas?lat=38.7253&lon=-9.15" -o cap/alertas-lisboa.json || true
           curl -s -m 60 "http://127.0.0.1:3000/api/lines?near=41.1522,-8.5042&r=800" -o cap/linhas-spc.json || true
+          curl -s -m 60 "http://127.0.0.1:3000/api/transit/nearby?lat=41.1435&lon=-8.4947&radius=1000" -o cap/perto-spc.json || true
+          curl -s -m 60 "http://127.0.0.1:3000/api/transit/nearby?lat=38.7107&lon=-9.1365&radius=1000" -o cap/perto-baixa.json || true
 
       - name: Tirar capturas
         run: |
