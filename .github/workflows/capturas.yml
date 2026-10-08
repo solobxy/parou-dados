@@ -198,6 +198,11 @@ jobs:
           await captura('25-reportar', porto, '/mapa', async (p) => { await p.locator('button:has-text("Reportar")').first().click(); }, 6000);
           await captura('26-linha', porto, '/transportes', async (p) => { await p.locator('text=Linhas').first().scrollIntoViewIfNeeded(); await p.locator('h3:has-text("Linha Azul")').first().click(); }, 8000);
           await captura('27-404', {}, '/isto-nao-existe', null, 4000);
+          // Botão "Instalar" no topo (Android e iPhone) com os passos abertos
+          const uaAndroid = { userAgent: 'Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.0.0 Mobile Safari/537.36' };
+          const uaIphone = { userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.6 Mobile/15E148 Safari/604.1' };
+          await captura('28-instalar-android', { ...porto, ...uaAndroid }, '/', async (p) => { await p.locator('[data-teste="instalar-topo"]').click(); }, 8000);
+          await captura('29-instalar-iphone', { ...porto, ...uaIphone }, '/', async (p) => { await p.locator('[data-teste="instalar-topo"]').click(); }, 8000);
           await captura('14-privacidade', {}, '/privacidade', null, 5000);
           await captura('15-sobre', {}, '/sobre', null, 5000);
           await captura('16-favoritos', {}, '/favoritos', null, 6000);
