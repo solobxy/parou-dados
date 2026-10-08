@@ -73,7 +73,12 @@ jobs:
           exec > >(tee -a $GITHUB_WORKSPACE/registo-android.txt) 2>&1
           set -e
           mkdir -p ~/.bubblewrap
-          printf '{"jdkPath":"%s","androidSdkPath":"%s"}' "$JAVA_HOME" "$ANDROID_HOME" > ~/.bubblewrap/config.json
+          # O Bubblewrap procura o SDK no formato antigo (pasta "tools"): monta uma vista assim
+          SDK="$HOME/android-sdk"; mkdir -p "$SDK"
+          for d in "$ANDROID_HOME"/*; do ln -sfn "$d" "$SDK/$(basename "$d")"; done
+          ln -sfn "$ANDROID_HOME/cmdline-tools/latest" "$SDK/tools"
+          ls "$SDK"; ls "$SDK/tools/bin" | head
+          printf '{"jdkPath":"%s","androidSdkPath":"%s"}' "$JAVA_HOME" "$SDK" > ~/.bubblewrap/config.json
           jq --arg v "${{ inputs.versao }}" --argjson c "${{ inputs.codigo }}" --arg fp "$(cat sha256.txt)" \
             '.appVersionName=$v | .appVersion=$v | .appVersionCode=$c | .fingerprints=[{"name":"upload","value":$fp}]' \
             twa-manifest.json > twa.tmp && mv twa.tmp twa-manifest.json
