@@ -198,6 +198,25 @@ jobs:
           await captura('25-reportar', porto, '/mapa', async (p) => { await p.locator('button:has-text("Reportar")').first().click(); }, 6000);
           await captura('26-linha', porto, '/transportes', async (p) => { await p.locator('text=Linhas').first().scrollIntoViewIfNeeded(); await p.locator('h3:has-text("Linha Azul")').first().click(); }, 8000);
           await captura('27-404', {}, '/isto-nao-existe', null, 4000);
+          // O Chrome considera a PAROU instalável? (sem isto não aparece o pedido "Instalar app")
+          {
+            const ctx = await browser.newContext({ ...telemovel });
+            const page = await ctx.newPage();
+            await page.goto(base + '/', { waitUntil: 'load', timeout: 60000 }).catch(() => {});
+            await page.waitForTimeout(8000);
+            await page.reload({ waitUntil: 'load' }).catch(() => {});
+            await page.waitForTimeout(5000);
+            try {
+              const cdp = await ctx.newCDPSession(page);
+              const r = await cdp.send('Page.getInstallabilityErrors');
+              registo.push(`[instalavel] erros: ${JSON.stringify(r.installabilityErrors || r)}`);
+              const m = await cdp.send('Page.getAppManifest');
+              registo.push(`[instalavel] manifesto: ${m.url} erros=${JSON.stringify(m.errors || [])}`);
+            } catch (e) { registo.push(`[instalavel] falhou: ${String(e).slice(0, 200)}`); }
+            const sw = await page.evaluate(async () => { const r = await navigator.serviceWorker.getRegistration(); return { controlado: Boolean(navigator.serviceWorker.controller), ativo: Boolean(r && r.active), ambito: r && r.scope }; }).catch((e) => String(e));
+            registo.push(`[instalavel] service worker: ${JSON.stringify(sw)}`);
+            await ctx.close();
+          }
           // Botão "Instalar" no topo (Android e iPhone) com os passos abertos
           const uaAndroid = { userAgent: 'Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.0.0 Mobile Safari/537.36' };
           const uaIphone = { userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.6 Mobile/15E148 Safari/604.1' };
