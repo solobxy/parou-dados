@@ -100,6 +100,11 @@ jobs:
           await captura('05-perto-localizacao-recusada', {}, '/', async (p) => {
             await p.locator('[data-teste="ativar-localizacao"]:visible').first().click();
           });
+          await captura('05b-perto-bloqueada-ajuda', {}, '/', async (p) => {
+            await p.locator('[data-teste="ativar-localizacao"]:visible').first().click();
+            await p.waitForTimeout(3000);
+            await p.locator('[data-teste="ativar-localizacao"]:visible').first().click();
+          });
           await captura('06-alertas-porto', porto, '/alertas', null, 9000);
           await captura('07-alertas-sem-localizacao', {}, '/alertas', null, 9000);
           await captura('08-horarios-spc', spc, '/transportes', null, 10000);
