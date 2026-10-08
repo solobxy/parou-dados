@@ -35,6 +35,15 @@ escrever_estado() {
 # 1. Caddy
 source /etc/parou-servidor.env
 sed "s/{HOST_TESTE}/$HOST_TESTE/g" "$SERV/Caddyfile" > /tmp/Caddyfile.novo
+# O domínio só entra quando já aponta para este servidor (senão o Caddy falhava o
+# certificado e ficava a tentar com esperas cada vez maiores)
+MEU_IP="$(echo "${HOST_TESTE%%.sslip.io}" | tr '-' '.')"
+for DOM in parou.pt www.parou.pt; do
+  IP_DOM="$( (dig +short A "$DOM" @1.1.1.1 2>/dev/null || getent ahostsv4 "$DOM" | awk '{print $1}') | grep -E '^[0-9.]+$' | head -1)"
+  if [ "$IP_DOM" != "$MEU_IP" ]; then
+    sed -i "/^# INICIO $DOM\$/,/^# FIM $DOM\$/d" /tmp/Caddyfile.novo
+  fi
+done
 if ! cmp -s /tmp/Caddyfile.novo /etc/caddy/Caddyfile; then
   if caddy validate --adapter caddyfile --config /tmp/Caddyfile.novo >/dev/null 2>&1; then
     cp /tmp/Caddyfile.novo /etc/caddy/Caddyfile
