@@ -5,6 +5,8 @@ name: Servidor (Hetzner)
 #   recriar  - apaga o servidor "parou" e cria um novo (CX23, Ubuntu 24.04) com a chave SSH
 #              deste repositório e a instalação automática; acompanha a instalação até ao fim
 #   comando  - corre um comando no servidor por SSH
+#   chaves   - copia chaves de APIs guardadas como segredos do GitHub (ex.: FOGOS_API_KEY)
+#              para /etc/parou.env no servidor e reinicia a app (nunca aparecem no resultado)
 # O resultado fica no ramo "servidor-resultado", em resultado.txt.
 #
 # A chave SSH privada fica em servidor/chave-ssh.enc, cifrada com o HCLOUD_TOKEN
@@ -14,7 +16,7 @@ on:
   workflow_dispatch:
     inputs:
       acao:
-        description: "estado, recriar ou comando"
+        description: "estado, recriar, comando ou chaves"
         required: true
         default: "estado"
       comando:
@@ -103,6 +105,23 @@ jobs:
             if ssh root@$IP "cloud-init status 2>/dev/null | grep -qE 'done|error'"; then echo "cloud-init terminou: $(ssh root@$IP cloud-init status)" >> resultado.txt; break; fi
             sleep 15
           done
+
+      - name: Chaves de APIs para o servidor
+        if: inputs.acao == 'chaves'
+        env:
+          FOGOS_API_KEY: ${{ secrets.FOGOS_API_KEY }}
+        run: |
+          source funcs.sh
+          IP=$(h "$API/servers?name=parou" | jq -r '.servers[0].public_net.ipv4.ip // empty')
+          [ -n "$IP" ] || { echo "Servidor não encontrado" >> resultado.txt; exit 1; }
+          for NOME in FOGOS_API_KEY; do
+            VALOR="${!NOME}"
+            if [ -z "$VALOR" ]; then echo "$NOME: sem segredo no GitHub (nada a fazer)" >> resultado.txt; continue; fi
+            # Passa o valor pelo stdin (não aparece em comandos nem no resultado)
+            printf '%s' "$VALOR" | ssh root@$IP "V=\$(cat); grep -v '^$NOME=' /etc/parou.env > /etc/parou.env.novo; echo \"$NOME=\$V\" >> /etc/parou.env.novo; chmod 600 /etc/parou.env.novo; mv /etc/parou.env.novo /etc/parou.env"
+            echo "$NOME: copiada para o servidor" >> resultado.txt
+          done
+          ssh root@$IP "systemctl restart parou" && echo "App reiniciada" >> resultado.txt
 
       - name: Diagnóstico ou comando
         if: always()
