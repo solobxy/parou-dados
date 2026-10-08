@@ -1,0 +1,41 @@
+name: Vigiar o site
+
+# De 15 em 15 minutos, testa de fora se a PAROU está a responder e a mostrar paragens.
+# Só falha (e o GitHub manda um email) se falhar 3 vezes seguidas em ~3 minutos, ou seja,
+# quando há mesmo um problema (o servidor também se reinicia sozinho se a app bloquear).
+
+on:
+  schedule:
+    - cron: "7,22,37,52 * * * *"
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  vigiar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Testar o site
+        run: |
+          testar() {
+            base="$1"
+            curl -fsS -m 20 "$base/health" >/dev/null || { echo "$base/health não respondeu"; return 1; }
+            n=$(curl -fsS -m 40 "$base/api/transit/nearby?lat=38.7107&lon=-9.1365&radius=800" | python3 -c "import json,sys; print(len(json.load(sys.stdin).get('stops') or []))" 2>/dev/null || echo 0)
+            [ "$n" -gt 0 ] || { echo "$base: Perto sem paragens na Baixa de Lisboa"; return 1; }
+            echo "$base OK ($n paragens perto da Baixa)"
+          }
+          sites="https://2-31-13-85.sslip.io"
+          # Quando o domínio já aponta para o servidor, testa também o parou.pt
+          if [ "$(dig +short A parou.pt @1.1.1.1 | head -1)" = "2.31.13.85" ]; then sites="$sites https://parou.pt"; fi
+          falhou=0
+          for s in $sites; do
+            ok=0
+            for i in 1 2 3; do
+              if testar "$s"; then ok=1; break; fi
+              sleep 60
+            done
+            [ $ok = 1 ] || falhou=1
+          done
+          echo "Sites testados: $sites" >> "$GITHUB_STEP_SUMMARY"
+          exit $falhou
