@@ -36,6 +36,7 @@ ALERTAS
 • Incêndios ativos e ocorrências da Proteção Civil perto de ti
 • Feriados e notícias que mexem com as tuas viagens
 • Tudo atualizado automaticamente; o que já passou desaparece sozinho
+• Notificações de greves, avisos de mau tempo e perturbações graves no teu distrito, mesmo com a app fechada
 
 MAPA
 • Vê no mapa o que está a acontecer agora em Portugal
@@ -74,7 +75,7 @@ Fontes: operadores de transportes (horários GTFS), IMT, IPMA, Open-Meteo, Fogos
 | Nome | Sim | Não | Sim (só com conta) | Gestão de conta, funcionalidade |
 | Endereço de email | Sim | Não | Sim (só com conta) | Gestão de conta |
 | Outro conteúdo gerado pelo utilizador (ocorrências, comentários) | Sim | Não | Sim | Funcionalidade da app |
-| IDs do dispositivo ou outros (identificador aleatório para a cópia dos favoritos) | Sim | Não | Não | Funcionalidade da app |
+| IDs do dispositivo ou outros (identificador aleatório para a cópia dos favoritos; endereço de entrega das notificações, se ligadas) | Sim | Não | Não | Funcionalidade da app |
 
 Nota: a localização é tratada de forma efémera (só para calcular as paragens perto; não é guardada no servidor).
 
