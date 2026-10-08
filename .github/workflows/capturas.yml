@@ -105,6 +105,18 @@ jobs:
             await p.waitForTimeout(3000);
             await p.locator('[data-teste="ativar-localizacao"]:visible').first().click();
           });
+          // Localização autorizada mas sem posição (como com a localização do telemóvel desligada)
+          await captura('05c-perto-localizacao-desligada', { permissions: ['geolocation'] }, '/', async (p) => {
+            await p.evaluate(() => {
+              const g = navigator.geolocation;
+              const erro = (err) => setTimeout(() => err && err({ code: 2, message: 'desligada', PERMISSION_DENIED: 1, POSITION_UNAVAILABLE: 2, TIMEOUT: 3 }), 300);
+              g.getCurrentPosition = (ok, err) => erro(err);
+              g.watchPosition = (ok, err) => { erro(err); return 1; };
+            });
+            await p.locator('[data-teste="ativar-localizacao"]:visible').first().click().catch(() => {});
+            await p.waitForTimeout(2500);
+            await p.locator('[data-teste="ativar-localizacao"]:visible').first().click().catch(() => {});
+          });
           await captura('06-alertas-porto', porto, '/alertas', null, 9000);
           await captura('07-alertas-sem-localizacao', {}, '/alertas', null, 9000);
           await captura('08-horarios-spc', spc, '/transportes', null, 10000);
