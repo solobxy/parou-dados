@@ -1,12 +1,12 @@
 {
-  "built_at": "2026-10-10T03:42:16.579298+00:00",
-  "db_bytes": 331677696,
-  "gz_bytes": 72354357,
+  "built_at": "2026-10-10T03:52:43.577596+00:00",
+  "db_bytes": 660692992,
+  "gz_bytes": 125585714,
   "totals": {
     "lines": 2822,
     "stops": 46389,
-    "trips": 76074,
-    "stop_times": 2190679,
+    "trips": 138241,
+    "stop_times": 4299787,
     "operators": 30,
     "operators_ok": 27,
     "operators_desatualizados": 3
@@ -766,11 +766,11 @@
           "total": 398
         },
         "servicos_com_data_hoje": [
-          "AS",
-          "CS",
-          "FS",
-          "BS",
           "ES",
+          "FS",
+          "CS",
+          "AS",
+          "BS",
           "DS"
         ],
         "viagens_por_servico": [
@@ -826,5 +826,5 @@
       }
     }
   },
-  "duration_s": 188
+  "duration_s": 221
 }
