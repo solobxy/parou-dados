@@ -1030,6 +1030,61 @@ def process_carris_metropolitana(conn, have_prev):
         return row
 
 
+CM_GTFS = "https://api.carrismetropolitana.pt/gtfs"
+CM_HORARIOS_DIAS = 3  # janela curta: o GTFS da Carris Metropolitana é enorme
+
+
+def process_horarios_cm(conn, today_dt):
+    """Horários da Carris Metropolitana só para o planeador de viagens (feed "cmh").
+
+    As paragens e linhas da Carris Metropolitana continuam a vir da API (feed carris_metropolitana,
+    ids "cm:"), e as partidas que a app mostra também (tempo real). Aqui juntam-se as viagens do
+    GTFS com outro prefixo ("cmh:"), sem paragens nem linhas próprias, para o planeador poder
+    calcular percursos com a Carris Metropolitana sem duplicar nada no resto da app.
+    """
+    global WINDOW_DAYS
+    fid = "cmh"
+    t0 = time.time()
+    try:
+        _, body = http_get(CM_GTFS, timeout=300)
+        log_fetch(conn, fid, CM_GTFS, 200, len(body), int((time.time() - t0) * 1000), "GTFS da Carris Metropolitana (planeador)")
+        delete_feed(conn, fid)
+        guardado = WINDOW_DAYS
+        WINDOW_DAYS = CM_HORARIOS_DIAS
+        try:
+            stats = ingest_gtfs(conn, fid, body, today_dt)
+        finally:
+            WINDOW_DAYS = guardado
+        # As linhas passam a apontar para as da API ("1001" -> cmh:1001, o planeador lê cm:1001)
+        conn.execute("""UPDATE trips SET route_id = 'cmh:' || COALESCE(
+                          (SELECT r.route_short_name FROM routes r WHERE r.route_id = trips.route_id),
+                          substr(trips.route_id, 5))
+                        WHERE feed_id = ?""", (fid,))
+        # Confirma que as paragens do GTFS são as mesmas da API (senão não serve e sai tudo)
+        total, iguais = conn.execute("""
+            SELECT COUNT(*), SUM(CASE WHEN EXISTS (SELECT 1 FROM stops c WHERE c.stop_id = 'cm:' || substr(s.stop_id, 5)) THEN 1 ELSE 0 END)
+            FROM stops s WHERE s.feed_id = ?""", (fid,)).fetchone()
+        conn.execute("DELETE FROM stops WHERE feed_id = ?", (fid,))
+        conn.execute("DELETE FROM routes WHERE feed_id = ?", (fid,))
+        taxa = (iguais or 0) / total if total else 0
+        if taxa < 0.9 or not stats.get("stop_times"):
+            delete_feed(conn, fid)
+            conn.commit()
+            log(f"  AVISO {fid}: paragens do GTFS não batem com a API ({iguais}/{total}); horários do planeador ignorados")
+            return
+        conn.commit()
+        log(f"  OK  {fid}: {stats.get('trips')} viagens, {stats.get('stop_times')} horários (paragens iguais à API: {taxa:.0%})")
+    except Exception as err:  # noqa: BLE001
+        try:
+            delete_feed(conn, fid)
+            conn.commit()
+        except Exception:  # noqa: BLE001
+            pass
+        log_fetch(conn, fid, CM_GTFS, 0, 0, 0, "Falha", str(err))
+        conn.commit()
+        log(f"  AVISO {fid}: sem horários da Carris Metropolitana para o planeador ({str(err)[:200]})")
+
+
 UNIR_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "unir")
 UNIR_COR = "#CE9926"  # amarelo-torrado dos autocarros UNIR
 
@@ -1222,6 +1277,7 @@ def main():
         log(f"[{i}/{len(feeds)}] {feed['operator_name']}")
         results.append(process_feed(conn, feed, today_dt, have_prev))
     results.append(process_carris_metropolitana(conn, have_prev))
+    process_horarios_cm(conn, today_dt)
     results.append(process_unir(conn))
 
     try:
