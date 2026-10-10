@@ -23,6 +23,7 @@ import gzip
 import io
 import itertools
 import json
+import math
 import os
 import re
 import shutil
@@ -1060,10 +1061,41 @@ def process_horarios_cm(conn, today_dt):
                           (SELECT r.route_short_name FROM routes r WHERE r.route_id = trips.route_id),
                           substr(trips.route_id, 5))
                         WHERE feed_id = ?""", (fid,))
-        # Confirma que as paragens do GTFS são as mesmas da API (senão não serve e sai tudo)
-        total, iguais = conn.execute("""
-            SELECT COUNT(*), SUM(CASE WHEN EXISTS (SELECT 1 FROM stops c WHERE c.stop_id = 'cm:' || substr(s.stop_id, 5)) THEN 1 ELSE 0 END)
-            FROM stops s WHERE s.feed_id = ?""", (fid,)).fetchone()
+        # Ligar cada paragem do GTFS à paragem da API: pelo mesmo código (com ou sem zeros à
+        # esquerda) ou, se não houver, pela paragem da API mais perto (até 30 m).
+        api = conn.execute("SELECT stop_id, stop_lat, stop_lon FROM stops WHERE feed_id = 'carris_metropolitana'").fetchall()
+        por_codigo = {}
+        grelha = {}
+        for sid, la, lo in api:
+            cod = sid[3:]
+            por_codigo[cod] = sid
+            por_codigo[cod.lstrip("0") or "0"] = sid
+            if la is not None and lo is not None:
+                grelha.setdefault((int(la * 500), int(lo * 400)), []).append((sid, la, lo))
+        mapa = []
+        for sid, la, lo in conn.execute("SELECT stop_id, stop_lat, stop_lon FROM stops WHERE feed_id = ?", (fid,)).fetchall():
+            cod = sid[4:]
+            alvo = por_codigo.get(cod) or por_codigo.get(cod.lstrip("0") or "0")
+            if not alvo and la is not None and lo is not None:
+                melhor, dmin = None, 30.0
+                ci, cj = int(la * 500), int(lo * 400)
+                for di in (-1, 0, 1):
+                    for dj in (-1, 0, 1):
+                        for asid, ala, alo in grelha.get((ci + di, cj + dj), []):
+                            d = math.hypot((ala - la) * 111320, (alo - lo) * 111320 * math.cos(math.radians(la)))
+                            if d < dmin:
+                                melhor, dmin = asid, d
+                alvo = melhor
+            if alvo:
+                mapa.append((sid, "cmh:" + alvo[3:]))
+        total = conn.execute("SELECT COUNT(*) FROM stops WHERE feed_id = ?", (fid,)).fetchone()[0]
+        iguais = len(mapa)
+        conn.execute("CREATE TEMP TABLE IF NOT EXISTS mapa_cmh (de TEXT PRIMARY KEY, para TEXT)")
+        conn.execute("DELETE FROM mapa_cmh")
+        conn.executemany("INSERT OR REPLACE INTO mapa_cmh VALUES (?, ?)", mapa)
+        conn.execute("""UPDATE stop_times SET stop_id = (SELECT para FROM mapa_cmh WHERE de = stop_times.stop_id)
+                        WHERE feed_id = ? AND stop_id IN (SELECT de FROM mapa_cmh)""", (fid,))
+        conn.execute("DROP TABLE mapa_cmh")
         conn.execute("DELETE FROM stops WHERE feed_id = ?", (fid,))
         conn.execute("DELETE FROM routes WHERE feed_id = ?", (fid,))
         taxa = (iguais or 0) / total if total else 0
