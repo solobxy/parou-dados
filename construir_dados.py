@@ -1200,6 +1200,21 @@ def process_unir(conn):
 DIAS_COLUNA = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"]
 
 
+def completar_destinos(conn):
+    """Viagens sem destino (alguns operadores, como a Carris, não preenchem o trip_headsign): usa o nome da última
+    paragem da viagem, que é o sítio para onde ela realmente vai. Percursos circulares (acabam onde começam) ficam
+    como estão: a app mostra então o nome da linha."""
+    ultima = """(SELECT s.stop_name FROM stop_times st
+                 JOIN stops s ON s.stop_id = CASE WHEN st.stop_id LIKE 'cmh:%' THEN 'cm:' || substr(st.stop_id, 5) ELSE st.stop_id END
+                 WHERE st.trip_id = trips.trip_id ORDER BY st.stop_sequence {} LIMIT 1)"""
+    fim, inicio = ultima.format("DESC"), ultima.format("ASC")
+    n = conn.execute(f"""UPDATE trips SET trip_headsign = {fim}
+        WHERE (trip_headsign IS NULL OR TRIM(trip_headsign) = '')
+          AND {fim} IS NOT NULL AND {fim} <> COALESCE({inicio}, '')""").rowcount
+    conn.commit()
+    log(f"Destinos completados com a última paragem: {n} viagens")
+
+
 def viagens_ativas(conn, dia):
     """Viagens por operador ativas num dia, com EXATAMENTE a mesma regra que a app usa."""
     ymd, col = dia.strftime("%Y%m%d"), DIAS_COLUNA[dia.weekday()]
@@ -1319,6 +1334,7 @@ def main():
 
     log("A criar índices...")
     conn.executescript(SCHEMA_INDEXES)
+    completar_destinos(conn)
 
     ok = [r for r in results if r.get("status") == "OK"]
     built_at = now_iso()
