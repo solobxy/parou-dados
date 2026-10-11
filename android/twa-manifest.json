@@ -14,8 +14,8 @@
   "backgroundColor": "#FFFFFF",
   "enableNotifications": true,
   "startUrl": "/?origem=android",
-  "iconUrl": "https://2-31-13-85.sslip.io/icon-512.png",
-  "maskableIconUrl": "https://2-31-13-85.sslip.io/icon-maskable-512.png",
+  "iconUrl": "https://parou.pt/icon-512.png",
+  "maskableIconUrl": "https://parou.pt/icon-maskable-512.png",
   "monochromeIconUrl": "",
   "splashScreenFadeOutDuration": 300,
   "signingKey": {
@@ -26,7 +26,7 @@
   "appVersionCode": 1,
   "shortcuts": [],
   "generatorApp": "bubblewrap-cli",
-  "webManifestUrl": "https://2-31-13-85.sslip.io/manifest.webmanifest",
+  "webManifestUrl": "https://parou.pt/manifest.webmanifest",
   "fallbackType": "customtabs",
   "features": {
     "locationDelegation": {
