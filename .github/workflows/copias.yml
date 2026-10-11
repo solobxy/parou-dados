@@ -1,0 +1,104 @@
+name: Cópias de segurança
+
+# Todas as noites vai buscar ao servidor a cópia mais recente das bases de dados de pessoas
+# (contas e comunidade, favoritos de cada telemóvel, subscrições de avisos), cifra-a e guarda-a
+# no GitHub durante 90 dias. Assim, se o servidor se perder, os dados não se perdem com ele.
+#
+# - O servidor faz uma cópia verificada de 6 em 6 horas (pasta /var/lib/parou/copias/ultima).
+# - Aqui a cópia é cifrada com AES-256 (palavra-passe = HCLOUD_TOKEN, como a chave SSH do servidor):
+#   quem não tem o segredo não consegue ler nada, mesmo com acesso ao ficheiro.
+# - Cada execução testa a cópia como se fosse restaurá-la (decifra, abre e conta os registos).
+#   Se algo falhar, ou se a cópia do servidor estiver velha, a execução falha e o GitHub avisa por email.
+#
+# Para restaurar: descarregar o artefacto "copia-AAAA-MM-DD", e correr
+#   openssl enc -d -aes-256-cbc -pbkdf2 -iter 200000 -pass env:HCLOUD_TOKEN -in copia.tgz.enc | tar xzf -
+
+on:
+  schedule:
+    - cron: "50 3 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: copias
+  cancel-in-progress: false
+
+jobs:
+  copiar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      HCLOUD_TOKEN: ${{ secrets.HCLOUD_TOKEN }}
+      API: https://api.hetzner.cloud/v1
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Ligar ao servidor
+        run: |
+          if [ -z "$HCLOUD_TOKEN" ]; then echo "Falta o segredo HCLOUD_TOKEN"; exit 1; fi
+          mkdir -p ~/.ssh && chmod 700 ~/.ssh
+          (umask 077; openssl enc -d -aes-256-cbc -pbkdf2 -iter 200000 -pass env:HCLOUD_TOKEN -in servidor/chave-ssh.enc -out ~/.ssh/id_ed25519)
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keygen -y -f ~/.ssh/id_ed25519 >/dev/null
+          printf 'Host *\n  StrictHostKeyChecking no\n  UserKnownHostsFile /dev/null\n  LogLevel ERROR\n  ConnectTimeout 15\n' > ~/.ssh/config
+          IP=$(curl -fsS -H "Authorization: Bearer $HCLOUD_TOKEN" "$API/servers?name=parou" | jq -r '.servers[0].public_net.ipv4.ip // empty')
+          [ -n "$IP" ] || { echo "Não encontrei o servidor"; exit 1; }
+          echo "IP=$IP" >> "$GITHUB_ENV"
+
+      - name: Buscar a cópia mais recente
+        run: |
+          ssh root@$IP 'cat /var/lib/parou/copias/ultima/INFO.txt' | tee info.txt
+          grep -q '^quando=' info.txt || { echo "O servidor ainda não tem cópias."; exit 1; }
+          # A cópia do servidor não pode ter mais de 13 horas (ele faz uma de 6 em 6)
+          QUANDO=$(sed -n 's/^quando=//p' info.txt | head -1)
+          IDADE=$(( $(date -u +%s) - $(date -u -d "$QUANDO" +%s) ))
+          echo "Idade da cópia no servidor: $((IDADE/60)) minutos"
+          [ "$IDADE" -lt 46800 ] || { echo "A cópia do servidor está velha demais."; exit 1; }
+          ! grep -q 'ERRO' info.txt || { echo "O servidor reportou erro numa das bases."; exit 1; }
+          ssh root@$IP 'cd /var/lib/parou/copias && tar czf - ultima' > ultima.tgz
+          ls -l ultima.tgz
+
+      - name: Cifrar
+        run: |
+          DIA=$(date -u +%Y-%m-%d)
+          echo "DIA=$DIA" >> "$GITHUB_ENV"
+          openssl enc -aes-256-cbc -pbkdf2 -iter 200000 -salt -pass env:HCLOUD_TOKEN -in ultima.tgz -out copia.tgz.enc
+          ls -l copia.tgz.enc
+
+      - name: Testar como se fosse restaurar
+        run: |
+          mkdir teste && cd teste
+          openssl enc -d -aes-256-cbc -pbkdf2 -iter 200000 -pass env:HCLOUD_TOKEN -in ../copia.tgz.enc | tar xzf -
+          python3 - <<'PY'
+          import sqlite3, glob, sys, os
+          tabelas = {'comunidade': ['utilizadores', 'publicacoes', 'ocorrencias', 'visitantes'], 'utilizadores': ['dados_utilizador'], 'push': []}
+          resumo = []
+          falhou = False
+          for nome, lista in tabelas.items():
+              f = f'ultima/{nome}.db'
+              if not os.path.exists(f):
+                  if nome == 'comunidade': falhou = True; resumo.append(f'{nome}: EM FALTA')
+                  else: resumo.append(f'{nome}: (ainda sem ficheiro)')
+                  continue
+              c = sqlite3.connect(f)
+              ok = c.execute('PRAGMA integrity_check').fetchone()[0]
+              partes = []
+              for t in lista:
+                  try: partes.append(f'{t}={c.execute(f"SELECT COUNT(*) FROM {t}").fetchone()[0]}')
+                  except Exception as e: partes.append(f'{t}=?')
+              if ok != 'ok': falhou = True
+              resumo.append(f'{nome}: integridade={ok} ' + ' '.join(partes))
+          print('\n'.join(resumo))
+          open(os.environ['GITHUB_STEP_SUMMARY'], 'a').write('### Cópia de ' + os.environ.get('DIA', '') + '\n```\n' + '\n'.join(resumo) + '\n```\n')
+          sys.exit(1 if falhou else 0)
+          PY
+
+      - name: Guardar fora do servidor (90 dias)
+        uses: actions/upload-artifact@v4
+        with:
+          name: copia-${{ env.DIA }}
+          path: copia.tgz.enc
+          retention-days: 90
+          if-no-files-found: error
