@@ -1,7 +1,7 @@
 {
-  "built_at": "2026-10-11T10:20:18.087915+00:00",
+  "built_at": "2026-10-11T19:37:41.663259+00:00",
   "db_bytes": 593149952,
-  "gz_bytes": 114854183,
+  "gz_bytes": 114854190,
   "totals": {
     "lines": 2821,
     "stops": 46389,
@@ -766,12 +766,12 @@
           "total": 397
         },
         "servicos_com_data_hoje": [
-          "EDF",
-          "BDF",
-          "CDF",
           "DDF",
+          "BDF",
           "ADF",
-          "FDF"
+          "FDF",
+          "EDF",
+          "CDF"
         ],
         "viagens_por_servico": [
           {
@@ -826,5 +826,5 @@
       }
     }
   },
-  "duration_s": 267
+  "duration_s": 233
 }
