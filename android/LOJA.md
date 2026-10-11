@@ -13,83 +13,82 @@ Tudo o que a Play Console pede, pronto a copiar.
 **Nome da app** (máx. 30): `PAROU: Transportes em direto`
 
 **Descrição curta** (máx. 80):
-`Autocarros, metro e comboios perto de ti, horários, greves e alertas. Grátis.`
+`Autocarros, metro e comboios perto de ti, em tempo real. Horários e alertas.`
 
 **Descrição completa:**
 
 ```
-A PAROU mostra-te, num só sítio, o que passa perto de ti: autocarros, metro, comboios e barcos, com quanto tempo falta para chegarem.
+A PAROU mostra-te, num só sítio, o que passa perto de ti: autocarros, metro, comboios e barcos, e quanto tempo falta para chegarem.
 
 PERTO DE TI
 • Abre a app e vê logo as paragens à tua volta e os próximos transportes
-• Tempo real onde os operadores o disponibilizam (Carris Metropolitana, STCP e outros); onde não há, a hora do horário oficial
-• Toca numa paragem para ver todas as partidas e o sentido de cada linha
+• Tempo real onde o operador o disponibiliza (por exemplo, STCP e Carris Metropolitana); onde não há, a hora do horário oficial, sempre identificada
+• Toca numa partida para ver o percurso da linha e as paragens no mapa
 
 HORÁRIOS DE TODAS AS LINHAS
-• Metro, comboios (CP, Fertagus), autocarros e barcos de todo o país
+• Metro, comboios, autocarros e barcos de todo o país
 • Pesquisa por número de linha ou destino
 • Guarda as tuas linhas e paragens favoritas
 
-ALERTAS
+ALERTAS E MAPA
 • Greves e perturbações anunciadas pelos operadores
 • Avisos de mau tempo do IPMA e previsão do tempo
-• Incêndios ativos e ocorrências da Proteção Civil perto de ti
+• Incêndios ativos e ocorrências da Proteção Civil
 • Feriados e notícias que mexem com as tuas viagens
-• Tudo atualizado automaticamente; o que já passou desaparece sozinho
-• Notificações de greves, avisos de mau tempo e perturbações graves no teu distrito, mesmo com a app fechada
+• Notificações opcionais de greves, mau tempo e perturbações graves no teu distrito
 
-MAPA
-• Vê no mapa o que está a acontecer agora em Portugal
+COMUNIDADE
+• Faz perguntas e partilha avisos com quem usa os mesmos transportes
+• Podes denunciar conteúdo e bloquear utilizadores
 
 GRATUITA E SEM FINS LUCRATIVOS
-Sem publicidade, sem subscrições e sem venda de dados. Feita para os cidadãos.
+Sem publicidade, sem subscrições e sem venda de dados. Feita para os cidadãos. Não precisas de conta para usar a app.
 
-Fontes: operadores de transportes (horários GTFS), IMT, IPMA, Open-Meteo, Fogos.pt/ANEPC e OpenStreetMap.
+A PAROU é um projeto independente. Não é uma app oficial de nenhum operador de transportes nem de entidade pública. Os horários e o tempo real vêm dos operadores e podem ter atrasos ou erros.
+
+Fontes: operadores de transportes (horários GTFS), IMT, IPMA, Open-Meteo, Fogos.pt/ANEPC, OpenStreetMap e órgãos de comunicação social.
 ```
 
 **Categoria:** Mapas e navegação
-**Email de contacto:** diniscash@gmail.com
+**Email de contacto:** contacto@parou.pt
 **Site:** https://parou.pt
 **Política de privacidade:** https://parou.pt/privacidade
 
 ## Conteúdo da app (Play Console › Política › Conteúdo da app)
 
-- **Anúncios:** Não, a app não contém anúncios.
-- **Acesso à app:** Toda a funcionalidade está disponível sem restrições (não é preciso conta).
-- **Público-alvo:** 13 anos ou mais (não é dirigida a crianças).
-- **Classificação de conteúdo (questionário):** categoria "Referência, notícias ou educação"; sem violência, sem conteúdo sexual, sem linguagem imprópria, sem drogas, sem jogos de azar. *Interação entre utilizadores:* Sim (as pessoas podem publicar ocorrências e comentários públicos). *Partilha a localização do utilizador com outras pessoas:* Não. *Compras digitais:* Não.
-- **App de notícias:** Não.
-- **Apps governamentais:** Não.
-- **Funcionalidades financeiras / saúde:** Não.
+- **Anúncios:** Não, a app não contém anúncios. **ID de publicidade:** não usa.
+- **Acesso à app:** «Parte da funcionalidade está restringida». Instruções (em inglês) no kit; a app é aberta sem conta, a conta só é precisa para publicar na Comunidade e reportar ocorrências. Criar conta é instantâneo (sem verificação de email). Dar também uma conta de teste.
+- **Público-alvo:** 16–17 e 18+ (não é dirigida a crianças).
+- **Classificação de conteúdo:** categoria «Utilitário, produtividade, comunicação ou outro»; sem violência, sexo, linguagem imprópria, drogas ou jogo. *Os utilizadores interagem ou trocam conteúdo:* Sim. *Partilha a localização com outras pessoas:* Sim (as ocorrências mostram o local no mapa). *Compras digitais:* Não.
+- **App de notícias:** Não. **Governamental:** Não. **Financeira / saúde:** Não.
 
 ### Segurança dos dados
 
-- **Recolhe ou partilha dados?** Sim, recolhe.
-- **Os dados são encriptados em trânsito?** Sim.
-- **As pessoas podem pedir para apagar os dados?** Sim — na app (Perfil › Apagar conta) e em https://parou.pt/privacidade#apagar-conta
+Recolhe dados; encriptados em trânsito; as pessoas podem pedir o apagamento. **Nada é partilhado** com terceiros.
 
-| Tipo de dados | Recolhido | Partilhado | Opcional? | Para quê |
-|---|---|---|---|---|
-| Localização aproximada | Sim | Não | Sim (pode escolher um local à mão) | Funcionalidade da app |
-| Localização precisa | Sim | Não | Sim | Funcionalidade da app |
-| Nome | Sim | Não | Sim (só com conta) | Gestão de conta, funcionalidade |
-| Endereço de email | Sim | Não | Sim (só com conta) | Gestão de conta |
-| Outro conteúdo gerado pelo utilizador (ocorrências, comentários) | Sim | Não | Sim | Funcionalidade da app |
-| IDs do dispositivo ou outros (identificador aleatório para a cópia dos favoritos; endereço de entrega das notificações, se ligadas) | Sim | Não | Não | Funcionalidade da app |
+| Tipo de dados | Opcional? | Para quê |
+|---|---|---|
+| Localização aproximada e precisa | Sim (pode escolher um local à mão) | Funcionalidade (tratada só em memória, não fica guardada) |
+| Nome | Sim (só com conta) | Funcionalidade, gestão de contas |
+| Endereço de email | Sim (só com conta) | Gestão de contas |
+| IDs de utilizador | Sim (só com conta) | Funcionalidade, gestão de contas |
+| Fotos | Sim (foto numa ocorrência) | Funcionalidade |
+| Outro conteúdo gerado pelo utilizador | Sim (ocorrências, publicações, respostas) | Funcionalidade |
+| Interações com a app | Sim (contagem anónima, desligável na Privacidade) | Análise |
+| Registos de falhas | Não (automático) | Análise |
+| Identificadores de dispositivo ou outros (código aleatório num cookie; endereço das notificações) | Não (automático) | Funcionalidade |
 
-Nota: a localização é tratada de forma efémera (só para calcular as paragens perto; não é guardada no servidor).
-
-**URL para apagar a conta:** https://parou.pt/privacidade#apagar-conta
+**URL para apagar a conta:** https://parou.pt/apagar-conta (dentro da app: Perfil › Apagar conta).
 
 ## Teste fechado (obrigatório para contas pessoais novas)
 
 1. Play Console › Testar e lançar › Testes › **Teste fechado** › Criar faixa.
 2. Carregar o **PAROU-1.0.0.aab**. Aceitar a **Assinatura de apps da Google Play** (recomendado).
-3. Testadores: criar uma lista de emails (pelo menos 12 contas Gmail) ou um Grupo Google.
+3. Testadores: criar uma lista de emails (pelo menos 12 contas Gmail; pedir a 20) ou um Grupo Google.
 4. Enviar o **link de participação** aos testadores (por WhatsApp): cada um toca em "Tornar-me testador" e instala a app pela Play Store.
 5. Ao fim de **14 dias seguidos** com 12 ou mais testadores inscritos, pedir o **acesso à produção** (Painel › Candidatar-se a produção).
 
-Depois do primeiro envio: Play Console › Configuração › **Integridade da app** › Assinatura de apps › copiar a **impressão digital SHA-256** da chave de assinatura da app e mandá-la ao Claude (não é segredo). Vai para o ficheiro `https://parou.pt/.well-known/assetlinks.json`, para a app abrir sem a barra do browser.
+Depois do primeiro envio: Play Console › Testar e lançar › **Integridade da app** (ou Configuração › Assinatura de apps) › copiar o **SHA-256** do certificado da chave de assinatura da app (não é segredo). Entra no servidor na variável `ANDROID_SHA256_EXTRA` (separada por vírgulas) e passa a constar de `https://parou.pt/.well-known/assetlinks.json`, para a app abrir em ecrã inteiro, sem a barra do browser.
 
 ## Atualizar a app
 
