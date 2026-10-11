@@ -27,8 +27,9 @@ jobs:
       - name: Capturas e imagens
         run: |
           mkdir -p trabalho && cd trabalho && npm init -y >/dev/null && npm i --no-audit --no-fund playwright@1 >/dev/null && npx playwright install --with-deps chromium >/dev/null
-          SITE="${{ inputs.site }}" SAIDA="$PWD/saida" node ../android/loja/fazer.cjs
-          curl -fsSL "${{ inputs.site }}/icon-512.png" -o saida/icone-512.png
+          exec > >(tee -a "$GITHUB_WORKSPACE/registo-loja.txt") 2>&1
+          PW="$PWD/node_modules/playwright" SITE="${{ inputs.site }}" SAIDA="$PWD/saida" node ../android/loja/fazer.cjs
+          curl -fsSL "${{ inputs.site }}/icon-maskable-512.png" -o saida/icone-512.png
           ls -la saida
       - name: Publicar
         working-directory: trabalho/saida
@@ -41,3 +42,11 @@ jobs:
             case "$f" in *.png|*.jpg) [ "$f" = "icone-512.png" ] || gh release delete-asset loja "$f" -R ${{ github.repository }} -y ;; esac
           done
           gh release upload loja -R ${{ github.repository }} *.jpg icone-512.png --clobber
+      - name: Guardar o registo
+        if: always()
+        run: |
+          mkdir pub && cp registo-loja.txt pub/ 2>/dev/null || echo "sem registo" > pub/registo-loja.txt
+          cd pub && git init -q -b loja-resultado
+          git config user.name "parou-dados"; git config user.email "actions@users.noreply.github.com"
+          git add -A && git commit -q -m "Loja $(date -u +%Y-%m-%dT%H:%MZ)"
+          git push -q -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" loja-resultado
