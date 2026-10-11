@@ -16,21 +16,30 @@ const lisboa = { geolocation: { latitude: 38.7107, longitude: -9.1365 }, permiss
 
 // <mark> = palavra que fica em destaque (branco sobre preto)
 const ECRAS = [
-  { id: 'perto', geo: porto, caminho: '/', espera: 11000, legenda: 'O que passa perto de ti, <mark>agora.</mark>' },
+  { id: 'perto', geo: porto, caminho: '/', espera: 11000, legenda: 'O que passa perto de ti,<br><mark>agora.</mark>' },
   {
-    id: 'percurso', geo: porto, caminho: '/', espera: 11000, legenda: 'Toca numa linha e <mark>vê o percurso.</mark>',
+    id: 'percurso', geo: porto, caminho: '/', espera: 11000, legenda: 'Toca numa linha e<br><mark>vê o percurso.</mark>',
     acao: async (p) => {
       await p.locator('[data-teste="paragem-perto"]:visible').first().click();
       await p.waitForTimeout(4000);
-      const linha = p.locator('[aria-label^="Ver o percurso da linha"]:visible').first();
-      if (await linha.count()) { await linha.click(); await p.waitForTimeout(6000); }
+      const linhas = p.locator('[aria-label^="Ver o percurso da linha"]:visible');
+      const n = Math.min(await linhas.count(), 8);
+      for (let i = 0; i < n; i++) {
+        await linhas.nth(i).click();
+        await p.waitForTimeout(5000);
+        const txt = await p.locator('[data-teste="percurso-linha"]').innerText().catch(() => '');
+        console.log('percurso', i, JSON.stringify(txt.slice(0, 90)));
+        if (txt && !/indispon|erro/i.test(txt) && /paragem/i.test(txt)) return;
+        await p.locator('[aria-label="Voltar às partidas da paragem"]').click().catch(() => {});
+        await p.waitForTimeout(1200);
+      }
     },
   },
-  { id: 'mapa', geo: porto, caminho: '/mapa', espera: 10000, legenda: 'Incêndios e avisos <mark>no mapa.</mark>' },
-  { id: 'horarios', geo: lisboa, caminho: '/transportes', espera: 9000, legenda: 'Horários de <mark>todas as linhas.</mark>' },
-  { id: 'noticias', geo: porto, caminho: '/alertas', espera: 9000, legenda: 'Greves, tempo e feriados <mark>num só sítio.</mark>' },
-  { id: 'comunidade', geo: porto, caminho: '/comunidade', espera: 8000, legenda: 'Fala com quem <mark>viaja contigo.</mark>' },
-  { id: 'escuro', geo: porto, caminho: '/', espera: 11000, tema: 'escuro', legenda: 'Claro, escuro <mark>ou laranja.</mark>' },
+  { id: 'mapa', geo: porto, caminho: '/mapa', espera: 10000, legenda: 'Incêndios e avisos<br><mark>no mapa.</mark>' },
+  { id: 'horarios', geo: lisboa, caminho: '/transportes', espera: 9000, legenda: 'Horários de<br><mark>todas as linhas.</mark>' },
+  { id: 'noticias', geo: porto, caminho: '/alertas', espera: 9000, legenda: 'Greves, tempo e feriados<br><mark>num só sítio.</mark>' },
+  { id: 'comunidade', geo: porto, caminho: '/comunidade', espera: 8000, legenda: 'Fala com quem<br><mark>viaja contigo.</mark>' },
+  { id: 'escuro', geo: porto, caminho: '/', espera: 11000, tema: 'escuro', legenda: 'Claro, escuro<br><mark>ou laranja.</mark>' },
 ];
 
 const FONTES = '<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@500;700&family=Barlow+Condensed:wght@700&display=swap" rel="stylesheet">';
@@ -48,7 +57,7 @@ const FONTES = '<link href="https://fonts.googleapis.com/css2?family=Barlow:wght
     if (preparar) await preparar(ctx);
     const p = await ctx.newPage();
     try {
-      await p.goto(base + e.caminho, { waitUntil: 'load', timeout: 60000 });
+      await p.goto(base + e.caminho + '?origem=android', { waitUntil: 'load', timeout: 60000 });
       await p.waitForTimeout(e.espera);
       if (e.acao) { try { await e.acao(p); } catch (err) { console.log(e.id, 'ação:', err.message.split('\n')[0]); } await p.waitForTimeout(2500); }
       await p.screenshot({ path: path.join(saida, `crua-${e.id}.jpg`), type: 'jpeg', quality: 94 });
@@ -71,7 +80,7 @@ const FONTES = '<link href="https://fonts.googleapis.com/css2?family=Barlow:wght
       body{width:1080px;height:1920px;overflow:hidden;background:#FF6B1A;font-family:Barlow,Arial,sans-serif;position:relative}
       .marca{position:absolute;left:72px;top:64px;display:flex;align-items:center;gap:18px;font-family:'Barlow Condensed','Barlow',Arial,sans-serif;font-weight:700;font-size:44px;letter-spacing:3px;color:#111}
       .marca svg{width:46px;height:46px}
-      h1{position:absolute;left:72px;right:72px;top:150px;font-family:'Barlow Condensed','Barlow',Arial,sans-serif;font-weight:700;font-size:124px;line-height:1.02;color:#111111;letter-spacing:-.5px}
+      h1{position:absolute;left:72px;right:72px;top:150px;white-space:nowrap;font-family:'Barlow Condensed','Barlow',Arial,sans-serif;font-weight:700;font-size:124px;line-height:1.02;color:#111111;letter-spacing:-.5px}
       mark{background:#111111;color:#FFFFFF;padding:0 22px 6px;border-radius:22px;-webkit-box-decoration-break:clone;box-decoration-break:clone}
       .tel{position:absolute;left:50%;top:500px;transform:translateX(-50%);width:828px;height:1440px;border-radius:84px 84px 0 0;background:#111111;padding:16px 16px 0;box-shadow:0 -10px 60px rgba(0,0,0,.28)}
       .tel img{display:block;width:796px;height:1416px;border-radius:70px 70px 0 0;object-fit:cover;object-position:top}
@@ -85,7 +94,7 @@ const FONTES = '<link href="https://fonts.googleapis.com/css2?family=Barlow:wght
       // A legenda cabe sempre em 2 linhas acima do telemóvel: se for comprida, o tipo encolhe
       const h = document.querySelector('h1');
       let t = 124;
-      while (h.getBoundingClientRect().height > 270 && t > 70) { t -= 4; h.style.fontSize = t + 'px'; }
+      while ((h.getBoundingClientRect().height > 290 || h.scrollWidth > h.clientWidth) && t > 60) { t -= 4; h.style.fontSize = t + 'px'; }
     });
     await p.waitForTimeout(600);
     await p.screenshot({ path: path.join(saida, `loja-${n}-${e.id}.jpg`), type: 'jpeg', quality: 94 });
