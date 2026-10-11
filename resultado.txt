@@ -1,0 +1,11 @@
+== 2026-10-11T03:58:14Z acao=comando
+IP: 2.31.13.85
+== Saída no servidor
+Oct 08 14:24:36 parou env[56379]: [IndexNow] 9000 endereços → HTTP 403
+Oct 08 14:39:38 parou env[56953]: [IndexNow] 9000 endereços → HTTP 200
+Oct 08 14:39:44 parou env[56953]: [IndexNow] 9000 endereços → HTTP 200
+Oct 08 14:39:50 parou env[56953]: [IndexNow] 6778 endereços → HTTP 200
+ESTADO
+{"tudo":1791470377680,"principais":1791470377680}== Teste de fora
+https://2-31-13-85.sslip.io/health 200 0.408709s
+https://2-31-13-85.sslip.io/api/transit/loading-status 200 0.394846s
