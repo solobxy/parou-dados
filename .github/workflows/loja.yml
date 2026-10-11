@@ -29,7 +29,7 @@ jobs:
           mkdir -p trabalho && cd trabalho && npm init -y >/dev/null && npm i --no-audit --no-fund playwright@1 >/dev/null && npx playwright install --with-deps chromium >/dev/null
           exec > >(tee -a "$GITHUB_WORKSPACE/registo-loja.txt") 2>&1
           PW="$PWD/node_modules/playwright" SITE="${{ inputs.site }}" SAIDA="$PWD/saida" node ../android/loja/fazer.cjs
-          curl -fsSL "${{ inputs.site }}/icon-maskable-512.png" -o saida/icone-512.png
+          cp ../android/loja/icone-512.png saida/icone-512.png
           ls -la saida
       - name: Publicar
         working-directory: trabalho/saida
