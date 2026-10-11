@@ -114,6 +114,12 @@ jobs:
           source funcs.sh
           IP=$(h "$API/servers?name=parou" | jq -r '.servers[0].public_net.ipv4.ip // empty')
           [ -n "$IP" ] || { echo "Servidor não encontrado" >> resultado.txt; exit 1; }
+          # Sem segredo no GitHub, usa a chave cifrada guardada no repositório (age, para a chave SSH
+          # do servidor: só quem tem o HCLOUD_TOKEN a consegue abrir).
+          if [ -z "$FOGOS_API_KEY" ] && [ -f servidor/fogos.age ]; then
+            sudo apt-get install -y -qq age >/dev/null 2>&1
+            FOGOS_API_KEY=$(age -d -i ~/.ssh/id_ed25519 servidor/fogos.age 2>/dev/null) || FOGOS_API_KEY=""
+          fi
           for NOME in FOGOS_API_KEY; do
             VALOR="${!NOME}"
             if [ -z "$VALOR" ]; then echo "$NOME: sem segredo no GitHub (nada a fazer)" >> resultado.txt; continue; fi
