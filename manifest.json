@@ -1,7 +1,7 @@
 {
-  "built_at": "2026-10-12T12:02:37.567989+00:00",
+  "built_at": "2026-10-12T12:20:36.781959+00:00",
   "db_bytes": 547094528,
-  "gz_bytes": 108274074,
+  "gz_bytes": 108273782,
   "totals": {
     "lines": 2821,
     "stops": 46389,
@@ -490,7 +490,7 @@
     {
       "id": "tld-7825",
       "operator_name": "RMTEJO II - Transportes Rodoviários de Passageiros",
-      "status": "ERROR",
+      "status": "SEM DADOS",
       "lines": 0,
       "stops": 0,
       "trips": 0,
@@ -499,7 +499,7 @@
       "dias_validade": null,
       "horario_prolongado": false,
       "url": "https://files.mobilitydatabase.org/tld-7825/latest.zip",
-      "last_error": "https://files.mobilitydatabase.org/tld-7825/latest.zip -> o operador publicou o ficheiro sem paragens (lista de paragens vazia) | https://drive.google.com/uc?export=download&id=1v9eGjezOzbaBQi-Aa5c15tZXcSiiDwqA -> o operador publicou o ficheiro sem paragens (lista de paragens vazia)",
+      "last_error": "O operador publicou o ficheiro sem paragens, linhas nem horários. Quando publicar dados, a PAROU usa-os sozinha.",
       "servicos_associados": null,
       "servicos_sem_calendario": null,
       "viagens_hoje": 0,
@@ -509,7 +509,7 @@
     {
       "id": "tld-7876",
       "operator_name": "RDL RODOVIÁRIA DO LIS II",
-      "status": "ERROR",
+      "status": "SEM DADOS",
       "lines": 0,
       "stops": 0,
       "trips": 0,
@@ -518,7 +518,7 @@
       "dias_validade": null,
       "horario_prolongado": false,
       "url": "https://files.mobilitydatabase.org/tld-7876/latest.zip",
-      "last_error": "https://files.mobilitydatabase.org/tld-7876/latest.zip -> o operador publicou o ficheiro sem paragens (lista de paragens vazia) | https://drive.google.com/uc?export=download&id=192Qat2jJKyv5hhO8T3eVT70M5NB0dtXC -> o operador publicou o ficheiro sem paragens (lista de paragens vazia)",
+      "last_error": "O operador publicou o ficheiro sem paragens, linhas nem horários. Quando publicar dados, a PAROU usa-os sozinha.",
       "servicos_associados": null,
       "servicos_sem_calendario": null,
       "viagens_hoje": 0,
@@ -528,7 +528,7 @@
     {
       "id": "tld-7877",
       "operator_name": "RDL RODOVIÁRIA DO LIS",
-      "status": "ERROR",
+      "status": "SEM DADOS",
       "lines": 0,
       "stops": 0,
       "trips": 0,
@@ -537,7 +537,7 @@
       "dias_validade": null,
       "horario_prolongado": false,
       "url": "https://files.mobilitydatabase.org/tld-7877/latest.zip",
-      "last_error": "https://files.mobilitydatabase.org/tld-7877/latest.zip -> o operador publicou o ficheiro sem paragens (lista de paragens vazia) | https://drive.google.com/uc?export=download&id=1NqcOk8IrlV73TBonJAxpzIUTjaAjF27M -> o operador publicou o ficheiro sem paragens (lista de paragens vazia)",
+      "last_error": "O operador publicou o ficheiro sem paragens, linhas nem horários. Quando publicar dados, a PAROU usa-os sozinha.",
       "servicos_associados": null,
       "servicos_sem_calendario": null,
       "viagens_hoje": 0,
@@ -764,13 +764,13 @@
           "total": 398
         },
         "servicos_com_data_hoje": [
-          "DU",
-          "CU",
-          "EU",
-          "FU",
           "AU",
+          "EU",
+          "BU",
+          "FU",
+          "DU",
           "BexpU",
-          "BU"
+          "CU"
         ],
         "viagens_por_servico": [
           {
@@ -825,5 +825,5 @@
       }
     }
   },
-  "duration_s": 384
+  "duration_s": 228
 }
