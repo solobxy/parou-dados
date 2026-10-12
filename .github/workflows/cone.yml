@@ -58,10 +58,26 @@ jobs:
             geolocation: { latitude: 41.1462, longitude: -8.6110, accuracy: 8 }, permissions: ['geolocation'],
           });
           const page = await ctx.newPage();
+          await page.addInitScript(() => {
+            window.__reg = [];
+            const orig = window.addEventListener.bind(window);
+            window.addEventListener = (t, f, o) => { if (/orientation/.test(t)) window.__reg.push(t + ':' + (o === true || (o && o.capture) ? 'cap' : 'bub')); return orig(t, f, o); };
+            window.__vistos = [];
+            ['deviceorientationabsolute','deviceorientation'].forEach((t) => orig(t, (e) => window.__vistos.push(t + ':' + e.alpha + ',' + e.beta + ',' + e.gamma + ',' + e.absolute), true));
+          });
           page.on('console', (m) => { if (m.type() === 'error') log.push('consola: ' + m.text().slice(0, 160)); });
           page.on('pageerror', (e) => log.push('erro: ' + String(e).slice(0, 200)));
           await page.goto(base + '/', { waitUntil: 'load', timeout: 60000 });
           await page.waitForTimeout(12000);
+          const sonda = async (rotulo) => {
+            const r = await page.evaluate(() => ({
+              registados: window.__reg, vistos: window.__vistos.length, ultimo: window.__vistos.slice(-1)[0],
+              ecra: screen.orientation ? screen.orientation.type + '/' + screen.orientation.angle : 'sem screen.orientation',
+              windowOrientation: String(window.orientation), temDOE: 'DeviceOrientationEvent' in window,
+              pedePermissao: typeof window.DeviceOrientationEvent?.requestPermission, seguro: window.isSecureContext,
+            }));
+            log.push(rotulo + ' ' + JSON.stringify(r));
+          };
           const info = async (rotulo) => {
             const r = await page.evaluate(() => {
               const m = document.querySelector('.custom-user-marker-icon');
@@ -86,6 +102,7 @@ jobs:
           await enviar('deviceorientation', { alpha: 180, beta: 70, gamma: 0, absolute: false });
           await page.waitForTimeout(600);
           await info('4) só relativo (sem norte): nada muda');
+          await sonda('5) sonda');
           await page.evaluate(() => { window.__eventos = 0; });
           await ctx.close();
           await browser.close();
