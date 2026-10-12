@@ -969,6 +969,16 @@ def process_feed(conn, feed, today_dt, have_prev):
         log(f"  ~~  {fid}: falhou hoje, mantidos os dados anteriores")
         return old
     row = dict(base)
+    # Ficheiro publicado vazio (só a linha de cabeçalhos): não é um erro da PAROU nem do download, o operador
+    # ainda não publicou dados. Fica "SEM DADOS" e passa a ser usado sozinho quando houver horários.
+    vazio = bool(errors) and all("lista de paragens vazia" in e for e in errors)
+    if vazio:
+        row.update({"status": "SEM DADOS", "progress": "SEM DADOS: o operador publicou o ficheiro vazio",
+                    "last_error": "O operador publicou o ficheiro sem paragens, linhas nem horários. Quando publicar dados, a PAROU usa-os sozinha."})
+        upsert_feed(conn, row)
+        conn.commit()
+        log(f"  --  {fid}: o operador publicou o ficheiro vazio (sem dados)")
+        return row
     row.update({"status": "ERROR", "progress": f"ERROR: {message[:300]}", "last_error": message[:1000]})
     upsert_feed(conn, row)
     conn.commit()
