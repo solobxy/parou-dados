@@ -1,0 +1,104 @@
+name: Teste do cone de direção
+
+# Compila a app (solobxy/parou), abre o Perto com uma localização falsa e envia eventos de bússola falsos
+# para ver se o cone laranja aparece e roda. Guarda o resultado no ramo "cone".
+
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: "Commit ou ramo de solobxy/parou"
+        required: false
+        default: "main"
+
+permissions:
+  contents: write
+
+jobs:
+  cone:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: solobxy/parou
+          ref: ${{ inputs.ref }}
+          path: app
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Compilar a app
+        working-directory: app
+        run: |
+          npm ci --no-audit --no-fund --legacy-peer-deps || npm install --no-audit --no-fund --legacy-peer-deps
+          npm run build
+
+      - name: Arrancar a app
+        working-directory: app
+        run: |
+          mkdir -p dados
+          NODE_ENV=production PORT=3000 PAROU_DATA_DIR=$PWD/dados TZ=Europe/Lisbon FOGOS_TESTE=1 nohup node --import tsx server.ts > app.log 2>&1 &
+          for i in $(seq 1 40); do curl -s -m 5 -o /dev/null http://127.0.0.1:3000/health && break; sleep 3; done
+          curl -s -m 5 -o /dev/null -w "%{http_code}\n" http://127.0.0.1:3000/
+
+      - name: Testar o cone
+        run: |
+          mkdir -p cap && cd cap && npm init -y >/dev/null && npm i --no-audit --no-fund playwright@1 >/dev/null && npx playwright install --with-deps chromium >/dev/null
+          cat > cone.mjs <<'EOF'
+          import { chromium } from 'playwright';
+          import fs from 'node:fs';
+          const base = 'http://127.0.0.1:3000';
+          const log = [];
+          const browser = await chromium.launch();
+          const ctx = await browser.newContext({
+            viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true,
+            locale: 'pt-PT', timezoneId: 'Europe/Lisbon',
+            geolocation: { latitude: 41.1462, longitude: -8.6110, accuracy: 8 }, permissions: ['geolocation'],
+          });
+          const page = await ctx.newPage();
+          page.on('console', (m) => { if (m.type() === 'error') log.push('consola: ' + m.text().slice(0, 160)); });
+          page.on('pageerror', (e) => log.push('erro: ' + String(e).slice(0, 200)));
+          await page.goto(base + '/', { waitUntil: 'load', timeout: 60000 });
+          await page.waitForTimeout(12000);
+          const info = async (rotulo) => {
+            const r = await page.evaluate(() => {
+              const m = document.querySelector('.custom-user-marker-icon');
+              const c = m && m.querySelector('[data-cone]');
+              const caixa = c ? c.getBoundingClientRect() : null;
+              return { marcador: !!m, cone: !!c, opacidade: c && c.style.opacity, transformacao: c && c.style.transform, opacidadeCalculada: c && getComputedStyle(c).opacity, visivel: caixa ? [Math.round(caixa.x), Math.round(caixa.y), Math.round(caixa.width), Math.round(caixa.height)] : null };
+            });
+            log.push(rotulo + ' ' + JSON.stringify(r));
+          };
+          const enviar = (tipo, d) => page.evaluate(([tipo, d]) => { window.dispatchEvent(new DeviceOrientationEvent(tipo, d)); }, [tipo, d]);
+          await info('1) antes de qualquer evento');
+          await page.screenshot({ path: 'cone-0-sem-evento.png' });
+          await enviar('deviceorientationabsolute', { alpha: 90, beta: 10, gamma: 0, absolute: true });
+          await page.waitForTimeout(600);
+          await info('2) absoluto, deitado, alpha=90 (esperado: opacidade 1, rotate(270deg))');
+          await page.screenshot({ path: 'cone-1-absoluto-deitado.png' });
+          await page.waitForTimeout(200);
+          await enviar('deviceorientationabsolute', { alpha: 0, beta: 70, gamma: 0, absolute: true });
+          await page.waitForTimeout(600);
+          await info('3) absoluto, de pé, beta=70 alpha=0');
+          await page.screenshot({ path: 'cone-2-absoluto-de-pe.png' });
+          await enviar('deviceorientation', { alpha: 180, beta: 70, gamma: 0, absolute: false });
+          await page.waitForTimeout(600);
+          await info('4) só relativo (sem norte): nada muda');
+          await page.evaluate(() => { window.__eventos = 0; });
+          await ctx.close();
+          await browser.close();
+          fs.writeFileSync('resultado.txt', log.join('\n') + '\n');
+          console.log(log.join('\n'));
+          EOF
+          node cone.mjs
+
+      - name: Guardar
+        if: always()
+        run: |
+          mkdir pub && cp cap/*.png cap/*.txt pub/ 2>/dev/null || true
+          tail -n 40 app/app.log > pub/app.log 2>/dev/null || true
+          cd pub && git init -q -b cone
+          git config user.name "parou-dados"; git config user.email "actions@users.noreply.github.com"
+          git add -A && git commit -q -m "Teste do cone ${{ inputs.ref }} $(date -u +%Y-%m-%dT%H:%MZ)" && git push -q -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" cone
