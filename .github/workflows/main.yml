@@ -22,6 +22,32 @@ jobs:
         with:
           python-version: "3.12"
 
+      # STCP: credenciais da API oficial, cifradas no repositório (servidor/stcp.age). Só se abrem com o
+      # HCLOUD_TOKEN; ficam mascaradas nos registos e só existem durante esta execução.
+      - name: Credenciais da STCP
+        continue-on-error: true
+        env:
+          HCLOUD_TOKEN: ${{ secrets.HCLOUD_TOKEN }}
+        run: |
+          if [ -n "$HCLOUD_TOKEN" ] && [ -f servidor/stcp.age ] && [ -f servidor/chave-ssh.enc ]; then
+            command -v age >/dev/null 2>&1 || sudo apt-get install -y -qq age >/dev/null 2>&1 || true
+            (umask 077; openssl enc -d -aes-256-cbc -pbkdf2 -iter 200000 -pass env:HCLOUD_TOKEN -in servidor/chave-ssh.enc -out "$RUNNER_TEMP/chave" 2>/dev/null) || true
+            DADOS=$(age -d -i "$RUNNER_TEMP/chave" servidor/stcp.age 2>/dev/null) || DADOS=""
+            rm -f "$RUNNER_TEMP/chave"
+            ID=$(printf '%s' "$DADOS" | sed -n 1p)
+            CHAVE=$(printf '%s' "$DADOS" | sed -n 2p)
+            if [ -n "$ID" ] && [ -n "$CHAVE" ]; then
+              echo "::add-mask::$ID"
+              echo "::add-mask::$CHAVE"
+              { echo "STCP_APP_ID=$ID"; echo "STCP_API_KEY=$CHAVE"; } >> "$GITHUB_ENV"
+              echo "Credenciais da STCP prontas"
+            else
+              echo "Sem credenciais da STCP: a usar as fontes abertas"
+            fi
+          else
+            echo "Sem credenciais da STCP: a usar as fontes abertas"
+          fi
+
       - name: Construir a base de dados
         run: python construir_dados.py
 

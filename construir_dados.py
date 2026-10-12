@@ -173,8 +173,15 @@ def norm(text):
     return text.lower()
 
 
+# Fontes com credenciais (por URL). Os valores vêm do ambiente e nunca se escrevem em registos nem na base.
+CABECALHOS_POR_URL = {}
+STCP_ESTATICO = "https://api.stcp.pt:8443/v1/ficheiros/estatico/ficheirozip"
+
+
 def http_get_full(url, timeout=180, insecure=False):
-    req = urllib.request.Request(url, headers={"User-Agent": UA, "Accept": "*/*"})
+    cabecalhos = {"User-Agent": UA, "Accept": "*/*"}
+    cabecalhos.update(CABECALHOS_POR_URL.get(url, {}))
+    req = urllib.request.Request(url, headers=cabecalhos)
     context = ssl._create_unverified_context() if insecure else None  # noqa: S323
     with urllib.request.urlopen(req, timeout=timeout, context=context) as resp:
         return resp.status, resp.read(), dict(resp.headers)
@@ -875,6 +882,11 @@ def process_feed(conn, feed, today_dt, have_prev):
     for u in (feed.get("url"), feed.get("mirror")):
         if u and u not in [x[0] for x in candidates]:
             candidates.append((u, None))
+    # STCP: a API oficial (credenciais cedidas à PAROU.PT) tem os horários em vigor, antes dos portais abertos.
+    # Entra como mais uma fonte: como o Porto escolhe o ficheiro com o calendário mais recente, ganha sozinha.
+    if fid == "stcp" and os.environ.get("STCP_APP_ID") and os.environ.get("STCP_API_KEY"):
+        CABECALHOS_POR_URL[STCP_ESTATICO] = {"X-App-Id": os.environ["STCP_APP_ID"], "X-Api-Key": os.environ["STCP_API_KEY"]}
+        candidates.insert(0, (STCP_ESTATICO, None))
     urls = [c[0] for c in candidates]
     days = dict(candidates)
 
