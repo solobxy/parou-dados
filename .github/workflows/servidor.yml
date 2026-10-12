@@ -120,7 +120,14 @@ jobs:
             sudo apt-get install -y -qq age >/dev/null 2>&1
             FOGOS_API_KEY=$(age -d -i ~/.ssh/id_ed25519 servidor/fogos.age 2>/dev/null) || FOGOS_API_KEY=""
           fi
-          for NOME in FOGOS_API_KEY; do
+          # STCP (API oficial de tempo real): credenciais cifradas em servidor/stcp.age (linha 1 = app-id, linha 2 = chave)
+          if [ -f servidor/stcp.age ]; then
+            command -v age >/dev/null 2>&1 || sudo apt-get install -y -qq age >/dev/null 2>&1
+            STCP_DADOS=$(age -d -i ~/.ssh/id_ed25519 servidor/stcp.age 2>/dev/null) || STCP_DADOS=""
+            STCP_APP_ID=$(printf '%s' "$STCP_DADOS" | sed -n 1p)
+            STCP_API_KEY=$(printf '%s' "$STCP_DADOS" | sed -n 2p)
+          fi
+          for NOME in FOGOS_API_KEY STCP_APP_ID STCP_API_KEY; do
             VALOR="${!NOME}"
             if [ -z "$VALOR" ]; then echo "$NOME: sem segredo no GitHub (nada a fazer)" >> resultado.txt; continue; fi
             # Passa o valor pelo stdin (não aparece em comandos nem no resultado)
