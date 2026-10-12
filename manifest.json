@@ -1,12 +1,12 @@
 {
-  "built_at": "2026-10-12T16:06:00.051412+00:00",
-  "db_bytes": 562806784,
-  "gz_bytes": 111638839,
+  "built_at": "2026-10-12T22:33:15.445253+00:00",
+  "db_bytes": 564248576,
+  "gz_bytes": 111905926,
   "totals": {
     "lines": 2821,
     "stops": 46385,
-    "trips": 121444,
-    "stop_times": 3715054,
+    "trips": 122588,
+    "stop_times": 3728299,
     "operators": 30,
     "operators_ok": 27,
     "operators_desatualizados": 2
@@ -113,18 +113,18 @@
       "status": "OK",
       "lines": 3,
       "stops": 19,
-      "trips": 348,
-      "valid_until": "2030-12-25",
+      "trips": 1492,
+      "valid_until": "2032-12-31",
       "validade": "ok",
-      "dias_validade": 1535,
-      "horario_prolongado": true,
+      "dias_validade": 2272,
+      "horario_prolongado": false,
       "url": "https://mts.pt/imt/MTS-20240129.zip",
-      "last_error": "O operador não atualizou as datas do calendário para alguns dias (3 dias sem horário publicado); a usar o horário semanal mais recente.",
+      "last_error": null,
       "servicos_associados": null,
       "servicos_sem_calendario": null,
-      "viagens_hoje": 348,
-      "viagens_amanha": 0,
-      "dias_uteis_sem_servico": 4
+      "viagens_hoje": 676,
+      "viagens_amanha": 676,
+      "dias_uteis_sem_servico": 0
     },
     {
       "id": "tcb_barreiro",
@@ -770,13 +770,13 @@
           "total": 398
         },
         "servicos_com_data_hoje": [
+          "EU",
+          "CU",
+          "FU",
           "BexpU",
           "DU",
-          "FU",
           "AU",
-          "BU",
-          "CU",
-          "EU"
+          "BU"
         ],
         "viagens_por_servico": [
           {
@@ -831,5 +831,5 @@
       }
     }
   },
-  "duration_s": 242
+  "duration_s": 200
 }
