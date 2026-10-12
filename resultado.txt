@@ -1,0 +1,5 @@
+1) antes de qualquer evento {"marcador":true,"cone":true,"opacidade":"0","transformacao":"","opacidadeCalculada":"0","visivel":[145,159,100,100]}
+2) absoluto, deitado, alpha=90 (esperado: opacidade 1, rotate(270deg)) {"marcador":true,"cone":true,"opacidade":"1","transformacao":"rotate(270deg)","opacidadeCalculada":"1","visivel":[145,159,100,100]}
+3) absoluto, de pé, beta=70 alpha=0 {"marcador":true,"cone":true,"opacidade":"1","transformacao":"rotate(297deg)","opacidadeCalculada":"1","visivel":[128,142,134,134]}
+4) só relativo (sem norte): nada muda {"marcador":true,"cone":true,"opacidade":"1","transformacao":"rotate(297deg)","opacidadeCalculada":"1","visivel":[128,142,134,134]}
+5) sonda {"registados":["deviceorientationabsolute:cap","deviceorientation:cap"],"vistos":5,"ultimo":"deviceorientation:180,70,0,false","ecra":"portrait-primary/0","windowOrientation":"0","temDOE":true,"pedePermissao":"function","seguro":true}
