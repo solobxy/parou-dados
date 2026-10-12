@@ -1,15 +1,15 @@
 {
-  "built_at": "2026-10-12T12:20:36.781959+00:00",
-  "db_bytes": 547094528,
-  "gz_bytes": 108273782,
+  "built_at": "2026-10-12T16:06:00.051412+00:00",
+  "db_bytes": 562806784,
+  "gz_bytes": 111638839,
   "totals": {
     "lines": 2821,
-    "stops": 46389,
-    "trips": 118011,
-    "stop_times": 3591260,
+    "stops": 46385,
+    "trips": 121444,
+    "stop_times": 3715054,
     "operators": 30,
     "operators_ok": 27,
-    "operators_desatualizados": 3
+    "operators_desatualizados": 2
   },
   "feeds": [
     {
@@ -150,19 +150,19 @@
       "operator_name": "STCP (Porto)",
       "status": "OK",
       "lines": 71,
-      "stops": 2548,
-      "trips": 12523,
-      "valid_until": "2026-09-23",
-      "validade": "caducado",
-      "dias_validade": -19,
-      "horario_prolongado": true,
-      "url": "https://dadosabertos.cm-porto.pt/dataset/71490e40-9e19-11f1-84ed-6abdb6d5cf34/resource/51340c18-0ef5-4895-b099-cf7247ea54f4/download/gtfs_feed.zip",
-      "last_error": "O operador não atualizou as datas do calendário (terminam em 2026-09-23); a usar o horário semanal em vigor.",
+      "stops": 2544,
+      "trips": 15956,
+      "valid_until": "2026-10-31",
+      "validade": "ok",
+      "dias_validade": 19,
+      "horario_prolongado": false,
+      "url": "https://api.stcp.pt:8443/v1/ficheiros/estatico/ficheirozip",
+      "last_error": null,
       "servicos_associados": null,
       "servicos_sem_calendario": null,
-      "viagens_hoje": 0,
-      "viagens_amanha": 5386,
-      "dias_uteis_sem_servico": 1
+      "viagens_hoje": 5645,
+      "viagens_amanha": 5645,
+      "dias_uteis_sem_servico": 0
     },
     {
       "id": "metro_porto",
@@ -591,23 +591,29 @@
       "stcp": {
         "calendar": [],
         "datas_soltas": {
-          "primeira": "20260901",
-          "ultima": "20261025",
-          "total": 36
+          "primeira": "20261011",
+          "ultima": "20261031",
+          "total": 21
         },
-        "servicos_com_data_hoje": [],
+        "servicos_com_data_hoje": [
+          "UTIL ESCOLAR:FLUXO 3 20261012"
+        ],
         "viagens_por_servico": [
           {
-            "service": "UTIL FERIAS:FLUXO 3 20260831",
-            "viagens": 5386
+            "service": "UTIL ESCOLAR:FLUXO 3 20261012",
+            "viagens": 5645
           },
           {
-            "service": "SABADO:FLUXO 3 20260831",
-            "viagens": 3871
+            "service": "SABADO:FLUXO 3 20261012",
+            "viagens": 3847
           },
           {
-            "service": "DOM|FERIADO:FLUXO 3 20260831",
-            "viagens": 3266
+            "service": "DOM|FERIADO:FLUXO 3 20261010",
+            "viagens": 3232
+          },
+          {
+            "service": "DOM|FERIADO:FLUXO 3 20261012",
+            "viagens": 3232
           }
         ]
       },
@@ -764,13 +770,13 @@
           "total": 398
         },
         "servicos_com_data_hoje": [
-          "AU",
-          "EU",
-          "BU",
-          "FU",
-          "DU",
           "BexpU",
-          "CU"
+          "DU",
+          "FU",
+          "AU",
+          "BU",
+          "CU",
+          "EU"
         ],
         "viagens_por_servico": [
           {
@@ -825,5 +831,5 @@
       }
     }
   },
-  "duration_s": 228
+  "duration_s": 242
 }
