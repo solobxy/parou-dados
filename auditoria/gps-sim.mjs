@@ -10,7 +10,7 @@ const LAT0 = 41.15, LON0 = -8.61, M = 111320, COS = Math.cos(LAT0 * Math.PI / 18
 const toLL = (x, y) => ({ lat: LAT0 + y / M, lon: LON0 + x / (M * COS) });
 
 // Trajetória verdadeira a 10 Hz: [tempo, x, y, vx, vy]
-function trajeto() {
+function trajeto(pe = false) {
   const dt = 0.1, pts = [];
   let x = 0, y = 0, h = 0.4 /* rad desde o norte */, v = 0, t = 0;
   // plano: [duração, aceleração alvo/velocidade alvo, taxa de viragem rad/s]
@@ -31,9 +31,15 @@ function trajeto() {
     [12, 1.1, 0],
     [60, 0, 0],
   ];
-  for (const [dur, acc, w] of plano) {
+  // A pé: espera na paragem, caminha a ~1,4 m/s, curvas de 90º nas esquinas
+  const planoPe = [
+    [40, 0, 0], [3, 0.5, 0], [60, 0, 0], [2.5, 0, 0.63], [50, 0, 0], [2.5, 0, -0.63], [30, 0, 0],
+    [2, -0.7, 0], [45, 0, 0], [3, 0.5, 0], [80, 0, 0],
+  ];
+  const vmax = pe ? 1.4 : 13;
+  for (const [dur, acc, w] of (pe ? planoPe : plano)) {
     for (let i = 0; i < dur / dt; i++) {
-      v = Math.max(0, Math.min(13, v + acc * dt));
+      v = Math.max(0, Math.min(vmax, v + acc * dt));
       h += w * dt;
       x += v * Math.sin(h) * dt; y += v * Math.cos(h) * dt;
       t += dt;
@@ -64,9 +70,9 @@ function filtroAntigo(prev, lat, lon, acc, t, velMs) {
   return { lat: prev.lat + (lat - prev.lat) * k, lon: prev.lon + (lon - prev.lon) * k, variancia: (1 - k) * variancia, t };
 }
 
-function cenario(semente, { ruido = 1, saltos = 1, tunel = false, semDoppler = false } = {}) {
+function cenario(semente, { ruido = 1, saltos = 1, tunel = false, semDoppler = false, pe = false } = {}) {
   const r = rng(semente);
-  const pts = trajeto();
+  const pts = trajeto(pe);
   const T = pts[pts.length - 1].t;
   // leituras a 1 Hz com erro correlacionado (multipath), saltos e atraso
   let bx = 0, by = 0, saltoRest = 0, sx = 0, sy = 0;
@@ -83,11 +89,11 @@ function cenario(semente, { ruido = 1, saltos = 1, tunel = false, semDoppler = f
     if (tunel && t >= 70 && t < 95) { ex = (r() - 0.5) * 900; ey = (r() - 0.5) * 900; accRep = 300 + r() * 500; }
     const llm = toLL(p.x + ex, p.y + ey);
     const atraso = 0.4 + r() * 0.9;
-    const v = Math.max(0, p.v + 0.35 * gauss(r));
+    const v = Math.max(0, p.v + (pe ? 0.12 : 0.35) * gauss(r));
     const velOk = !semDoppler && r() > 0.03;
     leituras.push({
       tFix: t, chegada: t + atraso, lat: llm.lat, lon: llm.lon, acc: Math.round(accRep), x: p.x, y: p.y,
-      velocidade: velOk ? v : null, rumo: velOk && v >= 0.5 ? ((p.h * 180 / Math.PI + 3 * gauss(r)) % 360 + 360) % 360 : null,
+      velocidade: velOk ? v : null, rumo: velOk && v >= 0.5 ? ((p.h * 180 / Math.PI + (pe ? 10 : 3) * gauss(r)) % 360 + 360) % 360 : null,
     });
   }
   return { pts, leituras, T };
@@ -187,3 +193,6 @@ if (!so || so === 'normal') resumo('GPS normal', { ruido: 1, saltos: 1 });
 if (!so || so === 'mau') resumo('GPS mau', { ruido: 2, saltos: 3 });
 if (!so || so === 'semdop') resumo('sem Doppler', { ruido: 1, saltos: 1, semDoppler: true });
 if (!so || so === 'tunel') resumo('túnel', { ruido: 1, saltos: 1, tunel: true });
+if (!so || so === 'pe') resumo('a pé', { ruido: 1, saltos: 1, pe: true });
+if (!so || so === 'peurbano') resumo('a pé, rua estreita (erro 2×)', { ruido: 2, saltos: 2, pe: true });
+if (!so || so === 'pesemdop') resumo('a pé, sem Doppler', { ruido: 1.3, saltos: 1, pe: true, semDoppler: true });
