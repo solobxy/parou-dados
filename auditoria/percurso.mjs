@@ -60,6 +60,7 @@ async function correr(browser, nome, motor, tema, custom) {
   const ctx = await browser.newContext({
     ...(custom || base), ...(custom ? { locale: 'pt-PT' } : {}), locale: 'pt-PT', timezoneId: 'Europe/Lisbon',
     permissions: ['geolocation'], geolocation: { latitude: LAT, longitude: LON, accuracy: 10 },
+    serviceWorkers: 'block', // o Playwright não intercepta pedidos que passam pelo service worker (WebKit)
   });
   await ctx.addInitScript({ content: `try{ Object.defineProperty(Navigator.prototype,'webdriver',{get:()=>false,configurable:true}); localStorage.setItem('parou_tema','${tema}'); localStorage.setItem('parou_aviso_instalar','1'); localStorage.setItem('parou_bemvindo','visto'); localStorage.setItem('parou_localizacao_ok','1'); }catch(e){}` });
   await ctx.route(/(tile|openstreetmap|arcgisonline|cartocdn|basemaps)\./i, (rt) => rt.fulfill({ status: 200, contentType: 'image/png', body: PNG }));
@@ -113,6 +114,7 @@ async function correr(browser, nome, motor, tema, custom) {
     ok(`${rot} linha do percurso desenhada no mapa`, linhaMapa >= 2, linhaMapa);
     const cab = await p.locator('[data-teste="percurso-linha"] >> text=Santo Ovídio').first().isVisible().catch(() => false);
     ok(`${rot} cabeçalho mostra a linha e o destino`, (await p.locator('[data-teste="percurso-linha"]').innerText()).includes('706') || cab);
+    await foto('2_percurso_so_horario');
     // a lista do percurso cabe no ecrã (não passa do fundo) e dá para deslizar até ao fim
     const caixa = await p.locator('[data-teste="percurso-linha"]').boundingBox();
     const vh = p.viewportSize().height;
@@ -124,7 +126,6 @@ async function correr(browser, nome, motor, tema, custom) {
       const h = document.elementFromPoint(x, y); return h && (l === h || l.contains(h)) ? 'ok' : 'tapada por ' + (h ? h.tagName + '.' + String(h.className).slice(0, 40) : 'nada');
     });
     ok(`${rot} última paragem do percurso alcançável (não tapada)`, sobreposto === 'ok', sobreposto);
-    await foto('2_percurso_so_horario');
 
     // 2) "Partidas" volta à lista da paragem
     await p.getByRole('button', { name: /Partidas|Voltar às partidas/ }).first().click();
@@ -133,7 +134,7 @@ async function correr(browser, nome, motor, tema, custom) {
 
     // 3) Tocar numa partida do painel (com viagem) também abre o percurso, agora com horas
     await p.waitForTimeout(500);
-    const painel = p.locator('aside [role="button"][aria-label*="Ver o percurso da linha 205"]:visible').first();
+    const painel = p.locator('aside [role="button"]:not([data-teste="partida-perto"])[aria-label*="Ver o percurso da linha 205"]:visible').first();
     ok(`${rot} painel da paragem tem a partida 205 como botão`, (await painel.count()) === 1);
     await painel.click();
     await p.waitForSelector('[data-teste="percurso-linha"]:visible', { timeout: 10000 });
