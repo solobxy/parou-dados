@@ -408,11 +408,57 @@ async function parteCidades(browser, nome, motor, tema, custom) {
   await ctx.close();
 }
 
+// ============ Parte C: aviso de posição pouco precisa ============
+async function parteAviso(browser, nome, motor, tema, custom) {
+  const rot = `[${nome} ${tema}] precisão`;
+  const foto = async (p, s) => { await p.waitForTimeout(400); return p.screenshot({ path: `${SAIDA}/${nome.replace(/[^\w]+/g, '_')}_${tema}_prec_${s}.jpg`, type: 'jpeg', quality: 60, scale: 'css' }).catch(() => {}); };
+  const ctx = await novoContexto(browser, nome, tema, custom, { gps: true });
+  if (!ctx) return;
+  await ctx.setGeolocation({ latitude: LAT, longitude: LON, accuracy: 800 });
+  await ctx.route('**/api/transit/nearby**', (rt) => rt.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ stops: [PARAGEM], vehicles: [], alerts: [], radiusMeters: 500, timestamp: new Date().toISOString() }) }));
+  await ctx.route('**/api/transit/stop/**', (rt) => rt.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ departures: [] }) }));
+  const p = await ctx.newPage();
+  const erros = [];
+  p.on('pageerror', (e) => erros.push(String(e).slice(0, 200)));
+  const aviso = p.locator('[data-teste="aviso-precisao"]:visible');
+  try {
+    await p.goto(`${BASE}/`, { waitUntil: 'domcontentloaded' });
+    await p.waitForSelector('[data-teste="paragem-perto"]:visible', { timeout: 45000 });
+    await fechaPonto(p);
+    ok(`${rot}: logo ao início não incomoda (espera 20 s)`, (await aviso.count()) === 0);
+    await p.waitForSelector('[data-teste="aviso-precisao"]', { state: 'visible', timeout: 45000 });
+    const txt = await aviso.first().innerText();
+    ok(`${rot}: com 800 m de erro avisa "pouco precisa"`, /pouco precisa/.test(txt) && /localização precisa/.test(txt), txt.replace(/\n/g, ' ').slice(0, 120));
+    ok(`${rot}: diz a ordem de grandeza (cerca de 800 m ou 1,5 km)`, /cerca de (\d[\d,. ]*\s?(m|km))/.test(txt), txt.replace(/\n/g, ' ').slice(0, 80));
+    const c1 = await aviso.first().locator('p').first().evaluate(eval(CONTRASTE));
+    const c2 = await aviso.first().locator('p').nth(1).evaluate(eval(CONTRASTE));
+    ok(`${rot}: texto do aviso com contraste ≥ 4.5:1`, c1 >= 4.5 && c2 >= 4.5, `${c1.toFixed(2)} / ${c2.toFixed(2)}`);
+    const bb = await aviso.first().boundingBox();
+    ok(`${rot}: aviso cabe na largura do ecrã`, bb && bb.x >= 0 && bb.x + bb.width <= p.viewportSize().width + 1, bb ? `${Math.round(bb.x)}+${Math.round(bb.width)}` : '');
+    const bf = await p.locator('[data-teste="aviso-precisao-fechar"]:visible').first().boundingBox();
+    ok(`${rot}: botão "Percebi" com altura ≥ 44 px`, bf && bf.height >= 44, bf ? Math.round(bf.height) : '');
+    await foto(p, '1_aviso');
+    await p.locator('[data-teste="aviso-precisao-fechar"]:visible').first().click();
+    await p.waitForTimeout(300);
+    ok(`${rot}: "Percebi" fecha o aviso`, (await aviso.count()) === 0);
+    // A posição melhora: o aviso não volta; e quem nunca o fechou vê-o desaparecer
+    await ctx.setGeolocation({ latitude: LAT, longitude: LON, accuracy: 8 });
+    await p.waitForTimeout(4000);
+    ok(`${rot}: com a posição boa não há aviso`, (await aviso.count()) === 0);
+  } catch (e) {
+    ok(`${rot}: aviso sem exceções`, false, String(e).slice(0, 300));
+    await foto(p, 'erro');
+  }
+  ok(`${rot}: aviso sem erros de JavaScript`, erros.length === 0, erros.slice(0, 2).join(' | '));
+  await ctx.close();
+}
+
 for (const [nome, motor, tema, custom] of ALVOS) {
   const b = await (motor === 'webkit' ? webkit : chromium).launch();
   try {
     await parteCidades(b, nome, motor, tema, custom);
     await parteLocalizacao(b, nome, motor, tema, custom);
+    if (nome !== 'Pixel 5') await parteAviso(b, nome, motor, tema, custom);
   } catch (e) {
     ok(`[${nome} ${tema}] sem exceções gerais`, false, String(e).slice(0, 300));
   }
