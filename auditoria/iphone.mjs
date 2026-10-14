@@ -22,7 +22,12 @@ const ALVOS = [
   ['iPhone 13 Mini', 'webkit', 'todos'],
   ['iPhone 13', 'webkit', 'claro'],
   ['iPhone 14 Pro Max', 'webkit', 'todos'],
+  ['iPhone SE landscape', 'webkit', 'claro'],
+  ['iPhone 13 Mini landscape', 'webkit', 'todos'],
+  ['iPhone 14 Pro Max landscape', 'webkit', 'claro'],
   ['iPad Mini', 'webkit', 'claro'],
+  ['iPad Mini landscape', 'webkit', 'claro'],
+  ['iPad Pro 11', 'webkit', 'claro'],
   ['Galaxy S9+', 'chromium', 'claro'],            // 320×658
   ['Galaxy S5', 'chromium', 'claro'],             // 360×640
   ['Pixel 5', 'chromium', 'claro'],
@@ -94,7 +99,7 @@ async function novoContexto(browsers, [nome, motor, , extra], tema) {
     const temas = temasSel === 'todos' ? TEMAS : ['claro'];
     const reg = { aparelho: rotulo, motor, rotas: [], interacoes: [] };
     res.aparelhos.push(reg);
-    const fotografar = /Mini|SE$|Pro Max|Fold/.test(nome);
+    const fotografar = /Mini|SE|Pro Max|Fold/.test(nome);
 
     for (const tema of temas) {
       const ctx = await novoContexto(browsers, alvo, tema);
