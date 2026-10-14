@@ -66,6 +66,14 @@ for f in parou.service parou-atualizar.service parou-atualizar.timer; do
   fi
 done
 
+# Resumo do registo de segurança da app (só totais por tipo e por dia: sem IPs, sem rotas, sem códigos de origem).
+# Fica ao lado da página de estado, para a vigia automática do GitHub o poder ler e avisar o criador.
+if [ -s /var/lib/parou/seguranca-resumo.json ]; then
+  cp /var/lib/parou/seguranca-resumo.json /var/lib/parou-estado/seguranca.json.tmp \
+    && mv /var/lib/parou-estado/seguranca.json.tmp /var/lib/parou-estado/seguranca.json \
+    && chmod 644 /var/lib/parou-estado/seguranca.json
+fi
+
 # Registos do servidor: no máximo 30 dias (como diz a política de privacidade) e 500 MB
 mkdir -p /etc/systemd/journald.conf.d
 printf '[Journal]\nMaxRetentionSec=30day\nSystemMaxUse=500M\n' > /tmp/parou-journald.conf
