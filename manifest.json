@@ -1,12 +1,12 @@
 {
-  "built_at": "2026-10-14T09:02:49.403357+00:00",
-  "db_bytes": 581378048,
-  "gz_bytes": 115237754,
+  "built_at": "2026-10-14T19:28:59.677225+00:00",
+  "db_bytes": 581439488,
+  "gz_bytes": 115261337,
   "totals": {
     "lines": 2821,
-    "stops": 46381,
+    "stops": 46382,
     "trips": 126176,
-    "stop_times": 3854176,
+    "stop_times": 3854534,
     "operators": 30,
     "operators_ok": 27,
     "operators_desatualizados": 2
@@ -283,7 +283,7 @@
       "operator_name": "Vamus Algarve",
       "status": "OK",
       "lines": 72,
-      "stops": 2851,
+      "stops": 2852,
       "trips": 1114,
       "valid_until": "2027-12-31",
       "validade": "ok",
@@ -770,12 +770,12 @@
           "total": 399
         },
         "servicos_com_data_hoje": [
-          "EU",
-          "AU",
-          "CU",
-          "DU",
           "BexpU",
+          "EU",
+          "CU",
+          "AU",
           "FU",
+          "DU",
           "BU"
         ],
         "viagens_por_servico": [
@@ -831,5 +831,5 @@
       }
     }
   },
-  "duration_s": 266
+  "duration_s": 256
 }
