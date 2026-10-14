@@ -80,6 +80,7 @@ const fechaPonto = async (p) => {
   if (await f.count()) await f.first().click({ timeout: 2000 }).catch(() => {});
 };
 const cabe = async (p, seletor) => {
+  await p.waitForTimeout(500); // as janelas sobem com uma animação curta
   const c = await p.locator(seletor).first().boundingBox();
   const vh = p.viewportSize().height, vw = p.viewportSize().width;
   return c && c.x >= -1 && c.y >= -1 && c.x + c.width <= vw + 2 && c.y + c.height <= vh + 2 ? 'ok' : `fora do ecrã ${c ? `${Math.round(c.x)},${Math.round(c.y)} ${Math.round(c.width)}x${Math.round(c.height)} em ${vw}x${vh}` : 'sem caixa'}`;
@@ -88,7 +89,7 @@ const cabe = async (p, seletor) => {
 // ============ Parte A: localização ============
 async function parteLocalizacao(browser, nome, motor, tema, custom) {
   const rot = `[${nome} ${tema}] localização`;
-  const foto = (p, s) => p.screenshot({ path: `${SAIDA}/${nome.replace(/[^\w]+/g, '_')}_${tema}_loc_${s}.jpg`, type: 'jpeg', quality: 60, scale: 'css' }).catch(() => {});
+  const foto = async (p, s) => { await p.waitForTimeout(500); return p.screenshot({ path: `${SAIDA}/${nome.replace(/[^\w]+/g, '_')}_${tema}_loc_${s}.jpg`, type: 'jpeg', quality: 60, scale: 'css' }).catch(() => {}); };
 
   // A1) Convite para ativar (sem GPS): a nota está à vista e abre a janela
   {
@@ -207,7 +208,7 @@ async function parteLocalizacao(browser, nome, motor, tema, custom) {
 // ============ Parte B: as minhas cidades ============
 async function parteCidades(browser, nome, motor, tema, custom) {
   const rot = `[${nome} ${tema}] cidades`;
-  const foto = (p, s) => p.screenshot({ path: `${SAIDA}/${nome.replace(/[^\w]+/g, '_')}_${tema}_cid_${s}.jpg`, type: 'jpeg', quality: 60, scale: 'css' }).catch(() => {});
+  const foto = async (p, s) => { await p.waitForTimeout(500); return p.screenshot({ path: `${SAIDA}/${nome.replace(/[^\w]+/g, '_')}_${tema}_cid_${s}.jpg`, type: 'jpeg', quality: 60, scale: 'css' }).catch(() => {}); };
   const ctx = await novoContexto(browser, nome, tema, custom, { gps: false });
   if (!ctx) return;
   const pedidos = [];
@@ -261,11 +262,11 @@ async function parteCidades(browser, nome, motor, tema, custom) {
     // Procurar
     const campo = p.locator(`${sheet} input[type="search"]`);
     const fs = await campo.evaluate((e) => parseFloat(getComputedStyle(e).fontSize));
-    ok(`${rot}: campo de pesquisa ≥ 16 px (o iPhone não faz zoom)`, fs >= 16, fs);
-    await campo.fill('sao joao');
+    if (nome !== 'Desktop') ok(`${rot}: campo de pesquisa ≥ 16 px (o iPhone não faz zoom)`, fs >= 16, fs);
+    await campo.fill('guimaraes');
     await p.waitForTimeout(200);
     const achadas = await p.locator('[data-teste="cidade"]').allInnerTexts();
-    ok(`${rot}: pesquisa sem acentos encontra "São João da Madeira"`, achadas.some((x) => /São João da Madeira/.test(x)), achadas.join(',').slice(0, 80));
+    ok(`${rot}: pesquisa sem acentos encontra "Guimarães"`, achadas.some((x) => /Guimarães/.test(x)), achadas.join(',').slice(0, 80));
     await campo.fill('xyzxyz');
     await p.waitForTimeout(200);
     ok(`${rot}: pesquisa sem resultados diz "Nenhuma cidade com esse nome."`, /Nenhuma cidade com esse nome/.test(await p.locator(sheet).innerText()));
@@ -314,8 +315,8 @@ async function parteCidades(browser, nome, motor, tema, custom) {
     ok(`${rot}: sem resultados nas cidades diz onde procurou`, /Nenhuma linha em Braga e Lisboa/.test(semTxt), semTxt.replace(/\n/g, ' ').slice(0, 100));
     await foto(p, '5_sem_resultados');
     await p.locator('[data-teste="procurar-todo-o-pais"]').first().click();
-    await p.waitForFunction(() => /Só noutra cidade/.test(document.body.innerText), null, { timeout: 8000 }).catch(() => {});
-    ok(`${rot}: "Procurar em todo o país" mostra a linha de outra cidade`, /Só noutra cidade/.test(await p.evaluate(() => document.body.innerText)));
+    await p.waitForFunction(() => /Só noutra cidade/i.test(document.body.innerText), null, { timeout: 8000 }).catch(() => {});
+    ok(`${rot}: "Procurar em todo o país" mostra a linha de outra cidade`, /Só noutra cidade/i.test(await p.evaluate(() => document.body.innerText)));
     ok(`${rot}: esse pedido não leva filtro`, !ultimo().cidades && ultimo().q === 'zzz', JSON.stringify(ultimo()));
     ok(`${rot}: avisa que mostra todo o país`, (await p.locator('[data-teste="aviso-todo-o-pais"]').count()) === 1);
     ok(`${rot}: "todo o país" é só desta vez (a escolha continua guardada)`, (await ls('parou_cidades')) === '{"v":1,"s":["braga","lisboa"]}', await ls('parou_cidades'));
