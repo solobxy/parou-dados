@@ -20,6 +20,11 @@ try{document.cookie='parou_idioma=${idioma};path=/;max-age=3600';}catch(e){}
 window.__lcp=0;window.__cls=0;
 try{new PerformanceObserver(function(l){for(var e of l.getEntries())window.__lcp=e.startTime}).observe({type:'largest-contentful-paint',buffered:true})}catch(e){}
 window.__shifts=[];
+window.__mut=[];
+try{var __mo=new MutationObserver(function(rs){for(var r of rs){if(window.__mut.length>=30)return;var t=Math.round(performance.now());
+if(r.type==='childList'){for(var n of r.removedNodes){if(n.nodeType===1&&/^(SECTION|DIV|MAIN|FOOTER|NAV|HEADER)$/.test(n.tagName)&&(n.textContent||'').length>20){window.__mut.push({t:t,k:'-',n:n.tagName+'.'+String(n.className||'').slice(0,40)+' "'+(n.textContent||'').trim().slice(0,20)+'"',p:(r.target.tagName||'')+'.'+String(r.target.className||'').slice(0,40)})}}}
+else if(r.type==='attributes'&&r.attributeName==='style'){var s=r.target.getAttribute('style')||'';if(/display/.test(s))window.__mut.push({t:t,k:'style',n:r.target.tagName+'.'+String(r.target.className||'').slice(0,40),s:s.slice(0,60)})}}});
+__mo.observe(document,{childList:true,subtree:true,attributes:true,attributeFilter:['style']})}catch(e){}
 try{new PerformanceObserver(function(l){for(var e of l.getEntries())if(!e.hadRecentInput){window.__cls+=e.value;if(e.value>0.02&&window.__shifts.length<6){var d=function(n){if(!n)return '?';var c=(n.className&&n.className.baseVal!==undefined?n.className.baseVal:n.className)||'';return (n.tagName||'#').toLowerCase()+'.'+String(c).slice(0,60)+' "'+((n.textContent||'').trim().slice(0,24))+'"'};window.__shifts.push({v:+e.value.toFixed(3),t:Math.round(e.startTime),s:(e.sources||[]).slice(0,3).map(function(s){return d(s.node)+' y '+Math.round(s.previousRect.y)+'>'+Math.round(s.currentRect.y)+' h '+Math.round(s.currentRect.height)}) })}}}).observe({type:'layout-shift',buffered:true})}catch(e){}
 `;
 
@@ -27,7 +32,7 @@ const medir = `(() => {
   const vw = window.innerWidth, vis = (e) => { const r = e.getBoundingClientRect(); const cs = getComputedStyle(e); return r.width > 0 && r.height > 0 && cs.visibility !== 'hidden' && cs.display !== 'none' && cs.opacity !== '0'; };
   const out = { titulo: document.title, lang: document.documentElement.lang, h1: document.querySelectorAll('h1').length,
     desc: !!document.querySelector('meta[name=description]'), canonical: (document.querySelector('link[rel=canonical]') || {}).href || '',
-    scrollW: document.documentElement.scrollWidth, vw, lcp: Math.round(window.__lcp || 0), cls: +(window.__cls || 0).toFixed(3), shifts: window.__shifts || [] };
+    scrollW: document.documentElement.scrollWidth, vw, lcp: Math.round(window.__lcp || 0), cls: +(window.__cls || 0).toFixed(3), shifts: window.__shifts || [], mut: window.__mut || [] };
   out.transbordam = [...document.querySelectorAll('body *')].filter((e) => { if (!vis(e)) return false; const r = e.getBoundingClientRect(); return r.right > vw + 1 && !e.closest('.leaflet-container,[data-rolagem],.overflow-x-auto,.overflow-auto,.scroll-x,[class*="overflow-x"]'); }).slice(0, 5).map((e) => e.tagName.toLowerCase() + '.' + String(e.className).slice(0, 50) + ' "' + (e.textContent || '').trim().slice(0, 30) + '" r=' + Math.round(e.getBoundingClientRect().right));
   const alvos = [...document.querySelectorAll('a[href],button,[role=button],[role=tab],input:not([type=hidden]),select,textarea,summary')].filter(vis);
   out.nAlvos = alvos.length;
