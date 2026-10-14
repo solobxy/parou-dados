@@ -206,6 +206,29 @@ const PASSOS = ['idioma', 'perto', 'destinos', 'horarios', 'alertas', 'comunidad
     await ctx.close();
   }
 
+  // F2) Administração: mudar de idioma na demonstração recarrega a página e a demonstração continua no passo seguinte
+  {
+    const { ctx, p } = await contexto(browser, { w: 390, h: 780, init: adminInit });
+    ok('[demo idioma] conta de teste criada', (await registar(ctx)) < 300);
+    await p.goto(BASE + '/', { waitUntil: 'load' });
+    await p.waitForTimeout(1200);
+    await abrirPerfil(p);
+    await p.locator('[data-teste="abrir-bemvindo"]').scrollIntoViewIfNeeded();
+    await p.locator('[data-teste="abrir-bemvindo"]').click();
+    await aparece(p, 4000);
+    await Promise.all([p.waitForNavigation({ waitUntil: 'load', timeout: 20000 }), p.locator('[data-teste="bv-idioma-en"]').click()]);
+    ok('[demo idioma] depois de escolher inglês a demonstração continua', await aparece(p, 6000));
+    await p.waitForTimeout(600);
+    ok('[demo idioma] no passo 2 (perto)', (await passoAtivo(p)) === 'perto', await passoAtivo(p));
+    ok('[demo idioma] estado real continua "visto"', (await estado(p)) === 'visto', await estado(p));
+    await foto(p, 'demo_idioma_en_passo1');
+    await p.getByRole('button', { name: 'Close' }).first().click();
+    await p.waitForTimeout(300);
+    await p.reload({ waitUntil: 'load' });
+    ok('[demo idioma] depois de fechar e recarregar não volta a abrir', await naoAparece(p, 2500));
+    await ctx.close();
+  }
+
   // G) Teclado: setas mudam de passo, Esc fecha
   {
     const { ctx, p } = await contexto(browser, { w: 1280, h: 800 });
