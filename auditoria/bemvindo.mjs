@@ -31,6 +31,8 @@ const semTransbordo = (p) => p.evaluate(() => document.documentElement.scrollWid
 const passoAtivo = (p) => p.evaluate(() => { const s = [...document.querySelectorAll('[data-teste="bem-vindo"] [data-passo]')].find((e) => e.getAttribute('aria-hidden') === 'false'); return s ? s.getAttribute('data-passo') : null; });
 const alturaOk = (p) => p.evaluate(() => { const d = document.querySelector('[role="dialog"]'); if (!d) return false; const r = d.getBoundingClientRect(); return r.top >= -1 && r.bottom <= window.innerHeight + 1; });
 
+const cabeSemDeslizar = (p) => p.evaluate(() => { const c = document.querySelector('[role="dialog"] .overflow-y-auto'); return c ? c.scrollHeight <= c.clientHeight + 1 : false; });
+
 const PASSOS = ['idioma', 'perto', 'destinos', 'horarios', 'alertas', 'comunidade', 'conta'];
 
 (async () => {
@@ -48,6 +50,7 @@ const PASSOS = ['idioma', 'perto', 'destinos', 'horarios', 'alertas', 'comunidad
       await p.waitForTimeout(500);
       await foto(p, `${w}_${tema}_0_idioma`);
       ok(`[${w} ${tema}] diálogo cabe no ecrã (passo 0)`, await alturaOk(p));
+      ok(`[${w} ${tema}] idioma: tudo visível sem deslizar`, await cabeSemDeslizar(p));
       await p.locator('[data-teste="bv-idioma-pt"]').click();
       for (let i = 1; i < PASSOS.length; i++) {
         await p.waitForTimeout(450);
@@ -55,6 +58,7 @@ const PASSOS = ['idioma', 'perto', 'destinos', 'horarios', 'alertas', 'comunidad
         ok(`[${w} ${tema}] passo ${i} = ${PASSOS[i]}`, a === PASSOS[i], a);
         if (w !== 320 || i === 1 || i === 6) await foto(p, `${w}_${tema}_${i}_${PASSOS[i]}`);
         if (i === 3 || i === 6) ok(`[${w} ${tema}] diálogo cabe no ecrã (passo ${i})`, await alturaOk(p));
+        ok(`[${w} ${tema}] passo ${i}: tudo visível sem deslizar`, await cabeSemDeslizar(p));
         if (i < PASSOS.length - 1) await p.getByRole('button', { name: /^Seguinte$/ }).click();
       }
       ok(`[${w} ${tema}] sem scroll lateral`, await semTransbordo(p));
