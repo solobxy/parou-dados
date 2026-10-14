@@ -124,8 +124,9 @@ const ficheiros = ['/.env', '/.env.local', '/.git/config', '/.git/HEAD', '/packa
 const exp = [];
 for (const f of ficheiros) {
   const r = await pedir(f, { headers: { accept: '*/*' } });
-  const conteudoSensivel = /root:.*:0:0|DB_PASSWORD|PRIVATE KEY|PAROU_ADMIN|VAPID_PRIVATE|"name":\s*"|SQLite format|\[core\]|import .* from|ref: refs\/heads/.test(r.c);
   const ehSPA = r.s === 200 && ehHtmlDoSite(r);
+  // A página inicial do site tem dados estruturados (JSON-LD com "name"): se é a própria página do site, não se procura conteúdo suspeito
+  const conteudoSensivel = !ehSPA && /root:.*:0:0|DB_PASSWORD|PRIVATE KEY|PAROU_ADMIN|VAPID_PRIVATE|"name":\s*"|SQLite format|\[core\]|import .* from|ref: refs\/heads/.test(r.c);
   if (r.s === 200 && !ehSPA) { exp.push(f); nota('FALHA', `${f} → 200 (${r.ct})`, r.c.replace(/\s+/g, ' ').slice(0, 100)); }
   else if (conteudoSensivel) { exp.push(f); nota('FALHA', `${f} → conteúdo suspeito`, r.c.slice(0, 100)); }
   else if (r.s >= 500) nota('AVISO', `${f} → ${r.s}`);
