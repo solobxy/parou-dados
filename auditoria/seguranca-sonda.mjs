@@ -44,11 +44,12 @@ for (const p of ['/', '/api/health', '/linhas']) {
 
 // ---------- 2. HTTP -> HTTPS e TLS ----------
 console.log('\n## 2. HTTP/TLS');
-{
+if (!BASE.startsWith('https')) nota('INFO', 'ensaio local em http: sem verificação de TLS/redirecionamento');
+else {
   const r = await pedir(`http://${HOST}/`, { semCorpo: true });
   nota(/^30[1278]$/.test(String(r.s)) && /^https:/.test(r.h.get('location') || '') ? 'OK' : 'AVISO', `http://${HOST}/ → ${r.s} ${r.h.get('location') || ''}`, r.erro || '');
 }
-await new Promise((ok) => {
+if (BASE.startsWith('https')) await new Promise((ok) => {
   const s = tls.connect({ host: HOST, port: 443, servername: HOST, rejectUnauthorized: true }, () => {
     const c = s.getPeerCertificate();
     const dias = Math.round((new Date(c.valid_to).getTime() - Date.now()) / 86400000);
@@ -57,7 +58,7 @@ await new Promise((ok) => {
   });
   s.on('error', (e) => { nota('FALHA', 'TLS', e.message); ok(); });
 });
-for (const v of ['TLSv1', 'TLSv1.1']) {
+for (const v of BASE.startsWith('https') ? ['TLSv1', 'TLSv1.1'] : []) {
   await new Promise((ok) => {
     const s = tls.connect({ host: HOST, port: 443, servername: HOST, minVersion: v, maxVersion: v }, () => { nota('AVISO', `${v} aceite`); s.end(); ok(); });
     s.on('error', () => { nota('OK', `${v} recusado`); ok(); });
@@ -95,7 +96,7 @@ let abertas = 0;
 // Ações pesadas: só o pedido normal (se a guarda falhasse, a variante dispararia mesmo o trabalho em produção)
 const PESADAS = new Set(['/api/coverage/reingest-all', '/api/coverage/run-discovery', '/api/transit/discovery/sync', '/api/public-sources/sync', '/api/central-alerts/sync', '/api/transit-catalog/probe']);
 for (const [m, p] of admin) {
-  for (const [mm, pp, como] of variantes(m, p).filter((v) => !PESADAS.has(p) || v[2] === 'normal')) {
+  for (const [mm, pp, como] of variantes(m, p).filter((v) => process.env.TUDO || !PESADAS.has(p) || v[2] === 'normal')) {
     const r = await pedir(pp, { method: mm, headers: { 'content-type': 'application/json', origin: BASE }, body: mm === 'POST' || mm === 'PUT' ? '{}' : undefined });
     const fechado = r.s === 403 || r.s === 404 || r.s === 401 || r.s === 405 || r.s === 429 || (r.s === 200 && ehHtmlDoSite(r));
     if (!fechado) { abertas++; nota('FALHA', `${mm} ${pp} [${como}] respondeu ${r.s}`, (r.c || '').replace(/\s+/g, ' ').slice(0, 120)); }
@@ -103,6 +104,15 @@ for (const [m, p] of admin) {
   }
 }
 if (!abertas) nota('OK', 'nenhuma rota de administração respondeu sem chave (incluindo variantes)');
+
+if (process.env.CHAVE_ENSAIO) {
+  console.log('\n## 3b. Com a chave de ensaio (esperado 200)');
+  for (const [m, p, cab] of [['GET', '/api/coverage/logs', { 'x-parou-admin': process.env.CHAVE_ENSAIO }], ['GET', '/Api/Coverage/Logs', { 'x-parou-admin': process.env.CHAVE_ENSAIO }], ['GET', '/debug/stop/x?chave=' + process.env.CHAVE_ENSAIO, {}], ['GET', '/api/coverage/logs', { 'x-parou-admin': 'errada-errada-errada-errada' }]]) {
+    const r = await pedir(p, { method: m, headers: cab });
+    const esperado = /errada/.test(JSON.stringify(cab)) ? r.s === 403 : r.s === 200;
+    nota(esperado ? 'OK' : 'FALHA', `${m} ${p.replace(process.env.CHAVE_ENSAIO, '***')} ${/errada/.test(JSON.stringify(cab)) ? 'com chave errada' : 'com chave certa'} → ${r.s}`);
+  }
+}
 
 // ---------- 4. ficheiros que nunca devem estar expostos ----------
 console.log('\n## 4. Ficheiros sensíveis');
