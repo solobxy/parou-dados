@@ -9,8 +9,12 @@ const res = { testes: [], consola: [] };
 const ok = (nome, cond, extra = '') => { res.testes.push({ nome, ok: !!cond, extra: String(extra) }); console.log(cond ? 'OK     ' : 'FALHOU ', nome, extra); };
 const PNG = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGP4z8DwHwAFAAH/q842iQAAAABJRU5ErkJggg==', 'base64');
 
-async function contexto(browser, { w, h, tema = 'claro', ua, init = '' }) {
-  const ctx = await browser.newContext({ viewport: { width: w, height: h }, locale: 'pt-PT', timezoneId: 'Europe/Lisbon', hasTouch: w < 1024, isMobile: w < 700, userAgent: ua });
+// Um navegador "normal": o de testes anuncia-se como HeadlessChrome com webdriver=true e a app (de propósito) trata isso como robô
+const UA_TELEMOVEL = 'Mozilla/5.0 (Linux; Android 14; Pixel 7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Mobile Safari/537.36';
+const UA_COMPUTADOR = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36';
+async function contexto(browser, { w, h, tema = 'claro', ua, init = '', robo = false }) {
+  const ctx = await browser.newContext({ viewport: { width: w, height: h }, locale: 'pt-PT', timezoneId: 'Europe/Lisbon', hasTouch: w < 1024, isMobile: w < 700, userAgent: robo ? undefined : (ua || (w < 700 ? UA_TELEMOVEL : UA_COMPUTADOR)) });
+  if (!robo) await ctx.addInitScript({ content: `try{ Object.defineProperty(Navigator.prototype,'webdriver',{get:()=>false,configurable:true}); }catch(e){}` });
   await ctx.addInitScript({ content: `try{ if(!localStorage.getItem('parou_tema')) localStorage.setItem('parou_tema','${tema}'); localStorage.setItem('parou_aviso_instalar','1'); }catch(e){} ${init}` });
   await ctx.route(/(tile|openstreetmap|arcgisonline|cartocdn|basemaps)\./i, (r) => r.fulfill({ status: 200, contentType: 'image/png', body: PNG }));
   const p = await ctx.newPage();
@@ -125,6 +129,14 @@ const PASSOS = ['idioma', 'perto', 'destinos', 'horarios', 'alertas', 'comunidad
     const { ctx, p } = await contexto(browser, { w: 390, h: 780, ua: 'Mozilla/5.0 (Linux; Android 6.0.1; Nexus 5X) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Mobile Safari/537.36 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)' });
     await p.goto(BASE + '/', { waitUntil: 'load' });
     ok('[robô] Googlebot não vê', await naoAparece(p, 2500));
+    await ctx.close();
+  }
+
+  // E2) O navegador automático (webdriver, HeadlessChrome) também conta como robô
+  {
+    const { ctx, p } = await contexto(browser, { w: 390, h: 780, robo: true });
+    await p.goto(BASE + '/', { waitUntil: 'load' });
+    ok('[robô] navegador automático não vê', await naoAparece(p, 2500));
     await ctx.close();
   }
 
