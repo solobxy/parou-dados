@@ -13,6 +13,9 @@ ExecStart=/usr/bin/env node --import tsx server.ts
 Restart=always
 RestartSec=5
 LimitNOFILE=65536
+# Ficheiros novos só legíveis pelo utilizador da app e o root; a app não pode ganhar mais privilégios
+UMask=0027
+NoNewPrivileges=true
 
 [Install]
 WantedBy=multi-user.target
