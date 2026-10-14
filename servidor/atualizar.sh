@@ -28,7 +28,8 @@ escrever_estado() {
     echo "Reinícios pela vigia: $(tail -n 3 /var/lib/parou-estado/reinicios.log 2>/dev/null | tr '\n' ';' || true)"
     echo
     echo "--- Últimas linhas da app ---"
-    journalctl -u parou -n 40 --no-pager -o cat 2>/dev/null | cut -c1-300
+    # Esta página é pública: esconde emails e endereços IP que alguma linha possa ter
+    journalctl -u parou -n 40 --no-pager -o cat 2>/dev/null | sed -E 's/[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/<email>/g; s/([0-9]{1,3}\.){3}[0-9]{1,3}/<ip>/g' | cut -c1-240
   } > "$ESTADO.tmp" && mv "$ESTADO.tmp" "$ESTADO"
   chmod 644 "$ESTADO"
 }
@@ -71,6 +72,26 @@ printf '[Journal]\nMaxRetentionSec=30day\nSystemMaxUse=500M\n' > /tmp/parou-jour
 if ! cmp -s /tmp/parou-journald.conf /etc/systemd/journald.conf.d/parou.conf; then
   cp /tmp/parou-journald.conf /etc/systemd/journald.conf.d/parou.conf
   systemctl restart systemd-journald || true
+fi
+
+# Segurança do servidor (cada passo só mexe se ainda não está assim)
+# 1. SSH só com chave: ninguém tem palavra-passe, por isso fecha-se a porta a tentativas de adivinhar.
+#    O ficheiro começa por 00 porque no SSH vale o primeiro valor que aparece.
+if [ ! -f /etc/ssh/sshd_config.d/00-parou.conf ]; then
+  mkdir -p /etc/ssh/sshd_config.d
+  printf 'PasswordAuthentication no\nKbdInteractiveAuthentication no\nPermitRootLogin prohibit-password\n' > /etc/ssh/sshd_config.d/00-parou.conf
+  if sshd -t 2>/dev/null && sshd -T 2>/dev/null | grep -q '^passwordauthentication no'; then
+    systemctl reload ssh 2>/dev/null || systemctl reload sshd 2>/dev/null || true
+  else
+    rm -f /etc/ssh/sshd_config.d/00-parou.conf   # não ficou bem: volta ao que estava
+  fi
+fi
+# 2. A pasta dos dados (contas, favoritos, subscrições, cópias) só o utilizador da app e o root a abrem
+if [ "$(stat -c %a /var/lib/parou 2>/dev/null)" != "750" ]; then chmod 750 /var/lib/parou 2>/dev/null || true; fi
+# 3. Atualizações de segurança do Ubuntu já se instalam sozinhas; o kernel novo só vale depois de reiniciar,
+#    por isso o servidor reinicia sozinho de madrugada quando há uma atualização que o exija (a app volta sozinha).
+if [ ! -f /etc/apt/apt.conf.d/52parou-reinicio ]; then
+  printf 'Unattended-Upgrade::Automatic-Reboot "true";\nUnattended-Upgrade::Automatic-Reboot-WithUsers "true";\nUnattended-Upgrade::Automatic-Reboot-Time "04:30";\n' > /etc/apt/apt.conf.d/52parou-reinicio
 fi
 
 # Fuso horário de Portugal para a app (horas locais, "hoje", feriados)
