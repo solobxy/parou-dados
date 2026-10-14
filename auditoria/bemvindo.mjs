@@ -140,17 +140,14 @@ const PASSOS = ['idioma', 'perto', 'destinos', 'horarios', 'alertas', 'comunidad
     await ctx.close();
   }
 
-  // F) Administração: botão temporário no menu "Mais" abre o carrossel sem mexer no que está guardado
-  for (const [w, h, nome] of [[390, 780, 'm'], [1280, 800, 'd']]) {
-    const { ctx, p } = await contexto(browser, { w, h, init: "try{ localStorage.setItem('parou_bemvindo','visto'); localStorage.setItem('parou_admin','a'.repeat(24)); }catch(e){}" });
-    await p.goto(BASE + '/transportes', { waitUntil: 'load' });
-    await p.waitForTimeout(1200);
-    await p.locator('button[aria-expanded]').filter({ hasText: /Mais|More/ }).first().click();
-    await p.waitForTimeout(250);
-    const botao = p.locator('[data-teste="menu-bemvindo"]');
-    ok(`[admin ${nome}] botão "Ver boas-vindas" existe no menu`, (await botao.count()) === 1);
-    await foto(p, `admin_${nome}_menu`);
-    await botao.click();
+  // F) Administração: botão temporário abre o carrossel sem mexer no que está guardado.
+  //    No computador está no menu "Mais"; no telemóvel (onde o menu "Mais" não existe) está no perfil.
+  const adminInit = "try{ localStorage.setItem('parou_bemvindo','visto'); localStorage.setItem('parou_admin','a'.repeat(24)); }catch(e){}";
+  const registar = async (ctx) => {
+    const r = await ctx.request.post(BASE + '/api/conta/registar', { data: { nome: 'Teste Boas-vindas', email: `bv.${Date.now()}.${Math.floor(Math.random() * 1e6)}@exemplo.test`, palavraPasse: 'Palavra-passe-muito-boa-123' }, headers: { 'x-forwarded-for': `203.0.113.${1 + Math.floor(Math.random() * 200)}` } });
+    return r.status();
+  };
+  const verDemo = async (p, nome) => {
     ok(`[admin ${nome}] abre o carrossel`, await aparece(p, 4000));
     await p.waitForTimeout(500);
     await p.locator('[data-teste="bv-idioma-pt"]').click();
@@ -160,6 +157,44 @@ const PASSOS = ['idioma', 'perto', 'destinos', 'horarios', 'alertas', 'comunidad
     await p.waitForTimeout(300);
     ok(`[admin ${nome}] fecha`, (await dialogo(p).count()) === 0);
     ok(`[admin ${nome}] estado continua "visto"`, (await estado(p)) === 'visto', await estado(p));
+  };
+  {
+    const { ctx, p } = await contexto(browser, { w: 1280, h: 800, init: adminInit });
+    await p.goto(BASE + '/transportes', { waitUntil: 'load' });
+    await p.waitForTimeout(1200);
+    await p.locator('button[aria-expanded]').filter({ hasText: /Mais|More/ }).first().click();
+    await p.waitForTimeout(250);
+    const botao = p.locator('[data-teste="menu-bemvindo"]');
+    ok('[admin d] botão "Ver boas-vindas" existe no menu', (await botao.count()) === 1);
+    await foto(p, 'admin_d_menu');
+    await botao.click();
+    await verDemo(p, 'd');
+    await ctx.close();
+  }
+  {
+    const { ctx, p } = await contexto(browser, { w: 390, h: 780, init: adminInit });
+    ok('[admin m] conta de teste criada', (await registar(ctx)) < 300);
+    await p.goto(BASE + '/', { waitUntil: 'load' });
+    await p.waitForTimeout(1200);
+    await p.locator('button[aria-label^="A tua conta"]').first().click();
+    await p.waitForTimeout(400);
+    const botao = p.locator('[data-teste="abrir-bemvindo"]');
+    ok('[admin m] botão "Ver boas-vindas" existe no perfil', (await botao.count()) === 1);
+    await botao.scrollIntoViewIfNeeded();
+    await foto(p, 'admin_m_perfil');
+    await botao.click();
+    await verDemo(p, 'm');
+    await ctx.close();
+  }
+  {
+    // Quem tem conta mas não é administrador não vê o botão
+    const { ctx, p } = await contexto(browser, { w: 390, h: 780, init: "try{ localStorage.setItem('parou_bemvindo','visto'); }catch(e){}" });
+    await registar(ctx);
+    await p.goto(BASE + '/', { waitUntil: 'load' });
+    await p.waitForTimeout(1200);
+    await p.locator('button[aria-label^="A tua conta"]').first().click();
+    await p.waitForTimeout(400);
+    ok('[utilizador comum] não vê o botão de boas-vindas', (await p.locator('[data-teste="abrir-bemvindo"]').count()) === 0);
     await ctx.close();
   }
 
