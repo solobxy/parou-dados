@@ -151,30 +151,37 @@ async function novoContexto(browsers, [nome, motor, , extra], tema) {
           } else aviso(`[${rotulo} ${tema}] Perto: campo de pesquisa não encontrado`);
         } catch (e) { ok(`[${rotulo} ${tema}] Perto: pesquisa`, false, String(e).slice(0, 140)); }
 
-        // B2) Entrar / criar conta
-        try {
-          await p.goto(BASE + '/', { waitUntil: 'load' });
-          await p.waitForTimeout(2000);
-          await p.locator('[data-teste=ponto-diario-fechar]').first().click({ timeout: 800 }).catch(() => {});
-          const bot = p.locator('[data-teste=botao-entrar]').first();
-          if (await bot.count() && await bot.isVisible()) {
+        // B2) Janelas: têm de caber no ecrã, ou o topo tem de estar visível e o resto alcançável a deslizar
+        const JANELAS = [['Entrar', '/', '[data-teste=botao-entrar]'], ['Notificações', '/', '[aria-label="Notificações"]'], ['Publicar', '/comunidade', '[data-teste=abrir-compositor]']];
+        for (const [nomeJ, rotaJ, sel] of JANELAS) {
+          try {
+            await p.goto(BASE + rotaJ, { waitUntil: 'load' });
+            await p.waitForTimeout(2000);
+            await p.locator('[data-teste=ponto-diario-fechar]').first().click({ timeout: 800 }).catch(() => {});
+            const bot = p.locator(`${sel}:visible`).first();
+            if (!(await bot.count())) { aviso(`[${rotulo} ${tema}] ${nomeJ}: botão não visível`); continue; }
             await bot.click({ timeout: 4000 });
-            await p.waitForTimeout(700);
+            await p.waitForTimeout(800);
             const d = await p.evaluate(() => {
-              const dlg = document.querySelector('[role=dialog]');
+              const dlg = document.querySelector('[role=dialog], [aria-modal=true]');
               if (!dlg) return null;
               const r = dlg.getBoundingClientRect();
-              const campos = [...dlg.querySelectorAll('input:not([type=checkbox]):not([type=hidden]), textarea, select')].filter((e) => e.getBoundingClientRect().width > 0).map((e) => parseFloat(getComputedStyle(e).fontSize));
-              const sc = dlg.querySelector('[class*="overflow-y"]') || dlg;
-              return { topo: Math.round(r.top), fundo: Math.round(r.bottom), esq: Math.round(r.left), dir: Math.round(r.right), vw: innerWidth, vh: innerHeight, campos, rolavel: sc.scrollHeight > sc.clientHeight + 1 };
+              const roll = (e) => /(auto|scroll)/.test(getComputedStyle(e).overflowY) && e.scrollHeight > e.clientHeight + 1;
+              let rola = false;
+              for (let e = dlg; e && e !== document.body; e = e.parentElement) { if (roll(e)) { rola = true; break; } }
+              const interno = [...dlg.querySelectorAll('*')].some(roll);
+              const campos = [...dlg.querySelectorAll('input:not([type=checkbox]):not([type=radio]):not([type=hidden]):not([type=file]), textarea, select')].filter((e) => e.getBoundingClientRect().width > 0).map((e) => parseFloat(getComputedStyle(e).fontSize));
+              return { topo: Math.round(r.top), fundo: Math.round(r.bottom), esq: Math.round(r.left), dir: Math.round(r.right), vw: innerWidth, vh: innerHeight, rola, interno, campos };
             });
             if (d) {
-              ok(`[${rotulo} ${tema}] Entrar: a janela cabe no ecrã`, d.topo >= -1 && d.fundo <= d.vh + 1 && d.esq >= -1 && d.dir <= d.vw + 1, JSON.stringify({ topo: d.topo, fundo: d.fundo, vh: d.vh, esq: d.esq, dir: d.dir, vw: d.vw }));
-              ok(`[${rotulo} ${tema}] Entrar: campos com letra >= 16px (sem zoom no iOS)`, d.campos.length > 0 && d.campos.every((f) => f >= 16), d.campos.join(','));
-            } else aviso(`[${rotulo} ${tema}] Entrar: sem janela (role=dialog)`);
-            if (fotografar) await p.screenshot({ path: `${SAIDA}/${nome.replace(/[^\w]+/g, '_')}_${tema}_entrar.png` });
-          } else aviso(`[${rotulo} ${tema}] Entrar: botão não visível`);
-        } catch (e) { ok(`[${rotulo} ${tema}] Entrar`, false, String(e).slice(0, 140)); }
+              const cabe = d.topo >= -1 && d.esq >= -1 && d.dir <= d.vw + 1 && (d.fundo <= d.vh + 1 || d.rola || d.interno);
+              ok(`[${rotulo} ${tema}] ${nomeJ}: a janela cabe no ecrã (ou desliza)`, cabe, JSON.stringify(d));
+              ok(`[${rotulo} ${tema}] ${nomeJ}: campos com letra >= 16px (sem zoom no iOS)`, d.campos.every((f) => f >= 16), d.campos.join(','));
+            } else aviso(`[${rotulo} ${tema}] ${nomeJ}: sem janela (role=dialog)`);
+            if (fotografar && nomeJ === 'Entrar') await p.screenshot({ path: `${SAIDA}/${nome.replace(/[^\w]+/g, '_')}_${tema}_entrar.png` });
+            await p.keyboard.press('Escape').catch(() => {});
+          } catch (e) { ok(`[${rotulo} ${tema}] ${nomeJ}`, false, String(e).slice(0, 140)); }
+        }
       }
       ok(`[${rotulo} ${tema}] sem erros de consola`, consola.length === 0, consola.slice(0, 2).join(' | '));
       await ctx.close();
