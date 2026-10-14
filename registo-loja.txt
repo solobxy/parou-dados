@@ -1,0 +1,28 @@
+ok perto
+percurso 0 "Partidas\n3M\nAeroporto*\n40 paragens até ao fim\nAv. Aliados\nEstás aqui\n05:30\nTrindade\n05:31\n"
+ok percurso
+ok mapa
+ok horarios
+ok noticias
+ok comunidade
+ok escuro
+total 3676
+drwxr-xr-x 2 runner runner   4096 Oct 14 04:17 .
+drwxr-xr-x 4 runner runner   4096 Oct 14 04:15 ..
+-rw-r--r-- 1 runner runner 240483 Oct 14 04:16 crua-comunidade.jpg
+-rw-r--r-- 1 runner runner 305691 Oct 14 04:17 crua-escuro.jpg
+-rw-r--r-- 1 runner runner 194072 Oct 14 04:16 crua-horarios.jpg
+-rw-r--r-- 1 runner runner 324282 Oct 14 04:16 crua-mapa.jpg
+-rw-r--r-- 1 runner runner 203448 Oct 14 04:16 crua-noticias.jpg
+-rw-r--r-- 1 runner runner 268328 Oct 14 04:16 crua-percurso.jpg
+-rw-r--r-- 1 runner runner 309965 Oct 14 04:15 crua-perto.jpg
+-rw-r--r-- 1 runner runner  37578 Oct 14 04:17 destaque-1024x500.jpg
+-rw-r--r-- 1 runner runner   6077 Oct 14 04:17 icone-512.png
+-rw-r--r-- 1 runner runner 285460 Oct 14 04:17 loja-1-perto.jpg
+-rw-r--r-- 1 runner runner 261163 Oct 14 04:17 loja-2-percurso.jpg
+-rw-r--r-- 1 runner runner 290856 Oct 14 04:17 loja-3-mapa.jpg
+-rw-r--r-- 1 runner runner 212335 Oct 14 04:17 loja-4-horarios.jpg
+-rw-r--r-- 1 runner runner 228877 Oct 14 04:17 loja-5-noticias.jpg
+-rw-r--r-- 1 runner runner 239112 Oct 14 04:17 loja-6-comunidade.jpg
+-rw-r--r-- 1 runner runner 275431 Oct 14 04:17 loja-7-escuro.jpg
+-rw-r--r-- 1 runner runner  39891 Oct 14 04:17 og-1200x630.jpg
