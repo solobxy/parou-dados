@@ -147,6 +147,12 @@ const PASSOS = ['idioma', 'perto', 'destinos', 'horarios', 'alertas', 'comunidad
     const r = await ctx.request.post(BASE + '/api/conta/registar', { data: { nome: 'Teste Boas-vindas', email: `bv.${Date.now()}.${Math.floor(Math.random() * 1e6)}@exemplo.test`, palavraPasse: 'Palavra-passe-muito-boa-123' }, headers: { 'x-forwarded-for': `203.0.113.${1 + Math.floor(Math.random() * 200)}` } });
     return r.status();
   };
+  const abrirPerfil = async (p) => {
+    // Quem tem conta vê o cartão do ponto diário ao abrir: fecha-o primeiro
+    try { await p.locator('[data-teste="ponto-diario-fechar"]').click({ timeout: 3500 }); await p.waitForTimeout(300); } catch {}
+    await p.locator('button[aria-label^="A tua conta"]').first().click();
+    await p.waitForTimeout(400);
+  };
   const verDemo = async (p, nome) => {
     ok(`[admin ${nome}] abre o carrossel`, await aparece(p, 4000));
     await p.waitForTimeout(500);
@@ -176,8 +182,7 @@ const PASSOS = ['idioma', 'perto', 'destinos', 'horarios', 'alertas', 'comunidad
     ok('[admin m] conta de teste criada', (await registar(ctx)) < 300);
     await p.goto(BASE + '/', { waitUntil: 'load' });
     await p.waitForTimeout(1200);
-    await p.locator('button[aria-label^="A tua conta"]').first().click();
-    await p.waitForTimeout(400);
+    await abrirPerfil(p);
     const botao = p.locator('[data-teste="abrir-bemvindo"]');
     ok('[admin m] botão "Ver boas-vindas" existe no perfil', (await botao.count()) === 1);
     await botao.scrollIntoViewIfNeeded();
@@ -192,8 +197,7 @@ const PASSOS = ['idioma', 'perto', 'destinos', 'horarios', 'alertas', 'comunidad
     await registar(ctx);
     await p.goto(BASE + '/', { waitUntil: 'load' });
     await p.waitForTimeout(1200);
-    await p.locator('button[aria-label^="A tua conta"]').first().click();
-    await p.waitForTimeout(400);
+    await abrirPerfil(p);
     ok('[utilizador comum] não vê o botão de boas-vindas', (await p.locator('[data-teste="abrir-bemvindo"]').count()) === 0);
     await ctx.close();
   }
