@@ -1,0 +1,50 @@
+name: Vigiar a segurança
+
+# De hora a hora, lê o resumo do registo de segurança da PAROU (só totais: sem IPs, sem rotas, sem códigos de origem)
+# e falha, para o GitHub mandar um email ao criador, quando:
+#   - há um aviso de nível alto ou médio (tentativas na administração, muitas entradas falhadas, picos de erros…), ou
+#   - o resumo deixou de ser atualizado há mais de 3 horas (o registo parou).
+# Cada aviso só é anunciado uma vez de 6 em 6 horas pelo servidor, por isso não há uma enxurrada de emails.
+
+on:
+  schedule:
+    - cron: "17 * * * *"
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  vigiar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Ler e avaliar o resumo de segurança
+        run: |
+          set -u
+          curl -fsS -m 30 --retry 3 --retry-delay 10 "https://2-31-13-85.sslip.io/_seguranca-servidor" -o seguranca.json \
+            || { echo "::error::Não consegui ler o resumo de segurança do servidor"; exit 1; }
+          python3 - <<'PY'
+          import json, sys, datetime
+          d = json.load(open("seguranca.json"))
+          atualizado = datetime.datetime.fromisoformat(d["atualizado"].replace("Z", "+00:00"))
+          idade_h = (datetime.datetime.now(datetime.timezone.utc) - atualizado).total_seconds() / 3600
+          avisos = d.get("avisos") or []
+          out = ["## Resumo de segurança", f"Atualizado há {idade_h:.1f} h", "", "Últimas 24 h:"]
+          for k, v in sorted((d.get("ultimas24h") or {}).items()):
+              out.append(f"- {k}: {v}")
+          out.append("")
+          out.append("Avisos: " + ("nenhum" if not avisos else ""))
+          for a in avisos:
+              out.append(f"- [{a['nivel']}] {a['texto']}")
+          open(__import__("os").environ["GITHUB_STEP_SUMMARY"], "a").write("\n".join(out) + "\n")
+          print("\n".join(out))
+          falha = False
+          if idade_h > 3:
+              print("::error::O registo de segurança deixou de ser atualizado há mais de 3 horas")
+              falha = True
+          graves = [a for a in avisos if a["nivel"] in ("alta", "media")]
+          for a in graves:
+              print(f"::error::Segurança ({a['nivel']}): {a['texto']}")
+              falha = True
+          sys.exit(1 if falha else 0)
+          PY
