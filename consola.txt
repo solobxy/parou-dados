@@ -1,0 +1,550 @@
+OK      [iPhone SE claro] cidades: sem cidades, o botão diz "Cidades: todas" Cidades: todas
+OK      [iPhone SE claro] cidades: sem cidades, o primeiro pedido não leva filtro {"cidades":null,"q":""}
+OK      [iPhone SE claro] cidades: mostra as linhas de todo o país 
+OK      [iPhone SE claro] cidades: botão de cidades com altura ≥ 44 px 44
+OK      [iPhone SE claro] cidades: botão de cidades cabe na largura do ecrã 162+142 de 320
+OK      [iPhone SE claro] cidades: seletor abre e lista cidades 51
+OK      [iPhone SE claro] cidades: seletor mostra quantas linhas tem cada cidade Porto 265 linhas
+OK      [iPhone SE claro] cidades: cidade sem linhas diz "sem linhas ainda" Viseu sem linhas ainda
+OK      [iPhone SE claro] cidades: uma linha só diz "1 linha" (singular) Beja 1 linha
+OK      [iPhone SE claro] cidades: nenhuma linha do seletor transborda na largura 0
+OK      [iPhone SE claro] cidades: seletor cabe no ecrã ok
+OK      [iPhone SE claro] cidades: cada cidade é um alvo de toque ≥ 44 px 48
+OK      [iPhone SE claro] cidades: caixa de seleção tem contorno visível 
+OK      [iPhone SE claro] cidades: nome da cidade com contraste ≥ 4.5:1 18.88
+OK      [iPhone SE claro] cidades: "Concluído" visível e com ≥ 44 px 507+48 de 568
+OK      [iPhone SE claro] cidades: "Ver todas" desativado sem cidades 
+OK      [iPhone SE claro] cidades: campo de pesquisa ≥ 16 px (o iPhone não faz zoom) 16
+OK      [iPhone SE claro] cidades: pesquisa sem acentos encontra "Guimarães" Guimarães
+10 linhas
+OK      [iPhone SE claro] cidades: pesquisa sem resultados diz "Nenhuma cidade com esse nome." 
+OK      [iPhone SE claro] cidades: Porto fica marcado (aria-checked) 
+OK      [iPhone SE claro] cidades: a escolha fica guardada no telemóvel {"v":1,"s":["porto"]}
+OK      [iPhone SE claro] cidades: escolha atual é só Braga {"v":1,"s":["braga"]}
+OK      [iPhone SE claro] cidades: "Concluído" fecha o seletor 
+OK      [iPhone SE claro] cidades: o botão passa a mostrar "Braga" Braga
+OK      [iPhone SE claro] cidades: mostra as linhas de Braga 
+OK      [iPhone SE claro] cidades: resposta atrasada do Porto não estraga a lista (pedido mais recente ganha) 
+OK      [iPhone SE claro] cidades: o último pedido ao servidor leva cidades=braga {"cidades":"braga","q":""}
+OK      [iPhone SE claro] cidades: botão com duas cidades diz "Braga e Lisboa" Braga e Lisboa
+OK      [iPhone SE claro] cidades: pedido leva as duas cidades {"cidades":"braga,lisboa","q":""}
+OK      [iPhone SE claro] cidades: botão com cidades continua dentro do ecrã 162+142
+OK      [iPhone SE claro] cidades: botão com cidades (escuro) com contraste ≥ 4.5:1 18.88
+OK      [iPhone SE claro] cidades: sem resultados nas cidades diz onde procurou Nenhuma linha em Braga e Lisboa para esta pesquisa. Procurar em todo o país
+OK      [iPhone SE claro] cidades: "Procurar em todo o país" mostra a linha de outra cidade 
+OK      [iPhone SE claro] cidades: esse pedido não leva filtro {"cidades":null,"q":"zzz"}
+OK      [iPhone SE claro] cidades: avisa que mostra todo o país 
+OK      [iPhone SE claro] cidades: "todo o país" é só desta vez (a escolha continua guardada) {"v":1,"s":["braga","lisboa"]}
+OK      [iPhone SE claro] cidades: "Voltar às minhas cidades" volta a filtrar {"cidades":"braga,lisboa","q":"zzz"}
+OK      [iPhone SE claro] cidades: ao recarregar mantém as cidades escolhidas Braga e Lisboa
+OK      [iPhone SE claro] cidades: ao recarregar nenhum pedido sai sem filtro [{"cidades":"braga,lisboa","q":""}]
+OK      [iPhone SE claro] cidades: chega a 8 cidades escolhidas 8
+OK      [iPhone SE claro] cidades: com 8, as restantes ficam bloqueadas 43
+OK      [iPhone SE claro] cidades: diz que chegou ao máximo 
+OK      [iPhone SE claro] cidades: "Ver todas" limpa a escolha e guarda a lista vazia {"v":1,"s":[]}
+OK      [iPhone SE claro] cidades: sem cidades volta "Cidades: todas" e o pedido sem filtro Cidades: todas {"cidades":null,"q":""}
+OK      [iPhone SE claro] cidades: cidade sem linhas diz "Ainda não temos linhas de Viseu." Ainda não temos linhas de Viseu. Procurar em todo o país
+OK      [iPhone SE claro] cidades: cidade sem linhas oferece "Procurar em todo o país" 
+OK      [iPhone SE claro] cidades: Favoritos mostra as cidades escolhidas Porto e Braga
+OK      [iPhone SE claro] cidades: Favoritos explica o efeito nos Horários 
+OK      [iPhone SE claro] cidades: Favoritos abre o seletor com as duas marcadas 
+OK      [iPhone SE claro] cidades: Favoritos atualiza o botão (só Braga) Braga
+OK      [iPhone SE claro] cidades: Favoritos guarda a escolha {"v":1,"s":["braga"]}
+OK      [iPhone SE claro] cidades: Favoritos sem deslize horizontal 0
+OK      [iPhone SE claro] cidades: sem erros de JavaScript 
+OK      [iPhone SE claro] localização: convite mostra a nota sobre o uso da localização 1
+OK      [iPhone SE claro] localização: nota diz que não fica guardada no servidor Só serve para mostrar o que passa perto de ti. Não fica guardada no servidor. Saber mais
+OK      [iPhone SE claro] localização: nota é um alvo de toque ≥ 44 px 52
+OK      [iPhone SE claro] localização: nota cabe na largura do ecrã 37+241
+OK      [iPhone SE claro] localização: texto da nota com contraste ≥ 4.5:1 5.33
+OK      [iPhone SE claro] localização: botão "Ativar localização" continua visível no ecrã 380
+OK      [iPhone SE claro] localização: janela explica o que vai para o servidor e o que fica no telemóvel A tua localização | Usamos a tua localização para uma coisa só: mostrar as paragens e os transportes perto de ti. | No servidor | A posição 
+OK      [iPhone SE claro] localização: janela cabe no ecrã ok
+OK      [iPhone SE claro] localização: sem GPS ligado não há botão de desligar 
+OK      [iPhone SE claro] localização: texto da janela com contraste ≥ 4.5:1 18.88
+OK      [iPhone SE claro] localização: texto secundário da janela com contraste ≥ 4.5:1 5.33
+OK      [iPhone SE claro] localização: Esc fecha a janela 
+OK      [iPhone SE claro] localização: Enter na nota abre a janela 
+OK      [iPhone SE claro] localização: convite sem erros de JavaScript 
+OK      [iPhone SE claro] localização: com GPS ligado a lista mostra a paragem 
+OK      [iPhone SE claro] localização: a nota também está no fim da lista 1
+OK      [iPhone SE claro] localização: com GPS ligado aparece "Desligar e apagar a posição guardada" 1
+OK      [iPhone SE claro] localização: botão de desligar com altura ≥ 44 px 48
+OK      [iPhone SE claro] localização: botão de desligar visível sem deslizar ok
+OK      [iPhone SE claro] localização: antes de desligar há posição guardada no telemóvel 
+OK      [iPhone SE claro] localização: desligar fecha a janela 
+OK      [iPhone SE claro] localização: desligar apaga a última posição 
+OK      [iPhone SE claro] localização: desligar regista que está desligada 
+OK      [iPhone SE claro] localização: desligar tira a autorização guardada da app 
+OK      [iPhone SE claro] localização: depois de desligar volta o convite e a lista de paragens desaparece 1 convites, 0 paragens
+OK      [iPhone SE claro] localização: depois de recarregar continua desligada 0 paragens
+OK      [iPhone SE claro] localização: depois de recarregar não há posição guardada 
+OK      [iPhone SE claro] localização: voltar a ativar traz as paragens 
+OK      [iPhone SE claro] localização: voltar a ativar limpa o "desligada" 
+OK      [iPhone SE claro] localização: desligar sem erros de JavaScript 
+OK      [iPhone SE claro] precisão: logo ao início não incomoda (espera 20 s) 
+OK      [iPhone SE claro] precisão: com 800 m de erro avisa "pouco precisa" A tua posição está pouco precisa (cerca de 1,5 km).  Nas definições do telemóvel, liga a localização precisa para este b
+OK      [iPhone SE claro] precisão: diz a ordem de grandeza (cerca de 800 m ou 1,5 km) A tua posição está pouco precisa (cerca de 1,5 km).  Nas definições do telemóvel
+OK      [iPhone SE claro] precisão: texto do aviso com contraste ≥ 4.5:1 17.15 / 4.84
+OK      [iPhone SE claro] precisão: aviso cabe na largura do ecrã 12+291
+OK      [iPhone SE claro] precisão: botão "Percebi" com altura ≥ 44 px 44
+OK      [iPhone SE claro] precisão: "Percebi" fecha o aviso 
+OK      [iPhone SE claro] precisão: com a posição boa não há aviso 
+OK      [iPhone SE claro] precisão: aviso sem erros de JavaScript 
+OK      [iPhone 13 Mini claro] cidades: sem cidades, o botão diz "Cidades: todas" Cidades: todas
+OK      [iPhone 13 Mini claro] cidades: sem cidades, o primeiro pedido não leva filtro {"cidades":null,"q":""}
+OK      [iPhone 13 Mini claro] cidades: mostra as linhas de todo o país 
+OK      [iPhone 13 Mini claro] cidades: botão de cidades com altura ≥ 44 px 44
+OK      [iPhone 13 Mini claro] cidades: botão de cidades cabe na largura do ecrã 203+156 de 375
+OK      [iPhone 13 Mini claro] cidades: seletor abre e lista cidades 51
+OK      [iPhone 13 Mini claro] cidades: seletor mostra quantas linhas tem cada cidade Porto 265 linhas
+OK      [iPhone 13 Mini claro] cidades: cidade sem linhas diz "sem linhas ainda" Viseu sem linhas ainda
+OK      [iPhone 13 Mini claro] cidades: uma linha só diz "1 linha" (singular) Beja 1 linha
+OK      [iPhone 13 Mini claro] cidades: nenhuma linha do seletor transborda na largura 0
+OK      [iPhone 13 Mini claro] cidades: seletor cabe no ecrã ok
+OK      [iPhone 13 Mini claro] cidades: cada cidade é um alvo de toque ≥ 44 px 48
+OK      [iPhone 13 Mini claro] cidades: caixa de seleção tem contorno visível 
+OK      [iPhone 13 Mini claro] cidades: nome da cidade com contraste ≥ 4.5:1 18.88
+OK      [iPhone 13 Mini claro] cidades: "Concluído" visível e com ≥ 44 px 568+48 de 629
+OK      [iPhone 13 Mini claro] cidades: "Ver todas" desativado sem cidades 
+OK      [iPhone 13 Mini claro] cidades: campo de pesquisa ≥ 16 px (o iPhone não faz zoom) 16
+OK      [iPhone 13 Mini claro] cidades: pesquisa sem acentos encontra "Guimarães" Guimarães
+10 linhas
+OK      [iPhone 13 Mini claro] cidades: pesquisa sem resultados diz "Nenhuma cidade com esse nome." 
+OK      [iPhone 13 Mini claro] cidades: Porto fica marcado (aria-checked) 
+OK      [iPhone 13 Mini claro] cidades: a escolha fica guardada no telemóvel {"v":1,"s":["porto"]}
+OK      [iPhone 13 Mini claro] cidades: escolha atual é só Braga {"v":1,"s":["braga"]}
+OK      [iPhone 13 Mini claro] cidades: "Concluído" fecha o seletor 
+OK      [iPhone 13 Mini claro] cidades: o botão passa a mostrar "Braga" Braga
+OK      [iPhone 13 Mini claro] cidades: mostra as linhas de Braga 
+OK      [iPhone 13 Mini claro] cidades: resposta atrasada do Porto não estraga a lista (pedido mais recente ganha) 
+OK      [iPhone 13 Mini claro] cidades: o último pedido ao servidor leva cidades=braga {"cidades":"braga","q":""}
+OK      [iPhone 13 Mini claro] cidades: botão com duas cidades diz "Braga e Lisboa" Braga e Lisboa
+OK      [iPhone 13 Mini claro] cidades: pedido leva as duas cidades {"cidades":"braga,lisboa","q":""}
+OK      [iPhone 13 Mini claro] cidades: botão com cidades continua dentro do ecrã 205+154
+OK      [iPhone 13 Mini claro] cidades: botão com cidades (escuro) com contraste ≥ 4.5:1 18.88
+OK      [iPhone 13 Mini claro] cidades: sem resultados nas cidades diz onde procurou Nenhuma linha em Braga e Lisboa para esta pesquisa. Procurar em todo o país
+OK      [iPhone 13 Mini claro] cidades: "Procurar em todo o país" mostra a linha de outra cidade 
+OK      [iPhone 13 Mini claro] cidades: esse pedido não leva filtro {"cidades":null,"q":"zzz"}
+OK      [iPhone 13 Mini claro] cidades: avisa que mostra todo o país 
+OK      [iPhone 13 Mini claro] cidades: "todo o país" é só desta vez (a escolha continua guardada) {"v":1,"s":["braga","lisboa"]}
+OK      [iPhone 13 Mini claro] cidades: "Voltar às minhas cidades" volta a filtrar {"cidades":"braga,lisboa","q":"zzz"}
+OK      [iPhone 13 Mini claro] cidades: ao recarregar mantém as cidades escolhidas Braga e Lisboa
+OK      [iPhone 13 Mini claro] cidades: ao recarregar nenhum pedido sai sem filtro [{"cidades":"braga,lisboa","q":""}]
+OK      [iPhone 13 Mini claro] cidades: chega a 8 cidades escolhidas 8
+OK      [iPhone 13 Mini claro] cidades: com 8, as restantes ficam bloqueadas 43
+OK      [iPhone 13 Mini claro] cidades: diz que chegou ao máximo 
+OK      [iPhone 13 Mini claro] cidades: "Ver todas" limpa a escolha e guarda a lista vazia {"v":1,"s":[]}
+OK      [iPhone 13 Mini claro] cidades: sem cidades volta "Cidades: todas" e o pedido sem filtro Cidades: todas {"cidades":null,"q":""}
+OK      [iPhone 13 Mini claro] cidades: cidade sem linhas diz "Ainda não temos linhas de Viseu." Ainda não temos linhas de Viseu. Procurar em todo o país
+OK      [iPhone 13 Mini claro] cidades: cidade sem linhas oferece "Procurar em todo o país" 
+OK      [iPhone 13 Mini claro] cidades: Favoritos mostra as cidades escolhidas Porto e Braga
+OK      [iPhone 13 Mini claro] cidades: Favoritos explica o efeito nos Horários 
+OK      [iPhone 13 Mini claro] cidades: Favoritos abre o seletor com as duas marcadas 
+OK      [iPhone 13 Mini claro] cidades: Favoritos atualiza o botão (só Braga) Braga
+OK      [iPhone 13 Mini claro] cidades: Favoritos guarda a escolha {"v":1,"s":["braga"]}
+OK      [iPhone 13 Mini claro] cidades: Favoritos sem deslize horizontal 0
+OK      [iPhone 13 Mini claro] cidades: sem erros de JavaScript 
+OK      [iPhone 13 Mini claro] localização: convite mostra a nota sobre o uso da localização 1
+OK      [iPhone 13 Mini claro] localização: nota diz que não fica guardada no servidor Só serve para mostrar o que passa perto de ti. Não fica guardada no servidor. Saber mais
+OK      [iPhone 13 Mini claro] localização: nota é um alvo de toque ≥ 44 px 44
+OK      [iPhone 13 Mini claro] localização: nota cabe na largura do ecrã 37+296
+OK      [iPhone 13 Mini claro] localização: texto da nota com contraste ≥ 4.5:1 5.33
+OK      [iPhone 13 Mini claro] localização: botão "Ativar localização" continua visível no ecrã 354
+OK      [iPhone 13 Mini claro] localização: janela explica o que vai para o servidor e o que fica no telemóvel A tua localização | Usamos a tua localização para uma coisa só: mostrar as paragens e os transportes perto de ti. | No servidor | A posição 
+OK      [iPhone 13 Mini claro] localização: janela cabe no ecrã ok
+OK      [iPhone 13 Mini claro] localização: sem GPS ligado não há botão de desligar 
+OK      [iPhone 13 Mini claro] localização: texto da janela com contraste ≥ 4.5:1 18.88
+OK      [iPhone 13 Mini claro] localização: texto secundário da janela com contraste ≥ 4.5:1 5.33
+OK      [iPhone 13 Mini claro] localização: Esc fecha a janela 
+OK      [iPhone 13 Mini claro] localização: Enter na nota abre a janela 
+OK      [iPhone 13 Mini claro] localização: convite sem erros de JavaScript 
+OK      [iPhone 13 Mini claro] localização: com GPS ligado a lista mostra a paragem 
+OK      [iPhone 13 Mini claro] localização: a nota também está no fim da lista 1
+OK      [iPhone 13 Mini claro] localização: com GPS ligado aparece "Desligar e apagar a posição guardada" 1
+OK      [iPhone 13 Mini claro] localização: botão de desligar com altura ≥ 44 px 48
+OK      [iPhone 13 Mini claro] localização: botão de desligar visível sem deslizar ok
+OK      [iPhone 13 Mini claro] localização: antes de desligar há posição guardada no telemóvel 
+OK      [iPhone 13 Mini claro] localização: desligar fecha a janela 
+OK      [iPhone 13 Mini claro] localização: desligar apaga a última posição 
+OK      [iPhone 13 Mini claro] localização: desligar regista que está desligada 
+OK      [iPhone 13 Mini claro] localização: desligar tira a autorização guardada da app 
+OK      [iPhone 13 Mini claro] localização: depois de desligar volta o convite e a lista de paragens desaparece 1 convites, 0 paragens
+OK      [iPhone 13 Mini claro] localização: depois de recarregar continua desligada 0 paragens
+OK      [iPhone 13 Mini claro] localização: depois de recarregar não há posição guardada 
+OK      [iPhone 13 Mini claro] localização: voltar a ativar traz as paragens 
+OK      [iPhone 13 Mini claro] localização: voltar a ativar limpa o "desligada" 
+OK      [iPhone 13 Mini claro] localização: desligar sem erros de JavaScript 
+OK      [iPhone 13 Mini claro] precisão: logo ao início não incomoda (espera 20 s) 
+OK      [iPhone 13 Mini claro] precisão: com 800 m de erro avisa "pouco precisa" A tua posição está pouco precisa (cerca de 1,5 km).  Nas definições do telemóvel, liga a localização precisa para este b
+OK      [iPhone 13 Mini claro] precisão: diz a ordem de grandeza (cerca de 800 m ou 1,5 km) A tua posição está pouco precisa (cerca de 1,5 km).  Nas definições do telemóvel
+OK      [iPhone 13 Mini claro] precisão: texto do aviso com contraste ≥ 4.5:1 17.15 / 4.84
+OK      [iPhone 13 Mini claro] precisão: aviso cabe na largura do ecrã 12+346
+OK      [iPhone 13 Mini claro] precisão: botão "Percebi" com altura ≥ 44 px 44
+OK      [iPhone 13 Mini claro] precisão: "Percebi" fecha o aviso 
+OK      [iPhone 13 Mini claro] precisão: com a posição boa não há aviso 
+OK      [iPhone 13 Mini claro] precisão: aviso sem erros de JavaScript 
+OK      [iPhone 13 Mini escuro] cidades: sem cidades, o botão diz "Cidades: todas" Cidades: todas
+OK      [iPhone 13 Mini escuro] cidades: sem cidades, o primeiro pedido não leva filtro {"cidades":null,"q":""}
+OK      [iPhone 13 Mini escuro] cidades: mostra as linhas de todo o país 
+OK      [iPhone 13 Mini escuro] cidades: botão de cidades com altura ≥ 44 px 44
+OK      [iPhone 13 Mini escuro] cidades: botão de cidades cabe na largura do ecrã 203+156 de 375
+OK      [iPhone 13 Mini escuro] cidades: seletor abre e lista cidades 51
+OK      [iPhone 13 Mini escuro] cidades: seletor mostra quantas linhas tem cada cidade Porto 265 linhas
+OK      [iPhone 13 Mini escuro] cidades: cidade sem linhas diz "sem linhas ainda" Viseu sem linhas ainda
+OK      [iPhone 13 Mini escuro] cidades: uma linha só diz "1 linha" (singular) Beja 1 linha
+OK      [iPhone 13 Mini escuro] cidades: nenhuma linha do seletor transborda na largura 0
+OK      [iPhone 13 Mini escuro] cidades: seletor cabe no ecrã ok
+OK      [iPhone 13 Mini escuro] cidades: cada cidade é um alvo de toque ≥ 44 px 48
+OK      [iPhone 13 Mini escuro] cidades: caixa de seleção tem contorno visível 
+OK      [iPhone 13 Mini escuro] cidades: nome da cidade com contraste ≥ 4.5:1 16.12
+OK      [iPhone 13 Mini escuro] cidades: "Concluído" visível e com ≥ 44 px 568+48 de 629
+OK      [iPhone 13 Mini escuro] cidades: "Ver todas" desativado sem cidades 
+OK      [iPhone 13 Mini escuro] cidades: campo de pesquisa ≥ 16 px (o iPhone não faz zoom) 16
+OK      [iPhone 13 Mini escuro] cidades: pesquisa sem acentos encontra "Guimarães" Guimarães
+10 linhas
+OK      [iPhone 13 Mini escuro] cidades: pesquisa sem resultados diz "Nenhuma cidade com esse nome." 
+OK      [iPhone 13 Mini escuro] cidades: Porto fica marcado (aria-checked) 
+OK      [iPhone 13 Mini escuro] cidades: a escolha fica guardada no telemóvel {"v":1,"s":["porto"]}
+OK      [iPhone 13 Mini escuro] cidades: escolha atual é só Braga {"v":1,"s":["braga"]}
+OK      [iPhone 13 Mini escuro] cidades: "Concluído" fecha o seletor 
+OK      [iPhone 13 Mini escuro] cidades: o botão passa a mostrar "Braga" Braga
+OK      [iPhone 13 Mini escuro] cidades: mostra as linhas de Braga 
+OK      [iPhone 13 Mini escuro] cidades: resposta atrasada do Porto não estraga a lista (pedido mais recente ganha) 
+OK      [iPhone 13 Mini escuro] cidades: o último pedido ao servidor leva cidades=braga {"cidades":"braga","q":""}
+OK      [iPhone 13 Mini escuro] cidades: botão com duas cidades diz "Braga e Lisboa" Braga e Lisboa
+OK      [iPhone 13 Mini escuro] cidades: pedido leva as duas cidades {"cidades":"braga,lisboa","q":""}
+OK      [iPhone 13 Mini escuro] cidades: botão com cidades continua dentro do ecrã 205+154
+OK      [iPhone 13 Mini escuro] cidades: botão com cidades (escuro) com contraste ≥ 4.5:1 16.85
+OK      [iPhone 13 Mini escuro] cidades: sem resultados nas cidades diz onde procurou Nenhuma linha em Braga e Lisboa para esta pesquisa. Procurar em todo o país
+OK      [iPhone 13 Mini escuro] cidades: "Procurar em todo o país" mostra a linha de outra cidade 
+OK      [iPhone 13 Mini escuro] cidades: esse pedido não leva filtro {"cidades":null,"q":"zzz"}
+OK      [iPhone 13 Mini escuro] cidades: avisa que mostra todo o país 
+OK      [iPhone 13 Mini escuro] cidades: "todo o país" é só desta vez (a escolha continua guardada) {"v":1,"s":["braga","lisboa"]}
+OK      [iPhone 13 Mini escuro] cidades: "Voltar às minhas cidades" volta a filtrar {"cidades":"braga,lisboa","q":"zzz"}
+OK      [iPhone 13 Mini escuro] cidades: ao recarregar mantém as cidades escolhidas Braga e Lisboa
+OK      [iPhone 13 Mini escuro] cidades: ao recarregar nenhum pedido sai sem filtro [{"cidades":"braga,lisboa","q":""}]
+OK      [iPhone 13 Mini escuro] cidades: chega a 8 cidades escolhidas 8
+OK      [iPhone 13 Mini escuro] cidades: com 8, as restantes ficam bloqueadas 43
+OK      [iPhone 13 Mini escuro] cidades: diz que chegou ao máximo 
+OK      [iPhone 13 Mini escuro] cidades: "Ver todas" limpa a escolha e guarda a lista vazia {"v":1,"s":[]}
+OK      [iPhone 13 Mini escuro] cidades: sem cidades volta "Cidades: todas" e o pedido sem filtro Cidades: todas {"cidades":null,"q":""}
+OK      [iPhone 13 Mini escuro] cidades: cidade sem linhas diz "Ainda não temos linhas de Viseu." Ainda não temos linhas de Viseu. Procurar em todo o país
+OK      [iPhone 13 Mini escuro] cidades: cidade sem linhas oferece "Procurar em todo o país" 
+OK      [iPhone 13 Mini escuro] cidades: Favoritos mostra as cidades escolhidas Porto e Braga
+OK      [iPhone 13 Mini escuro] cidades: Favoritos explica o efeito nos Horários 
+OK      [iPhone 13 Mini escuro] cidades: Favoritos abre o seletor com as duas marcadas 
+OK      [iPhone 13 Mini escuro] cidades: Favoritos atualiza o botão (só Braga) Braga
+OK      [iPhone 13 Mini escuro] cidades: Favoritos guarda a escolha {"v":1,"s":["braga"]}
+OK      [iPhone 13 Mini escuro] cidades: Favoritos sem deslize horizontal 0
+OK      [iPhone 13 Mini escuro] cidades: sem erros de JavaScript 
+OK      [iPhone 13 Mini escuro] localização: convite mostra a nota sobre o uso da localização 1
+OK      [iPhone 13 Mini escuro] localização: nota diz que não fica guardada no servidor Só serve para mostrar o que passa perto de ti. Não fica guardada no servidor. Saber mais
+OK      [iPhone 13 Mini escuro] localização: nota é um alvo de toque ≥ 44 px 44
+OK      [iPhone 13 Mini escuro] localização: nota cabe na largura do ecrã 37+296
+OK      [iPhone 13 Mini escuro] localização: texto da nota com contraste ≥ 4.5:1 6.95
+OK      [iPhone 13 Mini escuro] localização: botão "Ativar localização" continua visível no ecrã 354
+OK      [iPhone 13 Mini escuro] localização: janela explica o que vai para o servidor e o que fica no telemóvel A tua localização | Usamos a tua localização para uma coisa só: mostrar as paragens e os transportes perto de ti. | No servidor | A posição 
+OK      [iPhone 13 Mini escuro] localização: janela cabe no ecrã ok
+OK      [iPhone 13 Mini escuro] localização: sem GPS ligado não há botão de desligar 
+OK      [iPhone 13 Mini escuro] localização: texto da janela com contraste ≥ 4.5:1 16.12
+OK      [iPhone 13 Mini escuro] localização: texto secundário da janela com contraste ≥ 4.5:1 6.95
+OK      [iPhone 13 Mini escuro] localização: Esc fecha a janela 
+OK      [iPhone 13 Mini escuro] localização: Enter na nota abre a janela 
+OK      [iPhone 13 Mini escuro] localização: convite sem erros de JavaScript 
+OK      [iPhone 13 Mini escuro] localização: com GPS ligado a lista mostra a paragem 
+OK      [iPhone 13 Mini escuro] localização: a nota também está no fim da lista 1
+OK      [iPhone 13 Mini escuro] localização: com GPS ligado aparece "Desligar e apagar a posição guardada" 1
+OK      [iPhone 13 Mini escuro] localização: botão de desligar com altura ≥ 44 px 48
+OK      [iPhone 13 Mini escuro] localização: botão de desligar visível sem deslizar ok
+OK      [iPhone 13 Mini escuro] localização: antes de desligar há posição guardada no telemóvel 
+OK      [iPhone 13 Mini escuro] localização: desligar fecha a janela 
+OK      [iPhone 13 Mini escuro] localização: desligar apaga a última posição 
+OK      [iPhone 13 Mini escuro] localização: desligar regista que está desligada 
+OK      [iPhone 13 Mini escuro] localização: desligar tira a autorização guardada da app 
+OK      [iPhone 13 Mini escuro] localização: depois de desligar volta o convite e a lista de paragens desaparece 1 convites, 0 paragens
+OK      [iPhone 13 Mini escuro] localização: depois de recarregar continua desligada 0 paragens
+OK      [iPhone 13 Mini escuro] localização: depois de recarregar não há posição guardada 
+OK      [iPhone 13 Mini escuro] localização: voltar a ativar traz as paragens 
+OK      [iPhone 13 Mini escuro] localização: voltar a ativar limpa o "desligada" 
+OK      [iPhone 13 Mini escuro] localização: desligar sem erros de JavaScript 
+OK      [iPhone 13 Mini escuro] precisão: logo ao início não incomoda (espera 20 s) 
+OK      [iPhone 13 Mini escuro] precisão: com 800 m de erro avisa "pouco precisa" A tua posição está pouco precisa (cerca de 1,5 km).  Nas definições do telemóvel, liga a localização precisa para este b
+OK      [iPhone 13 Mini escuro] precisão: diz a ordem de grandeza (cerca de 800 m ou 1,5 km) A tua posição está pouco precisa (cerca de 1,5 km).  Nas definições do telemóvel
+OK      [iPhone 13 Mini escuro] precisão: texto do aviso com contraste ≥ 4.5:1 14.15 / 6.10
+OK      [iPhone 13 Mini escuro] precisão: aviso cabe na largura do ecrã 12+346
+OK      [iPhone 13 Mini escuro] precisão: botão "Percebi" com altura ≥ 44 px 44
+OK      [iPhone 13 Mini escuro] precisão: "Percebi" fecha o aviso 
+OK      [iPhone 13 Mini escuro] precisão: com a posição boa não há aviso 
+OK      [iPhone 13 Mini escuro] precisão: aviso sem erros de JavaScript 
+OK      [iPhone 13 Mini ambar] cidades: sem cidades, o botão diz "Cidades: todas" Cidades: todas
+OK      [iPhone 13 Mini ambar] cidades: sem cidades, o primeiro pedido não leva filtro {"cidades":null,"q":""}
+OK      [iPhone 13 Mini ambar] cidades: mostra as linhas de todo o país 
+OK      [iPhone 13 Mini ambar] cidades: botão de cidades com altura ≥ 44 px 44
+OK      [iPhone 13 Mini ambar] cidades: botão de cidades cabe na largura do ecrã 203+156 de 375
+OK      [iPhone 13 Mini ambar] cidades: seletor abre e lista cidades 51
+OK      [iPhone 13 Mini ambar] cidades: seletor mostra quantas linhas tem cada cidade Porto 265 linhas
+OK      [iPhone 13 Mini ambar] cidades: cidade sem linhas diz "sem linhas ainda" Viseu sem linhas ainda
+OK      [iPhone 13 Mini ambar] cidades: uma linha só diz "1 linha" (singular) Beja 1 linha
+OK      [iPhone 13 Mini ambar] cidades: nenhuma linha do seletor transborda na largura 0
+OK      [iPhone 13 Mini ambar] cidades: seletor cabe no ecrã ok
+OK      [iPhone 13 Mini ambar] cidades: cada cidade é um alvo de toque ≥ 44 px 48
+OK      [iPhone 13 Mini ambar] cidades: caixa de seleção tem contorno visível 
+OK      [iPhone 13 Mini ambar] cidades: nome da cidade com contraste ≥ 4.5:1 16.38
+OK      [iPhone 13 Mini ambar] cidades: "Concluído" visível e com ≥ 44 px 568+48 de 629
+OK      [iPhone 13 Mini ambar] cidades: "Ver todas" desativado sem cidades 
+OK      [iPhone 13 Mini ambar] cidades: campo de pesquisa ≥ 16 px (o iPhone não faz zoom) 16
+OK      [iPhone 13 Mini ambar] cidades: pesquisa sem acentos encontra "Guimarães" Guimarães
+10 linhas
+OK      [iPhone 13 Mini ambar] cidades: pesquisa sem resultados diz "Nenhuma cidade com esse nome." 
+OK      [iPhone 13 Mini ambar] cidades: Porto fica marcado (aria-checked) 
+OK      [iPhone 13 Mini ambar] cidades: a escolha fica guardada no telemóvel {"v":1,"s":["porto"]}
+OK      [iPhone 13 Mini ambar] cidades: escolha atual é só Braga {"v":1,"s":["braga"]}
+OK      [iPhone 13 Mini ambar] cidades: "Concluído" fecha o seletor 
+OK      [iPhone 13 Mini ambar] cidades: o botão passa a mostrar "Braga" Braga
+OK      [iPhone 13 Mini ambar] cidades: mostra as linhas de Braga 
+OK      [iPhone 13 Mini ambar] cidades: resposta atrasada do Porto não estraga a lista (pedido mais recente ganha) 
+OK      [iPhone 13 Mini ambar] cidades: o último pedido ao servidor leva cidades=braga {"cidades":"braga","q":""}
+OK      [iPhone 13 Mini ambar] cidades: botão com duas cidades diz "Braga e Lisboa" Braga e Lisboa
+OK      [iPhone 13 Mini ambar] cidades: pedido leva as duas cidades {"cidades":"braga,lisboa","q":""}
+OK      [iPhone 13 Mini ambar] cidades: botão com cidades continua dentro do ecrã 205+154
+OK      [iPhone 13 Mini ambar] cidades: botão com cidades (escuro) com contraste ≥ 4.5:1 16.38
+OK      [iPhone 13 Mini ambar] cidades: sem resultados nas cidades diz onde procurou Nenhuma linha em Braga e Lisboa para esta pesquisa. Procurar em todo o país
+OK      [iPhone 13 Mini ambar] cidades: "Procurar em todo o país" mostra a linha de outra cidade 
+OK      [iPhone 13 Mini ambar] cidades: esse pedido não leva filtro {"cidades":null,"q":"zzz"}
+OK      [iPhone 13 Mini ambar] cidades: avisa que mostra todo o país 
+OK      [iPhone 13 Mini ambar] cidades: "todo o país" é só desta vez (a escolha continua guardada) {"v":1,"s":["braga","lisboa"]}
+OK      [iPhone 13 Mini ambar] cidades: "Voltar às minhas cidades" volta a filtrar {"cidades":"braga,lisboa","q":"zzz"}
+OK      [iPhone 13 Mini ambar] cidades: ao recarregar mantém as cidades escolhidas Braga e Lisboa
+OK      [iPhone 13 Mini ambar] cidades: ao recarregar nenhum pedido sai sem filtro [{"cidades":"braga,lisboa","q":""}]
+OK      [iPhone 13 Mini ambar] cidades: chega a 8 cidades escolhidas 8
+OK      [iPhone 13 Mini ambar] cidades: com 8, as restantes ficam bloqueadas 43
+OK      [iPhone 13 Mini ambar] cidades: diz que chegou ao máximo 
+OK      [iPhone 13 Mini ambar] cidades: "Ver todas" limpa a escolha e guarda a lista vazia {"v":1,"s":[]}
+OK      [iPhone 13 Mini ambar] cidades: sem cidades volta "Cidades: todas" e o pedido sem filtro Cidades: todas {"cidades":null,"q":""}
+OK      [iPhone 13 Mini ambar] cidades: cidade sem linhas diz "Ainda não temos linhas de Viseu." Ainda não temos linhas de Viseu. Procurar em todo o país
+OK      [iPhone 13 Mini ambar] cidades: cidade sem linhas oferece "Procurar em todo o país" 
+OK      [iPhone 13 Mini ambar] cidades: Favoritos mostra as cidades escolhidas Porto e Braga
+OK      [iPhone 13 Mini ambar] cidades: Favoritos explica o efeito nos Horários 
+OK      [iPhone 13 Mini ambar] cidades: Favoritos abre o seletor com as duas marcadas 
+OK      [iPhone 13 Mini ambar] cidades: Favoritos atualiza o botão (só Braga) Braga
+OK      [iPhone 13 Mini ambar] cidades: Favoritos guarda a escolha {"v":1,"s":["braga"]}
+OK      [iPhone 13 Mini ambar] cidades: Favoritos sem deslize horizontal 0
+OK      [iPhone 13 Mini ambar] cidades: sem erros de JavaScript 
+OK      [iPhone 13 Mini ambar] localização: convite mostra a nota sobre o uso da localização 1
+OK      [iPhone 13 Mini ambar] localização: nota diz que não fica guardada no servidor Só serve para mostrar o que passa perto de ti. Não fica guardada no servidor. Saber mais
+OK      [iPhone 13 Mini ambar] localização: nota é um alvo de toque ≥ 44 px 44
+OK      [iPhone 13 Mini ambar] localização: nota cabe na largura do ecrã 37+296
+OK      [iPhone 13 Mini ambar] localização: texto da nota com contraste ≥ 4.5:1 5.87
+OK      [iPhone 13 Mini ambar] localização: botão "Ativar localização" continua visível no ecrã 354
+OK      [iPhone 13 Mini ambar] localização: janela explica o que vai para o servidor e o que fica no telemóvel A tua localização | Usamos a tua localização para uma coisa só: mostrar as paragens e os transportes perto de ti. | No servidor | A posição 
+OK      [iPhone 13 Mini ambar] localização: janela cabe no ecrã ok
+OK      [iPhone 13 Mini ambar] localização: sem GPS ligado não há botão de desligar 
+OK      [iPhone 13 Mini ambar] localização: texto da janela com contraste ≥ 4.5:1 16.38
+OK      [iPhone 13 Mini ambar] localização: texto secundário da janela com contraste ≥ 4.5:1 5.82
+OK      [iPhone 13 Mini ambar] localização: Esc fecha a janela 
+OK      [iPhone 13 Mini ambar] localização: Enter na nota abre a janela 
+OK      [iPhone 13 Mini ambar] localização: convite sem erros de JavaScript 
+OK      [iPhone 13 Mini ambar] localização: com GPS ligado a lista mostra a paragem 
+OK      [iPhone 13 Mini ambar] localização: a nota também está no fim da lista 1
+OK      [iPhone 13 Mini ambar] localização: com GPS ligado aparece "Desligar e apagar a posição guardada" 1
+OK      [iPhone 13 Mini ambar] localização: botão de desligar com altura ≥ 44 px 48
+OK      [iPhone 13 Mini ambar] localização: botão de desligar visível sem deslizar ok
+OK      [iPhone 13 Mini ambar] localização: antes de desligar há posição guardada no telemóvel 
+OK      [iPhone 13 Mini ambar] localização: desligar fecha a janela 
+OK      [iPhone 13 Mini ambar] localização: desligar apaga a última posição 
+OK      [iPhone 13 Mini ambar] localização: desligar regista que está desligada 
+OK      [iPhone 13 Mini ambar] localização: desligar tira a autorização guardada da app 
+OK      [iPhone 13 Mini ambar] localização: depois de desligar volta o convite e a lista de paragens desaparece 1 convites, 0 paragens
+OK      [iPhone 13 Mini ambar] localização: depois de recarregar continua desligada 0 paragens
+OK      [iPhone 13 Mini ambar] localização: depois de recarregar não há posição guardada 
+OK      [iPhone 13 Mini ambar] localização: voltar a ativar traz as paragens 
+OK      [iPhone 13 Mini ambar] localização: voltar a ativar limpa o "desligada" 
+OK      [iPhone 13 Mini ambar] localização: desligar sem erros de JavaScript 
+OK      [iPhone 13 Mini ambar] precisão: logo ao início não incomoda (espera 20 s) 
+OK      [iPhone 13 Mini ambar] precisão: com 800 m de erro avisa "pouco precisa" A tua posição está pouco precisa (cerca de 1,5 km).  Nas definições do telemóvel, liga a localização precisa para este b
+OK      [iPhone 13 Mini ambar] precisão: diz a ordem de grandeza (cerca de 800 m ou 1,5 km) A tua posição está pouco precisa (cerca de 1,5 km).  Nas definições do telemóvel
+OK      [iPhone 13 Mini ambar] precisão: texto do aviso com contraste ≥ 4.5:1 15.34 / 5.45
+OK      [iPhone 13 Mini ambar] precisão: aviso cabe na largura do ecrã 12+346
+OK      [iPhone 13 Mini ambar] precisão: botão "Percebi" com altura ≥ 44 px 44
+OK      [iPhone 13 Mini ambar] precisão: "Percebi" fecha o aviso 
+OK      [iPhone 13 Mini ambar] precisão: com a posição boa não há aviso 
+OK      [iPhone 13 Mini ambar] precisão: aviso sem erros de JavaScript 
+OK      [Pixel 5 claro] cidades: sem cidades, o botão diz "Cidades: todas" Cidades: todas
+OK      [Pixel 5 claro] cidades: sem cidades, o primeiro pedido não leva filtro {"cidades":null,"q":""}
+OK      [Pixel 5 claro] cidades: mostra as linhas de todo o país 
+OK      [Pixel 5 claro] cidades: botão de cidades com altura ≥ 44 px 44
+OK      [Pixel 5 claro] cidades: botão de cidades cabe na largura do ecrã 215+162 de 393
+OK      [Pixel 5 claro] cidades: seletor abre e lista cidades 51
+OK      [Pixel 5 claro] cidades: seletor mostra quantas linhas tem cada cidade Porto 265 linhas
+OK      [Pixel 5 claro] cidades: cidade sem linhas diz "sem linhas ainda" Viseu sem linhas ainda
+OK      [Pixel 5 claro] cidades: uma linha só diz "1 linha" (singular) Beja 1 linha
+OK      [Pixel 5 claro] cidades: nenhuma linha do seletor transborda na largura 0
+OK      [Pixel 5 claro] cidades: seletor cabe no ecrã ok
+OK      [Pixel 5 claro] cidades: cada cidade é um alvo de toque ≥ 44 px 48
+OK      [Pixel 5 claro] cidades: caixa de seleção tem contorno visível 
+OK      [Pixel 5 claro] cidades: nome da cidade com contraste ≥ 4.5:1 18.88
+OK      [Pixel 5 claro] cidades: "Concluído" visível e com ≥ 44 px 666+48 de 727
+OK      [Pixel 5 claro] cidades: "Ver todas" desativado sem cidades 
+OK      [Pixel 5 claro] cidades: campo de pesquisa ≥ 16 px (o iPhone não faz zoom) 16
+OK      [Pixel 5 claro] cidades: pesquisa sem acentos encontra "Guimarães" Guimarães
+10 linhas
+OK      [Pixel 5 claro] cidades: pesquisa sem resultados diz "Nenhuma cidade com esse nome." 
+OK      [Pixel 5 claro] cidades: Porto fica marcado (aria-checked) 
+OK      [Pixel 5 claro] cidades: a escolha fica guardada no telemóvel {"v":1,"s":["porto"]}
+OK      [Pixel 5 claro] cidades: escolha atual é só Braga {"v":1,"s":["braga"]}
+OK      [Pixel 5 claro] cidades: "Concluído" fecha o seletor 
+OK      [Pixel 5 claro] cidades: o botão passa a mostrar "Braga" Braga
+OK      [Pixel 5 claro] cidades: mostra as linhas de Braga 
+OK      [Pixel 5 claro] cidades: resposta atrasada do Porto não estraga a lista (pedido mais recente ganha) 
+OK      [Pixel 5 claro] cidades: o último pedido ao servidor leva cidades=braga {"cidades":"braga","q":""}
+OK      [Pixel 5 claro] cidades: botão com duas cidades diz "Braga e Lisboa" Braga e Lisboa
+OK      [Pixel 5 claro] cidades: pedido leva as duas cidades {"cidades":"braga,lisboa","q":""}
+OK      [Pixel 5 claro] cidades: botão com cidades continua dentro do ecrã 218+159
+OK      [Pixel 5 claro] cidades: botão com cidades (escuro) com contraste ≥ 4.5:1 18.88
+OK      [Pixel 5 claro] cidades: sem resultados nas cidades diz onde procurou Nenhuma linha em Braga e Lisboa para esta pesquisa. Procurar em todo o país
+OK      [Pixel 5 claro] cidades: "Procurar em todo o país" mostra a linha de outra cidade 
+OK      [Pixel 5 claro] cidades: esse pedido não leva filtro {"cidades":null,"q":"zzz"}
+OK      [Pixel 5 claro] cidades: avisa que mostra todo o país 
+OK      [Pixel 5 claro] cidades: "todo o país" é só desta vez (a escolha continua guardada) {"v":1,"s":["braga","lisboa"]}
+OK      [Pixel 5 claro] cidades: "Voltar às minhas cidades" volta a filtrar {"cidades":"braga,lisboa","q":"zzz"}
+OK      [Pixel 5 claro] cidades: ao recarregar mantém as cidades escolhidas Braga e Lisboa
+OK      [Pixel 5 claro] cidades: ao recarregar nenhum pedido sai sem filtro [{"cidades":"braga,lisboa","q":""}]
+OK      [Pixel 5 claro] cidades: chega a 8 cidades escolhidas 8
+OK      [Pixel 5 claro] cidades: com 8, as restantes ficam bloqueadas 43
+OK      [Pixel 5 claro] cidades: diz que chegou ao máximo 
+OK      [Pixel 5 claro] cidades: "Ver todas" limpa a escolha e guarda a lista vazia {"v":1,"s":[]}
+OK      [Pixel 5 claro] cidades: sem cidades volta "Cidades: todas" e o pedido sem filtro Cidades: todas {"cidades":null,"q":""}
+OK      [Pixel 5 claro] cidades: cidade sem linhas diz "Ainda não temos linhas de Viseu." Ainda não temos linhas de Viseu. Procurar em todo o país
+OK      [Pixel 5 claro] cidades: cidade sem linhas oferece "Procurar em todo o país" 
+OK      [Pixel 5 claro] cidades: Favoritos mostra as cidades escolhidas Porto e Braga
+OK      [Pixel 5 claro] cidades: Favoritos explica o efeito nos Horários 
+OK      [Pixel 5 claro] cidades: Favoritos abre o seletor com as duas marcadas 
+OK      [Pixel 5 claro] cidades: Favoritos atualiza o botão (só Braga) Braga
+OK      [Pixel 5 claro] cidades: Favoritos guarda a escolha {"v":1,"s":["braga"]}
+OK      [Pixel 5 claro] cidades: Favoritos sem deslize horizontal 0
+OK      [Pixel 5 claro] cidades: sem erros de JavaScript 
+OK      [Pixel 5 claro] localização: convite mostra a nota sobre o uso da localização 1
+OK      [Pixel 5 claro] localização: nota diz que não fica guardada no servidor Só serve para mostrar o que passa perto de ti. Não fica guardada no servidor. Saber mais
+OK      [Pixel 5 claro] localização: nota é um alvo de toque ≥ 44 px 44
+OK      [Pixel 5 claro] localização: nota cabe na largura do ecrã 48+298
+OK      [Pixel 5 claro] localização: texto da nota com contraste ≥ 4.5:1 5.33
+OK      [Pixel 5 claro] localização: botão "Ativar localização" continua visível no ecrã 354
+OK      [Pixel 5 claro] localização: janela explica o que vai para o servidor e o que fica no telemóvel A tua localização | Usamos a tua localização para uma coisa só: mostrar as paragens e os transportes perto de ti. | No servidor | A posição 
+OK      [Pixel 5 claro] localização: janela cabe no ecrã ok
+OK      [Pixel 5 claro] localização: sem GPS ligado não há botão de desligar 
+OK      [Pixel 5 claro] localização: texto da janela com contraste ≥ 4.5:1 18.88
+OK      [Pixel 5 claro] localização: texto secundário da janela com contraste ≥ 4.5:1 5.33
+OK      [Pixel 5 claro] localização: Esc fecha a janela 
+OK      [Pixel 5 claro] localização: Enter na nota abre a janela 
+OK      [Pixel 5 claro] localização: convite sem erros de JavaScript 
+OK      [Pixel 5 claro] localização: com GPS ligado a lista mostra a paragem 
+OK      [Pixel 5 claro] localização: a nota também está no fim da lista 1
+OK      [Pixel 5 claro] localização: com GPS ligado aparece "Desligar e apagar a posição guardada" 1
+OK      [Pixel 5 claro] localização: botão de desligar com altura ≥ 44 px 48
+OK      [Pixel 5 claro] localização: botão de desligar visível sem deslizar ok
+OK      [Pixel 5 claro] localização: antes de desligar há posição guardada no telemóvel 
+OK      [Pixel 5 claro] localização: desligar fecha a janela 
+OK      [Pixel 5 claro] localização: desligar apaga a última posição 
+OK      [Pixel 5 claro] localização: desligar regista que está desligada 
+OK      [Pixel 5 claro] localização: desligar tira a autorização guardada da app 
+OK      [Pixel 5 claro] localização: depois de desligar volta o convite e a lista de paragens desaparece 1 convites, 0 paragens
+OK      [Pixel 5 claro] localização: depois de recarregar continua desligada 0 paragens
+OK      [Pixel 5 claro] localização: depois de recarregar não há posição guardada 
+OK      [Pixel 5 claro] localização: voltar a ativar traz as paragens 
+OK      [Pixel 5 claro] localização: voltar a ativar limpa o "desligada" 
+OK      [Pixel 5 claro] localização: desligar sem erros de JavaScript 
+OK      [Desktop claro] cidades: sem cidades, o botão diz "Cidades: todas" Cidades: todas
+OK      [Desktop claro] cidades: sem cidades, o primeiro pedido não leva filtro {"cidades":null,"q":""}
+OK      [Desktop claro] cidades: mostra as linhas de todo o país 
+OK      [Desktop claro] cidades: botão de cidades com altura ≥ 44 px 44
+OK      [Desktop claro] cidades: botão de cidades cabe na largura do ecrã 902+162 de 1280
+OK      [Desktop claro] cidades: seletor abre e lista cidades 51
+OK      [Desktop claro] cidades: seletor mostra quantas linhas tem cada cidade Porto 265 linhas
+OK      [Desktop claro] cidades: cidade sem linhas diz "sem linhas ainda" Viseu sem linhas ainda
+OK      [Desktop claro] cidades: uma linha só diz "1 linha" (singular) Beja 1 linha
+OK      [Desktop claro] cidades: nenhuma linha do seletor transborda na largura 0
+OK      [Desktop claro] cidades: seletor cabe no ecrã ok
+OK      [Desktop claro] cidades: cada cidade é um alvo de toque ≥ 44 px 48
+OK      [Desktop claro] cidades: caixa de seleção tem contorno visível 
+OK      [Desktop claro] cidades: nome da cidade com contraste ≥ 4.5:1 18.88
+OK      [Desktop claro] cidades: "Concluído" visível e com ≥ 44 px 691+48 de 800
+OK      [Desktop claro] cidades: "Ver todas" desativado sem cidades 
+OK      [Desktop claro] cidades: pesquisa sem acentos encontra "Guimarães" Guimarães
+10 linhas
+OK      [Desktop claro] cidades: pesquisa sem resultados diz "Nenhuma cidade com esse nome." 
+OK      [Desktop claro] cidades: Porto fica marcado (aria-checked) 
+OK      [Desktop claro] cidades: a escolha fica guardada no telemóvel {"v":1,"s":["porto"]}
+OK      [Desktop claro] cidades: escolha atual é só Braga {"v":1,"s":["braga"]}
+OK      [Desktop claro] cidades: "Concluído" fecha o seletor 
+OK      [Desktop claro] cidades: o botão passa a mostrar "Braga" Braga
+OK      [Desktop claro] cidades: mostra as linhas de Braga 
+OK      [Desktop claro] cidades: resposta atrasada do Porto não estraga a lista (pedido mais recente ganha) 
+OK      [Desktop claro] cidades: o último pedido ao servidor leva cidades=braga {"cidades":"braga","q":""}
+OK      [Desktop claro] cidades: botão com duas cidades diz "Braga e Lisboa" Braga e Lisboa
+OK      [Desktop claro] cidades: pedido leva as duas cidades {"cidades":"braga,lisboa","q":""}
+OK      [Desktop claro] cidades: botão com cidades continua dentro do ecrã 905+159
+OK      [Desktop claro] cidades: botão com cidades (escuro) com contraste ≥ 4.5:1 18.88
+OK      [Desktop claro] cidades: sem resultados nas cidades diz onde procurou Nenhuma linha em Braga e Lisboa para esta pesquisa. Procurar em todo o país
+OK      [Desktop claro] cidades: "Procurar em todo o país" mostra a linha de outra cidade 
+OK      [Desktop claro] cidades: esse pedido não leva filtro {"cidades":null,"q":"zzz"}
+OK      [Desktop claro] cidades: avisa que mostra todo o país 
+OK      [Desktop claro] cidades: "todo o país" é só desta vez (a escolha continua guardada) {"v":1,"s":["braga","lisboa"]}
+OK      [Desktop claro] cidades: "Voltar às minhas cidades" volta a filtrar {"cidades":"braga,lisboa","q":"zzz"}
+OK      [Desktop claro] cidades: ao recarregar mantém as cidades escolhidas Braga e Lisboa
+OK      [Desktop claro] cidades: ao recarregar nenhum pedido sai sem filtro [{"cidades":"braga,lisboa","q":""}]
+OK      [Desktop claro] cidades: chega a 8 cidades escolhidas 8
+OK      [Desktop claro] cidades: com 8, as restantes ficam bloqueadas 43
+OK      [Desktop claro] cidades: diz que chegou ao máximo 
+OK      [Desktop claro] cidades: "Ver todas" limpa a escolha e guarda a lista vazia {"v":1,"s":[]}
+OK      [Desktop claro] cidades: sem cidades volta "Cidades: todas" e o pedido sem filtro Cidades: todas {"cidades":null,"q":""}
+OK      [Desktop claro] cidades: cidade sem linhas diz "Ainda não temos linhas de Viseu." Ainda não temos linhas de Viseu. Procurar em todo o país
+OK      [Desktop claro] cidades: cidade sem linhas oferece "Procurar em todo o país" 
+OK      [Desktop claro] cidades: Favoritos mostra as cidades escolhidas Porto e Braga
+OK      [Desktop claro] cidades: Favoritos explica o efeito nos Horários 
+OK      [Desktop claro] cidades: Favoritos abre o seletor com as duas marcadas 
+OK      [Desktop claro] cidades: Favoritos atualiza o botão (só Braga) Braga
+OK      [Desktop claro] cidades: Favoritos guarda a escolha {"v":1,"s":["braga"]}
+OK      [Desktop claro] cidades: Favoritos sem deslize horizontal 0
+OK      [Desktop claro] cidades: sem erros de JavaScript 
+OK      [Desktop claro] localização: convite mostra a nota sobre o uso da localização 1
+OK      [Desktop claro] localização: nota diz que não fica guardada no servidor Só serve para mostrar o que passa perto de ti. Não fica guardada no servidor. Saber mais
+OK      [Desktop claro] localização: nota é um alvo de toque ≥ 44 px 44
+OK      [Desktop claro] localização: nota cabe na largura do ecrã 721+298
+OK      [Desktop claro] localização: texto da nota com contraste ≥ 4.5:1 5.33
+OK      [Desktop claro] localização: botão "Ativar localização" continua visível no ecrã 529
+OK      [Desktop claro] localização: janela explica o que vai para o servidor e o que fica no telemóvel A tua localização | Usamos a tua localização para uma coisa só: mostrar as paragens e os transportes perto de ti. | No servidor | A posição 
+OK      [Desktop claro] localização: janela cabe no ecrã ok
+OK      [Desktop claro] localização: sem GPS ligado não há botão de desligar 
+OK      [Desktop claro] localização: texto da janela com contraste ≥ 4.5:1 18.88
+OK      [Desktop claro] localização: texto secundário da janela com contraste ≥ 4.5:1 5.33
+OK      [Desktop claro] localização: Esc fecha a janela 
+OK      [Desktop claro] localização: Enter na nota abre a janela 
+OK      [Desktop claro] localização: convite sem erros de JavaScript 
+OK      [Desktop claro] localização: com GPS ligado a lista mostra a paragem 
+OK      [Desktop claro] localização: a nota também está no fim da lista 1
+OK      [Desktop claro] localização: com GPS ligado aparece "Desligar e apagar a posição guardada" 1
+OK      [Desktop claro] localização: botão de desligar com altura ≥ 44 px 48
+OK      [Desktop claro] localização: botão de desligar visível sem deslizar ok
+OK      [Desktop claro] localização: antes de desligar há posição guardada no telemóvel 
+OK      [Desktop claro] localização: desligar fecha a janela 
+OK      [Desktop claro] localização: desligar apaga a última posição 
+OK      [Desktop claro] localização: desligar regista que está desligada 
+OK      [Desktop claro] localização: desligar tira a autorização guardada da app 
+OK      [Desktop claro] localização: depois de desligar volta o convite e a lista de paragens desaparece 1 convites, 0 paragens
+OK      [Desktop claro] localização: depois de recarregar continua desligada 0 paragens
+OK      [Desktop claro] localização: depois de recarregar não há posição guardada 
+OK      [Desktop claro] localização: voltar a ativar traz as paragens 
+OK      [Desktop claro] localização: voltar a ativar limpa o "desligada" 
+OK      [Desktop claro] localização: desligar sem erros de JavaScript 
+OK      [Desktop claro] precisão: logo ao início não incomoda (espera 20 s) 
+OK      [Desktop claro] precisão: com 800 m de erro avisa "pouco precisa" A tua posição está pouco precisa (cerca de 1,5 km).  Nas definições do telemóvel, liga a localização precisa para este b
+OK      [Desktop claro] precisão: diz a ordem de grandeza (cerca de 800 m ou 1,5 km) A tua posição está pouco precisa (cerca de 1,5 km).  Nas definições do telemóvel
+OK      [Desktop claro] precisão: texto do aviso com contraste ≥ 4.5:1 17.15 / 4.84
+OK      [Desktop claro] precisão: aviso cabe na largura do ecrã 12+435
+OK      [Desktop claro] precisão: botão "Percebi" com altura ≥ 44 px 44
+OK      [Desktop claro] precisão: "Percebi" fecha o aviso 
+OK      [Desktop claro] precisão: com a posição boa não há aviso 
+OK      [Desktop claro] precisão: aviso sem erros de JavaScript 
+
+TOTAL 542/542

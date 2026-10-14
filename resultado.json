@@ -1,0 +1,2715 @@
+{
+ "testes": [
+  {
+   "nome": "[iPhone SE claro] cidades: sem cidades, o botão diz \"Cidades: todas\"",
+   "ok": true,
+   "extra": "Cidades: todas"
+  },
+  {
+   "nome": "[iPhone SE claro] cidades: sem cidades, o primeiro pedido não leva filtro",
+   "ok": true,
+   "extra": "{\"cidades\":null,\"q\":\"\"}"
+  },
+  {
+   "nome": "[iPhone SE claro] cidades: mostra as linhas de todo o país",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[iPhone SE claro] cidades: botão de cidades com altura ≥ 44 px",
+   "ok": true,
+   "extra": "44"
+  },
+  {
+   "nome": "[iPhone SE claro] cidades: botão de cidades cabe na largura do ecrã",
+   "ok": true,
+   "extra": "162+142 de 320"
+  },
+  {
+   "nome": "[iPhone SE claro] cidades: seletor abre e lista cidades",
+   "ok": true,
+   "extra": "51"
+  },
+  {
+   "nome": "[iPhone SE claro] cidades: seletor mostra quantas linhas tem cada cidade",
+   "ok": true,
+   "extra": "Porto 265 linhas"
+  },
+  {
+   "nome": "[iPhone SE claro] cidades: cidade sem linhas diz \"sem linhas ainda\"",
+   "ok": true,
+   "extra": "Viseu sem linhas ainda"
+  },
+  {
+   "nome": "[iPhone SE claro] cidades: uma linha só diz \"1 linha\" (singular)",
+   "ok": true,
+   "extra": "Beja 1 linha"
+  },
+  {
+   "nome": "[iPhone SE claro] cidades: nenhuma linha do seletor transborda na largura",
+   "ok": true,
+   "extra": "0"
+  },
+  {
+   "nome": "[iPhone SE claro] cidades: seletor cabe no ecrã",
+   "ok": true,
+   "extra": "ok"
+  },
+  {
+   "nome": "[iPhone SE claro] cidades: cada cidade é um alvo de toque ≥ 44 px",
+   "ok": true,
+   "extra": "48"
+  },
+  {
+   "nome": "[iPhone SE claro] cidades: caixa de seleção tem contorno visível",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[iPhone SE claro] cidades: nome da cidade com contraste ≥ 4.5:1",
+   "ok": true,
+   "extra": "18.88"
+  },
+  {
+   "nome": "[iPhone SE claro] cidades: \"Concluído\" visível e com ≥ 44 px",
+   "ok": true,
+   "extra": "507+48 de 568"
+  },
+  {
+   "nome": "[iPhone SE claro] cidades: \"Ver todas\" desativado sem cidades",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[iPhone SE claro] cidades: campo de pesquisa ≥ 16 px (o iPhone não faz zoom)",
+   "ok": true,
+   "extra": "16"
+  },
+  {
+   "nome": "[iPhone SE claro] cidades: pesquisa sem acentos encontra \"Guimarães\"",
+   "ok": true,
+   "extra": "Guimarães\n10 linhas"
+  },
+  {
+   "nome": "[iPhone SE claro] cidades: pesquisa sem resultados diz \"Nenhuma cidade com esse nome.\"",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[iPhone SE claro] cidades: Porto fica marcado (aria-checked)",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[iPhone SE claro] cidades: a escolha fica guardada no telemóvel",
+   "ok": true,
+   "extra": "{\"v\":1,\"s\":[\"porto\"]}"
+  },
+  {
+   "nome": "[iPhone SE claro] cidades: escolha atual é só Braga",
+   "ok": true,
+   "extra": "{\"v\":1,\"s\":[\"braga\"]}"
+  },
+  {
+   "nome": "[iPhone SE claro] cidades: \"Concluído\" fecha o seletor",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[iPhone SE claro] cidades: o botão passa a mostrar \"Braga\"",
+   "ok": true,
+   "extra": "Braga"
+  },
+  {
+   "nome": "[iPhone SE claro] cidades: mostra as linhas de Braga",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[iPhone SE claro] cidades: resposta atrasada do Porto não estraga a lista (pedido mais recente ganha)",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[iPhone SE claro] cidades: o último pedido ao servidor leva cidades=braga",
+   "ok": true,
+   "extra": "{\"cidades\":\"braga\",\"q\":\"\"}"
+  },
+  {
+   "nome": "[iPhone SE claro] cidades: botão com duas cidades diz \"Braga e Lisboa\"",
+   "ok": true,
+   "extra": "Braga e Lisboa"
+  },
+  {
+   "nome": "[iPhone SE claro] cidades: pedido leva as duas cidades",
+   "ok": true,
+   "extra": "{\"cidades\":\"braga,lisboa\",\"q\":\"\"}"
+  },
+  {
+   "nome": "[iPhone SE claro] cidades: botão com cidades continua dentro do ecrã",
+   "ok": true,
+   "extra": "162+142"
+  },
+  {
+   "nome": "[iPhone SE claro] cidades: botão com cidades (escuro) com contraste ≥ 4.5:1",
+   "ok": true,
+   "extra": "18.88"
+  },
+  {
+   "nome": "[iPhone SE claro] cidades: sem resultados nas cidades diz onde procurou",
+   "ok": true,
+   "extra": "Nenhuma linha em Braga e Lisboa para esta pesquisa. Procurar em todo o país"
+  },
+  {
+   "nome": "[iPhone SE claro] cidades: \"Procurar em todo o país\" mostra a linha de outra cidade",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[iPhone SE claro] cidades: esse pedido não leva filtro",
+   "ok": true,
+   "extra": "{\"cidades\":null,\"q\":\"zzz\"}"
+  },
+  {
+   "nome": "[iPhone SE claro] cidades: avisa que mostra todo o país",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[iPhone SE claro] cidades: \"todo o país\" é só desta vez (a escolha continua guardada)",
+   "ok": true,
+   "extra": "{\"v\":1,\"s\":[\"braga\",\"lisboa\"]}"
+  },
+  {
+   "nome": "[iPhone SE claro] cidades: \"Voltar às minhas cidades\" volta a filtrar",
+   "ok": true,
+   "extra": "{\"cidades\":\"braga,lisboa\",\"q\":\"zzz\"}"
+  },
+  {
+   "nome": "[iPhone SE claro] cidades: ao recarregar mantém as cidades escolhidas",
+   "ok": true,
+   "extra": "Braga e Lisboa"
+  },
+  {
+   "nome": "[iPhone SE claro] cidades: ao recarregar nenhum pedido sai sem filtro",
+   "ok": true,
+   "extra": "[{\"cidades\":\"braga,lisboa\",\"q\":\"\"}]"
+  },
+  {
+   "nome": "[iPhone SE claro] cidades: chega a 8 cidades escolhidas",
+   "ok": true,
+   "extra": "8"
+  },
+  {
+   "nome": "[iPhone SE claro] cidades: com 8, as restantes ficam bloqueadas",
+   "ok": true,
+   "extra": "43"
+  },
+  {
+   "nome": "[iPhone SE claro] cidades: diz que chegou ao máximo",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[iPhone SE claro] cidades: \"Ver todas\" limpa a escolha e guarda a lista vazia",
+   "ok": true,
+   "extra": "{\"v\":1,\"s\":[]}"
+  },
+  {
+   "nome": "[iPhone SE claro] cidades: sem cidades volta \"Cidades: todas\" e o pedido sem filtro",
+   "ok": true,
+   "extra": "Cidades: todas {\"cidades\":null,\"q\":\"\"}"
+  },
+  {
+   "nome": "[iPhone SE claro] cidades: cidade sem linhas diz \"Ainda não temos linhas de Viseu.\"",
+   "ok": true,
+   "extra": "Ainda não temos linhas de Viseu. Procurar em todo o país"
+  },
+  {
+   "nome": "[iPhone SE claro] cidades: cidade sem linhas oferece \"Procurar em todo o país\"",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[iPhone SE claro] cidades: Favoritos mostra as cidades escolhidas",
+   "ok": true,
+   "extra": "Porto e Braga"
+  },
+  {
+   "nome": "[iPhone SE claro] cidades: Favoritos explica o efeito nos Horários",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[iPhone SE claro] cidades: Favoritos abre o seletor com as duas marcadas",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[iPhone SE claro] cidades: Favoritos atualiza o botão (só Braga)",
+   "ok": true,
+   "extra": "Braga"
+  },
+  {
+   "nome": "[iPhone SE claro] cidades: Favoritos guarda a escolha",
+   "ok": true,
+   "extra": "{\"v\":1,\"s\":[\"braga\"]}"
+  },
+  {
+   "nome": "[iPhone SE claro] cidades: Favoritos sem deslize horizontal",
+   "ok": true,
+   "extra": "0"
+  },
+  {
+   "nome": "[iPhone SE claro] cidades: sem erros de JavaScript",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[iPhone SE claro] localização: convite mostra a nota sobre o uso da localização",
+   "ok": true,
+   "extra": "1"
+  },
+  {
+   "nome": "[iPhone SE claro] localização: nota diz que não fica guardada no servidor",
+   "ok": true,
+   "extra": "Só serve para mostrar o que passa perto de ti. Não fica guardada no servidor. Saber mais"
+  },
+  {
+   "nome": "[iPhone SE claro] localização: nota é um alvo de toque ≥ 44 px",
+   "ok": true,
+   "extra": "52"
+  },
+  {
+   "nome": "[iPhone SE claro] localização: nota cabe na largura do ecrã",
+   "ok": true,
+   "extra": "37+241"
+  },
+  {
+   "nome": "[iPhone SE claro] localização: texto da nota com contraste ≥ 4.5:1",
+   "ok": true,
+   "extra": "5.33"
+  },
+  {
+   "nome": "[iPhone SE claro] localização: botão \"Ativar localização\" continua visível no ecrã",
+   "ok": true,
+   "extra": "380"
+  },
+  {
+   "nome": "[iPhone SE claro] localização: janela explica o que vai para o servidor e o que fica no telemóvel",
+   "ok": true,
+   "extra": "A tua localização | Usamos a tua localização para uma coisa só: mostrar as paragens e os transportes perto de ti. | No servidor | A posição "
+  },
+  {
+   "nome": "[iPhone SE claro] localização: janela cabe no ecrã",
+   "ok": true,
+   "extra": "ok"
+  },
+  {
+   "nome": "[iPhone SE claro] localização: sem GPS ligado não há botão de desligar",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[iPhone SE claro] localização: texto da janela com contraste ≥ 4.5:1",
+   "ok": true,
+   "extra": "18.88"
+  },
+  {
+   "nome": "[iPhone SE claro] localização: texto secundário da janela com contraste ≥ 4.5:1",
+   "ok": true,
+   "extra": "5.33"
+  },
+  {
+   "nome": "[iPhone SE claro] localização: Esc fecha a janela",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[iPhone SE claro] localização: Enter na nota abre a janela",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[iPhone SE claro] localização: convite sem erros de JavaScript",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[iPhone SE claro] localização: com GPS ligado a lista mostra a paragem",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[iPhone SE claro] localização: a nota também está no fim da lista",
+   "ok": true,
+   "extra": "1"
+  },
+  {
+   "nome": "[iPhone SE claro] localização: com GPS ligado aparece \"Desligar e apagar a posição guardada\"",
+   "ok": true,
+   "extra": "1"
+  },
+  {
+   "nome": "[iPhone SE claro] localização: botão de desligar com altura ≥ 44 px",
+   "ok": true,
+   "extra": "48"
+  },
+  {
+   "nome": "[iPhone SE claro] localização: botão de desligar visível sem deslizar",
+   "ok": true,
+   "extra": "ok"
+  },
+  {
+   "nome": "[iPhone SE claro] localização: antes de desligar há posição guardada no telemóvel",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[iPhone SE claro] localização: desligar fecha a janela",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[iPhone SE claro] localização: desligar apaga a última posição",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[iPhone SE claro] localização: desligar regista que está desligada",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[iPhone SE claro] localização: desligar tira a autorização guardada da app",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[iPhone SE claro] localização: depois de desligar volta o convite e a lista de paragens desaparece",
+   "ok": true,
+   "extra": "1 convites, 0 paragens"
+  },
+  {
+   "nome": "[iPhone SE claro] localização: depois de recarregar continua desligada",
+   "ok": true,
+   "extra": "0 paragens"
+  },
+  {
+   "nome": "[iPhone SE claro] localização: depois de recarregar não há posição guardada",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[iPhone SE claro] localização: voltar a ativar traz as paragens",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[iPhone SE claro] localização: voltar a ativar limpa o \"desligada\"",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[iPhone SE claro] localização: desligar sem erros de JavaScript",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[iPhone SE claro] precisão: logo ao início não incomoda (espera 20 s)",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[iPhone SE claro] precisão: com 800 m de erro avisa \"pouco precisa\"",
+   "ok": true,
+   "extra": "A tua posição está pouco precisa (cerca de 1,5 km).  Nas definições do telemóvel, liga a localização precisa para este b"
+  },
+  {
+   "nome": "[iPhone SE claro] precisão: diz a ordem de grandeza (cerca de 800 m ou 1,5 km)",
+   "ok": true,
+   "extra": "A tua posição está pouco precisa (cerca de 1,5 km).  Nas definições do telemóvel"
+  },
+  {
+   "nome": "[iPhone SE claro] precisão: texto do aviso com contraste ≥ 4.5:1",
+   "ok": true,
+   "extra": "17.15 / 4.84"
+  },
+  {
+   "nome": "[iPhone SE claro] precisão: aviso cabe na largura do ecrã",
+   "ok": true,
+   "extra": "12+291"
+  },
+  {
+   "nome": "[iPhone SE claro] precisão: botão \"Percebi\" com altura ≥ 44 px",
+   "ok": true,
+   "extra": "44"
+  },
+  {
+   "nome": "[iPhone SE claro] precisão: \"Percebi\" fecha o aviso",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[iPhone SE claro] precisão: com a posição boa não há aviso",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[iPhone SE claro] precisão: aviso sem erros de JavaScript",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[iPhone 13 Mini claro] cidades: sem cidades, o botão diz \"Cidades: todas\"",
+   "ok": true,
+   "extra": "Cidades: todas"
+  },
+  {
+   "nome": "[iPhone 13 Mini claro] cidades: sem cidades, o primeiro pedido não leva filtro",
+   "ok": true,
+   "extra": "{\"cidades\":null,\"q\":\"\"}"
+  },
+  {
+   "nome": "[iPhone 13 Mini claro] cidades: mostra as linhas de todo o país",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[iPhone 13 Mini claro] cidades: botão de cidades com altura ≥ 44 px",
+   "ok": true,
+   "extra": "44"
+  },
+  {
+   "nome": "[iPhone 13 Mini claro] cidades: botão de cidades cabe na largura do ecrã",
+   "ok": true,
+   "extra": "203+156 de 375"
+  },
+  {
+   "nome": "[iPhone 13 Mini claro] cidades: seletor abre e lista cidades",
+   "ok": true,
+   "extra": "51"
+  },
+  {
+   "nome": "[iPhone 13 Mini claro] cidades: seletor mostra quantas linhas tem cada cidade",
+   "ok": true,
+   "extra": "Porto 265 linhas"
+  },
+  {
+   "nome": "[iPhone 13 Mini claro] cidades: cidade sem linhas diz \"sem linhas ainda\"",
+   "ok": true,
+   "extra": "Viseu sem linhas ainda"
+  },
+  {
+   "nome": "[iPhone 13 Mini claro] cidades: uma linha só diz \"1 linha\" (singular)",
+   "ok": true,
+   "extra": "Beja 1 linha"
+  },
+  {
+   "nome": "[iPhone 13 Mini claro] cidades: nenhuma linha do seletor transborda na largura",
+   "ok": true,
+   "extra": "0"
+  },
+  {
+   "nome": "[iPhone 13 Mini claro] cidades: seletor cabe no ecrã",
+   "ok": true,
+   "extra": "ok"
+  },
+  {
+   "nome": "[iPhone 13 Mini claro] cidades: cada cidade é um alvo de toque ≥ 44 px",
+   "ok": true,
+   "extra": "48"
+  },
+  {
+   "nome": "[iPhone 13 Mini claro] cidades: caixa de seleção tem contorno visível",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[iPhone 13 Mini claro] cidades: nome da cidade com contraste ≥ 4.5:1",
+   "ok": true,
+   "extra": "18.88"
+  },
+  {
+   "nome": "[iPhone 13 Mini claro] cidades: \"Concluído\" visível e com ≥ 44 px",
+   "ok": true,
+   "extra": "568+48 de 629"
+  },
+  {
+   "nome": "[iPhone 13 Mini claro] cidades: \"Ver todas\" desativado sem cidades",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[iPhone 13 Mini claro] cidades: campo de pesquisa ≥ 16 px (o iPhone não faz zoom)",
+   "ok": true,
+   "extra": "16"
+  },
+  {
+   "nome": "[iPhone 13 Mini claro] cidades: pesquisa sem acentos encontra \"Guimarães\"",
+   "ok": true,
+   "extra": "Guimarães\n10 linhas"
+  },
+  {
+   "nome": "[iPhone 13 Mini claro] cidades: pesquisa sem resultados diz \"Nenhuma cidade com esse nome.\"",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[iPhone 13 Mini claro] cidades: Porto fica marcado (aria-checked)",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[iPhone 13 Mini claro] cidades: a escolha fica guardada no telemóvel",
+   "ok": true,
+   "extra": "{\"v\":1,\"s\":[\"porto\"]}"
+  },
+  {
+   "nome": "[iPhone 13 Mini claro] cidades: escolha atual é só Braga",
+   "ok": true,
+   "extra": "{\"v\":1,\"s\":[\"braga\"]}"
+  },
+  {
+   "nome": "[iPhone 13 Mini claro] cidades: \"Concluído\" fecha o seletor",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[iPhone 13 Mini claro] cidades: o botão passa a mostrar \"Braga\"",
+   "ok": true,
+   "extra": "Braga"
+  },
+  {
+   "nome": "[iPhone 13 Mini claro] cidades: mostra as linhas de Braga",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[iPhone 13 Mini claro] cidades: resposta atrasada do Porto não estraga a lista (pedido mais recente ganha)",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[iPhone 13 Mini claro] cidades: o último pedido ao servidor leva cidades=braga",
+   "ok": true,
+   "extra": "{\"cidades\":\"braga\",\"q\":\"\"}"
+  },
+  {
+   "nome": "[iPhone 13 Mini claro] cidades: botão com duas cidades diz \"Braga e Lisboa\"",
+   "ok": true,
+   "extra": "Braga e Lisboa"
+  },
+  {
+   "nome": "[iPhone 13 Mini claro] cidades: pedido leva as duas cidades",
+   "ok": true,
+   "extra": "{\"cidades\":\"braga,lisboa\",\"q\":\"\"}"
+  },
+  {
+   "nome": "[iPhone 13 Mini claro] cidades: botão com cidades continua dentro do ecrã",
+   "ok": true,
+   "extra": "205+154"
+  },
+  {
+   "nome": "[iPhone 13 Mini claro] cidades: botão com cidades (escuro) com contraste ≥ 4.5:1",
+   "ok": true,
+   "extra": "18.88"
+  },
+  {
+   "nome": "[iPhone 13 Mini claro] cidades: sem resultados nas cidades diz onde procurou",
+   "ok": true,
+   "extra": "Nenhuma linha em Braga e Lisboa para esta pesquisa. Procurar em todo o país"
+  },
+  {
+   "nome": "[iPhone 13 Mini claro] cidades: \"Procurar em todo o país\" mostra a linha de outra cidade",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[iPhone 13 Mini claro] cidades: esse pedido não leva filtro",
+   "ok": true,
+   "extra": "{\"cidades\":null,\"q\":\"zzz\"}"
+  },
+  {
+   "nome": "[iPhone 13 Mini claro] cidades: avisa que mostra todo o país",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[iPhone 13 Mini claro] cidades: \"todo o país\" é só desta vez (a escolha continua guardada)",
+   "ok": true,
+   "extra": "{\"v\":1,\"s\":[\"braga\",\"lisboa\"]}"
+  },
+  {
+   "nome": "[iPhone 13 Mini claro] cidades: \"Voltar às minhas cidades\" volta a filtrar",
+   "ok": true,
+   "extra": "{\"cidades\":\"braga,lisboa\",\"q\":\"zzz\"}"
+  },
+  {
+   "nome": "[iPhone 13 Mini claro] cidades: ao recarregar mantém as cidades escolhidas",
+   "ok": true,
+   "extra": "Braga e Lisboa"
+  },
+  {
+   "nome": "[iPhone 13 Mini claro] cidades: ao recarregar nenhum pedido sai sem filtro",
+   "ok": true,
+   "extra": "[{\"cidades\":\"braga,lisboa\",\"q\":\"\"}]"
+  },
+  {
+   "nome": "[iPhone 13 Mini claro] cidades: chega a 8 cidades escolhidas",
+   "ok": true,
+   "extra": "8"
+  },
+  {
+   "nome": "[iPhone 13 Mini claro] cidades: com 8, as restantes ficam bloqueadas",
+   "ok": true,
+   "extra": "43"
+  },
+  {
+   "nome": "[iPhone 13 Mini claro] cidades: diz que chegou ao máximo",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[iPhone 13 Mini claro] cidades: \"Ver todas\" limpa a escolha e guarda a lista vazia",
+   "ok": true,
+   "extra": "{\"v\":1,\"s\":[]}"
+  },
+  {
+   "nome": "[iPhone 13 Mini claro] cidades: sem cidades volta \"Cidades: todas\" e o pedido sem filtro",
+   "ok": true,
+   "extra": "Cidades: todas {\"cidades\":null,\"q\":\"\"}"
+  },
+  {
+   "nome": "[iPhone 13 Mini claro] cidades: cidade sem linhas diz \"Ainda não temos linhas de Viseu.\"",
+   "ok": true,
+   "extra": "Ainda não temos linhas de Viseu. Procurar em todo o país"
+  },
+  {
+   "nome": "[iPhone 13 Mini claro] cidades: cidade sem linhas oferece \"Procurar em todo o país\"",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[iPhone 13 Mini claro] cidades: Favoritos mostra as cidades escolhidas",
+   "ok": true,
+   "extra": "Porto e Braga"
+  },
+  {
+   "nome": "[iPhone 13 Mini claro] cidades: Favoritos explica o efeito nos Horários",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[iPhone 13 Mini claro] cidades: Favoritos abre o seletor com as duas marcadas",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[iPhone 13 Mini claro] cidades: Favoritos atualiza o botão (só Braga)",
+   "ok": true,
+   "extra": "Braga"
+  },
+  {
+   "nome": "[iPhone 13 Mini claro] cidades: Favoritos guarda a escolha",
+   "ok": true,
+   "extra": "{\"v\":1,\"s\":[\"braga\"]}"
+  },
+  {
+   "nome": "[iPhone 13 Mini claro] cidades: Favoritos sem deslize horizontal",
+   "ok": true,
+   "extra": "0"
+  },
+  {
+   "nome": "[iPhone 13 Mini claro] cidades: sem erros de JavaScript",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[iPhone 13 Mini claro] localização: convite mostra a nota sobre o uso da localização",
+   "ok": true,
+   "extra": "1"
+  },
+  {
+   "nome": "[iPhone 13 Mini claro] localização: nota diz que não fica guardada no servidor",
+   "ok": true,
+   "extra": "Só serve para mostrar o que passa perto de ti. Não fica guardada no servidor. Saber mais"
+  },
+  {
+   "nome": "[iPhone 13 Mini claro] localização: nota é um alvo de toque ≥ 44 px",
+   "ok": true,
+   "extra": "44"
+  },
+  {
+   "nome": "[iPhone 13 Mini claro] localização: nota cabe na largura do ecrã",
+   "ok": true,
+   "extra": "37+296"
+  },
+  {
+   "nome": "[iPhone 13 Mini claro] localização: texto da nota com contraste ≥ 4.5:1",
+   "ok": true,
+   "extra": "5.33"
+  },
+  {
+   "nome": "[iPhone 13 Mini claro] localização: botão \"Ativar localização\" continua visível no ecrã",
+   "ok": true,
+   "extra": "354"
+  },
+  {
+   "nome": "[iPhone 13 Mini claro] localização: janela explica o que vai para o servidor e o que fica no telemóvel",
+   "ok": true,
+   "extra": "A tua localização | Usamos a tua localização para uma coisa só: mostrar as paragens e os transportes perto de ti. | No servidor | A posição "
+  },
+  {
+   "nome": "[iPhone 13 Mini claro] localização: janela cabe no ecrã",
+   "ok": true,
+   "extra": "ok"
+  },
+  {
+   "nome": "[iPhone 13 Mini claro] localização: sem GPS ligado não há botão de desligar",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[iPhone 13 Mini claro] localização: texto da janela com contraste ≥ 4.5:1",
+   "ok": true,
+   "extra": "18.88"
+  },
+  {
+   "nome": "[iPhone 13 Mini claro] localização: texto secundário da janela com contraste ≥ 4.5:1",
+   "ok": true,
+   "extra": "5.33"
+  },
+  {
+   "nome": "[iPhone 13 Mini claro] localização: Esc fecha a janela",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[iPhone 13 Mini claro] localização: Enter na nota abre a janela",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[iPhone 13 Mini claro] localização: convite sem erros de JavaScript",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[iPhone 13 Mini claro] localização: com GPS ligado a lista mostra a paragem",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[iPhone 13 Mini claro] localização: a nota também está no fim da lista",
+   "ok": true,
+   "extra": "1"
+  },
+  {
+   "nome": "[iPhone 13 Mini claro] localização: com GPS ligado aparece \"Desligar e apagar a posição guardada\"",
+   "ok": true,
+   "extra": "1"
+  },
+  {
+   "nome": "[iPhone 13 Mini claro] localização: botão de desligar com altura ≥ 44 px",
+   "ok": true,
+   "extra": "48"
+  },
+  {
+   "nome": "[iPhone 13 Mini claro] localização: botão de desligar visível sem deslizar",
+   "ok": true,
+   "extra": "ok"
+  },
+  {
+   "nome": "[iPhone 13 Mini claro] localização: antes de desligar há posição guardada no telemóvel",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[iPhone 13 Mini claro] localização: desligar fecha a janela",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[iPhone 13 Mini claro] localização: desligar apaga a última posição",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[iPhone 13 Mini claro] localização: desligar regista que está desligada",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[iPhone 13 Mini claro] localização: desligar tira a autorização guardada da app",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[iPhone 13 Mini claro] localização: depois de desligar volta o convite e a lista de paragens desaparece",
+   "ok": true,
+   "extra": "1 convites, 0 paragens"
+  },
+  {
+   "nome": "[iPhone 13 Mini claro] localização: depois de recarregar continua desligada",
+   "ok": true,
+   "extra": "0 paragens"
+  },
+  {
+   "nome": "[iPhone 13 Mini claro] localização: depois de recarregar não há posição guardada",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[iPhone 13 Mini claro] localização: voltar a ativar traz as paragens",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[iPhone 13 Mini claro] localização: voltar a ativar limpa o \"desligada\"",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[iPhone 13 Mini claro] localização: desligar sem erros de JavaScript",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[iPhone 13 Mini claro] precisão: logo ao início não incomoda (espera 20 s)",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[iPhone 13 Mini claro] precisão: com 800 m de erro avisa \"pouco precisa\"",
+   "ok": true,
+   "extra": "A tua posição está pouco precisa (cerca de 1,5 km).  Nas definições do telemóvel, liga a localização precisa para este b"
+  },
+  {
+   "nome": "[iPhone 13 Mini claro] precisão: diz a ordem de grandeza (cerca de 800 m ou 1,5 km)",
+   "ok": true,
+   "extra": "A tua posição está pouco precisa (cerca de 1,5 km).  Nas definições do telemóvel"
+  },
+  {
+   "nome": "[iPhone 13 Mini claro] precisão: texto do aviso com contraste ≥ 4.5:1",
+   "ok": true,
+   "extra": "17.15 / 4.84"
+  },
+  {
+   "nome": "[iPhone 13 Mini claro] precisão: aviso cabe na largura do ecrã",
+   "ok": true,
+   "extra": "12+346"
+  },
+  {
+   "nome": "[iPhone 13 Mini claro] precisão: botão \"Percebi\" com altura ≥ 44 px",
+   "ok": true,
+   "extra": "44"
+  },
+  {
+   "nome": "[iPhone 13 Mini claro] precisão: \"Percebi\" fecha o aviso",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[iPhone 13 Mini claro] precisão: com a posição boa não há aviso",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[iPhone 13 Mini claro] precisão: aviso sem erros de JavaScript",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[iPhone 13 Mini escuro] cidades: sem cidades, o botão diz \"Cidades: todas\"",
+   "ok": true,
+   "extra": "Cidades: todas"
+  },
+  {
+   "nome": "[iPhone 13 Mini escuro] cidades: sem cidades, o primeiro pedido não leva filtro",
+   "ok": true,
+   "extra": "{\"cidades\":null,\"q\":\"\"}"
+  },
+  {
+   "nome": "[iPhone 13 Mini escuro] cidades: mostra as linhas de todo o país",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[iPhone 13 Mini escuro] cidades: botão de cidades com altura ≥ 44 px",
+   "ok": true,
+   "extra": "44"
+  },
+  {
+   "nome": "[iPhone 13 Mini escuro] cidades: botão de cidades cabe na largura do ecrã",
+   "ok": true,
+   "extra": "203+156 de 375"
+  },
+  {
+   "nome": "[iPhone 13 Mini escuro] cidades: seletor abre e lista cidades",
+   "ok": true,
+   "extra": "51"
+  },
+  {
+   "nome": "[iPhone 13 Mini escuro] cidades: seletor mostra quantas linhas tem cada cidade",
+   "ok": true,
+   "extra": "Porto 265 linhas"
+  },
+  {
+   "nome": "[iPhone 13 Mini escuro] cidades: cidade sem linhas diz \"sem linhas ainda\"",
+   "ok": true,
+   "extra": "Viseu sem linhas ainda"
+  },
+  {
+   "nome": "[iPhone 13 Mini escuro] cidades: uma linha só diz \"1 linha\" (singular)",
+   "ok": true,
+   "extra": "Beja 1 linha"
+  },
+  {
+   "nome": "[iPhone 13 Mini escuro] cidades: nenhuma linha do seletor transborda na largura",
+   "ok": true,
+   "extra": "0"
+  },
+  {
+   "nome": "[iPhone 13 Mini escuro] cidades: seletor cabe no ecrã",
+   "ok": true,
+   "extra": "ok"
+  },
+  {
+   "nome": "[iPhone 13 Mini escuro] cidades: cada cidade é um alvo de toque ≥ 44 px",
+   "ok": true,
+   "extra": "48"
+  },
+  {
+   "nome": "[iPhone 13 Mini escuro] cidades: caixa de seleção tem contorno visível",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[iPhone 13 Mini escuro] cidades: nome da cidade com contraste ≥ 4.5:1",
+   "ok": true,
+   "extra": "16.12"
+  },
+  {
+   "nome": "[iPhone 13 Mini escuro] cidades: \"Concluído\" visível e com ≥ 44 px",
+   "ok": true,
+   "extra": "568+48 de 629"
+  },
+  {
+   "nome": "[iPhone 13 Mini escuro] cidades: \"Ver todas\" desativado sem cidades",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[iPhone 13 Mini escuro] cidades: campo de pesquisa ≥ 16 px (o iPhone não faz zoom)",
+   "ok": true,
+   "extra": "16"
+  },
+  {
+   "nome": "[iPhone 13 Mini escuro] cidades: pesquisa sem acentos encontra \"Guimarães\"",
+   "ok": true,
+   "extra": "Guimarães\n10 linhas"
+  },
+  {
+   "nome": "[iPhone 13 Mini escuro] cidades: pesquisa sem resultados diz \"Nenhuma cidade com esse nome.\"",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[iPhone 13 Mini escuro] cidades: Porto fica marcado (aria-checked)",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[iPhone 13 Mini escuro] cidades: a escolha fica guardada no telemóvel",
+   "ok": true,
+   "extra": "{\"v\":1,\"s\":[\"porto\"]}"
+  },
+  {
+   "nome": "[iPhone 13 Mini escuro] cidades: escolha atual é só Braga",
+   "ok": true,
+   "extra": "{\"v\":1,\"s\":[\"braga\"]}"
+  },
+  {
+   "nome": "[iPhone 13 Mini escuro] cidades: \"Concluído\" fecha o seletor",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[iPhone 13 Mini escuro] cidades: o botão passa a mostrar \"Braga\"",
+   "ok": true,
+   "extra": "Braga"
+  },
+  {
+   "nome": "[iPhone 13 Mini escuro] cidades: mostra as linhas de Braga",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[iPhone 13 Mini escuro] cidades: resposta atrasada do Porto não estraga a lista (pedido mais recente ganha)",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[iPhone 13 Mini escuro] cidades: o último pedido ao servidor leva cidades=braga",
+   "ok": true,
+   "extra": "{\"cidades\":\"braga\",\"q\":\"\"}"
+  },
+  {
+   "nome": "[iPhone 13 Mini escuro] cidades: botão com duas cidades diz \"Braga e Lisboa\"",
+   "ok": true,
+   "extra": "Braga e Lisboa"
+  },
+  {
+   "nome": "[iPhone 13 Mini escuro] cidades: pedido leva as duas cidades",
+   "ok": true,
+   "extra": "{\"cidades\":\"braga,lisboa\",\"q\":\"\"}"
+  },
+  {
+   "nome": "[iPhone 13 Mini escuro] cidades: botão com cidades continua dentro do ecrã",
+   "ok": true,
+   "extra": "205+154"
+  },
+  {
+   "nome": "[iPhone 13 Mini escuro] cidades: botão com cidades (escuro) com contraste ≥ 4.5:1",
+   "ok": true,
+   "extra": "16.85"
+  },
+  {
+   "nome": "[iPhone 13 Mini escuro] cidades: sem resultados nas cidades diz onde procurou",
+   "ok": true,
+   "extra": "Nenhuma linha em Braga e Lisboa para esta pesquisa. Procurar em todo o país"
+  },
+  {
+   "nome": "[iPhone 13 Mini escuro] cidades: \"Procurar em todo o país\" mostra a linha de outra cidade",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[iPhone 13 Mini escuro] cidades: esse pedido não leva filtro",
+   "ok": true,
+   "extra": "{\"cidades\":null,\"q\":\"zzz\"}"
+  },
+  {
+   "nome": "[iPhone 13 Mini escuro] cidades: avisa que mostra todo o país",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[iPhone 13 Mini escuro] cidades: \"todo o país\" é só desta vez (a escolha continua guardada)",
+   "ok": true,
+   "extra": "{\"v\":1,\"s\":[\"braga\",\"lisboa\"]}"
+  },
+  {
+   "nome": "[iPhone 13 Mini escuro] cidades: \"Voltar às minhas cidades\" volta a filtrar",
+   "ok": true,
+   "extra": "{\"cidades\":\"braga,lisboa\",\"q\":\"zzz\"}"
+  },
+  {
+   "nome": "[iPhone 13 Mini escuro] cidades: ao recarregar mantém as cidades escolhidas",
+   "ok": true,
+   "extra": "Braga e Lisboa"
+  },
+  {
+   "nome": "[iPhone 13 Mini escuro] cidades: ao recarregar nenhum pedido sai sem filtro",
+   "ok": true,
+   "extra": "[{\"cidades\":\"braga,lisboa\",\"q\":\"\"}]"
+  },
+  {
+   "nome": "[iPhone 13 Mini escuro] cidades: chega a 8 cidades escolhidas",
+   "ok": true,
+   "extra": "8"
+  },
+  {
+   "nome": "[iPhone 13 Mini escuro] cidades: com 8, as restantes ficam bloqueadas",
+   "ok": true,
+   "extra": "43"
+  },
+  {
+   "nome": "[iPhone 13 Mini escuro] cidades: diz que chegou ao máximo",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[iPhone 13 Mini escuro] cidades: \"Ver todas\" limpa a escolha e guarda a lista vazia",
+   "ok": true,
+   "extra": "{\"v\":1,\"s\":[]}"
+  },
+  {
+   "nome": "[iPhone 13 Mini escuro] cidades: sem cidades volta \"Cidades: todas\" e o pedido sem filtro",
+   "ok": true,
+   "extra": "Cidades: todas {\"cidades\":null,\"q\":\"\"}"
+  },
+  {
+   "nome": "[iPhone 13 Mini escuro] cidades: cidade sem linhas diz \"Ainda não temos linhas de Viseu.\"",
+   "ok": true,
+   "extra": "Ainda não temos linhas de Viseu. Procurar em todo o país"
+  },
+  {
+   "nome": "[iPhone 13 Mini escuro] cidades: cidade sem linhas oferece \"Procurar em todo o país\"",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[iPhone 13 Mini escuro] cidades: Favoritos mostra as cidades escolhidas",
+   "ok": true,
+   "extra": "Porto e Braga"
+  },
+  {
+   "nome": "[iPhone 13 Mini escuro] cidades: Favoritos explica o efeito nos Horários",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[iPhone 13 Mini escuro] cidades: Favoritos abre o seletor com as duas marcadas",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[iPhone 13 Mini escuro] cidades: Favoritos atualiza o botão (só Braga)",
+   "ok": true,
+   "extra": "Braga"
+  },
+  {
+   "nome": "[iPhone 13 Mini escuro] cidades: Favoritos guarda a escolha",
+   "ok": true,
+   "extra": "{\"v\":1,\"s\":[\"braga\"]}"
+  },
+  {
+   "nome": "[iPhone 13 Mini escuro] cidades: Favoritos sem deslize horizontal",
+   "ok": true,
+   "extra": "0"
+  },
+  {
+   "nome": "[iPhone 13 Mini escuro] cidades: sem erros de JavaScript",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[iPhone 13 Mini escuro] localização: convite mostra a nota sobre o uso da localização",
+   "ok": true,
+   "extra": "1"
+  },
+  {
+   "nome": "[iPhone 13 Mini escuro] localização: nota diz que não fica guardada no servidor",
+   "ok": true,
+   "extra": "Só serve para mostrar o que passa perto de ti. Não fica guardada no servidor. Saber mais"
+  },
+  {
+   "nome": "[iPhone 13 Mini escuro] localização: nota é um alvo de toque ≥ 44 px",
+   "ok": true,
+   "extra": "44"
+  },
+  {
+   "nome": "[iPhone 13 Mini escuro] localização: nota cabe na largura do ecrã",
+   "ok": true,
+   "extra": "37+296"
+  },
+  {
+   "nome": "[iPhone 13 Mini escuro] localização: texto da nota com contraste ≥ 4.5:1",
+   "ok": true,
+   "extra": "6.95"
+  },
+  {
+   "nome": "[iPhone 13 Mini escuro] localização: botão \"Ativar localização\" continua visível no ecrã",
+   "ok": true,
+   "extra": "354"
+  },
+  {
+   "nome": "[iPhone 13 Mini escuro] localização: janela explica o que vai para o servidor e o que fica no telemóvel",
+   "ok": true,
+   "extra": "A tua localização | Usamos a tua localização para uma coisa só: mostrar as paragens e os transportes perto de ti. | No servidor | A posição "
+  },
+  {
+   "nome": "[iPhone 13 Mini escuro] localização: janela cabe no ecrã",
+   "ok": true,
+   "extra": "ok"
+  },
+  {
+   "nome": "[iPhone 13 Mini escuro] localização: sem GPS ligado não há botão de desligar",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[iPhone 13 Mini escuro] localização: texto da janela com contraste ≥ 4.5:1",
+   "ok": true,
+   "extra": "16.12"
+  },
+  {
+   "nome": "[iPhone 13 Mini escuro] localização: texto secundário da janela com contraste ≥ 4.5:1",
+   "ok": true,
+   "extra": "6.95"
+  },
+  {
+   "nome": "[iPhone 13 Mini escuro] localização: Esc fecha a janela",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[iPhone 13 Mini escuro] localização: Enter na nota abre a janela",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[iPhone 13 Mini escuro] localização: convite sem erros de JavaScript",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[iPhone 13 Mini escuro] localização: com GPS ligado a lista mostra a paragem",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[iPhone 13 Mini escuro] localização: a nota também está no fim da lista",
+   "ok": true,
+   "extra": "1"
+  },
+  {
+   "nome": "[iPhone 13 Mini escuro] localização: com GPS ligado aparece \"Desligar e apagar a posição guardada\"",
+   "ok": true,
+   "extra": "1"
+  },
+  {
+   "nome": "[iPhone 13 Mini escuro] localização: botão de desligar com altura ≥ 44 px",
+   "ok": true,
+   "extra": "48"
+  },
+  {
+   "nome": "[iPhone 13 Mini escuro] localização: botão de desligar visível sem deslizar",
+   "ok": true,
+   "extra": "ok"
+  },
+  {
+   "nome": "[iPhone 13 Mini escuro] localização: antes de desligar há posição guardada no telemóvel",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[iPhone 13 Mini escuro] localização: desligar fecha a janela",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[iPhone 13 Mini escuro] localização: desligar apaga a última posição",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[iPhone 13 Mini escuro] localização: desligar regista que está desligada",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[iPhone 13 Mini escuro] localização: desligar tira a autorização guardada da app",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[iPhone 13 Mini escuro] localização: depois de desligar volta o convite e a lista de paragens desaparece",
+   "ok": true,
+   "extra": "1 convites, 0 paragens"
+  },
+  {
+   "nome": "[iPhone 13 Mini escuro] localização: depois de recarregar continua desligada",
+   "ok": true,
+   "extra": "0 paragens"
+  },
+  {
+   "nome": "[iPhone 13 Mini escuro] localização: depois de recarregar não há posição guardada",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[iPhone 13 Mini escuro] localização: voltar a ativar traz as paragens",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[iPhone 13 Mini escuro] localização: voltar a ativar limpa o \"desligada\"",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[iPhone 13 Mini escuro] localização: desligar sem erros de JavaScript",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[iPhone 13 Mini escuro] precisão: logo ao início não incomoda (espera 20 s)",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[iPhone 13 Mini escuro] precisão: com 800 m de erro avisa \"pouco precisa\"",
+   "ok": true,
+   "extra": "A tua posição está pouco precisa (cerca de 1,5 km).  Nas definições do telemóvel, liga a localização precisa para este b"
+  },
+  {
+   "nome": "[iPhone 13 Mini escuro] precisão: diz a ordem de grandeza (cerca de 800 m ou 1,5 km)",
+   "ok": true,
+   "extra": "A tua posição está pouco precisa (cerca de 1,5 km).  Nas definições do telemóvel"
+  },
+  {
+   "nome": "[iPhone 13 Mini escuro] precisão: texto do aviso com contraste ≥ 4.5:1",
+   "ok": true,
+   "extra": "14.15 / 6.10"
+  },
+  {
+   "nome": "[iPhone 13 Mini escuro] precisão: aviso cabe na largura do ecrã",
+   "ok": true,
+   "extra": "12+346"
+  },
+  {
+   "nome": "[iPhone 13 Mini escuro] precisão: botão \"Percebi\" com altura ≥ 44 px",
+   "ok": true,
+   "extra": "44"
+  },
+  {
+   "nome": "[iPhone 13 Mini escuro] precisão: \"Percebi\" fecha o aviso",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[iPhone 13 Mini escuro] precisão: com a posição boa não há aviso",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[iPhone 13 Mini escuro] precisão: aviso sem erros de JavaScript",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[iPhone 13 Mini ambar] cidades: sem cidades, o botão diz \"Cidades: todas\"",
+   "ok": true,
+   "extra": "Cidades: todas"
+  },
+  {
+   "nome": "[iPhone 13 Mini ambar] cidades: sem cidades, o primeiro pedido não leva filtro",
+   "ok": true,
+   "extra": "{\"cidades\":null,\"q\":\"\"}"
+  },
+  {
+   "nome": "[iPhone 13 Mini ambar] cidades: mostra as linhas de todo o país",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[iPhone 13 Mini ambar] cidades: botão de cidades com altura ≥ 44 px",
+   "ok": true,
+   "extra": "44"
+  },
+  {
+   "nome": "[iPhone 13 Mini ambar] cidades: botão de cidades cabe na largura do ecrã",
+   "ok": true,
+   "extra": "203+156 de 375"
+  },
+  {
+   "nome": "[iPhone 13 Mini ambar] cidades: seletor abre e lista cidades",
+   "ok": true,
+   "extra": "51"
+  },
+  {
+   "nome": "[iPhone 13 Mini ambar] cidades: seletor mostra quantas linhas tem cada cidade",
+   "ok": true,
+   "extra": "Porto 265 linhas"
+  },
+  {
+   "nome": "[iPhone 13 Mini ambar] cidades: cidade sem linhas diz \"sem linhas ainda\"",
+   "ok": true,
+   "extra": "Viseu sem linhas ainda"
+  },
+  {
+   "nome": "[iPhone 13 Mini ambar] cidades: uma linha só diz \"1 linha\" (singular)",
+   "ok": true,
+   "extra": "Beja 1 linha"
+  },
+  {
+   "nome": "[iPhone 13 Mini ambar] cidades: nenhuma linha do seletor transborda na largura",
+   "ok": true,
+   "extra": "0"
+  },
+  {
+   "nome": "[iPhone 13 Mini ambar] cidades: seletor cabe no ecrã",
+   "ok": true,
+   "extra": "ok"
+  },
+  {
+   "nome": "[iPhone 13 Mini ambar] cidades: cada cidade é um alvo de toque ≥ 44 px",
+   "ok": true,
+   "extra": "48"
+  },
+  {
+   "nome": "[iPhone 13 Mini ambar] cidades: caixa de seleção tem contorno visível",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[iPhone 13 Mini ambar] cidades: nome da cidade com contraste ≥ 4.5:1",
+   "ok": true,
+   "extra": "16.38"
+  },
+  {
+   "nome": "[iPhone 13 Mini ambar] cidades: \"Concluído\" visível e com ≥ 44 px",
+   "ok": true,
+   "extra": "568+48 de 629"
+  },
+  {
+   "nome": "[iPhone 13 Mini ambar] cidades: \"Ver todas\" desativado sem cidades",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[iPhone 13 Mini ambar] cidades: campo de pesquisa ≥ 16 px (o iPhone não faz zoom)",
+   "ok": true,
+   "extra": "16"
+  },
+  {
+   "nome": "[iPhone 13 Mini ambar] cidades: pesquisa sem acentos encontra \"Guimarães\"",
+   "ok": true,
+   "extra": "Guimarães\n10 linhas"
+  },
+  {
+   "nome": "[iPhone 13 Mini ambar] cidades: pesquisa sem resultados diz \"Nenhuma cidade com esse nome.\"",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[iPhone 13 Mini ambar] cidades: Porto fica marcado (aria-checked)",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[iPhone 13 Mini ambar] cidades: a escolha fica guardada no telemóvel",
+   "ok": true,
+   "extra": "{\"v\":1,\"s\":[\"porto\"]}"
+  },
+  {
+   "nome": "[iPhone 13 Mini ambar] cidades: escolha atual é só Braga",
+   "ok": true,
+   "extra": "{\"v\":1,\"s\":[\"braga\"]}"
+  },
+  {
+   "nome": "[iPhone 13 Mini ambar] cidades: \"Concluído\" fecha o seletor",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[iPhone 13 Mini ambar] cidades: o botão passa a mostrar \"Braga\"",
+   "ok": true,
+   "extra": "Braga"
+  },
+  {
+   "nome": "[iPhone 13 Mini ambar] cidades: mostra as linhas de Braga",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[iPhone 13 Mini ambar] cidades: resposta atrasada do Porto não estraga a lista (pedido mais recente ganha)",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[iPhone 13 Mini ambar] cidades: o último pedido ao servidor leva cidades=braga",
+   "ok": true,
+   "extra": "{\"cidades\":\"braga\",\"q\":\"\"}"
+  },
+  {
+   "nome": "[iPhone 13 Mini ambar] cidades: botão com duas cidades diz \"Braga e Lisboa\"",
+   "ok": true,
+   "extra": "Braga e Lisboa"
+  },
+  {
+   "nome": "[iPhone 13 Mini ambar] cidades: pedido leva as duas cidades",
+   "ok": true,
+   "extra": "{\"cidades\":\"braga,lisboa\",\"q\":\"\"}"
+  },
+  {
+   "nome": "[iPhone 13 Mini ambar] cidades: botão com cidades continua dentro do ecrã",
+   "ok": true,
+   "extra": "205+154"
+  },
+  {
+   "nome": "[iPhone 13 Mini ambar] cidades: botão com cidades (escuro) com contraste ≥ 4.5:1",
+   "ok": true,
+   "extra": "16.38"
+  },
+  {
+   "nome": "[iPhone 13 Mini ambar] cidades: sem resultados nas cidades diz onde procurou",
+   "ok": true,
+   "extra": "Nenhuma linha em Braga e Lisboa para esta pesquisa. Procurar em todo o país"
+  },
+  {
+   "nome": "[iPhone 13 Mini ambar] cidades: \"Procurar em todo o país\" mostra a linha de outra cidade",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[iPhone 13 Mini ambar] cidades: esse pedido não leva filtro",
+   "ok": true,
+   "extra": "{\"cidades\":null,\"q\":\"zzz\"}"
+  },
+  {
+   "nome": "[iPhone 13 Mini ambar] cidades: avisa que mostra todo o país",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[iPhone 13 Mini ambar] cidades: \"todo o país\" é só desta vez (a escolha continua guardada)",
+   "ok": true,
+   "extra": "{\"v\":1,\"s\":[\"braga\",\"lisboa\"]}"
+  },
+  {
+   "nome": "[iPhone 13 Mini ambar] cidades: \"Voltar às minhas cidades\" volta a filtrar",
+   "ok": true,
+   "extra": "{\"cidades\":\"braga,lisboa\",\"q\":\"zzz\"}"
+  },
+  {
+   "nome": "[iPhone 13 Mini ambar] cidades: ao recarregar mantém as cidades escolhidas",
+   "ok": true,
+   "extra": "Braga e Lisboa"
+  },
+  {
+   "nome": "[iPhone 13 Mini ambar] cidades: ao recarregar nenhum pedido sai sem filtro",
+   "ok": true,
+   "extra": "[{\"cidades\":\"braga,lisboa\",\"q\":\"\"}]"
+  },
+  {
+   "nome": "[iPhone 13 Mini ambar] cidades: chega a 8 cidades escolhidas",
+   "ok": true,
+   "extra": "8"
+  },
+  {
+   "nome": "[iPhone 13 Mini ambar] cidades: com 8, as restantes ficam bloqueadas",
+   "ok": true,
+   "extra": "43"
+  },
+  {
+   "nome": "[iPhone 13 Mini ambar] cidades: diz que chegou ao máximo",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[iPhone 13 Mini ambar] cidades: \"Ver todas\" limpa a escolha e guarda a lista vazia",
+   "ok": true,
+   "extra": "{\"v\":1,\"s\":[]}"
+  },
+  {
+   "nome": "[iPhone 13 Mini ambar] cidades: sem cidades volta \"Cidades: todas\" e o pedido sem filtro",
+   "ok": true,
+   "extra": "Cidades: todas {\"cidades\":null,\"q\":\"\"}"
+  },
+  {
+   "nome": "[iPhone 13 Mini ambar] cidades: cidade sem linhas diz \"Ainda não temos linhas de Viseu.\"",
+   "ok": true,
+   "extra": "Ainda não temos linhas de Viseu. Procurar em todo o país"
+  },
+  {
+   "nome": "[iPhone 13 Mini ambar] cidades: cidade sem linhas oferece \"Procurar em todo o país\"",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[iPhone 13 Mini ambar] cidades: Favoritos mostra as cidades escolhidas",
+   "ok": true,
+   "extra": "Porto e Braga"
+  },
+  {
+   "nome": "[iPhone 13 Mini ambar] cidades: Favoritos explica o efeito nos Horários",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[iPhone 13 Mini ambar] cidades: Favoritos abre o seletor com as duas marcadas",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[iPhone 13 Mini ambar] cidades: Favoritos atualiza o botão (só Braga)",
+   "ok": true,
+   "extra": "Braga"
+  },
+  {
+   "nome": "[iPhone 13 Mini ambar] cidades: Favoritos guarda a escolha",
+   "ok": true,
+   "extra": "{\"v\":1,\"s\":[\"braga\"]}"
+  },
+  {
+   "nome": "[iPhone 13 Mini ambar] cidades: Favoritos sem deslize horizontal",
+   "ok": true,
+   "extra": "0"
+  },
+  {
+   "nome": "[iPhone 13 Mini ambar] cidades: sem erros de JavaScript",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[iPhone 13 Mini ambar] localização: convite mostra a nota sobre o uso da localização",
+   "ok": true,
+   "extra": "1"
+  },
+  {
+   "nome": "[iPhone 13 Mini ambar] localização: nota diz que não fica guardada no servidor",
+   "ok": true,
+   "extra": "Só serve para mostrar o que passa perto de ti. Não fica guardada no servidor. Saber mais"
+  },
+  {
+   "nome": "[iPhone 13 Mini ambar] localização: nota é um alvo de toque ≥ 44 px",
+   "ok": true,
+   "extra": "44"
+  },
+  {
+   "nome": "[iPhone 13 Mini ambar] localização: nota cabe na largura do ecrã",
+   "ok": true,
+   "extra": "37+296"
+  },
+  {
+   "nome": "[iPhone 13 Mini ambar] localização: texto da nota com contraste ≥ 4.5:1",
+   "ok": true,
+   "extra": "5.87"
+  },
+  {
+   "nome": "[iPhone 13 Mini ambar] localização: botão \"Ativar localização\" continua visível no ecrã",
+   "ok": true,
+   "extra": "354"
+  },
+  {
+   "nome": "[iPhone 13 Mini ambar] localização: janela explica o que vai para o servidor e o que fica no telemóvel",
+   "ok": true,
+   "extra": "A tua localização | Usamos a tua localização para uma coisa só: mostrar as paragens e os transportes perto de ti. | No servidor | A posição "
+  },
+  {
+   "nome": "[iPhone 13 Mini ambar] localização: janela cabe no ecrã",
+   "ok": true,
+   "extra": "ok"
+  },
+  {
+   "nome": "[iPhone 13 Mini ambar] localização: sem GPS ligado não há botão de desligar",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[iPhone 13 Mini ambar] localização: texto da janela com contraste ≥ 4.5:1",
+   "ok": true,
+   "extra": "16.38"
+  },
+  {
+   "nome": "[iPhone 13 Mini ambar] localização: texto secundário da janela com contraste ≥ 4.5:1",
+   "ok": true,
+   "extra": "5.82"
+  },
+  {
+   "nome": "[iPhone 13 Mini ambar] localização: Esc fecha a janela",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[iPhone 13 Mini ambar] localização: Enter na nota abre a janela",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[iPhone 13 Mini ambar] localização: convite sem erros de JavaScript",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[iPhone 13 Mini ambar] localização: com GPS ligado a lista mostra a paragem",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[iPhone 13 Mini ambar] localização: a nota também está no fim da lista",
+   "ok": true,
+   "extra": "1"
+  },
+  {
+   "nome": "[iPhone 13 Mini ambar] localização: com GPS ligado aparece \"Desligar e apagar a posição guardada\"",
+   "ok": true,
+   "extra": "1"
+  },
+  {
+   "nome": "[iPhone 13 Mini ambar] localização: botão de desligar com altura ≥ 44 px",
+   "ok": true,
+   "extra": "48"
+  },
+  {
+   "nome": "[iPhone 13 Mini ambar] localização: botão de desligar visível sem deslizar",
+   "ok": true,
+   "extra": "ok"
+  },
+  {
+   "nome": "[iPhone 13 Mini ambar] localização: antes de desligar há posição guardada no telemóvel",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[iPhone 13 Mini ambar] localização: desligar fecha a janela",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[iPhone 13 Mini ambar] localização: desligar apaga a última posição",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[iPhone 13 Mini ambar] localização: desligar regista que está desligada",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[iPhone 13 Mini ambar] localização: desligar tira a autorização guardada da app",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[iPhone 13 Mini ambar] localização: depois de desligar volta o convite e a lista de paragens desaparece",
+   "ok": true,
+   "extra": "1 convites, 0 paragens"
+  },
+  {
+   "nome": "[iPhone 13 Mini ambar] localização: depois de recarregar continua desligada",
+   "ok": true,
+   "extra": "0 paragens"
+  },
+  {
+   "nome": "[iPhone 13 Mini ambar] localização: depois de recarregar não há posição guardada",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[iPhone 13 Mini ambar] localização: voltar a ativar traz as paragens",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[iPhone 13 Mini ambar] localização: voltar a ativar limpa o \"desligada\"",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[iPhone 13 Mini ambar] localização: desligar sem erros de JavaScript",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[iPhone 13 Mini ambar] precisão: logo ao início não incomoda (espera 20 s)",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[iPhone 13 Mini ambar] precisão: com 800 m de erro avisa \"pouco precisa\"",
+   "ok": true,
+   "extra": "A tua posição está pouco precisa (cerca de 1,5 km).  Nas definições do telemóvel, liga a localização precisa para este b"
+  },
+  {
+   "nome": "[iPhone 13 Mini ambar] precisão: diz a ordem de grandeza (cerca de 800 m ou 1,5 km)",
+   "ok": true,
+   "extra": "A tua posição está pouco precisa (cerca de 1,5 km).  Nas definições do telemóvel"
+  },
+  {
+   "nome": "[iPhone 13 Mini ambar] precisão: texto do aviso com contraste ≥ 4.5:1",
+   "ok": true,
+   "extra": "15.34 / 5.45"
+  },
+  {
+   "nome": "[iPhone 13 Mini ambar] precisão: aviso cabe na largura do ecrã",
+   "ok": true,
+   "extra": "12+346"
+  },
+  {
+   "nome": "[iPhone 13 Mini ambar] precisão: botão \"Percebi\" com altura ≥ 44 px",
+   "ok": true,
+   "extra": "44"
+  },
+  {
+   "nome": "[iPhone 13 Mini ambar] precisão: \"Percebi\" fecha o aviso",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[iPhone 13 Mini ambar] precisão: com a posição boa não há aviso",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[iPhone 13 Mini ambar] precisão: aviso sem erros de JavaScript",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[Pixel 5 claro] cidades: sem cidades, o botão diz \"Cidades: todas\"",
+   "ok": true,
+   "extra": "Cidades: todas"
+  },
+  {
+   "nome": "[Pixel 5 claro] cidades: sem cidades, o primeiro pedido não leva filtro",
+   "ok": true,
+   "extra": "{\"cidades\":null,\"q\":\"\"}"
+  },
+  {
+   "nome": "[Pixel 5 claro] cidades: mostra as linhas de todo o país",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[Pixel 5 claro] cidades: botão de cidades com altura ≥ 44 px",
+   "ok": true,
+   "extra": "44"
+  },
+  {
+   "nome": "[Pixel 5 claro] cidades: botão de cidades cabe na largura do ecrã",
+   "ok": true,
+   "extra": "215+162 de 393"
+  },
+  {
+   "nome": "[Pixel 5 claro] cidades: seletor abre e lista cidades",
+   "ok": true,
+   "extra": "51"
+  },
+  {
+   "nome": "[Pixel 5 claro] cidades: seletor mostra quantas linhas tem cada cidade",
+   "ok": true,
+   "extra": "Porto 265 linhas"
+  },
+  {
+   "nome": "[Pixel 5 claro] cidades: cidade sem linhas diz \"sem linhas ainda\"",
+   "ok": true,
+   "extra": "Viseu sem linhas ainda"
+  },
+  {
+   "nome": "[Pixel 5 claro] cidades: uma linha só diz \"1 linha\" (singular)",
+   "ok": true,
+   "extra": "Beja 1 linha"
+  },
+  {
+   "nome": "[Pixel 5 claro] cidades: nenhuma linha do seletor transborda na largura",
+   "ok": true,
+   "extra": "0"
+  },
+  {
+   "nome": "[Pixel 5 claro] cidades: seletor cabe no ecrã",
+   "ok": true,
+   "extra": "ok"
+  },
+  {
+   "nome": "[Pixel 5 claro] cidades: cada cidade é um alvo de toque ≥ 44 px",
+   "ok": true,
+   "extra": "48"
+  },
+  {
+   "nome": "[Pixel 5 claro] cidades: caixa de seleção tem contorno visível",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[Pixel 5 claro] cidades: nome da cidade com contraste ≥ 4.5:1",
+   "ok": true,
+   "extra": "18.88"
+  },
+  {
+   "nome": "[Pixel 5 claro] cidades: \"Concluído\" visível e com ≥ 44 px",
+   "ok": true,
+   "extra": "666+48 de 727"
+  },
+  {
+   "nome": "[Pixel 5 claro] cidades: \"Ver todas\" desativado sem cidades",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[Pixel 5 claro] cidades: campo de pesquisa ≥ 16 px (o iPhone não faz zoom)",
+   "ok": true,
+   "extra": "16"
+  },
+  {
+   "nome": "[Pixel 5 claro] cidades: pesquisa sem acentos encontra \"Guimarães\"",
+   "ok": true,
+   "extra": "Guimarães\n10 linhas"
+  },
+  {
+   "nome": "[Pixel 5 claro] cidades: pesquisa sem resultados diz \"Nenhuma cidade com esse nome.\"",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[Pixel 5 claro] cidades: Porto fica marcado (aria-checked)",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[Pixel 5 claro] cidades: a escolha fica guardada no telemóvel",
+   "ok": true,
+   "extra": "{\"v\":1,\"s\":[\"porto\"]}"
+  },
+  {
+   "nome": "[Pixel 5 claro] cidades: escolha atual é só Braga",
+   "ok": true,
+   "extra": "{\"v\":1,\"s\":[\"braga\"]}"
+  },
+  {
+   "nome": "[Pixel 5 claro] cidades: \"Concluído\" fecha o seletor",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[Pixel 5 claro] cidades: o botão passa a mostrar \"Braga\"",
+   "ok": true,
+   "extra": "Braga"
+  },
+  {
+   "nome": "[Pixel 5 claro] cidades: mostra as linhas de Braga",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[Pixel 5 claro] cidades: resposta atrasada do Porto não estraga a lista (pedido mais recente ganha)",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[Pixel 5 claro] cidades: o último pedido ao servidor leva cidades=braga",
+   "ok": true,
+   "extra": "{\"cidades\":\"braga\",\"q\":\"\"}"
+  },
+  {
+   "nome": "[Pixel 5 claro] cidades: botão com duas cidades diz \"Braga e Lisboa\"",
+   "ok": true,
+   "extra": "Braga e Lisboa"
+  },
+  {
+   "nome": "[Pixel 5 claro] cidades: pedido leva as duas cidades",
+   "ok": true,
+   "extra": "{\"cidades\":\"braga,lisboa\",\"q\":\"\"}"
+  },
+  {
+   "nome": "[Pixel 5 claro] cidades: botão com cidades continua dentro do ecrã",
+   "ok": true,
+   "extra": "218+159"
+  },
+  {
+   "nome": "[Pixel 5 claro] cidades: botão com cidades (escuro) com contraste ≥ 4.5:1",
+   "ok": true,
+   "extra": "18.88"
+  },
+  {
+   "nome": "[Pixel 5 claro] cidades: sem resultados nas cidades diz onde procurou",
+   "ok": true,
+   "extra": "Nenhuma linha em Braga e Lisboa para esta pesquisa. Procurar em todo o país"
+  },
+  {
+   "nome": "[Pixel 5 claro] cidades: \"Procurar em todo o país\" mostra a linha de outra cidade",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[Pixel 5 claro] cidades: esse pedido não leva filtro",
+   "ok": true,
+   "extra": "{\"cidades\":null,\"q\":\"zzz\"}"
+  },
+  {
+   "nome": "[Pixel 5 claro] cidades: avisa que mostra todo o país",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[Pixel 5 claro] cidades: \"todo o país\" é só desta vez (a escolha continua guardada)",
+   "ok": true,
+   "extra": "{\"v\":1,\"s\":[\"braga\",\"lisboa\"]}"
+  },
+  {
+   "nome": "[Pixel 5 claro] cidades: \"Voltar às minhas cidades\" volta a filtrar",
+   "ok": true,
+   "extra": "{\"cidades\":\"braga,lisboa\",\"q\":\"zzz\"}"
+  },
+  {
+   "nome": "[Pixel 5 claro] cidades: ao recarregar mantém as cidades escolhidas",
+   "ok": true,
+   "extra": "Braga e Lisboa"
+  },
+  {
+   "nome": "[Pixel 5 claro] cidades: ao recarregar nenhum pedido sai sem filtro",
+   "ok": true,
+   "extra": "[{\"cidades\":\"braga,lisboa\",\"q\":\"\"}]"
+  },
+  {
+   "nome": "[Pixel 5 claro] cidades: chega a 8 cidades escolhidas",
+   "ok": true,
+   "extra": "8"
+  },
+  {
+   "nome": "[Pixel 5 claro] cidades: com 8, as restantes ficam bloqueadas",
+   "ok": true,
+   "extra": "43"
+  },
+  {
+   "nome": "[Pixel 5 claro] cidades: diz que chegou ao máximo",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[Pixel 5 claro] cidades: \"Ver todas\" limpa a escolha e guarda a lista vazia",
+   "ok": true,
+   "extra": "{\"v\":1,\"s\":[]}"
+  },
+  {
+   "nome": "[Pixel 5 claro] cidades: sem cidades volta \"Cidades: todas\" e o pedido sem filtro",
+   "ok": true,
+   "extra": "Cidades: todas {\"cidades\":null,\"q\":\"\"}"
+  },
+  {
+   "nome": "[Pixel 5 claro] cidades: cidade sem linhas diz \"Ainda não temos linhas de Viseu.\"",
+   "ok": true,
+   "extra": "Ainda não temos linhas de Viseu. Procurar em todo o país"
+  },
+  {
+   "nome": "[Pixel 5 claro] cidades: cidade sem linhas oferece \"Procurar em todo o país\"",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[Pixel 5 claro] cidades: Favoritos mostra as cidades escolhidas",
+   "ok": true,
+   "extra": "Porto e Braga"
+  },
+  {
+   "nome": "[Pixel 5 claro] cidades: Favoritos explica o efeito nos Horários",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[Pixel 5 claro] cidades: Favoritos abre o seletor com as duas marcadas",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[Pixel 5 claro] cidades: Favoritos atualiza o botão (só Braga)",
+   "ok": true,
+   "extra": "Braga"
+  },
+  {
+   "nome": "[Pixel 5 claro] cidades: Favoritos guarda a escolha",
+   "ok": true,
+   "extra": "{\"v\":1,\"s\":[\"braga\"]}"
+  },
+  {
+   "nome": "[Pixel 5 claro] cidades: Favoritos sem deslize horizontal",
+   "ok": true,
+   "extra": "0"
+  },
+  {
+   "nome": "[Pixel 5 claro] cidades: sem erros de JavaScript",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[Pixel 5 claro] localização: convite mostra a nota sobre o uso da localização",
+   "ok": true,
+   "extra": "1"
+  },
+  {
+   "nome": "[Pixel 5 claro] localização: nota diz que não fica guardada no servidor",
+   "ok": true,
+   "extra": "Só serve para mostrar o que passa perto de ti. Não fica guardada no servidor. Saber mais"
+  },
+  {
+   "nome": "[Pixel 5 claro] localização: nota é um alvo de toque ≥ 44 px",
+   "ok": true,
+   "extra": "44"
+  },
+  {
+   "nome": "[Pixel 5 claro] localização: nota cabe na largura do ecrã",
+   "ok": true,
+   "extra": "48+298"
+  },
+  {
+   "nome": "[Pixel 5 claro] localização: texto da nota com contraste ≥ 4.5:1",
+   "ok": true,
+   "extra": "5.33"
+  },
+  {
+   "nome": "[Pixel 5 claro] localização: botão \"Ativar localização\" continua visível no ecrã",
+   "ok": true,
+   "extra": "354"
+  },
+  {
+   "nome": "[Pixel 5 claro] localização: janela explica o que vai para o servidor e o que fica no telemóvel",
+   "ok": true,
+   "extra": "A tua localização | Usamos a tua localização para uma coisa só: mostrar as paragens e os transportes perto de ti. | No servidor | A posição "
+  },
+  {
+   "nome": "[Pixel 5 claro] localização: janela cabe no ecrã",
+   "ok": true,
+   "extra": "ok"
+  },
+  {
+   "nome": "[Pixel 5 claro] localização: sem GPS ligado não há botão de desligar",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[Pixel 5 claro] localização: texto da janela com contraste ≥ 4.5:1",
+   "ok": true,
+   "extra": "18.88"
+  },
+  {
+   "nome": "[Pixel 5 claro] localização: texto secundário da janela com contraste ≥ 4.5:1",
+   "ok": true,
+   "extra": "5.33"
+  },
+  {
+   "nome": "[Pixel 5 claro] localização: Esc fecha a janela",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[Pixel 5 claro] localização: Enter na nota abre a janela",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[Pixel 5 claro] localização: convite sem erros de JavaScript",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[Pixel 5 claro] localização: com GPS ligado a lista mostra a paragem",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[Pixel 5 claro] localização: a nota também está no fim da lista",
+   "ok": true,
+   "extra": "1"
+  },
+  {
+   "nome": "[Pixel 5 claro] localização: com GPS ligado aparece \"Desligar e apagar a posição guardada\"",
+   "ok": true,
+   "extra": "1"
+  },
+  {
+   "nome": "[Pixel 5 claro] localização: botão de desligar com altura ≥ 44 px",
+   "ok": true,
+   "extra": "48"
+  },
+  {
+   "nome": "[Pixel 5 claro] localização: botão de desligar visível sem deslizar",
+   "ok": true,
+   "extra": "ok"
+  },
+  {
+   "nome": "[Pixel 5 claro] localização: antes de desligar há posição guardada no telemóvel",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[Pixel 5 claro] localização: desligar fecha a janela",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[Pixel 5 claro] localização: desligar apaga a última posição",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[Pixel 5 claro] localização: desligar regista que está desligada",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[Pixel 5 claro] localização: desligar tira a autorização guardada da app",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[Pixel 5 claro] localização: depois de desligar volta o convite e a lista de paragens desaparece",
+   "ok": true,
+   "extra": "1 convites, 0 paragens"
+  },
+  {
+   "nome": "[Pixel 5 claro] localização: depois de recarregar continua desligada",
+   "ok": true,
+   "extra": "0 paragens"
+  },
+  {
+   "nome": "[Pixel 5 claro] localização: depois de recarregar não há posição guardada",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[Pixel 5 claro] localização: voltar a ativar traz as paragens",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[Pixel 5 claro] localização: voltar a ativar limpa o \"desligada\"",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[Pixel 5 claro] localização: desligar sem erros de JavaScript",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[Desktop claro] cidades: sem cidades, o botão diz \"Cidades: todas\"",
+   "ok": true,
+   "extra": "Cidades: todas"
+  },
+  {
+   "nome": "[Desktop claro] cidades: sem cidades, o primeiro pedido não leva filtro",
+   "ok": true,
+   "extra": "{\"cidades\":null,\"q\":\"\"}"
+  },
+  {
+   "nome": "[Desktop claro] cidades: mostra as linhas de todo o país",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[Desktop claro] cidades: botão de cidades com altura ≥ 44 px",
+   "ok": true,
+   "extra": "44"
+  },
+  {
+   "nome": "[Desktop claro] cidades: botão de cidades cabe na largura do ecrã",
+   "ok": true,
+   "extra": "902+162 de 1280"
+  },
+  {
+   "nome": "[Desktop claro] cidades: seletor abre e lista cidades",
+   "ok": true,
+   "extra": "51"
+  },
+  {
+   "nome": "[Desktop claro] cidades: seletor mostra quantas linhas tem cada cidade",
+   "ok": true,
+   "extra": "Porto 265 linhas"
+  },
+  {
+   "nome": "[Desktop claro] cidades: cidade sem linhas diz \"sem linhas ainda\"",
+   "ok": true,
+   "extra": "Viseu sem linhas ainda"
+  },
+  {
+   "nome": "[Desktop claro] cidades: uma linha só diz \"1 linha\" (singular)",
+   "ok": true,
+   "extra": "Beja 1 linha"
+  },
+  {
+   "nome": "[Desktop claro] cidades: nenhuma linha do seletor transborda na largura",
+   "ok": true,
+   "extra": "0"
+  },
+  {
+   "nome": "[Desktop claro] cidades: seletor cabe no ecrã",
+   "ok": true,
+   "extra": "ok"
+  },
+  {
+   "nome": "[Desktop claro] cidades: cada cidade é um alvo de toque ≥ 44 px",
+   "ok": true,
+   "extra": "48"
+  },
+  {
+   "nome": "[Desktop claro] cidades: caixa de seleção tem contorno visível",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[Desktop claro] cidades: nome da cidade com contraste ≥ 4.5:1",
+   "ok": true,
+   "extra": "18.88"
+  },
+  {
+   "nome": "[Desktop claro] cidades: \"Concluído\" visível e com ≥ 44 px",
+   "ok": true,
+   "extra": "691+48 de 800"
+  },
+  {
+   "nome": "[Desktop claro] cidades: \"Ver todas\" desativado sem cidades",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[Desktop claro] cidades: pesquisa sem acentos encontra \"Guimarães\"",
+   "ok": true,
+   "extra": "Guimarães\n10 linhas"
+  },
+  {
+   "nome": "[Desktop claro] cidades: pesquisa sem resultados diz \"Nenhuma cidade com esse nome.\"",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[Desktop claro] cidades: Porto fica marcado (aria-checked)",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[Desktop claro] cidades: a escolha fica guardada no telemóvel",
+   "ok": true,
+   "extra": "{\"v\":1,\"s\":[\"porto\"]}"
+  },
+  {
+   "nome": "[Desktop claro] cidades: escolha atual é só Braga",
+   "ok": true,
+   "extra": "{\"v\":1,\"s\":[\"braga\"]}"
+  },
+  {
+   "nome": "[Desktop claro] cidades: \"Concluído\" fecha o seletor",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[Desktop claro] cidades: o botão passa a mostrar \"Braga\"",
+   "ok": true,
+   "extra": "Braga"
+  },
+  {
+   "nome": "[Desktop claro] cidades: mostra as linhas de Braga",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[Desktop claro] cidades: resposta atrasada do Porto não estraga a lista (pedido mais recente ganha)",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[Desktop claro] cidades: o último pedido ao servidor leva cidades=braga",
+   "ok": true,
+   "extra": "{\"cidades\":\"braga\",\"q\":\"\"}"
+  },
+  {
+   "nome": "[Desktop claro] cidades: botão com duas cidades diz \"Braga e Lisboa\"",
+   "ok": true,
+   "extra": "Braga e Lisboa"
+  },
+  {
+   "nome": "[Desktop claro] cidades: pedido leva as duas cidades",
+   "ok": true,
+   "extra": "{\"cidades\":\"braga,lisboa\",\"q\":\"\"}"
+  },
+  {
+   "nome": "[Desktop claro] cidades: botão com cidades continua dentro do ecrã",
+   "ok": true,
+   "extra": "905+159"
+  },
+  {
+   "nome": "[Desktop claro] cidades: botão com cidades (escuro) com contraste ≥ 4.5:1",
+   "ok": true,
+   "extra": "18.88"
+  },
+  {
+   "nome": "[Desktop claro] cidades: sem resultados nas cidades diz onde procurou",
+   "ok": true,
+   "extra": "Nenhuma linha em Braga e Lisboa para esta pesquisa. Procurar em todo o país"
+  },
+  {
+   "nome": "[Desktop claro] cidades: \"Procurar em todo o país\" mostra a linha de outra cidade",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[Desktop claro] cidades: esse pedido não leva filtro",
+   "ok": true,
+   "extra": "{\"cidades\":null,\"q\":\"zzz\"}"
+  },
+  {
+   "nome": "[Desktop claro] cidades: avisa que mostra todo o país",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[Desktop claro] cidades: \"todo o país\" é só desta vez (a escolha continua guardada)",
+   "ok": true,
+   "extra": "{\"v\":1,\"s\":[\"braga\",\"lisboa\"]}"
+  },
+  {
+   "nome": "[Desktop claro] cidades: \"Voltar às minhas cidades\" volta a filtrar",
+   "ok": true,
+   "extra": "{\"cidades\":\"braga,lisboa\",\"q\":\"zzz\"}"
+  },
+  {
+   "nome": "[Desktop claro] cidades: ao recarregar mantém as cidades escolhidas",
+   "ok": true,
+   "extra": "Braga e Lisboa"
+  },
+  {
+   "nome": "[Desktop claro] cidades: ao recarregar nenhum pedido sai sem filtro",
+   "ok": true,
+   "extra": "[{\"cidades\":\"braga,lisboa\",\"q\":\"\"}]"
+  },
+  {
+   "nome": "[Desktop claro] cidades: chega a 8 cidades escolhidas",
+   "ok": true,
+   "extra": "8"
+  },
+  {
+   "nome": "[Desktop claro] cidades: com 8, as restantes ficam bloqueadas",
+   "ok": true,
+   "extra": "43"
+  },
+  {
+   "nome": "[Desktop claro] cidades: diz que chegou ao máximo",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[Desktop claro] cidades: \"Ver todas\" limpa a escolha e guarda a lista vazia",
+   "ok": true,
+   "extra": "{\"v\":1,\"s\":[]}"
+  },
+  {
+   "nome": "[Desktop claro] cidades: sem cidades volta \"Cidades: todas\" e o pedido sem filtro",
+   "ok": true,
+   "extra": "Cidades: todas {\"cidades\":null,\"q\":\"\"}"
+  },
+  {
+   "nome": "[Desktop claro] cidades: cidade sem linhas diz \"Ainda não temos linhas de Viseu.\"",
+   "ok": true,
+   "extra": "Ainda não temos linhas de Viseu. Procurar em todo o país"
+  },
+  {
+   "nome": "[Desktop claro] cidades: cidade sem linhas oferece \"Procurar em todo o país\"",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[Desktop claro] cidades: Favoritos mostra as cidades escolhidas",
+   "ok": true,
+   "extra": "Porto e Braga"
+  },
+  {
+   "nome": "[Desktop claro] cidades: Favoritos explica o efeito nos Horários",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[Desktop claro] cidades: Favoritos abre o seletor com as duas marcadas",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[Desktop claro] cidades: Favoritos atualiza o botão (só Braga)",
+   "ok": true,
+   "extra": "Braga"
+  },
+  {
+   "nome": "[Desktop claro] cidades: Favoritos guarda a escolha",
+   "ok": true,
+   "extra": "{\"v\":1,\"s\":[\"braga\"]}"
+  },
+  {
+   "nome": "[Desktop claro] cidades: Favoritos sem deslize horizontal",
+   "ok": true,
+   "extra": "0"
+  },
+  {
+   "nome": "[Desktop claro] cidades: sem erros de JavaScript",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[Desktop claro] localização: convite mostra a nota sobre o uso da localização",
+   "ok": true,
+   "extra": "1"
+  },
+  {
+   "nome": "[Desktop claro] localização: nota diz que não fica guardada no servidor",
+   "ok": true,
+   "extra": "Só serve para mostrar o que passa perto de ti. Não fica guardada no servidor. Saber mais"
+  },
+  {
+   "nome": "[Desktop claro] localização: nota é um alvo de toque ≥ 44 px",
+   "ok": true,
+   "extra": "44"
+  },
+  {
+   "nome": "[Desktop claro] localização: nota cabe na largura do ecrã",
+   "ok": true,
+   "extra": "721+298"
+  },
+  {
+   "nome": "[Desktop claro] localização: texto da nota com contraste ≥ 4.5:1",
+   "ok": true,
+   "extra": "5.33"
+  },
+  {
+   "nome": "[Desktop claro] localização: botão \"Ativar localização\" continua visível no ecrã",
+   "ok": true,
+   "extra": "529"
+  },
+  {
+   "nome": "[Desktop claro] localização: janela explica o que vai para o servidor e o que fica no telemóvel",
+   "ok": true,
+   "extra": "A tua localização | Usamos a tua localização para uma coisa só: mostrar as paragens e os transportes perto de ti. | No servidor | A posição "
+  },
+  {
+   "nome": "[Desktop claro] localização: janela cabe no ecrã",
+   "ok": true,
+   "extra": "ok"
+  },
+  {
+   "nome": "[Desktop claro] localização: sem GPS ligado não há botão de desligar",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[Desktop claro] localização: texto da janela com contraste ≥ 4.5:1",
+   "ok": true,
+   "extra": "18.88"
+  },
+  {
+   "nome": "[Desktop claro] localização: texto secundário da janela com contraste ≥ 4.5:1",
+   "ok": true,
+   "extra": "5.33"
+  },
+  {
+   "nome": "[Desktop claro] localização: Esc fecha a janela",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[Desktop claro] localização: Enter na nota abre a janela",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[Desktop claro] localização: convite sem erros de JavaScript",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[Desktop claro] localização: com GPS ligado a lista mostra a paragem",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[Desktop claro] localização: a nota também está no fim da lista",
+   "ok": true,
+   "extra": "1"
+  },
+  {
+   "nome": "[Desktop claro] localização: com GPS ligado aparece \"Desligar e apagar a posição guardada\"",
+   "ok": true,
+   "extra": "1"
+  },
+  {
+   "nome": "[Desktop claro] localização: botão de desligar com altura ≥ 44 px",
+   "ok": true,
+   "extra": "48"
+  },
+  {
+   "nome": "[Desktop claro] localização: botão de desligar visível sem deslizar",
+   "ok": true,
+   "extra": "ok"
+  },
+  {
+   "nome": "[Desktop claro] localização: antes de desligar há posição guardada no telemóvel",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[Desktop claro] localização: desligar fecha a janela",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[Desktop claro] localização: desligar apaga a última posição",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[Desktop claro] localização: desligar regista que está desligada",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[Desktop claro] localização: desligar tira a autorização guardada da app",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[Desktop claro] localização: depois de desligar volta o convite e a lista de paragens desaparece",
+   "ok": true,
+   "extra": "1 convites, 0 paragens"
+  },
+  {
+   "nome": "[Desktop claro] localização: depois de recarregar continua desligada",
+   "ok": true,
+   "extra": "0 paragens"
+  },
+  {
+   "nome": "[Desktop claro] localização: depois de recarregar não há posição guardada",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[Desktop claro] localização: voltar a ativar traz as paragens",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[Desktop claro] localização: voltar a ativar limpa o \"desligada\"",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[Desktop claro] localização: desligar sem erros de JavaScript",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[Desktop claro] precisão: logo ao início não incomoda (espera 20 s)",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[Desktop claro] precisão: com 800 m de erro avisa \"pouco precisa\"",
+   "ok": true,
+   "extra": "A tua posição está pouco precisa (cerca de 1,5 km).  Nas definições do telemóvel, liga a localização precisa para este b"
+  },
+  {
+   "nome": "[Desktop claro] precisão: diz a ordem de grandeza (cerca de 800 m ou 1,5 km)",
+   "ok": true,
+   "extra": "A tua posição está pouco precisa (cerca de 1,5 km).  Nas definições do telemóvel"
+  },
+  {
+   "nome": "[Desktop claro] precisão: texto do aviso com contraste ≥ 4.5:1",
+   "ok": true,
+   "extra": "17.15 / 4.84"
+  },
+  {
+   "nome": "[Desktop claro] precisão: aviso cabe na largura do ecrã",
+   "ok": true,
+   "extra": "12+435"
+  },
+  {
+   "nome": "[Desktop claro] precisão: botão \"Percebi\" com altura ≥ 44 px",
+   "ok": true,
+   "extra": "44"
+  },
+  {
+   "nome": "[Desktop claro] precisão: \"Percebi\" fecha o aviso",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[Desktop claro] precisão: com a posição boa não há aviso",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[Desktop claro] precisão: aviso sem erros de JavaScript",
+   "ok": true,
+   "extra": ""
+  }
+ ],
+ "notas": []
+}
