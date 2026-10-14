@@ -56,7 +56,7 @@ jobs:
         working-directory: auditoria
         run: |
           mkdir -p ../res
-          SAIDA=../res timeout 1200 node iphone.mjs 2>&1 | tee ../res/consola.txt | tail -150
+          SAIDA=../res timeout 1500 node iphone.mjs 2>&1 | tee ../res/consola.txt | tail -150
 
       - name: Guardar
         if: always()
