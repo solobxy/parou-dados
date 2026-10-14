@@ -1,0 +1,29 @@
+OK      [claro] o ponto da localização aparece no mapa 
+[claro] andou 484 m; maior deslocamento em 0,25 s 5.4 m; recuo total 0.0 m; ponto longe do centro até 1 px
+OK      [claro] o ponto avança de forma contínua (< 10 m em 0,25 s; o autocarro faz 3 m) 5.4
+OK      [claro] o ponto não anda para trás (recuo total < 8 m) 0.0
+OK      [claro] o ponto percorre o trajeto (±30%) em vez de ficar parado 484
+OK      [claro] o mapa segue o ponto (fica a menos de 40 px do centro) 1
+OK      [claro] sem erros de consola 
+OK      [escuro] o ponto da localização aparece no mapa 
+[escuro] andou 489 m; maior deslocamento em 0,25 s 5.7 m; recuo total 0.0 m; ponto longe do centro até 1 px
+OK      [escuro] o ponto avança de forma contínua (< 10 m em 0,25 s; o autocarro faz 3 m) 5.7
+OK      [escuro] o ponto não anda para trás (recuo total < 8 m) 0.0
+OK      [escuro] o ponto percorre o trajeto (±30%) em vez de ficar parado 489
+OK      [escuro] o mapa segue o ponto (fica a menos de 40 px do centro) 1
+OK      [escuro] sem erros de consola 
+OK      [claro, com Doppler] o ponto da localização aparece no mapa 
+[claro, com Doppler] andou 491 m; maior deslocamento em 0,25 s 4.0 m; recuo total 0.0 m; ponto longe do centro até 1 px
+OK      [claro, com Doppler] o ponto avança de forma contínua (< 7 m em 0,25 s; o autocarro faz 3 m) 4.0
+OK      [claro, com Doppler] o ponto não anda para trás (recuo total < 3 m) 0.0
+OK      [claro, com Doppler] o ponto percorre o trajeto (±30%) em vez de ficar parado 491
+OK      [claro, com Doppler] o mapa segue o ponto (fica a menos de 40 px do centro) 1
+OK      [claro, com Doppler] sem erros de consola 
+[parado] dispersão do ponto: 8.85 m (GPS cru 8.3 m)
+OK      [parado] sem velocidade do GPS o ponto não é pior do que o GPS cru (<= 125%) 8.85 vs 8.32
+OK      [parado] sem erros de consola 
+[parado, com Doppler] dispersão do ponto: 1.39 m (GPS cru 10.0 m)
+OK      [parado, com Doppler] o ponto fica quase quieto (dispersão < 2,5 m com GPS a variar ~10 m) 1.39
+OK      [parado, com Doppler] sem erros de consola 
+
+22/22 testes OK

@@ -1,0 +1,40 @@
+
+== GPS normal (média de 20 viagens) ==
+erro na leitura (RMSE)                         crua   15.19  antigo   14.03  novo    6.67 m
+erro na leitura (95%)                          crua   18.36  antigo   17.62  novo   12.05 m
+erro do ponto no ecrã vs posição real (RMSE)   crua   21.09  antigo   21.41  novo    8.70 m
+erro do ponto no ecrã (95%)                    crua   33.45  antigo   33.55  novo   14.94 m
+pior erro no ecrã                              crua   97.11  antigo   96.77  novo   23.48 m
+salto do ponto num fotograma (99% dos fotogr.) crua    9.77  antigo    9.47  novo    1.10 m
+maior salto num só fotograma                   crua   96.80  antigo   96.40  novo    1.19 m
+parado: dispersão do ponto                     crua   12.54  antigo    9.83  novo    1.29 m
+
+== GPS mau (média de 20 viagens) ==
+erro na leitura (RMSE)                         crua   29.30  antigo   27.06  novo   12.73 m
+erro na leitura (95%)                          crua   73.25  antigo   68.49  novo   21.94 m
+erro do ponto no ecrã vs posição real (RMSE)   crua   32.61  antigo   31.43  novo   13.90 m
+erro do ponto no ecrã (95%)                    crua   74.84  antigo   69.73  novo   23.87 m
+pior erro no ecrã                              crua  119.30  antigo  119.18  novo   31.98 m
+salto do ponto num fotograma (99% dos fotogr.) crua   11.61  antigo    9.35  novo    1.11 m
+maior salto num só fotograma                   crua  114.25  antigo  114.39  novo    1.26 m
+parado: dispersão do ponto                     crua   21.15  antigo   15.44  novo    2.47 m
+
+== sem Doppler (média de 20 viagens) ==
+erro na leitura (RMSE)                         crua   15.15  antigo   14.46  novo   11.43 m
+erro na leitura (95%)                          crua   22.33  antigo   20.41  novo   18.61 m
+erro do ponto no ecrã vs posição real (RMSE)   crua   20.61  antigo   20.99  novo   15.17 m
+erro do ponto no ecrã (95%)                    crua   34.22  antigo   33.41  novo   28.37 m
+pior erro no ecrã                              crua   95.02  antigo   94.42  novo   83.34 m
+salto do ponto num fotograma (99% dos fotogr.) crua    9.69  antigo    9.07  novo    1.12 m
+maior salto num só fotograma                   crua   92.44  antigo   92.68  novo    1.98 m
+parado: dispersão do ponto                     crua    7.28  antigo    6.39  novo    3.36 m
+
+== túnel (média de 20 viagens) ==
+erro na leitura (RMSE)                         crua   99.33  antigo   35.61  novo   26.64 m
+erro na leitura (95%)                          crua  276.10  antigo   93.89  novo   15.96 m
+erro do ponto no ecrã vs posição real (RMSE)   crua  100.47  antigo   41.68  novo   30.87 m
+erro do ponto no ecrã (95%)                    crua  276.52  antigo  104.85  novo   34.36 m
+pior erro no ecrã                              crua  547.10  antigo  204.90  novo  205.11 m
+salto do ponto num fotograma (99% dos fotogr.) crua   10.10  antigo    8.74  novo    1.10 m
+maior salto num só fotograma                   crua  907.12  antigo  185.85  novo  133.30 m
+parado: dispersão do ponto                     crua   12.54  antigo    9.83  novo    1.29 m
