@@ -133,7 +133,7 @@ async function novoContexto(browsers, [nome, motor, , extra], tema) {
           await p.goto(BASE + '/', { waitUntil: 'load' });
           await p.waitForTimeout(2500);
           await p.locator('[data-teste=ponto-diario-fechar]').first().click({ timeout: 800 }).catch(() => {});
-          const campo = p.locator('input[placeholder*="Para onde"], input[placeholder*="Procurar um local"], input[placeholder*="Rua, localidade"]').first();
+          const campo = p.locator('input[placeholder*="Para onde"]:visible, input[placeholder*="Procurar um local"]:visible, input[placeholder*="Rua, localidade"]:visible').first();
           if (await campo.count()) {
             await campo.click({ timeout: 4000 });
             await p.waitForTimeout(500);
