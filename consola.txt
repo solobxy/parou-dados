@@ -1,0 +1,184 @@
+OK      [390 claro] aparece na primeira visita 
+OK      [390 claro] diálogo cabe no ecrã (passo 0) 
+OK      [390 claro] idioma: tudo visível sem deslizar 
+OK      [390 claro] passo 1 = perto perto
+OK      [390 claro] passo 1: tudo visível sem deslizar 
+OK      [390 claro] passo 2 = destinos destinos
+OK      [390 claro] passo 2: tudo visível sem deslizar 
+OK      [390 claro] passo 3 = horarios horarios
+OK      [390 claro] diálogo cabe no ecrã (passo 3) 
+OK      [390 claro] passo 3: tudo visível sem deslizar 
+OK      [390 claro] passo 4 = alertas alertas
+OK      [390 claro] passo 4: tudo visível sem deslizar 
+OK      [390 claro] passo 5 = comunidade comunidade
+OK      [390 claro] passo 5: tudo visível sem deslizar 
+OK      [390 claro] passo 6 = conta conta
+OK      [390 claro] diálogo cabe no ecrã (passo 6) 
+OK      [390 claro] passo 6: tudo visível sem deslizar 
+OK      [390 claro] sem scroll lateral 
+OK      [390 claro] fecha em Finalizar 
+OK      [390 claro] fica guardado como visto visto
+OK      [390 claro] não volta a aparecer 
+OK      [390 escuro] aparece na primeira visita 
+OK      [390 escuro] diálogo cabe no ecrã (passo 0) 
+OK      [390 escuro] idioma: tudo visível sem deslizar 
+OK      [390 escuro] passo 1 = perto perto
+OK      [390 escuro] passo 1: tudo visível sem deslizar 
+OK      [390 escuro] passo 2 = destinos destinos
+OK      [390 escuro] passo 2: tudo visível sem deslizar 
+OK      [390 escuro] passo 3 = horarios horarios
+OK      [390 escuro] diálogo cabe no ecrã (passo 3) 
+OK      [390 escuro] passo 3: tudo visível sem deslizar 
+OK      [390 escuro] passo 4 = alertas alertas
+OK      [390 escuro] passo 4: tudo visível sem deslizar 
+OK      [390 escuro] passo 5 = comunidade comunidade
+OK      [390 escuro] passo 5: tudo visível sem deslizar 
+OK      [390 escuro] passo 6 = conta conta
+OK      [390 escuro] diálogo cabe no ecrã (passo 6) 
+OK      [390 escuro] passo 6: tudo visível sem deslizar 
+OK      [390 escuro] sem scroll lateral 
+OK      [390 escuro] fecha em Finalizar 
+OK      [390 escuro] fica guardado como visto visto
+OK      [390 escuro] não volta a aparecer 
+OK      [390 ambar] aparece na primeira visita 
+OK      [390 ambar] diálogo cabe no ecrã (passo 0) 
+OK      [390 ambar] idioma: tudo visível sem deslizar 
+OK      [390 ambar] passo 1 = perto perto
+OK      [390 ambar] passo 1: tudo visível sem deslizar 
+OK      [390 ambar] passo 2 = destinos destinos
+OK      [390 ambar] passo 2: tudo visível sem deslizar 
+OK      [390 ambar] passo 3 = horarios horarios
+OK      [390 ambar] diálogo cabe no ecrã (passo 3) 
+OK      [390 ambar] passo 3: tudo visível sem deslizar 
+OK      [390 ambar] passo 4 = alertas alertas
+OK      [390 ambar] passo 4: tudo visível sem deslizar 
+OK      [390 ambar] passo 5 = comunidade comunidade
+OK      [390 ambar] passo 5: tudo visível sem deslizar 
+OK      [390 ambar] passo 6 = conta conta
+OK      [390 ambar] diálogo cabe no ecrã (passo 6) 
+OK      [390 ambar] passo 6: tudo visível sem deslizar 
+OK      [390 ambar] sem scroll lateral 
+OK      [390 ambar] fecha em Finalizar 
+OK      [390 ambar] fica guardado como visto visto
+OK      [390 ambar] não volta a aparecer 
+OK      [320 claro] aparece na primeira visita 
+OK      [320 claro] diálogo cabe no ecrã (passo 0) 
+OK      [320 claro] idioma: tudo visível sem deslizar 
+OK      [320 claro] passo 1 = perto perto
+OK      [320 claro] passo 1: tudo visível sem deslizar 
+OK      [320 claro] passo 2 = destinos destinos
+OK      [320 claro] passo 2: tudo visível sem deslizar 
+OK      [320 claro] passo 3 = horarios horarios
+OK      [320 claro] diálogo cabe no ecrã (passo 3) 
+OK      [320 claro] passo 3: tudo visível sem deslizar 
+OK      [320 claro] passo 4 = alertas alertas
+OK      [320 claro] passo 4: tudo visível sem deslizar 
+OK      [320 claro] passo 5 = comunidade comunidade
+OK      [320 claro] passo 5: tudo visível sem deslizar 
+OK      [320 claro] passo 6 = conta conta
+OK      [320 claro] diálogo cabe no ecrã (passo 6) 
+OK      [320 claro] passo 6: tudo visível sem deslizar 
+OK      [320 claro] sem scroll lateral 
+OK      [320 claro] fecha em Finalizar 
+OK      [320 claro] fica guardado como visto visto
+OK      [320 claro] não volta a aparecer 
+OK      [1280 claro] aparece na primeira visita 
+OK      [1280 claro] diálogo cabe no ecrã (passo 0) 
+OK      [1280 claro] idioma: tudo visível sem deslizar 
+OK      [1280 claro] passo 1 = perto perto
+OK      [1280 claro] passo 1: tudo visível sem deslizar 
+OK      [1280 claro] passo 2 = destinos destinos
+OK      [1280 claro] passo 2: tudo visível sem deslizar 
+OK      [1280 claro] passo 3 = horarios horarios
+OK      [1280 claro] diálogo cabe no ecrã (passo 3) 
+OK      [1280 claro] passo 3: tudo visível sem deslizar 
+OK      [1280 claro] passo 4 = alertas alertas
+OK      [1280 claro] passo 4: tudo visível sem deslizar 
+OK      [1280 claro] passo 5 = comunidade comunidade
+OK      [1280 claro] passo 5: tudo visível sem deslizar 
+OK      [1280 claro] passo 6 = conta conta
+OK      [1280 claro] diálogo cabe no ecrã (passo 6) 
+OK      [1280 claro] passo 6: tudo visível sem deslizar 
+OK      [1280 claro] sem scroll lateral 
+OK      [1280 claro] fecha em Finalizar 
+OK      [1280 claro] fica guardado como visto visto
+OK      [1280 claro] não volta a aparecer 
+OK      [1280 escuro] aparece na primeira visita 
+OK      [1280 escuro] diálogo cabe no ecrã (passo 0) 
+OK      [1280 escuro] idioma: tudo visível sem deslizar 
+OK      [1280 escuro] passo 1 = perto perto
+OK      [1280 escuro] passo 1: tudo visível sem deslizar 
+OK      [1280 escuro] passo 2 = destinos destinos
+OK      [1280 escuro] passo 2: tudo visível sem deslizar 
+OK      [1280 escuro] passo 3 = horarios horarios
+OK      [1280 escuro] diálogo cabe no ecrã (passo 3) 
+OK      [1280 escuro] passo 3: tudo visível sem deslizar 
+OK      [1280 escuro] passo 4 = alertas alertas
+OK      [1280 escuro] passo 4: tudo visível sem deslizar 
+OK      [1280 escuro] passo 5 = comunidade comunidade
+OK      [1280 escuro] passo 5: tudo visível sem deslizar 
+OK      [1280 escuro] passo 6 = conta conta
+OK      [1280 escuro] diálogo cabe no ecrã (passo 6) 
+OK      [1280 escuro] passo 6: tudo visível sem deslizar 
+OK      [1280 escuro] sem scroll lateral 
+OK      [1280 escuro] fecha em Finalizar 
+OK      [1280 escuro] fica guardado como visto visto
+OK      [1280 escuro] não volta a aparecer 
+OK      [1280 ambar] aparece na primeira visita 
+OK      [1280 ambar] diálogo cabe no ecrã (passo 0) 
+OK      [1280 ambar] idioma: tudo visível sem deslizar 
+OK      [1280 ambar] passo 1 = perto perto
+OK      [1280 ambar] passo 1: tudo visível sem deslizar 
+OK      [1280 ambar] passo 2 = destinos destinos
+OK      [1280 ambar] passo 2: tudo visível sem deslizar 
+OK      [1280 ambar] passo 3 = horarios horarios
+OK      [1280 ambar] diálogo cabe no ecrã (passo 3) 
+OK      [1280 ambar] passo 3: tudo visível sem deslizar 
+OK      [1280 ambar] passo 4 = alertas alertas
+OK      [1280 ambar] passo 4: tudo visível sem deslizar 
+OK      [1280 ambar] passo 5 = comunidade comunidade
+OK      [1280 ambar] passo 5: tudo visível sem deslizar 
+OK      [1280 ambar] passo 6 = conta conta
+OK      [1280 ambar] diálogo cabe no ecrã (passo 6) 
+OK      [1280 ambar] passo 6: tudo visível sem deslizar 
+OK      [1280 ambar] sem scroll lateral 
+OK      [1280 ambar] fecha em Finalizar 
+OK      [1280 ambar] fica guardado como visto visto
+OK      [1280 ambar] não volta a aparecer 
+OK      [idioma] depois de escolher inglês volta a abrir o carrossel 
+OK      [idioma] retoma no passo 2 (perto) perto
+OK      [idioma] texto em inglês See what is coming near you
+OK      [idioma] estado guardado "curso:1" curso:1
+OK      [idioma] termina e fica visto visto
+OK      [existente] utilizador antigo não vê 
+OK      [existente] fica marcado como visto visto
+OK      [ligação direta] /transportes não mostra 
+OK      [ligação direta] continua "novo" novo
+OK      [ligação direta] ao abrir o início aparece 
+OK      [robô] Googlebot não vê 
+OK      [robô] navegador automático não vê 
+OK      [admin d] botão "Ver boas-vindas" existe no menu 
+OK      [admin d] abre o carrossel 
+OK      [admin d] segue para o passo 2 
+OK      [admin d] fecha 
+OK      [admin d] estado continua "visto" visto
+OK      [admin m] conta de teste criada 
+OK      [admin m] botão "Ver boas-vindas" existe no perfil 
+OK      [admin m] abre o carrossel 
+OK      [admin m] segue para o passo 2 
+OK      [admin m] fecha 
+OK      [admin m] estado continua "visto" visto
+OK      [utilizador comum] não vê o botão de boas-vindas 
+OK      [demo idioma] conta de teste criada 
+OK      [demo idioma] depois de escolher inglês a demonstração continua 
+OK      [demo idioma] no passo 2 (perto) perto
+OK      [demo idioma] estado real continua "visto" visto
+OK      [demo idioma] fecha 
+OK      [demo idioma] depois de fechar e recarregar não volta a abrir 
+OK      [teclado] seta direita avança destinos
+OK      [teclado] seta esquerda recua perto
+OK      [teclado] Esc fecha 
+OK      [teclado] Esc deixa guardado como visto visto
+OK      sem erros de consola 
+
+182/182 testes OK

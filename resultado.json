@@ -1,0 +1,916 @@
+{
+ "testes": [
+  {
+   "nome": "[390 claro] aparece na primeira visita",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[390 claro] diálogo cabe no ecrã (passo 0)",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[390 claro] idioma: tudo visível sem deslizar",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[390 claro] passo 1 = perto",
+   "ok": true,
+   "extra": "perto"
+  },
+  {
+   "nome": "[390 claro] passo 1: tudo visível sem deslizar",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[390 claro] passo 2 = destinos",
+   "ok": true,
+   "extra": "destinos"
+  },
+  {
+   "nome": "[390 claro] passo 2: tudo visível sem deslizar",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[390 claro] passo 3 = horarios",
+   "ok": true,
+   "extra": "horarios"
+  },
+  {
+   "nome": "[390 claro] diálogo cabe no ecrã (passo 3)",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[390 claro] passo 3: tudo visível sem deslizar",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[390 claro] passo 4 = alertas",
+   "ok": true,
+   "extra": "alertas"
+  },
+  {
+   "nome": "[390 claro] passo 4: tudo visível sem deslizar",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[390 claro] passo 5 = comunidade",
+   "ok": true,
+   "extra": "comunidade"
+  },
+  {
+   "nome": "[390 claro] passo 5: tudo visível sem deslizar",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[390 claro] passo 6 = conta",
+   "ok": true,
+   "extra": "conta"
+  },
+  {
+   "nome": "[390 claro] diálogo cabe no ecrã (passo 6)",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[390 claro] passo 6: tudo visível sem deslizar",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[390 claro] sem scroll lateral",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[390 claro] fecha em Finalizar",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[390 claro] fica guardado como visto",
+   "ok": true,
+   "extra": "visto"
+  },
+  {
+   "nome": "[390 claro] não volta a aparecer",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[390 escuro] aparece na primeira visita",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[390 escuro] diálogo cabe no ecrã (passo 0)",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[390 escuro] idioma: tudo visível sem deslizar",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[390 escuro] passo 1 = perto",
+   "ok": true,
+   "extra": "perto"
+  },
+  {
+   "nome": "[390 escuro] passo 1: tudo visível sem deslizar",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[390 escuro] passo 2 = destinos",
+   "ok": true,
+   "extra": "destinos"
+  },
+  {
+   "nome": "[390 escuro] passo 2: tudo visível sem deslizar",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[390 escuro] passo 3 = horarios",
+   "ok": true,
+   "extra": "horarios"
+  },
+  {
+   "nome": "[390 escuro] diálogo cabe no ecrã (passo 3)",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[390 escuro] passo 3: tudo visível sem deslizar",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[390 escuro] passo 4 = alertas",
+   "ok": true,
+   "extra": "alertas"
+  },
+  {
+   "nome": "[390 escuro] passo 4: tudo visível sem deslizar",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[390 escuro] passo 5 = comunidade",
+   "ok": true,
+   "extra": "comunidade"
+  },
+  {
+   "nome": "[390 escuro] passo 5: tudo visível sem deslizar",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[390 escuro] passo 6 = conta",
+   "ok": true,
+   "extra": "conta"
+  },
+  {
+   "nome": "[390 escuro] diálogo cabe no ecrã (passo 6)",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[390 escuro] passo 6: tudo visível sem deslizar",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[390 escuro] sem scroll lateral",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[390 escuro] fecha em Finalizar",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[390 escuro] fica guardado como visto",
+   "ok": true,
+   "extra": "visto"
+  },
+  {
+   "nome": "[390 escuro] não volta a aparecer",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[390 ambar] aparece na primeira visita",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[390 ambar] diálogo cabe no ecrã (passo 0)",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[390 ambar] idioma: tudo visível sem deslizar",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[390 ambar] passo 1 = perto",
+   "ok": true,
+   "extra": "perto"
+  },
+  {
+   "nome": "[390 ambar] passo 1: tudo visível sem deslizar",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[390 ambar] passo 2 = destinos",
+   "ok": true,
+   "extra": "destinos"
+  },
+  {
+   "nome": "[390 ambar] passo 2: tudo visível sem deslizar",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[390 ambar] passo 3 = horarios",
+   "ok": true,
+   "extra": "horarios"
+  },
+  {
+   "nome": "[390 ambar] diálogo cabe no ecrã (passo 3)",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[390 ambar] passo 3: tudo visível sem deslizar",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[390 ambar] passo 4 = alertas",
+   "ok": true,
+   "extra": "alertas"
+  },
+  {
+   "nome": "[390 ambar] passo 4: tudo visível sem deslizar",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[390 ambar] passo 5 = comunidade",
+   "ok": true,
+   "extra": "comunidade"
+  },
+  {
+   "nome": "[390 ambar] passo 5: tudo visível sem deslizar",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[390 ambar] passo 6 = conta",
+   "ok": true,
+   "extra": "conta"
+  },
+  {
+   "nome": "[390 ambar] diálogo cabe no ecrã (passo 6)",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[390 ambar] passo 6: tudo visível sem deslizar",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[390 ambar] sem scroll lateral",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[390 ambar] fecha em Finalizar",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[390 ambar] fica guardado como visto",
+   "ok": true,
+   "extra": "visto"
+  },
+  {
+   "nome": "[390 ambar] não volta a aparecer",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[320 claro] aparece na primeira visita",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[320 claro] diálogo cabe no ecrã (passo 0)",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[320 claro] idioma: tudo visível sem deslizar",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[320 claro] passo 1 = perto",
+   "ok": true,
+   "extra": "perto"
+  },
+  {
+   "nome": "[320 claro] passo 1: tudo visível sem deslizar",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[320 claro] passo 2 = destinos",
+   "ok": true,
+   "extra": "destinos"
+  },
+  {
+   "nome": "[320 claro] passo 2: tudo visível sem deslizar",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[320 claro] passo 3 = horarios",
+   "ok": true,
+   "extra": "horarios"
+  },
+  {
+   "nome": "[320 claro] diálogo cabe no ecrã (passo 3)",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[320 claro] passo 3: tudo visível sem deslizar",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[320 claro] passo 4 = alertas",
+   "ok": true,
+   "extra": "alertas"
+  },
+  {
+   "nome": "[320 claro] passo 4: tudo visível sem deslizar",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[320 claro] passo 5 = comunidade",
+   "ok": true,
+   "extra": "comunidade"
+  },
+  {
+   "nome": "[320 claro] passo 5: tudo visível sem deslizar",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[320 claro] passo 6 = conta",
+   "ok": true,
+   "extra": "conta"
+  },
+  {
+   "nome": "[320 claro] diálogo cabe no ecrã (passo 6)",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[320 claro] passo 6: tudo visível sem deslizar",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[320 claro] sem scroll lateral",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[320 claro] fecha em Finalizar",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[320 claro] fica guardado como visto",
+   "ok": true,
+   "extra": "visto"
+  },
+  {
+   "nome": "[320 claro] não volta a aparecer",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[1280 claro] aparece na primeira visita",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[1280 claro] diálogo cabe no ecrã (passo 0)",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[1280 claro] idioma: tudo visível sem deslizar",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[1280 claro] passo 1 = perto",
+   "ok": true,
+   "extra": "perto"
+  },
+  {
+   "nome": "[1280 claro] passo 1: tudo visível sem deslizar",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[1280 claro] passo 2 = destinos",
+   "ok": true,
+   "extra": "destinos"
+  },
+  {
+   "nome": "[1280 claro] passo 2: tudo visível sem deslizar",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[1280 claro] passo 3 = horarios",
+   "ok": true,
+   "extra": "horarios"
+  },
+  {
+   "nome": "[1280 claro] diálogo cabe no ecrã (passo 3)",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[1280 claro] passo 3: tudo visível sem deslizar",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[1280 claro] passo 4 = alertas",
+   "ok": true,
+   "extra": "alertas"
+  },
+  {
+   "nome": "[1280 claro] passo 4: tudo visível sem deslizar",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[1280 claro] passo 5 = comunidade",
+   "ok": true,
+   "extra": "comunidade"
+  },
+  {
+   "nome": "[1280 claro] passo 5: tudo visível sem deslizar",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[1280 claro] passo 6 = conta",
+   "ok": true,
+   "extra": "conta"
+  },
+  {
+   "nome": "[1280 claro] diálogo cabe no ecrã (passo 6)",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[1280 claro] passo 6: tudo visível sem deslizar",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[1280 claro] sem scroll lateral",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[1280 claro] fecha em Finalizar",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[1280 claro] fica guardado como visto",
+   "ok": true,
+   "extra": "visto"
+  },
+  {
+   "nome": "[1280 claro] não volta a aparecer",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[1280 escuro] aparece na primeira visita",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[1280 escuro] diálogo cabe no ecrã (passo 0)",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[1280 escuro] idioma: tudo visível sem deslizar",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[1280 escuro] passo 1 = perto",
+   "ok": true,
+   "extra": "perto"
+  },
+  {
+   "nome": "[1280 escuro] passo 1: tudo visível sem deslizar",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[1280 escuro] passo 2 = destinos",
+   "ok": true,
+   "extra": "destinos"
+  },
+  {
+   "nome": "[1280 escuro] passo 2: tudo visível sem deslizar",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[1280 escuro] passo 3 = horarios",
+   "ok": true,
+   "extra": "horarios"
+  },
+  {
+   "nome": "[1280 escuro] diálogo cabe no ecrã (passo 3)",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[1280 escuro] passo 3: tudo visível sem deslizar",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[1280 escuro] passo 4 = alertas",
+   "ok": true,
+   "extra": "alertas"
+  },
+  {
+   "nome": "[1280 escuro] passo 4: tudo visível sem deslizar",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[1280 escuro] passo 5 = comunidade",
+   "ok": true,
+   "extra": "comunidade"
+  },
+  {
+   "nome": "[1280 escuro] passo 5: tudo visível sem deslizar",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[1280 escuro] passo 6 = conta",
+   "ok": true,
+   "extra": "conta"
+  },
+  {
+   "nome": "[1280 escuro] diálogo cabe no ecrã (passo 6)",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[1280 escuro] passo 6: tudo visível sem deslizar",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[1280 escuro] sem scroll lateral",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[1280 escuro] fecha em Finalizar",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[1280 escuro] fica guardado como visto",
+   "ok": true,
+   "extra": "visto"
+  },
+  {
+   "nome": "[1280 escuro] não volta a aparecer",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[1280 ambar] aparece na primeira visita",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[1280 ambar] diálogo cabe no ecrã (passo 0)",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[1280 ambar] idioma: tudo visível sem deslizar",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[1280 ambar] passo 1 = perto",
+   "ok": true,
+   "extra": "perto"
+  },
+  {
+   "nome": "[1280 ambar] passo 1: tudo visível sem deslizar",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[1280 ambar] passo 2 = destinos",
+   "ok": true,
+   "extra": "destinos"
+  },
+  {
+   "nome": "[1280 ambar] passo 2: tudo visível sem deslizar",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[1280 ambar] passo 3 = horarios",
+   "ok": true,
+   "extra": "horarios"
+  },
+  {
+   "nome": "[1280 ambar] diálogo cabe no ecrã (passo 3)",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[1280 ambar] passo 3: tudo visível sem deslizar",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[1280 ambar] passo 4 = alertas",
+   "ok": true,
+   "extra": "alertas"
+  },
+  {
+   "nome": "[1280 ambar] passo 4: tudo visível sem deslizar",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[1280 ambar] passo 5 = comunidade",
+   "ok": true,
+   "extra": "comunidade"
+  },
+  {
+   "nome": "[1280 ambar] passo 5: tudo visível sem deslizar",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[1280 ambar] passo 6 = conta",
+   "ok": true,
+   "extra": "conta"
+  },
+  {
+   "nome": "[1280 ambar] diálogo cabe no ecrã (passo 6)",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[1280 ambar] passo 6: tudo visível sem deslizar",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[1280 ambar] sem scroll lateral",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[1280 ambar] fecha em Finalizar",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[1280 ambar] fica guardado como visto",
+   "ok": true,
+   "extra": "visto"
+  },
+  {
+   "nome": "[1280 ambar] não volta a aparecer",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[idioma] depois de escolher inglês volta a abrir o carrossel",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[idioma] retoma no passo 2 (perto)",
+   "ok": true,
+   "extra": "perto"
+  },
+  {
+   "nome": "[idioma] texto em inglês",
+   "ok": true,
+   "extra": "See what is coming near you"
+  },
+  {
+   "nome": "[idioma] estado guardado \"curso:1\"",
+   "ok": true,
+   "extra": "curso:1"
+  },
+  {
+   "nome": "[idioma] termina e fica visto",
+   "ok": true,
+   "extra": "visto"
+  },
+  {
+   "nome": "[existente] utilizador antigo não vê",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[existente] fica marcado como visto",
+   "ok": true,
+   "extra": "visto"
+  },
+  {
+   "nome": "[ligação direta] /transportes não mostra",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[ligação direta] continua \"novo\"",
+   "ok": true,
+   "extra": "novo"
+  },
+  {
+   "nome": "[ligação direta] ao abrir o início aparece",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[robô] Googlebot não vê",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[robô] navegador automático não vê",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[admin d] botão \"Ver boas-vindas\" existe no menu",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[admin d] abre o carrossel",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[admin d] segue para o passo 2",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[admin d] fecha",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[admin d] estado continua \"visto\"",
+   "ok": true,
+   "extra": "visto"
+  },
+  {
+   "nome": "[admin m] conta de teste criada",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[admin m] botão \"Ver boas-vindas\" existe no perfil",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[admin m] abre o carrossel",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[admin m] segue para o passo 2",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[admin m] fecha",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[admin m] estado continua \"visto\"",
+   "ok": true,
+   "extra": "visto"
+  },
+  {
+   "nome": "[utilizador comum] não vê o botão de boas-vindas",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[demo idioma] conta de teste criada",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[demo idioma] depois de escolher inglês a demonstração continua",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[demo idioma] no passo 2 (perto)",
+   "ok": true,
+   "extra": "perto"
+  },
+  {
+   "nome": "[demo idioma] estado real continua \"visto\"",
+   "ok": true,
+   "extra": "visto"
+  },
+  {
+   "nome": "[demo idioma] fecha",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[demo idioma] depois de fechar e recarregar não volta a abrir",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[teclado] seta direita avança",
+   "ok": true,
+   "extra": "destinos"
+  },
+  {
+   "nome": "[teclado] seta esquerda recua",
+   "ok": true,
+   "extra": "perto"
+  },
+  {
+   "nome": "[teclado] Esc fecha",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[teclado] Esc deixa guardado como visto",
+   "ok": true,
+   "extra": "visto"
+  },
+  {
+   "nome": "sem erros de consola",
+   "ok": true,
+   "extra": ""
+  }
+ ],
+ "consola": [],
+ "consolaTotal": 0
+}
