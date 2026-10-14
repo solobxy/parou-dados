@@ -222,8 +222,9 @@ const PASSOS = ['idioma', 'perto', 'destinos', 'horarios', 'alertas', 'comunidad
     ok('[demo idioma] no passo 2 (perto)', (await passoAtivo(p)) === 'perto', await passoAtivo(p));
     ok('[demo idioma] estado real continua "visto"', (await estado(p)) === 'visto', await estado(p));
     await foto(p, 'demo_idioma_en_passo1');
-    await p.getByRole('button', { name: 'Close' }).first().click();
+    await p.keyboard.press('Escape');
     await p.waitForTimeout(300);
+    ok('[demo idioma] fecha', (await dialogo(p).count()) === 0);
     await p.reload({ waitUntil: 'load' });
     ok('[demo idioma] depois de fechar e recarregar não volta a abrir', await naoAparece(p, 2500));
     await ctx.close();
