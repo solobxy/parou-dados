@@ -141,8 +141,10 @@ function janelas(pts, mpp, ms) {
     await p.waitForSelector('.custom-user-marker-icon', { timeout: 15000 }).catch(() => {});
     await gravar(p);
     let bx = 0, by = 0;
+    const brutos = [];
     for (let i = 0; i < 30; i++) {
       bx = 0.85 * bx + 0.53 * 8 * gauss(); by = 0.85 * by + 0.53 * 8 * gauss();
+      brutos.push({ x: bx, y: by });
       await fixar(ctx, p, llDe(bx, by), 9, doppler ? 0 : undefined, undefined);
       await p.waitForTimeout(1000);
     }
@@ -151,10 +153,14 @@ function janelas(pts, mpp, ms) {
     const dep = pts.slice(Math.floor(pts.length * 0.4)); // depois de assentar
     const mx = dep.reduce((s, q) => s + q.x, 0) / dep.length, my = dep.reduce((s, q) => s + q.y, 0) / dep.length;
     const disp = Math.sqrt(dep.reduce((s, q) => s + (q.x - mx) ** 2 + (q.y - my) ** 2, 0) / dep.length) * mpp;
-    const lim = doppler ? 2.5 : 7;
-    res.notas.push(`[${rot}] dispersão do ponto: ${disp.toFixed(2)} m (GPS cru ~11 m)`);
+    // dispersão do GPS cru no mesmo período (o ruído é lento, por isso varia muito de amostra para amostra)
+    const crus = brutos.slice(Math.floor(brutos.length * 0.4));
+    const cx = crus.reduce((s, q) => s + q.x, 0) / crus.length, cy = crus.reduce((s, q) => s + q.y, 0) / crus.length;
+    const dispCru = Math.sqrt(crus.reduce((s, q) => s + (q.x - cx) ** 2 + (q.y - cy) ** 2, 0) / crus.length);
+    res.notas.push(`[${rot}] dispersão do ponto: ${disp.toFixed(2)} m (GPS cru ${dispCru.toFixed(1)} m)`);
     console.log(res.notas.at(-1));
-    ok(`[${rot}] o ponto fica quase quieto (dispersão < ${lim} m com GPS a variar ~11 m)`, disp < lim, disp.toFixed(2));
+    if (doppler) ok(`[${rot}] o ponto fica quase quieto (dispersão < 2,5 m com GPS a variar ~${dispCru.toFixed(0)} m)`, disp < 2.5, disp.toFixed(2));
+    else ok(`[${rot}] sem velocidade do GPS o ponto não treme mais do que o GPS cru`, disp < dispCru, `${disp.toFixed(2)} < ${dispCru.toFixed(2)}`);
     ok(`[${rot}] sem erros de consola`, consola.length === 0, consola.slice(0, 2).join(' | '));
     await p.screenshot({ path: `${SAIDA}/gps_${doppler ? 'parado_doppler' : 'parado'}.png` });
     await ctx.close();
