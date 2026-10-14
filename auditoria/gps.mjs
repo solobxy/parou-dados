@@ -26,6 +26,7 @@ async function novaPagina(browser, tema = 'claro', w = 390, h = 780) {
   });
   await ctx.addInitScript({ content: `try{ Object.defineProperty(Navigator.prototype,'webdriver',{get:()=>false,configurable:true}); localStorage.setItem('parou_tema','${tema}'); localStorage.setItem('parou_aviso_instalar','1'); localStorage.setItem('parou_bemvindo','visto'); localStorage.setItem('parou_localizacao_ok','1'); }catch(e){}` });
   await ctx.route(/(tile|openstreetmap|arcgisonline|cartocdn|basemaps)\./i, (rt) => rt.fulfill({ status: 200, contentType: 'image/png', body: PNG }));
+  await ctx.addInitScript({ content: DOPPLER });
   const p = await ctx.newPage();
   const consola = [];
   p.on('console', (m) => { if (m.type() === 'error' && !/Failed to load resource|favicon|ERR_/.test(m.text())) consola.push(m.text().slice(0, 200)); });
@@ -58,19 +59,17 @@ const metrosPorPixel = (p) => p.evaluate((lat) => {
 }, LAT0);
 
 
-// Define a posição do GPS simulado. Com CDP dá também velocidade e rumo (efeito Doppler, como num telemóvel real);
-// sem CDP só dá a posição (o que o Playwright oferece).
-async function fixar(ctx, cdp, ll, acc, vel, rumo) {
-  if (cdp) {
-    const par = { latitude: ll.latitude, longitude: ll.longitude, accuracy: acc };
-    if (vel !== undefined && vel !== null) par.speed = vel;
-    if (rumo !== undefined && rumo !== null) par.heading = rumo;
-    await cdp.send('Emulation.setGeolocationOverride', par);
-  } else {
-    await ctx.setGeolocation({ ...ll, accuracy: acc });
-  }
+// Define a posição do GPS simulado. O Chromium só simula a posição; a velocidade e o rumo (efeito Doppler, como num
+// telemóvel real) são acrescentados à leitura por um invólucro de navigator.geolocation (ver DOPPLER), que é
+// exatamente o que o hook useUserLocation lê (coords.speed / coords.heading).
+const DOPPLER = `(() => { const g = navigator.geolocation; if (!g) return; const w = g.watchPosition.bind(g), c = g.getCurrentPosition.bind(g);
+  const mais = (cb) => (pos) => { const d = window.__dop; if (!d || typeof cb !== 'function') return cb(pos); const co = pos.coords;
+    cb({ timestamp: pos.timestamp, coords: { latitude: co.latitude, longitude: co.longitude, accuracy: co.accuracy, altitude: co.altitude, altitudeAccuracy: co.altitudeAccuracy, speed: d.speed, heading: d.heading } }); };
+  g.watchPosition = (ok, err, opt) => w(mais(ok), err, opt); g.getCurrentPosition = (ok, err, opt) => c(mais(ok), err, opt); })();`;
+async function fixar(ctx, p, ll, acc, vel, rumo) {
+  if (vel !== undefined && vel !== null) await p.evaluate((d) => { window.__dop = d; }, { speed: vel, heading: rumo ?? null });
+  await ctx.setGeolocation({ ...ll, accuracy: acc });
 }
-const lerGps = (p) => p.evaluate(() => new Promise((res) => navigator.geolocation.getCurrentPosition((q) => res({ s: q.coords.speed, h: q.coords.heading }), (e) => res({ erro: e.code + ' ' + e.message }), { maximumAge: 0, timeout: 8000 })));
 
 // Deslocamento do ponto numa janela de 'ms' milissegundos, em metros (reduz o efeito dos pixéis inteiros do Leaflet,
 // que no zoom 16 valem ~1,8 m cada)
@@ -87,23 +86,15 @@ function janelas(pts, mpp, ms) {
 
 (async () => {
   const browser = await chromium.launch({ args: ['--no-sandbox'] });
-  let dopplerDisponivel = null;
+  const dopplerDisponivel = true;
 
   // ---- 1) Autocarro a 12 m/s para leste, GPS a 1 Hz com ruído; sem e com velocidade/rumo do GPS
   for (const [tema, doppler] of [['claro', false], ['escuro', false], ['claro', true]]) {
     const rot = `${tema}${doppler ? ', com Doppler' : ''}`;
     const { ctx, p, consola } = await novaPagina(browser, tema, 390, 780);
-    const cdp = doppler ? await ctx.newCDPSession(p) : null;
-    await p.goto(BASE + '/', { waitUntil: 'load' });
+        await p.goto(BASE + '/', { waitUntil: 'load' });
     await p.waitForTimeout(2500);
-    await fixar(ctx, cdp, llDe(0, 0), 10, doppler ? 12 : undefined, doppler ? 90 : undefined);
-    if (doppler) {
-      const g = await lerGps(p);
-      dopplerDisponivel = !!(g && g.s !== null && g.s !== undefined && Number.isFinite(g.s));
-      res.notas.push(`Chromium passa velocidade/rumo: ${dopplerDisponivel} ${JSON.stringify(g)}`);
-      console.log(res.notas.at(-1));
-      if (!dopplerDisponivel) { await ctx.close(); continue; }
-    }
+    await fixar(ctx, p, llDe(0, 0), 10, doppler ? 12 : undefined, doppler ? 90 : undefined);
     await p.waitForSelector('.custom-user-marker-icon', { timeout: 15000 }).catch(() => {});
     ok(`[${rot}] o ponto da localização aparece no mapa`, (await p.locator('.custom-user-marker-icon').count()) === 1);
     await gravar(p);
@@ -113,7 +104,7 @@ function janelas(pts, mpp, ms) {
       bx = 0.9 * bx + 0.44 * 5 * gauss(); by = 0.9 * by + 0.44 * 5 * gauss();
       const salto = (i === 17 || i === 18) ? 70 : 0; // dois segundos de GPS a mentir
       const ll = llDe(x + bx + salto, y + by);
-      await fixar(ctx, cdp, ll, 6 + Math.round(Math.abs(gauss()) * 5), doppler ? 12 + 0.3 * gauss() : undefined, doppler ? 90 : undefined);
+      await fixar(ctx, p, ll, 6 + Math.round(Math.abs(gauss()) * 5), doppler ? 12 + 0.3 * gauss() : undefined, doppler ? 90 : undefined);
       await p.waitForTimeout(1000);
     }
     const pts = await rastro(p);
@@ -144,16 +135,15 @@ function janelas(pts, mpp, ms) {
     if (doppler && !dopplerDisponivel) continue;
     const rot = doppler ? 'parado, com Doppler' : 'parado';
     const { ctx, p, consola } = await novaPagina(browser, 'claro');
-    const cdp = doppler ? await ctx.newCDPSession(p) : null;
-    await p.goto(BASE + '/', { waitUntil: 'load' });
+        await p.goto(BASE + '/', { waitUntil: 'load' });
     await p.waitForTimeout(2500);
-    await fixar(ctx, cdp, llDe(0, 0), 10, doppler ? 0 : undefined, undefined);
+    await fixar(ctx, p, llDe(0, 0), 10, doppler ? 0 : undefined, undefined);
     await p.waitForSelector('.custom-user-marker-icon', { timeout: 15000 }).catch(() => {});
     await gravar(p);
     let bx = 0, by = 0;
     for (let i = 0; i < 30; i++) {
       bx = 0.85 * bx + 0.53 * 8 * gauss(); by = 0.85 * by + 0.53 * 8 * gauss();
-      await fixar(ctx, cdp, llDe(bx, by), 9, doppler ? 0 : undefined, undefined);
+      await fixar(ctx, p, llDe(bx, by), 9, doppler ? 0 : undefined, undefined);
       await p.waitForTimeout(1000);
     }
     const pts = (await rastro(p)).filter((q) => q.t > 0);
