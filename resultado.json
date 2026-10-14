@@ -1,0 +1,645 @@
+{
+ "testes": [
+  {
+   "nome": "[iPhone SE claro] cartão mostra as partidas",
+   "ok": true,
+   "extra": "3"
+  },
+  {
+   "nome": "[iPhone SE claro] só as partidas com percurso são botões (2 de 3)",
+   "ok": true,
+   "extra": "2"
+  },
+  {
+   "nome": "[iPhone SE claro] botões têm seta",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[iPhone SE claro] alvo de toque ≥ 44 px de altura",
+   "ok": true,
+   "extra": "57"
+  },
+  {
+   "nome": "[iPhone SE claro] só horário: tocar abre o percurso com as 7 paragens",
+   "ok": true,
+   "extra": "7"
+  },
+  {
+   "nome": "[iPhone SE claro] só horário: pede o percurso pela linha, paragem e destino",
+   "ok": true,
+   "extra": "?rota=R706&stop=S1&dest=Matosinhos%20Sul"
+  },
+  {
+   "nome": "[iPhone SE claro] paragens por ordem (Bolhão … Santo Ovídio)",
+   "ok": true,
+   "extra": "Bolhão > Aliados > São Bento > Ribeira > Cais de Gaia > Jardim do Morro > Santo Ovídio"
+  },
+  {
+   "nome": "[iPhone SE claro] sem horas de passagem para partida só com horário",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[iPhone SE claro] avisa que as horas não estão disponíveis",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[iPhone SE claro] linha do percurso desenhada no mapa",
+   "ok": true,
+   "extra": "11"
+  },
+  {
+   "nome": "[iPhone SE claro] cabeçalho mostra a linha e o destino",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[iPhone SE claro] percurso dentro do ecrã",
+   "ok": true,
+   "extra": "307..504 de 568"
+  },
+  {
+   "nome": "[iPhone SE claro] última paragem do percurso alcançável (não tapada)",
+   "ok": true,
+   "extra": "ok"
+  },
+  {
+   "nome": "[iPhone SE claro] \"Partidas\" volta à lista da paragem",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[iPhone SE claro] painel da paragem tem a partida 205 como botão",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[iPhone SE claro] painel: partida com viagem pede pelo trip_id",
+   "ok": true,
+   "extra": "?trip=T205&stop=S1&rota=R205&dest=Santo%20Ov%C3%ADdio"
+  },
+  {
+   "nome": "[iPhone SE claro] painel: o percurso traz as horas",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[iPhone SE claro] sem erros de JavaScript",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[iPhone 13 Mini claro] cartão mostra as partidas",
+   "ok": true,
+   "extra": "3"
+  },
+  {
+   "nome": "[iPhone 13 Mini claro] só as partidas com percurso são botões (2 de 3)",
+   "ok": true,
+   "extra": "2"
+  },
+  {
+   "nome": "[iPhone 13 Mini claro] botões têm seta",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[iPhone 13 Mini claro] alvo de toque ≥ 44 px de altura",
+   "ok": true,
+   "extra": "57"
+  },
+  {
+   "nome": "[iPhone 13 Mini claro] só horário: tocar abre o percurso com as 7 paragens",
+   "ok": true,
+   "extra": "7"
+  },
+  {
+   "nome": "[iPhone 13 Mini claro] só horário: pede o percurso pela linha, paragem e destino",
+   "ok": true,
+   "extra": "?rota=R706&stop=S1&dest=Matosinhos%20Sul"
+  },
+  {
+   "nome": "[iPhone 13 Mini claro] paragens por ordem (Bolhão … Santo Ovídio)",
+   "ok": true,
+   "extra": "Bolhão > Aliados > São Bento > Ribeira > Cais de Gaia > Jardim do Morro > Santo Ovídio"
+  },
+  {
+   "nome": "[iPhone 13 Mini claro] sem horas de passagem para partida só com horário",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[iPhone 13 Mini claro] avisa que as horas não estão disponíveis",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[iPhone 13 Mini claro] linha do percurso desenhada no mapa",
+   "ok": true,
+   "extra": "11"
+  },
+  {
+   "nome": "[iPhone 13 Mini claro] cabeçalho mostra a linha e o destino",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[iPhone 13 Mini claro] percurso dentro do ecrã",
+   "ok": true,
+   "extra": "307..565 de 629"
+  },
+  {
+   "nome": "[iPhone 13 Mini claro] última paragem do percurso alcançável (não tapada)",
+   "ok": true,
+   "extra": "ok"
+  },
+  {
+   "nome": "[iPhone 13 Mini claro] \"Partidas\" volta à lista da paragem",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[iPhone 13 Mini claro] painel da paragem tem a partida 205 como botão",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[iPhone 13 Mini claro] painel: partida com viagem pede pelo trip_id",
+   "ok": true,
+   "extra": "?trip=T205&stop=S1&rota=R205&dest=Santo%20Ov%C3%ADdio"
+  },
+  {
+   "nome": "[iPhone 13 Mini claro] painel: o percurso traz as horas",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[iPhone 13 Mini claro] \"voltar\" do telemóvel fecha a paragem e mostra a lista",
+   "ok": true,
+   "extra": "1"
+  },
+  {
+   "nome": "[iPhone 13 Mini claro] teclado (Enter) abre o percurso; sem dados diz \"indisponível\"",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[iPhone 13 Mini claro] sem erros de JavaScript",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[iPhone 13 Mini escuro] cartão mostra as partidas",
+   "ok": true,
+   "extra": "3"
+  },
+  {
+   "nome": "[iPhone 13 Mini escuro] só as partidas com percurso são botões (2 de 3)",
+   "ok": true,
+   "extra": "2"
+  },
+  {
+   "nome": "[iPhone 13 Mini escuro] botões têm seta",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[iPhone 13 Mini escuro] alvo de toque ≥ 44 px de altura",
+   "ok": true,
+   "extra": "57"
+  },
+  {
+   "nome": "[iPhone 13 Mini escuro] só horário: tocar abre o percurso com as 7 paragens",
+   "ok": true,
+   "extra": "7"
+  },
+  {
+   "nome": "[iPhone 13 Mini escuro] só horário: pede o percurso pela linha, paragem e destino",
+   "ok": true,
+   "extra": "?rota=R706&stop=S1&dest=Matosinhos%20Sul"
+  },
+  {
+   "nome": "[iPhone 13 Mini escuro] paragens por ordem (Bolhão … Santo Ovídio)",
+   "ok": true,
+   "extra": "Bolhão > Aliados > São Bento > Ribeira > Cais de Gaia > Jardim do Morro > Santo Ovídio"
+  },
+  {
+   "nome": "[iPhone 13 Mini escuro] sem horas de passagem para partida só com horário",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[iPhone 13 Mini escuro] avisa que as horas não estão disponíveis",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[iPhone 13 Mini escuro] linha do percurso desenhada no mapa",
+   "ok": true,
+   "extra": "11"
+  },
+  {
+   "nome": "[iPhone 13 Mini escuro] cabeçalho mostra a linha e o destino",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[iPhone 13 Mini escuro] percurso dentro do ecrã",
+   "ok": true,
+   "extra": "307..565 de 629"
+  },
+  {
+   "nome": "[iPhone 13 Mini escuro] última paragem do percurso alcançável (não tapada)",
+   "ok": true,
+   "extra": "ok"
+  },
+  {
+   "nome": "[iPhone 13 Mini escuro] \"Partidas\" volta à lista da paragem",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[iPhone 13 Mini escuro] painel da paragem tem a partida 205 como botão",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[iPhone 13 Mini escuro] painel: partida com viagem pede pelo trip_id",
+   "ok": true,
+   "extra": "?trip=T205&stop=S1&rota=R205&dest=Santo%20Ov%C3%ADdio"
+  },
+  {
+   "nome": "[iPhone 13 Mini escuro] painel: o percurso traz as horas",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[iPhone 13 Mini escuro] sem erros de JavaScript",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[iPhone 13 Mini ambar] cartão mostra as partidas",
+   "ok": true,
+   "extra": "3"
+  },
+  {
+   "nome": "[iPhone 13 Mini ambar] só as partidas com percurso são botões (2 de 3)",
+   "ok": true,
+   "extra": "2"
+  },
+  {
+   "nome": "[iPhone 13 Mini ambar] botões têm seta",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[iPhone 13 Mini ambar] alvo de toque ≥ 44 px de altura",
+   "ok": true,
+   "extra": "57"
+  },
+  {
+   "nome": "[iPhone 13 Mini ambar] só horário: tocar abre o percurso com as 7 paragens",
+   "ok": true,
+   "extra": "7"
+  },
+  {
+   "nome": "[iPhone 13 Mini ambar] só horário: pede o percurso pela linha, paragem e destino",
+   "ok": true,
+   "extra": "?rota=R706&stop=S1&dest=Matosinhos%20Sul"
+  },
+  {
+   "nome": "[iPhone 13 Mini ambar] paragens por ordem (Bolhão … Santo Ovídio)",
+   "ok": true,
+   "extra": "Bolhão > Aliados > São Bento > Ribeira > Cais de Gaia > Jardim do Morro > Santo Ovídio"
+  },
+  {
+   "nome": "[iPhone 13 Mini ambar] sem horas de passagem para partida só com horário",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[iPhone 13 Mini ambar] avisa que as horas não estão disponíveis",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[iPhone 13 Mini ambar] linha do percurso desenhada no mapa",
+   "ok": true,
+   "extra": "11"
+  },
+  {
+   "nome": "[iPhone 13 Mini ambar] cabeçalho mostra a linha e o destino",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[iPhone 13 Mini ambar] percurso dentro do ecrã",
+   "ok": true,
+   "extra": "307..565 de 629"
+  },
+  {
+   "nome": "[iPhone 13 Mini ambar] última paragem do percurso alcançável (não tapada)",
+   "ok": true,
+   "extra": "ok"
+  },
+  {
+   "nome": "[iPhone 13 Mini ambar] \"Partidas\" volta à lista da paragem",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[iPhone 13 Mini ambar] painel da paragem tem a partida 205 como botão",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[iPhone 13 Mini ambar] painel: partida com viagem pede pelo trip_id",
+   "ok": true,
+   "extra": "?trip=T205&stop=S1&rota=R205&dest=Santo%20Ov%C3%ADdio"
+  },
+  {
+   "nome": "[iPhone 13 Mini ambar] painel: o percurso traz as horas",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[iPhone 13 Mini ambar] sem erros de JavaScript",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[Pixel 5 claro] cartão mostra as partidas",
+   "ok": true,
+   "extra": "3"
+  },
+  {
+   "nome": "[Pixel 5 claro] só as partidas com percurso são botões (2 de 3)",
+   "ok": true,
+   "extra": "2"
+  },
+  {
+   "nome": "[Pixel 5 claro] botões têm seta",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[Pixel 5 claro] alvo de toque ≥ 44 px de altura",
+   "ok": true,
+   "extra": "57"
+  },
+  {
+   "nome": "[Pixel 5 claro] só horário: tocar abre o percurso com as 7 paragens",
+   "ok": true,
+   "extra": "7"
+  },
+  {
+   "nome": "[Pixel 5 claro] só horário: pede o percurso pela linha, paragem e destino",
+   "ok": true,
+   "extra": "?rota=R706&stop=S1&dest=Matosinhos%20Sul"
+  },
+  {
+   "nome": "[Pixel 5 claro] paragens por ordem (Bolhão … Santo Ovídio)",
+   "ok": true,
+   "extra": "Bolhão > Aliados > São Bento > Ribeira > Cais de Gaia > Jardim do Morro > Santo Ovídio"
+  },
+  {
+   "nome": "[Pixel 5 claro] sem horas de passagem para partida só com horário",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[Pixel 5 claro] avisa que as horas não estão disponíveis",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[Pixel 5 claro] linha do percurso desenhada no mapa",
+   "ok": true,
+   "extra": "11"
+  },
+  {
+   "nome": "[Pixel 5 claro] cabeçalho mostra a linha e o destino",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[Pixel 5 claro] percurso dentro do ecrã",
+   "ok": true,
+   "extra": "332..663 de 727"
+  },
+  {
+   "nome": "[Pixel 5 claro] última paragem do percurso alcançável (não tapada)",
+   "ok": true,
+   "extra": "ok"
+  },
+  {
+   "nome": "[Pixel 5 claro] \"Partidas\" volta à lista da paragem",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[Pixel 5 claro] painel da paragem tem a partida 205 como botão",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[Pixel 5 claro] painel: partida com viagem pede pelo trip_id",
+   "ok": true,
+   "extra": "?trip=T205&stop=S1&rota=R205&dest=Santo%20Ov%C3%ADdio"
+  },
+  {
+   "nome": "[Pixel 5 claro] painel: o percurso traz as horas",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[Pixel 5 claro] sem erros de JavaScript",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[Galaxy S9+ claro] cartão mostra as partidas",
+   "ok": true,
+   "extra": "3"
+  },
+  {
+   "nome": "[Galaxy S9+ claro] só as partidas com percurso são botões (2 de 3)",
+   "ok": true,
+   "extra": "2"
+  },
+  {
+   "nome": "[Galaxy S9+ claro] botões têm seta",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[Galaxy S9+ claro] alvo de toque ≥ 44 px de altura",
+   "ok": true,
+   "extra": "57"
+  },
+  {
+   "nome": "[Galaxy S9+ claro] só horário: tocar abre o percurso com as 7 paragens",
+   "ok": true,
+   "extra": "7"
+  },
+  {
+   "nome": "[Galaxy S9+ claro] só horário: pede o percurso pela linha, paragem e destino",
+   "ok": true,
+   "extra": "?rota=R706&stop=S1&dest=Matosinhos%20Sul"
+  },
+  {
+   "nome": "[Galaxy S9+ claro] paragens por ordem (Bolhão … Santo Ovídio)",
+   "ok": true,
+   "extra": "Bolhão > Aliados > São Bento > Ribeira > Cais de Gaia > Jardim do Morro > Santo Ovídio"
+  },
+  {
+   "nome": "[Galaxy S9+ claro] sem horas de passagem para partida só com horário",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[Galaxy S9+ claro] avisa que as horas não estão disponíveis",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[Galaxy S9+ claro] linha do percurso desenhada no mapa",
+   "ok": true,
+   "extra": "11"
+  },
+  {
+   "nome": "[Galaxy S9+ claro] cabeçalho mostra a linha e o destino",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[Galaxy S9+ claro] percurso dentro do ecrã",
+   "ok": true,
+   "extra": "307..594 de 658"
+  },
+  {
+   "nome": "[Galaxy S9+ claro] última paragem do percurso alcançável (não tapada)",
+   "ok": true,
+   "extra": "ok"
+  },
+  {
+   "nome": "[Galaxy S9+ claro] \"Partidas\" volta à lista da paragem",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[Galaxy S9+ claro] painel da paragem tem a partida 205 como botão",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[Galaxy S9+ claro] painel: partida com viagem pede pelo trip_id",
+   "ok": true,
+   "extra": "?trip=T205&stop=S1&rota=R205&dest=Santo%20Ov%C3%ADdio"
+  },
+  {
+   "nome": "[Galaxy S9+ claro] painel: o percurso traz as horas",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[Galaxy S9+ claro] sem erros de JavaScript",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[Desktop claro] cartão mostra as partidas",
+   "ok": true,
+   "extra": "3"
+  },
+  {
+   "nome": "[Desktop claro] só as partidas com percurso são botões (2 de 3)",
+   "ok": true,
+   "extra": "2"
+  },
+  {
+   "nome": "[Desktop claro] botões têm seta",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[Desktop claro] alvo de toque ≥ 44 px de altura",
+   "ok": true,
+   "extra": "57"
+  },
+  {
+   "nome": "[Desktop claro] só horário: tocar abre o percurso com as 7 paragens",
+   "ok": true,
+   "extra": "7"
+  },
+  {
+   "nome": "[Desktop claro] só horário: pede o percurso pela linha, paragem e destino",
+   "ok": true,
+   "extra": "?rota=R706&stop=S1&dest=Matosinhos%20Sul"
+  },
+  {
+   "nome": "[Desktop claro] paragens por ordem (Bolhão … Santo Ovídio)",
+   "ok": true,
+   "extra": "Bolhão > Aliados > São Bento > Ribeira > Cais de Gaia > Jardim do Morro > Santo Ovídio"
+  },
+  {
+   "nome": "[Desktop claro] sem horas de passagem para partida só com horário",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[Desktop claro] avisa que as horas não estão disponíveis",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[Desktop claro] linha do percurso desenhada no mapa",
+   "ok": true,
+   "extra": "11"
+  },
+  {
+   "nome": "[Desktop claro] cabeçalho mostra a linha e o destino",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[Desktop claro] percurso dentro do ecrã",
+   "ok": true,
+   "extra": "114..801 de 800"
+  },
+  {
+   "nome": "[Desktop claro] última paragem do percurso alcançável (não tapada)",
+   "ok": true,
+   "extra": "ok"
+  },
+  {
+   "nome": "[Desktop claro] \"Partidas\" volta à lista da paragem",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[Desktop claro] painel da paragem tem a partida 205 como botão",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[Desktop claro] painel: partida com viagem pede pelo trip_id",
+   "ok": true,
+   "extra": "?trip=T205&stop=S1&rota=R205&dest=Santo%20Ov%C3%ADdio"
+  },
+  {
+   "nome": "[Desktop claro] painel: o percurso traz as horas",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[Desktop claro] sem erros de JavaScript",
+   "ok": true,
+   "extra": ""
+  }
+ ],
+ "notas": []
+}

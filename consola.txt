@@ -1,0 +1,130 @@
+OK      [iPhone SE claro] cartão mostra as partidas 3
+OK      [iPhone SE claro] só as partidas com percurso são botões (2 de 3) 2
+OK      [iPhone SE claro] botões têm seta 
+OK      [iPhone SE claro] alvo de toque ≥ 44 px de altura 57
+OK      [iPhone SE claro] só horário: tocar abre o percurso com as 7 paragens 7
+OK      [iPhone SE claro] só horário: pede o percurso pela linha, paragem e destino ?rota=R706&stop=S1&dest=Matosinhos%20Sul
+OK      [iPhone SE claro] paragens por ordem (Bolhão … Santo Ovídio) Bolhão > Aliados > São Bento > Ribeira > Cais de Gaia > Jardim do Morro > Santo Ovídio
+OK      [iPhone SE claro] sem horas de passagem para partida só com horário 
+OK      [iPhone SE claro] avisa que as horas não estão disponíveis 
+OK      [iPhone SE claro] linha do percurso desenhada no mapa 11
+OK      [iPhone SE claro] cabeçalho mostra a linha e o destino 
+OK      [iPhone SE claro] percurso dentro do ecrã 307..504 de 568
+OK      [iPhone SE claro] última paragem do percurso alcançável (não tapada) ok
+OK      [iPhone SE claro] "Partidas" volta à lista da paragem 
+OK      [iPhone SE claro] painel da paragem tem a partida 205 como botão 
+OK      [iPhone SE claro] painel: partida com viagem pede pelo trip_id ?trip=T205&stop=S1&rota=R205&dest=Santo%20Ov%C3%ADdio
+OK      [iPhone SE claro] painel: o percurso traz as horas 
+OK      [iPhone SE claro] sem erros de JavaScript 
+OK      [iPhone 13 Mini claro] cartão mostra as partidas 3
+OK      [iPhone 13 Mini claro] só as partidas com percurso são botões (2 de 3) 2
+OK      [iPhone 13 Mini claro] botões têm seta 
+OK      [iPhone 13 Mini claro] alvo de toque ≥ 44 px de altura 57
+OK      [iPhone 13 Mini claro] só horário: tocar abre o percurso com as 7 paragens 7
+OK      [iPhone 13 Mini claro] só horário: pede o percurso pela linha, paragem e destino ?rota=R706&stop=S1&dest=Matosinhos%20Sul
+OK      [iPhone 13 Mini claro] paragens por ordem (Bolhão … Santo Ovídio) Bolhão > Aliados > São Bento > Ribeira > Cais de Gaia > Jardim do Morro > Santo Ovídio
+OK      [iPhone 13 Mini claro] sem horas de passagem para partida só com horário 
+OK      [iPhone 13 Mini claro] avisa que as horas não estão disponíveis 
+OK      [iPhone 13 Mini claro] linha do percurso desenhada no mapa 11
+OK      [iPhone 13 Mini claro] cabeçalho mostra a linha e o destino 
+OK      [iPhone 13 Mini claro] percurso dentro do ecrã 307..565 de 629
+OK      [iPhone 13 Mini claro] última paragem do percurso alcançável (não tapada) ok
+OK      [iPhone 13 Mini claro] "Partidas" volta à lista da paragem 
+OK      [iPhone 13 Mini claro] painel da paragem tem a partida 205 como botão 
+OK      [iPhone 13 Mini claro] painel: partida com viagem pede pelo trip_id ?trip=T205&stop=S1&rota=R205&dest=Santo%20Ov%C3%ADdio
+OK      [iPhone 13 Mini claro] painel: o percurso traz as horas 
+OK      [iPhone 13 Mini claro] "voltar" do telemóvel fecha a paragem e mostra a lista 1
+OK      [iPhone 13 Mini claro] teclado (Enter) abre o percurso; sem dados diz "indisponível" 
+OK      [iPhone 13 Mini claro] sem erros de JavaScript 
+OK      [iPhone 13 Mini escuro] cartão mostra as partidas 3
+OK      [iPhone 13 Mini escuro] só as partidas com percurso são botões (2 de 3) 2
+OK      [iPhone 13 Mini escuro] botões têm seta 
+OK      [iPhone 13 Mini escuro] alvo de toque ≥ 44 px de altura 57
+OK      [iPhone 13 Mini escuro] só horário: tocar abre o percurso com as 7 paragens 7
+OK      [iPhone 13 Mini escuro] só horário: pede o percurso pela linha, paragem e destino ?rota=R706&stop=S1&dest=Matosinhos%20Sul
+OK      [iPhone 13 Mini escuro] paragens por ordem (Bolhão … Santo Ovídio) Bolhão > Aliados > São Bento > Ribeira > Cais de Gaia > Jardim do Morro > Santo Ovídio
+OK      [iPhone 13 Mini escuro] sem horas de passagem para partida só com horário 
+OK      [iPhone 13 Mini escuro] avisa que as horas não estão disponíveis 
+OK      [iPhone 13 Mini escuro] linha do percurso desenhada no mapa 11
+OK      [iPhone 13 Mini escuro] cabeçalho mostra a linha e o destino 
+OK      [iPhone 13 Mini escuro] percurso dentro do ecrã 307..565 de 629
+OK      [iPhone 13 Mini escuro] última paragem do percurso alcançável (não tapada) ok
+OK      [iPhone 13 Mini escuro] "Partidas" volta à lista da paragem 
+OK      [iPhone 13 Mini escuro] painel da paragem tem a partida 205 como botão 
+OK      [iPhone 13 Mini escuro] painel: partida com viagem pede pelo trip_id ?trip=T205&stop=S1&rota=R205&dest=Santo%20Ov%C3%ADdio
+OK      [iPhone 13 Mini escuro] painel: o percurso traz as horas 
+OK      [iPhone 13 Mini escuro] sem erros de JavaScript 
+OK      [iPhone 13 Mini ambar] cartão mostra as partidas 3
+OK      [iPhone 13 Mini ambar] só as partidas com percurso são botões (2 de 3) 2
+OK      [iPhone 13 Mini ambar] botões têm seta 
+OK      [iPhone 13 Mini ambar] alvo de toque ≥ 44 px de altura 57
+OK      [iPhone 13 Mini ambar] só horário: tocar abre o percurso com as 7 paragens 7
+OK      [iPhone 13 Mini ambar] só horário: pede o percurso pela linha, paragem e destino ?rota=R706&stop=S1&dest=Matosinhos%20Sul
+OK      [iPhone 13 Mini ambar] paragens por ordem (Bolhão … Santo Ovídio) Bolhão > Aliados > São Bento > Ribeira > Cais de Gaia > Jardim do Morro > Santo Ovídio
+OK      [iPhone 13 Mini ambar] sem horas de passagem para partida só com horário 
+OK      [iPhone 13 Mini ambar] avisa que as horas não estão disponíveis 
+OK      [iPhone 13 Mini ambar] linha do percurso desenhada no mapa 11
+OK      [iPhone 13 Mini ambar] cabeçalho mostra a linha e o destino 
+OK      [iPhone 13 Mini ambar] percurso dentro do ecrã 307..565 de 629
+OK      [iPhone 13 Mini ambar] última paragem do percurso alcançável (não tapada) ok
+OK      [iPhone 13 Mini ambar] "Partidas" volta à lista da paragem 
+OK      [iPhone 13 Mini ambar] painel da paragem tem a partida 205 como botão 
+OK      [iPhone 13 Mini ambar] painel: partida com viagem pede pelo trip_id ?trip=T205&stop=S1&rota=R205&dest=Santo%20Ov%C3%ADdio
+OK      [iPhone 13 Mini ambar] painel: o percurso traz as horas 
+OK      [iPhone 13 Mini ambar] sem erros de JavaScript 
+OK      [Pixel 5 claro] cartão mostra as partidas 3
+OK      [Pixel 5 claro] só as partidas com percurso são botões (2 de 3) 2
+OK      [Pixel 5 claro] botões têm seta 
+OK      [Pixel 5 claro] alvo de toque ≥ 44 px de altura 57
+OK      [Pixel 5 claro] só horário: tocar abre o percurso com as 7 paragens 7
+OK      [Pixel 5 claro] só horário: pede o percurso pela linha, paragem e destino ?rota=R706&stop=S1&dest=Matosinhos%20Sul
+OK      [Pixel 5 claro] paragens por ordem (Bolhão … Santo Ovídio) Bolhão > Aliados > São Bento > Ribeira > Cais de Gaia > Jardim do Morro > Santo Ovídio
+OK      [Pixel 5 claro] sem horas de passagem para partida só com horário 
+OK      [Pixel 5 claro] avisa que as horas não estão disponíveis 
+OK      [Pixel 5 claro] linha do percurso desenhada no mapa 11
+OK      [Pixel 5 claro] cabeçalho mostra a linha e o destino 
+OK      [Pixel 5 claro] percurso dentro do ecrã 332..663 de 727
+OK      [Pixel 5 claro] última paragem do percurso alcançável (não tapada) ok
+OK      [Pixel 5 claro] "Partidas" volta à lista da paragem 
+OK      [Pixel 5 claro] painel da paragem tem a partida 205 como botão 
+OK      [Pixel 5 claro] painel: partida com viagem pede pelo trip_id ?trip=T205&stop=S1&rota=R205&dest=Santo%20Ov%C3%ADdio
+OK      [Pixel 5 claro] painel: o percurso traz as horas 
+OK      [Pixel 5 claro] sem erros de JavaScript 
+OK      [Galaxy S9+ claro] cartão mostra as partidas 3
+OK      [Galaxy S9+ claro] só as partidas com percurso são botões (2 de 3) 2
+OK      [Galaxy S9+ claro] botões têm seta 
+OK      [Galaxy S9+ claro] alvo de toque ≥ 44 px de altura 57
+OK      [Galaxy S9+ claro] só horário: tocar abre o percurso com as 7 paragens 7
+OK      [Galaxy S9+ claro] só horário: pede o percurso pela linha, paragem e destino ?rota=R706&stop=S1&dest=Matosinhos%20Sul
+OK      [Galaxy S9+ claro] paragens por ordem (Bolhão … Santo Ovídio) Bolhão > Aliados > São Bento > Ribeira > Cais de Gaia > Jardim do Morro > Santo Ovídio
+OK      [Galaxy S9+ claro] sem horas de passagem para partida só com horário 
+OK      [Galaxy S9+ claro] avisa que as horas não estão disponíveis 
+OK      [Galaxy S9+ claro] linha do percurso desenhada no mapa 11
+OK      [Galaxy S9+ claro] cabeçalho mostra a linha e o destino 
+OK      [Galaxy S9+ claro] percurso dentro do ecrã 307..594 de 658
+OK      [Galaxy S9+ claro] última paragem do percurso alcançável (não tapada) ok
+OK      [Galaxy S9+ claro] "Partidas" volta à lista da paragem 
+OK      [Galaxy S9+ claro] painel da paragem tem a partida 205 como botão 
+OK      [Galaxy S9+ claro] painel: partida com viagem pede pelo trip_id ?trip=T205&stop=S1&rota=R205&dest=Santo%20Ov%C3%ADdio
+OK      [Galaxy S9+ claro] painel: o percurso traz as horas 
+OK      [Galaxy S9+ claro] sem erros de JavaScript 
+OK      [Desktop claro] cartão mostra as partidas 3
+OK      [Desktop claro] só as partidas com percurso são botões (2 de 3) 2
+OK      [Desktop claro] botões têm seta 
+OK      [Desktop claro] alvo de toque ≥ 44 px de altura 57
+OK      [Desktop claro] só horário: tocar abre o percurso com as 7 paragens 7
+OK      [Desktop claro] só horário: pede o percurso pela linha, paragem e destino ?rota=R706&stop=S1&dest=Matosinhos%20Sul
+OK      [Desktop claro] paragens por ordem (Bolhão … Santo Ovídio) Bolhão > Aliados > São Bento > Ribeira > Cais de Gaia > Jardim do Morro > Santo Ovídio
+OK      [Desktop claro] sem horas de passagem para partida só com horário 
+OK      [Desktop claro] avisa que as horas não estão disponíveis 
+OK      [Desktop claro] linha do percurso desenhada no mapa 11
+OK      [Desktop claro] cabeçalho mostra a linha e o destino 
+OK      [Desktop claro] percurso dentro do ecrã 114..801 de 800
+OK      [Desktop claro] última paragem do percurso alcançável (não tapada) ok
+OK      [Desktop claro] "Partidas" volta à lista da paragem 
+OK      [Desktop claro] painel da paragem tem a partida 205 como botão 
+OK      [Desktop claro] painel: partida com viagem pede pelo trip_id ?trip=T205&stop=S1&rota=R205&dest=Santo%20Ov%C3%ADdio
+OK      [Desktop claro] painel: o percurso traz as horas 
+OK      [Desktop claro] sem erros de JavaScript 
+
+128/128 OK; 0 falhas
