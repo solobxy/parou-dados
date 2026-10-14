@@ -1,0 +1,107 @@
+name: Auditoria completa da app
+
+# Compila a app (solobxy/parou), põe-na a correr com os dados reais e testa tudo: API com pedidos maliciosos,
+# todos os ecrãs em vários tamanhos/temas/idiomas (erros, acessibilidade, desempenho) e o Lighthouse.
+# Resultado no ramo "auditoria-resultado".
+
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: "Commit ou ramo de solobxy/parou"
+        required: false
+        default: "main"
+      partes:
+        description: "O que correr (api, ui, lighthouse, ou todas)"
+        required: false
+        default: "todas"
+
+permissions:
+  contents: write
+
+jobs:
+  auditoria:
+    runs-on: ubuntu-latest
+    timeout-minutes: 75
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/checkout@v4
+        with:
+          repository: solobxy/parou
+          ref: ${{ inputs.ref }}
+          path: app
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Compilar a app
+        working-directory: app
+        run: |
+          npm ci --no-audit --no-fund --legacy-peer-deps || npm install --no-audit --no-fund --legacy-peer-deps
+          npm run build
+          npx tsc --noEmit -p . > ../tipos.txt 2>&1 || true
+          echo "linhas de erro de tipos: $(wc -l < ../tipos.txt)"
+          du -sh dist; find dist -name '*.js' -size +100k -exec ls -la {} \; | awk '{print $5, $9}' | sort -rn | head -15 > ../bundles.txt || true
+          npm audit --omit=dev --json > ../npm-audit.json 2>/dev/null || true
+
+      - name: Arrancar a app
+        working-directory: app
+        run: |
+          mkdir -p dados
+          NODE_ENV=production PORT=3000 PAROU_DATA_DIR=$PWD/dados TZ=Europe/Lisbon FOGOS_TESTE=1 nohup node --import tsx server.ts > app.log 2>&1 &
+          for i in $(seq 1 90); do curl -s -m 5 http://127.0.0.1:3000/api/transit/loading-status | grep -q '"isLoading":false' && break; sleep 5; done
+          curl -s http://127.0.0.1:3000/api/transit/loading-status; echo
+          sleep 20
+
+      - name: API (pedidos maliciosos)
+        if: inputs.partes == 'todas' || inputs.partes == 'api'
+        continue-on-error: true
+        run: |
+          mkdir -p res
+          SAIDA=res/api.txt node auditoria/api.mjs > res/api-consola.txt 2>&1 || true
+          tail -60 res/api.txt || true
+
+      - name: Instalar Playwright e axe
+        if: inputs.partes == 'todas' || inputs.partes == 'ui' || inputs.partes == 'lighthouse'
+        run: |
+          cd auditoria && npm init -y >/dev/null && npm i --no-audit --no-fund playwright@1 axe-core@4 >/dev/null && npx playwright install --with-deps chromium >/dev/null
+
+      - name: Ecrãs (acessibilidade, erros, desempenho)
+        if: inputs.partes == 'todas' || inputs.partes == 'ui'
+        continue-on-error: true
+        working-directory: auditoria
+        run: |
+          mkdir -p ../res/ui
+          SAIDA=../res/ui timeout 3000 node ui.mjs 2>&1 | tail -20
+
+      - name: Lighthouse
+        if: inputs.partes == 'todas' || inputs.partes == 'lighthouse'
+        continue-on-error: true
+        working-directory: auditoria
+        run: |
+          mkdir -p ../res/lh
+          export CHROME_PATH=$(node -e "console.log(require('playwright').chromium.executablePath())")
+          npm i --no-audit --no-fund lighthouse@12 >/dev/null 2>&1
+          for u in "/" "/transportes" "/alertas" "/comunidade" "/linhas" "/linha/stcp:801" "/privacidade"; do
+            n=$(echo "$u" | tr -c 'a-z0-9' '_')
+            npx lighthouse "http://127.0.0.1:3000$u" --chrome-flags="--headless=new --no-sandbox" --only-categories=performance,accessibility,best-practices,seo --output=json --output-path=../res/lh/$n.json --quiet || true
+          done
+          ls ../res/lh
+
+      - name: Registo do servidor
+        if: always()
+        run: |
+          mkdir -p res
+          cp app/app.log res/app.log 2>/dev/null || true
+          cp tipos.txt bundles.txt npm-audit.json res/ 2>/dev/null || true
+          grep -c -i -E "error|unhandled|uncaught|TypeError|ReferenceError" res/app.log > res/app-erros-contagem.txt || true
+
+      - name: Guardar
+        if: always()
+        run: |
+          mkdir pub && cp -r res/* pub/ 2>/dev/null || echo "sem resultados" > pub/vazio.txt
+          cd pub && git init -q -b auditoria-resultado
+          git config user.name "parou-dados"; git config user.email "actions@users.noreply.github.com"
+          git add -A && git commit -q -m "Auditoria ${{ inputs.ref }} $(date -u +%Y-%m-%dT%H:%MZ)" && git push -q -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" auditoria-resultado
