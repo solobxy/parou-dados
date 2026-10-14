@@ -220,6 +220,12 @@ async function parteCidades(browser, nome, motor, tema, custom) {
     if (u.searchParams.get('cidades') === 'porto') await new Promise((r) => setTimeout(r, 1800));
     return rt.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(respostaLinhas(u)) }).catch(() => {});
   });
+  // Quantas linhas tem cada cidade (no servidor de verdade vem da base; aqui é simulado)
+  await ctx.route('**/api/lines/cidades', (rt) => {
+    const c = {}; for (const x of ['lisboa','porto','braga','coimbra','aveiro','faro','setubal','leiria','viseu','evora','santarem','viana-do-castelo','vila-real','braganca','guarda','castelo-branco','portalegre','beja','funchal','ponta-delgada','maia','matosinhos','vila-nova-de-gaia','gondomar','valongo','povoa-de-varzim','vila-do-conde','espinho','guimaraes','vila-nova-de-famalicao','santa-maria-da-feira','amadora','sintra','cascais','oeiras','loures','odivelas','almada','seixal','barreiro','montijo','vila-franca-de-xira','figueira-da-foz','torres-vedras','caldas-da-rainha','portimao','albufeira','loule','lagos','olhao','covilha']) c[x] = 10;
+    c.porto = 265; c.lisboa = 370; c.viseu = 0; c['ponta-delgada'] = 0; c.beja = 1; c['vila-nova-de-famalicao'] = 64;
+    return rt.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ cidades: c }) });
+  });
   await ctx.route('**/api/dados-utilizador**', (rt) => rt.fulfill({ status: 200, contentType: 'application/json', body: '{}' }));
   const p = await ctx.newPage();
   const erros = [];
@@ -247,6 +253,16 @@ async function parteCidades(browser, nome, motor, tema, custom) {
     await chip().click();
     await p.waitForSelector(sheet, { timeout: 5000 });
     ok(`${rot}: seletor abre e lista cidades`, (await p.locator('[data-teste="cidade"]').count()) >= 40, await p.locator('[data-teste="cidade"]').count());
+    await p.waitForSelector('[data-teste="cidade-linhas"]', { timeout: 8000 }).catch(() => {});
+    const numPorto = await p.locator('[data-teste="cidade"][data-cidade="porto"]').innerText();
+    const numViseu = await p.locator('[data-teste="cidade"][data-cidade="viseu"]').innerText();
+    const numBeja = await p.locator('[data-teste="cidade"][data-cidade="beja"]').innerText();
+    ok(`${rot}: seletor mostra quantas linhas tem cada cidade`, /265 linhas/.test(numPorto), numPorto.replace(/\n/g, ' '));
+    ok(`${rot}: cidade sem linhas diz "sem linhas ainda"`, /sem linhas ainda/.test(numViseu), numViseu.replace(/\n/g, ' '));
+    ok(`${rot}: uma linha só diz "1 linha" (singular)`, /\b1 linha\b(?!s)/.test(numBeja), numBeja.replace(/\n/g, ' '));
+    // nenhuma linha da lista sai do ecrã nem corta o nome
+    const sobraLinhas = await p.evaluate(() => Array.from(document.querySelectorAll('[data-teste="cidade"]')).filter((b) => b.scrollWidth > b.clientWidth + 1).length);
+    ok(`${rot}: nenhuma linha do seletor transborda na largura`, sobraLinhas === 0, sobraLinhas);
     ok(`${rot}: seletor cabe no ecrã`, (await cabe(p, sheet)) === 'ok', await cabe(p, sheet));
     const alvoLinha = await p.locator('[data-teste="cidade"]').first().boundingBox();
     ok(`${rot}: cada cidade é um alvo de toque ≥ 44 px`, alvoLinha && alvoLinha.height >= 44, alvoLinha ? Math.round(alvoLinha.height) : '');
@@ -354,6 +370,15 @@ async function parteCidades(browser, nome, motor, tema, custom) {
     await p.locator('[data-teste="cidades-concluido"]').click();
     await p.waitForTimeout(900);
     ok(`${rot}: sem cidades volta "Cidades: todas" e o pedido sem filtro`, /Cidades: todas/.test(await chip().innerText()) && !ultimo().cidades, `${await chip().innerText()} ${JSON.stringify(ultimo())}`);
+
+    // Cidade sem linhas nos nossos dados: diz a verdade e deixa procurar em todo o país
+    await p.evaluate(() => localStorage.setItem('parou_cidades', JSON.stringify({ v: 1, s: ['viseu'] })));
+    await p.goto(`${BASE}/horarios`, { waitUntil: 'domcontentloaded' });
+    await p.waitForSelector('[data-teste="sem-linhas"]', { timeout: 20000 });
+    const vazio = await p.locator('[data-teste="sem-linhas"]').innerText();
+    ok(`${rot}: cidade sem linhas diz "Ainda não temos linhas de Viseu."`, /Ainda não temos linhas de Viseu/.test(vazio), vazio.replace(/\n/g, ' ').slice(0, 100));
+    ok(`${rot}: cidade sem linhas oferece "Procurar em todo o país"`, (await p.locator('[data-teste="procurar-todo-o-pais"]').count()) >= 1);
+    await foto(p, '7b_cidade_sem_linhas');
 
     // Favoritos: o mesmo botão e o mesmo seletor
     await p.evaluate(() => localStorage.setItem('parou_cidades', JSON.stringify({ v: 1, s: ['porto', 'braga'] })));
