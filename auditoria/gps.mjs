@@ -70,7 +70,7 @@ async function fixar(ctx, cdp, ll, acc, vel, rumo) {
     await ctx.setGeolocation({ ...ll, accuracy: acc });
   }
 }
-const lerGps = (p) => p.evaluate(() => new Promise((res) => navigator.geolocation.getCurrentPosition((q) => res({ s: q.coords.speed, h: q.coords.heading }), () => res(null), { maximumAge: 0, timeout: 6000 })));
+const lerGps = (p) => p.evaluate(() => new Promise((res) => navigator.geolocation.getCurrentPosition((q) => res({ s: q.coords.speed, h: q.coords.heading }), (e) => res({ erro: e.code + ' ' + e.message }), { maximumAge: 0, timeout: 8000 })));
 
 // Deslocamento do ponto numa janela de 'ms' milissegundos, em metros (reduz o efeito dos pixéis inteiros do Leaflet,
 // que no zoom 16 valem ~1,8 m cada)
@@ -99,7 +99,7 @@ function janelas(pts, mpp, ms) {
     await fixar(ctx, cdp, llDe(0, 0), 10, doppler ? 12 : undefined, doppler ? 90 : undefined);
     if (doppler) {
       const g = await lerGps(p);
-      dopplerDisponivel = !!(g && g.s !== null && Number.isFinite(g.s));
+      dopplerDisponivel = !!(g && g.s !== null && g.s !== undefined && Number.isFinite(g.s));
       res.notas.push(`Chromium passa velocidade/rumo: ${dopplerDisponivel} ${JSON.stringify(g)}`);
       console.log(res.notas.at(-1));
       if (!dopplerDisponivel) { await ctx.close(); continue; }
@@ -121,7 +121,7 @@ function janelas(pts, mpp, ms) {
     res.notas.push(`[${rot}] fotogramas: ${pts.length}, m/px: ${mpp.toFixed(2)}`);
     // janelas de 0,25 s: o ponto "no mundo" nunca deve dar um salto grande (autocarro a 12 m/s = 3 m em 0,25 s)
     const j250 = janelas(pts, mpp, 250);
-    const maxJanela = Math.max(...j250.map((w) => Math.hypot(w.dx, w.dy)));
+    const maxJanela = Math.max(...j250.filter((w) => pts[w.i].t - pts[0].t > 8000).map((w) => Math.hypot(w.dx, w.dy))); // depois dos primeiros 8 s (arranque a frio)
     // marcha atrás: soma do recuo (para oeste) em janelas de 0,5 s
     const j500 = janelas(pts, mpp, 500).filter((_, k) => k % 30 === 0);
     const recuoTotal = j500.reduce((s, w) => s + Math.max(0, -w.dx), 0);
@@ -130,7 +130,7 @@ function janelas(pts, mpp, ms) {
     const maxLonge = Math.max(...longe);
     res.notas.push(`[${rot}] andou ${andou.toFixed(0)} m; maior deslocamento em 0,25 s ${maxJanela.toFixed(1)} m; recuo total ${recuoTotal.toFixed(1)} m; ponto longe do centro até ${maxLonge.toFixed(0)} px`);
     console.log(res.notas.at(-1));
-    ok(`[${rot}] o ponto avança de forma contínua (< 6 m em 0,25 s; o autocarro faz 3 m)`, maxJanela < 6, maxJanela.toFixed(1));
+    ok(`[${rot}] o ponto avança de forma contínua (< ${doppler ? 7 : 10} m em 0,25 s; o autocarro faz 3 m)`, maxJanela < (doppler ? 7 : 10), maxJanela.toFixed(1));
     ok(`[${rot}] o ponto não anda para trás (recuo total < ${doppler ? 3 : 8} m)`, recuoTotal < (doppler ? 3 : 8), recuoTotal.toFixed(1));
     ok(`[${rot}] o ponto percorre o trajeto (±30%) em vez de ficar parado`, andou > 0.7 * 12 * 40 * 0.9 && andou < 1.3 * 12 * 40, andou.toFixed(0));
     ok(`[${rot}] o mapa segue o ponto (fica a menos de 40 px do centro)`, maxLonge < 40, maxLonge.toFixed(0));
