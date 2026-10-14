@@ -88,7 +88,7 @@ const cabe = async (p, seletor) => {
 // ============ Parte A: localização ============
 async function parteLocalizacao(browser, nome, motor, tema, custom) {
   const rot = `[${nome} ${tema}] localização`;
-  const foto = (p, s) => p.screenshot({ path: `${SAIDA}/${nome.replace(/[^\w]+/g, '_')}_${tema}_loc_${s}.png` }).catch(() => {});
+  const foto = (p, s) => p.screenshot({ path: `${SAIDA}/${nome.replace(/[^\w]+/g, '_')}_${tema}_loc_${s}.jpg`, type: 'jpeg', quality: 60, scale: 'css' }).catch(() => {});
 
   // A1) Convite para ativar (sem GPS): a nota está à vista e abre a janela
   {
@@ -207,7 +207,7 @@ async function parteLocalizacao(browser, nome, motor, tema, custom) {
 // ============ Parte B: as minhas cidades ============
 async function parteCidades(browser, nome, motor, tema, custom) {
   const rot = `[${nome} ${tema}] cidades`;
-  const foto = (p, s) => p.screenshot({ path: `${SAIDA}/${nome.replace(/[^\w]+/g, '_')}_${tema}_cid_${s}.png` }).catch(() => {});
+  const foto = (p, s) => p.screenshot({ path: `${SAIDA}/${nome.replace(/[^\w]+/g, '_')}_${tema}_cid_${s}.jpg`, type: 'jpeg', quality: 60, scale: 'css' }).catch(() => {});
   const ctx = await novoContexto(browser, nome, tema, custom, { gps: false });
   if (!ctx) return;
   const pedidos = [];
