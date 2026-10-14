@@ -1,0 +1,132 @@
+== / -> 200 0.002696s 20158B 
+<title>PAROU — Autocarros, metro e comboios perto de ti em tempo real</title>
+<meta name="description" content="Vê o que passa perto de ti em tempo real: autocarros da Carris Metropolitana, Carris e STCP, metro, comboios da CP e barcos. Horários dos principais operadores, greves e alertas. Grátis e sem anúncios."
+<link rel="canonical" href="https://parou.pt/"
+<meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1"
+== /linhas -> 200 0.671018s 25095B 
+<title>Linhas e horários de autocarros, metro e comboios em Portugal | PAROU</title>
+<meta name="description" content="Horários de autocarro, metro, comboio e barco em Portugal: Carris Metropolitana, Carris, Metro de Lisboa, CP, STCP, Metro do Porto e mais 21 operadores.…"
+<link rel="canonical" href="https://parou.pt/linhas"
+<meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1"
+== /linhas/stcp -> 200 0.004587s 46189B 
+<title>Horários STCP e tempo real: linhas e paragens | PAROU</title>
+<meta name="description" content="Horários das 71 linhas STCP (autocarro): partidas de dias úteis, sábados e domingos, percurso e paragens, com os próximos autocarros em tempo real."
+<link rel="canonical" href="https://parou.pt/linhas/stcp"
+<meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1"
+== /linhas/carris-metropolitana -> 200 0.007778s 253060B 
+<title>Horários Carris Metropolitana e tempo real: linhas e paragens | PAROU</title>
+<meta name="description" content="Horários das 717 linhas Carris Metropolitana (autocarro): partidas de dias úteis, sábados e domingos, percurso e paragens, com os próximos autocarros em…"
+<link rel="canonical" href="https://parou.pt/linhas/carris-metropolitana"
+<meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1"
+== /paragens/stcp -> 200 0.001760s 47050B 
+<title>Paragens STCP: horários e próximas partidas | PAROU</title>
+<meta name="description" content="Lista de todas as paragens STCP: próximas partidas, linhas e horários de cada paragem na PAROU."
+<link rel="canonical" href="https://parou.pt/paragens/stcp"
+<meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1"
+== /greves -> 200 0.005481s 23375B 
+<title>Greves de transportes hoje: metro, CP, Carris e STCP | PAROU</title>
+<meta name="description" content="Há greve hoje? Greves anunciadas no metro de Lisboa e do Porto, na CP e nos comboios, na Carris, na STCP, na Fertagus e noutros transportes, com datas,…"
+<link rel="canonical" href="https://parou.pt/greves"
+<meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1"
+== /pesquisa?q=801 -> 200 0.063034s 23221B 
+<title>Pesquisa: 801 | PAROU</title>
+<meta name="description" content="Pesquisa linhas e paragens de transportes públicos em Portugal."
+<link rel="canonical" href="https://parou.pt/pesquisa"
+<meta name="robots" content="noindex, follow"
+== /sitemap.xml -> 200 0.001078s 412B 
+== /sitemap-paginas.xml -> 200 0.001162s 11792B 
+== /isto-nao-existe -> 404 0.001807s 16723B 
+<title>Página não encontrada | PAROU</title>
+<meta name="description" content="Esta página não existe ou mudou de sítio."
+<link rel="canonical" href="https://parou.pt/"
+<meta name="robots" content="noindex, follow"
+== /transportes -> 200 0.001217s 18349B 
+<title>Horários de autocarros, metro e comboios em Portugal | PAROU</title>
+<meta name="description" content="Pesquisa qualquer linha de autocarro, metro, comboio ou barco em Portugal e vê os próximos horários e o tempo real: Carris Metropolitana, Carris, Metro, CP, STCP e mais."
+<link rel="canonical" href="https://parou.pt/transportes"
+<meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1"
+== /favoritos -> 200 0.001768s 16726B 
+<title>Os meus favoritos | PAROU</title>
+<meta name="description" content="As tuas linhas e paragens favoritas na PAROU."
+<link rel="canonical" href="https://parou.pt/favoritos"
+<meta name="robots" content="noindex, follow"
+== /linha/stcp:801 -> 301 0.001665s 76B http://127.0.0.1:3000/linhas/stcp/801-cordoaria-s-pedro-da-cova
+== /paragem/stcp:PSL1 -> 301 0.000820s 55B http://127.0.0.1:3000/paragens/stcp/passal
+== robots (parou.pt)
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /debug/
+Disallow: /pesquisa
+Disallow: /_estado
+Disallow: /*?reportId=
+
+Sitemap: https://parou.pt/sitemap.xml
+== sitemap-linhas (início)
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+<url><loc>https://parou.pt/linhas/carris-metropolitana</loc><lastmod>2026-10-13</lastmod><changefreq>weekly</changefreq><priority>0.8</priority></url>
+<url><loc>https://parou.pt/paragens/carris-metropolitana</loc><lastmod>2026-10-13</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url>
+<url><loc>https://parou.pt/paragens/carris-metropolitana?p=2</loc><lastmod>2026-10-13</lastmod><changefreq>weekly</changefreq><priority>0.3</priority></url>
+<url><loc>https://parou.pt/paragens/carris-metropolitana?p=3</loc><lastmod>2026-10-13</lastmod><changefreq>weekly</changefreq><priority>0.3</priority></url>
+<url><loc>https://parou.pt/paragens/carris-metropolitana?p=4</loc><lastmod>2026-10-13</lastmod><changefreq>weekly</changefreq><priority>0.3</priority></url>
+<url><loc>https://parou.pt/paragens/carris-metropolitana?p=5</loc><lastmod>2026-10-13</lastmod><changefreq>weekly</changefreq><priority>0.3</priority></url>
+<url><loc>https://parou.pt/paragens/carris-metropolitana?p=6</loc><lastmod>2026-10-13</lastmod><changefreq>weekly</changefreq><priority>0.3</priority></url>
+<url><loc>https://parou.pt/paragens/carris-metropolitana?p=7</loc><lastmod>2026-10-13</lastmod><changefreq>weekly</changefreq><priority>0.3</priority></url>
+<url><loc>https://parou.pt/paragens/carris-metropolitana?p=8</loc><lastmod>2026-10-13</lastmod><changefreq>weekly</changefreq><priority>0.3</priority></ur
+== contagem de endereços
+2959
+28608
+yes: standard output: Broken pipe
+yes: standard output: Broken pipe
+== amostra (25 linhas + 25 paragens)
+200 0.543193s /linhas/carris-metropolitana/3706-charneca-de-caparica-lisboa-sete-rios-via-feijo
+200 0.021363s /linhas/mobiave/263-fradelos-igreja-famalicao-estacao-rodoviaria-via-vilarinho-das
+200 0.003145s /linhas/unir/1214-o-azemeis-escola-soares-basto-fajoes-via-gandara
+200 0.089229s /linhas/tub-braga/80-sete-fontes-espirito-santo
+200 0.486573s /linhas/carris-metropolitana/1521-alges-estacao-agualva-cacem-estacao-via-a5
+200 0.502978s /linhas/carris-metropolitana/2804-mafra-lisboa-campo-grande-via-a8
+200 0.001248s /paragens/stcp?p=4
+200 0.625542s /linhas/carris-metropolitana/1218-agualva-cacem-estacao-mira-sintra-mercado-via-av-bomb-vol
+200 0.001208s /paragens/carris-metropolitana?p=24
+200 0.587672s /linhas/carris-metropolitana/1509-amadora-hospital-casal-de-cambra-c-saude
+200 0.631465s /linhas/carris-metropolitana/1232-rio-de-mouro-estacao-sul-circular-via-mem-martins
+200 0.001462s /linhas/unir/9901-cais-da-afurada-cais-do-ouro
+200 0.005739s /linhas/guimabus/173-s-torcato-eb23-ataes-via-gominhaes
+200 0.005086s /linhas/carris/10b-campo-cebolas-circulacao-graca
+200 0.004761s /linhas/smtuc/50t-manutencao-sargento-mor-via-souselas-9
+200 0.001142s /linhas/apanha-me/7-linha-verde-nocturna
+200 0.005751s /linhas/smtuc/27f-praca-da-republica-bairro-do-ingote-via-bairro-do-brinca-5
+200 0.039635s /linhas/carris/729-cc-ajuda-r-gen-joao-almeida-polo-universitario-ajuda-iscsp
+200 0.060355s /linhas/carris/26b-parque-nacoes-norte-parque-nacoes-sul
+200 0.592742s /linhas/carris-metropolitana/1209-bairro-da-felosa-mira-sintra-mercado-via-cemiterio
+200 0.003421s /linhas/horarios-do-funchal/05a-zona-velha-cidade-pontinha-no-do-lido
+200 0.005256s /linhas/smtuc/221-ecovia-linha-vermelha-estacao-coimbra-b-hospitais-da-universidade-2
+200 0.001881s /linhas/unir/2001-lazaro-lourosa-fiaes-interface-via-esc-de-escariz
+200 0.003626s /linhas/tcb-barreiro/14-terminal-casquilhos
+200 0.012480s /linhas/stcp/901-trindade-valadares
+200 0.917937s /paragens/apanha-me/vilamoura-centro
+200 0.741785s /paragens/carris-metropolitana/av-torrado-silva-hospital-g-orta
+200 0.022498s /paragens/unir/arcos
+200 3.507870s /paragens/carris-metropolitana/estr-de-mem-martins-221
+200 1.253747s /paragens/mobicascais/aldi-manique
+200 1.380902s /paragens/carris-metropolitana/cabeco-da-flauta-sbsr
+200 0.323637s /paragens/unir/real-nojoes-2
+200 1.274445s /paragens/guimabus/cemiterio-da-atouguia
+200 0.847120s /paragens/cp/bifurcacao-de-lares
+200 0.337467s /paragens/unir/rua-das-fabricas
+200 3.828260s /paragens/carris-metropolitana/bairro-fitares
+200 3.502493s /paragens/carris-metropolitana/av-tomas-ribeiro-63
+200 0.423497s /paragens/carris-metropolitana/aiana-cemiterio
+200 0.462477s /paragens/smtuc/rua-marnoco-e-sousa-penedo-da-saudade
+200 3.503221s /paragens/carris-metropolitana/a-da-beja-fonte-sta
+200 1.842758s /paragens/smtuc/marco-dos-pereiros-centro
+200 0.001901s /paragens/unir/s-caetano-2
+200 0.001707s /paragens/unir/quartel-militar
+200 0.381563s /paragens/carris-metropolitana/em536-1-210-pq-vale-rosa
+200 3.517298s /paragens/carris-metropolitana/av-chaby-pinheiro-31-atrium
+200 3.503621s /paragens/carris-metropolitana/r-vieira-silva-x-av-miradouro
+200 3.503161s /paragens/carris-metropolitana/av-cel-linhares-lima-3-adega-colares
+200 0.976377s /paragens/tub-braga/santo-andre-iii-p-industrial
+200 3.502950s /paragens/carris-metropolitana/cotovia-231-semaforos
+200 3.502923s /paragens/carris-metropolitana/casal-sto-antonio-r-do-povo

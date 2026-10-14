@@ -1,0 +1,2 @@
+sem erros de tipos nesses ficheiros
+total de linhas de erro no projeto: 0
