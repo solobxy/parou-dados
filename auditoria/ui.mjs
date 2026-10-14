@@ -15,7 +15,7 @@ const PUBL = ['/sobre', '/privacidade', '/termos', '/contactar', '/apagar-conta'
 const lerLote = (a, n) => a.slice(0, n);
 
 const initTpl = (tema, idioma) => `
-try{localStorage.setItem('parou_tema','${tema}');localStorage.setItem('parou_aviso_instalar','1');localStorage.setItem('parou_idioma','${idioma}');}catch(e){}
+try{localStorage.setItem('parou_tema','${tema}');localStorage.setItem('parou_aviso_instalar','1');localStorage.setItem('parou_bemvindo','visto');localStorage.setItem('parou_idioma','${idioma}');}catch(e){}
 try{document.cookie='parou_idioma=${idioma};path=/;max-age=3600';}catch(e){}
 window.__lcp=0;window.__cls=0;
 try{new PerformanceObserver(function(l){for(var e of l.getEntries())window.__lcp=e.startTime}).observe({type:'largest-contentful-paint',buffered:true})}catch(e){}

@@ -52,7 +52,7 @@ const FONTES = '<link href="https://fonts.googleapis.com/css2?family=Barlow:wght
   for (const e of ECRAS) {
     const ctx = await browser.newContext({ ...tel, ...e.geo });
     await ctx.addInitScript((t) => {
-      try { localStorage.setItem('parou_aviso_instalar', '1'); if (t) localStorage.setItem('parou_tema', t); } catch {}
+      try { localStorage.setItem('parou_aviso_instalar', '1'); localStorage.setItem('parou_bemvindo', 'visto'); if (t) localStorage.setItem('parou_tema', t); } catch {}
     }, e.tema || null);
     if (preparar) await preparar(ctx);
     const p = await ctx.newPage();
