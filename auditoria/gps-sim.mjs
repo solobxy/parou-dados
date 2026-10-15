@@ -70,7 +70,7 @@ function filtroAntigo(prev, lat, lon, acc, t, velMs) {
   return { lat: prev.lat + (lat - prev.lat) * k, lon: prev.lon + (lon - prev.lon) * k, variancia: (1 - k) * variancia, t };
 }
 
-function cenario(semente, { ruido = 1, saltos = 1, tunel = false, semDoppler = false, pe = false } = {}) {
+function cenario(semente, { ruido = 1, saltos = 1, tunel = false, semDoppler = false, pe = false, accBase = 5 } = {}) {
   const r = rng(semente);
   const pts = trajeto(pe);
   const T = pts[pts.length - 1].t;
@@ -83,7 +83,7 @@ function cenario(semente, { ruido = 1, saltos = 1, tunel = false, semDoppler = f
     by = f * by + Math.sqrt(1 - f * f) * 5 * ruido * gauss(r);
     if (saltoRest <= 0 && r() < 0.012 * saltos) { saltoRest = 2 + Math.floor(r() * 3); const ang = r() * 6.283, mag = 40 + r() * 60; sx = Math.cos(ang) * mag; sy = Math.sin(ang) * mag; }
     let ex = bx + 2.5 * ruido * gauss(r), ey = by + 2.5 * ruido * gauss(r);
-    let accRep = 5 + Math.abs(gauss(r)) * 4;
+    let accRep = accBase + Math.abs(gauss(r)) * 4;
     if (saltoRest > 0) { ex += sx; ey += sy; saltoRest--; if (r() < 0.5) accRep = 8 + r() * 30; }
     const p = verdade(pts, t);
     if (tunel && t >= 70 && t < 95) { ex = (r() - 0.5) * 900; ey = (r() - 0.5) * 900; accRep = 300 + r() * 500; }
@@ -106,6 +106,7 @@ function correr(semente, opcoes) {
   const { pts, leituras, T } = cenario(semente, opcoes);
   const t0 = 1_700_000_000_000; // época arbitrária
   const novo = new FiltroGps();
+  novo.aparelho = (opcoes && opcoes.aparelho) || null;
   if (process.env.AJ) Object.assign(novo.ajustes, JSON.parse(process.env.AJ));
   const desl = new Deslizador();
   let ant = null;
@@ -196,3 +197,91 @@ if (!so || so === 'tunel') resumo('túnel', { ruido: 1, saltos: 1, tunel: true }
 if (!so || so === 'pe') resumo('a pé', { ruido: 1, saltos: 1, pe: true });
 if (!so || so === 'peurbano') resumo('a pé, rua estreita (erro 2×)', { ruido: 2, saltos: 2, pe: true });
 if (!so || so === 'pesemdop') resumo('a pé, sem Doppler', { ruido: 1.3, saltos: 1, pe: true, semDoppler: true });
+if (!so || so === 'pefraco') resumo('a pé, GPS fraco sem Doppler (precisão 22–30 m), acelerómetro: a andar', { ruido: 3, saltos: 1, pe: true, semDoppler: true, accBase: 22, aparelho: 'a-andar' });
+if (!so || so === 'busfraco') resumo('autocarro, GPS fraco sem Doppler (precisão 22–30 m), sem acelerómetro', { ruido: 3, saltos: 1, semDoppler: true, accBase: 22 });
+if (!so || so === 'busfraco') resumo('PIOR CASO: autocarro, GPS fraco sem Doppler, telemóvel quieto na mão', { ruido: 3, saltos: 1, semDoppler: true, accBase: 22, aparelho: 'parado' });
+
+// ── Dentro de casa / rua estreita: pessoa PARADA, GPS fraco (Wi-Fi e antenas). Mede se o ponto "anda" sozinho. ──
+// Erro lento e correlacionado (multipath), grupos de leituras desviadas 60–150 m durante 5–25 s,
+// leituras "por rede" muito fora (precisão declarada 200–1500 m) e precisão declarada quase sempre otimista.
+function parado(semente, { gps = 1, doppler = 'nenhum', durMin = 10 } = {}) {
+  const r = rng(semente);
+  const t0 = 1_700_000_000_000;
+  const f = Math.exp(-1 / 60);
+  let bx = 0, by = 0, saltoRest = 0, sx = 0, sy = 0;
+  const leituras = [];
+  for (let t = 1; t < durMin * 60; t += 1) {
+    if (r() < 0.04) continue; // falha de leitura
+    bx = f * bx + Math.sqrt(1 - f * f) * 14 * gps * gauss(r);
+    by = f * by + Math.sqrt(1 - f * f) * 14 * gps * gauss(r);
+    if (saltoRest <= 0 && r() < 0.008 * gps) { saltoRest = 5 + Math.floor(r() * 20); const a = r() * 6.283, m = 60 + r() * 90; sx = Math.cos(a) * m; sy = Math.sin(a) * m; }
+    let ex = bx + 5 * gauss(r), ey = by + 5 * gauss(r);
+    let acc = 15 + Math.abs(gauss(r)) * 22;
+    if (saltoRest > 0) { ex += sx; ey += sy; saltoRest--; }
+    if (r() < 0.02) { const a = r() * 6.283, m = 150 + r() * 650; ex += Math.cos(a) * m; ey += Math.sin(a) * m; acc = 200 + r() * 1300; }
+    const llm = toLL(ex, ey);
+    const atraso = 0.3 + r() * 1.0;
+    let velocidade = null, rumo = null;
+    if (doppler === 'zero') { velocidade = r() < 0.7 ? 0 : null; }
+    leituras.push({ tFix: t, chegada: t + atraso, lat: llm.lat, lon: llm.lon, acc: Math.round(acc), velocidade, rumo });
+  }
+  return { leituras, T: durMin * 60, t0 };
+}
+
+function correrParado(semente, opcoes) {
+  const { leituras, T, t0 } = parado(semente, opcoes);
+  const f = new FiltroGps();
+  f.aparelho = opcoes.aparelho ?? null;
+  if (process.env.AJ) Object.assign(f.ajustes, JSON.parse(process.env.AJ));
+  const d = new Deslizador();
+  let i = 0, ant = null, caminho = 0, rapido = 0, nF = 0, maxSalto = 0;
+  const pts = [];
+  const dtF = 1 / 60;
+  const m = (p) => ({ x: (p.lon - LON0) * M * COS, y: (p.lat - LAT0) * M });
+  for (let t = 0; t < T; t += dtF) {
+    while (i < leituras.length && leituras[i].chegada <= t) {
+      const l = leituras[i++];
+      f.atualizar({ lat: l.lat, lon: l.lon, precisao: l.acc, t: t0 + l.tFix * 1000, chegada: t0 + l.chegada * 1000, velocidade: l.velocidade, rumo: l.rumo }, t0 + l.chegada * 1000);
+    }
+    const est = f.estimarEm(t0 + t * 1000);
+    if (!est) continue;
+    d.passo(dtF, est);
+    const p = m({ lat: d.lat, lon: d.lon });
+    if (t > 30) { // depois de 30 s de arranque
+      pts.push(p);
+      if (ant) { const passo = Math.hypot(p.x - ant.x, p.y - ant.y); caminho += passo; maxSalto = Math.max(maxSalto, passo); if (passo / dtF > 0.5) rapido++; nF++; }
+    }
+    ant = p;
+  }
+  const mx = pts.reduce((s, p) => s + p.x, 0) / pts.length, my = pts.reduce((s, p) => s + p.y, 0) / pts.length;
+  const erro = pts.map((p) => Math.hypot(p.x, p.y)).sort((a, b) => a - b);
+  return {
+    erroRmse: Math.sqrt(erro.reduce((s, e) => s + e * e, 0) / erro.length),
+    erro95: erro[Math.floor(0.95 * erro.length)],
+    erroMax: erro[erro.length - 1],
+    caminhoM: caminho,
+    rapidoPct: 100 * rapido / nF,
+    maxSalto,
+    disp: Math.sqrt(pts.reduce((s, p) => s + (p.x - mx) ** 2 + (p.y - my) ** 2, 0) / pts.length),
+  };
+}
+
+function resumoParado(titulo, opcoes) {
+  const runs = [];
+  for (let s = 1; s <= 12; s++) runs.push(correrParado(s * 7919, opcoes));
+  const med = (k) => runs.reduce((a, r) => a + r[k], 0) / runs.length;
+  console.log(`\n== ${titulo} (pessoa parada ${opcoes.durMin ?? 10} min, média de ${runs.length}) ==`);
+  console.log('erro do ponto vs sítio real (RMSE)'.padEnd(46), med('erroRmse').toFixed(1).padStart(7), 'm');
+  console.log('erro do ponto (95%)'.padEnd(46), med('erro95').toFixed(1).padStart(7), 'm');
+  console.log('pior erro do ponto'.padEnd(46), med('erroMax').toFixed(1).padStart(7), 'm');
+  console.log('caminho percorrido pelo ponto (devia ser ~0)'.padEnd(46), med('caminhoM').toFixed(0).padStart(7), 'm');
+  console.log('tempo a andar a mais de 0,5 m/s'.padEnd(46), med('rapidoPct').toFixed(1).padStart(7), '%');
+  console.log('maior salto num só fotograma'.padEnd(46), med('maxSalto').toFixed(2).padStart(7), 'm');
+}
+if (!so || so === 'interior') {
+  resumoParado('Interior, sem velocidade do GPS, sem acelerómetro', { gps: 1, doppler: 'nenhum' });
+  resumoParado('Interior, sem velocidade do GPS, telemóvel quieto', { gps: 1, doppler: 'nenhum', aparelho: 'parado' });
+  resumoParado('Interior, velocidade 0 dada em 70% das leituras, telemóvel quieto', { gps: 1, doppler: 'zero', aparelho: 'parado' });
+  resumoParado('Interior mau (erro 1,8×), telemóvel quieto', { gps: 1.8, doppler: 'nenhum', aparelho: 'parado' });
+}
+export { cenario, trajeto, verdade, toLL, rng, gauss };
