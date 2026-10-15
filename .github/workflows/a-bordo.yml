@@ -162,6 +162,14 @@ jobs:
           SAIDA=../res timeout 300 node post-imagem.mjs 2>&1 | tee ../res/post-imagem.txt | tail -50
           exit ${PIPESTATUS[0]}
 
+      - name: Testar que a bola do autocarro vai em cima de mim quando estou a bordo (browser)
+        continue-on-error: true
+        working-directory: auditoria
+        run: |
+          mkdir -p ../res
+          SAIDA=../res timeout 400 node a-bordo-segue.mjs 2>&1 | tee ../res/a-bordo-segue.txt | tail -40
+          exit ${PIPESTATUS[0]}
+
       - name: Guardar
         if: always()
         run: |
