@@ -54,7 +54,9 @@ jobs:
           fi
 
       - name: Testar o construtor (desenhos dos percursos)
-        run: python auditoria/test_formas.py
+        run: |
+          python auditoria/test_formas.py
+          python auditoria/test_estradas.py
 
       - name: Construir a base de dados
         run: python construir_dados.py

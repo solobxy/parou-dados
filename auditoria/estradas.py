@@ -32,6 +32,7 @@ JANELA = 50             # paragens por pedido (com 1 de sobreposição)
 RAZAO_MAX_PAR = 3.0     # uma volta destas entre duas paragens seguidas é absurda
 EXCESSO_MIN_M = 800     # (e só conta se passar de tudo isto metros além da linha reta)
 FRACAO_MIN_BOA = 0.6    # sequências com menos pares bem encaixados ficam sem desenho
+SIGMA_M = 40            # incerteza que se dá ao OSRM sobre onde a paragem está (ele procura até 3× isto à volta)
 
 
 def haversine(a, b):
@@ -75,6 +76,52 @@ def mais_perto(base, lat, lon):
             return round(json.loads(r.read())["waypoints"][0]["distance"])
     except Exception:  # noqa: BLE001
         return None
+
+
+def osrm_match(base, pontos, sigma=None):
+    """Pede ao OSRM que case a sequência de paragens com a estrada/carril (escolhe, para todas as paragens em conjunto, os pontos
+    que dão o caminho mais coerente: assim as duas vias de um metro, ou os dois lados de uma rua, não se misturam).
+    Devolve a resposta (dict com "code"); em caso de falha, {"code": "Erro", "message": ...}."""
+    sigma = sigma or SIGMA_M
+    coords = ";".join(f"{lon:.6f},{lat:.6f}" for lat, lon in pontos)
+    raios = ";".join(str(sigma) for _ in pontos)
+    url = (f"{base}/match/v1/driving/{coords}?overview=full&geometries=polyline6&steps=false&annotations=false"
+           f"&gaps=ignore&tidy=false&radiuses={raios}")
+    try:
+        with urllib.request.urlopen(url, timeout=120) as r:
+            return json.loads(r.read())
+    except urllib.error.HTTPError as e:
+        try:
+            return json.loads(e.read())
+        except Exception:  # noqa: BLE001
+            return {"code": "Erro", "message": f"HTTP {e.code}"}
+    except Exception as e:  # noqa: BLE001
+        return {"code": "Erro", "message": str(e)[:120]}
+
+
+def fracao_encaixada(linha, pontos, raio_m):
+    """Fração das paragens que ficam a menos de `raio_m` metros do desenho (é o que a app exige para aceitar o desenho)."""
+    if len(linha) < 2 or not pontos:
+        return 0.0
+    perto = 0
+    for (lat, lon) in pontos:
+        k = math.cos(math.radians(lat)) * 111320.0
+        m = 110540.0
+        melhor = 1e12
+        for i in range(len(linha) - 1):
+            ax, ay = (linha[i][1] - lon) * k, (linha[i][0] - lat) * m
+            bx, by = (linha[i + 1][1] - lon) * k, (linha[i + 1][0] - lat) * m
+            if min(ax, bx) > raio_m or max(ax, bx) < -raio_m or min(ay, by) > raio_m or max(ay, by) < -raio_m:
+                continue
+            dx, dy = bx - ax, by - ay
+            L = dx * dx + dy * dy
+            t = 0.0 if L == 0 else max(0.0, min(1.0, -(ax * dx + ay * dy) / L))
+            d = math.hypot(ax + t * dx, ay + t * dy)
+            if d < melhor:
+                melhor = d
+        if melhor <= raio_m:
+            perto += 1
+    return perto / len(pontos)
 
 
 def rota_com_janelas(base, pontos):
@@ -150,6 +197,61 @@ def desenhar_sequencia(base, pontos, nomes=None, eventos=None):
     return codificar_polilinha(simplificar(linha, 1.5), 6), fracao, razao
 
 
+def desenhar_por_match(base, pontos, nomes=None, eventos=None):
+    """Como desenhar_sequencia, mas com o «match» do OSRM: escolhe de uma vez o caminho de toda a sequência.
+    Paragem que não casa com nenhuma estrada/carril, ou troço sem ligação, ou volta absurda: esses pares ficam a direito."""
+    n = len(pontos)
+    nomes = nomes or [str(i) for i in range(n)]
+    eventos = eventos if eventos is not None else []
+    if n < 2:
+        return None
+    bom = [False] * (n - 1)
+
+    def resolver(ini, fim, profundidade=0):
+        if fim - ini < 1:
+            return []
+        dados = osrm_match(base, pontos[ini:fim + 1])
+        if dados.get("code") != "Ok" or not dados.get("matchings"):
+            eventos.append({"tipo": "sem_match", "paragem": f"{nomes[ini]} … {nomes[fim]}", "codigo": dados.get("code"), "mensagem": str(dados.get("message", ""))[:80]})
+            return []
+        tps, ms = dados.get("tracepoints") or [], dados["matchings"]
+        por_troco = {}
+        for k, t in enumerate(tps):
+            if t is None:
+                eventos.append({"tipo": "sem_match", "paragem": nomes[ini + k], "mais_perto_m": mais_perto(base, *pontos[ini + k])})
+                continue
+            por_troco.setdefault(t["matchings_index"], []).append((t["waypoint_index"], ini + k))
+        for m_i in sorted(por_troco):
+            lista = sorted(por_troco[m_i])
+            for (w, a), (_, b) in zip(lista, lista[1:]):
+                d = ms[m_i]["legs"][w]["distance"]
+                reta = haversine(pontos[a], pontos[b])
+                if reta > 0 and d > RAZAO_MAX_PAR * reta and d - reta > EXCESSO_MIN_M and profundidade < 12:
+                    eventos.append({"tipo": "volta_absurda", "de": nomes[a], "para": nomes[b], "reta_m": round(reta), "rota_m": round(d)})
+                    return resolver(ini, a, profundidade + 1) + resolver(b, fim, profundidade + 1)
+        troços = []
+        for m_i in sorted(por_troco):
+            lista = sorted(por_troco[m_i])
+            for (_, a), (_, b) in zip(lista, lista[1:]):
+                if b == a + 1:
+                    bom[a] = True
+            troços.append(descodificar_polilinha(ms[m_i]["geometry"], 6))
+        return troços
+
+    troços = resolver(0, n - 1)
+    if not troços:
+        return None
+    fracao = sum(bom) / (n - 1)
+    if fracao < FRACAO_MIN_BOA:
+        return None
+    linha = [p for t in troços for p in t]
+    if len(linha) < 2:
+        return None
+    reta = sum(haversine(pontos[k], pontos[k + 1]) for k in range(n - 1))
+    razao = comprimento(linha) / reta if reta > 0 else 1.0
+    return codificar_polilinha(simplificar(linha, 1.5), 6), fracao, razao
+
+
 def sequencias_unir(conn, limite=None):
     cur = conn.execute(
         "SELECT sr.route_id, sr.direction_id, sr.stop_id, s.stop_lat, s.stop_lon, s.stop_name FROM stop_routes sr JOIN stops s ON s.stop_id = sr.stop_id "
@@ -186,23 +288,26 @@ def limitar(lista, limite):
     return [lista[int(i * passo)] for i in range(limite)]
 
 
-def correr(nome, base, sequencias, relatorio, caminhos):
+def correr(nome, base, sequencias, relatorio, caminhos, modo="route", metricas=False):
     t0 = time.time()
     feitas = 0
     sem = 0
-    fracoes, razoes = [], []
+    fracoes, razoes, encaixes = [], [], []
     motivos, exemplos = {}, []
+    desenhar = desenhar_por_match if modo == "match" else desenhar_sequencia
 
     def um(seq):
         eventos = []
-        res = desenhar_sequencia(base, [(s[1], s[2]) for s in seq], [s[3] if len(s) > 3 else s[0] for s in seq], eventos)
-        return chave_padrao([s[0] for s in seq]), res, eventos
+        pontos = [(s[1], s[2]) for s in seq]
+        res = desenhar(base, pontos, [s[3] if len(s) > 3 else s[0] for s in seq], eventos)
+        enc = fracao_encaixada(descodificar_polilinha(res[0], 6), pontos, 80) if (metricas and res) else None
+        return chave_padrao([s[0] for s in seq]), res, eventos, enc
 
     with concurrent.futures.ThreadPoolExecutor(max_workers=8) as ex:
-        for chave, res, eventos in ex.map(um, sequencias):
+        for chave, res, eventos, enc in ex.map(um, sequencias):
             for e in eventos:
                 motivos[e["tipo"]] = motivos.get(e["tipo"], 0) + 1
-                if len(exemplos) < 30:
+                if sum(1 for x in exemplos if x["tipo"] == e["tipo"]) < 8:
                     exemplos.append(e)
             if res is None:
                 sem += 1
@@ -211,13 +316,16 @@ def correr(nome, base, sequencias, relatorio, caminhos):
             feitas += 1
             fracoes.append(res[1])
             razoes.append(res[2])
+            if enc is not None:
+                encaixes.append(enc)
     razoes.sort()
     relatorio[nome] = {
         "sequencias": len(sequencias), "desenhadas": feitas, "sem_desenho": sem,
         "fracao_media_pares_bons": round(sum(fracoes) / len(fracoes), 3) if fracoes else None,
         "razao_mediana": round(razoes[len(razoes) // 2], 3) if razoes else None,
         "razao_p95": round(razoes[int(len(razoes) * 0.95)], 3) if razoes else None,
-        "motivos": motivos, "exemplos": exemplos,
+        "paragens_a_menos_de_80m": round(sum(encaixes) / len(encaixes), 3) if encaixes else None,
+        "modo": modo, "motivos": motivos, "exemplos": exemplos,
         "segundos": round(time.time() - t0, 1),
     }
     print(f"{nome}: {json.dumps(relatorio[nome], ensure_ascii=False)}", flush=True)
@@ -231,15 +339,17 @@ def main():
     ap.add_argument("--saida", required=True)
     ap.add_argument("--limite", type=int, default=0, help="só uma amostra de N sequências por grupo (sonda)")
     ap.add_argument("--carris", default="cp,metro_porto,metro_lisboa", help="operadores desenhados pelo carril")
+    ap.add_argument("--modo", choices=["route", "match"], default="route", help="como pedir ao OSRM: route (paragem a paragem) ou match (sequência inteira)")
+    ap.add_argument("--metricas", action="store_true", help="mede também quantas paragens ficam a menos de 80 m do desenho (mais lento; para ensaios)")
     args = ap.parse_args()
 
     conn = sqlite3.connect(f"file:{args.db}?mode=ro", uri=True)
     caminhos, relatorio = {}, {}
     if args.carro:
-        correr("unir", args.carro, sequencias_unir(conn, args.limite), relatorio, caminhos)
+        correr("unir", args.carro, sequencias_unir(conn, args.limite), relatorio, caminhos, args.modo, args.metricas)
     if args.comboio:
         for feed in [f for f in args.carris.split(",") if f]:
-            correr(feed, args.comboio, sequencias_viagens(conn, [feed], args.limite), relatorio, caminhos)
+            correr(feed, args.comboio, sequencias_viagens(conn, [feed], args.limite), relatorio, caminhos, args.modo, args.metricas)
     saida = {"versao": 1, "criado": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()), "caminhos": caminhos, "relatorio": relatorio,
              "carris": [f for f in args.carris.split(",") if f] if args.comboio else []}
     with gzip.open(args.saida, "wt", encoding="utf-8") as f:
