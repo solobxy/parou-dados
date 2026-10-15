@@ -1,0 +1,31 @@
+name: Medir os desenhos dos percursos (shapes) dos operadores
+
+# Descarrega os horários oficiais (GTFS) de cada operador e mede se trazem o desenho do percurso (shapes.txt)
+# e se esse desenho segue as paragens. Resultado no ramo "formas-resultado" (formas-feeds.txt/json).
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  formas:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Medir
+        run: |
+          mkdir -p res
+          python auditoria/formas-feeds.py 2>&1 | tee res/formas-log.txt
+      - name: Guardar o resultado
+        if: always()
+        run: |
+          mkdir -p pub && cp -r res/* pub/ 2>/dev/null || echo "sem resultados" > pub/vazio.txt
+          cd pub && git init -q -b formas-resultado
+          git config user.name "parou-dados"; git config user.email "actions@users.noreply.github.com"
+          git add -A && git commit -q -m "Formas $(date -u +%Y-%m-%dT%H:%MZ)" && git push -q -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" formas-resultado
