@@ -1,6 +1,6 @@
 name: Teste dos autocarros em direto, do «A bordo» e dos temas
 
-# Compila a app (solobxy/parou), verifica os tipos, corre o teste do detetor «Está a bordo do …?» e, num browser simulado (Chromium e WebKit),
+# Compila a app (solobxy/parou), verifica os tipos, corre o teste do detetor «Está a bordo do …?», a leitura dos dados da TUB (Braga) e, num browser simulado (Chromium e WebKit),
 # um mundo simulado: autocarro + GPS a andar juntos, a pé, «Não», «Não perguntar mais», tocar num autocarro, e os 4 temas em 320/390/1280 px.
 # Resultado (capturas, resultado.json, erros de tipos) no ramo "a-bordo-resultado".
 
@@ -10,7 +10,7 @@ on:
       ref:
         description: "Commit ou ramo de solobxy/parou"
         required: false
-        default: "auditoria"
+        default: "tub"
       rapido:
         description: "1 = só temas e tamanhos (sem as simulações longas)"
         required: false
@@ -51,6 +51,18 @@ jobs:
         run: |
           mkdir -p ../res
           APP=$PWD node --import tsx ../auditoria/a-bordo-detetor.mjs 2>&1 | tee ../res/detetor.txt | tail -60
+
+      - name: Teste da leitura da TUB (ficheiros reais da TUB e testes montados à mão)
+        continue-on-error: true
+        working-directory: app
+        run: |
+          mkdir -p ../res/tub-real
+          curl -s -m 30 -o ../res/tub-real/vehicle_positions.pb https://mobibus-gateway.fleetaware.pt/gtfs-rt/feed/vehicle_positions.pb || true
+          curl -s -m 30 -o ../res/tub-real/trip_updates.pb https://mobibus-gateway.fleetaware.pt/gtfs-rt/feed/trip_updates.pb || true
+          ls -l ../res/tub-real
+          REAIS=""
+          if [ -s ../res/tub-real/vehicle_positions.pb ] && [ -s ../res/tub-real/trip_updates.pb ]; then REAIS="$(cd ../res/tub-real && pwd)"; fi
+          FICHEIROS_TUB="$REAIS" APP=$PWD node --import tsx ../auditoria/tub-leitor.mjs 2>&1 | tee ../res/tub-leitor.txt | tail -90
 
       - name: Arrancar a app
         working-directory: app
