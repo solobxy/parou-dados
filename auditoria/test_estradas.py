@@ -105,6 +105,40 @@ ok("[métrica] paragens em cima do desenho: todas encaixam", es.fracao_encaixada
 longe = [(LAT + 0.01, LON0 + i * 0.0083) for i in range(6)]          # ~1,1 km ao lado
 ok("[métrica] paragens a 1 km do desenho: nenhuma encaixa", es.fracao_encaixada(linha, longe, 80) == 0.0)
 
+# --- 9. métrica com uma linha reta muito comprida (2 km entre vértices): as paragens a meio encaixam
+reta_longa = [(LAT, LON0), (LAT, LON0 + 0.0083 * 3)]
+meio = [(LAT + 0.0003, LON0 + 0.0083 * 1.5), (LAT - 0.0004, LON0 + 0.0083 * 2.4)]     # ~33 m e ~44 m ao lado, a meio do segmento
+ok("[métrica] paragens a meio de um segmento muito comprido encaixam", es.fracao_encaixada(reta_longa, meio, 80) == 1.0)
+fora_de_ponta = [(LAT, LON0 - 0.02)]                                                  # ~1,7 km antes do início
+ok("[métrica] paragem muito antes do início não encaixa", es.fracao_encaixada(reta_longa, fora_de_ponta, 80) == 0.0)
+
+# --- 10. «melhor»: corre os dois modos e fica com o que desenha mais paragens e mais pares bons
+def com(route, match):
+    es.desenhar_sequencia = lambda base, pontos, nomes=None, eventos=None: route
+    es.desenhar_por_match = lambda base, pontos, nomes=None, eventos=None: match
+LINHA_TODA = codificar_polilinha(PARAGENS, 6)
+LINHA_METADE = codificar_polilinha(PARAGENS[:3], 6)            # só passa por 3 das 6 paragens
+r_bom = (LINHA_TODA, 1.0, 1.1)
+r_meio = (LINHA_METADE, 1.0, 1.1)
+com(r_meio, r_bom)
+ok("[melhor] fica com o que passa por mais paragens (match)", es.desenhar_melhor("x", PARAGENS, NOMES, []) == r_bom)
+com(r_bom, r_meio)
+ok("[melhor] fica com o que passa por mais paragens (route)", es.desenhar_melhor("x", PARAGENS, NOMES, []) == r_bom)
+com(None, r_bom)
+ok("[melhor] se um falha, serve o outro (match)", es.desenhar_melhor("x", PARAGENS, NOMES, []) == r_bom)
+com(r_bom, None)
+ok("[melhor] se um falha, serve o outro (route)", es.desenhar_melhor("x", PARAGENS, NOMES, []) == r_bom)
+com(None, None)
+ok("[melhor] se os dois falham, sem desenho (nunca se inventa)", es.desenhar_melhor("x", PARAGENS, NOMES, []) is None)
+r_a = (LINHA_TODA, 0.6, 1.1)
+r_b = (LINHA_TODA, 1.0, 1.1)
+com(r_a, r_b)
+ok("[melhor] com as mesmas paragens, ganha o que tem mais pares bem ligados", es.desenhar_melhor("x", PARAGENS, NOMES, []) == r_b)
+com((LINHA_TODA, 1.0, 1.1), (LINHA_TODA, 1.0, 1.1))
+ev = []
+es.desenhar_melhor("x", PARAGENS, NOMES, ev)
+ok("[melhor] fica registado qual dos modos ganhou", any(str(e.get("tipo", "")).startswith("escolhido_") for e in ev), str(ev))
+
 print()
 if falhas:
     print(f"{falhas} testes falharam")
