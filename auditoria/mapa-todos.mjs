@@ -49,7 +49,6 @@ const PARAGEM = {
   activeAlerts: [],
 };
 
-let zoomVisto = null;
 async function abrir(browser) {
   const ctx = await browser.newContext({
     viewport: { width: 390, height: 780 }, hasTouch: true, isMobile: true, locale: 'pt-PT', timezoneId: 'Europe/Lisbon', permissions: ['geolocation'],
@@ -57,11 +56,7 @@ async function abrir(browser) {
     userAgent: 'Mozilla/5.0 (Linux; Android 14; Pixel 7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Mobile Safari/537.36',
   });
   await ctx.addInitScript({ content: `try{ Object.defineProperty(Navigator.prototype,'webdriver',{get:()=>false,configurable:true}); localStorage.removeItem('parou_tema'); localStorage.setItem('parou_aviso_instalar','1'); localStorage.setItem('parou_bemvindo','visto'); localStorage.setItem('parou_localizacao_ok','1'); }catch(e){}` });
-  await ctx.route(/(tile|openstreetmap|arcgisonline|cartocdn|basemaps)\./i, (rt) => {
-    const m = /\/(\d{1,2})\/\d+\/\d+\.png/.exec(rt.request().url());
-    if (m) zoomVisto = Number(m[1]);
-    return rt.fulfill({ status: 200, contentType: 'image/png', body: PNG });
-  });
+  await ctx.route(/(tile|openstreetmap|arcgisonline|cartocdn|basemaps)\./i, (rt) => rt.fulfill({ status: 200, contentType: 'image/png', body: PNG }));
   await ctx.route('**/api/transit/nearby**', (rt) => rt.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ stops: [PARAGEM], vehicles: [], alerts: [], radiusMeters: 500, timestamp: new Date().toISOString() }) }));
   await ctx.route('**/api/transit/stop/**', (rt) => rt.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ departures: [] }) }));
   // O servidor simulado: filtra como o verdadeiro (caixa e/ou linhas) e recusa caixas com mais de 0,6° de lado
@@ -70,13 +65,13 @@ async function abrir(browser) {
     const linhas = (u.searchParams.get('linhas') || '').split(',').filter(Boolean);
     const cx = (u.searchParams.get('caixa') || '').split(',').map(Number);
     const temCaixa = cx.length === 4 && cx.every(Number.isFinite);
-    mundo.pedidos.push({ t: Date.now(), linhas, caixa: temCaixa ? { sul: cx[0], oeste: cx[1], norte: cx[2], leste: cx[3] } : null, zoom: zoomVisto });
+    mundo.pedidos.push({ t: Date.now(), linhas, caixa: temCaixa ? { sul: cx[0], oeste: cx[1], norte: cx[2], leste: cx[3] } : null, origem: rt.request().headers()['x-parou-origem'] || null });
     if (!linhas.length && !temCaixa) return rt.fulfill({ status: 400, contentType: 'application/json', body: '{"error":"Indica as linhas ou uma caixa do mapa."}' });
     if (temCaixa && (cx[2] - cx[0] > 0.6 + 1e-6 || cx[3] - cx[1] > 0.6 + 1e-6)) { mundo.grandes += 1; return rt.fulfill({ status: 400, contentType: 'application/json', body: '{"error":"Caixa grande demais"}' }); }
     const agora = Math.floor(Date.now() / 1000);
     let lista = mundo.veiculos;
     if (temCaixa) lista = lista.filter((v) => v.lat >= cx[0] && v.lat <= cx[2] && v.lon >= cx[1] && v.lon <= cx[3]);
-    if (linhas.length) lista = lista.filter((v) => linhas.includes(`${v.op}:${v.linha}`.toUpperCase()));
+    if (linhas.length) { const quer = linhas.map((l) => l.toLowerCase()); lista = lista.filter((v) => quer.includes(`${v.op}:${v.linha}`.toLowerCase())); }
     const corpo = lista.map((v) => ({ id: v.id, op: v.op, linha: v.linha, lat: v.lat, lon: v.lon, t: agora - 10 }));
     return rt.fulfill({ status: 200, contentType: 'application/json', headers: { 'cache-control': 'no-store' }, body: JSON.stringify({ veiculos: corpo, agora }) });
   });
@@ -125,6 +120,17 @@ async function arrastar(cdp, p, de, para) {
   await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
 }
 
+/** Nível de zoom efetivo, medido no ecrã: distância em px entre os dois autocarros à vista mais afastados, contra a distância real em metros */
+function zoomMedido(lido) {
+  const v = lido.pinos.filter((x) => x.dentro).map((x) => ({ x, v: mundo.veiculos.find((w) => w.linha === x.txt) })).filter((a) => a.v);
+  let melhor = null;
+  for (let i = 0; i < v.length; i++) for (let j = i + 1; j < v.length; j++) {
+    const m = Math.hypot(v[i].v.x - v[j].v.x, v[i].v.y - v[j].v.y);
+    if (m >= 150 && (!melhor || m > melhor.m)) melhor = { m, px: Math.hypot(v[i].x.cx - v[j].x.cx, v[i].x.cy - v[j].x.cy) };
+  }
+  if (!melhor) return null;
+  return Math.round(Math.log2(156543.03392 * Math.cos(LAT0 * Math.PI / 180) * (melhor.px / melhor.m)));
+}
 const visiveis = (lido) => lido.pinos.filter((x) => x.dentro);
 const mapaNaImagem = (lido, z, lat0, lon0) => (v) => { const [dx, dy] = projetar(v.lat, v.lon, z, lat0, lon0); return [lido.rect.l + lido.rect.w / 2 + dx, lido.rect.t + lido.rect.h / 2 + dy]; };
 
@@ -136,10 +142,11 @@ async function correr(browser) {
     await p.waitForSelector('.bus-pin__num', { timeout: 30000 });
     await p.waitForTimeout(3000);
     let lido = await p.evaluate(LER);
-    const z0 = zoomVisto;
+    const z0 = zoomMedido(lido);
     nota(`mapa ao nível ${z0}; ecrã do mapa ${Math.round(lido.rect.w)}×${Math.round(lido.rect.h)} px; ${lido.pinos.length} marcadores desenhados`);
     const vis = visiveis(lido).map((x) => x.txt);
     const faltam = ESPERADOS_INICIO.filter((l) => !vis.includes(l));
+    ok('[ao abrir] o mapa está ao nível de zoom 16 (medido no ecrã)', z0 === 16, String(z0));
     ok('[ao abrir] todos os autocarros do ecrã estão no mapa (16: as duas linhas da paragem e 14 de outras linhas)', faltam.length === 0, faltam.length ? `faltam ${faltam.length}: ${faltam.join(' ')}` : `${vis.length} à vista`);
     const demais = vis.filter((l) => !ESPERADOS_INICIO.includes(l));
     ok('[ao abrir] e nenhum a mais (os que estão fora do ecrã não aparecem à vista)', demais.length === 0, demais.join(' '));
@@ -181,11 +188,11 @@ async function correr(browser) {
     let lido = await p2.evaluate(LER);
     const cx = lido.rect.l + lido.rect.w / 2, cy = lido.rect.t + lido.rect.h / 2;
     await p2.mouse.move(cx, cy);
-    const z0 = zoomVisto;
+    const z0 = zoomMedido(lido);
     await p2.mouse.wheel(0, 300); // ~3 níveis para longe
     await p2.waitForTimeout(3500);
-    const z1 = zoomVisto;
     lido = await p2.evaluate(LER);
+    const z1 = zoomMedido(lido);
     nota(`zoom ${z0} → ${z1}; ${lido.pinos.length} marcadores; pontos: ${lido.ponto}`);
     ok('[afastar] o mapa afastou-se (pelo menos 2 níveis)', z0 !== null && z1 !== null && z0 - z1 >= 2, `${z0} → ${z1}`);
     const aImagem = mapaNaImagem(lido, z1, LAT0, LON0);
@@ -203,10 +210,10 @@ async function correr(browser) {
 
     // mais longe ainda: até aparecer o aviso (máx. 6 voltas)
     const grandesAntes = mundo.grandes;
-    let zf = z1;
-    for (let i = 0; i < 6 && !(await p2.evaluate(LER)).dicaVisivel; i++) { await p2.mouse.wheel(0, 100); await p2.waitForTimeout(2200); zf = zoomVisto; }
+    let voltas = 0;
+    for (; voltas < 6 && !(await p2.evaluate(LER)).dicaVisivel; voltas++) { await p2.mouse.wheel(0, 100); await p2.waitForTimeout(2200); }
     lido = await p2.evaluate(LER);
-    nota(`zoom ${zf}; aviso visível: ${lido.dicaVisivel}; marcadores: ${lido.pinos.length}`);
+    nota(`depois de ${voltas} voltas na roda: aviso visível: ${lido.dicaVisivel}; marcadores: ${lido.pinos.length}`);
     ok('[muito longe] com o mapa muito afastado aparece o aviso para aproximar', lido.dicaVisivel && /aproxima/i.test(lido.dicaTexto || ''), lido.dicaTexto || 'sem aviso');
     ok('[muito longe] e não fica nenhum autocarro desenhado', lido.pinos.length === 0, `${lido.pinos.length} marcadores`);
     ok('[muito longe] a app nunca pediu uma caixa maior do que o servidor aceita', mundo.grandes === grandesAntes && mundo.grandes === 0, `${mundo.grandes} pedidos recusados`);
@@ -215,7 +222,7 @@ async function correr(browser) {
     await p2.mouse.wheel(0, -600);
     await p2.waitForTimeout(3500);
     lido = await p2.evaluate(LER);
-    ok('[aproximar] ao aproximar outra vez o aviso desaparece e os autocarros voltam', !lido.dicaVisivel && lido.pinos.length > 0, `${lido.pinos.length} marcadores, zoom ${zoomVisto}`);
+    ok('[aproximar] ao aproximar outra vez o aviso desaparece e os autocarros voltam', !lido.dicaVisivel && lido.pinos.length > 0, `${lido.pinos.length} marcadores, zoom ${zoomMedido(lido)}`);
     ok('[tudo] sem erros de consola', b.erros.length === 0, b.erros.slice(0, 2).join(' | '));
   } catch (e) {
     ok('[afastar] correu sem exceções', false, String(e).slice(0, 300));
