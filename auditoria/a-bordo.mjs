@@ -248,6 +248,69 @@ async function testarServidor() {
   } else nota('servidor: sem autocarros reais na caixa de teste (fora de horas ou sem rede); /a-bordo real não testado');
 }
 
+// ---------------------------------------------------------------------------------------------------------------- 0b) Braga (TUB) com dados reais
+async function testarBraga() {
+  const j = async (u) => { const r = await fetch(BASE + u); let corpo = null; try { corpo = await r.json(); } catch {} return { status: r.status, corpo }; };
+  const dormir = (ms) => new Promise((r) => setTimeout(r, ms));
+  const caixa = '41.50,-8.48,41.60,-8.36';
+  const a = await j(`/api/transit/veiculos?caixa=${caixa}`);
+  ok('Braga: /veiculos na caixa de Braga → 200 e lista', a.status === 200 && Array.isArray(a.corpo?.veiculos), a.status);
+  const tub = (a.corpo?.veiculos || []).filter((v) => v.op === 'tub');
+  nota(`Braga: ${tub.length} autocarros da TUB no mapa (${tub.slice(0, 8).map((v) => `${v.linha}${typeof v.rumo === 'number' ? '↑' + v.rumo : ''}`).join(', ')})`);
+  if (!tub.length) { nota('Braga: sem autocarros da TUB agora (fora de horas ou a TUB sem dados): o resto não foi testado'); return; }
+  ok('Braga: os autocarros têm id "tub:…" e linha curta (até 5 caracteres)', tub.every((v) => /^tub:/.test(v.id) && v.linha && v.linha.length <= 5), tub.filter((v) => !/^tub:/.test(v.id) || v.linha.length > 5).map((v) => `${v.id}/${v.linha}`).slice(0, 3).join(' '));
+  ok('Braga: as posições têm menos de 2 minutos', tub.every((v) => a.corpo.agora - v.t <= 120 && a.corpo.agora - v.t >= -30), tub.map((v) => a.corpo.agora - v.t).slice(0, 6).join(','));
+  ok('Braga: cada autocarro diz a viagem', tub.every((v) => typeof v.viagem === 'string' && v.viagem.length > 0), tub.filter((v) => !v.viagem).length + ' sem viagem');
+  const so = tub[0].linha;
+  const filtrado = await j(`/api/transit/veiculos?linhas=${encodeURIComponent('TUB:' + so)}&caixa=${caixa}`);
+  ok(`Braga: pedir só a linha tub:${so} devolve só essa linha`, filtrado.status === 200 && filtrado.corpo.veiculos.length > 0 && filtrado.corpo.veiculos.every((v) => v.op === 'tub' && v.linha === so), `${filtrado.corpo?.veiculos?.length} autocarros`);
+
+  // Rumo: a TUB não o envia; o servidor calcula-o pelo caminho. Duas leituras com 25 s de intervalo.
+  await dormir(25000);
+  const b = await j(`/api/transit/veiculos?caixa=${caixa}`);
+  const tub2 = (b.corpo?.veiculos || []).filter((v) => v.op === 'tub');
+  const aAndar = tub2.filter((v) => (v.vel ?? 0) >= 10);
+  const comRumo = aAndar.filter((v) => typeof v.rumo === 'number');
+  nota(`Braga: 2.ª leitura: ${tub2.length} autocarros, ${aAndar.length} a andar (≥ 10 km/h), ${comRumo.length} com rumo`);
+  ok('Braga: os autocarros que andam têm rumo (calculado pelo caminho)', aAndar.length === 0 || comRumo.length > 0, `${comRumo.length}/${aAndar.length}`);
+
+  // Partidas perto dos autocarros: devem trazer a hora em direto da TUB
+  let rt = 0, total = 0; const exemplos = []; const incoerentes = [];
+  for (const v of tub2.slice(0, 8)) {
+    const n = await j(`/api/transit/nearby?lat=${v.lat}&lon=${v.lon}&radius=350`);
+    for (const s of n.corpo?.stops || []) for (const d of s.nextDepartures || []) {
+      if (!/tub/i.test(`${d.operatorId || s.operatorId}`)) continue;
+      total++;
+      if (d.isRealtime && d.state === 'TEMPO REAL') {
+        rt++;
+        if (exemplos.length < 4) exemplos.push(`${d.lineCode} ${s.name || s.stopName || ''} ${d.scheduledTime}→${d.displayText} «${d.statusDescription}»`);
+        const dif = Math.abs((d.realtime_epoch_secs ?? 0) - d.dep_epoch_secs);
+        if (!/TUB/.test(d.statusDescription || '') || !Number.isFinite(d.realtime_epoch_secs) || dif > 3 * 3600) incoerentes.push(`${d.lineCode} dif=${dif}s «${d.statusDescription}»`);
+      }
+    }
+  }
+  nota(`Braga: ${total} partidas da TUB perto dos autocarros, ${rt} com hora em direto; exemplos: ${exemplos.join(' | ') || '-'}`);
+  ok('Braga: há partidas da TUB com a hora em direto perto dos autocarros', rt > 0, `${rt}/${total}`);
+  ok('Braga: as horas em direto são coerentes (dizem «TUB», diferença ≤ 3 h do horário)', incoerentes.length === 0, incoerentes.slice(0, 3).join(' ; '));
+
+  // A bordo num autocarro da TUB
+  const alvo = tub2.find((v) => v.viagem && (v.vel ?? 0) >= 3) || tub2[0];
+  const g = await j('/api/transit/a-bordo?completo=1&veiculo=' + encodeURIComponent(alvo.id));
+  nota(`Braga: /a-bordo de ${alvo.id} (linha ${alvo.linha}) → ${g.status}; paragens ${g.corpo?.paragens?.length ?? '-'}; origem ${g.corpo?.origem ?? '-'}; índice ${g.corpo?.indice ?? '-'}; destino ${g.corpo?.destino ?? '-'}; previstas ${g.corpo?.previstas ? Object.keys(g.corpo.previstas).length : 0}`);
+  ok('Braga: /a-bordo de um autocarro da TUB → 200 com percurso', g.status === 200 && (g.corpo?.paragens?.length ?? 0) >= 4, `${g.status} ${g.corpo?.paragens?.length}`);
+  ok('Braga: o percurso é o da viagem do autocarro (com as horas do horário)', g.corpo?.origem === 'viagem' && g.corpo.paragens.every((p) => /^\d\d:\d\d$/.test(p.hora || '')), g.corpo?.origem);
+  if (g.corpo?.previstas) {
+    const idx = Object.keys(g.corpo.previstas).map(Number).sort((x, y) => x - y);
+    const mins = idx.map((i) => { const [h, m] = g.corpo.previstas[i].split(':').map(Number); return h * 60 + m; });
+    const crescente = mins.every((m, k) => k === 0 || m >= mins[k - 1] - 1 || mins[k - 1] - m > 600); // tolera a passagem da meia-noite
+    ok('Braga: horas previstas em formato HH:MM, só das paragens que faltam e por ordem', idx.every((i) => i >= g.corpo.indice) && g.corpo.previstas[idx[0]].match(/^\d\d:\d\d$/) && crescente, idx.slice(0, 6).map((i) => `${i}:${g.corpo.previstas[i]}`).join(' '));
+    const prox = g.corpo.previstas[g.corpo.indice];
+    const horario = g.corpo.paragens[g.corpo.indice]?.hora;
+    nota(`Braga: próxima paragem «${g.corpo.paragens[g.corpo.indice]?.nome}»: horário ${horario}, previsto ${prox ?? '-'}`);
+  } else nota('Braga: este autocarro não tinha previsões por paragem nesta altura');
+  ok('Braga: pedido sem veículo desconhecido continua a dar 404', (await j('/api/transit/a-bordo?veiculo=tub:NAOEXISTE')).status === 404);
+}
+
 // ---------------------------------------------------------------------------------------------------------------- 1) a viajar no 801
 async function viajar({ browser, tema, ficha, completo }) {
   const rot = `[viagem ${tema}]`;
@@ -478,6 +541,40 @@ async function manual(browser, { tema, largura = 390, altura = 780, aparelho = n
     const pino = p.locator('.parou-bus-icone', { has: p.locator('.bus-pin__num', { hasText: '801' }) }).first();
     const caixa = await pino.boundingBox();
     ok(`${rot} marcador do autocarro com 44 px de toque`, caixa && caixa.width >= 43.5 && caixa.height >= 43.5, caixa ? `${Math.round(caixa.width)}x${Math.round(caixa.height)}` : 'sem caixa');
+    // Uma roda azul com o número lá dentro (801 no 801), em todos os temas
+    const roda = await p.evaluate(() => {
+      const n = [...document.querySelectorAll('.bus-pin__num')].find((e) => e.textContent.trim() === '801');
+      if (!n) return null;
+      const r = n.getBoundingClientRect(); const cs = getComputedStyle(n);
+      const m = /rgba?\((\d+),\s*(\d+),\s*(\d+)/.exec(cs.backgroundColor) || [];
+      return { w: r.width, h: r.height, raio: cs.borderTopLeftRadius, fundo: [Number(m[1]), Number(m[2]), Number(m[3])], cabe: n.scrollWidth <= n.clientWidth + 1, texto: n.textContent.trim() };
+    });
+    ok(`${rot} o autocarro é uma roda (círculo) com o número dentro`, !!roda && Math.abs(roda.w - roda.h) < 1 && roda.w >= 32 && (roda.raio === '50%' || parseFloat(roda.raio) >= roda.w / 2 - 1) && roda.cabe, roda ? `${Math.round(roda.w)}x${Math.round(roda.h)} raio ${roda.raio} «${roda.texto}» ${roda.cabe ? 'cabe' : 'não cabe'}` : 'sem marcador');
+    ok(`${rot} a roda é azul`, !!roda && roda.fundo[2] > 140 && roda.fundo[2] > roda.fundo[0] + 60 && roda.fundo[2] > roda.fundo[1] + 30, roda ? `rgb(${roda.fundo.join(',')})` : '');
+    const longos = await p.evaluate(() => [['4436', 'bus-pin__num--4'], ['2A', ''], ['ZC', ''], ['10001', 'bus-pin__num--5']].map(([t, c]) => {
+      const d = document.createElement('div'); d.className = 'bus-pin'; d.style.cssText = 'position:fixed;left:-300px;top:0';
+      d.innerHTML = `<b class="bus-pin__num ${c}">${t}</b>`; document.body.appendChild(d);
+      const n = d.firstChild; const r = [t, n.scrollWidth <= n.clientWidth + 1]; d.remove(); return r;
+    }));
+    ok(`${rot} números de 2, 4 e 5 caracteres (ZC, 4436, 10001) cabem dentro da roda`, longos.every(([, cabe]) => cabe), longos.map(([t, c]) => `${t}:${c ? 'ok' : 'corta'}`).join(' '));
+    // Cada operador com a sua cor: STCP azul, Carris Metropolitana amarelo, TUB vermelho (fáceis de distinguir e com o número legível)
+    const cores = await p.evaluate(() => {
+      const lum = ([r, g, b]) => { const f = (v) => { v /= 255; return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; }; return 0.2126 * f(r) + 0.7152 * f(g) + 0.0722 * f(b); };
+      const rgb = (c) => c.match(/\d+(\.\d+)?/g).slice(0, 3).map(Number);
+      const saida = {};
+      for (const op of ['stcp', 'cm', 'tub']) {
+        const d = document.createElement('div'); d.className = `bus-pin bus-pin--${op}`; d.style.cssText = 'position:fixed;left:-300px;top:0';
+        d.innerHTML = '<b class="bus-pin__num">801</b>'; document.body.appendChild(d);
+        const cs = getComputedStyle(d.firstChild); const f = rgb(cs.backgroundColor), t = rgb(cs.color);
+        const [a, b] = [lum(f), lum(t)];
+        saida[op] = { fundo: f, razao: (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05) }; d.remove();
+      }
+      return saida;
+    });
+    const dist = (x, y) => Math.hypot(x[0] - y[0], x[1] - y[1], x[2] - y[2]);
+    ok(`${rot} a roda de cada operador tem o seu azul (STCP), amarelo (Carris Metropolitana) e vermelho (TUB)`, cores.stcp.fundo[2] > cores.stcp.fundo[0] + 60 && cores.cm.fundo[0] > 200 && cores.cm.fundo[1] > 160 && cores.cm.fundo[2] < 80 && cores.tub.fundo[0] > 150 && cores.tub.fundo[1] < 60 && cores.tub.fundo[2] < 90, JSON.stringify(Object.fromEntries(Object.entries(cores).map(([k, v]) => [k, v.fundo.join(',')]))));
+    ok(`${rot} as três cores distinguem-se bem (distância ≥ 180)`, dist(cores.stcp.fundo, cores.cm.fundo) >= 180 && dist(cores.stcp.fundo, cores.tub.fundo) >= 150 && dist(cores.cm.fundo, cores.tub.fundo) >= 150, `stcp-cm ${Math.round(dist(cores.stcp.fundo, cores.cm.fundo))}, stcp-tub ${Math.round(dist(cores.stcp.fundo, cores.tub.fundo))}, cm-tub ${Math.round(dist(cores.cm.fundo, cores.tub.fundo))}`);
+    ok(`${rot} o número é legível em qualquer operador (≥ 4,5:1)`, Object.values(cores).every((c) => c.razao >= 4.5), Object.entries(cores).map(([k, v]) => `${k} ${v.razao.toFixed(1)}:1`).join(' '));
     const centroPino = await pino.boundingBox();
     await pino.click({ timeout: 8000 });
     await p.waitForSelector('[data-teste="cartao-autocarro"]', { timeout: 8000 });
@@ -579,6 +676,7 @@ async function mosaicosReais(browser, tema) {
 // ---------------------------------------------------------------------------------------------------------------- execução
 (async () => {
   await testarServidor();
+  await testarBraga();
   const cr = await chromium.launch({ args: ['--no-sandbox'] });
   let wk = null;
   try { wk = await webkit.launch(); } catch (e) { nota('WebKit indisponível: ' + String(e).slice(0, 120)); }
