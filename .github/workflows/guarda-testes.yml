@@ -72,3 +72,7 @@ jobs:
       - name: Movimento dos autocarros (suave, sem teleportes)
         working-directory: app
         run: APP=$PWD node --import tsx ../auditoria/trajeto-veiculo.mjs 2>&1 | grep -v "Experimental\|trace-warnings" | tail -90; exit ${PIPESTATUS[0]}
+
+      - name: Autocarros no ecrã (todos os da zona que se vê)
+        working-directory: app
+        run: APP=$PWD node --import tsx ../auditoria/veiculos-no-ecra.mjs 2>&1 | grep -v "Experimental\|trace-warnings" | tail -60; exit ${PIPESTATUS[0]}
