@@ -15,6 +15,10 @@ on:
         description: "1 = só temas e tamanhos (sem as simulações longas)"
         required: false
         default: "0"
+      resultado:
+        description: "Ramo onde guardar o resultado (vazio = a-bordo-resultado; outro nome permite corridas em paralelo)"
+        required: false
+        default: ""
       dados:
         description: "Endereço dos dados (vazio = os de sempre; dados-teste = https://github.com/solobxy/parou-dados/releases/download/dados-teste)"
         required: false
@@ -175,10 +179,12 @@ jobs:
 
       - name: Guardar
         if: always()
+        env:
+          RAMO_RESULTADO: ${{ inputs.resultado || 'a-bordo-resultado' }}
         run: |
           cp tipos.txt res/ 2>/dev/null || true
           tail -80 app/app.log > res/servidor.txt 2>/dev/null || true
           mkdir -p pub && cp -r res/* pub/ 2>/dev/null || echo "sem resultados" > pub/vazio.txt
-          cd pub && git init -q -b a-bordo-resultado
+          cd pub && git init -q -b "${RAMO_RESULTADO}"
           git config user.name "parou-dados"; git config user.email "actions@users.noreply.github.com"
-          git add -A && git commit -q -m "A bordo ${{ inputs.ref }} $(date -u +%Y-%m-%dT%H:%MZ)" && git push -q -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" a-bordo-resultado
+          git add -A && git commit -q -m "A bordo ${{ inputs.ref }} $(date -u +%Y-%m-%dT%H:%MZ)" && git push -q -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" "${RAMO_RESULTADO}"
