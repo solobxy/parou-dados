@@ -168,6 +168,23 @@ const mediana = (v) => { const s = [...v].sort((a, b) => a - b); return s.length
     for (let i = 0; i < 6; i++) { await gps(); await espera(500); const m = await p.evaluate(MEDIR); if (!m.erro) depois.push(m.px); await espera(500); }
     ok('[GPS fraco] quando o GPS volta ao normal a bola volta a seguir a pessoa', depois.length >= 4 && mediana(depois) <= 3, `mediana ${mediana(depois).toFixed(1)} px`);
 
+    // Longe do autocarro: a pessoa fica a 900 m dele (parada, com bom GPS) com o autocarro marcado como «meu».
+    // É o que acontece a quem toca em «Estou a bordo» em casa, por teste ou por engano. A bola não pode saltar para o ponto da pessoa
+    // e ficar lá parada: tem de continuar a andar onde o operador diz que o autocarro vai.
+    const x0 = xBus(Date.now());
+    const longe = async () => { const pos = ll(x0 + bx, 904 + by); await fixar(ctx, p, pos.lat, pos.lon, 7, 0, null); };
+    for (let i = 0; i < 12; i++) { await longe(); await espera(1000); }       // o filtro do GPS leva uns segundos a aceitar o salto
+    const dLonge = [];
+    for (let i = 0; i < 10; i++) { await longe(); await espera(500); const m = await p.evaluate(MEDIR); if (!m.erro) dLonge.push(m); await espera(500); }
+    nota(`longe: distância ao ponto (px) ${dLonge.map((m) => Math.round(m.px)).join(' ')}; dx ${dLonge.map((m) => Math.round(m.dx)).join(' ')}`);
+    ok('[longe] a 900 m do autocarro a bola não salta para o ponto da pessoa (mediana > 30 px)', dLonge.length >= 6 && mediana(dLonge.map((m) => m.px)) > 30, dLonge.length ? `mediana ${mediana(dLonge.map((m) => m.px)).toFixed(1)} px` : 'sem medidas');
+    ok('[longe] e continua a andar com o autocarro, não fica parada (anda ≥ 3 px em 10 s)', dLonge.length >= 6 && Math.abs(dLonge[dLonge.length - 1].dx - dLonge[0].dx) >= 3, dLonge.length ? `dx ${dLonge[0].dx.toFixed(1)} → ${dLonge[dLonge.length - 1].dx.toFixed(1)} px` : 'sem medidas');
+    // A pessoa volta ao autocarro: a bola volta a ir em cima dela
+    for (let i = 0; i < 12; i++) { await gps(); await espera(1000); }
+    const volta = [];
+    for (let i = 0; i < 6; i++) { await gps(); await espera(500); const m = await p.evaluate(MEDIR); if (!m.erro) volta.push(m.px); await espera(500); }
+    ok('[longe] ao voltar ao autocarro a bola volta a ir em cima da pessoa', volta.length >= 4 && mediana(volta) <= 3, volta.length ? `mediana ${mediana(volta).toFixed(1)} px` : 'sem medidas');
+
     // Já saí: a bola deixa de seguir a pessoa (já não vai lá dentro) e fica na posição do operador
     await p.locator('[data-teste="a-bordo-sair"]').click();
     await p.waitForTimeout(500);
