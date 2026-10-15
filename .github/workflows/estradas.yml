@@ -20,6 +20,10 @@ on:
         description: "1 = publicar na release desenhos (0 = só o relatório)"
         required: false
         default: "1"
+      modo:
+        description: "route = paragem a paragem; match = sequência inteira (escolhe a via certa); ambos = ensaio que compara (não publica)"
+        required: false
+        default: "match"
 
 permissions:
   contents: write
@@ -37,36 +41,58 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Mapa de Portugal (Geofabrik) e dados de hoje
+      - name: Dados de hoje
         run: |
-          mkdir -p osrm-carro osrm-carris
-          curl -fL --retry 3 --retry-delay 10 -o portugal.osm.pbf https://download.geofabrik.de/europe/portugal-latest.osm.pbf
-          ls -l portugal.osm.pbf
           curl -fL --retry 3 --retry-delay 10 -o gtfs.db.gz https://github.com/solobxy/parou-dados/releases/download/dados/gtfs.db.gz
           gunzip -f gtfs.db.gz
           ls -l gtfs.db
 
+      - name: Semana
+        id: semana
+        run: echo "s=$(date -u +%G-%V)" >> "$GITHUB_OUTPUT"
+
+      # O mapa muda pouco: guarda-se o OSRM já preparado durante a semana (poupa uns 8 minutos em cada ensaio)
+      - name: Mapas já preparados
+        id: cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            osrm-carro
+            osrm-carris
+          key: osrm-v2-${{ hashFiles('osrm/comboio.lua') }}-${{ steps.semana.outputs.s }}
+
+      - name: Mapa de Portugal (Geofabrik)
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: |
+          mkdir -p osrm-carro osrm-carris
+          curl -fL --retry 3 --retry-delay 10 -o portugal.osm.pbf https://download.geofabrik.de/europe/portugal-latest.osm.pbf
+          ls -l portugal.osm.pbf
+
       - name: Preparar o OSRM das estradas
+        if: steps.cache.outputs.cache-hit != 'true'
         run: |
           cp portugal.osm.pbf osrm-carro/mapa.osm.pbf
           docker run --rm -v "$PWD/osrm-carro:/data" $OSRM osrm-extract -p /opt/car.lua /data/mapa.osm.pbf
           docker run --rm -v "$PWD/osrm-carro:/data" $OSRM osrm-partition /data/mapa.osrm
           docker run --rm -v "$PWD/osrm-carro:/data" $OSRM osrm-customize /data/mapa.osrm
+          rm -f osrm-carro/mapa.osm.pbf
           ls -l osrm-carro | head
 
       - name: Preparar o OSRM dos carris
+        if: steps.cache.outputs.cache-hit != 'true'
         run: |
           cp portugal.osm.pbf osrm-carris/mapa.osm.pbf
           cp osrm/comboio.lua osrm-carris/comboio.lua
           docker run --rm -v "$PWD/osrm-carris:/data" $OSRM osrm-extract -p /data/comboio.lua /data/mapa.osm.pbf
           docker run --rm -v "$PWD/osrm-carris:/data" $OSRM osrm-partition /data/mapa.osrm
           docker run --rm -v "$PWD/osrm-carris:/data" $OSRM osrm-customize /data/mapa.osrm
+          rm -f osrm-carris/mapa.osm.pbf
           ls -l osrm-carris | head
 
       - name: Arrancar os dois servidores
         run: |
           docker run -d --name carro  -p 5000:5000 -v "$PWD/osrm-carro:/data"  $OSRM osrm-routed --algorithm mld --max-viaroute-size 1000 --max-matching-size 1000 /data/mapa.osrm
-          docker run -d --name carris -p 5001:5001 -v "$PWD/osrm-carris:/data" $OSRM osrm-routed --algorithm mld --max-viaroute-size 1000 -p 5001 /data/mapa.osrm
+          docker run -d --name carris -p 5001:5001 -v "$PWD/osrm-carris:/data" $OSRM osrm-routed --algorithm mld --max-viaroute-size 1000 --max-matching-size 1000 -p 5001 /data/mapa.osrm
           for porta in 5000 5001; do
             for i in $(seq 1 60); do
               curl -s -m 5 "http://127.0.0.1:$porta/route/v1/driving/-8.6110,41.1496;-8.6090,41.1500?overview=false" | grep -q '"code"' && break
@@ -80,16 +106,25 @@ jobs:
         run: |
           mkdir -p res
           LIMITE="${{ inputs.limite || '0' }}"
-          python3 auditoria/estradas.py --db gtfs.db --carro http://127.0.0.1:5000 --comboio http://127.0.0.1:5001 --saida desenhos-extra.json.gz --limite "$LIMITE" 2>&1 | tee res/estradas.txt
-          python3 - <<'PY' >> res/estradas.txt
-          import gzip, json
-          d = json.load(gzip.open("desenhos-extra.json.gz", "rt"))
-          print(json.dumps(d["relatorio"], indent=1, ensure_ascii=False))
-          PY
-          cp desenhos-extra.json.gz res/ || true
+          MODO="${{ inputs.modo || 'match' }}"
+          METRICAS=""
+          if [ "$LIMITE" != "0" ]; then METRICAS="--metricas"; fi
+          if [ "$MODO" = "ambos" ]; then
+            for M in route match; do
+              python3 auditoria/estradas.py --db gtfs.db --carro http://127.0.0.1:5000 --comboio http://127.0.0.1:5001 --saida desenhos-extra-$M.json.gz --limite "$LIMITE" --modo $M $METRICAS 2>&1 | tee res/estradas-$M.txt
+            done
+            cp desenhos-extra-match.json.gz desenhos-extra.json.gz
+            python3 auditoria/comparar-estradas.py desenhos-extra-route.json.gz desenhos-extra-match.json.gz > res/comparacao.txt
+            cat res/comparacao.txt
+          else
+            python3 auditoria/estradas.py --db gtfs.db --carro http://127.0.0.1:5000 --comboio http://127.0.0.1:5001 --saida desenhos-extra.json.gz --limite "$LIMITE" --modo "$MODO" $METRICAS 2>&1 | tee res/estradas.txt
+            python3 auditoria/comparar-estradas.py desenhos-extra.json.gz > res/comparacao.txt
+            cat res/comparacao.txt
+          fi
+          cp desenhos-extra*.json.gz res/ || true
 
       - name: Publicar na release "desenhos"
-        if: ${{ (inputs.publicar || '1') == '1' && (inputs.limite || '0') == '0' }}
+        if: ${{ (inputs.publicar || '1') == '1' && (inputs.limite || '0') == '0' && (inputs.modo || 'match') != 'ambos' }}
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
