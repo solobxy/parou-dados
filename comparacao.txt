@@ -1,0 +1,77 @@
+grupo          modo    sequencias   desenhadas   fracao_media paragens_a_m razao_median razao_p95    segundos     motivos
+unir           melhor  818          814          0.997        None         1.189        1.416        212.4        {"escolhido_match": 230, "escolhido_route": 584, "volta_absurda": 89, "sem_match": 4}
+cp             melhor  239          239          1.0          None         1.098        1.211        24.7         {"escolhido_route": 140, "escolhido_match": 99, "volta_absurda": 2}
+metro_porto    melhor  20           20           1.0          None         1.068        1.083        0.6          {"escolhido_match": 20}
+metro_lisboa   melhor  18           18           1.0          None         1.094        1.206        0.2          {"escolhido_match": 18}
+
+[unir / melhor] escolhido_match:
+    {"nota_match": 2.0, "nota_route": 2.0}
+    {"nota_match": 2.0, "nota_route": 2.0}
+    {"nota_match": 2.0, "nota_route": 2.0}
+    {"nota_match": 2.0, "nota_route": 2.0}
+    {"nota_match": 2.0, "nota_route": 2.0}
+    {"nota_match": 2.0, "nota_route": 1.967}
+    {"nota_match": 1.977, "nota_route": 1.976}
+    {"nota_match": 1.979, "nota_route": 1.978}
+[unir / melhor] escolhido_route:
+    {"nota_match": 1.974, "nota_route": 2.0}
+    {"nota_match": 1.966, "nota_route": 2.0}
+    {"nota_match": 1.967, "nota_route": 2.0}
+    {"nota_match": 1.951, "nota_route": 2.0}
+    {"nota_match": 1.64, "nota_route": 2.0}
+    {"nota_match": 1.93, "nota_route": 2.0}
+    {"nota_match": 1.96, "nota_route": 2.0}
+    {"nota_match": 1.96, "nota_route": 2.0}
+[unir / melhor] volta_absurda:
+    {"de": "Junta de Freguesia - Cesar", "para": "Cesar (Cemitério)", "reta_m": 120, "rota_m": 942}
+    {"de": "Fermêdo (Cruz. Abrunhal)", "para": "Castelo", "reta_m": 780, "rota_m": 4078}
+    {"de": "Junta de Freguesia - Cesar", "para": "Cesar (Cemitério)", "reta_m": 120, "rota_m": 942}
+    {"de": "Alvarenga (Pirraça 1)", "para": "Cruzamento Noninha", "reta_m": 282, "rota_m": 2154}
+    {"de": "Sto. António", "para": "Areinho", "reta_m": 1025, "rota_m": 4887}
+    {"de": "Areinho", "para": "Sto. António", "reta_m": 1034, "rota_m": 4891}
+    {"de": "Moldes (Modernas)", "para": "Moldes (Cruz. Paços)", "reta_m": 274, "rota_m": 3329}
+    {"de": "Moldes (Portela)", "para": "Moldes (Modernas)", "reta_m": 431, "rota_m": 1487}
+[unir / melhor] sem_match:
+    {"paragem": "Cais da Afurada … Cais do Ouro", "codigo": "NoMatch", "mensagem": "Could not match the trace."}
+    {"paragem": "Cais do Ouro … Cais da Afurada", "codigo": "NoMatch", "mensagem": "Could not match the trace."}
+    {"paragem": "Cais de Gaia … Cais da Ribeira", "codigo": "NoMatch", "mensagem": "Could not match the trace."}
+    {"paragem": "Cais da Ribeira … Cais de Gaia", "codigo": "NoMatch", "mensagem": "Could not match the trace."}
+[cp / melhor] escolhido_route:
+    {"nota_match": -1.0, "nota_route": 2.0}
+    {"nota_match": -1.0, "nota_route": 2.0}
+    {"nota_match": -1.0, "nota_route": 2.0}
+    {"nota_match": -1.0, "nota_route": 2.0}
+    {"nota_match": -1.0, "nota_route": 2.0}
+    {"nota_match": -1.0, "nota_route": 2.0}
+    {"nota_match": 1.941, "nota_route": 2.0}
+    {"nota_match": 1.95, "nota_route": 2.0}
+[cp / melhor] escolhido_match:
+    {"nota_match": 2.0, "nota_route": 2.0}
+    {"nota_match": 2.0, "nota_route": 2.0}
+    {"nota_match": 2.0, "nota_route": 2.0}
+    {"nota_match": 2.0, "nota_route": 2.0}
+    {"nota_match": 2.0, "nota_route": 2.0}
+    {"nota_match": 2.0, "nota_route": 2.0}
+    {"nota_match": 2.0, "nota_route": 1.843}
+    {"nota_match": 2.0, "nota_route": 1.95}
+[cp / melhor] volta_absurda:
+    {"de": "Espadaneira", "para": "Taveiro", "reta_m": 2517, "rota_m": 27275}
+    {"de": "Taveiro", "para": "Espadaneira", "reta_m": 2517, "rota_m": 27275}
+[metro_porto / melhor] escolhido_match:
+    {"nota_match": 2.0, "nota_route": 1.684}
+    {"nota_match": 2.0, "nota_route": 1.818}
+    {"nota_match": 2.0, "nota_route": 1.602}
+    {"nota_match": 2.0, "nota_route": 1.714}
+    {"nota_match": 2.0, "nota_route": 1.655}
+    {"nota_match": 2.0, "nota_route": 1.752}
+    {"nota_match": 2.0, "nota_route": 1.612}
+    {"nota_match": 2.0, "nota_route": 1.532}
+[metro_lisboa / melhor] escolhido_match:
+    {"nota_match": 1.889, "nota_route": 1.595}
+    {"nota_match": 2.0, "nota_route": 1.833}
+    {"nota_match": 2.0, "nota_route": 1.889}
+    {"nota_match": 1.833, "nota_route": 1.8}
+    {"nota_match": 1.889, "nota_route": 1.765}
+    {"nota_match": 1.667, "nota_route": -1.0}
+    {"nota_match": 1.846, "nota_route": 1.75}
+    {"nota_match": 2.0, "nota_route": -1.0}
