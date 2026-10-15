@@ -1,0 +1,107 @@
+name: Estradas (desenhos das linhas sem desenho)
+
+# Desenha pela estrada (ou pelo carril) as linhas que os horários oficiais não desenham: UNIR (só tem a ordem das paragens), Comboio CP e
+# Metro de Lisboa e do Porto (desenhos esparsos). Usa o mapa do OpenStreetMap (Geofabrik) e o OSRM, num servidor de estradas e noutro de carris
+# (osrm/comboio.lua), e pede a rota de cada sequência de paragens, pela ordem. Onde não há estrada/carril perto de uma paragem, ou a volta é
+# absurda, o troço fica a direito (como antes): nunca se inventa um caminho.
+# O resultado vai para a release "desenhos" (desenhos-extra.json.gz). O gerador diário dos dados (main.yml) liga-o às linhas pela sequência de paragens.
+# Estradas e carris quase não mudam: basta correr de vez em quando (todos os domingos), ou à mão depois de mudar linhas.
+
+on:
+  schedule:
+    - cron: "40 4 * * 0"
+  workflow_dispatch:
+    inputs:
+      limite:
+        description: "Só uma amostra de N sequências por grupo (0 = todas; para ensaios)"
+        required: false
+        default: "0"
+      publicar:
+        description: "1 = publicar na release desenhos (0 = só o relatório)"
+        required: false
+        default: "1"
+
+permissions:
+  contents: write
+
+jobs:
+  estradas:
+    runs-on: ubuntu-latest
+    timeout-minutes: 150
+    env:
+      OSRM: ghcr.io/project-osrm/osrm-backend:v5.27.1
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Mapa de Portugal (Geofabrik) e dados de hoje
+        run: |
+          mkdir -p osrm-carro osrm-carris
+          curl -fL --retry 3 --retry-delay 10 -o portugal.osm.pbf https://download.geofabrik.de/europe/portugal-latest.osm.pbf
+          ls -l portugal.osm.pbf
+          curl -fL --retry 3 --retry-delay 10 -o gtfs.db.gz https://github.com/solobxy/parou-dados/releases/download/dados/gtfs.db.gz
+          gunzip -f gtfs.db.gz
+          ls -l gtfs.db
+
+      - name: Preparar o OSRM das estradas
+        run: |
+          cp portugal.osm.pbf osrm-carro/mapa.osm.pbf
+          docker run --rm -v "$PWD/osrm-carro:/data" $OSRM osrm-extract -p /opt/car.lua /data/mapa.osm.pbf
+          docker run --rm -v "$PWD/osrm-carro:/data" $OSRM osrm-partition /data/mapa.osrm
+          docker run --rm -v "$PWD/osrm-carro:/data" $OSRM osrm-customize /data/mapa.osrm
+          ls -l osrm-carro | head
+
+      - name: Preparar o OSRM dos carris
+        run: |
+          cp portugal.osm.pbf osrm-carris/mapa.osm.pbf
+          cp osrm/comboio.lua osrm-carris/comboio.lua
+          docker run --rm -v "$PWD/osrm-carris:/data" $OSRM osrm-extract -p /data/comboio.lua /data/mapa.osm.pbf
+          docker run --rm -v "$PWD/osrm-carris:/data" $OSRM osrm-partition /data/mapa.osrm
+          docker run --rm -v "$PWD/osrm-carris:/data" $OSRM osrm-customize /data/mapa.osrm
+          ls -l osrm-carris | head
+
+      - name: Arrancar os dois servidores
+        run: |
+          docker run -d --name carro  -p 5000:5000 -v "$PWD/osrm-carro:/data"  $OSRM osrm-routed --algorithm mld --max-viaroute-size 1000 --max-matching-size 1000 /data/mapa.osrm
+          docker run -d --name carris -p 5001:5001 -v "$PWD/osrm-carris:/data" $OSRM osrm-routed --algorithm mld --max-viaroute-size 1000 -p 5001 /data/mapa.osrm
+          for porta in 5000 5001; do
+            for i in $(seq 1 60); do
+              curl -s -m 5 "http://127.0.0.1:$porta/route/v1/driving/-8.6110,41.1496;-8.6090,41.1500?overview=false" | grep -q '"code"' && break
+              sleep 2
+            done
+          done
+          curl -s "http://127.0.0.1:5000/route/v1/driving/-8.6110,41.1496;-8.5760,41.1512?overview=false"; echo
+          docker logs --tail 5 carris
+
+      - name: Gerar os desenhos
+        run: |
+          mkdir -p res
+          LIMITE="${{ inputs.limite || '0' }}"
+          python3 auditoria/estradas.py --db gtfs.db --carro http://127.0.0.1:5000 --comboio http://127.0.0.1:5001 --saida desenhos-extra.json.gz --limite "$LIMITE" 2>&1 | tee res/estradas.txt
+          python3 - <<'PY' >> res/estradas.txt
+          import gzip, json
+          d = json.load(gzip.open("desenhos-extra.json.gz", "rt"))
+          print(json.dumps(d["relatorio"], indent=1, ensure_ascii=False))
+          PY
+          cp desenhos-extra.json.gz res/ || true
+
+      - name: Publicar na release "desenhos"
+        if: ${{ (inputs.publicar || '1') == '1' && (inputs.limite || '0') == '0' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release view desenhos >/dev/null 2>&1 || gh release create desenhos --title "Desenhos pela estrada" --notes "Desenhos das linhas sem desenho nos horários (UNIR, CP, metros), feitos com o OpenStreetMap."
+          gh release upload desenhos desenhos-extra.json.gz --clobber
+
+      - name: Guardar o resultado (ramo estradas-resultado)
+        if: always()
+        run: |
+          mkdir -p pub && cp -r res/* pub/ 2>/dev/null || echo "sem resultados" > pub/vazio.txt
+          docker logs --tail 40 carro > pub/osrm-carro.log 2>&1 || true
+          docker logs --tail 40 carris > pub/osrm-carris.log 2>&1 || true
+          cd pub && git init -q -b estradas-resultado
+          git config user.name "parou-dados"; git config user.email "actions@users.noreply.github.com"
+          git add -A && git commit -q -m "Estradas $(date -u +%Y-%m-%dT%H:%MZ)" && git push -q -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" estradas-resultado

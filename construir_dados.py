@@ -313,6 +313,11 @@ CREATE TABLE IF NOT EXISTS trips (
 CREATE TABLE IF NOT EXISTS shapes (
   shape_id TEXT PRIMARY KEY, feed_id TEXT NOT NULL, pontos TEXT NOT NULL
 );
+-- Desenho de uma linha sem viagens na base (UNIR): um por linha e sentido, feito pelo mapa de estradas (ver auditoria/estradas.py)
+CREATE TABLE IF NOT EXISTS route_shapes (
+  route_id TEXT NOT NULL, direction_id INTEGER NOT NULL DEFAULT 0, shape_id TEXT NOT NULL,
+  PRIMARY KEY (route_id, direction_id)
+);
 CREATE TABLE IF NOT EXISTS stop_times (
   id INTEGER PRIMARY KEY AUTOINCREMENT, feed_id TEXT NOT NULL, trip_id TEXT NOT NULL,
   stop_id TEXT NOT NULL, arrival_secs INTEGER, departure_secs INTEGER, stop_sequence INTEGER,
@@ -461,6 +466,12 @@ def simplificar(pontos, tolerancia_m=TOLERANCIA_FORMAS_M):
             pilha.append((i, idx))
             pilha.append((idx, j))
     return [p for p, mantem in zip(pontos, manter) if mantem]
+
+
+def chave_padrao(stop_ids):
+    """Identifica uma sequência de paragens (a mesma conta no gerador dos desenhos extra, auditoria/estradas.py)."""
+    import hashlib
+    return hashlib.sha1("|".join(stop_ids).encode("utf-8")).hexdigest()[:16]
 
 
 def insert_many(conn, table, rows):
@@ -1343,6 +1354,83 @@ def process_unir(conn):
 DIAS_COLUNA = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"]
 
 
+URL_DESENHOS_EXTRA = os.environ.get(
+    "PAROU_DESENHOS_URL", "https://github.com/solobxy/parou-dados/releases/download/desenhos/desenhos-extra.json.gz")
+
+
+def carregar_desenhos_extra():
+    """Desenhos pela estrada das linhas que não os trazem (UNIR, CP, metros), feitos à parte pelo workflow «Estradas»
+    (auditoria/estradas.py). Se não existirem ou não se conseguirem ler, a base sai sem eles: nada falha."""
+    try:
+        req = urllib.request.Request(URL_DESENHOS_EXTRA, headers={"User-Agent": "parou-dados"})
+        with urllib.request.urlopen(req, timeout=90) as r:
+            dados = json.loads(gzip.decompress(r.read()).decode("utf-8"))
+        if isinstance(dados, dict) and isinstance(dados.get("caminhos"), dict):
+            log(f"Desenhos extra: {len(dados['caminhos'])} sequências ({dados.get('criado', '?')})")
+            return dados
+    except Exception as e:  # noqa: BLE001
+        log(f"Sem desenhos extra ({str(e)[:100]}): a base sai só com os desenhos dos horários")
+    return None
+
+
+def aplicar_desenhos_extra(conn, extras):
+    """Liga os desenhos extra às linhas, pela chave da sequência de paragens (chave_padrao):
+    - UNIR: um desenho por linha e sentido (tabela route_shapes);
+    - operadores desenhados pelo carril (extras["carris"], ex.: CP, Metro): cada viagem com essa sequência de paragens passa a usar o desenho.
+    Devolve quantos desenhos ficaram ligados, por grupo."""
+    caminhos = (extras or {}).get("caminhos") or {}
+    contagem = {"unir": 0, "viagens": 0}
+    if not caminhos:
+        return contagem
+    novos = set()
+
+    def guardar(chave, feed):
+        sid = "osrm:" + chave
+        if sid not in novos:
+            conn.execute("INSERT OR REPLACE INTO shapes (shape_id, feed_id, pontos) VALUES (?, ?, ?)", (sid, feed, caminhos[chave]))
+            novos.add(sid)
+        return sid
+
+    # UNIR: sequências de paragens por linha e sentido
+    seqs = {}
+    for rota, sentido, sid in conn.execute(
+            "SELECT route_id, direction_id, stop_id FROM stop_routes WHERE route_id LIKE 'unir:%' AND stop_sequence IS NOT NULL "
+            "ORDER BY route_id, direction_id, stop_sequence"):
+        seqs.setdefault((rota, sentido), []).append(sid)
+    for (rota, sentido), ids in seqs.items():
+        chave = chave_padrao(ids)
+        if chave in caminhos:
+            conn.execute("INSERT OR REPLACE INTO route_shapes (route_id, direction_id, shape_id) VALUES (?, ?, ?)",
+                         (rota, sentido, guardar(chave, "unir")))
+            contagem["unir"] += 1
+
+    # Operadores desenhados pelo carril: viagem a viagem, pela sequência das suas paragens
+    for feed in extras.get("carris") or []:
+        atual, ids, ligacoes = None, [], []
+
+        def fecha():
+            if atual is not None and len(ids) >= 2:
+                chave = chave_padrao(ids)
+                if chave in caminhos:
+                    ligacoes.append((guardar(chave, feed), atual))
+        for tid, sid in conn.execute(
+                "SELECT t.trip_id, st.stop_id FROM trips t JOIN stop_times st ON st.trip_id = t.trip_id "
+                "WHERE t.feed_id = ? ORDER BY t.trip_id, st.stop_sequence", (feed,)):
+            if tid != atual:
+                fecha()
+                atual, ids = tid, []
+            ids.append(sid)
+        fecha()
+        conn.executemany("UPDATE trips SET shape_id = ? WHERE trip_id = ?", ligacoes)
+        contagem["viagens"] += len(ligacoes)
+
+    # Desenhos que deixaram de ser usados (por exemplo, os esparsos do metro que o do mapa de carris substituiu)
+    conn.execute("DELETE FROM shapes WHERE shape_id NOT IN (SELECT shape_id FROM trips WHERE shape_id IS NOT NULL) "
+                 "AND shape_id NOT IN (SELECT shape_id FROM route_shapes)")
+    conn.commit()
+    return contagem
+
+
 def completar_destinos(conn):
     """Viagens sem destino (alguns operadores, como a Carris, não preenchem o trip_headsign): usa o nome da última
     paragem da viagem, que é o sítio para onde ela realmente vai. Percursos circulares (acabam onde começam) ficam
@@ -1478,6 +1566,9 @@ def main():
     log("A criar índices...")
     conn.executescript(SCHEMA_INDEXES)
     completar_destinos(conn)
+    extras = carregar_desenhos_extra()
+    if extras:
+        log(f"Desenhos extra ligados: {aplicar_desenhos_extra(conn, extras)}")
 
     ok = [r for r in results if r.get("status") == "OK"]
     built_at = now_iso()
@@ -1504,6 +1595,7 @@ def main():
     for fid, n in conn.execute("SELECT feed_id, COUNT(*) FROM shapes GROUP BY feed_id"):
         formas_por_operador.setdefault(fid, {"viagens": 0, "com_desenho": 0})["desenhos"] = n
     formas_bytes = conn.execute("SELECT COALESCE(SUM(LENGTH(pontos)), 0) FROM shapes").fetchone()[0]
+    unir_com_desenho = conn.execute("SELECT COUNT(*) FROM route_shapes").fetchone()[0]
     conn.close()
 
     if integrity != "ok":
@@ -1539,7 +1631,7 @@ def main():
             "viagens_amanha": saude["amanha"].get(r.get("id"), 0),
             "dias_uteis_sem_servico": saude["dias_uteis_sem_servico"].get(r.get("id"), 0),
         } for r in results],
-        "desenhos": {"bytes": formas_bytes, "por_operador": formas_por_operador},
+        "desenhos": {"bytes": formas_bytes, "por_operador": formas_por_operador, "unir_linhas_com_desenho": unir_com_desenho},
         "verificacao": {"data_hoje": saude["data_hoje"], "data_amanha": saude["data_amanha"],
                         "dias_uteis_verificados": saude["dias_uteis_verificados"],
                         "porto": saude["porto"]},
