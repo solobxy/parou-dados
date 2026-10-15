@@ -3,6 +3,8 @@
 // posição atrasada (uns 100 a 300 m para trás de um autocarro a 30 km/h) enquanto o ponto da pessoa, vindo do GPS, estava à frente.
 // Mundo simulado: um autocarro (801) a andar a 8 m/s; a posição que o «operador» dá tem 12 a 22 s de idade; o GPS da pessoa vai no autocarro, em tempo real.
 // Mede-se, no ecrã, a distância entre o centro da bola do autocarro «meu» e o centro do ponto da pessoa.
+// Escala: com o painel «A bordo» aberto o mapa mostra a viagem inteira e 1 px ≈ 14 m (as paragens, a 350 m umas das outras, ficam a ~25 px).
+// A app antiga (bola no sítio do operador) dá 12 a 16 px de distância = 170 a 230 m; em cima do ponto são 0 a 2 px.
 // Os pedidos /api/transit/nearby, /veiculos e /a-bordo são simulados; o que se testa é a app. Não é num telemóvel a sério.
 import { chromium } from 'playwright';
 import fs from 'fs';
@@ -152,19 +154,19 @@ const mediana = (v) => { const s = [...v].sort((a, b) => a - b); return s.length
     await p.screenshot({ path: `${SAIDA}/a_bordo_segue.png` }).catch(() => {});
     nota(`distâncias medidas (px): ${dist.map((d) => Math.round(d)).join(' ')}`);
     ok('[a bordo] mediu-se a distância entre a bola e o ponto da pessoa', dist.length >= 15, erro || `${dist.length} medidas`);
-    ok('[a bordo] a bola do autocarro está em cima do ponto da pessoa (mediana ≤ 8 px)', dist.length >= 15 && mediana(dist) <= 8, `mediana ${mediana(dist).toFixed(1)} px`);
-    ok('[a bordo] e nunca se afasta mais de 16 px (≈ 25 m neste zoom)', dist.length >= 15 && Math.max(...dist) <= 16, `máximo ${Math.max(...dist).toFixed(1)} px`);
+    ok('[a bordo] a bola do autocarro está em cima do ponto da pessoa (mediana ≤ 3 px ≈ 40 m)', dist.length >= 15 && mediana(dist) <= 3, `mediana ${mediana(dist).toFixed(1)} px`);
+    ok('[a bordo] e nunca se afasta mais de 6 px (≈ 85 m) — o atraso do operador era de 170 a 230 m', dist.length >= 15 && Math.max(...dist) <= 6, `máximo ${Math.max(...dist).toFixed(1)} px`);
 
     // Com o GPS fraco (±150 m) a bola não se agarra a uma posição má: volta à do operador (atrasada), nunca salta para um sítio duvidoso
     const fracas = [];
     for (let i = 0; i < 8; i++) { await gps(150); await espera(500); const m = await p.evaluate(MEDIR); if (!m.erro) fracas.push(m.px); await espera(500); }
     nota(`com GPS fraco (px): ${fracas.map((d) => Math.round(d)).join(' ')}`);
-    ok('[GPS fraco] com precisão de 150 m a bola não segue o ponto (usa a posição do operador)', fracas.length >= 4 && mediana(fracas) > 30, `mediana ${mediana(fracas).toFixed(1)} px`);
+    ok('[GPS fraco] com precisão de 150 m a bola não segue o ponto (usa a posição do operador)', fracas.length >= 4 && mediana(fracas) > 8, `mediana ${mediana(fracas).toFixed(1)} px`);
     // O GPS volta ao normal: volta a seguir
     for (let i = 0; i < 6; i++) { await gps(); await espera(1000); }
     const depois = [];
     for (let i = 0; i < 6; i++) { await gps(); await espera(500); const m = await p.evaluate(MEDIR); if (!m.erro) depois.push(m.px); await espera(500); }
-    ok('[GPS fraco] quando o GPS volta ao normal a bola volta a seguir a pessoa', depois.length >= 4 && mediana(depois) <= 8, `mediana ${mediana(depois).toFixed(1)} px`);
+    ok('[GPS fraco] quando o GPS volta ao normal a bola volta a seguir a pessoa', depois.length >= 4 && mediana(depois) <= 3, `mediana ${mediana(depois).toFixed(1)} px`);
 
     // Já saí: a bola deixa de seguir a pessoa (já não vai lá dentro) e fica na posição do operador
     await p.locator('[data-teste="a-bordo-sair"]').click();
@@ -176,7 +178,7 @@ const mediana = (v) => { const s = [...v].sort((a, b) => a - b); return s.length
       const a = ponto.getBoundingClientRect(), b = bola.getBoundingClientRect();
       return Math.hypot(a.left + a.width / 2 - (b.left + b.width / 2), a.top + a.height / 2 - (b.top + b.height / 2));
     });
-    ok('[já saí] depois de «Já saí» a bola volta à posição do operador (já não está em cima de mim)', bolaSaiu !== null && bolaSaiu > 30, bolaSaiu === null ? 'sem bola' : `${bolaSaiu.toFixed(1)} px`);
+    ok('[já saí] depois de «Já saí» a bola volta à posição do operador (já não está em cima de mim)', bolaSaiu !== null && bolaSaiu > 8, bolaSaiu === null ? 'sem bola' : `${bolaSaiu.toFixed(1)} px`);
     ok('[tudo] sem erros de consola', erros.length === 0, erros.slice(0, 2).join(' | '));
   } catch (e) {
     ok('[a bordo] correu sem exceções', false, String(e).slice(0, 300));
