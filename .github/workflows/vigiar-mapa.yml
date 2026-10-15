@@ -21,7 +21,7 @@ on:
         default: ""
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   vigiar:
@@ -47,10 +47,10 @@ jobs:
           SITE="${SITE_PEDIDO:-https://2-31-13-85.sslip.io}" SAIDA=../res node vigiar-mapa.mjs 2>&1 | tee ../res/vigiar-mapa.txt | tee -a "$GITHUB_STEP_SUMMARY"
           exit ${PIPESTATUS[0]}
 
-      - name: Guardar as capturas
+      - name: Guardar o resultado (ramo vigiar-mapa-resultado)
         if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: vigiar-mapa
-          path: res/
-          retention-days: 7
+        run: |
+          mkdir -p pub && cp -r res/* pub/ 2>/dev/null || echo "sem resultados" > pub/vazio.txt
+          cd pub && git init -q -b vigiar-mapa-resultado
+          git config user.name "parou-dados"; git config user.email "actions@users.noreply.github.com"
+          git add -A && git commit -q -m "Vigiar o mapa $(date -u +%Y-%m-%dT%H:%MZ)" && git push -q -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" vigiar-mapa-resultado
