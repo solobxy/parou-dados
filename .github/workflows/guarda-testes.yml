@@ -4,7 +4,8 @@ name: Guarda dos testes rápidos
 #   - tipos (tsc), sem nenhum erro;
 #   - detetor do «A bordo»;
 #   - leitura da TUB (ficheiros montados à mão e, se responderem, os reais);
-#   - planeador: metro, comboio e barco têm de aparecer nas opções de viagem (base GTFS montada, motor a sério).
+#   - planeador: metro, comboio e barco têm de aparecer nas opções de viagem (base GTFS montada, motor a sério);
+#   - movimento dos autocarros no mapa: suave, sem «teleportes», com séries reais medidas no servidor.
 # A app (solobxy/parou) não corre testes a cada alteração; esta guarda apanha, no máximo no dia seguinte, uma alteração
 # que estrague uma destas coisas. Só falha (e o GitHub manda um email) se algum teste falhar.
 # Os testes com browser (rodas no mapa, painel «A bordo», temas…) ficam no workflow «a-bordo», que se corre à mão.
@@ -67,3 +68,7 @@ jobs:
       - name: Planeador (metro, comboio e barco nas opções de viagem)
         working-directory: app
         run: APP=$PWD node --import tsx ../auditoria/planeador-modos.mjs 2>&1 | grep -v "Experimental\|trace-warnings" | tail -50; exit ${PIPESTATUS[0]}
+
+      - name: Movimento dos autocarros (suave, sem teleportes)
+        working-directory: app
+        run: APP=$PWD node --import tsx ../auditoria/trajeto-veiculo.mjs 2>&1 | grep -v "Experimental\|trace-warnings" | tail -90; exit ${PIPESTATUS[0]}
