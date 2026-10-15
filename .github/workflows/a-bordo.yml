@@ -131,6 +131,14 @@ jobs:
           SAIDA=../res timeout 300 node mapa-todos.mjs 2>&1 | tee ../res/todos.txt | tail -40
           exit ${PIPESTATUS[0]}
 
+      - name: Testar as imagens dos posts da Comunidade (browser)
+        continue-on-error: true
+        working-directory: auditoria
+        run: |
+          mkdir -p ../res
+          SAIDA=../res timeout 300 node post-imagem.mjs 2>&1 | tee ../res/post-imagem.txt | tail -50
+          exit ${PIPESTATUS[0]}
+
       - name: Guardar
         if: always()
         run: |
