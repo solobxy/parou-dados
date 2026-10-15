@@ -15,6 +15,10 @@ on:
         description: "1 = só temas e tamanhos (sem as simulações longas)"
         required: false
         default: "0"
+      dados:
+        description: "Endereço dos dados (vazio = os de sempre; dados-teste = https://github.com/solobxy/parou-dados/releases/download/dados-teste)"
+        required: false
+        default: ""
 
 permissions:
   contents: write
@@ -98,11 +102,30 @@ jobs:
 
       - name: Arrancar a app
         working-directory: app
+        env:
+          DADOS_PEDIDOS: ${{ inputs.dados }}
         run: |
           mkdir -p dados
+          if [ -n "$DADOS_PEDIDOS" ]; then export PAROU_DADOS_URL="$DADOS_PEDIDOS"; fi
           NODE_ENV=production PORT=3000 PAROU_DATA_DIR=$PWD/dados TZ=Europe/Lisbon FOGOS_TESTE=1 nohup node --import tsx server.ts > app.log 2>&1 &
           for i in $(seq 1 60); do curl -s -m 5 http://127.0.0.1:3000/api/transit/loading-status | grep -q '"isLoading":false' && break; sleep 5; done
           sleep 5
+
+      - name: "Teste dos desenhos pela estrada (dados reais: linhas e viagens seguem a estrada, não atravessam prédios)"
+        continue-on-error: true
+        working-directory: app
+        run: |
+          mkdir -p ../res
+          APP=$PWD BASE=http://127.0.0.1:3000 DB=$PWD/dados/gtfs.db node --import tsx ../auditoria/percurso-estrada.mjs 2>&1 | grep -v "Experimental\|trace-warnings" | tee ../res/percurso-estrada.txt | tail -90
+          exit ${PIPESTATUS[0]}
+
+      - name: "Teste das funções do desenho (polilinha, encaixe das paragens, troços)"
+        continue-on-error: true
+        working-directory: app
+        run: |
+          mkdir -p ../res
+          APP=$PWD node --import tsx ../auditoria/caminho.mjs 2>&1 | grep -v "Experimental\|trace-warnings" | tee ../res/caminho.txt | tail -60
+          exit ${PIPESTATUS[0]}
 
       - name: Instalar Playwright
         run: |
