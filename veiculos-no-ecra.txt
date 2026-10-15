@@ -1,0 +1,27 @@
+OK      [caixa] Lisboa 0,5°×0,5° é aceite (antes só até 0,3°) 
+OK      [caixa] 0,6°×0,6° ainda é aceite 
+OK      [caixa] 0,7° de lado é recusada (pedidos grandes demais) 
+OK      [caixa] fora de Portugal é recusada 
+OK      [caixa] caixa do telemóvel em Campanhã é aceite 
+OK      [servidor] só caixa (sem linhas): devolve todos os autocarros lá dentro 58 de 58
+OK      [servidor] inclui os três operadores stcp,cm,tub
+OK      [servidor] inclui todas as linhas (nenhuma fica de fora por não ser de uma paragem perto) 15 linhas
+OK      [servidor] nada de fora da caixa 
+OK      [servidor] caixa larga com 1500 autocarros: devolve no máximo 700 (resposta leve) 700
+OK      [servidor] e devolve 700 (não menos) 700
+OK      [servidor] os que ficam são os mais perto do centro do ecrã (nenhum excluído está mais perto que o mais longe dos incluídos) incluído mais longe 18922 m; excluído mais perto 18969 m
+OK      [app] ecrã pequeno → pede uma caixa {"caixa":{"sul":41.145,"norte":41.155,"oeste":-8.595,"leste":-8.58}}
+OK      [app] a caixa cobre o ecrã todo 
+OK      [app] com folga à volta (≥ 10% de cada lado, para os autocarros que estão a entrar no ecrã) {"sul":41.145,"norte":41.155,"oeste":-8.595,"leste":-8.58}
+OK      [app] mas sem exagero (menos de 3× o ecrã) 
+OK      [app] a caixa é aceite pelo servidor 
+OK      [app] um toque pequeno no mapa não muda a caixa (arredondada, menos pedidos diferentes) {"sul":41.145,"norte":41.155,"oeste":-8.595,"leste":-8.58}
+OK      [app] ecrã de cidade (0,14°×0,2°) → pede uma caixa aceite pelo servidor {"caixa":{"sul":41.055,"norte":41.245,"oeste":-8.75,"leste":-8.49}}
+OK      [app] mapa muito afastado (0,6°×0,8°) → não pede nada e diz para aproximar {"longe":true}
+OK      [app] mapa do país inteiro → não pede nada 
+OK      [app] fora de Portugal → não pede nada (e não diz «aproxima») {}
+OK      [app] perto do limite do mapa de Portugal a caixa pedida continua válida {"caixa":{"sul":36.94,"norte":37.01,"oeste":-9.01,"leste":-8.94}}
+OK      [app] valores inválidos → não pede nada 
+OK      [app] Açores → pede uma caixa válida {"caixa":{"sul":37.725,"norte":37.765,"oeste":-25.69,"leste":-25.63}}
+
+Todos os testes OK
