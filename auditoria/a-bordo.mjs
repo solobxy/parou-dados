@@ -90,15 +90,15 @@ const DOPPLER = `(() => { const g = navigator.geolocation; if (!g) return; const
     cb({ timestamp: pos.timestamp, coords: { latitude: co.latitude, longitude: co.longitude, accuracy: co.accuracy, altitude: co.altitude, altitudeAccuracy: co.altitudeAccuracy, speed: d.speed, heading: d.heading } }); };
   g.watchPosition = (ok, err, opt) => w(mais(ok), err, opt); g.getCurrentPosition = (ok, err, opt) => c(mais(ok), err, opt); })();`;
 
-async function abrir(browser, { tema = 'claro', largura = 390, altura = 780, aparelho = null, mundo }) {
+async function abrir(browser, { tema = 'claro', largura = 390, altura = 780, aparelho = null, mundo, tiles = false }) {
   const base = aparelho ? devices[aparelho] : { viewport: { width: largura, height: altura }, hasTouch: true, isMobile: true, userAgent: 'Mozilla/5.0 (Linux; Android 14; Pixel 7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Mobile Safari/537.36' };
   const ctx = await browser.newContext({
     ...base, locale: 'pt-PT', timezoneId: 'Europe/Lisbon', permissions: ['geolocation'], geolocation: { latitude: LAT0, longitude: LON0, accuracy: 10 },
     serviceWorkers: 'block', // o Playwright não intercepta pedidos que passam pelo service worker
   });
-  await ctx.addInitScript({ content: `try{ Object.defineProperty(Navigator.prototype,'webdriver',{get:()=>false,configurable:true}); localStorage.setItem('parou_tema','${tema}'); localStorage.setItem('parou_aviso_instalar','1'); localStorage.setItem('parou_bemvindo','visto'); localStorage.setItem('parou_localizacao_ok','1'); }catch(e){}` });
+  await ctx.addInitScript({ content: `try{ Object.defineProperty(Navigator.prototype,'webdriver',{get:()=>false,configurable:true}); if(!sessionStorage.getItem('__teste_ini')){ sessionStorage.setItem('__teste_ini','1'); ${tema === 'claro' ? "localStorage.removeItem('parou_tema');" : `localStorage.setItem('parou_tema','${tema}');`} } localStorage.setItem('parou_aviso_instalar','1'); localStorage.setItem('parou_bemvindo','visto'); localStorage.setItem('parou_localizacao_ok','1'); }catch(e){}` });
   await ctx.addInitScript({ content: DOPPLER });
-  await ctx.route(/(tile|openstreetmap|arcgisonline|cartocdn|basemaps)\./i, (rt) => rt.fulfill({ status: 200, contentType: 'image/png', body: PNG }));
+  if (!tiles) await ctx.route(/(tile|openstreetmap|arcgisonline|cartocdn|basemaps)\./i, (rt) => rt.fulfill({ status: 200, contentType: 'image/png', body: PNG }));
   await ctx.route('**/api/transit/nearby**', (rt) => rt.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ stops: [PARAGEM], vehicles: [], alerts: [], radiusMeters: 500, timestamp: new Date().toISOString() }) }));
   await ctx.route('**/api/transit/stop/**', (rt) => rt.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ departures: [] }) }));
   await ctx.route('**/api/transit/veiculos**', (rt) => {
@@ -287,6 +287,8 @@ async function viajar({ browser, tema, ficha, completo }) {
     ok(`${rot} só uma pergunta (os dois autocarros não estão lado a lado)`, (await p.locator('[data-teste="a-bordo-sim"]').count()) === 1);
     await espera(400);
     await foto('1_pergunta');
+    const caixaPergunta = await p.locator('[data-teste="pergunta-a-bordo"]').boundingBox();
+    ok(`${rot} a pergunta é compacta (não tapa o mapa todo): ≤ 130 px de altura`, caixaPergunta && caixaPergunta.height <= 130, caixaPergunta ? Math.round(caixaPergunta.height) : 'sem caixa');
     const alturas = await alturaMinimaBotoes(p, '[data-teste="pergunta-a-bordo"]');
     ok(`${rot} botões da pergunta com 44 px ou mais`, alturas.length === 0, alturas.join('; '));
     const cPergunta = await contrasteDe(p, '[data-teste="pergunta-a-bordo"]');
@@ -301,7 +303,7 @@ async function viajar({ browser, tema, ficha, completo }) {
     ok(`${rot} depois de «Sim», mostra o painel «A bordo»`, await p.locator('[data-teste="painel-a-bordo"]').isVisible());
     ok(`${rot} a pergunta desaparece`, (await p.locator('[data-teste="pergunta-a-bordo"]').count()) === 0);
     const proxima = await p.locator('[data-teste="a-bordo-proxima"]').innerText().catch(() => '');
-    ok(`${rot} mostra a próxima paragem com a distância em metros`, /(Aliados|São Bento|Bolh)/i.test(proxima) && /\d+ ?m\b/.test(proxima), proxima.replace(/\n/g, ' | '));
+    ok(`${rot} mostra a próxima paragem com a distância em metros`, /(Bolh|Aliados|S[aã]o Bento|Ribeira|Cais de Gaia|Jardim do Morro|Santo Ov|General Torres|Candal|Vila d|Sandim|Lavadores)/i.test(proxima) && /\d+ ?m\b/.test(proxima), proxima.replace(/\n/g, ' | '));
     ok(`${rot} mostra o horário da paragem, identificado como «horário» (não inventa tempo real)`, /horário \d\d:\d\d/.test(proxima), proxima.replace(/\n/g, ' | '));
     const linhasLista = await p.locator('[data-teste="a-bordo-paragens"] ol li').count();
     ok(`${rot} lista as paragens que faltam`, linhasLista >= 8, linhasLista);
@@ -486,7 +488,16 @@ async function manual(browser, { tema, largura = 390, altura = 780, aparelho = n
     ok(`${rot} botão «Estou a bordo» com 44 px`, alturasPopup.length === 0, alturasPopup.join('; '));
     const cPopup = await contrasteDe(p, '.pp-bus');
     ok(`${rot} contraste do popup ≥ 4,5:1`, cPopup.pior.r >= 1, `${cPopup.n} textos; pior «${cPopup.pior.txt}» ${cPopup.pior.razao?.toFixed(2)}:1 ${cPopup.pior.cor} sobre ${cPopup.pior.fundo}`);
-    await p.locator('[data-teste="estou-a-bordo"]').click();
+    await p.waitForTimeout(900); // o mapa desliza até a janela ficar à vista
+    const tapado = await p.evaluate(() => {
+      const b = document.querySelector('[data-teste="estou-a-bordo"]'); if (!b) return 'sem botão';
+      const r = b.getBoundingClientRect(); const x = r.left + r.width / 2, y = r.top + r.height / 2;
+      if (y < 0 || y > innerHeight || x < 0 || x > innerWidth) return 'fora do ecrã';
+      const h = document.elementFromPoint(x, y); return h && (b === h || b.contains(h)) ? 'ok' : 'tapado por ' + (h ? h.tagName + '.' + String(h.className).slice(0, 50) : 'nada');
+    });
+    ok(`${rot} o botão «Estou a bordo» fica à vista (não tapado pela pesquisa nem pelos botões do mapa)`, tapado === 'ok', tapado);
+    await foto('2b_popup_assente');
+    await p.locator('[data-teste="estou-a-bordo"]').click({ timeout: 8000 });
     await p.waitForSelector('[data-teste="painel-a-bordo"]', { timeout: 10000 });
     await p.waitForSelector('[data-teste="a-bordo-proxima"]', { timeout: 15000 }).catch(() => {});
     await p.waitForTimeout(1800);
@@ -545,6 +556,21 @@ async function seletor(browser) {
   } catch (e) { ok(`${rot} correu sem exceções`, false, String(e).slice(0, 300)); } finally { await ctx.close(); }
 }
 
+// ---------------------------------------------------------------------------------------------------------------- 7) mapa com mosaicos reais (aspeto dos 4 temas)
+async function mosaicosReais(browser, tema) {
+  const rot = `[mosaicos ${tema}]`;
+  const mundo = criarMundo({ xParado: 70 });
+  const { ctx, p, erros } = await abrir(browser, { tema, mundo, tiles: true });
+  try {
+    await p.waitForSelector('.bus-pin', { timeout: 30000 }).catch(() => {});
+    await p.waitForTimeout(5000);
+    const n = await p.evaluate(() => document.querySelectorAll('img.leaflet-tile-loaded').length);
+    nota(`${rot} mosaicos carregados: ${n}`);
+    await p.screenshot({ path: `${SAIDA}/mosaicos_${tema}.png` }).catch(() => {});
+    ok(`${rot} sem erros de consola`, erros.length === 0, erros.slice(0, 2).join(' | '));
+  } catch (e) { ok(`${rot} correu sem exceções`, false, String(e).slice(0, 300)); } finally { await ctx.close(); }
+}
+
 // ---------------------------------------------------------------------------------------------------------------- execução
 (async () => {
   await testarServidor();
@@ -558,6 +584,7 @@ async function seletor(browser) {
   }
   if (wk) for (const tema of ['claro', 'porto']) await manual(wk, { tema, aparelho: 'iPhone 13 Mini', etiqueta: 'iphone' });
   await seletor(cr);
+  for (const tema of ['claro', 'escuro', 'ambar', 'porto']) await mosaicosReais(cr, tema);
 
   if (!RAPIDO) {
     // Simulações longas: duas de cada vez
