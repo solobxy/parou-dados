@@ -124,5 +124,42 @@ with tempfile.TemporaryDirectory() as d:
     except Exception as e:  # noqa: BLE001
         ok("[reaproveitar] base de ontem sem shapes: os dados de ontem entram na mesma", False, repr(e)[:200])
 
+# --- 6. desenhos extra (UNIR, CP, metros): ligam-se pela sequência de paragens
+ok("[extra] a chave de uma sequência depende da ordem das paragens", cd.chave_padrao(["a", "b", "c"]) != cd.chave_padrao(["c", "b", "a"]) and cd.chave_padrao(["a", "b"]) == cd.chave_padrao(["a", "b"]))
+conn = base_nova()
+conn.executescript("""
+INSERT INTO routes (route_id, feed_id, route_short_name) VALUES ('unir:L1','unir','L1'), ('cp:R','cp','AP'), ('metro:R','metro','A');
+INSERT INTO stops (stop_id, feed_id, stop_name, stop_lat, stop_lon) VALUES
+  ('unir:1','unir','U1',41.10,-8.60),('unir:2','unir','U2',41.11,-8.60),('unir:3','unir','U3',41.12,-8.60),
+  ('cp:X','cp','X',41.20,-8.60),('cp:Y','cp','Y',41.30,-8.60),
+  ('metro:M1','metro','M1',41.40,-8.60),('metro:M2','metro','M2',41.41,-8.60);
+INSERT INTO stop_routes (feed_id, stop_id, route_id, direction_id, stop_sequence) VALUES
+  ('unir','unir:1','unir:L1',0,1),('unir','unir:2','unir:L1',0,2),('unir','unir:3','unir:L1',0,3),
+  ('unir','unir:3','unir:L1',1,1),('unir','unir:2','unir:L1',1,2);
+INSERT INTO trips (trip_id, feed_id, route_id, service_id, shape_id) VALUES
+  ('cp:T1','cp','cp:R','S',NULL), ('cp:T2','cp','cp:R','S',NULL), ('metro:T1','metro','metro:R','S','metro:esparso');
+INSERT INTO shapes (shape_id, feed_id, pontos) VALUES ('metro:esparso','metro','_p~iF~ps|U');
+INSERT INTO stop_times (feed_id, trip_id, stop_id, arrival_secs, departure_secs, stop_sequence) VALUES
+  ('cp','cp:T1','cp:X',1,1,1),('cp','cp:T1','cp:Y',2,2,2),('cp','cp:T2','cp:X',1,1,1),('cp','cp:T2','cp:Y',2,2,2),
+  ('metro','metro:T1','metro:M1',1,1,1),('metro','metro:T1','metro:M2',2,2,2);
+""")
+extras = {"carris": ["cp", "metro"], "caminhos": {
+    cd.chave_padrao(["unir:1", "unir:2", "unir:3"]): cd.codificar_polilinha([(41.10, -8.60), (41.12, -8.60)]),
+    cd.chave_padrao(["cp:X", "cp:Y"]): cd.codificar_polilinha([(41.20, -8.60), (41.25, -8.61), (41.30, -8.60)]),
+    cd.chave_padrao(["metro:M1", "metro:M2"]): cd.codificar_polilinha([(41.40, -8.60), (41.41, -8.60)]),
+}}
+cont = cd.aplicar_desenhos_extra(conn, extras)
+ok("[extra] UNIR: a linha e sentido com desenho fica ligada (só essa)", cont["unir"] == 1 and conn.execute("SELECT COUNT(*) FROM route_shapes").fetchone()[0] == 1, str(cont))
+ok("[extra] UNIR: o outro sentido, sem desenho, fica sem ligação", conn.execute("SELECT COUNT(*) FROM route_shapes WHERE direction_id = 1").fetchone()[0] == 0)
+ok("[extra] CP: as duas viagens com a mesma sequência usam o mesmo desenho", conn.execute("SELECT COUNT(DISTINCT shape_id) FROM trips WHERE feed_id = 'cp' AND shape_id IS NOT NULL").fetchone()[0] == 1
+   and conn.execute("SELECT COUNT(*) FROM trips WHERE feed_id = 'cp' AND shape_id IS NOT NULL").fetchone()[0] == 2)
+ok("[extra] metro: o desenho esparso é substituído pelo do mapa de carris", conn.execute("SELECT shape_id FROM trips WHERE trip_id = 'metro:T1'").fetchone()[0].startswith("osrm:"))
+ok("[extra] o desenho esparso que deixou de ser usado desaparece da base", conn.execute("SELECT COUNT(*) FROM shapes WHERE shape_id = 'metro:esparso'").fetchone()[0] == 0)
+pontos = cd.descodificar_polilinha(conn.execute("SELECT pontos FROM shapes WHERE shape_id = (SELECT shape_id FROM trips WHERE trip_id = 'cp:T1')").fetchone()[0])
+ok("[extra] o desenho guardado é o que veio (3 pontos, com a curva)", len(pontos) == 3 and abs(pontos[1][0] - 41.25) < 1e-5)
+ok("[extra] sem desenhos extra: nada muda e nada falha", cd.aplicar_desenhos_extra(base_nova(), None) == {"unir": 0, "viagens": 0})
+cd.URL_DESENHOS_EXTRA = "http://127.0.0.1:9/nao-existe.json.gz"
+ok("[extra] se o ficheiro não existir ou não se ler, a base sai sem eles (sem falhar)", cd.carregar_desenhos_extra() is None)
+
 print(f"\n{falhas} FALHA(S)" if falhas else "\nOs desenhos dos percursos ficam guardados na base.")
 sys.exit(1 if falhas else 0)
