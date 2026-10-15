@@ -34,12 +34,12 @@ const LER = `(() => {
   await p.waitForTimeout(16000);
   const grande = p.locator('[aria-label="Aumentar o mapa"]').first();
   if (await grande.count()) { await grande.click().catch(() => {}); await p.waitForTimeout(3000); }
-  const afastar = p.locator('[aria-label="Afastar mapa"]').first();
-  for (let n = 0; n <= 4; n++) {
-    if (n > 0) {
-      if (!(await afastar.count())) break;
-      await afastar.click().catch(() => {});
-    }
+  // O aviso «Sem sinal de GPS» vem do GPS simulado do browser de testes (num telemóvel a sério há sinal): fica fora da imagem.
+  await p.addStyleTag({ content: '[data-teste="aviso-precisao-mapa"]{display:none!important}' });
+  const caixa = await p.evaluate(() => { const r = document.querySelector('.leaflet-container').getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; });
+  await p.mouse.move(caixa.x, caixa.y);
+  for (let n = 0; n <= 5; n++) {
+    if (n > 0) await p.mouse.wheel(0, 60); // um nível para longe
     await p.waitForTimeout(n === 0 ? 4000 : 9000); // o mapa assenta, pede ao servidor e desenha
     const lido = await p.evaluate(LER);
     lista.push({ passo: n, ...lido });
