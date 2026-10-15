@@ -110,6 +110,8 @@ const MEDIR = `(() => {
   const a = c(ponto), b = c(bola);
   return { px: Math.hypot(a[0] - b[0], a[1] - b[1]), dx: b[0] - a[0], dy: b[1] - a[1] };
 })()`;
+/** Opacidade do ponto da pessoa (0 = escondido, 1 = à vista); null se não existe */
+const OPACIDADE_PONTO = `(() => { const e = document.querySelector('.custom-user-marker-icon'); return e ? Number(getComputedStyle(e).opacity) : null; })()`;
 const mediana = (v) => { const s = [...v].sort((a, b) => a - b); return s.length ? s[Math.floor(s.length / 2)] : NaN; };
 
 (async () => {
@@ -156,17 +158,26 @@ const mediana = (v) => { const s = [...v].sort((a, b) => a - b); return s.length
     ok('[a bordo] mediu-se a distância entre a bola e o ponto da pessoa', dist.length >= 15, erro || `${dist.length} medidas`);
     ok('[a bordo] a bola do autocarro está em cima do ponto da pessoa (mediana ≤ 3 px ≈ 40 m)', dist.length >= 15 && mediana(dist) <= 3, `mediana ${mediana(dist).toFixed(1)} px`);
     ok('[a bordo] e nunca se afasta mais de 6 px (≈ 85 m) — o atraso do operador era de 170 a 230 m', dist.length >= 15 && Math.max(...dist) <= 6, `máximo ${Math.max(...dist).toFixed(1)} px`);
+    await espera(400);
+    const opAbordo = await p.evaluate(OPACIDADE_PONTO);
+    ok('[ponto] a bordo, com a bola em cima da pessoa, o ponto da pessoa esconde-se (um só marcador)', opAbordo !== null && opAbordo <= 0.05, `opacidade ${opAbordo}`);
 
     // Com o GPS fraco (±150 m) a bola não se agarra a uma posição má: volta à do operador (atrasada), nunca salta para um sítio duvidoso
     const fracas = [];
     for (let i = 0; i < 8; i++) { await gps(150); await espera(500); const m = await p.evaluate(MEDIR); if (!m.erro) fracas.push(m.px); await espera(500); }
     nota(`com GPS fraco (px): ${fracas.map((d) => Math.round(d)).join(' ')}`);
     ok('[GPS fraco] com precisão de 150 m a bola não segue o ponto (usa a posição do operador)', fracas.length >= 4 && mediana(fracas) > 8, `mediana ${mediana(fracas).toFixed(1)} px`);
+    await espera(400);
+    const opFraco = await p.evaluate(OPACIDADE_PONTO);
+    ok('[ponto] com GPS fraco a bola não segue e o ponto da pessoa volta a ver-se', opFraco !== null && opFraco >= 0.95, `opacidade ${opFraco}`);
     // O GPS volta ao normal: volta a seguir
     for (let i = 0; i < 6; i++) { await gps(); await espera(1000); }
     const depois = [];
     for (let i = 0; i < 6; i++) { await gps(); await espera(500); const m = await p.evaluate(MEDIR); if (!m.erro) depois.push(m.px); await espera(500); }
     ok('[GPS fraco] quando o GPS volta ao normal a bola volta a seguir a pessoa', depois.length >= 4 && mediana(depois) <= 3, `mediana ${mediana(depois).toFixed(1)} px`);
+    await espera(400);
+    const opVolta = await p.evaluate(OPACIDADE_PONTO);
+    ok('[ponto] com o GPS normal a bola segue outra vez e o ponto volta a esconder-se', opVolta !== null && opVolta <= 0.05, `opacidade ${opVolta}`);
 
     // Longe do autocarro: a pessoa fica a 900 m dele (parada, com bom GPS) com o autocarro marcado como «meu».
     // É o que acontece a quem toca em «Estou a bordo» em casa, por teste ou por engano. A bola não pode saltar para o ponto da pessoa
@@ -179,6 +190,8 @@ const mediana = (v) => { const s = [...v].sort((a, b) => a - b); return s.length
     nota(`longe: distância ao ponto (px) ${dLonge.map((m) => Math.round(m.px)).join(' ')}; dx ${dLonge.map((m) => Math.round(m.dx)).join(' ')}`);
     ok('[longe] a 900 m do autocarro a bola não salta para o ponto da pessoa (mediana > 30 px)', dLonge.length >= 6 && mediana(dLonge.map((m) => m.px)) > 30, dLonge.length ? `mediana ${mediana(dLonge.map((m) => m.px)).toFixed(1)} px` : 'sem medidas');
     ok('[longe] e continua a andar com o autocarro, não fica parada (anda ≥ 3 px em 10 s)', dLonge.length >= 6 && Math.abs(dLonge[dLonge.length - 1].dx - dLonge[0].dx) >= 3, dLonge.length ? `dx ${dLonge[0].dx.toFixed(1)} → ${dLonge[dLonge.length - 1].dx.toFixed(1)} px` : 'sem medidas');
+    const opLonge = await p.evaluate(OPACIDADE_PONTO);
+    ok('[ponto] longe do autocarro o ponto da pessoa fica à vista (a pessoa não está no autocarro)', opLonge !== null && opLonge >= 0.95, `opacidade ${opLonge}`);
     // A pessoa volta ao autocarro: a bola volta a ir em cima dela
     for (let i = 0; i < 12; i++) { await gps(); await espera(1000); }
     const volta = [];
@@ -196,6 +209,8 @@ const mediana = (v) => { const s = [...v].sort((a, b) => a - b); return s.length
       return Math.hypot(a.left + a.width / 2 - (b.left + b.width / 2), a.top + a.height / 2 - (b.top + b.height / 2));
     });
     ok('[já saí] depois de «Já saí» a bola volta à posição do operador (já não está em cima de mim)', bolaSaiu !== null && bolaSaiu > 8, bolaSaiu === null ? 'sem bola' : `${bolaSaiu.toFixed(1)} px`);
+    const opSaiu = await p.evaluate(OPACIDADE_PONTO);
+    ok('[ponto] depois de «Já saí» o ponto da pessoa está à vista', opSaiu !== null && opSaiu >= 0.95, `opacidade ${opSaiu}`);
     ok('[tudo] sem erros de consola', erros.length === 0, erros.slice(0, 2).join(' | '));
   } catch (e) {
     ok('[a bordo] correu sem exceções', false, String(e).slice(0, 300));
