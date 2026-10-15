@@ -1,0 +1,106 @@
+GET https://www.tub.pt/developer/gtfs/feed/tub.zip
+  -> 200 1839834 bytes em 1.89s; content-type=application/zip; cache-control=None; last-modified=Sun, 27 Sep 2026 13:47:24 GMT; etag=None; server=nginx
+ficheiros no zip: ['agency.txt', 'calendar.txt', 'calendar_dates.txt', 'fare_attributes.txt', 'fare_rules.txt', 'routes.txt', 'shapes.txt', 'stops.txt', 'stop_times.txt', 'trips.txt']
+GTFS: 80 rotas, 3730 viagens, 2011 paragens
+exemplo rota: {"route_id": "2", "agency_id": "TUB", "route_short_name": "2", "route_long_name": "PONTE DE PRADO - BOM JESUS", "route_type": "3"}
+exemplo viagem: {"route_id": "2", "service_id": "1", "trip_id": "2_305", "trip_headsign": "BOM JESUS", "direction_id": "0", "shape_id": "4"}
+exemplo paragem: {"stop_id": "1", "stop_name": "BOM JESUS", "stop_lat": "41.554462", "stop_lon": "-8.381193", "zone_id": "1"}
+calendar.txt: 10 linhas; calendar_dates.txt: 36 linhas
+exemplo calendar: {"service_id": "7", "monday": "1", "tuesday": "1", "wednesday": "1", "thursday": "1", "friday": "0", "saturday": "0", "sunday": "0", "start_date": "20260928", "end_date": "20270201"}
+shapes.txt existe
+frequencies.txt não existe
+feed_info.txt não existe
+
+===== rodada 1 (agora 2026-10-15 16:13:07Z) =====
+GET https://mobibus-gateway.fleetaware.pt/gtfs-rt/feed/vehicle_positions.pb
+  -> 200 7462 bytes em 0.67s; content-type=application/octet-stream; cache-control=None; last-modified=Thu, 15 Oct 2026 16:13:07 GMT; etag="6ad0fb93-1d26"; server=openresty
+cabeçalho posições: 2.0 incrementality 0 timestamp 2026-10-15 16:13:07Z (há 1s)
+entidades: 80 com veículo: 80
+idade das posições: min 4s, mediana 4s, máx 4s
+com trip_id: 80; com route_id: 80
+trip_id que existe no GTFS: 80/80; route_id que existe no GTFS: 80/80
+  exemplo:  {"entity": "45_410", "trip": "45_410", "route": "45", "dir": 1, "start": "", "date": "20261015", "veiculo_id": "1066", "etiqueta": "1066", "matricula": "", "lat": 41.56439208984375, "lon": -8.419811248779297, "rumo": null, "vel_ms": 0.05643480643630028, "stop_id": "76", "seq": 22, "estado": 2, "ocupacao": null, "ts": "2026-10-15 16:13:04Z"}
+  exemplo:  {"entity": "43_315", "trip": "43_315", "route": "43", "dir": 0, "start": "", "date": "20261015", "veiculo_id": "919", "etiqueta": "919", "matricula": "", "lat": 41.545021057128906, "lon": -8.423718452453613, "rumo": null, "vel_ms": 1.9821633100509644, "stop_id": "223", "seq": 5, "estado": 1, "ocupacao": null, "ts": "2026-10-15 16:13:04Z"}
+  exemplo:  {"entity": "18_139", "trip": "18_139", "route": "18", "dir": 0, "start": "", "date": "20261015", "veiculo_id": "913", "etiqueta": "913", "matricula": "", "lat": 41.5511360168457, "lon": -8.417009353637695, "rumo": null, "vel_ms": 0.04898950457572937, "stop_id": "165", "seq": 21, "estado": 2, "ocupacao": null, "ts": "2026-10-15 16:13:04Z"}
+  exemplo:  {"entity": "87_533", "trip": "87_533", "route": "87", "dir": 0, "start": "", "date": "20261015", "veiculo_id": "916", "etiqueta": "916", "matricula": "", "lat": 41.55891418457031, "lon": -8.410240173339844, "rumo": null, "vel_ms": 3.7467939853668213, "stop_id": "1418", "seq": 4, "estado": 1, "ocupacao": null, "ts": "2026-10-15 16:13:04Z"}
+veículos por linha (route_short_name): {'45': 3, '43': 3, '18': 1, '87': 3, '70': 1, '95': 4, '35': 1, '14': 3, '24': 6, '52': 1, '19': 1, '74': 4, '9': 2, '7': 3, '96': 4, '5': 3, '90': 6, '73': 2, '40': 3, '2': 3, '85': 2, '33': 2, '72': 1, '50': 1, '58': 1, '13': 1, '94': 2, '80': 1, '41': 3, '37': 1, '21': 2, '315': 1, '97': 1, '501': 1, '36': 1, '53': 1, '12': 1}
+caixa dos veículos: lat 41.4828..41.5895, lon -8.5116..-8.3328
+GET https://mobibus-gateway.fleetaware.pt/gtfs-rt/feed/trip_updates.pb
+  -> 200 48522 bytes em 0.90s; content-type=application/octet-stream; cache-control=None; last-modified=Thu, 15 Oct 2026 16:12:53 GMT; etag="6ad0fb85-bd8a"; server=openresty
+cabeçalho viagens: 2.0 timestamp 2026-10-15 16:12:53Z (há 16s)
+entidades: 80 com trip_update: 80
+stop_time_update por viagem: min 2, mediana 17, máx 65
+trip_id que existe no GTFS: 80/80
+stop_id que existe no GTFS: 1604 / 1604
+com arrival.time: 1604 com arrival.delay: 0 com departure.time: 1604 com departure.delay: 0 com stop_sequence: 1604 schedule_relationship!=SCHEDULED: 0
+  exemplo viagem: {"entity": "12_61", "trip": "12_61", "route": "12", "start": "", "date": "20261015", "veiculo": "351", "delay": null, "ts": "2026-10-15 16:12:50Z", "n_stu": 14}
+     stu: {"seq": 13, "stop": "795", "arr": "2026-10-15 16:14:56Z", "arr_delay": null, "dep": "2026-10-15 16:15:13Z", "dep_delay": null, "rel": 0}
+     stu: {"seq": 14, "stop": "797", "arr": "2026-10-15 16:16:05Z", "arr_delay": null, "dep": "2026-10-15 16:16:38Z", "dep_delay": null, "rel": 0}
+     stu: {"seq": 15, "stop": "1606", "arr": "2026-10-15 16:16:53Z", "arr_delay": null, "dep": "2026-10-15 16:17:57Z", "dep_delay": null, "rel": 0}
+  exemplo viagem: {"entity": "13_40", "trip": "13_40", "route": "13", "start": "", "date": "20261015", "veiculo": "904", "delay": null, "ts": "2026-10-15 16:12:50Z", "n_stu": 17}
+     stu: {"seq": 21, "stop": "812", "arr": "2026-10-15 16:13:01Z", "arr_delay": null, "dep": "2026-10-15 16:13:04Z", "dep_delay": null, "rel": 0}
+     stu: {"seq": 22, "stop": "813", "arr": "2026-10-15 16:13:28Z", "arr_delay": null, "dep": "2026-10-15 16:13:29Z", "dep_delay": null, "rel": 0}
+     stu: {"seq": 23, "stop": "815", "arr": "2026-10-15 16:13:51Z", "arr_delay": null, "dep": "2026-10-15 16:13:51Z", "dep_delay": null, "rel": 0}
+viagens com posição: 80; com atualização: 80; em ambas: 80
+
+===== rodada 2 (agora 2026-10-15 16:13:21Z) =====
+GET https://mobibus-gateway.fleetaware.pt/gtfs-rt/feed/vehicle_positions.pb
+  -> 200 7462 bytes em 0.42s; content-type=application/octet-stream; cache-control=None; last-modified=Thu, 15 Oct 2026 16:13:07 GMT; etag="6ad0fb93-1d26"; server=openresty
+cabeçalho posições: 2.0 incrementality 0 timestamp 2026-10-15 16:13:07Z (há 15s)
+entidades: 80 com veículo: 80
+idade das posições: min 18s, mediana 18s, máx 18s
+com trip_id: 80; com route_id: 80
+trip_id que existe no GTFS: 80/80; route_id que existe no GTFS: 80/80
+  exemplo:  {"entity": "45_410", "trip": "45_410", "route": "45", "dir": 1, "start": "", "date": "20261015", "veiculo_id": "1066", "etiqueta": "1066", "matricula": "", "lat": 41.56439208984375, "lon": -8.419811248779297, "rumo": null, "vel_ms": 0.05643480643630028, "stop_id": "76", "seq": 22, "estado": 2, "ocupacao": null, "ts": "2026-10-15 16:13:04Z"}
+  exemplo:  {"entity": "43_315", "trip": "43_315", "route": "43", "dir": 0, "start": "", "date": "20261015", "veiculo_id": "919", "etiqueta": "919", "matricula": "", "lat": 41.545021057128906, "lon": -8.423718452453613, "rumo": null, "vel_ms": 1.9821633100509644, "stop_id": "223", "seq": 5, "estado": 1, "ocupacao": null, "ts": "2026-10-15 16:13:04Z"}
+  exemplo:  {"entity": "18_139", "trip": "18_139", "route": "18", "dir": 0, "start": "", "date": "20261015", "veiculo_id": "913", "etiqueta": "913", "matricula": "", "lat": 41.5511360168457, "lon": -8.417009353637695, "rumo": null, "vel_ms": 0.04898950457572937, "stop_id": "165", "seq": 21, "estado": 2, "ocupacao": null, "ts": "2026-10-15 16:13:04Z"}
+  exemplo:  {"entity": "87_533", "trip": "87_533", "route": "87", "dir": 0, "start": "", "date": "20261015", "veiculo_id": "916", "etiqueta": "916", "matricula": "", "lat": 41.55891418457031, "lon": -8.410240173339844, "rumo": null, "vel_ms": 3.7467939853668213, "stop_id": "1418", "seq": 4, "estado": 1, "ocupacao": null, "ts": "2026-10-15 16:13:04Z"}
+veículos por linha (route_short_name): {'45': 3, '43': 3, '18': 1, '87': 3, '70': 1, '95': 4, '35': 1, '14': 3, '24': 6, '52': 1, '19': 1, '74': 4, '9': 2, '7': 3, '96': 4, '5': 3, '90': 6, '73': 2, '40': 3, '2': 3, '85': 2, '33': 2, '72': 1, '50': 1, '58': 1, '13': 1, '94': 2, '80': 1, '41': 3, '37': 1, '21': 2, '315': 1, '97': 1, '501': 1, '36': 1, '53': 1, '12': 1}
+GET https://mobibus-gateway.fleetaware.pt/gtfs-rt/feed/trip_updates.pb
+  -> 200 47472 bytes em 0.85s; content-type=application/octet-stream; cache-control=None; last-modified=Thu, 15 Oct 2026 16:13:09 GMT; etag="6ad0fb95-b970"; server=openresty
+cabeçalho viagens: 2.0 timestamp 2026-10-15 16:13:09Z (há 14s)
+entidades: 79 com trip_update: 79
+stop_time_update por viagem: min 2, mediana 16, máx 65
+trip_id que existe no GTFS: 79/79
+stop_id que existe no GTFS: 1568 / 1568
+com arrival.time: 1568 com arrival.delay: 0 com departure.time: 1568 com departure.delay: 0 com stop_sequence: 1568 schedule_relationship!=SCHEDULED: 0
+  exemplo viagem: {"entity": "12_61", "trip": "12_61", "route": "12", "start": "", "date": "20261015", "veiculo": "351", "delay": null, "ts": "2026-10-15 16:13:05Z", "n_stu": 14}
+     stu: {"seq": 13, "stop": "795", "arr": "2026-10-15 16:14:56Z", "arr_delay": null, "dep": "2026-10-15 16:15:26Z", "dep_delay": null, "rel": 0}
+     stu: {"seq": 14, "stop": "797", "arr": "2026-10-15 16:16:05Z", "arr_delay": null, "dep": "2026-10-15 16:16:51Z", "dep_delay": null, "rel": 0}
+     stu: {"seq": 15, "stop": "1606", "arr": "2026-10-15 16:16:53Z", "arr_delay": null, "dep": "2026-10-15 16:18:10Z", "dep_delay": null, "rel": 0}
+  exemplo viagem: {"entity": "13_40", "trip": "13_40", "route": "13", "start": "", "date": "20261015", "veiculo": "904", "delay": null, "ts": "2026-10-15 16:13:05Z", "n_stu": 17}
+     stu: {"seq": 21, "stop": "812", "arr": "2026-10-15 16:13:01Z", "arr_delay": null, "dep": "2026-10-15 16:13:04Z", "dep_delay": null, "rel": 0}
+     stu: {"seq": 22, "stop": "813", "arr": "2026-10-15 16:13:28Z", "arr_delay": null, "dep": "2026-10-15 16:13:29Z", "dep_delay": null, "rel": 0}
+     stu: {"seq": 23, "stop": "815", "arr": "2026-10-15 16:13:51Z", "arr_delay": null, "dep": "2026-10-15 16:13:51Z", "dep_delay": null, "rel": 0}
+viagens com posição: 80; com atualização: 79; em ambas: 79
+
+===== rodada 3 (agora 2026-10-15 16:13:34Z) =====
+GET https://mobibus-gateway.fleetaware.pt/gtfs-rt/feed/vehicle_positions.pb
+  -> 200 7462 bytes em 0.59s; content-type=application/octet-stream; cache-control=None; last-modified=Thu, 15 Oct 2026 16:13:22 GMT; etag="6ad0fba2-1d26"; server=openresty
+cabeçalho posições: 2.0 incrementality 0 timestamp 2026-10-15 16:13:22Z (há 13s)
+entidades: 80 com veículo: 80
+idade das posições: min 16s, mediana 16s, máx 16s
+com trip_id: 80; com route_id: 80
+trip_id que existe no GTFS: 80/80; route_id que existe no GTFS: 80/80
+  exemplo:  {"entity": "45_410", "trip": "45_410", "route": "45", "dir": 1, "start": "", "date": "20261015", "veiculo_id": "1066", "etiqueta": "1066", "matricula": "", "lat": 41.56465530395508, "lon": -8.41972827911377, "rumo": null, "vel_ms": 7.453484535217285, "stop_id": "76", "seq": 22, "estado": 2, "ocupacao": null, "ts": "2026-10-15 16:13:19Z"}
+  exemplo:  {"entity": "43_315", "trip": "43_315", "route": "43", "dir": 0, "start": "", "date": "20261015", "veiculo_id": "919", "etiqueta": "919", "matricula": "", "lat": 41.545013427734375, "lon": -8.423750877380371, "rumo": null, "vel_ms": 0.05551324784755707, "stop_id": "223", "seq": 5, "estado": 1, "ocupacao": null, "ts": "2026-10-15 16:13:19Z"}
+  exemplo:  {"entity": "18_139", "trip": "18_139", "route": "18", "dir": 0, "start": "", "date": "20261015", "veiculo_id": "913", "etiqueta": "913", "matricula": "", "lat": 41.55121994018555, "lon": -8.417071342468262, "rumo": null, "vel_ms": 3.551565170288086, "stop_id": "165", "seq": 21, "estado": 2, "ocupacao": null, "ts": "2026-10-15 16:13:19Z"}
+  exemplo:  {"entity": "87_533", "trip": "87_533", "route": "87", "dir": 0, "start": "", "date": "20261015", "veiculo_id": "916", "etiqueta": "916", "matricula": "", "lat": 41.558372497558594, "lon": -8.410571098327637, "rumo": null, "vel_ms": 9.812150001525879, "stop_id": "1558", "seq": 5, "estado": 2, "ocupacao": null, "ts": "2026-10-15 16:13:19Z"}
+veículos por linha (route_short_name): {'45': 3, '43': 3, '18': 1, '87': 3, '70': 1, '95': 4, '35': 1, '14': 3, '24': 6, '52': 1, '19': 1, '74': 4, '9': 2, '7': 3, '96': 4, '5': 3, '90': 6, '73': 2, '40': 3, '2': 3, '85': 2, '33': 2, '72': 1, '50': 1, '58': 1, '13': 1, '94': 2, '80': 1, '41': 3, '37': 1, '21': 2, '315': 1, '97': 1, '501': 1, '36': 1, '53': 1, '12': 1}
+GET https://mobibus-gateway.fleetaware.pt/gtfs-rt/feed/trip_updates.pb
+  -> 200 47090 bytes em 0.68s; content-type=application/octet-stream; cache-control=None; last-modified=Thu, 15 Oct 2026 16:13:23 GMT; etag="6ad0fba3-b7f2"; server=openresty
+cabeçalho viagens: 2.0 timestamp 2026-10-15 16:13:23Z (há 13s)
+entidades: 79 com trip_update: 79
+stop_time_update por viagem: min 2, mediana 16, máx 65
+trip_id que existe no GTFS: 79/79
+stop_id que existe no GTFS: 1554 / 1554
+com arrival.time: 1554 com arrival.delay: 0 com departure.time: 1554 com departure.delay: 0 com stop_sequence: 1554 schedule_relationship!=SCHEDULED: 0
+  exemplo viagem: {"entity": "12_61", "trip": "12_61", "route": "12", "start": "", "date": "20261015", "veiculo": "351", "delay": null, "ts": "2026-10-15 16:13:20Z", "n_stu": 14}
+     stu: {"seq": 13, "stop": "795", "arr": "2026-10-15 16:14:56Z", "arr_delay": null, "dep": "2026-10-15 16:15:26Z", "dep_delay": null, "rel": 0}
+     stu: {"seq": 14, "stop": "797", "arr": "2026-10-15 16:16:05Z", "arr_delay": null, "dep": "2026-10-15 16:16:51Z", "dep_delay": null, "rel": 0}
+     stu: {"seq": 15, "stop": "1606", "arr": "2026-10-15 16:16:53Z", "arr_delay": null, "dep": "2026-10-15 16:18:10Z", "dep_delay": null, "rel": 0}
+  exemplo viagem: {"entity": "13_40", "trip": "13_40", "route": "13", "start": "", "date": "20261015", "veiculo": "904", "delay": null, "ts": "2026-10-15 16:13:20Z", "n_stu": 16}
+     stu: {"seq": 22, "stop": "813", "arr": "2026-10-15 16:13:33Z", "arr_delay": null, "dep": "2026-10-15 16:13:41Z", "dep_delay": null, "rel": 0}
+     stu: {"seq": 23, "stop": "815", "arr": "2026-10-15 16:13:56Z", "arr_delay": null, "dep": "2026-10-15 16:14:01Z", "dep_delay": null, "rel": 0}
+     stu: {"seq": 24, "stop": "817", "arr": "2026-10-15 16:14:37Z", "arr_delay": null, "dep": "2026-10-15 16:14:57Z", "dep_delay": null, "rel": 0}
+viagens com posição: 80; com atualização: 79; em ambas: 79
