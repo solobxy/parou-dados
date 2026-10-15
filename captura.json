@@ -1,0 +1,56 @@
+{
+  "site": "https://2-31-13-85.sslip.io",
+  "lat": 41.1496,
+  "lon": -8.6109,
+  "tema": "claro",
+  "passos": [
+    {
+      "passo": 0,
+      "w": 390,
+      "h": 492,
+      "rodas": 3,
+      "pontos": 0,
+      "hora": "23:08"
+    },
+    {
+      "passo": 1,
+      "w": 390,
+      "h": 492,
+      "rodas": 7,
+      "pontos": 0,
+      "hora": "23:08"
+    },
+    {
+      "passo": 2,
+      "w": 390,
+      "h": 492,
+      "rodas": 12,
+      "pontos": 1,
+      "hora": "23:08"
+    },
+    {
+      "passo": 3,
+      "w": 390,
+      "h": 492,
+      "rodas": 26,
+      "pontos": 1,
+      "hora": "23:08"
+    },
+    {
+      "passo": 4,
+      "w": 390,
+      "h": 492,
+      "rodas": 41,
+      "pontos": 1,
+      "hora": "23:08"
+    },
+    {
+      "passo": 5,
+      "w": 390,
+      "h": 492,
+      "rodas": 50,
+      "pontos": 1,
+      "hora": "23:08"
+    }
+  ]
+}
