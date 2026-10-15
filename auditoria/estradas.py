@@ -100,19 +100,34 @@ def osrm_match(base, pontos, sigma=None):
 
 
 def fracao_encaixada(linha, pontos, raio_m):
-    """Fração das paragens que ficam a menos de `raio_m` metros do desenho (é o que a app exige para aceitar o desenho)."""
+    """Fração das paragens que ficam a menos de `raio_m` metros do desenho (é o que a app exige para aceitar o desenho).
+    Usa uma grelha de células de ~300 m para só comparar cada paragem com os segmentos que estão por perto."""
     if len(linha) < 2 or not pontos:
         return 0.0
+    CEL = 0.003            # graus (~330 m de latitude, ~250 m de longitude)
+    grelha = {}
+    for i in range(len(linha) - 1):
+        a, b = linha[i], linha[i + 1]
+        passos = max(1, int(haversine(a, b) / 120.0))
+        celulas = set()
+        for q in range(passos + 1):
+            t = q / passos
+            celulas.add((int((a[0] + (b[0] - a[0]) * t) / CEL), int((a[1] + (b[1] - a[1]) * t) / CEL)))
+        for c in celulas:
+            grelha.setdefault(c, []).append(i)
     perto = 0
     for (lat, lon) in pontos:
         k = math.cos(math.radians(lat)) * 111320.0
         m = 110540.0
+        ci, cj = int(lat / CEL), int(lon / CEL)
+        candidatos = set()
+        for di in (-1, 0, 1):
+            for dj in (-1, 0, 1):
+                candidatos.update(grelha.get((ci + di, cj + dj), ()))
         melhor = 1e12
-        for i in range(len(linha) - 1):
+        for i in candidatos:
             ax, ay = (linha[i][1] - lon) * k, (linha[i][0] - lat) * m
             bx, by = (linha[i + 1][1] - lon) * k, (linha[i + 1][0] - lat) * m
-            if min(ax, bx) > raio_m or max(ax, bx) < -raio_m or min(ay, by) > raio_m or max(ay, by) < -raio_m:
-                continue
             dx, dy = bx - ax, by - ay
             L = dx * dx + dy * dy
             t = 0.0 if L == 0 else max(0.0, min(1.0, -(ax * dx + ay * dy) / L))
@@ -252,6 +267,33 @@ def desenhar_por_match(base, pontos, nomes=None, eventos=None):
     return codificar_polilinha(simplificar(linha, 1.5), 6), fracao, razao
 
 
+def desenhar_melhor(base, pontos, nomes=None, eventos=None):
+    """Corre os dois modos (paragem a paragem e sequência inteira) e fica com o melhor desenho desta sequência:
+    o que passa por mais paragens e liga mais pares. O «match» acerta nas vias certas (as duas vias de um metro, os lados de uma rua) mas deixa
+    cair paragens em estações grandes; o paragem a paragem passa por todas mas pode dar voltas. Cada sequência fica com o que se portou melhor."""
+    eventos = eventos if eventos is not None else []
+    ev_r, ev_m = [], []
+    r = desenhar_sequencia(base, pontos, nomes, ev_r)
+    m = desenhar_por_match(base, pontos, nomes, ev_m)
+
+    def nota(x):
+        if x is None:
+            return -1.0
+        return x[1] + fracao_encaixada(descodificar_polilinha(x[0], 6), pontos, 80)
+
+    nr, nm = nota(r), nota(m)
+    if nr < 0 and nm < 0:
+        eventos.extend(ev_r + ev_m)
+        return None
+    if nm >= nr - 0.005:
+        eventos.extend(ev_m)
+        eventos.append({"tipo": "escolhido_match", "nota_match": round(nm, 3), "nota_route": round(nr, 3)})
+        return m
+    eventos.extend(ev_r)
+    eventos.append({"tipo": "escolhido_route", "nota_match": round(nm, 3), "nota_route": round(nr, 3)})
+    return r
+
+
 def sequencias_unir(conn, limite=None):
     cur = conn.execute(
         "SELECT sr.route_id, sr.direction_id, sr.stop_id, s.stop_lat, s.stop_lon, s.stop_name FROM stop_routes sr JOIN stops s ON s.stop_id = sr.stop_id "
@@ -294,7 +336,7 @@ def correr(nome, base, sequencias, relatorio, caminhos, modo="route", metricas=F
     sem = 0
     fracoes, razoes, encaixes = [], [], []
     motivos, exemplos = {}, []
-    desenhar = desenhar_por_match if modo == "match" else desenhar_sequencia
+    desenhar = {"match": desenhar_por_match, "melhor": desenhar_melhor}.get(modo, desenhar_sequencia)
 
     def um(seq):
         eventos = []
@@ -339,7 +381,7 @@ def main():
     ap.add_argument("--saida", required=True)
     ap.add_argument("--limite", type=int, default=0, help="só uma amostra de N sequências por grupo (sonda)")
     ap.add_argument("--carris", default="cp,metro_porto,metro_lisboa", help="operadores desenhados pelo carril")
-    ap.add_argument("--modo", choices=["route", "match"], default="route", help="como pedir ao OSRM: route (paragem a paragem) ou match (sequência inteira)")
+    ap.add_argument("--modo", choices=["route", "match", "melhor"], default="melhor", help="como pedir ao OSRM: route (paragem a paragem), match (sequência inteira) ou melhor (corre os dois e fica com o melhor de cada sequência)")
     ap.add_argument("--metricas", action="store_true", help="mede também quantas paragens ficam a menos de 80 m do desenho (mais lento; para ensaios)")
     args = ap.parse_args()
 

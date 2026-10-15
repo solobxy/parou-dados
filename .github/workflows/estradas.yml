@@ -21,9 +21,9 @@ on:
         required: false
         default: "1"
       modo:
-        description: "route = paragem a paragem; match = sequência inteira (escolhe a via certa); ambos = ensaio que compara (não publica)"
+        description: "melhor = corre os dois e fica com o melhor de cada sequência; route = paragem a paragem; match = sequência inteira; ambos = ensaio que compara os três (não publica)"
         required: false
-        default: "match"
+        default: "melhor"
 
 permissions:
   contents: write
@@ -106,15 +106,15 @@ jobs:
         run: |
           mkdir -p res
           LIMITE="${{ inputs.limite || '0' }}"
-          MODO="${{ inputs.modo || 'match' }}"
+          MODO="${{ inputs.modo || 'melhor' }}"
           METRICAS=""
           if [ "$LIMITE" != "0" ]; then METRICAS="--metricas"; fi
           if [ "$MODO" = "ambos" ]; then
-            for M in route match; do
+            for M in route match melhor; do
               python3 auditoria/estradas.py --db gtfs.db --carro http://127.0.0.1:5000 --comboio http://127.0.0.1:5001 --saida desenhos-extra-$M.json.gz --limite "$LIMITE" --modo $M $METRICAS 2>&1 | tee res/estradas-$M.txt
             done
-            cp desenhos-extra-match.json.gz desenhos-extra.json.gz
-            python3 auditoria/comparar-estradas.py desenhos-extra-route.json.gz desenhos-extra-match.json.gz > res/comparacao.txt
+            cp desenhos-extra-melhor.json.gz desenhos-extra.json.gz
+            python3 auditoria/comparar-estradas.py desenhos-extra-route.json.gz desenhos-extra-match.json.gz desenhos-extra-melhor.json.gz > res/comparacao.txt
             cat res/comparacao.txt
           else
             python3 auditoria/estradas.py --db gtfs.db --carro http://127.0.0.1:5000 --comboio http://127.0.0.1:5001 --saida desenhos-extra.json.gz --limite "$LIMITE" --modo "$MODO" $METRICAS 2>&1 | tee res/estradas.txt
@@ -124,7 +124,7 @@ jobs:
           cp desenhos-extra*.json.gz res/ || true
 
       - name: Publicar na release "desenhos"
-        if: ${{ (inputs.publicar || '1') == '1' && (inputs.limite || '0') == '0' && (inputs.modo || 'match') != 'ambos' }}
+        if: ${{ (inputs.publicar || '1') == '1' && (inputs.limite || '0') == '0' && (inputs.modo || 'melhor') != 'ambos' }}
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
