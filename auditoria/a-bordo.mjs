@@ -215,7 +215,7 @@ async function testarServidor() {
   const f = await j('/api/transit/a-bordo');
   ok('servidor: /a-bordo sem veículo → 400 ou 404', f.status === 400 || f.status === 404, f.status);
   for (const v of (b.corpo?.veiculos || []).slice(0, 3)) {
-    ok(`servidor: veículo ${v.id} só traz o necessário (sem campos a mais)`, Object.keys(v).every((k) => ['id', 'op', 'linha', 'lat', 'lon', 'rumo', 'vel', 't', 'viagem'].includes(k)), Object.keys(v).join(','));
+    ok(`servidor: veículo ${v.id} só traz o necessário (sem campos a mais)`, Object.keys(v).every((k) => ['id', 'op', 'linha', 'lat', 'lon', 'rumo', 'vel', 't', 'ant', 'viagem'].includes(k)), Object.keys(v).join(','));
   }
   // As partidas reais das paragens perto dão chaves de linha ("stcp:803", "cm:4436") que batem com os autocarros em direto?
   const chaveTeste = (d, paragem) => {

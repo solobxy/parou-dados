@@ -64,6 +64,14 @@ jobs:
           if [ -s ../res/tub-real/vehicle_positions.pb ] && [ -s ../res/tub-real/trip_updates.pb ]; then REAIS="$(cd ../res/tub-real && pwd)"; fi
           FICHEIROS_TUB="$REAIS" APP=$PWD node --import tsx ../auditoria/tub-leitor.mjs 2>&1 | tee ../res/tub-leitor.txt | tail -90
 
+      - name: Teste do movimento dos autocarros (suave, sem teleportes; séries reais medidas no servidor)
+        continue-on-error: true
+        working-directory: app
+        run: |
+          mkdir -p ../res
+          APP=$PWD node --import tsx ../auditoria/trajeto-veiculo.mjs 2>&1 | grep -v "Experimental\|trace-warnings" | tee ../res/trajeto-veiculo.txt | tail -90
+          exit ${PIPESTATUS[0]}
+
       - name: Teste do planeador (metro, comboio e barco têm de aparecer nas opções de viagem)
         continue-on-error: true
         working-directory: app
@@ -90,6 +98,13 @@ jobs:
         run: |
           mkdir -p ../res
           SAIDA=../res RAPIDO=${{ inputs.rapido }} timeout 1800 node a-bordo.mjs 2>&1 | tee ../res/consola.txt | tail -250
+
+      - name: Testar o movimento dos autocarros no mapa (browser)
+        continue-on-error: true
+        working-directory: auditoria
+        run: |
+          mkdir -p ../res
+          SAIDA=../res timeout 300 node mapa-suave.mjs 2>&1 | tee ../res/suave.txt | tail -40
 
       - name: Guardar
         if: always()
