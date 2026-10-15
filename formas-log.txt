@@ -1,0 +1,42 @@
+== metro_lisboa
+metro_lisboa           shapes=    36 pontos=     380 viagens c/forma=5106/5106 espaço mediano=741.7 m; formas c/ salto>200m=36; paragens>80m do desenho: 0/567 (mediana 0.0 m, p95 0.0 m)
+== carris
+carris                 shapes=   308 pontos=  142365 viagens c/forma=87885/87885 espaço mediano=12.0 m; formas c/ salto>200m=125; paragens>80m do desenho: 0/1179 (mediana 6.3 m, p95 10.9 m)
+== cp
+cp                     SEM shapes.txt
+== fertagus
+fertagus               shapes=     6 pontos=    4820 viagens c/forma=260/260 espaço mediano=34.0 m; formas c/ salto>200m=6; paragens>80m do desenho: 8/520 (mediana 28.0 m, p95 76.6 m)
+== transtejo_soflusa
+transtejo_soflusa      shapes=    17 pontos=     224 viagens c/forma=938/938 espaço mediano=513.3 m; formas c/ salto>200m=17; paragens>80m do desenho: 0/84 (mediana 0.0 m, p95 0.0 m)
+== mts
+mts                    shapes=     6 pontos=    1600 viagens c/forma=2067/2067 espaço mediano=13.0 m; formas c/ salto>200m=6; paragens>80m do desenho: 0/469 (mediana 1.8 m, p95 4.0 m)
+== tcb_barreiro
+   falhou https://www.tcbarreiro.pt/front/files/sample_gtfs/GTFS-TCB_24.zip HTTP Error 404: Not Found
+tcb_barreiro           NÃO FOI POSSÍVEL DESCARREGAR
+== stcp
+stcp                   shapes=   140 pontos=   37215 viagens c/forma=37250/37250 espaço mediano=23.7 m; formas c/ salto>200m=137; paragens>80m do desenho: 0/1606 (mediana 6.3 m, p95 11.5 m)
+== metro_porto
+metro_porto            shapes=    12 pontos=     332 viagens c/forma=2941/2941 espaço mediano=666.7 m; formas c/ salto>200m=12; paragens>80m do desenho: 0/853 (mediana 0.1 m, p95 0.5 m)
+== tub_braga
+tub_braga              shapes=   392 pontos=   89297 viagens c/forma=3607/3730 espaço mediano=26.4 m; formas c/ salto>200m=378; paragens>80m do desenho: 16/1372 (mediana 4.1 m, p95 9.4 m)
+== guimabus
+guimabus               shapes=   235 pontos=   89405 viagens c/forma=2213/2213 espaço mediano=20.1 m; formas c/ salto>200m=218; paragens>80m do desenho: 0/1275 (mediana 5.3 m, p95 9.5 m)
+== tuba_barcelos
+tuba_barcelos          shapes=   295 pontos=  478927 viagens c/forma=739/739 espaço mediano=7.8 m; formas c/ salto>200m=28; paragens>80m do desenho: 0/1438 (mediana 4.7 m, p95 11.7 m)
+== mobiave
+mobiave                shapes=   195 pontos=  296127 viagens c/forma=2690/2690 espaço mediano=4.7 m; formas c/ salto>200m=0; paragens>80m do desenho: 0/1374 (mediana 4.3 m, p95 8.9 m)
+== smtuc
+   falhou https://dados.gov.pt/pt/datasets/r/bdae1dd0-74e5-4c52-8234-b7cb1cf5bee HTTP Error 404: Not Found
+smtuc                  shapes=   396 pontos=  200346 viagens c/forma=8114/8114 espaço mediano=21.7 m; formas c/ salto>200m=0; paragens>80m do desenho: 0/966 (mediana 0.0 m, p95 0.0 m)
+== vamus
+vamus                  shapes=   329 pontos=  180336 viagens c/forma=1308/1308 espaço mediano=28.8 m; formas c/ salto>200m=328; paragens>80m do desenho: 0/1374 (mediana 5.3 m, p95 9.8 m)
+== proximo_faro
+proximo_faro           shapes=    29 pontos=    8444 viagens c/forma=745/745 espaço mediano=17.6 m; formas c/ salto>200m=28; paragens>80m do desenho: 0/987 (mediana 5.3 m, p95 13.9 m)
+== giro
+giro                   shapes=    33 pontos=   13483 viagens c/forma=611/611 espaço mediano=19.6 m; formas c/ salto>200m=31; paragens>80m do desenho: 0/1108 (mediana 5.6 m, p95 9.5 m)
+== sobe_desce_tavira
+sobe_desce_tavira      shapes=    16 pontos=    6348 viagens c/forma=27/27 espaço mediano=17.1 m; formas c/ salto>200m=16; paragens>80m do desenho: 0/956 (mediana 5.6 m, p95 9.6 m)
+== horarios_funchal
+horarios_funchal       shapes=   260 pontos=  178709 viagens c/forma=10656/10656 espaço mediano=7.4 m; formas c/ salto>200m=0; paragens>80m do desenho: 0/1280 (mediana 0.0 m, p95 3.8 m)
+== cm_gtfs
+cm_gtfs                shapes=  1623 pontos= 1719243 viagens c/forma=305382/305382 espaço mediano=8.2 m; formas c/ salto>200m=703; paragens>80m do desenho: 0/1278 (mediana 5.8 m, p95 11.1 m)
