@@ -72,6 +72,14 @@ jobs:
           APP=$PWD node --import tsx ../auditoria/trajeto-veiculo.mjs 2>&1 | grep -v "Experimental\|trace-warnings" | tee ../res/trajeto-veiculo.txt | tail -90
           exit ${PIPESTATUS[0]}
 
+      - name: Teste dos autocarros no ecrã (todos os da zona que se vê, qualquer operador e linha; raio largo)
+        continue-on-error: true
+        working-directory: app
+        run: |
+          mkdir -p ../res
+          APP=$PWD node --import tsx ../auditoria/veiculos-no-ecra.mjs 2>&1 | grep -v "Experimental\|trace-warnings" | tee ../res/veiculos-no-ecra.txt | tail -60
+          exit ${PIPESTATUS[0]}
+
       - name: Teste do planeador (metro, comboio e barco têm de aparecer nas opções de viagem)
         continue-on-error: true
         working-directory: app
@@ -105,6 +113,15 @@ jobs:
         run: |
           mkdir -p ../res
           SAIDA=../res timeout 300 node mapa-suave.mjs 2>&1 | tee ../res/suave.txt | tail -40
+          exit ${PIPESTATUS[0]}
+
+      - name: Testar que o mapa mostra todos os autocarros do ecrã (browser)
+        continue-on-error: true
+        working-directory: auditoria
+        run: |
+          mkdir -p ../res
+          SAIDA=../res timeout 300 node mapa-todos.mjs 2>&1 | tee ../res/todos.txt | tail -40
+          exit ${PIPESTATUS[0]}
 
       - name: Guardar
         if: always()
