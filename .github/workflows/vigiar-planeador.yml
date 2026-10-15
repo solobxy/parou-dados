@@ -1,0 +1,88 @@
+name: Vigiar o planeador de viagens
+
+# Todos os dias, com os dados verdadeiros do servidor, pede viagens que só fazem sentido de metro, de comboio e de barco
+# e confirma que o planeador as mostra como opção ("Para onde vais?").
+#
+# Porquê: o metro já esteve escondido durante muito tempo, porque o planeador só mostrava percursos com transbordo quando
+# chegavam antes do autocarro direto. O teste automático (auditoria/planeador-modos.mjs) apanha isso no código; este apanha
+# o que o código não vê: dados do dia sem viagens (calendário caducado, feed que deixou de carregar) ou uma regressão que só
+# aparece com a rede real.
+#
+# Só falha (e o GitHub manda um email) se alguma das viagens não tiver nenhuma opção com o meio de transporte esperado.
+# Pede sempre a viagem para amanhã ao meio-dia (hora de Lisboa), para o resultado não depender da hora a que corre.
+
+on:
+  schedule:
+    - cron: "41 6 * * *"
+  workflow_dispatch:
+    inputs:
+      site:
+        description: "Endereço do servidor (vazio = o de sempre)"
+        required: false
+        default: ""
+
+permissions: {}
+
+jobs:
+  vigiar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Pedir as viagens e ver os meios de transporte
+        env:
+          SITE_PEDIDO: ${{ inputs.site }}
+        run: |
+          site="${SITE_PEDIDO:-https://2-31-13-85.sslip.io}"
+          quando="$(TZ=Europe/Lisbon date -d 'tomorrow 12:00' +%Y-%m-%dT%H:%M)"
+          echo "Servidor: $site  Partida: $quando (hora de Lisboa)" | tee -a "$GITHUB_STEP_SUMMARY"
+          cat > sonda.py <<'PY'
+          import json, sys, time, urllib.parse, urllib.request
+          site, quando = sys.argv[1], sys.argv[2]
+          # nome, origem (lat, lon), destino (lat, lon), meio de transporte que tem de aparecer
+          VIAGENS = [
+            ("Lisboa: Marquês de Pombal → Aeroporto", (38.7253, -9.1496), (38.7694, -9.1281), "Metro"),
+            ("Lisboa: Rossio → Oriente", (38.7140, -9.1394), (38.7677, -9.0993), "Metro"),
+            ("Lisboa: Alvalade → Moscavide", (38.7529, -9.1427), (38.7790, -9.1021), "Metro"),
+            ("Lisboa: Colégio Militar → Oriente", (38.7473, -9.1887), (38.7677, -9.0993), "Metro"),
+            ("Porto: Trindade → Estádio do Dragão", (41.1522, -8.6094), (41.1617, -8.5836), "Metro"),
+            ("Porto: Casa da Música → Aeroporto", (41.1586, -8.6306), (41.2368, -8.6692), "Metro"),
+            ("Porto: Bolhão → Hospital São João", (41.1494, -8.6049), (41.1829, -8.6001), "Metro"),
+            ("Porto: São Bento → Matosinhos Sul", (41.1457, -8.6107), (41.1809, -8.6903), "Metro"),
+            ("Lisboa: Rossio → Sintra (comboio)", (38.7140, -9.1394), (38.7980, -9.3870), "Comboio"),
+            ("Lisboa: Cais do Sodré → Cacilhas (barco)", (38.7062, -9.1447), (38.6877, -9.1480), "Barco"),
+          ]
+          def pedir(o, d):
+              q = urllib.parse.urlencode({"originLat": o[0], "originLon": o[1], "destLat": d[0], "destLon": d[1], "destName": "Destino", "quando": quando})
+              ultimo = None
+              for tentativa in range(3):
+                  try:
+                      with urllib.request.urlopen(f"{site}/api/transit/plan-route?{q}", timeout=60) as r:
+                          return json.load(r)
+                  except Exception as e:  # servidor a arrancar, rede…
+                      ultimo = e
+                      time.sleep(20)
+              raise ultimo
+          falhas = []
+          for nome, o, d, modo in VIAGENS:
+              try:
+                  resp = pedir(o, d)
+              except Exception as e:
+                  falhas.append(f"{nome}: o servidor não respondeu ({e})")
+                  print(f"FALHOU  {nome}: sem resposta ({e})")
+                  continue
+              rotas = resp.get("routes") or []
+              meios = [[l.get("transportMode") for l in r.get("legs", []) if l.get("mode") == "TRANSIT"] for r in rotas]
+              resumo = " | ".join(f"{'>'.join(str(m) for m in ms) or 'a pé'} {r.get('totalDurationMinutes')}min" for ms, r in zip(meios, rotas))
+              if any(modo in ms for ms in meios):
+                  print(f"OK      {nome}: {resumo}")
+              else:
+                  falhas.append(f"{nome}: nenhuma opção de {modo} (opções: {resumo or 'nenhuma'})")
+                  print(f"FALHOU  {nome}: nenhuma opção de {modo}. Opções: {resumo or 'nenhuma'}")
+          if falhas:
+              print("\nViagens sem o meio de transporte esperado:")
+              for f in falhas: print(" -", f)
+              sys.exit(1)
+          print("\nTodas as viagens têm o meio de transporte esperado.")
+          PY
+          python3 sonda.py "$site" "$quando" | tee -a "$GITHUB_STEP_SUMMARY"
+          exit ${PIPESTATUS[0]}
