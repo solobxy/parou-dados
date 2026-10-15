@@ -104,7 +104,9 @@ async function abrir(browser, { tema = 'claro', largura = 390, altura = 780, apa
   await ctx.route('**/api/transit/veiculos**', (rt) => {
     const u = new URL(rt.request().url());
     const linhas = (u.searchParams.get('linhas') || '').split(',').filter(Boolean);
-    if (linhas.length) mundo.pedidosMapa += 1; else mundo.pedidosDetecao += 1;
+    // A app diz quem pede (cabeçalho X-Parou-Origem): o mapa, ou a deteção do «A bordo». Versões antigas não diziam: sem linhas era a deteção.
+    const origem = rt.request().headers()['x-parou-origem'];
+    if (origem ? origem === 'deteccao' : !linhas.length) mundo.pedidosDetecao += 1; else mundo.pedidosMapa += 1;
     const caixa = (u.searchParams.get('caixa') || '').split(',').map(Number);
     let lista = mundo.veiculos();
     if (caixa.length === 4 && caixa.every(Number.isFinite)) {
@@ -324,7 +326,9 @@ async function viajar({ browser, tema, ficha, completo }) {
     await p.waitForSelector('.bus-pin', { timeout: 30000 }).catch(() => {});
     const pinos = await p.locator('.bus-pin__num').allInnerTexts();
     ok(`${rot} o mapa mostra os autocarros das linhas da paragem (801 e 803)`, pinos.includes('801') && pinos.includes('803'), pinos.join(','));
-    ok(`${rot} não mostra autocarros de linhas que não são desta zona (4436 é de outra zona)`, !pinos.includes('4436'), pinos.join(','));
+    // O mapa mostra TODOS os autocarros do ecrã (qualquer linha); o 4436 está a 2,2 km e por isso não está no ecrã
+    const noEcra = await p.evaluate(() => { const m = document.querySelector('.leaflet-container').getBoundingClientRect(); return [...document.querySelectorAll('.bus-pin__num')].filter((n) => { const b = n.getBoundingClientRect(); const x = b.left + b.width / 2, y = b.top + b.height / 2; return x >= m.left && x <= m.right && y >= m.top && y <= m.bottom; }).map((n) => n.textContent.trim()); });
+    ok(`${rot} só se vêem os autocarros que estão no ecrã do mapa (o 4436 está a 2,2 km, fora do ecrã)`, !noEcra.includes('4436') && noEcra.includes('801'), noEcra.join(','));
     await foto('0_parado');
 
     // 4 s parado
