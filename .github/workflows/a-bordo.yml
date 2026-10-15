@@ -74,7 +74,10 @@ jobs:
         run: |
           mkdir -p ../res
           APP=$PWD node --import tsx ../auditoria/trajeto-veiculo.mjs 2>&1 | grep -v "Experimental\|trace-warnings" | tee ../res/trajeto-veiculo.txt | tail -90
-          exit ${PIPESTATUS[0]}
+          r1=${PIPESTATUS[0]}
+          APP=$PWD node --import tsx ../auditoria/seguir-pessoa.mjs 2>&1 | grep -v "Experimental\|trace-warnings" | tee ../res/seguir-pessoa.txt | tail -40
+          r2=${PIPESTATUS[0]}
+          exit $((r1 || r2))
 
       - name: Teste dos autocarros no ecrã (todos os da zona que se vê, qualquer operador e linha; raio largo)
         continue-on-error: true
