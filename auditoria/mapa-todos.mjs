@@ -2,7 +2,7 @@
 //   1. ao abrir, todos os autocarros que cabem no ecrã (de qualquer operador e linha) estão desenhados, e nenhum a mais;
 //      o pedido ao servidor é por caixa do ecrã, sem lista de linhas;
 //   2. ao arrastar o mapa (dedo, com toque), aparecem os autocarros da zona nova;
-//   3. ao afastar o mapa (zoom) aparecem os de um raio maior, em pontos coloridos sem número;
+//   3. ao afastar o mapa (zoom) aparecem os de um raio maior, cada um com o NÚMERO DA LINHA legível (sem ter de aproximar para o descobrir);
 //   4. com o mapa afastado de mais não pede nada (nunca uma caixa maior do que o servidor aceita) e diz para aproximar; ao aproximar voltam.
 // O mapa antigo (só as linhas das 6 paragens mais perto, numa caixa fixa à volta da pessoa) falha este teste; é essa a prova de que o teste apanha o erro.
 // Os pedidos /api/transit/nearby e /veiculos são simulados (o /veiculos simulado filtra como o servidor: por caixa e/ou linhas, e recusa caixas
@@ -31,6 +31,7 @@ const LINHAS_DENTRO = ['300', '301', '205', '107', '902', '505', '203', '401', '
 LINHAS_DENTRO.forEach((l, i) => por(`d${i}`, OPS[i % 3], l, (rnd() - 0.5) * 300, (rnd() - 0.5) * 240));   // no ecrã inicial (±150 m × ±120 m)
 por('s801', 'stcp', '801', 40, 30); por('s803', 'stcp', '803', -60, -20);                               // as duas linhas da paragem simulada
 for (let i = 1; i <= 8; i++) por(`b${i}`, OPS[i % 3], `B${i}`, 420 + rnd() * 330, (rnd() - 0.5) * 200);  // a este, fora do ecrã inicial (só se vê ao arrastar)
+por('lx', 'tub', 'AB123', 600, 300);                                                                   // um código de 5 caracteres (o mais comprido): não pode ficar cortado
 for (let i = 0; i < 40; i++) {                                                                          // anel de 0,8 a 4 km (só se veem afastando o mapa)
   const ang = rnd() * 2 * Math.PI, r = 800 + rnd() * 3200;
   por(`l${i}`, OPS[i % 3], `L${i}`, Math.cos(ang) * r, Math.sin(ang) * r);
@@ -103,7 +104,7 @@ const LER = `(() => {
     const num = pin.querySelector('.bus-pin__num'); if (!num) return;
     const b = num.getBoundingClientRect(); const cx = b.left + b.width / 2, cy = b.top + b.height / 2;
     const dentro = cx >= r.left && cx <= r.right && cy >= r.top && cy <= r.bottom;
-    saida.push({ txt: num.textContent.trim(), op: ['stcp', 'cm', 'tub'].find((o) => pin.classList.contains('bus-pin--' + o)), w: Math.round(b.width), fonte: getComputedStyle(num).fontSize, dentro, cx, cy });
+    saida.push({ txt: num.textContent.trim(), op: ['stcp', 'cm', 'tub'].find((o) => pin.classList.contains('bus-pin--' + o)), w: Math.round(b.width), h: Math.round(b.height), fonte: getComputedStyle(num).fontSize, cortado: num.scrollWidth > num.clientWidth + 1, dentro, cx, cy });
   });
   const dica = document.querySelector('.bus-dica');
   return { rect: { l: r.left, t: r.top, w: r.width, h: r.height }, pinos: saida, dicaVisivel: !!dica && !dica.hidden && getComputedStyle(dica).display !== 'none', dicaTexto: dica ? dica.textContent : null, ponto: document.querySelector('.leaflet-container').classList.contains('mapa-bus-ponto') };
@@ -203,9 +204,12 @@ async function correr(browser) {
     const faltam = esperados.filter((l) => !vis.includes(l));
     ok(`[afastar] com o mapa afastado vêem-se todos os autocarros do ecrã maior (${esperados.length} esperados, mais que ao início)`, esperados.length >= 25 && faltam.length === 0, faltam.length ? `faltam ${faltam.length}: ${faltam.slice(0, 12).join(' ')}` : `${vis.length} à vista`);
     if (z1 !== null && z1 <= 14) {
-      ok('[afastar] ao nível de zoom 14 ou menos os autocarros são pontos pequenos (≤ 20 px, sem número à vista)', lido.ponto && visiveis(lido).every((x) => x.w <= 20 && parseFloat(x.fonte) === 0), `${Math.max(...visiveis(lido).map((x) => x.w))} px; fonte ${visiveis(lido)[0]?.fonte}`);
+      const v = visiveis(lido);
+      ok('[afastar] ao nível de zoom 14 ou menos cada autocarro mostra o número da linha, com letra legível (≥ 11 px)', lido.ponto && v.length > 0 && v.every((x) => parseFloat(x.fonte) >= 11), `fontes ${[...new Set(v.map((x) => x.fonte))].join(' ')}`);
+      ok('[afastar] e o número cabe inteiro na bola (nenhum cortado, nem o de 5 caracteres)', v.every((x) => !x.cortado) && v.some((x) => x.txt === 'AB123'), `cortados: ${v.filter((x) => x.cortado).map((x) => x.txt).join(' ') || 'nenhum'}`);
+      ok('[afastar] as bolas afastadas são mais pequenas do que as de perto (altura ≤ 30 px) para não taparem o mapa', v.every((x) => x.h <= 30 && x.h >= 20), `altura ${Math.min(...v.map((x) => x.h))}–${Math.max(...v.map((x) => x.h))} px, largura até ${Math.max(...v.map((x) => x.w))} px`);
     }
-    ok('[afastar] os pontos continuam a ter a cor do operador', ['stcp', 'cm', 'tub'].every((o) => visiveis(lido).some((x) => x.op === o)));
+    ok('[afastar] as bolas continuam a ter a cor do operador', ['stcp', 'cm', 'tub'].every((o) => visiveis(lido).some((x) => x.op === o)));
     await p2.screenshot({ path: `${SAIDA}/todos_3_afastado.png` }).catch(() => {});
 
     // mais longe ainda: até aparecer o aviso (máx. 6 voltas)
