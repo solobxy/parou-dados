@@ -80,6 +80,14 @@ jobs:
           APP=$PWD node --import tsx ../auditoria/veiculos-no-ecra.mjs 2>&1 | grep -v "Experimental\|trace-warnings" | tee ../res/veiculos-no-ecra.txt | tail -60
           exit ${PIPESTATUS[0]}
 
+      - name: Teste das novidades (imagens, limites de texto, nome do tema Azul)
+        continue-on-error: true
+        working-directory: app
+        run: |
+          mkdir -p ../res
+          APP=$PWD node --import tsx ../auditoria/novidades.mjs 2>&1 | grep -v "Experimental\|trace-warnings" | tee ../res/novidades.txt | tail -80
+          exit ${PIPESTATUS[0]}
+
       - name: Teste do planeador (metro, comboio e barco têm de aparecer nas opções de viagem)
         continue-on-error: true
         working-directory: app
