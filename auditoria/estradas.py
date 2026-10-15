@@ -68,6 +68,15 @@ def osrm_rota(base, pontos):
     return descodificar_polilinha(rota["geometry"], 6), [leg["distance"] for leg in rota["legs"]]
 
 
+def mais_perto(base, lat, lon):
+    """Distância (m) do ponto à estrada/carril mais próximo, sem limite de raio (só para explicar falhas)."""
+    try:
+        with urllib.request.urlopen(f"{base}/nearest/v1/driving/{lon:.6f},{lat:.6f}?number=1", timeout=30) as r:
+            return round(json.loads(r.read())["waypoints"][0]["distance"])
+    except Exception:  # noqa: BLE001
+        return None
+
+
 def rota_com_janelas(base, pontos):
     """Rota por todos os pontos, em janelas de JANELA paragens. (pontos da rota, distâncias das pernas) ou (None, mensagem)."""
     geometria, pernas = [], []
@@ -85,9 +94,12 @@ def rota_com_janelas(base, pontos):
     return geometria, pernas
 
 
-def desenhar_sequencia(base, pontos):
-    """Desenho de uma sequência de paragens: (polilinha, fração de pares bem encaixados, razão comprimento/linha reta) ou None."""
+def desenhar_sequencia(base, pontos, nomes=None, eventos=None):
+    """Desenho de uma sequência de paragens: (polilinha, fração de pares bem encaixados, razão comprimento/linha reta) ou None.
+    `eventos` (opcional) recebe o que correu mal, para o relatório."""
     n = len(pontos)
+    nomes = nomes or [str(i) for i in range(n)]
+    eventos = eventos if eventos is not None else []
     if n < 2:
         return None
     bom = [True] * (n - 1)       # o par (k, k+1) tem estrada
@@ -104,12 +116,14 @@ def desenhar_sequencia(base, pontos):
             if m and profundidade < 12:
                 k = ini + int(m.group(1))
                 if 0 <= k - ini <= fim - ini:
+                    eventos.append({"tipo": "sem_estrada", "paragem": nomes[k], "mais_perto_m": mais_perto(base, *pontos[k])})
                     fora[k] = True
                     if k > ini:
                         bom[k - 1] = False
                     if k < fim:
                         bom[k] = False
                     return resolver(ini, k - 1, profundidade + 1) + resolver(k + 1, fim, profundidade + 1)
+            eventos.append({"tipo": "erro_osrm", "mensagem": str(extra)[:100], "paragens": f"{nomes[ini]} … {nomes[fim]}"})
             for k in range(ini, fim):
                 bom[k] = False
             return []
@@ -117,6 +131,7 @@ def desenhar_sequencia(base, pontos):
             reta = haversine(pontos[ini + k], pontos[ini + k + 1])
             if reta > 0 and d > RAZAO_MAX_PAR * reta and d - reta > EXCESSO_MIN_M:
                 # Volta absurda: parte-se aqui e este par fica a direito
+                eventos.append({"tipo": "volta_absurda", "de": nomes[ini + k], "para": nomes[ini + k + 1], "reta_m": round(reta), "rota_m": round(d)})
                 bom[ini + k] = False
                 return resolver(ini, ini + k, profundidade + 1) + resolver(ini + k + 1, fim, profundidade + 1)
         return [g]
@@ -137,11 +152,11 @@ def desenhar_sequencia(base, pontos):
 
 def sequencias_unir(conn, limite=None):
     cur = conn.execute(
-        "SELECT sr.route_id, sr.direction_id, sr.stop_id, s.stop_lat, s.stop_lon FROM stop_routes sr JOIN stops s ON s.stop_id = sr.stop_id "
+        "SELECT sr.route_id, sr.direction_id, sr.stop_id, s.stop_lat, s.stop_lon, s.stop_name FROM stop_routes sr JOIN stops s ON s.stop_id = sr.stop_id "
         "WHERE sr.route_id LIKE 'unir:%' AND s.stop_lat IS NOT NULL AND s.stop_lon IS NOT NULL ORDER BY sr.route_id, sr.direction_id, sr.stop_sequence")
     grupos = {}
-    for rota, sentido, sid, lat, lon in cur:
-        grupos.setdefault((rota, sentido), []).append((sid, lat, lon))
+    for rota, sentido, sid, lat, lon, nome in cur:
+        grupos.setdefault((rota, sentido), []).append((sid, lat, lon, nome))
     return limitar(list(grupos.values()), limite)
 
 
@@ -149,17 +164,17 @@ def sequencias_viagens(conn, feeds, limite=None):
     padroes = {}
     for feed in feeds:
         cur = conn.execute(
-            "SELECT t.trip_id, st.stop_id, s.stop_lat, s.stop_lon FROM trips t JOIN stop_times st ON st.trip_id = t.trip_id "
+            "SELECT t.trip_id, st.stop_id, s.stop_lat, s.stop_lon, s.stop_name FROM trips t JOIN stop_times st ON st.trip_id = t.trip_id "
             "JOIN stops s ON s.stop_id = st.stop_id WHERE t.feed_id = ? AND s.stop_lat IS NOT NULL ORDER BY t.trip_id, st.stop_sequence", (feed,))
         atual, seq = None, []
         def fecha():
             if len(seq) >= 2:
                 padroes.setdefault(chave_padrao([x[0] for x in seq]), list(seq))
-        for tid, sid, lat, lon in cur:
+        for tid, sid, lat, lon, nome in cur:
             if tid != atual:
                 fecha()
                 atual, seq = tid, []
-            seq.append((sid, lat, lon))
+            seq.append((sid, lat, lon, nome))
         fecha()
     return limitar(list(padroes.values()), limite)
 
@@ -176,12 +191,19 @@ def correr(nome, base, sequencias, relatorio, caminhos):
     feitas = 0
     sem = 0
     fracoes, razoes = [], []
+    motivos, exemplos = {}, []
 
     def um(seq):
-        return chave_padrao([s[0] for s in seq]), desenhar_sequencia(base, [(s[1], s[2]) for s in seq])
+        eventos = []
+        res = desenhar_sequencia(base, [(s[1], s[2]) for s in seq], [s[3] if len(s) > 3 else s[0] for s in seq], eventos)
+        return chave_padrao([s[0] for s in seq]), res, eventos
 
     with concurrent.futures.ThreadPoolExecutor(max_workers=8) as ex:
-        for chave, res in ex.map(um, sequencias):
+        for chave, res, eventos in ex.map(um, sequencias):
+            for e in eventos:
+                motivos[e["tipo"]] = motivos.get(e["tipo"], 0) + 1
+                if len(exemplos) < 30:
+                    exemplos.append(e)
             if res is None:
                 sem += 1
                 continue
@@ -195,9 +217,10 @@ def correr(nome, base, sequencias, relatorio, caminhos):
         "fracao_media_pares_bons": round(sum(fracoes) / len(fracoes), 3) if fracoes else None,
         "razao_mediana": round(razoes[len(razoes) // 2], 3) if razoes else None,
         "razao_p95": round(razoes[int(len(razoes) * 0.95)], 3) if razoes else None,
+        "motivos": motivos, "exemplos": exemplos,
         "segundos": round(time.time() - t0, 1),
     }
-    print(f"{nome}: {relatorio[nome]}", flush=True)
+    print(f"{nome}: {json.dumps(relatorio[nome], ensure_ascii=False)}", flush=True)
 
 
 def main():
