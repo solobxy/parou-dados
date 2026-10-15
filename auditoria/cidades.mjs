@@ -420,30 +420,35 @@ async function parteAviso(browser, nome, motor, tema, custom) {
   const p = await ctx.newPage();
   const erros = [];
   p.on('pageerror', (e) => erros.push(String(e).slice(0, 200)));
-  const aviso = p.locator('[data-teste="aviso-precisao"]:visible');
+  const aviso = p.locator('[data-teste="aviso-precisao-chip"]:visible');
   try {
     await p.goto(`${BASE}/`, { waitUntil: 'domcontentloaded' });
     await p.waitForSelector('[data-teste="paragem-perto"]:visible', { timeout: 45000 });
     await fechaPonto(p);
-    ok(`${rot}: logo ao início não incomoda (espera 20 s)`, (await aviso.count()) === 0);
-    await p.waitForSelector('[data-teste="aviso-precisao"]', { state: 'visible', timeout: 45000 });
-    const txt = await aviso.first().innerText();
-    ok(`${rot}: com 800 m de erro avisa "pouco precisa"`, /pouco precisa/.test(txt) && /localização precisa/.test(txt), txt.replace(/\n/g, ' ').slice(0, 120));
-    ok(`${rot}: diz a ordem de grandeza (cerca de 800 m ou 1,5 km)`, /cerca de (\d[\d,. ]*\s?(m|km))/.test(txt), txt.replace(/\n/g, ' ').slice(0, 80));
-    const c1 = await aviso.first().locator('p').first().evaluate(eval(CONTRASTE));
-    const c2 = await aviso.first().locator('p').nth(1).evaluate(eval(CONTRASTE));
-    ok(`${rot}: texto do aviso com contraste ≥ 4.5:1`, c1 >= 4.5 && c2 >= 4.5, `${c1.toFixed(2)} / ${c2.toFixed(2)}`);
-    const bb = await aviso.first().boundingBox();
-    ok(`${rot}: aviso cabe na largura do ecrã`, bb && bb.x >= 0 && bb.x + bb.width <= p.viewportSize().width + 1, bb ? `${Math.round(bb.x)}+${Math.round(bb.width)}` : '');
-    const bf = await p.locator('[data-teste="aviso-precisao-fechar"]:visible').first().boundingBox();
-    ok(`${rot}: botão "Percebi" com altura ≥ 44 px`, bf && bf.height >= 44, bf ? Math.round(bf.height) : '');
+    // O aviso vive no mapa e só aparece depois de a precisão ficar fraca durante uns segundos (não pisca no arranque do GPS)
+    await p.waitForSelector('[data-teste="aviso-precisao-chip"]', { state: 'visible', timeout: 45000 });
+    const chip = await aviso.first().innerText();
+    ok(`${rot}: com 800 m de erro o aviso do mapa diz "posição aproximada"`, /Posição aproximada/.test(chip), chip.replace(/\n/g, ' ').slice(0, 120));
+    ok(`${rot}: diz a ordem de grandeza (cerca de N metros ou km)`, /cerca de (\d[\d,. ]*\s?(metros?|km))/.test(chip), chip.replace(/\n/g, ' ').slice(0, 80));
+    const bc = await aviso.first().boundingBox();
+    ok(`${rot}: aviso cabe na largura do ecrã e tem ≥ 44 px de altura`, bc && bc.x >= 0 && bc.x + bc.width <= p.viewportSize().width + 1 && bc.height >= 44, bc ? `${Math.round(bc.x)}+${Math.round(bc.width)} x ${Math.round(bc.height)}` : '');
     await foto(p, '1_aviso');
-    await p.locator('[data-teste="aviso-precisao-fechar"]:visible').first().click();
+    await aviso.first().click();
+    const det = p.locator('[data-teste="aviso-precisao-detalhe"]:visible');
+    await det.first().waitFor({ state: 'visible', timeout: 5000 });
+    const txt = await det.first().innerText();
+    ok(`${rot}: o detalhe explica como ligar a localização precisa`, /localização precisa/.test(txt), txt.replace(/\n/g, ' ').slice(0, 120));
+    const c1 = await det.first().locator('p').first().evaluate(eval(CONTRASTE));
+    ok(`${rot}: texto do detalhe com contraste ≥ 4.5:1`, c1 >= 4.5, c1.toFixed(2));
+    const bf = await p.locator('[data-teste="aviso-precisao-fechar-mapa"]:visible').first().boundingBox();
+    ok(`${rot}: botão "Fechar" com altura ≥ 44 px`, bf && bf.height >= 44, bf ? Math.round(bf.height) : '');
+    await foto(p, '2_detalhe');
+    await p.locator('[data-teste="aviso-precisao-fechar-mapa"]:visible').first().click();
     await p.waitForTimeout(300);
-    ok(`${rot}: "Percebi" fecha o aviso`, (await aviso.count()) === 0);
-    // A posição melhora: o aviso não volta; e quem nunca o fechou vê-o desaparecer
+    ok(`${rot}: "Fechar" esconde o detalhe`, (await det.count()) === 0);
+    // A posição melhora: o aviso desaparece
     await ctx.setGeolocation({ latitude: LAT, longitude: LON, accuracy: 8 });
-    await p.waitForTimeout(4000);
+    await p.waitForFunction(() => !document.querySelector('[data-teste="aviso-precisao-chip"]'), null, { timeout: 30000 }).catch(() => {});
     ok(`${rot}: com a posição boa não há aviso`, (await aviso.count()) === 0);
   } catch (e) {
     ok(`${rot}: aviso sem exceções`, false, String(e).slice(0, 300));
