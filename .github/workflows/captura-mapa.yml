@@ -1,0 +1,43 @@
+name: Captura real do mapa dos autocarros
+
+# Abre o site verdadeiro (com mapas e autocarros verdadeiros) com a localização no Porto e fotografa o mapa do Perto em vários níveis.
+# Serve de prova visual para as novidades. Resultado no ramo "captura-mapa-resultado" (captura_N.png e captura.json).
+
+on:
+  workflow_dispatch:
+    inputs:
+      tema:
+        description: "Tema (vazio = claro; ex.: porto, escuro, ambar)"
+        required: false
+        default: ""
+
+permissions:
+  contents: write
+
+jobs:
+  captura:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Instalar o Playwright
+        run: |
+          cd auditoria && npm init -y >/dev/null && npm i --no-audit --no-fund playwright@1 >/dev/null && npx playwright install --with-deps chromium >/dev/null
+      - name: Fotografar o mapa
+        env:
+          TEMA: ${{ inputs.tema }}
+        run: |
+          mkdir -p res
+          cd auditoria
+          SAIDA=../res node captura-mapa.mjs 2>&1 | tee ../res/captura.txt
+          exit ${PIPESTATUS[0]}
+      - name: Guardar o resultado
+        if: always()
+        run: |
+          mkdir -p pub && cp -r res/* pub/ 2>/dev/null || echo "sem resultados" > pub/vazio.txt
+          cd pub && git init -q -b captura-mapa-resultado
+          git config user.name "parou-dados"; git config user.email "actions@users.noreply.github.com"
+          git add -A && git commit -q -m "Captura do mapa $(date -u +%Y-%m-%dT%H:%MZ)" && git push -q -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" captura-mapa-resultado
