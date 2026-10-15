@@ -306,7 +306,12 @@ CREATE TABLE IF NOT EXISTS routes (
 );
 CREATE TABLE IF NOT EXISTS trips (
   trip_id TEXT PRIMARY KEY, feed_id TEXT NOT NULL, route_id TEXT NOT NULL, service_id TEXT,
-  trip_headsign TEXT, direction_id INTEGER DEFAULT 0
+  trip_headsign TEXT, direction_id INTEGER DEFAULT 0, shape_id TEXT
+);
+-- Desenho do percurso de cada viagem (shapes.txt dos horários oficiais), simplificado e em polilinha codificada
+-- (precisão 6, como o formato do Google). A app desenha a linha por aqui, pela estrada, e não em reta entre paragens.
+CREATE TABLE IF NOT EXISTS shapes (
+  shape_id TEXT PRIMARY KEY, feed_id TEXT NOT NULL, pontos TEXT NOT NULL
 );
 CREATE TABLE IF NOT EXISTS stop_times (
   id INTEGER PRIMARY KEY AUTOINCREMENT, feed_id TEXT NOT NULL, trip_id TEXT NOT NULL,
@@ -346,6 +351,7 @@ CREATE INDEX IF NOT EXISTS idx_stops_coords ON stops (stop_lat, stop_lon);
 CREATE INDEX IF NOT EXISTS idx_stops_parent ON stops (parent_station);
 CREATE INDEX IF NOT EXISTS idx_routes_feed ON routes (feed_id);
 CREATE INDEX IF NOT EXISTS idx_trips_route ON trips (route_id);
+CREATE INDEX IF NOT EXISTS idx_shapes_feed ON shapes (feed_id);
 CREATE INDEX IF NOT EXISTS idx_trips_feed ON trips (feed_id);
 CREATE INDEX IF NOT EXISTS idx_trips_service ON trips (feed_id, service_id);
 CREATE INDEX IF NOT EXISTS idx_stop_times_stop ON stop_times (stop_id, departure_secs);
@@ -367,12 +373,94 @@ CREATE INDEX IF NOT EXISTS idx_stop_routes_route ON stop_routes (route_id, direc
 DATA_TABLES = {
     "stops": "stop_id, feed_id, stop_name, stop_lat, stop_lon, zone_id, parent_station, location_type",
     "routes": "route_id, feed_id, route_short_name, route_long_name, route_type, route_color",
-    "trips": "trip_id, feed_id, route_id, service_id, trip_headsign, direction_id",
+    "trips": "trip_id, feed_id, route_id, service_id, trip_headsign, direction_id, shape_id",
+    "shapes": "shape_id, feed_id, pontos",
     "stop_times": "feed_id, trip_id, stop_id, arrival_secs, departure_secs, stop_sequence, pickup_type",
     "calendar": "feed_id, service_id, monday, tuesday, wednesday, thursday, friday, saturday, sunday, start_date, end_date",
     "calendar_dates": "feed_id, service_id, date, exception_type",
     "frequencies": "feed_id, trip_id, start_time_secs, end_time_secs, headway_secs, exact_times",
 }
+
+
+# ---------------------------------------------------------------------------
+# Desenho dos percursos (shapes): simplificar e guardar em polilinha codificada
+# ---------------------------------------------------------------------------
+PRECISAO_FORMAS = 6          # casas decimais (≈ 0,1 m)
+TOLERANCIA_FORMAS_M = 1.5    # a simplificação nunca afasta o desenho mais do que isto da estrada original
+
+
+def codificar_polilinha(pontos, precisao=PRECISAO_FORMAS):
+    """Algoritmo de polilinha codificada do Google, sobre pares (lat, lon)."""
+    fator = 10 ** precisao
+    out = []
+    plat = plon = 0
+    for lat, lon in pontos:
+        la, lo = int(round(lat * fator)), int(round(lon * fator))
+        for v in (la - plat, lo - plon):
+            v = ~(v << 1) if v < 0 else (v << 1)
+            while v >= 0x20:
+                out.append(chr((0x20 | (v & 0x1F)) + 63))
+                v >>= 5
+            out.append(chr(v + 63))
+        plat, plon = la, lo
+    return "".join(out)
+
+
+def descodificar_polilinha(texto, precisao=PRECISAO_FORMAS):
+    fator = 10 ** precisao
+    pontos = []
+    i, lat, lon = 0, 0, 0
+    while i < len(texto):
+        for eixo in (0, 1):
+            resultado, deslocamento = 0, 0
+            while True:
+                b = ord(texto[i]) - 63
+                i += 1
+                resultado |= (b & 0x1F) << deslocamento
+                deslocamento += 5
+                if b < 0x20:
+                    break
+            delta = ~(resultado >> 1) if resultado & 1 else (resultado >> 1)
+            if eixo == 0:
+                lat += delta
+            else:
+                lon += delta
+        pontos.append((lat / fator, lon / fator))
+    return pontos
+
+
+def simplificar(pontos, tolerancia_m=TOLERANCIA_FORMAS_M):
+    """Douglas-Peucker (sem recursão): tira pontos em linha, guarda as curvas e as pontas."""
+    n = len(pontos)
+    if n <= 2:
+        return list(pontos)
+    k = math.cos(math.radians(pontos[0][0])) * 111320.0
+    m = 110540.0
+    xy = [(lon * k, lat * m) for lat, lon in pontos]
+    manter = [False] * n
+    manter[0] = manter[-1] = True
+    pilha = [(0, n - 1)]
+    while pilha:
+        i, j = pilha.pop()
+        ax, ay = xy[i]
+        bx, by = xy[j]
+        dx, dy = bx - ax, by - ay
+        comp2 = dx * dx + dy * dy
+        dmax, idx = -1.0, -1
+        for t in range(i + 1, j):
+            px, py = xy[t]
+            if comp2 == 0:
+                d = math.hypot(px - ax, py - ay)
+            else:
+                u = max(0.0, min(1.0, ((px - ax) * dx + (py - ay) * dy) / comp2))
+                d = math.hypot(px - (ax + u * dx), py - (ay + u * dy))
+            if d > dmax:
+                dmax, idx = d, t
+        if dmax > tolerancia_m:
+            manter[idx] = True
+            pilha.append((i, idx))
+            pilha.append((idx, j))
+    return [p for p, mantem in zip(pontos, manter) if mantem]
 
 
 def insert_many(conn, table, rows):
@@ -650,6 +738,8 @@ def ingest_gtfs(conn, feed_id, zip_bytes, today_dt, extend_calendar=False, max_b
                 yield (p + rid, feed_id, r.get("route_short_name") or rid, r.get("route_long_name") or "",
                        rtype, ("#" + color) if color else None)
 
+        shapes_usadas = set()
+
         def trips():
             for r in gtfs_rows(zf, "trips.txt"):
                 tid = r.get("trip_id")
@@ -659,8 +749,31 @@ def ingest_gtfs(conn, feed_id, zip_bytes, today_dt, extend_calendar=False, max_b
                 if active is not None and service not in active:
                     continue
                 kept_trips.add(tid)
+                forma = r.get("shape_id") or None
+                if forma:
+                    shapes_usadas.add(forma)
                 yield (p + tid, feed_id, p + (r.get("route_id") or ""), service,
-                       r.get("trip_headsign") or None, to_int(r.get("direction_id"), 0))
+                       r.get("trip_headsign") or None, to_int(r.get("direction_id"), 0), (p + forma) if forma else None)
+
+        def shapes():
+            # Só os desenhos que as viagens guardadas usam. Os pontos vêm por ordem de shape_pt_sequence.
+            if not shapes_usadas:
+                return
+            por_forma = {}
+            for r in gtfs_rows(zf, "shapes.txt"):
+                sid = r.get("shape_id")
+                if sid not in shapes_usadas:
+                    continue
+                lat, lon = to_float(r.get("shape_pt_lat")), to_float(r.get("shape_pt_lon"))
+                if lat is None or lon is None:
+                    continue
+                por_forma.setdefault(sid, []).append((to_int(r.get("shape_pt_sequence"), 0), lat, lon))
+            for sid, lista in por_forma.items():
+                lista.sort(key=lambda x: x[0])
+                pontos = [(la, lo) for _, la, lo in lista]
+                if len(pontos) < 2:
+                    continue
+                yield (p + sid, feed_id, codificar_polilinha(simplificar(pontos)))
 
         def stop_times():
             for r in gtfs_rows(zf, "stop_times.txt"):
@@ -698,10 +811,13 @@ def ingest_gtfs(conn, feed_id, zip_bytes, today_dt, extend_calendar=False, max_b
                 "routes": insert_many(conn, "routes", routes()),
                 "trips": insert_many(conn, "trips", trips()),
                 "stop_times": insert_many(conn, "stop_times", stop_times()),
+                "shapes": insert_many(conn, "shapes", shapes()),
                 "calendar": insert_many(conn, "calendar", calendar_rows()),
                 "calendar_dates": insert_many(conn, "calendar_dates", iter(cal_dates)),
                 "frequencies": insert_many(conn, "frequencies", frequencies()),
             }
+            conn.execute("UPDATE trips SET shape_id = NULL WHERE feed_id = ? AND shape_id IS NOT NULL "
+                         "AND shape_id NOT IN (SELECT shape_id FROM shapes WHERE feed_id = ?)", (feed_id, feed_id))
             if stats["stops"] == 0:
                 member = next((n for n in zf.namelist() if os.path.basename(n).lower() == "stops.txt"), None)
                 head = zf.read(member)[:160] if member else b""
@@ -767,8 +883,13 @@ def carry_over(conn, feed_id):
             return None
         delete_feed(conn, feed_id)
         for table, columns in DATA_TABLES.items():
+            # A base de ontem pode ser anterior aos desenhos (shapes): copia só as colunas que ela já tinha
+            antigas = {d[1] for d in conn.execute(f"PRAGMA prev.table_info({table})").fetchall()}
+            if not antigas:
+                continue
+            usar = ", ".join(c.strip() for c in columns.split(",") if c.strip() in antigas)
             conn.execute(
-                f"INSERT OR REPLACE INTO {table} ({columns}) SELECT {columns} FROM prev.{table} WHERE feed_id = ?",
+                f"INSERT OR REPLACE INTO {table} ({usar}) SELECT {usar} FROM prev.{table} WHERE feed_id = ?",
                 (feed_id,),
             )
         return old_row
@@ -1378,6 +1499,11 @@ def main():
         " (SELECT COUNT(*) FROM stop_times)").fetchone()
     integrity = conn.execute("PRAGMA quick_check").fetchone()[0]
     saude = verificar_saude(conn, today_dt)
+    formas_por_operador = {r[0]: {"viagens": r[1], "com_desenho": r[2] or 0} for r in conn.execute(
+        "SELECT feed_id, COUNT(*), SUM(shape_id IS NOT NULL) FROM trips GROUP BY feed_id")}
+    for fid, n in conn.execute("SELECT feed_id, COUNT(*) FROM shapes GROUP BY feed_id"):
+        formas_por_operador.setdefault(fid, {"viagens": 0, "com_desenho": 0})["desenhos"] = n
+    formas_bytes = conn.execute("SELECT COALESCE(SUM(LENGTH(pontos)), 0) FROM shapes").fetchone()[0]
     conn.close()
 
     if integrity != "ok":
@@ -1413,6 +1539,7 @@ def main():
             "viagens_amanha": saude["amanha"].get(r.get("id"), 0),
             "dias_uteis_sem_servico": saude["dias_uteis_sem_servico"].get(r.get("id"), 0),
         } for r in results],
+        "desenhos": {"bytes": formas_bytes, "por_operador": formas_por_operador},
         "verificacao": {"data_hoje": saude["data_hoje"], "data_amanha": saude["data_amanha"],
                         "dias_uteis_verificados": saude["dias_uteis_verificados"],
                         "porto": saude["porto"]},
@@ -1424,6 +1551,10 @@ def main():
     log("")
     log(f"Concluído em {manifest['duration_s']} s: {len(ok)}/{len(results)} operadores OK, "
         f"{totals[0]} linhas, {totals[1]} paragens, {totals[3]} horários.")
+    for fid, v in sorted(formas_por_operador.items()):
+        if v.get("viagens"):
+            log(f"  desenhos {fid}: {v['com_desenho']}/{v['viagens']} viagens com percurso desenhado ({v.get('desenhos', 0)} desenhos)")
+    log(f"Desenhos dos percursos: {formas_bytes // 1024} KB de texto")
     log(f"gtfs.db: {manifest['db_bytes'] // 1048576} MB | gtfs.db.gz: {manifest['gz_bytes'] // 1048576} MB")
     if manifest["db_bytes"] > 900 * 1048576:
         log("AVISO: a base de dados tem mais de 900 MB; a app vai precisar de bastante memória.")
