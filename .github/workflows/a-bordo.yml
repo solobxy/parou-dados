@@ -64,6 +64,14 @@ jobs:
           if [ -s ../res/tub-real/vehicle_positions.pb ] && [ -s ../res/tub-real/trip_updates.pb ]; then REAIS="$(cd ../res/tub-real && pwd)"; fi
           FICHEIROS_TUB="$REAIS" APP=$PWD node --import tsx ../auditoria/tub-leitor.mjs 2>&1 | tee ../res/tub-leitor.txt | tail -90
 
+      - name: Teste do planeador (metro, comboio e barco têm de aparecer nas opções de viagem)
+        continue-on-error: true
+        working-directory: app
+        run: |
+          mkdir -p ../res
+          APP=$PWD node --import tsx ../auditoria/planeador-modos.mjs 2>&1 | tee ../res/planeador-modos.txt | tail -60
+          exit ${PIPESTATUS[0]}
+
       - name: Arrancar a app
         working-directory: app
         run: |
