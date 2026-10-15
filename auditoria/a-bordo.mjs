@@ -669,8 +669,20 @@ async function bragaReal(browser, tema) {
     if (rodas.length) {
       const cor = await p.evaluate(() => { const n = document.querySelector('.bus-pin--tub .bus-pin__num'); return n ? getComputedStyle(n).backgroundColor : ''; });
       ok(`${rot} a roda da TUB é vermelha`, /rgb\(200, 16, 46\)/.test(cor), cor);
-      const roda = p.locator('.parou-bus-icone', { has: p.locator('.bus-pin--tub') }).first();
-      await roda.click({ timeout: 8000 });
+      // Uma roda da TUB à vista (não tapada pela pesquisa, pelos botões ou pela folha de baixo)
+      const alvo = await p.evaluate(() => {
+        for (const e of [...document.querySelectorAll('.parou-bus-icone')].filter((x) => x.querySelector('.bus-pin--tub'))) {
+          const n = e.querySelector('.bus-pin__num'); const r = n.getBoundingClientRect();
+          const x = r.left + r.width / 2, y = r.top + r.height / 2;
+          if (x < 24 || x > 330 || y < 125 || y > 295) continue;
+          const topo = document.elementFromPoint(x, y);
+          if (topo && e.contains(topo)) return { x, y, linha: n.textContent.trim() };
+        }
+        return null;
+      });
+      ok(`${rot} há uma roda da TUB à vista para tocar`, !!alvo, alvo ? `linha ${alvo.linha}` : 'nenhuma à vista');
+      if (!alvo) throw new Error('sem roda à vista');
+      await p.mouse.click(alvo.x, alvo.y);
       await p.waitForSelector('[data-teste="cartao-autocarro"]', { timeout: 8000 });
       const cartao = (await p.locator('[data-teste="cartao-autocarro"]').innerText()).replace(/\n/g, ' | ');
       await p.screenshot({ path: `${SAIDA}/braga_${tema}_2_cartao.png` }).catch(() => {});
