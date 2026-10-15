@@ -15,7 +15,7 @@ fs.mkdirSync(SAIDA, { recursive: true });
 let falhas = 0;
 const ok = (nome, cond, extra = '') => { if (!cond) falhas++; console.log(cond ? 'OK     ' : 'FALHOU ', nome, extra); };
 
-const IMAGENS = ['/novidades/boas-vindas-1.jpg', '/novidades/comunidade-1.jpg'];
+const IMAGENS = ['/novidades/todos-autocarros-1.jpg', '/novidades/todos-autocarros-2.jpg'];
 const POST = {
   id: 'pub-teste', titulo: 'Todos os autocarros no mapa', texto: 'O mapa do Perto agora mostra todos os autocarros que estão no ecrã.', tipo: 'novidade', imagens: IMAGENS,
   comLocalizacao: false, criado: Date.now() - 300000, pontos: 0, respostas: 0, estado: 'visivel', meuVoto: 0, meu: false, denunciei: false,
@@ -92,7 +92,8 @@ const primeira = (p) => p.locator('[data-teste="imagens-post"] [aria-label^="Abr
       ok('[imagem] Esc fecha', !(await aberta(p)));
       // fechar: fundo escuro
       await primeira(p).click(); await p.waitForTimeout(500);
-      await p.mouse.click(8, 400); await p.waitForTimeout(300);
+      const caixaImg = await p.locator('[data-teste="imagem-grande"] img').first().boundingBox().catch(() => null);
+      await p.mouse.click(195, caixaImg ? Math.min(caixaImg.y + caixaImg.height + 30, 700) : 650); await p.waitForTimeout(300);
       ok('[imagem] tocar no fundo escuro fecha', !(await aberta(p)));
       // fechar: voltar do telemóvel
       await primeira(p).click(); await p.waitForTimeout(500);
