@@ -1,0 +1,69 @@
+name: Guarda dos testes rápidos
+
+# Todos os dias, e sempre que se pede à mão, corre os testes rápidos (sem browser) sobre a versão que está em "main" da app:
+#   - tipos (tsc), sem nenhum erro;
+#   - detetor do «A bordo»;
+#   - leitura da TUB (ficheiros montados à mão e, se responderem, os reais);
+#   - planeador: metro, comboio e barco têm de aparecer nas opções de viagem (base GTFS montada, motor a sério).
+# A app (solobxy/parou) não corre testes a cada alteração; esta guarda apanha, no máximo no dia seguinte, uma alteração
+# que estrague uma destas coisas. Só falha (e o GitHub manda um email) se algum teste falhar.
+# Os testes com browser (rodas no mapa, painel «A bordo», temas…) ficam no workflow «a-bordo», que se corre à mão.
+
+on:
+  schedule:
+    - cron: "11 7 * * *"
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: "Ramo, etiqueta ou commit da app (vazio = main)"
+        required: false
+        default: ""
+
+permissions:
+  contents: read
+
+jobs:
+  guarda:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/checkout@v4
+        with:
+          repository: solobxy/parou
+          ref: ${{ inputs.ref || 'main' }}
+          path: app
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Instalar e verificar os tipos
+        working-directory: app
+        run: |
+          npm ci --no-audit --no-fund --legacy-peer-deps || npm install --no-audit --no-fund --legacy-peer-deps
+          echo "Versão da app: $(git rev-parse --short HEAD)" | tee -a "$GITHUB_STEP_SUMMARY"
+          npx tsc --noEmit -p . > ../tipos.txt 2>&1 || true
+          n=$(wc -l < ../tipos.txt)
+          echo "Linhas de erro de tipos: $n" | tee -a "$GITHUB_STEP_SUMMARY"
+          head -40 ../tipos.txt
+          [ "$n" -eq 0 ]
+
+      - name: Detetor do «A bordo»
+        working-directory: app
+        run: APP=$PWD node --import tsx ../auditoria/a-bordo-detetor.mjs 2>&1 | tail -40; exit ${PIPESTATUS[0]}
+
+      - name: Leitura da TUB
+        working-directory: app
+        run: |
+          mkdir -p ../tub-real
+          curl -s -m 30 -o ../tub-real/vehicle_positions.pb https://mobibus-gateway.fleetaware.pt/gtfs-rt/feed/vehicle_positions.pb || true
+          curl -s -m 30 -o ../tub-real/trip_updates.pb https://mobibus-gateway.fleetaware.pt/gtfs-rt/feed/trip_updates.pb || true
+          REAIS=""
+          if [ -s ../tub-real/vehicle_positions.pb ] && [ -s ../tub-real/trip_updates.pb ]; then REAIS="$(cd ../tub-real && pwd)"; fi
+          FICHEIROS_TUB="$REAIS" APP=$PWD node --import tsx ../auditoria/tub-leitor.mjs 2>&1 | tail -40; exit ${PIPESTATUS[0]}
+
+      - name: Planeador (metro, comboio e barco nas opções de viagem)
+        working-directory: app
+        run: APP=$PWD node --import tsx ../auditoria/planeador-modos.mjs 2>&1 | grep -v "Experimental\|trace-warnings" | tail -50; exit ${PIPESTATUS[0]}
