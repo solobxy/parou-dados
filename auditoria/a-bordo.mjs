@@ -717,17 +717,18 @@ async function seletor(browser) {
     await p.waitForSelector('[data-teste="menu-tema"]', { timeout: 5000 });
     for (const id of ['claro', 'escuro', 'ambar', 'porto']) ok(`${rot} o seletor tem «${id}»`, (await p.locator(`[data-teste="tema-${id}"]`).count()) === 1);
     await p.screenshot({ path: `${SAIDA}/seletor_temas.png` }).catch(() => {});
+    ok(`${rot} o tema azul chama-se só «Azul»`, ((await p.locator('[data-teste="tema-porto"]').innerText()).split('\n')[0] || '').trim() === 'Azul', (await p.locator('[data-teste="tema-porto"]').innerText()).split('\n')[0]);
     await p.locator('[data-teste="tema-porto"]').click();
     await p.waitForTimeout(500);
-    ok(`${rot} escolher «Azul Porto» aplica o tema`, (await p.evaluate(() => document.documentElement.getAttribute('data-tema'))) === 'porto');
+    ok(`${rot} escolher «Azul» aplica o tema`, (await p.evaluate(() => document.documentElement.getAttribute('data-tema'))) === 'porto');
     ok(`${rot} a escolha fica guardada`, (await p.evaluate(() => localStorage.getItem('parou_tema'))) === 'porto');
     const barra = await p.evaluate(() => document.querySelector('meta[name="theme-color"]')?.getAttribute('content') || '');
-    ok(`${rot} a barra do telemóvel fica branca no Azul Porto`, /^#?fff(fff)?$/i.test(barra.replace('#', '')), barra);
+    ok(`${rot} a barra do telemóvel fica branca no Azul`, /^#?fff(fff)?$/i.test(barra.replace('#', '')), barra);
     const cor = await p.evaluate(() => getComputedStyle(document.body).backgroundColor);
-    nota(`${rot} fundo do corpo no Azul Porto: ${cor}`);
+    nota(`${rot} fundo do corpo no Azul: ${cor}`);
     await p.reload({ waitUntil: 'domcontentloaded' });
     await p.waitForTimeout(800);
-    ok(`${rot} depois de recarregar continua Azul Porto (sem piscar para o claro)`, (await p.evaluate(() => document.documentElement.getAttribute('data-tema'))) === 'porto');
+    ok(`${rot} depois de recarregar continua Azul (sem piscar para o claro)`, (await p.evaluate(() => document.documentElement.getAttribute('data-tema'))) === 'porto');
     ok(`${rot} sem erros de consola`, erros.length === 0, erros.slice(0, 2).join(' | '));
   } catch (e) { ok(`${rot} correu sem exceções`, false, String(e).slice(0, 300)); } finally { await ctx.close(); }
 }
