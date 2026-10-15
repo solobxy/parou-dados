@@ -1,0 +1,55 @@
+name: Vigiar as imagens dos posts da Comunidade
+
+# Todos os dias, abre o site verdadeiro (com o service worker ligado, como na app instalada) e confere que:
+#  - tocar na imagem de um post abre-a dentro da app (X, fundo, Esc e voltar fecham; com duas imagens passa-se de uma à outra);
+#  - abrir o endereço de uma imagem devolve a imagem e nunca a app com «Página não encontrada».
+#
+# Porquê: tocar na imagem de um post abria o ficheiro como página; o service worker respondia com a app, que arrancava de novo
+# nesse endereço e mostrava «Página não encontrada». Os testes simulados não apanhavam isto porque corriam sem service worker.
+#
+# Só falha (e o GitHub manda um email) se alguma destas verificações falhar. Também se pode correr à mão (Actions → Vigiar as imagens dos posts).
+
+on:
+  schedule:
+    - cron: "41 11 * * *"
+  workflow_dispatch:
+    inputs:
+      site:
+        description: "Endereço do servidor (vazio = o de sempre)"
+        required: false
+        default: ""
+
+permissions:
+  contents: write
+
+jobs:
+  vigiar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Instalar o Playwright
+        run: |
+          cd auditoria && npm init -y >/dev/null && npm i --no-audit --no-fund playwright@1 >/dev/null && npx playwright install --with-deps chromium >/dev/null
+
+      - name: Abrir o site e conferir as imagens
+        env:
+          SITE_PEDIDO: ${{ inputs.site }}
+        run: |
+          mkdir -p res
+          cd auditoria
+          BASE="${SITE_PEDIDO:-https://2-31-13-85.sslip.io}" SAIDA=../res timeout 420 node post-imagem.mjs 2>&1 | tee ../res/vigiar-imagens.txt | tee -a "$GITHUB_STEP_SUMMARY"
+          exit ${PIPESTATUS[0]}
+
+      - name: Guardar o resultado (ramo vigiar-imagens-resultado)
+        if: always()
+        run: |
+          mkdir -p pub && cp -r res/* pub/ 2>/dev/null || echo "sem resultados" > pub/vazio.txt
+          cd pub && git init -q -b vigiar-imagens-resultado
+          git config user.name "parou-dados"; git config user.email "actions@users.noreply.github.com"
+          git add -A && git commit -q -m "Vigiar as imagens $(date -u +%Y-%m-%dT%H:%MZ)" && git push -q -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" vigiar-imagens-resultado
