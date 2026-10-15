@@ -1,0 +1,56 @@
+name: Vigiar o mapa dos autocarros em direto
+
+# Todos os dias, abre o site verdadeiro num browser com a localização em várias cidades (Porto, Matosinhos, Amadora, Almada, Setúbal, Braga)
+# e confere, com os dados reais, que o mapa mostra TODOS os autocarros que o servidor tem na zona que se vê.
+#
+# Porquê: em Campanhã o mapa só mostrava 1 autocarro porque a app pedia apenas as linhas das paragens mais perto (quase só metro e comboio).
+# Os testes automáticos (auditoria/mapa-todos.mjs, num mundo simulado) apanham isso no código; esta sonda apanha o que o código não vê:
+# um operador que deixou de aparecer, uma cidade vazia com autocarros no servidor, ou uma regressão que só aparece com dados reais.
+#
+# Só falha (e o GitHub manda um email) se numa cidade o mapa mostrar menos autocarros do que o servidor tem no ecrã.
+# Também se pode correr à mão (Actions → Vigiar o mapa dos autocarros em direto), por exemplo contra outro endereço.
+
+on:
+  schedule:
+    - cron: "17 11 * * *"
+  workflow_dispatch:
+    inputs:
+      site:
+        description: "Endereço do servidor (vazio = o de sempre)"
+        required: false
+        default: ""
+
+permissions:
+  contents: read
+
+jobs:
+  vigiar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Instalar o Playwright
+        run: |
+          cd auditoria && npm init -y >/dev/null && npm i --no-audit --no-fund playwright@1 >/dev/null && npx playwright install --with-deps chromium >/dev/null
+
+      - name: Abrir o site e conferir o mapa nas cidades
+        env:
+          SITE_PEDIDO: ${{ inputs.site }}
+        run: |
+          mkdir -p res
+          cd auditoria
+          SITE="${SITE_PEDIDO:-https://2-31-13-85.sslip.io}" SAIDA=../res node vigiar-mapa.mjs 2>&1 | tee ../res/vigiar-mapa.txt | tee -a "$GITHUB_STEP_SUMMARY"
+          exit ${PIPESTATUS[0]}
+
+      - name: Guardar as capturas
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: vigiar-mapa
+          path: res/
+          retention-days: 7
