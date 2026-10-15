@@ -40,6 +40,9 @@ jobs:
         with:
           node-version: 22
 
+      - name: Construtor da base (desenhos dos percursos)
+        run: python3 auditoria/test_formas.py
+
       - name: Instalar e verificar os tipos
         working-directory: app
         run: |

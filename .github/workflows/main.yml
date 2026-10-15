@@ -6,6 +6,11 @@ on:
     # Segunda volta à tarde: se a da manhã falhar ou atrasar, os horários não ficam velhos
     - cron: "17 15 * * *"
   workflow_dispatch:
+    inputs:
+      etiqueta:
+        description: "Onde publicar a base (dados = produção; dados-teste = ensaio, a app não a usa)"
+        required: false
+        default: "dados"
 
 permissions:
   contents: write
@@ -48,17 +53,22 @@ jobs:
             echo "Sem credenciais da STCP: a usar as fontes abertas"
           fi
 
+      - name: Testar o construtor (desenhos dos percursos)
+        run: python auditoria/test_formas.py
+
       - name: Construir a base de dados
         run: python construir_dados.py
 
       - name: Publicar na release "dados"
         env:
           GH_TOKEN: ${{ github.token }}
+          ETIQUETA: ${{ inputs.etiqueta || 'dados' }}
         run: |
-          gh release view dados >/dev/null 2>&1 || gh release create dados --title "Dados PAROU.PT" --notes "Base de dados de horários, atualizada todos os dias."
-          gh release upload dados gtfs.db.gz manifest.json --clobber
+          gh release view "$ETIQUETA" >/dev/null 2>&1 || gh release create "$ETIQUETA" --title "Dados PAROU.PT ($ETIQUETA)" --notes "Base de dados de horários, atualizada todos os dias."
+          gh release upload "$ETIQUETA" gtfs.db.gz manifest.json --clobber
 
       - name: Guardar o resumo no repositório
+        if: ${{ (inputs.etiqueta || 'dados') == 'dados' }}
         run: |
           git config user.name "parou-dados"
           git config user.email "actions@users.noreply.github.com"
