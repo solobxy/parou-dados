@@ -96,6 +96,7 @@ const PARES = [
   ['Braga centro → Gualtar', { lat: 41.5503, lon: -8.42 }, { lat: 41.56, lon: -8.397 }],
   ['Campanhã → Foz (Porto)', { lat: 41.1485, lon: -8.5855 }, { lat: 41.1536, lon: -8.6766 }],
 ];
+const OPERADORES_PELO_MAPA = new RegExp(process.env.SEM_DESENHO || '^(CP|UNIR)\\b|Comboios de Portugal', 'i');
 let trocosTransito = 0, trocosComCaminho = 0, paresComTransporte = 0;
 for (const [nome, o, d] of PARES) {
   if (!o || !d) { nota(`${nome}: sem coordenadas na base`); continue; }
@@ -107,7 +108,12 @@ for (const [nome, o, d] of PARES) {
   const problemas = [];
   for (const l of trocos) {
     trocosTransito++;
-    if (!l.caminho) { problemas.push(`${l.lineCode || '?'} (${l.operatorName || '?'}): sem caminho`); continue; }
+    if (!l.caminho) {
+      // Operadores que só ganham desenho com o mapa de estradas/carris (workflow «Estradas»): CP e UNIR
+      if (OPERADORES_PELO_MAPA.test(String(l.operatorName || ''))) { nota(`${l.lineCode || '?'} (${l.operatorName}): sem caminho (espera o desenho do mapa de estradas/carris)`); continue; }
+      problemas.push(`${l.lineCode || '?'} (${l.operatorName || '?'}): sem caminho`);
+      continue;
+    }
     trocosComCaminho++;
     const linha = C.descodificarPolilinha(l.caminho);
     const ps = l.pontos;

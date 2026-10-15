@@ -97,6 +97,20 @@ const naEstrada = (x, y, lado = 0) => ll(x, y + lado);
   ok('[não serve] sem paragens: sem encaixe', C.encaixarParagens(estrada, []) === null);
 }
 
+// ------------------------------------------------------------ desenho no sentido contrário
+{
+  const paragens = [ll(0, 0), ll(400, 150), ll(650, 300), ll(900, 500), ll(1500, 700), ll(1500, 1200)];
+  const contrario = [...estrada].reverse(); // o operador desenhou a viagem ao contrário (Corroios → Cacilhas em vez de Cacilhas → Corroios)
+  const r = C.encaixarNoDesenho(contrario, paragens);
+  ok('[ao contrário] um desenho ao contrário é virado e passa a servir', !!r && r.invertido === true);
+  ok('[ao contrário] depois de virado, as posições não decrescem e o recuo é 0', !!r && r.encaixe.retrocessoM === 0 && r.encaixe.posicoes.every((p, i, a) => i === 0 || p >= a[i - 1]));
+  ok('[ao contrário] o desenho virado vai da 1.ª paragem à última', !!r && metros(r.desenho[0], paragens[0]) < 1 && metros(r.desenho[r.desenho.length - 1], paragens[5]) < 1);
+  const certo = C.encaixarNoDesenho(estrada, paragens);
+  ok('[ao contrário] um desenho no sentido certo não se vira', !!certo && certo.invertido === false && certo.desenho === estrada);
+  const longe = estrada.map((p) => ({ lat: p.lat + 0.01, lon: p.lon }));
+  ok('[ao contrário] um desenho de outro sítio continua a ser recusado nos dois sentidos', C.encaixarNoDesenho(longe, paragens) === null);
+}
+
 // ------------------------------------------------------------ fatiar
 {
   const total = comprimento(estrada);
