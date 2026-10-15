@@ -1,7 +1,7 @@
 {
-  "built_at": "2026-10-15T21:15:06.576732+00:00",
-  "db_bytes": 643104768,
-  "gz_bytes": 126337832,
+  "built_at": "2026-10-15T22:01:21.368812+00:00",
+  "db_bytes": 645791744,
+  "gz_bytes": 127397034,
   "totals": {
     "lines": 2826,
     "stops": 46384,
@@ -584,7 +584,7 @@
     }
   ],
   "desenhos": {
-    "bytes": 5776055,
+    "bytes": 7859561,
     "por_operador": {
       "carris": {
         "viagens": 25013,
@@ -598,7 +598,8 @@
       },
       "cp": {
         "viagens": 1590,
-        "com_desenho": 0
+        "com_desenho": 1590,
+        "desenhos": 239
       },
       "fertagus": {
         "viagens": 260,
@@ -633,7 +634,7 @@
       "metro_porto": {
         "viagens": 2941,
         "com_desenho": 2941,
-        "desenhos": 12
+        "desenhos": 20
       },
       "mobiave": {
         "viagens": 2690,
@@ -714,9 +715,14 @@
         "viagens": 1114,
         "com_desenho": 1114,
         "desenhos": 307
+      },
+      "unir": {
+        "viagens": 0,
+        "com_desenho": 0,
+        "desenhos": 788
       }
     },
-    "unir_linhas_com_desenho": 0
+    "unir_linhas_com_desenho": 788
   },
   "verificacao": {
     "data_hoje": "2026-10-15",
@@ -909,13 +915,13 @@
           "total": 399
         },
         "servicos_com_data_hoje": [
-          "FU",
-          "AU",
+          "EU",
           "DU",
           "BexpU",
           "BU",
-          "EU",
-          "CU"
+          "FU",
+          "CU",
+          "AU"
         ],
         "viagens_por_servico": [
           {
@@ -970,5 +976,5 @@
       }
     }
   },
-  "duration_s": 254
+  "duration_s": 258
 }
