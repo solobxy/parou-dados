@@ -1,0 +1,32 @@
+name: Sonda dos dados em tempo real da TUB
+
+# Descarrega o GTFS e os ficheiros GTFS-Realtime da TUB (Braga) e mostra o que têm. Só leitura. Resultado no ramo "tub-resultado".
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  sonda:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Sondar
+        continue-on-error: true
+        run: |
+          pip install --quiet gtfs-realtime-bindings protobuf
+          mkdir -p res
+          python auditoria/tub-sonda.py 2>&1 | tee res/sonda.txt | tail -150
+      - name: Guardar
+        if: always()
+        run: |
+          mkdir -p pub && cp -r res/* pub/ 2>/dev/null || echo "sem resultados" > pub/vazio.txt
+          cd pub && git init -q -b tub-resultado
+          git config user.name "parou-dados"; git config user.email "actions@users.noreply.github.com"
+          git add -A && git commit -q -m "TUB $(date -u +%Y-%m-%dT%H:%MZ)" && git push -q -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" tub-resultado
