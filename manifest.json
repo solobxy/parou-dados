@@ -1,7 +1,7 @@
 {
-  "built_at": "2026-10-15T19:12:49.950646+00:00",
-  "db_bytes": 632537088,
-  "gz_bytes": 123876258,
+  "built_at": "2026-10-15T21:15:06.576732+00:00",
+  "db_bytes": 643104768,
+  "gz_bytes": 126337832,
   "totals": {
     "lines": 2826,
     "stops": 46384,
@@ -583,6 +583,141 @@
       "dias_uteis_sem_servico": 0
     }
   ],
+  "desenhos": {
+    "bytes": 5776055,
+    "por_operador": {
+      "carris": {
+        "viagens": 25013,
+        "com_desenho": 25013,
+        "desenhos": 308
+      },
+      "cmh": {
+        "viagens": 50018,
+        "com_desenho": 50018,
+        "desenhos": 1578
+      },
+      "cp": {
+        "viagens": 1590,
+        "com_desenho": 0
+      },
+      "fertagus": {
+        "viagens": 260,
+        "com_desenho": 260,
+        "desenhos": 4
+      },
+      "giro": {
+        "viagens": 541,
+        "com_desenho": 541,
+        "desenhos": 33
+      },
+      "guimabus": {
+        "viagens": 2012,
+        "com_desenho": 2012,
+        "desenhos": 230
+      },
+      "horarios_funchal": {
+        "viagens": 5329,
+        "com_desenho": 5329,
+        "desenhos": 260
+      },
+      "mdb-1272": {
+        "viagens": 4787,
+        "com_desenho": 4787,
+        "desenhos": 196
+      },
+      "metro_lisboa": {
+        "viagens": 2553,
+        "com_desenho": 2553,
+        "desenhos": 18
+      },
+      "metro_porto": {
+        "viagens": 2941,
+        "com_desenho": 2941,
+        "desenhos": 12
+      },
+      "mobiave": {
+        "viagens": 2690,
+        "com_desenho": 2690,
+        "desenhos": 195
+      },
+      "mts": {
+        "viagens": 1492,
+        "com_desenho": 1492,
+        "desenhos": 6
+      },
+      "proximo_faro": {
+        "viagens": 593,
+        "com_desenho": 593,
+        "desenhos": 26
+      },
+      "smtuc": {
+        "viagens": 4416,
+        "com_desenho": 4416,
+        "desenhos": 394
+      },
+      "sobe_desce_tavira": {
+        "viagens": 27,
+        "com_desenho": 27,
+        "desenhos": 16
+      },
+      "stcp": {
+        "viagens": 22216,
+        "com_desenho": 22216,
+        "desenhos": 247
+      },
+      "tcb_barreiro": {
+        "viagens": 1601,
+        "com_desenho": 1601,
+        "desenhos": 69
+      },
+      "tld-4257": {
+        "viagens": 16,
+        "com_desenho": 16,
+        "desenhos": 2
+      },
+      "tld-4316": {
+        "viagens": 347,
+        "com_desenho": 347,
+        "desenhos": 72
+      },
+      "tld-4317": {
+        "viagens": 552,
+        "com_desenho": 552,
+        "desenhos": 69
+      },
+      "tld-4318": {
+        "viagens": 139,
+        "com_desenho": 139,
+        "desenhos": 15
+      },
+      "tld-4319": {
+        "viagens": 129,
+        "com_desenho": 129,
+        "desenhos": 9
+      },
+      "transtejo_soflusa": {
+        "viagens": 938,
+        "com_desenho": 938,
+        "desenhos": 17
+      },
+      "tub_braga": {
+        "viagens": 3730,
+        "com_desenho": 3607,
+        "desenhos": 392
+      },
+      "tuba_barcelos": {
+        "viagens": 648,
+        "com_desenho": 648,
+        "desenhos": 262
+      },
+      "vamus": {
+        "viagens": 1114,
+        "com_desenho": 1114,
+        "desenhos": 307
+      }
+    },
+    "unir_linhas_com_desenho": 0
+  },
   "verificacao": {
     "data_hoje": "2026-10-15",
     "data_amanha": "2026-10-16",
@@ -774,13 +909,13 @@
           "total": 399
         },
         "servicos_com_data_hoje": [
-          "BexpU",
-          "CU",
           "FU",
+          "AU",
           "DU",
-          "EU",
+          "BexpU",
           "BU",
-          "AU"
+          "EU",
+          "CU"
         ],
         "viagens_por_servico": [
           {
@@ -835,5 +970,5 @@
       }
     }
   },
-  "duration_s": 263
+  "duration_s": 254
 }
