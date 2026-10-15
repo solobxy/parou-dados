@@ -1,0 +1,58 @@
+name: Vigiar os desenhos pela estrada
+
+# Todos os dias, com a base e o servidor verdadeiros, confirma que as linhas e as viagens se desenham pela estrada (ou pelo carril)
+# e não em linha reta entre paragens, que atravessava prédios: autocarros, metro, comboio, barco, UNIR, e as opções do planeador.
+#
+# Como: pede ao workflow «Servidor» (acao=comando) que corra auditoria/percurso-estrada.mjs no próprio servidor (que tem a base e a app),
+# espera pelo resultado e lê-o com auditoria/ler-resultado-estradas.sh. Só falha (e o GitHub manda um email) se o teste falhar, não chegar
+# ao fim ou não tiver corrido agora.
+# Porquê: os desenhos vêm de um passo longo (mapa de estradas, workflow «Estradas») e de uma base diária; um passo que falhe em silêncio
+# faria a app voltar às linhas retas sem ninguém dar por isso.
+
+on:
+  schedule:
+    - cron: "23 7 * * *"
+  workflow_dispatch:
+
+permissions:
+  actions: write
+  contents: read
+
+jobs:
+  vigiar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Pedir ao servidor que corra o teste
+        run: |
+          antes=$(date -u +%s)
+          echo "antes=$antes" >> "$GITHUB_ENV"
+          gh workflow run servidor.yml --repo "$GITHUB_REPOSITORY" -f acao=comando -f "comando=$(cat auditoria/vigiar-estradas.sh)"
+          # Descobre a corrida que acabámos de pedir (a mais recente criada depois de `antes`)
+          id=""
+          for i in $(seq 1 30); do
+            sleep 10
+            id=$(gh run list --repo "$GITHUB_REPOSITORY" --workflow=servidor.yml --event workflow_dispatch --limit 5 --json databaseId,createdAt \
+              -q "[.[] | select((.createdAt | fromdateiso8601) >= $antes - 5)] | sort_by(.createdAt) | last | .databaseId // empty")
+            [ -n "$id" ] && break
+          done
+          [ -n "$id" ] || { echo "Não encontrei a corrida do servidor."; exit 1; }
+          echo "Corrida do servidor: $id"
+          for i in $(seq 1 200); do
+            estado=$(gh run view "$id" --repo "$GITHUB_REPOSITORY" --json status -q .status)
+            [ "$estado" = "completed" ] && break
+            sleep 10
+          done
+          [ "$estado" = "completed" ] || { echo "A corrida do servidor não acabou a tempo."; exit 1; }
+
+      - name: Ler o resultado
+        run: |
+          git fetch -q origin servidor-resultado
+          git show origin/servidor-resultado:resultado.txt > resultado.txt
+          tail -25 resultado.txt
+          bash auditoria/ler-resultado-estradas.sh resultado.txt 1800 | tee -a "$GITHUB_STEP_SUMMARY"
+          exit "${PIPESTATUS[0]}"
