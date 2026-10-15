@@ -284,14 +284,15 @@ async function testarBraga() {
       if (d.isRealtime && d.state === 'TEMPO REAL') {
         rt++;
         if (exemplos.length < 4) exemplos.push(`${d.lineCode} ${s.name || s.stopName || ''} ${d.scheduledTime}→${d.displayText} «${d.statusDescription}»`);
-        const dif = Math.abs((d.realtime_epoch_secs ?? 0) - d.dep_epoch_secs);
-        if (!/TUB/.test(d.statusDescription || '') || !Number.isFinite(d.realtime_epoch_secs) || dif > 3 * 3600) incoerentes.push(`${d.lineCode} dif=${dif}s «${d.statusDescription}»`);
+        // A API (/nearby) dá a hora prevista (expectedTime), o atraso (delaySeconds) e a hora do horário (scheduledTime)
+        const dif = Math.abs(d.delaySeconds);
+        if (!/TUB/.test(d.statusDescription || '') || !Number.isFinite(d.delaySeconds) || dif > 3 * 3600 || !/^\d\d:\d\d$/.test(d.expectedTime || '') || !/^\d\d:\d\d$/.test(d.scheduledTime || '')) incoerentes.push(`${d.lineCode} atraso=${d.delaySeconds}s horário ${d.scheduledTime} previsto ${d.expectedTime} «${d.statusDescription}»`);
       }
     }
   }
   nota(`Braga: ${total} partidas da TUB perto dos autocarros, ${rt} com hora em direto; exemplos: ${exemplos.join(' | ') || '-'}`);
   ok('Braga: há partidas da TUB com a hora em direto perto dos autocarros', rt > 0, `${rt}/${total}`);
-  ok('Braga: as horas em direto são coerentes (dizem «TUB», diferença ≤ 3 h do horário)', incoerentes.length === 0, incoerentes.slice(0, 3).join(' ; '));
+  ok('Braga: as horas em direto são coerentes (dizem «TUB», hora prevista e atraso ≤ 3 h do horário)', incoerentes.length === 0, incoerentes.slice(0, 3).join(' ; '));
 
   // A bordo num autocarro da TUB
   const alvo = tub2.find((v) => v.viagem && (v.vel ?? 0) >= 3) || tub2[0];
@@ -571,6 +572,14 @@ async function manual(browser, { tema, largura = 390, altura = 780, aparelho = n
       }
       return saida;
     });
+    // Fotografia das três rodas por cima do mapa (para ver as cores de cada tema)
+    await p.evaluate(() => {
+      const d = document.createElement('div'); d.id = '__rodas'; d.style.cssText = 'position:fixed;left:8px;top:150px;z-index:99999;display:flex;gap:0';
+      d.innerHTML = [['stcp', '801', 90], ['cm', '4436', 200], ['tub', '45', 310]].map(([op, n, rumo]) => `<div class="bus-pin bus-pin--${op}"><i class="bus-pin__seta" style="transform:rotate(${rumo}deg)"></i><b class="bus-pin__num${n.length >= 3 ? ` bus-pin__num--${n.length}` : ''}">${n}</b></div>`).join('');
+      document.body.appendChild(d);
+    });
+    await p.screenshot({ path: `${SAIDA}/${nomeFicheiro}_0_rodas.png`, clip: { x: 0, y: 130, width: Math.min(200, largura), height: 90 } }).catch(() => {});
+    await p.evaluate(() => document.getElementById('__rodas')?.remove());
     const dist = (x, y) => Math.hypot(x[0] - y[0], x[1] - y[1], x[2] - y[2]);
     ok(`${rot} a roda de cada operador tem o seu azul (STCP), amarelo (Carris Metropolitana) e vermelho (TUB)`, cores.stcp.fundo[2] > cores.stcp.fundo[0] + 60 && cores.cm.fundo[0] > 200 && cores.cm.fundo[1] > 160 && cores.cm.fundo[2] < 80 && cores.tub.fundo[0] > 150 && cores.tub.fundo[1] < 60 && cores.tub.fundo[2] < 90, JSON.stringify(Object.fromEntries(Object.entries(cores).map(([k, v]) => [k, v.fundo.join(',')]))));
     ok(`${rot} as três cores distinguem-se bem (distância ≥ 180)`, dist(cores.stcp.fundo, cores.cm.fundo) >= 180 && dist(cores.stcp.fundo, cores.tub.fundo) >= 150 && dist(cores.cm.fundo, cores.tub.fundo) >= 150, `stcp-cm ${Math.round(dist(cores.stcp.fundo, cores.cm.fundo))}, stcp-tub ${Math.round(dist(cores.stcp.fundo, cores.tub.fundo))}, cm-tub ${Math.round(dist(cores.cm.fundo, cores.tub.fundo))}`);
@@ -633,6 +642,55 @@ async function manual(browser, { tema, largura = 390, altura = 780, aparelho = n
   } finally { await ctx.close(); }
 }
 
+// ---------------------------------------------------------------------------------------------------------------- 5b) Braga com dados reais no browser (rodas vermelhas da TUB)
+async function bragaReal(browser, tema) {
+  const rot = `[Braga real ${tema}]`;
+  const ctx = await browser.newContext({
+    viewport: { width: 390, height: 780 }, hasTouch: true, isMobile: true, locale: 'pt-PT', timezoneId: 'Europe/Lisbon', serviceWorkers: 'block',
+    userAgent: 'Mozilla/5.0 (Linux; Android 14; Pixel 7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Mobile Safari/537.36',
+    permissions: ['geolocation'], geolocation: { latitude: 41.5518, longitude: -8.4229, accuracy: 10 },
+  });
+  await ctx.addInitScript({ content: `try{ Object.defineProperty(Navigator.prototype,'webdriver',{get:()=>false,configurable:true}); ${tema === 'claro' ? "localStorage.removeItem('parou_tema');" : `localStorage.setItem('parou_tema','${tema}');`} localStorage.setItem('parou_aviso_instalar','1'); localStorage.setItem('parou_bemvindo','visto'); localStorage.setItem('parou_localizacao_ok','1'); }catch(e){}` });
+  const p = await ctx.newPage();
+  const erros = [];
+  p.on('console', (m) => { if (m.type() === 'error' && !/Failed to load resource|favicon|ERR_|net::/.test(m.text())) erros.push(m.text().slice(0, 240)); });
+  p.on('pageerror', (e) => erros.push('PAGEERROR ' + String(e).slice(0, 240)));
+  try {
+    await p.goto(`${BASE}/`, { waitUntil: 'domcontentloaded' });
+    await p.waitForSelector('[data-teste="paragem-perto"]:visible', { timeout: 60000 }).catch(() => {});
+    const fechar = p.locator('[data-teste="ponto-diario-fechar"]');
+    if (await fechar.count()) await fechar.first().click({ timeout: 2000 }).catch(() => {});
+    await p.waitForSelector('.bus-pin--tub', { timeout: 45000 }).catch(() => {});
+    await p.waitForTimeout(1500);
+    await p.screenshot({ path: `${SAIDA}/braga_${tema}_1_mapa.png` }).catch(() => {});
+    const rodas = await p.locator('.bus-pin--tub .bus-pin__num').allInnerTexts();
+    nota(`${rot}: ${rodas.length} rodas da TUB no mapa (${rodas.slice(0, 10).join(', ')}); paragem: ${(await p.locator('[data-teste="paragem-perto"]').first().innerText().catch(() => '')).replace(/\n/g, ' | ').slice(0, 160)}`);
+    ok(`${rot} aparecem rodas da TUB no mapa do Perto`, rodas.length > 0, rodas.length);
+    if (rodas.length) {
+      const cor = await p.evaluate(() => { const n = document.querySelector('.bus-pin--tub .bus-pin__num'); return n ? getComputedStyle(n).backgroundColor : ''; });
+      ok(`${rot} a roda da TUB é vermelha`, /rgb\(200, 16, 46\)/.test(cor), cor);
+      const roda = p.locator('.parou-bus-icone', { has: p.locator('.bus-pin--tub') }).first();
+      await roda.click({ timeout: 8000 });
+      await p.waitForSelector('[data-teste="cartao-autocarro"]', { timeout: 8000 });
+      const cartao = (await p.locator('[data-teste="cartao-autocarro"]').innerText()).replace(/\n/g, ' | ');
+      await p.screenshot({ path: `${SAIDA}/braga_${tema}_2_cartao.png` }).catch(() => {});
+      ok(`${rot} o cartão diz a linha e que é da TUB`, /Linha \S+/.test(cartao) && /TUB/.test(cartao), cartao);
+      await p.locator('[data-teste="estou-a-bordo"]').click();
+      await p.waitForSelector('[data-teste="a-bordo-paragens"], [data-teste="painel-a-bordo"]', { timeout: 20000 }).catch(() => {});
+      await p.waitForTimeout(2500);
+      await p.screenshot({ path: `${SAIDA}/braga_${tema}_3_painel.png` }).catch(() => {});
+      const prox = (await p.locator('[data-teste="a-bordo-proxima"]').innerText({ timeout: 8000 }).catch(() => '')).replace(/\n/g, ' | ');
+      nota(`${rot}: próxima paragem no painel «${prox}»`);
+      ok(`${rot} o painel «A bordo» abre com a próxima paragem e a hora (horário ou previsto)`, /(PRÓXIMA PARAGEM|NA PARAGEM|ÚLTIMA PARAGEM|FIM DE LINHA)/i.test(prox) && /(horário|previsto) \d\d:\d\d/.test(prox), prox);
+    }
+    ok(`${rot} sem erros de consola`, erros.length === 0, erros.slice(0, 2).join(' || '));
+  } catch (e) {
+    ok(`${rot} correu sem exceções`, false, String(e).slice(0, 200));
+  } finally {
+    await ctx.close();
+  }
+}
+
 // ---------------------------------------------------------------------------------------------------------------- 6) seletor de temas
 async function seletor(browser) {
   const rot = '[temas]';
@@ -687,6 +745,7 @@ async function mosaicosReais(browser, tema) {
   }
   if (wk) for (const tema of ['claro', 'porto']) await manual(wk, { tema, aparelho: 'iPhone 13 Mini', etiqueta: 'iphone' });
   await seletor(cr);
+  for (const tema of ['claro', 'porto']) await bragaReal(cr, tema);
   for (const tema of ['claro', 'escuro', 'ambar', 'porto']) await mosaicosReais(cr, tema);
 
   if (!RAPIDO) {
