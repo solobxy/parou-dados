@@ -112,6 +112,16 @@ const MEDIR = `(() => {
 })()`;
 /** Opacidade do ponto da pessoa (0 = escondido, 1 = à vista); null se não existe */
 const OPACIDADE_PONTO = `(() => { const e = document.querySelector('.custom-user-marker-icon'); return e ? Number(getComputedStyle(e).opacity) : null; })()`;
+/** O mapa segue o autocarro? Distância (px) do centro da bola «meu» ao centro do mapa e número de paragens à vista (bolinhas do percurso) */
+const MAPA = `(() => {
+  const m = document.querySelector('.leaflet-container'); const bola = document.querySelector('.bus-pin--meu .bus-pin__num');
+  if (!m || !bola) return { erro: 'sem mapa ou bola' };
+  const r = m.getBoundingClientRect(), b = bola.getBoundingClientRect();
+  const fora = Math.hypot(b.left + b.width / 2 - (r.left + r.width / 2), b.top + b.height / 2 - (r.top + r.height / 2));
+  let paragens = 0;
+  document.querySelectorAll('path.leaflet-interactive').forEach((e) => { const q = e.getBoundingClientRect(); const x = q.left + q.width / 2, y = q.top + q.height / 2; if (x >= r.left && x <= r.right && y >= r.top && y <= r.bottom) paragens++; });
+  return { fora, paragens, w: r.width, h: r.height, cx: r.left + r.width / 2, cy: r.top + r.height / 2 };
+})()`;
 const mediana = (v) => { const s = [...v].sort((a, b) => a - b); return s.length ? s[Math.floor(s.length / 2)] : NaN; };
 
 (async () => {
@@ -161,6 +171,35 @@ const mediana = (v) => { const s = [...v].sort((a, b) => a - b); return s.length
     await espera(400);
     const opAbordo = await p.evaluate(OPACIDADE_PONTO);
     ok('[ponto] a bordo, com a bola em cima da pessoa, o ponto da pessoa esconde-se (um só marcador)', opAbordo !== null && opAbordo <= 0.05, `opacidade ${opAbordo}`);
+
+    // O mapa segue o autocarro: centrado e com 2 a 3 paragens à vista (nem o percurso todo, nem demasiado perto)
+    const m1 = await p.evaluate(MAPA);
+    nota(`mapa: ${JSON.stringify(m1)}`);
+    ok('[mapa] ao ir a bordo o mapa segue o autocarro: a bola está no centro do mapa (≤ 20 px)', !m1.erro && m1.fora <= 20, m1.erro || `${m1.fora.toFixed(1)} px`);
+    ok('[mapa] e mostra 2 a 6 paragens à volta (não o percurso todo, nem só uma)', !m1.erro && m1.paragens >= 2 && m1.paragens <= 6, `${m1.paragens} paragens`);
+    // A pessoa arrasta o mapa: deixa de seguir; 6 s depois de largar volta a prender
+    await p.mouse.move(m1.cx, m1.cy + 40); await p.mouse.down();
+    for (let i = 1; i <= 8; i++) { await p.mouse.move(m1.cx + i * 16, m1.cy + 40 + i * 8); await espera(30); }
+    await p.mouse.up();
+    const largouEm = Date.now();
+    await gps(); await espera(1500);
+    const m2 = await p.evaluate(MAPA);
+    ok('[mapa] ao arrastar o mapa deixa de seguir (a bola sai do centro)', !m2.erro && m2.fora > 60, m2.erro || `${m2.fora.toFixed(1)} px`);
+    while (Date.now() - largouEm < 4000) { await gps(); await espera(1000); }
+    const m3 = await p.evaluate(MAPA);
+    ok('[mapa] 4 s depois de largar ainda não voltou a prender', !m3.erro && m3.fora > 40, m3.erro || `${m3.fora.toFixed(1)} px`);
+    while (Date.now() - largouEm < 9500) { await gps(); await espera(1000); }
+    const m4 = await p.evaluate(MAPA);
+    ok('[mapa] 6 s depois de largar volta a prender ao autocarro (centrado)', !m4.erro && m4.fora <= 20, m4.erro || `${m4.fora.toFixed(1)} px`);
+    // Afasta o mapa (roda do rato = zoom): deixa de seguir; depois volta ao zoom certo
+    await p.mouse.move(m1.cx, m1.cy); await p.mouse.wheel(0, 700);
+    await espera(1500);
+    const m5 = await p.evaluate(MAPA);
+    nota(`depois de afastar: ${JSON.stringify(m5)}`);
+    const largouZoom = Date.now();
+    while (Date.now() - largouZoom < 9500) { await gps(); await espera(1000); }
+    const m6 = await p.evaluate(MAPA);
+    ok('[mapa] depois de afastar e esperar, volta a seguir com 2 a 6 paragens à vista', !m6.erro && m6.fora <= 20 && m6.paragens >= 2 && m6.paragens <= 6, m6.erro || `${m6.fora.toFixed(1)} px, ${m6.paragens} paragens`);
 
     // Com o GPS fraco (±150 m) a bola não se agarra a uma posição má: volta à do operador (atrasada), nunca salta para um sítio duvidoso
     const fracas = [];
