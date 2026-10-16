@@ -1,0 +1,31 @@
+OK      existem normalizeDistrict e distritoNoTexto 
+OK      [distrito] «Bragança» → Bragança Bragança
+OK      [distrito] «BRAGANÇA» → Bragança Bragança
+OK      [distrito] «braganca» → Bragança Bragança
+OK      [distrito] «Distrito de Bragança» → Bragança Bragança
+OK      [distrito] «Braga» → Braga Braga
+OK      [distrito] «braga» → Braga Braga
+OK      [distrito] «Distrito de Braga» → Braga Braga
+OK      [distrito] «Lisboa» → Lisboa Lisboa
+OK      [distrito] «Porto» → Porto Porto
+OK      [distrito] «Setúbal» → Setúbal Setúbal
+OK      [distrito] «setubal» → Setúbal Setúbal
+OK      [distrito] «Évora» → Évora Évora
+OK      [distrito] «evora» → Évora Évora
+OK      [distrito] «Vila Real» → Vila Real Vila Real
+OK      [distrito] «Viana do Castelo» → Viana do Castelo Viana do Castelo
+OK      [distrito] «Castelo Branco» → Castelo Branco Castelo Branco
+OK      [distrito] «Santarém» → Santarém Santarém
+OK      [distrito] «Faro» → Faro Faro
+OK      [distrito] «Guarda» → Guarda Guarda
+OK      [distrito] «Região Autónoma da Madeira» → Região Autónoma da Madeira Região Autónoma da Madeira
+OK      [distrito] «Madeira» → Região Autónoma da Madeira Região Autónoma da Madeira
+OK      [distrito] «Açores» → Região Autónoma dos Açores Região Autónoma dos Açores
+OK      [distrito] vazio → Lisboa 
+OK      [distrito] desconhecido fica como veio 
+OK      [texto] «Macedo de Cavaleiros, Bragança» → Bragança 
+OK      [texto] «acidente na A11 em Braga» → Braga 
+OK      [texto] «Bragança» sozinho nunca dá Braga 
+OK      [texto] sem distrito → null 
+
+Todos os testes OK
