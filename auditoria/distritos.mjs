@@ -23,5 +23,25 @@ if (typeof D.normalizeDistrict === 'function') {
   ok('[texto] «Bragança» sozinho nunca dá Braga', t('autocarros em bragança') === 'Bragança');
   ok('[texto] sem distrito → null', t('greve geral') === null);
 }
+
+// Outras cidades: o nome de uma cidade dentro de outra palavra não pode ser confundido
+ok('existem temPalavra e distritoDaDescricaoANEPC', typeof D.temPalavra === 'function' && typeof D.distritoDaDescricaoANEPC === 'function');
+if (typeof D.temPalavra === 'function') {
+  const w = D.temPalavra;
+  ok('[palavra] «aeroporto» não é Porto', !w('obras no aeroporto', 'porto'));
+  ok('[palavra] «Porto» é Porto', w('greve no Porto hoje', 'porto'));
+  ok('[palavra] «Porto Santo» não conta como Porto sozinho? (conta como palavra)', w('porto santo', 'porto'));
+  ok('[palavra] «Bragança» não é Braga', !w('Macedo de Cavaleiros, Bragança', 'braga'));
+  ok('[palavra] «Farol»/«Faroleiro» não é Faro', !w('luz do farol e faroleiro', 'faro'));
+  ok('[palavra] acentos: «Setúbal» = setubal', w('Setúbal: greve', 'setubal'));
+  ok('[palavra] «Guimarães» = guimaraes', w('comboio para Guimarães', 'guimaraes'));
+  ok('[palavra] «Almadares» não é Almada', !w('rua dos almadares', 'almada'));
+}
+if (typeof D.distritoDaDescricaoANEPC === 'function') {
+  const f = D.distritoDaDescricaoANEPC;
+  ok('[ANEPC] Macedo de Cavaleiros → Bragança', f('Ocorrência da Proteção Civil (ANEPC) em Rua X, Macedo De Cavaleiros, Bragança. Estado: Em Curso. Meios: 3') === 'Bragança');
+  ok('[ANEPC] Braga → Braga', f('Ocorrência da Proteção Civil (ANEPC) em A11, Braga, Braga. Estado: Em Curso.') === 'Braga');
+  ok('[ANEPC] descrição de outra fonte → null', f('Greve no Porto') === null);
+}
 console.log(falhas ? `\n${falhas} FALHA(S)` : '\nTodos os testes OK');
 process.exit(falhas ? 1 : 0);
