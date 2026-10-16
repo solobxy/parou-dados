@@ -1,12 +1,12 @@
 {
-  "built_at": "2026-10-16T08:30:37.961985+00:00",
-  "db_bytes": 619921408,
-  "gz_bytes": 121904525,
+  "built_at": "2026-10-16T18:54:01.541611+00:00",
+  "db_bytes": 650928128,
+  "gz_bytes": 127667044,
   "totals": {
     "lines": 2826,
     "stops": 46384,
-    "trips": 130051,
-    "stop_times": 3999928,
+    "trips": 135761,
+    "stop_times": 4201650,
     "operators": 30,
     "operators_ok": 27,
     "operators_desatualizados": 2
@@ -118,7 +118,7 @@
       "validade": "ok",
       "dias_validade": 2268,
       "horario_prolongado": false,
-      "url": "https://mts.pt/imt/MTS-20240129.zip",
+      "url": "https://files.mobilitydatabase.org/mdb-2408/latest.zip",
       "last_error": null,
       "servicos_associados": null,
       "servicos_sem_calendario": null,
@@ -584,7 +584,7 @@
     }
   ],
   "desenhos": {
-    "bytes": 7859191,
+    "bytes": 8819843,
     "por_operador": {
       "carris": {
         "viagens": 25013,
@@ -592,9 +592,9 @@
         "desenhos": 308
       },
       "cmh": {
-        "viagens": 50023,
-        "com_desenho": 50023,
-        "desenhos": 1578
+        "viagens": 55733,
+        "com_desenho": 55733,
+        "desenhos": 2088
       },
       "cp": {
         "viagens": 1589,
@@ -911,13 +911,13 @@
           "total": 399
         },
         "servicos_com_data_hoje": [
-          "DU",
           "EU",
-          "BU",
+          "DU",
+          "AU",
           "FU",
           "BexpU",
-          "CU",
-          "AU"
+          "BU",
+          "CU"
         ],
         "viagens_por_servico": [
           {
@@ -972,5 +972,5 @@
       }
     }
   },
-  "duration_s": 221
+  "duration_s": 297
 }
