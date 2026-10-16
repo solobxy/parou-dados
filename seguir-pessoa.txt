@@ -1,0 +1,20 @@
+OK      [raio] existem as funções 
+OK      [a bordo] autocarro a 8 m/s (29 km/h), modelo 200 m atrás (atraso medido no mapa): segue 
+OK      [a bordo] autocarro a 14 m/s (50 km/h), modelo 560 m atrás (40 s de idade): segue 
+OK      [a bordo] autocarro parado e a pessoa em cima dele: segue 
+OK      [a bordo] autocarro parado numa paragem, pessoa a 60 m: segue 
+OK      [longe] a 1,2 km do autocarro, parada: não segue 
+OK      [longe] a 3 km do autocarro: não segue 
+OK      [longe] a 3 km, mesmo com o autocarro rápido (20 m/s): não segue 
+OK      [longe] a 600 m de um autocarro parado: não segue 
+OK      [longe] a 5 km, já a seguir (histerese): deixa de seguir 
+OK      [raio] cresce com a velocidade 
+OK      [raio] nunca abaixo de 200 m nem acima de 900 m 420 .. 900
+OK      [histerese] um pouco acima do raio: não começa a seguir 
+OK      [histerese] um pouco acima do raio: se já segue, continua 
+OK      [histerese] muito acima do raio: mesmo a seguir, deixa de seguir 
+OK      [robustez] distância inválida (NaN): não segue 
+OK      [robustez] velocidade inválida (NaN): usa a mínima, não rebenta 
+OK      [robustez] distância infinita: não segue 
+
+Todos os testes OK
