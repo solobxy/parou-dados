@@ -83,7 +83,9 @@ jobs:
           r2=${PIPESTATUS[0]}
           APP=$PWD node --import tsx ../auditoria/seguir-mapa.mjs 2>&1 | grep -v "Experimental\|trace-warnings" | tee ../res/seguir-mapa.txt | tail -40
           r3=${PIPESTATUS[0]}
-          exit $((r1 || r2 || r3))
+          APP=$PWD node --import tsx ../auditoria/distritos.mjs 2>&1 | grep -v "Experimental\|trace-warnings" | tee ../res/distritos.txt | tail -50
+          r4=${PIPESTATUS[0]}
+          exit $((r1 || r2 || r3 || r4))
 
       - name: Teste dos autocarros no ecrã (todos os da zona que se vê, qualquer operador e linha; raio largo)
         continue-on-error: true
