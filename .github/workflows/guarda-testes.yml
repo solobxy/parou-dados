@@ -80,6 +80,10 @@ jobs:
         working-directory: app
         run: APP=$PWD node --import tsx ../auditoria/seguir-pessoa.mjs 2>&1 | grep -v "Experimental\|trace-warnings" | tail -40; exit ${PIPESTATUS[0]}
 
+      - name: Zoom do mapa a seguir o autocarro «a bordo»
+        working-directory: app
+        run: APP=$PWD node --import tsx ../auditoria/seguir-mapa.mjs 2>&1 | grep -v "Experimental\|trace-warnings" | tail -40; exit ${PIPESTATUS[0]}
+
       - name: Autocarros no ecrã (todos os da zona que se vê)
         working-directory: app
         run: APP=$PWD node --import tsx ../auditoria/veiculos-no-ecra.mjs 2>&1 | grep -v "Experimental\|trace-warnings" | tail -60; exit ${PIPESTATUS[0]}
