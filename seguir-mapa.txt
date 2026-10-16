@@ -1,0 +1,13 @@
+OK      [zoom] existe zoomParaParagens 
+OK      [zoom] paragens a 350 m: cabem 2,5 a 3,5 espaçamentos na largura 3.00
+OK      [zoom] paragens a 600 m: idem 3.00
+OK      [zoom] paragens muito juntas (80 m): não passa de 17 16.962378498997076
+OK      [zoom] paragens muito afastadas (5 km): não desce de 14 14
+OK      [zoom] mais afastadas, menos zoom 
+OK      [zoom] no início da linha (índice 0) também funciona 
+OK      [zoom] no fim da linha também funciona 
+OK      [zoom] com 2 paragens funciona 
+OK      [zoom] paragens repetidas no mesmo sítio: devolve um valor válido 
+OK      [zoom] ecrã mais largo, mais zoom (mesmo número de paragens à vista) 
+
+Todos os testes OK
