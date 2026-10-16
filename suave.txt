@@ -1,0 +1,22 @@
+OK      [mapa suave com «ant»] o 801 e o 803 estão no mapa durante os 50 s 3000 imagens
+NOTA    [mapa suave com «ant»] escala: 0.55 px por metro; o autocarro a 4 m/s anda 2.2 px/s
+NOTA    [mapa suave com «ant»] janelas de 1 s: mediana 2.0 px, p99 4.0 px, esperado 2.2 px; parado 0% do tempo; maior passo entre imagens 1.00 px
+OK      [mapa suave com «ant»] anda quase sempre (parado menos de 10% do tempo; o mapa antigo ficava parado ~85%) 0%
+OK      [mapa suave com «ant»] nenhum salto entre imagens (≤ 3 px no máximo, e menos de 3× o passo normal + 1 px) 1.00 px
+OK      [mapa suave com «ant»] velocidade regular (em qualquer segundo anda no máximo 2,2× o esperado) 4.0 px contra 2.2 px esperados
+OK      [mapa suave com «ant»] velocidade média parecida com a real (mediana de 1 s entre 0,6× e 1,5×) 2.0 px contra 2.2
+OK      [mapa suave com «ant»] o 801 anda para este (direita) e não para trás 121 px para a direita
+OK      [mapa suave com «ant»] a ponta do 801 aponta para este (90° ± 25°) rumo 90° 
+OK      [mapa suave com «ant»] sem erros de consola 
+OK      [mapa suave] o 801 e o 803 estão no mapa durante os 50 s 3001 imagens
+NOTA    [mapa suave] escala: 0.55 px por metro; o autocarro a 4 m/s anda 2.2 px/s
+NOTA    [mapa suave] janelas de 1 s: mediana 2.0 px, p99 3.0 px, esperado 2.2 px; parado 0% do tempo; maior passo entre imagens 1.00 px
+OK      [mapa suave] anda quase sempre (parado menos de 10% do tempo; o mapa antigo ficava parado ~85%) 0%
+OK      [mapa suave] nenhum salto entre imagens (≤ 3 px no máximo, e menos de 3× o passo normal + 1 px) 1.00 px
+OK      [mapa suave] velocidade regular (em qualquer segundo anda no máximo 2,2× o esperado) 3.0 px contra 2.2 px esperados
+OK      [mapa suave] velocidade média parecida com a real (mediana de 1 s entre 0,6× e 1,5×) 2.0 px contra 2.2
+OK      [mapa suave] o 801 anda para este (direita) e não para trás 118 px para a direita
+OK      [mapa suave] a ponta do 801 aponta para este (90° ± 25°) rumo 90° 
+OK      [mapa suave] sem erros de consola 
+
+16/16 testes OK

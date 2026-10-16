@@ -1,0 +1,78 @@
+OK      varint: negativo de 32 bits em 10 bytes lê-se como -45 -45
+OK      varint: hora (5 bytes) certa 
+OK      varint: zero 
+OK      varint: número cortado dá erro (não fica pendurado) 
+OK      STCP: lê o veículo, a viagem e a linha como antes {"id":"stcp:3342","veiculo":"3342","routeId":"801","linha":"801","tripId":"801_7","lat":41.149600982666016,"lon":-8.610899925231934,"rumo":135,"velocidade":36,"epoch":1760543996}
+OK      posições: lê os 3 veículos bons e salta o de Lisboa, o sem número e a entidade estragada tem 3
+OK      posições: veículo 1066 → viagem, linha e coordenadas 
+OK      posições: velocidade em km/h (0,056 m/s → 0) 0
+OK      posições: hora do veículo 
+OK      posições: velocidade 8,5 m/s → 31 km/h 31
+OK      posições: rumo enviado pela TUB (270) mantém-se 
+OK      posições: sem hora própria usa a hora do ficheiro 
+OK      cabeçalho: hora do ficheiro 
+OK      cabeçalho: ficheiro sem cabeçalho → 0 
+OK      posições: lixo dá erro (a fonte guarda os dados anteriores) 
+OK      rumo: primeira leitura não tem rumo 
+OK      rumo: 60 m para norte → 0° 0
+OK      rumo: 80 m para este → 90° 90
+OK      rumo: parado (tremor de 2 m) mantém 90° 90
+OK      rumo: a mesma leitura outra vez mantém 90° 90
+OK      rumo: 70 m para sul → 180° 180
+OK      rumo: outro veículo começa sem rumo (não herda o do 1) 
+OK      rumo: movimento lento (3 m por leitura) só dá rumo depois de 8 m undefined,undefined,0
+OK      viagens: lê 3 viagens e salta a estragada tem 3
+OK      viagens: 12_61 com veículo 351, linha 12 e 4 paragens 
+OK      viagens: horas previstas de chegada e partida 
+OK      viagens: paragem saltada (relação = 1) 
+OK      viagens: atraso negativo e positivo lidos com o sinal certo -45,120
+OK      viagens: sequência da paragem 
+OK      viagens: viagem suprimida (estado 3) 
+OK      viagens: paragem sem código é saltada e a outra fica 
+OK      previsão: usa a hora de partida prevista pela TUB (3 min depois do horário) {"tipo":"hora","epoch":1792081980,"veiculo":"351"}
+OK      previsão: sem hora de partida usa a de chegada 
+OK      previsão: viagem de outro dia (mesmo código) não conta 
+OK      previsão: hora a mais de 3 horas do horário não é desta partida 
+OK      previsão: viagem suprimida pela TUB 
+OK      previsão: supressão de outro dia não afeta esta partida 
+OK      previsão: supressão sem dia, com 20 h de diferença, não conta 
+OK      previsão: paragem saltada 
+OK      previsão: paragem que a viagem já não tem (já passou) → sem previsão 
+OK      previsão: viagem que não está em circulação → sem previsão 
+OK      previsão: linha circular (duas passagens) fica com a mais perto do horário {"tipo":"hora","epoch":1792081860,"veiculo":"351"}
+OK      previsão: só o atraso (75 s) → horário + atraso {"tipo":"hora","epoch":1792081875,"veiculo":"351"}
+OK      previsão: viagem depois da meia-noite (25:10) pertence ao dia anterior do serviço {"tipo":"hora","epoch":1792109520,"veiculo":"351"}
+OK      previsão: códigos sem prefixo também servem 
+OK      previsão: sem segundos de horário não rebenta (sem verificar o dia) 
+OK      percurso: a partir da paragem 4 (índice 3) dá as horas de 11, 13 e 14 [[3,1760000600],[4,1760000900],[5,1760001200]]
+OK      percurso: usa a hora de chegada (e a de partida quando só há essa) 
+OK      percurso: as paragens já passadas não têm hora 
+OK      percurso: linha circular — a 1.ª passagem pela 11 (índice 1) e a 2.ª (índice 3) ficam com horas diferentes [[1,1760000100],[3,1760000600],[4,1760000900],[5,1760001200]]
+OK      percurso: paragem saltada não leva hora 
+OK      percurso: sem previsões → vazio 
+OK      percurso: índice fora do percurso não rebenta 
+(node:2487) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+OK      fonte: 3 pedidos ao mesmo tempo → 1 ida à TUB pedidos=1
+OK      fonte: 5 s depois ainda usa a cache (sem novo pedido) 
+OK      fonte: 17 s depois pede outra vez pedidos=2
+OK      fonte: idade dos dados dentro do razoável 0
+[TUB] viagens: não consegui ler (sem rede); a app usa o horário até voltar.
+OK      fonte: se a TUB falha, usa os dados de há 20 s (ainda valem) pedidos=3 idade=20
+OK      fonte: depois de falhar não insiste antes de 30 s pedidos=3
+OK      fonte: passados 30 s volta a tentar pedidos=4
+OK      fonte: dados com mais de 2 minutos não se usam null
+OK      fonte: erro HTTP não deita fora nem inventa dados 
+OK      fonte: ficheiro parado há 5 minutos (hora no cabeçalho) não se usa null
+OK      fonte: relógio da TUB adiantado não estraga a idade 0
+NOTA    ficheiros reais: 90 posições, 87 viagens
+OK      reais: posições lidas 
+OK      reais: todas as posições com viagem, linha e número de veículo 
+OK      reais: posições em Braga (41.4–41.7, -8.6–-8.2) [{"veiculo":"1066","tripId":"45_392","routeId":"45","lat":41.580772399902344,"lon":-8.427490234375,"velocidade":39,"epoch":1792134784}]
+OK      reais: viagens lidas com paragens 
+OK      reais: cada paragem tem hora (chegada ou partida) 
+OK      reais: as viagens com posição têm previsões 87/90
+OK      reais: paragens por ordem de sequência 
+OK      reais: as horas previstas não andam para trás ao longo da viagem 
+
+Todos os testes OK

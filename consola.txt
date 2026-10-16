@@ -1,0 +1,419 @@
+OK      servidor: /veiculos sem filtro → 400 400
+OK      servidor: /veiculos com caixa → 200 e lista 200 24 veículos
+OK      servidor: /veiculos não vai para cache no-store
+OK      servidor: caixa gigante → 400 400
+OK      servidor: /veiculos com linhas → 200 200
+OK      servidor: /a-bordo de um autocarro desconhecido → 404 404
+OK      servidor: /a-bordo sem veículo → 400 ou 404 400
+OK      servidor: veículo urn:ngsi-ld:Vehicle:porto:stcp:bus:3556 só traz o necessário (sem campos a mais) id,op,linha,lat,lon,rumo,vel,t
+OK      servidor: veículo urn:ngsi-ld:Vehicle:porto:stcp:bus:1206 só traz o necessário (sem campos a mais) id,op,linha,lat,lon,rumo,vel,t
+OK      servidor: veículo urn:ngsi-ld:Vehicle:porto:stcp:bus:1207 só traz o necessário (sem campos a mais) id,op,linha,lat,lon,rumo,t
+NOTA    reais Porto (STCP): 6 paragens; operadores stcp/STCP (Porto) ; metro_porto/Metro do Porto; 8 linhas com chave (stcp:202, stcp:304, stcp:600, stcp:703, stcp:305, stcp:801, stcp:905, stcp:904); sem chave: metro_porto|Metro do Porto|metro_po; autocarros em direto nessas linhas e zona: 5 (stcp:304, stcp:305, stcp:703, stcp:801, stcp:904)
+NOTA    reais Amadora (Carris Metropolitana): 6 paragens; operadores carris_metropolitana/Carris Metropolitana; 4 linhas com chave (cm:1014, cm:1510, cm:1501, cm:1718); sem chave: -; autocarros em direto nessas linhas e zona: 3 (cm:1014, cm:1510, cm:1014)
+NOTA    reais Sintra (Carris Metropolitana): 6 paragens; operadores carris_metropolitana/Carris Metropolitana ; cp/CP - Comboios de Portugal; 1 linhas com chave (cm:1252); sem chave: cp|CP - Comboios de Portugal|cp:25-94; autocarros em direto nessas linhas e zona: 0 ()
+NOTA    servidor: /a-bordo de urn:ngsi-ld:Vehicle:porto:stcp:bus:3556 (linha 200) → 200; paragens 30; origem posicao; índice 5
+OK      servidor: /a-bordo de um autocarro real responde 200 ou 404 (sem erro 500) 200
+OK      Braga: /veiculos na caixa de Braga → 200 e lista 200
+NOTA    Braga: 85 autocarros da TUB no mapa (45, 81, 43, 87, 95, 24, 43, 36)
+OK      Braga: os autocarros têm id "tub:…" e linha curta (até 5 caracteres) 
+OK      Braga: as posições têm menos de 2 minutos 24,24,24,24,24,24
+OK      Braga: cada autocarro diz a viagem 0 sem viagem
+OK      Braga: pedir só a linha tub:45 devolve só essa linha 3 autocarros
+NOTA    Braga: 2.ª leitura: 87 autocarros, 41 a andar (≥ 10 km/h), 41 com rumo
+OK      Braga: os autocarros que andam têm rumo (calculado pelo caminho) 41/41
+NOTA    Braga: 284 partidas da TUB perto dos autocarros, 106 com hora em direto; exemplos: 45 CÁVADO VIII (LIMITE 1/2) 08:37→chega em 20 min «Hora estimada em direto pelo GPS do autocarro (TUB)» | 45 PAÇO PALMEIRA (SECURITAS) 08:38→chega em 20 min «Hora estimada em direto pelo GPS do autocarro (TUB)» | 7 RAIO (JOÃO PENHA) 08:19→chega em 1 min «Hora estimada em direto pelo GPS do autocarro (TUB)» | 7 RAIO (JOÃO PENHA) 08:49→chega em 32 min «Hora estimada em direto pelo GPS do autocarro (TUB)»
+OK      Braga: há partidas da TUB com a hora em direto perto dos autocarros 106/284
+OK      Braga: as horas em direto são coerentes (dizem «TUB», hora prevista e atraso ≤ 3 h do horário) 
+NOTA    Braga: /a-bordo de tub:913 (linha 18) → 200; paragens 21; origem viagem; índice 1; destino PINHEIRO DO BICHO VIA ESPORÕES; previstas 20
+OK      Braga: /a-bordo de um autocarro da TUB → 200 com percurso 200 21
+OK      Braga: o percurso é o da viagem do autocarro (com as horas do horário) viagem
+OK      Braga: horas previstas em formato HH:MM, só das paragens que faltam e por ordem 1:08:24 2:08:26 3:08:27 4:08:29 5:08:29 6:08:30
+NOTA    Braga: próxima paragem «LIBERDADE (IGREJA S LÁZARO II)»: horário 08:10, previsto 08:24
+OK      Braga: pedido sem veículo desconhecido continua a dar 404 
+OK      [manual claro 320] tema ativo = claro claro
+OK      [manual claro 320] sem scroll lateral no Perto com autocarros 320 de 320
+OK      [manual claro 320] número da linha legível no marcador do autocarro (≥ 4,5:1) 2 textos; pior «801» 6.75:1 rgb(255, 255, 255) sobre rgb(21,83,201)
+OK      [manual claro 320] marcador do autocarro com 44 px de toque 48x48
+OK      [manual claro 320] o autocarro é uma roda (círculo) com o número dentro 36x36 raio 50% «801» cabe
+OK      [manual claro 320] a roda é azul rgb(21,83,201)
+OK      [manual claro 320] números de 2, 4 e 5 caracteres (ZC, 4436, 10001) cabem dentro da roda 4436:ok 2A:ok ZC:ok 10001:ok
+OK      [manual claro 320] a roda de cada operador tem o seu azul (STCP), amarelo (Carris Metropolitana) e vermelho (TUB) {"stcp":"21,83,201","cm":"255,196,0","tub":"200,16,46"}
+OK      [manual claro 320] as três cores distinguem-se bem (distância ≥ 180) stcp-cm 329, stcp-tub 246, cm-tub 194
+OK      [manual claro 320] o número é legível em qualquer operador (≥ 4,5:1) stcp 6.7:1 cm 11.8:1 tub 5.9:1
+OK      [manual claro 320] o cartão diz a linha e a idade da posição Linha 801 | há 23 s · STCP | Estou a bordo
+OK      [manual claro 320] o cartão não tapa o autocarro em que tocaste cartão 221..279, autocarro y=169
+OK      [manual claro 320] o cartão é baixo (≤ 72 px) 58
+OK      [manual claro 320] botões do cartão com 44 px 
+OK      [manual claro 320] contraste do cartão ≥ 4,5:1 3 textos; pior «há 23 s · STCP» 5.33:1 rgb(107, 107, 107) sobre rgb(255,255,255)
+OK      [manual claro 320] sem scroll lateral com o cartão 320 de 320
+OK      [manual claro 320] o botão «Estou a bordo» fica à vista (não tapado por nada) ok
+OK      [manual claro 320] painel com a próxima paragem PRÓXIMA PARAGEM | São Bento | 30 m | horário 08:15 | Depois, mais 9 paragens até ao fim
+OK      [manual claro 320] sem scroll lateral com o painel 320 de 320
+OK      [manual claro 320] botões do painel com 44 px ou mais 
+OK      [manual claro 320] contraste do painel ≥ 4,5:1 (3:1 em texto grande) 31 textos; pior «801» 5.13:1 rgb(17, 17, 17) sobre rgb(228,87,46)
+OK      [manual claro 320] o painel está dentro do ecrã 271..576 de 640
+OK      [manual claro 320] a próxima paragem cabe na largura ok
+OK      [manual claro 320] «Já saí» fecha o painel 
+OK      [manual claro 320] sem erros de consola 
+OK      [manual claro 390] tema ativo = claro claro
+OK      [manual claro 390] sem scroll lateral no Perto com autocarros 390 de 390
+OK      [manual claro 390] número da linha legível no marcador do autocarro (≥ 4,5:1) 2 textos; pior «801» 6.75:1 rgb(255, 255, 255) sobre rgb(21,83,201)
+OK      [manual claro 390] marcador do autocarro com 44 px de toque 48x48
+OK      [manual claro 390] o autocarro é uma roda (círculo) com o número dentro 36x36 raio 50% «801» cabe
+OK      [manual claro 390] a roda é azul rgb(21,83,201)
+OK      [manual claro 390] números de 2, 4 e 5 caracteres (ZC, 4436, 10001) cabem dentro da roda 4436:ok 2A:ok ZC:ok 10001:ok
+OK      [manual claro 390] a roda de cada operador tem o seu azul (STCP), amarelo (Carris Metropolitana) e vermelho (TUB) {"stcp":"21,83,201","cm":"255,196,0","tub":"200,16,46"}
+OK      [manual claro 390] as três cores distinguem-se bem (distância ≥ 180) stcp-cm 329, stcp-tub 246, cm-tub 194
+OK      [manual claro 390] o número é legível em qualquer operador (≥ 4,5:1) stcp 6.7:1 cm 11.8:1 tub 5.9:1
+OK      [manual claro 390] o cartão diz a linha e a idade da posição Linha 801 | há 19 s · STCP | Estou a bordo
+OK      [manual claro 390] o cartão não tapa o autocarro em que tocaste cartão 268..326, autocarro y=193
+OK      [manual claro 390] o cartão é baixo (≤ 72 px) 58
+OK      [manual claro 390] botões do cartão com 44 px 
+OK      [manual claro 390] contraste do cartão ≥ 4,5:1 3 textos; pior «há 19 s · STCP» 5.33:1 rgb(107, 107, 107) sobre rgb(255,255,255)
+OK      [manual claro 390] sem scroll lateral com o cartão 390 de 390
+OK      [manual claro 390] o botão «Estou a bordo» fica à vista (não tapado por nada) ok
+OK      [manual claro 390] painel com a próxima paragem PRÓXIMA PARAGEM | São Bento | 30 m | horário 08:15 | Depois, mais 9 paragens até ao fim
+OK      [manual claro 390] sem scroll lateral com o painel 390 de 390
+OK      [manual claro 390] botões do painel com 44 px ou mais 
+OK      [manual claro 390] contraste do painel ≥ 4,5:1 (3:1 em texto grande) 31 textos; pior «801» 5.13:1 rgb(17, 17, 17) sobre rgb(228,87,46)
+OK      [manual claro 390] o painel está dentro do ecrã 318..716 de 780
+OK      [manual claro 390] a próxima paragem cabe na largura ok
+OK      [manual claro 390] «Já saí» fecha o painel 
+OK      [manual claro 390] sem erros de consola 
+OK      [manual claro 1280] tema ativo = claro claro
+OK      [manual claro 1280] sem scroll lateral no Perto com autocarros 1280 de 1280
+OK      [manual claro 1280] número da linha legível no marcador do autocarro (≥ 4,5:1) 2 textos; pior «801» 6.75:1 rgb(255, 255, 255) sobre rgb(21,83,201)
+OK      [manual claro 1280] marcador do autocarro com 44 px de toque 48x48
+OK      [manual claro 1280] o autocarro é uma roda (círculo) com o número dentro 36x36 raio 50% «801» cabe
+OK      [manual claro 1280] a roda é azul rgb(21,83,201)
+OK      [manual claro 1280] números de 2, 4 e 5 caracteres (ZC, 4436, 10001) cabem dentro da roda 4436:ok 2A:ok ZC:ok 10001:ok
+OK      [manual claro 1280] a roda de cada operador tem o seu azul (STCP), amarelo (Carris Metropolitana) e vermelho (TUB) {"stcp":"21,83,201","cm":"255,196,0","tub":"200,16,46"}
+OK      [manual claro 1280] as três cores distinguem-se bem (distância ≥ 180) stcp-cm 329, stcp-tub 246, cm-tub 194
+OK      [manual claro 1280] o número é legível em qualquer operador (≥ 4,5:1) stcp 6.7:1 cm 11.8:1 tub 5.9:1
+OK      [manual claro 1280] o cartão diz a linha e a idade da posição Linha 801 | há 16 s · STCP | Estou a bordo
+OK      [manual claro 1280] o cartão não tapa o autocarro em que tocaste cartão 727..785, autocarro y=426
+OK      [manual claro 1280] o cartão é baixo (≤ 72 px) 58
+OK      [manual claro 1280] botões do cartão com 44 px 
+OK      [manual claro 1280] contraste do cartão ≥ 4,5:1 3 textos; pior «há 16 s · STCP» 5.33:1 rgb(107, 107, 107) sobre rgb(255,255,255)
+OK      [manual claro 1280] sem scroll lateral com o cartão 1280 de 1280
+OK      [manual claro 1280] o botão «Estou a bordo» fica à vista (não tapado por nada) ok
+OK      [manual claro 1280] painel com a próxima paragem PRÓXIMA PARAGEM | São Bento | 30 m | horário 08:15 | Depois, mais 9 paragens até ao fim
+OK      [manual claro 1280] sem scroll lateral com o painel 1280 de 1280
+OK      [manual claro 1280] botões do painel com 44 px ou mais 
+OK      [manual claro 1280] contraste do painel ≥ 4,5:1 (3:1 em texto grande) 31 textos; pior «801» 5.13:1 rgb(17, 17, 17) sobre rgb(228,87,46)
+OK      [manual claro 1280] o painel está dentro do ecrã 57..801 de 800
+OK      [manual claro 1280] a próxima paragem cabe na largura ok
+OK      [manual claro 1280] «Já saí» fecha o painel 
+OK      [manual claro 1280] sem erros de consola 
+OK      [manual escuro 320] tema ativo = escuro escuro
+OK      [manual escuro 320] sem scroll lateral no Perto com autocarros 320 de 320
+OK      [manual escuro 320] número da linha legível no marcador do autocarro (≥ 4,5:1) 2 textos; pior «801» 6.75:1 rgb(255, 255, 255) sobre rgb(21,83,201)
+OK      [manual escuro 320] marcador do autocarro com 44 px de toque 48x48
+OK      [manual escuro 320] o autocarro é uma roda (círculo) com o número dentro 36x36 raio 50% «801» cabe
+OK      [manual escuro 320] a roda é azul rgb(21,83,201)
+OK      [manual escuro 320] números de 2, 4 e 5 caracteres (ZC, 4436, 10001) cabem dentro da roda 4436:ok 2A:ok ZC:ok 10001:ok
+OK      [manual escuro 320] a roda de cada operador tem o seu azul (STCP), amarelo (Carris Metropolitana) e vermelho (TUB) {"stcp":"21,83,201","cm":"255,196,0","tub":"200,16,46"}
+OK      [manual escuro 320] as três cores distinguem-se bem (distância ≥ 180) stcp-cm 329, stcp-tub 246, cm-tub 194
+OK      [manual escuro 320] o número é legível em qualquer operador (≥ 4,5:1) stcp 6.7:1 cm 11.8:1 tub 5.9:1
+OK      [manual escuro 320] o cartão diz a linha e a idade da posição Linha 801 | há 22 s · STCP | Estou a bordo
+OK      [manual escuro 320] o cartão não tapa o autocarro em que tocaste cartão 221..279, autocarro y=169
+OK      [manual escuro 320] o cartão é baixo (≤ 72 px) 58
+OK      [manual escuro 320] botões do cartão com 44 px 
+OK      [manual escuro 320] contraste do cartão ≥ 4,5:1 3 textos; pior «há 22 s · STCP» 6.95:1 rgb(160, 160, 166) sobre rgb(22,22,24)
+OK      [manual escuro 320] sem scroll lateral com o cartão 320 de 320
+OK      [manual escuro 320] o botão «Estou a bordo» fica à vista (não tapado por nada) ok
+OK      [manual escuro 320] painel com a próxima paragem PRÓXIMA PARAGEM | São Bento | 30 m | horário 08:15 | Depois, mais 9 paragens até ao fim
+OK      [manual escuro 320] sem scroll lateral com o painel 320 de 320
+OK      [manual escuro 320] botões do painel com 44 px ou mais 
+OK      [manual escuro 320] contraste do painel ≥ 4,5:1 (3:1 em texto grande) 31 textos; pior «801» 5.13:1 rgb(17, 17, 17) sobre rgb(228,87,46)
+OK      [manual escuro 320] o painel está dentro do ecrã 271..576 de 640
+OK      [manual escuro 320] a próxima paragem cabe na largura ok
+OK      [manual escuro 320] «Já saí» fecha o painel 
+OK      [manual escuro 320] sem erros de consola 
+OK      [manual escuro 390] tema ativo = escuro escuro
+OK      [manual escuro 390] sem scroll lateral no Perto com autocarros 390 de 390
+OK      [manual escuro 390] número da linha legível no marcador do autocarro (≥ 4,5:1) 2 textos; pior «801» 6.75:1 rgb(255, 255, 255) sobre rgb(21,83,201)
+OK      [manual escuro 390] marcador do autocarro com 44 px de toque 48x48
+OK      [manual escuro 390] o autocarro é uma roda (círculo) com o número dentro 36x36 raio 50% «801» cabe
+OK      [manual escuro 390] a roda é azul rgb(21,83,201)
+OK      [manual escuro 390] números de 2, 4 e 5 caracteres (ZC, 4436, 10001) cabem dentro da roda 4436:ok 2A:ok ZC:ok 10001:ok
+OK      [manual escuro 390] a roda de cada operador tem o seu azul (STCP), amarelo (Carris Metropolitana) e vermelho (TUB) {"stcp":"21,83,201","cm":"255,196,0","tub":"200,16,46"}
+OK      [manual escuro 390] as três cores distinguem-se bem (distância ≥ 180) stcp-cm 329, stcp-tub 246, cm-tub 194
+OK      [manual escuro 390] o número é legível em qualquer operador (≥ 4,5:1) stcp 6.7:1 cm 11.8:1 tub 5.9:1
+OK      [manual escuro 390] o cartão diz a linha e a idade da posição Linha 801 | há 19 s · STCP | Estou a bordo
+OK      [manual escuro 390] o cartão não tapa o autocarro em que tocaste cartão 268..326, autocarro y=193
+OK      [manual escuro 390] o cartão é baixo (≤ 72 px) 58
+OK      [manual escuro 390] botões do cartão com 44 px 
+OK      [manual escuro 390] contraste do cartão ≥ 4,5:1 3 textos; pior «há 19 s · STCP» 6.95:1 rgb(160, 160, 166) sobre rgb(22,22,24)
+OK      [manual escuro 390] sem scroll lateral com o cartão 390 de 390
+OK      [manual escuro 390] o botão «Estou a bordo» fica à vista (não tapado por nada) ok
+OK      [manual escuro 390] painel com a próxima paragem PRÓXIMA PARAGEM | São Bento | 30 m | horário 08:16 | Depois, mais 9 paragens até ao fim
+OK      [manual escuro 390] sem scroll lateral com o painel 390 de 390
+OK      [manual escuro 390] botões do painel com 44 px ou mais 
+OK      [manual escuro 390] contraste do painel ≥ 4,5:1 (3:1 em texto grande) 31 textos; pior «801» 5.13:1 rgb(17, 17, 17) sobre rgb(228,87,46)
+OK      [manual escuro 390] o painel está dentro do ecrã 318..716 de 780
+OK      [manual escuro 390] a próxima paragem cabe na largura ok
+OK      [manual escuro 390] «Já saí» fecha o painel 
+OK      [manual escuro 390] sem erros de consola 
+OK      [manual escuro 1280] tema ativo = escuro escuro
+OK      [manual escuro 1280] sem scroll lateral no Perto com autocarros 1280 de 1280
+OK      [manual escuro 1280] número da linha legível no marcador do autocarro (≥ 4,5:1) 2 textos; pior «801» 6.75:1 rgb(255, 255, 255) sobre rgb(21,83,201)
+OK      [manual escuro 1280] marcador do autocarro com 44 px de toque 48x48
+OK      [manual escuro 1280] o autocarro é uma roda (círculo) com o número dentro 36x36 raio 50% «801» cabe
+OK      [manual escuro 1280] a roda é azul rgb(21,83,201)
+OK      [manual escuro 1280] números de 2, 4 e 5 caracteres (ZC, 4436, 10001) cabem dentro da roda 4436:ok 2A:ok ZC:ok 10001:ok
+OK      [manual escuro 1280] a roda de cada operador tem o seu azul (STCP), amarelo (Carris Metropolitana) e vermelho (TUB) {"stcp":"21,83,201","cm":"255,196,0","tub":"200,16,46"}
+OK      [manual escuro 1280] as três cores distinguem-se bem (distância ≥ 180) stcp-cm 329, stcp-tub 246, cm-tub 194
+OK      [manual escuro 1280] o número é legível em qualquer operador (≥ 4,5:1) stcp 6.7:1 cm 11.8:1 tub 5.9:1
+OK      [manual escuro 1280] o cartão diz a linha e a idade da posição Linha 801 | há 15 s · STCP | Estou a bordo
+OK      [manual escuro 1280] o cartão não tapa o autocarro em que tocaste cartão 727..785, autocarro y=426
+OK      [manual escuro 1280] o cartão é baixo (≤ 72 px) 58
+OK      [manual escuro 1280] botões do cartão com 44 px 
+OK      [manual escuro 1280] contraste do cartão ≥ 4,5:1 3 textos; pior «há 15 s · STCP» 6.95:1 rgb(160, 160, 166) sobre rgb(22,22,24)
+OK      [manual escuro 1280] sem scroll lateral com o cartão 1280 de 1280
+OK      [manual escuro 1280] o botão «Estou a bordo» fica à vista (não tapado por nada) ok
+OK      [manual escuro 1280] painel com a próxima paragem PRÓXIMA PARAGEM | São Bento | 30 m | horário 08:16 | Depois, mais 9 paragens até ao fim
+OK      [manual escuro 1280] sem scroll lateral com o painel 1280 de 1280
+OK      [manual escuro 1280] botões do painel com 44 px ou mais 
+OK      [manual escuro 1280] contraste do painel ≥ 4,5:1 (3:1 em texto grande) 31 textos; pior «801» 5.13:1 rgb(17, 17, 17) sobre rgb(228,87,46)
+OK      [manual escuro 1280] o painel está dentro do ecrã 57..801 de 800
+OK      [manual escuro 1280] a próxima paragem cabe na largura ok
+OK      [manual escuro 1280] «Já saí» fecha o painel 
+OK      [manual escuro 1280] sem erros de consola 
+OK      [manual ambar 320] tema ativo = ambar ambar
+OK      [manual ambar 320] sem scroll lateral no Perto com autocarros 320 de 320
+OK      [manual ambar 320] número da linha legível no marcador do autocarro (≥ 4,5:1) 2 textos; pior «801» 6.75:1 rgb(255, 255, 255) sobre rgb(21,83,201)
+OK      [manual ambar 320] marcador do autocarro com 44 px de toque 48x48
+OK      [manual ambar 320] o autocarro é uma roda (círculo) com o número dentro 36x36 raio 50% «801» cabe
+OK      [manual ambar 320] a roda é azul rgb(21,83,201)
+OK      [manual ambar 320] números de 2, 4 e 5 caracteres (ZC, 4436, 10001) cabem dentro da roda 4436:ok 2A:ok ZC:ok 10001:ok
+OK      [manual ambar 320] a roda de cada operador tem o seu azul (STCP), amarelo (Carris Metropolitana) e vermelho (TUB) {"stcp":"21,83,201","cm":"255,196,0","tub":"200,16,46"}
+OK      [manual ambar 320] as três cores distinguem-se bem (distância ≥ 180) stcp-cm 329, stcp-tub 246, cm-tub 194
+OK      [manual ambar 320] o número é legível em qualquer operador (≥ 4,5:1) stcp 6.7:1 cm 11.8:1 tub 5.9:1
+OK      [manual ambar 320] o cartão diz a linha e a idade da posição Linha 801 | há 22 s · STCP | Estou a bordo
+OK      [manual ambar 320] o cartão não tapa o autocarro em que tocaste cartão 221..279, autocarro y=169
+OK      [manual ambar 320] o cartão é baixo (≤ 72 px) 58
+OK      [manual ambar 320] botões do cartão com 44 px 
+OK      [manual ambar 320] contraste do cartão ≥ 4,5:1 3 textos; pior «há 22 s · STCP» 5.87:1 rgb(122, 92, 71) sobre rgb(255,250,244)
+OK      [manual ambar 320] sem scroll lateral com o cartão 320 de 320
+OK      [manual ambar 320] o botão «Estou a bordo» fica à vista (não tapado por nada) ok
+OK      [manual ambar 320] painel com a próxima paragem PRÓXIMA PARAGEM | São Bento | 30 m | horário 08:16 | Depois, mais 9 paragens até ao fim
+OK      [manual ambar 320] sem scroll lateral com o painel 320 de 320
+OK      [manual ambar 320] botões do painel com 44 px ou mais 
+OK      [manual ambar 320] contraste do painel ≥ 4,5:1 (3:1 em texto grande) 31 textos; pior «801» 5.13:1 rgb(17, 17, 17) sobre rgb(228,87,46)
+OK      [manual ambar 320] o painel está dentro do ecrã 271..576 de 640
+OK      [manual ambar 320] a próxima paragem cabe na largura ok
+OK      [manual ambar 320] «Já saí» fecha o painel 
+OK      [manual ambar 320] sem erros de consola 
+OK      [manual ambar 390] tema ativo = ambar ambar
+OK      [manual ambar 390] sem scroll lateral no Perto com autocarros 390 de 390
+OK      [manual ambar 390] número da linha legível no marcador do autocarro (≥ 4,5:1) 2 textos; pior «801» 6.75:1 rgb(255, 255, 255) sobre rgb(21,83,201)
+OK      [manual ambar 390] marcador do autocarro com 44 px de toque 48x48
+OK      [manual ambar 390] o autocarro é uma roda (círculo) com o número dentro 36x36 raio 50% «801» cabe
+OK      [manual ambar 390] a roda é azul rgb(21,83,201)
+OK      [manual ambar 390] números de 2, 4 e 5 caracteres (ZC, 4436, 10001) cabem dentro da roda 4436:ok 2A:ok ZC:ok 10001:ok
+OK      [manual ambar 390] a roda de cada operador tem o seu azul (STCP), amarelo (Carris Metropolitana) e vermelho (TUB) {"stcp":"21,83,201","cm":"255,196,0","tub":"200,16,46"}
+OK      [manual ambar 390] as três cores distinguem-se bem (distância ≥ 180) stcp-cm 329, stcp-tub 246, cm-tub 194
+OK      [manual ambar 390] o número é legível em qualquer operador (≥ 4,5:1) stcp 6.7:1 cm 11.8:1 tub 5.9:1
+OK      [manual ambar 390] o cartão diz a linha e a idade da posição Linha 801 | há 18 s · STCP | Estou a bordo
+OK      [manual ambar 390] o cartão não tapa o autocarro em que tocaste cartão 268..326, autocarro y=193
+OK      [manual ambar 390] o cartão é baixo (≤ 72 px) 58
+OK      [manual ambar 390] botões do cartão com 44 px 
+OK      [manual ambar 390] contraste do cartão ≥ 4,5:1 3 textos; pior «há 18 s · STCP» 5.87:1 rgb(122, 92, 71) sobre rgb(255,250,244)
+OK      [manual ambar 390] sem scroll lateral com o cartão 390 de 390
+OK      [manual ambar 390] o botão «Estou a bordo» fica à vista (não tapado por nada) ok
+OK      [manual ambar 390] painel com a próxima paragem PRÓXIMA PARAGEM | São Bento | 30 m | horário 08:16 | Depois, mais 9 paragens até ao fim
+OK      [manual ambar 390] sem scroll lateral com o painel 390 de 390
+OK      [manual ambar 390] botões do painel com 44 px ou mais 
+OK      [manual ambar 390] contraste do painel ≥ 4,5:1 (3:1 em texto grande) 31 textos; pior «801» 5.13:1 rgb(17, 17, 17) sobre rgb(228,87,46)
+OK      [manual ambar 390] o painel está dentro do ecrã 318..716 de 780
+OK      [manual ambar 390] a próxima paragem cabe na largura ok
+OK      [manual ambar 390] «Já saí» fecha o painel 
+OK      [manual ambar 390] sem erros de consola 
+OK      [manual ambar 1280] tema ativo = ambar ambar
+OK      [manual ambar 1280] sem scroll lateral no Perto com autocarros 1280 de 1280
+OK      [manual ambar 1280] número da linha legível no marcador do autocarro (≥ 4,5:1) 2 textos; pior «801» 6.75:1 rgb(255, 255, 255) sobre rgb(21,83,201)
+OK      [manual ambar 1280] marcador do autocarro com 44 px de toque 48x48
+OK      [manual ambar 1280] o autocarro é uma roda (círculo) com o número dentro 36x36 raio 50% «801» cabe
+OK      [manual ambar 1280] a roda é azul rgb(21,83,201)
+OK      [manual ambar 1280] números de 2, 4 e 5 caracteres (ZC, 4436, 10001) cabem dentro da roda 4436:ok 2A:ok ZC:ok 10001:ok
+OK      [manual ambar 1280] a roda de cada operador tem o seu azul (STCP), amarelo (Carris Metropolitana) e vermelho (TUB) {"stcp":"21,83,201","cm":"255,196,0","tub":"200,16,46"}
+OK      [manual ambar 1280] as três cores distinguem-se bem (distância ≥ 180) stcp-cm 329, stcp-tub 246, cm-tub 194
+OK      [manual ambar 1280] o número é legível em qualquer operador (≥ 4,5:1) stcp 6.7:1 cm 11.8:1 tub 5.9:1
+OK      [manual ambar 1280] o cartão diz a linha e a idade da posição Linha 801 | há 15 s · STCP | Estou a bordo
+OK      [manual ambar 1280] o cartão não tapa o autocarro em que tocaste cartão 727..785, autocarro y=426
+OK      [manual ambar 1280] o cartão é baixo (≤ 72 px) 58
+OK      [manual ambar 1280] botões do cartão com 44 px 
+OK      [manual ambar 1280] contraste do cartão ≥ 4,5:1 3 textos; pior «há 15 s · STCP» 5.87:1 rgb(122, 92, 71) sobre rgb(255,250,244)
+OK      [manual ambar 1280] sem scroll lateral com o cartão 1280 de 1280
+OK      [manual ambar 1280] o botão «Estou a bordo» fica à vista (não tapado por nada) ok
+OK      [manual ambar 1280] painel com a próxima paragem PRÓXIMA PARAGEM | São Bento | 30 m | horário 08:16 | Depois, mais 9 paragens até ao fim
+OK      [manual ambar 1280] sem scroll lateral com o painel 1280 de 1280
+OK      [manual ambar 1280] botões do painel com 44 px ou mais 
+OK      [manual ambar 1280] contraste do painel ≥ 4,5:1 (3:1 em texto grande) 31 textos; pior «801» 5.13:1 rgb(17, 17, 17) sobre rgb(228,87,46)
+OK      [manual ambar 1280] o painel está dentro do ecrã 57..801 de 800
+OK      [manual ambar 1280] a próxima paragem cabe na largura ok
+OK      [manual ambar 1280] «Já saí» fecha o painel 
+OK      [manual ambar 1280] sem erros de consola 
+OK      [manual porto 320] tema ativo = porto porto
+OK      [manual porto 320] sem scroll lateral no Perto com autocarros 320 de 320
+OK      [manual porto 320] número da linha legível no marcador do autocarro (≥ 4,5:1) 2 textos; pior «801» 8.34:1 rgb(255, 255, 255) sobre rgb(11,70,176)
+OK      [manual porto 320] marcador do autocarro com 44 px de toque 48x48
+OK      [manual porto 320] o autocarro é uma roda (círculo) com o número dentro 36x36 raio 50% «801» cabe
+OK      [manual porto 320] a roda é azul rgb(11,70,176)
+OK      [manual porto 320] números de 2, 4 e 5 caracteres (ZC, 4436, 10001) cabem dentro da roda 4436:ok 2A:ok ZC:ok 10001:ok
+OK      [manual porto 320] a roda de cada operador tem o seu azul (STCP), amarelo (Carris Metropolitana) e vermelho (TUB) {"stcp":"11,70,176","cm":"255,196,0","tub":"200,16,46"}
+OK      [manual porto 320] as três cores distinguem-se bem (distância ≥ 180) stcp-cm 326, stcp-tub 236, cm-tub 194
+OK      [manual porto 320] o número é legível em qualquer operador (≥ 4,5:1) stcp 8.3:1 cm 11.8:1 tub 5.9:1
+OK      [manual porto 320] o cartão diz a linha e a idade da posição Linha 801 | há 21 s · STCP | Estou a bordo
+OK      [manual porto 320] o cartão não tapa o autocarro em que tocaste cartão 221..279, autocarro y=169
+OK      [manual porto 320] o cartão é baixo (≤ 72 px) 58
+OK      [manual porto 320] botões do cartão com 44 px 
+OK      [manual porto 320] contraste do cartão ≥ 4,5:1 3 textos; pior «há 21 s · STCP» 6.72:1 rgb(79, 92, 118) sobre rgb(255,255,255)
+OK      [manual porto 320] sem scroll lateral com o cartão 320 de 320
+OK      [manual porto 320] o botão «Estou a bordo» fica à vista (não tapado por nada) ok
+OK      [manual porto 320] painel com a próxima paragem PRÓXIMA PARAGEM | São Bento | 30 m | horário 08:16 | Depois, mais 9 paragens até ao fim
+OK      [manual porto 320] sem scroll lateral com o painel 320 de 320
+OK      [manual porto 320] botões do painel com 44 px ou mais 
+OK      [manual porto 320] contraste do painel ≥ 4,5:1 (3:1 em texto grande) 31 textos; pior «801» 5.13:1 rgb(17, 17, 17) sobre rgb(228,87,46)
+OK      [manual porto 320] o painel está dentro do ecrã 271..576 de 640
+OK      [manual porto 320] a próxima paragem cabe na largura ok
+OK      [manual porto 320] «Já saí» fecha o painel 
+OK      [manual porto 320] sem erros de consola 
+OK      [manual porto 390] tema ativo = porto porto
+OK      [manual porto 390] sem scroll lateral no Perto com autocarros 390 de 390
+OK      [manual porto 390] número da linha legível no marcador do autocarro (≥ 4,5:1) 2 textos; pior «801» 8.34:1 rgb(255, 255, 255) sobre rgb(11,70,176)
+OK      [manual porto 390] marcador do autocarro com 44 px de toque 48x48
+OK      [manual porto 390] o autocarro é uma roda (círculo) com o número dentro 36x36 raio 50% «801» cabe
+OK      [manual porto 390] a roda é azul rgb(11,70,176)
+OK      [manual porto 390] números de 2, 4 e 5 caracteres (ZC, 4436, 10001) cabem dentro da roda 4436:ok 2A:ok ZC:ok 10001:ok
+OK      [manual porto 390] a roda de cada operador tem o seu azul (STCP), amarelo (Carris Metropolitana) e vermelho (TUB) {"stcp":"11,70,176","cm":"255,196,0","tub":"200,16,46"}
+OK      [manual porto 390] as três cores distinguem-se bem (distância ≥ 180) stcp-cm 326, stcp-tub 236, cm-tub 194
+OK      [manual porto 390] o número é legível em qualquer operador (≥ 4,5:1) stcp 8.3:1 cm 11.8:1 tub 5.9:1
+OK      [manual porto 390] o cartão diz a linha e a idade da posição Linha 801 | há 18 s · STCP | Estou a bordo
+OK      [manual porto 390] o cartão não tapa o autocarro em que tocaste cartão 268..326, autocarro y=193
+OK      [manual porto 390] o cartão é baixo (≤ 72 px) 58
+OK      [manual porto 390] botões do cartão com 44 px 
+OK      [manual porto 390] contraste do cartão ≥ 4,5:1 3 textos; pior «há 18 s · STCP» 6.72:1 rgb(79, 92, 118) sobre rgb(255,255,255)
+OK      [manual porto 390] sem scroll lateral com o cartão 390 de 390
+OK      [manual porto 390] o botão «Estou a bordo» fica à vista (não tapado por nada) ok
+OK      [manual porto 390] painel com a próxima paragem PRÓXIMA PARAGEM | São Bento | 30 m | horário 08:16 | Depois, mais 9 paragens até ao fim
+OK      [manual porto 390] sem scroll lateral com o painel 390 de 390
+OK      [manual porto 390] botões do painel com 44 px ou mais 
+OK      [manual porto 390] contraste do painel ≥ 4,5:1 (3:1 em texto grande) 31 textos; pior «801» 5.13:1 rgb(17, 17, 17) sobre rgb(228,87,46)
+OK      [manual porto 390] o painel está dentro do ecrã 318..716 de 780
+OK      [manual porto 390] a próxima paragem cabe na largura ok
+OK      [manual porto 390] «Já saí» fecha o painel 
+OK      [manual porto 390] sem erros de consola 
+OK      [manual porto 1280] tema ativo = porto porto
+OK      [manual porto 1280] sem scroll lateral no Perto com autocarros 1280 de 1280
+OK      [manual porto 1280] número da linha legível no marcador do autocarro (≥ 4,5:1) 2 textos; pior «801» 8.34:1 rgb(255, 255, 255) sobre rgb(11,70,176)
+OK      [manual porto 1280] marcador do autocarro com 44 px de toque 48x48
+OK      [manual porto 1280] o autocarro é uma roda (círculo) com o número dentro 36x36 raio 50% «801» cabe
+OK      [manual porto 1280] a roda é azul rgb(11,70,176)
+OK      [manual porto 1280] números de 2, 4 e 5 caracteres (ZC, 4436, 10001) cabem dentro da roda 4436:ok 2A:ok ZC:ok 10001:ok
+OK      [manual porto 1280] a roda de cada operador tem o seu azul (STCP), amarelo (Carris Metropolitana) e vermelho (TUB) {"stcp":"11,70,176","cm":"255,196,0","tub":"200,16,46"}
+OK      [manual porto 1280] as três cores distinguem-se bem (distância ≥ 180) stcp-cm 326, stcp-tub 236, cm-tub 194
+OK      [manual porto 1280] o número é legível em qualquer operador (≥ 4,5:1) stcp 8.3:1 cm 11.8:1 tub 5.9:1
+OK      [manual porto 1280] o cartão diz a linha e a idade da posição Linha 801 | há 14 s · STCP | Estou a bordo
+OK      [manual porto 1280] o cartão não tapa o autocarro em que tocaste cartão 727..785, autocarro y=426
+OK      [manual porto 1280] o cartão é baixo (≤ 72 px) 58
+OK      [manual porto 1280] botões do cartão com 44 px 
+OK      [manual porto 1280] contraste do cartão ≥ 4,5:1 3 textos; pior «há 14 s · STCP» 6.72:1 rgb(79, 92, 118) sobre rgb(255,255,255)
+OK      [manual porto 1280] sem scroll lateral com o cartão 1280 de 1280
+OK      [manual porto 1280] o botão «Estou a bordo» fica à vista (não tapado por nada) ok
+OK      [manual porto 1280] painel com a próxima paragem PRÓXIMA PARAGEM | São Bento | 30 m | horário 08:16 | Depois, mais 9 paragens até ao fim
+OK      [manual porto 1280] sem scroll lateral com o painel 1280 de 1280
+OK      [manual porto 1280] botões do painel com 44 px ou mais 
+OK      [manual porto 1280] contraste do painel ≥ 4,5:1 (3:1 em texto grande) 31 textos; pior «801» 5.13:1 rgb(17, 17, 17) sobre rgb(228,87,46)
+OK      [manual porto 1280] o painel está dentro do ecrã 57..801 de 800
+OK      [manual porto 1280] a próxima paragem cabe na largura ok
+OK      [manual porto 1280] «Já saí» fecha o painel 
+OK      [manual porto 1280] sem erros de consola 
+OK      [manual iphone] tema ativo = claro claro
+OK      [manual iphone] sem scroll lateral no Perto com autocarros 375 de 375
+OK      [manual iphone] número da linha legível no marcador do autocarro (≥ 4,5:1) 2 textos; pior «801» 6.75:1 rgb(255, 255, 255) sobre rgb(21,83,201)
+OK      [manual iphone] marcador do autocarro com 44 px de toque 48x48
+OK      [manual iphone] o autocarro é uma roda (círculo) com o número dentro 36x36 raio 50% «801» cabe
+OK      [manual iphone] a roda é azul rgb(21,83,201)
+OK      [manual iphone] números de 2, 4 e 5 caracteres (ZC, 4436, 10001) cabem dentro da roda 4436:ok 2A:ok ZC:ok 10001:ok
+OK      [manual iphone] a roda de cada operador tem o seu azul (STCP), amarelo (Carris Metropolitana) e vermelho (TUB) {"stcp":"21,83,201","cm":"255,196,0","tub":"200,16,46"}
+OK      [manual iphone] as três cores distinguem-se bem (distância ≥ 180) stcp-cm 329, stcp-tub 246, cm-tub 194
+OK      [manual iphone] o número é legível em qualquer operador (≥ 4,5:1) stcp 6.7:1 cm 11.8:1 tub 5.9:1
+OK      [manual iphone] o cartão diz a linha e a idade da posição Linha 801 | há 16 s · STCP | Estou a bordo
+OK      [manual iphone] o cartão não tapa o autocarro em que tocaste cartão 221..279, autocarro y=169
+OK      [manual iphone] o cartão é baixo (≤ 72 px) 58
+OK      [manual iphone] botões do cartão com 44 px 
+OK      [manual iphone] contraste do cartão ≥ 4,5:1 3 textos; pior «há 16 s · STCP» 5.33:1 rgb(107, 107, 107) sobre rgb(255,255,255)
+OK      [manual iphone] sem scroll lateral com o cartão 375 de 375
+OK      [manual iphone] o botão «Estou a bordo» fica à vista (não tapado por nada) ok
+OK      [manual iphone] painel com a próxima paragem PRÓXIMA PARAGEM | São Bento | 30 m | horário 08:17 | Depois, mais 9 paragens até ao fim
+OK      [manual iphone] sem scroll lateral com o painel 375 de 375
+OK      [manual iphone] botões do painel com 44 px ou mais 
+OK      [manual iphone] contraste do painel ≥ 4,5:1 (3:1 em texto grande) 31 textos; pior «801» 5.13:1 rgb(17, 17, 17) sobre rgb(228,87,46)
+OK      [manual iphone] o painel está dentro do ecrã 271..565 de 629
+OK      [manual iphone] a próxima paragem cabe na largura ok
+OK      [manual iphone] «Já saí» fecha o painel 
+OK      [manual iphone] sem erros de consola 
+OK      [manual iphone] tema ativo = porto porto
+OK      [manual iphone] sem scroll lateral no Perto com autocarros 375 de 375
+OK      [manual iphone] número da linha legível no marcador do autocarro (≥ 4,5:1) 2 textos; pior «801» 8.34:1 rgb(255, 255, 255) sobre rgb(11,70,176)
+OK      [manual iphone] marcador do autocarro com 44 px de toque 48x48
+OK      [manual iphone] o autocarro é uma roda (círculo) com o número dentro 36x36 raio 50% «801» cabe
+OK      [manual iphone] a roda é azul rgb(11,70,176)
+OK      [manual iphone] números de 2, 4 e 5 caracteres (ZC, 4436, 10001) cabem dentro da roda 4436:ok 2A:ok ZC:ok 10001:ok
+OK      [manual iphone] a roda de cada operador tem o seu azul (STCP), amarelo (Carris Metropolitana) e vermelho (TUB) {"stcp":"11,70,176","cm":"255,196,0","tub":"200,16,46"}
+OK      [manual iphone] as três cores distinguem-se bem (distância ≥ 180) stcp-cm 326, stcp-tub 236, cm-tub 194
+OK      [manual iphone] o número é legível em qualquer operador (≥ 4,5:1) stcp 8.3:1 cm 11.8:1 tub 5.9:1
+OK      [manual iphone] o cartão diz a linha e a idade da posição Linha 801 | há 24 s · STCP | Estou a bordo
+OK      [manual iphone] o cartão não tapa o autocarro em que tocaste cartão 221..279, autocarro y=169
+OK      [manual iphone] o cartão é baixo (≤ 72 px) 58
+OK      [manual iphone] botões do cartão com 44 px 
+OK      [manual iphone] contraste do cartão ≥ 4,5:1 3 textos; pior «há 24 s · STCP» 6.72:1 rgb(79, 92, 118) sobre rgb(255,255,255)
+OK      [manual iphone] sem scroll lateral com o cartão 375 de 375
+OK      [manual iphone] o botão «Estou a bordo» fica à vista (não tapado por nada) ok
+OK      [manual iphone] painel com a próxima paragem PRÓXIMA PARAGEM | São Bento | 30 m | horário 08:17 | Depois, mais 9 paragens até ao fim
+OK      [manual iphone] sem scroll lateral com o painel 375 de 375
+OK      [manual iphone] botões do painel com 44 px ou mais 
+OK      [manual iphone] contraste do painel ≥ 4,5:1 (3:1 em texto grande) 31 textos; pior «801» 5.13:1 rgb(17, 17, 17) sobre rgb(228,87,46)
+OK      [manual iphone] o painel está dentro do ecrã 271..565 de 629
+OK      [manual iphone] a próxima paragem cabe na largura ok
+OK      [manual iphone] «Já saí» fecha o painel 
+OK      [manual iphone] sem erros de consola 
+OK      [temas] o seletor tem «claro» 
+OK      [temas] o seletor tem «escuro» 
+OK      [temas] o seletor tem «ambar» 
+OK      [temas] o seletor tem «porto» 
+OK      [temas] o tema azul chama-se só «Azul» Azul
+OK      [temas] escolher «Azul» aplica o tema 
+OK      [temas] a escolha fica guardada 
+OK      [temas] a barra do telemóvel fica branca no Azul #FFFFFF
+NOTA    [temas] fundo do corpo no Azul: rgb(255, 255, 255)
+OK      [temas] depois de recarregar continua Azul (sem piscar para o claro) 
+OK      [temas] sem erros de consola 
+NOTA    [Braga real claro]: 24 rodas da TUB no mapa (18, 21, 57, 45, 501, 5, 90, 2, 7, 58); paragem: Central Ii | 170 metros | 96 | E. Leclerc | a chegar | 08:17 | 33 | Cabreiros | 3 min | 08:20 | 95 | Nova Arcada | 3 min | 08:20
+OK      [Braga real claro] aparecem rodas da TUB no mapa do Perto 24
+OK      [Braga real claro] a roda da TUB é vermelha rgb(200, 16, 46)
+OK      [Braga real claro] há uma roda da TUB à vista para tocar linha 501
+OK      [Braga real claro] o cartão diz a linha e que é da TUB Linha 501 | há 19 s · TUB | Estou a bordo
+NOTA    [Braga real claro]: próxima paragem no painel «NA PARAGEM | Central Iv | horário 08:20 | Depois, mais 35 paragens até ao fim»
+OK      [Braga real claro] o painel «A bordo» abre com a próxima paragem e a hora (horário ou previsto) NA PARAGEM | Central Iv | horário 08:20 | Depois, mais 35 paragens até ao fim
+OK      [Braga real claro] sem erros de consola 
+NOTA    [Braga real porto]: 24 rodas da TUB no mapa (18, 21, 57, 45, 501, 5, 90, 2, 7, 58); paragem: Central Ii | 170 metros | 96 | E. Leclerc | a chegar | 08:17 | 33 | Cabreiros | 3 min | 08:20 | 95 | Nova Arcada | 3 min | 08:20
+OK      [Braga real porto] aparecem rodas da TUB no mapa do Perto 24
+OK      [Braga real porto] a roda da TUB é vermelha rgb(200, 16, 46)
+OK      [Braga real porto] há uma roda da TUB à vista para tocar linha 501
+OK      [Braga real porto] o cartão diz a linha e que é da TUB Linha 501 | há 27 s · TUB | Estou a bordo
+NOTA    [Braga real porto]: próxima paragem no painel «NA PARAGEM | Central Iv | horário 08:20 | Depois, mais 35 paragens até ao fim»
+OK      [Braga real porto] o painel «A bordo» abre com a próxima paragem e a hora (horário ou previsto) NA PARAGEM | Central Iv | horário 08:20 | Depois, mais 35 paragens até ao fim
+OK      [Braga real porto] sem erros de consola 
+NOTA    [mosaicos claro] mosaicos carregados: 6
+OK      [mosaicos claro] sem erros de consola 
+NOTA    [mosaicos escuro] mosaicos carregados: 6
+OK      [mosaicos escuro] sem erros de consola 
+NOTA    [mosaicos ambar] mosaicos carregados: 6
+OK      [mosaicos ambar] sem erros de consola 
+NOTA    [mosaicos porto] mosaicos carregados: 6
+OK      [mosaicos porto] sem erros de consola 
+
+399/399 testes OK
