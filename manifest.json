@@ -1,12 +1,12 @@
 {
-  "built_at": "2026-10-19T09:20:11.888491+00:00",
+  "built_at": "2026-10-19T20:39:51.897231+00:00",
   "db_bytes": 573079552,
-  "gz_bytes": 114758397,
+  "gz_bytes": 114754858,
   "totals": {
     "lines": 2828,
     "stops": 46384,
     "trips": 121671,
-    "stop_times": 3706631,
+    "stop_times": 3706626,
     "operators": 30,
     "operators_ok": 27,
     "operators_desatualizados": 2
@@ -198,9 +198,9 @@
       "last_error": null,
       "servicos_associados": null,
       "servicos_sem_calendario": null,
-      "viagens_hoje": 2116,
+      "viagens_hoje": 0,
       "viagens_amanha": 2116,
-      "dias_uteis_sem_servico": 0
+      "dias_uteis_sem_servico": 1
     },
     {
       "id": "guimabus",
@@ -911,13 +911,13 @@
           "total": 392
         },
         "servicos_com_data_hoje": [
+          "DU",
+          "FU",
           "CU",
           "EU",
-          "BU",
-          "BexpU",
-          "DU",
           "AU",
-          "FU"
+          "BexpU",
+          "BU"
         ],
         "viagens_por_servico": [
           {
@@ -972,5 +972,5 @@
       }
     }
   },
-  "duration_s": 338
+  "duration_s": 255
 }
