@@ -1,7 +1,7 @@
 {
-  "built_at": "2026-10-21T08:54:45.975295+00:00",
+  "built_at": "2026-10-21T19:22:59.945313+00:00",
   "db_bytes": 564387840,
-  "gz_bytes": 112608209,
+  "gz_bytes": 112608015,
   "totals": {
     "lines": 2828,
     "stops": 46383,
@@ -907,11 +907,11 @@
           "total": 393
         },
         "servicos_com_data_hoje": [
-          "DU",
-          "EU",
           "CU",
           "FU",
           "BU",
+          "EU",
+          "DU",
           "AU",
           "BexpU"
         ],
