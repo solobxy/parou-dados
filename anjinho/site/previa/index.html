@@ -503,6 +503,11 @@ addEventListener('scroll',()=>{if(!pend){pend=true;requestAnimationFrame(tick)}}
 .prenda .estado.ok{font-family:"Chorus","TeX Gyre Chorus",cursive;font-size:24px}
 .prenda .x{position:absolute;right:6px;top:6px;min-width:44px;min-height:44px;border:0;background:none;font:600 14px "Inter",system-ui,sans-serif;cursor:pointer;color:#1D1719}
 .prenda .mel{position:absolute;left:-9999px}
+.prenda form label{flex:none}
+.prenda .seta{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:visible}
+.prenda .seta path{fill:none;stroke-linecap:round;stroke-linejoin:round}
+.prenda .seta .halo{stroke:#fff;stroke-width:11}
+.prenda .seta .traco-s{stroke:#F6B8C8;stroke-width:6}
 @media (min-width:700px){.prenda .cartao{left:auto;right:24px;width:380px;top:auto;bottom:100px;transform-origin:92% 110%}}
 @media (prefers-reduced-motion:reduce){
   .caixa .aure,.caixa.salta svg,.caixa.salta .tampa{animation:none}
@@ -539,6 +544,7 @@ addEventListener('scroll',()=>{if(!pend){pend=true;requestAnimationFrame(tick)}}
     <p class="estado" id="prEstado" role="status" aria-live="polite"></p>
     <p class="letra">entras no diário da anjinho: um email por drop, nada mais. sais quando quiseres. <a href="/privacidade">privacidade</a>.</p>
   </div>
+  <svg class="seta" aria-hidden="true"><path class="corpo halo"/><path class="ponta halo"/><path class="corpo traco-s"/><path class="ponta traco-s"/></svg>
 </div>
 <script>
 (function(){
@@ -578,9 +584,31 @@ if(guardado)return;
 caixa.hidden=false;
 if(!calmo){setTimeout(()=>{caixa.classList.add('salta');setTimeout(()=>caixa.classList.remove('salta'),2400)},2200)}
 function abrir(){caixa.classList.add('aberta');prenda.hidden=false;prenda.classList.add('aberta');
-  setTimeout(()=>{prenda.classList.add('vis');prenda.querySelector('.cartao').focus({preventScroll:true})},calmo?0:220)}
+  setTimeout(()=>{prenda.classList.add('vis');prenda.querySelector('.cartao').focus({preventScroll:true});setTimeout(desenhaSeta,calmo?0:560)},calmo?0:220)}
 function fechar(){prenda.classList.remove('vis');caixa.classList.remove('aberta');
   setTimeout(()=>{prenda.classList.remove('aberta');prenda.hidden=true;if(guardado)caixa.hidden=true;else caixa.focus()},calmo?0:350)}
+// seta à mão da caixa até ao botão
+const seta=prenda.querySelector('.seta');
+function desenhaSeta(){
+  if(!seta||prenda.hidden)return;
+  const vv=window.visualViewport,teclado=vv&&vv.height<innerHeight*.75;
+  const largo=matchMedia('(min-width:700px)').matches;seta.style.display=(teclado||largo)?'none':'';if(teclado||largo)return;
+  const c=caixa.getBoundingClientRect(),b=botao.getBoundingClientRect(),W=innerWidth;
+  const S={x:c.left+c.width*.45,y:c.top-6},E={x:b.left+b.width*.24,y:b.bottom+8},dy=S.y-E.y;
+  if(dy<80){seta.style.display='none';return}
+  const P=[S,{x:S.x+W*.02,y:S.y-dy*.22},{x:S.x-W*.22,y:S.y-dy*.42},{x:E.x+W*.18,y:S.y-dy*.52},{x:E.x-W*.06,y:S.y-dy*.68},{x:E.x+W*.01,y:S.y-dy*.86},E];
+  // curva suave a passar por todos os pontos (Catmull-Rom)
+  let d=`M${P[0].x.toFixed(1)} ${P[0].y.toFixed(1)}`;
+  for(let i=0;i<P.length-1;i++){const p0=P[i-1]||P[i],p1=P[i],p2=P[i+1],p3=P[i+2]||p2;
+    d+=` C${(p1.x+(p2.x-p0.x)/6).toFixed(1)} ${(p1.y+(p2.y-p0.y)/6).toFixed(1)} ${(p2.x-(p3.x-p1.x)/6).toFixed(1)} ${(p2.y-(p3.y-p1.y)/6).toFixed(1)} ${p2.x.toFixed(1)} ${p2.y.toFixed(1)}`}
+  const ux=E.x-P[5].x,uy=E.y-P[5].y,L=Math.hypot(ux,uy)||1,a=Math.atan2(uy/L,ux/L),k=24;
+  const ponta=`M${(E.x-k*Math.cos(a-.5)).toFixed(1)} ${(E.y-k*Math.sin(a-.5)).toFixed(1)} L${E.x.toFixed(1)} ${E.y.toFixed(1)} L${(E.x-k*Math.cos(a+.55)).toFixed(1)} ${(E.y-k*Math.sin(a+.55)).toFixed(1)}`;
+  seta.querySelectorAll('.corpo').forEach(p=>p.setAttribute('d',d));seta.querySelectorAll('.ponta').forEach(p=>p.setAttribute('d',ponta));
+  if(!calmo&&!seta.dataset.feita){seta.dataset.feita=1;
+    seta.querySelectorAll('path').forEach(p=>{const l=p.getTotalLength();p.style.transition='none';p.style.strokeDasharray=l;p.style.strokeDashoffset=l;
+      p.getBoundingClientRect();const corpo=p.classList.contains('corpo');p.style.transition=`stroke-dashoffset ${corpo?.9:.25}s cubic-bezier(.4,.1,.2,1) ${corpo?.35:1.2}s`;p.style.strokeDashoffset=0})}
+}
+addEventListener('resize',desenhaSeta);if(window.visualViewport)visualViewport.addEventListener('resize',desenhaSeta);
 caixa.addEventListener('click',abrir);
 const vv=window.visualViewport,cartao=prenda.querySelector('.cartao');
 if(vv){const ajusta=()=>{if(prenda.hidden)return;cartao.style.maxHeight=(vv.height-44)+'px';cartao.style.top=matchMedia('(min-width:700px)').matches?'':(vv.offsetTop+22)+'px'};vv.addEventListener('resize',ajusta);vv.addEventListener('scroll',ajusta)}
@@ -593,7 +621,7 @@ form.addEventListener('submit',async e=>{
   botao.disabled=true;estado.textContent='a guardar…';
   try{const r=await fetch('/api/lista',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:v,consentimento:true,origem:'caixa',site:document.getElementById('prSite').value})});
     if(r.ok){guardado=true;try{localStorage.setItem('anjinho-prenda','ok')}catch(_){}
-      estado.className='estado ok';estado.textContent='está guardada ♡ o teu código chega com o drop 01.';form.hidden=true;setTimeout(fechar,3200)}
+      estado.className='estado ok';estado.textContent='está guardada ♡ o teu código chega com o drop 01.';form.hidden=true;seta.style.display='none';setTimeout(fechar,3200)}
     else if(r.status===429)estado.textContent='muitas tentativas seguidas. espera uns minutos.';
     else if(r.status===400)estado.textContent='esse email não parece certo. confirma e tenta outra vez.';
     else estado.textContent='não consegui guardar. tenta outra vez daqui a nada.';
