@@ -11,8 +11,8 @@ const PECAS = [
     detalhes: ['exterior: camurça sintética', 'gola: pelo sintético', 'renda: croché de algodão', 'sola: borracha, 4 cm', 'forro quentinho por dentro'],
     tamanhos: ['36', '37', '38', '39', '40'],
     cores: [
-      { nome: 'bege', hex: '#E9DCCB', imgs: [['botas_bege_2.webp', 'nuvem'], ['botas_bege_1.webp', 'ceu'], ['det_bege.webp', 'foto']] },
-      { nome: 'chocolate', hex: '#6B4632', imgs: [['botas_choc_1.webp', 'nuvem'], ['det_choc.webp', 'foto'], ['botas_choc_1.webp', 'rosa']] }
+      { nome: 'bege', hex: '#E9DCCB', imgs: [['botas_bege_2.webp', 'nuvem'], ['botas_bege_2m.webp', 'ceu'], ['det_bege.webp', 'foto']] },
+      { nome: 'chocolate', hex: '#6B4632', imgs: [['botas_choc_1.webp', 'nuvem'], ['botas_choc_1m.webp', 'rosa'], ['det_choc.webp', 'foto']] }
     ],
     autocolante: ['laco', 'riscas']
   },
