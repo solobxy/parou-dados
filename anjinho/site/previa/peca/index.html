@@ -362,10 +362,9 @@ if(calmo){
 }
 // --- caixa-prenda
 const caixa=document.getElementById('caixa'),prenda=document.getElementById('prenda'),form=document.getElementById('prForm'),email=document.getElementById('prEmail'),estado=document.getElementById('prEstado'),botao=document.getElementById('prBotao');
-if(guardado)return;
-caixa.hidden=false;
-if(!calmo){setTimeout(()=>{caixa.classList.add('salta');setTimeout(()=>caixa.classList.remove('salta'),2400)},2200)}
-function abrir(){caixa.classList.add('aberta');prenda.hidden=false;prenda.classList.add('aberta');
+if(!guardado){caixa.hidden=false;
+if(!calmo){setTimeout(()=>{caixa.classList.add('salta');setTimeout(()=>caixa.classList.remove('salta'),2400)},2200)}}
+function abrir(){if(guardado){form.hidden=true;estado.className='estado ok';estado.textContent='já estás no diário ♡ o teu código chega com o drop 01.'}caixa.classList.add('aberta');prenda.hidden=false;prenda.classList.add('aberta');
   setTimeout(()=>{prenda.classList.add('vis');prenda.querySelector('.cartao').focus({preventScroll:true});setTimeout(desenhaSeta,calmo?0:560)},calmo?0:220)}
 function fechar(){prenda.classList.remove('vis');caixa.classList.remove('aberta');
   setTimeout(()=>{prenda.classList.remove('aberta');prenda.hidden=true;if(guardado)caixa.hidden=true;else caixa.focus()},calmo?0:350)}
@@ -392,6 +391,7 @@ function desenhaSeta(){
 }
 addEventListener('resize',desenhaSeta);if(window.visualViewport)visualViewport.addEventListener('resize',desenhaSeta);
 caixa.addEventListener('click',abrir);
+window.abrirPrenda=abrir;
 const vv=window.visualViewport,cartao=prenda.querySelector('.cartao');
 if(vv){const ajusta=()=>{if(prenda.hidden)return;cartao.style.maxHeight=(vv.height-44)+'px';cartao.style.top=matchMedia('(min-width:700px)').matches?'':(vv.offsetTop+22)+'px'};vv.addEventListener('resize',ajusta);vv.addEventListener('scroll',ajusta)}
 email.addEventListener('focus',()=>setTimeout(()=>email.scrollIntoView({block:'center',behavior:'smooth'}),300));
@@ -412,6 +412,5 @@ form.addEventListener('submit',async e=>{
 });
 })();
 </script>
-
 </body>
 </html>

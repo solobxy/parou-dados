@@ -119,6 +119,12 @@ atualizaSaco(0);
 .cod input{flex:1;min-height:48px;border:1.5px solid #9fb3c6;background:#fff;padding:0 12px;font-size:15px;text-transform:uppercase}
 .cod button{min-height:48px;padding:0 16px;border:0;background:var(--tinta);color:var(--papel);font-weight:600;cursor:pointer}
 .cod-msg{font-size:13px;margin-top:6px;min-height:1.2em}
+.gratis{display:flex;align-items:center;gap:12px;width:100%;margin-top:4px;padding:10px 14px 10px 10px;background:#fff;border:1.5px dashed #E88AA3;cursor:pointer;text-align:left;transition:transform .2s var(--e)}
+.gratis:active{transform:scale(.98)}
+.gratis svg{width:40px;height:40px;flex:none;overflow:visible}
+.gratis span:nth-child(2){flex:1;font-size:15px;line-height:1.25}
+.gratis small{display:block;font-size:13px;color:var(--cinza)}
+.caixa,.prenda .seta{display:none!important}
 .linhas{margin-top:14px;font-size:15px}
 .linhas div{display:flex;justify-content:space-between;margin-top:6px}
 .linhas .tot{font-size:20px;font-weight:600;margin-top:12px}
@@ -153,6 +159,7 @@ atualizaSaco(0);
     <div id="rItens"></div>
     <div class="cod"><label class="skip" for="codigo">código de desconto ou cartão presente</label><input id="codigo" placeholder="código de desconto" autocomplete="off" autocapitalize="characters"><button type="button" id="aplicar">aplicar</button></div>
     <p class="cod-msg" id="codMsg" role="status"></p>
+    <button type="button" class="gratis" id="gratis"><svg viewBox="0 0 68 68" aria-hidden="true"><polygon points="13,34 34,48 13,62" fill="#E795AA"/><polygon points="13,34 55,34 34,48" fill="#F6B8C8"/><polygon points="55,34 55,62 34,48" fill="#EFA0B5"/><polygon points="13,62 34,48 55,62" fill="#D9849C"/><polygon points="31.5,34 36.5,34 36,62 32,62" fill="#1D1719"/><polygon points="9,24 59,24 34,30" fill="#F8C6D3"/><polygon points="9,24 34,30 9,36" fill="#E795AA"/><polygon points="59,24 59,36 34,30" fill="#EFA0B5"/><polygon points="9,36 34,30 59,36" fill="#C9607D"/><polygon points="31.5,24 36.5,24 36.5,36 31.5,36" fill="#1D1719"/><g transform="translate(16,6) scale(.36)"><polygon points="50,46 8,30 22,62" fill="#E88AA3"/><polygon points="50,46 8,30 30,22" fill="#C9607D"/><polygon points="50,46 92,30 78,62" fill="#E88AA3"/><polygon points="50,46 92,30 70,22" fill="#C9607D"/><polygon points="44,50 34,88 40,86 50,54" fill="#1D1719"/><polygon points="56,50 68,86 62,87 50,54" fill="#1D1719"/></g></svg><span><b>desconto grátis</b><small>10% na tua primeira compra</small></span><span aria-hidden="true">→</span></button>
     <div class="linhas"><div><span>subtotal</span><span id="lSub"></span></div><div id="lDescL" hidden><span id="lDescN">desconto</span><span id="lDesc"></span></div><div><span>envio</span><span>grátis</span></div><div class="tot"><span>total</span><span id="lTot"></span></div><span class="iva">IVA incluído</span></div>
     <div class="st" data-f="borboleta" data-e="pixel" style="right:14px;top:-18px;width:42px;transform:rotate(10deg)"></div>
   </aside>
@@ -216,6 +223,7 @@ function render(){
   if(desc){d=Math.round(sub*desc.pct)/100;q('lDescL').hidden=false;q('lDescN').textContent=`desconto (${desc.cod})`;q('lDesc').textContent='− '+eur(d)}else q('lDescL').hidden=true;
   q('lSub').textContent=eur(sub);q('lTot').textContent=eur(sub-d);q('pagarT').textContent='pagar '+eur(sub-d);
 }
+q('gratis').onclick=()=>window.abrirPrenda&&abrirPrenda();
 q('aplicar').onclick=()=>{const c=q('codigo').value.trim().toUpperCase();
   if(c==='ANJINHO10'){desc={cod:c,pct:10};q('codMsg').textContent='10% na primeira compra ♡ aplicado.'}
   else if(!c){q('codMsg').textContent='escreve o código primeiro.'}
@@ -252,6 +260,175 @@ const o=LOJA.guardar.bind(LOJA);LOJA.guardar=l=>{o(l);render()};
 desenhaAutocolantes(document);
 })();
 </script>
-
+<!-- borboleta-scroll e caixa-prenda -->
+<style>
+.caixa[hidden],.prenda[hidden],.prenda form[hidden]{display:none!important}
+#borb{position:fixed;right:6px;top:0;width:26px;height:22px;z-index:25;pointer-events:none;will-change:transform}
+#borb svg{width:100%;height:100%;display:block;overflow:visible}
+#borb .f2{display:none}#borb.fechada .f1{display:none}#borb.fechada .f2{display:block}
+.caixa{position:fixed;right:14px;bottom:calc(14px + env(safe-area-inset-bottom));z-index:30;width:68px;height:68px;padding:0;border:0;background:none;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.caixa svg{width:100%;height:100%;overflow:visible;display:block;filter:drop-shadow(2px 0 0 #fff) drop-shadow(-2px 0 0 #fff) drop-shadow(0 2px 0 #fff) drop-shadow(0 -2px 0 #fff)}
+.caixa .tampa{transform-box:fill-box;transform-origin:20% 100%;transition:transform .5s cubic-bezier(.3,1.4,.5,1)}
+.caixa .aure{transform-box:fill-box;transform-origin:center;animation:aure 2.6s ease-in-out infinite alternate}
+@keyframes aure{from{transform:translateY(-2px)}to{transform:translateY(2px)}}
+@keyframes salto{0%,100%{transform:translateY(0) scale(1)}12%{transform:translateY(0) scale(1.12,.88)}32%{transform:translateY(-24px) scale(.94,1.06) rotate(-4deg)}52%{transform:translateY(0) scale(1.1,.9)}68%{transform:translateY(-9px) rotate(3deg)}84%{transform:translateY(0) scale(1.03,.97)}}
+@keyframes espreita{0%,100%{transform:none}30%,60%{transform:translateY(-7px) rotate(-8deg)}}
+.caixa.salta svg{animation:salto 1.15s cubic-bezier(.3,.7,.3,1) 2}
+.caixa.salta .tampa{animation:espreita 1.15s ease-in-out 2}
+.caixa.aberta .tampa{transform:translateY(-16px) rotate(-28deg)}
+.caixa:focus-visible{outline:3px solid #1D1719;outline-offset:4px}
+.prenda{position:fixed;inset:0;z-index:60;display:none}
+.prenda.aberta{display:block}
+.prenda .fundo{position:absolute;inset:0;background:rgba(29,23,25,.3);opacity:0;transition:opacity .3s}
+.prenda .cartao{position:absolute;left:12px;right:12px;top:calc(22px + env(safe-area-inset-top));max-height:calc(100% - 44px);overflow:auto;outline:none;background:#fff;padding:28px 22px 22px;transform-origin:88% 100%;transform:translateY(120px) scale(.15) rotate(8deg);opacity:0;transition:transform .55s cubic-bezier(.3,1.35,.5,1),opacity .2s}
+.prenda.vis .fundo{opacity:1}.prenda.vis .cartao{transform:rotate(-1.5deg);opacity:1}
+.prenda .cartao::before{content:"";position:absolute;left:50%;top:-13px;width:110px;height:28px;background:rgba(246,184,200,.85);transform:translateX(-50%) rotate(-3deg)}
+.prenda h2{font-family:"Inter Display","Inter",sans-serif;font-weight:900;font-size:40px;line-height:.9;letter-spacing:-.05em}
+.prenda .grande{display:inline-block;background:#F6B8C8;padding:0 .12em;transform:rotate(-2deg)}
+.prenda p{margin-top:12px;font-size:16px;line-height:1.5}
+.prenda form{margin-top:16px;display:flex;flex-direction:column;gap:10px}
+.prenda input[type=email]{width:100%;min-height:52px;border:2px solid #1D1719;background:#fff;padding:0 14px;font:16px "Inter",system-ui,sans-serif;color:#1D1719;border-radius:0}
+.prenda button[type=submit]{min-height:52px;border:0;background:#1D1719;color:#FBF7F2;font:600 16px "Inter",system-ui,sans-serif;cursor:pointer;display:flex;align-items:center;justify-content:space-between;padding:0 20px}
+.prenda .letra{font-size:12px;color:#5d5056;margin-top:10px;line-height:1.5}
+.prenda .estado{font-size:15px;margin-top:10px;min-height:1.4em}
+.prenda .estado.ok{font-family:"Chorus","TeX Gyre Chorus",cursive;font-size:24px}
+.prenda .x{position:absolute;right:6px;top:6px;min-width:44px;min-height:44px;border:0;background:none;font:600 14px "Inter",system-ui,sans-serif;cursor:pointer;color:#1D1719}
+.prenda .mel{position:absolute;left:-9999px}
+.prenda form label{flex:none}
+.prenda .seta{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:visible}
+.prenda .seta path{fill:none;stroke-linecap:round;stroke-linejoin:round}
+.prenda .seta .halo{stroke:#fff;stroke-width:11}
+.prenda .seta .traco-s{stroke:#F6B8C8;stroke-width:6}
+@media (min-width:700px){.prenda .cartao{left:auto;right:24px;width:380px;top:auto;bottom:100px;transform-origin:92% 110%}}
+@media (prefers-reduced-motion:reduce){
+  .caixa .aure,.caixa.salta svg,.caixa.salta .tampa{animation:none}
+  .caixa .tampa,.prenda .cartao,.prenda .fundo{transition:none}
+}
+</style>
+<div id="borb" aria-hidden="true"><svg viewBox="0 0 11 9" shape-rendering="crispEdges"><g class="f1"></g><g class="f2"></g></svg></div>
+<button class="caixa" id="caixa" type="button" aria-haspopup="dialog" aria-label="abrir prenda: 10% na primeira compra" hidden>
+  <svg viewBox="0 0 68 68" aria-hidden="true">
+    <ellipse class="aure" cx="34" cy="6" rx="15" ry="4.5" fill="none" stroke="#F6B8C8" stroke-width="3.5"/>
+    <g>
+      <polygon points="13,34 34,48 13,62" fill="#E795AA"/>
+      <polygon points="13,34 55,34 34,48" fill="#F6B8C8"/>
+      <polygon points="55,34 55,62 34,48" fill="#EFA0B5"/>
+      <polygon points="13,62 34,48 55,62" fill="#D9849C"/>
+      <polygon points="31.5,34 36.5,34 36,62 32,62" fill="#1D1719"/>
+    </g>
+    <g class="tampa">
+      <polygon points="9,24 59,24 34,30" fill="#F8C6D3"/>
+      <polygon points="9,24 34,30 9,36" fill="#E795AA"/>
+      <polygon points="59,24 59,36 34,30" fill="#EFA0B5"/>
+      <polygon points="9,36 34,30 59,36" fill="#C9607D"/>
+      <polygon points="31.5,24 36.5,24 36.5,36 31.5,36" fill="#1D1719"/>
+      <g transform="translate(16,6) scale(.36)">
+        <polygon points="50,46 8,30 22,62" fill="#E88AA3"/><polygon points="50,46 8,30 30,22" fill="#C9607D"/><polygon points="50,46 22,62 44,54" fill="#F6B8C8"/>
+        <polygon points="50,46 92,30 78,62" fill="#E88AA3"/><polygon points="50,46 92,30 70,22" fill="#C9607D"/><polygon points="50,46 78,62 56,54" fill="#F6B8C8"/>
+        <polygon points="44,50 34,88 40,86 50,54" fill="#1D1719"/><polygon points="56,50 68,86 62,87 50,54" fill="#1D1719"/>
+      </g>
+    </g>
+  </svg>
+</button>
+<div class="prenda" id="prenda" role="dialog" aria-modal="true" aria-labelledby="prT" hidden>
+  <div class="fundo" data-fecha></div>
+  <div class="cartao" tabindex="-1">
+    <button class="x" type="button" data-fecha>fechar</button>
+    <h2 id="prT">uma prenda <span class="grande">para ti ♡</span></h2>
+    <p><strong>10% na tua primeira compra.</strong> deixa o teu email e o código chega-te com o drop 01.</p>
+    <form id="prForm" novalidate>
+      <label><span class="so-leitor skip">o teu email</span><input id="prEmail" type="email" inputmode="email" autocomplete="email" autocapitalize="off" spellcheck="false" placeholder="o teu email" maxlength="254" required aria-describedby="prEstado"></label>
+      <label class="mel" aria-hidden="true">não preencher<input id="prSite" tabindex="-1" autocomplete="off"></label>
+      <button type="submit" id="prBotao">quero a prenda <span aria-hidden="true">→</span></button>
+    </form>
+    <p class="estado" id="prEstado" role="status" aria-live="polite"></p>
+    <p class="letra">entras no diário da anjinho: um email por drop, nada mais. sais quando quiseres. <a href="/privacidade">privacidade</a>.</p>
+  </div>
+  <svg class="seta" aria-hidden="true"><path class="corpo halo"/><path class="ponta halo"/><path class="corpo traco-s"/><path class="ponta traco-s"/></svg>
+</div>
+<script>
+(function(){
+const calmo=matchMedia('(prefers-reduced-motion: reduce)').matches;
+let guardado=false;try{guardado=localStorage.getItem('anjinho-prenda')==='ok'}catch(_){}
+// --- borboleta: desenha os 2 fotogramas em pixel
+const NS='http://www.w3.org/2000/svg',COR={R:'#E88AA3',P:'#F6B8C8',T:'#1D1719'};
+const F1=['..T.....T..','...T...T...','RRR..T..RRR','RPPR.T.RPPR','RPPPRTRPPPR','.RPPRTRPPR.','..RPRTRPR..','.RPPRTRPPR.','.RRR.T.RRR.'];
+const F2=['..T.....T..','...T...T...','...R.T.R...','..RPRTRPR..','..RPRTRPR..','...RRTRR...','...RPTPR...','...RRTRR...','.....T.....'];
+const borb=document.getElementById('borb');
+[[F1,'.f1'],[F2,'.f2']].forEach(([m,sel])=>{const g=borb.querySelector(sel);m.forEach((l,y)=>[...l].forEach((c,x)=>{if(c!=='.'){const r=document.createElementNS(NS,'rect');r.setAttribute('x',x);r.setAttribute('y',y);r.setAttribute('width',1.04);r.setAttribute('height',1.04);r.setAttribute('fill',COR[c]);g.appendChild(r)}}))});
+const prog=()=>{const m=document.documentElement.scrollHeight-innerHeight;return m>0?Math.min(1,Math.max(0,scrollY/m)):0};
+const lim=()=>({cima:76,baixo:innerHeight-120});
+if(calmo){
+  const pos=()=>{const l=lim();borb.style.transform=`translate3d(0,${(l.cima+prog()*(l.baixo-l.cima)).toFixed(1)}px,0)`};
+  addEventListener('scroll',pos,{passive:true});addEventListener('resize',pos);pos();
+}else{
+  let y=lim().cima,ang=0,asa=0,ultimo=0;
+  const voa=t=>{
+    const l=lim(),alvo=l.cima+prog()*(l.baixo-l.cima),vel=alvo-y;
+    y+=vel*.09;
+    const mexe=Math.abs(vel)>1;
+    // vira a cabeça para onde voa (para baixo = 180°)
+    const dir=vel>1?180:vel<-1?0:ang>90?180:0;
+    ang+=(dir-ang)*.08;
+    const x=Math.sin(t/(mexe?260:900))*(mexe?12:3);
+    const incl=Math.max(-18,Math.min(18,Math.cos(t/260)*(mexe?14:0)));
+    if(t-ultimo>(mexe?90:700)){asa^=1;ultimo=t;borb.classList.toggle('fechada',!!asa)}
+    borb.style.transform=`translate3d(${x.toFixed(1)}px,${y.toFixed(1)}px,0) rotate(${(ang+incl).toFixed(1)}deg)`;
+    requestAnimationFrame(voa);
+  };
+  requestAnimationFrame(voa);
+}
+// --- caixa-prenda
+const caixa=document.getElementById('caixa'),prenda=document.getElementById('prenda'),form=document.getElementById('prForm'),email=document.getElementById('prEmail'),estado=document.getElementById('prEstado'),botao=document.getElementById('prBotao');
+if(!guardado){caixa.hidden=false;
+if(!calmo){setTimeout(()=>{caixa.classList.add('salta');setTimeout(()=>caixa.classList.remove('salta'),2400)},2200)}}
+function abrir(){if(guardado){form.hidden=true;estado.className='estado ok';estado.textContent='já estás no diário ♡ o teu código chega com o drop 01.'}caixa.classList.add('aberta');prenda.hidden=false;prenda.classList.add('aberta');
+  setTimeout(()=>{prenda.classList.add('vis');prenda.querySelector('.cartao').focus({preventScroll:true});setTimeout(desenhaSeta,calmo?0:560)},calmo?0:220)}
+function fechar(){prenda.classList.remove('vis');caixa.classList.remove('aberta');
+  setTimeout(()=>{prenda.classList.remove('aberta');prenda.hidden=true;if(guardado)caixa.hidden=true;else caixa.focus()},calmo?0:350)}
+// seta à mão da caixa até ao botão
+const seta=prenda.querySelector('.seta');
+function desenhaSeta(){
+  if(!seta||prenda.hidden)return;
+  const vv=window.visualViewport,teclado=vv&&vv.height<innerHeight*.75;
+  const largo=matchMedia('(min-width:700px)').matches;seta.style.display=(teclado||largo)?'none':'';if(teclado||largo)return;
+  const c=caixa.getBoundingClientRect(),b=botao.getBoundingClientRect(),W=innerWidth;
+  const S={x:c.left+c.width*.45,y:c.top-6},E={x:b.left+b.width*.24,y:b.bottom+8},dy=S.y-E.y;
+  if(dy<80){seta.style.display='none';return}
+  const P=[S,{x:S.x+W*.02,y:S.y-dy*.22},{x:S.x-W*.22,y:S.y-dy*.42},{x:E.x+W*.18,y:S.y-dy*.52},{x:E.x-W*.06,y:S.y-dy*.68},{x:E.x+W*.01,y:S.y-dy*.86},E];
+  // curva suave a passar por todos os pontos (Catmull-Rom)
+  let d=`M${P[0].x.toFixed(1)} ${P[0].y.toFixed(1)}`;
+  for(let i=0;i<P.length-1;i++){const p0=P[i-1]||P[i],p1=P[i],p2=P[i+1],p3=P[i+2]||p2;
+    d+=` C${(p1.x+(p2.x-p0.x)/6).toFixed(1)} ${(p1.y+(p2.y-p0.y)/6).toFixed(1)} ${(p2.x-(p3.x-p1.x)/6).toFixed(1)} ${(p2.y-(p3.y-p1.y)/6).toFixed(1)} ${p2.x.toFixed(1)} ${p2.y.toFixed(1)}`}
+  const ux=E.x-P[5].x,uy=E.y-P[5].y,L=Math.hypot(ux,uy)||1,a=Math.atan2(uy/L,ux/L),k=24;
+  const ponta=`M${(E.x-k*Math.cos(a-.5)).toFixed(1)} ${(E.y-k*Math.sin(a-.5)).toFixed(1)} L${E.x.toFixed(1)} ${E.y.toFixed(1)} L${(E.x-k*Math.cos(a+.55)).toFixed(1)} ${(E.y-k*Math.sin(a+.55)).toFixed(1)}`;
+  seta.querySelectorAll('.corpo').forEach(p=>p.setAttribute('d',d));seta.querySelectorAll('.ponta').forEach(p=>p.setAttribute('d',ponta));
+  if(!calmo&&!seta.dataset.feita){seta.dataset.feita=1;
+    seta.querySelectorAll('path').forEach(p=>{const l=p.getTotalLength();p.style.transition='none';p.style.strokeDasharray=l;p.style.strokeDashoffset=l;
+      p.getBoundingClientRect();const corpo=p.classList.contains('corpo');p.style.transition=`stroke-dashoffset ${corpo?.9:.25}s cubic-bezier(.4,.1,.2,1) ${corpo?.35:1.2}s`;p.style.strokeDashoffset=0})}
+}
+addEventListener('resize',desenhaSeta);if(window.visualViewport)visualViewport.addEventListener('resize',desenhaSeta);
+caixa.addEventListener('click',abrir);
+window.abrirPrenda=abrir;
+const vv=window.visualViewport,cartao=prenda.querySelector('.cartao');
+if(vv){const ajusta=()=>{if(prenda.hidden)return;cartao.style.maxHeight=(vv.height-44)+'px';cartao.style.top=matchMedia('(min-width:700px)').matches?'':(vv.offsetTop+22)+'px'};vv.addEventListener('resize',ajusta);vv.addEventListener('scroll',ajusta)}
+email.addEventListener('focus',()=>setTimeout(()=>email.scrollIntoView({block:'center',behavior:'smooth'}),300));
+prenda.addEventListener('click',e=>{if(e.target.closest('[data-fecha]'))fechar()});
+addEventListener('keydown',e=>{if(e.key==='Escape'&&!prenda.hidden)fechar()});
+form.addEventListener('submit',async e=>{
+  e.preventDefault();const v=email.value.trim();estado.className='estado';
+  if(!/^[^@\s]+@[^@\s]+\.[^@\s]{2,}$/.test(v)){estado.textContent='esse email não parece certo. confirma e tenta outra vez.';email.focus();return}
+  botao.disabled=true;estado.textContent='a guardar…';
+  try{const r=await fetch('/api/lista',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:v,consentimento:true,origem:'caixa',site:document.getElementById('prSite').value})});
+    if(r.ok){guardado=true;try{localStorage.setItem('anjinho-prenda','ok')}catch(_){}
+      estado.className='estado ok';estado.textContent='está guardada ♡ o teu código chega com o drop 01.';form.hidden=true;seta.style.display='none';setTimeout(fechar,3200)}
+    else if(r.status===429)estado.textContent='muitas tentativas seguidas. espera uns minutos.';
+    else if(r.status===400)estado.textContent='esse email não parece certo. confirma e tenta outra vez.';
+    else estado.textContent='não consegui guardar. tenta outra vez daqui a nada.';
+  }catch(_){estado.textContent='sem ligação. confirma a internet e tenta outra vez.'}
+  botao.disabled=false;
+});
+})();
+</script>
 </body>
 </html>
