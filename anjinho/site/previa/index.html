@@ -247,6 +247,8 @@ atualizaSaco(0);
 
 
 <header class="hero">
+  <div class="resp" data-s="7" style="right:-60px;top:70px;width:260px;opacity:.9"></div>
+  <div class="resp" data-s="23" style="left:-70px;bottom:120px;width:200px;opacity:.75"></div>
   <div class="foto" role="img" aria-label="Lugar da fotografia principal do drop 01">fotografia do drop 01<br>modelo de corpo inteiro, céu claro</div>
   <span class="etq pix">♡ save file 01 · inverno ♡</span>
   <h1>anjinha,<br>por <span class="circ">dentro.<svg viewBox="0 0 560 220" preserveAspectRatio="none" aria-hidden="true"><path class="traco" d="M30 120 C 20 40, 300 10, 470 40 C 560 58, 540 160, 420 185 C 280 212, 60 200, 40 140 C 30 105, 120 70, 220 62" fill="none" stroke="#F6B8C8" stroke-width="12" stroke-linecap="round"/></svg></span></h1>
@@ -260,6 +262,7 @@ atualizaSaco(0);
 </header>
 
 <section class="diario" id="diario" aria-labelledby="dt">
+  <div class="resp" data-s="41" style="left:-50px;top:40px;width:240px"></div>
   <div class="pagina">
     <h2 id="dt">querido diário,</h2>
     <p class="mao" style="font-size:22px;margin-top:6px">21 de outubro</p>
@@ -280,6 +283,7 @@ atualizaSaco(0);
 </section>
 
 <section class="drop" id="drop" aria-labelledby="drt">
+  <div class="resp" data-s="59" style="right:-80px;top:38%;width:300px;opacity:.8"></div>
   <div class="cab"><h2 id="drt" class="recorte" aria-label="drop 01">drop 01</h2><p>drop de inverno. 6 peças.</p></div>
   <div class="grelha" id="grelha"></div>
   <div class="st cola" data-f="coracao" data-e="pixel" style="right:var(--m);top:104px;width:46px;--r:rotate(8deg)"></div>
@@ -292,6 +296,7 @@ atualizaSaco(0);
 </section>
 
 <section class="look" id="look" aria-labelledby="lt">
+  <div class="resp" data-s="83" style="left:30%;top:20px;width:220px;opacity:.85"></div>
   <h2 id="lt" class="recorte" aria-label="lookbook" style="padding:0 var(--m)">lookbook</h2>
   <div class="fita" tabindex="0" aria-label="Fotografias do lookbook, deslizar para o lado">
     <figure class="pol"><div class="st cola" data-f="coracao" data-e="papel" style="--r:rotate(10deg)"></div><div class="ph">polaroid 1<br>botas nuvem + polainas</div><figcaption class="leg mao">primeiro frio</figcaption></figure>
@@ -665,6 +670,45 @@ form.addEventListener('submit',async e=>{
   }catch(_){estado.textContent='sem ligação. confirma a internet e tenta outra vez.'}
   botao.disabled=false;
 });
+})();
+</script>
+
+<!-- respingos rosa em meio-tom -->
+<style>
+.resp{position:absolute;pointer-events:none;z-index:-1}
+.resp svg{width:100%;height:auto;display:block;overflow:visible}
+.hero>.resp{z-index:0}
+section,header,footer{isolation:isolate}
+</style>
+<script>
+(function(){
+const NS='http://www.w3.org/2000/svg';
+const el=(n,a)=>{const e=document.createElementNS(NS,n);for(const k in a)e.setAttribute(k,a[k]);return e};
+let id=0;
+function respingo(semente,cor){
+  let s=semente*9301%233280;const r=()=>{s=(s*9301+49297)%233280;return s/233280};
+  const svg=el('svg',{viewBox:'0 0 200 200','aria-hidden':'true'});
+  const C=100,R=34;
+  // mancha principal: contorno irregular com picos a sair
+  let d='';const N=90,picos=[];
+  for(let k=0;k<7+Math.floor(r()*5);k++)picos.push({a:r()*Math.PI*2,l:1.4+r()*1.4,w:.05+r()*.07});
+  for(let i=0;i<=N;i++){const a=i/N*Math.PI*2;
+    let raio=R*(1+.12*Math.sin(a*3+semente)+.08*Math.sin(a*7+semente*2)+.05*Math.sin(a*13));
+    picos.forEach(p=>{let da=Math.abs(((a-p.a+Math.PI*3)%(Math.PI*2))-Math.PI);if(da<p.w*2.2)raio+=R*(p.l-1)*Math.pow(1-da/(p.w*2.2),2.2)});
+    d+=(i?'L':'M')+(C+Math.cos(a)*raio).toFixed(1)+' '+(C+Math.sin(a)*raio).toFixed(1)}
+  d+='Z';
+  // gotas soltas à volta, mais pequenas quanto mais longe
+  const gotas=[];for(let k=0;k<14;k++){const a=r()*Math.PI*2,dist=R*(1.5+r()*1.4),g=Math.max(2.5,9-dist/12)*(0.6+r()*.7);gotas.push([C+Math.cos(a)*dist,C+Math.sin(a)*dist,g])}
+  const cid='rsp'+(++id)+semente;
+  const cp=el('clipPath',{id:cid});cp.append(el('path',{d}));gotas.forEach(([x,y,g])=>cp.append(el('circle',{cx:x,cy:y,r:g})));
+  const defs=el('defs');defs.append(cp);svg.append(defs);
+  // pontos de meio-tom: maiores no centro, a desaparecer para fora
+  const g=el('g',{'clip-path':`url(#${cid})`,fill:cor});
+  const passo=5.2;
+  for(let y=0;y<200;y+=passo)for(let x=((y/passo)%2?passo/2:0);x<200;x+=passo){
+    const dd=Math.hypot(x-C,y-C)/(R*2.6),rr=2.7*(1-dd)+.7;if(rr>.4)g.append(el('circle',{cx:x.toFixed(1),cy:y.toFixed(1),r:rr.toFixed(2)}))}
+  svg.append(g);return svg}
+document.querySelectorAll('.resp[data-s]').forEach(d=>d.append(respingo(+d.dataset.s,d.dataset.cor||'#F6B8C8')));
 })();
 </script>
 
