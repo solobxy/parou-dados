@@ -1,0 +1,37 @@
+[SQLite DB] Base de dados sem feeds. A registar feeds oficiais do catálogo...
+[SQLite DB] 29 feeds registados com sucesso.
+(node:2549) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+[Planeador] índice pronto (17 padrões, 69 paragens, 44 ms)
+OK      o motor em memória do planeador ficou pronto pronto (17 padrões, 69 paragens, 44 ms)
+OK      [metro com transbordo] o autocarro direto aparece Autocarro 45min | Metro>Metro 50min
+OK      [metro com transbordo] o metro aparece como opção, mesmo chegando depois do autocarro Autocarro 45min | Metro>Metro 50min
+OK      [metro com transbordo] o metro é mesmo mais lento (o cenário testa o caso difícil) 50 > 45
+OK      [metro com transbordo] a opção do metro tem as duas linhas e um transbordo ["Metro","Metro"]
+OK      [metro com transbordo] no máximo 5 opções 2
+OK      [comboio com transbordo] o autocarro direto aparece Autocarro 45min | Comboio>Comboio 50min
+OK      [comboio com transbordo] o comboio aparece como opção, mesmo chegando depois do autocarro Autocarro 45min | Comboio>Comboio 50min
+OK      [comboio com transbordo] o comboio é mesmo mais lento (o cenário testa o caso difícil) 50 > 45
+OK      [comboio com transbordo] a opção do comboio tem as duas linhas e um transbordo ["Comboio","Comboio"]
+OK      [comboio com transbordo] no máximo 5 opções 2
+OK      [barco com transbordo] o autocarro direto aparece Autocarro 45min | Barco>Barco 50min
+OK      [barco com transbordo] o barco aparece como opção, mesmo chegando depois do autocarro Autocarro 45min | Barco>Barco 50min
+OK      [barco com transbordo] o barco é mesmo mais lento (o cenário testa o caso difícil) 50 > 45
+OK      [barco com transbordo] a opção do barco tem as duas linhas e um transbordo ["Barco","Barco"]
+OK      [barco com transbordo] no máximo 5 opções 2
+OK      [metro muito lento] um metro que chega muito mais tarde não polui a lista Autocarro 45min
+OK      [metro muito lento] o autocarro continua lá Autocarro 45min
+OK      [metro direto mais rápido] aparece e é o mais rápido Metro 25min | Autocarro 45min
+OK      [centro com muitas paragens de autocarro] a estação de metro, mais longe, também conta Metro 35min
+OK      [só autocarros] continua a dar só autocarros Autocarro 45min
+OK      [lista] o metro entra mesmo ficando fora dos 5 primeiros b1,b2,b3,b4,m1
+OK      [lista] continua a ter 5 opções 5
+OK      [lista] a ordem é a original (mais rápida primeiro) 20,22,24,25,33
+OK      [lista] a melhor opção não sai 
+OK      [lista] um metro muito mais lento não é forçado b1,b2,b3,b4,b5
+OK      [lista] sem necessidade, só corta ao tamanho m1,b1,b2,b3,b4
+OK      [lista] metro, comboio e barco entram todos, o melhor autocarro fica b1,b2,m1,c1,x1
+OK      [lista] a opção a pé fica a-pe,b1,b2,b3,m1
+OK      [lista] lista vazia ou curta não parte 
+
+Tudo OK
