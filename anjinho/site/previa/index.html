@@ -151,7 +151,9 @@ nav .saco{margin-left:auto;font-size:14px;min-height:44px;display:flex;align-ite
 .fita{display:flex;gap:18px;padding:34px var(--m) 20px;overflow-x:auto;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch}
 .pol{flex:0 0 68%;scroll-snap-align:center;background:#fff;padding:12px 12px 52px;position:relative}
 .pol:nth-child(odd){transform:rotate(-2deg)}.pol:nth-child(even){transform:rotate(2deg)}
-.pol .ph{aspect-ratio:1;background:var(--nuvem);display:flex;align-items:center;justify-content:center;font-size:11px;color:#a5939a;text-align:center;padding:12px}
+.pol .ph{aspect-ratio:1;background:var(--nuvem);display:flex;align-items:center;justify-content:center;font-size:11px;color:#a5939a;text-align:center;padding:12px;overflow:hidden}
+.pol .ph:has(img){padding:0}
+.pol .ph img{width:100%;height:100%;object-fit:cover;display:block}
 .pol .leg{position:absolute;left:16px;bottom:12px;font-size:24px}
 
 /* entra */
@@ -349,10 +351,10 @@ atualizaSaco(0);
   <div class="resp" data-s="83" style="left:12%;top:-220px;width:660px;opacity:.5"></div>
   <h2 id="lt" class="recorte" aria-label="lookbook" style="padding:0 var(--m)">lookbook</h2>
   <div class="fita" tabindex="0" aria-label="Fotografias do lookbook, deslizar para o lado">
-    <figure class="pol"><div class="st cola" data-f="coracao" data-e="papel" style="--r:rotate(10deg)"></div><div class="ph">polaroid 1<br>botas nuvem + polainas</div><figcaption class="leg mao">primeiro frio</figcaption></figure>
-    <figure class="pol"><div class="st cola" data-f="laco" data-e="pixel" style="--r:rotate(-8deg)"></div><div class="ph">polaroid 2<br>casaco de malha, janela</div><figcaption class="leg mao">manhã de dezembro</figcaption></figure>
-    <figure class="pol"><div class="st cola" data-f="coelho" data-e="autocolante" style="--r:rotate(6deg)"></div><div class="ph">polaroid 3<br>protetores de orelhas, rua</div><figcaption class="leg mao">autocarro das 7h</figcaption></figure>
-    <figure class="pol"><div class="st cola" data-f="borboleta" data-e="riscas" style="--r:rotate(-12deg)"></div><div class="ph">polaroid 4<br>cachecol mohair, espelho</div><figcaption class="leg mao">jantar de natal</figcaption></figure>
+    <figure class="pol"><div class="st cola" data-f="coracao" data-e="papel" style="--r:rotate(10deg)"></div><div class="ph"><img src="/previa/img/look/look1.webp" alt="pernas com as botas nuvem bege, meias brancas de folhos e saia rosa, na calçada molhada" loading="lazy" width="1200" height="1200"></div><figcaption class="leg mao">primeiro frio</figcaption></figure>
+    <figure class="pol"><div class="st cola" data-f="laco" data-e="pixel" style="--r:rotate(-8deg)"></div><div class="ph"><img src="/previa/img/look/look2.webp" alt="rapariga de costas a atar um laço de cetim rosa no cabelo, à janela" loading="lazy" width="1200" height="1200"></div><figcaption class="leg mao">manhã de dezembro</figcaption></figure>
+    <figure class="pol"><div class="st cola" data-f="coelho" data-e="autocolante" style="--r:rotate(6deg)"></div><div class="ph"><img src="/previa/img/look/look3.webp" alt="rapariga de costas no autocarro, com protetores de orelhas brancos e um laço rosa" loading="lazy" width="1200" height="1200"></div><figcaption class="leg mao">autocarro das 7h</figcaption></figure>
+    <figure class="pol"><div class="st cola" data-f="borboleta" data-e="riscas" style="--r:rotate(-12deg)"></div><div class="ph"><img src="/previa/img/look/look4.webp" alt="necessaire corça numa mesa de natal com velas rosa e tangerinas" loading="lazy" width="1200" height="1200"></div><figcaption class="leg mao">jantar de natal</figcaption></figure>
   </div>
 </section>
 
