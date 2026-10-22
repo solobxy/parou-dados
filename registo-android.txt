@@ -1,0 +1,114 @@
+::add-mask::f3abac1626498c8b5f5afbff41004464ea2790fa
+SHA-256: 13:BD:79:AE:A8:96:4D:FF:FD:7E:D3:12:46:F5:59:3A:C6:5D:5F:65:90:9C:C0:CB:56:FD:FA:60:EE:DE:27:3B
+build-tools
+cmake
+cmdline-tools
+extras
+licenses
+ndk
+packages-list.txt
+platform-tools
+platforms
+tools
+apkanalyzer
+avdmanager
+lint
+profgen
+resourceshrinker
+retrace
+screenshot2
+sdkmanager
+yes: ,-----.        ,--.  ,--.  ,--.
+|  |) /_,--.,--|  |-.|  |-.|  |,---.,--.   ,--,--.--.,--,--.,---.
+|  .-.  |  ||  | .-. | .-. |  | .-. |  |.'.|  |  .--' ,-.  | .-. |
+|  '--' '  ''  | `-' | `-' |  \   --|   .'.   |  |  \ '-'  | '-' '
+`------' `----' `---' `---'`--'`----'--'   '--`--'   `--`--|  |-'
+                                                           `--'    
+Generating Android Project.
+
+Project updated successfully.
+Build it by running bubblewrap build
+standard output: Broken pipe
+LOJA.md
+app
+build.gradle
+chave.json
+chave.json.enc
+gradle
+gradle.properties
+gradlew
+gradlew.bat
+loja
+manifest-checksum.txt
+settings.gradle
+sha256.txt
+store_icon.png
+twa-manifest.json
+upload.keystore
+upload.keystore.enc
+yes: standard output: Broken pipe
+> Task :app:packageReleaseBundle
+> Task :app:signReleaseBundle
+> Task :app:produceReleaseBundleIdeListingFile
+> Task :app:createReleaseBundleListingFileRedirect
+> Task :app:bundleRelease
+[Incubating] Problems report is available at: file:///home/runner/work/parou-dados/parou-dados/android/build/reports/problems/problems-report.html
+
+Deprecated Gradle features were used in this build, making it incompatible with Gradle 9.0.
+
+You can use '--warning-mode all' to show the individual deprecation warnings and determine if they come from your own scripts or plugins.
+
+For more on this, please refer to https://docs.gradle.org/8.11.1/userguide/command_line_interface.html#sec:command_line_warnings in the Gradle documentation.
+
+BUILD SUCCESSFUL in 1m 4s
+45 actionable tasks: 45 executed
+AAB=app/build/outputs/bundle/release/app-release.aab APK=app/build/outputs/apk/release/app-release-unsigned.apk
+jar signed.
+
+Warning: 
+The signer's certificate is self-signed.
+APK assinado e verificado
+-rw-r--r-- 1 runner runner 1280295 Oct 22 20:25 alinhado.apk
+-rw-r--r-- 1 runner runner 1425402 Oct 22 20:25 app-release-bundle.aab
+-rw-r--r-- 1 runner runner 1332052 Oct 22 20:25 app-release-signed.apk
+[
+  {
+    "relation": [
+      "delegate_permission/common.handle_all_urls"
+    ],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "pt.parou.app",
+      "sha256_cert_fingerprints": [
+        "13:BD:79:AE:A8:96:4D:FF:FD:7E:D3:12:46:F5:59:3A:C6:5D:5F:65:90:9C:C0:CB:56:FD:FA:60:EE:DE:27:3B"
+      ]
+    }
+  }
+]
+https://github.com/solobxy/parou-dados/releases/tag/android
+LOJA.md
+PAROU-1.0.1.aab
+PAROU-1.0.1.apk
+alinhado.apk
+app
+app-release-bundle.aab
+app-release-signed.apk
+app-release-signed.apk.idsig
+assetlinks.json
+build
+build.gradle
+chave.json
+chave.json.enc
+gradle
+gradle.properties
+gradlew
+gradlew.bat
+local.properties
+loja
+manifest-checksum.txt
+settings.gradle
+sha256.txt
+store_icon.png
+twa-manifest.json
+upload.keystore
+upload.keystore.enc
