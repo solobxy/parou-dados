@@ -208,7 +208,7 @@ form.addEventListener('submit',async e=>{
 .prenda{position:fixed;inset:0;z-index:60;display:none}
 .prenda.aberta{display:block}
 .prenda .fundo{position:absolute;inset:0;background:rgba(29,23,25,.3);opacity:0;transition:opacity .3s}
-.prenda .cartao{position:absolute;left:12px;right:12px;bottom:calc(96px + env(safe-area-inset-bottom));background:#fff;padding:28px 22px 22px;transform-origin:92% 110%;transform:translateY(60px) scale(.15) rotate(8deg);opacity:0;transition:transform .55s cubic-bezier(.3,1.35,.5,1),opacity .2s}
+.prenda .cartao{position:absolute;left:12px;right:12px;top:calc(22px + env(safe-area-inset-top));max-height:calc(100% - 44px);overflow:auto;outline:none;background:#fff;padding:28px 22px 22px;transform-origin:88% 100%;transform:translateY(120px) scale(.15) rotate(8deg);opacity:0;transition:transform .55s cubic-bezier(.3,1.35,.5,1),opacity .2s}
 .prenda.vis .fundo{opacity:1}.prenda.vis .cartao{transform:rotate(-1.5deg);opacity:1}
 .prenda .cartao::before{content:"";position:absolute;left:50%;top:-13px;width:110px;height:28px;background:rgba(246,184,200,.85);transform:translateX(-50%) rotate(-3deg)}
 .prenda h2{font-family:"Inter Display","Inter",sans-serif;font-weight:900;font-size:40px;line-height:.9;letter-spacing:-.05em}
@@ -222,7 +222,7 @@ form.addEventListener('submit',async e=>{
 .prenda .estado.ok{font-family:"Chorus","TeX Gyre Chorus",cursive;font-size:24px}
 .prenda .x{position:absolute;right:6px;top:6px;min-width:44px;min-height:44px;border:0;background:none;font:600 14px "Inter",system-ui,sans-serif;cursor:pointer;color:#1D1719}
 .prenda .mel{position:absolute;left:-9999px}
-@media (min-width:700px){.prenda .cartao{left:auto;right:24px;width:380px}}
+@media (min-width:700px){.prenda .cartao{left:auto;right:24px;width:380px;top:auto;bottom:100px;transform-origin:92% 110%}}
 @media (prefers-reduced-motion:reduce){
   .caixa .aure,.caixa.salta svg,.caixa.salta .tampa{animation:none}
   .caixa .tampa,.prenda .cartao,.prenda .fundo{transition:none}
@@ -246,7 +246,7 @@ form.addEventListener('submit',async e=>{
 </button>
 <div class="prenda" id="prenda" role="dialog" aria-modal="true" aria-labelledby="prT" hidden>
   <div class="fundo" data-fecha></div>
-  <div class="cartao">
+  <div class="cartao" tabindex="-1">
     <button class="x" type="button" data-fecha>fechar</button>
     <h2 id="prT">uma prenda <span class="grande">para ti ♡</span></h2>
     <p><strong>10% na tua primeira compra.</strong> deixa o teu email e o código chega-te com o drop 01.</p>
@@ -297,10 +297,13 @@ if(guardado)return;
 caixa.hidden=false;
 if(!calmo){setTimeout(()=>{caixa.classList.add('salta');setTimeout(()=>caixa.classList.remove('salta'),2400)},2200)}
 function abrir(){caixa.classList.add('aberta');prenda.hidden=false;prenda.classList.add('aberta');
-  setTimeout(()=>{prenda.classList.add('vis');email.focus({preventScroll:true})},calmo?0:220)}
+  setTimeout(()=>{prenda.classList.add('vis');prenda.querySelector('.cartao').focus({preventScroll:true})},calmo?0:220)}
 function fechar(){prenda.classList.remove('vis');caixa.classList.remove('aberta');
   setTimeout(()=>{prenda.classList.remove('aberta');prenda.hidden=true;if(guardado)caixa.hidden=true;else caixa.focus()},calmo?0:350)}
 caixa.addEventListener('click',abrir);
+const vv=window.visualViewport,cartao=prenda.querySelector('.cartao');
+if(vv){const ajusta=()=>{if(prenda.hidden)return;cartao.style.maxHeight=(vv.height-44)+'px';cartao.style.top=matchMedia('(min-width:700px)').matches?'':(vv.offsetTop+22)+'px'};vv.addEventListener('resize',ajusta);vv.addEventListener('scroll',ajusta)}
+email.addEventListener('focus',()=>setTimeout(()=>email.scrollIntoView({block:'center',behavior:'smooth'}),300));
 prenda.addEventListener('click',e=>{if(e.target.closest('[data-fecha]'))fechar()});
 addEventListener('keydown',e=>{if(e.key==='Escape'&&!prenda.hidden)fechar()});
 form.addEventListener('submit',async e=>{
