@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="pt-PT">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#DCE8F2">
+<meta name="color-scheme" content="light">
+<title>anjinho · em breve</title>
+<meta name="description" content="anjinho: moda coquette para raparigas românticas. o drop 01 é de inverno. entra no diário e sabe dele antes de toda a gente.">
+<meta property="og:title" content="anjinho · em breve">
+<meta property="og:description" content="o drop 01 é de inverno. entra no diário e sabe dele antes de toda a gente.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath d='M50 86 C 18 64, 6 44, 14 28 C 22 12, 44 14, 50 30 C 56 14, 78 12, 86 28 C 94 44, 82 64, 50 86 Z' fill='%23F6B8C8' stroke='%231D1719' stroke-width='6'/%3E%3C/svg%3E">
+<style>
+@font-face{font-family:"Inter";src:url(/fontes/inter-400.woff) format("woff");font-weight:400;font-display:swap}
+@font-face{font-family:"Inter";src:url(/fontes/inter-600.woff) format("woff");font-weight:600;font-display:swap}
+@font-face{font-family:"Inter Display";src:url(/fontes/interdisplay-800.woff) format("woff");font-weight:800;font-display:swap}
+@font-face{font-family:"Inter Display";src:url(/fontes/interdisplay-900.woff) format("woff");font-weight:900;font-display:swap}
+@font-face{font-family:"Unifont";src:url(/fontes/unifont.woff) format("woff");font-display:swap}
+@font-face{font-family:"Chorus";src:url(/fontes/chorus.woff) format("woff");font-display:swap}
+:root{--papel:#FBF7F2;--tinta:#1D1719;--rosa:#F6B8C8;--ceu:#DCE8F2;--nuvem:#F1E6E4;--e:cubic-bezier(.2,.7,.1,1);--m:20px}
+*{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-text-size-adjust:100%}
+body{background:var(--ceu);color:var(--tinta);font-family:"Inter",system-ui,sans-serif;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+a{color:inherit}
+:focus-visible{outline:3px solid var(--tinta);outline-offset:3px}
+.mao{font-family:"Chorus","Snell Roundhand",cursive}
+.pix{font-family:"Unifont",ui-monospace,monospace}
+.so-leitor{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+header{padding:16px var(--m) 0;display:flex;align-items:center}
+header svg{height:30px;width:auto;display:block}
+.topo{position:relative;padding:44px var(--m) 0}
+.etq{display:inline-block;background:#fff;padding:3px 8px;font-size:15px;transform:rotate(-2deg)}
+h1{position:relative;z-index:2;font-family:"Inter Display","Inter",sans-serif;font-weight:900;font-size:clamp(56px,15.5vw,170px);line-height:.82;letter-spacing:-.065em;margin-top:14px}
+h1 .circ{position:relative;display:inline-block}
+h1 .circ svg{position:absolute;left:-6%;top:-14%;width:112%;height:128%;overflow:visible;z-index:-1}
+.sub{margin-top:22px;font-size:17px;line-height:1.5;max-width:28ch}
+.pagina{position:relative;background:#fff;margin:56px var(--m) 0;padding:40px 24px 36px;transform:rotate(-1deg)}
+.pagina::before{content:"";position:absolute;left:50%;top:-14px;width:120px;height:30px;background:rgba(246,184,200,.85);transform:translateX(-50%) rotate(3deg)}
+.pagina h2{font-family:"Inter Display","Inter",sans-serif;font-weight:800;font-size:44px;line-height:.9;letter-spacing:-.05em}
+.pagina .data{font-size:22px;margin-top:6px}
+.pagina p{margin-top:16px;font-size:17px;line-height:1.55;max-width:36ch}
+.pagina .assin{font-size:28px;margin-top:18px}
+.entra{margin-top:30px;padding-top:26px;border-top:2px dashed var(--rosa)}
+.entra h3{font-family:"Inter Display","Inter",sans-serif;font-weight:800;font-size:30px;letter-spacing:-.04em;line-height:1}
+.entra p{margin-top:10px;font-size:16px}
+form{margin-top:18px;display:flex;flex-wrap:wrap;gap:10px}
+form label{flex:1 1 220px}
+input[type=email]{width:100%;min-height:54px;border:2px solid var(--tinta);background:#fff;padding:0 16px;font:16px "Inter",system-ui,sans-serif;color:var(--tinta);border-radius:0}
+.mel{position:absolute;left:-9999px}
+button{font:inherit;cursor:pointer;min-height:54px;padding:0 24px;border:0;background:var(--rosa);color:var(--tinta);font-weight:600;font-size:16px;display:inline-flex;align-items:center;gap:28px;transition:transform .2s var(--e)}
+button:active{transform:scale(.97)}
+button[disabled]{opacity:.6;cursor:wait}
+.letra{margin-top:12px;font-size:13px;line-height:1.5;color:#5d5056}
+.estado{margin-top:12px;font-size:16px;min-height:1.5em}
+.estado.ok{font-size:24px}
+footer{padding:64px var(--m) calc(32px + env(safe-area-inset-bottom));font-size:13px;display:flex;gap:18px;flex-wrap:wrap;color:#5d5056}
+.st{position:absolute;z-index:6;pointer-events:none}
+.st>svg{width:100%;height:auto;display:block;overflow:visible}
+.cola{opacity:0;transform:var(--r,rotate(0)) scale(1.35)}
+.cola.ok{opacity:1;transform:var(--r,rotate(0)) scale(1);transition:transform .55s var(--e),opacity .25s}
+.flutua>svg{animation:flutua 5s ease-in-out infinite alternate}
+@keyframes flutua{from{transform:translateY(-4px) rotate(-3deg)}to{transform:translateY(5px) rotate(3deg)}}
+@media (min-width:900px){
+  :root{--m:56px}
+  header{padding-top:22px}
+  .topo{display:grid;grid-template-columns:1.7fr 1fr;align-items:end;gap:40px;padding-top:56px}
+  h1{font-size:clamp(80px,9.5vw,160px)}
+  .sub{font-size:19px;margin-bottom:12px}
+  .pagina{max-width:760px;margin:80px auto 0;padding:56px 56px 48px}
+  .pagina h2{font-size:64px}
+}
+@media (prefers-reduced-motion:reduce){
+  .cola{opacity:1;transform:var(--r,rotate(0))}
+  .cola.ok{transition:none}
+  .flutua>svg{animation:none}
+  button{transition:none}
+}
+</style>
+</head>
+<body>
+<header><svg role="img" aria-label="anjinho" xmlns="http://www.w3.org/2000/svg" viewBox="-60 -60 6615 2295"><g transform="translate(0 1681) scale(1 -1)" fill="#1D1719"><path transform="translate(0.0 0)" d="M427 -18C589 -18 680 46 736 149H740V0H1028V716C1028 942 862 1078 573 1078C283 1078 111 940 98 722H375C382 803 454 859 564 859C672 859 737 805 737 727V720C737 652 669 643 476 624C256 604 64 536 64 298C64 87 216 -18 427 -18ZM509 187C410 187 346 231 346 306C346 390 426 429 527 444C622 459 705 473 739 492V386C739 272 651 187 509 187Z"/><path transform="translate(1060.3 0)" d="M399 587C399 751 484 824 606 824C729 824 800 749 800 607V0H1094V661C1094 928 949 1078 724 1078C572 1078 465 1010 394 890V1056H104V0H399Z"/><path transform="translate(2187.6 0)" d="M105 1056V-56C105 -147 72 -185 -6 -185H-72V-418H45C279 -418 400 -296 400 -89V1056Z"/><path transform="translate(2620.0 0)" d="M104 0H399V1056H104Z"/><path transform="translate(3051.3 0)" d="M399 587C399 751 484 824 606 824C729 824 800 749 800 607V0H1094V661C1094 928 949 1078 724 1078C572 1078 465 1010 394 890V1056H104V0H399Z"/><path transform="translate(4178.6 0)" d="M399 587C399 751 484 824 606 824C729 824 800 749 800 607V0H1094V661C1094 928 949 1078 724 1078C575 1078 470 1013 399 897V1490H104V0H399Z"/><path transform="translate(5305.9 0)" d="M594 -24C915 -24 1131 196 1131 527C1131 858 915 1080 594 1080C274 1080 58 858 58 527C58 196 274 -24 594 -24ZM594 215C451 215 355 331 355 527C355 724 452 841 594 841C737 841 834 724 834 527C834 331 738 215 594 215Z"/><ellipse cx="2567.3" cy="1424.8" rx="613.9" ry="162.2" fill="none" stroke="#F6B8C8" stroke-width="94.4"/></g></svg></header>
+
+<main>
+<section class="topo" aria-labelledby="t">
+  <div>
+    <span class="etq pix">♡ save file 01 · inverno ♡</span>
+    <h1 id="t">anjinha,<br>por <span class="circ">dentro.<svg viewBox="0 0 560 220" preserveAspectRatio="none" aria-hidden="true"><path class="traco" d="M30 120 C 20 40, 300 10, 470 40 C 560 58, 540 160, 420 185 C 280 212, 60 200, 40 140 C 30 105, 120 70, 220 62" fill="none" stroke="#F6B8C8" stroke-width="12" stroke-linecap="round"/></svg></span></h1>
+  </div>
+  <p class="sub">a anjinho está quase pronta. o primeiro drop é de inverno e chega primeiro a quem entrar no diário.</p>
+  <div class="st cola flutua" data-f="borboleta" data-e="pixel" style="right:7%;top:6px;width:56px;--r:rotate(-6deg)"></div>
+  <div class="st cola flutua" data-f="coracao" data-e="meiotom" style="right:12%;bottom:-40px;width:46px;--r:rotate(-10deg)"></div>
+</section>
+
+<section class="pagina" aria-labelledby="dt">
+  <h2 id="dt">querido diário,</h2>
+  <p class="data mao">21 de outubro</p>
+  <p>hoje no autocarro a rapariga ao meu lado estava a ouvir um banger da ayesha. laço no cabelo, meias brancas e umas botas de pelo pelas quais eu vendia um rim.</p>
+  <p>não tive coragem de lhe perguntar onde as comprou. então fiz a anjinho.</p>
+  <p class="assin mao">xoxo ♡</p>
+
+  <div class="entra">
+    <h3>entra no diário</h3>
+    <p>sabes do drop 01 antes de toda a gente.</p>
+    <form id="form" novalidate>
+      <label><span class="so-leitor">o teu email</span><input id="email" name="email" type="email" inputmode="email" autocomplete="email" autocapitalize="off" spellcheck="false" placeholder="o teu email" required maxlength="254" aria-describedby="estado letra"></label>
+      <label class="mel" aria-hidden="true">não preencher<input id="site" name="site" tabindex="-1" autocomplete="off"></label>
+      <button type="submit" id="botao">quero entrar <span aria-hidden="true">→</span></button>
+    </form>
+    <p class="letra" id="letra">um email por drop, nada mais. sais quando quiseres. lê a <a href="/privacidade">política de privacidade</a>.</p>
+    <p class="estado" id="estado" role="status" aria-live="polite"></p>
+  </div>
+
+  <div class="st cola" data-f="coracao" data-e="autocolante" style="right:18px;top:-30px;width:58px;--r:rotate(12deg)"></div>
+  <div class="st cola flutua" data-f="laco" data-e="papel" style="left:-14px;bottom:-34px;width:84px;--r:rotate(-12deg)"></div>
+  <div class="st cola" data-f="coelho" data-e="pixel" style="right:16px;bottom:-26px;width:60px;--r:rotate(-6deg)"></div>
+</section>
+</main>
+
+<footer>
+  <span>© 2026 anjinho · portugal</span>
+  <a href="/privacidade">privacidade</a>
+</footer>
+
+<script>
+const reduz=matchMedia('(prefers-reduced-motion: reduce)').matches;
+// autocolantes: laços, corações, borboletas, coelhinhos
+(function(){
+const NS='http://www.w3.org/2000/svg',T='#1D1719',R='#F6B8C8',R2='#E88AA3',W='#FFFFFF';
+const FORMAS={
+ laco:{d:'M50 46 C 32 20, 8 22, 8 40 C 8 58, 30 60, 50 50 C 70 60, 92 58, 92 40 C 92 22, 68 20, 50 46 Z',cx:50,cy:44,x:'M46 52 L 34 88 M54 52 L 68 86',pt:[[50,48,5]]},
+ coracao:{d:'M50 86 C 18 64, 6 44, 14 28 C 22 12, 44 14, 50 30 C 56 14, 78 12, 86 28 C 94 44, 82 64, 50 86 Z',cx:50,cy:46,x:'',pt:[]},
+ borboleta:{d:'M50 50 C 40 20, 10 10, 10 34 C 10 50, 30 52, 48 52 C 26 56, 18 80, 32 86 C 44 90, 50 70, 50 56 C 50 70, 56 90, 68 86 C 82 80, 74 56, 52 52 C 70 52, 90 50, 90 34 C 90 10, 60 20, 50 50 Z',cx:50,cy:52,x:'M50 34 L 50 74 M50 34 C 47 24, 43 18, 38 14 M50 34 C 53 24, 57 18, 62 14',pt:[]},
+ coelho:{d:'M38 50 C 30 34, 26 8, 34 6 C 42 4, 44 30, 46 46 C 48 46, 52 46, 54 46 C 56 30, 58 4, 66 6 C 74 8, 70 34, 62 50 C 76 56, 80 72, 72 84 C 64 94, 36 94, 28 84 C 20 72, 24 56, 38 50 Z',cx:50,cy:60,x:'M46 77 L 50 80 L 54 77',pt:[[40,69,2.8],[60,69,2.8]]}
+};
+const PIX={
+ laco:['...........','.RR.....RR.','RPPR...RPPR','RPPPRTRPPPR','RPPPRTRPPPR','RPPR.T.RPPR','.RR.TTT.RR.','....T.T....','...T...T...','..T.....T..'],
+ coracao:['.TTT.TTT.','TPPPTPPPT','TPWPPPPPT','TPPPPPPPT','.TPPPPPT.','..TPPPT..','...TPT...','....T....'],
+ borboleta:['..T.....T..','...T...T...','RRR..T..RRR','RPPR.T.RPPR','RPPPRTRPPPR','.RPPRTRPPR.','..RPRTRPR..','.RPPRTRPPR.','.RRR.T.RRR.'],
+ coelho:['.TTT...TTT.','.TPT...TPT.','.TPT...TPT.','.TWT...TWT.','.TWTTTTTWT.','TWWWWWWWWWT','TWWTWWWTWWT','TWPWWWWWPWT','TWWWWTWWWWT','.TWWWWWWWT.','..TTTTTTT..']
+};
+let seed=11;const rnd=()=>{seed=(seed*9301+49297)%233280;return seed/233280};
+const el=(n,a)=>{const e=document.createElementNS(NS,n);for(const k in a)e.setAttribute(k,a[k]);return e};
+const tmp=el('svg',{width:0,height:0});tmp.style.position='absolute';document.body.appendChild(tmp);
+function P(d,n){const p=el('path',{d});tmp.appendChild(p);const L=p.getTotalLength();const r=Array.from({length:n},(_,i)=>p.getPointAtLength(L*i/n));p.remove();return r}
+let uid=0;
+function extras(s,F,cor,w){if(F.x)s.append(el('path',{d:F.x,fill:'none',stroke:cor,'stroke-width':w,'stroke-linecap':'round','stroke-linejoin':'round'}));F.pt.forEach(([x,y,r])=>s.append(el('circle',{cx:x,cy:y,r,fill:cor})))}
+function clip(s,F){const id='k'+(uid++);const df=el('defs');const cp=el('clipPath',{id});cp.append(el('path',{d:F.d}));df.append(cp);s.append(df);return el('g',{'clip-path':`url(#${id})`})}
+const EST={
+ autocolante:(s,F,f)=>{s.append(el('path',{d:F.d,fill:f==='coracao'?R:W,stroke:T,'stroke-width':4,'stroke-linejoin':'round'}));extras(s,F,T,4);if(f==='laco')s.append(el('circle',{cx:50,cy:48,r:6,fill:R,stroke:T,'stroke-width':3}))},
+ vetor:(s,F)=>{s.append(el('path',{d:F.d,fill:'none',stroke:R2,'stroke-width':2}));extras(s,F,R2,2);P(F.d,10).forEach(q=>s.append(el('rect',{x:q.x-2.4,y:q.y-2.4,width:4.8,height:4.8,fill:T})))},
+ rabisco:(s,F)=>{let d='';const b=P(F.d,60);for(let k=0;k<3;k++)b.forEach((q,i)=>{const j=()=>(rnd()-.5)*(k?9:6);d+=(i||k?'L':'M')+(q.x+j()).toFixed(1)+' '+(q.y+j()).toFixed(1)});
+  s.append(el('path',{d,fill:'none',stroke:R2,'stroke-width':1.6,'stroke-linejoin':'round'}));extras(s,F,T,2.6)},
+ pontos:(s,F)=>{[1,.7,.42].forEach((k,ri)=>P(F.d,[34,24,14][ri]).forEach(q=>s.append(el('circle',{cx:F.cx+(q.x-F.cx)*k,cy:F.cy+(q.y-F.cy)*k,r:[2.8,2.2,1.6][ri],fill:R2}))));extras(s,F,T,2.6)},
+ meiotom:(s,F)=>{const g=clip(s,F);for(let y=4;y<96;y+=4)for(let x=2;x<98;x+=4){const r=2.1*(1-(y-4)/96)+.3;g.append(el('circle',{cx:x+((y/4)%2?2:0),cy:y,r,fill:T}))}s.append(g);extras(s,F,T,3)},
+ riscas:(s,F)=>{const g=clip(s,F);for(let y=0;y<100;y+=7)g.append(el('rect',{x:0,y,width:100,height:4,fill:R2}));s.append(g);extras(s,F,R2,3.4)},
+ papel:(s,F)=>{s.append(el('path',{d:F.d,fill:R,transform:`rotate(-3 ${F.cx} ${F.cy})`}),el('path',{d:F.d,fill:'none',stroke:T,'stroke-width':2.2,transform:`translate(2.5 2) rotate(2 ${F.cx} ${F.cy})`}));extras(s,F,T,3)},
+ pixel:(s,F,f)=>{const m=PIX[f],h=m.length,w=m[0].length,c=92/Math.max(w,h),ox=(100-w*c)/2,oy=(100-h*c)/2,cor={R:R2,P:R,T,W};
+  m.forEach((row,y)=>[...row].forEach((ch,x)=>{if(ch!=='.')s.append(el('rect',{x:(ox+x*c).toFixed(2),y:(oy+y*c).toFixed(2),width:(c+.3).toFixed(2),height:(c+.3).toFixed(2),fill:cor[ch],'shape-rendering':'crispEdges'}))}))}
+};
+document.querySelectorAll('.st[data-f]').forEach(d=>{const f=d.dataset.f,e=d.dataset.e,s=el('svg',{viewBox:'0 0 100 100','aria-hidden':'true',focusable:'false'});EST[e](s,FORMAS[f],f);d.append(s)});
+tmp.remove();
+})();
+
+// autocolantes colam-se
+const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('ok');io.unobserve(e.target)}}),{threshold:.3});
+document.querySelectorAll('.cola').forEach((el,i)=>{if(reduz)el.classList.add('ok');else{el.style.transitionDelay=(200+i*120)+'ms';io.observe(el)}});
+document.querySelectorAll('.flutua>svg').forEach((s,i)=>s.style.animationDelay=(-i*1.3)+'s');
+// marcador desenha-se
+const tr=document.querySelector('.traco');
+if(tr&&!reduz){const L=tr.getTotalLength();tr.style.strokeDasharray=L;tr.style.strokeDashoffset=L;
+  setTimeout(()=>{tr.style.transition='stroke-dashoffset 1.1s cubic-bezier(.2,.7,.1,1)';tr.style.strokeDashoffset=0},450)}
+// entrar no diário
+const form=document.getElementById('form'),email=document.getElementById('email'),estado=document.getElementById('estado'),botao=document.getElementById('botao');
+form.addEventListener('submit',async e=>{
+  e.preventDefault();
+  const v=email.value.trim();
+  estado.className='estado';
+  if(!/^[^@\s]+@[^@\s]+\.[^@\s]{2,}$/.test(v)){estado.textContent='esse email não parece certo. confirma e tenta outra vez.';email.setAttribute('aria-invalid','true');email.focus();return}
+  email.removeAttribute('aria-invalid');
+  botao.disabled=true;estado.textContent='a guardar…';
+  try{
+    const r=await fetch('/api/lista',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:v,consentimento:true,origem:'espera',site:document.getElementById('site').value})});
+    if(r.ok){estado.className='estado ok mao';estado.textContent='estás dentro ♡ vemo-nos no drop 01.';form.reset()}
+    else if(r.status===429){estado.textContent='muitas tentativas seguidas. espera uns minutos e tenta outra vez.'}
+    else if(r.status===400){estado.textContent='esse email não parece certo. confirma e tenta outra vez.'}
+    else{estado.textContent='não consegui guardar o teu email. tenta outra vez daqui a nada.'}
+  }catch(_){estado.textContent='sem ligação. confirma a internet e tenta outra vez.'}
+  botao.disabled=false;
+});
+</script>
+</body>
+</html>

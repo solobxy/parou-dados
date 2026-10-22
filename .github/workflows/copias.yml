@@ -10,8 +10,12 @@ name: Cópias de segurança
 # - Cada execução testa a cópia como se fosse restaurá-la (decifra, abre e conta os registos).
 #   Se algo falhar, ou se a cópia do servidor estiver velha, a execução falha e o GitHub avisa por email.
 #
+# Também guarda a lista de espera da anjinho.pt (/var/lib/anjinho/lista.jsonl) num ficheiro cifrado à parte.
+#
 # Para restaurar: descarregar o artefacto "copia-AAAA-MM-DD", e correr
 #   openssl enc -d -aes-256-cbc -pbkdf2 -iter 200000 -pass env:HCLOUD_TOKEN -in copia.tgz.enc | tar xzf -
+#   openssl enc -d -aes-256-cbc -pbkdf2 -iter 200000 -pass env:HCLOUD_TOKEN -in anjinho-lista.jsonl.enc > lista.jsonl
+#   (e no servidor: copiar para /var/lib/anjinho/lista.jsonl e systemctl restart anjinho)
 
 on:
   schedule:
@@ -59,13 +63,18 @@ jobs:
           ! grep -q 'ERRO' info.txt || { echo "O servidor reportou erro numa das bases."; exit 1; }
           ssh root@$IP 'cd /var/lib/parou/copias && tar czf - ultima' > ultima.tgz
           ls -l ultima.tgz
+          # Lista de espera da anjinho.pt (pode ainda não existir)
+          ssh root@$IP 'cat /var/lib/anjinho/lista.jsonl 2>/dev/null || true' > anjinho-lista.jsonl
+          echo "Emails na lista da anjinho: $(grep -c . anjinho-lista.jsonl || true)"
 
       - name: Cifrar
         run: |
           DIA=$(date -u +%Y-%m-%d)
           echo "DIA=$DIA" >> "$GITHUB_ENV"
           openssl enc -aes-256-cbc -pbkdf2 -iter 200000 -salt -pass env:HCLOUD_TOKEN -in ultima.tgz -out copia.tgz.enc
-          ls -l copia.tgz.enc
+          openssl enc -aes-256-cbc -pbkdf2 -iter 200000 -salt -pass env:HCLOUD_TOKEN -in anjinho-lista.jsonl -out anjinho-lista.jsonl.enc
+          shred -u anjinho-lista.jsonl
+          ls -l copia.tgz.enc anjinho-lista.jsonl.enc
 
       - name: Testar como se fosse restaurar
         run: |
@@ -92,6 +101,18 @@ jobs:
               resumo.append(f'{nome}: integridade={ok} ' + ' '.join(partes))
           print('\n'.join(resumo))
           open(os.environ['GITHUB_STEP_SUMMARY'], 'a').write('### Cópia de ' + os.environ.get('DIA', '') + '\n```\n' + '\n'.join(resumo) + '\n```\n')
+          # Lista da anjinho: cada linha tem de ser JSON com email
+          import json, subprocess
+          dados = subprocess.run(['openssl','enc','-d','-aes-256-cbc','-pbkdf2','-iter','200000','-pass','env:HCLOUD_TOKEN','-in','../anjinho-lista.jsonl.enc'], capture_output=True, check=True).stdout.decode()
+          linhas = [l for l in dados.splitlines() if l.strip()]
+          try:
+              n = sum(1 for l in linhas if '@' in json.loads(l)['email'])
+              linha = f'anjinho: {n} emails na lista'
+              if n != len(linhas): falhou = True; linha += ' (HÁ LINHAS INVÁLIDAS)'
+          except Exception as e:
+              falhou = True; linha = f'anjinho: lista ilegível ({type(e).__name__})'
+          print(linha)
+          open(os.environ['GITHUB_STEP_SUMMARY'], 'a').write(linha + '\n')
           sys.exit(1 if falhou else 0)
           PY
 
@@ -99,6 +120,8 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: copia-${{ env.DIA }}
-          path: copia.tgz.enc
+          path: |
+            copia.tgz.enc
+            anjinho-lista.jsonl.enc
           retention-days: 90
           if-no-files-found: error
