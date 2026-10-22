@@ -241,7 +241,7 @@ const CARTOES=[
 ];
 function cartaoHTML(c){return `<div class="cc ${c.cls}" aria-hidden="true"><div class="fita"></div><div class="logo">${c.logo}</div><span class="tag">${c.tag}</span><span class="v">${c.v}<small>€</small></span><div class="st" data-f="${c.f}" data-e="${c.e}"></div></div>`}
 const lista=document.getElementById('cartoes');
-let escolhido=CARTOES[1];
+let escolhido=CARTOES.find(c=>c.v===+new URLSearchParams(location.search).get('v'))||CARTOES[1];
 CARTOES.forEach(c=>{const b=document.createElement('button');b.type='button';b.className='cartao-op';b.setAttribute('role','radio');b.setAttribute('aria-checked',c===escolhido);b.setAttribute('aria-label',`cartão presente de ${c.v} euros`);
  b.innerHTML=cartaoHTML(c)+`<p class="val">cartão de ${c.v} €<span>${c===escolhido?'escolhido':'escolher'}</span></p>`;
  b.addEventListener('click',()=>escolher(c));lista.appendChild(b)});
