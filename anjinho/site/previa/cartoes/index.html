@@ -226,6 +226,7 @@ atualizaSaco(0);
 
 <footer><span>© 2026 anjinho · portugal</span><a href="/privacidade">privacidade</a></footer>
 
+<script src="/previa/loja.js"></script>
 <script>
 const reduz=matchMedia('(prefers-reduced-motion: reduce)').matches;
 const LOGO=document.querySelector('nav svg').outerHTML;
@@ -237,7 +238,6 @@ const CARTOES=[
  {v:50,cls:'c50',f:'borboleta',e:'papel',tag:'♡ save file 50',logo:LOGO},
  {v:100,cls:'c100',f:'coelho',e:'autocolante',tag:'♡ save file 100',logo:LOGO_BRANCO}
 ];
-const eur=n=>new Intl.NumberFormat('pt-PT',{style:'currency',currency:'EUR'}).format(n);
 function cartaoHTML(c){return `<div class="cc ${c.cls}" aria-hidden="true"><div class="fita"></div><div class="logo">${c.logo}</div><span class="tag">${c.tag}</span><span class="v">${c.v}<small>€</small></span><div class="st" data-f="${c.f}" data-e="${c.e}"></div></div>`}
 const lista=document.getElementById('cartoes');
 let escolhido=CARTOES[1];
@@ -261,7 +261,6 @@ const q=id=>document.getElementById(id);
 document.querySelectorAll('input[name=quando]').forEach(r=>r.addEventListener('change',()=>{const dia=document.querySelector('input[name=quando]:checked').value==='dia';q('qData').hidden=!dia;if(dia&&!q('qData').value){const d=new Date();d.setDate(d.getDate()+1);q('qData').value=d.toISOString().slice(0,10)}atualiza()}));
 const hoje=new Date();q('qData').min=hoje.toISOString().slice(0,10);const max=new Date();max.setDate(max.getDate()+365);q('qData').max=max.toISOString().slice(0,10);
 ['qNome','qEmail','qMsg','qDe','qData'].forEach(id=>q(id).addEventListener('input',()=>atualiza()));
-const esc=s=>s.replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 function atualiza(redesenha){
  const nome=q('qNome').value.trim(),de=q('qDe').value.trim(),msg=q('qMsg').value;
  q('qConta').textContent=`${msg.length}/200`;
@@ -274,15 +273,13 @@ function atualiza(redesenha){
  q('bVal').textContent=eur(escolhido.v);
 }
 // adicionar ao saco (pré-visualização: ainda não há pagamentos)
-let saco=0;
 q('add').onclick=()=>{
  q('estado').textContent='';
  if(presente){const em=q('qEmail').value.trim();
   if(!/^[^@\s]+@[^@\s]+\.[^@\s]{2,}$/.test(em)){q('qEmail').setAttribute('aria-invalid','true');q('qEmailErro').textContent='escreve o email de quem vai receber o cartão.';q('qEmail').focus();return}
   q('qEmail').removeAttribute('aria-invalid');q('qEmailErro').textContent='';}
- saco++;atualizaSaco(saco);
- const quando=presente?(document.querySelector('input[name=quando]:checked').value==='dia'&&q('qData').value?` no dia ${new Date(q('qData').value+'T12:00').toLocaleDateString('pt-PT',{day:'numeric',month:'long'})}`:' logo a seguir à compra'):'';
- q('estado').innerHTML=`cartão de ${eur(escolhido.v)} no saco ♡${presente?` vai para ${esc(q('qEmail').value.trim())}${quando}.`:''}<br><span style="color:#5d5056">isto ainda é uma pré-visualização: os cartões presente ficam à venda quando a loja abrir.</span>`;
+ const para=presente?(q('qNome').value.trim()||q('qEmail').value.trim()):'';
+ LOJA.adicionar({id:'cartao-'+escolhido.v,nome:`cartão presente ${escolhido.v} €`,preco:escolhido.v,para,img:''});
 };
 // letras recortadas
 (function(){const cores=['#F6B8C8','#FFFFFF','#DCE8F2','#F1E6E4'];let seed=5;const rnd=()=>{seed=(seed*9301+49297)%233280;return seed/233280};

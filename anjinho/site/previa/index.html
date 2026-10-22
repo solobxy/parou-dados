@@ -93,9 +93,11 @@ nav .saco{margin-left:auto;font-size:14px;min-height:44px;display:flex;align-ite
 .cab p{font-size:14px;max-width:18ch;text-align:right}
 .grelha{display:grid;grid-template-columns:1fr 1fr;gap:28px 12px}
 .peca{text-align:left;display:block;width:100%}
-.peca .img{aspect-ratio:3/4;display:flex;align-items:center;justify-content:center;font-size:11px;color:#9c8a91;position:relative;text-align:center;padding:0 22%}
+.peca .img{aspect-ratio:3/4;display:flex;align-items:center;justify-content:center;font-size:11px;color:#9c8a91;position:relative;text-align:center;padding:0 2%}
 .peca .img svg{position:absolute;left:-4%;right:-4%;bottom:10%;width:108%;height:58%;overflow:visible;transition:transform .5s var(--e)}
 .peca .img span{position:relative}
+.peca .img img{position:relative;z-index:1;max-width:96%;max-height:86%;object-fit:contain;filter:drop-shadow(0 14px 14px rgba(29,23,25,.12));transition:transform .5s var(--e)}
+.peca:hover .img img,.peca:focus-visible .img img{transform:translateY(-6px) rotate(-2deg)}
 .peca:hover .img svg,.peca:focus-visible .img svg{transform:scale(1.04) rotate(-1.5deg)}
 .peca .nome{margin-top:10px;font-size:14px;display:flex;justify-content:space-between;gap:8px}
 .peca .nome span{opacity:.55}
@@ -284,7 +286,7 @@ atualizaSaco(0);
 
 <section class="drop" id="drop" aria-labelledby="drt">
   <div class="resp" data-s="59" style="right:-420px;top:26%;width:900px;opacity:.5"></div>
-  <div class="cab"><h2 id="drt" class="recorte" aria-label="drop 01">drop 01</h2><p>drop de inverno. 6 peças.</p></div>
+  <div class="cab"><h2 id="drt" class="recorte" aria-label="drop 01">drop 01</h2><p>drop de inverno. 3 peças.</p></div>
   <div class="grelha" id="grelha"></div>
   <div class="st cola" data-f="coracao" data-e="pixel" style="right:var(--m);top:104px;width:46px;--r:rotate(8deg)"></div>
   <div class="st cola" data-f="borboleta" data-e="pontos" style="left:56%;bottom:-36px;width:80px;--r:rotate(-10deg)"></div>
@@ -342,48 +344,15 @@ atualizaSaco(0);
   </div>
 </div>
 
+<script src="/previa/loja.js"></script>
 <script>
-const PECAS=[
- {id:'botas',nome:'botas nuvem',preco:59.9,desc:'camurça rosa, pelo sintético removível e renda com laço. sola alta e leve.',nota:'a peça do drop ♡',tam:['36','37','38','39']},
- {id:'casaco',nome:'casaco malha laço',preco:49.9,desc:'malha grossa e macia, botões de pérola e um laço de cetim ao peito.',nota:'por cima de tudo',tam:['xs','s','m','l']},
- {id:'polainas',nome:'polainas renda',preco:19.9,desc:'malha canelada com renda no topo. por cima de meias brancas ou de collants.',nota:'com as botas nuvem',tam:['único']},
- {id:'orelhas',nome:'protetores de orelhas',preco:24.9,desc:'pelo sintético branco com um laço rosa. dobram-se e cabem na mala.',nota:'para o autocarro das 7h',tam:['único']},
- {id:'cachecol',nome:'cachecol mohair',preco:29.9,desc:'rosa pálido, comprido e leve. dá duas voltas e ainda sobra.',nota:'cheira a inverno',tam:['único']},
- {id:'mala',nome:'mala de pelo',preco:34.9,desc:'pelo sintético cor de nuvem, alça curta e fecho com laço.',nota:'cabe o telemóvel e o batom',tam:['único']}
-];
-const NUVENS=[
- 'M40 190 C 6 186, 4 130, 46 122 C 40 74, 96 56, 124 86 C 140 34, 214 24, 238 74 C 262 40, 330 50, 330 102 C 376 98, 400 150, 370 176 C 396 214, 352 246, 314 230 C 290 258, 230 256, 210 234 C 182 258, 124 256, 106 230 C 80 248, 34 232, 40 190 Z',
- 'M30 170 C 4 150, 18 104, 60 108 C 62 62, 120 48, 146 78 C 170 30, 250 36, 260 86 C 300 58, 366 82, 352 132 C 396 146, 392 206, 350 212 C 344 248, 288 254, 264 232 C 236 258, 176 256, 158 230 C 128 252, 74 244, 70 210 C 34 216, 14 196, 30 170 Z',
- 'M52 176 C 14 168, 20 112, 64 116 C 72 70, 132 64, 150 100 C 176 48, 252 52, 266 104 C 306 80, 368 110, 350 156 C 392 176, 374 232, 330 226 C 312 256, 252 258, 232 232 C 204 256, 142 254, 128 226 C 92 246, 44 224, 52 176 Z'
-];
-const CORES=['#F6E4E8','#ECEFF3','#F1E6E4'];
-const eur=new Intl.NumberFormat('pt-PT',{style:'currency',currency:'EUR'});
 const reduz=matchMedia('(prefers-reduced-motion: reduce)').matches;
 const g=document.getElementById('grelha');
 PECAS.forEach((p,i)=>{
-  const b=document.createElement('button');b.className='peca';b.dataset.id=p.id;
-  const c=NUVENS[i%NUVENS.length], cor=CORES[i%CORES.length];
-  b.innerHTML=`<div class="img"><svg viewBox="0 0 400 260" preserveAspectRatio="none" aria-hidden="true"><path d="${c}" fill="${cor}"/></svg><span>foto recortada · ${p.nome}</span></div><p class="nome">${p.nome}<span>ver</span></p>`;
-  b.setAttribute('aria-label',p.nome+', ver peça e preço');
-  b.addEventListener('click',()=>abrir(p,b));g.appendChild(b);
+  const a=document.createElement('a');a.className='peca';a.href='/previa/peca/?p='+p.id;
+  a.innerHTML=`<div class="img"><svg viewBox="0 0 400 260" preserveAspectRatio="none" aria-hidden="true"><path d="${NUVENS[i%3]}" fill="${CORES_NUVEM[i%3]}"/></svg><img src="${IMG+p.cores[0].imgs[0][0]}" alt="${esc(p.nome)}" loading="lazy"></div><p class="nome">${esc(p.nome)}<span>ver</span></p>`;
+  g.appendChild(a);
 });
-// ficha
-const F=document.getElementById('ficha');let ultimo=null,tamSel=null,saco=0;
-function abrir(p,origem){
-  ultimo=origem;tamSel=null;
-  const k=PECAS.indexOf(p);fImg.innerHTML=`<svg viewBox="0 0 400 260" preserveAspectRatio="none" aria-hidden="true"><path d="${NUVENS[k%3]}" fill="${CORES[k%3]}"/></svg><span>foto recortada · ${p.nome}</span>`;fNome.textContent=p.nome;fPreco.textContent=eur.format(p.preco);
-  fDesc.textContent=p.desc;fNota.textContent=p.nota;fTam.innerHTML='';
-  p.tam.forEach(t=>{const x=document.createElement('button');x.textContent=t;x.setAttribute('aria-pressed','false');
-    x.onclick=()=>{[...fTam.children].forEach(c=>c.setAttribute('aria-pressed','false'));x.setAttribute('aria-pressed','true');tamSel=t;fAdd.firstChild.textContent='pôr no saco ';};fTam.appendChild(x)});
-  if(p.tam.length===1){fTam.firstChild.setAttribute('aria-pressed','true');tamSel=p.tam[0]}
-  F.hidden=false;F.classList.add('aberta');requestAnimationFrame(()=>F.classList.add('vis'));
-  document.body.style.overflow='hidden';setTimeout(()=>F.querySelector('.fechar').focus(),50);
-}
-function fechar(){F.classList.remove('vis');setTimeout(()=>{F.classList.remove('aberta');F.hidden=true},reduz?0:400);document.body.style.overflow='';ultimo&&ultimo.focus()}
-F.addEventListener('click',e=>{if(e.target.closest('[data-fechar]'))fechar()});
-addEventListener('keydown',e=>{if(e.key==='Escape'&&!F.hidden)fechar()});
-fAdd.onclick=()=>{if(!tamSel){fAdd.firstChild.textContent='escolhe o tamanho primeiro ';fTam.querySelector('button').focus();return}
-  saco++;atualizaSaco(saco);fechar()};
 // nav sólida depois do hero
 const nav=document.getElementById('nav');
 new IntersectionObserver(([e])=>nav.classList.toggle('solid',!e.isIntersecting),{rootMargin:'-80px 0px 0px 0px'}).observe(document.querySelector('.hero'));
