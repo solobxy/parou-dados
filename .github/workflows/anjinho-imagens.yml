@@ -1,0 +1,52 @@
+name: anjinho · trazer imagens
+
+# Descarrega imagens geradas (ex.: Higgsfield) para anjinho/site/previa/img/look/
+# e guarda-as no repositório, já reduzidas e em WebP.
+# entrada "lista": linhas "nome url" (nome sem extensão)
+
+on:
+  workflow_dispatch:
+    inputs:
+      lista:
+        description: "linhas: nome url"
+        required: true
+
+permissions:
+  contents: write
+
+concurrency:
+  group: anjinho-imagens
+  cancel-in-progress: false
+
+jobs:
+  trazer:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Descarregar e converter
+        env:
+          LISTA: ${{ inputs.lista }}
+        run: |
+          mkdir -p anjinho/site/previa/img/look
+          python3 -m pip install -q pillow
+          printf '%s\n' "$LISTA" | while read -r nome url; do
+            [ -n "$nome" ] || continue
+            case "$nome" in *[!a-z0-9_-]*) echo "nome inválido: $nome"; exit 1;; esac
+            case "$url" in https://*) ;; *) echo "url inválido"; exit 1;; esac
+            curl -fsSL -m 120 "$url" -o "/tmp/$nome.src"
+            python3 - "$nome" <<'PY'
+          import sys
+          from PIL import Image
+          n=sys.argv[1]
+          im=Image.open(f'/tmp/{n}.src').convert('RGB')
+          im.thumbnail((1200,1200))
+          im.save(f'anjinho/site/previa/img/look/{n}.webp',quality=84,method=6)
+          print(n,im.size)
+          PY
+          done
+      - name: Guardar
+        run: |
+          git config user.name "parou-dados"; git config user.email "actions@users.noreply.github.com"
+          git add anjinho/site/previa/img/look
+          git commit -q -m "anjinho: imagens do lookbook" || exit 0
+          git pull -q --rebase && git push -q
