@@ -518,7 +518,7 @@ addEventListener('scroll',()=>{if(!pend){pend=true;requestAnimationFrame(tick)}}
 #borb svg{width:100%;height:100%;display:block;overflow:visible}
 #borb .f2{display:none}#borb.fechada .f1{display:none}#borb.fechada .f2{display:block}
 .caixa{position:fixed;right:14px;bottom:calc(14px + env(safe-area-inset-bottom));z-index:30;width:68px;height:68px;padding:0;border:0;background:none;cursor:pointer;-webkit-tap-highlight-color:transparent}
-.caixa svg{width:100%;height:100%;overflow:visible;display:block}
+.caixa svg{width:100%;height:100%;overflow:visible;display:block;filter:drop-shadow(2px 0 0 #fff) drop-shadow(-2px 0 0 #fff) drop-shadow(0 2px 0 #fff) drop-shadow(0 -2px 0 #fff)}
 .caixa .tampa{transform-box:fill-box;transform-origin:20% 100%;transition:transform .5s cubic-bezier(.3,1.4,.5,1)}
 .caixa .aure{transform-box:fill-box;transform-origin:center;animation:aure 2.6s ease-in-out infinite alternate}
 @keyframes aure{from{transform:translateY(-2px)}to{transform:translateY(2px)}}
@@ -561,14 +561,23 @@ addEventListener('scroll',()=>{if(!pend){pend=true;requestAnimationFrame(tick)}}
   <svg viewBox="0 0 68 68" aria-hidden="true">
     <ellipse class="aure" cx="34" cy="6" rx="15" ry="4.5" fill="none" stroke="#F6B8C8" stroke-width="3.5"/>
     <g>
-      <rect x="13" y="34" width="42" height="28" fill="#F6B8C8" stroke="#1D1719" stroke-width="3"/>
-      <rect x="30.5" y="34" width="7" height="28" fill="#fff" stroke="#1D1719" stroke-width="2.5"/>
+      <polygon points="13,34 34,48 13,62" fill="#E795AA"/>
+      <polygon points="13,34 55,34 34,48" fill="#F6B8C8"/>
+      <polygon points="55,34 55,62 34,48" fill="#EFA0B5"/>
+      <polygon points="13,62 34,48 55,62" fill="#D9849C"/>
+      <polygon points="31.5,34 36.5,34 36,62 32,62" fill="#1D1719"/>
     </g>
     <g class="tampa">
-      <rect x="9" y="24" width="50" height="12" fill="#F6B8C8" stroke="#1D1719" stroke-width="3"/>
-      <rect x="30.5" y="24" width="7" height="12" fill="#fff" stroke="#1D1719" stroke-width="2.5"/>
-      <path d="M34 24 C 26 12, 14 12, 18 20 C 21 26, 30 25, 34 24 Z M34 24 C 42 12, 54 12, 50 20 C 47 26, 38 25, 34 24 Z" fill="#fff" stroke="#1D1719" stroke-width="2.5" stroke-linejoin="round"/>
-      <circle cx="34" cy="23" r="3.5" fill="#F6B8C8" stroke="#1D1719" stroke-width="2.5"/>
+      <polygon points="9,24 59,24 34,30" fill="#F8C6D3"/>
+      <polygon points="9,24 34,30 9,36" fill="#E795AA"/>
+      <polygon points="59,24 59,36 34,30" fill="#EFA0B5"/>
+      <polygon points="9,36 34,30 59,36" fill="#C9607D"/>
+      <polygon points="31.5,24 36.5,24 36.5,36 31.5,36" fill="#1D1719"/>
+      <g transform="translate(16,6) scale(.36)">
+        <polygon points="50,46 8,30 22,62" fill="#E88AA3"/><polygon points="50,46 8,30 30,22" fill="#C9607D"/><polygon points="50,46 22,62 44,54" fill="#F6B8C8"/>
+        <polygon points="50,46 92,30 78,62" fill="#E88AA3"/><polygon points="50,46 92,30 70,22" fill="#C9607D"/><polygon points="50,46 78,62 56,54" fill="#F6B8C8"/>
+        <polygon points="44,50 34,88 40,86 50,54" fill="#1D1719"/><polygon points="56,50 68,86 62,87 50,54" fill="#1D1719"/>
+      </g>
     </g>
   </svg>
 </button>
