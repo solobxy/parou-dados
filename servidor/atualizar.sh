@@ -40,7 +40,7 @@ sed "s/{HOST_TESTE}/$HOST_TESTE/g" "$SERV/Caddyfile" > /tmp/Caddyfile.novo
 # O domínio só entra quando já aponta para este servidor (senão o Caddy falhava o
 # certificado e ficava a tentar com esperas cada vez maiores)
 MEU_IP="$(echo "${HOST_TESTE%%.sslip.io}" | tr '-' '.')"
-for DOM in parou.pt www.parou.pt; do
+for DOM in parou.pt www.parou.pt anjinho.pt www.anjinho.pt; do
   IP_DOM="$( (dig +short A "$DOM" @1.1.1.1 2>/dev/null || getent ahostsv4 "$DOM" | awk '{print $1}') | grep -E '^[0-9.]+$' | head -1)"
   if [ "$IP_DOM" != "$MEU_IP" ]; then
     sed -i "/^# INICIO $DOM\$/,/^# FIM $DOM\$/d" /tmp/Caddyfile.novo
@@ -51,6 +51,26 @@ if ! cmp -s /tmp/Caddyfile.novo /etc/caddy/Caddyfile; then
     cp /tmp/Caddyfile.novo /etc/caddy/Caddyfile
     systemctl reload caddy || systemctl restart caddy
   fi
+fi
+
+# anjinho.pt: site estático e lista de espera (os emails ficam em /var/lib/anjinho, fora do repositório)
+ANJ=$BASE/servidor/anjinho
+if [ -d "$ANJ/site" ]; then
+  if ! diff -rq "$ANJ/site" /var/www/anjinho >/dev/null 2>&1; then
+    rm -rf /var/www/anjinho.novo && mkdir -p /var/www && cp -r "$ANJ/site" /var/www/anjinho.novo \
+      && chmod -R a+rX /var/www/anjinho.novo \
+      && rm -rf /var/www/anjinho.velho && { [ ! -d /var/www/anjinho ] || mv /var/www/anjinho /var/www/anjinho.velho; } \
+      && mv /var/www/anjinho.novo /var/www/anjinho && rm -rf /var/www/anjinho.velho
+  fi
+  REINICIAR_ANJ=""
+  if ! cmp -s "$ANJ/lista.mjs" /opt/anjinho/lista.mjs; then
+    mkdir -p /opt/anjinho && install -m 644 "$ANJ/lista.mjs" /opt/anjinho/lista.mjs && REINICIAR_ANJ=1
+  fi
+  if ! cmp -s "$SERV/anjinho.service" /etc/systemd/system/anjinho.service; then
+    cp "$SERV/anjinho.service" /etc/systemd/system/anjinho.service && systemctl daemon-reload && REINICIAR_ANJ=1
+  fi
+  systemctl is-enabled --quiet anjinho 2>/dev/null || systemctl enable anjinho >/dev/null 2>&1
+  if [ -n "$REINICIAR_ANJ" ]; then systemctl restart anjinho; else systemctl is-active --quiet anjinho || systemctl start anjinho; fi
 fi
 
 # O próprio atualizador, se mudou no repositório

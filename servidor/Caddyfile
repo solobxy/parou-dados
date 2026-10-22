@@ -46,3 +46,46 @@ www.parou.pt {
 	redir https://parou.pt{uri} permanent
 }
 # FIM www.parou.pt
+
+# ANJINHO.PT - lista de espera (site estático em /var/www/anjinho + /api/lista no 127.0.0.1:3100)
+(anjinho) {
+	encode zstd gzip
+	header {
+		Strict-Transport-Security "max-age=31536000"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		Permissions-Policy "geolocation=(), camera=(), microphone=()"
+		Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; form-action 'self'; frame-ancestors 'none'; base-uri 'none'"
+		-Server
+	}
+	handle /api/lista {
+		request_body {
+			max_size 4KB
+		}
+		reverse_proxy 127.0.0.1:3100
+	}
+	handle {
+		root * /var/www/anjinho
+		@fontes path /fontes/*
+		header @fontes Cache-Control "public, max-age=31536000, immutable"
+		try_files {path} {path}.html
+		file_server
+	}
+}
+
+# Endereço de testes da anjinho (funciona antes de o domínio apontar para aqui)
+anjinho.{HOST_TESTE} {
+	import anjinho
+}
+
+# INICIO anjinho.pt
+anjinho.pt {
+	import anjinho
+}
+# FIM anjinho.pt
+
+# INICIO www.anjinho.pt
+www.anjinho.pt {
+	redir https://anjinho.pt{uri} permanent
+}
+# FIM www.anjinho.pt
