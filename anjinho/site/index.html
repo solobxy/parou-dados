@@ -100,7 +100,7 @@ footer{padding:64px var(--m) calc(32px + env(safe-area-inset-bottom));font-size:
 
   <div class="entra">
     <h3>entra no diário</h3>
-    <p>sabes do drop 01 antes de toda a gente.</p>
+    <p>sabes do drop 01 antes de toda a gente e ganhas 10% na primeira compra.</p>
     <form id="form" novalidate>
       <label><span class="so-leitor">o teu email</span><input id="email" name="email" type="email" inputmode="email" autocomplete="email" autocapitalize="off" spellcheck="false" placeholder="o teu email" required maxlength="254" aria-describedby="estado letra"></label>
       <label class="mel" aria-hidden="true">não preencher<input id="site" name="site" tabindex="-1" autocomplete="off"></label>
@@ -188,5 +188,136 @@ form.addEventListener('submit',async e=>{
   botao.disabled=false;
 });
 </script>
+<!-- borboleta-scroll e caixa-prenda -->
+<style>
+.caixa[hidden],.prenda[hidden],.prenda form[hidden]{display:none!important}
+#borb{position:fixed;right:6px;top:0;width:26px;height:22px;z-index:25;pointer-events:none;will-change:transform}
+#borb svg{width:100%;height:100%;display:block;overflow:visible}
+#borb .f2{display:none}#borb.fechada .f1{display:none}#borb.fechada .f2{display:block}
+.caixa{position:fixed;right:14px;bottom:calc(14px + env(safe-area-inset-bottom));z-index:30;width:68px;height:68px;padding:0;border:0;background:none;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.caixa svg{width:100%;height:100%;overflow:visible;display:block}
+.caixa .tampa{transform-box:fill-box;transform-origin:20% 100%;transition:transform .5s cubic-bezier(.3,1.4,.5,1)}
+.caixa .aure{transform-box:fill-box;transform-origin:center;animation:aure 2.6s ease-in-out infinite alternate}
+@keyframes aure{from{transform:translateY(-2px)}to{transform:translateY(2px)}}
+@keyframes salto{0%,100%{transform:translateY(0) scale(1)}12%{transform:translateY(0) scale(1.12,.88)}32%{transform:translateY(-24px) scale(.94,1.06) rotate(-4deg)}52%{transform:translateY(0) scale(1.1,.9)}68%{transform:translateY(-9px) rotate(3deg)}84%{transform:translateY(0) scale(1.03,.97)}}
+@keyframes espreita{0%,100%{transform:none}30%,60%{transform:translateY(-7px) rotate(-8deg)}}
+.caixa.salta svg{animation:salto 1.15s cubic-bezier(.3,.7,.3,1) 2}
+.caixa.salta .tampa{animation:espreita 1.15s ease-in-out 2}
+.caixa.aberta .tampa{transform:translateY(-16px) rotate(-28deg)}
+.caixa:focus-visible{outline:3px solid #1D1719;outline-offset:4px}
+.prenda{position:fixed;inset:0;z-index:60;display:none}
+.prenda.aberta{display:block}
+.prenda .fundo{position:absolute;inset:0;background:rgba(29,23,25,.3);opacity:0;transition:opacity .3s}
+.prenda .cartao{position:absolute;left:12px;right:12px;bottom:calc(96px + env(safe-area-inset-bottom));background:#fff;padding:28px 22px 22px;transform-origin:92% 110%;transform:translateY(60px) scale(.15) rotate(8deg);opacity:0;transition:transform .55s cubic-bezier(.3,1.35,.5,1),opacity .2s}
+.prenda.vis .fundo{opacity:1}.prenda.vis .cartao{transform:rotate(-1.5deg);opacity:1}
+.prenda .cartao::before{content:"";position:absolute;left:50%;top:-13px;width:110px;height:28px;background:rgba(246,184,200,.85);transform:translateX(-50%) rotate(-3deg)}
+.prenda h2{font-family:"Inter Display","Inter",sans-serif;font-weight:900;font-size:40px;line-height:.9;letter-spacing:-.05em}
+.prenda .grande{display:inline-block;background:#F6B8C8;padding:0 .12em;transform:rotate(-2deg)}
+.prenda p{margin-top:12px;font-size:16px;line-height:1.5}
+.prenda form{margin-top:16px;display:flex;flex-direction:column;gap:10px}
+.prenda input[type=email]{width:100%;min-height:52px;border:2px solid #1D1719;background:#fff;padding:0 14px;font:16px "Inter",system-ui,sans-serif;color:#1D1719;border-radius:0}
+.prenda button[type=submit]{min-height:52px;border:0;background:#1D1719;color:#FBF7F2;font:600 16px "Inter",system-ui,sans-serif;cursor:pointer;display:flex;align-items:center;justify-content:space-between;padding:0 20px}
+.prenda .letra{font-size:12px;color:#5d5056;margin-top:10px;line-height:1.5}
+.prenda .estado{font-size:15px;margin-top:10px;min-height:1.4em}
+.prenda .estado.ok{font-family:"Chorus","TeX Gyre Chorus",cursive;font-size:24px}
+.prenda .x{position:absolute;right:6px;top:6px;min-width:44px;min-height:44px;border:0;background:none;font:600 14px "Inter",system-ui,sans-serif;cursor:pointer;color:#1D1719}
+.prenda .mel{position:absolute;left:-9999px}
+@media (min-width:700px){.prenda .cartao{left:auto;right:24px;width:380px}}
+@media (prefers-reduced-motion:reduce){
+  .caixa .aure,.caixa.salta svg,.caixa.salta .tampa{animation:none}
+  .caixa .tampa,.prenda .cartao,.prenda .fundo{transition:none}
+}
+</style>
+<div id="borb" aria-hidden="true"><svg viewBox="0 0 11 9" shape-rendering="crispEdges"><g class="f1"></g><g class="f2"></g></svg></div>
+<button class="caixa" id="caixa" type="button" aria-haspopup="dialog" aria-label="abrir prenda: 10% na primeira compra" hidden>
+  <svg viewBox="0 0 68 68" aria-hidden="true">
+    <ellipse class="aure" cx="34" cy="6" rx="15" ry="4.5" fill="none" stroke="#F6B8C8" stroke-width="3.5"/>
+    <g>
+      <rect x="13" y="34" width="42" height="28" fill="#F6B8C8" stroke="#1D1719" stroke-width="3"/>
+      <rect x="30.5" y="34" width="7" height="28" fill="#fff" stroke="#1D1719" stroke-width="2.5"/>
+    </g>
+    <g class="tampa">
+      <rect x="9" y="24" width="50" height="12" fill="#F6B8C8" stroke="#1D1719" stroke-width="3"/>
+      <rect x="30.5" y="24" width="7" height="12" fill="#fff" stroke="#1D1719" stroke-width="2.5"/>
+      <path d="M34 24 C 26 12, 14 12, 18 20 C 21 26, 30 25, 34 24 Z M34 24 C 42 12, 54 12, 50 20 C 47 26, 38 25, 34 24 Z" fill="#fff" stroke="#1D1719" stroke-width="2.5" stroke-linejoin="round"/>
+      <circle cx="34" cy="23" r="3.5" fill="#F6B8C8" stroke="#1D1719" stroke-width="2.5"/>
+    </g>
+  </svg>
+</button>
+<div class="prenda" id="prenda" role="dialog" aria-modal="true" aria-labelledby="prT" hidden>
+  <div class="fundo" data-fecha></div>
+  <div class="cartao">
+    <button class="x" type="button" data-fecha>fechar</button>
+    <h2 id="prT">uma prenda <span class="grande">para ti ♡</span></h2>
+    <p><strong>10% na tua primeira compra.</strong> deixa o teu email e o código chega-te com o drop 01.</p>
+    <form id="prForm" novalidate>
+      <label><span class="so-leitor skip">o teu email</span><input id="prEmail" type="email" inputmode="email" autocomplete="email" autocapitalize="off" spellcheck="false" placeholder="o teu email" maxlength="254" required aria-describedby="prEstado"></label>
+      <label class="mel" aria-hidden="true">não preencher<input id="prSite" tabindex="-1" autocomplete="off"></label>
+      <button type="submit" id="prBotao">quero a prenda <span aria-hidden="true">→</span></button>
+    </form>
+    <p class="estado" id="prEstado" role="status" aria-live="polite"></p>
+    <p class="letra">entras no diário da anjinho: um email por drop, nada mais. sais quando quiseres. <a href="/privacidade">privacidade</a>.</p>
+  </div>
+</div>
+<script>
+(function(){
+const calmo=matchMedia('(prefers-reduced-motion: reduce)').matches;
+let guardado=false;try{guardado=localStorage.getItem('anjinho-prenda')==='ok'}catch(_){}
+// --- borboleta: desenha os 2 fotogramas em pixel
+const NS='http://www.w3.org/2000/svg',COR={R:'#E88AA3',P:'#F6B8C8',T:'#1D1719'};
+const F1=['..T.....T..','...T...T...','RRR..T..RRR','RPPR.T.RPPR','RPPPRTRPPPR','.RPPRTRPPR.','..RPRTRPR..','.RPPRTRPPR.','.RRR.T.RRR.'];
+const F2=['..T.....T..','...T...T...','...R.T.R...','..RPRTRPR..','..RPRTRPR..','...RRTRR...','...RPTPR...','...RRTRR...','.....T.....'];
+const borb=document.getElementById('borb');
+[[F1,'.f1'],[F2,'.f2']].forEach(([m,sel])=>{const g=borb.querySelector(sel);m.forEach((l,y)=>[...l].forEach((c,x)=>{if(c!=='.'){const r=document.createElementNS(NS,'rect');r.setAttribute('x',x);r.setAttribute('y',y);r.setAttribute('width',1.04);r.setAttribute('height',1.04);r.setAttribute('fill',COR[c]);g.appendChild(r)}}))});
+const prog=()=>{const m=document.documentElement.scrollHeight-innerHeight;return m>0?Math.min(1,Math.max(0,scrollY/m)):0};
+const lim=()=>({cima:76,baixo:innerHeight-120});
+if(calmo){
+  const pos=()=>{const l=lim();borb.style.transform=`translate3d(0,${(l.cima+prog()*(l.baixo-l.cima)).toFixed(1)}px,0)`};
+  addEventListener('scroll',pos,{passive:true});addEventListener('resize',pos);pos();
+}else{
+  let y=lim().cima,ang=0,asa=0,ultimo=0;
+  const voa=t=>{
+    const l=lim(),alvo=l.cima+prog()*(l.baixo-l.cima),vel=alvo-y;
+    y+=vel*.09;
+    const mexe=Math.abs(vel)>1;
+    // vira a cabeça para onde voa (para baixo = 180°)
+    const dir=vel>1?180:vel<-1?0:ang>90?180:0;
+    ang+=(dir-ang)*.08;
+    const x=Math.sin(t/(mexe?260:900))*(mexe?12:3);
+    const incl=Math.max(-18,Math.min(18,Math.cos(t/260)*(mexe?14:0)));
+    if(t-ultimo>(mexe?90:700)){asa^=1;ultimo=t;borb.classList.toggle('fechada',!!asa)}
+    borb.style.transform=`translate3d(${x.toFixed(1)}px,${y.toFixed(1)}px,0) rotate(${(ang+incl).toFixed(1)}deg)`;
+    requestAnimationFrame(voa);
+  };
+  requestAnimationFrame(voa);
+}
+// --- caixa-prenda
+const caixa=document.getElementById('caixa'),prenda=document.getElementById('prenda'),form=document.getElementById('prForm'),email=document.getElementById('prEmail'),estado=document.getElementById('prEstado'),botao=document.getElementById('prBotao');
+if(guardado)return;
+caixa.hidden=false;
+if(!calmo){setTimeout(()=>{caixa.classList.add('salta');setTimeout(()=>caixa.classList.remove('salta'),2400)},2200)}
+function abrir(){caixa.classList.add('aberta');prenda.hidden=false;prenda.classList.add('aberta');
+  setTimeout(()=>{prenda.classList.add('vis');email.focus({preventScroll:true})},calmo?0:220)}
+function fechar(){prenda.classList.remove('vis');caixa.classList.remove('aberta');
+  setTimeout(()=>{prenda.classList.remove('aberta');prenda.hidden=true;if(guardado)caixa.hidden=true;else caixa.focus()},calmo?0:350)}
+caixa.addEventListener('click',abrir);
+prenda.addEventListener('click',e=>{if(e.target.closest('[data-fecha]'))fechar()});
+addEventListener('keydown',e=>{if(e.key==='Escape'&&!prenda.hidden)fechar()});
+form.addEventListener('submit',async e=>{
+  e.preventDefault();const v=email.value.trim();estado.className='estado';
+  if(!/^[^@\s]+@[^@\s]+\.[^@\s]{2,}$/.test(v)){estado.textContent='esse email não parece certo. confirma e tenta outra vez.';email.focus();return}
+  botao.disabled=true;estado.textContent='a guardar…';
+  try{const r=await fetch('/api/lista',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:v,consentimento:true,origem:'caixa',site:document.getElementById('prSite').value})});
+    if(r.ok){guardado=true;try{localStorage.setItem('anjinho-prenda','ok')}catch(_){}
+      estado.className='estado ok';estado.textContent='está guardada ♡ o teu código chega com o drop 01.';form.hidden=true;setTimeout(fechar,3200)}
+    else if(r.status===429)estado.textContent='muitas tentativas seguidas. espera uns minutos.';
+    else if(r.status===400)estado.textContent='esse email não parece certo. confirma e tenta outra vez.';
+    else estado.textContent='não consegui guardar. tenta outra vez daqui a nada.';
+  }catch(_){estado.textContent='sem ligação. confirma a internet e tenta outra vez.'}
+  botao.disabled=false;
+});
+})();
+</script>
+
 </body>
 </html>
