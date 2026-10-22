@@ -206,8 +206,45 @@ footer small{font-size:12px;opacity:.6}
 <nav id="nav" aria-label="Principal">
   <a class="marca" href="#" aria-label="anjinho, início"><svg role="img" aria-label="anjinho" style="height:30px;width:auto;display:block" xmlns="http://www.w3.org/2000/svg" viewBox="-60 -60 6615 2295"><g transform="translate(0 1681) scale(1 -1)" fill="#1D1719"><path transform="translate(0.0 0)" d="M427 -18C589 -18 680 46 736 149H740V0H1028V716C1028 942 862 1078 573 1078C283 1078 111 940 98 722H375C382 803 454 859 564 859C672 859 737 805 737 727V720C737 652 669 643 476 624C256 604 64 536 64 298C64 87 216 -18 427 -18ZM509 187C410 187 346 231 346 306C346 390 426 429 527 444C622 459 705 473 739 492V386C739 272 651 187 509 187Z"/><path transform="translate(1060.3 0)" d="M399 587C399 751 484 824 606 824C729 824 800 749 800 607V0H1094V661C1094 928 949 1078 724 1078C572 1078 465 1010 394 890V1056H104V0H399Z"/><path transform="translate(2187.6 0)" d="M105 1056V-56C105 -147 72 -185 -6 -185H-72V-418H45C279 -418 400 -296 400 -89V1056Z"/><path transform="translate(2620.0 0)" d="M104 0H399V1056H104Z"/><path transform="translate(3051.3 0)" d="M399 587C399 751 484 824 606 824C729 824 800 749 800 607V0H1094V661C1094 928 949 1078 724 1078C572 1078 465 1010 394 890V1056H104V0H399Z"/><path transform="translate(4178.6 0)" d="M399 587C399 751 484 824 606 824C729 824 800 749 800 607V0H1094V661C1094 928 949 1078 724 1078C575 1078 470 1013 399 897V1490H104V0H399Z"/><path transform="translate(5305.9 0)" d="M594 -24C915 -24 1131 196 1131 527C1131 858 915 1080 594 1080C274 1080 58 858 58 527C58 196 274 -24 594 -24ZM594 215C451 215 355 331 355 527C355 724 452 841 594 841C737 841 834 724 834 527C834 331 738 215 594 215Z"/><ellipse cx="2567.3" cy="1424.8" rx="613.9" ry="162.2" fill="none" stroke="#F6B8C8" stroke-width="94.4"/></g></svg></a>
   <div class="links"><a href="#drop">drop 01</a><a href="#look">lookbook</a><a href="#diario">diário</a><a href="/previa/cartoes/">cartões presente</a></div>
-  <button class="saco" id="saco" aria-live="polite">saco (0)</button>
+  <button class="saco" id="saco" aria-live="polite" aria-label="saco vazio">saco (0)</button>
 </nav>
+<!-- carrinho que enche -->
+<style>
+.saco{gap:4px;position:relative;padding:0 2px;border:0;background:none;cursor:pointer;min-width:52px;justify-content:flex-end}
+.saco svg{width:46px;height:38px;display:block;overflow:visible}
+.saco .n{font-family:"Unifont",monospace;font-size:15px;min-width:1ch}
+.saco .it{opacity:0;transform:translateY(-10px);transform-box:fill-box;transition:opacity .2s,transform .45s cubic-bezier(.3,1.5,.5,1)}
+.saco .it.on{opacity:1;transform:none}
+.saco.mexe svg{animation:abana .55s ease-in-out}
+@keyframes abana{0%,100%{transform:none}25%{transform:rotate(-8deg)}55%{transform:rotate(6deg)}80%{transform:rotate(-2deg)}}
+@media (prefers-reduced-motion:reduce){.saco .it{transition:none}.saco.mexe svg{animation:none}}
+</style>
+<script>
+(function(){
+const b=document.getElementById('saco');if(!b)return;
+b.innerHTML=`<svg viewBox="0 0 48 40" aria-hidden="true" stroke="#1D1719" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round">
+ <path d="M2 5 H8 L12 27 H41" fill="none"/>
+ <path d="M18 12 L19 25 M27 12 L27 25 M36 12 L35 25 M10.7 18.5 H43" fill="none" stroke-width="1.3" opacity=".35"/>
+ <g class="it i1" data-n="1"><rect x="13" y="13" width="12" height="10" fill="#F6B8C8"/><path d="M19 13 V23" stroke="#fff" stroke-width="2.4"/><path d="M13 13 H25" /></g>
+ <g class="it i2" data-n="2"><path d="M28 13 C 28 8, 34 8, 34 13" fill="none"/><rect x="26" y="12" width="10" height="11" fill="#fff"/></g>
+ <g class="it i3" data-n="3"><path d="M19 12 C 13 8, 12 4, 15 3 C 17 2.4, 18.5 3.6, 19 5 C 19.5 3.6, 21 2.4, 23 3 C 26 4, 25 8, 19 12 Z" fill="#F6B8C8"/></g>
+ <g class="it i4" data-n="4"><path d="M31 9 C 27 4, 23 5, 24 8 C 25 10.5, 29 10, 31 9 C 33 10, 37 10.5, 38 8 C 39 5, 35 4, 31 9 Z" fill="#F6B8C8"/><circle cx="31" cy="9" r="1.6" fill="#1D1719" stroke="none"/></g>
+ <g class="it i5" data-n="5"><path d="M38 12 C 36 4, 37 1, 39 1 C 41 1, 41 6, 40 12 M42 12 C 42 5, 43 2, 45 2.5 C 47 3, 45 8, 43.5 12" fill="#fff"/></g>
+ <path d="M9.5 12 H45 L41 25 H12 Z" fill="none"/>
+ <circle cx="16" cy="34" r="3" fill="#fff"/><circle cx="37" cy="34" r="3" fill="#fff"/>
+</svg><span class="n"></span>`;
+let antes=0;
+window.atualizaSaco=function(n){
+  b.querySelectorAll('.it').forEach(g=>g.classList.toggle('on',n>=+g.dataset.n));
+  b.querySelector('.n').textContent=n>0?n:'';
+  b.setAttribute('aria-label',n===0?'saco vazio':n===1?'saco, 1 peça':`saco, ${n} peças`);
+  if(n>antes){b.classList.remove('mexe');void b.offsetWidth;b.classList.add('mexe')}
+  antes=n;
+};
+atualizaSaco(0);
+})();
+</script>
+
 
 <header class="hero">
   <div class="foto" role="img" aria-label="Lugar da fotografia principal do drop 01">fotografia do drop 01<br>modelo de corpo inteiro, céu claro</div>
@@ -341,7 +378,7 @@ function fechar(){F.classList.remove('vis');setTimeout(()=>{F.classList.remove('
 F.addEventListener('click',e=>{if(e.target.closest('[data-fechar]'))fechar()});
 addEventListener('keydown',e=>{if(e.key==='Escape'&&!F.hidden)fechar()});
 fAdd.onclick=()=>{if(!tamSel){fAdd.firstChild.textContent='escolhe o tamanho primeiro ';fTam.querySelector('button').focus();return}
-  saco++;document.getElementById('saco').textContent=`saco (${saco})`;fechar()};
+  saco++;atualizaSaco(saco);fechar()};
 // nav sólida depois do hero
 const nav=document.getElementById('nav');
 new IntersectionObserver(([e])=>nav.classList.toggle('solid',!e.isIntersecting),{rootMargin:'-80px 0px 0px 0px'}).observe(document.querySelector('.hero'));
