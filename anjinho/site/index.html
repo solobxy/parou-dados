@@ -83,12 +83,7 @@ footer{padding:64px var(--m) calc(32px + env(safe-area-inset-bottom));font-size:
   .pagina{max-width:760px;margin:80px auto 0;padding:56px 56px 48px}
   .pagina h2{font-size:64px}
 }
-@media (prefers-reduced-motion:reduce){
-  .cola{opacity:1;transform:var(--r,rotate(0))}
-  .cola.ok{transition:none}
-  .flutua>svg{animation:none}
-  button{transition:none}
-}
+
 </style>
 </head>
 <body>
@@ -136,7 +131,8 @@ footer{padding:64px var(--m) calc(32px + env(safe-area-inset-bottom));font-size:
 </footer>
 
 <script>
-const reduz=matchMedia('(prefers-reduced-motion: reduce)').matches;
+const reduz=false;
+const movimentoForte=!matchMedia('(prefers-reduced-motion: reduce)').matches;
 // autocolantes: laços, corações, borboletas, coelhinhos
 (function(){
 const NS='http://www.w3.org/2000/svg',T='#1D1719',R='#F6B8C8',R2='#E88AA3',W='#FFFFFF';
@@ -242,10 +238,7 @@ form.addEventListener('submit',async e=>{
 .prenda .seta .halo{stroke:#fff;stroke-width:11}
 .prenda .seta .traco-s{stroke:#F6B8C8;stroke-width:6}
 @media (min-width:700px){.prenda .cartao{left:auto;right:24px;width:380px;top:auto;bottom:100px;transform-origin:92% 110%}}
-@media (prefers-reduced-motion:reduce){
-  .caixa .aure,.caixa.salta svg,.caixa.salta .tampa{animation:none}
-  .caixa .tampa,.prenda .cartao,.prenda .fundo{transition:none}
-}
+
 </style>
 <div id="borb" aria-hidden="true"><svg viewBox="0 0 11 9" shape-rendering="crispEdges"><g class="f1"></g><g class="f2"></g></svg></div>
 <button class="caixa" id="caixa" type="button" aria-haspopup="dialog" aria-label="abrir prenda: 10% na primeira compra" hidden>
@@ -290,7 +283,7 @@ form.addEventListener('submit',async e=>{
 </div>
 <script>
 (function(){
-const calmo=matchMedia('(prefers-reduced-motion: reduce)').matches;
+const calmo=false;
 let guardado=false;try{guardado=localStorage.getItem('anjinho-prenda')==='ok'}catch(_){}
 // --- borboleta: desenha os 2 fotogramas em pixel
 const NS='http://www.w3.org/2000/svg',COR={R:'#E88AA3',P:'#F6B8C8',T:'#1D1719'};

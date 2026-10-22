@@ -114,7 +114,7 @@ footer{padding:72px var(--m) calc(40px + env(safe-area-inset-bottom));font-size:
   .duas .previa-email{margin-top:56px;padding:28px}
   .fim{max-width:560px}
 }
-@media (prefers-reduced-motion:reduce){.cartao-op,.cartao-op .cc,.btn{transition:none}}
+
 </style>
 </head>
 <body>
@@ -133,7 +133,7 @@ footer{padding:72px var(--m) calc(40px + env(safe-area-inset-bottom));font-size:
 .saco .it.on{opacity:1;transform:none}
 .saco.mexe svg{animation:abana .55s ease-in-out}
 @keyframes abana{0%,100%{transform:none}25%{transform:rotate(-8deg)}55%{transform:rotate(6deg)}80%{transform:rotate(-2deg)}}
-@media (prefers-reduced-motion:reduce){.saco .it{transition:none}.saco.mexe svg{animation:none}}
+
 </style>
 <script>
 (function(){
@@ -228,7 +228,8 @@ atualizaSaco(0);
 
 <script src="/previa/loja.js"></script>
 <script>
-const reduz=matchMedia('(prefers-reduced-motion: reduce)').matches;
+const reduz=false;
+const movimentoForte=!matchMedia('(prefers-reduced-motion: reduce)').matches;
 const LOGO=document.querySelector('nav svg').outerHTML;
 const LOGO_BRANCO=LOGO.replace('fill="#1D1719"','fill="#FBF7F2"');
 const LOGO_AUR_BRANCA=LOGO.replace('stroke="#F6B8C8"','stroke="#FFFFFF"');
@@ -369,10 +370,7 @@ atualiza();
 .prenda .seta .halo{stroke:#fff;stroke-width:11}
 .prenda .seta .traco-s{stroke:#F6B8C8;stroke-width:6}
 @media (min-width:700px){.prenda .cartao{left:auto;right:24px;width:380px;top:auto;bottom:100px;transform-origin:92% 110%}}
-@media (prefers-reduced-motion:reduce){
-  .caixa .aure,.caixa.salta svg,.caixa.salta .tampa{animation:none}
-  .caixa .tampa,.prenda .cartao,.prenda .fundo{transition:none}
-}
+
 </style>
 <div id="borb" aria-hidden="true"><svg viewBox="0 0 11 9" shape-rendering="crispEdges"><g class="f1"></g><g class="f2"></g></svg></div>
 <button class="caixa" id="caixa" type="button" aria-haspopup="dialog" aria-label="abrir prenda: 10% na primeira compra" hidden>
@@ -417,7 +415,7 @@ atualiza();
 </div>
 <script>
 (function(){
-const calmo=matchMedia('(prefers-reduced-motion: reduce)').matches;
+const calmo=false;
 let guardado=false;try{guardado=localStorage.getItem('anjinho-prenda')==='ok'}catch(_){}
 // --- borboleta: desenha os 2 fotogramas em pixel
 const NS='http://www.w3.org/2000/svg',COR={R:'#E88AA3',P:'#F6B8C8',T:'#1D1719'};

@@ -56,7 +56,7 @@ footer.rodape{padding:72px var(--m) calc(40px + env(safe-area-inset-bottom));fon
 .saco .it.on{opacity:1;transform:none}
 .saco.mexe svg{animation:abana .55s ease-in-out}
 @keyframes abana{0%,100%{transform:none}25%{transform:rotate(-8deg)}55%{transform:rotate(6deg)}80%{transform:rotate(-2deg)}}
-@media (prefers-reduced-motion:reduce){.saco .it{transition:none}.saco.mexe svg{animation:none}}
+
 </style>
 <script>
 (function(){
@@ -147,7 +147,7 @@ atualizaSaco(0);
   .resumo{position:sticky;top:20px;grid-column:2;grid-row:2/span 4}
   .ck>.bloco,.ck>.fim{grid-column:1}
 }
-@media (prefers-reduced-motion:reduce){.pagar{transition:none}}
+
 </style>
 <main id="conteudo">
 <div id="vazio" class="vazio-ck" hidden><p>o teu saco está vazio ♡</p><a href="/previa/#drop">ver o drop 01</a></div>
@@ -300,10 +300,7 @@ desenhaAutocolantes(document);
 .prenda .seta .halo{stroke:#fff;stroke-width:11}
 .prenda .seta .traco-s{stroke:#F6B8C8;stroke-width:6}
 @media (min-width:700px){.prenda .cartao{left:auto;right:24px;width:380px;top:auto;bottom:100px;transform-origin:92% 110%}}
-@media (prefers-reduced-motion:reduce){
-  .caixa .aure,.caixa.salta svg,.caixa.salta .tampa{animation:none}
-  .caixa .tampa,.prenda .cartao,.prenda .fundo{transition:none}
-}
+
 </style>
 <div id="borb" aria-hidden="true"><svg viewBox="0 0 11 9" shape-rendering="crispEdges"><g class="f1"></g><g class="f2"></g></svg></div>
 <button class="caixa" id="caixa" type="button" aria-haspopup="dialog" aria-label="abrir prenda: 10% na primeira compra" hidden>
@@ -348,7 +345,7 @@ desenhaAutocolantes(document);
 </div>
 <script>
 (function(){
-const calmo=matchMedia('(prefers-reduced-motion: reduce)').matches;
+const calmo=false;
 let guardado=false;try{guardado=localStorage.getItem('anjinho-prenda')==='ok'}catch(_){}
 // --- borboleta: desenha os 2 fotogramas em pixel
 const NS='http://www.w3.org/2000/svg',COR={R:'#E88AA3',P:'#F6B8C8',T:'#1D1719'};

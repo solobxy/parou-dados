@@ -70,7 +70,7 @@ nav .saco{margin-left:auto;font-size:14px;min-height:44px;display:flex;align-ite
 .templo .baloica.b2{animation-duration:5.4s;animation-delay:-2s}
 @keyframes baloica{from{transform:rotate(-3deg)}to{transform:rotate(3deg)}}
 .templo .bota{filter:drop-shadow(0 10px 8px rgba(29,23,25,.16))}
-@media (prefers-reduced-motion:reduce){.templo .baloica{animation:none}}
+
 .templo .st{z-index:3}
 /* autocolantes */
 .st{position:absolute;z-index:6;pointer-events:none}
@@ -204,12 +204,7 @@ footer small{font-size:12px;opacity:.6}
 .anim .recorte .pal span{opacity:0;transform:translateY(-70px) rotate(calc(var(--r) + 30deg))}
 .anim .recorte.ok .pal span{opacity:1;transform:rotate(var(--r)) translateY(var(--y));transition:transform .7s cubic-bezier(.3,1.4,.5,1) var(--d),opacity .2s var(--d)}
 .st>svg,.hero h1,.hero .foto,.hero .nota{will-change:transform}
-@media (prefers-reduced-motion:reduce){
-  html{scroll-behavior:auto}
-  .cola{opacity:1;transform:var(--r,rotate(0))}
-  .cola.ok{transition:none}
-  .ficha .painel,.ficha .fundo{transition:none}
-}
+
 </style>
 </head>
 <body>
@@ -229,7 +224,7 @@ footer small{font-size:12px;opacity:.6}
 .saco .it.on{opacity:1;transform:none}
 .saco.mexe svg{animation:abana .55s ease-in-out}
 @keyframes abana{0%,100%{transform:none}25%{transform:rotate(-8deg)}55%{transform:rotate(6deg)}80%{transform:rotate(-2deg)}}
-@media (prefers-reduced-motion:reduce){.saco .it{transition:none}.saco.mexe svg{animation:none}}
+
 </style>
 <script>
 (function(){
@@ -359,7 +354,8 @@ atualizaSaco(0);
 
 <script src="/previa/loja.js"></script>
 <script>
-const reduz=matchMedia('(prefers-reduced-motion: reduce)').matches;
+const reduz=false;
+const movimentoForte=!matchMedia('(prefers-reduced-motion: reduce)').matches;
 const g=document.getElementById('grelha');
 PECAS.forEach((p,i)=>{
   const a=document.createElement('a');a.className='peca';a.href='/previa/peca/?p='+p.id;
@@ -529,7 +525,7 @@ let pend=false;
 function tick(){pend=false;const y=scrollY,H=innerHeight;
  if(y<H*1.2){h1.style.transform=`translate3d(0,${y*.32}px,0)`;h1.style.opacity=Math.max(0,1-y/(H*.42));etq.style.opacity=Math.max(0,1-y/(H*.3));foto.style.transform=`translate3d(0,${y*.14}px,0) scale(${1+y/H*.06})`;nota.style.transform=`translate3d(0,${y*.5}px,0) rotate(${-6+y/H*8}deg)`}
  sts.forEach(o=>{const r=o.box.getBoundingClientRect();if(r.bottom<-200||r.top>H+200)return;const d=r.top+r.height/2-H/2;o.svg.style.transform=`translate3d(0,${(-d*o.v).toFixed(1)}px,0) rotate(${(d*.03*o.r).toFixed(1)}deg)`});}
-addEventListener('scroll',()=>{if(!pend){pend=true;requestAnimationFrame(tick)}},{passive:true});tick();
+if(movimentoForte){addEventListener('scroll',()=>{if(!pend){pend=true;requestAnimationFrame(tick)}},{passive:true});tick();}
 })();
 </script>
 <!-- borboleta-scroll e caixa-prenda -->
@@ -572,10 +568,7 @@ addEventListener('scroll',()=>{if(!pend){pend=true;requestAnimationFrame(tick)}}
 .prenda .seta .halo{stroke:#fff;stroke-width:11}
 .prenda .seta .traco-s{stroke:#F6B8C8;stroke-width:6}
 @media (min-width:700px){.prenda .cartao{left:auto;right:24px;width:380px;top:auto;bottom:100px;transform-origin:92% 110%}}
-@media (prefers-reduced-motion:reduce){
-  .caixa .aure,.caixa.salta svg,.caixa.salta .tampa{animation:none}
-  .caixa .tampa,.prenda .cartao,.prenda .fundo{transition:none}
-}
+
 </style>
 <div id="borb" aria-hidden="true"><svg viewBox="0 0 11 9" shape-rendering="crispEdges"><g class="f1"></g><g class="f2"></g></svg></div>
 <button class="caixa" id="caixa" type="button" aria-haspopup="dialog" aria-label="abrir prenda: 10% na primeira compra" hidden>
@@ -620,7 +613,7 @@ addEventListener('scroll',()=>{if(!pend){pend=true;requestAnimationFrame(tick)}}
 </div>
 <script>
 (function(){
-const calmo=matchMedia('(prefers-reduced-motion: reduce)').matches;
+const calmo=false;
 let guardado=false;try{guardado=localStorage.getItem('anjinho-prenda')==='ok'}catch(_){}
 // --- borboleta: desenha os 2 fotogramas em pixel
 const NS='http://www.w3.org/2000/svg',COR={R:'#E88AA3',P:'#F6B8C8',T:'#1D1719'};
