@@ -58,7 +58,7 @@ nav .saco{margin-left:auto;font-size:14px;min-height:44px;display:flex;align-ite
 .hero h1{position:relative;z-index:2;font-family:"Inter Display","Inter";font-weight:900;font-size:clamp(56px,15.5vw,190px);line-height:.82;letter-spacing:-.065em;margin-top:14px}
 .hero h1 .circ{position:relative;display:inline-block}
 .hero h1 .circ svg{position:absolute;left:-6%;top:-14%;width:112%;height:128%;overflow:visible;z-index:-1}
-.hero .nota{position:absolute;z-index:4;font-size:26px;line-height:1;right:var(--m);top:42%;transform:rotate(-6deg);max-width:9em;text-align:right}
+.hero .nota{position:absolute;z-index:4;font-size:26px;line-height:1;right:var(--m);top:34%;transform:rotate(-6deg);max-width:9em;text-align:right}
 .hero .cta{margin-top:auto;position:relative;z-index:5}
 .btn{display:inline-flex;align-items:center;gap:40px;background:var(--rosa);padding:18px 24px;font-weight:600;font-size:15px;min-height:52px;transition:transform .2s var(--e)}
 .btn:active{transform:scale(.97)}
@@ -66,7 +66,11 @@ nav .saco{margin-left:auto;font-size:14px;min-height:44px;display:flex;align-ite
 
 .hero .foto.templo{background:none;border-radius:0;padding:0;right:-6%;width:88%;height:66%}
 .templo .pilares{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
-.templo .destaque{position:absolute;left:50%;bottom:9%;width:46%;height:auto;transform:translateX(-50%) rotate(-6deg);filter:drop-shadow(0 18px 16px rgba(29,23,25,.14));z-index:2}
+.templo .baloica{transform-box:view-box;transform-origin:200px 24px;animation:baloica 4.6s ease-in-out infinite alternate}
+.templo .baloica.b2{animation-duration:5.4s;animation-delay:-2s}
+@keyframes baloica{from{transform:rotate(-3deg)}to{transform:rotate(3deg)}}
+.templo .bota{filter:drop-shadow(0 10px 8px rgba(29,23,25,.16))}
+@media (prefers-reduced-motion:reduce){.templo .baloica{animation:none}}
 .templo .st{z-index:3}
 /* autocolantes */
 .st{position:absolute;z-index:6;pointer-events:none}
@@ -168,9 +172,10 @@ footer small{font-size:12px;opacity:.6}
   nav .links{display:flex}
   .hero{padding-top:130px}
   .hero .foto{right:12%;width:36%;height:84%}
-  .hero .foto.templo{right:8%;width:44%;height:88%}
+  .hero .foto.templo{right:3%;width:40%;height:88%}
+  .hero h1{font-size:clamp(96px,9.6vw,150px)}
   .hero h1{max-width:9ch}
-  .hero .nota{top:22%;right:6%;font-size:34px}
+  .hero .nota{top:56%;right:auto;left:38%;font-size:34px;text-align:left}
   .hs1{left:44%;right:auto;top:15%}
   .hs2{left:27%;top:auto;bottom:6%;width:110px}
   .hs3{right:16%;bottom:8%;width:96px}
@@ -257,7 +262,6 @@ atualizaSaco(0);
   <div class="resp" data-s="23" style="left:-300px;bottom:-140px;width:600px;opacity:.45"></div>
   <div class="foto templo" aria-hidden="true">
     <svg class="pilares" id="pilares" viewBox="0 0 400 560" preserveAspectRatio="xMidYMax meet"></svg>
-    <img class="destaque" src="/previa/img/botas_bege_2.webp" alt="" width="742" height="961">
     <div class="st" data-f="laco" data-e="papel" style="left:3%;top:50%;width:15%;transform:rotate(-14deg)"></div>
     <div class="st" data-f="coracao" data-e="pixel" style="right:7%;top:58%;width:10%;transform:rotate(8deg)"></div>
   </div>
@@ -436,6 +440,25 @@ form.addEventListener('submit',e=>{e.preventDefault();const v=email.value.trim()
  svg.append(g);
  // chão de pontos por baixo da peça
  for(let i=0;i<9;i++)for(let j=0;j<42;j++){const x=200+(j-21)*7+(i%2)*3.5,y=520+i*5,d=Math.hypot((x-200)/150,(y-540)/24);if(d<1)svg.append(el('circle',{cx:x,cy:y,r:(2.2*(1-d)+.4).toFixed(2),fill:'#E88AA3',opacity:.7}))}
+ // sombras suaves no chão
+ [[150,528,46],[250,532,46]].forEach(([cx,cy,rx])=>svg.append(el('ellipse',{cx,cy,rx,ry:7,fill:'#1D1719',opacity:.08})));
+ // o par de botas pendurado pelos atacadores, a baloiçar debaixo do arco
+ const W=124,H=W*961/742;
+ const par=[
+   {src:'/previa/img/botas_bege_2m.webp',nx:.38,ny:.17,kx:142,ky:288,fio:'M197 26 C 186 110, 150 200, 142 288',cls:'baloica'},
+   {src:'/previa/img/botas_bege_2.webp',nx:.62,ny:.17,kx:262,ky:350,fio:'M203 26 C 214 120, 256 240, 262 350',cls:'baloica b2'}
+ ];
+ par.forEach(p=>{const gr=el('g',{class:p.cls});
+   gr.append(el('path',{d:p.fio,fill:'none',stroke:'#fff',"stroke-width":4.5,"stroke-linecap":'round'}));
+   gr.append(el('path',{d:p.fio,fill:'none',stroke:'#F6B8C8',"stroke-width":2.6,"stroke-linecap":'round'}));
+   gr.append(el('image',{href:p.src,x:(p.kx-p.nx*W).toFixed(1),y:(p.ky-p.ny*H).toFixed(1),width:W,height:H.toFixed(1),class:'bota'}));
+   svg.append(gr)});
+ // laço no fecho do arco, onde as fitas estão presas
+ const laco=el('g',{transform:'translate(176,6) scale(.48)'});
+ laco.append(el('path',{d:'M50 46 C 32 20, 8 22, 8 40 C 8 58, 30 60, 50 50 C 70 60, 92 58, 92 40 C 92 22, 68 20, 50 46 Z',fill:'#F6B8C8',transform:'rotate(-3 50 46)'}));
+ laco.append(el('path',{d:'M50 46 C 32 20, 8 22, 8 40 C 8 58, 30 60, 50 50 C 70 60, 92 58, 92 40 C 92 22, 68 20, 50 46 Z',fill:'none',stroke:'#1D1719',"stroke-width":2.6,transform:'translate(2.5 2) rotate(2 50 46)'}));
+ laco.append(el('circle',{cx:50,cy:47,r:6,fill:'#fff',stroke:'#1D1719',"stroke-width":2.6}));
+ svg.append(laco);
 })();
 // letras recortadas
 (function(){const cores=['#F6B8C8','#FFFFFF','#DCE8F2','#F1E6E4'];let seed=7;const rnd=()=>{seed=(seed*9301+49297)%233280;return seed/233280};
