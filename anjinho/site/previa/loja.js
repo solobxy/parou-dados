@@ -92,7 +92,7 @@ const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;',
   .ps .linha.tot{font-size:18px;font-weight:600;margin-top:10px}
   .ps .iva{font-size:12px;color:#5d5056;margin-top:4px}
   .ps .fin{display:flex;align-items:center;justify-content:space-between;margin-top:14px;background:#1D1719;color:#FBF7F2;min-height:56px;padding:0 20px;font-weight:600;text-decoration:none}
-  @media (prefers-reduced-motion:reduce){.ps .painel,.ps .fundo{transition:none}}`;
+  `;
   const st = document.createElement('style'); st.textContent = css; document.head.appendChild(st);
   const d = document.createElement('div'); d.className = 'ps'; d.id = 'ps'; d.hidden = true;
   d.setAttribute('role', 'dialog'); d.setAttribute('aria-modal', 'true'); d.setAttribute('aria-labelledby', 'psT');
@@ -129,7 +129,7 @@ function abrirSaco() {
 }
 function fecharSaco() {
   const d = document.getElementById('ps'); d.classList.remove('vis'); document.body.style.overflow = '';
-  setTimeout(() => { d.classList.remove('aberto'); d.hidden = true; }, matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 400);
+  setTimeout(() => { d.classList.remove('aberto'); d.hidden = true; }, 400);
   if (_ultimoFoco && _ultimoFoco.focus) _ultimoFoco.focus();
 }
 document.addEventListener('DOMContentLoaded', () => {
