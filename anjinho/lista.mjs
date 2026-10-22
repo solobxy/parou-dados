@@ -70,7 +70,7 @@ http.createServer((req, res) => {
       const linha = JSON.stringify({
         email,
         quando: new Date().toISOString(),
-        consentimento: 'v1: «um email por drop, nada mais. sais quando quiseres.»',
+        consentimento: 'v2: «10% na primeira compra. um email por drop, nada mais. sais quando quiseres.»',
         origem: String(dados.origem || 'site').slice(0, 40),
       }) + '\n';
       try { fs.writeSync(fd, linha); fs.fsyncSync(fd); }
