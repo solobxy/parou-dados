@@ -64,6 +64,10 @@ nav .saco{margin-left:auto;font-size:14px;min-height:44px;display:flex;align-ite
 .btn:active{transform:scale(.97)}
 .lado{display:none}
 
+.hero .foto.templo{background:none;border-radius:0;padding:0;right:-6%;width:88%;height:66%}
+.templo .pilares{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+.templo .destaque{position:absolute;left:50%;bottom:9%;width:46%;height:auto;transform:translateX(-50%) rotate(-6deg);filter:drop-shadow(0 18px 16px rgba(29,23,25,.14));z-index:2}
+.templo .st{z-index:3}
 /* autocolantes */
 .st{position:absolute;z-index:6;pointer-events:none}
 .st svg{overflow:visible;display:block}
@@ -164,6 +168,7 @@ footer small{font-size:12px;opacity:.6}
   nav .links{display:flex}
   .hero{padding-top:130px}
   .hero .foto{right:12%;width:36%;height:84%}
+  .hero .foto.templo{right:8%;width:44%;height:88%}
   .hero h1{max-width:9ch}
   .hero .nota{top:22%;right:6%;font-size:34px}
   .hs1{left:44%;right:auto;top:15%}
@@ -249,9 +254,13 @@ atualizaSaco(0);
 
 
 <header class="hero">
-  <div class="resp" data-s="7" style="right:-330px;top:-60px;width:780px;opacity:.55"></div>
   <div class="resp" data-s="23" style="left:-300px;bottom:-140px;width:600px;opacity:.45"></div>
-  <div class="foto" role="img" aria-label="Lugar da fotografia principal do drop 01">fotografia do drop 01<br>modelo de corpo inteiro, céu claro</div>
+  <div class="foto templo" aria-hidden="true">
+    <svg class="pilares" id="pilares" viewBox="0 0 400 560" preserveAspectRatio="xMidYMax meet"></svg>
+    <img class="destaque" src="/previa/img/botas_bege_2.webp" alt="" width="742" height="961">
+    <div class="st" data-f="laco" data-e="papel" style="left:3%;top:50%;width:15%;transform:rotate(-14deg)"></div>
+    <div class="st" data-f="coracao" data-e="pixel" style="right:7%;top:58%;width:10%;transform:rotate(8deg)"></div>
+  </div>
   <span class="etq pix">♡ save file 01 · inverno ♡</span>
   <h1>anjinha,<br>por <span class="circ">dentro.<svg viewBox="0 0 560 220" preserveAspectRatio="none" aria-hidden="true"><path class="traco" d="M30 120 C 20 40, 300 10, 470 40 C 560 58, 540 160, 420 185 C 280 212, 60 200, 40 140 C 30 105, 120 70, 220 62" fill="none" stroke="#F6B8C8" stroke-width="12" stroke-linecap="round"/></svg></span></h1>
   <p class="nota mao">botas nuvem + meias brancas ♡</p>
@@ -408,6 +417,26 @@ form.addEventListener('submit',e=>{e.preventDefault();const v=email.value.trim()
    .then(r=>{emsg.textContent=r.ok?'estás dentro ♡ vemo-nos no drop 01.':'não consegui guardar o teu email. tenta outra vez daqui a nada.';if(r.ok)form.reset()})
    .catch(()=>{emsg.textContent='sem ligação. confirma a internet e tenta outra vez.'})});
 
+
+// pilares em meio-tom à volta da peça do hero
+(function(){const svg=document.getElementById('pilares');if(!svg)return;const NS='http://www.w3.org/2000/svg';
+ const el=(n,a)=>{const e=document.createElementNS(NS,n);for(const k in a)e.setAttribute(k,a[k]);return e};
+ const pilar=x=>`M${x-40} 560 H${x+40} V538 H${x-40} Z M${x-32} 538 H${x+32} V520 H${x-32} Z M${x-24} 520 V178 H${x+24} V520 Z M${x-34} 178 H${x+34} V160 H${x-34} Z M${x-30} 160 C ${x-44} 160, ${x-44} 140, ${x-30} 142 H${x+30} C ${x+44} 140, ${x+44} 160, ${x+30} 160 Z`;
+ const arco='M40 150 A160 160 0 0 1 360 150 L328 150 A128 128 0 0 0 72 150 Z';
+ const defs=el('defs',{});const cp=el('clipPath',{id:'cpPil'});
+ [pilar(56),pilar(344)].forEach(d=>cp.append(el('path',{d})));cp.append(el('path',{d:arco}));defs.append(cp);svg.append(defs);
+ const g=el('g',{'clip-path':'url(#cpPil)'});const P=6.4;
+ for(let y=0;y<=560;y+=P)for(let x=((y/P)%2?P/2:0);x<=400;x+=P){
+   // sombra cilíndrica: mais escuro do lado de fora de cada pilar; caneluras no fuste
+   const cx=x<200?56:344,dx=(x-cx)/24;let r;
+   if(y>178&&y<520&&Math.abs(dx)<=1){const lado=x<200?-dx:dx;r=1.2+1.35*(0.55+0.45*lado)+0.6*Math.abs(Math.sin(dx*Math.PI*2.5))}
+   else if(y<=160){const a=Math.atan2(150-y,x-200);r=1.3+1.2*Math.abs(Math.cos(a))}
+   else r=2.5-((y-520)/40)*.6;
+   g.append(el('circle',{cx:x.toFixed(1),cy:y.toFixed(1),r:Math.max(.5,Math.min(3.1,r)).toFixed(2),fill:y>178&&y<520&&Math.abs(dx)>0.55?'#E88AA3':'#F6B8C8'}))}
+ svg.append(g);
+ // chão de pontos por baixo da peça
+ for(let i=0;i<9;i++)for(let j=0;j<42;j++){const x=200+(j-21)*7+(i%2)*3.5,y=520+i*5,d=Math.hypot((x-200)/150,(y-540)/24);if(d<1)svg.append(el('circle',{cx:x,cy:y,r:(2.2*(1-d)+.4).toFixed(2),fill:'#E88AA3',opacity:.7}))}
+})();
 // letras recortadas
 (function(){const cores=['#F6B8C8','#FFFFFF','#DCE8F2','#F1E6E4'];let seed=7;const rnd=()=>{seed=(seed*9301+49297)%233280;return seed/233280};
 document.querySelectorAll('.recorte').forEach(h=>{const t=h.textContent;h.textContent='';t.split(' ').forEach((w,wi)=>{
