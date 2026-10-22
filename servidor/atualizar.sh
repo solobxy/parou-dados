@@ -54,7 +54,17 @@ if ! cmp -s /tmp/Caddyfile.novo /etc/caddy/Caddyfile; then
 fi
 
 # anjinho.pt: site estático e lista de espera (os emails ficam em /var/lib/anjinho, fora do repositório)
-ANJ=$BASE/servidor/anjinho
+# O código da anjinho vive no repositório privado solobxy/anjinho; o servidor lê-o com uma chave só de leitura
+ANJ=/opt/anjinho-repo
+if [ -f /root/.ssh/anjinho_deploy ]; then
+  export GIT_SSH_COMMAND="ssh -i /root/.ssh/anjinho_deploy -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new"
+  if [ -d "$ANJ/.git" ]; then
+    git -C "$ANJ" fetch -q --depth 1 origin main && git -C "$ANJ" reset -q --hard origin/main || true
+  else
+    git clone -q --depth 1 git@github.com:solobxy/anjinho.git "$ANJ" || rm -rf "$ANJ"
+  fi
+  unset GIT_SSH_COMMAND
+fi
 if [ -d "$ANJ/site" ]; then
   if ! diff -rq "$ANJ/site" /var/www/anjinho >/dev/null 2>&1; then
     rm -rf /var/www/anjinho.novo && mkdir -p /var/www && cp -r "$ANJ/site" /var/www/anjinho.novo \
