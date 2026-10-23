@@ -89,3 +89,18 @@ www.anjinho.pt {
 	redir https://anjinho.pt{uri} permanent
 }
 # FIM www.anjinho.pt
+
+# JINXED - site estático de demonstração em /var/www/jinxed (copiado à mão, fora do repositório)
+jinxed.{HOST_TESTE} {
+	encode zstd gzip
+	header {
+		Strict-Transport-Security "max-age=31536000"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		Permissions-Policy "geolocation=(), camera=(), microphone=()"
+		X-Robots-Tag "noindex, nofollow"
+		-Server
+	}
+	root * /var/www/jinxed
+	file_server
+}
