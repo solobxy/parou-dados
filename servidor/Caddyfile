@@ -91,7 +91,7 @@ www.anjinho.pt {
 # FIM www.anjinho.pt
 
 # JINXED - site estático de demonstração em /var/www/jinxed (copiado à mão, fora do repositório)
-jinxed.{HOST_TESTE} {
+(jinxed) {
 	encode zstd gzip
 	header {
 		Strict-Transport-Security "max-age=31536000"
@@ -104,3 +104,19 @@ jinxed.{HOST_TESTE} {
 	root * /var/www/jinxed
 	file_server
 }
+
+jinxed.{HOST_TESTE} {
+	import jinxed
+}
+
+# INICIO jinxed.world
+jinxed.world {
+	import jinxed
+}
+# FIM jinxed.world
+
+# INICIO www.jinxed.world
+www.jinxed.world {
+	redir https://jinxed.world{uri} permanent
+}
+# FIM www.jinxed.world
