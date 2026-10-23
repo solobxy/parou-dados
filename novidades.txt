@@ -1,0 +1,129 @@
+OK      [novidades] ids únicos 
+OK      [boas-vindas] título até 90 caracteres 20
+OK      [boas-vindas] data válida e não futura 2026-10-10
+OK      [boas-vindas] imagem /novidades/boas-vindas-1.jpg existe 
+OK      [boas-vindas] imagem /novidades/boas-vindas-1.jpg é JPEG 1080×1080 1080×1080
+OK      [boas-vindas] não diz «Azul Porto» 
+OK      [planeador] título até 90 caracteres 30
+OK      [planeador] texto da Comunidade até 600 caracteres 115
+OK      [planeador] data válida e não futura 2026-10-10
+OK      [planeador] imagem /novidades/planeador-1.jpg existe 
+OK      [planeador] imagem /novidades/planeador-1.jpg é JPEG 1080×1080 1080×1080
+OK      [planeador] não diz «Azul Porto» 
+OK      [comunidade] título até 90 caracteres 16
+OK      [comunidade] data válida e não futura 2026-10-10
+OK      [comunidade] imagem /novidades/comunidade-1.jpg existe 
+OK      [comunidade] imagem /novidades/comunidade-1.jpg é JPEG 1080×1080 1080×1080
+OK      [comunidade] não diz «Azul Porto» 
+OK      [avatar] título até 90 caracteres 17
+OK      [avatar] texto da Comunidade até 600 caracteres 108
+OK      [avatar] data válida e não futura 2026-10-10
+OK      [avatar] imagem /novidades/avatar-1.jpg existe 
+OK      [avatar] imagem /novidades/avatar-1.jpg é JPEG 1080×1080 1080×1080
+OK      [avatar] imagem /novidades/avatar-2.jpg existe 
+OK      [avatar] imagem /novidades/avatar-2.jpg é JPEG 1080×1080 1080×1080
+OK      [avatar] não diz «Azul Porto» 
+OK      [medalhas] título até 90 caracteres 20
+OK      [medalhas] texto da Comunidade até 600 caracteres 116
+OK      [medalhas] data válida e não futura 2026-10-10
+OK      [medalhas] imagem /novidades/medalhas-1.jpg existe 
+OK      [medalhas] imagem /novidades/medalhas-1.jpg é JPEG 1080×1080 1080×1080
+OK      [medalhas] imagem /novidades/medalhas-2.jpg existe 
+OK      [medalhas] imagem /novidades/medalhas-2.jpg é JPEG 1080×1080 1080×1080
+OK      [medalhas] não diz «Azul Porto» 
+OK      [alertas-noticias] título até 90 caracteres 18
+OK      [alertas-noticias] texto da Comunidade até 600 caracteres 93
+OK      [alertas-noticias] data válida e não futura 2026-10-10
+OK      [alertas-noticias] imagem /novidades/alertas-noticias-1.jpg existe 
+OK      [alertas-noticias] imagem /novidades/alertas-noticias-1.jpg é JPEG 1080×1080 1080×1080
+OK      [alertas-noticias] não diz «Azul Porto» 
+OK      [perto-fluido] título até 90 caracteres 34
+OK      [perto-fluido] data válida e não futura 2026-10-10
+OK      [perto-fluido] imagem /novidades/perto-fluido-1.jpg existe 
+OK      [perto-fluido] imagem /novidades/perto-fluido-1.jpg é JPEG 1080×1080 1080×1080
+OK      [perto-fluido] não diz «Azul Porto» 
+OK      [ingles] título até 90 caracteres 22
+OK      [ingles] data válida e não futura 2026-10-10
+OK      [ingles] imagem /novidades/ingles-1.jpg existe 
+OK      [ingles] imagem /novidades/ingles-1.jpg é JPEG 1080×1080 1080×1080
+OK      [ingles] não diz «Azul Porto» 
+OK      [temas] título até 90 caracteres 18
+OK      [temas] texto da Comunidade até 600 caracteres 121
+OK      [temas] data válida e não futura 2026-10-11
+OK      [temas] imagem /novidades/temas-1.jpg existe 
+OK      [temas] imagem /novidades/temas-1.jpg é JPEG 1080×1080 1080×1080
+OK      [temas] não diz «Azul Porto» 
+OK      [recuperar-palavra-passe] título até 90 caracteres 34
+OK      [recuperar-palavra-passe] texto da Comunidade até 600 caracteres 138
+OK      [recuperar-palavra-passe] data válida e não futura 2026-10-11
+OK      [recuperar-palavra-passe] imagem /novidades/recuperar-1.jpg existe 
+OK      [recuperar-palavra-passe] imagem /novidades/recuperar-1.jpg é JPEG 1080×1080 1080×1080
+OK      [recuperar-palavra-passe] não diz «Azul Porto» 
+OK      [conforto] título até 90 caracteres 24
+OK      [conforto] texto da Comunidade até 600 caracteres 202
+OK      [conforto] data válida e não futura 2026-10-11
+OK      [conforto] imagem /novidades/conforto-1.jpg existe 
+OK      [conforto] imagem /novidades/conforto-1.jpg é JPEG 1080×1080 1080×1080
+OK      [conforto] não diz «Azul Porto» 
+OK      [stcp-tempo-real] título até 90 caracteres 41
+OK      [stcp-tempo-real] texto da Comunidade até 600 caracteres 229
+OK      [stcp-tempo-real] data válida e não futura 2026-10-12
+OK      [stcp-tempo-real] imagem /novidades/stcp-tempo-real-1.jpg existe 
+OK      [stcp-tempo-real] imagem /novidades/stcp-tempo-real-1.jpg é JPEG 1080×1080 1080×1080
+OK      [stcp-tempo-real] não diz «Azul Porto» 
+OK      [varios-destinos] título até 90 caracteres 24
+OK      [varios-destinos] texto da Comunidade até 600 caracteres 286
+OK      [varios-destinos] data válida e não futura 2026-10-12
+OK      [varios-destinos] imagem /novidades/varios-destinos-1.jpg existe 
+OK      [varios-destinos] imagem /novidades/varios-destinos-1.jpg é JPEG 1080×1080 1080×1080
+OK      [varios-destinos] não diz «Azul Porto» 
+OK      [rotas-combinadas] título até 90 caracteres 27
+OK      [rotas-combinadas] texto da Comunidade até 600 caracteres 255
+OK      [rotas-combinadas] data válida e não futura 2026-10-13
+OK      [rotas-combinadas] imagem /novidades/rotas-combinadas-1.jpg existe 
+OK      [rotas-combinadas] imagem /novidades/rotas-combinadas-1.jpg é JPEG 1080×1080 1080×1080
+OK      [rotas-combinadas] não diz «Azul Porto» 
+OK      [proxima-ligacao] título até 90 caracteres 38
+OK      [proxima-ligacao] texto da Comunidade até 600 caracteres 270
+OK      [proxima-ligacao] data válida e não futura 2026-10-13
+OK      [proxima-ligacao] imagem /novidades/proxima-ligacao-1.jpg existe 
+OK      [proxima-ligacao] imagem /novidades/proxima-ligacao-1.jpg é JPEG 1080×1080 1080×1080
+OK      [proxima-ligacao] não diz «Azul Porto» 
+OK      [ponto-diario] título até 90 caracteres 33
+OK      [ponto-diario] texto da Comunidade até 600 caracteres 185
+OK      [ponto-diario] data válida e não futura 2026-10-13
+OK      [ponto-diario] imagem /novidades/ponto-diario-1.jpg existe 
+OK      [ponto-diario] imagem /novidades/ponto-diario-1.jpg é JPEG 1080×1080 1080×1080
+OK      [ponto-diario] não diz «Azul Porto» 
+OK      [idiomas-de-fr] título até 90 caracteres 32
+OK      [idiomas-de-fr] texto da Comunidade até 600 caracteres 180
+OK      [idiomas-de-fr] data válida e não futura 2026-10-13
+OK      [idiomas-de-fr] imagem /novidades/idiomas-de-fr-1.jpg existe 
+OK      [idiomas-de-fr] imagem /novidades/idiomas-de-fr-1.jpg é JPEG 1080×1080 1080×1080
+OK      [idiomas-de-fr] não diz «Azul Porto» 
+OK      [atrasos-em-direto] título até 90 caracteres 17
+OK      [atrasos-em-direto] texto da Comunidade até 600 caracteres 167
+OK      [atrasos-em-direto] data válida e não futura 2026-10-14
+OK      [atrasos-em-direto] imagem /novidades/atrasos-em-direto-1.jpg existe 
+OK      [atrasos-em-direto] imagem /novidades/atrasos-em-direto-1.jpg é JPEG 1080×1080 1080×1080
+OK      [atrasos-em-direto] não diz «Azul Porto» 
+OK      [a-bordo] título até 90 caracteres 30
+OK      [a-bordo] data válida e não futura 2026-10-15
+OK      [a-bordo] não diz «Azul Porto» 
+OK      [todos-autocarros] título até 90 caracteres 27
+OK      [todos-autocarros] texto da Comunidade até 600 caracteres 271
+OK      [todos-autocarros] data válida e não futura 2026-10-15
+OK      [todos-autocarros] imagem /novidades/todos-autocarros-1.jpg existe 
+OK      [todos-autocarros] imagem /novidades/todos-autocarros-1.jpg é JPEG 1080×1080 1080×1080
+OK      [todos-autocarros] imagem /novidades/todos-autocarros-2.jpg existe 
+OK      [todos-autocarros] imagem /novidades/todos-autocarros-2.jpg é JPEG 1080×1080 1080×1080
+OK      [todos-autocarros] não diz «Azul Porto» 
+OK      [tema] o tema azul chama-se só «Azul» Azul
+OK      [tema] en: sem a tradução antiga de «Azul Porto» 
+OK      [tema] en: «Azul» está traduzido 
+OK      [tema] fr: sem a tradução antiga de «Azul Porto» 
+OK      [tema] fr: «Azul» está traduzido 
+OK      [tema] de: sem a tradução antiga de «Azul Porto» 
+OK      [tema] de: «Azul» está traduzido 
+
+Novidades e nome do tema em ordem.
