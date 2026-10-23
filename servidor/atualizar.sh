@@ -41,8 +41,13 @@ sed "s/{HOST_TESTE}/$HOST_TESTE/g" "$SERV/Caddyfile" > /tmp/Caddyfile.novo
 # certificado e ficava a tentar com esperas cada vez maiores)
 MEU_IP="$(echo "${HOST_TESTE%%.sslip.io}" | tr '-' '.')"
 for DOM in parou.pt www.parou.pt anjinho.pt www.anjinho.pt jinxed.world www.jinxed.world; do
-  IP_DOM="$( (dig +short A "$DOM" @1.1.1.1 2>/dev/null || getent ahostsv4 "$DOM" | awk '{print $1}') | grep -E '^[0-9.]+$' | head -1)"
-  if [ "$IP_DOM" != "$MEU_IP" ]; then
+  # Pergunta a dois DNS: basta um dizer que o domínio aponta para aqui (durante uma mudança
+  # de DNS uns ainda dão o endereço antigo e o domínio entrava e saía a cada 2 minutos)
+  IPS="$( (dig +short +time=3 +tries=2 A "$DOM" @1.1.1.1; dig +short +time=3 +tries=2 A "$DOM" @8.8.8.8) 2>/dev/null | grep -E '^[0-9.]+$' | sort -u)"
+  [ -n "$IPS" ] || IPS="$(getent ahostsv4 "$DOM" 2>/dev/null | awk '{print $1}' | sort -u)"
+  # Sem resposta nenhuma (falha de rede): fica como está agora, não tira o domínio por isso
+  if [ -z "$IPS" ] && grep -qx "# INICIO $DOM" /etc/caddy/Caddyfile 2>/dev/null; then continue; fi
+  if ! printf '%s\n' "$IPS" | grep -qx "$MEU_IP"; then
     sed -i "/^# INICIO $DOM\$/,/^# FIM $DOM\$/d" /tmp/Caddyfile.novo
   fi
 done
