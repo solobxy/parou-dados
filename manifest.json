@@ -1,15 +1,15 @@
 {
-  "built_at": "2026-10-24T08:26:22.239343+00:00",
-  "db_bytes": 656904192,
-  "gz_bytes": 129991173,
+  "built_at": "2026-10-24T18:31:50.270991+00:00",
+  "db_bytes": 656875520,
+  "gz_bytes": 129974825,
   "totals": {
     "lines": 2828,
     "stops": 46388,
-    "trips": 138277,
-    "stop_times": 4302552,
+    "trips": 138275,
+    "stop_times": 4302520,
     "operators": 30,
     "operators_ok": 27,
-    "operators_desatualizados": 2
+    "operators_desatualizados": 3
   },
   "feeds": [
     {
@@ -170,13 +170,13 @@
       "status": "OK",
       "lines": 7,
       "stops": 85,
-      "trips": 2941,
-      "valid_until": "2026-12-25",
-      "validade": "ok",
-      "dias_validade": 62,
+      "trips": 2939,
+      "valid_until": "2024-12-31",
+      "validade": "caducado",
+      "dias_validade": -662,
       "horario_prolongado": true,
-      "url": "https://dadosabertos.cm-porto.pt/dataset/713a680c-9e19-11f1-84ed-6abdb6d5cf34/resource/28a13723-2af1-4bbb-a2b1-f8b08df8c7e4/download/___",
-      "last_error": "O operador não atualizou as datas do calendário para alguns dias (15 dias sem horário publicado); a usar o horário semanal mais recente.",
+      "url": "https://files.mobilitydatabase.org/mdb-2147/latest.zip",
+      "last_error": "O operador não atualizou as datas do calendário (terminam em 2024-12-31); a usar o horário semanal em vigor.",
       "servicos_associados": null,
       "servicos_sem_calendario": null,
       "viagens_hoje": 918,
@@ -632,8 +632,8 @@
         "desenhos": 18
       },
       "metro_porto": {
-        "viagens": 2941,
-        "com_desenho": 2941,
+        "viagens": 2939,
+        "com_desenho": 2939,
         "desenhos": 20
       },
       "mobiave": {
@@ -770,8 +770,8 @@
         "calendar": [
           {
             "service": "ADF",
-            "inicio": "20260406",
-            "fim": "20260719",
+            "inicio": "20240909",
+            "fim": "20241231",
             "seg": 0,
             "ter": 0,
             "qua": 0,
@@ -782,8 +782,8 @@
           },
           {
             "service": "AS",
-            "inicio": "20260406",
-            "fim": "20260719",
+            "inicio": "20240909",
+            "fim": "20241231",
             "seg": 0,
             "ter": 0,
             "qua": 0,
@@ -794,8 +794,8 @@
           },
           {
             "service": "AU",
-            "inicio": "20260406",
-            "fim": "20260719",
+            "inicio": "20240909",
+            "fim": "20241231",
             "seg": 1,
             "ter": 1,
             "qua": 1,
@@ -806,8 +806,8 @@
           },
           {
             "service": "BDF",
-            "inicio": "20260406",
-            "fim": "20260719",
+            "inicio": "20240909",
+            "fim": "20241231",
             "seg": 0,
             "ter": 0,
             "qua": 0,
@@ -818,8 +818,8 @@
           },
           {
             "service": "BS",
-            "inicio": "20260406",
-            "fim": "20260719",
+            "inicio": "20240909",
+            "fim": "20241231",
             "seg": 0,
             "ter": 0,
             "qua": 0,
@@ -830,8 +830,8 @@
           },
           {
             "service": "BU",
-            "inicio": "20260406",
-            "fim": "20260719",
+            "inicio": "20240909",
+            "fim": "20241231",
             "seg": 1,
             "ter": 1,
             "qua": 1,
@@ -842,8 +842,8 @@
           },
           {
             "service": "BexpU",
-            "inicio": "20260406",
-            "fim": "20260719",
+            "inicio": "20240909",
+            "fim": "20241231",
             "seg": 1,
             "ter": 1,
             "qua": 1,
@@ -854,8 +854,8 @@
           },
           {
             "service": "CDF",
-            "inicio": "20260406",
-            "fim": "20260719",
+            "inicio": "20240909",
+            "fim": "20241231",
             "seg": 0,
             "ter": 0,
             "qua": 0,
@@ -866,8 +866,8 @@
           },
           {
             "service": "CS",
-            "inicio": "20260406",
-            "fim": "20260719",
+            "inicio": "20240909",
+            "fim": "20241231",
             "seg": 0,
             "ter": 0,
             "qua": 0,
@@ -878,8 +878,8 @@
           },
           {
             "service": "CU",
-            "inicio": "20260406",
-            "fim": "20260719",
+            "inicio": "20240909",
+            "fim": "20241231",
             "seg": 1,
             "ter": 1,
             "qua": 1,
@@ -890,8 +890,8 @@
           },
           {
             "service": "DDF",
-            "inicio": "20260406",
-            "fim": "20260719",
+            "inicio": "20240909",
+            "fim": "20241231",
             "seg": 0,
             "ter": 0,
             "qua": 0,
@@ -902,8 +902,8 @@
           },
           {
             "service": "DS",
-            "inicio": "20260406",
-            "fim": "20260719",
+            "inicio": "20240909",
+            "fim": "20241231",
             "seg": 0,
             "ter": 0,
             "qua": 0,
@@ -914,22 +914,22 @@
           }
         ],
         "datas_soltas": {
-          "primeira": "20260101",
-          "ultima": "20261225",
-          "total": 392
+          "primeira": "20261023",
+          "ultima": "20261107",
+          "total": 107
         },
         "servicos_com_data_hoje": [
           "FS",
-          "BS",
-          "ES",
-          "AS",
           "DS",
-          "CS"
+          "ES",
+          "CS",
+          "BS",
+          "AS"
         ],
         "viagens_por_servico": [
           {
             "service": "DU",
-            "viagens": 417
+            "viagens": 415
           },
           {
             "service": "DS",
@@ -979,5 +979,5 @@
       }
     }
   },
-  "duration_s": 294
+  "duration_s": 1317
 }
