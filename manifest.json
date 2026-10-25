@@ -1,7 +1,7 @@
 {
-  "built_at": "2026-10-25T08:45:23.878569+00:00",
-  "db_bytes": 631140352,
-  "gz_bytes": 124513343,
+  "built_at": "2026-10-25T18:29:16.668250+00:00",
+  "db_bytes": 631181312,
+  "gz_bytes": 124495563,
   "totals": {
     "lines": 2828,
     "stops": 46388,
@@ -584,7 +584,7 @@
     }
   ],
   "desenhos": {
-    "bytes": 7780714,
+    "bytes": 7809356,
     "por_operador": {
       "carris": {
         "viagens": 24996,
@@ -598,8 +598,8 @@
       },
       "cp": {
         "viagens": 1757,
-        "com_desenho": 1732,
-        "desenhos": 235
+        "com_desenho": 1757,
+        "desenhos": 246
       },
       "fertagus": {
         "viagens": 260,
@@ -915,11 +915,11 @@
           "total": 391
         },
         "servicos_com_data_hoje": [
-          "ADF",
           "DDF",
-          "EDF",
           "CDF",
           "FDF",
+          "ADF",
+          "EDF",
           "BDF"
         ],
         "viagens_por_servico": [
@@ -975,5 +975,5 @@
       }
     }
   },
-  "duration_s": 288
+  "duration_s": 287
 }
