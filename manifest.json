@@ -1,12 +1,12 @@
 {
-  "built_at": "2026-10-26T09:21:57.150615+00:00",
-  "db_bytes": 347701248,
-  "gz_bytes": 77282077,
+  "built_at": "2026-10-26T20:33:14.026934+00:00",
+  "db_bytes": 573652992,
+  "gz_bytes": 114901348,
   "totals": {
     "lines": 2828,
     "stops": 46388,
-    "trips": 78872,
-    "stop_times": 2272972,
+    "trips": 122060,
+    "stop_times": 3711037,
     "operators": 30,
     "operators_ok": 27,
     "operators_desatualizados": 2
@@ -584,12 +584,17 @@
     }
   ],
   "desenhos": {
-    "bytes": 5550019,
+    "bytes": 7805414,
     "por_operador": {
       "carris": {
         "viagens": 24996,
         "com_desenho": 24996,
         "desenhos": 307
+      },
+      "cmh": {
+        "viagens": 43188,
+        "com_desenho": 43188,
+        "desenhos": 1575
       },
       "cp": {
         "viagens": 1866,
@@ -906,13 +911,13 @@
           "total": 392
         },
         "servicos_com_data_hoje": [
-          "DU",
-          "CU",
-          "FU",
           "BU",
+          "BexpU",
+          "DU",
           "EU",
           "AU",
-          "BexpU"
+          "CU",
+          "FU"
         ],
         "viagens_por_servico": [
           {
@@ -967,5 +972,5 @@
       }
     }
   },
-  "duration_s": 259
+  "duration_s": 225
 }
