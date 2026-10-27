@@ -1,0 +1,57 @@
+name: Duas Chaves - recolha de anúncios
+
+# Lê anúncios públicos de arrendamento (duaschaves/recolher.py) e guarda-os em
+# sites/duaschaves/anuncios.json. O servidor copia a pasta em menos de 2 minutos.
+# Não recolhe contactos (ver o início de recolher.py).
+
+on:
+  workflow_dispatch:
+    inputs:
+      paginas:
+        description: "Páginas por distrito e tipo"
+        default: "2"
+      max_detalhes:
+        description: "Anúncios novos a abrir (descrição e fotos)"
+        default: "80"
+      guardar:
+        description: "sim = guardar no repositório; nao = só testar"
+        default: "sim"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: duaschaves-recolha
+  cancel-in-progress: false
+
+jobs:
+  recolher:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - name: Recolher
+        env:
+          PAGINAS: ${{ inputs.paginas || '2' }}
+          MAX_DETALHES: ${{ inputs.max_detalhes || '80' }}
+        run: |
+          python3 duaschaves/recolher.py sites/duaschaves/anuncios.json 2>&1 | tee recolha.txt
+          ls -la sites/duaschaves/
+      - name: Guardar
+        if: ${{ (inputs.guardar || 'sim') == 'sim' }}
+        run: |
+          git config user.name "parou-dados"
+          git config user.email "actions@users.noreply.github.com"
+          git add sites/duaschaves/anuncios.json
+          if git diff --cached --quiet; then echo "Sem alterações"; exit 0; fi
+          git commit -q -m "Duas Chaves: anúncios $(date -u +%Y-%m-%dT%H:%MZ)"
+          for i in 1 2 3; do git pull -q --rebase && git push -q && break; sleep 5; done
+      - name: Resultado
+        if: always()
+        run: |
+          mkdir pub && cp recolha.txt pub/ 2>/dev/null || echo "sem registo" > pub/recolha.txt
+          [ -f sites/duaschaves/anuncios.json ] && python3 -c "import json;d=json.load(open('sites/duaschaves/anuncios.json'));print(len(d['anuncios']),'anúncios');print(json.dumps(d['anuncios'][:2],ensure_ascii=False,indent=1)[:3000])" >> pub/recolha.txt
+          cd pub && git init -q -b duaschaves-recolha-resultado
+          git config user.name "parou-dados"; git config user.email "actions@users.noreply.github.com"
+          git add -A && git commit -q -m "Recolha $(date -u +%Y-%m-%dT%H:%MZ)"
+          git push -q -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" duaschaves-recolha-resultado
