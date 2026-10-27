@@ -120,3 +120,51 @@ www.jinxed.world {
 	redir https://jinxed.world{uri} permanent
 }
 # FIM www.jinxed.world
+
+# DUAS CHAVES - site de arrendamento (protótipo estático em /var/www/duaschaves, vindo de sites/duaschaves deste repositório)
+# Enquanto é protótipo (dados de demonstração) não deve aparecer nos motores de pesquisa: X-Robots-Tag noindex.
+(duaschaves) {
+	encode zstd gzip
+	header {
+		Strict-Transport-Security "max-age=31536000"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		Permissions-Policy "geolocation=(), camera=(), microphone=()"
+		Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self'; form-action 'self'; frame-ancestors 'none'; base-uri 'none'"
+		X-Robots-Tag "noindex, nofollow"
+		-Server
+	}
+	root * /var/www/duaschaves
+	file_server
+}
+
+# Endereço de testes (funciona antes de o domínio apontar para aqui)
+duaschaves.{HOST_TESTE} {
+	import duaschaves
+}
+
+# O domínio ainda não está comprado: fica pronto para duaschaves.pt e chave.pt.
+# Cada bloco só entra quando o domínio já aponta para este servidor (ver atualizar.sh).
+# INICIO duaschaves.pt
+duaschaves.pt {
+	import duaschaves
+}
+# FIM duaschaves.pt
+
+# INICIO www.duaschaves.pt
+www.duaschaves.pt {
+	redir https://duaschaves.pt{uri} permanent
+}
+# FIM www.duaschaves.pt
+
+# INICIO chave.pt
+chave.pt {
+	import duaschaves
+}
+# FIM chave.pt
+
+# INICIO www.chave.pt
+www.chave.pt {
+	redir https://chave.pt{uri} permanent
+}
+# FIM www.chave.pt
