@@ -177,7 +177,7 @@ input[type=file]{font:inherit;font-size:15px;max-width:100%}
 /* anúncio */
 .voltar{display:inline-flex;align-items:center;gap:6px;min-height:44px;font-weight:600;color:var(--tinta);text-decoration:none;margin:12px 0 8px}
 .voltar:hover{color:var(--tinta);text-decoration:underline}
-.casa-grelha{display:grid;gap:24px;grid-template-areas:"topo" "painel" "resto";padding-bottom:64px}
+.casa-grelha{display:grid;gap:24px;grid-template-columns:minmax(0,1fr);grid-template-areas:"topo" "painel" "resto";padding-bottom:64px}
 .casa-topo{grid-area:topo;display:flex;flex-direction:column;gap:6px}
 .casa-resto{grid-area:resto}
 .painel{grid-area:painel;background:#fff;border-radius:18px;padding:20px;display:flex;flex-direction:column;gap:14px}
@@ -283,6 +283,13 @@ input[type=file]{font:inherit;font-size:15px;max-width:100%}
 .lista-aviso{margin:0;padding-left:20px;line-height:1.5}
 .lista-aviso li+li{margin-top:4px}
 textarea[readonly]{background:var(--fundo);min-height:150px}
+.foto-img{aspect-ratio:16/10;background:#D6DDDA;overflow:hidden}
+.foto-img img{width:100%;height:100%;object-fit:cover;display:block}
+.galeria{display:flex;gap:8px;overflow-x:auto;scroll-snap-type:x mandatory;border-radius:18px;margin-bottom:6px}
+.galeria img{flex:0 0 100%;width:100%;aspect-ratio:16/10;object-fit:cover;scroll-snap-align:start;border-radius:18px;background:#D6DDDA}
+.texto.longo{white-space:pre-line}
+.preco .consulta{font-size:20px;letter-spacing:-.01em}
+.mais{display:flex;justify-content:center;margin-top:20px}
 /* senhorios */
 .form-grelha{display:grid;gap:18px;grid-template-columns:minmax(0,1fr)}
 .fotos-pre{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:8px}
@@ -353,7 +360,7 @@ dialog.dialogo::backdrop{background:rgba(15,26,23,.55)}
 </head>
 <body>
 <a class="saltar" href="#conteudo" id="saltar">Saltar para o conteúdo</a>
-<p class="aviso-demo">Protótipo com dados de demonstração: os anúncios e os pagamentos não são reais.</p>
+<p class="aviso-demo" id="aviso-demo">Protótipo com dados de demonstração: os anúncios e os pagamentos não são reais.</p>
 <header class="topo">
   <div class="contentor topo-in">
     <a class="marca" href="#inicio" aria-label="Duas Chaves, início">
@@ -497,10 +504,13 @@ function eur(n){return fmtEur.format(n);}
 var P1='1&nbsp;€', P2='9,99&nbsp;€';
 var fmtData = new Intl.DateTimeFormat('pt-PT',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
 var fmtDia = new Intl.DateTimeFormat('pt-PT',{day:'numeric',month:'long'});
-function quando(m){return m<60?'há '+m+' min':'há '+Math.floor(m/60)+' h';}
+function quando(m){if(m<60)return 'há '+m+' min';if(m<1440)return 'há '+Math.floor(m/60)+' h';var d=Math.floor(m/1440);return d===1?'há 1 dia':'há '+d+' dias';}
+function precoHtml(c){return c.renda?eur(c.renda)+'<small> /mês</small>':'<span class="consulta">Preço sob consulta</span>';}
+function tipTxt(c){return c.tip||c.tipo||'Casa';}
+function resumoCasa(c,comCidade){var p=[tipTxt(c)];if(c.area)p.push(c.area+' m²');var l=esc(c.bairro);if(comCidade&&c.cidade&&c.cidade!==c.bairro)l+=', '+esc(c.cidade);p.push(l);return p.join(' · ');}
 function norm(t){return String(t).normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().trim();}
 function emCidade(c){var n=norm(c);if(n==='porto')return 'no Porto';var cap=c.trim();return 'em '+cap.charAt(0).toUpperCase()+cap.slice(1);}
-function entrada(c){return c.renda*(1+c.caucao);}
+function entrada(c){return (c.renda&&c.caucao!=null)?c.renda*(1+c.caucao):null;}
 function papel(c){return c.gen==='f'?'Senhoria':'Senhorio';}
 function primeiroNome(c){return c.senhorio?c.senhorio.split(' ')[0]:'senhorio';}
 function artigo(c){return c.gen==='f'?'a':'o';}
@@ -631,7 +641,7 @@ function dialogoMensagem(c){
 function dialogoExterno(c,acao){
   var f=FONTES[c.fonte];
   var tit={visita:'Marcar visita',ligar:'Ligar a quem anuncia',msg:'Enviar mensagem'}[acao];
-  var msg='Olá! Vi o seu anúncio ('+c.tip+' em '+c.bairro+', '+eur(c.renda)+' por mês) e gostava de visitar a casa. Quando seria possível?';
+  var msg='Olá! Vi o seu anúncio ('+tipTxt(c)+' em '+c.bairro+(c.renda?', '+eur(c.renda)+' por mês':'')+') e gostava de visitar a casa. Quando seria possível?';
   abrirDialogo('<div class="dialogo-corpo">'+cabecaDialogo(tit)+
     '<p style="margin:0">Quem anuncia está '+f.em+'. Fala diretamente com essa pessoa:</p>'+
     '<div class="contacto"><p class="rotulo">Contacto</p><p class="contacto-num">[contacto do anúncio original]</p></div>'+
@@ -653,9 +663,9 @@ function confianca(c){
 }
 function cartao(c){
   return '<a class="cartao" href="#casa-'+c.id+'">'+
-    '<div class="foto" style="background:'+c.cor+'"><span>[Foto do anúncio]</span></div>'+
-    '<div class="cartao-corpo"><div class="linha-topo"><p class="preco">'+eur(c.renda)+'<small> /mês</small></p><span class="quando">'+quando(c.min)+'</span></div>'+
-    '<h3>'+c.tip+' · '+c.area+' m² · '+esc(c.bairro)+', '+esc(c.cidade)+'</h3>'+confianca(c)+'</div></a>';
+    (c.fotos&&c.fotos.length?'<div class="foto-img"><img src="'+esc(c.fotos[0])+'" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" width="655" height="410"></div>':'<div class="foto" style="background:'+c.cor+'"><span>[Foto do anúncio]</span></div>')+
+    '<div class="cartao-corpo"><div class="linha-topo"><p class="preco">'+precoHtml(c)+'</p><span class="quando">'+quando(c.min)+'</span></div>'+
+    '<h3>'+resumoCasa(c,true)+'</h3>'+confianca(c)+'</div></a>';
 }
 function partes(o){
   var label=(o.senhorio?(o.papel+' já confirmou'):(o.papel+' ainda não confirmou'))+'. '+(o.tu?'Tu já confirmaste.':'Falta a tua confirmação.');
@@ -763,15 +773,15 @@ function vInicio(){
 function filtrar(){
   var cid=norm(estado.cidade);
   var r=CASAS.filter(function(c){
-    if(cid&&norm(c.cidade).indexOf(cid)<0&&norm(c.bairro).indexOf(cid)<0)return false;
-    if(estado.precoMax&&c.renda>estado.precoMax)return false;
+    if(cid&&norm(c.cidade).indexOf(cid)<0&&norm(c.bairro).indexOf(cid)<0&&norm(c.distrito||'').indexOf(cid)<0)return false;
+    if(estado.precoMax&&(!c.renda||c.renda>estado.precoMax))return false;
     if(estado.soProt&&!c.prot)return false;
     if(estado.tips.length){var t=c.tip;if(['T3','T4','T5'].indexOf(t)>=0)t='T3+';if(estado.tips.indexOf(t)<0)return false;}
     return true;
   });
   r.sort(function(a,b){
-    if(estado.ordem==='barato')return a.renda-b.renda;
-    if(estado.ordem==='caro')return b.renda-a.renda;
+    if(estado.ordem==='barato')return (a.renda||1e9)-(b.renda||1e9);
+    if(estado.ordem==='caro')return (b.renda||0)-(a.renda||0);
     return a.min-b.min;
   });
   return r;
@@ -808,7 +818,7 @@ function vPesquisa(){
       '</section>'+
     '</div></div>';
 
-  var lista=document.getElementById('lista');
+  var lista=document.getElementById('lista'),limite=30;
   function desenhar(){
     var r=filtrar();
     document.getElementById('n-res').textContent=r.length===0?'Nenhuma casa':(r.length===1?'1 casa':r.length+' casas');
@@ -816,9 +826,12 @@ function vPesquisa(){
     if(!r.length){
       lista.innerHTML='<div class="vazio" style="grid-column:1 / -1"><h2>Não há casas com estes filtros</h2><p>Tira um filtro ou cria um alerta: avisamos-te quando aparecer uma casa assim.</p><button type="button" class="botao-sec botao-peq" id="vazio-limpar">Limpar filtros</button></div>';
       document.getElementById('vazio-limpar').addEventListener('click',limpar);
-    }else{lista.innerHTML=r.map(cartao).join('');}
+    }else{
+      lista.innerHTML=r.slice(0,limite).map(cartao).join('')+(r.length>limite?'<div class="mais" style="grid-column:1 / -1"><button type="button" class="botao-sec" id="b-mais">Ver mais casas</button></div>':'');
+      var bm=document.getElementById('b-mais');if(bm)bm.addEventListener('click',function(){limite+=30;desenhar();});
+    }
   }
-  function limpar(){estado.precoMax=0;estado.tips=[];estado.soProt=false;document.getElementById('f-preco').value='0';document.getElementById('f-prot').checked=false;main.querySelectorAll('[data-tip]').forEach(function(b){b.setAttribute('aria-pressed','false');});desenhar();}
+  function limpar(){limite=30;estado.precoMax=0;estado.tips=[];estado.soProt=false;document.getElementById('f-preco').value='0';document.getElementById('f-prot').checked=false;main.querySelectorAll('[data-tip]').forEach(function(b){b.setAttribute('aria-pressed','false');});desenhar();}
   desenhar();
 
   document.getElementById('f-busca2').addEventListener('submit',function(e){e.preventDefault();estado.cidade=document.getElementById('p-cidade').value.trim();vPesquisa();});
@@ -849,7 +862,7 @@ function vPesquisa(){
 function vCasa(id){
   var c=casa(id);
   if(!c){vNaoExiste();return;}
-  titulo(c.tip+' em '+c.bairro);
+  titulo(tipTxt(c)+' em '+c.bairro);
   var painel;
   if(c.prot){
     painel='<div class="caixa-prot"><h2 class="h-prot">'+svg(P.escudo)+'Pagamento protegido</h2>'+
@@ -862,7 +875,7 @@ function vCasa(id){
     var f=FONTES[c.fonte];
     painel='<div class="caixa-fora"><h2 class="h-prot fora">'+svg(P.externo)+f.de+'</h2>'+
       '<p>Encontrámos este anúncio automaticamente. O contacto e o pagamento são feitos diretamente com quem anuncia, sem pagamento protegido.</p>'+
-      '<div class="total"><span>Para entrar (1.ª renda + caução de '+meses(c.caucao)+')</span><strong>'+eur(entrada(c))+'</strong></div></div>'+
+      (entrada(c)?'<div class="total"><span>Para entrar (1.ª renda + caução de '+meses(c.caucao)+')</span><strong>'+eur(entrada(c))+'</strong></div>':'<div class="total"><span>Renda mensal</span><strong>'+(c.renda?eur(c.renda):'Sob consulta')+'</strong></div>')+'</div>'+
       botoesContacto()+
       '<button class="botao-sec largo" type="button" id="b-proteger">'+svg(P.escudo)+'Pagar com proteção nesta casa</button>'+
       '<div class="dicas"><h3>Antes de pagares alguma coisa</h3><ul>'+
@@ -875,22 +888,22 @@ function vCasa(id){
     '<a class="voltar" href="#pesquisa">'+svg(P.voltar,{s:18})+'Voltar aos resultados</a>'+
     '<div class="casa-grelha">'+
       '<div class="casa-topo">'+
-        '<div class="foto foto-grande" style="background:'+c.cor+'"><span>[Fotos do anúncio]</span><span class="contador">1 / 12</span></div>'+
-        '<div class="preco-linha"><p class="preco preco-grande">'+eur(c.renda)+'<small> /mês</small></p>'+
+        (c.fotos&&c.fotos.length?'<div class="galeria" tabindex="0" aria-label="Fotos da casa, desliza para ver mais">'+c.fotos.map(function(u,i){return '<img src="'+esc(u)+'" alt="Foto '+(i+1)+' de '+c.fotos.length+'" '+(i?'loading="lazy" ':'')+'decoding="async" referrerpolicy="no-referrer" width="655" height="410">';}).join('')+'</div><p class="meta">'+c.fotos.length+(c.fotos.length>1?' fotos · desliza para ver':' foto')+'</p>':'<div class="foto foto-grande" style="background:'+c.cor+'"><span>[Fotos do anúncio]</span><span class="contador">1 / 12</span></div>')+
+        '<div class="preco-linha"><p class="preco preco-grande">'+precoHtml(c)+'</p>'+
           '<button type="button" class="icone guardar" id="b-guardar" aria-pressed="'+guardada+'" aria-label="Guardar casa">'+svg(P.coracao)+'</button></div>'+
-        '<h1 class="casa-titulo" tabindex="-1">'+c.tip+' · '+c.area+' m² · '+esc(c.andar)+' · '+esc(c.bairro)+', '+esc(c.cidade)+'</h1>'+
+        '<h1 class="casa-titulo" tabindex="-1">'+(c.titulo?esc(c.titulo):resumoCasa(c,true))+'</h1>'+(c.titulo?'<p class="meta">'+resumoCasa(c,true)+'</p>':'')+
         '<p class="meta">Publicado '+quando(c.min)+'</p>'+
       '</div>'+
       '<aside class="painel" aria-label="Contacto e pagamento">'+painel+'</aside>'+
       '<div class="casa-resto">'+
-        '<h2 class="h-peq">Sobre a casa</h2><p class="texto">'+esc(c.desc)+'</p>'+
+        '<h2 class="h-peq">Sobre a casa</h2><p class="texto longo">'+(c.desc?esc(c.desc):'Sem descrição. Vê o anúncio original para mais detalhes.')+'</p>'+
         '<dl class="dados">'+
-          '<div><dt>Tipologia</dt><dd>'+c.tip+'</dd></div>'+
-          '<div><dt>Área</dt><dd>'+c.area+' m²</dd></div>'+
-          '<div><dt>Andar</dt><dd>'+esc(c.andar)+'</dd></div>'+
-          '<div><dt>Mobilada</dt><dd>'+(c.mob?'Sim':'Não')+'</dd></div>'+
-          '<div><dt>Renda</dt><dd>'+eur(c.renda)+' /mês</dd></div>'+
-          '<div><dt>Caução</dt><dd>'+meses(c.caucao)+'</dd></div>'+
+          '<div><dt>Tipologia</dt><dd>'+tipTxt(c)+'</dd></div>'+
+          '<div><dt>Área</dt><dd>'+(c.area?c.area+' m²':'—')+'</dd></div>'+
+          '<div><dt>Andar</dt><dd>'+(c.andar?esc(c.andar):'—')+'</dd></div>'+
+          '<div><dt>Mobilada</dt><dd>'+(c.mob==null?'—':(c.mob?'Sim':'Não'))+'</dd></div>'+
+          '<div><dt>Renda</dt><dd>'+(c.renda?eur(c.renda)+' /mês':'Sob consulta')+'</dd></div>'+
+          '<div><dt>Caução</dt><dd>'+(c.caucao==null?'—':meses(c.caucao))+'</dd></div>'+
           '<div><dt>Certificado energético</dt><dd>[a indicar]</dd></div>'+
           '<div><dt>Origem</dt><dd>'+(c.prot?'Publicado aqui':esc(c.fonte))+'</dd></div>'+
         '</dl>'+
@@ -905,7 +918,7 @@ function vCasa(id){
   main.querySelectorAll('[data-acao]').forEach(function(b){b.addEventListener('click',function(){acaoContacto(c,b.getAttribute('data-acao'));});});
   if(!c.prot){
     document.getElementById('b-proteger').addEventListener('click',function(){
-      estado.prefill={onde:c.fonte,link:c.url,zona:c.bairro+', '+c.cidade,renda:c.renda,caucao:c.caucao};ir('proteger');
+      estado.prefill={onde:c.fonte,link:c.url,zona:c.bairro+(c.cidade&&c.cidade!==c.bairro?', '+c.cidade:''),renda:c.renda||'',caucao:c.caucao==null?1:c.caucao};ir('proteger');
     });
   }
 }
@@ -1428,6 +1441,22 @@ document.getElementById('saltar').addEventListener('click',function(e){e.prevent
 window.addEventListener('hashchange',rota);
 atualizarTopo();
 rota();
+/* Anúncios reais recolhidos automaticamente (anuncios.json, ao lado desta página). Sem ficheiro, ficam os de demonstração. */
+function deRecolha(a){
+  var t=a.data?Date.parse(a.data):NaN;
+  return {id:+String(a.id).replace(/\D/g,''),cidade:a.cidade||a.distrito||'',distrito:a.distrito||'',bairro:a.bairro||a.cidade||'',tip:a.tip||'',tipo:a.tipo||'',titulo:a.titulo||'',
+    area:a.area||null,andar:a.andar||'',renda:a.renda||null,caucao:null,min:isNaN(t)?99999:Math.max(1,Math.round((Date.now()-t)/6e4)),prot:false,
+    fonte:FONTES[a.fonte]?a.fonte:'Imovirtual',url:a.url,mob:null,cor:'#D6DDDA',desc:a.desc||'',fotos:a.fotos||[]};
+}
+try{
+  fetch('anuncios.json',{cache:'no-store'}).then(function(r){return r.ok?r.json():null;}).then(function(d){
+    if(!d||!d.anuncios||!d.anuncios.length)return;
+    CASAS=CASAS.filter(function(c){return c.prot;}).concat(d.anuncios.map(deRecolha).filter(function(c){return c.id&&c.url;}));
+    document.getElementById('aviso-demo').textContent='Versão de testes: os anúncios de outros sites são reais; os publicados aqui e os pagamentos são de demonstração.';
+    var h=location.hash.slice(1)||'inicio';
+    if(/^(inicio|pesquisa|conta|casa-\d+)$/.test(h))rota();
+  }).catch(function(){});
+}catch(e){}
 })();
 </script>
 </body>

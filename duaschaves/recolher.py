@@ -102,7 +102,7 @@ def detalhes(anuncio):
     if not ad:
         return False
     anuncio['desc'] = limpar_texto(ad.get('description'))
-    fotos = [i.get('large') or i.get('medium') for i in ad.get('images') or [] if i]
+    fotos = [i.get('medium') or i.get('large') for i in ad.get('images') or [] if i]
     if fotos:
         anuncio['fotos'] = [f for f in fotos if f][:12]
     for c in ad.get('characteristics') or []:
