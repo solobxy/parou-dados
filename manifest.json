@@ -1,7 +1,7 @@
 {
-  "built_at": "2026-10-27T09:21:36.351137+00:00",
+  "built_at": "2026-10-27T20:10:06.600238+00:00",
   "db_bytes": 550584320,
-  "gz_bytes": 111300959,
+  "gz_bytes": 111300384,
   "totals": {
     "lines": 2828,
     "stops": 46381,
@@ -80,7 +80,7 @@
       "validade": "ok",
       "dias_validade": 138,
       "horario_prolongado": false,
-      "url": "https://www.fertagus.pt/GTFSTMLzip/Fertagus_GTFS.zip",
+      "url": "https://files.mobilitydatabase.org/tld-715/latest.zip",
       "last_error": null,
       "servicos_associados": null,
       "servicos_sem_calendario": null,
@@ -911,12 +911,12 @@
           "total": 393
         },
         "servicos_com_data_hoje": [
-          "CU",
-          "BexpU",
-          "EU",
-          "BU",
-          "FU",
           "AU",
+          "CU",
+          "FU",
+          "BexpU",
+          "BU",
+          "EU",
           "DU"
         ],
         "viagens_por_servico": [
