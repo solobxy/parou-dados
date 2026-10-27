@@ -487,6 +487,7 @@ var P = {
   seta:'<path d="M5 12h14M13 6l6 6-6 6"/>',
   baixo:'<path d="m6 9 6 6 6-6"/>',
   coracao:'<path d="M12 20s-7-4.5-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.5-7 10-7 10z"/>',
+  telefone:'<path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2"/>',
   lixo:'<path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/>'
 };
 function svg(p,o){o=o||{};var s=o.s||20,w=o.w||2;return '<svg width="'+s+'" height="'+s+'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="'+w+'" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+p+'</svg>';}
@@ -544,7 +545,7 @@ var ERRO_EMAIL='Escreve um e-mail válido, por exemplo nome@gmail.com.';
 /* ---------- acesso pago (1 € → 9,99 €) ---------- */
 function listaInclui(){
   return '<ul class="inclui">'+
-    '<li>'+svg(P.visto,{s:20,w:2.4})+'<span>Contacto de qualquer anúncio, de todos os sites</span></li>'+
+    '<li>'+svg(P.visto,{s:20,w:2.4})+'<span>Marcar visitas, ligar e enviar mensagens em qualquer anúncio</span></li>'+
     '<li>'+svg(P.visto,{s:20,w:2.4})+'<span>Link para o anúncio original</span></li>'+
     '<li>'+svg(P.visto,{s:20,w:2.4})+'<span>Alertas no momento em que a casa aparece</span></li>'+
   '</ul>';
@@ -553,7 +554,7 @@ function avisoRenovacao(){return '<p class="aviso-preco">Depois, <strong>'+P2+' 
 function abrirAcesso(depois){
   var semSessao=!conta.sessao;
   abrirDialogo('<form class="dialogo-corpo" id="f-acesso" novalidate>'+
-    cabecaDialogo('Ver os contactos')+
+    cabecaDialogo('Desbloquear os contactos')+
     '<div class="oferta"><p class="oferta-preco">'+P1+'</p><p class="oferta-txt">nos primeiros 30 dias</p></div>'+
     listaInclui()+avisoRenovacao()+
     (semSessao?'<div class="campo"><label for="ac-email">E-mail</label><input id="ac-email" type="email" autocomplete="email" inputmode="email"></div>':'')+
@@ -571,6 +572,77 @@ function abrirAcesso(depois){
     guardarConta();dlg.close();
     toast('Acesso ativo. A 1.ª renovação é a '+fmtDia.format(new Date(conta.acesso.ate))+', por 9,99 €.');
     if(depois)depois();
+  });
+}
+
+/* ---------- os 3 botões de contacto (pagos com o acesso) ---------- */
+function botoesContacto(){
+  var ativo=acessoAtivo(),cad=ativo?'':svg(P.cadeado,{s:18});
+  return '<div class="acoes">'+
+    '<button class="botao largo" type="button" data-acao="visita">'+cad+'Marcar visita</button>'+
+    '<button class="botao-sec largo" type="button" data-acao="ligar">'+(cad||svg(P.telefone,{s:18}))+'Ligar para o telemóvel</button>'+
+    '<button class="botao-sec largo" type="button" data-acao="msg">'+(cad||svg(P.msg,{s:18}))+'Enviar mensagem</button>'+
+    (ativo?'':'<p class="ajuda centro">Com o acesso: '+P1+' nos primeiros 30 dias, depois '+P2+' a cada 30 dias.</p>')+
+  '</div>';
+}
+function acaoContacto(c,acao){
+  var correr=function(){
+    if(!c.prot){dialogoExterno(c,acao);return;}
+    if(acao==='visita')dialogoVisita(c);else if(acao==='ligar')dialogoLigar(c);else dialogoMensagem(c);
+  };
+  if(acessoAtivo())correr();
+  else abrirAcesso(function(){vCasa(c.id);foco();correr();});
+}
+function dialogoVisita(c){
+  var horas=['Amanhã, 18:00','Amanhã, 19:00','Sábado, 10:00','Sábado, 11:30'];
+  abrirDialogo('<form class="dialogo-corpo" id="f-visita" novalidate>'+cabecaDialogo('Marcar visita')+
+    '<fieldset class="campo"><legend class="rotulo">Escolhe uma hora</legend><div class="horas">'+
+      horas.map(function(h,i){return '<label class="hora"><input type="radio" name="hora" value="'+h+'"'+(i===0?' checked':'')+'>'+h+'</label>';}).join('')+
+    '</div></fieldset>'+
+    '<div class="campo"><label for="v-nome">O teu nome</label><input id="v-nome" type="text" autocomplete="name"></div>'+
+    '<div class="campo"><label for="v-tel">Telemóvel</label><input id="v-tel" type="tel" inputmode="tel" autocomplete="tel"><p class="ajuda">Para '+(c.gen==='f'?'a senhoria':'o senhorio')+' confirmar a visita contigo.</p></div>'+
+    '<button class="botao largo" type="submit">Pedir visita</button></form>');
+  document.getElementById('f-visita').addEventListener('submit',function(e){
+    e.preventDefault();
+    var n=document.getElementById('v-nome'),t=document.getElementById('v-tel');
+    var okN=erroCampo(n,n.value.trim()?'':'Escreve o teu nome.');
+    var okT=erroCampo(t,/^(\+351)?9\d{8}$/.test(t.value.replace(/\s/g,''))?'':'Escreve os 9 dígitos do telemóvel, começado por 9.');
+    if(!okN){n.focus();return;}if(!okT){t.focus();return;}
+    var h=e.target.querySelector('input[name=hora]:checked').value;
+    dlg.close();toast('Pedido de visita para '+h+' registado. Protótipo: nada foi enviado.');
+  });
+}
+function dialogoLigar(c){
+  abrirDialogo('<div class="dialogo-corpo">'+cabecaDialogo('Ligar a '+esc(c.senhorio))+
+    '<div class="contacto"><p class="rotulo">Telemóvel</p><p class="contacto-num">[telemóvel '+(c.gen==='f'?'da senhoria':'do senhorio')+']</p></div>'+
+    '<p class="ajuda">No site a funcionar, tocas no número para ligar.</p>'+
+    '<button class="botao-sec largo" type="button" data-fechar>Fechar</button></div>');
+}
+function dialogoMensagem(c){
+  abrirDialogo('<form class="dialogo-corpo" id="f-msg" novalidate>'+cabecaDialogo('Mensagem para '+esc(primeiroNome(c)))+
+    '<div class="campo"><label for="m-txt">Mensagem</label><textarea id="m-txt">Olá, a casa ainda está disponível? Gostava de a visitar.</textarea></div>'+
+    '<button class="botao largo" type="submit">Enviar mensagem</button></form>');
+  document.getElementById('f-msg').addEventListener('submit',function(e){
+    e.preventDefault();var m=document.getElementById('m-txt');
+    if(!erroCampo(m,m.value.trim()?'':'Escreve a tua mensagem.')){m.focus();return;}
+    dlg.close();toast('Mensagem guardada. Protótipo: nada foi enviado.');
+  });
+}
+function dialogoExterno(c,acao){
+  var f=FONTES[c.fonte];
+  var tit={visita:'Marcar visita',ligar:'Ligar a quem anuncia',msg:'Enviar mensagem'}[acao];
+  var msg='Olá! Vi o seu anúncio ('+c.tip+' em '+c.bairro+', '+eur(c.renda)+' por mês) e gostava de visitar a casa. Quando seria possível?';
+  abrirDialogo('<div class="dialogo-corpo">'+cabecaDialogo(tit)+
+    '<p style="margin:0">Quem anuncia está '+f.em+'. Fala diretamente com essa pessoa:</p>'+
+    '<div class="contacto"><p class="rotulo">Contacto</p><p class="contacto-num">[contacto do anúncio original]</p></div>'+
+    (acao==='ligar'?'':'<div class="campo"><label for="ext-msg">Mensagem pronta</label><textarea id="ext-msg" readonly>'+esc(msg)+'</textarea></div><button class="botao-sec largo" type="button" id="b-copiar-ext">Copiar mensagem</button>')+
+    '<a class="botao largo" href="'+c.url+'" target="_blank" rel="noopener">Abrir anúncio '+f.em+' '+svg(P.externo,{s:18})+'</a>'+
+    '<p class="ajuda">Para pagares com segurança, propõe o <a href="#proteger">pagamento protegido</a>.</p></div>');
+  var bc=document.getElementById('b-copiar-ext');
+  if(bc)bc.addEventListener('click',function(){
+    var ta=document.getElementById('ext-msg');
+    var falhou=function(){ta.focus();ta.select();toast('Seleciona a mensagem e copia-a.');};
+    try{navigator.clipboard.writeText(msg).then(function(){toast('Mensagem copiada.');},falhou);}catch(err){falhou();}
   });
 }
 
@@ -645,7 +717,7 @@ function vInicio(){
   '</div></section>'+
 
   '<section class="seccao branco"><div class="contentor dois-col">'+
-    '<div><h2>O contacto de qualquer casa</h2><p class="apoio">Ver anúncios é grátis. Para veres o contacto de quem anuncia e saberes das casas novas no momento em que aparecem, o acesso custa '+P1+' nos primeiros 30 dias.</p>'+
+    '<div><h2>O contacto de qualquer casa</h2><p class="apoio">Ver os anúncios, as fotos e toda a informação é grátis. Para marcares visitas, ligares e enviares mensagens, e saberes das casas novas no momento em que aparecem, o acesso custa '+P1+' nos primeiros 30 dias.</p>'+
     '<a class="botao" href="#precos">Ver preços</a></div>'+
     '<div class="plano destaque"><div class="oferta"><p class="oferta-preco">'+P1+'</p><p class="oferta-txt">nos primeiros 30 dias</p></div>'+listaInclui()+avisoRenovacao()+'</div>'+
   '</div></section>'+
@@ -781,27 +853,19 @@ function vCasa(id){
   var painel;
   if(c.prot){
     painel='<div class="caixa-prot"><h2 class="h-prot">'+svg(P.escudo)+'Pagamento protegido</h2>'+
-      '<p>Pagas a entrada aqui. O dinheiro fica retido e só chega '+(c.gen==='f'?'à senhoria':'ao senhorio')+' quando os dois confirmarem a entrega das chaves. Visitas e mensagens são grátis; o serviço custa '+eur(TAXA)+' e só pagas se arrendares.</p>'+
+      '<p>Pagas a entrada aqui. O dinheiro fica retido e só chega '+(c.gen==='f'?'à senhoria':'ao senhorio')+' quando os dois confirmarem a entrega das chaves. O serviço custa '+eur(TAXA)+' e só pagas se arrendares.</p>'+
       '<div class="total"><span>Para entrar (1.ª renda + caução de '+meses(c.caucao)+')</span><strong>'+eur(entrada(c))+'</strong></div></div>'+
       '<div class="pessoa"><div class="avatar" aria-hidden="true">'+c.ini+'</div><div><p class="nome">'+esc(c.senhorio)+'</p><p class="papel">'+svg(P.visto,{s:16,w:2.4})+papel(c)+' · identidade verificada</p></div></div>'+
-      '<button class="botao largo" type="button" id="b-visita">Marcar visita</button>'+
-      '<button class="botao-sec largo" type="button" id="b-msg">'+svg(P.msg)+'Enviar mensagem</button>'+
+      botoesContacto()+
       '<p class="ajuda centro">Já visitaste? <a href="#pagamento-'+c.id+'">Pagar a entrada com proteção</a></p>';
   }else{
     var f=FONTES[c.fonte];
     painel='<div class="caixa-fora"><h2 class="h-prot fora">'+svg(P.externo)+f.de+'</h2>'+
       '<p>Encontrámos este anúncio automaticamente. O contacto e o pagamento são feitos diretamente com quem anuncia, sem pagamento protegido.</p>'+
-      '<div class="total"><span>Para entrar (1.ª renda + caução de '+meses(c.caucao)+')</span><strong>'+eur(entrada(c))+'</strong></div></div>';
-    if(acessoAtivo()){
-      painel+='<div class="contacto"><p class="rotulo">Contacto de quem anuncia</p><p class="contacto-num">[telefone do anúncio original]</p></div>'+
-        '<a class="botao largo" href="'+c.url+'" target="_blank" rel="noopener">Abrir anúncio '+f.em+' '+svg(P.externo,{s:18})+'</a>';
-    }else{
-      painel+='<div class="contacto"><p class="rotulo">Contacto de quem anuncia</p><p class="mascarado"><span aria-hidden="true">9•• ••• •••</span><span style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)">Contacto escondido</span></p></div>'+
-        '<button class="botao largo" type="button" id="b-desbloquear">Ver contacto por '+P1+'</button>'+
-        '<p class="ajuda centro">Depois, '+P2+' a cada 30 dias. Cancelas quando quiseres.</p>';
-    }
-    painel+='<button class="botao-sec largo" type="button" id="b-proteger">'+svg(P.escudo)+'Pagar com proteção nesta casa</button>';
-    painel+='<div class="dicas"><h3>Antes de pagares alguma coisa</h3><ul>'+
+      '<div class="total"><span>Para entrar (1.ª renda + caução de '+meses(c.caucao)+')</span><strong>'+eur(entrada(c))+'</strong></div></div>'+
+      botoesContacto()+
+      '<button class="botao-sec largo" type="button" id="b-proteger">'+svg(P.escudo)+'Pagar com proteção nesta casa</button>'+
+      '<div class="dicas"><h3>Antes de pagares alguma coisa</h3><ul>'+
         '<li>Visita a casa antes de pagar qualquer valor.</li>'+
         '<li>Desconfia de rendas muito abaixo das outras na zona.</li>'+
         '<li>Confirma que quem anuncia é mesmo o dono.</li></ul></div>';
@@ -838,39 +902,8 @@ function vCasa(id){
     if(i>=0){conta.guardadas.splice(i,1);toast('Casa removida das guardadas.');}else{conta.guardadas.push(c.id);toast('Casa guardada na tua conta.');}
     this.setAttribute('aria-pressed',i<0);guardarConta();
   });
-  if(c.prot){
-    document.getElementById('b-visita').addEventListener('click',function(){
-      var horas=['Amanhã, 18:00','Amanhã, 19:00','Sábado, 10:00','Sábado, 11:30'];
-      abrirDialogo('<form class="dialogo-corpo" id="f-visita" novalidate>'+cabecaDialogo('Marcar visita')+
-        '<fieldset class="campo"><legend class="rotulo">Escolhe uma hora</legend><div class="horas">'+
-          horas.map(function(h,i){return '<label class="hora"><input type="radio" name="hora" value="'+h+'"'+(i===0?' checked':'')+'>'+h+'</label>';}).join('')+
-        '</div></fieldset>'+
-        '<div class="campo"><label for="v-nome">O teu nome</label><input id="v-nome" type="text" autocomplete="name"></div>'+
-        '<div class="campo"><label for="v-tel">Telemóvel</label><input id="v-tel" type="tel" inputmode="tel" autocomplete="tel"><p class="ajuda">Para '+(c.gen==='f'?'a senhoria':'o senhorio')+' confirmar a visita contigo.</p></div>'+
-        '<button class="botao largo" type="submit">Pedir visita</button></form>');
-      document.getElementById('f-visita').addEventListener('submit',function(e){
-        e.preventDefault();
-        var n=document.getElementById('v-nome'),t=document.getElementById('v-tel');
-        var okN=erroCampo(n,n.value.trim()?'':'Escreve o teu nome.');
-        var okT=erroCampo(t,/^(\+351)?9\d{8}$/.test(t.value.replace(/\s/g,''))?'':'Escreve os 9 dígitos do telemóvel, começado por 9.');
-        if(!okN){n.focus();return;}if(!okT){t.focus();return;}
-        var h=e.target.querySelector('input[name=hora]:checked').value;
-        dlg.close();toast('Pedido de visita para '+h+' registado. Protótipo: nada foi enviado.');
-      });
-    });
-    document.getElementById('b-msg').addEventListener('click',function(){
-      abrirDialogo('<form class="dialogo-corpo" id="f-msg" novalidate>'+cabecaDialogo('Mensagem para '+esc(primeiroNome(c)))+
-        '<div class="campo"><label for="m-txt">Mensagem</label><textarea id="m-txt">Olá, a casa ainda está disponível?</textarea></div>'+
-        '<button class="botao largo" type="submit">Enviar mensagem</button></form>');
-      document.getElementById('f-msg').addEventListener('submit',function(e){
-        e.preventDefault();var m=document.getElementById('m-txt');
-        if(!erroCampo(m,m.value.trim()?'':'Escreve a tua mensagem.')){m.focus();return;}
-        dlg.close();toast('Mensagem guardada. Protótipo: nada foi enviado.');
-      });
-    });
-  }else{
-    var bd=document.getElementById('b-desbloquear');
-    if(bd)bd.addEventListener('click',function(){abrirAcesso(function(){vCasa(id);foco();});});
+  main.querySelectorAll('[data-acao]').forEach(function(b){b.addEventListener('click',function(){acaoContacto(c,b.getAttribute('data-acao'));});});
+  if(!c.prot){
     document.getElementById('b-proteger').addEventListener('click',function(){
       estado.prefill={onde:c.fonte,link:c.url,zona:c.bairro+', '+c.cidade,renda:c.renda,caucao:c.caucao};ir('proteger');
     });
@@ -985,10 +1018,9 @@ function vPrecos(){
     '<div class="planos">'+
       '<div class="plano"><h2>Grátis</h2><p class="preco-plano">0&nbsp;€</p>'+
         '<ul class="inclui">'+
-          '<li>'+svg(P.visto,{s:20,w:2.4})+'<span>Ver todos os anúncios, de todos os sites</span></li>'+
+          '<li>'+svg(P.visto,{s:20,w:2.4})+'<span>Ver todos os anúncios, com fotos e toda a informação</span></li>'+
           '<li>'+svg(P.visto,{s:20,w:2.4})+'<span>Guardar casas e criar alertas (resumo uma vez por dia)</span></li>'+
-          '<li>'+svg(P.visto,{s:20,w:2.4})+'<span>Visitas e mensagens nas casas com pagamento protegido</span></li>'+
-          '<li class="nao">'+svg(P.menos,{s:20,w:2.4})+'<span>Contacto dos anúncios de outros sites</span></li>'+
+          '<li class="nao">'+svg(P.menos,{s:20,w:2.4})+'<span>Marcar visitas, ligar e enviar mensagens</span></li>'+
         '</ul>'+
         '<a class="botao-sec largo" href="#pesquisa">Procurar casas</a></div>'+
       '<div class="plano destaque"><h2>Acesso</h2><p class="preco-plano">'+P1+' <small>nos primeiros 30 dias</small></p>'+
@@ -1114,13 +1146,13 @@ function vConta(){
   titulo('A minha conta');
   var a=conta.acesso,ativo=acessoAtivo(),blocoAcesso;
   if(ativo&&a.renova){
-    blocoAcesso='<div class="bloco ativo"><h2>Acesso ativo</h2><p>Vês o contacto de qualquer anúncio. A próxima renovação é a <strong>'+fmtDia.format(new Date(a.ate))+'</strong>, por '+P2+'. Avisamos-te por e-mail 3 dias antes.</p>'+
+    blocoAcesso='<div class="bloco ativo"><h2>Acesso ativo</h2><p>Podes marcar visitas, ligar e enviar mensagens em qualquer anúncio. A próxima renovação é a <strong>'+fmtDia.format(new Date(a.ate))+'</strong>, por '+P2+'. Avisamos-te por e-mail 3 dias antes.</p>'+
       '<button class="botao-sec" type="button" id="b-cancelar-acesso" style="align-self:flex-start">Cancelar renovação</button></div>';
   }else if(ativo){
     blocoAcesso='<div class="bloco"><h2>Acesso ativo até '+fmtDia.format(new Date(a.ate))+'</h2><p>Cancelaste a renovação. Não voltas a ser cobrado.</p>'+
       '<button class="botao-sec" type="button" id="b-retomar" style="align-self:flex-start">Retomar renovação</button></div>';
   }else{
-    blocoAcesso='<div class="bloco"><h2>Sem acesso aos contactos</h2><p>Por '+P1+' nos primeiros 30 dias, vês o contacto de qualquer anúncio e recebes os alertas no momento.</p>'+
+    blocoAcesso='<div class="bloco"><h2>Sem acesso aos contactos</h2><p>Por '+P1+' nos primeiros 30 dias, marcas visitas, ligas e envias mensagens em qualquer anúncio, e recebes os alertas no momento.</p>'+
       '<button class="botao" type="button" id="b-acesso" style="align-self:flex-start">Desbloquear por '+P1+'</button></div>';
   }
   var guard=conta.guardadas.map(casa).filter(Boolean);
@@ -1180,7 +1212,7 @@ function vAjuda(){
   titulo('Perguntas frequentes');
   var q=[
     ['De onde vêm os anúncios?','Juntamos as casas publicadas aqui por senhorios e os anúncios que encontramos automaticamente noutros sites. Cada anúncio mostra de onde vem e há quanto tempo apareceu.'],
-    ['Quanto custa?','Ver anúncios, guardar casas e criar alertas é grátis. Para veres o contacto de qualquer anúncio, o acesso custa 1 € nos primeiros 30 dias e depois 9,99 € a cada 30 dias. Nas casas com pagamento protegido, o serviço custa '+eur(TAXA)+' e só pagas se arrendares.'],
+    ['Quanto custa?','Ver anúncios, guardar casas e criar alertas é grátis. Para marcar visitas, ligar e enviar mensagens em qualquer anúncio, o acesso custa 1 € nos primeiros 30 dias e depois 9,99 € a cada 30 dias. Nas casas com pagamento protegido, o serviço custa '+eur(TAXA)+' e só pagas se arrendares.'],
     ['Como cancelo o acesso?','Na tua conta, em «Cancelar renovação». Continuas com acesso até ao fim do período pago e não voltas a ser cobrado. Avisamos-te por e-mail 3 dias antes de cada renovação.'],
     ['O que é o pagamento protegido?','Pagas a 1.ª renda e a caução aqui. O dinheiro fica retido e só chega ao senhorio depois de ele confirmar que entregou as chaves e de tu confirmares que entraste na casa.'],
     ['Posso usar o pagamento protegido numa casa que vi no Facebook?','Sim. Preenches um pedido com a casa e o contacto de quem anuncia, e envias-lhe um convite. Se aceitar, confirmamos a identidade e que a casa é dele, e o dinheiro fica retido até receberes as chaves. Se recusar, isso não prova que seja burla, mas é um sinal para teres cuidado.'],
