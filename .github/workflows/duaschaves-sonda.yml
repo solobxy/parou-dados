@@ -20,7 +20,7 @@ jobs:
       - name: Guardar
         if: always()
         run: |
-          mkdir pub && cp -r sonda pub/ 2>/dev/null; cp sonda-registo.txt pub/ 2>/dev/null; cd pub && git init -q -b duaschaves-sonda-resultado
+          mkdir pub && tar czf pub/sonda.tgz sonda; cp sonda/resumo.json sonda-registo.txt pub/ 2>/dev/null; ls -la pub; cd pub && git init -q -b duaschaves-sonda-resultado
           git config user.name "parou-dados"; git config user.email "actions@users.noreply.github.com"
           git add -A && git commit -q -m "Sonda $(date -u +%Y-%m-%dT%H:%MZ)"
           git push -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" duaschaves-sonda-resultado
