@@ -2653,7 +2653,7 @@ function abrirAlertaPop(){
   abrirDialogo('<div class="dialogo-corpo promo pop-alerta">'+
     '<button type="button" class="icone promo-x" aria-label="Fechar" data-fechar>'+svg(P.fechar)+'</button>'+
     '<h2 class="promo-tit" tabindex="-1">Queres receber as casas novas no e&#8209;mail, <em>grátis</em>?</h2>'+
-    (n.n24>0?'<p class="pa-sub"><strong>'+(n.n24>=100?'Mais de '+(Math.floor(n.n24/10)*10).toLocaleString('pt-PT'):n.n24.toLocaleString('pt-PT'))+' casas novas</strong> nas últimas 24 horas.</p>':'<p class="pa-sub">Avisamos-te quando aparecer uma casa como a que procuras.</p>')+
+    (n.n24>0?'<p class="pa-sub"><strong>'+(n.n24>=100?'Mais de '+(Math.floor((n.n24-1)/10)*10).toLocaleString('pt-PT'):n.n24.toLocaleString('pt-PT'))+' casas novas</strong> nas últimas 24 horas.</p>':'<p class="pa-sub">Avisamos-te quando aparecer uma casa como a que procuras.</p>')+
     '<span class="pa-sino" aria-hidden="true">'+svg(P.sino,{s:34})+'</span>'+
     '<form id="f-pop-alerta" novalidate>'+
       '<div class="campo"><label for="pa-cidade">Cidade ou bairro</label><input id="pa-cidade" type="text" autocomplete="address-level2" value="'+esc(cid)+'" placeholder="Todo o país"></div>'+
