@@ -1067,6 +1067,19 @@ function baratasInicio(){
   return r;
 }
 function recomendadasEm(nome,n){var cid=norm(nome);return CASAS.filter(function(c){return naZona(c,cid);}).sort(cmpRecom).slice(0,n);}
+/* Nos recomendados, os quartos não tapam os T0/T1: entra 1 quarto a cada 2 casas (cada lista mantém a sua ordem) */
+function intercalarQuartos(r){
+  var cab=r.filter(function(c){return nivel(c)===0;}),resto=r.filter(function(c){return nivel(c)!==0;});
+  var q=cab.filter(function(c){return c.tipo==='Quarto';}),t=cab.filter(function(c){return c.tipo!=='Quarto';});
+  if(!q.length||!t.length)return r;
+  var out=[],i=0,k=0;
+  while(i<t.length||k<q.length){
+    if(i<t.length)out.push(t[i++]);
+    if(i<t.length)out.push(t[i++]);
+    if(k<q.length)out.push(q[k++]);
+  }
+  return out.concat(resto);
+}
 function filtrar(){
   var cid=norm(estado.cidade);
   var r=CASAS.filter(function(c){
@@ -1090,6 +1103,7 @@ function filtrar(){
     if(estado.ordem==='recomendados')return cmpRecom(a,b);
     return a.min-b.min;
   });
+  if(estado.ordem==='recomendados')r=intercalarQuartos(r);
   return r;
 }
 function nFiltros(){return (estado.precoMax?1:0)+estado.tips.length+(estado.soProt?1:0)+(estado.areaMin?1:0)+(estado.dias?1:0)+(estado.soPart?1:0)+(estado.soFotos?1:0)+(estado.comPreco?1:0)+(estado.tipoImovel?1:0);}
