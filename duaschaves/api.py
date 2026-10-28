@@ -243,7 +243,7 @@ def limpar_filtro(f):
             ok[k] = int(f[k])
     if isinstance(f.get('tips'), list):
         ok['tips'] = [t for t in f['tips'] if t in ('Quarto', 'T0', 'T1', 'T2', 'T3+')][:5]
-    for k in ('soProt', 'soPart', 'soFotos', 'comPreco'):
+    for k in ('soProt', 'soPart', 'soFotos', 'comPreco', 'semCaucao'):
         if f.get(k) is True:
             ok[k] = True
     if isinstance(f.get('casa'), (int, str)):

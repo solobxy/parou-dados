@@ -707,7 +707,7 @@ var FONTES = {
 var PRECOS = [0,600,800,1000,1200,1500];
 var TIPS = ['Quarto','T0','T1','T2','T3+'];
 
-var estado = {cidade:'',precoMax:0,tips:[],soProt:false,areaMin:0,dias:0,soPart:false,soFotos:false,comPreco:false,tipoImovel:'',ordem:'recomendados',filtrosAbertos:false};
+var estado = {cidade:'',precoMax:0,tips:[],soProt:false,areaMin:0,dias:0,soPart:false,soFotos:false,comPreco:false,semCaucao:false,tipoImovel:'',ordem:'recomendados',filtrosAbertos:false};
 var pagamentos = {};
 var pedidos = {};
 var proxPedido = 101;
@@ -837,10 +837,10 @@ function zonasPreferidas(n){
 }
 function filtroAtual(){var f={cidade:estado.cidade,precoMax:estado.precoMax,tips:estado.tips.slice(),soProt:estado.soProt};EXTRAS.forEach(function(k){if(estado[k])f[k]=estado[k];});return f;}
 function aplicarFiltro(f){estado.cidade=f.cidade||'';estado.precoMax=f.precoMax||0;estado.tips=(f.tips||[]).slice();estado.soProt=!!f.soProt;
-  estado.areaMin=f.areaMin||0;estado.dias=f.dias||0;estado.soPart=!!f.soPart;estado.soFotos=!!f.soFotos;estado.comPreco=!!f.comPreco;estado.tipoImovel=f.tipoImovel||'';}
+  estado.areaMin=f.areaMin||0;estado.dias=f.dias||0;estado.soPart=!!f.soPart;estado.soFotos=!!f.soFotos;estado.comPreco=!!f.comPreco;estado.semCaucao=!!f.semCaucao;estado.tipoImovel=f.tipoImovel||'';}
 function chaveFiltro(f){return [norm(f.cidade||''),f.precoMax||0,(f.tips||[]).slice().sort().join(','),f.soProt?1:0].concat(EXTRAS.map(function(k){return f[k]||'';})).join('|');}
 function descFiltro(f){var d=descAlerta({cidade:f.cidade,precoMax:f.precoMax,tip:(f.tips||[]).join(', '),soProt:f.soProt});var x=[];
-  if(f.tipoImovel)x.push(f.tipoImovel);if(f.areaMin)x.push('+'+f.areaMin+' m²');if(f.dias)x.push(f.dias===1?'últimas 24 h':'últimos '+f.dias+' dias');if(f.soPart)x.push('particulares');if(f.soFotos)x.push('com fotos');if(f.comPreco)x.push('com preço');
+  if(f.tipoImovel)x.push(f.tipoImovel);if(f.areaMin)x.push('+'+f.areaMin+' m²');if(f.dias)x.push(f.dias===1?'últimas 24 h':'últimos '+f.dias+' dias');if(f.soPart)x.push('particulares');if(f.soFotos)x.push('com fotos');if(f.comPreco)x.push('com preço');if(f.semCaucao)x.push('sem caução');
   return x.length?d+' · '+x.join(' · '):d;}
 function registarPesquisa(){
   if(!estado.cidade&&!nFiltros())return;
@@ -1382,6 +1382,7 @@ function filtrar(){
     if(estado.dias&&c.min>estado.dias*1440)return false;
     if(estado.soPart&&!c.part&&!c.prot)return false;
     if(estado.soFotos&&!(c.fotos&&c.fotos.length))return false;
+    if(estado.semCaucao&&condCasa(c).caucao!=='Sem caução')return false;
     if(estado.comPreco&&!c.renda)return false;
     if(estado.tipoImovel&&c.tipo!==estado.tipoImovel)return false;
     if(estado.tips.length){var t=c.tipo==='Quarto'?'Quarto':c.tip;if(/^T([3-9]|\d\d)$/.test(t))t='T3+';if(estado.tips.indexOf(t)<0)return false;}
@@ -1398,8 +1399,8 @@ function filtrar(){
   if(estado.ordem==='recomendados')r=intercalarQuartos(r);
   return r;
 }
-function nFiltros(){return (estado.precoMax?1:0)+estado.tips.length+(estado.soProt?1:0)+(estado.areaMin?1:0)+(estado.dias?1:0)+(estado.soPart?1:0)+(estado.soFotos?1:0)+(estado.comPreco?1:0)+(estado.tipoImovel?1:0);}
-var EXTRAS=['areaMin','dias','soPart','soFotos','comPreco','tipoImovel'];
+function nFiltros(){return (estado.precoMax?1:0)+estado.tips.length+(estado.soProt?1:0)+(estado.areaMin?1:0)+(estado.dias?1:0)+(estado.soPart?1:0)+(estado.soFotos?1:0)+(estado.comPreco?1:0)+(estado.semCaucao?1:0)+(estado.tipoImovel?1:0);}
+var EXTRAS=['areaMin','dias','soPart','soFotos','comPreco','semCaucao','tipoImovel'];
 function sel(id,val,ops){return '<select id="'+id+'">'+ops.map(function(o){return '<option value="'+o[0]+'"'+(String(o[0])===String(val)?' selected':'')+'>'+o[1]+'</option>';}).join('')+'</select>';}
 
 function vPesquisa(){
@@ -1424,6 +1425,7 @@ function vPesquisa(){
         '<label class="interruptor"><input type="checkbox" id="f-part"'+(estado.soPart?' checked':'')+'><span>Só particulares (sem agência)</span></label>'+
         '<label class="interruptor"><input type="checkbox" id="f-fotos"'+(estado.soFotos?' checked':'')+'><span>Só com fotos</span></label>'+
         '<label class="interruptor"><input type="checkbox" id="f-compreco"'+(estado.comPreco?' checked':'')+'><span>Só com preço indicado</span></label>'+
+        '<label class="interruptor"><input type="checkbox" id="f-semcaucao"'+(estado.semCaucao?' checked':'')+'><span>Sem caução</span></label>'+
         '<label class="interruptor"><input type="checkbox" id="f-prot"'+(estado.soProt?' checked':'')+'><span>Só pagamento seguro</span></label>'+
         '<button type="button" class="botao-texto" id="f-limpar" style="align-self:flex-start">Limpar filtros</button>'+
       '</aside>'+
@@ -1461,7 +1463,7 @@ function vPesquisa(){
       var bcl=document.getElementById('b-cta-lista');if(bcl)bcl.addEventListener('click',function(){abrirAcesso(function(){vPesquisa();foco();});});
     }
   }
-  function limpar(){limite=30;estado.precoMax=0;estado.tips=[];estado.soProt=false;estado.areaMin=0;estado.dias=0;estado.soPart=false;estado.soFotos=false;estado.comPreco=false;estado.tipoImovel='';
+  function limpar(){limite=30;estado.precoMax=0;estado.tips=[];estado.soProt=false;estado.areaMin=0;estado.dias=0;estado.soPart=false;estado.soFotos=false;estado.comPreco=false;estado.semCaucao=false;estado.tipoImovel='';
     ['f-preco','f-area','f-dias'].forEach(function(i){document.getElementById(i).value='0';});document.getElementById('f-tipo').value='';
     ['f-prot','f-part','f-fotos','f-compreco'].forEach(function(i){document.getElementById(i).checked=false;});main.querySelectorAll('[data-tip]').forEach(function(b){b.setAttribute('aria-pressed','false');});desenhar();}
   desenhar();
@@ -1472,6 +1474,7 @@ function vPesquisa(){
   document.getElementById('f-prot').addEventListener('change',function(){estado.soProt=this.checked;limite=30;desenhar();});
   document.getElementById('f-part').addEventListener('change',function(){estado.soPart=this.checked;limite=30;desenhar();});
   document.getElementById('f-fotos').addEventListener('change',function(){estado.soFotos=this.checked;limite=30;desenhar();});
+  document.getElementById('f-semcaucao').addEventListener('change',function(){estado.semCaucao=this.checked;limite=30;desenhar();});
   document.getElementById('f-compreco').addEventListener('change',function(){estado.comPreco=this.checked;limite=30;desenhar();});
   document.getElementById('f-area').addEventListener('change',function(){estado.areaMin=+this.value;limite=30;desenhar();});
   document.getElementById('f-dias').addEventListener('change',function(){estado.dias=+this.value;limite=30;desenhar();});
