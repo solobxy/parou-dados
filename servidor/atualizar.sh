@@ -106,6 +106,12 @@ if [ -f "$SERV/duaschaves-recolha.service" ]; then
     if ! cmp -s "$SERV/$f" "/etc/systemd/system/$f"; then cp "$SERV/$f" "/etc/systemd/system/$f" && systemctl daemon-reload; fi
   done
   systemctl is-enabled --quiet duaschaves-recolha.timer 2>/dev/null || systemctl enable --now duaschaves-recolha.timer >/dev/null 2>&1
+  # Páginas para o Google: geradas logo que o gerador muda (e depois de cada recolha, pelo serviço)
+  PV=$(sha256sum "$BASE/servidor/duaschaves/paginas.py" 2>/dev/null | cut -c1-16)
+  if [ -n "$PV" ] && [ "$(cat /var/lib/duaschaves-dados/.paginas.versao 2>/dev/null)" != "$PV" ]; then
+    runuser -u parou -- /usr/bin/python3 "$BASE/servidor/duaschaves/paginas.py" /var/lib/duaschaves-dados/anuncios.json /var/lib/duaschaves-dados/seo \
+      && echo "$PV" > /var/lib/duaschaves-dados/.paginas.versao
+  fi
 fi
 
 # API da Duas Chaves (contas, preferências, alertas). Os segredos ficam em /etc/duaschaves/api.env, fora do repositório.

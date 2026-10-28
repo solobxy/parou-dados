@@ -7,8 +7,20 @@
 <meta name="color-scheme" content="light">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='4 6 40 36'%3E%3Cpath fill='%230B6E4F' d='M5 8.4Q5 7 6.4 7H26A17 17 0 0 1 26 41L24.19 25.69A5.4 5.4 0 1 0 20.59 25.69L18.77 41H6.4Q5 41 5 39.6Z'/%3E%3C/svg%3E">
 <link rel="apple-touch-icon" href="/marca/duaschaves-icone-180.png">
-<meta name="description" content="Casas para arrendar em Portugal: os anúncios de vários sites num só lugar e um pagamento que só chega ao senhorio quando recebes as chaves.">
+<meta name="description" content="Casas e quartos para arrendar em Portugal, de vários sites num só lugar, dos mais baratos para os mais caros. Alertas de casas novas e pagamento seguro contra burlas.">
 <title>Duas Chaves · Casas para arrendar, sem burlas</title>
+<link rel="canonical" href="https://duaschaves.pt/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Duas Chaves">
+<meta property="og:locale" content="pt_PT">
+<meta property="og:title" content="Duas Chaves · Casas para arrendar, sem burlas">
+<meta property="og:description" content="Casas e quartos para arrendar em Portugal, de vários sites num só lugar, e um pagamento seguro que só chega ao senhorio quando recebes as chaves.">
+<meta property="og:url" content="https://duaschaves.pt/">
+<meta property="og:image" content="https://duaschaves.pt/marca/duaschaves-og.png">
+<meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="sitemap" type="application/xml" href="/sitemap.xml">
+<script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"Organization","@id":"https://duaschaves.pt/#org","name":"Duas Chaves","url":"https://duaschaves.pt/","logo":"https://duaschaves.pt/marca/duaschaves-icone.png"},{"@type":"WebSite","@id":"https://duaschaves.pt/#site","name":"Duas Chaves","url":"https://duaschaves.pt/","inLanguage":"pt-PT","publisher":{"@id":"https://duaschaves.pt/#org"}}]}</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -435,6 +447,17 @@ dialog.dialogo::backdrop{background:rgba(15,26,23,.55)}
       </a>
       <p>Casas para arrendar em Portugal. O dinheiro só sai com as duas confirmações.</p>
     </div>
+    <nav aria-label="Arrendar por cidade">
+      <a href="/arrendar/lisboa/">Arrendar em Lisboa</a>
+      <a href="/arrendar/porto/">Arrendar no Porto</a>
+      <a href="/arrendar/braga/">Arrendar em Braga</a>
+      <a href="/arrendar/coimbra/">Arrendar em Coimbra</a>
+      <a href="/arrendar/aveiro/">Arrendar em Aveiro</a>
+      <a href="/arrendar/faro/">Arrendar em Faro</a>
+      <a href="/arrendar/setubal/">Arrendar em Setúbal</a>
+      <a href="/arrendar/funchal/">Arrendar no Funchal</a>
+      <a href="/arrendar/">Todas as cidades</a>
+    </nav>
     <nav aria-label="Rodapé">
       <a href="#pesquisa">Pesquisar casas</a>
       <a href="#alertas">Alertas</a>
@@ -1786,7 +1809,16 @@ function marcarNav(base){
 }
 function rota(){
   if(dlg.open)dlg.close();
-  var h=location.hash.slice(1)||'inicio',m,base=h;
+  var h=location.hash.slice(1)||'inicio',m,base=h,qi=h.indexOf('?');
+  if(qi>=0){
+    var q={};h.slice(qi+1).split('&').forEach(function(par){var kv=par.split('=');try{q[kv[0]]=decodeURIComponent((kv[1]||'').replace(/\+/g,' '));}catch(e){}});
+    h=base=h.slice(0,qi);
+    if(h==='pesquisa'){
+      if(q.cidade!=null)estado.cidade=q.cidade.slice(0,80);
+      if(q.tips!=null)estado.tips=q.tips.split(',').filter(function(t){return TIPS.indexOf(t)>=0;});
+      if(q.max)estado.precoMax=+q.max||0;
+    }
+  }
   if(h==='pesquisa')vPesquisa();
   else if((m=h.match(/^casa-(\d+)$/))){vCasa(+m[1]);base='pesquisa';}
   else if((m=h.match(/^pagamento-(\d+)$/))){vPagamento(+m[1]);base=pedidos[+m[1]]?'proteger':'pesquisa';}

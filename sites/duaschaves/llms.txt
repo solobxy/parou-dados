@@ -1,0 +1,23 @@
+# Duas Chaves
+
+> Duas Chaves (duaschaves.pt) é um site português para encontrar casas e quartos para arrendar em Portugal. Junta num só lugar anúncios públicos de vários sites, ordena-os do mais barato para o mais caro e avisa por e-mail quando aparecem casas novas. Tem um pagamento seguro: a entrada (1.ª renda e caução) fica retida e só chega ao senhorio quando o inquilino confirma que recebeu as chaves, para evitar burlas no arrendamento.
+
+## Para quem procura casa
+- Ver anúncios, fotos e informação é grátis.
+- O acesso aos contactos (marcar visita, ligar, enviar mensagem) custa 1 € nos primeiros 30 dias e depois 9,99 € a cada 30 dias, até cancelar.
+- Alertas de casas novas: resumo diário grátis; com acesso, no momento.
+- Pagamento seguro: 5 € por casa arrendada.
+
+## Páginas principais
+- [Início](https://duaschaves.pt/): pesquisa por cidade, renda máxima e tipologia (quarto, T0, T1, T2, T3+).
+- [Casas para arrendar por cidade](https://duaschaves.pt/arrendar/): uma página por cidade e por tipologia, com os anúncios do mais barato para o mais caro.
+- [Arrendar em Lisboa](https://duaschaves.pt/arrendar/lisboa/)
+- [Arrendar no Porto](https://duaschaves.pt/arrendar/porto/)
+- [Arrendar em Braga](https://duaschaves.pt/arrendar/braga/)
+- [Arrendar em Coimbra](https://duaschaves.pt/arrendar/coimbra/)
+
+## Como evitar burlas no arrendamento
+- Visitar a casa antes de pagar qualquer valor.
+- Desconfiar de rendas muito abaixo das outras na zona.
+- Confirmar que quem anuncia é o dono.
+- Usar um pagamento que só liberta o dinheiro depois da entrega das chaves.
