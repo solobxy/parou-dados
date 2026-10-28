@@ -37,6 +37,7 @@ PAG_SUPER = int(os.environ.get('PAG_SUPER', '2'))           # páginas por distr
 PAG_SUPER_GRANDES = int(os.environ.get('PAG_SUPER_GRANDES', '5'))
 PAG_SAPO = int(os.environ.get('PAG_SAPO', '12'))             # páginas nacionais no Casa Sapo (é lento: pede 1 página a cada 8 s)
 PAUSA_SUPER, PAUSA_SAPO = 5.0, 10.0
+IDADE_MAX_DIAS = int(os.environ.get('IDADE_MAX_DIAS', '60'))   # publicado há mais de 60 dias: quase de certeza já arrendado ou esquecido
 DIAS_MAX_EXTRA = 7          # nos outros sites, um anúncio que deixa de aparecer nas páginas lidas sai ao fim de 7 dias
 MAX_VERIFICAR_EXTRA = 30
 MAX_RELER = int(os.environ.get('MAX_RELER', '40'))   # anúncios antigos relidos por volta (para caução, adiantadas, fiador)
@@ -404,6 +405,12 @@ def main():
     if not vistos:
         print('Nenhum anúncio lido: mantenho o ficheiro anterior.', file=sys.stderr)
         sys.exit(1)
+    # Anúncios antigos demais: quem anuncia já não responde (casa arrendada ou anúncio esquecido). Saem.
+    limite_idade = (datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(days=IDADE_MAX_DIAS)).strftime('%Y-%m-%dT%H:%M:%SZ')
+    velhos = [i for i, a in vistos.items() if a.get('data') and a['data'][:19].replace(' ', 'T') + 'Z' < limite_idade]
+    for i in velhos:
+        del vistos[i]
+    print(f'Publicados há mais de {IDADE_MAX_DIAS} dias (retirados): {len(velhos)}')
     lista = sorted(vistos.values(), key=lambda a: a.get('data') or '', reverse=True)[:MAX_ANUNCIOS]
     def sem_visto(a):
         return {k: v for k, v in a.items() if k != 'visto'}

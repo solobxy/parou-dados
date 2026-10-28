@@ -976,7 +976,8 @@ function numerosCasas(){
   CASAS.forEach(function(c){var k=norm(c.cidade||'');if(!k)return;g[k]=(g[k]||0)+1;nomes[k]=nomes[k]||c.cidade.trim();});
   var cid=Object.keys(g).filter(function(k){return g[k]>=3;}).map(function(k){return {k:k,nome:nomes[k],n:g[k],pr:PRINCIPAIS.indexOf(k)>=0?1:0};})
     .sort(function(a,b){return (b.pr-a.pr)||(b.n-a.n);});
-  return {total:CASAS.length,n24:CASAS.filter(function(c){return c.min<1440;}).length,cidades:cid.slice(0,8)};
+  var fs={};if(ATUALIZADO)CASAS.forEach(function(c){if(c.url)fs[c.fonte]=1;});
+  return {total:CASAS.length,n24:CASAS.filter(function(c){return c.min<1440;}).length,cidades:cid.slice(0,8),fontes:Object.keys(fs)};
 }
 function minAtualizado(){if(!ATUALIZADO)return null;var t=Date.parse(ATUALIZADO);return isNaN(t)?null:Math.max(1,Math.round((Date.now()-t)/6e4));}
 function cartaoMini(c){
@@ -1006,7 +1007,7 @@ function telemovelAlertas(){
     '</div><figcaption>'+(l.every(function(c){return c.min<1440;})?'Casas reais das últimas 24 horas':'Casas reais publicadas há pouco')+'</figcaption></figure>';
 }
 function faq(){return [
-  ['De onde vêm as casas?','Juntamos num só lugar os anúncios dos principais sites de arrendamento em Portugal. Atualizamos de 30 em 30 minutos e retiramos os que já não estão disponíveis.'],
+  ['De onde vêm as casas?','Juntamos num só lugar os anúncios dos principais sites de arrendamento em Portugal ('+(function(){var f=numerosCasas().fontes;return f.length>1?f.slice(0,-1).join(', ')+' e '+f[f.length-1]:'Imovirtual';})()+'), sem repetir a mesma casa. Atualizamos de 30 em 30 minutos e retiramos as que já não estão disponíveis.'],
   ['Quanto custa?','Ver as casas é grátis. O acesso para contactar e receber alertas no minuto custa '+P1+' nos primeiros 30 dias e depois '+P2+' a cada 30 dias, até cancelares.'],
   ['Como cancelo?','Na tua conta, com um toque. Avisamos-te por e-mail 3 dias antes de cada renovação, para não haver surpresas.'],
   ['As casas são verificadas?','Os anúncios de outros sites não são verificados por nós. É por isso que existe o pagamento seguro: o dinheiro da entrada fica retido e só chega ao senhorio quando recebes as chaves.'],
@@ -1016,7 +1017,7 @@ function vInicio(){
   titulo('');
   var prefs=lerPrefs(),recentes=prefs.pesquisas.slice(0,3);
   var novas=baratasInicio(),nc=numerosCasas(),ma=minAtualizado(),tel=telemovelAlertas(),ativo=acessoAtivo();
-  var nums=nc.total>20?'<p class="numeros"><span><strong>'+fmtN(nc.total)+'</strong> casas</span>'+(nc.n24>0?'<span><strong>'+fmtN(nc.n24)+'</strong> novas em 24 h</span>':'')+(ma!=null&&ma<180?'<span>Atualizado '+quando(ma)+'</span>':'')+'</p>':'';
+  var nums=nc.total>20?'<p class="numeros"><span><strong>'+fmtN(nc.total)+'</strong> casas'+(nc.fontes.length>1?' de <strong>'+nc.fontes.length+'</strong> sites':'')+'</span>'+(nc.n24>0?'<span><strong>'+fmtN(nc.n24)+'</strong> novas em 24 h</span>':'')+(ma!=null&&ma<180?'<span>Atualizado '+quando(ma)+'</span>':'')+'</p>':'';
   main.innerHTML=
   '<section class="heroi"><div class="contentor heroi-grelha"><div>'+
     '<h1 class="grande" tabindex="-1">Casas para arrendar, sem burlas</h1>'+
@@ -1378,7 +1379,7 @@ function pedirEmailGuardar(c){
 function vCasa(id){
   var c=casa(id);
   if(!c){vNaoExiste();return;}
-  if(!c.det)carregarDet(c,function(){if(location.hash==='#casa-'+id){var y=scrollY;vCasa(id);scrollTo(0,y);}});
+  if(DET_N&&!c.det)carregarDet(c,function(){if(location.hash==='#casa-'+id){var y=scrollY;vCasa(id);scrollTo(0,y);}});
   titulo(tipTxt(c)+' em '+c.bairro);
   var painel;
   if(c.prot){
@@ -2225,10 +2226,11 @@ function idNum(i){
 /* em que ficheiro det/NN.json estão a descrição e as fotos todas (igual a parte() em recolher.py) */
 function parteDet(i){var h=0;for(var k=0;k<i.length;k++)h=(Math.imul(h,31)+i.charCodeAt(k))>>>0;return h%64;}
 var DET_N=0;
+var IDADE_MAX=60;   /* anúncios publicados há mais de 60 dias não aparecem: quase de certeza já arrendados */
 function deRecolha(a){
   var t=a.data?Date.parse(a.data):NaN;
   return {id:idNum(a.id),rid:String(a.id),cidade:a.cidade||a.distrito||'',distrito:a.distrito||'',bairro:a.bairro||a.cidade||'',tip:a.tip||'',tipo:a.tipo||'',titulo:a.titulo||'',
-    area:a.area||null,andar:a.andar||'',renda:a.renda||null,caucao:null,min:isNaN(t)?99999:Math.max(1,Math.round((Date.now()-t)/6e4)),semData:isNaN(t),prot:false,
+    area:a.area||null,andar:a.andar||'',renda:a.renda||null,caucao:null,min:isNaN(t)?99999:Math.max(1,Math.round((Date.now()-t)/6e4)),semData:!a.data,prot:false,
     fonte:FONTES[a.fonte]?a.fonte:'Imovirtual',url:a.url,mob:null,cor:'#D6DDDA',desc:a.desc||'',fotos:a.fotos||[],det:!DET_N||!!a.desc,
     cond:{caucao:a.caucao||'',adiantadas:a.adiantadas||'',fiador:a.fiador||''},livre:/^\d{4}-\d{2}-\d{2}$/.test(a.livre||'')?a.livre:'',
     vis:a.visto&&!isNaN(Date.parse(a.visto))?Math.max(1,Math.round((Date.now()-Date.parse(a.visto))/6e4)):null,part:!!a.particular};
@@ -2236,7 +2238,7 @@ function deRecolha(a){
 /* abre a descrição e as fotos todas de um anúncio (lista.json só traz o essencial) */
 var detCache={};
 function carregarDet(c,depois){
-  if(c.det||!DET_N){depois();return;}
+  if(c.det||!DET_N){c.det=true;return;}
   var k=parteDet(c.rid);
   var aplicar=function(d){var x=d&&d[c.rid];if(x){c.desc=x.desc||'';if(x.fotos&&x.fotos.length)c.fotos=x.fotos;if(x.titulo)c.titulo=x.titulo;c._cond=null;}c.det=true;depois();};
   if(detCache[k]){aplicar(detCache[k]);return;}
@@ -2246,7 +2248,7 @@ window.dcCasas=function(){return CASAS;};   /* para os testes automáticos */
 function receber(d){
   if(!d||!d.anuncios||!d.anuncios.length)return false;
   DET_N=d.det||0;
-  CASAS=d.anuncios.map(deRecolha).filter(function(c){return c.id&&c.url;});medianas=null;ATUALIZADO=d.atualizado||null;
+  CASAS=d.anuncios.map(deRecolha).filter(function(c){return c.id&&c.url&&(c.semData||c.min<=IDADE_MAX*1440);});medianas=null;ATUALIZADO=d.atualizado||null;
   document.getElementById('aviso-demo').textContent='Versão de testes: os anúncios são reais; os pagamentos ainda são de demonstração.';
   var h=location.hash.slice(1)||'inicio';
   if(/^(inicio|pesquisa|conta|casa-\d+)/.test(h))rota();
