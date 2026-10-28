@@ -1,0 +1,42 @@
+[
+ {
+  "nome": "rentola-lx",
+  "url": "https://rentola.pt/alugar/lisboa",
+  "estado": 200,
+  "bytes": 1500000,
+  "server": "cloudflare",
+  "next_data": false,
+  "ld_json": 4,
+  "titulo": "8005 arrendamentos em Lisboa | Rentola"
+ },
+ {
+  "nome": "rentola-porto",
+  "url": "https://rentola.pt/alugar/porto",
+  "estado": 200,
+  "bytes": 1382434,
+  "server": "cloudflare",
+  "next_data": false,
+  "ld_json": 4,
+  "titulo": "3016 arrendamentos em Porto | Rentola"
+ },
+ {
+  "nome": "ev-arr",
+  "url": "https://www.engelvoelkers.com/pt/pt/imoveis/res/arrendar/imobiliario",
+  "estado": 404,
+  "bytes": 199967,
+  "server": "cloudflare",
+  "next_data": true,
+  "ld_json": 0,
+  "titulo": "Engel &amp; Völkers"
+ },
+ {
+  "nome": "imo-p10",
+  "url": "https://www.imovirtual.com/pt/resultados/arrendar/apartamento/lisboa?by=LATEST&direction=DESC&page=10",
+  "estado": 200,
+  "bytes": 1123068,
+  "server": "",
+  "next_data": true,
+  "ld_json": 0,
+  "titulo": "Página 10 - Casas e apartamentos para arrendar: Lisboa distrito | Imovirtual.com"
+ }
+]
