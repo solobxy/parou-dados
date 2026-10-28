@@ -421,9 +421,10 @@ def main():
         if not os.path.exists(os.path.join(os.path.dirname(os.path.abspath(saida)), 'lista.json')):
             escrever_leves(saida, lista)
         return
-    with open(saida, 'w', encoding='utf-8') as f:
+    with open(saida + '.tmp', 'w', encoding='utf-8') as f:      # escreve ao lado e troca de uma vez (o site nunca lê meio ficheiro)
         json.dump({'atualizado': datetime.datetime.now(datetime.timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ'),
                    'anuncios': lista}, f, ensure_ascii=False, separators=(',', ':'))
+    os.replace(saida + '.tmp', saida)
     escrever_leves(saida, lista)
     por_fonte = {}
     for a in lista:
