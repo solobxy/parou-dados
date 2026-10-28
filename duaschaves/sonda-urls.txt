@@ -1,2 +1,4 @@
-dc-saude https://duaschaves.2-31-13-85.sslip.io/api/saude
-dc-estat https://duaschaves.2-31-13-85.sslip.io/api/estatisticas
+rentola-lx https://rentola.pt/alugar/lisboa
+rentola-porto https://rentola.pt/alugar/porto
+ev-arr https://www.engelvoelkers.com/pt/pt/imoveis/res/arrendar/imobiliario
+imo-p10 https://www.imovirtual.com/pt/resultados/arrendar/apartamento/lisboa?by=LATEST&direction=DESC&page=10
