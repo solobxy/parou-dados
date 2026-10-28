@@ -9,10 +9,24 @@ BASE = 'https://casa.sapo.pt'
 TIPOS = {'apartamentos': 'Apartamento', 'moradias': 'Moradia', 'quartos': 'Quarto'}
 
 
+def todas(n_max=220):
+    """Todas as páginas, intercaladas por tipo (apartamentos têm mais)."""
+    lst = []
+    for p in range(1, n_max + 1):
+        lst.append(('apartamentos', p))
+        if p <= n_max // 2:
+            lst.append(('moradias', p))
+            lst.append(('quartos', p))
+    return lst
+
+
+def url_de(slug, p):
+    return f'{BASE}/alugar-{slug}/' + (f'?pn={p}' if p > 1 else '')
+
+
 def paginas(n_pag):
-    for slug in TIPOS:
-        for p in range(1, (n_pag if slug == 'apartamentos' else max(1, n_pag // 2)) + 1):
-            yield slug, f'{BASE}/alugar-{slug}/' + (f'?pn={p}' if p > 1 else '')
+    for slug, p in todas()[:n_pag]:
+        yield slug, url_de(slug, p)
 
 
 def ligacao(bloco):

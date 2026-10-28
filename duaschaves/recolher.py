@@ -35,7 +35,6 @@ MAX_DETALHES = int(os.environ.get('MAX_DETALHES', '80'))
 MAX_ANUNCIOS = int(os.environ.get('MAX_ANUNCIOS', '9000'))
 PAG_SUPER = int(os.environ.get('PAG_SUPER', '2'))           # páginas por distrito no Supercasa (5 nos grandes)
 PAG_SUPER_GRANDES = int(os.environ.get('PAG_SUPER_GRANDES', '5'))
-PAG_SAPO = int(os.environ.get('PAG_SAPO', '12'))             # páginas nacionais no Casa Sapo (é lento: pede 1 página a cada 8 s)
 PAUSA_SUPER, PAUSA_SAPO, PAUSA_IAD = 5.0, 10.0, 4.0
 PAG_IAD = int(os.environ.get('PAG_IAD', '10'))               # iad: ~30 anúncios por página, ~250 no total
 IDADE_MAX_DIAS = int(os.environ.get('IDADE_MAX_DIAS', '60'))   # publicado há mais de 60 dias: quase de certeza já arrendado ou esquecido
@@ -230,9 +229,23 @@ def paginas_iad():
         yield 'arr', slug, url
 
 
+CURSOR = {}     # onde ficou a leitura do Casa Sapo (ele só deixa ler poucas páginas de cada vez)
+
+
 def paginas_sapo():
-    for slug, url in casasapo.paginas(PAG_SAPO):
-        yield slug, slug, url
+    """Começa nas primeiras páginas (as novidades) e depois continua onde ficou na volta anterior,
+    para percorrer o site todo ao longo do dia sem pedir mais páginas de seguida do que ele aceita."""
+    lst = casasapo.todas()
+    for slug, p in lst[:3]:
+        yield 'novas-' + slug, slug, casasapo.url_de(slug, p)
+    k = CURSOR.get('sapo', 3)
+    if k >= len(lst):
+        k = 3
+    for i in range(k, len(lst)):
+        CURSOR['sapo_prox'] = i
+        slug, p = lst[i]
+        yield f'resto-{i}', slug, casasapo.url_de(slug, p)
+    CURSOR['sapo_prox'] = 3
 
 
 def ainda_existe_extra(a):
@@ -296,6 +309,11 @@ def main():
 
     vistos = {}
     agora = agora_iso()
+    f_cursor = os.path.join(os.path.dirname(os.path.abspath(saida)), 'cursor.json')
+    try:
+        CURSOR.update(json.load(open(f_cursor)))
+    except (OSError, ValueError):
+        pass
     # os outros sites correm em paralelo com o Imovirtual (servidores diferentes, cada um ao seu ritmo)
     extra = {'super': {}, 'sapo': {}, 'iad': {}}
     fios = [threading.Thread(target=correr_fonte, args=(supercasa, paginas_super(), PAUSA_SUPER, extra['super'])),
@@ -371,6 +389,13 @@ def main():
     for t in fios:
         if t.is_alive() or t.ident:
             t.join()
+    if 'sapo_prox' in CURSOR:
+        CURSOR['sapo'] = CURSOR.pop('sapo_prox')
+        try:
+            with open(f_cursor, 'w') as f:
+                json.dump(CURSOR, f)
+        except OSError:
+            pass
     ja = {chave_igual(a) for a in vistos.values()} - {None}
     gids = set()
     fontes_antes = {re.sub(r'-.*', '', i) for i in anterior}
