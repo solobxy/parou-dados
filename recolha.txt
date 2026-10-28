@@ -1,0 +1,189 @@
+  429 https://supercasa.pt/arrendar-casas/lisboa-distrito?ordem=atualizado-desc
+  429 https://casa.sapo.pt/alugar-apartamentos/
+  410 https://www.imovirtual.com/pt/anuncio/moradia-em-quinta-particular-ID1j5a7
+  410 https://www.imovirtual.com/pt/anuncio/apartamento-t0-para-arrendamento-ID1j59h
+  410 https://www.imovirtual.com/pt/anuncio/casa-t2-caverneira-aguas-santas-maia-ID1j586
+  410 https://www.imovirtual.com/pt/anuncio/apartamento-de-tipologia-t2-na-serra-de-carnaxide-com-garagem-com-ID1j53r
+  410 https://www.imovirtual.com/pt/anuncio/apartamento-t3-para-arrendamento-de-luxo-com-vista-mar-condominio-ID1j53h
+  410 https://www.imovirtual.com/pt/anuncio/arrendamento-t1-1-duplex-marinha-grande-i-centro-ID1j50b
+  410 https://www.imovirtual.com/pt/anuncio/excelente-apartamento-t2-para-arrendamento-ID1j4Zm
+  410 https://www.imovirtual.com/pt/anuncio/alugo-t1-1-anexo-moradia-ID1j4Pg
+  410 https://www.imovirtual.com/pt/anuncio/arrendamento-t1-em-pedroso-carvalhos-750EUR-mes-ID1j4OP
+  410 https://www.imovirtual.com/pt/anuncio/studio-leiria-prox-a-marques-de-pombal-ID1j4NP
+  410 https://www.imovirtual.com/pt/anuncio/apartamento-t2-totalmenteremodelado-na-zona-ribeirinha-deportimao-ID1j4CF
+  410 https://www.imovirtual.com/pt/anuncio/casa-de-campo-com-2-quartos-ID1j4CD
+  410 https://www.imovirtual.com/pt/anuncio/t2-arrendamento-cozinha-equipada-e-lugar-de-estacionamento-ID1j4tK
+  410 https://www.imovirtual.com/pt/anuncio/moradia-independente-com-logradouro-2km-da-praia-do-magoito-ID1j4rV
+  410 https://www.imovirtual.com/pt/anuncio/moradia-t2-independente-ID1j4rO
+  410 https://www.imovirtual.com/pt/anuncio/apartamento-t3-para-arrendamento-ID1j4jY
+  410 https://www.imovirtual.com/pt/anuncio/arrenda-se-apartamento-t3-ID1j3Cg
+  410 https://www.imovirtual.com/pt/anuncio/quarto-localizado-em-alcntara-lisbon-ID1j3A0
+lisboa/apartamento p1: 37 anúncios (37 novos)
+Supercasa: 429 em https://supercasa.pt/arrendar-casas/lisboa-distrito?ordem=atualizado-desc; paro este site nesta volta.
+Supercasa: 0 anúncios em 1 páginas
+lisboa/apartamento p2: 37 anúncios (36 novos)
+lisboa/apartamento p3: 37 anúncios (36 novos)
+Casa Sapo: 429 em https://casa.sapo.pt/alugar-apartamentos/; paro este site nesta volta.
+Casa Sapo: 0 anúncios em 1 páginas
+lisboa/apartamento p4: 37 anúncios (36 novos)
+lisboa/apartamento p5: 37 anúncios (36 novos)
+lisboa/moradia p1: 37 anúncios (36 novos)
+lisboa/moradia p2: 37 anúncios (36 novos)
+lisboa/moradia p3: 37 anúncios (36 novos)
+lisboa/moradia p4: 37 anúncios (36 novos)
+lisboa/moradia p5: 37 anúncios (36 novos)
+lisboa/quarto p1: 37 anúncios (36 novos)
+lisboa/quarto p2: 37 anúncios (36 novos)
+lisboa/quarto p3: 37 anúncios (36 novos)
+lisboa/quarto p4: 37 anúncios (36 novos)
+lisboa/quarto p5: 37 anúncios (36 novos)
+porto/apartamento p1: 37 anúncios (36 novos)
+porto/apartamento p2: 37 anúncios (36 novos)
+porto/apartamento p3: 37 anúncios (36 novos)
+porto/apartamento p4: 37 anúncios (36 novos)
+porto/apartamento p5: 37 anúncios (36 novos)
+porto/moradia p1: 37 anúncios (36 novos)
+porto/moradia p2: 37 anúncios (36 novos)
+porto/moradia p3: 37 anúncios (36 novos)
+porto/moradia p4: 37 anúncios (36 novos)
+porto/moradia p5: 37 anúncios (36 novos)
+porto/quarto p1: 37 anúncios (36 novos)
+porto/quarto p2: 37 anúncios (36 novos)
+porto/quarto p3: 37 anúncios (36 novos)
+porto/quarto p4: 37 anúncios (36 novos)
+porto/quarto p5: 37 anúncios (36 novos)
+setubal/apartamento p1: 37 anúncios (36 novos)
+setubal/apartamento p2: 37 anúncios (36 novos)
+setubal/apartamento p3: 37 anúncios (36 novos)
+setubal/apartamento p4: 37 anúncios (36 novos)
+setubal/apartamento p5: 37 anúncios (36 novos)
+setubal/moradia p1: 37 anúncios (36 novos)
+setubal/moradia p2: 37 anúncios (36 novos)
+setubal/moradia p3: 37 anúncios (36 novos)
+setubal/moradia p4: 37 anúncios (36 novos)
+setubal/moradia p5: 37 anúncios (36 novos)
+setubal/quarto p1: 37 anúncios (36 novos)
+setubal/quarto p2: 37 anúncios (36 novos)
+setubal/quarto p3: 37 anúncios (36 novos)
+setubal/quarto p4: 37 anúncios (36 novos)
+setubal/quarto p5: 18 anúncios (17 novos)
+braga/apartamento p1: 37 anúncios (36 novos)
+braga/apartamento p2: 37 anúncios (36 novos)
+braga/apartamento p3: 37 anúncios (36 novos)
+braga/apartamento p4: 37 anúncios (36 novos)
+braga/apartamento p5: 37 anúncios (36 novos)
+braga/moradia p1: 37 anúncios (34 novos)
+braga/moradia p2: 37 anúncios (35 novos)
+braga/moradia p3: 37 anúncios (35 novos)
+braga/moradia p4: 37 anúncios (0 novos)
+braga/quarto p1: 37 anúncios (36 novos)
+braga/quarto p2: 37 anúncios (36 novos)
+braga/quarto p3: 30 anúncios (29 novos)
+braga/quarto p4: 30 anúncios (0 novos)
+faro/apartamento p1: 37 anúncios (36 novos)
+faro/apartamento p2: 37 anúncios (36 novos)
+faro/apartamento p3: 37 anúncios (36 novos)
+faro/apartamento p4: 37 anúncios (36 novos)
+faro/apartamento p5: 37 anúncios (36 novos)
+faro/moradia p1: 37 anúncios (36 novos)
+faro/moradia p2: 37 anúncios (36 novos)
+faro/moradia p3: 37 anúncios (36 novos)
+faro/moradia p4: 20 anúncios (19 novos)
+faro/moradia p5: 20 anúncios (0 novos)
+faro/quarto p1: 37 anúncios (36 novos)
+faro/quarto p2: 10 anúncios (9 novos)
+faro/quarto p3: 10 anúncios (0 novos)
+coimbra/apartamento p1: 37 anúncios (36 novos)
+coimbra/moradia p1: 37 anúncios (36 novos)
+coimbra/quarto p1: 37 anúncios (36 novos)
+aveiro/apartamento p1: 37 anúncios (36 novos)
+aveiro/moradia p1: 37 anúncios (34 novos)
+aveiro/quarto p1: 37 anúncios (36 novos)
+leiria/apartamento p1: 37 anúncios (36 novos)
+leiria/moradia p1: 37 anúncios (35 novos)
+leiria/quarto p1: 22 anúncios (21 novos)
+santarem/apartamento p1: 37 anúncios (36 novos)
+santarem/moradia p1: 37 anúncios (36 novos)
+santarem/quarto p1: 31 anúncios (30 novos)
+viseu/apartamento p1: 37 anúncios (36 novos)
+viseu/moradia p1: 37 anúncios (33 novos)
+viseu/quarto p1: 13 anúncios (12 novos)
+viana-do-castelo/apartamento p1: 37 anúncios (36 novos)
+viana-do-castelo/moradia p1: 37 anúncios (32 novos)
+viana-do-castelo/quarto p1: 19 anúncios (18 novos)
+vila-real/apartamento p1: 27 anúncios (24 novos)
+vila-real/moradia p1: 17 anúncios (12 novos)
+vila-real/quarto p1: 0 anúncios (0 novos)
+braganca/apartamento p1: 22 anúncios (21 novos)
+braganca/moradia p1: 4 anúncios (3 novos)
+braganca/quarto p1: 4 anúncios (3 novos)
+guarda/apartamento p1: 17 anúncios (16 novos)
+guarda/moradia p1: 5 anúncios (4 novos)
+guarda/quarto p1: 3 anúncios (2 novos)
+castelo-branco/apartamento p1: 37 anúncios (35 novos)
+castelo-branco/moradia p1: 29 anúncios (28 novos)
+castelo-branco/quarto p1: 21 anúncios (20 novos)
+portalegre/apartamento p1: 14 anúncios (13 novos)
+portalegre/moradia p1: 10 anúncios (8 novos)
+portalegre/quarto p1: 6 anúncios (5 novos)
+evora/apartamento p1: 33 anúncios (32 novos)
+evora/moradia p1: 26 anúncios (24 novos)
+evora/quarto p1: 2 anúncios (1 novos)
+beja/apartamento p1: 20 anúncios (19 novos)
+beja/moradia p1: 24 anúncios (23 novos)
+beja/quarto p1: 0 anúncios (0 novos)
+ilha-da-madeira/apartamento p1: 37 anúncios (36 novos)
+ilha-da-madeira/moradia p1: 15 anúncios (14 novos)
+ilha-da-madeira/quarto p1: 0 anúncios (0 novos)
+ilha-de-sao-miguel/apartamento p1: 22 anúncios (21 novos)
+ilha-de-sao-miguel/moradia p1: 7 anúncios (6 novos)
+ilha-de-sao-miguel/quarto p1: 3 anúncios (2 novos)
+ilha-terceira/apartamento p1: 3 anúncios (2 novos)
+ilha-terceira/moradia p1: 2 anúncios (1 novos)
+ilha-terceira/quarto p1: 0 anúncios (0 novos)
+Relidos para condições de entrada: 40 (faltam 186)
+Fora dos resultados: 254 · retirados 18 · expirados 0 · confirmados 42
+Outros sites: novos nesta volta {} · fora dos resultados 0 · retirados 0
+Por site: {'Imovirtual': 3525}
+Guardados 3525 anúncios (3063 novos, 5 com descrição lida agora, 28 com preço sob consulta). Pedidos: {'ok': 206, 'erro': 20}
+3525 anúncios
+[
+ {
+  "id": "imo-19325334",
+  "titulo": "Alugo T2 em Aveiras de Cima",
+  "tip": "T2",
+  "tipo": "Apartamento",
+  "area": 70,
+  "renda": 800,
+  "bairro": "Aveiras de Cima",
+  "cidade": "Azambuja",
+  "distrito": "Lisboa",
+  "fotos": [
+   "https://ireland.apollo.olxcdn.com/v1/files/eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJmbiI6InZlbDNseWF6a3h3Ni1FQ09TWVNURU0iLCJ3IjpbeyJmbiI6IjY5bmxwYTdlY3FtNzEtQVBUIiwicyI6IjE2IiwiYSI6IjAiLCJwIjoiMTAsLTEwIn1dfQ.lOAWgUvj1LgYD3A8QkNbw2qkaDiYVb73IchI9ecKBbI/image;s=655x491;q=80",
+   "https://ireland.apollo.olxcdn.com/v1/files/eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJmbiI6IjF0Nzg4NHpxdWdxbTEtRUNPU1lTVEVNIiwidyI6W3siZm4iOiI2OW5scGE3ZWNxbTcxLUFQVCIsInMiOiIxNiIsImEiOiIwIiwicCI6IjEwLC0xMCJ9XX0.JcZzglJHSXiOCL3HTFi7rxb4qCECErZ2OLky0LKyq98/image;s=655x491;q=80",
+   "https://ireland.apollo.olxcdn.com/v1/files/eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJmbiI6InVyMnBmdHMzendhdzItRUNPU1lTVEVNIiwidyI6W3siZm4iOiI2OW5scGE3ZWNxbTcxLUFQVCIsInMiOiIxNiIsImEiOiIwIiwicCI6IjEwLC0xMCJ9XX0.KPp5G4GFHPgu3aWrrILcNpXsQPeUHmzjPpgDC33qVvM/image;s=655x491;q=80",
+   "https://ireland.apollo.olxcdn.com/v1/files/eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJmbiI6Imp3OGxnenI4b2QweC1FQ09TWVNURU0iLCJ3IjpbeyJmbiI6IjY5bmxwYTdlY3FtNzEtQVBUIiwicyI6IjE2IiwiYSI6IjAiLCJwIjoiMTAsLTEwIn1dfQ.xaj_jz6exZivOCZWirzLs7QUSxqJlzfVbtmM47ADthQ/image;s=655x491;q=80",
+   "https://ireland.apollo.olxcdn.com/v1/files/eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJmbiI6InhqeHoyZzhza2VpZjEtRUNPU1lTVEVNIiwidyI6W3siZm4iOiI2OW5scGE3ZWNxbTcxLUFQVCIsInMiOiIxNiIsImEiOiIwIiwicCI6IjEwLC0xMCJ9XX0.PAoBT48gYlOENjy2D36YbJHWmDKxzK7EvoH4Jahuhjw/image;s=655x491;q=80",
+   "https://ireland.apollo.olxcdn.com/v1/files/eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJmbiI6Imh0N2RiZDF0YXlxdTMtRUNPU1lTVEVNIiwidyI6W3siZm4iOiI2OW5scGE3ZWNxbTcxLUFQVCIsInMiOiIxNiIsImEiOiIwIiwicCI6IjEwLC0xMCJ9XX0.dgo8ojCekafF-FIhB-y46lsGw4FPXEo45M9L8qMvPMA/image;s=655x491;q=80",
+   "https://ireland.apollo.olxcdn.com/v1/files/eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJmbiI6ImFld3FjOWtjaGdwYS1FQ09TWVNURU0iLCJ3IjpbeyJmbiI6IjY5bmxwYTdlY3FtNzEtQVBUIiwicyI6IjE2IiwiYSI6IjAiLCJwIjoiMTAsLTEwIn1dfQ.oWBvrCcM6r_3uAG_ONVzub4qNDePrulMS5u9bkrp8xU/image;s=655x491;q=80"
+  ],
+  "data": "2026-10-28T13:43:32+00:00",
+  "particular": false,
+  "fonte": "Imovirtual",
+  "url": "https://www.imovirtual.com/pt/anuncio/alugo-t2-em-aveiras-de-cima-ID1j5oV",
+  "desc": "Se o anuncio está visivel é porque está disponível.\n\nNão são permitidos animais de estimação.\n\nNúmero máximo de pessoas: 2 a 3.\n\nEntrada em novembro.\n\nAnexo independente inserido em moradia.\n\nÁgua e Luz a dividir pelo número total de habitantes.\n\nGás de botija para o fogão/forno.",
+  "visto": "2026-10-28T13:43:16Z",
+  "lido": 2
+ },
+ {
+  "id": "imo-19325328",
+  "titulo": "T2 mobilado c/ varanda | Av. 5 de Outubro | Arrenda",
+  "tip": "T2",
+  "tipo": "Apartamento",
+  "area": 76,
+  "renda": 1600,
+  "bairro": "Alvalade",
+  "cidade": "Lisboa",
+  "distrito": "Lisboa",
+  "fotos": [
+   "https://ireland.apollo.olxcdn.
