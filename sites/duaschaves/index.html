@@ -289,9 +289,18 @@ input[type=file]{font:inherit;font-size:15px;max-width:100%}
 .promo-tit{margin:0;font-size:26px;line-height:1.12;letter-spacing:-.02em;font-weight:800;max-width:16ch}
 .promo-preco{margin:0;font-size:17px;color:var(--texto2)}.promo-preco strong{font-size:40px;font-weight:800;color:var(--tinta);letter-spacing:-.03em;margin-right:6px;font-variant-numeric:tabular-nums}
 .ajuda.centro{text-align:center}
-dialog.dialogo[open] .promo{animation:promoEntra .45s var(--mola) both}
-@keyframes promoEntra{from{opacity:0;transform:translateY(24px) scale(.98)}to{opacity:1;transform:none}}
-@media (prefers-reduced-motion:reduce){dialog.dialogo[open] .promo{animation:aparecer .3s ease-out both !important}}
+dialog.dlg-promo{border:1px solid rgba(11,110,79,.28);border-radius:26px;box-shadow:0 0 0 6px rgba(255,255,255,.28),0 0 0 7px rgba(11,110,79,.18),0 32px 80px -24px rgba(0,0,0,.55)}
+dialog.dlg-promo[open]{animation:dlgEntra .6s var(--mola) both}
+dialog.dlg-promo[open]::backdrop{background:rgba(15,26,23,.42);-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px);animation:aparecer .45s ease-out both}
+dialog.dlg-promo.a-sair{animation:dlgSai .23s ease-in both}
+dialog.dlg-promo.a-sair::backdrop{animation:sumir .23s ease-in both}
+.dlg-promo .promo>*{animation:promoItem .55s var(--mola) both}
+.dlg-promo .promo>*:nth-child(2){animation-delay:.12s}.dlg-promo .promo>*:nth-child(3){animation-delay:.18s}.dlg-promo .promo>*:nth-child(4){animation-delay:.24s}.dlg-promo .promo>*:nth-child(5){animation-delay:.3s}.dlg-promo .promo>*:nth-child(6){animation-delay:.36s}.dlg-promo .promo>*:nth-child(7){animation-delay:.42s}
+@keyframes dlgEntra{from{opacity:0;transform:translateY(36px) scale(.96)}to{opacity:1;transform:none}}
+@keyframes dlgSai{to{opacity:0;transform:translateY(16px) scale(.98)}}
+@keyframes promoItem{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+@keyframes sumir{to{opacity:0}}
+@media (prefers-reduced-motion:reduce){dialog.dlg-promo[open],.dlg-promo .promo>*{animation:aparecer .45s ease-out both !important}dialog.dlg-promo.a-sair{animation:sumir .23s ease-in both !important}}
 
 /* herói */
 .heroi{padding:32px 0 56px}
@@ -804,10 +813,18 @@ function toast(msg){var t=document.getElementById('toast');t.textContent=msg;t.c
 var dlg = document.getElementById('dialogo');
 function abrirDialogo(html){
   dlg.innerHTML=html;
-  dlg.querySelectorAll('[data-fechar]').forEach(function(b){b.addEventListener('click',function(){dlg.close();});});
+  dlg.querySelectorAll('[data-fechar]').forEach(function(b){b.addEventListener('click',function(){fecharDlg();});});
   if(typeof dlg.showModal==='function'){if(!dlg.open)dlg.showModal();}else{dlg.setAttribute('open','');}
 }
-dlg.addEventListener('click',function(e){if(e.target===dlg)dlg.close();});
+dlg.addEventListener('click',function(e){if(e.target===dlg)fecharDlg();});
+/* fechar com uma saída suave (na oferta); nos outros diálogos fecha logo */
+function fecharDlg(){
+  if(!dlg.classList.contains('dlg-promo')||false){dlg.close();return;}
+  if(dlg.classList.contains('a-sair'))return;
+  dlg.classList.add('a-sair');setTimeout(function(){dlg.classList.remove('a-sair');dlg.close();},230);
+}
+dlg.addEventListener('cancel',function(e){if(dlg.classList.contains('dlg-promo')){e.preventDefault();fecharDlg();}});
+dlg.addEventListener('close',function(){dlg.classList.remove('dlg-promo','a-sair');});
 function cabecaDialogo(t){return '<div class="dialogo-cabeca"><h2>'+t+'</h2><button type="button" class="icone" aria-label="Fechar" data-fechar>'+svg(P.fechar)+'</button></div>';}
 
 var memAlertas=[];
@@ -2431,6 +2448,7 @@ function promoPodeAbrir(){
 }
 function promoFechada(){try{localStorage.setItem('dc-promo',String(Date.now()));}catch(e){}}
 function abrirPromo(){
+  dlg.classList.add('dlg-promo');
   abrirDialogo('<div class="dialogo-corpo promo">'+
     '<button type="button" class="icone promo-x" aria-label="Fechar" data-fechar>'+svg(P.fechar)+'</button>'+
     '<span class="selo-quente">Oferta de boas-vindas</span>'+
