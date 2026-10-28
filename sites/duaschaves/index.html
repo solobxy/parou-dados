@@ -198,6 +198,8 @@ input[type=file]{font:inherit;font-size:15px;max-width:100%}
 /* duas colunas: no telemóvel ficam uma por baixo da outra, com espaço */
 .dois-col{display:grid;gap:32px}
 
+.zona-outra{display:flex;gap:8px;margin-top:10px}.zona-outra input{flex:1;min-width:0}.zona-outra .botao-sec{min-height:52px}
+
 /* herói */
 .heroi{padding:32px 0 56px}
 .heroi-grelha{display:grid;gap:40px;align-items:center}
@@ -1820,6 +1822,25 @@ function reduzirFoto(file,cb){
   img.onerror=function(){URL.revokeObjectURL(url);cb(null);};
   img.src=url;
 }
+/* perfil: zonas como escolhas (várias) e mês de entrada numa lista */
+var ZONAS_BASE=['Lisboa','Porto','Braga','Coimbra','Aveiro','Faro','Setúbal','Funchal','Matosinhos','Vila Nova de Gaia','Maia','Amadora','Oeiras','Almada','Cascais','Sintra','Odivelas','Loures'];
+function opcoesZonas(guardadas){
+  var sel=(guardadas||'').split(',').map(function(x){return x.trim();}).filter(Boolean);
+  var base=ATUALIZADO?numerosCasas().cidades.map(function(c){return c.nome;}):[];
+  ZONAS_BASE.forEach(function(z){if(base.length<14&&!base.some(function(b){return norm(b)===norm(z);}))base.push(z);});
+  var out=sel.map(function(n){return {nome:n,sel:true};});
+  base.forEach(function(n){if(!sel.some(function(x){return norm(x)===norm(n);}))out.push({nome:n,sel:false});});
+  return out;
+}
+function chipZona(z){return '<button type="button" class="chip" data-pzona="'+esc(z.nome)+'" aria-pressed="'+!!z.sel+'">'+esc(z.nome)+'</button>';}
+function selEntrada(v){
+  var M=['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
+  var d=new Date(),ops=[['','Quanto antes']];
+  for(var k=0;k<12;k++){var y=d.getFullYear(),m=d.getMonth()+k;y+=Math.floor(m/12);m=m%12;
+    var val=y+'-'+('0'+(m+1)).slice(-2);ops.push([val,(k===0?'Este mês ('+M[m]+')':M[m].charAt(0).toUpperCase()+M[m].slice(1)+(y!==d.getFullYear()?' de '+y:''))]);}
+  if(v&&!ops.some(function(o){return o[0]===v;}))ops.push([esc(v),esc(v)]);
+  return sel('pf-entrada',v,ops);
+}
 function vPerfil(){
   if(!conta.sessao){vEntrar();return;}
   titulo('Editar perfil');
@@ -1839,8 +1860,11 @@ function vPerfil(){
       '<div class="campo inteiro"><label for="pf-cidade">Onde vives agora</label><input id="pf-cidade" type="text" maxlength="60" autocomplete="address-level2" value="'+esc(p.cidade||'')+'"></div>'+
       '<fieldset class="campo inteiro" style="border:0;padding:0;margin:0"><legend class="rotulo">O que procuras</legend><div class="chips" style="margin-top:6px">'+TIPS.map(function(t){return '<button type="button" class="chip" data-ptip="'+t+'" aria-pressed="'+((p.tips||[]).indexOf(t)>=0)+'">'+t+'</button>';}).join('')+'</div></fieldset>'+
       '<div class="campo"><label for="pf-orc">Renda até (€ por mês)</label><input id="pf-orc" type="number" inputmode="numeric" min="1" max="20000" value="'+(p.orcamento||'')+'"></div>'+
-      '<div class="campo"><label for="pf-entrada">Quando queres entrar</label><input id="pf-entrada" type="month" value="'+esc(p.entrada||'')+'"></div>'+
-      '<div class="campo inteiro"><label for="pf-zonas">Zonas que preferes</label><input id="pf-zonas" type="text" maxlength="120" placeholder="Ex.: Porto, Matosinhos" value="'+esc(p.zonas||'')+'"></div>'+
+      '<div class="campo"><label for="pf-entrada">Quando queres entrar</label>'+selEntrada(p.entrada||'')+'</div>'+
+      '<fieldset class="campo inteiro" style="border:0;padding:0;margin:0"><legend class="rotulo">Zonas que preferes <span class="opcional">(podes escolher várias)</span></legend>'+
+        '<div class="chips" id="pf-zonas" style="margin-top:6px">'+opcoesZonas(p.zonas).map(chipZona).join('')+'</div>'+
+        '<div class="zona-outra"><label class="isco" for="pf-zona-nova">Outra zona</label><input id="pf-zona-nova" type="text" maxlength="40" placeholder="Outra zona" autocomplete="off"><button class="botao-sec" type="button" id="pf-zona-juntar">Juntar</button></div>'+
+      '</fieldset>'+
       sn('pf-animais',p.animais,'Tens animais?')+sn('pf-fumador',p.fumador,'Fumas?')+
       '<div class="campo inteiro"><label for="pf-desc">Sobre ti</label><textarea id="pf-desc" maxlength="600" rows="5" placeholder="Ex.: Sou enfermeira no Hospital de São João, procuro um T1 perto do trabalho a partir de janeiro. Sou calma e pago sempre a horas.">'+esc(p.descricao||'')+'</textarea><p class="ajuda" id="pf-conta" style="text-align:right;margin:4px 0 0"></p></div>'+
       '<button class="botao largo inteiro" type="submit">Guardar perfil</button>'+
@@ -1849,6 +1873,14 @@ function vPerfil(){
   document.getElementById('pf-idade').addEventListener('input',function(){erroCampo(this,'');});
   var contar=function(){cont.textContent=desc.value.length+' / 600';};contar();desc.addEventListener('input',contar);
   main.querySelectorAll('[data-ptip]').forEach(function(b){b.addEventListener('click',function(){b.setAttribute('aria-pressed',b.getAttribute('aria-pressed')!=='true');});});
+  var zc=document.getElementById('pf-zonas');
+  zc.addEventListener('click',function(e){var b=e.target.closest('[data-pzona]');if(b)b.setAttribute('aria-pressed',b.getAttribute('aria-pressed')!=='true');});
+  var juntarZona=function(){var i=document.getElementById('pf-zona-nova'),n=i.value.trim().replace(/,/g,' ');if(!n)return;
+    var ja=[].filter.call(zc.querySelectorAll('[data-pzona]'),function(b){return norm(b.getAttribute('data-pzona'))===norm(n);})[0];
+    if(ja)ja.setAttribute('aria-pressed','true');else zc.insertAdjacentHTML('beforeend',chipZona({nome:n,sel:true}));
+    i.value='';i.focus();};
+  document.getElementById('pf-zona-juntar').addEventListener('click',juntarZona);
+  document.getElementById('pf-zona-nova').addEventListener('keydown',function(e){if(e.key==='Enter'){e.preventDefault();juntarZona();}});
   document.getElementById('pf-ficheiro').addEventListener('change',function(){
     var f=this.files&&this.files[0];if(!f)return;
     if(!/^image\//.test(f.type)){toast('Escolhe uma imagem (JPG, PNG ou WebP).');return;}
@@ -1874,7 +1906,7 @@ function vPerfil(){
     if(!erroCampo(ie,idade&&(+idade<18||+idade>99)?'A idade tem de estar entre 18 e 99.':'')){ie.focus();return;}
     var novo={nome:v('pf-nome'),idade:idade?+idade:null,genero:v('pf-genero'),situacao:v('pf-situacao'),emprego:v('pf-emprego'),cidade:v('pf-cidade'),
       tips:[].map.call(main.querySelectorAll('[data-ptip][aria-pressed="true"]'),function(b){return b.getAttribute('data-ptip');}),
-      orcamento:orc?+orc:null,entrada:v('pf-entrada'),zonas:v('pf-zonas'),animais:yn('pf-animais'),fumador:yn('pf-fumador'),descricao:desc.value.trim()};
+      orcamento:orc?+orc:null,entrada:v('pf-entrada'),zonas:[].map.call(main.querySelectorAll('[data-pzona][aria-pressed="true"]'),function(b){return b.getAttribute('data-pzona');}).join(', ').slice(0,300),animais:yn('pf-animais'),fumador:yn('pf-fumador'),descricao:desc.value.trim()};
     var bt=e.target.querySelector('button[type=submit]');
     var fim=function(p){conta.perfil=p||novo;guardarConta();toast('Perfil guardado.');ir('conta');};
     if(conta.servidor){bt.disabled=true;

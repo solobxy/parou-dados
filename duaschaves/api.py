@@ -191,7 +191,7 @@ def limpar_perfil(p):
     if not isinstance(p, dict):
         return None
     out = {'nome': texto(p.get('nome'), 60), 'emprego': texto(p.get('emprego'), 80), 'cidade': texto(p.get('cidade'), 60),
-           'descricao': texto(p.get('descricao'), 600), 'zonas': texto(p.get('zonas'), 120), 'entrada': texto(p.get('entrada'), 10)}
+           'descricao': texto(p.get('descricao'), 600), 'zonas': texto(p.get('zonas'), 300), 'entrada': texto(p.get('entrada'), 10)}
     i = p.get('idade')
     out['idade'] = int(i) if isinstance(i, (int, float)) and 18 <= i <= 99 else None
     out['genero'] = p.get('genero') if p.get('genero') in GENEROS else ''
