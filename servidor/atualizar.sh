@@ -129,7 +129,7 @@ if [ -f "$SERV/duaschaves-api.service" ] && [ -f "$BASE/servidor/duaschaves/api.
     if [ -f "$SERV/$f" ] && ! cmp -s "$SERV/$f" "/etc/systemd/system/$f"; then cp "$SERV/$f" "/etc/systemd/system/$f" && systemctl daemon-reload; fi
   done
   [ -f /etc/systemd/system/duaschaves-alertas.timer ] && { systemctl is-enabled --quiet duaschaves-alertas.timer 2>/dev/null || systemctl enable --now duaschaves-alertas.timer >/dev/null 2>&1; }
-  V=$( { sha256sum "$BASE/servidor/duaschaves/api.py" /etc/duaschaves/api.env; } | sha256sum | cut -c1-16)
+  V=$( { sha256sum "$BASE/servidor/duaschaves/api.py" "$BASE/servidor/duaschaves/estatisticas.py" /etc/duaschaves/api.env 2>/dev/null; } | sha256sum | cut -c1-16)
   if [ "$(cat /etc/duaschaves/api.versao 2>/dev/null)" != "$V" ]; then
     systemctl restart duaschaves-api.service && echo "$V" > /etc/duaschaves/api.versao
   fi

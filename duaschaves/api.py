@@ -16,6 +16,8 @@ iguais exista ou não o e-mail; campos do utilizador validados e com tamanho má
 """
 import base64, hashlib, hmac, json, os, re, secrets, sqlite3, sys, threading, time, urllib.parse, urllib.request
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import estatisticas as est
 
 DB = os.environ.get('DC_DB', '/var/lib/duaschaves-api/dados.db')
 PORTA = int(os.environ.get('DC_PORTA', '3110'))
@@ -30,6 +32,8 @@ RE_EMAIL = re.compile(r'^[^\s@<>"]{1,64}@[^\s@<>"]{1,190}\.[A-Za-z]{2,24}$')
 GOOGLE_ID, GOOGLE_SEGREDO = os.environ.get('GOOGLE_ID', ''), os.environ.get('GOOGLE_SEGREDO', '')
 FACEBOOK_ID, FACEBOOK_SEGREDO = os.environ.get('FACEBOOK_ID', ''), os.environ.get('FACEBOOK_SEGREDO', '')
 FACEBOOK_VERSAO = os.environ.get('FACEBOOK_VERSAO', 'v26.0')
+# quem pode ver as estatísticas (e-mails das contas, separados por espaços)
+ADMINS = set((os.environ.get('ADMINS') or 'diniscash@gmail.com').lower().split())
 COOKIE_APAGAR = '__Host-dc_sessao=; Path=/; Max-Age=0; HttpOnly; Secure; SameSite=Lax'
 SENHAS_FRACAS = {'123456789', '1234567890', 'password', 'password1', 'qwertyuiop', 'palavrapasse', 'benfica1904', 'portugal123',
                  '12345678910', 'iloveyou12', 'aaaaaaaaaa', '0123456789', 'abcdefghij', 'passw0rd12', 'duaschaves', 'duaschaves1'}
@@ -127,6 +131,7 @@ def criar_tabelas():
         cols = [r[1] for r in c.execute('PRAGMA table_info(alertas)')]
         if 'ultimo_envio' not in cols:
             c.execute('ALTER TABLE alertas ADD COLUMN ultimo_envio INTEGER')
+        est.criar(c)
         if not c.execute("SELECT 1 FROM config WHERE chave='segredo'").fetchone():
             c.execute("INSERT INTO config VALUES('segredo', ?)", (secrets.token_hex(32),))
 
@@ -318,10 +323,23 @@ class API(BaseHTTPRequestHandler):
                 return self.responder(200, {
                     'email': u['email'], 'marketing': bool(u['marketing']), 'prefs': json.loads(u['prefs'] or '{}'),
                     'perfil': json.loads(u['perfil'] or '{}'), 'foto': bool(u['foto']), 'tem_senha': bool(u['senha']),
-                    'google': bool(u['google_sub']), 'facebook': bool(u['facebook_id']),
+                    'google': bool(u['google_sub']), 'facebook': bool(u['facebook_id']), 'admin': u['email'].lower() in ADMINS,
                     'acesso': {'ate': (u['acesso_ate'] or 0) * 1000, 'renova': bool(u['renova'])} if u['acesso_ate'] else None,
                     'alertas': [dict(id=a['id'], filtro=json.loads(a['filtro'])) for a in
                                 c.execute('SELECT id, filtro FROM alertas WHERE utilizador=? AND ativo=1 ORDER BY id DESC', (u['id'],))]})
+        if url.path == '/api/estatisticas':    # só para as contas em ADMINS
+            q = urllib.parse.parse_qs(url.query)
+            with ligar() as c:
+                u = self.sessao(c)
+                if not u:
+                    return self.responder(401, {'erro': 'sem_sessao'})
+                if u['email'].lower() not in ADMINS:
+                    return self.responder(403, {'erro': 'sem_permissao'})
+                try:
+                    dias = int((q.get('dias') or ['30'])[0])
+                except ValueError:
+                    dias = 30
+                return self.responder(200, est.resumo(c, dias))
         if url.path == '/api/perfil/foto':     # só o próprio vê a sua foto
             with ligar() as c:
                 u = self.sessao(c)
@@ -392,6 +410,13 @@ class API(BaseHTTPRequestHandler):
             return self.responder(400, {'erro': 'pedido'})
         p = urllib.parse.urlsplit(self.path).path
         ip = self.ip()
+
+        if p == '/api/ev':                  # estatísticas: sem cookies, sem dados pessoais (ver estatisticas.py)
+            if not limite('ev:' + ip, 300, 600):
+                return self.responder(429, {'erro': 'muitos_pedidos'})
+            with ligar() as c:
+                est.registar(c, corpo, ip, self.headers.get('User-Agent') or '', bool(self.sessao(c)))
+            return self.responder(200, {'ok': True})
 
         if p == '/api/entrar':
             email = str(corpo.get('email') or '').strip().lower()
