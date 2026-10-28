@@ -19,7 +19,7 @@ DIAS_MAX dias, sai também.
 import datetime, hashlib, html, json, os, re, sys, threading, time, unicodedata, urllib.error, urllib.request
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from condicoes import condicoes
-from fontes import casasapo, iad, supercasa
+from fontes import casasapo, iad, rentola, supercasa
 
 BASE = 'https://www.imovirtual.com'
 UA = 'Mozilla/5.0 (compatible; DuasChavesBot/0.1; +https://duaschaves.pt)'
@@ -36,6 +36,7 @@ MAX_ANUNCIOS = int(os.environ.get('MAX_ANUNCIOS', '9000'))
 PAG_SUPER = int(os.environ.get('PAG_SUPER', '2'))           # páginas por distrito no Supercasa (5 nos grandes)
 PAG_SUPER_GRANDES = int(os.environ.get('PAG_SUPER_GRANDES', '5'))
 PAUSA_SUPER, PAUSA_SAPO, PAUSA_IAD = 5.0, 10.0, 4.0
+PAG_RENTOLA, PAG_RENTOLA_GRANDES, PAUSA_RENTOLA = int(os.environ.get('PAG_RENTOLA', '3')), int(os.environ.get('PAG_RENTOLA_GRANDES', '10')), 4.0
 PAG_IAD = int(os.environ.get('PAG_IAD', '10'))               # iad: ~30 anúncios por página, ~250 no total
 IDADE_MAX_DIAS = int(os.environ.get('IDADE_MAX_DIAS', '60'))   # publicado há mais de 60 dias: quase de certeza já arrendado ou esquecido
 DIAS_MAX_EXTRA = 7          # nos outros sites, um anúncio que deixa de aparecer nas páginas lidas sai ao fim de 7 dias
@@ -224,6 +225,11 @@ def paginas_super():
         yield url.split('/pagina-')[0].split('?')[0], slug, url
 
 
+def paginas_rentola():
+    for cid, url in rentola.paginas(PAG_RENTOLA, PAG_RENTOLA_GRANDES):
+        yield cid, cid, url
+
+
 def paginas_iad():
     for slug, url in iad.paginas(PAG_IAD):
         yield 'arr', slug, url
@@ -315,10 +321,11 @@ def main():
     except (OSError, ValueError):
         pass
     # os outros sites correm em paralelo com o Imovirtual (servidores diferentes, cada um ao seu ritmo)
-    extra = {'super': {}, 'sapo': {}, 'iad': {}}
+    extra = {'super': {}, 'sapo': {}, 'iad': {}, 'rent': {}}
     fios = [threading.Thread(target=correr_fonte, args=(supercasa, paginas_super(), PAUSA_SUPER, extra['super'])),
             threading.Thread(target=correr_fonte, args=(casasapo, paginas_sapo(), PAUSA_SAPO, extra['sapo'])),
-            threading.Thread(target=correr_fonte, args=(iad, paginas_iad(), PAUSA_IAD, extra['iad']))]
+            threading.Thread(target=correr_fonte, args=(iad, paginas_iad(), PAUSA_IAD, extra['iad'])),
+            threading.Thread(target=correr_fonte, args=(rentola, paginas_rentola(), PAUSA_RENTOLA, extra['rent']))]
     if os.environ.get('SO_IMOVIRTUAL') != '1':
         for t in fios:
             t.start()
@@ -400,7 +407,7 @@ def main():
     gids = set()
     fontes_antes = {re.sub(r'-.*', '', i) for i in anterior}
     n_extra = {}
-    for pref, itens in (('super', extra['super']), ('sapo', extra['sapo']), ('iad', extra['iad'])):
+    for pref, itens in (('super', extra['super']), ('sapo', extra['sapo']), ('iad', extra['iad']), ('rent', extra['rent'])):
         for a in itens.values():
             if a.get('gid') and a['gid'] in gids:
                 continue
