@@ -39,6 +39,7 @@ PAUSA_SUPER, PAUSA_SAPO, PAUSA_IAD = 5.0, 10.0, 4.0
 PAG_RENTOLA, PAG_RENTOLA_GRANDES, PAUSA_RENTOLA = int(os.environ.get('PAG_RENTOLA', '3')), int(os.environ.get('PAG_RENTOLA_GRANDES', '10')), 4.0
 PAG_IAD = int(os.environ.get('PAG_IAD', '10'))               # iad: ~30 anúncios por página, ~250 no total
 IDADE_MAX_DIAS = int(os.environ.get('IDADE_MAX_DIAS', '60'))   # publicado há mais de 60 dias: quase de certeza já arrendado ou esquecido
+TEMPO_FONTE = int(os.environ.get('TEMPO_FONTE', str(14 * 60)))   # cada site tem no máximo 14 min por volta (a volta toda tem de caber em 40)
 DIAS_MAX_EXTRA = 7          # nos outros sites, um anúncio que deixa de aparecer nas páginas lidas sai ao fim de 7 dias
 MAX_VERIFICAR_EXTRA = 30
 MAX_RELER = int(os.environ.get('MAX_RELER', '80'))   # anúncios antigos relidos por volta (para caução, adiantadas, fiador)
@@ -183,9 +184,13 @@ def correr_fonte(mod, paginas, pausa, resultado):
     """Lê as páginas de resultados de um site. Pára esse site se ele pedir para abrandar (429) ou bloquear (403)."""
     parados, n_pag, n_erros, n_lentos = set(), 0, 0, 0
     estados = {}
+    t0 = time.time()
     for grupo, slug, url in paginas:
         if grupo in parados:
             continue
+        if time.time() - t0 > TEMPO_FONTE:
+            print(f'{mod.NOME}: tempo esgotado ({TEMPO_FONTE // 60} min); continua na próxima volta.')
+            break
         estado, _, texto = obter(url, com_estado=True, pausa=pausa)
         n_pag += 1
         estados[str(estado)] = estados.get(str(estado), 0) + 1
