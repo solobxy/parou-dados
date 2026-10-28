@@ -1,1 +1,2 @@
-dc-lista https://duaschaves.2-31-13-85.sslip.io/lista.json
+dc-saude https://duaschaves.2-31-13-85.sslip.io/api/saude
+dc-estat https://duaschaves.2-31-13-85.sslip.io/api/estatisticas
