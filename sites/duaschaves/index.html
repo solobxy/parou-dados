@@ -256,7 +256,22 @@ input[type=file]{font:inherit;font-size:15px;max-width:100%}
 .pw-casa p{margin:0}.pw-preco{font-weight:800;font-size:17px}.pw-preco small{font-weight:600;color:var(--texto2)}.pw-linha{font-size:14px;color:var(--texto2)}
 .pw-quando{font-size:13px;color:var(--texto3)}.pw-quando.novo,.quando.novo{color:#0B6E4F;font-weight:700}
 #f-acesso>button[type=submit]{position:sticky;bottom:12px;z-index:2;box-shadow:0 8px 24px rgba(11,110,79,.35)}
-.pw-renova{margin:-6px 0 0;font-size:15px;color:var(--texto2)}
+.pw-renova{margin:2px 0 0;font-size:13px;line-height:1.35;color:var(--texto2)}
+.dialogo-corpo.pw{padding:16px 18px;gap:10px}
+.pw .dialogo-cabeca h2{font-size:20px;line-height:1.2}
+.pw .pw-casa{padding:8px;gap:10px}.pw .pw-casa img{width:56px;height:42px}.pw .pw-casa>div{min-width:0}
+.pw .pw-linha{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.pw .pw-preco{font-size:16px}
+@media (max-height:700px){dialog.dialogo{max-height:calc(100dvh - 16px);width:calc(100% - 20px)}.dialogo-corpo.pw{padding:12px 16px;gap:7px}.pw .oferta-preco{font-size:30px}.pw .inclui li{font-size:14px}.pw .pw-facto{font-size:13px}}
+.pw .pw-facto{font-size:14px;line-height:1.4}.pw .pw-fonte{display:inline;font-size:12px}
+.pw-oferta{display:flex;align-items:center;gap:12px}.pw .oferta-preco{font-size:34px}.pw .oferta-txt{font-size:16px;color:var(--tinta);font-weight:700}
+.pw .inclui{gap:6px}.pw .inclui li{font-size:15px;line-height:1.35}.pw .inclui li svg{width:18px;height:18px}
+.pw .campo{gap:4px}.pw .campo input{min-height:46px}
+.pw-metodos{border:0;padding:0;margin:0;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.pw-metodos legend{float:left;margin-right:4px;font-size:14px}
+.pw-metodo{flex:1;white-space:nowrap;display:flex;align-items:center;gap:8px;min-height:46px;padding:0 12px;border:1.5px solid var(--borda-forte);border-radius:12px;font-weight:700;cursor:pointer;background:#fff}
+.pw-metodo:has(input:checked){border-color:var(--verde);background:var(--verde-claro)}.pw-metodo input{accent-color:var(--verde);width:18px;height:18px;margin:0}
+.pw .botao.largo{min-height:50px}
+.pw-nota{margin:0;text-align:center;font-size:12px;color:var(--texto3)}
 .pw-facto{margin:0;font-size:15px;line-height:1.45}.pw-fonte{display:block;font-size:12px;color:var(--texto3);margin-top:2px}
 .dispo{display:inline-flex;align-items:center;gap:4px;color:#0B6E4F;font-weight:600}
 .barra-cta{position:fixed;left:0;right:0;bottom:calc(64px + env(safe-area-inset-bottom));z-index:19;display:flex;gap:12px;align-items:center;justify-content:space-between;background:#fff;border-top:1px solid var(--borda);padding:10px 16px;box-shadow:0 -6px 18px rgba(15,26,23,.08);transform:translateY(0);transition:transform .2s ease-out,opacity .2s ease-out}
@@ -710,7 +725,6 @@ function listaInclui(){
   return '<ul class="inclui">'+
     '<li>'+svg(P.visto,{s:20,w:2.4})+'<span>Marcar visitas, ligar e enviar mensagens em <strong>todas</strong> as casas</span></li>'+
     '<li>'+svg(P.visto,{s:20,w:2.4})+'<span>Alertas <strong>no minuto</strong> em que aparece uma casa para ti (sem acesso, só um resumo por dia)</span></li>'+
-    '<li>'+svg(P.visto,{s:20,w:2.4})+'<span>Link direto para o anúncio original</span></li>'+
   '</ul>';
 }
 function avisoRenovacao(){return '<p class="aviso-preco">Depois dos 30 dias, <strong>'+P2+' a cada 30 dias</strong>, até cancelares. Cancelas com um toque na tua conta e avisamos-te por e-mail 3 dias antes de cada renovação.</p>';}
@@ -718,21 +732,22 @@ function abrirAcesso(depois,c){
   var semSessao=!conta.sessao;
   var mini=c?'<div class="pw-casa">'+(c.fotos&&c.fotos.length?'<img src="'+esc(c.fotos[0])+'" alt="" referrerpolicy="no-referrer" width="72" height="54">':'')+
     '<div><p class="pw-preco">'+precoHtml(c)+'</p><p class="pw-linha">'+resumoCasa(c,false)+'</p><p class="pw-quando'+(c.min<1440?' novo':'')+'">Publicada '+quando(c.min)+'</p></div></div>':'';
-  abrirDialogo('<form class="dialogo-corpo" id="f-acesso" novalidate>'+
-    cabecaDialogo(c?'Contacta esta casa antes dos outros':'Desbloquear os contactos')+
+  abrirDialogo('<form class="dialogo-corpo pw" id="f-acesso" novalidate>'+
+    cabecaDialogo(c?'Contacta antes dos outros':'Desbloquear os contactos')+
     mini+
-    '<p class="pw-facto">Cada casa para arrendar recebe, em média, <strong>24 contactos</strong>, e 11% saem do mercado em menos de 24 horas. <span class="pw-fonte">Fonte: idealista, 1.º trimestre de 2026</span></p>'+
-    '<div class="oferta"><p class="oferta-preco">'+P1+'</p><p class="oferta-txt">30 dias de acesso</p></div>'+
-    '<p class="pw-renova">Depois, '+P2+' a cada 30 dias. Cancelas quando quiseres, com um toque.</p>'+
-    listaInclui()+
+    '<p class="pw-facto">Cada casa recebe em média <strong>24 contactos</strong> e 11% saem em menos de 24 h <span class="pw-fonte">(idealista, 2026)</span>.</p>'+
+    '<div class="pw-oferta"><p class="oferta-preco">'+P1+'</p><div><p class="oferta-txt">30 dias de acesso</p><p class="pw-renova">Depois '+P2+'/30 dias. Cancelas quando quiseres; avisamos 3 dias antes.</p></div></div>'+
+    '<ul class="inclui">'+
+      '<li>'+svg(P.visto,{s:18,w:2.4})+'<span>Visitas, chamadas e mensagens em <strong>todas</strong> as casas</span></li>'+
+      '<li>'+svg(P.visto,{s:18,w:2.4})+'<span>Alertas <strong>no minuto</strong> (sem acesso, 1 resumo por dia)</span></li>'+
+    '</ul>'+
     (semSessao?'<div class="campo"><label for="ac-email">E-mail</label><input id="ac-email" type="email" autocomplete="email" inputmode="email"></div>':'')+
-    '<fieldset class="metodos"><legend class="rotulo" style="margin-bottom:8px">Pagar com</legend>'+
-      '<label class="metodo"><input type="radio" name="ac-metodo" value="mbway" checked><span><strong>MB WAY</strong><small>Confirmas na app do teu banco</small></span></label>'+
-      '<label class="metodo"><input type="radio" name="ac-metodo" value="cartao"><span><strong>Cartão</strong><small>Visa ou Mastercard</small></span></label>'+
+    '<fieldset class="pw-metodos"><legend class="isco">Pagar com</legend>'+
+      '<label class="pw-metodo"><input type="radio" name="ac-metodo" value="mbway" checked><span>MB WAY</span></label>'+
+      '<label class="pw-metodo"><input type="radio" name="ac-metodo" value="cartao"><span>Cartão</span></label>'+
     '</fieldset>'+
     '<button class="botao largo" type="submit">Desbloquear por '+P1+'</button>'+
-    avisoRenovacao()+
-    '<p class="ajuda centro">Protótipo: nenhum pagamento é feito.</p></form>');
+    '<p class="pw-nota">Protótipo: nenhum pagamento é feito.</p></form>');
   document.getElementById('f-acesso').addEventListener('submit',function(e){
     e.preventDefault();
     if(semSessao){var em=document.getElementById('ac-email');if(!erroCampo(em,emailOk(em.value.trim())?'':ERRO_EMAIL)){em.focus();return;}conta.email=em.value.trim();conta.sessao=true;}
