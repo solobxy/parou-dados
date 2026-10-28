@@ -21,6 +21,8 @@ for nome, url in URLS:
         vistos.add(host); s, b, h = ler(host + '/robots.txt')
         open(f'sonda/{nome}.robots.txt', 'wb').write(b); time.sleep(3)
     s, b, h = ler(url)
+    # tira chaves de API que venham nas páginas (o GitHub recusa o envio se as encontrar)
+    b = re.sub(rb'AIza[0-9A-Za-z_\-]{30,}|(?:sk|pk|rk)_(?:live|test)_[0-9A-Za-z]{10,}|eyJ[0-9A-Za-z_\-]{20,}\.[0-9A-Za-z_\-]{10,}\.[0-9A-Za-z_\-]{10,}|gh[pousr]_[0-9A-Za-z]{30,}|xox[abp]-[0-9A-Za-z\-]{10,}|AKIA[0-9A-Z]{16}', b'[chave]', b)
     open(f'sonda/{nome}.html', 'wb').write(b)
     txt = b.decode('utf-8', 'replace')
     res.append({'nome': nome, 'url': url, 'estado': s, 'bytes': len(b), 'server': h.get('Server', ''), 'next_data': '__NEXT_DATA__' in txt, 'ld_json': txt.count('application/ld+json'), 'titulo': (re.search(r'<title[^>]*>(.*?)</title>', txt, re.S) or [None, ''])[1].strip()[:120]})
