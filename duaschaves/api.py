@@ -14,7 +14,7 @@ Segurança: tokens e sessões guardados só como hash SHA-256; cookie HttpOnly, 
 pedidos POST só com JSON e de uma origem aceite; limites de pedidos por IP e por e-mail; respostas
 iguais exista ou não o e-mail; campos do utilizador validados e com tamanho máximo.
 """
-import hashlib, hmac, json, os, re, secrets, sqlite3, sys, threading, time, urllib.parse, urllib.request
+import base64, hashlib, hmac, json, os, re, secrets, sqlite3, sys, threading, time, urllib.parse, urllib.request
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 DB = os.environ.get('DC_DB', '/var/lib/duaschaves-api/dados.db')
@@ -26,6 +26,48 @@ LINK_MIN = 20            # validade do link de entrada
 SESSAO_DIAS = 30
 MAX_CORPO = 64 * 1024
 RE_EMAIL = re.compile(r'^[^\s@<>"]{1,64}@[^\s@<>"]{1,190}\.[A-Za-z]{2,24}$')
+
+GOOGLE_ID, GOOGLE_SEGREDO = os.environ.get('GOOGLE_ID', ''), os.environ.get('GOOGLE_SEGREDO', '')
+FACEBOOK_ID, FACEBOOK_SEGREDO = os.environ.get('FACEBOOK_ID', ''), os.environ.get('FACEBOOK_SEGREDO', '')
+FACEBOOK_VERSAO = os.environ.get('FACEBOOK_VERSAO', 'v26.0')
+COOKIE_APAGAR = '__Host-dc_sessao=; Path=/; Max-Age=0; HttpOnly; Secure; SameSite=Lax'
+SENHAS_FRACAS = {'123456789', '1234567890', 'password', 'password1', 'qwertyuiop', 'palavrapasse', 'benfica1904', 'portugal123',
+                 '12345678910', 'iloveyou12', 'aaaaaaaaaa', '0123456789', 'abcdefghij', 'passw0rd12', 'duaschaves', 'duaschaves1'}
+
+
+def cookie_sessao(s):
+    return '__Host-dc_sessao=%s; Path=/; Max-Age=%d; HttpOnly; Secure; SameSite=Lax' % (s, SESSAO_DIAS * 86400)
+
+
+def hash_senha(senha, sal=None):
+    """scrypt (memória pesada contra placas gráficas): N=2^16, r=8, p=2, sal aleatório de 16 bytes."""
+    sal = sal or secrets.token_bytes(16)
+    d = hashlib.scrypt(senha.encode(), salt=sal, n=2 ** 16, r=8, p=2, maxmem=96 * 1024 * 1024, dklen=32)
+    return 'scrypt$16$8$2$%s$%s' % (base64.b64encode(sal).decode(), base64.b64encode(d).decode())
+
+
+def confere_senha(senha, guardado):
+    try:
+        _, n, r, p, sal, d = guardado.split('$')
+        novo = hashlib.scrypt(senha.encode(), salt=base64.b64decode(sal), n=2 ** int(n), r=int(r), p=int(p),
+                              maxmem=96 * 1024 * 1024, dklen=32)
+        return hmac.compare_digest(novo, base64.b64decode(d))
+    except Exception:
+        return False
+
+
+HASH_FALSO = None
+
+
+def senha_fraca(senha, email):
+    if len(senha) < 10 or len(senha) > 128:
+        return 'A palavra-passe precisa de ter entre 10 e 128 caracteres.'
+    if senha.lower() in SENHAS_FRACAS or len(set(senha)) < 4:
+        return 'Essa palavra-passe é demasiado fácil de adivinhar.'
+    if email and len(email.split('@')[0]) >= 4 and email.split('@')[0].lower() in senha.lower():
+        return 'Não uses o teu e-mail na palavra-passe.'
+    return ''
+
 
 _bloq = threading.Lock()
 _contagens = {}          # limite de pedidos: chave -> [instantes]
@@ -74,6 +116,12 @@ def criar_tabelas():
         ucols = [r[1] for r in c.execute('PRAGMA table_info(utilizadores)')]
         if 'perfil' not in ucols:
             c.execute("ALTER TABLE utilizadores ADD COLUMN perfil TEXT NOT NULL DEFAULT '{}'")
+        for col, tipo in (('senha', 'TEXT'), ('google_sub', 'TEXT'), ('facebook_id', 'TEXT'), ('email_ok', 'INTEGER NOT NULL DEFAULT 0')):
+            if col not in ucols:
+                c.execute('ALTER TABLE utilizadores ADD COLUMN %s %s' % (col, tipo))
+        scols = [r[1] for r in c.execute('PRAGMA table_info(sessoes)')]
+        if 'criada' not in scols:
+            c.execute('ALTER TABLE sessoes ADD COLUMN criada INTEGER')
         if 'foto' not in ucols:
             c.execute('ALTER TABLE utilizadores ADD COLUMN foto TEXT')
         cols = [r[1] for r in c.execute('PRAGMA table_info(alertas)')]
@@ -244,7 +292,7 @@ class API(BaseHTTPRequestHandler):
 
     def sessao(self, c):
         ck = self.headers.get('Cookie') or ''
-        m = re.search(r'(?:^|;\s*)dc_sessao=([A-Za-z0-9_\-]{20,100})', ck)
+        m = re.search(r'(?:^|;\s*)__Host-dc_sessao=([A-Za-z0-9_\-]{20,100})', ck)
         if not m:
             return None
         r = c.execute('SELECT u.* FROM sessoes s JOIN utilizadores u ON u.id=s.utilizador WHERE s.hash=? AND s.expira>? AND u.apagado=0',
@@ -260,7 +308,8 @@ class API(BaseHTTPRequestHandler):
     def do_GET(self):
         url = urllib.parse.urlsplit(self.path)
         if url.path == '/api/saude':
-            return self.responder(200, {'ok': True, 'email': bool(RESEND)})
+            return self.responder(200, {'ok': True, 'email': bool(RESEND), 'google': bool(GOOGLE_ID and GOOGLE_SEGREDO),
+                                        'facebook': bool(FACEBOOK_ID and FACEBOOK_SEGREDO), 'senha': True})
         if url.path == '/api/eu':
             with ligar() as c:
                 u = self.sessao(c)
@@ -268,7 +317,8 @@ class API(BaseHTTPRequestHandler):
                     return self.responder(401, {'erro': 'sem_sessao'})
                 return self.responder(200, {
                     'email': u['email'], 'marketing': bool(u['marketing']), 'prefs': json.loads(u['prefs'] or '{}'),
-                    'perfil': json.loads(u['perfil'] or '{}'), 'foto': bool(u['foto']),
+                    'perfil': json.loads(u['perfil'] or '{}'), 'foto': bool(u['foto']), 'tem_senha': bool(u['senha']),
+                    'google': bool(u['google_sub']), 'facebook': bool(u['facebook_id']),
                     'acesso': {'ate': (u['acesso_ate'] or 0) * 1000, 'renova': bool(u['renova'])} if u['acesso_ate'] else None,
                     'alertas': [dict(id=a['id'], filtro=json.loads(a['filtro'])) for a in
                                 c.execute('SELECT id, filtro FROM alertas WHERE utilizador=? AND ativo=1 ORDER BY id DESC', (u['id'],))]})
@@ -289,6 +339,9 @@ class API(BaseHTTPRequestHandler):
             self.end_headers()
             self.wfile.write(dados)
             return
+        m = re.fullmatch(r'/api/oauth/(google|facebook)/(inicio|volta)', url.path)
+        if m:
+            return self.oauth(m.group(1), m.group(2), urllib.parse.parse_qs(url.query))
         if url.path == '/api/parar':        # parar um alerta a partir do link no e-mail (sem precisar de entrar)
             q = urllib.parse.parse_qs(url.query)
             a, k = q.get('a', [''])[0], q.get('k', [''])[0]
@@ -310,10 +363,11 @@ class API(BaseHTTPRequestHandler):
                     return self.redirecionar(self.base() + '/#entrar-erro')
                 c.execute('UPDATE links SET usado=1 WHERE hash=?', (h(t),))
                 u = utilizador(c, r['email'])
-                s = secrets.token_urlsafe(32)
-                c.execute('INSERT INTO sessoes(hash, utilizador, expira) VALUES(?,?,?)', (h(s), u['id'], agora + SESSAO_DIAS * 86400))
-                c.execute('DELETE FROM sessoes WHERE expira<?', (agora,))
-            ck = 'dc_sessao=%s; Path=/; Max-Age=%d; HttpOnly; Secure; SameSite=Lax' % (s, SESSAO_DIAS * 86400)
+                if not u['email_ok'] and u['senha']:      # o dono provou o e-mail: anula palavra-passe posta por outra pessoa
+                    c.execute('UPDATE utilizadores SET senha=NULL WHERE id=?', (u['id'],))
+                    c.execute('DELETE FROM sessoes WHERE utilizador=?', (u['id'],))
+                c.execute('UPDATE utilizadores SET email_ok=1 WHERE id=?', (u['id'],))
+                ck = nova_sessao(c, u['id'])
             return self.redirecionar(destino, [('Set-Cookie', ck)])
         return self.responder(404, {'erro': 'nao_existe'})
 
@@ -359,6 +413,47 @@ class API(BaseHTTPRequestHandler):
                 return self.responder(503, {'erro': 'email_por_ligar'})
             return self.responder(200, {'ok': True, 'enviado': bool(r)})
 
+        if p == '/api/registar':
+            email = str(corpo.get('email') or '').strip().lower()
+            senha = corpo.get('senha') if isinstance(corpo.get('senha'), str) else ''
+            if corpo.get('site'):
+                return self.responder(200, {'ok': True})
+            if not RE_EMAIL.match(email):
+                return self.responder(400, {'erro': 'email'})
+            fraca = senha_fraca(senha, email)
+            if fraca:
+                return self.responder(400, {'erro': 'senha', 'msg': fraca})
+            if not limite('reg:' + ip, 5, 3600):
+                return self.responder(429, {'erro': 'muitos_pedidos'})
+            with ligar() as c:
+                ex = utilizador(c, email, criar=False)
+                # só se pode criar conta num e-mail que ainda não tem forma de entrar (ex.: só deixou um alerta)
+                if ex and (ex['senha'] or ex['google_sub'] or ex['facebook_id'] or ex['email_ok']):
+                    return self.responder(409, {'erro': 'conta_existe'})
+                u = utilizador(c, email)
+                c.execute('UPDATE utilizadores SET senha=?, perfil=? WHERE id=?',
+                          (hash_senha(senha), json.dumps({'nome': texto(corpo.get('nome'), 60)}, ensure_ascii=False), u['id']))
+                ck = nova_sessao(c, u['id'])
+            return self.responder(200, {'ok': True}, [('Set-Cookie', ck)])
+
+        if p == '/api/entrar-senha':
+            email = str(corpo.get('email') or '').strip().lower()
+            senha = corpo.get('senha') if isinstance(corpo.get('senha'), str) else ''
+            if not limite('ls-ip:' + ip, 20, 900) or not limite('ls-em:' + email, 6, 900):
+                return self.responder(429, {'erro': 'muitos_pedidos'})
+            with ligar() as c:
+                u = utilizador(c, email, criar=False) if RE_EMAIL.match(email) else None
+                guardado = u['senha'] if u and u['senha'] and not u['apagado'] else None
+                global HASH_FALSO
+                if not guardado:                 # gasta o mesmo tempo para não revelar que contas existem
+                    HASH_FALSO = HASH_FALSO or hash_senha('x' * 12)
+                    confere_senha(senha[:128], HASH_FALSO)
+                    return self.responder(401, {'erro': 'credenciais'})
+                if not confere_senha(senha[:128], guardado):
+                    return self.responder(401, {'erro': 'credenciais'})
+                ck = nova_sessao(c, u['id'])
+            return self.responder(200, {'ok': True}, [('Set-Cookie', ck)])
+
         if p == '/api/alerta':             # alerta ou pedido de aviso, com ou sem conta
             email = str(corpo.get('email') or '').strip().lower()
             f = limpar_filtro(corpo.get('filtro'))
@@ -383,10 +478,25 @@ class API(BaseHTTPRequestHandler):
                 return self.responder(401, {'erro': 'sem_sessao'})
             if p == '/api/sair':
                 ck = self.headers.get('Cookie') or ''
-                m = re.search(r'(?:^|;\s*)dc_sessao=([A-Za-z0-9_\-]{20,100})', ck)
+                m = re.search(r'(?:^|;\s*)__Host-dc_sessao=([A-Za-z0-9_\-]{20,100})', ck)
                 if m:
                     c.execute('DELETE FROM sessoes WHERE hash=?', (h(m.group(1)),))
-                return self.responder(200, {'ok': True}, [('Set-Cookie', 'dc_sessao=; Path=/; Max-Age=0; HttpOnly; Secure; SameSite=Lax')])
+                return self.responder(200, {'ok': True}, [('Set-Cookie', COOKIE_APAGAR)])
+            if p == '/api/senha':
+                nova = corpo.get('nova') if isinstance(corpo.get('nova'), str) else ''
+                atual = corpo.get('atual') if isinstance(corpo.get('atual'), str) else ''
+                if u['senha'] and not confere_senha(atual[:128], u['senha']):
+                    return self.responder(401, {'erro': 'credenciais'})
+                fraca = senha_fraca(nova, u['email'])
+                if fraca:
+                    return self.responder(400, {'erro': 'senha', 'msg': fraca})
+                c.execute('UPDATE utilizadores SET senha=? WHERE id=?', (hash_senha(nova), u['id']))
+                c.execute('DELETE FROM sessoes WHERE utilizador=?', (u['id'],))     # termina as outras sessões
+                ck = nova_sessao(c, u['id'])
+                return self.responder(200, {'ok': True}, [('Set-Cookie', ck)])
+            if p == '/api/sair-tudo':
+                c.execute('DELETE FROM sessoes WHERE utilizador=?', (u['id'],))
+                return self.responder(200, {'ok': True}, [('Set-Cookie', COOKIE_APAGAR)])
             if p == '/api/perfil':
                 perfil = limpar_perfil(corpo.get('perfil'))
                 if perfil is None:
@@ -426,7 +536,7 @@ class API(BaseHTTPRequestHandler):
                 c.execute('DELETE FROM alertas WHERE utilizador=?', (u['id'],))
                 c.execute('DELETE FROM sessoes WHERE utilizador=?', (u['id'],))
                 c.execute('DELETE FROM utilizadores WHERE id=?', (u['id'],))
-                return self.responder(200, {'ok': True}, [('Set-Cookie', 'dc_sessao=; Path=/; Max-Age=0; HttpOnly; Secure; SameSite=Lax')])
+                return self.responder(200, {'ok': True}, [('Set-Cookie', COOKIE_APAGAR)])
         return self.responder(404, {'erro': 'nao_existe'})
 
 
@@ -458,6 +568,109 @@ def _foto(self):
 
 
 API.foto = _foto
+
+
+def nova_sessao(c, uid):
+    """Sessão nova a cada entrada (evita fixação de sessão); devolve o Set-Cookie."""
+    s = secrets.token_urlsafe(32)
+    agora = int(time.time())
+    c.execute('INSERT INTO sessoes(hash, utilizador, expira, criada) VALUES(?,?,?,?)', (h(s), uid, agora + SESSAO_DIAS * 86400, agora))
+    c.execute('DELETE FROM sessoes WHERE expira<?', (agora,))
+    return cookie_sessao(s)
+
+
+def _assinar(c, txt):
+    seg = c.execute("SELECT valor FROM config WHERE chave='segredo'").fetchone()[0]
+    return hmac.new(seg.encode(), b'oauth:' + txt.encode(), 'sha256').hexdigest()
+
+
+def _pedir(url, dados=None, cab=None):
+    req = urllib.request.Request(url, data=urllib.parse.urlencode(dados).encode() if dados else None, headers=cab or {})
+    with urllib.request.urlopen(req, timeout=15) as r:
+        return json.loads(r.read())
+
+
+def _oauth(self, prov, fase, q):
+    base = self.base()
+    volta = base + '/api/oauth/%s/volta' % prov
+    def erro(cod):
+        return self.redirecionar(base + '/#entrar-erro-' + cod, [('Set-Cookie', 'dc_oauth=; Path=/api/oauth; Max-Age=0; HttpOnly; Secure; SameSite=Lax')])
+    if prov == 'google' and not (GOOGLE_ID and GOOGLE_SEGREDO) or prov == 'facebook' and not (FACEBOOK_ID and FACEBOOK_SEGREDO):
+        return erro('indisponivel')
+    if not limite('oauth:' + self.ip(), 30, 900):
+        return erro('limite')
+    if fase == 'inicio':
+        estado, verif = secrets.token_urlsafe(24), secrets.token_urlsafe(48)
+        exp = str(int(time.time()) + 600)
+        with ligar() as c:
+            val = '%s.%s.%s.%s' % (prov, estado, verif, exp)
+            ck = 'dc_oauth=%s.%s; Path=/api/oauth; Max-Age=600; HttpOnly; Secure; SameSite=Lax' % (val, _assinar(c, val))
+        if prov == 'google':
+            desafio = base64.urlsafe_b64encode(hashlib.sha256(verif.encode()).digest()).rstrip(b'=').decode()
+            url = 'https://accounts.google.com/o/oauth2/v2/auth?' + urllib.parse.urlencode({
+                'client_id': GOOGLE_ID, 'redirect_uri': volta, 'response_type': 'code', 'scope': 'openid email profile',
+                'state': estado, 'code_challenge': desafio, 'code_challenge_method': 'S256', 'prompt': 'select_account'})
+        else:
+            url = 'https://www.facebook.com/%s/dialog/oauth?' % FACEBOOK_VERSAO + urllib.parse.urlencode({
+                'client_id': FACEBOOK_ID, 'redirect_uri': volta, 'state': estado, 'scope': 'email,public_profile', 'response_type': 'code'})
+        return self.redirecionar(url, [('Set-Cookie', ck)])
+    # volta: confirmar o estado guardado no cookie assinado (contra CSRF no login)
+    m = re.search(r'(?:^|;\s*)dc_oauth=([^;]+)', self.headers.get('Cookie') or '')
+    code, estado = (q.get('code') or [''])[0], (q.get('state') or [''])[0]
+    if not m or not code or not estado:
+        return erro('cancelado')
+    partes = m.group(1).rsplit('.', 1)
+    if len(partes) != 2:
+        return erro('estado')
+    val, assin = partes
+    with ligar() as c:
+        if not hmac.compare_digest(_assinar(c, val), assin):
+            return erro('estado')
+    try:
+        p_prov, p_estado, verif, exp = val.split('.')
+    except ValueError:
+        return erro('estado')
+    if p_prov != prov or not hmac.compare_digest(p_estado, estado) or int(exp) < time.time():
+        return erro('estado')
+    try:
+        if prov == 'google':
+            tok = _pedir('https://oauth2.googleapis.com/token', {'code': code, 'client_id': GOOGLE_ID, 'client_secret': GOOGLE_SEGREDO,
+                                                                'redirect_uri': volta, 'grant_type': 'authorization_code', 'code_verifier': verif})
+            info = _pedir('https://openidconnect.googleapis.com/v1/userinfo', cab={'Authorization': 'Bearer ' + tok['access_token']})
+            if not info.get('email_verified'):
+                return erro('email')
+            email, ident, nome, col = info.get('email', '').lower(), str(info.get('sub')), info.get('name') or '', 'google_sub'
+        else:
+            tok = _pedir('https://graph.facebook.com/%s/oauth/access_token?' % FACEBOOK_VERSAO + urllib.parse.urlencode({
+                'client_id': FACEBOOK_ID, 'client_secret': FACEBOOK_SEGREDO, 'redirect_uri': volta, 'code': code}))
+            prova = hmac.new(FACEBOOK_SEGREDO.encode(), tok['access_token'].encode(), 'sha256').hexdigest()
+            info = _pedir('https://graph.facebook.com/%s/me?' % FACEBOOK_VERSAO + urllib.parse.urlencode({
+                'fields': 'id,name,email', 'access_token': tok['access_token'], 'appsecret_proof': prova}))
+            email, ident, nome, col = (info.get('email') or '').lower(), str(info.get('id')), info.get('name') or '', 'facebook_id'
+            if not email:
+                return erro('email')
+    except Exception as e:
+        print('oauth falhou:', prov, type(e).__name__, file=sys.stderr)
+        return erro('falhou')
+    if not RE_EMAIL.match(email) or not ident:
+        return erro('email')
+    with ligar() as c:
+        u = c.execute('SELECT * FROM utilizadores WHERE %s=?' % col, (ident,)).fetchone() or utilizador(c, email)
+        if not u['email_ok'] and u['senha']:
+            # alguém criou conta com este e-mail sem o confirmar: o dono verdadeiro (provado pelo Google/Facebook)
+            # fica com a conta, a palavra-passe desconhecida é anulada e as sessões antigas terminam
+            c.execute('UPDATE utilizadores SET senha=NULL WHERE id=?', (u['id'],))
+            c.execute('DELETE FROM sessoes WHERE utilizador=?', (u['id'],))
+        c.execute('UPDATE utilizadores SET %s=?, email_ok=1 WHERE id=?' % col, (ident, u['id']))
+        perfil = json.loads(u['perfil'] or '{}')
+        if nome and not perfil.get('nome'):
+            perfil['nome'] = texto(nome, 60)
+            c.execute('UPDATE utilizadores SET perfil=? WHERE id=?', (json.dumps(perfil, ensure_ascii=False), u['id']))
+        ck = nova_sessao(c, u['id'])
+    return self.redirecionar(base + '/#conta', [('Set-Cookie', ck), ('Set-Cookie', 'dc_oauth=; Path=/api/oauth; Max-Age=0; HttpOnly; Secure; SameSite=Lax')])
+
+
+API.oauth = _oauth
 
 
 def main():

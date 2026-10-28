@@ -98,6 +98,14 @@ input[type=file]{font:inherit;font-size:15px;max-width:100%}
 
 .interruptor{display:flex;align-items:center;gap:12px;font-size:16px;font-weight:600;cursor:pointer;min-height:44px}
 .isco{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden}
+.sociais{display:flex;flex-direction:column;gap:10px;margin-bottom:8px}
+.botao-social{display:flex;align-items:center;justify-content:center;gap:10px;min-height:52px;border-radius:14px;font-weight:700;font-size:16px;text-decoration:none;border:1px solid var(--borda-forte);background:#fff;color:var(--tinta)}
+.botao-social.facebook{background:#1877F2;border-color:#1877F2;color:#fff}
+.ou{display:flex;align-items:center;gap:12px;color:var(--texto3);font-size:14px;margin:16px 0}.ou::before,.ou::after{content:'';flex:1;height:1px;background:var(--borda)}
+.abas{display:flex;background:#E6EBE9;border-radius:14px;padding:4px;margin-bottom:12px}.abas button{flex:1;min-height:44px;border:0;border-radius:10px;background:none;font:inherit;font-weight:700;color:var(--texto2);cursor:pointer}
+.abas button[aria-selected="true"]{background:#fff;color:var(--tinta);box-shadow:0 1px 3px rgba(15,26,23,.12)}
+.senha-linha{display:flex;gap:8px;align-items:center}.senha-linha input{flex:1;min-width:0}
+.erro-caixa{margin:0 0 14px;padding:12px 14px;border-radius:12px;background:#FDECEA;color:#8A1C12;font-weight:600}
 .consent{display:flex;align-items:flex-start;gap:10px;font-size:14px;line-height:1.45;color:#46524D;cursor:pointer}
 .consent input{width:20px;height:20px;margin:1px 0 0;flex:0 0 auto;accent-color:#0B6E4F}
 .opcional{font-weight:400;color:#5A6762}
@@ -620,7 +628,7 @@ function criarAlerta(a){var l=lerAlertas();a.id=Date.now();l.unshift(a);guardarA
 function descAlerta(a){var p=[];p.push(a.cidade?a.cidade:'Todo o país');if(a.precoMax)p.push('até '+eur(a.precoMax));if(a.tip)p.push(a.tip);if(a.soProt)p.push('só com pagamento seguro');return p.join(' · ');}
 
 /* ---------- servidor (contas reais quando a API existe; sem API fica tudo no dispositivo) ---------- */
-var servidor=false,emailLigado=false;
+var servidor=false,emailLigado=false,metodos={};
 function notaEnvio(){return emailLigado?'':(servidor?' Os e-mails começam a ser enviados em breve.':' Versão de testes: ainda não enviamos e-mails.');}
 function api(caminho,corpo){
   var o={credentials:'same-origin',headers:{}};
@@ -1529,12 +1537,13 @@ function vConta(){
       '<div class="bloco"><h2>Pedidos em anúncios de outros sites</h2>'+(Object.keys(pedidos).length?Object.keys(pedidos).map(function(k){var pd=pedidos[k];return '<a class="linha-lista" href="#pedido-'+pd.id+'"><strong>'+esc(pd.zona)+'</strong><span>'+({convite:'À espera de resposta',aceite:'Aceite',recusado:'Recusado'})[pd.estado]+'</span></a>';}).join(''):'<p class="ajuda">Viste uma casa noutro site? <a href="#proteger">Protege o pagamento</a>.</p>')+'</div>'+
       '<div class="bloco"><h2>Os meus anúncios</h2>'+(conta.anuncios.length?conta.anuncios.map(function(an){return '<div class="linha-lista"><strong>'+esc(an.tip)+' · '+esc(an.bairro)+', '+esc(an.cidade)+'</strong><span>'+esc(an.estado)+'</span></div>';}).join(''):'<p class="ajuda">Tens uma casa para arrendar? <a href="#senhorios">Publica-a aqui</a>.</p>')+'</div>'+
       '<div class="bloco"><h2>Alertas</h2><p>'+(nAl?'Tens '+nAl+' '+(nAl>1?'alertas':'alerta')+'.':'Ainda não tens alertas.')+' <a href="#alertas">Gerir alertas</a></p></div>'+
-      blocoDispositivo()+
+      blocoDispositivo()+(conta.servidor?blocoSeguranca():'')+
     '</div>'+
     (conta.servidor?'<p class="ajuda" style="margin-top:20px">As casas guardadas, as pesquisas e os alertas ficam na tua conta, em qualquer dispositivo. <button type="button" class="botao-texto" id="b-apagar-conta" style="padding:0;min-height:auto">Apagar a minha conta</button></p>':'<p class="ajuda" style="margin-top:20px">Versão de testes: a conta fica só neste browser.</p>')+
   '</div>';
   document.getElementById('b-sair').addEventListener('click',function(){if(servidor)api('sair',{}).catch(function(){});conta.sessao=false;guardarConta();toast('Saíste da conta.');ir('inicio');});
   ligarDispositivo(function(){vConta();foco();});
+  ligarSeguranca();
   var bac=document.getElementById('b-apagar-conta');
   if(bac)bac.addEventListener('click',function(){
     abrirDialogo('<div class="dialogo-corpo">'+cabecaDialogo('Apagar a conta?')+'<p style="margin:0">Apagamos o teu e-mail, as casas guardadas, as pesquisas e os alertas. Não dá para desfazer.</p>'+
@@ -1576,6 +1585,36 @@ function ligarDispositivo(depois){
   if(m)m.addEventListener('change',function(){lerMarketing('d-mkt');guardarConta();toast(m.checked?'Vais receber sugestões por e-mail.':'Deixas de receber sugestões por e-mail.');});
   var h=document.getElementById('b-apagar-hist');
   if(h)h.addEventListener('click',function(){apagarPrefs();toast('Histórico e zonas apagados.');depois();});
+}
+
+/* ---------- segurança da conta ---------- */
+function blocoSeguranca(){
+  var c=conta.metodosConta||{},via=[];if(c.google)via.push('Google');if(c.facebook)via.push('Facebook');if(c.tem_senha)via.push('palavra-passe');
+  return '<div class="bloco"><h2>Segurança</h2><p>'+(via.length?'Entras com '+via.join(', ')+'.':'Entras com link por e-mail.')+'</p>'+
+    '<div class="botoes-linha"><button class="botao-sec botao-peq" type="button" id="b-mudar-senha">'+(c.tem_senha?'Mudar palavra-passe':'Criar palavra-passe')+'</button>'+
+    '<button class="botao-texto" type="button" id="b-sair-tudo">Sair em todos os dispositivos</button></div></div>';
+}
+function ligarSeguranca(){
+  var b=document.getElementById('b-mudar-senha');if(!b)return;
+  var tem=!!(conta.metodosConta&&conta.metodosConta.tem_senha);
+  b.addEventListener('click',function(){
+    abrirDialogo('<form class="dialogo-corpo" id="f-senha" novalidate>'+cabecaDialogo(tem?'Mudar palavra-passe':'Criar palavra-passe')+
+      (tem?'<div class="campo"><label for="s-atual">Palavra-passe atual</label><input id="s-atual" type="password" autocomplete="current-password" maxlength="128"></div>':'')+
+      '<div class="campo"><label for="s-nova">Nova palavra-passe</label><input id="s-nova" type="password" autocomplete="new-password" maxlength="128"><p class="ajuda" style="margin:4px 0 0">Pelo menos 10 caracteres. As outras sessões terminam.</p></div>'+
+      '<button class="botao largo" type="submit">Guardar</button></form>');
+    document.getElementById('f-senha').addEventListener('submit',function(e){
+      e.preventDefault();var n=document.getElementById('s-nova'),a=document.getElementById('s-atual');
+      if(!erroCampo(n,n.value.length>=10?'':'Pelo menos 10 caracteres.')){n.focus();return;}
+      api('senha',{atual:a?a.value:'',nova:n.value}).then(function(r){
+        if(r._estado===200){dlg.close();conta.metodosConta=conta.metodosConta||{};conta.metodosConta.tem_senha=true;guardarConta();toast('Palavra-passe guardada.');vConta();foco();}
+        else if(r._estado===401&&a){erroCampo(a,'A palavra-passe atual está errada.');a.focus();}
+        else if(r.msg){erroCampo(n,r.msg);n.focus();}else toast('Não foi possível. Tenta outra vez.');
+      }).catch(function(){toast('Sem ligação. Tenta outra vez.');});
+    });
+  });
+  document.getElementById('b-sair-tudo').addEventListener('click',function(){
+    api('sair-tudo',{}).then(function(){conta.sessao=false;conta.servidor=false;guardarConta();toast('Saíste em todos os dispositivos.');ir('inicio');}).catch(function(){toast('Sem ligação. Tenta outra vez.');});
+  });
 }
 
 /* ---------- perfil de inquilino ---------- */
@@ -1663,40 +1702,82 @@ function vPerfil(){
   });
 }
 
-function vEntrar(erroLink){
+var ERROS_ENTRAR={link:'Esse link já não é válido: expirou ou já foi usado. Pede outro.',cancelado:'A entrada foi cancelada.',estado:'A entrada demorou demasiado ou foi interrompida. Tenta outra vez.',
+  email:'Essa conta não tem um e-mail confirmado. Usa outro método.',falhou:'Não conseguimos confirmar a tua conta agora. Tenta outra vez.',indisponivel:'Esse método de entrada ainda não está disponível.',limite:'Demasiadas tentativas. Espera uns minutos.'};
+var SVG_G='<svg width="20" height="20" viewBox="0 0 48 48" aria-hidden="true"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.4-.4-3.5z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-8l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.4-.4-3.5z"/></svg>';
+var SVG_F='<svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path fill="#fff" d="M13.5 22v-8h2.7l.4-3.2h-3.1V8.8c0-.9.3-1.5 1.6-1.5h1.7V4.4c-.3 0-1.3-.1-2.5-.1-2.5 0-4.1 1.5-4.1 4.2v2.3H7.4V14h2.8v8z"/></svg>';
+function vEntrar(erroCod,modo){
   titulo('Entrar');
+  modo=modo||'entrar';
+  var g=servidor&&metodos.google,f=servidor&&metodos.facebook,criar=modo==='criar';
   main.innerHTML='<div class="contentor estreito-s pag-simples">'+
-    '<h1 class="titulo" tabindex="-1">Entrar</h1>'+
-    (erroLink?'<p class="erro-campo" role="alert" style="margin:0 0 12px">Esse link já não é válido: expirou ou já foi usado. Pede outro.</p>':'')+
-    '<p class="apoio">Sem palavras-passe: enviamos-te um link de acesso por e-mail.</p>'+
+    '<h1 class="titulo" tabindex="-1">'+(criar?'Criar conta':'Entrar')+'</h1>'+
+    (erroCod&&ERROS_ENTRAR[erroCod]?'<p class="erro-caixa" role="alert">'+ERROS_ENTRAR[erroCod]+'</p>':'')+
+    (g||f?'<div class="sociais">'+(g?'<a class="botao-social google" href="/api/oauth/google/inicio">'+SVG_G+'Continuar com Google</a>':'')+(f?'<a class="botao-social facebook" href="/api/oauth/facebook/inicio">'+SVG_F+'Continuar com Facebook</a>':'')+'</div><p class="ou"><span>ou com o teu e-mail</span></p>':'')+
+    '<div class="abas" role="tablist"><button type="button" role="tab" aria-selected="'+!criar+'" data-modo="entrar">Entrar</button><button type="button" role="tab" aria-selected="'+criar+'" data-modo="criar">Criar conta</button></div>'+
     '<form id="f-entrar" class="form-cartao" novalidate style="grid-template-columns:minmax(0,1fr)">'+
+      (criar?'<div class="campo"><label for="e-nome">Nome</label><input id="e-nome" type="text" maxlength="60" autocomplete="name"></div>':'')+
+      '<div class="campo"><label for="e-email">E-mail</label><input id="e-email" type="email" autocomplete="email" inputmode="email"></div>'+
+      '<div class="campo"><label for="e-senha">Palavra-passe</label><div class="senha-linha"><input id="e-senha" type="password" autocomplete="'+(criar?'new-password':'current-password')+'" maxlength="128"><button type="button" class="botao-texto" id="e-ver" aria-label="Mostrar palavra-passe">Mostrar</button></div>'+(criar?'<p class="ajuda" style="margin:4px 0 0">Pelo menos 10 caracteres. Uma frase curta é fácil de lembrar e difícil de adivinhar.</p>':'')+'</div>'+
+      '<div class="isco" aria-hidden="true"><label for="e-site">Não preenchas</label><input id="e-site" type="text" tabindex="-1" autocomplete="off"></div>'+
+      '<button class="botao largo" type="submit">'+(criar?'Criar conta':'Entrar')+'</button>'+
+      (criar?'<p class="ajuda" style="margin:0">Ao criar conta aceitas os <a href="#termos">termos e a política de privacidade</a>.</p>':'<p class="ajuda" style="margin:0"><button type="button" class="botao-texto" id="b-link" style="padding:0;min-height:auto">Entrar com um link por e-mail</button> (também serve se te esqueceste da palavra-passe)</p>')+
+    '</form>'+
+    '<div class="sucesso" id="entrar-ok" hidden tabindex="-1"></div>'+
+    (servidor?'':'<p class="ajuda" style="margin-top:16px">Versão de testes: a conta fica só neste telemóvel.</p>')+
+  '</div>';
+  main.querySelectorAll('[data-modo]').forEach(function(b){b.addEventListener('click',function(){vEntrar('',b.getAttribute('data-modo'));foco();});});
+  var ver=document.getElementById('e-ver'),se=document.getElementById('e-senha');
+  ver.addEventListener('click',function(){var m=se.type==='password';se.type=m?'text':'password';ver.textContent=m?'Esconder':'Mostrar';ver.setAttribute('aria-label',(m?'Esconder':'Mostrar')+' palavra-passe');});
+  var bl=document.getElementById('b-link');if(bl)bl.addEventListener('click',function(){vEntrarLink();foco();});
+  document.getElementById('f-entrar').addEventListener('submit',function(e){
+    e.preventDefault();
+    var em=document.getElementById('e-email'),email=em.value.trim(),senha=se.value,bt=e.target.querySelector('button[type=submit]'),txt=bt.textContent;
+    if(!erroCampo(em,emailOk(email)?'':ERRO_EMAIL)){em.focus();return;}
+    if(!erroCampo(se,senha.length>=(criar?10:1)?'':(criar?'A palavra-passe precisa de pelo menos 10 caracteres.':'Escreve a palavra-passe.'))){se.focus();return;}
+    var nome=criar?document.getElementById('e-nome').value.trim():'';
+    if(!servidor){conta.sessao=true;conta.email=email;if(nome){conta.perfil=conta.perfil||{};conta.perfil.nome=nome;}guardarConta();toast(criar?'Conta criada.':'Entraste.');ir('conta');return;}
+    bt.disabled=true;bt.textContent=criar?'A criar…':'A entrar…';
+    api(criar?'registar':'entrar-senha',{email:email,senha:senha,nome:nome,site:document.getElementById('e-site').value}).then(function(r){
+      bt.disabled=false;bt.textContent=txt;
+      if(r._estado===200){se.value='';return api('eu').then(function(u){if(u._estado===200){conta.sessao=true;conta.servidor=true;conta.email=u.email;conta.perfil=u.perfil||{};conta.temFoto=!!u.foto;conta.metodosConta={google:!!u.google,facebook:!!u.facebook,tem_senha:!!u.tem_senha};guardarConta();}toast(criar?'Conta criada. Bem-vindo!':'Entraste.');ir('conta');});}
+      if(r._estado===401){erroCampo(se,'E-mail ou palavra-passe errados.');se.focus();}
+      else if(r._estado===409){erroCampo(em,'Já existe uma conta com este e-mail. Entra, ou usa o Google ou o Facebook.');em.focus();}
+      else if(r._estado===400&&r.msg){erroCampo(se,r.msg);se.focus();}
+      else if(r._estado===400){erroCampo(em,ERRO_EMAIL);em.focus();}
+      else if(r._estado===429){erroCampo(se,'Demasiadas tentativas. Espera uns minutos e tenta outra vez.');}
+      else toast('Não foi possível agora. Tenta outra vez.');
+    }).catch(function(){bt.disabled=false;bt.textContent=txt;toast('Sem ligação. Tenta outra vez.');});
+  });
+}
+function vEntrarLink(){
+  titulo('Entrar com link');
+  main.innerHTML='<div class="contentor estreito-s pag-simples">'+
+    '<button type="button" class="voltar" id="b-voltar-entrar" style="background:none;border:0;padding:0;font:inherit;cursor:pointer">'+svg(P.voltar,{s:18})+'Voltar</button>'+
+    '<h1 class="titulo" tabindex="-1">Entrar com link</h1>'+
+    '<p class="apoio">Enviamos-te um link por e-mail. Abres e entras, sem palavra-passe.</p>'+
+    '<form id="f-link" class="form-cartao" novalidate style="grid-template-columns:minmax(0,1fr)">'+
       '<div class="campo"><label for="e-email">E-mail</label><input id="e-email" type="email" autocomplete="email" inputmode="email"></div>'+
       '<div class="isco" aria-hidden="true"><label for="e-site">Não preenchas</label><input id="e-site" type="text" tabindex="-1" autocomplete="off"></div>'+
       '<button class="botao largo" type="submit">Enviar link de acesso</button>'+
     '</form>'+
     '<div class="sucesso" id="entrar-ok" hidden tabindex="-1"></div>'+
   '</div>';
-  document.getElementById('f-entrar').addEventListener('submit',function(e){
+  document.getElementById('b-voltar-entrar').addEventListener('click',function(){vEntrar();foco();});
+  document.getElementById('f-link').addEventListener('submit',function(e){
     e.preventDefault();var em=document.getElementById('e-email');
     if(!erroCampo(em,emailOk(em.value.trim())?'':ERRO_EMAIL)){em.focus();return;}
     var email=em.value.trim(),ok=document.getElementById('entrar-ok'),form=e.target,bt=form.querySelector('button[type=submit]');
-    function demo(msg){
-      ok.innerHTML='<h2>Verifica o teu e-mail</h2><p>'+msg+'</p><button class="botao largo" type="button" id="b-entrar-ja">Entrar já (demonstração)</button>';
-      ok.hidden=false;form.hidden=true;ok.focus();
-      document.getElementById('b-entrar-ja').addEventListener('click',function(){conta.sessao=true;conta.email=email;guardarConta();vConta();foco();});
-    }
-    if(!servidor){demo('Nesta versão de testes ainda não enviamos e-mails. Num site a funcionar, receberias agora um link em <strong>'+esc(email)+'</strong>.');return;}
+    function aviso(msg){ok.innerHTML='<h2>Ainda não dá</h2><p>'+msg+'</p>';ok.hidden=false;form.hidden=true;ok.focus();}
+    if(!servidor||!emailLigado){aviso('O envio de e-mails ainda está a ser ligado. Por agora, entra com o Google, o Facebook ou uma palavra-passe.');return;}
     bt.disabled=true;bt.textContent='A enviar…';
     api('entrar',{email:email,site:document.getElementById('e-site').value}).then(function(r){
       bt.disabled=false;bt.textContent='Enviar link de acesso';
-      if(r._estado===200){
-        ok.innerHTML='<h2>Verifica o teu e-mail</h2><p>Enviámos um link para <strong>'+esc(email)+'</strong>. Abre-o neste telemóvel para entrares. Vale 20 minutos.</p><p class="ajuda">Não chegou? Vê no spam ou <button type="button" class="botao-texto" id="b-reenviar" style="padding:0;min-height:auto">pede outro</button>.</p>';
-        ok.hidden=false;form.hidden=true;ok.focus();
-        document.getElementById('b-reenviar').addEventListener('click',function(){ok.hidden=true;form.hidden=false;em.focus();});
-      }else if(r._estado===429){erroCampo(em,'Pediste vários links seguidos. Espera uns minutos e tenta outra vez.');em.focus();}
+      if(r._estado===200){ok.innerHTML='<h2>Verifica o teu e-mail</h2><p>Enviámos um link para <strong>'+esc(email)+'</strong>. Abre-o neste telemóvel. Vale 20 minutos.</p>';ok.hidden=false;form.hidden=true;ok.focus();}
+      else if(r._estado===429){erroCampo(em,'Pediste vários links seguidos. Espera uns minutos e tenta outra vez.');em.focus();}
       else if(r._estado===400){erroCampo(em,ERRO_EMAIL);em.focus();}
-      else demo('O envio de e-mails ainda está a ser ligado. Por agora, podes entrar no modo de demonstração.');
-    }).catch(function(){bt.disabled=false;bt.textContent='Enviar link de acesso';demo('Não conseguimos enviar o e-mail agora. Podes entrar no modo de demonstração.');});
+      else aviso('Não conseguimos enviar o e-mail agora. Tenta mais tarde.');
+    }).catch(function(){bt.disabled=false;bt.textContent='Enviar link de acesso';aviso('Sem ligação. Tenta outra vez.');});
   });
 }
 
@@ -1918,7 +1999,9 @@ function rota(){
   else if((m=h.match(/^convite-(\d+)$/))){vConvite(+m[1]);base='proteger';}
   else if(h==='senhorios')vSenhorios();
   else if(h==='conta'||h==='entrar'){vConta();base='conta';}
-  else if(h==='entrar-erro'){vEntrar(true);base='conta';}
+  else if(h==='entrar-erro'){vEntrar('link');base='conta';}
+  else if((m=h.match(/^entrar-erro-([a-z]+)$/))){vEntrar(m[1]);base='conta';}
+  else if(h==='criar-conta'){if(conta.sessao)vConta();else vEntrar('','criar');base='conta';}
   else if(h==='alerta-parado'){vAlertas();base='alertas';setTimeout(function(){toast('Alerta parado. Não voltas a receber e-mails dele.');},50);}
   else if(h==='perfil'){vPerfil();base='conta';}
   else if(h==='ajuda')vAjuda();
@@ -1935,10 +2018,12 @@ rota();
 try{
   api('saude').then(function(r){
     if(r._estado!==200)return;
-    servidor=true;emailLigado=!!r.email;
+    servidor=true;emailLigado=!!r.email;metodos={google:!!r.google,facebook:!!r.facebook,senha:!!r.senha};
+    if(!conta.sessao&&/^(entrar|conta)/.test(location.hash.slice(1)))rota();
     return api('eu').then(function(u){
       if(u._estado!==200){if(conta.sessao&&conta.servidor){conta.sessao=false;conta.servidor=false;guardarConta();}return;}
       conta.sessao=true;conta.servidor=true;conta.email=u.email;conta.perfil=u.perfil||{};conta.temFoto=!!u.foto;conta.fotoVersao=Date.now();
+      conta.metodosConta={google:!!u.google,facebook:!!u.facebook,tem_senha:!!u.tem_senha};
       if(u.marketing)conta.marketing={sim:true,quando:Date.now()};
       var pr=u.prefs||{},p=lerPrefs();
       (pr.guardadas||[]).forEach(function(id){if(conta.guardadas.indexOf(id)<0)conta.guardadas.push(id);});
