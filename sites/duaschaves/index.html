@@ -129,6 +129,7 @@ input[type=file]{font:inherit;font-size:15px;max-width:100%}
 .heroi{padding:32px 0 56px}
 .heroi-grelha{display:grid;gap:40px;align-items:center}
 .busca{display:grid;gap:12px;grid-template-columns:minmax(0,1fr)}
+.b-tips{grid-column:1 / -1;border:0;padding:0;margin:0;min-width:0}.b-tips .chips{margin-top:6px}
 .cidades{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:16px 0 0;font-size:15px;color:var(--texto2)}
 .cofre{background:#fff;border-radius:24px;padding:28px 24px;display:flex;flex-direction:column;gap:18px}
 .cofre-legenda{margin:0;font-size:15px;font-weight:600;color:var(--texto2);letter-spacing:0;line-height:1.4}
@@ -244,7 +245,7 @@ main:has(.barra-cta) .casa-grelha{padding-bottom:110px}
 .cartao-cta h3{margin:0;font-size:20px;line-height:1.25}.cartao-cta p{margin:0;color:#C9D3CF;font-size:15px;line-height:1.45}.cartao-cta .botao{align-self:flex-start}
 .botoes-linha{display:flex;flex-wrap:wrap;gap:12px;align-items:center}
 .novo-txt{color:#0B6E4F;font-weight:700}
-.n-novas{display:inline-flex;align-items:center;gap:6px;font-size:15px;font-weight:600;color:#0B6E4F;margin:4px 0 0}
+.n-novas{display:inline-flex;align-items:center;gap:6px;font-size:15px;font-weight:600;color:#0B6E4F;margin:4px 0 16px}
 .n-novas::before{content:'';width:8px;height:8px;border-radius:50%;background:#0B6E4F}
 @media (prefers-reduced-motion:reduce){.barra-cta{transition:none}}
 .planos{display:grid;gap:16px;grid-template-columns:minmax(0,1fr)}
@@ -386,6 +387,7 @@ dialog.dialogo::backdrop{background:rgba(15,26,23,.55)}
   .heroi{padding:72px 0 120px}
   .busca{grid-template-columns:minmax(0,1fr) 180px auto;align-items:end}
   .busca .botao{grid-column:auto}
+  .b-tips{order:9}
   .cofre{padding:36px 32px}
   .cofre-valor{font-size:60px}
   .casas.tres{grid-template-columns:repeat(3,minmax(0,1fr))}
@@ -875,6 +877,7 @@ function vInicio(){
     '<form class="busca" id="f-busca" role="search">'+
       '<div class="campo"><label for="b-cidade">Onde queres morar?</label><input id="b-cidade" type="search" placeholder="Cidade ou bairro" autocomplete="address-level2" value="'+esc(estado.cidade)+'"></div>'+
       '<div class="campo"><label for="b-preco">Renda máxima</label><select id="b-preco">'+opcoesPreco(estado.precoMax)+'</select></div>'+
+      '<fieldset class="campo b-tips"><legend class="rotulo">O que procuras</legend><div class="chips">'+TIPS.map(function(t){return '<button type="button" class="chip" data-btip="'+t+'" aria-pressed="'+(estado.tips.indexOf(t)>=0)+'">'+t+'</button>';}).join('')+'</div></fieldset>'+
       '<button class="botao" type="submit">'+svg(P.lupa)+'Procurar casas</button>'+
     '</form>'+
     (recentes.length?
@@ -940,9 +943,11 @@ function vInicio(){
     e.preventDefault();
     estado.cidade=document.getElementById('b-cidade').value.trim();
     estado.precoMax=+document.getElementById('b-preco').value;
+    estado.tips=[].map.call(main.querySelectorAll('[data-btip][aria-pressed="true"]'),function(b){return b.getAttribute('data-btip');});
     ir('pesquisa');
   });
   main.querySelectorAll('[data-cidade]').forEach(function(b){b.addEventListener('click',function(){estado.cidade=b.getAttribute('data-cidade');ir('pesquisa');});});
+  main.querySelectorAll('[data-btip]').forEach(function(b){b.addEventListener('click',function(){b.setAttribute('aria-pressed',b.getAttribute('aria-pressed')!=='true');});});
   main.querySelectorAll('[data-pesq]').forEach(function(b){b.addEventListener('click',function(){aplicarFiltro(recentes[+b.getAttribute('data-pesq')]);ir('pesquisa');});});
   var bha=document.getElementById('b-home-acesso');
   if(bha)bha.addEventListener('click',function(){if(acessoAtivo()){ir('pesquisa');return;}abrirAcesso(function(){});});
@@ -990,13 +995,23 @@ function naZona(c,cid){return !cid||norm(c.cidade).indexOf(cid)>=0||norm(c.bairr
 /* «Recomendados»: primeiro T0, T1 e quartos, do mais barato para o mais caro; depois o resto, também do mais barato.
    Sem preço, sem fotos ou com renda abaixo do mínimo (costuma ser erro ou burla) vão para o fim. */
 function minimo(c){return c.tipo==='Quarto'?150:300;}
+/* Cidades onde há mais procura (e as áreas metropolitanas à volta): os anúncios baratos daqui vêm primeiro */
+var PRINCIPAIS=['lisboa','porto','braga','coimbra','aveiro','faro','setubal','funchal','leiria','evora','guimaraes',
+  'amadora','oeiras','odivelas','loures','almada','seixal','barreiro','cascais','sintra','vila franca de xira',
+  'matosinhos','vila nova de gaia','maia','gondomar','valongo'];
+function principal(c){var x=norm(c.cidade||'');return PRINCIPAIS.indexOf(x)>=0;}
+/* «barato» numa cidade principal: quarto até 400 €, T0/T1 até 800 € */
+function baratoPrincipal(c){return principal(c)&&c.renda&&c.renda>=minimo(c)&&c.renda<=(c.tipo==='Quarto'?400:800);}
 function nivel(c){if(!c.renda||c.renda<minimo(c)||!(c.fotos&&c.fotos.length)&&!c.prot)return 2;return grupo(c);}
-function cmpRecom(a,b){var na=nivel(a),nb=nivel(b);if(na!==nb)return na-nb;if(na<2&&a.renda!==b.renda)return a.renda-b.renda;return pontuacao(b)-pontuacao(a);}
+function cmpRecom(a,b){var na=nivel(a),nb=nivel(b);if(na!==nb)return na-nb;
+  if(na<2){var pa=baratoPrincipal(a)?0:1,pb=baratoPrincipal(b)?0:1;if(pa!==pb)return pa-pb;if(a.renda!==b.renda)return a.renda-b.renda;}
+  return pontuacao(b)-pontuacao(a);}
 /* Início: T0 e T1 mais baratos (com preço e fotos) e 2 quartos mais baratos, na zona da pessoa ou no país */
 function baratasInicio(){
-  // sempre as mais baratas do país: 4 T0, 3 T1 e 2 quartos, com preço e fotos; rendas abaixo do mínimo ficam de fora (costumam ser erro ou burla)
+  // sempre as mais baratas: primeiro as das cidades principais, depois as do resto do país; 4 T0, 3 T1 e 2 quartos, com preço e fotos; rendas abaixo do mínimo ficam de fora (costumam ser erro ou burla)
   var ok=function(c,min){return c.renda&&c.renda>=min&&c.fotos&&c.fotos.length;},porPreco=function(a,b){return a.renda-b.renda;};
-  var de=function(f,min,n){return CASAS.filter(function(c){return f(c)&&ok(c,min);}).sort(porPreco).slice(0,n);};
+  var de=function(f,min,n){var l=CASAS.filter(function(c){return f(c)&&ok(c,min);}).sort(porPreco);
+    var pr=l.filter(baratoPrincipal);return pr.concat(l.filter(function(c){return pr.indexOf(c)<0;})).slice(0,n);};
   var t0=de(function(c){return c.tipo!=='Quarto'&&c.tip==='T0';},300,4),t1=de(function(c){return c.tipo!=='Quarto'&&c.tip==='T1';},300,3),q=de(function(c){return c.tipo==='Quarto';},150,2);
   var r=[];[t0[0],t1[0],t0[1],q[0],t0[2],t1[1],t0[3],t1[2],q[1]].forEach(function(c){if(c)r.push(c);});
   return r;
