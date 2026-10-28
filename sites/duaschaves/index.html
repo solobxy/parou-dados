@@ -300,6 +300,13 @@ dialog.dlg-promo[open]::backdrop{background:rgba(15,26,23,.42);-webkit-backdrop-
 dialog.dlg-promo.a-sair{animation:dlgSai .23s ease-in both}
 dialog.dlg-promo.a-sair::backdrop{animation:sumir .23s ease-in both}
 .dlg-promo .promo>*{animation:promoItem .55s var(--mola) both}
+.pop-alerta{align-items:center;text-align:center;gap:14px}
+.pop-alerta .promo-tit{max-width:18ch;margin:0 auto;padding:0 30px;box-sizing:content-box;font-size:24px}.pop-alerta .promo-tit em{font-style:normal;color:var(--verde)}
+.pop-alerta .pa-sub{margin:0;font-size:16px;line-height:1.45;color:var(--texto2);max-width:30ch}.pop-alerta .pa-sub strong{color:var(--tinta);font-variant-numeric:tabular-nums}
+.pa-sino{width:72px;height:72px;border-radius:50%;display:grid;place-items:center;background:var(--quente-claro);color:var(--quente-texto);margin:4px 0}
+.pop-alerta form{width:100%;display:flex;flex-direction:column;gap:10px;text-align:left}
+.pop-alerta .botao-sec{width:100%}
+
 .dlg-promo .promo>*:nth-child(2){animation-delay:.12s}.dlg-promo .promo>*:nth-child(3){animation-delay:.18s}.dlg-promo .promo>*:nth-child(4){animation-delay:.24s}.dlg-promo .promo>*:nth-child(5){animation-delay:.3s}.dlg-promo .promo>*:nth-child(6){animation-delay:.36s}.dlg-promo .promo>*:nth-child(7){animation-delay:.42s}
 @keyframes dlgEntra{from{opacity:0;transform:translateY(36px) scale(.96)}to{opacity:1;transform:none}}
 @keyframes dlgSai{to{opacity:0;transform:translateY(16px) scale(.98)}}
@@ -2510,7 +2517,7 @@ function desenharPainel(j){
   var contas='<section class="pn-card"><h2>Contas</h2><dl class="pn-dl">'+
     [['Total',c.total],['Novas no período',c.novas],['Com acesso pago ativo',c.com_acesso],['Aceitam sugestões por e-mail',c.marketing],['Entram com Google',c.google],['Entram com Facebook',c.facebook],['Têm palavra-passe',c.senha],['Guardaram o perfil',c.com_perfil],['Com foto',c.com_foto],['Alertas ativos',c.alertas_ativos],['Alertas novos no período',c.alertas_novos]]
     .map(function(x){return '<div><dt>'+x[0]+'</dt><dd>'+fmtN(x[1]||0)+'</dd></div>';}).join('')+'</dl></section>';
-  var nomesEv={vista:'Páginas vistas',pesquisa:'Pesquisas',casa:'Casas abertas',original:'Cliques para o anúncio original',paywall:'Viram o pagamento',pagar_clique:'Carregaram em pagar',pago:'Pagamentos',promo_ver:'Oferta vista',promo_fechar:'Oferta fechada',promo_clique:'Oferta clicada',alerta:'Alertas criados',pesquisa_guardada:'Pesquisas guardadas',registo:'Contas criadas (e-mail)',entrar:'Entradas na conta',guardar:'Casas guardadas',perfil:'Perfis guardados',filtro:'Filtros mudados',tempo:'Visitas com tempo medido',cidade_inicio:'Cidades escolhidas no início',contactar:'Botões de contacto',proteger:'Pagamento seguro (casa)',publicar:'Anúncios publicados',sair:'Saídas da conta',instalar:'Botão «Instalar a app»',instalada:'App instalada'};
+  var nomesEv={vista:'Páginas vistas',pesquisa:'Pesquisas',casa:'Casas abertas',original:'Cliques para o anúncio original',paywall:'Viram o pagamento',pagar_clique:'Carregaram em pagar',pago:'Pagamentos',promo_ver:'Oferta vista',promo_fechar:'Oferta fechada',promo_clique:'Oferta clicada',alerta:'Alertas criados',pesquisa_guardada:'Pesquisas guardadas',registo:'Contas criadas (e-mail)',entrar:'Entradas na conta',guardar:'Casas guardadas',perfil:'Perfis guardados',filtro:'Filtros mudados',tempo:'Visitas com tempo medido',cidade_inicio:'Cidades escolhidas no início',contactar:'Botões de contacto',proteger:'Pagamento seguro (casa)',publicar:'Anúncios publicados',sair:'Saídas da conta',instalar:'Botão «Instalar a app»',instalada:'App instalada',alerta_pop_ver:'Convite de alertas visto',alerta_pop_nao:'Convite de alertas recusado'};
   var evs='<section class="pn-card pn-largo"><h2>Tudo o que fizeram</h2><table class="pn-tab"><thead><tr><th scope="col">Ação</th><th scope="col">Vezes</th><th scope="col">Pessoas</th></tr></thead><tbody>'+
     Object.keys(ev_).filter(function(k){return ev_[k].vezes;}).sort(function(a,b){return ev_[b].vezes-ev_[a].vezes;}).map(function(k){return '<tr><td>'+(nomesEv[k]||k)+'</td><td>'+fmtN(ev_[k].vezes)+'</td><td>'+fmtN(ev_[k].pessoas)+'</td></tr>';}).join('')+'</tbody></table></section>';
   var pf=j.perfil||{};
@@ -2627,6 +2634,49 @@ function abrirPromo(){
   dlg.addEventListener('close',function f(){dlg.removeEventListener('close',f);promoFechada();if(!clicou)ev('promo_fechar',{});});
   document.getElementById('b-promo').addEventListener('click',function(){clicou=true;ev('promo_clique',{});promoFechada();dlg.close();abrirAcesso(function(){});});
 }
+/* Convite para alertas por e-mail: só a quem já pesquisou ou viu 2 casas, não tem alertas,
+   e não viu nenhuma janela nos últimos 10 min. Se disser que não, volta daqui a 4 dias. */
+var ALERTA_POP_PAUSA=4*DIA;
+function alertaPopPode(){
+  if(navigator.webdriver&&!promoTeste())return false;
+  if(dlg.open||lerAlertas().length)return false;
+  var h=(location.hash.slice(1)||'inicio');
+  if(/^(entrar|criar-conta|perfil|pagamento-|pedido-|convite-|termos|privacidade|alertas|precos)/.test(h))return false;
+  var p=lerPrefs();if(!((p.vistas||[]).length>=2||(p.pesquisas||[]).length>=1))return false;
+  var t=0,u=0;try{t=+localStorage.getItem('dc-alerta-pop')||0;u=+localStorage.getItem('dc-promo')||0;}catch(e){}
+  return Date.now()-t>ALERTA_POP_PAUSA&&Date.now()-u>10*60000;
+}
+function abrirAlertaPop(){
+  var n=numerosCasas(),z=zonasPreferidas(1)[0],cid=estado.cidade||(z?z.nome:'');
+  try{localStorage.setItem('dc-alerta-pop',String(Date.now()));}catch(e){}
+  dlg.classList.add('dlg-promo');
+  abrirDialogo('<div class="dialogo-corpo promo pop-alerta">'+
+    '<button type="button" class="icone promo-x" aria-label="Fechar" data-fechar>'+svg(P.fechar)+'</button>'+
+    '<h2 class="promo-tit" tabindex="-1">Queres receber as casas novas no e&#8209;mail, <em>grátis</em>?</h2>'+
+    (n.fontes.length>1&&n.n24>0?'<p class="pa-sub">Juntamos <strong>'+n.fontes.length+' sites</strong> e nas últimas 24 horas apareceram <strong>'+n.n24.toLocaleString('pt-PT')+' casas novas</strong>.</p>':'<p class="pa-sub">Avisamos-te quando aparecer uma casa como a que procuras.</p>')+
+    '<span class="pa-sino" aria-hidden="true">'+svg(P.sino,{s:34})+'</span>'+
+    '<form id="f-pop-alerta" novalidate>'+
+      '<div class="campo"><label for="pa-cidade">Cidade ou bairro</label><input id="pa-cidade" type="text" autocomplete="address-level2" value="'+esc(cid)+'" placeholder="Todo o país"></div>'+
+      '<div class="campo"><label for="pa-email">E-mail</label><input id="pa-email" type="email" autocomplete="email" inputmode="email" value="'+esc(conta.email||'')+'"></div>'+
+      '<button class="botao largo" type="submit">Sim, avisar-me</button>'+
+      '<button class="botao-sec" type="button" data-fechar>Não, obrigado</button>'+
+    '</form>'+
+  '</div>');
+  var tt=dlg.querySelector('.promo-tit');if(tt)tt.focus();
+  ev('alerta_pop_ver',{});var criou=false;
+  dlg.addEventListener('close',function f(){dlg.removeEventListener('close',f);if(!criou)ev('alerta_pop_nao',{});});
+  document.getElementById('f-pop-alerta').addEventListener('submit',function(e){
+    e.preventDefault();var em=document.getElementById('pa-email');
+    if(!erroCampo(em,emailOk(em.value.trim())?'':ERRO_EMAIL)){em.focus();return;}
+    criou=true;
+    criarAlerta({cidade:document.getElementById('pa-cidade').value.trim(),precoMax:estado.precoMax||0,tip:(estado.tips||[]).join(', '),soProt:false,email:em.value.trim()});
+    fecharDlg();toast('Alerta criado. Vês e mudas em Alertas.');
+  });
+}
+(function(){
+  var tentar=function(){if(alertaPopPode())abrirAlertaPop();else if(!lerAlertas().length)setTimeout(tentar,20000);};
+  setTimeout(tentar,+promoTeste()||45000);
+})();
 (function(){
   var tentar=function(){if(promoPodeAbrir())abrirPromo();else if(!acessoAtivo())setTimeout(tentar,15000);};
   setTimeout(tentar,+promoTeste()||PROMO_ESPERA);
