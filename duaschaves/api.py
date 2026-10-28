@@ -71,6 +71,11 @@ def criar_tabelas():
         CREATE INDEX IF NOT EXISTS i_alertas_u ON alertas(utilizador);
         CREATE TABLE IF NOT EXISTS config(chave TEXT PRIMARY KEY, valor TEXT NOT NULL);
         ''')
+        ucols = [r[1] for r in c.execute('PRAGMA table_info(utilizadores)')]
+        if 'perfil' not in ucols:
+            c.execute("ALTER TABLE utilizadores ADD COLUMN perfil TEXT NOT NULL DEFAULT '{}'")
+        if 'foto' not in ucols:
+            c.execute('ALTER TABLE utilizadores ADD COLUMN foto TEXT')
         cols = [r[1] for r in c.execute('PRAGMA table_info(alertas)')]
         if 'ultimo_envio' not in cols:
             c.execute('ALTER TABLE alertas ADD COLUMN ultimo_envio INTEGER')
@@ -117,6 +122,50 @@ def email_entrar(para, link):
             '<p style="color:#56635e;font-size:14px">O link vale ' + str(LINK_MIN) + ' minutos e só funciona uma vez. '
             'Se não pediste para entrar, ignora este e-mail.</p></div>')
     return enviar_email(para, 'O teu link para entrar na Duas Chaves', texto, html)
+
+
+FOTOS = os.path.join(os.path.dirname(DB), 'fotos')
+MAX_FOTO = 2 * 1024 * 1024
+GENEROS = ('Mulher', 'Homem', 'Outro', 'Prefiro não dizer')
+SITUACOES = ('Trabalhador por conta de outrem', 'Trabalhador independente', 'Estudante', 'Reformado', 'À procura de emprego', 'Outra')
+TIPS_OK = ('Quarto', 'T0', 'T1', 'T2', 'T3+')
+
+
+def texto(v, n):
+    if not isinstance(v, str):
+        return ''
+    v = re.sub(r'[\x00-\x08\x0b-\x1f\x7f]', '', v).strip()
+    return v[:n]
+
+
+def limpar_perfil(p):
+    """Só os campos do perfil, com tipo e tamanho controlados. Tudo é opcional."""
+    if not isinstance(p, dict):
+        return None
+    out = {'nome': texto(p.get('nome'), 60), 'emprego': texto(p.get('emprego'), 80), 'cidade': texto(p.get('cidade'), 60),
+           'descricao': texto(p.get('descricao'), 600), 'zonas': texto(p.get('zonas'), 120), 'entrada': texto(p.get('entrada'), 10)}
+    i = p.get('idade')
+    out['idade'] = int(i) if isinstance(i, (int, float)) and 18 <= i <= 99 else None
+    out['genero'] = p.get('genero') if p.get('genero') in GENEROS else ''
+    out['situacao'] = p.get('situacao') if p.get('situacao') in SITUACOES else ''
+    o = p.get('orcamento')
+    out['orcamento'] = int(o) if isinstance(o, (int, float)) and 0 < o <= 20000 else None
+    out['tips'] = [t for t in (p.get('tips') or []) if t in TIPS_OK][:5] if isinstance(p.get('tips'), list) else []
+    if out['entrada'] and not re.fullmatch(r'\d{4}-\d{2}(-\d{2})?', out['entrada']):
+        out['entrada'] = ''
+    for k in ('animais', 'fumador'):
+        out[k] = p.get(k) if p.get(k) in (True, False) else None
+    return out
+
+
+def tipo_imagem(b):
+    if b[:3] == b'\xff\xd8\xff':
+        return 'jpg'
+    if b[:8] == b'\x89PNG\r\n\x1a\n':
+        return 'png'
+    if b[:4] == b'RIFF' and b[8:12] == b'WEBP':
+        return 'webp'
+    return None
 
 
 PREFS_CHAVES = {'guardadas': list, 'filtros': list, 'zonas': dict}
@@ -219,9 +268,27 @@ class API(BaseHTTPRequestHandler):
                     return self.responder(401, {'erro': 'sem_sessao'})
                 return self.responder(200, {
                     'email': u['email'], 'marketing': bool(u['marketing']), 'prefs': json.loads(u['prefs'] or '{}'),
+                    'perfil': json.loads(u['perfil'] or '{}'), 'foto': bool(u['foto']),
                     'acesso': {'ate': (u['acesso_ate'] or 0) * 1000, 'renova': bool(u['renova'])} if u['acesso_ate'] else None,
                     'alertas': [dict(id=a['id'], filtro=json.loads(a['filtro'])) for a in
                                 c.execute('SELECT id, filtro FROM alertas WHERE utilizador=? AND ativo=1 ORDER BY id DESC', (u['id'],))]})
+        if url.path == '/api/perfil/foto':     # só o próprio vê a sua foto
+            with ligar() as c:
+                u = self.sessao(c)
+            if not u or not u['foto']:
+                return self.responder(404, {'erro': 'sem_foto'})
+            try:
+                dados = open(os.path.join(FOTOS, u['foto']), 'rb').read()
+            except OSError:
+                return self.responder(404, {'erro': 'sem_foto'})
+            self.send_response(200)
+            self.send_header('Content-Type', {'jpg': 'image/jpeg', 'png': 'image/png', 'webp': 'image/webp'}[u['foto'].rsplit('.', 1)[1]])
+            self.send_header('Cache-Control', 'private, no-cache')
+            self.send_header('X-Content-Type-Options', 'nosniff')
+            self.send_header('Content-Length', str(len(dados)))
+            self.end_headers()
+            self.wfile.write(dados)
+            return
         if url.path == '/api/parar':        # parar um alerta a partir do link no e-mail (sem precisar de entrar)
             q = urllib.parse.parse_qs(url.query)
             a, k = q.get('a', [''])[0], q.get('k', [''])[0]
@@ -264,6 +331,8 @@ class API(BaseHTTPRequestHandler):
     def do_POST(self):
         if not self.origem_ok():
             return self.responder(403, {'erro': 'origem'})
+        if urllib.parse.urlsplit(self.path).path == '/api/perfil/foto':
+            return self.foto()
         corpo = self.corpo_json()
         if corpo is None or not isinstance(corpo, dict):
             return self.responder(400, {'erro': 'pedido'})
@@ -318,6 +387,20 @@ class API(BaseHTTPRequestHandler):
                 if m:
                     c.execute('DELETE FROM sessoes WHERE hash=?', (h(m.group(1)),))
                 return self.responder(200, {'ok': True}, [('Set-Cookie', 'dc_sessao=; Path=/; Max-Age=0; HttpOnly; Secure; SameSite=Lax')])
+            if p == '/api/perfil':
+                perfil = limpar_perfil(corpo.get('perfil'))
+                if perfil is None:
+                    return self.responder(400, {'erro': 'pedido'})
+                c.execute('UPDATE utilizadores SET perfil=? WHERE id=?', (json.dumps(perfil, ensure_ascii=False), u['id']))
+                return self.responder(200, {'ok': True, 'perfil': perfil})
+            if p == '/api/perfil/foto/apagar':
+                if u['foto']:
+                    try:
+                        os.remove(os.path.join(FOTOS, u['foto']))
+                    except OSError:
+                        pass
+                c.execute('UPDATE utilizadores SET foto=NULL WHERE id=?', (u['id'],))
+                return self.responder(200, {'ok': True})
             if p == '/api/preferencias':
                 novos = {}
                 if 'prefs' in corpo:
@@ -335,11 +418,46 @@ class API(BaseHTTPRequestHandler):
                 c.execute('UPDATE alertas SET ativo=0 WHERE id=? AND utilizador=?', (i, u['id']))   # só os do próprio
                 return self.responder(200, {'ok': True})
             if p == '/api/apagar-conta':     # RGPD: apagar os dados a pedido
+                if u['foto']:
+                    try:
+                        os.remove(os.path.join(FOTOS, u['foto']))
+                    except OSError:
+                        pass
                 c.execute('DELETE FROM alertas WHERE utilizador=?', (u['id'],))
                 c.execute('DELETE FROM sessoes WHERE utilizador=?', (u['id'],))
                 c.execute('DELETE FROM utilizadores WHERE id=?', (u['id'],))
                 return self.responder(200, {'ok': True}, [('Set-Cookie', 'dc_sessao=; Path=/; Max-Age=0; HttpOnly; Secure; SameSite=Lax')])
         return self.responder(404, {'erro': 'nao_existe'})
+
+
+def _foto(self):
+    with ligar() as c:
+        u = self.sessao(c)
+        if not u:
+            return self.responder(401, {'erro': 'sem_sessao'})
+        if not limite('foto:' + str(u['id']), 10, 3600):
+            return self.responder(429, {'erro': 'muitos_pedidos'})
+        n = int(self.headers.get('Content-Length') or 0)
+        if n <= 0 or n > MAX_FOTO:
+            return self.responder(413, {'erro': 'tamanho'})
+        dados = self.rfile.read(n)
+        ext = tipo_imagem(dados)            # pelo conteúdo, não pelo nome nem pelo Content-Type
+        if not ext:
+            return self.responder(415, {'erro': 'formato'})
+        os.makedirs(FOTOS, mode=0o700, exist_ok=True)
+        nome = secrets.token_hex(16) + '.' + ext
+        with open(os.path.join(FOTOS, nome), 'wb') as f:
+            f.write(dados)
+        if u['foto']:
+            try:
+                os.remove(os.path.join(FOTOS, u['foto']))
+            except OSError:
+                pass
+        c.execute('UPDATE utilizadores SET foto=? WHERE id=?', (nome, u['id']))
+    return self.responder(200, {'ok': True})
+
+
+API.foto = _foto
 
 
 def main():

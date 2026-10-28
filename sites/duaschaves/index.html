@@ -215,6 +215,10 @@ input[type=file]{font:inherit;font-size:15px;max-width:100%}
 .contacto-num{margin:0;font-size:20px;font-weight:700;font-variant-numeric:tabular-nums}
 .mascarado{margin:0;font-size:22px;font-weight:700;letter-spacing:.06em;color:var(--texto3);font-variant-numeric:tabular-nums}
 .pessoa{display:flex;align-items:center;gap:12px}
+.av-foto{border-radius:999px;object-fit:cover;flex-shrink:0;background:#D6DDDA}
+.perfil-topo{display:flex;gap:14px;align-items:center}.perfil-topo .nome{margin:0;font-weight:700;font-size:18px}
+.progresso{height:8px;border-radius:999px;background:var(--fundo);overflow:hidden}.progresso span{display:block;height:100%;background:var(--verde)}
+.perfil-foto{display:flex;gap:16px;align-items:center;flex-wrap:wrap}
 .avatar{width:44px;height:44px;border-radius:999px;background:var(--tinta);color:#fff;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;flex-shrink:0}
 .pessoa p{margin:0}
 .pessoa .nome{font-size:16px;font-weight:600}
@@ -538,7 +542,7 @@ var main = document.getElementById('conteudo');
 
 /* ---------- conta (só neste browser) ---------- */
 var conta=(function(){
-  var base={sessao:false,email:'',acesso:null,guardadas:[],anuncios:[],marketing:null};
+  var base={sessao:false,email:'',acesso:null,guardadas:[],anuncios:[],marketing:null,perfil:{},fotoLocal:'',temFoto:false};
   try{var c=JSON.parse(localStorage.getItem('dc-conta')||'null');if(c&&typeof c==='object'){for(var k in base){if(!(k in c))c[k]=base[k];}return c;}}catch(e){}
   return base;
 })();
@@ -1519,7 +1523,7 @@ function vConta(){
   main.innerHTML='<div class="contentor estreito-m pag-simples">'+
     '<h1 class="titulo" tabindex="-1">A minha conta</h1>'+
     '<p class="apoio" style="margin-bottom:16px">'+esc(conta.email)+' · <button type="button" class="botao-texto" id="b-sair" style="font-size:18px;padding:0;min-height:auto">Sair</button></p>'+
-    '<div class="blocos">'+blocoAcesso+
+    '<div class="blocos">'+blocoPerfil()+blocoAcesso+
       '<div class="bloco"><h2>Casas guardadas</h2>'+(guard.length?'<div class="casas">'+guard.map(cartao).join('')+'</div>':'<p class="ajuda">Ainda não guardaste casas. Toca no coração de um anúncio para o guardar aqui.</p>')+'</div>'+
       '<div class="bloco"><h2>Pagamentos seguros</h2>'+(pags.length?pags.map(function(x){return '<a class="linha-lista" href="#pagamento-'+x.c.id+'"><strong>'+x.c.tip+' · '+esc(x.c.bairro)+'</strong><span>'+nomeFase[x.p.fase]+'</span></a>';}).join(''):'<p class="ajuda">Ainda não pagaste nenhuma entrada com pagamento seguro.</p>')+'</div>'+
       '<div class="bloco"><h2>Pedidos em anúncios de outros sites</h2>'+(Object.keys(pedidos).length?Object.keys(pedidos).map(function(k){var pd=pedidos[k];return '<a class="linha-lista" href="#pedido-'+pd.id+'"><strong>'+esc(pd.zona)+'</strong><span>'+({convite:'À espera de resposta',aceite:'Aceite',recusado:'Recusado'})[pd.estado]+'</span></a>';}).join(''):'<p class="ajuda">Viste uma casa noutro site? <a href="#proteger">Protege o pagamento</a>.</p>')+'</div>'+
@@ -1572,6 +1576,91 @@ function ligarDispositivo(depois){
   if(m)m.addEventListener('change',function(){lerMarketing('d-mkt');guardarConta();toast(m.checked?'Vais receber sugestões por e-mail.':'Deixas de receber sugestões por e-mail.');});
   var h=document.getElementById('b-apagar-hist');
   if(h)h.addEventListener('click',function(){apagarPrefs();toast('Histórico e zonas apagados.');depois();});
+}
+
+/* ---------- perfil de inquilino ---------- */
+var GENEROS=['Mulher','Homem','Outro','Prefiro não dizer'];
+var SITUACOES=['Trabalhador por conta de outrem','Trabalhador independente','Estudante','Reformado','À procura de emprego','Outra'];
+function fotoPerfilUrl(){if(conta.servidor&&conta.temFoto)return '/api/perfil/foto?v='+(conta.fotoVersao||1);return conta.fotoLocal||'';}
+function iniciais(){var n=(conta.perfil&&conta.perfil.nome)||conta.email||'?';return n.trim().split(/\s+/).slice(0,2).map(function(x){return x.charAt(0).toUpperCase();}).join('');}
+function avatarPerfil(tam){var u=fotoPerfilUrl();return u?'<img class="av-foto" src="'+esc(u)+'" alt="" width="'+tam+'" height="'+tam+'" style="width:'+tam+'px;height:'+tam+'px">':'<div class="avatar" aria-hidden="true" style="width:'+tam+'px;height:'+tam+'px;font-size:'+Math.round(tam/2.8)+'px">'+esc(iniciais())+'</div>';}
+function completoPerfil(){var p=conta.perfil||{},campos=['nome','idade','situacao','emprego','cidade','descricao'],n=campos.filter(function(k){return p[k];}).length+((p.tips&&p.tips.length)?1:0)+(fotoPerfilUrl()?1:0);return Math.round(n/8*100);}
+function blocoPerfil(){
+  var p=conta.perfil||{},pct=completoPerfil(),linha=[];
+  if(p.idade)linha.push(p.idade+' anos');if(p.emprego)linha.push(esc(p.emprego));if(p.cidade)linha.push(esc(p.cidade));
+  return '<div class="bloco"><h2>O meu perfil</h2><div class="perfil-topo">'+avatarPerfil(64)+'<div><p class="nome">'+esc(p.nome||'Sem nome')+'</p><p class="ajuda" style="margin:2px 0 0">'+(linha.join(' · ')||'Ainda não preencheste o perfil.')+'</p></div></div>'+
+    '<div class="progresso" role="img" aria-label="Perfil '+pct+'% completo"><span style="width:'+pct+'%"></span></div><p class="ajuda" style="margin:0">Perfil '+pct+'% completo. Os senhorios respondem mais a quem se apresenta bem.</p>'+
+    '<a class="botao-sec" href="#perfil" style="align-self:flex-start">Editar perfil</a></div>';
+}
+function reduzirFoto(file,cb){
+  var url=URL.createObjectURL(file),img=new Image();
+  img.onload=function(){var m=512,w=img.naturalWidth,h=img.naturalHeight,l=Math.min(w,h);var cv=document.createElement('canvas');cv.width=cv.height=Math.min(m,l);
+    cv.getContext('2d').drawImage(img,(w-l)/2,(h-l)/2,l,l,0,0,cv.width,cv.height);URL.revokeObjectURL(url);
+    cv.toBlob(function(b){cb(b,cv.toDataURL('image/jpeg',0.82));},'image/jpeg',0.82);};
+  img.onerror=function(){URL.revokeObjectURL(url);cb(null);};
+  img.src=url;
+}
+function vPerfil(){
+  if(!conta.sessao){vEntrar();return;}
+  titulo('Editar perfil');
+  var p=conta.perfil||{},op=function(lista,v){return '<option value="">—</option>'+lista.map(function(x){return '<option'+(x===v?' selected':'')+'>'+esc(x)+'</option>';}).join('');};
+  var sn=function(id,v,txt){return '<div class="campo"><label for="'+id+'">'+txt+'</label><select id="'+id+'"><option value="">—</option><option value="1"'+(v===true?' selected':'')+'>Sim</option><option value="0"'+(v===false?' selected':'')+'>Não</option></select></div>';};
+  main.innerHTML='<div class="contentor estreito-m pag-simples">'+
+    '<a class="voltar" href="#conta">'+svg(P.voltar,{s:18})+'A minha conta</a>'+
+    '<h1 class="titulo" tabindex="-1">O meu perfil</h1>'+
+    '<p class="apoio">Apresenta-te aos senhorios. Por agora só tu vês o teu perfil; vais poder enviá-lo quando contactares uma casa.</p>'+
+    '<form id="f-perfil" class="form-cartao" novalidate>'+
+      '<div class="inteiro perfil-foto"><span id="pf-av">'+avatarPerfil(88)+'</span><div class="botoes-linha"><label class="botao-sec botao-peq" for="pf-ficheiro">Escolher foto</label><input id="pf-ficheiro" type="file" accept="image/*" class="isco"><button type="button" class="botao-texto" id="pf-tirar"'+(fotoPerfilUrl()?'':' hidden')+'>Remover</button></div></div>'+
+      '<div class="campo inteiro"><label for="pf-nome">Nome</label><input id="pf-nome" type="text" maxlength="60" autocomplete="name" value="'+esc(p.nome||'')+'"></div>'+
+      '<div class="campo"><label for="pf-idade">Idade <span class="opcional">(opcional)</span></label><input id="pf-idade" type="number" inputmode="numeric" min="18" max="99" value="'+(p.idade||'')+'"></div>'+
+      '<div class="campo"><label for="pf-genero">Género <span class="opcional">(opcional)</span></label><select id="pf-genero">'+op(GENEROS,p.genero)+'</select></div>'+
+      '<div class="campo"><label for="pf-situacao">Situação</label><select id="pf-situacao">'+op(SITUACOES,p.situacao)+'</select></div>'+
+      '<div class="campo"><label for="pf-emprego">Profissão ou curso</label><input id="pf-emprego" type="text" maxlength="80" autocomplete="organization-title" value="'+esc(p.emprego||'')+'"></div>'+
+      '<div class="campo inteiro"><label for="pf-cidade">Onde vives agora</label><input id="pf-cidade" type="text" maxlength="60" autocomplete="address-level2" value="'+esc(p.cidade||'')+'"></div>'+
+      '<fieldset class="campo inteiro" style="border:0;padding:0;margin:0"><legend class="rotulo">O que procuras</legend><div class="chips" style="margin-top:6px">'+TIPS.map(function(t){return '<button type="button" class="chip" data-ptip="'+t+'" aria-pressed="'+((p.tips||[]).indexOf(t)>=0)+'">'+t+'</button>';}).join('')+'</div></fieldset>'+
+      '<div class="campo"><label for="pf-orc">Renda até (€ por mês)</label><input id="pf-orc" type="number" inputmode="numeric" min="1" max="20000" value="'+(p.orcamento||'')+'"></div>'+
+      '<div class="campo"><label for="pf-entrada">Quando queres entrar</label><input id="pf-entrada" type="month" value="'+esc(p.entrada||'')+'"></div>'+
+      '<div class="campo inteiro"><label for="pf-zonas">Zonas que preferes</label><input id="pf-zonas" type="text" maxlength="120" placeholder="Ex.: Porto, Matosinhos" value="'+esc(p.zonas||'')+'"></div>'+
+      sn('pf-animais',p.animais,'Tens animais?')+sn('pf-fumador',p.fumador,'Fumas?')+
+      '<div class="campo inteiro"><label for="pf-desc">Sobre ti</label><textarea id="pf-desc" maxlength="600" rows="5" placeholder="Ex.: Sou enfermeira no Hospital de São João, procuro um T1 perto do trabalho a partir de janeiro. Sou calma e pago sempre a horas.">'+esc(p.descricao||'')+'</textarea><p class="ajuda" id="pf-conta" style="text-align:right;margin:4px 0 0"></p></div>'+
+      '<button class="botao largo inteiro" type="submit">Guardar perfil</button>'+
+    '</form></div>';
+  var desc=document.getElementById('pf-desc'),cont=document.getElementById('pf-conta');
+  document.getElementById('pf-idade').addEventListener('input',function(){erroCampo(this,'');});
+  var contar=function(){cont.textContent=desc.value.length+' / 600';};contar();desc.addEventListener('input',contar);
+  main.querySelectorAll('[data-ptip]').forEach(function(b){b.addEventListener('click',function(){b.setAttribute('aria-pressed',b.getAttribute('aria-pressed')!=='true');});});
+  document.getElementById('pf-ficheiro').addEventListener('change',function(){
+    var f=this.files&&this.files[0];if(!f)return;
+    if(!/^image\//.test(f.type)){toast('Escolhe uma imagem (JPG, PNG ou WebP).');return;}
+    reduzirFoto(f,function(blob,dataUrl){
+      if(!blob){toast('Não conseguimos ler essa imagem. Experimenta outra.');return;}
+      var fim=function(){document.getElementById('pf-av').innerHTML=avatarPerfil(88);document.getElementById('pf-tirar').hidden=false;atualizarTopo();toast('Foto atualizada.');};
+      if(conta.servidor){
+        fetch('/api/perfil/foto',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'image/jpeg'},body:blob}).then(function(r){
+          if(!r.ok){toast(r.status===413?'A foto é demasiado grande.':'Não foi possível guardar a foto. Tenta outra vez.');return;}
+          conta.temFoto=true;conta.fotoVersao=Date.now();guardarConta();fim();
+        }).catch(function(){toast('Sem ligação. Tenta outra vez.');});
+      }else{conta.fotoLocal=dataUrl;guardarConta();fim();}
+    });
+  });
+  document.getElementById('pf-tirar').addEventListener('click',function(){
+    var fim=function(){conta.fotoLocal='';conta.temFoto=false;guardarConta();document.getElementById('pf-av').innerHTML=avatarPerfil(88);document.getElementById('pf-tirar').hidden=true;toast('Foto removida.');};
+    if(conta.servidor)api('perfil/foto/apagar',{}).then(fim).catch(function(){toast('Sem ligação. Tenta outra vez.');});else fim();
+  });
+  document.getElementById('f-perfil').addEventListener('submit',function(e){
+    e.preventDefault();
+    var v=function(id){return document.getElementById(id).value.trim();},yn=function(id){var x=v(id);return x===''?null:x==='1';};
+    var idade=v('pf-idade'),orc=v('pf-orc'),ie=document.getElementById('pf-idade');
+    if(!erroCampo(ie,idade&&(+idade<18||+idade>99)?'A idade tem de estar entre 18 e 99.':'')){ie.focus();return;}
+    var novo={nome:v('pf-nome'),idade:idade?+idade:null,genero:v('pf-genero'),situacao:v('pf-situacao'),emprego:v('pf-emprego'),cidade:v('pf-cidade'),
+      tips:[].map.call(main.querySelectorAll('[data-ptip][aria-pressed="true"]'),function(b){return b.getAttribute('data-ptip');}),
+      orcamento:orc?+orc:null,entrada:v('pf-entrada'),zonas:v('pf-zonas'),animais:yn('pf-animais'),fumador:yn('pf-fumador'),descricao:desc.value.trim()};
+    var bt=e.target.querySelector('button[type=submit]');
+    var fim=function(p){conta.perfil=p||novo;guardarConta();toast('Perfil guardado.');ir('conta');};
+    if(conta.servidor){bt.disabled=true;
+      api('perfil',{perfil:novo}).then(function(r){bt.disabled=false;if(r._estado!==200){toast('Não foi possível guardar. Tenta outra vez.');return;}fim(r.perfil);}).catch(function(){bt.disabled=false;toast('Sem ligação. Tenta outra vez.');});
+    }else fim();
+  });
 }
 
 function vEntrar(erroLink){
@@ -1831,6 +1920,7 @@ function rota(){
   else if(h==='conta'||h==='entrar'){vConta();base='conta';}
   else if(h==='entrar-erro'){vEntrar(true);base='conta';}
   else if(h==='alerta-parado'){vAlertas();base='alertas';setTimeout(function(){toast('Alerta parado. Não voltas a receber e-mails dele.');},50);}
+  else if(h==='perfil'){vPerfil();base='conta';}
   else if(h==='ajuda')vAjuda();
   else if(h==='termos')vTermos();
   else{vInicio();base='inicio';}
@@ -1848,7 +1938,7 @@ try{
     servidor=true;emailLigado=!!r.email;
     return api('eu').then(function(u){
       if(u._estado!==200){if(conta.sessao&&conta.servidor){conta.sessao=false;conta.servidor=false;guardarConta();}return;}
-      conta.sessao=true;conta.servidor=true;conta.email=u.email;
+      conta.sessao=true;conta.servidor=true;conta.email=u.email;conta.perfil=u.perfil||{};conta.temFoto=!!u.foto;conta.fotoVersao=Date.now();
       if(u.marketing)conta.marketing={sim:true,quando:Date.now()};
       var pr=u.prefs||{},p=lerPrefs();
       (pr.guardadas||[]).forEach(function(id){if(conta.guardadas.indexOf(id)<0)conta.guardadas.push(id);});
