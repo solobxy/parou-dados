@@ -17,7 +17,8 @@ DISTRITOS = ['lisboa', 'porto', 'setubal', 'braga', 'faro', 'coimbra', 'aveiro',
              'viana-do-castelo', 'vila-real', 'braganca', 'guarda', 'castelo-branco', 'portalegre', 'evora', 'beja',
              'ilha-da-madeira', 'ilha-de-sao-miguel', 'ilha-terceira']
 GRANDES = {'lisboa', 'porto', 'setubal', 'braga', 'faro'}   # mais anúncios: lê mais páginas
-TIPOS = ['apartamento', 'moradia']
+TIPOS = ['apartamento', 'moradia', 'quarto']
+NOME_TIPO = {'apartamento': 'Apartamento', 'moradia': 'Moradia', 'quarto': 'Quarto'}
 PAGINAS = int(os.environ.get('PAGINAS', '2'))
 PAGINAS_GRANDES = int(os.environ.get('PAGINAS_GRANDES', '5'))
 MAX_DETALHES = int(os.environ.get('MAX_DETALHES', '80'))
@@ -82,14 +83,14 @@ def preco_valido(item):
     return int(round(v)) if PRECO_MIN <= v <= PRECO_MAX else None
 
 
-def do_resultado(item):
+def do_resultado(item, tipo):
     bairro, concelho, distrito = local(item)
     fotos = [i.get('medium') or i.get('large') for i in item.get('images') or [] if i]
     return {
         'id': 'imo-' + str(item['id']),
         'titulo': item.get('title') or '',
-        'tip': tipologia(item.get('title'), item.get('roomsNumber')),
-        'tipo': 'Moradia' if item.get('estate') == 'HOUSE' else 'Apartamento',
+        'tip': '' if tipo == 'quarto' else tipologia(item.get('title'), item.get('roomsNumber')),
+        'tipo': NOME_TIPO[tipo],
         'area': item.get('areaInSquareMeters'),
         'renda': preco_valido(item),
         'bairro': bairro, 'cidade': concelho, 'distrito': distrito,
@@ -137,7 +138,7 @@ def main():
                 for it in itens:
                     if it.get('transaction') != 'RENT' or not it.get('slug'):
                         continue
-                    a = do_resultado(it)
+                    a = do_resultado(it, tipo)
                     vistos[a['id']] = a
                 if not itens:
                     break
