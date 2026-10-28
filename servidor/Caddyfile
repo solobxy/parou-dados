@@ -134,8 +134,16 @@ www.jinxed.world {
 		X-Robots-Tag "noindex, nofollow"
 		-Server
 	}
-	root * /var/www/duaschaves
-	file_server
+	# Os anúncios são recolhidos no próprio servidor (duaschaves-recolha.timer) e ficam fora da pasta do site
+	handle /anuncios.json {
+		root * /var/lib/duaschaves-dados
+		header Cache-Control "no-cache"
+		file_server
+	}
+	handle {
+		root * /var/www/duaschaves
+		file_server
+	}
 }
 
 # Endereço de testes (funciona antes de o domínio apontar para aqui)

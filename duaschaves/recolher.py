@@ -134,7 +134,10 @@ def main():
                 url = f'{BASE}/pt/resultados/arrendar/{tipo}/{distrito}?by=LATEST&direction=DESC&page={pagina}'
                 d = next_data(obter(url))
                 itens = ((((d or {}).get('props') or {}).get('pageProps') or {}).get('data') or {}).get('searchAds', {}).get('items') or []
-                print(f'{distrito}/{tipo} p{pagina}: {len(itens)} anúncios')
+                novos_pag = sum(1 for it in itens if 'imo-' + str(it.get('id')) not in vistos)
+                print(f'{distrito}/{tipo} p{pagina}: {len(itens)} anúncios ({novos_pag} novos)')
+                if pagina > 1 and novos_pag == 0:
+                    break
                 for it in itens:
                     if it.get('transaction') != 'RENT' or not it.get('slug'):
                         continue

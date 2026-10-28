@@ -1,0 +1,10 @@
+[Unit]
+Description=Duas Chaves - recolha de anúncios a cada 30 minutos
+
+[Timer]
+OnCalendar=*-*-* *:07,37:00
+RandomizedDelaySec=60
+Persistent=true
+
+[Install]
+WantedBy=timers.target

@@ -5,8 +5,7 @@ name: Duas Chaves - recolha de anúncios
 # Não recolhe contactos (ver o início de recolher.py).
 
 on:
-  schedule:
-    - cron: "17,47 * * * *"
+  # A recolha automática corre no servidor (duaschaves-recolha.timer); isto fica para testes à mão.
   workflow_dispatch:
     inputs:
       paginas:

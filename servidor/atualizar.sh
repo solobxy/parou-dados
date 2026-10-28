@@ -97,6 +97,16 @@ if [ -f "$DC/index.html" ] && ! diff -rq "$DC" /var/www/duaschaves >/dev/null 2>
     && rm -rf /var/www/duaschaves.velho && { [ ! -d /var/www/duaschaves ] || mv /var/www/duaschaves /var/www/duaschaves.velho; } \
     && mv /var/www/duaschaves.novo /var/www/duaschaves && rm -rf /var/www/duaschaves.velho
 fi
+# Recolha de anúncios a cada 30 min, no próprio servidor. Na primeira vez usa a cópia do repositório.
+if [ -f "$SERV/duaschaves-recolha.service" ]; then
+  if [ ! -s /var/lib/duaschaves-dados/anuncios.json ] && [ -f "$DC/anuncios.json" ]; then
+    install -d -o parou -g parou -m 755 /var/lib/duaschaves-dados && install -o parou -g parou -m 644 "$DC/anuncios.json" /var/lib/duaschaves-dados/anuncios.json
+  fi
+  for f in duaschaves-recolha.service duaschaves-recolha.timer; do
+    if ! cmp -s "$SERV/$f" "/etc/systemd/system/$f"; then cp "$SERV/$f" "/etc/systemd/system/$f" && systemctl daemon-reload; fi
+  done
+  systemctl is-enabled --quiet duaschaves-recolha.timer 2>/dev/null || systemctl enable --now duaschaves-recolha.timer >/dev/null 2>&1
+fi
 
 # O próprio atualizador, se mudou no repositório
 if ! cmp -s "$SERV/parou-atualizar" /usr/local/bin/parou-atualizar; then
