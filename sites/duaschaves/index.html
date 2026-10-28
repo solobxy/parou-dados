@@ -270,6 +270,15 @@ input[type=file]{font:inherit;font-size:15px;max-width:100%}
 .cc-topo{text-align:center;margin:0 auto}.cc-topo h2{margin-left:auto;margin-right:auto}.cc-topo .apoio{margin-left:auto;margin-right:auto}
 .seccao h2{text-wrap:balance}.apoio{text-wrap:pretty}
 
+.heroi .grande{margin-bottom:22px}
+.traco{position:relative;display:inline-block;white-space:nowrap;z-index:0}
+.traco svg{position:absolute;left:-3%;bottom:-.26em;width:106%;height:.42em;overflow:visible;z-index:-1;pointer-events:none}
+.traco path{fill:none;stroke:var(--quente);stroke-linecap:round;stroke-dasharray:1;stroke-dashoffset:1;animation:desenhar .75s cubic-bezier(.6,.1,.3,1) .45s forwards}
+.traco .t1{stroke-width:10}
+.traco .t2{stroke-width:5;opacity:.7;animation-delay:.75s;animation-duration:.55s}
+@keyframes desenhar{to{stroke-dashoffset:0}}
+@media (prefers-reduced-motion:reduce){.traco path{stroke-dashoffset:0;animation:aparecer .6s ease-out .3s both !important}}
+
 /* herói */
 .heroi{padding:32px 0 56px}
 .heroi-grelha{display:grid;gap:40px;align-items:center}
@@ -1169,7 +1178,7 @@ function vInicio(){
   var nums=nc.total>20?'<p class="numeros"><span><strong>'+fmtN(nc.total)+'</strong> casas'+(nc.fontes.length>1?' de <strong>'+nc.fontes.length+'</strong> sites':'')+'</span>'+(nc.n24>0?'<span><strong>'+fmtN(nc.n24)+'</strong> novas em 24 h</span>':'')+(ma!=null&&ma<180?'<span class="atual">Atualizado '+quando(ma)+'</span>':'')+'</p>':'';
   main.innerHTML=
   '<section class="heroi"><div class="contentor heroi-grelha"><div>'+
-    '<h1 class="grande" tabindex="-1">Casas para arrendar, sem burlas</h1>'+
+    '<h1 class="grande" tabindex="-1">Casas para arrendar, <span class="traco">sem burlas<svg viewBox="0 0 300 30" preserveAspectRatio="none" aria-hidden="true" focusable="false"><path class="t1" pathLength="1" d="M5 19 C 48 13, 104 10, 158 10 S 252 11, 295 7"/><path class="t2" pathLength="1" d="M26 25 C 86 20, 150 18, 214 18 S 266 18, 284 16"/></svg></span></h1>'+
     '<p class="apoio">Experimenta o pagamento seguro, que só chega ao senhorio quando recebes as chaves.</p>'+
     nums+
     '<form class="busca" id="f-busca" role="search">'+
