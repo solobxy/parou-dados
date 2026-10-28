@@ -840,7 +840,7 @@ function aplicarFiltro(f){estado.cidade=f.cidade||'';estado.precoMax=f.precoMax|
   estado.areaMin=f.areaMin||0;estado.dias=f.dias||0;estado.soPart=!!f.soPart;estado.soFotos=!!f.soFotos;estado.comPreco=!!f.comPreco;estado.semCaucao=!!f.semCaucao;estado.tipoImovel=f.tipoImovel||'';}
 function chaveFiltro(f){return [norm(f.cidade||''),f.precoMax||0,(f.tips||[]).slice().sort().join(','),f.soProt?1:0].concat(EXTRAS.map(function(k){return f[k]||'';})).join('|');}
 function descFiltro(f){var d=descAlerta({cidade:f.cidade,precoMax:f.precoMax,tip:(f.tips||[]).join(', '),soProt:f.soProt});var x=[];
-  if(f.tipoImovel)x.push(f.tipoImovel);if(f.areaMin)x.push('+'+f.areaMin+' m²');if(f.dias)x.push(f.dias===1?'últimas 24 h':'últimos '+f.dias+' dias');if(f.soPart)x.push('particulares');if(f.soFotos)x.push('com fotos');if(f.comPreco)x.push('com preço');if(f.semCaucao)x.push('sem caução');
+  if(f.tipoImovel)x.push(f.tipoImovel);if(f.areaMin)x.push('+'+f.areaMin+' m²');if(f.dias)x.push(f.dias===1?'últimas 24 h':'últimos '+f.dias+' dias');if(f.soPart)x.push('particulares');if(f.soFotos)x.push('com fotos');if(f.comPreco)x.push('com preço');if(f.semCaucao)x.push('sem caução indicada');
   return x.length?d+' · '+x.join(' · '):d;}
 function registarPesquisa(){
   if(!estado.cidade&&!nFiltros())return;
@@ -1382,7 +1382,7 @@ function filtrar(){
     if(estado.dias&&c.min>estado.dias*1440)return false;
     if(estado.soPart&&!c.part&&!c.prot)return false;
     if(estado.soFotos&&!(c.fotos&&c.fotos.length))return false;
-    if(estado.semCaucao&&condCasa(c).caucao!=='Sem caução')return false;
+    if(estado.semCaucao){var cc=condCasa(c).caucao;if(cc&&cc!=='Sem caução')return false;}   /* fica: «sem caução» ou sem informação */
     if(estado.comPreco&&!c.renda)return false;
     if(estado.tipoImovel&&c.tipo!==estado.tipoImovel)return false;
     if(estado.tips.length){var t=c.tipo==='Quarto'?'Quarto':c.tip;if(/^T([3-9]|\d\d)$/.test(t))t='T3+';if(estado.tips.indexOf(t)<0)return false;}
@@ -1425,7 +1425,7 @@ function vPesquisa(){
         '<label class="interruptor"><input type="checkbox" id="f-part"'+(estado.soPart?' checked':'')+'><span>Só particulares (sem agência)</span></label>'+
         '<label class="interruptor"><input type="checkbox" id="f-fotos"'+(estado.soFotos?' checked':'')+'><span>Só com fotos</span></label>'+
         '<label class="interruptor"><input type="checkbox" id="f-compreco"'+(estado.comPreco?' checked':'')+'><span>Só com preço indicado</span></label>'+
-        '<label class="interruptor"><input type="checkbox" id="f-semcaucao"'+(estado.semCaucao?' checked':'')+'><span>Sem caução</span></label>'+
+        '<label class="interruptor"><input type="checkbox" id="f-semcaucao"'+(estado.semCaucao?' checked':'')+'><span>Sem caução indicada</span></label>'+
         '<label class="interruptor"><input type="checkbox" id="f-prot"'+(estado.soProt?' checked':'')+'><span>Só pagamento seguro</span></label>'+
         '<button type="button" class="botao-texto" id="f-limpar" style="align-self:flex-start">Limpar filtros</button>'+
       '</aside>'+

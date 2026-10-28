@@ -50,7 +50,7 @@ def cumpre(a, f):
         return False
     if f.get('soFotos') and not a.get('fotos'):
         return False
-    if f.get('semCaucao') and a.get('caucao') != 'Sem caução':
+    if f.get('semCaucao') and a.get('caucao') and a.get('caucao') != 'Sem caução':   # sem informação também conta
         return False
     if f.get('soProt'):
         return False                        # as casas recolhidas não têm pagamento protegido
