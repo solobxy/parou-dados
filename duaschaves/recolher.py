@@ -7,7 +7,13 @@ contacto estão vedadas no robots.txt e os números são dados pessoais de quem 
 
 Uso: python3 duaschaves/recolher.py sites/duaschaves/anuncios.json
 Variáveis: PAGINAS (páginas por distrito e tipo, por omissão 2), MAX_DETALHES (anúncios novos
-cuja página se abre para ler a descrição e as fotos, por omissão 80).
+cuja página se abre para ler a descrição e as fotos, por omissão 80), MAX_VERIFICAR (anúncios que já
+não aparecem nos resultados e cuja página se abre para confirmar se ainda existem, por omissão 60).
+
+Remoção automática: um anúncio que aparece nos resultados está confirmado. Os que deixam de aparecer
+ficam, mas a página deles é verificada aos poucos (os mais antigos primeiro): se der 404/410, se
+redirecionar para fora do anúncio ou se o anúncio não estiver ativo, sai logo. Sem confirmação em
+DIAS_MAX dias, sai também.
 """
 import datetime, html, json, os, re, sys, time, urllib.error, urllib.request
 
@@ -22,7 +28,9 @@ NOME_TIPO = {'apartamento': 'Apartamento', 'moradia': 'Moradia', 'quarto': 'Quar
 PAGINAS = int(os.environ.get('PAGINAS', '2'))
 PAGINAS_GRANDES = int(os.environ.get('PAGINAS_GRANDES', '5'))
 MAX_DETALHES = int(os.environ.get('MAX_DETALHES', '80'))
-MAX_ANUNCIOS = 2500
+MAX_ANUNCIOS = 3000
+MAX_VERIFICAR = int(os.environ.get('MAX_VERIFICAR', '60'))
+DIAS_MAX = 7
 MAX_DESC = 700      # a descrição completa fica no anúncio original; aqui só o essencial (ficheiro leve)
 MAX_FOTOS = 8
 PAUSA = 2.0
@@ -31,17 +39,24 @@ PRECO_MIN, PRECO_MAX = 100, 20000   # fora disto o preço é claramente falso: m
 pedidos = {'ok': 0, 'erro': 0}
 
 
-def obter(url):
+def obter(url, com_estado=False):
+    """Devolve o HTML (ou None). Com com_estado=True devolve (estado, url_final, html):
+    estado = código HTTP, ou 0 se a ligação falhou (não se sabe se o anúncio existe)."""
     time.sleep(PAUSA)
     req = urllib.request.Request(url, headers={'User-Agent': UA, 'Accept-Language': 'pt-PT,pt;q=0.9'})
     try:
         with urllib.request.urlopen(req, timeout=30) as r:
             pedidos['ok'] += 1
-            return r.read().decode('utf-8', 'replace')
+            texto = r.read().decode('utf-8', 'replace')
+            return (r.status, r.geturl(), texto) if com_estado else texto
+    except urllib.error.HTTPError as e:
+        pedidos['erro'] += 1
+        print(f'  {e.code} {url}', file=sys.stderr)
+        return (e.code, url, None) if com_estado else None
     except (urllib.error.URLError, TimeoutError, ConnectionError) as e:
         pedidos['erro'] += 1
         print(f'  falhou {url}: {e}', file=sys.stderr)
-        return None
+        return (0, url, None) if com_estado else None
 
 
 def next_data(texto):
@@ -118,16 +133,40 @@ def detalhes(anuncio):
     return True
 
 
+def ainda_existe(anuncio):
+    """True = confirmado ativo, False = retirado, None = não se conseguiu saber."""
+    estado, final, texto = obter(anuncio['url'], com_estado=True)
+    if estado in (404, 410):
+        return False
+    if estado != 200 or texto is None:
+        return None
+    if '/pt/anuncio/' not in final:
+        return False          # redirecionou para resultados: o anúncio saiu
+    ad = ((((next_data(texto) or {}).get('props') or {}).get('pageProps') or {}).get('ad'))
+    if not ad:
+        return False
+    st = str(ad.get('status') or '').lower()
+    return st not in ('inactive', 'removed', 'expired', 'archived', 'outdated', 'closed', 'deleted', 'blocked', 'unpublished')
+
+
+def agora_iso():
+    return datetime.datetime.now(datetime.timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')
+
+
 def main():
     saida = sys.argv[1]
     anterior = {}
     try:
         with open(saida, encoding='utf-8') as f:
-            anterior = {a['id']: a for a in json.load(f).get('anuncios', [])}
+            dados = json.load(f)
+        anterior = {a['id']: a for a in dados.get('anuncios', [])}
+        for a in anterior.values():          # ficheiros antigos ainda sem «visto»
+            a.setdefault('visto', dados.get('atualizado') or '')
     except (OSError, ValueError):
         pass
 
     vistos = {}
+    agora = agora_iso()
     for distrito in DISTRITOS:
         for tipo in TIPOS:
             for pagina in range(1, (PAGINAS_GRANDES if distrito in GRANDES else PAGINAS) + 1):
@@ -142,6 +181,7 @@ def main():
                     if it.get('transaction') != 'RENT' or not it.get('slug'):
                         continue
                     a = do_resultado(it, tipo)
+                    a['visto'] = agora
                     vistos[a['id']] = a
                 if not itens:
                     break
@@ -164,8 +204,30 @@ def main():
     novos.sort(key=lambda a: a.get('data') or '', reverse=True)
     lidos = sum(1 for a in novos[:MAX_DETALHES] if detalhes(a))
 
+    # Anúncios que já não aparecem nos resultados: verificar uma parte, os há mais tempo sem confirmação primeiro
+    limite = (datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(days=DIAS_MAX)).strftime('%Y-%m-%dT%H:%M:%SZ')
+    fora = [a for i, a in anterior.items() if i not in vistos]
+    fora.sort(key=lambda a: a.get('visto') or '')
+    retirados = expirados = confirmados = 0
+    for n, a in enumerate(fora):
+        if (a.get('visto') or '') < limite:
+            expirados += 1
+            continue
+        if n < MAX_VERIFICAR:
+            r = ainda_existe(a)
+            if r is False:
+                retirados += 1
+                continue
+            if r is True:
+                a['visto'] = agora
+                confirmados += 1
+        vistos[a['id']] = a
+    print(f'Fora dos resultados: {len(fora)} · retirados {retirados} · expirados {expirados} · confirmados {confirmados}')
+
     lista = sorted(vistos.values(), key=lambda a: a.get('data') or '', reverse=True)[:MAX_ANUNCIOS]
-    if [a['id'] for a in lista] == list(anterior.keys()) and all(a == anterior[a['id']] for a in lista):
+    def sem_visto(a):
+        return {k: v for k, v in a.items() if k != 'visto'}
+    if not (retirados or confirmados) and [a['id'] for a in lista] == list(anterior.keys()) and all(sem_visto(a) == sem_visto(anterior[a['id']]) for a in lista):
         print('Sem alterações.')
         return
     with open(saida, 'w', encoding='utf-8') as f:
