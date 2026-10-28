@@ -19,7 +19,7 @@ for nome, url in URLS:
     host = urllib.parse.urlsplit(url).scheme + '://' + urllib.parse.urlsplit(url).netloc
     if host not in vistos:
         vistos.add(host); s, b, h = ler(host + '/robots.txt')
-        open(f'sonda/{nome}.robots.txt', 'wb').write(b); time.sleep(3)
+        open(f'sonda/{nome}.robots.txt', 'wb').write(b); time.sleep(0.3)
     s, b, h = ler(url)
     # tira chaves de API que venham nas páginas (o GitHub recusa o envio se as encontrar)
     b = re.sub(rb'AIza[0-9A-Za-z_\-]{30,}|(?:sk|pk|rk)_(?:live|test)_[0-9A-Za-z]{10,}|eyJ[0-9A-Za-z_\-]{20,}\.[0-9A-Za-z_\-]{10,}\.[0-9A-Za-z_\-]{10,}|gh[pousr]_[0-9A-Za-z]{30,}|xox[abp]-[0-9A-Za-z\-]{10,}|AKIA[0-9A-Z]{16}', b'[chave]', b)
@@ -27,7 +27,14 @@ for nome, url in URLS:
     txt = b.decode('utf-8', 'replace')
     if url.endswith('.json'):
         try:
-            d = json.loads(txt); an = d.get('anuncios') or []
+            d = json.loads(txt)
+            if '/det/' in url:
+                c = {}
+                for k in d:
+                    c[k.split('-')[0]] = c.get(k.split('-')[0], 0) + 1
+                print('DET', url, c)
+                d = {}
+            an = d.get('anuncios') or []
             cont = {}
             for a in an:
                 cont[a.get('fonte')] = cont.get(a.get('fonte'), 0) + 1
@@ -35,5 +42,5 @@ for nome, url in URLS:
         except Exception as e:
             print('RESUMO falhou', url, e)
     res.append({'nome': nome, 'url': url, 'estado': s, 'bytes': len(b), 'server': h.get('Server', ''), 'next_data': '__NEXT_DATA__' in txt, 'ld_json': txt.count('application/ld+json'), 'titulo': (re.search(r'<title[^>]*>(.*?)</title>', txt, re.S) or [None, ''])[1].strip()[:120]})
-    print(json.dumps(res[-1], ensure_ascii=False)); time.sleep(3)
+    print(json.dumps(res[-1], ensure_ascii=False)); time.sleep(0.3)
 json.dump(res, open('sonda/resumo.json', 'w'), ensure_ascii=False, indent=1)
