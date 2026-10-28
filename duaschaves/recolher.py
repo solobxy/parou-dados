@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-"""Duas Chaves: recolhe anúncios públicos de arrendamento do Imovirtual (que inclui muitos da OLX).
+"""Duas Chaves: recolhe anúncios públicos de arrendamento do Imovirtual (que inclui muitos da OLX),
+do Supercasa e do Casa Sapo (duaschaves/fontes/). Cada site é lido em paralelo, cada um ao seu ritmo.
 
 Só lê páginas que o robots.txt do site permite (resultados e anúncios), devagar (uma página de
 2 em 2 segundos) e com um User-Agent que se identifica. NÃO recolhe contactos: as páginas de
@@ -15,9 +16,10 @@ ficam, mas a página deles é verificada aos poucos (os mais antigos primeiro): 
 redirecionar para fora do anúncio ou se o anúncio não estiver ativo, sai logo. Sem confirmação em
 DIAS_MAX dias, sai também.
 """
-import datetime, html, json, os, re, sys, time, urllib.error, urllib.request
+import datetime, hashlib, html, json, os, re, sys, threading, time, unicodedata, urllib.error, urllib.request
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from condicoes import condicoes
+from fontes import casasapo, supercasa
 
 BASE = 'https://www.imovirtual.com'
 UA = 'Mozilla/5.0 (compatible; DuasChavesBot/0.1; +https://duaschaves.pt)'
@@ -30,7 +32,13 @@ NOME_TIPO = {'apartamento': 'Apartamento', 'moradia': 'Moradia', 'quarto': 'Quar
 PAGINAS = int(os.environ.get('PAGINAS', '2'))
 PAGINAS_GRANDES = int(os.environ.get('PAGINAS_GRANDES', '5'))
 MAX_DETALHES = int(os.environ.get('MAX_DETALHES', '80'))
-MAX_ANUNCIOS = 3000
+MAX_ANUNCIOS = int(os.environ.get('MAX_ANUNCIOS', '9000'))
+PAG_SUPER = int(os.environ.get('PAG_SUPER', '2'))           # páginas por distrito no Supercasa (5 nos grandes)
+PAG_SUPER_GRANDES = int(os.environ.get('PAG_SUPER_GRANDES', '5'))
+PAG_SAPO = int(os.environ.get('PAG_SAPO', '12'))             # páginas nacionais no Casa Sapo (é lento: pede 1 página a cada 8 s)
+PAUSA_SUPER, PAUSA_SAPO = 3.0, 8.0
+DIAS_MAX_EXTRA = 7          # nos outros sites, um anúncio que deixa de aparecer nas páginas lidas sai ao fim de 7 dias
+MAX_VERIFICAR_EXTRA = 30
 MAX_RELER = int(os.environ.get('MAX_RELER', '40'))   # anúncios antigos relidos por volta (para caução, adiantadas, fiador)
 MAX_VERIFICAR = int(os.environ.get('MAX_VERIFICAR', '60'))
 DIAS_MAX = 7
@@ -42,10 +50,10 @@ PRECO_MIN, PRECO_MAX = 100, 20000   # fora disto o preço é claramente falso: m
 pedidos = {'ok': 0, 'erro': 0}
 
 
-def obter(url, com_estado=False):
+def obter(url, com_estado=False, pausa=None):
     """Devolve o HTML (ou None). Com com_estado=True devolve (estado, url_final, html):
     estado = código HTTP, ou 0 se a ligação falhou (não se sabe se o anúncio existe)."""
-    time.sleep(PAUSA)
+    time.sleep(PAUSA if pausa is None else pausa)
     req = urllib.request.Request(url, headers={'User-Agent': UA, 'Accept-Language': 'pt-PT,pt;q=0.9'})
     try:
         with urllib.request.urlopen(req, timeout=30) as r:
@@ -157,6 +165,99 @@ def ainda_existe(anuncio):
     return st not in ('inactive', 'removed', 'expired', 'archived', 'outdated', 'closed', 'deleted', 'blocked', 'unpublished')
 
 
+def norm(t):
+    return unicodedata.normalize('NFD', (t or '').lower()).encode('ascii', 'ignore').decode().strip()
+
+
+def chave_igual(a):
+    """O mesmo imóvel noutro site: mesma cidade, renda, área e tipologia."""
+    if not (a.get('renda') and a.get('area')):
+        return None
+    return (norm(a.get('cidade')), a['renda'], a['area'], a.get('tip') or a.get('tipo'))
+
+
+def correr_fonte(mod, paginas, pausa, resultado):
+    """Lê as páginas de resultados de um site. Pára esse site se ele pedir para abrandar (429) ou bloquear (403)."""
+    parados, n_pag, n_erros = set(), 0, 0
+    for grupo, slug, url in paginas:
+        if grupo in parados:
+            continue
+        estado, _, texto = obter(url, com_estado=True, pausa=pausa)
+        n_pag += 1
+        if estado in (403, 429, 503):
+            print(f'{mod.NOME}: {estado} em {url}; paro este site nesta volta.')
+            break
+        if estado in (404, 410):
+            parados.add(grupo)
+            continue
+        if not texto:
+            n_erros += 1
+            if n_erros >= 5:
+                break
+            continue
+        try:
+            itens = mod.ler(texto, slug)
+        except Exception as e:                       # a página mudou: não estraga a recolha dos outros sites
+            print(f'{mod.NOME}: erro a ler {url}: {e}')
+            itens = []
+        novos = [a for a in itens if a['id'] not in resultado]
+        for a in itens:
+            resultado.setdefault(a['id'], a)
+        if not novos:
+            parados.add(grupo)                       # nada de novo nesta página: as seguintes do mesmo grupo também não terão
+    print(f'{mod.NOME}: {len(resultado)} anúncios em {n_pag} páginas')
+
+
+def paginas_super():
+    for slug, url in supercasa.paginas(PAG_SUPER, PAG_SUPER_GRANDES):
+        yield url.split('/pagina-')[0].split('?')[0], slug, url
+
+
+def paginas_sapo():
+    for slug, url in casasapo.paginas(PAG_SAPO):
+        yield slug, slug, url
+
+
+def ainda_existe_extra(a):
+    estado, final, texto = obter(a['url'], com_estado=True, pausa=PAUSA_SUPER)
+    if estado in (404, 410):
+        return False
+    if estado != 200 or texto is None:
+        return None
+    return final.split('?')[0].rstrip('/') == a['url'].split('?')[0].rstrip('/')
+
+
+def parte(i):
+    """Em que ficheiro det/NN.json fica o anúncio (o site calcula o mesmo: h = h*31 + código, 32 bits)."""
+    h = 0
+    for ch in i:
+        h = (h * 31 + ord(ch)) & 0xffffffff
+    return h % 64
+
+
+def escrever_leves(saida, lista):
+    """lista.json (o que a pesquisa precisa, leve para o telemóvel) e det/NN.json (descrição e fotos, por anúncio)."""
+    pasta = os.path.dirname(os.path.abspath(saida))
+    leve = []
+    det = {}
+    for a in lista:
+        l = {k: v for k, v in a.items() if k not in ('desc', 'titulo', 'visto', 'lido', 'gid') and v not in (None, '', False, [])}
+        l['fotos'] = (a.get('fotos') or [])[:3]
+        if a.get('visto'):
+            l['visto'] = a['visto']
+        leve.append(l)
+        k = parte(a['id'])
+        det.setdefault(k, {})[a['id']] = {'desc': a.get('desc') or '', 'fotos': a.get('fotos') or [], 'titulo': a.get('titulo') or ''}
+    os.makedirs(os.path.join(pasta, 'det'), exist_ok=True)
+    for k in range(64):
+        with open(os.path.join(pasta, 'det', f'{k}.json.tmp'), 'w', encoding='utf-8') as f:
+            json.dump(det.get(k, {}), f, ensure_ascii=False, separators=(',', ':'))
+        os.replace(os.path.join(pasta, 'det', f'{k}.json.tmp'), os.path.join(pasta, 'det', f'{k}.json'))
+    with open(os.path.join(pasta, 'lista.json.tmp'), 'w', encoding='utf-8') as f:
+        json.dump({'atualizado': agora_iso(), 'det': 64, 'anuncios': leve}, f, ensure_ascii=False, separators=(',', ':'))
+    os.replace(os.path.join(pasta, 'lista.json.tmp'), os.path.join(pasta, 'lista.json'))
+
+
 def agora_iso():
     return datetime.datetime.now(datetime.timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')
 
@@ -175,6 +276,13 @@ def main():
 
     vistos = {}
     agora = agora_iso()
+    # os outros sites correm em paralelo com o Imovirtual (servidores diferentes, cada um ao seu ritmo)
+    extra = {'super': {}, 'sapo': {}}
+    fios = [threading.Thread(target=correr_fonte, args=(supercasa, paginas_super(), PAUSA_SUPER, extra['super'])),
+            threading.Thread(target=correr_fonte, args=(casasapo, paginas_sapo(), PAUSA_SAPO, extra['sapo']))]
+    if os.environ.get('SO_IMOVIRTUAL') != '1':
+        for t in fios:
+            t.start()
     for distrito in DISTRITOS:
         for tipo in TIPOS:
             for pagina in range(1, (PAGINAS_GRANDES if distrito in GRANDES else PAGINAS) + 1):
@@ -195,12 +303,13 @@ def main():
                     break
 
     if not vistos:
-        print('Nenhum anúncio lido: mantenho o ficheiro anterior.', file=sys.stderr)
-        sys.exit(1)
+        print('Imovirtual: nenhum anúncio lido.', file=sys.stderr)
 
     # Descrição e fotos: reaproveita o que já se leu; abre só os anúncios novos (mais recentes primeiro)
     novos = []
     for a in vistos.values():
+        if not a['id'].startswith('imo-'):
+            continue
         velho = anterior.get(a['id'])
         if velho and velho.get('desc'):
             a['desc'] = velho['desc']
@@ -213,13 +322,13 @@ def main():
     novos.sort(key=lambda a: a.get('data') or '', reverse=True)
     lidos = sum(1 for a in novos[:MAX_DETALHES] if detalhes(a))
     # anúncios já conhecidos mas lidos antes de haver caução/adiantadas/fiador: reler aos poucos, os mais recentes primeiro
-    antigos = sorted((a for a in vistos.values() if a.get('desc') and a.get('lido') != 2), key=lambda a: a.get('data') or '', reverse=True)
+    antigos = sorted((a for a in vistos.values() if a['id'].startswith('imo-') and a.get('desc') and a.get('lido') != 2), key=lambda a: a.get('data') or '', reverse=True)
     relidos = sum(1 for a in antigos[:MAX_RELER] if detalhes(a))
     print(f'Relidos para condições de entrada: {relidos} (faltam {max(0, len(antigos) - MAX_RELER)})')
 
     # Anúncios que já não aparecem nos resultados: verificar uma parte, os há mais tempo sem confirmação primeiro
     limite = (datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(days=DIAS_MAX)).strftime('%Y-%m-%dT%H:%M:%SZ')
-    fora = [a for i, a in anterior.items() if i not in vistos]
+    fora = [a for i, a in anterior.items() if i not in vistos and i.startswith('imo-')]
     fora.sort(key=lambda a: a.get('visto') or '')
     retirados = expirados = confirmados = 0
     for n, a in enumerate(fora):
@@ -237,15 +346,76 @@ def main():
         vistos[a['id']] = a
     print(f'Fora dos resultados: {len(fora)} · retirados {retirados} · expirados {expirados} · confirmados {confirmados}')
 
+    # Outros sites: juntar sem repetir o mesmo imóvel (mesmo id da Janela Digital, ou mesma cidade, renda, área e tipologia)
+    for t in fios:
+        if t.is_alive() or t.ident:
+            t.join()
+    ja = {chave_igual(a) for a in vistos.values()} - {None}
+    gids = set()
+    fontes_antes = {re.sub(r'-.*', '', i) for i in anterior}
+    n_extra = {}
+    for pref, itens in (('super', extra['super']), ('sapo', extra['sapo'])):
+        for a in itens.values():
+            if a.get('gid') and a['gid'] in gids:
+                continue
+            k = chave_igual(a)
+            if k and k in ja:
+                continue
+            velho = anterior.get(a['id'])
+            if velho:
+                a['data'] = velho.get('data')
+            elif not a.get('data'):
+                # data desconhecida: na 1.ª leitura de um site fica sem data; depois, conta a 1.ª vez que se viu
+                a['data'] = agora if pref in fontes_antes else None
+            a.update({k2: v for k2, v in condicoes(a.get('desc') or '').items() if v and not a.get(k2)})
+            a['visto'] = agora
+            vistos[a['id']] = a
+            if not velho:
+                n_extra[pref] = n_extra.get(pref, 0) + 1
+            if a.get('gid'):
+                gids.add(a['gid'])
+            if k:
+                ja.add(k)
+    # anúncios dos outros sites que não apareceram agora: ficam até DIAS_MAX_EXTRA dias; alguns são verificados (Supercasa)
+    limite_x = (datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(days=DIAS_MAX_EXTRA)).strftime('%Y-%m-%dT%H:%M:%SZ')
+    fora_x = sorted((a for i, a in anterior.items() if i not in vistos and not i.startswith('imo-')), key=lambda a: a.get('visto') or '')
+    ret_x = 0
+    ver_x = 0
+    for a in fora_x:
+        if (a.get('visto') or '') < limite_x:
+            continue
+        if a['id'].startswith('super-') and ver_x < MAX_VERIFICAR_EXTRA:
+            ver_x += 1
+            r = ainda_existe_extra(a)
+            if r is False:
+                ret_x += 1
+                continue
+            if r is True:
+                a['visto'] = agora
+        vistos[a['id']] = a
+    print(f'Outros sites: novos nesta volta {n_extra} · fora dos resultados {len(fora_x)} · retirados {ret_x}')
+
+    if not vistos:
+        print('Nenhum anúncio lido: mantenho o ficheiro anterior.', file=sys.stderr)
+        sys.exit(1)
     lista = sorted(vistos.values(), key=lambda a: a.get('data') or '', reverse=True)[:MAX_ANUNCIOS]
     def sem_visto(a):
         return {k: v for k, v in a.items() if k != 'visto'}
-    if not (retirados or confirmados) and [a['id'] for a in lista] == list(anterior.keys()) and all(sem_visto(a) == sem_visto(anterior[a['id']]) for a in lista):
+    meio_dia = (datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(hours=12)).strftime('%Y-%m-%dT%H:%M:%SZ')
+    visto_velho = any((anterior.get(a['id'], {}).get('visto') or '') < meio_dia for a in lista if a.get('visto') == agora)
+    if not (retirados or confirmados or n_extra or visto_velho) and [a['id'] for a in lista] == list(anterior.keys()) and all(sem_visto(a) == sem_visto(anterior[a['id']]) for a in lista):
         print('Sem alterações.')
+        if not os.path.exists(os.path.join(os.path.dirname(os.path.abspath(saida)), 'lista.json')):
+            escrever_leves(saida, lista)
         return
     with open(saida, 'w', encoding='utf-8') as f:
         json.dump({'atualizado': datetime.datetime.now(datetime.timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ'),
                    'anuncios': lista}, f, ensure_ascii=False, separators=(',', ':'))
+    escrever_leves(saida, lista)
+    por_fonte = {}
+    for a in lista:
+        por_fonte[a.get('fonte')] = por_fonte.get(a.get('fonte'), 0) + 1
+    print(f'Por site: {por_fonte}')
     sem_preco = sum(1 for a in lista if a['renda'] is None)
     print(f'Guardados {len(lista)} anúncios ({len(novos)} novos, {lidos} com descrição lida agora, '
           f'{sem_preco} com preço sob consulta). Pedidos: {pedidos}')

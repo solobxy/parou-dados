@@ -2,5 +2,7 @@ User-agent: *
 Allow: /
 Disallow: /api/
 Disallow: /anuncios.json
+Disallow: /lista.json
+Disallow: /det/
 
 Sitemap: https://duaschaves.pt/sitemap.xml

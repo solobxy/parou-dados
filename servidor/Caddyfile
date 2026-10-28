@@ -130,7 +130,7 @@ www.jinxed.world {
 		X-Content-Type-Options "nosniff"
 		Referrer-Policy "strict-origin-when-cross-origin"
 		Permissions-Policy "geolocation=(), camera=(), microphone=()"
-		Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://ireland.apollo.olxcdn.com; connect-src 'self'; form-action 'self'; frame-ancestors 'none'; base-uri 'none'"
+		Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://ireland.apollo.olxcdn.com https://imagens.supercasa.pt https://media.casasapo.pt; connect-src 'self'; form-action 'self'; frame-ancestors 'none'; base-uri 'none'"
 		-Server
 	}
 	# API de contas e alertas (duaschaves-api.service, só em 127.0.0.1)
@@ -154,6 +154,17 @@ www.jinxed.world {
 	handle /anuncios.json {
 		root * /var/lib/duaschaves-dados
 		header Cache-Control "no-cache"
+		file_server
+	}
+	# Lista leve para a pesquisa e detalhes por anúncio (escritos por recolher.py)
+	handle /lista.json {
+		root * /var/lib/duaschaves-dados
+		header Cache-Control "no-cache"
+		file_server
+	}
+	handle /det/* {
+		root * /var/lib/duaschaves-dados
+		header Cache-Control "public, max-age=300"
 		file_server
 	}
 	handle {

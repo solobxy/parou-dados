@@ -12,6 +12,8 @@ Uso: python3 paginas.py anuncios.json pasta_de_saida
 """
 import datetime, html, json, os, re, shutil, sys, tempfile, unicodedata
 from urllib.parse import quote
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from ids import id_num
 
 SITE = 'https://duaschaves.pt'
 MIN_CIDADE, MIN_TIPO, MAX_CARTOES = 5, 3, 30
@@ -69,7 +71,7 @@ def area_ok(a):
 
 
 def cartao(a):
-    i = re.sub(r'\D', '', str(a['id']))
+    i = str(id_num(a['id']))
     t = tip(a) or a.get('tipo') or 'Casa'
     partes = [t] + ([f"{a['area']} m²"] if area_ok(a) else []) + [a.get('bairro') or a.get('cidade') or '']
     foto = (a.get('fotos') or [''])[0]
@@ -84,7 +86,7 @@ def pagina(caminho, titulo, descricao, h1, intro, migalhas, cartoes, links, ver_
     bc = {'@context': 'https://schema.org', '@type': 'BreadcrumbList', 'itemListElement': [
         {'@type': 'ListItem', 'position': n + 1, 'name': nome, 'item': SITE + c} for n, (nome, c) in enumerate(migalhas)]}
     il = {'@context': 'https://schema.org', '@type': 'ItemList', 'name': h1, 'numberOfItems': len(cartoes),
-          'itemListElement': [{'@type': 'ListItem', 'position': n + 1, 'url': SITE + '/#casa-' + re.sub(r'\D', '', str(a['id']))}
+          'itemListElement': [{'@type': 'ListItem', 'position': n + 1, 'url': SITE + '/#casa-' + str(id_num(a['id']))}
                               for n, a in enumerate(cartoes)]}
     nav = ' <span>›</span> '.join(f'<a href="{c}">{e(n)}</a>' if k < len(migalhas) - 1 else f'<span aria-current="page">{e(n)}</span>'
                                   for k, (n, c) in enumerate(migalhas))

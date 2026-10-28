@@ -605,7 +605,9 @@ var CASAS = [
 var FONTES = {
   'idealista':{de:'Do idealista',em:'no idealista'},
   'OLX':{de:'Da OLX',em:'na OLX'},
-  'Imovirtual':{de:'Do Imovirtual',em:'no Imovirtual'}
+  'Imovirtual':{de:'Do Imovirtual',em:'no Imovirtual'},
+  'Supercasa':{de:'Do Supercasa',em:'no Supercasa'},
+  'Casa Sapo':{de:'Do Casa Sapo',em:'no Casa Sapo'}
 };
 var PRECOS = [0,600,800,1000,1200,1500];
 var TIPS = ['Quarto','T0','T1','T2','T3+'];
@@ -785,7 +787,7 @@ function avisoRenovacao(){return '<p class="aviso-preco">Depois dos 30 dias, <st
 function abrirAcesso(depois,c){
   var semSessao=!conta.sessao;
   var mini=c?'<div class="pw-casa">'+(c.fotos&&c.fotos.length?'<img src="'+esc(c.fotos[0])+'" alt="" referrerpolicy="no-referrer" width="72" height="54">':'')+
-    '<div><p class="pw-preco">'+precoHtml(c)+'</p><p class="pw-linha">'+resumoCasa(c,false)+'</p><p class="pw-quando'+(c.min<1440?' novo':'')+'">Publicada '+quando(c.min)+'</p></div></div>':'';
+    '<div><p class="pw-preco">'+precoHtml(c)+'</p><p class="pw-linha">'+resumoCasa(c,false)+'</p><p class="pw-quando'+(c.min<1440?' novo':'')+'">'+(c.semData?esc(FONTES[c.fonte].de):'Publicada '+quando(c.min))+'</p></div></div>':'';
   abrirDialogo('<form class="dialogo-corpo pw" id="f-acesso" novalidate>'+
     cabecaDialogo(c?'Contacta antes dos outros':'Desbloquear os contactos')+
     mini+
@@ -946,7 +948,7 @@ document.addEventListener('click',function(e){
 function cartao(c){
   return '<a class="cartao" href="#casa-'+c.id+'">'+
     (c.fotos&&c.fotos.length?fotosCartao(c):'<div class="foto" style="background:'+c.cor+'"><span>[Foto do anúncio]</span></div>')+
-    '<div class="cartao-corpo"><div class="linha-topo"><p class="preco">'+precoHtml(c)+'</p><span class="quando'+(c.min<1440?' novo':'')+'">'+(c.min<1440?'Nova · ':'')+quando(c.min)+'</span></div>'+
+    '<div class="cartao-corpo"><div class="linha-topo"><p class="preco">'+precoHtml(c)+'</p><span class="quando'+(c.min<1440?' novo':'')+'">'+(c.semData?'':(c.min<1440?'Nova · ':'')+quando(c.min))+'</span></div>'+
     '<h3>'+resumoCasa(c,true)+'</h3>'+(c.prot?confianca(c):'')+'</div></a>';
 }
 function partes(o){
@@ -1376,6 +1378,7 @@ function pedirEmailGuardar(c){
 function vCasa(id){
   var c=casa(id);
   if(!c){vNaoExiste();return;}
+  if(!c.det)carregarDet(c,function(){if(location.hash==='#casa-'+id){var y=scrollY;vCasa(id);scrollTo(0,y);}});
   titulo(tipTxt(c)+' em '+c.bairro);
   var painel;
   if(c.prot){
@@ -1404,11 +1407,11 @@ function vCasa(id){
         '<div class="preco-linha"><p class="preco preco-grande">'+precoHtml(c)+'</p>'+
           '<button type="button" class="icone guardar" id="b-guardar" aria-pressed="'+guardada+'" aria-label="Guardar casa">'+svg(P.coracao)+'</button></div>'+
         '<h1 class="casa-titulo" tabindex="-1">'+(c.titulo?esc(c.titulo):resumoCasa(c,true))+'</h1>'+(c.titulo?'<p class="meta">'+resumoCasa(c,true)+'</p>':'')+
-        '<p class="meta">Publicado '+quando(c.min)+(c.vis!=null&&c.vis<2880?' · <span class="dispo">'+svg(P.visto,{s:15,w:2.6})+'Ainda disponível, confirmado '+quando(c.vis)+'</span>':'')+'</p>'+
+        '<p class="meta">'+(c.semData?esc(FONTES[c.fonte].de):'Publicado '+quando(c.min))+(c.vis!=null&&c.vis<2880?' · <span class="dispo">'+svg(P.visto,{s:15,w:2.6})+'Ainda disponível, confirmado '+quando(c.vis)+'</span>':'')+'</p>'+
       '</div>'+
       '<aside class="painel" aria-label="Contacto e pagamento">'+painel+'</aside>'+
       '<div class="casa-resto">'+
-        '<h2 class="h-peq">Sobre a casa</h2><p class="texto longo">'+(c.desc?esc(c.desc):'Sem descrição. Vê o anúncio original para mais detalhes.')+'</p>'+
+        '<h2 class="h-peq">Sobre a casa</h2><p class="texto longo">'+(c.desc?esc(c.desc):c.det?'Sem descrição. Vê o anúncio original para mais detalhes.':'A carregar a descrição…')+'</p>'+
         '<dl class="dados">'+
           '<div><dt>Tipologia</dt><dd>'+tipTxt(c)+'</dd></div>'+
           '<div><dt>Área</dt><dd>'+(areaOk(c)?c.area+' m²':'—')+'</dd></div>'+
@@ -1428,7 +1431,7 @@ function vCasa(id){
   marcarZona(c.cidade||c.distrito,1);
   if(!acessoAtivo()){
     var bar=document.createElement('div');bar.className='barra-cta escondida';bar.id='barra-cta';
-    bar.innerHTML='<div class="bc-txt"><p class="bc-preco">'+precoHtml(c)+'</p><p class="bc-sub">'+(c.min<1440?'Nova · publicada ':'Publicada ')+quando(c.min)+'</p></div>'+
+    bar.innerHTML='<div class="bc-txt"><p class="bc-preco">'+precoHtml(c)+'</p><p class="bc-sub">'+(c.semData?esc(FONTES[c.fonte].de):(c.min<1440?'Nova · publicada ':'Publicada ')+quando(c.min))+'</p></div>'+
       '<button class="botao" type="button" data-acao="visita">Contactar · '+P1+'</button>';
     main.appendChild(bar);
     var acoes=main.querySelector('.painel .acoes');
@@ -2211,22 +2214,47 @@ try{
   }).catch(function(){});
 }catch(e){}
 /* Anúncios reais recolhidos automaticamente (anuncios.json, ao lado desta página). Sem ficheiro, ficam os de demonstração. */
+/* id numérico (o endereço #casa-N só aceita algarismos): Imovirtual fica com o número dele; os outros sites, num intervalo próprio */
+function idNum(i){
+  i=String(i);var m;
+  if((m=i.match(/^imo-(\d+)$/)))return +m[1];
+  if((m=i.match(/^super-(\d+)$/)))return 7e15+(+m[1]);
+  if((m=i.match(/^sapo-([0-9a-f]{8})-?([0-9a-f]{4})/i)))return 8e15+parseInt(m[1]+m[2],16)%1e15;
+  return +i.replace(/\D/g,'').slice(-15)||0;
+}
+/* em que ficheiro det/NN.json estão a descrição e as fotos todas (igual a parte() em recolher.py) */
+function parteDet(i){var h=0;for(var k=0;k<i.length;k++)h=(Math.imul(h,31)+i.charCodeAt(k))>>>0;return h%64;}
+var DET_N=0;
 function deRecolha(a){
   var t=a.data?Date.parse(a.data):NaN;
-  return {id:+String(a.id).replace(/\D/g,''),cidade:a.cidade||a.distrito||'',distrito:a.distrito||'',bairro:a.bairro||a.cidade||'',tip:a.tip||'',tipo:a.tipo||'',titulo:a.titulo||'',
-    area:a.area||null,andar:a.andar||'',renda:a.renda||null,caucao:null,min:isNaN(t)?99999:Math.max(1,Math.round((Date.now()-t)/6e4)),prot:false,
-    fonte:FONTES[a.fonte]?a.fonte:'Imovirtual',url:a.url,mob:null,cor:'#D6DDDA',desc:a.desc||'',fotos:a.fotos||[],
+  return {id:idNum(a.id),rid:String(a.id),cidade:a.cidade||a.distrito||'',distrito:a.distrito||'',bairro:a.bairro||a.cidade||'',tip:a.tip||'',tipo:a.tipo||'',titulo:a.titulo||'',
+    area:a.area||null,andar:a.andar||'',renda:a.renda||null,caucao:null,min:isNaN(t)?99999:Math.max(1,Math.round((Date.now()-t)/6e4)),semData:isNaN(t),prot:false,
+    fonte:FONTES[a.fonte]?a.fonte:'Imovirtual',url:a.url,mob:null,cor:'#D6DDDA',desc:a.desc||'',fotos:a.fotos||[],det:!DET_N||!!a.desc,
     cond:{caucao:a.caucao||'',adiantadas:a.adiantadas||'',fiador:a.fiador||''},livre:/^\d{4}-\d{2}-\d{2}$/.test(a.livre||'')?a.livre:'',
     vis:a.visto&&!isNaN(Date.parse(a.visto))?Math.max(1,Math.round((Date.now()-Date.parse(a.visto))/6e4)):null,part:!!a.particular};
 }
+/* abre a descrição e as fotos todas de um anúncio (lista.json só traz o essencial) */
+var detCache={};
+function carregarDet(c,depois){
+  if(c.det||!DET_N){depois();return;}
+  var k=parteDet(c.rid);
+  var aplicar=function(d){var x=d&&d[c.rid];if(x){c.desc=x.desc||'';if(x.fotos&&x.fotos.length)c.fotos=x.fotos;if(x.titulo)c.titulo=x.titulo;c._cond=null;}c.det=true;depois();};
+  if(detCache[k]){aplicar(detCache[k]);return;}
+  fetch('det/'+k+'.json',{cache:'no-cache'}).then(function(r){return r.ok?r.json():null;}).then(function(d){detCache[k]=d||{};aplicar(d);}).catch(function(){c.det=true;depois();});
+}
+window.dcCasas=function(){return CASAS;};   /* para os testes automáticos */
+function receber(d){
+  if(!d||!d.anuncios||!d.anuncios.length)return false;
+  DET_N=d.det||0;
+  CASAS=d.anuncios.map(deRecolha).filter(function(c){return c.id&&c.url;});medianas=null;ATUALIZADO=d.atualizado||null;
+  document.getElementById('aviso-demo').textContent='Versão de testes: os anúncios são reais; os pagamentos ainda são de demonstração.';
+  var h=location.hash.slice(1)||'inicio';
+  if(/^(inicio|pesquisa|conta|casa-\d+)/.test(h))rota();
+  return true;
+}
 try{
-  fetch('anuncios.json',{cache:'no-store'}).then(function(r){return r.ok?r.json():null;}).then(function(d){
-    if(!d||!d.anuncios||!d.anuncios.length)return;
-    CASAS=d.anuncios.map(deRecolha).filter(function(c){return c.id&&c.url;});medianas=null;ATUALIZADO=d.atualizado||null;
-    document.getElementById('aviso-demo').textContent='Versão de testes: os anúncios são reais; os pagamentos ainda são de demonstração.';
-    var h=location.hash.slice(1)||'inicio';
-    if(/^(inicio|pesquisa|conta|casa-\d+)$/.test(h))rota();
-  }).catch(function(){});
+  var json=function(u){return fetch(u,{cache:'no-cache'}).then(function(r){return r.ok?r.json():null;}).catch(function(){return null;});};
+  json('lista.json').then(function(d){if(!receber(d))json('anuncios.json').then(receber);});
 }catch(e){}
 })();
 </script>

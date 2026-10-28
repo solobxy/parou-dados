@@ -10,6 +10,7 @@ Sem RESEND_API_KEY não envia nada (fica tudo à espera). Cada e-mail tem um lin
 import datetime, html, json, os, sys, time, unicodedata
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import api
+from ids import id_num
 
 ANUNCIOS = os.environ.get('DC_ANUNCIOS', '/var/lib/duaschaves-dados/anuncios.json')
 HORA_RESUMO = 19
@@ -79,7 +80,7 @@ def email_casas(base, f, casas, parar):
         tip = 'Quarto' if a.get('tipo') == 'Quarto' else (a.get('tip') or a.get('tipo') or 'Casa')
         preco = ('%d €/mês' % a['renda']) if a.get('renda') else 'Preço sob consulta'
         local = a.get('bairro') or a.get('cidade') or ''
-        link = '%s/#casa-%s' % (base, ''.join(ch for ch in str(a['id']) if ch.isdigit()))
+        link = '%s/#casa-%s' % (base, str(id_num(a['id'])))
         linhas_txt.append('- %s · %s · %s\n  %s' % (preco, tip, local, link))
         foto = (a.get('fotos') or [''])[0]
         linhas_html.append(
