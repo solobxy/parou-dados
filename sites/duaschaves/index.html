@@ -554,7 +554,8 @@ var fmtDia = new Intl.DateTimeFormat('pt-PT',{day:'numeric',month:'long'});
 function quando(m){if(m<60)return 'há '+m+' min';if(m<1440)return 'há '+Math.floor(m/60)+' h';var d=Math.floor(m/1440);return d===1?'há 1 dia':'há '+d+' dias';}
 function precoHtml(c){return c.renda?eur(c.renda)+'<small> /mês</small>':'<span class="consulta">Preço sob consulta</span>';}
 function tipTxt(c){return c.tipo==='Quarto'?'Quarto':(c.tip||c.tipo||'Casa');}
-function resumoCasa(c,comCidade){var p=[tipTxt(c)];if(c.area)p.push(c.area+' m²');var l=esc(c.bairro);if(comCidade&&c.cidade&&c.cidade!==c.bairro)l+=', '+esc(c.cidade);p.push(l);return p.join(' · ');}
+function areaOk(c){return c.area&&c.area>=5&&c.area<=(c.tipo==='Quarto'?40:(c.tip==='T0'||c.tip==='T1'?150:1000));}
+function resumoCasa(c,comCidade){var p=[tipTxt(c)];if(areaOk(c))p.push(c.area+' m²');var l=esc(c.bairro);if(comCidade&&c.cidade&&c.cidade!==c.bairro)l+=', '+esc(c.cidade);p.push(l);return p.join(' · ');}
 function norm(t){return String(t).normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().trim();}
 function emCidade(c){var n=norm(c);if(n==='porto')return 'no Porto';var cap=c.trim();return 'em '+cap.charAt(0).toUpperCase()+cap.slice(1);}
 function entrada(c){return (c.renda&&c.caucao!=null)?c.renda*(1+c.caucao):null;}
@@ -965,7 +966,7 @@ function vInicio(){
 var medianas=null;
 function calcularMedianas(){
   var g={};
-  CASAS.forEach(function(c){if(c.renda&&c.area>5){var k=chaveZona(c);(g[k]=g[k]||[]).push(c.renda/c.area);}});
+  CASAS.forEach(function(c){if(c.renda&&areaOk(c)){var k=chaveZona(c);(g[k]=g[k]||[]).push(c.renda/c.area);}});
   medianas={};
   Object.keys(g).forEach(function(k){var v=g[k].sort(function(a,b){return a-b;});if(v.length>=3)medianas[k]=v[Math.floor(v.length/2)];});
 }
@@ -976,7 +977,7 @@ function pontuacao(c){
   if(!medianas)calcularMedianas();
   var valor=0.5;
   var med=medianas[chaveZona(c)];
-  if(c.renda&&c.area>5&&med){valor=Math.max(0,Math.min(1,0.5+(med-c.renda/c.area)/med));}
+  if(c.renda&&areaOk(c)&&med){valor=Math.max(0,Math.min(1,0.5+(med-c.renda/c.area)/med));}
   var nf=(c.fotos&&c.fotos.length)||0;
   var fotos=Math.min(nf,10)/10;
   var fresco=Math.exp(-c.min/(60*24*4));
@@ -986,7 +987,11 @@ function pontuacao(c){
   c._pont=p;return p;
 }
 function naZona(c,cid){return !cid||norm(c.cidade).indexOf(cid)>=0||norm(c.bairro).indexOf(cid)>=0||norm(c.distrito||'').indexOf(cid)>=0;}
-function cmpRecom(a,b){var ga=grupo(a),gb=grupo(b);if(ga!==gb)return ga-gb;return pontuacao(b)-pontuacao(a);}
+/* «Recomendados»: primeiro T0, T1 e quartos, do mais barato para o mais caro; depois o resto, também do mais barato.
+   Sem preço, sem fotos ou com renda abaixo do mínimo (costuma ser erro ou burla) vão para o fim. */
+function minimo(c){return c.tipo==='Quarto'?150:300;}
+function nivel(c){if(!c.renda||c.renda<minimo(c)||!(c.fotos&&c.fotos.length)&&!c.prot)return 2;return grupo(c);}
+function cmpRecom(a,b){var na=nivel(a),nb=nivel(b);if(na!==nb)return na-nb;if(na<2&&a.renda!==b.renda)return a.renda-b.renda;return pontuacao(b)-pontuacao(a);}
 /* Início: T0 e T1 mais baratos (com preço e fotos) e 2 quartos mais baratos, na zona da pessoa ou no país */
 function baratasInicio(){
   // sempre as mais baratas do país: 4 T0, 3 T1 e 2 quartos, com preço e fotos; rendas abaixo do mínimo ficam de fora (costumam ser erro ou burla)
@@ -1003,7 +1008,7 @@ function filtrar(){
     if(!naZona(c,cid))return false;
     if(estado.precoMax&&(!c.renda||c.renda>estado.precoMax))return false;
     if(estado.soProt&&!c.prot)return false;
-    if(estado.areaMin&&!(c.area>=estado.areaMin))return false;
+    if(estado.areaMin&&!(areaOk(c)&&c.area>=estado.areaMin))return false;
     if(estado.dias&&c.min>estado.dias*1440)return false;
     if(estado.soPart&&!c.part&&!c.prot)return false;
     if(estado.soFotos&&!(c.fotos&&c.fotos.length))return false;
@@ -1015,8 +1020,8 @@ function filtrar(){
   r.sort(function(a,b){
     if(estado.ordem==='barato')return (a.renda||1e9)-(b.renda||1e9);
     if(estado.ordem==='caro')return (b.renda||0)-(a.renda||0);
-    if(estado.ordem==='m2'){var ma=a.renda&&a.area?a.renda/a.area:1e9,mb=b.renda&&b.area?b.renda/b.area:1e9;return ma-mb;}
-    if(estado.ordem==='area')return (b.area||0)-(a.area||0);
+    if(estado.ordem==='m2'){var ma=a.renda&&areaOk(a)?a.renda/a.area:1e9,mb=b.renda&&areaOk(b)?b.renda/b.area:1e9;return ma-mb;}
+    if(estado.ordem==='area')return (areaOk(b)?b.area:0)-(areaOk(a)?a.area:0);
     if(estado.ordem==='recomendados')return cmpRecom(a,b);
     return a.min-b.min;
   });
@@ -1183,7 +1188,7 @@ function vCasa(id){
         '<h2 class="h-peq">Sobre a casa</h2><p class="texto longo">'+(c.desc?esc(c.desc):'Sem descrição. Vê o anúncio original para mais detalhes.')+'</p>'+
         '<dl class="dados">'+
           '<div><dt>Tipologia</dt><dd>'+tipTxt(c)+'</dd></div>'+
-          '<div><dt>Área</dt><dd>'+(c.area?c.area+' m²':'—')+'</dd></div>'+
+          '<div><dt>Área</dt><dd>'+(areaOk(c)?c.area+' m²':'—')+'</dd></div>'+
           '<div><dt>Andar</dt><dd>'+(c.andar?esc(c.andar):'—')+'</dd></div>'+
           '<div><dt>Mobilada</dt><dd>'+(c.mob==null?'—':(c.mob?'Sim':'Não'))+'</dd></div>'+
           '<div><dt>Renda</dt><dd>'+(c.renda?eur(c.renda)+' /mês':'Sob consulta')+'</dd></div>'+
