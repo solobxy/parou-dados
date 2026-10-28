@@ -1,0 +1,9 @@
+[Unit]
+Description=Duas Chaves - alertas por e-mail depois de cada recolha
+
+[Timer]
+OnCalendar=*:22,52
+Persistent=true
+
+[Install]
+WantedBy=timers.target

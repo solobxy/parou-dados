@@ -1,0 +1,19 @@
+[Unit]
+Description=Duas Chaves - envio dos alertas de casas novas por e-mail
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=parou
+Group=parou
+StateDirectory=duaschaves-api
+StateDirectoryMode=0700
+EnvironmentFile=-/etc/duaschaves/api.env
+ExecStart=/usr/bin/python3 /opt/parou/servidor/duaschaves/alertas.py
+TimeoutStartSec=15min
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+MemoryMax=300M

@@ -14,7 +14,7 @@ Segurança: tokens e sessões guardados só como hash SHA-256; cookie HttpOnly, 
 pedidos POST só com JSON e de uma origem aceite; limites de pedidos por IP e por e-mail; respostas
 iguais exista ou não o e-mail; campos do utilizador validados e com tamanho máximo.
 """
-import hashlib, json, os, re, secrets, sqlite3, sys, threading, time, urllib.parse, urllib.request
+import hashlib, hmac, json, os, re, secrets, sqlite3, sys, threading, time, urllib.parse, urllib.request
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 DB = os.environ.get('DC_DB', '/var/lib/duaschaves-api/dados.db')
@@ -69,7 +69,18 @@ def criar_tabelas():
         CREATE TABLE IF NOT EXISTS alertas(id INTEGER PRIMARY KEY, utilizador INTEGER NOT NULL, filtro TEXT NOT NULL, criado INTEGER NOT NULL, ativo INTEGER NOT NULL DEFAULT 1);
         CREATE TABLE IF NOT EXISTS envios(id INTEGER PRIMARY KEY, email TEXT NOT NULL, tipo TEXT NOT NULL, estado TEXT NOT NULL, quando INTEGER NOT NULL);
         CREATE INDEX IF NOT EXISTS i_alertas_u ON alertas(utilizador);
+        CREATE TABLE IF NOT EXISTS config(chave TEXT PRIMARY KEY, valor TEXT NOT NULL);
         ''')
+        cols = [r[1] for r in c.execute('PRAGMA table_info(alertas)')]
+        if 'ultimo_envio' not in cols:
+            c.execute('ALTER TABLE alertas ADD COLUMN ultimo_envio INTEGER')
+        if not c.execute("SELECT 1 FROM config WHERE chave='segredo'").fetchone():
+            c.execute("INSERT INTO config VALUES('segredo', ?)", (secrets.token_hex(32),))
+
+
+def assinatura(c, alerta_id):
+    seg = c.execute("SELECT valor FROM config WHERE chave='segredo'").fetchone()[0]
+    return hmac.new(seg.encode(), b'parar:' + str(alerta_id).encode(), 'sha256').hexdigest()[:32]
 
 
 def utilizador(c, email, criar=True):
@@ -211,6 +222,15 @@ class API(BaseHTTPRequestHandler):
                     'acesso': {'ate': (u['acesso_ate'] or 0) * 1000, 'renova': bool(u['renova'])} if u['acesso_ate'] else None,
                     'alertas': [dict(id=a['id'], filtro=json.loads(a['filtro'])) for a in
                                 c.execute('SELECT id, filtro FROM alertas WHERE utilizador=? AND ativo=1 ORDER BY id DESC', (u['id'],))]})
+        if url.path == '/api/parar':        # parar um alerta a partir do link no e-mail (sem precisar de entrar)
+            q = urllib.parse.parse_qs(url.query)
+            a, k = q.get('a', [''])[0], q.get('k', [''])[0]
+            if a.isdigit() and re.fullmatch(r'[0-9a-f]{32}', k or ''):
+                with ligar() as c:
+                    if hmac.compare_digest(assinatura(c, int(a)), k):
+                        c.execute('UPDATE alertas SET ativo=0 WHERE id=?', (int(a),))
+                        return self.redirecionar(self.base() + '/#alerta-parado')
+            return self.redirecionar(self.base() + '/#alertas')
         if url.path == '/api/entrar/confirmar':
             t = urllib.parse.parse_qs(url.query).get('t', [''])[0]
             destino = self.base() + '/#conta'
