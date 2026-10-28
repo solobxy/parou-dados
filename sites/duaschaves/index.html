@@ -99,6 +99,16 @@ input[type=file]{font:inherit;font-size:15px;max-width:100%}
 .caixa-check input{width:22px;height:22px;margin:1px 0 0;accent-color:var(--verde);flex-shrink:0}
 
 .chips{display:flex;flex-wrap:wrap;gap:8px}
+.seccao-recentes{padding:0 0 36px}
+.h-recentes{margin:0 0 12px;font-size:18px;font-weight:800;letter-spacing:-.01em}
+.faixa-rec{display:flex;gap:10px;overflow-x:auto;scroll-snap-type:x mandatory;margin:0 -20px;padding:2px 20px 4px;scroll-padding:0 20px;scrollbar-width:none}
+.faixa-rec::-webkit-scrollbar{display:none}
+.rec{flex:0 0 auto;max-width:min(320px,calc(100vw - 56px));min-height:64px;scroll-snap-align:start;display:flex;align-items:center;gap:12px;padding:10px 14px 10px 10px;border-radius:16px;border:1px solid var(--borda);background:#fff;font:inherit;color:var(--tinta);text-align:left;cursor:pointer;transition:border-color .15s ease-out,transform .15s ease-out}
+.rec:hover{border-color:var(--borda-forte)}.rec:active{transform:scale(.98)}
+.rec>svg{flex:0 0 auto;color:var(--texto3)}
+.rec-ic{flex:0 0 40px;height:40px;border-radius:12px;background:var(--verde-claro);color:var(--verde);display:flex;align-items:center;justify-content:center}
+.rec-txt{display:flex;flex-direction:column;min-width:0}.rec-txt strong{font-size:15px;font-weight:800}
+.rec-txt span{font-size:13px;color:var(--texto3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .vh{position:absolute!important;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
 /* pesquisa do início: uma só caixa com o botão dentro */
 .busca2{display:flex;align-items:center;gap:8px;max-width:520px;margin:0 auto 8px;padding:6px 6px 6px 16px;border-radius:18px;background:#fff;border:1px solid var(--borda-forte);box-shadow:0 1px 2px rgba(15,26,23,.06),0 12px 28px -16px rgba(15,26,23,.28);transition:border-color .15s ease-out,box-shadow .15s ease-out}
@@ -1073,6 +1083,13 @@ function registarPesquisa(){
 function filtroGuardado(f){var k=chaveFiltro(f);return lerPrefs().filtros.some(function(x){return chaveFiltro(x)===k;});}
 function guardarFiltro(f){var p=lerPrefs();if(filtroGuardado(f))return;ev('pesquisa_guardada',{cidade:f.cidade||''});var g={cidade:f.cidade,precoMax:f.precoMax,tips:(f.tips||[]).slice(),soProt:!!f.soProt};EXTRAS.forEach(function(k){if(f[k])g[k]=f[k];});p.filtros.unshift(g);p.filtros=p.filtros.slice(0,12);guardarPrefs();}
 function tirarFiltro(i){var p=lerPrefs();p.filtros.splice(i,1);guardarPrefs();}
+/* pesquisas recentes sem repetir quase iguais (mesma zona, preço e tipologias): fica a mais recente */
+function pesquisasUnicas(l,n){var vistas={},r=[];(l||[]).forEach(function(f){var k=norm(f.cidade||'')+'|'+(f.precoMax||0)+'|'+(f.tips||[]).join(',')+'|'+(f.tipoImovel||'');if(vistas[k])return;vistas[k]=1;r.push(f);});return r.slice(0,n);}
+function cartoesPesquisa(l){return l.map(function(f,i){
+  var linha=[];if(f.precoMax)linha.push('até '+eur(f.precoMax));if(f.tips&&f.tips.length)linha.push(f.tips.join(', '));if(f.tipoImovel)linha.push(f.tipoImovel==='Quarto'?'Quartos':f.tipoImovel+'s');
+  var extra=['areaMin','dias','soPart','soFotos','comPreco','semCaucao','soProt'].filter(function(k){return f[k];}).length;
+  return '<button type="button" class="rec" data-pesq="'+i+'"><span class="rec-ic">'+svg(P.lupa,{s:18,w:2.2})+'</span><span class="rec-txt"><strong>'+esc(f.cidade||'Todo o país')+'</strong><span>'+esc(linha.join(' · ')||'Todas as casas')+(extra?' · +'+extra+(extra===1?' filtro':' filtros'):'')+'</span></span>'+svg(P.seta,{s:18})+'</button>';
+}).join('');}
 function chipsFiltros(lista,attr){return lista.map(function(f,i){return '<button type="button" class="chip" '+attr+'="'+i+'">'+esc(descFiltro(f))+'</button>';}).join('');}
 
 /* consentimento de marketing: separado do alerta e desligado por defeito */
@@ -1406,7 +1423,7 @@ function tiposBarra(attr,atual,ligacoes){
 }
 function vInicio(){
   titulo('');
-  var prefs=lerPrefs(),recentes=prefs.pesquisas.slice(0,3);
+  var prefs=lerPrefs(),recentes=pesquisasUnicas(prefs.pesquisas,4);
   var novas=baratasInicio(),nc=numerosCasas(),ma=minAtualizado(),tel=mockHeroi(),duo=mockDuo(),ativo=acessoAtivo();
   var nums=false&&nc.total>20?'<p class="numeros"><span><strong>'+fmtN(nc.total)+'</strong> casas</span>'+(nc.n24>0?'<span><strong>'+fmtN(nc.n24)+'</strong> novas em 24 h</span>':'')+(ma!=null&&ma<180?'<span class="atual">Atualizado '+quando(ma)+'</span>':'')+'</p>':'';
   main.innerHTML=
@@ -1417,7 +1434,6 @@ function vInicio(){
       '<input id="b-cidade" type="search" placeholder="Cidade ou bairro" autocomplete="address-level2" value="'+esc(estado.cidade)+'">'+
       '<button class="botao" type="submit">Procurar</button></form>'+
     tiposBarra('data-htipo',estado.tipoImovel,true)+
-    (recentes.length?'<div class="cidades"><span>Continuar:</span>'+chipsFiltros(recentes,'data-pesq')+'</div>':'')+
   '</div>'+
   (tel?'<div class="heroi-mock">'+tel+'</div>':'')+
   '</div></section>'+
@@ -1428,6 +1444,7 @@ function vInicio(){
   '</ol></div>'+
   '</section>'+
 
+  (recentes.length?'<section class="seccao-recentes" aria-labelledby="rec-tit"><div class="contentor"><h2 class="h-recentes" id="rec-tit">Continuar a procurar</h2><div class="faixa-rec">'+cartoesPesquisa(recentes)+'</div></div></section>':'')+
   (podeInstalar()?'<div class="contentor"><div class="cartao-app" data-instalar-cartao><span class="ntf-ic" aria-hidden="true">'+SIMB_BRANCO+'</span><div><p class="ca-tit">Tem a Duas Chaves no ecrã do telemóvel</p><p class="ca-sub">Abre num toque, como uma app. Grátis e sem ocupar espaço.</p></div><button type="button" class="botao botao-peq" data-instalar>Instalar</button></div></div>':'')+
   '<section class="seccao" style="padding-top:0"><div class="contentor">'+
     '<div class="seccao-cabeca"><h2>As mais baratas agora</h2><a class="botao-sec botao-peq" href="#pesquisa">Ver todas as casas '+svg(P.seta,{s:18})+'</a></div>'+
