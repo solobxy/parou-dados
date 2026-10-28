@@ -1,12 +1,12 @@
 {
-  "built_at": "2026-10-28T10:02:27.806398+00:00",
-  "db_bytes": 564662272,
-  "gz_bytes": 112685165,
+  "built_at": "2026-10-28T19:29:52.149432+00:00",
+  "db_bytes": 597012480,
+  "gz_bytes": 116075823,
   "totals": {
-    "lines": 2829,
-    "stops": 46381,
-    "trips": 119835,
-    "stop_times": 3631301,
+    "lines": 2836,
+    "stops": 46382,
+    "trips": 125178,
+    "stop_times": 3790504,
     "operators": 30,
     "operators_ok": 27,
     "operators_desatualizados": 2
@@ -80,7 +80,7 @@
       "validade": "ok",
       "dias_validade": 137,
       "horario_prolongado": false,
-      "url": "https://files.mobilitydatabase.org/tld-715/latest.zip",
+      "url": "https://www.fertagus.pt/GTFSTMLzip/Fertagus_GTFS.zip",
       "last_error": null,
       "servicos_associados": null,
       "servicos_sem_calendario": null,
@@ -92,14 +92,14 @@
       "id": "transtejo_soflusa",
       "operator_name": "Transtejo Soflusa",
       "status": "OK",
-      "lines": 5,
+      "lines": 6,
       "stops": 10,
-      "trips": 938,
+      "trips": 937,
       "valid_until": "2028-12-31",
       "validade": "ok",
       "dias_validade": 795,
       "horario_prolongado": false,
-      "url": "https://files.mobilitydatabase.org/mdb-2921/latest.zip",
+      "url": "https://api.ttsl.pt/files/GTFS.ZIP",
       "last_error": null,
       "servicos_associados": null,
       "servicos_sem_calendario": null,
@@ -358,12 +358,12 @@
       "id": "horarios_funchal",
       "operator_name": "Horários do Funchal",
       "status": "OK",
-      "lines": 164,
-      "stops": 1742,
-      "trips": 5329,
-      "valid_until": "2026-11-30",
+      "lines": 170,
+      "stops": 1743,
+      "trips": 10673,
+      "valid_until": "2027-08-31",
       "validade": "ok",
-      "dias_validade": 33,
+      "dias_validade": 307,
       "horario_prolongado": false,
       "url": "https://www.horariosdofunchal.pt/googletransit.zip",
       "last_error": null,
@@ -584,7 +584,7 @@
     }
   ],
   "desenhos": {
-    "bytes": 7806578,
+    "bytes": 7799426,
     "por_operador": {
       "carris": {
         "viagens": 24996,
@@ -617,9 +617,9 @@
         "desenhos": 230
       },
       "horarios_funchal": {
-        "viagens": 5329,
-        "com_desenho": 5329,
-        "desenhos": 260
+        "viagens": 10673,
+        "com_desenho": 10673,
+        "desenhos": 269
       },
       "mdb-1272": {
         "viagens": 3790,
@@ -697,9 +697,9 @@
         "desenhos": 9
       },
       "transtejo_soflusa": {
-        "viagens": 938,
-        "com_desenho": 938,
-        "desenhos": 17
+        "viagens": 937,
+        "com_desenho": 937,
+        "desenhos": 18
       },
       "tub_braga": {
         "viagens": 3730,
@@ -907,13 +907,13 @@
           "total": 393
         },
         "servicos_com_data_hoje": [
+          "AU",
           "FU",
           "DU",
-          "BexpU",
-          "AU",
           "CU",
-          "BU",
-          "EU"
+          "BexpU",
+          "EU",
+          "BU"
         ],
         "viagens_por_servico": [
           {
@@ -968,5 +968,5 @@
       }
     }
   },
-  "duration_s": 280
+  "duration_s": 257
 }
