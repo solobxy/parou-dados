@@ -409,7 +409,7 @@ dialog.dialogo::backdrop{background:rgba(15,26,23,.55)}
     <nav class="nav-topo" aria-label="Principal">
       <a href="#pesquisa" data-nav="pesquisa">Pesquisar</a>
       <a href="#alertas" data-nav="alertas">Alertas</a>
-      <a href="#proteger" data-nav="proteger">Pagamento protegido</a>
+      <a href="#proteger" data-nav="proteger">Pagamento seguro</a>
       <a href="#precos" data-nav="precos">Preços</a>
       <a href="#senhorios" data-nav="senhorios">Para senhorios</a>
     </nav>
@@ -430,7 +430,7 @@ dialog.dialogo::backdrop{background:rgba(15,26,23,.55)}
     <nav aria-label="Rodapé">
       <a href="#pesquisa">Pesquisar casas</a>
       <a href="#alertas">Alertas</a>
-      <a href="#proteger">Pagamento protegido</a>
+      <a href="#proteger">Pagamento seguro</a>
       <a href="#precos">Preços</a>
       <a href="#senhorios">Para senhorios</a>
       <a href="#ajuda">Perguntas frequentes</a>
@@ -472,7 +472,7 @@ dialog.dialogo::backdrop{background:rgba(15,26,23,.55)}
 'use strict';
 
 var MARCA='Duas Chaves';
-var TAXA=5;              /* € por casa arrendada com pagamento protegido */
+var TAXA=5;              /* € por casa arrendada com pagamento seguro */
 var DIA=864e5;
 
 /* ---------- dados de demonstração ---------- */
@@ -581,7 +581,7 @@ var memAlertas=[];
 function lerAlertas(){try{return JSON.parse(localStorage.getItem('dc-alertas')||'[]');}catch(e){return memAlertas;}}
 function guardarAlertas(a){memAlertas=a;try{localStorage.setItem('dc-alertas',JSON.stringify(a));}catch(e){}}
 function criarAlerta(a){var l=lerAlertas();a.id=Date.now();l.unshift(a);guardarAlertas(l);if(servidor)setTimeout(function(){avisarServidorAlerta(a);},0);}
-function descAlerta(a){var p=[];p.push(a.cidade?a.cidade:'Todo o país');if(a.precoMax)p.push('até '+eur(a.precoMax));if(a.tip)p.push(a.tip);if(a.soProt)p.push('só protegidas');return p.join(' · ');}
+function descAlerta(a){var p=[];p.push(a.cidade?a.cidade:'Todo o país');if(a.precoMax)p.push('até '+eur(a.precoMax));if(a.tip)p.push(a.tip);if(a.soProt)p.push('só com pagamento seguro');return p.join(' · ');}
 
 /* ---------- servidor (contas reais quando a API existe; sem API fica tudo no dispositivo) ---------- */
 var servidor=false,emailLigado=false;
@@ -762,7 +762,7 @@ function dialogoExterno(c,acao){
     '<div class="contacto"><p class="rotulo">Contacto</p><p class="contacto-num">[contacto do anúncio original]</p></div>'+
     (acao==='ligar'?'':'<div class="campo"><label for="ext-msg">Mensagem pronta</label><textarea id="ext-msg" readonly>'+esc(msg)+'</textarea></div><button class="botao-sec largo" type="button" id="b-copiar-ext">Copiar mensagem</button>')+
     '<a class="botao largo" href="'+c.url+'" target="_blank" rel="noopener">Abrir anúncio '+f.em+' '+svg(P.externo,{s:18})+'</a>'+
-    '<p class="ajuda">Para pagares com segurança, propõe o <a href="#proteger">pagamento protegido</a>.</p></div>');
+    '<p class="ajuda">Para pagares com segurança, propõe o <a href="#proteger">pagamento seguro</a>.</p></div>');
   var bc=document.getElementById('b-copiar-ext');
   if(bc)bc.addEventListener('click',function(){
     var ta=document.getElementById('ext-msg');
@@ -806,8 +806,8 @@ function ligarGaleria(){
 
 /* ---------- peças ---------- */
 function confianca(c){
-  if(c.prot)return '<p class="confianca">'+svg(P.escudo,{s:18})+'Pagamento protegido</p>';
-  return '<p class="confianca fora">'+svg(P.externo,{s:18})+FONTES[c.fonte].de+' · sem pagamento protegido</p>';
+  if(c.prot)return '<p class="confianca">'+svg(P.escudo,{s:18})+'Pagamento seguro</p>';
+  return '<p class="confianca fora">'+svg(P.externo,{s:18})+FONTES[c.fonte].de+' · sem pagamento seguro</p>';
 }
 function cartao(c){
   return '<a class="cartao" href="#casa-'+c.id+'">'+
@@ -836,15 +836,15 @@ function vInicio(){
   titulo('');
   var prefs=lerPrefs(),zs=zonasPreferidas(4),recentes=prefs.pesquisas.slice(0,3);
   var zona=zs.length?zs[0]:null;
-  var novas=zona?recomendadasEm(zona.nome,3):[];
-  if(novas.length<3){zona=null;novas=CASAS.slice().sort(function(a,b){return a.min-b.min;}).slice(0,3);}
+  var novas=zona?baratasInicio(zona.nome):[];
+  if(novas.length<4){zona=null;novas=baratasInicio('');}
   var secCasas=zona?
-    '<div class="seccao-cabeca"><h2>Casas para ti em '+esc(zona.nome)+'</h2><button type="button" class="botao-sec botao-peq" data-cidade="'+esc(zona.nome)+'">Ver todas '+svg(P.seta,{s:18})+'</button></div>'+
+    '<div class="seccao-cabeca"><h2>As mais baratas em '+esc(zona.nome)+'</h2><button type="button" class="botao-sec botao-peq" data-cidade="'+esc(zona.nome)+'">Ver todas '+svg(P.seta,{s:18})+'</button></div>'+
     (zs.length>1?'<div class="cidades" style="margin:0 0 16px"><span>As tuas zonas:</span>'+zs.slice(1).map(function(z){return '<button type="button" class="chip" data-cidade="'+esc(z.nome)+'">'+esc(z.nome)+'</button>';}).join('')+'</div>':'')+
     '<div class="casas tres">'+novas.map(cartao).join('')+'</div>'+
     '<p class="ajuda" style="margin-top:14px">Escolhidas pelo que procuraste neste dispositivo. <button type="button" class="botao-texto" id="b-esquecer" style="padding:0;min-height:auto">Apagar histórico</button></p>'
   :
-    '<div class="seccao-cabeca"><h2>Casas novas agora</h2><a class="botao-sec botao-peq" href="#pesquisa">Ver todas as casas '+svg(P.seta,{s:18})+'</a></div>'+
+    '<div class="seccao-cabeca"><h2>As mais baratas agora</h2><a class="botao-sec botao-peq" href="#pesquisa">Ver todas as casas '+svg(P.seta,{s:18})+'</a></div>'+
     '<div class="casas tres">'+novas.map(cartao).join('')+'</div>';
   main.innerHTML=
   '<section class="heroi"><div class="contentor heroi-grelha"><div>'+
@@ -861,7 +861,7 @@ function vInicio(){
       '<div class="cidades"><span>Mais procuradas:</span>'+['Lisboa','Porto','Coimbra','Braga'].map(function(c){return '<button type="button" class="chip" data-cidade="'+c+'">'+c+'</button>';}).join('')+'</div>')+
   '</div>'+
   '<div class="cofre">'+
-    '<p class="cofre-legenda">Exemplo de pagamento protegido</p>'+
+    '<p class="cofre-legenda">Exemplo de pagamento seguro</p>'+
     '<p class="cofre-valor">'+eur(1700)+'</p>'+
     partes({senhorio:true,tu:false,papel:'Senhoria',ini:'AM'})+
     '<p class="cofre-nota">A senhoria já confirmou que entregou as chaves. O dinheiro só lhe chega quando tu também confirmares.</p>'+
@@ -888,7 +888,7 @@ function vInicio(){
   '</div></section>'+
 
   '<section class="seccao branco"><div class="contentor dois-col">'+
-    '<div><h2>Viste a casa no Facebook?</h2><p class="apoio">Usa o pagamento protegido em qualquer anúncio. Envias um convite a quem anuncia: se aceitar, o dinheiro fica depositado até receberes as chaves. Se recusar, é um sinal para teres mais cuidado.</p>'+
+    '<div><h2>Viste a casa no Facebook?</h2><p class="apoio">Usa o pagamento seguro em qualquer anúncio. Envias um convite a quem anuncia: se aceitar, o dinheiro fica depositado até receberes as chaves. Se recusar, é um sinal para teres mais cuidado.</p>'+
     '<a class="botao" href="#proteger">Proteger um pagamento</a></div>'+
     '<div class="bolha"><p class="rotulo">A mensagem que envias</p><p>Olá! Vi a sua casa no Facebook e quero arrendá-la. Para ficarmos os dois seguros, proponho pagar a entrada pelo Duas Chaves: o dinheiro fica depositado e passa para si assim que me entregar as chaves. Para si é grátis.</p></div>'+
   '</div></section>'+
@@ -967,6 +967,15 @@ function pontuacao(c){
 }
 function naZona(c,cid){return !cid||norm(c.cidade).indexOf(cid)>=0||norm(c.bairro).indexOf(cid)>=0||norm(c.distrito||'').indexOf(cid)>=0;}
 function cmpRecom(a,b){var ga=grupo(a),gb=grupo(b);if(ga!==gb)return ga-gb;return pontuacao(b)-pontuacao(a);}
+/* Início: T0 e T1 mais baratos (com preço e fotos) e 2 quartos mais baratos, na zona da pessoa ou no país */
+function baratasInicio(nome){
+  var cid=norm(nome||''),ok=function(c){return c.renda&&c.fotos&&c.fotos.length&&naZona(c,cid);};
+  var porPreco=function(a,b){return a.renda-b.renda;};
+  var t=CASAS.filter(function(c){return ok(c)&&c.tipo!=='Quarto'&&(c.tip==='T0'||c.tip==='T1');}).sort(porPreco).slice(0,4);
+  var q=CASAS.filter(function(c){return ok(c)&&c.tipo==='Quarto';}).sort(porPreco).slice(0,2);
+  var r=[];[t[0],t[1],q[0],t[2],t[3],q[1]].forEach(function(c){if(c)r.push(c);});
+  return r;
+}
 function recomendadasEm(nome,n){var cid=norm(nome);return CASAS.filter(function(c){return naZona(c,cid);}).sort(cmpRecom).slice(0,n);}
 function filtrar(){
   var cid=norm(estado.cidade);
@@ -1019,7 +1028,7 @@ function vPesquisa(){
         '<label class="interruptor"><input type="checkbox" id="f-part"'+(estado.soPart?' checked':'')+'><span>Só particulares (sem agência)</span></label>'+
         '<label class="interruptor"><input type="checkbox" id="f-fotos"'+(estado.soFotos?' checked':'')+'><span>Só com fotos</span></label>'+
         '<label class="interruptor"><input type="checkbox" id="f-compreco"'+(estado.comPreco?' checked':'')+'><span>Só com preço indicado</span></label>'+
-        '<label class="interruptor"><input type="checkbox" id="f-prot"'+(estado.soProt?' checked':'')+'><span>Só pagamento protegido</span></label>'+
+        '<label class="interruptor"><input type="checkbox" id="f-prot"'+(estado.soProt?' checked':'')+'><span>Só pagamento seguro</span></label>'+
         '<button type="button" class="botao-texto" id="f-limpar" style="align-self:flex-start">Limpar filtros</button>'+
       '</aside>'+
       '<section aria-label="Resultados">'+
@@ -1122,17 +1131,17 @@ function vCasa(id){
   titulo(tipTxt(c)+' em '+c.bairro);
   var painel;
   if(c.prot){
-    painel='<div class="caixa-prot"><h2 class="h-prot">'+svg(P.escudo)+'Pagamento protegido</h2>'+
+    painel='<div class="caixa-prot"><h2 class="h-prot">'+svg(P.escudo)+'Pagamento seguro</h2>'+
       '<p>Pagas a entrada aqui. O dinheiro fica retido e só chega '+(c.gen==='f'?'à senhoria':'ao senhorio')+' quando os dois confirmarem a entrega das chaves. O serviço custa '+eur(TAXA)+' e só pagas se arrendares.</p>'+
       '<div class="total"><span>Para entrar (1.ª renda + caução de '+meses(c.caucao)+')</span><strong>'+eur(entrada(c))+'</strong></div></div>'+
       '<div class="pessoa"><div class="avatar" aria-hidden="true">'+c.ini+'</div><div><p class="nome">'+esc(c.senhorio)+'</p><p class="papel">'+svg(P.visto,{s:16,w:2.4})+papel(c)+' · identidade verificada</p></div></div>'+
       botoesContacto()+
-      '<p class="ajuda centro">Já visitaste? <a href="#pagamento-'+c.id+'">Pagar a entrada com proteção</a></p>';
+      '<p class="ajuda centro">Já visitaste? <a href="#pagamento-'+c.id+'">Pagar a entrada em segurança</a></p>';
   }else{
     var f=FONTES[c.fonte];
     painel=''+
       botoesContacto()+
-      '<button class="botao-sec largo" type="button" id="b-proteger">'+svg(P.escudo)+'Pagar com proteção nesta casa</button>'+
+      '<button class="botao-sec largo" type="button" id="b-proteger">'+svg(P.escudo)+'Pagamento seguro nesta casa</button>'+
       '<div class="dicas"><h3>Antes de pagares alguma coisa</h3><ul>'+
         '<li>Visita a casa antes de pagar qualquer valor.</li>'+
         '<li>Desconfia de rendas muito abaixo das outras na zona.</li>'+
@@ -1199,7 +1208,7 @@ function vCasa(id){
 function vPagamento(id){
   var c=casa(id);
   if(!c||!c.prot){vNaoExiste();return;}
-  titulo('Pagamento protegido');
+  titulo('Pagamento seguro');
   var p=pagamentos[id]||(pagamentos[id]={fase:'metodo',metodo:'mbway',senhorio:false,tu:false});
   var nome=primeiroNome(c),art=artigo(c),Art=art.toUpperCase();
   var voltar=c.pedido?'<a class="voltar" href="#pedido-'+c.id+'">'+svg(P.voltar,{s:18})+'Voltar ao pedido</a>':'<a class="voltar" href="#casa-'+c.id+'">'+svg(P.voltar,{s:18})+'Voltar ao anúncio</a>';
@@ -1207,13 +1216,13 @@ function vPagamento(id){
 
   if(p.fase==='metodo'){
     html=voltar+
-      '<div><h1 class="titulo" tabindex="-1">Pagar a entrada com proteção</h1>'+
+      '<div><h1 class="titulo" tabindex="-1">Pagar a entrada em segurança</h1>'+
       '<p class="apoio" style="margin:0">O dinheiro fica retido. '+Art+' '+esc(nome)+' só o recebe quando os dois confirmarem a entrega das chaves.</p></div>'+
       '<dl class="resumo">'+
         '<div><dt>Casa</dt><dd>'+c.tip+' · '+local(c)+'</dd></div>'+
         '<div><dt>1.ª renda</dt><dd>'+eur(c.renda)+'</dd></div>'+
         (c.caucao?'<div><dt>Caução ('+meses(c.caucao)+')</dt><dd>'+eur(c.renda*c.caucao)+'</dd></div>':'')+
-        '<div><dt>Serviço de pagamento protegido</dt><dd>'+eur(TAXA)+'</dd></div>'+
+        '<div><dt>Serviço de pagamento seguro</dt><dd>'+eur(TAXA)+'</dd></div>'+
         '<div class="linha-total"><dt>Total</dt><dd>'+eur(entrada(c)+TAXA)+'</dd></div>'+
       '</dl>'+
       '<form id="f-pag" novalidate style="display:flex;flex-direction:column;gap:16px">'+
@@ -1314,7 +1323,7 @@ function vPrecos(){
         (ativo?'<a class="botao-sec largo" href="#conta">Acesso ativo · ver a minha conta</a>':'<button class="botao largo" type="button" id="b-comprar">Desbloquear por '+P1+'</button>')+
       '</div>'+
     '</div>'+
-    '<div class="bloco" style="margin-top:16px"><h2>Pagamento protegido: '+eur(TAXA)+' por casa</h2><p>Nas casas publicadas aqui e em qualquer anúncio de outro site, se quem anuncia aceitar. Para quem anuncia é grátis. Se não arrendares, devolvemos.</p><a class="botao-sec" href="#proteger" style="align-self:flex-start">Proteger um pagamento</a></div>'+
+    '<div class="bloco" style="margin-top:16px"><h2>Pagamento seguro: '+eur(TAXA)+' por casa</h2><p>Nas casas publicadas aqui e em qualquer anúncio de outro site, se quem anuncia aceitar. Para quem anuncia é grátis. Se não arrendares, devolvemos.</p><a class="botao-sec" href="#proteger" style="align-self:flex-start">Proteger um pagamento</a></div>'+
     '<p class="ajuda" style="margin-top:24px">Tens dúvidas? Vê as <a href="#ajuda">perguntas frequentes</a>.</p>'+
   '</div>';
   var b=document.getElementById('b-comprar');
@@ -1333,7 +1342,7 @@ function vAlertas(){
       '<div class="campo"><label for="a-preco">Renda máxima</label><select id="a-preco">'+opcoesPreco(estado.precoMax)+'</select></div>'+
       '<div class="campo"><label for="a-tip">Tipologia</label><select id="a-tip"><option value="">Qualquer</option>'+TIPS.map(function(t){return '<option>'+t+'</option>';}).join('')+'</select></div>'+
       '<div class="campo"><label for="a-email">E-mail</label><input id="a-email" type="email" autocomplete="email" inputmode="email" value="'+esc(conta.email)+'"></div>'+
-      '<label class="interruptor inteiro"><input type="checkbox" id="a-prot"><span>Só casas com pagamento protegido</span></label>'+
+      '<label class="interruptor inteiro"><input type="checkbox" id="a-prot"><span>Só casas com pagamento seguro</span></label>'+
       '<button class="botao largo inteiro" type="submit">'+svg(P.sino)+'Criar alerta</button>'+
     '</form>'+
     '<h2 class="h-peq">Os teus alertas</h2>'+
@@ -1450,7 +1459,7 @@ function vConta(){
     '<p class="apoio" style="margin-bottom:16px">'+esc(conta.email)+' · <button type="button" class="botao-texto" id="b-sair" style="font-size:18px;padding:0;min-height:auto">Sair</button></p>'+
     '<div class="blocos">'+blocoAcesso+
       '<div class="bloco"><h2>Casas guardadas</h2>'+(guard.length?'<div class="casas">'+guard.map(cartao).join('')+'</div>':'<p class="ajuda">Ainda não guardaste casas. Toca no coração de um anúncio para o guardar aqui.</p>')+'</div>'+
-      '<div class="bloco"><h2>Pagamentos protegidos</h2>'+(pags.length?pags.map(function(x){return '<a class="linha-lista" href="#pagamento-'+x.c.id+'"><strong>'+x.c.tip+' · '+esc(x.c.bairro)+'</strong><span>'+nomeFase[x.p.fase]+'</span></a>';}).join(''):'<p class="ajuda">Ainda não pagaste nenhuma entrada com proteção.</p>')+'</div>'+
+      '<div class="bloco"><h2>Pagamentos seguros</h2>'+(pags.length?pags.map(function(x){return '<a class="linha-lista" href="#pagamento-'+x.c.id+'"><strong>'+x.c.tip+' · '+esc(x.c.bairro)+'</strong><span>'+nomeFase[x.p.fase]+'</span></a>';}).join(''):'<p class="ajuda">Ainda não pagaste nenhuma entrada com pagamento seguro.</p>')+'</div>'+
       '<div class="bloco"><h2>Pedidos em anúncios de outros sites</h2>'+(Object.keys(pedidos).length?Object.keys(pedidos).map(function(k){var pd=pedidos[k];return '<a class="linha-lista" href="#pedido-'+pd.id+'"><strong>'+esc(pd.zona)+'</strong><span>'+({convite:'À espera de resposta',aceite:'Aceite',recusado:'Recusado'})[pd.estado]+'</span></a>';}).join(''):'<p class="ajuda">Viste uma casa noutro site? <a href="#proteger">Protege o pagamento</a>.</p>')+'</div>'+
       '<div class="bloco"><h2>Os meus anúncios</h2>'+(conta.anuncios.length?conta.anuncios.map(function(an){return '<div class="linha-lista"><strong>'+esc(an.tip)+' · '+esc(an.bairro)+', '+esc(an.cidade)+'</strong><span>'+esc(an.estado)+'</span></div>';}).join(''):'<p class="ajuda">Tens uma casa para arrendar? <a href="#senhorios">Publica-a aqui</a>.</p>')+'</div>'+
       '<div class="bloco"><h2>Alertas</h2><p>'+(nAl?'Tens '+nAl+' '+(nAl>1?'alertas':'alerta')+'.':'Ainda não tens alertas.')+' <a href="#alertas">Gerir alertas</a></p></div>'+
@@ -1544,10 +1553,10 @@ function vAjuda(){
   titulo('Perguntas frequentes');
   var q=[
     ['De onde vêm os anúncios?','Juntamos as casas publicadas aqui por senhorios e os anúncios que encontramos automaticamente noutros sites. Cada anúncio mostra de onde vem e há quanto tempo apareceu.'],
-    ['Quanto custa?','Ver anúncios, guardar casas e criar alertas é grátis. Para marcar visitas, ligar e enviar mensagens em qualquer anúncio, o acesso custa 1 € nos primeiros 30 dias e depois 9,99 € a cada 30 dias. Nas casas com pagamento protegido, o serviço custa '+eur(TAXA)+' e só pagas se arrendares.'],
+    ['Quanto custa?','Ver anúncios, guardar casas e criar alertas é grátis. Para marcar visitas, ligar e enviar mensagens em qualquer anúncio, o acesso custa 1 € nos primeiros 30 dias e depois 9,99 € a cada 30 dias. Nas casas com pagamento seguro, o serviço custa '+eur(TAXA)+' e só pagas se arrendares.'],
     ['Como cancelo o acesso?','Na tua conta, em «Cancelar renovação». Continuas com acesso até ao fim do período pago e não voltas a ser cobrado. Avisamos-te por e-mail 3 dias antes de cada renovação.'],
-    ['O que é o pagamento protegido?','Pagas a 1.ª renda e a caução aqui. O dinheiro fica retido e só chega ao senhorio depois de ele confirmar que entregou as chaves e de tu confirmares que entraste na casa.'],
-    ['Posso usar o pagamento protegido numa casa que vi no Facebook?','Sim. Preenches um pedido com a casa e o contacto de quem anuncia, e envias-lhe um convite. Se aceitar, confirmamos a identidade e que a casa é dele, e o dinheiro fica retido até receberes as chaves. Se recusar, isso não prova que seja burla, mas é um sinal para teres cuidado.'],
+    ['O que é o pagamento seguro?','Pagas a 1.ª renda e a caução aqui. O dinheiro fica retido e só chega ao senhorio depois de ele confirmar que entregou as chaves e de tu confirmares que entraste na casa.'],
+    ['Posso usar o pagamento seguro numa casa que vi no Facebook?','Sim. Preenches um pedido com a casa e o contacto de quem anuncia, e envias-lhe um convite. Se aceitar, confirmamos a identidade e que a casa é dele, e o dinheiro fica retido até receberes as chaves. Se recusar, isso não prova que seja burla, mas é um sinal para teres cuidado.'],
     ['E se houver um problema com a casa?','Avisa-nos antes de confirmares. O dinheiro continua retido enquanto falamos com os dois e analisamos o caso.'],
     ['E se a casa já tiver sido arrendada?','Os anúncios de outros sites são verificados [frequência a definir]. Quando um anúncio desaparece da origem, retiramo-lo daqui.']
   ];
@@ -1562,7 +1571,7 @@ function vTermos(){
   titulo('Termos e privacidade');
   main.innerHTML='<div class="contentor estreito-m pag-simples">'+
     '<h1 class="titulo" tabindex="-1">Termos e privacidade</h1>'+
-    '<div class="bloco"><p>[Texto a escrever antes do lançamento: termos de utilização, condições do acesso e da renovação, pagamento protegido e devoluções, política de privacidade e de cookies.]</p></div>'+
+    '<div class="bloco"><p>[Texto a escrever antes do lançamento: termos de utilização, condições do acesso e da renovação, pagamento seguro e devoluções, política de privacidade e de cookies.]</p></div>'+
   '</div>';
 }
 
@@ -1573,7 +1582,7 @@ function mensagemConvite(p){
 }
 
 function vProteger(){
-  titulo('Pagamento protegido em qualquer anúncio');
+  titulo('Pagamento seguro em qualquer anúncio');
   var pf=estado.prefill||{};estado.prefill=null;
   var caucaoSel=(pf.caucao!=null?pf.caucao:1);
   main.innerHTML=
@@ -1588,7 +1597,7 @@ function vProteger(){
     passo('depois','O dinheiro só sai com as duas confirmações','Depois de receberes as chaves.')+
   '</ol></div></section>'+
   '<section class="seccao branco" style="padding-top:48px"><div class="contentor estreito-m">'+
-    '<h2>Pedido de pagamento protegido</h2>'+
+    '<h2>Pedido de pagamento seguro</h2>'+
     '<p class="apoio">Todos os campos são obrigatórios, exceto os marcados como opcionais. O serviço custa '+eur(TAXA)+' e só pagas se arrendares.</p>'+
     '<form class="form-grelha" id="f-pedido" novalidate>'+
       '<div class="campo"><label for="pp-onde">Onde viste a casa?</label><select id="pp-onde">'+Object.keys(ONDE).map(function(o){return '<option'+(pf.onde===o?' selected':'')+'>'+o+'</option>';}).join('')+'</select></div>'+
@@ -1637,7 +1646,7 @@ function vProteger(){
 function vPedido(id){
   var p=pedidos[id];
   if(!p){vNaoExiste();return;}
-  titulo('Pedido de pagamento protegido');
+  titulo('Pedido de pagamento seguro');
   var c=casa(id),pg=pagamentos[id],pago=!!(pg&&pg.fase!=='metodo'),lib=!!(pg&&pg.fase==='libertado');
   var quem=p.senhorio?esc(p.senhorio):'Quem anuncia';
   var msg=mensagemConvite(p);
@@ -1645,7 +1654,7 @@ function vPedido(id){
   if(p.estado==='convite')lis+=passo('agora',quem+' aceita e confirma a identidade','À espera',true);
   else if(p.estado==='recusado')lis+=passo('depois',quem+' recusou','');
   else lis+=passo('feito',quem+' aceitou','Identidade e documento da casa confirmados');
-  lis+=passo(pago?'feito':(p.estado==='aceite'?'agora':'depois'),'Pagas a entrada com proteção',pago?'O dinheiro está retido':(p.estado==='aceite'?'Já podes pagar':''),!pago&&p.estado==='aceite');
+  lis+=passo(pago?'feito':(p.estado==='aceite'?'agora':'depois'),'Pagas a entrada em segurança',pago?'O dinheiro está retido':(p.estado==='aceite'?'Já podes pagar':''),!pago&&p.estado==='aceite');
   lis+=passo(lib?'feito':'depois','Recebes as chaves e os dois confirmam',lib?'Dinheiro libertado':'');
   var bloco='';
   if(p.estado==='convite'){
@@ -1655,17 +1664,17 @@ function vPedido(id){
       '<button class="botao-sec largo" type="button" id="b-copiar">Copiar mensagem</button></div>'+
       '<p class="ajuda">Também podes enviá-la por SMS ou e-mail. <a href="#convite-'+id+'">Ver o que quem anuncia recebe</a></p></div>';
   }else if(p.estado==='recusado'){
-    bloco='<div class="bloco aviso"><h2>'+quem+' recusou o pagamento protegido</h2>'+
+    bloco='<div class="bloco aviso"><h2>'+quem+' recusou o pagamento seguro</h2>'+
       '<p>Isto não prova que seja burla: há senhorios honestos que preferem receber diretamente. Mas tem cuidado:</p>'+
       '<ul class="lista-aviso"><li>Não pagues nada antes de visitar a casa.</li><li>Pede um documento que prove que a casa é dele, como a caderneta predial.</li><li>Desconfia se houver pressa para pagar ou se a renda estiver muito abaixo das outras na zona.</li></ul>'+
       '<a class="botao-sec" href="#pesquisa" style="align-self:flex-start">Procurar outras casas</a></div>';
   }else if(pago){
     bloco='<div class="bloco ativo"><h2>'+(lib?'Dinheiro libertado':'Entrada paga e retida')+'</h2><p>'+(lib?'Os dois confirmaram a entrega das chaves.':'O dinheiro só sai quando os dois confirmarem a entrega das chaves.')+'</p><a class="botao-sec" href="#pagamento-'+id+'" style="align-self:flex-start">Ver o pagamento</a></div>';
   }else{
-    bloco='<div class="bloco ativo"><h2>'+quem+' aceitou</h2><p>Confirmámos a identidade e o documento da casa. Já podes pagar a entrada: o dinheiro fica retido até os dois confirmarem a entrega das chaves.</p><a class="botao largo" href="#pagamento-'+id+'">Pagar a entrada com proteção</a></div>';
+    bloco='<div class="bloco ativo"><h2>'+quem+' aceitou</h2><p>Confirmámos a identidade e o documento da casa. Já podes pagar a entrada: o dinheiro fica retido até os dois confirmarem a entrega das chaves.</p><a class="botao largo" href="#pagamento-'+id+'">Pagar a entrada em segurança</a></div>';
   }
   main.innerHTML='<div class="contentor estreito pag">'+
-    '<div><h1 class="titulo" tabindex="-1">Pedido de pagamento protegido</h1>'+
+    '<div><h1 class="titulo" tabindex="-1">Pedido de pagamento seguro</h1>'+
     '<p class="meta">'+local(c)+' · '+eur(p.renda)+' /mês · visto '+ONDE[p.onde]+'</p></div>'+
     bloco+
     '<div><h2 class="h-peq">Em que ponto está</h2><ol class="passos">'+lis+'</ol></div>'+
@@ -1699,7 +1708,7 @@ function vConvite(id){
   }else{
     html=nota+
       '<div><h1 class="titulo" tabindex="-1">'+esc(p.nome)+' quer arrendar a tua casa</h1>'+
-      '<p class="apoio" style="margin:0">'+local(c)+' · '+eur(p.renda)+' /mês. Propõe pagar a entrada com proteção.</p></div>'+
+      '<p class="apoio" style="margin:0">'+local(c)+' · '+eur(p.renda)+' /mês. Propõe pagar a entrada com pagamento seguro.</p></div>'+
       '<div class="cofre"><p class="cofre-legenda">Entrada que fica depositada</p><p class="cofre-valor">'+eur(entrada(c))+'</p>'+
         '<p class="cofre-nota">Antes de entregares as chaves, já vês o dinheiro retido. Recebes assim que os dois confirmarem a entrega.</p></div>'+
       '<div class="bloco"><h2>Para ti</h2><ul class="inclui">'+
