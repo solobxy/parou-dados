@@ -28,7 +28,7 @@
 <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"Organization","@id":"https://duaschaves.pt/#org","name":"Duas Chaves","url":"https://duaschaves.pt/","logo":"https://duaschaves.pt/marca/duaschaves-icone.png"},{"@type":"WebSite","@id":"https://duaschaves.pt/#site","name":"Duas Chaves","url":"https://duaschaves.pt/","inLanguage":"pt-PT","publisher":{"@id":"https://duaschaves.pt/#org"}}]}</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 :root{
   --fundo:#F3F5F4;--superficie:#FFFFFF;--tinta:#0F1A17;--texto2:#3E4A46;--texto3:#55625E;
@@ -39,7 +39,7 @@
 }
 *{box-sizing:border-box}
 html{-webkit-text-size-adjust:100%;color-scheme:light;background:var(--fundo)}
-body{margin:0;font-family:'Schibsted Grotesk',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;background:var(--fundo);color:var(--tinta);font-size:16px;line-height:1.5;touch-action:manipulation;padding-bottom:calc(64px + env(safe-area-inset-bottom))}
+body{margin:0;font-family:'Plus Jakarta Sans',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;background:var(--fundo);color:var(--tinta);font-size:16px;line-height:1.5;touch-action:manipulation;padding-bottom:calc(64px + env(safe-area-inset-bottom))}
 a{color:var(--verde)}
 a:hover{color:var(--verde-escuro)}
 :focus-visible{outline:3px solid var(--verde);outline-offset:2px}
@@ -132,16 +132,27 @@ input[type=file]{font:inherit;font-size:15px;max-width:100%}
 
 /* cartões de casa */
 .casas{display:grid;gap:16px;grid-template-columns:minmax(0,1fr)}
-.cartao{display:block;background:#fff;border-radius:18px;overflow:hidden;text-decoration:none;color:var(--tinta);transition:transform .15s ease-out}
+@media (min-width:1160px){.casas{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.cartao{display:grid;grid-template-columns:46% minmax(0,1fr);background:#fff;border-radius:18px;overflow:hidden;text-decoration:none;color:var(--tinta);box-shadow:0 1px 2px rgba(15,26,23,.06),0 8px 24px -12px rgba(15,26,23,.14);transition:transform .2s var(--mola),box-shadow .2s ease-out}
+.cartao>.foto-img,.cartao>.foto{aspect-ratio:auto;height:100%;min-height:196px}.cartao>.foto{padding:8px;font-size:12px}
+.cartao .marca-foto{width:clamp(28px,22%,48px)}.cartao .n-fotos{right:8px;bottom:8px;font-size:12px;padding:2px 8px}
+.cartao{position:relative}.c-nova{position:absolute;z-index:2;left:10px;top:10px;padding:3px 10px;border-radius:999px;background:var(--quente);color:var(--tinta);font-size:12px;font-weight:800;pointer-events:none}
+.c-sub{margin:0;font-size:14px;line-height:1.4;color:var(--texto2);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.c-dados{margin:4px 0 0;padding:8px 0;border-top:1px solid var(--borda);border-bottom:1px solid var(--borda);display:flex;flex-wrap:wrap;justify-content:space-between;gap:2px 10px;font-size:14px;color:var(--tinta)}
+.c-dados span{white-space:nowrap}
+.c-pe{margin-top:auto;padding-top:6px;display:flex;align-items:center;justify-content:space-between;gap:8px}
+.c-pe .preco{font-size:21px;white-space:nowrap}.c-pe .preco .consulta{font-size:15px}
+.c-ver{display:inline-flex;align-items:center;gap:2px;font-size:15px;font-weight:700;color:var(--verde);white-space:nowrap}
+.cartao .confianca{font-size:13px;margin:2px 0 0}
 .cartao:hover{color:var(--tinta);transform:translateY(-2px)}
 .foto{aspect-ratio:16/10;display:flex;align-items:flex-end;justify-content:space-between;gap:8px;padding:12px;font-size:13px;color:var(--texto2)}
 .contador{padding:4px 10px;border-radius:999px;background:var(--tinta);color:#fff;font-weight:600;font-variant-numeric:tabular-nums}
-.cartao-corpo{padding:14px 16px 16px;display:flex;flex-direction:column;gap:6px}
+.cartao-corpo{padding:14px 14px 14px 16px;display:flex;flex-direction:column;gap:4px;min-width:0}
 .linha-topo{display:flex;align-items:baseline;justify-content:space-between;gap:8px}
 .preco{margin:0;font-size:24px;font-weight:800;letter-spacing:-.02em;font-variant-numeric:tabular-nums;line-height:1.15}
 .preco small{font-size:15px;font-weight:500;color:var(--texto3);letter-spacing:0}
 .quando{font-size:14px;color:var(--texto3);white-space:nowrap}
-.cartao h3{margin:0;font-size:16px;font-weight:500;color:var(--texto2)}
+.cartao h3{margin:0;font-size:19px;line-height:1.2;font-weight:800;letter-spacing:-.02em;color:var(--tinta);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .confianca{margin:4px 0 0;display:flex;align-items:center;gap:6px;font-size:15px;font-weight:600;color:var(--verde)}
 .confianca.fora{color:var(--texto3);font-weight:500}
 
@@ -402,6 +413,40 @@ dialog.dlg-promo.a-sair::backdrop{animation:sumir .23s ease-in both}
 .botao-filtros{justify-self:start}
 .filtros{background:#fff;border-radius:18px;padding:20px;display:none;flex-direction:column;gap:22px}
 .filtros.aberto{display:flex}
+/* filtros (estilo folha no telemóvel, coluna no computador) */
+.f-cabeca{display:flex;align-items:center;justify-content:space-between;gap:12px}.f-cabeca h2{margin:0;font-size:24px;font-weight:800;letter-spacing:-.02em}
+.f-sec{display:flex;flex-direction:column;gap:14px;padding:22px 0;border-top:1px solid var(--borda)}
+.f-sec h3{margin:0;font-size:17px;font-weight:800;letter-spacing:-.01em}
+.f-sec .chips{display:flex;flex-wrap:wrap;gap:10px}
+.chip.redondo{min-width:48px;justify-content:center;padding:0 12px}
+.f-linha{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.f-valor{font-size:14px;color:var(--texto2);background:var(--fundo);border:1px solid var(--borda);border-radius:10px;padding:6px 10px}.f-valor strong{color:var(--tinta)}
+.f-par{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:end;gap:8px}.f-par .campo{margin:0}.f-par label{font-size:14px;color:var(--texto2);font-weight:500}
+.f-traco{padding-bottom:14px;color:var(--texto3)}
+.f-eur input::-webkit-outer-spin-button,.f-eur input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}.f-eur input{-moz-appearance:textfield}.f-eur{position:relative}.f-eur input{width:100%;padding-right:32px}.f-eur span{position:absolute;right:12px;top:50%;transform:translateY(-50%);color:var(--texto2);pointer-events:none}
+.f-barra2,.f-barra1{position:relative;height:36px;margin:0 2px}
+.f-trilho{position:absolute;left:0;right:0;top:50%;height:4px;margin-top:-2px;border-radius:2px;background:var(--borda)}
+.f-cheio{position:absolute;top:0;bottom:0;background:var(--verde);border-radius:2px}
+.f-barra2 input[type=range],.f-barra1 input[type=range]{position:absolute;left:0;right:0;top:0;width:100%;height:36px;margin:0;background:none;-webkit-appearance:none;appearance:none}
+.f-barra2 input[type=range]{pointer-events:none}
+.f-barra1 input[type=range]{background:linear-gradient(var(--verde),var(--verde)) 0 50%/var(--p,0%) 4px no-repeat,linear-gradient(var(--borda),var(--borda)) 0 50%/100% 4px no-repeat}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;pointer-events:auto;width:28px;height:28px;border-radius:50%;background:#fff;border:3px solid var(--verde);box-shadow:0 1px 4px rgba(0,0,0,.18);cursor:pointer}
+input[type=range]::-moz-range-thumb{pointer-events:auto;width:22px;height:22px;border-radius:50%;background:#fff;border:3px solid var(--verde);box-shadow:0 1px 4px rgba(0,0,0,.18);cursor:pointer}
+input[type=range]::-moz-range-track{background:transparent}
+input[type=range]:focus-visible{outline:none}input[type=range]:focus-visible::-webkit-slider-thumb{box-shadow:0 0 0 4px rgba(11,110,79,.3)}
+.interruptor.linha{justify-content:space-between;font-weight:500}
+.f-pe{display:flex;align-items:center;justify-content:space-between;gap:12px;padding-top:18px;border-top:1px solid var(--borda)}
+#f-ver{display:none}
+html.sem-scroll,html.sem-scroll body{overflow:hidden}
+@media (max-width:899px){
+  .filtros.aberto{position:fixed;inset:0;z-index:40;border-radius:0;padding:0 20px;overflow-y:auto;overscroll-behavior:contain;gap:0;scroll-padding:80px 0 110px;animation:subir .25s ease-out backwards}
+  .filtros .f-cabeca{position:sticky;top:0;z-index:2;background:#fff;margin:0 -20px;padding:16px 20px;border-bottom:1px solid var(--borda)}
+  .filtros .f-sec:first-of-type{border-top:0}
+  .filtros .f-pe{position:sticky;bottom:0;z-index:2;background:#fff;margin:auto -20px 0;padding:12px 20px calc(12px + env(safe-area-inset-bottom));box-shadow:0 -6px 20px rgba(15,26,23,.08)}
+  #f-ver{display:inline-flex;flex:1;justify-content:center}
+}
+@media (min-width:900px){.f-cabeca{display:none}.filtros .f-sec:first-of-type{border-top:0;padding-top:0}.filtros{gap:0}}
+
 .result-cabeca{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:12px;flex-wrap:wrap}
 .n-res{margin:0;font-size:18px;font-weight:700}
 .ordem{display:flex;align-items:center;gap:8px}
@@ -619,11 +664,11 @@ dialog.dialogo::backdrop{background:rgba(15,26,23,.55)}
 .toast.ver{opacity:1;transform:translate(-50%,0)}
 
 #conteudo:focus,[tabindex="-1"]:focus{outline:none}
-#conteudo>*{animation:subir .25s ease-out both}
+#conteudo>*{animation:subir .25s ease-out backwards}
 @keyframes subir{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
 
 @media (min-width:640px){
-  .casas{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .casas.tres{grid-template-columns:repeat(2,minmax(0,1fr))}
   .busca{grid-template-columns:minmax(0,1fr) 200px}
   .busca .botao{grid-column:1 / -1}
   .form-grelha{grid-template-columns:repeat(2,minmax(0,1fr))}
@@ -644,7 +689,7 @@ dialog.dialogo::backdrop{background:rgba(15,26,23,.55)}
   .b-tips{order:9}
   .cofre{padding:36px 32px}
   .cofre-valor{font-size:60px}
-  .casas.tres{grid-template-columns:repeat(3,minmax(0,1fr))}
+
   .pesq-grelha{grid-template-columns:280px minmax(0,1fr);align-items:start;gap:32px}
   .botao-filtros{display:none}
   .filtros{display:flex;position:sticky;top:88px}
@@ -799,7 +844,7 @@ var FONTES = {
 var PRECOS = [0,600,800,1000,1200,1500];
 var TIPS = ['Quarto','T0','T1','T2','T3+'];
 
-var estado = {cidade:'',precoMax:0,tips:[],soProt:false,areaMin:0,dias:0,soPart:false,soFotos:false,comPreco:false,semCaucao:false,tipoImovel:'',ordem:'recomendados',filtrosAbertos:false};
+var estado = {cidade:'',precoMin:0,precoMax:0,tips:[],soProt:false,areaMin:0,dias:0,soPart:false,soFotos:false,comPreco:false,semCaucao:false,tipoImovel:'',ordem:'recomendados',filtrosAbertos:false};
 var pagamentos = {};
 var pedidos = {};
 var proxPedido = 101;
@@ -975,7 +1020,7 @@ function tirarZona(k){var p=lerPrefs(),z=p.zonas[k];if(!z)return;z.tirada=Date.n
 function registarVista(c){var p=lerPrefs();p.vistas=(p.vistas||[]).filter(function(v){return v.id!==c.id;});p.vistas.unshift({id:c.id,t:Date.now()});p.vistas=p.vistas.slice(0,20);try{localStorage.setItem('dc-prefs',JSON.stringify(memPrefs));}catch(e){}}
 function filtroAtual(){var f={cidade:estado.cidade,precoMax:estado.precoMax,tips:estado.tips.slice(),soProt:estado.soProt};EXTRAS.forEach(function(k){if(estado[k])f[k]=estado[k];});return f;}
 function aplicarFiltro(f){estado.cidade=f.cidade||'';estado.precoMax=f.precoMax||0;estado.tips=(f.tips||[]).slice();estado.soProt=!!f.soProt;
-  estado.areaMin=f.areaMin||0;estado.dias=f.dias||0;estado.soPart=!!f.soPart;estado.soFotos=!!f.soFotos;estado.comPreco=!!f.comPreco;estado.semCaucao=!!f.semCaucao;estado.tipoImovel=f.tipoImovel||'';}
+  estado.precoMin=f.precoMin||0;estado.areaMin=f.areaMin||0;estado.dias=f.dias||0;estado.soPart=!!f.soPart;estado.soFotos=!!f.soFotos;estado.comPreco=!!f.comPreco;estado.semCaucao=!!f.semCaucao;estado.tipoImovel=f.tipoImovel||'';}
 function chaveFiltro(f){return [norm(f.cidade||''),f.precoMax||0,(f.tips||[]).slice().sort().join(','),f.soProt?1:0].concat(EXTRAS.map(function(k){return f[k]||'';})).join('|');}
 function descFiltro(f){var d=descAlerta({cidade:f.cidade,precoMax:f.precoMax,tip:(f.tips||[]).join(', '),soProt:f.soProt});var x=[];
   if(f.tipoImovel)x.push(f.tipoImovel);if(f.areaMin)x.push('+'+f.areaMin+' m²');if(f.dias)x.push(f.dias===1?'últimas 24 h':'últimos '+f.dias+' dias');if(f.soPart)x.push('particulares');if(f.soFotos)x.push('com fotos');if(f.comPreco)x.push('com preço');if(f.semCaucao)x.push('sem caução indicada');
@@ -1184,11 +1229,21 @@ document.addEventListener('click',function(e){
   var i=Math.round(f.scrollLeft/f.clientWidth)+d,n=f.children.length;i=(i+n)%n;
   f.scrollTo({left:i*f.clientWidth,behavior:matchMedia('(prefers-reduced-motion:reduce)').matches?'auto':'smooth'});
 },true);
+function nQuartos(c){if(c.tipo==='Quarto')return '1 quarto';var m=/^T(\d)/.exec(c.tip||'');if(!m)return '';var n=+m[1];return n===0?'Estúdio':n+(n===1?' quarto':' quartos');}
 function cartao(c){
-  return '<a class="cartao" href="#casa-'+c.id+'">'+
+  var cid=(c.cidade||c.bairro||'').trim(),sub=[],tp=c.tipo==='Quarto'?'Quarto':(c.tipo||'Casa');
+  sub.push(esc(tp)+(c.bairro&&norm(c.bairro)!==norm(cid)?' em '+esc(c.bairro):''));
+  if(c.particular)sub.push('Particular');
+  var dados=[c.tipo==='Quarto'?'':nQuartos(c),areaOk(c)?c.area+' m²':'',c.semData?'':quando(c.min)].filter(Boolean).slice(0,2);
+  return '<a class="cartao" href="#casa-'+c.id+'">'+(!c.semData&&c.min<1440?'<span class="c-nova">Nova</span>':'')+
     (c.fotos&&c.fotos.length?fotosCartao(c):'<div class="foto" style="background:'+c.cor+'"><span>[Foto do anúncio]</span></div>')+
-    '<div class="cartao-corpo"><div class="linha-topo"><p class="preco">'+precoHtml(c)+'</p><span class="quando'+(c.min<1440?' novo':'')+'">'+(c.semData?'':(c.min<1440?'Nova · ':'')+quando(c.min))+'</span></div>'+
-    '<h3>'+resumoCasa(c,true)+'</h3>'+(c.prot?confianca(c):'')+'</div></a>';
+    '<div class="cartao-corpo">'+
+      '<h3>'+esc(cid||'Portugal')+'</h3>'+
+      (sub.length?'<p class="c-sub">'+sub.join(' · ')+'</p>':'')+
+      (dados.length?'<p class="c-dados">'+dados.map(function(d){return '<span>'+esc(d)+'</span>';}).join('')+'</p>':'')+
+      (c.prot?confianca(c):'')+
+      '<div class="c-pe"><p class="preco">'+(c.renda?eur(c.renda):'<span class="consulta">Sob consulta</span>')+'</p><span class="c-ver">Ver mais'+svg(P.seta,{s:18,w:2.4})+'</span></div>'+
+    '</div></a>';
 }
 function partes(o){
   var label=(o.senhorio?(o.papel+' já confirmou'):(o.papel+' ainda não confirmou'))+'. '+(o.tu?'Tu já confirmaste.':'Falta a tua confirmação.');
@@ -1524,6 +1579,7 @@ function filtrar(){
   var r=CASAS.filter(function(c){
     if(!naZona(c,cid))return false;
     if(estado.precoMax&&(!c.renda||c.renda>estado.precoMax))return false;
+    if(estado.precoMin&&(!c.renda||c.renda<estado.precoMin))return false;
     if(estado.soProt&&!c.prot)return false;
     if(estado.areaMin&&!(areaOk(c)&&c.area>=estado.areaMin))return false;
     if(estado.dias&&c.min>estado.dias*1440)return false;
@@ -1546,12 +1602,71 @@ function filtrar(){
   if(estado.ordem==='recomendados')r=intercalarQuartos(r);
   return r;
 }
-function nFiltros(){return (estado.precoMax?1:0)+estado.tips.length+(estado.soProt?1:0)+(estado.areaMin?1:0)+(estado.dias?1:0)+(estado.soPart?1:0)+(estado.soFotos?1:0)+(estado.comPreco?1:0)+(estado.semCaucao?1:0);}
-var EXTRAS=['areaMin','dias','soPart','soFotos','comPreco','semCaucao','tipoImovel'];
+function nFiltros(){return (estado.precoMax||estado.precoMin?1:0)+estado.tips.length+(estado.soProt?1:0)+(estado.areaMin?1:0)+(estado.dias?1:0)+(estado.soPart?1:0)+(estado.soFotos?1:0)+(estado.comPreco?1:0)+(estado.semCaucao?1:0);}
+var EXTRAS=['precoMin','areaMin','dias','soPart','soFotos','comPreco','semCaucao','tipoImovel'];
 function sel(id,val,ops){return '<select id="'+id+'">'+ops.map(function(o){return '<option value="'+o[0]+'"'+(String(o[0])===String(val)?' selected':'')+'>'+o[1]+'</option>';}).join('')+'</select>';}
 
+var PRECO_MAX_BARRA=3000,AREA_MAX_BARRA=200;
+function chipsUm(attr,val,ops){return ops.map(function(o){return '<button type="button" class="chip" '+attr+'="'+o[0]+'" aria-pressed="'+(String(o[0])===String(val))+'">'+o[1]+'</button>';}).join('');}
+function filtrosHtml(){
+  var tipsSel=estado.tips.filter(function(t){return t!=='Quarto';});
+  var sw=function(id,on,txt){return '<label class="interruptor linha"><span>'+txt+'</span><input type="checkbox" id="'+id+'"'+(on?' checked':'')+'></label>';};
+  return '<div class="f-cabeca"><h2>Filtros</h2><button type="button" class="icone" id="f-fechar" aria-label="Fechar filtros">'+svg(P.fechar)+'</button></div>'+
+    '<section class="f-sec"><h3>Preço</h3><div class="chips">'+chipsUm('data-fpreco',estado.precoMin?'x':estado.precoMax,[[0,'Qualquer'],[500,'Até 500 €'],[750,'Até 750 €'],[1000,'Até 1.000 €'],[1500,'Até 1.500 €']])+'</div>'+
+      '<div class="f-par"><div class="campo"><label for="f-pmin">Pelo menos</label><div class="f-eur"><input id="f-pmin" type="number" inputmode="numeric" min="0" step="50" placeholder="0" value="'+(estado.precoMin||'')+'"><span>€</span></div></div><span class="f-traco" aria-hidden="true">–</span>'+
+      '<div class="campo"><label for="f-pmax">Até</label><div class="f-eur"><input id="f-pmax" type="number" inputmode="numeric" min="0" step="50" placeholder="Qualquer" value="'+(estado.precoMax||'')+'"><span>€</span></div></div></div>'+
+      '<div class="f-barra2" id="f-barra-preco"><div class="f-trilho"><div class="f-cheio"></div></div>'+
+        '<input type="range" id="f-rmin" min="0" max="'+PRECO_MAX_BARRA+'" step="50" value="'+Math.min(estado.precoMin||0,PRECO_MAX_BARRA)+'" aria-label="Renda mínima">'+
+        '<input type="range" id="f-rmax" min="0" max="'+PRECO_MAX_BARRA+'" step="50" value="'+(estado.precoMax?Math.min(estado.precoMax,PRECO_MAX_BARRA):PRECO_MAX_BARRA)+'" aria-label="Renda máxima"></div></section>'+
+    '<section class="f-sec"><h3>Quartos</h3><div class="chips"><button type="button" class="chip" data-tip-qq aria-pressed="'+(!tipsSel.length)+'">Qualquer</button>'+
+      [['T0','Estúdio'],['T1','1'],['T2','2'],['T3+','3+']].map(function(t){return '<button type="button" class="chip'+(t[1].length<3?' redondo':'')+'" data-tip="'+t[0]+'" aria-pressed="'+(estado.tips.indexOf(t[0])>=0)+'">'+t[1]+'</button>';}).join('')+'</div></section>'+
+    '<section class="f-sec"><div class="f-linha"><h3>Tamanho</h3><span class="f-valor" id="f-area-txt"></span></div>'+
+      '<div class="f-barra1"><input type="range" id="f-area" min="0" max="'+AREA_MAX_BARRA+'" step="5" value="'+(estado.areaMin||0)+'" aria-label="Área mínima em metros quadrados"></div></section>'+
+    '<section class="f-sec"><h3>Publicadas</h3><div class="chips">'+chipsUm('data-fdias',estado.dias,[[0,'Qualquer altura'],[1,'Últimas 24 h'],[3,'Últimos 3 dias'],[7,'Última semana']])+'</div></section>'+
+    '<section class="f-sec"><h3>Condições</h3>'+
+      sw('f-part',estado.soPart,'Só particulares (sem agência)')+sw('f-semcaucao',estado.semCaucao,'Sem caução indicada')+sw('f-compreco',estado.comPreco,'Só com preço indicado')+sw('f-fotos',estado.soFotos,'Só com fotos')+sw('f-prot',estado.soProt,'Só com pagamento seguro')+'</section>'+
+    '<div class="f-pe"><button type="button" class="botao-texto" id="f-limpar">Limpar</button><button type="button" class="botao" id="f-ver">Ver casas</button></div>';
+}
+function abrirFiltros(sim){
+  estado.filtrosAbertos=sim;var b=document.getElementById('b-filtros'),f=document.getElementById('filtros');if(!f)return;
+  if(b)b.setAttribute('aria-expanded',sim);f.classList.toggle('aberto',sim);
+  var folha=matchMedia('(max-width:899px)').matches;document.documentElement.classList.toggle('sem-scroll',sim&&folha);
+  if(sim&&folha){var x=document.getElementById('f-fechar');if(x)x.focus();}else if(!sim&&b&&folha)b.focus();
+}
+function ligarFiltros(raiz,mudou){
+  var $=function(i){return document.getElementById(i);};
+  function marca(attr,v){raiz.querySelectorAll('['+attr+']').forEach(function(b){b.setAttribute('aria-pressed',String(b.getAttribute(attr))===String(v));});}
+  raiz.querySelectorAll('[data-ftipo]').forEach(function(b){b.addEventListener('click',function(){estado.tipoImovel=b.getAttribute('data-ftipo');marca('data-ftipo',estado.tipoImovel);ev('filtro',{f:'tipo'});mudou();});});
+  raiz.querySelectorAll('[data-fdias]').forEach(function(b){b.addEventListener('click',function(){estado.dias=+b.getAttribute('data-fdias');marca('data-fdias',estado.dias);ev('filtro',{f:'dias'});mudou();});});
+  function precoUI(){
+    $('f-pmin').value=estado.precoMin||'';$('f-pmax').value=estado.precoMax||'';
+    $('f-rmin').value=Math.min(estado.precoMin||0,PRECO_MAX_BARRA);$('f-rmax').value=estado.precoMax?Math.min(estado.precoMax,PRECO_MAX_BARRA):PRECO_MAX_BARRA;
+    var a=+$('f-rmin').value/PRECO_MAX_BARRA*100,z=+$('f-rmax').value/PRECO_MAX_BARRA*100,c=$('f-barra-preco').querySelector('.f-cheio');c.style.left=a+'%';c.style.right=(100-z)+'%';
+    marca('data-fpreco',estado.precoMin?'x':estado.precoMax);
+  }
+  raiz.querySelectorAll('[data-fpreco]').forEach(function(b){b.addEventListener('click',function(){estado.precoMin=0;estado.precoMax=+b.getAttribute('data-fpreco');precoUI();ev('filtro',{f:'preco'});mudou();});});
+  var tP;function depois(){clearTimeout(tP);tP=setTimeout(mudou,250);}
+  $('f-rmin').addEventListener('input',function(){var v=+this.value,mx=+$('f-rmax').value;if(v>mx-50){v=mx-50;}estado.precoMin=Math.max(0,v);precoUI();depois();});
+  $('f-rmax').addEventListener('input',function(){var v=+this.value,mn=+$('f-rmin').value;if(v<mn+50){v=mn+50;}estado.precoMax=v>=PRECO_MAX_BARRA?0:v;precoUI();depois();});
+  $('f-pmin').addEventListener('change',function(){estado.precoMin=Math.max(0,Math.round(+this.value||0));if(estado.precoMax&&estado.precoMin>estado.precoMax)estado.precoMax=0;precoUI();mudou();});
+  $('f-pmax').addEventListener('change',function(){estado.precoMax=Math.max(0,Math.round(+this.value||0));if(estado.precoMax&&estado.precoMin>estado.precoMax)estado.precoMin=0;precoUI();mudou();});
+  precoUI();
+  raiz.querySelectorAll('[data-tip]').forEach(function(b){b.addEventListener('click',function(){
+    var t=b.getAttribute('data-tip'),i=estado.tips.indexOf(t);estado.tips=estado.tips.filter(function(x){return x!=='Quarto';});i=estado.tips.indexOf(t);
+    if(i>=0)estado.tips.splice(i,1);else estado.tips.push(t);
+    raiz.querySelectorAll('[data-tip]').forEach(function(x){x.setAttribute('aria-pressed',estado.tips.indexOf(x.getAttribute('data-tip'))>=0);});
+    var q=raiz.querySelector('[data-tip-qq]');if(q)q.setAttribute('aria-pressed',!estado.tips.length);mudou();
+  });});
+  var qq=raiz.querySelector('[data-tip-qq]');if(qq)qq.addEventListener('click',function(){estado.tips=[];raiz.querySelectorAll('[data-tip]').forEach(function(x){x.setAttribute('aria-pressed','false');});qq.setAttribute('aria-pressed','true');mudou();});
+  function areaUI(){var v=estado.areaMin;$('f-area-txt').innerHTML=v?'Pelo menos <strong>'+v+' m²</strong>':'Qualquer';var r=$('f-area');r.style.setProperty('--p',(v/AREA_MAX_BARRA*100)+'%');}
+  $('f-area').addEventListener('input',function(){estado.areaMin=+this.value;areaUI();depois();});areaUI();
+  [['f-part','soPart'],['f-semcaucao','semCaucao'],['f-compreco','comPreco'],['f-fotos','soFotos'],['f-prot','soProt']].forEach(function(x){$(x[0]).addEventListener('change',function(){estado[x[1]]=this.checked;ev('filtro',{f:x[1]});mudou();});});
+  $('f-fechar').addEventListener('click',function(){abrirFiltros(false);});
+  $('f-ver').addEventListener('click',function(){abrirFiltros(false);var l=document.getElementById('n-res');if(l)l.scrollIntoView({block:'start'});});
+}
 function vPesquisa(){
   titulo('Pesquisar casas');
+  if(matchMedia('(max-width:899px)').matches)estado.filtrosAbertos=false;document.documentElement.classList.remove('sem-scroll');
   main.innerHTML='<div class="contentor">'+
     '<div class="pesq-topo">'+
       '<h1 class="titulo" tabindex="-1">Casas para arrendar '+(estado.cidade?esc(emCidade(estado.cidade)):'em Portugal')+'</h1>'+
@@ -1564,18 +1679,7 @@ function vPesquisa(){
     '<nav class="tipos" aria-label="Tipo de imóvel">'+[['','Todos',P.t_todos],['Apartamento','Apartamentos',P.t_apart],['Moradia','Moradias',P.t_moradia],['Quarto','Quartos',P.t_quarto]].map(function(t){return '<button type="button" class="tipo" data-tipo="'+t[0]+'" aria-pressed="'+(estado.tipoImovel===t[0])+'">'+svg(t[2],{s:26,w:1.6})+'<span>'+t[1]+'</span></button>';}).join('')+'</nav>'+
     '<div class="pesq-grelha">'+
       '<button class="botao-sec botao-peq botao-filtros" type="button" id="b-filtros" aria-expanded="'+estado.filtrosAbertos+'" aria-controls="filtros">'+svg(P.filtro,{s:18})+'Filtros<span id="n-filtros"></span></button>'+
-      '<aside class="filtros'+(estado.filtrosAbertos?' aberto':'')+'" id="filtros" aria-label="Filtros">'+
-        '<div class="campo"><label for="f-preco">Renda máxima</label><select id="f-preco">'+opcoesPreco(estado.precoMax)+'</select></div>'+
-        '<fieldset class="campo"><legend class="rotulo">Tipologia</legend><div class="chips" style="margin-top:6px">'+TIPS.map(function(t){return '<button type="button" class="chip" data-tip="'+t+'" aria-pressed="'+(estado.tips.indexOf(t)>=0)+'">'+t+'</button>';}).join('')+'</div></fieldset>'+
-        '<div class="campo"><label for="f-area">Área mínima</label>'+sel('f-area',estado.areaMin,[[0,'Qualquer'],[30,'30 m²'],[50,'50 m²'],[70,'70 m²'],[90,'90 m²'],[120,'120 m²']])+'</div>'+
-        '<div class="campo"><label for="f-dias">Publicadas</label>'+sel('f-dias',estado.dias,[[0,'Em qualquer altura'],[1,'Nas últimas 24 horas'],[3,'Nos últimos 3 dias'],[7,'Na última semana']])+'</div>'+
-        '<label class="interruptor"><input type="checkbox" id="f-part"'+(estado.soPart?' checked':'')+'><span>Só particulares (sem agência)</span></label>'+
-        '<label class="interruptor"><input type="checkbox" id="f-fotos"'+(estado.soFotos?' checked':'')+'><span>Só com fotos</span></label>'+
-        '<label class="interruptor"><input type="checkbox" id="f-compreco"'+(estado.comPreco?' checked':'')+'><span>Só com preço indicado</span></label>'+
-        '<label class="interruptor"><input type="checkbox" id="f-semcaucao"'+(estado.semCaucao?' checked':'')+'><span>Sem caução indicada</span></label>'+
-        '<label class="interruptor"><input type="checkbox" id="f-prot"'+(estado.soProt?' checked':'')+'><span>Só pagamento seguro</span></label>'+
-        '<button type="button" class="botao-texto" id="f-limpar" style="align-self:flex-start">Limpar filtros</button>'+
-      '</aside>'+
+      '<aside class="filtros'+(estado.filtrosAbertos?' aberto':'')+'" id="filtros" aria-label="Filtros">'+filtrosHtml()+'</aside>'+
       '<section aria-label="Resultados">'+
         '<div class="result-cabeca"><p class="n-res" id="n-res" aria-live="polite"></p>'+
           '<div class="ordem"><label for="f-ordem">Ordenar</label><select id="f-ordem">'+
@@ -1598,7 +1702,7 @@ function vPesquisa(){
     var ba=document.getElementById('b-alerta');ba.textContent=filtroGuardado(filtroAtual())?'Pesquisa guardada':'Guardar pesquisa';
     var nNov=r.filter(function(c){return c.min<1440;}).length;
     document.getElementById('n-res').innerHTML=(r.length===0?'Nenhuma casa':(r.length===1?'1 casa':r.length+' casas'))+(nNov?' · <span class="novo-txt">'+nNov+(nNov===1?' nova':' novas')+' nas últimas 24 h</span>':'');
-    var n=nFiltros();document.getElementById('n-filtros').textContent=n?' ('+n+')':'';
+    var n=nFiltros();document.getElementById('n-filtros').textContent=n?' ('+n+')':'';var fv=document.getElementById('f-ver');if(fv)fv.textContent=r.length?'Ver '+(r.length===1?'1 casa':fmtN(r.length)+' casas'):'Nenhuma casa';
     if(!r.length){
       lista.innerHTML='<div class="vazio" style="grid-column:1 / -1"><h2>Não há casas com estes filtros</h2><p>Tira um filtro ou cria um alerta: avisamos-te quando aparecer uma casa assim.</p><button type="button" class="botao-sec botao-peq" id="vazio-limpar">Limpar filtros</button></div>';
       document.getElementById('vazio-limpar').addEventListener('click',limpar);
@@ -1610,30 +1714,17 @@ function vPesquisa(){
       var bcl=document.getElementById('b-cta-lista');if(bcl)bcl.addEventListener('click',function(){abrirAcesso(function(){vPesquisa();foco();});});
     }
   }
-  function limpar(){limite=30;estado.precoMax=0;estado.tips=[];estado.soProt=false;estado.areaMin=0;estado.dias=0;estado.soPart=false;estado.soFotos=false;estado.comPreco=false;estado.semCaucao=false;estado.tipoImovel='';
-    ['f-preco','f-area','f-dias'].forEach(function(i){document.getElementById(i).value='0';});marcarTipos();
-    ['f-prot','f-part','f-fotos','f-compreco'].forEach(function(i){document.getElementById(i).checked=false;});main.querySelectorAll('[data-tip]').forEach(function(b){b.setAttribute('aria-pressed','false');});desenhar();}
+  function limpar(){limite=30;estado.precoMin=0;estado.precoMax=0;estado.tips=[];estado.soProt=false;estado.areaMin=0;estado.dias=0;estado.soPart=false;estado.soFotos=false;estado.comPreco=false;estado.semCaucao=false;
+    document.getElementById('filtros').innerHTML=filtrosHtml();ligarFiltros(main,function(){limite=30;desenhar();});document.getElementById('f-limpar').addEventListener('click',limpar);desenhar();}
   desenhar();
 
   document.getElementById('f-busca2').addEventListener('submit',function(e){e.preventDefault();estado.cidade=document.getElementById('p-cidade').value.trim();vPesquisa();});
-  document.getElementById('b-filtros').addEventListener('click',function(){estado.filtrosAbertos=!estado.filtrosAbertos;this.setAttribute('aria-expanded',estado.filtrosAbertos);document.getElementById('filtros').classList.toggle('aberto',estado.filtrosAbertos);});
-  document.getElementById('f-preco').addEventListener('change',function(){estado.precoMax=+this.value;desenhar();});
-  document.getElementById('f-prot').addEventListener('change',function(){estado.soProt=this.checked;limite=30;desenhar();});
-  document.getElementById('f-part').addEventListener('change',function(){estado.soPart=this.checked;limite=30;desenhar();});
-  document.getElementById('f-fotos').addEventListener('change',function(){estado.soFotos=this.checked;limite=30;desenhar();});
-  document.getElementById('f-semcaucao').addEventListener('change',function(){estado.semCaucao=this.checked;limite=30;desenhar();});
-  document.getElementById('f-compreco').addEventListener('change',function(){estado.comPreco=this.checked;limite=30;desenhar();});
-  document.getElementById('f-area').addEventListener('change',function(){estado.areaMin=+this.value;limite=30;desenhar();});
-  document.getElementById('f-dias').addEventListener('change',function(){estado.dias=+this.value;limite=30;desenhar();});
+  document.getElementById('b-filtros').addEventListener('click',function(){abrirFiltros(!estado.filtrosAbertos);});
+  ligarFiltros(main,function(){limite=30;desenhar();});
   function marcarTipos(){document.querySelectorAll('.tipo').forEach(function(b){b.setAttribute('aria-pressed',String(b.dataset.tipo===estado.tipoImovel));});}
   document.querySelectorAll('.tipo').forEach(function(b){b.addEventListener('click',function(){estado.tipoImovel=b.dataset.tipo;limite=30;marcarTipos();desenhar();});});
   document.getElementById('f-ordem').addEventListener('change',function(){estado.ordem=this.value;desenhar();});
   document.getElementById('f-limpar').addEventListener('click',limpar);
-  main.querySelectorAll('[data-tip]').forEach(function(b){b.addEventListener('click',function(){
-    var t=b.getAttribute('data-tip');var i=estado.tips.indexOf(t);
-    if(i>=0)estado.tips.splice(i,1);else estado.tips.push(t);
-    b.setAttribute('aria-pressed',i<0);desenhar();
-  });});
   main.querySelectorAll('[data-fg]').forEach(function(b){b.addEventListener('click',function(){aplicarFiltro(lerPrefs().filtros[+b.getAttribute('data-fg')]);limite=30;vPesquisa();foco();});});
   document.getElementById('b-alerta').addEventListener('click',function(){
     var f=filtroAtual();
@@ -2598,6 +2689,8 @@ function rota(){
 }
 document.getElementById('saltar').addEventListener('click',function(e){e.preventDefault();main.focus();});
 window.addEventListener('hashchange',rota);
+document.addEventListener('keydown',function(e){if(e.key==='Escape'&&document.documentElement.classList.contains('sem-scroll')&&!dlg.open)abrirFiltros(false);});
+window.addEventListener('hashchange',function(){document.documentElement.classList.remove('sem-scroll');});
 /* ---------- app instalável (PWA) ---------- */
 var pedidoInstalar=null;
 function emApp(){return matchMedia('(display-mode: standalone)').matches||navigator.standalone===true;}
