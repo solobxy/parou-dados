@@ -99,6 +99,39 @@ input[type=file]{font:inherit;font-size:15px;max-width:100%}
 .caixa-check input{width:22px;height:22px;margin:1px 0 0;accent-color:var(--verde);flex-shrink:0}
 
 .chips{display:flex;flex-wrap:wrap;gap:8px}
+.vh{position:absolute!important;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+/* pesquisa do início: uma só caixa com o botão dentro */
+.busca2{display:flex;align-items:center;gap:8px;max-width:520px;margin:0 auto 8px;padding:6px 6px 6px 16px;border-radius:18px;background:#fff;border:1px solid var(--borda-forte);box-shadow:0 1px 2px rgba(15,26,23,.06),0 12px 28px -16px rgba(15,26,23,.28);transition:border-color .15s ease-out,box-shadow .15s ease-out}
+.busca2:focus-within{border-color:var(--verde);box-shadow:0 0 0 3px var(--verde-claro),0 12px 28px -16px rgba(15,26,23,.28)}
+.busca2>svg{flex:0 0 auto;color:var(--texto3)}
+.busca2 input{flex:1;min-width:0;height:48px;border:0;outline:0;background:none;font:inherit;font-size:17px;color:var(--tinta)}
+.busca2 input::placeholder{color:var(--texto3)}
+.busca2 .botao{min-height:48px;padding:0 18px;border-radius:13px;font-size:16px}
+.heroi .tipos{max-width:520px;margin:6px auto 0;border-bottom:0}
+.heroi .tipo{padding-bottom:8px}.heroi .tipo::after{display:none}
+.heroi .tipo svg{transition:transform .2s ease-out}.heroi .tipo:hover svg{transform:translateY(-2px)}
+/* cena do herói */
+.selo-cena{position:absolute;z-index:4;display:flex;align-items:center;gap:8px;padding:9px 13px;border-radius:16px;background:#fff;box-shadow:0 1px 2px rgba(15,26,23,.08),0 14px 30px -14px rgba(15,26,23,.35);font-size:13px;color:var(--texto2);line-height:1.25;animation:flutuar 6s ease-in-out infinite}
+.selo-cena strong{color:var(--tinta);font-weight:800;font-variant-numeric:tabular-nums}
+.selo-total{left:max(6px,calc(50% - 196px));top:196px;flex-direction:column;align-items:flex-start;gap:0}.selo-total strong{font-size:22px;letter-spacing:-.02em}
+.selo-novas{right:max(6px,calc(50% - 192px));top:268px;animation-delay:-2s}
+.selo-novas i{width:8px;height:8px;border-radius:50%;background:var(--verde);box-shadow:0 0 0 4px var(--verde-claro)}
+.selo-seguro{left:50%;margin-left:-112px;width:224px;box-sizing:border-box;top:322px;animation-delay:-4s}
+.selo-seguro>span:last-child{display:flex;flex-direction:column}.selo-seguro small{font-size:12px;color:var(--texto3)}
+.ss-ic{flex:0 0 34px;height:34px;border-radius:10px;background:var(--quente-claro);color:var(--quente-texto);display:flex;align-items:center;justify-content:center}
+@keyframes flutuar{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+@media (prefers-reduced-motion:reduce){.selo-cena{animation:none}}
+/* faixa «como funciona» */
+.faixa-como{padding:4px 0 40px}
+.como{list-style:none;margin:0 auto;padding:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;max-width:720px}
+.como li{display:flex;flex-direction:column;align-items:center;text-align:center;gap:2px;padding:16px 6px;border-radius:18px;background:#fff;border:1px solid var(--borda)}
+.como strong{font-size:14px;line-height:1.25;font-weight:800;margin-top:8px}
+.como li>span:last-child{font-size:12.5px;color:var(--texto3);line-height:1.3}
+.como-ic{width:44px;height:44px;border-radius:14px;background:var(--verde-claro);color:var(--verde);display:flex;align-items:center;justify-content:center}
+.como-ic.quente{background:var(--quente-claro);color:var(--quente-texto)}
+.cc-baixo{max-width:560px;margin:0 auto}.cc-fonte{text-align:center;margin-top:14px}
+.titulo-pesq{font-size:24px;margin-bottom:12px}
+.n-res .novo-txt{color:var(--texto3);font-weight:500}
 .tipos{display:flex;gap:4px;overflow-x:auto;scrollbar-width:none;margin:4px -4px 18px;padding:0 4px;border-bottom:1px solid var(--borda)}
 .tipos::-webkit-scrollbar{display:none}
 .tipo{flex:1 1 0;min-width:0;white-space:nowrap;display:flex;flex-direction:column;align-items:center;gap:6px;padding:10px 4px 12px;border:0;background:none;font:inherit;font-size:13.5px;font-weight:600;color:var(--texto2);cursor:pointer;position:relative;transition:color .15s ease-out}
@@ -157,7 +190,7 @@ input[type=file]{font:inherit;font-size:15px;max-width:100%}
 .confianca.fora{color:var(--texto3);font-weight:500}
 
 /* títulos e secções */
-.grande{margin:0 0 14px;font-size:36px;line-height:1.02;letter-spacing:-.035em;font-weight:800;max-width:17ch}
+.grande{margin:0 0 14px;font-size:32px;line-height:1.02;letter-spacing:-.035em;font-weight:800;max-width:17ch}
 .titulo{margin:0 0 8px;font-size:30px;line-height:1.08;letter-spacing:-.025em;font-weight:800}
 .apoio{margin:0 0 24px;font-size:18px;line-height:1.5;color:var(--texto2);max-width:46ch}
 .h-peq{margin:0 0 12px;font-size:20px;font-weight:700;letter-spacing:-.01em}
@@ -231,7 +264,7 @@ input[type=file]{font:inherit;font-size:15px;max-width:100%}
 
 /* ilustrações: telemóveis em código */
 .mock{position:relative;margin:0 auto;overflow:visible;clip-path:inset(-120px -120px 0 -120px);display:flex;justify-content:center}
-.riscos{position:absolute;width:64px;height:48px;fill:none;stroke:var(--quente);stroke-width:5;stroke-linecap:round;opacity:.9}
+.riscos{position:absolute;width:44px;height:34px;fill:none;stroke:var(--quente);stroke-width:4;stroke-linecap:round;opacity:.9}
 .riscos.esq{left:4%;top:24px;transform:scaleX(-1)}
 .riscos.dir{right:4%;top:24px}
 .tlm{position:relative;width:250px;flex:0 0 auto;border-radius:44px;background:#16211E;padding:9px;box-shadow:0 30px 60px -24px rgba(15,26,23,.45)}
@@ -246,7 +279,7 @@ input[type=file]{font:inherit;font-size:15px;max-width:100%}
 .tlm-desc{margin:2px 0 10px;font-size:13px;color:var(--texto2);line-height:1.35}
 .tlm-dados{display:flex;justify-content:space-between;gap:6px;padding-top:8px;border-top:1px solid var(--borda);font-size:12px;color:var(--texto2)}
 .tlm-preco{margin:8px 0 0;font-size:18px;font-weight:800;font-variant-numeric:tabular-nums}.tlm-preco small{font-size:12px;font-weight:500;color:var(--texto3)}
-.mock-heroi{height:420px;padding-top:28px}
+.mock-heroi{height:392px;padding-top:24px}
 .ntf-pilha{position:absolute;left:50%;top:96px;transform:translateX(-50%);width:min(330px,92%);height:120px}
 .ntf{position:absolute;left:0;right:0;top:0;display:flex;gap:12px;align-items:center;padding:12px 14px;border-radius:22px;background:rgba(255,255,255,.93);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);box-shadow:0 10px 30px -10px rgba(15,26,23,.35);font-size:13.5px;line-height:1.35;color:var(--tinta)}
 .ntf-0{z-index:3}.ntf-1{z-index:2;transform:translateY(14px) scale(.94)}.ntf-2{z-index:1;transform:translateY(27px) scale(.88)}.ntf-1 .ntf-txt,.ntf-1 .ntf-ic,.ntf-2 .ntf-txt,.ntf-2 .ntf-ic{visibility:hidden}.ntf-1{background:rgba(255,255,255,.8)}.ntf-2{background:rgba(255,255,255,.65)}
@@ -371,8 +404,10 @@ dialog.dlg-promo.a-sair::backdrop{animation:sumir .23s ease-in both}
 @media (min-width:900px){.cartao-app{max-width:520px}}
 
 /* herói */
-.heroi{padding:32px 0 56px}
-.heroi-grelha{display:grid;gap:40px;align-items:center}
+.heroi{padding:28px 0 8px}
+.heroi-grelha{display:grid;gap:24px;align-items:center}
+.heroi .apoio{font-size:16.5px;margin-bottom:20px;max-width:34ch}
+@media (min-width:900px){.heroi .busca2,.heroi .tipos{margin-left:0}.heroi .apoio{font-size:18px;max-width:42ch}.faixa-como{padding:24px 0 64px}.como{gap:16px}.como li{padding:22px 12px}.como strong{font-size:16px}.como li>span:last-child{font-size:14px}}
 .busca{display:grid;gap:12px;grid-template-columns:minmax(0,1fr)}
 .b-tips{grid-column:1 / -1;border:0;padding:0;margin:0;min-width:0}.b-tips .chips{margin-top:6px}
 .cidades{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:16px 0 0;font-size:15px;color:var(--texto2)}
@@ -448,7 +483,7 @@ html.sem-scroll,html.sem-scroll body{overflow:hidden}
 @media (min-width:900px){.f-cabeca{display:none}.filtros .f-sec:first-of-type{border-top:0;padding-top:0}.filtros{gap:0}}
 
 .result-cabeca{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:12px;flex-wrap:wrap}
-.n-res{margin:0;font-size:18px;font-weight:700}
+.n-res{margin:0;font-size:16px;font-weight:700}
 .ordem{display:flex;align-items:center;gap:8px}
 .ordem label{font-size:14px;font-weight:600;color:var(--texto2)}
 .ordem select{min-height:44px;font-size:15px;width:auto}
@@ -683,7 +718,7 @@ dialog.dialogo::backdrop{background:rgba(15,26,23,.55)}
   .titulo{font-size:40px}
   .seccao{padding:120px 0}
   .seccao h2{font-size:36px}
-  .heroi{padding:72px 0 120px}
+  .heroi{padding:64px 0 40px}
   .busca{grid-template-columns:minmax(0,1fr) 180px auto;align-items:end}
   .busca .botao{grid-column:auto}
   .b-tips{order:9}
@@ -1303,12 +1338,17 @@ function riscos(lado){return '<svg class="riscos '+lado+'" viewBox="0 0 80 60" a
 /* herói: telemóvel com uma casa e três alertas a chegar por cima */
 function mockHeroi(){
   var l=casasMock(4);if(l.length<3)return '';
+  var nc=numerosCasas(),ma=minAtualizado();
   var c=l[0];
   var notif=function(x,i){return '<div class="ntf ntf-'+i+'"><span class="ntf-ic">'+SIMB_BRANCO+'</span><span class="ntf-txt"><span class="ntf-topo"><strong>Duas Chaves</strong><span>'+(i===0?'agora':quando(Math.max(1,x.min)).replace('há ',''))+'</span></span><span>Casa nova: '+esc(tipTxt(x))+' '+esc(emCidade(x.cidade||x.bairro))+', '+eur(x.renda)+'</span></span></div>';};
   var ecra='<div class="tlm-casa">'+fotoMock(c,'tlm-foto')+'<div class="tlm-casa-c"><p class="tlm-cid">'+esc(c.cidade||c.bairro)+'</p><p class="tlm-desc">'+esc(tipTxt(c))+(areaOk(c)?' com '+c.area+' m²':'')+' em '+esc(c.bairro)+'</p>'+
     '<div class="tlm-dados"><span>'+esc(tipTxt(c))+'</span><span>'+esc(c.tipo||'Casa')+'</span><span>'+(areaOk(c)?c.area+' m²':'—')+'</span></div><p class="tlm-preco">'+eur(c.renda)+'<small> /mês</small></p></div></div>';
   return '<figure class="mock mock-heroi" aria-label="Exemplo: alertas de casas novas a chegar ao telemóvel, com casas reais publicadas há pouco">'+riscos('esq')+riscos('dir')+
-    tlm(ecra)+'<div class="ntf-pilha">'+[l[1],l[2],l[3]||l[1]].map(notif).join('')+'</div></figure>';
+    tlm(ecra)+'<div class="ntf-pilha">'+[l[1],l[2],l[3]||l[1]].map(notif).join('')+'</div>'+
+    (nc.total>20?'<div class="selo-cena selo-total"><strong>'+fmtN(nc.total)+'</strong><span>casas'+(ma!=null&&ma<180?' · atualizado '+quando(ma):'')+'</span></div>':'')+
+    (nc.n24>0?'<div class="selo-cena selo-novas"><i aria-hidden="true"></i><span><strong>'+fmtN(nc.n24)+'</strong> novas hoje</span></div>':'')+
+    '<div class="selo-cena selo-seguro"><span class="ss-ic">'+svg(P.cadeado,{s:18,w:2.2})+'</span><span><strong>'+eur(Math.round((c.renda||600)*2))+' retidos</strong><small>até receberes as chaves</small></span></div>'+
+  '</figure>';
 }
 /* «Cansado de chegar tarde?»: dois telemóveis, a app com as casas para ti e o e-mail do alerta */
 function mockDuo(){
@@ -1361,41 +1401,46 @@ function animarEntradas(){
     el.classList.add('rev');revObs.observe(el);
   });
 }
+function tiposBarra(attr,atual,ligacoes){
+  return '<nav class="tipos" aria-label="Tipo de imóvel">'+[['','Todos',P.t_todos],['Apartamento','Apartamentos',P.t_apart],['Moradia','Moradias',P.t_moradia],['Quarto','Quartos',P.t_quarto]].map(function(t){return '<button type="button" class="tipo" '+attr+'="'+t[0]+'"'+(ligacoes?'':' aria-pressed="'+(atual===t[0])+'"')+'>'+svg(t[2],{s:26,w:1.6})+'<span>'+t[1]+'</span></button>';}).join('')+'</nav>';
+}
 function vInicio(){
   titulo('');
   var prefs=lerPrefs(),recentes=prefs.pesquisas.slice(0,3);
   var novas=baratasInicio(),nc=numerosCasas(),ma=minAtualizado(),tel=mockHeroi(),duo=mockDuo(),ativo=acessoAtivo();
-  var nums=nc.total>20?'<p class="numeros"><span><strong>'+fmtN(nc.total)+'</strong> casas</span>'+(nc.n24>0?'<span><strong>'+fmtN(nc.n24)+'</strong> novas em 24 h</span>':'')+(ma!=null&&ma<180?'<span class="atual">Atualizado '+quando(ma)+'</span>':'')+'</p>':'';
+  var nums=false&&nc.total>20?'<p class="numeros"><span><strong>'+fmtN(nc.total)+'</strong> casas</span>'+(nc.n24>0?'<span><strong>'+fmtN(nc.n24)+'</strong> novas em 24 h</span>':'')+(ma!=null&&ma<180?'<span class="atual">Atualizado '+quando(ma)+'</span>':'')+'</p>':'';
   main.innerHTML=
   '<section class="heroi"><div class="contentor heroi-grelha"><div>'+
     '<h1 class="grande" tabindex="-1">Casas para arrendar, <span class="traco">sem burlas<svg viewBox="0 0 300 30" preserveAspectRatio="none" aria-hidden="true" focusable="false"><path class="t1" pathLength="1" d="M5 19 C 48 13, 104 10, 158 10 S 252 11, 295 7"/><path class="t2" pathLength="1" d="M26 25 C 86 20, 150 18, 214 18 S 266 18, 284 16"/></svg></span></h1>'+
-    '<p class="apoio">Experimenta o pagamento seguro, que só chega ao senhorio quando recebes as chaves.</p>'+
-    nums+
-    '<form class="busca" id="f-busca" role="search">'+
-      '<div class="campo"><label for="b-cidade">Onde queres morar?</label><input id="b-cidade" type="search" placeholder="Cidade ou bairro" autocomplete="address-level2" value="'+esc(estado.cidade)+'"></div>'+
-      '<div class="campo"><label for="b-preco">Renda máxima</label><select id="b-preco">'+opcoesPreco(estado.precoMax)+'</select></div>'+
-      '<fieldset class="campo b-tips"><legend class="rotulo">O que procuras</legend><div class="chips">'+TIPS.map(function(t){return '<button type="button" class="chip" data-btip="'+t+'" aria-pressed="'+(estado.tips.indexOf(t)>=0)+'">'+t+'</button>';}).join('')+'</div></fieldset>'+
-      '<button class="botao" type="submit">'+svg(P.lupa)+'Procurar casas</button>'+
-    '</form>'+
+    '<p class="apoio">As casas dos principais sites num só lugar, com pagamento seguro.</p>'+
+    '<form class="busca2" id="f-busca" role="search"><label class="vh" for="b-cidade">Onde queres morar?</label>'+svg(P.lupa,{s:20})+
+      '<input id="b-cidade" type="search" placeholder="Cidade ou bairro" autocomplete="address-level2" value="'+esc(estado.cidade)+'">'+
+      '<button class="botao" type="submit">Procurar</button></form>'+
+    tiposBarra('data-htipo',estado.tipoImovel,true)+
     (recentes.length?'<div class="cidades"><span>Continuar:</span>'+chipsFiltros(recentes,'data-pesq')+'</div>':'')+
   '</div>'+
   (tel?'<div class="heroi-mock">'+tel+'</div>':'')+
   '</div></section>'+
+  '<section class="faixa-como" aria-label="Como funciona"><div class="contentor"><ol class="como">'+
+    '<li><span class="como-ic">'+svg(P.lupa,{s:22,w:2})+'</span><strong>Tudo num só lugar</strong><span>sem repetir casas</span></li>'+
+    '<li><span class="como-ic">'+svg(P.sino,{s:22,w:2})+'</span><strong>Sê o primeiro</strong><span>alertas no minuto</span></li>'+
+    '<li><span class="como-ic quente">'+svg(P.escudo,{s:22,w:2})+'</span><strong>Paga seguro</strong><span>só com as chaves</span></li>'+
+  '</ol></div>'+
+  '</section>'+
 
   (podeInstalar()?'<div class="contentor"><div class="cartao-app" data-instalar-cartao><span class="ntf-ic" aria-hidden="true">'+SIMB_BRANCO+'</span><div><p class="ca-tit">Tem a Duas Chaves no ecrã do telemóvel</p><p class="ca-sub">Abre num toque, como uma app. Grátis e sem ocupar espaço.</p></div><button type="button" class="botao botao-peq" data-instalar>Instalar</button></div></div>':'')+
   '<section class="seccao" style="padding-top:0"><div class="contentor">'+
     '<div class="seccao-cabeca"><h2>As mais baratas agora</h2><a class="botao-sec botao-peq" href="#pesquisa">Ver todas as casas '+svg(P.seta,{s:18})+'</a></div>'+
-    '<div class="casas tres">'+novas.map(cartao).join('')+'</div>'+
+    '<div class="faixa-casas">'+novas.map(cartaoMini).join('')+'</div>'+
   '</div></section>'+
 
   (nc.cidades.length>=2?'<section class="seccao branco"><div class="contentor" id="cid-bloco">'+blocoCidade(nc.cidades)+'</div></section>':'')+
 
   '<section class="seccao verde-band" id="chegar-cedo"><div class="contentor">'+
     '<div class="cc-topo"><h2>Cansado de chegar tarde?</h2>'+
-    '<p class="apoio">Sê o primeiro a marcar visita quando aparece uma casa nova, seja em que site for.</p></div>'+
+    '<p class="apoio">Recebe as casas novas antes dos outros.</p></div>'+
     duo+
-    '<div class="dois-col cc-baixo"><div>'+vantagens(nc.fontes.length)+
-    '<p class="ajuda">Segundo o idealista, 11% das casas para arrendar desaparecem em menos de 24 horas. Fonte: <a href="https://www.idealista.pt/news/node/75579" target="_blank" rel="noopener">idealista, 1.º trimestre de 2026</a></p></div>'+
+    '<div class="cc-baixo">'+
     '<form class="form-cartao" id="f-alerta-rapido" novalidate>'+
       '<p class="h-peq inteiro">Criar alerta grátis</p>'+
       '<div class="campo"><label for="ar-cidade">Cidade</label><input id="ar-cidade" type="text" autocomplete="address-level2" value="'+esc(estado.cidade)+'"></div>'+
@@ -1405,33 +1450,29 @@ function vInicio(){
       '<button class="botao largo inteiro" type="submit">'+svg(P.sino)+'Avisar-me de casas novas</button>'+
       '<p class="ajuda inteiro">Grátis: um resumo por dia. Com o acesso, no minuto em que aparecem.</p>'+
     '</form>'+
-  '</div></section>'+
+    '<p class="ajuda cc-fonte">11% das casas para arrendar desaparecem em menos de 24 horas (<a href="https://www.idealista.pt/news/node/75579" target="_blank" rel="noopener">idealista, 1.º trim. 2026</a>).</p>'+
+  '</div></div></section>'+
 
   '<section class="seccao" id="precos-inicio"><div class="contentor dois-col">'+
-    '<div><h2>Contacta primeiro. Visita primeiro.</h2><p class="apoio">Ver as casas é grátis. Com o acesso, marcas visitas, ligas e envias mensagens em todas, e sabes das novas no minuto em que aparecem.</p>'+
+    '<div><h2>Contacta primeiro. Visita primeiro.</h2><p class="apoio">Ver é grátis. Com o acesso, contactas todas as casas e sabes das novas no minuto.</p>'+
     '<ul class="compara"><li><span>Duas Chaves</span><strong>'+P2+' a cada 30 dias</strong></li><li><span>Outros agregadores</span><strong>até 39,99&nbsp;€ a cada 4 semanas</strong></li></ul></div>'+
     '<div class="plano destaque"><span class="selo-quente">Poupas 90% no 1.º mês</span><div class="oferta"><p class="oferta-preco">'+P1+'</p><p class="oferta-txt">nos primeiros 30 dias</p></div>'+listaInclui()+
       '<button class="botao largo" type="button" id="b-home-acesso">'+(ativo?'Ver as casas':'Começar por '+P1)+'</button>'+avisoRenovacao()+'</div>'+
   '</div></section>'+
 
-  '<section class="seccao branco"><div class="contentor dois-col">'+
-    '<div><h2>O dinheiro só sai com as duas confirmações</h2><p class="apoio">A burla mais comum no arrendamento é pedir dinheiro por uma casa que não existe ou não é de quem anuncia. Aqui, quem anuncia não recebe nada antes de entregar as chaves. O serviço custa '+eur(TAXA)+', e só pagas se arrendares.</p>'+
+  '<section class="seccao branco"><div class="contentor estreito">'+
+    '<div><h2>O dinheiro só sai com as duas confirmações</h2><p class="apoio">Quem anuncia só recebe depois de te entregar as chaves. Custa '+eur(TAXA)+' e só pagas se arrendares.</p>'+
     '<div class="cofre cofre-cinza">'+
       '<p class="cofre-legenda">Exemplo de pagamento seguro</p>'+
       '<p class="cofre-valor">'+eur(1700)+'</p>'+
       partes({senhorio:true,tu:false,papel:'Senhoria',ini:'AM'})+
       '<p class="cofre-nota">A senhoria já confirmou que entregou as chaves. O dinheiro só lhe chega quando tu também confirmares.</p>'+
-    '</div></div>'+
-    '<ol class="passos">'+
-      passo('feito','Pagas a entrada aqui','A 1.ª renda e a caução ficam retidas. O senhorio ainda não recebe.')+
-      passo('feito','Recebes as chaves','O senhorio confirma que entregou as chaves.')+
-      passo('agora','Confirmas que entraste','Se a casa não corresponder ao anúncio, avisas-nos e o dinheiro continua retido.')+
-      passo('depois','O senhorio recebe','Só depois das duas confirmações.')+
-    '</ol>'+
+    '</div>'+
+    '<a class="botao-sec" style="margin-top:20px" href="#proteger">Como funciona o pagamento seguro '+svg(P.seta,{s:18})+'</a></div>'+
   '</div></section>'+
 
   '<section class="seccao branco"><div class="contentor dois-col">'+
-    '<div><h2>Perguntas frequentes</h2><p class="apoio">O essencial antes de começares.</p></div>'+
+    '<div><h2>Perguntas frequentes</h2></div>'+
     '<div class="faq">'+faq().map(function(f){return '<details><summary>'+f[0]+'</summary><p>'+f[1]+'</p></details>';}).join('')+'</div>'+
   '</div></section>'+
 
@@ -1449,16 +1490,14 @@ function vInicio(){
   document.getElementById('f-busca').addEventListener('submit',function(e){
     e.preventDefault();
     estado.cidade=document.getElementById('b-cidade').value.trim();
-    estado.precoMax=+document.getElementById('b-preco').value;
-    estado.tips=[].map.call(main.querySelectorAll('[data-btip][aria-pressed="true"]'),function(b){return b.getAttribute('data-btip');});
     ir('pesquisa');
   });
-  main.querySelectorAll('[data-btip]').forEach(function(b){b.addEventListener('click',function(){b.setAttribute('aria-pressed',b.getAttribute('aria-pressed')!=='true');});});
+  main.querySelectorAll('[data-htipo]').forEach(function(b){b.addEventListener('click',function(){estado.cidade=document.getElementById('b-cidade').value.trim();estado.tipoImovel=b.getAttribute('data-htipo');ir('pesquisa');});});
   main.querySelectorAll('[data-pesq]').forEach(function(b){b.addEventListener('click',function(){aplicarFiltro(recentes[+b.getAttribute('data-pesq')]);ir('pesquisa');});});
   var cb=document.getElementById('cid-bloco');
   if(cb)cb.addEventListener('click',function(e){var b=e.target.closest('[data-cid]');if(!b)return;CID_INICIO=b.getAttribute('data-cid');cb.innerHTML=blocoCidade(nc.cidades);var nb=cb.querySelector('[data-cid][aria-pressed="true"]');if(nb)nb.focus();});
   var comecar=function(){if(acessoAtivo()){ir('pesquisa');return;}abrirAcesso(function(){});};
-  contarNumeros(main.querySelectorAll('.numeros strong'));
+  contarNumeros(main.querySelectorAll('.selo-total strong,.selo-novas strong'));
   document.getElementById('b-home-acesso').addEventListener('click',comecar);
   var cf=document.getElementById('cta-fixo');
   if(cf){
@@ -1669,14 +1708,14 @@ function vPesquisa(){
   if(matchMedia('(max-width:899px)').matches)estado.filtrosAbertos=false;document.documentElement.classList.remove('sem-scroll');
   main.innerHTML='<div class="contentor">'+
     '<div class="pesq-topo">'+
-      '<h1 class="titulo" tabindex="-1">Casas para arrendar '+(estado.cidade?esc(emCidade(estado.cidade)):'em Portugal')+'</h1>'+
+      '<h1 class="titulo titulo-pesq" tabindex="-1">'+(estado.cidade?'Casas '+esc(emCidade(estado.cidade)):'Casas para arrendar')+'</h1>'+
       '<form class="busca-linha" id="f-busca2" role="search">'+
         '<div class="campo"><label for="p-cidade">Cidade ou bairro</label><input id="p-cidade" type="search" autocomplete="address-level2" value="'+esc(estado.cidade)+'"></div>'+
         '<button class="botao" type="submit">'+svg(P.lupa)+'Procurar</button>'+
       '</form>'+
       (lerPrefs().filtros.length?'<div class="cidades" style="margin-top:14px"><span>Guardadas:</span>'+chipsFiltros(lerPrefs().filtros,'data-fg')+'</div>':'')+
     '</div>'+
-    '<nav class="tipos" aria-label="Tipo de imóvel">'+[['','Todos',P.t_todos],['Apartamento','Apartamentos',P.t_apart],['Moradia','Moradias',P.t_moradia],['Quarto','Quartos',P.t_quarto]].map(function(t){return '<button type="button" class="tipo" data-tipo="'+t[0]+'" aria-pressed="'+(estado.tipoImovel===t[0])+'">'+svg(t[2],{s:26,w:1.6})+'<span>'+t[1]+'</span></button>';}).join('')+'</nav>'+
+    tiposBarra('data-tipo',estado.tipoImovel,false)+
     '<div class="pesq-grelha">'+
       '<button class="botao-sec botao-peq botao-filtros" type="button" id="b-filtros" aria-expanded="'+estado.filtrosAbertos+'" aria-controls="filtros">'+svg(P.filtro,{s:18})+'Filtros<span id="n-filtros"></span></button>'+
       '<aside class="filtros'+(estado.filtrosAbertos?' aberto':'')+'" id="filtros" aria-label="Filtros">'+filtrosHtml()+'</aside>'+
@@ -1690,7 +1729,7 @@ function vPesquisa(){
             '<option value="m2"'+(estado.ordem==='m2'?' selected':'')+'>Mais barato por m²</option>'+
             '<option value="area"'+(estado.ordem==='area'?' selected':'')+'>Maior área</option>'+
           '</select></div></div>'+
-        '<div class="nudge">'+svg(P.sino,{s:22})+'<p>Guarda esta pesquisa e sabe das casas novas antes dos outros.</p><button type="button" class="botao-texto" id="b-alerta"></button></div>'+
+        '<div class="nudge">'+svg(P.sino,{s:22})+'<p>Sabe das casas novas antes dos outros.</p><button type="button" class="botao-texto" id="b-alerta"></button></div>'+
         '<div class="casas" id="lista"></div>'+
       '</section>'+
     '</div></div>';
@@ -1701,7 +1740,7 @@ function vPesquisa(){
     clearTimeout(tReg);tReg=setTimeout(registarPesquisa,1200);
     var ba=document.getElementById('b-alerta');ba.textContent=filtroGuardado(filtroAtual())?'Pesquisa guardada':'Guardar pesquisa';
     var nNov=r.filter(function(c){return c.min<1440;}).length;
-    document.getElementById('n-res').innerHTML=(r.length===0?'Nenhuma casa':(r.length===1?'1 casa':r.length+' casas'))+(nNov?' · <span class="novo-txt">'+nNov+(nNov===1?' nova':' novas')+' nas últimas 24 h</span>':'');
+    document.getElementById('n-res').innerHTML=(r.length===0?'Nenhuma casa':(r.length===1?'1 casa':r.length+' casas'))+(nNov?' <span class="novo-txt">· '+nNov+(nNov===1?' nova':' novas')+' hoje</span>':'');
     var n=nFiltros();document.getElementById('n-filtros').textContent=n?' ('+n+')':'';var fv=document.getElementById('f-ver');if(fv)fv.textContent=r.length?'Ver '+(r.length===1?'1 casa':fmtN(r.length)+' casas'):'Nenhuma casa';
     if(!r.length){
       lista.innerHTML='<div class="vazio" style="grid-column:1 / -1"><h2>Não há casas com estes filtros</h2><p>Tira um filtro ou cria um alerta: avisamos-te quando aparecer uma casa assim.</p><button type="button" class="botao-sec botao-peq" id="vazio-limpar">Limpar filtros</button></div>';
