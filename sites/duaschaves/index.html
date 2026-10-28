@@ -279,6 +279,20 @@ input[type=file]{font:inherit;font-size:15px;max-width:100%}
 @keyframes desenhar{to{stroke-dashoffset:0}}
 @media (prefers-reduced-motion:reduce){.traco path{stroke-dashoffset:0;animation:aparecer .6s ease-out .3s both !important}}
 
+.chip-tirar{gap:6px;padding-right:6px;cursor:default}
+.chip-tirar button{display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;margin:-6px 0;border:0;border-radius:999px;background:transparent;color:var(--texto2);cursor:pointer}
+.chip-tirar button:hover{background:#E6EBE9;color:var(--tinta)}
+.linha-lista.vista{text-decoration:none;color:var(--tinta);gap:12px}.linha-lista.vista span{color:var(--texto2);font-size:15px}.linha-lista.vista strong{white-space:nowrap;font-variant-numeric:tabular-nums}
+
+.promo{position:relative;align-items:stretch;text-align:left;gap:14px;padding-top:28px}
+.promo-x{position:absolute;top:10px;right:10px}
+.promo-tit{margin:0;font-size:26px;line-height:1.12;letter-spacing:-.02em;font-weight:800;max-width:16ch}
+.promo-preco{margin:0;font-size:17px;color:var(--texto2)}.promo-preco strong{font-size:40px;font-weight:800;color:var(--tinta);letter-spacing:-.03em;margin-right:6px;font-variant-numeric:tabular-nums}
+.ajuda.centro{text-align:center}
+dialog.dialogo[open] .promo{animation:promoEntra .45s var(--mola) both}
+@keyframes promoEntra{from{opacity:0;transform:translateY(24px) scale(.98)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){dialog.dialogo[open] .promo{animation:aparecer .3s ease-out both !important}}
+
 /* herói */
 .heroi{padding:32px 0 56px}
 .heroi-grelha{display:grid;gap:40px;align-items:center}
@@ -824,15 +838,18 @@ function avisarServidorAlerta(a){
 var memPrefs=null;
 function lerPrefs(){
   if(memPrefs)return memPrefs;
-  var b={zonas:{},pesquisas:[],filtros:[],emailPedido:false};
+  var b={zonas:{},pesquisas:[],filtros:[],vistas:[],emailPedido:false};
   try{var p=JSON.parse(localStorage.getItem('dc-prefs')||'null');if(p&&typeof p==='object'){for(var k in b){if(!(k in p))p[k]=b[k];}memPrefs=p;return p;}}catch(e){}
   memPrefs=b;return b;
 }
 function guardarPrefs(){try{localStorage.setItem('dc-prefs',JSON.stringify(memPrefs));}catch(e){}sincronizar();}
-function apagarPrefs(){var p=lerPrefs();memPrefs={zonas:{},pesquisas:[],filtros:p.filtros,emailPedido:p.emailPedido};guardarPrefs();}
+function apagarPrefs(){var p=lerPrefs();memPrefs={zonas:{},pesquisas:[],filtros:p.filtros,vistas:[],emailPedido:p.emailPedido};guardarPrefs();}
 function marcarZona(nome,peso){
   nome=(nome||'').trim().replace(/\s+/g,' ');if(!nome)return;
   var p=lerPrefs(),k=norm(nome),z=p.zonas[k]||{nome:nome,pontos:0,ultimo:0};
+  if(peso>=50){z.fixa=true;delete z.tirada;z.nome=nome;}               /* escolhida pela pessoa */
+  else if(z.tirada&&Date.now()-z.tirada<30*DIA)return;                 /* tirada há menos de 30 dias: não volta sozinha */
+  else if(z.tirada){delete z.tirada;}
   z.pontos+=peso;z.ultimo=Date.now();p.zonas[k]=z;
   var ks=Object.keys(p.zonas);
   if(ks.length>30){ks.sort(function(a,b){return p.zonas[a].ultimo-p.zonas[b].ultimo;});delete p.zonas[ks[0]];}
@@ -841,9 +858,11 @@ function marcarZona(nome,peso){
 /* zonas mais procuradas, com mais peso para as recentes (meia-vida de cerca de 3 semanas) */
 function zonasPreferidas(n){
   var p=lerPrefs(),agora=Date.now();
-  return Object.keys(p.zonas).map(function(k){var z=p.zonas[k];return {k:k,nome:z.nome,v:z.pontos*Math.exp(-(agora-z.ultimo)/(30*DIA))};})
-    .filter(function(z){return z.v>0.5;}).sort(function(a,b){return b.v-a.v;}).slice(0,n||3);
+  return Object.keys(p.zonas).filter(function(k){return !p.zonas[k].tirada;}).map(function(k){var z=p.zonas[k];return {k:k,nome:z.nome,fixa:!!z.fixa,v:z.fixa?1e6+z.pontos:z.pontos*Math.exp(-(agora-z.ultimo)/(30*DIA))};})
+    .filter(function(z){return z.v>1.5;}).sort(function(a,b){return b.v-a.v;}).slice(0,n||3);
 }
+function tirarZona(k){var p=lerPrefs(),z=p.zonas[k];if(!z)return;z.tirada=Date.now();z.pontos=0;z.fixa=false;guardarPrefs();}
+function registarVista(c){var p=lerPrefs();p.vistas=(p.vistas||[]).filter(function(v){return v.id!==c.id;});p.vistas.unshift({id:c.id,t:Date.now()});p.vistas=p.vistas.slice(0,20);try{localStorage.setItem('dc-prefs',JSON.stringify(memPrefs));}catch(e){}}
 function filtroAtual(){var f={cidade:estado.cidade,precoMax:estado.precoMax,tips:estado.tips.slice(),soProt:estado.soProt};EXTRAS.forEach(function(k){if(estado[k])f[k]=estado[k];});return f;}
 function aplicarFiltro(f){estado.cidade=f.cidade||'';estado.precoMax=f.precoMax||0;estado.tips=(f.tips||[]).slice();estado.soProt=!!f.soProt;
   estado.areaMin=f.areaMin||0;estado.dias=f.dias||0;estado.soPart=!!f.soPart;estado.soFotos=!!f.soFotos;estado.comPreco=!!f.comPreco;estado.semCaucao=!!f.semCaucao;estado.tipoImovel=f.tipoImovel||'';}
@@ -1586,7 +1605,7 @@ function vCasa(id){
     '</div></div>';
 
   ligarGaleria();
-  marcarZona(c.cidade||c.distrito,1);
+  marcarZona(c.cidade||c.distrito,1);registarVista(c);
   if(!acessoAtivo()){
     var bar=document.createElement('div');bar.className='barra-cta escondida';bar.id='barra-cta';
     bar.innerHTML='<div class="bc-txt"><p class="bc-preco">'+precoHtml(c)+'</p><p class="bc-sub">'+(c.semData?esc(FONTES[c.fonte].de):(c.min<1440?'Nova · publicada ':'Publicada ')+quando(c.min))+'</p></div>'+
@@ -1905,19 +1924,33 @@ function vConta(){
 }
 
 function blocoDispositivo(){
-  var p=lerPrefs(),zs=zonasPreferidas(5);
-  return '<div class="bloco"><h2>Neste dispositivo</h2>'+
-    '<p class="rotulo">Pesquisas guardadas</p>'+
-    (p.filtros.length?p.filtros.map(function(f,i){return '<div class="linha-lista"><button type="button" class="botao-texto" data-fg-ir="'+i+'" style="padding:0;min-height:auto;text-align:left">'+esc(descFiltro(f))+'</button><button type="button" class="botao-texto" data-fg-tirar="'+i+'" aria-label="Apagar pesquisa '+esc(descFiltro(f))+'">Apagar</button></div>';}).join(''):'<p class="ajuda">Ainda não guardaste pesquisas.</p>')+
-    '<p class="rotulo" style="margin-top:12px">Zonas que mais procuras</p>'+
-    '<p>'+(zs.length?zs.map(function(z){return esc(z.nome);}).join(' · '):'<span class="ajuda">Ainda nenhuma.</span>')+'</p>'+
-    '<label class="consent" style="margin-top:8px"><input type="checkbox" id="d-mkt"'+(conta.marketing&&conta.marketing.sim?' checked':'')+'><span>Receber sugestões de casas e novidades por e-mail</span></label>'+
+  var p=lerPrefs(),zs=zonasPreferidas(8);
+  var rec=(p.pesquisas||[]).slice(0,5);
+  var vistas=(p.vistas||[]).map(function(v){return casa(v.id);}).filter(Boolean).slice(0,5);
+  var linha=function(txt,attrIr,i,attrTirar,rot){return '<div class="linha-lista"><button type="button" class="botao-texto" '+attrIr+'="'+i+'" style="padding:0;min-height:auto;text-align:left">'+esc(txt)+'</button><button type="button" class="icone" '+attrTirar+'="'+i+'" aria-label="'+esc(rot)+'">'+svg(P.fechar,{s:18})+'</button></div>';};
+  return '<div class="bloco"><h2>Neste dispositivo</h2><p class="ajuda" style="margin-top:-4px">Fica guardado neste telemóvel ou computador, mesmo sem entrares na conta.</p>'+
+    '<p class="rotulo" style="margin-top:8px">Zonas que mais procuras</p>'+
+    '<div class="chips" id="d-zonas">'+(zs.length?zs.map(function(z){return '<span class="chip chip-tirar">'+esc(z.nome)+'<button type="button" data-zona-tirar="'+esc(z.k)+'" aria-label="Tirar '+esc(z.nome)+'">'+svg(P.fechar,{s:16,w:2.4})+'</button></span>';}).join(''):'<span class="ajuda">Ainda nenhuma.</span>')+'</div>'+
+    '<div class="zona-outra"><label class="isco" for="d-zona-nova">Juntar zona</label><input id="d-zona-nova" type="text" maxlength="40" placeholder="Juntar uma zona" autocomplete="off"><button class="botao-sec" type="button" id="d-zona-juntar">Juntar</button></div>'+
+    '<p class="rotulo" style="margin-top:16px">Pesquisas recentes</p>'+
+    (rec.length?rec.map(function(f,i){return linha(descFiltro(f),'data-rec-ir',i,'data-rec-tirar','Apagar esta pesquisa do histórico');}).join(''):'<p class="ajuda">Ainda não pesquisaste.</p>')+
+    '<p class="rotulo" style="margin-top:16px">Pesquisas guardadas</p>'+
+    (p.filtros.length?p.filtros.map(function(f,i){return linha(descFiltro(f),'data-fg-ir',i,'data-fg-tirar','Apagar pesquisa guardada');}).join(''):'<p class="ajuda">Ainda não guardaste pesquisas.</p>')+
+    '<p class="rotulo" style="margin-top:16px">Casas que viste</p>'+
+    (vistas.length?vistas.map(function(c){return '<a class="linha-lista vista" href="#casa-'+c.id+'"><span>'+resumoCasa(c,true)+'</span><strong>'+(c.renda?eur(c.renda):'')+'</strong></a>';}).join(''):'<p class="ajuda">Ainda não abriste nenhuma casa.</p>')+
+    '<label class="consent" style="margin-top:12px"><input type="checkbox" id="d-mkt"'+(conta.marketing&&conta.marketing.sim?' checked':'')+'><span>Receber sugestões de casas e novidades por e-mail</span></label>'+
     '<button class="botao-sec" type="button" id="b-apagar-hist" style="align-self:flex-start;margin-top:8px">Apagar histórico e zonas</button>'+
   '</div>';
 }
 function ligarDispositivo(depois){
   main.querySelectorAll('[data-fg-ir]').forEach(function(b){b.addEventListener('click',function(){aplicarFiltro(lerPrefs().filtros[+b.getAttribute('data-fg-ir')]);ir('pesquisa');});});
   main.querySelectorAll('[data-fg-tirar]').forEach(function(b){b.addEventListener('click',function(){tirarFiltro(+b.getAttribute('data-fg-tirar'));toast('Pesquisa apagada.');depois();});});
+  main.querySelectorAll('[data-rec-ir]').forEach(function(b){b.addEventListener('click',function(){aplicarFiltro(lerPrefs().pesquisas[+b.getAttribute('data-rec-ir')]);ir('pesquisa');});});
+  main.querySelectorAll('[data-rec-tirar]').forEach(function(b){b.addEventListener('click',function(){var p=lerPrefs();p.pesquisas.splice(+b.getAttribute('data-rec-tirar'),1);guardarPrefs();toast('Pesquisa apagada do histórico.');depois();});});
+  main.querySelectorAll('[data-zona-tirar]').forEach(function(b){b.addEventListener('click',function(){var k=b.getAttribute('data-zona-tirar'),n=b.parentNode.textContent;tirarZona(k);toast(n+' saiu das tuas zonas.');depois();});});
+  var zn=document.getElementById('d-zona-nova'),zj=document.getElementById('d-zona-juntar');
+  var juntar=function(){var n=zn.value.trim().replace(/,/g,' ');if(!n)return;marcarZona(n,50);toast(n+' juntou-se às tuas zonas.');depois();};
+  if(zj){zj.addEventListener('click',juntar);zn.addEventListener('keydown',function(e){if(e.key==='Enter'){e.preventDefault();juntar();}});}
   var m=document.getElementById('d-mkt');
   if(m)m.addEventListener('change',function(){lerMarketing('d-mkt');guardarConta();toast(m.checked?'Vais receber sugestões por e-mail.':'Deixas de receber sugestões por e-mail.');});
   var h=document.getElementById('b-apagar-hist');
@@ -2092,7 +2125,9 @@ function vEntrar(erroCod,modo){
     '</form>'+
     '<div class="sucesso" id="entrar-ok" hidden tabindex="-1"></div>'+
     (servidor?'':'<p class="ajuda" style="margin-top:16px">Versão de testes: a conta fica só neste telemóvel.</p>')+
+    '<div class="blocos" style="margin-top:28px">'+blocoDispositivo()+'</div>'+
   '</div>';
+  ligarDispositivo(function(){vEntrar(erroCod,modo);});
   main.querySelectorAll('[data-modo]').forEach(function(b){b.addEventListener('click',function(){vEntrar('',b.getAttribute('data-modo'));foco();});});
   var ver=document.getElementById('e-ver'),se=document.getElementById('e-senha');
   ver.addEventListener('click',function(){var m=se.type==='password';se.type=m?'text':'password';ver.textContent=m?'Esconder':'Mostrar';ver.setAttribute('aria-label',(m?'Esconder':'Mostrar')+' palavra-passe');});
@@ -2381,6 +2416,38 @@ function rota(){
 }
 document.getElementById('saltar').addEventListener('click',function(e){e.preventDefault();main.focus();});
 window.addEventListener('hashchange',rota);
+/* Oferta de boas-vindas: aparece ao fim de 30 s no site a quem ainda não tem o acesso.
+   Se a pessoa fechar, só volta a aparecer neste dispositivo daqui a 12 horas. */
+var PROMO_ESPERA=30000,PROMO_PAUSA=12*3600000;
+function promoTeste(){try{return localStorage.getItem('dc-promo-teste');}catch(e){return null;}}
+function promoPodeAbrir(){
+  if(navigator.webdriver&&!promoTeste())return false;   /* testes automáticos: só quando pedem */
+  if(acessoAtivo())return false;
+  if(dlg.open)return false;
+  var h=(location.hash.slice(1)||'inicio');
+  if(/^(entrar|criar-conta|perfil|pagamento-|pedido-|convite-|termos|privacidade)/.test(h))return false;
+  var t=0;try{t=+localStorage.getItem('dc-promo')||0;}catch(e){}
+  return Date.now()-t>PROMO_PAUSA;
+}
+function promoFechada(){try{localStorage.setItem('dc-promo',String(Date.now()));}catch(e){}}
+function abrirPromo(){
+  abrirDialogo('<div class="dialogo-corpo promo">'+
+    '<button type="button" class="icone promo-x" aria-label="Fechar" data-fechar>'+svg(P.fechar)+'</button>'+
+    '<span class="selo-quente">Oferta de boas-vindas</span>'+
+    '<h2 class="promo-tit" tabindex="-1" autofocus>Sê o primeiro a contactar as casas novas</h2>'+
+    '<p class="promo-preco"><strong>'+P1+'</strong> nos primeiros 30 dias</p>'+
+    listaInclui()+
+    '<button class="botao largo" type="button" id="b-promo">Começar por '+P1+'</button>'+
+    '<p class="ajuda centro">Depois, '+P2+' a cada 30 dias. Cancelas quando quiseres.</p>'+
+  '</div>');
+  dlg.addEventListener('close',function f(){dlg.removeEventListener('close',f);promoFechada();});
+  document.getElementById('b-promo').addEventListener('click',function(){promoFechada();dlg.close();abrirAcesso(function(){});});
+}
+(function(){
+  var tentar=function(){if(promoPodeAbrir())abrirPromo();else if(!acessoAtivo())setTimeout(tentar,15000);};
+  setTimeout(tentar,+promoTeste()||PROMO_ESPERA);
+})();
+
 atualizarTopo();
 rota();
 try{
