@@ -329,6 +329,8 @@ dialog.dlg-promo.a-sair::backdrop{animation:sumir .23s ease-in both}
 @media (min-width:900px){.pn-tiles{grid-template-columns:repeat(5,minmax(0,1fr))}.pn-grelha{grid-template-columns:repeat(2,minmax(0,1fr))}.pn-largo{grid-column:1 / -1}}
 @media (min-width:1280px){.pn-grelha{grid-template-columns:repeat(3,minmax(0,1fr))}}
 
+.pw-mkt{font-size:13px;line-height:1.35}.pw-mkt input{width:18px;height:18px}
+
 /* herói */
 .heroi{padding:32px 0 56px}
 .heroi-grelha{display:grid;gap:40px;align-items:center}
@@ -650,6 +652,7 @@ dialog.dialogo::backdrop{background:rgba(15,26,23,.55)}
   .mock-duo:not(.vis) .tlm-dir{transform:rotate(6deg) translate(-22px,34px)}
   .cartao:hover,.botao:active{transform:none}
 }
+@media (max-height:700px){.pw-mkt{font-size:12px}.pw .pw-nota{display:none}.dialogo-corpo.pw{gap:5px}.pw .inclui{gap:2px}}
 </style>
 </head>
 <body>
@@ -959,7 +962,7 @@ function tirarFiltro(i){var p=lerPrefs();p.filtros.splice(i,1);guardarPrefs();}
 function chipsFiltros(lista,attr){return lista.map(function(f,i){return '<button type="button" class="chip" '+attr+'="'+i+'">'+esc(descFiltro(f))+'</button>';}).join('');}
 
 /* consentimento de marketing: separado do alerta e desligado por defeito */
-function campoMarketing(id){return '<label class="consent"><input type="checkbox" id="'+id+'"'+(conta.marketing&&conta.marketing.sim?' checked':'')+'><span>Quero receber também sugestões de casas e novidades da Duas Chaves por e-mail. Podes sair em qualquer e-mail.</span></label>';}
+function campoMarketing(id,zona){var z=zona||(zonasPreferidas(1)[0]||{}).nome||'';return '<label class="consent"><input type="checkbox" id="'+id+'"'+(conta.marketing&&conta.marketing.sim?' checked':'')+'><span>Avisa-me por e-mail das casas mais baratas'+(z?' '+esc(emCidade(z)):' da minha zona')+' antes de toda a gente, e das novidades da Duas Chaves. Sais quando quiseres.</span></label>';}
 function lerMarketing(id){var el=document.getElementById(id);if(!el)return;var sim=el.checked;if(!conta.marketing||conta.marketing.sim!==sim){conta.marketing={sim:sim,quando:Date.now()};}}
 function notaPrivacidade(){return '<p class="ajuda">Usamos o teu e-mail para os alertas que pedires. <a href="#termos">Privacidade</a></p>';}
 
@@ -1001,6 +1004,7 @@ function abrirAcesso(depois,c){
       '<label class="pw-metodo"><input type="radio" name="ac-metodo" value="cartao"><svg class="pw-ic" viewBox="0 0 28 20" width="28" height="20" aria-hidden="true"><rect x="0.75" y="0.75" width="26.5" height="18.5" rx="3" fill="#fff" stroke="#3E4A46" stroke-width="1.5"/><rect x="1" y="5" width="26" height="3.2" fill="#3E4A46"/><rect x="4" y="12.5" width="9" height="2" rx="1" fill="#9AA8A3"/></svg><span>Cartão</span></label>'+
     '</fieldset>'+
     '<button class="botao largo" type="submit">Desbloquear por '+P1+'</button>'+
+    '<label class="consent pw-mkt"><input type="checkbox" id="ac-sem-mkt"><span>Não quero receber por e-mail ofertas e novidades da Duas Chaves.</span></label>'+
     '<p class="pw-nota">Protótipo: nenhum pagamento é feito.</p></form>');
   document.getElementById('f-acesso').addEventListener('submit',function(e){
     e.preventDefault();
@@ -1008,6 +1012,8 @@ function abrirAcesso(depois,c){
     var agora=Date.now(),met=(main.ownerDocument.querySelector('[name="ac-metodo"]:checked')||{}).value||'';
     ev('pagar_clique',{metodo:met});ev('pago',{metodo:met,valor:1});
     conta.acesso={inicio:agora,ate:agora+30*DIA,renova:true};
+    /* cliente: pode receber ofertas de serviços parecidos, salvo se recusar aqui (art. 13.º-A, n.º 3, da Lei 41/2004) */
+    var semMkt=document.getElementById('ac-sem-mkt');if(semMkt)conta.marketing={sim:!semMkt.checked,quando:agora,base:'cliente'};
     guardarConta();dlg.close();
     toast('Acesso ativo. A 1.ª renovação é a '+fmtDia.format(new Date(conta.acesso.ate))+', por 9,99 €.');
     if(depois)depois();
@@ -2015,7 +2021,7 @@ function blocoDispositivo(){
     (p.filtros.length?p.filtros.map(function(f,i){return linha(descFiltro(f),'data-fg-ir',i,'data-fg-tirar','Apagar pesquisa guardada');}).join(''):'<p class="ajuda">Ainda não guardaste pesquisas.</p>')+
     '<p class="rotulo" style="margin-top:16px">Casas que viste</p>'+
     (vistas.length?vistas.map(function(c){return '<a class="linha-lista vista" href="#casa-'+c.id+'"><span>'+resumoCasa(c,true)+'</span><strong>'+(c.renda?eur(c.renda):'')+'</strong></a>';}).join(''):'<p class="ajuda">Ainda não abriste nenhuma casa.</p>')+
-    '<label class="consent" style="margin-top:12px"><input type="checkbox" id="d-mkt"'+(conta.marketing&&conta.marketing.sim?' checked':'')+'><span>Receber sugestões de casas e novidades por e-mail</span></label>'+
+    '<label class="consent" style="margin-top:12px"><input type="checkbox" id="d-mkt"'+(conta.marketing&&conta.marketing.sim?' checked':'')+'><span>Avisa-me por e-mail das casas mais baratas e das novidades da Duas Chaves</span></label>'+
     '<button class="botao-sec" type="button" id="b-apagar-hist" style="align-self:flex-start;margin-top:8px">Apagar histórico e zonas</button>'+
   '</div>';
 }
