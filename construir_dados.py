@@ -77,8 +77,8 @@ SEED_FEEDS = [
      "url": "https://www.fertagus.pt/GTFSTMLzip/Fertagus_GTFS.zip",
      "mdb": ["fertagus"]},
     {"id": "transtejo_soflusa", "operator_name": "Transtejo Soflusa", "mode": "Barco",
-     "url": "https://files.mobilitydatabase.org/mdb-2921/latest.zip",
-     "mirror": "https://api.transtejo.pt/files/GTFS.zip",
+     "url": "https://api.ttsl.pt/files/GTFS.ZIP",  # oficial, enviado pela TTSL (28/10/2026)
+     "mirror": "https://files.mobilitydatabase.org/mdb-2921/latest.zip",
      "mdb": ["transtejo"]},
     {"id": "mts", "operator_name": "Metro Transportes do Sul", "mode": "Metro",
      "url": "https://mts.pt/imt/MTS-20240129.zip",

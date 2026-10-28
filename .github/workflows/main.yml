@@ -57,6 +57,7 @@ jobs:
         run: |
           python auditoria/test_formas.py
           python auditoria/test_estradas.py
+          python auditoria/test_ttsl_fonte.py
 
       - name: Construir a base de dados
         run: python construir_dados.py
