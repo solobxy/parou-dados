@@ -862,15 +862,8 @@ function passo(tipo,tit,sub,subEspera){
 function vInicio(){
   titulo('');
   var prefs=lerPrefs(),zs=zonasPreferidas(4),recentes=prefs.pesquisas.slice(0,3);
-  var zona=zs.length?zs[0]:null;
-  var novas=zona?baratasInicio(zona.nome):[];
-  if(novas.length<4){zona=null;novas=baratasInicio('');}
-  var secCasas=zona?
-    '<div class="seccao-cabeca"><h2>As mais baratas em '+esc(zona.nome)+'</h2><button type="button" class="botao-sec botao-peq" data-cidade="'+esc(zona.nome)+'">Ver todas '+svg(P.seta,{s:18})+'</button></div>'+
-    (zs.length>1?'<div class="cidades" style="margin:0 0 16px"><span>As tuas zonas:</span>'+zs.slice(1).map(function(z){return '<button type="button" class="chip" data-cidade="'+esc(z.nome)+'">'+esc(z.nome)+'</button>';}).join('')+'</div>':'')+
-    '<div class="casas tres">'+novas.map(cartao).join('')+'</div>'+
-    '<p class="ajuda" style="margin-top:14px">Escolhidas pelo que procuraste neste dispositivo. <button type="button" class="botao-texto" id="b-esquecer" style="padding:0;min-height:auto">Apagar histórico</button></p>'
-  :
+  var novas=baratasInicio();
+  var secCasas=
     '<div class="seccao-cabeca"><h2>As mais baratas agora</h2><a class="botao-sec botao-peq" href="#pesquisa">Ver todas as casas '+svg(P.seta,{s:18})+'</a></div>'+
     '<div class="casas tres">'+novas.map(cartao).join('')+'</div>';
   main.innerHTML=
@@ -995,12 +988,12 @@ function pontuacao(c){
 function naZona(c,cid){return !cid||norm(c.cidade).indexOf(cid)>=0||norm(c.bairro).indexOf(cid)>=0||norm(c.distrito||'').indexOf(cid)>=0;}
 function cmpRecom(a,b){var ga=grupo(a),gb=grupo(b);if(ga!==gb)return ga-gb;return pontuacao(b)-pontuacao(a);}
 /* Início: T0 e T1 mais baratos (com preço e fotos) e 2 quartos mais baratos, na zona da pessoa ou no país */
-function baratasInicio(nome){
-  var cid=norm(nome||''),ok=function(c){return c.renda&&c.fotos&&c.fotos.length&&naZona(c,cid);};
-  var porPreco=function(a,b){return a.renda-b.renda;};
-  var t=CASAS.filter(function(c){return ok(c)&&c.tipo!=='Quarto'&&(c.tip==='T0'||c.tip==='T1');}).sort(porPreco).slice(0,4);
-  var q=CASAS.filter(function(c){return ok(c)&&c.tipo==='Quarto';}).sort(porPreco).slice(0,2);
-  var r=[];[t[0],t[1],q[0],t[2],t[3],q[1]].forEach(function(c){if(c)r.push(c);});
+function baratasInicio(){
+  // sempre as mais baratas do país: 4 T0, 3 T1 e 2 quartos, com preço e fotos; rendas abaixo do mínimo ficam de fora (costumam ser erro ou burla)
+  var ok=function(c,min){return c.renda&&c.renda>=min&&c.fotos&&c.fotos.length;},porPreco=function(a,b){return a.renda-b.renda;};
+  var de=function(f,min,n){return CASAS.filter(function(c){return f(c)&&ok(c,min);}).sort(porPreco).slice(0,n);};
+  var t0=de(function(c){return c.tipo!=='Quarto'&&c.tip==='T0';},300,4),t1=de(function(c){return c.tipo!=='Quarto'&&c.tip==='T1';},300,3),q=de(function(c){return c.tipo==='Quarto';},150,2);
+  var r=[];[t0[0],t1[0],t0[1],q[0],t0[2],t1[1],t0[3],t1[2],q[1]].forEach(function(c){if(c)r.push(c);});
   return r;
 }
 function recomendadasEm(nome,n){var cid=norm(nome);return CASAS.filter(function(c){return naZona(c,cid);}).sort(cmpRecom).slice(0,n);}
