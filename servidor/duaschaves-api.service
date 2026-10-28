@@ -1,0 +1,26 @@
+[Unit]
+Description=Duas Chaves - API de contas, preferências e alertas
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=parou
+Group=parou
+StateDirectory=duaschaves-api
+StateDirectoryMode=0700
+EnvironmentFile=-/etc/duaschaves/api.env
+ExecStart=/usr/bin/python3 /opt/parou/servidor/duaschaves/api.py
+Restart=always
+RestartSec=3
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectKernelTunables=yes
+ProtectControlGroups=yes
+RestrictSUIDSGID=yes
+MemoryMax=200M
+
+[Install]
+WantedBy=multi-user.target

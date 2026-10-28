@@ -108,6 +108,23 @@ if [ -f "$SERV/duaschaves-recolha.service" ]; then
   systemctl is-enabled --quiet duaschaves-recolha.timer 2>/dev/null || systemctl enable --now duaschaves-recolha.timer >/dev/null 2>&1
 fi
 
+# API da Duas Chaves (contas, preferências, alertas). Os segredos ficam em /etc/duaschaves/api.env, fora do repositório.
+if [ -f "$SERV/duaschaves-api.service" ] && [ -f "$BASE/servidor/duaschaves/api.py" ]; then
+  install -d -m 750 -o root -g parou /etc/duaschaves
+  if [ ! -f /etc/duaschaves/api.env ]; then
+    printf 'ORIGENS=https://duaschaves.pt https://www.duaschaves.pt https://duaschaves.2-31-13-85.sslip.io\nEMAIL_DE=Duas Chaves <ola@duaschaves.pt>\n' > /etc/duaschaves/api.env
+    chown root:parou /etc/duaschaves/api.env && chmod 640 /etc/duaschaves/api.env
+  fi
+  if ! cmp -s "$SERV/duaschaves-api.service" /etc/systemd/system/duaschaves-api.service; then
+    cp "$SERV/duaschaves-api.service" /etc/systemd/system/duaschaves-api.service && systemctl daemon-reload
+  fi
+  systemctl is-enabled --quiet duaschaves-api.service 2>/dev/null || systemctl enable --now duaschaves-api.service >/dev/null 2>&1
+  V=$( { sha256sum "$BASE/servidor/duaschaves/api.py" /etc/duaschaves/api.env; } | sha256sum | cut -c1-16)
+  if [ "$(cat /etc/duaschaves/api.versao 2>/dev/null)" != "$V" ]; then
+    systemctl restart duaschaves-api.service && echo "$V" > /etc/duaschaves/api.versao
+  fi
+fi
+
 # O próprio atualizador, se mudou no repositório
 if ! cmp -s "$SERV/parou-atualizar" /usr/local/bin/parou-atualizar; then
   install -m 755 "$SERV/parou-atualizar" /usr/local/bin/parou-atualizar

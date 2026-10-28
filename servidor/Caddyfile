@@ -134,6 +134,10 @@ www.jinxed.world {
 		X-Robots-Tag "noindex, nofollow"
 		-Server
 	}
+	# API de contas e alertas (duaschaves-api.service, só em 127.0.0.1)
+	handle /api/* {
+		reverse_proxy 127.0.0.1:3110
+	}
 	# Os anúncios são recolhidos no próprio servidor (duaschaves-recolha.timer) e ficam fora da pasta do site
 	handle /anuncios.json {
 		root * /var/lib/duaschaves-dados
