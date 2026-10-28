@@ -15,7 +15,7 @@ from urllib.parse import quote
 
 SITE = 'https://duaschaves.pt'
 MIN_CIDADE, MIN_TIPO, MAX_CARTOES = 5, 3, 30
-TIPOS = [('quartos', 'Quartos', 'quartos'), ('t0', 'T0', 'T0'), ('t1', 'T1', 'T1'), ('t2', 'T2', 'T2'), ('t3-ou-mais', 'T3 ou mais', 'T3+')]
+TIPOS = [('quartos', 'Quartos', 'Quarto'), ('t0', 'T0', 'T0'), ('t1', 'T1', 'T1'), ('t2', 'T2', 'T2'), ('t3-ou-mais', 'T3 ou mais', 'T3+')]
 MESES = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro']
 SIMBOLO = 'M5 8.4Q5 7 6.4 7H26A17 17 0 0 1 26 41L24.19 25.69A5.4 5.4 0 1 0 20.59 25.69L18.77 41H6.4Q5 41 5 39.6Z'
 e = html.escape
