@@ -49,6 +49,7 @@ PAUSA = 2.0
 PRECO_MIN, PRECO_MAX = 100, 20000   # fora disto o preço é claramente falso: mostra-se «sob consulta»
 
 pedidos = {'ok': 0, 'erro': 0}
+ESTADO_FONTES = {}     # resumo de cada site nesta volta (fica no início de lista.json, para se ver de fora)
 
 
 def obter(url, com_estado=False, pausa=None):
@@ -180,11 +181,13 @@ def chave_igual(a):
 def correr_fonte(mod, paginas, pausa, resultado):
     """Lê as páginas de resultados de um site. Pára esse site se ele pedir para abrandar (429) ou bloquear (403)."""
     parados, n_pag, n_erros, n_lentos = set(), 0, 0, 0
+    estados = {}
     for grupo, slug, url in paginas:
         if grupo in parados:
             continue
         estado, _, texto = obter(url, com_estado=True, pausa=pausa)
         n_pag += 1
+        estados[str(estado)] = estados.get(str(estado), 0) + 1
         if estado in (429, 503) and n_lentos < 2:
             n_lentos += 1                            # pediu para abrandar: espera 90 s, abranda e tenta outra vez
             pausa *= 2
@@ -213,6 +216,7 @@ def correr_fonte(mod, paginas, pausa, resultado):
         if not novos:
             parados.add(grupo)                       # nada de novo nesta página: as seguintes do mesmo grupo também não terão
     print(f'{mod.NOME}: {len(resultado)} anúncios em {n_pag} páginas')
+    ESTADO_FONTES[mod.NOME] = {'lidos': len(resultado), 'paginas': n_pag, 'estados': estados}
 
 
 def paginas_super():
@@ -261,7 +265,10 @@ def escrever_leves(saida, lista):
             json.dump(det.get(k, {}), f, ensure_ascii=False, separators=(',', ':'))
         os.replace(os.path.join(pasta, 'det', f'{k}.json.tmp'), os.path.join(pasta, 'det', f'{k}.json'))
     with open(os.path.join(pasta, 'lista.json.tmp'), 'w', encoding='utf-8') as f:
-        json.dump({'atualizado': agora_iso(), 'det': 64, 'anuncios': leve}, f, ensure_ascii=False, separators=(',', ':'))
+        por_fonte = {}
+        for a in lista:
+            por_fonte[a.get('fonte')] = por_fonte.get(a.get('fonte'), 0) + 1
+        json.dump({'atualizado': agora_iso(), 'det': 64, 'por_site': por_fonte, 'recolha': ESTADO_FONTES, 'anuncios': leve}, f, ensure_ascii=False, separators=(',', ':'))
     os.replace(os.path.join(pasta, 'lista.json.tmp'), os.path.join(pasta, 'lista.json'))
 
 
