@@ -283,6 +283,7 @@ main:has(.barra-cta) .casa-grelha{padding-bottom:110px}
 .cartao-cta{grid-column:1 / -1;display:flex;flex-direction:column;gap:10px;background:#0F1A17;color:#fff;border-radius:18px;padding:20px}
 .cartao-cta h3{margin:0;font-size:20px;line-height:1.25}.cartao-cta p{margin:0;color:#C9D3CF;font-size:15px;line-height:1.45}.cartao-cta .botao{align-self:flex-start}
 .botoes-linha{display:flex;flex-wrap:wrap;gap:12px;align-items:center}
+.sem-info{color:var(--texto3);font-weight:400}
 .novo-txt{color:#0B6E4F;font-weight:700}
 .n-novas{display:inline-flex;align-items:center;gap:6px;font-size:15px;font-weight:600;color:#0B6E4F;margin:4px 0 16px}
 .n-novas::before{content:'';width:8px;height:8px;border-radius:50%;background:#0B6E4F}
@@ -1044,6 +1045,31 @@ function pontuacao(c){
 function naZona(c,cid){return !cid||norm(c.cidade).indexOf(cid)>=0||norm(c.bairro).indexOf(cid)>=0||norm(c.distrito||'').indexOf(cid)>=0;}
 /* «Recomendados»: primeiro T0, T1 e quartos, do mais barato para o mais caro; depois o resto, também do mais barato.
    Sem preço, sem fotos ou com renda abaixo do mínimo (costuma ser erro ou burla) vão para o fim. */
+/* Condições de entrada tiradas da descrição (a mesma lógica de duaschaves/condicoes.py, para anúncios antigos) */
+function condicoes(texto){
+  var t=(texto||'').replace(/€/g,' eur ').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/\s+/g,' ');
+  var NUM='(\\d{1,2}|um|uma|dois|duas|tres|quatro|cinco|seis)',MES='(?:\\(\\s*\\w+\\s*\\)\\s*)?(?:meses|mes|rendas?|mensalidades?)';
+  var PAL={um:1,uma:1,dois:2,duas:2,tres:3,quatro:4,cinco:5,seis:6},n=function(x){return PAL[x]||(/^\d+$/.test(x)?+x:0);};
+  var ms=function(k){return k+' '+(k===1?'mês':'meses');},out={},m;
+  if(/(sem|nao (?:e )?(?:pedida|exigida|necessaria)a?|isento de) cauca/.test(t))out.caucao='Sem caução';
+  else{
+    m=t.match(new RegExp(NUM+'\\s*'+MES+'\\s*(?:de\\s*)?(?:cauca|garantia|deposito)'))||t.match(new RegExp('(?:cauca[oa]?|deposito de garantia)\\s*(?:de|:|-|=|no valor de|equivalente a|correspondente a|igual a)?\\s*'+NUM+'\\s*'+MES));
+    if(m&&n(m[1])>0&&n(m[1])<=12)out.caucao=ms(n(m[1]));
+    else{m=t.match(/cauca[oa]?\s*(?:de|:|-|=|no valor de)?\s*(\d{1,2}[\. ]?\d{3}|\d{2,4})(?:,\d+)?\s*eur/);
+      if(m){var v=+m[1].replace(/\D/g,'');if(v>=50&&v<=30000)out.caucao=String(v).replace(/\B(?=(\d{3})+(?!\d))/g,'.')+' €';}}
+  }
+  m=t.match(new RegExp(NUM+'\\s*'+MES+'\\s*(?:de renda\\s*)?(?:adiantad|antecipad|em adiantamento|de adiantamento|pagos? adiantad|pagas? adiantad)'))||t.match(new RegExp('(?:adiantamento|antecipacao|adiantadas?|antecipadas?)\\s*(?:de|:|-)?\\s*'+NUM+'\\s*'+MES));
+  if(m&&n(m[1])>0&&n(m[1])<=12)out.adiantadas=ms(n(m[1]));
+  if(/(sem|nao (?:e )?(?:necessario|exigido|pedido)|dispensa(?:-se)?) (?:de )?fiador/.test(t))out.fiador='Não pede';
+  else if(/\bfiador/.test(t))out.fiador='Pede fiador';
+  return out;
+}
+function condCasa(c){
+  if(c._cond)return c._cond;
+  var d=condicoes(c.desc),g=c.cond||{};
+  c._cond={caucao:g.caucao||d.caucao||'',adiantadas:g.adiantadas||d.adiantadas||'',fiador:g.fiador||d.fiador||''};
+  return c._cond;
+}
 function minimo(c){return c.tipo==='Quarto'?150:300;}
 /* Cidades onde há mais procura (e as áreas metropolitanas à volta): os anúncios baratos daqui vêm primeiro */
 var PRINCIPAIS=['lisboa','porto','braga','coimbra','aveiro','faro','setubal','funchal','leiria','evora','guimaraes',
@@ -1271,7 +1297,10 @@ function vCasa(id){
           '<div><dt>Andar</dt><dd>'+(c.andar?esc(c.andar):'—')+'</dd></div>'+
           '<div><dt>Mobilada</dt><dd>'+(c.mob==null?'—':(c.mob?'Sim':'Não'))+'</dd></div>'+
           '<div><dt>Renda</dt><dd>'+(c.renda?eur(c.renda)+' /mês':'Sob consulta')+'</dd></div>'+
-          '<div><dt>Caução</dt><dd>'+(c.caucao==null?'—':meses(c.caucao))+'</dd></div>'+
+          '<div><dt>Caução</dt><dd>'+(c.caucao!=null?meses(c.caucao):(condCasa(c).caucao||'<span class="sem-info">Sem informação</span>'))+'</dd></div>'+
+          '<div><dt>Rendas adiantadas</dt><dd>'+(condCasa(c).adiantadas||'<span class="sem-info">Sem informação</span>')+'</dd></div>'+
+          '<div><dt>Fiador</dt><dd>'+(condCasa(c).fiador||'<span class="sem-info">Sem informação</span>')+'</dd></div>'+
+          (c.livre?'<div><dt>Disponível a partir de</dt><dd>'+fmtDia.format(new Date(c.livre+'T12:00:00'))+'</dd></div>':'')+
           '<div><dt>Certificado energético</dt><dd>[a indicar]</dd></div>'+
         '</dl>'+
       '</div>'+
@@ -2069,6 +2098,7 @@ function deRecolha(a){
   return {id:+String(a.id).replace(/\D/g,''),cidade:a.cidade||a.distrito||'',distrito:a.distrito||'',bairro:a.bairro||a.cidade||'',tip:a.tip||'',tipo:a.tipo||'',titulo:a.titulo||'',
     area:a.area||null,andar:a.andar||'',renda:a.renda||null,caucao:null,min:isNaN(t)?99999:Math.max(1,Math.round((Date.now()-t)/6e4)),prot:false,
     fonte:FONTES[a.fonte]?a.fonte:'Imovirtual',url:a.url,mob:null,cor:'#D6DDDA',desc:a.desc||'',fotos:a.fotos||[],
+    cond:{caucao:a.caucao||'',adiantadas:a.adiantadas||'',fiador:a.fiador||''},livre:/^\d{4}-\d{2}-\d{2}$/.test(a.livre||'')?a.livre:'',
     vis:a.visto&&!isNaN(Date.parse(a.visto))?Math.max(1,Math.round((Date.now()-Date.parse(a.visto))/6e4)):null,part:!!a.particular};
 }
 try{

@@ -16,6 +16,8 @@ redirecionar para fora do anúncio ou se o anúncio não estiver ativo, sai logo
 DIAS_MAX dias, sai também.
 """
 import datetime, html, json, os, re, sys, time, urllib.error, urllib.request
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from condicoes import condicoes
 
 BASE = 'https://www.imovirtual.com'
 UA = 'Mozilla/5.0 (compatible; DuasChavesBot/0.1; +https://duaschaves.pt)'
@@ -29,6 +31,7 @@ PAGINAS = int(os.environ.get('PAGINAS', '2'))
 PAGINAS_GRANDES = int(os.environ.get('PAGINAS_GRANDES', '5'))
 MAX_DETALHES = int(os.environ.get('MAX_DETALHES', '80'))
 MAX_ANUNCIOS = 3000
+MAX_RELER = int(os.environ.get('MAX_RELER', '40'))   # anúncios antigos relidos por volta (para caução, adiantadas, fiador)
 MAX_VERIFICAR = int(os.environ.get('MAX_VERIFICAR', '60'))
 DIAS_MAX = 7
 MAX_DESC = 700      # a descrição completa fica no anúncio original; aqui só o essencial (ficheiro leve)
@@ -123,13 +126,18 @@ def detalhes(anuncio):
     ad = (((d or {}).get('props') or {}).get('pageProps') or {}).get('ad')
     if not ad:
         return False
+    completa = html.unescape(re.sub(r'<[^>]+>', ' ', ad.get('description') or ''))
     anuncio['desc'] = limpar_texto(ad.get('description'))
+    anuncio.update(condicoes(completa))      # caução, rendas adiantadas e fiador lidos da descrição inteira
+    anuncio['lido'] = 2                       # versão da leitura dos detalhes
     fotos = [i.get('medium') or i.get('large') for i in ad.get('images') or [] if i]
     if fotos:
         anuncio['fotos'] = [f for f in fotos if f][:MAX_FOTOS]
     for c in ad.get('characteristics') or []:
         if c.get('key') == 'floor_no' and c.get('localizedValue'):
             anuncio['andar'] = c['localizedValue']
+        if c.get('key') == 'free_from' and re.fullmatch(r'\d{4}-\d{2}-\d{2}', c.get('value') or c.get('localizedValue') or ''):
+            anuncio['livre'] = c.get('value') or c.get('localizedValue')
     return True
 
 
@@ -197,12 +205,17 @@ def main():
         if velho and velho.get('desc'):
             a['desc'] = velho['desc']
             a['fotos'] = velho.get('fotos') or a['fotos']
-            if velho.get('andar'):
-                a['andar'] = velho['andar']
+            for k in ('andar', 'caucao', 'adiantadas', 'fiador', 'livre', 'lido'):
+                if velho.get(k):
+                    a[k] = velho[k]
         else:
             novos.append(a)
     novos.sort(key=lambda a: a.get('data') or '', reverse=True)
     lidos = sum(1 for a in novos[:MAX_DETALHES] if detalhes(a))
+    # anúncios já conhecidos mas lidos antes de haver caução/adiantadas/fiador: reler aos poucos, os mais recentes primeiro
+    antigos = sorted((a for a in vistos.values() if a.get('desc') and a.get('lido') != 2), key=lambda a: a.get('data') or '', reverse=True)
+    relidos = sum(1 for a in antigos[:MAX_RELER] if detalhes(a))
+    print(f'Relidos para condições de entrada: {relidos} (faltam {max(0, len(antigos) - MAX_RELER)})')
 
     # Anúncios que já não aparecem nos resultados: verificar uma parte, os há mais tempo sem confirmação primeiro
     limite = (datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(days=DIAS_MAX)).strftime('%Y-%m-%dT%H:%M:%SZ')
