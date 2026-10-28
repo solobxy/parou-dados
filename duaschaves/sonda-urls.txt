@@ -1,8 +1,3 @@
-bq-lisboa https://www.bquarto.pt/lisboa/procuro-quartos-lisboa
-bq-porto-ap https://www.bquarto.pt/porto/procuro-apartamento-porto
-bq-anuncio https://www.bquarto.pt/aveiro/arrendo-quarto-em-aveiro-glicinias?k=180241045
-iad-arr https://www.iadportugal.pt/anuncios/arrendamento
-c21-arr https://www.century21.pt/arrendar/imoveis/distrito-lisboa
-zome-arr https://www.zome.pt/pt/imoveis?negocio=arrendar
-kw-arr https://www.kwportugal.pt/pt/imoveis?businessType=arrendar
-era-arr https://www.era.pt/imoveis/arrendar/lisboa
+dc-lista https://duaschaves.2-31-13-85.sslip.io/lista.json
+dc-anuncios https://duaschaves.2-31-13-85.sslip.io/anuncios.json
+dc-det https://duaschaves.2-31-13-85.sslip.io/det/0.json
