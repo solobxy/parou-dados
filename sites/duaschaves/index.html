@@ -200,6 +200,66 @@ input[type=file]{font:inherit;font-size:15px;max-width:100%}
 
 .zona-outra{display:flex;gap:8px;margin-top:10px}.zona-outra input{flex:1;min-width:0}.zona-outra .botao-sec{min-height:52px}
 
+/* ilustrações: telemóveis em código */
+.mock{position:relative;margin:0 auto;overflow:visible;clip-path:inset(-120px -120px 0 -120px);display:flex;justify-content:center}
+.riscos{position:absolute;width:64px;height:48px;fill:none;stroke:var(--verde);stroke-width:5;stroke-linecap:round;opacity:.9}
+.riscos.esq{left:4%;top:24px;transform:scaleX(-1)}
+.riscos.dir{right:4%;top:24px}
+.tlm{position:relative;width:250px;flex:0 0 auto;border-radius:44px;background:#16211E;padding:9px;box-shadow:0 30px 60px -24px rgba(15,26,23,.45)}
+.tlm-ecra{position:relative;border-radius:36px;background:#fff;overflow:hidden;height:500px}
+.tlm-ilha{position:absolute;top:9px;left:50%;transform:translateX(-50%);width:78px;height:23px;border-radius:14px;background:#16211E;z-index:2}
+.tlm-barra{display:flex;justify-content:space-between;align-items:center;padding:12px 22px 8px;font-size:13px;font-weight:700;color:var(--tinta);font-variant-numeric:tabular-nums}
+.tlm-ic{display:flex;align-items:flex-end;gap:2px}.tlm-ic i{display:block;width:3px;background:var(--tinta);border-radius:1px}.tlm-ic i:nth-child(1){height:5px}.tlm-ic i:nth-child(2){height:7px}.tlm-ic i:nth-child(3){height:9px}.tlm-ic b{display:block;width:18px;height:9px;border:1.5px solid var(--tinta);border-radius:3px;margin-left:4px;box-shadow:inset 11px 0 0 var(--tinta)}
+.tlm-casa{margin:118px 12px 0;border-radius:18px;overflow:hidden;box-shadow:0 1px 3px rgba(15,26,23,.12),0 8px 24px -12px rgba(15,26,23,.25)}
+.tlm-foto{display:block;width:100%;height:150px;object-fit:cover;background:#D6DDDA}
+.tlm-casa-c{padding:12px 14px 14px}
+.tlm-cid{margin:0;font-size:16px;font-weight:800}
+.tlm-desc{margin:2px 0 10px;font-size:13px;color:var(--texto2);line-height:1.35}
+.tlm-dados{display:flex;justify-content:space-between;gap:6px;padding-top:8px;border-top:1px solid var(--borda);font-size:12px;color:var(--texto2)}
+.tlm-preco{margin:8px 0 0;font-size:18px;font-weight:800;font-variant-numeric:tabular-nums}.tlm-preco small{font-size:12px;font-weight:500;color:var(--texto3)}
+.mock-heroi{height:420px;padding-top:28px}
+.ntf-pilha{position:absolute;left:50%;top:96px;transform:translateX(-50%);width:min(330px,92%);height:120px}
+.ntf{position:absolute;left:0;right:0;top:0;display:flex;gap:12px;align-items:center;padding:12px 14px;border-radius:22px;background:rgba(255,255,255,.93);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);box-shadow:0 10px 30px -10px rgba(15,26,23,.35);font-size:13.5px;line-height:1.35;color:var(--tinta)}
+.ntf-0{z-index:3}.ntf-1{z-index:2;transform:translateY(14px) scale(.94)}.ntf-2{z-index:1;transform:translateY(27px) scale(.88)}.ntf-1 .ntf-txt,.ntf-1 .ntf-ic,.ntf-2 .ntf-txt,.ntf-2 .ntf-ic{visibility:hidden}.ntf-1{background:rgba(255,255,255,.8)}.ntf-2{background:rgba(255,255,255,.65)}
+.ntf-ic{flex:0 0 40px;height:40px;border-radius:11px;background:var(--verde);display:flex;align-items:center;justify-content:center}.ntf-ic svg{width:24px;height:22px}
+.ntf-ic.peq{flex-basis:30px;height:30px;border-radius:8px}.ntf-ic.peq svg{width:17px;height:15px}
+.ntf-txt{display:flex;flex-direction:column;gap:1px;min-width:0}
+.ntf-topo{display:flex;justify-content:space-between;gap:8px;font-size:13px;color:var(--texto3)}.ntf-topo strong{color:var(--tinta);font-size:14px}
+.ntf-txt>span:last-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mock-duo{margin-top:8px;overflow:visible}
+.mock-duo .palco{position:relative;width:520px;height:540px;flex:0 0 auto;display:flex;justify-content:center;padding-top:30px;overflow:visible;clip-path:inset(-120px -120px 0 -120px)}
+.mock-duo .tlm{width:240px}
+.mock-duo .tlm-ecra{height:500px}
+.tlm-esq{transform:rotate(-6deg) translate(22px,6px);z-index:2}
+.tlm-dir{transform:rotate(6deg) translate(-22px,34px);z-index:1}
+@media (max-width:560px){.mock-duo .palco{zoom:.86}}
+@media (max-width:460px){.mock-duo .palco{zoom:.74}}
+@media (max-width:400px){.mock-duo .palco{zoom:.7}}
+@media (max-width:360px){.mock-duo .palco{zoom:.6}}
+.mk-app,.mk-mail{padding:4px 12px}
+.mk-ola{margin:6px 0 0;font-size:19px;font-weight:800;letter-spacing:-.01em}.mk-ola span{color:var(--verde)}
+.mk-sub{margin:2px 0 10px;font-size:12px;color:var(--texto2)}
+.mk-item{display:flex;gap:8px;padding:8px;margin-bottom:8px;border-radius:14px;background:#fff;box-shadow:0 1px 3px rgba(15,26,23,.12),0 6px 16px -10px rgba(15,26,23,.3)}
+.mk-foto{flex:0 0 62px;width:62px;height:70px;border-radius:10px;object-fit:cover;background:#D6DDDA;display:block}
+.mk-c{min-width:0;flex:1}
+.mk-cid{margin:0;font-size:13px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mk-l{margin:1px 0 4px;font-size:11px;color:var(--texto2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mk-pb{display:flex;justify-content:space-between;align-items:center;gap:4px}.mk-pb strong{font-size:13px;font-variant-numeric:tabular-nums}
+.mk-bt{font-size:10.5px;font-weight:700;color:#fff;background:var(--verde);border-radius:7px;padding:4px 7px;white-space:nowrap}
+.mk-assunto{margin:8px 0 8px;font-size:16px;font-weight:800;line-height:1.2}
+.mk-de{display:flex;gap:8px;align-items:center;font-size:12px;line-height:1.2}.mk-de small{color:var(--texto3)}
+.mk-txt{margin:10px 0;font-size:12px;line-height:1.45;color:var(--texto2)}
+.mk-grande{position:relative;border-radius:14px;overflow:hidden;margin-bottom:8px}
+.mk-gfoto{display:block;width:100%;height:150px;object-fit:cover;background:#D6DDDA}
+.mk-tempo{position:absolute;left:8px;top:8px;font-size:11px;font-weight:700;color:#fff;background:rgba(15,26,23,.7);border-radius:999px;padding:3px 9px}
+.cc-topo{max-width:640px}
+.cc-baixo{margin-top:32px}
+.vantagens{list-style:none;margin:0 0 20px;padding:0;display:flex;flex-direction:column;gap:20px}
+.vantagens li{display:flex;gap:14px;align-items:flex-start}.vantagens li>svg{flex:0 0 auto;color:var(--verde);margin-top:2px}
+.vantagens h3{margin:0;font-size:19px;font-weight:800;letter-spacing:-.01em;line-height:1.3}.vantagens p{margin:3px 0 0;color:var(--texto2)}
+.heroi-mock{margin:0 -20px}
+@media (min-width:900px){.heroi-mock{margin:0}}
+
 /* herói */
 .heroi{padding:32px 0 56px}
 .heroi-grelha{display:grid;gap:40px;align-items:center}
@@ -515,7 +575,7 @@ dialog.dialogo::backdrop{background:rgba(15,26,23,.55)}
       <a href="#proteger" data-nav="proteger">Pagamento seguro</a>
       <a href="#precos" data-nav="precos">Preços</a>
       <a href="#senhorios" data-nav="senhorios">Para senhorios</a>
-    </nav>
+        </nav>
     <a class="botao-sec botao-peq" href="#conta" data-nav="conta" id="b-topo-conta">Entrar</a>
   </div>
 </header>
@@ -556,6 +616,10 @@ dialog.dialogo::backdrop{background:rgba(15,26,23,.55)}
 </footer>
 
 <nav class="nav-baixo" aria-label="Atalhos">
+  <a href="#inicio" data-nav="inicio">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 11 12 4l8 7"/><path d="M6 10v10h12V10"/></svg>
+    Início
+  </a>
   <a href="#pesquisa" data-nav="pesquisa">
     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
     Pesquisar
@@ -567,10 +631,6 @@ dialog.dialogo::backdrop{background:rgba(15,26,23,.55)}
   <a href="#proteger" data-nav="proteger">
     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 5 6v5c0 4.5 3 8 7 10 4-2 7-5.5 7-10V6l-7-3z"/><path d="m9 12 2 2 4-4"/></svg>
     Proteger
-  </a>
-  <a href="#senhorios" data-nav="senhorios">
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 11 12 4l8 7"/><path d="M6 10v10h12V10"/></svg>
-    Senhorios
   </a>
   <a href="#conta" data-nav="conta">
     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg>
@@ -996,18 +1056,48 @@ function blocoCidade(nc){
     '<div class="faixa-casas">'+casas.map(cartaoMini).join('')+'</div>'+
     '<a class="botao-sec" href="#pesquisa?cidade='+encodeURIComponent(cid.nome)+'">Ver as '+fmtN(cid.n)+' casas '+esc(emCidade(cid.nome))+' '+svg(P.seta,{s:18})+'</a>';
 }
-/* Telemóvel de exemplo com casas reais de hoje, como chegariam num alerta */
-function telemovelAlertas(){
-  var l=CASAS.filter(function(c){return c.renda&&c.renda>=minimo(c)&&c.fotos&&c.fotos.length&&(c.tipo==='Quarto'||c.tip==='T0'||c.tip==='T1'||c.tip==='T2')&&c.renda<=1200;})
-    .sort(function(a,b){return a.min-b.min;}).slice(0,3);
-  if(l.length<2)return '';
+/* Ilustrações do início: telemóveis desenhados em código, com casas reais (fotos, preços e zonas do momento) */
+var SIMB_BRANCO='<svg viewBox="5 7 38 34" aria-hidden="true"><path fill="#fff" d="M5 8.4Q5 7 6.4 7H26A17 17 0 0 1 26 41L24.19 25.69A5.4 5.4 0 1 0 20.59 25.69L18.77 41H6.4Q5 41 5 39.6Z"/></svg>';
+function casasMock(n){
+  var l=CASAS.filter(function(c){return c.renda&&c.renda>=minimo(c)&&c.renda<=1300&&c.fotos&&c.fotos.length&&(c.tipo==='Quarto'||/^T[0-2]$/.test(c.tip));});
+  l.sort(function(a,b){return (baratoPrincipal(b)-baratoPrincipal(a))||(a.min-b.min);});
+  return l.slice(0,n);
+}
+function fotoMock(c,cls){return c.fotos&&c.fotos.length?'<img class="'+cls+'" src="'+esc(c.fotos[0])+'" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer">':'<span class="'+cls+'" style="background:'+c.cor+'"></span>';}
+function tlm(conteudo,cls){
   var d=new Date(),h=('0'+d.getHours()).slice(-2)+':'+('0'+d.getMinutes()).slice(-2);
-  return '<figure class="telemovel" aria-label="Exemplo de alertas no telemóvel com casas reais de hoje">'+
-    '<div class="tel-ecra"><p class="tel-hora" aria-hidden="true">'+h+'</p>'+
-    l.map(function(c){return '<div class="notif"><span class="notif-ic" aria-hidden="true"><svg viewBox="5 7 38 34"><path fill="#fff" d="M5 8.4Q5 7 6.4 7H26A17 17 0 0 1 26 41L24.19 25.69A5.4 5.4 0 1 0 20.59 25.69L18.77 41H6.4Q5 41 5 39.6Z"/></svg></span>'+
-      '<span class="notif-txt"><span class="notif-topo"><strong>Duas Chaves</strong><span>'+quando(c.min)+'</span></span>'+
-      '<span>Nova casa no teu alerta: '+esc(tipTxt(c))+' '+esc(emCidade(c.cidade||c.bairro))+', '+eur(c.renda)+'/mês</span></span></div>';}).join('')+
-    '</div><figcaption>'+(l.every(function(c){return c.min<1440;})?'Casas reais das últimas 24 horas':'Casas reais publicadas há pouco')+'</figcaption></figure>';
+  return '<div class="tlm'+(cls?' '+cls:'')+'"><div class="tlm-ecra"><span class="tlm-ilha"></span><div class="tlm-barra"><span>'+h+'</span><span class="tlm-ic"><i></i><i></i><i></i><b></b></span></div>'+conteudo+'</div></div>';
+}
+function riscos(lado){return '<svg class="riscos '+lado+'" viewBox="0 0 80 60" aria-hidden="true"><path d="M8 50 C 22 34, 38 22, 70 12"/><path d="M28 56 C 40 48, 52 44, 72 40"/></svg>';}
+/* herói: telemóvel com uma casa e três alertas a chegar por cima */
+function mockHeroi(){
+  var l=casasMock(4);if(l.length<3)return '';
+  var c=l[0];
+  var notif=function(x,i){return '<div class="ntf ntf-'+i+'"><span class="ntf-ic">'+SIMB_BRANCO+'</span><span class="ntf-txt"><span class="ntf-topo"><strong>Duas Chaves</strong><span>'+(i===0?'agora':quando(Math.max(1,x.min)).replace('há ',''))+'</span></span><span>Casa nova: '+esc(tipTxt(x))+' '+esc(emCidade(x.cidade||x.bairro))+', '+eur(x.renda)+'</span></span></div>';};
+  var ecra='<div class="tlm-casa">'+fotoMock(c,'tlm-foto')+'<div class="tlm-casa-c"><p class="tlm-cid">'+esc(c.cidade||c.bairro)+'</p><p class="tlm-desc">'+esc(tipTxt(c))+(areaOk(c)?' com '+c.area+' m²':'')+' em '+esc(c.bairro)+'</p>'+
+    '<div class="tlm-dados"><span>'+esc(tipTxt(c))+'</span><span>'+esc(c.tipo||'Casa')+'</span><span>'+(areaOk(c)?c.area+' m²':'—')+'</span></div><p class="tlm-preco">'+eur(c.renda)+'<small> /mês</small></p></div></div>';
+  return '<figure class="mock mock-heroi" aria-label="Exemplo: alertas de casas novas a chegar ao telemóvel, com casas reais publicadas há pouco">'+riscos('esq')+riscos('dir')+
+    tlm(ecra)+'<div class="ntf-pilha">'+[l[1],l[2],l[3]||l[1]].map(notif).join('')+'</div></figure>';
+}
+/* «Cansado de chegar tarde?»: dois telemóveis, a app com as casas para ti e o e-mail do alerta */
+function mockDuo(){
+  var l=casasMock(5);if(l.length<4)return '';
+  var nome=((conta.perfil&&conta.perfil.nome)||'').split(' ')[0]||'Ana';
+  var item=function(c){return '<div class="mk-item">'+fotoMock(c,'mk-foto')+'<div class="mk-c"><p class="mk-cid">'+esc(c.cidade||c.bairro)+'</p><p class="mk-l">'+esc(tipTxt(c))+(areaOk(c)?' · '+c.area+' m²':'')+'</p><div class="mk-pb"><strong>'+eur(c.renda)+'</strong><span class="mk-bt">Contactar</span></div></div></div>';};
+  var app='<div class="mk-app"><p class="mk-ola">Olá, <span>'+esc(nome)+'</span>!</p><p class="mk-sub">Encontrámos casas novas para ti</p>'+l.slice(0,3).map(item).join('')+'</div>';
+  var c=l[3];
+  var mail='<div class="mk-mail"><p class="mk-assunto">Casa nova no teu alerta</p><div class="mk-de"><span class="ntf-ic peq">'+SIMB_BRANCO+'</span><span><strong>Duas Chaves</strong><br><small>agora</small></span></div>'+
+    '<p class="mk-txt">Olá! Há uma casa nova que cumpre o que procuras. Marca a visita antes dos outros.</p>'+
+    '<div class="mk-grande">'+fotoMock(c,'mk-gfoto')+'<span class="mk-tempo">'+(c.min<1440?quando(c.min):'Nova')+'</span></div><p class="mk-cid">'+esc(c.cidade||c.bairro)+'</p><p class="mk-l">'+esc(tipTxt(c))+(areaOk(c)?' · '+c.area+' m²':'')+' · '+eur(c.renda)+'/mês</p></div>';
+  return '<figure class="mock mock-duo" aria-label="Exemplo: a lista de casas novas na app e o e-mail de alerta, com casas reais"><div class="palco">'+riscos('esq')+tlm(app,'tlm-esq')+tlm(mail,'tlm-dir')+'</div></figure>';
+}
+function vantagens(nf){
+  var it=function(ic,t,p){return '<li>'+svg(ic,{s:26,w:1.8})+'<div><h3>'+t+'</h3><p>'+p+'</p></div></li>';};
+  return '<ul class="vantagens">'+
+    it(P.lupa,'Procuramos por ti em '+(nf>1?nf+' sites':'vários sites'),'De 30 em 30 minutos, sem repetir a mesma casa.')+
+    it(P.sino,'Alertas no minuto','Sabes das casas novas assim que aparecem, por e-mail.')+
+    it(P.escudo,'Pagamento seguro','O dinheiro só chega ao senhorio quando recebes as chaves.')+
+  '</ul>';
 }
 function faq(){return [
   ['De onde vêm as casas?','Juntamos num só lugar os anúncios dos principais sites de arrendamento em Portugal ('+(function(){var f=numerosCasas().fontes;return f.length>1?f.slice(0,-1).join(', ')+' e '+f[f.length-1]:'Imovirtual';})()+'), sem repetir a mesma casa. Atualizamos de 30 em 30 minutos e retiramos as que já não estão disponíveis.'],
@@ -1019,7 +1109,7 @@ function faq(){return [
 function vInicio(){
   titulo('');
   var prefs=lerPrefs(),recentes=prefs.pesquisas.slice(0,3);
-  var novas=baratasInicio(),nc=numerosCasas(),ma=minAtualizado(),tel=telemovelAlertas(),ativo=acessoAtivo();
+  var novas=baratasInicio(),nc=numerosCasas(),ma=minAtualizado(),tel=mockHeroi(),duo=mockDuo(),ativo=acessoAtivo();
   var nums=nc.total>20?'<p class="numeros"><span><strong>'+fmtN(nc.total)+'</strong> casas'+(nc.fontes.length>1?' de <strong>'+nc.fontes.length+'</strong> sites':'')+'</span>'+(nc.n24>0?'<span><strong>'+fmtN(nc.n24)+'</strong> novas em 24 h</span>':'')+(ma!=null&&ma<180?'<span>Atualizado '+quando(ma)+'</span>':'')+'</p>':'';
   main.innerHTML=
   '<section class="heroi"><div class="contentor heroi-grelha"><div>'+
@@ -1034,7 +1124,7 @@ function vInicio(){
     '</form>'+
     (recentes.length?'<div class="cidades"><span>Continuar:</span>'+chipsFiltros(recentes,'data-pesq')+'</div>':'')+
   '</div>'+
-  (tel?'<div class="heroi-tel">'+tel+'</div>':'')+
+  (tel?'<div class="heroi-mock">'+tel+'</div>':'')+
   '</div></section>'+
 
   '<section class="seccao" style="padding-top:0"><div class="contentor">'+
@@ -1044,11 +1134,12 @@ function vInicio(){
 
   (nc.cidades.length>=2?'<section class="seccao branco"><div class="contentor" id="cid-bloco">'+blocoCidade(nc.cidades)+'</div></section>':'')+
 
-  '<section class="seccao escura" id="chegar-cedo"><div class="contentor dois-col">'+
-    '<div><h2>Cansado de chegar tarde?</h2>'+
-    '<p class="apoio">Segundo o idealista, 11% das casas para arrendar desaparecem em menos de 24 horas. Diz-nos o que procuras e avisamos-te assim que aparecer uma casa para ti.</p>'+
-    '<p class="ajuda">Fonte: <a href="https://www.idealista.pt/news/node/75579" target="_blank" rel="noopener">idealista, 1.º trimestre de 2026</a></p>'+
-    (tel?'<div class="tel-meio">'+tel+'</div>':'')+'</div>'+
+  '<section class="seccao verde-band" id="chegar-cedo"><div class="contentor">'+
+    '<div class="cc-topo"><h2>Cansado de chegar tarde?</h2>'+
+    '<p class="apoio">Sê o primeiro a marcar visita quando aparece uma casa nova, seja em que site for.</p></div>'+
+    duo+
+    '<div class="dois-col cc-baixo"><div>'+vantagens(nc.fontes.length)+
+    '<p class="ajuda">Segundo o idealista, 11% das casas para arrendar desaparecem em menos de 24 horas. Fonte: <a href="https://www.idealista.pt/news/node/75579" target="_blank" rel="noopener">idealista, 1.º trimestre de 2026</a></p></div>'+
     '<form class="form-cartao" id="f-alerta-rapido" novalidate>'+
       '<p class="h-peq inteiro">Criar alerta grátis</p>'+
       '<div class="campo"><label for="ar-cidade">Cidade</label><input id="ar-cidade" type="text" autocomplete="address-level2" value="'+esc(estado.cidade)+'"></div>'+
