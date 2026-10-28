@@ -99,6 +99,15 @@ input[type=file]{font:inherit;font-size:15px;max-width:100%}
 .caixa-check input{width:22px;height:22px;margin:1px 0 0;accent-color:var(--verde);flex-shrink:0}
 
 .chips{display:flex;flex-wrap:wrap;gap:8px}
+.tipos{display:flex;gap:4px;overflow-x:auto;scrollbar-width:none;margin:4px -4px 18px;padding:0 4px;border-bottom:1px solid var(--borda)}
+.tipos::-webkit-scrollbar{display:none}
+.tipo{flex:1 1 0;min-width:0;white-space:nowrap;display:flex;flex-direction:column;align-items:center;gap:6px;padding:10px 4px 12px;border:0;background:none;font:inherit;font-size:13.5px;font-weight:600;color:var(--texto2);cursor:pointer;position:relative;transition:color .15s ease-out}
+.tipo::after{content:"";position:absolute;left:8px;right:8px;bottom:-1px;height:2px;border-radius:2px;background:var(--tinta);transform:scaleX(0);transition:transform .2s ease-out}
+.tipo:hover{color:var(--tinta)}
+.tipo[aria-pressed=true]{color:var(--tinta)}
+.tipo[aria-pressed=true]::after{transform:scaleX(1)}
+.tipo:focus-visible{outline:2px solid var(--tinta);outline-offset:-2px;border-radius:8px}
+@media (min-width:900px){.tipos{justify-content:flex-start}.tipo{flex:0 0 auto;min-width:110px}}
 .chip{min-height:44px;padding:0 16px;border-radius:999px;border:1px solid var(--borda-forte);background:#fff;font:inherit;font-size:15px;font-weight:600;color:var(--tinta);cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:background-color .15s ease-out}
 .chip:hover{border-color:var(--tinta)}
 .chip[aria-pressed=true]{background:var(--tinta);border-color:var(--tinta);color:#fff}
@@ -810,6 +819,10 @@ function atualizarTopo(){document.getElementById('b-topo-conta').textContent=con
 /* ---------- utilidades ---------- */
 var MARCA_FOTO='<span class="marca-foto" aria-hidden="true"><svg viewBox="5 7 38 34" aria-hidden="true" focusable="false"><path fill="#fff" d="M5 8.4Q5 7 6.4 7H26A17 17 0 0 1 26 41L24.19 25.69A5.4 5.4 0 1 0 20.59 25.69L18.77 41H6.4Q5 41 5 39.6Z"/></svg></span>';
 var P = {
+  t_todos:'<rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/>',
+  t_apart:'<path d="M3 21h18"/><path d="M5 21V4h9v17"/><path d="M14 9h5v12"/><path d="M8 8h1M11 8h0M8 12h1M11 12h0M8 16h1M11 16h0"/>',
+  t_moradia:'<path d="M3 11 12 4l9 7"/><path d="M5 9.5V21h14V9.5"/><path d="M10 21v-6h4v6"/>',
+  t_quarto:'<path d="M3 6v13"/><path d="M3 15h18v4"/><path d="M21 15v-3a3 3 0 0 0-3-3h-7v6"/><circle cx="7" cy="11.5" r="2"/>',
   lupa:'<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>',
   escudo:'<path d="M12 3 5 6v5c0 4.5 3 8 7 10 4-2 7-5.5 7-10V6l-7-3z"/><path d="m9 12 2 2 4-4"/>',
   sino:'<path d="M6 8a6 6 0 1 1 12 0c0 7 3 8 3 8H3s3-1 3-8"/><path d="M10 20a2 2 0 0 0 4 0"/>',
@@ -1257,13 +1270,13 @@ function mockDuo(){
 function vantagens(nf){
   var it=function(ic,t,p){return '<li>'+svg(ic,{s:26,w:1.8})+'<div><h3>'+t+'</h3><p>'+p+'</p></div></li>';};
   return '<ul class="vantagens">'+
-    it(P.lupa,'Procuramos por ti em '+(nf>1?nf+' sites':'vários sites'),'De 30 em 30 minutos, sem repetir a mesma casa.')+
+    it(P.lupa,'Procuramos por ti nos principais sites','De 30 em 30 minutos, sem repetir a mesma casa.')+
     it(P.sino,'Alertas no minuto','Sabes das casas novas assim que aparecem, por e-mail.')+
     it(P.escudo,'Pagamento seguro','O dinheiro só chega ao senhorio quando recebes as chaves.')+
   '</ul>';
 }
 function faq(){return [
-  ['De onde vêm as casas?','Juntamos num só lugar os anúncios dos principais sites de arrendamento em Portugal ('+(function(){var f=numerosCasas().fontes;return f.length>1?f.slice(0,-1).join(', ')+' e '+f[f.length-1]:'Imovirtual';})()+'), sem repetir a mesma casa. Atualizamos de 30 em 30 minutos e retiramos as que já não estão disponíveis.'],
+  ['De onde vêm as casas?','Juntamos num só lugar os anúncios dos principais sites de arrendamento em Portugal, sem repetir a mesma casa. Atualizamos de 30 em 30 minutos e retiramos as que já não estão disponíveis.'],
   ['Quanto custa?','Ver as casas é grátis. O acesso para contactar e receber alertas no minuto custa '+P1+' nos primeiros 30 dias e depois '+P2+' a cada 30 dias, até cancelares.'],
   ['Como cancelo?','Na tua conta, com um toque. Avisamos-te por e-mail 3 dias antes de cada renovação, para não haver surpresas.'],
   ['As casas são verificadas?','Os anúncios de outros sites não são verificados por nós. É por isso que existe o pagamento seguro: o dinheiro da entrada fica retido e só chega ao senhorio quando recebes as chaves.'],
@@ -1297,7 +1310,7 @@ function vInicio(){
   titulo('');
   var prefs=lerPrefs(),recentes=prefs.pesquisas.slice(0,3);
   var novas=baratasInicio(),nc=numerosCasas(),ma=minAtualizado(),tel=mockHeroi(),duo=mockDuo(),ativo=acessoAtivo();
-  var nums=nc.total>20?'<p class="numeros"><span><strong>'+fmtN(nc.total)+'</strong> casas'+(nc.fontes.length>1?' de <strong>'+nc.fontes.length+'</strong> sites':'')+'</span>'+(nc.n24>0?'<span><strong>'+fmtN(nc.n24)+'</strong> novas em 24 h</span>':'')+(ma!=null&&ma<180?'<span class="atual">Atualizado '+quando(ma)+'</span>':'')+'</p>':'';
+  var nums=nc.total>20?'<p class="numeros"><span><strong>'+fmtN(nc.total)+'</strong> casas</span>'+(nc.n24>0?'<span><strong>'+fmtN(nc.n24)+'</strong> novas em 24 h</span>':'')+(ma!=null&&ma<180?'<span class="atual">Atualizado '+quando(ma)+'</span>':'')+'</p>':'';
   main.innerHTML=
   '<section class="heroi"><div class="contentor heroi-grelha"><div>'+
     '<h1 class="grande" tabindex="-1">Casas para arrendar, <span class="traco">sem burlas<svg viewBox="0 0 300 30" preserveAspectRatio="none" aria-hidden="true" focusable="false"><path class="t1" pathLength="1" d="M5 19 C 48 13, 104 10, 158 10 S 252 11, 295 7"/><path class="t2" pathLength="1" d="M26 25 C 86 20, 150 18, 214 18 S 266 18, 284 16"/></svg></span></h1>'+
@@ -1533,7 +1546,7 @@ function filtrar(){
   if(estado.ordem==='recomendados')r=intercalarQuartos(r);
   return r;
 }
-function nFiltros(){return (estado.precoMax?1:0)+estado.tips.length+(estado.soProt?1:0)+(estado.areaMin?1:0)+(estado.dias?1:0)+(estado.soPart?1:0)+(estado.soFotos?1:0)+(estado.comPreco?1:0)+(estado.semCaucao?1:0)+(estado.tipoImovel?1:0);}
+function nFiltros(){return (estado.precoMax?1:0)+estado.tips.length+(estado.soProt?1:0)+(estado.areaMin?1:0)+(estado.dias?1:0)+(estado.soPart?1:0)+(estado.soFotos?1:0)+(estado.comPreco?1:0)+(estado.semCaucao?1:0);}
 var EXTRAS=['areaMin','dias','soPart','soFotos','comPreco','semCaucao','tipoImovel'];
 function sel(id,val,ops){return '<select id="'+id+'">'+ops.map(function(o){return '<option value="'+o[0]+'"'+(String(o[0])===String(val)?' selected':'')+'>'+o[1]+'</option>';}).join('')+'</select>';}
 
@@ -1548,12 +1561,12 @@ function vPesquisa(){
       '</form>'+
       (lerPrefs().filtros.length?'<div class="cidades" style="margin-top:14px"><span>Guardadas:</span>'+chipsFiltros(lerPrefs().filtros,'data-fg')+'</div>':'')+
     '</div>'+
+    '<nav class="tipos" aria-label="Tipo de imóvel">'+[['','Todos',P.t_todos],['Apartamento','Apartamentos',P.t_apart],['Moradia','Moradias',P.t_moradia],['Quarto','Quartos',P.t_quarto]].map(function(t){return '<button type="button" class="tipo" data-tipo="'+t[0]+'" aria-pressed="'+(estado.tipoImovel===t[0])+'">'+svg(t[2],{s:26,w:1.6})+'<span>'+t[1]+'</span></button>';}).join('')+'</nav>'+
     '<div class="pesq-grelha">'+
       '<button class="botao-sec botao-peq botao-filtros" type="button" id="b-filtros" aria-expanded="'+estado.filtrosAbertos+'" aria-controls="filtros">'+svg(P.filtro,{s:18})+'Filtros<span id="n-filtros"></span></button>'+
       '<aside class="filtros'+(estado.filtrosAbertos?' aberto':'')+'" id="filtros" aria-label="Filtros">'+
         '<div class="campo"><label for="f-preco">Renda máxima</label><select id="f-preco">'+opcoesPreco(estado.precoMax)+'</select></div>'+
         '<fieldset class="campo"><legend class="rotulo">Tipologia</legend><div class="chips" style="margin-top:6px">'+TIPS.map(function(t){return '<button type="button" class="chip" data-tip="'+t+'" aria-pressed="'+(estado.tips.indexOf(t)>=0)+'">'+t+'</button>';}).join('')+'</div></fieldset>'+
-        '<div class="campo"><label for="f-tipo">Tipo de imóvel</label>'+sel('f-tipo',estado.tipoImovel,[['','Todos'],['Apartamento','Apartamento'],['Moradia','Moradia'],['Quarto','Quarto']])+'</div>'+
         '<div class="campo"><label for="f-area">Área mínima</label>'+sel('f-area',estado.areaMin,[[0,'Qualquer'],[30,'30 m²'],[50,'50 m²'],[70,'70 m²'],[90,'90 m²'],[120,'120 m²']])+'</div>'+
         '<div class="campo"><label for="f-dias">Publicadas</label>'+sel('f-dias',estado.dias,[[0,'Em qualquer altura'],[1,'Nas últimas 24 horas'],[3,'Nos últimos 3 dias'],[7,'Na última semana']])+'</div>'+
         '<label class="interruptor"><input type="checkbox" id="f-part"'+(estado.soPart?' checked':'')+'><span>Só particulares (sem agência)</span></label>'+
@@ -1598,7 +1611,7 @@ function vPesquisa(){
     }
   }
   function limpar(){limite=30;estado.precoMax=0;estado.tips=[];estado.soProt=false;estado.areaMin=0;estado.dias=0;estado.soPart=false;estado.soFotos=false;estado.comPreco=false;estado.semCaucao=false;estado.tipoImovel='';
-    ['f-preco','f-area','f-dias'].forEach(function(i){document.getElementById(i).value='0';});document.getElementById('f-tipo').value='';
+    ['f-preco','f-area','f-dias'].forEach(function(i){document.getElementById(i).value='0';});marcarTipos();
     ['f-prot','f-part','f-fotos','f-compreco'].forEach(function(i){document.getElementById(i).checked=false;});main.querySelectorAll('[data-tip]').forEach(function(b){b.setAttribute('aria-pressed','false');});desenhar();}
   desenhar();
 
@@ -1612,7 +1625,8 @@ function vPesquisa(){
   document.getElementById('f-compreco').addEventListener('change',function(){estado.comPreco=this.checked;limite=30;desenhar();});
   document.getElementById('f-area').addEventListener('change',function(){estado.areaMin=+this.value;limite=30;desenhar();});
   document.getElementById('f-dias').addEventListener('change',function(){estado.dias=+this.value;limite=30;desenhar();});
-  document.getElementById('f-tipo').addEventListener('change',function(){estado.tipoImovel=this.value;limite=30;desenhar();});
+  function marcarTipos(){document.querySelectorAll('.tipo').forEach(function(b){b.setAttribute('aria-pressed',String(b.dataset.tipo===estado.tipoImovel));});}
+  document.querySelectorAll('.tipo').forEach(function(b){b.addEventListener('click',function(){estado.tipoImovel=b.dataset.tipo;limite=30;marcarTipos();desenhar();});});
   document.getElementById('f-ordem').addEventListener('change',function(){estado.ordem=this.value;desenhar();});
   document.getElementById('f-limpar').addEventListener('click',limpar);
   main.querySelectorAll('[data-tip]').forEach(function(b){b.addEventListener('click',function(){
@@ -2653,7 +2667,7 @@ function abrirAlertaPop(){
   abrirDialogo('<div class="dialogo-corpo promo pop-alerta">'+
     '<button type="button" class="icone promo-x" aria-label="Fechar" data-fechar>'+svg(P.fechar)+'</button>'+
     '<h2 class="promo-tit" tabindex="-1">Queres receber as casas novas no e&#8209;mail, <em>grátis</em>?</h2>'+
-    (n.n24>0?'<p class="pa-sub"><strong>'+(n.n24>=100?'Mais de '+(Math.floor((n.n24-1)/10)*10).toLocaleString('pt-PT'):n.n24.toLocaleString('pt-PT'))+' casas novas</strong> nas últimas 24 horas.</p>':'<p class="pa-sub">Avisamos-te quando aparecer uma casa como a que procuras.</p>')+
+    (n.total>=100?'<p class="pa-sub"><strong>Mais de '+(Math.floor((n.total-1)/100)*100).toLocaleString('pt-PT')+' casas</strong> para arrendar'+(n.n24>0?' e <strong>'+n.n24.toLocaleString('pt-PT')+' novas</strong> nas últimas 24 horas':'')+'.</p>':'<p class="pa-sub">Avisamos-te quando aparecer uma casa como a que procuras.</p>')+
     '<span class="pa-sino" aria-hidden="true">'+svg(P.sino,{s:34})+'</span>'+
     '<form id="f-pop-alerta" novalidate>'+
       '<div class="campo"><label for="pa-cidade">Cidade ou bairro</label><input id="pa-cidade" type="text" autocomplete="address-level2" value="'+esc(cid)+'" placeholder="Todo o país"></div>'+
