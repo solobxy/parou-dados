@@ -18,7 +18,7 @@
   --erro:#B42318;--cinza-passo:#9AA8A3;
 }
 *{box-sizing:border-box}
-html{-webkit-text-size-adjust:100%}
+html{-webkit-text-size-adjust:100%;color-scheme:light;background:var(--fundo)}
 body{margin:0;font-family:'Schibsted Grotesk',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;background:var(--fundo);color:var(--tinta);font-size:16px;line-height:1.5;touch-action:manipulation;padding-bottom:calc(64px + env(safe-area-inset-bottom))}
 a{color:var(--verde)}
 a:hover{color:var(--verde-escuro)}
@@ -304,7 +304,7 @@ textarea[readonly]{background:var(--fundo);min-height:150px}
 .rodape .pequeno{font-size:13px;color:var(--texto3)}
 
 /* diálogo e aviso */
-dialog.dialogo{border:0;border-radius:20px;padding:0;overflow:auto;width:calc(100% - 32px);max-width:480px;max-height:calc(100dvh - 32px);color:var(--tinta);font-family:inherit}
+dialog.dialogo{border:0;border-radius:20px;padding:0;overflow:auto;background:#fff;color-scheme:light;width:calc(100% - 32px);max-width:480px;max-height:calc(100dvh - 32px);color:var(--tinta);font-family:inherit}
 dialog.dialogo::backdrop{background:rgba(15,26,23,.55)}
 .dialogo-corpo{padding:20px;display:flex;flex-direction:column;gap:16px;margin:0}
 .dialogo-cabeca{display:flex;align-items:center;justify-content:space-between;gap:12px}
@@ -460,7 +460,7 @@ var FONTES = {
 var PRECOS = [0,600,800,1000,1200,1500];
 var TIPS = ['T0','T1','T2','T3+'];
 
-var estado = {cidade:'',precoMax:0,tips:[],soProt:false,ordem:'recentes',filtrosAbertos:false};
+var estado = {cidade:'',precoMax:0,tips:[],soProt:false,ordem:'recomendados',filtrosAbertos:false};
 var pagamentos = {};
 var pedidos = {};
 var proxPedido = 101;
@@ -770,6 +770,29 @@ function vInicio(){
   });
 }
 
+/* «Recomendados»: primeiro as casas com melhor renda para a zona (€/m² abaixo da mediana do concelho),
+   mais fotos, descrição e mais recentes. Sem preço ou sem fotos vão para o fim. */
+var medianas=null;
+function calcularMedianas(){
+  var g={};
+  CASAS.forEach(function(c){if(c.renda&&c.area>10){var k=norm(c.cidade||c.distrito||'');(g[k]=g[k]||[]).push(c.renda/c.area);}});
+  medianas={};
+  Object.keys(g).forEach(function(k){var v=g[k].sort(function(a,b){return a-b;});if(v.length>=3)medianas[k]=v[Math.floor(v.length/2)];});
+}
+function pontuacao(c){
+  if(c._pont!=null)return c._pont;
+  if(!medianas)calcularMedianas();
+  var valor=0.5;
+  var med=medianas[norm(c.cidade||c.distrito||'')];
+  if(c.renda&&c.area>10&&med){valor=Math.max(0,Math.min(1,0.5+(med-c.renda/c.area)/med));}
+  var nf=(c.fotos&&c.fotos.length)||0;
+  var fotos=Math.min(nf,10)/10;
+  var fresco=Math.exp(-c.min/(60*24*4));
+  var p=0.4*valor+0.25*fotos+0.25*fresco+(c.desc?0.1:0);
+  if(!c.renda)p-=0.5;
+  if(!nf&&!c.prot)p-=0.3;
+  c._pont=p;return p;
+}
 function filtrar(){
   var cid=norm(estado.cidade);
   var r=CASAS.filter(function(c){
@@ -782,6 +805,7 @@ function filtrar(){
   r.sort(function(a,b){
     if(estado.ordem==='barato')return (a.renda||1e9)-(b.renda||1e9);
     if(estado.ordem==='caro')return (b.renda||0)-(a.renda||0);
+    if(estado.ordem==='recomendados')return pontuacao(b)-pontuacao(a);
     return a.min-b.min;
   });
   return r;
@@ -809,6 +833,7 @@ function vPesquisa(){
       '<section aria-label="Resultados">'+
         '<div class="result-cabeca"><p class="n-res" id="n-res" aria-live="polite"></p>'+
           '<div class="ordem"><label for="f-ordem">Ordenar</label><select id="f-ordem">'+
+            '<option value="recomendados"'+(estado.ordem==='recomendados'?' selected':'')+'>Recomendados</option>'+
             '<option value="recentes"'+(estado.ordem==='recentes'?' selected':'')+'>Mais recentes</option>'+
             '<option value="barato"'+(estado.ordem==='barato'?' selected':'')+'>Renda mais baixa</option>'+
             '<option value="caro"'+(estado.ordem==='caro'?' selected':'')+'>Renda mais alta</option>'+
@@ -1449,8 +1474,8 @@ function deRecolha(a){
 try{
   fetch('anuncios.json',{cache:'no-store'}).then(function(r){return r.ok?r.json():null;}).then(function(d){
     if(!d||!d.anuncios||!d.anuncios.length)return;
-    CASAS=CASAS.filter(function(c){return c.prot;}).concat(d.anuncios.map(deRecolha).filter(function(c){return c.id&&c.url;}));
-    document.getElementById('aviso-demo').textContent='Versão de testes: os anúncios de outros sites são reais; os publicados aqui e os pagamentos são de demonstração.';
+    CASAS=d.anuncios.map(deRecolha).filter(function(c){return c.id&&c.url;});medianas=null;
+    document.getElementById('aviso-demo').textContent='Versão de testes: os anúncios são reais; os pagamentos ainda são de demonstração.';
     var h=location.hash.slice(1)||'inicio';
     if(/^(inicio|pesquisa|conta|casa-\d+)$/.test(h))rota();
   }).catch(function(){});

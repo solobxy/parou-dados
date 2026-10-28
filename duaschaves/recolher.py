@@ -13,11 +13,17 @@ import datetime, html, json, os, re, sys, time, urllib.error, urllib.request
 
 BASE = 'https://www.imovirtual.com'
 UA = 'Mozilla/5.0 (compatible; DuasChavesBot/0.1; +https://duaschaves.pt)'
-DISTRITOS = ['lisboa', 'porto', 'coimbra', 'braga', 'setubal', 'faro', 'aveiro']
+DISTRITOS = ['lisboa', 'porto', 'setubal', 'braga', 'faro', 'coimbra', 'aveiro', 'leiria', 'santarem', 'viseu',
+             'viana-do-castelo', 'vila-real', 'braganca', 'guarda', 'castelo-branco', 'portalegre', 'evora', 'beja',
+             'ilha-da-madeira', 'ilha-de-sao-miguel', 'ilha-terceira']
+GRANDES = {'lisboa', 'porto', 'setubal', 'braga', 'faro'}   # mais anúncios: lê mais páginas
 TIPOS = ['apartamento', 'moradia']
 PAGINAS = int(os.environ.get('PAGINAS', '2'))
+PAGINAS_GRANDES = int(os.environ.get('PAGINAS_GRANDES', '5'))
 MAX_DETALHES = int(os.environ.get('MAX_DETALHES', '80'))
-MAX_ANUNCIOS = 1500
+MAX_ANUNCIOS = 2500
+MAX_DESC = 700      # a descrição completa fica no anúncio original; aqui só o essencial (ficheiro leve)
+MAX_FOTOS = 8
 PAUSA = 2.0
 PRECO_MIN, PRECO_MAX = 100, 20000   # fora disto o preço é claramente falso: mostra-se «sob consulta»
 
@@ -47,7 +53,7 @@ def limpar_texto(t):
     t = html.unescape(re.sub(r'<[^>]+>', '', t))
     t = re.sub(r'[ \t]+', ' ', t)
     t = re.sub(r'\n\s*\n+', '\n\n', t).strip()
-    return t[:2500]
+    return t if len(t) <= MAX_DESC else t[:MAX_DESC].rsplit(' ', 1)[0] + '…'
 
 
 def tipologia(titulo, quartos):
@@ -87,7 +93,7 @@ def do_resultado(item):
         'area': item.get('areaInSquareMeters'),
         'renda': preco_valido(item),
         'bairro': bairro, 'cidade': concelho, 'distrito': distrito,
-        'fotos': [f for f in fotos if f][:12],
+        'fotos': [f for f in fotos if f][:MAX_FOTOS],
         'data': item.get('createdAtFirst') or item.get('dateCreated'),
         'particular': bool(item.get('isPrivateOwner')),
         'fonte': 'Imovirtual',
@@ -104,7 +110,7 @@ def detalhes(anuncio):
     anuncio['desc'] = limpar_texto(ad.get('description'))
     fotos = [i.get('medium') or i.get('large') for i in ad.get('images') or [] if i]
     if fotos:
-        anuncio['fotos'] = [f for f in fotos if f][:12]
+        anuncio['fotos'] = [f for f in fotos if f][:MAX_FOTOS]
     for c in ad.get('characteristics') or []:
         if c.get('key') == 'floor_no' and c.get('localizedValue'):
             anuncio['andar'] = c['localizedValue']
@@ -123,7 +129,7 @@ def main():
     vistos = {}
     for distrito in DISTRITOS:
         for tipo in TIPOS:
-            for pagina in range(1, PAGINAS + 1):
+            for pagina in range(1, (PAGINAS_GRANDES if distrito in GRANDES else PAGINAS) + 1):
                 url = f'{BASE}/pt/resultados/arrendar/{tipo}/{distrito}?by=LATEST&direction=DESC&page={pagina}'
                 d = next_data(obter(url))
                 itens = ((((d or {}).get('props') or {}).get('pageProps') or {}).get('data') or {}).get('searchAds', {}).get('items') or []
