@@ -7,6 +7,11 @@
 <meta name="color-scheme" content="light">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='4 6 40 36'%3E%3Cpath fill='%230B6E4F' d='M5 8.4Q5 7 6.4 7H26A17 17 0 0 1 26 41L24.19 25.69A5.4 5.4 0 1 0 20.59 25.69L18.77 41H6.4Q5 41 5 39.6Z'/%3E%3C/svg%3E">
 <link rel="apple-touch-icon" href="/marca/duaschaves-icone-180.png">
+<link rel="manifest" href="/manifest.webmanifest">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Duas Chaves">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="description" content="Casas e quartos para arrendar em Portugal, de vários sites num só lugar, dos mais baratos para os mais caros. Alertas de casas novas e pagamento seguro contra burlas.">
 <title>Duas Chaves · Casas para arrendar, sem burlas</title>
 <link rel="canonical" href="https://duaschaves.pt/">
@@ -330,6 +335,13 @@ dialog.dlg-promo.a-sair::backdrop{animation:sumir .23s ease-in both}
 @media (min-width:1280px){.pn-grelha{grid-template-columns:repeat(3,minmax(0,1fr))}}
 
 .pw-mkt{font-size:13px;line-height:1.35}.pw-mkt input{width:18px;height:18px}
+
+.cartao-app{display:flex;align-items:center;gap:12px;background:#fff;border-radius:18px;padding:12px 12px 12px 14px;margin:-24px 0 32px;box-shadow:0 1px 3px rgba(15,26,23,.08)}
+.cartao-app>div{flex:1;min-width:0}.ca-tit{margin:0;font-weight:800;font-size:15px;line-height:1.3}.ca-sub{margin:2px 0 0;font-size:13px;color:var(--texto2);line-height:1.35}
+.cartao-app .botao{flex:0 0 auto;min-height:44px;padding:0 16px;font-size:15px}
+.passos-instalar{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:10px;font-size:16px;line-height:1.45}.passos-instalar svg{vertical-align:-3px}
+.rodape .instalar{align-self:flex-start;margin-top:4px}
+@media (min-width:900px){.cartao-app{max-width:520px}}
 
 /* herói */
 .heroi{padding:32px 0 56px}
@@ -683,6 +695,7 @@ dialog.dialogo::backdrop{background:rgba(15,26,23,.55)}
         <svg viewBox="0 0 230 48" width="144" height="30" aria-hidden="true" focusable="false"><path fill="#0B6E4F" transform="translate(-4.41 5.82) scale(0.8824)" d="M5 8.4Q5 7 6.4 7H26A17 17 0 0 1 26 41L24.19 25.69A5.4 5.4 0 1 0 20.59 25.69L18.77 41H6.4Q5 41 5 39.6Z"/><path fill="#0F1A17" transform="translate(43.53 42) scale(0.01458)" d="M142 0V-1440H691Q950 -1440 1115 -1355Q1279 -1271 1358 -1111Q1436 -951 1436 -724Q1436 -485 1351 -324Q1267 -163 1100 -82Q933 0 686 0ZM451 -261H653Q1112 -261 1112 -720Q1112 -865 1063 -968Q1015 -1070 915 -1125Q815 -1179 659 -1179H451ZM1952 26Q1827 26 1747 -31Q1666 -88 1627 -189Q1588 -290 1588 -422V-1080H1886V-457Q1886 -326 1931 -263Q1976 -199 2071 -199Q2127 -199 2178 -228Q2228 -258 2260 -327Q2292 -396 2292 -515V-1080H2590V0H2302V-253L2309 -209Q2261 -99 2171 -36Q2080 26 1952 26ZM3137 26Q3034 26 2947 -11Q2860 -47 2807 -119Q2755 -191 2755 -299Q2755 -415 2822 -496Q2889 -577 3017 -620Q3145 -662 3326 -662H3478L3460 -635V-697Q3460 -804 3421 -856Q3382 -909 3292 -909Q3206 -909 3160 -863Q3115 -818 3105 -734L2801 -786Q2818 -876 2878 -949Q2939 -1021 3046 -1064Q3153 -1107 3309 -1107Q3452 -1107 3551 -1062Q3650 -1016 3702 -914Q3753 -812 3753 -641V-274Q3753 -240 3763 -229Q3772 -218 3803 -218H3852V0H3710Q3594 0 3533 -59Q3472 -117 3472 -227V-278L3524 -258Q3511 -215 3486 -166Q3461 -117 3417 -73Q3373 -30 3304 -2Q3236 26 3137 26ZM3223 -178Q3293 -178 3347 -210Q3401 -242 3432 -306Q3463 -371 3463 -467V-490H3337Q3230 -490 3170 -462Q3111 -434 3087 -394Q3063 -353 3063 -315Q3063 -285 3077 -253Q3092 -221 3126 -199Q3161 -178 3223 -178ZM4434 26Q4312 26 4204 -9Q4096 -45 4022 -120Q3949 -195 3928 -315L4200 -369Q4209 -278 4265 -231Q4320 -185 4423 -185Q4522 -185 4570 -224Q4618 -264 4618 -317Q4618 -364 4580 -398Q4543 -432 4452 -446L4353 -462Q4296 -471 4230 -487Q4164 -502 4106 -534Q4048 -565 4011 -621Q3975 -677 3975 -765Q3975 -872 4032 -948Q4089 -1025 4191 -1065Q4293 -1106 4424 -1106Q4545 -1106 4645 -1071Q4745 -1035 4813 -967Q4880 -898 4900 -797L4628 -741Q4621 -782 4602 -818Q4582 -854 4542 -877Q4502 -899 4434 -899Q4357 -899 4312 -869Q4266 -839 4266 -787Q4266 -749 4292 -725Q4317 -701 4362 -686Q4406 -672 4462 -662L4574 -643Q4660 -629 4738 -595Q4815 -560 4864 -496Q4913 -432 4913 -328Q4913 -213 4850 -134Q4788 -55 4680 -14Q4571 26 4434 26ZM6107 26Q5892 26 5734 -67Q5575 -160 5489 -329Q5402 -497 5402 -723Q5402 -946 5487 -1113Q5572 -1280 5730 -1373Q5888 -1466 6106 -1466Q6351 -1466 6523 -1343Q6694 -1221 6748 -989L6434 -916Q6404 -1061 6318 -1133Q6231 -1205 6105 -1205Q5984 -1205 5900 -1145Q5815 -1085 5771 -976Q5726 -868 5726 -720Q5726 -572 5771 -462Q5816 -353 5900 -294Q5984 -234 6101 -234Q6227 -234 6313 -306Q6399 -378 6430 -509L6751 -444Q6693 -218 6522 -96Q6351 26 6107 26ZM6903 0V-1500H7201V-827L7184 -871Q7232 -982 7323 -1044Q7413 -1106 7542 -1106Q7667 -1106 7747 -1049Q7827 -992 7866 -891Q7905 -790 7905 -658V0H7608V-623Q7608 -756 7572 -818Q7537 -881 7440 -881Q7323 -881 7262 -792Q7201 -703 7201 -525V0ZM8404 26Q8300 26 8213 -11Q8126 -47 8073 -119Q8021 -191 8021 -299Q8021 -415 8088 -496Q8156 -577 8283 -620Q8411 -662 8592 -662H8744L8726 -635V-697Q8726 -804 8687 -856Q8649 -909 8558 -909Q8472 -909 8427 -863Q8381 -818 8371 -734L8068 -786Q8084 -876 8145 -949Q8205 -1021 8312 -1064Q8419 -1107 8576 -1107Q8718 -1107 8817 -1062Q8916 -1016 8968 -914Q9020 -812 9020 -641V-274Q9020 -240 9029 -229Q9039 -218 9070 -218H9118V0H8976Q8860 0 8799 -59Q8738 -117 8738 -227V-278L8791 -258Q8777 -215 8752 -166Q8727 -117 8683 -73Q8639 -30 8570 -2Q8502 26 8404 26ZM8489 -178Q8559 -178 8613 -210Q8667 -242 8698 -306Q8729 -371 8729 -467V-490H8603Q8496 -490 8437 -462Q8377 -434 8353 -394Q8329 -353 8329 -315Q8329 -285 8344 -253Q8358 -221 8393 -199Q8427 -178 8489 -178ZM9578 0 9169 -1080H9502L9770 -212H9742L10008 -1080H10341L9933 0ZM10966 26Q10808 26 10681 -43Q10555 -112 10481 -240Q10407 -367 10407 -541Q10407 -714 10480 -841Q10552 -968 10678 -1037Q10804 -1106 10964 -1106Q11054 -1106 11145 -1079Q11237 -1052 11314 -983Q11390 -915 11437 -792Q11484 -670 11484 -480H10598V-650H11219L11187 -597Q11179 -705 11148 -771Q11116 -837 11067 -867Q11017 -897 10956 -897Q10877 -897 10824 -852Q10771 -807 10745 -727Q10719 -646 10719 -540Q10719 -380 10779 -287Q10839 -194 10964 -194Q11046 -194 11104 -236Q11163 -278 11194 -364L11463 -295Q11425 -183 11348 -112Q11272 -41 11172 -8Q11072 26 10966 26ZM12078 26Q11956 26 11848 -9Q11740 -45 11666 -120Q11593 -195 11572 -315L11844 -369Q11853 -278 11909 -231Q11965 -185 12067 -185Q12166 -185 12214 -224Q12262 -264 12262 -317Q12262 -364 12225 -398Q12187 -432 12096 -446L11997 -462Q11940 -471 11874 -487Q11809 -502 11750 -534Q11692 -565 11656 -621Q11619 -677 11619 -765Q11619 -872 11676 -948Q11733 -1025 11835 -1065Q11937 -1106 12069 -1106Q12190 -1106 12290 -1071Q12390 -1035 12457 -967Q12524 -898 12544 -797L12272 -741Q12265 -782 12246 -818Q12226 -854 12186 -877Q12147 -899 12078 -899Q12001 -899 11956 -869Q11910 -839 11910 -787Q11910 -749 11936 -725Q11962 -701 12006 -686Q12050 -672 12106 -662L12219 -643Q12304 -629 12382 -595Q12459 -560 12508 -496Q12557 -432 12557 -328Q12557 -213 12495 -134Q12432 -55 12324 -14Q12216 26 12078 26Z"/></svg>
       </a>
       <p>Casas para arrendar em Portugal. O dinheiro só sai com as duas confirmações.</p>
+      <button type="button" class="botao-sec botao-peq instalar" data-instalar hidden>Instalar a app</button>
     </div>
     <nav aria-label="Arrendar por cidade">
       <a href="/arrendar/lisboa/">Arrendar em Lisboa</a>
@@ -1294,6 +1307,7 @@ function vInicio(){
   (tel?'<div class="heroi-mock">'+tel+'</div>':'')+
   '</div></section>'+
 
+  (podeInstalar()?'<div class="contentor"><div class="cartao-app" data-instalar-cartao><span class="ntf-ic" aria-hidden="true">'+SIMB_BRANCO+'</span><div><p class="ca-tit">Tem a Duas Chaves no ecrã do telemóvel</p><p class="ca-sub">Abre num toque, como uma app. Grátis e sem ocupar espaço.</p></div><button type="button" class="botao botao-peq" data-instalar>Instalar</button></div></div>':'')+
   '<section class="seccao" style="padding-top:0"><div class="contentor">'+
     '<div class="seccao-cabeca"><h2>As mais baratas agora</h2><a class="botao-sec botao-peq" href="#pesquisa">Ver todas as casas '+svg(P.seta,{s:18})+'</a></div>'+
     '<div class="casas tres">'+novas.map(cartao).join('')+'</div>'+
@@ -1428,12 +1442,14 @@ function condicoes(texto){
   var NUM='(\\d{1,2}|um|uma|dois|duas|tres|quatro|cinco|seis)',MES='(?:\\(\\s*\\w+\\s*\\)\\s*)?(?:meses|mes|rendas?|mensalidades?)';
   var PAL={um:1,uma:1,dois:2,duas:2,tres:3,quatro:4,cinco:5,seis:6},n=function(x){return PAL[x]||(/^\d+$/.test(x)?+x:0);};
   var ms=function(k){return k+' '+(k===1?'mês':'meses');},out={},m;
-  if(/(sem|nao (?:e )?(?:pedida|exigida|necessaria)a?|isento de) cauca/.test(t))out.caucao='Sem caução';
+  if(/(sem|nao (?:e |ha |tem )?(?:pedida|exigida|necessaria|precisa)a?|isento de|isencao de|dispensa(?:-se)?(?: de| a)?|nao se pede) cauca/.test(t)||/cauca[oa]?\s*(?::|-)?\s*(?:nao|isento|isenta|dispensada|0 eur|zero)\b/.test(t))out.caucao='Sem caução';
   else{
     m=t.match(new RegExp(NUM+'\\s*'+MES+'\\s*(?:de\\s*)?(?:cauca|garantia|deposito)'))||t.match(new RegExp('(?:cauca[oa]?|deposito de garantia)\\s*(?:de|:|-|=|no valor de|equivalente a|correspondente a|igual a)?\\s*'+NUM+'\\s*'+MES));
     if(m&&n(m[1])>0&&n(m[1])<=12)out.caucao=ms(n(m[1]));
-    else{m=t.match(/cauca[oa]?\s*(?:de|:|-|=|no valor de)?\s*(\d{1,2}[\. ]?\d{3}|\d{2,4})(?:,\d+)?\s*eur/);
-      if(m){var v=+m[1].replace(/\D/g,'');if(v>=50&&v<=30000)out.caucao=String(v).replace(/\B(?=(\d{3})+(?!\d))/g,'.')+' €';}}
+    else if(/cauca[oa]?\s*(?:de|no|do|com o|com|:|-)?\s*(?:igual|mesmo|identic[oa])\s*valor|cauca[oa]?\s*(?:de|no valor de|equivalente a|correspondente a|igual a)\s*(?:uma|1)\s*(?:renda|mensalidade|mes)|(?:igual|mesmo) valor (?:de|para|como) cauca|cauca[oa]? (?:igual|equivalente) (?:a|ao valor d[ae]) renda/.test(t))out.caucao=ms(1);
+    else{m=t.match(/cauca[oa]?\s*(?:de|:|-|=|no valor de)?\s*(\d{1,2}[\. ]?\d{3}|\d{2,4})(?:,\d+)?\s*eur/)||t.match(/(\d{1,2}[\. ]?\d{3}|\d{2,4})(?:,\d+)?\s*eur\s*(?:de\s*)?(?:cauca|deposito de garantia)/);
+      if(m){var v=+m[1].replace(/\D/g,'');if(v>=50&&v<=30000)out.caucao=String(v).replace(/\B(?=(\d{3})+(?!\d))/g,'.')+' €';}
+      if(!out.caucao&&/\bcauca[oa]?\b|deposito de garantia|deposito de seguranca/.test(t))out.caucao='Pedida, sem valor indicado';}
   }
   m=t.match(new RegExp(NUM+'\\s*'+MES+'\\s*(?:de renda\\s*)?(?:adiantad|antecipad|em adiantamento|de adiantamento|pagos? adiantad|pagas? adiantad)'))||t.match(new RegExp('(?:adiantamento|antecipacao|adiantadas?|antecipadas?)\\s*(?:de|:|-)?\\s*'+NUM+'\\s*'+MES));
   if(m&&n(m[1])>0&&n(m[1])<=12)out.adiantadas=ms(n(m[1]));
@@ -1969,7 +1985,7 @@ function vConta(){
   var nomeFase={retido:'Retido',problema:'Retido · problema aberto',disputa:'Retido · em análise',libertado:'Libertado'};
   var nAl=lerAlertas().length;
   main.innerHTML='<div class="contentor estreito-m pag-simples">'+
-    '<h1 class="titulo" tabindex="-1">A minha conta</h1>'+(conta.admin?'<a class="botao-sec botao-peq" href="#painel" style="margin-bottom:12px">'+svg(P.lupa,{s:18})+'Estatísticas do site</a>':'')+
+    '<h1 class="titulo" tabindex="-1">A minha conta</h1>'+(podeInstalar()?'<button type="button" class="botao-sec botao-peq" data-instalar style="margin:0 8px 12px 0">Instalar a app</button>':'')+(conta.admin?'<a class="botao-sec botao-peq" href="#painel" style="margin-bottom:12px">'+svg(P.lupa,{s:18})+'Estatísticas do site</a>':'')+
     '<p class="apoio" style="margin-bottom:16px">'+esc(conta.email)+' · <button type="button" class="botao-texto" id="b-sair" style="font-size:18px;padding:0;min-height:auto">Sair</button></p>'+
     '<div class="blocos">'+blocoPerfil()+blocoAcesso+
       '<div class="bloco"><h2>Casas guardadas</h2>'+(guard.length?'<div class="casas">'+guard.map(cartao).join('')+'</div>':'<p class="ajuda">Ainda não guardaste casas. Toca no coração de um anúncio para o guardar aqui.</p>')+'</div>'+
@@ -2494,7 +2510,7 @@ function desenharPainel(j){
   var contas='<section class="pn-card"><h2>Contas</h2><dl class="pn-dl">'+
     [['Total',c.total],['Novas no período',c.novas],['Com acesso pago ativo',c.com_acesso],['Aceitam sugestões por e-mail',c.marketing],['Entram com Google',c.google],['Entram com Facebook',c.facebook],['Têm palavra-passe',c.senha],['Guardaram o perfil',c.com_perfil],['Com foto',c.com_foto],['Alertas ativos',c.alertas_ativos],['Alertas novos no período',c.alertas_novos]]
     .map(function(x){return '<div><dt>'+x[0]+'</dt><dd>'+fmtN(x[1]||0)+'</dd></div>';}).join('')+'</dl></section>';
-  var nomesEv={vista:'Páginas vistas',pesquisa:'Pesquisas',casa:'Casas abertas',original:'Cliques para o anúncio original',paywall:'Viram o pagamento',pagar_clique:'Carregaram em pagar',pago:'Pagamentos',promo_ver:'Oferta vista',promo_fechar:'Oferta fechada',promo_clique:'Oferta clicada',alerta:'Alertas criados',pesquisa_guardada:'Pesquisas guardadas',registo:'Contas criadas (e-mail)',entrar:'Entradas na conta',guardar:'Casas guardadas',perfil:'Perfis guardados',filtro:'Filtros mudados',tempo:'Visitas com tempo medido',cidade_inicio:'Cidades escolhidas no início',contactar:'Botões de contacto',proteger:'Pagamento seguro (casa)',publicar:'Anúncios publicados',sair:'Saídas da conta'};
+  var nomesEv={vista:'Páginas vistas',pesquisa:'Pesquisas',casa:'Casas abertas',original:'Cliques para o anúncio original',paywall:'Viram o pagamento',pagar_clique:'Carregaram em pagar',pago:'Pagamentos',promo_ver:'Oferta vista',promo_fechar:'Oferta fechada',promo_clique:'Oferta clicada',alerta:'Alertas criados',pesquisa_guardada:'Pesquisas guardadas',registo:'Contas criadas (e-mail)',entrar:'Entradas na conta',guardar:'Casas guardadas',perfil:'Perfis guardados',filtro:'Filtros mudados',tempo:'Visitas com tempo medido',cidade_inicio:'Cidades escolhidas no início',contactar:'Botões de contacto',proteger:'Pagamento seguro (casa)',publicar:'Anúncios publicados',sair:'Saídas da conta',instalar:'Botão «Instalar a app»',instalada:'App instalada'};
   var evs='<section class="pn-card pn-largo"><h2>Tudo o que fizeram</h2><table class="pn-tab"><thead><tr><th scope="col">Ação</th><th scope="col">Vezes</th><th scope="col">Pessoas</th></tr></thead><tbody>'+
     Object.keys(ev_).filter(function(k){return ev_[k].vezes;}).sort(function(a,b){return ev_[b].vezes-ev_[a].vezes;}).map(function(k){return '<tr><td>'+(nomesEv[k]||k)+'</td><td>'+fmtN(ev_[k].vezes)+'</td><td>'+fmtN(ev_[k].pessoas)+'</td></tr>';}).join('')+'</tbody></table></section>';
   var pf=j.perfil||{};
@@ -2554,12 +2570,34 @@ function rota(){
   else{vInicio();base='inicio';}
   marcarNav(base);
   ev('vista',{pagina:base});
+  if(typeof mostrarInstalar==='function')mostrarInstalar();
   animarEntradas();
   window.scrollTo(0,0);
   foco();
 }
 document.getElementById('saltar').addEventListener('click',function(e){e.preventDefault();main.focus();});
 window.addEventListener('hashchange',rota);
+/* ---------- app instalável (PWA) ---------- */
+var pedidoInstalar=null;
+function emApp(){return matchMedia('(display-mode: standalone)').matches||navigator.standalone===true;}
+function ehIOS(){return /iphone|ipad|ipod/i.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);}
+function podeInstalar(){return !emApp()&&(!!pedidoInstalar||ehIOS()||/android/i.test(navigator.userAgent));}
+function mostrarInstalar(){document.querySelectorAll('[data-instalar]').forEach(function(b){b.hidden=!podeInstalar();});var c=document.querySelector('[data-instalar-cartao]');if(c)c.hidden=!podeInstalar();}
+window.addEventListener('beforeinstallprompt',function(e){e.preventDefault();pedidoInstalar=e;mostrarInstalar();});
+window.addEventListener('appinstalled',function(){pedidoInstalar=null;ev('instalada',{});toast('A Duas Chaves está no teu ecrã.');mostrarInstalar();});
+function instalarApp(){
+  ev('instalar',{origem:(location.hash.slice(1)||'inicio').split('-')[0]});
+  if(pedidoInstalar){var p=pedidoInstalar;pedidoInstalar=null;p.prompt();p.userChoice.then(function(c){if(c.outcome!=='accepted')pedidoInstalar=null;mostrarInstalar();}).catch(function(){});return;}
+  var ios=ehIOS();
+  abrirDialogo('<div class="dialogo-corpo">'+cabecaDialogo('Instalar a Duas Chaves')+
+    (ios?'<ol class="passos-instalar"><li>Toca no botão <strong>Partilhar</strong> '+svg('<path d="M12 3v12"/><path d="m8 7 4-4 4 4"/><path d="M5 12v7h14v-7"/>',{s:18})+' na barra do Safari.</li><li>Escolhe <strong>Adicionar ao ecrã principal</strong>.</li><li>Toca em <strong>Adicionar</strong>.</li></ol>'
+      :'<ol class="passos-instalar"><li>Abre o menu do browser '+svg('<circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/>',{s:18,w:3})+' (os três pontos).</li><li>Escolhe <strong>Instalar app</strong> ou <strong>Adicionar ao ecrã principal</strong>.</li><li>Confirma em <strong>Instalar</strong>.</li></ol>')+
+    '<p class="ajuda">Fica um ícone no ecrã, abre sem a barra do browser e não ocupa quase espaço.</p>'+
+    '<button class="botao largo" type="button" data-fechar>Percebi</button></div>');
+}
+document.addEventListener('click',function(e){var b=e.target.closest&&e.target.closest('[data-instalar]');if(b){e.preventDefault();instalarApp();}});
+if('serviceWorker' in navigator&&location.protocol==='https:'&&!/claude|anthropic/.test(location.host)){window.addEventListener('load',function(){navigator.serviceWorker.register('/sw.js').catch(function(){});});}
+
 /* Oferta de boas-vindas: aparece ao fim de 30 s no site a quem ainda não tem o acesso.
    Se a pessoa fechar, só volta a aparecer neste dispositivo daqui a 12 horas. */
 var PROMO_ESPERA=30000,PROMO_PAUSA=12*3600000;

@@ -41,7 +41,7 @@ PAG_IAD = int(os.environ.get('PAG_IAD', '10'))               # iad: ~30 anúncio
 IDADE_MAX_DIAS = int(os.environ.get('IDADE_MAX_DIAS', '60'))   # publicado há mais de 60 dias: quase de certeza já arrendado ou esquecido
 DIAS_MAX_EXTRA = 7          # nos outros sites, um anúncio que deixa de aparecer nas páginas lidas sai ao fim de 7 dias
 MAX_VERIFICAR_EXTRA = 30
-MAX_RELER = int(os.environ.get('MAX_RELER', '40'))   # anúncios antigos relidos por volta (para caução, adiantadas, fiador)
+MAX_RELER = int(os.environ.get('MAX_RELER', '80'))   # anúncios antigos relidos por volta (para caução, adiantadas, fiador)
 MAX_VERIFICAR = int(os.environ.get('MAX_VERIFICAR', '60'))
 DIAS_MAX = 7
 MAX_DESC = 700      # a descrição completa fica no anúncio original; aqui só o essencial (ficheiro leve)
@@ -140,7 +140,7 @@ def detalhes(anuncio):
     completa = html.unescape(re.sub(r'<[^>]+>', ' ', ad.get('description') or ''))
     anuncio['desc'] = limpar_texto(ad.get('description'))
     anuncio.update(condicoes(completa))      # caução, rendas adiantadas e fiador lidos da descrição inteira
-    anuncio['lido'] = 2                       # versão da leitura dos detalhes
+    anuncio['lido'] = 3                       # versão da leitura dos detalhes (3: caução «de igual valor» e caução sem valor)
     fotos = [i.get('medium') or i.get('large') for i in ad.get('images') or [] if i]
     if fotos:
         anuncio['fotos'] = [f for f in fotos if f][:MAX_FOTOS]
@@ -368,7 +368,7 @@ def main():
     novos.sort(key=lambda a: a.get('data') or '', reverse=True)
     lidos = sum(1 for a in novos[:MAX_DETALHES] if detalhes(a))
     # anúncios já conhecidos mas lidos antes de haver caução/adiantadas/fiador: reler aos poucos, os mais recentes primeiro
-    antigos = sorted((a for a in vistos.values() if a['id'].startswith('imo-') and a.get('desc') and a.get('lido') != 2), key=lambda a: a.get('data') or '', reverse=True)
+    antigos = sorted((a for a in vistos.values() if a['id'].startswith('imo-') and a.get('desc') and a.get('lido') != 3), key=lambda a: a.get('data') or '', reverse=True)
     relidos = sum(1 for a in antigos[:MAX_RELER] if detalhes(a))
     print(f'Relidos para condições de entrada: {relidos} (faltam {max(0, len(antigos) - MAX_RELER)})')
 
@@ -457,6 +457,13 @@ def main():
     for i in velhos:
         del vistos[i]
     print(f'Publicados há mais de {IDADE_MAX_DIAS} dias (retirados): {len(velhos)}')
+    # condições de entrada que faltem: tiradas da descrição guardada (até o anúncio ser relido por inteiro)
+    for a in vistos.values():
+        if a.get('desc'):
+            cd = condicoes(a['desc'])
+            for k in ('caucao', 'adiantadas', 'fiador'):
+                if cd.get(k) and not a.get(k):
+                    a[k] = cd[k]
     lista = sorted(vistos.values(), key=lambda a: a.get('data') or '', reverse=True)[:MAX_ANUNCIOS]
     def sem_visto(a):
         return {k: v for k, v in a.items() if k != 'visto'}

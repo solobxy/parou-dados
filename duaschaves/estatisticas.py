@@ -11,7 +11,7 @@ CAMPOS = {'cidade', 'tips', 'preco', 'filtros', 'casa', 'fonte', 'tipo', 'tip', 
           'n', 'ordem', 'valor', 'pagina', 's', 'nome', 'zona', 'resultados'}
 EVENTOS = {'vista', 'pesquisa', 'casa', 'original', 'paywall', 'pagar_clique', 'pago', 'promo_ver', 'promo_fechar',
            'promo_clique', 'alerta', 'pesquisa_guardada', 'registo', 'entrar', 'guardar', 'perfil', 'filtro',
-           'tempo', 'cidade_inicio', 'contactar', 'proteger', 'publicar', 'sair'}
+           'tempo', 'cidade_inicio', 'contactar', 'proteger', 'publicar', 'sair', 'instalar', 'instalada'}
 RE_ROBO = re.compile(r'bot|crawl|spider|slurp|headless|lighthouse|preview|facebookexternalhit|curl|wget|python|httpclient', re.I)
 
 
