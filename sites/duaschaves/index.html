@@ -607,7 +607,8 @@ var FONTES = {
   'OLX':{de:'Da OLX',em:'na OLX'},
   'Imovirtual':{de:'Do Imovirtual',em:'no Imovirtual'},
   'Supercasa':{de:'Do Supercasa',em:'no Supercasa'},
-  'Casa Sapo':{de:'Do Casa Sapo',em:'no Casa Sapo'}
+  'Casa Sapo':{de:'Do Casa Sapo',em:'no Casa Sapo'},
+  'iad':{de:'Da iad',em:'na iad'}
 };
 var PRECOS = [0,600,800,1000,1200,1500];
 var TIPS = ['Quarto','T0','T1','T2','T3+'];
@@ -2219,6 +2220,7 @@ try{
 function idNum(i){
   i=String(i);var m;
   if((m=i.match(/^imo-(\d+)$/)))return +m[1];
+  if((m=i.match(/^iad-(\d+)$/)))return 6e15+(+m[1]);
   if((m=i.match(/^super-(\d+)$/)))return 7e15+(+m[1]);
   if((m=i.match(/^sapo-([0-9a-f]{8})-?([0-9a-f]{4})/i)))return 8e15+parseInt(m[1]+m[2],16)%1e15;
   return +i.replace(/\D/g,'').slice(-15)||0;

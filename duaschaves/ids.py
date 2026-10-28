@@ -7,6 +7,9 @@ def id_num(i):
     m = re.fullmatch(r'imo-(\d+)', i)
     if m:
         return int(m.group(1))
+    m = re.fullmatch(r'iad-(\d+)', i)
+    if m:
+        return 6 * 10**15 + int(m.group(1))
     m = re.fullmatch(r'super-(\d+)', i)
     if m:
         return 7 * 10**15 + int(m.group(1))
