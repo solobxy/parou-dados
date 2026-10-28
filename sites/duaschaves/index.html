@@ -29,6 +29,8 @@
   --fundo:#F3F5F4;--superficie:#FFFFFF;--tinta:#0F1A17;--texto2:#3E4A46;--texto3:#55625E;
   --borda:#DDE3E0;--borda-forte:#C9D3CF;--verde:#0B6E4F;--verde-escuro:#08523B;--verde-claro:#E3F1EA;
   --erro:#B42318;--cinza-passo:#9AA8A3;
+  --quente:#F2A33A;--quente-claro:#FEF1DC;--quente-texto:#8A4A00;
+  --mola:cubic-bezier(.2,.8,.2,1);
 }
 *{box-sizing:border-box}
 html{-webkit-text-size-adjust:100%;color-scheme:light;background:var(--fundo)}
@@ -147,8 +149,10 @@ input[type=file]{font:inherit;font-size:15px;max-width:100%}
 
 /* início: números, cidades, telemóvel, comparação, perguntas, barra fixa */
 .numeros{display:flex;flex-wrap:wrap;gap:4px 0;margin:-8px 0 20px;font-size:15px;color:var(--texto2)}
-.numeros span{padding-right:12px;margin-right:12px;border-right:1px solid var(--borda-forte)}
-.numeros span:last-child{border:0;margin:0;padding:0}
+.numeros{column-gap:0}
+.numeros span:not(.atual)+span:not(.atual)::before{content:'·';margin:0 10px;color:var(--texto3)}
+.numeros .atual{flex-basis:100%;font-size:14px;color:var(--texto3)}
+@media (min-width:900px){.numeros .atual{flex-basis:auto}.numeros .atual::before{content:'·';margin:0 10px}}
 .numeros strong{color:var(--tinta);font-weight:800;font-variant-numeric:tabular-nums}
 .cid-sel{margin:4px 0 20px}
 .faixa-casas{display:flex;gap:12px;overflow-x:auto;scroll-snap-type:x mandatory;margin:0 -20px 24px;padding:0 20px 4px;scroll-padding:0 20px;scrollbar-width:none}
@@ -202,7 +206,7 @@ input[type=file]{font:inherit;font-size:15px;max-width:100%}
 
 /* ilustrações: telemóveis em código */
 .mock{position:relative;margin:0 auto;overflow:visible;clip-path:inset(-120px -120px 0 -120px);display:flex;justify-content:center}
-.riscos{position:absolute;width:64px;height:48px;fill:none;stroke:var(--verde);stroke-width:5;stroke-linecap:round;opacity:.9}
+.riscos{position:absolute;width:64px;height:48px;fill:none;stroke:var(--quente);stroke-width:5;stroke-linecap:round;opacity:.9}
 .riscos.esq{left:4%;top:24px;transform:scaleX(-1)}
 .riscos.dir{right:4%;top:24px}
 .tlm{position:relative;width:250px;flex:0 0 auto;border-radius:44px;background:#16211E;padding:9px;box-shadow:0 30px 60px -24px rgba(15,26,23,.45)}
@@ -259,6 +263,12 @@ input[type=file]{font:inherit;font-size:15px;max-width:100%}
 .vantagens h3{margin:0;font-size:19px;font-weight:800;letter-spacing:-.01em;line-height:1.3}.vantagens p{margin:3px 0 0;color:var(--texto2)}
 .heroi-mock{margin:0 -20px}
 @media (min-width:900px){.heroi-mock{margin:0}}
+
+.selo-quente{align-self:flex-start;display:inline-flex;align-items:center;min-height:28px;padding:0 12px;border-radius:999px;background:var(--quente);color:var(--tinta);font-size:14px;font-weight:800}
+.cta-fixo strong{color:var(--quente)}
+@media (max-width:899px){.heroi .grande,.heroi .apoio{text-align:center;margin-left:auto;margin-right:auto}.heroi .numeros{justify-content:center}.heroi .numeros .atual{text-align:center}}
+.cc-topo{text-align:center;margin:0 auto}.cc-topo h2{margin-left:auto;margin-right:auto}.cc-topo .apoio{margin-left:auto;margin-right:auto}
+.seccao h2{text-wrap:balance}.apoio{text-wrap:pretty}
 
 /* herói */
 .heroi{padding:32px 0 56px}
@@ -369,7 +379,7 @@ input[type=file]{font:inherit;font-size:15px;max-width:100%}
 .pw-casa{display:flex;gap:12px;align-items:center;background:var(--fundo);border-radius:14px;padding:10px}
 .pw-casa img{width:72px;height:54px;object-fit:cover;border-radius:8px;background:#D6DDDA;flex:0 0 auto}
 .pw-casa p{margin:0}.pw-preco{font-weight:800;font-size:17px}.pw-preco small{font-weight:600;color:var(--texto2)}.pw-linha{font-size:14px;color:var(--texto2)}
-.pw-quando{font-size:13px;color:var(--texto3)}.pw-quando.novo,.quando.novo{color:#0B6E4F;font-weight:700}
+.pw-quando{font-size:13px;color:var(--texto3)}.pw-quando.novo,.quando.novo{color:var(--quente-texto);background:var(--quente-claro);font-weight:700;border-radius:999px;padding:2px 9px}
 #f-acesso>button[type=submit]{position:sticky;bottom:12px;z-index:2;box-shadow:0 8px 24px rgba(11,110,79,.35)}
 .pw-renova{margin:2px 0 0;font-size:13px;line-height:1.35;color:var(--texto2)}
 .dialogo-corpo.pw{padding:16px 18px;gap:10px}
@@ -556,8 +566,30 @@ dialog.dialogo::backdrop{background:rgba(15,26,23,.55)}
 @media (min-width:1080px){body{padding-bottom:0}.nav-topo{display:flex}.nav-baixo{display:none}.toast{bottom:24px}.grande{font-size:50px}.seccao h2{font-size:42px}.heroi-grelha{grid-template-columns:minmax(0,1.1fr) minmax(0,.9fr);gap:72px}.dois-col{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:72px;align-items:start}}
 @media (min-width:1280px){.grande{font-size:60px}}
 @media (max-width:360px){.grande{font-size:30px}.titulo{font-size:26px}.seccao h2{font-size:26px}.cofre-valor{font-size:40px}.marca{font-size:19px}}
+/* movimento: entradas suaves ao descer a página; com «reduzir movimento» ficam só esmaecimentos, sem deslocações */
+.rev{opacity:0;transform:translateY(18px);transition:opacity .55s ease-out,transform .7s var(--mola);transition-delay:calc(var(--i,0) * 70ms)}
+.rev.vis{opacity:1;transform:none}
+.mock-heroi .tlm{animation:telEntra .8s var(--mola) both}
+.mock-heroi .ntf-0{animation:ntfCai .7s var(--mola) .55s both}
+.mock-heroi .ntf-1{animation:aparecer .5s ease-out .95s both}
+.mock-heroi .ntf-2{animation:aparecer .5s ease-out 1.1s both}
+@keyframes telEntra{from{opacity:0;transform:translateY(40px)}to{opacity:1;transform:none}}
+@keyframes ntfCai{from{opacity:0;transform:translateY(-26px) scale(.96)}to{opacity:1;transform:none}}
+@keyframes aparecer{from{opacity:0}to{opacity:1}}
+.mock-duo .tlm{transition:transform .9s var(--mola),opacity .6s ease-out}
+.mock-duo:not(.vis) .tlm-esq{transform:rotate(0) translate(40px,40px);opacity:0}
+.mock-duo:not(.vis) .tlm-dir{transform:rotate(0) translate(-40px,60px);opacity:0}
+.mock-duo .tlm-dir{transition-delay:.12s}
+.mock-duo.rev{opacity:1;transform:none}
 @media (prefers-reduced-motion:reduce){
-  *,*::before,*::after{transition:none !important;animation:none !important}
+  html{scroll-behavior:auto}
+  *,*::before,*::after{transition-property:opacity,background-color,border-color,color !important;transition-duration:.3s !important}
+  #conteudo>*{animation:aparecer .3s ease-out both}
+  .rev{transform:none !important}
+  .mock-heroi .tlm,.mock-heroi .ntf-0{animation-name:aparecer !important}
+  .mock-duo:not(.vis) .tlm-esq{transform:rotate(-6deg) translate(22px,6px)}
+  .mock-duo:not(.vis) .tlm-dir{transform:rotate(6deg) translate(-22px,34px)}
+  .cartao:hover,.botao:active{transform:none}
 }
 </style>
 </head>
@@ -1106,11 +1138,35 @@ function faq(){return [
   ['As casas são verificadas?','Os anúncios de outros sites não são verificados por nós. É por isso que existe o pagamento seguro: o dinheiro da entrada fica retido e só chega ao senhorio quando recebes as chaves.'],
   ['Quanto custa o pagamento seguro?','O serviço custa '+eur(TAXA)+' e só pagas se arrendares. Podes usá-lo em qualquer anúncio, mesmo de fora do Duas Chaves.']
 ];}
+/* números do topo contam até ao valor real (sem «reduzir movimento») */
+function contarNumeros(els){
+  if(matchMedia('(prefers-reduced-motion: reduce)').matches)return;
+  [].forEach.call(els,function(el){
+    var alvo=+el.textContent.replace(/\D/g,'');if(!alvo||alvo<10)return;
+    var t0=null,dur=900;
+    var passo=function(t){if(!t0)t0=t;var k=Math.min(1,(t-t0)/dur),e=1-Math.pow(1-k,3);el.textContent=fmtN(Math.round(alvo*e));if(k<1)requestAnimationFrame(passo);};
+    el.textContent='0';requestAnimationFrame(passo);
+  });
+}
+/* entradas ao descer a página: cada bloco aparece quando chega ao ecrã */
+var REV_SEL='.seccao h2,.seccao .apoio,.seccao-cabeca .botao-sec,.casas.tres>*,.faixa-casas,.cid-sel,.vantagens li,.plano,.compara li,.faq details,.mock-duo,.cofre,.passos li,.form-cartao,.cc-baixo .ajuda';
+var revObs=null;
+function animarEntradas(){
+  if(!('IntersectionObserver' in window))return;
+  if(revObs)revObs.disconnect();
+  revObs=new IntersectionObserver(function(es){es.forEach(function(x){if(x.isIntersecting){x.target.classList.add('vis');revObs.unobserve(x.target);}});},{rootMargin:'0px 0px -8% 0px',threshold:.08});
+  [].forEach.call(main.querySelectorAll(REV_SEL),function(el){
+    if(el.closest('.heroi'))return;
+    var irmaos=el.parentNode?[].filter.call(el.parentNode.children,function(x){return x.matches&&x.matches(REV_SEL);}):[];
+    el.style.setProperty('--i',Math.min(6,Math.max(0,irmaos.indexOf(el))));
+    el.classList.add('rev');revObs.observe(el);
+  });
+}
 function vInicio(){
   titulo('');
   var prefs=lerPrefs(),recentes=prefs.pesquisas.slice(0,3);
   var novas=baratasInicio(),nc=numerosCasas(),ma=minAtualizado(),tel=mockHeroi(),duo=mockDuo(),ativo=acessoAtivo();
-  var nums=nc.total>20?'<p class="numeros"><span><strong>'+fmtN(nc.total)+'</strong> casas'+(nc.fontes.length>1?' de <strong>'+nc.fontes.length+'</strong> sites':'')+'</span>'+(nc.n24>0?'<span><strong>'+fmtN(nc.n24)+'</strong> novas em 24 h</span>':'')+(ma!=null&&ma<180?'<span>Atualizado '+quando(ma)+'</span>':'')+'</p>':'';
+  var nums=nc.total>20?'<p class="numeros"><span><strong>'+fmtN(nc.total)+'</strong> casas'+(nc.fontes.length>1?' de <strong>'+nc.fontes.length+'</strong> sites':'')+'</span>'+(nc.n24>0?'<span><strong>'+fmtN(nc.n24)+'</strong> novas em 24 h</span>':'')+(ma!=null&&ma<180?'<span class="atual">Atualizado '+quando(ma)+'</span>':'')+'</p>':'';
   main.innerHTML=
   '<section class="heroi"><div class="contentor heroi-grelha"><div>'+
     '<h1 class="grande" tabindex="-1">Casas para arrendar, sem burlas</h1>'+
@@ -1154,7 +1210,7 @@ function vInicio(){
   '<section class="seccao" id="precos-inicio"><div class="contentor dois-col">'+
     '<div><h2>Contacta primeiro. Visita primeiro.</h2><p class="apoio">Ver as casas é grátis. Com o acesso, marcas visitas, ligas e envias mensagens em todas, e sabes das novas no minuto em que aparecem.</p>'+
     '<ul class="compara"><li><span>Duas Chaves</span><strong>'+P2+' a cada 30 dias</strong></li><li><span>Outros agregadores</span><strong>até 39,99&nbsp;€ a cada 4 semanas</strong></li></ul></div>'+
-    '<div class="plano destaque"><div class="oferta"><p class="oferta-preco">'+P1+'</p><p class="oferta-txt">nos primeiros 30 dias</p></div>'+listaInclui()+
+    '<div class="plano destaque"><span class="selo-quente">Poupas 90% no 1.º mês</span><div class="oferta"><p class="oferta-preco">'+P1+'</p><p class="oferta-txt">nos primeiros 30 dias</p></div>'+listaInclui()+
       '<button class="botao largo" type="button" id="b-home-acesso">'+(ativo?'Ver as casas':'Começar por '+P1)+'</button>'+avisoRenovacao()+'</div>'+
   '</div></section>'+
 
@@ -1172,12 +1228,6 @@ function vInicio(){
       passo('agora','Confirmas que entraste','Se a casa não corresponder ao anúncio, avisas-nos e o dinheiro continua retido.')+
       passo('depois','O senhorio recebe','Só depois das duas confirmações.')+
     '</ol>'+
-  '</div></section>'+
-
-  '<section class="seccao"><div class="contentor dois-col">'+
-    '<div><h2>Viste a casa no Facebook?</h2><p class="apoio">Usa o pagamento seguro em qualquer anúncio. Envias um convite a quem anuncia: se aceitar, o dinheiro fica depositado até receberes as chaves. Se recusar, é um sinal para teres mais cuidado.</p>'+
-    '<a class="botao" href="#proteger">Proteger um pagamento</a></div>'+
-    '<div class="bolha"><p class="rotulo">A mensagem que envias</p><p>Olá! Vi a sua casa no Facebook e quero arrendá-la. Para ficarmos os dois seguros, proponho pagar a entrada pelo Duas Chaves: o dinheiro fica depositado e passa para si assim que me entregar as chaves. Para si é grátis.</p></div>'+
   '</div></section>'+
 
   '<section class="seccao branco"><div class="contentor dois-col">'+
@@ -1208,6 +1258,7 @@ function vInicio(){
   var cb=document.getElementById('cid-bloco');
   if(cb)cb.addEventListener('click',function(e){var b=e.target.closest('[data-cid]');if(!b)return;CID_INICIO=b.getAttribute('data-cid');cb.innerHTML=blocoCidade(nc.cidades);var nb=cb.querySelector('[data-cid][aria-pressed="true"]');if(nb)nb.focus();});
   var comecar=function(){if(acessoAtivo()){ir('pesquisa');return;}abrirAcesso(function(){});};
+  contarNumeros(main.querySelectorAll('.numeros strong'));
   document.getElementById('b-home-acesso').addEventListener('click',comecar);
   var cf=document.getElementById('cta-fixo');
   if(cf){
@@ -2312,6 +2363,7 @@ function rota(){
   else if(h==='termos')vTermos();
   else{vInicio();base='inicio';}
   marcarNav(base);
+  animarEntradas();
   window.scrollTo(0,0);
   foco();
 }
