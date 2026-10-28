@@ -873,9 +873,7 @@ function vCasa(id){
       '<p class="ajuda centro">Já visitaste? <a href="#pagamento-'+c.id+'">Pagar a entrada com proteção</a></p>';
   }else{
     var f=FONTES[c.fonte];
-    painel='<div class="caixa-fora"><h2 class="h-prot fora">'+svg(P.externo)+f.de+'</h2>'+
-      '<p>Encontrámos este anúncio automaticamente. O contacto e o pagamento são feitos diretamente com quem anuncia, sem pagamento protegido.</p>'+
-      (entrada(c)?'<div class="total"><span>Para entrar (1.ª renda + caução de '+meses(c.caucao)+')</span><strong>'+eur(entrada(c))+'</strong></div>':'<div class="total"><span>Renda mensal</span><strong>'+(c.renda?eur(c.renda):'Sob consulta')+'</strong></div>')+'</div>'+
+    painel=''+
       botoesContacto()+
       '<button class="botao-sec largo" type="button" id="b-proteger">'+svg(P.escudo)+'Pagar com proteção nesta casa</button>'+
       '<div class="dicas"><h3>Antes de pagares alguma coisa</h3><ul>'+
