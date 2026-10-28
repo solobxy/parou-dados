@@ -85,6 +85,7 @@ input[type=file]{font:inherit;font-size:15px;max-width:100%}
 .chip[aria-pressed=true]{background:var(--tinta);border-color:var(--tinta);color:#fff}
 
 .interruptor{display:flex;align-items:center;gap:12px;font-size:16px;font-weight:600;cursor:pointer;min-height:44px}
+.isco{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden}
 .consent{display:flex;align-items:flex-start;gap:10px;font-size:14px;line-height:1.45;color:#46524D;cursor:pointer}
 .consent input{width:20px;height:20px;margin:1px 0 0;flex:0 0 auto;accent-color:#0B6E4F}
 .opcional{font-weight:400;color:#5A6762}
@@ -510,7 +511,7 @@ var conta=(function(){
   try{var c=JSON.parse(localStorage.getItem('dc-conta')||'null');if(c&&typeof c==='object'){for(var k in base){if(!(k in c))c[k]=base[k];}return c;}}catch(e){}
   return base;
 })();
-function guardarConta(){try{localStorage.setItem('dc-conta',JSON.stringify(conta));}catch(e){}atualizarTopo();}
+function guardarConta(){try{localStorage.setItem('dc-conta',JSON.stringify(conta));}catch(e){}atualizarTopo();if(typeof sincronizar==='function')sincronizar();}
 function acessoAtivo(){return !!(conta.acesso&&(conta.acesso.renova||Date.now()<conta.acesso.ate));}
 function atualizarTopo(){document.getElementById('b-topo-conta').textContent=conta.sessao?'A minha conta':'Entrar';}
 
@@ -579,8 +580,25 @@ function cabecaDialogo(t){return '<div class="dialogo-cabeca"><h2>'+t+'</h2><but
 var memAlertas=[];
 function lerAlertas(){try{return JSON.parse(localStorage.getItem('dc-alertas')||'[]');}catch(e){return memAlertas;}}
 function guardarAlertas(a){memAlertas=a;try{localStorage.setItem('dc-alertas',JSON.stringify(a));}catch(e){}}
-function criarAlerta(a){var l=lerAlertas();a.id=Date.now();l.unshift(a);guardarAlertas(l);}
+function criarAlerta(a){var l=lerAlertas();a.id=Date.now();l.unshift(a);guardarAlertas(l);if(servidor)setTimeout(function(){avisarServidorAlerta(a);},0);}
 function descAlerta(a){var p=[];p.push(a.cidade?a.cidade:'Todo o país');if(a.precoMax)p.push('até '+eur(a.precoMax));if(a.tip)p.push(a.tip);if(a.soProt)p.push('só protegidas');return p.join(' · ');}
+
+/* ---------- servidor (contas reais quando a API existe; sem API fica tudo no dispositivo) ---------- */
+var servidor=false;
+function api(caminho,corpo){
+  var o={credentials:'same-origin',headers:{}};
+  if(corpo!==undefined){o.method='POST';o.headers['Content-Type']='application/json';o.body=JSON.stringify(corpo);}
+  return fetch('/api/'+caminho,o).then(function(r){return r.json().catch(function(){return {};}).then(function(d){d._estado=r.status;return d;});});
+}
+var tSync;
+function sincronizar(){
+  if(!servidor||!conta.sessao)return;
+  clearTimeout(tSync);
+  tSync=setTimeout(function(){var p=lerPrefs();api('preferencias',{prefs:{guardadas:conta.guardadas.slice(-200),filtros:p.filtros,zonas:p.zonas},marketing:!!(conta.marketing&&conta.marketing.sim)}).catch(function(){});},800);
+}
+function avisarServidorAlerta(a){
+  try{api('alerta',{email:a.email,filtro:{cidade:a.cidade||'',precoMax:a.precoMax||0,tips:a.tip?String(a.tip).split(', '):[],soProt:!!a.soProt,casa:a.casa},marketing:!!(conta.marketing&&conta.marketing.sim)}).catch(function(){});}catch(e){}
+}
 
 /* ---------- preferências guardadas neste dispositivo (zonas, pesquisas, filtros) ---------- */
 var memPrefs=null;
@@ -590,7 +608,7 @@ function lerPrefs(){
   try{var p=JSON.parse(localStorage.getItem('dc-prefs')||'null');if(p&&typeof p==='object'){for(var k in b){if(!(k in p))p[k]=b[k];}memPrefs=p;return p;}}catch(e){}
   memPrefs=b;return b;
 }
-function guardarPrefs(){try{localStorage.setItem('dc-prefs',JSON.stringify(memPrefs));}catch(e){}}
+function guardarPrefs(){try{localStorage.setItem('dc-prefs',JSON.stringify(memPrefs));}catch(e){}sincronizar();}
 function apagarPrefs(){var p=lerPrefs();memPrefs={zonas:{},pesquisas:[],filtros:p.filtros,emailPedido:p.emailPedido};guardarPrefs();}
 function marcarZona(nome,peso){
   nome=(nome||'').trim().replace(/\s+/g,' ');if(!nome)return;
@@ -1437,10 +1455,19 @@ function vConta(){
       '<div class="bloco"><h2>Alertas</h2><p>'+(nAl?'Tens '+nAl+' '+(nAl>1?'alertas':'alerta')+'.':'Ainda não tens alertas.')+' <a href="#alertas">Gerir alertas</a></p></div>'+
       blocoDispositivo()+
     '</div>'+
-    '<p class="ajuda" style="margin-top:20px">Protótipo: a conta fica só neste browser.</p>'+
+    (conta.servidor?'<p class="ajuda" style="margin-top:20px">As casas guardadas, as pesquisas e os alertas ficam na tua conta, em qualquer dispositivo. <button type="button" class="botao-texto" id="b-apagar-conta" style="padding:0;min-height:auto">Apagar a minha conta</button></p>':'<p class="ajuda" style="margin-top:20px">Versão de testes: a conta fica só neste browser.</p>')+
   '</div>';
-  document.getElementById('b-sair').addEventListener('click',function(){conta.sessao=false;guardarConta();toast('Saíste da conta.');ir('inicio');});
+  document.getElementById('b-sair').addEventListener('click',function(){if(servidor)api('sair',{}).catch(function(){});conta.sessao=false;guardarConta();toast('Saíste da conta.');ir('inicio');});
   ligarDispositivo(function(){vConta();foco();});
+  var bac=document.getElementById('b-apagar-conta');
+  if(bac)bac.addEventListener('click',function(){
+    abrirDialogo('<div class="dialogo-corpo">'+cabecaDialogo('Apagar a conta?')+'<p style="margin:0">Apagamos o teu e-mail, as casas guardadas, as pesquisas e os alertas. Não dá para desfazer.</p>'+
+      '<button class="botao-sec largo" type="button" id="b-conf-apagar">Apagar a minha conta</button><button class="botao largo" type="button" data-fechar>Manter a conta</button></div>');
+    document.getElementById('b-conf-apagar').addEventListener('click',function(){
+      api('apagar-conta',{}).then(function(r){dlg.close();if(r._estado!==200){toast('Não foi possível apagar agora. Tenta outra vez.');return;}
+        conta.sessao=false;conta.servidor=false;conta.email='';conta.guardadas=[];conta.marketing=null;guardarConta();apagarPrefs();toast('Conta apagada.');ir('inicio');}).catch(function(){toast('Sem ligação. Tenta outra vez.');});
+    });
+  });
   var bc=document.getElementById('b-cancelar-acesso');
   if(bc)bc.addEventListener('click',function(){
     abrirDialogo('<div class="dialogo-corpo">'+cabecaDialogo('Cancelar a renovação?')+
@@ -1475,13 +1502,15 @@ function ligarDispositivo(depois){
   if(h)h.addEventListener('click',function(){apagarPrefs();toast('Histórico e zonas apagados.');depois();});
 }
 
-function vEntrar(){
+function vEntrar(erroLink){
   titulo('Entrar');
   main.innerHTML='<div class="contentor estreito-s pag-simples">'+
     '<h1 class="titulo" tabindex="-1">Entrar</h1>'+
+    (erroLink?'<p class="erro-campo" role="alert" style="margin:0 0 12px">Esse link já não é válido: expirou ou já foi usado. Pede outro.</p>':'')+
     '<p class="apoio">Sem palavras-passe: enviamos-te um link de acesso por e-mail.</p>'+
     '<form id="f-entrar" class="form-cartao" novalidate style="grid-template-columns:minmax(0,1fr)">'+
       '<div class="campo"><label for="e-email">E-mail</label><input id="e-email" type="email" autocomplete="email" inputmode="email"></div>'+
+      '<div class="isco" aria-hidden="true"><label for="e-site">Não preenchas</label><input id="e-site" type="text" tabindex="-1" autocomplete="off"></div>'+
       '<button class="botao largo" type="submit">Enviar link de acesso</button>'+
     '</form>'+
     '<div class="sucesso" id="entrar-ok" hidden tabindex="-1"></div>'+
@@ -1489,11 +1518,24 @@ function vEntrar(){
   document.getElementById('f-entrar').addEventListener('submit',function(e){
     e.preventDefault();var em=document.getElementById('e-email');
     if(!erroCampo(em,emailOk(em.value.trim())?'':ERRO_EMAIL)){em.focus();return;}
-    var email=em.value.trim(),ok=document.getElementById('entrar-ok');
-    ok.innerHTML='<h2>Verifica o teu e-mail</h2><p>Num site a funcionar, enviaríamos agora um link para <strong>'+esc(email)+'</strong>.</p>'+
-      '<button class="botao largo" type="button" id="b-entrar-ja">Entrar já (demonstração)</button>';
-    ok.hidden=false;e.target.hidden=true;ok.focus();
-    document.getElementById('b-entrar-ja').addEventListener('click',function(){conta.sessao=true;conta.email=email;guardarConta();vConta();foco();});
+    var email=em.value.trim(),ok=document.getElementById('entrar-ok'),form=e.target,bt=form.querySelector('button[type=submit]');
+    function demo(msg){
+      ok.innerHTML='<h2>Verifica o teu e-mail</h2><p>'+msg+'</p><button class="botao largo" type="button" id="b-entrar-ja">Entrar já (demonstração)</button>';
+      ok.hidden=false;form.hidden=true;ok.focus();
+      document.getElementById('b-entrar-ja').addEventListener('click',function(){conta.sessao=true;conta.email=email;guardarConta();vConta();foco();});
+    }
+    if(!servidor){demo('Nesta versão de testes ainda não enviamos e-mails. Num site a funcionar, receberias agora um link em <strong>'+esc(email)+'</strong>.');return;}
+    bt.disabled=true;bt.textContent='A enviar…';
+    api('entrar',{email:email,site:document.getElementById('e-site').value}).then(function(r){
+      bt.disabled=false;bt.textContent='Enviar link de acesso';
+      if(r._estado===200){
+        ok.innerHTML='<h2>Verifica o teu e-mail</h2><p>Enviámos um link para <strong>'+esc(email)+'</strong>. Abre-o neste telemóvel para entrares. Vale 20 minutos.</p><p class="ajuda">Não chegou? Vê no spam ou <button type="button" class="botao-texto" id="b-reenviar" style="padding:0;min-height:auto">pede outro</button>.</p>';
+        ok.hidden=false;form.hidden=true;ok.focus();
+        document.getElementById('b-reenviar').addEventListener('click',function(){ok.hidden=true;form.hidden=false;em.focus();});
+      }else if(r._estado===429){erroCampo(em,'Pediste vários links seguidos. Espera uns minutos e tenta outra vez.');em.focus();}
+      else if(r._estado===400){erroCampo(em,ERRO_EMAIL);em.focus();}
+      else demo('O envio de e-mails ainda está a ser ligado. Por agora, podes entrar no modo de demonstração.');
+    }).catch(function(){bt.disabled=false;bt.textContent='Enviar link de acesso';demo('Não conseguimos enviar o e-mail agora. Podes entrar no modo de demonstração.');});
   });
 }
 
@@ -1706,6 +1748,7 @@ function rota(){
   else if((m=h.match(/^convite-(\d+)$/))){vConvite(+m[1]);base='proteger';}
   else if(h==='senhorios')vSenhorios();
   else if(h==='conta'||h==='entrar'){vConta();base='conta';}
+  else if(h==='entrar-erro'){vEntrar(true);base='conta';}
   else if(h==='ajuda')vAjuda();
   else if(h==='termos')vTermos();
   else{vInicio();base='inicio';}
@@ -1717,6 +1760,23 @@ document.getElementById('saltar').addEventListener('click',function(e){e.prevent
 window.addEventListener('hashchange',rota);
 atualizarTopo();
 rota();
+try{
+  api('saude').then(function(r){
+    if(r._estado!==200)return;
+    servidor=true;
+    return api('eu').then(function(u){
+      if(u._estado!==200){if(conta.sessao&&conta.servidor){conta.sessao=false;conta.servidor=false;guardarConta();}return;}
+      conta.sessao=true;conta.servidor=true;conta.email=u.email;
+      if(u.marketing)conta.marketing={sim:true,quando:Date.now()};
+      var pr=u.prefs||{},p=lerPrefs();
+      (pr.guardadas||[]).forEach(function(id){if(conta.guardadas.indexOf(id)<0)conta.guardadas.push(id);});
+      (pr.filtros||[]).forEach(function(f){if(!filtroGuardado(f))p.filtros.push(f);});
+      if(pr.zonas&&typeof pr.zonas==='object')Object.keys(pr.zonas).forEach(function(k){if(!p.zonas[k])p.zonas[k]=pr.zonas[k];});
+      guardarConta();guardarPrefs();
+      var h=location.hash.slice(1);if(h==='conta'||h==='entrar'||h==='inicio'||!h)rota();
+    });
+  }).catch(function(){});
+}catch(e){}
 /* Anúncios reais recolhidos automaticamente (anuncios.json, ao lado desta página). Sem ficheiro, ficam os de demonstração. */
 function deRecolha(a){
   var t=a.data?Date.parse(a.data):NaN;
