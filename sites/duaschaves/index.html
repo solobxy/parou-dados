@@ -584,7 +584,8 @@ function criarAlerta(a){var l=lerAlertas();a.id=Date.now();l.unshift(a);guardarA
 function descAlerta(a){var p=[];p.push(a.cidade?a.cidade:'Todo o país');if(a.precoMax)p.push('até '+eur(a.precoMax));if(a.tip)p.push(a.tip);if(a.soProt)p.push('só protegidas');return p.join(' · ');}
 
 /* ---------- servidor (contas reais quando a API existe; sem API fica tudo no dispositivo) ---------- */
-var servidor=false;
+var servidor=false,emailLigado=false;
+function notaEnvio(){return emailLigado?'':(servidor?' Os e-mails começam a ser enviados em breve.':' Versão de testes: ainda não enviamos e-mails.');}
 function api(caminho,corpo){
   var o={credentials:'same-origin',headers:{}};
   if(corpo!==undefined){o.method='POST';o.headers['Content-Type']='application/json';o.body=JSON.stringify(corpo);}
@@ -934,7 +935,7 @@ function vInicio(){
     criarAlerta({cidade:cidA,precoMax:+document.getElementById('ar-preco').value,tip:'',soProt:false,email:em.value.trim()});
     if(cidA)marcarZona(cidA,3);
     lerMarketing('ar-mkt');if(!conta.email)conta.email=em.value.trim();guardarConta();
-    toast('Alerta criado. Protótipo: não são enviados e-mails.');
+    toast('Alerta criado.'+notaEnvio());
     e.target.reset();
   });
 }
@@ -1091,7 +1092,7 @@ function vPesquisa(){
       if(v&&!erroCampo(em,emailOk(v)?'':ERRO_EMAIL)){em.focus();return;}
       guardarFiltro(f);
       if(v){criarAlerta({cidade:f.cidade,precoMax:f.precoMax,tip:f.tips.join(', '),soProt:f.soProt,email:v});lerMarketing('ad-mkt');if(!conta.email)conta.email=v;guardarConta();}
-      dlg.close();toast(v?'Pesquisa guardada e alerta criado. Protótipo: não são enviados e-mails.':'Pesquisa guardada neste dispositivo.');
+      dlg.close();toast(v?'Pesquisa guardada e alerta criado.'+notaEnvio():'Pesquisa guardada neste dispositivo.');
       vPesquisa();
     });
   });
@@ -1111,7 +1112,7 @@ function pedirEmailGuardar(c){
     if(!erroCampo(em,emailOk(v)?'':ERRO_EMAIL)){em.focus();return;}
     conta.email=v;lerMarketing('ge-mkt');guardarConta();
     criarAlerta({cidade:zona,precoMax:0,tip:c.tipo==='Quarto'?'Quarto':(c.tip||''),soProt:false,email:v,casa:c.id});
-    dlg.close();toast('Feito. Avisamos-te desta casa e das parecidas. Protótipo: não são enviados e-mails.');
+    dlg.close();toast('Feito. Avisamos-te desta casa e das parecidas.'+notaEnvio());
   });
 }
 
@@ -1337,7 +1338,7 @@ function vAlertas(){
     '</form>'+
     '<h2 class="h-peq">Os teus alertas</h2>'+
     '<ul class="alertas" id="lista-alertas"></ul>'+
-    '<p class="ajuda">Protótipo: os alertas ficam só neste browser e não são enviados e-mails.</p>'+
+    '<p class="ajuda">'+(servidor?'Os alertas ficam guardados na Duas Chaves.'+notaEnvio():'Versão de testes: os alertas ficam só neste browser e ainda não enviamos e-mails.')+' Sem acesso, recebes um resumo por dia; com acesso, recebes as casas no momento.</p>'+
   '</div>';
   function desenhar(){
     var l=lerAlertas(),ul=document.getElementById('lista-alertas');
@@ -1749,6 +1750,7 @@ function rota(){
   else if(h==='senhorios')vSenhorios();
   else if(h==='conta'||h==='entrar'){vConta();base='conta';}
   else if(h==='entrar-erro'){vEntrar(true);base='conta';}
+  else if(h==='alerta-parado'){vAlertas();base='alertas';setTimeout(function(){toast('Alerta parado. Não voltas a receber e-mails dele.');},50);}
   else if(h==='ajuda')vAjuda();
   else if(h==='termos')vTermos();
   else{vInicio();base='inicio';}
@@ -1763,7 +1765,7 @@ rota();
 try{
   api('saude').then(function(r){
     if(r._estado!==200)return;
-    servidor=true;
+    servidor=true;emailLigado=!!r.email;
     return api('eu').then(function(u){
       if(u._estado!==200){if(conta.sessao&&conta.servidor){conta.sessao=false;conta.servidor=false;guardarConta();}return;}
       conta.sessao=true;conta.servidor=true;conta.email=u.email;
