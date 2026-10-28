@@ -36,7 +36,7 @@ MAX_ANUNCIOS = int(os.environ.get('MAX_ANUNCIOS', '9000'))
 PAG_SUPER = int(os.environ.get('PAG_SUPER', '2'))           # páginas por distrito no Supercasa (5 nos grandes)
 PAG_SUPER_GRANDES = int(os.environ.get('PAG_SUPER_GRANDES', '5'))
 PAG_SAPO = int(os.environ.get('PAG_SAPO', '12'))             # páginas nacionais no Casa Sapo (é lento: pede 1 página a cada 8 s)
-PAUSA_SUPER, PAUSA_SAPO = 3.0, 8.0
+PAUSA_SUPER, PAUSA_SAPO = 5.0, 10.0
 DIAS_MAX_EXTRA = 7          # nos outros sites, um anúncio que deixa de aparecer nas páginas lidas sai ao fim de 7 dias
 MAX_VERIFICAR_EXTRA = 30
 MAX_RELER = int(os.environ.get('MAX_RELER', '40'))   # anúncios antigos relidos por volta (para caução, adiantadas, fiador)
@@ -178,12 +178,18 @@ def chave_igual(a):
 
 def correr_fonte(mod, paginas, pausa, resultado):
     """Lê as páginas de resultados de um site. Pára esse site se ele pedir para abrandar (429) ou bloquear (403)."""
-    parados, n_pag, n_erros = set(), 0, 0
+    parados, n_pag, n_erros, n_lentos = set(), 0, 0, 0
     for grupo, slug, url in paginas:
         if grupo in parados:
             continue
         estado, _, texto = obter(url, com_estado=True, pausa=pausa)
         n_pag += 1
+        if estado in (429, 503) and n_lentos < 2:
+            n_lentos += 1                            # pediu para abrandar: espera 90 s, abranda e tenta outra vez
+            pausa *= 2
+            print(f'{mod.NOME}: {estado}; espero 90 s e abrando para {pausa:.0f} s entre páginas.')
+            time.sleep(90)
+            estado, _, texto = obter(url, com_estado=True, pausa=pausa)
         if estado in (403, 429, 503):
             print(f'{mod.NOME}: {estado} em {url}; paro este site nesta volta.')
             break
