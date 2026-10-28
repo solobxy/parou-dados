@@ -106,6 +106,11 @@ if [ -f "$SERV/duaschaves-recolha.service" ]; then
     if ! cmp -s "$SERV/$f" "/etc/systemd/system/$f"; then cp "$SERV/$f" "/etc/systemd/system/$f" && systemctl daemon-reload; fi
   done
   systemctl is-enabled --quiet duaschaves-recolha.timer 2>/dev/null || systemctl enable --now duaschaves-recolha.timer >/dev/null 2>&1
+  # Forçar uma recolha já: mudar o conteúdo de duaschaves/forcar-recolha (para a volta em curso e começa outra com o código novo)
+  FR=$(cat "$BASE/servidor/duaschaves/forcar-recolha" 2>/dev/null)
+  if [ -n "$FR" ] && [ "$(cat /var/lib/duaschaves-dados/.forcar 2>/dev/null)" != "$FR" ]; then
+    echo "$FR" > /var/lib/duaschaves-dados/.forcar && systemctl restart --no-block duaschaves-recolha.service
+  fi
   # Páginas para o Google: geradas logo que o gerador muda (e depois de cada recolha, pelo serviço)
   PV=$(sha256sum "$BASE/servidor/duaschaves/paginas.py" 2>/dev/null | cut -c1-16)
   if [ -n "$PV" ] && [ "$(cat /var/lib/duaschaves-dados/.paginas.versao 2>/dev/null)" != "$PV" ]; then
