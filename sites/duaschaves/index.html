@@ -1162,10 +1162,10 @@ function avisoRenovacao(){return '<p class="aviso-preco">Depois dos 30 dias, <st
 /* prova social: só números reais e só quando já são expressivos; senão, o facto do mercado */
 var PUBLICO=null;
 function provaSocial(){
-  if(PUBLICO&&PUBLICO.pessoas7>=20)return '<p class="pw-facto"><strong>'+fmtN(PUBLICO.pessoas7)+' pessoas</strong> criaram alertas na Duas Chaves nos últimos 7 dias.</p>';
+  if(PUBLICO&&PUBLICO.pessoas7>=20)return '<p class="pw-facto"><strong>'+fmtN(PUBLICO.pessoas7)+' pessoas</strong> criaram alertas esta semana.</p>';
   var n=numerosCasas();
-  if(n.n24>=20)return '<p class="pw-facto"><strong>'+fmtN(n.n24)+' casas novas</strong> nas últimas 24 h. Cada uma recebe em média 24 contactos <span class="pw-fonte">(dados do mercado, 2026)</span>.</p>';
-  return '<p class="pw-facto">Cada casa recebe em média <strong>24 contactos</strong> e 11% saem em menos de 24 h <span class="pw-fonte">(dados do mercado, 2026)</span>.</p>';
+  if(n.n24>=20)return '<p class="pw-facto"><strong>'+fmtN(n.n24)+' casas novas</strong> hoje.</p>';
+  return '';
 }
 function abrirAcesso(depois,c){
   var semSessao=!conta.sessao;
@@ -1173,23 +1173,22 @@ function abrirAcesso(depois,c){
   var mini=c?'<div class="pw-casa">'+(c.fotos&&c.fotos.length?'<img src="'+esc(c.fotos[0])+'" alt="" referrerpolicy="no-referrer" width="72" height="54">':'')+
     '<div><p class="pw-preco">'+precoHtml(c)+'</p><p class="pw-linha">'+resumoCasa(c,false)+'</p><p class="pw-quando'+(c.min<1440?' novo':'')+'">'+(c.semData?esc(FONTES[c.fonte].de):'Publicada '+quando(c.min))+'</p></div></div>':'';
   abrirDialogo('<form class="dialogo-corpo pw" id="f-acesso" novalidate>'+
-    cabecaDialogo(c?'Contacta antes dos outros':'Desbloquear os contactos')+
+    cabecaDialogo('Contacta antes dos outros')+
     mini+
     provaSocial()+
-    '<div class="pw-oferta"><p class="oferta-preco">'+riscado()+comVisto(P1)+'</p><div><p class="oferta-txt">30 dias de acesso</p><p class="pw-renova">Depois '+precoPlano(planoAtual())+'/'+planoAtual().dias+' dias'+(planoAtual().id==='p30'?' (ou 24,99&nbsp;€ por 90 dias)':'')+'.</p></div></div>'+
+    '<div class="pw-oferta"><p class="oferta-preco">'+riscado()+comVisto(P1)+'</p><p class="oferta-txt">30 dias</p></div>'+
     '<ul class="inclui">'+
-      '<li>'+svg(P.visto,{s:18,w:2.4})+'<span>Visitas, chamadas e mensagens em <strong>todas</strong> as casas</span></li>'+
-      '<li>'+svg(P.visto,{s:18,w:2.4})+'<span>Alertas <strong>no minuto</strong> (sem acesso, 1 resumo por dia)</span></li>'+
+      '<li>'+svg(P.visto,{s:18,w:2.4})+'<span>Contactos de <strong>todas</strong> as casas</span></li>'+
+      '<li>'+svg(P.visto,{s:18,w:2.4})+'<span>Alertas <strong>no minuto</strong></span></li>'+
     '</ul>'+
-    '<ul class="pw-controlo">'+['Cancelas com um toque, na tua conta','Avisamos por e-mail 3 dias antes de cobrar','Sem fidelização nem custos escondidos'].map(function(t){return '<li>'+svg(P.escudo,{s:16,w:2})+t+'</li>';}).join('')+'</ul>'+
     (semSessao?'<div class="campo"><label for="ac-email">E-mail</label><input id="ac-email" type="email" autocomplete="email" inputmode="email"></div>':'')+
     '<fieldset class="pw-metodos"><legend class="isco">Pagar com</legend>'+
       '<label class="pw-metodo"><input type="radio" name="ac-metodo" value="mbway" checked><img class="pw-ic" src="data:image/png;base64,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" alt="" width="22" height="22"><span>MB WAY</span></label>'+
       '<label class="pw-metodo"><input type="radio" name="ac-metodo" value="cartao"><svg class="pw-ic" viewBox="0 0 28 20" width="28" height="20" aria-hidden="true"><rect x="0.75" y="0.75" width="26.5" height="18.5" rx="3" fill="#fff" stroke="#3E4A46" stroke-width="1.5"/><rect x="1" y="5" width="26" height="3.2" fill="#3E4A46"/><rect x="4" y="12.5" width="9" height="2" rx="1" fill="#9AA8A3"/></svg><span>Cartão</span></label>'+
     '</fieldset>'+
     '<button class="botao largo" type="submit">Desbloquear por '+P1+'</button>'+
-    '<label class="consent pw-mkt"><input type="checkbox" id="ac-sem-mkt"><span>Não quero receber por e-mail ofertas e novidades da Duas Chaves.</span></label>'+
-    '<p class="pw-nota">Protótipo: nenhum pagamento é feito.</p></form>');
+    '<p class="pw-renova centro">Depois '+precoPlano(planoAtual())+'/'+planoAtual().dias+' dias. Cancelas com um toque.</p>'+
+    '<label class="consent pw-mkt"><input type="checkbox" id="ac-sem-mkt"><span>Não quero ofertas por e-mail.</span></label></form>');
   document.getElementById('f-acesso').addEventListener('submit',function(e){
     e.preventDefault();
     /* subscrever só com o e-mail: sem criar conta antes. O acesso fica neste dispositivo e enviamos um link para acabar a conta. */
