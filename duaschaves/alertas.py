@@ -104,6 +104,53 @@ def email_casas(base, f, casas, parar):
     return titulo, texto, corpo
 
 
+OFERTA_DIAS = 5          # oferta de 1 € a quem tem alertas grátis há 5 dias e aceitou receber ofertas
+
+
+def email_oferta(base, n, sair):
+    titulo = '%d casas para ti nos últimos dias' % n
+    texto = ('Olá!\n\nDesde que criaste o teu alerta apareceram %d casas que encaixam no que procuras.\n'
+             'Com o acesso da Duas Chaves sabes delas no minuto em que aparecem, em vez de um resumo por dia.\n\n'
+             'Experimenta 30 dias por 1 €: %s/#precos\n'
+             'Depois são 9,99 € a cada 30 dias. Cancelas com um toque e avisamos 3 dias antes de cobrar.\n\n'
+             'Não queres receber ofertas? %s\n' % (n, base, sair))
+    corpo = ('<div style="font-family:system-ui,sans-serif;font-size:16px;color:#0F1A17;max-width:520px">'
+             '<p style="margin:0 0 4px;color:#0B6E4F;font-weight:700">Duas Chaves</p>'
+             '<h1 style="font-size:22px;margin:0 0 10px">%d casas apareceram para o teu alerta</h1>'
+             '<p>Com o acesso, sabes delas <strong>no minuto</strong> em que aparecem, em vez de um resumo por dia. Quem contacta primeiro, visita primeiro.</p>'
+             '<p><a href="%s/#precos" style="display:inline-block;background:#0B6E4F;color:#fff;text-decoration:none;font-weight:700;padding:12px 20px;border-radius:12px">Experimentar 30 dias por 1 €</a></p>'
+             '<p style="color:#56635e;font-size:14px">Depois, 9,99 € a cada 30 dias. Cancelas com um toque e avisamos 3 dias antes de cobrar.</p>'
+             '<p style="font-size:13px;color:#56635e">Recebes este e-mail porque aceitaste receber novidades da Duas Chaves. <a href="%s" style="color:#56635e">Não quero receber ofertas</a>.</p></div>'
+             % (n, base, html.escape(sair)))
+    return titulo, texto, corpo
+
+
+def ofertas(c, anuncios, base, agora):
+    """Uma única oferta por pessoa: alerta grátis há OFERTA_DIAS dias, sem acesso, com consentimento de marketing."""
+    lx = datetime.datetime.now(LX)
+    if not (10 <= lx.hour < 20):
+        return 0
+    limite_t = agora - OFERTA_DIAS * 86400
+    gente = c.execute('SELECT u.id, u.email, MIN(a.criado) criado FROM utilizadores u JOIN alertas a ON a.utilizador=u.id '
+                      'WHERE u.apagado=0 AND u.marketing=1 AND a.ativo=1 AND (u.acesso_ate IS NULL OR u.acesso_ate<?) '
+                      'GROUP BY u.id HAVING MIN(a.criado)<?', (agora, limite_t)).fetchall()
+    n_env = 0
+    for g in gente:
+        if c.execute("SELECT 1 FROM envios WHERE email=? AND tipo='oferta_d5' AND estado='enviado'", (g['email'],)).fetchone():
+            continue
+        filtros = [json.loads(r['filtro']) for r in c.execute('SELECT filtro FROM alertas WHERE utilizador=? AND ativo=1', (g['id'],))]
+        n = sum(1 for a in anuncios if a['_t'] > g['criado'] and any(cumpre(a, f) for f in filtros))
+        if n < 3:
+            continue
+        sair = '%s/api/sem-mkt?u=%d&k=%s' % (base, g['id'], api.assinatura_mkt(c, g['id']))
+        assunto, texto, corpo = email_oferta(base, n, sair)
+        ok = api.enviar_email(g['email'], assunto, texto, corpo)
+        c.execute('INSERT INTO envios(email, tipo, estado, quando) VALUES(?,?,?,?)', (g['email'], 'oferta_d5', 'enviado' if ok else 'falhou', agora))
+        n_env += 1 if ok else 0
+        time.sleep(0.6)
+    return n_env
+
+
 def main():
     if not api.RESEND:
         print('Envio de e-mails por ligar: nada a fazer.')
@@ -148,7 +195,9 @@ def main():
                 c.execute('UPDATE alertas SET ultimo_envio=? WHERE id=?', (agora, r['id']))
                 enviados += 1
             time.sleep(0.6)   # limite do Resend: poucos pedidos por segundo
+        of = ofertas(c, anuncios, base, agora)
     print('Alertas enviados: %d' % enviados)
+    print('Ofertas enviadas: %d' % of)
 
 
 if __name__ == '__main__':

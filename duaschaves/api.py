@@ -141,6 +141,11 @@ def assinatura(c, alerta_id):
     return hmac.new(seg.encode(), b'parar:' + str(alerta_id).encode(), 'sha256').hexdigest()[:32]
 
 
+def assinatura_mkt(c, uid):
+    seg = c.execute("SELECT valor FROM config WHERE chave='segredo'").fetchone()[0]
+    return hmac.new(seg.encode(), b'mkt:' + str(uid).encode(), 'sha256').hexdigest()[:32]
+
+
 def utilizador(c, email, criar=True):
     r = c.execute('SELECT * FROM utilizadores WHERE email=?', (email,)).fetchone()
     if r or not criar:
@@ -315,6 +320,11 @@ class API(BaseHTTPRequestHandler):
         if url.path == '/api/saude':
             return self.responder(200, {'ok': True, 'email': bool(RESEND), 'google': bool(GOOGLE_ID and GOOGLE_SEGREDO),
                                         'facebook': bool(FACEBOOK_ID and FACEBOOK_SEGREDO), 'senha': True})
+        if url.path == '/api/publico':      # números públicos e agregados (prova social verdadeira), sem dados pessoais
+            semana = int(time.time()) - 7 * 86400
+            with ligar() as c:
+                r = c.execute('SELECT COUNT(*) n, COUNT(DISTINCT utilizador) p FROM alertas WHERE criado>?', (semana,)).fetchone()
+            return self.responder(200, {'alertas7': r['n'] or 0, 'pessoas7': r['p'] or 0})
         if url.path == '/api/eu':
             with ligar() as c:
                 u = self.sessao(c)
@@ -369,6 +379,15 @@ class API(BaseHTTPRequestHandler):
                         c.execute('UPDATE alertas SET ativo=0 WHERE id=?', (int(a),))
                         return self.redirecionar(self.base() + '/#alerta-parado')
             return self.redirecionar(self.base() + '/#alertas')
+        if url.path == '/api/sem-mkt':      # deixar de receber ofertas, a partir do link no e-mail (sem precisar de entrar)
+            q = urllib.parse.parse_qs(url.query)
+            u, k = q.get('u', [''])[0], q.get('k', [''])[0]
+            if u.isdigit() and re.fullmatch(r'[0-9a-f]{32}', k or ''):
+                with ligar() as c:
+                    if hmac.compare_digest(assinatura_mkt(c, int(u)), k):
+                        c.execute('UPDATE utilizadores SET marketing=0, marketing_quando=? WHERE id=?', (int(time.time()), int(u)))
+                        return self.redirecionar(self.base() + '/#sem-ofertas')
+            return self.redirecionar(self.base() + '/#conta')
         if url.path == '/api/entrar/confirmar':
             t = urllib.parse.parse_qs(url.query).get('t', [''])[0]
             destino = self.base() + '/#conta'

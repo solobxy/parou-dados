@@ -163,6 +163,14 @@ input[type=file]{font:inherit;font-size:15px;max-width:100%}
 .ou{display:flex;align-items:center;gap:12px;color:var(--texto3);font-size:14px;margin:16px 0}.ou::before,.ou::after{content:'';flex:1;height:1px;background:var(--borda)}
 .abas{display:flex;background:#E6EBE9;border-radius:14px;padding:4px;margin-bottom:12px}.abas button{flex:1;min-height:44px;border:0;border-radius:10px;background:none;font:inherit;font-weight:700;color:var(--texto2);cursor:pointer}
 .abas button[aria-selected="true"]{background:#fff;color:var(--tinta);box-shadow:0 1px 3px rgba(15,26,23,.12)}
+.pw-controlo{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px;font-size:14px;color:var(--texto2)}.pw-controlo li{display:flex;align-items:center;gap:8px}.pw-controlo svg{color:var(--verde);flex-shrink:0}
+.planos-dep{border:0;margin:0;display:flex;flex-direction:column;gap:10px}.h-planos{float:left;width:100%;margin:0 0 6px;padding:0;font-size:20px;font-weight:800;letter-spacing:-.01em}
+.plano-op{display:flex;align-items:center;gap:12px;padding:14px 16px;border:1.5px solid var(--borda-forte);border-radius:14px;cursor:pointer;min-height:56px}
+.plano-op:has(input:checked){border-color:var(--verde);box-shadow:0 0 0 3px rgba(11,110,79,.18)}
+.plano-op input{width:20px;height:20px;accent-color:var(--verde);margin:0;flex-shrink:0}
+.po-txt{flex:1;min-width:0;display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px}.po-txt small{flex-basis:100%;color:var(--texto2);font-size:14px}
+.po-selo{min-height:22px;font-size:12px;padding:0 8px}.po-preco{font-weight:800;font-size:18px;font-variant-numeric:tabular-nums;white-space:nowrap}
+.pf-prog{display:flex;flex-direction:column;gap:6px;margin:0 0 16px}.pf-prog .progresso span{transition:width .3s ease-out}
 .senha-linha{position:relative}.senha-linha input{padding-right:104px}.senha-linha .botao-texto{position:absolute;right:6px;top:50%;transform:translateY(-50%);min-height:44px;padding:0 12px}
 .erro-caixa{margin:0 0 14px;padding:12px 14px;border-radius:12px;background:#FDECEA;color:#8A1C12;font-weight:600}
 .consent{display:flex;align-items:flex-start;gap:10px;font-size:14px;line-height:1.45;color:#46524D;cursor:pointer}
@@ -938,6 +946,11 @@ function esc(t){return String(t==null?'':t).replace(/[&<>"']/g,function(c){retur
 var fmtEur = new Intl.NumberFormat('pt-PT',{style:'currency',currency:'EUR',maximumFractionDigits:0});
 function eur(n){return fmtEur.format(n);}
 var P1='1&nbsp;€', P2='9,99&nbsp;€';
+/* planos depois do 1.º mês; o de 60 dias serve de comparação (efeito de engodo) e o de 90 é o de melhor preço por mês */
+var PLANOS=[{id:'p30',dias:30,preco:9.99},{id:'p60',dias:60,preco:19.49},{id:'p90',dias:90,preco:24.99}];
+function planoAtual(){var id=(typeof conta!=='undefined'&&conta.plano)||'p30';return PLANOS.filter(function(x){return x.id===id;})[0]||PLANOS[0];}
+function precoPlano(x){return x.preco.toFixed(2).replace('.',',')+'&nbsp;€';}
+function porMes(x){return (x.preco/x.dias*30).toFixed(2).replace('.',',')+'&nbsp;€';}
 var fmtData = new Intl.DateTimeFormat('pt-PT',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
 var fmtDia = new Intl.DateTimeFormat('pt-PT',{day:'numeric',month:'long'});
 function quando(m){if(m<60)return 'há '+m+' min';if(m<1440)return 'há '+Math.floor(m/60)+' h';var d=Math.floor(m/1440);return d===1?'há 1 dia':'há '+d+' dias';}
@@ -1115,6 +1128,14 @@ function listaInclui(){
   '</ul>';
 }
 function avisoRenovacao(){return '<p class="aviso-preco">Depois dos 30 dias, <strong>'+P2+' a cada 30 dias</strong>, até cancelares. Cancelas com um toque na tua conta e avisamos-te por e-mail 3 dias antes de cada renovação.</p>';}
+/* prova social: só números reais e só quando já são expressivos; senão, o facto do mercado */
+var PUBLICO=null;
+function provaSocial(){
+  if(PUBLICO&&PUBLICO.pessoas7>=20)return '<p class="pw-facto"><strong>'+fmtN(PUBLICO.pessoas7)+' pessoas</strong> criaram alertas na Duas Chaves nos últimos 7 dias.</p>';
+  var n=numerosCasas();
+  if(n.n24>=20)return '<p class="pw-facto"><strong>'+fmtN(n.n24)+' casas novas</strong> nas últimas 24 h. Cada uma recebe em média 24 contactos <span class="pw-fonte">(idealista, 2026)</span>.</p>';
+  return '<p class="pw-facto">Cada casa recebe em média <strong>24 contactos</strong> e 11% saem em menos de 24 h <span class="pw-fonte">(idealista, 2026)</span>.</p>';
+}
 function abrirAcesso(depois,c){
   var semSessao=!conta.sessao;
   ev('paywall',{origem:c?'casa':(dlg.classList.contains('dlg-promo')?'oferta':(location.hash.slice(1)||'inicio').split('-')[0])});
@@ -1123,12 +1144,13 @@ function abrirAcesso(depois,c){
   abrirDialogo('<form class="dialogo-corpo pw" id="f-acesso" novalidate>'+
     cabecaDialogo(c?'Contacta antes dos outros':'Desbloquear os contactos')+
     mini+
-    '<p class="pw-facto">Cada casa recebe em média <strong>24 contactos</strong> e 11% saem em menos de 24 h <span class="pw-fonte">(idealista, 2026)</span>.</p>'+
-    '<div class="pw-oferta"><p class="oferta-preco">'+P1+'</p><div><p class="oferta-txt">30 dias de acesso</p><p class="pw-renova">Depois '+P2+'/30 dias. Cancelas quando quiseres; avisamos 3 dias antes.</p></div></div>'+
+    provaSocial()+
+    '<div class="pw-oferta"><p class="oferta-preco">'+P1+'</p><div><p class="oferta-txt">30 dias de acesso</p><p class="pw-renova">Depois '+precoPlano(planoAtual())+'/'+planoAtual().dias+' dias'+(planoAtual().id==='p30'?' (ou 24,99&nbsp;€ por 90 dias)':'')+'.</p></div></div>'+
     '<ul class="inclui">'+
       '<li>'+svg(P.visto,{s:18,w:2.4})+'<span>Visitas, chamadas e mensagens em <strong>todas</strong> as casas</span></li>'+
       '<li>'+svg(P.visto,{s:18,w:2.4})+'<span>Alertas <strong>no minuto</strong> (sem acesso, 1 resumo por dia)</span></li>'+
     '</ul>'+
+    '<ul class="pw-controlo">'+['Cancelas com um toque, na tua conta','Avisamos por e-mail 3 dias antes de cobrar','Sem fidelização nem custos escondidos'].map(function(t){return '<li>'+svg(P.escudo,{s:16,w:2})+t+'</li>';}).join('')+'</ul>'+
     (semSessao?'<div class="campo"><label for="ac-email">E-mail</label><input id="ac-email" type="email" autocomplete="email" inputmode="email"></div>':'')+
     '<fieldset class="pw-metodos"><legend class="isco">Pagar com</legend>'+
       '<label class="pw-metodo"><input type="radio" name="ac-metodo" value="mbway" checked><img class="pw-ic" src="data:image/png;base64,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" alt="" width="22" height="22"><span>MB WAY</span></label>'+
@@ -1146,7 +1168,7 @@ function abrirAcesso(depois,c){
     /* cliente: pode receber ofertas de serviços parecidos, salvo se recusar aqui (art. 13.º-A, n.º 3, da Lei 41/2004) */
     var semMkt=document.getElementById('ac-sem-mkt');if(semMkt)conta.marketing={sim:!semMkt.checked,quando:agora,base:'cliente'};
     guardarConta();dlg.close();
-    toast('Acesso ativo. A 1.ª renovação é a '+fmtDia.format(new Date(conta.acesso.ate))+', por 9,99 €.');
+    toast('Acesso ativo. A 1.ª renovação é a '+fmtDia.format(new Date(conta.acesso.ate))+', por '+precoPlano(planoAtual()).replace('&nbsp;',' ')+'.');
     if(depois)depois();
   });
 }
@@ -1692,15 +1714,15 @@ function abrirFiltros(sim){
 function ligarFiltros(raiz,mudou){
   var $=function(i){return document.getElementById(i);};
   function marca(attr,v){raiz.querySelectorAll('['+attr+']').forEach(function(b){b.setAttribute('aria-pressed',String(b.getAttribute(attr))===String(v));});}
-  raiz.querySelectorAll('[data-ftipo]').forEach(function(b){b.addEventListener('click',function(){estado.tipoImovel=b.getAttribute('data-ftipo');marca('data-ftipo',estado.tipoImovel);ev('filtro',{f:'tipo'});mudou();});});
-  raiz.querySelectorAll('[data-fdias]').forEach(function(b){b.addEventListener('click',function(){estado.dias=+b.getAttribute('data-fdias');marca('data-fdias',estado.dias);ev('filtro',{f:'dias'});mudou();});});
+  raiz.querySelectorAll('[data-ftipo]').forEach(function(b){b.addEventListener('click',function(){estado.tipoImovel=b.getAttribute('data-ftipo');marca('data-ftipo',estado.tipoImovel);ev('filtro',{nome:'tipo:'+(estado.tipoImovel||'todos')});mudou();});});
+  raiz.querySelectorAll('[data-fdias]').forEach(function(b){b.addEventListener('click',function(){estado.dias=+b.getAttribute('data-fdias');marca('data-fdias',estado.dias);ev('filtro',{nome:'dias:'+estado.dias});mudou();});});
   function precoUI(){
     $('f-pmin').value=estado.precoMin||'';$('f-pmax').value=estado.precoMax||'';
     $('f-rmin').value=Math.min(estado.precoMin||0,PRECO_MAX_BARRA);$('f-rmax').value=estado.precoMax?Math.min(estado.precoMax,PRECO_MAX_BARRA):PRECO_MAX_BARRA;
     var a=+$('f-rmin').value/PRECO_MAX_BARRA*100,z=+$('f-rmax').value/PRECO_MAX_BARRA*100,c=$('f-barra-preco').querySelector('.f-cheio');c.style.left=a+'%';c.style.right=(100-z)+'%';
     marca('data-fpreco',estado.precoMin?'x':estado.precoMax);
   }
-  raiz.querySelectorAll('[data-fpreco]').forEach(function(b){b.addEventListener('click',function(){estado.precoMin=0;estado.precoMax=+b.getAttribute('data-fpreco');precoUI();ev('filtro',{f:'preco'});mudou();});});
+  raiz.querySelectorAll('[data-fpreco]').forEach(function(b){b.addEventListener('click',function(){estado.precoMin=0;estado.precoMax=+b.getAttribute('data-fpreco');precoUI();ev('filtro',{nome:'preco:'+estado.precoMax});mudou();});});
   var tP;function depois(){clearTimeout(tP);tP=setTimeout(mudou,250);}
   $('f-rmin').addEventListener('input',function(){var v=+this.value,mx=+$('f-rmax').value;if(v>mx-50){v=mx-50;}estado.precoMin=Math.max(0,v);precoUI();depois();});
   $('f-rmax').addEventListener('input',function(){var v=+this.value,mn=+$('f-rmin').value;if(v<mn+50){v=mn+50;}estado.precoMax=v>=PRECO_MAX_BARRA?0:v;precoUI();depois();});
@@ -1716,7 +1738,7 @@ function ligarFiltros(raiz,mudou){
   var qq=raiz.querySelector('[data-tip-qq]');if(qq)qq.addEventListener('click',function(){estado.tips=[];raiz.querySelectorAll('[data-tip]').forEach(function(x){x.setAttribute('aria-pressed','false');});qq.setAttribute('aria-pressed','true');mudou();});
   function areaUI(){var v=estado.areaMin;$('f-area-txt').innerHTML=v?'Pelo menos <strong>'+v+' m²</strong>':'Qualquer';var r=$('f-area');r.style.setProperty('--p',(v/AREA_MAX_BARRA*100)+'%');}
   $('f-area').addEventListener('input',function(){estado.areaMin=+this.value;areaUI();depois();});areaUI();
-  [['f-part','soPart'],['f-semcaucao','semCaucao'],['f-compreco','comPreco'],['f-fotos','soFotos'],['f-prot','soProt']].forEach(function(x){$(x[0]).addEventListener('change',function(){estado[x[1]]=this.checked;ev('filtro',{f:x[1]});mudou();});});
+  [['f-part','soPart'],['f-semcaucao','semCaucao'],['f-compreco','comPreco'],['f-fotos','soFotos'],['f-prot','soProt']].forEach(function(x){$(x[0]).addEventListener('change',function(){estado[x[1]]=this.checked;mudou();});});
   $('f-fechar').addEventListener('click',function(){abrirFiltros(false);});
   $('f-ver').addEventListener('click',function(){abrirFiltros(false);var l=document.getElementById('n-res');if(l)l.scrollIntoView({block:'start'});});
 }
@@ -2021,11 +2043,17 @@ function vPrecos(){
         (ativo?'<a class="botao-sec largo" href="#conta">Acesso ativo · ver a minha conta</a>':'<button class="botao largo" type="button" id="b-comprar">Desbloquear por '+P1+'</button>')+
       '</div>'+
     '</div>'+
+    '<fieldset class="bloco planos-dep" style="margin-top:16px"><legend class="h-planos">Depois do 1.º mês, escolhe como continuas</legend>'+
+      PLANOS.map(function(x){var poup=Math.round((1-(x.preco/x.dias*30)/9.99)*100);return '<label class="plano-op'+(x.id==='p90'?' melhor':'')+'"><input type="radio" name="plano" value="'+x.id+'"'+(planoAtual().id===x.id?' checked':'')+'>'+
+        '<span class="po-txt"><strong>'+x.dias+' dias</strong>'+(x.id==='p90'?'<span class="selo-quente po-selo">Melhor preço</span>':'')+'<small>'+porMes(x)+' por cada 30 dias'+(poup>0?' · poupas '+poup+'%':'')+'</small></span>'+
+        '<span class="po-preco">'+precoPlano(x)+'</span></label>';}).join('')+
+      '<p class="ajuda" style="margin:0">Podes mudar quando quiseres. Avisamos 3 dias antes de cada cobrança.</p></fieldset>'+
     '<div class="bloco" style="margin-top:16px"><h2>Pagamento seguro: '+eur(TAXA)+' por casa</h2><p>Nas casas publicadas aqui e em qualquer anúncio de outro site, se quem anuncia aceitar. Para quem anuncia é grátis. Se não arrendares, devolvemos.</p><a class="botao-sec" href="#proteger" style="align-self:flex-start">Proteger um pagamento</a></div>'+
     '<p class="ajuda" style="margin-top:24px">Tens dúvidas? Vê as <a href="#ajuda">perguntas frequentes</a>.</p>'+
   '</div>';
   var b=document.getElementById('b-comprar');
   if(b)b.addEventListener('click',function(){abrirAcesso(function(){vPrecos();foco();});});
+  main.querySelectorAll('[name=plano]').forEach(function(r){r.addEventListener('change',function(){conta.plano=r.value;guardarConta();ev('filtro',{nome:'plano:'+r.value});});});
 }
 
 function vAlertas(){
@@ -2261,13 +2289,16 @@ var SITUACOES=['Trabalhador por conta de outrem','Trabalhador independente','Est
 function fotoPerfilUrl(){if(conta.servidor&&conta.temFoto)return '/api/perfil/foto?v='+(conta.fotoVersao||1);return conta.fotoLocal||'';}
 function iniciais(){var n=(conta.perfil&&conta.perfil.nome)||conta.email||'?';return n.trim().split(/\s+/).slice(0,2).map(function(x){return x.charAt(0).toUpperCase();}).join('');}
 function avatarPerfil(tam){var u=fotoPerfilUrl();return u?'<img class="av-foto" src="'+esc(u)+'" alt="" width="'+tam+'" height="'+tam+'" style="width:'+tam+'px;height:'+tam+'px">':'<div class="avatar" aria-hidden="true" style="width:'+tam+'px;height:'+tam+'px;font-size:'+Math.round(tam/2.8)+'px">'+esc(iniciais())+'</div>';}
+var NOMES_PERFIL={foto:'foto',nome:'nome',idade:'idade',situacao:'situação',emprego:'profissão',cidade:'onde vives',tips:'o que procuras',descricao:'sobre ti'};
+function faltaPerfil(p,temFoto){var f=[];if(!temFoto)f.push('foto');['nome','idade','situacao','emprego','cidade'].forEach(function(k){if(!p[k])f.push(k);});if(!(p.tips&&p.tips.length))f.push('tips');if(!p.descricao)f.push('descricao');return f;}
+function textoFalta(f){var n=f.slice(0,2).map(function(k){return NOMES_PERFIL[k];});return n.length?'Falta: '+n.join(' e ')+(f.length>2?' e mais '+(f.length-2):''):'Perfil completo.';}
 function completoPerfil(){var p=conta.perfil||{},campos=['nome','idade','situacao','emprego','cidade','descricao'],n=campos.filter(function(k){return p[k];}).length+((p.tips&&p.tips.length)?1:0)+(fotoPerfilUrl()?1:0);return Math.round(n/8*100);}
 function blocoPerfil(){
   var p=conta.perfil||{},pct=completoPerfil(),linha=[];
   if(p.idade)linha.push(p.idade+' anos');if(p.emprego)linha.push(esc(p.emprego));if(p.cidade)linha.push(esc(p.cidade));
   return '<div class="bloco"><h2>O meu perfil</h2><div class="perfil-topo">'+avatarPerfil(64)+'<div><p class="nome">'+esc(p.nome||'Sem nome')+'</p><p class="ajuda" style="margin:2px 0 0">'+(linha.join(' · ')||'Ainda não preencheste o perfil.')+'</p></div></div>'+
-    '<div class="progresso" role="img" aria-label="Perfil '+pct+'% completo"><span style="width:'+pct+'%"></span></div><p class="ajuda" style="margin:0">Perfil '+pct+'% completo. Os senhorios respondem mais a quem se apresenta bem.</p>'+
-    '<a class="botao-sec" href="#perfil" style="align-self:flex-start">Editar perfil</a></div>';
+    '<div class="progresso" role="img" aria-label="Perfil '+pct+'% completo"><span style="width:'+pct+'%"></span></div><p class="ajuda" style="margin:0"><strong>'+(8-faltaPerfil(p,!!fotoPerfilUrl()).length)+' de 8</strong> · '+textoFalta(faltaPerfil(p,!!fotoPerfilUrl()))+'</p>'+
+    '<a class="botao-sec" href="#perfil" style="align-self:flex-start">'+(pct<100?'Completar perfil':'Editar perfil')+'</a></div>';
 }
 function reduzirFoto(file,cb){
   var url=URL.createObjectURL(file),img=new Image();
@@ -2305,6 +2336,7 @@ function vPerfil(){
     '<a class="voltar" href="#conta">'+svg(P.voltar,{s:18})+'A minha conta</a>'+
     '<h1 class="titulo" tabindex="-1">O meu perfil</h1>'+
     '<p class="apoio">Apresenta-te aos senhorios. Por agora só tu vês o teu perfil; vais poder enviá-lo quando contactares uma casa.</p>'+
+    '<div class="pf-prog" aria-live="polite"><div class="progresso"><span id="pf-barra"></span></div><p class="ajuda" id="pf-falta"></p></div>'+
     '<form id="f-perfil" class="form-cartao" novalidate>'+
       '<div class="inteiro perfil-foto"><span id="pf-av">'+avatarPerfil(88)+'</span><div class="botoes-linha"><label class="botao-sec botao-peq" for="pf-ficheiro">Escolher foto</label><input id="pf-ficheiro" type="file" accept="image/*" class="isco"><button type="button" class="botao-texto" id="pf-tirar"'+(fotoPerfilUrl()?'':' hidden')+'>Remover</button></div></div>'+
       '<div class="campo inteiro"><label for="pf-nome">Nome</label><input id="pf-nome" type="text" maxlength="60" autocomplete="name" value="'+esc(p.nome||'')+'"></div>'+
@@ -2325,6 +2357,11 @@ function vPerfil(){
       '<button class="botao largo inteiro" type="submit">Guardar perfil</button>'+
     '</form></div>';
   var desc=document.getElementById('pf-desc'),cont=document.getElementById('pf-conta');
+  var progPerfil=function(){var v=function(i){var e=document.getElementById(i);return e?e.value.trim():'';};
+    var q={nome:v('pf-nome'),idade:v('pf-idade'),situacao:v('pf-situacao'),emprego:v('pf-emprego'),cidade:v('pf-cidade'),descricao:v('pf-desc'),tips:[].slice.call(main.querySelectorAll('[data-ptip][aria-pressed=true]'))};
+    var f=faltaPerfil(q,!!fotoPerfilUrl());document.getElementById('pf-barra').style.width=Math.round((8-f.length)/8*100)+'%';
+    document.getElementById('pf-falta').innerHTML='<strong>'+(8-f.length)+' de 8</strong> · '+textoFalta(f);};
+  progPerfil();var fp=document.getElementById('f-perfil');fp.addEventListener('input',progPerfil);fp.addEventListener('change',progPerfil);fp.addEventListener('click',function(){setTimeout(progPerfil,0);});
   document.getElementById('pf-idade').addEventListener('input',function(){erroCampo(this,'');});
   var contar=function(){cont.textContent=desc.value.length+' / 600';};contar();desc.addEventListener('input',contar);
   main.querySelectorAll('[data-ptip]').forEach(function(b){b.addEventListener('click',function(){b.setAttribute('aria-pressed',b.getAttribute('aria-pressed')!=='true');});});
@@ -2730,6 +2767,7 @@ function rota(){
   else if(h==='entrar-erro'){vEntrar('link');base='conta';}
   else if((m=h.match(/^entrar-erro-([a-z]+)$/))){vEntrar(m[1]);base='conta';}
   else if(h==='criar-conta'){if(conta.sessao)vConta();else vEntrar('','criar');base='conta';}
+  else if(h==='sem-ofertas'){if(conta.marketing)conta.marketing.sim=false;guardarConta();vConta();base='conta';setTimeout(function(){toast('Pronto. Não voltas a receber ofertas por e-mail.');},50);}
   else if(h==='alerta-parado'){vAlertas();base='alertas';setTimeout(function(){toast('Alerta parado. Não voltas a receber e-mails dele.');},50);}
   else if(h==='perfil'){vPerfil();base='conta';}
   else if(h==='painel'){vPainel();base='conta';}
@@ -2850,7 +2888,7 @@ rota();
 try{
   api('saude').then(function(r){
     if(r._estado!==200)return;
-    servidor=true;emailLigado=!!r.email;metodos={google:!!r.google,facebook:!!r.facebook,senha:!!r.senha};
+    servidor=true;emailLigado=!!r.email;api('publico').then(function(q){if(q._estado===200)PUBLICO=q;}).catch(function(){});metodos={google:!!r.google,facebook:!!r.facebook,senha:!!r.senha};
     if(!conta.sessao&&/^(entrar|conta)/.test(location.hash.slice(1)))rota();
     return api('eu').then(function(u){
       if(u._estado!==200){if(conta.sessao&&conta.servidor){conta.sessao=false;conta.servidor=false;guardarConta();}return;}
