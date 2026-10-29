@@ -259,6 +259,19 @@ input[type=file]{font:inherit;font-size:15px;max-width:100%}
 .escura .form-cartao .ajuda{color:var(--texto3)}
 .tel-meio{margin-top:32px}
 .heroi-tel{display:none}
+.compara2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:0 0 24px;align-items:stretch}
+.cp{border-radius:18px;padding:16px 14px;display:flex;flex-direction:column;gap:2px;min-width:0}
+.cp-nos{background:var(--verde);color:#fff;box-shadow:0 14px 30px -16px rgba(11,110,79,.6);position:relative;padding-top:38px}
+@media (max-width:359px){.cp-nos{padding-top:50px}}
+.cp-eles{background:#fff;border:1px solid var(--borda);color:var(--texto2);padding-top:34px}
+.cp-selo{position:absolute;top:10px;left:12px;right:12px;font-size:11.5px;font-weight:800;color:var(--tinta);background:var(--quente);border-radius:999px;padding:3px 8px;text-align:center;line-height:1.25}
+.cp-nome{margin:0;font-size:14px;font-weight:700;line-height:1.25}.cp-nos .cp-nome{color:#DDF2E9}
+.cp-preco{margin:4px 0 0;font-size:34px;font-weight:800;letter-spacing:-.03em;line-height:1.05;font-variant-numeric:tabular-nums}
+.cp-eles .cp-preco{font-size:22px;color:var(--texto2);margin-top:12px}
+.cp-per{margin:0;font-size:13px;line-height:1.3}.cp-nos .cp-per{color:#DDF2E9}
+.cp-barra{height:6px;border-radius:3px;background:rgba(0,0,0,.08);margin:12px 0 8px;overflow:hidden}.cp-nos .cp-barra{background:rgba(255,255,255,.22)}
+.cp-barra span{display:block;height:100%;border-radius:3px;background:#fff}.cp-eles .cp-barra span{background:#C9D1CE}
+.cp-dep{margin:0;font-size:12.5px;line-height:1.3}.cp-nos .cp-dep{color:#DDF2E9}
 .compara{list-style:none;margin:0 0 24px;padding:0;border-top:1px solid var(--borda)}
 .compara li{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:14px 0;border-bottom:1px solid var(--borda);font-size:16px;color:var(--texto2)}
 .compara li strong{color:var(--tinta);text-align:right}
@@ -1538,7 +1551,12 @@ function vInicio(){
 
   '<section class="seccao" id="precos-inicio"><div class="contentor dois-col">'+
     '<div><h2>Contacta primeiro. Visita primeiro.</h2><p class="apoio">Ver é grátis. Com o acesso, contactas todas as casas e sabes das novas no minuto.</p>'+
-    '<ul class="compara"><li><span>Duas Chaves</span><strong>'+P2+' a cada 30 dias</strong></li><li><span>Outros agregadores</span><strong>até 39,99&nbsp;€ a cada 4 semanas</strong></li></ul></div>'+
+    '<div class="compara2" role="group" aria-label="Comparação de preços">'+
+      '<div class="cp cp-nos"><span class="cp-selo">Até 75% mais barato</span><p class="cp-nome">Duas Chaves</p><p class="cp-preco">'+P1+'</p><p class="cp-per">nos primeiros 30 dias</p>'+
+        '<div class="cp-barra" aria-hidden="true"><span style="width:25%"></span></div><p class="cp-dep">Depois, '+P2+' a cada 30 dias</p></div>'+
+      '<div class="cp cp-eles"><p class="cp-nome">Outros sites e aplicações</p><p class="cp-preco">até 39,99&nbsp;€</p><p class="cp-per">a cada 4 semanas</p>'+
+        '<div class="cp-barra" aria-hidden="true"><span style="width:100%"></span></div></div>'+
+    '</div></div>'+
     '<div class="plano destaque"><span class="selo-quente">Poupas 90% no 1.º mês</span><div class="oferta"><p class="oferta-preco">'+P1+'</p><p class="oferta-txt">nos primeiros 30 dias</p></div>'+listaInclui()+
       '<button class="botao largo" type="button" id="b-home-acesso">'+(ativo?'Ver as casas':'Começar por '+P1)+'</button>'+avisoRenovacao()+'</div>'+
   '</div></section>'+
