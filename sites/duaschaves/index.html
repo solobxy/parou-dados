@@ -191,6 +191,7 @@ input[type=file]{font:inherit;font-size:15px;max-width:100%}
 .c-sub{margin:0;font-size:14px;line-height:1.4;color:var(--texto2);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .c-dados{margin:4px 0 0;padding:8px 0;border-top:1px solid var(--borda);border-bottom:1px solid var(--borda);display:flex;flex-wrap:wrap;justify-content:space-between;gap:2px 10px;font-size:14px;color:var(--tinta)}
 .c-dados span{white-space:nowrap}
+@media (max-width:379px){.cartao{grid-template-columns:41% minmax(0,1fr)}.cartao-corpo{padding:12px 12px 12px 14px}}
 .c-info{list-style:none;margin:6px 0 0;padding:0;display:flex;flex-direction:column;gap:5px;font-size:13px;color:var(--texto2);line-height:1.3}.c-info li{display:flex;align-items:center;gap:6px;min-width:0}.c-info span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.c-info svg{flex-shrink:0;color:var(--texto3)}
 .c-pe{margin-top:auto;padding-top:6px;display:flex;align-items:center;justify-content:space-between;gap:8px}
 .c-pe .preco{font-size:21px;white-space:nowrap}.c-pe .preco .consulta{font-size:15px}
@@ -204,7 +205,7 @@ input[type=file]{font:inherit;font-size:15px;max-width:100%}
 .preco{margin:0;font-size:24px;font-weight:800;letter-spacing:-.02em;font-variant-numeric:tabular-nums;line-height:1.15}
 .preco small{font-size:15px;font-weight:500;color:var(--texto3);letter-spacing:0}
 .quando{font-size:14px;color:var(--texto3);white-space:nowrap}
-.cartao h3{margin:0;font-size:19px;line-height:1.2;font-weight:800;letter-spacing:-.02em;color:var(--tinta);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cartao h3{margin:0;font-size:16px;line-height:1.2;font-weight:800;letter-spacing:-.02em;color:var(--tinta);display:flex;align-items:center;gap:6px;min-width:0}.cartao h3 span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.cartao h3 svg{flex-shrink:0;color:var(--verde)}
 .confianca{margin:4px 0 0;display:flex;align-items:center;gap:6px;font-size:15px;font-weight:600;color:var(--verde)}
 .confianca.fora{color:var(--texto3);font-weight:500}
 
@@ -1316,21 +1317,27 @@ document.addEventListener('click',function(e){
   f.scrollTo({left:i*f.clientWidth,behavior:matchMedia('(prefers-reduced-motion:reduce)').matches?'auto':'smooth'});
 },true);
 function nQuartos(c){if(c.tipo==='Quarto')return '1 quarto';var m=/^T(\d)/.exec(c.tip||'');if(!m)return '';var n=+m[1];return n===0?'Estúdio':n+(n===1?' quarto':' quartos');}
+/* título do cartão pelo tipo: «Quarto», «Estúdio», «Apartamento T2», «Moradia T3» */
+function tituloCasa(c){
+  if(c.tipo==='Quarto')return ['Quarto',P.t_quarto];
+  var mor=c.tipo==='Moradia',t=c.tip||'';
+  if(!mor&&t==='T0')return ['Estúdio',P.t_apart];
+  return [(mor?'Moradia':'Apartamento')+(t?' '+t:''),mor?P.t_moradia:P.t_apart];
+}
 function cartao(c){
-  var cid=(c.cidade||c.bairro||'').trim(),sub=[],tp=c.tipo==='Quarto'?'Quarto':(c.tipo||'Casa');
-  sub.push(esc(tp)+(c.bairro&&norm(c.bairro)!==norm(cid)?' em '+esc(c.bairro):''));
-  var dados=[c.tipo==='Quarto'?'':nQuartos(c),areaOk(c)?c.area+' m²':''].filter(Boolean);
+  var cid=(c.cidade||c.bairro||'').trim(),sub=[],tit=tituloCasa(c);
+  sub.push((c.bairro&&norm(c.bairro)!==norm(cid)?esc(c.bairro)+', ':'')+esc(cid||'Portugal'));
+  var dados=[areaOk(c)?c.area+' m²':'',c.renda&&areaOk(c)&&c.tipo!=='Quarto'?(c.renda/c.area).toFixed(1).replace('.',',').replace(',0','')+' €/m²':''].filter(Boolean);
   /* informação útil para não deixar o cartão vazio: quando saiu, preço por m², condições de entrada, particular */
   var info=[],cd=condCasa(c);
   if(!c.semData)info.push([P.relogio,'Publicada '+quando(c.min)]);
-  if(c.renda&&areaOk(c)&&c.tipo!=='Quarto')info.push([P.regua,(c.renda/c.area).toFixed(1).replace('.',',').replace(',0','')+' €/m²']);
   var cond=[];if(cd.caucao)cond.push(cd.caucao==='Sem caução'?'Sem caução':(/^Pedida/.test(cd.caucao)?'Pede caução':'Caução de '+cd.caucao));if(cd.fiador)cond.push(cd.fiador);
   if(cond.length)info.push([P.escudo,cond.join(' · ')]);
   if(c.particular)info.push([P.pessoa,'Anúncio de particular']);
   return '<a class="cartao" href="#casa-'+c.id+'">'+(!c.semData&&c.min<1440?'<span class="c-nova">Nova</span>':'')+
     (c.fotos&&c.fotos.length?fotosCartao(c):'<div class="foto" style="background:'+c.cor+'"><span>[Foto do anúncio]</span></div>')+
     '<div class="cartao-corpo">'+
-      '<h3>'+esc(cid||'Portugal')+'</h3>'+
+      '<h3>'+svg(tit[1],{s:18,w:1.8})+'<span>'+esc(tit[0])+'</span></h3>'+
       (sub.length?'<p class="c-sub">'+sub.join(' · ')+'</p>':'')+
       (dados.length?'<p class="c-dados">'+dados.map(function(d){return '<span>'+esc(d)+'</span>';}).join('')+'</p>':'')+
       (info.length?'<ul class="c-info">'+info.slice(0,3).map(function(x){return '<li>'+svg(x[0],{s:15,w:2})+'<span>'+esc(x[1])+'</span></li>';}).join('')+'</ul>':'')+
