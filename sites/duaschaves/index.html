@@ -170,6 +170,7 @@ input[type=file]{font:inherit;font-size:15px;max-width:100%}
 .plano-op input{width:20px;height:20px;accent-color:var(--verde);margin:0;flex-shrink:0}
 .po-txt{flex:1;min-width:0;display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px}.po-txt small{flex-basis:100%;color:var(--texto2);font-size:14px}
 .po-selo{min-height:22px;font-size:12px;padding:0 8px}.po-preco{font-weight:800;font-size:18px;font-variant-numeric:tabular-nums;white-space:nowrap}
+.aviso-disp{display:flex;gap:8px;align-items:flex-start;margin:0 0 16px;padding:12px 14px;border-radius:14px;background:var(--verde-claro);color:var(--tinta);font-size:15px;line-height:1.4}.aviso-disp svg{color:var(--verde);flex-shrink:0;margin-top:1px}
 .pf-prog{display:flex;flex-direction:column;gap:6px;margin:0 0 16px}.pf-prog .progresso span{transition:width .3s ease-out}
 .senha-linha{position:relative}.senha-linha input{padding-right:104px}.senha-linha .botao-texto{position:absolute;right:6px;top:50%;transform:translateY(-50%);min-height:44px;padding:0 12px}
 .erro-caixa{margin:0 0 14px;padding:12px 14px;border-radius:12px;background:#FDECEA;color:#8A1C12;font-weight:600}
@@ -674,7 +675,7 @@ textarea[readonly]{background:var(--fundo);min-height:150px}
 .car-seta.ant{left:10px}.car-seta.seg{right:10px}
 @media (hover:hover) and (pointer:fine){.car:hover .car-seta{display:flex}}
 .galeria{display:flex;gap:0;overflow-x:auto;scroll-snap-type:x mandatory;border-radius:18px;scroll-behavior:smooth}
-.galeria img{flex:0 0 100%;width:100%;aspect-ratio:16/10;object-fit:cover;scroll-snap-align:start;background:#D6DDDA}
+.galeria img{flex:0 0 100%;width:100%;aspect-ratio:16/10;object-fit:cover;scroll-snap-align:start;scroll-snap-stop:always;background:#D6DDDA}
 @media (prefers-reduced-motion:reduce){.galeria{scroll-behavior:auto}}
 .texto.longo{white-space:pre-line}
 .preco .consulta{font-size:20px;letter-spacing:-.01em}
@@ -876,20 +877,19 @@ var DIA=864e5;
 /* ---------- dados de demonstração ---------- */
 var CASAS = [
   {id:1,cidade:'Porto',bairro:'Bonfim',tip:'T2',area:72,andar:'2.º andar',renda:850,caucao:1,min:4,prot:true,senhorio:'Ana M.',ini:'AM',gen:'f',mob:false,cor:'#CBD6D1',desc:'Apartamento remodelado, com varanda e muita luz. A 5 minutos do metro Campo 24 de Agosto.'},
-  {id:2,cidade:'Porto',bairro:'Cedofeita',tip:'T1',area:48,andar:'1.º andar',renda:790,caucao:2,min:12,prot:false,fonte:'idealista',url:'https://www.idealista.pt',mob:true,cor:'#D6DDDA',desc:'T1 renovado perto da Rua de Cedofeita, com cozinha equipada.'},
+  {id:2,cidade:'Porto',bairro:'Cedofeita',tip:'T1',area:48,andar:'1.º andar',renda:790,caucao:2,min:12,prot:false,fonte:'Casa Sapo',url:'https://casa.sapo.pt',mob:true,cor:'#D6DDDA',desc:'T1 renovado perto da Rua de Cedofeita, com cozinha equipada.'},
   {id:3,cidade:'Porto',bairro:'Paranhos',tip:'T1',area:55,andar:'3.º andar',renda:820,caucao:1,min:25,prot:true,senhorio:'Rui C.',ini:'RC',gen:'m',mob:false,cor:'#C4D2CB',desc:'Perto do Hospital de São João e da faculdade. Prédio com elevador.'},
   {id:4,cidade:'Porto',bairro:'Campanhã',tip:'T0',area:32,andar:'R/C',renda:620,caucao:2,min:38,prot:false,fonte:'OLX',url:'https://www.olx.pt',mob:true,cor:'#D3DAD7',desc:'Estúdio junto à estação de Campanhã.'},
   {id:5,cidade:'Lisboa',bairro:'Arroios',tip:'T1',area:50,andar:'4.º andar',renda:1150,caucao:1,min:6,prot:true,senhorio:'Marta S.',ini:'MS',gen:'f',mob:true,cor:'#C9D5D0',desc:'Mobilado, com elevador, a 3 minutos do metro de Arroios.'},
-  {id:6,cidade:'Lisboa',bairro:'Benfica',tip:'T2',area:78,andar:'5.º andar',renda:1400,caucao:2,min:19,prot:false,fonte:'idealista',url:'https://www.idealista.pt',mob:false,cor:'#D0D9D5',desc:'T2 com lugar de garagem, perto do Colombo.'},
+  {id:6,cidade:'Lisboa',bairro:'Benfica',tip:'T2',area:78,andar:'5.º andar',renda:1400,caucao:2,min:19,prot:false,fonte:'Casa Sapo',url:'https://casa.sapo.pt',mob:false,cor:'#D0D9D5',desc:'T2 com lugar de garagem, perto do Colombo.'},
   {id:7,cidade:'Lisboa',bairro:'Alvalade',tip:'T2',area:70,andar:'1.º andar',renda:1500,caucao:2,min:52,prot:true,senhorio:'João P.',ini:'JP',gen:'m',mob:false,cor:'#C6D3CD',desc:'Rua calma junto à Avenida da Igreja, com marquise.'},
   {id:8,cidade:'Lisboa',bairro:'Penha de França',tip:'T0',area:28,andar:'2.º andar',renda:850,caucao:2,min:64,prot:false,fonte:'Imovirtual',url:'https://www.imovirtual.com',mob:true,cor:'#D8DEDB',desc:'Estúdio mobilado com kitchenette.'},
   {id:9,cidade:'Coimbra',bairro:'Celas',tip:'T2',area:80,andar:'2.º andar',renda:750,caucao:1,min:9,prot:true,senhorio:'Teresa L.',ini:'TL',gen:'f',mob:true,cor:'#CDD8D3',desc:'Perto dos Hospitais da Universidade de Coimbra. Dois quartos grandes.'},
   {id:10,cidade:'Coimbra',bairro:'Santa Clara',tip:'T1',area:45,andar:'1.º andar',renda:550,caucao:2,min:130,prot:false,fonte:'OLX',url:'https://www.olx.pt',mob:false,cor:'#D5DCD9',desc:'T1 com vista para o rio, na margem esquerda.'},
-  {id:11,cidade:'Braga',bairro:'São Víctor',tip:'T2',area:85,andar:'3.º andar',renda:750,caucao:2,min:15,prot:false,fonte:'idealista',url:'https://www.idealista.pt',mob:false,cor:'#CFD9D4',desc:'T2 perto da Universidade do Minho (Gualtar).'},
+  {id:11,cidade:'Braga',bairro:'São Víctor',tip:'T2',area:85,andar:'3.º andar',renda:750,caucao:2,min:15,prot:false,fonte:'Casa Sapo',url:'https://casa.sapo.pt',mob:false,cor:'#CFD9D4',desc:'T2 perto da Universidade do Minho (Gualtar).'},
   {id:12,cidade:'Braga',bairro:'Maximinos',tip:'T3',area:110,andar:'Moradia',renda:950,caucao:1,min:190,prot:true,senhorio:'Carlos R.',ini:'CR',gen:'m',mob:false,cor:'#C8D4CE',desc:'Moradia em banda com quintal e garagem.'}
 ];
 var FONTES = {
-  'idealista':{de:'Do idealista',em:'no idealista'},
   'OLX':{de:'Da OLX',em:'na OLX'},
   'Imovirtual':{de:'Do Imovirtual',em:'no Imovirtual'},
   'Supercasa':{de:'Do Supercasa',em:'no Supercasa'},
@@ -915,7 +915,7 @@ var conta=(function(){
 })();
 function guardarConta(){try{localStorage.setItem('dc-conta',JSON.stringify(conta));}catch(e){}atualizarTopo();if(typeof sincronizar==='function')sincronizar();}
 /* só com sessão iniciada e dentro do prazo; com servidor, quem decide é o servidor (/api/eu) */
-function acessoAtivo(){return !!(conta.sessao&&conta.acesso&&Date.now()<conta.acesso.ate);}
+function acessoAtivo(){return !!((conta.sessao&&conta.acesso&&Date.now()<conta.acesso.ate)||(conta.acessoDisp&&Date.now()<conta.acessoDisp.ate));}
 function atualizarTopo(){document.getElementById('b-topo-conta').textContent=conta.sessao?'A minha conta':'Entrar';}
 
 /* ---------- utilidades ---------- */
@@ -1140,8 +1140,8 @@ var PUBLICO=null;
 function provaSocial(){
   if(PUBLICO&&PUBLICO.pessoas7>=20)return '<p class="pw-facto"><strong>'+fmtN(PUBLICO.pessoas7)+' pessoas</strong> criaram alertas na Duas Chaves nos últimos 7 dias.</p>';
   var n=numerosCasas();
-  if(n.n24>=20)return '<p class="pw-facto"><strong>'+fmtN(n.n24)+' casas novas</strong> nas últimas 24 h. Cada uma recebe em média 24 contactos <span class="pw-fonte">(idealista, 2026)</span>.</p>';
-  return '<p class="pw-facto">Cada casa recebe em média <strong>24 contactos</strong> e 11% saem em menos de 24 h <span class="pw-fonte">(idealista, 2026)</span>.</p>';
+  if(n.n24>=20)return '<p class="pw-facto"><strong>'+fmtN(n.n24)+' casas novas</strong> nas últimas 24 h. Cada uma recebe em média 24 contactos <span class="pw-fonte">(dados do mercado, 2026)</span>.</p>';
+  return '<p class="pw-facto">Cada casa recebe em média <strong>24 contactos</strong> e 11% saem em menos de 24 h <span class="pw-fonte">(dados do mercado, 2026)</span>.</p>';
 }
 function abrirAcesso(depois,c){
   var semSessao=!conta.sessao;
@@ -1168,11 +1168,29 @@ function abrirAcesso(depois,c){
     '<p class="pw-nota">Protótipo: nenhum pagamento é feito.</p></form>');
   document.getElementById('f-acesso').addEventListener('submit',function(e){
     e.preventDefault();
-    if(servidor){   /* site real: o acesso só existe depois de um pagamento confirmado pelo servidor */
-      var met0=(main.ownerDocument.querySelector('[name="ac-metodo"]:checked')||{}).value||'';ev('pagar_clique',{metodo:met0});
-      if(!conta.sessao){var em0=document.getElementById('ac-email');if(em0&&!erroCampo(em0,emailOk(em0.value.trim())?'':ERRO_EMAIL)){em0.focus();return;}
-        if(em0)conta.email=em0.value.trim();guardarConta();dlg.close();toast('Primeiro, cria a tua conta ou entra.');ir('entrar');return;}
-      dlg.close();toast('Os pagamentos abrem em breve. Ainda não cobramos nada.');return;
+    /* subscrever só com o e-mail: sem criar conta antes. O acesso fica neste dispositivo e enviamos um link para acabar a conta. */
+    var emS=document.getElementById('ac-email');
+    if(emS&&!erroCampo(emS,emailOk(emS.value.trim())?'':ERRO_EMAIL)){emS.focus();return;}
+    var emailS=emS?emS.value.trim():conta.email;
+    if(servidor){   /* site real: o acesso só fica ativo depois de o pagamento ser confirmado pelo servidor */
+      var met0=(main.ownerDocument.querySelector('[name="ac-metodo"]:checked')||{}).value||'',sm=document.getElementById('ac-sem-mkt');ev('pagar_clique',{metodo:met0});
+      var bt=e.target.querySelector('button[type=submit]');bt.disabled=true;
+      api('subscrever',{email:emailS,metodo:met0,plano:planoAtual().id,sem_mkt:!!(sm&&sm.checked)}).then(function(r){
+        bt.disabled=false;
+        if(r._estado!==200){toast(r.erro==='muitos_pedidos'?'Muitas tentativas. Espera uns minutos.':'Não deu. Confirma o e-mail e tenta outra vez.');return;}
+        if(!conta.email){conta.email=emailS;guardarConta();}
+        dlg.close();
+        if(r.pagamento==='por_ligar'){toast('Os pagamentos abrem em breve. Ainda não cobramos nada.');return;}
+        if(r.url)location.href=r.url;
+      }).catch(function(){bt.disabled=false;toast('Sem ligação. Tenta outra vez.');});
+      return;
+    }
+    if(!conta.sessao){   /* protótipo sem servidor: acesso só neste dispositivo, sem conta */
+      var ag=Date.now(),mt=(main.ownerDocument.querySelector('[name="ac-metodo"]:checked')||{}).value||'';
+      ev('pagar_clique',{metodo:mt});ev('pago',{metodo:mt,valor:1});
+      conta.email=emailS;conta.acessoDisp={ate:ag+30*DIA};guardarConta();dlg.close();
+      toast('Acesso ativo neste dispositivo. Enviámos para '+emailS+' um link para acabares a conta.');
+      if(depois)depois();return;
     }
     if(semSessao){var em=document.getElementById('ac-email');if(!erroCampo(em,emailOk(em.value.trim())?'':ERRO_EMAIL)){em.focus();return;}conta.email=em.value.trim();conta.sessao=true;}
     var agora=Date.now(),met=(main.ownerDocument.querySelector('[name="ac-metodo"]:checked')||{}).value||'';
@@ -1515,7 +1533,7 @@ function vInicio(){
       '<button class="botao largo inteiro" type="submit">'+svg(P.sino)+'Avisar-me de casas novas</button>'+
       '<p class="ajuda inteiro">Grátis: um resumo por dia. Com o acesso, no minuto em que aparecem.</p>'+
     '</form>'+
-    '<p class="ajuda cc-fonte">11% das casas para arrendar desaparecem em menos de 24 horas (<a href="https://www.idealista.pt/news/node/75579" target="_blank" rel="noopener">idealista, 1.º trim. 2026</a>).</p>'+
+    '<p class="ajuda cc-fonte">11% das casas para arrendar desaparecem em menos de 24 horas (dados do mercado, 1.º trimestre de 2026).</p>'+
   '</div></div></section>'+
 
   '<section class="seccao" id="precos-inicio"><div class="contentor dois-col">'+
@@ -2087,7 +2105,7 @@ function vAlertas(){
   var ativo=acessoAtivo();
   main.innerHTML='<div class="contentor estreito-m pag-simples">'+
     '<h1 class="titulo" tabindex="-1">Alertas de casas novas</h1>'+
-    '<p class="apoio">Segundo o <a href="https://www.idealista.pt/news/node/75579" target="_blank" rel="noopener">idealista</a>, 11% das casas para arrendar desaparecem em menos de 24 horas. '+
+    '<p class="apoio">11% das casas para arrendar desaparecem em menos de 24 horas. '+
       (ativo?'Com o teu acesso, recebes o aviso no momento em que a casa aparece.':'Sem acesso, recebes um resumo por dia. Com o <a href="#precos">acesso</a>, o aviso chega no momento em que a casa aparece.')+'</p>'+
     '<form class="form-cartao" id="f-alerta" novalidate>'+
       '<div class="campo"><label for="a-cidade">Cidade ou bairro <span class="opc">(opcional)</span></label><input id="a-cidade" type="text" autocomplete="address-level2" value="'+esc(estado.cidade)+'"></div>'+
@@ -2444,6 +2462,7 @@ function vEntrar(erroCod,modo){
   main.innerHTML='<div class="contentor estreito-s pag-simples">'+
     '<h1 class="titulo" tabindex="-1">'+(criar?'Criar conta':'Entrar')+'</h1>'+
     (erroCod&&ERROS_ENTRAR[erroCod]?'<p class="erro-caixa" role="alert">'+ERROS_ENTRAR[erroCod]+'</p>':'')+
+    (conta.acessoDisp&&Date.now()<conta.acessoDisp.ate?'<p class="aviso-disp">'+svg(P.visto,{s:18,w:2.4})+'<span>O teu acesso está ativo neste dispositivo. Entra com <strong>'+esc(conta.email||'o e-mail do pagamento')+'</strong> para o teres também noutros.</span></p>':'')+
     (g||f?'<div class="sociais">'+(g?'<a class="botao-social google" href="/api/oauth/google/inicio">'+SVG_G+'Continuar com Google</a>':'')+(f?'<a class="botao-social facebook" href="/api/oauth/facebook/inicio">'+SVG_F+'Continuar com Facebook</a>':'')+'</div><p class="ou"><span>ou com o teu e-mail</span></p>':'')+
     '<div class="abas" role="tablist"><button type="button" role="tab" aria-selected="'+!criar+'" data-modo="entrar">Entrar</button><button type="button" role="tab" aria-selected="'+criar+'" data-modo="criar">Criar conta</button></div>'+
     '<form id="f-entrar" class="form-cartao" novalidate style="grid-template-columns:minmax(0,1fr)">'+
@@ -2914,7 +2933,8 @@ rota();
 try{
   api('saude').then(function(r){
     if(r._estado!==200)return;
-    servidor=true;emailLigado=!!r.email;api('publico').then(function(q){if(q._estado===200)PUBLICO=q;}).catch(function(){});metodos={google:!!r.google,facebook:!!r.facebook,senha:!!r.senha};
+    servidor=true;emailLigado=!!r.email;api('publico').then(function(q){if(q._estado===200)PUBLICO=q;}).catch(function(){});
+    api('dispositivo').then(function(d){if(d._estado!==200)return;var antes=acessoAtivo();conta.acessoDisp=d.acesso||null;if(d.email&&!conta.email)conta.email=d.email;guardarConta();if(antes!==acessoAtivo())rota();}).catch(function(){});metodos={google:!!r.google,facebook:!!r.facebook,senha:!!r.senha};
     if(!conta.sessao&&/^(entrar|conta)/.test(location.hash.slice(1)))rota();
     return api('eu').then(function(u){
       if(u._estado!==200){if(conta.sessao&&conta.servidor){conta.sessao=false;conta.servidor=false;conta.acesso=null;guardarConta();}return;}

@@ -116,6 +116,10 @@ def criar_tabelas():
         CREATE TABLE IF NOT EXISTS envios(id INTEGER PRIMARY KEY, email TEXT NOT NULL, tipo TEXT NOT NULL, estado TEXT NOT NULL, quando INTEGER NOT NULL);
         CREATE INDEX IF NOT EXISTS i_alertas_u ON alertas(utilizador);
         CREATE TABLE IF NOT EXISTS config(chave TEXT PRIMARY KEY, valor TEXT NOT NULL);
+        CREATE TABLE IF NOT EXISTS subscricoes(id INTEGER PRIMARY KEY, email TEXT NOT NULL, disp TEXT NOT NULL, estado TEXT NOT NULL,
+          plano TEXT NOT NULL DEFAULT 'p30', metodo TEXT, criado INTEGER NOT NULL, ate INTEGER, marketing INTEGER NOT NULL DEFAULT 1);
+        CREATE INDEX IF NOT EXISTS i_sub_disp ON subscricoes(disp);
+        CREATE INDEX IF NOT EXISTS i_sub_email ON subscricoes(email);
         ''')
         ucols = [r[1] for r in c.execute('PRAGMA table_info(utilizadores)')]
         if 'perfil' not in ucols:
@@ -144,6 +148,54 @@ def assinatura(c, alerta_id):
 def assinatura_mkt(c, uid):
     seg = c.execute("SELECT valor FROM config WHERE chave='segredo'").fetchone()[0]
     return hmac.new(seg.encode(), b'mkt:' + str(uid).encode(), 'sha256').hexdigest()[:32]
+
+
+# ---------- subscrição só com e-mail (sem conta) ----------
+# O dispositivo fica com um cookie próprio (__Host-dc_disp). A subscrição só passa a «ativa» quando o pagamento
+# for confirmado (ativar_subscricao, chamada pelo aviso do serviço de pagamentos). Aí envia-se um link para
+# acabar a conta; ao entrar com esse e-mail, o acesso passa também para a conta.
+DISP_DIAS = 400
+PAGAMENTOS = os.environ.get('PAGAMENTOS', '')      # vazio: ainda não há serviço de pagamentos ligado
+
+
+def cookie_disp(t):
+    return '__Host-dc_disp=%s; Path=/; Max-Age=%d; HttpOnly; Secure; SameSite=Lax' % (t, DISP_DIAS * 86400)
+
+
+def ativar_subscricao(c, sub_id, base, dias=30):
+    """Chamada quando o pagamento é confirmado. Ativa no dispositivo e, se já houver conta com o e-mail, na conta."""
+    r = c.execute('SELECT * FROM subscricoes WHERE id=?', (sub_id,)).fetchone()
+    if not r:
+        return False
+    ate = max(r['ate'] or 0, int(time.time())) + dias * 86400
+    c.execute("UPDATE subscricoes SET estado='ativa', ate=? WHERE id=?", (ate, sub_id))
+    u = c.execute('SELECT * FROM utilizadores WHERE email=? AND apagado=0', (r['email'],)).fetchone()
+    if u:
+        c.execute('UPDATE utilizadores SET acesso_ate=MAX(COALESCE(acesso_ate,0), ?), renova=1 WHERE id=?', (ate, u['id']))
+    t = secrets.token_urlsafe(32)
+    c.execute('INSERT INTO links(hash, email, expira) VALUES(?,?,?)', (h(t), r['email'], int(time.time()) + 7 * 86400))
+    email_acabar_conta(r['email'], base + '/api/entrar/confirmar?t=' + t)
+    return True
+
+
+def email_acabar_conta(para, link):
+    texto = ('Olá!\n\nO teu acesso à Duas Chaves está ativo neste dispositivo.\n'
+             'Para o teres também noutros dispositivos e gerires a subscrição, acaba de criar a tua conta:\n' + link +
+             '\n\nO link vale 7 dias e só funciona uma vez.\n\nDuas Chaves')
+    html = ('<div style="font-family:system-ui,sans-serif;font-size:16px;color:#0F1A17;max-width:480px">'
+            '<p>Olá!</p><p>O teu acesso à Duas Chaves está <strong>ativo</strong> neste dispositivo.</p>'
+            '<p>Acaba de criar a tua conta para o teres noutros dispositivos e gerires a subscrição.</p>'
+            '<p><a href="' + link + '" style="display:inline-block;background:#0B6E4F;color:#fff;text-decoration:none;'
+            'font-weight:700;padding:14px 22px;border-radius:12px">Acabar de criar a conta</a></p>'
+            '<p style="color:#56635e;font-size:14px">O link vale 7 dias e só funciona uma vez.</p></div>')
+    return enviar_email(para, 'Acaba de criar a tua conta na Duas Chaves', texto, html)
+
+
+def juntar_subscricoes(c, uid, email):
+    """Ao entrar: o acesso pago só com e-mail passa para a conta com esse e-mail."""
+    r = c.execute("SELECT MAX(ate) m FROM subscricoes WHERE email=? AND estado='ativa'", (email,)).fetchone()
+    if r and r['m'] and r['m'] > time.time():
+        c.execute('UPDATE utilizadores SET acesso_ate=MAX(COALESCE(acesso_ate,0), ?), renova=1 WHERE id=?', (r['m'], uid))
 
 
 def utilizador(c, email, criar=True):
@@ -320,6 +372,16 @@ class API(BaseHTTPRequestHandler):
         if url.path == '/api/saude':
             return self.responder(200, {'ok': True, 'email': bool(RESEND), 'google': bool(GOOGLE_ID and GOOGLE_SEGREDO),
                                         'facebook': bool(FACEBOOK_ID and FACEBOOK_SEGREDO), 'senha': True})
+        if url.path == '/api/dispositivo':  # acesso pago neste dispositivo, sem conta
+            m = re.search(r'(?:^|;\s*)__Host-dc_disp=([A-Za-z0-9_\-]{20,100})', self.headers.get('Cookie') or '')
+            if not m:
+                return self.responder(200, {'acesso': None})
+            with ligar() as c:
+                r = c.execute("SELECT email, estado, ate FROM subscricoes WHERE disp=? ORDER BY id DESC LIMIT 1", (h(m.group(1)),)).fetchone()
+            if not r:
+                return self.responder(200, {'acesso': None})
+            ativo = r['estado'] == 'ativa' and (r['ate'] or 0) > time.time()
+            return self.responder(200, {'acesso': {'ate': r['ate'] * 1000} if ativo else None, 'estado': r['estado'], 'email': r['email']})
         if url.path == '/api/publico':      # números públicos e agregados (prova social verdadeira), sem dados pessoais
             semana = int(time.time()) - 7 * 86400
             with ligar() as c:
@@ -330,6 +392,9 @@ class API(BaseHTTPRequestHandler):
                 u = self.sessao(c)
                 if not u:
                     return self.responder(401, {'erro': 'sem_sessao'})
+                if u['email_ok']:           # só com o e-mail provado é que o acesso pago com esse e-mail passa para a conta
+                    juntar_subscricoes(c, u['id'], u['email'])
+                    u = self.sessao(c)
                 return self.responder(200, {
                     'email': u['email'], 'marketing': bool(u['marketing']), 'prefs': json.loads(u['prefs'] or '{}'),
                     'perfil': json.loads(u['perfil'] or '{}'), 'foto': bool(u['foto']), 'tem_senha': bool(u['senha']),
@@ -404,6 +469,7 @@ class API(BaseHTTPRequestHandler):
                     c.execute('UPDATE utilizadores SET senha=NULL WHERE id=?', (u['id'],))
                     c.execute('DELETE FROM sessoes WHERE utilizador=?', (u['id'],))
                 c.execute('UPDATE utilizadores SET email_ok=1 WHERE id=?', (u['id'],))
+                juntar_subscricoes(c, u['id'], u['email'])
                 ck = nova_sessao(c, u['id'])
             return self.redirecionar(destino, [('Set-Cookie', ck)])
         return self.responder(404, {'erro': 'nao_existe'})
@@ -436,6 +502,23 @@ class API(BaseHTTPRequestHandler):
             with ligar() as c:
                 est.registar(c, corpo, ip, self.headers.get('User-Agent') or '', bool(self.sessao(c)))
             return self.responder(200, {'ok': True})
+
+        if p == '/api/subscrever':          # pagar só com o e-mail, sem criar conta antes
+            email = str(corpo.get('email') or '').strip().lower()
+            plano = corpo.get('plano') if corpo.get('plano') in ('p30', 'p60', 'p90') else 'p30'
+            metodo = corpo.get('metodo') if corpo.get('metodo') in ('mbway', 'cartao') else ''
+            if not RE_EMAIL.match(email):
+                return self.responder(400, {'erro': 'email'})
+            if not limite('sub:' + ip, 10, 900):
+                return self.responder(429, {'erro': 'muitos_pedidos'})
+            m = re.search(r'(?:^|;\s*)__Host-dc_disp=([A-Za-z0-9_\-]{20,100})', self.headers.get('Cookie') or '')
+            t = m.group(1) if m else secrets.token_urlsafe(32)
+            with ligar() as c:
+                c.execute('INSERT INTO subscricoes(email, disp, estado, plano, metodo, criado, marketing) VALUES(?,?,?,?,?,?,?)',
+                          (email, h(t), 'pendente', plano, metodo, int(time.time()), 0 if corpo.get('sem_mkt') else 1))
+            # Sem serviço de pagamentos ligado não se ativa nada (senão o acesso seria grátis).
+            return self.responder(200, {'ok': True, 'estado': 'pendente', 'pagamento': 'por_ligar' if not PAGAMENTOS else 'iniciar'},
+                                  [('Set-Cookie', cookie_disp(t))])
 
         if p == '/api/entrar':
             email = str(corpo.get('email') or '').strip().lower()

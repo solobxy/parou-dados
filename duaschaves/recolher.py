@@ -173,6 +173,22 @@ def norm(t):
     return unicodedata.normalize('NFD', (t or '').lower()).encode('ascii', 'ignore').decode().strip()
 
 
+RE_QUARTO = re.compile(r'^(?:(?:arrenda-se|aluga-se|alugo|arrendo|aluguer de|para arrendar|disponivel|otimo|excelente|amplo|grande)\s+)?(?:um\s+|1\s+)?quartos?\b(?!\s*(?:apartamento|moradia|casa)\b)')
+
+
+def tipo_real(a):
+    """O site de origem às vezes classifica um quarto como moradia ou apartamento; o título diz a verdade."""
+    t = norm(a.get('titulo') or '')
+    if not t and a.get('desc'):
+        t = norm(a['desc'][:120])
+    if a.get('tipo') != 'Quarto' and RE_QUARTO.match(t):
+        a['tipo'] = 'Quarto'
+        a['tip'] = ''
+        if a.get('area') and a['area'] > 40:
+            a['area'] = None            # num quarto, a área anunciada costuma ser a da casa
+    return a
+
+
 def chave_igual(a):
     """O mesmo imóvel noutro site: mesma cidade, renda, área e tipologia."""
     if not (a.get('renda') and a.get('area')):
@@ -469,6 +485,22 @@ def main():
             for k in ('caucao', 'adiantadas', 'fiador'):
                 if cd.get(k) and not a.get(k):
                     a[k] = cd[k]
+    # tipo corrigido pelo título e o mesmo anúncio repetido (mesma cidade, renda, área, tipo e título) só uma vez
+    for a in vistos.values():
+        tipo_real(a)
+    vistos_dup, apagar = {}, []
+    for i, a in sorted(vistos.items(), key=lambda x: (-(len(x[1].get('fotos') or [])), x[1].get('data') or '')):
+        k = chave_igual(a)
+        if not k:
+            continue
+        k = k + (norm(a.get('titulo') or '')[:60],)
+        if k in vistos_dup:
+            apagar.append(i)
+        else:
+            vistos_dup[k] = i
+    for i in apagar:
+        del vistos[i]
+    print(f'Repetidos retirados: {len(apagar)}')
     lista = sorted(vistos.values(), key=lambda a: a.get('data') or '', reverse=True)[:MAX_ANUNCIOS]
     def sem_visto(a):
         return {k: v for k, v in a.items() if k != 'visto'}
