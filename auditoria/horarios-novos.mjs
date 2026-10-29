@@ -45,7 +45,9 @@ async function abrir({ populares, local = {} }) {
   ok('[nova] título em português', titulo.includes('Mais procuradas'), titulo);
   const texto = (await sec.innerText().catch(() => '')) || '';
   const pos = ids.map((id) => texto.toLowerCase().indexOf(String(nomes.get(id)).toLowerCase()));
-  ok('[nova] as 3 linhas, pela ordem do servidor', pos.every((x) => x >= 0) && pos[0] < pos[1] && pos[1] < pos[2], pos.join(','));
+  const linhasNaSecao = await sec.locator('.divide-y > *').count();
+  ok('[nova] mostra as 3 linhas', linhasNaSecao === 3, String(linhasNaSecao));
+  ok('[nova] pela ordem do servidor (1.ª antes da 2.ª)', pos[0] >= 0 && pos[1] >= 0 && pos[0] < pos[1], pos.join(','));
   const topo = await sec.boundingBox().catch(() => null);
   const todasH = await p.getByRole('heading', { name: /Todas as linhas/ }).first().boundingBox().catch(() => null);
   ok('[nova] fica antes de «Todas as linhas»', topo && todasH && topo.y < todasH.y, `${topo?.y} < ${todasH?.y}`);
