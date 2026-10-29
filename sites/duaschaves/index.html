@@ -911,7 +911,8 @@ var conta=(function(){
   return base;
 })();
 function guardarConta(){try{localStorage.setItem('dc-conta',JSON.stringify(conta));}catch(e){}atualizarTopo();if(typeof sincronizar==='function')sincronizar();}
-function acessoAtivo(){return !!(conta.acesso&&(conta.acesso.renova||Date.now()<conta.acesso.ate));}
+/* só com sessão iniciada e dentro do prazo; com servidor, quem decide é o servidor (/api/eu) */
+function acessoAtivo(){return !!(conta.sessao&&conta.acesso&&Date.now()<conta.acesso.ate);}
 function atualizarTopo(){document.getElementById('b-topo-conta').textContent=conta.sessao?'A minha conta':'Entrar';}
 
 /* ---------- utilidades ---------- */
@@ -1161,6 +1162,12 @@ function abrirAcesso(depois,c){
     '<p class="pw-nota">Protótipo: nenhum pagamento é feito.</p></form>');
   document.getElementById('f-acesso').addEventListener('submit',function(e){
     e.preventDefault();
+    if(servidor){   /* site real: o acesso só existe depois de um pagamento confirmado pelo servidor */
+      var met0=(main.ownerDocument.querySelector('[name="ac-metodo"]:checked')||{}).value||'';ev('pagar_clique',{metodo:met0});
+      if(!conta.sessao){var em0=document.getElementById('ac-email');if(em0&&!erroCampo(em0,emailOk(em0.value.trim())?'':ERRO_EMAIL)){em0.focus();return;}
+        if(em0)conta.email=em0.value.trim();guardarConta();dlg.close();toast('Primeiro, cria a tua conta ou entra.');ir('entrar');return;}
+      dlg.close();toast('Os pagamentos abrem em breve. Ainda não cobramos nada.');return;
+    }
     if(semSessao){var em=document.getElementById('ac-email');if(!erroCampo(em,emailOk(em.value.trim())?'':ERRO_EMAIL)){em.focus();return;}conta.email=em.value.trim();conta.sessao=true;}
     var agora=Date.now(),met=(main.ownerDocument.querySelector('[name="ac-metodo"]:checked')||{}).value||'';
     ev('pagar_clique',{metodo:met});ev('pago',{metodo:met,valor:1});
@@ -2193,7 +2200,7 @@ function vConta(){
     '</div>'+
     (conta.servidor?'<p class="ajuda" style="margin-top:20px">As casas guardadas, as pesquisas e os alertas ficam na tua conta, em qualquer dispositivo. <button type="button" class="botao-texto" id="b-apagar-conta" style="padding:0;min-height:auto">Apagar a minha conta</button></p>':'<p class="ajuda" style="margin-top:20px">Versão de testes: a conta fica só neste browser.</p>')+
   '</div>';
-  document.getElementById('b-sair').addEventListener('click',function(){if(servidor)api('sair',{}).catch(function(){});conta.sessao=false;guardarConta();toast('Saíste da conta.');ir('inicio');});
+  document.getElementById('b-sair').addEventListener('click',function(){if(servidor)api('sair',{}).catch(function(){});conta.sessao=false;conta.acesso=null;guardarConta();toast('Saíste da conta.');ir('inicio');});
   ligarDispositivo(function(){vConta();foco();});
   ligarSeguranca();
   var bac=document.getElementById('b-apagar-conta');
@@ -2202,7 +2209,7 @@ function vConta(){
       '<button class="botao-sec largo" type="button" id="b-conf-apagar">Apagar a minha conta</button><button class="botao largo" type="button" data-fechar>Manter a conta</button></div>');
     document.getElementById('b-conf-apagar').addEventListener('click',function(){
       api('apagar-conta',{}).then(function(r){dlg.close();if(r._estado!==200){toast('Não foi possível apagar agora. Tenta outra vez.');return;}
-        conta.sessao=false;conta.servidor=false;conta.email='';conta.guardadas=[];conta.marketing=null;guardarConta();apagarPrefs();toast('Conta apagada.');ir('inicio');}).catch(function(){toast('Sem ligação. Tenta outra vez.');});
+        conta.sessao=false;conta.servidor=false;conta.acesso=null;conta.email='';conta.guardadas=[];conta.marketing=null;guardarConta();apagarPrefs();toast('Conta apagada.');ir('inicio');}).catch(function(){toast('Sem ligação. Tenta outra vez.');});
     });
   });
   var bc=document.getElementById('b-cancelar-acesso');
@@ -2279,7 +2286,7 @@ function ligarSeguranca(){
     });
   });
   document.getElementById('b-sair-tudo').addEventListener('click',function(){
-    api('sair-tudo',{}).then(function(){conta.sessao=false;conta.servidor=false;guardarConta();toast('Saíste em todos os dispositivos.');ir('inicio');}).catch(function(){toast('Sem ligação. Tenta outra vez.');});
+    api('sair-tudo',{}).then(function(){conta.sessao=false;conta.servidor=false;conta.acesso=null;guardarConta();toast('Saíste em todos os dispositivos.');ir('inicio');}).catch(function(){toast('Sem ligação. Tenta outra vez.');});
   });
 }
 
@@ -2891,10 +2898,11 @@ try{
     servidor=true;emailLigado=!!r.email;api('publico').then(function(q){if(q._estado===200)PUBLICO=q;}).catch(function(){});metodos={google:!!r.google,facebook:!!r.facebook,senha:!!r.senha};
     if(!conta.sessao&&/^(entrar|conta)/.test(location.hash.slice(1)))rota();
     return api('eu').then(function(u){
-      if(u._estado!==200){if(conta.sessao&&conta.servidor){conta.sessao=false;conta.servidor=false;guardarConta();}return;}
+      if(u._estado!==200){if(conta.sessao&&conta.servidor){conta.sessao=false;conta.servidor=false;conta.acesso=null;guardarConta();}return;}
       var antes=conta.sessao;
       conta.sessao=true;conta.servidor=true;conta.email=u.email;conta.perfil=u.perfil||{};conta.temFoto=!!u.foto;conta.fotoVersao=Date.now();conta.admin=!!u.admin;
       if(!antes)ev('entrar',{metodo:u.google?'google':u.facebook?'facebook':'email'});
+      conta.acesso=u.acesso&&u.acesso.ate>Date.now()?{ate:u.acesso.ate,renova:!!u.acesso.renova}:null;
       conta.metodosConta={google:!!u.google,facebook:!!u.facebook,tem_senha:!!u.tem_senha};
       if(u.marketing)conta.marketing={sim:true,quando:Date.now()};
       var pr=u.prefs||{},p=lerPrefs();
