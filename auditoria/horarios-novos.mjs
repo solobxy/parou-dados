@@ -14,7 +14,7 @@ const ok = (nome, cond, extra = '') => { if (!cond) falhas++; console.log(cond ?
 
 const todas = await (await fetch(`${BASE}/api/lines?page=1`)).json();
 const ids = (todas.lines || []).slice(5, 8).map((l) => l.id);
-const nomes = new Map((todas.lines || []).map((l) => [l.id, l.code]));
+const nomes = new Map((todas.lines || []).map((l) => [l.id, String(l.name || l.code).slice(0, 12)]));
 ok('[preparar] há linhas reais na base de teste', ids.length === 3, ids.join(', '));
 
 const browser = await chromium.launch();
@@ -45,14 +45,14 @@ async function abrir({ populares, local = {} }) {
   ok('[nova] título em português', titulo.includes('Mais procuradas'), titulo);
   const texto = (await sec.innerText().catch(() => '')) || '';
   const pos = ids.map((id) => texto.indexOf(String(nomes.get(id))));
-  ok('[nova] as 3 linhas, pela ordem do servidor', pos.every((x) => x >= 0) && pos[0] <= pos[1] && pos[1] <= pos[2], pos.join(','));
+  ok('[nova] as 3 linhas, pela ordem do servidor', pos.every((x) => x >= 0) && pos[0] < pos[1] && pos[1] < pos[2], pos.join(','));
   const topo = await sec.boundingBox().catch(() => null);
   const todasH = await p.getByRole('heading', { name: /Todas as linhas/ }).first().boundingBox().catch(() => null);
   ok('[nova] fica antes de «Todas as linhas»', topo && todasH && topo.y < todasH.y, `${topo?.y} < ${todasH?.y}`);
   const larg = await p.evaluate(() => document.documentElement.scrollWidth);
   ok('[nova] sem scroll lateral a 390 px', larg <= 390, String(larg));
   await p.screenshot({ path: `${SAIDA}/mais-procuradas.png` });
-  await sec.locator('[role="button"], button').first().click({ timeout: 5000 }).catch(() => {});
+  await sec.getByText(nomes.get(ids[0]), { exact: false }).first().click({ timeout: 5000 }).catch((e) => console.log('NOTA    clique:', String(e).slice(0, 120)));
   await p.waitForTimeout(4000);
   ok('[contar] abrir a linha avisa o servidor (só tipo, id e nome)', avisos.some((a) => a.t === 'linha' && a.id === ids[0] && Object.keys(a).sort().join() === 'id,nome,t'), JSON.stringify(avisos));
   ok('[nova] sem erros na página', erros.length === 0, erros.join(' | '));
