@@ -571,6 +571,13 @@ dialog{overscroll-behavior:contain}
 
 /* oferta / acesso */
 .oferta{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.riscado{position:relative;display:inline-block;font-size:max(15px,.4em);font-weight:700;letter-spacing:0;color:var(--texto3);margin-right:.5em;vertical-align:.35em;white-space:nowrap;line-height:1.2}
+.cp-nos .riscado{color:#BFE3D4}
+.x-mao{position:absolute;left:-10%;top:-12%;width:120%;height:124%;overflow:visible;fill:none;stroke:#E5484D;stroke-width:3.2;stroke-linecap:round;pointer-events:none}
+.x-mao path{stroke-dasharray:1;stroke-dashoffset:1;animation:riscar .35s ease-out .3s forwards}.x-mao path+path{animation-delay:.55s}
+@keyframes riscar{to{stroke-dashoffset:0}}
+@media (prefers-reduced-motion:reduce){.x-mao path{animation:none;stroke-dashoffset:0}}
+.com-visto{display:inline-flex;align-items:center;gap:.12em;white-space:nowrap}.com-visto svg{color:var(--verde);flex-shrink:0;width:.62em;height:.62em}.cp-nos .com-visto svg{color:#fff}
 .dialogo .oferta-preco{font-size:40px}
 .oferta-preco{margin:0;font-size:48px;font-weight:800;letter-spacing:-.03em;line-height:1;font-variant-numeric:tabular-nums}
 .oferta-txt{margin:0;font-size:17px;font-weight:600;color:var(--texto2)}
@@ -966,6 +973,10 @@ function esc(t){return String(t==null?'':t).replace(/[&<>"']/g,function(c){retur
 var fmtEur = new Intl.NumberFormat('pt-PT',{style:'currency',currency:'EUR',maximumFractionDigits:0});
 function eur(n){return fmtEur.format(n);}
 var P1='1&nbsp;€', P2='9,99&nbsp;€';
+/* preço normal riscado à mão (X vermelho) e o preço da oferta com um visto: âncora de preço verdadeira (9,99 € é o preço depois do 1.º mês) */
+var X_MAO='<svg class="x-mao" viewBox="0 0 100 40" preserveAspectRatio="none" aria-hidden="true" focusable="false"><path pathLength="1" d="M6 6 C 30 14, 62 25, 95 35"/><path pathLength="1" d="M93 5 C 68 13, 36 24, 4 36"/></svg>';
+function riscado(){return '<span class="riscado"><span class="isco">Antes </span>'+P2+X_MAO+'</span>';}
+function comVisto(t){return '<span class="com-visto">'+svg('<path d="m5 12.5 4.5 4.5L19 7.5"/>',{s:'0.62em',w:3.4})+t+'</span>';}
 /* planos depois do 1.º mês; o de 60 dias serve de comparação (efeito de engodo) e o de 90 é o de melhor preço por mês */
 var PLANOS=[{id:'p30',dias:30,preco:9.99},{id:'p60',dias:60,preco:19.49},{id:'p90',dias:90,preco:24.99}];
 function planoAtual(){var id=(typeof conta!=='undefined'&&conta.plano)||'p30';return PLANOS.filter(function(x){return x.id===id;})[0]||PLANOS[0];}
@@ -1165,7 +1176,7 @@ function abrirAcesso(depois,c){
     cabecaDialogo(c?'Contacta antes dos outros':'Desbloquear os contactos')+
     mini+
     provaSocial()+
-    '<div class="pw-oferta"><p class="oferta-preco">'+P1+'</p><div><p class="oferta-txt">30 dias de acesso</p><p class="pw-renova">Depois '+precoPlano(planoAtual())+'/'+planoAtual().dias+' dias'+(planoAtual().id==='p30'?' (ou 24,99&nbsp;€ por 90 dias)':'')+'.</p></div></div>'+
+    '<div class="pw-oferta"><p class="oferta-preco">'+riscado()+comVisto(P1)+'</p><div><p class="oferta-txt">30 dias de acesso</p><p class="pw-renova">Depois '+precoPlano(planoAtual())+'/'+planoAtual().dias+' dias'+(planoAtual().id==='p30'?' (ou 24,99&nbsp;€ por 90 dias)':'')+'.</p></div></div>'+
     '<ul class="inclui">'+
       '<li>'+svg(P.visto,{s:18,w:2.4})+'<span>Visitas, chamadas e mensagens em <strong>todas</strong> as casas</span></li>'+
       '<li>'+svg(P.visto,{s:18,w:2.4})+'<span>Alertas <strong>no minuto</strong> (sem acesso, 1 resumo por dia)</span></li>'+
@@ -1552,12 +1563,12 @@ function vInicio(){
   '<section class="seccao" id="precos-inicio"><div class="contentor dois-col">'+
     '<div><h2>Contacta primeiro. Visita primeiro.</h2><p class="apoio">Ver é grátis. Com o acesso, contactas todas as casas e sabes das novas no minuto.</p>'+
     '<div class="compara2" role="group" aria-label="Comparação de preços">'+
-      '<div class="cp cp-nos"><span class="cp-selo">Até 75% mais barato</span><p class="cp-nome">Duas Chaves</p><p class="cp-preco">'+P1+'</p><p class="cp-per">nos primeiros 30 dias</p>'+
+      '<div class="cp cp-nos"><span class="cp-selo">Até 75% mais barato</span><p class="cp-nome">Duas Chaves</p><p class="cp-preco">'+riscado()+comVisto(P1)+'</p><p class="cp-per">nos primeiros 30 dias</p>'+
         '<div class="cp-barra" aria-hidden="true"><span style="width:25%"></span></div><p class="cp-dep">Depois, '+P2+' a cada 30 dias</p></div>'+
       '<div class="cp cp-eles"><p class="cp-nome">Outros sites e aplicações</p><p class="cp-preco">até 39,99&nbsp;€</p><p class="cp-per">a cada 4 semanas</p>'+
         '<div class="cp-barra" aria-hidden="true"><span style="width:100%"></span></div></div>'+
     '</div></div>'+
-    '<div class="plano destaque"><span class="selo-quente">Poupas 90% no 1.º mês</span><div class="oferta"><p class="oferta-preco">'+P1+'</p><p class="oferta-txt">nos primeiros 30 dias</p></div>'+listaInclui()+
+    '<div class="plano destaque"><span class="selo-quente">Poupas 90% no 1.º mês</span><div class="oferta"><p class="oferta-preco">'+riscado()+comVisto(P1)+'</p><p class="oferta-txt">nos primeiros 30 dias</p></div>'+listaInclui()+
       '<button class="botao largo" type="button" id="b-home-acesso">'+(ativo?'Ver as casas':'Começar por '+P1)+'</button>'+avisoRenovacao()+'</div>'+
   '</div></section>'+
 
@@ -2100,7 +2111,7 @@ function vPrecos(){
           '<li class="nao">'+svg(P.menos,{s:20,w:2.4})+'<span>Marcar visitas, ligar e enviar mensagens</span></li>'+
         '</ul>'+
         '<a class="botao-sec largo" href="#pesquisa">Procurar casas</a></div>'+
-      '<div class="plano destaque"><h2>Acesso</h2><p class="preco-plano">'+P1+' <small>nos primeiros 30 dias</small></p>'+
+      '<div class="plano destaque"><h2>Acesso</h2><p class="preco-plano">'+riscado()+comVisto(P1)+' <small>nos primeiros 30 dias</small></p>'+
         listaInclui()+avisoRenovacao()+
         (ativo?'<a class="botao-sec largo" href="#conta">Acesso ativo · ver a minha conta</a>':'<button class="botao largo" type="button" id="b-comprar">Desbloquear por '+P1+'</button>')+
       '</div>'+
@@ -2889,7 +2900,7 @@ function abrirPromo(){
     '<button type="button" class="icone promo-x" aria-label="Fechar" data-fechar>'+svg(P.fechar)+'</button>'+
     '<span class="selo-quente">Oferta de boas-vindas</span>'+
     '<h2 class="promo-tit" tabindex="-1" autofocus>Sê o primeiro a contactar as casas novas</h2>'+
-    '<p class="promo-preco"><strong>'+P1+'</strong> nos primeiros 30 dias</p>'+
+    '<p class="promo-preco">'+riscado()+'<strong>'+comVisto(P1)+'</strong> nos primeiros 30 dias</p>'+
     listaInclui()+
     '<button class="botao largo" type="button" id="b-promo">Começar por '+P1+'</button>'+
     '<p class="ajuda centro">Depois, '+P2+' a cada 30 dias. Cancelas quando quiseres.</p>'+
