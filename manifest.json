@@ -1,12 +1,12 @@
 {
-  "built_at": "2026-10-29T10:25:20.971235+00:00",
-  "db_bytes": 643043328,
-  "gz_bytes": 124202661,
+  "built_at": "2026-10-29T20:24:21.663674+00:00",
+  "db_bytes": 657166336,
+  "gz_bytes": 127022907,
   "totals": {
-    "lines": 2836,
+    "lines": 2830,
     "stops": 46382,
-    "trips": 134039,
-    "stop_times": 4112386,
+    "trips": 136474,
+    "stop_times": 4204404,
     "operators": 30,
     "operators_ok": 27,
     "operators_desatualizados": 2
@@ -358,9 +358,9 @@
       "id": "horarios_funchal",
       "operator_name": "Horários do Funchal",
       "status": "OK",
-      "lines": 170,
+      "lines": 164,
       "stops": 1743,
-      "trips": 10673,
+      "trips": 10658,
       "valid_until": "2027-08-31",
       "validade": "ok",
       "dias_validade": 306,
@@ -584,7 +584,7 @@
     }
   ],
   "desenhos": {
-    "bytes": 7811201,
+    "bytes": 8306263,
     "por_operador": {
       "carris": {
         "viagens": 24996,
@@ -592,9 +592,9 @@
         "desenhos": 307
       },
       "cmh": {
-        "viagens": 47587,
-        "com_desenho": 47587,
-        "desenhos": 1582
+        "viagens": 50037,
+        "com_desenho": 50037,
+        "desenhos": 1909
       },
       "cp": {
         "viagens": 1868,
@@ -617,9 +617,9 @@
         "desenhos": 230
       },
       "horarios_funchal": {
-        "viagens": 10673,
-        "com_desenho": 10673,
-        "desenhos": 269
+        "viagens": 10658,
+        "com_desenho": 10658,
+        "desenhos": 260
       },
       "mdb-1272": {
         "viagens": 3790,
@@ -911,13 +911,13 @@
           "total": 393
         },
         "servicos_com_data_hoje": [
-          "CU",
-          "EU",
           "BU",
-          "BexpU",
-          "FU",
+          "DU",
+          "CU",
           "AU",
-          "DU"
+          "FU",
+          "BexpU",
+          "EU"
         ],
         "viagens_por_servico": [
           {
@@ -972,5 +972,5 @@
       }
     }
   },
-  "duration_s": 289
+  "duration_s": 345
 }
