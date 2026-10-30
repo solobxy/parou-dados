@@ -28,6 +28,18 @@ for (const u of amostra) {
   ok(`[linha ${u.split('/')[2]}] JSON-LD válido`, jsonld(r.h).every((x) => x !== 'INVÁLIDO'));
   if (!/\/unir\//.test(u)) ok(`[linha ${u.split('/')[2]}] descrição com horas dos dias úteis (ou sem horário)`, /^Dias úteis: 1\.º \S+ às \d\d:\d\d, último às \d\d:\d\d/.test(d) || /^Horário da /.test(d), d.slice(0, 80));
 }
+// Carris Metropolitana: a API (padrões) às vezes não tem a versão em vigor (ex.: 4562 só tinha agosto e 2027),
+// e a página dizia «sem serviço» em todos os dias. As linhas mais procuradas têm de mostrar o horário.
+for (const cod of ['4562', '4725', '1001']) {
+  const u = linhas.find((x) => x.startsWith(`/linhas/carris-metropolitana/${cod}-`));
+  if (!u) { console.log('NOTA    sem a linha CM', cod); continue; }
+  const r = await pedir(u);
+  const d = descricao(r.h);
+  const uteis = (/<summary>Dias úteis<span class="nota"[^>]*>([^<]*)/.exec(r.h) || [])[1] || '';
+  console.log('       ', u, '\n         dias úteis:', uteis, '\n         descrição:', d.slice(0, 120));
+  ok(`[CM ${cod}] dias úteis com partidas (não «sem serviço»)`, r.estado === 200 && /\d+ partidas/.test(uteis), uteis || r.estado);
+  ok(`[CM ${cod}] descrição começa pelas horas dos dias úteis`, /^Dias úteis: (1\.º autocarro às \d\d:\d\d|uma partida)/.test(d), d.slice(0, 80));
+}
 for (const op of ['stcp', 'carris-metropolitana', 'cp', 'fertagus', 'metro-de-lisboa']) {
   const r = await pedir(`/linhas/${op}`);
   if (r.estado === 404) { console.log('NOTA    sem', op); continue; }
