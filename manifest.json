@@ -1,7 +1,7 @@
 {
-  "built_at": "2026-10-30T18:16:59.748810+00:00",
+  "built_at": "2026-10-30T20:00:52.900362+00:00",
   "db_bytes": 741777408,
-  "gz_bytes": 139080394,
+  "gz_bytes": 139080400,
   "totals": {
     "lines": 2662,
     "stops": 46392,
@@ -194,7 +194,7 @@
       "validade": "ok",
       "dias_validade": 94,
       "horario_prolongado": false,
-      "url": "https://files.mobilitydatabase.org/mdb-1927/latest.zip",
+      "url": "https://www.tub.pt/developer/gtfs/feed/tub.zip",
       "last_error": null,
       "servicos_associados": null,
       "servicos_sem_calendario": null,
@@ -907,13 +907,13 @@
           "total": 393
         },
         "servicos_com_data_hoje": [
-          "CU",
-          "FU",
           "BU",
+          "EU",
           "AU",
+          "CU",
           "BexpU",
           "DU",
-          "EU"
+          "FU"
         ],
         "viagens_por_servico": [
           {
@@ -968,5 +968,5 @@
       }
     }
   },
-  "duration_s": 279
+  "duration_s": 324
 }
