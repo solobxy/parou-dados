@@ -349,10 +349,6 @@ sup.ref a{color:var(--carimbo-texto);text-decoration:none;padding:2px}
 .a-pensar i:nth-child(2){animation-delay:.15s}.a-pensar i:nth-child(3){animation-delay:.3s}
 .nota{margin:12px 0 0;font-size:14px;color:var(--tinta-2)}
 .nota.erro{color:var(--carimbo-texto)}
-.exemplos{display:flex;flex-direction:column;gap:8px;margin-top:16px}
-.exemplos-titulo{margin:0 0 2px;font-size:14px;color:var(--tinta-2)}
-.exemplo{display:block;width:100%;text-align:left;background:var(--cartao);border:0;border-radius:12px;padding:13px 16px;font-size:16px;line-height:1.35;min-height:48px;box-shadow:0 0 0 1px var(--linha);transition:box-shadow .2s,transform .2s var(--ease)}
-.exemplo:hover{box-shadow:0 0 0 2px var(--verde-3)}
 
 /* Carta pronta: papel de 25 linhas com margem */
 .carta{background:var(--folha);color:var(--folha-tinta);border-radius:4px;margin:8px 0 14px;box-shadow:var(--sombra-folha);overflow:hidden}
@@ -1273,13 +1269,7 @@ sup.ref a{color:var(--carimbo-texto);text-decoration:none;padding:2px}
     ].join("\n\n");
   }
   var PROMPT_TRANSCRICAO = "Estas imagens são fotografias ou páginas digitalizadas de um documento que uma pessoa carregou para pedir ajuda jurídica em Portugal. Transcreve fielmente todo o texto legível, pela ordem, com todos os números, datas, valores, nomes e referências. Se a fotografia estiver torta ou com sombras, lê na mesma. Escreve [ilegível] onde não conseguires ler. Responde apenas com a transcrição.";
-  var GREETING = "Olá, sou o Goodman. Conta-me o que se passa como contarias a um amigo: o que aconteceu, quando, quanto dinheiro está em jogo e o que tens por escrito.\n\nSe recebeste uma carta, um contrato ou uma notificação, fotografa-a e carrega no clipe. Eu leio tudo e digo-te onde estás forte, onde estás fraco e qual é o melhor caminho.";
-  var EXEMPLOS = [
-    "O meu senhorio quer aumentar a renda 15% este ano. Pode?",
-    "Fui despedido por mensagem, sem aviso. Tenho direito a quê?",
-    "Uma loja não me quer reparar um telemóvel avariado.",
-    "Recebi uma multa de estacionamento e acho que é injusta."
-  ];
+  var GREETING = "Olá, sou o Goodman. Em que te posso ajudar? Vou dar-te a melhor solução.\n\nSe quiseres, podes anexar fotos ou ficheiros da carta ou do documento que recebeste.";
 
   /* ---------- Markdown simples ---------- */
   /* Só se fazem ligações para sites oficiais: o resto aparece como texto */
@@ -1514,12 +1504,7 @@ sup.ref a{color:var(--carimbo-texto);text-decoration:none;padding:2px}
   }
   function desenharInicio(){
     fio.innerHTML = "";
-    var b = adicionarGoodman({ texto: GREETING });
-    var ex = document.createElement("div");
-    ex.className = "exemplos";
-    ex.innerHTML = '<p class="exemplos-titulo">Exemplos para começar</p>' +
-      EXEMPLOS.map(function(t){ return '<button type="button" class="exemplo">' + esc(t) + "</button>"; }).join("");
-    b.el.appendChild(ex);
+    adicionarGoodman({ texto: GREETING });
   }
   function desenharTudo(){
     desenharInicio();
@@ -2013,7 +1998,6 @@ sup.ref a{color:var(--carimbo-texto);text-decoration:none;padding:2px}
   }
   document.addEventListener("click", function(e){
     var cp = e.target.closest(".copiar"); if (cp){ copiarCarta(cp); return; }
-    var ex = e.target.closest(".exemplo"); if (ex && fio.contains(ex)){ enviar(ex.textContent); }
   });
   $("btn-nova").addEventListener("click", function(){
     if (state.ctl) state.ctl.abort();
