@@ -1,0 +1,33 @@
+name: Visita real ao parou.pt
+
+# Abre o parou.pt (produção) num Chromium de telemóvel como quem chega do Google, mede os tempos,
+# regista o que aparece por cima do conteúdo e erros, e tira capturas. Não altera nada no site.
+# Resultado no ramo "visita-real-resultado".
+
+on:
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  visita:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Visitar
+        working-directory: auditoria
+        run: |
+          npm init -y >/dev/null && npm i --no-audit --no-fund playwright@1 >/dev/null && npx playwright install --with-deps chromium >/dev/null
+          mkdir -p ../res && SAIDA=../res timeout 600 node visita-real.mjs 2>&1 | tail -150
+      - name: Guardar
+        if: always()
+        run: |
+          mkdir -p pub && cp -r res/* pub/ 2>/dev/null || echo "sem resultados" > pub/vazio.txt
+          cd pub && git init -q -b visita-real-resultado
+          git config user.name "parou-dados"; git config user.email "actions@users.noreply.github.com"
+          git add -A && git commit -q -m "Visita real $(date -u +%Y-%m-%dT%H:%MZ)" && git push -q -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" visita-real-resultado
