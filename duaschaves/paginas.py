@@ -23,6 +23,19 @@ from ids import id_num
 SITE = 'https://duplicasa.pt'
 INDEXNOW = '386c1a2d4d17b112c59bb9e697abc415'      # chave pública do IndexNow (Bing, Yandex, Seznam…); o ficheiro com ela está na raiz do site
 MIN_CIDADE, MIN_TIPO, MAX_CARTOES = 5, 3, 30
+# Páginas por renda máxima («casas para alugar em gaia até 400 euros» 590/mês, «casas para alugar 250€» 480, KD 0): só com
+# pelo menos MIN_PRECO casas e quando a faixa não repete a cidade inteira
+TETOS, MIN_PRECO = (300, 400, 500, 600, 800, 1000), 5
+MIN_ZONA = 5          # páginas por freguesia/zona («casas para alugar em ermesinde» 720/mês)
+# Como as pessoas escrevem o nome («casas para alugar gaia» 2400/mês)
+CURTO = {'Vila Nova de Gaia': 'Gaia', 'Santa Maria da Feira': 'Feira', 'Vila Nova de Famalicão': 'Famalicão'}
+# Regiões que se pesquisam pelo nome da região
+REGIAO_NOME = {'Faro': 'Algarve', 'Ilha da Madeira': 'Madeira', 'Ilha de São Miguel': 'São Miguel (Açores)', 'Ilha Terceira': 'Terceira (Açores)'}
+REGIAO_EM = {'Algarve': 'no Algarve', 'Madeira': 'na Madeira', 'São Miguel (Açores)': 'em São Miguel, nos Açores', 'Terceira (Açores)': 'na Terceira, nos Açores',
+             'Margem Sul': 'na Margem Sul', 'Grande Porto': 'no Grande Porto'}
+GRUPOS = {'Margem Sul': ['Almada', 'Seixal', 'Barreiro', 'Moita', 'Montijo', 'Alcochete', 'Sesimbra', 'Palmela', 'Setúbal'],
+          'Grande Porto': ['Porto', 'Vila Nova de Gaia', 'Matosinhos', 'Maia', 'Gondomar', 'Valongo', 'Póvoa de Varzim', 'Vila do Conde', 'Espinho', 'Trofa', 'Santo Tirso']}
+RE_DESPESAS = re.compile(r'despesas (estao |est.o )?inclu|inclui (todas as )?despesas|contas inclu')
 TIPOS = [('quartos', 'Quartos', 'Quarto'), ('apartamentos', 'Apartamentos', 'Apartamento'), ('moradias', 'Moradias', 'Moradia'),
          ('t0', 'T0', 'T0'), ('t1', 'T1', 'T1'), ('t2', 'T2', 'T2'), ('t3-ou-mais', 'T3 ou mais', 'T3+')]
 MESES = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro']
@@ -53,6 +66,15 @@ def tip(a):
 
 NO = {'porto', 'funchal', 'barreiro', 'seixal', 'cartaxo', 'entroncamento', 'fundao', 'sabugal', 'bombarral', 'crato', 'montijo', 'peso da regua', 'redondo', 'sardoal', 'gavião', 'alandroal'}
 NA = {'amadora', 'maia', 'nazare', 'figueira da foz', 'guarda', 'lourinha', 'batalha', 'golega', 'mealhada', 'trofa', 'murtosa', 'sertã', 'chamusca', 'covilha', 'povoa de varzim', 'povoa de lanhoso', 'moita', 'ribeira grande', 'ribeira brava', 'calheta', 'horta', 'praia da vitoria', 'madalena', 'lagoa', 'nazaré', 'vidigueira', 'vila do porto'}
+
+
+def norm_t(t):
+    return unicodedata.normalize('NFD', t or '').encode('ascii', 'ignore').decode().lower()
+
+
+def nome_pesquisa(cidade):
+    """Nome para o título: o curto que as pessoas usam, com o oficial entre parêntesis."""
+    return f'{CURTO[cidade]} ({cidade})' if cidade in CURTO else cidade
 
 
 def em(c):
@@ -194,7 +216,7 @@ def data_pt(iso):
 
 
 def nome_tipo(tt, tn):
-    return {'Quarto': 'Quartos', 'Apartamento': 'Apartamentos', 'Moradia': 'Moradias'}.get(tt, tn)
+    return {'Quarto': 'Quartos', 'Apartamento': 'Apartamentos', 'Moradia': 'Moradias', 'T0': 'T0 e estúdios'}.get(tt, tn)
 
 
 def palavra_alugar(tt):
@@ -228,8 +250,24 @@ def gerar(anuncios, atualizado):
             frases.append(f'Um quarto anda pelos {num(meds["Quarto"])} €.')
         if boas:
             frases.append(f'A renda mais baixa agora é de {num(boas[0]["renda"])} €.')
+        plaus = sorted([a for a in lista if plausivel(a)], key=lambda a: a['renda'])
+        precos_pag = []
+        for teto in TETOS:
+            n_t = sum(1 for a in plaus if a['renda'] <= teto)
+            if n_t >= MIN_PRECO and n_t <= 0.85 * len(plaus) and any(a['renda'] <= teto and a.get('fotos') for a in plaus):
+                precos_pag.append((teto, n_t))
+        zonas = {}
+        for a in lista:
+            z = (a.get('bairro') or '').strip()
+            if z and norm_t(z) != norm_t(cidade):
+                zonas.setdefault(z, []).append(a)
+        zonas_pag = sorted([(z, l) for z, l in zonas.items() if len(l) >= MIN_ZONA and slug(z)], key=lambda x: -len(x[1]))
         links = ('<h2>Por tipo de casa</h2><ul class="ch">' + ''.join(
             f'<li><a href="/arrendar/{s}/{ts}/">{e(nome_tipo(tt, tn))} {e(em(cidade))}</a></li>' for ts, tn, tt in tipos_pag) + '</ul>') if tipos_pag else ''
+        if precos_pag:
+            links += '<h2>Por renda máxima</h2><ul class="ch">' + ''.join(f'<li><a href="/arrendar/{s}/ate-{t}/">Até {num(t)} € ({n})</a></li>' for t, n in precos_pag) + '</ul>'
+        if zonas_pag:
+            links += '<h2>Por zona</h2><ul class="ch">' + ''.join(f'<li><a href="/arrendar/{s}/zona/{slug(z)}/">{e(z)} ({len(l)})</a></li>' for z, l in zonas_pag[:30]) + '</ul>'
         vizinhas = [c for c, _ in cidades if c != cidade and (por_cidade[c][0].get('distrito') == lista[0].get('distrito'))][:12]
         if vizinhas:
             links += '<h2>Perto de ' + e(cidade) + '</h2><ul class="ch">' + ''.join(f'<li><a href="/arrendar/{slug(c)}/">Casas para alugar {e(em(c))}</a></li>' for c in vizinhas) + '</ul>'
@@ -246,9 +284,9 @@ def gerar(anuncios, atualizado):
         faq.append(('Como recebo as casas novas primeiro?', 'Cria um alerta grátis na Duplicasa: recebes um resumo por dia. Com o acesso, o aviso chega no minuto em que a casa aparece.'))
         desde = f' desde {num(boas[0]["renda"])} €' if boas else ''
         paginas[f'/arrendar/{s}/'] = pagina(
-            f'/arrendar/{s}/', f'Casas para alugar {em(cidade)}{desde} | Duplicasa',
+            f'/arrendar/{s}/', f'Casas para alugar {em(CURTO.get(cidade, cidade))}{desde} | Duplicasa',
             f'{num(len(lista))} casas, apartamentos e quartos para alugar {em(cidade)}, dos mais baratos para os mais caros. Arrenda sem burlas e sabe das casas novas no minuto.',
-            f'Casas para alugar {em(cidade)}', ' '.join(frases),
+            f'Casas para alugar {em(nome_pesquisa(cidade))}', ' '.join(frases),
             [('Início', '/'), ('Arrendar', '/arrendar/'), (cidade, f'/arrendar/{s}/')],
             boas[:MAX_CARTOES], links, '/#pesquisa?cidade=' + quote(cidade), hoje, faq=faq)
         for ts, tn, tt in tipos_pag:
@@ -273,13 +311,102 @@ def gerar(anuncios, atualizado):
                 f'{nome} para {pal} {em(cidade)}', intro,
                 [('Início', '/'), ('Arrendar', '/arrendar/'), (cidade, f'/arrendar/{s}/'), (nome, f'/arrendar/{s}/{ts}/')],
                 sub[:MAX_CARTOES], outros, '/#pesquisa?cidade=' + quote(cidade) + ('&amp;tips=' + quote(tips_q) if tips_q else ''), hoje, faq=faq_t)
+        voltar = f'<h2>Mais {e(em(cidade))}</h2><ul class="ch"><li><a href="/arrendar/{s}/">Todas as casas {e(em(cidade))}</a></li>' + ''.join(
+            f'<li><a href="/arrendar/{s}/{ts}/">{e(nome_tipo(tt, tn))}</a></li>' for ts, tn, tt in tipos_pag) + '</ul>'
+        for teto, n_t in precos_pag:
+            sub = [a for a in plaus if a['renda'] <= teto and a.get('fotos')]
+            n_q = sum(1 for a in plaus if a['renda'] <= teto and a.get('tipo') == 'Quarto')
+            n_c = n_t - n_q
+            partes = [f'{num(n_c)} {"casa" if n_c == 1 else "casas"}'] if n_c else []
+            if n_q:
+                partes.append(f'{num(n_q)} {"quarto" if n_q == 1 else "quartos"}')
+            intro = (f'{" e ".join(partes).capitalize()} para arrendar {e(em(cidade))} com renda até {num(teto)} € por mês, '
+                     f'da mais barata para a mais cara. A mais barata custa {num(plaus[0]["renda"])} €. Atualizado a {hoje}.')
+            oque = 'Quartos' if not n_c else ('Casas' if not n_q else 'Casas e quartos')   # o título diz o que há mesmo
+            outros_t = '<h2>Outras faixas de preço</h2><ul class="ch">' + ''.join(f'<li><a href="/arrendar/{s}/ate-{t}/">Até {num(t)} €</a></li>' for t, _ in precos_pag if t != teto) + '</ul>'
+            faq_p = [(f'Há casas para alugar {em(cidade)} até {num(teto)} €?', f'Sim: {" e ".join(partes)} com renda até {num(teto)} € por mês, nos anúncios da Duplicasa a {hoje}.'),
+                     ('Como sei das casas baratas antes dos outros?', 'Cria um alerta com a renda máxima que queres pagar. Recebes um resumo grátis por dia; com o acesso, o aviso chega no minuto em que a casa aparece.')]
+            paginas[f'/arrendar/{s}/ate-{teto}/'] = pagina(
+                f'/arrendar/{s}/ate-{teto}/', f'{oque} para alugar {em(CURTO.get(cidade, cidade))} até {num(teto)} € | Duplicasa',
+                f'{" e ".join(partes).capitalize()} para alugar {em(cidade)} com renda até {num(teto)} € por mês, das mais baratas para as mais caras. Sabe das novas no minuto.',
+                f'{oque} para alugar {em(CURTO.get(cidade, cidade))} até {num(teto)} €', intro,
+                [('Início', '/'), ('Arrendar', '/arrendar/'), (cidade, f'/arrendar/{s}/'), (f'Até {num(teto)} €', f'/arrendar/{s}/ate-{teto}/')],
+                sub[:MAX_CARTOES], outros_t + voltar, '/#pesquisa?cidade=' + quote(cidade) + f'&amp;max={teto}', hoje, faq=faq_p)
+        for z, lz in zonas_pag:
+            zs = slug(z)
+            pz = sorted([a for a in lz if plausivel(a)], key=lambda a: a['renda'])
+            sub = [a for a in pz if a.get('fotos')]
+            if not sub:
+                continue
+            md_z = mediana([a['renda'] for a in pz if a.get('tipo') != 'Quarto'])
+            intro = (f'{num(len(lz))} casas, apartamentos e quartos para arrendar {e(em(z))}, {e(em(cidade))}, do mais barato para o mais caro. '
+                     f'Desde {num(pz[0]["renda"])} € por mês' + (f'; a meio da tabela, {num(md_z)} €' if md_z else '') + f'. Atualizado a {hoje}.')
+            outras_z = '<h2>Outras zonas ' + e(em(cidade)) + '</h2><ul class="ch">' + ''.join(
+                [f'<li><a href="/arrendar/{s}/zona/{slug(x)}/">{e(x)}</a></li>' for x, _ in zonas_pag if x != z][:20]) + '</ul>'
+            faq_z = [(f'Quanto custa arrendar casa {em(z)}?', f'Desde {num(pz[0]["renda"])} € por mês' + (f'; a meio da tabela, {num(md_z)} € (sem contar quartos)' if md_z else '') + f', nos anúncios da Duplicasa a {hoje}.')]
+            paginas[f'/arrendar/{s}/zona/{zs}/'] = pagina(
+                f'/arrendar/{s}/zona/{zs}/', f'Casas para alugar {em(z)} ({CURTO.get(cidade, cidade)}) | Duplicasa',
+                f'{num(len(lz))} casas, apartamentos e quartos para alugar {em(z)}, {em(cidade)}, desde {num(pz[0]["renda"])} € por mês. Alertas de casas novas no minuto em que aparecem.',
+                f'Casas para alugar {em(z)}', intro,
+                [('Início', '/'), ('Arrendar', '/arrendar/'), (cidade, f'/arrendar/{s}/'), (z, f'/arrendar/{s}/zona/{zs}/')],
+                sub[:MAX_CARTOES], outras_z + voltar, '/#pesquisa?cidade=' + quote(z), hoje, faq=faq_z)
+    # regiões: distritos (com o nome por que se pesquisam) e grupos de cidades (Margem Sul, Grande Porto)
+    regioes = {}
+    for c, l in cidades:
+        d = (l[0].get('distrito') or '').strip()
+        if d:
+            nome = REGIAO_NOME.get(d, 'Distrito ' + ('do ' if norm_t(d) in NO else ('da ' if norm_t(d) in NA else 'de ')) + d)
+            regioes.setdefault(nome, []).append((c, l))
+    for g, cs in GRUPOS.items():
+        regioes[g] = [(c, por_cidade[c]) for c in cs if c in dict(cidades)]
+    regioes_pag = {}
+    for nome, cs in regioes.items():
+        todas = [a for _, l in cs for a in l]
+        if len(todas) < 10 or len(cs) < 2:
+            continue
+        rs = slug(nome)
+        prep = REGIAO_EM.get(nome, ('no ' + nome[0].lower() + nome[1:]) if nome.startswith('Distrito') else em(nome))
+        pr = sorted([a for a in todas if plausivel(a)], key=lambda a: a['renda'])
+        sub = [a for a in pr if a.get('fotos')]
+        md = mediana([a['renda'] for a in pr if tip(a) == 'T1'])
+        intro = (f'{num(len(todas))} casas, apartamentos e quartos para arrendar {e(prep)}, em {len(cs)} cidades. Desde {num(pr[0]["renda"])} € por mês'
+                 + (f'; um T1 pede, a meio da tabela, {num(md)} €' if md else '') + f'. Atualizado a {hoje}.') if pr else ''
+        lk = '<h2>Cidades</h2><ul class="ch">' + ''.join(f'<li><a href="/arrendar/{slug(c)}/">Casas para alugar {e(em(CURTO.get(c, c)))} ({len(l)})</a></li>' for c, l in sorted(cs, key=lambda x: -len(x[1]))) + '</ul>'
+        regioes_pag[nome] = (rs, len(todas))
+        paginas[f'/arrendar/regiao/{rs}/'] = pagina(
+            f'/arrendar/regiao/{rs}/', f'Casas para alugar {prep} | Duplicasa',
+            f'{num(len(todas))} casas, apartamentos e quartos para alugar {prep}, das mais baratas para as mais caras. Alertas de casas novas no minuto em que aparecem.',
+            f'Casas para alugar {prep}', intro,
+            [('Início', '/'), ('Arrendar', '/arrendar/'), (nome, f'/arrendar/regiao/{rs}/')],
+            sub[:MAX_CARTOES], lk, '/#pesquisa', hoje)
+    # renda máxima em todo o país («casas para alugar até 300 euros», «até 600 euros»)
+    plaus_pt = sorted([a for a in anuncios if plausivel(a)], key=lambda a: a['renda'])
+    for teto in TETOS:
+        sub = [a for a in plaus_pt if a['renda'] <= teto]
+        if len(sub) < MIN_PRECO:
+            continue
+        por_c = {}
+        for a in sub:
+            por_c[a.get('cidade') or ''] = por_c.get(a.get('cidade') or '', 0) + 1
+        lk = '<h2>Onde há mais</h2><ul class="ch">' + ''.join(
+            f'<li><a href="/arrendar/{slug(c)}/{("ate-" + str(teto) + "/") if (c, teto) in [(cc, t) for cc, _ in cidades for t in TETOS] else ""}">{e(c)} ({n})</a></li>'
+            for c, n in sorted(por_c.items(), key=lambda x: -x[1])[:24] if c and slug(c) in {slug(x) for x, _ in cidades}) + '</ul>'
+        paginas[f'/arrendar/ate-{teto}/'] = pagina(
+            f'/arrendar/ate-{teto}/', f'Casas para alugar até {num(teto)} € em Portugal | Duplicasa',
+            f'{num(len(sub))} casas e quartos para alugar em Portugal com renda até {num(teto)} € por mês, das mais baratas para as mais caras. Sabe das novas no minuto.',
+            f'Casas para alugar até {num(teto)} € em Portugal',
+            f'{num(len(sub))} casas e quartos para arrendar com renda até {num(teto)} € por mês, de vários sites, num só lugar. Atualizado a {hoje}.',
+            [('Início', '/'), ('Arrendar', '/arrendar/'), (f'Até {num(teto)} €', f'/arrendar/ate-{teto}/')],
+            [a for a in sub if a.get('fotos')][:MAX_CARTOES], lk, f'/#pesquisa?max={teto}', hoje)
     # índice de cidades, agrupado por distrito
     por_distrito = {}
     for c, l in cidades:
         por_distrito.setdefault(l[0].get('distrito') or 'Outros', []).append((c, len(l)))
     blocos = ''.join('<h2>' + e(d) + '</h2><ul class="ch">' + ''.join(
         f'<li><a href="/arrendar/{slug(c)}/">{e(c)} ({n})</a></li>' for c, n in sorted(cs)) + '</ul>' for d, cs in sorted(por_distrito.items()))
-    blocos = '<p><a href="/arrendar/precos/">Ver o preço das rendas em cada cidade</a></p>' + blocos
+    blocos = ('<p><a href="/arrendar/precos/">Ver o preço das rendas em cada cidade</a></p>'
+              '<h2>Por renda máxima</h2><ul class="ch">' + ''.join(f'<li><a href="/arrendar/ate-{t}/">Até {num(t)} €</a></li>' for t in TETOS if f'/arrendar/ate-{t}/' in paginas) + '</ul>'
+              '<h2>Por região</h2><ul class="ch">' + ''.join(f'<li><a href="/arrendar/regiao/{rs}/">{e(n)} ({num(k)})</a></li>' for n, (rs, k) in sorted(regioes_pag.items())) + '</ul>' + blocos)
     baratas = sorted([a for a in anuncios if plausivel(a) and a.get('fotos') and tip(a) in ('T0', 'T1', 'Quarto')], key=lambda a: a['renda'])[:12]
     paginas['/arrendar/'] = pagina(
         '/arrendar/', 'Casas e quartos para alugar em Portugal, por cidade | Duplicasa',

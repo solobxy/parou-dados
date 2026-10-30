@@ -26,6 +26,9 @@ Dados atuais (número de casas e renda mediana por cidade): [llms-full.txt](http
 - [Casas para alugar em Leiria](https://duplicasa.pt/arrendar/leiria/)
 - [Casas para alugar em Viseu](https://duplicasa.pt/arrendar/viseu/)
 - [Preço das rendas por cidade](https://duplicasa.pt/arrendar/precos/): renda mediana de quartos, T0, T1 e T2 e preço por m², atualizada.
+- Por renda máxima: [até 300 €](https://duplicasa.pt/arrendar/ate-300/), [até 400 €](https://duplicasa.pt/arrendar/ate-400/), [até 500 €](https://duplicasa.pt/arrendar/ate-500/), [até 600 €](https://duplicasa.pt/arrendar/ate-600/); e em cada cidade, por exemplo [Lisboa até 800 €](https://duplicasa.pt/arrendar/lisboa/ate-800/).
+- Por região: [Margem Sul](https://duplicasa.pt/arrendar/regiao/margem-sul/), [Grande Porto](https://duplicasa.pt/arrendar/regiao/grande-porto/), [Algarve](https://duplicasa.pt/arrendar/regiao/algarve/), [Madeira](https://duplicasa.pt/arrendar/regiao/madeira/).
+- Por zona (freguesia) dentro de cada cidade, por exemplo [Arroios, Lisboa](https://duplicasa.pt/arrendar/lisboa/zona/arroios/).
 
 ## Como evitar burlas no arrendamento
 - Visitar a casa antes de pagar qualquer valor.
