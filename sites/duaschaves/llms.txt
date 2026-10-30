@@ -30,6 +30,13 @@ Dados atuais (número de casas e renda mediana por cidade): [llms-full.txt](http
 - Por região: [Margem Sul](https://duplicasa.pt/arrendar/regiao/margem-sul/), [Grande Porto](https://duplicasa.pt/arrendar/regiao/grande-porto/), [Algarve](https://duplicasa.pt/arrendar/regiao/algarve/), [Madeira](https://duplicasa.pt/arrendar/regiao/madeira/).
 - Por zona (freguesia) dentro de cada cidade, por exemplo [Arroios, Lisboa](https://duplicasa.pt/arrendar/lisboa/zona/arroios/).
 
+## Guias
+- [Como arrendar casa em Portugal, passo a passo](https://duplicasa.pt/arrendar/guias/como-arrendar-casa-em-portugal/)
+- [Arrendar casa sem fiador](https://duplicasa.pt/arrendar/guias/arrendar-casa-sem-fiador/)
+- [Arrendar casa sem caução](https://duplicasa.pt/arrendar/guias/arrendar-casa-sem-caucao/)
+- [Arrendar casa sem contrato: os riscos](https://duplicasa.pt/arrendar/guias/arrendar-casa-sem-contrato-riscos/)
+- [Como evitar burlas no arrendamento](https://duplicasa.pt/arrendar/guias/como-evitar-burlas-no-arrendamento/)
+
 ## Como evitar burlas no arrendamento
 - Visitar a casa antes de pagar qualquer valor.
 - Desconfiar de rendas muito abaixo das outras na zona.

@@ -133,7 +133,7 @@ def item_ld(a):
     return d
 
 
-def pagina(caminho, titulo, descricao, h1, intro, migalhas, cartoes, links, ver_todas, atualizado, extra='', faq=None, tabela=''):
+def pagina(caminho, titulo, descricao, h1, intro, migalhas, cartoes, links, ver_todas, atualizado, extra='', faq=None, tabela='', artigo=None, botao='Pesquisar com filtros e alertas'):
     url = SITE + caminho
     if len(titulo) > 65 and titulo.endswith(' | Duplicasa'):     # o Google corta títulos compridos: a marca sai primeiro
         titulo = titulo[:-len(' | Duplicasa')]
@@ -145,6 +145,11 @@ def pagina(caminho, titulo, descricao, h1, intro, migalhas, cartoes, links, ver_
     if faq:
         lds.append({'@context': 'https://schema.org', '@type': 'FAQPage', 'mainEntity': [
             {'@type': 'Question', 'name': q, 'acceptedAnswer': {'@type': 'Answer', 'text': re.sub(r'<[^>]+>', '', r)}} for q, r in faq]})
+    if artigo:
+        lds.append({'@context': 'https://schema.org', '@type': 'Article', 'headline': h1, 'description': descricao, 'inLanguage': 'pt-PT',
+                    'datePublished': artigo, 'dateModified': artigo, 'mainEntityOfPage': url, 'image': SITE + '/marca/duaschaves-og.png',
+                    'author': {'@type': 'Organization', 'name': 'Duplicasa', 'url': SITE + '/'},
+                    'publisher': {'@type': 'Organization', 'name': 'Duplicasa', 'logo': {'@type': 'ImageObject', 'url': SITE + '/marca/duaschaves-icone.png'}}})
     lds.append({'@context': 'https://schema.org', '@type': 'WebPage', 'name': titulo, 'url': url, 'inLanguage': 'pt-PT',
                 'description': descricao, 'isPartOf': {'@type': 'WebSite', 'name': 'Duplicasa', 'url': SITE + '/'},
                 'publisher': {'@type': 'Organization', 'name': 'Duplicasa', 'url': SITE + '/', 'logo': SITE + '/marca/duaschaves-icone.png'}})
@@ -183,7 +188,8 @@ h1{{font-size:34px;line-height:1.1;letter-spacing:-.03em;margin:0 0 12px}}h2{{fo
 details{{border-top:1px solid var(--b);padding:12px 0}}details:first-of-type{{border-top:0}}summary{{font-weight:700;cursor:pointer;min-height:24px}}details p{{margin:8px 0 0}}
 .tab{{width:100%;border-collapse:collapse;background:#fff;border-radius:18px;overflow:hidden;font-size:15px}}.tab th,.tab td{{text-align:left;padding:10px 12px;border-bottom:1px solid var(--b)}}.tab th{{color:var(--t3);font-weight:700}}.tab td.n,.tab th.n{{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}}.rolar .tab{{min-width:620px}}
 .rolar{{overflow-x:auto;border-radius:18px}}
-footer{{margin-top:56px;border-top:1px solid var(--b);padding:28px 0 40px;font-size:14px;color:var(--t3)}}footer a{{margin-right:12px}}
+.guia{{max-width:760px}}.guia h2{{margin-top:36px}}.guia p,.guia li{{font-size:17px;line-height:1.65;color:var(--t2)}}.guia li{{margin-bottom:6px}}.guia strong{{color:var(--t)}}.nota{{font-size:14px;color:var(--t3);margin-top:28px}}
+footer{{margin-top:56px;border-top:1px solid var(--b);padding:28px 0 40px;font-size:14px;color:var(--t3)}}footer a{{margin-right:14px;white-space:nowrap;display:inline-block;line-height:2}}
 @media(min-width:900px){{h1{{font-size:46px}}}}
 </style></head><body>
 <header><div class="w"><a class="logo" href="/" aria-label="Duplicasa, início">{LOGO}</a><a class="bt" href="{ver_todas}">Ver casas</a></div></header>
@@ -191,18 +197,19 @@ footer{{margin-top:56px;border-top:1px solid var(--b);padding:28px 0 40px;font-s
 <nav class="mig" aria-label="Estás aqui">{nav}</nav>
 <h1>{e(h1)}</h1>
 <p class="intro">{intro}</p>
-<p><a class="bt" href="{ver_todas}">Pesquisar com filtros e alertas</a></p>
+<p><a class="bt" href="{ver_todas}">{botao}</a></p>
 {grelha}
 {tabela}
 {links}
 {faq_html}
 <section class="cx"><h2 style="margin-top:0">Arrendar sem cair numa burla</h2>
 <ul><li>Visita a casa antes de pagar qualquer valor.</li><li>Desconfia de rendas muito abaixo das outras na zona.</li>
-<li>Confirma que quem anuncia é mesmo o dono.</li><li>Em breve, com o pagamento seguro da Duplicasa, a entrada só vai chegar ao senhorio quando receberes as chaves.</li></ul></section>
+<li>Confirma que quem anuncia é mesmo o dono.</li><li>Em breve, com o pagamento seguro da Duplicasa, a entrada só vai chegar ao senhorio quando receberes as chaves.</li></ul>
+<p><a href="/arrendar/guias/como-evitar-burlas-no-arrendamento/">Guia: como evitar burlas no arrendamento</a> · <a href="/arrendar/guias/">Todos os guias</a></p></section>
 {extra}
 </main>
 <footer><div class="w"><p>Duplicasa · casas e quartos para alugar em Portugal, num só lugar. Anúncios atualizados a {atualizado}.</p>
-<p><a href="/arrendar/">Todas as cidades</a><a href="/arrendar/precos/">Preço das rendas</a><a href="/">Início</a><a href="/#senhorios">Para senhorios</a><a href="/#termos">Termos e privacidade</a></p></div></footer>
+<p><a href="/arrendar/">Todas as cidades</a><a href="/arrendar/precos/">Preço das rendas</a><a href="/arrendar/guias/">Guias</a><a href="/">Início</a><a href="/#senhorios">Para senhorios</a><a href="/#termos">Termos e privacidade</a></p></div></footer>
 </body></html>
 '''
 
@@ -447,6 +454,131 @@ def gerar(anuncios, atualizado):
     return paginas, resumo
 
 
+# Guias: respostas às perguntas que mais aparecem nas sugestões do Google («como arrendar casa em portugal»,
+# «arrendar casa sem fiador», «sem caução», «sem contrato», burlas). Conselho prático; sem regras legais por confirmar.
+NOTA_LEGAL = ('<p class="nota">Este guia dá conselhos práticos e não é aconselhamento jurídico. Para saber o que a lei diz no teu caso, '
+              'fala com um jurista ou consulta o <a href="https://www.portaldahabitacao.pt/" rel="noopener">Portal da Habitação</a>.</p>')
+GUIAS = [
+    {'slug': 'como-arrendar-casa-em-portugal', 'data': '2026-10-30',
+     'titulo': 'Como arrendar casa em Portugal: passo a passo | Duplicasa',
+     'desc': 'Do orçamento às chaves: documentos que costumam pedir, quanto dinheiro levar à entrada, o que perguntar na visita e o que confirmar antes de pagar.',
+     'h1': 'Como arrendar casa em Portugal, passo a passo',
+     'intro': 'Do orçamento à entrega das chaves: o que fazer em cada passo para arrendar casa depressa, sem perder dinheiro nem cair numa burla.',
+     'corpo': """<h2>1. Faz as contas antes de procurar</h2>
+<p>Uma regra prática muito usada é a renda não passar de um terço do que entra em casa por mês. Conta também com a entrada: além da primeira renda, muitas casas pedem caução e algumas pedem rendas adiantadas. Pergunta sempre <strong>quanto é preciso pagar ao todo para entrar</strong>.</p>
+<p>Vê quanto custa a zona que queres na página <a href="/arrendar/precos/">preço das rendas por cidade</a>.</p>
+<h2>2. Prepara os documentos</h2>
+<p>Ter tudo pronto faz-te passar à frente de quem ainda vai juntar papéis. É costume pedirem:</p>
+<ul><li>documento de identificação e NIF;</li><li>últimos recibos de vencimento ou declaração da entidade patronal;</li><li>última declaração de IRS;</li><li>se és estudante, comprovativo de matrícula e, muitas vezes, um fiador.</li></ul>
+<h2>3. Procura em vários sites ao mesmo tempo</h2>
+<p>As casas boas e baratas desaparecem depressa. Na <a href="/#pesquisa">Duplicasa</a> vês as casas dos principais sites num só lugar, sem repetidas, e com um <a href="/#alertas">alerta</a> sabes das novas logo que aparecem.</p>
+<h2>4. Contacta depressa e visita</h2>
+<p>Na visita, pergunta: as despesas estão incluídas? Quanto é a caução e como é devolvida? Quando fica livre? Pede para ver o certificado energético e confirma se vai haver contrato escrito e recibos.</p>
+<h2>5. Confirma antes de pagar</h2>
+<ul><li>Nunca pagues nada sem visitar a casa.</li><li>Confirma que quem anuncia é o dono ou tem autorização para arrendar.</li><li>Desconfia de pressa, de preços muito abaixo da zona e de pedidos de pagamento por transferência a quem nunca viste.</li></ul>
+<h2>6. Contrato e entrada</h2>
+<p>Pede o contrato por escrito e lê-o todo: duração, renda, quando sobe, caução, quem paga o quê. No dia em que entras, tira fotos de cada divisão e dos equipamentos e envia-as ao senhorio: ajuda a reaver a caução no fim.</p>""",
+     'faq': [('Que documentos pedem para arrendar casa?', 'É costume pedirem documento de identificação, NIF, recibos de vencimento ou declaração da entidade patronal e a última declaração de IRS. A estudantes pedem muitas vezes um fiador.'),
+             ('Quanto dinheiro preciso para entrar numa casa arrendada?', 'Além da primeira renda, muitas casas pedem caução e algumas pedem rendas adiantadas. Pergunta sempre o valor total para entrar antes de avançar.')],
+     'botao': 'Ver casas para arrendar', 'link': '/#pesquisa', 'legal': True},
+    {'slug': 'arrendar-casa-sem-fiador', 'data': '2026-10-30',
+     'titulo': 'Arrendar casa sem fiador: o que fazer e o que propor | Duplicasa',
+     'desc': 'Como arrendar casa sem fiador: porque o pedem, o que podes propor em troca e como encontrar senhorios que não o exigem.',
+     'h1': 'Arrendar casa sem fiador',
+     'intro': 'O fiador é uma garantia para o senhorio de que a renda é paga. Se não tens quem o seja, há outras formas de dar essa confiança.',
+     'corpo': """<h2>Porque é que pedem fiador</h2>
+<p>O senhorio quer saber que recebe a renda todos os meses. O fiador responde por ela se o inquilino não pagar. Por isso pedem-no mais a quem tem rendimentos baixos ou recentes, como estudantes ou quem acabou de chegar a Portugal.</p>
+<h2>O que podes propor em vez de fiador</h2>
+<ul><li><strong>Mostrar rendimentos estáveis:</strong> contrato de trabalho, recibos dos últimos meses e a declaração de IRS.</li>
+<li><strong>Seguro de renda:</strong> há seguros que protegem o senhorio se a renda não for paga. Propor que o contrate, ou dividir o custo, pode substituir o fiador.</li>
+<li><strong>Referências:</strong> o contacto ou uma carta de um senhorio anterior a dizer que pagaste sempre a horas.</li>
+<li><strong>Uma garantia maior à entrada:</strong> alguns senhorios aceitam em troca uma caução ou rendas adiantadas. Combina tudo por escrito e confirma que está dentro do que a lei permite.</li></ul>
+<h2>Onde procurar</h2>
+<p>Particulares às vezes são mais flexíveis do que agências. Na <a href="/#pesquisa">pesquisa da Duplicasa</a>, em Filtros, escolhe «Só particulares». Quando o anúncio diz se pede fiador, mostramos isso na ficha da casa.</p>
+<p>Cria um <a href="/#alertas">alerta</a> para seres dos primeiros a contactar: quem chega primeiro tem mais margem para negociar.</p>""",
+     'faq': [('É possível arrendar casa sem fiador?', 'Sim. Muitos senhorios aceitam outra garantia: rendimentos estáveis comprovados, um seguro de renda, referências de um senhorio anterior ou uma garantia maior à entrada, combinada por escrito.'),
+             ('O que posso oferecer em vez de fiador?', 'Contrato de trabalho e recibos, um seguro de renda, cartas de referência ou, se o senhorio aceitar e a lei permitir, uma caução maior.')],
+     'botao': 'Ver casas de particulares', 'link': '/#pesquisa', 'legal': True},
+    {'slug': 'arrendar-casa-sem-caucao', 'data': '2026-10-30',
+     'titulo': 'Arrendar casa sem caução: como encontrar e negociar | Duplicasa',
+     'desc': 'O que é a caução, como encontrar casas que não a pedem e como garantir que a recebes de volta quando sais.',
+     'h1': 'Arrendar casa sem caução',
+     'intro': 'A caução é o dinheiro que entregas ao entrar para cobrir danos ou rendas em falta, e que te devolvem quando sais. Há casas que não a pedem.',
+     'corpo': """<h2>Como encontrar casas sem caução</h2>
+<p>Na <a href="/#pesquisa">pesquisa da Duplicasa</a>, abre Filtros e escolhe «Sem caução indicada»: ficam as casas cujo anúncio diz que não pedem caução ou que não falam nela. Confirma sempre com quem anuncia antes de visitar.</p>
+<h2>Como negociar</h2>
+<ul><li>Mostra que és um inquilino de confiança: rendimentos, referências, documentos prontos.</li>
+<li>Propõe dividir a caução em prestações nos primeiros meses.</li>
+<li>Pergunta se aceitam um seguro de renda no lugar da caução.</li></ul>
+<h2>Se pagares caução, garante que a recebes de volta</h2>
+<ul><li>O valor da caução e a forma de devolução devem estar no contrato.</li>
+<li>Pede recibo de tudo o que pagas.</li>
+<li>No dia da entrada, tira fotos de cada divisão e dos equipamentos e envia-as ao senhorio. Faz o mesmo à saída.</li></ul>""",
+     'faq': [('O que é a caução no arrendamento?', 'É um valor entregue no início do contrato para cobrir danos ou rendas em falta. É devolvido no fim, se a casa ficar como estava e não houver rendas por pagar.'),
+             ('Como encontro casas sem caução?', 'Na pesquisa da Duplicasa, em Filtros, escolhe «Sem caução indicada» e confirma sempre com quem anuncia.')],
+     'botao': 'Procurar casas sem caução', 'link': '/#pesquisa', 'legal': True},
+    {'slug': 'arrendar-casa-sem-contrato-riscos', 'data': '2026-10-30',
+     'titulo': 'Arrendar casa sem contrato: os riscos para quem arrenda | Duplicasa',
+     'desc': 'Porque é que arrendar sem contrato escrito é arriscado para o inquilino e o que fazer para te protegeres.',
+     'h1': 'Arrendar casa sem contrato: os riscos',
+     'intro': 'Sem contrato escrito, fica tudo dependente da palavra de cada um. Para quem arrenda, isso traz riscos práticos.',
+     'corpo': """<h2>Os riscos práticos</h2>
+<ul><li><strong>Provar o que combinaram:</strong> renda, duração, caução e quem paga as despesas ficam sem registo.</li>
+<li><strong>Reaver a caução:</strong> sem nada escrito, é mais difícil exigir a devolução.</li>
+<li><strong>Provar que moras lá:</strong> pode complicar a mudança de morada, o atestado de residência ou outros pedidos que precisam de comprovativo.</li>
+<li><strong>Sair ou ser mandado sair:</strong> sem prazos escritos, cada parte pode ter uma ideia diferente do que foi combinado.</li></ul>
+<h2>Como te proteger</h2>
+<ul><li>Pede sempre um contrato escrito antes de pagar.</li>
+<li>Paga por transferência, nunca em dinheiro, e guarda os comprovativos.</li>
+<li>Pede recibos das rendas.</li>
+<li>Guarda as mensagens com o senhorio sobre o que foi combinado.</li></ul>""",
+     'faq': [('Quais são os riscos de arrendar casa sem contrato?', 'Fica mais difícil provar o que foi combinado (renda, duração, caução), reaver a caução e provar que moras na casa.'),
+             ('O que fazer se o senhorio não quer fazer contrato?', 'Pede-o por escrito antes de pagares. Se mesmo assim avançares, paga por transferência, guarda comprovativos e mensagens e pede recibos. Para saber os teus direitos, fala com um jurista.')],
+     'botao': 'Ver casas para arrendar', 'link': '/#pesquisa', 'legal': True},
+    {'slug': 'como-evitar-burlas-no-arrendamento', 'data': '2026-10-30',
+     'titulo': 'Como evitar burlas no arrendamento: sinais e o que fazer | Duplicasa',
+     'desc': 'Os sinais de uma burla em anúncios de casas para arrendar, como confirmar que o anúncio é verdadeiro e o que fazer se fores enganado.',
+     'h1': 'Como evitar burlas no arrendamento',
+     'intro': 'As burlas em casas para arrendar repetem quase sempre os mesmos sinais. Saber reconhecê-los é a melhor proteção.',
+     'corpo': """<h2>Sinais de alerta</h2>
+<ul><li>Renda muito abaixo das outras na mesma zona.</li>
+<li>Pressa: «há muita gente interessada, paga hoje para reservar».</li>
+<li>Quem anuncia diz estar fora do país e não pode mostrar a casa.</li>
+<li>Pede pagamento, ou cópias dos teus documentos, antes da visita.</li>
+<li>Fala só por mensagens e evita chamadas.</li>
+<li>As mesmas fotos aparecem noutros anúncios, com outro preço ou noutra cidade.</li></ul>
+<h2>Como confirmar que o anúncio é verdadeiro</h2>
+<ul><li>Visita a casa antes de pagar qualquer valor.</li>
+<li>Pede para ver um documento que mostre que a casa é de quem anuncia, como a caderneta predial.</li>
+<li>Pesquisa as fotos do anúncio numa pesquisa de imagens para ver se aparecem noutro lado.</li>
+<li>Compara a renda com o <a href="/arrendar/precos/">preço das rendas na zona</a>.</li></ul>
+<h2>Se já pagaste a um burlão</h2>
+<ul><li>Contacta logo o teu banco: às vezes ainda dá para travar a transferência.</li>
+<li>Guarda tudo: anúncio, mensagens, comprovativos.</li>
+<li>Apresenta queixa às autoridades.</li></ul>
+<h2>Pagamento seguro (em breve)</h2>
+<p>Com o <a href="/#proteger">pagamento seguro da Duplicasa</a>, a entrada vai ficar guardada numa instituição de pagamento autorizada e só chega ao senhorio quando recebes as chaves. Podes entrar já na lista de espera.</p>""",
+     'faq': [('Como sei se um anúncio de casa é burla?', 'Desconfia de rendas muito abaixo da zona, de pressa para pagar, de quem não pode mostrar a casa e de pedidos de pagamento antes da visita. Pesquisa as fotos para ver se aparecem noutros anúncios.'),
+             ('O que fazer se paguei a um burlão?', 'Contacta logo o teu banco, guarda o anúncio, as mensagens e os comprovativos, e apresenta queixa às autoridades.')],
+     'botao': 'Entrar na lista do pagamento seguro', 'link': '/#proteger', 'legal': False},
+]
+
+
+def gerar_guias(paginas, hoje):
+    for g in GUIAS:
+        caminho = f"/arrendar/guias/{g['slug']}/"
+        outros = '<h2>Outros guias</h2><ul class="ch">' + ''.join(f'<li><a href="/arrendar/guias/{x["slug"]}/">{e(x["h1"])}</a></li>' for x in GUIAS if x is not g) + '</ul>'
+        corpo = '<article class="guia">' + g['corpo'] + (NOTA_LEGAL if g['legal'] else '') + '</article>' + outros
+        paginas[caminho] = pagina(caminho, g['titulo'], g['desc'], g['h1'], g['intro'],
+                                  [('Início', '/'), ('Arrendar', '/arrendar/'), ('Guias', '/arrendar/guias/'), (g['h1'], caminho)],
+                                  [], corpo, g['link'], hoje, faq=g['faq'], artigo=g['data'], botao=g['botao'])
+    lista = '<ul class="ch">' + ''.join(f'<li><a href="/arrendar/guias/{x["slug"]}/">{e(x["h1"])}</a></li>' for x in GUIAS) + '</ul>'
+    paginas['/arrendar/guias/'] = pagina('/arrendar/guias/', 'Guias para arrendar casa em Portugal | Duplicasa',
+                                         'Guias práticos para arrendar casa em Portugal: passo a passo, sem fiador, sem caução, sem contrato e como evitar burlas.',
+                                         'Guias para arrendar casa', 'Respostas práticas às perguntas que mais se fazem antes de arrendar casa em Portugal.',
+                                         [('Início', '/'), ('Arrendar', '/arrendar/'), ('Guias', '/arrendar/guias/')], [], lista, '/#pesquisa', hoje)
+
+
 def llms_full(resumo, n_total, hoje):
     """Versão longa do llms.txt, com os números de hoje: para os assistentes de IA citarem dados atuais."""
     linhas = sorted([r for r in resumo if r['n'] >= 10], key=lambda r: -r['n'])
@@ -504,6 +636,7 @@ def main():
         print('Poucos anúncios: mantenho as páginas anteriores.', file=sys.stderr)
         return
     paginas, resumo = gerar(anuncios, atualizado)
+    gerar_guias(paginas, data_pt(atualizado))
     pai = os.path.dirname(os.path.abspath(destino))
     os.makedirs(pai, exist_ok=True)
     tmp = tempfile.mkdtemp(prefix='.seo-', dir=pai)
