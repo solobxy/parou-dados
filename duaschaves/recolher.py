@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Duas Chaves: recolhe anúncios públicos de arrendamento do Imovirtual (que inclui muitos da OLX),
+"""Duplicasa: recolhe anúncios públicos de arrendamento do Imovirtual (que inclui muitos da OLX),
 do Supercasa e do Casa Sapo (duaschaves/fontes/). Cada site é lido em paralelo, cada um ao seu ritmo.
 
 Só lê páginas que o robots.txt do site permite (resultados e anúncios), devagar (uma página de
@@ -22,7 +22,7 @@ from condicoes import condicoes
 from fontes import casasapo, iad, rentola, supercasa
 
 BASE = 'https://www.imovirtual.com'
-UA = 'Mozilla/5.0 (compatible; DuasChavesBot/0.1; +https://duaschaves.pt)'
+UA = 'Mozilla/5.0 (compatible; DuplicasaBot/0.1; +https://duplicasa.pt)'
 DISTRITOS = ['lisboa', 'porto', 'setubal', 'braga', 'faro', 'coimbra', 'aveiro', 'leiria', 'santarem', 'viseu',
              'viana-do-castelo', 'vila-real', 'braganca', 'guarda', 'castelo-branco', 'portalegre', 'evora', 'beja',
              'ilha-da-madeira', 'ilha-de-sao-miguel', 'ilha-terceira']

@@ -122,7 +122,7 @@ www.jinxed.world {
 # FIM www.jinxed.world
 
 # DUAS CHAVES - site de arrendamento (protótipo estático em /var/www/duaschaves, vindo de sites/duaschaves deste repositório)
-# O endereço de testes (sslip.io) fica fora do Google; o domínio a sério (duaschaves.pt) é indexado.
+# O endereço de testes (sslip.io) fica fora do Google; o domínio a sério (duplicasa.pt) é indexado.
 (duaschaves) {
 	encode zstd gzip
 	header {
@@ -196,19 +196,19 @@ Disallow: /
 	import duaschaves
 }
 
-# O domínio ainda não está comprado: fica pronto para duaschaves.pt e chave.pt.
+# O domínio ainda não está comprado: fica pronto para duplicasa.pt e chave.pt.
 # Cada bloco só entra quando o domínio já aponta para este servidor (ver atualizar.sh).
-# INICIO duaschaves.pt
-duaschaves.pt {
+# INICIO duplicasa.pt
+duplicasa.pt {
 	import duaschaves
 }
-# FIM duaschaves.pt
+# FIM duplicasa.pt
 
-# INICIO www.duaschaves.pt
-www.duaschaves.pt {
-	redir https://duaschaves.pt{uri} permanent
+# INICIO www.duplicasa.pt
+www.duplicasa.pt {
+	redir https://duplicasa.pt{uri} permanent
 }
-# FIM www.duaschaves.pt
+# FIM www.duplicasa.pt
 
 # INICIO chave.pt
 chave.pt {

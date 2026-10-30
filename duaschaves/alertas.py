@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Duas Chaves: envia os alertas por e-mail.
+"""Duplicasa: envia os alertas por e-mail.
 
 Corre depois de cada recolha (duaschaves-alertas.timer). Para cada alerta ativo procura casas novas
 desde o último envio que cumprem o filtro:
@@ -94,11 +94,11 @@ def email_casas(base, f, casas, parar):
     texto = ('Casas novas para o teu alerta (%s):\n\n%s\n%s\nVer todas: %s/#pesquisa\n\nParar este alerta: %s\n'
              % (desc_filtro(f), '\n'.join(linhas_txt), ('\n+%d casas\n' % mais) if mais > 0 else '', base, parar))
     corpo = ('<div style="font-family:system-ui,sans-serif;font-size:16px;color:#0F1A17;max-width:520px">'
-             '<p style="margin:0 0 4px;color:#0B6E4F;font-weight:700">Duas Chaves</p>'
+             '<p style="margin:0 0 4px;color:#0B6E4F;font-weight:700">Duplicasa</p>'
              '<h1 style="font-size:22px;margin:0 0 6px">%s</h1><p style="margin:0 0 12px;color:#56635e">%s</p>'
              '<table width="100%%" cellpadding="0" cellspacing="0">%s</table>%s'
              '<p><a href="%s/#pesquisa" style="display:inline-block;background:#0B6E4F;color:#fff;text-decoration:none;font-weight:700;padding:12px 20px;border-radius:12px">Ver as casas</a></p>'
-             '<p style="font-size:13px;color:#56635e">Recebes este e-mail porque criaste um alerta na Duas Chaves. <a href="%s" style="color:#56635e">Parar este alerta</a>.</p></div>'
+             '<p style="font-size:13px;color:#56635e">Recebes este e-mail porque criaste um alerta na Duplicasa. <a href="%s" style="color:#56635e">Parar este alerta</a>.</p></div>'
              % (html.escape(titulo), html.escape(desc_filtro(f)), ''.join(linhas_html),
                 ('<p style="color:#56635e">E mais %d.</p>' % mais) if mais > 0 else '', base, html.escape(parar)))
     return titulo, texto, corpo
@@ -110,17 +110,17 @@ OFERTA_DIAS = 5          # oferta de 1 € a quem tem alertas grátis há 5 dias
 def email_oferta(base, n, sair):
     titulo = '%d casas para ti nos últimos dias' % n
     texto = ('Olá!\n\nDesde que criaste o teu alerta apareceram %d casas que encaixam no que procuras.\n'
-             'Com o acesso da Duas Chaves sabes delas no minuto em que aparecem, em vez de um resumo por dia.\n\n'
+             'Com o acesso da Duplicasa sabes delas no minuto em que aparecem, em vez de um resumo por dia.\n\n'
              'Experimenta 30 dias por 1 €: %s/#precos\n'
              'Depois são 9,99 € a cada 30 dias. Cancelas com um toque e avisamos 3 dias antes de cobrar.\n\n'
              'Não queres receber ofertas? %s\n' % (n, base, sair))
     corpo = ('<div style="font-family:system-ui,sans-serif;font-size:16px;color:#0F1A17;max-width:520px">'
-             '<p style="margin:0 0 4px;color:#0B6E4F;font-weight:700">Duas Chaves</p>'
+             '<p style="margin:0 0 4px;color:#0B6E4F;font-weight:700">Duplicasa</p>'
              '<h1 style="font-size:22px;margin:0 0 10px">%d casas apareceram para o teu alerta</h1>'
              '<p>Com o acesso, sabes delas <strong>no minuto</strong> em que aparecem, em vez de um resumo por dia. Quem contacta primeiro, visita primeiro.</p>'
              '<p><a href="%s/#precos" style="display:inline-block;background:#0B6E4F;color:#fff;text-decoration:none;font-weight:700;padding:12px 20px;border-radius:12px">Experimentar 30 dias por 1 €</a></p>'
              '<p style="color:#56635e;font-size:14px">Depois, 9,99 € a cada 30 dias. Cancelas com um toque e avisamos 3 dias antes de cobrar.</p>'
-             '<p style="font-size:13px;color:#56635e">Recebes este e-mail porque aceitaste receber novidades da Duas Chaves. <a href="%s" style="color:#56635e">Não quero receber ofertas</a>.</p></div>'
+             '<p style="font-size:13px;color:#56635e">Recebes este e-mail porque aceitaste receber novidades da Duplicasa. <a href="%s" style="color:#56635e">Não quero receber ofertas</a>.</p></div>'
              % (n, base, html.escape(sair)))
     return titulo, texto, corpo
 
@@ -167,7 +167,7 @@ def main():
     lx = datetime.datetime.now(LX)
     base = sorted(api.ORIGENS)[0]
     for o in api.ORIGENS:
-        if o.endswith('://duaschaves.pt'):
+        if o.endswith('://duplicasa.pt'):
             base = o
     enviados = 0
     with api.ligar() as c:

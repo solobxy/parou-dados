@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Duas Chaves: páginas para o Google (SEO), feitas a partir dos anúncios recolhidos.
+"""Duplicasa: páginas para o Google (SEO), feitas a partir dos anúncios recolhidos.
 
 Gera HTML estático (sem JavaScript) para cada cidade com anúncios e para cada tipologia dentro da cidade:
   /arrendar/                      todas as cidades
@@ -15,7 +15,7 @@ from urllib.parse import quote
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from ids import id_num
 
-SITE = 'https://duaschaves.pt'
+SITE = 'https://duplicasa.pt'
 MIN_CIDADE, MIN_TIPO, MAX_CARTOES = 5, 3, 30
 TIPOS = [('quartos', 'Quartos', 'Quarto'), ('t0', 'T0', 'T0'), ('t1', 'T1', 'T1'), ('t2', 'T2', 'T2'), ('t3-ou-mais', 'T3 ou mais', 'T3+')]
 MESES = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro']
@@ -93,7 +93,7 @@ def pagina(caminho, titulo, descricao, h1, intro, migalhas, cartoes, links, ver_
     return f'''<!DOCTYPE html>
 <html lang="pt-PT"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{e(titulo)}</title><meta name="description" content="{e(descricao)}"><link rel="canonical" href="{url}">
-<meta property="og:type" content="website"><meta property="og:site_name" content="Duas Chaves"><meta property="og:locale" content="pt_PT">
+<meta property="og:type" content="website"><meta property="og:site_name" content="Duplicasa"><meta property="og:locale" content="pt_PT">
 <meta property="og:title" content="{e(titulo)}"><meta property="og:description" content="{e(descricao)}"><meta property="og:url" content="{url}">
 <meta property="og:image" content="{SITE}/marca/duaschaves-og.png"><meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="/marca/duaschaves-simbolo.svg" type="image/svg+xml"><link rel="apple-touch-icon" href="/marca/duaschaves-icone-180.png">
@@ -117,7 +117,7 @@ h1{{font-size:34px;line-height:1.1;letter-spacing:-.03em;margin:0 0 12px}}h2{{fo
 footer{{margin-top:56px;border-top:1px solid var(--b);padding:28px 0 40px;font-size:14px;color:var(--t3)}}
 @media(min-width:900px){{h1{{font-size:46px}}}}
 </style></head><body>
-<header><div class="w"><a class="logo" href="/"><svg viewBox="5 7 38 34" width="30" height="27" aria-hidden="true"><path fill="#0B6E4F" d="{SIMBOLO}"/></svg>Duas Chaves</a><a class="bt" href="{ver_todas}">Ver casas</a></div></header>
+<header><div class="w"><a class="logo" href="/"><svg viewBox="5 7 38 34" width="30" height="27" aria-hidden="true"><path fill="#0B6E4F" d="{SIMBOLO}"/></svg>Duplicasa</a><a class="bt" href="{ver_todas}">Ver casas</a></div></header>
 <main class="w">
 <nav class="mig" aria-label="Estás aqui">{nav}</nav>
 <h1>{e(h1)}</h1>
@@ -127,10 +127,10 @@ footer{{margin-top:56px;border-top:1px solid var(--b);padding:28px 0 40px;font-s
 {links}
 <section class="cx"><h2 style="margin-top:0">Arrendar sem cair numa burla</h2>
 <ul><li>Visita a casa antes de pagar qualquer valor.</li><li>Desconfia de rendas muito abaixo das outras na zona.</li>
-<li>Confirma que quem anuncia é mesmo o dono.</li><li>Com o pagamento seguro da Duas Chaves, a entrada só chega ao senhorio quando recebes as chaves.</li></ul></section>
+<li>Confirma que quem anuncia é mesmo o dono.</li><li>Com o pagamento seguro da Duplicasa, a entrada só chega ao senhorio quando recebes as chaves.</li></ul></section>
 {extra}
 </main>
-<footer><div class="w">Duas Chaves · casas para arrendar em Portugal, sem burlas. Anúncios atualizados a {atualizado}. <a href="/arrendar/">Todas as cidades</a> · <a href="/">Início</a></div></footer>
+<footer><div class="w">Duplicasa · casas para arrendar em Portugal, sem burlas. Anúncios atualizados a {atualizado}. <a href="/arrendar/">Todas as cidades</a> · <a href="/">Início</a></div></footer>
 </body></html>
 '''
 
@@ -157,7 +157,7 @@ def gerar(anuncios, atualizado):
         boas = sorted([a for a in lista if plausivel(a) and a.get('fotos')], key=lambda a: a['renda'])
         meds = {t: mediana([a['renda'] for a in lista if plausivel(a) and tip(a) == t]) for _, _, t in TIPOS}
         tipos_pag = [(ts, tn, tt) for ts, tn, tt in TIPOS if sum(1 for a in lista if tip(a) == tt) >= MIN_TIPO]
-        frases = [f'Há {num(len(lista))} casas e quartos para arrendar {e(em(cidade))} na Duas Chaves, juntos de vários sites e atualizados a {hoje}.']
+        frases = [f'Há {num(len(lista))} casas e quartos para arrendar {e(em(cidade))} na Duplicasa, juntos de vários sites e atualizados a {hoje}.']
         if meds.get('T1'):
             frases.append(f'Um T1 pede, a meio da tabela, {num(meds["T1"])} € por mês.')
         if meds.get('Quarto'):
@@ -171,7 +171,7 @@ def gerar(anuncios, atualizado):
             links += '<h2>Perto de ' + e(cidade) + '</h2><ul class="ch">' + ''.join(f'<li><a href="/arrendar/{slug(c)}/">{e(c)}</a></li>' for c in vizinhas) + '</ul>'
         desde = f' desde {num(boas[0]["renda"])} €' if boas else ''
         paginas[f'/arrendar/{s}/'] = pagina(
-            f'/arrendar/{s}/', f'Casas para arrendar {em(cidade)}{desde} | Duas Chaves',
+            f'/arrendar/{s}/', f'Casas para arrendar {em(cidade)}{desde} | Duplicasa',
             f'{num(len(lista))} casas e quartos para arrendar {em(cidade)}, dos mais baratos para os mais caros. Alertas de casas novas e pagamento seguro contra burlas.',
             f'Casas para arrendar {em(cidade)}', ' '.join(frases),
             [('Início', '/'), ('Arrendar', '/arrendar/'), (cidade, f'/arrendar/{s}/')],
@@ -188,7 +188,7 @@ def gerar(anuncios, atualizado):
             outros = '<h2>Outras tipologias ' + e(em(cidade)) + '</h2><ul class="ch">' + ''.join(
                 f'<li><a href="/arrendar/{s}/{x}/">{e(n)}</a></li>' for x, n, _ in tipos_pag if x != ts) + f'<li><a href="/arrendar/{s}/">Todas</a></li></ul>'
             paginas[f'/arrendar/{s}/{ts}/'] = pagina(
-                f'/arrendar/{s}/{ts}/', f'{nome} para arrendar {em(cidade)} desde {num(sub[0]["renda"])} € | Duas Chaves',
+                f'/arrendar/{s}/{ts}/', f'{nome} para arrendar {em(cidade)} desde {num(sub[0]["renda"])} € | Duplicasa',
                 f'{nome} para arrendar {em(cidade)}, dos mais baratos para os mais caros, desde {num(sub[0]["renda"])} € por mês. Alertas de casas novas e pagamento seguro.',
                 f'{nome} para arrendar {em(cidade)}', intro,
                 [('Início', '/'), ('Arrendar', '/arrendar/'), (cidade, f'/arrendar/{s}/'), (nome, f'/arrendar/{s}/{ts}/')],
@@ -201,7 +201,7 @@ def gerar(anuncios, atualizado):
         f'<li><a href="/arrendar/{slug(c)}/">{e(c)} ({n})</a></li>' for c, n in sorted(cs)) + '</ul>' for d, cs in sorted(por_distrito.items()))
     baratas = sorted([a for a in anuncios if plausivel(a) and a.get('fotos') and tip(a) in ('T0', 'T1', 'Quarto')], key=lambda a: a['renda'])[:12]
     paginas['/arrendar/'] = pagina(
-        '/arrendar/', 'Casas para arrendar em Portugal, por cidade | Duas Chaves',
+        '/arrendar/', 'Casas para arrendar em Portugal, por cidade | Duplicasa',
         f'{num(len(anuncios))} casas e quartos para arrendar em {len(cidades)} cidades de Portugal, juntos num só lugar. Alertas de casas novas e pagamento seguro.',
         'Casas para arrendar em Portugal',
         f'{num(len(anuncios))} casas e quartos para arrendar, de vários sites, num só lugar. Escolhe a cidade. Atualizado a {hoje}.',

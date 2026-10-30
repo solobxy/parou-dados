@@ -1,4 +1,4 @@
-"""Duas Chaves: estatísticas próprias, sem cookies e sem serviços de terceiros.
+"""Duplicasa: estatísticas próprias, sem cookies e sem serviços de terceiros.
 
 Cada visitante é contado com um código que muda todos os dias (hash de um sal diário + IP + navegador),
 como no Plausible: dá para contar visitantes únicos por dia, mas não dá para seguir alguém entre dias

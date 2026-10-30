@@ -1,7 +1,7 @@
 """Sonda de fontes: para cada site, lê o robots.txt e uma página de pesquisa de arrendamento
 e guarda-os em sonda/ (para estudar a estrutura antes de escrever um recolhedor). Só leitura, 1 pedido de cada vez, 3 s entre pedidos."""
 import os, sys, time, urllib.request, urllib.parse, json, re
-UA = 'Mozilla/5.0 (compatible; DuasChavesBot/1.0; +https://duaschaves.pt/bot)'
+UA = 'Mozilla/5.0 (compatible; DuplicasaBot/1.0; +https://duplicasa.pt/bot)'
 URLS = [l.split() for l in open(sys.argv[1]) if l.strip() and not l.startswith('#')]
 os.makedirs('sonda', exist_ok=True)
 res = []

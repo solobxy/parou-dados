@@ -40,7 +40,7 @@ sed "s/{HOST_TESTE}/$HOST_TESTE/g" "$SERV/Caddyfile" > /tmp/Caddyfile.novo
 # O domínio só entra quando já aponta para este servidor (senão o Caddy falhava o
 # certificado e ficava a tentar com esperas cada vez maiores)
 MEU_IP="$(echo "${HOST_TESTE%%.sslip.io}" | tr '-' '.')"
-for DOM in parou.pt www.parou.pt anjinho.pt www.anjinho.pt jinxed.world www.jinxed.world duaschaves.pt www.duaschaves.pt chave.pt www.chave.pt; do
+for DOM in parou.pt www.parou.pt anjinho.pt www.anjinho.pt jinxed.world www.jinxed.world duplicasa.pt www.duplicasa.pt chave.pt www.chave.pt; do
   # Pergunta a dois DNS: basta um dizer que o domínio aponta para aqui (durante uma mudança
   # de DNS uns ainda dão o endereço antigo e o domínio entrava e saía a cada 2 minutos)
   IPS="$( (dig +short +time=3 +tries=2 A "$DOM" @1.1.1.1; dig +short +time=3 +tries=2 A "$DOM" @8.8.8.8) 2>/dev/null | grep -E '^[0-9.]+$' | sort -u)"
@@ -119,12 +119,16 @@ if [ -f "$SERV/duaschaves-recolha.service" ]; then
   fi
 fi
 
-# API da Duas Chaves (contas, preferências, alertas). Os segredos ficam em /etc/duaschaves/api.env, fora do repositório.
+# API da Duplicasa (contas, preferências, alertas). Os segredos ficam em /etc/duaschaves/api.env, fora do repositório.
 if [ -f "$SERV/duaschaves-api.service" ] && [ -f "$BASE/servidor/duaschaves/api.py" ]; then
   install -d -m 750 -o root -g parou /etc/duaschaves
   if [ ! -f /etc/duaschaves/api.env ]; then
-    printf 'ORIGENS=https://duaschaves.pt https://www.duaschaves.pt https://duaschaves.2-31-13-85.sslip.io\nEMAIL_DE=Duas Chaves <ola@duaschaves.pt>\n' > /etc/duaschaves/api.env
+    printf 'ORIGENS=https://duplicasa.pt https://www.duplicasa.pt https://duaschaves.2-31-13-85.sslip.io\nEMAIL_DE=Duplicasa <ola@duplicasa.pt>\n' > /etc/duaschaves/api.env
     chown root:parou /etc/duaschaves/api.env && chmod 640 /etc/duaschaves/api.env
+  fi
+  # Nova marca (Duplicasa): troca o domínio e o remetente no ficheiro já existente, sem mexer nos segredos
+  if grep -q 'duaschaves\.pt' /etc/duaschaves/api.env; then
+    sed -i 's#https://www\.duaschaves\.pt#https://www.duplicasa.pt#g; s#https://duaschaves\.pt#https://duplicasa.pt#g; s#^EMAIL_DE=Duas Chaves <ola@duaschaves\.pt>$#EMAIL_DE=Duplicasa <ola@duplicasa.pt>#' /etc/duaschaves/api.env
   fi
   if ! cmp -s "$SERV/duaschaves-api.service" /etc/systemd/system/duaschaves-api.service; then
     cp "$SERV/duaschaves-api.service" /etc/systemd/system/duaschaves-api.service && systemctl daemon-reload
