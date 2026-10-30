@@ -95,7 +95,7 @@ p{margin:0}
 .sub{margin-top:14px;max-width:46ch;font-size:17px}
 .sub a{font-weight:700;text-decoration:none;border-bottom:2px solid currentColor}
 .sub a:hover{border-bottom-color:transparent}
-.c-goth{color:#B0101C}.c-coq{color:#B4436A}.c-trans{color:#B84A0E}.c-casa{color:#0E6B4F}
+.c-adri{color:#7A5820}.c-goth{color:#B0101C}.c-coq{color:#B4436A}.c-trans{color:#B84A0E}.c-casa{color:#0E6B4F}
 .ctas{margin-top:26px;display:flex;gap:10px;flex-wrap:wrap}
 .ctas .btn{flex:1 1 150px}
 
@@ -113,8 +113,7 @@ p{margin:0}
 .project .shot{display:flex;justify-content:center}
 .project .phone{position:relative;--pw:min(78vw,320px)}
 .project .logo{height:auto;width:auto;max-height:52px;max-width:220px}
-.project .logo.on-light{mix-blend-mode:multiply}.project .logo.on-dark{mix-blend-mode:screen}
-.project h3{margin-top:24px;font-size:clamp(28px,3.4vw,46px);line-height:1;font-weight:800;font-stretch:104%;letter-spacing:-.03em}
+.project h3{margin-top:24px;font-size:clamp(26px,3.4vw,46px);line-height:1;font-weight:800;font-stretch:104%;letter-spacing:-.03em}
 .project p{margin-top:16px;max-width:46ch;font-size:18px;color:var(--muted);transition:color .6s var(--ease)}
 .project .btn{margin-top:28px}
 
@@ -160,6 +159,17 @@ p{margin:0}
 .rec-tag{font-size:15px;font-weight:600}
 .note{margin-top:18px;font-size:15px;color:var(--muted)}
 
+
+/* Perguntas */
+.faq-list{margin-top:40px;display:grid;gap:12px;align-items:start}
+.faq-list details{background:var(--surface);transition:background-color .6s var(--ease)}
+.faq-list summary{list-style:none;cursor:pointer;min-height:64px;padding:20px 64px 20px 24px;position:relative;font-weight:700;font-size:19px;line-height:1.3}
+.faq-list summary::-webkit-details-marker{display:none}
+.faq-list summary::after{content:"";position:absolute;right:26px;top:50%;width:14px;height:14px;margin-top:-10px;border-right:3px solid currentColor;border-bottom:3px solid currentColor;transform:rotate(45deg);transition:transform .3s var(--ease)}
+.faq-list details[open] summary::after{transform:rotate(225deg);margin-top:-3px}
+.faq-list details p{padding:0 24px 24px;color:var(--muted);max-width:56ch}
+.faq-list summary:focus-visible{outline:2px solid var(--ink);outline-offset:-2px}
+
 /* Fecho */
 .final{background:var(--ink);color:var(--bg);padding:48px 20px;display:grid;gap:22px;justify-items:start}
 .final .h2{color:inherit;font-size:clamp(30px,6vw,76px)}
@@ -200,7 +210,8 @@ footer a{min-height:44px;display:inline-flex;align-items:center}
   .project .shot{grid-column:7 / span 6}
   .project:nth-of-type(even) .info{grid-column:8 / span 5;order:2}
   .project:nth-of-type(even) .shot{grid-column:1 / span 6;order:1}
-  .project .phone{--pw:330px}
+  .project .phone{--pw:360px}
+  .faq-list{grid-template-columns:repeat(2,minmax(0,1fr))}
 }
 
 /* Movimento: momento de abertura */
@@ -262,16 +273,16 @@ footer a{min-height:44px;display:inline-flex;align-items:center}
       <div class="hero-text">
         <h1 class="name"><span>Dinis</span><span>Sousa.</span></h1>
         <p class="lead">Faço sites que não se parecem uns com os outros.</p>
-        <p class="sub"><a class="c-goth" href="#jinxed">Uma marca gótica</a>, <a class="c-coq" href="#anjinho">uma loja coquette</a>, <a class="c-trans" href="#parou">uma app de transportes</a> e <a class="c-casa" href="#duplicasa">um site de casas para arrendar</a>. Todos feitos por mim. O próximo pode ser o teu.</p>
+        <p class="sub"><a class="c-adri" href="#adri">Um estúdio de piercing</a>, <a class="c-coq" href="#anjinho">uma loja coquette</a>, <a class="c-goth" href="#jinxed">uma marca gótica</a> e <a class="c-trans" href="#parou">uma app de transportes</a>. Todos feitos por mim. O próximo pode ser o teu.</p>
         <div class="ctas">
           <a class="btn btn-primary wa" data-msg="Olá Dinis! Quero um site." href="https://wa.me/351913488258">Pedir o meu site</a>
           <a class="btn btn-secondary" href="#projetos">Ver projetos</a>
         </div>
       </div>
-      <div class="fan" role="group" aria-label="Três projetos meus">
-        <div class="phone p-left"><img src="img/anjinho.webp" width="640" height="1237" alt="Página inicial da loja anjinho.pt" fetchpriority="high"></div>
-        <div class="phone p-right"><img src="img/jinxed.webp" width="640" height="1325" alt="Peças da loja jinxed.world" fetchpriority="high"></div>
-        <div class="phone p-center"><img src="img/parou.webp" width="640" height="1325" alt="App PAROU com o mapa do Porto e os próximos autocarros" fetchpriority="high"></div>
+      <div class="fan" role="group" aria-label="Três sites que fiz">
+        <div class="phone p-left"><img src="img/anjinho.webp" width="640" height="1237" alt="Página inicial da loja anjinho.pt"></div>
+        <div class="phone p-right"><img src="img/jinxed.webp" width="640" height="1325" alt="Peças da loja jinxed.world"></div>
+        <div class="phone p-center"><img src="img/adri.webp" width="640" height="1385" alt="Site AdriBodyPiercing com a letra A em 3D e uma barra de piercing dourada" fetchpriority="high"></div>
       </div>
     </div>
   </section>
@@ -291,7 +302,7 @@ footer a{min-height:44px;display:inline-flex;align-items:center}
           <img class="logo rv" src="img/logo_adri.webp" width="325" height="70" alt="AdriBodyPiercing" loading="lazy" style="max-height:44px">
           <h3 class="rv" id="t-adri">O teu piercing, sem stress.</h3>
           <p class="rv">Estúdio de body piercing do Adriano, que está a começar. Fiz o logótipo, a joia em 3D que roda no topo e o site, com preços à vista e marcação online.</p>
-          <a class="btn btn-primary rv" href="https://adribodypiercing.2-31-13-85.sslip.io">Ver o site</a>
+          <a class="btn btn-secondary rv" href="https://adribodypiercing.2-31-13-85.sslip.io" target="_blank" rel="noopener">Ver o site ↗</a>
         </div>
         <div class="shot"><div class="phone rv"><img src="img/adri.webp" width="640" height="1385" alt="Site AdriBodyPiercing: a letra A em 3D atravessada por uma barra de piercing dourada" loading="lazy"></div></div>
       </div>
@@ -300,10 +311,10 @@ footer a{min-height:44px;display:inline-flex;align-items:center}
     <article class="project" id="parou" data-world="parou" aria-labelledby="t-parou">
       <div class="wrap">
         <div class="info">
-          <img class="logo on-dark rv" src="img/logo_parou.webp" width="235" height="85" alt="PAROU" loading="lazy" style="max-height:48px">
+          <img class="logo rv" src="img/logo_parou.webp" width="235" height="85" alt="PAROU" loading="lazy" style="max-height:48px">
           <h3 class="rv" id="t-parou">Quando passa o próximo?</h3>
           <p class="rv">App de transportes para todo o país. Fiz a marca, o design e a app: tempo real onde existe, horário oficial onde não existe, e avisos de greves e ocorrências. É gratuita e sem fins lucrativos.</p>
-          <a class="btn btn-primary rv" href="https://parou.pt">Abrir parou.pt</a>
+          <a class="btn btn-secondary rv" href="https://parou.pt" target="_blank" rel="noopener">Abrir parou.pt ↗</a>
         </div>
         <div class="shot"><div class="phone rv"><img src="img/parou.webp" width="640" height="1325" alt="App PAROU: transportes perto, com autocarros a chegar" loading="lazy"></div></div>
       </div>
@@ -315,7 +326,7 @@ footer a{min-height:44px;display:inline-flex;align-items:center}
           <img class="logo rv" src="img/logo_anjinho.svg" width="200" height="69" alt="anjinho" loading="lazy" style="max-height:40px">
           <h3 class="rv" id="t-anjinho">quase uma anjinha.</h3>
           <p class="rv">Marca de moda coquette. Fiz a marca, a loja e a direção das imagens das peças, com o preço a aparecer só quando se abre cada uma.</p>
-          <a class="btn btn-primary rv" href="https://anjinho.pt">Visitar anjinho.pt</a>
+          <a class="btn btn-secondary rv" href="https://anjinho.pt" target="_blank" rel="noopener">Visitar anjinho.pt ↗</a>
         </div>
         <div class="shot"><div class="phone rv"><img src="img/anjinho.webp" width="640" height="1237" alt="Loja anjinho.pt: «quase uma anjinha.» com as botas nuvem" loading="lazy"></div></div>
       </div>
@@ -324,10 +335,10 @@ footer a{min-height:44px;display:inline-flex;align-items:center}
     <article class="project" id="jinxed" data-world="jinxed" aria-labelledby="t-jinxed">
       <div class="wrap">
         <div class="info">
-          <img class="logo on-dark rv" src="img/logo_jinxed.webp" width="200" height="90" alt="jinxed" loading="lazy" style="max-height:52px">
+          <img class="logo rv" src="img/logo_jinxed.webp" width="200" height="90" alt="jinxed" loading="lazy" style="max-height:52px">
           <h3 class="rv" id="t-jinxed" lang="en">Gothic menswear.</h3>
           <p class="rv">Marca de roupa para homem, feita em Portugal. Fiz o logótipo e a loja, toda em inglês, escura e cheia de movimento.</p>
-          <a class="btn btn-primary rv" href="https://jinxed.world">Visitar jinxed.world</a>
+          <a class="btn btn-secondary rv" href="https://jinxed.world" target="_blank" rel="noopener">Visitar jinxed.world ↗</a>
         </div>
         <div class="shot"><div class="phone rv"><img src="img/jinxed.webp" width="640" height="1325" alt="Loja jinxed.world com casacos e calças de ganga" loading="lazy"></div></div>
       </div>
@@ -336,10 +347,10 @@ footer a{min-height:44px;display:inline-flex;align-items:center}
     <article class="project" id="duplicasa" data-world="duplicasa" aria-labelledby="t-duplicasa">
       <div class="wrap">
         <div class="info">
-          <img class="logo on-light rv" src="img/logo_duplicasa.webp" width="355" height="85" alt="Duplicasa" loading="lazy" style="max-height:44px">
+          <img class="logo rv" src="img/logo_duplicasa.webp" width="355" height="85" alt="Duplicasa" loading="lazy" style="max-height:44px">
           <h3 class="rv" id="t-duplicasa">Casas para arrendar, sem burlas.</h3>
           <p class="rv">Plataforma de arrendamento. Fiz o nome, a marca e o site: as casas dos principais sites num só lugar, com pagamento seguro.</p>
-          <a class="btn btn-primary rv" href="https://duplicasa.pt">Visitar duplicasa.pt</a>
+          <a class="btn btn-secondary rv" href="https://duplicasa.pt" target="_blank" rel="noopener">Visitar duplicasa.pt ↗</a>
         </div>
         <div class="shot"><div class="phone rv"><img src="img/duplicasa.webp" width="640" height="1325" alt="Site Duplicasa: pesquisa de casas para arrendar" loading="lazy"></div></div>
       </div>
@@ -384,21 +395,35 @@ footer a{min-height:44px;display:inline-flex;align-items:center}
         <div class="plan rv">
           <div class="row"><h3>Página única</h3><span class="price">149&nbsp;€</span></div>
           <p>Uma página com o essencial: quem és, o que fazes e como te contactam.</p>
-          <a class="btn btn-secondary wa" data-msg="Olá Dinis! Quero a página única (149 €)." href="https://wa.me/351913488258">Pedir este</a>
+          <a class="btn btn-secondary wa" data-msg="Olá Dinis! Quero a página única (149 €)." href="https://wa.me/351913488258">Pedir página única</a>
         </div>
         <div class="plan rec rv">
           <span class="rec-tag">Recomendado</span>
           <div class="row"><h3>Site completo</h3><span class="price">299&nbsp;€</span></div>
           <p>Até 5 páginas, desenhado de raiz para a tua marca, rápido no telemóvel e preparado para o Google.</p>
-          <a class="btn wa" data-msg="Olá Dinis! Quero o site completo (299 €)." href="https://wa.me/351913488258">Pedir este</a>
+          <a class="btn wa" data-msg="Olá Dinis! Quero o site completo (299 €)." href="https://wa.me/351913488258">Pedir site completo</a>
         </div>
         <div class="plan rv">
           <div class="row"><h3>Loja online</h3><span class="price"><small>desde</small> 499&nbsp;€</span></div>
           <p>Produtos, carrinho e pagamentos online, com o mesmo cuidado no desenho.</p>
-          <a class="btn btn-secondary wa" data-msg="Olá Dinis! Quero uma loja online (desde 499 €)." href="https://wa.me/351913488258">Pedir este</a>
+          <a class="btn btn-secondary wa" data-msg="Olá Dinis! Quero uma loja online (desde 499 €)." href="https://wa.me/351913488258">Pedir loja online</a>
         </div>
       </div>
       <p class="note rv">Domínio e alojamento combinamos à parte, antes de começar.</p>
+    </div>
+  </section>
+
+  <section class="section" id="perguntas" data-world="base" aria-labelledby="t-faq" style="padding-top:0">
+    <div class="wrap">
+      <h2 class="h2 rv" id="t-faq">Perguntas que me fazem</h2>
+      <div class="faq-list">
+        <details class="rv"><summary>Quanto tempo demora?</summary><p>Depende do tamanho do site. Digo-te o prazo antes de começar, junto com o preço.</p></details>
+        <details class="rv"><summary>E se eu não gostar do desenho?</summary><p>Mudamos. Mostro-te o desenho antes de construir e só passo ao código quando estiveres contente com ele.</p></details>
+        <details class="rv"><summary>Não tenho textos nem fotos. Faz mal?</summary><p>Não. Ajudo-te com os textos e com as imagens. Se tiveres fotos do teu trabalho, melhor: são as que mais convencem quem visita.</p></details>
+        <details class="rv"><summary>O site aparece no Google?</summary><p>Deixo-o pronto para o Google: rápido, com título e descrição certos e o teu negócio bem identificado. Ninguém pode garantir o primeiro lugar, por isso também não o prometo.</p></details>
+        <details class="rv"><summary>E o domínio e o alojamento?</summary><p>Combinamos à parte, antes de começar, para saberes sempre quanto pagas e porquê.</p></details>
+        <details class="rv"><summary>Fica a funcionar no telemóvel?</summary><p>Sim. Desenho primeiro para o telemóvel, porque é aí que a maioria dos teus clientes te vai encontrar.</p></details>
+      </div>
     </div>
   </section>
 
@@ -407,7 +432,7 @@ footer a{min-height:44px;display:inline-flex;align-items:center}
       <div class="final rv">
         <h2 class="h2" id="t-final">O próximo pode ser o teu.</h2>
         <a class="btn wa" data-msg="Olá Dinis! Quero um site." href="https://wa.me/351913488258">Pedir o meu site</a>
-        <p>Respondo eu, no WhatsApp: 913 488 258. Ou por e-mail: <a href="mailto:diniscash@gmail.com">diniscash@gmail.com</a></p>
+        <p>Respondo eu, no WhatsApp: 913&nbsp;488&nbsp;258. Ou por e-mail: <a href="mailto:diniscash@gmail.com">diniscash@gmail.com</a></p>
       </div>
     </div>
   </section>
@@ -435,7 +460,7 @@ footer a{min-height:44px;display:inline-flex;align-items:center}
   if('IntersectionObserver' in window){
     var wo=new IntersectionObserver(function(entries){
       entries.forEach(function(e){ if(e.isIntersecting){ document.body.setAttribute('data-world', e.target.getAttribute('data-world')); } });
-    },{rootMargin:'-48% 0px -48% 0px'});
+    },{rootMargin:'-58% 0px -41% 0px'});
     worlds.forEach(function(el){wo.observe(el);});
 
     /* Entradas: só espera o que ainda está abaixo do ecrã */
@@ -481,6 +506,8 @@ footer a{min-height:44px;display:inline-flex;align-items:center}
     });
   });
   update();
+  if(document.fonts&&document.fonts.ready){document.fonts.ready.then(update);}
+  var rt; window.addEventListener('resize',function(){clearTimeout(rt);rt=setTimeout(update,150);});
 })();
 </script>
 </body>
