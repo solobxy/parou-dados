@@ -1,0 +1,43 @@
+name: Baixar ficheiros
+
+# Descarrega ficheiros de URLs https (ex.: imagens geradas no Higgsfield) para o ramo
+# "ficheiros-baixados", em baixados/<nome>. Serve para trazer ficheiros que o ambiente
+# de trabalho do Claude não consegue descarregar diretamente. Não toca no ramo main.
+#   pedidos: uma linha por ficheiro, "nome url" (ex.: "orelha.png https://...")
+
+on:
+  workflow_dispatch:
+    inputs:
+      pedidos:
+        description: "Linhas 'nome url'"
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  baixar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Descarregar
+        env:
+          PEDIDOS: ${{ inputs.pedidos }}
+        run: |
+          set -euo pipefail
+          mkdir -p baixados
+          printf '%s\n' "$PEDIDOS" | tr ';' '\n' | while read -r nome url; do
+            [ -n "${nome:-}" ] || continue
+            case "$url" in https://*) ;; *) echo "URL recusado: $url"; exit 1;; esac
+            nome="$(basename "$nome")"
+            curl -fsSL --max-time 120 -o "baixados/$nome" "$url"
+            echo "$nome $(stat -c %s "baixados/$nome") bytes"
+          done
+      - name: Guardar no ramo ficheiros-baixados
+        run: |
+          set -euo pipefail
+          cd baixados
+          git init -q -b ficheiros-baixados
+          git config user.name "github-actions"; git config user.email "actions@github.com"
+          git add -A && git commit -q -m "Ficheiros baixados $(date -u +%FT%TZ)"
+          git push -q -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" ficheiros-baixados
