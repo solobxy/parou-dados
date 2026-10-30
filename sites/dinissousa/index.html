@@ -44,6 +44,7 @@ body[data-world="parou"]{--bg:#16151A;--ink:#FFFFFF;--muted:#A8A6AE;--surface:#2
 body[data-world="anjinho"]{--bg:#DCE8F4;--ink:#1D1719;--muted:#4D4A55;--surface:#C8D8EA;--accent:#1D1719;--on-accent:#DCE8F4;--frame:#1D1719;--mark:#F2A7BD}
 body[data-world="jinxed"]{--bg:#110D0E;--ink:#EAE3DA;--muted:#A69F98;--surface:#1F191A;--accent:#D6101C;--on-accent:#FFFFFF;--frame:#2B2325;--mark:#D6101C}
 body[data-world="adri"]{--bg:#0E0C0B;--ink:#EEE8DF;--muted:#BDB5A9;--surface:#1E1B18;--accent:#D9B676;--on-accent:#141210;--frame:#2A2622;--mark:#D9B676}
+body[data-world="goodman"]{--bg:#0E3A2C;--ink:#F0F5F1;--muted:#B4CABE;--surface:#17503D;--accent:#C7372A;--on-accent:#FFFFFF;--frame:#0A2A20;--mark:#C7372A}
 body[data-world="duplicasa"]{--bg:#F3F5F4;--ink:#10241B;--muted:#4A5A52;--surface:#E0E8E3;--accent:#0E6B4F;--on-accent:#FFFFFF;--frame:#10241B;--mark:#0E6B4F}
 
 *,*::before,*::after{box-sizing:border-box}
@@ -108,8 +109,7 @@ p{margin:0}
 .brands{margin-top:36px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;padding:8px;background:#E2E2DE}
 .brand-tile{height:104px;display:flex;align-items:center;justify-content:center;padding:16px;text-decoration:none;transition:transform .35s var(--ease)}
 .brand-tile img{width:auto;max-width:100%;object-fit:contain}
-.brand-tile.t-adri{grid-column:span 2}
-.t-adri{background:#0E0C0B}.t-parou{background:#16151A}.t-anjinho{background:#DCE8F4}.t-jinxed{background:#110D0E}.t-duplicasa{background:#FFFFFF}
+.t-adri{background:#0E0C0B}.t-parou{background:#16151A}.t-anjinho{background:#DCE8F4}.t-jinxed{background:#110D0E}.t-duplicasa{background:#FFFFFF}.t-goodman{background:#0E3A2C}
 @media (hover:hover){.brand-tile:hover{transform:translateY(-4px)}}
 .project{padding-block:88px}
 .project .wrap{display:grid;gap:32px;align-items:center}
@@ -191,8 +191,7 @@ footer a{min-height:44px;display:inline-flex;align-items:center}
   .fan .p-left{left:calc(50% - 228px)}
   .fan .p-right{right:calc(50% - 228px)}
   .styles{grid-template-columns:repeat(4,minmax(0,1fr))}
-  .brands{grid-template-columns:repeat(5,minmax(0,1fr))}
-  .brand-tile.t-adri{grid-column:auto}
+  .brands{grid-template-columns:repeat(3,minmax(0,1fr))}
   .brand-tile{height:120px}
   .plans{grid-template-columns:repeat(3,minmax(0,1fr))}
   .steps{grid-template-columns:repeat(3,minmax(0,1fr))}
@@ -217,6 +216,7 @@ footer a{min-height:44px;display:inline-flex;align-items:center}
   .project:nth-of-type(even) .info{grid-column:8 / span 5;order:2}
   .project:nth-of-type(even) .shot{grid-column:1 / span 6;order:1}
   .project .phone{--pw:360px}
+  .brands{grid-template-columns:repeat(6,minmax(0,1fr))}
   .faq-list{grid-template-columns:repeat(2,minmax(0,1fr))}
 }
 
@@ -303,6 +303,7 @@ footer a{min-height:44px;display:inline-flex;align-items:center}
         <a class="brand-tile t-anjinho" href="#anjinho"><img src="img/logo_anjinho.svg" width="200" height="69" alt="anjinho" style="height:30px"></a>
         <a class="brand-tile t-jinxed" href="#jinxed"><img src="img/logo_jinxed.webp" width="200" height="90" alt="jinxed" style="height:40px"></a>
         <a class="brand-tile t-duplicasa" href="#duplicasa"><img src="img/logo_duplicasa.webp" width="355" height="85" alt="Duplicasa" style="height:30px"></a>
+        <a class="brand-tile t-goodman" href="#goodman"><img src="img/logo_goodman.webp" width="441" height="66" alt="Goodman" style="height:24px"></a>
       </nav>
     </div>
 
@@ -363,6 +364,18 @@ footer a{min-height:44px;display:inline-flex;align-items:center}
           <a class="btn btn-secondary rv" href="https://duplicasa.pt" target="_blank" rel="noopener">Visitar duplicasa.pt ↗</a>
         </div>
         <div class="shot"><div class="phone rv"><img src="img/duplicasa.webp" width="640" height="1325" alt="Site Duplicasa: pesquisa de casas para arrendar" loading="lazy"></div></div>
+      </div>
+    </article>
+
+    <article class="project" id="goodman" data-world="goodman" aria-labelledby="t-goodman">
+      <div class="wrap">
+        <div class="info">
+          <img class="logo rv" src="img/logo_goodman.webp" width="441" height="66" alt="Goodman" loading="lazy" style="max-height:30px">
+          <h3 class="rv" id="t-goodman">A lei do teu lado.</h3>
+          <p class="rv">Assistente jurídico com IA para a lei portuguesa. Fiz a marca, a personagem e o site: contas o caso, ele lê os teus documentos e responde com o artigo da lei e a ligação ao Diário da República. Ainda está em testes.</p>
+          <a class="btn btn-secondary rv" href="https://goodman.2-31-13-85.sslip.io" target="_blank" rel="noopener">Ver o site ↗</a>
+        </div>
+        <div class="shot"><div class="phone rv"><img src="img/goodman.webp" width="640" height="1385" alt="Site Goodman: «A lei do teu lado.», com a personagem do advogado e uma carta do senhorio" loading="lazy"></div></div>
       </div>
     </article>
   </section>
