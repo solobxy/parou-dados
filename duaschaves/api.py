@@ -120,6 +120,7 @@ def criar_tabelas():
           plano TEXT NOT NULL DEFAULT 'p30', metodo TEXT, criado INTEGER NOT NULL, ate INTEGER, marketing INTEGER NOT NULL DEFAULT 1);
         CREATE INDEX IF NOT EXISTS i_sub_disp ON subscricoes(disp);
         CREATE INDEX IF NOT EXISTS i_sub_email ON subscricoes(email);
+        CREATE TABLE IF NOT EXISTS pedidos(id INTEGER PRIMARY KEY, tipo TEXT NOT NULL, email TEXT NOT NULL, dados TEXT NOT NULL, criado INTEGER NOT NULL);
         ''')
         ucols = [r[1] for r in c.execute('PRAGMA table_info(utilizadores)')]
         if 'perfil' not in ucols:
@@ -156,6 +157,37 @@ def assinatura_mkt(c, uid):
 # acabar a conta; ao entrar com esse e-mail, o acesso passa também para a conta.
 DISP_DIAS = 400
 PAGAMENTOS = os.environ.get('PAGAMENTOS', '')      # vazio: ainda não há serviço de pagamentos ligado
+
+# Pedidos sem conta: campos aceites por tipo (tipo, tamanho máximo ou valor máximo)
+PEDIDO_CAMPOS = {
+    'seguro': {'onde': ('str', 30), 'link': ('str', 300), 'renda': ('int', 20000), 'nome': ('str', 80), 'casa': ('str', 40)},
+    'senhorio': {'nome': ('str', 80), 'telemovel': ('str', 20), 'cidade': ('str', 80), 'zona': ('str', 120), 'tipologia': ('str', 20),
+                 'area': ('int', 5000), 'renda': ('int', 20000), 'caucao': ('int', 6), 'descricao': ('str', 2000)},
+}
+PEDIDO_NOMES = {'seguro': 'lista de espera do pagamento seguro', 'senhorio': 'senhorio quer publicar'}
+
+# Links dos anúncios originais: não vão no lista.json público; só quem tem o acesso ativo os recebe, um a um.
+LINKS = os.environ.get('DC_LINKS', '/var/lib/duaschaves-dados/links.json')
+_links = {'mtime': None, 'mapa': {}}
+_links_bloq = threading.Lock()
+
+
+def link_anuncio(rid):
+    """URL do anúncio original (links.json escrito por recolher.py; relido quando muda)."""
+    with _links_bloq:
+        try:
+            mt = os.path.getmtime(LINKS)
+        except OSError:
+            return None
+        if mt != _links['mtime']:
+            try:
+                with open(LINKS, encoding='utf-8') as f:
+                    _links['mapa'] = json.load(f)
+                _links['mtime'] = mt
+            except (OSError, ValueError):
+                return None
+        u = _links['mapa'].get(rid)
+    return u if isinstance(u, str) and u.startswith('https://') else None
 
 
 def cookie_disp(t):
@@ -382,6 +414,38 @@ class API(BaseHTTPRequestHandler):
                 return self.responder(200, {'acesso': None})
             ativo = r['estado'] == 'ativa' and (r['ate'] or 0) > time.time()
             return self.responder(200, {'acesso': {'ate': r['ate'] * 1000} if ativo else None, 'estado': r['estado'], 'email': r['email']})
+        if url.path == '/api/link':         # link do anúncio original: só com o acesso ativo (ou administração)
+            rid = urllib.parse.parse_qs(url.query).get('id', [''])[0]
+            if not re.fullmatch(r'[A-Za-z0-9_\-]{3,80}', rid or ''):
+                return self.responder(400, {'erro': 'pedido'})
+            agora = int(time.time())
+            chave = None
+            with ligar() as c:
+                u = self.sessao(c)
+                if u and ((u['acesso_ate'] or 0) > agora or u['email'].lower() in ADMINS):
+                    chave = 'u%d' % u['id']
+                else:
+                    m = re.search(r'(?:^|;\s*)__Host-dc_disp=([A-Za-z0-9_\-]{20,100})', self.headers.get('Cookie') or '')
+                    if m:
+                        r = c.execute("SELECT id FROM subscricoes WHERE disp=? AND estado='ativa' AND ate>? ORDER BY id DESC LIMIT 1",
+                                      (h(m.group(1)), agora)).fetchone()
+                        if r:
+                            chave = 's%d' % r['id']
+            if not chave:
+                return self.responder(403, {'erro': 'sem_acesso'})
+            if not limite('link:' + chave, 150, 3600):     # quem paga contacta casas, não copia o site inteiro
+                return self.responder(429, {'erro': 'muitos_pedidos'})
+            u = link_anuncio(rid)
+            return self.responder(200, {'url': u}) if u else self.responder(404, {'erro': 'sem_link'})
+        if url.path == '/api/pedidos':      # lista de espera e pedidos de senhorios: só administração
+            with ligar() as c:
+                u = self.sessao(c)
+                if not u:
+                    return self.responder(401, {'erro': 'sem_sessao'})
+                if u['email'].lower() not in ADMINS:
+                    return self.responder(403, {'erro': 'sem_permissao'})
+                return self.responder(200, {'pedidos': [dict(id=r['id'], tipo=r['tipo'], email=r['email'], dados=json.loads(r['dados']), criado=r['criado'])
+                                                        for r in c.execute('SELECT * FROM pedidos ORDER BY id DESC LIMIT 500')]})
         if url.path == '/api/publico':      # números públicos e agregados (prova social verdadeira), sem dados pessoais
             semana = int(time.time()) - 7 * 86400
             with ligar() as c:
@@ -503,6 +567,41 @@ class API(BaseHTTPRequestHandler):
                 est.registar(c, corpo, ip, self.headers.get('User-Agent') or '', bool(self.sessao(c)))
             return self.responder(200, {'ok': True})
 
+        if p == '/api/pedido':              # lista de espera do pagamento seguro e pedidos de senhorios (sem conta)
+            tipo = corpo.get('tipo')
+            campos = PEDIDO_CAMPOS.get(tipo)
+            email = str(corpo.get('email') or '').strip().lower()
+            if not campos or not RE_EMAIL.match(email):
+                return self.responder(400, {'erro': 'pedido'})
+            if corpo.get('site'):           # isco para robôs: responde como se tivesse corrido bem
+                return self.responder(200, {'ok': True})
+            if not limite('ped:' + ip, 8, 3600) or not limite('ped:' + email, 5, 86400):
+                return self.responder(429, {'erro': 'muitos_pedidos'})
+            dados_in = corpo.get('dados') if isinstance(corpo.get('dados'), dict) else {}
+            dados = {}
+            for k, (t, n) in campos.items():
+                v = dados_in.get(k)
+                if v is None or v == '':
+                    continue
+                if t == 'int':
+                    try:
+                        v = int(float(v))
+                    except (TypeError, ValueError):
+                        continue
+                    if 0 <= v <= n:
+                        dados[k] = v
+                else:
+                    dados[k] = str(v).strip()[:n]
+            with ligar() as c:
+                c.execute('DELETE FROM pedidos WHERE criado<?', (int(time.time()) - 365 * 86400,))   # no máximo 12 meses (política de privacidade)
+                c.execute('INSERT INTO pedidos(tipo, email, dados, criado) VALUES(?,?,?,?)',
+                          (tipo, email, json.dumps(dados, ensure_ascii=False), int(time.time())))
+            resumo = '\n'.join('%s: %s' % (k, v) for k, v in dados.items())
+            for adm in ADMINS:
+                enviar_email(adm, 'Duplicasa: novo pedido (%s)' % PEDIDO_NOMES[tipo], 'E-mail: %s\n%s' % (email, resumo),
+                             '<pre style="font-family:system-ui,sans-serif;font-size:15px">' +
+                             ('E-mail: %s\n%s' % (email, resumo)).replace('&', '&amp;').replace('<', '&lt;') + '</pre>')
+            return self.responder(200, {'ok': True})
         if p == '/api/subscrever':          # pagar só com o e-mail, sem criar conta antes
             email = str(corpo.get('email') or '').strip().lower()
             plano = corpo.get('plano') if corpo.get('plano') in ('p30', 'p60', 'p90') else 'p30'
@@ -662,6 +761,7 @@ class API(BaseHTTPRequestHandler):
                         pass
                 c.execute('DELETE FROM alertas WHERE utilizador=?', (u['id'],))
                 c.execute('DELETE FROM sessoes WHERE utilizador=?', (u['id'],))
+                c.execute('DELETE FROM pedidos WHERE email=?', (u['email'],))
                 c.execute('DELETE FROM utilizadores WHERE id=?', (u['id'],))
                 return self.responder(200, {'ok': True}, [('Set-Cookie', COOKIE_APAGAR)])
         return self.responder(404, {'erro': 'nao_existe'})

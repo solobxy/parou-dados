@@ -51,7 +51,7 @@ PAUSA = 2.0
 PRECO_MIN, PRECO_MAX = 100, 20000   # fora disto o preço é claramente falso: mostra-se «sob consulta»
 
 pedidos = {'ok': 0, 'erro': 0}
-ESTADO_FONTES = {}     # resumo de cada site nesta volta (fica no início de lista.json, para se ver de fora)
+ESTADO_FONTES = {}     # resumo de cada site nesta volta (fica em estado-recolha.json, fora da parte pública)
 
 
 def obter(url, com_estado=False, pausa=None):
@@ -307,7 +307,8 @@ def escrever_leves(saida, lista):
     leve = []
     det = {}
     for a in lista:
-        l = {k: v for k, v in a.items() if k not in ('desc', 'titulo', 'visto', 'lido', 'gid') and v not in (None, '', False, [])}
+        # sem o link do anúncio original: esse só sai pela API, a quem tem o acesso (links.json, fora da parte pública)
+        l = {k: v for k, v in a.items() if k not in ('desc', 'titulo', 'visto', 'lido', 'gid', 'url') and v not in (None, '', False, [])}
         l['fotos'] = (a.get('fotos') or [])[:3]
         if a.get('visto'):
             l['visto'] = a['visto']
@@ -319,12 +320,19 @@ def escrever_leves(saida, lista):
         with open(os.path.join(pasta, 'det', f'{k}.json.tmp'), 'w', encoding='utf-8') as f:
             json.dump(det.get(k, {}), f, ensure_ascii=False, separators=(',', ':'))
         os.replace(os.path.join(pasta, 'det', f'{k}.json.tmp'), os.path.join(pasta, 'det', f'{k}.json'))
-    with open(os.path.join(pasta, 'lista.json.tmp'), 'w', encoding='utf-8') as f:
-        por_fonte = {}
-        for a in lista:
-            por_fonte[a.get('fonte')] = por_fonte.get(a.get('fonte'), 0) + 1
-        json.dump({'atualizado': agora_iso(), 'det': 64, 'por_site': por_fonte, 'recolha': ESTADO_FONTES, 'anuncios': leve}, f, ensure_ascii=False, separators=(',', ':'))
-    os.replace(os.path.join(pasta, 'lista.json.tmp'), os.path.join(pasta, 'lista.json'))
+    por_fonte = {}
+    for a in lista:
+        por_fonte[a.get('fonte')] = por_fonte.get(a.get('fonte'), 0) + 1
+    escrever_json(os.path.join(pasta, 'links.json'), {a['id']: a['url'] for a in lista if a.get('url')})
+    escrever_json(os.path.join(pasta, 'estado-recolha.json'), {'atualizado': agora_iso(), 'por_site': por_fonte, 'recolha': ESTADO_FONTES})
+    escrever_json(os.path.join(pasta, 'lista.json'), {'atualizado': agora_iso(), 'det': 64, 'anuncios': leve})
+
+
+def escrever_json(caminho, dados):
+    """Escreve ao lado e troca de uma vez (quem lê nunca apanha meio ficheiro)."""
+    with open(caminho + '.tmp', 'w', encoding='utf-8') as f:
+        json.dump(dados, f, ensure_ascii=False, separators=(',', ':'))
+    os.replace(caminho + '.tmp', caminho)
 
 
 def agora_iso():
@@ -517,7 +525,8 @@ def main():
     visto_velho = any((anterior.get(a['id'], {}).get('visto') or '') < meio_dia for a in lista if a.get('visto') == agora)
     if not (retirados or confirmados or n_extra or visto_velho) and [a['id'] for a in lista] == list(anterior.keys()) and all(sem_visto(a) == sem_visto(anterior[a['id']]) for a in lista):
         print('Sem alterações.')
-        if not os.path.exists(os.path.join(os.path.dirname(os.path.abspath(saida)), 'lista.json')):
+        pasta = os.path.dirname(os.path.abspath(saida))
+        if not os.path.exists(os.path.join(pasta, 'lista.json')) or not os.path.exists(os.path.join(pasta, 'links.json')):
             escrever_leves(saida, lista)
         return
     with open(saida + '.tmp', 'w', encoding='utf-8') as f:      # escreve ao lado e troca de uma vez (o site nunca lê meio ficheiro)

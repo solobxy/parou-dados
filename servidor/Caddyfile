@@ -151,10 +151,16 @@ www.jinxed.world {
 		header Cache-Control "public, max-age=1800"
 		file_server
 	}
+	# A lista completa (com os links dos anúncios originais) não é pública: o site usa lista.json, e os links
+	# saem um a um pela API, só para quem tem o acesso
 	handle /anuncios.json {
-		root * /var/lib/duaschaves-dados
-		header Cache-Control "no-cache"
-		file_server
+		respond 404
+	}
+	handle /links.json {
+		respond 404
+	}
+	handle /estado-recolha.json {
+		respond 404
 	}
 	# Lista leve para a pesquisa e detalhes por anúncio (escritos por recolher.py)
 	handle /lista.json {

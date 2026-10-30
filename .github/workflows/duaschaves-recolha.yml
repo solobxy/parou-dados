@@ -15,8 +15,8 @@ on:
         description: "Anúncios novos a abrir (descrição e fotos)"
         default: "80"
       guardar:
-        description: "sim = guardar no repositório; nao = só testar"
-        default: "sim"
+        description: "Já não se guarda no repositório (é público e a lista tem os links pagos). Fica só para testar."
+        default: "nao"
 
 permissions:
   contents: write
@@ -39,7 +39,7 @@ jobs:
           python3 duaschaves/recolher.py sites/duaschaves/anuncios.json 2>&1 | tee recolha.txt
           ls -la sites/duaschaves/
       - name: Guardar
-        if: ${{ (inputs.guardar || 'sim') == 'sim' }}
+        if: ${{ false }}   # nunca: o repositório é público e a lista completa tem os links dos anúncios originais
         run: |
           git config user.name "parou-dados"
           git config user.email "actions@users.noreply.github.com"
@@ -51,7 +51,7 @@ jobs:
         if: always()
         run: |
           mkdir pub && cp recolha.txt pub/ 2>/dev/null || echo "sem registo" > pub/recolha.txt
-          [ -f sites/duaschaves/anuncios.json ] && python3 -c "import json;d=json.load(open('sites/duaschaves/anuncios.json'));print(len(d['anuncios']),'anúncios');print(json.dumps(d['anuncios'][:2],ensure_ascii=False,indent=1)[:3000])" >> pub/recolha.txt
+          [ -f sites/duaschaves/anuncios.json ] && python3 -c "import json;d=json.load(open('sites/duaschaves/anuncios.json'));print(len(d['anuncios']),'anúncios');print('(exemplos omitidos: o ramo de resultados é público)')" >> pub/recolha.txt
           cd pub && git init -q -b duaschaves-recolha-resultado
           git config user.name "parou-dados"; git config user.email "actions@users.noreply.github.com"
           git add -A && git commit -q -m "Recolha $(date -u +%Y-%m-%dT%H:%MZ)"

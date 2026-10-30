@@ -5,4 +5,4 @@ Disallow: /anuncios.json
 Disallow: /lista.json
 Disallow: /det/
 
-Sitemap: https://duaschaves.pt/sitemap.xml
+Sitemap: https://duplicasa.pt/sitemap.xml
