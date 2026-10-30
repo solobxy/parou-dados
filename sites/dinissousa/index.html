@@ -348,7 +348,7 @@ footer a{min-height:44px;display:inline-flex;align-items:center}
           <p class="rv">Estúdio de body piercing do Adriano, que está a começar. Fiz o logótipo, a joia em 3D que roda no topo e o site, com preços à vista e marcação online.</p>
           <a class="btn btn-secondary rv" href="https://adribodypiercing.2-31-13-85.sslip.io" target="_blank" rel="noopener">Ver o site ↗</a>
         </div>
-        <div class="shot"><div class="phone rv"><video class="demo" muted loop playsinline preload="none" poster="vid/adri.webp" width="360" height="746" aria-label="Vídeo do site AdriBodyPiercing a ser usado"><source src="vid/adri.mp4" type="video/mp4"></video><button class="vplay" type="button" aria-label="Pausar vídeo"><svg viewBox="0 0 24 24" aria-hidden="true"><path class="i-pausa" d="M8 5v14M16 5v14"/><path class="i-play" d="M8 5l11 7-11 7z"/></svg></button></div></div>
+        <div class="shot"><div class="phone rv"><video class="demo" muted loop playsinline autoplay preload="none" disablepictureinpicture disableremoteplayback poster="vid/adri.webp" width="360" height="746" aria-label="Vídeo do site AdriBodyPiercing a ser usado"><source src="vid/adri.mp4" type="video/mp4"></video></div></div>
       </div>
     </article>
 
@@ -372,7 +372,7 @@ footer a{min-height:44px;display:inline-flex;align-items:center}
           <p class="rv">Marca de moda coquette. Fiz a marca, a loja e a direção das imagens das peças, com o preço a aparecer só quando se abre cada uma.</p>
           <a class="btn btn-secondary rv" href="https://anjinho.pt" target="_blank" rel="noopener">Visitar anjinho.pt ↗</a>
         </div>
-        <div class="shot"><div class="phone rv"><video class="demo" muted loop playsinline preload="none" poster="vid/anjinho.webp" width="360" height="746" aria-label="Vídeo da loja anjinho.pt a ser usada"><source src="vid/anjinho.mp4" type="video/mp4"></video><button class="vplay" type="button" aria-label="Pausar vídeo"><svg viewBox="0 0 24 24" aria-hidden="true"><path class="i-pausa" d="M8 5v14M16 5v14"/><path class="i-play" d="M8 5l11 7-11 7z"/></svg></button></div></div>
+        <div class="shot"><div class="phone rv"><video class="demo" muted loop playsinline autoplay preload="none" disablepictureinpicture disableremoteplayback poster="vid/anjinho.webp" width="360" height="746" aria-label="Vídeo da loja anjinho.pt a ser usada"><source src="vid/anjinho.mp4" type="video/mp4"></video></div></div>
       </div>
     </article>
 
@@ -396,7 +396,7 @@ footer a{min-height:44px;display:inline-flex;align-items:center}
           <p class="rv">Plataforma de arrendamento. Fiz o nome, a marca e o site: as casas dos principais sites num só lugar, com pagamento seguro.</p>
           <a class="btn btn-secondary rv" href="https://duplicasa.pt" target="_blank" rel="noopener">Visitar duplicasa.pt ↗</a>
         </div>
-        <div class="shot"><div class="phone rv"><video class="demo" muted loop playsinline preload="none" poster="vid/duplicasa.webp" width="360" height="746" aria-label="Vídeo do site Duplicasa a ser usado"><source src="vid/duplicasa.mp4" type="video/mp4"></video><button class="vplay" type="button" aria-label="Pausar vídeo"><svg viewBox="0 0 24 24" aria-hidden="true"><path class="i-pausa" d="M8 5v14M16 5v14"/><path class="i-play" d="M8 5l11 7-11 7z"/></svg></button></div></div>
+        <div class="shot"><div class="phone rv"><video class="demo" muted loop playsinline autoplay preload="none" disablepictureinpicture disableremoteplayback poster="vid/duplicasa.webp" width="360" height="746" aria-label="Vídeo do site Duplicasa a ser usado"><source src="vid/duplicasa.mp4" type="video/mp4"></video></div></div>
       </div>
     </article>
 
@@ -408,7 +408,7 @@ footer a{min-height:44px;display:inline-flex;align-items:center}
           <p class="rv">Assistente jurídico com IA para a lei portuguesa. Fiz a marca, a personagem e o site: contas o caso, ele lê os teus documentos e responde com o artigo da lei e a ligação ao Diário da República. Ainda está em testes.</p>
           <a class="btn btn-secondary rv" href="https://goodman.2-31-13-85.sslip.io" target="_blank" rel="noopener">Ver o site ↗</a>
         </div>
-        <div class="shot"><div class="phone rv"><video class="demo" muted loop playsinline preload="none" poster="vid/goodman.webp" width="360" height="746" aria-label="Vídeo do site Goodman a ser usado"><source src="vid/goodman.mp4" type="video/mp4"></video><button class="vplay" type="button" aria-label="Pausar vídeo"><svg viewBox="0 0 24 24" aria-hidden="true"><path class="i-pausa" d="M8 5v14M16 5v14"/><path class="i-play" d="M8 5l11 7-11 7z"/></svg></button></div></div>
+        <div class="shot"><div class="phone rv"><video class="demo" muted loop playsinline autoplay preload="none" disablepictureinpicture disableremoteplayback poster="vid/goodman.webp" width="360" height="746" aria-label="Vídeo do site Goodman a ser usado"><source src="vid/goodman.mp4" type="video/mp4"></video></div></div>
       </div>
     </article>
   </section>
@@ -596,26 +596,15 @@ footer a{min-height:44px;display:inline-flex;align-items:center}
     mostrar(0); ciclo();
   })();
 
-  /* Vídeos dos projetos: só tocam quando estão no ecrã; o botão pausa */
+  /* Vídeos dos projetos: começam sozinhos quando se aproximam do ecrã e param fora dele (poupa bateria e dados) */
   (function(){
     var vids=[].slice.call(document.querySelectorAll('video.demo'));
-    vids.forEach(function(v){
-      var b=v.parentNode.querySelector('.vplay'); v.dataset.parado='0';
-      b.addEventListener('click',function(){
-        var p=v.dataset.parado!=='1'; v.dataset.parado=p?'1':'0';
-        b.setAttribute('aria-pressed',p?'true':'false'); b.setAttribute('aria-label',p?'Tocar vídeo':'Pausar vídeo');
-        if(p) v.pause(); else { var pr=v.play(); if(pr&&pr.catch) pr.catch(function(){}); }
-      });
-    });
-    if(!('IntersectionObserver' in window)) return;
-    var io=new IntersectionObserver(function(es){
-      es.forEach(function(e){
-        var v=e.target;
-        if(e.isIntersecting&&v.dataset.parado!=='1'){ var pr=v.play(); if(pr&&pr.catch) pr.catch(function(){}); }
-        else v.pause();
-      });
-    },{threshold:.35});
-    vids.forEach(function(v){ io.observe(v); });
+    function tocar(v){ v.muted=true; var pr=v.play(); if(pr&&pr.catch) pr.catch(function(){}); }
+    vids.forEach(function(v){ v.addEventListener('click',function(){ if(v.paused) tocar(v); }); });
+    if(!('IntersectionObserver' in window)){ vids.forEach(function(v){ v.preload='auto'; tocar(v); }); return; }
+    var perto=new IntersectionObserver(function(es){ es.forEach(function(e){ if(e.isIntersecting){ e.target.preload='auto'; perto.unobserve(e.target); } }); },{rootMargin:'600px 0px'});
+    var io=new IntersectionObserver(function(es){ es.forEach(function(e){ if(e.isIntersecting) tocar(e.target); else e.target.pause(); }); },{threshold:.2});
+    vids.forEach(function(v){ perto.observe(v); io.observe(v); });
   })();
 
   /* Pré-visualização */
