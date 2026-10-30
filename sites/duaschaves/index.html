@@ -699,6 +699,10 @@ main:has(.barra-cta) .casa-grelha{padding-bottom:110px}
 .alertas strong{display:block;font-size:16px}
 .alertas span{font-size:14px;color:var(--texto3)}
 .blocos{display:flex;flex-direction:column;gap:16px}
+.termos h1+.ajuda{margin-top:-8px}
+.termos-ind{display:flex;flex-wrap:wrap;gap:8px;margin:20px 0 8px}.termos-ind button{border:0;cursor:pointer;font:inherit;display:inline-flex;align-items:center;min-height:40px;padding:0 14px;border-radius:999px;background:#fff;color:var(--tinta);text-decoration:none;font-weight:600;font-size:15px}
+.termos-parte{font-size:24px;margin:40px 0 4px;letter-spacing:-.01em;scroll-margin-top:90px}
+.termo{scroll-margin-top:90px;margin-top:24px}.termo h2{font-size:18px;margin:0 0 8px}.termo p,.termo li{margin:0 0 10px;line-height:1.6;color:var(--texto2);max-width:68ch}.termo ul{margin:0;padding-left:20px}.termo a{color:var(--verde)}
 .bloco{background:#fff;border-radius:18px;padding:20px;display:flex;flex-direction:column;gap:12px}
 .bloco h2{margin:0;font-size:20px;letter-spacing:-.01em}
 .bloco p{margin:0}
@@ -2646,12 +2650,78 @@ function vAjuda(){
   '</div>';
 }
 
+/* Identificação de quem presta o serviço (obrigatória num site que vende): preencher o NIF e a morada quando houver atividade aberta */
+var RESP={nome:'Dinis Sousa',nif:'',morada:'',email:'ola@duplicasa.pt'};
 function vTermos(){
   titulo('Termos e privacidade');
-  main.innerHTML='<div class="contentor estreito-m pag-simples">'+
+  var sec=function(id,t,ps){return '<section class="termo" id="'+id+'"><h2>'+t+'</h2>'+ps.map(function(x){return x.charAt(0)==='<'?x:'<p>'+x+'</p>';}).join('')+'</section>';};
+  var mail='<a href="mailto:'+RESP.email+'">'+RESP.email+'</a>';
+  var quem=esc(RESP.nome)+(RESP.nif?', NIF '+esc(RESP.nif):'')+(RESP.morada?', '+esc(RESP.morada):'');
+  main.innerHTML='<div class="contentor estreito-m pag-simples termos">'+
     '<h1 class="titulo" tabindex="-1">Termos e privacidade</h1>'+
-    '<div class="bloco"><p>[Texto a escrever antes do lançamento: termos de utilização, condições do acesso e da renovação, pagamento seguro e devoluções, política de privacidade e de cookies.]</p></div>'+
+    '<p class="ajuda">Última atualização: 30 de outubro de 2026</p>'+
+    '<nav class="termos-ind" aria-label="Nesta página"><button type="button" data-ir-sec="t-termos">Termos de utilização</button><button type="button" data-ir-sec="t-privacidade">Privacidade</button><button type="button" data-ir-sec="t-cookies">Cookies</button></nav>'+
+
+    '<h2 class="termos-parte" id="t-termos">Termos de utilização</h2>'+
+    sec('t-quem','Quem somos',['A Duplicasa é um serviço de '+quem+'. Para qualquer assunto, escreve para '+mail+'.'])+
+    sec('t-servico','O que a Duplicasa faz',[
+      'Juntamos num só lugar anúncios de casas e quartos para arrendar publicados noutros sites, e anúncios publicados diretamente na Duplicasa. Ver as casas é grátis.',
+      'Não somos uma imobiliária nem fazemos parte do contrato de arrendamento. Quem anuncia é responsável pelo anúncio. Os anúncios que vêm de outros sites não são verificados por nós e podem estar desatualizados, por isso confirma sempre os dados com quem anuncia antes de decidir.',
+      'Nunca pagues uma entrada sem ver a casa e sem saber com quem estás a falar. Se não tiveres a certeza, usa o pagamento seguro.'])+
+    sec('t-acesso','Acesso pago',[
+      'O acesso deixa-te contactar quem anuncia em todas as casas e receber alertas no momento em que aparece uma casa nova.',
+      'A primeira subscrição custa 1 € pelos primeiros 30 dias. Depois renova-se automaticamente por 9,99 € a cada 30 dias, até cancelares. Também há planos de 60 e 90 dias, com o preço que vês antes de pagar. Os preços que mostramos são finais.',
+      'Avisamos-te por e-mail 3 dias antes de cada renovação. Podes cancelar a qualquer momento na tua conta ou pelo link desse e-mail. Ao cancelar, continuas com acesso até ao fim do período que já pagaste e não voltas a ser cobrado.',
+      'Se uma cobrança falhar, o acesso fica suspenso até o pagamento ser feito.'])+
+    sec('t-resolucao','Desistir nos primeiros 14 dias',[
+      'Tens 14 dias depois da primeira subscrição para desistir, sem dares motivo. Basta escreveres para '+mail+' com o e-mail que usaste.',
+      'Como o acesso começa logo, a teu pedido, devolvemos a parte do valor que corresponde aos dias que faltam, no prazo de 14 dias e pelo mesmo meio de pagamento.'])+
+    sec('t-seguro','Pagamento seguro',[
+      'O pagamento seguro serve para pagares a entrada de uma casa sem correres o risco de burla: o dinheiro fica retido e só passa para o senhorio quando as duas partes confirmam a entrega das chaves.',
+      'O dinheiro não fica numa conta da Duplicasa: é guardado por uma instituição de pagamento autorizada. O serviço custa '+eur(TAXA)+' e só o pagas se arrendares. Se a casa não for entregue, o dinheiro volta para ti.'])+
+    sec('t-uso','Usar a Duplicasa',[
+      'Não podes usar a Duplicasa para publicar anúncios falsos, enganar outras pessoas, enviar publicidade não pedida a quem anuncia ou copiar o site com programas automáticos. Se isso acontecer, podemos suspender ou fechar a conta.',
+      'Deves dar dados verdadeiros e guardar a tua palavra-passe só para ti.'])+
+    sec('t-resp','Responsabilidade',[
+      'Fazemos tudo para que o site funcione bem e esteja atualizado, mas não respondemos pelo conteúdo dos anúncios de terceiros nem pelo que for combinado entre o senhorio e quem procura casa.',
+      'Nada nestes termos tira os direitos que a lei te dá como consumidor.'])+
+    sec('t-litigios','Reclamações e litígios',[
+      'Se tiveres uma reclamação, fala connosco primeiro em '+mail+'. Podes também usar o <a href="https://www.livroreclamacoes.pt" target="_blank" rel="noopener">Livro de Reclamações Eletrónico</a>.',
+      'Em caso de litígio, podes recorrer a uma entidade de resolução alternativa de litígios de consumo, como o <a href="https://www.cniacc.pt" target="_blank" rel="noopener">CNIACC</a> (Centro Nacional de Informação e Arbitragem de Conflitos de Consumo). Aplica-se a lei portuguesa.'])+
+    sec('t-mudancas','Mudanças nestes termos',[
+      'Se mudarmos o preço ou as condições do acesso, avisamos por e-mail pelo menos 30 dias antes. Se não concordares, podes cancelar antes da mudança.'])+
+
+    '<h2 class="termos-parte" id="t-privacidade">Política de privacidade</h2>'+
+    sec('p-resp','Responsável',['O responsável pelos teus dados é '+quem+'. Contacto: '+mail+'.'])+
+    sec('p-dados','Que dados guardamos',[
+      '<ul>'+
+        '<li><strong>Sem conta:</strong> as tuas pesquisas, zonas, filtros e casas vistas ficam só no teu dispositivo, não no nosso servidor.</li>'+
+        '<li><strong>Estatísticas:</strong> contamos visitas e pesquisas sem cookies. Cada visitante recebe um código que muda todos os dias, por isso não conseguimos seguir ninguém de um dia para o outro. O endereço IP não fica guardado: só é usado durante alguns minutos para travar abusos, como tentativas repetidas de entrar numa conta.</li>'+
+        '<li><strong>Conta:</strong> e-mail, palavra-passe (guardada cifrada, nunca a conseguimos ler), alertas, casas guardadas e preferências.</li>'+
+        '<li><strong>Perfil (opcional):</strong> nome, idade, género, emprego, foto, cidade, o que procuras e descrição. Só preenches o que quiseres.</li>'+
+        '<li><strong>Entrar com Google ou Facebook:</strong> recebemos o teu nome e e-mail. Nada é publicado em teu nome.</li>'+
+        '<li><strong>Acesso pago:</strong> e-mail, plano, datas e estado dos pagamentos. Os dados do cartão ou do MB WAY ficam no serviço de pagamentos e nunca passam por nós.</li>'+
+        '<li><strong>Pagamento seguro:</strong> os dados do pedido, incluindo o contacto de quem anuncia que tu nos dás.</li>'+
+      '</ul>'])+
+    sec('p-fins','Para que os usamos',[
+      '<ul>'+
+        '<li>Para prestar o serviço que pediste: conta, alertas, acesso e pagamento seguro.</li>'+
+        '<li>Para perceber, com números agregados, o que funciona no site e melhorá-lo.</li>'+
+        '<li>Para te enviar novidades e ofertas, só se aceitares na conta. Se fores cliente do acesso, podemos enviar ofertas de serviços parecidos; podes recusar quando pagas e em cada e-mail.</li>'+
+        '<li>Para cumprir a lei, por exemplo guardar os dados de faturação.</li>'+
+      '</ul>'])+
+    sec('p-partilha','Com quem partilhamos',[
+      'Só com os serviços de que precisamos para funcionar: o alojamento do site (servidores na União Europeia), o envio de e-mails, o serviço de pagamentos e, se os usares para entrar, a Google e a Facebook. Quando algum destes serviços trata dados fora da União Europeia, fá-lo com as garantias previstas no RGPD. Não vendemos os teus dados.',
+      'As fotos dos anúncios são carregadas a partir dos servidores onde estão publicadas. Para as mostrar, o teu navegador liga-se a esses servidores, sem lhes dizer de que página vens.'])+
+    sec('p-tempo','Durante quanto tempo',[
+      'Os dados da conta ficam até a apagares. As estatísticas são apagadas ao fim de 400 dias. Os dados de faturação são guardados durante o prazo que a lei exige.'])+
+    sec('p-direitos','Os teus direitos',[
+      'Podes ver, corrigir, levar ou apagar os teus dados, e opor-te ao seu uso para marketing. Apagas a conta com um toque na página da conta; para o resto, escreve para '+mail+'.',
+      'Se achares que não tratámos bem os teus dados, podes queixar-te à <a href="https://www.cnpd.pt" target="_blank" rel="noopener">CNPD</a> (Comissão Nacional de Proteção de Dados).'])+
+    sec('t-cookies','Cookies',[
+      'Usamos apenas os cookies necessários para o site funcionar: um para manter a sessão iniciada (dura 30 dias) e outro para reconhecer o acesso pago neste dispositivo. Também guardamos as tuas preferências no próprio dispositivo. Não usamos cookies de publicidade nem de rastreio, por isso não te pedimos autorização.'])+
   '</div>';
+  [].forEach.call(main.querySelectorAll('[data-ir-sec]'),function(x){x.addEventListener('click',function(){var el=document.getElementById(x.getAttribute('data-ir-sec'));if(el)el.scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'});});});
 }
 
 function mensagemConvite(p){
