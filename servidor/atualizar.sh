@@ -118,6 +118,24 @@ if [ -f "$GM/index.html" ] && ! diff -rq "$GM" /var/www/goodman >/dev/null 2>&1;
     && mv /var/www/goodman.novo /var/www/goodman && rm -rf /var/www/goodman.velho
 fi
 
+# AdriBodyPiercing: agenda (API em 127.0.0.1:3120, atrás do Caddy). A password fica só como hash em
+# /etc/adri-agenda/agenda.env, fora do repositório (posta lá pelo servidor.yml, acao=chaves-adri).
+if [ -f "$SERV/adri-agenda.service" ] && [ -f "$BASE/servidor/adri/agenda.py" ]; then
+  install -d -m 750 -o root -g parou /etc/adri-agenda
+  if [ ! -f /etc/adri-agenda/agenda.env ]; then
+    printf 'ORIGENS=https://adribodypiercing.pt https://www.adribodypiercing.pt https://adribodypiercing.2-31-13-85.sslip.io\n' > /etc/adri-agenda/agenda.env
+    chown root:parou /etc/adri-agenda/agenda.env && chmod 640 /etc/adri-agenda/agenda.env
+  fi
+  if ! cmp -s "$SERV/adri-agenda.service" /etc/systemd/system/adri-agenda.service; then
+    cp "$SERV/adri-agenda.service" /etc/systemd/system/adri-agenda.service && systemctl daemon-reload
+  fi
+  systemctl is-enabled --quiet adri-agenda.service 2>/dev/null || systemctl enable --now adri-agenda.service >/dev/null 2>&1
+  V=$( { sha256sum "$BASE/servidor/adri/agenda.py" /etc/adri-agenda/agenda.env 2>/dev/null; } | sha256sum | cut -c1-16)
+  if [ "$(cat /etc/adri-agenda/versao 2>/dev/null)" != "$V" ]; then
+    systemctl restart adri-agenda.service && echo "$V" > /etc/adri-agenda/versao
+  fi
+fi
+
 # Duas Chaves: site estático (protótipo) que vive neste repositório, em sites/duaschaves.
 # Copia só quando mudou, para uma pasta nova, e troca de uma vez (nunca fica meio copiado).
 DC=$BASE/servidor/sites/duaschaves

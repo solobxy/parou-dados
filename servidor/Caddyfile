@@ -294,7 +294,22 @@ www.dinissousa.pt {
 	header @pagina Cache-Control "no-cache"
 	@manifesto path /manifest.webmanifest
 	header @manifesto Content-Type "application/manifest+json"
-	file_server
+	# Página do Adriano (agenda): fora dos motores de busca e sem guardar em cache
+	@adminagenda path /adri-agenda-k7q2 /adri-agenda-k7q2/*
+	header @adminagenda {
+		Cache-Control "no-store"
+		X-Robots-Tag "noindex, nofollow"
+	}
+	# Agenda de marcações (adri/agenda.py)
+	handle /api/* {
+		request_body {
+			max_size 8KB
+		}
+		reverse_proxy 127.0.0.1:3120
+	}
+	handle {
+		file_server
+	}
 	# Página 404 com a marca (em vez da página vazia do servidor)
 	handle_errors {
 		root * /var/www/adribodypiercing

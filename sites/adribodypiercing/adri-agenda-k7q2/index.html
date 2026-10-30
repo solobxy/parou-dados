@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="no-referrer">
+<meta name="theme-color" content="#0E0C0B">
+<title>Agenda — AdriBodyPiercing</title>
+<link rel="icon" href="/apple-touch-icon.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<style>
+@font-face{font-family:"Bricolage Grotesque";src:url(/fonts/bricolage.woff) format("woff");font-weight:200 800;font-display:swap}
+@font-face{font-family:"Figtree";src:url(/fonts/figtree.woff) format("woff");font-weight:300 900;font-display:swap}
+:root{--noite:#0E0C0B;--noite-2:#171513;--noite-3:#211E1B;--osso:#EEE8DF;--osso-2:#E4DCD0;--osso-3:#D8CEBF;--tinta:#141210;--sec:#BDB5A9;--sec-c:#4D463E;--ouro:#D9B676;--verde:#2F8F4E;--ambar:#C98A1E;--verm:#B3261E;
+  --serif:"Bricolage Grotesque",system-ui,sans-serif;--sans:"Figtree",system-ui,sans-serif;--ease:cubic-bezier(.2,.7,.2,1);color-scheme:dark}
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--noite);color:var(--osso);font:400 16px/1.5 var(--sans);-webkit-font-smoothing:antialiased;min-height:100svh}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer;touch-action:manipulation}
+:focus-visible{outline:3px solid var(--ouro);outline-offset:2px;border-radius:6px}
+[hidden]{display:none!important}
+h1,h2,h3{font-family:var(--serif);margin:0;letter-spacing:-.02em}
+.wrap{max-width:860px;margin:0 auto;padding:0 max(16px,env(safe-area-inset-left)) calc(40px + env(safe-area-inset-bottom))}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:48px;padding:0 20px;border:0;border-radius:999px;background:var(--ouro);color:var(--tinta);font-weight:600;text-decoration:none;white-space:nowrap;transition:transform .15s var(--ease),background-color .2s}
+.btn:active{transform:scale(.97)}
+.btn.esc{background:var(--noite-3);color:var(--osso)}
+.btn.osso{background:var(--osso);color:var(--tinta)}
+.btn.verm{background:#3a1d1a;color:#ffd9d2}
+.btn.peq{min-height:40px;padding:0 14px;font-size:14px}
+.btn:disabled{opacity:.5;cursor:wait}
+.btn svg{width:18px;height:18px}
+/* entrar */
+.entrar{min-height:100svh;display:grid;place-items:center;padding:24px}
+.entrar form{width:min(100%,380px);text-align:center}
+.entrar .m{width:84px;margin:0 auto 22px}
+.entrar h1{font-size:30px;margin-bottom:6px}
+.entrar p{color:var(--sec);margin:0 0 24px}
+.campo{display:grid;gap:6px;text-align:left;margin-bottom:14px}
+.campo label{font-weight:600;font-size:14px}
+input,select,textarea{width:100%;min-height:50px;padding:12px 14px;border-radius:12px;border:2px solid transparent;background:var(--noite-3);color:var(--osso)}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--ouro)}
+textarea{min-height:80px;resize:vertical}
+.erro{color:#ffb4a8;font-weight:600;font-size:14px;margin:4px 0 12px}
+/* topo */
+.topo{position:sticky;top:0;z-index:20;background:var(--noite);padding:calc(10px + env(safe-area-inset-top)) 0 0}
+.topo .linha{display:flex;align-items:center;gap:12px;padding:6px 0 12px}
+.topo .m{width:34px;height:34px;background:var(--noite-3);border-radius:10px;padding:4px}
+.topo h1{font-size:22px;margin-right:auto}
+.tabs{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;padding-bottom:12px}
+.tabs::-webkit-scrollbar{display:none}
+.tabs button{flex:none;min-height:42px;padding:0 16px;border-radius:999px;border:0;background:var(--noite-3);color:var(--osso);font-weight:600;font-size:15px;display:inline-flex;align-items:center;gap:8px}
+.tabs button[aria-selected="true"]{background:var(--osso);color:var(--tinta)}
+.tabs .n{min-width:22px;height:22px;padding:0 6px;border-radius:999px;background:var(--ouro);color:var(--tinta);font-size:13px;display:inline-grid;place-items:center}
+/* listas */
+.dia-t{font-family:var(--serif);font-weight:600;font-size:18px;margin:26px 0 10px;color:var(--sec)}
+.vazio{color:var(--sec);padding:30px 0;text-align:center}
+.card{background:var(--noite-2);border-radius:20px;padding:18px;margin-bottom:10px;animation:entra .35s var(--ease)}
+@keyframes entra{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.card .cab{display:flex;align-items:flex-start;gap:14px}
+.hora{flex:none;min-width:74px;text-align:center;background:var(--noite-3);border-radius:14px;padding:8px 6px}
+.hora b{display:block;font-family:var(--serif);font-size:22px;line-height:1.1}
+.hora span{font-size:12px;color:var(--sec)}
+.card h3{font-size:19px}
+.card .serv{color:var(--osso);margin-top:2px}
+.card .mini{color:var(--sec);font-size:14px;margin-top:4px}
+.pill{display:inline-flex;align-items:center;gap:6px;padding:3px 10px;border-radius:999px;background:var(--noite-3);font-size:13px;font-weight:600;margin-top:8px}
+.pill i{width:8px;height:8px;border-radius:50%;background:var(--ambar)}
+.pill.confirmada i{background:var(--verde)}.pill.recusada i,.pill.cancelada i,.pill.faltou i{background:var(--verm)}.pill.concluida i{background:var(--sec)}
+.notas{margin-top:12px;padding:10px 12px;border-radius:12px;background:var(--noite-3);font-size:14px;white-space:pre-wrap}
+.acoes{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+.contacto{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.aviso{margin-top:12px;padding:12px;border-radius:14px;background:#1f2a1f;display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between}
+.aviso p{margin:0;font-size:14px}
+details.hist{margin-top:10px;font-size:13px;color:var(--sec)}
+details.hist ul{margin:6px 0 0;padding-left:18px}
+/* formulários */
+.painel{background:var(--noite-2);border-radius:20px;padding:18px;margin-top:16px}
+.servs{display:flex;flex-wrap:wrap;gap:6px}
+.servs label{display:inline-flex;align-items:center;gap:6px;min-height:40px;padding:0 12px;border-radius:999px;background:var(--noite-3);font-size:14px;cursor:pointer}
+.servs input{width:auto;min-height:0;accent-color:var(--ouro)}
+.horas{display:grid;grid-template-columns:repeat(auto-fill,minmax(80px,1fr));gap:6px}
+.horas button{min-height:44px;border-radius:10px;border:0;background:var(--noite-3);color:var(--osso);font-weight:600}
+.horas button[aria-pressed="true"]{background:var(--osso);color:var(--tinta)}
+.horas button:disabled{opacity:.35;text-decoration:line-through;cursor:not-allowed}
+.duas{display:grid;grid-template-columns:1fr 1fr;gap:0 12px}
+@media (max-width:520px){.duas{grid-template-columns:1fr}}
+.blq{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 0}
+.blq+.blq{border-top:1px solid var(--noite-3)}
+dialog{border:0;padding:0;background:transparent;color:var(--osso);width:min(520px,calc(100vw - 20px));max-height:calc(100dvh - 20px)}
+dialog::backdrop{background:rgba(0,0,0,.7)}
+.dlg{background:var(--noite-2);border-radius:22px;padding:20px;max-height:calc(100dvh - 20px);overflow:auto}
+.dlg h2{font-size:22px;margin-bottom:12px}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom));transform:translate(-50%,20px);opacity:0;background:var(--osso);color:var(--tinta);padding:12px 18px;border-radius:999px;font-weight:600;transition:.3s var(--ease);z-index:50;pointer-events:none;max-width:calc(100vw - 32px);text-align:center}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+</style>
+</head>
+<body>
+<section class="entrar" id="vEntrar" hidden>
+  <form id="fEntrar" autocomplete="on">
+    <div class="m"><svg xmlns="http://www.w3.org/2000/svg" viewBox="-227 -880 1100 1100" aria-hidden="true" focusable="false"><g class="bar" fill="#D9B676"><rect x="-64" y="-245.0" width="776" height="66" rx="33.0"/><circle cx="-64" cy="-212" r="60"/><circle cx="712" cy="-212" r="60"/></g><g fill="currentColor" transform="translate(0.0 0.0) scale(1 -1)"><path transform="translate(0.0 0)" d="M5 0 230 660H418L641 0H485L325 542H320L160 0Z"/></g></svg></div>
+    <h1>Agenda do Adriano</h1>
+    <p>Escreve a password para ver e gerir as marcações.</p>
+    <div class="campo"><label for="senha">Password</label><input id="senha" type="password" autocomplete="current-password" required></div>
+    <p class="erro" id="eEntrar" role="alert" hidden></p>
+    <button class="btn" style="width:100%" id="bEntrar">Entrar</button>
+  </form>
+</section>
+
+<div id="vApp" hidden>
+  <header class="topo"><div class="wrap" style="padding-bottom:0">
+    <div class="linha"><div class="m"><svg xmlns="http://www.w3.org/2000/svg" viewBox="-227 -880 1100 1100" aria-hidden="true" focusable="false"><g class="bar" fill="#D9B676"><rect x="-64" y="-245.0" width="776" height="66" rx="33.0"/><circle cx="-64" cy="-212" r="60"/><circle cx="712" cy="-212" r="60"/></g><g fill="currentColor" transform="translate(0.0 0.0) scale(1 -1)"><path transform="translate(0.0 0)" d="M5 0 230 660H418L641 0H485L325 542H320L160 0Z"/></g></svg></div><h1>Agenda</h1><button class="btn esc peq" id="bAtualizar" aria-label="Atualizar">Atualizar</button><button class="btn esc peq" id="bSair">Sair</button></div>
+    <nav class="tabs" role="tablist">
+      <button role="tab" data-v="pedidos" aria-selected="true">Pedidos <span class="n" id="nPed">0</span></button>
+      <button role="tab" data-v="agenda" aria-selected="false">Agenda</button>
+      <button role="tab" data-v="nova" aria-selected="false">Nova marcação</button>
+      <button role="tab" data-v="bloqueios" aria-selected="false">Bloquear dias</button>
+      <button role="tab" data-v="historico" aria-selected="false">Histórico</button>
+    </nav>
+  </div></header>
+  <main class="wrap" id="conteudo"></main>
+</div>
+
+<dialog id="dlg"><div class="dlg" id="dlgCx"></div></dialog>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(function(){
+'use strict';
+var WA_NUM = '351910000000';
+var $ = function(s, c){ return (c || document).querySelector(s); };
+var $$ = function(s, c){ return Array.prototype.slice.call((c || document).querySelectorAll(s)); };
+var dados = {marcacoes:[], pendentes:0, servicos:{}}, vista = 'pedidos', avisos = {};
+var fmtDia = new Intl.DateTimeFormat('pt-PT', {weekday:'long', day:'numeric', month:'long'});
+var fmtCurto = new Intl.DateTimeFormat('pt-PT', {weekday:'short', day:'numeric', month:'short'});
+var eur = new Intl.NumberFormat('pt-PT', {style:'currency', currency:'EUR'});
+function dParse(s){ var p = s.split('-'); return new Date(+p[0], +p[1] - 1, +p[2]); }
+function cap(s){ return s.charAt(0).toUpperCase() + s.slice(1); }
+function hojeISO(){ var d = new Date(); return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0'); }
+function esc(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+function toast(t){ var el = $('#toast'); el.textContent = t; el.classList.add('on'); clearTimeout(toast.t); toast.t = setTimeout(function(){ el.classList.remove('on'); }, 2600); }
+function api(m, url, corpo){
+  return fetch('/api' + url, {method:m, credentials:'same-origin', cache:'no-store', headers: corpo ? {'Content-Type':'application/json'} : {}, body: corpo ? JSON.stringify(corpo) : undefined})
+    .then(function(r){ return r.json().catch(function(){ return {}; }).then(function(j){
+      if (r.status === 401 && url !== '/admin/entrar'){ mostrarEntrar(); throw {s:401, j:j}; }
+      if (!r.ok) throw {s:r.status, j:j}; return j; }); });
+}
+function primeiro(n){ return String(n || '').split(' ')[0]; }
+function wa(tel, msg){ return 'https://wa.me/351' + tel + '?text=' + encodeURIComponent(msg); }
+function quando(m){ return fmtDia.format(dParse(m.data)) + ', às ' + m.hora.replace(':', 'h'); }
+function mensagem(m, tipo){
+  var n = primeiro(m.nome), q = quando(m), s = m.servicos.join(', ');
+  if (tipo === 'aprovar') return 'Olá ' + n + '! A tua marcação no AdriBodyPiercing está confirmada: ' + s + ', ' + q + '. Qualquer dúvida, diz. Até já! Adriano';
+  if (tipo === 'recusar') return 'Olá ' + n + '! Infelizmente não consigo fazer a marcação de ' + q + '.' + (m.motivo ? ' ' + m.motivo : '') + ' Queres escolher outro dia no site? Adriano';
+  if (tipo === 'reagendar') return 'Olá ' + n + '! Mudei a tua marcação (' + s + ') para ' + q + '. Se não der jeito, diz-me e vemos outra hora. Adriano';
+  if (tipo === 'cancelar') return 'Olá ' + n + '! A marcação de ' + q + ' foi cancelada.' + (m.motivo ? ' ' + m.motivo : '') + ' Adriano';
+  return 'Olá ' + n + '! Sobre a tua marcação de ' + q + '…';
+}
+var ICON_WA = "<svg viewBox=\"0 0 24 24\" fill=\"currentColor\" aria-hidden=\"true\"><path d=\"M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm0 18.2a8.2 8.2 0 0 1-4.2-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2z\"/><path d=\"M16.6 14.1c-.3-.1-1.6-.8-1.8-.9-.3-.1-.4-.1-.6.1l-.8 1c-.2.2-.3.2-.6.1a6.7 6.7 0 0 1-3.3-2.9c-.3-.4.2-.4.6-1.3.1-.2 0-.3 0-.4l-.8-1.9c-.2-.5-.4-.4-.6-.4h-.5c-.2 0-.4.1-.7.3-.2.3-.9.9-.9 2.2s.9 2.5 1 2.7c.1.2 1.8 2.8 4.4 3.9 1.6.7 2.3.8 3.1.6.5-.1 1.6-.6 1.8-1.3.2-.6.2-1.2.2-1.3-.1-.1-.3-.2-.5-.3z\"/></svg>";
+
+/* ---------- entrar e sair ---------- */
+function mostrarEntrar(){ $('#vApp').hidden = true; $('#vEntrar').hidden = false; setTimeout(function(){ $('#senha').focus(); }, 50); }
+function mostrarApp(){ $('#vEntrar').hidden = true; $('#vApp').hidden = false; carregar(); }
+$('#fEntrar').addEventListener('submit', function(e){
+  e.preventDefault(); var b = $('#bEntrar'), er = $('#eEntrar'); b.disabled = true; er.hidden = true;
+  api('POST', '/admin/entrar', {senha:$('#senha').value}).then(function(){ $('#senha').value = ''; mostrarApp(); }, function(x){
+    er.textContent = x.s === 429 ? 'Demasiadas tentativas. Espera 15 minutos e tenta outra vez.' : 'Password errada.'; er.hidden = false; $('#senha').select();
+  }).then(function(){ b.disabled = false; });
+});
+$('#bSair').addEventListener('click', function(){ api('POST', '/admin/sair', {}).catch(function(){}).then(mostrarEntrar); });
+$('#bAtualizar').addEventListener('click', function(){ carregar(true); });
+
+/* ---------- dados ---------- */
+function carregar(avisar){
+  return api('GET', '/admin/marcacoes').then(function(j){
+    dados = j; $('#nPed').textContent = j.pendentes; $('#nPed').hidden = !j.pendentes;
+    document.title = (j.pendentes ? '(' + j.pendentes + ') ' : '') + 'Agenda — AdriBodyPiercing';
+    if (vista !== 'nova' && vista !== 'bloqueios') desenhar();
+    if (avisar) toast('Atualizado.');
+  }).catch(function(){});
+}
+setInterval(function(){ if (!$('#vApp').hidden && !$('#dlg').open && vista !== 'nova') carregar(); }, 60000);
+
+$$('.tabs button').forEach(function(t){ t.addEventListener('click', function(){
+  vista = t.dataset.v; $$('.tabs button').forEach(function(x){ x.setAttribute('aria-selected', x === t); }); desenhar(); window.scrollTo(0, 0);
+}); });
+
+/* ---------- vistas ---------- */
+function desenhar(){
+  var c = $('#conteudo'), h = hojeISO(), ms = dados.marcacoes;
+  if (vista === 'nova') return novaMarcacao(c);
+  if (vista === 'bloqueios') return bloqueios(c);
+  var lista, vazio;
+  if (vista === 'pedidos'){ lista = ms.filter(function(m){ return m.estado === 'pendente' && m.data >= h; }); vazio = 'Não há pedidos à espera. Quando alguém marcar no site, aparece aqui.'; }
+  else if (vista === 'agenda'){ lista = ms.filter(function(m){ return (m.estado === 'confirmada' || m.estado === 'pendente') && m.data >= h; }); vazio = 'Ainda não há marcações daqui para a frente.'; }
+  else { lista = ms.filter(function(m){ return m.data < h || ['recusada','cancelada','concluida','faltou'].indexOf(m.estado) >= 0; }).reverse(); vazio = 'O histórico está vazio.'; }
+  if (!lista.length){ c.innerHTML = '<p class="vazio">' + vazio + '</p>'; return; }
+  var html = '', dia = '';
+  lista.forEach(function(m){
+    if (m.data !== dia){ dia = m.data; html += '<h2 class="dia-t">' + cap(fmtDia.format(dParse(m.data))) + (m.data === h ? ' (hoje)' : '') + '</h2>'; }
+    html += cartao(m);
+  });
+  c.innerHTML = html;
+  ligarCartoes(c);
+}
+var NOMES_EST = {pendente:'À espera', confirmada:'Confirmada', recusada:'Recusada', cancelada:'Cancelada', concluida:'Feita', faltou:'Faltou'};
+function cartao(m){
+  var ac = [];
+  if (m.estado === 'pendente') ac.push('<button class="btn peq" data-a="aprovar">Aprovar</button>', '<button class="btn osso peq" data-a="reagendar">Reagendar</button>', '<button class="btn verm peq" data-a="recusar">Recusar</button>');
+  if (m.estado === 'confirmada'){
+    if (m.data <= hojeISO()) ac.push('<button class="btn peq" data-a="concluir">Feita</button>', '<button class="btn esc peq" data-a="faltou">Faltou</button>');
+    ac.push('<button class="btn osso peq" data-a="reagendar">Reagendar</button>', '<button class="btn verm peq" data-a="cancelar">Cancelar</button>');
+  }
+  if (['recusada','cancelada','faltou','concluida'].indexOf(m.estado) >= 0 && m.data >= hojeISO()) ac.push('<button class="btn esc peq" data-a="reabrir">Voltar a abrir</button>');
+  var av = avisos[m.id];
+  return '<article class="card" data-id="' + m.id + '">' +
+    '<div class="cab"><div class="hora"><b>' + m.hora.replace(':', 'h') + '</b><span>' + esc(fmtCurto.format(dParse(m.data))) + '</span></div>' +
+    '<div style="min-width:0"><h3>' + esc(m.nome) + '</h3><div class="serv">' + esc(m.servicos.join(', ')) + '</div>' +
+    '<div class="mini">' + eur.format(m.total) + (m.origem === 'adriano' ? ' · marcada por ti' : ' com 10 % online') + '</div>' +
+    '<span class="pill ' + m.estado + '"><i></i>' + NOMES_EST[m.estado] + '</span>' + (m.motivo ? '<div class="mini">Motivo: ' + esc(m.motivo) + '</div>' : '') + '</div></div>' +
+    (m.notas ? '<div class="notas">' + esc(m.notas) + '</div>' : '') +
+    '<div class="contacto"><a class="btn esc peq" href="tel:+351' + m.tel + '">Ligar ' + m.tel.replace(/(\d{3})(\d{3})(\d{3})/, '$1 $2 $3') + '</a><a class="btn esc peq" target="_blank" rel="noopener" href="' + wa(m.tel, mensagem(m, '')) + '">' + ICON_WA + ' WhatsApp</a></div>' +
+    (av ? '<div class="aviso"><p>Avisa ' + esc(primeiro(m.nome)) + ' do que mudou.</p><a class="btn peq" target="_blank" rel="noopener" href="' + wa(m.tel, mensagem(m, av)) + '" data-avisado="' + m.id + '">' + ICON_WA + ' Avisar no WhatsApp</a></div>' : '') +
+    (ac.length ? '<div class="acoes">' + ac.join('') + '</div>' : '') +
+    '<details class="hist"><summary>Histórico do pedido</summary><ul>' + m.historico.map(function(x){ return '<li>' + new Date(x.t * 1000).toLocaleString('pt-PT', {dateStyle:'short', timeStyle:'short'}) + ': ' + esc(x.o) + '</li>'; }).join('') + '</ul></details>' +
+    '</article>';
+}
+function ligarCartoes(c){
+  $$('[data-avisado]', c).forEach(function(x){ x.addEventListener('click', function(){ delete avisos[+x.dataset.avisado]; setTimeout(desenhar, 300); }); });
+  $$('[data-a]', c).forEach(function(b){ b.addEventListener('click', function(){
+    var id = +b.closest('.card').dataset.id, m = dados.marcacoes.filter(function(x){ return x.id === id; })[0], a = b.dataset.a;
+    if (a === 'reagendar') return dlgReagendar(m);
+    if (a === 'recusar' || a === 'cancelar') return dlgMotivo(m, a);
+    acao(m, a, {}, b);
+  }); });
+}
+function acao(m, a, extra, botao){
+  if (botao) botao.disabled = true;
+  var corpo = Object.assign({acao:a}, extra || {});
+  return api('POST', '/admin/marcacoes/' + m.id + '/acao', corpo).then(function(novo){
+    if (['aprovar','recusar','reagendar','cancelar'].indexOf(a) >= 0) avisos[m.id] = a;
+    var txt = {aprovar:'Aprovada.', recusar:'Recusada.', reagendar:'Reagendada.', cancelar:'Cancelada.', concluir:'Marcada como feita.', faltou:'Marcada como falta.', reabrir:'Voltou a ficar à espera.'}[a];
+    $('#dlg').open && $('#dlg').close();
+    return carregar().then(function(){ if (avisos[m.id] === a) dlgAvisar(novo, a, txt); else toast(txt); });
+  }, function(x){
+    if (botao) botao.disabled = false;
+    toast(x.j && x.j.erro === 'hora_ocupada' ? 'Essa hora já está ocupada. Escolhe outra.' : x.j && x.j.erro === 'estado' ? 'Este pedido já mudou. Atualizei a lista.' : 'Não deu. Tenta outra vez.');
+    if (x.j && x.j.erro === 'estado') carregar();
+    throw x;
+  });
+}
+
+/* ---------- janelas ---------- */
+function dlgAvisar(m, tipo, titulo){
+  abrirDlg('<h2>' + titulo + '</h2><p style="color:var(--sec);margin:0 0 16px">Avisa ' + esc(primeiro(m.nome)) + ' no WhatsApp. A mensagem já vai escrita, podes mudá-la antes de enviar.</p>' +
+    '<div class="acoes"><a class="btn" target="_blank" rel="noopener" data-fechar id="dWa" href="' + wa(m.tel, mensagem(m, tipo)) + '">' + ICON_WA + ' Avisar no WhatsApp</a><button class="btn esc" data-fechar>Agora não</button></div>');
+  $('#dWa').addEventListener('click', function(){ delete avisos[m.id]; setTimeout(desenhar, 300); });
+}
+function abrirDlg(html){ $('#dlgCx').innerHTML = html; $('#dlg').showModal(); $$('[data-fechar]', $('#dlg')).forEach(function(b){ b.addEventListener('click', function(){ $('#dlg').close(); }); }); }
+$('#dlg').addEventListener('click', function(e){ if (e.target === $('#dlg')) $('#dlg').close(); });
+function dlgMotivo(m, a){
+  var t = a === 'recusar' ? 'Recusar o pedido' : 'Cancelar a marcação';
+  abrirDlg('<h2>' + t + '</h2><p style="color:var(--sec);margin:0 0 12px">' + esc(m.nome) + ', ' + quando(m) + '.</p>' +
+    '<div class="campo"><label for="mot">Motivo (opcional, vai na mensagem ao cliente)</label><textarea id="mot" maxlength="300" placeholder="Ex.: Nesse dia não estou no estúdio."></textarea></div>' +
+    '<div class="acoes"><button class="btn verm" id="dOk">' + (a === 'recusar' ? 'Recusar' : 'Cancelar marcação') + '</button><button class="btn esc" data-fechar>Voltar</button></div>');
+  $('#dOk').addEventListener('click', function(){ acao(m, a, {motivo:$('#mot').value}, $('#dOk')).catch(function(){}); });
+}
+function horasDe(data, alvo, atual){
+  alvo.innerHTML = '<p style="color:var(--sec)">A ver horas…</p>';
+  return api('GET', '/admin/disponibilidade?de=' + data + '&dias=1').then(function(j){
+    var o = j.dias[data];
+    if (!o){ alvo.innerHTML = '<p style="color:var(--sec)">O estúdio está fechado nesse dia.</p>'; return; }
+    alvo.innerHTML = '<div class="horas">' + Object.keys(o).map(function(h){ var livre = o[h] || (atual && atual.data === data && atual.hora === h); return '<button type="button" data-h="' + h + '" aria-pressed="false"' + (livre ? '' : ' disabled') + '>' + h.replace(':', 'h') + '</button>'; }).join('') + '</div>';
+    $$('button', alvo).forEach(function(b){ b.addEventListener('click', function(){ $$('button', alvo).forEach(function(x){ x.setAttribute('aria-pressed', x === b); }); alvo.dataset.h = b.dataset.h; }); });
+  });
+}
+function dlgReagendar(m){
+  abrirDlg('<h2>Reagendar</h2><p style="color:var(--sec);margin:0 0 12px">' + esc(m.nome) + '. Agora: ' + quando(m) + '.</p>' +
+    '<div class="campo"><label for="rd">Novo dia</label><input type="date" id="rd" min="' + hojeISO() + '" value="' + m.data + '"></div><div id="rh"></div>' +
+    '<div class="acoes"><button class="btn" id="dOk">Guardar nova hora</button><button class="btn esc" data-fechar>Voltar</button></div>');
+  var rh = $('#rh'); horasDe(m.data, rh, m);
+  $('#rd').addEventListener('change', function(){ rh.dataset.h = ''; horasDe($('#rd').value, rh, m); });
+  $('#dOk').addEventListener('click', function(){
+    if (!rh.dataset.h) return toast('Escolhe a nova hora.');
+    acao(m, 'reagendar', {data:$('#rd').value, hora:rh.dataset.h}, $('#dOk')).catch(function(){});
+  });
+}
+
+/* ---------- nova marcação (feita por telefone, Instagram, ao balcão) ---------- */
+function novaMarcacao(c){
+  var s = dados.servicos || {};
+  c.innerHTML = '<form class="painel" id="fNova"><h2 style="font-size:22px;margin-bottom:14px">Nova marcação</h2>' +
+    '<div class="campo"><span style="font-weight:600;font-size:14px">Piercings e serviços</span><div class="servs">' + Object.keys(s).map(function(k){ return '<label><input type="checkbox" value="' + k + '">' + esc(s[k].nome) + '</label>'; }).join('') + '</div></div>' +
+    '<div class="duas"><div class="campo"><label for="nNome">Nome</label><input id="nNome" autocomplete="off" required></div><div class="campo"><label for="nTel">Telemóvel</label><input id="nTel" type="tel" inputmode="tel" autocomplete="off" required></div></div>' +
+    '<div class="campo"><label for="nDia">Dia</label><input type="date" id="nDia" min="' + hojeISO() + '" value="' + hojeISO() + '"></div><div id="nHoras" style="margin-bottom:14px"></div>' +
+    '<div class="campo"><label for="nNotas">Notas (opcional)</label><textarea id="nNotas" maxlength="500"></textarea></div>' +
+    '<p class="erro" id="eNova" hidden></p><button class="btn" id="bNova">Guardar marcação confirmada</button></form>';
+  var nh = $('#nHoras'); horasDe($('#nDia').value, nh);
+  $('#nDia').addEventListener('change', function(){ nh.dataset.h = ''; horasDe($('#nDia').value, nh); });
+  $('#fNova').addEventListener('submit', function(e){
+    e.preventDefault();
+    var ids = $$('.servs input:checked').map(function(i){ return i.value; }), er = $('#eNova');
+    if (!ids.length || !nh.dataset.h){ er.textContent = !ids.length ? 'Escolhe pelo menos um piercing ou serviço.' : 'Escolhe a hora.'; er.hidden = false; return; }
+    er.hidden = true; $('#bNova').disabled = true;
+    api('POST', '/admin/marcacoes', {servicos:ids, data:$('#nDia').value, hora:nh.dataset.h, nome:$('#nNome').value, tel:$('#nTel').value, notas:$('#nNotas').value})
+      .then(function(novo){ vista = 'agenda'; $$('.tabs button').forEach(function(x){ x.setAttribute('aria-selected', x.dataset.v === 'agenda'); }); return carregar().then(function(){ dlgAvisar(novo, 'aprovar', 'Marcação guardada.'); }); },
+        function(x){ var cs = x.j && x.j.campos; er.textContent = cs ? Object.keys(cs).map(function(k){ return cs[k]; }).join(' ') : (x.j && x.j.erro === 'hora_ocupada' ? 'Essa hora já está ocupada.' : 'Não deu para guardar.'); er.hidden = false; })
+      .then(function(){ var b = $('#bNova'); if (b) b.disabled = false; });
+  });
+}
+
+/* ---------- bloquear dias ou horas (férias, consultas, imprevistos) ---------- */
+function bloqueios(c){
+  c.innerHTML = '<form class="painel" id="fBlq"><h2 style="font-size:22px;margin-bottom:6px">Bloquear dias ou horas</h2><p style="color:var(--sec);margin:0 0 14px">Os clientes deixam de ver essas horas no site. As marcações que já existem não mudam.</p>' +
+    '<div class="duas"><div class="campo"><label for="bDia">Dia</label><input type="date" id="bDia" min="' + hojeISO() + '" value="' + hojeISO() + '"></div>' +
+    '<div class="campo"><label for="bHora">Hora</label><select id="bHora"><option value="">O dia inteiro</option></select></div></div>' +
+    '<div class="campo"><label for="bMot">Motivo (só tu vês)</label><input id="bMot" maxlength="120" placeholder="Ex.: Férias"></div>' +
+    '<button class="btn" id="bBlq">Bloquear</button></form><div class="painel" id="lBlq"><p style="color:var(--sec)">A carregar…</p></div>';
+  function horasSelect(){
+    var d = dParse($('#bDia').value).getDay(), sem = ['10:30','11:30','12:30','14:30','15:30','16:30','17:30','18:30'], sab = ['10:00','11:00','12:00','14:00','15:00','16:00','17:00'];
+    var hs = d === 6 ? sab : (d >= 2 && d <= 5 ? sem : []);
+    $('#bHora').innerHTML = '<option value="">O dia inteiro</option>' + hs.map(function(h){ return '<option value="' + h + '">' + h.replace(':', 'h') + '</option>'; }).join('');
+  }
+  horasSelect(); $('#bDia').addEventListener('change', horasSelect);
+  function lista(){
+    api('GET', '/admin/bloqueios').then(function(j){
+      var l = $('#lBlq'); if (!l) return;
+      l.innerHTML = j.bloqueios.length ? j.bloqueios.map(function(b){ return '<div class="blq"><div><b>' + cap(fmtDia.format(dParse(b.data))) + '</b><div class="mini" style="color:var(--sec)">' + (b.hora ? 'às ' + b.hora.replace(':', 'h') : 'Dia inteiro') + (b.motivo ? ', ' + esc(b.motivo) : '') + '</div></div><button class="btn esc peq" data-b="' + b.id + '">Desbloquear</button></div>'; }).join('') : '<p style="color:var(--sec);margin:0">Não há dias bloqueados.</p>';
+      $$('[data-b]', l).forEach(function(x){ x.addEventListener('click', function(){ x.disabled = true; api('POST', '/admin/bloqueios/' + x.dataset.b + '/apagar', {}).then(function(){ toast('Desbloqueado.'); lista(); }); }); });
+    });
+  }
+  lista();
+  $('#fBlq').addEventListener('submit', function(e){
+    e.preventDefault(); $('#bBlq').disabled = true;
+    api('POST', '/admin/bloqueios', {data:$('#bDia').value, hora:$('#bHora').value, motivo:$('#bMot').value})
+      .then(function(){ toast('Bloqueado.'); $('#bMot').value = ''; lista(); }, function(){ toast('Escolhe um dia de hoje em diante.'); })
+      .then(function(){ $('#bBlq').disabled = false; });
+  });
+}
+
+/* ---------- arranque ---------- */
+api('GET', '/admin/estado').then(mostrarApp, function(){ mostrarEntrar(); });
+})();
+</script>
+</body>
+</html>

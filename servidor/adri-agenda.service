@@ -1,0 +1,27 @@
+[Unit]
+Description=AdriBodyPiercing - agenda de marcações (pedidos do site e página do Adriano)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=parou
+Group=parou
+StateDirectory=adri-agenda
+StateDirectoryMode=0700
+EnvironmentFile=-/etc/adri-agenda/agenda.env
+Environment=TZ=Europe/Lisbon
+ExecStart=/usr/bin/python3 /opt/parou/servidor/adri/agenda.py
+Restart=always
+RestartSec=3
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectKernelTunables=yes
+ProtectControlGroups=yes
+RestrictSUIDSGID=yes
+MemoryMax=200M
+
+[Install]
+WantedBy=multi-user.target

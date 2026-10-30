@@ -10,6 +10,8 @@ name: Servidor (Hetzner)
 #   chaves-duplicasa - copia os segredos da DupliCasa guardados no GitHub (GOOGLE_ID, GOOGLE_SEGREDO,
 #              FACEBOOK_ID, FACEBOOK_SEGREDO, RESEND_API_KEY) para /etc/duaschaves/api.env e reinicia
 #              só a API da DupliCasa (o PAROU não é tocado)
+#   chaves-adri - põe o hash da password da agenda do AdriBodyPiercing (servidor/adri-agenda.age, cifrado
+#              para a chave SSH do servidor) em /etc/adri-agenda/agenda.env e reinicia só a agenda
 # O resultado fica no ramo "servidor-resultado", em resultado.txt.
 #
 # A chave SSH privada fica em servidor/chave-ssh.enc, cifrada com o HCLOUD_TOKEN
@@ -19,7 +21,7 @@ on:
   workflow_dispatch:
     inputs:
       acao:
-        description: "estado, recriar, comando, chaves ou chaves-duplicasa"
+        description: "estado, recriar, comando, chaves, chaves-duplicasa ou chaves-adri"
         required: true
         default: "estado"
       comando:
@@ -162,6 +164,20 @@ jobs:
           if [ "$N" -gt 0 ]; then
             ssh root@$IP "systemctl restart duaschaves-api && sleep 2 && systemctl is-active duaschaves-api" >> resultado.txt 2>&1
           fi
+
+      - name: Password da agenda do AdriBodyPiercing para o servidor
+        if: inputs.acao == 'chaves-adri'
+        run: |
+          source funcs.sh
+          IP=$(h "$API/servers?name=parou" | jq -r '.servers[0].public_net.ipv4.ip // empty')
+          [ -n "$IP" ] || { echo "Servidor não encontrado" >> resultado.txt; exit 1; }
+          command -v age >/dev/null 2>&1 || sudo apt-get install -y -qq age >/dev/null 2>&1
+          VALOR=$(age -d -i ~/.ssh/id_ed25519 servidor/adri-agenda.age 2>/dev/null) || VALOR=""
+          if [ -z "$VALOR" ]; then echo "ADRI_SENHA_HASH: não deu para abrir servidor/adri-agenda.age" >> resultado.txt; exit 1; fi
+          # Só o hash (scrypt) e pelo stdin: nunca aparece em comandos nem no resultado
+          printf '%s' "$VALOR" | ssh root@$IP "V=\$(cat); install -d -m 750 -o root -g parou /etc/adri-agenda; F=/etc/adri-agenda/agenda.env; touch \$F; grep -v '^ADRI_SENHA_HASH=' \$F > \$F.novo; echo \"ADRI_SENHA_HASH=\$V\" >> \$F.novo; chown root:parou \$F.novo; chmod 640 \$F.novo; mv \$F.novo \$F"
+          echo "ADRI_SENHA_HASH: copiado para o servidor" >> resultado.txt
+          ssh root@$IP "systemctl restart adri-agenda 2>&1; sleep 2; systemctl is-active adri-agenda; curl -s -m 5 http://127.0.0.1:3120/api/saude; echo; grep -c '^ADRI_SENHA_HASH=scrypt:' /etc/adri-agenda/agenda.env; grep -c '^ORIGENS=' /etc/adri-agenda/agenda.env" >> resultado.txt 2>&1
 
       - name: Diagnóstico ou comando
         if: always()
