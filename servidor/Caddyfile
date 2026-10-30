@@ -246,6 +246,10 @@ www.chave.pt {
 		-Server
 	}
 	root * /var/www/dinissousa
+	# Preenche {{.Host}} nas etiquetas de partilha, para a pré-visualização funcionar em qualquer endereço
+	templates {
+		mime text/html
+	}
 	@estaticos path /fonts/* /img/*
 	header @estaticos Cache-Control "public, max-age=2592000"
 	@pagina path / /index.html
