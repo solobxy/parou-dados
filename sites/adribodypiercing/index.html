@@ -29,6 +29,11 @@
 <style>
 :root{
   --noite:#0E0C0B; --noite-2:#171513; --noite-3:#211E1B;
+  /* cartões escuros: superfície um pouco mais clara que o fundo e contorno fino que começa dourado e se desvanece */
+  --cartao-borda:linear-gradient(140deg, rgba(217,182,118,.5), rgba(238,232,223,.1) 40%, rgba(238,232,223,.06)) border-box;
+  --cartao-luz:radial-gradient(130% 90% at 0% 0%, rgba(217,182,118,.09), transparent 60%) padding-box;
+  --cartao:var(--cartao-luz), linear-gradient(180deg, #25211D, #1A1816) padding-box, var(--cartao-borda);
+  --cartao-2:var(--cartao-luz), linear-gradient(180deg, #2D2925, #221F1C) padding-box, var(--cartao-borda);
   --osso:#EEE8DF; --osso-2:#E4DCD0; --osso-3:#D8CEBF;
   --tinta:#141210; --sec-escuro:#BDB5A9; --sec-claro:#4D463E;
   --ouro:#D9B676; --ouro-2:#E7C98E; --ouro-tinta:#7A5820;
@@ -290,13 +295,13 @@ section{position:relative}
 .precos li .v{font-family:var(--serif);font-size:22px;text-align:right}
 .precos li small{grid-column:1/-1;color:var(--sec-escuro);font-size:14px}
 .servicos{margin-top:clamp(48px,6vw,80px);display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
-.servicos div{background:var(--noite-2);border-radius:20px;padding:24px}
+.servicos div{background:var(--cartao);border:1px solid transparent;border-radius:20px;padding:24px;display:flex;flex-direction:column}
 .servicos b{display:block;font-weight:600;margin-bottom:6px}
-.servicos .v{font-family:var(--serif);font-size:28px;display:block;margin-top:14px}
+.servicos .v{font-family:var(--serif);font-size:28px;display:block;margin-top:auto;padding-top:14px} /* preço sempre no fundo do cartão: alinhado com os do lado */
 .servicos p{color:var(--sec-escuro);font-size:15px}
 .aviso-online{margin-top:40px;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:20px}
 @media (max-width:900px){.precos{grid-template-columns:1fr}.precos .orelha-l ul{columns:1}.servicos{grid-template-columns:1fr 1fr}}
-@media (max-width:520px){.servicos{gap:10px}.servicos div{padding:18px 16px}.servicos .v{font-size:24px;margin-top:10px}.servicos p{font-size:14px}}
+@media (max-width:520px){.servicos{gap:10px}.servicos div{padding:18px 16px}.servicos .v{font-size:24px;padding-top:10px}.servicos p{font-size:14px}}
 
 /* joias */
 .joias-sec{background:var(--noite-2)}
@@ -304,7 +309,7 @@ section{position:relative}
 .metais b{display:block;font-family:var(--serif);font-weight:600;font-size:clamp(22px,2vw,27px);margin-bottom:8px}
 .metais p{color:var(--sec-escuro)}
 .vitrine{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
-.joia{background:var(--noite-3);border-radius:22px;padding:18px 20px 22px;display:flex;flex-direction:column;overflow:hidden}
+.joia{background:var(--cartao-2);border:1px solid transparent;border-radius:22px;padding:18px 20px 22px;display:flex;flex-direction:column;overflow:hidden}
 .joia .img{aspect-ratio:1;margin:-6px -6px 6px;display:grid;place-items:center}
 .joia img{width:100%;height:100%;object-fit:contain;transition:transform .7s var(--ease);will-change:transform}
 .joia:hover img{transform:rotate(-8deg) scale(1.05)}
@@ -387,7 +392,7 @@ section{position:relative}
 .cuidados ul{list-style:none;margin:0;padding:0;display:grid;gap:14px}
 .cuidados li{padding-left:30px;position:relative}
 .cuidados li::before{content:"";position:absolute;left:0;top:.62em;width:14px;height:2px;background:var(--ouro)}
-.cuidados .alerta{grid-column:span 4;background:var(--noite-2);border-radius:22px;padding:28px}
+.cuidados .alerta{grid-column:span 4;background:var(--cartao);border:1px solid transparent;border-radius:22px;padding:28px}
 .cuidados .alerta p+p{margin-top:12px}
 .tempos{grid-column:1/-1;margin-top:clamp(40px,5vw,72px);display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
 .tempos div{padding:22px 0}
