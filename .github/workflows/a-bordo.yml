@@ -164,6 +164,7 @@ jobs:
           mkdir -p ../res
           (cd ../app && APP=$PWD node --import tsx ../auditoria/mais-procuradas.mjs 2>&1 | grep -v "Experimental\|trace-warnings") | tee ../res/mais-procuradas.txt | tail -30
           SAIDA=../res timeout 300 node horarios-novos.mjs 2>&1 | tee ../res/horarios-novos.txt | tail -40
+          (cd ../app && APP=$PWD node --import tsx ../auditoria/cm-passagens.mjs 2>&1 | grep -v "Experimental\|trace-warnings") | tee ../res/cm-passagens.txt | tail -20
 
       - name: Testar o movimento dos autocarros no mapa (browser)
         continue-on-error: true
