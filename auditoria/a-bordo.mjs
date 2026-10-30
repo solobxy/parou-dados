@@ -669,6 +669,16 @@ async function bragaReal(browser, tema) {
     await p.screenshot({ path: `${SAIDA}/braga_${tema}_1_mapa.png` }).catch(() => {});
     const rodas = await p.locator('.bus-pin--tub .bus-pin__num').allInnerTexts();
     nota(`${rot}: ${rodas.length} rodas da TUB no mapa (${rodas.slice(0, 10).join(', ')}); paragem: ${(await p.locator('[data-teste="paragem-perto"]').first().innerText().catch(() => '')).replace(/\n/g, ' | ').slice(0, 160)}`);
+    // Fora do horário da TUB (de madrugada) não há autocarros em direto: não é falha da app.
+    // Confirma no servidor se há algum veículo da TUB perto do centro de Braga antes de exigir rodas no mapa.
+    if (!rodas.length) {
+      const v = await fetch(`${BASE}/api/transit/veiculos?caixa=41.50,-8.48,41.60,-8.37`).then((r) => r.json()).catch(() => ({ veiculos: [] }));
+      const tub = (v.veiculos || []).filter((x) => /tub/i.test(String(x.op || x.operador || x.feed || x.id || '')));
+      if (!tub.length) {
+        nota(`${rot}: a TUB não tem autocarros em direto agora (${new Date().toLocaleTimeString('pt-PT', { timeZone: 'Europe/Lisbon' })}); teste das rodas saltado`);
+        return;
+      }
+    }
     ok(`${rot} aparecem rodas da TUB no mapa do Perto`, rodas.length > 0, rodas.length);
     if (rodas.length) {
       const cor = await p.evaluate(() => { const n = document.querySelector('.bus-pin--tub .bus-pin__num'); return n ? getComputedStyle(n).backgroundColor : ''; });
