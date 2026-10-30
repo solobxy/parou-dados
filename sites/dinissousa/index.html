@@ -63,9 +63,8 @@ p{margin:0}
 .top .wrap{display:flex;align-items:center;justify-content:space-between;height:64px;gap:16px}
 .brand{display:inline-flex;align-items:center;gap:10px;text-decoration:none;min-height:44px}
 .brand-name{font-weight:800;font-stretch:112%;letter-spacing:-.03em;font-size:18px;white-space:nowrap}
-.mark{width:24px;height:24px;flex-shrink:0;overflow:visible}
-.mark path{fill:none;stroke:var(--ink);stroke-width:10;transition:stroke .6s var(--ease)}
-.mark rect{fill:var(--mark);transition:fill .6s var(--ease)}
+.mark{width:24px;height:26px;flex-shrink:0}
+.mark>path{fill:var(--ink);transition:fill .6s var(--ease)}
 .nav{display:flex;align-items:center;gap:28px}
 .nav .link{display:none;text-decoration:none;font-weight:500;font-size:16px;min-height:44px;align-items:center}
 .nav .link:hover{text-decoration:underline;text-underline-offset:4px}
@@ -211,16 +210,12 @@ footer a{min-height:44px;display:inline-flex;align-items:center}
 .js .fan .p-center{animation:rise .9s var(--ease) .1s both}
 .js .fan .p-left{animation:fanL 1s var(--ease) .3s both}
 .js .fan .p-right{animation:fanR 1s var(--ease) .3s both}
-.js .top .mark .tl{animation:selTL .8s var(--ease) .2s both}
-.js .top .mark .br{animation:selBR .8s var(--ease) .2s both}
-.js .top .mark rect{animation:pop .6s var(--ease) both;transform-origin:50% 50%;transform-box:fill-box}
+.js .top .mark .draw{stroke-dasharray:100;animation:drawS 1.1s var(--ease) .25s both}
 @keyframes stretch{from{font-stretch:62%;opacity:0}to{font-stretch:108%;opacity:1}}
 @keyframes rise{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:none}}
 @keyframes fanL{from{opacity:0;transform:translateX(45%) rotate(0)}to{opacity:1;transform:rotate(-8deg)}}
 @keyframes fanR{from{opacity:0;transform:translateX(-45%) rotate(0)}to{opacity:1;transform:rotate(8deg)}}
-@keyframes selTL{from{transform:translate(18px,18px);opacity:0}to{transform:none;opacity:1}}
-@keyframes selBR{from{transform:translate(-18px,-18px);opacity:0}to{transform:none;opacity:1}}
-@keyframes pop{from{transform:scale(.4)}to{transform:none}}
+@keyframes drawS{from{stroke-dashoffset:100}to{stroke-dashoffset:0}}
 @keyframes fade{from{opacity:0}to{opacity:1}}
 @keyframes stretchSoft{from{font-stretch:92%;opacity:0}to{font-stretch:108%;opacity:1}}
 
@@ -235,7 +230,8 @@ footer a{min-height:44px;display:inline-flex;align-items:center}
   .js .lead,.js .sub,.js .ctas,.js .fan .p-center{animation-name:fade}
   .js .fan .p-left{animation-name:fade;transform:rotate(-8deg)}
   .js .fan .p-right{animation-name:fade;transform:rotate(8deg)}
-  .js .top .mark .tl,.js .top .mark .br,.js .top .mark rect{animation-name:fade}
+  .js .top .mark .draw{animation:none}
+  .js .top .mark{animation:fade .6s both}
   .js .rv.pre{transform:none}
   .btn:active,.btn:hover,.style:hover .card{transform:none}
 }
@@ -247,7 +243,7 @@ footer a{min-height:44px;display:inline-flex;align-items:center}
 <header class="top">
   <div class="wrap">
     <a class="brand" href="#inicio" aria-label="Dinis Sousa, início">
-      <svg class="mark" viewBox="0 0 100 100" aria-hidden="true"><path class="tl" d="M5 36V5H36"/><path class="br" d="M95 64V95H64"/><rect x="31" y="31" width="38" height="38"/></svg>
+      <svg class="mark" viewBox="10 6 80 88" aria-hidden="true"><mask id="ds1" maskUnits="userSpaceOnUse" x="0" y="0" width="100" height="100"><rect width="100" height="100" fill="#fff"/><path class="draw" d="M96 24H50A13 13 0 0 0 50 50A13 13 0 0 1 50 76H4" pathLength="100" fill="none" stroke="#000" stroke-width="10"/></mask><path d="M14 10H46A40 40 0 0 1 46 90H14Z" mask="url(#ds1)"/></svg>
       <span class="brand-name">Dinis Sousa</span>
     </a>
     <nav class="nav" aria-label="Principal">
@@ -406,7 +402,7 @@ footer a{min-height:44px;display:inline-flex;align-items:center}
 
 <footer data-world="base">
   <div class="wrap">
-    <span class="brand"><svg class="mark" viewBox="0 0 100 100" aria-hidden="true"><path d="M5 36V5H36"/><path d="M95 64V95H64"/><rect x="31" y="31" width="38" height="38"/></svg><span class="brand-name" style="color:var(--ink)">Dinis Sousa</span></span>
+    <span class="brand"><svg class="mark" viewBox="10 6 80 88" aria-hidden="true"><mask id="ds2" maskUnits="userSpaceOnUse" x="0" y="0" width="100" height="100"><rect width="100" height="100" fill="#fff"/><path d="M96 24H50A13 13 0 0 0 50 50A13 13 0 0 1 50 76H4" pathLength="100" fill="none" stroke="#000" stroke-width="10"/></mask><path d="M14 10H46A40 40 0 0 1 46 90H14Z" mask="url(#ds2)"/></svg><span class="brand-name" style="color:var(--ink)">Dinis Sousa</span></span>
     <span>© 2026 Dinis Sousa · Portugal</span>
     <a href="https://www.livroreclamacoes.pt">Livro de Reclamações</a>
   </div>
