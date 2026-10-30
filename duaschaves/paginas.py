@@ -455,17 +455,32 @@ def gerar(anuncios, atualizado):
 
 
 # Guias: respostas às perguntas que mais aparecem nas sugestões do Google («como arrendar casa em portugal»,
-# «arrendar casa sem fiador», «sem caução», «sem contrato», burlas). Conselho prático; sem regras legais por confirmar.
-NOTA_LEGAL = ('<p class="nota">Este guia dá conselhos práticos e não é aconselhamento jurídico. Para saber o que a lei diz no teu caso, '
+# «sem fiador», «sem caução», «sem contrato», «aumento das rendas», burlas). As regras legais têm fonte e a data em que
+# foram confirmadas (LEI_CONFIRMADA). Antes de mudar uma regra, confirmar no Diário da República e no Portal das Finanças.
+# Nunca citar sites de anúncios (concorrentes) como fonte.
+LEI_CONFIRMADA = '30 de outubro de 2026'
+F_CC = ('Código Civil, artigos 1069.º, 1076.º e 1077.º (Diário da República)', 'https://diariodarepublica.pt/dr/legislacao-consolidada/decreto-lei/1966-34509075')
+F_AT = ('Portal das Finanças: contrato de arrendamento', 'https://info.portaldasfinancas.gov.pt/pt/apoio_ao_contribuinte/Cidadaos/Casa_e_propriedades/Arrendamento/Contrato%20urbano/Paginas/default.aspx')
+F_AT_CAUCAO = ('Autoridade Tributária: informação vinculativa sobre caução e rendas antecipadas', 'https://info.portaldasfinancas.gov.pt/pt/informacao_fiscal/informacoes_vinculativas/rendimento/circ/Documents/PIV_25441.pdf')
+F_CGD = ('Caixa Geral de Depósitos: a caução no arrendamento', 'https://www.cgd.pt/Site/Saldo-Positivo/leis-e-impostos/Pages/caucao-no-arrendamento.aspx')
+F_REFORMA = ('DECO PROteste: o que pode mudar com a revisão da lei do arrendamento', 'https://www.deco.proteste.pt/dinheiro/arrendamento/noticias/que-pode-mudar-com-revisao-lei-arrendamento')
+F_INQUILINO = ('DECO PROteste: inquilinos já podem comunicar contratos às Finanças', 'https://www.deco.proteste.pt/dinheiro/arrendamento/noticias/inquilinos-ja-podem-declarar-contratos-arrendamento-financas')
+F_GARANTIA = ('RTP: proposta de garantia pública no arrendamento em debate (29/09/2026)', 'https://www.rtp.pt/noticias/economia/arrendamento-em-debate-no-parlamento-com-chumbo-no-horizonte_e1768638')
+F_COEF = ('Cuatrecasas: coeficiente de atualização das rendas para 2027 (Aviso n.º 24199/2026/2)', 'https://www.cuatrecasas.com/pt/spain/imobiliario/art/coeficiente-atualizacao-anual-rendas-2027')
+REFORMA = ('<p><strong>Pode mudar:</strong> o Governo propôs acabar com o limite da caução e permitir até 3 rendas adiantadas '
+           '(Proposta de Lei n.º 103/XVII/1, aprovada na generalidade a 30 de setembro de 2026 e ainda em discussão no Parlamento). '
+           'Só muda quando o Governo publicar o decreto-lei e este entrar em vigor. Até lá, valem os limites acima.</p>')
+NOTA_LEGAL = ('<p class="nota">Este guia explica a lei em termos simples e não é aconselhamento jurídico. Para o teu caso concreto, '
               'fala com um jurista ou consulta o <a href="https://www.portaldahabitacao.pt/" rel="noopener">Portal da Habitação</a>.</p>')
 GUIAS = [
     {'slug': 'como-arrendar-casa-em-portugal', 'data': '2026-10-30',
      'titulo': 'Como arrendar casa em Portugal: passo a passo | Duplicasa',
-     'desc': 'Do orçamento às chaves: documentos que costumam pedir, quanto dinheiro levar à entrada, o que perguntar na visita e o que confirmar antes de pagar.',
+     'desc': 'Do orçamento às chaves: documentos que costumam pedir, quanto a lei deixa pedir à entrada, o que perguntar na visita e o que confirmar antes de pagar.',
      'h1': 'Como arrendar casa em Portugal, passo a passo',
      'intro': 'Do orçamento à entrega das chaves: o que fazer em cada passo para arrendar casa depressa, sem perder dinheiro nem cair numa burla.',
      'corpo': """<h2>1. Faz as contas antes de procurar</h2>
-<p>Uma regra prática muito usada é a renda não passar de um terço do que entra em casa por mês. Conta também com a entrada: além da primeira renda, muitas casas pedem caução e algumas pedem rendas adiantadas. Pergunta sempre <strong>quanto é preciso pagar ao todo para entrar</strong>.</p>
+<p>Uma regra prática muito usada é a renda não passar de um terço do que entra em casa por mês. Conta também com a entrada: além da primeira renda, muitas casas pedem caução e algumas pedem rendas adiantadas.</p>
+<p>A lei põe limites: a caução não pode passar do valor de <strong>2 rendas</strong> e as rendas adiantadas de <strong>2 meses</strong> (artigo 1076.º do Código Civil). Ou seja, além da primeira renda, o máximo que te podem pedir à entrada são 4 rendas. Pergunta sempre <strong>quanto é preciso pagar ao todo para entrar</strong>.</p>
 <p>Vê quanto custa a zona que queres na página <a href="/arrendar/precos/">preço das rendas por cidade</a>.</p>
 <h2>2. Prepara os documentos</h2>
 <p>Ter tudo pronto faz-te passar à frente de quem ainda vai juntar papéis. É costume pedirem:</p>
@@ -477,34 +492,51 @@ GUIAS = [
 <h2>5. Confirma antes de pagar</h2>
 <ul><li>Nunca pagues nada sem visitar a casa.</li><li>Confirma que quem anuncia é o dono ou tem autorização para arrendar.</li><li>Desconfia de pressa, de preços muito abaixo da zona e de pedidos de pagamento por transferência a quem nunca viste.</li></ul>
 <h2>6. Contrato e entrada</h2>
-<p>Pede o contrato por escrito e lê-o todo: duração, renda, quando sobe, caução, quem paga o quê. No dia em que entras, tira fotos de cada divisão e dos equipamentos e envia-as ao senhorio: ajuda a reaver a caução no fim.</p>""",
+<p>A lei exige contrato escrito. Lê-o todo antes de assinar: duração, renda, quando sobe, caução, quem paga o quê.</p>
+<p>Depois, o senhorio tem de comunicar o contrato às Finanças até ao fim do mês seguinte ao início e, em regra, passar recibo eletrónico de cada renda. Se não comunicar o contrato no prazo, podes ser tu a fazê-lo no Portal das Finanças.</p>
+<p>No dia em que entras, tira fotos de cada divisão e dos equipamentos e envia-as ao senhorio: ajuda a reaver a caução no fim.</p>""",
      'faq': [('Que documentos pedem para arrendar casa?', 'É costume pedirem documento de identificação, NIF, recibos de vencimento ou declaração da entidade patronal e a última declaração de IRS. A estudantes pedem muitas vezes um fiador.'),
-             ('Quanto dinheiro preciso para entrar numa casa arrendada?', 'Além da primeira renda, muitas casas pedem caução e algumas pedem rendas adiantadas. Pergunta sempre o valor total para entrar antes de avançar.')],
+             ('Quantas rendas pode o senhorio pedir à entrada?', 'Além da primeira renda, até 2 rendas adiantadas e uma caução até ao valor de 2 rendas (artigo 1076.º do Código Civil, regras em vigor a 30 de outubro de 2026). Há uma proposta do Governo para alargar estes limites, mas ainda não está em vigor.'),
+             ('O senhorio tem de comunicar o contrato às Finanças?', 'Sim, até ao fim do mês seguinte ao início do contrato. Se não o fizer, o inquilino pode comunicá-lo no Portal das Finanças depois desse prazo.')],
+     'fontes': [F_CC, F_AT, F_AT_CAUCAO, F_REFORMA],
      'botao': 'Ver casas para arrendar', 'link': '/#pesquisa', 'legal': True},
     {'slug': 'arrendar-casa-sem-fiador', 'data': '2026-10-30',
-     'titulo': 'Arrendar casa sem fiador: o que fazer e o que propor | Duplicasa',
-     'desc': 'Como arrendar casa sem fiador: porque o pedem, o que podes propor em troca e como encontrar senhorios que não o exigem.',
+     'titulo': 'Arrendar casa sem fiador: o que diz a lei e o que propor | Duplicasa',
+     'desc': 'A lei não obriga a ter fiador. Porque o pedem, o que podes propor em troca, os limites da lei e como encontrar senhorios que não o exigem.',
      'h1': 'Arrendar casa sem fiador',
-     'intro': 'O fiador é uma garantia para o senhorio de que a renda é paga. Se não tens quem o seja, há outras formas de dar essa confiança.',
+     'intro': 'O fiador é uma garantia para o senhorio de que a renda é paga. Nenhuma lei obriga a tê-lo, e há outras formas de dar essa confiança.',
      'corpo': """<h2>Porque é que pedem fiador</h2>
 <p>O senhorio quer saber que recebe a renda todos os meses. O fiador responde por ela se o inquilino não pagar. Por isso pedem-no mais a quem tem rendimentos baixos ou recentes, como estudantes ou quem acabou de chegar a Portugal.</p>
+<h2>O que diz a lei</h2>
+<ul><li><strong>Nenhuma lei obriga a ter fiador.</strong> É uma garantia que o senhorio pode pedir e que só existe se ficar no contrato, assinada pelo fiador.</li>
+<li><strong>Se a garantia for em dinheiro, há limites:</strong> a caução não pode passar do valor de 2 rendas e as rendas adiantadas de 2 meses (artigo 1076.º do Código Civil).</li>
+<li><strong>Não há garantia do Estado em vez de fiador.</strong> A 30 de outubro de 2026, a garantia pública para o arrendamento é só uma proposta apresentada no Parlamento, ainda não é lei. A garantia pública para jovens que existe é para quem compra casa com crédito à habitação.</li></ul>
 <h2>O que podes propor em vez de fiador</h2>
 <ul><li><strong>Mostrar rendimentos estáveis:</strong> contrato de trabalho, recibos dos últimos meses e a declaração de IRS.</li>
 <li><strong>Seguro de renda:</strong> há seguros que protegem o senhorio se a renda não for paga. Propor que o contrate, ou dividir o custo, pode substituir o fiador.</li>
 <li><strong>Referências:</strong> o contacto ou uma carta de um senhorio anterior a dizer que pagaste sempre a horas.</li>
-<li><strong>Uma garantia maior à entrada:</strong> alguns senhorios aceitam em troca uma caução ou rendas adiantadas. Combina tudo por escrito e confirma que está dentro do que a lei permite.</li></ul>
+<li><strong>Uma garantia maior à entrada:</strong> alguns senhorios aceitam em troca uma caução ou rendas adiantadas, dentro dos limites da lei. Combina tudo por escrito.</li></ul>
 <h2>Onde procurar</h2>
 <p>Particulares às vezes são mais flexíveis do que agências. Na <a href="/#pesquisa">pesquisa da Duplicasa</a>, em Filtros, escolhe «Só particulares». Quando o anúncio diz se pede fiador, mostramos isso na ficha da casa.</p>
 <p>Cria um <a href="/#alertas">alerta</a> para seres dos primeiros a contactar: quem chega primeiro tem mais margem para negociar.</p>""",
-     'faq': [('É possível arrendar casa sem fiador?', 'Sim. Muitos senhorios aceitam outra garantia: rendimentos estáveis comprovados, um seguro de renda, referências de um senhorio anterior ou uma garantia maior à entrada, combinada por escrito.'),
-             ('O que posso oferecer em vez de fiador?', 'Contrato de trabalho e recibos, um seguro de renda, cartas de referência ou, se o senhorio aceitar e a lei permitir, uma caução maior.')],
+     'faq': [('A lei obriga a ter fiador para arrendar casa?', 'Não. O fiador é uma garantia que o senhorio pode pedir, mas nenhuma lei a impõe. Só existe se ficar no contrato, assinada pelo fiador.'),
+             ('É possível arrendar casa sem fiador?', 'Sim. Muitos senhorios aceitam outra garantia: rendimentos estáveis comprovados, um seguro de renda, referências de um senhorio anterior ou uma caução, até ao valor de 2 rendas.'),
+             ('Há uma garantia do Estado que substitua o fiador?', 'A 30 de outubro de 2026, não. Foi apresentada no Parlamento uma proposta de garantia pública para o arrendamento, mas ainda não é lei. A garantia pública para jovens que existe é para o crédito à habitação.')],
+     'fontes': [F_CC, F_GARANTIA],
      'botao': 'Ver casas de particulares', 'link': '/#pesquisa', 'legal': True},
     {'slug': 'arrendar-casa-sem-caucao', 'data': '2026-10-30',
-     'titulo': 'Arrendar casa sem caução: como encontrar e negociar | Duplicasa',
-     'desc': 'O que é a caução, como encontrar casas que não a pedem e como garantir que a recebes de volta quando sais.',
+     'titulo': 'Arrendar casa sem caução: o que diz a lei e como negociar | Duplicasa',
+     'desc': 'A caução não é obrigatória e não pode passar de 2 rendas. Como encontrar casas sem caução, como negociar e como a recebes de volta.',
      'h1': 'Arrendar casa sem caução',
-     'intro': 'A caução é o dinheiro que entregas ao entrar para cobrir danos ou rendas em falta, e que te devolvem quando sais. Há casas que não a pedem.',
-     'corpo': """<h2>Como encontrar casas sem caução</h2>
+     'intro': 'A caução é o dinheiro que entregas ao entrar para cobrir danos ou rendas em falta, e que te devolvem quando sais. Não é obrigatória, e há casas que não a pedem.',
+     'corpo': """<h2>O que diz a lei</h2>
+<ul><li><strong>A caução não é obrigatória:</strong> só existe se for combinada no contrato.</li>
+<li><strong>Não pode passar do valor de 2 rendas</strong> (artigo 1076.º, n.º 2, do Código Civil). Com uma renda de 700 €, o máximo é 1400 €.</li>
+<li><strong>Rendas adiantadas são outra coisa:</strong> podem ser até 2 meses, com acordo escrito (artigo 1076.º, n.º 1). Ao contrário da caução, não são devolvidas: pagam os meses seguintes.</li>
+<li><strong>A lei não fixa um prazo para devolver a caução.</strong> Por isso, escreve no contrato quando e como é devolvida.</li>
+<li>Para as Finanças, a caução conta como rendimento do senhorio e deve aparecer no recibo de renda eletrónico.</li></ul>
+""" + REFORMA + """
+<h2>Como encontrar casas sem caução</h2>
 <p>Na <a href="/#pesquisa">pesquisa da Duplicasa</a>, abre Filtros e escolhe «Sem caução indicada»: ficam as casas cujo anúncio diz que não pedem caução ou que não falam nela. Confirma sempre com quem anuncia antes de visitar.</p>
 <h2>Como negociar</h2>
 <ul><li>Mostra que és um inquilino de confiança: rendimentos, referências, documentos prontos.</li>
@@ -514,26 +546,55 @@ GUIAS = [
 <ul><li>O valor da caução e a forma de devolução devem estar no contrato.</li>
 <li>Pede recibo de tudo o que pagas.</li>
 <li>No dia da entrada, tira fotos de cada divisão e dos equipamentos e envia-as ao senhorio. Faz o mesmo à saída.</li></ul>""",
-     'faq': [('O que é a caução no arrendamento?', 'É um valor entregue no início do contrato para cobrir danos ou rendas em falta. É devolvido no fim, se a casa ficar como estava e não houver rendas por pagar.'),
+     'faq': [('Quanto pode ser a caução de uma casa arrendada?', 'No máximo, o valor de 2 rendas (artigo 1076.º do Código Civil, regra em vigor a 30 de outubro de 2026). Há uma proposta do Governo para acabar com este limite, mas ainda não está em vigor.'),
+             ('A caução é obrigatória?', 'Não. Só existe se for combinada no contrato. Quando existe, deve ser devolvida no fim se a casa ficar como estava e não houver rendas por pagar.'),
+             ('Qual a diferença entre caução e rendas adiantadas?', 'A caução é uma garantia devolvida no fim do contrato, até ao valor de 2 rendas. As rendas adiantadas pagam os meses seguintes, até 2 meses, e não são devolvidas.'),
              ('Como encontro casas sem caução?', 'Na pesquisa da Duplicasa, em Filtros, escolhe «Sem caução indicada» e confirma sempre com quem anuncia.')],
+     'fontes': [F_CC, F_AT_CAUCAO, F_CGD, F_REFORMA],
      'botao': 'Procurar casas sem caução', 'link': '/#pesquisa', 'legal': True},
     {'slug': 'arrendar-casa-sem-contrato-riscos', 'data': '2026-10-30',
-     'titulo': 'Arrendar casa sem contrato: os riscos para quem arrenda | Duplicasa',
-     'desc': 'Porque é que arrendar sem contrato escrito é arriscado para o inquilino e o que fazer para te protegeres.',
-     'h1': 'Arrendar casa sem contrato: os riscos',
-     'intro': 'Sem contrato escrito, fica tudo dependente da palavra de cada um. Para quem arrenda, isso traz riscos práticos.',
-     'corpo': """<h2>Os riscos práticos</h2>
+     'titulo': 'É crime arrendar casa sem contrato? O que diz a lei | Duplicasa',
+     'desc': 'Arrendar sem contrato escrito não é crime para o inquilino, mas a lei exige contrato. Como provar que arrendas, as Finanças e como te protegeres.',
+     'h1': 'Arrendar casa sem contrato: o que diz a lei',
+     'intro': 'A lei exige contrato escrito. Se não o tens, podes ter na mesma direitos, mas fica tudo mais difícil de provar.',
+     'corpo': """<h2>O que diz a lei</h2>
+<ul><li><strong>Não é crime para o inquilino.</strong> Mas o contrato de arrendamento deve ser feito por escrito (artigo 1069.º, n.º 1, do Código Civil).</li>
+<li><strong>Se a falta de contrato não for culpa tua,</strong> podes provar que arrendas a casa por qualquer meio: basta mostrar que vives lá sem oposição do senhorio e que pagas a renda todos os meses há pelo menos 6 meses (artigo 1069.º, n.º 2).</li>
+<li><strong>Finanças:</strong> o senhorio tem de comunicar o contrato até ao fim do mês seguinte ao início. Se não o fizer, desde agosto de 2025 podes ser tu a comunicá-lo no Portal das Finanças, depois de acabar o prazo dele.</li>
+<li><strong>Recibos:</strong> em regra, o senhorio tem de passar recibo eletrónico de cada renda no Portal das Finanças. Há algumas exceções.</li></ul>
+<h2>Os riscos práticos</h2>
 <ul><li><strong>Provar o que combinaram:</strong> renda, duração, caução e quem paga as despesas ficam sem registo.</li>
 <li><strong>Reaver a caução:</strong> sem nada escrito, é mais difícil exigir a devolução.</li>
 <li><strong>Provar que moras lá:</strong> pode complicar a mudança de morada, o atestado de residência ou outros pedidos que precisam de comprovativo.</li>
 <li><strong>Sair ou ser mandado sair:</strong> sem prazos escritos, cada parte pode ter uma ideia diferente do que foi combinado.</li></ul>
 <h2>Como te proteger</h2>
 <ul><li>Pede sempre um contrato escrito antes de pagar.</li>
-<li>Paga por transferência, nunca em dinheiro, e guarda os comprovativos.</li>
+<li>Paga por transferência, nunca em dinheiro, e guarda os comprovativos: são a melhor prova dos meses de renda pagos.</li>
 <li>Pede recibos das rendas.</li>
 <li>Guarda as mensagens com o senhorio sobre o que foi combinado.</li></ul>""",
-     'faq': [('Quais são os riscos de arrendar casa sem contrato?', 'Fica mais difícil provar o que foi combinado (renda, duração, caução), reaver a caução e provar que moras na casa.'),
-             ('O que fazer se o senhorio não quer fazer contrato?', 'Pede-o por escrito antes de pagares. Se mesmo assim avançares, paga por transferência, guarda comprovativos e mensagens e pede recibos. Para saber os teus direitos, fala com um jurista.')],
+     'faq': [('É crime arrendar casa sem contrato?', 'Para o inquilino, não. A lei exige contrato escrito, e o senhorio tem obrigações nas Finanças (comunicar o contrato e passar recibos). Se a falta de contrato não for culpa tua, podes provar o arrendamento mostrando que vives na casa e pagas a renda há pelo menos 6 meses.'),
+             ('Posso provar que arrendo uma casa sem contrato escrito?', 'Sim, se a falta de contrato não for culpa tua: podes provar por qualquer meio que usas a casa sem oposição do senhorio e que pagas a renda todos os meses há pelo menos 6 meses (artigo 1069.º do Código Civil). Transferências bancárias e mensagens ajudam.'),
+             ('O senhorio não comunicou o contrato às Finanças. O que faço?', 'Se o senhorio não o comunicar até ao fim do mês seguinte ao início do contrato, podes ser tu a comunicá-lo no Portal das Finanças.'),
+             ('Quais são os riscos de arrendar casa sem contrato?', 'Fica mais difícil provar o que foi combinado (renda, duração, caução), reaver a caução e provar que moras na casa.')],
+     'fontes': [F_CC, F_AT, F_INQUILINO],
+     'botao': 'Ver casas para arrendar', 'link': '/#pesquisa', 'legal': True},
+    {'slug': 'aumento-das-rendas-em-2027', 'data': '2026-10-30',
+     'titulo': 'Aumento das rendas em 2027: quanto pode subir a renda | Duplicasa',
+     'desc': 'Em 2027 a renda pode subir até 2,56%. Como calcular o aumento, quando o senhorio o pode aplicar e com quanto tempo tem de avisar.',
+     'h1': 'Aumento das rendas em 2027',
+     'intro': 'O coeficiente para 2027 é 1,0256: nos contratos que seguem a regra da lei, a renda pode subir até 2,56%.',
+     'corpo': """<h2>Quanto pode subir</h2>
+<p>O coeficiente de atualização das rendas para 2027 é <strong>1,0256</strong>, publicado no Aviso n.º 24199/2026/2, no Diário da República de 1 de outubro de 2026. Para saber a renda nova, multiplica a atual por 1,0256:</p>
+<ul><li>500 € passam a 512,80 €;</li><li>800 € passam a 820,48 €;</li><li>1000 € passam a 1025,60 €.</li></ul>
+<h2>Quando e como</h2>
+<ul><li>A renda só pode subir 1 ano depois do início do contrato ou da última atualização.</li>
+<li>O senhorio tem de te avisar por escrito com pelo menos 30 dias de antecedência.</li>
+<li>Se o contrato tiver outra regra para atualizar a renda, vale a do contrato.</li></ul>
+<h2>Vais mudar de casa?</h2>
+<p>A renda de um contrato novo é combinada entre as partes. Compara o que te pedem com o <a href="/arrendar/precos/">preço das rendas na zona</a> e vê as <a href="/#pesquisa">casas para arrendar</a> dos principais sites num só lugar.</p>""",
+     'faq': [('Quanto pode subir a renda em 2027?', 'Até 2,56%, nos contratos que seguem a regra da lei: multiplica a renda atual por 1,0256 (Aviso n.º 24199/2026/2, Diário da República de 1 de outubro de 2026).'),
+             ('Quando pode o senhorio aumentar a renda?', 'Só 1 ano depois do início do contrato ou da última atualização, e com aviso por escrito com pelo menos 30 dias de antecedência.')],
+     'fontes': [F_CC, F_COEF],
      'botao': 'Ver casas para arrendar', 'link': '/#pesquisa', 'legal': True},
     {'slug': 'como-evitar-burlas-no-arrendamento', 'data': '2026-10-30',
      'titulo': 'Como evitar burlas no arrendamento: sinais e o que fazer | Duplicasa',
@@ -568,13 +629,17 @@ def gerar_guias(paginas, hoje):
     for g in GUIAS:
         caminho = f"/arrendar/guias/{g['slug']}/"
         outros = '<h2>Outros guias</h2><ul class="ch">' + ''.join(f'<li><a href="/arrendar/guias/{x["slug"]}/">{e(x["h1"])}</a></li>' for x in GUIAS if x is not g) + '</ul>'
-        corpo = '<article class="guia">' + g['corpo'] + (NOTA_LEGAL if g['legal'] else '') + '</article>' + outros
+        fontes = ''
+        if g.get('fontes'):
+            fontes = ('<h2>Fontes</h2><ul class="fontes">' + ''.join(f'<li><a href="{e(u)}" rel="noopener">{e(t)}</a></li>' for t, u in g['fontes'])
+                      + f'</ul><p class="nota">Regras confirmadas a {LEI_CONFIRMADA}. Se a lei mudar, atualizamos este guia.</p>')
+        corpo = '<article class="guia">' + g['corpo'] + fontes + (NOTA_LEGAL if g['legal'] else '') + '</article>' + outros
         paginas[caminho] = pagina(caminho, g['titulo'], g['desc'], g['h1'], g['intro'],
                                   [('Início', '/'), ('Arrendar', '/arrendar/'), ('Guias', '/arrendar/guias/'), (g['h1'], caminho)],
                                   [], corpo, g['link'], hoje, faq=g['faq'], artigo=g['data'], botao=g['botao'])
     lista = '<ul class="ch">' + ''.join(f'<li><a href="/arrendar/guias/{x["slug"]}/">{e(x["h1"])}</a></li>' for x in GUIAS) + '</ul>'
     paginas['/arrendar/guias/'] = pagina('/arrendar/guias/', 'Guias para arrendar casa em Portugal | Duplicasa',
-                                         'Guias práticos para arrendar casa em Portugal: passo a passo, sem fiador, sem caução, sem contrato e como evitar burlas.',
+                                         'Guias para arrendar casa em Portugal, com o que diz a lei: passo a passo, sem fiador, sem caução, sem contrato, aumento das rendas em 2027 e burlas.',
                                          'Guias para arrendar casa', 'Respostas práticas às perguntas que mais se fazem antes de arrendar casa em Portugal.',
                                          [('Início', '/'), ('Arrendar', '/arrendar/'), ('Guias', '/arrendar/guias/')], [], lista, '/#pesquisa', hoje)
 
@@ -597,7 +662,16 @@ def llms_full(resumo, n_total, hoje):
         if r['min']:
             t.append(f'- Renda mais baixa agora: {num(r["min"])} €')
         t.append('')
-    t += ['## Sobre a Duplicasa', '- Ver casas e criar alertas é grátis. O acesso para contactar quem anuncia custa 1 € nos primeiros 30 dias e depois 9,99 € a cada 30 dias, até cancelar.',
+    t += [f'## Regras do arrendamento em Portugal (confirmadas a {LEI_CONFIRMADA})',
+          '- Caução: no máximo o valor de 2 rendas; rendas adiantadas: no máximo 2 meses, com acordo escrito (artigo 1076.º do Código Civil). '
+          'A Proposta de Lei n.º 103/XVII/1 quer acabar com o limite da caução e permitir 3 rendas adiantadas, mas ainda não está em vigor.',
+          '- Contrato: deve ser escrito (artigo 1069.º do Código Civil). Sem contrato escrito por culpa que não seja do inquilino, este pode provar o arrendamento '
+          'mostrando que usa a casa sem oposição do senhorio e paga a renda há pelo menos 6 meses.',
+          '- Finanças: o senhorio comunica o contrato até ao fim do mês seguinte ao início; se não o fizer, o inquilino pode comunicá-lo no Portal das Finanças.',
+          '- Fiador: nenhuma lei o obriga; não existe garantia do Estado que o substitua no arrendamento.',
+          '- Atualização das rendas em 2027: até 2,56% (coeficiente 1,0256, Aviso n.º 24199/2026/2), 1 ano após o início ou a última atualização, com 30 dias de aviso.',
+          f'- Guias com fontes: {SITE}/arrendar/guias/', '',
+          '## Sobre a Duplicasa', '- Ver casas e criar alertas é grátis. O acesso para contactar quem anuncia custa 1 € nos primeiros 30 dias e depois 9,99 € a cada 30 dias, até cancelar.',
           '- Pagamento seguro (em breve): a entrada só chega ao senhorio quando os dois confirmam a entrega das chaves.',
           f'- Mais: {SITE}/llms.txt · {SITE}/arrendar/precos/', '']
     return '\n'.join(t)

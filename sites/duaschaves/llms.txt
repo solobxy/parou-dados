@@ -34,8 +34,15 @@ Dados atuais (número de casas e renda mediana por cidade): [llms-full.txt](http
 - [Como arrendar casa em Portugal, passo a passo](https://duplicasa.pt/arrendar/guias/como-arrendar-casa-em-portugal/)
 - [Arrendar casa sem fiador](https://duplicasa.pt/arrendar/guias/arrendar-casa-sem-fiador/)
 - [Arrendar casa sem caução](https://duplicasa.pt/arrendar/guias/arrendar-casa-sem-caucao/)
-- [Arrendar casa sem contrato: os riscos](https://duplicasa.pt/arrendar/guias/arrendar-casa-sem-contrato-riscos/)
+- [Arrendar casa sem contrato: o que diz a lei](https://duplicasa.pt/arrendar/guias/arrendar-casa-sem-contrato-riscos/)
+- [Aumento das rendas em 2027: até 2,56%](https://duplicasa.pt/arrendar/guias/aumento-das-rendas-em-2027/)
 - [Como evitar burlas no arrendamento](https://duplicasa.pt/arrendar/guias/como-evitar-burlas-no-arrendamento/)
+
+## O que diz a lei (confirmado a 30 de outubro de 2026)
+- Caução: no máximo o valor de 2 rendas. Rendas adiantadas: no máximo 2 meses (artigo 1076.º do Código Civil). Há uma proposta do Governo para mudar estes limites, ainda não em vigor.
+- O contrato deve ser escrito (artigo 1069.º do Código Civil); não ter contrato não é crime para o inquilino.
+- Nenhuma lei obriga a ter fiador.
+- Em 2027 a renda pode subir até 2,56% (coeficiente 1,0256).
 
 ## Como evitar burlas no arrendamento
 - Visitar a casa antes de pagar qualquer valor.
