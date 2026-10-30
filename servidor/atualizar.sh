@@ -217,15 +217,22 @@ if [ "$NOVO" = "$ATUAL" ] && [ -z "${FORCAR:-}" ]; then
   # Sem código novo: garante que a app e o Caddy estão a correr e a responder
   systemctl is-active --quiet caddy || systemctl start caddy
   systemctl is-active --quiet parou || systemctl start parou
-  # Vigia: se a app está "ligada" mas não responde (bloqueada) em 2 verificações
-  # seguidas (~4 min), reinicia-a. Uma falha isolada (ex.: a arrancar) não conta.
+  # Vigia: se a app está "ligada" mas não responde (bloqueada) em 3 verificações
+  # seguidas (~6 min), reinicia-a. Uma falha isolada (ex.: muito tráfego) não conta, e nos
+  # primeiros 8 minutos depois de arrancar também não (a app ainda está a preparar os índices;
+  # a 30/10/2026 reiniciá-la nessa fase deixou-a em ciclo de reinícios durante quase 2 horas).
   FALHAS=/var/lib/parou-estado/falhas-health
-  if curl -fsS -m 10 http://127.0.0.1:3000/health >/dev/null 2>&1; then
+  INICIO=$(systemctl show parou -p ActiveEnterTimestamp --value 2>/dev/null)
+  LIGADA_HA=$(( $(date +%s) - $(date -d "$INICIO" +%s 2>/dev/null || echo 0) ))
+  if curl -fsS -m 15 http://127.0.0.1:3000/health >/dev/null 2>&1; then
     rm -f "$FALHAS"
+  elif [ "$LIGADA_HA" -lt 480 ]; then
+    : # ainda a arrancar
   else
     N=$(( $(cat "$FALHAS" 2>/dev/null || echo 0) + 1 ))
     echo "$N" > "$FALHAS"
-    if [ "$N" -ge 2 ]; then
+    echo "$(date -u +%Y-%m-%dT%H:%M:%SZ) /health sem resposta ($N)" >> /var/lib/parou-estado/reinicios.log
+    if [ "$N" -ge 3 ]; then
       systemctl restart parou
       rm -f "$FALHAS"
       echo "$(date -u +%Y-%m-%dT%H:%M:%SZ) app não respondia; reiniciada" >> /var/lib/parou-estado/reinicios.log
