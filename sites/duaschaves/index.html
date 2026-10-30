@@ -395,6 +395,41 @@ dialog.dlg-promo.a-sair::backdrop{animation:sumir .23s ease-in both}
 .pop-alerta .botao-sec{width:100%}
 
 .dlg-promo .promo>*:nth-child(2){animation-delay:.12s}.dlg-promo .promo>*:nth-child(3){animation-delay:.18s}.dlg-promo .promo>*:nth-child(4){animation-delay:.24s}.dlg-promo .promo>*:nth-child(5){animation-delay:.3s}.dlg-promo .promo>*:nth-child(6){animation-delay:.36s}.dlg-promo .promo>*:nth-child(7){animation-delay:.42s}
+/* oferta de boas-vindas em ecrã inteiro */
+dialog.dialogo.dlg-oferta{width:100%;max-width:100%;height:100dvh;max-height:100dvh;margin:0;inset:0;border:0;border-radius:0;box-shadow:none;overflow:hidden}
+.po{position:relative;display:flex;flex-direction:column;height:100%;background:#fff;padding:0;gap:0}
+.po-ntf .ntf-txt{flex:1}
+.po-cena{position:relative;flex:1 1 46%;min-height:200px;overflow:hidden;background:linear-gradient(150deg,var(--verde) 0%,var(--verde-escuro) 100%)}
+.po-cena::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(15,26,23,.55) 0%,rgba(15,26,23,0) 30%,rgba(15,26,23,0) 55%,rgba(15,26,23,.5) 100%);pointer-events:none}
+.po-foto{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;transform:scale(1.08);transition:opacity .9s ease-out,transform 6s linear}
+.po-foto.ver{opacity:1;transform:scale(1)}
+.po-logo{position:absolute;z-index:2;left:20px;top:max(18px,env(safe-area-inset-top));height:29px;width:auto}
+.po-x{position:absolute;z-index:3;right:12px;top:max(10px,calc(env(safe-area-inset-top) - 4px));width:44px;height:44px;border:0;border-radius:50%;display:grid;place-items:center;background:rgba(15,26,23,.45);color:#fff;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);cursor:pointer}
+.po-x:hover{background:rgba(15,26,23,.62)}.po-x:focus-visible{outline:2px solid #fff;outline-offset:2px}
+.po-ntf{position:absolute;z-index:2;left:16px;right:16px;bottom:40px;top:auto;max-width:360px;margin:0 auto}
+.po-ntf.entra{animation:poNtf .5s var(--mola) both}
+@keyframes poNtf{from{opacity:0;transform:translateY(-10px) scale(.97)}to{opacity:1;transform:none}}
+.po-corpo{position:relative;z-index:2;flex:0 0 auto;margin-top:-24px;border-radius:24px 24px 0 0;background:#fff;padding:26px 22px max(18px,env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:14px;overflow-y:auto;max-height:calc(100dvh - 140px)}
+.po .promo-tit{font-size:clamp(26px,7.4vw,32px);max-width:15ch;line-height:1.08}
+.po .promo-preco{display:flex;align-items:baseline;flex-wrap:wrap;column-gap:4px}
+.po .promo-preco strong{font-size:44px}
+.po-acao{position:sticky;bottom:calc(-1 * max(18px,env(safe-area-inset-bottom)));display:flex;flex-direction:column;gap:10px;margin:4px -22px calc(-1 * max(18px,env(safe-area-inset-bottom)));padding:10px 22px max(18px,env(safe-area-inset-bottom));background:linear-gradient(180deg,rgba(255,255,255,0),#fff 14px)}
+@media (max-height:700px){.po-cena{min-height:120px}.po .promo-preco strong{font-size:38px}}
+.po-acao .botao{min-height:56px;font-size:18px}
+.dlg-oferta .po>*,.dlg-oferta .po-corpo>*{animation:promoItem .55s var(--mola) both}
+.dlg-oferta .po-corpo>*:nth-child(2){animation-delay:.1s}.dlg-oferta .po-corpo>*:nth-child(3){animation-delay:.16s}.dlg-oferta .po-corpo>*:nth-child(4){animation-delay:.22s}
+.dlg-oferta .po-ntf{animation:poNtf .6s var(--mola) .35s both}
+dialog.dlg-oferta[open]{animation:aparecer .35s ease-out both}
+@media (min-width:860px){
+  dialog.dialogo.dlg-oferta{width:min(940px,calc(100% - 48px));height:min(600px,calc(100dvh - 48px));margin:auto;border-radius:28px;box-shadow:0 40px 100px -30px rgba(0,0,0,.6)}
+  .po{flex-direction:row}
+  .po-cena{flex:1 1 52%}
+  .po-corpo{flex:0 0 48%;margin:0;border-radius:0;padding:56px 44px 36px;justify-content:center;max-height:none}
+  .po-ntf{bottom:28px}
+  .po-acao{position:static;margin:4px 0 0;padding:0;background:none}
+  .po-x{background:rgba(15,26,23,.06);color:var(--tinta);-webkit-backdrop-filter:none;backdrop-filter:none}.po-x:hover{background:rgba(15,26,23,.12)}.po-x:focus-visible{outline-color:var(--verde)}
+}
+@media (prefers-reduced-motion:reduce){.po-foto{transition:none;transform:none}.dlg-oferta .po>*,.dlg-oferta .po-corpo>*,.dlg-oferta .po-ntf,.po-ntf.entra{animation:none !important}}
 @keyframes dlgEntra{from{opacity:0;transform:translateY(36px) scale(.96)}to{opacity:1;transform:none}}
 @keyframes dlgSai{to{opacity:0;transform:translateY(16px) scale(.98)}}
 @keyframes promoItem{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
@@ -1045,7 +1080,7 @@ function fecharDlg(){
   dlg.classList.add('a-sair');setTimeout(function(){dlg.classList.remove('a-sair');dlg.close();},230);
 }
 dlg.addEventListener('cancel',function(e){if(dlg.classList.contains('dlg-promo')){e.preventDefault();fecharDlg();}});
-dlg.addEventListener('close',function(){dlg.classList.remove('dlg-promo','a-sair','dlg-cheia');});
+dlg.addEventListener('close',function(){dlg.classList.remove('dlg-promo','dlg-oferta','a-sair','dlg-cheia');});
 function cabecaDialogo(t){return '<div class="dialogo-cabeca"><h2>'+t+'</h2><button type="button" class="icone" aria-label="Fechar" data-fechar>'+svg(P.fechar)+'</button></div>';}
 
 var memAlertas=[];
@@ -2926,18 +2961,37 @@ function promoPodeAbrir(){
 }
 function promoFechada(){try{localStorage.setItem('dc-promo',String(Date.now()));}catch(e){}}
 function abrirPromo(){
-  dlg.classList.add('dlg-promo');
-  abrirDialogo('<div class="dialogo-corpo promo">'+
-    '<button type="button" class="icone promo-x" aria-label="Fechar" data-fechar>'+svg(P.fechar)+'</button>'+
-    '<span class="selo-quente">Oferta de boas-vindas</span>'+
-    '<h2 class="promo-tit" tabindex="-1" autofocus>Sê o primeiro a contactar as casas novas</h2>'+
-    '<p class="promo-preco">'+riscado()+'<strong>'+comVisto(P1)+'</strong> nos primeiros 30 dias</p>'+
-    listaInclui()+
-    '<button class="botao largo" type="button" id="b-promo">Começar por '+P1+'</button>'+
-    '<p class="ajuda centro">Depois, '+P2+' a cada 30 dias. Cancelas quando quiseres.</p>'+
+  /* ecrã inteiro: em cima, casas reais publicadas há pouco a passar devagar, com o alerta como chega ao telemóvel */
+  var l=casasMock(3);
+  var fotos=l.map(function(c,i){return '<img class="po-foto'+(i===0?' ver':'')+'" src="'+esc(c.fotos[0])+'" alt="" decoding="async" referrerpolicy="no-referrer" onerror="this.remove()">';}).join('');
+  var ntf=function(c){return '<span class="ntf-ic">'+SIMB_BRANCO+'</span><span class="ntf-txt"><span class="ntf-topo"><strong>Casa nova</strong><span>'+(c.min<1440?quando(Math.max(1,c.min||1)).replace('há ',''):'')+'</span></span><span>'+esc(tipTxt(c))+' '+esc(emCidade(c.cidade||c.bairro))+' · '+eur(c.renda)+'</span></span>';};
+  dlg.classList.add('dlg-promo','dlg-oferta');
+  abrirDialogo('<div class="promo po">'+
+    '<div class="po-cena" aria-hidden="true">'+fotos+
+      '<img class="po-logo" src="/marca/duaschaves-logo-branco.svg" alt="" width="116" height="29">'+
+      (l.length?'<div class="ntf po-ntf">'+ntf(l[0])+'</div>':'')+
+    '</div>'+
+    '<button type="button" class="po-x" aria-label="Fechar" data-fechar>'+svg(P.fechar)+'</button>'+
+    '<div class="po-corpo">'+
+      '<h2 class="promo-tit" tabindex="-1">Sê o primeiro a contactar as casas novas</h2>'+
+      '<p class="promo-preco">'+riscado()+'<strong>'+comVisto(P1)+'</strong> nos primeiros 30 dias</p>'+
+      listaInclui()+
+      '<div class="po-acao"><button class="botao largo" type="button" id="b-promo">Começar por '+P1+'</button>'+
+      '<p class="ajuda centro">Depois, '+P2+' a cada 30 dias. Cancelas quando quiseres.</p></div>'+
+    '</div>'+
   '</div>');
+  var tt=dlg.querySelector('.promo-tit');if(tt)tt.focus();
+  /* troca de casa a cada 4 s (sem «reduzir movimento») */
+  var imgs=dlg.querySelectorAll('.po-foto'),k=0,timer=null;
+  if(l.length>1&&!matchMedia('(prefers-reduced-motion: reduce)').matches){
+    timer=setInterval(function(){
+      imgs=dlg.querySelectorAll('.po-foto');if(imgs.length<2)return;
+      imgs[k%imgs.length].classList.remove('ver');k++;imgs[k%imgs.length].classList.add('ver');
+      var c=l[k%l.length],n=dlg.querySelector('.po-ntf');if(n){n.classList.remove('entra');void n.offsetWidth;n.innerHTML=ntf(c);n.classList.add('entra');}
+    },4000);
+  }
   ev('promo_ver',{});var clicou=false;
-  dlg.addEventListener('close',function f(){dlg.removeEventListener('close',f);promoFechada();if(!clicou)ev('promo_fechar',{});});
+  dlg.addEventListener('close',function f(){dlg.removeEventListener('close',f);clearInterval(timer);promoFechada();if(!clicou)ev('promo_fechar',{});});
   document.getElementById('b-promo').addEventListener('click',function(){clicou=true;ev('promo_clique',{});promoFechada();dlg.close();abrirAcesso(function(){});});
 }
 /* Convite para alertas por e-mail: só a quem já pesquisou ou viu 2 casas, não tem alertas,

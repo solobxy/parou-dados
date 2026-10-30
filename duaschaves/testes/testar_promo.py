@@ -12,7 +12,7 @@ try:
     ok(pg.locator('dialog[open] .promo').count()==0,'não aparece antes do tempo')
     pg.wait_for_timeout(1500);ok(pg.locator('dialog[open] .promo').count()==1,'aparece depois do tempo')
     pg.screenshot(path='/home/claude/testes/promo.png')
-    pg.click('.promo-x');pg.wait_for_timeout(300);ok(pg.locator('dialog[open]').count()==0,'fecha')
+    pg.click('.po-x');pg.wait_for_timeout(300);ok(pg.locator('dialog[open]').count()==0,'fecha')
     t=pg.evaluate("+localStorage.getItem('dc-promo')");ok(t>0,'guarda hora')
     pg.reload();pg.wait_for_timeout(2500);ok(pg.locator('dialog[open] .promo').count()==0,'não volta antes de 12 h')
     pg.evaluate("localStorage.setItem('dc-promo',String(Date.now()-13*3600000))");pg.reload();pg.wait_for_timeout(2500)
