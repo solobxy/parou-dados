@@ -288,7 +288,7 @@ www.dinissousa.pt {
 		-Server
 	}
 	root * /var/www/adribodypiercing
-	@estaticos path /fonts/* /three.module.min.js /og.jpg
+	@estaticos path /fonts/* /img/* /three.module.min.js /og.jpg
 	header @estaticos Cache-Control "public, max-age=2592000"
 	@pagina path / /index.html
 	header @pagina Cache-Control "no-cache"

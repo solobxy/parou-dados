@@ -142,13 +142,28 @@ p{margin:0}
   .heroi .texto{padding-top:calc(64px + 56svh)}
 }
 
-/* promessas */
-.promessas{background:var(--noite);padding:0 0 clamp(64px,8vw,112px)}
-.promessas .wrap{display:grid;grid-template-columns:repeat(4,1fr);gap:clamp(20px,3vw,48px)}
-.promessas b{display:block;font-family:var(--serif);font-weight:600;font-size:clamp(20px,1.7vw,24px);letter-spacing:-.02em;margin-bottom:6px;color:var(--osso)}
-.promessas span{color:var(--sec-escuro);font-size:16px}
-@media (max-width:900px){.promessas .wrap{grid-template-columns:1fr 1fr}}
-@media (max-width:420px){.promessas .wrap{grid-template-columns:1fr}}
+/* mosaico de fotos */
+.fotos{background:var(--noite);padding:0 0 clamp(80px,10vw,140px)}
+.mosaico{display:grid;grid-template-columns:5fr 4fr 3fr;gap:clamp(16px,2vw,28px);align-items:stretch}
+.mosaico figure,.f-marca{margin:0;display:flex;flex-direction:column;gap:14px}
+.ph{overflow:hidden;border-radius:22px;background:var(--noite-2)}
+.ph img{width:100%;height:100%;object-fit:cover;transform:scale(1.14);transition:transform 1.8s var(--ease)}
+.in .ph img,.ph.in img{transform:none}
+.mosaico figcaption b,.f-marca figcaption b{display:block;font-family:var(--serif);font-weight:600;font-size:clamp(19px,1.5vw,22px);letter-spacing:-.02em;color:var(--osso)}
+.mosaico figcaption span{color:var(--sec-escuro);font-size:15px}
+.f-orelha{grid-row:1/3}
+.f-orelha .ph{flex:1;min-height:0}
+.f-estudio{grid-column:2/4}
+.f-estudio .ph{aspect-ratio:16/9}
+.f-joias .ph{aspect-ratio:1}
+.f-prep .ph{aspect-ratio:4/5}
+@media (max-width:900px){
+  .mosaico{grid-template-columns:1fr 1fr}
+  .f-orelha{grid-row:auto;grid-column:1/-1}
+  .f-orelha .ph{aspect-ratio:1;flex:none}
+  .f-estudio{grid-column:1/-1}
+  .f-joias .ph,.f-prep .ph{aspect-ratio:4/5}
+}
 
 /* revelar ao scroll */
 .js .rv{opacity:0;transform:translateY(26px);transition:opacity .9s var(--ease),transform .9s var(--ease);transition-delay:var(--d,0s)}
@@ -177,6 +192,8 @@ section{position:relative}
 .pt i::after{content:"";position:absolute;inset:-7px;border-radius:50%;border:2px solid var(--tinta);opacity:0;transform:scale(.6)}
 .mapa.vivo .pt i::after{animation:pulso 2.4s var(--ease) infinite;animation-delay:var(--pd,0s)}
 @keyframes pulso{0%{opacity:.55;transform:scale(.6)}80%,100%{opacity:0;transform:scale(1.5)}}
+.pt:hover,.pt:focus-visible,.pt.atual{z-index:6}
+.pt.esq .et{left:auto;right:34px}
 .pt:hover i{transform:scale(1.3)}
 .pt[aria-pressed="true"] i{background:var(--ouro-tinta);transform:scale(1.35)}
 .pt[aria-pressed="true"] i::after{border-color:var(--ouro-tinta);opacity:1;transform:scale(1);animation:none}
@@ -184,9 +201,9 @@ section{position:relative}
 .pt .et{position:absolute;left:34px;top:50%;transform:translateY(-50%);white-space:nowrap;font-size:13px;font-weight:600;background:var(--tinta);color:var(--osso);padding:5px 10px;border-radius:999px;opacity:0;pointer-events:none;transition:opacity .2s var(--ease)}
 .pt:hover .et,.pt:focus-visible .et,.pt.atual .et{opacity:1}
 .lista-sitios{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-.lista-sitios button{display:flex;justify-content:space-between;align-items:center;gap:12px;min-height:56px;padding:0 18px;border:0;border-radius:14px;background:var(--osso-2);text-align:left;font-weight:500;transition:background-color .2s var(--ease),transform .15s var(--ease)}
-.lista-sitios button:active{transform:scale(.98)}
-.lista-sitios button[aria-pressed="true"]{background:var(--tinta);color:var(--osso)}
+.lista-sitios > button{display:flex;justify-content:space-between;align-items:center;gap:12px;min-height:56px;padding:0 18px;border:0;border-radius:14px;background:var(--osso-2);text-align:left;font-weight:500;transition:background-color .2s var(--ease),transform .15s var(--ease)}
+.lista-sitios > button:active{transform:scale(.98)}
+.lista-sitios > button[aria-pressed="true"]{background:var(--tinta);color:var(--osso)}
 .lista-sitios small{font-size:15px;font-weight:600}
 @media (max-width:520px){.lista-sitios{grid-template-columns:1fr}}
 .painel{position:sticky;top:100px}
@@ -203,6 +220,34 @@ section{position:relative}
 .ficha .img-joia{width:120px;height:120px;float:right;margin:-8px 0 0 12px;border-radius:50%;background:var(--tinta)}
 .ficha .acao{margin-top:26px;display:flex;gap:12px;flex-wrap:wrap}
 .troca{animation:troca .45s var(--ease)}
+.pop{position:absolute;z-index:10;background:var(--tinta);color:var(--osso);border-radius:20px;padding:18px 18px 18px;box-shadow:0 18px 40px rgba(0,0,0,.28)}
+.pop::before{content:"";position:absolute;left:calc(var(--ax) - 10px);top:-9px;width:20px;height:20px;background:var(--tinta);transform:rotate(45deg);border-radius:4px}
+.pop.cima::before{top:auto;bottom:-9px}
+.pop.entra{animation:popin .45s var(--ease)}
+@keyframes popin{from{opacity:0;transform:translateY(10px) scale(.96)}to{opacity:1;transform:none}}
+.pop.cima.entra{animation-name:popin-c}
+@keyframes popin-c{from{opacity:0;transform:translateY(-10px) scale(.96)}to{opacity:1;transform:none}}
+.pop .x,.ficha-inline .x{position:absolute;top:8px;right:8px;width:40px;height:40px;border:0;border-radius:50%;background:rgba(238,232,223,.12);color:var(--osso);font-size:22px;line-height:1}
+.mini{display:flex;gap:14px;align-items:center;padding-right:40px}
+.mini img{width:64px;height:64px;border-radius:50%;background:#000;flex:none}
+.mini b{display:block;font-family:var(--serif);font-weight:650;font-size:22px;letter-spacing:-.02em;line-height:1.1}
+.mini .pr{font-family:var(--serif);font-weight:650;font-size:20px}
+.mini .pr small{font-family:var(--sans);font-weight:400;font-size:14px;color:var(--sec-escuro)}
+.pop dl,.ficha-inline dl{display:grid;grid-template-columns:auto 1fr;gap:6px 16px;margin:14px 0 0;font-size:15px}
+.pop dt,.ficha-inline dt{color:var(--sec-escuro)}
+.pop dd,.ficha-inline dd{margin:0;font-weight:500}
+.pop .acao,.ficha-inline .acao{display:flex;gap:8px;margin-top:16px;flex-wrap:wrap}
+.pop .btn,.ficha-inline .btn{min-height:48px;padding:0 20px;font-size:15px;flex:1}
+.ficha-inline{grid-column:1/-1;position:relative;background:var(--tinta);color:var(--osso);border-radius:18px;padding:18px;margin:4px 0 6px;animation:popin .45s var(--ease)}
+.ficha-inline::before{content:"";position:absolute;left:calc(var(--ax) - 10px);top:-9px;width:20px;height:20px;background:var(--tinta);transform:rotate(45deg);border-radius:4px}
+.dica-toque{display:none}
+@media (max-width:900px){
+  .pt.atual .et{opacity:0}
+  .dica-toque{display:flex;align-items:center;gap:10px;justify-content:center;margin:0 0 6px;font-weight:600;font-size:15px}
+  .dica-toque svg{width:18px;height:18px;animation:desce 1.4s var(--ease) infinite}
+  @keyframes desce{0%,100%{transform:translateY(-2px)}50%{transform:translateY(4px)}}
+  #ficha{display:none}
+}
 @keyframes troca{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
 .selecao{margin-top:34px;padding:24px;border-radius:20px;background:var(--osso-2)}
 .selecao h4{margin:0 0 12px;font-size:15px;font-weight:600}
@@ -265,12 +310,14 @@ section{position:relative}
 @media (max-width:900px){.camps{grid-template-columns:1fr}}
 
 /* passos */
-.passos{display:grid;grid-template-columns:repeat(4,1fr);gap:clamp(24px,3vw,48px);position:relative}
+.como-grelha{display:grid;grid-template-columns:5fr 7fr;gap:clamp(28px,5vw,80px);align-items:start}
+.f-marca .ph{aspect-ratio:4/5}
+.passos{display:grid;grid-template-columns:repeat(2,1fr);gap:clamp(28px,3vw,48px);position:relative}
 .trilho{grid-column:1/-1;height:4px;background:var(--osso-3);border-radius:4px;overflow:hidden;margin-bottom:8px}
 .trilho i{display:block;height:100%;width:100%;background:var(--tinta);transform-origin:left;transform:scaleX(var(--p,0))}
-.passo .t{font-family:var(--serif);font-weight:650;font-size:clamp(48px,5.4vw,80px);line-height:1;letter-spacing:-.03em;display:block;margin-bottom:14px}
+.passo .t{font-family:var(--serif);font-weight:650;font-size:clamp(44px,4.4vw,68px);line-height:1;letter-spacing:-.03em;display:block;margin-bottom:14px}
 .passo h3{margin-bottom:10px}
-@media (max-width:900px){.passos{grid-template-columns:1fr 1fr}}
+@media (max-width:900px){.como-grelha{grid-template-columns:1fr}.f-marca .ph{aspect-ratio:1}.passos{grid-template-columns:1fr 1fr}}
 @media (max-width:520px){.passos{grid-template-columns:1fr}}
 
 /* cuidados */
@@ -407,7 +454,6 @@ legend{font-family:var(--serif);font-size:clamp(26px,2.4vw,32px);margin-bottom:1
   .barra-movel .wa-r{width:56px;padding:0}
   .barra-movel .wa-r svg{width:26px;height:26px}
   .rodape{padding-bottom:calc(110px + env(safe-area-inset-bottom))}
-  .toast{bottom:100px}
 }
 
 /* popup campanha */
@@ -433,7 +479,7 @@ dialog.camp[open]::backdrop{animation:fundo .4s var(--ease)}
 .camp .fechar:hover{background:rgba(238,232,223,.24)}
 .camp small{display:block;margin-top:16px;color:var(--sec-claro);font-size:13px}
 
-.toast{position:fixed;left:50%;bottom:96px;z-index:120;transform:translate(-50%,30px);opacity:0;background:var(--osso);color:var(--tinta);padding:14px 20px;border-radius:999px;font-weight:600;pointer-events:none;transition:opacity .3s var(--ease),transform .4s var(--ease)}
+.toast{position:fixed;left:50%;top:92px;z-index:120;transform:translate(-50%,-20px);opacity:0;background:var(--tinta);color:var(--osso);box-shadow:0 0 0 1px rgba(238,232,223,.18);max-width:calc(100vw - 32px);text-align:center;padding:14px 20px;border-radius:999px;font-weight:600;pointer-events:none;transition:opacity .3s var(--ease),transform .4s var(--ease)}
 .toast.on{opacity:1;transform:translate(-50%,0)}
 </style>
 </head>
@@ -491,12 +537,12 @@ dialog.camp[open]::backdrop{animation:fundo .4s var(--ease)}
   </div>
 </section>
 
-<section class="promessas" aria-label="O que está incluído">
-  <div class="wrap">
-    <div class="rv"><b>Preço fechado</b><span>Joia em titânio, soro e revisão já incluídos.</span></div>
-    <div class="rv" style="--d:.06s"><b>Agulha de uso único</b><span>Nunca pistola. Tudo aberto à tua frente.</span></div>
-    <div class="rv" style="--d:.12s"><b>Revisão grátis</b><span>Às 4–8 semanas trocamos a barra por uma mais curta.</span></div>
-    <div class="rv" style="--d:.18s"><b>Sem sinal</b><span>Marcas online e pagas só no estúdio.</span></div>
+<section class="fotos" aria-label="O estúdio e o que está incluído">
+  <div class="wrap mosaico">
+    <figure class="f-orelha rv"><div class="ph"><img src="/img/orelha.webp" alt="Orelha com várias joias finas em ouro: argola no hélix e pontos no flat, no tragus e no lóbulo" width="1200" height="1500" loading="lazy" decoding="async"></div><figcaption><b>Preço fechado</b><span>Joia em titânio, soro e revisão às 4–8 semanas já incluídos.</span></figcaption></figure>
+    <figure class="f-estudio rv" style="--d:.08s"><div class="ph"><img src="/img/estudio.webp" alt="Sala do estúdio, luminosa, com cadeira de piercing, autoclave e espelho" width="1024" height="688" loading="lazy" decoding="async"></div><figcaption><b>Uma pessoa de cada vez</b><span>Sem filas nem pressa. Marcas online e pagas só no estúdio.</span></figcaption></figure>
+    <figure class="f-joias rv" style="--d:.12s"><div class="ph"><img src="/img/joias.webp" alt="Tabuleiro com joias de piercing: argolas em ouro, labrets em titânio com pedras e uma ferradura preta" width="900" height="900" loading="lazy" decoding="async"></div><figcaption><b>Joias certificadas</b><span>Titânio de implante e ouro maciço.</span></figcaption></figure>
+    <figure class="f-prep rv" style="--d:.16s"><div class="ph"><img src="/img/preparacao.webp" alt="Mãos com luvas a abrir a embalagem esterilizada de uma agulha de uso único" width="800" height="1000" loading="lazy" decoding="async"></div><figcaption><b>Agulha de uso único</b><span>Nunca pistola. Tudo aberto à tua frente.</span></figcaption></figure>
   </div>
 </section>
 
@@ -513,6 +559,7 @@ dialog.camp[open]::backdrop{animation:fundo .4s var(--ease)}
           <button role="tab" id="tab-corpo" aria-selected="false" aria-controls="painel-corpo" tabindex="-1">Rosto e corpo</button>
         </div>
         <div id="painel-orelha" role="tabpanel" aria-labelledby="tab-orelha">
+          <p class="dica-toque" id="dicaToque"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M12 4v15M6 13l6 6 6-6"/></svg>Toca num ponto para ver o preço</p>
           <div class="orelha" id="orelha">
             <svg viewBox="90 20 240 420" fill="none" stroke="#141210" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
               <path class="tr" d="M122 170 C108 100 158 30 222 30 C290 30 318 96 306 170 C298 224 276 250 268 290 C262 330 268 380 238 410 C212 434 168 428 154 400 C144 380 150 356 160 342"/>
@@ -603,12 +650,15 @@ dialog.camp[open]::backdrop{animation:fundo .4s var(--ease)}
       <h2 id="t-como" class="rv">Como corre a marcação.</h2>
       <p class="sec rv" style="--d:.08s">Cerca de 20 minutos, do momento em que te sentas até saíres com os cuidados explicados. Se estiveres com nervos, vamos ao teu ritmo.</p>
     </div>
+    <div class="como-grelha">
+    <figure class="f-marca rv"><div class="ph"><img src="/img/marcacao.webp" alt="Cliente a sorrir confirma ao espelho o ponto marcado antes do piercing" width="800" height="1000" loading="lazy" decoding="async"></div><figcaption class="sec">Só furamos depois de confirmares o ponto ao espelho.</figcaption></figure>
     <div class="passos" id="passos">
       <div class="trilho" aria-hidden="true"><i></i></div>
       <div class="passo rv"><span class="t num">10 min</span><h3>Conversa</h3><p class="sec">Vemos a tua orelha ou o sítio que queres, escolhes a joia e tiras dúvidas. Se o sítio não for bom para a tua anatomia, dizemos.</p></div>
       <div class="passo rv" style="--d:.08s"><span class="t num">5 min</span><h3>Preparação</h3><p class="sec">O material sai da autoclave e abre-se à tua frente. Marcamos o ponto e confirmas ao espelho.</p></div>
       <div class="passo rv" style="--d:.16s"><span class="t num">1 min</span><h3>Perfuração</h3><p class="sec">Com agulha de uso único, nunca com pistola. Respiras fundo, contamos até três e está feito.</p></div>
       <div class="passo rv" style="--d:.24s"><span class="t num">5 min</span><h3>Cuidados</h3><p class="sec">Explicamos a limpeza, levas o soro e as instruções por escrito. Ficas com o nosso contacto para qualquer dúvida.</p></div>
+    </div>
     </div>
   </div>
 </section>
@@ -896,6 +946,7 @@ S.filter(function(s){ return s.z === 'orelha'; }).forEach(function(s, i){
   b.style.setProperty('--pd', (i * .19) + 's');
   b.setAttribute('aria-pressed', 'false');
   b.setAttribute('aria-label', s.n + ', ' + fmt(s.p));
+  if ((s.x - VB.x) / VB.w > .55) b.classList.add('esq');
   b.innerHTML = '<i></i><span class="et" aria-hidden="true">' + s.n + '</span>';
   b.addEventListener('click', function(){ mostrar(s.id); });
   orelha.appendChild(b);
@@ -908,20 +959,62 @@ S.filter(function(s){ return s.z === 'rosto' || s.z === 'corpo'; }).forEach(func
   b.addEventListener('click', function(){ mostrar(s.id); });
   lc.appendChild(b);
 });
+var mq = window.matchMedia('(max-width:900px)');
+var pop = document.createElement('div'); pop.className = 'pop'; pop.hidden = true; pop.setAttribute('role', 'dialog'); pop.setAttribute('aria-live', 'polite');
+orelha.appendChild(pop);
+var inl = document.createElement('div'); inl.className = 'ficha-inline'; inl.setAttribute('aria-live', 'polite');
+function miniHTML(s, ja){
+  return '<button type="button" class="x" aria-label="Fechar">×</button>' +
+    '<div class="mini"><img src="' + IMG[s.img] + '" alt="" width="64" height="64"><div><b>' + s.n + '</b><span class="pr num">' + fmt(s.p) + ' <small>· ' + fmt(s.p * (1 - CFG.desconto)) + ' online</small></span></div></div>' +
+    '<dl><dt>Cicatriza em</dt><dd>' + s.c + '</dd><dt>Joia incluída</dt><dd>' + s.j + '</dd></dl>' +
+    '<div class="acao">' + (ja ? '<button type="button" class="btn cinza js-add">Retirar</button><a class="btn" href="#marcar">Marcar já</a>' : '<button type="button" class="btn js-add">Juntar à seleção</button>') + '</div>';
+}
+function ligar(box, id){
+  box.querySelector('.js-add').addEventListener('click', function(){
+    var ja = sel.indexOf(id) >= 0; toggle(id); mostrar(id);
+    if (!ja) toast(byId[id].n + ' na seleção. Junta mais ou marca já.');
+  });
+  box.querySelector('.x').addEventListener('click', function(){ fecharFicha(); });
+}
+function fecharFicha(){ pop.hidden = true; if (inl.parentNode) inl.parentNode.removeChild(inl); atual = null; marcarPontos(); }
 function mostrar(id){
   var s = byId[id]; atual = id;
-  mapa.classList.remove('vivo');
+  mapa.classList.remove('vivo'); $('#dicaToque').style.visibility = 'hidden';
   var ja = sel.indexOf(id) >= 0;
-  var f = $('#ficha');
-  f.innerHTML = '<div class="troca"><img class="img-joia" src="' + IMG[s.img] + '" alt="" width="120" height="120">' +
-    '<h3>' + s.n + '</h3>' +
-    '<div class="linha"><span class="preco num">' + fmt(s.p) + '</span></div>' +
-    '<p class="sec num">' + fmt(s.p * (1 - CFG.desconto)) + ' na marcação online</p>' +
-    '<dl><dt>Cicatrização</dt><dd>' + s.c + '</dd><dt>Joia incluída</dt><dd>' + s.j + '</dd><dt>Joia em ouro</dt><dd>a partir de mais 35 €</dd></dl>' +
-    '<div class="acao"><button type="button" class="btn ' + (ja ? 'cinza' : 'escuro') + '" id="fichaAdd">' + (ja ? 'Retirar da seleção' : 'Juntar à seleção') + '</button></div></div>';
-  $('#fichaAdd').addEventListener('click', function(){ toggle(id); mostrar(id); });
+  if (mq.matches && s.z === 'orelha'){
+    if (inl.parentNode) inl.parentNode.removeChild(inl);
+    var novo = pop.hidden || pop.dataset.id !== id;
+    pop.innerHTML = miniHTML(s, ja); pop.dataset.id = id; pop.hidden = false; ligar(pop, id);
+    var W = orelha.clientWidth, H = orelha.clientHeight;
+    var px = (s.x - VB.x) / VB.w * W, py = (s.y - VB.y) / VB.h * H;
+    var pw = Math.min(310, W - 4); pop.style.width = pw + 'px';
+    var left = Math.max(2, Math.min(W - pw - 2, px - pw / 2));
+    pop.style.left = left + 'px'; pop.style.setProperty('--ax', Math.max(22, Math.min(pw - 22, px - left)) + 'px');
+    var cima = py > H * 0.5;
+    pop.classList.toggle('cima', cima);
+    if (cima){ pop.style.top = 'auto'; pop.style.bottom = (H - py + 26) + 'px'; } else { pop.style.bottom = 'auto'; pop.style.top = (py + 26) + 'px'; }
+    if (novo){ pop.classList.remove('entra'); void pop.offsetWidth; pop.classList.add('entra'); }
+    setTimeout(function(){ var r = pop.getBoundingClientRect(); if (r.top < 80 || r.bottom > window.innerHeight - 90) window.scrollBy({top: r.top < 80 ? r.top - 100 : r.bottom - window.innerHeight + 110, behavior:'smooth'}); }, 80);
+  } else if (mq.matches){
+    pop.hidden = true;
+    var b = $('#listaCorpo button[data-id="' + id + '"]');
+    if (inl.previousElementSibling !== b){ b.after(inl); inl.style.animation = 'none'; void inl.offsetWidth; inl.style.animation = ''; }
+    inl.innerHTML = miniHTML(s, ja); ligar(inl, id);
+    inl.style.setProperty('--ax', (b.offsetLeft - inl.offsetLeft + b.offsetWidth / 2) + 'px');
+    setTimeout(function(){ var r = inl.getBoundingClientRect(); if (r.bottom > window.innerHeight - 90) window.scrollBy({top: r.bottom - window.innerHeight + 110, behavior:'smooth'}); }, 80);
+  } else {
+    var f = $('#ficha');
+    f.innerHTML = '<div class="troca"><img class="img-joia" src="' + IMG[s.img] + '" alt="" width="120" height="120">' +
+      '<h3>' + s.n + '</h3>' +
+      '<div class="linha"><span class="preco num">' + fmt(s.p) + '</span></div>' +
+      '<p class="sec num">' + fmt(s.p * (1 - CFG.desconto)) + ' na marcação online</p>' +
+      '<dl><dt>Cicatrização</dt><dd>' + s.c + '</dd><dt>Joia incluída</dt><dd>' + s.j + '</dd><dt>Joia em ouro</dt><dd>a partir de mais 35 €</dd></dl>' +
+      '<div class="acao"><button type="button" class="btn ' + (ja ? 'cinza' : 'escuro') + '" id="fichaAdd">' + (ja ? 'Retirar da seleção' : 'Juntar à seleção') + '</button></div></div>';
+    $('#fichaAdd').addEventListener('click', function(){ toggle(id); mostrar(id); });
+  }
   marcarPontos();
 }
+document.addEventListener('keydown', function(e){ if (e.key === 'Escape' && (!pop.hidden || inl.parentNode)) fecharFicha(); });
 function marcarPontos(){
   $$('.pt, #listaCorpo button').forEach(function(b){
     var on = sel.indexOf(b.dataset.id) >= 0;
@@ -941,7 +1034,7 @@ function desenharSelecao(){
     var li = document.createElement('li');
     li.innerHTML = '<span>' + s.n + '</span><span style="margin-left:auto" class="num">' + fmt(s.p) + '</span>';
     var x = document.createElement('button'); x.type = 'button'; x.textContent = '×'; x.setAttribute('aria-label', 'Retirar ' + s.n);
-    x.addEventListener('click', function(){ toggle(id); if (atual === id) mostrar(id); });
+    x.addEventListener('click', function(){ toggle(id); if (atual === id && (!mq.matches || !pop.hidden || inl.parentNode)) mostrar(id); });
     li.appendChild(x); ul.appendChild(li);
   });
   contar($('#selTotal'), t * (1 - CFG.desconto));
