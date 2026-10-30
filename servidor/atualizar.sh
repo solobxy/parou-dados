@@ -108,6 +108,16 @@ if [ -f "$AB/index.html" ] && ! diff -rq "$AB" /var/www/adribodypiercing >/dev/n
     && mv /var/www/adribodypiercing.novo /var/www/adribodypiercing && rm -rf /var/www/adribodypiercing.velho
 fi
 
+# Goodman: advogado virtual, site estático em sites/goodman.
+# Copia só quando mudou, para uma pasta nova, e troca de uma vez (nunca fica meio copiado).
+GM=$BASE/servidor/sites/goodman
+if [ -f "$GM/index.html" ] && ! diff -rq "$GM" /var/www/goodman >/dev/null 2>&1; then
+  rm -rf /var/www/goodman.novo && mkdir -p /var/www && cp -r "$GM" /var/www/goodman.novo \
+    && chmod -R a+rX /var/www/goodman.novo \
+    && rm -rf /var/www/goodman.velho && { [ ! -d /var/www/goodman ] || mv /var/www/goodman /var/www/goodman.velho; } \
+    && mv /var/www/goodman.novo /var/www/goodman && rm -rf /var/www/goodman.velho
+fi
+
 # Duas Chaves: site estático (protótipo) que vive neste repositório, em sites/duaschaves.
 # Copia só quando mudou, para uma pasta nova, e troca de uma vez (nunca fica meio copiado).
 DC=$BASE/servidor/sites/duaschaves

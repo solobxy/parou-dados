@@ -325,3 +325,51 @@ www.adribodypiercing.pt {
 	redir https://adribodypiercing.pt{uri} permanent
 }
 # FIM www.adribodypiercing.pt
+
+# GOODMAN.PT - advogado virtual (site estático em /var/www/goodman, vindo de sites/goodman deste repositório).
+# O chat fala com a função «goodman» no Supabase; os PDF e Word são lidos com pdf.js e mammoth do cdnjs.
+(goodman) {
+	encode zstd gzip
+	header {
+		Strict-Transport-Security "max-age=31536000"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		Permissions-Policy "geolocation=(), microphone=()"
+		Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; worker-src 'self' blob: https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self' https://wbbnbtvtkzbrxomlorop.supabase.co https://cdnjs.cloudflare.com; form-action 'self'; frame-ancestors 'none'; base-uri 'none'"
+		-Server
+	}
+	root * /var/www/goodman
+	@estaticos path /favicon.svg /icone-180.png /partilha.png
+	header @estaticos Cache-Control "public, max-age=2592000"
+	@pagina path / /index.html
+	header @pagina Cache-Control "no-cache"
+	file_server
+	handle_errors {
+		root * /var/www/goodman
+		rewrite * /404.html
+		file_server
+	}
+}
+
+# Endereço de testes (funciona antes de o domínio apontar para aqui; fica fora do Google)
+goodman.{HOST_TESTE} {
+	header X-Robots-Tag "noindex, nofollow"
+	handle /robots.txt {
+		respond "User-agent: *
+Disallow: /
+" 200
+	}
+	import goodman
+}
+
+# INICIO goodman.pt
+goodman.pt {
+	import goodman
+}
+# FIM goodman.pt
+
+# INICIO www.goodman.pt
+www.goodman.pt {
+	redir https://goodman.pt{uri} permanent
+}
+# FIM www.goodman.pt
