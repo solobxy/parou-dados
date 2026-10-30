@@ -265,6 +265,11 @@ fi
 echo "$NOVO" > "$DIR/.versao"
 
 ANTERIOR=$(readlink -f $BASE/atual 2>/dev/null || true)
+# Mantém os pedaços (assets) da versão anterior: quem tinha a app aberta continua a conseguir abrir
+# os ecrãs (sem isto aparecia "Failed to fetch dynamically imported module" logo a seguir a cada versão)
+if [ -n "$ANTERIOR" ] && [ -d "$ANTERIOR/dist/assets" ] && [ -d "$DIR/dist/assets" ]; then
+  cp -n "$ANTERIOR"/dist/assets/* "$DIR/dist/assets/" 2>/dev/null || true
+fi
 ln -sfn "$DIR" $BASE/atual.novo && mv -T $BASE/atual.novo $BASE/atual
 systemctl restart parou
 
