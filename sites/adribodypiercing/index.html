@@ -1051,20 +1051,20 @@ function setSel(n){ sel = n; store.set('adri-sel', sel); listeners.forEach(funct
 function toggle(id){ var i = sel.indexOf(id); if (i < 0) setSel(sel.concat(id)); else setSel(sel.filter(function(x){ return x !== id; })); }
 
 /* ---------- Navegação ---------- */
-/* A barra só esconde depois de descer 60 px seguidos e só volta depois de subir 50 px:
-   toques curtos e o ressalto do iPhone já não a fazem saltar */
+/* A barra só esconde depois de descer 80 px seguidos e só volta depois de subir 60 px seguidos:
+   pequenos scrolls para ler e o ressalto do iPhone (em cima e em baixo) já não a fazem saltar */
 var nav = $('#nav'), lastY = Math.max(0, window.scrollY), acum = 0, navTick = false;
 function onScrollNav(){
   navTick = false;
-  var y = Math.max(0, window.scrollY), d = y - lastY;
+  var y = Math.min(Math.max(0, window.scrollY), document.documentElement.scrollHeight - window.innerHeight), d = y - lastY;
   lastY = y;
   nav.classList.toggle('solida', y > 40);
   if ((d > 0 && acum < 0) || (d < 0 && acum > 0)) acum = 0;
   acum += d;
   var escondida = nav.classList.contains('esconde');
   if (document.body.classList.contains('menu-aberto') || y < 200){ if (escondida) nav.classList.remove('esconde'); acum = 0; }
-  else if (!escondida && acum > 60){ nav.classList.add('esconde'); acum = 0; }
-  else if (escondida && acum < -50){ nav.classList.remove('esconde'); acum = 0; }
+  else if (!escondida && acum > 80){ nav.classList.add('esconde'); acum = 0; }
+  else if (escondida && acum < -60){ nav.classList.remove('esconde'); acum = 0; }
   $('#wa').classList.toggle('on', y > window.innerHeight * .6);
   var mr = $('#marcar').getBoundingClientRect();
   $('#barraMovel').classList.toggle('on', y > window.innerHeight * .7 && !(mr.top < window.innerHeight * .8 && mr.bottom > window.innerHeight * .3));
