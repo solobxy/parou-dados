@@ -55,9 +55,16 @@ body[data-world="goodman"]{--bg:#0E3A2C;--ink:#F0F5F1;--muted:#B4CABE;--surface:
 body[data-world="duplicasa"]{--bg:#F3F5F4;--ink:#10241B;--muted:#4A5A52;--surface:#E0E8E3;--accent:#0E6B4F;--on-accent:#FFFFFF;--frame:#10241B;--mark:#0E6B4F}
 
 *,*::before,*::after{box-sizing:border-box}
+html{background:var(--paper)}
+.mundo{position:fixed;inset:0;z-index:-1;pointer-events:none}
+.mundo i{position:absolute;inset:0;display:block}
+.mundo-base{background:var(--paper)}
+.mundo-wipe{opacity:0}
+:where(main,footer) :where(p,h2,h3,li,summary,small,span,strong){transition:color .35s var(--ease)}
+@media (prefers-reduced-motion:reduce){.mundo-base{transition:background-color .6s var(--ease)}}
 html{-webkit-text-size-adjust:100%;scroll-behavior:smooth;scroll-padding-top:76px}
-body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font);font-size:17px;line-height:1.5;
-  transition:background-color .6s var(--ease),color .6s var(--ease);-webkit-font-smoothing:antialiased;touch-action:manipulation}
+body{margin:0;background:transparent;color:var(--ink);font-family:var(--font);font-size:17px;line-height:1.5;
+  transition:color .35s var(--ease);-webkit-font-smoothing:antialiased;touch-action:manipulation}
 img{max-width:100%;display:block}
 a{color:inherit}
 h1,h2,h3{margin:0;text-wrap:balance}
@@ -68,7 +75,7 @@ p{margin:0}
 .wrap{max-width:1320px;margin:0 auto;padding-inline:var(--gutter)}
 
 /* Cabeçalho */
-.top{position:sticky;top:0;z-index:10;background:var(--bg);transition:background-color .6s var(--ease)}
+.top{position:sticky;top:0;z-index:10;background:var(--bg);transition:background-color .35s var(--ease)}
 .top .wrap{display:flex;align-items:center;justify-content:space-between;height:64px;gap:16px}
 .brand{display:inline-flex;align-items:center;gap:10px;text-decoration:none;min-height:44px}
 .brand-name{font-weight:800;font-stretch:112%;letter-spacing:-.03em;font-size:18px;white-space:nowrap}
@@ -90,13 +97,19 @@ p{margin:0}
 /* Herói */
 .hero{padding-top:12px;padding-bottom:72px;overflow-x:clip}
 .hero .wrap{display:grid;gap:28px}
-.fan{position:relative;height:330px;order:-1;--pw:146px}
+.fan{position:relative;height:360px;order:-1;--pw:146px;margin-inline:calc(-1 * var(--gutter));background:var(--stage,#0E0C0B);color:var(--stage-ink,#EEE8DF);overflow:hidden;transition:background-color .9s var(--ease),color .9s var(--ease)}
+.fan .phone{background:var(--hframe,#2A2622);transition:background-color .9s var(--ease)}
+.scr{position:relative;aspect-ratio:640/1325;border-radius:24px;overflow:hidden;background:var(--surface)}
+.scr img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:top;border-radius:0;opacity:0;transition:opacity .8s var(--ease)}
+.scr img.on{opacity:1}
+.palco-nome{position:absolute;left:var(--gutter);bottom:18px;margin:0;font-weight:700;font-size:15px;z-index:3}
+.palco-pausa{right:var(--gutter);bottom:10px;z-index:3;color:inherit;background:rgba(127,127,127,.18);background:color-mix(in srgb,currentColor 13%,transparent)}
 .phone{position:absolute;width:var(--pw);padding:6px;background:var(--frame);border-radius:30px;transition:background-color .6s var(--ease)}
 .phone img{width:100%;height:auto;aspect-ratio:640/1325;object-fit:cover;object-position:top;border-radius:24px;background:var(--surface)}
-.fan .p-left,.fan .p-right{--pw:124px;top:34px}
+.fan .p-left,.fan .p-right{--pw:124px;top:58px}
 .fan .p-left{left:calc(50% - 160px);transform:rotate(-8deg);transform-origin:bottom right}
 .fan .p-right{right:calc(50% - 160px);transform:rotate(8deg);transform-origin:bottom left}
-.fan .p-center{left:50%;top:0;margin-left:calc(var(--pw) / -2);z-index:2}
+.fan .p-center{left:50%;top:24px;margin-left:calc(var(--pw) / -2);z-index:2}
 .name{font-size:clamp(64px,17vw,176px);line-height:.86;font-weight:800;font-stretch:108%;letter-spacing:-.04em}
 .name span{display:block}
 .lead{margin-top:18px;font-size:clamp(21px,2.4vw,30px);line-height:1.25;font-weight:500;max-width:26ch}
@@ -126,6 +139,12 @@ p{margin:0}
 .project .wrap{display:grid;gap:32px;align-items:center}
 .project .shot{display:flex;justify-content:center}
 .project .phone{position:relative;--pw:min(78vw,320px)}
+.phone video{display:block;width:100%;height:auto;aspect-ratio:360/746;object-fit:cover;object-position:top;border-radius:24px;background:var(--surface)}
+.vplay{position:absolute;right:16px;bottom:16px;width:44px;height:44px;border-radius:50%;border:0;background:rgba(14,14,14,.72);color:#fff;display:grid;place-items:center;cursor:pointer;opacity:.85;transition:opacity .2s var(--ease)}
+.vplay:hover{opacity:1}
+.vplay svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
+.vplay .i-play{display:none;fill:currentColor;stroke:none}
+.vplay[aria-pressed="true"] .i-play{display:block}.vplay[aria-pressed="true"] .i-pausa{display:none}
 .project .logo{height:auto;width:auto;max-height:52px;max-width:220px}
 .project h3{margin-top:24px;font-size:clamp(26px,3.4vw,46px);line-height:1;font-weight:800;font-stretch:104%;letter-spacing:-.03em}
 .project p{margin-top:16px;max-width:46ch;font-size:18px;color:var(--muted);transition:color .6s var(--ease)}
@@ -197,8 +216,8 @@ footer a{min-height:44px;display:inline-flex;align-items:center}
 /* Telemóvel largo / tablet */
 @media (min-width:720px){
   :root{--gutter:40px;--section:144px}
-  .fan{height:440px;--pw:196px}
-  .fan .p-left,.fan .p-right{--pw:168px;top:44px}
+  .fan{height:500px;--pw:196px}
+  .fan .p-left,.fan .p-right{--pw:168px;top:76px}
   .fan .p-left{left:calc(50% - 228px)}
   .fan .p-right{right:calc(50% - 228px)}
   .styles{grid-template-columns:repeat(4,minmax(0,1fr))}
@@ -215,9 +234,9 @@ footer a{min-height:44px;display:inline-flex;align-items:center}
   .hero{padding-top:40px;padding-bottom:96px}
   .ctas .btn{flex:0 0 auto}
   .hero .wrap{grid-template-columns:repeat(12,minmax(0,1fr));align-items:end;gap:24px}
-  .hero-text{grid-column:1 / span 7;padding-bottom:12px}
-  .fan{order:0;grid-column:8 / span 5;height:560px;--pw:250px}
-  .fan .p-left,.fan .p-right{--pw:210px;top:60px}
+  .hero-text{grid-column:1 / span 6;padding-bottom:12px}
+  .fan{order:0;grid-column:7 / span 6;height:600px;--pw:250px;margin-inline:0;margin-left:clamp(16px,2.4vw,44px);margin-right:calc(-1 * var(--gutter));border-radius:32px 0 0 32px}
+  .fan .p-left,.fan .p-right{--pw:210px;top:92px}
   .fan .p-left{left:calc(50% - 270px)}
   .fan .p-right{right:calc(50% - 270px)}
   .project{padding-block:120px}
@@ -267,6 +286,7 @@ footer a{min-height:44px;display:inline-flex;align-items:center}
 </style>
 </head>
 <body data-world="base">
+<div class="mundo" aria-hidden="true"><i class="mundo-base" id="mundoBase"></i><i class="mundo-wipe" id="mundoWipe"></i></div>
 <a class="skip" href="#conteudo">Saltar para o conteúdo</a>
 
 <header class="top">
@@ -296,10 +316,12 @@ footer a{min-height:44px;display:inline-flex;align-items:center}
           <a class="btn btn-secondary" href="#projetos">Ver projetos</a>
         </div>
       </div>
-      <div class="fan" role="group" aria-label="Três sites que fiz">
-        <div class="phone p-left"><img src="img/anjinho.webp" width="640" height="1237" alt="Página inicial da loja anjinho.pt"></div>
-        <div class="phone p-right"><img src="img/jinxed.webp" width="640" height="1325" alt="Peças da loja jinxed.world"></div>
-        <div class="phone p-center"><img src="img/adri.webp" width="640" height="1385" alt="Site AdriBodyPiercing com a letra A em 3D e uma barra de piercing dourada" fetchpriority="high"></div>
+      <div class="fan" id="palco" role="group" aria-roledescription="carrossel" aria-label="Sites que fiz">
+        <div class="phone p-left" aria-hidden="true"><div class="scr"></div></div>
+        <div class="phone p-right" aria-hidden="true"><div class="scr"></div></div>
+        <div class="phone p-center"><div class="scr"><img class="on" src="img/adri.webp" width="640" height="1385" alt="Site AdriBodyPiercing" fetchpriority="high"></div></div>
+        <p class="palco-nome" id="palcoNome" aria-live="polite">AdriBodyPiercing</p>
+        <button class="palco-pausa vplay" id="palcoPausa" type="button" aria-label="Pausar a troca de projetos"><svg viewBox="0 0 24 24" aria-hidden="true"><path class="i-pausa" d="M8 5v14M16 5v14"/><path class="i-play" d="M8 5l11 7-11 7z"/></svg></button>
       </div>
     </div>
   </section>
@@ -326,7 +348,7 @@ footer a{min-height:44px;display:inline-flex;align-items:center}
           <p class="rv">Estúdio de body piercing do Adriano, que está a começar. Fiz o logótipo, a joia em 3D que roda no topo e o site, com preços à vista e marcação online.</p>
           <a class="btn btn-secondary rv" href="https://adribodypiercing.2-31-13-85.sslip.io" target="_blank" rel="noopener">Ver o site ↗</a>
         </div>
-        <div class="shot"><div class="phone rv"><img src="img/adri.webp" width="640" height="1385" alt="Site AdriBodyPiercing: a letra A em 3D atravessada por uma barra de piercing dourada" loading="lazy"></div></div>
+        <div class="shot"><div class="phone rv"><video class="demo" muted loop playsinline preload="none" poster="vid/adri.webp" width="360" height="746" aria-label="Vídeo do site AdriBodyPiercing a ser usado"><source src="vid/adri.mp4" type="video/mp4"></video><button class="vplay" type="button" aria-label="Pausar vídeo"><svg viewBox="0 0 24 24" aria-hidden="true"><path class="i-pausa" d="M8 5v14M16 5v14"/><path class="i-play" d="M8 5l11 7-11 7z"/></svg></button></div></div>
       </div>
     </article>
 
@@ -350,7 +372,7 @@ footer a{min-height:44px;display:inline-flex;align-items:center}
           <p class="rv">Marca de moda coquette. Fiz a marca, a loja e a direção das imagens das peças, com o preço a aparecer só quando se abre cada uma.</p>
           <a class="btn btn-secondary rv" href="https://anjinho.pt" target="_blank" rel="noopener">Visitar anjinho.pt ↗</a>
         </div>
-        <div class="shot"><div class="phone rv"><img src="img/anjinho.webp" width="640" height="1237" alt="Loja anjinho.pt: «quase uma anjinha.» com as botas nuvem" loading="lazy"></div></div>
+        <div class="shot"><div class="phone rv"><video class="demo" muted loop playsinline preload="none" poster="vid/anjinho.webp" width="360" height="746" aria-label="Vídeo da loja anjinho.pt a ser usada"><source src="vid/anjinho.mp4" type="video/mp4"></video><button class="vplay" type="button" aria-label="Pausar vídeo"><svg viewBox="0 0 24 24" aria-hidden="true"><path class="i-pausa" d="M8 5v14M16 5v14"/><path class="i-play" d="M8 5l11 7-11 7z"/></svg></button></div></div>
       </div>
     </article>
 
@@ -374,7 +396,7 @@ footer a{min-height:44px;display:inline-flex;align-items:center}
           <p class="rv">Plataforma de arrendamento. Fiz o nome, a marca e o site: as casas dos principais sites num só lugar, com pagamento seguro.</p>
           <a class="btn btn-secondary rv" href="https://duplicasa.pt" target="_blank" rel="noopener">Visitar duplicasa.pt ↗</a>
         </div>
-        <div class="shot"><div class="phone rv"><img src="img/duplicasa.webp" width="640" height="1325" alt="Site Duplicasa: pesquisa de casas para arrendar" loading="lazy"></div></div>
+        <div class="shot"><div class="phone rv"><video class="demo" muted loop playsinline preload="none" poster="vid/duplicasa.webp" width="360" height="746" aria-label="Vídeo do site Duplicasa a ser usado"><source src="vid/duplicasa.mp4" type="video/mp4"></video><button class="vplay" type="button" aria-label="Pausar vídeo"><svg viewBox="0 0 24 24" aria-hidden="true"><path class="i-pausa" d="M8 5v14M16 5v14"/><path class="i-play" d="M8 5l11 7-11 7z"/></svg></button></div></div>
       </div>
     </article>
 
@@ -386,7 +408,7 @@ footer a{min-height:44px;display:inline-flex;align-items:center}
           <p class="rv">Assistente jurídico com IA para a lei portuguesa. Fiz a marca, a personagem e o site: contas o caso, ele lê os teus documentos e responde com o artigo da lei e a ligação ao Diário da República. Ainda está em testes.</p>
           <a class="btn btn-secondary rv" href="https://goodman.2-31-13-85.sslip.io" target="_blank" rel="noopener">Ver o site ↗</a>
         </div>
-        <div class="shot"><div class="phone rv"><img src="img/goodman.webp" width="640" height="1385" alt="Site Goodman: «A lei do teu lado.», com a personagem do advogado e uma carta do senhorio" loading="lazy"></div></div>
+        <div class="shot"><div class="phone rv"><video class="demo" muted loop playsinline preload="none" poster="vid/goodman.webp" width="360" height="746" aria-label="Vídeo do site Goodman a ser usado"><source src="vid/goodman.mp4" type="video/mp4"></video><button class="vplay" type="button" aria-label="Pausar vídeo"><svg viewBox="0 0 24 24" aria-hidden="true"><path class="i-pausa" d="M8 5v14M16 5v14"/><path class="i-play" d="M8 5l11 7-11 7z"/></svg></button></div></div>
       </div>
     </article>
   </section>
@@ -489,11 +511,33 @@ footer a{min-height:44px;display:inline-flex;align-items:center}
   function setWa(a){ a.href = WA + encodeURIComponent(a.getAttribute('data-msg')||'Olá Dinis! Quero um site.'); }
   document.querySelectorAll('.wa').forEach(setWa);
 
-  /* Mundos: a página veste o projeto que está a meio do ecrã */
+  /* Mundos: a cor nova abre-se em círculo a partir do logótipo do projeto que entra */
+  var base=document.getElementById('mundoBase'), wipe=document.getElementById('mundoWipe');
+  var reduz=window.matchMedia('(prefers-reduced-motion: reduce)');
+  var anim=null, troca=null, mundoAtual='base', ultimoY=window.scrollY;
+  function corDe(w){ var b=document.body, a=b.getAttribute('data-world'); b.setAttribute('data-world',w); var c=getComputedStyle(b).getPropertyValue('--bg').trim(); b.setAttribute('data-world',a); return c; }
+  function mudarMundo(sec){
+    var w=sec.getAttribute('data-world'); if(w===mundoAtual) return;
+    var desce=window.scrollY>=ultimoY; ultimoY=window.scrollY;
+    var cor=corDe(w); mundoAtual=w;
+    clearTimeout(troca);
+    /* o texto muda a meio do círculo, para nunca ficar ilegível em cima da cor antiga */
+    var aplicar=function(){ document.body.setAttribute('data-world',w); };
+    if(anim){ anim.onfinish=null; anim.cancel(); anim=null; base.style.backgroundColor=wipe.style.backgroundColor; wipe.style.opacity='0'; }
+    if(reduz.matches || !wipe.animate){ aplicar(); base.style.backgroundColor=cor; return; }
+    troca=setTimeout(aplicar,300);
+    var vw=innerWidth, vh=innerHeight, x=vw/2, y=desce?vh:0;
+    var lg=sec.querySelector('.logo');
+    if(lg){ var r=lg.getBoundingClientRect(); x=Math.min(vw,Math.max(0,r.left+r.width/2)); y=Math.min(vh,Math.max(0,r.top+r.height/2)); }
+    var raio=Math.hypot(Math.max(x,vw-x),Math.max(y,vh-y))+20;
+    wipe.style.backgroundColor=cor; wipe.style.opacity='1';
+    anim=wipe.animate([{clipPath:'circle(0px at '+x+'px '+y+'px)'},{clipPath:'circle('+raio+'px at '+x+'px '+y+'px)'}],{duration:760,easing:'cubic-bezier(.65,0,.35,1)',fill:'forwards'});
+    anim.onfinish=function(){ base.style.backgroundColor=cor; wipe.style.opacity='0'; var a=anim; anim=null; if(a) a.cancel(); };
+  }
   var worlds=[].slice.call(document.querySelectorAll('[data-world]')).filter(function(el){return el!==document.body;});
   if('IntersectionObserver' in window){
     var wo=new IntersectionObserver(function(entries){
-      entries.forEach(function(e){ if(e.isIntersecting){ document.body.setAttribute('data-world', e.target.getAttribute('data-world')); } });
+      entries.forEach(function(e){ if(e.isIntersecting){ mudarMundo(e.target); } });
     },{rootMargin:'-90% 0px -9% 0px'});
     worlds.forEach(function(el){wo.observe(el);});
 
@@ -513,6 +557,66 @@ footer a{min-height:44px;display:inline-flex;align-items:center}
     },{rootMargin:'0px 0px -8% 0px'});
     rv.forEach(function(el){ro.observe(el);});
   }
+
+  /* Topo vivo: o leque troca de projeto e o palco veste a cor de cada um */
+  (function(){
+    var P=[
+      {n:'AdriBodyPiercing',img:'img/adri.webp',bg:'#0E0C0B',ink:'#EEE8DF',fr:'#2A2622'},
+      {n:'anjinho',img:'img/anjinho.webp',bg:'#DCE8F4',ink:'#1D1719',fr:'#1D1719'},
+      {n:'jinxed',img:'img/jinxed.webp',bg:'#110D0E',ink:'#EAE3DA',fr:'#2B2325'},
+      {n:'PAROU',img:'img/parou.webp',bg:'#16151A',ink:'#FFFFFF',fr:'#2E2D35'},
+      {n:'Duplicasa',img:'img/duplicasa.webp',bg:'#DDE9E1',ink:'#10241B',fr:'#10241B'},
+      {n:'Goodman',img:'img/goodman.webp',bg:'#0E3A2C',ink:'#F0F5F1',fr:'#0A2A20'}
+    ];
+    var palco=document.getElementById('palco'); if(!palco) return;
+    var tel=[palco.querySelector('.p-left .scr'),palco.querySelector('.p-center .scr'),palco.querySelector('.p-right .scr')];
+    var nome=document.getElementById('palcoNome'), btn=document.getElementById('palcoPausa');
+    /* cada ecrã tem as 6 imagens empilhadas; trocar é só mudar qual está visível */
+    tel.forEach(function(t,ti){
+      var ja=t.querySelector('img');
+      P.forEach(function(p,i){
+        if(ti===1&&i===0&&ja){ ja.dataset.i='0'; return; }
+        var im=new Image(); im.src=p.img; im.alt=ti===1?('Site '+p.n):''; im.decoding='async'; im.dataset.i=String(i);
+        if(ti!==1) im.setAttribute('aria-hidden','true');
+        t.appendChild(im);
+      });
+    });
+    var i=0, parado=false, visivel=true, tempo=null;
+    function mostrar(k){
+      i=(k+P.length)%P.length;
+      var idx=[(i-1+P.length)%P.length,i,(i+1)%P.length];
+      tel.forEach(function(t,ti){ t.querySelectorAll('img').forEach(function(im){ im.classList.toggle('on', +im.dataset.i===idx[ti]); }); });
+      var p=P[i]; palco.style.setProperty('--stage',p.bg); palco.style.setProperty('--stage-ink',p.ink); palco.style.setProperty('--hframe',p.fr);
+      nome.textContent=p.n;
+    }
+    function ciclo(){ clearTimeout(tempo); if(parado||!visivel||document.hidden) return; tempo=setTimeout(function(){ mostrar(i+1); ciclo(); },3200); }
+    btn.addEventListener('click',function(){ parado=!parado; btn.setAttribute('aria-pressed',parado?'true':'false'); btn.setAttribute('aria-label',parado?'Retomar a troca de projetos':'Pausar a troca de projetos'); ciclo(); });
+    if('IntersectionObserver' in window){ new IntersectionObserver(function(es){ visivel=es[0].isIntersecting; ciclo(); }).observe(palco); }
+    document.addEventListener('visibilitychange',ciclo);
+    mostrar(0); ciclo();
+  })();
+
+  /* Vídeos dos projetos: só tocam quando estão no ecrã; o botão pausa */
+  (function(){
+    var vids=[].slice.call(document.querySelectorAll('video.demo'));
+    vids.forEach(function(v){
+      var b=v.parentNode.querySelector('.vplay'); v.dataset.parado='0';
+      b.addEventListener('click',function(){
+        var p=v.dataset.parado!=='1'; v.dataset.parado=p?'1':'0';
+        b.setAttribute('aria-pressed',p?'true':'false'); b.setAttribute('aria-label',p?'Tocar vídeo':'Pausar vídeo');
+        if(p) v.pause(); else { var pr=v.play(); if(pr&&pr.catch) pr.catch(function(){}); }
+      });
+    });
+    if(!('IntersectionObserver' in window)) return;
+    var io=new IntersectionObserver(function(es){
+      es.forEach(function(e){
+        var v=e.target;
+        if(e.isIntersecting&&v.dataset.parado!=='1'){ var pr=v.play(); if(pr&&pr.catch) pr.catch(function(){}); }
+        else v.pause();
+      });
+    },{threshold:.35});
+    vids.forEach(function(v){ io.observe(v); });
+  })();
 
   /* Pré-visualização */
   var input=document.getElementById('negocio');

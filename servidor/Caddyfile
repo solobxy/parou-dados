@@ -250,7 +250,7 @@ www.chave.pt {
 	templates {
 		mime text/html
 	}
-	@estaticos path /fonts/* /img/*
+	@estaticos path /fonts/* /img/* /vid/*
 	header @estaticos Cache-Control "public, max-age=2592000"
 	@pagina path / /index.html
 	header @pagina Cache-Control "no-cache"
