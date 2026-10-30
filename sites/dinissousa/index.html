@@ -101,7 +101,11 @@ p{margin:0}
 .name span{display:block}
 .lead{margin-top:18px;font-size:clamp(21px,2.4vw,30px);line-height:1.25;font-weight:500;max-width:26ch}
 .sub{margin-top:14px;max-width:46ch;font-size:17px}
-.sub a{font-weight:700;text-decoration:none;border-bottom:2px solid currentColor}
+@media (max-width:400px){.sub{font-size:16px}}
+.sub .fim{display:block;margin-top:2px}
+.sub a{font-weight:700;text-decoration:none;border-bottom:2px solid currentColor;white-space:nowrap}
+.sub{text-wrap:pretty}
+.sub .nw{white-space:nowrap}
 .sub a:hover{border-bottom-color:transparent}
 .c-adri{color:#7A5820}.c-good{color:#0E3A2C}.c-goth{color:#B0101C}.c-coq{color:#B4436A}.c-trans{color:#B84A0E}.c-casa{color:#0E6B4F}
 .ctas{margin-top:26px;display:flex;gap:10px;flex-wrap:wrap}
@@ -286,7 +290,7 @@ footer a{min-height:44px;display:inline-flex;align-items:center}
       <div class="hero-text">
         <h1 class="name"><span>Dinis</span><span>Sousa.</span></h1>
         <p class="lead">Faço sites que não se parecem uns com os outros.</p>
-        <p class="sub"><a class="c-adri" href="#adri">Um estúdio de piercing</a>, <a class="c-coq" href="#anjinho">uma loja coquette</a>, <a class="c-goth" href="#jinxed">uma marca gótica</a>, <a class="c-trans" href="#parou">uma app de transportes</a>, <a class="c-casa" href="#duplicasa">um site de arrendamento</a> e <a class="c-good" href="#goodman">um advogado com IA</a>. Todos feitos por mim. O próximo pode ser o teu.</p>
+        <p class="sub"><a class="c-adri" href="#adri">Um estúdio de piercing</a>, <a class="c-coq" href="#anjinho">uma loja coquette</a>, <a class="c-goth" href="#jinxed">uma marca gótica</a>, <a class="c-trans" href="#parou">uma app de transportes</a>, <a class="c-casa" href="#duplicasa">um site de arrendamento</a> <span class="nw">e <a class="c-good" href="#goodman">um advogado com IA</a>.</span> <span class="fim">Todos feitos por mim. <span class="nw">O próximo pode ser o teu.</span></span></p>
         <div class="ctas">
           <a class="btn btn-primary wa" data-msg="Olá Dinis! Quero um site." href="https://wa.me/351913488258">Pedir o meu site</a>
           <a class="btn btn-secondary" href="#projetos">Ver projetos</a>
