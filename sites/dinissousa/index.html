@@ -105,9 +105,12 @@ p{margin:0}
 .intro{margin-top:18px;max-width:52ch;font-size:18px;color:var(--muted);transition:color .6s var(--ease)}
 
 /* Projetos */
-.index{margin-top:36px;display:flex;flex-wrap:wrap;gap:4px 28px}
-.index a{font-size:clamp(30px,4vw,48px);font-weight:800;font-stretch:104%;letter-spacing:-.03em;text-decoration:none;line-height:1.15}
-.index a:hover{text-decoration:underline;text-decoration-thickness:4px;text-underline-offset:6px}
+.brands{margin-top:36px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;padding:8px;background:#E2E2DE}
+.brand-tile{height:104px;display:flex;align-items:center;justify-content:center;padding:16px;text-decoration:none;transition:transform .35s var(--ease)}
+.brand-tile img{width:auto;max-width:100%;object-fit:contain}
+.brand-tile.t-adri{grid-column:span 2}
+.t-adri{background:#0E0C0B}.t-parou{background:#16151A}.t-anjinho{background:#DCE8F4}.t-jinxed{background:#110D0E}.t-duplicasa{background:#FFFFFF}
+@media (hover:hover){.brand-tile:hover{transform:translateY(-4px)}}
 .project{padding-block:88px}
 .project .wrap{display:grid;gap:32px;align-items:center}
 .project .shot{display:flex;justify-content:center}
@@ -188,6 +191,9 @@ footer a{min-height:44px;display:inline-flex;align-items:center}
   .fan .p-left{left:calc(50% - 228px)}
   .fan .p-right{right:calc(50% - 228px)}
   .styles{grid-template-columns:repeat(4,minmax(0,1fr))}
+  .brands{grid-template-columns:repeat(5,minmax(0,1fr))}
+  .brand-tile.t-adri{grid-column:auto}
+  .brand-tile{height:120px}
   .plans{grid-template-columns:repeat(3,minmax(0,1fr))}
   .steps{grid-template-columns:repeat(3,minmax(0,1fr))}
   .final{padding:88px 64px}
@@ -245,7 +251,7 @@ footer a{min-height:44px;display:inline-flex;align-items:center}
   .js .top .mark .draw{animation:none}
   .js .top .mark{animation:fade .6s both}
   .js .rv.pre{transform:none}
-  .btn:active,.btn:hover,.style:hover .card{transform:none}
+  .btn:active,.btn:hover,.style:hover .card,.brand-tile:hover{transform:none}
 }
 </style>
 </head>
@@ -291,8 +297,12 @@ footer a{min-height:44px;display:inline-flex;align-items:center}
     <div class="wrap section" data-world="base" style="padding-top:48px;padding-bottom:24px">
       <h2 class="h2 rv" id="t-projetos">O que já fiz</h2>
       <p class="intro rv">Projetos meus e de clientes, do nome ao último pormenor. Ao descer, o site muda para o mundo de cada um.</p>
-      <nav class="index rv" aria-label="Projetos">
-        <a href="#adri">AdriBodyPiercing</a><a href="#parou">PAROU</a><a href="#anjinho">anjinho</a><a href="#jinxed">jinxed</a><a href="#duplicasa">Duplicasa</a>
+      <nav class="brands rv" aria-label="Projetos">
+        <a class="brand-tile t-adri" href="#adri"><img src="img/logo_adri.webp" width="325" height="70" alt="AdriBodyPiercing" style="height:34px"></a>
+        <a class="brand-tile t-parou" href="#parou"><img src="img/logo_parou.webp" width="235" height="85" alt="PAROU" style="height:36px"></a>
+        <a class="brand-tile t-anjinho" href="#anjinho"><img src="img/logo_anjinho.svg" width="200" height="69" alt="anjinho" style="height:30px"></a>
+        <a class="brand-tile t-jinxed" href="#jinxed"><img src="img/logo_jinxed.webp" width="200" height="90" alt="jinxed" style="height:40px"></a>
+        <a class="brand-tile t-duplicasa" href="#duplicasa"><img src="img/logo_duplicasa.webp" width="355" height="85" alt="Duplicasa" style="height:30px"></a>
       </nav>
     </div>
 
@@ -460,7 +470,7 @@ footer a{min-height:44px;display:inline-flex;align-items:center}
   if('IntersectionObserver' in window){
     var wo=new IntersectionObserver(function(entries){
       entries.forEach(function(e){ if(e.isIntersecting){ document.body.setAttribute('data-world', e.target.getAttribute('data-world')); } });
-    },{rootMargin:'-58% 0px -41% 0px'});
+    },{rootMargin:'-90% 0px -9% 0px'});
     worlds.forEach(function(el){wo.observe(el);});
 
     /* Entradas: só espera o que ainda está abaixo do ecrã */
