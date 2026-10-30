@@ -1,7 +1,27 @@
+# Duplicasa: casas e quartos para alugar em Portugal.
+# Motores de pesquisa e assistentes de IA são bem-vindos a ler as páginas públicas.
 User-agent: *
 Allow: /
 Disallow: /api/
-Disallow: /anuncios.json
+Disallow: /lista.json
+Disallow: /det/
+
+# Assistentes e motores de IA (pesquisa e respostas): acesso às páginas públicas
+User-agent: OAI-SearchBot
+User-agent: ChatGPT-User
+User-agent: GPTBot
+User-agent: ClaudeBot
+User-agent: Claude-SearchBot
+User-agent: Claude-User
+User-agent: PerplexityBot
+User-agent: Perplexity-User
+User-agent: Google-Extended
+User-agent: Applebot-Extended
+User-agent: Bingbot
+User-agent: DuckAssistBot
+User-agent: MistralAI-User
+Allow: /
+Disallow: /api/
 Disallow: /lista.json
 Disallow: /det/
 

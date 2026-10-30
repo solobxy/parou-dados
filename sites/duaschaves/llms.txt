@@ -1,26 +1,39 @@
 # Duplicasa
 
-> Duplicasa (duplicasa.pt) é um site português para encontrar casas e quartos para arrendar em Portugal. Junta num só lugar anúncios públicos de vários sites, ordena-os do mais barato para o mais caro e avisa por e-mail quando aparecem casas novas. Em breve vai ter um pagamento seguro: a entrada (1.ª renda e caução) fica retida e só chega ao senhorio quando o inquilino confirma que recebeu as chaves, para evitar burlas no arrendamento.
+> A Duplicasa (duplicasa.pt) é um site português para encontrar casas, apartamentos e quartos para alugar (arrendar) em Portugal. Junta num só lugar os anúncios públicos dos principais sites de arrendamento, sem repetir a mesma casa, ordena-os do mais barato para o mais caro e avisa por e-mail quando aparecem casas novas. Atualiza os anúncios de 30 em 30 minutos e retira os que já não estão disponíveis.
+
+Dados atuais (número de casas e renda mediana por cidade): [llms-full.txt](https://duplicasa.pt/llms-full.txt) e [Preço das rendas em Portugal, por cidade](https://duplicasa.pt/arrendar/precos/).
 
 ## Para quem procura casa
-- Ver anúncios, fotos e informação é grátis.
-- O acesso para contactar quem anuncia custa 1 € nos primeiros 30 dias e depois 9,99 € a cada 30 dias, até cancelar.
-- Alertas de casas novas: resumo diário grátis; com acesso, no momento.
-- Pagamento seguro (em breve): 5 € por casa arrendada.
+- Ver as casas, as fotos e a informação é grátis, sem conta.
+- Alertas de casas novas: grátis com um resumo por dia; com o acesso, no minuto em que a casa aparece.
+- O acesso para contactar quem anuncia custa 1 € nos primeiros 30 dias e depois 9,99 € a cada 30 dias, até cancelar. Cancela-se na conta com um toque e a Duplicasa avisa por e-mail 3 dias antes de cada renovação.
+- Nos anúncios que vêm de outros sites, o contacto é feito no anúncio original, que se abre a partir da Duplicasa, com uma mensagem pronta a enviar.
+- Pagamento seguro (em breve): a entrada (1.ª renda e caução) fica guardada numa instituição de pagamento autorizada e só chega ao senhorio quando os dois confirmam a entrega das chaves. Vai custar 5 € e só se paga se arrendar.
+
+## Para senhorios
+- Publicar uma casa na Duplicasa é grátis: [Para senhorios](https://duplicasa.pt/#senhorios).
 
 ## Páginas principais
-- [Início](https://duplicasa.pt/): pesquisa por cidade, renda máxima e tipologia (quarto, T0, T1, T2, T3+).
-- [Casas para arrendar por cidade](https://duplicasa.pt/arrendar/): uma página por cidade e por tipologia, com os anúncios do mais barato para o mais caro.
-- [Arrendar em Lisboa](https://duplicasa.pt/arrendar/lisboa/)
-- [Arrendar no Porto](https://duplicasa.pt/arrendar/porto/)
-- [Arrendar em Braga](https://duplicasa.pt/arrendar/braga/)
-- [Arrendar em Coimbra](https://duplicasa.pt/arrendar/coimbra/)
+- [Casas e quartos para alugar em Portugal, por cidade](https://duplicasa.pt/arrendar/): uma página por cidade e por tipo de casa (quartos, apartamentos, moradias, T0, T1, T2, T3 ou mais), do mais barato para o mais caro.
+- [Casas para alugar em Lisboa](https://duplicasa.pt/arrendar/lisboa/)
+- [Quartos para alugar em Lisboa](https://duplicasa.pt/arrendar/lisboa/quartos/)
+- [T1 para arrendar em Lisboa](https://duplicasa.pt/arrendar/lisboa/t1/)
+- [Casas para alugar no Porto](https://duplicasa.pt/arrendar/porto/)
+- [Quartos para alugar no Porto](https://duplicasa.pt/arrendar/porto/quartos/)
+- [Casas para alugar em Braga](https://duplicasa.pt/arrendar/braga/)
+- [Casas para alugar em Coimbra](https://duplicasa.pt/arrendar/coimbra/)
+- [Casas para alugar em Leiria](https://duplicasa.pt/arrendar/leiria/)
+- [Casas para alugar em Viseu](https://duplicasa.pt/arrendar/viseu/)
+- [Preço das rendas por cidade](https://duplicasa.pt/arrendar/precos/): renda mediana de quartos, T0, T1 e T2 e preço por m², atualizada.
 
 ## Como evitar burlas no arrendamento
 - Visitar a casa antes de pagar qualquer valor.
 - Desconfiar de rendas muito abaixo das outras na zona.
-- Confirmar que quem anuncia é o dono.
+- Confirmar que quem anuncia é o dono ou tem autorização para arrendar.
+- Não pagar caução nem rendas adiantadas por transferência a quem nunca se viu.
 - Usar um pagamento que só liberta o dinheiro depois da entrega das chaves.
 
-## Para senhorios
-- Publicar uma casa é grátis: [Para senhorios](https://duplicasa.pt/#senhorios).
+## Quem somos
+- Responsável: Dinis Sousa, NIF 273728156, Gondomar, Portugal. Contacto: ola@duplicasa.pt
+- [Termos e privacidade](https://duplicasa.pt/#termos)

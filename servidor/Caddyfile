@@ -146,6 +146,12 @@ www.jinxed.world {
 		root * /var/lib/duaschaves-dados/seo
 		file_server
 	}
+	# Versão longa do llms.txt, com os números de hoje (gerada com as páginas)
+	handle /llms-full.txt {
+		root * /var/lib/duaschaves-dados/seo
+		header Cache-Control "public, max-age=1800"
+		file_server
+	}
 	handle /sitemap.xml {
 		root * /var/lib/duaschaves-dados/seo
 		header Cache-Control "public, max-age=1800"
