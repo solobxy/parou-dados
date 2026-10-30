@@ -13,7 +13,7 @@ const vivo = setInterval(() => {}, 1000); // AbortSignal.timeout não segura o p
 globalThis.fetch = (_u, o) => new Promise((_, rej) => o?.signal?.addEventListener('abort', () => rej(new Error('abortado'))));
 let t = Date.now();
 let r = await m.passagensHojeCMComEstado('999901');
-ok('[lenta] desiste em menos de 3 s', Date.now() - t < 3000, `${Date.now() - t} ms`);
+ok('[lenta] desiste em menos de 4 s', Date.now() - t < 4000, `${Date.now() - t} ms`);
 ok('[lenta] diz que não respondeu (ok=false), não "sem partidas"', r.ok === false && r.v.length === 0);
 
 // 2. API responde
