@@ -181,7 +181,16 @@ def tipo_real(a):
     t = norm(a.get('titulo') or '')
     if not t and a.get('desc'):
         t = norm(a['desc'][:120])
-    if a.get('tipo') != 'Quarto' and RE_QUARTO.match(t):
+    partes = [x.strip() for x in re.split(r'\s[-|–:]\s', t) if x.strip()][:3]   # «Agência - Quarto duplo ... - REF»
+    for x in partes:                 # o primeiro pedaço que diz o tipo decide
+        if RE_QUARTO.match(x):
+            break
+        if re.search(r'\b(apartamento|moradia|vivenda|casa|t\d|estudio|loft|duplex|predio)\b', x):
+            partes = []
+            break
+    else:
+        partes = []
+    if a.get('tipo') != 'Quarto' and partes:
         a['tipo'] = 'Quarto'
         a['tip'] = ''
         if a.get('area') and a['area'] > 40:
@@ -493,7 +502,7 @@ def main():
         k = chave_igual(a)
         if not k:
             continue
-        k = k + (norm(a.get('titulo') or '')[:60],)
+        k = k + (max(re.split(r'\s[-|–:]\s', norm(a.get('titulo') or '')) or [''], key=len)[:60],)   # sem o nome da agência nem a referência
         if k in vistos_dup:
             apagar.append(i)
         else:
