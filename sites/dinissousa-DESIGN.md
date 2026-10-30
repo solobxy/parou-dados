@@ -15,7 +15,7 @@ Mundos (fundo / tinta / apoio / acento):
 - PAROU: #16151A / #FFFFFF / #A8A6AE / #FF6B1A
 - anjinho: #DCE8F4 / #1D1719 / #4D4A55 / #1D1719 (rosa #F2A7BD só em pormenor)
 - jinxed: #110D0E / #EAE3DA / #A69F98 / #D6101C
-- Duplicasa: #F3F5F4 / #10241B / #4A5A52 / #0E6B4F
+- DupliCasa: #F3F5F4 / #10241B / #4A5A52 / #0E6B4F
 
 ## 3. Tipografia
 - Archivo variável (largura 62–125, peso 100–900), alojada no próprio site.

@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
-"""Duplicasa: API pequena para contas (entrar com link por e-mail), preferências e alertas.
+"""DupliCasa: API pequena para contas (entrar com link por e-mail), preferências e alertas.
 
 Só biblioteca padrão (http.server + sqlite3). Corre em 127.0.0.1, atrás do Caddy (que trata do HTTPS).
 
 Configuração (variáveis de ambiente, em /etc/duaschaves/api.env, fora do repositório):
   RESEND_API_KEY   chave do Resend para enviar e-mails (sem ela, os links ficam por enviar e a API diz isso)
-  EMAIL_DE         remetente, ex.: "Duplicasa <ola@duplicasa.pt>"
+  EMAIL_DE         remetente, ex.: "DupliCasa <ola@duplicasa.pt>"
   ORIGENS          origens aceites, separadas por espaços (ex.: https://duplicasa.pt https://www.duplicasa.pt)
   DC_DB            caminho da base de dados (por omissão /var/lib/duaschaves-api/dados.db)
   DC_PORTA         porta local (por omissão 3110)
@@ -23,7 +23,7 @@ DB = os.environ.get('DC_DB', '/var/lib/duaschaves-api/dados.db')
 PORTA = int(os.environ.get('DC_PORTA', '3110'))
 ORIGENS = set((os.environ.get('ORIGENS') or 'https://duplicasa.pt https://www.duplicasa.pt https://duaschaves.2-31-13-85.sslip.io').split())
 RESEND = os.environ.get('RESEND_API_KEY', '')
-EMAIL_DE = os.environ.get('EMAIL_DE', 'Duplicasa <ola@duplicasa.pt>')
+EMAIL_DE = os.environ.get('EMAIL_DE', 'DupliCasa <ola@duplicasa.pt>')
 LINK_MIN = 20            # validade do link de entrada
 SESSAO_DIAS = 30
 MAX_CORPO = 64 * 1024
@@ -211,16 +211,16 @@ def ativar_subscricao(c, sub_id, base, dias=30):
 
 
 def email_acabar_conta(para, link):
-    texto = ('Olá!\n\nO teu acesso à Duplicasa está ativo neste dispositivo.\n'
+    texto = ('Olá!\n\nO teu acesso à DupliCasa está ativo neste dispositivo.\n'
              'Para o teres também noutros dispositivos e gerires a subscrição, acaba de criar a tua conta:\n' + link +
-             '\n\nO link vale 7 dias e só funciona uma vez.\n\nDuplicasa')
+             '\n\nO link vale 7 dias e só funciona uma vez.\n\nDupliCasa')
     html = ('<div style="font-family:system-ui,sans-serif;font-size:16px;color:#0F1A17;max-width:480px">'
-            '<p>Olá!</p><p>O teu acesso à Duplicasa está <strong>ativo</strong> neste dispositivo.</p>'
+            '<p>Olá!</p><p>O teu acesso à DupliCasa está <strong>ativo</strong> neste dispositivo.</p>'
             '<p>Acaba de criar a tua conta para o teres noutros dispositivos e gerires a subscrição.</p>'
             '<p><a href="' + link + '" style="display:inline-block;background:#0B6E4F;color:#fff;text-decoration:none;'
             'font-weight:700;padding:14px 22px;border-radius:12px">Acabar de criar a conta</a></p>'
             '<p style="color:#56635e;font-size:14px">O link vale 7 dias e só funciona uma vez.</p></div>')
-    return enviar_email(para, 'Acaba de criar a tua conta na Duplicasa', texto, html)
+    return enviar_email(para, 'Acaba de criar a tua conta na DupliCasa', texto, html)
 
 
 def juntar_subscricoes(c, uid, email):
@@ -254,16 +254,16 @@ def enviar_email(para, assunto, texto, html):
 
 
 def email_entrar(para, link):
-    texto = ('Olá!\n\nToca no link para entrares na Duplicasa:\n' + link +
+    texto = ('Olá!\n\nToca no link para entrares na DupliCasa:\n' + link +
              '\n\nO link vale ' + str(LINK_MIN) + ' minutos e só funciona uma vez.\n'
-             'Se não pediste para entrar, ignora este e-mail.\n\nDuplicasa')
+             'Se não pediste para entrar, ignora este e-mail.\n\nDupliCasa')
     html = ('<div style="font-family:system-ui,sans-serif;font-size:16px;color:#0F1A17;max-width:480px">'
-            '<p>Olá!</p><p>Toca no botão para entrares na Duplicasa.</p>'
+            '<p>Olá!</p><p>Toca no botão para entrares na DupliCasa.</p>'
             '<p><a href="' + link + '" style="display:inline-block;background:#0B6E4F;color:#fff;text-decoration:none;'
-            'font-weight:700;padding:14px 22px;border-radius:12px">Entrar na Duplicasa</a></p>'
+            'font-weight:700;padding:14px 22px;border-radius:12px">Entrar na DupliCasa</a></p>'
             '<p style="color:#56635e;font-size:14px">O link vale ' + str(LINK_MIN) + ' minutos e só funciona uma vez. '
             'Se não pediste para entrar, ignora este e-mail.</p></div>')
-    return enviar_email(para, 'O teu link para entrar na Duplicasa', texto, html)
+    return enviar_email(para, 'O teu link para entrar na DupliCasa', texto, html)
 
 
 FOTOS = os.path.join(os.path.dirname(DB), 'fotos')
@@ -598,7 +598,7 @@ class API(BaseHTTPRequestHandler):
                           (tipo, email, json.dumps(dados, ensure_ascii=False), int(time.time())))
             resumo = '\n'.join('%s: %s' % (k, v) for k, v in dados.items())
             for adm in ADMINS:
-                enviar_email(adm, 'Duplicasa: novo pedido (%s)' % PEDIDO_NOMES[tipo], 'E-mail: %s\n%s' % (email, resumo),
+                enviar_email(adm, 'DupliCasa: novo pedido (%s)' % PEDIDO_NOMES[tipo], 'E-mail: %s\n%s' % (email, resumo),
                              '<pre style="font-family:system-ui,sans-serif;font-size:15px">' +
                              ('E-mail: %s\n%s' % (email, resumo)).replace('&', '&amp;').replace('<', '&lt;') + '</pre>')
             return self.responder(200, {'ok': True})
@@ -904,7 +904,7 @@ def main():
     criar_tabelas()
     srv = ThreadingHTTPServer(('127.0.0.1', PORTA), API)
     srv.daemon_threads = True
-    print('Duplicasa API em 127.0.0.1:%d (e-mail %s)' % (PORTA, 'ligado' if RESEND else 'por ligar'), file=sys.stderr)
+    print('DupliCasa API em 127.0.0.1:%d (e-mail %s)' % (PORTA, 'ligado' if RESEND else 'por ligar'), file=sys.stderr)
     srv.serve_forever()
 
 

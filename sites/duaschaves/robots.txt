@@ -1,4 +1,4 @@
-# Duplicasa: casas e quartos para alugar em Portugal.
+# DupliCasa: casas e quartos para alugar em Portugal.
 # Motores de pesquisa e assistentes de IA são bem-vindos a ler as páginas públicas.
 User-agent: *
 Allow: /

@@ -7,9 +7,9 @@ name: Servidor (Hetzner)
 #   comando  - corre um comando no servidor por SSH
 #   chaves   - copia chaves de APIs guardadas como segredos do GitHub (ex.: FOGOS_API_KEY)
 #              para /etc/parou.env no servidor e reinicia a app (nunca aparecem no resultado)
-#   chaves-duplicasa - copia os segredos da Duplicasa guardados no GitHub (GOOGLE_ID, GOOGLE_SEGREDO,
+#   chaves-duplicasa - copia os segredos da DupliCasa guardados no GitHub (GOOGLE_ID, GOOGLE_SEGREDO,
 #              FACEBOOK_ID, FACEBOOK_SEGREDO, RESEND_API_KEY) para /etc/duaschaves/api.env e reinicia
-#              só a API da Duplicasa (o PAROU não é tocado)
+#              só a API da DupliCasa (o PAROU não é tocado)
 # O resultado fica no ramo "servidor-resultado", em resultado.txt.
 #
 # A chave SSH privada fica em servidor/chave-ssh.enc, cifrada com o HCLOUD_TOKEN
@@ -139,7 +139,7 @@ jobs:
           done
           ssh root@$IP "systemctl restart parou" && echo "App reiniciada" >> resultado.txt
 
-      - name: Segredos da Duplicasa para o servidor
+      - name: Segredos da DupliCasa para o servidor
         if: inputs.acao == 'chaves-duplicasa'
         env:
           GOOGLE_ID: ${{ secrets.GOOGLE_ID }}

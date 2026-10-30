@@ -10,7 +10,7 @@ with sync_playwright() as p:
     for nome,ua in [('android',AND),('ios',IOS)]:
         ctx=b.new_context(viewport={'width':390,'height':844},user_agent=ua,ignore_https_errors=True);pg=ctx.new_page();er=[];pg.on('pageerror',lambda e:er.append(str(e)))
         pg.goto(U+'#inicio');pg.wait_for_timeout(1500)
-        m=pg.evaluate("fetch('/manifest.webmanifest').then(r=>r.json())");ok(m['short_name']=='Duplicasa' and len(m['icons'])==4,'manifest')
+        m=pg.evaluate("fetch('/manifest.webmanifest').then(r=>r.json())");ok(m['short_name']=='DupliCasa' and len(m['icons'])==4,'manifest')
         ok(pg.locator('[data-instalar-cartao]').is_visible(),nome+' cartão instalar')
         pg.screenshot(path=f'/home/claude/testes/pwa-{nome}.png')
         pg.locator('[data-instalar-cartao] [data-instalar]').click();pg.wait_for_timeout(400)

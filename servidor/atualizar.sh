@@ -129,16 +129,16 @@ if [ -f "$SERV/duaschaves-recolha.service" ]; then
   fi
 fi
 
-# API da Duplicasa (contas, preferências, alertas). Os segredos ficam em /etc/duaschaves/api.env, fora do repositório.
+# API da DupliCasa (contas, preferências, alertas). Os segredos ficam em /etc/duaschaves/api.env, fora do repositório.
 if [ -f "$SERV/duaschaves-api.service" ] && [ -f "$BASE/servidor/duaschaves/api.py" ]; then
   install -d -m 750 -o root -g parou /etc/duaschaves
   if [ ! -f /etc/duaschaves/api.env ]; then
-    printf 'ORIGENS=https://duplicasa.pt https://www.duplicasa.pt https://duaschaves.2-31-13-85.sslip.io\nEMAIL_DE=Duplicasa <ola@duplicasa.pt>\n' > /etc/duaschaves/api.env
+    printf 'ORIGENS=https://duplicasa.pt https://www.duplicasa.pt https://duaschaves.2-31-13-85.sslip.io\nEMAIL_DE=DupliCasa <ola@duplicasa.pt>\n' > /etc/duaschaves/api.env
     chown root:parou /etc/duaschaves/api.env && chmod 640 /etc/duaschaves/api.env
   fi
-  # Nova marca (Duplicasa): troca o domínio e o remetente no ficheiro já existente, sem mexer nos segredos
+  # Nova marca (DupliCasa): troca o domínio e o remetente no ficheiro já existente, sem mexer nos segredos
   if grep -q 'duaschaves\.pt' /etc/duaschaves/api.env; then
-    sed -i 's#https://www\.duaschaves\.pt#https://www.duplicasa.pt#g; s#https://duaschaves\.pt#https://duplicasa.pt#g; s#^EMAIL_DE=Duas Chaves <ola@duaschaves\.pt>$#EMAIL_DE=Duplicasa <ola@duplicasa.pt>#' /etc/duaschaves/api.env
+    sed -i 's#https://www\.duaschaves\.pt#https://www.duplicasa.pt#g; s#https://duaschaves\.pt#https://duplicasa.pt#g; s#^EMAIL_DE=Duas Chaves <ola@duaschaves\.pt>$#EMAIL_DE=DupliCasa <ola@duplicasa.pt>#' /etc/duaschaves/api.env
   fi
   if ! cmp -s "$SERV/duaschaves-api.service" /etc/systemd/system/duaschaves-api.service; then
     cp "$SERV/duaschaves-api.service" /etc/systemd/system/duaschaves-api.service && systemctl daemon-reload

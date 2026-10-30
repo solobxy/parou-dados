@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Duplicasa: páginas para o Google (SEO), feitas a partir dos anúncios recolhidos.
+"""DupliCasa: páginas para o Google (SEO), feitas a partir dos anúncios recolhidos.
 
 Gera HTML estático (sem JavaScript) para cada cidade com anúncios e para cada tipologia dentro da cidade:
   /arrendar/                      todas as cidades
@@ -39,7 +39,7 @@ RE_DESPESAS = re.compile(r'despesas (estao |est.o )?inclu|inclui (todas as )?des
 TIPOS = [('quartos', 'Quartos', 'Quarto'), ('apartamentos', 'Apartamentos', 'Apartamento'), ('moradias', 'Moradias', 'Moradia'),
          ('t0', 'T0', 'T0'), ('t1', 'T1', 'T1'), ('t2', 'T2', 'T2'), ('t3-ou-mais', 'T3 ou mais', 'T3+')]
 MESES = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro']
-LOGO = '<svg viewBox="-137.5 -96.5 591.8 122.9" width="135" height="28" role="img" aria-label="Duplicasa">' + '<g transform="translate(-153.26 -104.34) scale(1.3593)"><path fill="#0B6E4F" d="M11 88V52.00A22.0 22.0 0 0 1 55 52.00V88Z"/><path fill="#08523B" d="M42 88V36.00A24.0 24.0 0 0 1 90 36.00V88Z"/><path fill="#F2A33A" d="M42 88L42.00 36.00L42.27 32.40L42.54 32.18L42.81 32.31L43.08 32.45L43.35 32.59L43.62 32.74L43.90 32.89L44.17 33.04L44.44 33.21L44.71 33.37L44.98 33.55L45.25 33.73L45.52 33.91L45.79 34.10L46.06 34.30L46.33 34.50L46.60 34.71L46.88 34.93L47.15 35.15L47.42 35.38L47.69 35.62L47.96 35.87L48.23 36.12L48.50 36.39L48.77 36.66L49.04 36.94L49.31 37.24L49.58 37.54L49.85 37.86L50.12 38.19L50.40 38.53L50.67 38.89L50.94 39.26L51.21 39.65L51.48 40.06L51.75 40.49L52.02 40.95L52.29 41.42L52.56 41.93L52.83 42.48L53.10 43.07L53.38 43.70L53.65 44.40L53.92 45.18L54.19 46.08L54.46 47.15L54.73 48.56L55.00 52.00L55 88Z"/></g><path fill="#0F1A17" d="M30.615234375 0.0C52.880859375 0.0 66.2109375 -13.96484375 66.2109375 -36.474609375C66.2109375 -58.837890625 52.783203125 -72.75390625 31.15234375 -72.75390625H6.0546875V0.0ZM18.9453125 -11.03515625V-61.71875H30.322265625C45.654296875 -61.71875 53.173828125 -52.490234375 53.173828125 -36.474609375C53.173828125 -20.3125 45.751953125 -11.03515625 29.931640625 -11.03515625Z M92.3546875 1.025390625C99.48359375 1.025390625 104.708203125 -2.099609375 108.223828125 -7.91015625V0.0H120.333203125V-51.5625H107.9796875V-22.412109375C107.9796875 -13.623046875 103.19453125 -9.765625 96.700390625 -9.765625C90.10859375 -9.765625 86.3 -13.720703125 86.3 -21.2890625V-51.5625H73.9953125V-19.3359375C73.9953125 -6.103515625 81.563671875 1.025390625 92.3546875 1.025390625Z M130.070703125 20.41015625H142.375390625V-7.763671875H142.521875C145.74453125 -1.904296875 151.164453125 1.025390625 157.902734375 1.025390625C171.379296875 1.025390625 180.2171875 -9.765625 180.2171875 -25.830078125C180.2171875 -41.69921875 171.2328125 -52.587890625 157.9515625 -52.587890625C151.262109375 -52.587890625 145.54921875 -49.853515625 142.3265625 -44.384765625H142.180078125V-51.5625H130.070703125ZM155.021875 -9.27734375C146.965234375 -9.27734375 141.691796875 -15.771484375 141.691796875 -25.830078125C141.691796875 -35.83984375 146.965234375 -42.3828125 155.021875 -42.3828125C162.6390625 -42.3828125 167.766015625 -36.474609375 167.766015625 -25.830078125C167.766015625 -15.13671875 162.6390625 -9.27734375 155.021875 -9.27734375Z M199.86679687499998 -72.75390625H187.56210937499998V0.0H199.86679687499998Z M209.604296875 0.0H221.908984375V-51.5625H209.604296875ZM215.756640625 -59.228515625C219.955859375 -59.228515625 223.1296875 -62.255859375 223.1296875 -66.259765625C223.1296875 -70.21484375 219.955859375 -73.2421875 215.756640625 -73.2421875C211.557421875 -73.2421875 208.38359375 -70.21484375 208.38359375 -66.259765625C208.38359375 -62.255859375 211.557421875 -59.228515625 215.756640625 -59.228515625Z"/><g transform="translate(226.18 0)"><path fill="#0B6E4F" d="M37.79296875 1.171875C54.19921875 1.171875 66.69921875 -8.984375 69.140625 -24.853515625H56.0546875C54.00390625 -15.625 47.16796875 -10.400390625 37.890625 -10.400390625C24.51171875 -10.400390625 16.50390625 -20.703125 16.50390625 -36.328125C16.50390625 -52.05078125 24.560546875 -62.353515625 37.890625 -62.353515625C47.216796875 -62.353515625 54.052734375 -57.080078125 56.005859375 -47.802734375H69.140625C66.69921875 -63.720703125 54.19921875 -73.92578125 37.79296875 -73.92578125C17.724609375 -73.92578125 3.515625 -59.1796875 3.515625 -36.328125C3.515625 -13.623046875 17.724609375 1.171875 37.79296875 1.171875Z M92.45234375 0.830078125C100.85078125 0.830078125 105.196484375 -2.685546875 107.637890625 -7.275390625H107.833203125V0.0H119.942578125V-35.15625C119.942578125 -45.8984375 111.98359375 -52.587890625 98.555859375 -52.587890625C85.079296875 -52.587890625 76.680859375 -45.80078125 76.094921875 -35.546875H87.96015625C88.301953125 -39.892578125 92.305859375 -43.017578125 98.31171875 -43.017578125C104.219921875 -43.017578125 107.735546875 -39.892578125 107.735546875 -35.498046875V-35.107421875C107.735546875 -31.591796875 104.4640625 -31.4453125 94.89375 -30.37109375C84.24921875 -29.248046875 74.630078125 -26.3671875 74.630078125 -14.6484375C74.630078125 -4.345703125 82.1984375 0.830078125 92.45234375 0.830078125ZM95.4796875 -8.30078125C90.10859375 -8.30078125 86.641796875 -10.693359375 86.641796875 -14.74609375C86.641796875 -19.43359375 91.133984375 -21.337890625 96.407421875 -22.119140625C101.485546875 -22.900390625 106.270703125 -23.681640625 107.784375 -24.658203125V-19.091796875C107.784375 -13.0859375 103.536328125 -8.30078125 95.4796875 -8.30078125Z M149.84609375 1.220703125C162.590234375 1.220703125 171.72109375 -5.126953125 171.72109375 -15.185546875C171.72109375 -22.75390625 166.984765625 -27.24609375 156.7796875 -29.39453125L147.50234375 -31.298828125C143.20546875 -32.2265625 140.66640625 -34.130859375 140.66640625 -37.20703125C140.66640625 -40.72265625 143.98671875 -43.45703125 149.406640625 -43.45703125C155.021875 -43.45703125 158.781640625 -40.087890625 158.879296875 -35.498046875H170.4515625C170.15859375 -46.09375 161.613671875 -52.685546875 149.113671875 -52.685546875C136.516015625 -52.685546875 128.36171875 -46.2890625 128.36171875 -36.81640625C128.36171875 -29.00390625 133.5375 -23.974609375 143.40078125 -21.923828125L152.18984375 -20.1171875C156.535546875 -19.189453125 159.22109375 -17.3828125 159.22109375 -14.2578125C159.22109375 -10.595703125 155.6078125 -8.0078125 149.65078125 -8.0078125C143.4984375 -8.0078125 139.88515625 -10.888671875 139.348046875 -15.91796875H127.18984375C127.97109375 -4.833984375 137.297265625 1.220703125 149.84609375 1.220703125Z M194.64218749999998 0.830078125C203.04062499999998 0.830078125 207.38632812499998 -2.685546875 209.82773437499998 -7.275390625H210.02304687499998V0.0H222.13242187499998V-35.15625C222.13242187499998 -45.8984375 214.17343749999998 -52.587890625 200.74570312499998 -52.587890625C187.26914062499998 -52.587890625 178.87070312499998 -45.80078125 178.28476562499998 -35.546875H190.14999999999998C190.49179687499998 -39.892578125 194.49570312499998 -43.017578125 200.50156249999998 -43.017578125C206.40976562499998 -43.017578125 209.92539062499998 -39.892578125 209.92539062499998 -35.498046875V-35.107421875C209.92539062499998 -31.591796875 206.65390624999998 -31.4453125 197.08359374999998 -30.37109375C186.43906249999998 -29.248046875 176.81992187499998 -26.3671875 176.81992187499998 -14.6484375C176.81992187499998 -4.345703125 184.38828124999998 0.830078125 194.64218749999998 0.830078125ZM197.66953124999998 -8.30078125C192.29843749999998 -8.30078125 188.83164062499998 -10.693359375 188.83164062499998 -14.74609375C188.83164062499998 -19.43359375 193.32382812499998 -21.337890625 198.59726562499998 -22.119140625C203.67539062499998 -22.900390625 208.46054687499998 -23.681640625 209.97421874999998 -24.658203125V-19.091796875C209.97421874999998 -13.0859375 205.72617187499998 -8.30078125 197.66953124999998 -8.30078125Z"/></g>' + '</svg>'
+LOGO = '<svg viewBox="-137.5 -96.5 591.8 122.9" width="135" height="28" role="img" aria-label="DupliCasa">' + '<g transform="translate(-153.26 -104.34) scale(1.3593)"><path fill="#0B6E4F" d="M11 88V52.00A22.0 22.0 0 0 1 55 52.00V88Z"/><path fill="#08523B" d="M42 88V36.00A24.0 24.0 0 0 1 90 36.00V88Z"/><path fill="#F2A33A" d="M42 88L42.00 36.00L42.27 32.40L42.54 32.18L42.81 32.31L43.08 32.45L43.35 32.59L43.62 32.74L43.90 32.89L44.17 33.04L44.44 33.21L44.71 33.37L44.98 33.55L45.25 33.73L45.52 33.91L45.79 34.10L46.06 34.30L46.33 34.50L46.60 34.71L46.88 34.93L47.15 35.15L47.42 35.38L47.69 35.62L47.96 35.87L48.23 36.12L48.50 36.39L48.77 36.66L49.04 36.94L49.31 37.24L49.58 37.54L49.85 37.86L50.12 38.19L50.40 38.53L50.67 38.89L50.94 39.26L51.21 39.65L51.48 40.06L51.75 40.49L52.02 40.95L52.29 41.42L52.56 41.93L52.83 42.48L53.10 43.07L53.38 43.70L53.65 44.40L53.92 45.18L54.19 46.08L54.46 47.15L54.73 48.56L55.00 52.00L55 88Z"/></g><path fill="#0F1A17" d="M30.615234375 0.0C52.880859375 0.0 66.2109375 -13.96484375 66.2109375 -36.474609375C66.2109375 -58.837890625 52.783203125 -72.75390625 31.15234375 -72.75390625H6.0546875V0.0ZM18.9453125 -11.03515625V-61.71875H30.322265625C45.654296875 -61.71875 53.173828125 -52.490234375 53.173828125 -36.474609375C53.173828125 -20.3125 45.751953125 -11.03515625 29.931640625 -11.03515625Z M92.3546875 1.025390625C99.48359375 1.025390625 104.708203125 -2.099609375 108.223828125 -7.91015625V0.0H120.333203125V-51.5625H107.9796875V-22.412109375C107.9796875 -13.623046875 103.19453125 -9.765625 96.700390625 -9.765625C90.10859375 -9.765625 86.3 -13.720703125 86.3 -21.2890625V-51.5625H73.9953125V-19.3359375C73.9953125 -6.103515625 81.563671875 1.025390625 92.3546875 1.025390625Z M130.070703125 20.41015625H142.375390625V-7.763671875H142.521875C145.74453125 -1.904296875 151.164453125 1.025390625 157.902734375 1.025390625C171.379296875 1.025390625 180.2171875 -9.765625 180.2171875 -25.830078125C180.2171875 -41.69921875 171.2328125 -52.587890625 157.9515625 -52.587890625C151.262109375 -52.587890625 145.54921875 -49.853515625 142.3265625 -44.384765625H142.180078125V-51.5625H130.070703125ZM155.021875 -9.27734375C146.965234375 -9.27734375 141.691796875 -15.771484375 141.691796875 -25.830078125C141.691796875 -35.83984375 146.965234375 -42.3828125 155.021875 -42.3828125C162.6390625 -42.3828125 167.766015625 -36.474609375 167.766015625 -25.830078125C167.766015625 -15.13671875 162.6390625 -9.27734375 155.021875 -9.27734375Z M199.86679687499998 -72.75390625H187.56210937499998V0.0H199.86679687499998Z M209.604296875 0.0H221.908984375V-51.5625H209.604296875ZM215.756640625 -59.228515625C219.955859375 -59.228515625 223.1296875 -62.255859375 223.1296875 -66.259765625C223.1296875 -70.21484375 219.955859375 -73.2421875 215.756640625 -73.2421875C211.557421875 -73.2421875 208.38359375 -70.21484375 208.38359375 -66.259765625C208.38359375 -62.255859375 211.557421875 -59.228515625 215.756640625 -59.228515625Z"/><g transform="translate(226.18 0)"><path fill="#0B6E4F" d="M37.79296875 1.171875C54.19921875 1.171875 66.69921875 -8.984375 69.140625 -24.853515625H56.0546875C54.00390625 -15.625 47.16796875 -10.400390625 37.890625 -10.400390625C24.51171875 -10.400390625 16.50390625 -20.703125 16.50390625 -36.328125C16.50390625 -52.05078125 24.560546875 -62.353515625 37.890625 -62.353515625C47.216796875 -62.353515625 54.052734375 -57.080078125 56.005859375 -47.802734375H69.140625C66.69921875 -63.720703125 54.19921875 -73.92578125 37.79296875 -73.92578125C17.724609375 -73.92578125 3.515625 -59.1796875 3.515625 -36.328125C3.515625 -13.623046875 17.724609375 1.171875 37.79296875 1.171875Z M92.45234375 0.830078125C100.85078125 0.830078125 105.196484375 -2.685546875 107.637890625 -7.275390625H107.833203125V0.0H119.942578125V-35.15625C119.942578125 -45.8984375 111.98359375 -52.587890625 98.555859375 -52.587890625C85.079296875 -52.587890625 76.680859375 -45.80078125 76.094921875 -35.546875H87.96015625C88.301953125 -39.892578125 92.305859375 -43.017578125 98.31171875 -43.017578125C104.219921875 -43.017578125 107.735546875 -39.892578125 107.735546875 -35.498046875V-35.107421875C107.735546875 -31.591796875 104.4640625 -31.4453125 94.89375 -30.37109375C84.24921875 -29.248046875 74.630078125 -26.3671875 74.630078125 -14.6484375C74.630078125 -4.345703125 82.1984375 0.830078125 92.45234375 0.830078125ZM95.4796875 -8.30078125C90.10859375 -8.30078125 86.641796875 -10.693359375 86.641796875 -14.74609375C86.641796875 -19.43359375 91.133984375 -21.337890625 96.407421875 -22.119140625C101.485546875 -22.900390625 106.270703125 -23.681640625 107.784375 -24.658203125V-19.091796875C107.784375 -13.0859375 103.536328125 -8.30078125 95.4796875 -8.30078125Z M149.84609375 1.220703125C162.590234375 1.220703125 171.72109375 -5.126953125 171.72109375 -15.185546875C171.72109375 -22.75390625 166.984765625 -27.24609375 156.7796875 -29.39453125L147.50234375 -31.298828125C143.20546875 -32.2265625 140.66640625 -34.130859375 140.66640625 -37.20703125C140.66640625 -40.72265625 143.98671875 -43.45703125 149.406640625 -43.45703125C155.021875 -43.45703125 158.781640625 -40.087890625 158.879296875 -35.498046875H170.4515625C170.15859375 -46.09375 161.613671875 -52.685546875 149.113671875 -52.685546875C136.516015625 -52.685546875 128.36171875 -46.2890625 128.36171875 -36.81640625C128.36171875 -29.00390625 133.5375 -23.974609375 143.40078125 -21.923828125L152.18984375 -20.1171875C156.535546875 -19.189453125 159.22109375 -17.3828125 159.22109375 -14.2578125C159.22109375 -10.595703125 155.6078125 -8.0078125 149.65078125 -8.0078125C143.4984375 -8.0078125 139.88515625 -10.888671875 139.348046875 -15.91796875H127.18984375C127.97109375 -4.833984375 137.297265625 1.220703125 149.84609375 1.220703125Z M194.64218749999998 0.830078125C203.04062499999998 0.830078125 207.38632812499998 -2.685546875 209.82773437499998 -7.275390625H210.02304687499998V0.0H222.13242187499998V-35.15625C222.13242187499998 -45.8984375 214.17343749999998 -52.587890625 200.74570312499998 -52.587890625C187.26914062499998 -52.587890625 178.87070312499998 -45.80078125 178.28476562499998 -35.546875H190.14999999999998C190.49179687499998 -39.892578125 194.49570312499998 -43.017578125 200.50156249999998 -43.017578125C206.40976562499998 -43.017578125 209.92539062499998 -39.892578125 209.92539062499998 -35.498046875V-35.107421875C209.92539062499998 -31.591796875 206.65390624999998 -31.4453125 197.08359374999998 -30.37109375C186.43906249999998 -29.248046875 176.81992187499998 -26.3671875 176.81992187499998 -14.6484375C176.81992187499998 -4.345703125 184.38828124999998 0.830078125 194.64218749999998 0.830078125ZM197.66953124999998 -8.30078125C192.29843749999998 -8.30078125 188.83164062499998 -10.693359375 188.83164062499998 -14.74609375C188.83164062499998 -19.43359375 193.32382812499998 -21.337890625 198.59726562499998 -22.119140625C203.67539062499998 -22.900390625 208.46054687499998 -23.681640625 209.97421874999998 -24.658203125V-19.091796875C209.97421874999998 -13.0859375 205.72617187499998 -8.30078125 197.66953124999998 -8.30078125Z"/></g>' + '</svg>'
 e = html.escape
 
 
@@ -135,8 +135,8 @@ def item_ld(a):
 
 def pagina(caminho, titulo, descricao, h1, intro, migalhas, cartoes, links, ver_todas, atualizado, extra='', faq=None, tabela='', artigo=None, botao='Pesquisar com filtros e alertas'):
     url = SITE + caminho
-    if len(titulo) > 65 and titulo.endswith(' | Duplicasa'):     # o Google corta títulos compridos: a marca sai primeiro
-        titulo = titulo[:-len(' | Duplicasa')]
+    if len(titulo) > 65 and titulo.endswith(' | DupliCasa'):     # o Google corta títulos compridos: a marca sai primeiro
+        titulo = titulo[:-len(' | DupliCasa')]
     lds = [{'@context': 'https://schema.org', '@type': 'BreadcrumbList', 'itemListElement': [
         {'@type': 'ListItem', 'position': n + 1, 'name': nome, 'item': SITE + c} for n, (nome, c) in enumerate(migalhas)]}]
     if cartoes:
@@ -148,11 +148,11 @@ def pagina(caminho, titulo, descricao, h1, intro, migalhas, cartoes, links, ver_
     if artigo:
         lds.append({'@context': 'https://schema.org', '@type': 'Article', 'headline': h1, 'description': descricao, 'inLanguage': 'pt-PT',
                     'datePublished': artigo, 'dateModified': artigo, 'mainEntityOfPage': url, 'image': SITE + '/marca/duaschaves-og.png',
-                    'author': {'@type': 'Organization', 'name': 'Duplicasa', 'url': SITE + '/'},
-                    'publisher': {'@type': 'Organization', 'name': 'Duplicasa', 'logo': {'@type': 'ImageObject', 'url': SITE + '/marca/duaschaves-icone.png'}}})
+                    'author': {'@type': 'Organization', 'name': 'DupliCasa', 'url': SITE + '/'},
+                    'publisher': {'@type': 'Organization', 'name': 'DupliCasa', 'logo': {'@type': 'ImageObject', 'url': SITE + '/marca/duaschaves-icone.png'}}})
     lds.append({'@context': 'https://schema.org', '@type': 'WebPage', 'name': titulo, 'url': url, 'inLanguage': 'pt-PT',
-                'description': descricao, 'isPartOf': {'@type': 'WebSite', 'name': 'Duplicasa', 'url': SITE + '/'},
-                'publisher': {'@type': 'Organization', 'name': 'Duplicasa', 'url': SITE + '/', 'logo': SITE + '/marca/duaschaves-icone.png'}})
+                'description': descricao, 'isPartOf': {'@type': 'WebSite', 'name': 'DupliCasa', 'url': SITE + '/'},
+                'publisher': {'@type': 'Organization', 'name': 'DupliCasa', 'url': SITE + '/', 'logo': SITE + '/marca/duaschaves-icone.png'}})
     nav = ' <span>›</span> '.join(f'<a href="{c}">{e(n)}</a>' if k < len(migalhas) - 1 else f'<span aria-current="page">{e(n)}</span>'
                                   for k, (n, c) in enumerate(migalhas))
     faq_html = ('<section class="cx"><h2 style="margin-top:0">Perguntas frequentes</h2>' + ''.join(
@@ -164,10 +164,10 @@ def pagina(caminho, titulo, descricao, h1, intro, migalhas, cartoes, links, ver_
 <title>{e(titulo)}</title><meta name="description" content="{e(descricao)}"><link rel="canonical" href="{url}">
 <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1">
 <meta name="theme-color" content="#F3F5F4"><meta name="color-scheme" content="light">
-<meta property="og:type" content="website"><meta property="og:site_name" content="Duplicasa"><meta property="og:locale" content="pt_PT">
+<meta property="og:type" content="website"><meta property="og:site_name" content="DupliCasa"><meta property="og:locale" content="pt_PT">
 <meta property="og:title" content="{e(titulo)}"><meta property="og:description" content="{e(descricao)}"><meta property="og:url" content="{url}">
 <meta property="og:image" content="{SITE}/marca/duaschaves-og.png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">
-<meta property="og:image:alt" content="Duplicasa: casas para arrendar em Portugal, num só lugar"><meta name="twitter:card" content="summary_large_image">
+<meta property="og:image:alt" content="DupliCasa: casas para arrendar em Portugal, num só lugar"><meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="/marca/duaschaves-simbolo.svg" type="image/svg+xml"><link rel="apple-touch-icon" href="/marca/duaschaves-icone-180.png">
 {ld_html}
 <style>
@@ -192,7 +192,7 @@ details{{border-top:1px solid var(--b);padding:12px 0}}details:first-of-type{{bo
 footer{{margin-top:56px;border-top:1px solid var(--b);padding:28px 0 40px;font-size:14px;color:var(--t3)}}footer a{{margin-right:14px;white-space:nowrap;display:inline-block;line-height:2}}
 @media(min-width:900px){{h1{{font-size:46px}}}}
 </style></head><body>
-<header><div class="w"><a class="logo" href="/" aria-label="Duplicasa, início">{LOGO}</a><a class="bt" href="{ver_todas}">Ver casas</a></div></header>
+<header><div class="w"><a class="logo" href="/" aria-label="DupliCasa, início">{LOGO}</a><a class="bt" href="{ver_todas}">Ver casas</a></div></header>
 <main class="w">
 <nav class="mig" aria-label="Estás aqui">{nav}</nav>
 <h1>{e(h1)}</h1>
@@ -204,11 +204,11 @@ footer{{margin-top:56px;border-top:1px solid var(--b);padding:28px 0 40px;font-s
 {faq_html}
 <section class="cx"><h2 style="margin-top:0">Arrendar sem cair numa burla</h2>
 <ul><li>Visita a casa antes de pagar qualquer valor.</li><li>Desconfia de rendas muito abaixo das outras na zona.</li>
-<li>Confirma que quem anuncia é mesmo o dono.</li><li>Em breve, com o pagamento seguro da Duplicasa, a entrada só vai chegar ao senhorio quando receberes as chaves.</li></ul>
+<li>Confirma que quem anuncia é mesmo o dono.</li><li>Em breve, com o pagamento seguro da DupliCasa, a entrada só vai chegar ao senhorio quando receberes as chaves.</li></ul>
 <p><a href="/arrendar/guias/como-evitar-burlas-no-arrendamento/">Guia: como evitar burlas no arrendamento</a> · <a href="/arrendar/guias/">Todos os guias</a></p></section>
 {extra}
 </main>
-<footer><div class="w"><p>Duplicasa · casas e quartos para alugar em Portugal, num só lugar. Anúncios atualizados a {atualizado}.</p>
+<footer><div class="w"><p>DupliCasa · casas e quartos para alugar em Portugal, num só lugar. Anúncios atualizados a {atualizado}.</p>
 <p><a href="/arrendar/">Todas as cidades</a><a href="/arrendar/precos/">Preço das rendas</a><a href="/arrendar/guias/">Guias</a><a href="/">Início</a><a href="/#senhorios">Para senhorios</a><a href="/#termos">Termos e privacidade</a></p></div></footer>
 </body></html>
 '''
@@ -250,7 +250,7 @@ def gerar(anuncios, atualizado):
         tipos_pag = [(ts, tn, tt) for ts, tn, tt in TIPOS if sum(1 for a in lista if tipo_ok(a, tt)) >= MIN_TIPO]
         resumo.append({'cidade': cidade, 'slug': s, 'n': len(lista), 'quarto': meds.get('Quarto'), 'T0': meds.get('T0'), 'T1': meds.get('T1'),
                        'T2': meds.get('T2'), 'm2': m2, 'min': boas[0]['renda'] if boas else None, 'distrito': lista[0].get('distrito') or ''})
-        frases = [f'Há {num(len(lista))} casas, apartamentos e quartos para alugar {e(em(cidade))} na Duplicasa, juntos de vários sites e atualizados a {hoje}.']
+        frases = [f'Há {num(len(lista))} casas, apartamentos e quartos para alugar {e(em(cidade))} na DupliCasa, juntos de vários sites e atualizados a {hoje}.']
         if meds.get('T1'):
             frases.append(f'Um T1 pede, a meio da tabela, {num(meds["T1"])} € por mês.')
         if meds.get('Quarto'):
@@ -280,18 +280,18 @@ def gerar(anuncios, atualizado):
             links += '<h2>Perto de ' + e(cidade) + '</h2><ul class="ch">' + ''.join(f'<li><a href="/arrendar/{slug(c)}/">Casas para alugar {e(em(c))}</a></li>' for c in vizinhas) + '</ul>'
         faq = []
         if meds.get('T1'):
-            faq.append((f'Quanto custa alugar um T1 {em(cidade)}?', f'A meio da tabela, um T1 para arrendar {e(em(cidade))} pede {num(meds["T1"])} € por mês, nos anúncios da Duplicasa a {hoje}.'
+            faq.append((f'Quanto custa alugar um T1 {em(cidade)}?', f'A meio da tabela, um T1 para arrendar {e(em(cidade))} pede {num(meds["T1"])} € por mês, nos anúncios da DupliCasa a {hoje}.'
                         + (f' O mais barato que temos agora custa {num(min(a["renda"] for a in lista if plausivel(a) and tip(a) == "T1"))} €.' if any(plausivel(a) and tip(a) == 'T1' for a in lista) else '')))
         if meds.get('Quarto'):
             faq.append((f'Quanto custa um quarto {em(cidade)}?', f'Um quarto para alugar {e(em(cidade))} anda pelos {num(meds["Quarto"])} € por mês (mediana dos anúncios a {hoje}). Há quartos para estudantes e para quem trabalha.'))
         if m2:
             faq.append((f'Qual é o preço por m² das rendas {em(cidade)}?', f'Nos apartamentos e moradias anunciados {e(em(cidade))}, a renda mediana é de {str(round(m2, 1)).replace(".", ",")} € por m² por mês.'))
-        faq.append((f'Há casas para alugar a particulares {em(cidade)}?', f'Sim. Dos {num(len(lista))} anúncios {e(em(cidade))}, {num(n_part)} são de particulares, sem agência. Na pesquisa da Duplicasa podes mostrar só esses.' if n_part
+        faq.append((f'Há casas para alugar a particulares {em(cidade)}?', f'Sim. Dos {num(len(lista))} anúncios {e(em(cidade))}, {num(n_part)} são de particulares, sem agência. Na pesquisa da DupliCasa podes mostrar só esses.' if n_part
                     else f'Neste momento os anúncios {e(em(cidade))} são de agências. Cria um alerta e avisamos-te quando aparecer uma casa de um particular.'))
-        faq.append(('Como recebo as casas novas primeiro?', 'Cria um alerta grátis na Duplicasa: recebes um resumo por dia. Com o acesso, o aviso chega no minuto em que a casa aparece.'))
+        faq.append(('Como recebo as casas novas primeiro?', 'Cria um alerta grátis na DupliCasa: recebes um resumo por dia. Com o acesso, o aviso chega no minuto em que a casa aparece.'))
         desde = f' desde {num(boas[0]["renda"])} €' if boas else ''
         paginas[f'/arrendar/{s}/'] = pagina(
-            f'/arrendar/{s}/', f'Casas para alugar {em(CURTO.get(cidade, cidade))}{desde} | Duplicasa',
+            f'/arrendar/{s}/', f'Casas para alugar {em(CURTO.get(cidade, cidade))}{desde} | DupliCasa',
             f'{num(len(lista))} casas, apartamentos e quartos para alugar {em(cidade)}, dos mais baratos para os mais caros. Arrenda sem burlas e sabe das casas novas no minuto.',
             f'Casas para alugar {em(nome_pesquisa(cidade))}', ' '.join(frases),
             [('Início', '/'), ('Arrendar', '/arrendar/'), (cidade, f'/arrendar/{s}/')],
@@ -310,10 +310,10 @@ def gerar(anuncios, atualizado):
             outros = '<h2>Outros tipos de casa ' + e(em(cidade)) + '</h2><ul class="ch">' + ''.join(
                 f'<li><a href="/arrendar/{s}/{x}/">{e(nome_tipo(t2, n))}</a></li>' for x, n, t2 in tipos_pag if x != ts) + f'<li><a href="/arrendar/{s}/">Todas</a></li></ul>'
             faq_t = [(f'Quanto custa {"um quarto" if tt == "Quarto" else ("um apartamento" if tt == "Apartamento" else ("uma moradia" if tt == "Moradia" else "um " + tn))} {em(cidade)}?',
-                      f'Desde {num(sub[0]["renda"])} € por mês' + (f'; a meio da tabela, {num(md)} €' if md else '') + f' (anúncios da Duplicasa a {hoje}).')]
+                      f'Desde {num(sub[0]["renda"])} € por mês' + (f'; a meio da tabela, {num(md)} €' if md else '') + f' (anúncios da DupliCasa a {hoje}).')]
             tips_q = {'Quarto': 'Quarto', 'Apartamento': '', 'Moradia': ''}.get(tt, tt)
             paginas[f'/arrendar/{s}/{ts}/'] = pagina(
-                f'/arrendar/{s}/{ts}/', f'{nome} para {pal} {em(cidade)} desde {num(sub[0]["renda"])} € | Duplicasa',
+                f'/arrendar/{s}/{ts}/', f'{nome} para {pal} {em(cidade)} desde {num(sub[0]["renda"])} € | DupliCasa',
                 f'{nome} para {pal} {em(cidade)}, dos mais baratos para os mais caros, desde {num(sub[0]["renda"])} € por mês. Alertas de casas novas no minuto em que aparecem.',
                 f'{nome} para {pal} {em(cidade)}', intro,
                 [('Início', '/'), ('Arrendar', '/arrendar/'), (cidade, f'/arrendar/{s}/'), (nome, f'/arrendar/{s}/{ts}/')],
@@ -331,10 +331,10 @@ def gerar(anuncios, atualizado):
                      f'da mais barata para a mais cara. A mais barata custa {num(plaus[0]["renda"])} €. Atualizado a {hoje}.')
             oque = 'Quartos' if not n_c else ('Casas' if not n_q else 'Casas e quartos')   # o título diz o que há mesmo
             outros_t = '<h2>Outras faixas de preço</h2><ul class="ch">' + ''.join(f'<li><a href="/arrendar/{s}/ate-{t}/">Até {num(t)} €</a></li>' for t, _ in precos_pag if t != teto) + '</ul>'
-            faq_p = [(f'Há casas para alugar {em(cidade)} até {num(teto)} €?', f'Sim: {" e ".join(partes)} com renda até {num(teto)} € por mês, nos anúncios da Duplicasa a {hoje}.'),
+            faq_p = [(f'Há casas para alugar {em(cidade)} até {num(teto)} €?', f'Sim: {" e ".join(partes)} com renda até {num(teto)} € por mês, nos anúncios da DupliCasa a {hoje}.'),
                      ('Como sei das casas baratas antes dos outros?', 'Cria um alerta com a renda máxima que queres pagar. Recebes um resumo grátis por dia; com o acesso, o aviso chega no minuto em que a casa aparece.')]
             paginas[f'/arrendar/{s}/ate-{teto}/'] = pagina(
-                f'/arrendar/{s}/ate-{teto}/', f'{oque} para alugar {em(CURTO.get(cidade, cidade))} até {num(teto)} € | Duplicasa',
+                f'/arrendar/{s}/ate-{teto}/', f'{oque} para alugar {em(CURTO.get(cidade, cidade))} até {num(teto)} € | DupliCasa',
                 f'{" e ".join(partes).capitalize()} para alugar {em(cidade)} com renda até {num(teto)} € por mês, das mais baratas para as mais caras. Sabe das novas no minuto.',
                 f'{oque} para alugar {em(CURTO.get(cidade, cidade))} até {num(teto)} €', intro,
                 [('Início', '/'), ('Arrendar', '/arrendar/'), (cidade, f'/arrendar/{s}/'), (f'Até {num(teto)} €', f'/arrendar/{s}/ate-{teto}/')],
@@ -350,9 +350,9 @@ def gerar(anuncios, atualizado):
                      f'Desde {num(pz[0]["renda"])} € por mês' + (f'; a meio da tabela, {num(md_z)} €' if md_z else '') + f'. Atualizado a {hoje}.')
             outras_z = '<h2>Outras zonas ' + e(em(cidade)) + '</h2><ul class="ch">' + ''.join(
                 [f'<li><a href="/arrendar/{s}/zona/{slug(x)}/">{e(x)}</a></li>' for x, _ in zonas_pag if x != z][:20]) + '</ul>'
-            faq_z = [(f'Quanto custa arrendar casa {em(z)}?', f'Desde {num(pz[0]["renda"])} € por mês' + (f'; a meio da tabela, {num(md_z)} € (sem contar quartos)' if md_z else '') + f', nos anúncios da Duplicasa a {hoje}.')]
+            faq_z = [(f'Quanto custa arrendar casa {em(z)}?', f'Desde {num(pz[0]["renda"])} € por mês' + (f'; a meio da tabela, {num(md_z)} € (sem contar quartos)' if md_z else '') + f', nos anúncios da DupliCasa a {hoje}.')]
             paginas[f'/arrendar/{s}/zona/{zs}/'] = pagina(
-                f'/arrendar/{s}/zona/{zs}/', f'Casas para alugar {em(z)} ({CURTO.get(cidade, cidade)}) | Duplicasa',
+                f'/arrendar/{s}/zona/{zs}/', f'Casas para alugar {em(z)} ({CURTO.get(cidade, cidade)}) | DupliCasa',
                 f'{num(len(lz))} casas, apartamentos e quartos para alugar {em(z)}, {em(cidade)}, desde {num(pz[0]["renda"])} € por mês. Alertas de casas novas no minuto em que aparecem.',
                 f'Casas para alugar {em(z)}', intro,
                 [('Início', '/'), ('Arrendar', '/arrendar/'), (cidade, f'/arrendar/{s}/'), (z, f'/arrendar/{s}/zona/{zs}/')],
@@ -381,7 +381,7 @@ def gerar(anuncios, atualizado):
         lk = '<h2>Cidades</h2><ul class="ch">' + ''.join(f'<li><a href="/arrendar/{slug(c)}/">Casas para alugar {e(em(CURTO.get(c, c)))} ({len(l)})</a></li>' for c, l in sorted(cs, key=lambda x: -len(x[1]))) + '</ul>'
         regioes_pag[nome] = (rs, len(todas))
         paginas[f'/arrendar/regiao/{rs}/'] = pagina(
-            f'/arrendar/regiao/{rs}/', f'Casas para alugar {prep} | Duplicasa',
+            f'/arrendar/regiao/{rs}/', f'Casas para alugar {prep} | DupliCasa',
             f'{num(len(todas))} casas, apartamentos e quartos para alugar {prep}, das mais baratas para as mais caras. Alertas de casas novas no minuto em que aparecem.',
             f'Casas para alugar {prep}', intro,
             [('Início', '/'), ('Arrendar', '/arrendar/'), (nome, f'/arrendar/regiao/{rs}/')],
@@ -399,7 +399,7 @@ def gerar(anuncios, atualizado):
             f'<li><a href="/arrendar/{slug(c)}/{("ate-" + str(teto) + "/") if (c, teto) in [(cc, t) for cc, _ in cidades for t in TETOS] else ""}">{e(c)} ({n})</a></li>'
             for c, n in sorted(por_c.items(), key=lambda x: -x[1])[:24] if c and slug(c) in {slug(x) for x, _ in cidades}) + '</ul>'
         paginas[f'/arrendar/ate-{teto}/'] = pagina(
-            f'/arrendar/ate-{teto}/', f'Casas para alugar até {num(teto)} € em Portugal | Duplicasa',
+            f'/arrendar/ate-{teto}/', f'Casas para alugar até {num(teto)} € em Portugal | DupliCasa',
             f'{num(len(sub))} casas e quartos para alugar em Portugal com renda até {num(teto)} € por mês, das mais baratas para as mais caras. Sabe das novas no minuto.',
             f'Casas para alugar até {num(teto)} € em Portugal',
             f'{num(len(sub))} casas e quartos para arrendar com renda até {num(teto)} € por mês, de vários sites, num só lugar. Atualizado a {hoje}.',
@@ -416,7 +416,7 @@ def gerar(anuncios, atualizado):
               '<h2>Por região</h2><ul class="ch">' + ''.join(f'<li><a href="/arrendar/regiao/{rs}/">{e(n)} ({num(k)})</a></li>' for n, (rs, k) in sorted(regioes_pag.items())) + '</ul>' + blocos)
     baratas = sorted([a for a in anuncios if plausivel(a) and a.get('fotos') and tip(a) in ('T0', 'T1', 'Quarto')], key=lambda a: a['renda'])[:12]
     paginas['/arrendar/'] = pagina(
-        '/arrendar/', 'Casas e quartos para alugar em Portugal, por cidade | Duplicasa',
+        '/arrendar/', 'Casas e quartos para alugar em Portugal, por cidade | DupliCasa',
         f'{num(len(anuncios))} casas, apartamentos e quartos para alugar em {len(cidades)} cidades de Portugal, juntos num só lugar. Alertas de casas novas no minuto em que aparecem.',
         'Casas e quartos para alugar em Portugal',
         f'{num(len(anuncios))} casas, apartamentos e quartos para arrendar, de vários sites, num só lugar. Escolhe a cidade. Atualizado a {hoje}.',
@@ -429,7 +429,7 @@ def gerar(anuncios, atualizado):
                   f'<tr><td><a href="/arrendar/{r["slug"]}/">{e(r["cidade"])}</a></td><td class="n">{num(r["n"])}</td><td class="n">{f(r["quarto"])}</td>'
                   f'<td class="n">{f(r["T0"])}</td><td class="n">{f(r["T1"])}</td><td class="n">{f(r["T2"])}</td>'
                   f'<td class="n">{(str(round(r["m2"], 1)).replace(".", ",") + " €") if r["m2"] else "—"}</td></tr>' for r in linhas) +
-              '</tbody></table></div><p class="intro" style="font-size:15px;margin-top:12px">Mediana das rendas pedidas nos anúncios ativos na Duplicasa a ' + hoje +
+              '</tbody></table></div><p class="intro" style="font-size:15px;margin-top:12px">Mediana das rendas pedidas nos anúncios ativos na DupliCasa a ' + hoje +
               '. É o preço pedido, não o preço final do contrato. Cidades com pelo menos 10 anúncios.</p>')
     lx = next((r for r in linhas if r['cidade'] == 'Lisboa'), None)
     pt = next((r for r in linhas if r['cidade'] == 'Porto'), None)
@@ -439,14 +439,14 @@ def gerar(anuncios, atualizado):
         intro_p += (f'; no Porto, {num(pt["T1"])} €.' if pt and pt['T1'] else '.')
     faq_p = []
     if lx and lx['T1']:
-        faq_p.append(('Qual é a renda média de um T1 em Lisboa?', f'A meio da tabela, {num(lx["T1"])} € por mês nos anúncios da Duplicasa a {hoje}.'))
+        faq_p.append(('Qual é a renda média de um T1 em Lisboa?', f'A meio da tabela, {num(lx["T1"])} € por mês nos anúncios da DupliCasa a {hoje}.'))
     if pt and pt['T1']:
-        faq_p.append(('Qual é a renda média de um T1 no Porto?', f'A meio da tabela, {num(pt["T1"])} € por mês nos anúncios da Duplicasa a {hoje}.'))
+        faq_p.append(('Qual é a renda média de um T1 no Porto?', f'A meio da tabela, {num(pt["T1"])} € por mês nos anúncios da DupliCasa a {hoje}.'))
     if lx and lx['quarto']:
         faq_p.append(('Quanto custa um quarto em Lisboa?', f'Cerca de {num(lx["quarto"])} € por mês (mediana dos anúncios a {hoje}).'))
-    faq_p.append(('De onde vêm estes números?', 'Da mediana das rendas pedidas nos anúncios ativos na Duplicasa, que junta vários sites de arrendamento em Portugal. Atualizamos de 30 em 30 minutos.'))
+    faq_p.append(('De onde vêm estes números?', 'Da mediana das rendas pedidas nos anúncios ativos na DupliCasa, que junta vários sites de arrendamento em Portugal. Atualizamos de 30 em 30 minutos.'))
     paginas['/arrendar/precos/'] = pagina(
-        '/arrendar/precos/', f'Preço das rendas em Portugal por cidade ({MESES[datetime.date.today().month - 1]} {datetime.date.today().year}) | Duplicasa',
+        '/arrendar/precos/', f'Preço das rendas em Portugal por cidade ({MESES[datetime.date.today().month - 1]} {datetime.date.today().year}) | DupliCasa',
         'Quanto custa arrendar casa em Lisboa, Porto, Braga, Coimbra e outras cidades: renda mediana de quartos, T0, T1 e T2 e preço por m², com dados atualizados.',
         'Preço das rendas em Portugal, por cidade', intro_p,
         [('Início', '/'), ('Arrendar', '/arrendar/'), ('Preço das rendas', '/arrendar/precos/')],
@@ -474,7 +474,7 @@ NOTA_LEGAL = ('<p class="nota">Este guia explica a lei em termos simples e não 
               'fala com um jurista ou consulta o <a href="https://www.portaldahabitacao.pt/" rel="noopener">Portal da Habitação</a>.</p>')
 GUIAS = [
     {'slug': 'como-arrendar-casa-em-portugal', 'data': '2026-10-30',
-     'titulo': 'Como arrendar casa em Portugal: passo a passo | Duplicasa',
+     'titulo': 'Como arrendar casa em Portugal: passo a passo | DupliCasa',
      'desc': 'Do orçamento às chaves: documentos que costumam pedir, quanto a lei deixa pedir à entrada, o que perguntar na visita e o que confirmar antes de pagar.',
      'h1': 'Como arrendar casa em Portugal, passo a passo',
      'intro': 'Do orçamento à entrega das chaves: o que fazer em cada passo para arrendar casa depressa, sem perder dinheiro nem cair numa burla.',
@@ -486,7 +486,7 @@ GUIAS = [
 <p>Ter tudo pronto faz-te passar à frente de quem ainda vai juntar papéis. É costume pedirem:</p>
 <ul><li>documento de identificação e NIF;</li><li>últimos recibos de vencimento ou declaração da entidade patronal;</li><li>última declaração de IRS;</li><li>se és estudante, comprovativo de matrícula e, muitas vezes, um fiador.</li></ul>
 <h2>3. Procura em vários sites ao mesmo tempo</h2>
-<p>As casas boas e baratas desaparecem depressa. Na <a href="/#pesquisa">Duplicasa</a> vês as casas dos principais sites num só lugar, sem repetidas, e com um <a href="/#alertas">alerta</a> sabes das novas logo que aparecem.</p>
+<p>As casas boas e baratas desaparecem depressa. Na <a href="/#pesquisa">DupliCasa</a> vês as casas dos principais sites num só lugar, sem repetidas, e com um <a href="/#alertas">alerta</a> sabes das novas logo que aparecem.</p>
 <h2>4. Contacta depressa e visita</h2>
 <p>Na visita, pergunta: as despesas estão incluídas? Quanto é a caução e como é devolvida? Quando fica livre? Pede para ver o certificado energético e confirma se vai haver contrato escrito e recibos.</p>
 <h2>5. Confirma antes de pagar</h2>
@@ -501,7 +501,7 @@ GUIAS = [
      'fontes': [F_CC, F_AT, F_AT_CAUCAO, F_REFORMA],
      'botao': 'Ver casas para arrendar', 'link': '/#pesquisa', 'legal': True},
     {'slug': 'arrendar-casa-sem-fiador', 'data': '2026-10-30',
-     'titulo': 'Arrendar casa sem fiador: o que diz a lei e o que propor | Duplicasa',
+     'titulo': 'Arrendar casa sem fiador: o que diz a lei e o que propor | DupliCasa',
      'desc': 'A lei não obriga a ter fiador. Porque o pedem, o que podes propor em troca, os limites da lei e como encontrar senhorios que não o exigem.',
      'h1': 'Arrendar casa sem fiador',
      'intro': 'O fiador é uma garantia para o senhorio de que a renda é paga. Nenhuma lei obriga a tê-lo, e há outras formas de dar essa confiança.',
@@ -517,7 +517,7 @@ GUIAS = [
 <li><strong>Referências:</strong> o contacto ou uma carta de um senhorio anterior a dizer que pagaste sempre a horas.</li>
 <li><strong>Uma garantia maior à entrada:</strong> alguns senhorios aceitam em troca uma caução ou rendas adiantadas, dentro dos limites da lei. Combina tudo por escrito.</li></ul>
 <h2>Onde procurar</h2>
-<p>Particulares às vezes são mais flexíveis do que agências. Na <a href="/#pesquisa">pesquisa da Duplicasa</a>, em Filtros, escolhe «Só particulares». Quando o anúncio diz se pede fiador, mostramos isso na ficha da casa.</p>
+<p>Particulares às vezes são mais flexíveis do que agências. Na <a href="/#pesquisa">pesquisa da DupliCasa</a>, em Filtros, escolhe «Só particulares». Quando o anúncio diz se pede fiador, mostramos isso na ficha da casa.</p>
 <p>Cria um <a href="/#alertas">alerta</a> para seres dos primeiros a contactar: quem chega primeiro tem mais margem para negociar.</p>""",
      'faq': [('A lei obriga a ter fiador para arrendar casa?', 'Não. O fiador é uma garantia que o senhorio pode pedir, mas nenhuma lei a impõe. Só existe se ficar no contrato, assinada pelo fiador.'),
              ('É possível arrendar casa sem fiador?', 'Sim. Muitos senhorios aceitam outra garantia: rendimentos estáveis comprovados, um seguro de renda, referências de um senhorio anterior ou uma caução, até ao valor de 2 rendas.'),
@@ -525,7 +525,7 @@ GUIAS = [
      'fontes': [F_CC, F_GARANTIA],
      'botao': 'Ver casas de particulares', 'link': '/#pesquisa', 'legal': True},
     {'slug': 'arrendar-casa-sem-caucao', 'data': '2026-10-30',
-     'titulo': 'Arrendar casa sem caução: o que diz a lei e como negociar | Duplicasa',
+     'titulo': 'Arrendar casa sem caução: o que diz a lei e como negociar | DupliCasa',
      'desc': 'A caução não é obrigatória e não pode passar de 2 rendas. Como encontrar casas sem caução, como negociar e como a recebes de volta.',
      'h1': 'Arrendar casa sem caução',
      'intro': 'A caução é o dinheiro que entregas ao entrar para cobrir danos ou rendas em falta, e que te devolvem quando sais. Não é obrigatória, e há casas que não a pedem.',
@@ -537,7 +537,7 @@ GUIAS = [
 <li>Para as Finanças, a caução conta como rendimento do senhorio e deve aparecer no recibo de renda eletrónico.</li></ul>
 """ + REFORMA + """
 <h2>Como encontrar casas sem caução</h2>
-<p>Na <a href="/#pesquisa">pesquisa da Duplicasa</a>, abre Filtros e escolhe «Sem caução indicada»: ficam as casas cujo anúncio diz que não pedem caução ou que não falam nela. Confirma sempre com quem anuncia antes de visitar.</p>
+<p>Na <a href="/#pesquisa">pesquisa da DupliCasa</a>, abre Filtros e escolhe «Sem caução indicada»: ficam as casas cujo anúncio diz que não pedem caução ou que não falam nela. Confirma sempre com quem anuncia antes de visitar.</p>
 <h2>Como negociar</h2>
 <ul><li>Mostra que és um inquilino de confiança: rendimentos, referências, documentos prontos.</li>
 <li>Propõe dividir a caução em prestações nos primeiros meses.</li>
@@ -549,11 +549,11 @@ GUIAS = [
      'faq': [('Quanto pode ser a caução de uma casa arrendada?', 'No máximo, o valor de 2 rendas (artigo 1076.º do Código Civil, regra em vigor a 30 de outubro de 2026). Há uma proposta do Governo para acabar com este limite, mas ainda não está em vigor.'),
              ('A caução é obrigatória?', 'Não. Só existe se for combinada no contrato. Quando existe, deve ser devolvida no fim se a casa ficar como estava e não houver rendas por pagar.'),
              ('Qual a diferença entre caução e rendas adiantadas?', 'A caução é uma garantia devolvida no fim do contrato, até ao valor de 2 rendas. As rendas adiantadas pagam os meses seguintes, até 2 meses, e não são devolvidas.'),
-             ('Como encontro casas sem caução?', 'Na pesquisa da Duplicasa, em Filtros, escolhe «Sem caução indicada» e confirma sempre com quem anuncia.')],
+             ('Como encontro casas sem caução?', 'Na pesquisa da DupliCasa, em Filtros, escolhe «Sem caução indicada» e confirma sempre com quem anuncia.')],
      'fontes': [F_CC, F_AT_CAUCAO, F_CGD, F_REFORMA],
      'botao': 'Procurar casas sem caução', 'link': '/#pesquisa', 'legal': True},
     {'slug': 'arrendar-casa-sem-contrato-riscos', 'data': '2026-10-30',
-     'titulo': 'É crime arrendar casa sem contrato? O que diz a lei | Duplicasa',
+     'titulo': 'É crime arrendar casa sem contrato? O que diz a lei | DupliCasa',
      'desc': 'Arrendar sem contrato escrito não é crime para o inquilino, mas a lei exige contrato. Como provar que arrendas, as Finanças e como te protegeres.',
      'h1': 'Arrendar casa sem contrato: o que diz a lei',
      'intro': 'A lei exige contrato escrito. Se não o tens, podes ter na mesma direitos, mas fica tudo mais difícil de provar.',
@@ -579,7 +579,7 @@ GUIAS = [
      'fontes': [F_CC, F_AT, F_INQUILINO],
      'botao': 'Ver casas para arrendar', 'link': '/#pesquisa', 'legal': True},
     {'slug': 'aumento-das-rendas-em-2027', 'data': '2026-10-30',
-     'titulo': 'Aumento das rendas em 2027: quanto pode subir a renda | Duplicasa',
+     'titulo': 'Aumento das rendas em 2027: quanto pode subir a renda | DupliCasa',
      'desc': 'Em 2027 a renda pode subir até 2,56%. Como calcular o aumento, quando o senhorio o pode aplicar e com quanto tempo tem de avisar.',
      'h1': 'Aumento das rendas em 2027',
      'intro': 'O coeficiente para 2027 é 1,0256: nos contratos que seguem a regra da lei, a renda pode subir até 2,56%.',
@@ -597,7 +597,7 @@ GUIAS = [
      'fontes': [F_CC, F_COEF],
      'botao': 'Ver casas para arrendar', 'link': '/#pesquisa', 'legal': True},
     {'slug': 'como-evitar-burlas-no-arrendamento', 'data': '2026-10-30',
-     'titulo': 'Como evitar burlas no arrendamento: sinais e o que fazer | Duplicasa',
+     'titulo': 'Como evitar burlas no arrendamento: sinais e o que fazer | DupliCasa',
      'desc': 'Os sinais de uma burla em anúncios de casas para arrendar, como confirmar que o anúncio é verdadeiro e o que fazer se fores enganado.',
      'h1': 'Como evitar burlas no arrendamento',
      'intro': 'As burlas em casas para arrendar repetem quase sempre os mesmos sinais. Saber reconhecê-los é a melhor proteção.',
@@ -618,7 +618,7 @@ GUIAS = [
 <li>Guarda tudo: anúncio, mensagens, comprovativos.</li>
 <li>Apresenta queixa às autoridades.</li></ul>
 <h2>Pagamento seguro (em breve)</h2>
-<p>Com o <a href="/#proteger">pagamento seguro da Duplicasa</a>, a entrada vai ficar guardada numa instituição de pagamento autorizada e só chega ao senhorio quando recebes as chaves. Podes entrar já na lista de espera.</p>""",
+<p>Com o <a href="/#proteger">pagamento seguro da DupliCasa</a>, a entrada vai ficar guardada numa instituição de pagamento autorizada e só chega ao senhorio quando recebes as chaves. Podes entrar já na lista de espera.</p>""",
      'faq': [('Como sei se um anúncio de casa é burla?', 'Desconfia de rendas muito abaixo da zona, de pressa para pagar, de quem não pode mostrar a casa e de pedidos de pagamento antes da visita. Pesquisa as fotos para ver se aparecem noutros anúncios.'),
              ('O que fazer se paguei a um burlão?', 'Contacta logo o teu banco, guarda o anúncio, as mensagens e os comprovativos, e apresenta queixa às autoridades.')],
      'botao': 'Entrar na lista do pagamento seguro', 'link': '/#proteger', 'legal': False},
@@ -638,7 +638,7 @@ def gerar_guias(paginas, hoje):
                                   [('Início', '/'), ('Arrendar', '/arrendar/'), ('Guias', '/arrendar/guias/'), (g['h1'], caminho)],
                                   [], corpo, g['link'], hoje, faq=g['faq'], artigo=g['data'], botao=g['botao'])
     lista = '<ul class="ch">' + ''.join(f'<li><a href="/arrendar/guias/{x["slug"]}/">{e(x["h1"])}</a></li>' for x in GUIAS) + '</ul>'
-    paginas['/arrendar/guias/'] = pagina('/arrendar/guias/', 'Guias para arrendar casa em Portugal | Duplicasa',
+    paginas['/arrendar/guias/'] = pagina('/arrendar/guias/', 'Guias para arrendar casa em Portugal | DupliCasa',
                                          'Guias para arrendar casa em Portugal, com o que diz a lei: passo a passo, sem fiador, sem caução, sem contrato, aumento das rendas em 2027 e burlas.',
                                          'Guias para arrendar casa', 'Respostas práticas às perguntas que mais se fazem antes de arrendar casa em Portugal.',
                                          [('Início', '/'), ('Arrendar', '/arrendar/'), ('Guias', '/arrendar/guias/')], [], lista, '/#pesquisa', hoje)
@@ -648,8 +648,8 @@ def llms_full(resumo, n_total, hoje):
     """Versão longa do llms.txt, com os números de hoje: para os assistentes de IA citarem dados atuais."""
     linhas = sorted([r for r in resumo if r['n'] >= 10], key=lambda r: -r['n'])
     f = lambda v: (num(v) + ' €') if v else 'sem dados suficientes'
-    t = [f'# Duplicasa: casas e quartos para alugar em Portugal (dados de {hoje})', '',
-         f'> {num(n_total)} casas, apartamentos e quartos para arrendar em Portugal, juntos de vários sites na Duplicasa (duplicasa.pt). '
+    t = [f'# DupliCasa: casas e quartos para alugar em Portugal (dados de {hoje})', '',
+         f'> {num(n_total)} casas, apartamentos e quartos para arrendar em Portugal, juntos de vários sites na DupliCasa (duplicasa.pt). '
          'Os valores abaixo são a mediana das rendas pedidas nos anúncios ativos (não o preço final do contrato), atualizados de 30 em 30 minutos.', '',
          '## Renda mediana por cidade', '']
     for r in linhas:
@@ -671,7 +671,7 @@ def llms_full(resumo, n_total, hoje):
           '- Fiador: nenhuma lei o obriga; não existe garantia do Estado que o substitua no arrendamento.',
           '- Atualização das rendas em 2027: até 2,56% (coeficiente 1,0256, Aviso n.º 24199/2026/2), 1 ano após o início ou a última atualização, com 30 dias de aviso.',
           f'- Guias com fontes: {SITE}/arrendar/guias/', '',
-          '## Sobre a Duplicasa', '- Ver casas e criar alertas é grátis. O acesso para contactar quem anuncia custa 1 € nos primeiros 30 dias e depois 9,99 € a cada 30 dias, até cancelar.',
+          '## Sobre a DupliCasa', '- Ver casas e criar alertas é grátis. O acesso para contactar quem anuncia custa 1 € nos primeiros 30 dias e depois 9,99 € a cada 30 dias, até cancelar.',
           '- Pagamento seguro (em breve): a entrada só chega ao senhorio quando os dois confirmam a entrega das chaves.',
           f'- Mais: {SITE}/llms.txt · {SITE}/arrendar/precos/', '']
     return '\n'.join(t)
