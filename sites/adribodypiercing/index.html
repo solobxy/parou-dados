@@ -316,13 +316,22 @@ section{position:relative}
 .joia.grande b{font-size:20px}
 @media (max-width:900px){.vitrine{grid-template-columns:1fr 1fr}.metais{grid-template-columns:1fr}}
 @media (max-width:700px){
-  .vitrine{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;gap:12px;margin-inline:calc(-1 * var(--pad));padding:0 var(--pad) 8px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+  .vitrine{display:flex;overflow-x:auto;overflow-y:hidden;overscroll-behavior-x:contain;touch-action:pan-x pan-y;scroll-snap-type:x mandatory;scroll-padding-inline:var(--pad);gap:12px;margin-inline:calc(-1 * var(--pad));padding:0 var(--pad) 8px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
   .vitrine::-webkit-scrollbar{display:none}
   .joia,.joia.grande{flex:0 0 68%;scroll-snap-align:start}
   .desliza{display:flex}
 }
-.desliza{display:none;align-items:center;gap:8px;margin-top:14px;font-size:14px;color:var(--sec-escuro)}
-.desliza svg{width:18px;height:18px;animation:lado 1.6s var(--ease) infinite}
+.desliza{display:none;align-items:center;gap:14px;margin-top:18px}
+.vn-btn{flex:0 0 48px;width:48px;height:48px;border-radius:50%;border:0;background:var(--noite-3);color:var(--osso);display:grid;place-items:center;transition:background-color .2s var(--ease),opacity .2s var(--ease),transform .15s var(--ease)}
+.vn-btn svg{width:20px;height:20px}
+.vn-btn:active{transform:scale(.92)}
+.vn-btn:disabled{opacity:.35;cursor:default}
+.vn-btn:focus-visible{outline:2px solid var(--ouro);outline-offset:3px}
+.vn-trilho{flex:1;position:relative;height:28px;cursor:pointer;touch-action:none}
+.vn-trilho::before{content:"";position:absolute;left:0;right:0;top:50%;height:4px;margin-top:-2px;border-radius:4px;background:rgba(238,232,223,.16)}
+.vn-trilho i{position:absolute;top:50%;left:0;height:6px;margin-top:-3px;border-radius:6px;background:var(--ouro);width:30%;transform:translateX(0);will-change:transform}
+@media (hover:hover){.vn-btn:not(:disabled):hover{background:#2E2A26}}
+@media (max-width:700px){.desliza{display:flex}}
 @keyframes lado{0%,100%{transform:translateX(0)}50%{transform:translateX(6px)}}
 
 /* vale de oferta */
@@ -715,7 +724,11 @@ dialog.doc[open] .doc-cx{animation:pop .5s var(--ease)}
       <div class="rv" style="--d:.16s"><b>Nióbio</b><p>Alternativa para peles muito sensíveis, com cores feitas por anodização e não por tinta.</p></div>
     </div>
     <div class="vitrine" id="vitrine"></div>
-    <p class="desliza" aria-hidden="true">Desliza para ver mais <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></p>
+    <div class="desliza" id="vitrineNav">
+      <button type="button" class="vn-btn" id="vnAnt" aria-controls="vitrine" aria-label="Joia anterior"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg></button>
+      <div class="vn-trilho" id="vnTrilho" aria-hidden="true"><i id="vnPolegar"></i></div>
+      <button type="button" class="vn-btn" id="vnSeg" aria-controls="vitrine" aria-label="Joia seguinte"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+    </div>
   </div>
 </section>
 
@@ -1209,6 +1222,40 @@ $('#vitrine').innerHTML = J.map(function(j, i){
   return '<article class="joia rv' + (j[4] ? ' grande' : '') + '" style="--d:' + ((i % 4) * .06) + 's"><div class="img"><img src="' + IMG[j[4] ? 'heroi' : j[0]] + '" alt="' + j[1] + ' em ' + j[2].toLowerCase() + '" width="' + (j[4] ? 900 : 640) + '" height="' + (j[4] ? 900 : 640) + '" loading="lazy" decoding="async"></div><b>' + j[1] + '</b><span>' + j[2] + '</span><span class="v num">' + j[3] + '</span></article>';
 }).join('');
 $$('#vitrine .rv').forEach(function(el){ io.observe(el); });
+/* barra de deslizar das joias (telemóvel): setas + trilho que segue o scroll e pode ser arrastado */
+(function(){
+  var v = $('#vitrine'), ant = $('#vnAnt'), seg = $('#vnSeg'), tr = $('#vnTrilho'), pol = $('#vnPolegar');
+  if (!v || !tr) return;
+  var tick = false, suave = !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  function passo(){ var c = v.querySelector('.joia'); return c ? c.getBoundingClientRect().width + 12 : v.clientWidth * .7; }
+  function atualizar(){
+    tick = false;
+    var max = v.scrollWidth - v.clientWidth;
+    var frac = v.scrollWidth ? v.clientWidth / v.scrollWidth : 1;
+    var w = tr.clientWidth, pw = Math.max(36, w * frac);
+    pol.style.width = pw + 'px';
+    pol.style.transform = 'translateX(' + (max > 0 ? (v.scrollLeft / max) * (w - pw) : 0) + 'px)';
+    ant.disabled = v.scrollLeft <= 2;
+    seg.disabled = v.scrollLeft >= max - 2;
+  }
+  function pedir(){ if (!tick){ tick = true; requestAnimationFrame(atualizar); } }
+  v.addEventListener('scroll', pedir, {passive:true});
+  window.addEventListener('resize', pedir);
+  ant.addEventListener('click', function(){ v.scrollBy({left:-passo(), behavior: suave ? 'smooth' : 'auto'}); });
+  seg.addEventListener('click', function(){ v.scrollBy({left:passo(), behavior: suave ? 'smooth' : 'auto'}); });
+  function irPara(x){
+    var r = tr.getBoundingClientRect(), pw = pol.getBoundingClientRect().width;
+    var f = Math.max(0, Math.min(1, (x - r.left - pw / 2) / Math.max(1, r.width - pw)));
+    v.style.scrollSnapType = 'none';
+    v.scrollLeft = f * (v.scrollWidth - v.clientWidth);
+  }
+  var arrasta = false;
+  tr.addEventListener('pointerdown', function(e){ arrasta = true; tr.setPointerCapture(e.pointerId); irPara(e.clientX); });
+  tr.addEventListener('pointermove', function(e){ if (arrasta) irPara(e.clientX); });
+  function soltar(){ if (!arrasta) return; arrasta = false; v.style.scrollSnapType = ''; }
+  tr.addEventListener('pointerup', soltar); tr.addEventListener('pointercancel', soltar);
+  atualizar();
+})();
 
 /* rotação suave das joias e do trilho ao fazer scroll */
 var joiasImg = $$('#vitrine img'), fotosPh = $$('.ph img'), trilho = $('#passos .trilho i'), passos = $('#passos');
