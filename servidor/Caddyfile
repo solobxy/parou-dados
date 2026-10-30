@@ -221,3 +221,45 @@ www.chave.pt {
 	redir https://chave.pt{uri} permanent
 }
 # FIM www.chave.pt
+
+# DINISSOUSA.PT - portfólio (site estático em /var/www/dinissousa, vindo de sites/dinissousa deste repositório)
+(dinissousa) {
+	encode zstd gzip
+	header {
+		Strict-Transport-Security "max-age=31536000"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		Permissions-Policy "geolocation=(), camera=(), microphone=()"
+		Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; form-action 'self'; frame-ancestors 'none'; base-uri 'none'"
+		-Server
+	}
+	root * /var/www/dinissousa
+	@estaticos path /fonts/* /img/*
+	header @estaticos Cache-Control "public, max-age=2592000"
+	@pagina path / /index.html
+	header @pagina Cache-Control "no-cache"
+	file_server
+}
+
+# Endereço de testes (funciona antes de o domínio apontar para aqui; fica fora do Google)
+dinissousa.{HOST_TESTE} {
+	header X-Robots-Tag "noindex, nofollow"
+	handle /robots.txt {
+		respond "User-agent: *
+Disallow: /
+" 200
+	}
+	import dinissousa
+}
+
+# INICIO dinissousa.pt
+dinissousa.pt {
+	import dinissousa
+}
+# FIM dinissousa.pt
+
+# INICIO www.dinissousa.pt
+www.dinissousa.pt {
+	redir https://dinissousa.pt{uri} permanent
+}
+# FIM www.dinissousa.pt

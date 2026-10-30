@@ -40,7 +40,7 @@ sed "s/{HOST_TESTE}/$HOST_TESTE/g" "$SERV/Caddyfile" > /tmp/Caddyfile.novo
 # O domínio só entra quando já aponta para este servidor (senão o Caddy falhava o
 # certificado e ficava a tentar com esperas cada vez maiores)
 MEU_IP="$(echo "${HOST_TESTE%%.sslip.io}" | tr '-' '.')"
-for DOM in parou.pt www.parou.pt anjinho.pt www.anjinho.pt jinxed.world www.jinxed.world duplicasa.pt www.duplicasa.pt chave.pt www.chave.pt; do
+for DOM in parou.pt www.parou.pt anjinho.pt www.anjinho.pt jinxed.world www.jinxed.world duplicasa.pt www.duplicasa.pt chave.pt www.chave.pt dinissousa.pt www.dinissousa.pt; do
   # Pergunta a dois DNS: basta um dizer que o domínio aponta para aqui (durante uma mudança
   # de DNS uns ainda dão o endereço antigo e o domínio entrava e saía a cada 2 minutos)
   IPS="$( (dig +short +time=3 +tries=2 A "$DOM" @1.1.1.1; dig +short +time=3 +tries=2 A "$DOM" @8.8.8.8) 2>/dev/null | grep -E '^[0-9.]+$' | sort -u)"
@@ -86,6 +86,16 @@ if [ -d "$ANJ/site" ]; then
   fi
   systemctl is-enabled --quiet anjinho 2>/dev/null || systemctl enable anjinho >/dev/null 2>&1
   if [ -n "$REINICIAR_ANJ" ]; then systemctl restart anjinho; else systemctl is-active --quiet anjinho || systemctl start anjinho; fi
+fi
+
+# dinissousa.pt: portfólio do Dinis, site estático que vive neste repositório, em sites/dinissousa.
+# Copia só quando mudou, para uma pasta nova, e troca de uma vez (nunca fica meio copiado).
+DS=$BASE/servidor/sites/dinissousa
+if [ -f "$DS/index.html" ] && ! diff -rq "$DS" /var/www/dinissousa >/dev/null 2>&1; then
+  rm -rf /var/www/dinissousa.novo && mkdir -p /var/www && cp -r "$DS" /var/www/dinissousa.novo \
+    && chmod -R a+rX /var/www/dinissousa.novo \
+    && rm -rf /var/www/dinissousa.velho && { [ ! -d /var/www/dinissousa ] || mv /var/www/dinissousa /var/www/dinissousa.velho; } \
+    && mv /var/www/dinissousa.novo /var/www/dinissousa && rm -rf /var/www/dinissousa.velho
 fi
 
 # Duas Chaves: site estático (protótipo) que vive neste repositório, em sites/duaschaves.
