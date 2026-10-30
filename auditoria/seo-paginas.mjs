@@ -24,6 +24,7 @@ for (const u of amostra) {
   ok(`[linha ${u.split('/')[2]}] 200`, r.estado === 200, r.estado);
   ok(`[linha ${u.split('/')[2]}] título diz "horário" e não passa de 72`, /horário/.test(t) && t.length <= 72, t);
   ok(`[linha ${u.split('/')[2]}] título não começa por "Linha <número>" (o número vem primeiro)`, !/^Linha \d/.test(t), t);
+  ok(`[linha ${u.split('/')[2]}] título sem percurso vazio (" -:" ou "()")`, !/ -:|\(\s*-?\s*\)/.test(t + d), t);
   ok(`[linha ${u.split('/')[2]}] JSON-LD válido`, jsonld(r.h).every((x) => x !== 'INVÁLIDO'));
   if (!/\/unir\//.test(u)) ok(`[linha ${u.split('/')[2]}] descrição com horas dos dias úteis (ou sem horário)`, /^Dias úteis: 1\.º \S+ às \d\d:\d\d, último às \d\d:\d\d/.test(d) || /^Horário da /.test(d), d.slice(0, 80));
 }
