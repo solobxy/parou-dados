@@ -1,0 +1,48 @@
+
+== paragem-stcp /paragens/stcp/1-de-dezembro (claro) estado 200 em 7214 ms
+   tempos: TTFB 1174 ms · FCP 1312 ms · LCP 1312 ms · CLS 0 · 7747 B
+   diálogos ocupam 0% do ecrã
+   por cima: sticky 390x57 @0: PAROU Abrir a app
+   depois de "Ver em tempo real": /
+
+== paragem-cm /paragens/carris-metropolitana/4-marcos-em1023-xr-aceiro-ant-aleixo (claro) estado 200 em 10008 ms
+   tempos: TTFB 3975 ms · FCP 4016 ms · LCP 4016 ms · CLS 0 · 7392 B
+   diálogos ocupam 0% do ecrã
+   por cima: sticky 390x57 @0: PAROU Abrir a app
+
+== linha-carris /linhas/carris/10b-campo-cebolas-circulacao-graca (claro) estado 200 em 6636 ms
+   tempos: TTFB 478 ms · FCP 616 ms · LCP 616 ms · CLS 0 · 7954 B
+   diálogos ocupam 0% do ecrã
+   por cima: sticky 390x57 @0: PAROU Abrir a app
+
+== cidade-lisboa /cidade/lisboa (claro) estado 200 em 6653 ms
+   tempos: TTFB 471 ms · FCP 600 ms · LCP 600 ms · CLS 0 · 9166 B
+   diálogos ocupam 0% do ecrã
+   por cima: sticky 390x57 @0: PAROU Abrir a app
+
+== greves /greves (claro) estado 200 em 6506 ms
+   tempos: TTFB 473 ms · FCP 604 ms · LCP 604 ms · CLS 0 · 7242 B
+   diálogos ocupam 0% do ecrã
+   por cima: sticky 390x57 @0: PAROU Abrir a app
+
+== app-inicio / (claro) estado 200 em 7928 ms
+   tempos: TTFB 1057 ms · FCP 1872 ms · LCP 2036 ms · CLS 0 · 5105 B
+   diálogos ocupam 66% do ecrã
+   por cima: sticky 390x57 @0: PAROU
+   por cima: fixed 390x844 @0: Bem-vindo · Welcome Passo 1 de 7 PAROU Bem-vindo · Welcome Bienvenue · Willkommen Português Clica aqui para po
+   por cima: DIÁLOGO 390x556 @288: Bem-vindo · Welcome Passo 1 de 7 PAROU Bem-vindo · Welcome Bienvenue · Willkommen Português Clica aqui para po
+   por cima: fixed 390x65 @779: Perto Horários Alertas Notícias Comunidade
+
+== app-inicio / (escuro) estado 200 em 7229 ms
+   tempos: TTFB 471 ms · FCP 1168 ms · LCP 1320 ms · CLS 0 · 5105 B
+   diálogos ocupam 66% do ecrã
+   por cima: sticky 390x57 @0: PAROU
+   por cima: fixed 390x844 @0: Bem-vindo · Welcome Passo 1 de 7 PAROU Bem-vindo · Welcome Bienvenue · Willkommen Português Clica aqui para po
+   por cima: DIÁLOGO 390x556 @288: Bem-vindo · Welcome Passo 1 de 7 PAROU Bem-vindo · Welcome Bienvenue · Willkommen Português Clica aqui para po
+   por cima: fixed 390x65 @779: Perto Horários Alertas Notícias Comunidade
+
+== app-horarios /transportes (claro) estado 200 em 7213 ms
+   tempos: TTFB 472 ms · FCP 1160 ms · LCP 1544 ms · CLS 0.076 · 4672 B
+   diálogos ocupam 0% do ecrã
+   por cima: sticky 390x57 @0: PAROU
+   por cima: fixed 390x65 @779: Perto Horários Alertas Notícias Comunidade
