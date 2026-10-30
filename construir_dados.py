@@ -115,7 +115,7 @@ SEED_FEEDS = [
      "url": "https://map.mobility.ubiwhere.com/dataset/fe6015e4-86c7-437a-8d31-10759fe21a1d/resource/7ac67ef8-015c-42e8-9546-f6f0be956270/download/gtfs_vnf.zip",
      "mdb": ["mobiave", "famalicao"]},
     {"id": "smtuc", "operator_name": "SMTUC (Coimbra)", "mode": "Autocarro",
-     "url": "https://dados.gov.pt/pt/datasets/r/bdae1dd0-74e5-4c52-8234-b7cb1cf5bee2",
+     "url": "https://gtfs-api.smtuc.pt/api/static/",  # oficial, indicado pelos SMTUC (23/10/2026)
      "mirror": "https://files.mobilitydatabase.org/mdb-2992/latest.zip",
      "mdb": ["smtuc", "transportes urbanos de coimbra"]},
     {"id": "vamus", "operator_name": "Vamus Algarve", "mode": "Autocarro",
