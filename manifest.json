@@ -1,12 +1,12 @@
 {
-  "built_at": "2026-10-30T10:28:34.368671+00:00",
-  "db_bytes": 731537408,
-  "gz_bytes": 138337198,
+  "built_at": "2026-10-30T18:16:59.748810+00:00",
+  "db_bytes": 741777408,
+  "gz_bytes": 139080394,
   "totals": {
-    "lines": 2828,
-    "stops": 46382,
-    "trips": 148738,
-    "stop_times": 4625813,
+    "lines": 2662,
+    "stops": 46392,
+    "trips": 150121,
+    "stop_times": 4647284,
     "operators": 30,
     "operators_ok": 27,
     "operators_desatualizados": 2
@@ -194,7 +194,7 @@
       "validade": "ok",
       "dias_validade": 94,
       "horario_prolongado": false,
-      "url": "https://www.tub.pt/developer/gtfs/feed/tub.zip",
+      "url": "https://files.mobilitydatabase.org/mdb-1927/latest.zip",
       "last_error": null,
       "servicos_associados": null,
       "servicos_sem_calendario": null,
@@ -263,19 +263,19 @@
       "id": "smtuc",
       "operator_name": "SMTUC (Coimbra)",
       "status": "OK",
-      "lines": 396,
-      "stops": 1519,
-      "trips": 4416,
-      "valid_until": "2026-12-31",
-      "validade": "ok",
-      "dias_validade": 62,
+      "lines": 230,
+      "stops": 1529,
+      "trips": 5799,
+      "valid_until": "2026-11-12",
+      "validade": "a_caducar",
+      "dias_validade": 13,
       "horario_prolongado": false,
-      "url": "https://files.mobilitydatabase.org/mdb-2992/latest.zip",
+      "url": "https://gtfs-api.smtuc.pt/api/static/",
       "last_error": null,
       "servicos_associados": null,
       "servicos_sem_calendario": null,
-      "viagens_hoje": 2326,
-      "viagens_amanha": 1340,
+      "viagens_hoje": 2407,
+      "viagens_amanha": 1293,
       "dias_uteis_sem_servico": 0
     },
     {
@@ -584,7 +584,7 @@
     }
   ],
   "desenhos": {
-    "bytes": 10011391,
+    "bytes": 10023740,
     "por_operador": {
       "carris": {
         "viagens": 24996,
@@ -652,9 +652,9 @@
         "desenhos": 26
       },
       "smtuc": {
-        "viagens": 4416,
-        "com_desenho": 4416,
-        "desenhos": 394
+        "viagens": 5799,
+        "com_desenho": 5799,
+        "desenhos": 442
       },
       "sobe_desce_tavira": {
         "viagens": 27,
@@ -907,13 +907,13 @@
           "total": 393
         },
         "servicos_com_data_hoje": [
-          "EU",
-          "AU",
           "CU",
-          "BU",
-          "BexpU",
           "FU",
-          "DU"
+          "BU",
+          "AU",
+          "BexpU",
+          "DU",
+          "EU"
         ],
         "viagens_por_servico": [
           {
@@ -968,5 +968,5 @@
       }
     }
   },
-  "duration_s": 320
+  "duration_s": 279
 }
