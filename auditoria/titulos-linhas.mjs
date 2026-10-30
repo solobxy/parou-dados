@@ -44,6 +44,7 @@ ok('[7007] sem parênteses dentro de parênteses', !/\([^)]*\(/.test(t.descricao
 ok('[4562] última partida 00:35 (depois da meia-noite)', t.descricaoLinha(casos[0]).includes('último às 00:35'));
 ok('[Metro A] metro: "1.º metro"', t.descricaoLinha(casos[4]).includes('1.º metro'));
 ok('[Sintra] comboio: "1.º comboio"', t.descricaoLinha(casos[2]).includes('1.º comboio'));
+{ const x = t.descricaoLinha({ ...casos[2], uteis: [h('06:15')] }); ok('[uma partida] "uma partida, às 06:15" (sem "1.º … último")', x.startsWith('Dias úteis: uma partida, às 06:15.'), x); }
 ok('[intervalo] com poucas partidas de manhã: null', t.intervaloPonta([h('07:00'), h('09:00')]) === null);
 ok('[semVia] tira o "via"', t.semVia('Setúbal (ITS) – Azeitão via Palmela') === 'Setúbal (ITS) – Azeitão');
 ok('[Metro A] título "Linha A …"', t.tituloLinha(casos[4]).startsWith('Linha A '), t.tituloLinha(casos[4]));
