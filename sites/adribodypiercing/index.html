@@ -532,6 +532,24 @@ legend{font-family:var(--serif);font-size:clamp(26px,2.4vw,32px);margin-bottom:1
 .wa.on{transform:none}
 .wa svg{width:26px;height:26px}
 .wa:active{transform:scale(.96)}
+/* presente da campanha: fica no canto, por cima do botão de WhatsApp, e só abre o popup quando tocado */
+.presente{position:fixed;z-index:46;right:max(18px, env(safe-area-inset-right));bottom:calc(90px + env(safe-area-inset-bottom));width:64px;height:64px;border-radius:50%;border:1px solid rgba(217,182,118,.55);background:radial-gradient(circle at 30% 25%, #2F2A24, #171513 70%);box-shadow:0 12px 30px rgba(0,0,0,.45);display:grid;place-items:center;padding:0;opacity:0;transform:translateY(24px) scale(.6);pointer-events:none;transition:opacity .45s var(--ease),transform .55s cubic-bezier(.3,1.6,.5,1)}
+.presente.on{opacity:1;transform:none;pointer-events:auto}
+.presente.some{opacity:0;transform:scale(.4);pointer-events:none;transition:opacity .35s var(--ease) .25s,transform .45s var(--ease) .25s}
+.presente svg{width:40px;height:40px;overflow:visible}
+.presente .cx{transform-origin:24px 44px;animation:pulo 3.2s var(--ease) infinite}
+.presente .tampa{transform-origin:24px 20px;animation:tampa 3.2s var(--ease) infinite}
+.presente .brilho{opacity:0;animation:brilho 3.2s var(--ease) infinite}
+@keyframes pulo{0%,58%,100%{transform:none}64%{transform:translateY(-5px) rotate(-7deg)}70%{transform:translateY(0) rotate(6deg)}76%{transform:translateY(-3px) rotate(-4deg)}82%{transform:rotate(2deg)}88%{transform:none}}
+@keyframes tampa{0%,60%,100%{transform:none}66%{transform:translateY(-7px) rotate(-10deg)}72%{transform:translateY(-1px) rotate(4deg)}78%{transform:translateY(-4px) rotate(-6deg)}86%{transform:none}}
+@keyframes brilho{0%,62%,100%{opacity:0;transform:translateY(4px) scale(.6)}68%{opacity:1;transform:translateY(-6px) scale(1)}80%{opacity:0;transform:translateY(-12px) scale(.8)}}
+.presente.abre .cx{animation:abre-cx .5s var(--ease) forwards}
+.presente.abre .tampa{animation:abre-tampa .5s var(--ease) forwards}
+.presente.abre .brilho{animation:abre-brilho .6s var(--ease) forwards}
+@keyframes abre-cx{30%{transform:scale(1.12,.9)}100%{transform:scale(1)}}
+@keyframes abre-tampa{100%{transform:translate(10px,-22px) rotate(28deg);opacity:0}}
+@keyframes abre-brilho{0%{opacity:1;transform:translateY(0) scale(.6)}100%{opacity:0;transform:translateY(-26px) scale(1.6)}}
+.presente:focus-visible{outline:3px solid var(--ouro);outline-offset:3px}
 .barra-movel{display:none}
 @media (max-width:720px){
   .wa{display:none}
@@ -540,6 +558,7 @@ legend{font-family:var(--serif);font-size:clamp(26px,2.4vw,32px);margin-bottom:1
   .barra-movel .btn:first-child{flex:1}
   .barra-movel .wa-r{width:56px;padding:0}
   .barra-movel .wa-r svg{width:26px;height:26px}
+  .presente{right:max(12px, calc(env(safe-area-inset-right) - 4px))} /* centrado por cima do botão de WhatsApp */
   .rodape{padding-bottom:calc(110px + env(safe-area-inset-bottom))}
 }
 
@@ -974,6 +993,7 @@ dialog.doc[open] .doc-cx{animation:pop .5s var(--ease)}
 <a class="wa" id="wa" href="#" target="_blank" rel="noopener" aria-label="Falar no WhatsApp"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm0 18.2a8.2 8.2 0 0 1-4.2-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2z"/><path d="M16.6 14.1c-.3-.1-1.6-.8-1.8-.9-.3-.1-.4-.1-.6.1l-.8 1c-.2.2-.3.2-.6.1a6.7 6.7 0 0 1-3.3-2.9c-.3-.4.2-.4.6-1.3.1-.2 0-.3 0-.4l-.8-1.9c-.2-.5-.4-.4-.6-.4h-.5c-.2 0-.4.1-.7.3-.2.3-.9.9-.9 2.2s.9 2.5 1 2.7c.1.2 1.8 2.8 4.4 3.9 1.6.7 2.3.8 3.1.6.5-.1 1.6-.6 1.8-1.3.2-.6.2-1.2.2-1.3-.1-.1-.3-.2-.5-.3z"/></svg><span>WhatsApp</span></a>
 <div class="barra-movel" id="barraMovel"><a class="btn" href="#marcar">Marcar piercing</a><a class="btn osso wa-r" href="#" data-wa="Olá Adriano! Tenho uma dúvida." target="_blank" rel="noopener" aria-label="Falar no WhatsApp"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm0 18.2a8.2 8.2 0 0 1-4.2-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2z"/><path d="M16.6 14.1c-.3-.1-1.6-.8-1.8-.9-.3-.1-.4-.1-.6.1l-.8 1c-.2.2-.3.2-.6.1a6.7 6.7 0 0 1-3.3-2.9c-.3-.4.2-.4.6-1.3.1-.2 0-.3 0-.4l-.8-1.9c-.2-.5-.4-.4-.6-.4h-.5c-.2 0-.4.1-.7.3-.2.3-.9.9-.9 2.2s.9 2.5 1 2.7c.1.2 1.8 2.8 4.4 3.9 1.6.7 2.3.8 3.1.6.5-.1 1.6-.6 1.8-1.3.2-.6.2-1.2.2-1.3-.1-.1-.3-.2-.5-.3z"/></svg></a></div>
 
+<button type="button" class="presente" id="presente" aria-label="Abrir presente: 10 % de desconto na marcação online" aria-haspopup="dialog"><svg viewBox="0 0 48 48" aria-hidden="true"><g class="brilho" fill="#D9B676"><path d="M24 2l1.6 4.4L30 8l-4.4 1.6L24 14l-1.6-4.4L18 8l4.4-1.6z"/><circle cx="14" cy="10" r="1.6"/><circle cx="34" cy="9" r="1.4"/></g><g class="cx"><rect x="9" y="22" width="30" height="20" rx="3" fill="#EEE8DF"/><rect x="21.5" y="22" width="5" height="20" fill="#D9B676"/><g class="tampa"><rect x="6" y="15" width="36" height="9" rx="3" fill="#E4DCD0"/><rect x="21.5" y="15" width="5" height="9" fill="#D9B676"/><path d="M24 15c-3-6-10-7-10-2.5S20 16 24 15zm0 0c3-6 10-7 10-2.5S28 16 24 15z" fill="none" stroke="#D9B676" stroke-width="2.4" stroke-linejoin="round"/></g></g></svg></button>
 <dialog class="camp" id="camp" aria-labelledby="t-pop">
   <div class="cx">
     <button class="fechar" id="popFechar" aria-label="Fechar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
@@ -1584,17 +1604,29 @@ $$('[data-n]').forEach(function(el){ el.textContent = el.dataset.pre + '0' + el.
 /* ---------- Popup da campanha ---------- */
 var dlg = $('#camp');
 function abrirPop(){
-  if (sess.get('adri-pop') || store.get('adri-pedido') || !dlg.showModal || dlg.open || document.body.classList.contains('menu-aberto')) return;
-  var m = $('#marcar').getBoundingClientRect();
-  if (m.top < window.innerHeight && m.bottom > 0) return;
+  if (!dlg.showModal || dlg.open) return;
   sess.set('adri-pop', '1');
   document.documentElement.classList.add('bloqueado');
   dlg.showModal();
 }
 function fecharPop(){ dlg.close(); }
 dlg.addEventListener('close', function(){ document.documentElement.classList.remove('bloqueado'); });
-setTimeout(abrirPop, 20000);
-window.addEventListener('scroll', function f(){ if (window.scrollY > document.body.scrollHeight * .35){ abrirPop(); window.removeEventListener('scroll', f); } }, {passive:true});
+/* Presente no canto: aparece depois de uns segundos ou de algum scroll, mexe-se de vez em quando
+   e só abre o popup quando a pessoa lhe toca. Depois de aberto desaparece (nesta visita). */
+(function(){
+  var g = $('#presente');
+  if (!g || sess.get('adri-pop') || store.get('adri-pedido')) { if (g) g.remove(); return; }
+  var mostrado = false;
+  function mostrar(){ if (mostrado || sess.get('adri-pop')) return; mostrado = true; g.classList.add('on'); }
+  setTimeout(mostrar, 6000);
+  window.addEventListener('scroll', function f(){ if (window.scrollY > window.innerHeight * 1.2){ mostrar(); window.removeEventListener('scroll', f); } }, {passive:true});
+  g.addEventListener('click', function(){
+    if (g.classList.contains('abre')) return;
+    g.classList.add('abre');
+    setTimeout(abrirPop, 420);
+    setTimeout(function(){ g.classList.add('some'); setTimeout(function(){ g.remove(); }, 900); }, 380);
+  });
+})();
 $('#popFechar').addEventListener('click', fecharPop);
 $('#popAgora').addEventListener('click', fecharPop);
 dlg.addEventListener('click', function(e){ if (e.target === dlg) fecharPop(); });
