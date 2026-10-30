@@ -275,3 +275,45 @@ www.dinissousa.pt {
 	redir https://dinissousa.pt{uri} permanent
 }
 # FIM www.dinissousa.pt
+
+# ADRIBODYPIERCING - site do estúdio do Adriano (estático em /var/www/adribodypiercing, vindo de sites/adribodypiercing deste repositório)
+(adribodypiercing) {
+	encode zstd gzip
+	header {
+		Strict-Transport-Security "max-age=31536000"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		Permissions-Policy "geolocation=(), camera=(), microphone=()"
+		Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self'; form-action 'self'; frame-ancestors 'none'; base-uri 'none'"
+		-Server
+	}
+	root * /var/www/adribodypiercing
+	@estaticos path /fonts/* /three.module.min.js /og.jpg
+	header @estaticos Cache-Control "public, max-age=2592000"
+	@pagina path / /index.html
+	header @pagina Cache-Control "no-cache"
+	file_server
+}
+
+# Endereço de testes (funciona antes de o domínio apontar para aqui; fica fora do Google)
+adribodypiercing.{HOST_TESTE} {
+	header X-Robots-Tag "noindex, nofollow"
+	handle /robots.txt {
+		respond "User-agent: *
+Disallow: /
+" 200
+	}
+	import adribodypiercing
+}
+
+# INICIO adribodypiercing.pt
+adribodypiercing.pt {
+	import adribodypiercing
+}
+# FIM adribodypiercing.pt
+
+# INICIO www.adribodypiercing.pt
+www.adribodypiercing.pt {
+	redir https://adribodypiercing.pt{uri} permanent
+}
+# FIM www.adribodypiercing.pt

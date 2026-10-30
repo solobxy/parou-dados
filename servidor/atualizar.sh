@@ -40,7 +40,7 @@ sed "s/{HOST_TESTE}/$HOST_TESTE/g" "$SERV/Caddyfile" > /tmp/Caddyfile.novo
 # O domínio só entra quando já aponta para este servidor (senão o Caddy falhava o
 # certificado e ficava a tentar com esperas cada vez maiores)
 MEU_IP="$(echo "${HOST_TESTE%%.sslip.io}" | tr '-' '.')"
-for DOM in parou.pt www.parou.pt anjinho.pt www.anjinho.pt jinxed.world www.jinxed.world duplicasa.pt www.duplicasa.pt chave.pt www.chave.pt dinissousa.pt www.dinissousa.pt; do
+for DOM in parou.pt www.parou.pt anjinho.pt www.anjinho.pt jinxed.world www.jinxed.world duplicasa.pt www.duplicasa.pt chave.pt www.chave.pt dinissousa.pt www.dinissousa.pt adribodypiercing.pt www.adribodypiercing.pt; do
   # Pergunta a dois DNS: basta um dizer que o domínio aponta para aqui (durante uma mudança
   # de DNS uns ainda dão o endereço antigo e o domínio entrava e saía a cada 2 minutos)
   IPS="$( (dig +short +time=3 +tries=2 A "$DOM" @1.1.1.1; dig +short +time=3 +tries=2 A "$DOM" @8.8.8.8) 2>/dev/null | grep -E '^[0-9.]+$' | sort -u)"
@@ -96,6 +96,16 @@ if [ -f "$DS/index.html" ] && ! diff -rq "$DS" /var/www/dinissousa >/dev/null 2>
     && chmod -R a+rX /var/www/dinissousa.novo \
     && rm -rf /var/www/dinissousa.velho && { [ ! -d /var/www/dinissousa ] || mv /var/www/dinissousa /var/www/dinissousa.velho; } \
     && mv /var/www/dinissousa.novo /var/www/dinissousa && rm -rf /var/www/dinissousa.velho
+fi
+
+# AdriBodyPiercing: site do estúdio do Adriano, estático, em sites/adribodypiercing.
+# Copia só quando mudou, para uma pasta nova, e troca de uma vez (nunca fica meio copiado).
+AB=$BASE/servidor/sites/adribodypiercing
+if [ -f "$AB/index.html" ] && ! diff -rq "$AB" /var/www/adribodypiercing >/dev/null 2>&1; then
+  rm -rf /var/www/adribodypiercing.novo && mkdir -p /var/www && cp -r "$AB" /var/www/adribodypiercing.novo \
+    && chmod -R a+rX /var/www/adribodypiercing.novo \
+    && rm -rf /var/www/adribodypiercing.velho && { [ ! -d /var/www/adribodypiercing ] || mv /var/www/adribodypiercing /var/www/adribodypiercing.velho; } \
+    && mv /var/www/adribodypiercing.novo /var/www/adribodypiercing && rm -rf /var/www/adribodypiercing.velho
 fi
 
 # Duas Chaves: site estático (protótipo) que vive neste repositório, em sites/duaschaves.
