@@ -517,10 +517,10 @@ dialog.camp[open]::backdrop{animation:fundo .4s var(--ease)}
 @keyframes pop{from{opacity:0;transform:translateY(30px) scale(.96)}to{opacity:1;transform:none}}
 @keyframes fundo{from{opacity:0}to{opacity:1}}
 .camp .cx{background:var(--osso);border-radius:28px;overflow:hidden;position:relative}
-.camp .topo{background:var(--tinta);display:grid;place-items:center;height:clamp(120px,24svh,200px);position:relative;overflow:hidden}
-.camp .topo img{width:auto;height:110%;aspect-ratio:1;animation:roda 14s linear infinite}
+.camp .topo{--h:clamp(120px,24svh,200px);background:var(--tinta);display:block;height:var(--h);position:relative;overflow:hidden}
+.camp .topo img{position:absolute;top:14%;right:calc(var(--h) * -.34);width:auto;height:var(--h);aspect-ratio:1;animation:roda 14s linear infinite}
 @keyframes roda{to{transform:rotate(360deg)}}
-.camp .topo .pct{position:absolute;left:22px;bottom:12px;font-family:var(--serif);font-weight:700;font-size:clamp(56px,10svh,80px);line-height:1;color:var(--ouro);letter-spacing:-.04em}
+.camp .topo .pct{position:absolute;left:22px;bottom:12px;font-family:var(--serif);font-weight:700;font-size:clamp(52px,9svh,72px);line-height:1;color:var(--ouro);letter-spacing:-.04em;z-index:1;text-shadow:0 0 6px var(--tinta),0 0 22px var(--tinta)}
 .camp .corpo{padding:clamp(18px,3svh,28px) 24px clamp(18px,3svh,26px)}
 .camp h2{font-size:clamp(26px,4.2svh,36px)}
 .camp p{margin-top:12px}
@@ -1025,18 +1025,25 @@ function setSel(n){ sel = n; store.set('adri-sel', sel); listeners.forEach(funct
 function toggle(id){ var i = sel.indexOf(id); if (i < 0) setSel(sel.concat(id)); else setSel(sel.filter(function(x){ return x !== id; })); }
 
 /* ---------- Navegação ---------- */
-var nav = $('#nav'), lastY = 0;
+/* A barra só esconde depois de descer 60 px seguidos e só volta depois de subir 50 px seguidos:
+   toques curtos e o ressalto do iPhone já não a fazem saltar */
+var nav = $('#nav'), lastY = Math.max(0, window.scrollY), acum = 0, navTick = false;
 function onScrollNav(){
-  var y = window.scrollY;
-  nav.classList.toggle('solida', y > 40);
-  if (!document.body.classList.contains('menu-aberto')) nav.classList.toggle('esconde', y > 400 && y > lastY + 4);
-  if (y < lastY - 4) nav.classList.remove('esconde');
+  navTick = false;
+  var y = Math.max(0, window.scrollY), d = y - lastY;
   lastY = y;
+  nav.classList.toggle('solida', y > 40);
+  if ((d > 0 && acum < 0) || (d < 0 && acum > 0)) acum = 0;
+  acum += d;
+  var escondida = nav.classList.contains('esconde');
+  if (document.body.classList.contains('menu-aberto') || y < 200) { if (escondida) nav.classList.remove('esconde'); acum = 0; }
+  else if (!escondida && acum > 60) { nav.classList.add('esconde'); acum = 0; }
+  else if (escondida && acum < -50) { nav.classList.remove('esconde'); acum = 0; }
   $('#wa').classList.toggle('on', y > window.innerHeight * .6);
   var mr = $('#marcar').getBoundingClientRect();
   $('#barraMovel').classList.toggle('on', y > window.innerHeight * .7 && !(mr.top < window.innerHeight * .8 && mr.bottom > window.innerHeight * .3));
 }
-window.addEventListener('scroll', onScrollNav, {passive:true}); onScrollNav();
+window.addEventListener('scroll', function(){ if (!navTick){ navTick = true; requestAnimationFrame(onScrollNav); } }, {passive:true}); onScrollNav();
 var menuBtn = $('#menuBtn');
 function menu(abrir){
   document.body.classList.toggle('menu-aberto', abrir);
