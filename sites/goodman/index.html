@@ -33,6 +33,8 @@
   --pauta:rgba(14,58,44,.08); --margem:rgba(199,55,42,.4);
   --folha:#FFFFFF; --folha-tinta:#1D2420; --folha-2:#5B6660;
   --sombra-folha:0 1px 0 rgba(18,32,26,.08), 0 24px 44px -22px rgba(6,26,19,.55);
+  --bolha:#0E3A2C; --icone-fundo:#F6E2D2; --icone:#A8461C;
+  --contorno:linear-gradient(140deg, rgba(219,112,44,.6), rgba(199,55,42,.32) 48%, rgba(219,112,44,.14));
   --f-texto:"Archivo", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --f-lei:"Source Serif 4", Georgia, "Times New Roman", serif;
   --ease:cubic-bezier(.2,.7,.2,1);
@@ -40,14 +42,18 @@
   --gutter-d:max(20px, env(safe-area-inset-right, 0px));
 }
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
-  --papel:#0D1512; --papel-2:#15211C; --papel-3:#1F2E28; --cartao:#17231E;
+  --papel:#0D1512; --papel-2:#17241F; --papel-3:#22332C; --cartao:#21312A;
+  --bolha:#17503D; --icone-fundo:rgba(240,138,72,.14); --icone:#F2A167;
+  --contorno:linear-gradient(140deg, rgba(242,142,76,.62), rgba(242,115,95,.3) 48%, rgba(242,142,76,.12));
   --tinta:#E6ECE8; --tinta-2:#A6B6AD; --linha:rgba(230,236,232,.15);
   --verde:#0A2C22; --verde-2:#124134; --verde-3:#1B5543; --sobre-verde-2:#A7BFB2;
   --carimbo-texto:#F2735F; --pauta:rgba(230,236,232,.055); --margem:rgba(242,115,95,.4);
   --sombra-folha:0 24px 44px -22px rgba(0,0,0,.75);
   color-scheme:dark}}
 :root[data-theme="dark"]{
-  --papel:#0D1512; --papel-2:#15211C; --papel-3:#1F2E28; --cartao:#17231E;
+  --papel:#0D1512; --papel-2:#17241F; --papel-3:#22332C; --cartao:#21312A;
+  --bolha:#17503D; --icone-fundo:rgba(240,138,72,.14); --icone:#F2A167;
+  --contorno:linear-gradient(140deg, rgba(242,142,76,.62), rgba(242,115,95,.3) 48%, rgba(242,142,76,.12));
   --tinta:#E6ECE8; --tinta-2:#A6B6AD; --linha:rgba(230,236,232,.15);
   --verde:#0A2C22; --verde-2:#124134; --verde-3:#1B5543; --sobre-verde-2:#A7BFB2;
   --carimbo-texto:#F2735F; --pauta:rgba(230,236,232,.055); --margem:rgba(242,115,95,.4);
@@ -68,6 +74,16 @@ button{font:inherit;color:inherit;cursor:pointer;touch-action:manipulation}
 .largura{max-width:1200px;margin-inline:auto;padding-left:var(--gutter-e);padding-right:var(--gutter-d)}
 h1,h2,h3{margin:0;text-wrap:balance;font-weight:800}
 p{margin:0}
+
+/* Contorno quente: separa as caixas do fundo, sobretudo no modo escuro */
+.contorno{border:1px solid transparent;background:linear-gradient(var(--fundo-c,var(--papel-2)),var(--fundo-c,var(--papel-2))) padding-box,var(--contorno) border-box}
+.ic{width:22px;height:22px;flex:none}
+.icone-redondo{display:inline-grid;place-items:center;width:44px;height:44px;border-radius:50%;background:var(--icone-fundo);color:var(--icone);flex:none}
+.cta-seccao{display:flex;flex-wrap:wrap;align-items:center;gap:12px 20px;margin-top:40px}
+.cta-nota{font-size:15px;color:var(--tinta-2)}
+.botao-2{display:inline-flex;align-items:center;justify-content:center;gap:10px;min-height:54px;padding:0 24px;border-radius:999px;font-weight:700;font-size:17px;color:var(--tinta);text-decoration:none;white-space:nowrap}
+.botao-2.contorno{--fundo-c:var(--papel)}
+.botao-2:hover{--fundo-c:var(--papel-2)}
 
 /* Botões */
 .botao{display:inline-flex;align-items:center;justify-content:center;gap:10px;min-height:54px;padding:0 26px;border:0;border-radius:999px;background:var(--carimbo);color:#fff;font-weight:700;font-size:17px;text-decoration:none;white-space:nowrap;transition:background-color .2s,transform .2s var(--ease)}
@@ -132,13 +148,18 @@ p{margin:0}
 .prova p{font-size:clamp(24px,3.6vw,40px);line-height:1.22;letter-spacing:-.015em;font-weight:500;max-width:28em}
 .prova p strong{font-weight:800}
 .prova .ligacao{margin-top:20px;font-size:16px}
+.selos{display:flex;flex-wrap:wrap;gap:10px;margin-top:28px;padding:0;list-style:none}
+.selos li{display:inline-flex;align-items:center;gap:10px;min-height:48px;padding:6px 16px 6px 6px;border-radius:999px;font-size:15px;font-weight:600;--fundo-c:var(--papel)}
+.selos .icone-redondo{width:36px;height:36px}
+.selos .ic{width:19px;height:19px}
+.selos .paragrafo{font-family:var(--f-lei);font-weight:600;font-size:19px;line-height:1}
 
 /* Como funciona */
 .passos{display:grid;grid-template-columns:minmax(0,1fr);gap:56px;margin-top:56px;counter-reset:passo}
 .passo h3{font-size:24px;font-stretch:110%;letter-spacing:-.01em;margin-top:22px}
-.passo p{margin-top:8px;color:var(--tinta-2);max-width:26em}
-.cena{background:var(--papel-2);border-radius:18px;padding:22px;min-height:236px;display:flex;flex-direction:column;justify-content:center;gap:10px;overflow:hidden;position:relative}
-.bolha-p{align-self:flex-end;background:var(--verde);color:var(--sobre-verde);border-radius:16px 16px 4px 16px;padding:12px 16px;font-size:16px;max-width:90%}
+.passo > p{margin-top:8px;color:var(--tinta-2);max-width:26em}
+.cena{--fundo-c:var(--papel-2);border-radius:18px;padding:22px;min-height:236px;display:flex;flex-direction:column;justify-content:center;gap:10px;overflow:hidden;position:relative}
+.bolha-p{align-self:flex-end;background:var(--bolha);color:var(--sobre-verde);border-radius:16px 16px 4px 16px;padding:12px 16px;font-size:16px;max-width:90%}
 .anexo-mini{align-self:flex-end;display:flex;align-items:center;gap:10px;background:var(--cartao);border-radius:10px;padding:8px 12px 8px 8px;font-size:14px;font-weight:600}
 .anexo-mini .miniatura{width:34px;height:42px;border-radius:3px;background:#fff;box-shadow:0 0 0 1px var(--linha);position:relative;overflow:hidden}
 .anexo-mini .miniatura::after{content:"";position:absolute;inset:8px 6px;background:repeating-linear-gradient(#C7CEC9 0 2px,transparent 2px 6px)}
@@ -160,7 +181,7 @@ p{margin:0}
 .foto-doc .titulo-doc{font-family:var(--f-texto);font-weight:800;font-size:15px;margin-bottom:8px}
 .foto-doc dl{margin:10px 0 0;display:grid;grid-template-columns:auto 1fr;gap:2px 12px}
 .foto-doc dt{color:#5B6660}.foto-doc dd{margin:0}
-.ficha-doc{background:var(--cartao);border-radius:14px;padding:18px 20px;font-size:15px;line-height:1.45}
+.ficha-doc{--fundo-c:var(--cartao);border-radius:14px;padding:18px 20px;font-size:15px;line-height:1.45}
 .mesa .ficha-doc{justify-self:end;align-self:end;width:min(82%,380px);margin-top:150px;position:relative;z-index:2;box-shadow:0 24px 50px -24px rgba(6,26,19,.45)}
 .ficha-doc .ficha-titulo{display:flex;align-items:center;gap:8px;font-weight:800;font-stretch:112%;font-size:15px;margin-bottom:10px}
 .ficha-doc dl{margin:0;display:grid;grid-template-columns:minmax(80px,auto) minmax(0,1fr);gap:8px 14px}
@@ -173,11 +194,14 @@ p{margin:0}
 .banda{background:var(--papel-2)}
 .conversa-exemplo{margin-top:48px;max-width:760px;display:flex;flex-direction:column;gap:22px}
 .conversa-exemplo .msg-pessoa{max-width:min(86%,560px)}
+.conversa-exemplo.recolhida #resposta-exemplo{max-height:560px;overflow:hidden;position:relative}
+.conversa-exemplo.recolhida #resposta-exemplo::after{content:"";position:absolute;inset:auto 0 0;height:160px;background:linear-gradient(rgba(0,0,0,0),var(--papel-2));pointer-events:none}
+.exemplo-acoes{display:flex;flex-wrap:wrap;align-items:center;gap:12px 20px;margin-top:28px}
 
 /* O que sabe */
 .areas{margin-top:48px;border-top:1px solid var(--linha)}
 .area{border-bottom:1px solid var(--linha)}
-.area > button{width:100%;display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:16px;text-align:left;background:none;border:0;padding:22px 0;min-height:64px}
+.area > button{width:100%;display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:16px;text-align:left;background:none;border:0;padding:22px 0;min-height:64px}
 .area-nome{font-weight:750;font-stretch:112%;font-size:clamp(21px,2.6vw,28px);letter-spacing:-.015em;line-height:1.15}
 .area-temas{display:block;font-size:15px;color:var(--tinta-2);margin-top:4px;font-weight:400;font-stretch:100%;letter-spacing:0}
 .mais{width:36px;height:36px;border-radius:50%;background:var(--papel-2);position:relative;flex:none;transition:transform .3s var(--ease),background-color .2s}
@@ -189,7 +213,7 @@ p{margin:0}
 .area-corpo{display:grid;grid-template-rows:0fr;transition:grid-template-rows .35s var(--ease)}
 .area-corpo > div{overflow:hidden;min-height:0}
 .area.aberta .area-corpo{grid-template-rows:1fr}
-.area-dentro{padding:0 0 26px;display:grid;gap:16px;grid-template-columns:minmax(0,1fr)}
+.area-dentro{padding:0 0 26px 60px;display:grid;gap:16px;grid-template-columns:minmax(0,1fr)}
 .area-leis{font-size:15px;color:var(--tinta-2);max-width:46em}
 .area-leis strong{color:var(--tinta);font-weight:600}
 .perguntas-area{display:flex;flex-wrap:wrap;gap:10px}
@@ -198,7 +222,9 @@ p{margin:0}
 .perguntar::after{content:" ›";color:var(--carimbo-texto);font-weight:700}
 
 /* Limites */
-.limites-lista{margin-top:48px;display:grid;grid-template-columns:minmax(0,1fr);gap:36px}
+.limites-lista{margin-top:48px;display:grid;grid-template-columns:minmax(0,1fr);gap:16px}
+.limite{border-radius:18px;padding:24px 22px 26px}
+.limite .icone-redondo{margin-bottom:18px}
 .limite h3{font-size:22px;font-stretch:110%;letter-spacing:-.01em}
 .limite p{margin-top:8px;color:var(--tinta-2);max-width:30em}
 .limite .marca-vermelha{color:var(--carimbo-texto);font-weight:700}
@@ -317,7 +343,7 @@ p{margin:0}
 sup.ref{font-size:11px;font-weight:700;line-height:0;margin-left:2px}
 sup.ref a{color:var(--carimbo-texto);text-decoration:none;padding:2px}
 .msg-pessoa{align-self:flex-end;max-width:86%;display:flex;flex-direction:column;gap:8px;align-items:flex-end}
-.msg-pessoa .texto{background:var(--verde);color:var(--sobre-verde);border-radius:18px 18px 4px 18px;padding:11px 16px;white-space:pre-wrap;overflow-wrap:anywhere;font-size:16.5px}
+.msg-pessoa .texto{background:var(--bolha);color:var(--sobre-verde);border-radius:18px 18px 4px 18px;padding:11px 16px;white-space:pre-wrap;overflow-wrap:anywhere;font-size:16.5px}
 .a-pensar{display:inline-flex;align-items:center;gap:8px;color:var(--tinta-2);font-size:15.5px}
 .a-pensar i{width:6px;height:6px;border-radius:50%;background:var(--tinta-2);animation:luz 1.1s ease-in-out infinite}
 .a-pensar i:nth-child(2){animation-delay:.15s}.a-pensar i:nth-child(3){animation-delay:.3s}
@@ -385,12 +411,20 @@ sup.ref a{color:var(--carimbo-texto);text-decoration:none;padding:2px}
 .aviso{max-width:720px;margin:8px auto 0;font-size:12.5px;line-height:1.4;color:var(--tinta-2)}
 .ausente{max-width:720px;margin:0 auto 8px;font-size:14px;color:var(--carimbo-texto)}
 
+/* Barra de ação fixa no telemóvel: aparece depois do herói e esconde-se no fim da página */
+.barra-cta{position:fixed;left:0;right:0;bottom:0;z-index:30;display:flex;gap:10px;padding:10px var(--gutter-d) calc(10px + env(safe-area-inset-bottom,0px)) var(--gutter-e);background:color-mix(in srgb,var(--papel) 92%,transparent);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);border-top:1px solid var(--linha);transform:translateY(110%);transition:transform .28s var(--ease);visibility:hidden}
+.barra-cta.visivel{transform:none;visibility:visible}
+.barra-cta .botao{flex:1;min-height:50px}
+.barra-cta .botao-clipe{flex:none;width:50px;height:50px;border-radius:50%;display:grid;place-items:center;color:var(--tinta);--fundo-c:var(--papel)}
+@media (prefers-reduced-motion:reduce){.barra-cta{transform:none;opacity:0;transition:opacity .25s ease-out}.barra-cta.visivel{opacity:1}}
+@media (min-width:760px){.barra-cta{display:none}}
+
 /* ---------- Ecrãs largos ---------- */
 @media (min-width:760px){
   .topo nav{display:flex}
   .topo .curto{display:none}.topo .longo{display:inline}
   .passos{grid-template-columns:repeat(3,minmax(0,1fr));gap:32px}
-  .limites-lista{grid-template-columns:repeat(3,minmax(0,1fr));gap:40px}
+  .limites-lista{grid-template-columns:repeat(3,minmax(0,1fr));gap:20px}
   .area-dentro{grid-template-columns:minmax(0,1fr) minmax(0,1fr);align-items:start;gap:32px}
 }
 @media (min-width:1000px){
@@ -572,6 +606,11 @@ sup.ref a{color:var(--carimbo-texto);text-decoration:none;padding:2px}
 
     <section class="prova largura" aria-label="De onde vem a lei">
       <p>O Goodman não responde de memória. Antes de falar, procura entre <strong data-num="diplomas">5&nbsp;012 diplomas</strong> do Diário da República, das leis e códigos às portarias, lê os artigos que se aplicam ao teu caso e confirma cada um que cita.</p>
+      <ul class="selos">
+        <li class="contorno"><span class="icone-redondo"><span class="paragrafo" aria-hidden="true">§</span></span>Texto do Diário da República</li>
+        <li class="contorno"><span class="icone-redondo"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.3-5.7M20 4.5v4h-4"/></svg></span>Atualizado todas as semanas</li>
+        <li class="contorno"><span class="icone-redondo"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.5a8.5 8.5 0 1 1 0 17 8.5 8.5 0 0 1 0-17zM8.5 12.2l2.4 2.3 4.6-4.8"/></svg></span>Cada artigo confirmado</li>
+      </ul>
       <a class="ligacao" href="#perguntas" data-faq="fontes">Ver de onde vem a lei</a>
     </section>
 
@@ -579,7 +618,7 @@ sup.ref a{color:var(--carimbo-texto);text-decoration:none;padding:2px}
       <h2 id="titulo-como">Do problema ao plano.</h2>
       <div class="passos">
         <div class="passo">
-          <div class="cena" aria-hidden="true">
+          <div class="cena contorno" aria-hidden="true">
             <div class="anexo-mini"><span class="miniatura"></span>carta-senhorio.jpg</div>
             <div class="bolha-p">O senhorio quer subir a renda de 650 para 750 €. Pode?</div>
           </div>
@@ -587,7 +626,7 @@ sup.ref a{color:var(--carimbo-texto);text-decoration:none;padding:2px}
           <p>Escreve como falarias a um amigo, ou fotografa a carta que recebeste.</p>
         </div>
         <div class="passo">
-          <div class="cena" aria-hidden="true">
+          <div class="cena contorno" aria-hidden="true">
             <div class="artigo">
               <p class="nome-art">Código Civil, artigo 1077.º, n.º 2</p>
               <p>a) A renda pode ser actualizada <span class="sublinhado">anualmente</span>, de acordo com os coeficientes de actualização vigentes;</p>
@@ -597,7 +636,7 @@ sup.ref a{color:var(--carimbo-texto);text-decoration:none;padding:2px}
           <p>Lê o documento, encontra os artigos que se aplicam e, quando é preciso, consulta os sites oficiais.</p>
         </div>
         <div class="passo">
-          <div class="cena" aria-hidden="true">
+          <div class="cena contorno" aria-hidden="true">
             <div class="plano-mini"><strong>Em resumo:</strong> não tens de aceitar. Ele só pode atualizar uma vez por ano, pelo coeficiente oficial, com 30 dias de aviso.
               <div class="carta-mini"><span class="folhinha"></span>Carta pronta a enviar</div>
             </div>
@@ -606,6 +645,10 @@ sup.ref a{color:var(--carimbo-texto);text-decoration:none;padding:2px}
           <p>Onde estás forte, onde estás fraco, o melhor caminho e a carta pronta a enviar.</p>
         </div>
       </div>
+      <div class="cta-seccao">
+        <button type="button" class="botao" data-abrir>Contar o meu caso</button>
+        <span class="cta-nota">Sem criar conta. Escreves como falas.</span>
+      </div>
     </section>
 
     <section class="seccao largura docs" aria-labelledby="titulo-docs">
@@ -613,7 +656,10 @@ sup.ref a{color:var(--carimbo-texto);text-decoration:none;padding:2px}
         <div>
           <h2 id="titulo-docs">Fotografa a carta. Ele lê-a por ti.</h2>
           <p class="lede">PDF, Word ou fotografia, mesmo torta ou digitalizada. O Goodman tira as datas, os prazos e os valores, e diz-te primeiro o que não pode esperar.</p>
-          <p class="formatos">Lê até 3 documentos por mensagem, com 15 MB cada.</p>
+          <div class="cta-seccao">
+            <button type="button" class="botao" data-abrir-ficheiro><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 11.5l-7.8 7.8a5 5 0 0 1-7.1-7.1l8.5-8.5a3.3 3.3 0 0 1 4.7 4.7l-8.5 8.5a1.7 1.7 0 0 1-2.4-2.4l7.8-7.8"/></svg>Carregar um documento</button>
+          </div>
+          <p class="formatos">Até 3 documentos por mensagem, com 15 MB cada.</p>
         </div>
         <div class="mesa" aria-label="Exemplo: uma notificação de multa e o que o Goodman tirou dela" role="img">
           <div class="foto-doc" aria-hidden="true">
@@ -626,7 +672,7 @@ sup.ref a{color:var(--carimbo-texto);text-decoration:none;padding:2px}
             </dl>
             <p style="margin-top:10px">Pode proceder ao pagamento voluntário ou apresentar defesa nos termos da lei.</p>
           </div>
-          <div class="ficha-doc" aria-hidden="true">
+          <div class="ficha-doc contorno" aria-hidden="true">
             <p class="ficha-titulo"><span class="avatar"></span>O que li no documento</p>
             <dl>
               <dt>Documento</dt><dd>Notificação de multa de estacionamento</dd>
@@ -642,34 +688,41 @@ sup.ref a{color:var(--carimbo-texto);text-decoration:none;padding:2px}
     <section class="seccao banda" id="exemplo" aria-labelledby="titulo-exemplo">
       <div class="largura">
         <h2 id="titulo-exemplo">Um caso do princípio ao fim.</h2>
-        <p class="lede">Uma pergunta típica e a resposta no formato que o Goodman usa, com as fontes confirmadas no texto oficial.</p>
-        <div class="conversa-exemplo" id="conversa-exemplo">
+        <p class="lede">Uma pergunta real e a resposta que ele dá, com as fontes confirmadas.</p>
+        <div class="conversa-exemplo recolhida" id="conversa-exemplo">
           <div class="msg-pessoa"><div class="texto">Comprei um telemóvel há 14 meses e deixou de carregar. A loja diz que a garantia era só de um ano e manda-me falar com a marca.</div></div>
           <div class="msg msg-goodman" id="resposta-exemplo"><p class="quem"><span class="avatar" aria-hidden="true"></span>Goodman</p><div class="corpo"></div></div>
+        </div>
+        <div class="exemplo-acoes">
+          <button type="button" class="botao" data-abrir>Pedir o meu plano</button>
+          <button type="button" class="botao-2 contorno" id="ver-exemplo" aria-controls="conversa-exemplo" aria-expanded="false">Ver a resposta inteira</button>
         </div>
       </div>
     </section>
 
     <section class="seccao largura" id="sabe" aria-labelledby="titulo-sabe">
       <h2 id="titulo-sabe">Da renda ao IRS.</h2>
-      <p class="lede">Os temas em que as pessoas mais precisam de ajuda, com a lei de cada um. Toca num tema para ver o que ele consulta.</p>
+      <p class="lede">Toca num tema para ver a lei que ele consulta e perguntas para começar.</p>
       <div class="areas" id="areas"></div>
     </section>
 
     <section class="seccao largura" aria-labelledby="titulo-limites">
       <h2 id="titulo-limites">O que o Goodman não faz.</h2>
       <div class="limites-lista">
-        <div class="limite">
+        <div class="limite contorno">
+          <span class="icone-redondo"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v16M8 20h8M5 7h14M5 7l-2.5 6a2.5 2.5 0 0 0 5 0zM19 7l-2.5 6a2.5 2.5 0 0 0 5 0z"/></svg></span>
           <h3>Não vai a tribunal por ti</h3>
-          <p>Explica a lei, mostra-te as saídas e prepara as cartas. Em tribunal, quem te representa é um advogado.</p>
+          <p>Explica, mostra as saídas e prepara as cartas. Em tribunal, quem te representa é um advogado.</p>
         </div>
-        <div class="limite">
+        <div class="limite contorno">
+          <span class="icone-redondo"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.5 4a6.5 6.5 0 1 1 0 13 6.5 6.5 0 0 1 0-13zM15.5 15.5 20 20M8 10.5l1.8 1.8 3.2-3.3"/></svg></span>
           <h3>Não esconde o que não sabe</h3>
-          <p>Pode errar. Por isso cada resposta mostra o artigo e a fonte, e o que ele não conseguiu confirmar aparece <span class="marca-vermelha">a vermelho</span>.</p>
+          <p>Cada resposta mostra o artigo e a fonte. O que não confirmou aparece <span class="marca-vermelha">a vermelho</span>.</p>
         </div>
-        <div class="limite">
+        <div class="limite contorno">
+          <span class="icone-redondo"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5a3.2 3.2 0 1 1 0 6.4A3.2 3.2 0 0 1 9 5zM3.5 19.5c.6-3.2 2.8-5.3 5.5-5.3s4.9 2.1 5.5 5.3M18 8v6M15 11h6"/></svg></span>
           <h3>Não te deixa sozinho</h3>
-          <p>Em casos graves diz-te para falares com um advogado e o que levar. Se tiveres poucos rendimentos, a Segurança Social pode pagar o advogado.</p>
+          <p>Em casos graves, diz-te para falares com um advogado e o que levar.</p>
         </div>
       </div>
     </section>
@@ -693,6 +746,9 @@ sup.ref a{color:var(--carimbo-texto);text-decoration:none;padding:2px}
           <details><summary>Há alternativa gratuita para quem tem poucos rendimentos?<span class="mais" aria-hidden="true"></span></summary>
             <div class="resposta"><p>Sim. A proteção jurídica da Segurança Social pode pagar a consulta e o advogado a quem não tem meios. O Goodman diz-te quando faz sentido pedir.</p></div></details>
         </div>
+        <div class="cta-seccao">
+          <button type="button" class="botao-2 contorno" data-abrir>Perguntar outra coisa ao Goodman<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg></button>
+        </div>
       </div>
     </section>
 
@@ -707,6 +763,11 @@ sup.ref a{color:var(--carimbo-texto);text-decoration:none;padding:2px}
       </div>
     </section>
   </main>
+
+  <div class="barra-cta" id="barra-cta">
+    <button type="button" class="botao" data-abrir tabindex="-1">Falar com o Goodman</button>
+    <button type="button" class="botao-clipe contorno" data-abrir-ficheiro tabindex="-1" aria-label="Carregar um documento"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 11.5l-7.8 7.8a5 5 0 0 1-7.1-7.1l8.5-8.5a3.3 3.3 0 0 1 4.7 4.7l-8.5 8.5a1.7 1.7 0 0 1-2.4-2.4l7.8-7.8"/></svg></button>
+  </div>
 
   <footer class="rodape">
     <div class="largura">
@@ -1131,9 +1192,10 @@ sup.ref a{color:var(--carimbo-texto);text-decoration:none;padding:2px}
     ["Estado e administração", "Câmaras, serviços públicos, acesso a documentos", "Código do Procedimento Administrativo, acesso aos documentos administrativos, responsabilidade do Estado, tribunais administrativos", ["A Câmara não responde ao meu pedido há meses.", "Quero ver o meu processo num serviço público."]],
     ["Crime e queixas", "Apresentar queixa, burlas, violência doméstica", "Código Penal, Código de Processo Penal, violência doméstica", ["Fui vítima de uma burla online. Como apresento queixa?", "Recebi uma notificação como arguido."]]
   ];
+  var ICONES_AREA = {"Casa e arrendamento": "M3 11.5 12 4l9 7.5M5.5 10v9.5h13V10M10 19.5v-5h4v5", "Trabalho": "M3 9.5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2zM9 7.5V6a1.5 1.5 0 0 1 1.5-1.5h3A1.5 1.5 0 0 1 15 6v1.5M3 13h18", "Compras e consumo": "M5 8h14l-1 12H6zM9 10V7a3 3 0 0 1 6 0v3", "Família": "M9 5a3 3 0 1 1 0 6 3 3 0 0 1 0-6zM3.5 19.5c.6-3 2.8-5 5.5-5s4.9 2 5.5 5M16 5.5a2.5 2.5 0 1 1 0 5M17.5 14.6c1.6.6 2.7 2.4 3 4.9", "Multas e trânsito": "M3.5 17v-4.2l2.3-5.3h12.4l2.3 5.3V17zM7 17v2M17 17v2M7 13.5h1.5M15.5 13.5H17", "Dívidas e bancos": "M3 7a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2zM3 10h18M7 15h4", "Impostos e Finanças": "M6 3.5h12v17l-2-1.3-2 1.3-2-1.3-2 1.3-2-1.3-2 1.3zM9 8h6M9 11.5h6M9 15h3", "Segurança Social e apoios": "M12 3.5 5 6v5.5c0 4.2 3 7.6 7 9 4-1.4 7-4.8 7-9V6zM9 12l2 2 4-4", "Imigração e nacionalidade": "M12 3.5a8.5 8.5 0 1 1 0 17 8.5 8.5 0 0 1 0-17zM3.5 12h17M12 3.5c2.4 2.3 3.6 5.1 3.6 8.5s-1.2 6.2-3.6 8.5c-2.4-2.3-3.6-5.1-3.6-8.5S9.6 5.8 12 3.5z", "Estado e administração": "M3.5 9 12 4.5 20.5 9M4.5 9h15M6.5 11.5v6M10 11.5v6M14 11.5v6M17.5 11.5v6M3.5 20h17", "Crime e queixas": "M12 4 21 19.5H3zM12 10v4.5M12 17h.01"};
   var areasEl = $("areas");
   areasEl.innerHTML = AREAS.map(function(a, i){
-    return '<div class="area"><button type="button" aria-expanded="false" aria-controls="area-' + i + '" id="area-b-' + i + '"><span><span class="area-nome">' + esc(a[0]) + '</span><span class="area-temas">' + esc(a[1]) + '</span></span><span class="mais" aria-hidden="true"></span></button>' +
+    return '<div class="area"><button type="button" aria-expanded="false" aria-controls="area-' + i + '" id="area-b-' + i + '"><span class="icone-redondo"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="' + (ICONES_AREA[a[0]] || "") + '"/></svg></span><span><span class="area-nome">' + esc(a[0]) + '</span><span class="area-temas">' + esc(a[1]) + '</span></span><span class="mais" aria-hidden="true"></span></button>' +
       '<div class="area-corpo" id="area-' + i + '" role="region" aria-labelledby="area-b-' + i + '"><div><div class="area-dentro"><p class="area-leis"><strong>O que ele consulta:</strong> ' + esc(a[2]) + '.</p><div class="perguntas-area">' +
       a[3].map(function(q){ return '<button type="button" class="perguntar" data-pergunta="' + esc(q) + '">' + esc(q) + "</button>"; }).join("") + "</div></div></div></div></div>";
   }).join("");
@@ -1246,7 +1308,7 @@ sup.ref a{color:var(--carimbo-texto);text-decoration:none;padding:2px}
   function fichaDocHTML(linhas){
     var itens = linhas.map(function(l){ var m = l.match(/^\s*[-*]?\s*([^:]{2,24}):\s*(.+)$/); return m ? [m[1].trim(), m[2].trim()] : null; }).filter(Boolean);
     if (!itens.length) return "";
-    return '<div class="ficha-doc"><p class="ficha-titulo"><span class="avatar" aria-hidden="true"></span>O que li no documento</p><dl>' + itens.map(function(it){
+    return '<div class="ficha-doc contorno"><p class="ficha-titulo"><span class="avatar" aria-hidden="true"></span>O que li no documento</p><dl>' + itens.map(function(it){
       var prazo = /^prazo/i.test(it[0]);
       return (prazo ? '<div class="prazo" style="display:contents">' : "") + "<dt>" + esc(it[0]) + "</dt><dd>" + inline(esc(it[1])) + "</dd>" + (prazo ? "</div>" : "");
     }).join("") + "</dl></div>";
@@ -1899,6 +1961,34 @@ sup.ref a{color:var(--carimbo-texto);text-decoration:none;padding:2px}
     if (ultimoFoco && ultimoFoco.focus) ultimoFoco.focus();
   }
   document.querySelectorAll("[data-abrir]").forEach(function(b){ b.addEventListener("click", function(){ abrirApp(); }); });
+  /* «Carregar um documento»: abre a conversa e o seletor de ficheiros no mesmo toque */
+  document.querySelectorAll("[data-abrir-ficheiro]").forEach(function(b){ b.addEventListener("click", function(){ abrirApp(); inputFicheiro.click(); }); });
+
+  /* Barra fixa no telemóvel: só depois de o botão do herói sair do ecrã e antes do fim da página */
+  (function(){
+    var barra = $("barra-cta"), heroiBotoes = document.querySelector(".heroi-acoes"), fim = document.querySelector(".final");
+    if (!barra || !heroiBotoes || !fim || !("IntersectionObserver" in window)) return;
+    var passouHeroi = false, noFim = false;
+    function atualizar(){
+      var v = passouHeroi && !noFim;
+      barra.classList.toggle("visivel", v);
+      barra.querySelectorAll("button").forEach(function(b){ b.tabIndex = v ? 0 : -1; });
+    }
+    new IntersectionObserver(function(e){ var x = e[e.length - 1]; passouHeroi = !x.isIntersecting && x.boundingClientRect.top < 0; atualizar(); }).observe(heroiBotoes);
+    new IntersectionObserver(function(e){ var x = e[e.length - 1]; noFim = x.isIntersecting || x.boundingClientRect.top < 0; atualizar(); }).observe(fim);
+  })();
+
+  /* Exemplo: mostra a resposta inteira */
+  (function(){
+    var b = $("ver-exemplo"), c = $("conversa-exemplo");
+    if (!b || !c) return;
+    b.addEventListener("click", function(){
+      var aberta = c.classList.toggle("recolhida") === false;
+      b.setAttribute("aria-expanded", aberta);
+      b.textContent = aberta ? "Mostrar menos" : "Ver a resposta inteira";
+      if (!aberta) c.scrollIntoView({ block: "start" });
+    });
+  })();
   $("btn-fechar").addEventListener("click", function(){ fecharApp(false); });
   document.addEventListener("keydown", function(e){ if (e.key === "Escape" && !app.hidden) fecharApp(false); });
   window.addEventListener("hashchange", function(){ if (location.hash === "#conversa") abrirApp(); else fecharApp(true); });
