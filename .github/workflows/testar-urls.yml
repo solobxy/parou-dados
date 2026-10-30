@@ -28,6 +28,7 @@ jobs:
             r=$(curl -s -L -o corpo -w "%{http_code} %{time_total}s %{size_download}B" -m 90 "$u" || echo falhou)
             head -c 5000000 corpo > corpos/$i.txt 2>/dev/null || true
             echo "--- $u -> $r" >> resultado.txt
+            curl -sI -m 30 "$u" | grep -iE "^(HTTP|strict-transport|content-security|x-content-type|referrer-policy|permissions-policy|x-robots|cache-control|content-type)" >> resultado.txt || true
             head -c 1500 corpo >> resultado.txt 2>/dev/null; echo >> resultado.txt
           done
           cat resultado.txt
