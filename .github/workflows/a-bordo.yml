@@ -130,6 +130,14 @@ jobs:
           APP=$PWD BASE=http://127.0.0.1:3000 DB=$PWD/dados/gtfs.db node --import tsx ../auditoria/percurso-estrada.mjs 2>&1 | grep -v "Experimental\|trace-warnings" | tee ../res/percurso-estrada.txt | tail -90
           exit ${PIPESTATUS[0]}
 
+      - name: "Teste da rapidez das páginas das paragens (e o /health com carga)"
+        continue-on-error: true
+        working-directory: app
+        run: |
+          mkdir -p ../res
+          APP=$PWD BASE=http://127.0.0.1:3000 node ../auditoria/paginas-rapidas.mjs 2>&1 | tee ../res/paginas-rapidas.txt | tail -30
+          exit ${PIPESTATUS[0]}
+
       - name: "Teste das funções do desenho (polilinha, encaixe das paragens, troços)"
         continue-on-error: true
         working-directory: app
