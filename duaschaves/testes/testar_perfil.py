@@ -1,0 +1,42 @@
+import subprocess,time,sys
+from playwright.sync_api import sync_playwright
+srv=subprocess.Popen([sys.executable,'-m','http.server','8775','--bind','127.0.0.1'],cwd='/home/claude/teste-real',stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL);time.sleep(1)
+falhas=[]
+def ok(c,m):
+    if not c:falhas.append(m)
+U='http://127.0.0.1:8775/'
+try:
+  with sync_playwright() as p:
+    b=p.chromium.launch();pg=b.new_page(viewport={'width':390,'height':844},device_scale_factor=2);erros=[];pg.on('pageerror',lambda e:erros.append(str(e)))
+    pg.goto(U+'#entrar');pg.wait_for_timeout(700)
+    pg.click('[data-modo="criar"]');pg.wait_for_timeout(200)
+    ok(pg.is_visible('#e-nome'),'separador criar conta')
+    pg.fill('#e-nome','Ana');pg.fill('#e-email','ana@exemplo.pt');pg.fill('#e-senha','curta');pg.click('#f-entrar button[type=submit]');pg.wait_for_timeout(150)
+    ok(pg.is_visible('#e-senha-erro'),'erro palavra-passe curta')
+    pg.fill('#e-senha','umaFrase-boa-2026');pg.click('#f-entrar button[type=submit]');pg.wait_for_timeout(400)
+    pg.goto(U+'#entrar-erro-estado');pg.wait_for_timeout(300);ok(pg.is_visible('.erro-caixa'),'erro OAuth mostrado')
+    pg.goto(U+'#conta');pg.wait_for_timeout(300)
+    ok('O meu perfil' in pg.inner_text('main'),'bloco perfil na conta')
+    pg.click('a[href="#perfil"]');pg.wait_for_timeout(300)
+    pg.set_input_files('#pf-ficheiro','/tmp/foto-teste.jpg');pg.wait_for_timeout(800)
+    ok(pg.locator('#pf-av img').count()==1,'foto aparece')
+    pg.fill('#pf-nome','Ana Silva');pg.fill('#pf-idade','15');pg.click('#f-perfil button[type=submit]');pg.wait_for_timeout(200)
+    ok(pg.is_visible('#pf-idade-erro'),'erro idade')
+    pg.fill('#pf-idade','27');pg.select_option('#pf-genero','Mulher');pg.select_option('#pf-situacao','Trabalhador por conta de outrem')
+    pg.fill('#pf-emprego','Enfermeira');pg.fill('#pf-cidade','Aveiro');pg.click('[data-ptip="T1"]');pg.fill('#pf-orc','750');pg.select_option('#pf-entrada','2026-12');pg.click('[data-pzona="Porto"]');pg.fill('#pf-zona-nova','Foz do Douro');pg.click('#pf-zona-juntar');pg.wait_for_timeout(100)
+    pg.select_option('#pf-animais','0');pg.fill('#pf-desc','Sou enfermeira e procuro um T1 calmo.')
+    pg.screenshot(path='perfil-form.png',full_page=True)
+    pg.click('#f-perfil button[type=submit]');pg.wait_for_timeout(400)
+    ok(pg.url.endswith('#conta'),'volta à conta')
+    t=pg.inner_text('main');ok('Ana Silva' in t and '27 anos' in t and 'Enfermeira' in t,'resumo do perfil')
+    ok('8 de 8' in t,'perfil completo: '+t[t.find('Perfil '):t.find('Perfil ')+20])
+    pg.screenshot(path='perfil-conta.png')
+    pg.reload();pg.wait_for_timeout(600);pg.goto(U+'#perfil');pg.wait_for_timeout(300)
+    ok(pg.input_value('#pf-nome')=='Ana Silva' and pg.input_value('#pf-entrada')=='2026-12','perfil guardado ao recarregar')
+    z=pg.eval_on_selector_all('[data-pzona][aria-pressed="true"]','e=>e.map(x=>x.dataset.pzona)');ok(z==['Porto','Foz do Douro'],'zonas guardadas: %s'%z)
+    pg.screenshot(path='perfil-zonas.png',full_page=True)
+    ok(not erros,'erros %s'%erros)
+    ok(pg.evaluate("document.documentElement.scrollWidth<=innerWidth"),'sem transbordo')
+finally:srv.terminate()
+print('FALHAS' if falhas else 'TUDO OK',len(falhas))
+for x in falhas:print(' -',x)
