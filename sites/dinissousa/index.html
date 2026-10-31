@@ -138,53 +138,208 @@ p{margin:0}
 .project{padding-block:88px}
 .project .wrap{display:grid;gap:32px;align-items:center}
 .project .shot{display:flex;justify-content:center}
-.project{overflow-x:clip}
+.project{overflow:clip}
 .project .phone{position:relative}
-/* Cena de cada projeto: abre a app com o logótipo, desliza para cima, chega o aviso */
-.cena{position:relative;margin:0;width:var(--pw);--pw:min(74vw,320px);--mola:cubic-bezier(.2,1.25,.35,1)}
+/* Cenas dos projetos: cada marca abre à sua maneira e deixa sair do telemóvel o que é dela.
+   Só transform, opacity e clip-path; nada em ciclo infinito. Com movimento reduzido tudo acontece na mesma,
+   mas as viagens encolhem (--k) e as aberturas passam a desvanecer. */
+.cena{position:relative;z-index:1;isolation:isolate;margin:0;width:var(--pw);--pw:min(74vw,320px);--k:1;--sk:1;
+  --fora:clamp(20px,calc((100vw - var(--pw)) / 2 - 16px),110px);
+  --mola:cubic-bezier(.2,1.25,.35,1);--sai:cubic-bezier(.7,0,.25,1);--suave:cubic-bezier(.16,1,.3,1)}
+@supports (transition-timing-function:linear(0,1)){.cena{--mola:linear(0, 0.069 3.1%, 0.230 6.2%, 0.426 9.4%, 0.618 12.5%, 0.782 15.6%, 0.910 18.8%, 0.998 21.9%, 1.052 25%, 1.078 28.1%, 1.083 31.2%, 1.076 34.4%, 1.062 37.5%, 1.046 40.6%, 1.030 43.8%, 1.016 46.9%, 1.006 50%, 0.999 53.1%, 0.995 56.2%, 0.993 59.4%, 0.993 62.5%, 0.994 65.6%, 0.995 68.8%, 0.996 71.9%, 0.998 75%, 0.999 78.1%, 1)}}
+.project .info{position:relative;z-index:2}
+.cena .phone{position:relative;z-index:2}
 .ecra{position:relative;overflow:hidden;border-radius:24px;aspect-ratio:640/1325;background:var(--surface);isolation:isolate}
 .phone .ecra .site{position:absolute;inset:0;width:100%;height:100%;aspect-ratio:auto;border-radius:0;object-fit:cover;object-position:top}
-.abre{position:absolute;inset:0;z-index:2;display:none;place-items:center;background:var(--abre)}
+.abre{position:absolute;inset:0;z-index:3;display:none;place-items:center;background:var(--abre)}
 .js .abre{display:grid}
 .phone .abre img{height:auto;aspect-ratio:auto;border-radius:0;background:none;object-fit:contain}
-.barra{position:absolute;left:34%;right:34%;bottom:9px;height:5px;border-radius:3px;background:var(--barra,rgba(255,255,255,.8))}
-.aviso{--aw:min(calc(var(--pw) + 40px),calc(100vw - 24px));position:absolute;z-index:4;top:2.5%;left:calc(50% - var(--aw) / 2);width:var(--aw);display:flex;gap:12px;align-items:center;padding:12px 14px;border-radius:22px;background:rgba(255,255,255,.97);color:#121212;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;font-size:14px;line-height:1.3;text-align:left;
-  box-shadow:0 12px 0 -6px rgba(255,255,255,.6),0 22px 0 -12px rgba(255,255,255,.32),0 1px 2px rgba(0,0,0,.08),0 22px 44px -18px rgba(0,0,0,.5)}
-.aviso .ic{width:40px;height:40px;border-radius:10px;flex:none}
-.av-txt{display:flex;flex-direction:column;gap:1px;min-width:0;flex:1}
-.av-topo{display:flex;justify-content:space-between;gap:8px;font-size:13px;color:#6B6B6B}
-.av-topo strong{color:#121212;font-weight:700;font-size:14px}
-.selo{position:absolute;z-index:4;display:inline-flex;align-items:center;gap:8px;white-space:nowrap;font-size:14px;line-height:1.2;color:#121212;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.08),0 16px 32px -14px rgba(0,0,0,.45)}
-.selo.esq{left:-20px;top:57%}
-.selo.dir{right:-20px;top:63%}
-.s-pill{padding:11px 16px;border-radius:999px}
-.s-pill i{width:9px;height:9px;border-radius:50%;flex:none;box-shadow:0 0 0 4px rgba(0,0,0,.06)}
-.s-rosa{background:#FFE4EC;color:#1D1719}.s-rosa b{color:#D63F74;font-weight:400}
-.s-cartao{flex-direction:column;align-items:flex-start;gap:2px;padding:12px 16px;border-radius:18px}
-.s-cartao strong{font-size:18px;font-weight:800;letter-spacing:-.01em}
-.s-cartao small{font-size:13px;color:#5B5B5B}
-.s-carimbo{rotate:-6deg;padding:9px 16px;border-radius:2px;background:#0B0809;color:#EAE3DA;font-family:var(--serif);font-style:italic;font-weight:500;font-size:18px;outline:1px solid rgba(234,227,218,.75);outline-offset:-5px}
-.s-carimbo::before,.s-carimbo::after{content:"";width:6px;height:6px;background:#D6101C;transform:rotate(45deg)}
-.riscos{position:absolute;z-index:0;top:-34px;width:40px;height:30px;fill:none;stroke:var(--risco);stroke-width:4.5;stroke-linecap:round}
-.riscos.esq{left:-36px;transform:scaleX(-1)}
-.riscos.dir{right:-36px}
-/* a sequência: só com script, e só quando a cena entra no ecrã */
-.cena .phone{transition:opacity .6s var(--ease),transform .8s var(--ease)}
-.js .cena:not(.on) .phone{opacity:0;transform:translateY(28px)}
-.abre{transition:transform .7s cubic-bezier(.7,0,.25,1) 1.15s,opacity .45s var(--ease) 1.15s}
-.cena.on .abre{transform:translateY(-101%)}
-.abre img{transition:opacity .45s var(--ease) .3s,transform .7s var(--mola) .3s}
-.js .cena:not(.on) .abre img{opacity:0;transform:scale(.86)}
-.barra{transition:transform .35s var(--ease) .8s,opacity .35s var(--ease) .8s}
-.cena.on .barra{transform:translateY(-10px);opacity:.4}
-.phone .ecra .site{transition:transform 1.1s var(--ease) 1.2s}
-.js .cena:not(.on) .ecra .site{transform:scale(1.08) translateY(4%)}
-.aviso{transition:opacity .35s var(--ease) 1.9s,transform .65s var(--mola) 1.9s}
-.js .cena:not(.on) .aviso{opacity:0;transform:translateY(-16px) scale(.95)}
-.riscos path{stroke-dasharray:80;transition:stroke-dashoffset .5s var(--ease) 2.25s}
-.js .cena:not(.on) .riscos path{stroke-dashoffset:80}
-.selo{transition:opacity .35s var(--ease) 2.4s,transform .6s var(--mola) 2.4s}
-.js .cena:not(.on) .selo{opacity:0;transform:translateY(14px) scale(.92)}
+.fx{position:absolute;pointer-events:none}
+.fx img{display:block;width:100%;height:auto}
+img.fx{height:auto}
+
+/* comum: o telemóvel sobe e o site assenta */
+.cena .phone{transition:opacity .6s var(--ease),transform .8s var(--suave)}
+.js .cena:not(.on) .phone{opacity:0;transform:translateY(calc(28px * var(--k)))}
+.phone .ecra .site{transition:transform 1.2s var(--suave) 1.15s,clip-path .85s cubic-bezier(.6,0,.2,1) 1.1s}
+.js .cena:not(.on) .ecra .site{transform:scale(calc(1 + .06 * var(--k)))}
+
+/* aberturas */
+.r-sobe .abre{transition:transform .75s var(--sai) 1.15s,opacity .5s var(--ease) 1.15s}
+.r-sobe.on .abre{transform:translateY(-101%)}
+.barra{position:absolute;left:34%;right:34%;bottom:9px;height:5px;border-radius:3px;background:rgba(255,255,255,.8);transition:transform .35s var(--ease) .8s,opacity .35s var(--ease) .8s}
+.cena.on .barra{transform:translateY(calc(-10px * var(--k)));opacity:.4}
+.js .r-circulo .ecra .site{z-index:4;clip-path:circle(0% at 50% 46%)}
+.js .r-circulo.on .ecra .site{clip-path:circle(80% at 50% 46%)}
+.r-nuvem .abre{transition:opacity .8s var(--ease) 1.1s,transform 1s var(--suave) 1.1s}
+.r-nuvem.on .abre{opacity:0;transform:scale(calc(1 + .08 * var(--k)))}
+.r-iris .abre{clip-path:circle(80% at 50% 50%);transition:clip-path .75s cubic-bezier(.7,0,.3,1) 1.1s}
+.r-iris.on .abre{clip-path:circle(0% at 50% 50%)}
+.r-portas .abre,.r-fatias .abre{background:none}
+.r-portas .abre img,.r-fatias .abre img{position:relative;z-index:2}
+.portas,.fatias{position:absolute;inset:0;z-index:1}
+.portas i{position:absolute;top:0;bottom:0;width:50.5%;background:var(--abre);transition:transform .8s var(--sai) 1.15s,opacity .6s var(--ease) 1.15s}
+.portas i:first-child{left:0;box-shadow:inset -1px 0 0 rgba(16,36,27,.08)}
+.portas i:last-child{right:0}
+.r-portas.on .portas i:first-child{transform:translateX(-101%)}
+.r-portas.on .portas i:last-child{transform:translateX(101%)}
+.fatias i{position:absolute;left:0;right:0;height:calc(100% / 6 + 1px);background:var(--abre);transition:transform .42s steps(5,end),opacity .42s steps(5,end)}
+.fatias i:nth-child(1){top:0}.fatias i:nth-child(2){top:calc(100% / 6)}.fatias i:nth-child(3){top:calc(200% / 6)}
+.fatias i:nth-child(4){top:calc(300% / 6)}.fatias i:nth-child(5){top:calc(400% / 6)}.fatias i:nth-child(6){top:calc(500% / 6)}
+.r-fatias.on .fatias i:nth-child(odd){transform:translateX(-102%)}
+.r-fatias.on .fatias i:nth-child(even){transform:translateX(102%)}
+.fatias i:nth-child(1){transition-delay:1.12s}.fatias i:nth-child(2){transition-delay:1.2s}.fatias i:nth-child(3){transition-delay:1.16s}
+.fatias i:nth-child(4){transition-delay:1.26s}.fatias i:nth-child(5){transition-delay:1.14s}.fatias i:nth-child(6){transition-delay:1.22s}
+
+/* ADRI: logótipo com a barra de ouro; sai um talão de marcação por baixo e as bolas da joia */
+.c-adri .abre img{transition:opacity .5s var(--ease) .25s,transform .7s var(--suave) .25s}
+.js .c-adri:not(.on) .abre img{opacity:0;transform:translateY(calc(10px * var(--k)))}
+.linha{position:absolute;left:28%;right:28%;top:calc(50% + 30px);height:1.5px;background:linear-gradient(90deg,transparent,#D9B676 30%,#F3E2B5 50%,#D9B676 70%,transparent);transform:scaleX(0);transition:transform .8s var(--suave) .5s}
+.c-adri.on .linha{transform:scaleX(1)}
+.talao{z-index:1;left:9%;right:9%;top:calc(100% - 44px);filter:drop-shadow(0 14px 16px rgba(0,0,0,.5));transition:transform 1s var(--suave) 1.9s,opacity .3s var(--ease) 1.9s}
+.papel{padding:52px 18px 20px;display:grid;grid-template-columns:1fr auto;gap:2px 12px;align-items:center;background:#F4EEE4;color:#141210;
+  -webkit-mask:radial-gradient(circle at 50% 100%,transparent 4px,#000 4.5px) 0 0/12px 100%;mask:radial-gradient(circle at 50% 100%,transparent 4px,#000 4.5px) 0 0/12px 100%}
+.talao .t-topo{grid-column:1 / -1;font-size:10.5px;font-weight:700;letter-spacing:.1em;white-space:nowrap;text-transform:uppercase;color:#8A6A2F}
+.talao strong{font-size:19px;font-weight:800;letter-spacing:-.02em;line-height:1.1}
+.talao span:last-of-type{grid-column:1;font-size:13px;color:#5C554B}
+.talao .ok{grid-column:2;grid-row:2 / span 2;width:38px;height:38px;border-radius:50%;background:#D9B676;display:grid;place-items:center}
+.talao .ok svg{width:20px;height:20px;fill:none;stroke:#141210;stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round}
+.js .c-adri:not(.on) .talao{transform:translateY(calc(-78% * var(--k)));opacity:0}
+.bola{z-index:4;width:var(--s);height:var(--s);border-radius:50%;background:radial-gradient(circle at 34% 30%,#FFF7E0 0,#EBD192 22%,#C29A49 55%,#5E4719 100%);box-shadow:0 10px 20px -8px rgba(0,0,0,.7);
+  transition:transform 1.1s var(--suave) var(--d),opacity .4s var(--ease) var(--d)}
+.bola.b1{--s:26px;--d:2.2s;left:calc(-.55 * var(--fora));top:16%;--fx:calc(var(--pw) * .5);--fy:calc(var(--pw) * .5)}
+.bola.b2{--s:14px;--d:2.35s;right:calc(-.45 * var(--fora));top:9%;--fx:calc(var(--pw) * -.45);--fy:calc(var(--pw) * .7)}
+.bola.b3{--s:20px;--d:2.5s;right:calc(-.6 * var(--fora));top:44%;--fx:calc(var(--pw) * -.5);--fy:calc(var(--pw) * .1)}
+.js .c-adri:not(.on) .bola{opacity:0;transform:translate(calc(var(--fx) * var(--k)),calc(var(--fy) * var(--k))) scale(.3)}
+
+/* PAROU: o ponto laranja dá sinal, o site abre em círculo; sobe um painel de paragem com a contagem */
+.c-parou{margin-top:60px}
+.c-parou .abre img{transition:opacity .5s var(--ease) .2s}
+.js .c-parou:not(.on) .abre img{opacity:0}
+.ping{position:absolute;left:50%;top:50%;width:96px;height:96px;margin:-48px 0 0 -48px;border-radius:50%;border:2px solid #FF6B1A;opacity:0}
+.c-parou.on .ping{animation:ping 1.1s var(--suave) .45s both}
+.c-parou.on .ping.p2{animation-delay:.75s}
+@keyframes ping{from{opacity:.9;transform:scale(.4)}to{opacity:0;transform:scale(calc(.4 + 2 * var(--k)))}}
+.painel{z-index:1;left:calc(-1 * var(--fora));right:calc(-1 * var(--fora));top:-64px;height:56px;display:flex;align-items:center;gap:10px;padding:0 14px;border-radius:14px;background:#0B0A0E;color:#fff;border:1px solid #2E2D35;box-shadow:0 18px 40px -18px rgba(0,0,0,.8);
+  font-stretch:78%;transition:transform .9s var(--suave) 1.9s,opacity .5s var(--ease) 1.9s}
+.js .c-parou:not(.on) .painel{transform:translateY(calc(60px * var(--k)));opacity:0}
+.p-linha{flex:none;background:#FF6B1A;color:#111;font-weight:800;font-size:15px;padding:3px 7px;border-radius:5px;font-variant-numeric:tabular-nums}
+.p-dest{flex:1;min-width:0;display:flex;flex-direction:column;font-weight:700;font-size:16px;line-height:1.1;white-space:nowrap;overflow:hidden}
+.p-dest small{font-size:12px;font-weight:500;color:#A8A6AE;text-overflow:ellipsis;overflow:hidden}
+.flap{flex:none;display:grid;perspective:260px;font-size:22px;font-weight:800;color:#FF6B1A;font-variant-numeric:tabular-nums;text-align:right}
+.flap b{grid-area:1 / 1;backface-visibility:hidden;transform-origin:50% 50%;transition:transform .38s var(--ease),opacity .2s var(--ease)}
+.flap b:not(.ativo){opacity:0;transform:rotateX(calc(90deg * var(--k)))}
+.flap b.saiu{transform:rotateX(calc(-90deg * var(--k)))}
+.flap .chega{font-size:17px}
+.vivo{z-index:4;left:calc(-.7 * var(--fora));top:47%;display:inline-flex;align-items:center;gap:8px;padding:9px 14px;border-radius:999px;background:#fff;color:#111;font-size:13px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;box-shadow:0 16px 32px -14px rgba(0,0,0,.6);
+  transition:transform .7s var(--mola) 2.3s,opacity .3s var(--ease) 2.3s}
+.vivo i{position:relative;width:9px;height:9px;border-radius:50%;background:#2FBF71}
+.vivo i::after{content:"";position:absolute;inset:0;border-radius:50%;background:#2FBF71}
+.c-parou.on .vivo i::after{animation:pulso 1.2s var(--ease) 2.8s 3}
+@keyframes pulso{from{opacity:.7;transform:scale(1)}to{opacity:0;transform:scale(2.8)}}
+.js .c-parou:not(.on) .vivo{opacity:0;transform:translateX(calc(30px * var(--k))) scale(.8)}
+
+/* ANJINHO: o logótipo ganha um laço, abre em sonho; saem nuvens, borboletas e o aviso em autocolante */
+.a-logo{position:relative;width:54%;transition:transform .8s var(--mola) .2s,opacity .3s var(--ease) .2s}
+.js .c-anjinho:not(.on) .a-logo{opacity:0;transform:scale(calc(1 - .4 * var(--k)))}
+.phone .abre .a-laco{position:absolute;width:30%;right:-12%;top:-58%;rotate:14deg;transition:transform .6s var(--mola) .6s,opacity .2s var(--ease) .6s}
+.js .c-anjinho:not(.on) .a-laco{opacity:0;transform:scale(.2)}
+.nuvem{z-index:1;width:124px;transition:transform 1.3s var(--suave) var(--d),opacity .6s var(--ease) var(--d)}
+.nuvem.n1{--d:1.7s;left:calc(-1 * var(--fora) - 12px);top:15%}
+.nuvem.n2{--d:1.85s;right:calc(-1 * var(--fora) - 18px);top:66%;width:100px}
+.js .c-anjinho:not(.on) .nuvem.n1{opacity:0;transform:translateX(calc(70px * var(--k)))}
+.js .c-anjinho:not(.on) .nuvem.n2{opacity:0;transform:translateX(calc(-70px * var(--k)))}
+.borb{z-index:4;width:34px;transition:transform 1.4s var(--suave) var(--d),opacity .3s var(--ease) var(--d)}
+.borb i{display:block;transition:transform 1.4s cubic-bezier(.3,0,.2,1) var(--d)}
+.borb img{animation:bater .16s ease-in-out var(--d) 9 alternate}
+@keyframes bater{to{transform:scaleX(.35)}}
+.borb.o1{--d:2.1s;left:calc(-.6 * var(--fora));top:7%;--fx:calc(var(--pw) * .45);--fy:calc(var(--pw) * .55)}
+.borb.o2{--d:2.3s;right:calc(-.7 * var(--fora));top:40%;--fx:calc(var(--pw) * -.45);--fy:calc(var(--pw) * -.1);width:28px}
+.borb.o3{--d:2.45s;left:calc(-.5 * var(--fora));bottom:15%;--fx:calc(var(--pw) * .45);--fy:calc(var(--pw) * -.45);width:24px}
+.js .c-anjinho:not(.on) .borb{opacity:0;transform:translateX(calc(var(--fx) * var(--k)))}
+.js .c-anjinho:not(.on) .borb i{transform:translateY(calc(var(--fy) * var(--k))) scale(.4)}
+.balao{z-index:5;left:calc(-.4 * var(--fora));right:calc(-.4 * var(--fora));top:45%;display:flex;gap:10px;align-items:center;padding:12px 14px;background:#fff;color:#1D1719;border:2.5px solid #1D1719;border-radius:20px;box-shadow:4px 4px 0 #F6B8C8;rotate:-3deg;font-size:clamp(14px,3.8vw,15px);font-weight:700;line-height:1.25;
+  transition:transform .8s var(--mola) 2.75s,opacity .25s var(--ease) 2.75s}
+.balao::after{content:"";position:absolute;left:30px;bottom:-9px;width:14px;height:14px;background:#fff;border:solid #1D1719;border-width:0 2.5px 2.5px 0;transform:rotate(45deg)}
+.balao img{flex:none;width:30px}
+.balao small{display:block;font-size:12px;font-weight:500;color:#6A5F66}
+.js .c-anjinho:not(.on) .balao{opacity:0;transform:translateY(calc(30px * var(--k))) scale(.6)}
+.cor{z-index:5;width:20px;transition:transform .6s var(--mola) var(--d),opacity .2s var(--ease) var(--d)}
+.cor.c1{--d:3.05s;left:calc(-.6 * var(--fora));top:40%;rotate:-12deg}
+.cor.c2{--d:3.2s;left:calc(-.05 * var(--fora));top:37%;width:13px;rotate:10deg}
+.js .c-anjinho:not(.on) .cor{opacity:0;transform:scale(0)}
+
+/* JINXED: o logótipo falha como um néon, o ecrã parte-se em fatias; os pontos de meio-tom saem para o fundo e cai o carimbo */
+.c-jinxed.on .abre img{animation:neon .9s steps(1,end) .2s both}
+@keyframes neon{0%{opacity:0}11%{opacity:1}27%{opacity:.15}34%{opacity:1}55%{opacity:.25}62%{opacity:1}93%{opacity:1}100%{opacity:0}}
+.meio-tom{z-index:-1;left:50%;top:50%;width:max(300%,980px);height:150%;
+  background:radial-gradient(circle,rgba(214,16,28,.62) 0 1.6px,transparent 2.1px) 0 0/11px 11px,radial-gradient(circle,rgba(234,227,218,.14) 0 1px,transparent 1.5px) 5.5px 5.5px/11px 11px;
+  -webkit-mask:radial-gradient(closest-side,#000 18%,rgba(0,0,0,.55) 48%,transparent 100%);mask:radial-gradient(closest-side,#000 18%,rgba(0,0,0,.55) 48%,transparent 100%);
+  transform:translate(-50%,-50%);transition:transform 1.5s var(--suave) 1.55s,opacity .9s var(--ease) 1.55s}
+.js .c-jinxed:not(.on) .meio-tom{opacity:0;transform:translate(-50%,-50%) scale(calc(1 - .85 * var(--k)))}
+.aura{z-index:-1;left:-30%;right:-30%;top:15%;bottom:15%;background:radial-gradient(closest-side,rgba(214,16,28,.32),transparent);transition:opacity 1.2s var(--ease) 1.5s}
+.js .c-jinxed:not(.on) .aura{opacity:0}
+.carimbo{z-index:5;right:calc(-.5 * var(--fora));top:57%;display:inline-flex;align-items:center;gap:10px;padding:10px 18px;background:#0B0809;color:#EAE3DA;font-family:var(--serif);font-style:italic;font-weight:500;font-size:20px;line-height:1;white-space:nowrap;outline:1px solid rgba(234,227,218,.75);outline-offset:-5px;rotate:-6deg;box-shadow:0 18px 30px -12px rgba(0,0,0,.8);
+  transition:transform .3s cubic-bezier(.55,0,.8,.2) 2.35s,opacity .12s linear 2.35s}
+.carimbo::before,.carimbo::after{content:"";width:6px;height:6px;background:#D6101C;transform:rotate(45deg)}
+.js .c-jinxed:not(.on) .carimbo{opacity:0;transform:scale(calc(1 + 1.6 * var(--k))) rotate(calc(-10deg * var(--k)))}
+.c-jinxed.on .phone{animation:abana .3s linear 2.65s}
+@keyframes abana{25%{transform:translate(calc(-4px * var(--sk)),calc(2px * var(--sk)))}50%{transform:translate(calc(3px * var(--sk)),calc(-2px * var(--sk)))}75%{transform:translate(calc(-2px * var(--sk)),0)}}
+
+/* DUPLICASA: os arcos sobem, as portas abrem; as casas novas saem do telemóvel e empurram-se umas às outras */
+.c-duplicasa .abre img{clip-path:inset(0 0 0 0);transition:clip-path .7s var(--suave) .25s,opacity .25s var(--ease) 1.02s}
+.js .c-duplicasa:not(.on) .abre img{clip-path:inset(100% 0 0 0)}
+.c-duplicasa.on .abre img{opacity:0}
+.casa{--slot:72px;z-index:4;right:calc(-1 * var(--fora));top:60%;width:max-content;max-width:calc(var(--pw) + var(--fora) - 6px);white-space:nowrap;display:flex;gap:10px;align-items:center;padding:10px 12px;background:#fff;color:#10241B;border-radius:18px 18px 18px 6px;box-shadow:0 1px 2px rgba(16,36,27,.08),0 18px 34px -16px rgba(16,36,27,.5);font-size:14px;line-height:1.25;
+  transition:transform .75s var(--mola),opacity .3s var(--ease)}
+.casa .k-ic{flex:none;width:36px;height:36px;border-radius:11px;background:#DDEDE5;display:grid;place-items:center}
+.casa .k-ic svg{width:22px;height:22px;fill:none;stroke:#0B6E4F;stroke-width:2;stroke-linejoin:round;stroke-linecap:round}
+.casa b{display:flex;align-items:center;gap:6px;font-size:12.5px;color:#0B6E4F;letter-spacing:.01em}
+.casa b::before{content:"";width:7px;height:7px;border-radius:50%;background:#F2A33A}
+.casa strong{font-variant-numeric:tabular-nums;white-space:nowrap}
+.k1{transform:translateY(calc(-2 * var(--slot))) scale(.95);opacity:.9}
+.k2{transform:translateY(calc(-1 * var(--slot)))}
+.js .c-duplicasa:not([data-passo]) .casa,.js .c-duplicasa[data-passo="1"] :is(.k2,.k3),.js .c-duplicasa[data-passo="2"] .k3{opacity:0;transform:translate(calc(-46px * var(--k)),calc(24px * var(--k))) scale(calc(1 - .35 * var(--k)))}
+.js .c-duplicasa[data-passo="1"] .k1,.js .c-duplicasa[data-passo="2"] .k2{opacity:1;transform:none}
+.js .c-duplicasa[data-passo="2"] .k1{opacity:1;transform:translateY(calc(-1 * var(--slot)))}
+
+/* GOODMAN: o nome entra por baixo de uma linha, o ecrã fecha como uma íris; sai a conversa com o artigo da lei */
+.g-logo{display:block;width:64%;overflow:hidden;padding-block:4px}
+.c-goodman .abre img{transition:transform .8s var(--suave) .25s,opacity .4s var(--ease) .25s}
+.js .c-goodman:not(.on) .abre img{transform:translateY(calc(110% * var(--k)));opacity:0}
+.msg{z-index:4;max-width:min(calc(var(--pw) * .8),280px);padding:11px 14px;font-size:14px;line-height:1.35;box-shadow:0 18px 34px -16px rgba(0,0,0,.6);transition:transform .7s var(--mola) var(--d),opacity .25s var(--ease) var(--d)}
+.m-eu{--d:1.95s;right:calc(-1 * var(--fora));top:35%;background:#fff;color:#121212;border-radius:18px 18px 6px 18px;transform-origin:100% 100%}
+.g-col{z-index:4;left:calc(-1 * var(--fora));top:51%;display:grid;justify-items:start;gap:10px}
+.g-col .msg,.g-col .artigo{position:relative;grid-column:1}
+.m-digita,.m-resp{grid-row:1}
+.m-gm{background:#17503D;color:#F0F5F1;border-radius:18px 18px 18px 6px;transform-origin:0 100%}
+.m-resp{--d:3.25s}
+.m-digita{display:flex;gap:5px;padding:14px 16px;opacity:0;align-self:start}
+.m-digita i{width:7px;height:7px;border-radius:50%;background:#B4CABE}
+.c-goodman.on .m-digita{animation:digita .95s var(--ease) 2.4s both}
+.c-goodman.on .m-digita i{animation:ponto .45s ease-in-out 2.45s 2 alternate}
+.c-goodman.on .m-digita i:nth-child(2){animation-delay:2.57s}
+.c-goodman.on .m-digita i:nth-child(3){animation-delay:2.69s}
+@keyframes digita{0%{opacity:0;transform:scale(.6)}18%,82%{opacity:1;transform:none}100%{opacity:0;transform:scale(.9)}}
+@keyframes ponto{to{transform:translateY(calc(-4px * var(--k)));opacity:.5}}
+.artigo{--d:3.75s;grid-row:2;display:inline-flex;align-items:center;gap:8px;padding:8px 12px;border-radius:12px;background:#fff;color:#121212;font-size:13px;font-weight:700;white-space:nowrap;box-shadow:0 14px 28px -14px rgba(0,0,0,.6);
+  transition:transform .7s var(--mola) var(--d),opacity .25s var(--ease) var(--d)}
+.artigo b{color:#C7372A;font-size:16px}
+.artigo i{width:18px;height:18px;border-radius:50%;background:#2E8B57;color:#fff;font-style:normal;font-size:11px;display:grid;place-items:center}
+.js .c-goodman:not(.on) :is(.m-eu,.m-resp,.artigo){opacity:0;transform:translateY(calc(16px * var(--k))) scale(calc(1 - .3 * var(--k)))}
+
+@media (min-width:1080px){.cena{--fora:clamp(24px,calc((50vw - 56px - var(--pw)) / 2),120px)}}
+
+/* Movimento reduzido: as mesmas cenas, com viagens curtas e aberturas a desvanecer */
+@media (prefers-reduced-motion:reduce){
+  .cena{--k:.12;--sk:0}
+  .r-sobe.on .abre{transform:none;opacity:0}
+  .r-portas.on .portas i:first-child,.r-portas.on .portas i:last-child{transform:none;opacity:0}
+  .r-fatias.on .fatias i:nth-child(odd),.r-fatias.on .fatias i:nth-child(even){transform:none;opacity:0}
+  .c-jinxed .abre img{transition:opacity .3s var(--ease) 1s}
+  .c-jinxed.on .abre img{animation:none;opacity:0}
+  .flap b{transition:opacity .3s var(--ease)}
+}
 .vplay{position:absolute;right:16px;bottom:16px;width:44px;height:44px;border-radius:50%;border:0;background:rgba(14,14,14,.72);color:#fff;display:grid;place-items:center;cursor:pointer;opacity:.85;transition:opacity .2s var(--ease)}
 .vplay:hover{opacity:1}
 .vplay svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
@@ -327,8 +482,6 @@ footer a{min-height:44px;display:inline-flex;align-items:center}
   .js .top .mark{animation:fade .6s both}
   .js .rv.pre{transform:none}
   .btn:active,.btn:hover,.style:hover .card,.brand-tile:hover{transform:none}
-  .js .cena:not(.on) .phone,.js .cena:not(.on) .aviso,.js .cena:not(.on) .selo,.js .cena:not(.on) .ecra .site,.js .cena:not(.on) .abre img,.cena.on .barra{transform:none}
-  .cena.on .abre{transform:none;opacity:0}
 }
 </style>
 </head>
@@ -395,7 +548,7 @@ footer a{min-height:44px;display:inline-flex;align-items:center}
           <p class="rv">Estúdio de body piercing do Adriano, que está a começar. Fiz o logótipo, a joia em 3D que roda no topo e o site, com preços à vista e marcação online.</p>
           <a class="btn btn-secondary rv" href="https://adribodypiercing.2-31-13-85.sslip.io" target="_blank" rel="noopener">Ver o site ↗</a>
         </div>
-        <div class="shot"><figure class="cena" style="--abre:#0E0C0B;--risco:#D9B676"><svg class="riscos esq" viewBox="0 0 80 60" aria-hidden="true"><path d="M8 50C22 34 38 22 70 12"/><path d="M28 56C40 48 52 44 72 40"/></svg><svg class="riscos dir" viewBox="0 0 80 60" aria-hidden="true"><path d="M8 50C22 34 38 22 70 12"/><path d="M28 56C40 48 52 44 72 40"/></svg><div class="phone"><div class="ecra"><img class="site" src="img/adri.webp" width="640" height="1385" alt="Site AdriBodyPiercing no telemóvel" loading="lazy"><div class="abre" aria-hidden="true"><img src="img/logo_adri.webp" width="325" height="70" alt="" style="width:58%"><i class="barra"></i></div></div></div><div class="aviso" aria-hidden="true"><img class="ic" src="img/ic_adri.webp" width="112" height="112" alt="" loading="lazy"><span class="av-txt"><span class="av-topo"><strong>AdriBodyPiercing</strong><span>agora</span></span><span>Marcação confirmada: sábado, às 15h00.</span></span></div><span aria-hidden="true" class="selo esq s-pill"><i style="background:#D9B676"></i>Joias em titânio de implante</span></figure></div>
+        <div class="shot"><figure class="cena c-adri r-sobe" style="--abre:#0E0C0B"><div class="fx talao" aria-hidden="true"><div class="papel"><span class="t-topo">Marcação confirmada</span><strong>Sábado, 15h00</strong><span>Helix · joia em titânio de implante</span><i class="ok"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></i></div></div><div class="phone"><div class="ecra"><img class="site" src="img/adri.webp" width="640" height="1385" alt="Site AdriBodyPiercing no telemóvel" loading="lazy"><div class="abre" aria-hidden="true"><img src="img/logo_adri.webp" width="325" height="70" alt="" style="width:58%"><i class="linha"></i><i class="barra"></i></div></div></div><i class="fx bola b1" aria-hidden="true"></i><i class="fx bola b2" aria-hidden="true"></i><i class="fx bola b3" aria-hidden="true"></i></figure></div>
       </div>
     </article>
 
@@ -407,7 +560,7 @@ footer a{min-height:44px;display:inline-flex;align-items:center}
           <p class="rv">App de transportes para todo o país. Fiz a marca, o design e a app: tempo real onde existe, horário oficial onde não existe, e avisos de greves e ocorrências. É gratuita e sem fins lucrativos.</p>
           <a class="btn btn-secondary rv" href="https://parou.pt" target="_blank" rel="noopener">Abrir parou.pt ↗</a>
         </div>
-        <div class="shot"><figure class="cena" style="--abre:#16151A;--risco:#FF6B1A"><svg class="riscos esq" viewBox="0 0 80 60" aria-hidden="true"><path d="M8 50C22 34 38 22 70 12"/><path d="M28 56C40 48 52 44 72 40"/></svg><svg class="riscos dir" viewBox="0 0 80 60" aria-hidden="true"><path d="M8 50C22 34 38 22 70 12"/><path d="M28 56C40 48 52 44 72 40"/></svg><div class="phone"><div class="ecra"><img class="site" src="img/parou.webp" width="640" height="1325" alt="App PAROU no telemóvel: transportes perto, com autocarros a chegar" loading="lazy"><div class="abre" aria-hidden="true"><img src="img/logo_parou.webp" width="235" height="85" alt="" style="width:52%"><i class="barra"></i></div></div></div><div class="aviso" aria-hidden="true"><img class="ic" src="img/ic_parou.webp" width="112" height="112" alt="" loading="lazy"><span class="av-txt"><span class="av-topo"><strong>PAROU</strong><span>agora</span></span><span>O 8027 está a chegar a Campanhã Estação.</span></span></div><span aria-hidden="true" class="selo dir s-pill"><i style="background:#2FBF71"></i><strong>Ao vivo</strong>&nbsp;em todo o país</span></figure></div>
+        <div class="shot"><figure class="cena c-parou r-circulo" style="--abre:#16151A" data-passos="2700,3500,4300"><div class="fx painel" aria-hidden="true"><span class="p-linha">8027</span><span class="p-dest">Sebolido<small>Campanhã Estação</small></span><span class="flap"><b class="ativo">3 min</b><b>2 min</b><b>1 min</b><b class="chega">a chegar</b></span></div><div class="phone"><div class="ecra"><img class="site" src="img/parou.webp" width="640" height="1325" alt="App PAROU no telemóvel: transportes perto, com autocarros a chegar" loading="lazy"><div class="abre" aria-hidden="true"><img src="img/logo_parou.webp" width="235" height="85" alt="" style="width:52%"><i class="ping"></i><i class="ping p2"></i></div></div></div><span class="fx vivo" aria-hidden="true"><i></i>Ao vivo</span></figure></div>
       </div>
     </article>
 
@@ -419,7 +572,7 @@ footer a{min-height:44px;display:inline-flex;align-items:center}
           <p class="rv">Marca de moda coquette. Fiz a marca, a loja e a direção das imagens das peças, com o preço a aparecer só quando se abre cada uma.</p>
           <a class="btn btn-secondary rv" href="https://anjinho.pt" target="_blank" rel="noopener">Visitar anjinho.pt ↗</a>
         </div>
-        <div class="shot"><figure class="cena" style="--barra:rgba(29,23,25,.55);--abre:#DCE8F4;--risco:#F2A7BD"><svg class="riscos esq" viewBox="0 0 80 60" aria-hidden="true"><path d="M8 50C22 34 38 22 70 12"/><path d="M28 56C40 48 52 44 72 40"/></svg><svg class="riscos dir" viewBox="0 0 80 60" aria-hidden="true"><path d="M8 50C22 34 38 22 70 12"/><path d="M28 56C40 48 52 44 72 40"/></svg><div class="phone"><div class="ecra"><img class="site" src="img/anjinho.webp" width="640" height="1385" alt="Loja anjinho.pt no telemóvel" loading="lazy"><div class="abre" aria-hidden="true"><img src="img/logo_anjinho.svg" width="200" height="69" alt="" style="width:54%"><i class="barra"></i></div></div></div><div class="aviso" aria-hidden="true"><img class="ic" src="img/ic_anjinho.svg" width="112" height="112" alt="" loading="lazy"><span class="av-txt"><span class="av-topo"><strong>anjinho</strong><span>agora</span></span><span>O drop 01 já chegou ♡</span></span></div><span aria-hidden="true" class="selo esq s-pill s-rosa"><b aria-hidden="true">♡</b>Botas nuvem no carrinho</span></figure></div>
+        <div class="shot"><figure class="cena c-anjinho r-nuvem" style="--abre:#DCE8F4"><img class="fx nuvem n1" src="img/px_nuvem.svg" width="18" height="9" alt="" aria-hidden="true"><img class="fx nuvem n2" src="img/px_nuvem.svg" width="18" height="9" alt="" aria-hidden="true"><div class="phone"><div class="ecra"><img class="site" src="img/anjinho.webp" width="640" height="1385" alt="Loja anjinho.pt no telemóvel" loading="lazy"><div class="abre" aria-hidden="true"><span class="a-logo"><img src="img/logo_anjinho.svg" width="200" height="69" alt="" style="width:100%"><img class="a-laco" src="img/px_laco.svg" width="11" height="10" alt=""></span></div></div></div><span class="fx borb o1" aria-hidden="true"><i><img src="img/px_borboleta.svg" width="11" height="9" alt=""></i></span><span class="fx borb o2" aria-hidden="true"><i><img src="img/px_borboleta.svg" width="11" height="9" alt=""></i></span><span class="fx borb o3" aria-hidden="true"><i><img src="img/px_borboleta.svg" width="11" height="9" alt=""></i></span><div class="fx balao" aria-hidden="true"><img src="img/px_coracao.svg" width="9" height="8" alt=""><span><small>anjinho · agora</small>A tua encomenda chegou&nbsp;♡</span></div><img class="fx cor c1" src="img/px_coracao.svg" width="9" height="8" alt="" aria-hidden="true"><img class="fx cor c2" src="img/px_coracao.svg" width="9" height="8" alt="" aria-hidden="true"></figure></div>
       </div>
     </article>
 
@@ -431,7 +584,7 @@ footer a{min-height:44px;display:inline-flex;align-items:center}
           <p class="rv">Marca de roupa para homem, feita em Portugal. Fiz o logótipo e a loja, toda em inglês, escura e cheia de movimento.</p>
           <a class="btn btn-secondary rv" href="https://jinxed.world" target="_blank" rel="noopener">Visitar jinxed.world ↗</a>
         </div>
-        <div class="shot"><figure class="cena" style="--abre:#110D0E;--risco:#D6101C"><svg class="riscos esq" viewBox="0 0 80 60" aria-hidden="true"><path d="M8 50C22 34 38 22 70 12"/><path d="M28 56C40 48 52 44 72 40"/></svg><svg class="riscos dir" viewBox="0 0 80 60" aria-hidden="true"><path d="M8 50C22 34 38 22 70 12"/><path d="M28 56C40 48 52 44 72 40"/></svg><div class="phone"><div class="ecra"><img class="site" src="img/jinxed.webp" width="640" height="1325" alt="Loja jinxed.world no telemóvel, com casacos e calças de ganga" loading="lazy"><div class="abre" aria-hidden="true"><img src="img/logo_jinxed.webp" width="200" height="90" alt="" style="width:50%"><i class="barra"></i></div></div></div><div class="aviso" aria-hidden="true"><img class="ic" src="img/ic_jinxed.webp" width="112" height="112" alt="" loading="lazy"><span class="av-txt"><span class="av-topo"><strong>jinxed</strong><span>agora</span></span><span>Drop 01 esgotado. O próximo sai em breve.</span></span></div><span aria-hidden="true" class="selo dir s-carimbo">out of stock</span></figure></div>
+        <div class="shot"><figure class="cena c-jinxed r-fatias" style="--abre:#110D0E"><i class="fx meio-tom" aria-hidden="true"></i><i class="fx aura" aria-hidden="true"></i><div class="phone"><div class="ecra"><img class="site" src="img/jinxed.webp" width="640" height="1325" alt="Loja jinxed.world no telemóvel, com casacos e calças de ganga" loading="lazy"><div class="abre" aria-hidden="true"><span class="fatias"><i></i><i></i><i></i><i></i><i></i><i></i></span><img src="img/logo_jinxed.webp" width="200" height="90" alt="" style="width:50%"></div></div></div><span class="fx carimbo" aria-hidden="true" lang="en">out of stock</span></figure></div>
       </div>
     </article>
 
@@ -443,7 +596,7 @@ footer a{min-height:44px;display:inline-flex;align-items:center}
           <p class="rv">Plataforma de arrendamento. Fiz o nome, a marca e o site: as casas dos principais sites num só lugar, com pagamento seguro.</p>
           <a class="btn btn-secondary rv" href="https://duplicasa.pt" target="_blank" rel="noopener">Visitar duplicasa.pt ↗</a>
         </div>
-        <div class="shot"><figure class="cena" style="--barra:rgba(16,36,27,.5);--abre:#FFFFFF;--risco:#F2A33A"><svg class="riscos esq" viewBox="0 0 80 60" aria-hidden="true"><path d="M8 50C22 34 38 22 70 12"/><path d="M28 56C40 48 52 44 72 40"/></svg><svg class="riscos dir" viewBox="0 0 80 60" aria-hidden="true"><path d="M8 50C22 34 38 22 70 12"/><path d="M28 56C40 48 52 44 72 40"/></svg><div class="phone"><div class="ecra"><img class="site" src="img/duplicasa.webp" width="640" height="1386" alt="Site DupliCasa no telemóvel" loading="lazy"><div class="abre" aria-hidden="true"><img src="img/logo_duplicasa.svg" width="592" height="123" alt="" style="width:66%"><i class="barra"></i></div></div></div><div class="aviso" aria-hidden="true"><img class="ic" src="img/ic_duplicasa.svg" width="112" height="112" alt="" loading="lazy"><span class="av-txt"><span class="av-topo"><strong>DupliCasa</strong><span>agora</span></span><span>Casa nova: Quarto em Almada, 400 €</span></span></div><span aria-hidden="true" class="selo esq s-cartao"><strong>Todos os sites</strong><small>de casas num só lugar</small></span></figure></div>
+        <div class="shot"><figure class="cena c-duplicasa r-portas" style="--abre:#FFFFFF" data-passos="1950,2800,3650"><div class="phone"><div class="ecra"><img class="site" src="img/duplicasa.webp" width="640" height="1386" alt="Site DupliCasa no telemóvel" loading="lazy"><div class="abre" aria-hidden="true"><span class="portas"><i></i><i></i></span><img src="img/logo_duplicasa.svg" width="592" height="123" alt="" style="width:66%"></div></div></div><div class="fx casa k1" aria-hidden="true"><i class="k-ic"><svg viewBox="0 0 24 24"><path d="M4 11 12 4.5 20 11v8.5a1 1 0 0 1-1 1h-4.5V15h-5v5.5H5a1 1 0 0 1-1-1z"/></svg></i><span><b>Nova casa!</b>Quarto em Almada · <strong>400&nbsp;€</strong></span></div><div class="fx casa k2" aria-hidden="true"><i class="k-ic"><svg viewBox="0 0 24 24"><path d="M4 11 12 4.5 20 11v8.5a1 1 0 0 1-1 1h-4.5V15h-5v5.5H5a1 1 0 0 1-1-1z"/></svg></i><span><b>Nova casa!</b>T1 no Porto · <strong>800&nbsp;€</strong></span></div><div class="fx casa k3" aria-hidden="true"><i class="k-ic"><svg viewBox="0 0 24 24"><path d="M4 11 12 4.5 20 11v8.5a1 1 0 0 1-1 1h-4.5V15h-5v5.5H5a1 1 0 0 1-1-1z"/></svg></i><span><b>Nova casa!</b>T2 em Braga · <strong>750&nbsp;€</strong></span></div></figure></div>
       </div>
     </article>
 
@@ -455,7 +608,7 @@ footer a{min-height:44px;display:inline-flex;align-items:center}
           <p class="rv">Assistente jurídico com IA para a lei portuguesa. Fiz a marca, a personagem e o site: contas o caso, ele lê os teus documentos e responde com o artigo da lei e a ligação ao Diário da República. Ainda está em testes.</p>
           <a class="btn btn-secondary rv" href="https://goodman.2-31-13-85.sslip.io" target="_blank" rel="noopener">Ver o site ↗</a>
         </div>
-        <div class="shot"><figure class="cena" style="--abre:#0E3A2C;--risco:#C7372A"><svg class="riscos esq" viewBox="0 0 80 60" aria-hidden="true"><path d="M8 50C22 34 38 22 70 12"/><path d="M28 56C40 48 52 44 72 40"/></svg><svg class="riscos dir" viewBox="0 0 80 60" aria-hidden="true"><path d="M8 50C22 34 38 22 70 12"/><path d="M28 56C40 48 52 44 72 40"/></svg><div class="phone"><div class="ecra"><img class="site" src="img/goodman.webp" width="640" height="1385" alt="Site Goodman no telemóvel" loading="lazy"><div class="abre" aria-hidden="true"><img src="img/logo_goodman.webp" width="441" height="66" alt="" style="width:64%"><i class="barra"></i></div></div></div><div class="aviso" aria-hidden="true"><img class="ic" src="img/ic_goodman.webp" width="112" height="112" alt="" loading="lazy"><span class="av-txt"><span class="av-topo"><strong>Goodman</strong><span>agora</span></span><span>Li a carta do senhorio. Já tens resposta.</span></span></div><span aria-hidden="true" class="selo dir s-cartao" style="top:47%"><strong>Artigo da lei</strong><small>em cada resposta</small></span></figure></div>
+        <div class="shot"><figure class="cena c-goodman r-iris" style="--abre:#0E3A2C"><div class="phone"><div class="ecra"><img class="site" src="img/goodman.webp" width="640" height="1385" alt="Site Goodman no telemóvel" loading="lazy"><div class="abre" aria-hidden="true"><span class="g-logo"><img src="img/logo_goodman.webp" width="441" height="66" alt="" style="width:100%"></span></div></div></div><div class="fx msg m-eu" aria-hidden="true">O senhorio quer subir a renda de 650 para 750 €. Pode?</div><div class="fx g-col" aria-hidden="true"><div class="msg m-gm m-digita"><i></i><i></i><i></i></div><div class="msg m-gm m-resp">Não tens de aceitar. Se o contrato não o prevê, só pode atualizar a renda uma vez por ano, pelo coeficiente oficial.</div><div class="artigo"><b>§</b>Código Civil, artigo 1077.º<i>✓</i></div></div></figure></div>
       </div>
     </article>
   </section>
@@ -646,9 +799,18 @@ footer a{min-height:44px;display:inline-flex;align-items:center}
   /* Cenas dos projetos: tocam uma vez, quando o telemóvel aparece */
   (function(){
     var cenas=[].slice.call(document.querySelectorAll('.cena'));
-    if(!('IntersectionObserver' in window)){ cenas.forEach(function(c){c.classList.add('on');}); return; }
+    function ligar(c){
+      c.classList.add('on');
+      var passos=(c.getAttribute('data-passos')||'').split(',').filter(Boolean);
+      var flap=[].slice.call(c.querySelectorAll('.flap b'));
+      passos.forEach(function(ms,i){ setTimeout(function(){
+        c.setAttribute('data-passo',String(i+1));
+        if(flap[i+1]){ flap[i].classList.remove('ativo'); flap[i].classList.add('saiu'); flap[i+1].classList.add('ativo'); }
+      },+ms); });
+    }
+    if(!('IntersectionObserver' in window)){ cenas.forEach(ligar); return; }
     var io=new IntersectionObserver(function(es){
-      es.forEach(function(e){ if(e.isIntersecting){ e.target.classList.add('on'); io.unobserve(e.target); } });
+      es.forEach(function(e){ if(e.isIntersecting){ ligar(e.target); io.unobserve(e.target); } });
     },{threshold:.3});
     cenas.forEach(function(c){ io.observe(c); });
   })();
