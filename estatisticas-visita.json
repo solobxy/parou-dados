@@ -1,0 +1,84 @@
+[
+ {
+  "url": "https://parou.pt/",
+  "temScript": false,
+  "ativo": false,
+  "envios": [],
+  "erros": [],
+  "ok": false
+ },
+ {
+  "url": "https://anjinho.pt/",
+  "temScript": false,
+  "ativo": false,
+  "envios": [],
+  "erros": [],
+  "ok": false
+ },
+ {
+  "url": "https://jinxed.world/",
+  "temScript": true,
+  "ativo": true,
+  "envios": [
+   204,
+   204
+  ],
+  "erros": [],
+  "ok": true
+ },
+ {
+  "url": "https://duaschaves.2-31-13-85.sslip.io/",
+  "temScript": true,
+  "ativo": true,
+  "envios": [
+   204,
+   204
+  ],
+  "erros": [],
+  "ok": true
+ },
+ {
+  "url": "https://dinissousa.2-31-13-85.sslip.io/",
+  "temScript": true,
+  "ativo": true,
+  "envios": [
+   204,
+   204
+  ],
+  "erros": [],
+  "ok": true
+ },
+ {
+  "url": "https://jaesta.2-31-13-85.sslip.io/",
+  "temScript": true,
+  "ativo": true,
+  "envios": [
+   204,
+   204
+  ],
+  "erros": [],
+  "ok": true
+ },
+ {
+  "url": "https://adribodypiercing.2-31-13-85.sslip.io/",
+  "temScript": true,
+  "ativo": true,
+  "envios": [
+   204,
+   204
+  ],
+  "erros": [],
+  "ok": true
+ },
+ {
+  "url": "https://goodman.2-31-13-85.sslip.io/",
+  "temScript": true,
+  "ativo": true,
+  "envios": [
+   204,
+   204
+  ],
+  "erros": [],
+  "ok": true
+ }
+]

@@ -1,0 +1,9 @@
+FALHOU https://parou.pt/ envios=[] 
+FALHOU https://anjinho.pt/ envios=[] 
+OK https://jinxed.world/ envios=[204,204] 
+OK https://duaschaves.2-31-13-85.sslip.io/ envios=[204,204] 
+OK https://dinissousa.2-31-13-85.sslip.io/ envios=[204,204] 
+OK https://jaesta.2-31-13-85.sslip.io/ envios=[204,204] 
+OK https://adribodypiercing.2-31-13-85.sslip.io/ envios=[204,204] 
+OK https://goodman.2-31-13-85.sslip.io/ envios=[204,204] 
+6/8 sites a enviar estatísticas
