@@ -1987,5 +1987,11 @@ if (renderer) {
   loop();
 }
 </script>
+<script>
+/* Tempos de cicatrização: se a palavra mais comprida não couber na coluna (letra aumentada no telemóvel), a letra encolhe até caber */
+(function(){var els=[].slice.call(document.querySelectorAll('.tempos b'));
+function cabe(){els.forEach(function(e){e.style.fontSize='';for(var k=0;k<8;k++){if(!e.clientWidth||e.scrollWidth<=e.clientWidth+1)break;e.style.fontSize=(parseFloat(getComputedStyle(e).fontSize)*Math.min(.96,e.clientWidth/e.scrollWidth))+'px';}});}
+cabe();addEventListener('resize',cabe);if(document.fonts&&document.fonts.ready)document.fonts.ready.then(cabe);})();
+</script>
 </body>
 </html>
