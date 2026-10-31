@@ -221,7 +221,10 @@
       if (cabe(hi)) return;
       for (var i = 0; i < 9; i++) { var mid = (lo + hi) / 2; if (cabe(mid)) lo = mid; else hi = mid; }
       alvo.style.fontSize = Math.floor(lo) + 'px';
+      /* ecrã muito estreito ou letra aumentada: abaixo do mínimo, só o necessário para a palavra mais comprida caber */
+      for (var k = 0; k < 8 && alvo.scrollWidth > alvo.clientWidth + 1; k++) alvo.style.fontSize = (parseFloat(alvo.style.fontSize) * Math.min(0.96, alvo.clientWidth / alvo.scrollWidth)) + 'px';
     }
+    alvo.setAttribute('data-ajusta', '');
     alvo.style.overflowWrap = 'normal';
     fazer();
     if (document.fonts && document.fonts.ready) document.fonts.ready.then(fazer);
@@ -417,8 +420,8 @@
       });
       /* títulos: a palavra mais comprida tem de caber inteira (sem a partir) */
       [].forEach.call(document.querySelectorAll('h1, h2'), function (e) {
-        if (e.closest('.je-folha, .je-barra, .je-expirou')) return; e.style.fontSize = '';
-        for (var k = 0; k < 3; k++) { if (e.scrollWidth <= e.clientWidth + 1 || !e.clientWidth) break; e.style.fontSize = (parseFloat(getComputedStyle(e).fontSize) * e.clientWidth / e.scrollWidth * 0.98) + 'px'; }
+        if (e.closest('.je-folha, .je-barra, .je-expirou') || e.hasAttribute('data-ajusta')) return; e.style.fontSize = '';
+        for (var k = 0; k < 8; k++) { if (e.scrollWidth <= e.clientWidth + 1 || !e.clientWidth) break; e.style.fontSize = (parseFloat(getComputedStyle(e).fontSize) * Math.min(0.96, e.clientWidth / e.scrollWidth)) + 'px'; }
       });
     }
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', cabe); else cabe();

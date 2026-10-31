@@ -525,7 +525,7 @@ dialog.dlg-oferta[open]{animation:aparecer .35s ease-out both}
 
 /* duas partes e cadeado */
 .partes{display:flex;align-items:flex-start;justify-content:space-between}
-.parte{width:96px;display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center;font-size:14px;line-height:1.3;color:var(--texto2)}
+.parte{width:96px;flex:0 1 96px;min-width:0;overflow-wrap:break-word;display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center;font-size:clamp(12px,4.6vw,14px);line-height:1.3;color:var(--texto2)}
 .parte.ok{color:var(--verde);font-weight:600}
 .bola{width:52px;height:52px;border-radius:999px;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700}
 .bola.ok{background:var(--verde);color:#fff}
@@ -928,6 +928,7 @@ a.botao[aria-disabled="true"]{opacity:.6;pointer-events:none}
 }
 @media (min-width:1080px){body{padding-bottom:0}.nav-topo{display:flex}.nav-baixo{display:none}.toast{bottom:24px}.grande{font-size:50px}.seccao h2{font-size:42px}.heroi-grelha{grid-template-columns:minmax(0,1.1fr) minmax(0,.9fr);gap:72px}.dois-col{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:72px;align-items:start}}
 @media (min-width:1280px){.grande{font-size:60px}}
+@media (max-width:300px){.marca svg{width:112px;height:auto}.topo-in{gap:10px}}
 @media (max-width:360px){.grande{font-size:28px}.titulo{font-size:26px}.seccao h2{font-size:26px}.cofre-valor{font-size:40px}.marca{font-size:19px}}
 /* movimento: entradas suaves ao descer a página; com «reduzir movimento» ficam só esmaecimentos, sem deslocações */
 .rev{opacity:0;transform:translateY(18px);transition:opacity .55s ease-out,transform .7s var(--mola);transition-delay:calc(var(--i,0) * 70ms)}
