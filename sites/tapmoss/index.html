@@ -271,9 +271,9 @@ select.sel{width:100%;height:48px;padding:0 12px;background:#18241a;clip-path:va
 @keyframes flash{0%{opacity:.85}100%{opacity:0}}
 .phprev{background:#0a100b;clip-path:var(--notch);padding:6px;display:grid;place-items:center}.phprev img{display:block;max-width:100%;max-height:58vh;image-rendering:pixelated;image-rendering:crisp-edges}
 .mbtns a.btn{text-decoration:none;display:flex;align-items:center;justify-content:center}
-.chip.auto .pxi{width:13px;height:16px}.chip.auto.on{border-color:var(--moss);background:#24361c;box-shadow:0 0 10px rgba(154,214,90,.45)}.chip.auto.on .pxi{animation:tapb .5s ease-in-out infinite}
+.sbtn.auto.on .pxi{filter:drop-shadow(0 3px 0 rgba(4,8,5,.55)) drop-shadow(0 0 1px rgba(4,8,5,.9)) drop-shadow(0 0 9px rgba(154,214,90,.8));animation:tapb .5s ease-in-out infinite}.sbtn.auto.on .nm{color:#c7f08a}
 @keyframes tapb{0%,100%{transform:translateY(0)}50%{transform:translateY(2px)}}
-.rm .chip.auto.on .pxi{animation:none}
+.rm .sbtn.auto.on .pxi{animation:none}
 .chip.ic{width:34px;padding:0;justify-content:center}.chip.ic .pxi{width:18px;height:14px}
 .tabs{display:flex;gap:4px;margin:-2px 0 12px;background:#0f1810;clip-path:var(--notch);padding:4px}
 .tabs button{flex:1;height:38px;font-size:14px;color:var(--tx2);clip-path:var(--notch);position:relative}
@@ -467,7 +467,6 @@ select.sel{width:100%;height:48px;padding:0 12px;background:#18241a;clip-path:va
       <button class="pn chip" id="wxB"><span id="wxI"></span><span id="wxT">—</span></button>
       <button class="pn chip" id="covB"><span id="covT">Musgo 0%</span></button>
       <button class="pn chip ic" id="photoB" aria-label="Modo fotografia"><span id="icCam"></span></button>
-      <button class="pn chip ic auto" id="autoB" aria-pressed="false" aria-label="Toques automáticos"><span id="icAuto"></span></button>
       <span class="pn chip hidden" id="boostC"></span>
     </div>
     <div id="side">
@@ -475,6 +474,7 @@ select.sel{width:100%;height:48px;padding:0 12px;background:#18241a;clip-path:va
       <button class="sbtn lvl" id="sideLvl" aria-label="Baús de nível"><span id="icLvlChest"></span><span id="lvlL" class="nm xs"></span><span class="badge" id="lvlN"></span></button>
       <button class="sbtn gift hidden" id="sideGift" aria-label="Presentes dos amigos"><span id="icGift"></span><span class="nm xs"></span><span class="badge" id="giftN"></span></button>
       <button class="sbtn ev hidden" id="sideEv" aria-label="Evento de época"><span id="icEv"></span><span id="evL" class="nm xs"></span></button>
+      <button class="sbtn auto" id="autoB" aria-pressed="false" aria-label="Toques automáticos"><span id="icAuto"></span><span id="autoL" class="nm xs"></span></button>
     </div>
     <div id="loot" role="status" aria-live="polite"></div>
   </header>
@@ -548,7 +548,7 @@ const GL={
 'T':['#####','..#..','..#..','..#..','..#..','..#..','..#..'],'Q':['.###.','#...#','#...#','#...#','#.#.#','#..#.','.##.#'],
 '%':['##..#','##.#.','...#.','..#..','.#...','.#.##','#..##'],'×':['.....','#...#','.#.#.','..#..','.#.#.','#...#','.....'],
 ' ':['..','..','..','..','..','..','..'],':':['.','.','#','.','.','#','.'],
-'h':['#...','#...','###.','#..#','#..#','#..#','#..#'],'m':['.....','.....','##.#.','#.#.#','#.#.#','#.#.#','#.#.#'],
+'h':['#...','#...','###.','#..#','#..#','#..#','#..#'],'A':['.###.','#...#','#...#','#####','#...#','#...#','#...#'],'U':['#...#','#...#','#...#','#...#','#...#','#...#','.###.'],'O':['.###.','#...#','#...#','#...#','#...#','#...#','.###.'],'m':['.....','.....','##.#.','#.#.#','#.#.#','#.#.#','#.#.#'],
 };
 const numCache=new Map();
 function pxNum(str){
@@ -673,6 +673,7 @@ const IC={
 IC.camera=[['..ttt...','dddddddd','ddlLLldd','ddLbbLdd','ddlLLldd','dddddddd'],{t:'#c9c4ad',d:'#6a6e76',l:'#9aa0a8',L:'#5fb0f0',b:'#1b2a3a'}];
 IC.gift=[['..r...r..','...r.r...','bbbbrbbbb','bBBBrBBBb','.bBBrBBb.','.bBBrBBb.','.bBBrBBb.','.bbbrbbb.'],{r:'#f4d04a',b:'#a0283a',B:'#d23a2e'}];
 IC.full=[['ff...ff','f.....f','.......','.......','.......','f.....f','ff...ff'],{f:'#e8e0c8'}];
+IC.autoHand=[['...kk....','..kwwk...','..kwwkkk.','kkkwwwwwk','kwkwwwwsk','kwwwwwwsk','.kwwwwsk.','..kkkkk..'],{k:'#1b1512',w:'#f6f2e8',s:'#cbbfa6'}];
 IC.hand=[['.kk.....','kwwk....','kwwk....','kwwkkkk.','kwwwwwwk','kwwwwwwk','kwwwwwwk','.kwwwwk.','.kwwwwk.','..kkkk..'],{k:'#1b1512',w:'#f6f2e8'}];
 IC.check=[['......c','.....cc','c...cc.','cc.cc..','.ccc...','..c....'],{c:'#9ad65a'}];
 const icon=(k,cls)=>pxsvg(IC[k][0],IC[k][1],cls);
@@ -2935,7 +2936,7 @@ window.addEventListener('pagehide',()=>saveLocal());
 function setDockIcons(){$('#icMoss').innerHTML=mossIcon(S.sel)}
 
 /* ============ boot ============ */
-$('#icAuto').innerHTML=icon('hand');$('#icFsT').innerHTML=icon('full');$('#icGift').innerHTML=icon('gift');$('#icCam').innerHTML=icon('camera');$('#icCoin').innerHTML=icon('coin');$('#icGem').innerHTML=icon('gem');$('#icTrophy').innerHTML=icon('trophy');$('#icLvlChest').innerHTML=icon('chestLvl');$('#icGear').innerHTML=icon('gear');
+$('#icAuto').innerHTML=icon('autoHand');$('#autoL').innerHTML=pxNum('AUTO');$('#icFsT').innerHTML=icon('full');$('#icGift').innerHTML=icon('gift');$('#icCam').innerHTML=icon('camera');$('#icCoin').innerHTML=icon('coin');$('#icGem').innerHTML=icon('gem');$('#icTrophy').innerHTML=icon('trophy');$('#icLvlChest').innerHTML=icon('chestLvl');$('#icGear').innerHTML=icon('gear');
 $('#icWater').innerHTML=icon('drop');$('#icUp').innerHTML=icon('up');$('#icCol').innerHTML=icon('flower');$('#icScn').innerHTML=icon('map');$('#shX').innerHTML=icon('x');
 mq.addEventListener&&mq.addEventListener('change',setRM);
 window.addEventListener('appinstalled',()=>ev('instalar','pwa'));
