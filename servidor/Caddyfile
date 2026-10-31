@@ -500,6 +500,11 @@ www.goodman.pt {
 		Cross-Origin-Opener-Policy "same-origin"
 		-Server
 	}
+	# Ficheiros escondidos (.env, .git, ...) nunca existem aqui: 404 em vez da página da app
+	@escondidos path_regexp ^/\.
+	handle @escondidos {
+		respond 404
+	}
 	# Fotos (só JPEG limpos de metadados, nomes aleatórios) e API
 	handle /m/* {
 		reverse_proxy 127.0.0.1:3130
