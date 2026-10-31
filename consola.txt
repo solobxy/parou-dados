@@ -1,0 +1,1093 @@
+OK      [iPhone SE 320×568 claro /] sem scroll lateral scrollW=320 vw=320
+OK      [iPhone SE 320×568 claro /] nada sai do ecrã para o lado 
+OK      [iPhone SE 320×568 claro /] barra de baixo inteira no ecrã fundo=568 vh=568
+OK      [iPhone SE 320×568 claro /] todos os botões da barra recebem o toque 
+OK      [iPhone SE 320×568 claro /] campos de texto com letra >= 16px 
+OK      [iPhone SE 320×568 claro /transportes] sem scroll lateral scrollW=320 vw=320
+OK      [iPhone SE 320×568 claro /transportes] nada sai do ecrã para o lado 
+OK      [iPhone SE 320×568 claro /transportes] barra de baixo inteira no ecrã fundo=568 vh=568
+OK      [iPhone SE 320×568 claro /transportes] todos os botões da barra recebem o toque 
+OK      [iPhone SE 320×568 claro /transportes] campos de texto com letra >= 16px 
+OK      [iPhone SE 320×568 claro /mapa] sem scroll lateral scrollW=320 vw=320
+OK      [iPhone SE 320×568 claro /mapa] nada sai do ecrã para o lado 
+OK      [iPhone SE 320×568 claro /mapa] barra de baixo inteira no ecrã fundo=568 vh=568
+OK      [iPhone SE 320×568 claro /mapa] todos os botões da barra recebem o toque 
+OK      [iPhone SE 320×568 claro /mapa] campos de texto com letra >= 16px 
+OK      [iPhone SE 320×568 claro /alertas] sem scroll lateral scrollW=320 vw=320
+OK      [iPhone SE 320×568 claro /alertas] nada sai do ecrã para o lado 
+OK      [iPhone SE 320×568 claro /alertas] barra de baixo inteira no ecrã fundo=568 vh=568
+OK      [iPhone SE 320×568 claro /alertas] todos os botões da barra recebem o toque 
+OK      [iPhone SE 320×568 claro /alertas] campos de texto com letra >= 16px 
+OK      [iPhone SE 320×568 claro /comunidade] sem scroll lateral scrollW=320 vw=320
+OK      [iPhone SE 320×568 claro /comunidade] nada sai do ecrã para o lado 
+OK      [iPhone SE 320×568 claro /comunidade] barra de baixo inteira no ecrã fundo=568 vh=568
+OK      [iPhone SE 320×568 claro /comunidade] todos os botões da barra recebem o toque 
+OK      [iPhone SE 320×568 claro /comunidade] campos de texto com letra >= 16px 
+OK      [iPhone SE 320×568 claro /favoritos] sem scroll lateral scrollW=320 vw=320
+OK      [iPhone SE 320×568 claro /favoritos] nada sai do ecrã para o lado 
+OK      [iPhone SE 320×568 claro /favoritos] barra de baixo inteira no ecrã fundo=568 vh=568
+OK      [iPhone SE 320×568 claro /favoritos] todos os botões da barra recebem o toque 
+OK      [iPhone SE 320×568 claro /favoritos] campos de texto com letra >= 16px 
+OK      [iPhone SE 320×568 claro] Perto: a pesquisa de destino não provoca zoom no iOS (letra >= 16px) letra=16px
+OK      [iPhone SE 320×568 claro] Perto: a escala da página fica em 1 ao tocar na pesquisa 1
+OK      [iPhone SE 320×568 claro] Perto: com a pesquisa aberta nada sai do ecrã 
+OK      [iPhone SE 320×568 claro] Entrar: a janela cabe no ecrã (ou desliza) {"topo":83,"fundo":486,"esq":16,"dir":304,"vw":320,"vh":568,"rola":false,"interno":false,"campos":[16,16]}
+OK      [iPhone SE 320×568 claro] Entrar: campos com letra >= 16px (sem zoom no iOS) 16,16
+OK      [iPhone SE 320×568 claro] Notificações: a janela cabe no ecrã (ou desliza) {"topo":0,"fundo":568,"esq":0,"dir":320,"vw":320,"vh":568,"rola":false,"interno":true,"campos":[]}
+OK      [iPhone SE 320×568 claro] Notificações: campos com letra >= 16px (sem zoom no iOS) 
+OK      [iPhone SE 320×568 claro] Publicar: a janela cabe no ecrã (ou desliza) {"topo":83,"fundo":486,"esq":16,"dir":299,"vw":320,"vh":568,"rola":false,"interno":false,"campos":[16,16]}
+OK      [iPhone SE 320×568 claro] Publicar: campos com letra >= 16px (sem zoom no iOS) 16,16
+OK      [iPhone SE 320×568 claro] sem erros de consola 
+OK      [iPhone SE 320×568 escuro /] sem scroll lateral scrollW=320 vw=320
+OK      [iPhone SE 320×568 escuro /] nada sai do ecrã para o lado 
+OK      [iPhone SE 320×568 escuro /] barra de baixo inteira no ecrã fundo=568 vh=568
+OK      [iPhone SE 320×568 escuro /] todos os botões da barra recebem o toque 
+OK      [iPhone SE 320×568 escuro /] campos de texto com letra >= 16px 
+OK      [iPhone SE 320×568 escuro /transportes] sem scroll lateral scrollW=320 vw=320
+OK      [iPhone SE 320×568 escuro /transportes] nada sai do ecrã para o lado 
+OK      [iPhone SE 320×568 escuro /transportes] barra de baixo inteira no ecrã fundo=568 vh=568
+OK      [iPhone SE 320×568 escuro /transportes] todos os botões da barra recebem o toque 
+OK      [iPhone SE 320×568 escuro /transportes] campos de texto com letra >= 16px 
+OK      [iPhone SE 320×568 escuro /mapa] sem scroll lateral scrollW=320 vw=320
+OK      [iPhone SE 320×568 escuro /mapa] nada sai do ecrã para o lado 
+OK      [iPhone SE 320×568 escuro /mapa] barra de baixo inteira no ecrã fundo=568 vh=568
+OK      [iPhone SE 320×568 escuro /mapa] todos os botões da barra recebem o toque 
+OK      [iPhone SE 320×568 escuro /mapa] campos de texto com letra >= 16px 
+OK      [iPhone SE 320×568 escuro /alertas] sem scroll lateral scrollW=320 vw=320
+OK      [iPhone SE 320×568 escuro /alertas] nada sai do ecrã para o lado 
+OK      [iPhone SE 320×568 escuro /alertas] barra de baixo inteira no ecrã fundo=568 vh=568
+OK      [iPhone SE 320×568 escuro /alertas] todos os botões da barra recebem o toque 
+OK      [iPhone SE 320×568 escuro /alertas] campos de texto com letra >= 16px 
+OK      [iPhone SE 320×568 escuro /comunidade] sem scroll lateral scrollW=320 vw=320
+OK      [iPhone SE 320×568 escuro /comunidade] nada sai do ecrã para o lado 
+OK      [iPhone SE 320×568 escuro /comunidade] barra de baixo inteira no ecrã fundo=568 vh=568
+OK      [iPhone SE 320×568 escuro /comunidade] todos os botões da barra recebem o toque 
+OK      [iPhone SE 320×568 escuro /comunidade] campos de texto com letra >= 16px 
+OK      [iPhone SE 320×568 escuro /favoritos] sem scroll lateral scrollW=320 vw=320
+OK      [iPhone SE 320×568 escuro /favoritos] nada sai do ecrã para o lado 
+OK      [iPhone SE 320×568 escuro /favoritos] barra de baixo inteira no ecrã fundo=568 vh=568
+OK      [iPhone SE 320×568 escuro /favoritos] todos os botões da barra recebem o toque 
+OK      [iPhone SE 320×568 escuro /favoritos] campos de texto com letra >= 16px 
+OK      [iPhone SE 320×568 escuro] Perto: a pesquisa de destino não provoca zoom no iOS (letra >= 16px) letra=16px
+OK      [iPhone SE 320×568 escuro] Perto: a escala da página fica em 1 ao tocar na pesquisa 1
+OK      [iPhone SE 320×568 escuro] Perto: com a pesquisa aberta nada sai do ecrã 
+OK      [iPhone SE 320×568 escuro] Entrar: a janela cabe no ecrã (ou desliza) {"topo":83,"fundo":486,"esq":16,"dir":304,"vw":320,"vh":568,"rola":false,"interno":false,"campos":[16,16]}
+OK      [iPhone SE 320×568 escuro] Entrar: campos com letra >= 16px (sem zoom no iOS) 16,16
+OK      [iPhone SE 320×568 escuro] Notificações: a janela cabe no ecrã (ou desliza) {"topo":0,"fundo":568,"esq":0,"dir":320,"vw":320,"vh":568,"rola":false,"interno":true,"campos":[]}
+OK      [iPhone SE 320×568 escuro] Notificações: campos com letra >= 16px (sem zoom no iOS) 
+OK      [iPhone SE 320×568 escuro] Publicar: a janela cabe no ecrã (ou desliza) {"topo":83,"fundo":486,"esq":16,"dir":299,"vw":320,"vh":568,"rola":false,"interno":false,"campos":[16,16]}
+OK      [iPhone SE 320×568 escuro] Publicar: campos com letra >= 16px (sem zoom no iOS) 16,16
+OK      [iPhone SE 320×568 escuro] sem erros de consola 
+OK      [iPhone SE 320×568 ambar /] sem scroll lateral scrollW=320 vw=320
+OK      [iPhone SE 320×568 ambar /] nada sai do ecrã para o lado 
+OK      [iPhone SE 320×568 ambar /] barra de baixo inteira no ecrã fundo=568 vh=568
+OK      [iPhone SE 320×568 ambar /] todos os botões da barra recebem o toque 
+OK      [iPhone SE 320×568 ambar /] campos de texto com letra >= 16px 
+OK      [iPhone SE 320×568 ambar /transportes] sem scroll lateral scrollW=320 vw=320
+OK      [iPhone SE 320×568 ambar /transportes] nada sai do ecrã para o lado 
+OK      [iPhone SE 320×568 ambar /transportes] barra de baixo inteira no ecrã fundo=568 vh=568
+OK      [iPhone SE 320×568 ambar /transportes] todos os botões da barra recebem o toque 
+OK      [iPhone SE 320×568 ambar /transportes] campos de texto com letra >= 16px 
+OK      [iPhone SE 320×568 ambar /mapa] sem scroll lateral scrollW=320 vw=320
+OK      [iPhone SE 320×568 ambar /mapa] nada sai do ecrã para o lado 
+OK      [iPhone SE 320×568 ambar /mapa] barra de baixo inteira no ecrã fundo=568 vh=568
+OK      [iPhone SE 320×568 ambar /mapa] todos os botões da barra recebem o toque 
+OK      [iPhone SE 320×568 ambar /mapa] campos de texto com letra >= 16px 
+OK      [iPhone SE 320×568 ambar /alertas] sem scroll lateral scrollW=320 vw=320
+OK      [iPhone SE 320×568 ambar /alertas] nada sai do ecrã para o lado 
+OK      [iPhone SE 320×568 ambar /alertas] barra de baixo inteira no ecrã fundo=568 vh=568
+OK      [iPhone SE 320×568 ambar /alertas] todos os botões da barra recebem o toque 
+OK      [iPhone SE 320×568 ambar /alertas] campos de texto com letra >= 16px 
+OK      [iPhone SE 320×568 ambar /comunidade] sem scroll lateral scrollW=320 vw=320
+OK      [iPhone SE 320×568 ambar /comunidade] nada sai do ecrã para o lado 
+OK      [iPhone SE 320×568 ambar /comunidade] barra de baixo inteira no ecrã fundo=568 vh=568
+OK      [iPhone SE 320×568 ambar /comunidade] todos os botões da barra recebem o toque 
+OK      [iPhone SE 320×568 ambar /comunidade] campos de texto com letra >= 16px 
+OK      [iPhone SE 320×568 ambar /favoritos] sem scroll lateral scrollW=320 vw=320
+OK      [iPhone SE 320×568 ambar /favoritos] nada sai do ecrã para o lado 
+OK      [iPhone SE 320×568 ambar /favoritos] barra de baixo inteira no ecrã fundo=568 vh=568
+OK      [iPhone SE 320×568 ambar /favoritos] todos os botões da barra recebem o toque 
+OK      [iPhone SE 320×568 ambar /favoritos] campos de texto com letra >= 16px 
+OK      [iPhone SE 320×568 ambar] sem erros de consola 
+OK      [iPhone 8 375×667 claro /] sem scroll lateral scrollW=375 vw=375
+OK      [iPhone 8 375×667 claro /] nada sai do ecrã para o lado 
+OK      [iPhone 8 375×667 claro /] barra de baixo inteira no ecrã fundo=667 vh=667
+OK      [iPhone 8 375×667 claro /] todos os botões da barra recebem o toque 
+OK      [iPhone 8 375×667 claro /] campos de texto com letra >= 16px 
+OK      [iPhone 8 375×667 claro /transportes] sem scroll lateral scrollW=375 vw=375
+OK      [iPhone 8 375×667 claro /transportes] nada sai do ecrã para o lado 
+OK      [iPhone 8 375×667 claro /transportes] barra de baixo inteira no ecrã fundo=667 vh=667
+OK      [iPhone 8 375×667 claro /transportes] todos os botões da barra recebem o toque 
+OK      [iPhone 8 375×667 claro /transportes] campos de texto com letra >= 16px 
+OK      [iPhone 8 375×667 claro /mapa] sem scroll lateral scrollW=375 vw=375
+OK      [iPhone 8 375×667 claro /mapa] nada sai do ecrã para o lado 
+OK      [iPhone 8 375×667 claro /mapa] barra de baixo inteira no ecrã fundo=667 vh=667
+OK      [iPhone 8 375×667 claro /mapa] todos os botões da barra recebem o toque 
+OK      [iPhone 8 375×667 claro /mapa] campos de texto com letra >= 16px 
+OK      [iPhone 8 375×667 claro /alertas] sem scroll lateral scrollW=375 vw=375
+OK      [iPhone 8 375×667 claro /alertas] nada sai do ecrã para o lado 
+OK      [iPhone 8 375×667 claro /alertas] barra de baixo inteira no ecrã fundo=667 vh=667
+OK      [iPhone 8 375×667 claro /alertas] todos os botões da barra recebem o toque 
+OK      [iPhone 8 375×667 claro /alertas] campos de texto com letra >= 16px 
+OK      [iPhone 8 375×667 claro /comunidade] sem scroll lateral scrollW=375 vw=375
+OK      [iPhone 8 375×667 claro /comunidade] nada sai do ecrã para o lado 
+OK      [iPhone 8 375×667 claro /comunidade] barra de baixo inteira no ecrã fundo=667 vh=667
+OK      [iPhone 8 375×667 claro /comunidade] todos os botões da barra recebem o toque 
+OK      [iPhone 8 375×667 claro /comunidade] campos de texto com letra >= 16px 
+OK      [iPhone 8 375×667 claro /favoritos] sem scroll lateral scrollW=375 vw=375
+OK      [iPhone 8 375×667 claro /favoritos] nada sai do ecrã para o lado 
+OK      [iPhone 8 375×667 claro /favoritos] barra de baixo inteira no ecrã fundo=667 vh=667
+OK      [iPhone 8 375×667 claro /favoritos] todos os botões da barra recebem o toque 
+OK      [iPhone 8 375×667 claro /favoritos] campos de texto com letra >= 16px 
+OK      [iPhone 8 375×667 claro] Perto: a pesquisa de destino não provoca zoom no iOS (letra >= 16px) letra=16px
+OK      [iPhone 8 375×667 claro] Perto: a escala da página fica em 1 ao tocar na pesquisa 1
+OK      [iPhone 8 375×667 claro] Perto: com a pesquisa aberta nada sai do ecrã 
+OK      [iPhone 8 375×667 claro] Entrar: a janela cabe no ecrã (ou desliza) {"topo":132,"fundo":535,"esq":16,"dir":359,"vw":375,"vh":667,"rola":false,"interno":false,"campos":[16,16]}
+OK      [iPhone 8 375×667 claro] Entrar: campos com letra >= 16px (sem zoom no iOS) 16,16
+OK      [iPhone 8 375×667 claro] Notificações: a janela cabe no ecrã (ou desliza) {"topo":0,"fundo":667,"esq":0,"dir":375,"vw":375,"vh":667,"rola":false,"interno":true,"campos":[]}
+OK      [iPhone 8 375×667 claro] Notificações: campos com letra >= 16px (sem zoom no iOS) 
+OK      [iPhone 8 375×667 claro] Publicar: a janela cabe no ecrã (ou desliza) {"topo":132,"fundo":535,"esq":16,"dir":354,"vw":375,"vh":667,"rola":false,"interno":false,"campos":[16,16]}
+OK      [iPhone 8 375×667 claro] Publicar: campos com letra >= 16px (sem zoom no iOS) 16,16
+OK      [iPhone 8 375×667 claro] sem erros de consola 
+OK      [iPhone 12 Mini 375×629 claro /] sem scroll lateral scrollW=375 vw=375
+OK      [iPhone 12 Mini 375×629 claro /] nada sai do ecrã para o lado 
+OK      [iPhone 12 Mini 375×629 claro /] barra de baixo inteira no ecrã fundo=629 vh=629
+OK      [iPhone 12 Mini 375×629 claro /] todos os botões da barra recebem o toque 
+OK      [iPhone 12 Mini 375×629 claro /] campos de texto com letra >= 16px 
+OK      [iPhone 12 Mini 375×629 claro /transportes] sem scroll lateral scrollW=375 vw=375
+OK      [iPhone 12 Mini 375×629 claro /transportes] nada sai do ecrã para o lado 
+OK      [iPhone 12 Mini 375×629 claro /transportes] barra de baixo inteira no ecrã fundo=629 vh=629
+OK      [iPhone 12 Mini 375×629 claro /transportes] todos os botões da barra recebem o toque 
+OK      [iPhone 12 Mini 375×629 claro /transportes] campos de texto com letra >= 16px 
+OK      [iPhone 12 Mini 375×629 claro /mapa] sem scroll lateral scrollW=375 vw=375
+OK      [iPhone 12 Mini 375×629 claro /mapa] nada sai do ecrã para o lado 
+OK      [iPhone 12 Mini 375×629 claro /mapa] barra de baixo inteira no ecrã fundo=629 vh=629
+OK      [iPhone 12 Mini 375×629 claro /mapa] todos os botões da barra recebem o toque 
+OK      [iPhone 12 Mini 375×629 claro /mapa] campos de texto com letra >= 16px 
+OK      [iPhone 12 Mini 375×629 claro /alertas] sem scroll lateral scrollW=375 vw=375
+OK      [iPhone 12 Mini 375×629 claro /alertas] nada sai do ecrã para o lado 
+OK      [iPhone 12 Mini 375×629 claro /alertas] barra de baixo inteira no ecrã fundo=629 vh=629
+OK      [iPhone 12 Mini 375×629 claro /alertas] todos os botões da barra recebem o toque 
+OK      [iPhone 12 Mini 375×629 claro /alertas] campos de texto com letra >= 16px 
+OK      [iPhone 12 Mini 375×629 claro /comunidade] sem scroll lateral scrollW=375 vw=375
+OK      [iPhone 12 Mini 375×629 claro /comunidade] nada sai do ecrã para o lado 
+OK      [iPhone 12 Mini 375×629 claro /comunidade] barra de baixo inteira no ecrã fundo=629 vh=629
+OK      [iPhone 12 Mini 375×629 claro /comunidade] todos os botões da barra recebem o toque 
+OK      [iPhone 12 Mini 375×629 claro /comunidade] campos de texto com letra >= 16px 
+OK      [iPhone 12 Mini 375×629 claro /favoritos] sem scroll lateral scrollW=375 vw=375
+OK      [iPhone 12 Mini 375×629 claro /favoritos] nada sai do ecrã para o lado 
+OK      [iPhone 12 Mini 375×629 claro /favoritos] barra de baixo inteira no ecrã fundo=629 vh=629
+OK      [iPhone 12 Mini 375×629 claro /favoritos] todos os botões da barra recebem o toque 
+OK      [iPhone 12 Mini 375×629 claro /favoritos] campos de texto com letra >= 16px 
+OK      [iPhone 12 Mini 375×629 claro] Perto: a pesquisa de destino não provoca zoom no iOS (letra >= 16px) letra=16px
+OK      [iPhone 12 Mini 375×629 claro] Perto: a escala da página fica em 1 ao tocar na pesquisa 1
+OK      [iPhone 12 Mini 375×629 claro] Perto: com a pesquisa aberta nada sai do ecrã 
+OK      [iPhone 12 Mini 375×629 claro] Entrar: a janela cabe no ecrã (ou desliza) {"topo":113,"fundo":516,"esq":16,"dir":359,"vw":375,"vh":629,"rola":false,"interno":false,"campos":[16,16]}
+OK      [iPhone 12 Mini 375×629 claro] Entrar: campos com letra >= 16px (sem zoom no iOS) 16,16
+OK      [iPhone 12 Mini 375×629 claro] Notificações: a janela cabe no ecrã (ou desliza) {"topo":0,"fundo":629,"esq":0,"dir":375,"vw":375,"vh":629,"rola":false,"interno":true,"campos":[]}
+OK      [iPhone 12 Mini 375×629 claro] Notificações: campos com letra >= 16px (sem zoom no iOS) 
+OK      [iPhone 12 Mini 375×629 claro] Publicar: a janela cabe no ecrã (ou desliza) {"topo":113,"fundo":516,"esq":16,"dir":354,"vw":375,"vh":629,"rola":false,"interno":false,"campos":[16,16]}
+OK      [iPhone 12 Mini 375×629 claro] Publicar: campos com letra >= 16px (sem zoom no iOS) 16,16
+OK      [iPhone 12 Mini 375×629 claro] sem erros de consola 
+OK      [iPhone 12 Mini 375×629 escuro /] sem scroll lateral scrollW=375 vw=375
+OK      [iPhone 12 Mini 375×629 escuro /] nada sai do ecrã para o lado 
+OK      [iPhone 12 Mini 375×629 escuro /] barra de baixo inteira no ecrã fundo=629 vh=629
+OK      [iPhone 12 Mini 375×629 escuro /] todos os botões da barra recebem o toque 
+OK      [iPhone 12 Mini 375×629 escuro /] campos de texto com letra >= 16px 
+OK      [iPhone 12 Mini 375×629 escuro /transportes] sem scroll lateral scrollW=375 vw=375
+OK      [iPhone 12 Mini 375×629 escuro /transportes] nada sai do ecrã para o lado 
+OK      [iPhone 12 Mini 375×629 escuro /transportes] barra de baixo inteira no ecrã fundo=629 vh=629
+OK      [iPhone 12 Mini 375×629 escuro /transportes] todos os botões da barra recebem o toque 
+OK      [iPhone 12 Mini 375×629 escuro /transportes] campos de texto com letra >= 16px 
+OK      [iPhone 12 Mini 375×629 escuro /mapa] sem scroll lateral scrollW=375 vw=375
+OK      [iPhone 12 Mini 375×629 escuro /mapa] nada sai do ecrã para o lado 
+OK      [iPhone 12 Mini 375×629 escuro /mapa] barra de baixo inteira no ecrã fundo=629 vh=629
+OK      [iPhone 12 Mini 375×629 escuro /mapa] todos os botões da barra recebem o toque 
+OK      [iPhone 12 Mini 375×629 escuro /mapa] campos de texto com letra >= 16px 
+OK      [iPhone 12 Mini 375×629 escuro /alertas] sem scroll lateral scrollW=375 vw=375
+OK      [iPhone 12 Mini 375×629 escuro /alertas] nada sai do ecrã para o lado 
+OK      [iPhone 12 Mini 375×629 escuro /alertas] barra de baixo inteira no ecrã fundo=629 vh=629
+OK      [iPhone 12 Mini 375×629 escuro /alertas] todos os botões da barra recebem o toque 
+OK      [iPhone 12 Mini 375×629 escuro /alertas] campos de texto com letra >= 16px 
+OK      [iPhone 12 Mini 375×629 escuro /comunidade] sem scroll lateral scrollW=375 vw=375
+OK      [iPhone 12 Mini 375×629 escuro /comunidade] nada sai do ecrã para o lado 
+OK      [iPhone 12 Mini 375×629 escuro /comunidade] barra de baixo inteira no ecrã fundo=629 vh=629
+OK      [iPhone 12 Mini 375×629 escuro /comunidade] todos os botões da barra recebem o toque 
+OK      [iPhone 12 Mini 375×629 escuro /comunidade] campos de texto com letra >= 16px 
+OK      [iPhone 12 Mini 375×629 escuro /favoritos] sem scroll lateral scrollW=375 vw=375
+OK      [iPhone 12 Mini 375×629 escuro /favoritos] nada sai do ecrã para o lado 
+OK      [iPhone 12 Mini 375×629 escuro /favoritos] barra de baixo inteira no ecrã fundo=629 vh=629
+OK      [iPhone 12 Mini 375×629 escuro /favoritos] todos os botões da barra recebem o toque 
+OK      [iPhone 12 Mini 375×629 escuro /favoritos] campos de texto com letra >= 16px 
+OK      [iPhone 12 Mini 375×629 escuro] Perto: a pesquisa de destino não provoca zoom no iOS (letra >= 16px) letra=16px
+OK      [iPhone 12 Mini 375×629 escuro] Perto: a escala da página fica em 1 ao tocar na pesquisa 1
+OK      [iPhone 12 Mini 375×629 escuro] Perto: com a pesquisa aberta nada sai do ecrã 
+OK      [iPhone 12 Mini 375×629 escuro] Entrar: a janela cabe no ecrã (ou desliza) {"topo":113,"fundo":516,"esq":16,"dir":359,"vw":375,"vh":629,"rola":false,"interno":false,"campos":[16,16]}
+OK      [iPhone 12 Mini 375×629 escuro] Entrar: campos com letra >= 16px (sem zoom no iOS) 16,16
+OK      [iPhone 12 Mini 375×629 escuro] Notificações: a janela cabe no ecrã (ou desliza) {"topo":0,"fundo":629,"esq":0,"dir":375,"vw":375,"vh":629,"rola":false,"interno":true,"campos":[]}
+OK      [iPhone 12 Mini 375×629 escuro] Notificações: campos com letra >= 16px (sem zoom no iOS) 
+OK      [iPhone 12 Mini 375×629 escuro] Publicar: a janela cabe no ecrã (ou desliza) {"topo":113,"fundo":516,"esq":16,"dir":354,"vw":375,"vh":629,"rola":false,"interno":false,"campos":[16,16]}
+OK      [iPhone 12 Mini 375×629 escuro] Publicar: campos com letra >= 16px (sem zoom no iOS) 16,16
+OK      [iPhone 12 Mini 375×629 escuro] sem erros de consola 
+OK      [iPhone 12 Mini 375×629 ambar /] sem scroll lateral scrollW=375 vw=375
+OK      [iPhone 12 Mini 375×629 ambar /] nada sai do ecrã para o lado 
+OK      [iPhone 12 Mini 375×629 ambar /] barra de baixo inteira no ecrã fundo=629 vh=629
+OK      [iPhone 12 Mini 375×629 ambar /] todos os botões da barra recebem o toque 
+OK      [iPhone 12 Mini 375×629 ambar /] campos de texto com letra >= 16px 
+OK      [iPhone 12 Mini 375×629 ambar /transportes] sem scroll lateral scrollW=375 vw=375
+OK      [iPhone 12 Mini 375×629 ambar /transportes] nada sai do ecrã para o lado 
+OK      [iPhone 12 Mini 375×629 ambar /transportes] barra de baixo inteira no ecrã fundo=629 vh=629
+OK      [iPhone 12 Mini 375×629 ambar /transportes] todos os botões da barra recebem o toque 
+OK      [iPhone 12 Mini 375×629 ambar /transportes] campos de texto com letra >= 16px 
+OK      [iPhone 12 Mini 375×629 ambar /mapa] sem scroll lateral scrollW=375 vw=375
+OK      [iPhone 12 Mini 375×629 ambar /mapa] nada sai do ecrã para o lado 
+OK      [iPhone 12 Mini 375×629 ambar /mapa] barra de baixo inteira no ecrã fundo=629 vh=629
+OK      [iPhone 12 Mini 375×629 ambar /mapa] todos os botões da barra recebem o toque 
+OK      [iPhone 12 Mini 375×629 ambar /mapa] campos de texto com letra >= 16px 
+OK      [iPhone 12 Mini 375×629 ambar /alertas] sem scroll lateral scrollW=375 vw=375
+OK      [iPhone 12 Mini 375×629 ambar /alertas] nada sai do ecrã para o lado 
+OK      [iPhone 12 Mini 375×629 ambar /alertas] barra de baixo inteira no ecrã fundo=629 vh=629
+OK      [iPhone 12 Mini 375×629 ambar /alertas] todos os botões da barra recebem o toque 
+OK      [iPhone 12 Mini 375×629 ambar /alertas] campos de texto com letra >= 16px 
+OK      [iPhone 12 Mini 375×629 ambar /comunidade] sem scroll lateral scrollW=375 vw=375
+OK      [iPhone 12 Mini 375×629 ambar /comunidade] nada sai do ecrã para o lado 
+OK      [iPhone 12 Mini 375×629 ambar /comunidade] barra de baixo inteira no ecrã fundo=629 vh=629
+OK      [iPhone 12 Mini 375×629 ambar /comunidade] todos os botões da barra recebem o toque 
+OK      [iPhone 12 Mini 375×629 ambar /comunidade] campos de texto com letra >= 16px 
+OK      [iPhone 12 Mini 375×629 ambar /favoritos] sem scroll lateral scrollW=375 vw=375
+OK      [iPhone 12 Mini 375×629 ambar /favoritos] nada sai do ecrã para o lado 
+OK      [iPhone 12 Mini 375×629 ambar /favoritos] barra de baixo inteira no ecrã fundo=629 vh=629
+OK      [iPhone 12 Mini 375×629 ambar /favoritos] todos os botões da barra recebem o toque 
+OK      [iPhone 12 Mini 375×629 ambar /favoritos] campos de texto com letra >= 16px 
+OK      [iPhone 12 Mini 375×629 ambar] sem erros de consola 
+OK      [iPhone 13 Mini 375×629 claro /] sem scroll lateral scrollW=375 vw=375
+OK      [iPhone 13 Mini 375×629 claro /] nada sai do ecrã para o lado 
+OK      [iPhone 13 Mini 375×629 claro /] barra de baixo inteira no ecrã fundo=629 vh=629
+OK      [iPhone 13 Mini 375×629 claro /] todos os botões da barra recebem o toque 
+OK      [iPhone 13 Mini 375×629 claro /] campos de texto com letra >= 16px 
+OK      [iPhone 13 Mini 375×629 claro /transportes] sem scroll lateral scrollW=375 vw=375
+OK      [iPhone 13 Mini 375×629 claro /transportes] nada sai do ecrã para o lado 
+OK      [iPhone 13 Mini 375×629 claro /transportes] barra de baixo inteira no ecrã fundo=629 vh=629
+OK      [iPhone 13 Mini 375×629 claro /transportes] todos os botões da barra recebem o toque 
+OK      [iPhone 13 Mini 375×629 claro /transportes] campos de texto com letra >= 16px 
+OK      [iPhone 13 Mini 375×629 claro /mapa] sem scroll lateral scrollW=375 vw=375
+OK      [iPhone 13 Mini 375×629 claro /mapa] nada sai do ecrã para o lado 
+OK      [iPhone 13 Mini 375×629 claro /mapa] barra de baixo inteira no ecrã fundo=629 vh=629
+OK      [iPhone 13 Mini 375×629 claro /mapa] todos os botões da barra recebem o toque 
+OK      [iPhone 13 Mini 375×629 claro /mapa] campos de texto com letra >= 16px 
+OK      [iPhone 13 Mini 375×629 claro /alertas] sem scroll lateral scrollW=375 vw=375
+OK      [iPhone 13 Mini 375×629 claro /alertas] nada sai do ecrã para o lado 
+OK      [iPhone 13 Mini 375×629 claro /alertas] barra de baixo inteira no ecrã fundo=629 vh=629
+OK      [iPhone 13 Mini 375×629 claro /alertas] todos os botões da barra recebem o toque 
+OK      [iPhone 13 Mini 375×629 claro /alertas] campos de texto com letra >= 16px 
+OK      [iPhone 13 Mini 375×629 claro /comunidade] sem scroll lateral scrollW=375 vw=375
+OK      [iPhone 13 Mini 375×629 claro /comunidade] nada sai do ecrã para o lado 
+OK      [iPhone 13 Mini 375×629 claro /comunidade] barra de baixo inteira no ecrã fundo=629 vh=629
+OK      [iPhone 13 Mini 375×629 claro /comunidade] todos os botões da barra recebem o toque 
+OK      [iPhone 13 Mini 375×629 claro /comunidade] campos de texto com letra >= 16px 
+OK      [iPhone 13 Mini 375×629 claro /favoritos] sem scroll lateral scrollW=375 vw=375
+OK      [iPhone 13 Mini 375×629 claro /favoritos] nada sai do ecrã para o lado 
+OK      [iPhone 13 Mini 375×629 claro /favoritos] barra de baixo inteira no ecrã fundo=629 vh=629
+OK      [iPhone 13 Mini 375×629 claro /favoritos] todos os botões da barra recebem o toque 
+OK      [iPhone 13 Mini 375×629 claro /favoritos] campos de texto com letra >= 16px 
+OK      [iPhone 13 Mini 375×629 claro] Perto: a pesquisa de destino não provoca zoom no iOS (letra >= 16px) letra=16px
+OK      [iPhone 13 Mini 375×629 claro] Perto: a escala da página fica em 1 ao tocar na pesquisa 1
+OK      [iPhone 13 Mini 375×629 claro] Perto: com a pesquisa aberta nada sai do ecrã 
+OK      [iPhone 13 Mini 375×629 claro] Entrar: a janela cabe no ecrã (ou desliza) {"topo":113,"fundo":516,"esq":16,"dir":359,"vw":375,"vh":629,"rola":false,"interno":false,"campos":[16,16]}
+OK      [iPhone 13 Mini 375×629 claro] Entrar: campos com letra >= 16px (sem zoom no iOS) 16,16
+OK      [iPhone 13 Mini 375×629 claro] Notificações: a janela cabe no ecrã (ou desliza) {"topo":0,"fundo":629,"esq":0,"dir":375,"vw":375,"vh":629,"rola":false,"interno":true,"campos":[]}
+OK      [iPhone 13 Mini 375×629 claro] Notificações: campos com letra >= 16px (sem zoom no iOS) 
+OK      [iPhone 13 Mini 375×629 claro] Publicar: a janela cabe no ecrã (ou desliza) {"topo":113,"fundo":516,"esq":16,"dir":354,"vw":375,"vh":629,"rola":false,"interno":false,"campos":[16,16]}
+OK      [iPhone 13 Mini 375×629 claro] Publicar: campos com letra >= 16px (sem zoom no iOS) 16,16
+OK      [iPhone 13 Mini 375×629 claro] sem erros de consola 
+OK      [iPhone 13 Mini 375×629 escuro /] sem scroll lateral scrollW=375 vw=375
+OK      [iPhone 13 Mini 375×629 escuro /] nada sai do ecrã para o lado 
+OK      [iPhone 13 Mini 375×629 escuro /] barra de baixo inteira no ecrã fundo=629 vh=629
+OK      [iPhone 13 Mini 375×629 escuro /] todos os botões da barra recebem o toque 
+OK      [iPhone 13 Mini 375×629 escuro /] campos de texto com letra >= 16px 
+OK      [iPhone 13 Mini 375×629 escuro /transportes] sem scroll lateral scrollW=375 vw=375
+OK      [iPhone 13 Mini 375×629 escuro /transportes] nada sai do ecrã para o lado 
+OK      [iPhone 13 Mini 375×629 escuro /transportes] barra de baixo inteira no ecrã fundo=629 vh=629
+OK      [iPhone 13 Mini 375×629 escuro /transportes] todos os botões da barra recebem o toque 
+OK      [iPhone 13 Mini 375×629 escuro /transportes] campos de texto com letra >= 16px 
+OK      [iPhone 13 Mini 375×629 escuro /mapa] sem scroll lateral scrollW=375 vw=375
+OK      [iPhone 13 Mini 375×629 escuro /mapa] nada sai do ecrã para o lado 
+OK      [iPhone 13 Mini 375×629 escuro /mapa] barra de baixo inteira no ecrã fundo=629 vh=629
+OK      [iPhone 13 Mini 375×629 escuro /mapa] todos os botões da barra recebem o toque 
+OK      [iPhone 13 Mini 375×629 escuro /mapa] campos de texto com letra >= 16px 
+OK      [iPhone 13 Mini 375×629 escuro /alertas] sem scroll lateral scrollW=375 vw=375
+OK      [iPhone 13 Mini 375×629 escuro /alertas] nada sai do ecrã para o lado 
+OK      [iPhone 13 Mini 375×629 escuro /alertas] barra de baixo inteira no ecrã fundo=629 vh=629
+OK      [iPhone 13 Mini 375×629 escuro /alertas] todos os botões da barra recebem o toque 
+OK      [iPhone 13 Mini 375×629 escuro /alertas] campos de texto com letra >= 16px 
+OK      [iPhone 13 Mini 375×629 escuro /comunidade] sem scroll lateral scrollW=375 vw=375
+OK      [iPhone 13 Mini 375×629 escuro /comunidade] nada sai do ecrã para o lado 
+OK      [iPhone 13 Mini 375×629 escuro /comunidade] barra de baixo inteira no ecrã fundo=629 vh=629
+OK      [iPhone 13 Mini 375×629 escuro /comunidade] todos os botões da barra recebem o toque 
+OK      [iPhone 13 Mini 375×629 escuro /comunidade] campos de texto com letra >= 16px 
+OK      [iPhone 13 Mini 375×629 escuro /favoritos] sem scroll lateral scrollW=375 vw=375
+OK      [iPhone 13 Mini 375×629 escuro /favoritos] nada sai do ecrã para o lado 
+OK      [iPhone 13 Mini 375×629 escuro /favoritos] barra de baixo inteira no ecrã fundo=629 vh=629
+OK      [iPhone 13 Mini 375×629 escuro /favoritos] todos os botões da barra recebem o toque 
+OK      [iPhone 13 Mini 375×629 escuro /favoritos] campos de texto com letra >= 16px 
+OK      [iPhone 13 Mini 375×629 escuro] Perto: a pesquisa de destino não provoca zoom no iOS (letra >= 16px) letra=16px
+OK      [iPhone 13 Mini 375×629 escuro] Perto: a escala da página fica em 1 ao tocar na pesquisa 1
+OK      [iPhone 13 Mini 375×629 escuro] Perto: com a pesquisa aberta nada sai do ecrã 
+OK      [iPhone 13 Mini 375×629 escuro] Entrar: a janela cabe no ecrã (ou desliza) {"topo":113,"fundo":516,"esq":16,"dir":359,"vw":375,"vh":629,"rola":false,"interno":false,"campos":[16,16]}
+OK      [iPhone 13 Mini 375×629 escuro] Entrar: campos com letra >= 16px (sem zoom no iOS) 16,16
+OK      [iPhone 13 Mini 375×629 escuro] Notificações: a janela cabe no ecrã (ou desliza) {"topo":0,"fundo":629,"esq":0,"dir":375,"vw":375,"vh":629,"rola":false,"interno":true,"campos":[]}
+OK      [iPhone 13 Mini 375×629 escuro] Notificações: campos com letra >= 16px (sem zoom no iOS) 
+OK      [iPhone 13 Mini 375×629 escuro] Publicar: a janela cabe no ecrã (ou desliza) {"topo":113,"fundo":516,"esq":16,"dir":354,"vw":375,"vh":629,"rola":false,"interno":false,"campos":[16,16]}
+OK      [iPhone 13 Mini 375×629 escuro] Publicar: campos com letra >= 16px (sem zoom no iOS) 16,16
+OK      [iPhone 13 Mini 375×629 escuro] sem erros de consola 
+OK      [iPhone 13 Mini 375×629 ambar /] sem scroll lateral scrollW=375 vw=375
+OK      [iPhone 13 Mini 375×629 ambar /] nada sai do ecrã para o lado 
+OK      [iPhone 13 Mini 375×629 ambar /] barra de baixo inteira no ecrã fundo=629 vh=629
+OK      [iPhone 13 Mini 375×629 ambar /] todos os botões da barra recebem o toque 
+OK      [iPhone 13 Mini 375×629 ambar /] campos de texto com letra >= 16px 
+OK      [iPhone 13 Mini 375×629 ambar /transportes] sem scroll lateral scrollW=375 vw=375
+OK      [iPhone 13 Mini 375×629 ambar /transportes] nada sai do ecrã para o lado 
+OK      [iPhone 13 Mini 375×629 ambar /transportes] barra de baixo inteira no ecrã fundo=629 vh=629
+OK      [iPhone 13 Mini 375×629 ambar /transportes] todos os botões da barra recebem o toque 
+OK      [iPhone 13 Mini 375×629 ambar /transportes] campos de texto com letra >= 16px 
+OK      [iPhone 13 Mini 375×629 ambar /mapa] sem scroll lateral scrollW=375 vw=375
+OK      [iPhone 13 Mini 375×629 ambar /mapa] nada sai do ecrã para o lado 
+OK      [iPhone 13 Mini 375×629 ambar /mapa] barra de baixo inteira no ecrã fundo=629 vh=629
+OK      [iPhone 13 Mini 375×629 ambar /mapa] todos os botões da barra recebem o toque 
+OK      [iPhone 13 Mini 375×629 ambar /mapa] campos de texto com letra >= 16px 
+OK      [iPhone 13 Mini 375×629 ambar /alertas] sem scroll lateral scrollW=375 vw=375
+OK      [iPhone 13 Mini 375×629 ambar /alertas] nada sai do ecrã para o lado 
+OK      [iPhone 13 Mini 375×629 ambar /alertas] barra de baixo inteira no ecrã fundo=629 vh=629
+OK      [iPhone 13 Mini 375×629 ambar /alertas] todos os botões da barra recebem o toque 
+OK      [iPhone 13 Mini 375×629 ambar /alertas] campos de texto com letra >= 16px 
+OK      [iPhone 13 Mini 375×629 ambar /comunidade] sem scroll lateral scrollW=375 vw=375
+OK      [iPhone 13 Mini 375×629 ambar /comunidade] nada sai do ecrã para o lado 
+OK      [iPhone 13 Mini 375×629 ambar /comunidade] barra de baixo inteira no ecrã fundo=629 vh=629
+OK      [iPhone 13 Mini 375×629 ambar /comunidade] todos os botões da barra recebem o toque 
+OK      [iPhone 13 Mini 375×629 ambar /comunidade] campos de texto com letra >= 16px 
+OK      [iPhone 13 Mini 375×629 ambar /favoritos] sem scroll lateral scrollW=375 vw=375
+OK      [iPhone 13 Mini 375×629 ambar /favoritos] nada sai do ecrã para o lado 
+OK      [iPhone 13 Mini 375×629 ambar /favoritos] barra de baixo inteira no ecrã fundo=629 vh=629
+OK      [iPhone 13 Mini 375×629 ambar /favoritos] todos os botões da barra recebem o toque 
+OK      [iPhone 13 Mini 375×629 ambar /favoritos] campos de texto com letra >= 16px 
+OK      [iPhone 13 Mini 375×629 ambar] sem erros de consola 
+OK      [iPhone 13 390×664 claro /] sem scroll lateral scrollW=390 vw=390
+OK      [iPhone 13 390×664 claro /] nada sai do ecrã para o lado 
+OK      [iPhone 13 390×664 claro /] barra de baixo inteira no ecrã fundo=664 vh=664
+OK      [iPhone 13 390×664 claro /] todos os botões da barra recebem o toque 
+OK      [iPhone 13 390×664 claro /] campos de texto com letra >= 16px 
+OK      [iPhone 13 390×664 claro /transportes] sem scroll lateral scrollW=390 vw=390
+OK      [iPhone 13 390×664 claro /transportes] nada sai do ecrã para o lado 
+OK      [iPhone 13 390×664 claro /transportes] barra de baixo inteira no ecrã fundo=664 vh=664
+OK      [iPhone 13 390×664 claro /transportes] todos os botões da barra recebem o toque 
+OK      [iPhone 13 390×664 claro /transportes] campos de texto com letra >= 16px 
+OK      [iPhone 13 390×664 claro /mapa] sem scroll lateral scrollW=390 vw=390
+OK      [iPhone 13 390×664 claro /mapa] nada sai do ecrã para o lado 
+OK      [iPhone 13 390×664 claro /mapa] barra de baixo inteira no ecrã fundo=664 vh=664
+OK      [iPhone 13 390×664 claro /mapa] todos os botões da barra recebem o toque 
+OK      [iPhone 13 390×664 claro /mapa] campos de texto com letra >= 16px 
+OK      [iPhone 13 390×664 claro /alertas] sem scroll lateral scrollW=390 vw=390
+OK      [iPhone 13 390×664 claro /alertas] nada sai do ecrã para o lado 
+OK      [iPhone 13 390×664 claro /alertas] barra de baixo inteira no ecrã fundo=664 vh=664
+OK      [iPhone 13 390×664 claro /alertas] todos os botões da barra recebem o toque 
+OK      [iPhone 13 390×664 claro /alertas] campos de texto com letra >= 16px 
+OK      [iPhone 13 390×664 claro /comunidade] sem scroll lateral scrollW=390 vw=390
+OK      [iPhone 13 390×664 claro /comunidade] nada sai do ecrã para o lado 
+OK      [iPhone 13 390×664 claro /comunidade] barra de baixo inteira no ecrã fundo=664 vh=664
+OK      [iPhone 13 390×664 claro /comunidade] todos os botões da barra recebem o toque 
+OK      [iPhone 13 390×664 claro /comunidade] campos de texto com letra >= 16px 
+OK      [iPhone 13 390×664 claro /favoritos] sem scroll lateral scrollW=390 vw=390
+OK      [iPhone 13 390×664 claro /favoritos] nada sai do ecrã para o lado 
+OK      [iPhone 13 390×664 claro /favoritos] barra de baixo inteira no ecrã fundo=664 vh=664
+OK      [iPhone 13 390×664 claro /favoritos] todos os botões da barra recebem o toque 
+OK      [iPhone 13 390×664 claro /favoritos] campos de texto com letra >= 16px 
+OK      [iPhone 13 390×664 claro] Perto: a pesquisa de destino não provoca zoom no iOS (letra >= 16px) letra=16px
+OK      [iPhone 13 390×664 claro] Perto: a escala da página fica em 1 ao tocar na pesquisa 1
+OK      [iPhone 13 390×664 claro] Perto: com a pesquisa aberta nada sai do ecrã 
+OK      [iPhone 13 390×664 claro] Entrar: a janela cabe no ecrã (ou desliza) {"topo":131,"fundo":534,"esq":16,"dir":374,"vw":390,"vh":664,"rola":false,"interno":false,"campos":[16,16]}
+OK      [iPhone 13 390×664 claro] Entrar: campos com letra >= 16px (sem zoom no iOS) 16,16
+OK      [iPhone 13 390×664 claro] Notificações: a janela cabe no ecrã (ou desliza) {"topo":0,"fundo":664,"esq":0,"dir":390,"vw":390,"vh":664,"rola":false,"interno":true,"campos":[]}
+OK      [iPhone 13 390×664 claro] Notificações: campos com letra >= 16px (sem zoom no iOS) 
+OK      [iPhone 13 390×664 claro] Publicar: a janela cabe no ecrã (ou desliza) {"topo":131,"fundo":534,"esq":16,"dir":369,"vw":390,"vh":664,"rola":false,"interno":false,"campos":[16,16]}
+OK      [iPhone 13 390×664 claro] Publicar: campos com letra >= 16px (sem zoom no iOS) 16,16
+OK      [iPhone 13 390×664 claro] sem erros de consola 
+OK      [iPhone 14 Pro Max 430×740 claro /] sem scroll lateral scrollW=430 vw=430
+OK      [iPhone 14 Pro Max 430×740 claro /] nada sai do ecrã para o lado 
+OK      [iPhone 14 Pro Max 430×740 claro /] barra de baixo inteira no ecrã fundo=740 vh=740
+OK      [iPhone 14 Pro Max 430×740 claro /] todos os botões da barra recebem o toque 
+OK      [iPhone 14 Pro Max 430×740 claro /] campos de texto com letra >= 16px 
+OK      [iPhone 14 Pro Max 430×740 claro /transportes] sem scroll lateral scrollW=430 vw=430
+OK      [iPhone 14 Pro Max 430×740 claro /transportes] nada sai do ecrã para o lado 
+OK      [iPhone 14 Pro Max 430×740 claro /transportes] barra de baixo inteira no ecrã fundo=740 vh=740
+OK      [iPhone 14 Pro Max 430×740 claro /transportes] todos os botões da barra recebem o toque 
+OK      [iPhone 14 Pro Max 430×740 claro /transportes] campos de texto com letra >= 16px 
+OK      [iPhone 14 Pro Max 430×740 claro /mapa] sem scroll lateral scrollW=430 vw=430
+OK      [iPhone 14 Pro Max 430×740 claro /mapa] nada sai do ecrã para o lado 
+OK      [iPhone 14 Pro Max 430×740 claro /mapa] barra de baixo inteira no ecrã fundo=740 vh=740
+OK      [iPhone 14 Pro Max 430×740 claro /mapa] todos os botões da barra recebem o toque 
+OK      [iPhone 14 Pro Max 430×740 claro /mapa] campos de texto com letra >= 16px 
+OK      [iPhone 14 Pro Max 430×740 claro /alertas] sem scroll lateral scrollW=430 vw=430
+OK      [iPhone 14 Pro Max 430×740 claro /alertas] nada sai do ecrã para o lado 
+OK      [iPhone 14 Pro Max 430×740 claro /alertas] barra de baixo inteira no ecrã fundo=740 vh=740
+OK      [iPhone 14 Pro Max 430×740 claro /alertas] todos os botões da barra recebem o toque 
+OK      [iPhone 14 Pro Max 430×740 claro /alertas] campos de texto com letra >= 16px 
+OK      [iPhone 14 Pro Max 430×740 claro /comunidade] sem scroll lateral scrollW=430 vw=430
+OK      [iPhone 14 Pro Max 430×740 claro /comunidade] nada sai do ecrã para o lado 
+OK      [iPhone 14 Pro Max 430×740 claro /comunidade] barra de baixo inteira no ecrã fundo=740 vh=740
+OK      [iPhone 14 Pro Max 430×740 claro /comunidade] todos os botões da barra recebem o toque 
+OK      [iPhone 14 Pro Max 430×740 claro /comunidade] campos de texto com letra >= 16px 
+OK      [iPhone 14 Pro Max 430×740 claro /favoritos] sem scroll lateral scrollW=430 vw=430
+OK      [iPhone 14 Pro Max 430×740 claro /favoritos] nada sai do ecrã para o lado 
+OK      [iPhone 14 Pro Max 430×740 claro /favoritos] barra de baixo inteira no ecrã fundo=740 vh=740
+OK      [iPhone 14 Pro Max 430×740 claro /favoritos] todos os botões da barra recebem o toque 
+OK      [iPhone 14 Pro Max 430×740 claro /favoritos] campos de texto com letra >= 16px 
+OK      [iPhone 14 Pro Max 430×740 claro] Perto: a pesquisa de destino não provoca zoom no iOS (letra >= 16px) letra=16px
+OK      [iPhone 14 Pro Max 430×740 claro] Perto: a escala da página fica em 1 ao tocar na pesquisa 1
+OK      [iPhone 14 Pro Max 430×740 claro] Perto: com a pesquisa aberta nada sai do ecrã 
+OK      [iPhone 14 Pro Max 430×740 claro] Entrar: a janela cabe no ecrã (ou desliza) {"topo":169,"fundo":572,"esq":23,"dir":407,"vw":430,"vh":740,"rola":false,"interno":false,"campos":[16,16]}
+OK      [iPhone 14 Pro Max 430×740 claro] Entrar: campos com letra >= 16px (sem zoom no iOS) 16,16
+OK      [iPhone 14 Pro Max 430×740 claro] Notificações: a janela cabe no ecrã (ou desliza) {"topo":0,"fundo":740,"esq":0,"dir":430,"vw":430,"vh":740,"rola":false,"interno":true,"campos":[]}
+OK      [iPhone 14 Pro Max 430×740 claro] Notificações: campos com letra >= 16px (sem zoom no iOS) 
+OK      [iPhone 14 Pro Max 430×740 claro] Publicar: a janela cabe no ecrã (ou desliza) {"topo":169,"fundo":572,"esq":21,"dir":405,"vw":430,"vh":740,"rola":false,"interno":false,"campos":[16,16]}
+OK      [iPhone 14 Pro Max 430×740 claro] Publicar: campos com letra >= 16px (sem zoom no iOS) 16,16
+OK      [iPhone 14 Pro Max 430×740 claro] sem erros de consola 
+OK      [iPhone 14 Pro Max 430×740 escuro /] sem scroll lateral scrollW=430 vw=430
+OK      [iPhone 14 Pro Max 430×740 escuro /] nada sai do ecrã para o lado 
+OK      [iPhone 14 Pro Max 430×740 escuro /] barra de baixo inteira no ecrã fundo=740 vh=740
+OK      [iPhone 14 Pro Max 430×740 escuro /] todos os botões da barra recebem o toque 
+OK      [iPhone 14 Pro Max 430×740 escuro /] campos de texto com letra >= 16px 
+OK      [iPhone 14 Pro Max 430×740 escuro /transportes] sem scroll lateral scrollW=430 vw=430
+OK      [iPhone 14 Pro Max 430×740 escuro /transportes] nada sai do ecrã para o lado 
+OK      [iPhone 14 Pro Max 430×740 escuro /transportes] barra de baixo inteira no ecrã fundo=740 vh=740
+OK      [iPhone 14 Pro Max 430×740 escuro /transportes] todos os botões da barra recebem o toque 
+OK      [iPhone 14 Pro Max 430×740 escuro /transportes] campos de texto com letra >= 16px 
+OK      [iPhone 14 Pro Max 430×740 escuro /mapa] sem scroll lateral scrollW=430 vw=430
+OK      [iPhone 14 Pro Max 430×740 escuro /mapa] nada sai do ecrã para o lado 
+OK      [iPhone 14 Pro Max 430×740 escuro /mapa] barra de baixo inteira no ecrã fundo=740 vh=740
+OK      [iPhone 14 Pro Max 430×740 escuro /mapa] todos os botões da barra recebem o toque 
+OK      [iPhone 14 Pro Max 430×740 escuro /mapa] campos de texto com letra >= 16px 
+OK      [iPhone 14 Pro Max 430×740 escuro /alertas] sem scroll lateral scrollW=430 vw=430
+OK      [iPhone 14 Pro Max 430×740 escuro /alertas] nada sai do ecrã para o lado 
+OK      [iPhone 14 Pro Max 430×740 escuro /alertas] barra de baixo inteira no ecrã fundo=740 vh=740
+OK      [iPhone 14 Pro Max 430×740 escuro /alertas] todos os botões da barra recebem o toque 
+OK      [iPhone 14 Pro Max 430×740 escuro /alertas] campos de texto com letra >= 16px 
+OK      [iPhone 14 Pro Max 430×740 escuro /comunidade] sem scroll lateral scrollW=430 vw=430
+OK      [iPhone 14 Pro Max 430×740 escuro /comunidade] nada sai do ecrã para o lado 
+OK      [iPhone 14 Pro Max 430×740 escuro /comunidade] barra de baixo inteira no ecrã fundo=740 vh=740
+OK      [iPhone 14 Pro Max 430×740 escuro /comunidade] todos os botões da barra recebem o toque 
+OK      [iPhone 14 Pro Max 430×740 escuro /comunidade] campos de texto com letra >= 16px 
+OK      [iPhone 14 Pro Max 430×740 escuro /favoritos] sem scroll lateral scrollW=430 vw=430
+OK      [iPhone 14 Pro Max 430×740 escuro /favoritos] nada sai do ecrã para o lado 
+OK      [iPhone 14 Pro Max 430×740 escuro /favoritos] barra de baixo inteira no ecrã fundo=740 vh=740
+OK      [iPhone 14 Pro Max 430×740 escuro /favoritos] todos os botões da barra recebem o toque 
+OK      [iPhone 14 Pro Max 430×740 escuro /favoritos] campos de texto com letra >= 16px 
+OK      [iPhone 14 Pro Max 430×740 escuro] Perto: a pesquisa de destino não provoca zoom no iOS (letra >= 16px) letra=16px
+OK      [iPhone 14 Pro Max 430×740 escuro] Perto: a escala da página fica em 1 ao tocar na pesquisa 1
+OK      [iPhone 14 Pro Max 430×740 escuro] Perto: com a pesquisa aberta nada sai do ecrã 
+OK      [iPhone 14 Pro Max 430×740 escuro] Entrar: a janela cabe no ecrã (ou desliza) {"topo":169,"fundo":572,"esq":23,"dir":407,"vw":430,"vh":740,"rola":false,"interno":false,"campos":[16,16]}
+OK      [iPhone 14 Pro Max 430×740 escuro] Entrar: campos com letra >= 16px (sem zoom no iOS) 16,16
+OK      [iPhone 14 Pro Max 430×740 escuro] Notificações: a janela cabe no ecrã (ou desliza) {"topo":0,"fundo":740,"esq":0,"dir":430,"vw":430,"vh":740,"rola":false,"interno":true,"campos":[]}
+OK      [iPhone 14 Pro Max 430×740 escuro] Notificações: campos com letra >= 16px (sem zoom no iOS) 
+OK      [iPhone 14 Pro Max 430×740 escuro] Publicar: a janela cabe no ecrã (ou desliza) {"topo":169,"fundo":572,"esq":21,"dir":405,"vw":430,"vh":740,"rola":false,"interno":false,"campos":[16,16]}
+OK      [iPhone 14 Pro Max 430×740 escuro] Publicar: campos com letra >= 16px (sem zoom no iOS) 16,16
+OK      [iPhone 14 Pro Max 430×740 escuro] sem erros de consola 
+OK      [iPhone 14 Pro Max 430×740 ambar /] sem scroll lateral scrollW=430 vw=430
+OK      [iPhone 14 Pro Max 430×740 ambar /] nada sai do ecrã para o lado 
+OK      [iPhone 14 Pro Max 430×740 ambar /] barra de baixo inteira no ecrã fundo=740 vh=740
+OK      [iPhone 14 Pro Max 430×740 ambar /] todos os botões da barra recebem o toque 
+OK      [iPhone 14 Pro Max 430×740 ambar /] campos de texto com letra >= 16px 
+OK      [iPhone 14 Pro Max 430×740 ambar /transportes] sem scroll lateral scrollW=430 vw=430
+OK      [iPhone 14 Pro Max 430×740 ambar /transportes] nada sai do ecrã para o lado 
+OK      [iPhone 14 Pro Max 430×740 ambar /transportes] barra de baixo inteira no ecrã fundo=740 vh=740
+OK      [iPhone 14 Pro Max 430×740 ambar /transportes] todos os botões da barra recebem o toque 
+OK      [iPhone 14 Pro Max 430×740 ambar /transportes] campos de texto com letra >= 16px 
+OK      [iPhone 14 Pro Max 430×740 ambar /mapa] sem scroll lateral scrollW=430 vw=430
+OK      [iPhone 14 Pro Max 430×740 ambar /mapa] nada sai do ecrã para o lado 
+OK      [iPhone 14 Pro Max 430×740 ambar /mapa] barra de baixo inteira no ecrã fundo=740 vh=740
+OK      [iPhone 14 Pro Max 430×740 ambar /mapa] todos os botões da barra recebem o toque 
+OK      [iPhone 14 Pro Max 430×740 ambar /mapa] campos de texto com letra >= 16px 
+OK      [iPhone 14 Pro Max 430×740 ambar /alertas] sem scroll lateral scrollW=430 vw=430
+OK      [iPhone 14 Pro Max 430×740 ambar /alertas] nada sai do ecrã para o lado 
+OK      [iPhone 14 Pro Max 430×740 ambar /alertas] barra de baixo inteira no ecrã fundo=740 vh=740
+OK      [iPhone 14 Pro Max 430×740 ambar /alertas] todos os botões da barra recebem o toque 
+OK      [iPhone 14 Pro Max 430×740 ambar /alertas] campos de texto com letra >= 16px 
+OK      [iPhone 14 Pro Max 430×740 ambar /comunidade] sem scroll lateral scrollW=430 vw=430
+OK      [iPhone 14 Pro Max 430×740 ambar /comunidade] nada sai do ecrã para o lado 
+OK      [iPhone 14 Pro Max 430×740 ambar /comunidade] barra de baixo inteira no ecrã fundo=740 vh=740
+OK      [iPhone 14 Pro Max 430×740 ambar /comunidade] todos os botões da barra recebem o toque 
+OK      [iPhone 14 Pro Max 430×740 ambar /comunidade] campos de texto com letra >= 16px 
+OK      [iPhone 14 Pro Max 430×740 ambar /favoritos] sem scroll lateral scrollW=430 vw=430
+OK      [iPhone 14 Pro Max 430×740 ambar /favoritos] nada sai do ecrã para o lado 
+OK      [iPhone 14 Pro Max 430×740 ambar /favoritos] barra de baixo inteira no ecrã fundo=740 vh=740
+OK      [iPhone 14 Pro Max 430×740 ambar /favoritos] todos os botões da barra recebem o toque 
+OK      [iPhone 14 Pro Max 430×740 ambar /favoritos] campos de texto com letra >= 16px 
+OK      [iPhone 14 Pro Max 430×740 ambar] sem erros de consola 
+OK      [iPhone SE landscape 568×320 claro /] sem scroll lateral scrollW=568 vw=568
+OK      [iPhone SE landscape 568×320 claro /] nada sai do ecrã para o lado 
+OK      [iPhone SE landscape 568×320 claro /] barra de baixo inteira no ecrã fundo=320 vh=320
+OK      [iPhone SE landscape 568×320 claro /] todos os botões da barra recebem o toque 
+OK      [iPhone SE landscape 568×320 claro /] campos de texto com letra >= 16px 
+OK      [iPhone SE landscape 568×320 claro /transportes] sem scroll lateral scrollW=568 vw=568
+OK      [iPhone SE landscape 568×320 claro /transportes] nada sai do ecrã para o lado 
+OK      [iPhone SE landscape 568×320 claro /transportes] barra de baixo inteira no ecrã fundo=320 vh=320
+OK      [iPhone SE landscape 568×320 claro /transportes] todos os botões da barra recebem o toque 
+OK      [iPhone SE landscape 568×320 claro /transportes] campos de texto com letra >= 16px 
+OK      [iPhone SE landscape 568×320 claro /mapa] sem scroll lateral scrollW=568 vw=568
+OK      [iPhone SE landscape 568×320 claro /mapa] nada sai do ecrã para o lado 
+OK      [iPhone SE landscape 568×320 claro /mapa] barra de baixo inteira no ecrã fundo=320 vh=320
+OK      [iPhone SE landscape 568×320 claro /mapa] todos os botões da barra recebem o toque 
+OK      [iPhone SE landscape 568×320 claro /mapa] campos de texto com letra >= 16px 
+OK      [iPhone SE landscape 568×320 claro /alertas] sem scroll lateral scrollW=568 vw=568
+OK      [iPhone SE landscape 568×320 claro /alertas] nada sai do ecrã para o lado 
+OK      [iPhone SE landscape 568×320 claro /alertas] barra de baixo inteira no ecrã fundo=320 vh=320
+OK      [iPhone SE landscape 568×320 claro /alertas] todos os botões da barra recebem o toque 
+OK      [iPhone SE landscape 568×320 claro /alertas] campos de texto com letra >= 16px 
+OK      [iPhone SE landscape 568×320 claro /comunidade] sem scroll lateral scrollW=568 vw=568
+OK      [iPhone SE landscape 568×320 claro /comunidade] nada sai do ecrã para o lado 
+OK      [iPhone SE landscape 568×320 claro /comunidade] barra de baixo inteira no ecrã fundo=320 vh=320
+OK      [iPhone SE landscape 568×320 claro /comunidade] todos os botões da barra recebem o toque 
+OK      [iPhone SE landscape 568×320 claro /comunidade] campos de texto com letra >= 16px 
+OK      [iPhone SE landscape 568×320 claro /favoritos] sem scroll lateral scrollW=568 vw=568
+OK      [iPhone SE landscape 568×320 claro /favoritos] nada sai do ecrã para o lado 
+OK      [iPhone SE landscape 568×320 claro /favoritos] barra de baixo inteira no ecrã fundo=320 vh=320
+OK      [iPhone SE landscape 568×320 claro /favoritos] todos os botões da barra recebem o toque 
+OK      [iPhone SE landscape 568×320 claro /favoritos] campos de texto com letra >= 16px 
+OK      [iPhone SE landscape 568×320 claro] Perto: a pesquisa de destino não provoca zoom no iOS (letra >= 16px) letra=16px
+OK      [iPhone SE landscape 568×320 claro] Perto: a escala da página fica em 1 ao tocar na pesquisa 1
+OK      [iPhone SE landscape 568×320 claro] Perto: com a pesquisa aberta nada sai do ecrã 
+OK      [iPhone SE landscape 568×320 claro] Entrar: a janela cabe no ecrã (ou desliza) {"topo":16,"fundo":419,"esq":90,"dir":474,"vw":568,"vh":320,"rola":true,"interno":false,"campos":[16,16]}
+OK      [iPhone SE landscape 568×320 claro] Entrar: campos com letra >= 16px (sem zoom no iOS) 16,16
+OK      [iPhone SE landscape 568×320 claro] Notificações: a janela cabe no ecrã (ou desliza) {"topo":0,"fundo":320,"esq":0,"dir":568,"vw":568,"vh":320,"rola":false,"interno":true,"campos":[]}
+OK      [iPhone SE landscape 568×320 claro] Notificações: campos com letra >= 16px (sem zoom no iOS) 
+OK      [iPhone SE landscape 568×320 claro] Publicar: a janela cabe no ecrã (ou desliza) {"topo":16,"fundo":419,"esq":87,"dir":471,"vw":568,"vh":320,"rola":true,"interno":false,"campos":[16,16]}
+OK      [iPhone SE landscape 568×320 claro] Publicar: campos com letra >= 16px (sem zoom no iOS) 16,16
+OK      [iPhone SE landscape 568×320 claro] sem erros de consola 
+OK      [iPhone 13 Mini landscape 712×327 claro /] sem scroll lateral scrollW=712 vw=712
+OK      [iPhone 13 Mini landscape 712×327 claro /] nada sai do ecrã para o lado 
+OK      [iPhone 13 Mini landscape 712×327 claro /] barra de baixo inteira no ecrã fundo=327 vh=327
+OK      [iPhone 13 Mini landscape 712×327 claro /] todos os botões da barra recebem o toque 
+OK      [iPhone 13 Mini landscape 712×327 claro /] campos de texto com letra >= 16px 
+OK      [iPhone 13 Mini landscape 712×327 claro /transportes] sem scroll lateral scrollW=712 vw=712
+OK      [iPhone 13 Mini landscape 712×327 claro /transportes] nada sai do ecrã para o lado 
+OK      [iPhone 13 Mini landscape 712×327 claro /transportes] barra de baixo inteira no ecrã fundo=327 vh=327
+OK      [iPhone 13 Mini landscape 712×327 claro /transportes] todos os botões da barra recebem o toque 
+OK      [iPhone 13 Mini landscape 712×327 claro /transportes] campos de texto com letra >= 16px 
+OK      [iPhone 13 Mini landscape 712×327 claro /mapa] sem scroll lateral scrollW=712 vw=712
+OK      [iPhone 13 Mini landscape 712×327 claro /mapa] nada sai do ecrã para o lado 
+OK      [iPhone 13 Mini landscape 712×327 claro /mapa] barra de baixo inteira no ecrã fundo=327 vh=327
+OK      [iPhone 13 Mini landscape 712×327 claro /mapa] todos os botões da barra recebem o toque 
+OK      [iPhone 13 Mini landscape 712×327 claro /mapa] campos de texto com letra >= 16px 
+OK      [iPhone 13 Mini landscape 712×327 claro /alertas] sem scroll lateral scrollW=712 vw=712
+OK      [iPhone 13 Mini landscape 712×327 claro /alertas] nada sai do ecrã para o lado 
+OK      [iPhone 13 Mini landscape 712×327 claro /alertas] barra de baixo inteira no ecrã fundo=327 vh=327
+OK      [iPhone 13 Mini landscape 712×327 claro /alertas] todos os botões da barra recebem o toque 
+OK      [iPhone 13 Mini landscape 712×327 claro /alertas] campos de texto com letra >= 16px 
+OK      [iPhone 13 Mini landscape 712×327 claro /comunidade] sem scroll lateral scrollW=712 vw=712
+OK      [iPhone 13 Mini landscape 712×327 claro /comunidade] nada sai do ecrã para o lado 
+OK      [iPhone 13 Mini landscape 712×327 claro /comunidade] barra de baixo inteira no ecrã fundo=327 vh=327
+OK      [iPhone 13 Mini landscape 712×327 claro /comunidade] todos os botões da barra recebem o toque 
+OK      [iPhone 13 Mini landscape 712×327 claro /comunidade] campos de texto com letra >= 16px 
+OK      [iPhone 13 Mini landscape 712×327 claro /favoritos] sem scroll lateral scrollW=712 vw=712
+OK      [iPhone 13 Mini landscape 712×327 claro /favoritos] nada sai do ecrã para o lado 
+OK      [iPhone 13 Mini landscape 712×327 claro /favoritos] barra de baixo inteira no ecrã fundo=327 vh=327
+OK      [iPhone 13 Mini landscape 712×327 claro /favoritos] todos os botões da barra recebem o toque 
+OK      [iPhone 13 Mini landscape 712×327 claro /favoritos] campos de texto com letra >= 16px 
+OK      [iPhone 13 Mini landscape 712×327 claro] Perto: a pesquisa de destino não provoca zoom no iOS (letra >= 16px) letra=16px
+OK      [iPhone 13 Mini landscape 712×327 claro] Perto: a escala da página fica em 1 ao tocar na pesquisa 1
+OK      [iPhone 13 Mini landscape 712×327 claro] Perto: com a pesquisa aberta nada sai do ecrã 
+OK      [iPhone 13 Mini landscape 712×327 claro] Entrar: a janela cabe no ecrã (ou desliza) {"topo":16,"fundo":419,"esq":162,"dir":546,"vw":712,"vh":327,"rola":true,"interno":false,"campos":[16,16]}
+OK      [iPhone 13 Mini landscape 712×327 claro] Entrar: campos com letra >= 16px (sem zoom no iOS) 16,16
+OK      [iPhone 13 Mini landscape 712×327 claro] Notificações: a janela cabe no ecrã (ou desliza) {"topo":0,"fundo":327,"esq":0,"dir":712,"vw":712,"vh":327,"rola":false,"interno":true,"campos":[]}
+OK      [iPhone 13 Mini landscape 712×327 claro] Notificações: campos com letra >= 16px (sem zoom no iOS) 
+OK      [iPhone 13 Mini landscape 712×327 claro] Publicar: a janela cabe no ecrã (ou desliza) {"topo":16,"fundo":419,"esq":159,"dir":543,"vw":712,"vh":327,"rola":true,"interno":false,"campos":[16,16]}
+OK      [iPhone 13 Mini landscape 712×327 claro] Publicar: campos com letra >= 16px (sem zoom no iOS) 16,16
+OK      [iPhone 13 Mini landscape 712×327 claro] sem erros de consola 
+OK      [iPhone 13 Mini landscape 712×327 escuro /] sem scroll lateral scrollW=712 vw=712
+OK      [iPhone 13 Mini landscape 712×327 escuro /] nada sai do ecrã para o lado 
+OK      [iPhone 13 Mini landscape 712×327 escuro /] barra de baixo inteira no ecrã fundo=327 vh=327
+OK      [iPhone 13 Mini landscape 712×327 escuro /] todos os botões da barra recebem o toque 
+OK      [iPhone 13 Mini landscape 712×327 escuro /] campos de texto com letra >= 16px 
+OK      [iPhone 13 Mini landscape 712×327 escuro /transportes] sem scroll lateral scrollW=712 vw=712
+OK      [iPhone 13 Mini landscape 712×327 escuro /transportes] nada sai do ecrã para o lado 
+OK      [iPhone 13 Mini landscape 712×327 escuro /transportes] barra de baixo inteira no ecrã fundo=327 vh=327
+OK      [iPhone 13 Mini landscape 712×327 escuro /transportes] todos os botões da barra recebem o toque 
+OK      [iPhone 13 Mini landscape 712×327 escuro /transportes] campos de texto com letra >= 16px 
+OK      [iPhone 13 Mini landscape 712×327 escuro /mapa] sem scroll lateral scrollW=712 vw=712
+OK      [iPhone 13 Mini landscape 712×327 escuro /mapa] nada sai do ecrã para o lado 
+OK      [iPhone 13 Mini landscape 712×327 escuro /mapa] barra de baixo inteira no ecrã fundo=327 vh=327
+OK      [iPhone 13 Mini landscape 712×327 escuro /mapa] todos os botões da barra recebem o toque 
+OK      [iPhone 13 Mini landscape 712×327 escuro /mapa] campos de texto com letra >= 16px 
+OK      [iPhone 13 Mini landscape 712×327 escuro /alertas] sem scroll lateral scrollW=712 vw=712
+OK      [iPhone 13 Mini landscape 712×327 escuro /alertas] nada sai do ecrã para o lado 
+OK      [iPhone 13 Mini landscape 712×327 escuro /alertas] barra de baixo inteira no ecrã fundo=327 vh=327
+OK      [iPhone 13 Mini landscape 712×327 escuro /alertas] todos os botões da barra recebem o toque 
+OK      [iPhone 13 Mini landscape 712×327 escuro /alertas] campos de texto com letra >= 16px 
+OK      [iPhone 13 Mini landscape 712×327 escuro /comunidade] sem scroll lateral scrollW=712 vw=712
+OK      [iPhone 13 Mini landscape 712×327 escuro /comunidade] nada sai do ecrã para o lado 
+OK      [iPhone 13 Mini landscape 712×327 escuro /comunidade] barra de baixo inteira no ecrã fundo=327 vh=327
+OK      [iPhone 13 Mini landscape 712×327 escuro /comunidade] todos os botões da barra recebem o toque 
+OK      [iPhone 13 Mini landscape 712×327 escuro /comunidade] campos de texto com letra >= 16px 
+OK      [iPhone 13 Mini landscape 712×327 escuro /favoritos] sem scroll lateral scrollW=712 vw=712
+OK      [iPhone 13 Mini landscape 712×327 escuro /favoritos] nada sai do ecrã para o lado 
+OK      [iPhone 13 Mini landscape 712×327 escuro /favoritos] barra de baixo inteira no ecrã fundo=327 vh=327
+OK      [iPhone 13 Mini landscape 712×327 escuro /favoritos] todos os botões da barra recebem o toque 
+OK      [iPhone 13 Mini landscape 712×327 escuro /favoritos] campos de texto com letra >= 16px 
+OK      [iPhone 13 Mini landscape 712×327 escuro] Perto: a pesquisa de destino não provoca zoom no iOS (letra >= 16px) letra=16px
+OK      [iPhone 13 Mini landscape 712×327 escuro] Perto: a escala da página fica em 1 ao tocar na pesquisa 1
+OK      [iPhone 13 Mini landscape 712×327 escuro] Perto: com a pesquisa aberta nada sai do ecrã 
+OK      [iPhone 13 Mini landscape 712×327 escuro] Entrar: a janela cabe no ecrã (ou desliza) {"topo":16,"fundo":419,"esq":162,"dir":546,"vw":712,"vh":327,"rola":true,"interno":false,"campos":[16,16]}
+OK      [iPhone 13 Mini landscape 712×327 escuro] Entrar: campos com letra >= 16px (sem zoom no iOS) 16,16
+OK      [iPhone 13 Mini landscape 712×327 escuro] Notificações: a janela cabe no ecrã (ou desliza) {"topo":0,"fundo":327,"esq":0,"dir":712,"vw":712,"vh":327,"rola":false,"interno":true,"campos":[]}
+OK      [iPhone 13 Mini landscape 712×327 escuro] Notificações: campos com letra >= 16px (sem zoom no iOS) 
+OK      [iPhone 13 Mini landscape 712×327 escuro] Publicar: a janela cabe no ecrã (ou desliza) {"topo":16,"fundo":419,"esq":159,"dir":543,"vw":712,"vh":327,"rola":true,"interno":false,"campos":[16,16]}
+OK      [iPhone 13 Mini landscape 712×327 escuro] Publicar: campos com letra >= 16px (sem zoom no iOS) 16,16
+OK      [iPhone 13 Mini landscape 712×327 escuro] sem erros de consola 
+OK      [iPhone 13 Mini landscape 712×327 ambar /] sem scroll lateral scrollW=712 vw=712
+OK      [iPhone 13 Mini landscape 712×327 ambar /] nada sai do ecrã para o lado 
+OK      [iPhone 13 Mini landscape 712×327 ambar /] barra de baixo inteira no ecrã fundo=327 vh=327
+OK      [iPhone 13 Mini landscape 712×327 ambar /] todos os botões da barra recebem o toque 
+OK      [iPhone 13 Mini landscape 712×327 ambar /] campos de texto com letra >= 16px 
+OK      [iPhone 13 Mini landscape 712×327 ambar /transportes] sem scroll lateral scrollW=712 vw=712
+OK      [iPhone 13 Mini landscape 712×327 ambar /transportes] nada sai do ecrã para o lado 
+OK      [iPhone 13 Mini landscape 712×327 ambar /transportes] barra de baixo inteira no ecrã fundo=327 vh=327
+OK      [iPhone 13 Mini landscape 712×327 ambar /transportes] todos os botões da barra recebem o toque 
+OK      [iPhone 13 Mini landscape 712×327 ambar /transportes] campos de texto com letra >= 16px 
+OK      [iPhone 13 Mini landscape 712×327 ambar /mapa] sem scroll lateral scrollW=712 vw=712
+OK      [iPhone 13 Mini landscape 712×327 ambar /mapa] nada sai do ecrã para o lado 
+OK      [iPhone 13 Mini landscape 712×327 ambar /mapa] barra de baixo inteira no ecrã fundo=327 vh=327
+OK      [iPhone 13 Mini landscape 712×327 ambar /mapa] todos os botões da barra recebem o toque 
+OK      [iPhone 13 Mini landscape 712×327 ambar /mapa] campos de texto com letra >= 16px 
+OK      [iPhone 13 Mini landscape 712×327 ambar /alertas] sem scroll lateral scrollW=712 vw=712
+OK      [iPhone 13 Mini landscape 712×327 ambar /alertas] nada sai do ecrã para o lado 
+OK      [iPhone 13 Mini landscape 712×327 ambar /alertas] barra de baixo inteira no ecrã fundo=327 vh=327
+OK      [iPhone 13 Mini landscape 712×327 ambar /alertas] todos os botões da barra recebem o toque 
+OK      [iPhone 13 Mini landscape 712×327 ambar /alertas] campos de texto com letra >= 16px 
+OK      [iPhone 13 Mini landscape 712×327 ambar /comunidade] sem scroll lateral scrollW=712 vw=712
+OK      [iPhone 13 Mini landscape 712×327 ambar /comunidade] nada sai do ecrã para o lado 
+OK      [iPhone 13 Mini landscape 712×327 ambar /comunidade] barra de baixo inteira no ecrã fundo=327 vh=327
+OK      [iPhone 13 Mini landscape 712×327 ambar /comunidade] todos os botões da barra recebem o toque 
+OK      [iPhone 13 Mini landscape 712×327 ambar /comunidade] campos de texto com letra >= 16px 
+OK      [iPhone 13 Mini landscape 712×327 ambar /favoritos] sem scroll lateral scrollW=712 vw=712
+OK      [iPhone 13 Mini landscape 712×327 ambar /favoritos] nada sai do ecrã para o lado 
+OK      [iPhone 13 Mini landscape 712×327 ambar /favoritos] barra de baixo inteira no ecrã fundo=327 vh=327
+OK      [iPhone 13 Mini landscape 712×327 ambar /favoritos] todos os botões da barra recebem o toque 
+OK      [iPhone 13 Mini landscape 712×327 ambar /favoritos] campos de texto com letra >= 16px 
+OK      [iPhone 13 Mini landscape 712×327 ambar] sem erros de consola 
+OK      [iPhone 14 Pro Max landscape 814×380 claro /] sem scroll lateral scrollW=814 vw=814
+OK      [iPhone 14 Pro Max landscape 814×380 claro /] nada sai do ecrã para o lado 
+OK      [iPhone 14 Pro Max landscape 814×380 claro /] barra de baixo inteira no ecrã fundo=380 vh=380
+OK      [iPhone 14 Pro Max landscape 814×380 claro /] todos os botões da barra recebem o toque 
+OK      [iPhone 14 Pro Max landscape 814×380 claro /] campos de texto com letra >= 16px 
+OK      [iPhone 14 Pro Max landscape 814×380 claro /transportes] sem scroll lateral scrollW=814 vw=814
+OK      [iPhone 14 Pro Max landscape 814×380 claro /transportes] nada sai do ecrã para o lado 
+OK      [iPhone 14 Pro Max landscape 814×380 claro /transportes] barra de baixo inteira no ecrã fundo=380 vh=380
+OK      [iPhone 14 Pro Max landscape 814×380 claro /transportes] todos os botões da barra recebem o toque 
+OK      [iPhone 14 Pro Max landscape 814×380 claro /transportes] campos de texto com letra >= 16px 
+OK      [iPhone 14 Pro Max landscape 814×380 claro /mapa] sem scroll lateral scrollW=814 vw=814
+OK      [iPhone 14 Pro Max landscape 814×380 claro /mapa] nada sai do ecrã para o lado 
+OK      [iPhone 14 Pro Max landscape 814×380 claro /mapa] barra de baixo inteira no ecrã fundo=380 vh=380
+OK      [iPhone 14 Pro Max landscape 814×380 claro /mapa] todos os botões da barra recebem o toque 
+OK      [iPhone 14 Pro Max landscape 814×380 claro /mapa] campos de texto com letra >= 16px 
+OK      [iPhone 14 Pro Max landscape 814×380 claro /alertas] sem scroll lateral scrollW=814 vw=814
+OK      [iPhone 14 Pro Max landscape 814×380 claro /alertas] nada sai do ecrã para o lado 
+OK      [iPhone 14 Pro Max landscape 814×380 claro /alertas] barra de baixo inteira no ecrã fundo=380 vh=380
+OK      [iPhone 14 Pro Max landscape 814×380 claro /alertas] todos os botões da barra recebem o toque 
+OK      [iPhone 14 Pro Max landscape 814×380 claro /alertas] campos de texto com letra >= 16px 
+OK      [iPhone 14 Pro Max landscape 814×380 claro /comunidade] sem scroll lateral scrollW=814 vw=814
+OK      [iPhone 14 Pro Max landscape 814×380 claro /comunidade] nada sai do ecrã para o lado 
+OK      [iPhone 14 Pro Max landscape 814×380 claro /comunidade] barra de baixo inteira no ecrã fundo=380 vh=380
+OK      [iPhone 14 Pro Max landscape 814×380 claro /comunidade] todos os botões da barra recebem o toque 
+OK      [iPhone 14 Pro Max landscape 814×380 claro /comunidade] campos de texto com letra >= 16px 
+OK      [iPhone 14 Pro Max landscape 814×380 claro /favoritos] sem scroll lateral scrollW=814 vw=814
+OK      [iPhone 14 Pro Max landscape 814×380 claro /favoritos] nada sai do ecrã para o lado 
+OK      [iPhone 14 Pro Max landscape 814×380 claro /favoritos] barra de baixo inteira no ecrã fundo=380 vh=380
+OK      [iPhone 14 Pro Max landscape 814×380 claro /favoritos] todos os botões da barra recebem o toque 
+OK      [iPhone 14 Pro Max landscape 814×380 claro /favoritos] campos de texto com letra >= 16px 
+OK      [iPhone 14 Pro Max landscape 814×380 claro] Perto: a pesquisa de destino não provoca zoom no iOS (letra >= 16px) letra=16px
+OK      [iPhone 14 Pro Max landscape 814×380 claro] Perto: a escala da página fica em 1 ao tocar na pesquisa 1
+OK      [iPhone 14 Pro Max landscape 814×380 claro] Perto: com a pesquisa aberta nada sai do ecrã 
+OK      [iPhone 14 Pro Max landscape 814×380 claro] Entrar: a janela cabe no ecrã (ou desliza) {"topo":16,"fundo":419,"esq":213,"dir":597,"vw":814,"vh":380,"rola":true,"interno":false,"campos":[16,16]}
+OK      [iPhone 14 Pro Max landscape 814×380 claro] Entrar: campos com letra >= 16px (sem zoom no iOS) 16,16
+OK      [iPhone 14 Pro Max landscape 814×380 claro] Notificações: a janela cabe no ecrã (ou desliza) {"topo":0,"fundo":380,"esq":0,"dir":814,"vw":814,"vh":380,"rola":false,"interno":true,"campos":[]}
+OK      [iPhone 14 Pro Max landscape 814×380 claro] Notificações: campos com letra >= 16px (sem zoom no iOS) 
+OK      [iPhone 14 Pro Max landscape 814×380 claro] Publicar: a janela cabe no ecrã (ou desliza) {"topo":16,"fundo":419,"esq":210,"dir":594,"vw":814,"vh":380,"rola":true,"interno":false,"campos":[16,16]}
+OK      [iPhone 14 Pro Max landscape 814×380 claro] Publicar: campos com letra >= 16px (sem zoom no iOS) 16,16
+OK      [iPhone 14 Pro Max landscape 814×380 claro] sem erros de consola 
+OK      [iPad Mini 768×1024 claro /] sem scroll lateral scrollW=768 vw=768
+OK      [iPad Mini 768×1024 claro /] nada sai do ecrã para o lado 
+OK      [iPad Mini 768×1024 claro /] barra de baixo inteira no ecrã fundo=1024 vh=1024
+OK      [iPad Mini 768×1024 claro /] todos os botões da barra recebem o toque 
+OK      [iPad Mini 768×1024 claro /] campos de texto com letra >= 16px 
+OK      [iPad Mini 768×1024 claro /transportes] sem scroll lateral scrollW=768 vw=768
+OK      [iPad Mini 768×1024 claro /transportes] nada sai do ecrã para o lado 
+OK      [iPad Mini 768×1024 claro /transportes] barra de baixo inteira no ecrã fundo=1024 vh=1024
+OK      [iPad Mini 768×1024 claro /transportes] todos os botões da barra recebem o toque 
+OK      [iPad Mini 768×1024 claro /transportes] campos de texto com letra >= 16px 
+OK      [iPad Mini 768×1024 claro /mapa] sem scroll lateral scrollW=768 vw=768
+OK      [iPad Mini 768×1024 claro /mapa] nada sai do ecrã para o lado 
+OK      [iPad Mini 768×1024 claro /mapa] barra de baixo inteira no ecrã fundo=1024 vh=1024
+OK      [iPad Mini 768×1024 claro /mapa] todos os botões da barra recebem o toque 
+OK      [iPad Mini 768×1024 claro /mapa] campos de texto com letra >= 16px 
+OK      [iPad Mini 768×1024 claro /alertas] sem scroll lateral scrollW=768 vw=768
+OK      [iPad Mini 768×1024 claro /alertas] nada sai do ecrã para o lado 
+OK      [iPad Mini 768×1024 claro /alertas] barra de baixo inteira no ecrã fundo=1024 vh=1024
+OK      [iPad Mini 768×1024 claro /alertas] todos os botões da barra recebem o toque 
+OK      [iPad Mini 768×1024 claro /alertas] campos de texto com letra >= 16px 
+OK      [iPad Mini 768×1024 claro /comunidade] sem scroll lateral scrollW=768 vw=768
+OK      [iPad Mini 768×1024 claro /comunidade] nada sai do ecrã para o lado 
+OK      [iPad Mini 768×1024 claro /comunidade] barra de baixo inteira no ecrã fundo=1024 vh=1024
+OK      [iPad Mini 768×1024 claro /comunidade] todos os botões da barra recebem o toque 
+OK      [iPad Mini 768×1024 claro /comunidade] campos de texto com letra >= 16px 
+OK      [iPad Mini 768×1024 claro /favoritos] sem scroll lateral scrollW=768 vw=768
+OK      [iPad Mini 768×1024 claro /favoritos] nada sai do ecrã para o lado 
+OK      [iPad Mini 768×1024 claro /favoritos] barra de baixo inteira no ecrã fundo=1024 vh=1024
+OK      [iPad Mini 768×1024 claro /favoritos] todos os botões da barra recebem o toque 
+OK      [iPad Mini 768×1024 claro /favoritos] campos de texto com letra >= 16px 
+OK      [iPad Mini 768×1024 claro] Perto: a pesquisa de destino não provoca zoom no iOS (letra >= 16px) letra=16px
+OK      [iPad Mini 768×1024 claro] Perto: a escala da página fica em 1 ao tocar na pesquisa 1
+OK      [iPad Mini 768×1024 claro] Perto: com a pesquisa aberta nada sai do ecrã 
+OK      [iPad Mini 768×1024 claro] Entrar: a janela cabe no ecrã (ou desliza) {"topo":311,"fundo":714,"esq":192,"dir":576,"vw":768,"vh":1024,"rola":false,"interno":false,"campos":[16,16]}
+OK      [iPad Mini 768×1024 claro] Entrar: campos com letra >= 16px (sem zoom no iOS) 16,16
+OK      [iPad Mini 768×1024 claro] Notificações: a janela cabe no ecrã (ou desliza) {"topo":0,"fundo":1024,"esq":0,"dir":768,"vw":768,"vh":1024,"rola":false,"interno":false,"campos":[]}
+OK      [iPad Mini 768×1024 claro] Notificações: campos com letra >= 16px (sem zoom no iOS) 
+OK      [iPad Mini 768×1024 claro] Publicar: a janela cabe no ecrã (ou desliza) {"topo":311,"fundo":714,"esq":190,"dir":574,"vw":768,"vh":1024,"rola":false,"interno":false,"campos":[16,16]}
+OK      [iPad Mini 768×1024 claro] Publicar: campos com letra >= 16px (sem zoom no iOS) 16,16
+OK      [iPad Mini 768×1024 claro] sem erros de consola 
+OK      [iPad Mini landscape 1024×768 claro /] sem scroll lateral scrollW=1024 vw=1024
+OK      [iPad Mini landscape 1024×768 claro /] nada sai do ecrã para o lado 
+OK      [iPad Mini landscape 1024×768 claro /] campos de texto com letra >= 16px 
+OK      [iPad Mini landscape 1024×768 claro /transportes] sem scroll lateral scrollW=1024 vw=1024
+OK      [iPad Mini landscape 1024×768 claro /transportes] nada sai do ecrã para o lado 
+OK      [iPad Mini landscape 1024×768 claro /transportes] campos de texto com letra >= 16px 
+OK      [iPad Mini landscape 1024×768 claro /mapa] sem scroll lateral scrollW=1024 vw=1024
+OK      [iPad Mini landscape 1024×768 claro /mapa] nada sai do ecrã para o lado 
+OK      [iPad Mini landscape 1024×768 claro /mapa] campos de texto com letra >= 16px 
+OK      [iPad Mini landscape 1024×768 claro /alertas] sem scroll lateral scrollW=1024 vw=1024
+OK      [iPad Mini landscape 1024×768 claro /alertas] nada sai do ecrã para o lado 
+OK      [iPad Mini landscape 1024×768 claro /alertas] campos de texto com letra >= 16px 
+OK      [iPad Mini landscape 1024×768 claro /comunidade] sem scroll lateral scrollW=1024 vw=1024
+OK      [iPad Mini landscape 1024×768 claro /comunidade] nada sai do ecrã para o lado 
+OK      [iPad Mini landscape 1024×768 claro /comunidade] campos de texto com letra >= 16px 
+OK      [iPad Mini landscape 1024×768 claro /favoritos] sem scroll lateral scrollW=1024 vw=1024
+OK      [iPad Mini landscape 1024×768 claro /favoritos] nada sai do ecrã para o lado 
+OK      [iPad Mini landscape 1024×768 claro /favoritos] campos de texto com letra >= 16px 
+OK      [iPad Mini landscape 1024×768 claro] Perto: a pesquisa de destino não provoca zoom no iOS (letra >= 16px) letra=16px
+OK      [iPad Mini landscape 1024×768 claro] Perto: a escala da página fica em 1 ao tocar na pesquisa 1
+OK      [iPad Mini landscape 1024×768 claro] Perto: com a pesquisa aberta nada sai do ecrã 
+OK      [iPad Mini landscape 1024×768 claro] Entrar: a janela cabe no ecrã (ou desliza) {"topo":183,"fundo":586,"esq":318,"dir":702,"vw":1024,"vh":768,"rola":false,"interno":false,"campos":[16,16]}
+OK      [iPad Mini landscape 1024×768 claro] Entrar: campos com letra >= 16px (sem zoom no iOS) 16,16
+OK      [iPad Mini landscape 1024×768 claro] Notificações: a janela cabe no ecrã (ou desliza) {"topo":0,"fundo":768,"esq":0,"dir":1019,"vw":1024,"vh":768,"rola":false,"interno":false,"campos":[]}
+OK      [iPad Mini landscape 1024×768 claro] Notificações: campos com letra >= 16px (sem zoom no iOS) 
+OK      [iPad Mini landscape 1024×768 claro] Publicar: a janela cabe no ecrã (ou desliza) {"topo":183,"fundo":586,"esq":318,"dir":702,"vw":1024,"vh":768,"rola":false,"interno":false,"campos":[16,16]}
+OK      [iPad Mini landscape 1024×768 claro] Publicar: campos com letra >= 16px (sem zoom no iOS) 16,16
+OK      [iPad Mini landscape 1024×768 claro] sem erros de consola 
+OK      [iPad Pro 11 834×1194 claro /] sem scroll lateral scrollW=834 vw=834
+OK      [iPad Pro 11 834×1194 claro /] nada sai do ecrã para o lado 
+OK      [iPad Pro 11 834×1194 claro /] barra de baixo inteira no ecrã fundo=1194 vh=1194
+OK      [iPad Pro 11 834×1194 claro /] todos os botões da barra recebem o toque 
+OK      [iPad Pro 11 834×1194 claro /] campos de texto com letra >= 16px 
+OK      [iPad Pro 11 834×1194 claro /transportes] sem scroll lateral scrollW=834 vw=834
+OK      [iPad Pro 11 834×1194 claro /transportes] nada sai do ecrã para o lado 
+OK      [iPad Pro 11 834×1194 claro /transportes] barra de baixo inteira no ecrã fundo=1194 vh=1194
+OK      [iPad Pro 11 834×1194 claro /transportes] todos os botões da barra recebem o toque 
+OK      [iPad Pro 11 834×1194 claro /transportes] campos de texto com letra >= 16px 
+OK      [iPad Pro 11 834×1194 claro /mapa] sem scroll lateral scrollW=834 vw=834
+OK      [iPad Pro 11 834×1194 claro /mapa] nada sai do ecrã para o lado 
+OK      [iPad Pro 11 834×1194 claro /mapa] barra de baixo inteira no ecrã fundo=1194 vh=1194
+OK      [iPad Pro 11 834×1194 claro /mapa] todos os botões da barra recebem o toque 
+OK      [iPad Pro 11 834×1194 claro /mapa] campos de texto com letra >= 16px 
+OK      [iPad Pro 11 834×1194 claro /alertas] sem scroll lateral scrollW=834 vw=834
+OK      [iPad Pro 11 834×1194 claro /alertas] nada sai do ecrã para o lado 
+OK      [iPad Pro 11 834×1194 claro /alertas] barra de baixo inteira no ecrã fundo=1194 vh=1194
+OK      [iPad Pro 11 834×1194 claro /alertas] todos os botões da barra recebem o toque 
+OK      [iPad Pro 11 834×1194 claro /alertas] campos de texto com letra >= 16px 
+OK      [iPad Pro 11 834×1194 claro /comunidade] sem scroll lateral scrollW=834 vw=834
+OK      [iPad Pro 11 834×1194 claro /comunidade] nada sai do ecrã para o lado 
+OK      [iPad Pro 11 834×1194 claro /comunidade] barra de baixo inteira no ecrã fundo=1194 vh=1194
+OK      [iPad Pro 11 834×1194 claro /comunidade] todos os botões da barra recebem o toque 
+OK      [iPad Pro 11 834×1194 claro /comunidade] campos de texto com letra >= 16px 
+OK      [iPad Pro 11 834×1194 claro /favoritos] sem scroll lateral scrollW=834 vw=834
+OK      [iPad Pro 11 834×1194 claro /favoritos] nada sai do ecrã para o lado 
+OK      [iPad Pro 11 834×1194 claro /favoritos] barra de baixo inteira no ecrã fundo=1194 vh=1194
+OK      [iPad Pro 11 834×1194 claro /favoritos] todos os botões da barra recebem o toque 
+OK      [iPad Pro 11 834×1194 claro /favoritos] campos de texto com letra >= 16px 
+OK      [iPad Pro 11 834×1194 claro] Perto: a pesquisa de destino não provoca zoom no iOS (letra >= 16px) letra=16px
+OK      [iPad Pro 11 834×1194 claro] Perto: a escala da página fica em 1 ao tocar na pesquisa 1
+OK      [iPad Pro 11 834×1194 claro] Perto: com a pesquisa aberta nada sai do ecrã 
+OK      [iPad Pro 11 834×1194 claro] Entrar: a janela cabe no ecrã (ou desliza) {"topo":396,"fundo":799,"esq":225,"dir":609,"vw":834,"vh":1194,"rola":false,"interno":false,"campos":[16,16]}
+OK      [iPad Pro 11 834×1194 claro] Entrar: campos com letra >= 16px (sem zoom no iOS) 16,16
+OK      [iPad Pro 11 834×1194 claro] Notificações: a janela cabe no ecrã (ou desliza) {"topo":0,"fundo":1194,"esq":0,"dir":834,"vw":834,"vh":1194,"rola":false,"interno":false,"campos":[]}
+OK      [iPad Pro 11 834×1194 claro] Notificações: campos com letra >= 16px (sem zoom no iOS) 
+OK      [iPad Pro 11 834×1194 claro] Publicar: a janela cabe no ecrã (ou desliza) {"topo":396,"fundo":799,"esq":223,"dir":607,"vw":834,"vh":1194,"rola":false,"interno":false,"campos":[16,16]}
+OK      [iPad Pro 11 834×1194 claro] Publicar: campos com letra >= 16px (sem zoom no iOS) 16,16
+OK      [iPad Pro 11 834×1194 claro] sem erros de consola 
+OK      [Galaxy S9+ 320×658 claro /] sem scroll lateral scrollW=320 vw=320
+OK      [Galaxy S9+ 320×658 claro /] nada sai do ecrã para o lado 
+OK      [Galaxy S9+ 320×658 claro /] barra de baixo inteira no ecrã fundo=658 vh=658
+OK      [Galaxy S9+ 320×658 claro /] todos os botões da barra recebem o toque 
+OK      [Galaxy S9+ 320×658 claro /] campos de texto com letra >= 16px 
+OK      [Galaxy S9+ 320×658 claro /transportes] sem scroll lateral scrollW=320 vw=320
+OK      [Galaxy S9+ 320×658 claro /transportes] nada sai do ecrã para o lado 
+OK      [Galaxy S9+ 320×658 claro /transportes] barra de baixo inteira no ecrã fundo=658 vh=658
+OK      [Galaxy S9+ 320×658 claro /transportes] todos os botões da barra recebem o toque 
+OK      [Galaxy S9+ 320×658 claro /transportes] campos de texto com letra >= 16px 
+OK      [Galaxy S9+ 320×658 claro /mapa] sem scroll lateral scrollW=320 vw=320
+OK      [Galaxy S9+ 320×658 claro /mapa] nada sai do ecrã para o lado 
+OK      [Galaxy S9+ 320×658 claro /mapa] barra de baixo inteira no ecrã fundo=658 vh=658
+OK      [Galaxy S9+ 320×658 claro /mapa] todos os botões da barra recebem o toque 
+OK      [Galaxy S9+ 320×658 claro /mapa] campos de texto com letra >= 16px 
+OK      [Galaxy S9+ 320×658 claro /alertas] sem scroll lateral scrollW=320 vw=320
+OK      [Galaxy S9+ 320×658 claro /alertas] nada sai do ecrã para o lado 
+OK      [Galaxy S9+ 320×658 claro /alertas] barra de baixo inteira no ecrã fundo=658 vh=658
+OK      [Galaxy S9+ 320×658 claro /alertas] todos os botões da barra recebem o toque 
+OK      [Galaxy S9+ 320×658 claro /alertas] campos de texto com letra >= 16px 
+OK      [Galaxy S9+ 320×658 claro /comunidade] sem scroll lateral scrollW=320 vw=320
+OK      [Galaxy S9+ 320×658 claro /comunidade] nada sai do ecrã para o lado 
+OK      [Galaxy S9+ 320×658 claro /comunidade] barra de baixo inteira no ecrã fundo=658 vh=658
+OK      [Galaxy S9+ 320×658 claro /comunidade] todos os botões da barra recebem o toque 
+OK      [Galaxy S9+ 320×658 claro /comunidade] campos de texto com letra >= 16px 
+OK      [Galaxy S9+ 320×658 claro /favoritos] sem scroll lateral scrollW=320 vw=320
+OK      [Galaxy S9+ 320×658 claro /favoritos] nada sai do ecrã para o lado 
+OK      [Galaxy S9+ 320×658 claro /favoritos] barra de baixo inteira no ecrã fundo=658 vh=658
+OK      [Galaxy S9+ 320×658 claro /favoritos] todos os botões da barra recebem o toque 
+OK      [Galaxy S9+ 320×658 claro /favoritos] campos de texto com letra >= 16px 
+OK      [Galaxy S9+ 320×658 letra 130% /] sem scroll lateral scrollW=320 vw=320
+OK      [Galaxy S9+ 320×658 letra 130% /] nada sai do ecrã para o lado 
+OK      [Galaxy S9+ 320×658 letra 130% /] barra de baixo inteira no ecrã fundo=658 vh=658
+OK      [Galaxy S9+ 320×658 letra 130% /transportes] sem scroll lateral scrollW=320 vw=320
+OK      [Galaxy S9+ 320×658 letra 130% /transportes] nada sai do ecrã para o lado 
+OK      [Galaxy S9+ 320×658 letra 130% /transportes] barra de baixo inteira no ecrã fundo=658 vh=658
+OK      [Galaxy S9+ 320×658 letra 130% /mapa] sem scroll lateral scrollW=320 vw=320
+OK      [Galaxy S9+ 320×658 letra 130% /mapa] nada sai do ecrã para o lado 
+OK      [Galaxy S9+ 320×658 letra 130% /mapa] barra de baixo inteira no ecrã fundo=658 vh=658
+OK      [Galaxy S9+ 320×658 letra 130% /alertas] sem scroll lateral scrollW=320 vw=320
+OK      [Galaxy S9+ 320×658 letra 130% /alertas] nada sai do ecrã para o lado 
+OK      [Galaxy S9+ 320×658 letra 130% /alertas] barra de baixo inteira no ecrã fundo=658 vh=658
+OK      [Galaxy S9+ 320×658 letra 130% /comunidade] sem scroll lateral scrollW=320 vw=320
+OK      [Galaxy S9+ 320×658 letra 130% /comunidade] nada sai do ecrã para o lado 
+OK      [Galaxy S9+ 320×658 letra 130% /comunidade] barra de baixo inteira no ecrã fundo=658 vh=658
+OK      [Galaxy S9+ 320×658 letra 130% /favoritos] sem scroll lateral scrollW=320 vw=320
+OK      [Galaxy S9+ 320×658 letra 130% /favoritos] nada sai do ecrã para o lado 
+OK      [Galaxy S9+ 320×658 letra 130% /favoritos] barra de baixo inteira no ecrã fundo=658 vh=658
+OK      [Galaxy S9+ 320×658 letra 150% /] sem scroll lateral scrollW=320 vw=320
+OK      [Galaxy S9+ 320×658 letra 150% /] nada sai do ecrã para o lado 
+OK      [Galaxy S9+ 320×658 letra 150% /] barra de baixo inteira no ecrã fundo=658 vh=658
+OK      [Galaxy S9+ 320×658 letra 150% /transportes] sem scroll lateral scrollW=320 vw=320
+OK      [Galaxy S9+ 320×658 letra 150% /transportes] nada sai do ecrã para o lado 
+OK      [Galaxy S9+ 320×658 letra 150% /transportes] barra de baixo inteira no ecrã fundo=658 vh=658
+OK      [Galaxy S9+ 320×658 letra 150% /mapa] sem scroll lateral scrollW=320 vw=320
+OK      [Galaxy S9+ 320×658 letra 150% /mapa] nada sai do ecrã para o lado 
+OK      [Galaxy S9+ 320×658 letra 150% /mapa] barra de baixo inteira no ecrã fundo=658 vh=658
+OK      [Galaxy S9+ 320×658 letra 150% /alertas] sem scroll lateral scrollW=320 vw=320
+OK      [Galaxy S9+ 320×658 letra 150% /alertas] nada sai do ecrã para o lado 
+OK      [Galaxy S9+ 320×658 letra 150% /alertas] barra de baixo inteira no ecrã fundo=658 vh=658
+OK      [Galaxy S9+ 320×658 letra 150% /comunidade] sem scroll lateral scrollW=320 vw=320
+OK      [Galaxy S9+ 320×658 letra 150% /comunidade] nada sai do ecrã para o lado 
+OK      [Galaxy S9+ 320×658 letra 150% /comunidade] barra de baixo inteira no ecrã fundo=658 vh=658
+OK      [Galaxy S9+ 320×658 letra 150% /favoritos] sem scroll lateral scrollW=320 vw=320
+OK      [Galaxy S9+ 320×658 letra 150% /favoritos] nada sai do ecrã para o lado 
+OK      [Galaxy S9+ 320×658 letra 150% /favoritos] barra de baixo inteira no ecrã fundo=658 vh=658
+OK      [Galaxy S9+ 320×658 claro] Perto: a pesquisa de destino não provoca zoom no iOS (letra >= 16px) letra=16px
+OK      [Galaxy S9+ 320×658 claro] Perto: a escala da página fica em 1 ao tocar na pesquisa 1
+OK      [Galaxy S9+ 320×658 claro] Perto: com a pesquisa aberta nada sai do ecrã 
+OK      [Galaxy S9+ 320×658 claro] Entrar: a janela cabe no ecrã (ou desliza) {"topo":128,"fundo":531,"esq":16,"dir":304,"vw":320,"vh":658,"rola":false,"interno":false,"campos":[16,16]}
+OK      [Galaxy S9+ 320×658 claro] Entrar: campos com letra >= 16px (sem zoom no iOS) 16,16
+OK      [Galaxy S9+ 320×658 claro] Notificações: a janela cabe no ecrã (ou desliza) {"topo":0,"fundo":658,"esq":0,"dir":320,"vw":320,"vh":658,"rola":false,"interno":true,"campos":[]}
+OK      [Galaxy S9+ 320×658 claro] Notificações: campos com letra >= 16px (sem zoom no iOS) 
+OK      [Galaxy S9+ 320×658 claro] Publicar: a janela cabe no ecrã (ou desliza) {"topo":128,"fundo":531,"esq":16,"dir":304,"vw":320,"vh":658,"rola":false,"interno":false,"campos":[16,16]}
+OK      [Galaxy S9+ 320×658 claro] Publicar: campos com letra >= 16px (sem zoom no iOS) 16,16
+OK      [Galaxy S9+ 320×658 claro] sem erros de consola 
+OK      [Galaxy S5 360×640 claro /] sem scroll lateral scrollW=360 vw=360
+OK      [Galaxy S5 360×640 claro /] nada sai do ecrã para o lado 
+OK      [Galaxy S5 360×640 claro /] barra de baixo inteira no ecrã fundo=640 vh=640
+OK      [Galaxy S5 360×640 claro /] todos os botões da barra recebem o toque 
+OK      [Galaxy S5 360×640 claro /] campos de texto com letra >= 16px 
+OK      [Galaxy S5 360×640 claro /transportes] sem scroll lateral scrollW=360 vw=360
+OK      [Galaxy S5 360×640 claro /transportes] nada sai do ecrã para o lado 
+OK      [Galaxy S5 360×640 claro /transportes] barra de baixo inteira no ecrã fundo=640 vh=640
+OK      [Galaxy S5 360×640 claro /transportes] todos os botões da barra recebem o toque 
+OK      [Galaxy S5 360×640 claro /transportes] campos de texto com letra >= 16px 
+OK      [Galaxy S5 360×640 claro /mapa] sem scroll lateral scrollW=360 vw=360
+OK      [Galaxy S5 360×640 claro /mapa] nada sai do ecrã para o lado 
+OK      [Galaxy S5 360×640 claro /mapa] barra de baixo inteira no ecrã fundo=640 vh=640
+OK      [Galaxy S5 360×640 claro /mapa] todos os botões da barra recebem o toque 
+OK      [Galaxy S5 360×640 claro /mapa] campos de texto com letra >= 16px 
+OK      [Galaxy S5 360×640 claro /alertas] sem scroll lateral scrollW=360 vw=360
+OK      [Galaxy S5 360×640 claro /alertas] nada sai do ecrã para o lado 
+OK      [Galaxy S5 360×640 claro /alertas] barra de baixo inteira no ecrã fundo=640 vh=640
+OK      [Galaxy S5 360×640 claro /alertas] todos os botões da barra recebem o toque 
+OK      [Galaxy S5 360×640 claro /alertas] campos de texto com letra >= 16px 
+OK      [Galaxy S5 360×640 claro /comunidade] sem scroll lateral scrollW=360 vw=360
+OK      [Galaxy S5 360×640 claro /comunidade] nada sai do ecrã para o lado 
+OK      [Galaxy S5 360×640 claro /comunidade] barra de baixo inteira no ecrã fundo=640 vh=640
+OK      [Galaxy S5 360×640 claro /comunidade] todos os botões da barra recebem o toque 
+OK      [Galaxy S5 360×640 claro /comunidade] campos de texto com letra >= 16px 
+OK      [Galaxy S5 360×640 claro /favoritos] sem scroll lateral scrollW=360 vw=360
+OK      [Galaxy S5 360×640 claro /favoritos] nada sai do ecrã para o lado 
+OK      [Galaxy S5 360×640 claro /favoritos] barra de baixo inteira no ecrã fundo=640 vh=640
+OK      [Galaxy S5 360×640 claro /favoritos] todos os botões da barra recebem o toque 
+OK      [Galaxy S5 360×640 claro /favoritos] campos de texto com letra >= 16px 
+OK      [Galaxy S5 360×640 letra 130% /] sem scroll lateral scrollW=360 vw=360
+OK      [Galaxy S5 360×640 letra 130% /] nada sai do ecrã para o lado 
+OK      [Galaxy S5 360×640 letra 130% /] barra de baixo inteira no ecrã fundo=640 vh=640
+OK      [Galaxy S5 360×640 letra 130% /transportes] sem scroll lateral scrollW=360 vw=360
+OK      [Galaxy S5 360×640 letra 130% /transportes] nada sai do ecrã para o lado 
+OK      [Galaxy S5 360×640 letra 130% /transportes] barra de baixo inteira no ecrã fundo=640 vh=640
+OK      [Galaxy S5 360×640 letra 130% /mapa] sem scroll lateral scrollW=360 vw=360
+OK      [Galaxy S5 360×640 letra 130% /mapa] nada sai do ecrã para o lado 
+OK      [Galaxy S5 360×640 letra 130% /mapa] barra de baixo inteira no ecrã fundo=640 vh=640
+OK      [Galaxy S5 360×640 letra 130% /alertas] sem scroll lateral scrollW=360 vw=360
+OK      [Galaxy S5 360×640 letra 130% /alertas] nada sai do ecrã para o lado 
+OK      [Galaxy S5 360×640 letra 130% /alertas] barra de baixo inteira no ecrã fundo=640 vh=640
+OK      [Galaxy S5 360×640 letra 130% /comunidade] sem scroll lateral scrollW=360 vw=360
+OK      [Galaxy S5 360×640 letra 130% /comunidade] nada sai do ecrã para o lado 
+OK      [Galaxy S5 360×640 letra 130% /comunidade] barra de baixo inteira no ecrã fundo=640 vh=640
+OK      [Galaxy S5 360×640 letra 130% /favoritos] sem scroll lateral scrollW=360 vw=360
+OK      [Galaxy S5 360×640 letra 130% /favoritos] nada sai do ecrã para o lado 
+OK      [Galaxy S5 360×640 letra 130% /favoritos] barra de baixo inteira no ecrã fundo=640 vh=640
+OK      [Galaxy S5 360×640 letra 150% /] sem scroll lateral scrollW=360 vw=360
+OK      [Galaxy S5 360×640 letra 150% /] nada sai do ecrã para o lado 
+OK      [Galaxy S5 360×640 letra 150% /] barra de baixo inteira no ecrã fundo=640 vh=640
+OK      [Galaxy S5 360×640 letra 150% /transportes] sem scroll lateral scrollW=360 vw=360
+OK      [Galaxy S5 360×640 letra 150% /transportes] nada sai do ecrã para o lado 
+OK      [Galaxy S5 360×640 letra 150% /transportes] barra de baixo inteira no ecrã fundo=640 vh=640
+OK      [Galaxy S5 360×640 letra 150% /mapa] sem scroll lateral scrollW=360 vw=360
+OK      [Galaxy S5 360×640 letra 150% /mapa] nada sai do ecrã para o lado 
+OK      [Galaxy S5 360×640 letra 150% /mapa] barra de baixo inteira no ecrã fundo=640 vh=640
+OK      [Galaxy S5 360×640 letra 150% /alertas] sem scroll lateral scrollW=360 vw=360
+OK      [Galaxy S5 360×640 letra 150% /alertas] nada sai do ecrã para o lado 
+OK      [Galaxy S5 360×640 letra 150% /alertas] barra de baixo inteira no ecrã fundo=640 vh=640
+OK      [Galaxy S5 360×640 letra 150% /comunidade] sem scroll lateral scrollW=360 vw=360
+OK      [Galaxy S5 360×640 letra 150% /comunidade] nada sai do ecrã para o lado 
+OK      [Galaxy S5 360×640 letra 150% /comunidade] barra de baixo inteira no ecrã fundo=640 vh=640
+OK      [Galaxy S5 360×640 letra 150% /favoritos] sem scroll lateral scrollW=360 vw=360
+OK      [Galaxy S5 360×640 letra 150% /favoritos] nada sai do ecrã para o lado 
+OK      [Galaxy S5 360×640 letra 150% /favoritos] barra de baixo inteira no ecrã fundo=640 vh=640
+OK      [Galaxy S5 360×640 claro] Perto: a pesquisa de destino não provoca zoom no iOS (letra >= 16px) letra=16px
+OK      [Galaxy S5 360×640 claro] Perto: a escala da página fica em 1 ao tocar na pesquisa 1
+OK      [Galaxy S5 360×640 claro] Perto: com a pesquisa aberta nada sai do ecrã 
+OK      [Galaxy S5 360×640 claro] Entrar: a janela cabe no ecrã (ou desliza) {"topo":119,"fundo":522,"esq":16,"dir":344,"vw":360,"vh":640,"rola":false,"interno":false,"campos":[16,16]}
+OK      [Galaxy S5 360×640 claro] Entrar: campos com letra >= 16px (sem zoom no iOS) 16,16
+OK      [Galaxy S5 360×640 claro] Notificações: a janela cabe no ecrã (ou desliza) {"topo":0,"fundo":640,"esq":0,"dir":360,"vw":360,"vh":640,"rola":false,"interno":true,"campos":[]}
+OK      [Galaxy S5 360×640 claro] Notificações: campos com letra >= 16px (sem zoom no iOS) 
+OK      [Galaxy S5 360×640 claro] Publicar: a janela cabe no ecrã (ou desliza) {"topo":119,"fundo":522,"esq":16,"dir":344,"vw":360,"vh":640,"rola":false,"interno":false,"campos":[16,16]}
+OK      [Galaxy S5 360×640 claro] Publicar: campos com letra >= 16px (sem zoom no iOS) 16,16
+OK      [Galaxy S5 360×640 claro] sem erros de consola 
+OK      [Pixel 5 393×727 claro /] sem scroll lateral scrollW=393 vw=393
+OK      [Pixel 5 393×727 claro /] nada sai do ecrã para o lado 
+OK      [Pixel 5 393×727 claro /] barra de baixo inteira no ecrã fundo=727 vh=727
+OK      [Pixel 5 393×727 claro /] todos os botões da barra recebem o toque 
+OK      [Pixel 5 393×727 claro /] campos de texto com letra >= 16px 
+OK      [Pixel 5 393×727 claro /transportes] sem scroll lateral scrollW=393 vw=393
+OK      [Pixel 5 393×727 claro /transportes] nada sai do ecrã para o lado 
+OK      [Pixel 5 393×727 claro /transportes] barra de baixo inteira no ecrã fundo=727 vh=727
+OK      [Pixel 5 393×727 claro /transportes] todos os botões da barra recebem o toque 
+OK      [Pixel 5 393×727 claro /transportes] campos de texto com letra >= 16px 
+OK      [Pixel 5 393×727 claro /mapa] sem scroll lateral scrollW=393 vw=393
+OK      [Pixel 5 393×727 claro /mapa] nada sai do ecrã para o lado 
+OK      [Pixel 5 393×727 claro /mapa] barra de baixo inteira no ecrã fundo=727 vh=727
+OK      [Pixel 5 393×727 claro /mapa] todos os botões da barra recebem o toque 
+OK      [Pixel 5 393×727 claro /mapa] campos de texto com letra >= 16px 
+OK      [Pixel 5 393×727 claro /alertas] sem scroll lateral scrollW=393 vw=393
+OK      [Pixel 5 393×727 claro /alertas] nada sai do ecrã para o lado 
+OK      [Pixel 5 393×727 claro /alertas] barra de baixo inteira no ecrã fundo=727 vh=727
+OK      [Pixel 5 393×727 claro /alertas] todos os botões da barra recebem o toque 
+OK      [Pixel 5 393×727 claro /alertas] campos de texto com letra >= 16px 
+OK      [Pixel 5 393×727 claro /comunidade] sem scroll lateral scrollW=393 vw=393
+OK      [Pixel 5 393×727 claro /comunidade] nada sai do ecrã para o lado 
+OK      [Pixel 5 393×727 claro /comunidade] barra de baixo inteira no ecrã fundo=727 vh=727
+OK      [Pixel 5 393×727 claro /comunidade] todos os botões da barra recebem o toque 
+OK      [Pixel 5 393×727 claro /comunidade] campos de texto com letra >= 16px 
+OK      [Pixel 5 393×727 claro /favoritos] sem scroll lateral scrollW=393 vw=393
+OK      [Pixel 5 393×727 claro /favoritos] nada sai do ecrã para o lado 
+OK      [Pixel 5 393×727 claro /favoritos] barra de baixo inteira no ecrã fundo=727 vh=727
+OK      [Pixel 5 393×727 claro /favoritos] todos os botões da barra recebem o toque 
+OK      [Pixel 5 393×727 claro /favoritos] campos de texto com letra >= 16px 
+OK      [Pixel 5 393×727 claro] Perto: a pesquisa de destino não provoca zoom no iOS (letra >= 16px) letra=16px
+OK      [Pixel 5 393×727 claro] Perto: a escala da página fica em 1 ao tocar na pesquisa 1
+OK      [Pixel 5 393×727 claro] Perto: com a pesquisa aberta nada sai do ecrã 
+OK      [Pixel 5 393×727 claro] Entrar: a janela cabe no ecrã (ou desliza) {"topo":162,"fundo":565,"esq":16,"dir":377,"vw":393,"vh":727,"rola":false,"interno":false,"campos":[16,16]}
+OK      [Pixel 5 393×727 claro] Entrar: campos com letra >= 16px (sem zoom no iOS) 16,16
+OK      [Pixel 5 393×727 claro] Notificações: a janela cabe no ecrã (ou desliza) {"topo":0,"fundo":727,"esq":0,"dir":393,"vw":393,"vh":727,"rola":false,"interno":true,"campos":[]}
+OK      [Pixel 5 393×727 claro] Notificações: campos com letra >= 16px (sem zoom no iOS) 
+OK      [Pixel 5 393×727 claro] Publicar: a janela cabe no ecrã (ou desliza) {"topo":162,"fundo":565,"esq":16,"dir":377,"vw":393,"vh":727,"rola":false,"interno":false,"campos":[16,16]}
+OK      [Pixel 5 393×727 claro] Publicar: campos com letra >= 16px (sem zoom no iOS) 16,16
+OK      [Pixel 5 393×727 claro] sem erros de consola 
+OK      [Galaxy Fold (ecrã de fora) 280×653 claro /] sem scroll lateral scrollW=280 vw=280
+OK      [Galaxy Fold (ecrã de fora) 280×653 claro /] nada sai do ecrã para o lado 
+OK      [Galaxy Fold (ecrã de fora) 280×653 claro /] barra de baixo inteira no ecrã fundo=653 vh=653
+OK      [Galaxy Fold (ecrã de fora) 280×653 claro /] todos os botões da barra recebem o toque 
+OK      [Galaxy Fold (ecrã de fora) 280×653 claro /] campos de texto com letra >= 16px 
+OK      [Galaxy Fold (ecrã de fora) 280×653 claro /transportes] sem scroll lateral scrollW=280 vw=280
+OK      [Galaxy Fold (ecrã de fora) 280×653 claro /transportes] nada sai do ecrã para o lado 
+OK      [Galaxy Fold (ecrã de fora) 280×653 claro /transportes] barra de baixo inteira no ecrã fundo=653 vh=653
+OK      [Galaxy Fold (ecrã de fora) 280×653 claro /transportes] todos os botões da barra recebem o toque 
+OK      [Galaxy Fold (ecrã de fora) 280×653 claro /transportes] campos de texto com letra >= 16px 
+OK      [Galaxy Fold (ecrã de fora) 280×653 claro /mapa] sem scroll lateral scrollW=280 vw=280
+OK      [Galaxy Fold (ecrã de fora) 280×653 claro /mapa] nada sai do ecrã para o lado 
+OK      [Galaxy Fold (ecrã de fora) 280×653 claro /mapa] barra de baixo inteira no ecrã fundo=653 vh=653
+OK      [Galaxy Fold (ecrã de fora) 280×653 claro /mapa] todos os botões da barra recebem o toque 
+OK      [Galaxy Fold (ecrã de fora) 280×653 claro /mapa] campos de texto com letra >= 16px 
+OK      [Galaxy Fold (ecrã de fora) 280×653 claro /alertas] sem scroll lateral scrollW=280 vw=280
+OK      [Galaxy Fold (ecrã de fora) 280×653 claro /alertas] nada sai do ecrã para o lado 
+OK      [Galaxy Fold (ecrã de fora) 280×653 claro /alertas] barra de baixo inteira no ecrã fundo=653 vh=653
+OK      [Galaxy Fold (ecrã de fora) 280×653 claro /alertas] todos os botões da barra recebem o toque 
+OK      [Galaxy Fold (ecrã de fora) 280×653 claro /alertas] campos de texto com letra >= 16px 
+OK      [Galaxy Fold (ecrã de fora) 280×653 claro /comunidade] sem scroll lateral scrollW=280 vw=280
+OK      [Galaxy Fold (ecrã de fora) 280×653 claro /comunidade] nada sai do ecrã para o lado 
+OK      [Galaxy Fold (ecrã de fora) 280×653 claro /comunidade] barra de baixo inteira no ecrã fundo=653 vh=653
+OK      [Galaxy Fold (ecrã de fora) 280×653 claro /comunidade] todos os botões da barra recebem o toque 
+OK      [Galaxy Fold (ecrã de fora) 280×653 claro /comunidade] campos de texto com letra >= 16px 
+OK      [Galaxy Fold (ecrã de fora) 280×653 claro /favoritos] sem scroll lateral scrollW=280 vw=280
+OK      [Galaxy Fold (ecrã de fora) 280×653 claro /favoritos] nada sai do ecrã para o lado 
+OK      [Galaxy Fold (ecrã de fora) 280×653 claro /favoritos] barra de baixo inteira no ecrã fundo=653 vh=653
+OK      [Galaxy Fold (ecrã de fora) 280×653 claro /favoritos] todos os botões da barra recebem o toque 
+OK      [Galaxy Fold (ecrã de fora) 280×653 claro /favoritos] campos de texto com letra >= 16px 
+OK      [Galaxy Fold (ecrã de fora) 280×653 letra 130% /] sem scroll lateral scrollW=280 vw=280
+OK      [Galaxy Fold (ecrã de fora) 280×653 letra 130% /] nada sai do ecrã para o lado 
+OK      [Galaxy Fold (ecrã de fora) 280×653 letra 130% /] barra de baixo inteira no ecrã fundo=653 vh=653
+OK      [Galaxy Fold (ecrã de fora) 280×653 letra 130% /transportes] sem scroll lateral scrollW=280 vw=280
+OK      [Galaxy Fold (ecrã de fora) 280×653 letra 130% /transportes] nada sai do ecrã para o lado 
+OK      [Galaxy Fold (ecrã de fora) 280×653 letra 130% /transportes] barra de baixo inteira no ecrã fundo=653 vh=653
+OK      [Galaxy Fold (ecrã de fora) 280×653 letra 130% /mapa] sem scroll lateral scrollW=280 vw=280
+OK      [Galaxy Fold (ecrã de fora) 280×653 letra 130% /mapa] nada sai do ecrã para o lado 
+OK      [Galaxy Fold (ecrã de fora) 280×653 letra 130% /mapa] barra de baixo inteira no ecrã fundo=653 vh=653
+OK      [Galaxy Fold (ecrã de fora) 280×653 letra 130% /alertas] sem scroll lateral scrollW=280 vw=280
+OK      [Galaxy Fold (ecrã de fora) 280×653 letra 130% /alertas] nada sai do ecrã para o lado 
+OK      [Galaxy Fold (ecrã de fora) 280×653 letra 130% /alertas] barra de baixo inteira no ecrã fundo=653 vh=653
+OK      [Galaxy Fold (ecrã de fora) 280×653 letra 130% /comunidade] sem scroll lateral scrollW=280 vw=280
+OK      [Galaxy Fold (ecrã de fora) 280×653 letra 130% /comunidade] nada sai do ecrã para o lado 
+OK      [Galaxy Fold (ecrã de fora) 280×653 letra 130% /comunidade] barra de baixo inteira no ecrã fundo=653 vh=653
+OK      [Galaxy Fold (ecrã de fora) 280×653 letra 130% /favoritos] sem scroll lateral scrollW=280 vw=280
+OK      [Galaxy Fold (ecrã de fora) 280×653 letra 130% /favoritos] nada sai do ecrã para o lado 
+OK      [Galaxy Fold (ecrã de fora) 280×653 letra 130% /favoritos] barra de baixo inteira no ecrã fundo=653 vh=653
+OK      [Galaxy Fold (ecrã de fora) 280×653 letra 150% /] sem scroll lateral scrollW=280 vw=280
+OK      [Galaxy Fold (ecrã de fora) 280×653 letra 150% /] nada sai do ecrã para o lado 
+OK      [Galaxy Fold (ecrã de fora) 280×653 letra 150% /] barra de baixo inteira no ecrã fundo=653 vh=653
+OK      [Galaxy Fold (ecrã de fora) 280×653 letra 150% /transportes] sem scroll lateral scrollW=280 vw=280
+OK      [Galaxy Fold (ecrã de fora) 280×653 letra 150% /transportes] nada sai do ecrã para o lado 
+OK      [Galaxy Fold (ecrã de fora) 280×653 letra 150% /transportes] barra de baixo inteira no ecrã fundo=653 vh=653
+OK      [Galaxy Fold (ecrã de fora) 280×653 letra 150% /mapa] sem scroll lateral scrollW=280 vw=280
+OK      [Galaxy Fold (ecrã de fora) 280×653 letra 150% /mapa] nada sai do ecrã para o lado 
+OK      [Galaxy Fold (ecrã de fora) 280×653 letra 150% /mapa] barra de baixo inteira no ecrã fundo=653 vh=653
+OK      [Galaxy Fold (ecrã de fora) 280×653 letra 150% /alertas] sem scroll lateral scrollW=280 vw=280
+OK      [Galaxy Fold (ecrã de fora) 280×653 letra 150% /alertas] nada sai do ecrã para o lado 
+OK      [Galaxy Fold (ecrã de fora) 280×653 letra 150% /alertas] barra de baixo inteira no ecrã fundo=653 vh=653
+OK      [Galaxy Fold (ecrã de fora) 280×653 letra 150% /comunidade] sem scroll lateral scrollW=280 vw=280
+OK      [Galaxy Fold (ecrã de fora) 280×653 letra 150% /comunidade] nada sai do ecrã para o lado 
+OK      [Galaxy Fold (ecrã de fora) 280×653 letra 150% /comunidade] barra de baixo inteira no ecrã fundo=653 vh=653
+OK      [Galaxy Fold (ecrã de fora) 280×653 letra 150% /favoritos] sem scroll lateral scrollW=280 vw=280
+OK      [Galaxy Fold (ecrã de fora) 280×653 letra 150% /favoritos] nada sai do ecrã para o lado 
+OK      [Galaxy Fold (ecrã de fora) 280×653 letra 150% /favoritos] barra de baixo inteira no ecrã fundo=653 vh=653
+OK      [Galaxy Fold (ecrã de fora) 280×653 claro] Perto: a pesquisa de destino não provoca zoom no iOS (letra >= 16px) letra=16px
+OK      [Galaxy Fold (ecrã de fora) 280×653 claro] Perto: a escala da página fica em 1 ao tocar na pesquisa 1
+OK      [Galaxy Fold (ecrã de fora) 280×653 claro] Perto: com a pesquisa aberta nada sai do ecrã 
+OK      [Galaxy Fold (ecrã de fora) 280×653 claro] Entrar: a janela cabe no ecrã (ou desliza) {"topo":125,"fundo":528,"esq":16,"dir":264,"vw":280,"vh":653,"rola":false,"interno":false,"campos":[16,16]}
+OK      [Galaxy Fold (ecrã de fora) 280×653 claro] Entrar: campos com letra >= 16px (sem zoom no iOS) 16,16
+OK      [Galaxy Fold (ecrã de fora) 280×653 claro] Notificações: a janela cabe no ecrã (ou desliza) {"topo":0,"fundo":653,"esq":0,"dir":280,"vw":280,"vh":653,"rola":false,"interno":true,"campos":[]}
+OK      [Galaxy Fold (ecrã de fora) 280×653 claro] Notificações: campos com letra >= 16px (sem zoom no iOS) 
+OK      [Galaxy Fold (ecrã de fora) 280×653 claro] Publicar: a janela cabe no ecrã (ou desliza) {"topo":125,"fundo":528,"esq":16,"dir":264,"vw":280,"vh":653,"rola":false,"interno":false,"campos":[16,16]}
+OK      [Galaxy Fold (ecrã de fora) 280×653 claro] Publicar: campos com letra >= 16px (sem zoom no iOS) 16,16
+OK      [Galaxy Fold (ecrã de fora) 280×653 claro] sem erros de consola 
+
+1091/1091 testes OK; 0 avisos
