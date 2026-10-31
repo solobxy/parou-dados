@@ -118,6 +118,12 @@ p{margin:0}
 .hf>*{position:absolute;opacity:0;transform:translate(calc(var(--ex,0px) * var(--k)),calc(var(--ey,0px) * var(--k))) scale(calc(1 - .55 * var(--k)));transition:opacity .35s var(--ease),transform .35s var(--ease)}
 .hf.on>*{opacity:1;transform:none;transition:opacity .45s var(--ease) var(--d,.25s),transform 1.1s var(--mola) var(--d,.25s)}
 .hf.on>*:nth-child(2){--d:.35s}.hf.on>*:nth-child(3){--d:.45s}.hf.on>*:nth-child(4){--d:.55s}.hf.on>*:nth-child(5){--d:.65s}.hf.on>*:nth-child(6){--d:.75s}.hf.on>*:nth-child(7){--d:.85s}
+.hf .flut{height:auto;filter:drop-shadow(0 8px 10px rgba(0,0,0,.28))}
+.hf .hx{filter:drop-shadow(0 6px 10px rgba(214,16,28,.35))}
+.hf.on .flut{animation:flutua 3.4s ease-in-out .9s 1}
+.hf.on .flut:nth-child(even){animation-duration:3s;animation-delay:1.1s}
+@keyframes flutua{50%{translate:0 calc(-9px * var(--k))}}
+.hf.on>*:nth-child(8){--d:.95s}
 .hb{width:var(--s);height:var(--s);border-radius:50%;background:radial-gradient(circle at 34% 30%,#FFF7E0 0,#EBD192 22%,#C29A49 55%,#5E4719 100%);box-shadow:0 10px 18px -8px rgba(94,71,25,.6)}
 .hf img{height:auto;display:block}
 .hbo img{width:100%}
@@ -509,6 +515,7 @@ footer a{min-height:44px;display:inline-flex;align-items:center}
   .baralho{top:34px}
   .palco-nome{left:8px}.palco-pausa{right:24px}
   .h-msg{max-width:220px}
+  .hf .flut{scale:1.35}
   .project{padding-block:120px}
   .project .wrap{grid-template-columns:repeat(12,minmax(0,1fr));gap:24px}
   .project .info{grid-column:1 / span 5}
@@ -588,9 +595,7 @@ footer a{min-height:44px;display:inline-flex;align-items:center}
       <div class="fan" id="palco" role="group" aria-roledescription="carrossel" aria-label="Sites que fiz">
         <div class="fundos" aria-hidden="true">
           <div class="hf h-adri">
-            <i class="hb" style="left:13%;top:16%;--s:26px;--ex:120px;--ey:90px"></i><i class="hb" style="left:80%;top:11%;--s:15px;--ex:-110px;--ey:110px"></i>
-            <i class="hb" style="left:85%;top:56%;--s:32px;--ex:-130px;--ey:-10px"></i><i class="hb" style="left:9%;top:62%;--s:17px;--ex:120px;--ey:-20px"></i>
-            <i class="hb" style="left:67%;top:84%;--s:12px;--ex:-40px;--ey:-110px"></i>
+            <img class="flut" src="img/joia_barra_ouro.svg" alt="" style="left:11%;top:17%;width:64px;--ex:120px;--ey:90px;rotate:-22deg"><img class="flut" src="img/joia_argola_prata.svg" alt="" style="left:79%;top:9%;width:40px;--ex:-110px;--ey:110px;rotate:10deg"><img class="flut" src="img/joia_brinco_ouro.svg" alt="" style="left:85%;top:55%;width:30px;--ex:-130px;--ey:-10px;rotate:0deg"><img class="flut" src="img/joia_barra_prata.svg" alt="" style="left:6%;top:62%;width:54px;--ex:120px;--ey:-20px;rotate:28deg"><img class="flut" src="img/joia_argola_ouro.svg" alt="" style="left:66%;top:82%;width:30px;--ex:-40px;--ey:-110px;rotate:-14deg"><img class="flut" src="img/joia_brinco_prata.svg" alt="" style="left:24%;top:88%;width:18px;--ex:90px;--ey:-100px;rotate:0deg">
           </div>
           <div class="hf h-anjinho">
             <img class="hn" src="img/px_nuvem.svg" width="18" height="9" alt="" style="left:3%;top:12%;width:118px;--ex:130px;--ey:0px">
@@ -601,7 +606,7 @@ footer a{min-height:44px;display:inline-flex;align-items:center}
             <img class="hc" src="img/px_coracao.svg" width="9" height="8" alt="" style="left:11%;top:80%;width:20px;--ex:100px;--ey:-60px">
             <img class="hc" src="img/px_coracao.svg" width="9" height="8" alt="" style="left:90%;top:88%;width:14px;--ex:-80px;--ey:-80px">
           </div>
-          <div class="hf h-jinxed"><i class="h-meio"></i><span class="h-carimbo m-topo" lang="en" style="left:62%;top:76%;--ex:-60px;--ey:-90px">out of stock</span></div>
+          <div class="hf h-jinxed"><i class="h-meio"></i><img class="flut hx" src="img/x_jinxed.webp" alt="" style="left:12%;top:14%;width:26px;--ex:110px;--ey:90px;rotate:-14deg"><img class="flut hx" src="img/x_jinxed.webp" alt="" style="left:84%;top:22%;width:18px;--ex:-110px;--ey:70px;rotate:12deg"><img class="flut hx" src="img/x_jinxed.webp" alt="" style="left:7%;top:58%;width:16px;--ex:120px;--ey:0px;rotate:20deg"><img class="flut hx" src="img/x_jinxed.webp" alt="" style="left:88%;top:62%;width:30px;--ex:-120px;--ey:-10px;rotate:-8deg"><img class="flut hx" src="img/x_jinxed.webp" alt="" style="left:30%;top:86%;width:14px;--ex:70px;--ey:-100px;rotate:6deg"><span class="h-carimbo m-topo" lang="en" style="left:62%;top:76%;--ex:-60px;--ey:-90px">out of stock</span></div>
           <div class="hf h-parou">
             <svg class="h-rota" viewBox="0 0 100 100" preserveAspectRatio="none"><path class="tr" d="M-5 82C12 74 22 64 30 68S48 86 58 60 80 22 105 30"/><path class="pt" d="M30 68h0"/><path class="pt" d="M58 60h0"/></svg>
             <span class="h-chip m-topo" style="left:5%;top:14%;--ex:110px;--ey:60px"><b>8027</b>Sebolido <em>a chegar</em></span>
