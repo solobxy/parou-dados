@@ -107,6 +107,46 @@ def area_ok(a):
     return 5 <= ar <= lim
 
 
+# Bom negócio (a mesma regra do site, em index.html): renda pelo menos 15% e 40 € abaixo da mediana
+# dos anúncios da mesma tipologia na mesma cidade (últimos 30 dias, pelo menos 6); 40% ou mais abaixo é suspeito.
+NORMAL = {}
+
+
+def chave_tip(a):
+    if a.get('tipo') == 'Quarto':
+        return 'Q'
+    m = re.match(r'T(\d)', a.get('tip') or '')
+    return 'T' + str(min(int(m.group(1)), 4)) if m else ''
+
+
+def calc_normal(anuncios, agora):
+    g = {}
+    for a in anuncios:
+        k, z = chave_tip(a), norm_t((a.get('cidade') or '').strip())
+        if not (k and z and plausivel(a)):
+            continue
+        try:
+            idade = (agora - datetime.datetime.fromisoformat(a['data'].replace('Z', '+00:00'))).days if a.get('data') else 0
+        except (ValueError, TypeError):
+            idade = 0
+        if idade > 30:
+            continue
+        g.setdefault((z, k), []).append(a['renda'])
+    NORMAL.clear()
+    for k, v in g.items():
+        if len(v) >= 6:
+            v.sort()
+            NORMAL[k] = round(v[len(v) // 2] / 5) * 5
+
+
+def desconto(a):
+    med = NORMAL.get((norm_t((a.get('cidade') or '').strip()), chave_tip(a)))
+    if not med or not plausivel(a):
+        return 0
+    pct = (med - a['renda']) / med
+    return round(pct * 100) if 0.15 <= pct < 0.40 and med - a['renda'] >= 40 else 0
+
+
 def cartao(a):
     i = str(id_num(a['id']))
     t = tip(a) or a.get('tipo') or 'Casa'
@@ -115,7 +155,9 @@ def cartao(a):
     preco = f"{num(a['renda'])} €<small> /mês</small>" if a.get('renda') else 'Preço sob consulta'
     img = (f'<img src="{e(foto)}" alt="{e(t)} para arrendar em {e(a.get("bairro") or a.get("cidade") or "")}" '
            f'loading="lazy" width="400" height="250" referrerpolicy="no-referrer">' if foto else '<div class="sem"></div>')
-    return f'<a class="c" href="/#casa-{i}">{img}<div class="cc"><p class="p">{preco}</p><p class="l">{e(" · ".join(partes))}</p></div></a>'
+    d = desconto(a)
+    selo = f'<span class="neg">{d}% abaixo do normal</span>' if d else ''
+    return f'<a class="c" href="/#casa-{i}">{selo}{img}<div class="cc"><p class="p">{preco}</p><p class="l">{e(" · ".join(partes))}</p></div></a>'
 
 
 def item_ld(a):
@@ -181,7 +223,7 @@ header{{border-bottom:1px solid var(--b);background:var(--f)}}header .w{{display
 h1{{font-size:34px;line-height:1.1;letter-spacing:-.03em;margin:0 0 12px}}h2{{font-size:22px;margin:40px 0 12px;letter-spacing:-.01em}}
 .intro{{font-size:18px;color:var(--t2);max-width:760px;margin:0 0 20px}}
 .g{{display:grid;gap:16px;grid-template-columns:repeat(auto-fill,minmax(260px,1fr))}}
-.c{{display:block;background:#fff;border-radius:18px;overflow:hidden;text-decoration:none}}.c img,.c .sem{{display:block;width:100%;aspect-ratio:16/10;object-fit:cover;background:#D6DDDA}}
+.c{{position:relative;display:block;background:#fff;border-radius:18px;overflow:hidden;text-decoration:none}}.c .neg{{position:absolute;left:10px;top:10px;padding:4px 10px;border-radius:999px;background:#F2A33A;color:#2A1A00;font-size:12.5px;font-weight:800}}.c img,.c .sem{{display:block;width:100%;aspect-ratio:16/10;object-fit:cover;background:#D6DDDA}}
 .cc{{padding:14px 16px}}.p{{margin:0;font-weight:800;font-size:20px}}.p small{{font-weight:600;color:var(--t3);font-size:14px}}.l{{margin:4px 0 0;color:var(--t2);font-size:15px}}
 .ch{{display:flex;flex-wrap:wrap;gap:8px;padding:0;margin:0;list-style:none}}.ch a{{display:inline-flex;min-height:44px;align-items:center;padding:0 16px;border:1px solid #C9D3CF;border-radius:999px;background:#fff;text-decoration:none;font-weight:600}}
 .cx{{background:#fff;border-radius:18px;padding:20px;margin-top:32px}}.cx p,.cx li{{color:var(--t2)}}
@@ -233,6 +275,11 @@ def palavra_alugar(tt):
 
 def gerar(anuncios, atualizado):
     hoje = data_pt(atualizado)
+    try:
+        agora = datetime.datetime.fromisoformat((atualizado or '').replace('Z', '+00:00'))
+    except ValueError:
+        agora = datetime.datetime.now(datetime.timezone.utc)
+    calc_normal(anuncios, agora)
     por_cidade = {}
     for a in anuncios:
         c = (a.get('cidade') or '').strip()

@@ -1,11 +1,12 @@
 # DupliCasa
 
-> A DupliCasa (duplicasa.pt) é um site português para encontrar casas, apartamentos e quartos para alugar (arrendar) em Portugal. Junta num só lugar os anúncios públicos dos principais sites de arrendamento, sem repetir a mesma casa, ordena-os do mais barato para o mais caro e avisa por e-mail quando aparecem casas novas. Atualiza os anúncios de 30 em 30 minutos e retira os que já não estão disponíveis.
+> A DupliCasa (duplicasa.pt) é um site português para encontrar casas, apartamentos e quartos para alugar (arrendar) em Portugal. Junta num só lugar os anúncios públicos dos principais sites de arrendamento, sem repetir a mesma casa, mostra primeiro as que estão abaixo do preço normal da zona e avisa por e-mail quando aparecem casas novas. Atualiza os anúncios de 30 em 30 minutos e retira os que já não estão disponíveis.
 
 Dados atuais (número de casas e renda mediana por cidade): [llms-full.txt](https://duplicasa.pt/llms-full.txt) e [Preço das rendas em Portugal, por cidade](https://duplicasa.pt/arrendar/precos/).
 
 ## Para quem procura casa
 - Ver as casas, as fotos e a informação é grátis, sem conta.
+- Bom negócio: cada casa mostra quanto a renda está abaixo (ou acima) do normal, ou seja, da mediana dos anúncios da mesma tipologia na mesma cidade nos últimos 30 dias, com pelo menos 6 anúncios para comparar. Rendas 40% ou mais abaixo do normal são assinaladas como possível erro ou burla.
 - Alertas de casas novas: grátis com um resumo por dia; com o acesso, no minuto em que a casa aparece.
 - O acesso para contactar quem anuncia custa 1 € nos primeiros 30 dias e depois 9,99 € a cada 30 dias, até cancelar. Cancela-se na conta com um toque e a DupliCasa avisa por e-mail 3 dias antes de cada renovação.
 - Nos anúncios que vêm de outros sites, o contacto é feito no anúncio original, que se abre a partir da DupliCasa, com uma mensagem pronta a enviar.

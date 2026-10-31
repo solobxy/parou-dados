@@ -27,7 +27,7 @@
 <meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="sitemap" type="application/xml" href="/sitemap.xml">
-<script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"Organization","@id":"https://duplicasa.pt/#org","name":"DupliCasa","alternateName":"DupliCasa","url":"https://duplicasa.pt/","logo":"https://duplicasa.pt/marca/duaschaves-icone.png","email":"ola@duplicasa.pt","taxID":"273728156","address":{"@type":"PostalAddress","streetAddress":"Avenida General Humberto Delgado, 875, 1.º Esq.","postalCode":"4420-155","addressLocality":"Gondomar","addressCountry":"PT"},"description":"Agregador de casas, apartamentos e quartos para arrendar em Portugal, com alertas de casas novas."},{"@type":"WebSite","@id":"https://duplicasa.pt/#site","name":"DupliCasa","url":"https://duplicasa.pt/","inLanguage":"pt-PT","publisher":{"@id":"https://duplicasa.pt/#org"}},{"@type":"FAQPage","mainEntity":[{"@type":"Question","name":"De onde vêm as casas?","acceptedAnswer":{"@type":"Answer","text":"Juntamos num só lugar os anúncios dos principais sites de arrendamento em Portugal, sem repetir a mesma casa. Atualizamos de 30 em 30 minutos e retiramos as que já não estão disponíveis."}},{"@type":"Question","name":"Quanto custa?","acceptedAnswer":{"@type":"Answer","text":"Ver as casas, guardá-las e criar alertas é grátis. O acesso para contactar quem anuncia e receber os alertas no minuto custa 1 € nos primeiros 30 dias e depois 9,99 € a cada 30 dias, até cancelar."}},{"@type":"Question","name":"Como cancelo?","acceptedAnswer":{"@type":"Answer","text":"Na conta, com um toque. O acesso continua até ao fim do período pago e não há nova cobrança. Avisamos por e-mail 3 dias antes de cada renovação."}},{"@type":"Question","name":"As casas são verificadas?","acceptedAnswer":{"@type":"Answer","text":"Os anúncios que vêm de outros sites não são verificados pela DupliCasa. Visite sempre a casa antes de pagar, desconfie de rendas muito abaixo das outras na zona e confirme que quem anuncia é o dono."}}]}]}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"Organization","@id":"https://duplicasa.pt/#org","name":"DupliCasa","alternateName":"DupliCasa","url":"https://duplicasa.pt/","logo":"https://duplicasa.pt/marca/duaschaves-icone.png","email":"ola@duplicasa.pt","taxID":"273728156","address":{"@type":"PostalAddress","streetAddress":"Avenida General Humberto Delgado, 875, 1.º Esq.","postalCode":"4420-155","addressLocality":"Gondomar","addressCountry":"PT"},"description":"Agregador de casas, apartamentos e quartos para arrendar em Portugal, com alertas de casas novas."},{"@type":"WebSite","@id":"https://duplicasa.pt/#site","name":"DupliCasa","url":"https://duplicasa.pt/","inLanguage":"pt-PT","publisher":{"@id":"https://duplicasa.pt/#org"}},{"@type":"FAQPage","mainEntity":[{"@type":"Question","name":"De onde vêm as casas?","acceptedAnswer":{"@type":"Answer","text":"Juntamos num só lugar os anúncios dos principais sites de arrendamento em Portugal, sem repetir a mesma casa. Atualizamos de 30 em 30 minutos e retiramos as que já não estão disponíveis."}},{"@type":"Question","name":"Como sabem se uma casa é um bom negócio?","acceptedAnswer":{"@type":"Answer","text":"Comparamos a renda com o normal: a mediana dos anúncios da mesma tipologia, na mesma cidade, nos últimos 30 dias. Só marcamos quando há pelo menos 6 anúncios para comparar. Se uma renda estiver 40% ou mais abaixo do normal, não a mostramos como negócio: avisamos que pode ser um erro ou uma burla."}},{"@type":"Question","name":"Quanto custa?","acceptedAnswer":{"@type":"Answer","text":"Ver as casas, guardá-las e criar alertas é grátis. O acesso para contactar quem anuncia e receber os alertas no minuto custa 1 € nos primeiros 30 dias e depois 9,99 € a cada 30 dias, até cancelar."}},{"@type":"Question","name":"Como cancelo?","acceptedAnswer":{"@type":"Answer","text":"Na conta, com um toque. O acesso continua até ao fim do período pago e não há nova cobrança. Avisamos por e-mail 3 dias antes de cada renovação."}},{"@type":"Question","name":"As casas são verificadas?","acceptedAnswer":{"@type":"Answer","text":"Os anúncios que vêm de outros sites não são verificados pela DupliCasa. Visite sempre a casa antes de pagar, desconfie de rendas muito abaixo das outras na zona e confirme que quem anuncia é o dono."}}]}]}</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -189,7 +189,43 @@ input[type=file]{font:inherit;font-size:15px;max-width:100%}
 .cartao{display:grid;grid-template-columns:46% minmax(0,1fr);background:#fff;border-radius:18px;overflow:hidden;text-decoration:none;color:var(--tinta);box-shadow:0 1px 2px rgba(15,26,23,.06),0 8px 24px -12px rgba(15,26,23,.14);transition:transform .2s var(--mola),box-shadow .2s ease-out}
 .cartao>.foto-img,.cartao>.foto{aspect-ratio:auto;height:100%;min-height:196px}.cartao>.foto{padding:8px;font-size:12px}
 .cartao .marca-foto{width:clamp(28px,22%,48px)}.cartao .n-fotos{right:8px;bottom:8px;font-size:12px;padding:2px 8px}
-.cartao{position:relative}.c-nova{position:absolute;z-index:2;left:10px;top:10px;padding:3px 10px;border-radius:999px;background:var(--quente);color:var(--tinta);font-size:12px;font-weight:800;pointer-events:none}
+.cartao{position:relative}
+/* bom negócio: o laranja da marca fica só para «abaixo do normal» */
+.selos{position:absolute;z-index:2;left:10px;top:10px;right:10px;display:flex;flex-wrap:wrap;gap:6px;pointer-events:none}
+.selo-neg,.selo-nova{display:inline-flex;align-items:center;gap:4px;padding:4px 10px 4px 8px;border-radius:999px;font-size:12.5px;font-weight:800;line-height:1.2;letter-spacing:-.005em}
+.selo-neg{background:var(--quente);color:#2A1A00;box-shadow:0 2px 10px rgba(0,0,0,.18)}
+.selo-nova{background:rgba(17,28,24,.82);color:#fff;padding:4px 10px;backdrop-filter:blur(6px)}
+.c-normal{display:block;margin-top:2px;font-size:13px;font-weight:600;color:var(--texto3);letter-spacing:0}
+.mini .c-normal{margin-top:4px}
+.c-pe .preco{display:flex;flex-direction:column}
+.ver-neg{display:inline-flex;align-items:center;gap:5px;margin-left:6px;padding:4px 11px 4px 9px;border:0;border-radius:999px;background:var(--quente-claro);color:var(--quente-texto);font:inherit;font-size:14px;font-weight:700;cursor:pointer;vertical-align:1px}
+.ver-neg:hover{background:#FCE3BC}
+.seccao.negocios{padding-top:20px}
+.neg-cabeca{margin-bottom:16px}.neg-cabeca h2{margin-bottom:4px}
+.neg-apoio{margin:0;color:var(--texto2);font-size:15.5px}
+.negocios .botao-sec{margin-top:4px}
+@media (max-width:899px){.heroi.com-neg .heroi-mock{display:none}.heroi.com-neg{padding-bottom:0}}
+/* ficha: a renda comparada com o normal */
+.neg{margin:16px 0 4px;padding:16px 16px 14px;border:1px solid var(--borda);border-radius:16px;background:#fff}
+.neg-tit{display:flex;align-items:center;gap:8px;margin:0 0 6px;font-size:17px;font-weight:800;color:var(--tinta)}
+.neg-bom{border-color:#F6CF96;background:linear-gradient(180deg,#FFF8EC,#fff 70%)}.neg-bom .neg-tit{color:var(--quente-texto)}
+.neg-acima .neg-tit{color:var(--texto2)}
+.neg-susp{border-color:#E9B4A8;background:#FFF4F1}.neg-susp .neg-tit{color:#9A2B12}
+.neg-txt{margin:0 0 14px;font-size:15.5px;line-height:1.5;color:var(--texto2)}.neg-txt strong{color:var(--tinta)}
+.neg-susp .neg-txt{margin-bottom:8px}
+.neg-barra{position:relative;height:10px;margin:28px 2px 6px;border-radius:999px;background:linear-gradient(90deg,#BFE3CF,#E7ECEA 50%,#F3D9CF)}
+.neg-med{position:absolute;top:-6px;bottom:-6px;width:2px;margin-left:-1px;background:var(--texto3);border-radius:2px}
+.neg-med span{position:absolute;bottom:calc(100% + 3px);left:50%;transform:translateX(-50%);font-size:12px;font-weight:700;font-style:normal;color:var(--texto3);white-space:nowrap}
+.neg-esta{position:absolute;top:50%;width:20px;height:20px;margin:-10px 0 0 -10px;border-radius:50%;background:var(--verde);border:3px solid #fff;box-shadow:0 1px 6px rgba(0,0,0,.3)}
+.neg-bom .neg-esta{background:var(--quente)}
+.neg-eixo{display:flex;justify-content:space-between;font-size:12px;color:var(--texto3);margin:0 0 10px}
+.neg-base{margin:0;font-size:12.5px;color:var(--texto3)}
+.pw-neg{display:flex;gap:8px;align-items:flex-start;margin:-4px 0 14px;padding:10px 12px;border-radius:12px;background:var(--quente-claro);color:var(--quente-texto);font-size:14.5px;line-height:1.4}
+.pw-neg svg{flex-shrink:0;margin-top:1px}.pw-neg strong{color:#5C3100}
+.bc-neg{color:var(--quente-texto);font-weight:800}
+.cartao>.selos{right:auto;max-width:calc(46% - 20px)}
+@media (max-width:379px){.cartao>.selos{max-width:calc(41% - 20px)}}
+.selo-ficha{display:flex;width:fit-content;margin:8px 0 0;box-shadow:none;font-size:13px}
 .c-sub{margin:0;font-size:14px;line-height:1.4;color:var(--texto2);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .c-dados{margin:4px 0 0;padding:8px 0;border-top:1px solid var(--borda);border-bottom:1px solid var(--borda);display:flex;flex-wrap:wrap;justify-content:space-between;gap:2px 10px;font-size:14px;color:var(--tinta)}
 .c-dados span{white-space:nowrap}
@@ -868,9 +904,41 @@ a.botao[aria-disabled="true"]{opacity:.6;pointer-events:none}
   .cartao:hover,.botao:active{transform:none}
 }
 @media (max-height:700px){.pw-mkt{font-size:12px}.pw .pw-nota{display:none}.dialogo-corpo.pw{gap:5px}.pw .inclui{gap:2px}}
+/* Abertura: os dois arcos sobem, a luz acende entre eles e as portas abrem para o site. Uma vez por sessão, só no início. */
+#abertura{position:fixed;inset:0;z-index:1000;display:grid;place-items:center;background:var(--fundo);animation:ab-sai .45s cubic-bezier(.4,0,.2,1) 2.6s forwards}
+#abertura.sai{animation:ab-sai .5s cubic-bezier(.4,0,.2,1) forwards}
+.ab-in{display:flex;flex-direction:column;align-items:center;gap:16px}
+.ab-simb{display:block;overflow:visible}
+.ab-a1,.ab-a2,.ab-x{transform-box:fill-box;transform-origin:50% 100%}
+.ab-a1{animation:ab-sobe .62s cubic-bezier(.2,1.3,.4,1) both}
+.ab-a2{animation:ab-sobe .62s cubic-bezier(.2,1.3,.4,1) .12s both}
+.ab-x{animation:ab-luz .4s ease-out .58s both}
+.ab-nome{margin:0;font-size:27px;font-weight:800;letter-spacing:-.035em;color:var(--tinta);animation:ab-nome .5s cubic-bezier(.2,.7,.2,1) .45s both}
+.ab-nome span{color:var(--verde)}
+#abertura.sai .ab-a1{animation:ab-esq .5s cubic-bezier(.5,0,.2,1) forwards}
+#abertura.sai .ab-a2{animation:ab-dir .5s cubic-bezier(.5,0,.2,1) forwards}
+#abertura.sai .ab-x{animation:ab-apaga .2s ease-out forwards}
+#abertura.sai .ab-in{animation:ab-perto .5s cubic-bezier(.5,0,.2,1) forwards}
+@keyframes ab-sobe{from{transform:scaleY(0)}to{transform:none}}
+@keyframes ab-luz{from{opacity:0;transform:scaleY(.3)}to{opacity:1;transform:none}}
+@keyframes ab-nome{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+@keyframes ab-sai{to{opacity:0;visibility:hidden}}
+@keyframes ab-esq{to{transform:translateX(-12px) rotate(-4deg)}}
+@keyframes ab-dir{to{transform:translateX(12px) rotate(4deg)}}
+@keyframes ab-apaga{to{opacity:0}}
+@keyframes ab-perto{to{transform:scale(1.08)}}
+@keyframes ab-surge{from{opacity:0}to{opacity:1}}
+/* movimento reduzido: o mesmo momento, sem deslocações (só aparece e desaparece) */
+@media (prefers-reduced-motion:reduce){
+  .ab-a1,.ab-a2,.ab-x,.ab-nome{animation:ab-surge .35s ease-out both}
+  #abertura.sai .ab-a1,#abertura.sai .ab-a2,#abertura.sai .ab-in{animation:none}
+}
 </style>
 </head>
 <body>
+<div id="abertura" aria-hidden="true"><div class="ab-in"><svg class="ab-simb" viewBox="8 6 84 88" width="92" height="96"><path class="ab-a1" fill="#0B6E4F" d="M11 88V52.00A22.0 22.0 0 0 1 55 52.00V88Z"/><path class="ab-a2" fill="#08523B" d="M42 88V36.00A24.0 24.0 0 0 1 90 36.00V88Z"/><path class="ab-x" fill="#F2A33A" d="M42 88L42.00 36.00L42.27 32.40L42.54 32.18L42.81 32.31L43.08 32.45L43.35 32.59L43.62 32.74L43.90 32.89L44.17 33.04L44.44 33.21L44.71 33.37L44.98 33.55L45.25 33.73L45.52 33.91L45.79 34.10L46.06 34.30L46.33 34.50L46.60 34.71L46.88 34.93L47.15 35.15L47.42 35.38L47.69 35.62L47.96 35.87L48.23 36.12L48.50 36.39L48.77 36.66L49.04 36.94L49.31 37.24L49.58 37.54L49.85 37.86L50.12 38.19L50.40 38.53L50.67 38.89L50.94 39.26L51.21 39.65L51.48 40.06L51.75 40.49L52.02 40.95L52.29 41.42L52.56 41.93L52.83 42.48L53.10 43.07L53.38 43.70L53.65 44.40L53.92 45.18L54.19 46.08L54.46 47.15L54.73 48.56L55.00 52.00L55 88Z"/></svg><p class="ab-nome">Dupli<span>Casa</span></p></div></div>
+<script>/* abertura: fecha quando as casas chegam, nunca antes de a animação acabar (~1 s); o CSS fecha-a sozinho aos 2,6 s */
+(function(){var a=document.getElementById('abertura'),h=location.hash.replace('#',''),ok=!h||h==='inicio',t0=Date.now();try{if(sessionStorage.getItem('dc-ab'))ok=false;else sessionStorage.setItem('dc-ab','1');}catch(e){}if(/bot|crawl|spider|lighthouse/i.test(navigator.userAgent))ok=false;if(!ok){a.parentNode.removeChild(a);window.dcFecharAbertura=function(){};return;}window.dcFecharAbertura=function(){if(!a.parentNode||a.classList.contains('sai'))return;setTimeout(function(){a.classList.add('sai');setTimeout(function(){if(a.parentNode)a.parentNode.removeChild(a);},520);},Math.max(0,1050-(Date.now()-t0)));};a.addEventListener('click',function(){t0=0;window.dcFecharAbertura();});})();</script>
 <a class="saltar" href="#conteudo" id="saltar">Saltar para o conteúdo</a>
 <header class="topo">
   <div class="contentor topo-in">
@@ -1034,6 +1102,8 @@ var P = {
   filtro:'<path d="M4 6h16M7 12h10M10 18h4"/>',
   fechar:'<path d="M6 6l12 12M18 6 6 18"/>',
   seta:'<path d="M5 12h14M13 6l6 6-6 6"/>',
+  desce:'<path d="M3 7l6 6 4-4 8 8"/><path d="M21 11v6h-6"/>',
+  aviso:'<path d="M12 3 2 20h20z"/><path d="M12 10v4M12 17h.01"/>',
   baixo:'<path d="m6 9 6 6 6-6"/>',
   coracao:'<path d="M12 20s-7-4.5-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.5-7 10-7 10z"/>',
   telefone:'<path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2"/>',
@@ -1244,14 +1314,15 @@ function abrirAcesso(depois,c){
   var semSessao=!conta.sessao;
   ev('paywall',{origem:c?'casa':(dlg.classList.contains('dlg-promo')?'oferta':(location.hash.slice(1)||'inicio').split('-')[0])});
   var mini=c?'<div class="pw-casa">'+(c.fotos&&c.fotos.length?'<img src="'+esc(c.fotos[0])+'" alt="" referrerpolicy="no-referrer" width="72" height="54">':'')+
-    '<div><p class="pw-preco">'+precoHtml(c)+'</p><p class="pw-linha">'+resumoCasa(c,false)+'</p><p class="pw-quando'+(c.min<1440?' novo':'')+'">'+(c.semData?'Anúncio de outro site':'Publicada '+quando(c.min))+'</p></div></div>':'';
+    '<div><p class="pw-preco">'+precoHtml(c)+'</p><p class="pw-linha">'+resumoCasa(c,false)+'</p><p class="pw-quando'+(c.min<1440?' novo':'')+'">'+(c.semData?'Anúncio de outro site':'Publicada '+quando(c.min))+'</p></div></div>'+
+    (eNegocio(c)?'<p class="pw-neg">'+svg(P.desce,{s:18,w:2.4})+'<span>'+negocio(c).pct+'% abaixo do normal '+esc(emCidade(negocio(c).cid))+': pagas menos <strong>'+eur(negocio(c).poupa)+' por mês</strong>.</span></p>':''):'';
   var nc=numerosCasas(),pl=planoAtual(),fimTeste=new Date(Date.now()+30*DIA);
   var ben=function(ic,t){return '<li>'+svg(ic,{s:22,w:1.8})+'<span>'+t+'</span></li>';};
   var MB='data:image/png;base64,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';
   abrirDialogo('<form class="dialogo-corpo pw pw-cheia" id="f-acesso" novalidate>'+
     '<div class="pw-topo"><ol class="pw-passos" aria-label="Passos">'+(semSessao?'<li class="atual" aria-current="step"><span>1</span>E-mail</li><li><span>2</span>Pagar</li>':'<li class="feito"><span>'+svg(P.visto,{s:14,w:3})+'</span>Conta</li><li class="atual" aria-current="step"><span>2</span>Pagar</li>')+'<li><span>3</span>Contactar</li></ol>'+
       '<button type="button" class="icone" aria-label="Fechar" data-fechar>'+svg(P.fechar)+'</button></div>'+
-    '<h2 class="pw-tit" tabindex="-1">'+(c?'Contacta quem anuncia agora':'Contacta antes dos outros')+'</h2>'+
+    '<h2 class="pw-tit" tabindex="-1">'+(c?(eNegocio(c)?'Contacta antes que outro arrende':'Contacta quem anuncia agora'):'Contacta antes dos outros')+'</h2>'+
     '<p class="pw-sub">30 dias de acesso total por '+P1+'.</p>'+
     mini+
     '<ul class="pw-ben">'+
@@ -1466,7 +1537,7 @@ function cartao(c){
   var cond=[];if(cd.caucao)cond.push(cd.caucao==='Sem caução'?'Sem caução':(/^Pedida/.test(cd.caucao)?'Pede caução':'Caução de '+cd.caucao));if(cd.fiador)cond.push(cd.fiador);
   if(cond.length)info.push([P.escudo,cond.join(' · ')]);
   if(c.particular)info.push([P.pessoa,'Anúncio de particular']);
-  return '<a class="cartao" href="#casa-'+c.id+'">'+(!c.semData&&c.min<1440?'<span class="c-nova">Nova</span>':'')+
+  return '<a class="cartao" href="#casa-'+c.id+'">'+selosFoto(c,true)+
     (c.fotos&&c.fotos.length?fotosCartao(c):'<div class="foto" style="background:'+c.cor+'"><span>[Foto do anúncio]</span></div>')+
     '<div class="cartao-corpo">'+
       '<h3>'+svg(tit[1],{s:18,w:1.8})+'<span>'+esc(tit[0])+'</span></h3>'+
@@ -1474,7 +1545,7 @@ function cartao(c){
       (dados.length?'<p class="c-dados">'+dados.map(function(d){return '<span>'+esc(d)+'</span>';}).join('')+'</p>':'')+
       (info.length?'<ul class="c-info">'+info.slice(0,3).map(function(x){return '<li>'+svg(x[0],{s:15,w:2})+'<span>'+esc(x[1])+'</span></li>';}).join('')+'</ul>':'')+
       (c.prot?confianca(c):'')+
-      '<div class="c-pe"><p class="preco">'+(c.renda?eur(c.renda):'<span class="consulta">Sob consulta</span>')+'</p><span class="c-ver">Ver mais'+svg(P.seta,{s:18,w:2.4})+'</span></div>'+
+      '<div class="c-pe"><p class="preco">'+(c.renda?eur(c.renda):'<span class="consulta">Sob consulta</span>')+linhaNormal(c,true)+'</p><span class="c-ver">Ver mais'+svg(P.seta,{s:18,w:2.4})+'</span></div>'+
     '</div></a>';
 }
 function partes(o){
@@ -1508,8 +1579,8 @@ function numerosCasas(){
 function minAtualizado(){if(!ATUALIZADO)return null;var t=Date.parse(ATUALIZADO);return isNaN(t)?null:Math.max(1,Math.round((Date.now()-t)/6e4));}
 function cartaoMini(c){
   return '<a class="mini" href="#casa-'+c.id+'">'+
-    (c.fotos&&c.fotos.length?'<span class="mini-foto"><img src="'+esc(c.fotos[0])+'" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" width="320" height="200">'+MARCA_FOTO+'</span>':'<span class="mini-foto" style="background:'+c.cor+'"></span>')+
-    '<span class="mini-corpo"><span class="preco">'+precoHtml(c)+'</span><span class="mini-txt">'+resumoCasa(c,false)+'</span></span></a>';
+    (c.fotos&&c.fotos.length?'<span class="mini-foto"><img src="'+esc(c.fotos[0])+'" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" width="320" height="200">'+MARCA_FOTO+selosFoto(c)+'</span>':'<span class="mini-foto" style="background:'+c.cor+'">'+selosFoto(c)+'</span>')+
+    '<span class="mini-corpo"><span class="preco">'+precoHtml(c)+'</span><span class="mini-txt">'+resumoCasa(c,true)+'</span>'+linhaNormal(c)+'</span></a>';
 }
 function blocoCidade(nc){
   var cid=nc.filter(function(x){return x.k===norm(CID_INICIO);})[0]||nc[0];
@@ -1523,7 +1594,7 @@ function blocoCidade(nc){
 var SIMB_BRANCO='<svg viewBox="8 6 84 88" aria-hidden="true"><path fill="#fff" d="M11 88V52.00A22.0 22.0 0 0 1 55 52.00V88Z"/><path fill="#BFDCCF" d="M42 88V36.00A24.0 24.0 0 0 1 90 36.00V88Z"/><path fill="#F2A33A" d="M42 88L42.00 36.00L42.27 32.40L42.54 32.18L42.81 32.31L43.08 32.45L43.35 32.59L43.62 32.74L43.90 32.89L44.17 33.04L44.44 33.21L44.71 33.37L44.98 33.55L45.25 33.73L45.52 33.91L45.79 34.10L46.06 34.30L46.33 34.50L46.60 34.71L46.88 34.93L47.15 35.15L47.42 35.38L47.69 35.62L47.96 35.87L48.23 36.12L48.50 36.39L48.77 36.66L49.04 36.94L49.31 37.24L49.58 37.54L49.85 37.86L50.12 38.19L50.40 38.53L50.67 38.89L50.94 39.26L51.21 39.65L51.48 40.06L51.75 40.49L52.02 40.95L52.29 41.42L52.56 41.93L52.83 42.48L53.10 43.07L53.38 43.70L53.65 44.40L53.92 45.18L54.19 46.08L54.46 47.15L54.73 48.56L55.00 52.00L55 88Z"/></svg>';
 function casasMock(n){
   var l=CASAS.filter(function(c){return c.renda&&c.renda>=minimo(c)&&c.renda<=1300&&c.fotos&&c.fotos.length&&(c.tipo==='Quarto'||/^T[0-2]$/.test(c.tip));});
-  l.sort(function(a,b){return (baratoPrincipal(b)-baratoPrincipal(a))||(a.min-b.min);});
+  l.sort(function(a,b){return (eNegocio(b)-eNegocio(a))||(baratoPrincipal(b)-baratoPrincipal(a))||(a.min-b.min);});
   return l.slice(0,n);
 }
 function fotoMock(c,cls){return c.fotos&&c.fotos.length?'<img class="'+cls+'" src="'+esc(c.fotos[0])+'" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer">':'<span class="'+cls+'" style="background:'+c.cor+'"></span>';}
@@ -1572,13 +1643,14 @@ function perguntas(){return {
   custo:['Quanto custa?','Ver as casas, guardá-las e criar alertas é grátis. O acesso para contactar quem anuncia e receber os alertas no minuto custa '+P1+' nos primeiros 30 dias e depois '+P2+' a cada 30 dias, até cancelares.'],
   cancelar:['Como cancelo?','Na tua conta, com um toque. Continuas com acesso até ao fim do período que pagaste e não voltas a ser cobrado. Avisamos-te por e-mail 3 dias antes de cada renovação, para não haver surpresas.'],
   contactar:['Como contacto quem anuncia?','Com o acesso, abres o anúncio original com um toque e falas diretamente com quem anuncia. Damos-te também uma mensagem pronta a enviar.'],
+  negocio:['Como sabem se uma casa é um bom negócio?','Comparamos a renda com o normal: a mediana dos anúncios da mesma tipologia, na mesma cidade, nos últimos 30 dias. Só marcamos quando há pelo menos 6 anúncios para comparar. Se uma renda estiver 40% ou mais abaixo do normal, não a mostramos como negócio: avisamos que pode ser um erro ou uma burla.'],
   verificadas:['As casas são verificadas?','Os anúncios que vêm de outros sites não são verificados por nós. Visita sempre a casa antes de pagar, desconfia de rendas muito abaixo das outras na zona e confirma que quem anuncia é o dono.'],
   seguro:['O que é o pagamento seguro?','Um serviço que abre em breve: pagas a entrada pela DupliCasa, o dinheiro fica guardado numa instituição de pagamento autorizada e só chega a quem anuncia quando os dois confirmam a entrega das chaves. Vai custar '+eur(TAXA)+' e só pagas se arrendares. Já podes <a href="#proteger">entrar na lista de espera</a>.'],
   facebook:['Vai dar para usar numa casa que vi no Facebook?','Sim. O pagamento seguro vai funcionar em qualquer anúncio, mesmo de fora da DupliCasa: envias um convite a quem anuncia e, se aceitar, confirmamos a identidade e que a casa é dele. Se recusar, isso não prova que seja burla, mas é um sinal para teres cuidado.'],
   arrendada:['E se a casa já tiver sido arrendada?','Confirmamos os anúncios de outros sites várias vezes por dia e retiramos os que desaparecem da origem. As casas publicadas há mais de 60 dias também saem, porque quase de certeza já foram arrendadas.'],
   senhorio:['Tenho uma casa para arrendar. Como publico?','Publicar é grátis. Envia-nos os dados da casa em <a href="#senhorios">Para senhorios</a> e falamos contigo antes de a publicarmos.']
 };}
-function faq(){var q=perguntas();return [q.origem,q.custo,q.cancelar,q.verificadas,q.seguro];}
+function faq(){var q=perguntas();return [q.origem,q.negocio,q.custo,q.cancelar,q.verificadas,q.seguro];}
 /* números do topo contam até ao valor real (sem «reduzir movimento») */
 function contarNumeros(els){
   if(matchMedia('(prefers-reduced-motion: reduce)').matches)return;
@@ -1609,12 +1681,12 @@ function tiposBarra(attr,atual,ligacoes){
 function vInicio(){
   titulo('');
   var prefs=lerPrefs(),recentes=pesquisasUnicas(prefs.pesquisas,4);
-  var novas=baratasInicio(),nc=numerosCasas(),ma=minAtualizado(),tel=mockHeroi(),duo=mockDuo(),ativo=acessoAtivo();
+  var negs=negociosInicio(8),nNeg=nNegocios(),novas=negs.length>=4?[]:baratasInicio(),nc=numerosCasas(),ma=minAtualizado(),tel=mockHeroi(),duo=mockDuo(),ativo=acessoAtivo();
   var nums=false&&nc.total>20?'<p class="numeros"><span><strong>'+fmtN(nc.total)+'</strong> casas</span>'+(nc.n24>0?'<span><strong>'+fmtN(nc.n24)+'</strong> novas em 24 h</span>':'')+(ma!=null&&ma<180?'<span class="atual">Atualizado '+quando(ma)+'</span>':'')+'</p>':'';
   main.innerHTML=
-  '<section class="heroi"><div class="contentor heroi-grelha"><div>'+
+  '<section class="heroi'+(negs.length>=4?' com-neg':'')+'"><div class="contentor heroi-grelha"><div>'+
     '<h1 class="grande" tabindex="-1">Casas para alugar, <span class="traco">sem burlas<svg viewBox="0 0 300 30" preserveAspectRatio="none" aria-hidden="true" focusable="false"><path class="t1" pathLength="1" d="M5 19 C 48 13, 104 10, 158 10 S 252 11, 295 7"/><path class="t2" pathLength="1" d="M26 25 C 86 20, 150 18, 214 18 S 266 18, 284 16"/></svg></span></h1>'+
-    '<p class="apoio">As casas dos principais sites num só lugar. Sabes das novas no minuto em que aparecem.</p>'+
+    '<p class="apoio">As casas dos principais sites num só lugar, com as que estão abaixo do preço da zona primeiro.</p>'+
     '<form class="busca2" id="f-busca" role="search"><label class="vh" for="b-cidade">Onde queres morar?</label>'+svg(P.lupa,{s:20})+
       '<input id="b-cidade" type="search" placeholder="Cidade ou bairro" autocomplete="address-level2" value="'+esc(estado.cidade)+'">'+
       '<button class="botao" type="submit">Procurar</button></form>'+
@@ -1622,19 +1694,24 @@ function vInicio(){
   '</div>'+
   (tel?'<div class="heroi-mock">'+tel+'</div>':'')+
   '</div></section>'+
+  (negs.length>=4?'<section class="seccao negocios" aria-labelledby="neg-tit"><div class="contentor">'+
+    '<div class="neg-cabeca"><h2 id="neg-tit">Os melhores negócios agora</h2><p class="neg-apoio">Rendas abaixo do normal para a mesma tipologia e cidade'+(ma!=null&&ma<180?', atualizado '+quando(ma):'')+'.</p></div>'+
+    '<div class="faixa-casas">'+negs.map(cartaoMini).join('')+'</div>'+
+    '<a class="botao-sec" href="#pesquisa?cidade=&ordem=negocio">Ver os '+fmtN(nNeg)+' negócios '+svg(P.seta,{s:18})+'</a>'+
+  '</div></section>':'')+
   '<section class="faixa-como" aria-label="Como funciona"><div class="contentor"><ol class="como">'+
     '<li><span class="como-ic">'+svg(P.lupa,{s:22,w:2})+'</span><strong>Tudo num só lugar</strong><span>sem repetir casas</span></li>'+
     '<li><span class="como-ic">'+svg(P.sino,{s:22,w:2})+'</span><strong>Sê o primeiro</strong><span>alertas no minuto</span></li>'+
-    '<li><span class="como-ic quente">'+svg(P.escudo,{s:22,w:2})+'</span><strong>Paga seguro</strong><span>em breve</span></li>'+
+    '<li><span class="como-ic quente">'+svg(P.desce,{s:22,w:2})+'</span><strong>Sabes se é bom preço</strong><span>comparamos com a zona</span></li>'+
   '</ol></div>'+
   '</section>'+
 
   (recentes.length?'<section class="seccao-recentes" aria-labelledby="rec-tit"><div class="contentor"><h2 class="h-recentes" id="rec-tit">Continuar a procurar</h2><div class="faixa-rec">'+cartoesPesquisa(recentes)+'</div></div></section>':'')+
   (podeInstalar()?'<div class="contentor"><div class="cartao-app" data-instalar-cartao><span class="ntf-ic" aria-hidden="true">'+SIMB_BRANCO+'</span><div><p class="ca-tit">Tem a DupliCasa no ecrã do telemóvel</p><p class="ca-sub">Abre num toque, como uma app. Grátis e sem ocupar espaço.</p></div><button type="button" class="botao botao-peq" data-instalar>Instalar</button></div></div>':'')+
-  '<section class="seccao" style="padding-top:0"><div class="contentor">'+
+  (novas.length?'<section class="seccao" style="padding-top:0"><div class="contentor">'+
     '<div class="seccao-cabeca"><h2>As mais baratas agora</h2><a class="botao-sec botao-peq" href="#pesquisa">Ver todas as casas '+svg(P.seta,{s:18})+'</a></div>'+
     '<div class="faixa-casas">'+novas.map(cartaoMini).join('')+'</div>'+
-  '</div></section>'+
+  '</div></section>':'')+
 
   (nc.cidades.length>=2?'<section class="seccao branco"><div class="contentor" id="cid-bloco">'+blocoCidade(nc.cidades)+'</div></section>':'')+
 
@@ -1784,6 +1861,68 @@ function condCasa(c){
   return c._cond;
 }
 function minimo(c){return c.tipo==='Quarto'?150:300;}
+/* ---------- Bom negócio: a renda comparada com o normal na mesma cidade e tipologia ----------
+   «Normal» = mediana das rendas dos anúncios ativos na DupliCasa (não o valor dos contratos).
+   Só conta com pelo menos 6 anúncios iguais na cidade. 40 % ou mais abaixo do normal é suspeito (erro ou burla): não é negócio. */
+var NORMAL=null,NEG_MIN=0.15,NEG_SUSP=0.40,NORMAL_N=6;
+function chaveTip(c){if(c.tipo==='Quarto')return 'Q';var m=/^T(\d)/.exec(c.tip||'');return m?'T'+Math.min(+m[1],4):'';}
+function nomeTip(k,cid){var t={Q:'um quarto',T0:'um T0',T1:'um T1',T2:'um T2',T3:'um T3',T4:'um T4 ou maior'}[k]||'uma casa';return t+' '+emCidade(cid);}
+function calcNormal(){
+  var g={},nomes={};NORMAL={};
+  CASAS.forEach(function(c){var k=chaveTip(c),z=norm(c.cidade||'');if(!k||!z||!c.renda||c.renda<minimo(c)||c.min>30*1440)return;(g[z+'|'+k]=g[z+'|'+k]||[]).push(c.renda);nomes[z]=nomes[z]||c.cidade.trim();});
+  Object.keys(g).forEach(function(k){var v=g[k].sort(function(a,b){return a-b;});if(v.length<NORMAL_N)return;
+    var q=function(f){return v[Math.min(v.length-1,Math.floor(f*(v.length-1)+0.5))];};
+    NORMAL[k]={med:Math.round(q(0.5)/5)*5,p10:q(0.1),p90:q(0.9),n:v.length,cid:nomes[k.split('|')[0]]};});
+}
+/* {pct, poupa, normal, n, cid, k, tipo:'negocio'|'normal'|'acima'|'suspeito'} ou null se não há com que comparar */
+function negocio(c){
+  if(c._neg!==undefined)return c._neg;
+  if(!NORMAL)calcNormal();
+  var k=chaveTip(c),z=norm(c.cidade||''),x=NORMAL[z+'|'+k];
+  if(!x||!c.renda||c.renda<minimo(c)||c.renda>x.p90*1.6){c._neg=null;return null;}
+  var pct=(x.med-c.renda)/x.med,r={pct:Math.round(pct*100),poupa:Math.round((x.med-c.renda)/5)*5,normal:x.med,p10:x.p10,p90:x.p90,n:x.n,cid:x.cid,k:k};
+  r.tipo=pct>=NEG_SUSP?'suspeito':pct>=NEG_MIN&&r.poupa>=40?'negocio':pct<=-0.15?'acima':'normal';
+  c._neg=r;return r;
+}
+function eNegocio(c){var n=negocio(c);return !!(n&&n.tipo==='negocio');}
+/* pontos de um negócio: desconto, frescura (meia-vida ~4 dias), fotos e cidade com procura */
+function pontosNeg(c){
+  var n=negocio(c),fresco=c.semData?0.3:Math.exp(-c.min/(1440*5));
+  return (n&&n.tipo==='negocio'?0.6+n.pct/100*2:0)+0.8*fresco+Math.min((c.fotos||[]).length,6)/30+(principal(c)?0.25:0);
+}
+/* selo na foto: «23% abaixo do normal» (só nos negócios) e «Nova» (menos de 24 h) */
+function selosFoto(c,curto){
+  var n=negocio(c),h='';
+  if(n&&n.tipo==='negocio')h+='<span class="selo-neg">'+svg(P.desce,{s:14,w:2.6})+n.pct+(curto?'% abaixo':'% abaixo do normal')+'</span>';
+  if(!c.semData&&c.min<1440)h+='<span class="selo-nova">Nova</span>';
+  return h?'<span class="selos">'+h+'</span>':'';
+}
+function linhaNormal(c,curto){var n=negocio(c);return n&&n.tipo==='negocio'?'<span class="c-normal">Normal'+(curto?'':' '+esc(emCidade(n.cid)))+': '+eur(n.normal)+'</span>':'';}
+/* na ficha: onde fica esta renda entre as outras iguais na cidade */
+function blocoPreco(c){
+  var n=negocio(c);if(!n)return '';
+  var oque=nomeTip(n.k,n.cid),base='<p class="neg-base">Comparado com '+fmtN(n.n)+' anúncios de '+oque.replace(/^um |^uma /,'')+' na DupliCasa, dos últimos 30 dias.</p>';
+  if(n.tipo==='suspeito')return '<section class="neg neg-susp" aria-label="Aviso sobre o preço"><p class="neg-tit">'+svg(P.aviso,{s:20,w:2.2})+'Muito abaixo do normal</p>'+
+    '<p class="neg-txt">O normal para '+esc(oque)+' é '+eur(n.normal)+'. Uma renda tão baixa pode ser um erro no anúncio ou uma burla. <strong>Visita a casa antes de pagares qualquer valor.</strong></p>'+base+'</section>';
+  var lo=Math.min(n.p10,c.renda)*0.94,hi=Math.max(n.p90,c.renda)*1.04,pos=function(v){return Math.max(3,Math.min(97,(v-lo)/(hi-lo)*100)).toFixed(1);};
+  var barra='<div class="neg-barra" aria-hidden="true"><i class="neg-med" style="left:'+pos(n.normal)+'%"><span>normal</span></i><b class="neg-esta" style="left:'+pos(c.renda)+'%"></b></div><div class="neg-eixo" aria-hidden="true"><span>mais barato</span><span>mais caro</span></div>';
+  if(n.tipo==='negocio')return '<section class="neg neg-bom" aria-label="Preço comparado com a zona"><p class="neg-tit">'+svg(P.desce,{s:20,w:2.4})+n.pct+'% abaixo do normal</p>'+
+    '<p class="neg-txt">O normal para '+esc(oque)+' é <strong>'+eur(n.normal)+'</strong>. Aqui pagas menos <strong>'+eur(n.poupa)+' por mês</strong>, '+eur(n.poupa*12)+' num ano.</p>'+barra+base+'</section>';
+  if(n.tipo==='acima')return '<section class="neg neg-acima" aria-label="Preço comparado com a zona"><p class="neg-tit">'+(-n.pct)+'% acima do normal</p>'+
+    '<p class="neg-txt">O normal para '+esc(oque)+' é '+eur(n.normal)+'. Pode valer a pena negociar, ou <a href="#pesquisa?cidade='+encodeURIComponent(n.cid)+'&ordem=negocio">ver as casas '+esc(emCidade(n.cid))+' abaixo do normal</a>.</p>'+barra+base+'</section>';
+  return '<section class="neg" aria-label="Preço comparado com a zona"><p class="neg-tit">Renda dentro do normal</p><p class="neg-txt">O normal para '+esc(oque)+' é '+eur(n.normal)+'.</p>'+barra+base+'</section>';
+}
+/* início: os melhores negócios frescos (quarto, T0, T1, T2), primeiro na zona da pessoa, no máximo 2 por cidade */
+function negociosInicio(n){
+  var zs=zonasPreferidas(2).map(function(x){return norm(x.nome);});
+  var l=CASAS.filter(function(c){return eNegocio(c)&&c.fotos&&c.fotos.length&&c.min<=14*1440&&(c.tipo==='Quarto'||/^T[0-2]$/.test(c.tip));});
+  var naZ=function(c){return zs.indexOf(norm(c.cidade||''))>=0?1:0;};
+  l.sort(function(a,b){return (naZ(b)-naZ(a))||(pontosNeg(b)-pontosNeg(a));});
+  var por={},r=[];
+  l.forEach(function(c){var k=norm(c.cidade||'');if(r.length<n&&(por[k]||0)<2){por[k]=(por[k]||0)+1;r.push(c);}});
+  return r;
+}
+function nNegocios(){return CASAS.filter(eNegocio).length;}
 /* Cidades onde há mais procura (e as áreas metropolitanas à volta): os anúncios baratos daqui vêm primeiro */
 var PRINCIPAIS=['lisboa','porto','braga','coimbra','aveiro','faro','setubal','funchal','leiria','evora','guimaraes',
   'amadora','oeiras','odivelas','loures','almada','seixal','barreiro','cascais','sintra','vila franca de xira',
@@ -1791,9 +1930,10 @@ var PRINCIPAIS=['lisboa','porto','braga','coimbra','aveiro','faro','setubal','fu
 function principal(c){var x=norm(c.cidade||'');return PRINCIPAIS.indexOf(x)>=0;}
 /* «barato» numa cidade principal: quarto até 400 €, T0/T1 até 800 € */
 function baratoPrincipal(c){return principal(c)&&c.renda&&c.renda>=minimo(c)&&c.renda<=(c.tipo==='Quarto'?400:800);}
-function nivel(c){if(!c.renda||c.renda<minimo(c)||!(c.fotos&&c.fotos.length)&&!c.prot)return 2;return grupo(c);}
+function nivel(c){if(!c.renda||c.renda<minimo(c)||!(c.fotos&&c.fotos.length)&&!c.prot||(negocio(c)||{}).tipo==='suspeito'||c.min>30*1440)return 2;return grupo(c);}
 function cmpRecom(a,b){var na=nivel(a),nb=nivel(b);if(na!==nb)return na-nb;
-  if(na<2){var pa=baratoPrincipal(a)?0:1,pb=baratoPrincipal(b)?0:1;if(pa!==pb)return pa-pb;if(a.renda!==b.renda)return a.renda-b.renda;}
+  if(na<2){var ga=eNegocio(a)||baratoPrincipal(a)?0:1,gb=eNegocio(b)||baratoPrincipal(b)?0:1;if(ga!==gb)return ga-gb;
+    var d=pontosNeg(b)-pontosNeg(a);if(Math.abs(d)>1e-9)return d;return a.renda-b.renda;}
   return pontuacao(b)-pontuacao(a);}
 /* Início: T0 e T1 mais baratos (com preço e fotos) e 2 quartos mais baratos, na zona da pessoa ou no país */
 function baratasInicio(){
@@ -1842,6 +1982,7 @@ function filtrar(){
     if(estado.ordem==='m2'){var ma=a.renda&&areaOk(a)?a.renda/a.area:1e9,mb=b.renda&&areaOk(b)?b.renda/b.area:1e9;return ma-mb;}
     if(estado.ordem==='area')return (areaOk(b)?b.area:0)-(areaOk(a)?a.area:0);
     if(estado.ordem==='recomendados')return cmpRecom(a,b);
+    if(estado.ordem==='negocio'){var x=eNegocio(a)?pontosNeg(a):-99,y=eNegocio(b)?pontosNeg(b):-99;return (y-x)||(a.min-b.min);}
     return a.min-b.min;
   });
   if(estado.ordem==='recomendados')r=intercalarQuartos(r);
@@ -1929,6 +2070,7 @@ function vPesquisa(){
         '<div class="result-cabeca"><p class="n-res" id="n-res" aria-live="polite"></p>'+
           '<div class="ordem"><label for="f-ordem">Ordenar</label><select id="f-ordem">'+
             '<option value="recomendados"'+(estado.ordem==='recomendados'?' selected':'')+'>Recomendados</option>'+
+            '<option value="negocio"'+(estado.ordem==='negocio'?' selected':'')+'>Melhores negócios</option>'+
             '<option value="recentes"'+(estado.ordem==='recentes'?' selected':'')+'>Mais recentes</option>'+
             '<option value="barato"'+(estado.ordem==='barato'?' selected':'')+'>Renda mais baixa</option>'+
             '<option value="caro"'+(estado.ordem==='caro'?' selected':'')+'>Renda mais alta</option>'+
@@ -1946,7 +2088,9 @@ function vPesquisa(){
     clearTimeout(tReg);tReg=setTimeout(registarPesquisa,1200);
     var ba=document.getElementById('b-alerta');ba.textContent=filtroGuardado(filtroAtual())?'Pesquisa guardada':'Guardar pesquisa';
     var nNov=r.filter(function(c){return c.min<1440;}).length;
-    document.getElementById('n-res').innerHTML=!CARREGADO?'':(r.length===0?'Nenhuma casa':(r.length===1?'1 casa':r.length+' casas'))+(nNov?' <span class="novo-txt">· '+nNov+(nNov===1?' nova':' novas')+' hoje</span>':'');
+    var nNeg=r.filter(eNegocio).length;
+    document.getElementById('n-res').innerHTML=!CARREGADO?'':(r.length===0?'Nenhuma casa':(r.length===1?'1 casa':fmtN(r.length)+' casas'))+(nNov?' <span class="novo-txt">· '+nNov+(nNov===1?' nova':' novas')+' hoje</span>':'')+
+      (nNeg&&estado.ordem!=='negocio'?' <button type="button" class="ver-neg" data-ordem-neg>'+svg(P.desce,{s:15,w:2.6})+fmtN(nNeg)+' abaixo do normal</button>':'');
     var n=nFiltros();document.getElementById('n-filtros').textContent=n?' ('+n+')':'';var fv=document.getElementById('f-ver');if(fv)fv.textContent=r.length?'Ver '+(r.length===1?'1 casa':fmtN(r.length)+' casas'):'Nenhuma casa';
     if(!CARREGADO){
       lista.innerHTML=FALHOU?'<div class="vazio" style="grid-column:1 / -1"><h2>Não conseguimos carregar as casas</h2><p>Confirma a ligação à internet e tenta outra vez.</p><button type="button" class="botao-sec botao-peq" onclick="location.reload()">Tentar outra vez</button></div>':'<div class="vazio a-carregar" style="grid-column:1 / -1" role="status"><h2>A carregar as casas…</h2></div>';
@@ -1971,6 +2115,7 @@ function vPesquisa(){
   function marcarTipos(){document.querySelectorAll('.tipo').forEach(function(b){b.setAttribute('aria-pressed',String(b.dataset.tipo===estado.tipoImovel));});}
   document.querySelectorAll('.tipo').forEach(function(b){b.addEventListener('click',function(){estado.tipoImovel=b.dataset.tipo;limite=30;marcarTipos();desenhar();});});
   document.getElementById('f-ordem').addEventListener('change',function(){estado.ordem=this.value;desenhar();});
+  document.getElementById('n-res').addEventListener('click',function(e){if(!e.target.closest('[data-ordem-neg]'))return;estado.ordem='negocio';document.getElementById('f-ordem').value='negocio';limite=30;ev('ver_negocios',{});desenhar();});
   document.getElementById('f-limpar').addEventListener('click',limpar);
   main.querySelectorAll('[data-fg]').forEach(function(b){b.addEventListener('click',function(){aplicarFiltro(lerPrefs().filtros[+b.getAttribute('data-fg')]);limite=30;vPesquisa();foco();});});
   document.getElementById('b-alerta').addEventListener('click',function(){
@@ -2031,7 +2176,7 @@ function vCasa(id){
       '<button class="botao-sec largo" type="button" id="b-proteger">'+svg(P.escudo)+'Pagamento seguro (em breve)</button>'+
       '<div class="dicas"><h3>Antes de pagares alguma coisa</h3><ul>'+
         '<li>Visita a casa antes de pagar qualquer valor.</li>'+
-        '<li>Desconfia de rendas muito abaixo das outras na zona.</li>'+
+        '<li>Desconfia de rendas boas demais: avisamos-te quando estão muito abaixo do normal.</li>'+
         '<li>Confirma que quem anuncia é mesmo o dono.</li></ul></div>';
   }
   var guardada=conta.guardadas.indexOf(c.id)>=0;
@@ -2040,10 +2185,11 @@ function vCasa(id){
     '<div class="casa-grelha">'+
       '<div class="casa-topo">'+
         (c.fotos&&c.fotos.length?galeriaHtml(c):'<div class="foto foto-grande" style="background:'+c.cor+'"><span>Sem fotos</span></div>')+
-        '<div class="preco-linha"><p class="preco preco-grande">'+precoHtml(c)+'</p>'+
+        '<div class="preco-linha"><p class="preco preco-grande">'+precoHtml(c)+(eNegocio(c)?' <span class="selo-neg selo-ficha">'+svg(P.desce,{s:14,w:2.6})+negocio(c).pct+'% abaixo do normal</span>':'')+'</p>'+
           '<button type="button" class="icone guardar" id="b-guardar" aria-pressed="'+guardada+'" aria-label="Guardar casa">'+svg(P.coracao)+'</button></div>'+
         '<h1 class="casa-titulo" tabindex="-1">'+(c.titulo?esc(c.titulo):resumoCasa(c,true))+'</h1>'+(c.titulo?'<p class="meta">'+resumoCasa(c,true)+'</p>':'')+
         '<p class="meta">'+(c.semData?'Anúncio de outro site':'Publicado '+quando(c.min))+(c.vis!=null&&c.vis<2880?' · <span class="dispo">'+svg(P.visto,{s:15,w:2.6})+'Ainda disponível, confirmado '+quando(c.vis)+'</span>':'')+'</p>'+
+        blocoPreco(c)+
       '</div>'+
       '<aside class="painel" aria-label="Contacto e pagamento">'+painel+'</aside>'+
       '<div class="casa-resto">'+
@@ -2067,7 +2213,8 @@ function vCasa(id){
   ev('casa',{casa:c.rid||String(c.id),fonte:c.fonte,cidade:c.cidade,tip:tipTxt(c),renda:c.renda||0});
   if(!acessoAtivo()){
     var bar=document.createElement('div');bar.className='barra-cta escondida';bar.id='barra-cta';
-    bar.innerHTML='<div class="bc-txt"><p class="bc-preco">'+precoHtml(c)+'</p><p class="bc-sub">'+(c.semData?'Anúncio de outro site':(c.min<1440?'Nova · publicada ':'Publicada ')+quando(c.min))+'</p></div>'+
+    var ng=negocio(c);
+    bar.innerHTML='<div class="bc-txt"><p class="bc-preco">'+precoHtml(c)+'</p><p class="bc-sub">'+(ng&&ng.tipo==='negocio'?'<span class="bc-neg">'+ng.pct+'% abaixo do normal</span>':(c.semData?'Anúncio de outro site':(c.min<1440?'Nova · publicada ':'Publicada ')+quando(c.min)))+'</p></div>'+
       '<button class="botao" type="button" data-acao="visita">Contactar · '+P1+'</button>';
     main.appendChild(bar);
     var acoes=main.querySelector('.painel .acoes');
@@ -2994,6 +3141,7 @@ function rota(){
       if(q.cidade!=null)estado.cidade=q.cidade.slice(0,80);
       if(q.tips!=null)estado.tips=q.tips.split(',').filter(function(t){return TIPS.indexOf(t)>=0;});
       if(q.max)estado.precoMax=+q.max||0;
+      if(q.ordem==='negocio'||q.ordem==='recentes'||q.ordem==='barato')estado.ordem=q.ordem;
     }
   }
   if(h==='pesquisa')vPesquisa();
@@ -3064,7 +3212,7 @@ function abrirPromo(){
   /* ecrã inteiro: em cima, casas reais publicadas há pouco a passar devagar, com o alerta como chega ao telemóvel */
   var l=casasMock(3);
   var fotos=l.map(function(c,i){return '<img class="po-foto'+(i===0?' ver':'')+'" src="'+esc(c.fotos[0])+'" alt="" decoding="async" referrerpolicy="no-referrer" onerror="this.remove()">';}).join('');
-  var ntf=function(c){return '<span class="ntf-ic">'+SIMB_BRANCO+'</span><span class="ntf-txt"><span class="ntf-topo"><strong>Casa nova</strong><span>'+(c.min<1440?quando(Math.max(1,c.min||1)).replace('há ',''):'')+'</span></span><span>'+esc(tipTxt(c))+' '+esc(emCidade(c.cidade||c.bairro))+' · '+eur(c.renda)+'</span></span>';};
+  var ntf=function(c){return '<span class="ntf-ic">'+SIMB_BRANCO+'</span><span class="ntf-txt"><span class="ntf-topo"><strong>'+(eNegocio(c)?'Bom negócio':'Casa nova')+'</strong><span>'+(c.min<1440?quando(Math.max(1,c.min||1)).replace('há ',''):'')+'</span></span><span>'+esc(tipTxt(c))+' '+esc(emCidade(c.cidade||c.bairro))+' · '+eur(c.renda)+(eNegocio(c)?' · '+negocio(c).pct+'% abaixo':'')+'</span></span>';};
   dlg.classList.add('dlg-promo','dlg-oferta');
   abrirDialogo('<div class="promo po">'+
     '<div class="po-cena" aria-hidden="true">'+fotos+
@@ -3073,7 +3221,7 @@ function abrirPromo(){
     '</div>'+
     '<button type="button" class="po-x" aria-label="Fechar" data-fechar>'+svg(P.fechar)+'</button>'+
     '<div class="po-corpo">'+
-      '<h2 class="promo-tit" tabindex="-1">Sê o primeiro a contactar as casas novas</h2>'+
+      '<h2 class="promo-tit" tabindex="-1">'+(l.length&&eNegocio(l[0])?'Contacta os bons negócios antes dos outros':'Sê o primeiro a contactar as casas novas')+'</h2>'+
       '<p class="promo-preco">'+riscado()+'<strong>'+comVisto(P1)+'</strong> nos primeiros 30 dias</p>'+
       listaInclui()+
       '<div class="po-acao"><button class="botao largo" type="button" id="b-promo">Começar por '+P1+'</button>'+
@@ -3203,14 +3351,15 @@ window.dcCasas=function(){return CASAS;};   /* para os testes automáticos */
 function receber(d){
   if(!d||!d.anuncios||!d.anuncios.length)return false;
   DET_N=d.det||0;
-  CASAS=d.anuncios.map(deRecolha).filter(function(c){return c.id&&(c.semData||c.min<=IDADE_MAX*1440);});medianas=null;ATUALIZADO=d.atualizado||null;CARREGADO=true;
+  CASAS=d.anuncios.map(deRecolha).filter(function(c){return c.id&&(c.semData||c.min<=IDADE_MAX*1440);});medianas=null;NORMAL=null;ATUALIZADO=d.atualizado||null;CARREGADO=true;
   var h=location.hash.slice(1)||'inicio';
   if(/^(inicio|pesquisa|conta|casa-\d+)/.test(h))rota();
+  if(window.dcFecharAbertura)dcFecharAbertura();
   return true;
 }
 try{
   var json=function(u){return fetch(u,{cache:'no-cache'}).then(function(r){return r.ok?r.json():null;}).catch(function(){return null;});};
-  json('lista.json').then(function(d){if(!receber(d)){FALHOU=true;var h=location.hash.slice(1)||'inicio';if(/^(inicio|pesquisa|casa-\d+)/.test(h))rota();}});
+  json('lista.json').then(function(d){if(!receber(d)){FALHOU=true;if(window.dcFecharAbertura)dcFecharAbertura();var h=location.hash.slice(1)||'inicio';if(/^(inicio|pesquisa|casa-\d+)/.test(h))rota();}});
 }catch(e){}
 })();
 </script>

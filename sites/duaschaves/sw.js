@@ -1,7 +1,7 @@
 /* DupliCasa: service worker da app instalada.
    Página e anúncios: primeiro a rede (para estarem sempre atualizados); sem rede, a última cópia guardada.
    Imagens da marca: da cópia guardada. A API (/api/) nunca passa por aqui. */
-const CACHE = 'dc-v4';
+const CACHE = 'dc-v5';
 const BASE = ['/', '/manifest.webmanifest', '/marca/duaschaves-icone-192.png', '/marca/duaschaves-icone.png'];
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(BASE)).then(() => self.skipWaiting()));
