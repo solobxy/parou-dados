@@ -485,3 +485,62 @@ www.goodman.pt {
 	redir https://goodman.pt{uri} permanent
 }
 # FIM www.goodman.pt
+
+# APALAVRADO - mercado social (site em /var/www/apalavrado + API em 127.0.0.1:3130, apalavrado-api.service).
+# O código vive no repositório privado solobxy/apalavrado; o servidor lê-o com uma chave só de leitura.
+(apalavrado) {
+	import estatisticas
+	encode zstd gzip
+	header {
+		Strict-Transport-Security "max-age=31536000"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		Permissions-Policy "geolocation=(), camera=(), microphone=(), payment=(), usb=(), interest-cohort=()"
+		Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self'; worker-src 'self'; manifest-src 'self'; object-src 'none'; form-action 'self'; frame-ancestors 'none'; base-uri 'none'"
+		Cross-Origin-Opener-Policy "same-origin"
+		-Server
+	}
+	# Fotos (só JPEG limpos de metadados, nomes aleatórios) e API
+	handle /m/* {
+		reverse_proxy 127.0.0.1:3130
+	}
+	handle /api/media {
+		request_body {
+			max_size 5MB
+		}
+		reverse_proxy 127.0.0.1:3130
+	}
+	handle /api/* {
+		request_body {
+			max_size 64KB
+		}
+		reverse_proxy 127.0.0.1:3130
+	}
+	handle {
+		root * /var/www/apalavrado
+		@imutavel path /fontes/*
+		header @imutavel Cache-Control "public, max-age=31536000, immutable"
+		@imagens path /img/*
+		header @imagens Cache-Control "public, max-age=86400"
+		@revalidar not path /fontes/* /img/*
+		header @revalidar Cache-Control "no-cache"
+		try_files {path} /index.html
+		file_server
+	}
+}
+
+apalavrado.{HOST_TESTE} {
+	import apalavrado
+}
+
+# INICIO apalavrado.pt
+apalavrado.pt {
+	import apalavrado
+}
+# FIM apalavrado.pt
+
+# INICIO www.apalavrado.pt
+www.apalavrado.pt {
+	redir https://apalavrado.pt{uri} permanent
+}
+# FIM www.apalavrado.pt

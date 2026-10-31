@@ -47,7 +47,7 @@ sed -e "s/{HOST_TESTE}/$HOST_TESTE/g" -e "s/{ESTAT_CHAVE}/${ESTAT_CHAVE:-sem-cha
 # O domínio só entra quando já aponta para este servidor (senão o Caddy falhava o
 # certificado e ficava a tentar com esperas cada vez maiores)
 MEU_IP="$(echo "${HOST_TESTE%%.sslip.io}" | tr '-' '.')"
-for DOM in parou.pt www.parou.pt anjinho.pt www.anjinho.pt jinxed.world www.jinxed.world duplicasa.pt www.duplicasa.pt chave.pt www.chave.pt dinissousa.pt www.dinissousa.pt adribodypiercing.pt www.adribodypiercing.pt jaesta.pt www.jaesta.pt; do
+for DOM in parou.pt www.parou.pt anjinho.pt www.anjinho.pt jinxed.world www.jinxed.world duplicasa.pt www.duplicasa.pt chave.pt www.chave.pt dinissousa.pt www.dinissousa.pt adribodypiercing.pt www.adribodypiercing.pt jaesta.pt www.jaesta.pt apalavrado.pt www.apalavrado.pt; do
   # Pergunta a dois DNS: basta um dizer que o domínio aponta para aqui (durante uma mudança
   # de DNS uns ainda dão o endereço antigo e o domínio entrava e saía a cada 2 minutos)
   IPS="$( (dig +short +time=3 +tries=2 A "$DOM" @1.1.1.1; dig +short +time=3 +tries=2 A "$DOM" @8.8.8.8) 2>/dev/null | grep -E '^[0-9.]+$' | sort -u)"
@@ -218,6 +218,48 @@ if [ -f "$SERV/duaschaves-api.service" ] && [ -f "$BASE/servidor/duaschaves/api.
   if [ "$(cat /etc/duaschaves/api.versao 2>/dev/null)" != "$V" ]; then
     systemctl restart duaschaves-api.service && echo "$V" > /etc/duaschaves/api.versao
   fi
+fi
+
+# apalavrado: mercado social. Código no repositório privado solobxy/apalavrado, lido com uma chave só de leitura
+# (/root/.ssh/apalavrado_deploy). Site em /var/www/apalavrado; API em /opt/apalavrado/api (apalavrado-api.service);
+# dados em /var/lib/apalavrado-api (fora do repositório); configuração em /etc/apalavrado/api.env.
+APA=/opt/apalavrado-repo
+if [ -f /root/.ssh/apalavrado_deploy ]; then
+  export GIT_SSH_COMMAND="ssh -i /root/.ssh/apalavrado_deploy -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new"
+  if [ -d "$APA/.git" ]; then
+    git -C "$APA" fetch -q --depth 1 origin main && git -C "$APA" reset -q --hard origin/main || true
+  else
+    git clone -q --depth 1 git@github.com:solobxy/apalavrado.git "$APA" || rm -rf "$APA"
+  fi
+  unset GIT_SSH_COMMAND
+fi
+if [ -f "$APA/site/index.html" ] && [ -f "$APA/api/api.py" ]; then
+  if ! diff -rq "$APA/site" /var/www/apalavrado >/dev/null 2>&1; then
+    rm -rf /var/www/apalavrado.novo && mkdir -p /var/www && cp -r "$APA/site" /var/www/apalavrado.novo \
+      && chmod -R a+rX /var/www/apalavrado.novo \
+      && rm -rf /var/www/apalavrado.velho && { [ ! -d /var/www/apalavrado ] || mv /var/www/apalavrado /var/www/apalavrado.velho; } \
+      && mv /var/www/apalavrado.novo /var/www/apalavrado && rm -rf /var/www/apalavrado.velho
+  fi
+  if ! diff -rq "$APA/api" /opt/apalavrado/api >/dev/null 2>&1; then
+    rm -rf /opt/apalavrado/api.novo && mkdir -p /opt/apalavrado && cp -r "$APA/api" /opt/apalavrado/api.novo \
+      && chmod -R a+rX /opt/apalavrado/api.novo && rm -rf /opt/apalavrado/api.velho \
+      && { [ ! -d /opt/apalavrado/api ] || mv /opt/apalavrado/api /opt/apalavrado/api.velho; } \
+      && mv /opt/apalavrado/api.novo /opt/apalavrado/api && rm -rf /opt/apalavrado/api.velho
+  fi
+  install -d -m 750 -o root -g parou /etc/apalavrado
+  if [ ! -f /etc/apalavrado/api.env ]; then
+    printf 'ORIGENS=https://apalavrado.pt https://www.apalavrado.pt https://apalavrado.%s\nADMINS=diniscash@gmail.com\nAPA_PAGAMENTOS=teste\n' "$HOST_TESTE" > /etc/apalavrado/api.env
+    chown root:parou /etc/apalavrado/api.env && chmod 640 /etc/apalavrado/api.env
+  fi
+  if ! cmp -s "$SERV/apalavrado-api.service" /etc/systemd/system/apalavrado-api.service; then
+    cp "$SERV/apalavrado-api.service" /etc/systemd/system/apalavrado-api.service && systemctl daemon-reload
+  fi
+  systemctl is-enabled --quiet apalavrado-api.service 2>/dev/null || systemctl enable --now apalavrado-api.service >/dev/null 2>&1
+  V=$( { cat /opt/apalavrado/api/*.py /etc/apalavrado/api.env 2>/dev/null; } | sha256sum | cut -c1-16)
+  if [ "$(cat /etc/apalavrado/api.versao 2>/dev/null)" != "$V" ]; then
+    systemctl restart apalavrado-api.service && echo "$V" > /etc/apalavrado/api.versao
+  fi
+  systemctl is-active --quiet apalavrado-api.service || systemctl start apalavrado-api.service
 fi
 
 # O próprio atualizador, se mudou no repositório
