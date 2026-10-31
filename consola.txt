@@ -1,0 +1,88 @@
+##### motor: webkit
+FALHA index.html 250 1 | 3 texto(s) cortado(s)
+      cortado: button.style.s-calmo > span.card > span.pill «Contactar» dentro de span.card (7px)
+      cortado: button.style.s-vivo > span.card > span.pill «Contactar» dentro de span.card (10px)
+      cortado: button.style.s-suave > span.card > span.pill «Contactar» dentro de span.card (13px)
+TOTAL com problemas: 1 de 6
+TOTAL com problemas: 0 de 12
+FALHA index.html 250 1 | scroll para os lados +12px; 1 texto(s) fora do ecrã
+      fora: div.partes > div.parte > span «confirmação»
+FALHA termos/index.html 250 1 | scroll para os lados +12px
+FALHA privacidade/index.html 250 1 | scroll para os lados +12px
+TOTAL com problemas: 3 de 18
+TOTAL com problemas: 0 de 12
+FALHA index.html 250 1 | scroll para os lados +60px; 13 texto(s) fora do ecrã
+      fora: li.dentro > a > span.nome «Obras e remodelações»
+      fora: div.env.grelha > div.lateral.dentro > h2#t-preco «Preço fechado»
+      fora: div.env.grelha > div.lateral.dentro > p «Para comparar: nas listas de preços públ»
+      fora: div.cartao.dentro > div.valor > span «para pôr no ar, com o 1.º ano de domínio»
+      fora: div.env.grelha > div.cartao.dentro > p.depois «Depois, 96 € por ano, com alterações peq»
+      fora: div.env.grelha > div.cartao.dentro > span.lanc «Preço de lançamento para os 5 primeiros »
+      fora: div.cartao.dentro > ul.inclui > li «Site de uma página com o seu nome, servi»
+      fora: div.cartao.dentro > ul.inclui > li «Botões para ligar, mandar mensagem pelo »
+FALHA m/barbearia.html 250 1 | 2 texto(s) cortado(s)
+      cortado: div.galeria-fotos.reservado > figure > span «Uma foto do espaço» dentro de figure (19px)
+      cortado: div.galeria-fotos.reservado > figure > span «Uma foto do trabalho» dentro de figure (43px)
+FALHA m/beleza.html 250 1 | scroll para os lados +6px; 2 texto(s) cortado(s); 1 texto(s) fora do ecrã
+      cortado: div.galeria-fotos.reservado > figure > span «Uma foto do espaço» dentro de figure (21px)
+      cortado: div.galeria-fotos.reservado > figure > span «Uma foto do trabalho» dentro de figure (45px)
+      fora: div.env > div.cab.fora > h2#t-serv «Tratamentos»
+FALHA m/beleza.html 768 1 | 1 texto(s) cortado(s)
+      cortado: div.espelho > div.vidro > span#letra.letra «M» dentro de div.vidro (8px)
+FALHA m/beleza.html 1440 1 | 1 texto(s) cortado(s)
+      cortado: div.espelho > div.vidro > span#letra.letra «M» dentro de div.vidro (8px)
+FALHA m/obras.html 250 1 | scroll para os lados +29px; 3 texto(s) cortado(s); 1 texto(s) fora do ecrã
+      cortado: div.env.grelha > div > h1#titulo «Remodelações» dentro de section.heroi (2px)
+      cortado: div.galeria-fotos.reservado > figure > span «Uma foto do espaço» dentro de figure (19px)
+      cortado: div.galeria-fotos.reservado > figure > span «Uma foto do trabalho» dentro de figure (43px)
+      fora: header.env.topo > a.tel > span «912 345 678»
+FALHA m/oficina.html 250 1 | scroll para os lados +3px; 2 texto(s) cortado(s); 1 texto(s) fora do ecrã
+      cortado: div.galeria-fotos.reservado > figure > span «Uma foto do espaço» dentro de figure (19px)
+      cortado: div.galeria-fotos.reservado > figure > span «Uma foto do trabalho» dentro de figure (43px)
+      fora: header.env.topo > a.tel «936 000 000»
+TOTAL com problemas: 7 de 30
+##### motor: chromium
+TOTAL com problemas: 0 de 9
+TOTAL com problemas: 0 de 18
+TOTAL com problemas: 0 de 27
+TOTAL com problemas: 0 de 18
+      cortado: div.espelho > div.vidro > span#letra.letra «M» dentro de div.vidro (18px)
+FALHA m/beleza.html 320 1.3 | scroll para os lados +6px; 2 texto(s) cortado(s); 1 texto(s) fora do ecrã
+      cortado: div.galeria-fotos.reservado > figure > span «Uma foto do espaço» dentro de figure (7px)
+      cortado: div.galeria-fotos.reservado > figure > span «Uma foto do trabalho» dentro de figure (7px)
+      fora: div.env > div.cab.fora > h2#t-serv «Tratamentos»
+FALHA m/beleza.html 320 1.5 | scroll para os lados +56px; 2 texto(s) cortado(s); 3 texto(s) fora do ecrã
+      cortado: div.galeria-fotos.reservado > figure > span «Uma foto do espaço» dentro de figure (52px)
+      cortado: div.galeria-fotos.reservado > figure > span «Uma foto do trabalho» dentro de figure (52px)
+      fora: div.env > div.cab.fora > h2#t-serv «Tratamentos»
+      fora: div.env.grelha > div.fora.dentro > a.tel «914 000 000»
+      fora: div.je-barra.ativo > button.je-abrir > span.je-cta «Quero este site»
+FALHA m/obras.html 280 1 | 2 texto(s) cortado(s)
+      cortado: div.galeria-fotos.reservado > figure > span «Uma foto do espaço» dentro de figure (8px)
+      cortado: div.galeria-fotos.reservado > figure > span «Uma foto do trabalho» dentro de figure (8px)
+FALHA m/obras.html 320 1.3 | scroll para os lados +27px; 3 texto(s) cortado(s); 1 texto(s) fora do ecrã
+      cortado: div.planta > svg > text «2,10 m» dentro de svg (3px)
+      cortado: div.galeria-fotos.reservado > figure > span «Uma foto do espaço» dentro de figure (6px)
+      cortado: div.galeria-fotos.reservado > figure > span «Uma foto do trabalho» dentro de figure (6px)
+      fora: header.env.topo > a.tel > span «912 345 678»
+FALHA m/obras.html 390 1.3 | 1 texto(s) cortado(s)
+      cortado: div.planta > svg > text «2,10 m» dentro de svg (4px)
+FALHA m/obras.html 320 1.5 | scroll para os lados +69px; 3 texto(s) cortado(s); 2 texto(s) fora do ecrã
+      cortado: div.planta > svg > text «2,10 m» dentro de svg (5px)
+      cortado: div.galeria-fotos.reservado > figure > span «Uma foto do espaço» dentro de figure (49px)
+      cortado: div.galeria-fotos.reservado > figure > span «Uma foto do trabalho» dentro de figure (49px)
+      fora: header.env.topo > a.tel > span «912 345 678»
+      fora: div.je-barra.ativo > button.je-abrir > span.je-cta «Quero este site»
+FALHA m/oficina.html 280 1 | 2 texto(s) cortado(s)
+      cortado: div.galeria-fotos.reservado > figure > span «Uma foto do espaço» dentro de figure (8px)
+      cortado: div.galeria-fotos.reservado > figure > span «Uma foto do trabalho» dentro de figure (8px)
+FALHA m/oficina.html 320 1.3 | scroll para os lados +4px; 2 texto(s) cortado(s); 1 texto(s) fora do ecrã
+      cortado: div.galeria-fotos.reservado > figure > span «Uma foto do espaço» dentro de figure (6px)
+      cortado: div.galeria-fotos.reservado > figure > span «Uma foto do trabalho» dentro de figure (6px)
+      fora: header.env.topo > a.tel «936 000 000»
+FALHA m/oficina.html 320 1.5 | scroll para os lados +44px; 2 texto(s) cortado(s); 2 texto(s) fora do ecrã
+      cortado: div.galeria-fotos.reservado > figure > span «Uma foto do espaço» dentro de figure (49px)
+      cortado: div.galeria-fotos.reservado > figure > span «Uma foto do trabalho» dentro de figure (49px)
+      fora: header.env.topo > a.tel «936 000 000»
+      fora: div.je-barra.ativo > button.je-abrir > span.je-cta «Quero este site»
+TOTAL com problemas: 18 de 45

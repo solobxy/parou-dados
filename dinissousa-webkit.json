@@ -1,0 +1,42 @@
+{
+ "index.html 250 1": {
+  "hscroll": 0,
+  "cortado": [
+   "button.style.s-calmo > span.card > span.pill «Contactar» dentro de span.card (7px)",
+   "button.style.s-vivo > span.card > span.pill «Contactar» dentro de span.card (10px)",
+   "button.style.s-suave > span.card > span.pill «Contactar» dentro de span.card (13px)"
+  ],
+  "fora": [],
+  "erros": []
+ },
+ "index.html 320 1": {
+  "hscroll": 0,
+  "cortado": [],
+  "fora": [],
+  "erros": []
+ },
+ "index.html 375 1": {
+  "hscroll": 0,
+  "cortado": [],
+  "fora": [],
+  "erros": []
+ },
+ "index.html 390 1": {
+  "hscroll": 0,
+  "cortado": [],
+  "fora": [],
+  "erros": []
+ },
+ "index.html 768 1": {
+  "hscroll": 0,
+  "cortado": [],
+  "fora": [],
+  "erros": []
+ },
+ "index.html 1440 1": {
+  "hscroll": 0,
+  "cortado": [],
+  "fora": [],
+  "erros": []
+ }
+}

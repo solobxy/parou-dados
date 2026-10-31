@@ -1,0 +1,219 @@
+{
+ "index.html 250 1": {
+  "hscroll": 60,
+  "cortado": [],
+  "fora": [
+   "li.dentro > a > span.nome «Obras e remodelações»",
+   "div.env.grelha > div.lateral.dentro > h2#t-preco «Preço fechado»",
+   "div.env.grelha > div.lateral.dentro > p «Para comparar: nas listas de preços públ»",
+   "div.cartao.dentro > div.valor > span «para pôr no ar, com o 1.º ano de domínio»",
+   "div.env.grelha > div.cartao.dentro > p.depois «Depois, 96 € por ano, com alterações peq»",
+   "div.env.grelha > div.cartao.dentro > span.lanc «Preço de lançamento para os 5 primeiros »",
+   "div.cartao.dentro > ul.inclui > li «Site de uma página com o seu nome, servi»",
+   "div.cartao.dentro > ul.inclui > li «Botões para ligar, mandar mensagem pelo »",
+   "div.cartao.dentro > ul.inclui > li «Endereço próprio (onomedoseunegocio.pt),»",
+   "div.cartao.dentro > ul.inclui > li «As suas fotos, preços e textos, acertado»",
+   "div.cartao.dentro > ul.inclui > li «Pronto para o Google: dados do negócio, »",
+   "div.env.grelha > div.cartao.dentro > p.miudo «Preço final, sem IVA a somar, com fatura»",
+   "div.env.grelha > div.cartao.dentro > p.mais-pags «Precisa de mais páginas? Site completo p»"
+  ],
+  "erros": []
+ },
+ "index.html 320 1": {
+  "hscroll": 0,
+  "cortado": [],
+  "fora": [],
+  "erros": []
+ },
+ "index.html 375 1": {
+  "hscroll": 0,
+  "cortado": [],
+  "fora": [],
+  "erros": []
+ },
+ "index.html 390 1": {
+  "hscroll": 0,
+  "cortado": [],
+  "fora": [],
+  "erros": []
+ },
+ "index.html 768 1": {
+  "hscroll": 0,
+  "cortado": [],
+  "fora": [],
+  "erros": []
+ },
+ "index.html 1440 1": {
+  "hscroll": 0,
+  "cortado": [],
+  "fora": [],
+  "erros": []
+ },
+ "m/barbearia.html 250 1": {
+  "hscroll": 0,
+  "cortado": [
+   "div.galeria-fotos.reservado > figure > span «Uma foto do espaço» dentro de figure (19px)",
+   "div.galeria-fotos.reservado > figure > span «Uma foto do trabalho» dentro de figure (43px)"
+  ],
+  "fora": [],
+  "erros": []
+ },
+ "m/barbearia.html 320 1": {
+  "hscroll": 0,
+  "cortado": [],
+  "fora": [],
+  "erros": []
+ },
+ "m/barbearia.html 375 1": {
+  "hscroll": 0,
+  "cortado": [],
+  "fora": [],
+  "erros": []
+ },
+ "m/barbearia.html 390 1": {
+  "hscroll": 0,
+  "cortado": [],
+  "fora": [],
+  "erros": []
+ },
+ "m/barbearia.html 768 1": {
+  "hscroll": 0,
+  "cortado": [],
+  "fora": [],
+  "erros": []
+ },
+ "m/barbearia.html 1440 1": {
+  "hscroll": 0,
+  "cortado": [],
+  "fora": [],
+  "erros": []
+ },
+ "m/beleza.html 250 1": {
+  "hscroll": 6,
+  "cortado": [
+   "div.galeria-fotos.reservado > figure > span «Uma foto do espaço» dentro de figure (21px)",
+   "div.galeria-fotos.reservado > figure > span «Uma foto do trabalho» dentro de figure (45px)"
+  ],
+  "fora": [
+   "div.env > div.cab.fora > h2#t-serv «Tratamentos»"
+  ],
+  "erros": []
+ },
+ "m/beleza.html 320 1": {
+  "hscroll": 0,
+  "cortado": [],
+  "fora": [],
+  "erros": []
+ },
+ "m/beleza.html 375 1": {
+  "hscroll": 0,
+  "cortado": [],
+  "fora": [],
+  "erros": []
+ },
+ "m/beleza.html 390 1": {
+  "hscroll": 0,
+  "cortado": [],
+  "fora": [],
+  "erros": []
+ },
+ "m/beleza.html 768 1": {
+  "hscroll": 0,
+  "cortado": [
+   "div.espelho > div.vidro > span#letra.letra «M» dentro de div.vidro (8px)"
+  ],
+  "fora": [],
+  "erros": []
+ },
+ "m/beleza.html 1440 1": {
+  "hscroll": 0,
+  "cortado": [
+   "div.espelho > div.vidro > span#letra.letra «M» dentro de div.vidro (8px)"
+  ],
+  "fora": [],
+  "erros": []
+ },
+ "m/obras.html 250 1": {
+  "hscroll": 29,
+  "cortado": [
+   "div.env.grelha > div > h1#titulo «Remodelações» dentro de section.heroi (2px)",
+   "div.galeria-fotos.reservado > figure > span «Uma foto do espaço» dentro de figure (19px)",
+   "div.galeria-fotos.reservado > figure > span «Uma foto do trabalho» dentro de figure (43px)"
+  ],
+  "fora": [
+   "header.env.topo > a.tel > span «912 345 678»"
+  ],
+  "erros": []
+ },
+ "m/obras.html 320 1": {
+  "hscroll": 0,
+  "cortado": [],
+  "fora": [],
+  "erros": []
+ },
+ "m/obras.html 375 1": {
+  "hscroll": 0,
+  "cortado": [],
+  "fora": [],
+  "erros": []
+ },
+ "m/obras.html 390 1": {
+  "hscroll": 0,
+  "cortado": [],
+  "fora": [],
+  "erros": []
+ },
+ "m/obras.html 768 1": {
+  "hscroll": 0,
+  "cortado": [],
+  "fora": [],
+  "erros": []
+ },
+ "m/obras.html 1440 1": {
+  "hscroll": 0,
+  "cortado": [],
+  "fora": [],
+  "erros": []
+ },
+ "m/oficina.html 250 1": {
+  "hscroll": 3,
+  "cortado": [
+   "div.galeria-fotos.reservado > figure > span «Uma foto do espaço» dentro de figure (19px)",
+   "div.galeria-fotos.reservado > figure > span «Uma foto do trabalho» dentro de figure (43px)"
+  ],
+  "fora": [
+   "header.env.topo > a.tel «936 000 000»"
+  ],
+  "erros": []
+ },
+ "m/oficina.html 320 1": {
+  "hscroll": 0,
+  "cortado": [],
+  "fora": [],
+  "erros": []
+ },
+ "m/oficina.html 375 1": {
+  "hscroll": 0,
+  "cortado": [],
+  "fora": [],
+  "erros": []
+ },
+ "m/oficina.html 390 1": {
+  "hscroll": 0,
+  "cortado": [],
+  "fora": [],
+  "erros": []
+ },
+ "m/oficina.html 768 1": {
+  "hscroll": 0,
+  "cortado": [],
+  "fora": [],
+  "erros": []
+ },
+ "m/oficina.html 1440 1": {
+  "hscroll": 0,
+  "cortado": [],
+  "fora": [],
+  "erros": []
+ }
+}

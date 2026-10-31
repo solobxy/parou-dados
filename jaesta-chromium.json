@@ -1,0 +1,357 @@
+{
+ "index.html 280 1": {
+  "hscroll": 26,
+  "cortado": [],
+  "fora": [
+   "div.env.grelha > div.lateral.dentro > h2#t-preco «Preço fechado»",
+   "div.env.grelha > div.lateral.dentro > p «Para comparar: nas listas de preços públ»"
+  ],
+  "erros": []
+ },
+ "index.html 320 1": {
+  "hscroll": 0,
+  "cortado": [],
+  "fora": [],
+  "erros": []
+ },
+ "index.html 360 1": {
+  "hscroll": 0,
+  "cortado": [],
+  "fora": [],
+  "erros": []
+ },
+ "index.html 390 1": {
+  "hscroll": 0,
+  "cortado": [],
+  "fora": [],
+  "erros": []
+ },
+ "index.html 768 1": {
+  "hscroll": 0,
+  "cortado": [],
+  "fora": [],
+  "erros": []
+ },
+ "index.html 1440 1": {
+  "hscroll": 0,
+  "cortado": [],
+  "fora": [],
+  "erros": []
+ },
+ "index.html 320 1.3": {
+  "hscroll": 33,
+  "cortado": [],
+  "fora": [
+   "li.dentro > a > span.nome «Obras e remodelações»"
+  ],
+  "erros": []
+ },
+ "index.html 390 1.3": {
+  "hscroll": 0,
+  "cortado": [],
+  "fora": [],
+  "erros": []
+ },
+ "index.html 320 1.5": {
+  "hscroll": 81,
+  "cortado": [],
+  "fora": [
+   "div.dentro > p.grande > small «%»",
+   "div.env.grelha > div.dentro > h2#t-num «das microempresas tinham site em 2023.»",
+   "div.env.grelha > div.dentro > p.fonte «Empresas com menos de 10 pessoas, em Por»",
+   "div.dentro > p.fonte > a «PORDATA»",
+   "div.texto.dentro > p > b «o custo»",
+   "div.env.grelha > div.texto.dentro > p «,»",
+   "div.texto.dentro > p > b «a vontade de não mudar o que funciona»",
+   "div.env.grelha > div.texto.dentro > p «O já está resolve as três: preço fechado»",
+   "div.env.grelha > div.texto.dentro > p «Se usava o site grátis da Google, esse s»",
+   "div.env.grelha > div.texto.dentro > p.fonte «Estudo EDDE-DIGITAL24 (2024, 425 empresa»",
+   "li.dentro > a > span.nome «Obras e remodelações»",
+   "li.dentro > a > span.ver «Abrir exemplo»",
+   "div.env.grelha > div.lateral.dentro > p «Para comparar: nas listas de preços públ»",
+   "div.env.grelha > div.dentro > p «Pode ver outros projetos meus em»",
+   "div.env.grelha > div.dentro > a.contacto-g «913 488 258»"
+  ],
+  "erros": []
+ },
+ "m/barbearia.html 280 1": {
+  "hscroll": 0,
+  "cortado": [
+   "div.galeria-fotos.reservado > figure > span «Uma foto do espaço» dentro de figure (8px)",
+   "div.galeria-fotos.reservado > figure > span «Uma foto do trabalho» dentro de figure (8px)"
+  ],
+  "fora": [],
+  "erros": []
+ },
+ "m/barbearia.html 320 1": {
+  "hscroll": 0,
+  "cortado": [],
+  "fora": [],
+  "erros": []
+ },
+ "m/barbearia.html 360 1": {
+  "hscroll": 0,
+  "cortado": [],
+  "fora": [],
+  "erros": []
+ },
+ "m/barbearia.html 390 1": {
+  "hscroll": 0,
+  "cortado": [],
+  "fora": [],
+  "erros": []
+ },
+ "m/barbearia.html 768 1": {
+  "hscroll": 0,
+  "cortado": [],
+  "fora": [],
+  "erros": []
+ },
+ "m/barbearia.html 1440 1": {
+  "hscroll": 0,
+  "cortado": [],
+  "fora": [],
+  "erros": []
+ },
+ "m/barbearia.html 320 1.3": {
+  "hscroll": 0,
+  "cortado": [
+   "div.galeria-fotos.reservado > figure > span «Uma foto do espaço» dentro de figure (6px)",
+   "div.galeria-fotos.reservado > figure > span «Uma foto do trabalho» dentro de figure (6px)"
+  ],
+  "fora": [],
+  "erros": []
+ },
+ "m/barbearia.html 390 1.3": {
+  "hscroll": 0,
+  "cortado": [],
+  "fora": [],
+  "erros": []
+ },
+ "m/barbearia.html 320 1.5": {
+  "hscroll": 40,
+  "cortado": [
+   "div.galeria-fotos.reservado > figure > span «Uma foto do espaço» dentro de figure (49px)",
+   "div.galeria-fotos.reservado > figure > span «Uma foto do trabalho» dentro de figure (49px)"
+  ],
+  "fora": [
+   "header.env.topo > p.esta-aberto > b «Aberto agora»",
+   "div.env.grelha > div.fora.dentro > a.tel «913 000 000»",
+   "div.je-barra.ativo > button.je-abrir > span.je-cta «Quero este site»"
+  ],
+  "erros": []
+ },
+ "m/beleza.html 280 1": {
+  "hscroll": 0,
+  "cortado": [
+   "div.galeria-fotos.reservado > figure > span «Uma foto do espaço» dentro de figure (9px)",
+   "div.galeria-fotos.reservado > figure > span «Uma foto do trabalho» dentro de figure (9px)"
+  ],
+  "fora": [],
+  "erros": []
+ },
+ "m/beleza.html 320 1": {
+  "hscroll": 0,
+  "cortado": [],
+  "fora": [],
+  "erros": []
+ },
+ "m/beleza.html 360 1": {
+  "hscroll": 0,
+  "cortado": [],
+  "fora": [],
+  "erros": []
+ },
+ "m/beleza.html 390 1": {
+  "hscroll": 0,
+  "cortado": [],
+  "fora": [],
+  "erros": []
+ },
+ "m/beleza.html 768 1": {
+  "hscroll": 0,
+  "cortado": [
+   "div.espelho > div.vidro > span#letra.letra «M» dentro de div.vidro (18px)"
+  ],
+  "fora": [],
+  "erros": []
+ },
+ "m/beleza.html 1440 1": {
+  "hscroll": 0,
+  "cortado": [
+   "div.espelho > div.vidro > span#letra.letra «M» dentro de div.vidro (18px)"
+  ],
+  "fora": [],
+  "erros": []
+ },
+ "m/beleza.html 320 1.3": {
+  "hscroll": 6,
+  "cortado": [
+   "div.galeria-fotos.reservado > figure > span «Uma foto do espaço» dentro de figure (7px)",
+   "div.galeria-fotos.reservado > figure > span «Uma foto do trabalho» dentro de figure (7px)"
+  ],
+  "fora": [
+   "div.env > div.cab.fora > h2#t-serv «Tratamentos»"
+  ],
+  "erros": []
+ },
+ "m/beleza.html 390 1.3": {
+  "hscroll": 0,
+  "cortado": [],
+  "fora": [],
+  "erros": []
+ },
+ "m/beleza.html 320 1.5": {
+  "hscroll": 56,
+  "cortado": [
+   "div.galeria-fotos.reservado > figure > span «Uma foto do espaço» dentro de figure (52px)",
+   "div.galeria-fotos.reservado > figure > span «Uma foto do trabalho» dentro de figure (52px)"
+  ],
+  "fora": [
+   "div.env > div.cab.fora > h2#t-serv «Tratamentos»",
+   "div.env.grelha > div.fora.dentro > a.tel «914 000 000»",
+   "div.je-barra.ativo > button.je-abrir > span.je-cta «Quero este site»"
+  ],
+  "erros": []
+ },
+ "m/obras.html 280 1": {
+  "hscroll": 0,
+  "cortado": [
+   "div.galeria-fotos.reservado > figure > span «Uma foto do espaço» dentro de figure (8px)",
+   "div.galeria-fotos.reservado > figure > span «Uma foto do trabalho» dentro de figure (8px)"
+  ],
+  "fora": [],
+  "erros": []
+ },
+ "m/obras.html 320 1": {
+  "hscroll": 0,
+  "cortado": [],
+  "fora": [],
+  "erros": []
+ },
+ "m/obras.html 360 1": {
+  "hscroll": 0,
+  "cortado": [],
+  "fora": [],
+  "erros": []
+ },
+ "m/obras.html 390 1": {
+  "hscroll": 0,
+  "cortado": [],
+  "fora": [],
+  "erros": []
+ },
+ "m/obras.html 768 1": {
+  "hscroll": 0,
+  "cortado": [],
+  "fora": [],
+  "erros": []
+ },
+ "m/obras.html 1440 1": {
+  "hscroll": 0,
+  "cortado": [],
+  "fora": [],
+  "erros": []
+ },
+ "m/obras.html 320 1.3": {
+  "hscroll": 27,
+  "cortado": [
+   "div.planta > svg > text «2,10 m» dentro de svg (3px)",
+   "div.galeria-fotos.reservado > figure > span «Uma foto do espaço» dentro de figure (6px)",
+   "div.galeria-fotos.reservado > figure > span «Uma foto do trabalho» dentro de figure (6px)"
+  ],
+  "fora": [
+   "header.env.topo > a.tel > span «912 345 678»"
+  ],
+  "erros": []
+ },
+ "m/obras.html 390 1.3": {
+  "hscroll": 0,
+  "cortado": [
+   "div.planta > svg > text «2,10 m» dentro de svg (4px)"
+  ],
+  "fora": [],
+  "erros": []
+ },
+ "m/obras.html 320 1.5": {
+  "hscroll": 69,
+  "cortado": [
+   "div.planta > svg > text «2,10 m» dentro de svg (5px)",
+   "div.galeria-fotos.reservado > figure > span «Uma foto do espaço» dentro de figure (49px)",
+   "div.galeria-fotos.reservado > figure > span «Uma foto do trabalho» dentro de figure (49px)"
+  ],
+  "fora": [
+   "header.env.topo > a.tel > span «912 345 678»",
+   "div.je-barra.ativo > button.je-abrir > span.je-cta «Quero este site»"
+  ],
+  "erros": []
+ },
+ "m/oficina.html 280 1": {
+  "hscroll": 0,
+  "cortado": [
+   "div.galeria-fotos.reservado > figure > span «Uma foto do espaço» dentro de figure (8px)",
+   "div.galeria-fotos.reservado > figure > span «Uma foto do trabalho» dentro de figure (8px)"
+  ],
+  "fora": [],
+  "erros": []
+ },
+ "m/oficina.html 320 1": {
+  "hscroll": 0,
+  "cortado": [],
+  "fora": [],
+  "erros": []
+ },
+ "m/oficina.html 360 1": {
+  "hscroll": 0,
+  "cortado": [],
+  "fora": [],
+  "erros": []
+ },
+ "m/oficina.html 390 1": {
+  "hscroll": 0,
+  "cortado": [],
+  "fora": [],
+  "erros": []
+ },
+ "m/oficina.html 768 1": {
+  "hscroll": 0,
+  "cortado": [],
+  "fora": [],
+  "erros": []
+ },
+ "m/oficina.html 1440 1": {
+  "hscroll": 0,
+  "cortado": [],
+  "fora": [],
+  "erros": []
+ },
+ "m/oficina.html 320 1.3": {
+  "hscroll": 4,
+  "cortado": [
+   "div.galeria-fotos.reservado > figure > span «Uma foto do espaço» dentro de figure (6px)",
+   "div.galeria-fotos.reservado > figure > span «Uma foto do trabalho» dentro de figure (6px)"
+  ],
+  "fora": [
+   "header.env.topo > a.tel «936 000 000»"
+  ],
+  "erros": []
+ },
+ "m/oficina.html 390 1.3": {
+  "hscroll": 0,
+  "cortado": [],
+  "fora": [],
+  "erros": []
+ },
+ "m/oficina.html 320 1.5": {
+  "hscroll": 44,
+  "cortado": [
+   "div.galeria-fotos.reservado > figure > span «Uma foto do espaço» dentro de figure (49px)",
+   "div.galeria-fotos.reservado > figure > span «Uma foto do trabalho» dentro de figure (49px)"
+  ],
+  "fora": [
+   "header.env.topo > a.tel «936 000 000»",
+   "div.je-barra.ativo > button.je-abrir > span.je-cta «Quero este site»"
+  ],
+  "erros": []
+ }
+}
