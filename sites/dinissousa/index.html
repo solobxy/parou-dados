@@ -178,18 +178,20 @@ p{margin:0}
 .j-selo{position:absolute;left:62px;top:96px;white-space:nowrap;display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border:2px solid #C7372A;border-radius:6px;background:rgba(255,255,255,.94);color:#C7372A;font-size:12.5px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;rotate:-8deg;opacity:0;scale:calc(1 + 1.2 * var(--k));transition:opacity .15s,scale .15s}
 .j-selo i{font-style:normal}
 .h-goodman.on .j-selo{opacity:1;scale:1;transition:opacity .1s linear 2.55s,scale .3s cubic-bezier(.55,0,.8,.2) 2.55s}
-/* ADRI: um talão de marcação e o selo dourado «agendado» que cai em cima dele */
-.h-bilhete{z-index:3 !important;display:grid;gap:1px;width:150px;padding:12px 14px 13px;border-radius:12px;background:#FBF7F0;color:#1A1714;box-shadow:0 1px 2px rgba(0,0,0,.08),0 18px 34px -18px rgba(60,45,20,.45);rotate:var(--r)}
-.h-bilhete small{font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#9C7A33}
-.h-bilhete b{font-size:16px;letter-spacing:-.01em}
-.h-bilhete span{font-size:12.5px;color:#6B6257;font-variant-numeric:tabular-nums}
-.h-selo{position:absolute;right:-36px;top:-36px;width:82px;height:82px;opacity:0;scale:calc(1 + 1.3 * var(--k));rotate:-28deg;transition:opacity .15s,scale .15s,rotate .15s}
-.h-selo svg{display:block;width:100%;height:100%;filter:drop-shadow(0 6px 8px rgba(156,122,51,.35))}
-.h-selo::after{content:"";position:absolute;inset:4px;border-radius:50%;border:2px solid #D9B676;opacity:0}
-.h-adri.on .h-selo{opacity:1;scale:1;rotate:-12deg;transition:opacity .12s linear 1.25s,scale .32s cubic-bezier(.55,0,.8,.2) 1.25s,rotate .32s cubic-bezier(.55,0,.8,.2) 1.25s}
-.h-adri.on .h-selo::after{animation:onda-selo .7s var(--ease) 1.57s}
-@keyframes onda-selo{from{opacity:.7;scale:1}to{opacity:0;scale:1.7}}
-.h-adri.on .h-bilhete{animation:pancada .28s linear 1.57s}
+/* ADRI: o selo dourado «agendado» é carimbado sobre o baralho */
+.selo-ag{position:absolute;width:96px;height:96px;border-radius:50%;display:grid;place-content:center;justify-items:center;gap:2px;background:#FBF6EC;border:3px solid #B8903F;color:#9C7A33;text-align:center;box-shadow:0 12px 26px -12px rgba(120,90,30,.55);
+  opacity:0;scale:calc(1 + 1.3 * var(--k));rotate:-34deg;transition:opacity .15s,scale .15s,rotate .15s}
+.selo-ag::before{content:"";position:absolute;inset:5px;border-radius:50%;border:1px solid #D2B26A}
+.selo-ag::after{content:"";position:absolute;inset:-3px;border-radius:50%;border:2px solid #D9B676;opacity:0}
+.selo-ag svg{width:24px;height:24px;fill:none;stroke:#B8903F;stroke-width:3.4;stroke-linecap:round;stroke-linejoin:round}
+.selo-ag b{font-size:11.5px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;line-height:1.1}
+.selo-ag small{font-size:9.5px;font-weight:700;letter-spacing:.06em;color:#8A6A27;line-height:1.1}
+.h-agend{z-index:3 !important;width:96px;height:96px;transform:none !important}
+.h-agend .selo-ag{left:0;top:0}
+.h-adri.on .selo-ag{opacity:1;scale:1;rotate:-12deg;transition:opacity .1s linear .95s,scale .3s cubic-bezier(.55,0,.8,.2) .95s,rotate .3s cubic-bezier(.55,0,.8,.2) .95s}
+.h-adri.on .selo-ag::after{animation:onda-selo .7s var(--ease) 1.25s}
+@keyframes onda-selo{from{opacity:.8;scale:1}to{opacity:0;scale:1.7}}
+.h-adri.on .h-agend{animation:pancada .28s linear 1.25s}
 @keyframes pancada{30%{translate:0 3px}60%{translate:-1px -1px}}
 /* PAROU: o aviso sai do telemóvel e muda quando o autocarro chega */
 .fan{--btop:66px}
@@ -250,7 +252,7 @@ p{margin:0}
 .h-art i{width:16px;height:16px;border-radius:50%;background:#2E8B57;color:#fff;font-style:normal;font-size:10px;display:grid;place-items:center}
 @media (max-width:719px){
   .fan{height:450px}.baralho{top:66px}
-  .h-bilhete{left:4% !important;top:13% !important}
+  .h-agend{left:22% !important;top:20% !important}
   .h-juiz{left:0 !important;top:56% !important;scale:.85;transform-origin:0 0}
   .hf .so-d{display:none}
   .hf .m-topo{left:50% !important;top:14px !important;translate:-50% 0;max-width:calc(100% - 32px);white-space:nowrap}
@@ -362,9 +364,9 @@ img.fx{height:auto}
 .js .c-adri:not(.on) .talao{transform:translateY(calc(-78% * var(--k)));opacity:0}
 .bola{z-index:4;width:var(--s);height:var(--s);border-radius:50%;background:radial-gradient(circle at 34% 30%,#FFF7E0 0,#EBD192 22%,#C29A49 55%,#5E4719 100%);box-shadow:0 10px 20px -8px rgba(0,0,0,.7);
   transition:transform 1.1s var(--suave) var(--d),opacity .4s var(--ease) var(--d)}
-.bola.b1{--s:26px;--d:2.2s;left:calc(-.55 * var(--fora));top:16%;--fx:calc(var(--pw) * .5);--fy:calc(var(--pw) * .5)}
-.bola.b2{--s:14px;--d:2.35s;right:calc(-.45 * var(--fora));top:9%;--fx:calc(var(--pw) * -.45);--fy:calc(var(--pw) * .7)}
-.bola.b3{--s:20px;--d:2.5s;right:calc(-.6 * var(--fora));top:44%;--fx:calc(var(--pw) * -.5);--fy:calc(var(--pw) * .1)}
+.bola.b1{--s:56px;--r:-20deg;--d:2.2s;left:calc(-.55 * var(--fora));top:16%;--fx:calc(var(--pw) * .5);--fy:calc(var(--pw) * .5)}
+.bola.b2{--s:36px;--d:2.35s;right:calc(-.45 * var(--fora));top:9%;--fx:calc(var(--pw) * -.45);--fy:calc(var(--pw) * .7)}
+.bola.b3{--s:28px;--d:2.5s;right:calc(-.6 * var(--fora));top:44%;--fx:calc(var(--pw) * -.5);--fy:calc(var(--pw) * .1)}
 .js .c-adri:not(.on) .bola{opacity:0;transform:translate(calc(var(--fx) * var(--k)),calc(var(--fy) * var(--k))) scale(.3)}
 
 /* PAROU: o ponto laranja dá sinal, o site abre em círculo; sobe um painel de paragem com a contagem */
@@ -483,6 +485,39 @@ img.fx{height:auto}
 .artigo i{width:18px;height:18px;border-radius:50%;background:#2E8B57;color:#fff;font-style:normal;font-size:11px;display:grid;place-items:center}
 .js .c-goodman:not(.on) :is(.m-eu,.m-resp,.artigo){opacity:0;transform:translateY(calc(16px * var(--k))) scale(calc(1 - .3 * var(--k)))}
 
+/* extras das cenas: saem do telemóvel e ficam a flutuar uma vez */
+.sai-fx{z-index:4;rotate:var(--r,0deg);transition:transform 1.2s var(--mola) var(--d),opacity .4s var(--ease) var(--d)}
+.sai-fx img{display:block;width:100%;height:auto}
+.sai-fx.atras{z-index:1}
+.js .cena:not(.on) .sai-fx{opacity:0;transform:translate(calc(var(--fx,0px) * var(--k)),calc(var(--fy,0px) * var(--k))) scale(.4)}
+.cena.on .flut2{animation:flutua 3.4s ease-in-out calc(var(--d) + 1.1s) 1}
+.c-jinxed.on .bat img{animation:asa .15s ease-in-out var(--d) 14 alternate}
+.c-jinxed .bat img{filter:drop-shadow(0 0 8px rgba(214,16,28,.45))}
+.sai-fx .hx,.c-jinxed .flut2 img{filter:drop-shadow(0 6px 10px rgba(214,16,28,.4))}
+.bola.joia{background:none;border-radius:0;box-shadow:none;height:auto;rotate:var(--r,0deg);filter:drop-shadow(0 10px 12px rgba(0,0,0,.45))}
+.c-adri.on .bola.joia{animation:flutua 3.4s ease-in-out calc(var(--d) + 1.1s) 1}
+.selo-ag.s-talao{right:-14px;top:30px;width:84px;height:84px;z-index:3}
+.c-adri.on .selo-ag.s-talao{opacity:1;scale:1;rotate:-12deg;transition:opacity .1s linear 2.85s,scale .3s cubic-bezier(.55,0,.8,.2) 2.85s,rotate .3s cubic-bezier(.55,0,.8,.2) 2.85s}
+.c-adri.on .selo-ag.s-talao::after{animation:onda-selo .7s var(--ease) 3.15s}
+.c-adri.on .talao .papel{animation:pancada .28s linear 3.15s}
+.p-rota{z-index:4;left:0;top:0;overflow:visible;fill:none;stroke:#FF6B1A;stroke-width:4;stroke-linecap:round;stroke-dasharray:3000;stroke-dashoffset:3000;transition:stroke-dashoffset .3s}
+.c-parou.on .p-rota{stroke-dashoffset:0;transition:stroke-dashoffset 1.3s var(--suave) 2.1s}
+.p-bus{z-index:5;left:0;top:0;width:44px;height:auto;offset-rotate:auto;offset-distance:0%;offset-anchor:50% 70%;opacity:0}
+.c-parou.on .p-bus{animation:anda 2.8s cubic-bezier(.45,0,.2,1) 2.35s both,aparece .3s 2.35s both}
+@keyframes aparece{from{opacity:0}to{opacity:1}}
+.p-pino{z-index:5;width:28px;height:auto;opacity:0;transform:translateY(calc(-50px * var(--k)));transition:opacity .2s,transform .2s}
+.c-parou.on .p-pino{opacity:1;transform:none;transition:opacity .2s 5s,transform .8s var(--mola) 5s}
+.c-duplicasa .h-escolha{z-index:4;transition:transform 1.2s var(--mola) var(--d),opacity .4s var(--ease) var(--d),scale .3s}
+.c-duplicasa.on .h-escolha{scale:1.25;transition:transform 1.2s var(--mola) var(--d),opacity .4s var(--ease) var(--d),scale .8s var(--mola) 4.1s}
+.c-duplicasa.on .h-escolha .ce-b{opacity:1;transition:opacity .4s var(--ease) 4.1s}
+.c-duplicasa.on .ce-ok{transform:none;transition:transform .6s var(--mola) 4.45s}
+.c-duplicasa.on .ce-tag{opacity:1;transition:opacity .4s var(--ease) 4.65s}
+.c-goodman .h-juiz{z-index:5;width:150px;height:124px}
+.c-goodman.on .j-martelo{animation:martela 1s 4.1s both}
+.c-goodman.on .j-base{animation:pancada .3s linear 4.58s}
+.c-goodman.on .j-pum{animation:pum .5s var(--ease) 4.58s}
+.c-goodman.on .j-selo{opacity:1;scale:1;transition:opacity .1s linear 4.65s,scale .3s cubic-bezier(.55,0,.8,.2) 4.65s}
+@media (max-width:719px){.c-goodman .h-juiz{scale:.85;transform-origin:0 0}}
 @media (min-width:1080px){.cena{--fora:clamp(24px,calc((50vw - 56px - var(--pw)) / 2),120px)}}
 
 /* Movimento reduzido: as mesmas cenas, com viagens curtas e aberturas a desvanecer */
@@ -685,7 +720,7 @@ footer a{min-height:44px;display:inline-flex;align-items:center}
       <div class="fan" id="palco" role="group" aria-roledescription="carrossel" aria-label="Sites que fiz">
         <div class="fundos" aria-hidden="true">
           <div class="hf h-adri">
-            <div class="h-bilhete" style="left:0%;top:30%;--ex:110px;--ey:20px;--d:.3s;--r:-5deg"><small>Marcação</small><b>Sábado, 7 nov.</b><span>15h00 · Helix</span><i class="h-selo"><svg viewBox="0 0 100 100" aria-hidden="true"><defs><path id="arcoAdri" d="M50 50m-35 0a35 35 0 1 1 70 0a35 35 0 1 1-70 0"/></defs><circle cx="50" cy="50" r="47" fill="#FBF6EC" fill-opacity=".9" stroke="#B8903F" stroke-width="3"/><circle cx="50" cy="50" r="42" fill="none" stroke="#B8903F" stroke-width="1"/><text fill="#9C7A33" font-size="11.5" font-weight="800" letter-spacing="2.6"><textPath href="#arcoAdri">AGENDADO • SÁBADO • 15H00 •</textPath></text><path d="M37 51l9 9 18-20" fill="none" stroke="#B8903F" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/></svg></i></div>
+            <span class="h-agend" style="left:20%;top:16%;--d:0s"><span class="selo-ag" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg><b>Agendado</b><small>Sáb · 15h00</small></span></span>
             <img class="flut" src="img/joia_barra_ouro.svg" alt="" style="left:76%;top:8%;width:58px;--ex:-110px;--ey:110px;--d:0.35s;--r:-22deg">
             <img class="flut" src="img/joia_argola_prata.svg" alt="" style="left:88%;top:48%;width:42px;--ex:-130px;--ey:-10px;--d:0.45s;--r:10deg">
             <img class="flut" src="img/joia_brinco_ouro.svg" alt="" style="left:70%;top:86%;width:28px;--ex:-40px;--ey:-110px;--d:0.55s">
@@ -777,7 +812,7 @@ footer a{min-height:44px;display:inline-flex;align-items:center}
           <p class="rv">Estúdio de body piercing do Adriano, que está a começar. Fiz o logótipo, a joia em 3D que roda no topo e o site, com preços à vista e marcação online.</p>
           <a class="btn btn-secondary rv" href="https://adribodypiercing.2-31-13-85.sslip.io" target="_blank" rel="noopener">Ver o site ↗</a>
         </div>
-        <div class="shot"><figure class="cena c-adri r-sobe" style="--abre:#0E0C0B"><div class="fx talao" aria-hidden="true"><div class="papel"><span class="t-topo">Marcação confirmada</span><strong>Sábado, 15h00</strong><span>Helix · joia em titânio de implante</span><i class="ok"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></i></div></div><div class="phone"><div class="ecra"><img class="site" src="img/adri.webp" width="640" height="1385" alt="Site AdriBodyPiercing no telemóvel" loading="lazy"><div class="abre" aria-hidden="true"><img src="img/logo_adri.webp" width="325" height="70" alt="" style="width:58%"><i class="linha"></i><i class="barra"></i></div></div></div><i class="fx bola b1" aria-hidden="true"></i><i class="fx bola b2" aria-hidden="true"></i><i class="fx bola b3" aria-hidden="true"></i></figure></div>
+        <div class="shot"><figure class="cena c-adri r-sobe" style="--abre:#0E0C0B"><div class="fx talao" aria-hidden="true"><div class="papel"><span class="t-topo">Marcação confirmada</span><strong>Sábado, 15h00</strong><span>Helix · joia em titânio de implante</span></div><span class="selo-ag s-talao" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg><b>Agendado</b><small>Sáb · 15h00</small></span></div><div class="phone"><div class="ecra"><img class="site" src="img/adri.webp" width="640" height="1385" alt="Site AdriBodyPiercing no telemóvel" loading="lazy"><div class="abre" aria-hidden="true"><img src="img/logo_adri.webp" width="325" height="70" alt="" style="width:58%"><i class="linha"></i><i class="barra"></i></div></div></div><img class="fx bola joia b1" src="img/joia_barra_ouro.svg" alt="" aria-hidden="true"><img class="fx bola joia b2" src="img/joia_argola_prata.svg" alt="" aria-hidden="true"><img class="fx bola joia b3" src="img/joia_brinco_ouro.svg" alt="" aria-hidden="true"></figure></div>
       </div>
     </article>
 
@@ -789,7 +824,7 @@ footer a{min-height:44px;display:inline-flex;align-items:center}
           <p class="rv">App de transportes para todo o país. Fiz a marca, o design e a app: tempo real onde existe, horário oficial onde não existe, e avisos de greves e ocorrências. É gratuita e sem fins lucrativos.</p>
           <a class="btn btn-secondary rv" href="https://parou.pt" target="_blank" rel="noopener">Abrir parou.pt ↗</a>
         </div>
-        <div class="shot"><figure class="cena c-parou r-circulo" style="--abre:#16151A" data-passos="2700,3500,4300"><div class="fx painel" aria-hidden="true"><span class="p-linha">8027</span><span class="p-dest">Sebolido<small>Campanhã Estação</small></span><span class="flap"><b class="ativo">3 min</b><b>2 min</b><b>1 min</b><b class="chega">a chegar</b></span></div><div class="phone"><div class="ecra"><img class="site" src="img/parou.webp" width="640" height="1325" alt="App PAROU no telemóvel: transportes perto, com autocarros a chegar" loading="lazy"><div class="abre" aria-hidden="true"><img src="img/logo_parou.webp" width="235" height="85" alt="" style="width:52%"><i class="ping"></i><i class="ping p2"></i></div></div></div><span class="fx vivo" aria-hidden="true"><i></i>Ao vivo</span></figure></div>
+        <div class="shot"><figure class="cena c-parou r-circulo" style="--abre:#16151A" data-passos="2700,3500,4300"><div class="fx painel" aria-hidden="true"><span class="p-linha">8027</span><span class="p-dest">Sebolido<small>Campanhã Estação</small></span><span class="flap"><b class="ativo">3 min</b><b>2 min</b><b>1 min</b><b class="chega">a chegar</b></span></div><div class="phone"><div class="ecra"><img class="site" src="img/parou.webp" width="640" height="1325" alt="App PAROU no telemóvel: transportes perto, com autocarros a chegar" loading="lazy"><div class="abre" aria-hidden="true"><img src="img/logo_parou.webp" width="235" height="85" alt="" style="width:52%"><i class="ping"></i><i class="ping p2"></i></div></div></div><span class="fx vivo" aria-hidden="true"><i></i>Ao vivo</span><svg class="fx p-rota" aria-hidden="true"><path/></svg><img class="fx p-bus" src="img/autocarro.svg" alt="" aria-hidden="true"><img class="fx p-pino" src="img/alfinete.svg" alt="" aria-hidden="true"></figure></div>
       </div>
     </article>
 
@@ -813,7 +848,7 @@ footer a{min-height:44px;display:inline-flex;align-items:center}
           <p class="rv">Marca de roupa para homem, feita em Portugal. Fiz o logótipo e a loja, toda em inglês, escura e cheia de movimento.</p>
           <a class="btn btn-secondary rv" href="https://jinxed.world" target="_blank" rel="noopener">Visitar jinxed.world ↗</a>
         </div>
-        <div class="shot"><figure class="cena c-jinxed r-fatias" style="--abre:#110D0E"><i class="fx meio-tom" aria-hidden="true"></i><i class="fx aura" aria-hidden="true"></i><div class="phone"><div class="ecra"><img class="site" src="img/jinxed.webp" width="640" height="1325" alt="Loja jinxed.world no telemóvel, com casacos e calças de ganga" loading="lazy"><div class="abre" aria-hidden="true"><span class="fatias"><i></i><i></i><i></i><i></i><i></i><i></i></span><img src="img/logo_jinxed.webp" width="200" height="90" alt="" style="width:50%"></div></div></div><span class="fx carimbo" aria-hidden="true" lang="en">out of stock</span></figure></div>
+        <div class="shot"><figure class="cena c-jinxed r-fatias" style="--abre:#110D0E"><i class="fx meio-tom" aria-hidden="true"></i><i class="fx aura" aria-hidden="true"></i><div class="phone"><div class="ecra"><img class="site" src="img/jinxed.webp" width="640" height="1325" alt="Loja jinxed.world no telemóvel, com casacos e calças de ganga" loading="lazy"><div class="abre" aria-hidden="true"><span class="fatias"><i></i><i></i><i></i><i></i><i></i><i></i></span><img src="img/logo_jinxed.webp" width="200" height="90" alt="" style="width:50%"></div></div></div><span class="fx carimbo" aria-hidden="true" lang="en">out of stock</span><span class="fx sai-fx flut2" aria-hidden="true" style="left:calc(-.7 * var(--fora));top:9%;width:34px;--fx:calc(var(--pw) * 0.5);--fy:calc(var(--pw) * 0.6);--d:2.1s;--r:-14deg"><img src="img/x_jinxed.webp" alt=""></span><span class="fx sai-fx flut2" aria-hidden="true" style="right:calc(-.6 * var(--fora));top:27%;width:26px;--fx:calc(var(--pw) * -0.5);--fy:calc(var(--pw) * 0.3);--d:2.25s;--r:12deg"><img src="img/x_jinxed.webp" alt=""></span><span class="fx sai-fx flut2" aria-hidden="true" style="left:calc(-.55 * var(--fora));top:72%;width:40px;--fx:calc(var(--pw) * 0.5);--fy:calc(var(--pw) * -0.4);--d:2.4s;--r:8deg"><img src="img/x_jinxed.webp" alt=""></span><span class="fx sai-fx bat" aria-hidden="true" style="right:calc(-.75 * var(--fora));top:5%;width:46px;--fx:calc(var(--pw) * -0.5);--fy:calc(var(--pw) * 0.7);--d:2.2s;--r:0deg"><img src="img/morcego_osso.svg" alt=""></span><span class="fx sai-fx bat" aria-hidden="true" style="left:calc(-.85 * var(--fora));top:44%;width:38px;--fx:calc(var(--pw) * 0.5);--fy:calc(var(--pw) * 0.1);--d:2.35s;--r:0deg"><img src="img/morcego_osso.svg" alt=""></span><span class="fx sai-fx bat" aria-hidden="true" style="right:calc(-.5 * var(--fora));top:86%;width:30px;--fx:calc(var(--pw) * -0.4);--fy:calc(var(--pw) * -0.6);--d:2.5s;--r:0deg"><img src="img/morcego_osso.svg" alt=""></span></figure></div>
       </div>
     </article>
 
@@ -825,7 +860,7 @@ footer a{min-height:44px;display:inline-flex;align-items:center}
           <p class="rv">Plataforma de arrendamento. Fiz o nome, a marca e o site: as casas dos principais sites num só lugar, com pagamento seguro.</p>
           <a class="btn btn-secondary rv" href="https://duplicasa.pt" target="_blank" rel="noopener">Visitar duplicasa.pt ↗</a>
         </div>
-        <div class="shot"><figure class="cena c-duplicasa r-portas" style="--abre:#FFFFFF" data-passos="1950,2800,3650"><div class="phone"><div class="ecra"><img class="site" src="img/duplicasa.webp" width="640" height="1386" alt="Site DupliCasa no telemóvel" loading="lazy"><div class="abre" aria-hidden="true"><span class="portas"><i></i><i></i></span><img src="img/logo_duplicasa.svg" width="592" height="123" alt="" style="width:66%"></div></div></div><div class="fx casa k1" aria-hidden="true"><i class="k-ic"><svg viewBox="0 0 24 24"><path d="M4 11 12 4.5 20 11v8.5a1 1 0 0 1-1 1h-4.5V15h-5v5.5H5a1 1 0 0 1-1-1z"/></svg></i><span><b>Nova casa!</b>Quarto em Almada · <strong>400&nbsp;€</strong></span></div><div class="fx casa k2" aria-hidden="true"><i class="k-ic"><svg viewBox="0 0 24 24"><path d="M4 11 12 4.5 20 11v8.5a1 1 0 0 1-1 1h-4.5V15h-5v5.5H5a1 1 0 0 1-1-1z"/></svg></i><span><b>Nova casa!</b>T1 no Porto · <strong>800&nbsp;€</strong></span></div><div class="fx casa k3" aria-hidden="true"><i class="k-ic"><svg viewBox="0 0 24 24"><path d="M4 11 12 4.5 20 11v8.5a1 1 0 0 1-1 1h-4.5V15h-5v5.5H5a1 1 0 0 1-1-1z"/></svg></i><span><b>Nova casa!</b>T2 em Braga · <strong>750&nbsp;€</strong></span></div></figure></div>
+        <div class="shot"><figure class="cena c-duplicasa r-portas" style="--abre:#FFFFFF" data-passos="1950,2800,3650"><div class="phone"><div class="ecra"><img class="site" src="img/duplicasa.webp" width="640" height="1386" alt="Site DupliCasa no telemóvel" loading="lazy"><div class="abre" aria-hidden="true"><span class="portas"><i></i><i></i></span><img src="img/logo_duplicasa.svg" width="592" height="123" alt="" style="width:66%"></div></div></div><div class="fx casa k1" aria-hidden="true"><i class="k-ic"><svg viewBox="0 0 24 24"><path d="M4 11 12 4.5 20 11v8.5a1 1 0 0 1-1 1h-4.5V15h-5v5.5H5a1 1 0 0 1-1-1z"/></svg></i><span><b>Nova casa!</b>Quarto em Almada · <strong>400&nbsp;€</strong></span></div><div class="fx casa k2" aria-hidden="true"><i class="k-ic"><svg viewBox="0 0 24 24"><path d="M4 11 12 4.5 20 11v8.5a1 1 0 0 1-1 1h-4.5V15h-5v5.5H5a1 1 0 0 1-1-1z"/></svg></i><span><b>Nova casa!</b>T1 no Porto · <strong>800&nbsp;€</strong></span></div><div class="fx casa k3" aria-hidden="true"><i class="k-ic"><svg viewBox="0 0 24 24"><path d="M4 11 12 4.5 20 11v8.5a1 1 0 0 1-1 1h-4.5V15h-5v5.5H5a1 1 0 0 1-1-1z"/></svg></i><span><b>Nova casa!</b>T2 em Braga · <strong>750&nbsp;€</strong></span></div><span class="fx sai-fx atras" aria-hidden="true" style="left:calc(-1 * var(--fora) - 4px);top:22%;width:40px;--fx:calc(var(--pw) * 0.4);--fy:calc(var(--pw) * 0.2);--d:2.0s;--r:0deg"><img src="img/casa_2.svg" alt=""></span><span class="fx sai-fx atras" aria-hidden="true" style="left:calc(-1 * var(--fora));top:76%;width:34px;--fx:calc(var(--pw) * 0.4);--fy:calc(var(--pw) * -0.3);--d:2.1s;--r:0deg"><img src="img/casa_1.svg" alt=""></span><span class="fx sai-fx atras" aria-hidden="true" style="right:calc(-1 * var(--fora) - 6px);top:12%;width:38px;--fx:calc(var(--pw) * -0.4);--fy:calc(var(--pw) * 0.3);--d:2.2s;--r:0deg"><img src="img/casa_3.svg" alt=""></span><span class="fx sai-fx atras" aria-hidden="true" style="right:calc(-1 * var(--fora));top:88%;width:44px;--fx:calc(var(--pw) * -0.4);--fy:calc(var(--pw) * -0.4);--d:2.3s;--r:0deg"><img src="img/casa_2.svg" alt=""></span><span class="fx sai-fx h-escolha" aria-hidden="true" style="left:calc(-.9 * var(--fora));top:44%;width:56px;--fx:calc(var(--pw) * .45);--fy:0px;--d:2.4s"><img class="ce-a" src="img/casa_1.svg" alt=""><img class="ce-b" src="img/casa_esc.svg" alt=""><i class="ce-ok"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></i><b class="ce-tag">É esta!</b></span></figure></div>
       </div>
     </article>
 
@@ -837,7 +872,7 @@ footer a{min-height:44px;display:inline-flex;align-items:center}
           <p class="rv">Assistente jurídico com IA para a lei portuguesa. Fiz a marca, a personagem e o site: contas o caso, ele lê os teus documentos e responde com o artigo da lei e a ligação ao Diário da República. Ainda está em testes.</p>
           <a class="btn btn-secondary rv" href="https://goodman.2-31-13-85.sslip.io" target="_blank" rel="noopener">Ver o site ↗</a>
         </div>
-        <div class="shot"><figure class="cena c-goodman r-iris" style="--abre:#0E3A2C"><div class="phone"><div class="ecra"><img class="site" src="img/goodman.webp" width="640" height="1385" alt="Site Goodman no telemóvel" loading="lazy"><div class="abre" aria-hidden="true"><span class="g-logo"><img src="img/logo_goodman.webp" width="441" height="66" alt="" style="width:100%"></span></div></div></div><div class="fx msg m-eu" aria-hidden="true">O senhorio quer subir a renda de 650 para 750 €. Pode?</div><div class="fx g-col" aria-hidden="true"><div class="msg m-gm m-digita"><i></i><i></i><i></i></div><div class="msg m-gm m-resp">Não tens de aceitar. Se o contrato não o prevê, só pode atualizar a renda uma vez por ano, pelo coeficiente oficial.</div><div class="artigo"><b>§</b>Código Civil, artigo 1077.º<i>✓</i></div></div></figure></div>
+        <div class="shot"><figure class="cena c-goodman r-iris" style="--abre:#0E3A2C"><div class="phone"><div class="ecra"><img class="site" src="img/goodman.webp" width="640" height="1385" alt="Site Goodman no telemóvel" loading="lazy"><div class="abre" aria-hidden="true"><span class="g-logo"><img src="img/logo_goodman.webp" width="441" height="66" alt="" style="width:100%"></span></div></div></div><div class="fx msg m-eu" aria-hidden="true">O senhorio quer subir a renda de 650 para 750 €. Pode?</div><div class="fx g-col" aria-hidden="true"><div class="msg m-gm m-digita"><i></i><i></i><i></i></div><div class="msg m-gm m-resp">Não tens de aceitar. Se o contrato não o prevê, só pode atualizar a renda uma vez por ano, pelo coeficiente oficial.</div><div class="artigo"><b>§</b>Código Civil, artigo 1077.º<i>✓</i></div></div><span class="fx sai-fx h-juiz" aria-hidden="true" style="left:calc(-1 * var(--fora));top:76%;--fx:calc(var(--pw) * .4);--fy:calc(var(--pw) * -.3);--d:3.9s"><img class="j-base" src="img/martelo_base.svg" alt=""><img class="j-martelo" src="img/martelo.svg" alt=""><svg class="j-pum" viewBox="0 0 60 30"><path d="M8 22 2 14M30 16V4M52 22l6-8"/></svg><b class="j-selo">Caso resolvido <i>✓</i></b></span></figure></div>
       </div>
     </article>
   </section>
@@ -1123,6 +1158,17 @@ footer a{min-height:44px;display:inline-flex;align-items:center}
         if(flap[i+1]){ flap[i].classList.remove('ativo'); flap[i].classList.add('saiu'); flap[i+1].classList.add('ativo'); }
       },+ms); });
     }
+    /* PAROU: a linha passa por baixo do telemóvel e o autocarro segue-a até à paragem */
+    function rotaParou(){
+      var f=document.querySelector('.c-parou'); if(!f) return;
+      var W=f.clientWidth, H=f.clientHeight, s=f.querySelector('.p-rota'), b=f.querySelector('.p-bus'), pn=f.querySelector('.p-pino');
+      var X=function(v){return (v*W).toFixed(1)}, Y=function(v){return (v*H).toFixed(1)};
+      var d='M'+X(-.32)+' '+Y(.93)+'C'+X(0)+' '+Y(.99)+' '+X(.25)+' '+Y(.8)+' '+X(.5)+' '+Y(.86)+'S'+X(.95)+' '+Y(.8)+' '+X(1.08)+' '+Y(.66);
+      s.setAttribute('width',W); s.setAttribute('height',H); s.setAttribute('viewBox','0 0 '+W+' '+H); s.querySelector('path').setAttribute('d',d);
+      b.style.offsetPath="path('"+d+"')";
+      pn.style.left=(1.08*W-14)+'px'; pn.style.top=(.66*H-40)+'px';
+    }
+    rotaParou(); window.addEventListener('resize',rotaParou);
     if(!('IntersectionObserver' in window)){ cenas.forEach(ligar); return; }
     var io=new IntersectionObserver(function(es){
       es.forEach(function(e){ if(e.isIntersecting){ ligar(e.target); io.unobserve(e.target); } });
