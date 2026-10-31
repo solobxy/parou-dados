@@ -1,0 +1,11 @@
+FALHOU / (200) tem a etiqueta das estatísticas
+FALHOU / carrega o script uma só vez
+FALHOU /linhas (200) tem a etiqueta das estatísticas
+FALHOU /linhas carrega o script uma só vez
+FALHOU /greves (200) tem a etiqueta das estatísticas
+FALHOU /greves carrega o script uma só vez
+FALHOU /transportes (200) tem a etiqueta das estatísticas
+FALHOU /transportes carrega o script uma só vez
+FALHOU /_e.js responde 404 text/html; charset=utf-8
+FALHOU /_e (POST) responde 404
+10 falha(s)
