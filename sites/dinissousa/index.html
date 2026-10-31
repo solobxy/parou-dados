@@ -32,6 +32,7 @@
 </script>
 <style>
 @font-face{font-family:"Archivo";src:url("fonts/archivo.woff") format("woff");font-weight:100 900;font-stretch:62% 125%;font-display:swap}
+@font-face{font-family:"Pixelify Sans";src:url("fonts/pixelify.woff") format("woff");font-weight:400 700;font-display:swap}
 @font-face{font-family:"Newsreader";src:url("fonts/newsreader-italic-500.woff") format("woff");font-weight:500;font-style:italic;font-display:swap}
 
 :root{
@@ -51,6 +52,7 @@ body[data-world="parou"]{--bg:#16151A;--ink:#FFFFFF;--muted:#A8A6AE;--surface:#2
 body[data-world="anjinho"]{--bg:#DCE8F4;--ink:#1D1719;--muted:#4D4A55;--surface:#C8D8EA;--accent:#1D1719;--on-accent:#DCE8F4;--frame:#1D1719;--mark:#F2A7BD}
 body[data-world="jinxed"]{--bg:#110D0E;--ink:#EAE3DA;--muted:#A69F98;--surface:#1F191A;--accent:#D6101C;--on-accent:#FFFFFF;--frame:#2B2325;--mark:#D6101C}
 body[data-world="adri"]{--bg:#0E0C0B;--ink:#EEE8DF;--muted:#BDB5A9;--surface:#1E1B18;--accent:#D9B676;--on-accent:#141210;--frame:#2A2622;--mark:#D9B676}
+body[data-world="tapmoss"]{--bg:#0B120D;--ink:#F2EAD2;--muted:#AEB8A4;--surface:#18241A;--accent:#A8DC5C;--on-accent:#0B120D;--frame:#0F1810;--mark:#A8DC5C}
 body[data-world="goodman"]{--bg:#0E3A2C;--ink:#F0F5F1;--muted:#B4CABE;--surface:#17503D;--accent:#C7372A;--on-accent:#FFFFFF;--frame:#0A2A20;--mark:#C7372A}
 body[data-world="duplicasa"]{--bg:#F3F5F4;--ink:#10241B;--muted:#4A5A52;--surface:#E0E8E3;--accent:#0E6B4F;--on-accent:#FFFFFF;--frame:#10241B;--mark:#0E6B4F}
 
@@ -114,7 +116,7 @@ p{margin:0}
 .bolha.on{opacity:1;transform:none;transition:opacity .3s var(--ease) .4s,transform .8s var(--mola) .4s}
 .bolha img{height:21px;width:auto;max-width:none;display:block}
 .b-duplicasa{box-shadow:0 0 0 1px rgba(16,36,27,.1),0 16px 30px -14px rgba(0,0,0,.4)}
-.b-anjinho img{height:19px}.b-jinxed img{height:27px}.b-parou img{height:24px}.b-goodman img{height:17px}.b-duplicasa img{height:22px}
+.b-anjinho img{height:19px}.b-jinxed img{height:27px}.b-parou img{height:24px}.b-goodman img{height:17px}.b-tapmoss img{height:20px}.b-duplicasa img{height:22px}
 .carta.s1 .scr::after,.carta.s2 .scr::after{opacity:.16}
 .scr::after{content:"";position:absolute;inset:0;background:#000;opacity:0;transition:opacity .6s var(--ease);pointer-events:none}
 .scr img{transition:opacity .45s var(--ease)}
@@ -282,7 +284,7 @@ p{margin:0}
 .sub .nw{white-space:nowrap}
 .sub a:hover{border-bottom-color:transparent}
 .sub a.solto,.sub .nw.solto{white-space:normal}
-.c-adri{color:#7A5820}.c-good{color:#0E3A2C}.c-goth{color:#B0101C}.c-coq{color:#B4436A}.c-trans{color:#B84A0E}.c-casa{color:#0E6B4F}
+.c-adri{color:#7A5820}.c-good{color:#0E3A2C}.c-goth{color:#B0101C}.c-coq{color:#B4436A}.c-trans{color:#B84A0E}.c-casa{color:#0E6B4F}.c-moss{color:#3A7A25}
 .ctas{margin-top:26px;display:flex;gap:10px;flex-wrap:wrap}
 .risco{margin-top:12px;font-size:14px;color:var(--muted)}
 .ctas .btn{flex:1 1 150px}
@@ -296,7 +298,9 @@ p{margin:0}
 .brands{margin-top:36px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;padding:8px;background:#E2E2DE}
 .brand-tile{height:104px;display:flex;align-items:center;justify-content:center;padding:16px;text-decoration:none;transition:transform .35s var(--ease)}
 .brand-tile img{width:auto;max-width:100%;object-fit:contain}
-.t-adri{background:#0E0C0B}.t-parou{background:#16151A}.t-anjinho{background:#DCE8F4}.t-jinxed{background:#110D0E}.t-duplicasa{background:#FFFFFF}.t-goodman{background:#0E3A2C}
+.t-adri{background:#0E0C0B}.t-parou{background:#16151A}.t-anjinho{background:#DCE8F4}.t-jinxed{background:#110D0E}.t-duplicasa{background:#FFFFFF}.t-goodman{background:#0E3A2C}.t-tapmoss{background:#0B120D url("img/px_relva.svg") repeat-x left bottom/auto 18px;image-rendering:pixelated;grid-column:1/-1;position:relative}
+.t-tapmoss img{image-rendering:auto}
+.t-tapmoss .novo{position:absolute;top:10px;right:10px;padding:4px 8px 3px;background:#A8DC5C;color:#0B120D;font:600 12px/1 "Pixelify Sans",var(--font);letter-spacing:.02em}
 @media (hover:hover){.brand-tile:hover{transform:translateY(-4px)}}
 .project{padding-block:88px}
 .project .wrap{display:grid;gap:32px;align-items:center}
@@ -519,6 +523,70 @@ img.fx{height:auto}
 .c-duplicasa.on .h-escolha .ce-b{opacity:1;transition:opacity .4s var(--ease) 4.1s}
 .c-duplicasa.on .ce-ok{transform:none;transition:transform .6s var(--mola) 4.45s}
 .c-duplicasa.on .ce-tag{opacity:1;transition:opacity .4s var(--ease) 4.65s}
+
+/* TAPMOSS no topo: o musgo cresce na pedra aos bocadinhos, as moedas saltam a cada toque e a barra de nível enche */
+.h-pedra{width:112px}
+.h-pedra svg{display:block;width:100%;height:auto;overflow:visible;filter:drop-shadow(0 8px 8px rgba(0,0,0,.18))}
+.h-pedra :is(.p-m1,.p-m2,.p-m3,.p-fl){opacity:0}
+.h-tapmoss.on .p-m1{animation:pxcresce .36s steps(3,end) 1s both}
+.h-tapmoss.on .p-m2{animation:pxcresce .36s steps(3,end) 1.65s both}
+.h-tapmoss.on .p-m3{animation:pxcresce .36s steps(3,end) 2.3s both}
+.h-tapmoss.on .p-fl{animation:pxcresce .48s steps(4,end) 3s both}
+@keyframes pxcresce{0%{opacity:0;transform:translateY(1.5px)}100%{opacity:1;transform:none}}
+.hf .pxi,.fx .pxi{image-rendering:pixelated;height:auto}
+.h-nivel{display:inline-flex;flex-direction:column;gap:7px;padding:9px 11px 10px;background:#0F1810;color:#F2EAD2;font:600 13px/1 "Pixelify Sans",var(--font);white-space:nowrap;box-shadow:0 0 0 2px #2C4A24,0 16px 28px -12px rgba(0,0,0,.45)}
+.nv-t{position:relative;display:block}
+.nv-t b{font-weight:600}
+.nv-t .nv-b{position:absolute;left:0;top:0;color:#A8DC5C;opacity:0}
+.nv-barra{display:flex;gap:2px}
+.nv-barra i{width:8px;height:7px;background:#24361F}
+.nv-barra i.ja{background:#8CCF4A}
+.h-tapmoss.on .nv-barra i:not(.ja){animation:nvenche .01s steps(1,end) calc(1.1s + var(--i) * .2s) both}
+@keyframes nvenche{to{background:#A8DC5C}}
+.h-tapmoss.on .nv-a{animation:pxsome .2s steps(2,end) 2.05s both}
+.h-tapmoss.on .nv-b{animation:pxsurge .2s steps(2,end) 2.1s both}
+.h-tapmoss.on .h-nivel{animation:nvsobe .36s steps(3,end) 2.05s}
+@keyframes pxsome{to{opacity:0}}
+@keyframes pxsurge{to{opacity:1}}
+@keyframes nvsobe{50%{scale:1.12}}
+.hf :is(.h-moeda,.h-toque){z-index:3 !important}
+.h-moeda{width:24px;filter:drop-shadow(0 3px 0 rgba(0,0,0,.25))}
+.h-moeda img{display:block;width:100%}
+.h-moeda b{position:absolute;left:50%;bottom:100%;translate:-50% 0;font:700 15px/1 "Pixelify Sans",var(--font);color:#F4C54F;text-shadow:0 2px 0 #3A2706;opacity:0}
+.h-tapmoss.on .h-moeda b{animation:pxganho 1s steps(7,end) calc(var(--d) + .25s) both}
+@keyframes pxganho{0%{opacity:0;transform:translateY(4px)}15%{opacity:1}75%{opacity:1}100%{opacity:0;transform:translateY(calc(-22px * var(--k)))}}
+.h-toque{width:28px;height:28px;margin:-14px 0 0 -14px;box-shadow:0 0 0 2px #5FAA33}
+.h-tapmoss.on .h-toque{animation:pxtoque .54s steps(3,end) var(--d) 3 both}
+@keyframes pxtoque{0%{opacity:1;scale:.3}100%{opacity:0;scale:1.35}}
+.h-vaga{width:5px;height:5px;background:#D7F05A;box-shadow:0 0 0 1px rgba(110,140,20,.35),0 0 12px 4px rgba(200,232,80,.55)}
+.h-tapmoss.on .h-vaga{animation:pxvaga 2.6s ease-in-out calc(var(--d) + .4s) 2 alternate}
+@keyframes pxvaga{to{translate:calc(14px * var(--k)) calc(-12px * var(--k))}}
+.hf .pxflor{width:30px}
+@media (max-width:719px){.hf .h-pedra{width:84px;left:3% !important;top:85% !important}.hf .h-flor1{left:8% !important;top:14% !important}}
+
+/* TAPMOSS: o ecrã abre-se em píxeis; sai o aviso de musgo novo, as moedas de um toque e o baú do dia */
+.r-pixel .abre{background:none}
+.pix{position:absolute;inset:0;z-index:1;display:grid;grid-template-columns:repeat(6,1fr);grid-template-rows:repeat(13,1fr)}
+.pix i{background:var(--abre);margin:-.5px;transition:opacity .1s steps(1,end) var(--d)}
+.r-pixel.on .pix i{opacity:0}
+.phone .abre .tm-logo{position:relative;z-index:2;width:72%;opacity:0}
+.c-tapmoss.on .abre .tm-logo{animation:tmlogo 1.2s both}
+@keyframes tmlogo{0%{opacity:0;transform:scale(.86);animation-timing-function:steps(3,end)}22%{opacity:1;transform:none}86%{opacity:1;animation-timing-function:steps(2,end)}100%{opacity:0}}
+.tm-aviso{z-index:5;left:calc(-1 * var(--fora));top:13%;display:flex;gap:10px;align-items:center;padding:10px 13px 10px 10px;background:#0F1810;color:#F2EAD2;font:500 13px/1.3 "Pixelify Sans",var(--font);max-width:calc(var(--pw) + var(--fora) - 12px);
+  box-shadow:0 0 0 2px #2C4A24,0 20px 34px -14px rgba(0,0,0,.7);transition:transform .45s steps(4,end) 2.2s,opacity .2s steps(2,end) 2.2s}
+.tm-aviso img{flex:none;width:30px}
+.tm-aviso b{display:block;color:#A8DC5C;font-weight:700;font-size:14px}
+.js .c-tapmoss:not(.on) .tm-aviso{opacity:0;transform:translateX(calc(-28px * var(--k)))}
+.tm-moeda{width:26px}
+.tm-ganho{z-index:5;right:calc(-.55 * var(--fora));top:40%;font:700 22px/1 "Pixelify Sans",var(--font);color:#F4C54F;text-shadow:0 3px 0 #3A2706;opacity:0}
+.c-tapmoss.on .tm-ganho{animation:pxganho 1.3s steps(8,end) 3.25s both}
+.tm-bau{width:62px;text-align:center}
+.tm-bau b{display:block;margin-top:6px;font:600 12px/1 "Pixelify Sans",var(--font);color:#F2EAD2;white-space:nowrap}
+.c-tapmoss.on .tm-bau img{animation:pxabana .5s steps(4,end) 4.7s 2}
+@keyframes pxabana{25%{rotate:-8deg}75%{rotate:8deg}}
+.tm-vaga{z-index:3;width:5px;height:5px;background:#D7F05A;box-shadow:0 0 0 1px rgba(110,140,20,.35),0 0 14px 5px rgba(200,232,80,.5);transition:opacity .6s var(--ease) var(--d)}
+.js .c-tapmoss:not(.on) .tm-vaga{opacity:0}
+.c-tapmoss.on .tm-vaga{animation:pxvaga 2.8s ease-in-out calc(var(--d) + .6s) 2 alternate}
 .c-goodman .h-juiz{z-index:6}
 .c-goodman.on .j-martelo{animation:martela 1s 4.1s both}
 .c-goodman.on .j-base{animation:pancada .3s linear 4.58s}
@@ -767,7 +835,7 @@ footer a{min-height:44px;display:inline-flex;align-items:center}
       <div class="hero-text">
         <h1 class="name"><span>Dinis</span><span>Sousa.</span></h1>
         <p class="lead">Faço sites que não se parecem uns com os outros.</p>
-        <p class="sub"><a class="c-adri" href="#adri">Um estúdio de piercing</a>, <a class="c-coq" href="#anjinho">uma loja coquette</a>, <a class="c-goth" href="#jinxed">uma marca gótica</a>, <a class="c-trans" href="#parou">uma app de transportes</a>, <a class="c-casa" href="#duplicasa">um site de arrendamento</a> <span class="nw">e <a class="c-good" href="#goodman">um advogado com IA</a>.</span> <span class="fim">Todos feitos por mim. <span class="nw">O próximo pode ser o teu.</span></span></p>
+        <p class="sub"><a class="c-adri" href="#adri">Um estúdio de piercing</a>, <a class="c-coq" href="#anjinho">uma loja coquette</a>, <a class="c-goth" href="#jinxed">uma marca gótica</a>, <a class="c-trans" href="#parou">uma app de transportes</a>, <a class="c-casa" href="#duplicasa">um site de arrendamento</a>, <a class="c-good" href="#goodman">um advogado com IA</a> <span class="nw">e <a class="c-moss" href="#tapmoss">um jogo em pixel art</a>.</span> <span class="fim">Todos feitos por mim. <span class="nw">O próximo pode ser o teu.</span></span></p>
         <div class="ctas">
           <a class="btn btn-primary wa" data-msg="Olá Dinis! Quero um site." href="https://wa.me/351913488258">Pedir o meu site</a>
           <a class="btn btn-secondary" href="#projetos">Ver projetos</a>
@@ -834,12 +902,26 @@ footer a{min-height:44px;display:inline-flex;align-items:center}
             
             <span class="h-par" style="left:26%;top:90%;--ex:60px;--ey:-90px;--d:1.0s;--r:-12deg">§</span>
           </div>
+          <div class="hf h-tapmoss">
+            <span class="h-pedra" style="left:3%;top:3%;--ex:100px;--ey:60px;--d:.3s"><svg class="h-pedra-svg" viewBox="0 0 26 16" shape-rendering="crispEdges" aria-hidden="true"><g class="p-pedra"><rect x="7" y="6" width="11" height="1" fill="#8f9aa6"/><rect x="5" y="7" width="2" height="1" fill="#8f9aa6"/><rect x="7" y="7" width="4" height="1" fill="#b9c2cb"/><rect x="11" y="7" width="9" height="1" fill="#8f9aa6"/><rect x="4" y="8" width="1" height="1" fill="#8f9aa6"/><rect x="5" y="8" width="3" height="1" fill="#b9c2cb"/><rect x="8" y="8" width="14" height="1" fill="#8f9aa6"/><rect x="3" y="9" width="2" height="1" fill="#8f9aa6"/><rect x="5" y="9" width="1" height="1" fill="#b9c2cb"/><rect x="6" y="9" width="15" height="1" fill="#8f9aa6"/><rect x="21" y="9" width="1" height="1" fill="#646d78"/><rect x="22" y="9" width="1" height="1" fill="#8f9aa6"/><rect x="2" y="10" width="18" height="1" fill="#8f9aa6"/><rect x="20" y="10" width="2" height="1" fill="#646d78"/><rect x="22" y="10" width="2" height="1" fill="#8f9aa6"/><rect x="1" y="11" width="18" height="1" fill="#8f9aa6"/><rect x="19" y="11" width="4" height="1" fill="#646d78"/><rect x="23" y="11" width="1" height="1" fill="#8f9aa6"/><rect x="1" y="12" width="17" height="1" fill="#8f9aa6"/><rect x="18" y="12" width="6" height="1" fill="#646d78"/><rect x="24" y="12" width="1" height="1" fill="#8f9aa6"/><rect x="2" y="13" width="2" height="1" fill="#646d78"/><rect x="4" y="13" width="13" height="1" fill="#8f9aa6"/><rect x="17" y="13" width="7" height="1" fill="#646d78"/><rect x="3" y="14" width="20" height="1" fill="#646d78"/><rect x="4" y="15" width="18" height="1" fill="rgba(14,20,15,.18)"/></g><g class="p-m1"><rect x="8" y="5" width="1" height="1" fill="#9ad65a"/><rect x="9" y="5" width="1" height="1" fill="#5faa33"/><rect x="7" y="6" width="1" height="1" fill="#9ad65a"/><rect x="8" y="6" width="2" height="1" fill="#5faa33"/><rect x="10" y="6" width="1" height="1" fill="#9ad65a"/><rect x="6" y="7" width="1" height="1" fill="#9ad65a"/><rect x="7" y="7" width="4" height="1" fill="#5faa33"/><rect x="11" y="7" width="1" height="1" fill="#9ad65a"/></g><g class="p-m2"><rect x="14" y="3" width="1" height="1" fill="#9ad65a"/><rect x="13" y="4" width="1" height="1" fill="#9ad65a"/><rect x="14" y="4" width="1" height="1" fill="#5faa33"/><rect x="15" y="4" width="1" height="1" fill="#9ad65a"/><rect x="11" y="5" width="1" height="1" fill="#9ad65a"/><rect x="12" y="5" width="4" height="1" fill="#5faa33"/><rect x="16" y="5" width="1" height="1" fill="#9ad65a"/><rect x="10" y="6" width="1" height="1" fill="#9ad65a"/><rect x="11" y="6" width="2" height="1" fill="#5faa33"/><rect x="13" y="6" width="1" height="1" fill="#3f8229"/><rect x="14" y="6" width="3" height="1" fill="#5faa33"/><rect x="17" y="6" width="1" height="1" fill="#9ad65a"/><rect x="10" y="7" width="2" height="1" fill="#5faa33"/><rect x="12" y="7" width="1" height="1" fill="#3f8229"/><rect x="13" y="7" width="2" height="1" fill="#5faa33"/><rect x="15" y="7" width="1" height="1" fill="#3f8229"/><rect x="16" y="7" width="2" height="1" fill="#5faa33"/><rect x="18" y="7" width="1" height="1" fill="#9ad65a"/><rect x="12" y="8" width="1" height="1" fill="#3f8229"/><rect x="13" y="8" width="2" height="1" fill="#5faa33"/><rect x="15" y="8" width="1" height="1" fill="#3f8229"/></g><g class="p-m3"><rect x="22" y="5" width="1" height="1" fill="#9ad65a"/><rect x="4" y="6" width="1" height="1" fill="#9ad65a"/><rect x="20" y="6" width="1" height="1" fill="#9ad65a"/><rect x="21" y="6" width="2" height="1" fill="#5faa33"/><rect x="23" y="6" width="1" height="1" fill="#9ad65a"/><rect x="3" y="7" width="1" height="1" fill="#9ad65a"/><rect x="4" y="7" width="1" height="1" fill="#5faa33"/><rect x="5" y="7" width="1" height="1" fill="#9ad65a"/><rect x="20" y="7" width="2" height="1" fill="#5faa33"/><rect x="22" y="7" width="1" height="1" fill="#3f8229"/><rect x="23" y="7" width="1" height="1" fill="#5faa33"/><rect x="2" y="8" width="1" height="1" fill="#9ad65a"/><rect x="3" y="8" width="2" height="1" fill="#5faa33"/><rect x="5" y="8" width="1" height="1" fill="#3f8229"/><rect x="6" y="8" width="1" height="1" fill="#9ad65a"/><rect x="19" y="8" width="2" height="1" fill="#5faa33"/><rect x="21" y="8" width="1" height="1" fill="#3f8229"/><rect x="22" y="8" width="2" height="1" fill="#5faa33"/><rect x="2" y="9" width="1" height="1" fill="#5faa33"/><rect x="3" y="9" width="1" height="1" fill="#3f8229"/><rect x="4" y="9" width="1" height="1" fill="#5faa33"/><rect x="20" y="9" width="1" height="1" fill="#3f8229"/><rect x="21" y="9" width="2" height="1" fill="#5faa33"/><rect x="2" y="10" width="1" height="1" fill="#3f8229"/><rect x="3" y="10" width="1" height="1" fill="#5faa33"/><rect x="21" y="10" width="1" height="1" fill="#5faa33"/></g><g class="p-fl"><rect x="16" y="1" width="1" height="1" fill="#ee7fb0"/><rect x="15" y="2" width="1" height="1" fill="#ee7fb0"/><rect x="16" y="2" width="1" height="1" fill="#f4c54f"/><rect x="17" y="2" width="1" height="1" fill="#ee7fb0"/><rect x="16" y="3" width="1" height="1" fill="#ee7fb0"/><rect x="16" y="4" width="1" height="1" fill="#3f8229"/></g></svg></span>
+            <img class="flut pxi pxflor h-flor1" src="img/px_flor.svg" alt="" style="left:22%;top:5%;--ex:90px;--ey:90px;--d:.5s;--r:-8deg">
+            <img class="flut pxi pxflor" src="img/px_flor_azul.svg" alt="" style="left:88%;top:80%;width:22px;--ex:-100px;--ey:-70px;--d:.65s;--r:8deg">
+            <span class="h-nivel m-topo" style="left:72%;top:6%;--ex:-70px;--ey:60px;--d:.45s"><span class="nv-t"><b class="nv-a">Nível 9</b><b class="nv-b">Nível 10!</b></span><span class="nv-barra"><i class="ja"></i><i class="ja"></i><i class="ja"></i><i class="ja"></i><i class="ja"></i><i class="ja"></i><i style="--i:0"></i><i style="--i:1"></i><i style="--i:2"></i><i style="--i:3"></i></span></span>
+            <span class="h-toque" style="left:50%;top:50%;--d:.95s"></span>
+            <span class="h-moeda" style="left:47%;top:44%;--ex:0px;--ey:20px;--d:1s"><img class="pxi" src="img/px_moeda.svg" alt=""><b>+1</b></span>
+            <span class="h-moeda" style="left:55%;top:52%;width:20px;--ex:0px;--ey:20px;--d:1.55s"><img class="pxi" src="img/px_moeda.svg" alt=""><b>+1</b></span>
+            <span class="h-moeda" style="left:42%;top:58%;width:18px;--ex:0px;--ey:20px;--d:2.1s"><img class="pxi" src="img/px_moeda.svg" alt=""><b>+1</b></span>
+            <i class="h-vaga" style="left:2%;top:46%;--d:.7s"></i>
+            <i class="h-vaga" style="left:24%;top:95%;--d:.9s"></i>
+            <i class="h-vaga" style="left:97%;top:38%;--d:1.1s"></i>
+            <i class="h-vaga" style="left:82%;top:95%;--d:1.3s"></i>
+          </div>
         </div>
         <div class="baralho">
           <div class="carta s0 junto"><div class="cel" style="background:#2A2622"><div class="scr"><img class="on" src="img/adri.webp" width="640" height="1385" alt="Site AdriBodyPiercing" fetchpriority="high"><img alt=""></div></div></div>
           <div class="carta s1 junto" aria-hidden="true"><div class="cel" style="background:#1D1719"><div class="scr"><img class="on" src="img/anjinho.webp" width="640" height="1385" alt=""><img alt=""></div></div></div>
           <div class="carta s2 junto" aria-hidden="true"><div class="cel" style="background:#2B2325"><div class="scr"><img class="on" src="img/jinxed.webp" width="640" height="1385" alt=""><img alt=""></div></div></div>
-          <div class="bolhas" aria-hidden="true"><span class="bolha b-adri" style="background:#0E0C0B"><img src="img/logo_adri.webp" width="325" height="70" alt=""></span><span class="bolha b-anjinho" style="background:#DCE8F4"><img src="img/logo_anjinho.svg" width="200" height="69" alt=""></span><span class="bolha b-jinxed" style="background:#110D0E"><img src="img/logo_jinxed.webp" width="200" height="90" alt=""></span><span class="bolha b-parou" style="background:#16151A"><img src="img/logo_parou.webp" width="235" height="85" alt=""></span><span class="bolha b-duplicasa" style="background:#FFFFFF"><img src="img/logo_duplicasa.svg" width="592" height="123" alt=""></span><span class="bolha b-goodman" style="background:#0E3A2C"><img src="img/logo_goodman.webp" width="441" height="66" alt=""></span></div>
+          <div class="bolhas" aria-hidden="true"><span class="bolha b-adri" style="background:#0E0C0B"><img src="img/logo_adri.webp" width="325" height="70" alt=""></span><span class="bolha b-anjinho" style="background:#DCE8F4"><img src="img/logo_anjinho.svg" width="200" height="69" alt=""></span><span class="bolha b-jinxed" style="background:#110D0E"><img src="img/logo_jinxed.webp" width="200" height="90" alt=""></span><span class="bolha b-parou" style="background:#16151A"><img src="img/logo_parou.webp" width="235" height="85" alt=""></span><span class="bolha b-duplicasa" style="background:#FFFFFF"><img src="img/logo_duplicasa.svg" width="592" height="123" alt=""></span><span class="bolha b-goodman" style="background:#0E3A2C"><img src="img/logo_goodman.webp" width="441" height="66" alt=""></span><span class="bolha b-tapmoss" style="background:#0B120D"><img src="img/logo_tapmoss.webp" width="588" height="124" alt=""></span></div>
         </div>
         <p class="sr" id="palcoNome" aria-live="polite">AdriBodyPiercing</p>
         
@@ -858,6 +940,7 @@ footer a{min-height:44px;display:inline-flex;align-items:center}
         <a class="brand-tile t-jinxed" href="#jinxed"><img src="img/logo_jinxed.webp" width="200" height="90" alt="jinxed" style="height:40px"></a>
         <a class="brand-tile t-duplicasa" href="#duplicasa"><img src="img/logo_duplicasa.svg" width="592" height="123" alt="DupliCasa" style="height:30px"></a>
         <a class="brand-tile t-goodman" href="#goodman"><img src="img/logo_goodman.webp" width="441" height="66" alt="Goodman" style="height:24px"></a>
+        <a class="brand-tile t-tapmoss" href="#tapmoss"><img src="img/logo_tapmoss.webp" width="588" height="124" alt="tapmoss" style="height:30px"><span class="novo">Novo</span></a>
       </nav>
     </div>
 
@@ -930,6 +1013,18 @@ footer a{min-height:44px;display:inline-flex;align-items:center}
           <a class="btn btn-secondary rv" href="https://goodman.2-31-13-85.sslip.io" target="_blank" rel="noopener">Ver o site ↗</a>
         </div>
         <div class="shot"><figure class="cena c-goodman r-iris" style="--abre:#0E3A2C"><div class="phone"><div class="ecra"><img class="site" src="img/goodman.webp" width="640" height="1385" alt="Site Goodman no telemóvel" loading="lazy"><div class="abre" aria-hidden="true"><span class="g-logo"><img src="img/logo_goodman.webp" width="441" height="66" alt="" style="width:100%"></span></div></div></div><div class="fx msg m-eu" aria-hidden="true">O senhorio quer subir a renda de 650 para 750 €. Pode?</div><div class="fx g-col" aria-hidden="true"><div class="msg m-gm m-digita"><i></i><i></i><i></i></div><div class="msg m-gm m-resp">Não tens de aceitar. Se o contrato não o prevê, só pode atualizar a renda uma vez por ano, pelo coeficiente oficial.</div><div class="artigo"><b>§</b>Código Civil, artigo 1077.º<i>✓</i></div></div><span class="fx sai-fx h-juiz" aria-hidden="true" style="right:calc(-1 * var(--fora));top:79%;--fx:calc(var(--pw) * -.4);--fy:calc(var(--pw) * -.3);--d:3.9s"><span class="j-arte"><img class="j-base" src="img/martelo_base.svg" alt=""><img class="j-martelo" src="img/martelo.svg" alt=""><svg class="j-pum" viewBox="0 0 60 30"><path d="M8 22 2 14M30 16V4M52 22l6-8"/></svg></span><b class="j-selo">Caso resolvido <i>✓</i></b></span></figure></div>
+      </div>
+    </article>
+
+    <article class="project" id="tapmoss" data-world="tapmoss" aria-labelledby="t-tapmoss">
+      <div class="wrap">
+        <div class="info">
+          <img class="logo rv" src="img/logo_tapmoss.webp" width="588" height="124" alt="tapmoss" loading="lazy" style="max-height:38px">
+          <h3 class="rv" id="t-tapmoss">Um cantinho de floresta no bolso.</h3>
+          <p class="rv">Jogo calmo em pixel art, ideia minha. O musgo cresce devagar e ao acaso, o dia, a noite e a chuva seguem a tua cidade, e há flores raras, baús, animais e amigos para visitar. Fiz o jogo, os desenhos e o site.</p>
+          <a class="btn btn-secondary rv" href="https://tapmoss.com" target="_blank" rel="noopener">Jogar em tapmoss.com ↗</a>
+        </div>
+        <div class="shot"><figure class="cena c-tapmoss r-pixel" style="--abre:#0B120D"><div class="phone"><div class="ecra"><img class="site" src="img/tapmoss.webp" width="640" height="1386" alt="Jogo tapmoss no telemóvel" loading="lazy"><div class="abre" aria-hidden="true"><span class="pix"><i style="--d:1.28s"></i><i style="--d:1.17s"></i><i style="--d:1.48s"></i><i style="--d:1.12s"></i><i style="--d:1.41s"></i><i style="--d:1.31s"></i><i style="--d:1.12s"></i><i style="--d:1.39s"></i><i style="--d:1.10s"></i><i style="--d:1.35s"></i><i style="--d:1.12s"></i><i style="--d:1.14s"></i><i style="--d:1.34s"></i><i style="--d:1.59s"></i><i style="--d:1.16s"></i><i style="--d:1.22s"></i><i style="--d:1.47s"></i><i style="--d:1.67s"></i><i style="--d:1.44s"></i><i style="--d:1.33s"></i><i style="--d:1.69s"></i><i style="--d:1.11s"></i><i style="--d:1.61s"></i><i style="--d:1.26s"></i><i style="--d:1.17s"></i><i style="--d:1.15s"></i><i style="--d:1.27s"></i><i style="--d:1.59s"></i><i style="--d:1.19s"></i><i style="--d:1.44s"></i><i style="--d:1.48s"></i><i style="--d:1.31s"></i><i style="--d:1.42s"></i><i style="--d:1.12s"></i><i style="--d:1.12s"></i><i style="--d:1.21s"></i><i style="--d:1.50s"></i><i style="--d:1.35s"></i><i style="--d:1.27s"></i><i style="--d:1.44s"></i><i style="--d:1.36s"></i><i style="--d:1.27s"></i><i style="--d:1.57s"></i><i style="--d:1.51s"></i><i style="--d:1.23s"></i><i style="--d:1.44s"></i><i style="--d:1.41s"></i><i style="--d:1.62s"></i><i style="--d:1.53s"></i><i style="--d:1.26s"></i><i style="--d:1.69s"></i><i style="--d:1.15s"></i><i style="--d:1.34s"></i><i style="--d:1.55s"></i><i style="--d:1.17s"></i><i style="--d:1.38s"></i><i style="--d:1.10s"></i><i style="--d:1.49s"></i><i style="--d:1.55s"></i><i style="--d:1.44s"></i><i style="--d:1.62s"></i><i style="--d:1.27s"></i><i style="--d:1.51s"></i><i style="--d:1.45s"></i><i style="--d:1.44s"></i><i style="--d:1.36s"></i><i style="--d:1.60s"></i><i style="--d:1.67s"></i><i style="--d:1.37s"></i><i style="--d:1.49s"></i><i style="--d:1.12s"></i><i style="--d:1.51s"></i><i style="--d:1.48s"></i><i style="--d:1.70s"></i><i style="--d:1.59s"></i><i style="--d:1.26s"></i><i style="--d:1.32s"></i><i style="--d:1.49s"></i></span><img class="tm-logo" src="img/logo_tapmoss.webp" width="588" height="124" alt=""></div></div></div><div class="fx tm-aviso" aria-hidden="true"><img class="pxi" src="img/px_musgo_roxo.svg" alt=""><span><b>Musgo novo!</b>Desbloqueaste o musgo roxo</span></div><span class="fx sai-fx tm-moeda" aria-hidden="true" style="right:calc(-.7 * var(--fora));top:47%;--fx:calc(var(--pw) * -.45);--fy:calc(var(--pw) * .1);--d:2.95s"><img class="pxi" src="img/px_moeda.svg" alt=""></span><span class="fx sai-fx tm-moeda" aria-hidden="true" style="right:calc(-.25 * var(--fora));top:52%;width:20px;--fx:calc(var(--pw) * -.3);--fy:calc(var(--pw) * .05);--d:3.05s"><img class="pxi" src="img/px_moeda.svg" alt=""></span><span class="fx sai-fx tm-moeda" aria-hidden="true" style="right:calc(-.95 * var(--fora));top:56%;width:18px;--fx:calc(var(--pw) * -.55);--fy:calc(var(--pw) * -.05);--d:3.15s"><img class="pxi" src="img/px_moeda.svg" alt=""></span><b class="fx tm-ganho" aria-hidden="true">+36</b><span class="fx sai-fx tm-bau" aria-hidden="true" style="left:calc(-.75 * var(--fora));top:72%;--fx:calc(var(--pw) * .5);--fy:calc(var(--pw) * -.25);--d:3.9s"><img class="pxi" src="img/px_bau.svg" alt=""><b>Baú do dia</b></span><span class="fx sai-fx atras" aria-hidden="true" style="right:calc(-.6 * var(--fora));top:16%;width:26px;--fx:calc(var(--pw) * -.4);--fy:calc(var(--pw) * .3);--d:2.6s;--r:8deg"><img class="pxi" src="img/px_flor.svg" alt=""></span><i class="fx tm-vaga" aria-hidden="true" style="left:calc(-.5 * var(--fora));top:40%;--d:1.9s"></i><i class="fx tm-vaga" aria-hidden="true" style="right:calc(-.4 * var(--fora));top:30%;--d:2.1s"></i><i class="fx tm-vaga" aria-hidden="true" style="right:calc(-.8 * var(--fora));top:86%;--d:2.3s"></i></figure></div>
       </div>
     </article>
   </section>
@@ -1164,7 +1259,8 @@ footer a{min-height:44px;display:inline-flex;align-items:center}
       {k:'jinxed',t:4400,n:'jinxed',img:'img/jinxed.webp',fr:'#2B2325',lk:'c-goth'},
       {k:'parou',t:5400,n:'PAROU',img:'img/parou.webp',fr:'#2E2D35',lk:'c-trans'},
       {k:'duplicasa',t:5000,n:'DupliCasa',img:'img/duplicasa.webp',fr:'#10241B',lk:'c-casa'},
-      {k:'goodman',t:5000,n:'Goodman',img:'img/goodman.webp',fr:'#0A2A20',lk:'c-good'}
+      {k:'goodman',t:5000,n:'Goodman',img:'img/goodman.webp',fr:'#0A2A20',lk:'c-good'},
+      {k:'tapmoss',t:5200,n:'tapmoss',img:'img/tapmoss.webp',fr:'#0F1810',lk:'c-moss'}
     ], N=P.length;
     var palco=document.getElementById('palco'); if(!palco) return;
     var cartas=[].slice.call(palco.querySelectorAll('.carta'));
