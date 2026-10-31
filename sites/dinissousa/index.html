@@ -109,21 +109,62 @@ p{margin:0}
 .carta.s2{z-index:1;transform:translate(48%,7%) rotate(9deg) scale(.84)}
 .carta.sai{z-index:4;transform:translate(105%,-5%) rotate(20deg) scale(.95)}
 .carta.junto{transform:none}
+.bolhas{position:absolute;z-index:6;right:-24%;top:-14px}
+.bolha{position:absolute;right:0;top:0;display:flex;align-items:center;height:42px;padding:0 15px;border-radius:21px 21px 21px 6px;box-shadow:0 1px 2px rgba(0,0,0,.12),0 16px 30px -14px rgba(0,0,0,.5);opacity:0;transform:translateY(calc(12px * var(--k))) scale(calc(1 - .5 * var(--k)));transform-origin:0 100%;transition:opacity .2s var(--ease),transform .25s var(--ease)}
+.bolha.on{opacity:1;transform:none;rotate:4deg;transition:opacity .3s var(--ease) .4s,transform .8s var(--mola) .4s}
+.bolha img{height:19px;width:auto;max-width:none;display:block}
+.b-duplicasa{box-shadow:0 0 0 1px rgba(16,36,27,.1),0 16px 30px -14px rgba(0,0,0,.4)}
+.b-anjinho img{height:17px}.b-jinxed img{height:24px}.b-parou img{height:22px}.b-goodman img{height:15px}
 .carta.s1 .scr::after,.carta.s2 .scr::after{opacity:.16}
 .scr::after{content:"";position:absolute;inset:0;background:#000;opacity:0;transition:opacity .6s var(--ease);pointer-events:none}
 .scr img{transition:opacity .45s var(--ease)}
 /* os efeitos de cada marca, por trás do baralho, em fundo branco */
-.fundos{position:absolute;inset:0;z-index:1;pointer-events:none}
+.fundos{position:absolute;inset:0;pointer-events:none}
 .hf{position:absolute;inset:0}
-.hf>*{position:absolute;opacity:0;transform:translate(calc(var(--ex,0px) * var(--k)),calc(var(--ey,0px) * var(--k))) scale(calc(1 - .55 * var(--k)));transition:opacity .35s var(--ease),transform .35s var(--ease)}
+.hf>*{position:absolute;z-index:1;opacity:0;transform:translate(calc(var(--ex,0px) * var(--k)),calc(var(--ey,0px) * var(--k))) scale(calc(1 - .55 * var(--k)));transition:opacity .35s var(--ease),transform .35s var(--ease)}
 .hf.on>*{opacity:1;transform:none;transition:opacity .45s var(--ease) var(--d,.25s),transform 1.1s var(--mola) var(--d,.25s)}
-.hf.on>*:nth-child(2){--d:.35s}.hf.on>*:nth-child(3){--d:.45s}.hf.on>*:nth-child(4){--d:.55s}.hf.on>*:nth-child(5){--d:.65s}.hf.on>*:nth-child(6){--d:.75s}.hf.on>*:nth-child(7){--d:.85s}
+.h-anjinho.on>*:nth-child(2){--d:.35s}.h-anjinho.on>*:nth-child(3){--d:.45s}.h-anjinho.on>*:nth-child(4){--d:.55s}.h-anjinho.on>*:nth-child(5){--d:.65s}.h-anjinho.on>*:nth-child(6){--d:.75s}.h-anjinho.on>*:nth-child(7){--d:.85s}
 .hf .flut{height:auto;filter:drop-shadow(0 8px 10px rgba(0,0,0,.28))}
 .hf .hx{filter:drop-shadow(0 6px 10px rgba(214,16,28,.35))}
-.hf.on .flut{animation:flutua 3.4s ease-in-out .9s 1}
-.hf.on .flut:nth-child(even){animation-duration:3s;animation-delay:1.1s}
-@keyframes flutua{50%{translate:0 calc(-9px * var(--k))}}
-.hf.on>*:nth-child(8){--d:.95s}
+.flut,.brilho,.bat,.h-carta,.h-par{rotate:var(--r,0deg)}
+.hf.on .flut{animation:flutua 3.4s ease-in-out calc(var(--d) + .7s) 1}
+.hf.on .flut:nth-child(even){animation-duration:3s}
+@keyframes flutua{50%{translate:0 calc(-9px * var(--k));rotate:calc(var(--r,0deg) + 8deg * var(--k))}}
+.hf .brilho{height:auto}
+.h-adri.on .brilho{animation:cintila 1s ease-in-out calc(var(--d) + .4s) 3}
+@keyframes cintila{0%,100%{scale:.55;opacity:.4}50%{scale:1.15;opacity:1}}
+.bat img{width:100%}
+.h-jinxed.on .bat img{animation:asa .15s ease-in-out var(--d) 12 alternate}
+@keyframes asa{to{scale:1 .3}}
+.h-rota{position:absolute;left:0;top:0;overflow:visible}
+.bus{left:0;top:0;height:auto;offset-rotate:auto;offset-distance:0%;offset-anchor:50% 70%}
+.h-parou.on .bus{animation:anda 2.6s cubic-bezier(.45,0,.2,1) .55s both}
+@keyframes anda{from{offset-distance:0%}to{offset-distance:100%}}
+.hf .pino{height:auto}
+.h-vivo i{position:relative}
+.h-vivo i::after{content:"";position:absolute;inset:0;border-radius:50%;background:#2FBF71}
+.h-parou.on .h-vivo i::after{animation:pulso 1.2s var(--ease) 2s 3}
+.hf .sino{height:auto;transform-origin:50% 10%}
+.h-duplicasa.on .sino{animation:toca .5s ease-in-out 1.1s 3}
+@keyframes toca{25%{rotate:16deg}75%{rotate:-16deg}}
+.h-riscos{fill:none;stroke:#F2A33A;stroke-width:5;stroke-linecap:round;opacity:1 !important;transform:none !important}
+.h-riscos path{stroke-dasharray:80;stroke-dashoffset:80;transition:stroke-dashoffset .3s}
+.h-duplicasa.on .h-riscos path{stroke-dashoffset:0;transition:stroke-dashoffset .5s var(--ease) 1.3s}
+.h-carta{display:grid;gap:5px;width:118px;padding:10px 12px 12px;background:#fff;border-radius:6px;box-shadow:0 16px 28px -14px rgba(0,0,0,.45);font-family:var(--serif);font-style:italic;font-size:11px;color:#444}
+.h-carta i{display:block;height:3px;border-radius:2px;background:#E2E2DE}
+.h-carta i:last-of-type{width:60%}
+.h-lido{position:absolute;right:-10px;bottom:-8px;padding:2px 7px;border:2px solid #C7372A;border-radius:4px;color:#C7372A;font-family:var(--font);font-style:normal;font-weight:800;font-size:13px;letter-spacing:.06em;background:rgba(255,255,255,.9);rotate:-10deg;opacity:0}
+.h-goodman.on .h-lido{animation:carimba .35s cubic-bezier(.55,0,.8,.2) 1.15s both}
+@keyframes carimba{from{opacity:0;scale:calc(1 + 1.4 * var(--k))}to{opacity:1;scale:1}}
+.h-escreve span{display:flex;gap:5px;padding:12px 14px;border-radius:16px 16px 16px 5px;background:#17503D;opacity:0}
+.h-escreve span i{width:7px;height:7px;border-radius:50%;background:#B4CABE}
+.h-goodman.on .h-escreve span{animation:escreve .85s var(--ease) .9s both}
+.h-goodman.on .h-escreve i{animation:ponto .4s ease-in-out .95s 2 alternate}
+.h-goodman.on .h-escreve i:nth-child(2){animation-delay:1.05s}.h-goodman.on .h-escreve i:nth-child(3){animation-delay:1.15s}
+@keyframes escreve{0%{opacity:0;scale:.6}20%,80%{opacity:1;scale:1}100%{opacity:0;scale:.9}}
+.h-par{font-family:var(--serif);font-style:italic;font-size:44px;line-height:1;color:#C7372A;opacity:.85}
+
+.hf>:is(.h-casa,.h-msg,.h-art,.h-chip,.h-vivo,.h-carta,.h-carimbo,.h-escreve){z-index:3}
 .hb{width:var(--s);height:var(--s);border-radius:50%;background:radial-gradient(circle at 34% 30%,#FFF7E0 0,#EBD192 22%,#C29A49 55%,#5E4719 100%);box-shadow:0 10px 18px -8px rgba(94,71,25,.6)}
 .hf img{height:auto;display:block}
 .hbo img{width:100%}
@@ -133,8 +174,8 @@ p{margin:0}
 .h-jinxed.on .h-meio{transform:none !important;transition:opacity .8s var(--ease) .2s,transform 1.4s var(--suave) .2s}
 .h-carimbo{display:inline-flex;align-items:center;gap:8px;padding:8px 14px;background:#0B0809;color:#EAE3DA;font-family:var(--serif);font-style:italic;font-weight:500;font-size:16px;white-space:nowrap;outline:1px solid rgba(234,227,218,.75);outline-offset:-4px;rotate:-8deg;box-shadow:0 16px 26px -12px rgba(0,0,0,.6)}
 .h-carimbo::before,.h-carimbo::after{content:"";width:5px;height:5px;background:#D6101C;transform:rotate(45deg)}
-.h-rota{inset:0;width:100%;height:100%;overflow:visible;opacity:1 !important;transform:none !important}
-.h-rota path{fill:none;stroke:#FF6B1A;vector-effect:non-scaling-stroke;stroke-linecap:round}
+.h-rota{opacity:1 !important;transform:none !important}
+.h-rota path{fill:none;stroke:#FF6B1A;stroke-linecap:round}
 .h-rota .tr{stroke-width:3;stroke-dasharray:3000;stroke-dashoffset:3000;opacity:0;transition:stroke-dashoffset .35s var(--ease),opacity .3s var(--ease)}
 .h-parou.on .h-rota .tr{stroke-dashoffset:0;opacity:1;transition:stroke-dashoffset 1.6s var(--suave) .2s,opacity .2s .2s}
 .h-rota .pt{stroke-width:13;stroke:#fff;opacity:0;transition:opacity .3s}
@@ -552,6 +593,7 @@ footer a{min-height:44px;display:inline-flex;align-items:center}
   .js .name span{animation-name:stretchSoft;animation-duration:.7s}
   .js .lead,.js .sub,.js .ctas,.js .baralho{animation-name:fade}
   .fan{--k:.12}
+  .h-parou.on .bus{animation:fade .6s var(--ease) .55s both;offset-distance:100%}
   .carta.junto{transform:none}
   .js .top .mark .draw{animation:none}
   .js .top .mark{animation:fade .6s both}
@@ -595,7 +637,15 @@ footer a{min-height:44px;display:inline-flex;align-items:center}
       <div class="fan" id="palco" role="group" aria-roledescription="carrossel" aria-label="Sites que fiz">
         <div class="fundos" aria-hidden="true">
           <div class="hf h-adri">
-            <img class="flut" src="img/joia_barra_ouro.svg" alt="" style="left:11%;top:17%;width:64px;--ex:120px;--ey:90px;rotate:-22deg"><img class="flut" src="img/joia_argola_prata.svg" alt="" style="left:79%;top:9%;width:40px;--ex:-110px;--ey:110px;rotate:10deg"><img class="flut" src="img/joia_brinco_ouro.svg" alt="" style="left:85%;top:55%;width:30px;--ex:-130px;--ey:-10px;rotate:0deg"><img class="flut" src="img/joia_barra_prata.svg" alt="" style="left:6%;top:62%;width:54px;--ex:120px;--ey:-20px;rotate:28deg"><img class="flut" src="img/joia_argola_ouro.svg" alt="" style="left:66%;top:82%;width:30px;--ex:-40px;--ey:-110px;rotate:-14deg"><img class="flut" src="img/joia_brinco_prata.svg" alt="" style="left:24%;top:88%;width:18px;--ex:90px;--ey:-100px;rotate:0deg">
+            <img class="flut" src="img/joia_barra_ouro.svg" alt="" style="left:11%;top:17%;width:64px;--ex:120px;--ey:90px;--d:0.25s;--r:-22deg">
+            <img class="flut" src="img/joia_argola_prata.svg" alt="" style="left:79%;top:9%;width:40px;--ex:-110px;--ey:110px;--d:0.35s;--r:10deg">
+            <img class="flut" src="img/joia_brinco_ouro.svg" alt="" style="left:85%;top:55%;width:30px;--ex:-130px;--ey:-10px;--d:0.45s">
+            <img class="flut" src="img/joia_barra_prata.svg" alt="" style="left:6%;top:62%;width:54px;--ex:120px;--ey:-20px;--d:0.55s;--r:28deg">
+            <img class="flut" src="img/joia_argola_ouro.svg" alt="" style="left:66%;top:82%;width:30px;--ex:-40px;--ey:-110px;--d:0.65s;--r:-14deg">
+            <img class="flut" src="img/joia_brinco_prata.svg" alt="" style="left:24%;top:88%;width:18px;--ex:90px;--ey:-100px;--d:0.75s">
+            <img class="brilho" src="img/brilho.svg" alt="" style="left:20%;top:8%;width:22px;--ex:0px;--ey:0px;--d:0.6s">
+            <img class="brilho" src="img/brilho.svg" alt="" style="left:90%;top:36%;width:16px;--ex:0px;--ey:0px;--d:0.9s">
+            <img class="brilho" src="img/brilho.svg" alt="" style="left:14%;top:80%;width:14px;--ex:0px;--ey:0px;--d:1.1s">
           </div>
           <div class="hf h-anjinho">
             <img class="hn" src="img/px_nuvem.svg" width="18" height="9" alt="" style="left:3%;top:12%;width:118px;--ex:130px;--ey:0px">
@@ -606,27 +656,50 @@ footer a{min-height:44px;display:inline-flex;align-items:center}
             <img class="hc" src="img/px_coracao.svg" width="9" height="8" alt="" style="left:11%;top:80%;width:20px;--ex:100px;--ey:-60px">
             <img class="hc" src="img/px_coracao.svg" width="9" height="8" alt="" style="left:90%;top:88%;width:14px;--ex:-80px;--ey:-80px">
           </div>
-          <div class="hf h-jinxed"><i class="h-meio"></i><img class="flut hx" src="img/x_jinxed.webp" alt="" style="left:12%;top:14%;width:26px;--ex:110px;--ey:90px;rotate:-14deg"><img class="flut hx" src="img/x_jinxed.webp" alt="" style="left:84%;top:22%;width:18px;--ex:-110px;--ey:70px;rotate:12deg"><img class="flut hx" src="img/x_jinxed.webp" alt="" style="left:7%;top:58%;width:16px;--ex:120px;--ey:0px;rotate:20deg"><img class="flut hx" src="img/x_jinxed.webp" alt="" style="left:88%;top:62%;width:30px;--ex:-120px;--ey:-10px;rotate:-8deg"><img class="flut hx" src="img/x_jinxed.webp" alt="" style="left:30%;top:86%;width:14px;--ex:70px;--ey:-100px;rotate:6deg"><span class="h-carimbo m-topo" lang="en" style="left:62%;top:76%;--ex:-60px;--ey:-90px">out of stock</span></div>
+          <div class="hf h-jinxed">
+            <i class="h-meio" style="--d:.15s"></i>
+            <img class="flut hx" src="img/x_jinxed.webp" alt="" style="left:12%;top:14%;width:26px;--ex:110px;--ey:90px;--d:0.35s;--r:-14deg">
+            <img class="flut hx" src="img/x_jinxed.webp" alt="" style="left:84%;top:22%;width:18px;--ex:-110px;--ey:70px;--d:0.45s;--r:12deg">
+            <img class="flut hx" src="img/x_jinxed.webp" alt="" style="left:7%;top:58%;width:16px;--ex:120px;--ey:0px;--d:0.55s;--r:20deg">
+            <img class="flut hx" src="img/x_jinxed.webp" alt="" style="left:88%;top:62%;width:30px;--ex:-120px;--ey:-10px;--d:0.65s;--r:-8deg">
+            <img class="flut hx" src="img/x_jinxed.webp" alt="" style="left:30%;top:86%;width:14px;--ex:70px;--ey:-100px;--d:0.75s;--r:6deg">
+            <span class="bat" style="left:74%;top:6%;width:46px;--ex:-120px;--ey:110px;--d:0.5s"><img src="img/morcego.svg" alt=""></span>
+            <span class="bat" style="left:4%;top:36%;width:38px;--ex:130px;--ey:40px;--d:0.7s"><img src="img/morcego.svg" alt=""></span>
+            <span class="bat" style="left:80%;top:84%;width:30px;--ex:-110px;--ey:-90px;--d:0.9s"><img src="img/morcego.svg" alt=""></span>
+            <span class="h-carimbo m-topo" lang="en" style="left:62%;top:76%;--ex:-60px;--ey:-90px;--d:1.05s">out of stock</span>
+          </div>
           <div class="hf h-parou">
-            <svg class="h-rota" viewBox="0 0 100 100" preserveAspectRatio="none"><path class="tr" d="M-5 82C12 74 22 64 30 68S48 86 58 60 80 22 105 30"/><path class="pt" d="M30 68h0"/><path class="pt" d="M58 60h0"/></svg>
-            <span class="h-chip m-topo" style="left:5%;top:14%;--ex:110px;--ey:60px"><b>8027</b>Sebolido <em>a chegar</em></span>
-            <span class="h-vivo so-d" style="left:72%;top:10%;--ex:-90px;--ey:70px"><i></i>Ao vivo</span>
+            <svg class="h-rota" aria-hidden="true"><path class="tr"/><path class="pt p1"/><path class="pt p2"/></svg>
+            <img class="bus" src="img/autocarro.svg" alt="" style="--d:.5s;width:40px">
+            <img class="pino" src="img/alfinete.svg" alt="" style="left:95%;top:30%;width:26px;--ex:0px;--ey:-60px;--d:1.4s;margin:-37px 0 0 -13px">
+            <span class="h-chip m-topo" style="left:-3%;top:84%;--ex:110px;--ey:-40px;--d:1.2s"><b>8027</b>Sebolido <em>a chegar</em></span>
+            <span class="h-vivo so-d" style="left:66%;top:90%;--ex:-60px;--ey:-60px;--d:1.5s"><i></i>Ao vivo</span>
           </div>
           <div class="hf h-duplicasa">
-            <span class="h-casa so-d" style="left:3%;top:18%;--ex:120px;--ey:60px"><i><svg viewBox="0 0 24 24"><path d="M4 11 12 4.5 20 11v8.5a1 1 0 0 1-1 1h-4.5V15h-5v5.5H5a1 1 0 0 1-1-1z"/></svg></i><span><b>Nova casa!</b>T1 · <strong>800&nbsp;€</strong></span></span>
-            <span class="h-casa m-topo" style="left:68%;top:44%;--ex:-110px;--ey:0px"><i><svg viewBox="0 0 24 24"><path d="M4 11 12 4.5 20 11v8.5a1 1 0 0 1-1 1h-4.5V15h-5v5.5H5a1 1 0 0 1-1-1z"/></svg></i><span><b>Nova casa!</b>Quarto · <strong>400&nbsp;€</strong></span></span>
-            <span class="h-casa so-d" style="left:6%;top:72%;--ex:110px;--ey:-50px"><i><svg viewBox="0 0 24 24"><path d="M4 11 12 4.5 20 11v8.5a1 1 0 0 1-1 1h-4.5V15h-5v5.5H5a1 1 0 0 1-1-1z"/></svg></i><span><b>Nova casa!</b>T2 · <strong>750&nbsp;€</strong></span></span>
+            <span class="h-casa so-d" style="left:3%;top:18%;--ex:120px;--ey:60px;--d:0.3s"><i><svg viewBox="0 0 24 24"><path d="M4 11 12 4.5 20 11v8.5a1 1 0 0 1-1 1h-4.5V15h-5v5.5H5a1 1 0 0 1-1-1z"/></svg></i><span><b>Nova casa!</b>T1 · <strong>800&nbsp;€</strong></span></span>
+            <span class="h-casa m-topo" style="left:68%;top:44%;--ex:-110px;--ey:0px;--d:0.75s"><i><svg viewBox="0 0 24 24"><path d="M4 11 12 4.5 20 11v8.5a1 1 0 0 1-1 1h-4.5V15h-5v5.5H5a1 1 0 0 1-1-1z"/></svg></i><span><b>Nova casa!</b>Quarto · <strong>400&nbsp;€</strong></span></span>
+            <span class="h-casa so-d" style="left:6%;top:72%;--ex:110px;--ey:-50px;--d:1.2s"><i><svg viewBox="0 0 24 24"><path d="M4 11 12 4.5 20 11v8.5a1 1 0 0 1-1 1h-4.5V15h-5v5.5H5a1 1 0 0 1-1-1z"/></svg></i><span><b>Nova casa!</b>T2 · <strong>750&nbsp;€</strong></span></span>
+            <img class="sino" src="img/sino.svg" alt="" style="left:84%;top:9%;width:34px;--ex:-100px;--ey:90px;--d:0.45s">
+            <img class="flut" src="img/chave.svg" alt="" style="left:15%;top:45%;width:46px;--ex:110px;--ey:0px;--d:0.6s;--r:-18deg">
+            <img class="flut" src="img/dc_simbolo.svg" alt="" style="left:86%;top:76%;width:40px;--ex:-110px;--ey:-60px;--d:0.9s;--r:8deg">
+            <img class="flut" src="img/dc_simbolo.svg" alt="" style="left:40%;top:91%;width:24px;--ex:10px;--ey:-100px;--d:1.05s;--r:-6deg">
+            <svg class="h-riscos" viewBox="0 0 80 60" aria-hidden="true" style="left:74%;top:3%;width:40px;--d:.6s"><path d="M8 50C22 34 38 22 70 12"/><path d="M28 56C40 48 52 44 72 40"/></svg>
           </div>
           <div class="hf h-goodman">
-            <span class="h-msg eu m-topo" style="left:58%;top:14%;--ex:-90px;--ey:70px">O senhorio pode subir a renda?</span>
-            <span class="h-msg gm so-d" style="left:3%;top:50%;--ex:110px;--ey:0px">Vejo a lei e já te digo.</span>
-            <span class="h-art so-d" style="left:57%;top:80%;--ex:-80px;--ey:-70px"><b>§</b>Artigo confirmado <i>✓</i></span>
+            <span class="h-carta so-d" style="left:4%;top:10%;--ex:110px;--ey:80px;--d:0.3s;--r:-5deg"><small>Carta do senhorio</small><i></i><i></i><i></i><b class="h-lido">LIDO</b></span>
+            <span class="h-msg eu m-topo" style="left:58%;top:14%;--ex:-90px;--ey:70px;--d:0.55s">O senhorio pode subir a renda?</span>
+            <span class="h-escreve so-d" style="left:3%;top:52%;--ex:0px;--ey:0px;--d:0.9s"><span><i></i><i></i><i></i></span></span>
+            <span class="h-msg gm so-d" style="left:3%;top:52%;--ex:60px;--ey:0px;--d:1.75s">Vejo a lei e já te digo.</span>
+            <span class="h-art so-d" style="left:57%;top:80%;--ex:-80px;--ey:-70px;--d:2.1s"><b>§</b>Artigo confirmado <i>✓</i></span>
+            <span class="h-par" style="left:88%;top:44%;--ex:-110px;--ey:0px;--d:0.8s;--r:10deg">§</span>
+            <span class="h-par" style="left:26%;top:90%;--ex:60px;--ey:-90px;--d:1.0s;--r:-12deg">§</span>
           </div>
         </div>
         <div class="baralho">
           <div class="carta s0 junto"><div class="cel" style="background:#2A2622"><div class="scr"><img class="on" src="img/adri.webp" width="640" height="1385" alt="Site AdriBodyPiercing" fetchpriority="high"><img alt=""></div></div></div>
           <div class="carta s1 junto" aria-hidden="true"><div class="cel" style="background:#1D1719"><div class="scr"><img class="on" src="img/anjinho.webp" width="640" height="1385" alt=""><img alt=""></div></div></div>
           <div class="carta s2 junto" aria-hidden="true"><div class="cel" style="background:#2B2325"><div class="scr"><img class="on" src="img/jinxed.webp" width="640" height="1385" alt=""><img alt=""></div></div></div>
+          <div class="bolhas" aria-hidden="true"><span class="bolha b-adri" style="background:#0E0C0B"><img src="img/logo_adri.webp" width="325" height="70" alt=""></span><span class="bolha b-anjinho" style="background:#DCE8F4"><img src="img/logo_anjinho.svg" width="200" height="69" alt=""></span><span class="bolha b-jinxed" style="background:#110D0E"><img src="img/logo_jinxed.webp" width="200" height="90" alt=""></span><span class="bolha b-parou" style="background:#16151A"><img src="img/logo_parou.webp" width="235" height="85" alt=""></span><span class="bolha b-duplicasa" style="background:#FFFFFF"><img src="img/logo_duplicasa.svg" width="592" height="123" alt=""></span><span class="bolha b-goodman" style="background:#0E3A2C"><img src="img/logo_goodman.webp" width="441" height="66" alt=""></span></div>
         </div>
         <p class="palco-nome" id="palcoNome" aria-live="polite">AdriBodyPiercing</p>
         <button class="palco-pausa vplay" id="palcoPausa" type="button" aria-label="Pausar a troca de projetos"><svg viewBox="0 0 24 24" aria-hidden="true"><path class="i-pausa" d="M8 5v14M16 5v14"/><path class="i-play" d="M8 5l11 7-11 7z"/></svg></button>
@@ -931,7 +1004,22 @@ footer a{min-height:44px;display:inline-flex;align-items:center}
     var fx={}; [].slice.call(palco.querySelectorAll('.hf')).forEach(function(f){ fx[f.className.replace(/.*h-(\w+).*/,'$1')]=f; });
     var links={}; [].slice.call(document.querySelectorAll('.sub a')).forEach(function(a){ links[a.className.split(' ')[0]]=a; });
     var reduz=window.matchMedia('(prefers-reduced-motion: reduce)');
+    var bolhas=[].slice.call(palco.querySelectorAll('.bolha'));
     P.forEach(function(p){ var im=new Image(); im.src=p.img; });
+    /* a linha da PAROU é desenhada em píxeis do palco, para o autocarro a poder seguir sem se deformar */
+    var rota=palco.querySelector('.h-rota'), bus=palco.querySelector('.bus');
+    function desenhaRota(){
+      if(!rota) return; var W=palco.clientWidth, H=palco.clientHeight;
+      var X=function(v){return (v*W).toFixed(1)}, Y=function(v){return (v*H).toFixed(1)};
+      var ida='M'+X(-.05)+' '+Y(.16)+'C'+X(.15)+' '+Y(.02)+' '+X(.35)+' '+Y(.02)+' '+X(.5)+' '+Y(.05)+'S'+X(.88)+' '+Y(.02)+' '+X(.95)+' '+Y(.3);
+      rota.setAttribute('width',W); rota.setAttribute('height',H); rota.setAttribute('viewBox','0 0 '+W+' '+H);
+      rota.querySelector('.tr').setAttribute('d',ida+'S'+X(.93)+' '+Y(.8)+' '+X(1.05)+' '+Y(.95));
+      rota.querySelector('.p1').setAttribute('d','M'+X(.5)+' '+Y(.05)+'h0');
+      rota.querySelector('.p2').setAttribute('d','M'+X(.95)+' '+Y(.3)+'h0');
+      if(bus) bus.style.offsetPath="path('"+ida+"')";
+    }
+    desenhaRota(); window.addEventListener('resize',desenhaRota);
+
     var ordem=[0,1,2], i=0, ocupado=false, parado=false, pairar=false, visivel=true, tempo=null;
     /* troca a imagem de uma carta com um desvanecer curto (as duas imagens estão por cima uma da outra) */
     function pinta(c,k){
@@ -944,6 +1032,7 @@ footer a{min-height:44px;display:inline-flex;align-items:center}
       var p=P[i];
       Object.keys(fx).forEach(function(k){ fx[k].classList.toggle('on',k===p.k); });
       Object.keys(links).forEach(function(k){ links[k].classList.toggle('acende',k===p.lk); });
+      bolhas.forEach(function(b){ b.classList.toggle('on',b.classList.contains('b-'+p.k)); });
       nome.textContent=p.n;
       cartas.forEach(function(c,ci){ var img=c.querySelector('img.on'); if(ci===ordem[0]){ c.removeAttribute('aria-hidden'); img.alt='Site '+p.n; } else { c.setAttribute('aria-hidden','true'); img.alt=''; } });
     }
@@ -959,7 +1048,7 @@ footer a{min-height:44px;display:inline-flex;align-items:center}
       setTimeout(function(){ f.classList.remove('sai'); f.classList.add('s2'); pinta(f,alvo+2); ocupado=false; },380);
       ordem=[ordem[1],ordem[2],ordem[0]]; i=alvo; marcar();
     }
-    function ciclo(){ clearTimeout(tempo); if(parado||pairar||!visivel||document.hidden) return; tempo=setTimeout(function(){ ir(i+1); ciclo(); },3800); }
+    function ciclo(){ clearTimeout(tempo); if(parado||pairar||!visivel||document.hidden) return; tempo=setTimeout(function(){ ir(i+1); ciclo(); },4300); }
     btn.addEventListener('click',function(){ parado=!parado; btn.setAttribute('aria-pressed',parado?'true':'false'); btn.setAttribute('aria-label',parado?'Retomar a troca de projetos':'Pausar a troca de projetos'); ciclo(); });
     /* passar o rato (ou o foco) por uma frase mostra esse projeto no baralho */
     P.forEach(function(p,k){ var a=links[p.lk]; if(!a) return;
