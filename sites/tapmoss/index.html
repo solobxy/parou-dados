@@ -1652,7 +1652,7 @@ function puff(x,y,cols,n,spd,life){for(let i=0;i<n;i++){const a=rnd()*Math.PI*2,
 /* ============ sound ============ */
 const SND=(()=>{
   let ac=null,master=null,noise=null,wind=null,windF=null,windG=null,nextBird=0,nextCricket=0,nextNote=0,combo=0,lastTap=0;const bus={};
-  const PENTA=[0,2,4,7,9,12,14,16,19,21,24];const f=n=>440*Math.pow(2,n/12);
+  const PENTA=[0,2,4,7,9,12,14,16,19,21,24],TAPN=[0,2,4,7,9,12,14];const f=n=>440*Math.pow(2,n/12),vary=()=>1+(Math.random()-.5)*.035;
   function init(){if(ac)return true;const AC=window.AudioContext||window.webkitAudioContext;if(!AC)return false;try{ac=new AC()}catch(e){return false}
     master=ac.createGain();master.gain.value=.85;const comp=ac.createDynamicsCompressor();comp.threshold.value=-20;comp.ratio.value=3;master.connect(comp);comp.connect(ac.destination);
     for(const k of['sfx','amb','mus']){bus[k]=ac.createGain();bus[k].connect(master)}
@@ -1672,29 +1672,31 @@ const SND=(()=>{
     const v=o.v||.05;g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(v,t+(o.a||.01));g.gain.exponentialRampToValueAtTime(.0001,t+dur);
     s.connect(fl);fl.connect(g);g.connect(bus[o.bus||'sfx']);s.start(t,Math.random()*1.5);s.stop(t+dur+.05)}
   const P={
-    tap(){const t=performance.now();combo=t-lastTap<650?Math.min(combo+1,PENTA.length-1):0;lastTap=t;const n=PENTA[combo];tone(f(n+3),.24,{type:'triangle',v:.06,lp:2400});tone(f(n+15),.1,{v:.012});nz(.05,{f:3400,q:.8,v:.01})},
-    coin(){tone(f(19),.08,{type:'square',v:.012,lp:2800});tone(f(24),.2,{type:'square',v:.012,lp:2800,at:.06})},
-    gem(){[28,31,35,40].forEach((n,i)=>tone(f(n),.4,{type:'triangle',v:.03,at:i*.06,echo:1}))},
-    flower(r){r=r||0;const b=[12,14,16,19,21,24][r];tone(f(b),.6,{v:.05,echo:1});tone(f(b+7),.8,{v:.035,at:.08,echo:1});if(r>=3)tone(f(b+12),1,{v:.03,at:.16,echo:1})},
-    clean(){nz(.26,{f:900,to:2600,q:.7,v:.045})},
+    // taps: a short rounded "bloop" in the low-mid range (ears are most sensitive at 2–5 kHz, so nothing lives there), a soft body underneath, a little pitch wobble so a thousand taps never sound the same
+    tap(){const t=performance.now();combo=t-lastTap<650?Math.min(combo+1,TAPN.length-1):0;lastTap=t;const fr=f(TAPN[combo]-9)*vary();
+      tone(fr*1.45,.11,{to:fr,v:.075,a:.003,lp:1600});tone(fr*2,.05,{v:.01,a:.002,lp:1600});tone(150,.07,{to:85,v:.05,a:.002});nz(.018,{ft:'lowpass',f:1300,v:.016,a:.001})},
+    coin(){tone(f(7)*vary(),.1,{type:'triangle',v:.03,lp:1700});tone(f(12)*vary(),.2,{type:'triangle',v:.03,lp:1700,at:.06})},
+    gem(){[16,19,23,28].forEach((n,i)=>tone(f(n),.4,{type:'triangle',v:.028,at:i*.06,lp:2600,echo:1}))},
+    flower(r){r=r||0;const b=[0,2,4,7,9,12][r];tone(f(b),.6,{v:.05,echo:1});tone(f(b+7),.8,{v:.035,at:.08,echo:1});if(r>=3)tone(f(b+12),1,{v:.028,at:.16,echo:1})},
+    clean(){nz(.22,{f:700,to:1500,q:.7,v:.038})},
     dig(){nz(.32,{ft:'lowpass',f:700,to:300,v:.06});nz(.5,{f:1800,to:600,q:.6,v:.03,at:.15});tone(f(19),.25,{type:'triangle',v:.03,at:.55,echo:1})},
-    rattle(i){i=i||0;tone(150+i*30,.1,{type:'triangle',to:95,v:.05+.012*i,lp:800});nz(.06,{ft:'lowpass',f:650,v:.035+.01*i});tone(f(24+i*3),.06,{type:'square',v:.005,lp:3200,at:.025})},
-    burst(r){nz(.45,{f:500,to:4200,q:.6,v:.03+.008*r});if(r>=3)tone(f(36),1.1,{v:.02,a:.05,at:.12,echo:1})},
-    chest(r){r=r||0;tone(170,.25,{type:'triangle',to:120,v:.05,lp:900});nz(.14,{f:500,q:.5,v:.035});const sc=[0,4,7,12,16,19,24,28];for(let i=0;i<Math.min(8,3+r);i++)tone(f(12+sc[i]),.45,{type:'triangle',v:.035,at:.18+i*.07,echo:1})},
+    rattle(i){i=i||0;tone(150+i*30,.1,{type:'triangle',to:95,v:.05+.012*i,lp:800});nz(.06,{ft:'lowpass',f:650,v:.035+.01*i});tone(f(12+i*3),.06,{type:'triangle',v:.012,lp:1800,at:.025})},
+    burst(r){nz(.45,{f:400,to:2200,q:.6,v:.03+.008*r});if(r>=3)tone(f(24),1.1,{v:.02,a:.05,at:.12,echo:1})},
+    chest(r){r=r||0;tone(170,.25,{type:'triangle',to:120,v:.05,lp:900});nz(.14,{f:500,q:.5,v:.035});const sc=[0,4,7,12,16,19,24,28];for(let i=0;i<Math.min(8,3+r);i++)tone(f(3+sc[i]),.45,{type:'triangle',v:.035,at:.18+i*.07,lp:2400,echo:1})},
     level(){[0,4,7,12,16].forEach((n,i)=>tone(f(n+3),.5,{type:'triangle',v:.05,at:i*.09,echo:1}))},
-    water(){nz(1.6,{ft:'lowpass',f:1800,q:.3,v:.045,a:.25});for(let i=0;i<6;i++)tone(1100+Math.random()*900,.08,{v:.016,to:600,at:.1+Math.random()*1.2})},
-    lamp(on){nz(.03,{ft:'highpass',f:3000,v:.04});if(on)tone(f(-2),.7,{v:.025,a:.12,lp:900})},
+    water(){nz(1.6,{ft:'lowpass',f:1500,q:.3,v:.045,a:.25});for(let i=0;i<6;i++)tone(650+Math.random()*500,.08,{v:.016,to:380,at:.1+Math.random()*1.2})},
+    lamp(on){tone(420,.04,{type:'triangle',to:300,v:.03,lp:1200});if(on)tone(f(-2),.7,{v:.025,a:.12,lp:900})},
     place(){tone(140,.22,{to:70,v:.1});nz(.18,{ft:'lowpass',f:500,v:.05})},
     buy(){tone(f(14),.12,{type:'triangle',v:.045});tone(f(19),.3,{type:'triangle',v:.045,at:.08})},
-    click(){tone(1700,.03,{v:.015})},
-    chime(){tone(f(26),.7,{v:.025,echo:1});tone(f(31),.9,{v:.018,at:.12,echo:1})},
+    click(){const k=vary();tone(560*k,.05,{type:'triangle',to:380*k,v:.035,a:.002,lp:1300});nz(.012,{ft:'lowpass',f:1100,v:.012,a:.001})},
+    chime(){tone(f(14),.7,{v:.025,echo:1});tone(f(19),.9,{v:.018,at:.12,echo:1})},
     hi(){tone(f(7),.12,{type:'triangle',v:.04,to:f(12)});tone(f(14),.18,{type:'triangle',v:.04,at:.13})},
     flute(){const mel=[[12,.32],[16,.32],[19,.6],[17,.3],[16,.3],[14,.3],[12,.9]];let t=0;for(const[n,d]of mel){tone(f(n),d+.18,{v:.035,a:.07,vib:5,at:t,echo:1});t+=d}},
-    pop(){tone(f(20),.07,{v:.025,to:f(27)})},
+    pop(){tone(f(8),.08,{v:.03,to:f(15),lp:1600})},
     sneeze(){nz(.22,{f:2400,to:900,q:1.5,v:.045,at:.05})},
     door(){tone(220,.18,{type:'triangle',to:160,v:.03,lp:700});nz(.08,{ft:'lowpass',f:400,v:.04,at:.15})},
     atap(){const n=PENTA[(Math.random()*6)|0];tone(f(n-9),.16,{type:'triangle',v:.028,lp:1500})},
-    shutter(){nz(.04,{ft:'highpass',f:2500,v:.06});nz(.06,{ft:'bandpass',f:1200,v:.05,at:.07})},
+    shutter(){nz(.04,{ft:'bandpass',f:1500,v:.05});nz(.06,{ft:'bandpass',f:900,v:.05,at:.07})},
   };
   function play(k,a){if(!ac||!S||!S.snd.sfx||ac.state!=='running')return;try{P[k]&&P[k](a)}catch(e){}}
   function amb(){
@@ -3212,7 +3214,7 @@ function frame(t){
   tick(dt);draw();
 }
 /* versões novas: quando o jogo muda no servidor, guarda o progresso e recarrega a página */
-const BUILD='d4a213e8a737',UKEY='tapmoss.upd';const UPD={on:false,go:false,at:0};
+const BUILD='0ea8cedbee84',UKEY='tapmoss.upd';const UPD={on:false,go:false,at:0};
 async function checkUpdate(){
   if(BUILD.startsWith('__')||UPD.on||document.hidden||!navigator.onLine||!/^https?:$/.test(location.protocol)||window.claude)return;
   const t=performance.now();if(t-UPD.at<15000)return;UPD.at=t;
