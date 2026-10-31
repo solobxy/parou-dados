@@ -131,6 +131,33 @@ async function novoContexto(browsers, [nome, motor, , extra], tema) {
         } catch (e) { ok(`[${rotulo} ${tema} ${rota}] abrir o ecrã`, false, String(e).slice(0, 140)); }
       }
 
+      // ---- C) Letra aumentada (Android: Definições > Acessibilidade > Tamanho do texto). Só Chrome, ecrãs estreitos, tema claro.
+      if (motor === 'chromium' && vp.width <= 360 && tema === 'claro') {
+        for (const escala of [1.3, 1.5]) {
+          for (const rota of ROTAS) {
+            try {
+              await p.goto(BASE + rota, { waitUntil: 'load' });
+              await p.waitForTimeout(rota === '/' ? 2500 : 1800);
+              await p.locator('[data-teste=ponto-diario-fechar]').first().click({ timeout: 800 }).catch(() => {});
+              await p.evaluate((f) => {
+                const els = [...document.querySelectorAll('body, body *')];
+                const t = els.map((e) => parseFloat(getComputedStyle(e).fontSize));
+                const pais = els.map((e) => (e.parentElement ? parseFloat(getComputedStyle(e.parentElement).fontSize) : 0));
+                els.forEach((e, i) => { if (t[i] && (e === document.body || Math.abs(t[i] - pais[i]) > 0.01)) e.style.setProperty('font-size', t[i] * f + 'px'); });
+                window.dispatchEvent(new Event('resize'));
+              }, escala);
+              await p.waitForTimeout(700);
+              const m = await p.evaluate(medir);
+              const rot = `[${rotulo} letra ${Math.round(escala * 100)}% ${rota}]`;
+              ok(`${rot} sem scroll lateral`, m.scrollW <= m.vw + 1 && m.bodyScrollW <= m.vw + 1, `scrollW=${m.scrollW} vw=${m.vw}`);
+              ok(`${rot} nada sai do ecrã para o lado`, m.transbordam.length === 0, m.transbordam.slice(0, 3).join(' | '));
+              if (m.barra) ok(`${rot} barra de baixo inteira no ecrã`, !m.barra.cortada, `fundo=${m.barra.fundo} vh=${m.barra.vh}`);
+              if (['/', '/transportes', '/comunidade'].includes(rota)) await p.screenshot({ path: `${SAIDA}/${nome.replace(/[^\w]+/g, '_')}_letra${Math.round(escala * 100)}_${rota === '/' ? 'perto' : rota.slice(1)}.png` });
+            } catch (e) { ok(`[${rotulo} letra ${escala} ${rota}] abrir o ecrã`, false, String(e).slice(0, 140)); }
+          }
+        }
+      }
+
       // ---- B) Interações (só no tema claro e no escuro, para não demorar)
       if (tema !== 'ambar') {
         // B1) Perto: tocar na pesquisa de destino

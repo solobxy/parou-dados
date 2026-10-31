@@ -1,0 +1,47 @@
+name: Tamanhos dos sites no Safari e no Chrome
+
+# Abre os sites estáticos (sites/*) no motor do Safari (WebKit) e no do Chrome, em ecrãs de 250 a 1440 px,
+# e com a letra aumentada (Chrome), e procura scroll para os lados e texto cortado.
+# Resultado no ramo "tamanhos-resultado".
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  tamanhos:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Instalar Playwright
+        run: |
+          pip install -q playwright
+          python -m playwright install --with-deps chromium webkit >/dev/null
+      - name: Auditar
+        continue-on-error: true
+        env:
+          SAIDA: ${{ github.workspace }}/res
+        run: |
+          mkdir -p res
+          A=auditoria/tamanhos_sites.py
+          for M in webkit chromium; do
+            echo "##### motor: $M" | tee -a res/consola.txt
+            python $A sites/dinissousa index.html --motor=$M --nome=dinissousa-$M --fotos 2>&1 | tail -40 | tee -a res/consola.txt
+            python $A sites/adribodypiercing index.html 404.html --motor=$M --nome=adri-$M --fotos 2>&1 | tail -40 | tee -a res/consola.txt
+            python $A sites/duaschaves index.html termos/index.html privacidade/index.html --motor=$M --nome=duplicasa-$M --fotos 2>&1 | tail -40 | tee -a res/consola.txt
+            python $A sites/goodman index.html 404.html --motor=$M --nome=goodman-$M --fotos 2>&1 | tail -40 | tee -a res/consola.txt
+            python $A sites/jaesta index.html m/barbearia.html m/beleza.html m/obras.html m/oficina.html --motor=$M --nome=jaesta-$M 2>&1 | tail -40 | tee -a res/consola.txt
+          done
+      - name: Guardar
+        if: always()
+        run: |
+          mkdir -p pub && cp -r res/* pub/ 2>/dev/null || echo "sem resultados" > pub/vazio.txt
+          cd pub && git init -q -b tamanhos-resultado
+          git config user.name "parou-dados"; git config user.email "actions@users.noreply.github.com"
+          git add -A && git commit -q -m "tamanhos $(date -u +%Y-%m-%dT%H:%MZ)" && git push -q -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" tamanhos-resultado
