@@ -122,6 +122,7 @@ p{margin:0}
 .sub a:hover{border-bottom-color:transparent}
 .c-adri{color:#7A5820}.c-good{color:#0E3A2C}.c-goth{color:#B0101C}.c-coq{color:#B4436A}.c-trans{color:#B84A0E}.c-casa{color:#0E6B4F}
 .ctas{margin-top:26px;display:flex;gap:10px;flex-wrap:wrap}
+.risco{margin-top:12px;font-size:14px;color:var(--muted)}
 .ctas .btn{flex:1 1 150px}
 
 /* Secções */
@@ -385,11 +386,27 @@ img.fx{height:auto}
 .price small{font-size:18px;font-weight:600;letter-spacing:0}
 .plan p{color:var(--muted);max-width:40ch}
 .plan .btn{margin-top:auto;align-self:flex-start}
+.p-para{font-size:13px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;opacity:.7}
+.plan .p-div{margin-top:-6px;font-size:14px}
+.inclui{list-style:none;margin:6px 0 10px;padding:0;display:grid;gap:9px;font-size:15.5px;line-height:1.35}
+.inclui li{display:flex;gap:10px;align-items:flex-start}
+.inclui li::before{content:"";flex:none;width:18px;height:18px;margin-top:1px;background:currentColor;-webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M4.5 12.5l5 5L19.5 7' fill='none' stroke='%23000' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/contain no-repeat;mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M4.5 12.5l5 5L19.5 7' fill='none' stroke='%23000' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/contain no-repeat}
+.inclui li.nao{opacity:.45}
+.inclui li.nao::before{-webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M6 12h12' stroke='%23000' stroke-width='3' stroke-linecap='round'/%3E%3C/svg%3E");mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M6 12h12' stroke='%23000' stroke-width='3' stroke-linecap='round'/%3E%3C/svg%3E")}
+.inclui li.nao{text-decoration:line-through;text-decoration-thickness:1px}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap}
+.garante{list-style:none;margin:32px 0 0;padding:24px 0 0;border-top:1px solid color-mix(in srgb,var(--ink) 14%,transparent);display:grid;gap:18px}
+.garante li{display:flex;gap:14px;align-items:flex-start}
+.garante b{flex:none;width:34px;height:34px;border-radius:50%;display:grid;place-items:center;background:var(--ink);color:var(--bg);font-size:15px;font-variant-numeric:tabular-nums}
+.garante span{display:flex;flex-direction:column;gap:2px;color:var(--muted);font-size:15.5px;line-height:1.4}
+.garante strong{color:var(--ink);font-size:17px}
 .plan .btn-secondary{background:var(--bg)}
 .plan.rec{background:var(--ink);color:var(--bg)}
 .plan.rec p{color:inherit;opacity:.82}
 .plan.rec .btn{background:var(--bg);color:var(--ink)}
-.rec-tag{font-size:15px;font-weight:600}
+.plan{position:relative}
+.rec-tag{position:absolute;top:-13px;left:28px;padding:5px 12px;border-radius:999px;background:var(--bg);color:var(--ink);font-size:13px;font-weight:700;box-shadow:0 0 0 1.5px var(--ink)}
+.plan.rec{order:-1;margin-top:13px}
 .note{margin-top:18px;font-size:15px;color:var(--muted)}
 
 
@@ -423,7 +440,9 @@ footer a{min-height:44px;display:inline-flex;align-items:center}
   .styles{grid-template-columns:repeat(4,minmax(0,1fr))}
   .brands{grid-template-columns:repeat(3,minmax(0,1fr))}
   .brand-tile{height:120px}
-  .plans{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .plans{grid-template-columns:repeat(3,minmax(0,1fr));align-items:stretch}
+  .plan.rec{order:0;margin-top:0;margin-block:-14px;padding-block:42px;box-shadow:0 30px 60px -30px rgba(0,0,0,.45)}
+  .garante{grid-template-columns:repeat(3,minmax(0,1fr));gap:24px}
   .steps{grid-template-columns:repeat(3,minmax(0,1fr))}
   .final{padding:88px 64px}
 }
@@ -515,6 +534,7 @@ footer a{min-height:44px;display:inline-flex;align-items:center}
           <a class="btn btn-primary wa" data-msg="Olá Dinis! Quero um site." href="https://wa.me/351913488258">Pedir o meu site</a>
           <a class="btn btn-secondary" href="#projetos">Ver projetos</a>
         </div>
+        <p class="risco">Só pagas depois de aprovares o desenho.</p>
       </div>
       <div class="fan" id="palco" role="group" aria-roledescription="carrossel" aria-label="Sites que fiz">
         <div class="phone p-left" aria-hidden="true"><div class="scr"></div></div>
@@ -637,8 +657,8 @@ footer a{min-height:44px;display:inline-flex;align-items:center}
       <p class="intro rv">Do primeiro esboço ao site no ar, sem intermediários.</p>
       <ol class="steps">
         <li class="rv"><h3>Conversamos</h3><p>Contas-me o negócio ou a ideia, por WhatsApp ou chamada. Sem formulários compridos.</p></li>
-        <li class="rv"><h3>Vês antes de eu construir</h3><p>Mostro-te o desenho primeiro. Mudas o que quiseres antes de eu passar ao código.</p></li>
-        <li class="rv"><h3>Fica no ar, e é teu</h3><p>Publico no teu domínio e explico-te como tudo funciona.</p></li>
+        <li class="rv"><h3>Vês o desenho, sem pagar</h3><p>Mostro-te o site antes de o construir. Mudas o que quiseres e só pagas metade quando o aprovares.</p></li>
+        <li class="rv"><h3>Em 1 a 3 dias está no ar</h3><p>Publico no teu domínio, explico-te como tudo funciona e pagas a outra metade.</p></li>
       </ol>
     </div>
   </section>
@@ -646,26 +666,54 @@ footer a{min-height:44px;display:inline-flex;align-items:center}
   <section class="section" id="precos" data-world="base" aria-labelledby="t-precos" style="padding-top:0">
     <div class="wrap">
       <h2 class="h2 rv" id="t-precos">Preço fechado. Sem surpresas.</h2>
-      <p class="intro rv">Preço de lançamento para os primeiros 5 clientes. Depois disso, sobe.</p>
+      <p class="intro rv">Vês o desenho antes de pagares um cêntimo. Estes preços são só para os primeiros 5 clientes; depois, sobem.</p>
       <div class="plans">
         <div class="plan rv">
+          <p class="p-para">Para seres encontrado</p>
           <div class="row"><h3>Página única</h3><span class="price">149&nbsp;€</span></div>
-          <p>Uma página com o essencial: quem és, o que fazes e como te contactam.</p>
+          <p class="p-div">2 × 74,50&nbsp;€, o primeiro só depois do desenho</p>
+          <ul class="inclui">
+            <li>1 página desenhada de raiz</li>
+            <li>Contacto por WhatsApp, telefone e e&#8209;mail</li>
+            <li>Rápida no telemóvel</li>
+            <li>Domínio e alojamento no 1.º ano</li>
+            <li class="nao"><span class="sr">Não inclui: </span>Até 5 páginas</li>
+            <li class="nao"><span class="sr">Não inclui: </span>Preparada para o Google</li>
+          </ul>
           <a class="btn btn-secondary wa" data-msg="Olá Dinis! Quero a página única (149 €)." href="https://wa.me/351913488258">Pedir página única</a>
         </div>
         <div class="plan rec rv">
           <span class="rec-tag">Recomendado</span>
+          <p class="p-para">Para vender o teu serviço</p>
           <div class="row"><h3>Site completo</h3><span class="price">299&nbsp;€</span></div>
-          <p>Até 5 páginas, desenhado de raiz para a tua marca, rápido no telemóvel e preparado para o Google.</p>
+          <p class="p-div">2 × 149,50&nbsp;€, o primeiro só depois do desenho</p>
+          <ul class="inclui">
+            <li>Até 5 páginas desenhadas de raiz</li>
+            <li>Contacto por WhatsApp, telefone e e&#8209;mail</li>
+            <li>Rápido no telemóvel</li>
+            <li>Preparado para o Google</li>
+            <li>Domínio e alojamento no 1.º ano</li>
+          </ul>
           <a class="btn wa" data-msg="Olá Dinis! Quero o site completo (299 €)." href="https://wa.me/351913488258">Pedir site completo</a>
         </div>
         <div class="plan rv">
+          <p class="p-para">Para vender produtos</p>
           <div class="row"><h3>Loja online</h3><span class="price"><small>desde</small> 499&nbsp;€</span></div>
-          <p>Produtos, carrinho e pagamentos online, com o mesmo cuidado no desenho.</p>
+          <p class="p-div">2 × 249,50&nbsp;€, o primeiro só depois do desenho</p>
+          <ul class="inclui">
+            <li>Tudo o que tem o site completo</li>
+            <li>Produtos, carrinho e pagamentos online</li>
+            <li>Domínio e alojamento no 1.º ano</li>
+          </ul>
           <a class="btn btn-secondary wa" data-msg="Olá Dinis! Quero uma loja online (desde 499 €)." href="https://wa.me/351913488258">Pedir loja online</a>
         </div>
       </div>
-      <p class="note rv">Domínio e alojamento combinamos à parte, antes de começar.</p>
+      <ol class="garante rv" aria-label="Como pagas">
+        <li><b aria-hidden="true">1</b><span><strong>Desenho sem custo</strong>Mostro-te o site antes de o construir. Mudas o que quiseres.</span></li>
+        <li><b aria-hidden="true">2</b><span><strong>Aprovas, pagas metade</strong>Só depois de dizeres que sim é que começo.</span></li>
+        <li><b aria-hidden="true">3</b><span><strong>No ar em 1 a 3 dias</strong>Pagas a outra metade com o site a funcionar.</span></li>
+      </ol>
+      <p class="note rv">Para comparar: em Portugal, um site de 5 páginas custa normalmente 350 a 500&nbsp;€, e uma agência cobra 80 a 125&nbsp;€ por hora (segundo a Zaask). Depois do 1.º ano, renovas o domínio e o alojamento só se quiseres; digo-te o valor antes.</p>
     </div>
   </section>
 
@@ -673,11 +721,12 @@ footer a{min-height:44px;display:inline-flex;align-items:center}
     <div class="wrap">
       <h2 class="h2 rv" id="t-faq">Perguntas que me fazem</h2>
       <div class="faq-list">
-        <details class="rv"><summary>Quanto tempo demora?</summary><p>Depende do tamanho do site. Digo-te o prazo antes de começar, junto com o preço.</p></details>
-        <details class="rv"><summary>E se eu não gostar do desenho?</summary><p>Mudamos. Mostro-te o desenho antes de construir e só passo ao código quando estiveres contente com ele.</p></details>
+        <details class="rv"><summary>Quanto tempo demora?</summary><p>Depois de aprovares o desenho, o site fica no ar em 1 a 3 dias.</p></details>
+        <details class="rv"><summary>E se eu não gostar do desenho?</summary><p>Mudamos até gostares, e até lá não pagas nada. O desenho é feito sem custo; só pagas metade quando o aprovares.</p></details>
         <details class="rv"><summary>Não tenho textos nem fotos. Faz mal?</summary><p>Não. Ajudo-te com os textos e com as imagens. Se tiveres fotos do teu trabalho, melhor: são as que mais convencem quem visita.</p></details>
         <details class="rv"><summary>O site aparece no Google?</summary><p>Deixo-o pronto para o Google: rápido, com título e descrição certos e o teu negócio bem identificado. Ninguém pode garantir o primeiro lugar, por isso também não o prometo.</p></details>
-        <details class="rv"><summary>E o domínio e o alojamento?</summary><p>Combinamos à parte, antes de começar, para saberes sempre quanto pagas e porquê.</p></details>
+        <details class="rv"><summary>E o domínio e o alojamento?</summary><p>O 1.º ano está incluído no preço. Depois, renovas só se quiseres, e digo-te o valor antes.</p></details>
+        <details class="rv"><summary>Como pago?</summary><p>Em duas vezes: metade quando aprovas o desenho, a outra metade quando o site fica no ar.</p></details>
         <details class="rv"><summary>Fica a funcionar no telemóvel?</summary><p>Sim. Desenho primeiro para o telemóvel, porque é aí que a maioria dos teus clientes te vai encontrar.</p></details>
       </div>
     </div>
@@ -688,7 +737,7 @@ footer a{min-height:44px;display:inline-flex;align-items:center}
       <div class="final rv">
         <h2 class="h2" id="t-final">O próximo pode ser o teu.</h2>
         <a class="btn wa" data-msg="Olá Dinis! Quero um site." href="https://wa.me/351913488258">Pedir o meu site</a>
-        <p>Respondo eu, no WhatsApp: 913&nbsp;488&nbsp;258. Ou por e-mail: <a href="mailto:diniscash@gmail.com">diniscash@gmail.com</a></p>
+        <p>Sem compromisso: o desenho vem primeiro e só pagas metade quando o aprovares. Respondo eu, no WhatsApp: 913&nbsp;488&nbsp;258. Ou por e-mail: <a href="mailto:diniscash@gmail.com">diniscash@gmail.com</a></p>
       </div>
     </div>
   </section>
