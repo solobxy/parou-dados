@@ -100,7 +100,7 @@ p{margin:0}
 .fan{position:relative;height:400px;order:-1;--pw:150px;--k:1;--suave:cubic-bezier(.16,1,.3,1);--mola:cubic-bezier(.2,1.25,.35,1);margin-inline:calc(-1 * var(--gutter));overflow:hidden}
 @supports (transition-timing-function:linear(0,1)){.fan{--mola:linear(0, 0.069 3.1%, 0.230 6.2%, 0.426 9.4%, 0.618 12.5%, 0.782 15.6%, 0.910 18.8%, 0.998 21.9%, 1.052 25%, 1.078 28.1%, 1.083 31.2%, 1.076 34.4%, 1.062 37.5%, 1.046 40.6%, 1.030 43.8%, 1.016 46.9%, 1.006 50%, 0.999 53.1%, 0.995 56.2%, 0.993 59.4%, 0.993 62.5%, 0.994 65.6%, 0.995 68.8%, 0.996 71.9%, 0.998 75%, 0.999 78.1%, 1)}}
 /* o baralho: três telemóveis, a carta da frente sai para o lado e vai para trás */
-.baralho{cursor:pointer;-webkit-tap-highlight-color:transparent;position:absolute;z-index:2;left:50%;top:22px;width:var(--pw);margin-left:calc(var(--pw) / -2)}
+.baralho{position:absolute;z-index:2;left:50%;top:22px;width:var(--pw);margin-left:calc(var(--pw) / -2)}
 .carta{position:absolute;left:0;top:0;width:100%;transform-origin:50% 92%;transition:transform .8s var(--suave),opacity .45s var(--ease)}
 .cel{padding:5px;border-radius:28px;box-shadow:0 1px 2px rgba(0,0,0,.12),0 30px 50px -26px rgba(0,0,0,.5);transition:background-color .6s var(--ease)}
 .carta.s0{z-index:3;transform:none}
@@ -742,7 +742,7 @@ footer a{min-height:44px;display:inline-flex;align-items:center}
           <div class="bolhas" aria-hidden="true"><span class="bolha b-adri" style="background:#0E0C0B"><img src="img/logo_adri.webp" width="325" height="70" alt=""></span><span class="bolha b-anjinho" style="background:#DCE8F4"><img src="img/logo_anjinho.svg" width="200" height="69" alt=""></span><span class="bolha b-jinxed" style="background:#110D0E"><img src="img/logo_jinxed.webp" width="200" height="90" alt=""></span><span class="bolha b-parou" style="background:#16151A"><img src="img/logo_parou.webp" width="235" height="85" alt=""></span><span class="bolha b-duplicasa" style="background:#FFFFFF"><img src="img/logo_duplicasa.svg" width="592" height="123" alt=""></span><span class="bolha b-goodman" style="background:#0E3A2C"><img src="img/logo_goodman.webp" width="441" height="66" alt=""></span></div>
         </div>
         <p class="sr" id="palcoNome" aria-live="polite">AdriBodyPiercing</p>
-        <button class="palco-pausa sr-foco" id="palcoPausa" type="button" aria-label="Pausar a troca de projetos"><svg viewBox="0 0 24 24" aria-hidden="true"><path class="i-pausa" d="M8 5v14M16 5v14"/><path class="i-play" d="M8 5l11 7-11 7z"/></svg></button>
+        
       </div>
     </div>
   </section>
@@ -1040,7 +1040,7 @@ footer a{min-height:44px;display:inline-flex;align-items:center}
     ], N=P.length;
     var palco=document.getElementById('palco'); if(!palco) return;
     var cartas=[].slice.call(palco.querySelectorAll('.carta'));
-    var nome=document.getElementById('palcoNome'), btn=document.getElementById('palcoPausa');
+    var nome=document.getElementById('palcoNome');
     var fx={}; [].slice.call(palco.querySelectorAll('.hf')).forEach(function(f){ fx[f.className.replace(/.*h-(\w+).*/,'$1')]=f; });
     var links={}; [].slice.call(document.querySelectorAll('.sub a')).forEach(function(a){ links[a.className.split(' ')[0]]=a; });
     var reduz=window.matchMedia('(prefers-reduced-motion: reduce)');
@@ -1088,8 +1088,6 @@ footer a{min-height:44px;display:inline-flex;align-items:center}
       ordem=[ordem[1],ordem[2],ordem[0]]; i=alvo; marcar();
     }
     function ciclo(){ clearTimeout(tempo); if(parado||pairar||!visivel||document.hidden) return; tempo=setTimeout(function(){ ir(i+1); ciclo(); },P[i].t); }
-    palco.querySelector('.baralho').addEventListener('click',function(){ btn.click(); });
-    btn.addEventListener('click',function(){ parado=!parado; btn.setAttribute('aria-pressed',parado?'true':'false'); btn.setAttribute('aria-label',parado?'Retomar a troca de projetos':'Pausar a troca de projetos'); ciclo(); });
     /* passar o rato (ou o foco) por uma frase mostra esse projeto no baralho */
     P.forEach(function(p,k){ var a=links[p.lk]; if(!a) return;
       a.addEventListener('mouseenter',function(){ pairar=true; clearTimeout(tempo); ir(k); });
