@@ -568,6 +568,35 @@ www.apalavrado.pt {
 	handle @escondidos {
 		respond 404
 	}
+	# Jogo online (contas, amigos, mapa): só as funções tm_* do Supabase, e só com a chave deste servidor
+	handle_path /api/* {
+		@rpc path_regexp ^/tm_[a-z_]{2,30}$
+		handle @rpc {
+			@outro not method POST
+			respond @outro 405
+			request_body {
+				max_size 400KB
+			}
+			rewrite * /rest/v1/rpc{path}
+			reverse_proxy https://hvvvswhwcpavucwrvlsf.supabase.co {
+				header_up Host {upstream_hostport}
+				header_up apikey sb_publishable_aGAxV-VSm1YIjgd-sXWDgQ_dJkhYFpa
+				header_up Content-Type application/json
+				header_up X-Estat-Ip {remote_host}
+				header_up X-Estat-Chave {ESTAT_CHAVE}
+				header_up -Cookie
+				header_up -Authorization
+				header_up -Origin
+				header_up -Referer
+				header_up -X-Forwarded-For
+				header_down -Set-Cookie
+				header_down Cache-Control "no-store"
+			}
+		}
+		handle {
+			respond 404
+		}
+	}
 	root * /var/www/tapmoss
 	@icones path /*.png /fonts/*
 	header @icones Cache-Control "public, max-age=604800"
@@ -586,3 +615,15 @@ Disallow: /
 	}
 	import tapmoss
 }
+
+# INICIO tapmoss.com
+tapmoss.com {
+	import tapmoss
+}
+# FIM tapmoss.com
+
+# INICIO www.tapmoss.com
+www.tapmoss.com {
+	redir https://tapmoss.com{uri} permanent
+}
+# FIM www.tapmoss.com
