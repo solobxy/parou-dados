@@ -243,7 +243,7 @@
     medirScroll();
     var m = { t: ativoMs, sc: scrollMax, ap: alturaDoc(), n: nCliques };
     if (vitals.lcp) m.lcp = vitals.lcp;
-    if (vitals.cls) m.cls = Math.round(vitals.cls * 10000) / 10000;
+    if (vitals.lcp || vitals.cls) m.cls = Math.round(vitals.cls * 10000) / 10000; // 0 também conta (página estável)
     if (vitals.inp) m.inp = vitals.inp;
     var t = tempos(); if (t.tt) m.tt = t.tt; if (t.cg) m.cg = t.cg;
     return m;

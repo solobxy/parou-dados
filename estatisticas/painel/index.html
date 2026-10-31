@@ -1,0 +1,276 @@
+<meta name="dash-one-writer">
+<link rel="stylesheet" href="estilo.css">
+<div class="ds" id="topo">
+  <header class="ds-cab">
+    <h1 class="ds-h1">Estatísticas dos sites</h1>
+    <p class="ds-frase"><span data-draw="periodo" data-source="resumo">—</span> · <b data-draw="kv" data-source="resumo" data-field="visitantes">—</b> visitantes · <b data-draw="kv" data-source="resumo" data-field="contactos">—</b> contactos · <span class="ds-agora"><i class="ds-ponto"></i><b data-draw="kv" data-source="resumo" data-field="agora">—</b> agora no site</span></p>
+  </header>
+
+  <div class="ds-filtros" id="filtros">
+    <select class="ds-sel" data-draw="f-site" data-source="sites" aria-label="Site"></select>
+    <div class="ds-chips" role="group" aria-label="Período">
+      <button class="ds-chip" data-periodo="hoje" aria-pressed="false">Hoje</button>
+      <button class="ds-chip" data-periodo="ontem" aria-pressed="false">Ontem</button>
+      <button class="ds-chip" data-periodo="7" aria-pressed="false">7 dias</button>
+      <button class="ds-chip" data-periodo="30" aria-pressed="true">30 dias</button>
+      <button class="ds-chip" data-periodo="mes" aria-pressed="false">Este mês</button>
+      <button class="ds-chip" data-periodo="sempre" aria-pressed="false">Sempre</button>
+    </div>
+    <div class="ds-datas">
+      <label>De <input type="date" class="ds-de" min="2026-01-01" max="2099-12-31" aria-label="Desde o dia"></label>
+      <label>Até <input type="date" class="ds-ate" min="2026-01-01" max="2099-12-31" aria-label="Até ao dia"></label>
+    </div>
+    <label class="ds-check"><input type="checkbox" class="ds-teste" checked> Contar endereços de teste</label>
+    <button class="ds-btn ds-repor">Repor</button>
+  </div>
+
+  <nav class="ds-tabs" role="tablist" aria-label="Secções">
+    <button class="ds-tab" role="tab" data-tab="resumo" aria-selected="true">Resumo</button>
+    <button class="ds-tab" role="tab" data-tab="paginas" aria-selected="false">Páginas</button>
+    <button class="ds-tab" role="tab" data-tab="origem" aria-selected="false">Origem</button>
+    <button class="ds-tab" role="tab" data-tab="publico" aria-selected="false">Público</button>
+    <button class="ds-tab" role="tab" data-tab="cliques" aria-selected="false">Cliques e scroll</button>
+    <button class="ds-tab" role="tab" data-tab="contactos" aria-selected="false">Contactos</button>
+    <button class="ds-tab" role="tab" data-tab="tecnico" aria-selected="false">Técnico</button>
+  </nav>
+
+  <!-- RESUMO -->
+  <section class="ds-sec" id="resumo" role="tabpanel">
+    <div class="ds-kpis" id="indicadores">
+      <div class="ds-kpi" id="k-visitantes"><div class="ds-kpi-l">Visitantes</div><div class="ds-kpi-v" data-draw="kv" data-source="resumo" data-field="visitantes">—</div><div class="ds-kpi-d" data-draw="kd" data-source="resumo" data-field="var_visitantes" data-tipo="pct">—</div></div>
+      <div class="ds-kpi" id="k-visitas"><div class="ds-kpi-l">Visitas</div><div class="ds-kpi-v" data-draw="kv" data-source="resumo" data-field="visitas">—</div><div class="ds-kpi-d" data-draw="kd" data-source="resumo" data-field="var_visitas" data-tipo="pct">—</div></div>
+      <div class="ds-kpi" id="k-paginas"><div class="ds-kpi-l">Páginas vistas</div><div class="ds-kpi-v" data-draw="kv" data-source="resumo" data-field="paginas_vistas">—</div><div class="ds-kpi-d" data-draw="kd" data-source="resumo" data-field="var_paginas_vistas" data-tipo="pct">—</div></div>
+      <div class="ds-kpi" id="k-tempo"><div class="ds-kpi-l">Tempo ativo por visita</div><div class="ds-kpi-v" data-draw="kv" data-source="resumo" data-field="tempo_medio_s">—</div><div class="ds-kpi-d" data-draw="kd" data-source="resumo" data-field="var_tempo_medio_s" data-tipo="pct">—</div></div>
+      <div class="ds-kpi" id="k-rejeicao"><div class="ds-kpi-l">Saíram sem interagir</div><div class="ds-kpi-v" data-draw="kv" data-source="resumo" data-field="rejeicao">—</div><div class="ds-kpi-d" data-draw="kd" data-source="resumo" data-field="var_rejeicao" data-tipo="pp" data-bom="baixo">—</div></div>
+      <div class="ds-kpi" id="k-scroll"><div class="ds-kpi-l">Desceram na página (média)</div><div class="ds-kpi-v" data-draw="kv" data-source="resumo" data-field="scroll_medio">—</div><div class="ds-kpi-d" data-draw="kd" data-source="resumo" data-field="var_scroll_medio" data-tipo="pp">—</div></div>
+      <div class="ds-kpi" id="k-contactos"><div class="ds-kpi-l">Contactos</div><div class="ds-kpi-v" data-draw="kv" data-source="resumo" data-field="contactos">—</div><div class="ds-kpi-d" data-draw="kd" data-source="resumo" data-field="var_contactos" data-tipo="pct">—</div></div>
+      <div class="ds-kpi" id="k-taxa"><div class="ds-kpi-l">Visitas com contacto</div><div class="ds-kpi-v" data-draw="kv" data-source="resumo" data-field="taxa_contacto">—</div><div class="ds-kpi-d" data-draw="kd" data-source="resumo" data-field="var_taxa_contacto" data-tipo="pp">—</div></div>
+    </div>
+    <p class="ds-nota">A comparação é com o período anterior do mesmo tamanho. <b>Visitante</b>: pessoa diferente em cada dia (sem cookies, por isso quem volta noutro dia conta outra vez). <b>Visita</b>: termina após 30 min sem atividade. <b>Tempo ativo</b>: só conta com a página à vista e a pessoa a mexer. <b>Saíram sem interagir</b>: viram 1 página, sem cliques, menos de 10 s. <b>Contactos</b>: toques em WhatsApp, telefone, email e formulários enviados.</p>
+
+    <div class="ds-card" id="c-serie">
+      <div class="ds-card-cab">
+        <h2 class="ds-h2">Ao longo do tempo</h2>
+        <div class="ds-seg" role="group" aria-label="Medida">
+          <button class="ds-segb" data-medida="visitantes" aria-pressed="true">Visitantes</button>
+          <button class="ds-segb" data-medida="visitas" aria-pressed="false">Visitas</button>
+          <button class="ds-segb" data-medida="paginas_vistas" aria-pressed="false">Páginas</button>
+          <button class="ds-segb" data-medida="contactos" aria-pressed="false">Contactos</button>
+        </div>
+      </div>
+      <p class="ds-nota">Por dia; por hora quando o período é um só dia. Toca numa barra para abrir esse dia e perceber o que aconteceu.</p>
+      <div class="ds-graf dash-skeleton" data-draw="serie" data-source="serie"></div>
+    </div>
+
+    <div class="ds-card" id="c-sites">
+      <h2 class="ds-h2">Todos os sites</h2>
+      <p class="ds-nota">No período escolhido (o site escolhido em cima não se aplica aqui). Toca num site para ver só esse.</p>
+      <div class="ds-tabela"><table data-source="sites" data-row-key="site">
+        <thead><tr><th data-field="nome">Site</th><th class="n" data-field="visitantes">Visitantes</th><th class="n" data-field="visitas">Visitas</th><th class="n" data-field="paginas_vistas">Páginas</th><th class="n" data-field="tempo_medio_s">Tempo ativo</th><th class="n" data-field="rejeicao">Sem interagir</th><th class="n" data-field="contactos">Contactos</th><th class="n" data-field="pct_teste">De teste</th><th class="n" data-field="agora">Agora</th><th data-field="ultima">Última visita</th></tr></thead>
+        <tbody data-draw="t-sites"></tbody>
+      </table></div>
+    </div>
+
+    <div class="ds-card" id="c-ultimas">
+      <h2 class="ds-h2">Últimas páginas vistas</h2>
+      <p class="ds-nota">As 25 mais recentes do período. «Entrada» é a primeira página da visita.</p>
+      <div class="ds-tabela"><table data-source="ultimas" data-row-key="id">
+        <thead><tr><th data-field="quando">Quando</th><th data-field="site">Site</th><th data-field="caminho">Página</th><th data-field="fonte">Origem</th><th data-field="pais">País</th><th data-field="dispositivo">Aparelho</th><th class="n" data-field="tempo_s">Tempo ativo</th><th class="n" data-field="scroll_max">Desceu</th><th data-field="entrada">Entrada</th></tr></thead>
+        <tbody data-draw="t-ultimas"></tbody>
+      </table></div>
+    </div>
+  </section>
+
+  <!-- PÁGINAS -->
+  <section class="ds-sec" id="paginas" role="tabpanel" hidden>
+    <div class="ds-card" id="c-paginas">
+      <h2 class="ds-h2">Desempenho de cada página</h2>
+      <p class="ds-nota"><b>Saídas</b>: última página vista antes de a pessoa ir embora. <b>Até ao fim</b>: desceram 90 % ou mais. <b>Sem interagir</b>: entre quem entrou por esta página. Toca nos títulos das colunas para ordenar e numa página para ver os cliques dela.</p>
+      <input class="ds-busca ds-busca-paginas" type="search" placeholder="Procurar página" aria-label="Procurar página">
+      <div class="ds-tabela"><table data-source="paginas" data-row-key="chave" class="ds-t-paginas">
+        <thead><tr><th data-field="caminho" aria-sort="none" tabindex="0">Página</th><th data-field="site" aria-sort="none" tabindex="0">Site</th><th class="n" data-field="vistas" aria-sort="descending" tabindex="0">Vistas</th><th class="n" data-field="visitantes" aria-sort="none" tabindex="0">Visitantes</th><th class="n" data-field="entradas" aria-sort="none" tabindex="0">Entradas</th><th class="n" data-field="saidas" aria-sort="none" tabindex="0">Saídas</th><th class="n" data-field="tempo_medio_s" aria-sort="none" tabindex="0">Tempo ativo</th><th class="n" data-field="scroll_medio" aria-sort="none" tabindex="0">Desceram</th><th class="n" data-field="chegou_fim" aria-sort="none" tabindex="0">Até ao fim</th><th class="n" data-field="rejeicao" aria-sort="none" tabindex="0">Sem interagir</th><th class="n" data-field="cliques" aria-sort="none" tabindex="0">Cliques</th><th class="n" data-field="contactos" aria-sort="none" tabindex="0">Contactos</th></tr></thead>
+        <tbody data-draw="t-paginas"></tbody>
+      </table></div>
+    </div>
+  </section>
+
+  <!-- ORIGEM -->
+  <section class="ds-sec" id="origem" role="tabpanel" hidden>
+    <div class="ds-grelha">
+      <div class="ds-card" id="c-fontes-graf">
+        <h2 class="ds-h2">De onde vêm as visitas</h2>
+        <p class="ds-nota">Pela primeira página de cada visita. «Direto»: escreveram o endereço, usaram um favorito ou abriram de uma app que não diz a origem (WhatsApp, por exemplo).</p>
+        <div class="dash-skeleton" data-draw="b-fontes" data-source="fontes"></div>
+      </div>
+      <div class="ds-card" id="c-fontes-conv">
+        <h2 class="ds-h2">Que origem traz contactos</h2>
+        <p class="ds-nota">Percentagem de visitas de cada origem que acabaram num contacto.</p>
+        <div class="dash-skeleton" data-draw="b-conv" data-source="fontes"></div>
+      </div>
+    </div>
+    <div class="ds-card" id="c-fontes">
+      <h2 class="ds-h2">Qualidade de cada origem</h2>
+      <div class="ds-tabela"><table data-source="fontes" data-row-key="fonte">
+        <thead><tr><th data-field="fonte">Origem</th><th class="n" data-field="visitas">Visitas</th><th class="n" data-field="visitantes">Visitantes</th><th class="n" data-field="rejeicao">Sem interagir</th><th class="n" data-field="tempo_medio_s">Tempo ativo</th><th class="n" data-field="paginas_por_visita">Páginas por visita</th><th class="n" data-field="visitas_com_contacto">Visitas com contacto</th><th class="n" data-field="taxa_contacto">Taxa de contacto</th></tr></thead>
+        <tbody data-draw="t-fontes"></tbody>
+      </table></div>
+    </div>
+    <div class="ds-card" id="c-campanhas">
+      <h2 class="ds-h2">Campanhas e anúncios</h2>
+      <p class="ds-nota">Links com <code>?utm_source=ig&amp;utm_campaign=nome</code> (bio, stories, anúncios). Cliques vindos de anúncios Meta, Google e TikTok são reconhecidos sozinhos na coluna «Anúncio».</p>
+      <div class="ds-tabela"><table data-source="campanhas" data-row-key="chave">
+        <thead><tr><th data-field="campanha">Campanha</th><th data-field="origem">Origem</th><th data-field="meio">Meio</th><th data-field="conteudo">Conteúdo</th><th data-field="clique_anuncio">Anúncio</th><th class="n" data-field="visitas">Visitas</th><th class="n" data-field="rejeicao">Sem interagir</th><th class="n" data-field="tempo_medio_s">Tempo ativo</th><th class="n" data-field="visitas_com_contacto">Com contacto</th><th class="n" data-field="taxa_contacto">Taxa</th></tr></thead>
+        <tbody data-draw="t-campanhas"></tbody>
+      </table></div>
+    </div>
+    <div class="ds-card" id="c-referencias">
+      <h2 class="ds-h2">Páginas que enviaram visitas</h2>
+      <div class="ds-tabela"><table data-source="referencias" data-row-key="referencia">
+        <thead><tr><th data-field="referencia">Página de origem</th><th data-field="fonte">Origem</th><th class="n" data-field="visitas">Visitas</th></tr></thead>
+        <tbody data-draw="t-referencias"></tbody>
+      </table></div>
+    </div>
+  </section>
+
+  <!-- PÚBLICO -->
+  <section class="ds-sec" id="publico" role="tabpanel" hidden>
+    <div class="ds-grelha">
+      <div class="ds-card" id="c-paises">
+        <h2 class="ds-h2">Países</h2>
+        <p class="ds-nota">Pelo fuso horário do aparelho (sem usar o IP).</p>
+        <div class="dash-skeleton" data-draw="b-paises" data-source="paises"></div>
+        <h3 class="ds-h3">Em Portugal</h3>
+        <div class="dash-skeleton" data-draw="b-regioes" data-source="regioes"></div>
+      </div>
+      <div class="ds-card" id="c-aparelhos">
+        <h2 class="ds-h2">Aparelhos</h2>
+        <p class="ds-nota">Uma contagem por visita.</p>
+        <h3 class="ds-h3">Tipo</h3>
+        <div class="dash-skeleton" data-draw="b-tec" data-dim="dispositivo" data-source="tecnologia"></div>
+        <h3 class="ds-h3">Largura do ecrã</h3>
+        <div class="dash-skeleton" data-draw="b-tec" data-dim="largura" data-source="tecnologia"></div>
+      </div>
+      <div class="ds-card" id="c-sistemas">
+        <h2 class="ds-h2">Sistema e navegador</h2>
+        <p class="ds-nota">«Instagram (app)» e semelhantes: o site foi aberto dentro dessa app.</p>
+        <h3 class="ds-h3">Sistema</h3>
+        <div class="dash-skeleton" data-draw="b-tec" data-dim="sistema" data-source="tecnologia"></div>
+        <h3 class="ds-h3">Navegador</h3>
+        <div class="dash-skeleton" data-draw="b-tec" data-dim="navegador" data-source="tecnologia"></div>
+        <h3 class="ds-h3">Idioma</h3>
+        <div class="dash-skeleton" data-draw="b-tec" data-dim="idioma" data-source="tecnologia"></div>
+      </div>
+    </div>
+    <div class="ds-card" id="c-horas">
+      <h2 class="ds-h2">Dias e horas com mais visitas</h2>
+      <p class="ds-nota">Hora de Portugal. Mais escuro, mais visitas. Útil para escolher quando publicar e quando ligar anúncios.</p>
+      <div class="dash-skeleton ds-graf" data-draw="horas" data-source="horas"></div>
+    </div>
+  </section>
+
+  <!-- CLIQUES E SCROLL -->
+  <section class="ds-sec" id="cliques" role="tabpanel" hidden>
+    <div class="ds-card" id="c-escolha">
+      <div class="ds-card-cab">
+        <select class="ds-sel" data-draw="f-pagina" data-source="paginas" aria-label="Página"></select>
+        <div class="ds-seg" role="group" aria-label="Aparelho">
+          <button class="ds-segb" data-disp="telemovel" aria-pressed="true">Telemóvel</button>
+          <button class="ds-segb" data-disp="computador" aria-pressed="false">Computador</button>
+          <button class="ds-segb" data-disp="tablet" aria-pressed="false">Tablet</button>
+          <button class="ds-segb" data-disp="todos" aria-pressed="false">Todos</button>
+        </div>
+      </div>
+      <p class="ds-nota">A mostrar: <b data-draw="pagina-atual" data-source="scroll" data-field="pagina" data-row="0">—</b>. Sem escolha, mostra a página mais vista.</p>
+    </div>
+    <div class="ds-grelha">
+      <div class="ds-card" id="c-mapa">
+        <h2 class="ds-h2">Mapa de cliques</h2>
+        <p class="ds-nota">A página inteira, de cima a baixo, à escala. As linhas dizem quantas pessoas chegaram a cada altura.</p>
+        <div class="ds-legenda"><span><i data-draw="leg-cor"></i>Clique</span><span><i style="border: 2px solid var(--color-fg-muted)"></i>Em algo que não é clicável</span><span><i style="background: var(--cds-chart-status-critical)"></i>Clique de raiva (3+ seguidos)</span></div>
+        <div class="ds-mapa-caixa"><div class="ds-mapa dash-skeleton" data-draw="mapa" data-source="mapa scroll"></div></div>
+      </div>
+      <div class="ds-card" id="c-scroll">
+        <h2 class="ds-h2">Até onde descem</h2>
+        <p class="ds-nota">Percentagem das visitas a esta página que chegaram a cada ponto. Uma queda grande indica onde a página perde as pessoas.</p>
+        <div class="dash-skeleton" data-draw="scroll" data-source="scroll"></div>
+      </div>
+    </div>
+    <div class="ds-card" id="c-elementos">
+      <h2 class="ds-h2">O que mais clicam</h2>
+      <p class="ds-nota">«Não» em «Clicável» quer dizer que as pessoas tocam em algo que não faz nada: candidato a virar botão ou ligação.</p>
+      <div class="ds-tabela"><table data-source="elementos" data-row-key="chave">
+        <thead><tr><th data-field="elemento">Elemento</th><th data-field="texto">Texto</th><th class="n" data-field="cliques">Cliques</th><th class="n" data-field="visitas">Visitas</th><th class="n" data-field="pct_visitas">Das visitas</th><th data-field="interativo">Clicável</th><th class="n" data-field="raiva">De raiva</th><th data-field="href">Destino</th></tr></thead>
+        <tbody data-draw="t-elementos"></tbody>
+      </table></div>
+    </div>
+  </section>
+
+  <!-- CONTACTOS -->
+  <section class="ds-sec" id="contactos" role="tabpanel" hidden>
+    <div class="ds-grelha">
+      <div class="ds-card" id="c-acoes">
+        <h2 class="ds-h2">Ações</h2>
+        <p class="ds-nota">Contactos (WhatsApp, telefone, email, formulário, marcados com ★) e outros toques importantes, como ligações para o Instagram.</p>
+        <div class="dash-skeleton" data-draw="b-acoes" data-source="acoes"></div>
+      </div>
+      <div class="ds-card" id="c-conv2">
+        <h2 class="ds-h2">Taxa de contacto por origem</h2>
+        <p class="ds-nota">Das visitas de cada origem, quantas acabaram num contacto.</p>
+        <div class="dash-skeleton" data-draw="b-conv" data-source="fontes"></div>
+      </div>
+    </div>
+    <div class="ds-card" id="c-acoes-detalhe">
+      <h2 class="ds-h2">Cada ação em detalhe</h2>
+      <div class="ds-tabela"><table data-source="acoes_detalhe" data-row-key="chave">
+        <thead><tr><th data-field="nome">Ação</th><th data-field="valor">Destino</th><th data-field="site">Site</th><th data-field="caminho">Página</th><th class="n" data-field="n">Vezes</th><th data-field="ultima">Última</th></tr></thead>
+        <tbody data-draw="t-acoes"></tbody>
+      </table></div>
+    </div>
+  </section>
+
+  <!-- TÉCNICO -->
+  <section class="ds-sec" id="tecnico" role="tabpanel" hidden>
+    <div class="ds-card" id="c-velocidade">
+      <h2 class="ds-h2">Velocidade com visitantes reais</h2>
+      <p class="ds-nota">Valor que 75 % das visitas não ultrapassam (o critério do Google). Bom: <b>carregamento</b> (LCP) até 2,5 s, <b>estabilidade</b> (CLS) até 0,1, <b>resposta ao toque</b> (INP) até 200 ms.</p>
+      <div class="ds-tabela"><table data-source="velocidade" data-row-key="chave">
+        <thead><tr><th data-field="site">Site</th><th data-field="dispositivo">Aparelho</th><th class="n" data-field="amostras">Amostras</th><th class="n" data-field="lcp_ms">Carregamento</th><th class="n" data-field="cls">Estabilidade</th><th class="n" data-field="inp_ms">Resposta ao toque</th><th class="n" data-field="ttfb_ms">Resposta do servidor</th></tr></thead>
+        <tbody data-draw="t-velocidade"></tbody>
+      </table></div>
+    </div>
+    <div class="ds-card" id="c-erros">
+      <h2 class="ds-h2">Erros nos sites</h2>
+      <p class="ds-nota">Erros de JavaScript e ficheiros que não carregaram, vistos no aparelho de quem visitou.</p>
+      <div class="ds-tabela"><table data-source="erros" data-row-key="chave">
+        <thead><tr><th data-field="mensagem">Erro</th><th data-field="ficheiro">Ficheiro</th><th class="n" data-field="linha">Linha</th><th data-field="sites">Sites</th><th class="n" data-field="n">Vezes</th><th class="n" data-field="visitas">Visitas</th><th data-field="navegadores">Navegadores</th><th data-field="caminho">Página</th><th data-field="ultima">Último</th></tr></thead>
+        <tbody data-draw="t-erros"></tbody>
+      </table></div>
+    </div>
+    <div class="ds-grelha">
+      <div class="ds-card" id="c-recolha">
+        <h2 class="ds-h2">Estado da recolha</h2>
+        <p class="ds-nota">Pedidos recusados nos últimos 7 dias. Robôs recusados é normal. Se aparecer «chave errada», o servidor foi refeito e a chave tem de ser atualizada.</p>
+        <div class="ds-tabela"><table data-source="recolha" data-row-key="chave">
+          <thead><tr><th data-field="dia">Dia</th><th data-field="motivo">Motivo</th><th class="n" data-field="n">Pedidos</th><th data-field="ultimo">Último</th></tr></thead>
+          <tbody data-draw="t-recolha"></tbody>
+        </table></div>
+      </div>
+      <div class="ds-card" id="c-naocontar">
+        <h2 class="ds-h2">Não contar as tuas visitas</h2>
+        <p class="ds-nota">Abre cada ligação uma vez no teu telemóvel (e no computador, se usares). A partir daí esse navegador deixa de contar nesse site. Para voltar a contar, troca <code>naocontar</code> por <code>contar</code>.</p>
+        <ul class="ds-lista">
+          <li><a href="https://parou.pt/?naocontar" target="_blank" rel="noopener">parou.pt</a></li>
+          <li><a href="https://anjinho.pt/?naocontar" target="_blank" rel="noopener">anjinho.pt</a></li>
+          <li><a href="https://jinxed.world/?naocontar" target="_blank" rel="noopener">jinxed.world</a></li>
+          <li><a href="https://duaschaves.2-31-13-85.sslip.io/?naocontar" target="_blank" rel="noopener">DupliCasa (endereço de teste)</a> · <a href="https://duplicasa.pt/?naocontar" target="_blank" rel="noopener">duplicasa.pt</a></li>
+          <li><a href="https://dinissousa.2-31-13-85.sslip.io/?naocontar" target="_blank" rel="noopener">Dinis Sousa (teste)</a> · <a href="https://dinissousa.pt/?naocontar" target="_blank" rel="noopener">dinissousa.pt</a></li>
+          <li><a href="https://goodman.2-31-13-85.sslip.io/?naocontar" target="_blank" rel="noopener">Goodman (teste)</a> · <a href="https://goodman.pt/?naocontar" target="_blank" rel="noopener">goodman.pt</a></li>
+          <li><a href="https://adribodypiercing.2-31-13-85.sslip.io/?naocontar" target="_blank" rel="noopener">AdriBodyPiercing (teste)</a> · <a href="https://adribodypiercing.pt/?naocontar" target="_blank" rel="noopener">adribodypiercing.pt</a></li>
+          <li><a href="https://jaesta.2-31-13-85.sslip.io/?naocontar" target="_blank" rel="noopener">já está (teste)</a> · <a href="https://jaesta.pt/?naocontar" target="_blank" rel="noopener">jaesta.pt</a></li>
+          <li><a href="https://anjinho.2-31-13-85.sslip.io/?naocontar" target="_blank" rel="noopener">anjinho (teste)</a> · <a href="https://jinxed.2-31-13-85.sslip.io/?naocontar" target="_blank" rel="noopener">Jinxed (teste)</a> · <a href="https://2-31-13-85.sslip.io/?naocontar" target="_blank" rel="noopener">PAROU (teste)</a></li>
+        </ul>
+      </div>
+    </div>
+  </section>
+</div>
+<script src="app.js"></script>
