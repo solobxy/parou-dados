@@ -1,12 +1,12 @@
 {
-  "built_at": "2026-10-30T20:00:52.900362+00:00",
-  "db_bytes": 741777408,
-  "gz_bytes": 139080400,
+  "built_at": "2026-10-31T09:59:08.685084+00:00",
+  "db_bytes": 800485376,
+  "gz_bytes": 151619480,
   "totals": {
-    "lines": 2662,
-    "stops": 46392,
-    "trips": 150121,
-    "stop_times": 4647284,
+    "lines": 2665,
+    "stops": 46391,
+    "trips": 162870,
+    "stop_times": 5110920,
     "operators": 30,
     "operators_ok": 27,
     "operators_desatualizados": 2
@@ -21,13 +21,13 @@
       "trips": 2553,
       "valid_until": "2026-12-31",
       "validade": "ok",
-      "dias_validade": 62,
+      "dias_validade": 61,
       "horario_prolongado": false,
       "url": "https://www.metrolisboa.pt/google_transit/googleTransit.zip",
       "last_error": null,
       "servicos_associados": null,
       "servicos_sem_calendario": null,
-      "viagens_hoje": 1443,
+      "viagens_hoje": 1110,
       "viagens_amanha": 1110,
       "dias_uteis_sem_servico": 0
     },
@@ -40,33 +40,33 @@
       "trips": 24996,
       "valid_until": "2026-12-31",
       "validade": "ok",
-      "dias_validade": 62,
+      "dias_validade": 61,
       "horario_prolongado": false,
       "url": "https://gateway.carris.pt/gateway/gtfs/api/v2.11/GTFS",
       "last_error": null,
       "servicos_associados": null,
       "servicos_sem_calendario": null,
-      "viagens_hoje": 11459,
-      "viagens_amanha": 7235,
+      "viagens_hoje": 7235,
+      "viagens_amanha": 6302,
       "dias_uteis_sem_servico": 0
     },
     {
       "id": "cp",
       "operator_name": "CP - Comboios de Portugal",
       "status": "OK",
-      "lines": 185,
-      "stops": 454,
-      "trips": 1866,
+      "lines": 188,
+      "stops": 457,
+      "trips": 1869,
       "valid_until": "2026-12-12",
       "validade": "ok",
-      "dias_validade": 43,
+      "dias_validade": 42,
       "horario_prolongado": false,
       "url": "https://publico.cp.pt/gtfs/gtfs.zip",
       "last_error": null,
       "servicos_associados": null,
       "servicos_sem_calendario": null,
-      "viagens_hoje": 1323,
-      "viagens_amanha": 840,
+      "viagens_hoje": 840,
+      "viagens_amanha": 821,
       "dias_uteis_sem_servico": 0
     },
     {
@@ -78,13 +78,13 @@
       "trips": 260,
       "valid_until": "2027-03-14",
       "validade": "ok",
-      "dias_validade": 135,
+      "dias_validade": 134,
       "horario_prolongado": false,
       "url": "https://www.fertagus.pt/GTFSTMLzip/Fertagus_GTFS.zip",
       "last_error": null,
       "servicos_associados": null,
       "servicos_sem_calendario": null,
-      "viagens_hoje": 156,
+      "viagens_hoje": 104,
       "viagens_amanha": 104,
       "dias_uteis_sem_servico": 0
     },
@@ -97,14 +97,14 @@
       "trips": 937,
       "valid_until": "2028-12-31",
       "validade": "ok",
-      "dias_validade": 793,
+      "dias_validade": 792,
       "horario_prolongado": false,
       "url": "https://api.ttsl.pt/files/GTFS.ZIP",
       "last_error": null,
       "servicos_associados": null,
       "servicos_sem_calendario": null,
-      "viagens_hoje": 446,
-      "viagens_amanha": 257,
+      "viagens_hoje": 257,
+      "viagens_amanha": 234,
       "dias_uteis_sem_servico": 0
     },
     {
@@ -116,14 +116,14 @@
       "trips": 1492,
       "valid_until": "2032-12-31",
       "validade": "ok",
-      "dias_validade": 2254,
+      "dias_validade": 2253,
       "horario_prolongado": false,
       "url": "https://files.mobilitydatabase.org/mdb-2408/latest.zip",
       "last_error": null,
       "servicos_associados": null,
       "servicos_sem_calendario": null,
-      "viagens_hoje": 676,
-      "viagens_amanha": 468,
+      "viagens_hoje": 468,
+      "viagens_amanha": 348,
       "dias_uteis_sem_servico": 0
     },
     {
@@ -135,14 +135,14 @@
       "trips": 1601,
       "valid_until": "2026-12-31",
       "validade": "ok",
-      "dias_validade": 62,
+      "dias_validade": 61,
       "horario_prolongado": false,
       "url": "https://files.mobilitydatabase.org/mdb-3186/latest.zip",
       "last_error": null,
       "servicos_associados": null,
       "servicos_sem_calendario": null,
-      "viagens_hoje": 965,
-      "viagens_amanha": 339,
+      "viagens_hoje": 339,
+      "viagens_amanha": 297,
       "dias_uteis_sem_servico": 0
     },
     {
@@ -150,18 +150,18 @@
       "operator_name": "STCP (Porto)",
       "status": "OK",
       "lines": 71,
-      "stops": 2543,
-      "trips": 12711,
-      "valid_until": "2026-11-26",
+      "stops": 2539,
+      "trips": 25422,
+      "valid_until": "2026-11-30",
       "validade": "ok",
-      "dias_validade": 27,
+      "dias_validade": 30,
       "horario_prolongado": false,
       "url": "https://api.stcp.pt:8443/v1/ficheiros/estatico/ficheirozip",
       "last_error": null,
       "servicos_associados": null,
       "servicos_sem_calendario": null,
-      "viagens_hoje": 5632,
-      "viagens_amanha": 3847,
+      "viagens_hoje": 3847,
+      "viagens_amanha": 3232,
       "dias_uteis_sem_servico": 0
     },
     {
@@ -173,14 +173,14 @@
       "trips": 2941,
       "valid_until": "2026-12-25",
       "validade": "ok",
-      "dias_validade": 56,
+      "dias_validade": 55,
       "horario_prolongado": true,
       "url": "https://dadosabertos.cm-porto.pt/dataset/713a680c-9e19-11f1-84ed-6abdb6d5cf34/resource/28a13723-2af1-4bbb-a2b1-f8b08df8c7e4/download/___",
       "last_error": "O operador não atualizou as datas do calendário para alguns dias (15 dias sem horário publicado); a usar o horário semanal mais recente.",
       "servicos_associados": null,
       "servicos_sem_calendario": null,
-      "viagens_hoje": 1153,
-      "viagens_amanha": 918,
+      "viagens_hoje": 918,
+      "viagens_amanha": 870,
       "dias_uteis_sem_servico": 0
     },
     {
@@ -192,14 +192,14 @@
       "trips": 3730,
       "valid_until": "2027-02-01",
       "validade": "ok",
-      "dias_validade": 94,
+      "dias_validade": 93,
       "horario_prolongado": false,
       "url": "https://www.tub.pt/developer/gtfs/feed/tub.zip",
       "last_error": null,
       "servicos_associados": null,
       "servicos_sem_calendario": null,
-      "viagens_hoje": 2117,
-      "viagens_amanha": 895,
+      "viagens_hoje": 895,
+      "viagens_amanha": 799,
       "dias_uteis_sem_servico": 0
     },
     {
@@ -211,14 +211,14 @@
       "trips": 2012,
       "valid_until": "2026-12-31",
       "validade": "ok",
-      "dias_validade": 62,
+      "dias_validade": 61,
       "horario_prolongado": false,
       "url": "https://map.mobility.ubiwhere.com/dataset/ee6d46e4-9f19-4f4a-ab93-1a3cd69df349/resource/08f1ee6c-2d3f-4fb3-a861-5d6fb347a6d4/download/gtfs_gui.zip",
       "last_error": null,
       "servicos_associados": null,
       "servicos_sem_calendario": null,
-      "viagens_hoje": 979,
-      "viagens_amanha": 523,
+      "viagens_hoje": 523,
+      "viagens_amanha": 499,
       "dias_uteis_sem_servico": 0
     },
     {
@@ -230,14 +230,14 @@
       "trips": 648,
       "valid_until": "2024-12-31",
       "validade": "caducado",
-      "dias_validade": -668,
+      "dias_validade": -669,
       "horario_prolongado": true,
       "url": "https://map.mobility.ubiwhere.com/dataset/1842a15c-1aec-4f65-8e29-e57c8b4cbd74/resource/a595ee4b-bf86-4323-b1f4-7e3b3eb00e5e/download/gtfs_bar.zip",
       "last_error": "O operador não atualizou as datas do calendário (terminam em 2024-12-31); a usar o horário semanal em vigor.",
       "servicos_associados": null,
       "servicos_sem_calendario": null,
-      "viagens_hoje": 487,
-      "viagens_amanha": 94,
+      "viagens_hoje": 94,
+      "viagens_amanha": 33,
       "dias_uteis_sem_servico": 0
     },
     {
@@ -249,14 +249,14 @@
       "trips": 2690,
       "valid_until": "2025-12-31",
       "validade": "caducado",
-      "dias_validade": -303,
+      "dias_validade": -304,
       "horario_prolongado": true,
       "url": "https://map.mobility.ubiwhere.com/dataset/fe6015e4-86c7-437a-8d31-10759fe21a1d/resource/7ac67ef8-015c-42e8-9546-f6f0be956270/download/gtfs_vnf.zip",
       "last_error": "O operador não atualizou as datas do calendário (terminam em 2025-12-31); a usar o horário semanal em vigor.",
       "servicos_associados": null,
       "servicos_sem_calendario": null,
-      "viagens_hoje": 1637,
-      "viagens_amanha": 626,
+      "viagens_hoje": 626,
+      "viagens_amanha": 424,
       "dias_uteis_sem_servico": 0
     },
     {
@@ -268,14 +268,14 @@
       "trips": 5799,
       "valid_until": "2026-11-12",
       "validade": "a_caducar",
-      "dias_validade": 13,
+      "dias_validade": 12,
       "horario_prolongado": false,
       "url": "https://gtfs-api.smtuc.pt/api/static/",
       "last_error": null,
       "servicos_associados": null,
       "servicos_sem_calendario": null,
-      "viagens_hoje": 2407,
-      "viagens_amanha": 1293,
+      "viagens_hoje": 1293,
+      "viagens_amanha": 790,
       "dias_uteis_sem_servico": 0
     },
     {
@@ -287,14 +287,14 @@
       "trips": 1086,
       "valid_until": "2027-12-31",
       "validade": "ok",
-      "dias_validade": 427,
+      "dias_validade": 426,
       "horario_prolongado": false,
       "url": "https://drive.google.com/uc?export=download&id=1CM8O4ndsfSJhka42SxFUZ9eB-wE10NqX",
       "last_error": null,
       "servicos_associados": null,
       "servicos_sem_calendario": null,
-      "viagens_hoje": 695,
-      "viagens_amanha": 207,
+      "viagens_hoje": 207,
+      "viagens_amanha": 179,
       "dias_uteis_sem_servico": 0
     },
     {
@@ -306,14 +306,14 @@
       "trips": 665,
       "valid_until": "2027-12-31",
       "validade": "ok",
-      "dias_validade": 427,
+      "dias_validade": 426,
       "horario_prolongado": false,
       "url": "https://drive.google.com/uc?export=download&id=1xNHjM7yl-SS1jCkGrvIBBlOhUkFfNBjY",
       "last_error": null,
       "servicos_associados": null,
       "servicos_sem_calendario": null,
-      "viagens_hoje": 387,
-      "viagens_amanha": 124,
+      "viagens_hoje": 124,
+      "viagens_amanha": 154,
       "dias_uteis_sem_servico": 0
     },
     {
@@ -325,14 +325,14 @@
       "trips": 541,
       "valid_until": "2026-12-31",
       "validade": "ok",
-      "dias_validade": 62,
+      "dias_validade": 61,
       "horario_prolongado": false,
       "url": "https://drive.google.com/uc?export=download&id=1tkKV40lQlFcLiJhq8SwZQdxNVjFclRCA",
       "last_error": null,
       "servicos_associados": null,
       "servicos_sem_calendario": null,
-      "viagens_hoje": 289,
-      "viagens_amanha": 239,
+      "viagens_hoje": 239,
+      "viagens_amanha": 226,
       "dias_uteis_sem_servico": 0
     },
     {
@@ -344,14 +344,14 @@
       "trips": 27,
       "valid_until": "2027-12-31",
       "validade": "ok",
-      "dias_validade": 427,
+      "dias_validade": 426,
       "horario_prolongado": false,
       "url": "https://drive.google.com/uc?export=download&id=1C2KBOVsbm__ymWDgU1bXGbP0Gv3D2yo5",
       "last_error": null,
       "servicos_associados": null,
       "servicos_sem_calendario": null,
-      "viagens_hoje": 20,
-      "viagens_amanha": 5,
+      "viagens_hoje": 5,
+      "viagens_amanha": 0,
       "dias_uteis_sem_servico": 0
     },
     {
@@ -363,14 +363,14 @@
       "trips": 10658,
       "valid_until": "2027-08-31",
       "validade": "ok",
-      "dias_validade": 305,
+      "dias_validade": 304,
       "horario_prolongado": false,
       "url": "https://www.horariosdofunchal.pt/googletransit.zip",
       "last_error": null,
       "servicos_associados": null,
       "servicos_sem_calendario": null,
-      "viagens_hoje": 2441,
-      "viagens_amanha": 1556,
+      "viagens_hoje": 1556,
+      "viagens_amanha": 1332,
       "dias_uteis_sem_servico": 0
     },
     {
@@ -382,14 +382,14 @@
       "trips": 3790,
       "valid_until": "2027-12-31",
       "validade": "ok",
-      "dias_validade": 427,
+      "dias_validade": 426,
       "horario_prolongado": false,
       "url": "https://files.mobilitydatabase.org/mdb-1272/latest.zip",
       "last_error": null,
       "servicos_associados": null,
       "servicos_sem_calendario": null,
-      "viagens_hoje": 2083,
-      "viagens_amanha": 1278,
+      "viagens_hoje": 1278,
+      "viagens_amanha": 1155,
       "dias_uteis_sem_servico": 0
     },
     {
@@ -401,13 +401,13 @@
       "trips": 16,
       "valid_until": "2026-12-31",
       "validade": "ok",
-      "dias_validade": 62,
+      "dias_validade": 61,
       "horario_prolongado": false,
       "url": "https://files.mobilitydatabase.org/tld-4257/latest.zip",
       "last_error": null,
       "servicos_associados": null,
       "servicos_sem_calendario": null,
-      "viagens_hoje": 8,
+      "viagens_hoje": 4,
       "viagens_amanha": 4,
       "dias_uteis_sem_servico": 0
     },
@@ -420,14 +420,14 @@
       "trips": 347,
       "valid_until": "2026-12-31",
       "validade": "ok",
-      "dias_validade": 62,
+      "dias_validade": 61,
       "horario_prolongado": false,
       "url": "https://files.mobilitydatabase.org/tld-4316/latest.zip",
       "last_error": null,
       "servicos_associados": null,
       "servicos_sem_calendario": null,
-      "viagens_hoje": 212,
-      "viagens_amanha": 96,
+      "viagens_hoje": 96,
+      "viagens_amanha": 39,
       "dias_uteis_sem_servico": 0
     },
     {
@@ -439,13 +439,13 @@
       "trips": 552,
       "valid_until": "2026-12-31",
       "validade": "ok",
-      "dias_validade": 62,
+      "dias_validade": 61,
       "horario_prolongado": false,
       "url": "https://files.mobilitydatabase.org/tld-4317/latest.zip",
       "last_error": null,
       "servicos_associados": null,
       "servicos_sem_calendario": null,
-      "viagens_hoje": 423,
+      "viagens_hoje": 129,
       "viagens_amanha": 129,
       "dias_uteis_sem_servico": 0
     },
@@ -458,14 +458,14 @@
       "trips": 139,
       "valid_until": "2026-12-31",
       "validade": "ok",
-      "dias_validade": 62,
+      "dias_validade": 61,
       "horario_prolongado": false,
       "url": "https://files.mobilitydatabase.org/tld-4318/latest.zip",
       "last_error": null,
       "servicos_associados": null,
       "servicos_sem_calendario": null,
-      "viagens_hoje": 80,
-      "viagens_amanha": 47,
+      "viagens_hoje": 47,
+      "viagens_amanha": 12,
       "dias_uteis_sem_servico": 0
     },
     {
@@ -477,14 +477,14 @@
       "trips": 129,
       "valid_until": "2027-12-31",
       "validade": "ok",
-      "dias_validade": 427,
+      "dias_validade": 426,
       "horario_prolongado": false,
       "url": "https://files.mobilitydatabase.org/tld-4319/latest.zip",
       "last_error": null,
       "servicos_associados": null,
       "servicos_sem_calendario": null,
-      "viagens_hoje": 75,
-      "viagens_amanha": 54,
+      "viagens_hoje": 54,
+      "viagens_amanha": 0,
       "dias_uteis_sem_servico": 0
     },
     {
@@ -584,21 +584,21 @@
     }
   ],
   "desenhos": {
-    "bytes": 10023740,
+    "bytes": 10044570,
     "por_operador": {
       "carris": {
         "viagens": 24996,
-        "com_desenho": 24721,
-        "desenhos": 302
+        "com_desenho": 24996,
+        "desenhos": 307
       },
       "cmh": {
-        "viagens": 67935,
-        "com_desenho": 67935,
-        "desenhos": 3135
+        "viagens": 67970,
+        "com_desenho": 67970,
+        "desenhos": 3131
       },
       "cp": {
-        "viagens": 1866,
-        "com_desenho": 1812,
+        "viagens": 1869,
+        "com_desenho": 1815,
         "desenhos": 244
       },
       "fertagus": {
@@ -662,9 +662,9 @@
         "desenhos": 16
       },
       "stcp": {
-        "viagens": 12711,
-        "com_desenho": 12711,
-        "desenhos": 222
+        "viagens": 25422,
+        "com_desenho": 25422,
+        "desenhos": 245
       },
       "tcb_barreiro": {
         "viagens": 1601,
@@ -725,19 +725,19 @@
     "unir_linhas_com_desenho": 788
   },
   "verificacao": {
-    "data_hoje": "2026-10-30",
-    "data_amanha": "2026-10-31",
+    "data_hoje": "2026-10-31",
+    "data_amanha": "2026-11-01",
     "dias_uteis_verificados": 5,
     "porto": {
       "stcp": {
         "calendar": [],
         "datas_soltas": {
-          "primeira": "20261028",
-          "ultima": "20261126",
-          "total": 30
+          "primeira": "20261030",
+          "ultima": "20261130",
+          "total": 32
         },
         "servicos_com_data_hoje": [
-          "UTIL ESCOLAR:FLUXO 3 20261029"
+          "SABADO:FLUXO 3 20261031"
         ],
         "viagens_por_servico": [
           {
@@ -745,11 +745,23 @@
             "viagens": 5632
           },
           {
-            "service": "SABADO:FLUXO 3 20261029",
+            "service": "UTIL ESCOLAR:FLUXO 3 20261102",
+            "viagens": 5632
+          },
+          {
+            "service": "SABADO:FLUXO 3 20261031",
             "viagens": 3847
           },
           {
-            "service": "DOM|FERIADO:FLUXO 3 20261029",
+            "service": "SABADO:FLUXO 3 20261102",
+            "viagens": 3847
+          },
+          {
+            "service": "DOM|FERIADO:FLUXO 3 20261031",
+            "viagens": 3232
+          },
+          {
+            "service": "DOM|FERIADO:FLUXO 3 20261102",
             "viagens": 3232
           }
         ]
@@ -904,16 +916,15 @@
         "datas_soltas": {
           "primeira": "20260101",
           "ultima": "20261225",
-          "total": 393
+          "total": 392
         },
         "servicos_com_data_hoje": [
-          "BU",
-          "EU",
-          "AU",
-          "CU",
-          "BexpU",
-          "DU",
-          "FU"
+          "ES",
+          "FS",
+          "BS",
+          "DS",
+          "CS",
+          "AS"
         ],
         "viagens_por_servico": [
           {
@@ -968,5 +979,5 @@
       }
     }
   },
-  "duration_s": 324
+  "duration_s": 287
 }
