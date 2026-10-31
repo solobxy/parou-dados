@@ -10,7 +10,7 @@ for (const caminho of ['/', '/linhas', '/greves', '/transportes']) {
     const r = await fetch(BASE + caminho, { headers: { 'User-Agent': 'Mozilla/5.0 (teste)' } });
     const t = await r.text();
     ok(r.status === 200 && t.includes(ETIQUETA), `${caminho} (${r.status}) tem a etiqueta das estatísticas`);
-    ok(t.split('/_e.js').length === 2, `${caminho} carrega o script uma só vez`);
+    ok(t.split('src="/_e.js"').length === 2, `${caminho} carrega o script uma só vez`);
   } catch (e) { ok(false, `${caminho}: ${e}`); }
 }
 const js = await fetch(BASE + '/_e.js');
