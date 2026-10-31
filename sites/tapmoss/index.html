@@ -1409,7 +1409,7 @@ function puff(x,y,cols,n,spd,life){for(let i=0;i<n;i++){const a=rnd()*Math.PI*2,
 /* ============ sound ============ */
 const SND=(()=>{
   let ac=null,master=null,noise=null,wind=null,windF=null,windG=null,nextBird=0,nextCricket=0,nextNote=0,combo=0,lastTap=0;const bus={};
-  const PENTA=[0,2,4,7,9,12,14,16,19,21,24];const f=n=>440*Math.pow(2,n/12);
+  const PENTA=[0,2,4,7,9,12,14,16,19,21,24],SOFT=[-12,-10,-8,-5,-3,0,2];const f=n=>440*Math.pow(2,n/12);
   function init(){if(ac)return true;const AC=window.AudioContext||window.webkitAudioContext;if(!AC)return false;try{ac=new AC()}catch(e){return false}
     master=ac.createGain();master.gain.value=.85;const comp=ac.createDynamicsCompressor();comp.threshold.value=-20;comp.ratio.value=3;master.connect(comp);comp.connect(ac.destination);
     for(const k of['sfx','amb','mus']){bus[k]=ac.createGain();bus[k].connect(master)}
@@ -1429,8 +1429,9 @@ const SND=(()=>{
     const v=o.v||.05;g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(v,t+(o.a||.01));g.gain.exponentialRampToValueAtTime(.0001,t+dur);
     s.connect(fl);fl.connect(g);g.connect(bus[o.bus||'sfx']);s.start(t,Math.random()*1.5);s.stop(t+dur+.05)}
   const P={
-    tap(){const t=performance.now();combo=t-lastTap<650?Math.min(combo+1,PENTA.length-1):0;lastTap=t;const n=PENTA[combo];tone(f(n+3),.24,{type:'triangle',v:.06,lp:2400});tone(f(n+15),.1,{v:.012});nz(.05,{f:3400,q:.8,v:.01})},
-    coin(){tone(f(19),.08,{type:'square',v:.012,lp:2800});tone(f(24),.2,{type:'square',v:.012,lp:2800,at:.06})},
+    /* toque: uma nota grave e redonda, como madeira (marimba), de uma escala pentatónica; não sobe sem fim e fica mais baixa quando se toca depressa */
+    tap(){const t=performance.now(),dt=t-lastTap;lastTap=t;combo=dt<400?Math.min(combo+1,12):0;const n=SOFT[(Math.random()*SOFT.length)|0],v=.05*(dt<120?.4:dt<260?.65:1)*(combo>6?.7:1);tone(f(n),.34,{v:v,a:.008,lp:1100,to:f(n)*.985});tone(f(n+24),.06,{v:v*.15,lp:2400})},
+    coin(){tone(f(7),.12,{type:'triangle',v:.02,lp:1600});tone(f(12),.22,{type:'triangle',v:.018,lp:1600,at:.06})},
     gem(){[28,31,35,40].forEach((n,i)=>tone(f(n),.4,{type:'triangle',v:.03,at:i*.06,echo:1}))},
     flower(r){r=r||0;const b=[12,14,16,19,21,24][r];tone(f(b),.6,{v:.05,echo:1});tone(f(b+7),.8,{v:.035,at:.08,echo:1});if(r>=3)tone(f(b+12),1,{v:.03,at:.16,echo:1})},
     clean(){nz(.26,{f:900,to:2600,q:.7,v:.045})},
@@ -1440,14 +1441,14 @@ const SND=(()=>{
     lamp(on){nz(.03,{ft:'highpass',f:3000,v:.04});if(on)tone(f(-2),.7,{v:.025,a:.12,lp:900})},
     place(){tone(140,.22,{to:70,v:.1});nz(.18,{ft:'lowpass',f:500,v:.05})},
     buy(){tone(f(14),.12,{type:'triangle',v:.045});tone(f(19),.3,{type:'triangle',v:.045,at:.08})},
-    click(){tone(1700,.03,{v:.015})},
+    click(){tone(540,.06,{v:.014,a:.004,lp:1200})},
     chime(){tone(f(26),.7,{v:.025,echo:1});tone(f(31),.9,{v:.018,at:.12,echo:1})},
     hi(){tone(f(7),.12,{type:'triangle',v:.04,to:f(12)});tone(f(14),.18,{type:'triangle',v:.04,at:.13})},
     flute(){const mel=[[12,.32],[16,.32],[19,.6],[17,.3],[16,.3],[14,.3],[12,.9]];let t=0;for(const[n,d]of mel){tone(f(n),d+.18,{v:.035,a:.07,vib:5,at:t,echo:1});t+=d}},
-    pop(){tone(f(20),.07,{v:.025,to:f(27)})},
+    pop(){tone(f(7),.09,{v:.02,to:f(12),lp:1600})},
     sneeze(){nz(.22,{f:2400,to:900,q:1.5,v:.045,at:.05})},
     door(){tone(220,.18,{type:'triangle',to:160,v:.03,lp:700});nz(.08,{ft:'lowpass',f:400,v:.04,at:.15})},
-    atap(){const n=PENTA[(Math.random()*6)|0];tone(f(n-9),.16,{type:'triangle',v:.028,lp:1500})},
+    atap(){const n=SOFT[(Math.random()*5)|0];tone(f(n),.24,{v:.02,a:.01,lp:900})},
     shutter(){nz(.04,{ft:'highpass',f:2500,v:.06});nz(.06,{ft:'bandpass',f:1200,v:.05,at:.07})},
   };
   function play(k,a){if(!ac||!S||!S.snd.sfx||ac.state!=='running')return;try{P[k]&&P[k](a)}catch(e){}}
