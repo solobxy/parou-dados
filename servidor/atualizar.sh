@@ -25,6 +25,7 @@ escrever_estado() {
     echo "Disco: $(df -h / | awk 'NR==2 {print $3 " usados de " $2 " (" $5 ")"}')"
     echo "Base de horários: $(ls -la /var/lib/parou/gtfs.db 2>/dev/null | awk '{print $5 " bytes, " $6 " " $7 " " $8}')"
     echo "Ligado desde: $(uptime -s)"
+    echo "Estatísticas (hash da chave): $(printf '%s' "${ESTAT_CHAVE:-}" | sha256sum | cut -c1-64)"
     echo "Reinícios pela vigia: $(tail -n 3 /var/lib/parou-estado/reinicios.log 2>/dev/null | tr '\n' ';' || true)"
     echo
     echo "--- Últimas linhas da app ---"
@@ -36,7 +37,13 @@ escrever_estado() {
 
 # 1. Caddy
 source /etc/parou-servidor.env
-sed "s/{HOST_TESTE}/$HOST_TESTE/g" "$SERV/Caddyfile" > /tmp/Caddyfile.novo
+# Estatísticas: chave que só o Caddy deste servidor conhece (gerada aqui; o Supabase guarda só o hash,
+# que aparece em /_estado-servidor para se poder atualizar se o servidor for recriado)
+if [ ! -s /etc/estatisticas.env ]; then
+  (umask 077; echo "ESTAT_CHAVE=$(openssl rand -hex 32)" > /etc/estatisticas.env)
+fi
+source /etc/estatisticas.env
+sed -e "s/{HOST_TESTE}/$HOST_TESTE/g" -e "s/{ESTAT_CHAVE}/${ESTAT_CHAVE:-sem-chave}/g" "$SERV/Caddyfile" > /tmp/Caddyfile.novo
 # O domínio só entra quando já aponta para este servidor (senão o Caddy falhava o
 # certificado e ficava a tentar com esperas cada vez maiores)
 MEU_IP="$(echo "${HOST_TESTE%%.sslip.io}" | tr '-' '.')"
@@ -56,6 +63,17 @@ if ! cmp -s /tmp/Caddyfile.novo /etc/caddy/Caddyfile; then
     cp /tmp/Caddyfile.novo /etc/caddy/Caddyfile
     systemctl reload caddy || systemctl restart caddy
   fi
+fi
+
+# Estatísticas: o script /_e.js é servido por todos os sites a partir de /var/www/_estatisticas
+EJ="$SERV/estatisticas/e.js"
+if [ -f "$EJ" ] && ! cmp -s "$EJ" /var/www/_estatisticas/e.js; then
+  install -d -m 755 /var/www/_estatisticas && install -m 644 "$EJ" /var/www/_estatisticas/e.js.novo \
+    && mv /var/www/_estatisticas/e.js.novo /var/www/_estatisticas/e.js
+fi
+# A Jinxed foi copiada à mão (fora do repositório): junta-lhe o script se ainda não o tiver
+if [ -f /var/www/jinxed/index.html ] && ! grep -q '/_e.js' /var/www/jinxed/index.html; then
+  sed -i '0,/<\/head>/s##<script defer src="/_e.js" data-site="jinxed"></script></head>#' /var/www/jinxed/index.html
 fi
 
 # anjinho.pt: site estático e lista de espera (os emails ficam em /var/lib/anjinho, fora do repositório)

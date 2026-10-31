@@ -3,7 +3,43 @@
 # Os blocos do parou.pt só entram quando o domínio já aponta para este servidor (o
 # atualizador confirma o DNS a cada 2 min): assim o certificado é pedido logo à primeira.
 
+# ESTATÍSTICAS - recolha própria para todos os sites (sem cookies e sem guardar IPs).
+# /_e.js é o script (servidor/estatisticas/e.js, copiado para /var/www/_estatisticas) e /_e recebe os dados,
+# que seguem para o Supabase (projeto «estatisticas», função recolher). {ESTAT_CHAVE} é posto pelo atualizar.sh
+# a partir de /etc/estatisticas.env, gerado no próprio servidor (o Supabase só guarda o hash dessa chave).
+# Para um site novo: «import estatisticas» no bloco do site e <script defer src="/_e.js" data-site="ID"></script> no HTML.
+(estatisticas) {
+	handle /_e.js {
+		root * /var/www/_estatisticas
+		rewrite * /e.js
+		header Cache-Control "public, max-age=3600"
+		file_server
+	}
+	handle /_e {
+		@outro not method POST
+		respond @outro 405
+		request_body {
+			max_size 32KB
+		}
+		rewrite * /rest/v1/rpc/recolher
+		reverse_proxy https://hvvvswhwcpavucwrvlsf.supabase.co {
+			header_up Host {upstream_hostport}
+			header_up apikey sb_publishable_aGAxV-VSm1YIjgd-sXWDgQ_dJkhYFpa
+			header_up Content-Type application/json
+			header_up X-Estat-Ip {remote_host}
+			header_up X-Estat-Chave {ESTAT_CHAVE}
+			header_up -Cookie
+			header_up -Authorization
+			header_up -Origin
+			header_up -Referer
+			header_up -X-Forwarded-For
+			header_down -Set-Cookie
+		}
+	}
+}
+
 (app) {
+	import estatisticas
 	encode zstd gzip
 	header {
 		Strict-Transport-Security "max-age=31536000"
@@ -49,6 +85,7 @@ www.parou.pt {
 
 # ANJINHO.PT - lista de espera (site estático em /var/www/anjinho + /api/lista no 127.0.0.1:3100)
 (anjinho) {
+	import estatisticas
 	encode zstd gzip
 	header {
 		Strict-Transport-Security "max-age=31536000"
@@ -92,6 +129,7 @@ www.anjinho.pt {
 
 # JINXED - site estático de demonstração em /var/www/jinxed (copiado à mão, fora do repositório)
 (jinxed) {
+	import estatisticas
 	encode zstd gzip
 	header {
 		Strict-Transport-Security "max-age=31536000"
@@ -124,6 +162,7 @@ www.jinxed.world {
 # DUAS CHAVES - site de arrendamento (protótipo estático em /var/www/duaschaves, vindo de sites/duaschaves deste repositório)
 # O endereço de testes (sslip.io) fica fora do Google; o domínio a sério (duplicasa.pt) é indexado.
 (duaschaves) {
+	import estatisticas
 	encode zstd gzip
 	header {
 		Strict-Transport-Security "max-age=31536000"
@@ -236,6 +275,7 @@ www.chave.pt {
 
 # DINISSOUSA.PT - portfólio (site estático em /var/www/dinissousa, vindo de sites/dinissousa deste repositório)
 (dinissousa) {
+	import estatisticas
 	encode zstd gzip
 	header {
 		Strict-Transport-Security "max-age=31536000"
@@ -282,6 +322,7 @@ www.dinissousa.pt {
 
 # JAESTA.PT - «já está», sites feitos antes de pedir (estático em /var/www/jaesta, vindo de sites/jaesta deste repositório)
 (jaesta) {
+	import estatisticas
 	encode zstd gzip
 	header {
 		Strict-Transport-Security "max-age=31536000"
@@ -332,6 +373,7 @@ www.jaesta.pt {
 
 # ADRIBODYPIERCING - site do estúdio do Adriano (estático em /var/www/adribodypiercing, vindo de sites/adribodypiercing deste repositório)
 (adribodypiercing) {
+	import estatisticas
 	encode zstd gzip
 	header {
 		Strict-Transport-Security "max-age=31536000"
@@ -398,6 +440,7 @@ www.adribodypiercing.pt {
 # GOODMAN.PT - advogado virtual (site estático em /var/www/goodman, vindo de sites/goodman deste repositório).
 # O chat fala com a função «goodman» no Supabase; os PDF e Word são lidos com pdf.js e mammoth do cdnjs.
 (goodman) {
+	import estatisticas
 	encode zstd gzip
 	header {
 		Strict-Transport-Security "max-age=31536000"

@@ -233,7 +233,7 @@ details{{border-top:1px solid var(--b);padding:12px 0}}details:first-of-type{{bo
 .guia{{max-width:760px}}.guia h2{{margin-top:36px}}.guia p,.guia li{{font-size:17px;line-height:1.65;color:var(--t2)}}.guia li{{margin-bottom:6px}}.guia strong{{color:var(--t)}}.nota{{font-size:14px;color:var(--t3);margin-top:28px}}
 footer{{margin-top:56px;border-top:1px solid var(--b);padding:28px 0 40px;font-size:14px;color:var(--t3)}}footer a{{margin-right:14px;white-space:nowrap;display:inline-block;line-height:2}}
 @media(min-width:900px){{h1{{font-size:46px}}}}
-</style></head><body>
+</style><script defer src="/_e.js" data-site="duplicasa"></script></head><body>
 <header><div class="w"><a class="logo" href="/" aria-label="DupliCasa, início">{LOGO}</a><a class="bt" href="{ver_todas}">Ver casas</a></div></header>
 <main class="w">
 <nav class="mig" aria-label="Estás aqui">{nav}</nav>
