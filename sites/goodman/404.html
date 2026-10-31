@@ -80,12 +80,12 @@ p{margin:0}
 .icone-redondo{display:inline-grid;place-items:center;width:44px;height:44px;border-radius:50%;background:var(--icone-fundo);color:var(--icone);flex:none}
 .cta-seccao{display:flex;flex-wrap:wrap;align-items:center;gap:12px 20px;margin-top:40px}
 .cta-nota{font-size:15px;color:var(--tinta-2)}
-.botao-2{display:inline-flex;align-items:center;justify-content:center;gap:10px;min-height:54px;padding:0 24px;border-radius:999px;font-weight:700;font-size:17px;color:var(--tinta);text-decoration:none;white-space:nowrap}
+.botao-2{display:inline-flex;align-items:center;justify-content:center;gap:10px;min-height:54px;padding:8px 24px;border-radius:999px;font-weight:700;font-size:17px;color:var(--tinta);text-decoration:none;text-align:center;line-height:1.2;max-width:100%}
 .botao-2.contorno{--fundo-c:var(--papel)}
 .botao-2:hover{--fundo-c:var(--papel-2)}
 
 /* Botões */
-.botao{display:inline-flex;align-items:center;justify-content:center;gap:10px;min-height:54px;padding:0 26px;border:0;border-radius:999px;background:var(--carimbo);color:#fff;font-weight:700;font-size:17px;text-decoration:none;white-space:nowrap;transition:background-color .2s,transform .2s var(--ease)}
+.botao{display:inline-flex;align-items:center;justify-content:center;gap:10px;min-height:54px;padding:8px 26px;text-align:center;line-height:1.2;max-width:100%;border:0;border-radius:999px;background:var(--carimbo);color:#fff;font-weight:700;font-size:17px;text-decoration:none;transition:background-color .2s,transform .2s var(--ease)}
 .botao:hover{background:var(--carimbo-2)}
 .botao:active{transform:scale(.97)}
 .botao svg{width:20px;height:20px;flex:none}
@@ -101,7 +101,8 @@ p{margin:0}
 .topo nav{display:none;gap:28px;font-weight:500;font-size:16px}
 .topo nav a{text-decoration:none;opacity:.86}
 .topo nav a:hover{opacity:1;text-decoration:underline}
-.topo .botao{min-height:44px;padding:0 18px;font-size:15px}
+.topo .botao{min-height:44px;padding:6px 16px;font-size:15px}
+.topo .largura>*{min-width:0}
 .topo .curto{display:inline}.topo .longo{display:none}
 
 /* Herói */
@@ -183,7 +184,8 @@ p{margin:0}
 .ficha-doc{--fundo-c:var(--cartao);border-radius:14px;padding:18px 20px;font-size:15px;line-height:1.45}
 .mesa .ficha-doc{justify-self:end;align-self:end;width:min(82%,380px);margin-top:150px;position:relative;z-index:2;box-shadow:0 24px 50px -24px rgba(6,26,19,.45)}
 .ficha-doc .ficha-titulo{display:flex;align-items:center;gap:8px;font-weight:800;font-stretch:112%;font-size:15px;margin-bottom:10px}
-.ficha-doc dl{margin:0;display:grid;grid-template-columns:minmax(80px,auto) minmax(0,1fr);gap:8px 14px}
+.ficha-doc dl{margin:0;display:grid;grid-template-columns:fit-content(45%) minmax(0,1fr);gap:8px 14px}
+.ficha-doc dd,.ficha-doc dt{min-width:0;overflow-wrap:break-word}
 .ficha-doc dt{color:var(--tinta-2);font-size:14px}
 .ficha-doc dd{margin:0;font-weight:500}
 .ficha-doc .prazo dd{color:var(--carimbo-texto);font-weight:700}
@@ -409,7 +411,7 @@ sup.ref a{color:var(--carimbo-texto);text-decoration:none;padding:2px}
 .ausente{max-width:720px;margin:0 auto 8px;font-size:14px;color:var(--carimbo-texto)}
 
 /* Barra de ação fixa no telemóvel: aparece depois do herói e esconde-se no fim da página */
-.barra-cta{position:fixed;left:0;right:0;bottom:0;z-index:30;display:flex;gap:10px;padding:10px var(--gutter-d) calc(10px + env(safe-area-inset-bottom,0px)) var(--gutter-e);background:color-mix(in srgb,var(--papel) 92%,transparent);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);border-top:1px solid var(--linha);transform:translateY(110%);transition:transform .28s var(--ease);visibility:hidden}
+.barra-cta{position:fixed;left:0;right:0;bottom:0;z-index:30;display:flex;gap:10px;padding:10px var(--gutter-d) calc(10px + env(safe-area-inset-bottom,0px)) var(--gutter-e);background:var(--papel);background:color-mix(in srgb,var(--papel) 92%,transparent);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);border-top:1px solid var(--linha);transform:translateY(110%);transition:transform .28s var(--ease);visibility:hidden}
 .barra-cta.visivel{transform:none;visibility:visible}
 .barra-cta .botao{flex:1;min-height:50px}
 .barra-cta .botao-clipe{flex:none;width:50px;height:50px;border-radius:50%;display:grid;place-items:center;color:var(--tinta);--fundo-c:var(--papel)}
