@@ -76,7 +76,9 @@ VERIFICA = r"""(escala) => {
     if (el.closest('details:not([open])') && !el.closest('summary')) continue;
     let fixo = false; for (let q = el; q && q !== document.body; q = q.parentElement) { const ps = getComputedStyle(q).position; if (ps === 'fixed' || ps === 'sticky') { fixo = q; break; } }
     const rg = document.createRange(); rg.selectNodeContents(m2);
-    for (const r of rg.getClientRects()) if (r.width > 2 && r.height > 2) caixas.push({ r, el, fixo, t: m2.textContent.trim().slice(0, 24) });
+    // o que um ancestral corta (reticências, overflow) não se vê: recortar antes de comparar
+    const cortes = []; for (let q = el; q && q !== document.body; q = q.parentElement) { const qs = getComputedStyle(q); if (qs.overflowX !== 'visible' || qs.overflowY !== 'visible') cortes.push(q.getBoundingClientRect()); }
+    for (const r0 of rg.getClientRects()) { let L = r0.left, T = r0.top, Rr = r0.right, B = r0.bottom; for (const c of cortes) { L = Math.max(L, c.left); T = Math.max(T, c.top); Rr = Math.min(Rr, c.right); B = Math.min(B, c.bottom); } const fs0 = parseFloat(getComputedStyle(el).fontSize) || 16, cy = (T + B) / 2; T = Math.max(T, cy - 0.38 * fs0); B = Math.min(B, cy + 0.32 * fs0); /* só a faixa onde há tinta, não a caixa toda da letra */ const r = { left: L, top: T, right: Rr, bottom: B, width: Rr - L, height: B - T }; if (r.width > 2 && r.height > 2) caixas.push({ r, el, fixo, t: m2.textContent.trim().slice(0, 24) }); }
   }
   const sobre = [];
   for (let i = 0; i < caixas.length && sobre.length < 15; i++) for (let j = i + 1; j < caixas.length; j++) {

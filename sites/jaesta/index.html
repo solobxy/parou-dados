@@ -186,6 +186,12 @@ footer nav a, footer nav span { display: inline-block; padding: 12px 0; }
 .js [data-entra] { opacity: 0; transform: translateY(26px); }
 .js [data-entra].dentro { opacity: 1; transform: none; transition: opacity .6s ease-out, transform .75s cubic-bezier(.2,.8,.25,1); transition-delay: var(--atraso, 0s); }
 @media (prefers-reduced-motion: reduce) { .js [data-entra] { transform: none; } }
+
+/* robustez: ecrãs estreitos e letra aumentada */
+.grelha>*{min-width:0}
+.inclui li{overflow-wrap:anywhere}
+.galeria{grid-template-columns:repeat(2,minmax(0,1fr))}
+@media (min-width:960px){.galeria{grid-template-columns:repeat(4,minmax(0,1fr))}}
 </style>
 </head>
 <body>
@@ -368,6 +374,15 @@ footer nav a, footer nav span { display: inline-block; padding: 12px 0; }
   if ('IntersectionObserver' in window) new IntersectionObserver(function (es) { es[0].isIntersecting ? corre() : para(); }).observe(palco); else corre();
   document.addEventListener('visibilitychange', function () { document.hidden ? para() : corre(); });
 })();
+</script>
+<script>
+/* Números grandes (percentagem, preço, telefone): se não couberem (ecrã estreito ou letra aumentada), encolhem até caber */
+(function(){var els=[].slice.call(document.querySelectorAll('.numeros .grande,.contacto-g,.cartao .valor b')),tits=[].slice.call(document.querySelectorAll('h1,h2,.galeria .nome'));
+function larg(e){var r=document.createRange();r.selectNodeContents(e);return r.getBoundingClientRect().width;}
+function cabe(){els.forEach(function(e){e.style.fontSize='';var p=e.parentElement,ps=getComputedStyle(p),livre=p.clientWidth-parseFloat(ps.paddingLeft)-parseFloat(ps.paddingRight);
+for(var k=0;k<3;k++){var w=larg(e);if(w<=livre+1)break;e.style.fontSize=(parseFloat(getComputedStyle(e).fontSize)*livre/w*0.98)+'px';}});
+tits.forEach(function(e){e.style.fontSize='';for(var k=0;k<3;k++){if(!e.clientWidth||e.scrollWidth<=e.clientWidth+1)break;e.style.fontSize=(parseFloat(getComputedStyle(e).fontSize)*e.clientWidth/e.scrollWidth*0.98)+'px';}});}
+cabe();addEventListener('resize',cabe);if(document.fonts&&document.fonts.ready)document.fonts.ready.then(cabe);})();
 </script>
 </body>
 </html>

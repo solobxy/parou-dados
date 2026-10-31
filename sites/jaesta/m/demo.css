@@ -33,6 +33,12 @@
 .je-abrir:hover .je-cta { background: #3B4EF0; }
 .je-abrir:active { transform: scale(.985); }
 @media (max-width: 360px) { .je-txt span { display: none; } .je-cta { padding: 0 14px; } }
+/* robustez: nome do negócio em até 2 linhas; botão encolhe/parte em vez de sair do ecrã (letra aumentada) */
+.je-abrir { flex-wrap: wrap; row-gap: 8px; border-radius: 30px; }
+.je-txt { flex: 1000 1 7em; }
+.je-txt b { white-space: normal; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; line-height: 1.2; }
+.je-cta { flex: 1 0 auto; max-width: 100%; height: auto; min-height: 44px; padding: 6px 18px; white-space: normal; text-align: center; line-height: 1.15; }
+@media (max-width: 380px) { .je-simb { display: none; } .je-abrir { padding-left: 18px; } .je-cta { padding: 6px 14px; } }
 
 /* versões de cor, por cima da barra */
 .je-versoes { display: flex; align-items: center; gap: 6px; justify-content: center; margin: 0 auto 8px; width: max-content; max-width: 100%;
@@ -172,10 +178,18 @@ button.je-btn { width: 100%; border: 0; cursor: pointer; font-family: inherit; }
 .je-falta { margin: 10px 0 0; padding: 10px 14px; border-radius: 12px; background: #FDECEA; color: #8A1C12; font: 600 15px/1.35 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; text-align: center; }
 
 /* lugar das fotos, só na pré-visualização */
-.galeria-fotos.reservado figure { display: grid; place-items: center; aspect-ratio: 4 / 3; background: rgba(128,128,128,.14); }
+.galeria-fotos.reservado figure { display: grid; place-items: center; aspect-ratio: 4 / 3; overflow: visible; background: rgba(128,128,128,.14); }
 .galeria-fotos.reservado figure:first-child { aspect-ratio: auto; min-height: 220px; }
 .galeria-fotos.reservado span { display: grid; justify-items: center; gap: 8px; padding: 12px; text-align: center; font-size: 15px; font-weight: 600; opacity: .75; }
 .galeria-fotos.reservado svg { width: 30px; height: 30px; }
 
 /* filhos de grelha nunca crescem por causa de uma palavra comprida (o título ajusta-se à largura real) */
 .grelha > * { min-width: 0; }
+
+/* robustez (todos os modelos e pré-visualizações): ecrãs estreitos e letra aumentada no telemóvel */
+.galeria-fotos { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+@media (min-width: 900px) { .galeria-fotos { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+.galeria-fotos figure { min-width: 0; }
+.topo { flex-wrap: wrap; row-gap: 4px; }
+.topo > * { min-width: 0; }
+.planta svg { overflow: visible; }

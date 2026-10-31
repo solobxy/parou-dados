@@ -318,6 +318,8 @@
       vs.querySelectorAll('button').forEach(function (b, i) { b.addEventListener('click', function () { aplicarVersao(i); }); });
     }
     document.body.appendChild(barra);
+    /* o fim da página nunca fica escondido atrás da barra, mesmo quando ela parte em duas linhas */
+    if (window.ResizeObserver) new ResizeObserver(function () { document.body.style.paddingBottom = 'calc(' + (barra.offsetHeight + 24) + 'px + env(safe-area-inset-bottom))'; }).observe(barra);
 
     var noAr = new Date(Date.now() + 2 * 864e5);
     var expiraTxt = (D.expira && !EXEMPLO) ? ' A pré-visualização fica guardada até ' + dataPT(D.expira) + '.' : '';
@@ -404,4 +406,23 @@
     }
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', arrancar); else arrancar();
+
+  /* Telefones, monograma e títulos em letra grande: se não couberem (ecrã estreito ou letra aumentada), encolhem até caber */
+  (function () {
+    function larg(e) { var r = document.createRange(); r.selectNodeContents(e); return r.getBoundingClientRect().width; }
+    function cabe() {
+      [].forEach.call(document.querySelectorAll('.contactos .tel, .tel-grande, .vidro .letra'), function (e) {
+        e.style.fontSize = ''; var p = e.parentElement, ps = getComputedStyle(p), livre = (p.clientWidth - parseFloat(ps.paddingLeft) - parseFloat(ps.paddingRight)) * (e.classList.contains('letra') ? 0.9 : 1);
+        for (var k = 0; k < 3; k++) { var w = larg(e); if (!w || w <= livre + 1) break; e.style.fontSize = (parseFloat(getComputedStyle(e).fontSize) * livre / w * 0.98) + 'px'; }
+      });
+      /* títulos: a palavra mais comprida tem de caber inteira (sem a partir) */
+      [].forEach.call(document.querySelectorAll('h1, h2'), function (e) {
+        if (e.closest('.je-folha, .je-barra, .je-expirou')) return; e.style.fontSize = '';
+        for (var k = 0; k < 3; k++) { if (e.scrollWidth <= e.clientWidth + 1 || !e.clientWidth) break; e.style.fontSize = (parseFloat(getComputedStyle(e).fontSize) * e.clientWidth / e.scrollWidth * 0.98) + 'px'; }
+      });
+    }
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', cabe); else cabe();
+    addEventListener('resize', cabe); addEventListener('load', cabe);
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(cabe);
+  })();
 })();
