@@ -28,6 +28,16 @@ for (const u of amostra) {
   ok(`[linha ${u.split('/')[2]}] JSON-LD válido`, jsonld(r.h).every((x) => x !== 'INVÁLIDO'));
   if (!/\/unir\//.test(u)) ok(`[linha ${u.split('/')[2]}] descrição com horas dos dias úteis (ou sem horário)`, /^Dias úteis: 1\.º \S+ às \d\d:\d\d, último às \d\d:\d\d/.test(d) || /^Horário da /.test(d), d.slice(0, 80));
 }
+// Página inicial: «parou» é também um verbo («o site parou»), por isso o título diz que é uma app de transportes
+// e o WebSite tem os outros nomes por que as pessoas procuram a marca (PAROU app, PAROU transportes).
+{
+  const r = await pedir('/');
+  const t = titulo(r.h);
+  const site = jsonld(r.h).flatMap((x) => (x && x['@graph']) || [x]).find((x) => x && x['@type'] === 'WebSite');
+  const alt = [].concat((site && site.alternateName) || []);
+  ok('[início] título começa por PAROU e diz que é uma app de transportes', /^PAROU\b/.test(t) && /\bapp\b/i.test(t) && /autocarros/i.test(t) && t.length <= 65, `${t} (${t.length})`);
+  ok('[início] WebSite com os nomes alternativos da marca', ['PAROU app', 'PAROU Transportes', 'parou.pt'].every((n) => alt.some((a) => a.toLowerCase() === n.toLowerCase())), alt.join(' | '));
+}
 // Carris Metropolitana: a API (padrões) às vezes não tem a versão em vigor (ex.: 4562 só tinha agosto e 2027),
 // e a página dizia «sem serviço» em todos os dias. As linhas mais procuradas têm de mostrar o horário.
 for (const cod of ['4562', '4725', '1001']) {
