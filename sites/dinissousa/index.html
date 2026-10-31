@@ -185,7 +185,7 @@ p{margin:0}
   opacity:0;scale:calc(1 + 1.3 * var(--k));rotate:-34deg;transition:opacity .15s,scale .15s,rotate .15s}
 .selo-ag::before{content:"";position:absolute;inset:5px;border-radius:50%;border:1px solid #D2B26A}
 .selo-ag::after{content:"";position:absolute;inset:-3px;border-radius:50%;border:2px solid #D9B676;opacity:0}
-.selo-ag svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+.selo-ag img{position:absolute;inset:0;width:100%;height:100%;display:block}
 .selo-ag .sv{fill:none;stroke:#B8903F;stroke-width:5;stroke-linecap:round;stroke-linejoin:round}
 .selo-ag text{font-family:var(--font);font-weight:800;fill:#9C7A33}
 .selo-ag .s1{font-size:13px}
@@ -358,10 +358,10 @@ img.fx{height:auto}
 .linha{position:absolute;left:28%;right:28%;top:calc(50% + 30px);height:1.5px;background:linear-gradient(90deg,transparent,#D9B676 30%,#F3E2B5 50%,#D9B676 70%,transparent);transform:scaleX(0);transition:transform .8s var(--suave) .5s}
 .c-adri.on .linha{transform:scaleX(1)}
 .talao{z-index:1;left:9%;right:9%;top:calc(100% - 44px);filter:drop-shadow(0 14px 16px rgba(0,0,0,.5));transition:transform 1s var(--suave) 1.9s,opacity .3s var(--ease) 1.9s}
-.papel{padding:52px 18px 20px;display:grid;grid-template-columns:1fr auto;gap:2px 12px;align-items:center;background:#F4EEE4;color:#141210;
+.papel{padding:52px 76px 20px 16px;display:grid;grid-template-columns:1fr;gap:2px 12px;align-items:center;background:#F4EEE4;color:#141210;
   -webkit-mask:radial-gradient(circle at 50% 100%,transparent 4px,#000 4.5px) 0 0/12px 100%;mask:radial-gradient(circle at 50% 100%,transparent 4px,#000 4.5px) 0 0/12px 100%}
-.talao .t-topo{grid-column:1 / -1;font-size:10.5px;font-weight:700;letter-spacing:.1em;white-space:nowrap;text-transform:uppercase;color:#8A6A2F}
-.talao strong{font-size:19px;font-weight:800;letter-spacing:-.02em;line-height:1.1}
+.talao .t-topo{grid-column:1 / -1;font-size:10.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#8A6A2F}
+.talao strong{font-size:clamp(15px,4.6vw,18px);font-weight:800;letter-spacing:-.02em;line-height:1.1}
 .talao span:last-of-type{grid-column:1;font-size:13px;color:#5C554B}
 .talao .ok{grid-column:2;grid-row:2 / span 2;width:38px;height:38px;border-radius:50%;background:#D9B676;display:grid;place-items:center}
 .talao .ok svg{width:20px;height:20px;fill:none;stroke:#141210;stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round}
@@ -500,7 +500,7 @@ img.fx{height:auto}
 .sai-fx .hx,.c-jinxed .flut2 img{filter:drop-shadow(0 6px 10px rgba(214,16,28,.4))}
 .bola.joia{background:none;border-radius:0;box-shadow:none;height:auto;rotate:var(--r,0deg);filter:drop-shadow(0 10px 12px rgba(0,0,0,.45))}
 .c-adri.on .bola.joia{animation:flutua 3.4s ease-in-out calc(var(--d) + 1.1s) 1}
-.selo-ag.s-talao{right:-14px;top:30px;width:84px;height:84px;z-index:3}
+.selo-ag.s-talao{right:6px;top:calc(50% + 6px);margin-top:-32px;width:64px;height:64px;z-index:3}
 .c-adri.on .selo-ag.s-talao{opacity:1;scale:1;rotate:-12deg;transition:opacity .1s linear 2.85s,scale .3s cubic-bezier(.55,0,.8,.2) 2.85s,rotate .3s cubic-bezier(.55,0,.8,.2) 2.85s}
 .c-adri.on .selo-ag.s-talao::after{animation:onda-selo .7s var(--ease) 3.15s}
 .c-adri.on .talao .papel{animation:pancada .28s linear 3.15s}
@@ -724,7 +724,7 @@ footer a{min-height:44px;display:inline-flex;align-items:center}
       <div class="fan" id="palco" role="group" aria-roledescription="carrossel" aria-label="Sites que fiz">
         <div class="fundos" aria-hidden="true">
           <div class="hf h-adri">
-            <span class="h-agend" style="left:20%;top:16%;--d:0s"><span class="selo-ag" aria-hidden="true"><svg viewBox="0 0 100 100"><path class="sv" d="M39 36l7.5 7.5L62 28"/><text class="s1" x="50" y="62" text-anchor="middle" textLength="60" lengthAdjust="spacingAndGlyphs">AGENDADO</text><text class="s2" x="50" y="75" text-anchor="middle" textLength="42" lengthAdjust="spacingAndGlyphs">SÁB · 15H00</text></svg></span></span>
+            <span class="h-agend" style="left:20%;top:16%;--d:0s"><span class="selo-ag" aria-hidden="true"><img src="img/selo_agendado.svg" alt=""></span></span>
             <img class="flut" src="img/joia_barra_ouro.svg" alt="" style="left:76%;top:8%;width:58px;--ex:-110px;--ey:110px;--d:0.35s;--r:-22deg">
             <img class="flut" src="img/joia_argola_prata.svg" alt="" style="left:88%;top:48%;width:42px;--ex:-130px;--ey:-10px;--d:0.45s;--r:10deg">
             <img class="flut" src="img/joia_brinco_ouro.svg" alt="" style="left:70%;top:86%;width:28px;--ex:-40px;--ey:-110px;--d:0.55s">
@@ -816,7 +816,7 @@ footer a{min-height:44px;display:inline-flex;align-items:center}
           <p class="rv">Estúdio de body piercing do Adriano, que está a começar. Fiz o logótipo, a joia em 3D que roda no topo e o site, com preços à vista e marcação online.</p>
           <a class="btn btn-secondary rv" href="https://adribodypiercing.2-31-13-85.sslip.io" target="_blank" rel="noopener">Ver o site ↗</a>
         </div>
-        <div class="shot"><figure class="cena c-adri r-sobe" style="--abre:#0E0C0B"><div class="fx talao" aria-hidden="true"><div class="papel"><span class="t-topo">Marcação confirmada</span><strong>Sábado, 15h00</strong><span>Helix · joia em titânio de implante</span></div><span class="selo-ag s-talao" aria-hidden="true"><svg viewBox="0 0 100 100"><path class="sv" d="M39 36l7.5 7.5L62 28"/><text class="s1" x="50" y="62" text-anchor="middle" textLength="60" lengthAdjust="spacingAndGlyphs">AGENDADO</text><text class="s2" x="50" y="75" text-anchor="middle" textLength="42" lengthAdjust="spacingAndGlyphs">SÁB · 15H00</text></svg></span></div><div class="phone"><div class="ecra"><img class="site" src="img/adri.webp" width="640" height="1385" alt="Site AdriBodyPiercing no telemóvel" loading="lazy"><div class="abre" aria-hidden="true"><img src="img/logo_adri.webp" width="325" height="70" alt="" style="width:58%"><i class="linha"></i><i class="barra"></i></div></div></div><img class="fx bola joia b1" src="img/joia_barra_ouro.svg" alt="" aria-hidden="true"><img class="fx bola joia b2" src="img/joia_argola_prata.svg" alt="" aria-hidden="true"><img class="fx bola joia b3" src="img/joia_brinco_ouro.svg" alt="" aria-hidden="true"></figure></div>
+        <div class="shot"><figure class="cena c-adri r-sobe" style="--abre:#0E0C0B"><div class="fx talao" aria-hidden="true"><div class="papel"><span class="t-topo">Marcação</span><strong>Sábado, 15h00</strong><span>Helix · titânio de implante</span></div><span class="selo-ag s-talao" aria-hidden="true"><img src="img/selo_agendado.svg" alt=""></span></div><div class="phone"><div class="ecra"><img class="site" src="img/adri.webp" width="640" height="1385" alt="Site AdriBodyPiercing no telemóvel" loading="lazy"><div class="abre" aria-hidden="true"><img src="img/logo_adri.webp" width="325" height="70" alt="" style="width:58%"><i class="linha"></i><i class="barra"></i></div></div></div><img class="fx bola joia b1" src="img/joia_barra_ouro.svg" alt="" aria-hidden="true"><img class="fx bola joia b2" src="img/joia_argola_prata.svg" alt="" aria-hidden="true"><img class="fx bola joia b3" src="img/joia_brinco_ouro.svg" alt="" aria-hidden="true"></figure></div>
       </div>
     </article>
 
