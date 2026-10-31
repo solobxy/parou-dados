@@ -164,6 +164,20 @@ p{margin:0}
 .h-par{font-family:var(--serif);font-style:italic;font-size:44px;line-height:1;color:#C7372A;opacity:.85}
 
 .hf>:is(.h-casa,.h-msg,.h-art,.h-chip,.h-vivo,.h-carta,.h-carimbo,.h-escreve){z-index:3}
+/* GOODMAN: o martelo de juiz bate e o caso fica resolvido */
+.h-juiz{z-index:3 !important;width:150px;height:124px}
+.h-juiz img{position:absolute;display:block;height:auto}
+.j-base{left:2px;bottom:6px;width:74px}
+.j-martelo{left:0;top:35px;width:132px;transform-origin:95% 48%;rotate:32deg}
+.h-goodman.on .j-martelo{animation:martela 1s 2s both}
+@keyframes martela{0%{rotate:32deg;animation-timing-function:cubic-bezier(.6,0,.95,.5)}48%{rotate:-3deg;animation-timing-function:ease-out}62%{rotate:7deg;animation-timing-function:ease-in-out}80%{rotate:-1deg}100%{rotate:0deg}}
+.h-goodman.on .j-base{animation:pancada .3s linear 2.48s}
+.j-pum{position:absolute;left:10px;top:56px;width:60px;fill:none;stroke:#C7372A;stroke-width:3;stroke-linecap:round;opacity:0}
+.h-goodman.on .j-pum{animation:pum .5s var(--ease) 2.48s}
+@keyframes pum{0%{opacity:1;scale:.5;translate:0 6px}100%{opacity:0;scale:1.25;translate:0 -6px}}
+.j-selo{position:absolute;left:62px;top:96px;white-space:nowrap;display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border:2px solid #C7372A;border-radius:6px;background:rgba(255,255,255,.94);color:#C7372A;font-size:12.5px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;rotate:-8deg;opacity:0;scale:calc(1 + 1.2 * var(--k));transition:opacity .15s,scale .15s}
+.j-selo i{font-style:normal}
+.h-goodman.on .j-selo{opacity:1;scale:1;transition:opacity .1s linear 2.55s,scale .3s cubic-bezier(.55,0,.8,.2) 2.55s}
 /* ADRI: um talão de marcação e o selo dourado «agendado» que cai em cima dele */
 .h-bilhete{z-index:3 !important;display:grid;gap:1px;width:150px;padding:12px 14px 13px;border-radius:12px;background:#FBF7F0;color:#1A1714;box-shadow:0 1px 2px rgba(0,0,0,.08),0 18px 34px -18px rgba(60,45,20,.45);rotate:var(--r)}
 .h-bilhete small{font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#9C7A33}
@@ -237,6 +251,7 @@ p{margin:0}
 @media (max-width:719px){
   .fan{height:450px}.baralho{top:66px}
   .h-bilhete{left:4% !important;top:13% !important}
+  .h-juiz{left:0 !important;top:56% !important;scale:.85;transform-origin:0 0}
   .hf .so-d{display:none}
   .hf .m-topo{left:50% !important;top:14px !important;translate:-50% 0;max-width:calc(100% - 32px);white-space:nowrap}
 }
@@ -719,12 +734,12 @@ footer a{min-height:44px;display:inline-flex;align-items:center}
             <img class="sino" src="img/sino.svg" alt="" style="left:80%;top:3%;width:32px;--ex:-100px;--ey:90px;--d:1.7s">
           </div>
           <div class="hf h-goodman">
-            <span class="h-carta so-d" style="left:4%;top:10%;--ex:110px;--ey:80px;--d:0.3s;--r:-5deg"><small>Carta do senhorio</small><i></i><i></i><i></i><b class="h-lido">LIDO</b></span>
+            <span class="h-juiz" style="left:1%;top:6%;--ex:110px;--ey:80px;--d:.3s"><img class="j-base" src="img/martelo_base.svg" alt=""><img class="j-martelo" src="img/martelo.svg" alt=""><svg class="j-pum" viewBox="0 0 60 30" aria-hidden="true"><path d="M8 22 2 14M30 16V4M52 22l6-8"/></svg><b class="j-selo">Caso resolvido <i>✓</i></b></span>
             <span class="h-msg eu m-topo" style="left:58%;top:14%;--ex:-90px;--ey:70px;--d:0.55s">O senhorio pode subir a renda?</span>
             <span class="h-escreve so-d" style="left:3%;top:52%;--ex:0px;--ey:0px;--d:0.9s"><span><i></i><i></i><i></i></span></span>
             <span class="h-msg gm so-d" style="left:3%;top:52%;--ex:60px;--ey:0px;--d:1.75s">Vejo a lei e já te digo.</span>
             <span class="h-art so-d" style="left:57%;top:80%;--ex:-80px;--ey:-70px;--d:2.1s"><b>§</b>Artigo confirmado <i>✓</i></span>
-            <span class="h-par" style="left:88%;top:44%;--ex:-110px;--ey:0px;--d:0.8s;--r:10deg">§</span>
+            
             <span class="h-par" style="left:26%;top:90%;--ex:60px;--ey:-90px;--d:1.0s;--r:-12deg">§</span>
           </div>
         </div>
