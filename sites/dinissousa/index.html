@@ -59,7 +59,8 @@ html{background:var(--paper)}
 .mundo{position:fixed;inset:0;z-index:-1;pointer-events:none}
 .mundo i{position:absolute;inset:0;display:block}
 .mundo-base{background:var(--paper)}
-.mundo-wipe{opacity:0}
+.mundo-wipe{overflow:hidden}
+.mundo .onda{inset:auto;border-radius:50%;transform:scale(0.001);will-change:transform;backface-visibility:hidden}
 :where(main,footer) :where(p,h2,h3,li,summary,small,span,strong){transition:color .35s var(--ease)}
 @media (prefers-reduced-motion:reduce){.mundo-base{transition:background-color .6s var(--ease)}}
 html{-webkit-text-size-adjust:100%;scroll-behavior:smooth;scroll-padding-top:76px}
@@ -760,28 +761,47 @@ footer a{min-height:44px;display:inline-flex;align-items:center}
   function setWa(a){ a.href = WA + encodeURIComponent(a.getAttribute('data-msg')||'Olá Dinis! Quero um site.'); }
   document.querySelectorAll('.wa').forEach(setWa);
 
-  /* Mundos: a cor nova abre-se em círculo a partir do logótipo do projeto que entra */
-  var base=document.getElementById('mundoBase'), wipe=document.getElementById('mundoWipe');
+  /* Mundos: a cor nova abre-se num círculo a partir do logótipo do projeto que entra.
+     O círculo cresce só com transform (corre na placa gráfica, sem soluços). Se a pessoa voltar para trás
+     a meio, o mesmo círculo encolhe a partir de onde está; nunca fica meio-a-meio nem salta. */
+  var base=document.getElementById('mundoBase'), ondas=document.getElementById('mundoWipe');
   var reduz=window.matchMedia('(prefers-reduced-motion: reduce)');
-  var anim=null, troca=null, mundoAtual='base', ultimoY=window.scrollY;
+  var DUR=1000, CURVA='cubic-bezier(.76,0,.24,1)';
+  var pilha=[], troca=null, mundoAtual='base', ultimoY=window.scrollY;
   function corDe(w){ var b=document.body, a=b.getAttribute('data-world'); b.setAttribute('data-world',w); var c=getComputedStyle(b).getPropertyValue('--bg').trim(); b.setAttribute('data-world',a); return c; }
+  /* o texto muda quando o círculo já cobre boa parte do ecrã, para nunca ficar ilegível */
+  function texto(w,ms){ clearTimeout(troca); if(ms){ troca=setTimeout(function(){ document.body.setAttribute('data-world',w); },ms); } else { document.body.setAttribute('data-world',w); } }
+  function fixar(cor){ base.style.backgroundColor=cor; pilha.forEach(function(o){ o.anim.onfinish=null; o.anim.cancel(); o.el.remove(); }); pilha=[]; }
+  function fim(o){
+    if(o.voltar){
+      pilha.splice(pilha.indexOf(o),1); o.anim.onfinish=null; o.anim.cancel(); o.el.remove();
+      var t=pilha[pilha.length-1];
+      if(t && !t.voltar && t.anim.playState==='finished') fixar(t.cor);
+    } else if(o===pilha[pilha.length-1]) fixar(o.cor);
+  }
   function mudarMundo(sec){
     var w=sec.getAttribute('data-world'); if(w===mundoAtual) return;
     var desce=window.scrollY>=ultimoY; ultimoY=window.scrollY;
-    var cor=corDe(w); mundoAtual=w;
-    clearTimeout(troca);
-    /* o texto muda a meio do círculo, para nunca ficar ilegível em cima da cor antiga */
-    var aplicar=function(){ document.body.setAttribute('data-world',w); };
-    if(anim){ anim.onfinish=null; anim.cancel(); anim=null; base.style.backgroundColor=wipe.style.backgroundColor; wipe.style.opacity='0'; }
-    if(reduz.matches || !wipe.animate){ aplicar(); base.style.backgroundColor=cor; return; }
-    troca=setTimeout(aplicar,300);
-    var vw=innerWidth, vh=innerHeight, x=vw/2, y=desce?vh:0;
+    var de=mundoAtual; mundoAtual=w;
+    if(!ondas.animate){ texto(w); base.style.backgroundColor=corDe(w); return; }
+    var topo=pilha[pilha.length-1];
+    if(topo && topo.anim.playState!=='finished'){
+      if(!topo.voltar && w===topo.de){ topo.voltar=true; topo.anim.reverse(); texto(w); return; }
+      if(topo.voltar && w===topo.para){ topo.voltar=false; topo.anim.reverse(); texto(w,Math.round(DUR*.3)); return; }
+    }
+    var cor=corDe(w), vw=innerWidth, vh=innerHeight, x=vw/2, y=desce?vh:0;
     var lg=sec.querySelector('.logo');
     if(lg){ var r=lg.getBoundingClientRect(); x=Math.min(vw,Math.max(0,r.left+r.width/2)); y=Math.min(vh,Math.max(0,r.top+r.height/2)); }
-    var raio=Math.hypot(Math.max(x,vw-x),Math.max(y,vh-y))+20;
-    wipe.style.backgroundColor=cor; wipe.style.opacity='1';
-    anim=wipe.animate([{clipPath:'circle(0px at '+x+'px '+y+'px)'},{clipPath:'circle('+raio+'px at '+x+'px '+y+'px)'}],{duration:760,easing:'cubic-bezier(.65,0,.35,1)',fill:'forwards'});
-    anim.onfinish=function(){ base.style.backgroundColor=cor; wipe.style.opacity='0'; var a=anim; anim=null; if(a) a.cancel(); };
+    var raio=Math.ceil(Math.hypot(Math.max(x,vw-x),Math.max(y,vh-y)))+4;
+    var el=document.createElement('i'); el.className='onda';
+    el.style.cssText='left:'+(x-raio)+'px;top:'+(y-raio)+'px;width:'+(2*raio)+'px;height:'+(2*raio)+'px;background:'+cor+(reduz.matches?';transform:none':'');
+    ondas.appendChild(el);
+    var kf=reduz.matches?[{opacity:0},{opacity:1}]:[{transform:'scale(0.001)'},{transform:'scale(1)'}];
+    var o={el:el,de:de,para:w,cor:cor,voltar:false};
+    o.anim=el.animate(kf,{duration:reduz.matches?600:DUR,easing:reduz.matches?'ease':CURVA,fill:'forwards'});
+    o.anim.onfinish=function(){ fim(o); };
+    pilha.push(o);
+    texto(w,reduz.matches?0:Math.round(DUR*.3));
   }
   var worlds=[].slice.call(document.querySelectorAll('[data-world]')).filter(function(el){return el!==document.body;});
   if('IntersectionObserver' in window){
