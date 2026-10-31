@@ -1,0 +1,255 @@
+<!doctype html>
+<html lang="pt-PT">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#F7EDEA">
+<meta name="color-scheme" content="light">
+<title>Salão Central</title>
+<link rel="icon" href="../../m/favicon.svg" type="image/svg+xml">
+<meta property="og:type" content="website">
+<meta property="og:locale" content="pt_PT">
+<meta property="og:title" content="Pré-visualização do site: Salão Central">
+<meta property="og:description" content="Feita por Dinis Sousa, com o já está. Toque nos botões como se fosse cliente.">
+<meta property="og:image" content="https://jaesta.2-31-13-85.sslip.io/m/og-beleza.jpg">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="apple-touch-icon" href="../../apple-touch-icon.png">
+<link rel="preload" href="../../m/fontes/lora-italico.woff" as="font" type="font/woff" crossorigin>
+<link rel="stylesheet" href="../../m/demo.css">
+<style>
+@font-face { font-family: "Espelho"; src: url("../../m/fontes/lora-italico.woff") format("woff"); font-weight: 400 700; font-style: italic; font-display: swap; }
+@font-face { font-family: "Texto"; src: url("../../m/fontes/inter-400.woff") format("woff"); font-weight: 400; font-display: swap; }
+@font-face { font-family: "Texto"; src: url("../../m/fontes/inter-600.woff") format("woff"); font-weight: 600; font-display: swap; }
+:root { --pele: #F7EDEA; --pele-2: #EEDDD8; --ameixa: #2A1621; --apoio: #6A5560; --rosa: #B03463; --rosa-claro: #F2C9D6; --m: 20px; }
+@media (min-width: 900px) { :root { --m: 48px; } }
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }
+body { margin: 0; background: var(--pele); color: var(--ameixa); font: 400 17px/1.6 "Texto", system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+a { color: inherit; }
+h1, h2, h3 { font-family: "Espelho", Georgia, serif; font-style: italic; font-weight: 500; margin: 0; letter-spacing: -.02em; text-wrap: balance; }
+.env { width: min(1180px, 100% - 2 * var(--m)); margin-inline: auto; }
+.btn { display: inline-flex; align-items: center; justify-content: center; min-height: 54px; padding: 0 28px; border-radius: 999px; border: 0; font: 600 17px/1 "Texto", sans-serif; text-decoration: none; cursor: pointer; touch-action: manipulation; transition: transform .12s, background .15s; }
+.btn:active { transform: scale(.98); }
+.btn.rosa { background: var(--rosa); color: #fff; }
+.btn.rosa:hover { background: #C03C6E; }
+.btn.lin { background: transparent; color: var(--ameixa); box-shadow: inset 0 0 0 2px var(--ameixa); }
+a:focus-visible, button:focus-visible { outline: 3px solid var(--rosa); outline-offset: 3px; }
+.salta { position: absolute; left: -999px; top: 8px; background: #fff; padding: 10px 14px; z-index: 10; }
+.salta:focus { left: 8px; }
+
+.topo { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 18px 0; }
+.topo .marca { font: italic 500 22px/1.1 "Espelho", serif; text-decoration: none; padding: 10px 0; max-width: 65%; }
+.topo a.tel { font-weight: 600; text-decoration: none; white-space: nowrap; min-height: 44px; display: inline-flex; align-items: center; }
+
+.heroi { padding: 20px 0 70px; }
+.heroi .grelha { display: grid; gap: 34px; }
+@media (min-width: 900px) { .heroi .grelha { grid-template-columns: minmax(0, 1.15fr) minmax(0, .85fr); gap: 72px; align-items: center; } .heroi { padding: 50px 0 140px; } .espelho { width: min(100%, 420px); } }
+.ramo { color: var(--apoio); font-weight: 600; margin: 0 0 16px; }
+.heroi h1 { font-size: clamp(48px, 13vw, 124px); line-height: .98; }
+.heroi .frase { font-size: 19px; max-width: 30ch; margin: 20px 0 28px; color: var(--apoio); }
+.acoes { display: flex; flex-wrap: wrap; gap: 12px; }
+.heroi [data-aberto] { margin: 24px 0 0; font-size: 15px; color: var(--apoio); }
+.heroi [data-aberto] b { color: var(--ameixa); }
+
+/* o espelho */
+.espelho { position: relative; width: min(100%, 300px); justify-self: center; aspect-ratio: 3 / 4; border-radius: 999px 999px 26px 26px; padding: 14px; background: #E2C9A9; }
+.espelho::before { content: ""; position: absolute; inset: 0; border-radius: inherit; background: conic-gradient(from 210deg, #CDAE86, #F3E2C5, #B8946A, #EAD3B0, #CDAE86); }
+.vidro { position: relative; height: 100%; border-radius: 999px 999px 16px 16px; overflow: hidden; background: linear-gradient(160deg, #FBF4F2, #EFDCD8 55%, #E6CCC7); display: grid; place-items: center; }
+.vidro .letra { font: italic 500 clamp(160px, 44vw, 300px)/1 "Espelho", serif; color: var(--rosa); opacity: .9; transform: translateY(-4%); }
+.vidro .reflexo { position: absolute; inset: -20% -60%; background: linear-gradient(105deg, transparent 40%, rgba(255,255,255,.75) 47%, rgba(255,255,255,.15) 52%, transparent 58%); animation: luz 5.5s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) { .vidro .reflexo { animation-duration: 12s; } }
+@keyframes luz { 0%, 30% { transform: translateX(-40%); } 70%, 100% { transform: translateX(40%); } }
+.vidro .nota-esp { position: absolute; left: 50%; bottom: 22px; transform: translateX(-50%); background: rgba(255,255,255,.82); padding: 8px 16px; border-radius: 999px; font-size: 15px; white-space: nowrap; }
+.vidro .nota-esp b { font-size: 17px; }
+.vidro .nota-esp .est { color: var(--rosa); letter-spacing: 1px; }
+
+section { padding: 80px 0; }
+@media (min-width: 900px) { section { padding: 140px 0; } }
+.cab h2 { font-size: clamp(42px, 9vw, 88px); line-height: 1; }
+.cab p { color: var(--apoio); margin: 14px 0 0; max-width: 46ch; }
+
+.servicos { background: var(--ameixa); color: #F7EDEA; }
+.servicos .cab p { color: #CDB7C1; }
+.lista { display: grid; gap: 12px; margin: 40px 0 0; padding: 0; list-style: none; }
+@media (min-width: 700px) { .lista { grid-template-columns: 1fr 1fr; } }
+@media (min-width: 1100px) { .lista { grid-template-columns: 1fr 1fr 1fr; } }
+.lista button { all: unset; box-sizing: border-box; width: 100%; cursor: pointer; display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 24px 22px; border-radius: 22px; background: #3A2330; transition: background .2s, transform .2s; }
+.lista button:hover { background: #48293A; }
+.lista button:focus-visible { outline: 3px solid var(--rosa-claro); outline-offset: 3px; }
+.lista .s { font: italic 500 clamp(26px, 6vw, 34px)/1.1 "Espelho", serif; }
+.lista .mais { flex: none; font: 600 14px "Texto", sans-serif; color: var(--rosa-claro); text-align: right; }
+.lista .s small { display: block; font: 600 15px "Texto", sans-serif; font-style: normal; color: #CDB7C1; margin-top: 4px; }
+
+.marcacao .grelha { display: grid; gap: 40px; }
+@media (min-width: 900px) { .marcacao .grelha { grid-template-columns: 1.1fr .9fr; gap: 80px; align-items: start; } }
+.passo { margin: 0 0 24px; border: 0; padding: 0; }
+.passo legend { font-weight: 600; margin: 0 0 10px; padding: 0; }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chips button { min-height: 46px; padding: 0 18px; border-radius: 999px; border: 0; background: var(--pele-2); color: var(--ameixa); font: 600 15px "Texto", sans-serif; cursor: pointer; transition: background .15s, color .15s; }
+.chips button[aria-pressed="true"] { background: var(--ameixa); color: #fff; }
+.chips.dias button { display: grid; place-items: center; min-width: 74px; padding: 8px 12px; border-radius: 18px; line-height: 1.15; }
+.chips.dias button small { font-size: 12px; font-weight: 400; opacity: .8; }
+.cartao { position: sticky; top: 24px; background: #fff; border-radius: 28px; padding: 30px 26px 26px; box-shadow: 0 30px 60px -30px rgba(42,22,33,.35); }
+.cartao .sobre { font-size: 13px; font-weight: 600; color: var(--apoio); margin: 0; }
+.cartao h3 { font-size: 34px; line-height: 1.05; margin: 6px 0 18px; }
+.cartao .linha-c { display: flex; justify-content: space-between; gap: 12px; padding: 12px 0; border-bottom: 2px solid var(--pele-2); }
+.cartao .linha-c span:first-child { color: var(--apoio); }
+.cartao .linha-c span:last-child { font-weight: 600; text-align: right; }
+.cartao.muda { animation: muda .45s cubic-bezier(.2,.9,.3,1.2); }
+@keyframes muda { 0% { transform: scale(.98); } 100% { transform: none; } }
+.cartao .btn { width: 100%; margin-top: 22px; }
+.cartao .ajuda { font-size: 14px; color: var(--apoio); text-align: center; margin: 10px 0 0; }
+
+.prova { background: var(--rosa-claro); }
+.prova .linha { display: grid; gap: 14px; }
+@media (min-width: 900px) { .prova .linha { grid-template-columns: auto 1fr; align-items: center; gap: 64px; } }
+.prova .grande { font: italic 500 clamp(120px, 34vw, 240px)/.9 "Espelho", serif; color: var(--rosa); }
+.prova p { font-size: 20px; margin: 10px 0 0; }
+
+.contactos .grelha { display: grid; gap: 40px; }
+@media (min-width: 900px) { .contactos .grelha { grid-template-columns: 1.1fr 1fr; gap: 72px; } }
+.contactos h2 { font-size: clamp(42px, 9vw, 80px); line-height: 1; margin: 0 0 20px; }
+.contactos .tel { display: inline-block; font: italic 500 clamp(36px, 9vw, 60px)/1 "Espelho", serif; text-decoration: none; margin: 0 0 16px; white-space: nowrap; }
+.contactos .morada { font-size: 19px; margin: 0 0 16px; max-width: 34ch; }
+.contactos [data-aberto] { margin: 0 0 22px; }
+.horario { list-style: none; margin: 0; padding: 0; font-variant-numeric: tabular-nums; }
+.horario li { display: flex; justify-content: space-between; gap: 16px; padding: 12px 0; border-bottom: 2px solid var(--pele-2); }
+.horario li.hoje { font-weight: 600; }
+.horario em { font-style: normal; font-size: 12px; background: var(--rosa); color: #fff; padding: 2px 8px; border-radius: 99px; margin-left: 6px; vertical-align: 2px; }
+footer { background: var(--ameixa); color: #CDB7C1; padding: 36px 0; font-size: 15px; }
+footer a { display: inline-block; padding: 12px 0; }
+.morada a { display: inline-block; padding: 4px 0; }
+footer .linha { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 10px 24px; }
+footer b { font: italic 500 24px "Espelho", serif; color: #fff; }
+</style>
+</head>
+<body>
+<a class="salta" href="#conteudo">Saltar para o conteúdo</a>
+<header class="env topo"><a class="marca" href="#" data-d="nome">Estética</a><a class="tel" href="#" data-acao="ligar" data-tel></a></header>
+<main id="conteudo">
+  <section class="heroi" style="padding-top:20px">
+    <div class="env grelha">
+      <div>
+        <p class="ramo"><span id="ramo">Estética</span><span data-se="freguesia"> · <span data-d="freguesia"></span></span></p>
+        <h1 id="titulo" data-d="nome">Estética</h1>
+        <p class="frase" id="frase">Escolha o tratamento e o dia. Confirmamos a hora por mensagem.</p>
+        <div class="acoes"><a class="btn rosa" href="#marcar">Marcar</a><a class="btn lin" href="#" data-acao="ligar">Ligar</a></div>
+        <p data-aberto></p>
+      </div>
+      <div class="espelho" aria-hidden="true"><div class="vidro"><span class="letra" id="letra">E</span><span class="reflexo"></span><span class="nota-esp" data-se-rating><span class="est">★</span> <b data-rating></b> no Google</span></div></div>
+    </div>
+  </section>
+
+  <section class="servicos" aria-labelledby="t-serv">
+    <div class="env">
+      <div class="cab" data-entra><h2 id="t-serv">Tratamentos</h2><p>Toque num para o juntar à marcação.</p></div>
+      <ul class="lista" id="lista" data-entra></ul>
+    </div>
+  </section>
+
+  <section data-se-fotos aria-labelledby="t-fotos" style="--raio-foto:22px">
+    <div class="env"><div class="cab" data-entra><h2 id="t-fotos">O estúdio</h2></div><div class="galeria-fotos" data-fotos></div></div>
+  </section>
+
+  <section class="marcacao" id="marcar" aria-labelledby="t-marc">
+    <div class="env grelha">
+      <div data-entra>
+        <div class="cab" style="margin-bottom:30px"><h2 id="t-marc">Marcar</h2><p>Escolha o que quer e quando dá jeito. A hora certa fica combinada na resposta.</p></div>
+        <fieldset class="passo"><legend>Tratamento</legend><div class="chips" id="c-serv"></div></fieldset>
+        <fieldset class="passo"><legend>Dia</legend><div class="chips dias" id="c-dia"></div></fieldset>
+        <fieldset class="passo"><legend>Altura do dia</legend><div class="chips" id="c-per"><button type="button" aria-pressed="true">Manhã</button><button type="button" aria-pressed="false">Tarde</button><button type="button" aria-pressed="false">Fim do dia</button></div></fieldset>
+      </div>
+      <div class="cartao" id="cartao" data-entra aria-live="polite">
+        <p class="sobre">A sua marcação</p>
+        <h3 data-d="nome"></h3>
+        <div class="linha-c"><span>Tratamento</span><span id="k-serv">Por escolher</span></div>
+        <div class="linha-c"><span>Dia</span><span id="k-dia">—</span></div>
+        <div class="linha-c"><span>Altura</span><span id="k-per">Manhã</span></div>
+        <button class="btn rosa" type="button" id="pedir">Pedir marcação</button>
+        <p class="ajuda" id="ajuda-pedir">Segue pelo WhatsApp, já escrito.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="prova" aria-labelledby="t-prova" data-se-rating>
+    <div class="env linha" data-entra>
+      <div class="grande" aria-hidden="true" data-rating></div>
+      <div><h2 id="t-prova" style="font-size:clamp(34px,6vw,56px);line-height:1.05">Nota no Google</h2><p>Média de <span data-n></span>. <a href="#" data-acao="mapa">Ler as avaliações</a></p></div>
+    </div>
+  </section>
+
+  <section class="contactos" aria-labelledby="t-cont">
+    <div class="env grelha">
+      <div data-entra>
+        <h2 id="t-cont">Venha cá</h2>
+        <a class="tel" href="#" data-acao="ligar" data-tel></a>
+        <p class="morada" data-se="morada"><a href="#" data-acao="mapa" data-d="morada"></a></p>
+        <p data-aberto></p>
+        <div class="acoes"><a class="btn rosa" href="#marcar">Marcar</a><a class="btn lin" href="#" data-acao="mapa">Como chegar</a></div>
+      </div>
+      <div data-entra data-se-horario><h3 style="font-size:32px;margin:0 0 8px">Horário</h3><ul class="horario" data-horario></ul></div>
+    </div>
+  </section>
+</main>
+<footer><div class="env linha"><b data-d="nome"></b><span>© <span data-ano></span> · <a href="https://www.livroreclamacoes.pt" target="_blank" rel="noopener">Livro de Reclamações</a></span></div></footer>
+<script>window.D = {"nome": "Salão Central", "nicho": "beleza", "sub": "cabeleireiro", "freguesia": "São Cosme", "morada": "Praça Manuel Guedes 270, 4420-086 S. Cosme", "maps": "https://www.google.com/maps/search/?api=1&query=Sal%C3%A3o%20Central&query_place_id=ChIJkYKefCJjJA0Rka8I8rEZ1LI", "tel": "224633070", "rating": 4.9, "n": 129, "horario": {"seg": [], "ter": [["09:00", "12:30"], ["14:30", "19:45"]], "qua": [["09:00", "12:30"], ["14:30", "19:45"]], "qui": [["09:00", "12:30"], ["14:30", "19:45"]], "sex": [["09:00", "12:30"], ["14:30", "19:45"]], "sab": [["08:30", "12:30"], ["14:30", "19:30"]], "dom": []}, "artigo": "o", "expira": "2026-11-10"};</script>
+<script>
+window.VERSOES = [
+  { nome: 'Rosa', tema: '#F7EDEA', amostra: ['#B03463', '#F2C9D6', '#2A1621'], cores: { '--pele': '#F7EDEA', '--pele-2': '#EEDDD8', '--ameixa': '#2A1621', '--apoio': '#6A5560', '--rosa': '#B03463', '--rosa-claro': '#F2C9D6' } },
+  { nome: 'Lilás', tema: '#F4EFF7', amostra: ['#7A4FB0', '#E3D4F2', '#221A2B'], cores: { '--pele': '#F4EFF7', '--pele-2': '#E7DDEF', '--ameixa': '#221A2B', '--apoio': '#62566E', '--rosa': '#7A4FB0', '--rosa-claro': '#E3D4F2' } },
+  { nome: 'Sálvia', tema: '#EFF3EE', amostra: ['#3F7A5E', '#CFE3D6', '#1C2A22'], cores: { '--pele': '#EFF3EE', '--pele-2': '#DEE7DC', '--ameixa': '#1C2A22', '--apoio': '#52635A', '--rosa': '#3F7A5E', '--rosa-claro': '#CFE3D6' } }
+];
+window.TIPO_SCHEMA = 'BeautySalon';
+window.PEDIDO_PADRAO = 'fazer uma marcação';
+window.EXEMPLO = { nome: 'Estúdio Marta Lima', nicho: 'beleza', sub: 'unhas', freguesia: 'Valbom', morada: 'Rua Exemplo, 45, 4420-000 Valbom', tel: '914000000', rating: 5, n: 98,
+  horario: { seg: [['10:00','19:00']], ter: [['10:00','19:00']], qua: [['10:00','19:00']], qui: [['10:00','20:00']], sex: [['10:00','20:00']], sab: [['09:30','17:00']], dom: [] }, expira: '2099-12-31' };
+var SUBS = {
+  unhas: { ramo: 'Unhas', s: ['Manicure', 'Verniz gel', 'Unhas de gel', 'Pedicure', 'Nail art', 'Remoção'] },
+  cabeleireiro: { ramo: 'Cabeleireiro', s: ['Corte', 'Brushing', 'Coloração', 'Madeixas', 'Tratamentos', 'Penteados'] },
+  estetica: { ramo: 'Estética', s: ['Limpeza de pele', 'Depilação', 'Sobrancelhas', 'Pestanas', 'Massagem', 'Manicure e pedicure'] }
+};
+window.aoArrancar = function (D) {
+  var S = SUBS[D.sub] || SUBS.estetica;
+  var servObj = JaEsta.servicos(S.s), serv = servObj.map(function (o) { return o.nome; });
+  if (!JaEsta.temWhats()) { document.getElementById('pedir').textContent = 'Ligar para marcar'; document.getElementById('ajuda-pedir').textContent = 'Marcações pelo telefone.'; }
+  document.getElementById('ramo').textContent = D.ramo || S.ramo;
+  if (D.frase) document.getElementById('frase').textContent = D.frase;
+  var nome = String(D.nome || '').replace(/^(est[úu]dio|sal[ãa]o|espa[çc]o|cabeleireir[ao]|instituto|cl[íi]nica)\s+(de\s+|da\s+|do\s+)?/i, '');
+  document.getElementById('letra').textContent = (nome.trim()[0] || 'E').toUpperCase();
+  JaEsta.ajustar(document.getElementById('titulo'), 124, 36);
+  var esc = { s: [], d: null, p: 'Manhã' };
+  var cartao = document.getElementById('cartao'), cs = document.getElementById('c-serv'), cd = document.getElementById('c-dia'), ul = document.getElementById('lista');
+  function atual(anima) {
+    document.getElementById('k-serv').textContent = esc.s.length ? JaEsta.lista(esc.s) : 'Por escolher';
+    document.getElementById('k-dia').textContent = esc.d ? esc.d.curto + (/Hoje|Amanhã/.test(esc.d.curto) ? '' : ', ' + esc.d.num) : '—';
+    document.getElementById('k-per').textContent = esc.p;
+    cs.querySelectorAll('button').forEach(function (b) { b.setAttribute('aria-pressed', esc.s.indexOf(b.textContent) > -1); });
+    ul.querySelectorAll('button').forEach(function (b) { var on = esc.s.indexOf(b.dataset.s) > -1; b.querySelector('.mais').textContent = on ? 'Na marcação' : 'Juntar'; });
+    if (anima) { cartao.classList.remove('muda'); void cartao.offsetWidth; cartao.classList.add('muda'); }
+  }
+  function alterna(s) { var i = esc.s.indexOf(s); if (i > -1) esc.s.splice(i, 1); else esc.s.push(s); atual(true); }
+  servObj.forEach(function (o) {
+    var s = o.nome, li = document.createElement('li'), b = document.createElement('button'); b.type = 'button'; b.dataset.s = s;
+    b.innerHTML = '<span class="s"></span><span class="mais">Juntar</span>'; b.querySelector('.s').textContent = s;
+    var pr = o.preco || (JaEsta.previa ? 'preço a acertar' : ''); if (pr) { var sm = document.createElement('small'); sm.textContent = pr; b.querySelector('.s').appendChild(sm); }
+    b.onclick = function () { alterna(s); }; li.appendChild(b); ul.appendChild(li);
+    var c = document.createElement('button'); c.type = 'button'; c.textContent = s; c.setAttribute('aria-pressed', 'false'); c.onclick = function () { alterna(s); }; cs.appendChild(c);
+  });
+  JaEsta.diasAbertos(6).forEach(function (d) {
+    var b = document.createElement('button'); b.type = 'button'; b.innerHTML = d.curto + '<small>' + d.num + '</small>'; b.setAttribute('aria-pressed', 'false'); b.setAttribute('aria-label', d.curto + ', dia ' + d.num);
+    b.onclick = function () { esc.d = d; cd.querySelectorAll('button').forEach(function (x) { x.setAttribute('aria-pressed', x === b); }); atual(true); };
+    cd.appendChild(b);
+  });
+  document.querySelectorAll('#c-per button').forEach(function (b) { b.onclick = function () { esc.p = b.textContent; document.querySelectorAll('#c-per button').forEach(function (x) { x.setAttribute('aria-pressed', x === b); }); atual(true); }; });
+  document.getElementById('pedir').onclick = function () {
+    if (!esc.s.length) { JaEsta.avisar(this, 'Escolha primeiro o tratamento.'); cs.closest('fieldset').scrollIntoView({ behavior: 'smooth', block: 'center' }); return; }
+    var msg = 'Olá! Queria marcar ' + JaEsta.lista(esc.s).toLowerCase() + (esc.d ? ' ' + esc.d.frase : '') + ', de preferência ' + (esc.p === 'Fim do dia' ? 'ao fim do dia' : 'de ' + esc.p.toLowerCase()) + '. Que horas têm?';
+    JaEsta.executar('whatsapp', msg);
+  };
+  atual(false);
+};
+</script>
+<script src="../../m/demo.js"></script>
+</body>
+</html>

@@ -1,0 +1,204 @@
+--- https://jaesta.2-31-13-85.sslip.io/p/star-garage/ -> 200 1.172059s 20911B
+HTTP/2 200 
+cache-control: no-cache
+content-security-policy: default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; form-action 'self'; frame-ancestors 'none'; base-uri 'none'
+content-type: text/html; charset=utf-8
+permissions-policy: geolocation=(), camera=(), microphone=()
+referrer-policy: strict-origin-when-cross-origin
+strict-transport-security: max-age=31536000
+x-content-type-options: nosniff
+x-robots-tag: noindex, nofollow
+<!doctype html>
+<html lang="pt-PT">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#141619">
+<meta name="color-scheme" content="dark">
+<title>Star Garage</title>
+<link rel="icon" href="../../m/favicon.svg" type="image/svg+xml">
+<meta property="og:type" content="website">
+<meta property="og:locale" content="pt_PT">
+<meta property="og:title" content="Pré-visualização do site: Star Garage">
+<meta property="og:description" content="Feita por Dinis Sousa, com o já está. Toque nos botões como se fosse cliente.">
+<meta property="og:image" content="https://jaesta.2-31-13-85.sslip.io/m/og-oficina.jpg">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="apple-touch-icon" href="../../apple-touch-icon.png">
+<link rel="preload" href="../../m/fontes/heros-bolditalic.woff" as="font" type="font/woff" crossorigin>
+<link rel="stylesheet" href="../../m/demo.css">
+<style>
+@font-face { font-family: "Pista"; src: url("../../m/fontes/heros-bolditalic.woff") format("woff"); font-weight: 700; font-style: italic; font-display: swap; }
+@font-face { font-family: "Placa"; src: url("../../m/fontes/heros-bold.woff") format("woff"); font-weight: 700; font-display: swap; }
+@font-face { font-family: "Texto"; src: url("../../m/fontes/inter-400.woff") format("woff"); font-weight: 400; font-display: swap; }
+@font-face { font-family: "Tex
+--- https://jaesta.2-31-13-85.sslip.io/p/salao-central/ -> 200 0.731864s 20443B
+HTTP/2 200 
+cache-control: no-cache
+content-security-policy: default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; form-action 'self'; frame-ancestors 'none'; base-uri 'none'
+content-type: text/html; charset=utf-8
+permissions-policy: geolocation=(), camera=(), microphone=()
+referrer-policy: strict-origin-when-cross-origin
+strict-transport-security: max-age=31536000
+x-content-type-options: nosniff
+x-robots-tag: noindex, nofollow
+<!doctype html>
+<html lang="pt-PT">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#F7EDEA">
+<meta name="color-scheme" content="light">
+<title>Salão Central</title>
+<link rel="icon" href="../../m/favicon.svg" type="image/svg+xml">
+<meta property="og:type" content="website">
+<meta property="og:locale" content="pt_PT">
+<meta property="og:title" content="Pré-visualização do site: Salão Central">
+<meta property="og:description" content="Feita por Dinis Sousa, com o já está. Toque nos botões como se fosse cliente.">
+<meta property="og:image" content="https://jaesta.2-31-13-85.sslip.io/m/og-beleza.jpg">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="apple-touch-icon" href="../../apple-touch-icon.png">
+<link rel="preload" href="../../m/fontes/lora-italico.woff" as="font" type="font/woff" crossorigin>
+<link rel="stylesheet" href="../../m/demo.css">
+<style>
+@font-face { font-family: "Espelho"; src: url("../../m/fontes/lora-italico.woff") format("woff"); font-weight: 400 700; font-style: italic; font-display: swap; }
+@font-face { font-family: "Texto"; src: url("../../m/fontes/inter-400.woff") format("woff"); font-weight: 400; font-display: swap; }
+@font-face { font-family: "Texto"; src: url("../../m/fontes/inter-600.woff") format("woff"); font-weight: 600; font-display: swap; }
+:root { --pele: #F7EDEA; --
+--- https://jaesta.2-31-13-85.sslip.io/p/lista.json -> 200 0.544149s 8239B
+HTTP/2 200 
+cache-control: no-cache
+content-security-policy: default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; form-action 'self'; frame-ancestors 'none'; base-uri 'none'
+content-type: application/json
+permissions-policy: geolocation=(), camera=(), microphone=()
+referrer-policy: strict-origin-when-cross-origin
+strict-transport-security: max-age=31536000
+x-content-type-options: nosniff
+x-robots-tag: noindex, nofollow
+[
+ {
+  "nome": "Barbearia e Tattoo Asgard",
+  "pasta": "barbearia-e-tattoo-asgard",
+  "nicho": "barbearia",
+  "sub": null,
+  "freguesia": "Rio Tinto",
+  "tel": "913852587",
+  "rating": 4.9,
+  "n": 763,
+  "morada": "Av. Dr. Domingos Gonçalves de Sá 286, 4435-213 Rio Tinto",
+  "maps": "https://www.google.com/maps/search/?api=1&query=Barbearia%20e%20Tattoo%20Asgard&query_place_id=ChIJNY22MhdjJA0RJrOWsajrBiY",
+  "expira": "2026-11-10",
+  "site_atual": "",
+  "tipo_empresa": ""
+ },
+ {
+  "nome": "Bl3ss3d BarberShop 777",
+  "pasta": "bl3ss3d-barbershop-777",
+  "nicho": "barbearia",
+  "sub": null,
+  "freguesia": "Rio Tinto",
+  "tel": "914366715",
+  "rating": 5.0,
+  "n": 153,
+  "morada": "R. Boavista 600, 4435-483 Rio Tinto",
+  "maps": "https://www.google.com/maps/search/?api=1&query=Bl3ss3d%20BarberShop%20777&query_place_id=ChIJFwuktj5jJA0Ro7QZdDV3ORU",
+  "expira": "2026-11-10",
+  "site_atual": "",
+  "tipo_empresa": ""
+ },
+ {
+  "nome": "The Sousa Barber",
+  "pasta": "the-sousa-barber",
+  "nicho": "barbearia",
+  "sub": null,
+  "freguesia": "Rio Tinto",
+  "tel": "912333750",
+  "rating": 4.7,
+  "n": 86,
+  "morada": "R. Nossa Sra. Amparo 99, 4435-350 Rio Tinto",
+  "maps": "https://www.google.com/maps/search/?api=1&query=The%20Sousa%20Barber&query_place_id=ChIJs7Z29zxjJA0RBXIGbzcLgMQ",
+  "expira": "2026-11-10",
+  "site_atual": "",
+  "tipo_empresa": ""
+ },
+ {
+  "nome": "Men's Day BarberShop",
+  "pasta": "men-s-day-barbershop",
+  "nicho": "barbearia",
+  "sub": null,
+  "freguesia": "Rio Tin
+--- https://jaesta.2-31-13-85.sslip.io/criar/ -> 200 0.602334s 19381B
+HTTP/2 200 
+cache-control: no-cache
+content-security-policy: default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; form-action 'self'; frame-ancestors 'none'; base-uri 'none'
+content-type: text/html; charset=utf-8
+permissions-policy: geolocation=(), camera=(), microphone=()
+referrer-policy: strict-origin-when-cross-origin
+strict-transport-security: max-age=31536000
+x-content-type-options: nosniff
+x-robots-tag: noindex, nofollow
+<!doctype html>
+<html lang="pt-PT">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#FAFAF7">
+<title>Criar pré-visualização · já está</title>
+<link rel="icon" href="../img/favicon.svg" type="image/svg+xml">
+<style>
+@font-face { font-family: "Archivo"; src: url("../fontes/archivo.woff") format("woff"); font-weight: 100 900; font-stretch: 62% 125%; font-display: swap; }
+:root { --papel: #FAFAF7; --papel-2: #EFEFE8; --tinta: #101114; --apoio: #55565E; --azul: #2B3FE0; --verde: #1F8A4C; --verm: #B42318; }
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--papel); color: var(--tinta); font: 400 17px/1.5 "Archivo", system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+.env { width: min(640px, 100% - 32px); margin: 0 auto; padding: 18px 0 120px; }
+header { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 18px; }
+header img { height: 26px; }
+header a { font-weight: 600; font-size: 15px; padding: 12px 4px; }
+h1 { font-size: 34px; line-height: 1; letter-spacing: -.03em; font-weight: 800; font-stretch: 92%; margin: 8px 0 6px; }
+.intro { color: var(--apoio); margin: 0 0 22px; }
+h2 { font-size: 22px; letter-spacing: -.02em; margin: 30px 0 12px; }
+label, .rot { display: block; font-weight: 600; margin: 0 0 6px; font-size: 15px; }
+.campo { margin: 0 0 16px; }
+.campo 
+--- https://jaesta.2-31-13-85.sslip.io/m/demo.js -> 200 0.545842s 26402B
+HTTP/2 200 
+cache-control: no-cache
+content-security-policy: default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; form-action 'self'; frame-ancestors 'none'; base-uri 'none'
+content-type: text/javascript; charset=utf-8
+permissions-policy: geolocation=(), camera=(), microphone=()
+referrer-policy: strict-origin-when-cross-origin
+strict-transport-security: max-age=31536000
+x-content-type-options: nosniff
+x-robots-tag: noindex, nofollow
+/* já está — motor das pré-visualizações.
+   Lê os dados do negócio (window.D, ou #d=<base64> no endereço), preenche a página,
+   calcula «aberto agora» na hora de Portugal e, em modo pré-visualização, mostra a barra
+   «já está» e o que cada botão faria no site a sério, em vez de o executar. */
+(function () {
+  'use strict';
+  var BASE = (function () { var c = document.currentScript; return c && c.src ? c.src.replace(/[^/]*$/, '') : '/m/'; })();
+  var DINIS_WA = '351913488258';
+  var DINIS_TEL = '+351913488258';
+  var PRECO = 149;            // preço de lançamento (5 primeiros negócios)
+  var PRECO_DEPOIS = 249;     // preço depois dos 5 primeiros
+  var RENOVACAO = 96;         // por ano, a partir do 2.º ano
+  var DIAS = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sab'];
+  var NOMES_DIA = { seg: 'Segunda', ter: 'Terça', qua: 'Quarta', qui: 'Quinta', sex: 'Sexta', sab: 'Sábado', dom: 'Domingo' };
+  var ORDEM = ['seg', 'ter', 'qua', 'qui', 'sex', 'sab', 'dom'];
+
+  function lerHash() {
+    var m = /[#&]d=([^&]+)/.exec(location.hash || '');
+    if (!m) return null;
+    try {
+      var b = m[1].replace(/-/g, '+').replace(/_/g, '/');
+      while (b.length % 4) b += '=';
+      var bin = atob(b), bytes = new Uint8Array(bin.length);
+      for (var i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+      return JSON.parse(new TextDecoder().decode(bytes));
+    } catch (e) { return null; }
+  }
+
+  var D = window.D || lerHash() || window.EXEMPLO || {};
+

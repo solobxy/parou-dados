@@ -1,0 +1,273 @@
+<!doctype html>
+<html lang="pt-PT">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#FAFAF7">
+<title>Criar pré-visualização · já está</title>
+<link rel="icon" href="../img/favicon.svg" type="image/svg+xml">
+<style>
+@font-face { font-family: "Archivo"; src: url("../fontes/archivo.woff") format("woff"); font-weight: 100 900; font-stretch: 62% 125%; font-display: swap; }
+:root { --papel: #FAFAF7; --papel-2: #EFEFE8; --tinta: #101114; --apoio: #55565E; --azul: #2B3FE0; --verde: #1F8A4C; --verm: #B42318; }
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--papel); color: var(--tinta); font: 400 17px/1.5 "Archivo", system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+.env { width: min(640px, 100% - 32px); margin: 0 auto; padding: 18px 0 120px; }
+header { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 18px; }
+header img { height: 26px; }
+header a { font-weight: 600; font-size: 15px; padding: 12px 4px; }
+h1 { font-size: 34px; line-height: 1; letter-spacing: -.03em; font-weight: 800; font-stretch: 92%; margin: 8px 0 6px; }
+.intro { color: var(--apoio); margin: 0 0 22px; }
+h2 { font-size: 22px; letter-spacing: -.02em; margin: 30px 0 12px; }
+label, .rot { display: block; font-weight: 600; margin: 0 0 6px; font-size: 15px; }
+.campo { margin: 0 0 16px; }
+.campo small { display: block; color: var(--apoio); font-size: 13px; margin-top: 4px; }
+input, select, textarea { width: 100%; min-height: 50px; border: 2px solid #D6D6CF; border-radius: 12px; padding: 10px 12px; font: 400 17px "Archivo", sans-serif; color: var(--tinta); background: #fff; }
+textarea { min-height: 110px; resize: vertical; }
+input:focus, select:focus, textarea:focus { outline: none; border-color: var(--azul); }
+.duas { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.ramos { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.ramos button { min-height: 64px; border-radius: 14px; border: 2px solid #D6D6CF; background: #fff; font: 700 16px "Archivo", sans-serif; color: var(--tinta); cursor: pointer; }
+.ramos button[aria-pressed="true"] { border-color: var(--azul); background: #EEF0FF; color: var(--azul); }
+.dias { display: grid; gap: 8px; }
+.dia { display: grid; grid-template-columns: 74px 1fr; gap: 8px; align-items: center; }
+.dia b { font-size: 15px; }
+.dia input { min-height: 44px; font-size: 16px; }
+.btn { display: flex; align-items: center; justify-content: center; width: 100%; min-height: 56px; border-radius: 999px; border: 0; background: var(--azul); color: #fff; font: 700 17px "Archivo", sans-serif; text-decoration: none; cursor: pointer; margin-top: 10px; }
+.btn.sec { background: var(--papel-2); color: var(--tinta); }
+.btn.verde { background: var(--verde); }
+.resultado { margin-top: 26px; padding: 20px; border-radius: 20px; background: #fff; border: 2px solid var(--azul); }
+.resultado[hidden] { display: none; }
+.resultado .link { font-size: 13px; color: var(--apoio); overflow-wrap: anywhere; margin: 8px 0 4px; max-height: 3.2em; overflow: hidden; }
+.aviso { font-size: 14px; color: var(--apoio); margin: 12px 0 0; }
+.erro { color: var(--verm); font-weight: 600; font-size: 15px; margin: 8px 0 0; }
+.lista-feitas { list-style: none; padding: 0; margin: 0; display: grid; gap: 10px; }
+.lista-feitas li { background: #fff; border-radius: 16px; padding: 14px 16px; border: 2px solid var(--papel-2); }
+.lista-feitas .topo-l { display: flex; justify-content: space-between; gap: 10px; align-items: baseline; }
+.lista-feitas .topo-l b { font-size: 17px; }
+.lista-feitas small { color: var(--apoio); }
+.lista-feitas .det { display: block; margin-top: 2px; }
+.estado { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+.estado button, .estado a { min-height: 40px; padding: 0 12px; border-radius: 999px; border: 0; background: var(--papel-2); font: 600 14px "Archivo", sans-serif; color: var(--tinta); cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; }
+.estado button[aria-pressed="true"] { background: var(--tinta); color: #fff; }
+.vazio { color: var(--apoio); }
+details { margin-top: 8px; }
+summary { cursor: pointer; font-weight: 600; color: var(--azul); min-height: 44px; display: flex; align-items: center; }
+</style>
+</head>
+<body>
+<div class="env">
+  <header><img src="../img/jaesta-logo.svg" alt="já está" width="90" height="28"><a href="../">Site</a></header>
+  <h1>Nova pré-visualização</h1>
+  <p class="intro">Copie os dados do negócio do Google Maps. Em 1 minuto tem o link pronto para mostrar.</p>
+
+  <form id="f" novalidate>
+    <div class="campo"><span class="rot">Ramo</span>
+      <div class="ramos" id="ramos">
+        <button type="button" data-t="barbearia" aria-pressed="true">Barbearia</button>
+        <button type="button" data-t="beleza" aria-pressed="false">Estética e unhas</button>
+        <button type="button" data-t="obras" aria-pressed="false">Obras</button>
+        <button type="button" data-t="oficina" aria-pressed="false">Oficina</button>
+      </div>
+    </div>
+    <div class="campo" id="sub-campo" hidden><label for="sub">Especialidade</label><select id="sub"></select></div>
+    <div class="campo"><label for="nome">Nome do negócio</label><input id="nome" required autocomplete="off" placeholder="Ex.: Barbearia do Zé"></div>
+    <div class="duas">
+      <div class="campo"><label for="tel">Telefone</label><input id="tel" type="tel" inputmode="tel" placeholder="912 345 678"></div>
+      <div class="campo"><label for="wa">WhatsApp <small style="display:inline">(se outro)</small></label><input id="wa" type="tel" inputmode="tel" placeholder="telemóvel"></div>
+    </div>
+    <p class="erro" id="aviso-fixo" hidden style="color:#8A5A00">Este número é fixo. Peça ao dono um telemóvel com WhatsApp: assim as marcações e os pedidos chegam escritos. Sem ele, os botões ligam para o fixo.</p>
+    <div class="campo"><label for="freg">Localidade</label><input id="freg" placeholder="Ex.: Rio Tinto"></div>
+    <div class="campo"><label for="morada">Morada</label><input id="morada" autocomplete="off" placeholder="Rua, número, código postal e localidade"></div>
+    <div class="duas">
+      <div class="campo"><label for="rating">Nota no Google</label><input id="rating" inputmode="decimal" placeholder="4,8"></div>
+      <div class="campo"><label for="n">N.º de avaliações</label><input id="n" inputmode="numeric" placeholder="120"></div>
+    </div>
+    <div class="campo"><label for="maps">Link do Google Maps <small style="display:inline">(opcional)</small></label><input id="maps" type="url" inputmode="url" placeholder="https://maps.app.goo.gl/…"></div>
+
+    <h2>Horário</h2>
+    <div class="campo"><label for="colar">Cole aqui o horário do Google Maps</label><textarea id="colar" placeholder="segunda-feira  09:00–13:00, 14:30–19:00&#10;terça-feira  09:00–19:00&#10;…&#10;domingo  Encerrado"></textarea><small>Ou escreva em cada dia, abaixo. Vazio ou «fechado» = fechado. Dois períodos: 9-13, 14:30-19.</small></div>
+    <div class="dias" id="dias"></div>
+
+    <details><summary>Serviços e frase (opcional)</summary>
+      <div class="campo" style="margin-top:8px"><label for="serv">Serviços, um por linha</label><textarea id="serv" placeholder="Corte | 12&#10;Barba | 8&#10;(vazio = lista habitual do ramo)"></textarea><small>Com preço: escreva «Corte | 12». Sem preço: só o nome.</small></div>
+      <div class="campo"><label for="artigo">Como se diz o nome numa frase</label><select id="artigo"><option value="">Automático</option><option value="a">da (a Barbearia…)</option><option value="o">do (o Estúdio…)</option><option value="as">das (as Remodelações…)</option><option value="os">dos</option><option value="-">de (nome próprio)</option></select></div>
+      <div class="campo"><label for="frase">Frase do topo</label><input id="frase" placeholder="Fica a frase habitual do ramo se deixar vazio"></div>
+    </details>
+    <div class="campo" style="margin-top:14px"><label for="dias-val">A pré-visualização fica disponível durante</label><select id="dias-val"><option value="7">7 dias</option><option value="10" selected>10 dias</option><option value="14">14 dias</option></select></div>
+    <p class="erro" id="erro" hidden></p>
+    <button class="btn" type="submit">Criar pré-visualização</button>
+  </form>
+
+  <div class="resultado" id="res" hidden>
+    <b id="res-nome"></b>
+    <p class="link" id="res-link"></p>
+    <a class="btn" id="abrir" href="#" target="_blank" rel="noopener">Abrir pré-visualização</a>
+    <button class="btn sec" type="button" id="copiar">Copiar link</button>
+    <button class="btn sec" type="button" id="partilhar" hidden>Partilhar</button>
+    <a class="btn verde" id="wa-dono" href="#" target="_blank" rel="noopener">Enviar ao dono pelo WhatsApp</a>
+    <p class="aviso"><b>Só envie depois de o dono aceitar receber</b> (por exemplo, numa visita ou numa chamada). Mensagens a frio pelo WhatsApp podem bloquear o seu número.</p>
+  </div>
+
+  <h2>Prontas a mostrar</h2>
+  <p class="intro" style="margin-bottom:12px">Negócios da zona com boa nota no Google. Antes de ir, confirma no Maps que não têm botão «Website».</p>
+  <ul class="lista-feitas" id="prontas"></ul>
+  <p class="vazio" id="prontas-vazio">A carregar…</p>
+
+  <h2>Feitas neste telemóvel</h2>
+  <ul class="lista-feitas" id="feitas"></ul>
+  <p class="vazio" id="vazio">Ainda nenhuma.</p>
+</div>
+<script>
+(function () {
+  'use strict';
+  var BASE = location.href.replace(/criar\/.*$/, '');
+  var SUBS = {
+    beleza: [['estetica', 'Estética'], ['unhas', 'Unhas'], ['cabeleireiro', 'Cabeleireiro']],
+    obras: [['remodelacoes', 'Remodelações'], ['canalizador', 'Canalizador'], ['eletricista', 'Eletricista'], ['pintor', 'Pintura'], ['construcao', 'Construção civil']],
+    oficina: [['mecanica', 'Mecânica'], ['chapa', 'Chapa e pintura']]
+  };
+  var DIAS = [['seg', 'Segunda'], ['ter', 'Terça'], ['qua', 'Quarta'], ['qui', 'Quinta'], ['sex', 'Sexta'], ['sab', 'Sábado'], ['dom', 'Domingo']];
+  var tipo = 'barbearia';
+  try { localStorage.setItem('jaesta-dinis', '1'); } catch (e) {}
+  function verFixo() { var t = soDig($('tel').value), w = soDig($('wa').value); $('aviso-fixo').hidden = !(t.length >= 9 && t.slice(-9)[0] === '2' && !w); }
+  var $ = function (id) { return document.getElementById(id); };
+
+  document.querySelectorAll('#ramos button').forEach(function (b) {
+    b.onclick = function () {
+      tipo = b.dataset.t;
+      document.querySelectorAll('#ramos button').forEach(function (x) { x.setAttribute('aria-pressed', x === b); });
+      var s = SUBS[tipo];
+      $('sub-campo').hidden = !s;
+      $('sub').innerHTML = s ? s.map(function (o) { return '<option value="' + o[0] + '">' + o[1] + '</option>'; }).join('') : '';
+    };
+  });
+  $('dias').innerHTML = DIAS.map(function (d) { return '<div class="dia"><b>' + d[1] + '</b><input id="h-' + d[0] + '" placeholder="fechado" autocomplete="off"></div>'; }).join('');
+
+  // horário: aceita o texto do Google Maps e formas soltas («9-13, 14:30-19», «09h00–19h00», «Encerrado»)
+  function normHora(h) {
+    var m = /^(\d{1,2})(?:[:h.](\d{2}))?$/.exec(h.trim()); if (!m) return null;
+    var hh = +m[1], mm = m[2] ? +m[2] : 0; if (hh > 24 || mm > 59) return null;
+    return String(hh).padStart(2, '0') + ':' + String(mm).padStart(2, '0');
+  }
+  function lerBlocos(txt) {
+    txt = String(txt || '').toLowerCase();
+    if (!txt.trim() || /fechad|encerrad/.test(txt)) return [];
+    if (/24 horas|aberto 24/.test(txt)) return [['00:00', '23:59']];
+    var out = [], re = /(\d{1,2}(?:[:h.]\d{2})?)\s*h?\s*(?:–|-|—|às|a|até)\s*(\d{1,2}(?:[:h.]\d{2})?)/g, m;
+    while ((m = re.exec(txt))) { var a = normHora(m[1]), b = normHora(m[2]); if (a && b) out.push([a, b]); }
+    return out;
+  }
+  function fmt(bl) { return bl.map(function (b) { return b[0].replace(/^0/, '').replace(':00', '') + '-' + b[1].replace(/^0/, '').replace(':00', ''); }).join(', '); }
+  $('colar').addEventListener('input', function () {
+    var linhas = this.value.split(/\n|(?=segunda|terça|terca|quarta|quinta|sexta|sábado|sabado|domingo)/i);
+    var mapa = { segunda: 'seg', 'terça': 'ter', terca: 'ter', quarta: 'qua', quinta: 'qui', sexta: 'sex', 'sábado': 'sab', sabado: 'sab', domingo: 'dom' };
+    var ultimo = null;
+    linhas.forEach(function (l) {
+      var m = /(segunda|terça|terca|quarta|quinta|sexta|sábado|sabado|domingo)/i.exec(l);
+      var dia = m ? mapa[m[1].toLowerCase()] : ultimo;
+      if (!dia) return;
+      var resto = m ? l.slice(m.index + m[0].length) : l;
+      var bl = lerBlocos(resto);
+      var campo = $('h-' + dia);
+      if (m) campo.value = /fechad|encerrad/i.test(resto) ? 'fechado' : fmt(bl);
+      else if (bl.length) campo.value = [campo.value, fmt(bl)].filter(Boolean).join(', ');
+      ultimo = dia;
+    });
+  });
+
+  function b64(obj) {
+    var bytes = new TextEncoder().encode(JSON.stringify(obj)), bin = '';
+    bytes.forEach(function (b) { bin += String.fromCharCode(b); });
+    return btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  }
+  function soDig(t) { return String(t || '').replace(/\D/g, ''); }
+  function guardadas() { try { return JSON.parse(localStorage.getItem('jaesta-feitas') || '[]'); } catch (e) { return []; } }
+  function guardar(l) { try { localStorage.setItem('jaesta-feitas', JSON.stringify(l.slice(0, 80))); } catch (e) {} }
+  var ESTADOS = ['Mostrado', 'Disse que sim', 'Não', 'Voltar a falar'];
+  function desenharLista() {
+    var l = guardadas(), ul = $('feitas');
+    $('vazio').hidden = !!l.length;
+    ul.innerHTML = '';
+    l.forEach(function (it, i) {
+      var li = document.createElement('li');
+      li.innerHTML = '<div class="topo-l"><b></b><small></small></div><div class="estado"></div>';
+      li.querySelector('b').textContent = it.nome;
+      li.querySelector('small').textContent = it.data;
+      var est = li.querySelector('.estado');
+      var abrir = document.createElement('a'); abrir.href = it.link; abrir.target = '_blank'; abrir.rel = 'noopener'; abrir.textContent = 'Abrir'; est.appendChild(abrir);
+      ESTADOS.forEach(function (e) {
+        var b = document.createElement('button'); b.type = 'button'; b.textContent = e; b.setAttribute('aria-pressed', it.estado === e);
+        b.onclick = function () { var l2 = guardadas(); l2[i].estado = l2[i].estado === e ? '' : e; guardar(l2); desenharLista(); };
+        est.appendChild(b);
+      });
+      ul.appendChild(li);
+    });
+  }
+  desenharLista();
+  // pré-visualizações já feitas (lista em ../p/lista.json)
+  var RAMO = { barbearia: 'Barbearia', beleza: 'Estética e unhas', obras: 'Obras', oficina: 'Oficina' };
+  fetch('../p/lista.json', { cache: 'no-cache' }).then(function (r) { return r.ok ? r.json() : []; }).then(function (l) {
+    var ul = $('prontas'); $('prontas-vazio').hidden = !!l.length; $('prontas-vazio').textContent = 'Ainda nenhuma.';
+    l.forEach(function (it) {
+      var li = document.createElement('li');
+      li.innerHTML = '<div class="topo-l"><b></b><small></small></div><small class="det"></small><div class="estado"></div>';
+      li.querySelector('b').textContent = it.nome;
+      li.querySelector('.topo-l small').textContent = (it.rating ? Number(it.rating).toFixed(1).replace('.', ',') + ' ★ · ' + it.n : '');
+      var sociedade = /\b(lda|unipessoal|s\.?a\.?)\b/i.test(it.nome);
+      li.querySelector('.det').textContent = RAMO[it.nicho] + ' · ' + it.freguesia + ' · ' + (sociedade ? 'empresa: pode ligar' : 'visitar em pessoa');
+      var est = li.querySelector('.estado');
+      [['Abrir', '../p/' + it.pasta + '/'], ['Maps', it.maps], ['Ligar', 'tel:+351' + it.tel]].forEach(function (x) {
+        if (x[0] === 'Ligar' && !sociedade) return;
+        var a = document.createElement('a'); a.textContent = x[0]; a.href = x[1]; if (x[0] !== 'Ligar') { a.target = '_blank'; a.rel = 'noopener'; } est.appendChild(a);
+      });
+      ul.appendChild(li);
+    });
+  }).catch(function () { $('prontas-vazio').textContent = 'Sem lista por agora.'; });
+  $('tel').addEventListener('input', verFixo); $('wa').addEventListener('input', verFixo);
+
+  $('f').addEventListener('submit', function (ev) {
+    ev.preventDefault();
+    var erro = $('erro'); erro.hidden = true;
+    var nome = $('nome').value.trim(), tel = soDig($('tel').value);
+    if (!nome) { erro.textContent = 'Falta o nome do negócio.'; erro.hidden = false; $('nome').focus(); return; }
+    if (tel.length < 9) { erro.textContent = 'Falta o telefone (9 algarismos).'; erro.hidden = false; $('tel').focus(); return; }
+    var horario = {}, algum = false;
+    DIAS.forEach(function (d) { var bl = lerBlocos($('h-' + d[0]).value); horario[d[0]] = bl; if (bl.length) algum = true; });
+    var r = parseFloat(String($('rating').value).replace(',', '.'));
+    var exp = new Date(Date.now() + (+$('dias-val').value) * 864e5);
+    var D = {
+      nome: nome, nicho: tipo, sub: SUBS[tipo] ? $('sub').value : undefined,
+      freguesia: $('freg').value.trim() || undefined, morada: $('morada').value.trim() || undefined,
+      tel: tel.slice(-9), wa: soDig($('wa').value).slice(-9) || undefined,
+      rating: r > 0 && r <= 5 ? Math.round(r * 10) / 10 : undefined, n: parseInt(soDig($('n').value), 10) || undefined,
+      maps: $('maps').value.trim() || undefined,
+      horario: algum ? horario : undefined,
+      servicos: $('serv').value.split('\n').map(function (s) { return s.trim(); }).filter(Boolean),
+      frase: $('frase').value.trim() || undefined,
+      artigo: $('artigo').value ? ($('artigo').value === '-' ? '' : $('artigo').value) : undefined,
+      expira: exp.toISOString().slice(0, 10)
+    };
+    if (!D.servicos.length) delete D.servicos;
+    Object.keys(D).forEach(function (k) { if (D[k] === undefined) delete D[k]; });
+    var link = BASE + 'm/' + tipo + '.html#d=' + b64(D);
+    $('res').hidden = false;
+    $('res-nome').textContent = nome;
+    $('res-link').textContent = link;
+    $('abrir').href = link;
+    var dono = D.wa || D.tel;
+    var msg = 'Olá! Sou o Dinis, como falámos. Aqui está a pré-visualização do site que fiz para o seu negócio: ' + link + '\n\nToque nos botões como se fosse um cliente e experimente as cores. Se gostar, fica no ar em 48 horas.';
+    $('wa-dono').href = 'https://wa.me/351' + dono + '?text=' + encodeURIComponent(msg);
+    $('copiar').onclick = function () {
+      var b = this;
+      (navigator.clipboard ? navigator.clipboard.writeText(link) : Promise.reject()).then(function () { b.textContent = 'Link copiado'; setTimeout(function () { b.textContent = 'Copiar link'; }, 1800); })
+        .catch(function () { window.prompt('Copie o link:', link); });
+    };
+    if (navigator.share) { $('partilhar').hidden = false; $('partilhar').onclick = function () { navigator.share({ title: 'Pré-visualização do site: ' + nome, text: 'Pré-visualização do site: ' + nome, url: link }).catch(function () {}); }; }
+    var l = guardadas(); l.unshift({ nome: nome, link: link, data: new Date().toLocaleDateString('pt-PT'), estado: '' }); guardar(l); desenharLista();
+    $('res').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+})();
+</script>
+</body>
+</html>
