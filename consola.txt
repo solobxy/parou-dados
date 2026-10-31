@@ -1,0 +1,14 @@
+##### motor: webkit
+TOTAL com problemas: 0 de 6
+TOTAL com problemas: 0 de 12
+TOTAL com problemas: 0 de 18
+TOTAL com problemas: 0 de 12
+TOTAL com problemas: 0 de 30
+##### motor: chromium
+TOTAL com problemas: 0 de 9
+FALHA index.html 320 1.5 | 1 texto(s) em cima de outro
+      sobre: «6–8 semanas» × «2–3 meses» (24px)
+TOTAL com problemas: 1 de 18
+TOTAL com problemas: 0 de 27
+TOTAL com problemas: 0 de 18
+TOTAL com problemas: 0 de 45
