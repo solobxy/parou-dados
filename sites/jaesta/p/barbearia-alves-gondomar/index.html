@@ -1,0 +1,280 @@
+<!doctype html>
+<html lang="pt-PT">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#0E0D0C">
+<meta name="color-scheme" content="dark">
+<title>Barbearia Alves Gondomar</title>
+<link rel="icon" href="../../m/favicon.svg" type="image/svg+xml">
+<meta property="og:type" content="website">
+<meta property="og:locale" content="pt_PT">
+<meta property="og:title" content="Pré-visualização do site: Barbearia Alves Gondomar">
+<meta property="og:description" content="Feita por Dinis Sousa, com o já está. Toque nos botões como se fosse cliente.">
+<meta property="og:image" content="https://{{.Host}}/m/og-barbearia.jpg">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="apple-touch-icon" href="../../apple-touch-icon.png">
+<link rel="preload" href="../../m/fontes/bonum-bold.woff" as="font" type="font/woff" crossorigin>
+<link rel="stylesheet" href="../../m/demo.css">
+<style>
+@font-face { font-family: "Letreiro"; src: url("../../m/fontes/bonum-bold.woff") format("woff"); font-weight: 700; font-display: swap; }
+@font-face { font-family: "Texto"; src: url("../../m/fontes/inter-400.woff") format("woff"); font-weight: 400; font-display: swap; }
+@font-face { font-family: "Texto"; src: url("../../m/fontes/inter-600.woff") format("woff"); font-weight: 600; font-display: swap; }
+:root { --noite: #0E0D0C; --quadro: #171513; --osso: #EFE7DA; --osso-2: #B9B0A2; --vermelho: #C8322B; --azul: #23408F; --latao: #C9A66B; --m: 20px; }
+@media (min-width: 900px) { :root { --m: 48px; } }
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }
+body { margin: 0; background: var(--noite); color: var(--osso); font: 400 17px/1.55 "Texto", system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+a { color: inherit; }
+h1, h2, h3 { font-family: "Letreiro", "Bookman Old Style", Georgia, serif; font-weight: 700; margin: 0; letter-spacing: -.01em; text-wrap: balance; }
+.env { width: min(1180px, 100% - 2 * var(--m)); margin-inline: auto; }
+.btn { display: inline-flex; align-items: center; justify-content: center; min-height: 54px; padding: 0 28px; border-radius: 999px; border: 0; font: 600 17px/1 "Texto", sans-serif; text-decoration: none; cursor: pointer; touch-action: manipulation; transition: transform .12s, background .15s; }
+.btn:active { transform: scale(.98); }
+.btn.verm { background: var(--vermelho); color: #fff; }
+.btn.verm:hover { background: #D93A32; }
+.btn.lin { background: transparent; color: var(--osso); box-shadow: inset 0 0 0 2px #4A453E; }
+a:focus-visible, button:focus-visible { outline: 3px solid var(--latao); outline-offset: 3px; }
+.salta { position: absolute; left: -999px; top: 8px; background: #fff; color: #000; padding: 10px 14px; z-index: 10; }
+.salta:focus { left: 8px; }
+
+.topo { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 16px 0; }
+.topo .marca { font: 700 20px/1.1 "Letreiro", serif; text-decoration: none; padding: 10px 0; max-width: 65%; }
+.topo [data-aberto] { font-size: 14px; color: var(--osso-2); margin: 0; text-align: right; white-space: nowrap; }
+.topo [data-aberto] b { color: var(--osso); font-weight: 600; }
+@media (max-width: 520px) { .topo [data-aberto] span { display: none; } }
+
+.heroi { padding: 26px 0 64px; overflow: hidden; }
+.heroi .grelha { display: grid; grid-template-columns: minmax(0, 1fr) 74px; gap: 18px; align-items: stretch; }
+@media (max-width: 420px) { .heroi .grelha { grid-template-columns: minmax(0, 1fr) 52px; gap: 14px; } }
+@media (min-width: 900px) { .heroi .grelha { grid-template-columns: minmax(0, 1fr) 150px; gap: 64px; } .heroi { padding: 60px 0 130px; } }
+.ramo { color: var(--latao); font-weight: 600; margin: 0 0 18px; font-size: 16px; }
+.heroi h1 { font-size: clamp(44px, 12vw, 128px); line-height: .98; }
+.heroi .frase { font-size: 19px; color: var(--osso-2); max-width: 30ch; margin: 22px 0 28px; }
+.acoes { display: flex; flex-wrap: wrap; gap: 12px; }
+.nota { margin: 26px 0 0; color: var(--osso-2); font-size: 15px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.nota b { color: var(--osso); font-size: 18px; }
+.nota .est { color: var(--latao); font-size: 18px; }
+
+/* o poste de barbeiro */
+.poste { position: relative; display: grid; grid-template-rows: auto 1fr auto; justify-items: center; min-height: 360px; }
+.poste .tampa { width: 100%; height: 26px; border-radius: 40px 40px 6px 6px; background: linear-gradient(90deg, #7D6640, #E2C68F 35%, #9B7D4B 70%, #6B5634); }
+.poste .tampa.baixo { border-radius: 6px 6px 40px 40px; }
+.poste .vidro { position: relative; width: 78%; overflow: hidden; border-radius: 6px; background: #F5F1EA;
+  box-shadow: inset 10px 0 18px rgba(0,0,0,.28), inset -14px 0 22px rgba(0,0,0,.35); }
+.poste .listras { position: absolute; inset: -200% 0 0 0; height: 400%;
+  background: repeating-linear-gradient(-32deg, var(--vermelho) 0 22px, #F5F1EA 22px 40px, var(--azul) 40px 62px, #F5F1EA 62px 80px);
+  animation: rodar 3.2s linear infinite; }
+@keyframes rodar { to { transform: translateY(25%); } }
+@media (prefers-reduced-motion: reduce) { .poste .listras { animation-duration: 9s; } }
+.poste .brilho { position: absolute; inset: 0; background: linear-gradient(90deg, transparent 18%, rgba(255,255,255,.55) 30%, transparent 44%); }
+
+section { padding: 76px 0; }
+@media (min-width: 900px) { section { padding: 140px 0; } }
+.cab h2 { font-size: clamp(40px, 9vw, 84px); line-height: 1; }
+.cab p { color: var(--osso-2); max-width: 46ch; margin: 14px 0 0; }
+
+/* quadro de serviços */
+.quadro { background: var(--quadro); }
+.servicos { list-style: none; margin: 40px 0 0; padding: 0; }
+.servicos li { display: flex; align-items: baseline; gap: 6px 12px; padding: 16px 0; flex-wrap: wrap; }
+.servicos .s { min-width: 0; }
+@media (max-width: 600px) {
+  .servicos li { display: grid; grid-template-columns: 1fr auto; align-items: center; row-gap: 2px; }
+  .servicos .s { grid-column: 1 / -1; }
+  .servicos .pontos { display: none; }
+  .servicos .preco { grid-column: 1; justify-self: start; }
+  .servicos button { grid-column: 2; justify-self: end; }
+}
+.servicos .s { font: 700 clamp(26px, 6.4vw, 44px)/1.05 "Letreiro", serif; }
+.servicos .pontos { flex: 1; border-bottom: 3px dotted #4A453E; transform: translateY(-.3em); min-width: 20px; }
+.servicos .preco { flex: none; font: 700 clamp(22px, 5vw, 30px)/1 "Letreiro", serif; color: var(--latao); white-space: nowrap; }
+.servicos .preco.vazio { font: 600 13px "Texto", sans-serif; color: var(--osso-2); }
+.servicos button { flex: none; background: none; border: 0; color: var(--latao); font: 600 16px "Texto", sans-serif; cursor: pointer; min-height: 44px; padding: 0 4px; text-decoration: underline; text-underline-offset: 4px; }
+.quadro .rodape-q { color: var(--osso-2); font-size: 15px; margin: 22px 0 0; }
+
+/* senha de vez */
+.vez .grelha { display: grid; gap: 36px; }
+@media (min-width: 900px) { .vez .grelha { grid-template-columns: 1.1fr .9fr; gap: 72px; align-items: start; } }
+.passo { margin: 0 0 24px; border: 0; padding: 0; }
+.passo legend { font-weight: 600; margin: 0 0 10px; padding: 0; }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chips button { min-height: 46px; padding: 0 18px; border-radius: 999px; border: 0; background: #24211E; color: var(--osso); font: 600 15px "Texto", sans-serif; cursor: pointer; transition: background .15s, color .15s; }
+.chips button[aria-pressed="true"] { background: var(--osso); color: var(--noite); }
+.chips.dias button { display: grid; place-items: center; min-width: 74px; padding: 8px 12px; border-radius: 16px; line-height: 1.15; }
+.chips.dias button small { font-size: 12px; font-weight: 400; opacity: .8; }
+.dispensador { position: sticky; top: 24px; }
+.ranhura { height: 18px; border-radius: 10px; background: #000; box-shadow: inset 0 3px 6px rgba(0,0,0,.9); margin: 0 10px; position: relative; z-index: 2; }
+.senha { position: relative; margin: -9px 22px 0; background: #F3EEE4; color: #1A1714; padding: 26px 22px 24px; clip-path: polygon(0 0, 100% 0, 100% calc(100% - 10px), 95% 100%, 90% calc(100% - 10px), 85% 100%, 80% calc(100% - 10px), 75% 100%, 70% calc(100% - 10px), 65% 100%, 60% calc(100% - 10px), 55% 100%, 50% calc(100% - 10px), 45% 100%, 40% calc(100% - 10px), 35% 100%, 30% calc(100% - 10px), 25% 100%, 20% calc(100% - 10px), 15% 100%, 10% calc(100% - 10px), 5% 100%, 0 calc(100% - 10px)); }
+.senha.sai { animation: imprime .7s cubic-bezier(.3,.7,.3,1); }
+@keyframes imprime { 0% { transform: translateY(-70%); } 100% { transform: none; } }
+.senha .t { font: 600 13px "Texto", sans-serif; color: #6B645A; text-align: center; margin: 0; }
+.senha .numero { font: 700 96px/1 "Letreiro", serif; text-align: center; margin: 6px 0 4px; letter-spacing: -.03em; font-variant-numeric: tabular-nums; }
+.senha .loja { text-align: center; font: 700 18px/1.2 "Letreiro", serif; margin: 0 0 16px; }
+.senha dl { margin: 0; display: grid; grid-template-columns: auto 1fr; gap: 6px 14px; font-size: 15px; border-top: 2px dashed #C9C0B2; padding-top: 14px; }
+.senha dt { color: #6B645A; }
+.senha dd { margin: 0; font-weight: 600; text-align: right; }
+.vez .btn { width: 100%; margin-top: 18px; }
+.vez .ajuda { color: var(--osso-2); font-size: 14px; margin: 10px 0 0; text-align: center; }
+
+.prova .linha { display: grid; gap: 18px; }
+@media (min-width: 900px) { .prova .linha { grid-template-columns: auto 1fr; align-items: center; gap: 64px; } }
+.prova .grande { font: 700 clamp(120px, 32vw, 240px)/.85 "Letreiro", serif; color: var(--latao); letter-spacing: -.04em; }
+.prova p { font-size: 20px; margin: 10px 0 0; color: var(--osso-2); }
+
+.contactos { background: #F3EEE4; color: #1A1714; }
+.contactos .grelha { display: grid; gap: 40px; }
+@media (min-width: 900px) { .contactos .grelha { grid-template-columns: 1.1fr 1fr; gap: 72px; } }
+.contactos h2 { font-size: clamp(40px, 9vw, 80px); line-height: 1; margin: 0 0 20px; }
+.contactos .tel { display: inline-block; font: 700 clamp(34px, 9vw, 56px)/1 "Letreiro", serif; text-decoration: none; margin: 0 0 16px; white-space: nowrap; }
+.contactos .morada { font-size: 19px; margin: 0 0 16px; max-width: 34ch; }
+.contactos [data-aberto] { margin: 0 0 22px; }
+.contactos .btn.lin { color: #1A1714; box-shadow: inset 0 0 0 2px #1A1714; }
+.horario { list-style: none; margin: 0; padding: 0; font-variant-numeric: tabular-nums; }
+.horario li { display: flex; justify-content: space-between; gap: 16px; padding: 12px 0; border-bottom: 2px solid #E2DACC; }
+.horario li.hoje { font-weight: 600; }
+.horario em { font-style: normal; font-size: 12px; background: var(--vermelho); color: #fff; padding: 2px 8px; border-radius: 99px; margin-left: 6px; vertical-align: 2px; }
+footer { padding: 36px 0; color: var(--osso-2); font-size: 15px; }
+footer a { display: inline-block; padding: 12px 0; }
+.morada a { display: inline-block; padding: 4px 0; }
+footer .linha { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 10px 24px; }
+footer b { font: 700 22px "Letreiro", serif; color: var(--osso); }
+</style>
+</head>
+<body>
+<a class="salta" href="#conteudo">Saltar para o conteúdo</a>
+<header class="env topo">
+  <a class="marca" href="#" data-d="nome">Barbearia</a>
+  <p data-aberto></p>
+</header>
+<main id="conteudo">
+  <section class="heroi" style="padding-top:26px">
+    <div class="env grelha">
+      <div>
+        <p class="ramo"><span id="ramo">Barbearia</span><span data-se="freguesia"> em <span data-d="freguesia"></span></span></p>
+        <h1 id="titulo" data-d="nome">Barbearia</h1>
+        <p class="frase" id="frase">Escolha o corte e a hora. A marcação segue pelo WhatsApp.</p>
+        <div class="acoes"><a class="btn verm" href="#vez">Marcar</a><a class="btn lin" href="#" data-acao="ligar">Ligar</a></div>
+        <p class="nota" data-se-rating><span class="est" aria-hidden="true">★</span><b data-rating></b><span>no Google · <span data-n></span></span></p>
+      </div>
+      <div class="poste" aria-hidden="true"><div class="tampa"></div><div class="vidro"><div class="listras"></div><div class="brilho"></div></div><div class="tampa baixo"></div></div>
+    </div>
+  </section>
+
+  <section class="quadro" aria-labelledby="t-serv">
+    <div class="env">
+      <div class="cab" data-entra><h2 id="t-serv">Serviços</h2><p>Escolha um e marque logo a seguir.</p></div>
+      <ul class="servicos" id="servicos" data-entra></ul>
+    </div>
+  </section>
+
+  <section data-se-fotos aria-labelledby="t-fotos" style="--raio-foto:18px">
+    <div class="env"><div class="cab" data-entra><h2 id="t-fotos">O espaço</h2></div><div class="galeria-fotos" data-fotos></div></div>
+  </section>
+
+  <section class="vez" id="vez" aria-labelledby="t-vez">
+    <div class="env grelha">
+      <div data-entra>
+        <div class="cab" style="margin-bottom:30px"><h2 id="t-vez">Marque a sua vez</h2><p>Três toques. Confirmamos por mensagem.</p></div>
+        <fieldset class="passo"><legend>Serviço</legend><div class="chips" id="c-serv"></div></fieldset>
+        <fieldset class="passo"><legend>Dia</legend><div class="chips dias" id="c-dia"></div></fieldset>
+        <fieldset class="passo"><legend>Altura do dia</legend><div class="chips" id="c-per"><button type="button" aria-pressed="false">Manhã</button><button type="button" aria-pressed="true">Tarde</button><button type="button" aria-pressed="false">Fim do dia</button></div></fieldset>
+      </div>
+      <div class="dispensador" data-entra>
+        <div class="ranhura"></div>
+        <div class="senha" id="senha" aria-live="polite">
+          <p class="t">A sua vez</p>
+          <p class="numero" id="s-num">17</p>
+          <p class="loja" data-d="nome"></p>
+          <dl><dt>Serviço</dt><dd id="s-serv">—</dd><dt>Dia</dt><dd id="s-dia">—</dd><dt>Altura</dt><dd id="s-per">Tarde</dd></dl>
+        </div>
+        <button class="btn verm" type="button" id="pedir">Pedir marcação</button>
+        <p class="ajuda" id="ajuda-pedir">A hora certa é combinada na resposta.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="prova" aria-labelledby="t-prova" data-se-rating>
+    <div class="env linha" data-entra>
+      <div class="grande" aria-hidden="true" data-rating></div>
+      <div><h2 id="t-prova" style="font-size:clamp(32px,6vw,52px);line-height:1.05">Quem cá corta, volta.</h2><p>Nota média no Google, de <span data-n></span>. <a href="#" data-acao="mapa" style="color:var(--osso)">Ler as avaliações</a></p></div>
+    </div>
+  </section>
+
+  <section class="contactos" aria-labelledby="t-cont">
+    <div class="env grelha">
+      <div data-entra>
+        <h2 id="t-cont">Onde estamos</h2>
+        <a class="tel" href="#" data-acao="ligar" data-tel></a>
+        <p class="morada" data-se="morada"><a href="#" data-acao="mapa" data-d="morada"></a></p>
+        <p data-aberto></p>
+        <div class="acoes"><a class="btn verm" href="#vez">Marcar</a><a class="btn lin" href="#" data-acao="mapa">Como chegar</a></div>
+      </div>
+      <div data-entra data-se-horario><h3 style="font-size:28px;margin:0 0 8px">Horário</h3><ul class="horario" data-horario></ul></div>
+    </div>
+  </section>
+</main>
+<footer><div class="env linha"><b data-d="nome"></b><span>© <span data-ano></span> · <a href="https://www.livroreclamacoes.pt" target="_blank" rel="noopener">Livro de Reclamações</a></span></div></footer>
+<script>window.D = {"nome": "Barbearia Alves Gondomar", "nicho": "barbearia", "freguesia": "Gondomar", "morada": "R. Combatentes Grande Guerra 177, 4420-091 Gondomar", "maps": "https://www.google.com/maps/search/?api=1&query=Barbearia%20Alves%20Gondomar&query_place_id=ChIJqYOLLnFjJA0R4i4sNIEgN2Q", "tel": "913149644", "rating": 4.8, "n": 105, "horario": {"seg": [["09:00", "19:00"]], "ter": [["09:00", "19:00"]], "qua": [["09:00", "19:00"]], "qui": [["09:00", "19:00"]], "sex": [["09:00", "19:00"]], "sab": [["09:00", "19:00"]], "dom": []}, "artigo": "a", "expira": "2026-11-10"};</script>
+<script>
+window.VERSOES = [
+  { nome: 'Clássica', tema: '#0E0D0C', amostra: ['#C8322B', '#C9A66B', '#0E0D0C'], cores: { '--noite': '#0E0D0C', '--quadro': '#171513', '--vermelho': '#C8322B', '--azul': '#23408F', '--latao': '#C9A66B' } },
+  { nome: 'Verde garrafa', tema: '#0B1411', amostra: ['#1F7A4C', '#D3B57E', '#0B1411'], cores: { '--noite': '#0B1411', '--quadro': '#12201A', '--vermelho': '#1F7A4C', '--azul': '#0F3D2A', '--latao': '#D3B57E' } },
+  { nome: 'Azul-noite', tema: '#0B0E16', amostra: ['#3360DD', '#D9B77A', '#0B0E16'], cores: { '--noite': '#0B0E16', '--quadro': '#121726', '--vermelho': '#3360DD', '--azul': '#B8322C', '--latao': '#D9B77A' } }
+];
+window.TIPO_SCHEMA = 'BarberShop';
+window.PEDIDO_PADRAO = 'marcar um corte';
+window.EXEMPLO = { nome: 'Barbearia Teixeira', nicho: 'barbearia', freguesia: 'Fânzeres', morada: 'Rua Exemplo, 12, 4510-000 Fânzeres', tel: '913000000', rating: 4.9, n: 211,
+  horario: { seg: [], ter: [['09:00','13:00'],['14:30','20:00']], qua: [['09:00','13:00'],['14:30','20:00']], qui: [['09:00','13:00'],['14:30','20:00']], sex: [['09:00','13:00'],['14:30','20:00']], sab: [['09:00','18:00']], dom: [] }, expira: '2099-12-31' };
+var SERV = ['Corte', 'Barba', 'Corte e barba', 'Corte de criança', 'Desenho e riscas', 'Sobrancelha'];
+window.aoArrancar = function (D) {
+  var serv = JaEsta.servicos(SERV);
+  if (D.frase) document.getElementById('frase').textContent = D.frase;
+  if (D.ramo) document.getElementById('ramo').textContent = D.ramo;
+  JaEsta.ajustar(document.getElementById('titulo'), 128, 24);
+  var escolha = { s: null, d: null, p: 'Tarde' };
+  var ul = document.getElementById('servicos'), cs = document.getElementById('c-serv'), cd = document.getElementById('c-dia');
+  var senha = document.getElementById('senha');
+  var num = 10 + Math.floor(Math.random() * 80);
+  document.getElementById('s-num').textContent = num;
+  function imprimir() { senha.classList.remove('sai'); void senha.offsetWidth; senha.classList.add('sai'); }
+  function atualizar(novo) {
+    document.getElementById('s-serv').textContent = escolha.s || '—';
+    document.getElementById('s-dia').textContent = escolha.d ? escolha.d.curto + (escolha.d.curto === 'Hoje' || escolha.d.curto === 'Amanhã' ? '' : ', ' + escolha.d.num) : '—';
+    document.getElementById('s-per').textContent = escolha.p;
+    cs.querySelectorAll('button').forEach(function (b) { b.setAttribute('aria-pressed', b.textContent === escolha.s); });
+    if (novo) imprimir();
+  }
+  serv.forEach(function (o) {
+    var s = o.nome, li = document.createElement('li');
+    var preco = o.preco ? '<span class="preco"></span>' : (JaEsta.previa ? '<span class="preco vazio">preço a acertar</span>' : '');
+    li.innerHTML = '<span class="s"></span><span class="pontos" aria-hidden="true"></span>' + preco + '<button type="button">Marcar</button>';
+    li.querySelector('.s').textContent = s; if (o.preco) li.querySelector('.preco').textContent = o.preco;
+    li.querySelector('button').setAttribute('aria-label', 'Marcar ' + s);
+    li.querySelector('button').onclick = function () { escolha.s = s; atualizar(true); document.getElementById('vez').scrollIntoView({ behavior: 'smooth' }); };
+    ul.appendChild(li);
+    var b = document.createElement('button'); b.type = 'button'; b.textContent = s; b.setAttribute('aria-pressed', 'false');
+    b.onclick = function () { escolha.s = s; atualizar(true); };
+    cs.appendChild(b);
+  });
+  if (!JaEsta.temWhats()) { document.getElementById('pedir').textContent = 'Ligar para marcar'; document.getElementById('ajuda-pedir').textContent = 'Marcações pelo telefone. Diga o serviço e o dia que escolheu.'; }
+  JaEsta.diasAbertos(6).forEach(function (d, i) {
+    var b = document.createElement('button'); b.type = 'button'; b.innerHTML = d.curto + '<small>' + d.num + '</small>'; b.setAttribute('aria-pressed', 'false');
+    b.setAttribute('aria-label', d.curto + ', dia ' + d.num);
+    b.onclick = function () { escolha.d = d; cd.querySelectorAll('button').forEach(function (x) { x.setAttribute('aria-pressed', x === b); }); atualizar(true); };
+    cd.appendChild(b);
+  });
+  document.querySelectorAll('#c-per button').forEach(function (b) {
+    b.onclick = function () { escolha.p = b.textContent; document.querySelectorAll('#c-per button').forEach(function (x) { x.setAttribute('aria-pressed', x === b); }); atualizar(true); };
+  });
+  document.getElementById('pedir').onclick = function () {
+    if (!escolha.s) { JaEsta.avisar(this, 'Escolha primeiro o serviço.'); cs.closest('fieldset').scrollIntoView({ behavior: 'smooth', block: 'center' }); return; }
+    var msg = 'Olá! Queria marcar ' + escolha.s.toLowerCase() + (escolha.d ? ' ' + escolha.d.frase : '') + ', de preferência ' + (escolha.p === 'Fim do dia' ? 'ao fim do dia' : 'de ' + escolha.p.toLowerCase()) + '. Que horas têm livres?';
+    JaEsta.executar('whatsapp', msg);
+  };
+  atualizar(false);
+};
+</script>
+<script src="../../m/demo.js"></script>
+</body>
+</html>

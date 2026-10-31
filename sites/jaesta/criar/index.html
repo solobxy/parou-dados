@@ -46,6 +46,7 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--a
 .lista-feitas .topo-l { display: flex; justify-content: space-between; gap: 10px; align-items: baseline; }
 .lista-feitas .topo-l b { font-size: 17px; }
 .lista-feitas small { color: var(--apoio); }
+.lista-feitas .det { display: block; margin-top: 2px; }
 .estado { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
 .estado button, .estado a { min-height: 40px; padding: 0 12px; border-radius: 999px; border: 0; background: var(--papel-2); font: 600 14px "Archivo", sans-serif; color: var(--tinta); cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; }
 .estado button[aria-pressed="true"] { background: var(--tinta); color: #fff; }
@@ -107,6 +108,11 @@ summary { cursor: pointer; font-weight: 600; color: var(--azul); min-height: 44p
     <a class="btn verde" id="wa-dono" href="#" target="_blank" rel="noopener">Enviar ao dono pelo WhatsApp</a>
     <p class="aviso"><b>Só envie depois de o dono aceitar receber</b> (por exemplo, numa visita ou numa chamada). Mensagens a frio pelo WhatsApp podem bloquear o seu número.</p>
   </div>
+
+  <h2>Prontas a mostrar</h2>
+  <p class="intro" style="margin-bottom:12px">Negócios da zona com boa nota no Google. Antes de ir, confirma no Maps que não têm botão «Website».</p>
+  <ul class="lista-feitas" id="prontas"></ul>
+  <p class="vazio" id="prontas-vazio">A carregar…</p>
 
   <h2>Feitas neste telemóvel</h2>
   <ul class="lista-feitas" id="feitas"></ul>
@@ -199,6 +205,25 @@ summary { cursor: pointer; font-weight: 600; color: var(--azul); min-height: 44p
     });
   }
   desenharLista();
+  // pré-visualizações já feitas (lista em ../p/lista.json)
+  var RAMO = { barbearia: 'Barbearia', beleza: 'Estética e unhas', obras: 'Obras', oficina: 'Oficina' };
+  fetch('../p/lista.json', { cache: 'no-cache' }).then(function (r) { return r.ok ? r.json() : []; }).then(function (l) {
+    var ul = $('prontas'); $('prontas-vazio').hidden = !!l.length; $('prontas-vazio').textContent = 'Ainda nenhuma.';
+    l.forEach(function (it) {
+      var li = document.createElement('li');
+      li.innerHTML = '<div class="topo-l"><b></b><small></small></div><small class="det"></small><div class="estado"></div>';
+      li.querySelector('b').textContent = it.nome;
+      li.querySelector('.topo-l small').textContent = (it.rating ? Number(it.rating).toFixed(1).replace('.', ',') + ' ★ · ' + it.n : '');
+      var sociedade = /\b(lda|unipessoal|s\.?a\.?)\b/i.test(it.nome);
+      li.querySelector('.det').textContent = RAMO[it.nicho] + ' · ' + it.freguesia + ' · ' + (sociedade ? 'empresa: pode ligar' : 'visitar em pessoa');
+      var est = li.querySelector('.estado');
+      [['Abrir', '../p/' + it.pasta + '/'], ['Maps', it.maps], ['Ligar', 'tel:+351' + it.tel]].forEach(function (x) {
+        if (x[0] === 'Ligar' && !sociedade) return;
+        var a = document.createElement('a'); a.textContent = x[0]; a.href = x[1]; if (x[0] !== 'Ligar') { a.target = '_blank'; a.rel = 'noopener'; } est.appendChild(a);
+      });
+      ul.appendChild(li);
+    });
+  }).catch(function () { $('prontas-vazio').textContent = 'Sem lista por agora.'; });
   $('tel').addEventListener('input', verFixo); $('wa').addEventListener('input', verFixo);
 
   $('f').addEventListener('submit', function (ev) {

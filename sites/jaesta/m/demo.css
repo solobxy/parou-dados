@@ -176,3 +176,6 @@ button.je-btn { width: 100%; border: 0; cursor: pointer; font-family: inherit; }
 .galeria-fotos.reservado figure:first-child { aspect-ratio: auto; min-height: 220px; }
 .galeria-fotos.reservado span { display: grid; justify-items: center; gap: 8px; padding: 12px; text-align: center; font-size: 15px; font-weight: 600; opacity: .75; }
 .galeria-fotos.reservado svg { width: 30px; height: 30px; }
+
+/* filhos de grelha nunca crescem por causa de uma palavra comprida (o título ajusta-se à largura real) */
+.grelha > * { min-width: 0; }

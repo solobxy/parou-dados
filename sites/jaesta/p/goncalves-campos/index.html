@@ -1,0 +1,339 @@
+<!doctype html>
+<html lang="pt-PT">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#ECEAE4">
+<meta name="color-scheme" content="light">
+<title>Gonçalves Campos</title>
+<link rel="icon" href="../../m/favicon.svg" type="image/svg+xml">
+<meta property="og:type" content="website">
+<meta property="og:locale" content="pt_PT">
+<meta property="og:title" content="Pré-visualização do site: Gonçalves Campos">
+<meta property="og:description" content="Feita por Dinis Sousa, com o já está. Toque nos botões como se fosse cliente.">
+<meta property="og:image" content="https://{{.Host}}/m/og-obras.jpg">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="apple-touch-icon" href="../../apple-touch-icon.png">
+<link rel="preload" href="../../m/fontes/heroscn-bold.woff" as="font" type="font/woff" crossorigin>
+<link rel="stylesheet" href="../../m/demo.css">
+<style>
+@font-face { font-family: "Obra"; src: url("../../m/fontes/heroscn-bold.woff") format("woff"); font-weight: 700; font-display: swap; }
+@font-face { font-family: "Texto"; src: url("../../m/fontes/inter-400.woff") format("woff"); font-weight: 400; font-display: swap; }
+@font-face { font-family: "Texto"; src: url("../../m/fontes/inter-600.woff") format("woff"); font-weight: 600; font-display: swap; }
+:root {
+  --betao: #ECEAE4; --betao-2: #E0DDD5; --tinta: #17181A; --apoio: #4D4E52; --laranja: #F25C05; --laranja-escuro: #C24600;
+  --m: 20px; --larg: 1180px;
+}
+@media (min-width: 900px) { :root { --m: 48px; } }
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }
+body { margin: 0; background: var(--betao); color: var(--tinta); font: 400 17px/1.55 "Texto", system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+a { color: inherit; }
+h1, h2, h3 { font-family: "Obra", "Arial Narrow", sans-serif; font-weight: 700; letter-spacing: -.01em; margin: 0; text-wrap: balance; }
+.env { width: min(var(--larg), 100% - 2 * var(--m)); margin-inline: auto; }
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 10px; min-height: 54px; padding: 0 26px;
+  border: 0; border-radius: 0; font: 600 17px/1 "Texto", sans-serif; text-decoration: none; cursor: pointer;
+  background: var(--tinta); color: #fff; touch-action: manipulation; transition: transform .12s ease-out, background .15s;
+}
+.btn:active { transform: translateY(1px); }
+.btn.lar { background: var(--laranja); color: #111; }
+.btn.lar:hover { background: #FF6A14; }
+.btn.lin { background: transparent; color: var(--tinta); box-shadow: inset 0 0 0 2px var(--tinta); }
+.btn:focus-visible, button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible { outline: 3px solid var(--laranja); outline-offset: 3px; }
+.salta { position: absolute; left: -999px; top: 8px; background: #fff; padding: 10px 14px; z-index: 10; }
+.salta:focus { left: 8px; }
+
+/* topo */
+.topo { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 16px 0; }
+.marca { font-family: "Obra", sans-serif; font-weight: 700; font-size: 20px; line-height: 1.05; text-decoration: none; padding: 10px 0; max-width: 70%; }
+.topo a.tel { font-weight: 600; text-decoration: none; white-space: nowrap; display: inline-flex; align-items: center; gap: 8px; min-height: 44px; }
+.topo a.tel svg { width: 18px; height: 18px; }
+
+.heroi { position: relative; padding: 18px 0 56px; overflow: hidden; }
+.heroi .grelha { display: grid; gap: 28px; }
+@media (min-width: 900px) { .heroi .grelha { grid-template-columns: minmax(0,1.1fr) minmax(0,.9fr); align-items: center; gap: 56px; } .heroi { padding: 40px 0 120px; } }
+.sobre-titulo { font: 600 15px/1.3 "Texto", sans-serif; color: var(--apoio); margin: 0 0 14px; display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: center; }
+.heroi h1 { font-size: clamp(40px, 13vw, 112px); line-height: .94; text-transform: uppercase; letter-spacing: -.015em; padding-top: .04em; }
+.heroi h1 .cor { color: var(--laranja-escuro); }
+.heroi .frase { font-size: 19px; max-width: 30ch; margin: 18px 0 26px; }
+.acoes { display: flex; flex-wrap: wrap; gap: 12px; }
+.acoes .btn { flex: 1 1 auto; }
+@media (min-width: 520px) { .acoes .btn { flex: 0 0 auto; } }
+.nota-g { display: inline-flex; align-items: center; gap: 8px; font-weight: 600; white-space: nowrap; }
+.estrelas { color: var(--laranja-escuro); font-size: 18px; }
+
+/* planta (o desenho que se faz) */
+.planta { position: relative; aspect-ratio: 1 / .78; background: #F5F3EE; }
+.planta::before { content: ""; position: absolute; inset: 0; background-image: radial-gradient(#C9C5BB 1px, transparent 1.3px); background-size: 18px 18px; opacity: .8; }
+.planta svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.planta .parede { fill: none; stroke: var(--tinta); stroke-width: 7; stroke-linecap: square; stroke-dasharray: var(--l); stroke-dashoffset: var(--l); animation: desenhar 1.6s cubic-bezier(.55,.1,.3,1) forwards; }
+.planta .fina { fill: none; stroke: var(--tinta); stroke-width: 2; stroke-dasharray: var(--l); stroke-dashoffset: var(--l); animation: desenhar 1s .9s ease-out forwards; }
+.planta .cota { stroke: var(--apoio); stroke-width: 1.5; fill: none; opacity: 0; animation: aparecer .5s forwards; }
+.planta text { font: 700 15px "Obra", sans-serif; fill: var(--apoio); opacity: 0; animation: aparecer .5s forwards; }
+.planta .zona { fill: var(--laranja); opacity: 0; animation: zona 1s 2.2s cubic-bezier(.2,.8,.2,1) forwards; transform-origin: 70% 30%; }
+.planta .zona-txt { fill: #111; font-size: 16px; }
+@keyframes desenhar { to { stroke-dashoffset: 0; } }
+@keyframes aparecer { to { opacity: 1; } }
+@keyframes zona { 0% { opacity: 0; transform: scale(.96); } 100% { opacity: .92; transform: none; } }
+.planta .etiqueta { position: absolute; left: 14px; bottom: 12px; font: 600 13px "Texto", sans-serif; color: var(--apoio); }
+
+/* serviços */
+section { padding: 72px 0; }
+@media (min-width: 900px) { section { padding: 140px 0; } }
+.cab { display: grid; gap: 14px; margin-bottom: 34px; }
+@media (min-width: 900px) { .cab { grid-template-columns: 1fr 1fr; align-items: end; margin-bottom: 56px; } }
+.cab h2 { font-size: clamp(38px, 8vw, 76px); line-height: .95; text-transform: uppercase; }
+.cab p { margin: 0; max-width: 44ch; color: var(--apoio); }
+.servicos { background: var(--tinta); color: #F3F1EC; }
+.servicos .cab p { color: #B9B7B0; }
+.lista-s { list-style: none; margin: 0; padding: 0; display: grid; }
+@media (min-width: 900px) { .lista-s { grid-template-columns: 1fr 1fr; column-gap: 56px; } }
+.lista-s li { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 18px 0; border-bottom: 2px solid #2C2D30; }
+.lista-s .nome-s { font: 700 clamp(24px, 5.6vw, 34px)/1.05 "Obra", sans-serif; text-transform: uppercase; }
+.junta {
+  flex: none; width: 48px; height: 48px; border: 0; background: #2C2D30; color: #fff; font-size: 26px; line-height: 1; cursor: pointer;
+  display: grid; place-items: center; transition: background .2s, transform .2s;
+}
+.junta[aria-pressed="true"] { background: var(--laranja); color: #111; transform: rotate(45deg); }
+
+/* ficha de obra */
+.ficha-sec { background: var(--betao); }
+.ficha {
+  position: relative; background: #FBFAF7; padding: 26px 20px 24px; max-width: 760px;
+  background-image: linear-gradient(#ECE9E1 2px, transparent 2px), linear-gradient(90deg, #ECE9E1 2px, transparent 2px);
+  background-size: 28px 28px; background-position: -2px -2px;
+}
+@media (min-width: 900px) { .ficha { padding: 44px 48px 40px; } }
+.ficha-cab { display: flex; justify-content: space-between; align-items: start; gap: 12px; margin-bottom: 22px; }
+.ficha-cab h3 { font-size: 30px; line-height: 1; text-transform: uppercase; }
+.ficha-cab .num { font: 700 15px "Obra", sans-serif; color: var(--apoio); white-space: nowrap; text-align: right; }
+.campo { margin: 0 0 22px; border: 0; padding: 0; }
+.campo > legend, .campo > label { display: block; font-weight: 600; margin: 0 0 10px; font-size: 16px; padding: 0; }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chips button {
+  min-height: 44px; padding: 0 16px; border: 0; background: var(--betao-2); color: var(--tinta); font: 600 15px "Texto", sans-serif; cursor: pointer;
+  transition: background .15s, color .15s;
+}
+.chips button[aria-pressed="true"] { background: var(--tinta); color: #fff; }
+.area { display: flex; align-items: center; gap: 16px; }
+.area output { font: 700 30px "Obra", sans-serif; min-width: 4.4ch; white-space: nowrap; }
+input[type=range] { flex: 1; accent-color: var(--laranja-escuro); height: 44px; }
+.ficha input[type=text], .ficha textarea {
+  width: 100%; min-height: 50px; padding: 12px 14px; border: 2px solid #CFCBC1; background: #fff; font: 400 17px "Texto", sans-serif; color: var(--tinta); border-radius: 0;
+}
+.ficha textarea { min-height: 92px; resize: vertical; }
+.ficha .btn { width: 100%; margin-top: 4px; }
+.ficha .ajuda { font-size: 14px; color: var(--apoio); margin: 10px 0 0; }
+.carimbo-obra {
+  position: absolute; right: 18px; top: 74px; width: 92px; height: 92px; border: 3px solid var(--laranja-escuro); border-radius: 50%;
+  display: grid; place-content: center; text-align: center; color: var(--laranja-escuro); font: 700 14px/1 "Obra", sans-serif; text-transform: uppercase;
+  transform: rotate(14deg); opacity: .0; pointer-events: none;
+}
+.carimbo-obra.bate { animation: bate .45s cubic-bezier(.25,1.7,.5,1) forwards; }
+@keyframes bate { 0% { opacity: 0; transform: rotate(14deg) scale(1.6); } 100% { opacity: .9; transform: rotate(14deg) scale(1); } }
+
+/* prova */
+.prova { background: var(--laranja); color: #111; }
+.prova .grelha { display: grid; gap: 22px; align-items: end; }
+@media (min-width: 900px) { .prova .grelha { grid-template-columns: auto 1fr; gap: 64px; } }
+.prova .grande { font: 700 clamp(120px, 34vw, 260px)/.8 "Obra", sans-serif; letter-spacing: -.04em; }
+.prova p { margin: 0; font-size: 20px; max-width: 36ch; }
+.prova a { font-weight: 600; }
+
+/* contactos */
+.contactos .grelha { display: grid; gap: 40px; }
+@media (min-width: 900px) { .contactos .grelha { grid-template-columns: 1.1fr 1fr; gap: 72px; } }
+.contactos h2 { font-size: clamp(38px, 8vw, 76px); line-height: .95; text-transform: uppercase; margin-bottom: 22px; }
+.tel-grande { display: inline-block; font: 700 clamp(36px, 10vw, 64px)/1 "Obra", sans-serif; text-decoration: none; margin: 4px 0 16px; white-space: nowrap; }
+.morada { font-size: 19px; margin: 0 0 18px; max-width: 34ch; }
+[data-aberto] { font-size: 16px; margin: 0 0 22px; }
+.horario { list-style: none; margin: 0; padding: 0; }
+.horario li { display: flex; justify-content: space-between; gap: 16px; padding: 12px 0; border-bottom: 2px solid var(--betao-2); font-variant-numeric: tabular-nums; }
+.horario li.hoje { font-weight: 600; }
+.horario em { font-style: normal; background: var(--tinta); color: #fff; font-size: 12px; padding: 2px 7px; margin-left: 6px; vertical-align: 2px; }
+
+footer { background: var(--tinta); color: #B9B7B0; padding: 40px 0 36px; font-size: 15px; }
+footer a { display: inline-block; padding: 12px 0; }
+.morada a { display: inline-block; padding: 4px 0; }
+footer .linha { display: flex; flex-wrap: wrap; gap: 10px 24px; justify-content: space-between; }
+footer b { color: #fff; font: 700 22px "Obra", sans-serif; text-transform: uppercase; }
+</style>
+</head>
+<body>
+<a class="salta" href="#conteudo">Saltar para o conteúdo</a>
+<header class="env topo">
+  <a class="marca" href="#" data-d="nome">Remodelações</a>
+  <a class="tel" href="#" data-acao="ligar"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M6.6 10.8a15.5 15.5 0 006.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.6.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1A17 17 0 013 4c0-.6.4-1 1-1h3.5c.6 0 1 .4 1 1 0 1.3.2 2.5.6 3.6.1.3 0 .7-.2 1z"/></svg><span data-tel></span></a>
+</header>
+<main id="conteudo">
+  <section class="heroi" style="padding-top:18px">
+    <div class="env grelha">
+      <div>
+        <p class="sobre-titulo"><span id="ramo">Obras e remodelações</span><span>·</span><span data-d="freguesia"></span></p>
+        <h1 id="titulo" data-d="nome">Remodelações</h1>
+        <p class="frase" id="frase">Diga o que quer mudar em casa. Respondemos com um orçamento.</p>
+        <div class="acoes">
+          <a class="btn lar" href="#orcamento">Pedir orçamento</a>
+          <a class="btn lin" href="#" data-acao="ligar">Ligar</a>
+        </div>
+        <p class="sobre-titulo" style="margin-top:22px" data-se-rating><span class="nota-g"><span class="estrelas" aria-hidden="true">★</span><b data-rating></b> no Google</span><span data-n></span></p>
+      </div>
+      <div class="planta" aria-hidden="true">
+        <svg viewBox="0 0 600 470" preserveAspectRatio="xMidYMid meet">
+          <rect class="zona" x="352" y="40" width="208" height="210"/>
+          <path class="parede" style="--l:1900" d="M40 40H560V430H40Z"/>
+          <path class="parede" style="--l:900;animation-delay:.5s" d="M352 40V150M352 190V250M352 250H560M200 250H310M40 250H150"/>
+          <path class="fina" style="--l:500" d="M150 250A50 50 0 0 1 200 300M352 150A40 40 0 0 1 392 190"/>
+          <path class="cota" style="animation-delay:1.6s" d="M40 22H560M40 16V28M560 16V28M578 40V250M572 40H584M572 250H584"/>
+          <text x="282" y="16" style="animation-delay:1.7s">5,20 m</text>
+          <text x="586" y="150" style="animation-delay:1.8s" transform="rotate(90 586 150)">2,10 m</text>
+          <text class="zona-txt" x="420" y="226" style="animation-delay:2.6s" id="zona-txt">A remodelar</text>
+          <text x="70" y="220" style="animation-delay:2s">Sala</text>
+          <text x="70" y="410" style="animation-delay:2.1s">Quarto</text>
+          <text x="376" y="410" style="animation-delay:2.2s">Cozinha</text>
+        </svg>
+      </div>
+    </div>
+  </section>
+
+  <section class="servicos" aria-labelledby="t-serv">
+    <div class="env">
+      <div class="cab" data-entra>
+        <h2 id="t-serv">O que fazemos</h2>
+        <p>Toque no <b style="color:#fff">+</b> do que precisa. Fica logo no pedido de orçamento, mais abaixo.</p>
+      </div>
+      <ul class="lista-s" id="lista-s" data-entra></ul>
+    </div>
+  </section>
+
+  <section data-se-fotos aria-labelledby="t-fotos" style="--raio-foto:0">
+    <div class="env"><div class="cab" data-entra><h2 id="t-fotos">Trabalhos feitos</h2></div><div class="galeria-fotos" data-fotos></div></div>
+  </section>
+
+  <section class="ficha-sec" id="orcamento" aria-labelledby="t-orc">
+    <div class="env">
+      <div class="cab" data-entra>
+        <h2 id="t-orc">Pedir orçamento</h2>
+        <p>Um minuto. Segue pelo WhatsApp e pode juntar fotos na conversa.</p>
+      </div>
+      <form class="ficha" id="ficha" data-entra novalidate>
+        <div class="ficha-cab"><h3>Folha de obra</h3><span class="num" id="ficha-data"></span></div>
+        <span class="carimbo-obra" id="carimbo" aria-hidden="true">Pedido<br>pronto</span>
+        <fieldset class="campo"><legend>O que precisa</legend><div class="chips" id="chips"></div></fieldset>
+        <div class="campo"><label for="zona">Onde é a obra</label><input id="zona" type="text" autocomplete="address-level2" placeholder="Ex.: Rio Tinto"></div>
+        <div class="campo" id="campo-area"><label for="m2">Área aproximada</label><div class="area"><input id="m2" type="range" min="2" max="150" step="1" value="8"><output id="m2-out" for="m2">8 m²</output></div></div>
+        <fieldset class="campo"><legend>Para quando</legend><div class="chips" id="quando"><button type="button" aria-pressed="false">Urgente</button><button type="button" aria-pressed="true">Este mês</button><button type="button" aria-pressed="false">Sem pressa</button></div></fieldset>
+        <div class="campo"><label for="nota">Mais algum pormenor <span style="font-weight:400;color:var(--apoio)">(opcional)</span></label><textarea id="nota" placeholder="Ex.: trocar a banheira por base de duche"></textarea></div>
+        <button class="btn lar" type="submit">Enviar pedido pelo WhatsApp</button>
+        <p class="ajuda" id="ajuda">Segue pelo WhatsApp, já escrito. Na conversa pode juntar fotos.</p>
+      </form>
+    </div>
+  </section>
+
+  <section class="prova" aria-labelledby="t-prova" data-se-rating>
+    <div class="env grelha" data-entra>
+      <div class="grande" aria-hidden="true" data-rating></div>
+      <div>
+        <h2 id="t-prova" style="font-size:clamp(30px,6vw,48px);line-height:1;text-transform:uppercase;margin-bottom:14px">Nota no Google</h2>
+        <p>Média de <span data-n></span> de clientes. <a href="#" data-acao="mapa">Ler as avaliações</a></p>
+      </div>
+    </div>
+  </section>
+
+  <section class="contactos" aria-labelledby="t-cont">
+    <div class="env grelha">
+      <div data-entra>
+        <h2 id="t-cont">Fale connosco</h2>
+        <a class="tel-grande" href="#" data-acao="ligar" data-tel></a>
+        <p class="morada" id="zona-trab"></p>
+        <p data-aberto></p>
+        <div class="acoes"><a class="btn lar" href="#orcamento">Pedir orçamento</a><a class="btn lin" href="#" data-acao="ligar">Ligar</a></div>
+      </div>
+      <div data-entra data-se-horario>
+        <h3 style="font-size:26px;text-transform:uppercase;margin:0 0 10px">Horário</h3>
+        <ul class="horario" data-horario></ul>
+      </div>
+    </div>
+  </section>
+</main>
+<footer>
+  <div class="env linha"><b data-d="nome"></b><span>© <span data-ano></span> · <a href="https://www.livroreclamacoes.pt" target="_blank" rel="noopener">Livro de Reclamações</a></span></div>
+</footer>
+<script>window.D = {"nome": "Gonçalves Campos", "nicho": "obras", "sub": "remodelacoes", "freguesia": "Gondomar", "morada": "R. Sistelo 306, Rio Tinto", "maps": "https://www.google.com/maps/search/?api=1&query=Gon%C3%A7alves%20Campos&query_place_id=ChIJs1e8Y4FlJA0RU6-0rLuTQZA", "tel": "226171108", "rating": 4.9, "n": 17, "horario": {"seg": [["08:00", "12:30"], ["13:30", "17:00"]], "ter": [["08:00", "12:30"], ["13:30", "17:00"]], "qua": [["08:00", "12:30"], ["13:30", "17:00"]], "qui": [["08:00", "12:30"], ["13:30", "17:00"]], "sex": [["08:00", "12:30"], ["13:30", "17:00"]], "sab": [], "dom": []}, "artigo": "", "expira": "2026-11-10"};</script>
+<script>
+window.VERSOES = [
+  { nome: 'Laranja', tema: '#ECEAE4', amostra: ['#F25C05', '#17181A', '#ECEAE4'], cores: { '--laranja': '#F25C05', '--laranja-escuro': '#C24600', '--betao': '#ECEAE4', '--betao-2': '#E0DDD5', '--tinta': '#17181A' } },
+  { nome: 'Amarela', tema: '#EEEDE8', amostra: ['#F2B705', '#141516', '#EEEDE8'], cores: { '--laranja': '#F2B705', '--laranja-escuro': '#7A5A00', '--betao': '#EEEDE8', '--betao-2': '#E1DFD7', '--tinta': '#141516' } },
+  { nome: 'Verde', tema: '#E9ECE7', amostra: ['#3DAA6A', '#142019', '#E9ECE7'], cores: { '--laranja': '#3DAA6A', '--laranja-escuro': '#1D6B3F', '--betao': '#E9ECE7', '--betao-2': '#DCE1DA', '--tinta': '#142019' } }
+];
+window.TIPO_SCHEMA = 'HomeAndConstructionBusiness';
+window.PEDIDO_PADRAO = 'pedir um orçamento';
+window.EXEMPLO = { nome: 'Remodelações Ferreira', nicho: 'obras', sub: 'remodelacoes', freguesia: 'Rio Tinto', morada: 'Rua Exemplo, 100, 4435-000 Rio Tinto', tel: '912345678', rating: 4.9, n: 64,
+  horario: { seg: [['08:30','18:30']], ter: [['08:30','18:30']], qua: [['08:30','18:30']], qui: [['08:30','18:30']], sex: [['08:30','18:30']], sab: [['09:00','13:00']], dom: [] }, expira: '2099-12-31' };
+var RAMOS = {
+  remodelacoes: { ramo: 'Obras e remodelações', frase: 'Diga o que quer mudar em casa. Respondemos com um orçamento.', s: ['Casas de banho', 'Cozinhas', 'Pavimentos e azulejo', 'Pintura', 'Pladur e tetos falsos', 'Canalização e eletricidade'] },
+  canalizador: { ramo: 'Canalizador', frase: 'Fugas, entupimentos ou uma casa de banho nova. Diga o que se passa.', s: ['Fugas e roturas', 'Desentupimentos', 'Esquentadores e termoacumuladores', 'Torneiras e loiças', 'Canalização nova', 'Casas de banho'] },
+  eletricista: { ramo: 'Eletricista', frase: 'Avarias, quadros e instalações. Diga o que precisa e quando.', s: ['Avarias', 'Quadros elétricos', 'Instalações novas', 'Iluminação', 'Tomadas e interruptores', 'Videoporteiros e campainhas'] },
+  pintor: { ramo: 'Pintura', frase: 'Interiores, fachadas e humidades. Diga o que quer pintar.', s: ['Pintura interior', 'Fachadas', 'Tetos', 'Humidades', 'Envernizamentos', 'Pequenas reparações'] },
+  construcao: { ramo: 'Construção civil', frase: 'Da ampliação ao telhado. Conte-nos o projeto.', s: ['Remodelações completas', 'Ampliações', 'Telhados', 'Fachadas', 'Muros e exteriores', 'Isolamentos'] }
+};
+window.aoArrancar = function (D) {
+  var R = RAMOS[D.sub] || RAMOS.remodelacoes;
+  var servicos = JaEsta.servicos(R.s).map(function (o) { return o.nome; });
+  var zt = document.getElementById('zona-trab');
+  if (D.zonas) zt.textContent = 'Trabalhamos em ' + D.zonas + '.';
+  else if (D.freguesia) zt.textContent = 'Com base em ' + D.freguesia + '. Diga-nos onde é a obra.';
+  else zt.hidden = true;
+  if (!JaEsta.temWhats()) { document.querySelector('#ficha button[type=submit]').textContent = 'Ligar a pedir orçamento'; document.getElementById('ajuda').textContent = 'Pedidos pelo telefone. Tenha à mão o que escolheu acima.'; }
+  document.getElementById('ramo').textContent = D.ramo || R.ramo;
+  document.getElementById('frase').textContent = D.frase || R.frase;
+  if (D.freguesia) document.getElementById('zona').value = D.freguesia;
+  // título: a última palavra do nome ganha a cor (se o nome tiver mais de uma palavra)
+  var t = document.getElementById('titulo'), p = String(D.nome || '').trim().split(/\s+/);
+  if (p.length > 1) { var u = p.pop(); t.innerHTML = JaEsta.esc(p.join(' ')) + ' <span class="cor">' + JaEsta.esc(u) + '</span>'; }
+  JaEsta.ajustar(t, 112, 34);
+  var hoje = new Date().toLocaleDateString('pt-PT', { day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'Europe/Lisbon' });
+  document.getElementById('ficha-data').textContent = hoje;
+  var lista = document.getElementById('lista-s'), chips = document.getElementById('chips');
+  var escolhidos = {};
+  function marca(nome, on) {
+    escolhidos[nome] = on;
+    lista.querySelectorAll('.junta').forEach(function (b) { if (b.dataset.s === nome) { b.setAttribute('aria-pressed', on); b.setAttribute('aria-label', (on ? 'Tirar ' : 'Juntar ') + nome + ' ao pedido'); } });
+    chips.querySelectorAll('button').forEach(function (b) { if (b.dataset.s === nome) b.setAttribute('aria-pressed', on); });
+  }
+  servicos.forEach(function (s) {
+    var li = document.createElement('li');
+    li.innerHTML = '<span class="nome-s"></span><button type="button" class="junta" aria-pressed="false">+</button>';
+    li.firstChild.textContent = s; li.lastChild.dataset.s = s; li.lastChild.setAttribute('aria-label', 'Juntar ' + s + ' ao pedido');
+    li.lastChild.onclick = function () { marca(s, !escolhidos[s]); };
+    lista.appendChild(li);
+    var c = document.createElement('button'); c.type = 'button'; c.textContent = s; c.dataset.s = s; c.setAttribute('aria-pressed', 'false');
+    c.onclick = function () { marca(s, !escolhidos[s]); };
+    chips.appendChild(c);
+  });
+  chips.insertAdjacentHTML('beforeend', '');
+  var m2 = document.getElementById('m2'), out = document.getElementById('m2-out');
+  function area() { out.textContent = m2.value + JaEsta.nb + 'm²'; }
+  m2.addEventListener('input', area); area();
+  var comArea = !/canalizador|eletricista/.test(D.sub || '');
+  document.getElementById('campo-area').hidden = !comArea;
+  var quando = 'Este mês';
+  document.querySelectorAll('#quando button').forEach(function (b) {
+    b.onclick = function () { document.querySelectorAll('#quando button').forEach(function (x) { x.setAttribute('aria-pressed', x === b); }); quando = b.textContent; };
+  });
+  document.getElementById('ficha').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var lista2 = Object.keys(escolhidos).filter(function (k) { return escolhidos[k]; });
+    if (!lista2.length) { JaEsta.avisar(this.querySelector('button[type=submit]'), 'Escolha primeiro o que precisa.'); chips.scrollIntoView({ behavior: 'smooth', block: 'center' }); return; }
+    var zona = document.getElementById('zona').value.trim(), nota = document.getElementById('nota').value.trim();
+    var msg = 'Olá! Queria um orçamento para ' + JaEsta.lista(lista2).toLowerCase() + '.' + (zona ? ' Zona: ' + zona + '.' : '') + (comArea ? ' Área aproximada: ' + m2.value + ' m².' : '') + ' Para quando: ' + quando.toLowerCase() + '.' + (nota ? ' ' + nota.replace(/[.!?…]*$/, '') + '.' : '') + ' Posso enviar fotos.';
+    var c = document.getElementById('carimbo'); c.classList.remove('bate'); void c.offsetWidth; c.classList.add('bate');
+    setTimeout(function () { JaEsta.executar('whatsapp', msg); }, 380);
+  });
+};
+</script>
+<script src="../../m/demo.js"></script>
+</body>
+</html>

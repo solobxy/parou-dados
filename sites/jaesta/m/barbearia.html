@@ -46,6 +46,7 @@ a:focus-visible, button:focus-visible { outline: 3px solid var(--latao); outline
 
 .heroi { padding: 26px 0 64px; overflow: hidden; }
 .heroi .grelha { display: grid; grid-template-columns: minmax(0, 1fr) 74px; gap: 18px; align-items: stretch; }
+@media (max-width: 420px) { .heroi .grelha { grid-template-columns: minmax(0, 1fr) 52px; gap: 14px; } }
 @media (min-width: 900px) { .heroi .grelha { grid-template-columns: minmax(0, 1fr) 150px; gap: 64px; } .heroi { padding: 60px 0 130px; } }
 .ramo { color: var(--latao); font-weight: 600; margin: 0 0 18px; font-size: 16px; }
 .heroi h1 { font-size: clamp(44px, 12vw, 128px); line-height: .98; }
@@ -229,7 +230,7 @@ window.aoArrancar = function (D) {
   var serv = JaEsta.servicos(SERV);
   if (D.frase) document.getElementById('frase').textContent = D.frase;
   if (D.ramo) document.getElementById('ramo').textContent = D.ramo;
-  JaEsta.ajustar(document.getElementById('titulo'), 128, 34);
+  JaEsta.ajustar(document.getElementById('titulo'), 128, 24);
   var escolha = { s: null, d: null, p: 'Tarde' };
   var ul = document.getElementById('servicos'), cs = document.getElementById('c-serv'), cd = document.getElementById('c-dia');
   var senha = document.getElementById('senha');
