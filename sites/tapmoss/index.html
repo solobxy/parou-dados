@@ -188,7 +188,8 @@ select.sel{width:100%;height:48px;padding:0 12px;background:#18241a;clip-path:va
 .tog .sw2::after{content:"";position:absolute;top:4px;left:4px;width:16px;height:16px;background:#5a6658;transition:left .15s}
 .tog[aria-checked="true"] .sw2::after{left:24px;background:var(--moss)}
 .note{font-size:13px;color:var(--tx2);line-height:1.45;margin:8px 2px}
-.credit{font-size:12px;color:var(--tx3);text-align:center;margin-top:22px;letter-spacing:.04em}
+.credit{font-size:13px;color:var(--tx3);text-align:center;margin-top:22px;letter-spacing:.04em}
+.credit a,.t-credit a{color:var(--moss);text-decoration:none;font-weight:600;padding:6px 2px}.credit a:focus-visible,.t-credit a:focus-visible{outline:2px solid var(--moss);outline-offset:2px}
 .confirm{background:#2a1a17;clip-path:var(--notch);padding:12px;margin-top:8px}
 .confirm p{font-size:14px;margin-bottom:10px;line-height:1.4}
 .scard{display:flex;gap:12px;align-items:center;padding:12px;background:#18241a;clip-path:var(--notch);margin-bottom:8px}
@@ -316,7 +317,7 @@ select.sel{width:100%;height:48px;padding:0 12px;background:#18241a;clip-path:va
 .cities button:active{background:#2f5a22}
 .qhint{font-size:13px;color:var(--tx2);text-align:center;margin:2px 0 14px;max-width:320px;line-height:1.4}
 .start{width:100%;max-width:340px;height:54px;font-size:19px;font-weight:600}
-.t-credit{font-size:12px;color:var(--tx3);margin-top:14px;letter-spacing:.04em}
+.t-credit{font-size:13px;color:var(--tx3);margin-top:14px;letter-spacing:.04em;pointer-events:auto}
 
 /* reduced motion */
 .rm .ft{animation:ftr .95s ease-out forwards}
@@ -395,7 +396,7 @@ select.sel{width:100%;height:48px;padding:0 12px;background:#18241a;clip-path:va
     <p class="tag-l">Um cantinho de floresta para fazer crescer musgo.</p>
     <p class="scn" id="tScene"></p>
     <div id="tBody"></div>
-    <p class="t-credit">feito por dinissousa</p>
+    <p class="t-credit">made by <a href="https://dinissousa.pt" target="_blank" rel="noopener">dinissousa</a></p>
   </div>
 </div>
 
@@ -2322,7 +2323,7 @@ function renderSheet(live){
     h+=`<p class="note">${LIVE.wx?'O tempo vem do Open-Meteo e atualiza a cada 20 minutos.':'Sem ligação ao serviço do tempo, o sol, as nuvens e a chuva são simulados para este sítio.'}</p>`;
     h+=confirmNew?`<div class="confirm"><p>Perdes todo o progresso. Queres mesmo recomeçar?</p><div class="row2"><button class="btn ghost" id="noNew">Cancelar</button><button class="btn danger" id="yesNew">Sim, recomeçar</button></div></div>`:`<button class="btn ghost wide" id="newScene" style="margin-top:8px">Recomeçar do zero</button>`;
     h+=contaHTML();
-    h+=`<p class="credit">feito por dinissousa</p>`;
+    h+=`<p class="credit">made by <a href="https://dinissousa.pt" target="_blank" rel="noopener">dinissousa</a></p>`;
   }
   else if(sheetName==='prof'){title='Perfil';h+=tabsHTML('prof');
     const c=here(),tr=TRAITS.find(t=>t[0]===S.av.trait)||TRAITS[0],d=new Date(S.created||now()),MES=['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
