@@ -1,6 +1,6 @@
 import subprocess,time,sys
 from playwright.sync_api import sync_playwright
-srv=subprocess.Popen([sys.executable,'-m','http.server','8772','--bind','127.0.0.1'],cwd='/home/claude/teste-real',stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL);time.sleep(1)
+srv=subprocess.Popen([sys.executable,'-m','http.server','8772','--bind','127.0.0.1'],cwd='/tmp/teste-real',stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL);time.sleep(1)
 falhas=[]
 def ok(c,m):
     if not c:falhas.append(m)
@@ -14,10 +14,10 @@ try:
       ok(pg.locator('.faixa-casas .mini').count()>=3,'%d faixa de casas'%w)
       ok(pg.locator('.tlm').count()>=1,'%d telemóvel'%w)
       ok(pg.locator('#cta-fixo').is_hidden(),'%d cta escondido no herói'%w)
-      pg.screenshot(path='/home/claude/testes/ini-%d.png'%w,full_page=True)
+      pg.screenshot(path='/tmp/testes/ini-%d.png'%w,full_page=True)
       pg.evaluate('scrollTo(0,document.querySelector(".faixa-casas").getBoundingClientRect().top+scrollY+200)');pg.wait_for_timeout(400)
       ok(pg.locator('#cta-fixo').is_visible(),'%d cta visível depois do herói'%w)
-      pg.screenshot(path='/home/claude/testes/ini-%d-cta.png'%w)
+      pg.screenshot(path='/tmp/testes/ini-%d-cta.png'%w)
       if pg.locator('[data-cid]').count()>1:
         t0=pg.locator('#cid-tit').inner_text();pg.locator('[data-cid]').nth(1).click();pg.wait_for_timeout(200)
         ok(pg.locator('#cid-tit').inner_text()!=t0,'%d cidade muda'%w)

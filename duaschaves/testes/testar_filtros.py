@@ -1,6 +1,6 @@
 import subprocess,time,sys
 from playwright.sync_api import sync_playwright
-srv=subprocess.Popen([sys.executable,'-m','http.server','8769','--bind','127.0.0.1'],cwd='/home/claude/teste-real',stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL);time.sleep(1)
+srv=subprocess.Popen([sys.executable,'-m','http.server','8769','--bind','127.0.0.1'],cwd='/tmp/teste-real',stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL);time.sleep(1)
 falhas=[]
 def ok(c,m):
     if not c:falhas.append(m)

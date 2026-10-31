@@ -3044,7 +3044,7 @@ function instalarApp(){
     '<button class="botao largo" type="button" data-fechar>Percebi</button></div>');
 }
 document.addEventListener('click',function(e){var b=e.target.closest&&e.target.closest('[data-instalar]');if(b){e.preventDefault();instalarApp();}});
-if('serviceWorker' in navigator&&location.protocol==='https:'&&!/claude|anthropic/.test(location.host)){window.addEventListener('load',function(){navigator.serviceWorker.register('/sw.js').catch(function(){});});}
+if('serviceWorker' in navigator&&location.protocol==='https:'&&window.self===window.top){window.addEventListener('load',function(){navigator.serviceWorker.register('/sw.js').catch(function(){});});}
 
 /* Oferta de boas-vindas: aparece ao fim de 30 s no site a quem ainda não tem o acesso.
    Se a pessoa fechar, só volta a aparecer neste dispositivo daqui a 12 horas. */

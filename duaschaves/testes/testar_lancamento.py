@@ -2,7 +2,7 @@
 import sqlite3,time,re,json,sys
 from playwright.sync_api import sync_playwright
 U='http://localhost:8795/'
-foto=open('/home/claude/cap/f.jpg','rb').read()
+foto=open('/tmp/cap/f.jpg','rb').read()
 falhas=[]
 def ok(c,m):
     print(('ok   ' if c else 'FALHA'),m)
@@ -39,13 +39,13 @@ with sync_playwright() as p:
     href=pg.get_attribute('#b-original','href') or ''
     ok(href.startswith('https://www.imovirtual.com'),'com acesso: link do original vem da API (%s)'%href[:40])
     t=pg.inner_text('dialog[open]');ok('Imovirtual' not in t and 'imovirtual' not in t.lower(),'diálogo sem nome do outro site')
-    pg.screenshot(path='/home/claude/cap2/contacto.png')
+    pg.screenshot(path='/tmp/cap2/contacto.png')
     pg.keyboard.press('Escape');pg.wait_for_timeout(300)
     # lista de espera do pagamento seguro
     pg.goto(U+'#proteger');pg.wait_for_timeout(800)
     pg.fill('#pp-nome','Ana');pg.fill('#pp-email','ana@teste.pt');pg.click('#f-pedido button[type=submit]');pg.wait_for_timeout(800)
     ok(pg.locator('#ok-lista').count()==1,'lista de espera: confirmação')
-    pg.screenshot(path='/home/claude/cap2/proteger.png',full_page=True)
+    pg.screenshot(path='/tmp/cap2/proteger.png',full_page=True)
     # senhorio
     pg.goto(U+'#senhorios');pg.wait_for_timeout(800)
     pg.fill('#c-cidade','Porto');pg.fill('#c-bairro','Bonfim');pg.select_option('#c-tip','T1');pg.fill('#c-renda','750');pg.fill('#c-nome','Rui');pg.fill('#c-email','rui@teste.pt');pg.fill('#c-tel','912 345 678')

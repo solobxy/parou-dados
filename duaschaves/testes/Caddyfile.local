@@ -10,7 +10,7 @@ https://localhost:8443 {
 		reverse_proxy 127.0.0.1:3111
 	}
 	handle {
-		root * /home/claude/teste-real2
+		root * /tmp/teste-real2
 		file_server
 	}
 }

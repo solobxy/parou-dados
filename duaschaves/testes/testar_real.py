@@ -1,6 +1,6 @@
 import subprocess, time, sys, json
 from playwright.sync_api import sync_playwright
-srv = subprocess.Popen([sys.executable, '-m', 'http.server', '8765', '--bind', '127.0.0.1'], cwd='/home/claude/teste-real', stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+srv = subprocess.Popen([sys.executable, '-m', 'http.server', '8765', '--bind', '127.0.0.1'], cwd='/tmp/teste-real', stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 time.sleep(1)
 falhas = []
 def ok(c, m):
@@ -22,7 +22,7 @@ try:
             ok(all(x.strip() in ('Quarto','Estúdio','Apartamento T1','Moradia T0','Moradia T1') for x in prim[:3]), 'T0/T1/quartos primeiro: %s' % prim)
             ok(pg.locator('#lista .foto-img .marca-foto').count() >= 20, 'logo nos cartões')
             ok(pg.locator('header .marca svg').count() == 1, 'logo no topo')
-            pg.screenshot(path=f'/home/claude/testes/capturas6/real-pesquisa-{w}.png')
+            pg.screenshot(path=f'/tmp/testes/capturas6/real-pesquisa-{w}.png')
             pg.goto('http://127.0.0.1:8765/#casa-19324776'); pg.wait_for_timeout(800)
             ok(pg.locator('.galeria img').count() == 9, 'galeria 9 fotos')
             ok(pg.inner_text('#g-cont') == '1 / 9', 'contador inicial')
@@ -35,7 +35,7 @@ try:
             ok('Linha dois com <b>html</b>' in pg.inner_text('.texto'), 'descrição escapada')
             ok('Encontrámos' not in pg.inner_text('.painel') and pg.is_visible('[data-acao=ligar]'), 'painel sem caixa do Imovirtual')
             ok(not pg.evaluate('document.documentElement.scrollWidth > innerWidth'), 'transbordo anúncio %d' % w)
-            pg.screenshot(path=f'/home/claude/testes/capturas6/real-casa-{w}.png', full_page=True)
+            pg.screenshot(path=f'/tmp/testes/capturas6/real-casa-{w}.png', full_page=True)
             pg.goto('http://127.0.0.1:8765/#pesquisa'); pg.wait_for_timeout(600)
             (None if w > 1000 else pg.click('#b-filtros')); pg.fill('#f-pmax', '800'); pg.press('#f-pmax', 'Tab'); (None if w > 1000 else pg.click('#f-ver'))
             pg.wait_for_timeout(200)

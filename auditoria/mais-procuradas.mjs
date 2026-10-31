@@ -4,7 +4,7 @@
 import path from 'node:path';
 import os from 'node:os';
 import fs from 'node:fs';
-const APP = process.env.APP || '/home/claude/parou';
+const APP = process.env.APP || '../parou';
 process.env.PAROU_DATA_DIR = fs.mkdtempSync(path.join(os.tmpdir(), 'procuras-'));
 let falhas = 0;
 const ok = (n, c, e = '') => { if (!c) falhas++; console.log(c ? 'OK     ' : 'FALHOU ', n, e); };
