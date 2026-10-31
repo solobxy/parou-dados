@@ -263,7 +263,7 @@ p{margin:0}
   .hf .m-topo{left:50% !important;top:14px !important;translate:-50% 0;max-width:calc(100% - 32px);white-space:nowrap}
 }
 .sub a{transition:background-color .45s var(--ease),box-shadow .45s var(--ease)}
-.sub a.acende{background:color-mix(in srgb,currentColor 13%,transparent);box-shadow:0 0 0 3px color-mix(in srgb,currentColor 13%,transparent);border-radius:3px}
+.sub a.acende{background:rgba(127,127,127,.14);box-shadow:0 0 0 3px rgba(127,127,127,.14);background:color-mix(in srgb,currentColor 13%,transparent);box-shadow:0 0 0 3px color-mix(in srgb,currentColor 13%,transparent);border-radius:3px}
 .scr{position:relative;aspect-ratio:640/1325;border-radius:24px;overflow:hidden;background:var(--surface)}
 .scr img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:top;border-radius:0;opacity:0;transition:opacity .8s var(--ease)}
 .scr img.on{opacity:1}
@@ -587,7 +587,7 @@ img.fx{height:auto}
 .inclui li.nao{text-decoration:line-through;text-decoration-thickness:1px}
 .sr,.sr-foco:not(:focus-visible){position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap}
 .sr-foco{position:absolute;right:var(--gutter);bottom:8px;z-index:7;padding:10px 14px;border-radius:999px;border:0;background:var(--ink);color:var(--bg);font:600 14px var(--font)}
-.garante{list-style:none;margin:32px 0 0;padding:24px 0 0;border-top:1px solid color-mix(in srgb,var(--ink) 14%,transparent);display:grid;gap:18px}
+.garante{list-style:none;margin:32px 0 0;padding:24px 0 0;border-top:1px solid rgba(127,127,127,.25);border-top:1px solid color-mix(in srgb,var(--ink) 14%,transparent);display:grid;gap:18px}
 .garante li{display:flex;gap:14px;align-items:flex-start}
 .garante b{flex:none;width:34px;height:34px;border-radius:50%;display:grid;place-items:center;background:var(--ink);color:var(--bg);font-size:15px;font-variant-numeric:tabular-nums}
 .garante span{display:flex;flex-direction:column;gap:2px;color:var(--muted);font-size:15.5px;line-height:1.4}
@@ -691,6 +691,43 @@ footer a{min-height:44px;display:inline-flex;align-items:center}
   .js .rv.pre{transform:none}
   .btn:active,.btn:hover,.style:hover .card,.brand-tile:hover{transform:none}
 }
+
+/* Oferta de lançamento: cartão pequeno no canto, nunca ecrã inteiro */
+.oferta{position:fixed;z-index:60;right:16px;bottom:calc(16px + env(safe-area-inset-bottom));width:min(360px,calc(100vw - 24px));
+  background:#0E0E0E;color:#F1F1EF;border-radius:24px;padding:16px 16px 16px 18px;font-family:var(--font);
+  box-shadow:0 0 0 1px rgba(255,255,255,.1),0 24px 60px -12px rgba(0,0,0,.45),0 8px 18px -6px rgba(0,0,0,.3);
+  --k:1;--mola:cubic-bezier(.2,1.25,.3,1);transform-origin:100% 100%}
+@supports (transition-timing-function:linear(0,1)){.oferta{--mola:linear(0, 0.069 3.1%, 0.230 6.2%, 0.426 9.4%, 0.618 12.5%, 0.782 15.6%, 0.910 18.8%, 0.998 21.9%, 1.052 25%, 1.078 28.1%, 1.083 31.2%, 1.076 34.4%, 1.062 37.5%, 1.046 40.6%, 1.030 43.8%, 1.016 46.9%, 1.006 50%, 0.999 53.1%, 0.995 56.2%, 0.993 59.4%, 0.993 62.5%, 0.994 65.6%, 0.995 68.8%, 0.996 71.9%, 0.998 75%, 0.999 78.1%, 1)}}
+.oferta[hidden]{display:none}
+.oferta.entra{animation:ofEntra calc(.75s * var(--k)) var(--mola) both}
+.oferta.sai{animation:ofSai calc(.28s * var(--k)) cubic-bezier(.4,0,1,1) both}
+@keyframes ofEntra{from{opacity:0;transform:translateY(28px) scale(.94)}35%{opacity:1}to{opacity:1;transform:none}}
+@keyframes ofSai{to{opacity:0;transform:translateY(16px) scale(.97)}}
+.oferta .of-cab{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:-4px -6px 6px 0}
+.oferta .of-etq{display:inline-flex;align-items:center;gap:8px;font-size:13px;font-weight:600;letter-spacing:.01em;color:#B9B9B2}
+.oferta .of-etq i{width:8px;height:8px;border-radius:50%;background:#3DDC84;box-shadow:0 0 0 0 rgba(61,220,132,.55);animation:ofPulso calc(2.2s * var(--k)) ease-out infinite}
+@keyframes ofPulso{70%{box-shadow:0 0 0 7px rgba(61,220,132,0)}100%{box-shadow:0 0 0 0 rgba(61,220,132,0)}}
+.oferta .of-x{width:44px;height:44px;flex:none;display:grid;place-items:center;border:0;border-radius:50%;background:transparent;color:#B9B9B2;cursor:pointer;transition:background-color .2s,color .2s}
+.oferta .of-x:hover{background:rgba(255,255,255,.08);color:#fff}
+.oferta .of-x svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round}
+.oferta h2{font-size:clamp(19px,5.4vw,22px);line-height:1.12;font-weight:800;font-stretch:104%;letter-spacing:-.02em;margin:0 0 14px;text-wrap:balance}
+.oferta .of-rel{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin:0 0 12px}
+.oferta .of-rel div{background:rgba(255,255,255,.07);border-radius:12px;padding:8px 2px 7px;text-align:center;min-width:0;overflow:hidden}
+.oferta .of-rel b{display:block;font-size:clamp(20px,6.4vw,26px);font-weight:800;font-stretch:96%;line-height:1;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.oferta .of-rel b.tic{animation:ofTic calc(.32s * var(--k)) var(--ease)}
+@keyframes ofTic{from{transform:translateY(-35%);opacity:.35}}
+.oferta .of-rel span{display:block;margin-top:4px;font-size:11px;font-weight:600;color:#9C9C95;letter-spacing:.04em}
+.oferta p{margin:0 0 14px;font-size:14px;line-height:1.4;color:#C9C9C2}
+.oferta p strong{color:#fff;font-weight:700}
+.oferta .of-cta{display:flex;width:100%;min-height:50px;align-items:center;justify-content:center;gap:10px;padding:8px 18px;border-radius:999px;background:#F1F1EF;color:#0E0E0E;font-weight:700;font-size:16px;line-height:1.2;text-align:center;text-decoration:none;transition:transform .2s var(--ease),background-color .2s}
+.oferta .of-cta:hover{background:#fff}
+.oferta .of-cta:active{transform:scale(.97)}
+.oferta .of-cta svg{width:18px;height:18px;flex:none;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;transition:transform .25s var(--ease)}
+.oferta .of-cta:hover svg{transform:translateX(3px)}
+.oferta :focus-visible{outline:3px solid #8FB4FF;outline-offset:3px}
+@media (max-width:560px){.oferta{left:12px;right:12px;bottom:calc(12px + env(safe-area-inset-bottom));width:auto;max-width:420px;margin:0 auto;transform-origin:50% 100%;padding:12px 14px 14px 16px;border-radius:22px}.oferta h2{font-size:19px;margin-bottom:10px}.oferta .of-rel{margin-bottom:10px}.oferta .of-rel div{padding:6px 2px 5px}.oferta .of-rel b{font-size:22px}.oferta .of-rel span{margin-top:2px}.oferta p{font-size:13.5px;margin-bottom:12px}.oferta .of-cta{min-height:48px}}
+.oferta.curta p{display:none}
+@media (prefers-reduced-motion:reduce){.oferta{--k:.75}}
 </style>
 <script defer src="/_e.js" data-site="dinissousa"></script></head>
 <body data-world="base">
@@ -1235,6 +1272,62 @@ footer a{min-height:44px;display:inline-flex;align-items:center}
   update();
   if(document.fonts&&document.fonts.ready){document.fonts.ready.then(update);}
   var rt; window.addEventListener('resize',function(){clearTimeout(rt);rt=setTimeout(update,150);});
+})();
+</script>
+
+<aside class="oferta" id="oferta" role="dialog" aria-modal="false" aria-labelledby="oferta-t" hidden>
+  <div class="of-cab">
+    <span class="of-etq"><i aria-hidden="true"></i>Preço de lançamento</span>
+    <button class="of-x" type="button" aria-label="Fechar"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 3l10 10M13 3L3 13"/></svg></button>
+  </div>
+  <h2 id="oferta-t">Os preços atuais acabam a 30&nbsp;de&nbsp;novembro.</h2>
+  <div class="of-rel" aria-hidden="true">
+    <div><b data-u="d">00</b><span>dias</span></div>
+    <div><b data-u="h">00</b><span>horas</span></div>
+    <div><b data-u="m">00</b><span>min</span></div>
+    <div><b data-u="s">00</b><span>seg</span></div>
+  </div>
+  <p><strong>75&nbsp;€ · 149&nbsp;€ · desde 249&nbsp;€</strong>. E só pagas depois de veres o design.</p>
+  <a class="of-cta wa" data-msg="Olá Dinis! Quero garantir o preço de lançamento (até 30 de novembro)." href="https://wa.me/351913488258">Garantir este preço<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+</aside>
+<script>
+/* Oferta de lançamento: aparece a meio da página, no máximo 1 vez por dispositivo a cada 24 h, e desaparece sozinha a 30/11 às 23:59 (Lisboa) */
+(function(){
+  var el=document.getElementById('oferta'); if(!el) return;
+  var FIM=Date.UTC(2026,10,30,23,59,59), DIA=864e5, CHAVE='ds-oferta-vista';
+  window.estat=window.estat||function(){(window.estat.q=window.estat.q||[]).push(arguments)};
+  if(Date.now()>=FIM) return;
+  try{ var ult=+localStorage.getItem(CHAVE)||0; if(Date.now()-ult<DIA) return; }catch(e){}
+  var convertido=false, aberto=false, rel=null, uns={};
+  [].forEach.call(el.querySelectorAll('[data-u]'),function(b){uns[b.getAttribute('data-u')]=b;});
+  document.addEventListener('click',function(ev){var a=ev.target.closest&&ev.target.closest('a.wa'); if(a&&!el.contains(a)) convertido=true;},true);
+  function dd(n){return (n<10?'0':'')+n;}
+  function mostra(v){ var t=Math.max(0,FIM-Date.now()), s=Math.floor(t/1e3);
+    var val={d:dd(Math.floor(s/86400)),h:dd(Math.floor(s%86400/3600)),m:dd(Math.floor(s%3600/60)),s:dd(s%60)};
+    for(var k in val){ var b=uns[k]; if(b.textContent!==val[k]){ b.textContent=val[k]; if(v){ b.classList.remove('tic'); void b.offsetWidth; b.classList.add('tic'); } } }
+    if(t<=0) fecha(); }
+  function abre(){
+    if(aberto||convertido||Date.now()>=FIM) return; aberto=true;
+    try{ localStorage.setItem(CHAVE,String(Date.now())); }catch(e){}
+    mostra(false); el.hidden=false; el.classList.toggle('curta', el.offsetHeight>innerHeight*.55); el.classList.add('entra');
+    rel=setInterval(function(){mostra(true)},1000);
+    estat('oferta','mostrada');
+  }
+  function fecha(origem){
+    if(!aberto) return; aberto=false; clearInterval(rel);
+    if(origem) estat('oferta',origem);
+    el.classList.remove('entra'); el.classList.add('sai');
+    setTimeout(function(){el.hidden=true; el.classList.remove('sai');},320);
+  }
+  el.querySelector('.of-x').addEventListener('click',function(){fecha('fechada')});
+  var cta=el.querySelector('.of-cta'); cta.href='https://wa.me/351913488258?text='+encodeURIComponent(cta.getAttribute('data-msg'));
+  cta.addEventListener('click',function(){estat('oferta','clique'); setTimeout(function(){fecha()},400);});
+  document.addEventListener('keydown',function(ev){ if(ev.key==='Escape'&&aberto) fecha('fechada'); });
+  function ve(){
+    var max=document.documentElement.scrollHeight-innerHeight;
+    if(max>0&&scrollY/max>=.5){ removeEventListener('scroll',ve); abre(); }
+  }
+  addEventListener('scroll',ve,{passive:true});
 })();
 </script>
 </body>
