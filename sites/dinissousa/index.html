@@ -164,26 +164,19 @@ p{margin:0}
 .h-par{font-family:var(--serif);font-style:italic;font-size:44px;line-height:1;color:#C7372A;opacity:.85}
 
 .hf>:is(.h-casa,.h-msg,.h-art,.h-chip,.h-vivo,.h-carta,.h-carimbo,.h-escreve){z-index:3}
-/* ADRI: o calendário marca o dia e a hora */
-.h-cal{z-index:3 !important;width:214px;padding:14px;border-radius:18px;background:#141210;color:#EEE8DF;box-shadow:0 2px 4px rgba(0,0,0,.2),0 24px 44px -20px rgba(0,0,0,.6);font-size:12px}
-.cal-top{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px}
-.cal-top b{font-size:15px}.cal-top span{font-size:10.5px;color:#BDB5A9}
-.cal-sem,.cal-num{display:grid;grid-template-columns:repeat(7,1fr);text-align:center}
-.cal-sem span{font-size:10px;color:#8C857B}
-.cal-num{margin-top:4px}
-.cal-num i{position:relative;display:grid;place-items:center;height:26px;font-style:normal;font-weight:600;font-variant-numeric:tabular-nums}
-.cal-num .esc::before{content:"";position:absolute;inset:0 2px;border-radius:50%;background:#D9B676;transform:scale(0);transition:transform .2s var(--ease)}
-.cal-num .esc{transition:color .2s}
-.h-adri.on .cal-num .esc::before{transform:scale(1);transition:transform .6s var(--mola) .95s}
-.h-adri.on .cal-num .esc{color:#141210;transition:color .2s 1.05s}
-.cal-num .esc{isolation:isolate}.cal-num .esc::before{z-index:-1}
-.cal-hora{display:flex;gap:6px;margin-top:10px}
-.cal-hora i{flex:1;text-align:center;padding:6px 0;border-radius:8px;border:1px solid #3A352F;font-style:normal;font-size:11px;font-variant-numeric:tabular-nums;transition:background-color .2s,color .2s,border-color .2s}
-.h-adri.on .cal-hora .esc{background:#D9B676;border-color:#D9B676;color:#141210;transition:background-color .35s var(--ease) 1.55s,color .35s 1.55s,border-color .35s 1.55s}
-.cal-ok{display:flex;align-items:center;gap:8px;margin-top:10px;padding-top:10px;border-top:1px solid #2A2622;font-weight:700;font-size:12.5px;opacity:0;transform:translateY(6px);transition:opacity .2s,transform .2s}
-.cal-ok i{flex:none;width:22px;height:22px;border-radius:50%;background:#D9B676;display:grid;place-items:center}
-.cal-ok svg{width:13px;height:13px;fill:none;stroke:#141210;stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
-.h-adri.on .cal-ok{opacity:1;transform:none;transition:opacity .4s var(--ease) 2.15s,transform .7s var(--mola) 2.15s}
+/* ADRI: um talão de marcação e o selo dourado «agendado» que cai em cima dele */
+.h-bilhete{z-index:3 !important;display:grid;gap:1px;width:150px;padding:12px 14px 13px;border-radius:12px;background:#FBF7F0;color:#1A1714;box-shadow:0 1px 2px rgba(0,0,0,.08),0 18px 34px -18px rgba(60,45,20,.45);rotate:var(--r)}
+.h-bilhete small{font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#9C7A33}
+.h-bilhete b{font-size:16px;letter-spacing:-.01em}
+.h-bilhete span{font-size:12.5px;color:#6B6257;font-variant-numeric:tabular-nums}
+.h-selo{position:absolute;right:-36px;top:-36px;width:82px;height:82px;opacity:0;scale:calc(1 + 1.3 * var(--k));rotate:-28deg;transition:opacity .15s,scale .15s,rotate .15s}
+.h-selo svg{display:block;width:100%;height:100%;filter:drop-shadow(0 6px 8px rgba(156,122,51,.35))}
+.h-selo::after{content:"";position:absolute;inset:4px;border-radius:50%;border:2px solid #D9B676;opacity:0}
+.h-adri.on .h-selo{opacity:1;scale:1;rotate:-12deg;transition:opacity .12s linear 1.25s,scale .32s cubic-bezier(.55,0,.8,.2) 1.25s,rotate .32s cubic-bezier(.55,0,.8,.2) 1.25s}
+.h-adri.on .h-selo::after{animation:onda-selo .7s var(--ease) 1.57s}
+@keyframes onda-selo{from{opacity:.7;scale:1}to{opacity:0;scale:1.7}}
+.h-adri.on .h-bilhete{animation:pancada .28s linear 1.57s}
+@keyframes pancada{30%{translate:0 3px}60%{translate:-1px -1px}}
 /* PAROU: o aviso sai do telemóvel e muda quando o autocarro chega */
 .fan{--btop:66px}
 .h-alerta{z-index:3 !important;left:50%;top:calc(var(--btop) + 14px);translate:-50% 0;width:min(calc(var(--pw) + 70px),calc(100% - 20px));display:flex;gap:10px;align-items:center;padding:10px 12px;border-radius:18px;background:rgba(255,255,255,.97);color:#121212;box-shadow:0 12px 0 -6px rgba(255,255,255,.6),0 1px 2px rgba(0,0,0,.1),0 22px 40px -18px rgba(0,0,0,.55);font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;font-size:13px;line-height:1.3}
@@ -243,7 +236,7 @@ p{margin:0}
 .h-art i{width:16px;height:16px;border-radius:50%;background:#2E8B57;color:#fff;font-style:normal;font-size:10px;display:grid;place-items:center}
 @media (max-width:719px){
   .fan{height:450px}.baralho{top:66px}
-  .h-cal{scale:.74;transform-origin:0 0;left:1% !important;top:13% !important}
+  .h-bilhete{left:4% !important;top:13% !important}
   .hf .so-d{display:none}
   .hf .m-topo{left:50% !important;top:14px !important;translate:-50% 0;max-width:calc(100% - 32px);white-space:nowrap}
 }
@@ -677,7 +670,7 @@ footer a{min-height:44px;display:inline-flex;align-items:center}
       <div class="fan" id="palco" role="group" aria-roledescription="carrossel" aria-label="Sites que fiz">
         <div class="fundos" aria-hidden="true">
           <div class="hf h-adri">
-            <div class="h-cal" style="left:-2%;top:24%;--ex:120px;--ey:10px;--d:0.25s"><div class="cal-top"><b>Novembro</b><span>AdriBodyPiercing</span></div><div class="cal-sem"><span>S</span><span>T</span><span>Q</span><span>Q</span><span>S</span><span>S</span><span>D</span></div><div class="cal-num"><i>2</i><i>3</i><i>4</i><i>5</i><i>6</i><i class="esc">7</i><i>8</i></div><div class="cal-hora"><i>14h00</i><i class="esc">15h00</i><i>16h00</i></div><div class="cal-ok"><i><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></i><span>Marcado: sábado, 15h00</span></div></div>
+            <div class="h-bilhete" style="left:0%;top:30%;--ex:110px;--ey:20px;--d:.3s;--r:-5deg"><small>Marcação</small><b>Sábado, 7 nov.</b><span>15h00 · Helix</span><i class="h-selo"><svg viewBox="0 0 100 100" aria-hidden="true"><defs><path id="arcoAdri" d="M50 50m-35 0a35 35 0 1 1 70 0a35 35 0 1 1-70 0"/></defs><circle cx="50" cy="50" r="47" fill="#FBF6EC" fill-opacity=".9" stroke="#B8903F" stroke-width="3"/><circle cx="50" cy="50" r="42" fill="none" stroke="#B8903F" stroke-width="1"/><text fill="#9C7A33" font-size="11.5" font-weight="800" letter-spacing="2.6"><textPath href="#arcoAdri">AGENDADO • SÁBADO • 15H00 •</textPath></text><path d="M37 51l9 9 18-20" fill="none" stroke="#B8903F" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/></svg></i></div>
             <img class="flut" src="img/joia_barra_ouro.svg" alt="" style="left:76%;top:8%;width:58px;--ex:-110px;--ey:110px;--d:0.35s;--r:-22deg">
             <img class="flut" src="img/joia_argola_prata.svg" alt="" style="left:88%;top:48%;width:42px;--ex:-130px;--ey:-10px;--d:0.45s;--r:10deg">
             <img class="flut" src="img/joia_brinco_ouro.svg" alt="" style="left:70%;top:86%;width:28px;--ex:-40px;--ey:-110px;--d:0.55s">
