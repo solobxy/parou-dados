@@ -28,7 +28,7 @@
 <meta name="twitter:image" content="https://{{.Host}}/og.jpg">
 <link rel="preload" href="fonts/archivo.woff" as="font" type="font/woff" crossorigin>
 <script type="application/ld+json">
-{"@context":"https://schema.org","@type":"ProfessionalService","name":"Dinis Sousa","url":"https://dinissousa.pt/","description":"Sites feitos de raiz para marcas e negócios em Portugal.","areaServed":"PT","priceRange":"149 € – 499 €","telephone":"+351913488258","email":"diniscash@gmail.com","founder":{"@type":"Person","name":"Dinis Sousa"}}
+{"@context":"https://schema.org","@type":"ProfessionalService","name":"Dinis Sousa","url":"https://dinissousa.pt/","description":"Sites feitos de raiz para marcas e negócios em Portugal.","areaServed":"PT","priceRange":"75 € – 249 €","telephone":"+351913488258","email":"diniscash@gmail.com","founder":{"@type":"Person","name":"Dinis Sousa"}}
 </script>
 <style>
 @font-face{font-family:"Archivo";src:url("fonts/archivo.woff") format("woff");font-weight:100 900;font-stretch:62% 125%;font-display:swap}
@@ -76,17 +76,17 @@ p{margin:0}
 
 /* Cabeçalho */
 .top{position:sticky;top:0;z-index:10;background:var(--bg);transition:background-color .35s var(--ease)}
-.top .wrap{display:flex;align-items:center;justify-content:space-between;height:64px;gap:16px}
+.top .wrap{display:flex;align-items:center;justify-content:space-between;min-height:64px;gap:16px}
 .brand{display:inline-flex;align-items:center;gap:10px;text-decoration:none;min-height:44px}
 .brand-name{font-weight:800;font-stretch:112%;letter-spacing:-.03em;font-size:18px;white-space:nowrap}
 .mark{width:24px;height:26px;flex-shrink:0}
 .mark>path{fill:var(--ink);transition:fill .6s var(--ease)}
-.nav{display:flex;align-items:center;gap:28px}
+.nav{display:flex;align-items:center;gap:28px;min-width:0}
 .nav .link{display:none;text-decoration:none;font-weight:500;font-size:16px;min-height:44px;align-items:center}
 .nav .link:hover{text-decoration:underline;text-underline-offset:4px}
 
 /* Botões */
-.btn{display:inline-flex;align-items:center;justify-content:center;height:54px;padding:0 26px;border-radius:999px;text-decoration:none;font-weight:600;font-size:16px;white-space:nowrap;border:0;cursor:pointer;font-family:inherit;
+.btn{display:inline-flex;align-items:center;justify-content:center;min-height:54px;padding:10px 26px;text-align:center;line-height:1.2;max-width:100%;border-radius:999px;text-decoration:none;font-weight:600;font-size:16px;border:0;cursor:pointer;font-family:inherit;
   transition:background-color .6s var(--ease),color .6s var(--ease),transform .2s var(--ease)}
 .btn:active{transform:scale(.97)}
 .btn-primary{background:var(--accent);color:var(--on-accent)}
@@ -94,6 +94,7 @@ p{margin:0}
 .btn-small{height:44px;padding:0 18px;font-size:15px}
 @media (hover:hover){.btn:hover{transform:translateY(-2px)}}
 
+@supports not (overflow:clip){.hero{overflow-x:hidden}.project{overflow:hidden}}
 /* Herói */
 .hero{padding-top:12px;padding-bottom:72px;overflow-x:clip}
 .hero .wrap{display:grid;gap:28px}
@@ -280,6 +281,7 @@ p{margin:0}
 .sub{text-wrap:pretty}
 .sub .nw{white-space:nowrap}
 .sub a:hover{border-bottom-color:transparent}
+.sub a.solto,.sub .nw.solto{white-space:normal}
 .c-adri{color:#7A5820}.c-good{color:#0E3A2C}.c-goth{color:#B0101C}.c-coq{color:#B4436A}.c-trans{color:#B84A0E}.c-casa{color:#0E6B4F}
 .ctas{margin-top:26px;display:flex;gap:10px;flex-wrap:wrap}
 .risco{margin-top:12px;font-size:14px;color:var(--muted)}
@@ -357,6 +359,7 @@ img.fx{height:auto}
 .js .c-adri:not(.on) .abre img{opacity:0;transform:translateY(calc(10px * var(--k)))}
 .linha{position:absolute;left:28%;right:28%;top:calc(50% + 30px);height:1.5px;background:linear-gradient(90deg,transparent,#D9B676 30%,#F3E2B5 50%,#D9B676 70%,transparent);transform:scaleX(0);transition:transform .8s var(--suave) .5s}
 .c-adri.on .linha{transform:scaleX(1)}
+.cena.c-adri{margin-bottom:3.6em}
 .talao{z-index:1;left:9%;right:9%;top:calc(100% - 44px);filter:drop-shadow(0 14px 16px rgba(0,0,0,.5));transition:transform 1s var(--suave) 1.9s,opacity .3s var(--ease) 1.9s}
 .papel{padding:52px 76px 20px 16px;display:grid;grid-template-columns:1fr;gap:2px 12px;align-items:center;background:#F4EEE4;color:#141210;
   -webkit-mask:radial-gradient(circle at 50% 100%,transparent 4px,#000 4.5px) 0 0/12px 100%;mask:radial-gradient(circle at 50% 100%,transparent 4px,#000 4.5px) 0 0/12px 100%}
@@ -451,7 +454,7 @@ img.fx{height:auto}
 .c-duplicasa .abre img{clip-path:inset(0 0 0 0);transition:clip-path .7s var(--suave) .25s,opacity .25s var(--ease) 1.02s}
 .js .c-duplicasa:not(.on) .abre img{clip-path:inset(100% 0 0 0)}
 .c-duplicasa.on .abre img{opacity:0}
-.casa{--slot:72px;z-index:4;right:calc(-1 * var(--fora));top:60%;width:max-content;max-width:calc(var(--pw) + var(--fora) - 6px);white-space:nowrap;display:flex;gap:10px;align-items:center;padding:10px 12px;background:#fff;color:#10241B;border-radius:18px 18px 18px 6px;box-shadow:0 1px 2px rgba(16,36,27,.08),0 18px 34px -16px rgba(16,36,27,.5);font-size:14px;line-height:1.25;
+.casa{--slot:72px;z-index:4;right:calc(-1 * var(--fora));top:60%;width:max-content;max-width:calc(var(--pw) + var(--fora) - 6px);display:flex;gap:10px;align-items:center;padding:10px 12px;background:#fff;color:#10241B;border-radius:18px 18px 18px 6px;box-shadow:0 1px 2px rgba(16,36,27,.08),0 18px 34px -16px rgba(16,36,27,.5);font-size:14px;line-height:1.25;
   transition:transform .75s var(--mola),opacity .3s var(--ease)}
 .casa .k-ic{flex:none;width:36px;height:36px;border-radius:11px;background:#DDEDE5;display:grid;place-items:center}
 .casa .k-ic svg{width:22px;height:22px;fill:none;stroke:#0B6E4F;stroke-width:2;stroke-linejoin:round;stroke-linecap:round}
@@ -549,7 +552,7 @@ img.fx{height:auto}
 .card{aspect-ratio:4/5;padding:16px;display:flex;flex-direction:column;justify-content:space-between;overflow:hidden;outline:3px solid transparent;outline-offset:3px;transition:outline-color .2s var(--ease),transform .3s var(--ease)}
 .style[aria-pressed="true"] .card{outline-color:var(--ink)}
 @media (hover:hover){.style:hover .card{transform:translateY(-4px)}}
-.card .menu{font-size:11px;display:flex;gap:10px;opacity:.8}
+.card .menu{font-size:11px;display:flex;flex-wrap:wrap;gap:2px 10px;opacity:.8}
 .card .bn{display:block;font-size:var(--fs,30px);line-height:1;overflow-wrap:normal;word-break:normal}
 .card .pill{align-self:flex-start;font-size:12px;font-weight:600;padding:7px 12px;border-radius:999px}
 .style .lbl{font-weight:600;font-size:15px;display:flex;justify-content:space-between}
@@ -566,10 +569,11 @@ img.fx{height:auto}
 
 /* Preços */
 .plans{margin-top:40px;display:grid;gap:12px}
+.plans>*,.hero .wrap>*,.project .wrap>*{min-width:0}
 .plan{background:var(--surface);padding:28px;display:flex;flex-direction:column;gap:12px}
 .plan .row{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap}
 .plan h3{font-size:22px;font-weight:700}
-.price{font-size:40px;font-weight:800;font-stretch:104%;letter-spacing:-.03em;font-variant-numeric:tabular-nums;white-space:nowrap}
+.price{font-size:40px;font-weight:800;font-stretch:104%;letter-spacing:-.03em;font-variant-numeric:tabular-nums}
 .price small{font-size:18px;font-weight:600;letter-spacing:0}
 .plan p{color:var(--muted);max-width:40ch}
 .plan .btn{margin-top:auto;align-self:flex-start}
@@ -918,8 +922,8 @@ footer a{min-height:44px;display:inline-flex;align-items:center}
       <div class="plans">
         <div class="plan rv">
           <p class="p-para">Para seres encontrado</p>
-          <div class="row"><h3>Página única</h3><span class="price">149&nbsp;€</span></div>
-          <p class="p-div">2 × 74,50&nbsp;€, o primeiro só depois do desenho</p>
+          <div class="row"><h3>Página única</h3><span class="price">75&nbsp;€</span></div>
+          <p class="p-div">2 × 37,50&nbsp;€, o primeiro só depois do desenho</p>
           <ul class="inclui">
             <li>1 página desenhada de raiz</li>
             <li>Contacto por WhatsApp, telefone e e&#8209;mail</li>
@@ -928,13 +932,13 @@ footer a{min-height:44px;display:inline-flex;align-items:center}
             <li class="nao"><span class="sr">Não inclui: </span>Até 5 páginas</li>
             <li class="nao"><span class="sr">Não inclui: </span>Preparada para o Google</li>
           </ul>
-          <a class="btn btn-secondary wa" data-msg="Olá Dinis! Quero a página única (149 €)." href="https://wa.me/351913488258">Pedir página única</a>
+          <a class="btn btn-secondary wa" data-msg="Olá Dinis! Quero a página única (75 €)." href="https://wa.me/351913488258">Pedir página única</a>
         </div>
         <div class="plan rec rv">
           <span class="rec-tag">Recomendado</span>
           <p class="p-para">Para vender o teu serviço</p>
-          <div class="row"><h3>Site completo</h3><span class="price">299&nbsp;€</span></div>
-          <p class="p-div">2 × 149,50&nbsp;€, o primeiro só depois do desenho</p>
+          <div class="row"><h3>Site completo</h3><span class="price">149&nbsp;€</span></div>
+          <p class="p-div">2 × 74,50&nbsp;€, o primeiro só depois do desenho</p>
           <ul class="inclui">
             <li>Até 5 páginas desenhadas de raiz</li>
             <li>Contacto por WhatsApp, telefone e e&#8209;mail</li>
@@ -942,18 +946,18 @@ footer a{min-height:44px;display:inline-flex;align-items:center}
             <li>Preparado para o Google</li>
             <li>Domínio e alojamento no 1.º ano</li>
           </ul>
-          <a class="btn wa" data-msg="Olá Dinis! Quero o site completo (299 €)." href="https://wa.me/351913488258">Pedir site completo</a>
+          <a class="btn wa" data-msg="Olá Dinis! Quero o site completo (149 €)." href="https://wa.me/351913488258">Pedir site completo</a>
         </div>
         <div class="plan rv">
           <p class="p-para">Para vender produtos</p>
-          <div class="row"><h3>Loja online</h3><span class="price"><small>desde</small> 499&nbsp;€</span></div>
-          <p class="p-div">2 × 249,50&nbsp;€, o primeiro só depois do desenho</p>
+          <div class="row"><h3>Loja online</h3><span class="price"><small>desde</small> 249&nbsp;€</span></div>
+          <p class="p-div">2 × 124,50&nbsp;€, o primeiro só depois do desenho</p>
           <ul class="inclui">
             <li>Tudo o que tem o site completo</li>
             <li>Produtos, carrinho e pagamentos online</li>
             <li>Domínio e alojamento no 1.º ano</li>
           </ul>
-          <a class="btn btn-secondary wa" data-msg="Olá Dinis! Quero uma loja online (desde 499 €)." href="https://wa.me/351913488258">Pedir loja online</a>
+          <a class="btn btn-secondary wa" data-msg="Olá Dinis! Quero uma loja online (desde 249 €)." href="https://wa.me/351913488258">Pedir loja online</a>
         </div>
       </div>
       <ol class="garante rv" aria-label="Como pagas">
@@ -1178,6 +1182,29 @@ footer a{min-height:44px;display:inline-flex;align-items:center}
       es.forEach(function(e){ if(e.isIntersecting){ ligar(e.target); io.unobserve(e.target); } });
     },{threshold:.3});
     cenas.forEach(function(c){ io.observe(c); });
+  })();
+
+  /* Letra aumentada no telemóvel: o nome encolhe até caber e as frases do topo partem se não couberem */
+  (function(){
+    var nome=document.querySelector('.name'), sub=document.querySelector('.sub');
+    function cabe(){
+      if(nome){
+        nome.style.fontSize='';
+        for(var k=0;k<4;k++){
+          var largo=0; [].forEach.call(nome.children,function(s){ largo=Math.max(largo,s.scrollWidth); });
+          var lim=nome.clientWidth; if(!lim||largo<=lim+1) break;
+          var fs=parseFloat(getComputedStyle(nome).fontSize); nome.style.fontSize=(fs*lim/largo*0.98)+'px';
+        }
+      }
+      if(sub){
+        var w=sub.clientWidth;
+        [].forEach.call(sub.querySelectorAll('a,.nw'),function(el){ el.classList.remove('solto'); });
+        [].forEach.call(sub.querySelectorAll('a,.nw'),function(el){ if(el.getBoundingClientRect().width>w+1) el.classList.add('solto'); });
+      }
+    }
+    cabe(); if(document.fonts&&document.fonts.ready) document.fonts.ready.then(cabe);
+    window.addEventListener('resize',cabe); window.addEventListener('load',cabe);
+    window.__cabe=cabe;
   })();
 
   /* Pré-visualização */
