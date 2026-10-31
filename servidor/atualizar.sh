@@ -146,6 +146,16 @@ if [ -f "$GM/index.html" ] && ! diff -rq "$GM" /var/www/goodman >/dev/null 2>&1;
     && mv /var/www/goodman.novo /var/www/goodman && rm -rf /var/www/goodman.velho
 fi
 
+# tapmoss: jogo de fazer crescer musgo (instalável, funciona sem rede), site estático em sites/tapmoss.
+# Copia só quando mudou, para uma pasta nova, e troca de uma vez (nunca fica meio copiado).
+TM=$BASE/servidor/sites/tapmoss
+if [ -f "$TM/index.html" ] && ! diff -rq "$TM" /var/www/tapmoss >/dev/null 2>&1; then
+  rm -rf /var/www/tapmoss.novo && mkdir -p /var/www && cp -r "$TM" /var/www/tapmoss.novo \
+    && chmod -R a+rX /var/www/tapmoss.novo \
+    && rm -rf /var/www/tapmoss.velho && { [ ! -d /var/www/tapmoss ] || mv /var/www/tapmoss /var/www/tapmoss.velho; } \
+    && mv /var/www/tapmoss.novo /var/www/tapmoss && rm -rf /var/www/tapmoss.velho
+fi
+
 # AdriBodyPiercing: agenda (API em 127.0.0.1:3120, atrás do Caddy). A password fica só como hash em
 # /etc/adri-agenda/agenda.env, fora do repositório (posta lá pelo servidor.yml, acao=chaves-adri).
 if [ -f "$SERV/adri-agenda.service" ] && [ -f "$BASE/servidor/adri/agenda.py" ]; then
