@@ -35,7 +35,8 @@ VERIFICA = r"""(escala) => {
     if (!n.textContent.trim()) continue;
     const el = n.parentElement; if (!el || vistos.has(el)) continue;
     if (['SCRIPT','STYLE','NOSCRIPT','TEMPLATE','OPTION','TITLE'].includes(el.tagName)) continue;
-    if (el.closest('.sr,.sr-only,.visually-hidden,.skip,.salta,[class*=skip],.sr-foco,[hidden],dialog:not([open]),details:not([open]) > :not(summary),.recolhida')) continue;
+    if (el.closest('.sr,.sr-only,.vh,.visually-hidden,.skip,.salta,[class*=skip],.sr-foco,[hidden],dialog:not([open]),.recolhida')) continue;
+    if (el.closest('details:not([open])') && !el.closest('summary')) continue;
     if (!visivel(el)) continue;
     const rg = document.createRange(); rg.selectNodeContents(n);
     const rects = [...rg.getClientRects()].filter(r => r.width > 1 && r.height > 1);
@@ -66,6 +67,29 @@ VERIFICA = r"""(escala) => {
       if (!cortado && !vistos.has(el)) { vistos.add(el); res.fora.push(caminho(el) + ' «' + n.textContent.trim().slice(0, 40) + '»'); }
     }
   }
+  // texto em cima de texto (rótulos que se atropelam)
+  const caixas = [];
+  const w2 = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT); let m2;
+  while ((m2 = w2.nextNode())) {
+    if (!m2.textContent.trim()) continue; const el = m2.parentElement; if (!el || !visivel(el)) continue;
+    if (el.closest('[aria-hidden="true"],.sr,.sr-only,.vh,.visually-hidden,.skip,.salta,script,style,noscript,option')) continue;
+    if (el.closest('details:not([open])') && !el.closest('summary')) continue;
+    let fixo = false; for (let q = el; q && q !== document.body; q = q.parentElement) { const ps = getComputedStyle(q).position; if (ps === 'fixed' || ps === 'sticky') { fixo = q; break; } }
+    const rg = document.createRange(); rg.selectNodeContents(m2);
+    for (const r of rg.getClientRects()) if (r.width > 2 && r.height > 2) caixas.push({ r, el, fixo, t: m2.textContent.trim().slice(0, 24) });
+  }
+  const sobre = [];
+  for (let i = 0; i < caixas.length && sobre.length < 15; i++) for (let j = i + 1; j < caixas.length; j++) {
+    const A = caixas[i], B = caixas[j]; if (A.el === B.el || A.el.contains(B.el) || B.el.contains(A.el)) continue;
+    if (A.fixo !== B.fixo) continue; // conteúdo que passa por baixo de uma barra fixa
+    const ix = Math.min(A.r.right, B.r.right) - Math.max(A.r.left, B.r.left), iy = Math.min(A.r.bottom, B.r.bottom) - Math.max(A.r.top, B.r.top);
+    if (ix <= 2 || iy <= 2) continue;
+    const ha = Math.min(A.r.height, B.r.height);
+    if (iy < ha * 0.45) continue; // linhas vizinhas com entrelinha apertada
+    // um por cima do outro de propósito (posição absoluta/fixa)? continua a contar se ambos forem texto normal
+    sobre.push('«' + A.t + '» × «' + B.t + '» (' + Math.round(ix) + 'px)'); if (sobre.length >= 15) break;
+  }
+  res.sobre = sobre;
   res.cortado = [...new Set(res.cortado)].slice(0, 25); res.fora = [...new Set(res.fora)].slice(0, 25);
   return res;
 }"""
@@ -133,12 +157,14 @@ def resumo(rel):
         if r['hscroll'] > 1: probs.append(f"scroll para os lados +{r['hscroll']}px")
         if r['cortado']: probs.append(f"{len(r['cortado'])} texto(s) cortado(s)")
         if r['fora']: probs.append(f"{len(r['fora'])} texto(s) fora do ecrã")
+        if r.get('sobre'): probs.append(f"{len(r['sobre'])} texto(s) em cima de outro")
         if r['erros']: probs.append(f"erros JS: {r['erros'][:2]}")
         if probs:
             falhas += 1
             print('FALHA', k, '|', '; '.join(probs))
             for c in r['cortado'][:8]: print('      cortado:', c)
             for c in r['fora'][:8]: print('      fora:', c)
+            for c in r.get('sobre', [])[:8]: print('      sobre:', c)
     print('TOTAL com problemas:', falhas, 'de', len(rel))
 
 if __name__ == '__main__':
