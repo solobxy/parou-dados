@@ -28,7 +28,7 @@
 <meta name="twitter:image" content="https://{{.Host}}/og.jpg">
 <link rel="preload" href="fonts/archivo.woff" as="font" type="font/woff" crossorigin>
 <script type="application/ld+json">
-{"@context":"https://schema.org","@type":"ProfessionalService","name":"Dinis Sousa","url":"https://dinissousa.pt/","description":"Sites feitos de raiz para marcas e negócios em Portugal.","areaServed":"PT","priceRange":"75 € – 249 €","telephone":"+351913488258","email":"diniscash@gmail.com","founder":{"@type":"Person","name":"Dinis Sousa"}}
+{"@context":"https://schema.org","@type":"ProfessionalService","name":"Dinis Sousa","url":"https://dinissousa.pt/","description":"Sites feitos de raiz para marcas e negócios em Portugal.","areaServed":"PT","priceRange":"75 € – 690 €","telephone":"+351913488258","email":"diniscash@gmail.com","founder":{"@type":"Person","name":"Dinis Sousa"}}
 </script>
 <style>
 @font-face{font-family:"Archivo";src:url("fonts/archivo.woff") format("woff");font-weight:100 900;font-stretch:62% 125%;font-display:swap}
@@ -692,6 +692,16 @@ footer a{min-height:44px;display:inline-flex;align-items:center}
   .btn:active,.btn:hover,.style:hover .card,.brand-tile:hover{transform:none}
 }
 
+.plan.medida{background-color:var(--bg);box-shadow:inset 0 0 0 1.5px var(--ink);
+  background-image:radial-gradient(rgba(127,127,127,.28) 1px,transparent 1.3px);background-size:18px 18px;background-position:9px 9px}
+.plan.medida .m-topo{display:flex;flex-direction:column;gap:12px}
+.plan.medida .p-div{margin-top:0;font-size:15px;max-width:44ch}
+@media (min-width:720px){
+  .plan.medida{grid-column:1/-1;margin-top:20px;padding:36px;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.3fr);grid-template-areas:"topo lista" "botao lista";column-gap:56px;row-gap:24px;align-items:start}
+  .plan.medida .m-topo{grid-area:topo}
+  .plan.medida .inclui{grid-area:lista;margin:4px 0 0;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:28px;row-gap:12px}
+  .plan.medida .btn{grid-area:botao;align-self:end;justify-self:start}
+}
 .plan .lanc{margin-top:-6px;font-size:13px;font-weight:600;color:var(--ink);opacity:.82}
 /* Oferta de lançamento: cartão pequeno no canto, nunca ecrã inteiro */
 .oferta{position:fixed;z-index:60;right:20px;bottom:calc(20px + env(safe-area-inset-bottom));width:344px;max-width:calc(100vw - 24px);
@@ -1000,6 +1010,24 @@ footer a{min-height:44px;display:inline-flex;align-items:center}
             <li>Domínio e alojamento no 1.º ano</li>
           </ul>
           <a class="btn btn-secondary wa" data-msg="Olá Dinis! Quero uma loja online (desde 249 €)." data-normal-msg="Olá Dinis! Quero uma loja online (desde 499 €)." href="https://wa.me/351913488258">Pedir loja online</a>
+        </div>
+        <div class="plan medida rv">
+          <div class="m-topo">
+            <p class="p-para">Para ideias maiores</p>
+            <div class="row"><h3>À medida</h3><span class="price"><small>desde</small> 690&nbsp;€</span></div>
+            <p class="p-div">Um sistema feito à volta da forma como a tua empresa trabalha. O preço fica fechado depois de vermos juntos o que precisas.</p>
+          </div>
+          <ul class="inclui">
+            <li>Tudo o que tem a loja online</li>
+            <li>Área de cliente com login</li>
+            <li>Painel de administração só teu</li>
+            <li>Base de dados e CRM, com os clientes que já tens</li>
+            <li>Marcações, orçamentos ou encomendas</li>
+            <li>Estatísticas de visitas, cliques e vendas</li>
+            <li>Ligação à faturação (Moloni ou InvoiceXpress)</li>
+            <li>Domínio e alojamento no 1.º ano</li>
+          </ul>
+          <a class="btn btn-primary wa" data-msg="Olá Dinis! Tenho uma ideia para um projeto à medida. Posso explicar-te?" href="https://wa.me/351913488258">Contar a minha ideia</a>
         </div>
       </div>
       <script>
