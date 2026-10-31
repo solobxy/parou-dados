@@ -1,12 +1,12 @@
 {
-  "built_at": "2026-10-31T09:59:08.685084+00:00",
-  "db_bytes": 800485376,
-  "gz_bytes": 151619480,
+  "built_at": "2026-10-31T19:23:21.207043+00:00",
+  "db_bytes": 800849920,
+  "gz_bytes": 151678202,
   "totals": {
     "lines": 2665,
     "stops": 46391,
-    "trips": 162870,
-    "stop_times": 5110920,
+    "trips": 162936,
+    "stop_times": 5114024,
     "operators": 30,
     "operators_ok": 27,
     "operators_desatualizados": 2
@@ -189,7 +189,7 @@
       "status": "OK",
       "lines": 80,
       "stops": 2011,
-      "trips": 3730,
+      "trips": 3796,
       "valid_until": "2027-02-01",
       "validade": "ok",
       "dias_validade": 93,
@@ -198,7 +198,7 @@
       "last_error": null,
       "servicos_associados": null,
       "servicos_sem_calendario": null,
-      "viagens_hoje": 895,
+      "viagens_hoje": 0,
       "viagens_amanha": 799,
       "dias_uteis_sem_servico": 0
     },
@@ -584,7 +584,7 @@
     }
   ],
   "desenhos": {
-    "bytes": 10044570,
+    "bytes": 10039313,
     "por_operador": {
       "carris": {
         "viagens": 24996,
@@ -702,9 +702,9 @@
         "desenhos": 18
       },
       "tub_braga": {
-        "viagens": 3730,
-        "com_desenho": 3607,
-        "desenhos": 392
+        "viagens": 3796,
+        "com_desenho": 3621,
+        "desenhos": 383
       },
       "tuba_barcelos": {
         "viagens": 648,
@@ -919,12 +919,12 @@
           "total": 392
         },
         "servicos_com_data_hoje": [
+          "AS",
           "ES",
-          "FS",
           "BS",
-          "DS",
           "CS",
-          "AS"
+          "DS",
+          "FS"
         ],
         "viagens_por_servico": [
           {
@@ -979,5 +979,5 @@
       }
     }
   },
-  "duration_s": 287
+  "duration_s": 311
 }
