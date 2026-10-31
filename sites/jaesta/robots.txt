@@ -1,0 +1,5 @@
+User-agent: *
+Disallow: /m/
+Disallow: /p/
+Disallow: /criar/
+Sitemap: https://jaesta.pt/sitemap.xml

@@ -1,0 +1,6 @@
+Licenças dos tipos de letra usados nos modelos
+
+- Inter (inter-*.woff): SIL Open Font License 1.1, Rasmus Andersson.
+- Lora itálico (lora-italico.woff): SIL Open Font License 1.1, Cyreal.
+- TeX Gyre Bonum, Heros e Heros Cn (bonum-*, heros-*, heroscn-*): GUST Font License, GUST e-foundry.
+- Archivo (../../fontes/archivo.woff): SIL Open Font License 1.1, Omnibus-Type.

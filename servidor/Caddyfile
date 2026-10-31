@@ -280,6 +280,56 @@ www.dinissousa.pt {
 }
 # FIM www.dinissousa.pt
 
+# JAESTA.PT - «já está», sites feitos antes de pedir (estático em /var/www/jaesta, vindo de sites/jaesta deste repositório)
+(jaesta) {
+	encode zstd gzip
+	header {
+		Strict-Transport-Security "max-age=31536000"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		Permissions-Policy "geolocation=(), camera=(), microphone=()"
+		Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; form-action 'self'; frame-ancestors 'none'; base-uri 'none'"
+		-Server
+	}
+	root * /var/www/jaesta
+	# Preenche {{.Host}} nas etiquetas de partilha (imagem do WhatsApp em qualquer endereço)
+	templates {
+		mime text/html
+	}
+	@estaticos path /fontes/* /img/* /m/fontes/* *.svg *.jpg *.png *.webp *.woff
+	header @estaticos Cache-Control "public, max-age=2592000"
+	@paginas path / *.html *.js *.css /p/* /criar /criar/*
+	header @paginas Cache-Control "no-cache"
+	# Modelos, pré-visualizações e a página de criar ficam fora dos motores de busca
+	@privado path /m/* /p/* /criar /criar/*
+	header @privado X-Robots-Tag "noindex, nofollow"
+	try_files {path} {path}/index.html
+	file_server
+}
+
+# Endereço de testes (funciona antes de o domínio apontar para aqui; fica fora do Google)
+jaesta.{HOST_TESTE} {
+	header X-Robots-Tag "noindex, nofollow"
+	handle /robots.txt {
+		respond "User-agent: *
+Disallow: /
+" 200
+	}
+	import jaesta
+}
+
+# INICIO jaesta.pt
+jaesta.pt {
+	import jaesta
+}
+# FIM jaesta.pt
+
+# INICIO www.jaesta.pt
+www.jaesta.pt {
+	redir https://jaesta.pt{uri} permanent
+}
+# FIM www.jaesta.pt
+
 # ADRIBODYPIERCING - site do estúdio do Adriano (estático em /var/www/adribodypiercing, vindo de sites/adribodypiercing deste repositório)
 (adribodypiercing) {
 	encode zstd gzip

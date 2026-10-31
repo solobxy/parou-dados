@@ -1,0 +1,373 @@
+<!doctype html>
+<html lang="pt-PT">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>já está · O site do seu negócio, já feito</title>
+<meta name="description" content="Faço o site do seu negócio antes de lhe pedir seja o que for. Se gostar, fica no ar em 48 horas por 149 €. Se não gostar, não paga nada. Gondomar e Grande Porto.">
+<meta name="theme-color" content="#FAFAF7">
+<meta name="color-scheme" content="light">
+<meta property="og:type" content="website">
+<meta property="og:locale" content="pt_PT">
+<meta property="og:title" content="já está. O site do seu negócio, já feito.">
+<meta property="og:description" content="Vê o site antes de decidir. Se gostar, fica no ar em 48 horas por 149 €. Se não gostar, não paga nada.">
+<meta property="og:image" content="https://{{.Host}}/og.jpg">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="img/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="preload" href="fontes/archivo.woff" as="font" type="font/woff" crossorigin>
+<style>
+@font-face { font-family: "Archivo"; src: url("fontes/archivo.woff") format("woff"); font-weight: 100 900; font-stretch: 62% 125%; font-display: swap; }
+:root {
+  --papel: #FAFAF7; --papel-2: #EFEFE8; --tinta: #101114; --apoio: #55565E; --azul: #2B3FE0; --azul-claro: #8C9BFF;
+  --m: 20px; --larg: 1200px; --sec: 104px;
+}
+@media (min-width: 900px) { :root { --m: 56px; --sec: 176px; } }
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }
+body { margin: 0; background: var(--papel); color: var(--tinta); font: 400 18px/1.55 "Archivo", system-ui, sans-serif; font-stretch: 100%; -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
+a { color: inherit; }
+img { display: block; max-width: 100%; height: auto; }
+h1, h2, h3 { font-weight: 800; font-stretch: 92%; letter-spacing: -.035em; line-height: .96; margin: 0; text-wrap: balance; }
+p { margin: 0; }
+.env { width: min(var(--larg), 100% - 2 * var(--m)); margin-inline: auto; }
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; min-height: 56px; padding: 0 28px; border-radius: 999px; border: 0;
+  font: 700 17px/1 "Archivo", sans-serif; text-decoration: none; cursor: pointer; touch-action: manipulation; white-space: nowrap;
+  transition: transform .12s ease-out, background .15s;
+}
+.btn:active { transform: scale(.98); }
+.btn.azul { background: var(--azul); color: #fff; }
+.btn.azul:hover { background: #3B4EF0; }
+.btn.sec { background: var(--papel-2); color: var(--tinta); }
+.btn.sec:hover { background: #E5E5DD; }
+a:focus-visible, button:focus-visible, summary:focus-visible { outline: 3px solid var(--azul); outline-offset: 3px; border-radius: 6px; }
+.salta { position: absolute; left: -999px; top: 8px; background: #fff; padding: 10px 14px; z-index: 50; }
+.salta:focus { left: 8px; }
+.nb { white-space: nowrap; }
+
+/* topo */
+.topo { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 18px 0; }
+.topo .logo img { height: 30px; width: auto; }
+.topo nav { display: flex; align-items: center; gap: 22px; font-weight: 600; font-size: 16px; }
+.topo nav a.ligacao { text-decoration: none; display: none; }
+@media (min-width: 760px) { .topo nav a.ligacao { display: inline; } }
+.topo nav a.ligacao:hover { text-decoration: underline; text-underline-offset: 4px; }
+.topo .btn { min-height: 46px; padding: 0 20px; font-size: 15px; }
+
+/* herói */
+.heroi { padding: 24px 0 var(--sec); }
+.heroi .grelha { display: grid; gap: 48px; align-items: center; }
+@media (min-width: 960px) { .heroi .grelha { grid-template-columns: minmax(0, 1.15fr) minmax(0, .85fr); gap: 40px; } .heroi { padding-top: 56px; } .heroi h1 { font-size: clamp(64px, 7.6vw, 112px); } }
+.heroi h1 { font-size: clamp(50px, 13.4vw, 112px); }
+.heroi h1 .azul { color: var(--azul); }
+.heroi .apoio { font-size: clamp(19px, 2.2vw, 22px); max-width: 33ch; margin: 26px 0 32px; }
+.heroi .acoes { display: flex; flex-wrap: wrap; gap: 12px; }
+.heroi .quem { margin-top: 20px; color: var(--apoio); font-size: 15px; }
+.heroi .quem a { display: inline-block; padding: 10px 0; }
+
+/* palco do telemóvel */
+.palco { position: relative; justify-self: center; width: min(78vw, 330px); }
+.telemovel { position: relative; aspect-ratio: 540 / 1169; border-radius: 46px; background: var(--tinta); padding: 10px; box-shadow: 0 50px 80px -40px rgba(16,17,20,.55); }
+.ecra { position: relative; height: 100%; border-radius: 36px; overflow: hidden; background: #ddd; }
+.ecra img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: top; opacity: 0; transition: opacity .7s ease-out; }
+.ecra img.ativa { opacity: 1; }
+.selo {
+  position: absolute; left: -12%; bottom: 14%; width: clamp(122px, 38vw, 152px); height: clamp(122px, 38vw, 152px); border-radius: 50%; display: grid; place-content: center; text-align: center; overflow: hidden;
+  color: var(--azul); background: rgba(250,250,247,.94); border: 4px solid var(--azul); box-shadow: inset 0 0 0 5px var(--papel), inset 0 0 0 8px var(--azul);
+  transform: rotate(-12deg); padding: 0 16px;
+}
+.selo.bate { animation: bate .55s cubic-bezier(.25,1.7,.5,1) both; }
+@keyframes bate { 0% { transform: rotate(-12deg) scale(1.7); opacity: 0; } 100% { transform: rotate(-12deg) scale(1); opacity: 1; } }
+.selo b { font-size: clamp(20px, 6vw, 25px); white-space: nowrap; font-weight: 900; line-height: .95; letter-spacing: -.02em; font-stretch: 90%; }
+.selo small { font-size: 10px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; margin: 6px 0 3px; }
+.selo span { font-size: 12px; font-weight: 800; line-height: 1.12; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+
+/* números */
+.numeros { background: var(--tinta); color: var(--papel); padding: var(--sec) 0; }
+.numeros .grelha { display: grid; gap: 40px; }
+@media (min-width: 960px) { .numeros .grelha { grid-template-columns: 1.1fr .9fr; gap: 88px; align-items: end; } }
+.numeros .grande { font-size: clamp(110px, 30vw, 250px); font-weight: 900; font-stretch: 80%; letter-spacing: -.05em; line-height: .82; color: var(--azul-claro); }
+.numeros .grande small { font-size: .42em; letter-spacing: -.02em; }
+.numeros h2 { font-size: clamp(30px, 6vw, 52px); margin-top: 18px; max-width: 18ch; }
+.numeros .texto p { font-size: 19px; color: #CFCFD6; max-width: 40ch; }
+.numeros .texto p + p { margin-top: 18px; }
+.numeros .texto b { color: #fff; font-weight: 700; }
+.fonte { font-size: 13px; color: #8E8F99; margin-top: 18px; }
+.fonte a { color: inherit; display: inline-block; padding: 8px 0; }
+
+/* como funciona */
+.como { padding: var(--sec) 0; }
+.cab { display: grid; gap: 16px; margin-bottom: 48px; }
+@media (min-width: 960px) { .cab { grid-template-columns: 1fr 1fr; align-items: end; margin-bottom: 72px; } }
+.cab h2 { font-size: clamp(44px, 9.6vw, 92px); }
+.cab p { font-size: 19px; color: var(--apoio); max-width: 40ch; }
+.passos { list-style: none; margin: 0; padding: 0; display: grid; gap: 14px; }
+@media (min-width: 960px) { .passos { grid-template-columns: repeat(4, 1fr); gap: 16px; } }
+.passos li { position: relative; background: var(--papel-2); border-radius: 28px; padding: 28px 24px 30px; min-height: 210px; display: flex; flex-direction: column; justify-content: space-between; gap: 24px; overflow: hidden; }
+.passos li:last-child { background: var(--azul); color: #fff; }
+.passos .verbo { font-size: clamp(30px, 7vw, 38px); font-weight: 800; font-stretch: 90%; letter-spacing: -.03em; line-height: 1; }
+.passos p { font-size: 17px; color: var(--apoio); }
+.passos li:last-child p { color: #DADFFF; }
+.passos .marca-v { position: absolute; right: 18px; top: 18px; width: 44px; height: 44px; border-radius: 50%; border: 3px solid currentColor; color: var(--azul); display: grid; place-items: center; transform: rotate(-12deg) scale(.6); opacity: 0; }
+.passos li:last-child .marca-v { color: #fff; }
+.passos .marca-v svg { width: 24px; height: 24px; }
+.passos li.dentro .marca-v { animation: carimba .45s var(--atraso, .3s) cubic-bezier(.25,1.7,.5,1) forwards; }
+@keyframes carimba { to { transform: rotate(-12deg) scale(1); opacity: 1; } }
+
+/* exemplos */
+.exemplos { padding: 0 0 var(--sec); }
+.galeria { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 26px 14px; }
+@media (min-width: 960px) { .galeria { grid-template-columns: repeat(4, 1fr); gap: 24px; } }
+.galeria a { display: block; text-decoration: none; }
+.galeria .mini { display: block; border-radius: 26px; background: var(--tinta); padding: 6px; transition: transform .35s cubic-bezier(.2,.8,.2,1); }
+.galeria .mini img { border-radius: 20px; aspect-ratio: 540 / 1169; object-fit: cover; object-position: top; width: 100%; }
+.galeria a:hover .mini { transform: translateY(-6px) rotate(-1deg); }
+.galeria .nome { display: block; font-weight: 800; font-size: 20px; margin-top: 14px; letter-spacing: -.02em; }
+.galeria .ver { display: block; color: var(--azul); font-weight: 700; font-size: 15px; margin-top: 2px; }
+.nota-ex { color: var(--apoio); font-size: 15px; margin-top: 30px; }
+
+/* preço */
+.preco { background: var(--papel-2); padding: var(--sec) 0; }
+.preco .grelha { display: grid; gap: 40px; }
+@media (min-width: 960px) { .preco .grelha { grid-template-columns: .9fr 1.1fr; gap: 72px; align-items: start; } }
+.preco h2 { font-size: clamp(44px, 9.6vw, 92px); }
+.preco .lateral p { font-size: 19px; color: var(--apoio); margin-top: 20px; max-width: 36ch; }
+.cartao { background: var(--papel); border-radius: 32px; padding: 32px 24px 28px; }
+@media (min-width: 960px) { .cartao { padding: 44px 44px 40px; } }
+.cartao .valor { display: flex; align-items: baseline; flex-wrap: wrap; gap: 6px 16px; }
+.cartao .valor b { font-size: clamp(84px, 22vw, 132px); font-weight: 900; font-stretch: 84%; letter-spacing: -.05em; line-height: .85; }
+.cartao .valor span { font-weight: 700; color: var(--apoio); }
+.cartao .depois { font-size: 19px; font-weight: 700; margin-top: 16px; }
+.cartao .lanc { display: inline-block; margin: 12px 0 22px; font-weight: 700; color: var(--azul); }
+.inclui { list-style: none; margin: 0 0 26px; padding: 0; display: grid; gap: 12px; }
+.inclui li { position: relative; padding-left: 34px; font-size: 18px; }
+.inclui li::before { content: ""; position: absolute; left: 3px; top: 6px; width: 17px; height: 9px; border-left: 3px solid var(--azul); border-bottom: 3px solid var(--azul); transform: rotate(-45deg); }
+.paga { background: var(--papel-2); border-radius: 20px; padding: 18px 20px; font-size: 17px; }
+.paga b { font-weight: 700; }
+.cartao .btn { width: 100%; margin-top: 22px; }
+.miudo { font-size: 14px; color: var(--apoio); margin-top: 16px; }
+.mais-pags { margin-top: 26px; font-size: 17px; }
+
+/* quem */
+.quem-sec { padding: var(--sec) 0; }
+.quem-sec .grelha { display: grid; gap: 30px; }
+@media (min-width: 960px) { .quem-sec .grelha { grid-template-columns: 1.1fr .9fr; gap: 88px; align-items: end; } }
+.quem-sec h2 { font-size: clamp(44px, 9.6vw, 92px); }
+.quem-sec p { font-size: 19px; max-width: 40ch; }
+.quem-sec p + p { margin-top: 16px; }
+.quem-sec p a { display: inline-block; padding: 6px 0; }
+.contacto-g { display: inline-block; font-size: clamp(38px, 10vw, 64px); font-weight: 800; letter-spacing: -.03em; text-decoration: none; margin: 8px 0 18px; white-space: nowrap; }
+
+/* perguntas */
+.perguntas { padding: 0 0 var(--sec); }
+.perguntas details { border-bottom: 3px solid var(--papel-2); }
+.perguntas summary { list-style: none; cursor: pointer; display: flex; justify-content: space-between; align-items: center; gap: 18px; padding: 22px 0; font-size: clamp(20px, 4.6vw, 26px); font-weight: 700; letter-spacing: -.02em; line-height: 1.2; }
+.perguntas summary::-webkit-details-marker { display: none; }
+.perguntas summary::after { content: ""; flex: none; width: 14px; height: 14px; border-right: 3px solid var(--azul); border-bottom: 3px solid var(--azul); transform: rotate(45deg) translate(-3px, -3px); transition: transform .25s; }
+.perguntas details[open] summary::after { transform: rotate(225deg) translate(-3px, -3px); }
+.perguntas .resp { padding: 0 0 24px; font-size: 18px; color: #2C2D33; max-width: 62ch; }
+
+/* indicações */
+.indica { background: var(--azul); color: #fff; padding: calc(var(--sec) * .8) 0; }
+.indica .grelha { display: grid; gap: 26px; }
+@media (min-width: 960px) { .indica .grelha { grid-template-columns: 1.2fr .8fr; align-items: end; gap: 72px; } }
+.indica h2 { font-size: clamp(40px, 8.6vw, 80px); }
+.indica p { font-size: 19px; color: #DADFFF; max-width: 40ch; }
+.indica .btn { background: #fff; color: var(--azul); margin-top: 24px; }
+
+footer { padding: 48px 0 40px; font-size: 15px; color: var(--apoio); }
+footer .linha { display: flex; flex-wrap: wrap; gap: 14px 28px; align-items: center; justify-content: space-between; }
+footer img { height: 26px; width: auto; }
+footer nav { display: flex; flex-wrap: wrap; align-items: center; gap: 0 22px; }
+footer nav a, footer nav span { display: inline-block; padding: 12px 0; }
+
+/* entradas: uma vez, e sem script tudo fica visível */
+.js [data-entra] { opacity: 0; transform: translateY(26px); }
+.js [data-entra].dentro { opacity: 1; transform: none; transition: opacity .6s ease-out, transform .75s cubic-bezier(.2,.8,.25,1); transition-delay: var(--atraso, 0s); }
+@media (prefers-reduced-motion: reduce) { .js [data-entra] { transform: none; } }
+</style>
+</head>
+<body>
+<a class="salta" href="#conteudo">Saltar para o conteúdo</a>
+<header class="env topo">
+  <a class="logo" href="./" aria-label="já está, início"><img src="img/jaesta-logo.svg" alt="já está" width="140" height="44"></a>
+  <nav aria-label="Principal">
+    <a class="ligacao" href="#exemplos">Exemplos</a>
+    <a class="ligacao" href="#preco">Preço</a>
+    <a class="btn azul" href="https://wa.me/351913488258?text=Ol%C3%A1%20Dinis!%20Tenho%20um%20neg%C3%B3cio%20e%20queria%20ver%20como%20ficava%20o%20meu%20site." target="_blank" rel="noopener">Falar com o Dinis</a>
+  </nav>
+</header>
+
+<main id="conteudo">
+  <section class="heroi">
+    <div class="env grelha">
+      <div>
+        <h1>O seu site <span class="azul">já está feito.</span></h1>
+        <p class="apoio">Faço o site do seu negócio antes de lhe pedir seja o que for. Se gostar, fica no ar em 48&nbsp;horas por 149&nbsp;€. Se não gostar, não paga nada.</p>
+        <div class="acoes">
+          <a class="btn azul" href="https://wa.me/351913488258?text=Ol%C3%A1%20Dinis!%20Queria%20ver%20como%20ficava%20o%20site%20do%20meu%20neg%C3%B3cio.%20Chama-se%3A%20" target="_blank" rel="noopener">Quero ver o meu</a>
+          <a class="btn sec" href="#exemplos">Ver exemplos</a>
+        </div>
+        <p class="quem">Dinis Sousa · Gondomar e Grande Porto · <a class="nb" href="tel:+351913488258">913&nbsp;488&nbsp;258</a></p>
+      </div>
+      <div class="palco" aria-label="Exemplos de sites feitos com o já está, a passar no ecrã de um telemóvel" role="img">
+        <div class="telemovel"><div class="ecra">
+          <img class="ativa" src="img/barbearia.webp" alt="" width="540" height="1169" fetchpriority="high">
+          <img src="img/obras.webp" alt="" width="540" height="1169" loading="lazy">
+          <img src="img/beleza.webp" alt="" width="540" height="1169" loading="lazy">
+          <img src="img/oficina.webp" alt="" width="540" height="1169" loading="lazy">
+        </div></div>
+        <div class="selo bate" aria-hidden="true"><b>já está</b><small>feito para</small><span id="selo-nome">Barbearia Teixeira</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="numeros" aria-labelledby="t-num">
+    <div class="env grelha">
+      <div data-entra>
+        <p class="grande" aria-hidden="true">30,8<small>%</small></p>
+        <h2 id="t-num">das microempresas tinham site em 2023.</h2>
+        <p class="fonte">Empresas com menos de 10 pessoas, em Portugal. Fonte: INE, via <a href="https://www.pordata.pt/en/portugal/enterprises+with+a+presence+on+the+internet+as+a+percentage+of+total+of+enterprises+by+band+of+personnel+employed-1145" target="_blank" rel="noopener">PORDATA</a>.</p>
+      </div>
+      <div class="texto" data-entra style="--atraso:.1s">
+        <p>Num estudo feito a empresas da região Centro, os travões mais apontados foram <b>o custo</b>, <b>não saber tratar disso</b> e <b>a vontade de não mudar o que funciona</b>.</p>
+        <p>O já está resolve as três: preço fechado, eu trato de tudo e vê o site pronto antes de decidir.</p>
+        <p>Se usava o site grátis da Google, esse site foi desligado em março de 2024.</p>
+        <p class="fonte">Estudo EDDE-DIGITAL24 (2024, 425 empresas). Sites da Google: desligados a 1 de março de 2024.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="como" aria-labelledby="t-como">
+    <div class="env">
+      <div class="cab" data-entra><h2 id="t-como">Como funciona</h2><p>O trabalho todo é meu. O seu é ver e dizer se gosta.</p></div>
+      <ol class="passos">
+        <li data-entra><span class="marca-v" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="verbo">Vejo</span><p>o seu negócio no Google: nome, horário, morada, contactos e o que os clientes dizem.</p></li>
+        <li data-entra style="--atraso:.08s"><span class="marca-v" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="verbo">Faço</span><p>o site com isso tudo, em três versões de cores. Os clientes marcam e ligam a partir do telemóvel.</p></li>
+        <li data-entra style="--atraso:.16s"><span class="marca-v" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="verbo">Mostro</span><p>ao vivo, na sua loja ou num link. Escolhe a versão de que gosta mais.</p></li>
+        <li data-entra style="--atraso:.24s"><span class="marca-v" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="verbo">Já está.</span><p>Disse que sim? Junto as suas fotos e fica no ar em 48&nbsp;horas, com endereço próprio.</p></li>
+      </ol>
+    </div>
+  </section>
+
+  <section class="exemplos" id="exemplos" aria-labelledby="t-ex">
+    <div class="env">
+      <div class="cab" data-entra><h2 id="t-ex">Exemplos</h2><p>Cada ramo tem o seu desenho. Abra um e carregue nos botões, como se fosse cliente.</p></div>
+      <ul class="galeria">
+        <li data-entra><a href="m/barbearia.html"><span class="mini"><img src="img/barbearia.webp" alt="Exemplo de site para uma barbearia: poste de barbeiro e marcação por senha de vez" width="540" height="1169" loading="lazy"></span><span class="nome">Barbearias</span><span class="ver">Abrir exemplo</span></a></li>
+        <li data-entra style="--atraso:.06s"><a href="m/obras.html"><span class="mini"><img src="img/obras.webp" alt="Exemplo de site para obras e remodelações: planta a desenhar-se e folha de obra para pedir orçamento" width="540" height="1169" loading="lazy"></span><span class="nome">Obras e remodelações</span><span class="ver">Abrir exemplo</span></a></li>
+        <li data-entra style="--atraso:.12s"><a href="m/beleza.html"><span class="mini"><img src="img/beleza.webp" alt="Exemplo de site para estética e unhas: espelho com a inicial e marcação por tratamento" width="540" height="1169" loading="lazy"></span><span class="nome">Estética e unhas</span><span class="ver">Abrir exemplo</span></a></li>
+        <li data-entra style="--atraso:.18s"><a href="m/oficina.html"><span class="mini"><img src="img/oficina.webp" alt="Exemplo de site para uma oficina: matrícula onde o cliente escreve a sua e ficha de serviço" width="540" height="1169" loading="lazy"></span><span class="nome">Oficinas</span><span class="ver">Abrir exemplo</span></a></li>
+      </ul>
+      <p class="nota-ex">Os exemplos usam nomes inventados. O seu leva o nome, o horário e os contactos verdadeiros do seu negócio.</p>
+    </div>
+  </section>
+
+  <section class="preco" id="preco" aria-labelledby="t-preco">
+    <div class="env grelha">
+      <div class="lateral" data-entra>
+        <h2 id="t-preco">Preço fechado</h2>
+        <p>Para comparar: nas listas de preços públicas que encontrei em Portugal, um site de uma página custa de 297&nbsp;€ a 690&nbsp;€ + IVA (um freelancer e um estúdio, outubro de 2026).</p>
+      </div>
+      <div class="cartao" data-entra style="--atraso:.08s">
+        <div class="valor"><b>149&nbsp;€</b><span>para pôr no ar, com o 1.º ano de domínio e alojamento</span></div>
+        <p class="depois">Depois, 96&nbsp;€ por ano, com alterações pequenas incluídas. Sem fidelização.</p>
+        <span class="lanc">Preço de lançamento para os 5 primeiros negócios. Depois, 249&nbsp;€.</span>
+        <ul class="inclui">
+          <li>Site de uma página com o seu nome, serviços, horário e contactos</li>
+          <li>Botões para ligar, mandar mensagem pelo WhatsApp e chegar lá</li>
+          <li>Endereço próprio (onomedoseunegocio.pt), em nome do seu negócio</li>
+          <li>As suas fotos, preços e textos, acertados consigo</li>
+          <li>Pronto para o Google: dados do negócio, rapidez e telemóvel</li>
+        </ul>
+        <p class="paga"><b>Metade quando disser que sim, o resto com o site no ar.</b> <span class="nb">MB WAY</span> ou transferência. Se não gostar, não paga nada.</p>
+        <a class="btn azul" href="https://wa.me/351913488258?text=Ol%C3%A1%20Dinis!%20Queria%20ver%20como%20ficava%20o%20site%20do%20meu%20neg%C3%B3cio.%20Chama-se%3A%20" target="_blank" rel="noopener">Quero ver o meu</a>
+        <p class="miudo">Preço final, sem IVA a somar, com fatura-recibo. Se um dia quiser sair, o domínio é seu.</p>
+        <p class="mais-pags">Precisa de mais páginas? Site completo por 299&nbsp;€. Loja online desde 499&nbsp;€.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="quem-sec" aria-labelledby="t-quem">
+    <div class="env grelha">
+      <div data-entra>
+        <h2 id="t-quem">Quem faz</h2>
+      </div>
+      <div data-entra style="--atraso:.08s">
+        <p>Sou o Dinis Sousa. Vivo em Gondomar e faço sites para negócios daqui. Fala sempre comigo, do primeiro dia ao último.</p>
+        <p>Pode ver outros projetos meus em <a href="https://dinissousa.pt" target="_blank" rel="noopener">dinissousa.pt</a>.</p>
+        <a class="contacto-g" href="tel:+351913488258">913&nbsp;488&nbsp;258</a>
+      </div>
+    </div>
+  </section>
+
+  <section class="perguntas" aria-labelledby="t-perg">
+    <div class="env">
+      <div class="cab" data-entra><h2 id="t-perg">Perguntas</h2><p>As que os donos de negócio fazem mais vezes.</p></div>
+      <div data-entra>
+        <details><summary>Já tenho Instagram. Preciso de um site?</summary><p class="resp">O Instagram mostra o seu trabalho a quem já o segue. O site responde a quem procura no Google ou no Maps e quer saber, sem dar volta ao perfil, o horário, onde fica e como marcar. Os dois juntam-se: o site pode ter a ligação para o Instagram.</p></details>
+        <details><summary>E se eu não gostar?</summary><p class="resp">Não paga nada e a pré-visualização é apagada. Só paga a primeira metade depois de dizer que sim.</p></details>
+        <details><summary>Quanto tempo demora?</summary><p class="resp">O desenho já está feito quando o vê. Depois de dizer que sim e de me mandar as fotos, fica no ar em 48&nbsp;horas.</p></details>
+        <details><summary>Tenho de pagar todos os meses?</summary><p class="resp">Não. Paga 149&nbsp;€ para pôr o site no ar, com o 1.º ano de domínio e alojamento incluído. Do 2.º ano em diante são 96&nbsp;€ por ano, de uma vez, se quiser continuar comigo. Sem fidelização.</p></details>
+        <details><summary>O endereço fica em nome de quem?</summary><p class="resp">Do seu negócio. Se um dia quiser mudar de pessoa, leva o domínio consigo.</p></details>
+        <details><summary>E se precisar de mudar um preço ou o horário?</summary><p class="resp">Manda-me uma mensagem e eu trato. As pequenas alterações estão incluídas.</p></details>
+        <details><summary>Como pago?</summary><p class="resp">Por <span class="nb">MB WAY</span> ou transferência bancária, com fatura-recibo. Metade quando disser que sim, o resto quando o site estiver no ar.</p></details>
+      </div>
+    </div>
+  </section>
+
+  <section class="indica" aria-labelledby="t-ind">
+    <div class="env grelha">
+      <div data-entra><h2 id="t-ind">Indique um negócio</h2></div>
+      <div data-entra style="--atraso:.08s">
+        <p>Conhece um negócio sem site? Diga-me qual. Se avançar, recebe 20&nbsp;€ por <span class="nb">MB WAY</span>.</p>
+        <a class="btn" href="https://wa.me/351913488258?text=Ol%C3%A1%20Dinis!%20Conhe%C3%A7o%20um%20neg%C3%B3cio%20que%20merecia%20um%20site%3A%20" target="_blank" rel="noopener">Indicar um negócio</a>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="env linha">
+    <img src="img/jaesta-logo.svg" alt="já está" width="120" height="38">
+    <nav aria-label="Rodapé"><span>Dinis Sousa · Gondomar</span><a href="tel:+351913488258">913&nbsp;488&nbsp;258</a><a href="https://www.livroreclamacoes.pt" target="_blank" rel="noopener">Livro de Reclamações</a></nav>
+  </div>
+</footer>
+
+<script>
+(function () {
+  document.documentElement.classList.add('js');
+  var alvos = document.querySelectorAll('[data-entra]');
+  if ('IntersectionObserver' in window) {
+    var io = new IntersectionObserver(function (es) { es.forEach(function (e) { if (e.isIntersecting) { e.target.classList.add('dentro'); io.unobserve(e.target); } }); }, { rootMargin: '0px 0px -10% 0px' });
+    alvos.forEach(function (a) { io.observe(a); });
+  } else { alvos.forEach(function (a) { a.classList.add('dentro'); }); }
+  // o título do topo fica sempre em 2 linhas no máximo, em qualquer largura
+  var h1 = document.querySelector('.heroi h1');
+  function cabe() { var lh = parseFloat(getComputedStyle(h1).lineHeight); return h1.getBoundingClientRect().height <= lh * 2 + 2; }
+  function ajusta() {
+    h1.style.fontSize = ''; if (cabe()) return;
+    var hi = parseFloat(getComputedStyle(h1).fontSize), lo = 30;
+    for (var k = 0; k < 9; k++) { var m = (lo + hi) / 2; h1.style.fontSize = m + 'px'; if (cabe()) lo = m; else hi = m; }
+    h1.style.fontSize = Math.floor(lo) + 'px';
+  }
+  ajusta(); if (document.fonts) document.fonts.ready.then(ajusta);
+  var rt; window.addEventListener('resize', function () { clearTimeout(rt); rt = setTimeout(ajusta, 150); });
+  // o telemóvel do topo passa pelos exemplos e o selo «já está» bate em cada um
+  var imgs = document.querySelectorAll('.ecra img'), selo = document.querySelector('.selo'), nome = document.getElementById('selo-nome');
+  var nomes = ['Barbearia Teixeira', 'Remodelações Ferreira', 'Estúdio Marta Lima', 'Auto Reparadora Sousa'];
+  var i = 0, t = null;
+  function seguinte() {
+    imgs[i].classList.remove('ativa'); i = (i + 1) % imgs.length; imgs[i].classList.add('ativa');
+    setTimeout(function () { nome.textContent = nomes[i]; selo.classList.remove('bate'); void selo.offsetWidth; selo.classList.add('bate'); }, 380);
+  }
+  function corre() { if (!t) t = setInterval(seguinte, 3400); }
+  function para() { clearInterval(t); t = null; }
+  var palco = document.querySelector('.palco');
+  if ('IntersectionObserver' in window) new IntersectionObserver(function (es) { es[0].isIntersecting ? corre() : para(); }).observe(palco); else corre();
+  document.addEventListener('visibilitychange', function () { document.hidden ? para() : corre(); });
+})();
+</script>
+</body>
+</html>
