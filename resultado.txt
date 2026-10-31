@@ -1,0 +1,39 @@
+== 2026-10-31T15:20:52Z acao=comando
+IP: 2.31.13.85
+== Saída no servidor
+== Caddyfile com estatisticas: 9 imports
+chave substituida
+HASH=73515adb92d53a274760fd628dc4d30927fd7bbcc704a1e07764932c46b51b16
+total 24
+drwxr-xr-x  2 root root  4096 Oct 31 15:23 .
+drwxr-xr-x 10 root root  4096 Oct 31 15:23 ..
+-rw-r--r--  1 root root 15194 Oct 31 15:23 e.js
+== jinxed tem script: 1
+== dominios ativos no Caddy:
+parou.pt www.parou.pt anjinho.pt www.anjinho.pt jinxed.world www.jinxed.world goodman.pt www.goodman.pt 
+2-31-13-85.sslip.io                  js=200 get=405 post=204
+anjinho.2-31-13-85.sslip.io          js=200 get=405 post=204
+jinxed.2-31-13-85.sslip.io           js=200 get=405 post=204
+duaschaves.2-31-13-85.sslip.io       js=200 get=405 post=204
+dinissousa.2-31-13-85.sslip.io       js=200 get=405 post=204
+jaesta.2-31-13-85.sslip.io           js=200 get=405 post=204
+adribodypiercing.2-31-13-85.sslip.io js=200 get=405 post=204
+goodman.2-31-13-85.sslip.io          js=200 get=405 post=204
+parou.pt                             js=200 get=405 post=204
+duplicasa.pt                         js=000 get=000 post=000
+dinissousa.pt                        js=000 get=000 post=000
+anjinho.pt                           js=200 get=405 post=204
+jinxed.world                         js=200 get=405 post=204
+adribodypiercing.pt                  js=000 get=000 post=000
+goodman.pt                           js=000 get=000 post=000
+jaesta.pt                            js=000 get=000 post=000
+== caddy
+active
+{"level":"warn","ts":1793460203.0443537,"logger":"http","msg":"missing email address for ZeroSSL; it is strongly recommended to set one for next time"}
+{"level":"error","ts":1793460203.4959204,"logger":"tls.obtain","msg":"could not get certificate from issuer","identifier":"www.goodman.pt","issuer":"acme.zerossl.com-v2-DV90","error":"account pre-regi
+{"level":"error","ts":1793460203.495994,"logger":"tls.obtain","msg":"will retry","error":"[www.goodman.pt] Obtain: account pre-registration callback: failed getting EAB credentials: HTTP 422: caddy_le
+{"level":"error","ts":1793460203.4970248,"logger":"tls.obtain","msg":"could not get certificate from issuer","identifier":"goodman.pt","issuer":"acme.zerossl.com-v2-DV90","error":"account pre-registra
+{"level":"error","ts":1793460203.4970765,"logger":"tls.obtain","msg":"will retry","error":"[goodman.pt] Obtain: account pre-registration callback: failed getting EAB credentials: HTTP 422: caddy_legac
+== Teste de fora
+https://2-31-13-85.sslip.io/health 200 0.402138s
+https://2-31-13-85.sslip.io/api/transit/loading-status 200 0.371057s
