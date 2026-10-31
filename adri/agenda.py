@@ -43,8 +43,8 @@ SERVICOS = {
     'sobrancelha': ('Sobrancelha', 40), 'lingua': ('Língua', 45), 'umbigo': ('Umbigo', 45), 'mamilo': ('Mamilo (cada)', 50),
     'microdermal': ('Microdermal', 70), 'consulta': ('Consulta', 0), 'troca': ('Troca de joia', 10), 'retirar': ('Retirar joia', 5),
 }
-_SEMANA = ['10:30', '11:30', '12:30', '14:30', '15:30', '16:30', '17:30', '18:30']
-HORAS = {1: _SEMANA, 2: _SEMANA, 3: _SEMANA, 4: _SEMANA, 5: ['10:00', '11:00', '12:00', '14:00', '15:00', '16:00', '17:00']}  # 0 = segunda
+_DIA = ['10:00', '11:00', '12:00', '14:00', '15:00', '16:00', '17:00']  # terça a sábado, 10h–18h (a última marcação começa às 17h)
+HORAS = {1: _DIA, 2: _DIA, 3: _DIA, 4: _DIA, 5: _DIA}  # 0 = segunda
 ATIVOS = ('pendente', 'confirmada')
 ESTADOS = ('pendente', 'confirmada', 'recusada', 'cancelada', 'concluida', 'faltou')
 

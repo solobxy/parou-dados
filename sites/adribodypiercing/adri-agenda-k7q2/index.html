@@ -318,8 +318,8 @@ function bloqueios(c){
     '<div class="campo"><label for="bMot">Motivo (só tu vês)</label><input id="bMot" maxlength="120" placeholder="Ex.: Férias"></div>' +
     '<button class="btn" id="bBlq">Bloquear</button></form><div class="painel" id="lBlq"><p style="color:var(--sec)">A carregar…</p></div>';
   function horasSelect(){
-    var d = dParse($('#bDia').value).getDay(), sem = ['10:30','11:30','12:30','14:30','15:30','16:30','17:30','18:30'], sab = ['10:00','11:00','12:00','14:00','15:00','16:00','17:00'];
-    var hs = d === 6 ? sab : (d >= 2 && d <= 5 ? sem : []);
+    var d = dParse($('#bDia').value).getDay();
+    var hs = d >= 2 && d <= 6 ? ['10:00','11:00','12:00','14:00','15:00','16:00','17:00'] : [];
     $('#bHora').innerHTML = '<option value="">O dia inteiro</option>' + hs.map(function(h){ return '<option value="' + h + '">' + h.replace(':', 'h') + '</option>'; }).join('');
   }
   horasSelect(); $('#bDia').addEventListener('change', horasSelect);
