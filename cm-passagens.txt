@@ -1,0 +1,7 @@
+OK      [lenta] desiste em menos de 4 s 3500 ms
+OK      [lenta] diz que não respondeu (ok=false), não "sem partidas" 
+OK      [resposta] ok e com a partida [{"linha":"1001","destino":"Cacilhas","programada":36000,"prevista":36120}]
+OK      [cópia] dentro de 60 s responde da cópia 
+OK      [falha] sem cópia: ok=false 
+OK      [compatível] passagensHojeCM continua a devolver lista 
+tudo OK

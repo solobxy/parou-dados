@@ -1,0 +1,126 @@
+{
+ "testes": [
+  {
+   "nome": "[a bordo] o autocarro 801 está no mapa",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[a bordo] o autocarro fica marcado como «meu»",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[a bordo] mediu-se a distância entre a bola e o ponto da pessoa",
+   "ok": true,
+   "extra": "20 medidas"
+  },
+  {
+   "nome": "[a bordo] a bola do autocarro está em cima do ponto da pessoa (mediana ≤ 3 px ≈ 40 m)",
+   "ok": true,
+   "extra": "mediana 0.0 px"
+  },
+  {
+   "nome": "[a bordo] e nunca se afasta mais de 6 px (≈ 85 m) — o atraso do operador era de 170 a 230 m",
+   "ok": true,
+   "extra": "máximo 1.0 px"
+  },
+  {
+   "nome": "[ponto] a bordo, com a bola em cima da pessoa, o ponto da pessoa esconde-se (um só marcador)",
+   "ok": true,
+   "extra": "opacidade 0"
+  },
+  {
+   "nome": "[mapa] ao ir a bordo o mapa segue o autocarro: a bola está no centro do mapa (≤ 20 px)",
+   "ok": true,
+   "extra": "0.4 px"
+  },
+  {
+   "nome": "[mapa] e mostra 2 a 6 paragens à volta (não o percurso todo, nem só uma)",
+   "ok": true,
+   "extra": "4 paragens"
+  },
+  {
+   "nome": "[mapa] ao arrastar o mapa deixa de seguir (a bola sai do centro)",
+   "ok": true,
+   "extra": "146.6 px"
+  },
+  {
+   "nome": "[mapa] 4 s depois de largar ainda não voltou a prender",
+   "ok": true,
+   "extra": "152.9 px"
+  },
+  {
+   "nome": "[mapa] 6 s depois de largar volta a prender ao autocarro (centrado)",
+   "ok": true,
+   "extra": "0.6 px"
+  },
+  {
+   "nome": "[mapa] depois de afastar e esperar, volta a seguir com 2 a 6 paragens à vista",
+   "ok": true,
+   "extra": "0.4 px, 4 paragens"
+  },
+  {
+   "nome": "[GPS fraco] com precisão de 150 m a bola não segue o ponto (usa a posição do operador)",
+   "ok": true,
+   "extra": "mediana 51.0 px"
+  },
+  {
+   "nome": "[ponto] com GPS fraco a bola não segue e o ponto da pessoa volta a ver-se",
+   "ok": true,
+   "extra": "opacidade 1"
+  },
+  {
+   "nome": "[GPS fraco] quando o GPS volta ao normal a bola volta a seguir a pessoa",
+   "ok": true,
+   "extra": "mediana 0.0 px"
+  },
+  {
+   "nome": "[ponto] com o GPS normal a bola segue outra vez e o ponto volta a esconder-se",
+   "ok": true,
+   "extra": "opacidade 0"
+  },
+  {
+   "nome": "[longe] a 900 m do autocarro a bola não salta para o ponto da pessoa (mediana > 30 px)",
+   "ok": true,
+   "extra": "mediana 249.4 px"
+  },
+  {
+   "nome": "[longe] e continua a andar com o autocarro, não fica parada (anda ≥ 3 px em 10 s)",
+   "ok": true,
+   "extra": "dx -23.0 → -2.0 px"
+  },
+  {
+   "nome": "[ponto] longe do autocarro o ponto da pessoa fica à vista (a pessoa não está no autocarro)",
+   "ok": true,
+   "extra": "opacidade 1"
+  },
+  {
+   "nome": "[longe] ao voltar ao autocarro a bola volta a ir em cima da pessoa",
+   "ok": true,
+   "extra": "mediana 0.0 px"
+  },
+  {
+   "nome": "[já saí] depois de «Já saí» a bola volta à posição do operador (já não está em cima de mim)",
+   "ok": true,
+   "extra": "58.0 px"
+  },
+  {
+   "nome": "[ponto] depois de «Já saí» o ponto da pessoa está à vista",
+   "ok": true,
+   "extra": "opacidade 1"
+  },
+  {
+   "nome": "[tudo] sem erros de consola",
+   "ok": true,
+   "extra": ""
+  }
+ ],
+ "notas": [
+  "distâncias medidas (px): 0 0 0 0 0 0 0 1 0 0 0 0 0 0 0 0 0 0 0 0",
+  "mapa: {\"fora\":0.3828125,\"paragens\":4,\"w\":390,\"h\":276.765625,\"cx\":195,\"cy\":195.3828125}",
+  "depois de afastar: {\"fora\":0.3828125,\"paragens\":12,\"w\":390,\"h\":276.765625,\"cx\":195,\"cy\":195.3828125}",
+  "com GPS fraco (px): 0 0 54 53 52 51 51 49",
+  "longe: distância ao ponto (px) 250 250 250 250 249 249 249 249 249 249; dx -23 -20 -18 -16 -14 -11 -9 -7 -4 -2"
+ ]
+}

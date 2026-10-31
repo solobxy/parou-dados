@@ -1,0 +1,15 @@
+OK      [contar] a mesma pessoa no mesmo dia conta uma vez 
+OK      [contar] noutro dia a mesma pessoa volta a contar 
+OK      [validar] tipo inválido não conta 
+OK      [validar] id com espaços/HTML não conta 
+OK      [ordem] mais pessoas primeiro [{"id":"carris:728","nome":"Carris 728","pessoas":5},{"id":"cp:sintra","nome":"CP Sintra","pessoas":3},{"id":"stcp:205","nome":"STCP 205","pessoas":3}]
+OK      [ordem] B entra com 3 
+OK      [mínimo] soma dos dias conta (C: 2 hoje + 1 ontem = 3) 
+OK      [mínimo] só entram com 3 ou mais 
+OK      [nome] guarda o nome para a administração 
+OK      [paragens] separadas das linhas 
+OK      [populares] sem cidades devolve as linhas por ordem ["carris:728","cp:sintra","stcp:205"]
+OK      [30 dias] fora da janela não conta 
+OK      [privacidade] no disco não fica quem abriu alvo,dia,n,nome,tipo
+OK      [admin] resumo traz linhas e paragens 
+tudo OK

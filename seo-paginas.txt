@@ -1,0 +1,109 @@
+OK      [preparar] há linhas de vários operadores 7
+        /linhas/stcp/1m-av-aliados-matosinhos-praia 
+         título: 1M Av. Aliados – Matosinhos (Praia): horário STCP | PAROU (57) 
+         descrição: Dias úteis: 1.º autocarro às 00:30, último às 05:30, 6 partidas por dia. Linha 1M · STCP (Av. Aliados – Matosinhos): horário de sábados e domingos, 38…
+OK      [linha stcp] 200 200
+OK      [linha stcp] título diz "horário" e não passa de 72 1M Av. Aliados – Matosinhos (Praia): horário STCP | PAROU
+OK      [linha stcp] título não começa por "Linha <número>" (o número vem primeiro) 1M Av. Aliados – Matosinhos (Praia): horário STCP | PAROU
+OK      [linha stcp] título sem percurso vazio (" -:" ou "()") 1M Av. Aliados – Matosinhos (Praia): horário STCP | PAROU
+OK      [linha stcp] JSON-LD válido 
+OK      [linha stcp] descrição com horas dos dias úteis (ou sem horário) Dias úteis: 1.º autocarro às 00:30, último às 05:30, 6 partidas por dia. Linha 1
+        /linhas/carris/10b-campo-cebolas-circulacao-graca 
+         título: 10B Campo Cebolas / circulação Graça: horário Carris | PAROU (60) 
+         descrição: Dias úteis: 1.º autocarro às 07:30, último às 20:25, de 25 em 25 min na hora de ponta. Linha 10B · Carris (Campo Cebolas / circulação Graça): horário de…
+OK      [linha carris] 200 200
+OK      [linha carris] título diz "horário" e não passa de 72 10B Campo Cebolas / circulação Graça: horário Carris | PAROU
+OK      [linha carris] título não começa por "Linha <número>" (o número vem primeiro) 10B Campo Cebolas / circulação Graça: horário Carris | PAROU
+OK      [linha carris] título sem percurso vazio (" -:" ou "()") 10B Campo Cebolas / circulação Graça: horário Carris | PAROU
+OK      [linha carris] JSON-LD válido 
+OK      [linha carris] descrição com horas dos dias úteis (ou sem horário) Dias úteis: 1.º autocarro às 07:30, último às 20:25, de 25 em 25 min na hora de 
+        /linhas/cp/alfa-pendular-braga-lisboa-santa-apolonia 
+         título: Alfa Pendular Braga – Lisboa Santa Apolónia: horário CP | PAROU (63) 
+         descrição: Dias úteis: 1.º comboio às 06:00, último às 20:00, 4 partidas por dia. Alfa Pendular · CP – Comboios de Portugal (Braga – Lisboa Santa Apolónia): horário de…
+OK      [linha cp] 200 200
+OK      [linha cp] título diz "horário" e não passa de 72 Alfa Pendular Braga – Lisboa Santa Apolónia: horário CP | PAROU
+OK      [linha cp] título não começa por "Linha <número>" (o número vem primeiro) Alfa Pendular Braga – Lisboa Santa Apolónia: horário CP | PAROU
+OK      [linha cp] título sem percurso vazio (" -:" ou "()") Alfa Pendular Braga – Lisboa Santa Apolónia: horário CP | PAROU
+OK      [linha cp] JSON-LD válido 
+OK      [linha cp] descrição com horas dos dias úteis (ou sem horário) Dias úteis: 1.º comboio às 06:00, último às 20:00, 4 partidas por dia. Alfa Pend
+        /linhas/metro-do-porto/a 
+         título: Linha A Senhor de Matosinhos – Estádio do Dragão: horário Metro do Porto (72) 
+         descrição: Dias úteis: 1.º metro às 05:59, último às 01:00, de 12 em 12 min na hora de ponta. Linha A · Metro do Porto (Senhor de Matosinhos – Estádio do Dragão):…
+OK      [linha metro-do-porto] 200 200
+OK      [linha metro-do-porto] título diz "horário" e não passa de 72 Linha A Senhor de Matosinhos – Estádio do Dragão: horário Metro do Porto
+OK      [linha metro-do-porto] título não começa por "Linha <número>" (o número vem primeiro) Linha A Senhor de Matosinhos – Estádio do Dragão: horário Metro do Porto
+OK      [linha metro-do-porto] título sem percurso vazio (" -:" ou "()") Linha A Senhor de Matosinhos – Estádio do Dragão: horário Metro do Porto
+OK      [linha metro-do-porto] JSON-LD válido 
+OK      [linha metro-do-porto] descrição com horas dos dias úteis (ou sem horário) Dias úteis: 1.º metro às 05:59, último às 01:00, de 12 em 12 min na hora de pont
+        /linhas/unir/1001-arouca-cct-cabecais-via-tropeco 
+         título: 1001 Arouca (CCT) – Cabeçais (via Tropeço): horário UNIR | PAROU (64) 
+         descrição: Horário da Linha 1001 · UNIR (Arouca – Cabeçais): 39 paragens e horário de hoje.
+OK      [linha unir] 200 200
+OK      [linha unir] título diz "horário" e não passa de 72 1001 Arouca (CCT) – Cabeçais (via Tropeço): horário UNIR | PAROU
+OK      [linha unir] título não começa por "Linha <número>" (o número vem primeiro) 1001 Arouca (CCT) – Cabeçais (via Tropeço): horário UNIR | PAROU
+OK      [linha unir] título sem percurso vazio (" -:" ou "()") 1001 Arouca (CCT) – Cabeçais (via Tropeço): horário UNIR | PAROU
+OK      [linha unir] JSON-LD válido 
+        /linhas/carris-metropolitana/1001-alfragide-estr-seminario-reboleira-estacao 
+         título: 1001 Alfragide – Reboleira: horário Carris Metropolitana | PAROU (64) 
+         descrição: Dias úteis: 1.º autocarro às 06:20, último às 22:25, de 50 em 50 min na hora de ponta. Linha 1001 · Carris Metropolitana (Alfragide – Reboleira): horário de…
+OK      [linha carris-metropolitana] 200 200
+OK      [linha carris-metropolitana] título diz "horário" e não passa de 72 1001 Alfragide – Reboleira: horário Carris Metropolitana | PAROU
+OK      [linha carris-metropolitana] título não começa por "Linha <número>" (o número vem primeiro) 1001 Alfragide – Reboleira: horário Carris Metropolitana | PAROU
+OK      [linha carris-metropolitana] título sem percurso vazio (" -:" ou "()") 1001 Alfragide – Reboleira: horário Carris Metropolitana | PAROU
+OK      [linha carris-metropolitana] JSON-LD válido 
+OK      [linha carris-metropolitana] descrição com horas dos dias úteis (ou sem horário) Dias úteis: 1.º autocarro às 06:20, último às 22:25, de 50 em 50 min na hora de 
+        /linhas/tub-braga/2-ponte-de-prado-bom-jesus 
+         título: 2 Ponte de Prado – Bom Jesus: horário TUB | PAROU (49) 
+         descrição: Dias úteis: 1.º autocarro às 07:00, último às 20:30, de 30 em 30 min na hora de ponta. Linha 2 · TUB (Ponte de Prado – Bom Jesus): horário de sábados e…
+OK      [linha tub-braga] 200 200
+OK      [linha tub-braga] título diz "horário" e não passa de 72 2 Ponte de Prado – Bom Jesus: horário TUB | PAROU
+OK      [linha tub-braga] título não começa por "Linha <número>" (o número vem primeiro) 2 Ponte de Prado – Bom Jesus: horário TUB | PAROU
+OK      [linha tub-braga] título sem percurso vazio (" -:" ou "()") 2 Ponte de Prado – Bom Jesus: horário TUB | PAROU
+OK      [linha tub-braga] JSON-LD válido 
+OK      [linha tub-braga] descrição com horas dos dias úteis (ou sem horário) Dias úteis: 1.º autocarro às 07:00, último às 20:30, de 30 em 30 min na hora de 
+        /linhas/carris-metropolitana/4562-setubal-its-vila-nogueira-de-azeitao-escola-via-palmela-estacao 
+         dias úteis: 36 partidas · 05:15–22:45 
+         descrição: Dias úteis: 1.º autocarro às 05:15, último às 22:45, de 30 em 30 min na hora de ponta. Linha 4562 · Carris Metropolitana
+OK      [CM 4562] dias úteis com partidas (não «sem serviço») 36 partidas · 05:15–22:45
+OK      [CM 4562] descrição começa pelas horas dos dias úteis Dias úteis: 1.º autocarro às 05:15, último às 22:45, de 30 em 30 min na hora de 
+        /linhas/carris-metropolitana/4725-lisboa-sete-rios-setubal-terminal-varzea 
+         dias úteis: 33 partidas · 06:45–23:30 
+         descrição: Dias úteis: 1.º autocarro às 06:45, último às 23:30, de 30 em 30 min na hora de ponta. Linha 4725 · Carris Metropolitana
+OK      [CM 4725] dias úteis com partidas (não «sem serviço») 33 partidas · 06:45–23:30
+OK      [CM 4725] descrição começa pelas horas dos dias úteis Dias úteis: 1.º autocarro às 06:45, último às 23:30, de 30 em 30 min na hora de 
+        /linhas/carris-metropolitana/1001-alfragide-estr-seminario-reboleira-estacao 
+         dias úteis: 20 partidas · 06:20–22:25 
+         descrição: Dias úteis: 1.º autocarro às 06:20, último às 22:25, de 50 em 50 min na hora de ponta. Linha 1001 · Carris Metropolitana
+OK      [CM 1001] dias úteis com partidas (não «sem serviço») 20 partidas · 06:20–22:25
+OK      [CM 1001] descrição começa pelas horas dos dias úteis Dias úteis: 1.º autocarro às 06:20, último às 22:25, de 50 em 50 min na hora de 
+OK      [operador stcp] 200 em < 1,5 s 200 17 ms
+OK      [operador stcp] JSON-LD válido 
+OK      [operador stcp] perguntas frequentes visíveis e no FAQPage Como ver os horários da STCP em tempo real? | Quantas linhas e paragens tem a STCP? | Há greve da STCP hoje? | De onde vêm os horários da STCP?
+OK      [operador stcp] respostas sem "undefined"/"null" 
+OK      [operador stcp] secção "mais usadas" 
+OK      [operador stcp] liga a cidades 
+OK      [operador carris-metropolitana] 200 em < 1,5 s 200 15 ms
+OK      [operador carris-metropolitana] JSON-LD válido 
+OK      [operador carris-metropolitana] perguntas frequentes visíveis e no FAQPage Como ver os horários da Carris Metropolitana em tempo real? | Quantas linhas e paragens tem a Carris Metropolitana? | Há greve da Carris Metropolitana hoje? | De onde vêm os horários da Carris Metropolitana?
+OK      [operador carris-metropolitana] respostas sem "undefined"/"null" 
+OK      [operador carris-metropolitana] secção "mais usadas" 
+OK      [operador carris-metropolitana] liga a cidades 
+OK      [operador cp] 200 em < 1,5 s 200 5 ms
+OK      [operador cp] JSON-LD válido 
+OK      [operador cp] perguntas frequentes visíveis e no FAQPage A CP (comboios) tem tempo real? | Quantas linhas e paragens tem a CP (comboios)? | Há greve da CP (comboios) hoje? | De onde vêm os horários da CP (comboios)?
+OK      [operador cp] respostas sem "undefined"/"null" 
+OK      [operador cp] secção "mais usadas" 
+OK      [operador cp] liga a cidades 
+OK      [operador fertagus] 200 em < 1,5 s 200 2 ms
+OK      [operador fertagus] JSON-LD válido 
+OK      [operador fertagus] perguntas frequentes visíveis e no FAQPage A Fertagus tem tempo real? | Quantas linhas e paragens tem a Fertagus? | Há greve da Fertagus hoje? | De onde vêm os horários da Fertagus?
+OK      [operador fertagus] respostas sem "undefined"/"null" 
+OK      [operador fertagus] liga a cidades 
+OK      [operador metro-de-lisboa] 200 em < 1,5 s 200 2 ms
+OK      [operador metro-de-lisboa] JSON-LD válido 
+OK      [operador metro-de-lisboa] perguntas frequentes visíveis e no FAQPage Como ver os horários do Metro de Lisboa em tempo real? | Quantas linhas e paragens tem o Metro de Lisboa? | Há greve do Metro de Lisboa hoje? | De onde vêm os horários do Metro de Lisboa?
+OK      [operador metro-de-lisboa] respostas sem "undefined"/"null" 
+OK      [operador metro-de-lisboa] liga a cidades 
+OK      [stcp] título com "tempo real" Horários STCP e tempo real: linhas e paragens | PAROU
+OK      [stcp] pergunta sobre greve liga à página de greves 
+tudo OK

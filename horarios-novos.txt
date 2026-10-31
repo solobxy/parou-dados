@@ -1,0 +1,14 @@
+OK      [preparar] há linhas reais na base de teste horarios_funchal:001_C, mts:1_0, tcb_barreiro:1_1-QVB-TER_EA
+OK      [nova] aparece «Mais procuradas» 
+OK      [nova] título em português Mais procuradas
+OK      [nova] mostra as 3 linhas 3
+OK      [nova] pela ordem do servidor (1.ª antes da 2.ª) 47,120,-1
+OK      [nova] fica antes de «Todas as linhas» 214.84375 < 669.71875
+OK      [nova] sem scroll lateral a 390 px 390
+OK      [contar] abrir a linha avisa o servidor (só tipo, id e nome) [{"t":"linha","id":"horarios_funchal:001_C","nome":"001 Ponta Laranjeira - Centro (Ligação Monte C. 021)"}]
+OK      [nova] sem erros na página 
+OK      [com pesquisas] mostra as pesquisas recentes 
+OK      [com pesquisas] não mostra «Mais procuradas» 
+OK      [sem dados] a secção não aparece 
+OK      [sem dados] sem erros na página 
+tudo OK

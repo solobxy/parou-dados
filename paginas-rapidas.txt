@@ -1,0 +1,8 @@
+OK      [sql] sem "stop_id = ? OR stop_id IN (...)" (plano lento no SQLite 3.51) 
+OK      [preparar] há paragens no sitemap 13231
+OK      [tempo] mediana das páginas de paragem < 300 ms (75 páginas, 25 operadores) 3 ms, p90 120 ms
+OK      [tempo] p90 < 800 ms 120 ms
+OK      [carga] /health responde em < 1 s com 12 páginas em simultâneo 1 ms
+OK      [carga] as 12 páginas respondem 200 200,200,200,200,200,200,200,200,200,200,200,200
+OK      [carga] a mais lenta < 3 s 840 ms
+tudo OK
