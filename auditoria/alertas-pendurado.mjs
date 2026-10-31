@@ -5,7 +5,7 @@
 import path from 'node:path';
 import os from 'node:os';
 import fs from 'node:fs';
-const APP = process.env.APP || '/home/claude/parou';
+const APP = process.env.APP || '../parou';
 process.env.PAROU_DATA_DIR = fs.mkdtempSync(path.join(os.tmpdir(), 'alertas-'));
 globalThis.fetch = () => new Promise(() => {}); // fonte pendurada: nunca responde, ignora o abort
 let falhas = 0;

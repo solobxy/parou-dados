@@ -12,10 +12,10 @@ with sync_playwright() as p:
         pg.goto(U+'#inicio');pg.wait_for_timeout(1500)
         m=pg.evaluate("fetch('/manifest.webmanifest').then(r=>r.json())");ok(m['short_name']=='DupliCasa' and len(m['icons'])==4,'manifest')
         ok(pg.locator('[data-instalar-cartao]').is_visible(),nome+' cartão instalar')
-        pg.screenshot(path=f'/home/claude/testes/pwa-{nome}.png')
+        pg.screenshot(path=f'/tmp/testes/pwa-{nome}.png')
         pg.locator('[data-instalar-cartao] [data-instalar]').click();pg.wait_for_timeout(400)
         t=pg.inner_text('dialog');ok(('Partilhar' in t) if nome=='ios' else ('Instalar app' in t),nome+' instruções: '+t[:80])
-        pg.screenshot(path=f'/home/claude/testes/pwa-{nome}-dlg.png')
+        pg.screenshot(path=f'/tmp/testes/pwa-{nome}-dlg.png')
         pg.keyboard.press('Escape')
         if nome=='android':
             pg.wait_for_timeout(1500);r=pg.evaluate("navigator.serviceWorker.getRegistration().then(r=>!!r)");print('sw registado',r)

@@ -251,7 +251,7 @@ footer{{margin-top:56px;border-top:1px solid var(--b);padding:28px 0 40px;font-s
 {extra}
 </main>
 <footer><div class="w"><p>DupliCasa · casas e quartos para alugar em Portugal, num só lugar. Anúncios atualizados a {atualizado}.</p>
-<p><a href="/arrendar/">Todas as cidades</a><a href="/arrendar/precos/">Preço das rendas</a><a href="/arrendar/guias/">Guias</a><a href="/">Início</a><a href="/#senhorios">Para senhorios</a><a href="/#termos">Termos e privacidade</a></p></div></footer>
+<p><a href="/arrendar/">Todas as cidades</a><a href="/arrendar/precos/">Preço das rendas</a><a href="/arrendar/guias/">Guias</a><a href="/">Início</a><a href="/#senhorios">Para senhorios</a><a href="/#termos">Termos e privacidade</a><a href="https://dinissousa.pt" rel="noopener">Feito por dinissousa</a></p></div></footer>
 </body></html>
 '''
 

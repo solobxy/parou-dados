@@ -3,7 +3,7 @@
 // a primeira e a última partida e o intervalo. Exemplos reais das pesquisas do Search Console (out/2026).
 // Uso: APP=<pasta da app> tsx auditoria/titulos-linhas.mjs
 import path from 'node:path';
-const APP = process.env.APP || '/home/claude/parou';
+const APP = process.env.APP || '../parou';
 let falhas = 0;
 const ok = (n, c, e = '') => { if (!c) falhas++; console.log(c ? 'OK     ' : 'FALHOU ', n, e); };
 const t = await import(path.join(APP, 'src/server/seo/titulos.ts'));

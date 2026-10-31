@@ -2,7 +2,7 @@
 // a API lenta não pode fazer esperar a página mais de ~2,5 s, e uma falha não pode passar por "sem partidas".
 // Uso: APP=<pasta da app> tsx auditoria/cm-passagens.mjs
 import path from 'node:path';
-const APP = process.env.APP || '/home/claude/parou';
+const APP = process.env.APP || '../parou';
 let falhas = 0;
 const ok = (n, c, e = '') => { if (!c) falhas++; console.log(c ? 'OK     ' : 'FALHOU ', n, e); };
 const m = await import(path.join(APP, 'src/server/seo/carrisMetropolitana.ts'));

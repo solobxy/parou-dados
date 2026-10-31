@@ -2,7 +2,7 @@ name: Baixar ficheiros
 
 # Descarrega ficheiros de URLs https (ex.: imagens geradas no Higgsfield) para o ramo
 # "ficheiros-baixados", em baixados/<nome>. Serve para trazer ficheiros que o ambiente
-# de trabalho do Claude não consegue descarregar diretamente. Não toca no ramo main.
+# de trabalho na nuvem não consegue descarregar diretamente. Não toca no ramo main.
 #   pedidos: uma linha por ficheiro, "nome url" (ex.: "orelha.png https://...")
 
 on:

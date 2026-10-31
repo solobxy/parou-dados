@@ -1,6 +1,6 @@
 from playwright.sync_api import sync_playwright
 import subprocess,sys,time
-srv=subprocess.Popen([sys.executable,'-m','http.server','8766','--bind','127.0.0.1'],cwd='/home/claude/teste-real',stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL);time.sleep(1)
+srv=subprocess.Popen([sys.executable,'-m','http.server','8766','--bind','127.0.0.1'],cwd='/tmp/teste-real',stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL);time.sleep(1)
 JS='''() => {
  function lum(c){const m=c.match(/[\\d.]+/g).map(Number);if(m.length>3&&m[3]===0)return null;return m.slice(0,3).map(v=>{v/=255;return v<=0.03928?v/12.92:Math.pow((v+0.055)/1.055,2.4)}).reduce((a,v,i)=>a+v*[0.2126,0.7152,0.0722][i],0)}
  function fundo(el){while(el){const b=getComputedStyle(el).backgroundColor;const l=lum(b);if(l!==null)return l;el=el.parentElement}return 1}
@@ -35,7 +35,7 @@ try:
       if bg!='rgb(255, 255, 255)':falhas.append((esquema,'dialogo fundo',bg))
       m=pg.evaluate(JS)
       if m:falhas.append((esquema,'paywall',m))
-      pg.screenshot(path=f'/home/claude/testes/capturas9/paywall-{esquema}.png')
+      pg.screenshot(path=f'/tmp/testes/capturas9/paywall-{esquema}.png')
       ctx.close()
 finally: srv.terminate()
 print('TUDO OK' if not falhas else falhas)

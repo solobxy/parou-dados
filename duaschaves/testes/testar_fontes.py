@@ -1,6 +1,6 @@
 import subprocess,time,sys,json
 from playwright.sync_api import sync_playwright
-srv=subprocess.Popen([sys.executable,'-m','http.server','8773','--bind','127.0.0.1'],cwd='/home/claude/teste-real2',stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL);time.sleep(1)
+srv=subprocess.Popen([sys.executable,'-m','http.server','8773','--bind','127.0.0.1'],cwd='/tmp/teste-real2',stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL);time.sleep(1)
 falhas=[]
 def ok(c,m):
     if not c:falhas.append(m)
@@ -18,7 +18,7 @@ try:
       i=pg.evaluate('dcCasas().filter(function(c){return c.fonte==%s})[0].id'%json.dumps(f))
       pg.goto('http://127.0.0.1:8773/#casa-%d'%i);pg.wait_for_timeout(900)
       t=pg.inner_text('main');ok('A carregar' not in t,f+' descrição carregada');ok('Sobre a casa' in t,f+' abre')
-      pg.screenshot(path='/home/claude/testes/fonte-%s.png'%f.replace(' ',''))
+      pg.screenshot(path='/tmp/testes/fonte-%s.png'%f.replace(' ',''))
     ok(any('/det/' in u for u in pedidos),'pediu det')
     ok(not erros,'erros %s'%erros)
 finally:srv.terminate()

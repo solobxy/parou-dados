@@ -802,6 +802,9 @@ textarea[readonly]{background:var(--fundo);min-height:150px}
 .rodape nav{display:flex;flex-wrap:wrap;gap:0 20px;max-width:520px}
 .rodape nav a{color:var(--tinta);font-weight:600;font-size:15px;min-height:44px;display:inline-flex;align-items:center}
 .rodape .pequeno{font-size:13px;color:var(--texto3)}
+.rodape .pequeno a{color:inherit;text-decoration:underline;text-underline-offset:3px}
+.rodape .pequeno a:hover{color:var(--tinta)}
+body:has(#cta-fixo:not([hidden])) .rodape{padding-bottom:112px}
 
 /* diálogo e aviso */
 dialog.dialogo{border:0;border-radius:20px;padding:0;overflow:auto;background:#fff;color-scheme:light;width:calc(100% - 32px);max-width:480px;max-height:calc(100dvh - 32px);color:var(--tinta);font-family:inherit}
@@ -873,7 +876,10 @@ a.botao[aria-disabled="true"]{opacity:.6;pointer-events:none}
   .filtros{display:flex;position:sticky;top:88px}
   .casa-grelha{grid-template-columns:minmax(0,1fr) 380px;grid-template-areas:"topo painel" "resto painel";gap:24px 48px;align-items:start}
   .painel{position:sticky;top:88px}
-  .rodape-in{flex-direction:row;justify-content:space-between;align-items:flex-start}
+  .rodape-in{flex-direction:row;flex-wrap:wrap;justify-content:space-between;align-items:flex-start}
+  .rodape-in>div:first-child{flex:0 1 220px}
+  .rodape-in nav{flex:1 1 0;min-width:0}
+  .rodape .pequeno{flex-basis:100%}
 }
 @media (min-width:1080px){body{padding-bottom:0}.nav-topo{display:flex}.nav-baixo{display:none}.toast{bottom:24px}.grande{font-size:50px}.seccao h2{font-size:42px}.heroi-grelha{grid-template-columns:minmax(0,1.1fr) minmax(0,.9fr);gap:72px}.dois-col{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:72px;align-items:start}}
 @media (min-width:1280px){.grande{font-size:60px}}
@@ -1010,7 +1016,7 @@ a.botao[aria-disabled="true"]{opacity:.6;pointer-events:none}
       <a href="#termos">Termos e privacidade</a>
       <a href="https://www.livroreclamacoes.pt" target="_blank" rel="noopener">Livro de Reclamações</a>
     </nav>
-    <p class="pequeno">© 2026 DupliCasa</p>
+    <p class="pequeno">© 2026 DupliCasa · <a href="https://dinissousa.pt" target="_blank" rel="noopener">Feito por dinissousa</a></p>
   </div>
 </footer>
 
@@ -3192,7 +3198,7 @@ function instalarApp(){
     '<button class="botao largo" type="button" data-fechar>Percebi</button></div>');
 }
 document.addEventListener('click',function(e){var b=e.target.closest&&e.target.closest('[data-instalar]');if(b){e.preventDefault();instalarApp();}});
-if('serviceWorker' in navigator&&location.protocol==='https:'&&!/claude|anthropic/.test(location.host)){window.addEventListener('load',function(){navigator.serviceWorker.register('/sw.js').catch(function(){});});}
+if('serviceWorker' in navigator&&location.protocol==='https:'&&window.self===window.top){window.addEventListener('load',function(){navigator.serviceWorker.register('/sw.js').catch(function(){});});}
 
 /* Oferta de boas-vindas: aparece ao fim de 30 s no site a quem ainda não tem o acesso.
    Se a pessoa fechar, só volta a aparecer neste dispositivo daqui a 12 horas. */

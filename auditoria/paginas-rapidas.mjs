@@ -6,7 +6,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 const BASE = process.env.BASE || 'http://127.0.0.1:3000';
-const APP = process.env.APP || '/home/claude/parou';
+const APP = process.env.APP || '../parou';
 let falhas = 0;
 const ok = (n, c, e = '') => { if (!c) falhas++; console.log(c ? 'OK     ' : 'FALHOU ', n, e); };
 

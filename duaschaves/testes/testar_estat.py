@@ -36,9 +36,9 @@ with sync_playwright() as p:
     ok(any(x['nome']=='Porto' for x in j['cidades_pesquisadas']),'cidade pesquisada')
     ok(any('instagram' in x['nome'] for x in j['campanhas']),'campanha utm')
     ok([x for x in j['funil'] if x['nome']=='Pagaram'][0]['n']==0,'sem pagamento real, o funil não conta pagos')
-    pg.screenshot(path='/home/claude/testes/painel-1280.png',full_page=True)
+    pg.screenshot(path='/tmp/testes/painel-1280.png',full_page=True)
     ctx2=b.new_context(viewport={'width':390,'height':844},user_agent=UA,ignore_https_errors=True,storage_state=ctx.storage_state());p2=ctx2.new_page();p2.goto(U+'#painel');p2.wait_for_timeout(1500)
-    ok(p2.evaluate('document.documentElement.scrollWidth<=innerWidth'),'painel sem scroll lateral no telemóvel');p2.screenshot(path='/home/claude/testes/painel-390.png',full_page=True)
+    ok(p2.evaluate('document.documentElement.scrollWidth<=innerWidth'),'painel sem scroll lateral no telemóvel');p2.screenshot(path='/tmp/testes/painel-390.png',full_page=True)
     # outra conta não vê
     ok(not er,'erros %s'%er)
 print('FALHAS' if falhas else 'TUDO OK',len(falhas))
