@@ -13,7 +13,7 @@ try:
     pg.on('pageerror',lambda e: erros.append(str(e)))
     pg.goto(U+'#inicio'); pg.wait_for_timeout(900)
     ok('Continuar a procurar' not in pg.inner_text('main'),'início sem histórico')
-    ok('As mais baratas agora' in pg.inner_text('main'),'secção genérica');tits=pg.locator('section:has(h2:text("As mais baratas agora")) .mini-txt').all_inner_texts();ok(tits and all(x.split('·')[0].strip() in ('T0','T1','Quarto') for x in tits),'só T0/T1/quartos: %s'%tits)
+    ok('Os melhores negócios agora' in pg.inner_text('main'),'secção dos negócios');tits=pg.locator('section.negocios .mini-txt').all_inner_texts();ok(tits and all(x.split('·')[0].strip() in ('T0','T1','Quarto') for x in tits),'só T0/T1/quartos: %s'%tits)
     # pesquisa Porto + filtro T1
     pg.goto(U+'#pesquisa'); pg.wait_for_timeout(400)
     pg.fill('#p-cidade','Porto'); pg.press('#p-cidade','Enter'); pg.wait_for_timeout(300)
@@ -55,10 +55,10 @@ try:
     # início personalizado
     pg.goto(U+'#inicio'); pg.wait_for_timeout(500)
     t=pg.inner_text('main')
-    ok('As mais baratas agora' in t,'secção baratas')
+    ok('Os melhores negócios agora' in t,'secção dos negócios')
     ok('Continuar a procurar' in t,'pesquisas recentes')
     pg.screenshot(path='prefs-inicio.png',full_page=False)
-    tits=pg.locator('section:has(h2:text("As mais baratas agora")) .mini-txt').all_inner_texts()
+    tits=pg.locator('section.negocios .mini-txt').all_inner_texts()
     ok(tits and all(x.split('·')[0].strip() in ('T0','T1','Quarto') for x in tits),'início continua só com T0/T1/quartos com histórico: %s'%tits)
     # conta
     pg.evaluate("var c=JSON.parse(localStorage.getItem('dc-conta'));c.sessao=true;localStorage.setItem('dc-conta',JSON.stringify(c))")

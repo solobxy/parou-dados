@@ -215,7 +215,7 @@ input[type=file]{font:inherit;font-size:15px;max-width:100%}
 .neg-susp .neg-txt{margin-bottom:8px}
 .neg-barra{position:relative;height:10px;margin:28px 2px 6px;border-radius:999px;background:linear-gradient(90deg,#BFE3CF,#E7ECEA 50%,#F3D9CF)}
 .neg-med{position:absolute;top:-6px;bottom:-6px;width:2px;margin-left:-1px;background:var(--texto3);border-radius:2px}
-.neg-med span{position:absolute;bottom:calc(100% + 3px);left:50%;transform:translateX(-50%);font-size:12px;font-weight:700;font-style:normal;color:var(--texto3);white-space:nowrap}
+.neg-med-t{position:absolute;bottom:calc(100% + 9px);transform:translateX(-50%);font-size:12px;font-weight:700;color:var(--texto3);white-space:nowrap}
 .neg-esta{position:absolute;top:50%;width:20px;height:20px;margin:-10px 0 0 -10px;border-radius:50%;background:var(--verde);border:3px solid #fff;box-shadow:0 1px 6px rgba(0,0,0,.3)}
 .neg-bom .neg-esta{background:var(--quente)}
 .neg-eixo{display:flex;justify-content:space-between;font-size:12px;color:var(--texto3);margin:0 0 10px}
@@ -689,8 +689,53 @@ dialog{overscroll-behavior:contain}
 .barra-cta .botao{flex:0 0 auto;min-height:48px;padding:0 18px}
 @media (min-width:1080px){.barra-cta{display:none}}
 main:has(.barra-cta) .casa-grelha{padding-bottom:110px}
-.cartao-cta{grid-column:1 / -1;display:flex;flex-direction:column;gap:10px;background:#0F1A17;color:#fff;border-radius:18px;padding:20px}
-.cartao-cta h3{margin:0;font-size:20px;line-height:1.25}.cartao-cta p{margin:0;color:#C9D3CF;font-size:15px;line-height:1.45}.cartao-cta .botao{align-self:flex-start}
+.cartao-cta{grid-column:1 / -1}
+/* cartão do acesso no meio da lista */
+.ctl{grid-column:1 / -1;display:grid;gap:18px;padding:22px 20px 20px;border-radius:18px;background:#0F1A17;color:#fff;overflow:hidden}
+.ctl>*{min-width:0}
+.ctl h3{margin:0 0 8px;font-size:23px;line-height:1.18;letter-spacing:-.02em;font-weight:800;text-wrap:balance}
+.ctl-n{color:var(--quente);font-variant-numeric:tabular-nums}
+.ctl-txt>p{margin:0 0 18px;color:#C9D3CF;font-size:15.5px;line-height:1.5}
+.ctl .botao{width:100%}
+.ctl .ctl-pe{margin:10px 0 0;font-size:13px;color:#AEBAB5;text-align:center}
+/* leque de fotos reais */
+.ctl-leque{position:relative;height:150px}
+.ctl-f{position:absolute;left:50%;top:6px;width:112px;height:138px;margin-left:-56px;border-radius:14px;overflow:hidden;background:#2A3632;box-shadow:0 12px 26px -10px rgba(0,0,0,.7);
+  transition:transform .7s cubic-bezier(.2,1.2,.4,1),opacity .4s ease-out}
+.ctl-f img{width:100%;height:100%;object-fit:cover}
+.ctl-f b{position:absolute;left:6px;bottom:6px;padding:2px 8px;border-radius:999px;background:var(--quente);color:#2A1A00;font-size:12px;font-weight:800}
+.ctl-f1{z-index:2}.ctl-f2 b{left:auto;right:6px}
+.ctl-f0{transform:translateX(-30px) rotate(-3deg);opacity:0}.ctl-f2{transform:translateX(30px) rotate(3deg);opacity:0}
+.ctl.ver .ctl-f0{transform:translateX(-92px) translateY(8px) rotate(-9deg);opacity:1;transition-delay:.08s}
+.ctl.ver .ctl-f2{transform:translateX(92px) translateY(8px) rotate(9deg);opacity:1;transition-delay:.08s}
+.ctl.ver .ctl-f1{transform:translateY(-2px)}
+/* o alerta como chega ao telemóvel */
+.ctl-alerta{display:flex;gap:12px;align-items:center;padding:12px;border-radius:20px;background:#fff;color:var(--tinta);box-shadow:0 14px 30px -14px rgba(0,0,0,.8);
+  transform:translateY(-14px);opacity:0;transition:transform .6s cubic-bezier(.2,1.2,.4,1),opacity .35s ease-out}
+.ctl.ver .ctl-alerta{transform:none;opacity:1}
+.ctl-at{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px;font-size:14px;line-height:1.35}
+.ctl-at>span:last-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ctl-at-topo{display:flex;justify-content:space-between;gap:8px;font-size:13px;color:var(--texto3);white-space:nowrap}.ctl-at-topo strong{color:var(--tinta)}
+.ctl-at-foto{flex:0 0 52px;width:52px;height:52px;border-radius:10px;object-fit:cover}
+/* a casa das contas: foto larga com o preço e o normal */
+.ctl-casa{position:relative;height:150px;border-radius:14px;overflow:hidden;background:#2A3632;transform:scale(.96);opacity:0;transition:transform .6s cubic-bezier(.2,1.1,.4,1),opacity .35s ease-out}
+.ctl.ver .ctl-casa{transform:none;opacity:1}
+.ctl-casa img{width:100%;height:100%;object-fit:cover}
+.ctl-casa::after{content:"";position:absolute;inset:40% 0 0;background:linear-gradient(transparent,rgba(10,18,15,.85))}
+.ctl-casa b{position:absolute;z-index:1;left:10px;top:10px;padding:3px 9px;border-radius:999px;background:var(--quente);color:#2A1A00;font-size:12.5px;font-weight:800}
+.ctl-casa-info{position:absolute;z-index:1;left:12px;right:12px;bottom:10px;font-size:14px;color:#E4EAE7}.ctl-casa-info strong{font-size:22px;color:#fff;font-weight:800}
+@media (min-width:720px){
+  .ctl{grid-template-columns:minmax(0,1fr) 300px;align-items:center;gap:28px;padding:28px}
+  .ctl-leque,.ctl-alerta,.ctl-casa{order:2}
+  .ctl .botao{width:auto}.ctl .ctl-pe{text-align:left}
+}
+@media (max-width:359px){.ctl-at-foto{display:none}.ctl{padding:20px 16px 18px}.ctl-f{width:96px;height:120px;margin-left:-48px}.ctl.ver .ctl-f0{transform:translateX(-76px) translateY(8px) rotate(-9deg)}.ctl.ver .ctl-f2{transform:translateX(76px) translateY(8px) rotate(9deg)}}
+/* movimento reduzido: as peças só aparecem, sem viajar */
+@media (prefers-reduced-motion:reduce){
+  .ctl-f,.ctl-alerta,.ctl-casa{transition:opacity .4s ease-out}
+  .ctl-f0{transform:translateX(-92px) translateY(8px) rotate(-9deg)}.ctl-f2{transform:translateX(92px) translateY(8px) rotate(9deg)}
+  .ctl-alerta,.ctl-casa{transform:none}
+}
 .botoes-linha{display:flex;flex-wrap:wrap;gap:12px;align-items:center}
 .sem-info{color:var(--texto3);font-weight:400}
 .novo-txt{color:#0B6E4F;font-weight:700}
@@ -1533,6 +1578,45 @@ function tituloCasa(c){
   if(!mor&&t==='T0')return ['Estúdio',P.t_apart];
   return [(mor?'Moradia':'Apartamento')+(t?' '+t:''),mor?P.t_moradia:P.t_apart];
 }
+/* ---------- Cartão do acesso no meio da lista: a cada 5 casas, só para quem não tem acesso ----------
+   Três versões que se alternam, sempre com os dados reais da pesquisa: os negócios (fotos reais),
+   as casas novas de hoje (o alerta como chega ao telemóvel) e as contas (1 € contra a poupança de um ano). */
+function ctxCta(r){
+  var negs=r.filter(function(c){return eNegocio(c)&&c.fotos&&c.fotos.length;}).sort(function(a,b){return (grupo(a)-grupo(b))||(pontosNeg(b)-pontosNeg(a));});
+  var pp=negs.map(function(c){return negocio(c).poupa;}).sort(function(a,b){return a-b;}),medPoupa=pp.length?pp[Math.floor(pp.length/2)]:0;
+  var novas=r.filter(function(c){return !c.semData&&c.min<1440;}).sort(function(a,b){return a.min-b.min;});
+  var v=[];if(negs.length>=3)v.push('neg');if(novas.length)v.push('novas');if(negs.length)v.push('contas');if(!v.length)v.push('todas');
+  return {r:r,negs:negs,novas:novas,v:v,medPoupa:medPoupa,onde:estado.cidade?' '+emCidade(estado.cidade):''};
+}
+function ctaLista(x,k){
+  var tipo=x.v[k%x.v.length],volta=Math.floor(k/x.v.length),c=null,vis='',h='',p='';
+  var foto=function(c,cls){return '<img class="'+cls+'" src="'+esc(c.fotos[0])+'" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer">';};
+  if(tipo==='neg'){
+    var tres=[0,1,2].map(function(i){return x.negs[(volta*3+i)%x.negs.length];});c=tres[1];
+    vis='<div class="ctl-leque" aria-hidden="true">'+tres.map(function(c,i){return '<span class="ctl-f ctl-f'+i+'">'+foto(c,'')+'<b>−'+negocio(c).pct+'%</b></span>';}).join('')+'</div>';
+    h='<span class="ctl-n">'+fmtN(x.negs.length)+'</span> casas abaixo do normal'+esc(x.onde);
+    p='Em média, ficam '+eur(x.medPoupa)+' por mês abaixo do normal. Contacta-as antes que outro as arrende.';
+  }else if(tipo==='novas'){
+    c=x.novas[volta%x.novas.length];
+    vis='<div class="ctl-alerta" aria-hidden="true"><span class="ntf-ic">'+SIMB_BRANCO+'</span><span class="ctl-at"><span class="ctl-at-topo"><strong>Casa nova</strong><span>'+quando(c.min)+'</span></span>'+
+      '<span>'+esc(tipTxt(c))+' '+esc(emCidade(c.cidade||c.bairro))+(c.renda?' · '+eur(c.renda):'')+'</span></span>'+(c.fotos&&c.fotos.length?foto(c,'ctl-at-foto'):'')+'</div>';
+    h='<span class="ctl-n">'+fmtN(x.novas.length)+'</span> '+(x.novas.length===1?'casa nova':'casas novas')+' hoje'+esc(x.onde);
+    p='Com o acesso, o alerta chega no minuto em que a casa aparece. Quem contacta primeiro costuma visitar primeiro.';
+  }else if(tipo==='contas'){
+    c=x.negs[volta%x.negs.length];var ng=negocio(c);
+    vis='<div class="ctl-casa" aria-hidden="true">'+foto(c,'')+'<b>−'+ng.pct+'%</b><span class="ctl-casa-info"><strong>'+eur(c.renda)+'</strong> /mês · normal '+eur(ng.normal)+'</span></div>';
+    h='Paga '+P1+'. Poupa <span class="ctl-n">'+eur(ng.poupa)+'</span> por mês';
+    p='Este '+esc(tipTxt(c))+' '+esc(emCidade(c.cidade||c.bairro))+' fica '+eur(ng.poupa*12)+' abaixo do normal num ano. Para o contactar, o acesso custa '+P1+'.';
+  }else{
+    var l=x.r.filter(function(c){return c.fotos&&c.fotos.length;}).slice(volta*3,volta*3+3);
+    vis=l.length===3?'<div class="ctl-leque" aria-hidden="true">'+l.map(function(c,i){return '<span class="ctl-f ctl-f'+i+'">'+foto(c,'')+'</span>';}).join('')+'</div>':'';
+    h='Contacta todas as <span class="ctl-n">'+fmtN(x.r.length)+'</span> casas'+esc(x.onde);
+    p='Marca visitas, liga ou envia mensagem a quem anuncia, em qualquer casa.';
+  }
+  return '<div class="ctl v-'+tipo+'">'+vis+'<div class="ctl-txt"><h3>'+h+'</h3><p>'+p+'</p>'+
+    '<button class="botao" type="button" data-cta-lista="'+tipo+'"'+(c?' data-casa="'+c.id+'"':'')+'>Começar por '+P1+'</button>'+
+    '<p class="ctl-pe">Depois, '+P2+' a cada 30 dias. Cancelas quando quiseres.</p></div></div>';
+}
 function cartao(c){
   var cid=(c.cidade||c.bairro||'').trim(),sub=[],tit=tituloCasa(c);
   sub.push((c.bairro&&norm(c.bairro)!==norm(cid)?esc(c.bairro)+', ':'')+esc(cid||'Portugal'));
@@ -1911,7 +1995,7 @@ function blocoPreco(c){
   if(n.tipo==='suspeito')return '<section class="neg neg-susp" aria-label="Aviso sobre o preço"><p class="neg-tit">'+svg(P.aviso,{s:20,w:2.2})+'Muito abaixo do normal</p>'+
     '<p class="neg-txt">O normal para '+esc(oque)+' é '+eur(n.normal)+'. Uma renda tão baixa pode ser um erro no anúncio ou uma burla. <strong>Visita a casa antes de pagares qualquer valor.</strong></p>'+base+'</section>';
   var lo=Math.min(n.p10,c.renda)*0.94,hi=Math.max(n.p90,c.renda)*1.04,pos=function(v){return Math.max(3,Math.min(97,(v-lo)/(hi-lo)*100)).toFixed(1);};
-  var barra='<div class="neg-barra" aria-hidden="true"><i class="neg-med" style="left:'+pos(n.normal)+'%"><span>normal</span></i><b class="neg-esta" style="left:'+pos(c.renda)+'%"></b></div><div class="neg-eixo" aria-hidden="true"><span>mais barato</span><span>mais caro</span></div>';
+  var barra='<div class="neg-barra" aria-hidden="true"><i class="neg-med" style="left:'+pos(n.normal)+'%"></i><span class="neg-med-t" style="left:'+pos(n.normal)+'%">normal</span><b class="neg-esta" style="left:'+pos(c.renda)+'%"></b></div><div class="neg-eixo" aria-hidden="true"><span>mais barato</span><span>mais caro</span></div>';
   if(n.tipo==='negocio')return '<section class="neg neg-bom" aria-label="Preço comparado com a zona"><p class="neg-tit">'+svg(P.desce,{s:20,w:2.4})+n.pct+'% abaixo do normal</p>'+
     '<p class="neg-txt">O normal para '+esc(oque)+' é <strong>'+eur(n.normal)+'</strong>. Aqui pagas menos <strong>'+eur(n.poupa)+' por mês</strong>, '+eur(n.poupa*12)+' num ano.</p>'+barra+base+'</section>';
   if(n.tipo==='acima')return '<section class="neg neg-acima" aria-label="Preço comparado com a zona"><p class="neg-tit">'+(-n.pct)+'% acima do normal</p>'+
@@ -1921,11 +2005,13 @@ function blocoPreco(c){
 /* início: os melhores negócios frescos (quarto, T0, T1, T2), primeiro na zona da pessoa, no máximo 2 por cidade */
 function negociosInicio(n){
   var zs=zonasPreferidas(2).map(function(x){return norm(x.nome);});
-  var l=CASAS.filter(function(c){return eNegocio(c)&&c.fotos&&c.fotos.length&&c.min<=14*1440&&(c.tipo==='Quarto'||/^T[0-2]$/.test(c.tip));});
+  /* regra do início: só T0, T1 e quartos, nunca casas caras (T0/T1 até 900 €, quartos até 450 €), no máximo 2 quartos */
+  var l=CASAS.filter(function(c){return eNegocio(c)&&c.fotos&&c.fotos.length&&c.min<=14*1440&&(c.tipo==='Quarto'?c.renda<=450:(/^T[01]$/.test(c.tip)&&c.renda<=900));});
   var naZ=function(c){return zs.indexOf(norm(c.cidade||''))>=0?1:0;};
   l.sort(function(a,b){return (naZ(b)-naZ(a))||(pontosNeg(b)-pontosNeg(a));});
   var por={},r=[];
-  l.forEach(function(c){var k=norm(c.cidade||'');if(r.length<n&&(por[k]||0)<2){por[k]=(por[k]||0)+1;r.push(c);}});
+  var nq=0;
+  l.forEach(function(c){var k=norm(c.cidade||''),q=c.tipo==='Quarto';if(r.length<n&&(por[k]||0)<2&&(!q||nq<2)){por[k]=(por[k]||0)+1;if(q)nq++;r.push(c);}});
   return r;
 }
 function nNegocios(){return CASAS.filter(eNegocio).length;}
@@ -2089,6 +2175,8 @@ function vPesquisa(){
     '</div></div>';
 
   var lista=document.getElementById('lista'),limite=30,tReg;
+  lista.addEventListener('click',function(e){var b=e.target.closest('[data-cta-lista]');if(!b)return;
+    ev('cta_lista',{v:b.getAttribute('data-cta-lista')});var cc=b.getAttribute('data-casa');abrirAcesso(function(){vPesquisa();foco();},cc?casa(+cc):null);});
   function desenhar(){
     var r=filtrar();
     clearTimeout(tReg);tReg=setTimeout(registarPesquisa,1200);
@@ -2104,11 +2192,13 @@ function vPesquisa(){
       lista.innerHTML='<div class="vazio" style="grid-column:1 / -1"><h2>Não há casas com estes filtros</h2><p>Tira um filtro ou cria um alerta: avisamos-te quando aparecer uma casa assim.</p><button type="button" class="botao-sec botao-peq" id="vazio-limpar">Limpar filtros</button></div>';
       document.getElementById('vazio-limpar').addEventListener('click',limpar);
     }else{
-      var cards=r.slice(0,limite).map(cartao);
-      if(!acessoAtivo()&&cards.length>6)cards.splice(6,0,'<div class="cartao-cta"><h3>Quem contacta primeiro, visita primeiro</h3><p>Nas casas baratas, quem contacta primeiro costuma ser quem visita primeiro. Com o acesso, sabes delas no minuto em que aparecem e contactas logo.</p><button class="botao" type="button" id="b-cta-lista">Começar por '+P1+'</button></div>');
+      var cards=[],cx=acessoAtivo()?null:ctxCta(r),ate=Math.min(limite,r.length),kc=0;
+      r.slice(0,ate).forEach(function(c,i){cards.push(cartao(c));if(cx&&(i+1)%5===0&&i+1<ate)cards.push(ctaLista(cx,kc++));});
       lista.innerHTML=cards.join('')+(r.length>limite?'<div class="mais" style="grid-column:1 / -1"><button type="button" class="botao-sec" id="b-mais">Ver mais casas</button></div>':'');
       var bm=document.getElementById('b-mais');if(bm)bm.addEventListener('click',function(){limite+=30;desenhar();});
-      var bcl=document.getElementById('b-cta-lista');if(bcl)bcl.addEventListener('click',function(){abrirAcesso(function(){vPesquisa();foco();});});
+      var vs=lista.querySelectorAll('.ctl');
+      if('IntersectionObserver' in window){var ioc=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){e.target.classList.add('ver');ioc.unobserve(e.target);}});},{rootMargin:'0px 0px -15% 0px'});[].forEach.call(vs,function(el){ioc.observe(el);});}
+      else [].forEach.call(vs,function(el){el.classList.add('ver');});
     }
   }
   function limpar(){limite=30;estado.precoMin=0;estado.precoMax=0;estado.tips=[];estado.soProt=false;estado.areaMin=0;estado.dias=0;estado.soPart=false;estado.soFotos=false;estado.comPreco=false;estado.semCaucao=false;
@@ -2224,9 +2314,12 @@ function vCasa(id){
       '<button class="botao" type="button" data-acao="visita">Contactar · '+P1+'</button>';
     main.appendChild(bar);
     var acoes=main.querySelector('.painel .acoes');
-    if(acoes&&'IntersectionObserver' in window){
-      var io=new IntersectionObserver(function(es){es.forEach(function(e){bar.classList.toggle('escondida',e.isIntersecting||e.boundingClientRect.top>window.innerHeight);});});
-      io.observe(acoes);
+    /* a barra só aparece depois de os botões de contacto saírem por cima do ecrã. Com a posição em cada scroll
+       (e não com IntersectionObserver), porque um deslize rápido salta os botões sem disparar o observador. */
+    if(acoes){
+      var tick=false,upd=function(){tick=false;if(!bar.isConnected){removeEventListener('scroll',onS);return;}bar.classList.toggle('escondida',acoes.getBoundingClientRect().bottom>0);},
+        onS=function(){if(!tick){tick=true;requestAnimationFrame(upd);}};
+      addEventListener('scroll',onS,{passive:true});upd();
     }else bar.classList.remove('escondida');
   }
   document.getElementById('b-guardar').addEventListener('click',function(){
