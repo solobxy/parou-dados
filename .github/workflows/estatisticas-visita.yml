@@ -1,0 +1,40 @@
+name: Estatísticas - visita de verificação
+
+# Abre cada site num Chromium de telemóvel (como um visitante normal) e confirma que as estatísticas
+# chegam ao servidor. As visitas levam utm_source=teste-estatisticas (para se apagarem depois).
+# Resultado no ramo "estatisticas-resultado".
+
+on:
+  workflow_dispatch:
+    inputs:
+      urls:
+        description: "Endereços separados por espaços (vazio = todos os sites)"
+        required: false
+        default: ""
+
+permissions:
+  contents: write
+
+jobs:
+  visita:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Visitar
+        working-directory: auditoria
+        env:
+          URLS: ${{ inputs.urls }}
+        run: |
+          npm init -y >/dev/null && npm i --no-audit --no-fund playwright@1 >/dev/null && npx playwright install --with-deps chromium >/dev/null
+          mkdir -p ../res && SAIDA=../res timeout 900 node estatisticas-visita.mjs $URLS 2>&1 | tail -60
+      - name: Guardar
+        if: always()
+        run: |
+          mkdir -p pub && cp -r res/* pub/ 2>/dev/null || echo "sem resultados" > pub/vazio.txt
+          cd pub && git init -q -b estatisticas-resultado
+          git config user.name "parou-dados"; git config user.email "actions@users.noreply.github.com"
+          git add -A && git commit -q -m "Estatísticas $(date -u +%Y-%m-%dT%H:%MZ)" && git push -q -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" estatisticas-resultado
