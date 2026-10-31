@@ -692,6 +692,8 @@ footer a{min-height:44px;display:inline-flex;align-items:center}
   .btn:active,.btn:hover,.style:hover .card,.brand-tile:hover{transform:none}
 }
 
+.plan .lanc{margin-top:-4px;display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;color:var(--ink)}
+.plan .lanc i{width:7px;height:7px;flex:none;border-radius:50%;background:#1F9D57;box-shadow:0 0 0 0 rgba(31,157,87,.5);animation:ofPulso calc(2.2s * var(--k,1)) ease-out infinite}
 /* Oferta de lançamento: cartão pequeno no canto, nunca ecrã inteiro */
 .oferta{position:fixed;z-index:60;right:16px;bottom:calc(16px + env(safe-area-inset-bottom));width:min(360px,calc(100vw - 24px));
   background:#0E0E0E;color:#F1F1EF;border-radius:24px;padding:16px 16px 16px 18px;font-family:var(--font);
@@ -727,7 +729,7 @@ footer a{min-height:44px;display:inline-flex;align-items:center}
 .oferta :focus-visible{outline:3px solid #8FB4FF;outline-offset:3px}
 @media (max-width:560px){.oferta{left:12px;right:12px;bottom:calc(12px + env(safe-area-inset-bottom));width:auto;max-width:420px;margin:0 auto;transform-origin:50% 100%;padding:12px 14px 14px 16px;border-radius:22px}.oferta h2{font-size:19px;margin-bottom:10px}.oferta .of-rel{margin-bottom:10px}.oferta .of-rel div{padding:6px 2px 5px}.oferta .of-rel b{font-size:22px}.oferta .of-rel span{margin-top:2px}.oferta p{font-size:13.5px;margin-bottom:12px}.oferta .of-cta{min-height:48px}}
 .oferta.curta p{display:none}
-@media (prefers-reduced-motion:reduce){.oferta{--k:.75}}
+@media (prefers-reduced-motion:reduce){.oferta,.plan .lanc{--k:.75}}
 </style>
 <script defer src="/_e.js" data-site="dinissousa"></script></head>
 <body data-world="base">
@@ -955,12 +957,13 @@ footer a{min-height:44px;display:inline-flex;align-items:center}
   <section class="section" id="precos" data-world="base" aria-labelledby="t-precos" style="padding-top:0">
     <div class="wrap">
       <h2 class="h2 rv" id="t-precos">Preço fechado. Sem surpresas.</h2>
-      <p class="intro rv">Vês o desenho antes de pagares um cêntimo. Estes preços são só para os primeiros 5 clientes; depois, sobem.</p>
+      <p class="intro rv">Vês o desenho antes de pagares um cêntimo. <span data-normal="">Preços de lançamento até 30 de novembro; a 1 de dezembro voltam ao normal.</span></p>
       <div class="plans">
         <div class="plan rv">
           <p class="p-para">Para seres encontrado</p>
-          <div class="row"><h3>Página única</h3><span class="price">75&nbsp;€</span></div>
-          <p class="p-div">2 × 37,50&nbsp;€, o primeiro só depois do desenho</p>
+          <div class="row"><h3>Página única</h3><span class="price" data-normal="149&nbsp;€">75&nbsp;€</span></div>
+          <p class="p-div" data-normal="2 × 74,50&nbsp;€, o primeiro só depois do desenho">2 × 37,50&nbsp;€, o primeiro só depois do desenho</p>
+          <p class="lanc"><i aria-hidden="true"></i>Preço de lançamento até 30/11. Depois, 149&nbsp;€.</p>
           <ul class="inclui">
             <li>1 página desenhada de raiz</li>
             <li>Contacto por WhatsApp, telefone e e&#8209;mail</li>
@@ -969,13 +972,14 @@ footer a{min-height:44px;display:inline-flex;align-items:center}
             <li class="nao"><span class="sr">Não inclui: </span>Até 5 páginas</li>
             <li class="nao"><span class="sr">Não inclui: </span>Preparada para o Google</li>
           </ul>
-          <a class="btn btn-secondary wa" data-msg="Olá Dinis! Quero a página única (75 €)." href="https://wa.me/351913488258">Pedir página única</a>
+          <a class="btn btn-secondary wa" data-msg="Olá Dinis! Quero a página única (75 €)." data-normal-msg="Olá Dinis! Quero a página única (149 €)." href="https://wa.me/351913488258">Pedir página única</a>
         </div>
         <div class="plan rec rv">
           <span class="rec-tag">Recomendado</span>
           <p class="p-para">Para vender o teu serviço</p>
-          <div class="row"><h3>Site completo</h3><span class="price">149&nbsp;€</span></div>
-          <p class="p-div">2 × 74,50&nbsp;€, o primeiro só depois do desenho</p>
+          <div class="row"><h3>Site completo</h3><span class="price" data-normal="299&nbsp;€">149&nbsp;€</span></div>
+          <p class="p-div" data-normal="2 × 149,50&nbsp;€, o primeiro só depois do desenho">2 × 74,50&nbsp;€, o primeiro só depois do desenho</p>
+          <p class="lanc"><i aria-hidden="true"></i>Preço de lançamento até 30/11. Depois, 299&nbsp;€.</p>
           <ul class="inclui">
             <li>Até 5 páginas desenhadas de raiz</li>
             <li>Contacto por WhatsApp, telefone e e&#8209;mail</li>
@@ -983,20 +987,28 @@ footer a{min-height:44px;display:inline-flex;align-items:center}
             <li>Preparado para o Google</li>
             <li>Domínio e alojamento no 1.º ano</li>
           </ul>
-          <a class="btn wa" data-msg="Olá Dinis! Quero o site completo (149 €)." href="https://wa.me/351913488258">Pedir site completo</a>
+          <a class="btn wa" data-msg="Olá Dinis! Quero o site completo (149 €)." data-normal-msg="Olá Dinis! Quero o site completo (299 €)." href="https://wa.me/351913488258">Pedir site completo</a>
         </div>
         <div class="plan rv">
           <p class="p-para">Para vender produtos</p>
-          <div class="row"><h3>Loja online</h3><span class="price"><small>desde</small> 249&nbsp;€</span></div>
-          <p class="p-div">2 × 124,50&nbsp;€, o primeiro só depois do desenho</p>
+          <div class="row"><h3>Loja online</h3><span class="price" data-normal="<small>desde</small> 499&nbsp;€"><small>desde</small> 249&nbsp;€</span></div>
+          <p class="p-div" data-normal="2 × 249,50&nbsp;€, o primeiro só depois do desenho">2 × 124,50&nbsp;€, o primeiro só depois do desenho</p>
+          <p class="lanc"><i aria-hidden="true"></i>Preço de lançamento até 30/11. Depois, desde 499&nbsp;€.</p>
           <ul class="inclui">
             <li>Tudo o que tem o site completo</li>
             <li>Produtos, carrinho e pagamentos online</li>
             <li>Domínio e alojamento no 1.º ano</li>
           </ul>
-          <a class="btn btn-secondary wa" data-msg="Olá Dinis! Quero uma loja online (desde 249 €)." href="https://wa.me/351913488258">Pedir loja online</a>
+          <a class="btn btn-secondary wa" data-msg="Olá Dinis! Quero uma loja online (desde 249 €)." data-normal-msg="Olá Dinis! Quero uma loja online (desde 499 €)." href="https://wa.me/351913488258">Pedir loja online</a>
         </div>
       </div>
+      <script>
+      /* A 1 de dezembro (00:00, Lisboa) os preços voltam ao normal sozinhos, mesmo que a página não tenha sido atualizada */
+      (function(){ if(Date.now()<Date.UTC(2026,10,30,23,59,59)) return; var r=document.getElementById('precos');
+        [].forEach.call(r.querySelectorAll('[data-normal]'),function(e){ var v=e.getAttribute('data-normal'); if(v) e.innerHTML=v; else e.remove(); });
+        [].forEach.call(r.querySelectorAll('[data-normal-msg]'),function(a){ a.setAttribute('data-msg',a.getAttribute('data-normal-msg')); });
+        [].forEach.call(r.querySelectorAll('.lanc'),function(e){ e.remove(); }); })();
+      </script>
       <ol class="garante rv" aria-label="Como pagas">
         <li><b aria-hidden="true">1</b><span><strong>Desenho sem custo</strong>Mostro-te o site antes de o construir. Mudas o que quiseres.</span></li>
         <li><b aria-hidden="true">2</b><span><strong>Aprovas, pagas metade</strong>Só depois de dizeres que sim é que começo.</span></li>
@@ -1287,7 +1299,7 @@ footer a{min-height:44px;display:inline-flex;align-items:center}
     <div><b data-u="m">00</b><span>min</span></div>
     <div><b data-u="s">00</b><span>seg</span></div>
   </div>
-  <p><strong>75&nbsp;€ · 149&nbsp;€ · desde 249&nbsp;€</strong>. E só pagas depois de veres o design.</p>
+  <p><strong>75&nbsp;€ · 149&nbsp;€ · desde 249&nbsp;€</strong>. A 1 de dezembro voltam a 149&nbsp;€, 299&nbsp;€ e 499&nbsp;€.</p>
   <a class="of-cta wa" data-msg="Olá Dinis! Quero garantir o preço de lançamento (até 30 de novembro)." href="https://wa.me/351913488258">Garantir este preço<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
 </aside>
 <script>
