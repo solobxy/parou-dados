@@ -2084,7 +2084,7 @@ async function photoShot(){
   c.toBlob(b=>{if(!b){toast('Não deu para guardar a foto.');return}photoBlob=b;if(photoUrl)URL.revokeObjectURL(photoUrl);photoUrl=URL.createObjectURL(b);
     const name=`tapmoss-${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}.png`;photo.name=name;
     let canShare=false;try{canShare=!!(navigator.canShare&&navigator.canShare({files:[new File([b],name,{type:'image/png'})]}))}catch(e){}
-    showModal(`<div class="phprev"><img src="${photoUrl}" alt="Fotografia da cena ${esc(sceneTitle())}"></div><div class="mbtns">${canShare?`<button class="btn" data-m="phshare">Partilhar</button>`:''}<a class="btn ${canShare?'ghost':''}" href="${photoUrl}" download="${name}">Guardar</a><button class="btn ghost" data-m="close">Fechar</button></div>`);
+    showModal(`<div class="phprev"><img src="${photoUrl}" alt="Fotografia da cena ${esc(sceneTitle())}"></div><div class="mbtns">${canShare?`<button class="btn" data-m="phshare">Partilhar</button>`:''}${window.claude?`<button class="btn ${canShare?'ghost':''}" data-m="phsave">Guardar</button>`:`<a class="btn ${canShare?'ghost':''}" href="${photoUrl}" download="${name}">Guardar</a>`}<button class="btn ghost" data-m="close">Fechar</button></div>`);
   },'image/png');
 }
 
@@ -2142,6 +2142,7 @@ function contaHTML(){
 }
 function privHTML(){return`<h4 class="sub">Privacidade</h4><p class="note">Guardamos o nome que escolheste, a cidade (zona aproximada), o país e o progresso do jogo, para guardar o jogo e para os teus amigos. Não pedimos email nem guardamos a localização exata. Só os teus amigos veem o teu perfil e a tua cena, e o planeta mostra só totais por país.</p>`}
 
+async function photoSaveClaude(){try{const dl=window.claude&&await window.claude.use('downloads');if(!dl){toast('Aqui não dá para guardar. No jogo em tapmoss.com dá.');return}await dl.save({filename:photo&&photo.name||'tapmoss.png',data:photoBlob})}catch(e){toast('A foto não foi guardada.')}}
 async function photoShare(){if(!photoBlob)return;try{await navigator.share({files:[new File([photoBlob],photo&&photo.name||'tapmoss.png',{type:'image/png'})],title:'tapmoss',text:'O meu cantinho de musgo'})}catch(e){}}
 
 /* ============ save / load ============ */
@@ -2535,7 +2536,7 @@ $('#vbBack').addEventListener('click',endVisit);$('#vbWater').addEventListener('
 $('#sideDaily').addEventListener('click',()=>{SND.play('click');dailyModal()});
 $('#sideLvl').addEventListener('click',()=>{if(S.lvlChests>0)openLvlModal();else toast('Ganhas um baú de nível sempre que sobes de nível.')});
 $('#placeNo').addEventListener('click',()=>{SND.play('click');endPlacing()});$('#placeOk').addEventListener('click',confirmPlace);
-$('#modal').addEventListener('click',e=>{if(e.target.id==='modal'){closeModal();return}const b=e.target.closest('[data-m]');if(!b)return;const m=b.dataset.m;if(m==='close'){SND.play('click');closeModal()}else if(m==='phshare')photoShare();else if(m==='visit')visitFriend(b.dataset.id);else if(m==='rmfr'){if(NET.confRemover===b.dataset.id)removeFriend(b.dataset.id);else{NET.confRemover=b.dataset.id;b.textContent='Tens a certeza?';b.classList.add('danger')}}else if(m==='ligarsim'){closeModal();linkUse(pendLigar).then(ok=>{if(ok&&titleShown)buildTitle()});pendLigar=null}else if(m==='lvl1')openLvlModal();else if(m==='lvlall')openAllLvl();else if(m==='daily')doDaily()});
+$('#modal').addEventListener('click',e=>{if(e.target.id==='modal'){closeModal();return}const b=e.target.closest('[data-m]');if(!b)return;const m=b.dataset.m;if(m==='close'){SND.play('click');closeModal()}else if(m==='phshare')photoShare();else if(m==='phsave')photoSaveClaude();else if(m==='visit')visitFriend(b.dataset.id);else if(m==='rmfr'){if(NET.confRemover===b.dataset.id)removeFriend(b.dataset.id);else{NET.confRemover=b.dataset.id;b.textContent='Tens a certeza?';b.classList.add('danger')}}else if(m==='ligarsim'){closeModal();linkUse(pendLigar).then(ok=>{if(ok&&titleShown)buildTitle()});pendLigar=null}else if(m==='lvl1')openLvlModal();else if(m==='lvlall')openAllLvl();else if(m==='daily')doDaily()});
 $('#setB').addEventListener('click',()=>openSheet('set'));
 const bossInfo=()=>{const nx=nextUnlock();toast(`Nível ${S.level} · ${fmt(S.xp)} de ${fmt(need(S.level))} pontos${nx?` · nível ${nx[0]}: ${nx[1]}`:''}`)};
 $('#boss').addEventListener('click',bossInfo);$('#boss').addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' ')bossInfo()});
