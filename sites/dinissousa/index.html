@@ -692,43 +692,43 @@ footer a{min-height:44px;display:inline-flex;align-items:center}
   .btn:active,.btn:hover,.style:hover .card,.brand-tile:hover{transform:none}
 }
 
-.plan .lanc{margin-top:-4px;display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;color:var(--ink)}
-.plan .lanc i{width:7px;height:7px;flex:none;border-radius:50%;background:#1F9D57;box-shadow:0 0 0 0 rgba(31,157,87,.5);animation:ofPulso calc(2.2s * var(--k,1)) ease-out infinite}
+.plan .lanc{margin-top:-6px;font-size:13px;font-weight:600;color:var(--ink);opacity:.82}
 /* Oferta de lançamento: cartão pequeno no canto, nunca ecrã inteiro */
-.oferta{position:fixed;z-index:60;right:16px;bottom:calc(16px + env(safe-area-inset-bottom));width:min(360px,calc(100vw - 24px));
-  background:#0E0E0E;color:#F1F1EF;border-radius:24px;padding:16px 16px 16px 18px;font-family:var(--font);
-  box-shadow:0 0 0 1px rgba(255,255,255,.1),0 24px 60px -12px rgba(0,0,0,.45),0 8px 18px -6px rgba(0,0,0,.3);
-  --k:1;--mola:cubic-bezier(.2,1.25,.3,1);transform-origin:100% 100%}
+.oferta{position:fixed;z-index:60;right:20px;bottom:calc(20px + env(safe-area-inset-bottom));width:344px;max-width:calc(100vw - 24px);
+  background:#FFFFFF;color:#0E0E0E;border-radius:22px;padding:14px 18px 18px 20px;font-family:var(--font);
+  box-shadow:0 0 0 1px rgba(14,14,14,.07),0 2px 4px rgba(14,14,14,.06),0 24px 56px -16px rgba(14,14,14,.32);
+  --k:1;--mola:cubic-bezier(.2,1.2,.3,1);transform-origin:100% 100%}
 @supports (transition-timing-function:linear(0,1)){.oferta{--mola:linear(0, 0.069 3.1%, 0.230 6.2%, 0.426 9.4%, 0.618 12.5%, 0.782 15.6%, 0.910 18.8%, 0.998 21.9%, 1.052 25%, 1.078 28.1%, 1.083 31.2%, 1.076 34.4%, 1.062 37.5%, 1.046 40.6%, 1.030 43.8%, 1.016 46.9%, 1.006 50%, 0.999 53.1%, 0.995 56.2%, 0.993 59.4%, 0.993 62.5%, 0.994 65.6%, 0.995 68.8%, 0.996 71.9%, 0.998 75%, 0.999 78.1%, 1)}}
 .oferta[hidden]{display:none}
-.oferta.entra{animation:ofEntra calc(.75s * var(--k)) var(--mola) both}
-.oferta.sai{animation:ofSai calc(.28s * var(--k)) cubic-bezier(.4,0,1,1) both}
-@keyframes ofEntra{from{opacity:0;transform:translateY(28px) scale(.94)}35%{opacity:1}to{opacity:1;transform:none}}
-@keyframes ofSai{to{opacity:0;transform:translateY(16px) scale(.97)}}
-.oferta .of-cab{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:-4px -6px 6px 0}
-.oferta .of-etq{display:inline-flex;align-items:center;gap:8px;font-size:13px;font-weight:600;letter-spacing:.01em;color:#B9B9B2}
-.oferta .of-etq i{width:8px;height:8px;border-radius:50%;background:#3DDC84;box-shadow:0 0 0 0 rgba(61,220,132,.55);animation:ofPulso calc(2.2s * var(--k)) ease-out infinite}
-@keyframes ofPulso{70%{box-shadow:0 0 0 7px rgba(61,220,132,0)}100%{box-shadow:0 0 0 0 rgba(61,220,132,0)}}
-.oferta .of-x{width:44px;height:44px;flex:none;display:grid;place-items:center;border:0;border-radius:50%;background:transparent;color:#B9B9B2;cursor:pointer;transition:background-color .2s,color .2s}
-.oferta .of-x:hover{background:rgba(255,255,255,.08);color:#fff}
-.oferta .of-x svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round}
-.oferta h2{font-size:clamp(19px,5.4vw,22px);line-height:1.12;font-weight:800;font-stretch:104%;letter-spacing:-.02em;margin:0 0 14px;text-wrap:balance}
-.oferta .of-rel{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin:0 0 12px}
-.oferta .of-rel div{background:rgba(255,255,255,.07);border-radius:12px;padding:8px 2px 7px;text-align:center;min-width:0;overflow:hidden}
-.oferta .of-rel b{display:block;font-size:clamp(20px,6.4vw,26px);font-weight:800;font-stretch:96%;line-height:1;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
-.oferta .of-rel b.tic{animation:ofTic calc(.32s * var(--k)) var(--ease)}
-@keyframes ofTic{from{transform:translateY(-35%);opacity:.35}}
-.oferta .of-rel span{display:block;margin-top:4px;font-size:11px;font-weight:600;color:#9C9C95;letter-spacing:.04em}
-.oferta p{margin:0 0 14px;font-size:14px;line-height:1.4;color:#C9C9C2}
-.oferta p strong{color:#fff;font-weight:700}
-.oferta .of-cta{display:flex;width:100%;min-height:50px;align-items:center;justify-content:center;gap:10px;padding:8px 18px;border-radius:999px;background:#F1F1EF;color:#0E0E0E;font-weight:700;font-size:16px;line-height:1.2;text-align:center;text-decoration:none;transition:transform .2s var(--ease),background-color .2s}
-.oferta .of-cta:hover{background:#fff}
-.oferta .of-cta:active{transform:scale(.97)}
-.oferta .of-cta svg{width:18px;height:18px;flex:none;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;transition:transform .25s var(--ease)}
+.oferta.entra{animation:ofEntra calc(.7s * var(--k)) var(--mola) both}
+.oferta.sai{animation:ofSai calc(.26s * var(--k)) cubic-bezier(.4,0,1,1) both}
+@keyframes ofEntra{from{opacity:0;transform:translateY(24px) scale(.95)}40%{opacity:1}to{opacity:1;transform:none}}
+@keyframes ofSai{to{opacity:0;transform:translateY(12px) scale(.98)}}
+.oferta .of-cab{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-right:-10px}
+.oferta h2{font-family:var(--serif);font-style:italic;font-weight:500;font-size:18px;line-height:1.2;letter-spacing:0}
+.oferta .of-x{width:44px;height:44px;flex:none;display:grid;place-items:center;border:0;border-radius:50%;background:transparent;color:#55554F;cursor:pointer;transition:background-color .2s,color .2s}
+.oferta .of-x:hover{background:#F1F1EF;color:#0E0E0E}
+.oferta .of-x svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round}
+.oferta .of-precos{--e:1;margin:8px 0 20px;min-width:0}
+.oferta .of-agora{display:flex;align-items:baseline;gap:6px;font-size:calc(56px * var(--e));font-weight:800;font-stretch:108%;letter-spacing:-.04em;line-height:.9;font-variant-numeric:tabular-nums;white-space:nowrap}
+.oferta .of-agora small{font-size:14px;font-weight:600;font-stretch:100%;letter-spacing:0;color:#55554F}
+.oferta .of-depois{margin-top:10px;font-size:14px;line-height:1.4;color:#55554F}
+.oferta .of-depois span{color:#0E0E0E;font-weight:600;white-space:nowrap}
+.oferta .of-tempo{margin:0 0 16px}
+.oferta .of-tempo p{display:flex;justify-content:space-between;align-items:baseline;gap:12px;font-size:13px;font-weight:600;color:#55554F;margin:0 0 8px}
+.oferta .of-tempo b{font-size:15px;font-weight:700;color:#0E0E0E;font-variant-numeric:tabular-nums;letter-spacing:.01em}
+.oferta .of-barra{display:block;height:3px;border-radius:3px;background:#E8E8E4;overflow:hidden}
+.oferta .of-barra i{display:block;height:100%;border-radius:inherit;background:#0E0E0E;transform-origin:0 50%;transform:scaleX(0);transition:transform calc(1.1s * var(--k)) cubic-bezier(.2,.7,.2,1) calc(.25s * var(--k))}
+.oferta .of-cta{display:flex;width:100%;min-height:52px;align-items:center;justify-content:space-between;gap:12px;padding:8px 10px 8px 22px;border-radius:999px;background:#0E0E0E;color:#F1F1EF;font-weight:700;font-size:16px;line-height:1.2;text-decoration:none;transition:transform .2s var(--ease),background-color .2s}
+.oferta .of-cta:hover{background:#2A2A27}
+.oferta .of-cta:active{transform:scale(.98)}
+.oferta .of-cta svg{width:36px;height:36px;flex:none;border-radius:50%;background:#F1F1EF;color:#0E0E0E;padding:9px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;transition:transform .3s var(--ease)}
 .oferta .of-cta:hover svg{transform:translateX(3px)}
-.oferta :focus-visible{outline:3px solid #8FB4FF;outline-offset:3px}
-@media (max-width:560px){.oferta{left:12px;right:12px;bottom:calc(12px + env(safe-area-inset-bottom));width:auto;max-width:420px;margin:0 auto;transform-origin:50% 100%;padding:12px 14px 14px 16px;border-radius:22px}.oferta h2{font-size:19px;margin-bottom:10px}.oferta .of-rel{margin-bottom:10px}.oferta .of-rel div{padding:6px 2px 5px}.oferta .of-rel b{font-size:22px}.oferta .of-rel span{margin-top:2px}.oferta p{font-size:13.5px;margin-bottom:12px}.oferta .of-cta{min-height:48px}}
-.oferta.curta p{display:none}
+.oferta .of-nota{margin:10px 0 0;text-align:center;font-size:13px;color:#55554F}
+.oferta :focus-visible{outline:2px solid #0E0E0E;outline-offset:3px}
+.oferta.curta .of-nota{display:none}
+@media (max-width:300px){.oferta .of-cta{padding-left:18px;font-size:15px}.oferta .of-cta svg{width:30px;height:30px;padding:7px}}
+@media (max-width:560px){.oferta{left:12px;right:12px;bottom:calc(12px + env(safe-area-inset-bottom));width:auto;max-width:400px;margin:0 auto;transform-origin:50% 100%;padding:12px 16px 16px 18px}.oferta .of-precos{margin-bottom:16px}}
 @media (prefers-reduced-motion:reduce){.oferta,.plan .lanc{--k:.75}}
 </style>
 <script defer src="/_e.js" data-site="dinissousa"></script></head>
@@ -963,7 +963,7 @@ footer a{min-height:44px;display:inline-flex;align-items:center}
           <p class="p-para">Para seres encontrado</p>
           <div class="row"><h3>Página única</h3><span class="price" data-normal="149&nbsp;€">75&nbsp;€</span></div>
           <p class="p-div" data-normal="2 × 74,50&nbsp;€, o primeiro só depois do desenho">2 × 37,50&nbsp;€, o primeiro só depois do desenho</p>
-          <p class="lanc"><i aria-hidden="true"></i>Preço de lançamento até 30/11. Depois, 149&nbsp;€.</p>
+          <p class="lanc">Preço de lançamento até 30/11. Depois, 149&nbsp;€.</p>
           <ul class="inclui">
             <li>1 página desenhada de raiz</li>
             <li>Contacto por WhatsApp, telefone e e&#8209;mail</li>
@@ -979,7 +979,7 @@ footer a{min-height:44px;display:inline-flex;align-items:center}
           <p class="p-para">Para vender o teu serviço</p>
           <div class="row"><h3>Site completo</h3><span class="price" data-normal="299&nbsp;€">149&nbsp;€</span></div>
           <p class="p-div" data-normal="2 × 149,50&nbsp;€, o primeiro só depois do desenho">2 × 74,50&nbsp;€, o primeiro só depois do desenho</p>
-          <p class="lanc"><i aria-hidden="true"></i>Preço de lançamento até 30/11. Depois, 299&nbsp;€.</p>
+          <p class="lanc">Preço de lançamento até 30/11. Depois, 299&nbsp;€.</p>
           <ul class="inclui">
             <li>Até 5 páginas desenhadas de raiz</li>
             <li>Contacto por WhatsApp, telefone e e&#8209;mail</li>
@@ -993,7 +993,7 @@ footer a{min-height:44px;display:inline-flex;align-items:center}
           <p class="p-para">Para vender produtos</p>
           <div class="row"><h3>Loja online</h3><span class="price" data-normal="<small>desde</small> 499&nbsp;€"><small>desde</small> 249&nbsp;€</span></div>
           <p class="p-div" data-normal="2 × 249,50&nbsp;€, o primeiro só depois do desenho">2 × 124,50&nbsp;€, o primeiro só depois do desenho</p>
-          <p class="lanc"><i aria-hidden="true"></i>Preço de lançamento até 30/11. Depois, desde 499&nbsp;€.</p>
+          <p class="lanc">Preço de lançamento até 30/11. Depois, desde 499&nbsp;€.</p>
           <ul class="inclui">
             <li>Tudo o que tem o site completo</li>
             <li>Produtos, carrinho e pagamentos online</li>
@@ -1289,47 +1289,52 @@ footer a{min-height:44px;display:inline-flex;align-items:center}
 
 <aside class="oferta" id="oferta" role="dialog" aria-modal="false" aria-labelledby="oferta-t" hidden>
   <div class="of-cab">
-    <span class="of-etq"><i aria-hidden="true"></i>Preço de lançamento</span>
+    <h2 id="oferta-t">Preço de lançamento</h2>
     <button class="of-x" type="button" aria-label="Fechar"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 3l10 10M13 3L3 13"/></svg></button>
   </div>
-  <h2 id="oferta-t">Os preços atuais acabam a 30&nbsp;de&nbsp;novembro.</h2>
-  <div class="of-rel" aria-hidden="true">
-    <div><b data-u="d">00</b><span>dias</span></div>
-    <div><b data-u="h">00</b><span>horas</span></div>
-    <div><b data-u="m">00</b><span>min</span></div>
-    <div><b data-u="s">00</b><span>seg</span></div>
+  <div class="of-precos">
+    <p class="of-agora"><small>desde</small>75&nbsp;€</p>
+    <p class="of-depois">Até 30 de novembro. Depois, <span>desde 149&nbsp;€</span>.</p>
   </div>
-  <p><strong>75&nbsp;€ · 149&nbsp;€ · desde 249&nbsp;€</strong>. A 1 de dezembro voltam a 149&nbsp;€, 299&nbsp;€ e 499&nbsp;€.</p>
-  <a class="of-cta wa" data-msg="Olá Dinis! Quero garantir o preço de lançamento (até 30 de novembro)." href="https://wa.me/351913488258">Garantir este preço<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+  <div class="of-tempo" aria-hidden="true">
+    <p>Faltam <b data-t>—</b></p>
+    <span class="of-barra"><i></i></span>
+  </div>
+  <a class="of-cta" data-msg="Olá Dinis! Quero reservar o preço de lançamento para o meu site." href="https://wa.me/351913488258">Reservar este preço<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+  <p class="of-nota">Só pagas depois de veres o desenho.</p>
 </aside>
 <script>
 /* Oferta de lançamento: aparece a meio da página, no máximo 1 vez por dispositivo a cada 24 h, e desaparece sozinha a 30/11 às 23:59 (Lisboa) */
 (function(){
   var el=document.getElementById('oferta'); if(!el) return;
-  var FIM=Date.UTC(2026,10,30,23,59,59), DIA=864e5, CHAVE='ds-oferta-vista';
+  var INICIO=Date.UTC(2026,9,31,14,0,0), FIM=Date.UTC(2026,10,30,23,59,59), DIA=864e5, CHAVE='ds-oferta-vista';
   window.estat=window.estat||function(){(window.estat.q=window.estat.q||[]).push(arguments)};
   if(Date.now()>=FIM) return;
   try{ var ult=+localStorage.getItem(CHAVE)||0; if(Date.now()-ult<DIA) return; }catch(e){}
-  var convertido=false, aberto=false, rel=null, uns={};
-  [].forEach.call(el.querySelectorAll('[data-u]'),function(b){uns[b.getAttribute('data-u')]=b;});
+  var convertido=false, aberto=false, rel=null, t=el.querySelector('[data-t]'), barra=el.querySelector('.of-barra i');
   document.addEventListener('click',function(ev){var a=ev.target.closest&&ev.target.closest('a.wa'); if(a&&!el.contains(a)) convertido=true;},true);
   function dd(n){return (n<10?'0':'')+n;}
-  function mostra(v){ var t=Math.max(0,FIM-Date.now()), s=Math.floor(t/1e3);
-    var val={d:dd(Math.floor(s/86400)),h:dd(Math.floor(s%86400/3600)),m:dd(Math.floor(s%3600/60)),s:dd(s%60)};
-    for(var k in val){ var b=uns[k]; if(b.textContent!==val[k]){ b.textContent=val[k]; if(v){ b.classList.remove('tic'); void b.offsetWidth; b.classList.add('tic'); } } }
-    if(t<=0) fecha(); }
+  function mostra(){
+    var r=Math.max(0,FIM-Date.now()), s=Math.floor(r/1e3), d=Math.floor(s/86400);
+    t.textContent=(d?d+(d===1?' dia  ':' dias  '):'')+dd(Math.floor(s%86400/3600))+':'+dd(Math.floor(s%3600/60))+':'+dd(s%60);
+    var fr='scaleX('+Math.max(.02,Math.min(1,r/(FIM-INICIO))).toFixed(4)+')'; if(!barra.style.transform) requestAnimationFrame(function(){requestAnimationFrame(function(){barra.style.transform=fr;});}); else barra.style.transform=fr;
+    if(r<=0) fecha();
+  }
+  var pr=el.querySelector('.of-precos');
+  function cabe(){ var g=pr.children[0]; pr.style.setProperty('--e',1); for(var k=0;k<6&&g.scrollWidth>g.clientWidth+1;k++) pr.style.setProperty('--e',(parseFloat(pr.style.getPropertyValue('--e'))*Math.min(.96,g.clientWidth/g.scrollWidth)).toFixed(3)); }
+  addEventListener('resize',function(){ if(aberto) cabe(); });
   function abre(){
     if(aberto||convertido||Date.now()>=FIM) return; aberto=true;
     try{ localStorage.setItem(CHAVE,String(Date.now())); }catch(e){}
-    mostra(false); el.hidden=false; el.classList.toggle('curta', el.offsetHeight>innerHeight*.55); el.classList.add('entra');
-    rel=setInterval(function(){mostra(true)},1000);
+    el.hidden=false; cabe(); mostra(); el.classList.toggle('curta', el.offsetHeight>innerHeight*.5); el.classList.add('entra');
+    rel=setInterval(mostra,1000);
     estat('oferta','mostrada');
   }
   function fecha(origem){
     if(!aberto) return; aberto=false; clearInterval(rel);
     if(origem) estat('oferta',origem);
     el.classList.remove('entra'); el.classList.add('sai');
-    setTimeout(function(){el.hidden=true; el.classList.remove('sai');},320);
+    setTimeout(function(){el.hidden=true; el.classList.remove('sai');},300);
   }
   el.querySelector('.of-x').addEventListener('click',function(){fecha('fechada')});
   var cta=el.querySelector('.of-cta'); cta.href='https://wa.me/351913488258?text='+encodeURIComponent(cta.getAttribute('data-msg'));
