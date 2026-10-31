@@ -684,7 +684,7 @@ async function bragaReal(browser, tema) {
       const cor = await p.evaluate(() => { const n = document.querySelector('.bus-pin--tub .bus-pin__num'); return n ? getComputedStyle(n).backgroundColor : ''; });
       ok(`${rot} a roda da TUB é vermelha`, /rgb\(200, 16, 46\)/.test(cor), cor);
       // Uma roda da TUB à vista (não tapada pela pesquisa, pelos botões ou pela folha de baixo)
-      const alvo = await p.evaluate(() => {
+      const procurarRoda = () => p.evaluate(() => {
         for (const e of [...document.querySelectorAll('.parou-bus-icone')].filter((x) => x.querySelector('.bus-pin--tub'))) {
           const n = e.querySelector('.bus-pin__num'); const r = n.getBoundingClientRect();
           const x = r.left + r.width / 2, y = r.top + r.height / 2;
@@ -694,8 +694,14 @@ async function bragaReal(browser, tema) {
         }
         return null;
       });
-      ok(`${rot} há uma roda da TUB à vista para tocar`, !!alvo, alvo ? `linha ${alvo.linha}` : 'nenhuma à vista');
-      if (!alvo) throw new Error('sem roda à vista');
+      let alvo = await procurarRoda();
+      // Os autocarros estão onde estão: se os que há ficam debaixo da pesquisa ou fora do mapa, afasta o mapa uma vez
+      if (!alvo) { await p.mouse.move(195, 210); await p.mouse.wheel(0, 400); await p.waitForTimeout(1200); alvo = await procurarRoda(); }
+      if (!alvo) {
+        nota(`${rot}: há ${rodas.length} rodas da TUB, mas nenhuma fica livre no mapa (tapadas pela pesquisa ou fora da vista); toque na roda saltado`);
+        return;
+      }
+      ok(`${rot} há uma roda da TUB à vista para tocar`, !!alvo, `linha ${alvo.linha}`);
       await p.mouse.click(alvo.x, alvo.y);
       await p.waitForSelector('[data-teste="cartao-autocarro"]', { timeout: 8000 });
       const cartao = (await p.locator('[data-teste="cartao-autocarro"]').innerText()).replace(/\n/g, ' | ');
