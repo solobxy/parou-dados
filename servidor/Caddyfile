@@ -598,11 +598,24 @@ www.apalavrado.pt {
 		}
 	}
 	root * /var/www/tapmoss
-	@icones path /*.png /fonts/*
+	@icones path /*.png /fonts/* /img/*
 	header @icones Cache-Control "public, max-age=604800"
-	@revalidar path / /index.html /sw.js /manifest.json
+	# pages (the game in each language, the guides) and the files crawlers read: always checked for a newer version
+	@revalidar path / /index.html /sw.js /manifest.json */ *.html /sitemap.xml /robots.txt
 	header @revalidar Cache-Control "no-cache"
+	# /en/... is the same as the root: one address per page
+	redir /en / permanent
+	@en path_regexp en ^/en(/.*)$
+	redir @en {re.en.1} permanent
 	file_server
+	handle_errors {
+		@nf expression {err.status_code} == 404
+		handle @nf {
+			root * /var/www/tapmoss
+			rewrite * /404.html
+			file_server
+		}
+	}
 }
 
 # Endereço de testes (funciona antes de haver domínio; fica fora do Google)

@@ -1,8 +1,8 @@
 {
   "name": "tapmoss",
   "short_name": "tapmoss",
-  "description": "Um cantinho de floresta para fazer crescer musgo.",
-  "lang": "pt-PT",
+  "description": "A cozy pixel-art idle game: grow a moss garden that follows your real day, night and weather.",
+  "lang": "en",
   "id": "/",
   "start_url": "/",
   "scope": "/",
@@ -31,5 +31,39 @@
   "display_override": [
     "fullscreen",
     "standalone"
+  ],
+  "categories": [
+    "games",
+    "entertainment"
+  ],
+  "screenshots": [
+    {
+      "src": "/img/scene-clareira.png",
+      "sizes": "640x1024",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "A forest clearing covered in moss"
+    },
+    {
+      "src": "/img/scene-ruina.png",
+      "sizes": "640x1024",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "The castle ruin, restored"
+    },
+    {
+      "src": "/img/scene-lua.png",
+      "sizes": "640x1024",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "The Moon garden"
+    },
+    {
+      "src": "/img/scene-abismo.png",
+      "sizes": "640x1024",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "The ember abyss"
+    }
   ]
 }
