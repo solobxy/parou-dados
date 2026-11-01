@@ -1,7 +1,7 @@
 {
-  "built_at": "2026-11-01T10:50:35.977493+00:00",
-  "db_bytes": 661049344,
-  "gz_bytes": 128224206,
+  "built_at": "2026-11-01T19:45:45.452231+00:00",
+  "db_bytes": 661065728,
+  "gz_bytes": 128239891,
   "totals": {
     "lines": 2665,
     "stops": 46391,
@@ -584,7 +584,7 @@
     }
   ],
   "desenhos": {
-    "bytes": 9002091,
+    "bytes": 9009485,
     "por_operador": {
       "carris": {
         "viagens": 24996,
@@ -598,8 +598,8 @@
       },
       "cp": {
         "viagens": 1879,
-        "com_desenho": 1809,
-        "desenhos": 244
+        "com_desenho": 1879,
+        "desenhos": 250
       },
       "fertagus": {
         "viagens": 260,
@@ -976,5 +976,5 @@
       }
     }
   },
-  "duration_s": 338
+  "duration_s": 295
 }
