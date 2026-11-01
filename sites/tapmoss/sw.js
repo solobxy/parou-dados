@@ -1,7 +1,7 @@
 // tapmoss: funciona sem rede. As páginas vêm da rede quando há (para apanhar versões novas), senão da cache.
 // version.json fica sempre fora da cache: é por ele que o jogo sabe que há versão nova.
 // Cada página (o jogo em cada língua, os guias) guarda-se com o seu próprio endereço.
-const V='tapmoss-46';
+const V='tapmoss-47';
 const CORE=['/','/manifest.json','/tapmoss-192.png','/tapmoss-512.png','/tapmoss-maskable.png','/tapmoss-180.png','/tapmoss-64.png','/badge-96.png'];
 self.addEventListener('install',e=>{e.waitUntil(caches.open(V).then(c=>c.addAll(CORE)).then(()=>self.skipWaiting()))});
 self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==V).map(k=>caches.delete(k)))).then(()=>self.clients.claim()))});
@@ -24,7 +24,7 @@ self.addEventListener('fetch',e=>{
 });
 // avisos com o jogo fechado: o servidor manda só título, texto, etiqueta e a página de cada língua
 // the server sends title, text, a tag, the page of each language, and maybe a picture (only ours) and the label of a button
-const TAGS=['tm-diario','tm-amigos','tm-moedas','tm-ovo','tm-pet','tm-novidade','tm-online','tm-passou','tm-medalha','tm-volta'];
+const TAGS=['tm-diario','tm-amigos','tm-moedas','tm-ovo','tm-pet','tm-novidade','tm-online','tm-passou','tm-medalha','tm-volta','tm-manha','tm-ritmo'];
 self.addEventListener('push',e=>{let d={};try{d=e.data?e.data.json():{}}catch(x){}
   const url=typeof d.url==='string'&&/^\/([a-z]{2}\/)?(\?av=[0-9a-f]{24})?$/.test(d.url)?d.url:'/',tag=TAGS.includes(d.tag)?d.tag:'tm-amigos';
   const o={body:String(d.body||'').slice(0,200),tag,renotify:true,icon:'/tapmoss-192.png',badge:'/badge-96.png',data:{url},vibrate:[60,40,60]};
