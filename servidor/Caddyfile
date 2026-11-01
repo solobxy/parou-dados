@@ -597,6 +597,27 @@ www.apalavrado.pt {
 			respond 404
 		}
 	}
+	# invite links (/a/CODE and /pt/a/CODE...): link previews get a picture of the player's own gardener (made by their game), people go on to the game
+	@conviteImg path_regexp convI ^/(?:(pt|es|fr|de|ja|zh)/)?a/([A-Z0-9]{6})\.png$
+	handle @conviteImg {
+		rewrite * /functions/v1/tm-convite?c={re.convI.2}&l={re.convI.1}&png=1
+		reverse_proxy https://hvvvswhwcpavucwrvlsf.supabase.co {
+			header_up Host {upstream_hostport}
+			header_up -Cookie
+			header_down -Set-Cookie
+		}
+	}
+	@convite path_regexp conv ^/(?:(pt|es|fr|de|ja|zh)/)?a/([A-Z0-9]{6})/?$
+	handle @convite {
+		header X-Robots-Tag "noindex"
+		rewrite * /functions/v1/tm-convite?c={re.conv.2}&l={re.conv.1}
+		reverse_proxy https://hvvvswhwcpavucwrvlsf.supabase.co {
+			header_up Host {upstream_hostport}
+			header_up -Cookie
+			header_down -Set-Cookie
+			header_down Content-Type "text/html; charset=utf-8"
+		}
+	}
 	root * /var/www/tapmoss
 	@icones path /*.png /fonts/* /img/*
 	header @icones Cache-Control "public, max-age=604800"
