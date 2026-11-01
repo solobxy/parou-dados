@@ -860,6 +860,7 @@ select.sel,.selb{width:100%;height:48px;padding:0 12px;background:#18241a;clip-p
 .ptCard .fuAc{position:absolute;top:4px;left:4px;width:18px;height:18px;display:grid;place-items:center;background:#0f1810;clip-path:var(--notch)}.ptCard .fuAc svg{width:14px;height:auto}
 .fuBack{display:flex;align-items:center;justify-content:center;gap:6px;font-size:12.5px;color:var(--tx2);margin-top:6px}.fuBack svg{width:16px;height:auto}
 .mbtns .fuEm{flex:0 0 auto;min-width:76px}
+#langBtn .pxi.flag,#icLangT .pxi.flag{display:block;margin-right:0;width:22px;height:17px}.plist button>span{display:flex;align-items:center}.plist button .pxi.flag{display:block;width:22px;height:17px;margin-right:12px}
 #toast.fling{opacity:0;transform:translate(-50%,-30px);transition:opacity .26s ease-out,transform .26s ease-out}.rm #toast.fling{transform:translate(-50%,0)}
 .fuRow{box-shadow:inset 3px 0 0 #b685f2}.fuIco .pxi{width:22px;height:22px}
 .fuGrid .ptCard.fuOn{box-shadow:inset 0 0 0 2px #f4c54f,inset 0 -3px 0 var(--rc)}.fuChk{position:absolute;top:4px;right:4px}.fuChk .pxi{width:14px;height:14px}
@@ -1234,7 +1235,8 @@ function reportErr(msg,onde,pilha){
 addEventListener('error',e=>{if(e.filename&&!e.filename.startsWith(location.origin))return;reportErr(e.message,(e.filename||'').replace(location.origin,'')+':'+e.lineno+':'+e.colno,e.error&&e.error.stack)});
 addEventListener('unhandledrejection',e=>{const r=e.reason;if(r&&r.code)return;reportErr(r&&r.message||String(r),'promise',r&&r.stack)});
 /* ============ languages: English by default, the player can pick another one ============ */
-const LANGS=[['en','English'],['pt','Português'],['es','Español'],['fr','Français'],['de','Deutsch'],['ja','日本語'],['zh','中文']];
+const LANGS=[['en','English'],['pt','Português'],['es','Español'],['fr','Français'],['de','Deutsch'],['ja','日本語'],['zh','中文']],LANGF={en:'GB',pt:'PT',es:'ES',fr:'FR',de:'DE',ja:'JP',zh:'CN'};
+const langItems=()=>LANGS.map(([v,n])=>[v,n,flagSvg(LANGF[v])]);
 // the address can carry the language (tapmoss.com/pt/, /es/, ...): it is used until the player picks one
 const PATHLANG=(location.pathname.match(/^\/(pt|es|fr|de|ja|zh)(\/|$)/)||[])[1]||'';
 let LANG=PATHLANG||'en';try{const l=localStorage.getItem('tapmoss.lang');if(l&&LANGS.some(x=>x[0]===l))LANG=l;else if(PATHLANG)localStorage.setItem('tapmoss.lang',PATHLANG)}catch(e){}
@@ -1257,7 +1259,7 @@ function i18nStatic(){
   document.querySelectorAll('[data-i]').forEach(el=>{el.innerHTML=_t(el.innerHTML.trim())});
   document.querySelectorAll('[aria-label],[placeholder],[title]').forEach(el=>{for(const a of['aria-label','placeholder','title']){const v=el.getAttribute(a);if(v)el.setAttribute(a,_t(v))}});
   {const ab=document.getElementById('tAbout'),gd=document.getElementById('tGuide');if(ab)ab.href=LPRE+'/about/';if(gd)gd.href=LPRE+'/guide/flowers/'}
-  const tn=document.getElementById('tLangN'),tw=document.getElementById('tLangW');if(tn){tn.textContent=(LANGS.find(x=>x[0]===LANG)||LANGS[0])[1];tw.addEventListener('click',()=>pickList(_t('Língua'),LANGS,LANG,setLang))}
+  const tn=document.getElementById('tLangN'),tw=document.getElementById('tLangW');if(tn){tn.textContent=(LANGS.find(x=>x[0]===LANG)||LANGS[0])[1];tw.addEventListener('click',()=>pickList(_t('Língua'),langItems(),LANG,setLang))}
 }
 i18nStatic();
 // the server's clock wins over the device's once we've been online (moving the device clock does nothing)
@@ -6810,7 +6812,7 @@ function renderSheet0(live){
       else h+=`<div class="scard lock mys"><span class="ico">${icon('mystery')}</span><span class="meta"><h3>???</h3><p>${bm.teaser||''}</p><p>${_t('Abre no nível {0}',bm.lvl)}</p></span><span class="tag">${icon('lock')}</span></div>`});
   }else if(sheetName==='set'){title=_t('Definições');
     if(DEMO)h+=`<button class="btn gold wide" id="demoB">${_t('Ver animações das raridades')}</button>`;
-    h+=`<h4 class="sub">${_t("Língua")}</h4><button class="selb" id="langBtn" aria-haspopup="listbox">${icon('lang')}<span>${(LANGS.find(x=>x[0]===LANG)||LANGS[0])[1]}</span></button>`;
+    h+=`<h4 class="sub">${_t("Língua")}</h4><button class="selb" id="langBtn" aria-haspopup="listbox">${flagSvg(LANGF[LANG])}<span>${(LANGS.find(x=>x[0]===LANG)||LANGS[0])[1]}</span></button>`;
     h+=`<h4 class="sub">${_t("Onde estás")}</h4><div class="item"><span class="ico">${icon('map')}</span><span class="meta"><h3>${esc(here().nome)}</h3><p>${_t("O dia, a noite, a lua e as estações seguem a hora real deste sítio.")}</p></span></div>`;
     h+=`<button class="btn ghost wide" id="geoB">${_t("Atualizar com a minha localização")}</button><p class="note">${geoMsg||_t('Só mudas de sítio com a localização do aparelho. Guardamos uma zona aproximada, nunca a morada.')}</p>`;
     h+=`<h4 class="sub">${_t("Som")}</h4>`+[['sfx',_t('Efeitos'),_t('Toques, moedas, flores e baús.')],['tap',_t('Som dos cliques'),_t('O som de tocar no musgo e nos botões.')],['amb',_t('Ambiente'),_t('Vento, chuva, pássaros e grilos.')],['mus',_t('Música'),_t('Notas calmas, de vez em quando.')]].map(([k,l,d])=>`<button class="tog" data-snd="${k}" role="switch" aria-checked="${S.snd[k]?'true':'false'}"><span>${l}<br><span class="note" style="margin:0">${d}</span></span><span class="sw2"></span></button>`).join('');
@@ -6992,7 +6994,7 @@ $('#shB').addEventListener('click',e=>{
   const t=e.target.closest('button');if(!t)return;
   if(t.dataset.prt){PR.tab=t.dataset.prt;SND.play('click');sheetSig='';renderSheet();return}if(t.dataset.prn){prBuyNpc(t.dataset.prn);return}if(t.dataset.prp){prBuyP(+t.dataset.prp);return}
   if(t.dataset.prv){prSellAsk(t.dataset.prv);return}if(t.dataset.prx){prCancel(+t.dataset.prx);return}if(t.dataset.prl){prBid(+t.dataset.prl);return}if(t.dataset.prmail){closeSheet();mailAsk(false);return}
-  if(t.id==='langBtn'){pickList(_t('Língua'),LANGS,LANG,setLang);return}
+  if(t.id==='langBtn'){pickList(_t('Língua'),langItems(),LANG,setLang);return}
   if(t.dataset.sow!=null){sow(+t.dataset.sow);return}
   if(t.dataset.pt){ptAction(t.dataset.pt);return}
   if(t.dataset.topm){topMode=t.dataset.topm;SND.play('click');if(globe)topRender(globe.sel);return}
@@ -7562,7 +7564,7 @@ function buildTitle(){
 let pickCb=null;
 function pickList(title,items,cur,cb){
   pickCb=cb;const el=$('#pick');
-  el.innerHTML=`<div class="mcard"><h3 id="pickT">${esc(title)}</h3><div class="plist" role="listbox" aria-labelledby="pickT">${items.map(([v,n])=>`<button role="option" aria-selected="${v===cur}" class="${v===cur?'on':''}" data-pv="${esc(v)}"><span>${esc(n)}</span>${v===cur?icon('check'):''}</button>`).join('')}</div></div>`;
+  el.innerHTML=`<div class="mcard"><h3 id="pickT">${esc(title)}</h3><div class="plist" role="listbox" aria-labelledby="pickT">${items.map(([v,n,ic])=>`<button role="option" aria-selected="${v===cur}" class="${v===cur?'on':''}" data-pv="${esc(v)}"><span>${ic||''}${esc(n)}</span>${v===cur?icon('check'):''}</button>`).join('')}</div></div>`;
   el.classList.remove('hidden');const on=el.querySelector('.plist .on')||el.querySelector('.plist button');if(on){on.scrollIntoView({block:'center'});try{on.focus({preventScroll:true})}catch(e){}}
 }
 function pickClose(){const el=$('#pick');el.classList.add('hidden');el.innerHTML='';pickCb=null}
@@ -8587,7 +8589,7 @@ function frame(t){
   tick(dt);draw();guideTick();
 }
 /* versões novas: quando o jogo muda no servidor, guarda o progresso e recarrega a página */
-const BUILD='cea456c7bcbd',UKEY='tapmoss.upd';const UPD={on:false,go:false,at:0};
+const BUILD='2faf86a63c3b',UKEY='tapmoss.upd';const UPD={on:false,go:false,at:0};
 async function checkUpdate(){
   if(BUILD.startsWith('__')||UPD.on||document.hidden||!navigator.onLine||!/^https?:$/.test(location.protocol)||window.claude)return;
   const t=performance.now();if(t-UPD.at<15000)return;UPD.at=t;
@@ -8621,7 +8623,7 @@ window.addEventListener('pagehide',()=>saveLocal());
 function setDockIcons(){$('#icMoss').innerHTML=mossIcon(S.sel)}
 
 /* ============ boot ============ */
-$('#icAuto').innerHTML=icon('autoHand');$('#icPraca').innerHTML=icon('stall');$('#icScr').innerHTML=icon('games');$('#icLangT').innerHTML=icon('lang');$('#autoL').innerHTML=pxNum('AUTO');$('#icFsT').innerHTML=icon('full');$('#icGift').innerHTML=icon('gift');$('#icCam').innerHTML=icon('camera');$('#icEye').innerHTML=icon('eye');$('#icEdit').innerHTML=icon('edit');$('#icCoin').innerHTML=icon('coin');$('#icGem').innerHTML=icon('gem');$('#icTrophy').innerHTML=icon('trophy');$('#icLvlChest').innerHTML=icon('chestLvl');$('#icGear').innerHTML=icon('gear');
+$('#icAuto').innerHTML=icon('autoHand');$('#icPraca').innerHTML=icon('stall');$('#icScr').innerHTML=icon('games');$('#icLangT').innerHTML=flagSvg(LANGF[LANG]);$('#autoL').innerHTML=pxNum('AUTO');$('#icFsT').innerHTML=icon('full');$('#icGift').innerHTML=icon('gift');$('#icCam').innerHTML=icon('camera');$('#icEye').innerHTML=icon('eye');$('#icEdit').innerHTML=icon('edit');$('#icCoin').innerHTML=icon('coin');$('#icGem').innerHTML=icon('gem');$('#icTrophy').innerHTML=icon('trophy');$('#icLvlChest').innerHTML=icon('chestLvl');$('#icGear').innerHTML=icon('gear');
 $('#icWater').innerHTML=icon('can');$('#icEm').innerHTML=icon('em');$('#icPdFeed').innerHTML=icon('apple');$('#icPdPlay').innerHTML=icon('heart');$('#icPdWash').innerHTML=icon('drop');$('#icPdEggs').innerHTML=icon('egg');$('#icPdPets').innerHTML=icon('paw');$('#icPdBack').innerHTML=icon('back');$('#icUp').innerHTML=icon('up');$('#icCol').innerHTML=icon('flower');$('#icScn').innerHTML=icon('map');$('#shX').innerHTML=icon('x');
 mq.addEventListener&&mq.addEventListener('change',setRM);
 window.addEventListener('appinstalled',()=>{ev('instalar','pwa');if(S){S.inst={...(S.inst||{}),ok:1};dirtySave=true}});
