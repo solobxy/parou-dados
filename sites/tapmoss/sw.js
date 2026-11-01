@@ -1,7 +1,7 @@
 // tapmoss: funciona sem rede. As páginas vêm da rede quando há (para apanhar versões novas), senão da cache.
 // version.json fica sempre fora da cache: é por ele que o jogo sabe que há versão nova.
 // Cada página (o jogo em cada língua, os guias) guarda-se com o seu próprio endereço.
-const V='tapmoss-33';
+const V='tapmoss-34';
 const CORE=['/','/manifest.json','/tapmoss-192.png','/tapmoss-512.png','/tapmoss-maskable.png','/tapmoss-180.png','/tapmoss-64.png','/badge-96.png'];
 self.addEventListener('install',e=>{e.waitUntil(caches.open(V).then(c=>c.addAll(CORE)).then(()=>self.skipWaiting()))});
 self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==V).map(k=>caches.delete(k)))).then(()=>self.clients.claim()))});
@@ -35,3 +35,9 @@ self.addEventListener('push',e=>{let d={};try{d=e.data?e.data.json():{}}catch(x)
 // if the game is already open it gets the code by message, otherwise it opens with the code in the address
 self.addEventListener('notificationclick',e=>{e.notification.close();const url=(e.notification.data&&e.notification.data.url)||'/',m=/[?&]av=([0-9a-f]{24})/.exec(url),av=m?m[1]:'';
   e.waitUntil(self.clients.matchAll({type:'window',includeUncontrolled:true}).then(cs=>{for(const c of cs){if(new URL(c.url).origin===location.origin&&'focus'in c){if(av)try{c.postMessage({tm:'aviso',av})}catch(x){}return c.focus()}}return self.clients.openWindow(url)}))});
+
+// the browser can renew the subscription while the game is closed: hand the new one to the server under the old address,
+// so the player keeps getting notices without having to open the game first
+self.addEventListener('pushsubscriptionchange',e=>{e.waitUntil((async()=>{const old=e.oldSubscription;if(!old||!old.endpoint)return;
+  let sub=e.newSubscription;if(!sub){const k=old.options&&old.options.applicationServerKey;if(!k)return;sub=await self.registration.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:k})}
+  const j=sub.toJSON(),ks=j.keys||{};await fetch('/api/tm_avisos_trocar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({p_antigo:old.endpoint,p_sub:{endpoint:j.endpoint,p256dh:ks.p256dh,auth:ks.auth}})})})().catch(()=>{}))});
