@@ -2282,7 +2282,7 @@ function renderWorld0(){RWV++;
     // a grassy rise the castle stands on
     for(let x=cx-58;x<=cx+58;x++){const u=(x-cx)/58,hh=Math.round(4*(1-u*u));for(let k=0;k<=hh;k++){const y=by+1-k;if(y<0||y>=H)continue;const i=y*W+x;if(surf[i]&&surf[i]!==1)continue;put(x,y,mix(PAL.grass[k===hh?3:2],HAZE,hz+.08),1,1)}}
     // the keep and the inner towers, behind the wall
-    const kH=lv>=3?50:lv===2?30:lv===1?18:12,kW=12;
+    const kH=lv>=3?50:lv===2?30:lv===1?24:22,kW=12;
     block(cx-kW,cx+kW,x=>by-kH+(lv<3?Math.round(vnoise(x*.4,1,seed)*8):0),3,lv<2?ruin:0);
     if(lv>=3){merlons(cx-kW,cx+kW,by-kH,3);for(const wx of[cx-6,cx+5])for(const wy of[by-kH+8,by-kH+18,by-kH+28])window_(wx,wy,4);
       for(const s of[-1,1]){const tx=cx+s*24,tH=42;block(tx-5,tx+5,()=>by-tH,5+s,0);merlons(tx-5,tx+5,by-tH,5+s);window_(tx-1,by-tH+8,4);window_(tx-1,by-tH+18,3);if(lv>=5)roofCone(tx,by-tH-2,7,11,5+s)}
@@ -2300,7 +2300,7 @@ function renderWorld0(){RWV++;
     // arch stones around the gate
     for(let x=cx-gw;x<=cx+gw;x++){const u=(x-cx)/gw,y=Math.round(by-(gh-3+Math.sqrt(Math.max(0,1-u*u))*4))-1;put(x,y,ST(lv>=2?4:3),12,3)}
     // the two corner towers, in front of the wall
-    for(const s of[-1,1]){const tx=cx+s*46,tH=lv>=3?32:lv===2?20:lv===1?14:8;
+    for(const s of[-1,1]){const tx=cx+s*46,tH=lv>=3?32:lv===2?20:lv===1?17:15;
       block(tx-7,tx+7,x=>by-tH+(lv<3?Math.round(vnoise(x*.5,s+4,seed)*6):0),7+s,lv<2?ruin:0);
       if(lv>=3){merlons(tx-7,tx+7,by-tH,7+s);window_(tx-1,by-tH+7,4);window_(tx-1,by-tH+17,3);if(lv>=5)roofCone(tx,by-tH-2,9,14,7+s)}}
     // rubble at the foot of the ruin
@@ -2495,6 +2495,13 @@ function renderWorld0(){RWV++;
   sc.trees.forEach(o=>items.push([tree,o,o.by]));
   items.sort((a,b)=>a[2]-b[2]);
   for(const[fn,o,ky]of items){curDep=Math.min(255,Math.round(ky));NOFL=fn===bench||fn===pot||fn===house||fn===windmill||fn===azenha||fn===temple||fn===castle?1:0;UPG=fn===house?1:fn===windmill?2:fn===azenha?3:fn===castle?5:fn===temple?6:0;fn(o)}NOFL=0;UPG=0;
+  // the forgotten city's street lamps: on the cobbles, behind whatever stands in front of them, lit at night
+  if(sc.biome==='cidade'){const q=mulberry32(sc.seed^0x1a3b);let n=0;for(let k=0;k<60&&n<3;k++){const x=10+Math.floor(q()*(W-20)),y=HOR+24+Math.floor(q()*(H-HOR-70)),i0=y*W+x;
+    if(surf[i0]!==1||nofl[i0]||dep[i0]>y)continue;let ok=true;for(let h=1;h<=15&&ok;h++){const j=(y-h)*W+x;if(dep[j]>y||surf[j]===12||surf[j]===4||surf[j]===11)ok=false}if(!ok)continue;n++;
+    const pp=(xx,yy,c,l)=>{const j=yy*W+xx;if(xx<0||xx>=W||yy<0||dep[j]>y)return;curDep=y;put(xx,yy,c,12,l)};const IR=[[34,34,40],[58,58,66],[86,86,96]];
+    for(let xx=x-1;xx<=x+1;xx++)pp(xx,y,IR[1],0);pp(x,y-1,IR[2],1);for(let h=2;h<=11;h++)pp(x,y-h,IR[h%4===0?2:1],1);
+    for(let xx=x-2;xx<=x+2;xx++)pp(xx,y-12,IR[0],0);for(let h=13;h<=15;h++){pp(x-1,y-h,IR[0],0);pp(x+1,y-h,IR[0],0);pp(x,y-h,[255,206,120],3)}for(let xx=x-1;xx<=x+1;xx++)pp(xx,y-16,IR[2],1);pp(x,y-17,IR[1],1);
+    sc._hl.push([x,y-14]);for(let k2=1;k2<=2;k2++)shade(x+k2*(sunSide<0?1:-1),y+1,.8,true)}curDep=0}
   curDep=0;
   if(sc.arch){const q=mulberry32(sc.seed+77),bl=[];for(let i=0;i<4;i++)bl.push({x:28+i*34+q()*10,y:-10+q()*6,r:12+q()*7});canopy(bl,sc.seed+77,0)}
   {const hi=new ImageData(W2,H2);epx2(img.data,W,H,hi.data);wbX.putImageData(hi,0,0)}
@@ -5961,6 +5968,10 @@ function draw(){
   if(upL('bugs')>0&&!visiting){const n=Math.min(6,Math.ceil(upL('bugs')/4));for(let i=0;i<n;i++){const b=bugs[i];const x=RM?b.bx:b.bx+Math.sin(T*b.sp+b.ph)*30,y=RM?b.by:b.by+Math.sin(T*b.sp*1.7+b.ph*2)*16;drawSprite(BUG,BUG.map,x,y,false)}}
   if(env.night>.2){lowX.globalCompositeOperation='lighter';lowX.globalAlpha=env.night*(RM?.16:.12+.06*Math.sin(T*.9));lowX.drawImage(glowCv,0,0);lowX.globalAlpha=1;lowX.globalCompositeOperation='source-over'}
   if(env.rays>.05){lowX.globalCompositeOperation='lighter';const dir=-env.side*.55;for(let i=0;i<4;i++){const sh=RM?1:(.82+.18*Math.sin(T*.4+i*1.7));const a=.055*env.rays*sh;const x0=env.sx+(i-1.5)*20-dir*20,w0=5+i%2*5;lowX.fillStyle=`rgba(255,232,180,${a})`;lowX.beginPath();lowX.moveTo(x0,-4);lowX.lineTo(x0+w0,-4);lowX.lineTo(x0+w0+dir*H*1.1+8,H);lowX.lineTo(x0+dir*H*1.1-8,H);lowX.closePath();lowX.fill()}lowX.globalCompositeOperation='source-over'}
+  // dragonflies dart over the water on warm days
+  if(env.day>.55&&env.wx!=='rain'&&season!=='inverno'&&!RM&&!env.space&&!env.nether&&scene._water&&scene._water.length>30){const Wt=scene._water;for(let k=0;k<2;k++){const cyc=Math.floor(T*.4+k*1.7),c0=Wt[(hash2(cyc,k,3)*Wt.length)|0],c1=Wt[(hash2(cyc+1,k,3)*Wt.length)|0],u=(T*.4+k*1.7)%1,e=u<.7?0:(u-.7)/.3,ee=e*e*(3-2*e);
+    const x=Math.round(((c0%W)*(1-ee)+(c1%W)*ee)+Math.sin(T*9+k)*.6),y=Math.round(((c0/W|0)*(1-ee)+(c1/W|0)*ee)-6+Math.sin(T*3+k*2)*1.5),wg=Math.sin(T*60+k)>0;
+    lowX.fillStyle=css(mul(k?[60,170,220]:[90,200,120],env.amb));lowX.fillRect(x-2,y,4,1);lowX.fillStyle=css(mul([30,40,60],env.amb));lowX.fillRect(x+2,y,1,1);lowX.fillStyle=`rgba(220,240,255,${wg?.75:.35})`;lowX.fillRect(x-1,y-1,1,1);lowX.fillRect(x+1,y-1,1,1);if(wg){lowX.fillRect(x-1,y+1,1,1);lowX.fillRect(x+1,y+1,1,1)}}}
   if(env.day>.6&&env.wx==='clear'&&season!=='inverno'&&!RM){for(const b of butts){const x=b.bx+Math.sin(T*.37+b.ph)*34,y=b.by+Math.sin(T*.61+b.ph*2)*14,o=Math.sin(T*14+b.ph)>0;lowX.fillStyle=css(mul(b.c,env.amb));if(o){lowX.fillRect(x-1,y,1,1);lowX.fillRect(x+1,y,1,1);lowX.fillRect(x-1,y-1,1,1);lowX.fillRect(x+1,y-1,1,1)}else{lowX.fillRect(x,y-1,1,1)}lowX.fillStyle='rgba(40,30,20,.9)';lowX.fillRect(x,y,1,1)}}
   for(const l of leaves){lowX.fillStyle=css(mul(l.c,env.amb));lowX.fillRect(Math.round(l.x),Math.round(l.y),1,1);if(l.big)lowX.fillRect(Math.round(l.x)+1,Math.round(l.y),1,1)}
   if(env.night>.25){for(const f of flies){const x=RM?f.bx:f.bx+Math.sin(T*f.sp+f.ph)*10+Math.sin(T*f.sp*2.3+f.ph)*4,y=RM?f.by:f.by+Math.cos(T*f.sp*.8+f.ph)*7;const a=(Math.sin(T*(RM?.6:1.9)+f.ph*3)*.5+.5)*env.night;if(a<.15)continue;lowX.fillStyle=`rgba(190,235,100,${a*.35})`;lowX.fillRect(Math.round(x)-1,Math.round(y),3,1);lowX.fillRect(Math.round(x),Math.round(y)-1,1,3);lowX.fillStyle=`rgba(250,255,180,${a})`;lowX.fillRect(Math.round(x),Math.round(y),1,1)}}
@@ -6475,7 +6486,7 @@ function frame(t){
   tick(dt);draw();guideTick();
 }
 /* versões novas: quando o jogo muda no servidor, guarda o progresso e recarrega a página */
-const BUILD='3545c8c14783',UKEY='tapmoss.upd';const UPD={on:false,go:false,at:0};
+const BUILD='25b39c0d1752',UKEY='tapmoss.upd';const UPD={on:false,go:false,at:0};
 async function checkUpdate(){
   if(BUILD.startsWith('__')||UPD.on||document.hidden||!navigator.onLine||!/^https?:$/.test(location.protocol)||window.claude)return;
   const t=performance.now();if(t-UPD.at<15000)return;UPD.at=t;
