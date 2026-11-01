@@ -1,0 +1,15 @@
+1/129 arroz: continente 36, pingodoce 48, auchan 48
+11/129 grão de bico: continente 338, pingodoce 338, auchan 406
+21/129 flocos de aveia: continente 662, pingodoce 615, auchan 825
+31/129 frutos secos: continente 993, pingodoce 942, auchan 1175
+41/129 leite com chocolate: continente 1286, pingodoce 1204, auchan 1545
+51/129 queijo fatiado: continente 1558, pingodoce 1466, auchan 1897
+61/129 frango: continente 1890, pingodoce 1753, auchan 2274
+71/129 hambúrguer: continente 2186, pingodoce 1983, auchan 2617
+81/129 limão: continente 2524, pingodoce 2263, auchan 2965
+91/129 água: continente 2769, pingodoce 2468, auchan 3278
+101/129 detergente roupa: continente 3063, pingodoce 2831, auchan 3679
+111/129 sacos do lixo: continente 3408, pingodoce 3031, auchan 4006
+121/129 lâminas: continente 3700, pingodoce 3383, auchan 4385
+{"produtos": 11080, "ofertas": 12253, "iguais": 954, "promos": 3681, "pvpr": 2375, "outra": 145, "classes": {"real": 0, "fachada": 145, "pvpr": 2277, "promo": 1259}, "cabaz": {"n": 219, "totais": {"c": 667.21, "p": 669.17, "a": 681.32}, "indice": {"c": 100, "p": 100, "a": 102}, "vence": {"c": 147, "p": 142, "a": 124}}}
+{"continente": {"pedidos": 129, "falhas": 0, "codigos": {"200": 129}, "produtos": 3984}, "pingodoce": {"pedidos": 129, "falhas": 0, "codigos": {"200": 129}, "produtos": 3584}, "auchan": {"pedidos": 129, "falhas": 0, "codigos": {"200": 129}, "produtos": 4685}}
