@@ -67,5 +67,12 @@
       "form_factor": "narrow",
       "label": "The ember abyss"
     }
-  ]
+  ],
+  "related_applications": [
+    {
+      "platform": "webapp",
+      "url": "https://tapmoss.com/manifest.json"
+    }
+  ],
+  "prefer_related_applications": false
 }
