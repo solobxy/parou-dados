@@ -420,6 +420,7 @@ select.sel,.selb{width:100%;height:48px;padding:0 12px;background:#18241a;clip-p
 .wide #dock{left:max(8px,calc(50% - var(--colw) / 2 + 8px));right:max(8px,calc(50% - var(--colw) / 2 + 8px))}
 .wide #visitBar,.wide #place,.wide #edit,.wide #photoBar{left:max(10px,calc(50% - var(--colw) / 2 + 10px));right:max(10px,calc(50% - var(--colw) / 2 + 10px))}
 .wide #sheet{max-height:92%}
+.wide #toast,.wide #hint{max-width:calc(var(--colw) - 16px)}
 .panels #hud{left:0;right:auto;width:min(var(--side),400px);top:0;bottom:0;padding:calc(10px + env(safe-area-inset-top,0px)) 12px calc(10px + env(safe-area-inset-bottom,0px)) calc(12px + env(safe-area-inset-left,0px))}
 .panels #side{position:absolute;top:auto;left:calc(12px + env(safe-area-inset-left,0px));right:12px;bottom:calc(10px + env(safe-area-inset-bottom,0px));flex-direction:row;flex-wrap:wrap;gap:4px}
 .panels #dock{left:auto;right:0;top:0;bottom:0;width:min(var(--side),400px);padding:calc(10px + env(safe-area-inset-top,0px)) calc(12px + env(safe-area-inset-right,0px)) calc(10px + env(safe-area-inset-bottom,0px)) 12px;grid-template-columns:repeat(auto-fill,minmax(86px,1fr));align-content:center}
@@ -654,6 +655,16 @@ select.sel,.selb{width:100%;height:48px;padding:0 12px;background:#18241a;clip-p
 /* ============ base ============ */
 const W=160,H=256,HOR=116,N=W*H;
 const DBG=window.__TM_DEBUG||{};
+// errors on players' devices go to a private log (no account, no address): a bug shows up the day it appears, not when someone complains
+const ERRLOG={n:0,seen:new Set(),q:[]};
+function reportErr(msg,onde,pilha){
+  try{msg=String(msg||'').slice(0,300);onde=String(onde||'').slice(0,200);if(!msg||/ResizeObserver loop|^Script error\.?$/i.test(msg))return;
+    const k=msg+'|'+onde;if(ERRLOG.seen.has(k)||ERRLOG.n>=6)return;ERRLOG.seen.add(k);ERRLOG.n++;
+    const send=()=>{let on=false,v='';try{on=ONLINE;v=BUILD}catch(e){return false}if(!on)return true;
+      fetch('/api/tm_erro',{method:'POST',headers:{'Content-Type':'application/json'},keepalive:true,body:JSON.stringify({p:{msg,onde,pilha:String(pilha||'').slice(0,1500),v,lingua:typeof LANG==='string'?LANG:'',pagina:location.pathname.slice(0,80),aparelho:navigator.userAgent.slice(0,160)}})}).catch(()=>{});return true};
+    if(!send())setTimeout(send,3000)}catch(e){}}
+addEventListener('error',e=>{if(e.filename&&!e.filename.startsWith(location.origin))return;reportErr(e.message,(e.filename||'').replace(location.origin,'')+':'+e.lineno+':'+e.colno,e.error&&e.error.stack)});
+addEventListener('unhandledrejection',e=>{const r=e.reason;if(r&&r.code)return;reportErr(r&&r.message||String(r),'promise',r&&r.stack)});
 /* ============ languages: English by default, the player can pick another one ============ */
 const LANGS=[['en','English'],['pt','Português'],['es','Español'],['fr','Français'],['de','Deutsch'],['ja','日本語'],['zh','中文']];
 // the address can carry the language (tapmoss.com/pt/, /es/, ...): it is used until the player picks one
@@ -4104,7 +4115,7 @@ function resize(){uiR=null;setTimeout(()=>{uiR=null;clearUnderUI()},350);
   const a=$('#app').getBoundingClientRect(),dpr=Math.min(3,window.devicePixelRatio||1);
   view.cw=a.width;view.ch=a.height;view.dpr=dpr;cv.width=Math.round(a.width*dpr);cv.height=Math.round(a.height*dpr);
   const wide=a.width/a.height>.86,s=wide?a.height/H:Math.max(a.width/W,a.height/H);view.s=s;view.ox=(a.width-W*s)/2;view.oy=wide?0:(a.height-H*s)/2;view.wide=wide;
-  const side=Math.max(0,(a.width-W*s)/2),app=$('#app');app.classList.toggle('wide',wide);app.classList.toggle('panels',wide&&side>=150);
+  const side=Math.max(0,(a.width-W*s)/2),app=$('#app');app.classList.toggle('wide',wide);app.classList.remove('panels');/* on a computer the game stays one tidy column, like on a phone, over the blurred scene */
   app.style.setProperty('--colw',Math.min(a.width,W*s)+'px');app.style.setProperty('--side',side+'px');
 }
 new ResizeObserver(resize).observe($('#app'));
@@ -4292,7 +4303,7 @@ function frame(t){
   tick(dt);draw();
 }
 /* versões novas: quando o jogo muda no servidor, guarda o progresso e recarrega a página */
-const BUILD='dfb5c0406527',UKEY='tapmoss.upd';const UPD={on:false,go:false,at:0};
+const BUILD='e9edad1e4198',UKEY='tapmoss.upd';const UPD={on:false,go:false,at:0};
 async function checkUpdate(){
   if(BUILD.startsWith('__')||UPD.on||document.hidden||!navigator.onLine||!/^https?:$/.test(location.protocol)||window.claude)return;
   const t=performance.now();if(t-UPD.at<15000)return;UPD.at=t;
