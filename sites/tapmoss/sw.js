@@ -1,7 +1,7 @@
 // tapmoss: funciona sem rede. As páginas vêm da rede quando há (para apanhar versões novas), senão da cache.
 // version.json fica sempre fora da cache: é por ele que o jogo sabe que há versão nova.
 // Cada página (o jogo em cada língua, os guias) guarda-se com o seu próprio endereço.
-const V='tapmoss-7';
+const V='tapmoss-8';
 const CORE=['/','/manifest.json','/icon-192.png','/icon-512.png','/icon-maskable.png','/apple-touch-icon.png','/favicon.png'];
 self.addEventListener('install',e=>{e.waitUntil(caches.open(V).then(c=>c.addAll(CORE)).then(()=>self.skipWaiting()))});
 self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==V).map(k=>caches.delete(k)))).then(()=>self.clients.claim()))});
@@ -10,10 +10,14 @@ self.addEventListener('fetch',e=>{
   const r=e.request;if(r.method!=='GET')return;
   const u=new URL(r.url);if(u.origin!==location.origin||u.pathname.startsWith('/_e')||u.pathname.startsWith('/api/')||u.pathname==='/version.json')return;
   if(r.mode==='navigate'){
-    const k=pageKey(u);
-    e.respondWith(Promise.race([fetch(r),new Promise((_,no)=>setTimeout(()=>no(new Error('lento')),4000))])
-      .then(res=>{if(res.ok&&!res.redirected){const c=res.clone();caches.open(V).then(ca=>ca.put(k,c))}return res})
-      .catch(()=>caches.match(k).then(m=>m||caches.match('/')).then(m=>m||fetch(r))));
+    // the network copy is always saved when it arrives, even if it came too late to be shown this time;
+    // an update (?v=) never falls back to the old copy unless there is no network at all
+    const k=pageKey(u),forced=u.searchParams.has('v');
+    const net=fetch(r).then(res=>{if(res.ok&&!res.redirected){const c=res.clone();e.waitUntil(caches.open(V).then(ca=>ca.put(k,c)))}return res});
+    e.waitUntil(net.catch(()=>{}));
+    const old=()=>caches.match(k).then(m=>m||caches.match('/'));
+    if(forced){e.respondWith(net.catch(()=>old().then(m=>m||Response.error())));return}
+    e.respondWith(Promise.race([net,new Promise((_,no)=>setTimeout(()=>no(new Error('lento')),9000))]).catch(()=>old().then(m=>m||net)));
     return;
   }
   e.respondWith(caches.match(r).then(m=>m||fetch(r).then(res=>{if(res.ok&&!u.pathname.endsWith('.xml')&&!u.pathname.endsWith('.txt')){const c=res.clone();caches.open(V).then(ca=>ca.put(r,c))}return res})));
