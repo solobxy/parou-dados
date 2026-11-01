@@ -1,0 +1,28 @@
+[
+ {
+  "nome": "cont-piteira",
+  "url": "https://www.continente.pt/on/demandware.store/Sites-continente-Site/default/Search-UpdateGrid?q=piteira%20reserva&pmin=0.01&start=0&sz=12",
+  "final": "https://www.continente.pt/on/demandware.store/Sites-continente-Site/default/Search-UpdateGrid?q=piteira%20reserva&pmin=0.01&start=0&sz=12",
+  "estado": 200,
+  "bytes": 50566,
+  "server": "",
+  "tiles": 24,
+  "euros": 0,
+  "next_data": false,
+  "ld_json": 0,
+  "titulo": ""
+ },
+ {
+  "nome": "cont-azeite",
+  "url": "https://www.continente.pt/on/demandware.store/Sites-continente-Site/default/Search-UpdateGrid?q=azeite%20oliveira%20da%20serra%20selecionado&pmin=0.01&start=0&sz=12",
+  "final": "https://www.continente.pt/on/demandware.store/Sites-continente-Site/default/Search-UpdateGrid?q=azeite%20oliveira%20da%20serra%20selecionado&pmin=0.01&start=0&sz=12",
+  "estado": 200,
+  "bytes": 52680,
+  "server": "",
+  "tiles": 46,
+  "euros": 0,
+  "next_data": false,
+  "ld_json": 0,
+  "titulo": ""
+ }
+]
