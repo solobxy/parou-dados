@@ -1,7 +1,7 @@
 // tapmoss: funciona sem rede. As páginas vêm da rede quando há (para apanhar versões novas), senão da cache.
 // version.json fica sempre fora da cache: é por ele que o jogo sabe que há versão nova.
 // Cada página (o jogo em cada língua, os guias) guarda-se com o seu próprio endereço.
-const V='tapmoss-11';
+const V='tapmoss-12';
 const CORE=['/','/manifest.json','/tapmoss-192.png','/tapmoss-512.png','/tapmoss-maskable.png','/tapmoss-180.png','/tapmoss-64.png','/badge-96.png'];
 self.addEventListener('install',e=>{e.waitUntil(caches.open(V).then(c=>c.addAll(CORE)).then(()=>self.skipWaiting()))});
 self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==V).map(k=>caches.delete(k)))).then(()=>self.clients.claim()))});
@@ -30,6 +30,6 @@ self.addEventListener('push',e=>{let d={};try{d=e.data?e.data.json():{}}catch(x)
   const o={body:String(d.body||'').slice(0,200),tag,renotify:true,icon:'/tapmoss-192.png',badge:'/badge-96.png',data:{url},vibrate:[60,40,60]};
   if(typeof d.image==='string'&&/^\/img\/n\/[a-z]{2,12}\.png$/.test(d.image))o.image=d.image;
   if(typeof d.action==='string'&&d.action)o.actions=[{action:'abrir',title:d.action.slice(0,30)}];
-  e.waitUntil(self.registration.showNotification(String(d.title||'TapMoss').slice(0,60),o))});
+  e.waitUntil(self.registration.showNotification(String(d.title||'tapmoss').slice(0,60),o))});
 self.addEventListener('notificationclick',e=>{e.notification.close();const url=(e.notification.data&&e.notification.data.url)||'/';
   e.waitUntil(self.clients.matchAll({type:'window',includeUncontrolled:true}).then(cs=>{for(const c of cs){if(new URL(c.url).origin===location.origin&&'focus'in c)return c.focus()}return self.clients.openWindow(url)}))});
