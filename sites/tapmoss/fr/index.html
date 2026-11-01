@@ -5148,22 +5148,28 @@ let PR={busy:false,at:0,data:null,err:'',tab:'bancas',ppl:null,npc:null,npcD:'',
 function prS(){const d=dyId();let P=S.praca;if(!P||typeof P!=='object')P=S.praca={d,b:[],lv:null,tem:0};if(P.d!==d){P.d=d;P.b=[];dirtySave=true}if(!Array.isArray(P.b))P.b=[];return P}
 function prSeed(extra){let h=2166136261;const s=dyId()+':'+(CONTA?CONTA.id:((S.scenes[0]&&S.scenes[0].seed)||0))+':'+(extra||'');for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619)}return h>>>0}
 // the NPC deals of the day: always the same for one player on one day
+// what things are worth, in crystals: a find by its rarity, a pet by what its eggs cost on average to hatch one, a gem about 60 crystals.
+// The merchants sell a little above that and buy below it, small things in crystals and only the valuable ones in gems
+const PR_VAL=[1,3,8,20,60,180],PR_GEM=60,PR_PET=[36,140,360,720,3600,9600],prCol=c=>(c===3||c===4||c===7)?3:c===2?2.2:c===1?1.5:1;
+const prVal=(v,q)=>v>=PR_GEM*2?{preco:Math.max(2,Math.round(v/PR_GEM)),moeda:'em'}:{preco:Math.max(2,Math.round(v)),moeda:'gems'};
+const prPetGems=(r,c)=>Math.max(1,Math.round(PR_PET[r]*prCol(c)/PR_GEM));
 function prNpcDeals(nPl){
   const q=mulberry32(prSeed('npc')),n=Math.max(0,8-(nPl|0)),out=[],pickR=w=>{let t=w.reduce((a,b)=>a+b,0),r=q()*t;for(let i=0;i<w.length;i++){r-=w[i];if(r<=0)return i}return w.length-1};
   const kinds=['item','ovo','cambio','item','pet','compra','item','cambio'];
   for(let i=0;i<n;i++){const k='n'+i;let D=null,kind=kinds[i%kinds.length];
-    if(kind==='compra'){const dups=ITEMS.filter(it=>it.r>=2&&(S.coll[it.id]||0)>=2);if(dups.length){const it=dups[(q()*dups.length)|0];D={k,npc:'coruja',tipo:'compra',id:it.id,r:it.r,paga:[0,0,8,20,50,120][it.r],moeda:'item'}}else kind='item'}
-    if(!D&&kind==='item'){const r=1+pickR([25,30,25,15,5]),pool=ITEMS.filter(it=>it.r===r),miss=pool.filter(it=>!S.coll[it.id]),src=miss.length&&q()<.6?miss:pool,it=src[(q()*src.length)|0];
-      D={k,npc:'rosa',tipo:'item',id:it.id,r,preco:Math.max(1,Math.round([0,2,4,8,18,40][r]*(.8+q()*.4))),moeda:'em'}}
-    if(!D&&kind==='ovo'){const e=[1,2,3,5,6,7][pickR([30,25,10,12,12,11])];D={k,npc:'ourico',tipo:'ovo',e,r:({1:1,2:3,3:4,5:2,6:2,7:2})[e],preco:({1:3,2:7,3:16,5:6,6:6,7:6})[e],moeda:'em'}}
-    if(!D&&kind==='pet'){const r=2+pickR([55,32,13]),pool=PSP.filter(p=>p.r===r),sp=pool[(q()*pool.length)|0],c=q()<.82?0:q()<.7?1:2;D={k,npc:'ourico',tipo:'pet',s:sp.id,c,lv:1,r,preco:Math.round(PR_MINT('pet',r,c)*(2+q())),moeda:'em'}}
-    if(!D&&kind==='cambio'){D=q()<.5?{k,npc:'cambista',tipo:'cristais',n:25+((q()*16)|0),preco:1,moeda:'em',r:1}:{k,npc:'cambista',tipo:'gema',n:1,preco:45+((q()*26)|0),moeda:'gems',r:2}}
+    if(kind==='compra'){const dups=ITEMS.filter(it=>it.r>=2&&(S.coll[it.id]||0)>=2);if(dups.length){const it=dups[(q()*dups.length)|0];D={k,npc:'coruja',tipo:'compra',id:it.id,r:it.r,paga:Math.max(2,Math.round(PR_VAL[it.r]*.7)),moeda:'item'}}else kind='item'}
+    if(!D&&kind==='item'){const r=1+pickR([24,28,24,16,8]),pool=ITEMS.filter(it=>it.r===r),miss=pool.filter(it=>!S.coll[it.id]),src=miss.length&&q()<.6?miss:pool,it=src[(q()*src.length)|0];
+      D={k,npc:'rosa',tipo:'item',id:it.id,r,...prVal(PR_VAL[r]*(1.4+q()*.3))}}
+    if(!D&&kind==='ovo'){const e=[1,2,3,4,5,6,7][pickR([26,22,10,3,13,13,13])],E=PEGG[e],f=.8+q()*.1;D={k,npc:'ourico',tipo:'ovo',e,r:({1:1,2:3,3:4,4:5,5:2,6:2,7:3})[e],...(E.em?{preco:Math.max(1,Math.round(E.em*f)),moeda:'em'}:{preco:Math.max(2,Math.round(E.gem*f)),moeda:'gems'})}}
+    if(!D&&kind==='pet'){const r=2+pickR([55,32,13]),pool=PSP.filter(p=>p.r===r),sp=pool[(q()*pool.length)|0],c=q()<.82?0:q()<.7?1:2;D={k,npc:'ourico',tipo:'pet',s:sp.id,c,lv:1,r,preco:Math.max(1,Math.round(prPetGems(r,c)*(.85+q()*.15))),moeda:'em'}}
+    if(!D&&kind==='cambio'){D=q()<.5?{k,npc:'cambista',tipo:'cristais',n:40+((q()*11)|0),preco:1,moeda:'em',r:1}:{k,npc:'cambista',tipo:'gema',n:1,preco:62+((q()*14)|0),moeda:'gems',r:2}}
     if(D)out.push(D)}
   return out}
 // the auction of the day: sealed bids against an NPC; the winner pays one gem above the other bid
-function prAuc(d){d=d||dyId();const q=mulberry32(prSeed('leilao'+d)),pet=q()<.35;
-  if(pet){const r=q()<.75?4:5,pool=PSP.filter(p=>p.r===r),sp=pool[(q()*pool.length)|0],c=q()<.6?0:q()<.7?1:2,npcMax=Math.round(PR_MINT('pet',r,c)*(1.2+q()*.6));return{d,tipo:'pet',s:sp.id,c,lv:1,r,npcMax,ini:Math.max(1,Math.round(npcMax*.45))}}
-  const r=q()<.72?4:5,pool=ITEMS.filter(it=>it.r===r&&!it.flor),it=pool[(q()*pool.length)|0],npcMax=Math.round([0,0,0,0,16,42][r]*(.85+q()*.45));return{d,tipo:'item',id:it.id,r,npcMax,ini:Math.max(1,Math.round(npcMax*.45))}}
+// half the days a mythic find (a few gems), otherwise a pet: epic most days, legendary now and then
+function prAuc(d){d=d||dyId();const q=mulberry32(prSeed('leilao'+d)),u=q();
+  if(u>=.5){const r=u<.85?3:4,pool=PSP.filter(p=>p.r===r),sp=pool[(q()*pool.length)|0],c=q()<.7?0:q()<.7?1:2,npcMax=Math.round(prPetGems(r,c)*(.8+q()*.4));return{d,tipo:'pet',s:sp.id,c,lv:1,r,npcMax,ini:Math.max(1,Math.round(npcMax*.45))}}
+  const r=5,pool=ITEMS.filter(it=>it.r===r&&!it.flor),it=pool[(q()*pool.length)|0],npcMax=Math.max(2,Math.round(PR_VAL[r]/PR_GEM*(1+q()*.6)));return{d,tipo:'item',id:it.id,r,npcMax,ini:Math.max(1,Math.round(npcMax*.45))}}
 // yesterday's auction is settled the first time the square (or the game) is opened on a new day
 function prAucSettle(){const P=prS(),L=P.lv;if(!L||!L.d||L.d===dyId()||L.ok)return;const A=prAuc(L.d);L.ok=1;dirtySave=true;
   if(L.lance>A.npcMax){const pay=Math.min(L.lance,A.npcMax+1),back=L.lance-pay;if(back>0)addEm(back,'leilao');prGive(A,'leilao');S.stats.prLei=(S.stats.prLei||0)+1;
@@ -7456,7 +7462,7 @@ function frame(t){
   tick(dt);draw();guideTick();
 }
 /* versões novas: quando o jogo muda no servidor, guarda o progresso e recarrega a página */
-const BUILD='005e3868fa99',UKEY='tapmoss.upd';const UPD={on:false,go:false,at:0};
+const BUILD='ac503fbbf98a',UKEY='tapmoss.upd';const UPD={on:false,go:false,at:0};
 async function checkUpdate(){
   if(BUILD.startsWith('__')||UPD.on||document.hidden||!navigator.onLine||!/^https?:$/.test(location.protocol)||window.claude)return;
   const t=performance.now();if(t-UPD.at<15000)return;UPD.at=t;
