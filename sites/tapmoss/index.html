@@ -538,15 +538,28 @@ select.sel,.selb{width:100%;height:48px;padding:0 12px;background:#18241a;clip-p
 @keyframes ubBeams{0%,35%{opacity:0}50%{opacity:.35}62%{opacity:.15}80%{opacity:.6}90%{opacity:.4}100%{opacity:1}}
 @keyframes ubRing{0%{opacity:.95;transform:scale(1)}100%{opacity:0;transform:scale(9)}}
 @keyframes ubConf{0%{opacity:1;transform:translate(0,0) rotate(0)}100%{opacity:0;transform:translate(var(--cx),210px) rotate(var(--cr))}}
-.rm .ub *,.rm .ub,.rm .lt{animation:none!important;transition:none!important}
-.rm .ub-item::before{display:none}
-.rm .ub .many span,.rm .ub .ub-item{opacity:1}
+.rm .ub.shake .ub-chest{animation:ubSquash var(--sh,.7s) ease-in both}
+.rm .ub.r3.open .ub-stage,.rm .ub.r4.open .ub-stage,.rm .ub.r5.open .ub-stage,.rm #modal.flash,.rm .ub-conf i,.rm .lt{animation:none!important}
+.rm .ub.open .ub-rays{animation-duration:40s}.rm .ub.shown .ub-item{animation:ubItem .55s cubic-bezier(.2,1.5,.4,1) forwards}
 .rm #sheet,.rm #toast,.rm #title,.rm #scrim,.rm .bb i{transition:none}
-@media (prefers-reduced-motion:reduce){
-  .ft{animation:ftr .95s ease-out forwards}
-  #hint,.ready .big .pxi,.reveal,.sbtn.ready .pxi{animation:none}
-  #sheet,#toast,#title,#scrim,.bb i{transition:none}
-}
+/* phone set to reduce motion: keep the life (glows, pulses, sparkles), drop the big moves */
+.soft .ub.shake .ub-chest{animation:ubSquash var(--sh,.7s) ease-in both}
+.soft .ub.r3.open .ub-stage,.soft .ub.r4.open .ub-stage,.soft .ub.r5.open .ub-stage{animation:none}
+.soft #modal.flash{animation:none}
+@keyframes ubSquash{0%,70%{transform:none}86%,100%{transform:scale(1.1,.86)}}
+/* the light behind a chest is alive from the start: it breathes, the rays turn slowly, then everything splashes out */
+.ub-glow{animation:ubBreath 2.2s ease-in-out infinite}
+.ub .ub-rays{opacity:.2;animation:ubSpin 34s linear infinite}
+.ub.charge .ub-rays{opacity:.45;transition:opacity var(--sh,.7s) ease-in}
+@keyframes ubBreath{0%,100%{transform:scale(1);filter:brightness(1)}50%{transform:scale(1.1);filter:brightness(1.4)}}
+.ub-splash{position:absolute;left:50%;top:104px;width:0;height:0;pointer-events:none}
+.ub-splash i{position:absolute;left:-3px;top:0;width:6px;height:var(--l);transform-origin:50% 0;opacity:0;background:linear-gradient(to bottom,#fff,color-mix(in srgb,var(--rc) 85%,#fff) 45%,transparent);clip-path:polygon(50% 100%,100% 0,0 0)}
+.ub.open .ub-splash i{animation:ubSplash .55s cubic-bezier(.12,.8,.3,1) var(--d) forwards}
+@keyframes ubSplash{0%{opacity:1;transform:rotate(var(--a)) translateY(10px) scaleY(.15)}35%{opacity:1;transform:rotate(var(--a)) translateY(20px) scaleY(1)}100%{opacity:0;transform:rotate(var(--a)) translateY(78px) scaleY(.3)}}
+.ub-dust{position:absolute;left:50%;bottom:12px;width:44px;height:12px;margin-left:-22px;border-radius:50%;box-shadow:0 0 0 3px color-mix(in srgb,var(--rc) 55%,#fff),0 0 12px 2px color-mix(in srgb,var(--rc) 60%,transparent);opacity:0;pointer-events:none}
+.ub.open .ub-dust{animation:ubDust .65s cubic-bezier(.2,.7,.3,1) forwards}
+.ub.open .ub-dust.d2{animation-delay:.1s}
+@keyframes ubDust{0%{opacity:.95;transform:scale(.5)}100%{opacity:0;transform:scale(5.2,2.4)}}
 @media (max-width:350px){
   #hud{padding:6px 8px 0}#hud .row{gap:4px}
   .pill{padding:0 7px;gap:5px}.nm.big{font-size:19px}
@@ -677,8 +690,8 @@ function fbm(x,y,s){return vnoise(x,y,s)*.55+vnoise(x*2.07,y*2.07,s+17)*.3+vnois
 const BAY=[0,8,2,10,12,4,14,6,3,11,1,9,15,7,13,5].map(v=>(v+.5)/16);
 const bay=(x,y)=>BAY[((y&3)<<2)|(x&3)];
 const rnd=Math.random;
-let RM=false;const mq=matchMedia('(prefers-reduced-motion: reduce)');
-const setRM=()=>{RM=mq.matches||!!(S&&S.rm);document.documentElement.classList.toggle('rm',RM)};
+let RM=false,SOFT=false;const mq=matchMedia('(prefers-reduced-motion: reduce)');
+const setRM=()=>{RM=!!(S&&S.rm);SOFT=mq.matches&&!RM;document.documentElement.classList.toggle('rm',RM);document.documentElement.classList.toggle('soft',SOFT)};
 
 /* ============ pixel numbers ============ */
 const GL={
@@ -783,6 +796,63 @@ function pxsvg(map,P,cls){
   for(let y=0;y<h;y++){const row=map[y];let x=0;while(x<row.length){const ch=row[x];if(ch==='.'||ch===' '){x++;continue}let e=x+1;while(e<row.length&&row[e]===ch)e++;s+=`<rect x="${x}" y="${y}" width="${e-x}" height="1" fill="${P[ch]}"/>`;x=e}}
   return s+'</svg>';
 }
+// a chest drawn from rules, so every size and rarity stays consistent:
+// rounded lid, planks with grain, iron bands with rivets, a rim on the lid, a lock plate with a gem and a keyhole
+function chestArt(w,h,o){
+  o=o||{};const big=w>=30,lidH=o.lidH||Math.round(h*.4375),g=[];
+  const hz=(x,y,s)=>{let n=(x*374761393+y*668265263+s*69069)|0;n=Math.imul(n^(n>>>13),1274126177);return((n^(n>>>16))>>>0)/4294967296};
+  const cv=big?[7,4,2,1,1]:[4,2,1],inset=y=>y<cv.length?cv[y]:0;
+  for(let y=0;y<h;y++)g.push(new Array(w).fill('.'));
+  const inside=(x,y)=>y>=0&&y<h&&x>=inset(y)&&x<w-inset(y);
+  for(let y=0;y<h;y++)for(let x=0;x<w;x++){if(!inside(x,y))continue;g[y][x]=(!inside(x-1,y)||!inside(x+1,y)||!inside(x,y-1)||!inside(x,y+1))?'K':'W'}
+  const at=(x,y)=>y>=0&&y<h&&x>=0&&x<w?g[y][x]:'.';
+  const set=(x,y,c)=>{const v=at(x,y);if(v!=='.'&&v!=='K')g[y][x]=c};
+  // planks: seams across the lid and the body, a little grain
+  for(let y=1;y<h-1;y++)for(let x=1;x<w-1;x++){if(g[y][x]!=='W')continue;
+    const seamLid=y<lidH-2&&y>=2&&(y-2)%(big?4:3)===(big?3:2),seamBody=y>lidH&&y<h-3&&(y-lidH)%(big?5:4)===0;
+    if(seamLid||seamBody)g[y][x]='w';else if(hz(x,y,3)<(big?.06:.05))g[y][x]='w'}
+  // light from the top left, shade on the right
+  for(let x=1;x<w-1;x++)for(let y=1;y<lidH;y++){const v=g[y][x];if(v==='W'||v==='w'){g[y][x]='L';break}}
+  for(let y=1;y<h-1;y++){const xl=inset(y)+1,xr=w-inset(y)-2;if(g[y][xl]==='W')g[y][xl]='L';if(g[y][xr]==='W'||g[y][xr]==='L')g[y][xr]='w';if(big&&(g[y][xr-1]==='W'))g[y][xr-1]=hz(xr,y,5)<.5?'w':'W'}
+  // iron bands
+  const bw=big?4:2,b1=Math.round(w*(big?.17:.18)),b2=w-b1-bw;
+  for(const bx of[b1,b2])for(let y=0;y<h;y++)for(let i=0;i<bw;i++){const x=bx+i,v=at(x,y);if(v==='.'||v==='K')continue;g[y][x]=i===0?'H':i===bw-1?'m':'M'}
+  // rim on the lid and a shadow under it
+  for(let x=1;x<w-1;x++){set(x,lidH-2,'H');set(x,lidH-1,'m')}
+  for(let x=1;x<w-1;x++){const v=at(x,lidH);if(v==='W'||v==='L')g[lidH][x]='w'}
+  // foot of the body
+  for(let x=1;x<w-1;x++){if(big)set(x,h-3,'M');set(x,h-2,'m')}
+  // corner caps
+  const cs=big?4:2;for(let i=0;i<cs;i++)for(let j=0;j<cs;j++){set(1+i,h-2-j,j===cs-1||i===0?'H':'M');set(w-2-i,h-2-j,j===cs-1?'H':'m')}
+  for(let i=0;i<cs;i++)for(let j=0;j<cs-1;j++){set(1+i,lidH+j,i===0?'H':'M');set(w-2-i,lidH+j,'m')}
+  // rivets
+  for(const bx of[b1,b2]){const rx=bx+(bw>>1);for(let y=2;y<h-2;y+=big?4:3){if(y===lidH-2||y===lidH-1)continue;if(at(rx,y)==='M'||at(rx,y)==='H'||at(rx,y)==='m')g[y][rx]='R'}}
+  // lock plate, gem and keyhole
+  const pw=big?10:6,ph=big?12:7,px=(w-pw)>>1,py=lidH-(big?4:3);
+  for(let y=py;y<py+ph;y++)for(let x=px;x<px+pw;x++){const e=x===px||x===px+pw-1||y===py||y===py+ph-1;set(x,y,e?(x===px||y===py?'H':'m'):'P')}
+  const cx=w>>1;
+  if(big){for(let y=py+2;y<py+5;y++)for(let x=cx-2;x<cx+2;x++)set(x,y,'G');set(cx-2,py+2,'J');set(cx-1,py+2,'J');set(cx-2,py+3,'J');set(cx+1,py+4,'g');
+    const kh=['.gg.','gggg','.gg.','.gg.','gggg'];kh.forEach((r,j)=>{for(let i=0;i<4;i++)if(r[i]==='g')set(cx-2+i,py+6+j,'g')})}
+  else{set(cx-1,py+1,'J');set(cx,py+1,'G');set(cx-1,py+2,'G');set(cx,py+2,'G');set(cx-1,py+4,'g');set(cx,py+4,'g');set(cx-1,py+5,'g')}
+  return g.map(r=>r.join(''))
+}
+const CHEST_PAL=[
+  {K:'#24160a',w:'#5e3a1c',W:'#82552b',L:'#a8743c',M:'#7a7a82',m:'#4c4c54',H:'#b8b8c0',R:'#e0e0e6',P:'#8a8a92',G:'#c99a52',J:'#f2d49a',g:'#160e06'},
+  {K:'#14121c',w:'#55381c',W:'#76502a',L:'#9a6c3a',M:'#3e74b8',m:'#244a80',H:'#86c0f2',R:'#d8f0ff',P:'#4a82c4',G:'#5fc8ff',J:'#e6f8ff',g:'#08101c'},
+  {K:'#0c1814',w:'#3c2c1c',W:'#56402a',L:'#72583a',M:'#2a9a7c',m:'#16604e',H:'#6ae6c0',R:'#d8fff2',P:'#34ae8c',G:'#4fe0b0',J:'#e6fff6',g:'#06120e'},
+  {K:'#140c1c',w:'#3a2440',W:'#52345a',L:'#6e4a78',M:'#a8a4c0',m:'#6a6684',H:'#e2deff',R:'#ffffff',P:'#b8b2d8',G:'#b685f2',J:'#f0e2ff',g:'#140a20'},
+  {K:'#3a2404',w:'#b07a14',W:'#d9a22a',L:'#f6d36a',M:'#fff0b8',m:'#c99a32',H:'#ffffff',R:'#ffffff',P:'#fff3c8',G:'#5fd0f0',J:'#e6fbff',g:'#3a2404'},
+  {K:'#2a0610',w:'#7a1426',W:'#a0283a',L:'#d0485a',M:'#f4c54f',m:'#b07a14',H:'#fff3b8',R:'#ffffff',P:'#ffe08a',G:'#ff6d8a',J:'#ffffff',g:'#2a0610'}];
+const CHEST_EMIT=['','','R','R','LRHJG','MHRJGP'];
+
+// the same chest with its lid lifted, glowing inside
+function chestOpenArt(w,h){const m=chestArt(w,h),lidH=Math.round(h*.4375),gap=3,out=[];
+  for(let y=0;y<lidH;y++)out.push(m[y]);
+  // inside: dark, with coins catching the light
+  for(let j=0;j<gap;j++){const r=m[lidH].split('').map((c,x)=>c==='.'?'.':(x===0||x===w-1)?'K':j===1?((x*7+3)%5<2?'Y':'y'):j===0?'k':((x*5)%7<2?'y':'k'));out.push(r.join(''))}
+  for(let y=lidH;y<h;y++)out.push(m[y]);return out}
+const CH_S=chestArt(22,18),CH_B=chestArt(40,32),CH_SO=chestOpenArt(22,18);
+const CHEST_LVL={K:'#1c1b18',w:'#4a473e',W:'#6d6a5c',L:'#97907a',M:'#e0b050',m:'#9a6a1e',H:'#fff0b8',R:'#ffffff',P:'#f4c54f',G:'#f4c54f',J:'#fff3b8',g:'#2a1a04'};
 const IC={
   coin:[['..dddd..','.daaaad.','dacaaabd','dacaaabd','daaaaabd','daaaabbd','.dabbbd.','..dddd..'],{a:'#f4c54f',b:'#c98a1e',c:'#fff3b8',d:'#6b4310'}],
   gem:[['.dddddd.','dccaaabd','dcaaabbd','.daabbd.','..dabd..','...dd...'],{c:'#eafcff',a:'#86e1f5',b:'#3aa1c4',d:'#16465c'}],
@@ -948,8 +1018,9 @@ const BUG={map:['k.k','rkr','rrr'],pal:{r:'#d23a2e',k:'#1a1410'}};prepSprite(BUG
 const LAMPMAP=['..kkkk..','.kkkkkk.','.kyyyyk.','.kyYYyk.','.kyYYyk.','.kyyyyk.','.kkkkkk.','...ww...','...ww...','...ww...','...ww...','...ww...','...ww...','...ww...','..wwww..','.wwwwww.'];
 const LAMP_OFF={map:LAMPMAP,pal:{k:'#2a2a2e',y:'#4a4436',Y:'#5e5644',w:'#5a3e25'}},LAMP_ON={map:LAMPMAP,pal:{k:'#2a2a2e',y:'#ffc860',Y:'#fff3c8',w:'#5a3e25'},emit:'yY'};
 prepSprite(LAMP_OFF,LAMPMAP);prepSprite(LAMP_ON,LAMPMAP);
-const CHESTMAP=['.ddddddd.','dbbbbbbbd','dbaaaaabd','ddddyyddd','daaayaaad','daaaaaaad','dbbbbbbbd','ddddddddd'];
-const CHESTS=[{a:'#8a5a2a',b:'#b07a40',d:'#3f2410',y:'#c9a060'},{a:'#2f5f9a',b:'#5fa0e0',d:'#142640',y:'#e2f0ff'},{a:'#1f8a70',b:'#4fe0b0',d:'#0d3a30',y:'#e6fff6'},{a:'#5a2f8a',b:'#b685f2',d:'#24123a',y:'#f0e2ff'},{a:'#c9921e',b:'#f4c54f',d:'#5a3a08',y:'#fff3b8'},{a:'#a0283a',b:'#ff6d8a',d:'#3a0a14',y:'#ffffff'}].map((p,i)=>{const o={map:CHESTMAP,pal:p,emit:i===5?'by':i===4?'y':''};prepSprite(o,CHESTMAP);return o});
+IC.chest=[CH_S,CHEST_PAL[0]];IC.chestGold=[CH_S,CHEST_PAL[4]];IC.chestLvl=[CH_S,CHEST_LVL];IC.chestOpen=[CH_SO,{...CHEST_PAL[4],y:'#f4c54f',Y:'#fff8d8',k:'#2a1806'}];
+const CHESTMAP=CH_S;
+const CHESTS=[{a:'#8a5a2a',b:'#b07a40',d:'#3f2410',y:'#c9a060'},{a:'#2f5f9a',b:'#5fa0e0',d:'#142640',y:'#e2f0ff'},{a:'#1f8a70',b:'#4fe0b0',d:'#0d3a30',y:'#e6fff6'},{a:'#5a2f8a',b:'#b685f2',d:'#24123a',y:'#f0e2ff'},{a:'#c9921e',b:'#f4c54f',d:'#5a3a08',y:'#fff3b8'},{a:'#a0283a',b:'#ff6d8a',d:'#3a0a14',y:'#ffffff'}].map((p,i)=>{const o={map:CHESTMAP,pal:CHEST_PAL[i],emit:CHEST_EMIT[i],hi:1};prepSprite(o,CHESTMAP);return o});
 
 /* ============ avatar: art ============ */
 // body frame 8x12 (foot on row 11). Head box cols 1..6, rows hy..hy+4.
@@ -1328,7 +1399,7 @@ function birdTap(lx,ly){
 function drawBird(){
   if(BIRD){const B=BIRD,fr=(B.drop?BIRDS.n:BIRDS.c)[Math.floor(B.t*(B.drop?9:6))%2];drawSprite(fr,fr.map,B.x,Math.round(B.y)+(B.drop?0:4),B.dir<0);
     if(!B.drop&&!RM&&Math.sin(T*3)>.6)sparkle(Math.round(B.x)+(B.dir>0?-6:6),Math.round(B.y)-6,.9)}
-  if(fallChest){const F=fallChest,C=CHESTS[F.r];drawSprite(C,C.map,Math.round(F.x),Math.round(F.y),false)}
+  if(fallChest){const F=fallChest,C=CHESTS[F.r];drawHi(C,C.map,F.x,F.y,false)}
 }
 function openBirdChest(px,py){
   const ch=dropChest;dropChest=null;const r=ch.r;
@@ -1407,6 +1478,7 @@ const SC=()=>S.scenes[S.cur];
 const mk=()=>{const c=document.createElement('canvas');c.width=W;c.height=H;return c};
 const skyCv=mk(),skyX=skyCv.getContext('2d'),wbCv=mk(),wbX=wbCv.getContext('2d'),mossCv=mk(),mossX=mossCv.getContext('2d');
 const glowCv=mk(),glowX=glowCv.getContext('2d'),maskCv=mk(),maskX=maskCv.getContext('2d'),wtCv=mk(),wtX=wtCv.getContext('2d'),lowCv=mk(),lowX=lowCv.getContext('2d');
+const RES=2;lowCv.width=W*RES;lowCv.height=H*RES;lowX.setTransform(RES,0,0,RES,0,0);lowX.imageSmoothingEnabled=false;
 const mossImg=new ImageData(W,H),md=mossImg.data,glowImg=new ImageData(W,H),gd=glowImg.data;
 const cv=$('#cv'),dX=cv.getContext('2d'),bdCv=document.createElement('canvas');bdCv.width=10;bdCv.height=16;const bdX=bdCv.getContext('2d');
 let view={s:1,ox:0,oy:0,cw:1,ch:1,dpr:1};
@@ -2428,7 +2500,7 @@ function outlineOf(map){let m=olCache.get(map);if(m)return m;const h=map.length,
   for(let y=-1;y<=h;y++)for(let x=-1;x<=w;x++){if(on(x,y))continue;if(on(x+1,y)||on(x-1,y)||on(x,y+1)||on(x,y-1))pts.push([x,y])}olCache.set(map,pts);return pts}
 function drawGlow(map,x,y,rgb,k,flip){
   const h=map.length,w=map[0].length,x0=Math.round(x-w/2),y0=Math.round(y-h+1);
-  const a=(RM?.3:.18+.17*(.5+.5*Math.sin(T*2.6+x*.7)))*k;lowX.fillStyle=css(rgb,a);
+  const a=(.22+.24*(.5+.5*Math.sin(T*2.6+x*.7)))*k;lowX.fillStyle=css(rgb,a);
   for(const[px,py]of outlineOf(map))lowX.fillRect(x0+(flip?w-1-px:px),y0+py,1,1);
 }
 const sparkle=(x,y,a)=>{lowX.fillStyle=`rgba(255,248,214,${a})`;lowX.fillRect(x,y,1,1);lowX.fillStyle=`rgba(255,248,214,${a*.45})`;lowX.fillRect(x-1,y,3,1);lowX.fillRect(x,y-1,1,3)};
@@ -2725,16 +2797,13 @@ function showModal(h){$('#mcard').innerHTML=h;$('#modal').classList.remove('hidd
 function closeModal(){ubClear();$('#modal').classList.add('hidden');modalOn=false;$('#mcard').innerHTML='';$('#mcard').classList.remove('ubbing')}
 function showReveal(h,btns){showModal(h+`<div class="mbtns">${btns.map(([id,l,cls])=>`<button class="btn ${cls||''}" data-m="${id}">${l}</button>`).join('')}</div>`);const b=$('#mcard .mbtns .btn:last-child');if(b)b.focus({preventScroll:true})}
 /* opening a chest: it shakes, the lid pops off, light and sparks burst out and the find rises up */
-const CHB={map:['....dddddddddddd....','..ddmbbbbbbbbbbmdd..','.dmmbbbbbbbbbbbbmmd.','.dmnaaaaaaaaaaaanmd.','dmnaaaaaaaaaaaaaanmd','dmnkkkkkkkkkkkkkknmd','ddddddddyyyydddddddd',
-  'dmnbbbbbyYYybbbbbnmd','dmnaaaaayddyaaaaanmd','dmnaaaaayyyyaaaaanmd','dmnkkkkkkkkkkkkkknmd','dmnaaaaaaaaaaaaaanmd','dmnaaaaaaaaaaaaaanmd','dmnkkkkkkkkkkkkkknmd','dmmnnnnnnnnnnnnnnmmd','.dddddddddddddddddd.'],
-  pal:{chest:{a:'#a0662e',b:'#c98d4a',k:'#6e4320',d:'#2a1608',m:'#c7c2b3',n:'#77736a',y:'#f4c54f',Y:'#fff3b8'},
-    chestGold:{a:'#d9a22a',b:'#f6d36a',k:'#9a6a12',d:'#3a2404',m:'#fff3b8',n:'#b07a14',y:'#5fd0f0',Y:'#d8f6ff'},
-    chestLvl:{a:'#6d6a5c',b:'#97907a',k:'#4a473e',d:'#1c1b18',m:'#e0b050',n:'#9a6a1e',y:'#f4c54f',Y:'#fff3b8'}}};
+const CHB={map:CH_B,pal:{chest:CHEST_PAL[0],chestGold:CHEST_PAL[4],chestLvl:CHEST_LVL}};
+const chestPalOf=(kind,r)=>kind==='chest'?CHEST_PAL[clamp(r|0,0,5)]:CHB.pal[kind]||CHEST_PAL[0];
 const UB={T:[],busy:false,skip:null};
 function ubClear(){UB.T.forEach(clearTimeout);UB.T.length=0;UB.busy=false;UB.skip=null}
 function gainHTML(coins,gems){return`<div class="gain">${coins?`<span>${icon('coin')}<b class="cu" data-cu="${coins}">${NM('+'+fmt(coins),'mid')}</b></span>`:''}${gems?`<span class="g">${icon('gem')}<b class="cu" data-cu="${gems}">${NM('+'+gems,'mid')}</b></span>`:''}</div>`}
 function countUp(root){
-  if(RM||root.dataset.cu)return;root.dataset.cu='1';root.querySelectorAll('.cu').forEach(el=>{const v=+el.dataset.cu;if(!(v>3))return;const t0=performance.now(),D=650;
+  if(root.dataset.cu)return;root.dataset.cu='1';root.querySelectorAll('.cu').forEach(el=>{const v=+el.dataset.cu;if(!(v>3))return;const t0=performance.now(),D=650;
     const step=t=>{if(!el.isConnected)return;const k=Math.min(1,(t-t0)/D),e=1-Math.pow(1-k,3);el.innerHTML=NM('+'+fmt(Math.round(v*e)),'mid');if(k<1)requestAnimationFrame(step)};
     el.innerHTML=NM('+0','mid');requestAnimationFrame(step)})}
 function ubBurst(el,r){const box=el.querySelector('.ub-parts');if(!box)return;const gems=!!el.querySelector('.gain .g'),n=14+r*6,cols=[RC[r],RC[r],'#fff3b8','#f4c54f','#ffffff'];let h='';
@@ -2750,11 +2819,11 @@ function unbox(kind,r,itemSvg,info,btns){
   r=clamp(r|0,0,5);const quick=!!$('#ub');ubClear();
   const tw=r>=2?[[18,30],[78,22],[26,74],[84,66]].map(([x,y],i)=>`<i style="left:${x}%;top:${y}%;animation-delay:${i*.4}s"></i>`).join(''):'';
   showReveal(`<div class="ub r${r}" id="ub" style="--rc:${RC[r]}"><div class="ub-stage"><div class="ub-rays"></div><div class="ub-glow"></div><div class="ub-shadow"></div>`+
-    `<div class="ub-beams"><i></i><i></i><i></i><i></i></div><div class="ub-chest"><div class="ub-base">${pxsvg(CHB.map,CHB.pal[kind]||CHB.pal.chest)}</div><div class="ub-in"></div><div class="ub-lid">${pxsvg(CHB.map,CHB.pal[kind]||CHB.pal.chest)}</div></div>`+
+    `<div class="ub-beams"><i></i><i></i><i></i><i></i></div><div class="ub-chest"><div class="ub-base">${pxsvg(CHB.map,chestPalOf(kind,r))}</div><div class="ub-in"></div><div class="ub-lid">${pxsvg(CHB.map,chestPalOf(kind,r))}</div></div>`+
+    `<div class="ub-splash">${Array.from({length:12+r*2},(_,i)=>`<i style="--a:${Math.round(i*360/(12+r*2)+(Math.random()-.5)*14)}deg;--l:${18+((Math.random()*16)|0)+r*3}px;--d:${(Math.random()*60)|0}ms"></i>`).join('')}</div><div class="ub-dust"></div><div class="ub-dust d2"></div>`+
     `<div class="ub-ring"></div>${r>=2?'<div class="ub-ring r2"></div>':''}${itemSvg?`<div class="ub-item">${itemSvg}</div>`:''}<div class="ub-tw">${tw}</div><div class="ub-parts"></div><div class="ub-conf"></div><div class="ub-flash"></div></div><div class="ub-info">${info}</div></div>`,btns);
   const el=$('#ub'),card=$('#mcard');el.querySelectorAll('.many span').forEach((s,i)=>s.style.setProperty('--i',i));
   const end=()=>{ubClear();el.classList.remove('shake','charge');el.classList.add('open','shown','done');card.classList.remove('ubbing');const b=$('#mcard .mbtns .btn:last-child');if(b)b.focus({preventScroll:true})};
-  if(RM){SND.play('chest',r);end();countUp(el);return}
   const sh=quick?380:620+(r>=3?260:0)+(r>=4?220:0),go=(fn,ms)=>UB.T.push(setTimeout(fn,ms));
   card.classList.add('ubbing');el.style.setProperty('--sh',sh+'ms');el.classList.add('charge','shake');UB.busy=true;
   UB.skip=()=>{if(!el.classList.contains('open')){SND.play('chest',r);ubBurst(el,r)}end();countUp(el)};
@@ -3142,7 +3211,7 @@ async function photoShot(){
   if(!photo)return;const sc=6,iw=W*sc,ih=H*sc,fr=photo.frame,pad=fr?54:0,bot=fr?200:0;
   const c=document.createElement('canvas');c.width=iw+pad*2;c.height=ih+pad+bot;const x=c.getContext('2d');x.imageSmoothingEnabled=false;
   if(fr){x.fillStyle='#f1e8cf';x.fillRect(0,0,c.width,c.height);for(let i=0;i<900;i++){x.fillStyle=`rgba(120,100,60,${.04+rnd()*.05})`;x.fillRect((rnd()*c.width)|0,(rnd()*c.height)|0,6,6)}x.fillStyle='rgba(40,30,20,.25)';x.fillRect(pad-6,pad-6,iw+12,ih+12)}
-  x.drawImage(lowCv,0,0,W,H,pad,pad,iw,ih);
+  x.drawImage(lowCv,0,0,lowCv.width,lowCv.height,pad,pad,iw,ih);
   try{await document.fonts.ready}catch(e){}
   const F='"Pixelify Sans",ui-monospace,monospace',d=new Date(now()),ds=dateFmt(d,{day:'numeric',month:'short',year:'numeric'});
   if(fr){x.textBaseline='alphabetic';x.textAlign='left';x.fillStyle='#2a2418';x.font=`600 58px ${F}`;x.fillText(sceneTitle(),pad,ih+pad+88,iw*.68);
@@ -4006,6 +4075,20 @@ function drawSprite(o,map,x,y,flip){
   const h=map.length,w=map[0].length,x0=Math.round(x-w/2),y0=Math.round(y-h+1);
   for(let r=0;r<h;r++){const row=map[r];for(let c=0;c<w;c++){const ch=row[c];if(ch==='.')continue;lowX.fillStyle=tintCol(o.rgb[ch],o.emit&&o.emit.includes(ch));lowX.fillRect(x0+(flip?w-1-c:c),y0+r,1,1)}}
 }
+// hi-res sprites: each character of the map is half a scene pixel (the picture is drawn at twice the scene's resolution)
+function drawHi(o,map,x,y,flip,lift){
+  const h=map.length,w=map[0].length,x0=Math.round((x-w/4)*2)/2,y0=Math.round((y+1-h/2-(lift||0))*2)/2;
+  for(let r=0;r<h;r++){const row=map[r];for(let c=0;c<w;c++){const ch=row[c];if(ch==='.')continue;lowX.fillStyle=tintCol(o.rgb[ch],o.emit&&o.emit.includes(ch));lowX.fillRect(x0+(flip?w-1-c:c)*.5,y0+r*.5,.5,.5)}}
+}
+function drawGlowHi(map,x,y,rgb,k,lift){
+  const h=map.length,w=map[0].length,x0=Math.round((x-w/4)*2)/2,y0=Math.round((y+1-h/2-(lift||0))*2)/2,p=.5+.5*Math.sin(T*2.6+x*.7);
+  lowX.fillStyle=css(rgb,(.3+.3*p)*k);for(const[px,py]of outlineOf(map))lowX.fillRect(x0+px*.5,y0+py*.5,.5,.5);
+  lowX.fillStyle=css(rgb,(.1+.12*p)*k);for(const[px,py]of outlineOf(map)){lowX.fillRect(x0+px*.5-.5,y0+py*.5,.5,.5);lowX.fillRect(x0+px*.5+.5,y0+py*.5,.5,.5)}
+}
+// a soft pool of light under something you can pick up, so it stands out from the moss
+function drawHalo(x,y,rx,rgb,k){const p=.5+.5*Math.sin(T*2.2+x*.9),a=(.16+.14*p)*k;
+  lowX.save();lowX.globalCompositeOperation='lighter';lowX.translate(x+.5,y+.5);lowX.scale(1,.42);const g=lowX.createRadialGradient(0,0,0,0,0,rx*(1+.12*p));
+  g.addColorStop(0,css(rgb,a));g.addColorStop(1,css(rgb,0));lowX.fillStyle=g;lowX.fillRect(-rx*1.2,-rx*1.2,rx*2.4,rx*2.4);lowX.restore()}
 let T=0;
 const smoke=[];let smokeT=0;
 function drawLava(){
@@ -4047,13 +4130,19 @@ function draw(){
   if(sceneChest)dl.push([sceneChest.y,3,sceneChest]);if(dropChest)dl.push([dropChest.y,3,dropChest]);if(L)dl.push([L.y,4,L]);if(AV&&!AV.hidden&&!titleShown)dl.push([AV.y+.5,5,AV]);if(PET.x>=0&&AV&&!AV.hidden&&!titleShown)dl.push([PET.y+.4,8,PET]);for(const o of scene.tdeco||[])dl.push([o.y,10,o]);
   dl.sort((a,b)=>a[0]-b[0]);
   for(const[,k,o]of dl){
-    if(k===0){const D=DEB[o.k];drawGlow(D.map,o.x,o.y,[255,243,200],.7,false);drawSprite(D,D.map,o.x,o.y,false)}
-    else if(k===1){const F=flowerSet(VS())[o.r];drawGlow(F.map,o.x,o.y,mix(hex(RC[o.r]),[255,255,255],.45),1,false);drawSprite(F,F.map,o.x,o.y,false);if(o.r>=2&&!RM&&Math.sin(T*3+o.x)>.75)sparkle(o.x+(o.x%3)-1,o.y-F.h-1,.9)}
-    else if(k===2){const fr=o.fr?o.V.f[1]:o.V.f[0],hop=o.hop>0&&!RM?-Math.round(Math.sin(o.hop/.4*Math.PI)*3):0;if(o.gift)drawGlow(fr,o.x,o.y+hop,[255,243,200],.8,o.flip);drawSprite(o.V,fr,o.x,o.y+hop,o.flip)}
-    else if(k===3){const left=o.until-performance.now();if(left<10000&&!RM&&Math.floor(left/250)%2)continue;const C=CHESTS[o.r];drawGlow(C.map,o.x,o.y,mix(hex(RC[o.r]),[255,255,255],.3),1.3,false);drawSprite(C,C.map,o.x,o.y,false);if(!RM&&Math.sin(T*2.2+o.x)>.6)sparkle(o.x-3+((T*2|0)%7),o.y-9,.85)}
+    if(k===0){const D=DEB[o.k];drawHalo(o.x,o.y,6,[255,236,190],.7);drawGlow(D.map,o.x,o.y,[255,243,200],.7,false);drawSprite(D,D.map,o.x,o.y,false)}
+    else if(k===1){const F=flowerSet(VS())[o.r];drawHalo(o.x,o.y,6+o.r,mix(hex(RC[o.r]),[255,255,255],.45),.9+o.r*.18);drawGlow(F.map,o.x,o.y,mix(hex(RC[o.r]),[255,255,255],.45),1,false);drawSprite(F,F.map,o.x,o.y,false);if(o.r>=2&&Math.sin(T*3+o.x)>.75)sparkle(o.x+(o.x%3)-1,o.y-F.h-1,.9)}
+    else if(k===2){const fr=o.fr?o.V.f[1]:o.V.f[0],hop=o.hop>0&&!RM?-Math.round(Math.sin(o.hop/.4*Math.PI)*3):0;if(o.gift){drawHalo(o.x,o.y,8,[255,243,200],.8);drawGlow(fr,o.x,o.y+hop,[255,243,200],.8,o.flip)}drawSprite(o.V,fr,o.x,o.y+hop,o.flip)}
+    else if(k===3){const left=o.until-performance.now();if(left<10000&&Math.floor(left/250)%2)continue;const C=CHESTS[o.r],rc=hex(RC[o.r]),lc=mix(rc,[255,255,255],.35);
+      // a chest you can open: light on the ground, a beam for the rare ones, a little hop now and then, sparkles
+      const hop=RM?0:Math.max(0,Math.sin(T*3.1+o.x))**6*1.5,lift=Math.round(hop*2)/2;
+      drawHalo(o.x,o.y,10+o.r,lc,1.2+o.r*.15);
+      if(o.r>=2){lowX.save();lowX.globalCompositeOperation='lighter';const bh=26+o.r*6,g=lowX.createLinearGradient(0,o.y-bh,0,o.y-4);g.addColorStop(0,css(lc,0));g.addColorStop(1,css(lc,.16+.08*Math.sin(T*2)));lowX.fillStyle=g;lowX.fillRect(o.x-2,o.y-bh,5,bh-4);lowX.restore()}
+      drawGlowHi(C.map,o.x,o.y,lc,1.2,lift);drawHi(C,C.map,o.x,o.y,false,lift);
+      const ph=(T*1.3+o.x*.37)%1;if(ph<.5)sparkle(Math.round(o.x-5+((o.x*7+Math.floor(T*1.3))%11)),Math.round(o.y-10-lift-ph*4),.9*(1-ph*2))}
     else if(k===4)drawSprite(o.on?LAMP_ON:LAMP_OFF,LAMPMAP,o.x,o.y,false);
-    else if(k===6){const E=EVS[o.k],b=RM?0:Math.round(Math.sin(T*2.2+o.x)*.6);drawGlow(E.map,o.x,o.y+b,[255,236,180],1.2,false);drawSprite(E,E.map,o.x,o.y+b,false);if(!RM&&Math.sin(T*2.6+o.y)>.7)sparkle(o.x+2,o.y-E.h-1,.85)}
-    else if(k===7){const M=mushOf(o.k);if(o.k===2)drawGlow(M.map,o.x,o.y,M.glow||[160,230,255],env.night>.4?1.4:.7,false);drawSprite(M,M.map,o.x,o.y,false);if(o.k===2&&!RM&&Math.sin(T*2.4+o.x)>.8)sparkle(o.x,o.y-M.h-1,.8)}
+    else if(k===6){const E=EVS[o.k],b=RM?0:Math.round(Math.sin(T*2.2+o.x)*.6);drawHalo(o.x,o.y,7,[255,226,160],1);drawGlow(E.map,o.x,o.y+b,[255,236,180],1.2,false);drawSprite(E,E.map,o.x,o.y+b,false);if(Math.sin(T*2.6+o.y)>.7)sparkle(o.x+2,o.y-E.h-1,.85)}
+    else if(k===7){const M=mushOf(o.k);drawHalo(o.x,o.y,5+o.k,o.k===2?(M.glow||[160,230,255]):[255,240,210],o.k===2?1.1:.6);drawGlow(M.map,o.x,o.y,o.k===2?(M.glow||[160,230,255]):[255,243,210],o.k===2?(env.night>.4?1.4:.9):.6,false);drawSprite(M,M.map,o.x,o.y,false);if(o.k===2&&Math.sin(T*2.4+o.x)>.8)sparkle(o.x,o.y-M.h-1,.8)}
     else if(k===8)drawPet();
     else if(k===10)drawTdeco(o);
     else drawAvatar();
@@ -4073,11 +4162,11 @@ function draw(){
   if(waterFlash>0){lowX.fillStyle=`rgba(120,190,240,${waterFlash*.18})`;lowX.fillRect(0,0,W,H)}
   if(placing)drawPlacing();if(editing)drawEdit();
   dX.imageSmoothingEnabled=false;dX.fillStyle='#0b120d';dX.fillRect(0,0,cv.width,cv.height);
-  if(view.wide){bdX.drawImage(lowCv,0,0,W,H,0,0,10,16);dX.imageSmoothingEnabled=true;const k=Math.max(cv.width/10,cv.height/16)*1.15,bw=10*k,bh=16*k;dX.drawImage(bdCv,(cv.width-bw)/2,(cv.height-bh)/2,bw,bh);
+  if(view.wide){bdX.drawImage(lowCv,0,0,lowCv.width,lowCv.height,0,0,10,16);dX.imageSmoothingEnabled=true;const k=Math.max(cv.width/10,cv.height/16)*1.15,bw=10*k,bh=16*k;dX.drawImage(bdCv,(cv.width-bw)/2,(cv.height-bh)/2,bw,bh);
     dX.fillStyle='rgba(5,9,6,.5)';dX.fillRect(0,0,cv.width,cv.height);const x0=Math.round(view.ox*view.dpr),x1=Math.round((view.ox+W*view.s)*view.dpr),gw=28*view.dpr;
     let g=dX.createLinearGradient(x0-gw,0,x0,0);g.addColorStop(0,'rgba(0,0,0,0)');g.addColorStop(1,'rgba(0,0,0,.45)');dX.fillStyle=g;dX.fillRect(x0-gw,0,gw,cv.height);
     g=dX.createLinearGradient(x1,0,x1+gw,0);g.addColorStop(0,'rgba(0,0,0,.45)');g.addColorStop(1,'rgba(0,0,0,0)');dX.fillStyle=g;dX.fillRect(x1,0,gw,cv.height);dX.imageSmoothingEnabled=false}
-  dX.drawImage(lowCv,0,0,W,H,Math.round(view.ox*view.dpr),Math.round(view.oy*view.dpr),Math.round(W*view.s*view.dpr),Math.round(H*view.s*view.dpr));
+  dX.drawImage(lowCv,0,0,lowCv.width,lowCv.height,Math.round(view.ox*view.dpr),Math.round(view.oy*view.dpr),Math.round(W*view.s*view.dpr),Math.round(H*view.s*view.dpr));
 }
 
 /* ============ tick ============ */
@@ -4129,7 +4218,7 @@ function frame(t){
   tick(dt);draw();
 }
 /* versões novas: quando o jogo muda no servidor, guarda o progresso e recarrega a página */
-const BUILD='3e82deefeffd',UKEY='tapmoss.upd';const UPD={on:false,go:false,at:0};
+const BUILD='65621b5ba79f',UKEY='tapmoss.upd';const UPD={on:false,go:false,at:0};
 async function checkUpdate(){
   if(BUILD.startsWith('__')||UPD.on||document.hidden||!navigator.onLine||!/^https?:$/.test(location.protocol)||window.claude)return;
   const t=performance.now();if(t-UPD.at<15000)return;UPD.at=t;
@@ -4179,7 +4268,7 @@ setTimeout(cloudInit,50);
   if(l&&/^[A-Za-z0-9]{8}$/.test(l)&&ONLINE){pendLigar=l.toUpperCase();setTimeout(()=>showModal(`<div class="reveal" style="--rc:#5fb0f0"><div class="rn">${_t("Outro aparelho")}</div><h3>${_t("Continuar o jogo de outro aparelho?")}</h3><p>${_t("O progresso que houver neste aparelho é substituído pelo do outro.")}</p></div><div class="mbtns"><button class="btn ghost" data-m="close">${_t("Não")}</button><button class="btn" data-m="ligarsim">${_t("Sim, continuar")}</button></div>`),600)}
   if(a||l){try{history.replaceState(null,'',location.pathname)}catch(e){}}}
 if(ONLINE&&new URLSearchParams(location.search).has('verificar'))setTimeout(()=>api('tm_mundo',{}).then(r=>ev('api','ok '+(Array.isArray(r)?r.length:'?'))).catch(e=>ev('api','erro '+e.code)),2500);
-if(window.__TM_DEBUG)window.__tm={startPlacing,placeAt,confirmPlace,editStart,editAct,editTap,treeSnap,get placing(){return placing},get editing(){return editing},get BIRD(){return BIRD},set birdNext(v){birdNext=v},get dropChest(){return dropChest},birdTap,AVED,doDaily,grantCos,COS_BAU,avUnlock,get lastCos(){return lastCos},PETS,PET,BOT,bStats,avCompose,AVH,AVHATS,AVACC,AVTOPS,AVPT,AVO,growStep,growthRate,get mossCount(){return mossCount},sim:simulateGrowth,addXp,calcIncome,hud,openSheet,get S(){return S},VIS,placeVisitor,VCOND,get env(){return env},get scene(){return scene},spawnFlower,spawnDebris,checkVisitors,visitors,refreshEnv,cov,newGame,buyScene,switchScene,grantItem,rollRarity,get AV(){return AV},avPlan,placeAt,startPlacing,confirmPlace,endPlacing,buyHouse,spawnSceneChest,get sceneChest(){return sceneChest},toggleLamp,checkAch,openLvlModal,frame:()=>lowCv.toDataURL('image/png'),autoToggle,get autoH(){return autoH},get visiting(){return visiting},visitFriend,endVisit,photoStart,photoShot,eventoAtivo,spawnEvItem,evItems,get NET(){return NET},get CONTA(){return CONTA},onlineStart,sync,openCaixa,loadAmigos,addFriend,globeMount,sanScene,dailyModal,doDaily,closeModal,rebuildScene,SND,avCompose,houseLv,saveLocal,get placing(){return placing},collectFlower,openAllLvl,openSceneChest,toScreen,unbox,get cap(){return cap},get fert(){return fert},tick,doWater,buyHouse,houseCost,UPS,upCost,upL,PERKS,get cps(){return cps},get mossCps(){return mossCps},tapValue,spawnMush,useShovel,get shovelRun(){return shovelRun},tapOk};
+if(window.__TM_DEBUG)window.__tm={startPlacing,placeAt,confirmPlace,editStart,editAct,editTap,treeSnap,get placing(){return placing},get editing(){return editing},get BIRD(){return BIRD},set birdNext(v){birdNext=v},get dropChest(){return dropChest},birdTap,AVED,doDaily,grantCos,COS_BAU,avUnlock,get lastCos(){return lastCos},PETS,PET,BOT,bStats,avCompose,AVH,AVHATS,AVACC,AVTOPS,AVPT,AVO,growStep,growthRate,get mossCount(){return mossCount},sim:simulateGrowth,addXp,calcIncome,hud,openSheet,get S(){return S},VIS,placeVisitor,VCOND,get env(){return env},get scene(){return scene},spawnFlower,spawnDebris,checkVisitors,visitors,refreshEnv,cov,newGame,buyScene,switchScene,grantItem,rollRarity,get AV(){return AV},avPlan,placeAt,startPlacing,confirmPlace,endPlacing,buyHouse,spawnSceneChest,get sceneChest(){return sceneChest},set sceneChest(v){sceneChest=v},toggleLamp,checkAch,openLvlModal,frame:()=>lowCv.toDataURL('image/png'),autoToggle,get autoH(){return autoH},get visiting(){return visiting},visitFriend,endVisit,photoStart,photoShot,eventoAtivo,spawnEvItem,evItems,get NET(){return NET},get CONTA(){return CONTA},onlineStart,sync,openCaixa,loadAmigos,addFriend,globeMount,sanScene,dailyModal,doDaily,closeModal,rebuildScene,SND,avCompose,houseLv,saveLocal,get placing(){return placing},collectFlower,openAllLvl,openSceneChest,toScreen,unbox,get cap(){return cap},get fert(){return fert},tick,doWater,buyHouse,houseCost,UPS,upCost,upL,PERKS,get cps(){return cps},get mossCps(){return mossCps},tapValue,spawnMush,useShovel,get shovelRun(){return shovelRun},tapOk};
 })();
 </script>
 </body>
