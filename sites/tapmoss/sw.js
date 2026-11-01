@@ -2,7 +2,7 @@
 // version.json fica sempre fora da cache: é por ele que o jogo sabe que há versão nova.
 // Cada página (o jogo em cada língua, os guias) guarda-se com o seu próprio endereço.
 const V='tapmoss-8';
-const CORE=['/','/manifest.json','/icon-192.png','/icon-512.png','/icon-maskable.png','/apple-touch-icon.png','/favicon.png'];
+const CORE=['/','/manifest.json','/icon-192.png','/icon-512.png','/icon-maskable.png','/apple-touch-icon.png','/favicon.png','/badge-96.png'];
 self.addEventListener('install',e=>{e.waitUntil(caches.open(V).then(c=>c.addAll(CORE)).then(()=>self.skipWaiting()))});
 self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==V).map(k=>caches.delete(k)))).then(()=>self.clients.claim()))});
 const pageKey=u=>{let p=u.pathname.replace(/index\.html$/,'');if(!p.endsWith('/'))p+='/';return p};
@@ -22,3 +22,9 @@ self.addEventListener('fetch',e=>{
   }
   e.respondWith(caches.match(r).then(m=>m||fetch(r).then(res=>{if(res.ok&&!u.pathname.endsWith('.xml')&&!u.pathname.endsWith('.txt')){const c=res.clone();caches.open(V).then(ca=>ca.put(r,c))}return res})));
 });
+// avisos com o jogo fechado: o servidor manda só título, texto, etiqueta e a página de cada língua
+self.addEventListener('push',e=>{let d={};try{d=e.data?e.data.json():{}}catch(x){}
+  const url=typeof d.url==='string'&&/^\/([a-z]{2}\/)?$/.test(d.url)?d.url:'/',tag=d.tag==='tm-diario'?'tm-diario':'tm-amigos';
+  e.waitUntil(self.registration.showNotification(String(d.title||'tapmoss').slice(0,60),{body:String(d.body||'').slice(0,200),tag,renotify:true,icon:'/icon-192.png',badge:'/badge-96.png',data:{url}}))});
+self.addEventListener('notificationclick',e=>{e.notification.close();const url=(e.notification.data&&e.notification.data.url)||'/';
+  e.waitUntil(self.clients.matchAll({type:'window',includeUncontrolled:true}).then(cs=>{for(const c of cs){if(new URL(c.url).origin===location.origin&&'focus'in c)return c.focus()}return self.clients.openWindow(url)}))});
