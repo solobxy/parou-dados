@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+Disallow: /dados/
+
+Sitemap: https://caiu.pt/sitemap.xml

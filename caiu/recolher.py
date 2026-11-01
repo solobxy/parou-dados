@@ -531,7 +531,8 @@ def main():
         'pvpr': sum(1 for o in promos if any(m[0] == 'pvpr' for m in o['m'])),
         'outra': sum(1 for o in promos if any(m[0] == 'outra' for m in o['m'])),
         'classes': {c: contar(c) for c in ('real', 'fachada', 'pvpr', 'promo')},
-        'cabaz': {'n': len(comuns), 'totais': tot, 'indice': {c: round(v / mn * 100) if mn else 0 for c, v in tot.items()}, 'vence': vence},
+        'cabaz': {'n': len(comuns), 'totais': tot, 'indice': {c: round(v / mn * 100) if mn else 0 for c, v in tot.items()}, 'vence': vence,
+                  'dividir': round(sum(min(o['p'] for o in g['o']) for g in comuns), 2)},
         'dias_historico': db.execute('select count(distinct dia) from precos').fetchone()[0],
         'inicio_historico': db.execute('select min(dia) from precos').fetchone()[0],
         'diferenca': [comp(g) + [d, pc] for g, (d, pc) in

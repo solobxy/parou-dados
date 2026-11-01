@@ -47,7 +47,7 @@ sed -e "s/{HOST_TESTE}/$HOST_TESTE/g" -e "s/{ESTAT_CHAVE}/${ESTAT_CHAVE:-sem-cha
 # O domínio só entra quando já aponta para este servidor (senão o Caddy falhava o
 # certificado e ficava a tentar com esperas cada vez maiores)
 MEU_IP="$(echo "${HOST_TESTE%%.sslip.io}" | tr '-' '.')"
-for DOM in parou.pt www.parou.pt anjinho.pt www.anjinho.pt jinxed.world www.jinxed.world duplicasa.pt www.duplicasa.pt chave.pt www.chave.pt dinissousa.pt www.dinissousa.pt adribodypiercing.pt www.adribodypiercing.pt jaesta.pt www.jaesta.pt apalavrado.pt www.apalavrado.pt tapmoss.com www.tapmoss.com; do
+for DOM in parou.pt www.parou.pt anjinho.pt www.anjinho.pt jinxed.world www.jinxed.world duplicasa.pt www.duplicasa.pt chave.pt www.chave.pt dinissousa.pt www.dinissousa.pt adribodypiercing.pt www.adribodypiercing.pt jaesta.pt www.jaesta.pt apalavrado.pt www.apalavrado.pt tapmoss.com www.tapmoss.com caiu.pt www.caiu.pt; do
   # Pergunta a dois DNS: basta um dizer que o domínio aponta para aqui (durante uma mudança
   # de DNS uns ainda dão o endereço antigo e o domínio entrava e saía a cada 2 minutos)
   IPS="$( (dig +short +time=3 +tries=2 A "$DOM" @1.1.1.1; dig +short +time=3 +tries=2 A "$DOM" @8.8.8.8) 2>/dev/null | grep -E '^[0-9.]+$' | sort -u)"
@@ -270,6 +270,28 @@ if [ -f "$APA/site/index.html" ] && [ -f "$APA/api/api.py" ]; then
     systemctl restart apalavrado-api.service && echo "$V" > /etc/apalavrado/api.versao
   fi
   systemctl is-active --quiet apalavrado-api.service || systemctl start apalavrado-api.service
+fi
+
+# caiu.pt: comparador de preços dos supermercados. Site estático em sites/caiu; os preços são recolhidos
+# aqui, de manhã e à tarde (caiu-recolha.timer), para /var/lib/caiu-dados, e o Caddy serve-os em /dados/.
+CU=$BASE/servidor/sites/caiu
+if [ -f "$CU/index.html" ] && ! diff -rq "$CU" /var/www/caiu >/dev/null 2>&1; then
+  rm -rf /var/www/caiu.novo && mkdir -p /var/www && cp -r "$CU" /var/www/caiu.novo \
+    && chmod -R a+rX /var/www/caiu.novo \
+    && rm -rf /var/www/caiu.velho && { [ ! -d /var/www/caiu ] || mv /var/www/caiu /var/www/caiu.velho; } \
+    && mv /var/www/caiu.novo /var/www/caiu && rm -rf /var/www/caiu.velho
+fi
+if [ -f "$SERV/caiu-recolha.service" ] && [ -f "$BASE/servidor/caiu/recolher.py" ]; then
+  for f in caiu-recolha.service caiu-recolha.timer; do
+    if ! cmp -s "$SERV/$f" "/etc/systemd/system/$f"; then cp "$SERV/$f" "/etc/systemd/system/$f" && systemctl daemon-reload; fi
+  done
+  systemctl is-enabled --quiet caiu-recolha.timer 2>/dev/null || systemctl enable --now caiu-recolha.timer >/dev/null 2>&1
+  # Recolha já (na primeira instalação e sempre que caiu/forcar-recolha muda)
+  FR=$(cat "$BASE/servidor/caiu/forcar-recolha" 2>/dev/null)
+  if [ -n "$FR" ] && [ "$(cat /var/lib/caiu-estado/forcar 2>/dev/null)" != "$FR" ]; then
+    install -d -m 755 /var/lib/caiu-estado && echo "$FR" > /var/lib/caiu-estado/forcar
+    systemctl start --no-block caiu-recolha.service
+  fi
 fi
 
 # O próprio atualizador, se mudou no repositório

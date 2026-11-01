@@ -1,0 +1,21 @@
+[Unit]
+Description=caiu.pt - recolha dos preços do Continente, Pingo Doce e Auchan
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=parou
+Group=parou
+StateDirectory=caiu-dados
+StateDirectoryMode=0755
+UMask=0022
+Environment=TZ=Europe/Lisbon
+ExecStart=/usr/bin/python3 /opt/parou/servidor/caiu/recolher.py /var/lib/caiu-dados
+TimeoutStartSec=90min
+Nice=10
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+MemoryMax=600M

@@ -20,3 +20,15 @@ repositório; aqui fica só o site já construído.
 - Endereço de testes: `https://goodman.<ip-com-tracos>.sslip.io`, fora do Google.
 - Domínio: blocos prontos para `goodman.pt` e `www.goodman.pt`; ligam-se sozinhos quando o registo A apontar para o servidor.
 - O chat usa a função `goodman` no Supabase, que só aceita pedidos das origens autorizadas (segredo `ORIGENS`).
+
+## caiu/
+caiu.pt, comparador de preços do Continente, Pingo Doce e Auchan que diz se a promoção é a sério.
+Desenho em `caiu/DESIGN.md`.
+
+- Publicar: alterar `sites/caiu/` e fazer push para `main` (passo «caiu.pt» em `servidor/atualizar.sh`).
+- Preços: `caiu/recolher.py` corre no servidor às 07:20 e 16:20 (`caiu-recolha.timer`) e escreve em
+  `/var/lib/caiu-dados` (o site lê `/dados/resumo.json`, `/dados/lista.json` e `/dados/h/<id>.json`).
+  O histórico fica em `historico.db` (SQLite, nunca servido). Para forçar uma recolha, mudar `caiu/forcar-recolha`.
+  As pesquisas feitas em cada loja estão em `caiu/termos.txt`. Teste à mão: workflow «Caiu - recolha de preços (teste)».
+- Endereço de testes: `https://caiu.<ip-com-tracos>.sslip.io`, fora do Google.
+- Domínio: blocos prontos para `caiu.pt` e `www.caiu.pt`; ligam-se sozinhos quando o registo A apontar para o servidor.
