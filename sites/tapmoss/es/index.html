@@ -12,8 +12,8 @@
 <meta name="description" content="Un jardín de musgo en pixel art que sigue el día, la noche y el tiempo reales de tu ciudad. Juego idle relajante y gratis: toca, recoge flores, conoce animales.">
 <link rel="canonical" href="https://tapmoss.com/es/">
 <link rel="alternate" hreflang="en" href="https://tapmoss.com/"><link rel="alternate" hreflang="pt" href="https://tapmoss.com/pt/"><link rel="alternate" hreflang="es" href="https://tapmoss.com/es/"><link rel="alternate" hreflang="fr" href="https://tapmoss.com/fr/"><link rel="alternate" hreflang="de" href="https://tapmoss.com/de/"><link rel="alternate" hreflang="ja" href="https://tapmoss.com/ja/"><link rel="alternate" hreflang="zh-CN" href="https://tapmoss.com/zh/"><link rel="alternate" hreflang="x-default" href="https://tapmoss.com/">
-<link rel="manifest" href="/manifest.json"><link rel="icon" type="image/png" href="/favicon.png"><link rel="apple-touch-icon" href="/apple-touch-icon.png">
-<meta name="theme-color" content="#0b120d"><meta name="color-scheme" content="dark"><meta name="application-name" content="tapmoss"><meta name="apple-mobile-web-app-title" content="tapmoss">
+<link rel="manifest" href="/manifest.json"><link rel="icon" type="image/png" href="/tapmoss-64.png"><link rel="apple-touch-icon" href="/tapmoss-180.png">
+<meta name="theme-color" content="#0b120d"><meta name="color-scheme" content="dark"><meta name="application-name" content="TapMoss"><meta name="apple-mobile-web-app-title" content="TapMoss">
 <meta property="og:type" content="website"><meta property="og:site_name" content="tapmoss"><meta property="og:locale" content="es_ES"><meta property="og:locale:alternate" content="en_US"><meta property="og:locale:alternate" content="pt_PT"><meta property="og:locale:alternate" content="fr_FR"><meta property="og:locale:alternate" content="de_DE"><meta property="og:locale:alternate" content="ja_JP"><meta property="og:locale:alternate" content="zh_CN">
 <meta property="og:url" content="https://tapmoss.com/es/"><meta property="og:title" content="tapmoss: juego idle de jardín de musgo, gratis en el navegador"><meta property="og:description" content="Un jardín de musgo en pixel art que sigue el día, la noche y el tiempo reales de tu ciudad. Juego idle relajante y gratis: toca, recoge flores, conoce animales.">
 <meta property="og:image" content="https://tapmoss.com/img/og-es.jpg"><meta property="og:image:type" content="image/jpeg"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta property="og:image:alt" content="Un jardín de musgo que sigue tu cielo real">
@@ -5328,7 +5328,7 @@ function frame(t){
   tick(dt);draw();guideTick();
 }
 /* versões novas: quando o jogo muda no servidor, guarda o progresso e recarrega a página */
-const BUILD='ff28f9cc4161',UKEY='tapmoss.upd';const UPD={on:false,go:false,at:0};
+const BUILD='caa87b8c7ff6',UKEY='tapmoss.upd';const UPD={on:false,go:false,at:0};
 async function checkUpdate(){
   if(BUILD.startsWith('__')||UPD.on||document.hidden||!navigator.onLine||!/^https?:$/.test(location.protocol)||window.claude)return;
   const t=performance.now();if(t-UPD.at<15000)return;UPD.at=t;
