@@ -1,0 +1,32 @@
+name: Caiu - capturas do site
+
+# Abre o caiu.pt (ou o endereço de testes) num Chromium, tira capturas no telemóvel e no computador,
+# experimenta a pesquisa, a folha do produto e a lista, e guarda tudo no ramo caiu-capturas.
+
+on:
+  workflow_dispatch:
+    inputs:
+      url:
+        description: "Endereço"
+        default: "https://caiu.2-31-13-85.sslip.io/"
+
+permissions:
+  contents: write
+
+jobs:
+  capturas:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Instalar o Chromium
+        run: pip install -q playwright && python3 -m playwright install --with-deps chromium > /dev/null
+      - name: Capturas
+        run: python3 caiu/verificar/capturas.py "${{ inputs.url }}"
+      - name: Guardar
+        if: always()
+        run: |
+          cd capturas && git init -q -b caiu-capturas
+          git config user.name "parou-dados"; git config user.email "actions@users.noreply.github.com"
+          git add -A && git commit -q -m "Capturas $(date -u +%Y-%m-%dT%H:%MZ)"
+          git push -q -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" caiu-capturas
