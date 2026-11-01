@@ -258,6 +258,8 @@
     }
     desenharLista();
     if (lerLista().length) obterLista().then(desenharLista).catch(() => {});
+    // as secções do dia empurram a página: voltar a apontar para a âncora pedida (ex.: #lista)
+    if (location.hash === '#lista' || location.hash === '#metodo') document.querySelector(location.hash).scrollIntoView();
     rotas();
   }
 
