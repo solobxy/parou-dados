@@ -384,6 +384,11 @@ def main():
             time.sleep(PAUSA)
         if n % 10 == 0:
             print(f'{n + 1}/{len(termos)} {termo}: ' + ', '.join(f'{l} {len(v)}' for l, v in vistos.items()), flush=True)
+            # estado a meio (visível em /dados/estado.json enquanto a recolha corre)
+            parcial = dict(estado, a_correr=f'{n + 1}/{len(termos)}', produtos_vistos={l: len(v) for l, v in vistos.items()})
+            with open(os.path.join(pasta, 'estado.json.tmp'), 'w') as f:
+                json.dump(parcial, f, ensure_ascii=False)
+            os.replace(os.path.join(pasta, 'estado.json.tmp'), os.path.join(pasta, 'estado.json'))
 
     for loja, prods in vistos.items():
         estado['lojas'].setdefault(loja, {'pedidos': 0, 'falhas': 0, 'codigos': {}})['produtos'] = len(prods)
