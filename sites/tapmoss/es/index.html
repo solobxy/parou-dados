@@ -354,6 +354,14 @@ select.sel,.selb{width:100%;height:48px;padding:0 12px;background:#18241a;clip-p
 #eyeC .pxi{width:16px;height:auto}
 .row3{display:flex;gap:6px}.row3 .btn{flex:1;padding:0 6px;font-size:14px;gap:5px}.row3 .btn .pxi{width:16px;height:16px}
 .photo #hud,.photo #dock,.photo #side,.photo #tools,.photo #hint,.photo #toast,.photo #visitBar{display:none!important}
+#phOv{display:none}
+.photo #phOv{display:block;position:absolute;inset:0;z-index:21;pointer-events:none;box-shadow:inset 0 0 0 3px rgba(241,232,207,.55);transition:box-shadow .25s ease}
+.photo.phfr #phOv{box-shadow:inset 0 0 0 calc(var(--colw,100vw) * .045) #f1e8cf,inset 0 calc(-122px - env(safe-area-inset-bottom,0px)) 0 0 #f1e8cf}
+#phOv span,#phOv b{position:absolute;bottom:calc(84px + env(safe-area-inset-bottom,0px));opacity:0;transition:opacity .25s ease;font-family:"Pixelify Sans",ui-monospace,monospace}
+#phOv span{left:7%;right:40%;color:#2a2418;font-size:17px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}#phOv b{right:7%;color:#3f6b28;font-size:15px}
+.photo.phfr #phOv span,.photo.phfr #phOv b{opacity:1}
+.wide #phOv{left:max(0px,calc(50% - var(--colw) / 2));right:max(0px,calc(50% - var(--colw) / 2))}
+@media (prefers-reduced-motion:reduce){#phOv,#phOv span,#phOv b{transition:none}}
 #photoBar{position:absolute;left:10px;right:10px;bottom:calc(12px + env(safe-area-inset-bottom,0px));z-index:22;display:flex;gap:8px}#photoBar .btn{flex:1}
 #flash{position:absolute;inset:0;z-index:40;background:#fff;opacity:0;pointer-events:none}#flash.on{animation:flash .5s ease-out}
 @keyframes flash{0%{opacity:.85}100%{opacity:0}}
@@ -1034,6 +1042,7 @@ select.sel,.selb{width:100%;height:48px;padding:0 12px;background:#18241a;clip-p
   <div id="bot" class="hidden" role="alertdialog" aria-modal="true" aria-labelledby="botT"></div>
   <div id="vNav" class="hidden"><button id="vPrev" aria-label="Cena anterior"><span></span></button><button id="vNext" aria-label="Cena seguinte"><span></span></button></div>
   <div id="visitBar" class="pn hidden"><div class="vbt"><span id="vbAv" class="vbav"></span><div class="vbm"><b id="vbName"></b><p id="vbSub"></p></div><span id="vbEye" class="vbeye hidden"></span></div><p class="vbhelp hidden" id="vbHelp" role="status"></p><div class="row3" id="vbFr"><button class="btn" id="vbWater"></button><button class="btn gold" id="vbGift"></button><button class="btn ghost" id="vbBack" data-i>Voltar</button></div><div class="row3 hidden" id="vbPub"><button class="btn gold" id="vbStart" data-i>Começar o meu jardim</button><button class="btn" id="vbFriend"></button><button class="btn ghost" id="vbHome" data-i>O meu jardim</button></div><p class="vbn hidden" id="vbNote"></p></div>
+  <div id="phOv" aria-hidden="true"><span id="phCap"></span><b>tapmoss</b></div>
   <div id="photoBar" class="hidden"><button class="btn ghost" id="phClose" data-i>Fechar</button><button class="btn ghost" id="phFrame" aria-pressed="true">Com moldura</button><button class="btn" id="phShot" data-i>Tirar foto</button></div>
   <div id="flash" aria-hidden="true"></div>
   <div id="edit" class="pn hidden" role="region" aria-label="Editar a cena"><p id="editT"></p><div class="row3" id="editBtns"></div></div>
@@ -4739,9 +4748,9 @@ function drawEventFx(e){
 
 /* ============ modo fotografia ============ */
 let photo=null,photoBlob=null,photoUrl='';
-function photoStart(){if(titleShown)return;closeSheet();closeModal();if(placing)endPlacing();if(editing)editEnd();photo={frame:true};$('#app').classList.add('photo');$('#photoBar').classList.remove('hidden');renderPhotoBar();$('#hint').classList.add('hidden');SND.play('click')}
-function photoEnd(){photo=null;$('#app').classList.remove('photo');$('#photoBar').classList.add('hidden')}
-function renderPhotoBar(){const b=$('#phFrame');b.setAttribute('aria-pressed',String(photo.frame));b.textContent=photo.frame?_t('Com moldura'):_t('Sem moldura')}
+function photoStart(){if(titleShown)return;closeSheet();closeModal();if(placing)endPlacing();if(editing)editEnd();photo={frame:true};$('#app').classList.add('photo');$('#phCap').textContent=sceneTitle();$('#photoBar').classList.remove('hidden');renderPhotoBar();$('#hint').classList.add('hidden');SND.play('click')}
+function photoEnd(){photo=null;$('#app').classList.remove('photo','phfr');$('#photoBar').classList.add('hidden')}
+function renderPhotoBar(){const b=$('#phFrame');b.setAttribute('aria-pressed',String(photo.frame));b.textContent=photo.frame?_t('Com moldura'):_t('Sem moldura');$('#app').classList.toggle('phfr',!!photo.frame)}
 function sceneTitle(){return visiting?_t("Cena de {0}",visiting.nome):(sceneName(scene)||'tapmoss')}
 async function photoShot(){
   if(!photo)return;const sc=6,iw=W*sc,ih=H*sc,fr=photo.frame,pad=fr?54:0,bot=fr?200:0;
@@ -4759,7 +4768,8 @@ async function photoShot(){
   c.toBlob(b=>{if(!b){toast(_t('Não deu para guardar a foto.'));return}photoBlob=b;if(photoUrl)URL.revokeObjectURL(photoUrl);photoUrl=URL.createObjectURL(b);
     const name=`tapmoss-${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}.png`;if(photo)photo.name=name;
     let canShare=false;try{canShare=!!(navigator.canShare&&navigator.canShare({files:[new File([b],name,{type:'image/png'})]}))}catch(e){}
-    showModal(`<div class="phprev"><img src="${photoUrl}" alt="${_t("Fotografia da cena {0}",esc(sceneTitle()))}"></div><div class="mbtns">${canShare?`<button class="btn" data-m="phshare">${_t("Partilhar")}</button>`:''}${window.claude?`<button class="btn ${canShare?'ghost':''}" data-m="phsave">${_t("Guardar")}</button>`:`<a class="btn ${canShare?'ghost':''}" href="${photoUrl}" download="${name}">${_t("Guardar")}</a>`}<button class="btn ghost" data-m="close">${_t("Fechar")}</button></div>`);
+    let prev=photoUrl;try{prev=c.toDataURL('image/png')}catch(e){}
+    showModal(`<div class="phprev"><img src="${prev}" alt="${_t("Fotografia da cena {0}",esc(sceneTitle()))}"></div><div class="mbtns">${canShare?`<button class="btn" data-m="phshare">${_t("Partilhar")}</button>`:''}${window.claude?`<button class="btn ${canShare?'ghost':''}" data-m="phsave">${_t("Guardar")}</button>`:`<a class="btn ${canShare?'ghost':''}" href="${photoUrl}" download="${name}">${_t("Guardar")}</a>`}<button class="btn ghost" data-m="close">${_t("Fechar")}</button></div>`);
   },'image/png');
 }
 
@@ -5558,7 +5568,8 @@ async function flexCard(){SND.play('click');const Wc=1080,Hc=1350,c=document.cre
   x.fillStyle='#2b3e2d';x.fillRect(70,Hc-150,Wc-140,3);x.fillStyle='#9ad65a';x.font=`700 66px ${F}`;x.fillText('tapmoss',70,Hc-60);
   x.fillStyle='#b8b39b';x.font=`400 32px ${F}`;x.textAlign='right';if(CONTA&&CONTA.codigo)x.fillText(_t('Joga comigo · código {0}',CONTA.codigo),Wc-70,Hc-96);x.fillText('tapmoss.com',Wc-70,Hc-54);
   c.toBlob(b=>{if(!b)return;const url=URL.createObjectURL(b);if(flexUrl)URL.revokeObjectURL(flexUrl);flexUrl=url;flexBlob=b;S.stats.cards=(S.stats.cards||0)+1;dirtySave=true;checkAch();
-    showModal(`<div class="reveal" style="--rc:#f4c54f"><div class="rn">${_t('O meu cartão')}</div><img class="flexim" src="${url}" alt="${esc(_t('O teu cartão do tapmoss'))}"></div><div class="mbtns"><button class="btn ghost" data-m="close">${_t('Fechar')}</button>${navigator.canShare&&navigator.canShare({files:[new File([b],'tapmoss.png',{type:'image/png'})]})?`<button class="btn gold" data-m="flexshare">${_t('Partilhar')}</button>`:`<a class="btn gold" href="${url}" download="tapmoss.png">${_t('Guardar imagem')}</a>`}</div>`);ev('cartao','criar')},'image/png')}
+    let prev=url;try{prev=c.toDataURL('image/png')}catch(e){}
+    showModal(`<div class="reveal" style="--rc:#f4c54f"><div class="rn">${_t('O meu cartão')}</div><img class="flexim" src="${prev}" alt="${esc(_t('O teu cartão do tapmoss'))}"></div><div class="mbtns"><button class="btn ghost" data-m="close">${_t('Fechar')}</button>${navigator.canShare&&navigator.canShare({files:[new File([b],'tapmoss.png',{type:'image/png'})]})?`<button class="btn gold" data-m="flexshare">${_t('Partilhar')}</button>`:`<a class="btn gold" href="${url}" download="tapmoss.png">${_t('Guardar imagem')}</a>`}</div>`);ev('cartao','criar')},'image/png')}
 let flexUrl='',flexBlob=null;
 async function flexShare(){if(!flexBlob)return;try{await navigator.share({files:[new File([flexBlob],'tapmoss.png',{type:'image/png'})],title:'tapmoss',text:_t('O meu jardim no tapmoss. Joga comigo!')+' https://tapmoss.com'});ev('cartao','partilhar')}catch(e){}}
 function myRank(){const t=TOP[meuPais()];if(!t||!t.list)return 0;const i=t.list.findIndex(x=>x.nome===S.name&&x.nivel===S.level);return i>=0?i+1:0}
@@ -6673,7 +6684,7 @@ function frame(t){
   tick(dt);draw();guideTick();
 }
 /* versões novas: quando o jogo muda no servidor, guarda o progresso e recarrega a página */
-const BUILD='0561b04aba9a',UKEY='tapmoss.upd';const UPD={on:false,go:false,at:0};
+const BUILD='60b0a822bad9',UKEY='tapmoss.upd';const UPD={on:false,go:false,at:0};
 async function checkUpdate(){
   if(BUILD.startsWith('__')||UPD.on||document.hidden||!navigator.onLine||!/^https?:$/.test(location.protocol)||window.claude)return;
   const t=performance.now();if(t-UPD.at<15000)return;UPD.at=t;
