@@ -1808,24 +1808,29 @@ function genScene(sd){
     const bridgeAt=cx=>({cx,y0:Math.floor(sTop(cx))-3,y1:Math.ceil(sBot(cx))+3});
     const bBox=cx=>{const g=bridgeAt(cx);return{x0:cx-10,x1:cx+10,y0:g.y0-3,y1:g.y1+3}};
     const stonesOk=cx=>!(sc.stones||[]).some(t=>Math.abs(t.cx-cx)<t.rx+12);
-    let bs=sd.pdp&&Number.isFinite(sd.pdp.x)?sd.pdp.x:null;
-    if(bs==null){const c=[];for(let cx=24;cx<=W-24;cx+=2)c.push(cx);bs=pick(shuffle(c).sort((a,b)=>stonesOk(b)-stonesOk(a)),bBox)}
-    if(bs!=null){if(!sd.pdp&&!visiting)sd.pdp={x:bs};const g=bridgeAt(bs);sc.bigBridge={...g,lv:sd.pd|0,seed:seed^0x77,box:take(bBox(bs))};sc.bigBridge.box.big=1;
+    // phones in portrait only show x≈22..138 and the side buttons cover the right edge, so the buildings stay in 30..112
+    const SAFE0=30,SAFE1=112;
+    let bs=sd.pdp&&Number.isFinite(sd.pdp.x)&&sd.pdp.x>=SAFE0&&sd.pdp.x<=SAFE1-2?sd.pdp.x:null;
+    if(bs==null){const c=[];for(let cx=SAFE0;cx<=SAFE1-2;cx+=2)c.push(cx);bs=pick(shuffle(c).sort((a,b)=>stonesOk(b)-stonesOk(a)),bBox)}
+    if(bs!=null){if((!sd.pdp||sd.pdp.x!==bs)&&!visiting)sd.pdp={x:bs};const g=bridgeAt(bs);sc.bigBridge={...g,lv:sd.pd|0,seed:seed^0x77,box:take(bBox(bs))};sc.bigBridge.box.big=1;
       sc.stones=(sc.stones||[]).filter(t=>Math.abs(t.cx-bs)>t.rx+10)}
     // water mill: the wheel dips into the stream, the little mill house sits on the bank beside it
     const az=(sd.up||{}).moinho|0,azBox=c=>{const t=Math.floor(sTop(c.x));return c.f?{x0:c.x-26,x1:c.x+11,y0:t-30,y1:t+4,big:1}:{x0:c.x-11,x1:c.x+26,y0:t-30,y1:t+4,big:1}};
-    let ws=sd.azp&&Number.isFinite(sd.azp.x)?{x:sd.azp.x,f:sd.azp.f?1:0}:null;
-    if(!ws){const c=[],c2=[];for(let x=14;x<=W-14;x+=2)for(const f of[0,1]){const o={x,f},b=azBox(o);if(bs!=null&&b.x1>bs-12&&b.x0<bs+12)continue;(sTop(x)>HOR+28?c:c2).push(o)}
-      ws=pick([...shuffle(c).sort((a,b)=>stonesOk(b.x)-stonesOk(a.x)),...shuffle(c2)],azBox)}
-    if(ws){if(!sd.azp&&!visiting)sd.azp={x:ws.x,f:ws.f};const t=Math.floor(sTop(ws.x));sc.azSite={x:ws.x,f:ws.f,top:t,lv:az,seed:seed^0x3a,box:take(azBox(ws))};
+    const azIn=o=>{const b=azBox(o);return b.x0>=16&&b.x1<=SAFE1+4};
+    let ws=sd.azp&&Number.isFinite(sd.azp.x)&&azIn({x:sd.azp.x,f:sd.azp.f?1:0})?{x:sd.azp.x,f:sd.azp.f?1:0}:null;
+    if(!ws){const c=[],c2=[];for(let x=14;x<=W-14;x+=2)for(const f of[0,1]){const o={x,f},b=azBox(o);if(!azIn(o))continue;if(bs!=null&&b.x1>bs-12&&b.x0<bs+12)continue;(sTop(x)>HOR+28?c:c2).push(o)}
+      ws=pick([...shuffle(c).sort((a,b)=>stonesOk(b.x)-stonesOk(a.x)),...shuffle(c2)],azBox);
+      // no room in the safe part of the scene: anywhere is better than no mill at all
+      if(!ws){const c3=[];for(let x=14;x<=W-14;x+=2)for(const f of[0,1]){const o={x,f},b=azBox(o);if(bs!=null&&b.x1>bs-11&&b.x0<bs+11)continue;c3.push(o)}ws=pick(shuffle(c3),azBox)||pick(shuffle(c3),o=>({...azBox(o),y0:azBox(o).y0+8}))}}
+    if(ws){if((!sd.azp||sd.azp.x!==ws.x)&&!visiting)sd.azp={x:ws.x,f:ws.f};const t=Math.floor(sTop(ws.x));sc.azSite={x:ws.x,f:ws.f,top:t,lv:az,seed:seed^0x3a,box:take(azBox(ws))};
       sc.stones=(sc.stones||[]).filter(q=>Math.abs(q.cx-ws.x)>q.rx+11);
       if(az>0){const r=5+Math.floor(Math.min(20,az)/5);sc.wheel={x:ws.x,y:t+1,r,n:Math.min(16,6+(az>>1)),iron:az>=10,gold:az>=20,lv:az,by:t+Math.round(r*.45)}}}
     // windmill: up on the far bank if there is room, otherwise anywhere on dry ground
     const mBox=c=>({x0:c.cx-11,x1:c.cx+11,y0:c.by-34,y1:c.by+3,big:1});
-    let ms=sd.mvp&&Number.isFinite(sd.mvp.x)?{cx:sd.mvp.x,by:sd.mvp.y}:null;
-    if(!ms){const far=[],near=[];for(let cx=16;cx<=W-16;cx+=3)for(let by=HOR+14;by<=H-50;by+=3){const b=mBox({cx,by});if(b.y1<sTop(cx)-4)(by<HOR+46?far:near).push({cx,by});else if(b.y0>sBot(cx)+6)near.push({cx,by})}
+    let ms=sd.mvp&&Number.isFinite(sd.mvp.x)&&sd.mvp.x>=SAFE0&&sd.mvp.x<=SAFE1-15?{cx:sd.mvp.x,by:sd.mvp.y}:null;
+    if(!ms){const far=[],near=[];for(let cx=SAFE0;cx<=SAFE1-15;cx+=3)for(let by=HOR+14;by<=H-50;by+=3){const b=mBox({cx,by});if(b.y1<sTop(cx)-4)(by<HOR+46?far:near).push({cx,by});else if(b.y0>sBot(cx)+6)near.push({cx,by})}
       ms=pick([...shuffle(far),...shuffle(near)],mBox)}
-    if(ms){if(!sd.mvp&&!visiting)sd.mvp={x:ms.cx,y:ms.by};ms.box=take(mBox(ms));ms.seed=seed^0x51;ms.lv=sd.mv|0;sc.millSite=ms;
+    if(ms){if((!sd.mvp||sd.mvp.x!==ms.cx||sd.mvp.y!==ms.by)&&!visiting)sd.mvp={x:ms.cx,y:ms.by};ms.box=take(mBox(ms));ms.seed=seed^0x51;ms.lv=sd.mv|0;sc.millSite=ms;
       if(ms.lv>=4)sc.mill={x:ms.cx,y:ms.by-30,by:ms.by,cloth:ms.lv>=6}}
   }
   // a bridge needs water under it (the pond may have gone back to the inventory)
@@ -5242,7 +5247,7 @@ function frame(t){
   tick(dt);draw();guideTick();
 }
 /* versões novas: quando o jogo muda no servidor, guarda o progresso e recarrega a página */
-const BUILD='5b3e7488d6ad',UKEY='tapmoss.upd';const UPD={on:false,go:false,at:0};
+const BUILD='51af536e8e38',UKEY='tapmoss.upd';const UPD={on:false,go:false,at:0};
 async function checkUpdate(){
   if(BUILD.startsWith('__')||UPD.on||document.hidden||!navigator.onLine||!/^https?:$/.test(location.protocol)||window.claude)return;
   const t=performance.now();if(t-UPD.at<15000)return;UPD.at=t;
