@@ -607,6 +607,15 @@ www.apalavrado.pt {
 	redir /en / permanent
 	@en path_regexp en ^/en(/.*)$
 	redir @en {re.en.1} permanent
+	# shared garden links (/g/CODE, /pt/g/CODE...): the game page of that language opens the garden; never indexed
+	@jardimL path_regexp jardimL ^/(pt|es|fr|de|ja|zh)/g/[A-Z2-9]{8}/?$
+	@jardim path_regexp ^/g/[A-Z2-9]{8}/?$
+	header @jardimL X-Robots-Tag "noindex"
+	header @jardimL Cache-Control "no-cache"
+	header @jardim X-Robots-Tag "noindex"
+	header @jardim Cache-Control "no-cache"
+	rewrite @jardimL /{re.jardimL.1}/index.html
+	rewrite @jardim /index.html
 	file_server
 	handle_errors {
 		@nf expression {err.status_code} == 404
