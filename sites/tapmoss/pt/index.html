@@ -6205,7 +6205,8 @@ function ptFeedModal(){const p=ptAct();if(!p)return;const P=ptS();
 const ptDexN=()=>{const P=S&&S.pt;if(!P)return 0;const k=Object.keys(P.seen||{});return PSP.filter(s=>k.some(x=>x.startsWith(s.id+':'))).length};
 function ptSheetPets(){const P=ptS();let h=`<p class="lead">${_t('O pet que usas dá o bónus em todas as cenas e anda contigo. As cores raras (prata, ouro, holográfico, arco-íris) dão mais.')}</p>`;
   h+=`<div class="bonus">${icon('candy')}<div>${_t('<b>{0} doces de pet</b>',P.doces|0)}<p>${_t('Libertar um pet dá doces. Cada doce dá muita experiência ao pet que usas.')}</p></div></div>`;
-  const L=P.list.slice().sort((a,b)=>(b.u===P.at)-(a.u===P.at)||ptSp(b.s).r-ptSp(a.s).r||b.c-a.c||b.lv-a.lv);
+  // most valuable first: rarity, then how rare the colour is, then level. The pet in use keeps its place and is marked by its frame
+  const L=P.list.slice().sort((a,b)=>ptSp(b.s).r-ptSp(a.s).r||PCH_RANK.indexOf(b.c)-PCH_RANK.indexOf(a.c)||b.lv-a.lv);
   h+=`<div class="ptGrid">${L.map(p=>{const sp=ptSp(p.s);return`<button class="ptCard ${p.u===P.at?'on':''}" style="--rc:${RC[sp.r]}" data-pt="det:${p.u}"><span class="chr${p.c}">${ptSvg(p.s,p.c)}</span><b>${sp.nome}</b><span class="ptCt">${p.c?`<i style="color:${PCH[p.c].col}">${PCH[p.c].nome}</i>`:RN[sp.r]}</span><span class="ptCt">${_t('Nv')} ${p.lv}</span></button>`}).join('')}</div>`;
   h+=`<p class="note">${_t('{0} de {1} lugares.',P.list.length,PT_INV)}</p><h4 class="sub">${_t('Pets que já viste')} <span class="lv">${PSP.filter(s=>Object.keys(P.seen).some(k=>k.startsWith(s.id+':'))).length}/${PSP.length}</span></h4><div class="ptGrid dex">${PSP.map(s=>{const seen=Object.keys(P.seen).some(k=>k.startsWith(s.id+':'));return`<div class="ptCard dex ${seen?'':'off'}" style="--rc:${RC[s.r]}">${seen?ptSvg(s.id,0):pxsvg(PETS[s.id].F[2].map,sil(PETS[s.id].F[2].map),'nohd')}<b>${seen?s.nome:'???'}</b><span class="ptCt">${RN[s.r]}</span></div>`}).join('')}</div>`;
   return h}
@@ -6532,7 +6533,7 @@ function frame(t){
   tick(dt);draw();guideTick();
 }
 /* versões novas: quando o jogo muda no servidor, guarda o progresso e recarrega a página */
-const BUILD='3440383bf384',UKEY='tapmoss.upd';const UPD={on:false,go:false,at:0};
+const BUILD='51c24cb2288c',UKEY='tapmoss.upd';const UPD={on:false,go:false,at:0};
 async function checkUpdate(){
   if(BUILD.startsWith('__')||UPD.on||document.hidden||!navigator.onLine||!/^https?:$/.test(location.protocol)||window.claude)return;
   const t=performance.now();if(t-UPD.at<15000)return;UPD.at=t;
