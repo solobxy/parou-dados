@@ -152,6 +152,9 @@ def ler_continente(t):
             continue
         qtd = limpo((re.search(r'class="pwc-tile--quantity[^"]*">(.*?)</p>', b, re.S) or [None, ''])[1])
         pu, un = preco_unidade(limpo((re.search(r'class="pwc-tile--price-secondary[^"]*">(.*?)</div>', b, re.S) or [None, ''])[1]))
+        if pu is None:
+            pr = b.find('pwc-price-wrap')
+            pu, un = preco_unidade(limpo(b[pr:pr + 3000])) if pr > 0 else (None, '')
         lst = re.search(r'<div class="list[^"]*">(.*?)</div>', b, re.S)
         antes = pvpr = None
         if lst:
@@ -291,7 +294,8 @@ def agrupar(prods):
                 if not fa or not fb:
                     continue
                 sim = len(fa & fb) / len(fa | fb)
-                if sim >= 0.6:
+                razao = max(a['preco'], b['preco']) / max(0.01, min(a['preco'], b['preco']))
+                if sim >= (0.85 if razao > 1.6 else 0.65):
                     pares.append((sim, idx[x], idx[y]))
         for sim, i, j in sorted(pares, reverse=True):
             ri, rj = raiz(i), raiz(j)
@@ -308,7 +312,8 @@ def agrupar(prods):
 # ---------- veredito ----------
 def veredito(p, hist, outras):
     """p: oferta de hoje; hist: [(dia, preco, antes)] dos dias anteriores (mais recente no fim); outras: ofertas de outras lojas.
-    Devolve (classe, [motivos]). classe: 'real' (baixou a sério), 'fachada' (promoção que não é o que parece), 'promo', ''."""
+    Devolve (classe, [motivos]). classe: 'real' (baixou a sério), 'fachada' (promoção que não é o que parece),
+    'pvpr' (desconto calculado sobre o preço recomendado pela marca), 'promo' (ainda sem forma de confirmar), ''."""
     ult30 = [h for h in hist if h[0] >= (datetime.now(ZoneInfo('Europe/Lisbon')).date() - timedelta(days=30)).isoformat()]
     precos30 = [h[1] for h in ult30]
     dias = len(ult30)
@@ -321,7 +326,7 @@ def veredito(p, hist, outras):
     if p['pvpr'] and not p['antes'] and p['preco'] < p['pvpr']:
         motivos.append(['pvpr', p['pvpr']])
         if classe != 'real':
-            classe = 'fachada'
+            classe = 'pvpr'
     if promo and p['antes'] and dias >= 25 and precos30 and p['antes'] > max(precos30) + 0.005:
         motivos.append(['antes', p['antes'], round(max(precos30), 2), dias])
         if classe != 'real':
@@ -376,7 +381,7 @@ def main():
             print(f'{n + 1}/{len(termos)} {termo}: ' + ', '.join(f'{l} {len(v)}' for l, v in vistos.items()), flush=True)
 
     for loja, prods in vistos.items():
-        estado['lojas'][loja]['produtos'] = len(prods)
+        estado['lojas'].setdefault(loja, {'pedidos': 0, 'falhas': 0, 'codigos': {}})['produtos'] = len(prods)
         for p in prods.values():
             db.execute('insert or replace into produtos values (?,?,?,?,?,?,?,?,?,?,?)',
                        (loja, p['id'], p['nome'], p['marca'], p['cat'], p['qtd'], p['pun'], p['un'], p['img'], p['url'], hoje))
@@ -424,9 +429,8 @@ def main():
         qtd = next((p['qtd'] for p in ofs if p['qtd']), '')
         img = next((p['img'] for p in ofs if p['img']), '')
         classes = [o['v'] for o in o_out]
-        v = 'real' if 'real' in classes else 'fachada' if 'fachada' in classes else 'promo' if 'promo' in classes else ''
-        lista.append({'i': gid, 'n': nome, 'm': base['marca'], 'q': qtd, 'c': base['cat'], 'img': img, 'v': v, 'o': o_out,
-                      'k': norm(f"{nome} {base['marca']} {qtd}")})
+        v = next((c for c in ('real', 'fachada', 'pvpr', 'promo') if c in classes), '')
+        lista.append({'i': gid, 'n': nome, 'm': base['marca'], 'q': qtd, 'c': base['cat'], 'img': img, 'v': v, 'o': o_out})
         with open(os.path.join(pasta, 'h', gid + '.json'), 'w') as f:
             json.dump(hist_g, f, separators=(',', ':'))
     # apaga históricos de produtos que já não aparecem
@@ -458,43 +462,64 @@ def main():
             ps = sorted(o['p'] for o in g['o'])
             poupanca.append((round(ps[-1] - ps[0], 2), round((ps[-1] - ps[0]) / ps[-1] * 100), g['i']))
 
-    def destaque(g):
-        return {k: g[k] for k in ('i', 'n', 'm', 'q', 'img', 'v', 'o')}
+    IMGPRE = ['https://www.continente.pt/dw/image/v2/BDVS_PRD/on/demandware.static/-/Sites-col-master-catalog/default/',
+              'https://static.pingodoce.pt/dw/image/v2/BLJJ_PRD/on/demandware.static/-/Sites-pingo-doce-master/default/',
+              'https://www.auchan.pt/dw/image/v2/BFRC_PRD/on/demandware.static/-/Sites-auchan-pt-master-catalog/default/']
+
+    def cimg(u):
+        for n, pre in enumerate(IMGPRE):
+            if u.startswith(pre):
+                return f'{n}|{u[len(pre):]}'
+        return u
+
+    def comp(g):
+        """Formato compacto (o site descodifica): [id, nome, marca, qtd, categoria, imagem, veredito, ofertas]
+        oferta: [loja, id, preço, preço/unidade, unidade, antes, pvpr, texto da promoção, veredito, motivos, url, dias de histórico]"""
+        return [g['i'], g['n'], g['m'], g['q'], g['c'], cimg(g['img']), g['v'],
+                [[o['l'], o['id'], o['p'], o['pu'], o['u'], o['a'], o['r'], o['t'], o['v'], o['m'], o['url'], o['d']] for o in g['o']]]
 
     reais = sorted((g for g in lista if g['v'] == 'real'),
                    key=lambda g: -max(((m[1] - o['p']) / m[1]) for o in g['o'] for m in o['m'] if m[0] == 'min30'))
     fach = [g for g in lista if g['v'] == 'fachada']
-    # fachada mais clara primeiro: mais barato noutra loja, depois desconto só sobre o PVPR
+    # mais claras primeiro: as que estão mais caras do que noutra loja, pela diferença em percentagem
     def peso_f(g):
-        ms = [m for o in g['o'] for m in o['m']]
-        dif = max([o['p'] - m[2] for o in g['o'] for m in o['m'] if m[0] == 'outra'] or [0])
+        dif = max([(o['p'] - m[2]) / o['p'] for o in g['o'] for m in o['m'] if m[0] == 'outra'] or [0])
         return (-dif, -len(g['o']))
     fach.sort(key=peso_f)
+    pv = sorted((g for g in lista if g['v'] == 'pvpr'),
+                key=lambda g: -max((m[1] - o['p']) / m[1] for o in g['o'] for m in o['m'] if m[0] == 'pvpr'))
+    por_id = {g['i']: g for g in lista}
+    difs = sorted((x for x in poupanca if x[0] >= 0.5), key=lambda x: (-x[1], -x[0]))
+    contar = lambda c: sum(1 for o in promos if o['v'] == c)
     resumo = {
-        'atualizado': agora.isoformat(timespec='minutes'), 'dia': hoje,
+        'atualizado': agora.isoformat(timespec='minutes'), 'dia': hoje, 'img': IMGPRE,
+        'base': {COD[l]: LOJAS[l]['base'] for l in LOJAS},
         'lojas': lojas_res, 'produtos': len(lista), 'ofertas': sum(len(g['o']) for g in lista),
         'iguais': sum(1 for g in lista if len(g['o']) >= 2), 'promos': len(promos),
         'pvpr': sum(1 for o in promos if any(m[0] == 'pvpr' for m in o['m'])),
         'outra': sum(1 for o in promos if any(m[0] == 'outra' for m in o['m'])),
-        'fachada': sum(1 for o in promos if o['v'] == 'fachada'), 'reais': sum(1 for o in promos if o['v'] == 'real'),
+        'classes': {c: contar(c) for c in ('real', 'fachada', 'pvpr', 'promo')},
         'cabaz': {'n': len(comuns), 'totais': tot, 'indice': {c: round(v / mn * 100) if mn else 0 for c, v in tot.items()}, 'vence': vence},
         'dias_historico': db.execute('select count(distinct dia) from precos').fetchone()[0],
-        'maior_diferenca': [destaque(next(g for g in lista if g['i'] == i)) | {'dif': d, 'pct': pc} for d, pc, i in sorted(poupanca, reverse=True)[:12]],
-        'reais_top': [destaque(g) for g in reais[:12]],
-        'fachada_top': [destaque(g) for g in fach[:12]],
+        'inicio_historico': db.execute('select min(dia) from precos').fetchone()[0],
+        'diferenca': [comp(por_id[i]) + [d, pc] for d, pc, i in difs[:12]],
+        'reais': [comp(g) for g in reais[:12]],
+        'fachada': [comp(g) for g in fach[:12]],
+        'pvpr_top': [comp(g) for g in pv[:12]],
     }
+
     def escrever(nome, obj):
         tmp = os.path.join(pasta, nome + '.tmp')
         with open(tmp, 'w', encoding='utf-8') as f:
             json.dump(obj, f, ensure_ascii=False, separators=(',', ':'))
         os.replace(tmp, os.path.join(pasta, nome))
-    escrever('lista.json', {'dia': hoje, 'g': lista})
+    escrever('lista.json', {'dia': hoje, 'g': [comp(g) for g in lista]})
     escrever('resumo.json', resumo)
     estado['fim'] = datetime.now(ZoneInfo('Europe/Lisbon')).isoformat(timespec='seconds')
     estado['grupos'] = len(lista)
     escrever('estado.json', estado)
     db.close()
-    print(json.dumps({k: resumo[k] for k in ('produtos', 'ofertas', 'iguais', 'promos', 'pvpr', 'outra', 'fachada', 'reais', 'cabaz')}, ensure_ascii=False))
+    print(json.dumps({k: resumo[k] for k in ('produtos', 'ofertas', 'iguais', 'promos', 'pvpr', 'outra', 'classes', 'cabaz')}, ensure_ascii=False))
     print(json.dumps(estado['lojas'], ensure_ascii=False))
 
 
