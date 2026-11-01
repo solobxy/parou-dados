@@ -1,17 +1,3 @@
-# nome url  (lido por supermercados/sonda.py)
-continente-pesquisa https://www.continente.pt/pesquisa/?q=leite%20meio%20gordo&start=0&srule=Continente%2005&pmin=0.01
-continente-grid https://www.continente.pt/on/demandware.store/Sites-continente-Site/default/Search-UpdateGrid?q=leite&pmin=0.01&start=0&sz=36
-auchan-pesquisa https://www.auchan.pt/pt/pesquisa?q=leite
-auchan-grid https://www.auchan.pt/on/demandware.store/Sites-AuchanPT-Site/pt_PT/Search-UpdateGrid?q=leite&start=0&sz=36
-pingodoce-home https://www.pingodoce.pt/
-pingodoce-pesquisa https://www.pingodoce.pt/pesquisa/?q=leite
-pingodoce-sfcc https://www.pingodoce.pt/on/demandware.store/Sites-pingo-doce-Site/default/Search-UpdateGrid?q=leite&start=0&sz=36
-intermarche-home https://www.intermarche.pt/
-intermarche-pesquisa https://www.intermarche.pt/pesquisa?q=leite
-minipreco-home https://www.minipreco.pt/
-minipreco-pesquisa https://www.minipreco.pt/search?text=leite
-mercadona-api https://tienda.mercadona.pt/api/categories/?lang=pt
-lidl-pesquisa https://www.lidl.pt/q/search?q=leite
-aldi-home https://www.aldi.pt/
-eci-pesquisa https://www.elcorteingles.pt/supermercado/pesquisar/?term=leite
-froiz-home https://loja.froiz.com/
+# nome url  (lido por caiu/sonda.py)
+cont-piteira https://www.continente.pt/on/demandware.store/Sites-continente-Site/default/Search-UpdateGrid?q=piteira%20reserva&pmin=0.01&start=0&sz=12
+cont-azeite https://www.continente.pt/on/demandware.store/Sites-continente-Site/default/Search-UpdateGrid?q=azeite%20oliveira%20da%20serra%20selecionado&pmin=0.01&start=0&sz=12

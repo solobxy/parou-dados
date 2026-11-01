@@ -97,9 +97,9 @@ def preco_unidade(t):
 
 
 def tamanho(t):
-    """Quantidade total em ml, g ou unidades: 'emb. 6 x 1 lt' -> (6000, 'ml'); '500 gr' -> (500, 'g')."""
+    """Quantidade total em ml, g ou unidades e número de embalagens: 'emb. 6 x 1 lt' -> (6000, 'ml', 6); '500 gr' -> (500, 'g', 1)."""
     s = norm(t).replace(',', '.')
-    m = re.search(r'(\d+)\s*x\s*(\d+(?:\.\d+)?)\s*(ml|cl|lt|l|kg|gr|g)\b', s)
+    m = re.search(r'(\d+)\s*(?:un\s*|unid\s*)?x\s*(\d+(?:\.\d+)?)\s*(ml|cl|lt|l|kg|gr|g)\b', s)
     mult = 1
     if m:
         mult, v, u = int(m.group(1)), float(m.group(2)), m.group(3)
@@ -107,10 +107,10 @@ def tamanho(t):
         m = re.search(r'(\d+(?:\.\d+)?)\s*(ml|cl|lt|l|kg|gr|g)\b', s)
         if not m:
             m2 = re.search(r'(\d+)\s*(un|unid|rolos|doses|capsulas|saquetas|lavagens|pastilhas)\b', s)
-            return (int(m2.group(1)), 'un') if m2 else (None, '')
+            return (int(m2.group(1)), 'un', 1) if m2 else (None, '', 1)
         v, u = float(m.group(1)), m.group(2)
     f = {'ml': (1, 'ml'), 'cl': (10, 'ml'), 'lt': (1000, 'ml'), 'l': (1000, 'ml'), 'kg': (1000, 'g'), 'gr': (1, 'g'), 'g': (1, 'g')}[u]
-    return int(round(mult * v * f[0])), f[1]
+    return int(round(mult * v * f[0])), f[1], mult
 
 
 def frase(t):
@@ -268,13 +268,13 @@ def agrupar(prods):
     """prods: lista de dicts com loja. Devolve lista de grupos (listas de índices)."""
     baldes = {}
     for i, p in enumerate(prods):
-        q, u = tamanho(p['qtd'] + ' ' + p['nome'])
-        p['_tam'] = (q, u)
+        q, u, mult = tamanho(p['qtd'] + ' ' + p['nome'])
+        p['_tam'] = (q, u, mult)
         p['_fi'] = fichas(p['nome'], p['marca'])
         marca = norm(p['marca']).strip()
         if not marca or not q or marca in MARCAS_PROPRIAS:
             continue
-        baldes.setdefault((marca, q, u), []).append(i)
+        baldes.setdefault((marca, q, u, mult), []).append(i)
     pai = list(range(len(prods)))
 
     def raiz(i):
@@ -295,6 +295,11 @@ def agrupar(prods):
                     continue
                 sim = len(fa & fb) / len(fa | fb)
                 razao = max(a['preco'], b['preco']) / max(0.01, min(a['preco'], b['preco']))
+                # o preço por unidade de cada loja tem de bater certo com o preço (apanha packs diferentes)
+                if a['pun'] and b['pun'] and a['un'] == b['un']:
+                    q = (a['preco'] / b['preco']) / (a['pun'] / b['pun'])
+                    if not 0.8 <= q <= 1.25:
+                        continue
                 if sim >= (0.85 if razao > 1.6 else 0.65):
                     pares.append((sim, idx[x], idx[y]))
         for sim, i, j in sorted(pares, reverse=True):
@@ -478,9 +483,21 @@ def main():
         return [g['i'], g['n'], g['m'], g['q'], g['c'], cimg(g['img']), g['v'],
                 [[o['l'], o['id'], o['p'], o['pu'], o['u'], o['a'], o['r'], o['t'], o['v'], o['m'], o['url'], o['d']] for o in g['o']]]
 
+    def confirmado(g, so=None):
+        """Todas as ofertas (ou as indicadas) têm preço por unidade na mesma unidade: o tamanho bate certo."""
+        os_ = so or g['o']
+        return all(o['pu'] for o in os_) and len({o['u'] for o in os_}) == 1
+
     reais = sorted((g for g in lista if g['v'] == 'real'),
                    key=lambda g: -max(((m[1] - o['p']) / m[1]) for o in g['o'] for m in o['m'] if m[0] == 'min30'))
-    fach = [g for g in lista if g['v'] == 'fachada']
+    def fach_ok(g):
+        for o in g['o']:
+            for m in o['m']:
+                if m[0] == 'outra':
+                    outra = next((x for x in g['o'] if x['l'] == COD[m[1]]), None)
+                    return bool(outra) and confirmado(g, [o, outra])
+        return True
+    fach = [g for g in lista if g['v'] == 'fachada' and fach_ok(g)]
     # mais claras primeiro: as que estão mais caras do que noutra loja, pela diferença em percentagem
     def peso_f(g):
         dif = max([(o['p'] - m[2]) / o['p'] for o in g['o'] for m in o['m'] if m[0] == 'outra'] or [0])
@@ -489,7 +506,22 @@ def main():
     pv = sorted((g for g in lista if g['v'] == 'pvpr'),
                 key=lambda g: -max((m[1] - o['p']) / m[1] for o in g['o'] for m in o['m'] if m[0] == 'pvpr'))
     por_id = {g['i']: g for g in lista}
-    difs = sorted((x for x in poupanca if x[0] >= 0.5), key=lambda x: (-x[1], -x[0]))
+
+    def variados(gs, n):
+        """Os primeiros n, com no máximo 2 da mesma marca e 3 do mesmo tipo de produto (primeira palavra)."""
+        out, marcas, tipos, cats = [], {}, {}, {}
+        for g in gs:
+            mk, tp, ct = norm(g['m']), norm(g['n']).split(' ')[0], norm(g['c'])
+            if marcas.get(mk, 0) >= 2 or tipos.get(tp, 0) >= 3 or cats.get(ct, 0) >= 3:
+                continue
+            marcas[mk] = marcas.get(mk, 0) + 1
+            tipos[tp] = tipos.get(tp, 0) + 1
+            cats[ct] = cats.get(ct, 0) + 1
+            out.append(g)
+            if len(out) >= n:
+                break
+        return out
+    difs = sorted((x for x in poupanca if x[0] >= 0.5 and confirmado(por_id[x[2]])), key=lambda x: (-x[1], -x[0]))
     contar = lambda c: sum(1 for o in promos if o['v'] == c)
     resumo = {
         'atualizado': agora.isoformat(timespec='minutes'), 'dia': hoje, 'img': IMGPRE,
@@ -502,10 +534,11 @@ def main():
         'cabaz': {'n': len(comuns), 'totais': tot, 'indice': {c: round(v / mn * 100) if mn else 0 for c, v in tot.items()}, 'vence': vence},
         'dias_historico': db.execute('select count(distinct dia) from precos').fetchone()[0],
         'inicio_historico': db.execute('select min(dia) from precos').fetchone()[0],
-        'diferenca': [comp(por_id[i]) + [d, pc] for d, pc, i in difs[:12]],
-        'reais': [comp(g) for g in reais[:12]],
-        'fachada': [comp(g) for g in fach[:12]],
-        'pvpr_top': [comp(g) for g in pv[:12]],
+        'diferenca': [comp(g) + [d, pc] for g, (d, pc) in
+                      ((g, next((d, pc) for d, pc, i in difs if i == g['i'])) for g in variados([por_id[i] for d, pc, i in difs], 12))],
+        'reais': [comp(g) for g in variados(reais, 12)],
+        'fachada': [comp(g) for g in variados(fach, 12)],
+        'pvpr_top': [comp(g) for g in variados(pv, 12)],
     }
 
     def escrever(nome, obj):

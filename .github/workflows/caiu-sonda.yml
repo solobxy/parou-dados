@@ -20,7 +20,7 @@ jobs:
       - name: Domínios livres
         if: always()
         run: |
-          for d in semtruque semtruques afinal baixou baixoumesmo promoreal precoreal precolimpo descontoreal talao talaozinho etiqueta ofertareal riscado aocentimo centimo trocos caiu desceu pechincha truque promoounao eraprecisa cestocerto carrinhocerto contaaocentimo; do
+          for d in caiu; do
             st=$(dig +noall +comments "$d.pt" NS @1.1.1.1 | grep -o 'status: [A-Z]*' | cut -d' ' -f2)
             echo "$d.pt $st"
           done | tee dominios.txt
