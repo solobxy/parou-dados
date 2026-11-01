@@ -547,6 +547,16 @@ select.sel,.selb{width:100%;height:48px;padding:0 12px;background:#18241a;clip-p
 .soft .ub.r3.open .ub-stage,.soft .ub.r4.open .ub-stage,.soft .ub.r5.open .ub-stage{animation:none}
 .soft #modal.flash{animation:none}
 @keyframes ubSquash{0%,70%{transform:none}86%,100%{transform:scale(1.1,.86)}}
+/* small signs of life around the HUD */
+.sbtn.ready::before{content:"";position:absolute;left:50%;top:26px;width:70px;height:58px;margin:-29px 0 0 -35px;background:radial-gradient(closest-side,rgba(244,197,79,.42),rgba(244,197,79,0));pointer-events:none;animation:sbGlow 1.9s ease-in-out infinite}
+@keyframes sbGlow{0%,100%{opacity:.45;transform:scale(.9)}50%{opacity:1;transform:scale(1.08)}}
+.sbtn.ready .pxi{animation:wob 2.4s ease-in-out infinite,sbFlash 3.6s ease-in-out infinite}
+@keyframes sbFlash{0%,78%,100%{filter:drop-shadow(0 3px 0 rgba(4,8,5,.55)) drop-shadow(0 0 1px rgba(4,8,5,.9)) drop-shadow(0 0 9px rgba(244,197,79,.6)) brightness(1)}88%{filter:drop-shadow(0 3px 0 rgba(4,8,5,.55)) drop-shadow(0 0 1px rgba(4,8,5,.9)) drop-shadow(0 0 14px rgba(255,230,140,.95)) brightness(1.3)}}
+.has-dot .dot{animation:dotPulse 1.6s ease-in-out infinite}
+@keyframes dotPulse{0%,100%{box-shadow:0 0 0 2px #121c14,0 0 0 0 rgba(239,140,60,.6)}50%{box-shadow:0 0 0 2px #121c14,0 0 0 5px rgba(239,140,60,0)}}
+.bb i::after{content:"";position:absolute;inset:0;background:linear-gradient(100deg,transparent 30%,rgba(255,255,230,.55) 50%,transparent 70%) no-repeat;background-size:40% 100%;background-position:-60% 0;animation:bbShine 4.5s ease-in-out infinite}
+@keyframes bbShine{0%,70%{background-position:-60% 0}100%{background-position:160% 0}}
+.rm .sbtn.ready::before,.rm .bb i::after,.rm .has-dot .dot{animation:none}
 /* the light behind a chest is alive from the start: it breathes, the rays turn slowly, then everything splashes out */
 .ub-glow{animation:ubBreath 2.2s ease-in-out infinite}
 .ub .ub-rays{opacity:.2;animation:ubSpin 34s linear infinite}
@@ -791,8 +801,18 @@ const WXL={clear:_t('Céu limpo'),cloudy:_t('Nublado'),rain:_t('Chuva')};
 const WXM={clear:1,cloudy:1.15,rain:1.5};
 
 /* ============ pixel icons & sprites ============ */
+// small pictures (icons, finds, flowers, visitors, portraits) get the same double-resolution smoothing and soft light as the scene
+const SVGHD=new Map(),HDG=new Map();
+const shadeRgb=(c,s)=>s===1?[c[0]+(255-c[0])*.16,c[1]+(255-c[1])*.16,c[2]+(255-c[2])*.16]:s===-1?[c[0]*.8,c[1]*.8,c[2]*.82]:s===2?[c[0]*.3,c[1]*.3,c[2]*.32]:c;
 function pxsvg(map,P,cls){
-  const h=map.length,w=Math.max(...map.map(r=>r.length));let s=`<svg class="pxi ${cls||''}" viewBox="0 0 ${w} ${h}" shape-rendering="crispEdges" aria-hidden="true">`;
+  const h=map.length,w=Math.max(...map.map(r=>r.length));
+  if(w<=24&&h<=24&&typeof hdGrid==='function'){const key=map.join('|')+JSON.stringify(P)+(cls||'');const c=SVGHD.get(key);if(c)return c;
+    const R=hdGrid(map),rows=new Map(),hx=v=>/^#[0-9a-f]{6}$/i.test(v||'')?hex(v):null;
+    for(const[x,y,ch,sh]of R.px){if(sh===2||!P[ch])continue;const base=hx(P[ch]),col=base&&sh?css(shadeRgb(base,sh)):P[ch];(rows.get(y)||rows.set(y,[]).get(y)).push([x,col])}
+    let o=`<svg class="pxi ${cls||''}" viewBox="1 1 ${w*2} ${h*2}" shape-rendering="crispEdges" aria-hidden="true">`;
+    for(const[y,L]of rows){L.sort((a,b)=>a[0]-b[0]);let i=0;while(i<L.length){let e=i+1;while(e<L.length&&L[e][0]===L[e-1][0]+1&&L[e][1]===L[i][1])e++;o+=`<rect x="${L[i][0]}" y="${y}" width="${e-i}" height="1" fill="${L[i][1]}"/>`;i=e}}
+    o+='</svg>';SVGHD.set(key,o);if(SVGHD.size>2000)SVGHD.delete(SVGHD.keys().next().value);return o}
+  let s=`<svg class="pxi ${cls||''}" viewBox="0 0 ${w} ${h}" shape-rendering="crispEdges" aria-hidden="true">`;
   for(let y=0;y<h;y++){const row=map[y];let x=0;while(x<row.length){const ch=row[x];if(ch==='.'||ch===' '){x++;continue}let e=x+1;while(e<row.length&&row[e]===ch)e++;s+=`<rect x="${x}" y="${y}" width="${e-x}" height="1" fill="${P[ch]}"/>`;x=e}}
   return s+'</svg>';
 }
@@ -1361,12 +1381,19 @@ function petTick(dt){
   else{PET.mv=false;PET.fl=AV.x<PET.x}
   PET.x=clamp(PET.x,6,W-6);
 }
+// the character and the pet, at double resolution, hidden where something stands in front of them
+const OCC=new Map();
+function drawHDOcc(map,rgb,x0,y0,w,fl,fy,am){
+  const key=(map.__hk||(map.__hk=map.join('|')))+'|'+(fl?1:0)+'|'+((am[0]*48)|0)+'.'+((am[1]*48)|0)+'.'+((am[2]*48)|0)+'|'+w;let L=OCC.get(key);
+  if(!L){const R=hdGrid(map);L=[];for(const[hx,hy,ch,sh]of R.px){const k=rgb[ch];if(!k)continue;const c=shadeRgb(k,sh),a=sh===2?.85:(k.length>3?k[3]:1);
+      L.push([fl?w-hx*.5:-.5+hx*.5,-.5+hy*.5,`rgba(${c[0]*am[0]|0},${c[1]*am[1]|0},${c[2]*am[2]|0},${a})`])}
+    L.sort((a,b)=>a[2]<b[2]?-1:a[2]>b[2]?1:0);OCC.set(key,L);if(OCC.size>300)OCC.delete(OCC.keys().next().value)}
+  let last='';for(const[dx,dy,col]of L){const lx=x0+dx,ly=y0+dy,cx=Math.floor(lx+.25),cy=Math.floor(ly+.25);if(cy<0||cy>=H||cx<0||cx>=W||dep[cy*W+cx]>fy)continue;if(col!==last){lowX.fillStyle=col;last=col}lowX.fillRect(lx,ly,.5,.5)}}
 function drawPet(){
   const id=curPet();if(!id||PET.x<0)return;const P=PETS[id],fi=PET.mv?(Math.floor(PET.t*7)%2):2,F=P.F[fi];
   const hop=P.hop&&PET.mv&&!RM?-Math.round(Math.abs(Math.sin(PET.t*9))*3):0,fy=Math.round(PET.y),x0=Math.round(PET.x)-(F.w>>1),y0=fy-F.h+2+hop,am=mix(env.amb,[1,1,1],.28);
   lowX.fillStyle='rgba(10,14,8,.24)';for(let dx=-2;dx<=2;dx++){const x=Math.round(PET.x)+dx,i=(fy+1)*W+x;if(x>=0&&x<W&&fy+1<H&&dep[i]<=fy)lowX.fillRect(x,fy+1,1,1)}
-  for(let r=0;r<F.h;r++){const row=F.map[r],ly=y0+r;if(ly<0||ly>=H)continue;for(let c=0;c<row.length;c++){const ch=row[c];if(ch==='.')continue;const lx=x0+(PET.fl?F.w-1-c:c);if(lx<0||lx>=W||dep[ly*W+lx]>fy)continue;
-    const k=F.rgb[ch];lowX.fillStyle=k.length>3?`rgba(${k[0]*am[0]|0},${k[1]*am[1]|0},${k[2]*am[2]|0},${k[3]})`:`rgb(${k[0]*am[0]|0},${k[1]*am[1]|0},${k[2]*am[2]|0})`;lowX.fillRect(lx,ly,1,1)}}
+  drawHDOcc(F.map,F.rgb,x0,y0,F.w,PET.fl,fy,am);
 }
 /* the bird: now and then a bird crosses the sky carrying a chest; tap it and the chest falls into the scene */
 const outlineMap=m=>{const w=Math.max(...m.map(r=>r.length))+2,h=m.length+2,g=[];for(let y=0;y<h;y++){g.push([]);for(let x=0;x<w;x++){const c=(m[y-1]||'')[x-1];g[y].push(c&&c!=='.'?c:'.')}}
@@ -2758,8 +2785,7 @@ function drawAvatar(){
   const fy=Math.round(AV.y),x0=Math.round(AV.x)-7,y0=fy-19+AV.jy,fl=AV.fl&&pl.v!=='f';
   lowX.fillStyle='rgba(10,14,8,.28)';for(let dx=-3;dx<=3;dx++){const x=Math.round(AV.x)+dx,i=(fy+1)*W+x;if(x>=0&&x<W&&fy+1<H&&dep[i]<=fy)lowX.fillRect(x,fy+1,1,1)}
   const am=mix(env.amb,[1,1,1],.28);
-  for(let r=0;r<o.h;r++){const row=o.map[r],ly=y0+r;if(ly<0||ly>=H)continue;for(let c=0;c<row.length;c++){const ch=row[c];if(ch==='.')continue;const lx=x0+(fl?14-c:c);if(lx<0||lx>=W)continue;
-    if(dep[ly*W+lx]>fy)continue;const k=o.rgb[ch];lowX.fillStyle=k.length>3?`rgba(${k[0]*am[0]|0},${k[1]*am[1]|0},${k[2]*am[2]|0},${k[3]})`:`rgb(${k[0]*am[0]|0},${k[1]*am[1]|0},${k[2]*am[2]|0})`;lowX.fillRect(lx,ly,1,1)}}
+  drawHDOcc(o.map,o.rgb,x0,y0,15,fl,fy,am);
   if(AV.emo){const E=EMO[AV.emo.k];if(E){const lkh=(visiting?visiting.look:S.av.look).hat,top=y0+(pl.v==='l'?11:pn==='sit'||pn.startsWith('read')||pn==='crouch'?8+3:5)-(pl.v!=='l'?hatUp(lkh):0);
     const rise=RM?0:Math.round(AV.emo.t*3);const ex=pl.v==='l'?Math.round(AV.x)+(fl?3:-3):Math.round(AV.x)+(fl?-1:1);drawSprite(E,E.map,ex,top-rise,false)}}
 }
@@ -4071,24 +4097,51 @@ new ResizeObserver(resize).observe($('#app'));
 
 /* ============ draw ============ */
 function tintCol(rgb,emit){if(emit)return css(rgb);const a=env.amb;return css([rgb[0]*a[0],rgb[1]*a[1],rgb[2]*a[2]])}
+// sprites drawn at double resolution: EPX smoothing (round corners, cleaner diagonals), light from the top left, a thin dark rim so they read on the moss
+function hdGrid(map){
+  const key=map.join('|');let R=HDG.get(key);if(R)return R;
+  const h=map.length,w=Math.max(...map.map(r=>r.length)),at=(x,y)=>y<0||y>=h||x<0||x>=w?'.':(map[y][x]||'.');
+  const W2=w*2+2,H2=h*2+2,g=new Array(W2*H2).fill('.');
+  for(let y=0;y<h;y++)for(let x=0;x<w;x++){const P=at(x,y),A=at(x,y-1),B=at(x+1,y),C=at(x-1,y),D=at(x,y+1);let p1=P,p2=P,p3=P,p4=P;
+    if(C===A&&C!==D&&A!==B)p1=A;if(A===B&&A!==C&&B!==D)p2=B;if(D===C&&D!==B&&C!==A)p3=C;if(B===D&&B!==A&&D!==C)p4=D;
+    // never let the smoothing eat into a pixel that is there (eyes, beaks stay whole)
+    if(P!=='.'){if(p1==='.')p1=P;if(p2==='.')p2=P;if(p3==='.')p3=P;if(p4==='.')p4=P}
+    const i=(2*y+1)*W2+2*x+1;g[i]=p1;g[i+1]=p2;g[i+W2]=p3;g[i+W2+1]=p4}
+  const px=[];const G=(x,y)=>x<0||y<0||x>=W2||y>=H2?'.':g[y*W2+x];
+  for(let y=0;y<H2;y++)for(let x=0;x<W2;x++){const ch=G(x,y);
+    if(ch==='.'){const n=G(x,y-1)!=='.'?G(x,y-1):G(x-1,y)!=='.'?G(x-1,y):G(x+1,y)!=='.'?G(x+1,y):G(x,y+1);if(n!=='.')px.push([x,y,n,2]);continue}
+    const tl=G(x-1,y-1)==='.'||G(x,y-1)==='.',br=G(x+1,y+1)==='.'||G(x,y+1)==='.';px.push([x,y,ch,tl&&!br?1:br&&!tl?-1:0])}
+  R={w:W2,h:H2,px};HDG.set(key,R);if(HDG.size>900)HDG.delete(HDG.keys().next().value);return R}
+// each sprite is painted once per light level into a small canvas, then just copied: cheap enough for phones
+const SPC=new Map();let spId=0;
+function spriteCanvas(o,map,flip){
+  const a=env.amb,ak=((a[0]*48)|0)+'.'+((a[1]*48)|0)+'.'+((a[2]*48)|0),id=o.__sp||(o.__sp=++spId),mk=map.__hk||(map.__hk=map.join('|'));
+  const key=id+'|'+mk+'|'+(flip?1:0)+'|'+ak;let c=SPC.get(key);if(c)return c;
+  const R=hdGrid(map);c=document.createElement('canvas');c.width=R.w;c.height=R.h;const x=c.getContext('2d');
+  for(const[hx,hy,ch,sh]of R.px){const k=o.rgb[ch];if(!k)continue;const em=o.emit&&o.emit.includes(ch);x.fillStyle=sh===2?css(mul(shadeRgb(k,2),em?[1,1,1]:a),.85):tintCol(shadeRgb(k,sh),em);x.fillRect(flip?R.w-1-hx:hx,hy,1,1)}
+  SPC.set(key,c);if(SPC.size>500)SPC.delete(SPC.keys().next().value);return c}
 function drawSprite(o,map,x,y,flip){
-  const h=map.length,w=map[0].length,x0=Math.round(x-w/2),y0=Math.round(y-h+1);
-  for(let r=0;r<h;r++){const row=map[r];for(let c=0;c<w;c++){const ch=row[c];if(ch==='.')continue;lowX.fillStyle=tintCol(o.rgb[ch],o.emit&&o.emit.includes(ch));lowX.fillRect(x0+(flip?w-1-c:c),y0+r,1,1)}}
-}
+  const h=map.length,w=map[0].length,x0=Math.round(x-w/2),y0=Math.round(y-h+1),c=spriteCanvas(o,map,flip);
+  lowX.drawImage(c,x0-.5,y0-.5,c.width/2,c.height/2)}
 // hi-res sprites: each character of the map is half a scene pixel (the picture is drawn at twice the scene's resolution)
 function drawHi(o,map,x,y,flip,lift){
   const h=map.length,w=map[0].length,x0=Math.round((x-w/4)*2)/2,y0=Math.round((y+1-h/2-(lift||0))*2)/2;
-  for(let r=0;r<h;r++){const row=map[r];for(let c=0;c<w;c++){const ch=row[c];if(ch==='.')continue;lowX.fillStyle=tintCol(o.rgb[ch],o.emit&&o.emit.includes(ch));lowX.fillRect(x0+(flip?w-1-c:c)*.5,y0+r*.5,.5,.5)}}
-}
+  const a=env.amb,key='hi|'+(o.__sp||(o.__sp=++spId))+'|'+(flip?1:0)+'|'+((a[0]*48)|0)+'.'+((a[1]*48)|0)+'.'+((a[2]*48)|0);let c=SPC.get(key);
+  if(!c){c=document.createElement('canvas');c.width=w;c.height=h;const X=c.getContext('2d');
+    for(let r=0;r<h;r++){const row=map[r];for(let q=0;q<w;q++){const ch=row[q];if(ch==='.')continue;X.fillStyle=tintCol(o.rgb[ch],o.emit&&o.emit.includes(ch));X.fillRect(flip?w-1-q:q,r,1,1)}}SPC.set(key,c)}
+  lowX.drawImage(c,x0,y0,w/2,h/2)}
 function drawGlowHi(map,x,y,rgb,k,lift){
   const h=map.length,w=map[0].length,x0=Math.round((x-w/4)*2)/2,y0=Math.round((y+1-h/2-(lift||0))*2)/2,p=.5+.5*Math.sin(T*2.6+x*.7);
   lowX.fillStyle=css(rgb,(.3+.3*p)*k);for(const[px,py]of outlineOf(map))lowX.fillRect(x0+px*.5,y0+py*.5,.5,.5);
   lowX.fillStyle=css(rgb,(.1+.12*p)*k);for(const[px,py]of outlineOf(map)){lowX.fillRect(x0+px*.5-.5,y0+py*.5,.5,.5);lowX.fillRect(x0+px*.5+.5,y0+py*.5,.5,.5)}
 }
 // a soft pool of light under something you can pick up, so it stands out from the moss
-function drawHalo(x,y,rx,rgb,k){const p=.5+.5*Math.sin(T*2.2+x*.9),a=(.16+.14*p)*k;
-  lowX.save();lowX.globalCompositeOperation='lighter';lowX.translate(x+.5,y+.5);lowX.scale(1,.42);const g=lowX.createRadialGradient(0,0,0,0,0,rx*(1+.12*p));
-  g.addColorStop(0,css(rgb,a));g.addColorStop(1,css(rgb,0));lowX.fillStyle=g;lowX.fillRect(-rx*1.2,-rx*1.2,rx*2.4,rx*2.4);lowX.restore()}
+const HALO=new Map();
+function haloCanvas(rgb){const key=(rgb[0]|0)+','+(rgb[1]|0)+','+(rgb[2]|0);let c=HALO.get(key);if(c)return c;
+  c=document.createElement('canvas');c.width=64;c.height=28;const x=c.getContext('2d');x.translate(32,14);x.scale(1,.42);const g=x.createRadialGradient(0,0,0,0,0,32);
+  g.addColorStop(0,css(rgb,1));g.addColorStop(.55,css(rgb,.35));g.addColorStop(1,css(rgb,0));x.fillStyle=g;x.fillRect(-32,-34,64,68);HALO.set(key,c);return c}
+function drawHalo(x,y,rx,rgb,k){const p=.5+.5*Math.sin(T*2.2+x*.9),a=Math.min(1,(.16+.14*p)*k),r=rx*(1+.12*p),c=haloCanvas(rgb);
+  lowX.globalCompositeOperation='lighter';lowX.globalAlpha=a;lowX.drawImage(c,x+.5-r,y+.5-r*.44,r*2,r*.88);lowX.globalAlpha=1;lowX.globalCompositeOperation='source-over'}
 let T=0;
 const smoke=[];let smokeT=0;
 function drawLava(){
@@ -4218,7 +4271,7 @@ function frame(t){
   tick(dt);draw();
 }
 /* versões novas: quando o jogo muda no servidor, guarda o progresso e recarrega a página */
-const BUILD='65621b5ba79f',UKEY='tapmoss.upd';const UPD={on:false,go:false,at:0};
+const BUILD='f8f28004418c',UKEY='tapmoss.upd';const UPD={on:false,go:false,at:0};
 async function checkUpdate(){
   if(BUILD.startsWith('__')||UPD.on||document.hidden||!navigator.onLine||!/^https?:$/.test(location.protocol)||window.claude)return;
   const t=performance.now();if(t-UPD.at<15000)return;UPD.at=t;
