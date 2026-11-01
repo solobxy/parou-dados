@@ -27,6 +27,8 @@ escrever_estado() {
     echo "Ligado desde: $(uptime -s)"
     echo "Estatísticas (hash da chave): $(printf '%s' "${ESTAT_CHAVE:-}" | sha256sum | cut -c1-64)"
     echo "Reinícios pela vigia: $(tail -n 3 /var/lib/parou-estado/reinicios.log 2>/dev/null | tr '\n' ';' || true)"
+    echo "caiu.pt recolha: $(systemctl show caiu-recolha.service -p ActiveState -p Result -p ExecMainStatus 2>/dev/null | tr '\n' ' ')"
+    echo "caiu.pt últimas linhas: $(journalctl -u caiu-recolha -n 4 --no-pager -o cat 2>/dev/null | cut -c1-200 | tr '\n' ';')"
     echo
     echo "--- Últimas linhas da app ---"
     # Esta página é pública: esconde emails e endereços IP que alguma linha possa ter
