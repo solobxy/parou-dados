@@ -1,0 +1,41 @@
+name: Caiu - recolha de preços (teste)
+
+# A recolha diária corre no servidor (caiu-recolha.timer). Isto serve para testar o recolhedor à mão:
+# corre caiu/recolher.py e guarda o resultado no ramo caiu-recolha-resultado.
+
+on:
+  workflow_dispatch:
+    inputs:
+      max_termos:
+        description: "Quantas pesquisas fazer (vazio = todas)"
+        default: ""
+
+permissions:
+  contents: write
+
+concurrency:
+  group: caiu-recolha
+  cancel-in-progress: false
+
+jobs:
+  recolher:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - name: Recolher
+        env:
+          TZ: Europe/Lisbon
+        run: |
+          ARG=""; [ -n "${{ inputs.max_termos }}" ] && ARG="--max-termos ${{ inputs.max_termos }}"
+          python3 caiu/recolher.py dados $ARG 2>&1 | tee recolha.txt
+          ls -la dados | head; du -sh dados
+      - name: Guardar
+        if: always()
+        run: |
+          mkdir pub && cp recolha.txt pub/ 2>/dev/null; cp dados/*.json pub/ 2>/dev/null; cp dados/historico.db pub/ 2>/dev/null
+          tar czf pub/h.tgz -C dados h 2>/dev/null || true
+          cd pub && git init -q -b caiu-recolha-resultado
+          git config user.name "parou-dados"; git config user.email "actions@users.noreply.github.com"
+          git add -A && git commit -q -m "Recolha $(date -u +%Y-%m-%dT%H:%MZ)"
+          git push -q -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" caiu-recolha-resultado

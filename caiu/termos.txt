@@ -1,0 +1,139 @@
+# Pesquisas feitas em cada supermercado, todos os dias (uma por linha). Cada uma traz até 48 produtos.
+# Mercearia
+arroz
+arroz agulha
+massa esparguete
+massa
+farinha
+açúcar
+azeite
+óleo alimentar
+vinagre
+sal
+grão de bico
+feijão
+atum
+sardinhas
+salsichas
+polpa de tomate
+ketchup
+maionese
+mostarda
+cereais
+flocos de aveia
+bolachas
+bolacha maria
+chocolate
+nutella
+compota
+mel
+pão de forma
+tostas
+batatas fritas
+frutos secos
+caldo
+cogumelos
+milho doce
+azeitonas
+# Pequeno-almoço e bebidas quentes
+café
+café cápsulas
+café moído
+cevada
+chá
+leite com chocolate
+# Laticínios e frio
+leite
+leite meio gordo
+leite sem lactose
+bebida de aveia
+iogurte
+iogurte grego
+manteiga
+margarina
+queijo
+queijo fatiado
+queijo fresco
+requeijão
+natas
+fiambre
+presunto
+chouriço
+ovos
+pizza
+lasanha
+# Talho, peixaria e congelados
+frango
+peito de frango
+carne picada
+bife de vaca
+lombo de porco
+bacalhau
+pescada
+salmão
+douradas
+camarão
+hambúrguer
+gelado
+legumes congelados
+batata congelada
+# Fruta e legumes
+banana
+maçã
+laranja
+pera
+uvas
+morangos
+limão
+batata
+cebola
+alho
+tomate
+alface
+cenoura
+brócolos
+courgette
+abóbora
+# Bebidas
+água
+água com gás
+sumo
+coca-cola
+refrigerante
+ice tea
+cerveja
+vinho tinto
+vinho branco
+vinho do porto
+# Casa e limpeza
+detergente roupa
+amaciador
+detergente loiça
+pastilhas máquina loiça
+lixívia
+limpa vidros
+desengordurante
+papel higiénico
+rolo de cozinha
+guardanapos
+sacos do lixo
+película aderente
+papel de alumínio
+# Higiene e bebé
+champô
+gel de banho
+sabonete
+pasta de dentes
+escova de dentes
+desodorizante
+creme hidratante
+lâminas
+pensos higiénicos
+fraldas
+toalhitas
+papa bebé
+leite infantil
+# Animais
+comida gato
+comida cão
+areia gato

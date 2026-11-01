@@ -1,7 +1,7 @@
-name: Supermercados - sonda das lojas e dos domínios
+name: Caiu - sonda das lojas e dos domínios
 
-# Lê o robots.txt e uma página de pesquisa de cada supermercado (supermercados/sonda-urls.txt),
-# vê no DNS que domínios .pt ainda estão livres e guarda tudo no ramo supermercados-sonda-resultado.
+# Lê o robots.txt e uma página de pesquisa de cada supermercado (caiu/sonda-urls.txt),
+# vê no DNS que domínios .pt ainda estão livres e guarda tudo no ramo caiu-sonda-resultado.
 
 on:
   workflow_dispatch:
@@ -16,7 +16,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Sondar lojas
-        run: python3 supermercados/sonda.py supermercados/sonda-urls.txt 2>&1 | tee sonda-registo.txt
+        run: python3 caiu/sonda.py caiu/sonda-urls.txt 2>&1 | tee sonda-registo.txt
       - name: Domínios livres
         if: always()
         run: |
@@ -28,7 +28,7 @@ jobs:
         if: always()
         run: |
           mkdir pub && cp -r sonda pub/ 2>/dev/null; cp sonda-registo.txt dominios.txt pub/ 2>/dev/null; ls -la pub pub/sonda
-          cd pub && git init -q -b supermercados-sonda-resultado
+          cd pub && git init -q -b caiu-sonda-resultado
           git config user.name "parou-dados"; git config user.email "actions@users.noreply.github.com"
           git add -A && git commit -q -m "Sonda $(date -u +%Y-%m-%dT%H:%MZ)"
-          git push -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" supermercados-sonda-resultado
+          git push -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" caiu-sonda-resultado
