@@ -1535,10 +1535,12 @@ const SC=()=>S.scenes[S.cur];
 
 /* ============ canvases ============ */
 const mk=()=>{const c=document.createElement('canvas');c.width=W;c.height=H;return c};
-const skyCv=mk(),skyX=skyCv.getContext('2d'),wbCv=mk(),wbX=wbCv.getContext('2d'),mossCv=mk(),mossX=mossCv.getContext('2d');
-const glowCv=mk(),glowX=glowCv.getContext('2d'),maskCv=mk(),maskX=maskCv.getContext('2d'),wtCv=mk(),wtX=wtCv.getContext('2d'),lowCv=mk(),lowX=lowCv.getContext('2d');
+// the scenery is drawn at twice the simulation size: the world through EPX, the moss with its own sub-pixel texture
+const W2=W*2,H2=H*2,mk2=()=>{const c=document.createElement('canvas');c.width=W2;c.height=H2;return c};
+const skyCv=mk(),skyX=skyCv.getContext('2d'),wbCv=mk2(),wbX=wbCv.getContext('2d'),mossCv=mk2(),mossX=mossCv.getContext('2d');
+const glowCv=mk(),glowX=glowCv.getContext('2d'),maskCv=mk2(),maskX=maskCv.getContext('2d'),wtCv=mk2(),wtX=wtCv.getContext('2d'),lowCv=mk(),lowX=lowCv.getContext('2d');
 const RES=2;lowCv.width=W*RES;lowCv.height=H*RES;lowX.setTransform(RES,0,0,RES,0,0);lowX.imageSmoothingEnabled=false;
-const mossImg=new ImageData(W,H),md=mossImg.data,glowImg=new ImageData(W,H),gd=glowImg.data;
+const mossImg=new ImageData(W2,H2),md=mossImg.data,glowImg=new ImageData(W,H),gd=glowImg.data;
 const cv=$('#cv'),dX=cv.getContext('2d'),bdCv=document.createElement('canvas');bdCv.width=10;bdCv.height=16;const bdX=bdCv.getContext('2d');
 let view={s:1,ox:0,oy:0,cw:1,ch:1,dpr:1};
 const mossDirty=new Uint8Array(N);const dirtyList=[];let mossChanged=true;
@@ -1643,6 +1645,10 @@ const PATHMAX=90;
 function streamY(st,x){return st.y0+Math.sin(x*st.f+st.ph)*st.amp+(x-80)*st.tilt}
 
 /* ============ world render ============ */
+// EPX (scale2x): diagonal steps become smooth at double size, flat areas and dithering stay as they are
+function epx2(src,w,h,dst){const s=new Uint32Array(src.buffer,src.byteOffset,w*h),o=new Uint32Array(dst.buffer,dst.byteOffset,w*h*4),w2=w*2;
+  for(let y=0;y<h;y++)for(let x=0;x<w;x++){const i=y*w+x,P=s[i],A=y>0?s[i-w]:P,B=x<w-1?s[i+1]:P,C=x>0?s[i-1]:P,D=y<h-1?s[i+w]:P;
+    const k=y*2*w2+x*2;o[k]=C===A&&C!==D&&A!==B?A:P;o[k+1]=A===B&&A!==C&&B!==D?B:P;o[k+w2]=D===C&&D!==B&&C!==A?C:P;o[k+w2+1]=B===D&&B!==A&&D!==C?D:P}}
 function renderWorld(){
   const bp=BPAL[scene.biome],keep={};if(bp){for(const k in bp)if(k!=='haze'){keep[k]=PAL[k];PAL[k]=bp[k]}HAZE=bp.haze?hex(bp.haze):HAZE0}
   try{renderWorld0()}finally{for(const k in keep)PAL[k]=keep[k];HAZE=HAZE0}
@@ -1883,12 +1889,12 @@ function renderWorld0(){
   for(const[fn,o]of items){curDep=Math.min(255,Math.round(o.by));NOFL=fn===bench||fn===pot||fn===house?1:0;fn(o)}NOFL=0;
   curDep=0;
   if(sc.arch){const q=mulberry32(sc.seed+77),bl=[];for(let i=0;i<4;i++)bl.push({x:28+i*34+q()*10,y:-10+q()*6,r:12+q()*7});canopy(bl,sc.seed+77,0)}
-  wbX.putImageData(img,0,0);
+  {const hi=new ImageData(W2,H2);epx2(img.data,W,H,hi.data);wbX.putImageData(hi,0,0)}
   // edges & spots
   const cls=s=>s===2||s===10?2:s===4||s===11?4:s===3||s===9?3:s;
   edge.fill(0);
   for(let c=0;c<N;c++){const s=surf[c];if(s<2||s===7||s===8||s===13)continue;const k=cls(s),x=c%W;
-    if((x>0&&cls(surf[c-1])!==k)||(x<W-1&&cls(surf[c+1])!==k)||(c+W<N&&cls(surf[c+W])!==k)||(c-W>=0&&cls(surf[c-W])!==k))edge[c]=1}
+    edge[c]=(x>0&&cls(surf[c-1])!==k?1:0)|(x<W-1&&cls(surf[c+1])!==k?2:0)|(c-W>=0&&cls(surf[c-W])!==k?4:0)|(c+W<N&&cls(surf[c+W])!==k?8:0)}
   spots={rock:[],wall:[],log:[],ground:[],rim:sc._rim,water:sc._water};mossable=0;
   for(let c=0;c<N;c++){const s=surf[c];if(AFF[s]>0)mossable++;const x=c%W,y=(c/W)|0;
     if(x<14||x>W-14||y>H-40)continue;
@@ -1938,20 +1944,27 @@ function mossField(ga,S0){
 /* ============ moss ============ */
 function rebuildMossList(){mossCount=0;for(let c=0;c<N;c++){if(dens[c]&&(AFF[surf[c]]===0||!cap[c]))dens[c]=0;if(dens[c]>cap[c])dens[c]=cap[c];if(dens[c])mossList[mossCount++]=c}}
 function mossPix(c){
-  const j=c<<2,d=dens[c],x=c%W,y=(c/W)|0;
-  if(!d||(d<128&&bay(x,y)>=d/128)){
-    const b=c+W;
-    if(!d&&y<H-1&&dens[b]>200&&surf[c]!==8&&hash2(x,y,9)<.3){const col=SPEC[spec[b]].rgb[3];md[j]=col[0];md[j+1]=col[1];md[j+2]=col[2];md[j+3]=255}else md[j+3]=0;
-    gd[j+3]=0;return}
-  const sp=SPEC[spec[c]].rgb,l=lit[c],sf=surf[c];
-  let s=(sf===1?.6+l*.75:l*1.05)+(vnoise(x*.2,y*.34,5)-.5)*1.5;
-  if(y>0&&dens[c-W]===0)s+=sf===1?.7:1.2;
-  if(edge[c])s-=1.6;
-  const hh=hash2(x,y,7);if(hh<.14)s-=.9;else if(hh>.9)s+=.9;
-  if(d<100)s-=1;
-  let col=sp[clamp(Math.round(s),0,4)];if(sf===1&&y>HOR){const hz=(1-(y-HOR)/(H-HOR))**3*.6;if(hz>.02)col=mix(col,HAZE,hz)}
-  md[j]=col[0];md[j+1]=col[1];md[j+2]=col[2];md[j+3]=255;
-  if(spec[c]>=3&&d>200&&hash2(x,y,11)<.28){const g=sp[3];gd[j]=g[0];gd[j+1]=g[1];gd[j+2]=g[2];gd[j+3]=255}else gd[j+3]=0;
+  const d=dens[c],x=c%W,y=(c/W)|0,X=x*2,Y=y*2,j0=(Y*W2+X)<<2,j1=j0+(W2<<2),J=[j0,j0+4,j1,j1+4];
+  if(!d){gd[(c<<2)+3]=0;const b=c+W;
+    // tufts hanging over the top of dense moss, now one sub-pixel tall
+    if(y<H-1&&dens[b]>200&&surf[c]!==8){const col=SPEC[spec[b]].rgb[3];for(let k=0;k<4;k++){const on=k>=2?hash2(X+(k&1),Y+1,9)<.42:hash2(X+(k&1),Y,9)<.1;const j=J[k];if(on){md[j]=col[0];md[j+1]=col[1];md[j+2]=col[2];md[j+3]=255}else md[j+3]=0}}
+    else for(let k=0;k<4;k++)md[J[k]+3]=0;
+    return}
+  const sp=SPEC[spec[c]].rgb,l=lit[c],sf=surf[c],e=edge[c],top=y>0&&dens[c-W]===0,thin=d<128,t=d/128;
+  const s0=(sf===1?.6+l*.75:l*1.05)+(vnoise(x*.2,y*.34,5)-.5)*1.5+(d<100?-1:0);
+  let hz=0;if(sf===1&&y>HOR){hz=(1-(y-HOR)/(H-HOR))**3*.6;if(hz<=.02)hz=0}
+  const hh=hash2(x,y,7),hs=hash2(x,y,17),kl=hs<.36?(hs*11|0)&3:-1,kd=hash2(x,y,19)<.26?(kl+2)&3:-1;
+  let any=false;
+  for(let k=0;k<4;k++){const sx=k&1,sy=k>>1,XX=X+sx,YY=Y+sy,j=J[k];
+    if(thin&&bay(XX,YY)>=t){md[j+3]=0;continue}
+    let s=s0;
+    if(top)s+=sy===0?(sf===1?.9:1.4):(sf===1?.35:.6);
+    if(e&&((sx===0&&e&1)||(sx===1&&e&2)||(sy===0&&e&4)||(sy===1&&e&8)))s-=1.7;else if(e)s-=.35;
+    if(hh<.14)s-=.9;else if(hh>.9)s+=.9;
+    if(k===kl)s+=.6;else if(k===kd)s-=.6;
+    let col=sp[clamp(Math.round(s),0,4)];if(hz)col=mix(col,HAZE,hz);
+    md[j]=col[0];md[j+1]=col[1];md[j+2]=col[2];md[j+3]=255;any=true}
+  const g0=c<<2;if(any&&spec[c]>=3&&d>200&&hash2(x,y,11)<.28){const g=sp[3];gd[g0]=g[0];gd[g0+1]=g[1];gd[g0+2]=g[2];gd[g0+3]=255}else gd[g0+3]=0;
 }
 function markDirty(c){for(const k of[c,c-W,c+W]){if(k>=0&&k<N&&!mossDirty[k]){mossDirty[k]=1;dirtyList.push(k)}}}
 function redrawAllMoss(){for(let c=0;c<N;c++)mossPix(c);dirtyList.length=0;mossDirty.fill(0);mossX.putImageData(mossImg,0,0);glowX.putImageData(glowImg,0,0);mossChanged=true}
@@ -4271,13 +4284,13 @@ function drawLights(){
 }
 function draw(){
   flushMoss();
-  if(mossChanged){maskX.clearRect(0,0,W,H);maskX.drawImage(wbCv,0,0);maskX.drawImage(mossCv,0,0);mossChanged=false}
-  wtX.globalCompositeOperation='source-over';wtX.clearRect(0,0,W,H);wtX.drawImage(wbCv,0,0);wtX.drawImage(mossCv,0,0);
-  wtX.globalCompositeOperation='multiply';wtX.fillStyle=css(mul(env.amb,[255,255,255]));wtX.fillRect(0,0,W,H);
+  if(mossChanged){maskX.clearRect(0,0,W2,H2);maskX.drawImage(wbCv,0,0);maskX.drawImage(mossCv,0,0);mossChanged=false}
+  wtX.globalCompositeOperation='source-over';wtX.clearRect(0,0,W2,H2);wtX.drawImage(wbCv,0,0);wtX.drawImage(mossCv,0,0);
+  wtX.globalCompositeOperation='multiply';wtX.fillStyle=css(mul(env.amb,[255,255,255]));wtX.fillRect(0,0,W2,H2);
   wtX.globalCompositeOperation='destination-in';wtX.drawImage(maskCv,0,0);wtX.globalCompositeOperation='source-over';
   lowX.globalCompositeOperation='source-over';lowX.drawImage(skyCv,0,0);
   if(env.night>.3&&!RM){const r=mulberry32(99);for(let k=0;k<10;k++){const x=Math.floor(r()*W),y=Math.floor(r()*(HOR-30)),ph=r()*6;const a=(Math.sin(T*1.7+ph)*.5+.5)*env.night;if(a>.6){lowX.fillStyle=`rgba(240,244,255,${a*.9})`;lowX.fillRect(x,y,1,1)}}}
-  lowX.drawImage(wtCv,0,0);
+  lowX.drawImage(wtCv,0,0,W,H);
   // water shimmer & wish sparkle
   if(env.day>.2||env.night>.5){const a=env.day>.2?.28*env.day:.12;lowX.fillStyle=`rgba(225,242,255,${a})`;
     if(scene.pond){const p=scene.pond;for(let k=0;k<5;k++){const x=p.cx-p.rx*.6+((RM?k*9:T*3+k*13)%(p.rx*1.2)),y=p.cy+(k%3)-1;lowX.fillRect(Math.round(x),Math.round(y),2,1)}}
@@ -4381,7 +4394,7 @@ function frame(t){
   tick(dt);draw();
 }
 /* versões novas: quando o jogo muda no servidor, guarda o progresso e recarrega a página */
-const BUILD='25fd5847b37d',UKEY='tapmoss.upd';const UPD={on:false,go:false,at:0};
+const BUILD='de45c2610096',UKEY='tapmoss.upd';const UPD={on:false,go:false,at:0};
 async function checkUpdate(){
   if(BUILD.startsWith('__')||UPD.on||document.hidden||!navigator.onLine||!/^https?:$/.test(location.protocol)||window.claude)return;
   const t=performance.now();if(t-UPD.at<15000)return;UPD.at=t;
@@ -4431,7 +4444,7 @@ setTimeout(cloudInit,50);
   if(l&&/^[A-Za-z0-9]{8}$/.test(l)&&ONLINE){pendLigar=l.toUpperCase();setTimeout(()=>showModal(`<div class="reveal" style="--rc:#5fb0f0"><div class="rn">${_t("Outro aparelho")}</div><h3>${_t("Continuar o jogo de outro aparelho?")}</h3><p>${_t("O progresso que houver neste aparelho é substituído pelo do outro.")}</p></div><div class="mbtns"><button class="btn ghost" data-m="close">${_t("Não")}</button><button class="btn" data-m="ligarsim">${_t("Sim, continuar")}</button></div>`),600)}
   if(a||l){try{history.replaceState(null,'',location.pathname)}catch(e){}}}
 if(ONLINE&&new URLSearchParams(location.search).has('verificar'))setTimeout(()=>api('tm_mundo',{}).then(r=>ev('api','ok '+(Array.isArray(r)?r.length:'?'))).catch(e=>ev('api','erro '+e.code)),2500);
-if(window.__TM_DEBUG)window.__tm={startPlacing,placeAt,confirmPlace,editStart,editAct,editTap,treeSnap,get placing(){return placing},get editing(){return editing},get BIRD(){return BIRD},set birdNext(v){birdNext=v},get dropChest(){return dropChest},birdTap,AVED,doDaily,grantCos,COS_BAU,avUnlock,get lastCos(){return lastCos},PETS,PET,BOT,bStats,avCompose,AVH,AVHATS,AVACC,AVTOPS,AVPT,AVO,growStep,growthRate,get mossCount(){return mossCount},sim:simulateGrowth,addXp,calcIncome,hud,openSheet,get S(){return S},icon,VIS,placeVisitor,ITEMS,BIOMES,ACH,SPEC,MUSH,MUSHB,RN,RC,pxsvg,FLOWERSETS,UPNOTE,RESTO,DECOR,EVENTS,COS_BAU,get LANG(){return LANG},clearUnderUI,VCOND,get env(){return env},get scene(){return scene},spawnFlower,spawnDebris,checkVisitors,visitors,refreshEnv,cov,newGame,buyScene,switchScene,grantItem,rollRarity,get AV(){return AV},avPlan,placeAt,startPlacing,confirmPlace,endPlacing,buyHouse,spawnSceneChest,get sceneChest(){return sceneChest},set sceneChest(v){sceneChest=v},toggleLamp,checkAch,openLvlModal,frame:()=>lowCv.toDataURL('image/png'),autoToggle,get autoH(){return autoH},get visiting(){return visiting},visitFriend,endVisit,photoStart,photoShot,eventoAtivo,spawnEvItem,evItems,get NET(){return NET},get CONTA(){return CONTA},onlineStart,sync,openCaixa,loadAmigos,addFriend,globeMount,sanScene,dailyModal,doDaily,closeModal,rebuildScene,SND,avCompose,houseLv,saveLocal,get placing(){return placing},collectFlower,openAllLvl,openSceneChest,toScreen,unbox,get cap(){return cap},get fert(){return fert},tick,doWater,buyHouse,houseCost,UPS,upCost,upL,PERKS,get cps(){return cps},get mossCps(){return mossCps},tapValue,spawnMush,useShovel,get shovelRun(){return shovelRun},tapOk,closeSheet,espGain,rebAsk,rebStart,normalize,estSpent,lifeEarn,applySave,tapSpores};
+if(window.__TM_DEBUG)window.__tm={startPlacing,placeAt,confirmPlace,editStart,editAct,editTap,treeSnap,get placing(){return placing},get editing(){return editing},get BIRD(){return BIRD},set birdNext(v){birdNext=v},get dropChest(){return dropChest},birdTap,AVED,doDaily,grantCos,COS_BAU,avUnlock,get lastCos(){return lastCos},PETS,PET,BOT,bStats,avCompose,AVH,AVHATS,AVACC,AVTOPS,AVPT,AVO,growStep,growthRate,get mossCount(){return mossCount},sim:simulateGrowth,addXp,calcIncome,hud,openSheet,get S(){return S},icon,VIS,placeVisitor,ITEMS,BIOMES,ACH,SPEC,MUSH,MUSHB,RN,RC,pxsvg,FLOWERSETS,UPNOTE,RESTO,DECOR,EVENTS,COS_BAU,get LANG(){return LANG},clearUnderUI,VCOND,get env(){return env},get scene(){return scene},spawnFlower,spawnDebris,checkVisitors,visitors,refreshEnv,cov,newGame,buyScene,switchScene,grantItem,rollRarity,get AV(){return AV},avPlan,placeAt,startPlacing,confirmPlace,endPlacing,buyHouse,spawnSceneChest,get sceneChest(){return sceneChest},set sceneChest(v){sceneChest=v},toggleLamp,checkAch,openLvlModal,frame:()=>lowCv.toDataURL('image/png'),autoToggle,get autoH(){return autoH},get visiting(){return visiting},visitFriend,endVisit,photoStart,photoShot,eventoAtivo,spawnEvItem,evItems,get NET(){return NET},get CONTA(){return CONTA},onlineStart,sync,openCaixa,loadAmigos,addFriend,globeMount,sanScene,dailyModal,doDaily,closeModal,rebuildScene,SND,avCompose,houseLv,saveLocal,get placing(){return placing},collectFlower,openAllLvl,openSceneChest,toScreen,unbox,get cap(){return cap},get fert(){return fert},tick,doWater,buyHouse,houseCost,UPS,upCost,upL,PERKS,get cps(){return cps},get mossCps(){return mossCps},tapValue,spawnMush,useShovel,get shovelRun(){return shovelRun},tapOk,closeSheet,espGain,rebAsk,rebStart,normalize,estSpent,lifeEarn,applySave,tapSpores,draw,flushMoss};
 })();
 </script>
 </body>
