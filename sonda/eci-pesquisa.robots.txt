@@ -1,0 +1,43 @@
+#                                                                  
+#  _____ _    ____           _         ___             _   _       
+# | ____| |  / ___|___  _ __| |_ ___  |_ _|_ __   __ _| | /_/  ___ 
+# |  _| | | | |   / _ \| '__| __/ _ \  | || '_ \ / _` | |/ _ \/ __|
+# | |___| | | |__| (_) | |  | ||  __/  | || | | | (_| | |  __/\__ \
+# |_____|_|  \____\___/|_|   \__\___| |___|_| |_|\__, |_|\___||___/
+#                                                |___/             
+
+User-agent: *
+Disallow: /login
+Disallow: */checkout/*
+Disallow: /checkout-signin
+Disallow: /profile2
+Disallow: /*/search
+Disallow: /store/*
+Disallow: */cart/*
+Disallow: /aptc/c/*
+Disallow: /comprar/*
+
+Disallow: /api
+
+Disallow: *price::*
+
+Disallow: */cart/*
+Disallow: /compra/*
+
+Disallow: */undefined/*
+Disallow: */info/guidelines/*
+Disallow: */info/guidelines/toolkit/*
+Disallow: */info/guidelines/wireframes/*
+Disallow: */info/guidelines/templates/*
+Disallow: */info/guidelines/toolkit/tamanhos-de-imagens/*
+Disallow: */info/guidelines/toolkit/tipos-de-pecas/*
+Disallow: */info/guidelines/toolkit/tipos-de-composicao/*
+Disallow: */info/guidelines/toolkit/nomenclaturas/*
+Disallow: */info/guidelines/toolkit/anclas/*
+Disallow: */info/guidelines/toolkit/utms-e-links/*
+Disallow: */info/ajuda/*
+Disallow: */tecnologia/A43250552/*
+Disallow: */info/nexo/*
+Disallow: */info/manual-acolhimento-estagios/*
+
+Sitemap: https://www.elcorteingles.pt/sgfm/statics-front/front-msh3-eci-pt/contents/sitemap/sitemap.xml.gz
