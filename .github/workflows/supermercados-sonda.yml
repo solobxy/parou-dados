@@ -1,0 +1,34 @@
+name: Supermercados - sonda das lojas e dos domínios
+
+# Lê o robots.txt e uma página de pesquisa de cada supermercado (supermercados/sonda-urls.txt),
+# vê no DNS que domínios .pt ainda estão livres e guarda tudo no ramo supermercados-sonda-resultado.
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  sondar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Sondar lojas
+        run: python3 supermercados/sonda.py supermercados/sonda-urls.txt 2>&1 | tee sonda-registo.txt
+      - name: Domínios livres
+        if: always()
+        run: |
+          for d in semtruque semtruques afinal baixou baixoumesmo promoreal precoreal precolimpo descontoreal talao talaozinho etiqueta ofertareal riscado aocentimo centimo trocos caiu desceu pechincha truque promoounao eraprecisa cestocerto carrinhocerto contaaocentimo; do
+            st=$(dig +noall +comments "$d.pt" NS @1.1.1.1 | grep -o 'status: [A-Z]*' | cut -d' ' -f2)
+            echo "$d.pt $st"
+          done | tee dominios.txt
+      - name: Guardar
+        if: always()
+        run: |
+          mkdir pub && cp -r sonda pub/ 2>/dev/null; cp sonda-registo.txt dominios.txt pub/ 2>/dev/null; ls -la pub pub/sonda
+          cd pub && git init -q -b supermercados-sonda-resultado
+          git config user.name "parou-dados"; git config user.email "actions@users.noreply.github.com"
+          git add -A && git commit -q -m "Sonda $(date -u +%Y-%m-%dT%H:%MZ)"
+          git push -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" supermercados-sonda-resultado
