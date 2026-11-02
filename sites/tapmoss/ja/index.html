@@ -3237,7 +3237,7 @@ function renderWorld0(){RWV++;
   edge.fill(0);
   for(let c=0;c<N;c++){const s=surf[c];if(s<2||s===7||s===8||s===13)continue;const k=cls(s),x=c%W;
     edge[c]=(x>0&&cls(surf[c-1])!==k?1:0)|(x<W-1&&cls(surf[c+1])!==k?2:0)|(c-W>=0&&cls(surf[c-W])!==k?4:0)|(c+W<N&&cls(surf[c+W])!==k?8:0)}
-  spots={rock:[],wall:[],log:[],ground:[],rim:sc._rim,water:sc._water};mossable=0;
+  spots={rock:[],wall:[],log:[],ground:[],rim:sc._rim,water:sc._water};mossable=0;sc._bed=undefined;
   for(let c=0;c<N;c++){const s=surf[c];if(AFF[s]>0)mossable++;const x=c%W,y=(c/W)|0;
     if(x<14||x>W-14||y>H-40)continue;
     const k=cls(s);
@@ -3672,12 +3672,23 @@ function renderSky(e){
 
 /* ============ items in scene ============ */
 const FLX0=26,FLX1=W-32;
+/* the flower bed: an oval on open ground, the spot with the most ground around it, away from the buttons. Flowers only
+   bloom inside it (anywhere on the moss only while the bed has none yet), so the scene never fills up with them */
+const PICK_CAP=8,BED_RX=22,BED_RY=8;let flBank=0;
+// everything waiting to be picked up in the scene, counted together
+const pickN=sd=>{sd=sd||SC();return sd.flowers.length+sd.debris.length+((sd.mush||[]).length)+evItems.length+(sceneChest?1:0)};
+function gardenBed(){const sc=scene;if(!sc||!spots)return null;if(sc._bed!==undefined)return sc._bed;const G=spots.ground;let best=null,bs=-1;
+  if(G.length>=8){const q=mulberry32(((sc.seed|0)^0x5bd1e995)>>>0);for(let k=0;k<80;k++){const c=G[(q()*G.length)|0],cx=c%W,cy=(c/W)|0;
+      if(cx-BED_RX<FLX0-4||cx+BED_RX>FLX1+4||cy-BED_RY<HOR+10||cy+BED_RY>H-40)continue;if(uiBlocked(cx,cy,6)||uiBlocked(cx-BED_RX+3,cy,3)||uiBlocked(cx+BED_RX-3,cy,3))continue;
+      let n=0;for(const g of G){const dx=(g%W-cx)/BED_RX,dy=(((g/W)|0)-cy)/BED_RY;if(dx*dx+dy*dy<=1)n++}if(n>bs){bs=n;best={cx,cy,rx:BED_RX,ry:BED_RY}}}}
+  sc._bed=bs>=4?best:null;return sc._bed}
+const inBed=(B,x,y)=>{const dx=(x-B.cx)/(B.rx-2),dy=(y-B.cy)/(B.ry-1.5);return dx*dx+dy*dy<=1};
 function spawnFlower(boost,tg){
-  if(!mossCount)return false;const fl=(tg||SC()).flowers;
-  for(let t=0;t<40;t++){const c=mossList[(rnd()*mossCount)|0];const x=c%W,y=(c/W)|0;
+  if(!mossCount)return false;const fl=(tg||SC()).flowers,B=gardenBed();
+  for(let t=0;t<40;t++){let c;if(B){if(t>=30&&fl.length)break;if(t<30){const x0=Math.round(B.cx+(rnd()*2-1)*B.rx),y0=Math.round(B.cy+(rnd()*2-1)*B.ry);if(!inBed(B,x0,y0))continue;c=y0*W+x0}else c=mossList[(rnd()*mossCount)|0]}else c=mossList[(rnd()*mossCount)|0];const x=c%W,y=(c/W)|0;
     if(dens[c]<(tg?60:150)||x<FLX0||x>FLX1||y>H-42||y<HOR+8||nofl[c])continue;const s=surf[c];if(s!==1&&s!==2&&s!==5&&s!==6)continue;if(!tapSafe(x,y))continue;
     if(fl.some(f=>Math.abs(f.x-x)<5&&Math.abs(f.y-y)<5))continue;
-    const luck=luckBase()+upE('bot')*.03+upE('colmeia')*.03+(env&&env.night>.5?.35:0)+(boost==='bloom'?.25:boost?.8:0);
+    const luck=luckBase()+upE('bot')*.03+upE('colmeia')*.03+(env&&env.night>.5?.35:0)+(boost==='bloom'?.25:boost?.8:0)+(boost?0:flBank*.3);if(!boost)flBank=0;
     fl.push(boost==='bloom'?{x,y,r:rollRarity(luck,0),b:1}:{x,y,r:rollRarity(luck,0)});return true}
   return false;
 }
@@ -6346,7 +6357,7 @@ for(const k in EVS)prepSprite(EVS[k],EVS[k].map);
 const evItems=[];let evT=20,flakes=[];
 function evState(e){S.ev=S.ev||{};const st=S.ev[e.key]||(S.ev[e.key]={n:0,got:0});st.g2=st.g2|0;st.box=Math.max(0,st.box|0);st.n=Math.max(0,Math.min(1e5,st.n|0));if(st.gx&&!Array.isArray(st.gx))st.gx=[];return st}
 function spawnEvItem(e){
-  if(evItems.length>=3||!spots.ground.length)return;
+  if(evItems.length>=3||pickN()>=PICK_CAP||!spots.ground.length)return;
   for(let t=0;t<25;t++){const c=spots.ground[(rnd()*spots.ground.length)|0],x=c%W,y=(c/W)|0;if(y<HOR+16||y>H-40||x<FLX0||x>FLX1||nofl[c]||!tapSafe(x,y-3))continue;
     if(evItems.some(o=>Math.abs(o.x-x)<10&&Math.abs(o.y-y)<6)||SC().flowers.some(f=>Math.abs(f.x-x)<8&&Math.abs(f.y-y)<5))continue;
     const k=e.spr==='ovo'?['ovo','ovo2','ovo3'][(rnd()*3)|0]:e.spr;evItems.push({x,y,k,ph:evPhase(evState(e)),t0:T});puff(x,y-3,[[255,246,200]],5,12,.6);return}
@@ -6771,8 +6782,8 @@ function simulateGrowth(secRaw,withCoins){
   let steps=0,rem=sec;const MAX=2500000;while(rem>0&&steps<MAX){const ch=Math.min(rem,20),n=Math.min(Math.floor(growthRate()*ch/3.3),MAX-steps);for(let i=0;i<n;i++)growStep(true);steps+=n;rem-=ch}
   xpQuiet=false;calcIncome();
   let coins=0;if(withCoins){S.scenes.forEach((sd,i)=>{coins+=(inc0[i]+sceneIncome(sd))/2*Math.min(secRaw,cap(sd))*kf(sd)});coins+=bug0*sec*kf(SC());coins=Math.round(coins);S.coins+=coins}
-  const sd=SC();const nd=Math.min(4-sd.debris.length,Math.floor(sec/300));for(let i=0;i<nd;i++)spawnDebris();
-  if(S.level>=2){const nf=Math.min(Math.max(0,(5+Math.floor(S.level/4))-sd.flowers.length),Math.floor(sec/200));for(let i=0;i<nf;i++)spawnFlower()}
+  const sd=SC();const nd=Math.max(0,Math.min(3-sd.debris.length,PICK_CAP-pickN(sd),Math.floor(sec/300)));for(let i=0;i<nd;i++)spawnDebris();
+  if(S.level>=2){const nf=Math.max(0,Math.min(Math.min(6,3+Math.floor(S.level/8))-sd.flowers.length,PICK_CAP-pickN(sd),Math.floor(sec/200)));for(let i=0;i<nf;i++)spawnFlower()}
   return{coins,grown:mossCount-m0,lv:S.level-l0,sec};
 }
 
@@ -7388,7 +7399,7 @@ MUSH.forEach(m=>prepSprite(m,m.map));
 const mushOf=k=>((MUSHB[scene&&scene.biome]||MUSH)[k])||MUSH[k];
 const rainyNow=()=>env&&(env.wx==='rain'||now()-(S.lastRain||0)<40*60000);
 function spawnMush(){
-  const ms=SC().mush||(SC().mush=[]);if(ms.length>=5||!mossCount)return;
+  const ms=SC().mush||(SC().mush=[]);if(ms.length>=3||pickN()>=PICK_CAP||!mossCount)return;
   for(let t=0;t<30;t++){const c=mossList[(rnd()*mossCount)|0],x=c%W,y=(c/W)|0;
     if(dens[c]<150||surf[c]!==1||nofl[c]||x<FLX0||x>FLX1||y<HOR+14||y>H-42||!tapSafe(x,y))continue;
     if(ms.some(m=>Math.abs(m.x-x)<7&&Math.abs(m.y-y)<5)||SC().flowers.some(f=>Math.abs(f.x-x)<6&&Math.abs(f.y-y)<5))continue;
@@ -7983,6 +7994,16 @@ function drawLights(){
   lowX.globalCompositeOperation='source-over';
   if(L&&L.on&&n>.4&&!RM)for(let i=0;i<2;i++){const x=L.x+Math.cos(T*3.1+i*2.4)*5,y=L.y-13+Math.sin(T*4.3+i*1.7)*3;lowX.fillStyle='rgba(240,232,210,.85)';lowX.fillRect(Math.round(x),Math.round(y),1,1)}
 }
+// the edge of the flower bed: stones in the glade and by the stream, cut blocks in the ruin, bricks in the city, pale rocks
+// with crystals on the Moon, obsidian with embers in the abyss. The back half sits a little darker, so it reads as a ring on the ground
+const BED_ST={clareira:['#5e5a52','#7a756b','#9a948a','#2e2a24'],ribeiro:['#5a5e5a','#767b74','#979c92','#2a2e2a'],ruina:['#6e6858','#8c8572','#aca48e','#36322a'],
+  cidade:['#6a2e22','#8a3e2a','#a8543a','#341610'],lua:['#6a6a78','#8a8a9a','#b0b0c0','#2e2e3a'],abismo:['#1c1326','#2e2040','#44305e','#0a0610']};
+function drawBed(){const B=gardenBed();if(!B||titleShown)return;const P=BED_ST[scene.biome]||BED_ST.clareira,amb=env.amb,col=(h,k)=>css(mul(hex(h),amb),k);
+  lowX.save();lowX.fillStyle='rgba(28,18,8,.16)';lowX.beginPath();lowX.ellipse(B.cx,B.cy,B.rx-1,B.ry-.5,0,0,7);lowX.fill();lowX.restore();
+  const n=Math.round(2*Math.PI*Math.sqrt((B.rx*B.rx+B.ry*B.ry)/2)/2.6);
+  for(const front of[0,1])for(let i=0;i<n;i++){const a=i/n*Math.PI*2,sn=Math.sin(a);if((sn>0)!==!!front)continue;const x=Math.round(B.cx+Math.cos(a)*B.rx),y=Math.round(B.cy+sn*B.ry),h=hash2(i,scene.seed|0,71),c=P[h<.35?0:h<.75?1:2],k=front?1:.8;
+    if(front){lowX.fillStyle=col(P[3],.55);lowX.fillRect(x,y+1,2,1)}lowX.fillStyle=col(c,k);lowX.fillRect(x,y,2,1);lowX.fillStyle=col(P[2],k);lowX.fillRect(x,y,1,1);
+    if(h>.9&&(scene.biome==='lua'||scene.biome==='abismo')){const g=scene.biome==='lua'?'#c8e8ff':'#ff8a3a',tw=RM?.8:.5+.5*Math.sin(T*2+i);lowX.fillStyle=css(hex(g),tw);lowX.fillRect(x+1,y-1,1,1)}}}
 function draw(){
   if(MNR){mnDraw();return}
   flushMoss();
@@ -8001,6 +8022,7 @@ function draw(){
   if(now()>=S.wishAt&&spots.water.length&&!RM&&Math.sin(T*2.4)>.55){const c=spots.water[(Math.floor(T*.5)*7919)%spots.water.length];lowX.fillStyle='rgba(255,246,200,.95)';lowX.fillRect(c%W,(c/W)|0,1,1);lowX.fillStyle='rgba(255,246,200,.45)';lowX.fillRect(c%W-1,(c/W)|0,3,1);lowX.fillRect(c%W,((c/W)|0)-1,1,3)}
   drawWaterFx();drawWindows();if(scene._lava&&scene._lava.length)drawLava();drawEmit();drawDragon();drawMossFx();drawCastle();drawFox();drawDragonSky();if(!titleShown)drawAct();
   for(const p of smoke){const a=(1-p.t/p.life)*(p.t<.4?p.t/.4:1)*.42;const c=mul([206,204,206],env.amb);lowX.fillStyle=css(c,a);const sz=p.t>2.2?2:1;lowX.fillRect(Math.round(p.x),Math.round(p.y),sz,sz)}
+  drawBed();
   const dl=[],L=VS().lamp,EV=eventoAtivo();if(EV&&!titleShown)drawEventFx(EV);
   for(const b of VS().debris)dl.push([b.y,0,b]);for(const f of VS().flowers)dl.push([f.y,1,f]);for(const o of evItems)dl.push([o.y,6,o]);for(const m of (VS().mush||[]))dl.push([m.y,7,m]);for(const v of visitors)dl.push([v.y,2,v]);
   if(sceneChest)dl.push([sceneChest.y,3,sceneChest]);if(dropChest)dl.push([dropChest.y,3,dropChest]);if(L)dl.push([L.y,4,L]);if(AV&&!AV.hidden&&!titleShown)dl.push([AV.y+.5,5,AV]);if(PET.x>=0&&AV&&!AV.hidden&&!titleShown)dl.push([PET.y+.4,8,PET]);for(const o of scene.tdeco||[])dl.push([o.y,10,o]);if(scene.mill)dl.push([scene.mill.by,11,scene.mill]);if(scene.wheel)dl.push([scene.wheel.by,12,scene.wheel]);
@@ -9807,8 +9829,8 @@ function tick(dt){
   const sd=SC();
   if(visiting){flowerT=Math.max(flowerT,5);debrisT=Math.max(debrisT,5)}
   uiSweepT-=dt;if(uiSweepT<=0){uiSweepT=1.5;clearUnderUI()}
-  flowerT-=dt;if(flowerT<=0){flowerT=(30+rnd()*40)/((1+upE('bot')*.1+upE('colmeia')*.06+decBon('flor'))*petMul('flor'))*(season==='primavera'?.7:1);if(S.level>=2&&sd.flowers.length<Math.min(16,5+Math.floor(S.level/4)))spawnFlower()}
-  debrisT-=dt;if(debrisT<=0){debrisT=(35+rnd()*45)*(season==='outono'?.7:1);if(sd.debris.length<4)spawnDebris()}
+  flowerT-=dt;if(flowerT<=0){flowerT=(30+rnd()*40)/((1+upE('bot')*.1+upE('colmeia')*.06+decBon('flor'))*petMul('flor'))*(season==='primavera'?.7:1);if(S.level>=2){if(sd.flowers.length<Math.min(6,3+Math.floor(S.level/8))&&pickN(sd)<PICK_CAP)spawnFlower();else flBank=Math.min(4,flBank+1)}}
+  debrisT-=dt;if(debrisT<=0){debrisT=(35+rnd()*45)*(season==='outono'?.7:1);if(sd.debris.length<3&&pickN(sd)<PICK_CAP)spawnDebris()}
   if(upL('hog')>0&&!visiting){hogT-=dt;if(hogT<=0){hogT=Math.max(20,70-6*upE('hog'));if(sd.debris.length)cleanDebris((rnd()*sd.debris.length)|0,null,null,true)}}
   visT-=dt;if(visT<=0){visT=20+rnd()*15;checkVisitors()}
   const pt=performance.now();
@@ -9851,7 +9873,7 @@ function frame(t){
   tick(dt);draw();guideTick();
 }
 /* versões novas: quando o jogo muda no servidor, guarda o progresso e recarrega a página */
-const BUILD='d7a1fd92d712',UKEY='tapmoss.upd';const UPD={on:false,go:false,at:0};
+const BUILD='405b2e96c007',UKEY='tapmoss.upd';const UPD={on:false,go:false,at:0};
 // the new version downloads in the background while the game goes on; the reload only comes once the whole page is here,
 // so a slow network never leaves a half-built page on screen. The offline helper (sw.js) hands this copy over at the reload.
 const NEXTC='tapmoss-next',pgKey=()=>{let p=location.pathname.replace(/index\.html$/,'');if(!p.endsWith('/'))p+='/';return p};
