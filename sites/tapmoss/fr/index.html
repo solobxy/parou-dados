@@ -6022,7 +6022,7 @@ function wkSnap(){const b={atap:S.stats.atap||0};for(const k in WK_W)b[k]=S.stat
 function wkCheck(){if(!S||!S.stats)return;const w=wkId();if(!S.wk||S.wk.w!==w){S.wk={w,b:wkSnap(),prem:S.wk?S.wk.prem||'':''};dirtySave=true}}
 function wkPts(){if(!S||!S.wk)return 0;return ptsSince(S.wk.b)}
 const TOPW={},TOPD={};let topMode='semana';
-async function loadTopW(c,dia){if(!ONLINE||!/^[A-Z]{2}$/.test(c))return;const T=dia?TOPD:TOPW,t=T[c];if(t&&(t.busy||performance.now()-t.at<45000))return;
+async function loadTopW(c,dia){if(!ONLINE||!/^[A-Z]{2}$/.test(c))return;const T=dia?TOPD:TOPW,t=T[c];if(t&&(t.busy||performance.now()-t.at<15000))return;
   T[c]={busy:true,at:performance.now(),list:t&&t.list,fim:t&&t.fim,err:''};
   try{const r=await api(dia?'tm_top_dia':'tm_top_semana',{p_pais:c});const L=r&&Array.isArray(r.lista)?r.lista:[];T[c].fim=Number.isFinite(r&&r.fim)?performance.now()+r.fim*1000:0;
     T[c].list=L.slice(0,20).filter(x=>x&&typeof x==='object').map(x=>{const lk=sanLook(x.visual);return{nome:String(x.nome||'').slice(0,16),nivel:nInt(x.nivel,1,1e5,1),look:lk,tit:lk.tit,reb:nInt(x.renasc,0,1e6,0),pts:nInt(x.pontos,0,1e9,0),med:medSan(x.med),id:(typeof x.id==='string'&&UUID.test(x.id)?x.id:''),cena:x.cena!==false}})}
@@ -6038,12 +6038,16 @@ async function wkPremio(){if(!ONLINE||!CONTA||!S.wk||wkPremBusy||titleShown||vis
   }catch(e){}finally{wkPremBusy=false}}
 /* top 20 of a country: name, level and a tiny portrait; cached for a minute */
 const TOP={};
-async function loadTop(c){if(!ONLINE||!/^[A-Z]{2}$/.test(c))return;const t=TOP[c];if(t&&(t.busy||performance.now()-t.at<60000))return;
+async function loadTop(c){if(!ONLINE||!/^[A-Z]{2}$/.test(c))return;const t=TOP[c];if(t&&(t.busy||performance.now()-t.at<15000))return;
   TOP[c]={busy:true,at:performance.now(),list:t&&t.list,err:''};
   try{const r=await api('tm_top',{p_pais:c});TOP[c].list=Array.isArray(r)?r.slice(0,20).filter(x=>x&&typeof x==='object').map(x=>{const lk=sanLook(x.visual);return{nome:String(x.nome||'').slice(0,16),nivel:nInt(x.nivel,1,1e5,1),look:lk,tit:lk.tit,reb:nInt(x.renasc,0,1e6,0),id:(typeof x.id==='string'&&UUID.test(x.id)?x.id:''),cena:x.cena!==false}}):[]}
   catch(e){TOP[c].err=errMsg(e)}
   TOP[c].busy=false;TOP[c].at=performance.now();if(globe&&globe.sel===c)topRender(c);
 }
+function topLive(L,mode,c){if(!CONTA||c!==meuPais()||!L.some(x=>x.id===CONTA.id))return L;const me=CONTA.id;
+  const A=L.map(x=>x.id===me?{...x,nivel:Math.max(x.nivel,S.level|0),reb:Math.max(x.reb,S.reb|0),pts:mode==='d'?Math.max(x.pts|0,dyPts()):mode==='w'?Math.max(x.pts|0,wkPts()):x.pts}:x);
+  return mode==='s'?A.sort((a,b)=>b.nivel-a.nivel||b.reb-a.reb):A.sort((a,b)=>b.pts-a.pts)}
+setInterval(()=>{const g=globe;if(!g||!g.sel||document.hidden||!$('#topBox'))return;const c=g.sel;if(!(g.data&&g.data.m&&g.data.m[c]))return;loadTop(c);loadTopW(c);loadTopW(c,true);topRender(c)},20000);
 function topRender(c){const el=$('#topBox');if(!el)return;const t=TOP[c],m=globe&&globe.data.m[c];
   if(!m){el.innerHTML='';return}
   let h=`<div class="tabs toptabs" role="tablist">${[['dia',_t('Hoje')],['semana',_t('Esta semana')],['sempre',_t('Sempre')]].map(([k,l])=>`<button role="tab" aria-selected="${k===topMode}" class="${k===topMode?'on':''}" data-topm="${k}">${l}</button>`).join('')}</div><p class="note rvn">${icon('eye')}${_t('Toca num jogador para ver o jardim dele.')}</p>`;
@@ -6054,7 +6058,7 @@ function topRender(c){const el=$('#topBox');if(!el)return;const t=TOP[c],m=globe
     if(!W||(!W.list&&W.busy))h+=`<p class="note">${_t("A carregar…")}</p>`;
     else if(W.err&&!W.list)h+=`<p class="note">${esc(W.err)}</p>`;
     else if(!W.list.length)h+=`<p class="note">${dia?_t('Ainda ninguém fez pontos hoje. O primeiro lugar está livre.'):_t('Ainda ninguém fez pontos esta semana. O primeiro lugar está livre.')}</p>`;
-    else h+=`<ol class="top">${W.list.map((x,k)=>`<li class="${k<3||(dia&&k===3)?'p'+(k+1):''} ${mine&&x.nome===S.name?'me':''} ${x.id&&x.cena&&!(CONTA&&CONTA.id===x.id)?'rv':''}" ${x.id&&x.cena&&!(CONTA&&CONTA.id===x.id)?`data-rvis="${x.id}"`:''}><span class="n">${NM(k+1,'xs')}</span><span class="av ${k<3?'lf lfr'+(k+1):lvFr(x.nivel)}">${avPortrait(x.look)}</span><span class="who"><span class="wn">${esc(x.nome)}${medal(x.reb)}${medChips(x.med)}</span>${titHTML(x.tit)}</span><span class="lv wkp">${NM(fmt(x.pts),'xs')} <i>${_t('pts')}</i></span></li>`).join('')}</ol>`;
+    else h+=`<ol class="top">${topLive(W.list,dia?'d':'w',c).map((x,k)=>`<li class="${k<3||(dia&&k===3)?'p'+(k+1):''} ${mine&&x.nome===S.name?'me':''} ${x.id&&x.cena&&!(CONTA&&CONTA.id===x.id)?'rv':''}" ${x.id&&x.cena&&!(CONTA&&CONTA.id===x.id)?`data-rvis="${x.id}"`:''}><span class="n">${NM(k+1,'xs')}</span><span class="av ${k<3?'lf lfr'+(k+1):lvFr(x.nivel)}">${avPortrait(x.look)}</span><span class="who"><span class="wn">${esc(x.nome)}${medal(x.reb)}${medChips(x.med)}</span>${titHTML(x.tit)}</span><span class="lv wkp">${NM(fmt(x.pts),'xs')} <i>${_t('pts')}</i></span></li>`).join('')}</ol>`;
     if(mine)h+=`<p class="wkme">${dia?_t('Os teus pontos hoje: {0}',`<b>${fmt(dyPts())}</b>`):_t('Os teus pontos esta semana: {0}',`<b>${fmt(wkPts())}</b>`)}</p>`;
     h+=`<p class="note">${dia?_t('Conta o mesmo que o ranking da semana, mas recomeça do zero todos os dias.'):_t('Toques, flores, baús, a pá, minijogos, missões e ajudas a amigos dão pontos. Os toques automáticos não contam. Todas as segundas-feiras recomeça do zero.')}</p>`;
     el.innerHTML=h;return}
@@ -6062,7 +6066,7 @@ function topRender(c){const el=$('#topBox');if(!el)return;const t=TOP[c],m=globe
   if(!t||(!t.list&&t.busy))h+=`<p class="note">${_t("A carregar…")}</p>`;
   else if(t.err&&!t.list)h+=`<p class="note">${esc(t.err)}</p>`;
   else if(!t.list.length)h+=`<p class="note">${_t("Ainda ninguém aparece no top deste país.")}</p>`;
-  else h+=`<ol class="top">${t.list.map((x,k)=>`<li class="${k<3?'p'+(k+1):''} ${x.nome===S.name&&x.nivel===S.level&&c===meuPais()?'me':''} ${x.id&&x.cena&&!(CONTA&&CONTA.id===x.id)?'rv':''}" ${x.id&&x.cena&&!(CONTA&&CONTA.id===x.id)?`data-rvis="${x.id}"`:''}><span class="n">${NM(k+1,'xs')}</span><span class="av ${k<3?'lf lfr'+(k+1):lvFr(x.nivel)}">${avPortrait(x.look)}</span><span class="who"><span class="wn">${esc(x.nome)}${medal(x.reb)}</span>${titHTML(x.tit)}</span><span class="lv">${_t('Nv. {0}',NM(x.nivel,'xs'))}</span></li>`).join('')}</ol>`;
+  else h+=`<ol class="top">${topLive(t.list,'s',c).map((x,k)=>`<li class="${k<3?'p'+(k+1):''} ${x.nome===S.name&&x.nivel===S.level&&c===meuPais()?'me':''} ${x.id&&x.cena&&!(CONTA&&CONTA.id===x.id)?'rv':''}" ${x.id&&x.cena&&!(CONTA&&CONTA.id===x.id)?`data-rvis="${x.id}"`:''}><span class="n">${NM(k+1,'xs')}</span><span class="av ${k<3?'lf lfr'+(k+1):lvFr(x.nivel)}">${avPortrait(x.look)}</span><span class="who"><span class="wn">${esc(x.nome)}${medal(x.reb)}</span>${titHTML(x.tit)}</span><span class="lv">${_t('Nv. {0}',NM(x.nivel,'xs'))}</span></li>`).join('')}</ol>`;
   el.innerHTML=h}
 
 /* ============ a praça ============ */
@@ -9494,7 +9498,7 @@ function frame(t){
   tick(dt);draw();guideTick();
 }
 /* versões novas: quando o jogo muda no servidor, guarda o progresso e recarrega a página */
-const BUILD='4b9b67803b37',UKEY='tapmoss.upd';const UPD={on:false,go:false,at:0};
+const BUILD='90866e73a30b',UKEY='tapmoss.upd';const UPD={on:false,go:false,at:0};
 // the new version downloads in the background while the game goes on; the reload only comes once the whole page is here,
 // so a slow network never leaves a half-built page on screen. The offline helper (sw.js) hands this copy over at the reload.
 const NEXTC='tapmoss-next',pgKey=()=>{let p=location.pathname.replace(/index\.html$/,'');if(!p.endsWith('/'))p+='/';return p};
