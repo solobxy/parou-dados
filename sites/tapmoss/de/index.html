@@ -1188,6 +1188,8 @@ select.sel,.selb{width:100%;height:48px;padding:0 12px;background:#18241a;clip-p
 .mnDino p{font-size:12px;color:var(--tx2);margin:8px 0 0}
 .colGo{position:relative}
 .colGo .dot{position:absolute;top:8px;right:10px}
+.mbtns{display:flex;flex-direction:column;gap:6px;flex-shrink:0;align-items:stretch}
+.mbtns .btn{min-height:36px;padding-top:6px;padding-bottom:6px}
 /* while a slow page is still arriving: a calm cover instead of half-built buttons (only with JavaScript; the game removes it when it starts) */
 #boot{display:none;position:fixed;inset:0;z-index:9999;background:#060a07;flex-direction:column;align-items:center;justify-content:center;gap:14px;transition:opacity .3s}
 .js #boot{display:flex}
@@ -6858,7 +6860,7 @@ function renderSheet0(live){
     SPEC_ORD.forEach(i=>{const s=SPEC[i],lock=!specOpen(i),sel=S.sel===i,c=sowCost(i);if(s.em&&lock&&!S.em&&S.level<20)return;
       const what=(i===0?_t('O musgo base: cada pedaço rende 1×.'):_t('Cada pedaço rende {0}× o musgo verde.',dec(s.val)))+(s.fx==='chroma'?' '+_t('Tem todas as cores e larga pó de arco-íris.'):s.fx==='void'?' '+_t('Escuro como o espaço, com brilhos e partículas que sobem.'):s.fx==='frost'?' '+_t('Branco como a geada, com faíscas de gelo.'):s.fx==='silver'?' '+_t('Cinzento prateado, com reflexos de metal.'):'');
       const here=mb&&mb.n[i]?`<span class="mhere">${_t('Cobre {0}% da cena e dá {1}/s.',Math.max(1,Math.round(mb.n[i]/Math.max(1,mossable)*100)),fmtRate(mb.tv?inc*mb.v[i]/mb.tv:0))}</span>`:'';
-      h+=`<div class="item ${sel?'sel':''} ${lock?'lock':''}"><span class="sw">${s.c.map(c=>`<i style="background:${c}"></i>`).join('')}</span><span class="meta"><h3 class="${s.fx?'mfx '+s.fx:''}">${_t("Musgo {0}",s.nome)}${sel?` <span class="mact">${_t('Ativo')}</span>`:''}</h3><p>${lock&&s.em?_t('Hiper-raro. Só abre com gemas · {0}',_t('rende {0}× o verde',dec(s.val))):lock?_t("Abre no nível {0} · {1}",s.lvl,_t('rende {0}× o verde',dec(s.val))):what+(i>=3?' '+_t('Brilha à noite.'):'')}${here}</p></span>${lock&&s.em?`<button class="btn em" data-emm="${i}" ${(S.em||0)<s.em?'disabled':''}>${icon('em')}${NM(String(s.em))}</button>`:lock?`<span class="tag">${icon('lock')}</span>`:`<button class="btn ${c?'':'gold'}" data-sow="${i}" ${S.coins<c?'disabled':''}>${c?_t("Semear {0}{1}",icon('coin'),NM(fmt(c))):_t('Semear grátis')}</button>`}</div>`});
+      h+=`<div class="item ${sel?'sel':''} ${lock?'lock':''}"><span class="sw">${s.c.map(c=>`<i style="background:${c}"></i>`).join('')}</span><span class="meta"><h3 class="${s.fx?'mfx '+s.fx:''}">${_t("Musgo {0}",s.nome)}${sel?` <span class="mact">${_t('Ativo')}</span>`:''}</h3><p>${lock&&s.em?_t('Hiper-raro. Só abre com gemas · {0}',_t('rende {0}× o verde',dec(s.val))):lock?_t("Abre no nível {0} · {1}",s.lvl,_t('rende {0}× o verde',dec(s.val))):what+(i>=3?' '+_t('Brilha à noite.'):'')}${here}</p></span>${lock&&s.em?`<button class="btn em" data-emm="${i}" ${(S.em||0)<s.em?'disabled':''}>${icon('em')}${NM(String(s.em))}</button>`:lock?`<span class="tag">${icon('lock')}</span>`:`${(S.sown[i]||0)>0&&!sel?`<span class="mbtns"><button class="btn gold" data-msel="${i}">${_t('Usar')}</button><button class="btn ${c?'':'gold'}" data-sow="${i}" ${S.coins<c?'disabled':''}>${c?_t("Semear {0}{1}",icon('coin'),NM(fmt(c))):_t('Semear grátis')}</button></span>`:`<button class="btn ${c?'':'gold'}" data-sow="${i}" ${S.coins<c?'disabled':''}>${c?_t("Semear {0}{1}",icon('coin'),NM(fmt(c))):_t('Semear grátis')}</button>`}`}</div>`});
   }else if(sheetName==='up'){title=_t('Melhorar');
     // three currencies, three sections; the one picked at the top comes first and the others follow below, so nothing looks missing
     const H0=h;let hc='',hg='',he='';
@@ -7109,6 +7111,7 @@ $('#shB').addEventListener('click',e=>{
   if(t.dataset.prt){PR.tab=t.dataset.prt;SND.play('click');sheetSig='';renderSheet();return}if(t.dataset.prn){prBuyNpc(t.dataset.prn);return}if(t.dataset.prp){prBuyP(+t.dataset.prp);return}
   if(t.dataset.prv){prSellAsk(t.dataset.prv);return}if(t.dataset.prx){prCancel(+t.dataset.prx);return}if(t.dataset.prl){prBid(+t.dataset.prl);return}if(t.dataset.prmail){closeSheet();mailAsk(false);return}
   if(t.id==='langBtn'){pickList(_t('Língua'),langItems(),LANG,setLang);return}
+  if(t.dataset.msel!=null){const i=+t.dataset.msel;if(specOpen(i)&&(S.sown[i]||0)>0){S.sel=i;dirtySave=true;SND.play('click');setDockIcons();sheetSig='';renderSheet();hud();toast(_t('Musgo {0} ativo.',SPEC[i].nome))}return}
   if(t.dataset.sow!=null){sow(+t.dataset.sow);return}
   if(t.dataset.pt){ptAction(t.dataset.pt);return}
   if(t.dataset.topm){topMode=t.dataset.topm;SND.play('click');if(globe)topRender(globe.sel);return}
@@ -9491,7 +9494,7 @@ function frame(t){
   tick(dt);draw();guideTick();
 }
 /* versões novas: quando o jogo muda no servidor, guarda o progresso e recarrega a página */
-const BUILD='5f39de4945d9',UKEY='tapmoss.upd';const UPD={on:false,go:false,at:0};
+const BUILD='4b9b67803b37',UKEY='tapmoss.upd';const UPD={on:false,go:false,at:0};
 // the new version downloads in the background while the game goes on; the reload only comes once the whole page is here,
 // so a slow network never leaves a half-built page on screen. The offline helper (sw.js) hands this copy over at the reload.
 const NEXTC='tapmoss-next',pgKey=()=>{let p=location.pathname.replace(/index\.html$/,'');if(!p.endsWith('/'))p+='/';return p};
