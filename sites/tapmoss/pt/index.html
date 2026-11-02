@@ -1188,9 +1188,23 @@ select.sel,.selb{width:100%;height:48px;padding:0 12px;background:#18241a;clip-p
 .mnDino p{font-size:12px;color:var(--tx2);margin:8px 0 0}
 .colGo{position:relative}
 .colGo .dot{position:absolute;top:8px;right:10px}
+/* while a slow page is still arriving: a calm cover instead of half-built buttons (only with JavaScript; the game removes it when it starts) */
+#boot{display:none;position:fixed;inset:0;z-index:9999;background:#060a07;flex-direction:column;align-items:center;justify-content:center;gap:14px;transition:opacity .3s}
+.js #boot{display:flex}
+#boot img{width:96px;height:96px;image-rendering:pixelated;border-radius:22px}
+#boot .bt{font-family:var(--f);color:var(--tx);font-size:22px;letter-spacing:.04em}#boot .bt b{font-weight:inherit;color:var(--moss)}
+#boot .bd{display:flex;gap:8px;margin-top:4px}
+#boot .bd i{width:8px;height:8px;background:var(--moss);opacity:.2;animation:bootd 1.2s steps(1,end) infinite}
+#boot .bd i:nth-child(2){animation-delay:.4s}#boot .bd i:nth-child(3){animation-delay:.8s}
+@keyframes bootd{0%{opacity:1}33%,100%{opacity:.2}}
+#boot.out{opacity:0;pointer-events:none}
+@media (prefers-reduced-motion:reduce){#boot .bd i{animation:none;opacity:.6}#boot{transition:none}}
 </style>
+<script>document.documentElement.classList.add('js')</script>
 </head>
 <body>
+<div id="boot" aria-hidden="true"><img src="/tapmoss-192.png" alt="" width="96" height="96"><div class="bt">tap<b>moss</b></div><div class="bd"><i></i><i></i><i></i></div></div>
+<script>addEventListener('load',function(){setTimeout(function(){var b=document.getElementById('boot');if(b)b.remove()},4000)})</script>
 <noscript><div style="padding:24px;font:16px/1.6 system-ui,sans-serif;color:#ecebdc;background:#0b120d"><p><b>tapmoss</b></p><p>O tapmoss é um jogo idle relaxante em pixel art sobre fazer crescer musgo. Precisa de JavaScript para funcionar.</p><p>O tapmoss é um jogo idle relaxante e grátis, em pixel art. Tocas para espalhar esporos, o musgo vai cobrindo pedras, troncos e muros antigos, e o jardim continua a render enquanto estás fora. O céu do jogo é o teu: dia, noite e tempo reais, da tua cidade.</p><p><a href="/pt/about/">Sobre</a> · <a href="/pt/guide/flowers/">Flores</a> · <a href="/pt/guide/animals/">Animais</a> · <a href="/pt/guide/worlds/">Mundos</a> · <a href="/pt/guide/upgrades/">Melhorias</a> · <a href="/pt/guide/achievements/">Conquistas</a></p></div></noscript>
 <div id="app">
   <canvas id="cv" aria-label="A tua cena. Toca para ganhar moedas e espalhar esporos."></canvas>
@@ -9473,7 +9487,26 @@ function frame(t){
   tick(dt);draw();guideTick();
 }
 /* versões novas: quando o jogo muda no servidor, guarda o progresso e recarrega a página */
-const BUILD='3a442bb2fd99',UKEY='tapmoss.upd';const UPD={on:false,go:false,at:0};
+const BUILD='b76ad0fc933d',UKEY='tapmoss.upd';const UPD={on:false,go:false,at:0};
+// the new version downloads in the background while the game goes on; the reload only comes once the whole page is here,
+// so a slow network never leaves a half-built page on screen. The offline helper (sw.js) hands this copy over at the reload.
+const NEXTC='tapmoss-next',pgKey=()=>{let p=location.pathname.replace(/index\.html$/,'');if(!p.endsWith('/'))p+='/';return p};
+async function updPrefetch(v){
+  if(!('caches'in window)||!navigator.serviceWorker||!navigator.serviceWorker.controller)return v;
+  if(UPD.preBusy)return null;UPD.preBusy=true;
+  try{const c=await caches.open(NEXTC),key=pgKey()+'?v=';
+    if(await c.match(key+v)){UPD.pre=v;return v}
+    const r=await fetch(pgKey()+'?pre='+v,{cache:'no-store'});if(!r.ok)throw 0;
+    const txt=await r.text(),m=/const BUILD='([a-f0-9]{8,40})'/.exec(txt);
+    if(!m||!/<\/html>\s*$/.test(txt))throw 0;
+    if(m[1]===BUILD)return null;
+    const h=new Headers(r.headers);h.delete('content-encoding');h.delete('content-length');
+    for(const k of await c.keys())await c.delete(k);
+    await c.put(key+m[1],new Response(txt,{status:200,headers:h}));UPD.pre=m[1];return m[1]}
+  catch(e){UPD.preFail=(UPD.preFail|0)+1;return null}finally{UPD.preBusy=false}}
+// a copy of the version now running is no longer needed
+function updClean(){try{if('caches'in window)caches.open(NEXTC).then(c=>c.keys().then(ks=>ks.forEach(k=>{const m=/[?&]v=([a-f0-9]+)/.exec(k.url);if(!m||m[1]===BUILD)c.delete(k)}))).catch(()=>{})}catch(e){}}
+
 async function checkUpdate(){
   if(BUILD.startsWith('__')||UPD.on||document.hidden||!navigator.onLine||!/^https?:$/.test(location.protocol)||window.claude)return;
   const t=performance.now();if(t-UPD.at<15000)return;UPD.at=t;
@@ -9482,6 +9515,7 @@ async function checkUpdate(){
   let g={};try{g=JSON.parse(sessionStorage.getItem(UKEY)||'{}')||{}}catch(e){}
   const n=g.v===v&&Date.now()-(g.t||0)<600000?g.n|0:0;
   if(n>=3)return;
+  if(UPD.pre!==v&&(UPD.preFail|0)<3){const nv=await updPrefetch(v);if(!nv||UPD.on)return;v=nv}
   const busy=modalOn||sheetName||PIR||WSPIN||placing||editing||photo||(typeof UB!=='undefined'&&UB.busy);if(busy){UPD.wait=UPD.wait||t;if(t-UPD.wait<240000){UPD.at=t-10000;return}}
   forceUpdate(v,n);
 }
@@ -9545,7 +9579,8 @@ requestAnimationFrame(frame);
 setTimeout(cloudInit,50);
 {let g={};try{g=JSON.parse(sessionStorage.getItem(UKEY)||'{}')||{}}catch(e){}if(g.v===BUILD)try{sessionStorage.removeItem(UKEY)}catch(e){}
   const q=new URLSearchParams(location.search);if(q.has('v')){q.delete('v');try{history.replaceState(null,'',location.pathname+(q.toString()?'?'+q:'')+location.hash)}catch(e){}}
-  setTimeout(checkUpdate,8000);setInterval(checkUpdate,90000)}
+  setTimeout(checkUpdate,8000);setInterval(checkUpdate,90000);updClean()}
+{const b=document.getElementById('boot');if(b)requestAnimationFrame(()=>requestAnimationFrame(()=>{b.classList.add('out');setTimeout(()=>b.remove(),350)}))}
 {const q=new URLSearchParams(location.search),a=q.get('amigo'),l=q.get('ligar'),em=q.get('email'),rec=q.get('r')==='1';
   if(em&&/^[0-9a-f]{48}$/.test(em)&&ONLINE)setTimeout(()=>mailConfirm(em),700);
   if(a&&/^[A-Za-z0-9]{6}$/.test(a))pendAmigo=a.toUpperCase();

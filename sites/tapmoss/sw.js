@@ -1,22 +1,32 @@
 // tapmoss: funciona sem rede. As páginas vêm da rede quando há (para apanhar versões novas), senão da cache.
 // version.json fica sempre fora da cache: é por ele que o jogo sabe que há versão nova.
 // Cada página (o jogo em cada língua, os guias) guarda-se com o seu próprio endereço.
-const V='tapmoss-51';
+// A versão nova descarrega-se enquanto se joga e fica em NEXT; ao recarregar, sai daí sem esperar pela rede.
+const V='tapmoss-52',NEXT='tapmoss-next';
 const CORE=['/','/manifest.json','/tapmoss-192.png','/tapmoss-512.png','/tapmoss-maskable.png','/tapmoss-180.png','/tapmoss-64.png','/badge-96.png'];
-self.addEventListener('install',e=>{e.waitUntil(caches.open(V).then(c=>c.addAll(CORE)).then(()=>self.skipWaiting()))});
-self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==V).map(k=>caches.delete(k)))).then(()=>self.clients.claim()))});
+// the pages already kept by the previous version come along, so an update does not download the whole game again just to have it offline
+self.addEventListener('install',e=>{e.waitUntil((async()=>{const c=await caches.open(V);let pages=0;
+  for(const k of await caches.keys()){if(k===V||k===NEXT||!k.startsWith('tapmoss-'))continue;const o=await caches.open(k);
+    for(const q of await o.keys()){const u=new URL(q.url);if(u.search||!u.pathname.endsWith('/'))continue;const m=await o.match(q);if(m){await c.put(q,m);pages++}}}
+  await c.addAll(pages?CORE.filter(x=>x!=='/'):CORE);await self.skipWaiting()})())});
+self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==V&&k!==NEXT).map(k=>caches.delete(k)))).then(()=>self.clients.claim()))});
 const pageKey=u=>{let p=u.pathname.replace(/index\.html$/,'');if(!p.endsWith('/'))p+='/';return p};
 self.addEventListener('fetch',e=>{
   const r=e.request;if(r.method!=='GET')return;
-  const u=new URL(r.url);if(u.origin!==location.origin||u.pathname.startsWith('/_e')||u.pathname.startsWith('/api/')||u.pathname==='/version.json')return;
+  const u=new URL(r.url);if(u.origin!==location.origin||u.pathname.startsWith('/_e')||u.pathname.startsWith('/api/')||u.pathname==='/version.json'||u.searchParams.has('pre'))return;
   if(r.mode==='navigate'){
     // the network copy is always saved when it arrives, even if it came too late to be shown this time;
     // an update (?v=) never falls back to the old copy unless there is no network at all
-    const k=pageKey(u),forced=u.searchParams.has('v');
-    const net=fetch(r).then(res=>{if(res.ok&&!res.redirected){const c=res.clone();e.waitUntil(caches.open(V).then(ca=>ca.put(k,c)))}return res});
-    e.waitUntil(net.catch(()=>{}));
+    const k=pageKey(u),vv=u.searchParams.get('v');
+    const fromNet=()=>{const net=fetch(r).then(res=>{if(res.ok&&!res.redirected){const c=res.clone();e.waitUntil(caches.open(V).then(ca=>ca.put(k,c)))}return res});e.waitUntil(net.catch(()=>{}));return net};
     const old=()=>caches.match(k).then(m=>m||caches.match('/'));
-    if(forced){e.respondWith(net.catch(()=>old().then(m=>m||Response.error())));return}
+    if(vv){
+      // the game has usually downloaded the new version already, while it was being played: show it at once
+      e.respondWith(caches.open(NEXT).then(c=>c.match(k+'?v='+vv).then(m=>{
+        if(m){const a=m.clone();e.waitUntil(caches.open(V).then(ca=>ca.put(k,a)).then(()=>c.delete(k+'?v='+vv)).catch(()=>{}));return m}
+        return fromNet().catch(()=>old().then(o=>o||Response.error()))})).catch(()=>fromNet()));
+      return}
+    const net=fromNet();
     e.respondWith(Promise.race([net,new Promise((_,no)=>setTimeout(()=>no(new Error('lento')),9000))]).catch(()=>old().then(m=>m||net)));
     return;
   }
