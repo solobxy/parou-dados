@@ -8906,7 +8906,7 @@ function mnLoad(){const M=S.mina;mE.tgt=-1;mE.lastC=-1;mE.dmg=0;mE.rec.length=0;
 function mnGlowList(){const L=[];let w=0,nat=0;for(let c=0;c<MNC;c++){const v=mg[c],m=v&15;if(m&&MM[m].glow)L.push(c);if(m===M_AGUA){w++;if((v&64)&&!(v&32))nat++}}mE.glow=L;mE.wat=w;mE.nat=nat}
 
 /* the frontier: solid cells that touch air someone has dug (or the spot where the hole starts) */
-const mnIsF=c=>{if(mClr(c))return false;const x=c%MW,y=(c/MW)|0,A=n=>mg[n]===0;return(y>0&&A(c-MW))||(y<MH-1&&A(c+MW))||(x>0&&A(c-1))||(x<MW-1&&A(c+1))||(y===0&&Math.abs(x-S.mina.ex)<=1)};
+const mnIsF=c=>{if(mClr(c))return false;const x=c%MW,y=(c/MW)|0,A=n=>mg[n]===0||(mLiq(mg[n]&15)&&!(mg[n]&32));return(y>0&&A(c-MW))||(y<MH-1&&A(c+MW))||(x>0&&A(c-1))||(x<MW-1&&A(c+1))||(y===0&&Math.abs(x-S.mina.ex)<=1)};
 function mfAdd(c){if(mf[c])return;mf[c]=1;mfi[c]=mfl.length;mfl.push(c)}
 function mfDel(c){if(!mf[c])return;mf[c]=0;const i=mfi[c],l=mfl.pop();if(l!==c){mfl[i]=l;mfi[l]=i}}
 function mfRebuild(){for(const c of mfl)mf[c]=0;mfl.length=0;for(let c=0;c<MNC;c++)if(mnIsF(c))mfAdd(c);mE.fd=false}
@@ -8979,7 +8979,7 @@ function mnGetItem(it,bg,x,y){const M=S.mina,isNew=!M.coll[it.id];M.coll[it.id]=
    garden as well, and a little while it is closed (only for the first 24 hours) */
 let MNR=false;
 const mnOffRate=()=>.2+.01*S.mina.up.noi;
-let mnDrT=.8,mnAcc=0,mnCAt=0,mnMossT=6,mnRainT=0,mnEvapT=12,mnSaveT=0,mnVeinT=200;
+let mnCoolT=1.5,mnDrT=.8,mnAcc=0,mnCAt=0,mnMossT=6,mnRainT=0,mnEvapT=12,mnSaveT=0,mnVeinT=200;
 const mnRW=[];
 function mnRateFeed(v){const t=performance.now();mnRW.push([t,v]);while(mnRW.length&&t-mnRW[0][0]>12000)mnRW.shift()}
 const mnRateNow=()=>{if(mnRW.length<2)return mnRate();const s=mnRW.reduce((a,x)=>a+x[1],0),dt=Math.max(4,(performance.now()-mnRW[0][0])/1000);return Math.max(mnRate(),s/dt)};
@@ -8993,6 +8993,7 @@ function mnTick(dt){const M=S&&S.mina;if(!M||!M.on||visiting||titleShown)return;
   M.t=t;
   if(mE.tnt){mE.tnt.t+=dt;if(mE.tnt.t>=1.3){const c=mE.tnt.c;mE.tnt=null;mnTntBoom(mnIsF(c)?c:-1,!MNR)}}
   if(mE.ca){mnCAt+=dt;if(mnCAt>=.06){mnCAt=0;if(!mnCA())mE.ca=false}}
+  mnCoolT-=dt;if(mnCoolT<=0){mnCoolT=.7;mnCool()}
   if(mE.nat>0){mnDrT-=dt;for(let k=0;mnDrT<=0&&k<20;k++){mnDrT+=.11;mnDrain()}}else mnDrT=.8;
   mnMossT-=dt;if(mnMossT<=0){mnMossT=5+rnd()*5;mnMoss(1)}
   if(MNR){
@@ -9035,6 +9036,9 @@ function mnDrain(){let best=-1,by=MH,n=0;for(let c=0;c<MNC;c++){const v=mg[c];if
 function mnMoss(n){if(mE.fd)mfRebuild();if(!mfl.length)return;for(let k=0;k<n;k++){const c=mfl[(rnd()*mfl.length)|0],m=mg[c]&15;if(!m||mLiq(m)||(mg[c]&16)||mo[c])continue;mg[c]|=16;S.mina.st.musgo++;mE.dirty.add(c)}}
 // real rain where the player is: drops run into the hole and make puddles; with no rain they dry up slowly
 function mnRainDrop(){if(mE.wat>=70||mE.loaded<0)return;for(let k=0;k<24;k++){const x=clamp(S.mina.ex+Math.round((rnd()-.5)*(mnBio(S.mina.p)==='sup'?24:3)),0,MW-1);for(let y=0;y<8;y++){const c=y*MW+x;if(mg[c]===0){mnSet(c,M_AGUA);mE.wat++;mE.ca=true;mnFx.drip(x,y);mnPearl();return}if(mg[c]&15)break}}}
+// lava open to the air slowly cools: its surface turns to obsidian, which can be dug (and gives rubies)
+function mnCool(){if(mE.loaded<0)return;const L=[];for(let c=0;c<MNC;c++){const v=mg[c];if((v&15)===M_LAVA&&!(v&32)&&(c<MW||mg[c-MW]===0))L.push(c)}
+  if(!L.length)return;const c=L[(rnd()*L.length)|0];mnSet(c,M_OBSI);mE.ca=true;if(MNR)mnFx.steam(c%MW,(c/MW)|0)}
 function mnEvap(){if(!mE.wat)return;const L=[];for(let c=0;c<MNC;c++)if(mg[c]===M_AGUA&&(c<MW||mg[c-MW]===0))L.push(c);if(L.length){mnSet(L[(rnd()*L.length)|0],0);mE.wat--}}
 // a pearl sometimes forms in a big puddle: tap it before it sinks
 function mnPearl(){if(mE.pearl||mE.wat<14||rnd()>.06)return;const L=[];for(let c=MW;c<MNC;c++)if(mg[c]===M_AGUA&&mg[c-MW]===0)L.push(c);if(!L.length)return;mE.pearl={c:L[(rnd()*L.length)|0],until:now()+60000};SND.play('chime')}
@@ -9487,7 +9491,7 @@ function frame(t){
   tick(dt);draw();guideTick();
 }
 /* versões novas: quando o jogo muda no servidor, guarda o progresso e recarrega a página */
-const BUILD='b76ad0fc933d',UKEY='tapmoss.upd';const UPD={on:false,go:false,at:0};
+const BUILD='c81b7b01a0ad',UKEY='tapmoss.upd';const UPD={on:false,go:false,at:0};
 // the new version downloads in the background while the game goes on; the reload only comes once the whole page is here,
 // so a slow network never leaves a half-built page on screen. The offline helper (sw.js) hands this copy over at the reload.
 const NEXTC='tapmoss-next',pgKey=()=>{let p=location.pathname.replace(/index\.html$/,'');if(!p.endsWith('/'))p+='/';return p};
