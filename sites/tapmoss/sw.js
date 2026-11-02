@@ -1,7 +1,7 @@
 // tapmoss: funciona sem rede. As páginas vêm da rede quando há (para apanhar versões novas), senão da cache.
 // version.json fica sempre fora da cache: é por ele que o jogo sabe que há versão nova.
 // Cada página (o jogo em cada língua, os guias) guarda-se com o seu próprio endereço.
-const V='tapmoss-49';
+const V='tapmoss-50';
 const CORE=['/','/manifest.json','/tapmoss-192.png','/tapmoss-512.png','/tapmoss-maskable.png','/tapmoss-180.png','/tapmoss-64.png','/badge-96.png'];
 self.addEventListener('install',e=>{e.waitUntil(caches.open(V).then(c=>c.addAll(CORE)).then(()=>self.skipWaiting()))});
 self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==V).map(k=>caches.delete(k)))).then(()=>self.clients.claim()))});

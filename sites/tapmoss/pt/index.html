@@ -8832,7 +8832,8 @@ function mnNorm(o){const d=mnDef();if(!o||typeof o!=='object')return d;const f=(
   m.o=(Array.isArray(o.o)?o.o:[]).filter(x=>Array.isArray(x)&&x.length===4).map(x=>[x[0]?1:0,I(f(x[1],0,MW-3,0)),I(f(x[2],0,MH-3,0)),I(f(x[3],0,x[0]?MCOL.length-1:5,0))]).slice(0,80);
   return m}
 
-/* the grid of the phase being dug: low 4 bits the material, 16 = cave moss, 32 = air nobody has seen yet (a natural cave) */
+/* the grid of the phase being dug: low 4 bits the material, 16 = cave moss, 32 = air nobody has seen yet (a natural cave),
+   64 = water that was in the rock (it drains away once it is found) */
 const mg=new Uint8Array(MNC),mo=new Int16Array(MNC),mcnt=new Int16Array(MNS),mf=new Uint8Array(MNC),mfi=new Int32Array(MNC),mfl=[];
 const mE={L:0,ob:[],tgt:-1,dmg:0,fd:true,fogD:true,glow:[],wat:0,loaded:-1,rec:[],full:true,dirty:new Set()};
 const mMat=c=>mg[c]&15,mLiq=m=>m===M_AGUA||m===M_LAVA,mClr=c=>{const m=mg[c]&15;return m===0||m===M_AGUA||m===M_LAVA};
@@ -8885,12 +8886,13 @@ function mnLoad(){const M=S.mina;mE.tgt=-1;mE.dmg=0;mE.rec.length=0;
   let ok=M.g&&mnDec(M.g);
   if(ok){mo.fill(0);mE.ob=M.o.map(x=>({k:x[0],x:x[1],y:x[2],v:x[3],gone:0}));mE.ob.forEach((o,i)=>{for(let j=0;j<3;j++)for(let k=0;k<3;k++)mo[(o.y+j)*MW+o.x+k]=i+1})}
   else{mE.ob=mnGen(M.p,M.seed);M.L=0}
+  for(let c=0;c<MNC;c++)if((mg[c]&15)===M_AGUA&&!(mg[c]&32))mg[c]|=64;
   mE.L=M.L;mcnt.fill(0);for(let c=0;c<MNC;c++)if(mClr(c))mcnt[(c/MW/MSTR)|0]++;mnAdvL(true);
   mE.loaded=M.p;mE.fd=true;mE.fogD=true;mE.full=true;mnGlowList()}
-function mnGlowList(){const L=[];let w=0;for(let c=0;c<MNC;c++){const m=mg[c]&15;if(m&&MM[m].glow)L.push(c);if(m===M_AGUA)w++}mE.glow=L;mE.wat=w}
+function mnGlowList(){const L=[];let w=0,nat=0;for(let c=0;c<MNC;c++){const v=mg[c],m=v&15;if(m&&MM[m].glow)L.push(c);if(m===M_AGUA){w++;if((v&64)&&!(v&32))nat++}}mE.glow=L;mE.wat=w;mE.nat=nat}
 
 /* the frontier: solid cells that touch air someone has dug (or the spot where the hole starts) */
-const mnIsF=c=>{if(mClr(c))return false;const x=c%MW,y=(c/MW)|0,A=n=>mClr(n)&&!(mg[n]&32);return(y>0&&A(c-MW))||(y<MH-1&&A(c+MW))||(x>0&&A(c-1))||(x<MW-1&&A(c+1))||(y===0&&Math.abs(x-S.mina.ex)<=1)};
+const mnIsF=c=>{if(mClr(c))return false;const x=c%MW,y=(c/MW)|0,A=n=>mg[n]===0;return(y>0&&A(c-MW))||(y<MH-1&&A(c+MW))||(x>0&&A(c-1))||(x<MW-1&&A(c+1))||(y===0&&Math.abs(x-S.mina.ex)<=1)};
 function mfAdd(c){if(mf[c])return;mf[c]=1;mfi[c]=mfl.length;mfl.push(c)}
 function mfDel(c){if(!mf[c])return;mf[c]=0;const i=mfi[c],l=mfl.pop();if(l!==c){mfl[i]=l;mfi[l]=i}}
 function mfRebuild(){for(const c of mfl)mf[c]=0;mfl.length=0;for(let c=0;c<MNC;c++)if(mnIsF(c))mfAdd(c);mE.fd=false}
@@ -8942,7 +8944,7 @@ const mnN4=c=>{const x=c%MW,r=[];if(c>=MW)r.push(c-MW);if(c<MNC-MW)r.push(c+MW);
 // change one cell, keeping the layer counts, the frontier, the light and the picture up to date
 function mnSet(c,v){const was=mClr(c),y=(c/MW)|0;mg[c]=v;const now_=mClr(c);if(was!==now_)mcnt[(y/MSTR)|0]+=now_?1:-1;
   mE.dirty.add(c);for(const n of mnN4(c)){mE.dirty.add(n);if(mnIsF(n))mfAdd(n)}if(mf[c]&&!mnIsF(c))mfDel(c);else if(mnIsF(c))mfAdd(c);mE.fogD=true}
-function mnDiscover(c0){const st=[c0];let k=0;while(st.length&&k++<MNC){const c=st.pop();if(!(mg[c]&32))continue;mg[c]&=~32;mE.dirty.add(c);for(const n of mnN4(c)){if(mg[n]&32)st.push(n);else if(mnIsF(n))mfAdd(n)}}mE.fd=true;mE.fogD=true;mnGlowList()}
+function mnDiscover(c0){const st=[c0];let k=0;while(st.length&&k++<MNC){const c=st.pop();if(!(mg[c]&32))continue;mg[c]&=~32;if((mg[c]&15)===M_AGUA)mg[c]|=64;mE.dirty.add(c);for(const n of mnN4(c)){if(mg[n]&32)st.push(n);else if(mnIsF(n))mfAdd(n)}}mE.fd=true;mE.fogD=true;mnGlowList()}
 function mnXp(n){const M=S.mina;M.xp+=n;let g=0;while(M.xp>=mnNeed(M.lv)&&g++<200){M.xp-=mnNeed(M.lv);M.lv++;mnLevelUp()}}
 function mnLevelUp(){const M=S.mina;M.ru+=M.lv;M.st.ru+=M.lv;if(M.lv%10===0)addEm(1,'mina'+M.lv);if(!MNR)return;SND.play('level');toast(M.lv%10===0?_t('Mina nível {0} · +{1} rubis e 1 gema',M.lv,M.lv):_t('Mina nível {0} · +{1} rubis',M.lv,M.lv),'lvl');mnFx.levelUp()}
 // a chest or a find comes free: the whole 3x3 opens
@@ -8957,7 +8959,7 @@ function mnGetItem(it,bg,x,y){const M=S.mina,isNew=!M.coll[it.id];M.coll[it.id]=
    garden as well, and a little while it is closed (only for the first 24 hours) */
 let MNR=false;
 const mnOffRate=()=>.2+.01*S.mina.up.noi;
-let mnAcc=0,mnCAt=0,mnMossT=6,mnRainT=0,mnEvapT=12,mnSaveT=0,mnVeinT=200;
+let mnDrT=.8,mnAcc=0,mnCAt=0,mnMossT=6,mnRainT=0,mnEvapT=12,mnSaveT=0,mnVeinT=200;
 const mnRW=[];
 function mnRateFeed(v){const t=performance.now();mnRW.push([t,v]);while(mnRW.length&&t-mnRW[0][0]>12000)mnRW.shift()}
 const mnRateNow=()=>{if(mnRW.length<2)return mnRate();const s=mnRW.reduce((a,x)=>a+x[1],0),dt=Math.max(4,(performance.now()-mnRW[0][0])/1000);return Math.max(mnRate(),s/dt)};
@@ -8971,6 +8973,7 @@ function mnTick(dt){const M=S&&S.mina;if(!M||!M.on||visiting||titleShown)return;
   M.t=t;
   if(mE.tnt){mE.tnt.t+=dt;if(mE.tnt.t>=1.3){const c=mE.tnt.c;mE.tnt=null;mnTntBoom(mnIsF(c)?c:-1,!MNR)}}
   if(mE.ca){mnCAt+=dt;if(mnCAt>=.06){mnCAt=0;if(!mnCA())mE.ca=false}}
+  if(mE.nat>0){mnDrT-=dt;for(let k=0;mnDrT<=0&&k<20;k++){mnDrT+=.11;mnDrain()}}else mnDrT=.8;
   mnMossT-=dt;if(mnMossT<=0){mnMossT=5+rnd()*5;mnMoss(1)}
   if(MNR){
     if(env&&env.wx==='rain'){mnRainT-=dt;if(mnRainT<=0){mnRainT=2.2+rnd()*2;mnRainDrop()}}
@@ -8993,7 +8996,7 @@ function mnTntBoom(c,bg){const M=S.mina;if(c<0)c=mnPick();if(c<0)return 0;M.st.t
   if(!bg){mnFx.boom(cx,cy,R,n);SND.play('boom')}dirtySave=true;return n}
 // sand and gravel fall into the hole; water runs and settles; lava creeps, and where it meets water it turns into obsidian
 const mnSink=c=>c>=0&&c<MNC&&!mo[c]&&mClr(c);
-function mnSwap(a,b){const va=mg[a]&15,vb=mg[b]&15;mnSet(a,vb);mnSet(b,va);if(mE.tgt===a||mE.tgt===b){mE.tgt=-1;mE.dmg=0}}
+function mnSwap(a,b){const va=mg[a]&79,vb=mg[b]&79;mnSet(a,vb);mnSet(b,va);if(mE.tgt===a||mE.tgt===b){mE.tgt=-1;mE.dmg=0}}
 function mnCA(){let mv=false;const N=mE.caN=(mE.caN|0)+1;
   for(let y=MH-2;y>=0;y--){const dir=(N+y)&1;for(let i=0;i<MW;i++){const x=dir?i:MW-1-i,c=y*MW+x,m=mg[c]&15;if(!m||mo[c]||(mg[c]&32))continue;const A=MM[m];
     if(A.fall){const b=c+MW;if(mnSink(b)){mnSwap(c,b);mv=true;continue}
@@ -9001,10 +9004,13 @@ function mnCA(){let mv=false;const N=mE.caN=(mE.caN|0)+1;
     else if(A.liq){if(A.liq===2&&N%3)continue;
       if(m===M_LAVA){let hit=false;for(const n of mnN4(c))if((mg[n]&15)===M_AGUA&&!(mg[n]&32)){mnSet(n,0);hit=true}if(hit){mnSet(c,M_OBSI);if(MNR)mnFx.steam(x,y);mv=true;continue}}
       const b=c+MW;if((mg[b]&15)===0&&!mo[b]&&!(mg[b]&32)){mnSwap(c,b);mv=true;continue}
-      const up=y>0&&mLiq(mg[c-MW]&15);for(const dx of dir?[1,-1]:[-1,1]){const xx=x+dx;if(xx<0||xx>=MW)continue;const n=c+dx;if(mg[n]!==0||mo[n])continue;const ox=x-dx,op=ox>=0&&ox<MW&&mLiq(mg[c-dx]&15);
-        if(mg[n+MW]===0||up||op){mnSwap(c,n);mv=true;break}}}
+      const up=y>0&&mLiq(mg[c-MW]&15);for(const dx of dir?[1,-1]:[-1,1]){const xx=x+dx;if(xx<0||xx>=MW)continue;const n=c+dx;if(mg[n]!==0||mo[n])continue;
+        if(mg[n+MW]===0||up){mnSwap(c,n);mv=true;break}}}
   }}
   if(mv)mnGlowList();return mv}
+// the water of the river, once dug out, runs away little by little: the level goes down from the top
+function mnDrain(){let best=-1,by=MH,n=0;for(let c=0;c<MNC;c++){const v=mg[c];if((v&15)!==M_AGUA||!(v&64)||(v&32))continue;if(c>=MW&&mLiq(mg[c-MW]&15))continue;const y=(c/MW)|0;if(y<by){by=y;best=c;n=1}else if(y===by&&rnd()*++n<1)best=c}
+  if(best<0){mE.nat=0;return}mnSet(best,0);mE.nat--;mE.wat--;mE.ca=true;if(MNR)mnFx.drain(best%MW,(best/MW)|0)}
 // moss creeps over the walls of the hole, in the colours you have opened in the garden
 function mnMoss(n){if(mE.fd)mfRebuild();if(!mfl.length)return;for(let k=0;k<n;k++){const c=mfl[(rnd()*mfl.length)|0],m=mg[c]&15;if(!m||mLiq(m)||(mg[c]&16)||mo[c])continue;mg[c]|=16;S.mina.st.musgo++;mE.dirty.add(c)}}
 // real rain where the player is: drops run into the hole and make puddles; with no rain they dry up slowly
@@ -9024,7 +9030,7 @@ function mnAway(sec){const M=S&&S.mina;if(!M||!M.on)return null;if(mE.loaded!==M
   const r=mnOffRate(),pr0=M.pr,px0=M.st.pix,ru0=M.ru;
   if(M.up.tnt){const n=Math.min(400,Math.floor(sec*r/mnTntIv(M.up.tnt)));for(let i=0;i<n;i++){if(M.pend.includes(M.p))mnDescend(true);mnTntBoom(-1,true)}M.tntAt=now()+mnTntIv(M.up.tnt)*1000}
   let h=mnAjRate(M.up.aj)*mnPw()*r*sec;for(let g=0;h>0&&g<60;g++){if(M.pend.includes(M.p))mnDescend(true);const h0=h;h=mnHit(h,'auto',true);if(h>=h0)break}
-  mnMoss(Math.min(200,Math.floor(sec/9)));while(mE.ca&&mnCA()){}mE.ca=false;M.t=now();mnSave();dirtySave=true;
+  mnMoss(Math.min(200,Math.floor(sec/9)));for(let g=0;mE.nat>0&&g<MNC;g++)mnDrain();for(let g=0;mE.ca&&g<400;g++)if(!mnCA())break;mE.ca=false;M.t=now();mnSave();dirtySave=true;
   return{pix:M.st.pix-px0,pr:M.pr-pr0,ru:M.ru-ru0,sec}}
 // a phase dug to the bottom: a trophy (the first time), rubies and a good chest, then down to the next one
 function mnPhaseDone(bg){const M=S.mina,p=M.p;if(M.pend.includes(p))return;M.pend.push(p);const first=!M.tro.includes(p);if(first)M.tro.push(p);
@@ -9139,21 +9145,24 @@ const MNSPR=new Map();
 function mnSpr(key,map,pal){let c=MNSPR.get(key);if(c)return c;c=document.createElement('canvas');const w=Math.max(...map.map(r=>r.length)),h=map.length;c.width=w;c.height=h;const X=c.getContext('2d');
   for(let y=0;y<h;y++)for(let x=0;x<map[y].length;x++){const ch=map[y][x];if(ch==='.'||!pal[ch])continue;X.fillStyle=pal[ch];X.fillRect(x,y,1,1)}MNSPR.set(key,c);return c}
 // the pickaxe in the hand: three frames of the swing, coloured by its strength (or the skin)
-const MN_PKF=[['....hh.','...hmmh','..k.mh.','.k...h.','k......'],['.......','.hmmmh.','h..k..h','...k...','...k...'],['h......','hm..k..','.hmk...','..k....','.k.....']];
-function mnPkPal(t,R){const M=S.mina,K=MSK.find(s=>s.id===M.sk),P=K?K.pal:MPK[t].pal;return{h:P[0],m:P[2],k:'#8a5a30',H:P[1]}}
-function mnPickSvg(t,R){const P=mnPkPal(t,R),RR=R||S.mina.rar;return pxsvg(IC.pick[0],{...IC.pick[1],m:P.m,h:P.h,M:P.h},RR?'chr0':'')}
+function mnPkCols(t){const K=MSK.find(s=>s.id===S.mina.sk);return K?{m:K.pal[2],M:K.pal[1],w:K.pal[0]}:{m:MPK[t].pal[2],M:MPK[t].pal[1]}}
+function mnPickSvg(t,R){return pxsvg(IC.pick[0],{...IC.pick[1],...mnPkCols(t)},(R||S.mina.rar)?'chr0':'')}
+const mnPkCv=()=>mnSpr('pkc'+S.mina.pk+S.mina.sk,IC.pick[0],{...IC.pick[1],...mnPkCols(S.mina.pk)});
+// the pickaxe drawn with the end of its handle at (px,py), turned by ang (0 points up), mirrored when facing left
+function mnPkDraw(px,py,ang,fl,sc,al){const c=mnPkCv(),s=sc||.8;lowX.save();lowX.translate(px,py);if(fl)lowX.scale(-1,1);lowX.rotate(ang);if(al!=null)lowX.globalAlpha=al;lowX.drawImage(c,-4.5*s,-8.6*s,9*s,9*s);lowX.restore()}
+function mnDrawAutoPk(){const h=autoH;if(h.show<=0||!S.auto)return;mnPkDraw(h.x+3,h.y+6,h.press>0?.2:-.5,false,1.15,h.show*.95)}
 /* the little miner: the same gardener, with a helmet and a lamp. It walks down into the hole once there is room, hanging from the rope */
 const MAV={x:0,y:MY0,tx:0,ty:MY0,fl:false,sw:0,at:0,look:0};
-function mnSwing(k){MAV.sw=.28;if(k)MAV.at=performance.now()}
+function mnSwing(k){if(MAV.sw<=.04)MAV.sw=.28;if(k)MAV.at=performance.now()}
 function mnStand(){const M=S.mina,t=mE.tgt>=0?mE.tgt:mE.lastC|0,tx=t%MW,ty=(t/MW)|0;let best=null,bs=1e9;
-  const air=(x,y)=>x>=0&&x<MW&&y>=0&&y<MH&&mClr(y*MW+x)&&!(mg[y*MW+x]&32),solid=(x,y)=>y>=MH||(x>=0&&x<MW&&!mClr(y*MW+x));
+  const air=(x,y)=>x>=0&&x<MW&&y>=0&&y<MH&&mg[y*MW+x]===0,solid=(x,y)=>y>=MH||(x>=0&&x<MW&&!mClr(y*MW+x));
   for(let x=Math.max(0,tx-14);x<=Math.min(MW-4,tx+14);x++){for(let y=Math.min(MH-1,ty+6);y>=Math.max(9,ty-12);y--){if(!solid(x,y+1)&&!solid(x+3,y+1))continue;if(!solid(x+1,y+1)&&!solid(x+2,y+1))continue;
       let ok=true;for(let j=0;j<10&&ok;j++)for(let i=0;i<4;i++)if(!air(x+i,y-j)){ok=false;break}if(!ok)continue;const sc=Math.abs(x+2-tx)*1.3+Math.abs(y-ty)*.6;if(sc<bs){bs=sc;best=[MX0+(x+2)*MCS,MY0+(y+1)*MCS]}break}}
   if(best)return best;const ex=MX0+M.ex*MCS+1;return[ex+(tx<M.ex?-14:14),MY0]}
 function mnDrawAv(dt){const M=S.mina;if(!(MAV.tAt>0)||performance.now()-MAV.tAt>600){MAV.tAt=performance.now();const[x,y]=mnStand();if(Math.abs(x-MAV.tx)+Math.abs(y-MAV.ty)>10||MAV.y===MY0&&y!==MY0){MAV.tx=x;MAV.ty=y}}
   if(!MAV.x){MAV.x=MAV.tx;MAV.y=MAV.ty}const k=Math.min(1,dt*(RM?6:2.6));MAV.x+=(MAV.tx-MAV.x)*k;MAV.y+=(MAV.ty-MAV.y)*k;
   const tc=mE.tgt>=0?mE.tgt:-1;if(tc>=0){const gx=MX0+(tc%MW)*MCS;MAV.fl=gx<MAV.x}
-  if(MAV.sw>0)MAV.sw-=dt;const sw=MAV.sw>0?Math.floor((.28-MAV.sw)/.28*3)%3:-1;
+  if(MAV.sw>0)MAV.sw-=dt;
   const o=avCompose(S.av.look,'walkA',{noHat:true}),ax=Math.round(MAV.x),ay=Math.round(MAV.y),x0=ax-7,y0=ay-19,lt=mnDark()?[.92,.88,.8]:[1,1,1];
   // the rope from the pulley down to the miner
   if(ay>MY0+3){const rx=MX0+M.ex*MCS+1.5;lowX.fillStyle='rgba(200,170,120,.85)';const steps=Math.max(4,Math.round(Math.hypot(ax-rx,ay-20-(MY0-24))));for(let i=0;i<=steps;i++){const u=i/steps;lowX.fillRect(rx+(ax-rx)*u,MY0-23+(ay-20-(MY0-23))*u,.5,.5)}}
@@ -9163,9 +9172,9 @@ function mnDrawAv(dt){const M=S.mina;if(!(MAV.tAt>0)||performance.now()-MAV.tAt>
   const hx=MAV.fl?x0+4:x0+3,hy=y0+7;lowX.fillStyle='#c9921e';lowX.fillRect(hx,hy,8,1.5);lowX.fillStyle='#f4c54f';lowX.fillRect(hx+1,hy-1.5,6,2);lowX.fillStyle='#fff3b8';lowX.fillRect(hx+2,hy-1.5,2,.5);
   lowX.fillStyle='#8a5a0a';lowX.fillRect(MAV.fl?hx-1:hx+1,hy+1,8,.5);const lx=MAV.fl?hx-.5:hx+7;lowX.fillStyle='#fffbe0';lowX.fillRect(lx,hy-.5,1.5,1.5);
   if(mnDark()){lowX.save();lowX.globalCompositeOperation='lighter';const g=lowX.createRadialGradient(lx,hy,1,lx+(MAV.fl?-10:10),hy+4,22);g.addColorStop(0,'rgba(255,240,190,.32)');g.addColorStop(1,'rgba(255,240,190,0)');lowX.fillStyle=g;lowX.fillRect(lx-26,hy-20,52,44);lowX.restore()}
-  // the pickaxe
-  const F=MN_PKF[sw<0?1:sw],P=mnPkPal(M.pk),pal={h:P.h,m:P.m,k:P.k},sp=mnSpr('pk'+M.pk+M.sk+(MAV.fl?1:0)+(sw<0?1:sw),MAV.fl?F.map(r=>r.split('').reverse().join('')):F,pal);
-  lowX.drawImage(sp,MAV.fl?x0+1:x0+9,y0+9+(sw===2?1:0),7,5)}
+  // the pickaxe in the hand: resting forward, lifted behind the head, then down on the rock
+  let ang;if(MAV.sw>0){const u=(.28-MAV.sw)/.28;ang=u<.4?.6-u/.4*2:-1.4+(u-.4)/.6*2.7}else ang=.6+(RM?0:Math.sin(performance.now()/700)*.05);
+  mnPkDraw(MAV.fl?x0+6.5:x0+8.5,y0+15,ang,MAV.fl,.8)}
 /* effects */
 const mnP=[];let mnShake=0,mnFlash=0,mnDesc=0;
 const mnFx={
@@ -9180,6 +9189,7 @@ const mnFx={
     for(let i=0;i<(RM?16:44);i++){const a=rnd()*6.3,s=20+rnd()*70;mnP.push({x:wx,y:wy,vx:Math.cos(a)*s,vy:Math.sin(a)*s-20,g:80,t:0,life:.6+rnd()*.8,c:rnd()<.35?[255,190,80]:rnd()<.5?[255,120,40]:[120,110,100],glow:rnd()<.4?1:0,sz:rnd()<.4?1:.5})}
     for(let i=0;i<(RM?4:12);i++)mnP.push({x:wx+(rnd()-.5)*R*3,y:wy+(rnd()-.5)*R*3,vx:(rnd()-.5)*8,vy:-6-rnd()*6,g:-4,t:0,life:1.6+rnd(),c:[90,86,84],smoke:1,sz:2})},
   steam(x,y){const wx=MX0+x*MCS+1,wy=MY0+y*MCS;for(let i=0;i<5;i++)mnP.push({x:wx,y:wy,vx:(rnd()-.5)*6,vy:-8-rnd()*8,g:-4,t:0,life:1.2,c:[220,225,235],smoke:1,sz:1.5})},
+  drain(x,y){const wx=MX0+x*MCS+1,wy=MY0+y*MCS;for(let i=0;i<2;i++)mnP.push({x:wx+(rnd()-.5)*2,y:wy,vx:(rnd()-.5)*6,vy:-4-rnd()*6,g:-2,t:0,life:.9,c:[200,225,240],smoke:1,sz:1});mnP.push({x:wx,y:wy+1,vx:0,vy:14,g:30,t:0,life:.35,c:[120,190,230],sz:.5})},
   drip(x,y){mnP.push({x:MX0+x*MCS+1,y:MY0+y*MCS,vx:0,vy:20,g:0,t:0,life:.25,c:[160,210,240],sz:.5})},
   gain(v,xy){const wx=MX0+xy[0]*MCS+1,wy=MY0+xy[1]*MCS;if(uiBlocked(wx,wy-6,2))return;const[px,py]=toScreen(wx,wy-5);floatNum(px,py,'+'+fmt(v),'mnpr')},
   vein(cells){for(const c of cells){const wx=MX0+(c%MW)*MCS+1,wy=MY0+((c/MW)|0)*MCS+1;for(let i=0;i<10;i++){const a=rnd()*6.3,s=10+rnd()*30;mnP.push({x:wx,y:wy,vx:Math.cos(a)*s,vy:Math.sin(a)*s-14,g:30,t:0,life:1+rnd()*.5,c:rnd()<.5?[255,214,96]:[255,246,200],glow:1,sz:.5})}}mnFlash=.25},
@@ -9232,7 +9242,7 @@ function mnDraw(){const M=S.mina,t=performance.now(),dt=Math.min(.1,(t-(mnLastDr
   else{const g=lowX.createLinearGradient(0,MY0,0,H);g.addColorStop(0,'rgba(0,0,0,0)');g.addColorStop(1,'rgba(0,0,0,.2)');lowX.fillStyle=g;lowX.fillRect(0,MY0,W,H-MY0)}
   for(const p of mnP){const a=1-p.t/p.life;if(p.smoke){lowX.fillStyle=css(p.c,.35*a);lowX.fillRect(p.x-p.sz/2,p.y-p.sz/2,p.sz,p.sz);continue}lowX.fillStyle=css(p.c,Math.min(1,a*1.6));lowX.fillRect(p.x,p.y,p.sz||.5,p.sz||.5)}
   if(mE.lift){const L=mE.lift,u=Math.min(1,L.t/1.4),y=L.y-u*14;lowX.globalAlpha=1-Math.max(0,(u-.7)/.3);lowX.drawImage(mnSpr('it'+L.it.id,L.it.map,L.it.pal),L.x-3,y-3,6,6);lowX.globalAlpha=1}
-  drawAutoHand();
+  mnDrawAutoPk();
   if(mnFlash>0){lowX.fillStyle=`rgba(255,240,200,${Math.min(.6,mnFlash)*.5})`;lowX.fillRect(0,0,W,H)}
   if(mnDesc>0){lowX.fillStyle=`rgba(4,5,8,${Math.min(1,mnDesc*1.3)})`;lowX.fillRect(0,0,W,H)}
   const sx=mnShake>0?(rnd()-.5)*2*mnShake*4:0,sy=mnShake>0?(rnd()-.5)*2*mnShake*4:0;
@@ -9267,7 +9277,7 @@ function mnOpen(){if(!mnOpenOk()||visiting||titleShown)return;const M=S.mina;if(
   if(!M.seen){M.seen=1;setTimeout(mnIntro,500)}
   ev('mina','abrir');htmlCache.clear();hud()}
 function mnClose(){if(!MNR)return;MNR=false;$('#app').classList.remove('minemode');mnSave();saveLocal();mE.tnt=null;
-  $('#icCoin').innerHTML=icon('coin');$('#icGem').innerHTML=icon('gem');$('#icCoin')._mn=0;htmlCache.clear();uiR=null;hud()}
+  $('#icCoin').innerHTML=icon('coin');$('#icGem').innerHTML=icon('gem');$('#icCoin')._mn=0;$('#icAuto').innerHTML=icon('autoHand');$('#icAuto')._mn=null;htmlCache.clear();uiR=null;hud()}
 function mnIntro(){if(!MNR)return;showModal(`<div class="reveal ms" style="--rc:#c8a070"><div class="it">${icon('helmet')}</div><div class="rn">${_t('Mina')}</div><h3>${_t('Bem-vindo à mina')}</h3><ul class="gl msl">
   <li>${icon('pick')}<span>${_t('Toca em qualquer lado para dar golpes. A terra parte-se sozinha à volta do buraco, camada a camada.')}</span></li>
   <li>${icon('mole')}<span>${_t('Os ajudantes e a TNT escavam por ti, mesmo quando estás no jardim.')}</span></li>
@@ -9288,7 +9298,7 @@ function mnHud(){const M=S.mina,t=now();
   {const b=$('#mnBau'),n=M.bq.length;b.classList.toggle('hidden',!n);b.classList.toggle('ready',n>0);b.classList.toggle('has-badge',n>1);setH('#mnBauN',String(n>99?'99+':n));if(n){const r=M.bq[0];if(b._r!==r){b._r=r;$('#icMnBau').innerHTML=pxsvg(CH_S,CHEST_PAL[r]||CHEST_PAL[0])}}}
   {const b=$('#mnTnt'),on=M.up.tnt>0;b.classList.toggle('hidden',!on);if(on){const left=Math.max(0,M.tntAt-t);b.classList.toggle('ready',left<1500||!!mE.tnt);setH('#mnTntL',mE.tnt?'':pxNum(mmss(left/1000)))}}
   {const b=$('#mnBro'),act=t<M.bro,cd=t<M.broCd;b.classList.toggle('on',act);b.classList.toggle('cool',!act&&cd);b.classList.toggle('ready',!act&&!cd);setH('#mnBroL',act?pxNum(mmss((M.bro-t)/1000)):cd?pxNum(shortTime(M.broCd-t)):'')}
-  {const ab=$('#autoB'),on=!!S.auto;ab.classList.toggle('on',on);ab.setAttribute('aria-pressed',String(on))}
+  {const ab=$('#autoB'),on=!!S.auto,k=M.pk+M.sk;ab.classList.toggle('on',on);ab.setAttribute('aria-pressed',String(on));if($('#icAuto')._mn!==k){$('#icAuto')._mn=k;$('#icAuto').innerHTML=mnPickSvg(M.pk)}}
   $('#mnDesc').classList.toggle('hidden',!M.pend.includes(M.p)||modalOn);if(M.pend.includes(M.p))setH('#mnDesc',`${icon('layers')}<span>${_t('Descer para a fase {0}',M.p+2)}</span>`);
   const nx=MPK[M.pk+1];$('#bmPk').classList.toggle('has-dot',!!nx&&(nx.em?false:M.pr>=nx.c));
   $('#bmUp').classList.toggle('has-dot',MUP.some(u=>M.up[u.id]<u.max&&M.pr>=u.cost(M.up[u.id]))||MRP.some(u=>M.rp[u.id]<u.max&&M.ru>=u.cost(M.rp[u.id])));
@@ -9334,7 +9344,7 @@ function mnSheetPk(){const M=S.mina,t=M.pk,mx=t>=MPK.length-1,nx=mx?null:MPK[t+1
   else h+=`<p class="note">${_t('Sai nos baús da mina. Não muda a força: junta um efeito, e quanto mais rara mais forte.')}</p>`;
   M.inv.forEach((R,i)=>{h+=`<div class="item" style="--rc:${RC[R.r]}"><span class="ico">${mnPickSvg(t,R)}</span><span class="meta"><h3 style="color:${RC[R.r]}">${mnRarName(R)}</h3><p>${MRE[R.e].t(R.r)}</p></span><span class="mnbt"><button class="btn gold" data-mn="eq:${i}">${_t('Usar')}</button><button class="btn ghost" data-mn="melt:${i}">${icon('rubi')}${NM('+'+[1,2,4,8,15,30][R.r],'xs')}</button></span></div>`});
   if(M.inv.length)h+=`<p class="note">${_t('{0} de 12 na mochila. Derreter dá rubis.',M.inv.length)}</p>`;
-  h+=`<h4 class="sub">${_t('Aspeto')}</h4><div class="item ${M.sk?'':'sel'}"><span class="ico">${pxsvg(IC.pick[0],{...IC.pick[1],m:MPK[t].pal[2],M:MPK[t].pal[0]})}</span><span class="meta"><h3>${_t('Normal')}</h3><p>${_t('A cor do metal da picareta.')}</p></span>${M.sk?`<button class="btn ghost" data-mn="sk:">${_t('Usar')}</button>`:`<span class="tag">${_t('Em uso')}</span>`}</div>`;
+  h+=`<h4 class="sub">${_t('Aspeto')}</h4><div class="item ${M.sk?'':'sel'}"><span class="ico">${pxsvg(IC.pick[0],{...IC.pick[1],m:MPK[t].pal[2],M:MPK[t].pal[1]})}</span><span class="meta"><h3>${_t('Normal')}</h3><p>${_t('A cor do metal da picareta.')}</p></span>${M.sk?`<button class="btn ghost" data-mn="sk:">${_t('Usar')}</button>`:`<span class="tag">${_t('Em uso')}</span>`}</div>`;
   for(const K of MSK){const own=M.skins[K.id],on=M.sk===K.id;h+=`<div class="item ${on?'sel':''}"><span class="ico">${pxsvg(IC.pick[0],{...IC.pick[1],m:K.pal[2],M:K.pal[1],w:K.pal[0]})}</span><span class="meta"><h3>${_t('Picareta {0}',K.nome)}</h3><p>${_t('Só o aspeto e a cor do pó.')}</p></span>${on?`<span class="tag">${_t('Em uso')}</span>`:own?`<button class="btn ghost" data-mn="sk:${K.id}">${_t('Usar')}</button>`:mnBtnEm(K.em,'sk:'+K.id,(S.em||0)>=K.em)}</div>`}
   return[_t('Picareta'),h]}
 function mnSheetUp(){const M=S.mina,t=now();let h=`<div class="bonus">${icon('prata')}<div><b>${_t('+{0}% de prata',Math.round((mnPrMul()-1)*100))}</b><p>${_t('Do nível da mina, dos troféus, da coleção e do jardim.')}</p></div></div>`;
@@ -9443,7 +9453,7 @@ function frame(t){
   tick(dt);draw();guideTick();
 }
 /* versões novas: quando o jogo muda no servidor, guarda o progresso e recarrega a página */
-const BUILD='9f3498f8f62b',UKEY='tapmoss.upd';const UPD={on:false,go:false,at:0};
+const BUILD='4eb5d3d1d632',UKEY='tapmoss.upd';const UPD={on:false,go:false,at:0};
 async function checkUpdate(){
   if(BUILD.startsWith('__')||UPD.on||document.hidden||!navigator.onLine||!/^https?:$/.test(location.protocol)||window.claude)return;
   const t=performance.now();if(t-UPD.at<15000)return;UPD.at=t;
