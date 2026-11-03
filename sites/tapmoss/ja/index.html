@@ -1683,7 +1683,7 @@ const WXM={clear:1,cloudy:1.15,rain:1.5};
 /* ============ pixel icons & sprites ============ */
 // small pictures (icons, finds, flowers, visitors, portraits) get the same double-resolution smoothing and soft light as the scene
 const SVGHD=new Map(),HDG=new Map();
-const shadeRgb=(c,s)=>s===1?[c[0]+(255-c[0])*.16,c[1]+(255-c[1])*.16,c[2]+(255-c[2])*.16]:s===-1?[c[0]*.8,c[1]*.8,c[2]*.82]:s===2?[c[0]*.3,c[1]*.3,c[2]*.32]:c;
+const shadeRgb=(c,s)=>s===1?[c[0]+(255-c[0])*.16,c[1]+(255-c[1])*.16,c[2]+(255-c[2])*.16]:s===-1?[c[0]*.8,c[1]*.8,c[2]*.82]:s===2?[c[0]*.4,c[1]*.4,c[2]*.44]:c;
 function pxsvg(map,P,cls){
   if(map.__hi&&!(cls&&cls.includes('lo'))){const o=map.__hi,sl=P&&Object.values(P).every(v=>v==='#2a382c');return pxsvg(o.map,sl?sil(o.map):o.pal,(cls||'')+' nohd')}
   const h=map.length,w=Math.max(...map.map(r=>r.length));
@@ -2673,9 +2673,9 @@ function avHi(g,pal,look,v,hx,hy,top){
     if(c==='C'&&(x+y)%2===0)put(x,y,'c');
     if(c==='n'&&x%2===0)put(x,y,add('nl','#fff3b8'));
     if(c==='J'&&H0[y-1]&&H0[y-1][x]!=='J')put(x,y,add('Jl','#f0d090'))}
-  // the outline: one thin dark line all round
+  // no outline: a soft shadow just below and to the right, so the figure still reads on the moss
   const out=G.map(r=>r.slice());
-  for(let y=0;y<H2;y++)for(let x=0;x<W2;x++){if(G[y][x]!=='.')continue;if((y>0&&G[y-1][x]!=='.')||(y<H2-1&&G[y+1][x]!=='.')||(x>0&&G[y][x-1]!=='.')||(x<W2-1&&G[y][x+1]!=='.'))out[y][x]='k'}
+  for(let y=0;y<H2;y++)for(let x=0;x<W2;x++){if(G[y][x]!=='.')continue;if((y>0&&G[y-1][x]!=='.')||(x>0&&G[y][x-1]!=='.'))out[y][x]='k'}
   // one character per colour
   const P2={...pal,...PX},ch={},hexOf={};let n=0;const enc=k=>{if(k==='.')return'.';if(ch[k])return ch[k];const c=String.fromCharCode(0x200+n++);ch[k]=c;hexOf[c]=P2[k]||'#ff00ff';return c};
   const map=out.map(r=>r.map(enc).join('')),rgb={};
@@ -2741,13 +2741,13 @@ function avCompose(look,pose,o){
   }
   if(o.blink)for(let y=0;y<GH;y++)for(let x=0;x<GW;x++)if(g[y][x]==='E')g[y][x]='e';
   if(v==='l'&&!o.awake)for(let y=0;y<GH;y++)for(let x=0;x<GW;x++)if(g[y][x]==='E')g[y][x]='e';
-  // outline
+  // a soft shadow below and to the right, no outline
   const out=g.map(r=>r.slice());
-  for(let y=0;y<GH;y++)for(let x=0;x<GW;x++){if(g[y][x]!=='.')continue;let n=false;for(const[a,b]of[[1,0],[-1,0],[0,1],[0,-1]]){const yy=y+b,xx=x+a;if(yy>=0&&yy<GH&&xx>=0&&xx<GW&&g[yy][xx]!=='.'){n=true;break}}if(n)out[y][x]='k'}
+  for(let y=0;y<GH;y++)for(let x=0;x<GW;x++){if(g[y][x]!=='.')continue;let n=false;for(const[a,b]of[[-1,0],[0,-1]]){const yy=y+b,xx=x+a;if(yy>=0&&yy<GH&&xx>=0&&xx<GW&&g[yy][xx]!=='.'){n=true;break}}if(n)out[y][x]='k'}
   const sk=AVSKIN[look.skin]||AVSKIN[0],hp=HATPAL[look.hat]||{},tc=look.tc,pc=look.pc;
   const pal={H:look.hc,h:shadeHex(look.hc,.72),S:sk[0],s:sk[1],E:look.ec||'#1b1512',e:shadeHex(sk[1],.82),K:'#e8907a',T:tc,t:shadeHex(tc,.8),q:shadeHex(tc,.62),r:'#efe4c8',P:pc,p:shadeHex(pc,.75),O:look.sc||'#2e2420',
     B:'#8a3a2a',b:'#f3ead2',F:'#c9a060',W:'#7a8a92',w:'#4a5a62',L:'#4f8a34',l:'#2f5e24',C:'#d23a4e',c:'#a0283a',G:'#1b1512',g:'#3a4a5a',U:'#a06a3a',u:'#6a4424',V:'#a0283a',v:'#701a28',
-    n:'#e8c060',N:'#ef5a7f',J:'#c8963a',j:'#9a6a2a',D:'#d23a4e',d:'#8a1a2a',I:'#e4f3fb',i:'#9ac8e0',Y:'#f4c54f',y:'#b8902e',k:'rgba(16,14,10,.82)',M:'#fffbe6'};
+    n:'#e8c060',N:'#ef5a7f',J:'#c8963a',j:'#9a6a2a',D:'#d23a4e',d:'#8a1a2a',I:'#e4f3fb',i:'#9ac8e0',Y:'#f4c54f',y:'#b8902e',k:'rgba(16,14,10,.42)',M:'#fffbe6'};
   {const wp=WPAL[acc];if(wp){const q=Array.isArray(wp)?wp[o.wf?1:0]:wp;Object.assign(pal,q)}}
   if(top==='manto'){pal.T='#f6f1e4';pal.t='#dcd2bc';pal.q='#c8bca0'}else if(top==='estelar'){pal.T='#1f2a6a';pal.t='#151d4a';pal.q='#10163a'}linTopPal(top,pal);
   for(const ch in hp)pal['#'+ch]=hp[ch]==='HAIR'?look.hc:hp[ch];
@@ -4009,6 +4009,11 @@ function renderWorld0(){RWV++;
   if(sc.arch){const q=mulberry32(sc.seed+77),bl=[];for(let i=0;i<4;i++)bl.push({x:28+i*34+q()*10,y:-10+q()*6,r:12+q()*7});canopy(bl,sc.seed+77,0)}
   sc._emit=sc._emit.filter(e=>{const j=e[0]<<2;return d[j]===e[1]&&d[j+1]===e[2]&&d[j+2]===e[3]});
   {const e2=new Uint8ClampedArray(W*H*16);epx2(d,W,H,e2);hdEpx(e2,hd,hb);
+    // what is not drawn natively at 4× yet (buildings, the objects of the other worlds) gets a fine grain that follows its material,
+    // so it does not read as flat 4×4 blocks next to the rest
+    for(let Y=0;Y<HK;Y++)for(let X=0;X<WK;X++){const I=Y*WK+X;if(!hb[I])continue;const m=hmt[I],J=I<<2;if(!hd[J+3])continue;
+      const f=1+(m===5?(tn(X*.35,Y*3.2)-.5)*.2+(th(X,Y)-.5)*.05:m===3||m===9?(tn(X*3.2,Y*.35)-.5)*.2:m===2||m===4||m===10||m===11?(tn(X*1.6,Y*1.6)-.5)*.16+(th(X,Y)-.5)*.07:m===7?(tn(X*2.2,Y*2.2)-.5)*.22:m===13||m===8?0:(th(X,Y)-.5)*.07);
+      if(f!==1){hd[J]*=f;hd[J+1]*=f;hd[J+2]*=f}}
     hdLight(hd,hdp,hmt);hdDep.set(hdp);hdMat.set(hmt);for(let I=0,J=0;I<NK;I++,J+=4)hdLum[I]=(hd[J]*77+hd[J+1]*150+hd[J+2]*29)>>8;wbX.putImageData(hImg,0,0)}
   // edges & spots
   const cls=s=>s===2||s===10?2:s===4||s===11?4:s===3||s===9?3:s;
@@ -8715,7 +8720,7 @@ function hdGrid(map){
     const i=(2*y+1)*W2+2*x+1;g[i]=p1;g[i+1]=p2;g[i+W2]=p3;g[i+W2+1]=p4}
   const px=[];const G=(x,y)=>x<0||y<0||x>=W2||y>=H2?'.':g[y*W2+x];
   for(let y=0;y<H2;y++)for(let x=0;x<W2;x++){const ch=G(x,y);
-    if(ch==='.'){const n=G(x,y-1)!=='.'?G(x,y-1):G(x-1,y)!=='.'?G(x-1,y):G(x+1,y)!=='.'?G(x+1,y):G(x,y+1);if(n!=='.')px.push([x,y,n,2]);continue}
+    if(ch==='.'){const n=G(x,y-1)!=='.'?G(x,y-1):G(x-1,y)!=='.'?G(x-1,y):'.';if(n!=='.')px.push([x,y,n,2]);continue}
     const tl=G(x-1,y-1)==='.'||G(x,y-1)==='.',br=G(x+1,y+1)==='.'||G(x,y+1)==='.';px.push([x,y,ch,tl&&!br?1:br&&!tl?-1:0])}
   R={w:W2,h:H2,px};HDG.set(key,R);if(HDG.size>900)HDG.delete(HDG.keys().next().value);return R}
 // sprites in the scene at 4×, like the world: smoothed twice (round corners, clean diagonals), no dark outline; instead each one is lit on its
@@ -10811,7 +10816,7 @@ function frame(t){
   tick(dt);draw();guideTick();
 }
 /* versões novas: quando o jogo muda no servidor, guarda o progresso e recarrega a página */
-const BUILD='ade815bd2622',UKEY='tapmoss.upd';const UPD={on:false,go:false,at:0};
+const BUILD='949064d2e5df',UKEY='tapmoss.upd';const UPD={on:false,go:false,at:0};
 // the new version downloads in the background while the game goes on; the reload only comes once the whole page is here,
 // so a slow network never leaves a half-built page on screen. The offline helper (sw.js) hands this copy over at the reload.
 const NEXTC='tapmoss-next',pgKey=()=>{let p=location.pathname.replace(/index\.html$/,'');if(!p.endsWith('/'))p+='/';return p};
@@ -10840,7 +10845,7 @@ async function checkUpdate(){
   const n=g.v===v&&Date.now()-(g.t||0)<600000?g.n|0:0;
   if(n>=3)return;
   if(UPD.pre!==v&&(UPD.preFail|0)<3){const nv=await updPrefetch(v);if(!nv||UPD.on)return;v=nv}
-  const busy=modalOn||sheetName||PIR||WSPIN||placing||editing||photo||(typeof UB!=='undefined'&&UB.busy);if(busy){UPD.wait=UPD.wait||t;if(t-UPD.wait<240000){UPD.at=t-10000;return}}
+  const busy=t>25000&&(modalOn||sheetName||PIR||WSPIN||placing||editing||photo||(typeof UB!=='undefined'&&UB.busy));if(busy){UPD.wait=UPD.wait||t;if(t-UPD.wait<60000){UPD.at=t-10000;setTimeout(checkUpdate,6000);return}}
   forceUpdate(v,n);
 }
 function forceUpdate(v,n){
@@ -11327,7 +11332,7 @@ requestAnimationFrame(frame);
 setTimeout(cloudInit,50);
 {let g={};try{g=JSON.parse(sessionStorage.getItem(UKEY)||'{}')||{}}catch(e){}if(g.v===BUILD)try{sessionStorage.removeItem(UKEY)}catch(e){}
   const q=new URLSearchParams(location.search);if(q.has('v')){q.delete('v');try{history.replaceState(null,'',location.pathname+(q.toString()?'?'+q:'')+location.hash)}catch(e){}}
-  setTimeout(checkUpdate,8000);setInterval(checkUpdate,90000);updClean()}
+  setTimeout(checkUpdate,3000);setInterval(checkUpdate,45000);updClean()}
 {const b=document.getElementById('boot');if(b)requestAnimationFrame(()=>requestAnimationFrame(()=>{b.classList.add('out');setTimeout(()=>b.remove(),350)}))}
 {const q=new URLSearchParams(location.search),a=q.get('amigo'),l=q.get('ligar'),em=q.get('email'),rec=q.get('r')==='1';
   if(em&&/^[0-9a-f]{48}$/.test(em)&&ONLINE)setTimeout(()=>mailConfirm(em),700);
