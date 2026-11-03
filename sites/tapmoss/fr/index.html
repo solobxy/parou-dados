@@ -2826,9 +2826,9 @@ function hdNat(map){const o=[];map.forEach((row,y)=>{for(let x=0;x<row.length;x+
 // drawn at 4× like the rest of the scene (smoothed, lit on the top-left, a soft shadow instead of an outline), kept in a small canvas
 // per frame of animation; whatever stands in front of the figure is cut out of a scratch copy before it is drawn
 const OCC=new Map(),OCS=document.createElement('canvas');OCS.width=OCS.height=320;const OCX=OCS.getContext('2d');
-function drawHDOcc(map,rgb,x0,y0,w,fl,fy,am,rk,nat){
-  const key=(map.__hk||(map.__hk=map.join('|')))+'|'+(fl?1:0)+'|'+((am[0]*48)|0)+'.'+((am[1]*48)|0)+'.'+((am[2]*48)|0)+'|'+(rk||'')+(nat?'|n':'');let c=OCC.get(key);
-  if(!c){const R=hdUp(map,nat?1:2);c=document.createElement('canvas');c.width=R.w;c.height=R.h;const X=c.getContext('2d');
+function drawHDOcc(map,rgb,x0,y0,w,fl,fy,am,rk,nat,big){
+  const key=(map.__hk||(map.__hk=map.join('|')))+'|'+(fl?1:0)+'|'+((am[0]*48)|0)+'.'+((am[1]*48)|0)+'.'+((am[2]*48)|0)+'|'+(rk||'')+(nat?'|n':'')+(big?'|b':'');let c=OCC.get(key);
+  if(!c){const R=hdUp(map,(nat?1:2)+(big?1:0));c=document.createElement('canvas');c.width=R.w;c.height=R.h;const X=c.getContext('2d');
     for(const[hx,hy,ch,sh]of R.px){const k=rgb[ch];if(!k)continue;const px=fl?R.w-1-hx:hx;
       if(sh===3){X.fillStyle=`rgba(${(k[0]*.18*am[0])|0},${(k[1]*.18*am[1])|0},${(k[2]*.22*am[2])|0},.4)`}else{const q=shade4(k,sh);X.fillStyle=`rgba(${q[0]*am[0]|0},${q[1]*am[1]|0},${q[2]*am[2]|0},${k.length>3?k[3]:1})`}
       X.fillRect(px,hy,1,1)}
@@ -2838,13 +2838,15 @@ function drawHDOcc(map,rgb,x0,y0,w,fl,fy,am,rk,nat){
   const cx0=Math.floor(left),cx1=Math.ceil(left+cw/4),cy0=Math.floor(top),cy1=Math.ceil(top+ch/4);
   for(let cy=cy0;cy<cy1;cy++){if(cy<0||cy>=H)continue;for(let cx=cx0;cx<cx1;cx++){if(cx<0||cx>=W)continue;if(dep[cy*W+cx]>fy)OCX.clearRect((cx-left)*4,(cy-top)*4,4,4)}}
   lowX.drawImage(OCS,0,0,cw,ch,left,top,cw/4,ch/4)}
+// dragons and the mythical ones are far bigger than the gardener
+const PET_BIG=new Set(['dragao','dragaogelo','dragaodourado','dragaovazio','fenix','alicornio','pegaso','unicornio','kitsune']);
 function drawPet(){
   const id=curPet();if(!id||PET.x<0)return;const P=PETS[id],fi=PET.mv?(Math.floor(PET.t*7)%2):2,F=petFrame(P.F[fi],curPch());
-  const hd=P.hd?.5:1,hop=P.fly?-7-(RM?0:Math.round(Math.sin(PET.t*4)*2)):P.hop&&PET.mv&&!RM?-Math.round(Math.abs(Math.sin(PET.t*9))*3):0,fy=Math.round(PET.y),x0=Math.round(PET.x)-Math.round(F.w*hd/2),y0=fy-Math.round(F.h*hd)+2+hop,am=mix(env.amb,[1,1,1],.28);
-  lowX.fillStyle='rgba(10,14,8,.24)';for(let dx=-2;dx<=2;dx++){const x=Math.round(PET.x)+dx,i=(fy+1)*W+x;if(x>=0&&x<W&&fy+1<H&&dep[i]<=fy)lowX.fillRect(x,fy+1,1,1)}
-  drawHDOcc(F.map,F.rgb,x0,y0,F.w*hd,PET.fl,fy,am,F.rk,!!P.hd);
-  {const pa=!visiting&&S&&S.pt&&ptOpen()?ptAct():null,A=accOf(pa);if(A){const an=petAnchor(P),s=P.hd?.5:1,aw=A.om[0].length*s,ah=A.om.length*s,ax=x0+(PET.fl?F.w-1-an[0]:an[0])*hd,ay=y0+an[1]*hd;const[rgb,rk]=accRgb(A);
-    drawHDOcc(A.om,rgb,Math.round((ax-aw/2)*2)/2,Math.round((ay-ah+(A.halo?-1.5:.5*s+.5))*2)/2,aw,PET.fl,fy,am,'a'+A.id+rk,!!P.hd);PET.acc={x:ax,y:ay-ah,A}}else PET.acc=null}
+  const BIG=PET_BIG.has(id)?2:1,hd=(P.hd?.5:1)*BIG,hop=P.fly?-7-(RM?0:Math.round(Math.sin(PET.t*4)*2)):P.hop&&PET.mv&&!RM?-Math.round(Math.abs(Math.sin(PET.t*9))*3):0,fy=Math.round(PET.y),x0=Math.round(PET.x)-Math.round(F.w*hd/2),y0=fy-Math.round(F.h*hd)+2+hop,am=mix(env.amb,[1,1,1],.28);
+  lowX.fillStyle='rgba(10,14,8,.24)';for(let dx=-2*BIG;dx<=2*BIG;dx++){const x=Math.round(PET.x)+dx,i=(fy+1)*W+x;if(x>=0&&x<W&&fy+1<H&&dep[i]<=fy)lowX.fillRect(x,fy+1,1,1)}
+  drawHDOcc(F.map,F.rgb,x0,y0,F.w*hd,PET.fl,fy,am,F.rk,!!P.hd,BIG>1);
+  {const pa=!visiting&&S&&S.pt&&ptOpen()?ptAct():null,A=accOf(pa);if(A){const an=petAnchor(P),s=(P.hd?.5:1)*BIG,aw=A.om[0].length*s,ah=A.om.length*s,ax=x0+(PET.fl?F.w-1-an[0]:an[0])*hd,ay=y0+an[1]*hd;const[rgb,rk]=accRgb(A);
+    drawHDOcc(A.om,rgb,Math.round((ax-aw/2)*2)/2,Math.round((ay-ah+(A.halo?-1.5:.5*s+.5))*2)/2,aw,PET.fl,fy,am,'a'+A.id+rk,!!P.hd,BIG>1);PET.acc={x:ax,y:ay-ah,A}}else PET.acc=null}
   {const tn=performance.now(),dt=Math.min(.05,(tn-(PFX.lt||tn))/1000),c=curPch(),pa=!visiting&&S&&S.pt&&ptOpen()?ptAct():null,A=accOf(pa),bw=F.w*hd,bh=F.h*hd;PFX.lt=tn;
     pfxSpawn(PFX.sc,c,A,PET.acc?[PET.acc.x,PET.acc.y]:null,x0,y0,bw,bh,1,dt,PET.mv,tn/1000);pfxRun(PFX.sc,lowX,dt,1);if(c===7||c===11)pfxOrbit(lowX,x0+bw/2,y0+bh*.55,bw*.75,bh*.35,tn/1000,1)}
 }
@@ -10978,7 +10980,7 @@ function frame(t){
   tick(dt);draw();guideTick();
 }
 /* versões novas: quando o jogo muda no servidor, guarda o progresso e recarrega a página */
-const BUILD='ff30876ac0d1',UKEY='tapmoss.upd';const UPD={on:false,go:false,at:0};
+const BUILD='9285aa197513',UKEY='tapmoss.upd';const UPD={on:false,go:false,at:0};
 // the new version downloads in the background while the game goes on; the reload only comes once the whole page is here,
 // so a slow network never leaves a half-built page on screen. The offline helper (sw.js) hands this copy over at the reload.
 const NEXTC='tapmoss-next',pgKey=()=>{let p=location.pathname.replace(/index\.html$/,'');if(!p.endsWith('/'))p+='/';return p};
