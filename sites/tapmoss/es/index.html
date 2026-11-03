@@ -2822,14 +2822,22 @@ function petTick(dt){
 }
 // pets drawn at double resolution already: every map pixel is half a scene pixel
 function hdNat(map){const o=[];map.forEach((row,y)=>{for(let x=0;x<row.length;x++){const ch=row[x];if(ch!=='.')o.push([x+1,y+1,ch,0])}});return o}
-// the character and the pet, at double resolution, hidden where something stands in front of them
-const OCC=new Map();
+// the character and the pet, hidden where something stands in front of them
+// drawn at 4× like the rest of the scene (smoothed, lit on the top-left, a soft shadow instead of an outline), kept in a small canvas
+// per frame of animation; whatever stands in front of the figure is cut out of a scratch copy before it is drawn
+const OCC=new Map(),OCS=document.createElement('canvas');OCS.width=OCS.height=320;const OCX=OCS.getContext('2d');
 function drawHDOcc(map,rgb,x0,y0,w,fl,fy,am,rk,nat){
-  const key=(map.__hk||(map.__hk=map.join('|')))+'|'+(fl?1:0)+'|'+((am[0]*48)|0)+'.'+((am[1]*48)|0)+'.'+((am[2]*48)|0)+'|'+w+'|'+(rk||'')+(nat?'|n':'');let L=OCC.get(key);
-  if(!L){const R=nat?{px:hdNat(map)}:hdGrid(map);L=[];for(const[hx,hy,ch,sh]of R.px){const k=rgb[ch];if(!k)continue;const c=shadeRgb(k,sh),a=sh===2?.85:(k.length>3?k[3]:1);
-      L.push([fl?w-hx*.5:-.5+hx*.5,-.5+hy*.5,`rgba(${c[0]*am[0]|0},${c[1]*am[1]|0},${c[2]*am[2]|0},${a})`])}
-    L.sort((a,b)=>a[2]<b[2]?-1:a[2]>b[2]?1:0);OCC.set(key,L);if(OCC.size>300)OCC.delete(OCC.keys().next().value)}
-  let last='';for(const[dx,dy,col]of L){const lx=x0+dx,ly=y0+dy,cx=Math.floor(lx+.25),cy=Math.floor(ly+.25);if(cy<0||cy>=H||cx<0||cx>=W||dep[cy*W+cx]>fy)continue;if(col!==last){lowX.fillStyle=col;last=col}lowX.fillRect(lx,ly,.5,.5)}}
+  const key=(map.__hk||(map.__hk=map.join('|')))+'|'+(fl?1:0)+'|'+((am[0]*48)|0)+'.'+((am[1]*48)|0)+'.'+((am[2]*48)|0)+'|'+(rk||'')+(nat?'|n':'');let c=OCC.get(key);
+  if(!c){const R=hdUp(map,nat?1:2);c=document.createElement('canvas');c.width=R.w;c.height=R.h;const X=c.getContext('2d');
+    for(const[hx,hy,ch,sh]of R.px){const k=rgb[ch];if(!k)continue;const px=fl?R.w-1-hx:hx;
+      if(sh===3){X.fillStyle=`rgba(${(k[0]*.18*am[0])|0},${(k[1]*.18*am[1])|0},${(k[2]*.22*am[2])|0},.4)`}else{const q=shade4(k,sh);X.fillStyle=`rgba(${q[0]*am[0]|0},${q[1]*am[1]|0},${q[2]*am[2]|0},${k.length>3?k[3]:1})`}
+      X.fillRect(px,hy,1,1)}
+    OCC.set(key,c);if(OCC.size>300)OCC.delete(OCC.keys().next().value)}
+  const cw=c.width,ch=c.height,left=fl?x0+w+.5-cw/4:x0-.5,top=y0-.5;
+  OCX.clearRect(0,0,cw,ch);OCX.drawImage(c,0,0);
+  const cx0=Math.floor(left),cx1=Math.ceil(left+cw/4),cy0=Math.floor(top),cy1=Math.ceil(top+ch/4);
+  for(let cy=cy0;cy<cy1;cy++){if(cy<0||cy>=H)continue;for(let cx=cx0;cx<cx1;cx++){if(cx<0||cx>=W)continue;if(dep[cy*W+cx]>fy)OCX.clearRect((cx-left)*4,(cy-top)*4,4,4)}}
+  lowX.drawImage(OCS,0,0,cw,ch,left,top,cw/4,ch/4)}
 function drawPet(){
   const id=curPet();if(!id||PET.x<0)return;const P=PETS[id],fi=PET.mv?(Math.floor(PET.t*7)%2):2,F=petFrame(P.F[fi],curPch());
   const hd=P.hd?.5:1,hop=P.fly?-7-(RM?0:Math.round(Math.sin(PET.t*4)*2)):P.hop&&PET.mv&&!RM?-Math.round(Math.abs(Math.sin(PET.t*9))*3):0,fy=Math.round(PET.y),x0=Math.round(PET.x)-Math.round(F.w*hd/2),y0=fy-Math.round(F.h*hd)+2+hop,am=mix(env.amb,[1,1,1],.28);
@@ -8721,6 +8729,8 @@ function resize(){if(titleShown)logoSize(),logoDraw(1,-99);uiR=null;setTimeout((
   app.style.setProperty('--colw',Math.min(a.width,W*s)+'px');app.style.setProperty('--side',side+'px');
 }
 new ResizeObserver(resize).observe($('#app'));
+{const again=()=>{for(const t of[80,300,700,1500])setTimeout(resize,t)};addEventListener('orientationchange',again);addEventListener('resize',again);if(window.visualViewport)visualViewport.addEventListener('resize',again);
+  setInterval(()=>{if(document.hidden)return;const a=$('#app').getBoundingClientRect(),dpr=Math.min(3,window.devicePixelRatio||1);if(Math.abs(Math.round(a.width*dpr)-cv.width)>1||Math.abs(Math.round(a.height*dpr)-cv.height)>1||Math.abs(view.cw-a.width)>1||Math.abs(view.ch-a.height)>1)resize()},1000)}
 // browsers that ignore the viewport setting (Safari, some tablets): stop pinch and double-tap zoom by hand
 document.addEventListener('gesturestart',e=>e.preventDefault(),{passive:false});
 document.addEventListener('gesturechange',e=>e.preventDefault(),{passive:false});
@@ -10900,7 +10910,7 @@ function frame(t){
   tick(dt);draw();guideTick();
 }
 /* versões novas: quando o jogo muda no servidor, guarda o progresso e recarrega a página */
-const BUILD='81ae8d42c5a3',UKEY='tapmoss.upd';const UPD={on:false,go:false,at:0};
+const BUILD='cafc27413cdb',UKEY='tapmoss.upd';const UPD={on:false,go:false,at:0};
 // the new version downloads in the background while the game goes on; the reload only comes once the whole page is here,
 // so a slow network never leaves a half-built page on screen. The offline helper (sw.js) hands this copy over at the reload.
 const NEXTC='tapmoss-next',pgKey=()=>{let p=location.pathname.replace(/index\.html$/,'');if(!p.endsWith('/'))p+='/';return p};
