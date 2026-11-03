@@ -5686,7 +5686,10 @@ const EMO={heart:[['.r.r.','rrrrr','rrrrr','.rrr.','..r..'],{r:'#ef5a7f'}],note:
   '!':[['y','y','y','.','y'],{y:'#f4d04a'}],'?':[['yyy','..y','.y.','...','.y.'],{y:'#f3efe2'}],star:[['.y.','yyy','.y.'],{y:'#f4d04a'}],grr:[['.ccc.','ccccc','.ccc.'],{c:'#8a94a0'}],sweat:[['.b.','bbb','bbb','.b.'],{b:'#9fd3f5'}]};
 for(const k in EMO){const[m,p]=EMO[k];const o={map:m,pal:p,emit:Object.keys(p).join('')};prepSprite(o,m);EMO[k]=o}
 function avWalkable(x,y){x=Math.round(x);y=Math.round(y);if(x<9||x>W-9||y<HOR+16||y>H-36)return false;
-  const c=y*W+x;return surf[c]===1&&surf[c-2]===1&&surf[c+2]===1&&!block[c]}
+  const c=y*W+x;if(!(surf[c]===1&&surf[c-2]===1&&surf[c+2]===1&&!block[c]))return false;
+  // the flower bed is for flowers: walking round it, never through it, so a tap meant for a flower never lands on the gardener or the pet
+  const B=scene&&spots?gardenBed():null;if(B){const dx=(x-B.cx)/(B.rx+4),dy=(y-(B.cy+4))/(B.ry+8);if(dx*dx+dy*dy<1)return false}
+  return true}
 function avLineOk(x0,y0,x1,y1){const n=Math.ceil(Math.hypot(x1-x0,y1-y0)/2);for(let i=1;i<=n;i++){const t=i/n;if(!avWalkable(x0+(x1-x0)*t,y0+(y1-y0)*t))return false}return true}
 function avSpot(){const g=spots.ground;for(let k=0;k<300&&g.length;k++){const c=g[(rnd()*g.length)|0],x=c%W,y=(c/W)|0;if(avWalkable(x,y))return[x,y]}return null}
 function avReset(){AV={x:0,y:0,pose:'stand',fl:rnd()<.5,ft:0,blink:0,blinkT:2,emo:null,en:.75,plan:null,hidden:false,inside:false,jy:0};const p=avSpot();if(p){AV.x=p[0];AV.y=p[1]}else AV.hidden=true}
@@ -8992,16 +8995,17 @@ function drawLights(){
 }
 // the edge of the flower bed: stones in the glade and by the stream, cut blocks in the ruin, bricks in the city, pale rocks
 // with crystals on the Moon, obsidian with embers in the abyss. The back half sits a little darker, so it reads as a ring on the ground
-const BED_ST={clareira:['#5e5a52','#7a756b','#9a948a','#2e2a24'],ribeiro:['#5a5e5a','#767b74','#979c92','#2a2e2a'],ruina:['#6e6858','#8c8572','#aca48e','#36322a'],
-  cidade:['#6a2e22','#8a3e2a','#a8543a','#341610'],lua:['#6a6a78','#8a8a9a','#b0b0c0','#2e2e3a'],abismo:['#1c1326','#2e2040','#44305e','#0a0610']};
+const BED_ST={clareira:['#6e695f','#8c867a','#b4ad9e','#2e2a24'],ribeiro:['#6a6f6a','#888d85','#b0b6aa','#2a2e2a'],ruina:['#7e7766','#9c9580','#c2b9a0','#36322a'],
+  cidade:['#8a3e2a','#a8543a','#cc7450','#341610'],lua:['#8a8a9a','#a8a8bc','#d0d0e0','#2e2e3a'],abismo:['#3a2a48','#56406c','#80649c','#0e0612']};
 function drawBed(){const B=gardenBed();if(!B||titleShown)return;const P=BED_ST[scene.biome]||BED_ST.clareira,amb=env.amb,col=(h,k)=>css(mul(hex(h),amb),k),q=.25;
-  lowX.save();lowX.fillStyle='rgba(28,18,8,.16)';lowX.beginPath();lowX.ellipse(B.cx,B.cy,B.rx-1,B.ry-.5,0,0,7);lowX.fill();lowX.restore();
+  lowX.save();lowX.fillStyle=scene.biome==='abismo'?'rgba(12,2,0,.32)':scene.biome==='lua'?'rgba(10,10,30,.26)':'rgba(28,18,8,.26)';lowX.beginPath();lowX.ellipse(B.cx,B.cy,B.rx-1,B.ry-.5,0,0,7);lowX.fill();
+    const lip=scene.biome==='abismo'?`rgba(255,120,40,${RM?.35:.28+.1*Math.sin(T*1.6)})`:scene.biome==='lua'?'rgba(170,220,255,.32)':'rgba(255,246,214,.2)';lowX.strokeStyle=lip;lowX.lineWidth=.5;lowX.beginPath();lowX.ellipse(B.cx,B.cy+.25,B.rx-1.6,B.ry-1.1,0,0,7);lowX.stroke();lowX.restore();
   // small rounded stones at 4×: lit on top, dark underneath, a soft shadow below; the back half a little darker so it reads as a ring on the ground
   const n=Math.round(2*Math.PI*Math.sqrt((B.rx*B.rx+B.ry*B.ry)/2)/2.2);
   for(const front of[0,1])for(let i=0;i<n;i++){const a=i/n*Math.PI*2,sn=Math.sin(a);if((sn>0)!==!!front)continue;const X=Math.round((B.cx+Math.cos(a)*B.rx)*4),Y=Math.round((B.cy+sn*B.ry)*4),h=hash2(i,scene.seed|0,71),c=P[h<.35?0:h<.75?1:2],k=front?1:.8,w=h>.5?6:5;
     const r=(x,y,ww,hh,f)=>{lowX.fillStyle=f;lowX.fillRect(x*q,y*q,ww*q,hh*q)};
     r(X+1,Y+3,w,1,`rgba(20,14,8,${front?.38:.22})`);r(X,Y+1,w,2,col(c,k));r(X+1,Y,w-2,1,col(P[2],k));r(X+1,Y+2,w-2,1,col(P[h<.5?0:1],k*.92));r(X+1,Y+3,w-2,1,col(P[3],k*.9));r(X+1,Y,1,1,col(mix(hex(P[2]),[255,255,255],.3).map(v=>v|0).reduce((s,v)=>s+v.toString(16).padStart(2,'0'),'#'),k));
-    if(h>.9&&(scene.biome==='lua'||scene.biome==='abismo')){const g=scene.biome==='lua'?'#c8e8ff':'#ff8a3a',tw=RM?.8:.5+.5*Math.sin(T*2+i);lowX.fillStyle=css(hex(g),tw);lowX.fillRect((X+2)*q,(Y-1)*q,2*q,q)}}}
+    if(h>(scene.biome==='abismo'?.55:.72)&&(scene.biome==='lua'||scene.biome==='abismo')){const g=scene.biome==='lua'?'#c8e8ff':'#ff8a3a',tw=RM?.8:.5+.5*Math.sin(T*2+i);lowX.fillStyle=css(hex(g),tw);lowX.fillRect((X+2)*q,(Y-1)*q,2*q,q)}}}
 let wtV=0,wtKey='';
 function draw(){
   if(MNR){mnDraw();return}
@@ -10974,7 +10978,7 @@ function frame(t){
   tick(dt);draw();guideTick();
 }
 /* versões novas: quando o jogo muda no servidor, guarda o progresso e recarrega a página */
-const BUILD='29ebabb6dae4',UKEY='tapmoss.upd';const UPD={on:false,go:false,at:0};
+const BUILD='ff30876ac0d1',UKEY='tapmoss.upd';const UPD={on:false,go:false,at:0};
 // the new version downloads in the background while the game goes on; the reload only comes once the whole page is here,
 // so a slow network never leaves a half-built page on screen. The offline helper (sw.js) hands this copy over at the reload.
 const NEXTC='tapmoss-next',pgKey=()=>{let p=location.pathname.replace(/index\.html$/,'');if(!p.endsWith('/'))p+='/';return p};
