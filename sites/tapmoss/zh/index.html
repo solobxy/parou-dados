@@ -1687,12 +1687,12 @@ const shadeRgb=(c,s)=>s===1?[c[0]+(255-c[0])*.16,c[1]+(255-c[1])*.16,c[2]+(255-c
 function pxsvg(map,P,cls){
   if(map.__hi&&!(cls&&cls.includes('lo'))){const o=map.__hi,sl=P&&Object.values(P).every(v=>v==='#2a382c');return pxsvg(o.map,sl?sil(o.map):o.pal,(cls||'')+' nohd')}
   const h=map.length,w=Math.max(...map.map(r=>r.length));
-  if(w<=24&&h<=24&&typeof hdGrid==='function'&&!(cls&&cls.includes('nohd'))){const key=map.join('|')+JSON.stringify(P)+(cls||'');const c=SVGHD.get(key);if(c)return c;
-    const R=hdGrid(map),rows=new Map(),hx=v=>/^#[0-9a-f]{6}$/i.test(v||'')?hex(v):null;
-    for(const[x,y,ch,sh]of R.px){if(sh===2||!P[ch])continue;const base=hx(P[ch]),col=base&&sh?css(shadeRgb(base,sh)):P[ch];(rows.get(y)||rows.set(y,[]).get(y)).push([x,col])}
-    let o=`<svg class="pxi ${cls||''}" viewBox="1 1 ${w*2} ${h*2}" shape-rendering="crispEdges" aria-hidden="true">`;
-    for(const[y,L]of rows){L.sort((a,b)=>a[0]-b[0]);let i=0;while(i<L.length){let e=i+1;while(e<L.length&&L[e][0]===L[e-1][0]+1&&L[e][1]===L[i][1])e++;o+=`<rect x="${L[i][0]}" y="${y}" width="${e-i}" height="1" fill="${L[i][1]}"/>`;i=e}}
-    o+='</svg>';SVGHD.set(key,o);if(SVGHD.size>2000)SVGHD.delete(SVGHD.keys().next().value);return o}
+  if(w<=24&&h<=24&&typeof hdUp==='function'&&!(cls&&cls.includes('nohd'))){const key=map.join('|')+JSON.stringify(P)+(cls||'');const c=SVGHD.get(key);if(c)return c;
+    // the interface pictures at 4× like the scene: smoothed twice, lit on the top left, shaded on the bottom right, a soft shadow; one image each
+    const R=hdUp(map,2),hx=v=>/^#[0-9a-f]{6}$/i.test(v||'')?hex(v):null,cv=document.createElement('canvas');cv.width=R.w;cv.height=R.h;const X=cv.getContext('2d');
+    for(const[x,y,ch,sh]of R.px){if(!P[ch])continue;const base=hx(P[ch]);if(sh===3){if(!base)continue;X.fillStyle=`rgba(${base[0]*.15|0},${base[1]*.15|0},${base[2]*.18|0},.35)`}else X.fillStyle=base?css(shade4(base,sh)):P[ch];X.fillRect(x,y,1,1)}
+    const o=`<svg class="pxi ${cls||''}" viewBox="2 2 ${w*4+1} ${h*4+1}" aria-hidden="true"><image href="${cv.toDataURL()}" width="${R.w}" height="${R.h}" style="image-rendering:pixelated"/></svg>`;
+    SVGHD.set(key,o);if(SVGHD.size>2000)SVGHD.delete(SVGHD.keys().next().value);return o}
   let s=`<svg class="pxi ${cls||''}" viewBox="0 0 ${w} ${h}" shape-rendering="crispEdges" aria-hidden="true">`;
   for(let y=0;y<h;y++){const row=map[y];let x=0;while(x<row.length){const ch=row[x];if(ch==='.'||ch===' '){x++;continue}let e=x+1;while(e<row.length&&row[e]===ch)e++;s+=`<rect x="${x}" y="${y}" width="${e-x}" height="1" fill="${P[ch]}"/>`;x=e}}
   return s+'</svg>';
@@ -10910,7 +10910,7 @@ function frame(t){
   tick(dt);draw();guideTick();
 }
 /* versões novas: quando o jogo muda no servidor, guarda o progresso e recarrega a página */
-const BUILD='cafc27413cdb',UKEY='tapmoss.upd';const UPD={on:false,go:false,at:0};
+const BUILD='039888634299',UKEY='tapmoss.upd';const UPD={on:false,go:false,at:0};
 // the new version downloads in the background while the game goes on; the reload only comes once the whole page is here,
 // so a slow network never leaves a half-built page on screen. The offline helper (sw.js) hands this copy over at the reload.
 const NEXTC='tapmoss-next',pgKey=()=>{let p=location.pathname.replace(/index\.html$/,'');if(!p.endsWith('/'))p+='/';return p};
