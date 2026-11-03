@@ -8362,7 +8362,38 @@ const PA_T=[
   {nome:_t('Pá do vazio'),pal:{M:'#24104a',m:'#0e0620',H:'#c8a8ff',S:'#04020a',W:'#3a1a6a',w:'#1a0a3a'},fx:[154,90,254],star:1,vd:1}];
 const paT=()=>clamp((S&&S.pa)|0,0,PA_T.length-1),PA=()=>PA_T[paT()];
 const paPal=t=>({...IC.shovel[1],...PA_T[t].pal});
-const paSvg=(t,cls)=>pxsvg(IC.shovel[0],paPal(t),(cls||'')+(PA_T[t].chr?' chr4':''));
+// shovels at 4× (48×48), louder as they go up: plain iron, riveted bronze, engraved silver, a golden spade with a gem, then blades
+// made of emerald, ruby (a heart), sapphire waves, diamond, a rainbow, obsidian with lava and flames, a night sky full of stars, a rift
+const PAHD=new Map(),PAURL=new Map();
+function paHD(t){let c=PAHD.get(t);if(c)return c;const P=PA_T[t],pal=P.pal,h=v=>hex(v),M=h(pal.M),m=h(pal.m),HL=h(pal.H),SD=h(pal.S),WD=pal.W?h(pal.W):[122,82,46],wd=pal.w?h(pal.w):[84,54,28],fx=P.fx;
+  const N=48;c=document.createElement('canvas');c.width=N;c.height=N;const X=c.getContext('2d'),img=X.createImageData(N,N),d=img.data,L=(a,b,k)=>[a[0]+(b[0]-a[0])*k,a[1]+(b[1]-a[1])*k,a[2]+(b[2]-a[2])*k];
+  const set=(x,y,col,a)=>{if(x<0||y<0||x>=N||y>=N)return;const j=(y*N+x)<<2,al=a==null?1:a;d[j]=d[j]*(1-al)+col[0]*al;d[j+1]=d[j+1]*(1-al)+col[1]*al;d[j+2]=d[j+2]*(1-al)+col[2]*al;d[j+3]=Math.max(d[j+3],al*255)};
+  // u runs along the shovel from the grip (top right, u<0) to the tip of the blade (bottom left, u>0), v across it
+  const UV=(x,y)=>{const dx=x+.5-24,dy=y+.5-24;return[(-dx+dy)*.7071,(dx+dy)*.7071]};
+  const glow=(u0,R,col,a)=>{for(let y=0;y<N;y++)for(let x=0;x<N;x++){const[u,v]=UV(x,y),r=Math.hypot(u-u0,v)/R;if(r<1){const j=(y*N+x)<<2;if(d[j+3]<30){d[j]=col[0];d[j+1]=col[1];d[j+2]=col[2];d[j+3]=Math.max(d[j+3],(1-r)*(1-r)*a*255)}}}};
+  if(t>=4)glow(13,16+t*.6,fx,.22+t*.02);
+  // the blade: a spade whose width along u is w(u); its shape changes with the strength
+  const bw=u=>{const q=(u-3)/18;if(q<0||q>1)return -1;if(t===5)return 9.5*Math.sqrt(Math.max(0,Math.sin(Math.PI*Math.min(1,q*1.2))))*(1-q*.25)+(q<.45?Math.abs(Math.sin(q*7))*2:0);if(t>=3)return 9*Math.sin(Math.PI*Math.min(1,q*.9+.1))*(q>.75?(1-q)*4:1);return 8.5*(q<.8?1:(1-q)*5)};
+  for(let y=0;y<N;y++)for(let x=0;x<N;x++){const[u,v]=UV(x,y),w=bw(u);if(w<=0||Math.abs(v)>w)continue;const e=(w-Math.abs(v)),q=(u-3)/18;
+    let k=.55-v/w*.3+(e<1.2?-.25:0)+(Math.abs(v)<1.2&&q<.7?.18:0);let col=L(SD,L(m,M,clamp(k*1.4,0,1)),clamp(k*1.6,0,1));
+    if(t===8)col=L([(Math.sin(u*.45)*.5+.5)*255,(Math.sin(u*.45+2.1)*.5+.5)*255,(Math.sin(u*.45+4.2)*.5+.5)*255],[255,255,255],clamp(k-.4,0,.5));
+    if(t===4||t===5||t===7){const f=Math.floor((u+v*1.7)/3.2)+Math.floor((u-v*1.7)/3.2);col=L(col,(f&1)?HL:SD,.28)}
+    if(t===6&&Math.abs(Math.sin(u*.9+v*.4))<.18)col=L(col,HL,.6);
+    if(t===2&&Math.abs(Math.abs(v)-w*.55)<.5&&q<.8)col=L(col,HL,.6);
+    if(t===9){const n=Math.abs(tnz(x*6+3,y*6)-.5);col=L([40,10,8],[90,24,16],k);if(n<.05)col=[255,170,60];else if(n<.09)col=[220,70,30]}
+    if(t>=10){col=L(SD,m,clamp(k,0,1));if(th(x*3,y*5+t)<.06)col=[255,255,255];if(t===11){const r=Math.hypot(u-12,v);col=r<4?[4,2,10]:r<5.4?L(HL,[255,255,255],.3):col}}
+    if(e<.9)col=L(col,[255,255,255],k>.5&&v<0?.35:0);set(x,y,col)}
+  // the neck and rivets, the handle, the grip
+  for(let y=0;y<N;y++)for(let x=0;x<N;x++){const[u,v]=UV(x,y);
+    if(u>-19&&u<4&&Math.abs(v)<1.8){const k=.5-v*.22;set(x,y,t>=9?L(wd,WD,k):L(L(wd,WD,k),[150,110,70],th(x*2,y*9)*.15))}
+    if(u>=1.5&&u<5&&Math.abs(v)<2.8)set(x,y,L(SD,M,.6-v*.12));
+    if(u>-23&&u<-18&&Math.abs(v)<4.2&&!(u>-21.6&&u<-19.4&&Math.abs(v)<2.6))set(x,y,L(SD,t>=3?HL:M,.5-v*.1))}
+  if(t>=1)for(const v of[-1.6,1.6]){const u=3.2,x=Math.round(24+(-u+v)*.7071-.5),y=Math.round(24+(u+v)*.7071-.5);set(x,y,HL)}
+  if(t===3||t>=9){const u=-20.5,x=Math.round(24-u*.7071-.5),y=Math.round(24+u*.7071-.5);for(const[dx,dy]of[[0,0],[1,0],[0,1],[1,1]])set(x+dx,y+dy,t===3?[232,58,90]:HL)}
+  if(t===9)for(let y=0;y<16;y++)for(let x=0;x<24;x++){const[u,v]=UV(x,y+20),fl=tnz(x*9,y*13)*1.1-Math.abs(v)/10-(u<6?1:0);if(fl>.6&&u>4)set(x,y+20,fl>.8?[255,230,120]:[255,120,40],.75)}
+  if(t>=7)for(let i=0;i<5;i++){const a=i*1.26+t,x=Math.round(14+Math.cos(a)*14),y=Math.round(34+Math.sin(a)*11);set(x,y,[255,255,255],.9);set(x+1,y,HL,.5);set(x-1,y,HL,.5);set(x,y+1,HL,.5);set(x,y-1,HL,.5)}
+  X.putImageData(img,0,0);PAHD.set(t,c);return c}
+const paSvg=(t,cls)=>{let u=PAURL.get(t);if(!u){u=paHD(t).toDataURL();PAURL.set(t,u)}return`<svg class="pxi ${cls||''}${PA_T[t].chr?' chr4':''}" viewBox="0 0 48 48" aria-hidden="true"><image href="${u}" width="48" height="48" style="image-rendering:pixelated"/></svg>`};
 const PA_COST=[25e3,1e6,4e7,15e8,6e10,25e11,1e14,5e15,2e17,1e19],PA_EM=50,paEmT=t=>t===PA_T.length-2,paCost=t=>paEmT(t)?0:PA_COST[clamp(t|0,0,PA_COST.length-1)],paCan=t=>paEmT(t)?(S.em||0)>=PA_EM:S.coins>=paCost(t);
 const shovelCd=()=>[8,5,3][Math.min(2,perk('pa'))]*60000*(1-.03*paT());
 const shovelAtNow=()=>(SC().sh||0);
@@ -8386,11 +8417,14 @@ function useShovel(){
   if(!shovelReady()){const g=shovelGems();showModal(`<div class="reveal" style="--rc:${css(PA().fx)}"><div class="it">${paSvg(paT())}</div><div class="rn">${PA().nome}</div><h3>${_t("Pronta daqui a {0}",shortTime(shovelAtNow()-now()))}</h3><p class="note">${_t('Cada cena tem a sua pá: muda de cena e cava lá.')}</p>${paT()<PA_T.length-1?`<button class="lnk" data-m="paup">${_t('Melhorar a pá')}</button>`:''}<p>${_t("Podes usá-la já por {0} {1}.",g,g===1?_t('cristal'):_t('cristais'))}</p></div><div class="mbtns"><button class="btn ghost" data-m="close">${_t("Esperar")}</button><button class="btn gem" data-m="shgem" ${S.gems<g?'disabled':''}>${icon('gem')}${NM(String(g))}</button></div>`);return}
   const tg=shovelTargets();
   SC().sh=now()+shovelCd();S.stats.shovels=(S.stats.shovels||0)+1;dirtySave=true;paSprite();
-  shovelRun={t:0,dur:RM?.01:1.1,tg,agg:{coins:0,gems:0,n:0,fl:0},chest:null};SND.play('dig');hud();
+  // the shovel hops from find to find, nearest first (the flowers sit together in their bed now), then digs into the bed itself
+  const B=gardenBed(),fin=B?{x:B.cx,y:B.cy+1}:{x:W/2,y:H-62},from={x:-8,y:(B?B.cy:H-62)-14},stops=[];{let cur=from;const left=tg.slice();while(left.length){let bi=0,bd=1e9;for(let i=0;i<left.length;i++){const dd=Math.hypot(left[i].x-cur.x,(left[i].y-cur.y)*1.4);if(dd<bd){bd=dd;bi=i}}cur=left.splice(bi,1)[0];stops.push(cur)}}
+  const seg=stops.length?clamp(1.7/stops.length,.15,.3):0;
+  shovelRun={t:0,dur:RM?.01:seg*stops.length+.75,tg:stops,seg,fin,from,i:0,agg:{coins:0,gems:0,n:0,fl:0},chest:null};SND.play('dig');hud();
 }
 function shovelStep(dt){
-  const R=shovelRun;if(!R)return;R.t+=dt;const k=Math.min(1,R.t/R.dur),sx=-10+k*(W+20);
-  while(R.tg.length&&(R.tg[0].x<=sx||k>=1)){const g=R.tg.shift(),[px,py]=toScreen(g.x,g.y-3);
+  const R=shovelRun;if(!R)return;R.t+=dt;const k=Math.min(1,R.t/R.dur);
+  while(R.i<R.tg.length&&(R.t>=(R.i+1)*R.seg||k>=1)){const g=R.tg[R.i++],[px,py]=toScreen(g.x,g.y-3);if(!RM)SND.play('dig');
     if(g.k==='f'){const i=SC().flowers.indexOf(g.o);if(i>=0){collectFlower(i,px,py,R.agg);R.agg.fl++}}
     else if(g.k==='m'){const i=(SC().mush||[]).indexOf(g.o);if(i>=0)collectMush(i,px,py,R.agg)}
     else if(g.k==='d'){const i=SC().debris.indexOf(g.o);if(i>=0){const c0=S.coins;cleanDebris(i,px,py,true);R.agg.coins+=S.coins-c0;R.agg.n++}}
@@ -8403,18 +8437,25 @@ function shovelStep(dt){
     // every dig turns the soil (moss grows 2× for 2 minutes) and digs up buried treasure
     const t=paT(),P=PA_T[t],dc=Math.round(Math.max(200,cps*90)*(1+.5*perk('pa'))*(1+.6*t));S.coins+=dc;a.coins+=dc;a.n++;S.soilUntil=Math.max(S.soilUntil||0,now())+120000+t*20000;
     let res=null;if(rnd()<.3+.04*t)res=grantItem(rollRarity(luckBase()+.4+.12*t,t>=7?3:t>=4?2:1));if(rnd()<.12+.03*t){const gg=1+((rnd()*3)|0)+Math.floor(t/3);S.gems+=gg;a.gems+=gg}if(rnd()<.006+.002*t)addEm(1,'pa');
-    if(!RM){const c=P.fx;for(let j=0;j<10+t*3;j++)parts.push({x:W/2+(rnd()-.5)*70,y:H-62+(rnd()-.5)*12,vx:(rnd()-.5)*60,vy:-50-rnd()*50,g:P.fire?-20:120,t:0,life:.9+rnd()*.5,c:P.chr?[rnd()*255,rnd()*255,200]:c,glow:1,sz:t>=7?2:1})}
+    if(!RM){const c=P.fx;for(let j=0;j<10+t*3;j++)parts.push({x:R.fin.x+(rnd()-.5)*44,y:R.fin.y-2+(rnd()-.5)*8,vx:(rnd()-.5)*60,vy:-50-rnd()*50,g:P.fire?-20:120,t:0,life:.9+rnd()*.5,c:P.chr?[rnd()*255,rnd()*255,200]:c,glow:1,sz:t>=7?2:1})}
     const pa=ptAct();if(pa&&ptOpen())ptGainXp(pa,5);
-    if(!RM)for(let j=0;j<24;j++)parts.push({x:W/2+(rnd()-.5)*50,y:H-60+(rnd()-.5)*10,vx:(rnd()-.5)*50,vy:-40-rnd()*40,g:140,t:0,life:.8,c:rnd()<.5?[120,88,52]:rnd()<.5?[92,140,60]:[244,197,79],drop:0});
+    if(!RM){rings.push({x:R.fin.x,y:R.fin.y,t:0,life:.9,r:26,c:P.fx});for(let j=0;j<24;j++)parts.push({x:R.fin.x+(rnd()-.5)*34,y:R.fin.y+(rnd()-.5)*6,vx:(rnd()-.5)*50,vy:-40-rnd()*40,g:140,t:0,life:.8,c:rnd()<.5?[120,88,52]:rnd()<.5?[92,140,60]:[244,197,79],drop:0})}
     SND.play('coin');lootSum(paSvg(t),a,R.agg.fl);setTimeout(()=>toast(_t('A pá revolveu a terra: o musgo cresce 2× durante {0}.',shortTime(120000+t*20000))),600);
     if(res)setTimeout(()=>loot(res.it,0,0,res.isNew),900);
     if(R.chest&&sceneChest)openSceneChest(R.chest[0],R.chest[1]);
     hud();saveLocal()}
 }
-function drawShovel(){const R=shovelRun;if(!R||RM)return;const k=Math.min(1,R.t/R.dur),x=Math.round(-10+k*(W+20)),y=Math.round(H-58+Math.sin(k*Math.PI)*-10),M=paSprite(),P=PA();
-  lowX.globalAlpha=Math.min(1,(1-k)*6,k*8);drawSprite(M,M.map,x,y,false);lowX.globalAlpha=1;
-  // a trail in the colour of the shovel: sparks, flames for the infernal one, stars for the cosmic one
-  if(rnd()<.6)parts.push({x:x+(rnd()-.5)*6,y:y-4+(rnd()-.5)*6,vx:-20-rnd()*20,vy:P.fire?-30:-10+rnd()*20,g:P.fire?-30:40,t:0,life:.5+rnd()*.4,c:P.chr?[rnd()*255,180,rnd()*255]:P.fx,glow:1,sz:paT()>=8?2:1})}
+function drawShovel(){const R=shovelRun;if(!R||RM)return;const t=paT(),P=PA_T[t],c=paHD(t);
+  // where it is: on its way to the next find (a little hop), or plunging into the bed at the end
+  let a,b,u;if(R.i<R.tg.length){a=R.i?R.tg[R.i-1]:R.from;b=R.tg[R.i];u=clamp((R.t-R.i*R.seg)/R.seg,0,1)}else{a=R.tg.length?R.tg[R.tg.length-1]:R.from;b=R.fin;u=clamp((R.t-R.tg.length*R.seg)/.75,0,1)}
+  const fin=R.i>=R.tg.length,e=u*u*(3-2*u),x=a.x+(b.x-a.x)*e,y=a.y+(b.y-a.y)*e-Math.sin(u*Math.PI)*(fin?14:7)-6,dig=fin?Math.max(0,(u-.6)/.4):u>.78?(u-.78)/.22:0;
+  const ang=-.35+(b.x<a.x?-.25:.2)+dig*1.25;
+  lowX.save();lowX.globalAlpha=Math.min(1,R.t*6,(R.dur-R.t)*8+.2);lowX.translate(x,y-dig*3);lowX.rotate(ang);lowX.imageSmoothingEnabled=true;
+  if(t>=4){const g=lowX.createRadialGradient(-2,3,0,-2,3,10);g.addColorStop(0,css(P.fx,.28));g.addColorStop(1,css(P.fx,0));lowX.globalCompositeOperation='lighter';lowX.fillStyle=g;lowX.fillRect(-12,-7,20,20);lowX.globalCompositeOperation='source-over'}
+  lowX.drawImage(c,-8,-8,16,16);lowX.restore();lowX.imageSmoothingEnabled=false;
+  // its trail: dust for the plain ones, sparks of its colour, flames, stars, a rainbow, shards of the void
+  if(rnd()<.7){const pc=P.chr?[rnd()*255,180+rnd()*75,rnd()*255]:P.vd&&rnd()<.4?[20,8,40]:P.fx;parts.push({x:x-2+(rnd()-.5)*4,y:y+2+(rnd()-.5)*4,vx:(rnd()-.5)*16,vy:P.fire?-26:-6+rnd()*12,g:P.fire?-25:30,t:0,life:.45+rnd()*.35,c:pc,glow:t>=2?1:0,sz:t>=8?2:1,lit:t>=4?1:0})}
+  if(P.star&&rnd()<.3)parts.push({x:x+(rnd()-.5)*10,y:y+(rnd()-.5)*8,vx:0,vy:-4,g:0,t:0,life:.6,c:[255,255,255],glow:1,sz:1,lit:1})}
 const SHOVELSPR={map:IC.shovel[0],pal:IC.shovel[1]};prepSprite(SHOVELSPR,SHOVELSPR.map);
 function lootSum(ic,a,fl){
   const box=$('#loot');if(!box)return;const el=document.createElement('div');el.className='lt';el.style.setProperty('--rc','#c7c2b3');
@@ -10383,7 +10424,7 @@ function mnUnlock(quiet){const M=S.mina;if(M.on)return;M.on=1;M.t=now();M.bq.pus
 // each cell of the mine is painted with 8×8 pixels (4× the scene's resolution, like the garden)
 const MT=8,mnCv=document.createElement('canvas');mnCv.width=MW*MT;mnCv.height=MH*MT;const mnCX=mnCv.getContext('2d'),mnImg=mnCX.createImageData(MW*MT,MH*MT),mnPx=mnImg.data;
 const mnFogCv=document.createElement('canvas');mnFogCv.width=MW;mnFogCv.height=MH;const mnFogX=mnFogCv.getContext('2d'),mnFogImg=mnFogX.createImageData(MW,MH),mFog=new Uint8Array(MNC);
-const mnBgCv=document.createElement('canvas');mnBgCv.width=W*2;mnBgCv.height=H*2;const mnBgX=mnBgCv.getContext('2d');mnBgX.setTransform(2,0,0,2,0,0);
+const mnBgCv=document.createElement('canvas');mnBgCv.width=W*KH;mnBgCv.height=H*KH;const mnBgX=mnBgCv.getContext('2d');mnBgX.setTransform(KH,0,0,KH,0,0);
 const MMRGB=MM.map(A=>A&&A.c?A.c.map(hex):null),MMFL=MM.map(A=>A&&A.fl?A.fl.map(hex):null);
 const MN_CH=chestArt(12,10);
 let mnFogT=0,mnBgKey='';
@@ -10919,7 +10960,7 @@ function frame(t){
   tick(dt);draw();guideTick();
 }
 /* versões novas: quando o jogo muda no servidor, guarda o progresso e recarrega a página */
-const BUILD='e31080a7236b',UKEY='tapmoss.upd';const UPD={on:false,go:false,at:0};
+const BUILD='b11b7f151126',UKEY='tapmoss.upd';const UPD={on:false,go:false,at:0};
 // the new version downloads in the background while the game goes on; the reload only comes once the whole page is here,
 // so a slow network never leaves a half-built page on screen. The offline helper (sw.js) hands this copy over at the reload.
 const NEXTC='tapmoss-next',pgKey=()=>{let p=location.pathname.replace(/index\.html$/,'');if(!p.endsWith('/'))p+='/';return p};
