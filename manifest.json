@@ -1,12 +1,12 @@
 {
-  "built_at": "2026-11-03T11:18:03.221542+00:00",
-  "db_bytes": 337297408,
-  "gz_bytes": 73973037,
+  "built_at": "2026-11-03T21:03:56.421567+00:00",
+  "db_bytes": 560844800,
+  "gz_bytes": 111887407,
   "totals": {
     "lines": 2658,
     "stops": 46394,
-    "trips": 75336,
-    "stop_times": 2141932,
+    "trips": 118764,
+    "stop_times": 3579936,
     "operators": 30,
     "operators_ok": 27,
     "operators_desatualizados": 2
@@ -556,7 +556,7 @@
       "dias_validade": null,
       "horario_prolongado": false,
       "url": "https://api.carrismetropolitana.pt/v2",
-      "last_error": "Hoje falhou, mantidos os dados anteriores: HTTP Error 502: Bad Gateway",
+      "last_error": null,
       "servicos_associados": null,
       "servicos_sem_calendario": null,
       "viagens_hoje": 0,
@@ -584,12 +584,17 @@
     }
   ],
   "desenhos": {
-    "bytes": 5475583,
+    "bytes": 8627696,
     "por_operador": {
       "carris": {
         "viagens": 24868,
         "com_desenho": 24868,
         "desenhos": 307
+      },
+      "cmh": {
+        "viagens": 43428,
+        "com_desenho": 43428,
+        "desenhos": 2048
       },
       "cp": {
         "viagens": 1818,
@@ -902,13 +907,13 @@
           "total": 399
         },
         "servicos_com_data_hoje": [
-          "DU",
           "FU",
-          "CU",
-          "BexpU",
+          "AU",
           "EU",
+          "BexpU",
+          "DU",
           "BU",
-          "AU"
+          "CU"
         ],
         "viagens_por_servico": [
           {
@@ -963,5 +968,5 @@
       }
     }
   },
-  "duration_s": 209
+  "duration_s": 254
 }
