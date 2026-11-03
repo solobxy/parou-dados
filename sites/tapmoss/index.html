@@ -10446,11 +10446,73 @@ function mnSpr(key,map,pal){let c=MNSPR.get(key);if(c)return c;c=document.create
 // the pickaxe in the hand: each strength has its own drawing; a skin repaints its head and handle
 const MPKM=new Map(),MPK_MAP=t=>{let m=MPKM.get(t);if(!m){const P=MPK[t]||MPK[0];m=MPK_HEAD[P.hd].concat(MPK_HDL[P.hl]);MPKM.set(t,m)}return m};
 const mnSkinCols=K=>({M:K.pal[2],D:K.pal[2],T:K.pal[2],B:K.pal[2],S:K.pal[2],H:K.pal[2],V:K.pal[2],Y:K.pal[2],R:K.pal[2],m:K.pal[1],d:K.pal[1],t:K.pal[1],r:K.pal[1],v:K.pal[1],c:K.pal[1],w:K.pal[0],h:K.pal[0]});
+// pickaxes at 4× (48×48): each strength has its own head, and they get louder as they go up: plain wood and stone, then metal with rivets,
+// ornate blades with a gem, jagged obsidian, a huge ruby, a diamond cluster, magma with flames, a hammer with a glowing core, a bone
+// scythe with a skull, soul fire, demon horns, a shadow crescent, the moon, a star, a galaxy and finally a rift in the void
+const PKHD=new Map();
+function pkHD(t){const sk=S&&S.mina?S.mina.sk:'',key=t+'|'+sk;let c=PKHD.get(key);if(c)return c;
+  const P=MPK[t]||MPK[0],C=mnPkCols(t),hx=v=>typeof v==='string'?hex(v):v,first=(...k)=>{for(const q of k)if(C[q])return hx(C[q]);return[200,200,200]};
+  const hi=first('M','D','T','B','S','Y','s','R','H','V'),mid=first('m','d','t','r','R','H','v','M'),dk=first('g','k','p','v','r'),acc=hx(P.pal[2]),wd=first('w'),wh=first('h'),ol=first('k');
+  const N=48;c=document.createElement('canvas');c.width=N;c.height=N;const X=c.getContext('2d'),img=X.createImageData(N,N),d=img.data;
+  const sh=(col,f)=>[col[0]*f,col[1]*f,col[2]*f],L=(a,b,k)=>[a[0]+(b[0]-a[0])*k,a[1]+(b[1]-a[1])*k,a[2]+(b[2]-a[2])*k];
+  const set=(x,y,col,a)=>{if(x<0||y<0||x>=N||y>=N)return;const j=(y*N+x)<<2,al=a==null?1:a;d[j]=d[j]*(1-al)+col[0]*al;d[j+1]=d[j+1]*(1-al)+col[1]*al;d[j+2]=d[j+2]*(1-al)+col[2]*al;d[j+3]=Math.max(d[j+3],al*255)};
+  // a shape given by an inside test f(x,y)>0; shaded by how far in it is and which way its edge faces (light from the top left)
+  const fill=(f,lo,hiC,o={})=>{for(let y=0;y<N;y++)for(let x=0;x<N;x++){const v=f(x+.5,y+.5);if(v<=0)continue;
+    const gx=f(x+1.5,y+.5)-f(x-.5,y+.5),gy=f(x+.5,y+1.5)-f(x+.5,y-.5),gl=Math.hypot(gx,gy)||1,ndl=(-gx*-.6+-gy*-.8)/gl;
+    let k=.5+ndl*.35*Math.min(1,v*1.4)+(o.flat?0:Math.min(.25,v*.08))+(th(x*7+t*31,y*5)-.5)*(o.grain||.08);if(v<.6)k-=.28;
+    const col=k>.78?L(hiC,[255,255,255],o.shine?Math.min(.6,(k-.78)*3):0):L(lo,hiC,clamp(k,0,1)*1.15);set(x,y,o.dark&&v<.6?sh(col,.6):col,o.alpha)}};
+  const glow=(cx,cy,R,col,a)=>{for(let y=0;y<N;y++)for(let x=0;x<N;x++){const r=Math.hypot(x+.5-cx,y+.5-cy)/R;if(r<1){const j=(y*N+x)<<2,al=(1-r)*(1-r)*a;if(d[j+3]<40){d[j]=col[0];d[j+1]=col[1];d[j+2]=col[2];d[j+3]=Math.max(d[j+3],al*255)}}}};
+  const seg=(px,py,ax,ay,bx,by)=>{const vx=bx-ax,vy=by-ay,u=clamp(((px-ax)*vx+(py-ay)*vy)/(vx*vx+vy*vy),0,1);return Math.hypot(px-ax-vx*u,py-ay-vy*u)};
+  const circ=(cx,cy,r)=>(x,y)=>r-Math.hypot(x-cx,y-cy);
+  const arc=(cx,cy,R,w,a0,a1,tip)=>(x,y)=>{const dx=x-cx,dy=y-cy,r=Math.hypot(dx,dy),a=Math.atan2(dy,dx);if(a<a0||a>a1)return -1;const u=(a-a0)/(a1-a0),taper=tip?Math.min(1,Math.min(u,1-u)*tip):1;return w*taper-Math.abs(r-R)};
+  const poly=pts=>(x,y)=>{let ins=false,md=1e9;for(let i=0,j=pts.length-1;i<pts.length;j=i++){const[xi,yi]=pts[i],[xj,yj]=pts[j];if((yi>y)!==(yj>y)&&x<(xj-xi)*(y-yi)/(yj-yi)+xi)ins=!ins;md=Math.min(md,seg(x,y,xi,yi,xj,yj))}return ins?md:-md};
+  const star=(cx,cy,R,r,n,rot)=>{const p=[];for(let i=0;i<n*2;i++){const a=rot+i*Math.PI/n,rr=i%2?r:R;p.push([cx+Math.cos(a)*rr,cy+Math.sin(a)*rr])}return poly(p)};
+  const hd=P.hd,ti=t;
+  // the handle: wood or dark metal, a wrap of cloth or leather near the head, a cap at the end
+  const hdl=(x,y)=>2.2-Math.abs(x-24)+(y<15||y>46?-9:0);fill(hdl,sh(wd,.7),wh,{grain:.18});
+  for(let y=19;y<26;y+=2)for(let x=21;x<27;x++)set(x,y,sh(dk,.9),1);
+  fill(circ(24,46,2.6),sh(dk,.8),mid,{});
+  const gem=(cx,cy,r,col)=>{fill(poly([[cx,cy-r],[cx+r,cy],[cx,cy+r],[cx-r,cy]]),sh(col,.55),L(col,[255,255,255],.35),{shine:1,flat:1});set(Math.round(cx-r*.3),Math.round(cy-r*.4),[255,255,255],.9)};
+  if(hd==='classic'){fill(arc(24,24,18,3.6+ti*.4,-2.75,-.39,ti<1?2.2:3),dk,hi,{shine:ti>=2});fill(poly([[19,8],[29,8],[28,15],[20,15]]),sh(dk,.8),mid,{});if(ti>=2)for(const x of[21,27])set(x,11,L(hi,[255,255,255],.5),1)}
+  else if(hd==='ornate'){fill(arc(24,26,19,4.2,-2.8,-.34,3.2),dk,hi,{shine:1});fill(arc(24,26,14,1.4,-2.5,-.64,0),sh(dk,.7),mid,{});fill(circ(24,9,5.5),sh(dk,.8),mid,{});gem(24,9,3.6,acc);
+    for(const s of[-1,1])fill(poly([[24+s*6,6],[24+s*12,2],[24+s*9,8]]),dk,hi,{})}
+  else if(hd==='jagged'){fill(poly([[2,20],[8,6],[14,12],[20,2],[24,9],[28,2],[34,12],[40,6],[46,20],[36,14],[24,18],[12,14]]),sh(dk,.5),hi,{shine:1,dark:1});glow(24,10,20,acc,.35)}
+  else if(hd==='ruby'){fill(arc(24,27,19,3.4,-2.8,-.34,3),sh(hi,.5),hi,{shine:1});const R=hx(C.R||'#ff5a78');fill(poly([[24,0],[33,7],[30,16],[18,16],[15,7]]),sh(R,.45),L(R,[255,255,255],.3),{shine:1,flat:1});
+    for(const[a,b]of[[[24,0],[24,16]],[[15,7],[33,7]]])for(let k=0;k<=12;k++){const x=Math.round(a[0]+(b[0]-a[0])*k/12),y=Math.round(a[1]+(b[1]-a[1])*k/12);set(x,y,L(R,[255,255,255],.45),.5)}glow(24,8,22,R,.3)}
+  else if(hd==='crystal'){const D=hi;fill(poly([[7,15],[41,15],[38,20],[10,20]]),sh(dk,.6),mid,{shine:1});for(const[cx,h,w]of[[24,0,5],[15,5,4],[33,5,4],[8,11,3],[40,11,3]])fill(poly([[cx,h],[cx+w,h+5],[cx+w*.7,h+15],[cx-w*.7,h+15],[cx-w,h+5]]),sh(D,.5),L(D,[255,255,255],.4),{shine:1,flat:1});glow(24,9,24,D,.35)}
+  else if(hd==='flame'){fill(arc(24,26,18,4.4,-2.8,-.34,2.6),hx(C.M||'#4a1a12'),sh(hx(C.c||'#ff8a2a'),.8),{dark:1});
+    for(let y=0;y<26;y++)for(let x=0;x<N;x++){const n=th(x*3,y*5+11),f=arc(24,26,18,4.4,-2.8,-.34,2.6)(x+.5,y+.5);if(f>0&&n<.18)set(x,y,hx(C.f||'#ffc040'),.95)}
+    for(let y=0;y<14;y++)for(let x=8;x<40;x++){const fl=tn(x*9,y*14)*1.2-(14-y)/14*.2-Math.abs(x-24)/24;if(fl>.55)set(x,y,fl>.85?hx(C.g||'#ffe080'):hx(C.c||'#ff8a2a'),fl>.7?1:.6)}glow(24,10,24,[255,140,40],.45)}
+  else if(hd==='hammer'){fill(poly([[6,4],[42,4],[44,8],[44,18],[42,22],[6,22],[4,18],[4,8]]),sh(hx(C.H||'#5e636c'),.6),hi,{shine:1});
+    for(const x of[12,36])fill(poly([[x-3,6],[x+3,6],[x+3,20],[x-3,20]]),sh(dk,.6),mid,{});fill(circ(24,13,6.5),[60,30,10],hx(C.o||'#ffb040'),{shine:1,flat:1});fill(circ(24,13,3),[255,200,90],[255,250,220],{flat:1});glow(24,13,18,[255,170,60],.4)}
+  else if(hd==='skull'){fill(arc(30,30,24,3.2,-2.9,-1.2,2.4),sh(hi,.55),hi,{});fill(circ(18,11,8.5),sh(hi,.55),hx(C.S||'#f3ead2'),{});fill(poly([[13,15],[23,15],[22,21],[14,21]]),sh(hi,.5),hi,{});
+    for(const ex of[15,21]){fill(circ(ex,11,2.2),[20,10,8],[40,20,16],{flat:1});set(ex,11,hx(C.e||'#ff3a20'),1);set(ex-1,11,hx(C.e||'#ff3a20'),.8)}glow(18,11,14,hx(C.e||'#ff3a20'),.2)}
+  else if(hd==='wisp'){const T1=hx(C.t||'#40e0c0'),S1=hx(C.s||'#a0fff0');glow(24,12,24,S1,.4);
+    // a flame of souls: wide at the bottom, licking up into three tongues, white at the heart
+    for(let y=0;y<24;y++)for(let x=0;x<N;x++){const v=y/24,w=16*Math.pow(Math.sin(Math.PI*Math.min(1,v*1.15+.08)),.7),tongue=Math.abs(Math.sin((x-24)*.32))*(1-v)*7,dx=Math.abs(x+.5-24)+tongue*.0,f=(w-dx-tongue*.6+(tn(x*9,y*12+40)-.5)*4)/6;
+      if(f<=0)continue;const core=clamp(1-dx/(w*.45+1),0,1)*(v>.35?1:.4);set(x,y,core>.55?[240,255,252]:L(T1,S1,clamp(f*1.3,0,1)),clamp(f*1.6,0,.95))}
+    for(const[wx,wy]of[[8,6],[40,9],[34,1]])fill(circ(wx,wy,1.6),T1,[255,255,255],{flat:1,alpha:.8})}
+  else if(hd==='horns'){const R=hx(C.R||'#d82a20');for(const s of[-1,1])fill((x,y)=>{const dx=(x-24)*s;if(dx<2||y>24)return -1;return(4.5-dx*.12)-Math.abs(Math.hypot(dx-8,y-24)-14+dx*.15)},sh(R,.4),R,{shine:1});
+    fill(circ(24,14,6),sh(R,.4),R,{});gem(24,14,3.4,hx(C.g||'#ffd060'));glow(24,12,24,[255,90,30],.35)}
+  else if(hd==='crescent'){fill((x,y)=>Math.min(circ(26,22,17)(x,y),-circ(31,27,15)(x,y)),sh(dk,.6),hi,{shine:1});for(let k=0;k<6;k++){const a=-2.6+k*.35;set(Math.round(26+Math.cos(a)*15),Math.round(22+Math.sin(a)*15),L(hi,[255,255,255],.6),.8)}glow(22,12,22,hi,.3)}
+  else if(hd==='star'){if(ti>=17){for(let y=0;y<30;y++)for(let x=0;x<N;x++){const dx=x+.5-24,dy=(y+.5-13)*1.3,r=Math.hypot(dx,dy),a=Math.atan2(dy,dx),sw=Math.sin(a*2-r*.45);if(r<19&&r>5&&sw>.3)set(x,y,L([120,60,220],[255,130,210],(sw-.3)/.7),clamp((19-r)/8,0,.6)*sw)}}fill(star(24,13,13,5.5,5,-Math.PI/2),sh(hi,.55),hx(C.Y||C.M||'#fff3b8'),{shine:1});fill(circ(24,13,3.4),hx(C.y||'#ffffff'),[255,255,255],{flat:1});
+    for(let k=0;k<8;k++){const a=k*Math.PI/4+.39;for(let r=15;r<21;r++)set(Math.round(24+Math.cos(a)*r),Math.round(13+Math.sin(a)*r),hx(C.Y||'#fffbe0'),(21-r)/7)}glow(24,13,24,hx(C.Y||'#fff3b8'),.4)}
+  else if(hd==='rift'){for(let y=0;y<30;y++)for(let x=0;x<N;x++){const dx=x+.5-24,dy=(y+.5-13)*1.15,r=Math.hypot(dx,dy),a=Math.atan2(dy,dx);if(r>15)continue;
+      const sw=Math.sin(a*3+r*.55),ring=Math.abs(r-11)<1.6;let col=r<7?[4,2,10]:L(hx(C.v||'#1a0a34'),hx(C.V||'#3a1a6a'),.5+.5*sw);if(ring)col=L(hx(C.P||'#c8a8ff'),[255,255,255],.3);if(r>=7&&th(x*5,y*7)<.05)col=[255,255,255];set(x,y,col,r>13?(15-r)/2:1)}
+    glow(24,13,24,[150,90,255],.45)}
+  else fill(arc(24,24,18,4,-2.75,-.39,3),dk,hi,{});
+  X.putImageData(img,0,0);PKHD.set(key,c);return c}
+const pkAura=t=>t>=18?[170,110,255]:t>=15?[200,220,255]:t>=12?[160,255,230]:t>=9?[255,150,60]:t>=6?[200,160,255]:null;
 function mnPkCols(t){const K=MSK.find(s=>s.id===S.mina.sk),P=(MPK[t]||MPK[0]).p;return K?{...P,...mnSkinCols(K)}:P}
-function mnPickSvg(t,R){return pxsvg(MPK_MAP(t),mnPkCols(t),(R||S.mina.rar)?'chr0':'')}
-const mnPkCv=()=>mnSpr('pkc'+S.mina.pk+S.mina.sk,MPK_MAP(S.mina.pk),mnPkCols(S.mina.pk));
+const PKURL=new Map();
+function mnPickSvg(t,R){const k=t+'|'+(S.mina.sk||'');let u=PKURL.get(k);if(!u){u=pkHD(t).toDataURL();PKURL.set(k,u)}return`<svg class="pxi ${(R||S.mina.rar)?'chr0':''}" viewBox="0 0 48 48" aria-hidden="true"><image href="${u}" width="48" height="48" style="image-rendering:pixelated"/></svg>`}
+const mnPkCv=()=>pkHD(S.mina.pk);
 // the pickaxe drawn with the end of its handle at (px,py), turned by ang (0 points up), mirrored when facing left
-function mnPkDraw(px,py,ang,fl,sc,al){const c=mnPkCv(),s=sc||.8;lowX.save();lowX.translate(px,py);if(fl)lowX.scale(-1,1);lowX.rotate(ang);if(al!=null)lowX.globalAlpha=al;lowX.drawImage(c,-6*s,-11.4*s,12*s,12*s);lowX.restore()}
+function mnPkDraw(px,py,ang,fl,sc,al){const c=mnPkCv(),s=sc||.8,au=pkAura(S.mina.pk);lowX.save();lowX.translate(px,py);if(fl)lowX.scale(-1,1);lowX.rotate(ang);if(al!=null)lowX.globalAlpha=al;
+  // the stronger pickaxes carry their own light: a soft glow round the head, and sparks circling the best ones
+  if(au){const p=RM?.8:.75+.25*Math.sin(T*3),g=lowX.createRadialGradient(0,-8.5*s,0,0,-8.5*s,9*s);g.addColorStop(0,css(au,.32*p));g.addColorStop(1,css(au,0));lowX.globalCompositeOperation='lighter';lowX.fillStyle=g;lowX.fillRect(-9*s,-17.5*s,18*s,18*s);
+    if(S.mina.pk>=12&&!RM)for(let i=0;i<3;i++){const a=T*2.4+i*2.09,r=6.5*s;lowX.fillStyle=css(au,.85);lowX.fillRect(Math.cos(a)*r-.25,-8.5*s+Math.sin(a)*r*.6-.25,.5,.5)}lowX.globalCompositeOperation='source-over'}
+  lowX.imageSmoothingEnabled=true;lowX.drawImage(c,-6*s,-11.4*s,12*s,12*s);lowX.restore();lowX.imageSmoothingEnabled=false}
 // the auto pickaxe hangs above the cell being dug and comes down on it: the head lands on the cell at the bottom of the swing
 function mnDrawAutoPk(){const h=autoH;if(h.show<=0||!S.auto)return;const s=.9,d=9.4*s,AH=-2.25,AU=-.7,u=h.press>0?1-h.press/.14:1,k=h.press>0?Math.sin(u*Math.PI):0,A=AU+(AH-AU)*k;
   const px=h.x-d*Math.sin(AH),py=h.y+d*Math.cos(AH);mnPkDraw(px,py,A,false,s,h.show*.95);if(h.press>0&&k>.8&&!RM){lowX.fillStyle='rgba(255,250,220,.7)';lowX.fillRect(h.x-1,h.y-1,2,2)}}
@@ -10838,7 +10900,7 @@ function frame(t){
   tick(dt);draw();guideTick();
 }
 /* versões novas: quando o jogo muda no servidor, guarda o progresso e recarrega a página */
-const BUILD='1c09b46c97c4',UKEY='tapmoss.upd';const UPD={on:false,go:false,at:0};
+const BUILD='81ae8d42c5a3',UKEY='tapmoss.upd';const UPD={on:false,go:false,at:0};
 // the new version downloads in the background while the game goes on; the reload only comes once the whole page is here,
 // so a slow network never leaves a half-built page on screen. The offline helper (sw.js) hands this copy over at the reload.
 const NEXTC='tapmoss-next',pgKey=()=>{let p=location.pathname.replace(/index\.html$/,'');if(!p.endsWith('/'))p+='/';return p};
