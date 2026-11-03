@@ -10510,62 +10510,76 @@ const mnSkinCols=K=>({M:K.pal[2],D:K.pal[2],T:K.pal[2],B:K.pal[2],S:K.pal[2],H:K
 // ornate blades with a gem, jagged obsidian, a huge ruby, a diamond cluster, magma with flames, a hammer with a glowing core, a bone
 // scythe with a skull, soul fire, demon horns, a shadow crescent, the moon, a star, a galaxy and finally a rift in the void
 const PKHD=new Map();
-function pkHD(t){const sk=S&&S.mina?S.mina.sk:'',key=t+'|'+sk;let c=PKHD.get(key);if(c)return c;
-  const P=MPK[t]||MPK[0],C=mnPkCols(t),hx=v=>typeof v==='string'?hex(v):v,first=(...k)=>{for(const q of k)if(C[q])return hx(C[q]);return[200,200,200]};
-  const hi=first('M','D','T','B','S','Y','s','R','H','V'),mid=first('m','d','t','r','R','H','v','M'),dk=first('g','k','p','v','r'),acc=hx(P.pal[2]),wd=first('w'),wh=first('h'),ol=first('k');
-  const N=48;c=document.createElement('canvas');c.width=N;c.height=N;const X=c.getContext('2d'),img=X.createImageData(N,N),d=img.data;
-  const sh=(col,f)=>[col[0]*f,col[1]*f,col[2]*f],L=(a,b,k)=>[a[0]+(b[0]-a[0])*k,a[1]+(b[1]-a[1])*k,a[2]+(b[2]-a[2])*k];
-  const set=(x,y,col,a)=>{if(x<0||y<0||x>=N||y>=N)return;const j=(y*N+x)<<2,al=a==null?1:a;d[j]=d[j]*(1-al)+col[0]*al;d[j+1]=d[j+1]*(1-al)+col[1]*al;d[j+2]=d[j+2]*(1-al)+col[2]*al;d[j+3]=Math.max(d[j+3],al*255)};
-  // a shape given by an inside test f(x,y)>0; shaded by how far in it is and which way its edge faces (light from the top left)
-  const fill=(f,lo,hiC,o={})=>{for(let y=0;y<N;y++)for(let x=0;x<N;x++){const v=f(x+.5,y+.5);if(v<=0)continue;
-    const gx=f(x+1.5,y+.5)-f(x-.5,y+.5),gy=f(x+.5,y+1.5)-f(x+.5,y-.5),gl=Math.hypot(gx,gy)||1,ndl=(-gx*-.6+-gy*-.8)/gl;
-    let k=.5+ndl*.35*Math.min(1,v*1.4)+(o.flat?0:Math.min(.25,v*.08))+(th(x*7+t*31,y*5)-.5)*(o.grain||.08);if(v<.6)k-=.28;
-    const col=k>.78?L(hiC,[255,255,255],o.shine?Math.min(.6,(k-.78)*3):0):L(lo,hiC,clamp(k,0,1)*1.15);set(x,y,o.dark&&v<.6?sh(col,.6):col,o.alpha)}};
-  const glow=(cx,cy,R,col,a)=>{for(let y=0;y<N;y++)for(let x=0;x<N;x++){const r=Math.hypot(x+.5-cx,y+.5-cy)/R;if(r<1){const j=(y*N+x)<<2,al=(1-r)*(1-r)*a;if(d[j+3]<40){d[j]=col[0];d[j+1]=col[1];d[j+2]=col[2];d[j+3]=Math.max(d[j+3],al*255)}}}};
-  const seg=(px,py,ax,ay,bx,by)=>{const vx=bx-ax,vy=by-ay,u=clamp(((px-ax)*vx+(py-ay)*vy)/(vx*vx+vy*vy),0,1);return Math.hypot(px-ax-vx*u,py-ay-vy*u)};
-  const circ=(cx,cy,r)=>(x,y)=>r-Math.hypot(x-cx,y-cy);
-  const arc=(cx,cy,R,w,a0,a1,tip)=>(x,y)=>{const dx=x-cx,dy=y-cy,r=Math.hypot(dx,dy),a=Math.atan2(dy,dx);if(a<a0||a>a1)return -1;const u=(a-a0)/(a1-a0),taper=tip?Math.min(1,Math.min(u,1-u)*tip):1;return w*taper-Math.abs(r-R)};
-  const poly=pts=>(x,y)=>{let ins=false,md=1e9;for(let i=0,j=pts.length-1;i<pts.length;j=i++){const[xi,yi]=pts[i],[xj,yj]=pts[j];if((yi>y)!==(yj>y)&&x<(xj-xi)*(y-yi)/(yj-yi)+xi)ins=!ins;md=Math.min(md,seg(x,y,xi,yi,xj,yj))}return ins?md:-md};
-  const star=(cx,cy,R,r,n,rot)=>{const p=[];for(let i=0;i<n*2;i++){const a=rot+i*Math.PI/n,rr=i%2?r:R;p.push([cx+Math.cos(a)*rr,cy+Math.sin(a)*rr])}return poly(p)};
-  const hd=P.hd,ti=t;
-  // the handle: wood or dark metal, a wrap of cloth or leather near the head, a cap at the end
-  const hdl=(x,y)=>2.2-Math.abs(x-24)+(y<15||y>46?-9:0);fill(hdl,sh(wd,.7),wh,{grain:.18});
-  for(let y=19;y<26;y+=2)for(let x=21;x<27;x++)set(x,y,sh(dk,.9),1);
-  fill(circ(24,46,2.6),sh(dk,.8),mid,{});
-  const gem=(cx,cy,r,col)=>{fill(poly([[cx,cy-r],[cx+r,cy],[cx,cy+r],[cx-r,cy]]),sh(col,.55),L(col,[255,255,255],.35),{shine:1,flat:1});set(Math.round(cx-r*.3),Math.round(cy-r*.4),[255,255,255],.9)};
-  if(hd==='classic'){fill(arc(24,24,18,3.6+ti*.4,-2.75,-.39,ti<1?2.2:3),dk,hi,{shine:ti>=2});fill(poly([[19,8],[29,8],[28,15],[20,15]]),sh(dk,.8),mid,{});if(ti>=2)for(const x of[21,27])set(x,11,L(hi,[255,255,255],.5),1)}
-  else if(hd==='ornate'){fill(arc(24,26,19,4.2,-2.8,-.34,3.2),dk,hi,{shine:1});fill(arc(24,26,14,1.4,-2.5,-.64,0),sh(dk,.7),mid,{});fill(circ(24,9,5.5),sh(dk,.8),mid,{});gem(24,9,3.6,acc);
-    for(const s of[-1,1])fill(poly([[24+s*6,6],[24+s*12,2],[24+s*9,8]]),dk,hi,{})}
-  else if(hd==='jagged'){fill(poly([[2,20],[8,6],[14,12],[20,2],[24,9],[28,2],[34,12],[40,6],[46,20],[36,14],[24,18],[12,14]]),sh(dk,.5),hi,{shine:1,dark:1});glow(24,10,20,acc,.35)}
-  else if(hd==='ruby'){fill(arc(24,27,19,3.4,-2.8,-.34,3),sh(hi,.5),hi,{shine:1});const R=hx(C.R||'#ff5a78');fill(poly([[24,0],[33,7],[30,16],[18,16],[15,7]]),sh(R,.45),L(R,[255,255,255],.3),{shine:1,flat:1});
-    for(const[a,b]of[[[24,0],[24,16]],[[15,7],[33,7]]])for(let k=0;k<=12;k++){const x=Math.round(a[0]+(b[0]-a[0])*k/12),y=Math.round(a[1]+(b[1]-a[1])*k/12);set(x,y,L(R,[255,255,255],.45),.5)}glow(24,8,22,R,.3)}
-  else if(hd==='crystal'){const D=hi;fill(poly([[7,15],[41,15],[38,20],[10,20]]),sh(dk,.6),mid,{shine:1});for(const[cx,h,w]of[[24,0,5],[15,5,4],[33,5,4],[8,11,3],[40,11,3]])fill(poly([[cx,h],[cx+w,h+5],[cx+w*.7,h+15],[cx-w*.7,h+15],[cx-w,h+5]]),sh(D,.5),L(D,[255,255,255],.4),{shine:1,flat:1});glow(24,9,24,D,.35)}
-  else if(hd==='flame'){fill(arc(24,26,18,4.4,-2.8,-.34,2.6),hx(C.M||'#4a1a12'),sh(hx(C.c||'#ff8a2a'),.8),{dark:1});
-    for(let y=0;y<26;y++)for(let x=0;x<N;x++){const n=th(x*3,y*5+11),f=arc(24,26,18,4.4,-2.8,-.34,2.6)(x+.5,y+.5);if(f>0&&n<.18)set(x,y,hx(C.f||'#ffc040'),.95)}
-    for(let y=0;y<14;y++)for(let x=8;x<40;x++){const fl=tn(x*9,y*14)*1.2-(14-y)/14*.2-Math.abs(x-24)/24;if(fl>.55)set(x,y,fl>.85?hx(C.g||'#ffe080'):hx(C.c||'#ff8a2a'),fl>.7?1:.6)}glow(24,10,24,[255,140,40],.45)}
-  else if(hd==='hammer'){fill(poly([[6,4],[42,4],[44,8],[44,18],[42,22],[6,22],[4,18],[4,8]]),sh(hx(C.H||'#5e636c'),.6),hi,{shine:1});
-    for(const x of[12,36])fill(poly([[x-3,6],[x+3,6],[x+3,20],[x-3,20]]),sh(dk,.6),mid,{});fill(circ(24,13,6.5),[60,30,10],hx(C.o||'#ffb040'),{shine:1,flat:1});fill(circ(24,13,3),[255,200,90],[255,250,220],{flat:1});glow(24,13,18,[255,170,60],.4)}
-  else if(hd==='skull'){fill(arc(30,30,24,3.2,-2.9,-1.2,2.4),sh(hi,.55),hi,{});fill(circ(18,11,8.5),sh(hi,.55),hx(C.S||'#f3ead2'),{});fill(poly([[13,15],[23,15],[22,21],[14,21]]),sh(hi,.5),hi,{});
-    for(const ex of[15,21]){fill(circ(ex,11,2.2),[20,10,8],[40,20,16],{flat:1});set(ex,11,hx(C.e||'#ff3a20'),1);set(ex-1,11,hx(C.e||'#ff3a20'),.8)}glow(18,11,14,hx(C.e||'#ff3a20'),.2)}
-  else if(hd==='wisp'){const T1=hx(C.t||'#40e0c0'),S1=hx(C.s||'#a0fff0');glow(24,12,24,S1,.4);
-    // a flame of souls: wide at the bottom, licking up into three tongues, white at the heart
-    for(let y=0;y<24;y++)for(let x=0;x<N;x++){const v=y/24,w=16*Math.pow(Math.sin(Math.PI*Math.min(1,v*1.15+.08)),.7),tongue=Math.abs(Math.sin((x-24)*.32))*(1-v)*7,dx=Math.abs(x+.5-24)+tongue*.0,f=(w-dx-tongue*.6+(tn(x*9,y*12+40)-.5)*4)/6;
-      if(f<=0)continue;const core=clamp(1-dx/(w*.45+1),0,1)*(v>.35?1:.4);set(x,y,core>.55?[240,255,252]:L(T1,S1,clamp(f*1.3,0,1)),clamp(f*1.6,0,.95))}
-    for(const[wx,wy]of[[8,6],[40,9],[34,1]])fill(circ(wx,wy,1.6),T1,[255,255,255],{flat:1,alpha:.8})}
-  else if(hd==='horns'){const R=hx(C.R||'#d82a20');for(const s of[-1,1])fill((x,y)=>{const dx=(x-24)*s;if(dx<2||y>24)return -1;return(4.5-dx*.12)-Math.abs(Math.hypot(dx-8,y-24)-14+dx*.15)},sh(R,.4),R,{shine:1});
-    fill(circ(24,14,6),sh(R,.4),R,{});gem(24,14,3.4,hx(C.g||'#ffd060'));glow(24,12,24,[255,90,30],.35)}
-  else if(hd==='crescent'){fill((x,y)=>Math.min(circ(26,22,17)(x,y),-circ(31,27,15)(x,y)),sh(dk,.6),hi,{shine:1});for(let k=0;k<6;k++){const a=-2.6+k*.35;set(Math.round(26+Math.cos(a)*15),Math.round(22+Math.sin(a)*15),L(hi,[255,255,255],.6),.8)}glow(22,12,22,hi,.3)}
-  else if(hd==='star'){if(ti>=17){for(let y=0;y<30;y++)for(let x=0;x<N;x++){const dx=x+.5-24,dy=(y+.5-13)*1.3,r=Math.hypot(dx,dy),a=Math.atan2(dy,dx),sw=Math.sin(a*2-r*.45);if(r<19&&r>5&&sw>.3)set(x,y,L([120,60,220],[255,130,210],(sw-.3)/.7),clamp((19-r)/8,0,.6)*sw)}}fill(star(24,13,13,5.5,5,-Math.PI/2),sh(hi,.55),hx(C.Y||C.M||'#fff3b8'),{shine:1});fill(circ(24,13,3.4),hx(C.y||'#ffffff'),[255,255,255],{flat:1});
-    for(let k=0;k<8;k++){const a=k*Math.PI/4+.39;for(let r=15;r<21;r++)set(Math.round(24+Math.cos(a)*r),Math.round(13+Math.sin(a)*r),hx(C.Y||'#fffbe0'),(21-r)/7)}glow(24,13,24,hx(C.Y||'#fff3b8'),.4)}
-  else if(hd==='rift'){for(let y=0;y<30;y++)for(let x=0;x<N;x++){const dx=x+.5-24,dy=(y+.5-13)*1.15,r=Math.hypot(dx,dy),a=Math.atan2(dy,dx);if(r>15)continue;
-      const sw=Math.sin(a*3+r*.55),ring=Math.abs(r-11)<1.6;let col=r<7?[4,2,10]:L(hx(C.v||'#1a0a34'),hx(C.V||'#3a1a6a'),.5+.5*sw);if(ring)col=L(hx(C.P||'#c8a8ff'),[255,255,255],.3);if(r>=7&&th(x*5,y*7)<.05)col=[255,255,255];set(x,y,col,r>13?(15-r)/2:1)}
-    glow(24,13,24,[150,90,255],.45)}
-  else fill(arc(24,24,18,4,-2.75,-.39,3),dk,hi,{});
+// the look of each strength: blade length and curve, what sits at the back of the head, the core, the colours of the blade from root to tip,
+// how many rings on the handle, the end of the handle, and what floats around it
+const PKD=[
+ {L:8,cv:.35,w:3.2,bk:'spike',co:0,ga:'#8a6a44',gb:'#d8b880',bd:1,pm:'ball',fx:0},{L:10,cv:.4,w:3.6,bk:'spike',co:0,ga:'#5e5e6c',gb:'#c8c8d4',bd:1,pm:'ball',fx:0},
+ {L:12,cv:.42,w:3.6,bk:'spike',co:0,ga:'#8a4a22',gb:'#f0b078',bd:2,pm:'ball',fx:0},{L:14,cv:.45,w:3.8,bk:'spike',co:0,ga:'#6a7480',gb:'#f4f8fc',bd:2,pm:'spike',fx:0},
+ {L:16,cv:.5,w:4,bk:'blade2',co:'gem',ga:'#8a96a6',gb:'#ffffff',bd:3,pm:'gem',fx:'spark'},{L:17,cv:.5,w:4.2,bk:'blade2',co:'gem',ga:'#c8901a',gb:'#fff3b8',bd:3,pm:'gem',fx:'spark',sr:1},
+ {L:18,cv:.45,w:4.4,bk:'spike',co:'gem',ga:'#2a1e3a',gb:'#c8a8ff',bd:3,pm:'crystal',fx:'spark',sr:2},{L:18,cv:.55,w:4.4,bk:'blade2',co:'big',ga:'#7a1020',gb:'#ffc0cc',bd:3,pm:'gem',fx:'spark'},
+ {L:19,cv:.5,w:4.2,bk:'crystal',co:'gem',ga:'#3a8ab0',gb:'#ffffff',bd:3,pm:'crystal',fx:'spark'},{L:19,cv:.5,w:4.6,bk:'spike',co:'big',ga:'#2a0c08',gb:'#ffb040',bd:3,pm:'spike',fx:'flame',sr:2},
+ {L:14,cv:.25,w:5.4,bk:'hammer',co:'ring',ga:'#44444e',gb:'#d8dee6',bd:4,pm:'spike',fx:'spark'},{L:21,cv:.7,w:4.2,bk:'spike',co:'skull',ga:'#a89c88',gb:'#fffaf0',bd:4,pm:'claw',fx:'spark'},
+ {L:21,cv:.65,w:5,bk:'blade2',co:'big',ga:'#1a6a6a',gb:'#e0fff8',bd:4,pm:'crystal',fx:'wisp',ghost:1},{L:20,cv:.55,w:4.8,bk:'horn',co:'big',ga:'#5a0a10',gb:'#ff6a2a',bd:4,pm:'claw',fx:'flame',sr:2},
+ {L:23,cv:.8,w:4.4,bk:'spike',co:'eye',ga:'#1a0830',gb:'#c08aff',bd:4,pm:'claw',fx:'shard',sr:1},{L:24,cv:.9,w:5,bk:'blade2',co:'moon',ga:'#8a9ad0',gb:'#ffffff',bd:5,pm:'gem',fx:'star'},
+ {L:22,cv:.6,w:5.2,bk:'blade2',co:'star',ga:'#c8901a',gb:'#fffbe0',bd:5,pm:'gem',fx:'star'},{L:24,cv:.7,w:5.4,bk:'blade2',co:'star',ga:'#ff6ad0',gb:'#7fe3fe',bd:5,pm:'crystal',fx:'star',neb:1},
+ {L:25,cv:.75,w:5.6,bk:'blade2',co:'ring',ga:'#1a0a34',gb:'#c8a8ff',bd:5,pm:'crystal',fx:'shard',vd:1}];
+function pkHD(t,diag){const sk=S&&S.mina?S.mina.sk:'',key=t+'|'+sk+'|'+(diag?1:0);let c=PKHD.get(key);if(c)return c;
+  const P=MPK[t]||MPK[0],D=PKD[t]||PKD[0],C=mnPkCols(t),K=S&&S.mina&&MSK.find(q=>q.id===S.mina.sk),hx=v=>typeof v==='string'?hex(v):v,first=(...k)=>{for(const q of k)if(C[q])return hx(C[q]);return[200,200,200]};
+  const L=(a,b,k)=>[a[0]+(b[0]-a[0])*k,a[1]+(b[1]-a[1])*k,a[2]+(b[2]-a[2])*k],sh=(c,f)=>[c[0]*f,c[1]*f,c[2]*f];
+  const gA=K?hex(K.pal[0]):hex(D.ga),gB=K?hex(K.pal[2]):hex(D.gb),acc=hx(P.pal[2]),wd=first('w'),wh=first('h'),band=K?hex(K.pal[1]):first('r','p','m','M');
+  const N=64;c=document.createElement('canvas');c.width=N;c.height=N;const X=c.getContext('2d'),img=X.createImageData(N,N),d=img.data;
+  // a frame along the pickaxe: u from the end of the handle to the head, v across it (front of the blade is v<0)
+  const O=diag?[12,52]:[32,62],A=diag?[.7071,-.7071]:[0,-1],B=diag?[.7071,.7071]:[1,0],H0=diag?38:40,SC=1.55,SW=1.3;
+  const pt=(u,v)=>[O[0]+A[0]*u+B[0]*v,O[1]+A[1]*u+B[1]*v];
+  const lay=new Float32Array(N*N).fill(-1),col=new Array(N*N);
+  const put=(x,y,cc,z)=>{x|=0;y|=0;if(x<0||y<0||x>=N||y>=N)return;const i=y*N+x;if(z<lay[i])return;lay[i]=z;col[i]=cc};
+  const each=f=>{for(let y=0;y<N;y++)for(let x=0;x<N;x++){const px=x+.5-O[0],py=y+.5-O[1];f(x,y,px*A[0]+py*A[1],px*B[0]+py*B[1])}};
+  // the handle: wood or metal, darker on one side, wrapped near the hand, rings of colour, a guard under the head
+  const hw=t>=10?2.6:2.2;
+  each((x,y,u,v)=>{if(u<3||u>H0-1||Math.abs(v)>hw)return;const k=.62-v/hw*.3;let cc=L(sh(wd,.75),wh,k);
+    if(u<16&&((u+v*.8)%4+4)%4<1.3)cc=sh(cc,.7);if(Math.abs(v)>hw-.7)cc=sh(cc,.72);put(x,y,cc,1)});
+  for(let i=0;i<D.bd;i++){const u0=10+i*(H0-16)/Math.max(1,D.bd);each((x,y,u,v)=>{if(Math.abs(u-u0)>1.2||Math.abs(v)>hw+.9)return;put(x,y,L(sh(band,.6),L(band,[255,255,255],.25),.6-v/(hw+1)*.35),2)})}
+  if(t>=4)each((x,y,u,v)=>{if(u<H0-9||u>H0-7||Math.abs(v)>6)return;put(x,y,L(sh(gA,.7),gB,.5-v*.06+(u-H0+8)*.2),2)});
+  // the end of the handle
+  each((x,y,u,v)=>{const r=Math.hypot(u-2,v);let ins=false,z=.6;
+    if(D.pm==='ball')ins=r<2.8;else if(D.pm==='spike')ins=u<4&&u>-4&&Math.abs(v)<(u+4)*.45;else if(D.pm==='gem')ins=Math.abs(u-1)+Math.abs(v)<4;else if(D.pm==='crystal')ins=Math.abs(u+.5)*.5+Math.abs(v)<3&&u>-5;else if(D.pm==='claw')ins=(r<3)||(u<1&&u>-4&&Math.abs(Math.abs(v)-2.5)<.9);
+    if(!ins)return;const k=.55-v*.08-(u-2)*.05;put(x,y,D.pm==='gem'||D.pm==='crystal'?L(sh(acc,.5),L(acc,[255,255,255],.4),k):L(sh(gA,.7),gB,k),3)});
+  // the blade: a band that leaves the head forwards and curves down; root colour to tip colour, a lit edge on top, a darker belly
+  const bandC=(len,cv,w0,side,z,cA,cB,serr)=>{const pts=[];for(let i=0;i<=28;i++){const s=i/28;pts.push([H0-1-cv*len*s*s*.9,side*(len*s)+side*-1.5,s])}
+    each((x,y,u,v)=>{let bd=1e9,bs=0,bu=0,bv=0;for(let i=0;i<pts.length-1;i++){const[u1,v1,s1]=pts[i],[u2,v2,s2]=pts[i+1],du=u2-u1,dv=v2-v1,q=clamp(((u-u1)*du+(v-v1)*dv)/(du*du+dv*dv),0,1),uu=u1+du*q,vv=v1+dv*q,dd=Math.hypot(u-uu,v-vv);if(dd<bd){bd=dd;bs=s1+(s2-s1)*q;bu=u-uu;bv=v-vv}}
+      let w=w0*Math.pow(1-bs,.75)+.6;if(serr&&bu>0&&bs>.15&&bs<.85&&((bs*len)%3.2)<1.4)w+=serr*.9;if(bd>w)return;
+      const top=bu>0,e=w-bd;let cc=L(cA,cB,clamp(bs*1.15,0,1));cc=L(cc,top?[255,255,255]:sh(cc,.55),top?(e<1.1?.45:.12):(e<1.1?.4:.15));
+      if(D.ghost)cc=L(cc,[255,255,255],th(x*5,y*7)<.15?.6:0);if(D.neb&&th(x*3+11,y*5)<.07)cc=[255,255,255];if(D.vd&&!top&&e>1.4)cc=[10,4,22];
+      put(x,y,cc,z)})};
+  bandC(D.L*SC,D.cv,D.w*SW,-1,4,gA,gB,D.sr);
+  if(D.bk==='spike')bandC(Math.max(8,D.L*.45*SC),D.cv*.6,D.w*.8*SW,1,4,gA,L(gA,gB,.7),0);
+  else if(D.bk==='blade2')bandC(D.L*.62*SC,D.cv*.8,D.w*.85*SW,1,4,gA,gB,0);
+  else if(D.bk==='hammer')each((x,y,u,v)=>{if(v<1||v>14||Math.abs(u-H0+1)>7)return;const k=.6-(v-7)*.03+(H0-1-u)*-.04;put(x,y,Math.abs(u-H0+1)>6||v>13?sh(gA,.8):L(gA,gB,k),4)});
+  else if(D.bk==='horn')bandC(D.L*.55*SC,-.9,D.w*.9*SW,1,4,[90,10,16],[255,220,140],0);
+  else if(D.bk==='crystal')for(const[du,dv,sz]of[[3,5,4],[-1,8,3],[5,9,2.5]])each((x,y,u,v)=>{const uu=u-(H0+du),vv=v-dv;if(Math.abs(uu)*.6+Math.abs(vv)>sz)return;put(x,y,L(gA,gB,.5-vv*.1+uu*.08),4)});
+  // the heart of the head
+  const cx=H0-1;each((x,y,u,v)=>{const r=Math.hypot(u-cx,v);let cc=null;
+    if(r<4.6)cc=L(sh(gA,.6),gB,.55-v*.08+(u-cx)*.06);
+    if(D.co==='gem'&&Math.abs(u-cx)+Math.abs(v)<2.8)cc=L(sh(acc,.5),L(acc,[255,255,255],.45),.5-v*.12);
+    if(D.co==='big'&&Math.abs(u-cx)*.8+Math.abs(v)<4.2)cc=L(sh(acc,.45),L(acc,[255,255,255],.5),.55-v*.1+(u-cx)*.05);
+    if(D.co==='ring'&&r<4.6)cc=r<2.4?[6,2,14]:r<3.6?L(acc,[255,255,255],.35):sh(gA,.8);
+    if(D.co==='skull'&&r<4.4){cc=L([168,156,136],[255,248,232],.6-v*.06);if(Math.hypot(u-cx-1,Math.abs(v)-1.6)<1)cc=hx(C.e||'#ff3a20')}
+    if(D.co==='eye'&&r<4){cc=r<1.4?[255,240,255]:r<2.6?acc:[20,8,30]}
+    if(D.co==='moon'&&r<4.4){cc=Math.hypot(u-cx-1.5,v+1.5)<3.6?sh(gA,.5):[250,252,255]}
+    if(D.co==='star'){const a=Math.atan2(v,u-cx),rr=3+2.6*Math.pow(Math.abs(Math.cos(a*2.5)),6);if(r<rr)cc=r<2?[255,255,255]:L(acc,[255,255,240],.6)}
+    if(cc)put(x,y,cc,6)});
+  // colour into pixels: a soft edge of the part's own darker shade (not black)
+  for(let y=0;y<N;y++)for(let x=0;x<N;x++){const i=y*N+x;if(lay[i]<0)continue;const j=i<<2;let cc=col[i];
+    const edge=(x>0&&lay[i-1]<0)||(x<N-1&&lay[i+1]<0)||(y>0&&lay[i-N]<0)||(y<N-1&&lay[i+N]<0);if(edge)cc=sh(cc,.62);d[j]=cc[0];d[j+1]=cc[1];d[j+2]=cc[2];d[j+3]=255}
+  // what floats around it in the pictures: sparks, flames, wisps, stars, shards
+  if(D.fx){const r=mulberry32(t*97+7),hc=pt(H0+2,-D.L*.4);for(let k=0;k<6+t;k++){const ax=hc[0]+(r()-.5)*30,ay=hc[1]+(r()-.5)*24;if(ax<1||ay<1||ax>N-2||ay>N-2)continue;const i=((ay|0)*N+(ax|0));if(lay[i]>=0)continue;
+    const fc=D.fx==='flame'?(r()<.5?[255,200,80]:[255,110,40]):D.fx==='wisp'?[170,255,240]:D.fx==='shard'?acc:D.fx==='star'?[255,255,255]:L(gB,[255,255,255],.5),j=i<<2;d[j]=fc[0];d[j+1]=fc[1];d[j+2]=fc[2];d[j+3]=230;
+    if(D.fx==='star'||k%3===0){for(const[dx,dy]of[[1,0],[-1,0],[0,1],[0,-1]]){const q=(((ay|0)+dy)*N+((ax|0)+dx));if(q>=0&&q<N*N&&lay[q]<0&&!d[(q<<2)+3]){d[q<<2]=fc[0];d[(q<<2)+1]=fc[1];d[(q<<2)+2]=fc[2];d[(q<<2)+3]=110}}}}}
   X.putImageData(img,0,0);PKHD.set(key,c);return c}
 const pkAura=t=>t>=18?[170,110,255]:t>=15?[200,220,255]:t>=12?[160,255,230]:t>=9?[255,150,60]:t>=6?[200,160,255]:null;
 function mnPkCols(t){const K=MSK.find(s=>s.id===S.mina.sk),P=(MPK[t]||MPK[0]).p;return K?{...P,...mnSkinCols(K)}:P}
 const PKURL=new Map();
-function mnPickSvg(t,R){const k=t+'|'+(S.mina.sk||'');let u=PKURL.get(k);if(!u){u=pkHD(t).toDataURL();PKURL.set(k,u)}return`<svg class="pxi ${(R||S.mina.rar)?'chr0':''}" viewBox="0 0 48 48" aria-hidden="true"><image href="${u}" width="48" height="48" style="image-rendering:pixelated"/></svg>`}
+function mnPickSvg(t,R){const k=t+'|'+(S.mina.sk||'');let u=PKURL.get(k);if(!u){u=pkHD(t,1).toDataURL();PKURL.set(k,u)}return`<svg class="pxi ${(R||S.mina.rar)?'chr0':''}" viewBox="0 0 64 64" aria-hidden="true"><image href="${u}" width="64" height="64" style="image-rendering:pixelated"/></svg>`}
 const mnPkCv=()=>pkHD(S.mina.pk);
 // the pickaxe drawn with the end of its handle at (px,py), turned by ang (0 points up), mirrored when facing left
 function mnPkDraw(px,py,ang,fl,sc,al){const c=mnPkCv(),s=sc||.8,au=pkAura(S.mina.pk);lowX.save();lowX.translate(px,py);if(fl)lowX.scale(-1,1);lowX.rotate(ang);if(al!=null)lowX.globalAlpha=al;
@@ -10960,7 +10974,7 @@ function frame(t){
   tick(dt);draw();guideTick();
 }
 /* versões novas: quando o jogo muda no servidor, guarda o progresso e recarrega a página */
-const BUILD='b11b7f151126',UKEY='tapmoss.upd';const UPD={on:false,go:false,at:0};
+const BUILD='29ebabb6dae4',UKEY='tapmoss.upd';const UPD={on:false,go:false,at:0};
 // the new version downloads in the background while the game goes on; the reload only comes once the whole page is here,
 // so a slow network never leaves a half-built page on screen. The offline helper (sw.js) hands this copy over at the reload.
 const NEXTC='tapmoss-next',pgKey=()=>{let p=location.pathname.replace(/index\.html$/,'');if(!p.endsWith('/'))p+='/';return p};
