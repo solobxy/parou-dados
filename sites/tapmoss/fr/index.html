@@ -4041,6 +4041,13 @@ function renderWorld0(){RWV++;
   {const e2=new Uint8ClampedArray(W*H*16);epx2(d,W,H,e2);hdEpx(e2,hd,hb);
     // what is not drawn natively at 4× yet (buildings, the objects of the other worlds) gets a fine grain that follows its material,
     // so it does not read as flat 4×4 blocks next to the rest
+    // and where two colours meet inside a building (a brick and its mortar, a plank and the next, a tile and its shadow) the edge gets a
+    // bevel at 4×: light on top and on the left, shade underneath and on the right, so drawn details read as relief
+    {const dC=(i,j)=>{if(j<0||j>=N)return false;const a=i<<2,b=j<<2;return Math.abs(d[a]-d[b])+Math.abs(d[a+1]-d[b+1])+Math.abs(d[a+2]-d[b+2])>18&&dep[j]===dep[i]};
+      for(let Y=0;Y<HK;Y++){const fy=Y&3,y=Y>>2;for(let X=0;X<WK;X++){const I=Y*WK+X;if(!hb[I]||!hdp[I])continue;const fx=X&3,x=X>>2,i=y*W+x,J=I<<2;let f=1;
+        if(fy===0&&y>0&&dC(i,i-W))f+=.14;else if(fy===3&&y<H-1&&dC(i,i+W))f-=.16;
+        if(fx===0&&x>0&&dC(i,i-1))f+=.07;else if(fx===3&&x<W-1&&dC(i,i+1))f-=.09;
+        if(f!==1){hd[J]*=f;hd[J+1]*=f;hd[J+2]*=f}}}}
     for(let Y=0;Y<HK;Y++)for(let X=0;X<WK;X++){const I=Y*WK+X;if(!hb[I])continue;const m=hmt[I],J=I<<2;if(!hd[J+3])continue;
       const f=1+(m===5?(tn(X*.35,Y*3.2)-.5)*.2+(th(X,Y)-.5)*.05:m===3||m===9?(tn(X*3.2,Y*.35)-.5)*.2:m===2||m===4||m===10||m===11?(tn(X*1.6,Y*1.6)-.5)*.16+(th(X,Y)-.5)*.07:m===7?(tn(X*2.2,Y*2.2)-.5)*.22:m===13||m===8?0:(th(X,Y)-.5)*.07);
       if(f!==1){hd[J]*=f;hd[J+1]*=f;hd[J+2]*=f}}
@@ -10910,7 +10917,7 @@ function frame(t){
   tick(dt);draw();guideTick();
 }
 /* versões novas: quando o jogo muda no servidor, guarda o progresso e recarrega a página */
-const BUILD='039888634299',UKEY='tapmoss.upd';const UPD={on:false,go:false,at:0};
+const BUILD='2950ab59578a',UKEY='tapmoss.upd';const UPD={on:false,go:false,at:0};
 // the new version downloads in the background while the game goes on; the reload only comes once the whole page is here,
 // so a slow network never leaves a half-built page on screen. The offline helper (sw.js) hands this copy over at the reload.
 const NEXTC='tapmoss-next',pgKey=()=>{let p=location.pathname.replace(/index\.html$/,'');if(!p.endsWith('/'))p+='/';return p};
