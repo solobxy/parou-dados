@@ -3202,6 +3202,7 @@ const TN=(()=>{const S=512,P=64,lat=new Float32Array(P*P),r=mulberry32(91);for(l
   for(let y=0;y<S;y++)for(let x=0;x<S;x++){const u=x/8,v=y/8,xi=u|0,yi=v|0,fx=u-xi,fy=v-yi,sx=fx*fx*(3-2*fx),sy=fy*fy*(3-2*fy),x1=(xi+1)%P,y1=(yi+1)%P,A=lat[yi*P+xi],B=lat[yi*P+x1],C=lat[y1*P+xi],D=lat[y1*P+x1];a[y*S+x]=A+(B-A)*sx+(C-A)*sy+(A-B-C+D)*sx*sy}return a})();
 const TH=(()=>{const a=new Float32Array(512*512),r=mulberry32(17);for(let i=0;i<a.length;i++)a[i]=r();return a})();
 const tn=(u,v)=>TN[((v&511)<<9)|(u&511)],th=(u,v)=>TH[((v&511)<<9)|(u&511)];
+const tnz=tn; // the same, for places where a local name 'tn' already means something else
 // clumps of leaves: the crown is cut into small rounded cells (a few pixels each); every clump is lit on the side that faces the sun
 // and darker in the gaps between clumps. LC_S is the light on this pixel's clump, LC_R a random number of the clump
 let LC_S=0,LC_R=0;
@@ -10379,7 +10380,8 @@ function mnUnlock(quiet){const M=S.mina;if(M.on)return;M.on=1;M.t=now();M.bq.pus
   if(!quiet)msQueue({ic:'helmet',title:_t('A mina abriu!'),text:_t('Um segundo jogo ao lado do jardim: escava a terra pixel a pixel, encontra baús, fósseis e rubis. Continua a escavar mesmo quando estás no jardim.'),btn:_t('Ir para a mina'),go:'mina',rc:'#c8a070'})}
 /* drawing the mine. The grid is painted once into its own picture (4x4 screen pixels a cell, with grain, lit edges and moss)
    and only the cells that change are painted again. Light, water, lava, the gardener and the dust are drawn on top each frame */
-const mnCv=document.createElement('canvas');mnCv.width=MW*4;mnCv.height=MH*4;const mnCX=mnCv.getContext('2d'),mnImg=mnCX.createImageData(MW*4,MH*4),mnPx=mnImg.data;
+// each cell of the mine is painted with 8×8 pixels (4× the scene's resolution, like the garden)
+const MT=8,mnCv=document.createElement('canvas');mnCv.width=MW*MT;mnCv.height=MH*MT;const mnCX=mnCv.getContext('2d'),mnImg=mnCX.createImageData(MW*MT,MH*MT),mnPx=mnImg.data;
 const mnFogCv=document.createElement('canvas');mnFogCv.width=MW;mnFogCv.height=MH;const mnFogX=mnFogCv.getContext('2d'),mnFogImg=mnFogX.createImageData(MW,MH),mFog=new Uint8Array(MNC);
 const mnBgCv=document.createElement('canvas');mnBgCv.width=W*2;mnBgCv.height=H*2;const mnBgX=mnBgCv.getContext('2d');mnBgX.setTransform(2,0,0,2,0,0);
 const MMRGB=MM.map(A=>A&&A.c?A.c.map(hex):null),MMFL=MM.map(A=>A&&A.fl?A.fl.map(hex):null);
@@ -10392,22 +10394,22 @@ const mnScreenOk=c=>{const x=MX0+(c%MW)*MCS+1,y=MY0+((c/MW)|0)*MCS+1;return!uiBl
 function mnMossCol(c){const L=[];for(let i=0;i<SPEC.length;i++)if(specOpen(i))L.push(i);const k=L.length?L[(hash2(c,3,11)*L.length)|0]:0;return SPEC[k].c.map(hex)}
 function mnPaint(c){const x=c%MW,y=(c/MW)|0,v=mg[c],B0=MNBIO[mnBio(S.mina.p)];let m=mM(v);if(v&32){m=0;for(const n of mnN4(c)){const k=mM(mg[n]);if(k&&!(mg[n]&32)&&!mLiq(k)&&!MM[k].fl){m=k;break}}if(!m)m=B0.base}const B=MNBIO[mnBio(S.mina.p)],tn=B.tint,s=(y/MSTR)|0,band=.9+.14*hash2(s,S.mina.p,5),deep=1-.14*(y/MH);
   const clr=n=>n<0||n>=MNC?false:mClr(n)&&!(mg[n]&32),up=y>0?clr(c-MW):false,dn=y<MH-1&&clr(c+MW),lf=x>0&&clr(c-1),rt=x<MW-1&&clr(c+1);
-  const put=(i,j,r,g,b)=>{const k=((y*4+j)*MW*4+x*4+i)*4;mnPx[k]=r<0?0:r>255?255:r;mnPx[k+1]=g<0?0:g>255?255:g;mnPx[k+2]=b<0?0:b>255?255:b;mnPx[k+3]=255};
+  const put=(i,j,r,g,b)=>{const k=((y*MT+j)*MW*MT+x*MT+i)*4;mnPx[k]=r<0?0:r>255?255:r;mnPx[k+1]=g<0?0:g>255?255:g;mnPx[k+2]=b<0?0:b>255?255:b;mnPx[k+3]=255};
   if(!m||mLiq(m)){// the back wall of the hole: darker, with a little grain and shade where the rock overhangs
     const sol=n=>!mClr(n)||!!(mg[n]&32),w=B.wall,sU=y>0&&sol(c-MW),sL=x>0&&sol(c-1),sR=x<MW-1&&sol(c+1),sD=y<MH-1&&sol(c+MW);
-    for(let j=0;j<4;j++)for(let i=0;i<4;i++){const h=hash2(x*4+i,y*4+j,31);let k=band*deep*(.82+h*.32);if((sU&&j===0)||(sL&&i===0)||(sR&&i===3))k*=.62;if(sD&&j===3)k*=1.12;if(h>.94)k*=1.35;put(i,j,w[0]*k,w[1]*k,w[2]*k)}return}
+    for(let j=0;j<MT;j++)for(let i=0;i<MT;i++){const h=hash2(x*MT+i,y*MT+j,31),g2=tnz((x*MT+i)*2.2,(y*MT+j)*2.2);let k=band*deep*(.8+h*.18+g2*.22);if((sU&&j<=1)||(sL&&i<=1)||(sR&&i>=MT-2))k*=j===0||i===0||i===MT-1?.58:.74;if(sD&&j>=MT-2)k*=1.1;if(h>.97)k*=1.3;put(i,j,w[0]*k,w[1]*k,w[2]*k)}return}
   const P=MMRGB[m],FL=(v&32)?null:MMFL[m],mc=(v&16)?mnMossCol(c):null;
-  for(let j=0;j<4;j++)for(let i=0;i<4;i++){const h=hash2(x*4+i,y*4+j,77);let q=h<.16?0:h<.56?1:h<.88?2:3;
-    if(up&&j===0)q=3;else if(lf&&i===0)q=Math.min(3,q+1);if(dn&&j===3)q=0;else if(rt&&i===3)q=Math.max(0,q-1);
+  for(let j=0;j<MT;j++)for(let i=0;i<MT;i++){const X=x*MT+i,Y=y*MT+j,h=hash2(X,Y,77)*.22+tnz(X*1.9+x*5,Y*1.9)*.78;let q=h<.32?0:h<.48?1:h<.64?2:3;
+    if(up&&j===0)q=3;else if(up&&j===1)q=Math.max(q,2);else if(lf&&i===0)q=Math.min(3,q+1);if(dn&&j===MT-1)q=0;else if(dn&&j===MT-2)q=Math.min(q,1);else if(rt&&i===MT-1)q=Math.max(0,q-1);
     let col=P[q];
-    if(m===M_TIJ&&(j===0||i===((y&1)?0:2)))col=[col[0]*.55,col[1]*.55,col[2]*.52];
-    if(FL&&hash2(x*4+i,y*4+j,99)>(m===M_CRIST?.45:MM[m].sp||.62))col=FL[(hash2(x*4+i,y*4+j,13)*FL.length)|0];
+    if(m===M_TIJ&&(j===0||i===((y&1)?0:4)))col=[col[0]*.55,col[1]*.55,col[2]*.52];
+    if(FL&&hash2(X>>1,Y>>1,99)>(m===M_CRIST?.45:MM[m].sp||.62))col=FL[(hash2(X>>1,Y>>1,13)*FL.length)|0];
     let k=band*deep;if(FL)k=Math.max(k,.92);
     let r=col[0]*k*tn[0],g=col[1]*k*tn[1],b=col[2]*k*tn[2];
-    if(mc){const exp=(up&&j<=1&&(j===0||hash2(x*4+i,y,9)>.45))||(lf&&i===0&&hash2(x,y*4+j,8)>.4)||(rt&&i===3&&hash2(x,y*4+j,7)>.4)||(dn&&j===3&&hash2(x*4+i,y,6)>.6);if(exp){const mm=mc[2+((h*3)|0)]||mc[3];r=mm[0];g=mm[1];b=mm[2]}}
+    if(mc){const exp=(up&&j<=2&&(j<=1||hash2(X,y,9)>.45))||(lf&&i<=1&&hash2(x,Y,8)>.4)||(rt&&i>=MT-2&&hash2(x,Y,7)>.4)||(dn&&j>=MT-2&&hash2(X,y,6)>.6);if(exp){const mm=mc[2+((h*3)|0)]||mc[3];r=mm[0];g=mm[1];b=mm[2]}}
     put(i,j,r,g,b)}}
 function mnPaintAll(){for(let c=0;c<MNC;c++)mnPaint(c);mnCX.putImageData(mnImg,0,0);mE.dirty.clear();mE.full=false}
-function mnFlush(){if(mE.full){mnPaintAll();return}if(!mE.dirty.size)return;let x0=MW,y0=MH,x1=-1,y1=-1;for(const c of mE.dirty){mnPaint(c);const x=c%MW,y=(c/MW)|0;if(x<x0)x0=x;if(x>x1)x1=x;if(y<y0)y0=y;if(y>y1)y1=y}mE.dirty.clear();mnCX.putImageData(mnImg,0,0,x0*4,y0*4,(x1-x0+1)*4,(y1-y0+1)*4)}
+function mnFlush(){if(mE.full){mnPaintAll();return}if(!mE.dirty.size)return;let x0=MW,y0=MH,x1=-1,y1=-1;for(const c of mE.dirty){mnPaint(c);const x=c%MW,y=(c/MW)|0;if(x<x0)x0=x;if(x>x1)x1=x;if(y<y0)y0=y;if(y>y1)y1=y}mE.dirty.clear();mnCX.putImageData(mnImg,0,0,x0*MT,y0*MT,(x1-x0+1)*MT,(y1-y0+1)*MT)}
 // light in the dark phases: everything dug glows a little from the lantern, crystals and lava light their own corner
 const mDist=new Uint8Array(MNC);
 function mnFog(){mE.fogD=false;{const d=mDist;d.fill(255);const Q=new Int32Array(MNC);let qh=0,qt=0;for(let c=0;c<MNC;c++)if(mClr(c)&&!(mg[c]&32)){d[c]=0;Q[qt++]=c}
@@ -10917,7 +10919,7 @@ function frame(t){
   tick(dt);draw();guideTick();
 }
 /* versões novas: quando o jogo muda no servidor, guarda o progresso e recarrega a página */
-const BUILD='2950ab59578a',UKEY='tapmoss.upd';const UPD={on:false,go:false,at:0};
+const BUILD='e31080a7236b',UKEY='tapmoss.upd';const UPD={on:false,go:false,at:0};
 // the new version downloads in the background while the game goes on; the reload only comes once the whole page is here,
 // so a slow network never leaves a half-built page on screen. The offline helper (sw.js) hands this copy over at the reload.
 const NEXTC='tapmoss-next',pgKey=()=>{let p=location.pathname.replace(/index\.html$/,'');if(!p.endsWith('/'))p+='/';return p};
