@@ -3206,8 +3206,16 @@ function genScene(sd){
       if(!st){const pref=T0.cx<80?1:-1,C=[];for(const dx of[42,46,38,50])for(const sg of[pref,-pref])for(const dy of[0,-3,3,-6,6,-9,9,-12,12,15,18,22])C.push({x:T0.cx+sg*dx,y:T0.by+dy});
         const ok=q=>q.y>=HOR+46&&q.y<=H-38;
         for(const soft of[false,true]){st=C.find(q=>ok(q)&&fits(bx(q.x,q.y),soft))||null;if(st)break}
-        if(!st){const C2=[];for(let x=22;x<=W-22;x+=2)for(let y=HOR+46;y<=H-38;y+=2)C2.push({x,y});C2.sort((a,b)=>Math.hypot(a.x-T0.cx,(a.y-T0.by)*1.4)-Math.hypot(b.x-T0.cx,(b.y-T0.by)*1.4));
-          for(const soft of[false,true]){st=C2.find(q=>fits(bx(q.x,q.y),soft))||null;if(st)break}}}
+        const C2=[];for(let x=22;x<=W-22;x+=2)for(let y=HOR+46;y<=H-38;y+=2)C2.push({x,y});const dT=q=>Math.hypot(q.x-T0.cx,(q.y-T0.by)*1.4);C2.sort((a,b)=>dT(a)-dT(b));
+        if(!st)for(const soft of[false,true]){st=C2.find(q=>fits(bx(q.x,q.y),soft))||null;if(st)break}
+        // a square full of the player's things: the statue still goes as near the temple as it can, where it moves the fewest
+        // of them; those go back to the inventory (never a building, a tree or the water)
+        if(!st){const exM=new Map((sc._ex||[]).map(e=>[e.box,e]));let bs=1e18;
+          const cost=b=>{if(b.x0<4||b.x1>W-4||b.y1>H-34||wetB(b))return-1;let n=0;for(const o of occ){if(!ov(b,o)||softB.has(o))continue;if(!exM.has(o))return-1;n+=(o.x1-o.x0+1)*(o.y1-o.y0+1)}return n};
+          for(const q of[...C.filter(ok),...C2]){const k=cost(bx(q.x,q.y));if(k<0)continue;const v=k+dT(q)*25;if(v<bs){bs=v;st=q}}
+          if(st&&!visiting){const b=bx(st.x,st.y);for(const o of occ.filter(o=>ov(b,o)&&exM.has(o))){const e=exM.get(o);if(extras[e.ei])extras[e.ei].ok=false;
+              const i=occ.indexOf(o);if(i>=0)occ.splice(i,1);for(const k of['rocks','walls','benches','pots','tdeco'])if(Array.isArray(sc[k]))sc[k]=sc[k].filter(x=>x.box!==o);if(sc.log&&sc.log.box===o)sc.log=null}
+            sc._ex=sc._ex.filter(x=>extras[x.ei]&&extras[x.ei].ok!==false)}}}
       if(st){const b=bx(st.x,st.y);for(const o of occ.filter(o=>ov(b,o)&&softB.has(o))){const i=occ.indexOf(o);if(i>=0)occ.splice(i,1);sc.walls=sc.walls.filter(w=>w.box!==o);sc.rocks=sc.rocks.filter(r=>r.box!==o);if(sc.log&&sc.log.box===o)sc.log=null;if(sc.stump&&sc.stump.box===o)sc.stump=null}
         if(!visiting&&(!sd.ksp||sd.ksp.x!==st.x||sd.ksp.y!==st.y))sd.ksp={x:st.x,y:st.y};occ.push(b);sc.kitsune={cx:st.x,by:st.y,lv:clamp((sd.tp|0)-6,1,3),box:b}}}}
   // stepping stones drawn by the player
@@ -4823,7 +4831,7 @@ const houseLv=()=>SC().house?SC().house.lv:0;
 const houseCost=lv=>Math.round(HOUSE_COST[lv]*Math.pow(25,S.cur));
 function sweepFailed(sd){const bad=sd.extras.filter(e=>e.ok===false);if(!bad.length)return false;sd.extras=sd.extras.filter(e=>e.ok!==false);S.inv=S.inv||[];for(const e of bad)S.inv.push({t:e.t,seed:e.seed});return true}
 function rebuildScene(){
-  const old=surf.slice();scene=genScene(SC());if(sweepFailed(SC()))scene=genScene(SC());SC().name=scene.name;renderWorld();
+  const old=surf.slice();scene=genScene(SC());if(sweepFailed(SC())){scene=genScene(SC());setTimeout(()=>toast(_t('Um objeto que não cabia foi para o inventário.')),900)}SC().name=scene.name;renderWorld();
   for(let c=0;c<N;c++)if(old[c]!==surf[c]&&dens[c]){dens[c]=0;spec[c]=0}
   rebuildMossList();redrawAllMoss();rebuildBlock();calcIncome();dirtySave=true;visitors.length=0;
   const L=SC().lamp;if(L&&!lampOk(L.x,L.y)){const n=findLampSpot();if(n){n.on=L.on;SC().lamp=n}}
@@ -11225,7 +11233,7 @@ function frame(t){
   tick(dt);draw();guideTick();
 }
 /* versões novas: quando o jogo muda no servidor, guarda o progresso e recarrega a página */
-const BUILD='8a159d5a7402',UKEY='tapmoss.upd';const UPD={on:false,go:false,at:0};
+const BUILD='74d6d712f6d5',UKEY='tapmoss.upd';const UPD={on:false,go:false,at:0};
 // the new version downloads in the background while the game goes on; the reload only comes once the whole page is here,
 // so a slow network never leaves a half-built page on screen. The offline helper (sw.js) hands this copy over at the reload.
 const NEXTC='tapmoss-next',pgKey=()=>{let p=location.pathname.replace(/index\.html$/,'');if(!p.endsWith('/'))p+='/';return p};
