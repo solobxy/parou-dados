@@ -1389,6 +1389,26 @@ h4.mnrealm{color:#f4c54f;margin-top:14px}
 .avstage .me.ac-capasol2 .pxi,.avstage .me.ac-capalua2 .pxi,.avstage .me.ac-caparaiz2 .pxi{animation:wgGlow 2.6s ease-in-out infinite}
 .avstage .me.ac-capasol2{--wg:255,200,80}.avstage .me.ac-capalua2{--wg:200,210,255}.avstage .me.ac-caparaiz2{--wg:170,240,110}
 @media (max-height:700px){.lnscene .lcr.big{--s:84px}.lnchips li{min-height:34px;padding:6px 10px;font-size:13px}.lncard .lnfig{min-height:100px}.lnfig2{min-height:160px}}
+.avhide{margin:10px 0 2px}.avhide>span:first-child{display:flex;flex-direction:column;gap:2px}.avhide .note{margin:0;font-size:12px;line-height:1.35;color:var(--tx2)}
+.avstage .me.au{animation:auGl 2.8s ease-in-out infinite}
+@keyframes auGl{0%,100%{filter:drop-shadow(0 0 2px rgba(var(--au),.8)) drop-shadow(0 0 9px rgba(var(--au),.35))}50%{filter:drop-shadow(0 0 4px rgba(var(--au),1)) drop-shadow(0 0 18px rgba(var(--au),.65))}}
+.auFx{position:absolute;left:50%;bottom:8px;width:128px;height:160px;transform:translateX(-50%);pointer-events:none}
+.avstage.try .auFx{bottom:76px}
+.auFx::before{content:'';position:absolute;inset:16% 24% 2%;border-radius:50%;background:radial-gradient(closest-side,rgba(var(--au),.34),rgba(var(--au),0));animation:auBr 2.8s ease-in-out infinite}
+.auFx.rb::before{animation:auBr 2.8s ease-in-out infinite,auHue 5s linear infinite}
+.auFx i{position:absolute;left:var(--x);top:var(--y);width:4px;height:4px;background:rgb(var(--c));box-shadow:0 0 6px rgba(var(--c),.9);opacity:0}
+.auFx.g-up i{animation:auUp var(--s) linear var(--d) infinite}
+.auFx.g-dn i{top:6%;animation:auDn calc(var(--s) * 1.4) linear var(--d) infinite}
+.auFx.g-tw i{width:3px;height:3px;animation:auTw var(--s) ease-in-out var(--d) infinite}
+.auFx.g-or i{left:50%;top:56%;width:3px;height:3px;animation:auOr 3.4s linear var(--d) infinite}
+@keyframes auBr{50%{transform:scale(1.07);opacity:.62}}
+@keyframes auHue{to{filter:hue-rotate(360deg)}}
+@keyframes auUp{0%{opacity:0;transform:translateY(16px) scale(.6)}20%{opacity:1}100%{opacity:0;transform:translateY(-48px) scale(1)}}
+@keyframes auDn{0%{opacity:0;transform:translate(0,0) rotate(0)}15%{opacity:1}100%{opacity:0;transform:translate(12px,128px) rotate(200deg)}}
+@keyframes auTw{0%,100%{opacity:0;transform:scale(.3)}50%{opacity:1;transform:scale(1.25)}}
+@keyframes auOr{0%{transform:translate(48px,0);opacity:1}12.5%{transform:translate(34px,10px);opacity:1}25%{transform:translate(0,14px);opacity:1}37.5%{transform:translate(-34px,10px);opacity:.8}50%{transform:translate(-48px,0);opacity:.3}62.5%{transform:translate(-34px,-10px);opacity:.25}75%{transform:translate(0,-14px);opacity:.25}87.5%{transform:translate(34px,-10px);opacity:.5}100%{transform:translate(48px,0);opacity:1}}
+.swb.eyg{background:radial-gradient(circle,#fff 0 14%,var(--c) 42%,color-mix(in srgb,var(--c) 50%,#000) 100%);animation:swGl 2.2s ease-in-out infinite}
+@keyframes swGl{50%{filter:brightness(1.3) saturate(1.2)}}
 </style>
 <script>document.documentElement.classList.add('js')</script>
 </head>
@@ -1505,6 +1525,7 @@ Object.assign(TR,{"+{0} s de luz nas descidas": ["+{0} s of light in descents", 
 Object.assign(TR,{"{0} baús de nível por abrir": ["{0} level chests to open", "{0} cofres de nivel por abrir", "{0} coffres de niveau à ouvrir", "{0} Level-Truhen zum Öffnen", "開けられるレベル宝箱が{0}個", "{0} 个等级宝箱待开启"], "1 baú de nível por abrir": ["1 level chest to open", "1 cofre de nivel por abrir", "1 coffre de niveau à ouvrir", "1 Level-Truhe zum Öffnen", "開けられるレベル宝箱が1個", "1 个等级宝箱待开启"], "{0} presentes por abrir": ["{0} gifts to open", "{0} regalos por abrir", "{0} cadeaux à ouvrir", "{0} Geschenke zum Öffnen", "開けられるプレゼントが{0}個", "{0} 份礼物待打开"], "1 presente por abrir": ["1 gift to open", "1 regalo por abrir", "1 cadeau à ouvrir", "1 Geschenk zum Öffnen", "開けられるプレゼントが1個", "1 份礼物待打开"], "Prémios do evento por receber": ["Event prizes to claim", "Premios del evento por cobrar", "Prix de l’événement à récupérer", "Event-Preise zum Abholen", "受け取れるイベント報酬あり", "活动奖励待领取"], "{0} minijogos prontos": ["{0} minigames ready", "{0} minijuegos listos", "{0} mini-jeux prêts", "{0} Minispiele bereit", "遊べるミニゲームが{0}個", "{0} 个小游戏可玩"], "1 minijogo pronto": ["1 minigame ready", "1 minijuego listo", "1 mini-jeu prêt", "1 Minispiel bereit", "遊べるミニゲームが1個", "1 个小游戏可玩"], "Auréola Rosa": ["Pink Halo", "Aureola Rosa", "Auréole rose", "Rosa Heiligenschein", "ピンクの光輪", "粉色光环"], "Laço Rosa": ["Pink Bow", "Lazo Rosa", "Nœud rose", "Rosa Schleife", "ピンクのリボン", "粉色蝴蝶结"], "Vestido de Anjinho": ["Little Angel Dress", "Vestido de Angelito", "Robe de petit ange", "Engelchenkleid", "天使ちゃんのドレス", "小天使连衣裙"], "Asas Rosa": ["Pink Wings", "Alas Rosa", "Ailes roses", "Rosa Flügel", "ピンクの翼", "粉色之翼"], "Varinha de Coração": ["Heart Wand", "Varita de Corazón", "Baguette cœur", "Herzzauberstab", "ハートの杖", "爱心魔法棒"], "Querubim Rosa": ["Pink Cherub", "Querubín Rosa", "Chérubin rose", "Rosa Cherub", "ピンクの智天使", "粉色小天使"], "Para quem cuida das flores, do charco e dos pets.": ["For those who tend the flowers, the pond and their pets.", "Para quien cuida de las flores, del estanque y de sus mascotas.", "Pour qui prend soin des fleurs, de la mare et de ses compagnons.", "Für alle, die sich um Blumen, Teich und Haustiere kümmern.", "花と池とペットを大切にする人へ。", "献给照料花朵、池塘和宠物的人。"], "Coroa de Nuvens": ["Cloud Crown", "Corona de Nubes", "Couronne de nuages", "Wolkenkrone", "雲の冠", "云朵王冠"], "Apanha 200 flores.": ["Pick 200 flowers.", "Recoge 200 flores.", "Cueille 200 fleurs.", "Pflücke 200 Blumen.", "花を200本つむ。", "采200朵花。"], "Arco do Cupido": ["Cupid’s Bow", "Arco de Cupido", "Arc de Cupidon", "Amors Bogen", "キューピッドの弓", "丘比特之弓"], "Dá banho aos pets 25 vezes.": ["Bathe your pets 25 times.", "Baña a tus mascotas 25 veces.", "Baigne tes compagnons 25 fois.", "Bade deine Haustiere 25-mal.", "ペットを25回お風呂に入れる。", "给宠物洗澡 25 次。"], "Vestido de Querubim": ["Cherub Dress", "Vestido de Querubín", "Robe de chérubin", "Cherubkleid", "智天使のドレス", "小天使礼裙"], "Pede 40 desejos ao charco.": ["Make 40 wishes at the pond.", "Pide 40 deseos al estanque.", "Fais 40 vœux à la mare.", "Wünsch dir 40-mal etwas am Teich.", "池に願いごとを40回する。", "在池塘许愿40次。"], "Asas de Querubim": ["Cherub Wings", "Alas de Querubín", "Ailes de chérubin", "Cherubflügel", "智天使の翼", "小天使之翼"], "Apanha 800 flores.": ["Pick 800 flowers.", "Recoge 800 flores.", "Cueille 800 fleurs.", "Pflücke 800 Blumen.", "花を800本つむ。", "采800朵花。"], "Coroa do Arcanjo": ["Archangel’s Crown", "Corona del Arcángel", "Couronne de l’archange", "Krone des Erzengels", "大天使の冠", "大天使王冠"], "Vestes do Arcanjo": ["Archangel’s Robes", "Vestiduras del Arcángel", "Robes de l’archange", "Gewand des Erzengels", "大天使の衣", "大天使长袍"], "Asas do Arcanjo": ["Archangel Wings", "Alas del Arcángel", "Ailes de l’archange", "Erzengelflügel", "大天使の翼", "大天使之翼"], "Chegou o Querubim Rosa": ["The Pink Cherub is here", "Llega el Querubín Rosa", "Le Chérubin rose est arrivé", "Der Rosa Cherub ist da", "ピンクの智天使が登場", "粉色小天使来了"], "As outras abrem com flores, desejos e banhos aos pets.": ["The others open with flowers, wishes and baths for your pets.", "Las demás se abren con flores, deseos y baños a tus mascotas.", "Les autres s’ouvrent avec des fleurs, des vœux et des bains pour tes compagnons.", "Die anderen öffnen sich mit Blumen, Wünschen und Bädern für deine Haustiere.", "ほかは花、願いごと、ペットのお風呂で開く。", "其余部件靠采花、许愿和给宠物洗澡解锁。"], "Anjinhos rosa e asas que brilham no escuro": ["Pink angels and wings that glow in the dark", "Angelitos rosa y alas que brillan en la oscuridad", "Petits anges roses et ailes qui brillent dans le noir", "Rosa Engel und Flügel, die im Dunkeln leuchten", "ピンクの天使と、暗闇で光る翼", "粉色小天使和夜光之翼"], "Três conjuntos de anjinho rosa: um sai no baú do dia, outro abre com metas e o do Arcanjo cria-se na Oficina.": ["Three pink angel sets: one comes from the daily chest, one opens with goals and the Archangel is crafted in the workshop.", "Tres conjuntos de angelito rosa: uno sale en el cofre diario, otro se abre con metas y el del Arcángel se crea en el taller.", "Trois ensembles de petit ange rose : l’un sort du coffre du jour, un autre s’ouvre avec des objectifs et celui de l’archange se crée à l’atelier.", "Drei rosa Engelsets: eines gibt es in der Tagestruhe, eines öffnet sich mit Zielen und das des Erzengels wird in der Werkstatt hergestellt.", "ピンクの天使のセットが3つ:1つはデイリー宝箱から、1つは目標で開き、大天使のセットは工房で作れる。", "三套粉色小天使:一套来自每日宝箱,一套靠目标解锁,大天使套装在工坊制作。"], "As roupas e as asas raras brilham à noite e iluminam o chão à tua volta.": ["Rare clothes and wings glow at night and light up the ground around you.", "La ropa y las alas raras brillan de noche e iluminan el suelo a tu alrededor.", "Les vêtements et les ailes rares brillent la nuit et éclairent le sol autour de toi.", "Seltene Kleidung und Flügel leuchten nachts und erhellen den Boden um dich.", "レアな服と翼は夜に光り、足もとを照らす。", "稀有服装和翅膀在夜里发光,照亮你周围的地面。"], "As asas raras estão maiores e com mais efeitos.": ["Rare wings are bigger and have more effects.", "Las alas raras son más grandes y tienen más efectos.", "Les ailes rares sont plus grandes, avec plus d’effets.", "Seltene Flügel sind größer und haben mehr Effekte.", "レアな翼が大きくなり、エフェクトも増えた。", "稀有翅膀变得更大,特效更多。"], "As luzes de teto e a lareira iluminam a casa toda.": ["Ceiling lights and the fireplace now light the whole house.", "Las luces de techo y la chimenea iluminan toda la casa.", "Les plafonniers et la cheminée éclairent toute la maison.", "Deckenlampen und Kamin erhellen das ganze Haus.", "天井の照明と暖炉が家じゅうを照らす。", "吊灯和壁炉能照亮整个家。"], "Corrigido: as roupas de novembro voltavam às normais ao reabrir o jogo.": ["Fixed: November outfits went back to the plain ones when you reopened the game.", "Corregido: la ropa de noviembre volvía a la normal al reabrir el juego.", "Corrigé : les tenues de novembre redevenaient normales en rouvrant le jeu.", "Behoben: Die November-Outfits wurden beim erneuten Öffnen des Spiels zurückgesetzt.", "修正:ゲームを開き直すと11月の服が元に戻っていた。", "已修复:重新打开游戏时,十一月的服装会变回普通服装。"]});
 Object.assign(TR,{"Ainda há {0} baús e achados na rocha: usa uma lanterna para os soltares antes de desceres.": ["There are still {0} chests and finds in the rock: use a lantern to dig them out before you go down.", "Aún quedan {0} cofres y hallazgos en la roca: usa un farol para sacarlos antes de bajar.", "Il reste {0} coffres et trouvailles dans la roche : utilise une lanterne pour les dégager avant de descendre.", "Im Gestein stecken noch {0} Truhen und Funde: Nimm eine Laterne und hol sie heraus, bevor du hinabsteigst.", "岩の中にまだ宝箱と見つけものが{0}個ある。降りる前にランタンで掘り出そう。", "岩石里还有 {0} 个宝箱和收藏品：下到下一阶段之前，用灯笼把它们挖出来。"], "Todas as tuas cenas rendem moedas, mesmo quando não estás a olhar para elas. Nas outras cenas o musgo também cresce, e vês o que cresceu quando lá voltas.": ["All your scenes earn coins, even when you're not looking at them. Moss grows in your other scenes too, and you'll see how much when you go back.", "Todas tus escenas dan monedas, aunque no las estés mirando. En las otras escenas el musgo también crece, y verás cuánto cuando vuelvas.", "Toutes tes scènes rapportent des pièces, même quand tu ne les regardes pas. La mousse pousse aussi dans tes autres scènes, et tu verras combien en y revenant.", "Alle deine Szenen bringen Münzen, auch wenn du sie gerade nicht ansiehst. In den anderen Szenen wächst das Moos auch, und du siehst, wie viel, wenn du zurückkommst.", "見ていない時も、すべてのシーンがコインを生みます。ほかのシーンでもコケは育ち、戻ったときにどれだけ育ったかがわかります。", "所有场景都会产出金币，即使你没在看。其他场景里的苔藓也会生长，回去时就能看到长了多少。"], "De dia, de vez em quando; de noite, um ou dois no máximo, para veres ao acordar.": ["Now and then during the day; at night, one or two at most, for when you wake up.", "De día, de vez en cuando; de noche, uno o dos como mucho, para que los veas al despertar.", "De temps en temps dans la journée ; la nuit, une ou deux au plus, à voir au réveil.", "Tagsüber ab und zu, nachts höchstens ein oder zwei, die du beim Aufwachen siehst.", "日中はときどき、夜は多くても1〜2回。起きたときに見られます。", "白天偶尔提醒；夜里最多一两条，醒来就能看到。"], "Quando te regam, te deixam um baú, começam a jogar ou te passam à frente. No máximo um a cada 10 minutos.": ["When they water you, leave you a chest, start playing or pass you. At most one every 10 minutes.", "Cuando te riegan, te dejan un cofre, empiezan a jugar o te adelantan. Como mucho uno cada 10 minutos.", "Quand ils t’arrosent, te laissent un coffre, commencent à jouer ou te dépassent. Au plus une toutes les 10 minutes.", "Wenn sie dich gießen, dir eine Truhe dalassen, zu spielen beginnen oder dich überholen. Höchstens eine alle 10 Minuten.", "水やり、宝箱、プレイ開始、追い抜きのとき。10分に1回まで。", "好友给你浇水、留宝箱、开始游戏或超过你时。最多每 10 分钟一条。"], "Ao longo do dia e logo de manhã, com um baú extra se entrares pelo aviso. Também medalhas, ovos e o pet. Para sozinho ao fim de duas semanas sem jogar.": ["Through the day and first thing in the morning, with an extra chest if you come in through it. Also medals, eggs and your pet. Stops by itself after two weeks without playing.", "A lo largo del día y a primera hora de la mañana, con un cofre extra si entras desde el aviso. También medallas, huevos y la mascota. Se detiene solo tras dos semanas sin jugar.", "Au fil de la journée et dès le matin, avec un coffre en plus si tu entres par la notification. Aussi les médailles, les œufs et ton familier. S’arrête tout seul après deux semaines sans jouer.", "Über den Tag verteilt und gleich am Morgen, mit einer Extra-Truhe, wenn du über die Mitteilung kommst. Auch Medaillen, Eier und dein Haustier. Hört nach zwei Wochen ohne Spielen von selbst auf.", "日中と朝いちばんに。通知から入ると宝箱がもう1つ。メダル、タマゴ、ペットのお知らせも。2週間遊ばないと自動で止まります。", "白天和一早都会提醒，从通知进入多得一个宝箱。也包括奖牌、蛋和宠物。两周不玩会自动停止。"], "Avisos ao longo do dia e um logo de manhã, com o que o jardim fez de noite. E quando um amigo te regar ou te deixar um baú.": ["Notices through the day and one first thing in the morning with what your garden made overnight. And when a friend waters you or leaves you a chest.", "Avisos a lo largo del día y uno a primera hora de la mañana con lo que tu jardín hizo de noche. Y cuando un amigo te riegue o te deje un cofre.", "Des notifications dans la journée et une dès le matin avec ce que ton jardin a fait pendant la nuit. Et quand un ami t’arrose ou te laisse un coffre.", "Mitteilungen über den Tag und eine gleich am Morgen mit dem, was dein Garten über Nacht geschafft hat. Und wenn ein Freund dich gießt oder dir eine Truhe dalässt.", "日中に何回かと、朝いちばんに1回。夜のあいだに庭が育てたものをお知らせします。友だちが水やりや宝箱をくれたときも。", "白天会有几条提醒，一早还有一条告诉你花园夜里的收获。好友给你浇水或留宝箱时也会提醒。"], "Guardamos o nome que escolheste, a cidade (zona aproximada), o país e o progresso do jogo, para guardar o jogo e para os teus amigos. O email só se o deres, e serve apenas para recuperares o jardim: nunca o mostramos nem enviamos publicidade. Não guardamos a localização exata. Os teus amigos veem o teu perfil e a tua cena; se apareceres num ranking, quem o abrir também pode ver a tua cena. O planeta mostra só totais por país.": ["We keep the name you chose, your city (rough area), your country and your game progress, to save the game and for your friends. Your email only if you give it, and only so you can get your garden back: we never show it or send ads. We don't keep your exact location. Your friends see your profile and scene; if you appear in a ranking, whoever opens it can also see your scene. The planet only shows totals per country.", "Guardamos el nombre que elegiste, la ciudad (zona aproximada), el país y el progreso del juego, para guardar la partida y para tus amigos. El email solo si nos lo das, y sirve únicamente para recuperar tu jardín: nunca lo mostramos ni enviamos publicidad. No guardamos la ubicación exacta. Tus amigos ven tu perfil y tu escena; si apareces en un ranking, quien lo abra también puede ver tu escena. El planeta solo muestra totales por país.", "Nous gardons le nom que tu as choisi, ta ville (zone approximative), ton pays et ta progression, pour sauvegarder le jeu et pour tes amis. L'email seulement si tu le donnes, et uniquement pour récupérer ton jardin : on ne le montre jamais et on n'envoie pas de pub. Nous ne gardons pas ta position exacte. Tes amis voient ton profil et ta scène ; si tu apparais dans un classement, qui l’ouvre peut aussi voir ta scène. La planète ne montre que des totaux par pays.", "Wir speichern den Namen, den du gewählt hast, deine Stadt (ungefähre Gegend), dein Land und deinen Spielfortschritt, um das Spiel zu sichern und für deine Freunde. Die E-Mail nur, wenn du sie angibst, und nur, damit du deinen Garten zurückbekommst: Wir zeigen sie nie und schicken keine Werbung. Deinen genauen Standort speichern wir nicht. Deine Freunde sehen dein Profil und deine Szene; wenn du in einer Rangliste stehst, kann jeder, der sie öffnet, auch deine Szene sehen. Der Planet zeigt nur Summen pro Land.", "選んだ名前、都市（おおよその地域）、国、ゲームの進行を、セーブと友だちのために保存します。メールは登録した場合だけで、庭を取り戻すためにだけ使います。表示も広告送信もしません。正確な位置は保存しません。プロフィールと景色は友だちに見えます。ランキングに載ると、それを開いた人もあなたの景色を見られます。地球には国ごとの合計だけが表示されます。", "我们会保存你选的名字、城市（大致区域）、国家和游戏进度，用来存档和给好友看。邮箱只有你提供时才保存，只用来找回花园：我们从不公开，也不发广告。我们不保存精确位置。好友能看到你的资料和场景；如果你上了排行榜，打开榜单的人也能看到你的场景。地球上只显示各国的总数。"]});
 Object.assign(TR,{"musgo secou": ["moss dried", "musgo seco", "mousse séchée", "Moos vertrocknet", "コケが枯れた", "苔藓干了"], "Sem ti, o musgo seca devagar. Com toques e rega volta a crescer.": ["Without you, the moss slowly dries out. Taps and watering bring it back.", "Sin ti, el musgo se seca poco a poco. Con toques y riego vuelve a crecer.", "Sans toi, la mousse sèche doucement. Avec des touches et de l’eau, elle repousse.", "Ohne dich trocknet das Moos langsam aus. Mit Tippen und Gießen wächst es wieder.", "あなたがいないと、コケは少しずつ枯れていく。タップと水やりでまた育つ。", "没有你，苔藓会慢慢变干。点一点、浇浇水，它就会再长起来。"], "A subir… quanto mais fundo, mais demora, e a luz continua a gastar-se.": ["Climbing… the deeper you are, the longer it takes, and the light keeps burning.", "Subiendo… cuanto más hondo, más tarda, y la luz se sigue gastando.", "Tu remontes… plus c’est profond, plus c’est long, et la lumière continue de baisser.", "Du kletterst hoch … je tiefer, desto länger dauert es, und das Licht brennt weiter.", "のぼっている… 深いほど時間がかかり、明かりは減り続ける。", "正在往上爬……越深越慢，灯光还在不停消耗。"], "A subir…": ["Climbing…", "Subiendo…", "Tu remontes…", "Kletterst hoch …", "のぼり中…", "往上爬…"], "Mais fundo na mina · {0}": ["Deepest in the mine · {0}", "Más hondo en la mina · {0}", "Le plus profond dans la mine · {0}", "Am tiefsten in der Mine · {0}", "鉱山の最深記録 · {0}", "矿井最深 · {0}"], "Ainda ninguém deste país desceu à mina.": ["Nobody from this country has gone down the mine yet.", "Todavía nadie de este país ha bajado a la mina.", "Personne de ce pays n’est encore descendu dans la mine.", "Aus diesem Land ist noch niemand in die Mine gestiegen.", "この国からはまだ誰も鉱山に降りていない。", "这个国家还没有人下过矿井。"], "O teu fundo: {0} m": ["Your depth: {0} m", "Tu fondo: {0} m", "Ta profondeur : {0} m", "Deine Tiefe: {0} m", "あなたの深さ：{0} m", "你的深度：{0} 米"]});
+Object.assign(TR,{"Rapado": ["Buzz cut", "Rapado", "Coupe rasée", "Kurzgeschoren", "坊主", "寸头"], "Tigela": ["Bowl cut", "Corte tazón", "Coupe au bol", "Topfschnitt", "マッシュ", "蘑菇头"], "Liso comprido": ["Long and straight", "Largo y liso", "Long et lisse", "Lang und glatt", "ロングストレート", "长直发"], "Chiquinhas": ["Pigtails", "Coletas", "Couettes", "Zwei Zöpfchen", "ツインテール", "双马尾"], "Topete": ["Quiff", "Tupé", "Banane", "Tolle", "リーゼント", "飞机头"], "Caracóis": ["Short curls", "Rizos cortos", "Boucles courtes", "Kurze Locken", "ショートカール", "短卷发"], "Dois carrapitos": ["Space buns", "Dos moños", "Deux chignons", "Zwei Dutts", "ダブルおだんご", "双丸子头"], "Rabo alto": ["High ponytail", "Coleta alta", "Queue haute", "Hoher Pferdeschwanz", "ハイポニー", "高马尾"], "Trança de lado": ["Side braid", "Trenza de lado", "Tresse sur le côté", "Seitlicher Zopf", "サイド三つ編み", "侧边辫"], "Cachos longos": ["Long curls", "Rizos largos", "Longues boucles", "Lange Locken", "ロングカール", "长卷发"], "Mullet": ["Mullet", "Mullet", "Mulet", "Vokuhila", "マレット", "鲻鱼头"], "Samurai": ["Topknot", "Samurái", "Samouraï", "Samurai", "ちょんまげ", "武士髻"], "Brisa": ["Breeze", "Brisa", "Brise", "Brise", "そよ風", "微风"], "Raio de sol": ["Sunbeam", "Rayo de sol", "Rayon de soleil", "Sonnenstrahl", "陽だまり", "阳光"], "Luar": ["Moonlight", "Luz de luna", "Clair de lune", "Mondschein", "月明かり", "月光"], "Pétalas": ["Petals", "Pétalos", "Pétales", "Blütenblätter", "花びら", "花瓣"], "Maré": ["Tide", "Marea", "Marée", "Gezeiten", "潮", "潮汐"], "Brasas": ["Embers", "Brasas", "Braises", "Glut", "残り火", "余烬"], "Geada": ["Frost", "Escarcha", "Givre", "Raureif", "霜", "霜"], "Corações": ["Hearts", "Corazones", "Cœurs", "Herzen", "ハート", "爱心"], "Poeira de estrelas": ["Stardust", "Polvo de estrellas", "Poussière d'étoiles", "Sternenstaub", "星くず", "星尘"], "Trovão": ["Thunder", "Trueno", "Tonnerre", "Donner", "雷", "雷霆"], "Runas": ["Runes", "Runas", "Runes", "Runen", "ルーン", "符文"], "Cabelo rosa pastel": ["Pastel pink hair", "Pelo rosa pastel", "Cheveux rose pastel", "Pastellrosa Haare", "パステルピンクの髪", "淡粉色头发"], "Cabelo menta": ["Mint hair", "Pelo menta", "Cheveux menthe", "Mintgrüne Haare", "ミントの髪", "薄荷色头发"], "Cabelo lilás": ["Lilac hair", "Pelo lila", "Cheveux lilas", "Fliederfarbene Haare", "ライラックの髪", "丁香紫头发"], "Cabelo dourado": ["Golden hair", "Pelo dorado", "Cheveux dorés", "Goldene Haare", "金色の髪", "金色头发"], "Cabelo rosa néon": ["Neon pink hair", "Pelo rosa neón", "Cheveux rose néon", "Neonpinke Haare", "ネオンピンクの髪", "霓虹粉头发"], "Cabelo néon": ["Neon hair", "Pelo neón", "Cheveux néon", "Neonhaare", "ネオンの髪", "霓虹头发"], "Cabelo meia-noite": ["Midnight hair", "Pelo medianoche", "Cheveux minuit", "Mitternachtshaare", "真夜中の髪", "午夜色头发"], "Olhos rosa": ["Pink eyes", "Ojos rosa", "Yeux roses", "Rosa Augen", "ピンクの目", "粉色眼睛"], "Olhos de jade": ["Jade eyes", "Ojos de jade", "Yeux de jade", "Jadeaugen", "翡翠の目", "翡翠之眼"], "Olhos de ouro": ["Golden eyes", "Ojos de oro", "Yeux d'or", "Goldene Augen", "黄金の目", "黄金之眼"], "Olhos de rubi": ["Ruby eyes", "Ojos de rubí", "Yeux de rubis", "Rubinaugen", "ルビーの目", "红宝石之眼"], "Olhos estelares": ["Starry eyes", "Ojos estelares", "Yeux stellaires", "Sternenaugen", "星の目", "星辰之眼"], "Olhos néon": ["Neon eyes", "Ojos neón", "Yeux néon", "Neonaugen", "ネオンの目", "霓虹之眼"], "Olhos de cristal": ["Crystal eyes", "Ojos de cristal", "Yeux de cristal", "Kristallaugen", "水晶の目", "水晶之眼"], "Olhos de brasa": ["Ember eyes", "Ojos de brasa", "Yeux de braise", "Glutaugen", "残り火の目", "余烬之眼"], "Olhos arcanos": ["Arcane eyes", "Ojos arcanos", "Yeux arcaniques", "Arkane Augen", "秘術の目", "奥术之眼"], "Aura": ["Aura", "Aura", "Aura", "Aura", "オーラ", "光环"], "Esconder o chapéu": ["Hide the hat", "Ocultar el sombrero", "Masquer le chapeau", "Hut ausblenden", "帽子を隠す", "隐藏帽子"], "Esconder os extras": ["Hide the extras", "Ocultar los extras", "Masquer les extras", "Extras ausblenden", "アクセサリーを隠す", "隐藏配饰"], "Esconder a arma": ["Hide the weapon", "Ocultar el arma", "Masquer l'arme", "Waffe ausblenden", "武器を隠す", "隐藏武器"], "Esconder o animal": ["Hide the pet", "Ocultar la mascota", "Masquer l'animal", "Tier ausblenden", "ペットを隠す", "隐藏宠物"], "Continua contigo e o bónus do pet mantém-se.": ["It stays with you and the pet bonus still counts.", "Sigue contigo y el bonus de la mascota se mantiene.", "Il reste avec toi et le bonus de l'animal est conservé.", "Es bleibt bei dir und der Tierbonus gilt weiter.", "一緒にいて、ペットのボーナスはそのまま。", "它仍陪着你，宠物加成照常生效。"], "Continua equipado e conta para os conjuntos.": ["It stays equipped and counts towards the sets.", "Sigue equipado y cuenta para los conjuntos.", "Il reste équipé et compte pour les ensembles.", "Es bleibt angelegt und zählt für die Sets.", "装備したままで、セットにも数えられる。", "仍保持装备，并计入套装。"], "Uma luz à volta da tua personagem, no jardim, em casa e onde te virem.": ["A light around your character, in the garden, at home and wherever you're seen.", "Una luz alrededor de tu personaje, en el jardín, en casa y donde te vean.", "Une lumière autour de ton personnage, au jardin, à la maison et partout où on te voit.", "Ein Licht um deine Figur, im Garten, zu Hause und überall, wo man dich sieht.", "キャラクターを包む光。庭でも家でも、どこで見られても。", "环绕角色的光芒，在花园、在家，在任何被看到的地方。"]});
 </script>
 <script>
 (()=>{
@@ -2186,6 +2207,10 @@ const RCP=[
   {id:'hcestelar',t:'cos',k:'hc',v:'#8a5aff',r:5,need:{},mat:{poeira:2,prisma:1},g:60},
   {id:'tcgelo',t:'cos',k:'tc',v:'#bfe8ff',r:3,need:{},mat:{gelo:1,seda:3},g:12},
   {id:'tcabismo',t:'cos',k:'tc',v:'#2a0a3a',r:4,need:{},mat:{chama:1,escama:3},g:30},
+  {id:'hcnoite',t:'cos',k:'hc',v:'#1a1060',r:4,need:{},mat:{poeira:2,escama:3},g:30},
+  {id:'ecarcano',t:'cos',k:'ec',v:'#b46aff',r:4,need:{},mat:{prisma:1,poeira:2,orvalho:2},g:35},
+  {id:'aurarunas',t:'cos',k:'aura',v:'runas',r:4,need:{},mat:{poeira:3,quartzo:3,seda:2},g:40},
+  {id:'aurafenix',t:'cos',k:'aura',v:'fenix',r:6,need:{fenix:1},mat:{chama:3,prisma:1,pena:2},g:160},
   // paint for pets: one use, the pet takes the colour for good
   {id:'tprata',t:'tint',c:1,r:1,need:{},mat:{lasca:8,orvalho:2},g:4},
   {id:'touro',t:'tint',c:2,r:2,need:{bolota:1},mat:{quartzo:3,fio:10},g:8},
@@ -2211,7 +2236,7 @@ function ofName(R){if(R.t==='item')return ITEM[R.id].nome;if(R.t==='tint')return
 function tintSvg(c,cls){const C=PCH[c]||PCH[1],k=hex(C.col),d=shadeHex(C.col,.62),l=shadeHex(C.col,1.3);
   return pxsvg(['..www..','.wcccw.','.wwwww.','wpPPPpw','wpPLPpw','wpPPPpw','wppppdw','.wwwww.'],{w:'#2a2014',c:'#a06a3a',p:d,P:C.col,L:l,d:shadeHex(C.col,.45)},(cls||'')+' chr'+c)}
 function ofIcon(R){if(R.t==='item')return pxsvg(ITEM[R.id].map,ITEM[R.id].pal);if(R.t==='tint')return tintSvg(R.c);
-  const L=avFocus({...S.av.look,[R.k]:R.v},R.k),th=R.k==='hat'||R.k==='hc'?'head':R.k==='arm'?'arm':'bust';return avThumb(L,th)}
+  const L=avFocus({...S.av.look,[R.k]:R.v},R.k),th=R.k==='hat'||R.k==='hc'||R.k==='ec'?'head':R.k==='arm'?'arm':R.k==='aura'?'aura':'bust';return avThumb(L,th)}
 function ofDo(id){const R=RCPI[id];if(!R)return;if(!ofOn())return;if(ofDone(R)){toast(_t('Já é teu.'));return}if(!ofHave(R)){toast(_t('Faltam ingredientes.'));return}
   const ins=[];for(const k in R.need){S.coll[k]-=R.need[k];ins.push(pxsvg(ITEM[k].map,ITEM[k].pal))}for(const k in R.mat){S.mat[k]-=R.mat[k];ins.push(matSvg(k))}S.gems-=R.g;
   let isNew=true;
@@ -2222,7 +2247,7 @@ function ofDo(id){const R=RCPI[id];if(!R)return;if(!ofOn())return;if(ofDone(R)){
   S.stats.craft=(S.stats.craft||0)+1;if(R.r>=5)S.stats.craftLeg=(S.stats.craftLeg||0)+1;dirtySave=true;ev('oficina',R.id);saveLocal();pushCloud(true);hud();
   sheetSig='';renderSheet();ofReveal(R,ins)}
 // the reveal: what went in circles the core and melts into it; the rarer the thing, the longer and louder
-function ofReveal(R,ins){const vr=R.r,rc=RC[vr],nm=ofName(R),big=R.t==='cos'?avThumb(avFocus({...S.av.look,[R.k]:R.v},R.k),R.k==='hat'||R.k==='hc'?'head':'full'):R.t==='tint'?tintSvg(R.c):pxsvg(ITEM[R.id].map,ITEM[R.id].pal);
+function ofReveal(R,ins){const vr=R.r,rc=RC[vr],nm=ofName(R),big=R.t==='cos'?avThumb(avFocus({...S.av.look,[R.k]:R.v},R.k),R.k==='hat'||R.k==='hc'||R.k==='ec'?'head':'full'):R.t==='tint'?tintSvg(R.c):pxsvg(ITEM[R.id].map,ITEM[R.id].pal);
   const n=Math.max(1,ins.length),sub=R.t==='item'?_t('Coleção: +{0}% moedas para sempre.',Math.round(RBON[vr]*100))+(RELIC[R.id]?' '+relTxt(R.id)+'.':''):R.t==='cos'?_t('Já está no teu guarda-roupa.'):_t('Usa-a num pet, em Oficina › Tintas.');
   const btn=R.t==='cos'?`<button class="btn gold" data-m="ofwear:${R.id}">${_t('Vestir já')}</button>`:R.t==='tint'&&ptOpen()?`<button class="btn gold" data-m="oftint:${R.c}">${_t('Pintar um pet')}</button>`:'';
   SND.play('click');
@@ -2260,7 +2285,7 @@ function ofIng(R){let h='';
   for(const k in R.mat){const m=MAT[MATI[k]],hv=matN(k),ok=hv>=R.mat[k];h+=`<button class="ofIg ${ok?'ok':'no'}" style="--rc:${RC[m.r]}" data-ofi="m:${k}" aria-label="${esc(m.nome)}">${matSvg(k)}<b>${NM(Math.min(hv,999)+'/'+R.mat[k],'xs')}</b></button>`}
   return h}
 function ofCard(R){const done=ofDone(R),can=!done&&ofHave(R),nm=ofName(R),tint=R.t==='tint'?(S.tint&&S.tint[R.c])|0:0,tk=!done&&trkOn(R.id);
-  const what=R.t==='item'?_t('Achado · +{0}% moedas',Math.round(RBON[R.r]*100)):R.t==='tint'?_t('Tinta para pets · {0}',chBonTxt(R.c)||PCH[R.c].nome):R.k==='acc'?_t('Extra para a personagem'):R.k==='arm'?_t('Para a mão'):R.k==='hat'?_t('Chapéu'):R.k==='top'?_t('Roupa'):R.k==='hc'?_t('Cor do cabelo'):_t('Cor da roupa');
+  const what=R.t==='item'?_t('Achado · +{0}% moedas',Math.round(RBON[R.r]*100)):R.t==='tint'?_t('Tinta para pets · {0}',chBonTxt(R.c)||PCH[R.c].nome):R.k==='acc'?_t('Extra para a personagem'):R.k==='arm'?_t('Para a mão'):R.k==='hat'?_t('Chapéu'):R.k==='top'?_t('Roupa'):R.k==='hc'?_t('Cor do cabelo'):R.k==='ec'?_t('Olhos'):R.k==='aura'?_t('Aura'):_t('Cor da roupa');
   return`<div class="ofC ${done?'done':can?'can':''} ${tk?'trk':''}" data-rid="${R.id}" style="--rc:${RC[R.r]}"><div class="ofH"><span class="ofI ${R.t==='cos'?'cos':''} ${R.t==='item'&&ITEM[R.id].emit?'em':''}">${ofIcon(R)}</span><span class="meta"><h3>${nm}${tint?` <span class="lv">×${tint}</span>`:''}</h3><p><span style="color:${RC[R.r]}">${RN[R.r]}</span> · ${what}</p></span>${!done&&TRK_OK?`<button class="trkPin ${tk?'on':''}" data-trk="${R.id}" aria-pressed="${tk}" aria-label="${tk?_t('Deixar de seguir {0}',esc(nm)):_t('Seguir {0}',esc(nm))}" title="${tk?_t('§aseguir'):_t('Seguir')}">${icon(tk?'trk':'trko')}</button>`:''}</div>
     ${done?`<div class="ofF"><span class="tag ofOwn">${icon('check')}${_t('Já é teu')}</span></div>`:`<div class="ofF"><div class="ofIgs">${ofIng(R)}</div><button class="btn ${can?'gold':'ghost'} ofGo" data-of="${R.id}" ${can?'':'disabled'}>${icon('gem')}${NM(R.g,'xs')}<span>${_t('Criar')}</span></button></div>`}</div>`}
 function ofHTML(){
@@ -2314,12 +2339,41 @@ function ofModal(a){
   if(a.startsWith('ofpaint:')){const[,u,c]=a.split(':');closeModal();setTimeout(()=>ofPaint(u,+c),60);return true}
   return false}
 
+/* auras in the scene: a soft light that breathes around the whole figure, and what drifts in it. Shining eyes glint now and then.
+   It keeps moving with less movement too, only calmer. st holds the particles of that figure */
+function avAuraFx(X,look,e,left,top,fl,st){look=lookShown(look);const A=AURAD[look&&look.aura],eg=EGLOW[look&&look.ec];if(!A&&!eg)return;
+  const tn=performance.now(),q=st._au||(st._au={L:[],lt:tn}),dt=Math.min(.05,(tn-q.lt)/1000),t=tn/1000;q.lt=tn;
+  const hp=a2At(e,e.head,left,top,fl),cx=hp[0]+(fl?.6:-.6),y0=top+e.top/4,y1=top+e.feet/4,hh=y1-y0,my=(y0+y1)/2;
+  if(eg&&e.blink&&e.blink.length&&(t%3.1)<.42){const p=a2At(e,[e.head[0]+.5,e.head[1]+1.5],left,top,fl),k=Math.sin((t%3.1)/.42*Math.PI);
+    X.fillStyle=`rgba(255,255,255,${(.9*k).toFixed(2)})`;X.fillRect(p[0]-.125,p[1]-.75*k,.25,1.5*k);X.fillRect(p[0]-.75*k,p[1]-.125,1.5*k,.25);X.fillStyle=`rgba(${eg[0]},${eg[1]},${eg[2]},${(.35*k).toFixed(2)})`;X.fillRect(p[0]-.5,p[1]-.5,1,1)}
+  if(!A)return;const br=auB(),rb=A.c==='rb',C0=rb?hueRgb(t*60%360):A.c[0],C1=rb?hueRgb((t*60+120)%360):A.c[1];
+  // the light: crossed soft layers read as an oval around the body
+  for(const[w,h,a,c]of[[10,hh+5,.038,C0],[14,hh-1,.038,C0],[18,hh*.6,.034,C1],[7,hh+8,.028,C1]]){X.fillStyle=`rgba(${c[0]|0},${c[1]|0},${c[2]|0},${(a*(.5+br)).toFixed(3)})`;X.fillRect(Math.round((cx-w/2)*4)/4,Math.round((my-h/2+1)*4)/4,w,h)}
+  const R=Math.random,L=q.L,P=A.p,col=()=>P[(R()*P.length)|0],add=(x,y,vx,vy,life,s,z)=>{if(L.length<46)L.push({x,y,vx,vy,t:0,life,c:col(),z:z||1,a:.9,st:s===true||s===1,hr:s==='h'})};
+  const rate=A.r*(RM?.55:1),bx=()=>cx-4+R()*8,by=()=>y0+R()*hh;
+  if(A.k==='orbit'){// stars going round: in front they are bright, behind they fade
+    for(let i=0;i<3;i++){const a=t*(RM?1.2:2)+i*2.09,ox=Math.cos(a)*7,oy=Math.sin(a)*2.2,fr=Math.sin(a)>0,c=P[i%P.length];X.fillStyle=`rgba(${c},${fr?.95:.35})`;X.fillRect(Math.round((cx+ox-.5)*4)/4,Math.round((my+2+oy-.5)*4)/4,1,1);if(R()<dt*8)add(cx+ox,my+2+oy,0,0,.45,0)}}
+  if(R()<rate*dt){const k=A.k;
+    if(k==='leaf')add(bx()-3,by(),1.6+R()*1.6,.4+R()*.8,1.8,R()<.2);
+    else if(k==='rise')add(bx(),y0+hh*.4+R()*hh*.6,(R()-.5)*.8,-2.4-R()*1.8,1.7,R()<.3);
+    else if(k==='twinkle'||k==='spark')add(cx-6+R()*12,y0-2+R()*(hh+2),0,0,k==='spark'?.55:.9,1);
+    else if(k==='fall')add(cx-6+R()*12,y0-3,(R()-.5)*2,2+R()*1.2,1.9,R()<.15);
+    else if(k==='bub')add(bx(),y1-2-R()*hh*.5,(R()-.5)*.6,-2.6-R()*1.4,1.5,0);
+    else if(k==='ember'||k==='flame')add(bx(),y1-1-R()*hh*.6,(R()-.5)*1.8,-5-R()*4,k==='flame'?.9:1.1,R()<.2);
+    else if(k==='snow')add(cx-7+R()*14,y0-4,(R()-.5)*1.2,2.2+R()*1.2,2,R()<.3);
+    else if(k==='heart')add(bx(),by(),(R()-.5)*1,-1.4-R()*1.2,1.9,'h',.5);
+    else if(k==='shard')add(bx(),by(),(R()-.5)*.6,-1.2-R(),1.3,1);
+    else if(k==='rune')add(bx(),y1-2-R()*hh*.4,(R()-.5)*.5,-1-R()*.8,2.2,R()<.5);
+    else if(k==='wisp')add(bx(),y1-1,(R()-.5)*1.4,-1.6-R()*1.2,2.2,R()<.2);
+    else if(k==='zap'){// a crackle: a jagged line flashes along the side of the body
+      const s=R()<.5?-1:1;let x=cx+s*(3+R()*2),y=y0+R()*hh*.5;for(let i=0;i<5;i++){add(x,y,0,0,.16+R()*.08,i===0);x+=s*(R()-.3)*1.6;y+=1+R()*1.4}}}
+  pfxRun(L,X,dt,1)}
 /* the special looks in the scene: a soft glow behind the wings and particles in their colours.
    Feathers and light for the angel, embers for the devil, fairy dust, snow, flames for the phoenix, dark motes for the void */
 const WFX={L:[],lt:0},WCOL={asasanjo:['255,236,170','255,255,255'],asasdiabo:['255,90,40','255,170,60'],asasfada:['255,170,230','170,240,255'],asasgelo:['210,245,255','255,255,255'],asasfenix:['255,150,40','255,230,110'],asasvazio:['170,120,255','90,40,180'],capaestelar:['255,240,200','180,170,255'],asasborboleta:['255,170,60','255,246,224'],asasaurora:['120,255,200','190,140,255'],asaseclipse:['255,211,106','122,58,255']};
 const WFLAP={asasanjo:520,asasdiabo:380,asasfada:160,asasgelo:600,asasfenix:300,asasvazio:460,asasborboleta:240,asasaurora:420,asaseclipse:520};
-const avWF=look=>{const p=look&&WFLAP[look.acc];return p&&!RM?Math.floor(performance.now()/p)%2:0};
-function avWingFx(look,x0,y0,fl,v){if(OUT_OK)try{avAura(look,x0,y0,fl,v)}catch(e){}const a=look&&look.acc,C=WCOL[a];if(!C||v==='l')return;const tn=performance.now(),dt=Math.min(.05,(tn-(WFX.lt||tn))/1000);WFX.lt=tn;
+const avWF=look=>{const p=look&&!lookHid(look,'acc')&&WFLAP[look.acc];return p&&!RM?Math.floor(performance.now()/p)%2:0};
+function avWingFx(look,x0,y0,fl,v){look=lookShown(look);if(OUT_OK)try{avAura(look,x0,y0,fl,v)}catch(e){}const a=look&&look.acc,C=WCOL[a];if(!C||v==='l')return;const tn=performance.now(),dt=Math.min(.05,(tn-(WFX.lt||tn))/1000);WFX.lt=tn;
   const t=tn/1000,cx=x0+7,cy=y0+13,side=v==='s';
   // the glow: two soft rings that breathe. With reduced motion it stays still
   const br=RM?.5:.5+.5*Math.sin(t*(a==='asasfada'?4:2));
@@ -2591,7 +2645,8 @@ const AVO={// overlays relative to head anchor (hx=1 in body frame, hy per pose)
   },
 };
 // what each option needs: a number is the level; 'g30' costs 30 gems; 'b3' only comes out of the daily chest (rarity 3); -1 comes from an event
-const AVH=[['curto',0],['comprido',0],['franja',0],['risca',0],['ondulado',0],['rabo',0],['carrapito',0],['espetado',0],['careca',0],['trancas',0],['afro',0],['moicano',12]];
+const AVH=[['curto',0],['comprido',0],['franja',0],['risca',0],['ondulado',0],['rabo',0],['carrapito',0],['espetado',0],['careca',0],['trancas',0],['afro',0],['rapado',0],['tigela',0],['liso',0],['chiquinhas',0],
+  ['topete',6],['moicano',12],['caracois',14],['bolinhas',20],['rabalto',26],['trancalado',32],['cachos',45],['mullet','g20'],['samurai','g30']];
 const AVHATS=[['coroaesm','e30'],['kitsune','e20'],['nada',0],['gorro',3],['bone',5],['palha',8],['boina',10],['flores',16],['laco',18],['cogumelo',24],['feiticeiro',35],['coroa',65],['auscultadores','g20'],['cowboy','g25'],['gato','g30'],['tiara','g35'],['cartola','b2'],['viking','b3'],['aureola','b4'],['abobora',-1],['natal',-1],['coelho',-1],['arraial',-1],['mineiro','m1'],['cristal','m2'],['magma','m3'],['nucleo','m4'],['chifres','m5'],['caveira','m7'],['astronauta','m8'],['lunar','m9'],['coroagelo','c4'],['coroafogo','c5'],['nimbo','c6'],['vazio','m10'],['estrelas','b5'],['prismahalo','b6'],['coroaeclipse','b7']];
 const AVACC=[['nada',0],['cachecol',6],['colar',9],['mochila',13],['redondos',15],['oculos',20],['bigode',22],['bolsa',28],['capa',45],['papillon','g15'],['asas','b3'],['asasfada','c3'],['asasgelo','c4'],['asasanjo','c5'],['asasdiabo','c5'],['capaestelar','c5'],['asasfenix','c6'],['asasvazio','c7'],['asasborboleta','b5'],['asasaurora','b6'],['asaseclipse','b7']];
 const AVTOPS=[['lisa',0],['vestido',0],['riscas',5],['xadrez',8],['jardineiras',10],['capuz',15],['casaco',20],['real','b3'],['manto','c4'],['estelar','c4']];
@@ -2599,10 +2654,27 @@ const AVPT=[['calcas',0],['calcoes',0],['saia',0]];
 const AVPETS=[['nada',0],['pinto',10],['sapo','g30'],['gato','g40'],['cao','g40'],['coelho','g45'],['raposa','b3'],['coruja','b4'],['gatopreto',-1],['morcego',-1]];
 // skin tones are saved by position, so new ones go at the end; SKINORD is the order they are shown in
 const AVSKIN=[['#f6d7b8','#e2b893'],['#eab994','#d19a72'],['#c98d62','#ad7349'],['#9a6440','#7e4f30'],['#6b4428','#55341d'],['#f8e2d2','#e6c4ae'],['#4a2e1c','#3a2214']],SKINORD=[5,0,1,2,3,4,6];
-const AVHAIR=[['#2a1d16',0],['#5a3a22',0],['#a06a3a',0],['#e0b060',0],['#d8d4cc',0],['#f3efe2',0],['#c84a3a',4],['#e88ab0',8],['#6aa84f',12],['#8a7ae0',25],['#5ab0e0',40],['#c8d0dc','b2'],['#ff6d8a','b2'],['#ff5a2a','m5'],['#40e0c0','m6'],['#d8f4ff','c3'],['#d01848','c3'],['#8a5aff','c5']];
+const AVHAIR=[['#121216',0],['#2a1d16',0],['#5a3a22',0],['#7a3a1e',0],['#a06a3a',0],['#c88a4a',0],['#e0b060',0],['#d8d4cc',0],['#f3efe2',0],['#f0dca0',3],['#c84a3a',4],['#e2702a',6],['#e88ab0',8],['#6aa84f',12],['#3a2a5a',16],['#2a7a70',20],['#8a7ae0',25],['#3a5ad8',30],['#5ab0e0',40],['#d85ac8',50],
+  ['#ffd0e0','g15'],['#a8f0d8','g15'],['#c8b4ff','g20'],['#ffe27a','b3'],['#ff3aa8','b4'],['#16e0ff','m8'],['#1a1060','c4'],['#c8d0dc','b2'],['#ff6d8a','b2'],['#ff5a2a','m5'],['#40e0c0','m6'],['#d8f4ff','c3'],['#d01848','c3'],['#8a5aff','c5']];
 const AVTOPC=[['#5d8c4a',0],['#c8643a',0],['#e8d8b0',0],['#4a6a9a',0],['#a04a6a',0],['#3a8a8a',0],['#2e2e36',0],['#e88ab0',6],['#8a3a2a',10],['#7a5ab0',18],['#f4c54f',30],['#1f2a5a','b2'],['#ff6a2a','m3'],['#c8d8ff','m8'],['#3a1a6a','m10'],['#bfe8ff','c3'],['#2a0a3a','c4']];
 const AVPANTS=[['#5a4632',0],['#3a4a62',0],['#6a6a5a',0],['#2e3a2a',0],['#d8d0c0',0],['#2e2e36',0],['#4a6a9a',8],['#8a3a2a',22]];
-const AVEYE=[['#1b1512',0],['#4a2e1a',0],['#2e5a2a',0],['#2a4a7a',0],['#5a5a62',0],['#7a4a1a',0],['#8a4ad0','b2']];
+const AVEYE=[['#1b1512',0],['#4a2e1a',0],['#2e5a2a',0],['#2a4a7a',0],['#5a5a62',0],['#7a4a1a',0],['#3a8ad8',5],['#2aa070',10],['#c08a2a',16],['#b03040',35],['#c4d0e4',55],['#e060a8','g15'],['#8a4ad0','b2'],
+  ['#5aff8a','g40'],['#ffd23a','b3'],['#ff3a5a','b4'],['#f4f8ff','b5'],['#ff5ae6','b6'],['#36e8ff','m6'],['#ff8a2a','m8'],['#b46aff','c4']];
+// eyes that shine: a soft light around them, brighter in the dark, and now and then a glint
+const EGLOW={'#5aff8a':[110,255,150],'#ffd23a':[255,220,90],'#ff3a5a':[255,80,100],'#f4f8ff':[220,235,255],'#ff5ae6':[255,110,235],'#36e8ff':[90,240,255],'#ff8a2a':[255,150,60],'#b46aff':[190,130,255]};
+// auras: a light that hugs the figure (c: inner and outer colour, or 'rb' for a rainbow) and what drifts in it (p: colours, k: how it moves, r: how many)
+const AVAURA=[['nada',0],['brisa',12],['sol',22],['luar',35],['petalas',50],['mare',65],['brasas',85],['geada',110],['coracoes','g40'],['estrelas','g60'],['trovao','g90'],['cristal','m4'],['magma','m7'],['runas','c4'],['fenix','c6'],['arcoiris','b4'],['galaxia','b5'],['aurora','b6'],['eclipse','b7']];
+const AURAD={brisa:{c:[[120,230,120],[200,255,170]],p:['150,235,120','210,255,180'],k:'leaf',r:5},sol:{c:[[255,196,64],[255,240,160]],p:['255,214,90','255,246,190'],k:'rise',r:6},
+  luar:{c:[[140,180,255],[220,235,255]],p:['200,220,255','255,255,255'],k:'twinkle',r:5},petalas:{c:[[255,130,185],[255,210,230]],p:['255,160,200','255,220,235'],k:'fall',r:5},
+  mare:{c:[[40,130,235],[120,220,255]],p:['130,230,255','210,250,255'],k:'bub',r:6},brasas:{c:[[255,100,30],[255,190,80]],p:['255,120,40','255,200,90'],k:'ember',r:9},
+  geada:{c:[[160,225,255],[240,250,255]],p:['220,245,255','255,255,255'],k:'snow',r:6},coracoes:{c:[[255,90,150],[255,190,215]],p:['255,110,160','255,190,215'],k:'heart',r:3},
+  estrelas:{c:[[255,236,160],[255,255,255]],p:['255,230,130','255,255,240'],k:'spark',r:8},trovao:{c:[[130,180,255],[240,250,255]],p:['150,210,255','255,255,255'],k:'zap',r:3},
+  cristal:{c:[[120,255,235],[230,255,255]],p:['120,240,255','220,255,255'],k:'shard',r:7},magma:{c:[[200,30,10],[255,110,20]],p:['255,90,30','255,170,60'],k:'ember',r:11},
+  runas:{c:[[150,80,255],[220,170,255]],p:['176,112,255','230,200,255'],k:'rune',r:5},fenix:{c:[[255,190,60],[255,80,24]],p:['255,140,40','255,230,110'],k:'flame',r:12},
+  arcoiris:{c:'rb',p:['255,90,120','255,190,70','120,255,140','90,200,255','190,120,255'],k:'spark',r:9},galaxia:{c:[[120,70,255],[255,120,220]],p:['190,160,255','140,200,255','255,255,255'],k:'orbit',r:5},
+  aurora:{c:[[60,240,170],[170,110,255]],p:['120,255,200','190,140,255'],k:'wisp',r:7},eclipse:{c:[[255,200,90],[70,20,140]],p:['255,211,106','160,90,255'],k:'orbit',r:5}};
+// what can be hidden while it stays worn (and keeps whatever it gives)
+const AVHIDE=['hat','acc','arm','pet'];
 const AVSHOE=[['#2e2420',0],['#5a3a22',0],['#8a3a2a',0],['#3a4a62',0],['#e8e2d0',0],['#4f8a34',5],['#f4c54f','b2']];
 const HATPAL={estrelas:{W:'#ffffff',Y:'#ffc93a'},prismahalo:{R:'#ff5a7a',Y:'#ffe068',G:'#4ad890',B:'#4aa8ff',P:'#c080ff',C:'#7fe3fe',O:'#ffffff'},coroaeclipse:{Z:'#ffd36a',V:'#1a0a2e',E:'#b48aff',v:'#07040e'},coroagelo:{C:'#bfefff',W:'#ffffff',c:'#6ab0d8'},coroafogo:{Y:'#ffe068',O:'#ff8a20',R:'#d02a10',G:'#c99a3a'},nimbo:{V:'#9a5afe',W:'#e8d8ff'},coroaesm:{Y:'#f4c54f',E:'#2fd47a',M:'#16824a'},kitsune:{W:'#fff3e8',O:'#e07a32'},bone:{A:'#c8643a',a:'#8a3a2a',Q:'#f3efe2'},boina:{A:'#a03a4a',a:'#701a28',s:'#701a28'},laco:{A:'#ef5a7f',a:'#b03a5a'},auscultadores:{A:'#2e2e36',B:'#5fb0f0',b:'#3a7ab0'},cowboy:{A:'#a06a3a',a:'#6a4424',R:'#3a2a1a'},gato:{A:'HAIR',P:'#f0a0c0'},tiara:{A:'#d8dce8',R:'#5fb0f0'},cartola:{A:'#2a2a32',a:'#1a1a20',R:'#c84a3a'},viking:{A:'#a8acb4',a:'#6a6e78',W:'#f0e6cc',w:'#c8b890'},aureola:{Y:'#ffe58a',y:'#d8b44a'},abobora:{A:'#e07a22',a:'#b85a18',s:'#4f6b2e'},natal:{A:'#d23a2e',Q:'#f6f2e8'},coelho:{W:'#f3efe2',P:'#f0a0c0',B:'#c84a6a'},arraial:{A:'#e8c878',a:'#b89448',Q:'#4f8a34',X:'#ef5a7f',Y:'#f4d04a',Z:'#5fb0f0',l:'#4f8a34'},gorro:{A:'#c8643a',a:'#9a4a2a',Q:'#f3efe2'},palha:{A:'#e8c878',a:'#b89448',Q:'#c84a3a'},cogumelo:{A:'#d23a2e',a:'#f0e2c8',M:'#f6f2e8'},flores:{X:'#f0a0c0',Y:'#f4d04a',l:'#5d8c4a'},feiticeiro:{A:'#4a4aa0',a:'#33337a',Y:'#f4d04a'},coroa:{Y:'#f4c54f',R:'#d23a4e'},mineiro:{Y:'#f4c54f',y:'#a8741a',L:'#fffbe0'},cristal:{C:'#7fe3fe',c:'#3aa1c4'},magma:{K:'#2a1a34',Q:'#140a1e',o:'#ff6a2a'},nucleo:{O:'#ffb040',o:'#ff6a2a'},chifres:{R:'#d82a20'},caveira:{W:'#ece0c4',Q:'#2a1414'},astronauta:{G:'#c8e8ff'},lunar:{M:'#e0e8ff'},vazio:{V:'#3a1a6a',Z:'#ffffff'}};
 const TRAITS=[['curioso',_t('Curioso'),_t('Anda sempre atrás de bichos e flores.')],['dorminhoco',_t('Dorminhoco'),_t('Qualquer sombra serve para uma sesta.')],['sonhador',_t('Sonhador'),_t('Lê, olha as estrelas e toca flauta.')],['brincalhao',_t('Brincalhão'),_t('Dança, salta e acena a toda a gente.')]];
@@ -2827,7 +2899,9 @@ const petBedQ=(x,y)=>{const B=scene&&spots?gardenBed():null;if(!B)return 9;const
 function petAnchor(P){if(P._anc)return P._anc;const m=P.F[2].map;let r0=0;while(r0<m.length&&!/[^.k]/.test(m[r0]))r0++;let s=0,n=0;
   for(let r=r0;r<Math.min(m.length,r0+(P.hd?4:2));r++)for(let q=0;q<m[r].length;q++)if(m[r][q]!=='.'&&m[r][q]!=='k'){s+=q;n++}return P._anc=[n?s/n:m[0].length/2,r0]}
 function accRgb(A){if(A.fx!=='prism'||RM)return[A.rgb,''];const st=Math.floor(performance.now()/180)%6,o={k:A.rgb.k};for(const c in A.pal)o[c]=c==='W'?A.rgb.W:chromaRgb(A.rgb[c],4,c,st+(c==='m'?3:0));return[o,'p'+st]}
-const curPet=()=>{if(!visiting&&S&&S.pt&&S.pt.at&&ptOpen()){const p=ptAct();if(p&&PETS[p.s])return p.s}const L=visiting?visiting.look:S&&S.av&&S.av.look;const id=L&&L.pet;return id&&PETS[id]?id:''};
+const curPetRaw=()=>{if(!visiting&&S&&S.pt&&S.pt.at&&ptOpen()){const p=ptAct();if(p&&PETS[p.s])return p.s}const L=visiting?visiting.look:S&&S.av&&S.av.look;const id=L&&L.pet;return id&&PETS[id]?id:''};
+// the pet that walks with you: none while it is hidden (an active pet still gives its bonus)
+const curPet=()=>lookHid(visiting?visiting.look:S&&S.av&&S.av.look,'pet')?'':curPetRaw();
 const curPch=()=>{if(!visiting){const p=S&&S.pt&&S.pt.at&&ptOpen()?ptAct():null;return p?p.c|0:0}return(visiting.look&&visiting.look.pch)|0};
 // a chroma version of a frame: silver and gold are fixed, holographic and rainbow cycle through six steps
 function petFrame(F,c){if(!c)return F;const st=PCH_CYC(c)&&!RM?Math.floor(performance.now()/160)%6:0,k='_c'+c+'_'+st;if(F[k])return F[k];const rgb={};for(const ch in F.rgb)rgb[ch]=ch==='k'?F.rgb[ch]:chromaRgb(F.rgb[ch],c,ch,st);return F[k]={map:F.map,rgb,w:F.w,h:F.h,rk:c+'.'+st}}
@@ -3017,9 +3091,11 @@ function drawHead(F,J,O,z){const[x,y]=headPx(J),sk=O.skin;
   draw(F,{sh:ellP(x+3,y+5,5.2,4.8,.3),r:sk,kind:'skin',z:z+.01,grp:'head'});
   // three quarters to the right: the near eye, the far eye close to the edge, brows, nose, mouth, the ear
   const e=O.eye,ed=e.map(v=>v*.5|0),la=O.lash,br=O.brow,p=(dx,dy,c)=>pxp(F,null,x+dx,y+dy,c);
-  if(J.P.closed&&!O.awake){p(0,1,la);p(1,1,la);p(0,2,sk[3]);p(1,2,sk[3]);p(5,1,la);p(5,2,sk[3])}
-  else{p(0,0,la);p(1,0,la);p(0,1,FACE.W);p(1,1,e);p(0,2,FACE.w);p(1,2,ed);p(5,0,la);p(5,1,e);p(5,2,ed);
-    F.eyes=[[x,y],[x+1,y],[x,y+1],[x+1,y+1],[x,y+2],[x+1,y+2],[x+5,y],[x+5,y+1],[x+5,y+2]].map(([X,Y])=>[X,Y,(Y-y)===1?la:sk[3]])}
+  // the near eye is three pixels wide so its colour reads: the white, then a 2x2 iris (lit at the top, the pupil at the bottom)
+  if(J.P.closed&&!O.awake){p(-1,1,la);p(0,1,la);p(1,1,la);p(-1,2,sk[3]);p(0,2,sk[3]);p(1,2,sk[3]);p(5,1,la);p(5,2,sk[3])}
+  else{const el=O.eyeL||mixc(e,[255,255,255],.3),em=O.eyeM||e;p(-1,0,la);p(0,0,la);p(1,0,la);p(-1,1,FACE.W);p(0,1,el);p(1,1,em);p(-1,2,FACE.w);p(0,2,em);p(1,2,ed);p(5,0,la);p(5,1,el);p(5,2,ed);
+    if(O.eyeGlow){for(const[X,Y]of[[0,1],[1,1],[0,2],[5,1]])F.glow.push([x+X,y+Y,O.eyeGlow,(X===5?.32:.42)*(O.eyeGA||1)])}
+    F.eyes=[[x-1,y],[x,y],[x+1,y],[x-1,y+1],[x,y+1],[x+1,y+1],[x-1,y+2],[x,y+2],[x+1,y+2],[x+5,y],[x+5,y+1],[x+5,y+2]].map(([X,Y])=>[X,Y,(Y-y)===1?la:sk[3]])}
   p(-1,-2,br);p(0,-2,br);p(1,-2,br);p(5,-2,br);p(6,-2,br);
   p(6,2,sk[4]);p(6,4,sk[1]);p(5,4,sk[2]);
   p(3,7,O.lip||sk[1]);p(4,7,O.lip?O.lip.map(v=>v*.8|0):sk[1]);
@@ -3051,6 +3127,47 @@ const HAIRO={afro:[-15,-19],moicano:[-11,-16]};
 function genMask(w,h,ox,oy,fn){const rows=[];for(let r=0;r<h;r++){let row='';for(let c=0;c<w;c++)row+=fn(c+ox+.5,r+oy+.5);rows.push(row)}return rows}
 HAIR.afro=genMask(30,30,-15,-19,(x,y)=>{const d=((x+1.2)/11.6)**2+((y+3.6)/12)**2,n=Math.sin(x*1.7)*Math.cos(y*1.3)*.05;if(d>1+n)return'.';if(y>-3.2&&x>-3.2)return'.';if(y>2.4&&x>-5.4)return'.';if(y>7)return'.';return(Math.sin(x*.9+y*1.1)>.92)?'+':((x*3+y*5)%11===0?'-':'#')});
 HAIR.moicano=genMask(22,16,-11,-16,(x,y)=>{const a=Math.atan2(y-.5,(x-.5)/1.05),r=Math.hypot((x-.5)/7.8,(y-.5)/8.9);if(a>-1.05||a<-2.85)return'.';const tall=.36+.18*Math.abs(Math.sin(a*6.5));if(r<.9||r>1+tall*(1-Math.max(0,(-a-2.4))*1.7))return'.';return(r>1.1&&Math.abs(Math.sin(a*6.5))<.12)?'-':'#'});
+/*H2*/
+// ---------- more hair, drawn by rule: (x,y) are px from the centre of the head, at the middle of each pixel ----------
+// the skull puffed out by g px, and the line where the hair stops: forehead f, temple, nape b
+const skull=(x,y,g)=>((x-.5)/(7.6+g))**2+((y-.5)/(8.8+g))**2<=1;
+const hl=(x,f,b)=>x>.5?f:x>-2.5?f+(.5-x)/3*Math.min(6,b-f)*.5:x>-5?f+(b-f)*(.5+(-2.5-x)/2.5*.5):b;
+// strands that sweep from the forehead to a point (a ponytail, a knot): a dark line every few px of angle
+const sweep=(x,y,cx,cy,n)=>{const a=Math.atan2(y-cy,x-cx)*n+.5;return Math.abs(a-Math.round(a))<.09};
+// curls: round locks, lit at the top left and dark at the bottom right
+function curl(x,y,C,r){let b=null,bd=1e9;for(const c of C){const d=(x-c[0])**2+(y-c[1])**2;if(d<bd){bd=d;b=c}}if(!b||bd>r*r)return null;const dx=x-b[0],dy=y-b[1];
+  return dx+dy<-r*.7&&bd<r*r*.55?'+':dx+dy>r*.55||bd>r*r*.78&&dy>0?'-':'#'}
+const ring=(cx,cy,rx,ry,a0,a1,n)=>{const o=[];for(let i=0;i<n;i++){const a=(a0+(a1-a0)*i/(n-1))*Math.PI/180;o.push([cx+Math.cos(a)*rx,cy+Math.sin(a)*ry])}return o};
+HAIR.rapado=genMask(22,22,-11,-14,(x,y)=>{if(!skull(x,y,.2)||y>=hl(x,-4.6,3.4))return'.';return(x*3+y*5)%7===0?'-':'#'});
+HAIRO.tigela=[-12,-15];HAIR.tigela=genMask(24,22,-12,-15,(x,y)=>{const d=((x-.3)/8.9)**2+((y+1.4)/9)**2;if(d>1)return'.';const cut=x>-1.2?-2.6:x>-3.4?-2.6+(-1.2-x)*2.3:2.4;if(y>cut)return'.';
+  if(x>-1.2&&y>cut-1.6)return(Math.floor(x+.5)%3===0)?'-':'#';if(x<=-3.4&&y>cut-1.6)return(Math.floor(y)%3===0)?'-':'#';return(d<.5&&x>-2&&y<-6&&(x+y*2)%5===0)?'+':'#'});
+// a quiff: short at the sides, a wave of hair over the forehead
+HAIRO.topete=[-12,-20];HAIR.topete=genMask(26,26,-12,-20,(x,y)=>{const cap=skull(x,y,.6)&&y<hl(x,-4.8,2.6),
+  w=((x-2.8)/6)**2+((y+9.2+(x-2.8)*.22)/3.4)**2<=1&&y<-6.5;if(!cap&&!w)return'.';if(w&&!skull(x,y,-.5)){const s=(x-y*.9)%3.2;return y<-11.6&&x<4?'+':s>-.5&&s<.45?'-':'#'}return(x*2+y)%9===0?'-':'#'});
+// short curls all over
+HAIRO.caracois=[-13,-18];HAIR.caracois=genMask(26,26,-13,-18,(()=>{const C=[...ring(.2,-.6,7.4,8.4,105,330,15),...ring(.4,-1,4.4,5,160,320,7),[0,-3],[3,-5],[-3,-1],[6.2,-4.4],[4.2,-4.2]];
+  return(x,y)=>{if(y>hl(x,-3.6,4.2)+(x<-4?1:0))return'.';return curl(x,y,C,2.35)||'.'}})());
+// short on top, long at the back
+HAIR.mullet=genMask(22,24,-11,-14,(x,y)=>{if(!skull(x,y,.7))return(x<-4.5&&y>-1&&y<9.5&&x>-9.2+(y>6?(y-6)*.4:0))?((x*3+y)%5===0?'-':'#'):'.';if(y>=hl(x,-4.4,9.5))return'.';
+  if(x>0&&y>-6.6){const s=Math.floor(x)%3;return s===0?'-':'#'}return(x*2+y*3)%7===0?'-':'#'});
+// pulled back to a knot on the crown, the sides shaved (the knot is drawn on top)
+HAIR.samurai=genMask(22,18,-11,-14,(x,y)=>{if(!skull(x,y,.5)||y>=hl(x,-5,-1.6))return'.';return sweep(x,y,-3.4,-9.4,2.4)?'-':(y<-7.6&&x>-1&&x<4?'+':'#')});
+// long and straight, a side fringe (the length is drawn down the back)
+HAIR.liso=genMask(22,26,-11,-14,(x,y)=>{if(!skull(x,y,.8)){return x<-5&&y>-2&&y<10.5&&x>-9.4?(Math.floor(x)%3===0?'-':'#'):'.'}const f=-2.6-(x+1)*.42;if(x>-1&&y>f)return'.';if(x<=-1&&x>-4.2&&y>.5)return'.';
+  return x>-1&&y>f-1.4&&Math.floor(x*1.3)%3===0?'-':(x<-5?(Math.floor(x)%3===0?'-':'#'):'#')});
+// parted in the middle for two tails (drawn on their own)
+HAIR.chiquinhas=genMask(22,20,-11,-14,(x,y)=>{if(!skull(x,y,.5)||y>=hl(x,-4.2,3.2))return'.';if(Math.abs(x-1.2+(y+8)*.15)<.5&&y<-5)return'-';return sweep(x,y,-6,-3,2.6)&&x<-1?'-':'#'});
+// two buns on top (drawn on their own)
+HAIR.bolinhas=genMask(22,20,-11,-14,(x,y)=>{if(!skull(x,y,.4)||y>=hl(x,-4.4,3))return'.';if(x>-.5&&y>-6.4&&Math.floor(x)%4===1)return'-';return(x*2+y*3)%8===0?'-':'#'});
+// pulled up into a high tail (drawn on its own)
+HAIR.rabalto=genMask(22,18,-11,-14,(x,y)=>{if(!skull(x,y,.4)||y>=hl(x,-5,1.6))return'.';return sweep(x,y,-6.4,-7.4,3)?'-':(y<-7&&x>0&&x<5?'+':'#')});
+// long curls (more curls down the back)
+HAIRO.cachos=[-14,-18];HAIR.cachos=genMask(28,30,-14,-18,(()=>{const C=[...ring(.2,-.4,7.8,8.6,100,330,16),...ring(.4,-1,4.6,5.2,160,320,7),[0,-3],[3,-5],[-3,-1],[6.6,-4.2],[4.4,-4],
+    [-8.4,3],[-7.8,6.2],[-5.6,8.4],[-8.8,9],[-6.6,11],[-4.2,4.8],[-4.4,7.4],[-9.6,6]];
+  return(x,y)=>{if(x>-3.6&&y>hl(x,-3.4,4))return'.';if(x>-4&&x<=-3.6&&y>2)return'.';return curl(x,y,C,2.5)||'.'}})());
+// a side parting and one braid over the shoulder (the braid is drawn on its own)
+HAIR.trancalado=genMask(22,20,-11,-14,(x,y)=>{if(!skull(x,y,.6)||y>=hl(x,-3.4,4))return'.';if(Math.abs(x-3.4)<.5&&y<-6)return'-';return sweep(x,y,3.4,-9,2.8)&&y<-3?'-':'#'});
+/*/H2*/
 // sides of a shaved head: the skull with a dark dusting of stubble
 const STUB=['......................','......................','......................','......................','......................','.....~~~~~~~~~~.......','....~~~~~~~~~~~~~.....','...~~~~~~~~~~~~~~~....','..~~~~~~~~~~~~~~~~....','..~~~~~~~~~~~~~~~.....','..~~~~~~~~............','..~~~~~~..............','..~~~~~~..............','..~~~~~~..............','...~~~~~..............','...~~~~...............'];
 function hairShape(rows,ox,oy,cx,cy,R,clip){return{pix:1,bb:[ox,oy,ox+rows[0].length-1,oy+rows.length-1],s(px,py){if(clip!=null&&py<clip)return null;const r=rows[Math.floor(py)-oy];if(!r)return null;const ch=r[Math.floor(px)-ox];if(!ch||ch==='.')return null;
@@ -3058,11 +3175,28 @@ function hairShape(rows,ox,oy,cx,cy,R,clip){return{pix:1,bb:[ox,oy,ox+rows[0].le
 const hairMod=(k,n,X,Y)=>n.m==='-'?k-2:n.m==='+'?k+1:k-(((X*2+Y)%7===0)?1:0);
 // with a hat on, the hair above the brim is hidden (clip, in pixels from the centre of the head)
 function hairDraw(style,r,clip){return(F,J,z)=>{const[x,y]=headPx(J),cy=clip==null?null:y+clip;
-  if(style==='moicano'){draw(F,{sh:hairShape(STUB,x-11,y-14,x-1,y-4,11.5,cy),r:mixRamp(r,F.__sk,.8),kind:'hair',z:z-.01,grp:'head',noSel:1,mod:(k,n,X,Y)=>k-((X+Y*3)%3===0?1:0)})}
-  const o=HAIRO[style]||[-11,-14];draw(F,{sh:hairShape(HAIR[style],x+o[0],y+o[1],x-1,y-4,style==='afro'?14:11.5,cy),r,kind:'hair',z,grp:'hair',mod:style==='afro'?(k,n,X,Y)=>k-(((X*3+Y*2)%5===0)?1:0)-((X+Y*4)%9===0?1:0)+(n.m==='+'?1:0):hairMod})}}
+  if(style==='moicano'||style==='samurai'){draw(F,{sh:hairShape(STUB,x-11,y-14,x-1,y-4,11.5,cy),r:mixRamp(r,F.__sk,style==='samurai'?.6:.8),kind:'hair',z:z-.01,grp:'head',noSel:1,mod:(k,n,X,Y)=>k-((X+Y*3)%3===0?1:0)})}
+  // a buzz cut: the colour of the hair over the skin, cut so short the skull shows through
+  if(style==='rapado'){draw(F,{sh:hairShape(HAIR.rapado,x-11,y-14,x-1,y-4,11.5,cy),r:mixRamp(r,F.__sk,.42),kind:'hair',z,grp:'hair',mod:(k,n,X,Y)=>k-((X+Y*3)%3===0?1:0)-(n.m==='-'?1:0)});return}
+  const CU=style==='caracois'||style==='cachos';
+  const o=HAIRO[style]||[-11,-14];draw(F,{sh:hairShape(HAIR[style],x+o[0],y+o[1],x-1,y-4,style==='afro'?14:CU?12.5:11.5,cy),r,kind:'hair',z,grp:'hair',mod:style==='afro'?(k,n,X,Y)=>k-(((X*3+Y*2)%5===0)?1:0)-((X+Y*4)%9===0?1:0)+(n.m==='+'?1:0):CU?(k,n)=>n.m==='-'?k-2:n.m==='+'?k+1:k:hairMod})}}
 function mixRamp(a,b,t){if(!b)return a;return a.map((c,i)=>mixc(b[i],c,1-t))}
 // what grows down the back (design units, around the centre of the head; scaled with it)
-function hairFlow(style,r,J){const f=J.f,w=J.hairW||0,[x,y]=J.head;
+function hairFlow(style,r,J){const f=J.f,w=J.hairW||0,[x,y]=J.head,sw=(a,k)=>Math.sin(f*.9+a*3+(k||0))*w;
+  // a lock hanging from a tie: a chain of round segments along a curve (p0 the tie, p1 where it bends, p2 the tip), swinging with the walk
+  const lock=(p0,p1,p2,n,t0,t1,o)=>{const out=[];let p=p0;for(let i=1;i<=n;i++){const a=i/n,b=1-a,q=[b*b*p0[0]+2*a*b*p1[0]+a*a*p2[0]-w*a*a*(o.k||3)+sw(a)*.6*a,b*b*p0[1]+2*a*b*p1[1]+a*a*p2[1]];
+    out.push({sh:o.braid?ellipse((p[0]+q[0])/2,(p[1]+q[1])/2,t0-(t0-t1)*a,(t0-(t0-t1)*a)*.85,.3):capsule(p[0],p[1],q[0],q[1],t0-(t0-t1)*(a-1/n),t0-(t0-t1)*a),front:o.front,braid:o.braid?i:0,mod:o.mod});p=q}return out};
+  // long and straight down the back, or a mullet's short tail
+  if(style==='liso'||style==='mullet'){const M=style==='mullet',L=[],Rr=[],n=8,len=M?11:17;
+    for(let i=0;i<=n;i++){const a=i/n;L.push([x-6.4-a*(M?1.4:2)-w*a*a*3+Math.sin(f*.9+a*4)*w*.5,y-2+a*len])}
+    for(let i=n;i>=0;i--){const a=i/n;Rr.push([x-(M?3.4:1.4)-a*(M?1.2:1.6)-w*a*a*2.4+Math.sin(f*.9+a*4+1)*w*.4,y+2+a*(len-1.5)])}
+    return[{sh:poly([[x+1,y-6],...Rr.slice().reverse(),...L.slice().reverse(),[x-2,y-6.5]],1.6,[.06,-.04]),mod:(k,n,X,Y)=>k-((X%4===0)?1:0)-(((X+Y*2)%13===0)?1:0)}]}
+  if(style==='chiquinhas')return[...lock([x-6.2,y-2.6],[x-9.2,y+.8],[x-9,y+8.8],6,2.1,.9,{k:2.6}),{sh:ellipse(x-6,y-2.7,1.3,1.1),tie:1,bt:1},
+    ...lock([x+4.2,y-6.2],[x+8.6,y-3],[x+8,y+6.6],6,2.1,.9,{k:1.6})];
+  if(style==='rabalto')return[{sh:ellipse(x-4.4,y-5.6,1.3,1.1,-.5),tie:1,bt:1},...lock([x-5,y-6],[x-9.6,y-7.6],[x-9.6,y+5],7,2.1,.8,{k:3.4})];
+  if(style==='bolinhas')return[{sh:ellipse(x-4,y-6.9,2.5,2.3,-.3),bun:1},{sh:ellipse(x+1.4,y-7.9,2.2,2,.2),bun:1},{sh:ellipse(x-3.2,y-5.2,1.6,.7,-.5),tie:1,bt:1},{sh:ellipse(x+1.1,y-6.2,1.5,.6,.15),tie:1,bt:1}];
+  if(style==='samurai')return[{sh:ellipse(x-4.2,y-7.4,1.3,.8,-.7),bun:1},{sh:ellipse(x-2.3,y-7.3,1.6,1.4,-.2),bun:1},{sh:ellipse(x-2.1,y-6,1.4,.5,-.15),tie:1,bt:1,tc:'#3a2a2a'}];
+  if(style==='trancalado')return[...lock([x-3.6,y+1.8],[x-4,y+6.4],[x-2.2,y+11],6,1.5,1.1,{front:1,braid:1,k:1}),{sh:ellipse(x-2.1,y+11.7,.8,.65),front:1,tie:1}];
   if(style==='comprido'||style==='ondulado'){const long=style==='comprido',L=[],Rr=[],n=6,len=long?17:11;
     for(let i=0;i<=n;i++){const a=i/n;L.push([x-6.2-a*(long?3.4:2.4)-w*a*a*3+Math.sin(f*.9+a*4)*w*.5+(style==='ondulado'?Math.sin(a*9)*.7:0),y-2+a*len])}
     for(let i=n;i>=0;i--){const a=i/n;Rr.push([x-1.6-a*(long?3.2:2)-w*a*a*2.4+Math.sin(f*.9+a*4+1)*w*.4+(i%2?.7:0),y+2+a*(len-1.5)])}
@@ -3072,8 +3206,8 @@ function hairFlow(style,r,J){const f=J.f,w=J.hairW||0,[x,y]=J.head;
   if(style==='carrapito')return[{sh:ellipse(x-4.2,y-8.4,3.4,3,-.4),bun:1},{sh:ellipse(x-3.6,y-6.2,1.8,.9,-.4),tie:1}];
   if(style==='trancas'){const out=[];for(const[side,ox]of[[0,-4.4],[1,-1.4]]){let p=[x+ox,y+1];for(let i=1;i<=6;i++){const a=i/6,q=[x+ox-1.2-a*1.6-w*a*.8,y+1+a*12];out.push({sh:ellipse((p[0]+q[0])/2,(p[1]+q[1])/2,1.5,1.3,.3),front:side,braid:i});p=q}out.push({sh:ellipse(p[0],p[1]+.6,.9,.7),front:side,tie:1})}return out}
   return[]}
-function hairBackFn(style,r){return(F,J,z)=>{for(const s of hairFlow(style,r,J)){if(s.front||s.bun)continue;draw(F,{sh:s.sh,r:s.tie?rmp('#c84a5a'):r,kind:'hair',z:z+(s.tie?.1:0),grp:'hairB',mod:s.mod||(s.braid?(k,n,X,Y)=>k-((X+Y)%3===0?1:0):null)})}}}
-function hairFrontFn(style,r){return(F,J,z)=>{for(const s of hairFlow(style,r,J)){if(!s.front&&!s.bun&&!(s.tie&&style==='carrapito'))continue;draw(F,{sh:s.sh,r:s.tie?rmp('#c84a5a'):r,kind:'hair',z:s.front?17.2:z+.05,grp:s.front?'braid':'hair',mod:s.bun?(k,n,X,Y)=>k-(((X*2+Y*3)%6===0)?1:0):(k,n,X,Y)=>k-((X+Y)%3===0?1:0)})}}}
+function hairBackFn(style,r){return(F,J,z)=>{for(const s of hairFlow(style,r,J)){if(s.front||s.bun||s.bt)continue;draw(F,{sh:s.sh,r:s.tie?rmp(s.tc||'#c84a5a'):r,kind:'hair',z:z+(s.tie?.1:0),grp:'hairB',mod:s.mod||(s.braid?(k,n,X,Y)=>k-((X+Y)%3===0?1:0):null)})}}}
+function hairFrontFn(style,r){return(F,J,z)=>{for(const s of hairFlow(style,r,J)){if(!s.front&&!s.bun&&!s.bt&&!(s.tie&&style==='carrapito'))continue;draw(F,{sh:s.sh,r:s.tie?rmp(s.tc||'#c84a5a'):r,kind:'hair',z:s.front?17.2:z+(s.tie?.07:.05),grp:s.front?'braid':'hair',mod:s.bun?(k,n,X,Y)=>k-(((X*2+Y*3)%6===0)?1:0):(k,n,X,Y)=>k-((X+Y)%3===0?1:0)})}}}
 // ---------- hats ----------
 // Every hat of the old wardrobe is kept: its side picture is smoothed to four times its size, fitted to the new head
 // (a little wider than tall), then lit like the rest: a dome of light from the top left, a bevel at every edge, metal that shines.
@@ -3399,10 +3533,13 @@ const KIT_ARM={
   laminaforja(F,J){const K=KIT.cinzas,s=sword(F,J,34,{blade:R(['#140c0a','#2a1a14','#4a2e22','#7a4a30','#c07040','#ffb070']),guard:K.ir,len:22,w:2.9,gw:4.2,fuller:1});
     for(let k=4;k<22;k+=2){const q=[s.g[0]+s.dx*k,s.g[1]+s.dy*k];glow(F,q[0]-s.dy*2.4,q[1]+s.dx*2.4,[255,110+k*4,40],.7)}}};
 // ---------- a look becomes an outfit ----------
+// what hangs below a hat and so stays when one is worn (buns and knots on top go under it)
+const HLONG=new Set(['comprido','ondulado','rabo','trancas','liso','mullet','chiquinhas','rabalto','trancalado']);
 const HKEEP=typeof HATKEEP!=='undefined'?HATKEEP:{};
 function outfit(look,pose,opt){const sk=skinRamp(((AVSKIN[look.skin]||AVSKIN[0])[0])),hr=rmp(look.hc||'#5a3a22',{hs:1.1});
   const O={skin:sk,eye:hx(look.ec||'#1b1512'),lash:hr[0].map(v=>v*.7|0),brow:hr[1],hairR:hr,lip:null,top:null,topKind:'cloth',sleeves:null,sleeveKind:'cloth',fore:null,foreKind:'cloth',thigh:null,thighKind:'cloth',shin:null,shinKind:'cloth',
     boots:rmp(look.sc||'#2e2420',{k:.95}),gloves:sk,glovesKind:'skin',back:[],hairBack:[],torso:[],neck:[],head:[],hang:[],arm:[],leg:[],held:null,awake:!!opt.awake};
+  {const g=EGLOW[look.ec];if(g){O.eyeGlow=g;O.eyeL=mixc(O.eye,[255,255,255],.5)}}
   pantsSpec(O,look);topSpec(O,look);
   if(O.longRobe){O.thigh=O.top;O.shin=O.top}
   if(!O.noBelt&&!O.belt&&look.pt!=='saia'){O.hang.push((F,J)=>{const{pX,pY,B}=pr(J);draw(F,{sh:poly([[pX-B.hip-.8,pY-3.6],[pX+B.hip+1,pY-3.9],[pX+B.hip+1,pY-2.5],[pX-B.hip-.8,pY-2.2]],.7),r:LEATH,kind:'leather',z:ZH+.9,grp:'belt'});px(F,null,pX+2.4,pY-3.1,[232,192,96]);px(F,null,pX+3.2,pY-3.1,[176,130,60])})}
@@ -3410,7 +3547,7 @@ function outfit(look,pose,opt){const sk=skinRamp(((AVSKIN[look.skin]||AVSKIN[0])
   // hair, then whatever covers it
   const hat=look.hat&&look.hat!=='nada'&&!opt.noHat?look.hat:null,hair=look.hair||'curto',KH=hat&&KIT_HAT[hat],clip=hat&&!HKEEP[hat]&&!(KH&&KH.keep)?-8:null;
   if((KH&&KH.full)||(hat&&HAT_FACE[hat]))O.eyesHidden=1;
-  if(hair!=='careca'&&HAIR[hair]&&!(KH&&(KH.full||KH.nohair))){O.head.push(hairDraw(hair,hr,clip));if(clip==null||hair==='comprido'||hair==='ondulado'||hair==='rabo'||hair==='trancas'){O.hairBack.push(hairBackFn(hair,hr));O.head.push(hairFrontFn(hair,hr))}}
+  if(hair!=='careca'&&HAIR[hair]&&!(KH&&(KH.full||KH.nohair))){O.head.push(hairDraw(hair,hr,clip));if(clip==null||HLONG.has(hair)){O.hairBack.push(hairBackFn(hair,hr));O.head.push(hairFrontFn(hair,hr))}}
   accSpec(O,look,opt);
   if(KH)O.head.push(KH.fn);else if(hat){const h=hatDraw(hat,look.hc);if(h)O.head.push(h)}
   // a blade or a tool in the hand, put away when the hands are busy
@@ -3695,11 +3832,30 @@ return{render,meta,POSES,CW,CH,U,GY,hatGrid,outfit,KIT_HAT,KIT_TOP,KIT_ACC,KIT_A
    drawn behind what stands in front of it and in the light of the hour; portraits and thumbnails cut from one picture ---- */
 const A2F=new Map(),A2W=new Map(),A2P=new Map(),A2U=new Map(),A2OC=document.createElement('canvas');A2OC.width=A2.CW;A2OC.height=A2.CH;const A2OX=A2OC.getContext('2d');
 const a2K=(look,pose,f,o)=>JSON.stringify(look)+'|'+pose+'|'+f+'|'+(o.umb?1:0)+(o.wf?1:0)+(o.awake?1:0)+(o.noHat?1:0);
-function a2Make(look,pose,f,o){const r=A2.render(look,pose,f,o),c=document.createElement('canvas');c.width=r.w;c.height=r.h;c.getContext('2d').putImageData(new ImageData(r.px,r.w,r.h),0,0);r.cv=c;r.px=null;
+// what is drawn: a hidden piece stays worn (and keeps whatever it gives) but is left out of the picture
+function lookShown(L){if(!L||!Array.isArray(L.hd)||!L.hd.length)return L;const o={...L};for(const k of L.hd)if(AVHIDE.includes(k))o[k]='nada';delete o.hd;return o}
+const lookHid=(L,k)=>!!(L&&Array.isArray(L.hd)&&L.hd.includes(k));
+const hueRgb=h=>{const f=n=>{const k=(n+h/30)%12;return Math.round(255*(.64-.36*Math.max(-1,Math.min(k-3,9-k,1))))};return[f(0),f(8),f(4)]};
+// the aura of a frame: a soft light outside the outline (a few px, fading) and a touch of its colour on the outline itself.
+// Half of the light stays in the picture, so portraits and other players show it; the other half breathes in the scene
+function auraBake(r,A){const W=r.w,H=r.h,p=r.px,N=W*H,D=new Float32Array(N);for(let i=0;i<N;i++)D[i]=p[i*4+3]>90?0:99;
+  for(let y=0;y<H;y++)for(let x=0;x<W;x++){const i=y*W+x;let d=D[i];if(!d)continue;if(x>0)d=Math.min(d,D[i-1]+1);if(y>0){d=Math.min(d,D[i-W]+1);if(x>0)d=Math.min(d,D[i-W-1]+1.41);if(x<W-1)d=Math.min(d,D[i-W+1]+1.41)}D[i]=d}
+  for(let y=H-1;y>=0;y--)for(let x=W-1;x>=0;x--){const i=y*W+x;let d=D[i];if(!d)continue;if(x<W-1)d=Math.min(d,D[i+1]+1);if(y<H-1){d=Math.min(d,D[i+W]+1);if(x<W-1)d=Math.min(d,D[i+W+1]+1.41);if(x>0)d=Math.min(d,D[i+W-1]+1.41)}D[i]=d}
+  const R=5.5,h=new Uint8ClampedArray(N*4),rb=A.c==='rb',col=(x,y,t)=>rb?hueRgb((y*6+x*2)%360):A.c[0].map((v,i)=>v+(A.c[1][i]-v)*t);
+  for(let y=1;y<H-1;y++)for(let x=1;x<W-1;x++){const i=y*W+x,d=D[i],j=i*4;
+    if(!d){if(D[i-1]||D[i+1]||D[i-W]||D[i+W]){const c=col(x,y,0);for(let q=0;q<3;q++)p[j+q]=p[j+q]*.72+c[q]*.28}continue}
+    if(d>R)continue;const t=(d-1)/R,a=Math.pow(Math.max(0,1-t),1.7)*.8,c=col(x,y,t);h[j]=c[0];h[j+1]=c[1];h[j+2]=c[2];h[j+3]=a*255;
+    if(!p[j+3]){p[j]=c[0];p[j+1]=c[1];p[j+2]=c[2];p[j+3]=Math.round(a*120)}}
+  const ac=document.createElement('canvas');ac.width=W;ac.height=H;ac.getContext('2d').putImageData(new ImageData(h,W,H),0,0);r.ac=ac}
+// how bright the moving half of an aura is now: it breathes (slower with less movement)
+const auB=()=>{const t=performance.now()/1000;return RM?.42+.18*Math.sin(t*1.2):.4+.42*Math.sin(t*2.3)};
+function a2Make(look,pose,f,o){look=lookShown(look);const r=A2.render(look,pose,f,o),A=AURAD[look.aura];if(A)auraBake(r,A);const c=document.createElement('canvas');c.width=r.w;c.height=r.h;c.getContext('2d').putImageData(new ImageData(r.px,r.w,r.h),0,0);r.cv=c;r.px=null;
   if(r.lit&&r.lit.length){const lc=document.createElement('canvas');lc.width=r.w;lc.height=r.h;const lx=lc.getContext('2d');
     for(const[x,y,q,a]of r.lit){lx.fillStyle=`rgba(${q[0]},${q[1]},${q[2]},${(Math.min(1,a)*.2).toFixed(3)})`;lx.fillRect(x-1,y-1,3,3)}
     for(const[x,y,q,a]of r.lit){lx.fillStyle=`rgba(${q[0]},${q[1]},${q[2]},${Math.min(1,a+.25).toFixed(3)})`;lx.fillRect(x,y,1,1)}r.lc=lc}
   r.lit=null;return r}
+// a still picture of a frame (portraits, thumbnails): an aura shows a little brighter than its resting half
+function a2Pic(e){if(!e.ac)return e.cv.toDataURL();const c=document.createElement('canvas');c.width=e.w;c.height=e.h;const x=c.getContext('2d');x.globalAlpha=.55;x.drawImage(e.ac,0,0);x.globalAlpha=1;x.drawImage(e.cv,0,0);return c.toDataURL()}
 // a frame now (lazy: only if it is ready; otherwise it is made when there is time)
 function a2Get(look,pose,f,o,lazy){o=o||{};const k=a2K(look,pose,f,o);let e=A2F.get(k);if(e){A2F.delete(k);A2F.set(k,e);return e}
   if(lazy){if(!A2W.has(k)){A2W.set(k,[look,pose,f,o]);a2Pump()}return null}
@@ -3715,7 +3871,7 @@ let a2PT=0;const a2Idle=typeof requestIdleCallback==='function'?f=>requestIdleCa
 function a2Pump(){if(!a2PT)a2PT=a2Idle(a2Run)}
 function a2Run(dl){a2PT=0;const t0=performance.now(),more=()=>dl&&dl.timeRemaining?dl.timeRemaining()>6:performance.now()-t0<6;
   for(const[k,v]of A2W){A2W.delete(k);a2Get(v[0],v[1],v[2],v[3]);if(!more())break}
-  for(const[h,v]of A2P){if(!more()&&performance.now()-t0>1)break;A2P.delete(h);const e=a2Get(v[0],v[1],0,v[2]);if(!e)continue;const u=e.cv.toDataURL();A2U.set(h,u);if(A2U.size>300)A2U.delete(A2U.keys().next().value);
+  for(const[h,v]of A2P){if(!more()&&performance.now()-t0>1)break;A2P.delete(h);const e=a2Get(v[0],v[1],0,v[2]);if(!e)continue;const u=a2Pic(e);A2U.set(h,u);if(A2U.size>300)A2U.delete(A2U.keys().next().value);
     a2Fill(h,u);setTimeout(()=>a2Fill(h,u),600)}
   if(A2W.size||A2P.size)a2PT=a2Idle(a2Run)}
 // make the usual frames of a look ahead of time, so walking never waits
@@ -3732,14 +3888,15 @@ function a2Draw(X,e,gx,fy,fl,am,occ,blink,dy){const W4=e.w/4,H4=e.h/4,left=Math.
     O.globalCompositeOperation='destination-in';O.save();if(fl){O.translate(e.w,0);O.scale(-1,1)}O.drawImage(e.cv,0,0);O.restore();O.globalCompositeOperation='source-over';
     // what glows on the clothes stays bright in the dark
     if(e.lc){const k=clamp((1-(am[0]+am[1]+am[2])/3)*2,0,1);if(k>.04){O.save();O.globalAlpha=k;if(fl){O.translate(e.w,0);O.scale(-1,1)}O.drawImage(e.lc,0,0);O.restore()}}}
+  if(e.ac){O.save();O.globalCompositeOperation='destination-over';O.globalAlpha=auB();if(fl){O.translate(e.w,0);O.scale(-1,1)}O.drawImage(e.ac,0,0);O.restore()}
   if(occ){const cx0=Math.floor(left),cx1=Math.ceil(left+W4),cy0=Math.floor(top),cy1=Math.ceil(top+H4);for(let cy=cy0;cy<cy1;cy++){if(cy<0||cy>=H)continue;for(let cx=cx0;cx<cx1;cx++){if(cx<0||cx>=W)continue;if(dep[cy*W+cx]>fy)O.clearRect((cx-left)*4,(cy-top)*4,4,4)}}}
   X.drawImage(A2OC,0,0,e.w,e.h,left,top,W4,H4);return{left,top}}
 // where things sit on a drawn frame, in game pixels
 const a2At=(e,p,left,top,fl)=>[left+(fl?e.w-1-p[0]:p[0])/4,top+p[1]/4];
 // portraits and thumbnails: one picture per look and pose, cut by the viewBox; made a few at a time
-const A2BOX={arm:[48,0,48,48],cape:[30,22,66,66],port:[47,11,40,53.33],head:[48,7,38,38],bust:[40,22,52,52],legs:[38,56,56,38],full:[20,6,92,88]};
+const A2BOX={aura:[30,4,72,72],arm:[48,0,48,48],cape:[30,22,66,66],port:[47,11,40,53.33],head:[48,7,38,38],bust:[40,22,52,52],legs:[38,56,56,38],full:[20,6,92,88]};
 function a2H(s){let h=2166136261;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619)}return'a'+(h>>>0).toString(36)}
-function a2Url(look,pose,o){o=o||{};const k=a2K(look,pose,0,o),h=a2H(k);let u=A2U.get(h);if(!u){const e=A2F.get(k);if(e){u=e.cv.toDataURL();A2U.set(h,u)}}if(u)return{h,u};if(!A2P.has(h)){A2P.set(h,[look,pose,o]);a2Pump()}return{h,u:''}}
+function a2Url(look,pose,o){o=o||{};const k=a2K(look,pose,0,o),h=a2H(k);let u=A2U.get(h);if(!u){const e=A2F.get(k);if(e){u=a2Pic(e);A2U.set(h,u)}}if(u)return{h,u};if(!A2P.has(h)){A2P.set(h,[look,pose,o]);a2Pump()}return{h,u:''}}
 function a2Svg(look,box,cls,pose,o){const{h,u}=a2Url(look,pose||'idle',o);return`<svg class="pxi ${cls||''}" viewBox="${box.join(' ')}" aria-hidden="true"><image data-a2="${h}" href="${u}" width="${A2.CW}" height="${A2.CH}" image-rendering="optimizeSpeed" style="image-rendering:pixelated"/></svg>`}
 // the whole figure, cropped to its pixels, onto a big canvas (the pictures to share)
 function a2Blit(X,look,cx,by,s){const e=a2Get(look,'idle',0,{});if(!e)return;const c=e.cv.getContext('2d').getImageData(0,0,e.w,e.h).data;let x0=e.w,x1=0,y0=e.h,y1=0;
@@ -7005,14 +7162,19 @@ function claimAch(id){const a=ACH.find(x=>x[0]===id);if(!a||S.achv[id]!==1)retur
 
 /* ============ the little gardener ============ */
 let AV=null;
-const HN={curto:_t('Curto'),comprido:_t('Comprido'),franja:_t('Franja'),risca:_t('Risca ao lado'),ondulado:_t('Ondulado'),rabo:_t('Rabo de cavalo'),carrapito:_t('Carrapito'),espetado:_t('Espetado'),careca:_t('Careca'),trancas:_t('Tranças'),afro:_t('Afro'),moicano:_t('Moicano')};
+const HN={curto:_t('Curto'),comprido:_t('Comprido'),franja:_t('Franja'),risca:_t('Risca ao lado'),ondulado:_t('Ondulado'),rabo:_t('Rabo de cavalo'),carrapito:_t('Carrapito'),espetado:_t('Espetado'),careca:_t('Careca'),trancas:_t('Tranças'),afro:_t('Afro'),moicano:_t('Moicano'),
+  rapado:_t('Rapado'),tigela:_t('Tigela'),liso:_t('Liso comprido'),chiquinhas:_t('Chiquinhas'),topete:_t('Topete'),caracois:_t('Caracóis'),bolinhas:_t('Dois carrapitos'),rabalto:_t('Rabo alto'),trancalado:_t('Trança de lado'),cachos:_t('Cachos longos'),mullet:_t('Mullet'),samurai:_t('Samurai')};
+const AURAN={nada:_t('Nenhuma'),brisa:_t('Brisa'),sol:_t('Raio de sol'),luar:_t('Luar'),petalas:_t('Pétalas'),mare:_t('Maré'),brasas:_t('Brasas'),geada:_t('Geada'),coracoes:_t('Corações'),estrelas:_t('Poeira de estrelas'),trovao:_t('Trovão'),
+  cristal:_t('Cristal'),magma:_t('Magma'),runas:_t('Runas'),fenix:_t('Fénix'),arcoiris:_t('Arco-íris'),galaxia:_t('Galáxia'),aurora:_t('Aurora'),eclipse:_t('Eclipse')};
 const HATN={coroaesm:_t('Coroa de gema'),kitsune:_t('Orelhas de kitsune'),nada:_t('Nenhum'),gorro:_t('Gorro'),bone:_t('Boné'),palha:_t('Chapéu de palha'),boina:_t('Boina'),flores:_t('Coroa de flores'),laco:_t('Laço'),cogumelo:_t('Cogumelo'),feiticeiro:_t('Feiticeiro'),coroa:_t('Coroa'),auscultadores:_t('Auscultadores'),cowboy:_t('Chapéu de cowboy'),gato:_t('Orelhas de gato'),tiara:_t('Tiara'),cartola:_t('Cartola'),viking:_t('Capacete viking'),aureola:_t('Auréola'),abobora:_t('Abóbora'),natal:_t('Gorro de Natal'),coelho:_t('Orelhas de coelho'),arraial:_t('Chapéu de arraial'),mineiro:_t('Capacete de mineiro'),cristal:_t('Coroa de cristal'),magma:_t('Elmo de magma'),nucleo:_t('Anel do núcleo'),chifres:_t('Chifres do submundo'),caveira:_t('Elmo de caveira'),astronauta:_t('Capacete de astronauta'),lunar:_t('Lua crescente'),vazio:_t('Coroa do vazio'),coroagelo:_t('Coroa de gelo'),coroafogo:_t('Coroa de chamas'),nimbo:_t('Auréola do vazio'),estrelas:_t('Coroa de estrelas'),prismahalo:_t('Auréola prismática'),coroaeclipse:_t('Coroa do eclipse')};
 const ACCN={nada:_t('Nenhum'),cachecol:_t('Cachecol'),colar:_t('Colar'),mochila:_t('Mochila'),redondos:_t('Óculos redondos'),oculos:_t('Óculos de sol'),bigode:_t('Bigode'),bolsa:_t('Bolsa'),capa:_t('Capa'),papillon:_t('Laço ao pescoço'),asas:_t('Asas'),asasfada:_t('Asas de fada'),asasgelo:_t('Asas de gelo'),asasanjo:_t('Asas de anjo'),asasdiabo:_t('Asas de diabo'),capaestelar:_t('Capa estelar'),asasfenix:_t('Asas de fénix'),asasvazio:_t('Asas do vazio'),asasborboleta:_t('Asas de monarca'),asasaurora:_t('Asas de aurora'),asaseclipse:_t('Asas do eclipse')};
 const TOPN={lisa:_t('Lisa'),vestido:_t('Vestido'),riscas:_t('Às riscas'),xadrez:_t('Xadrez'),jardineiras:_t('Jardineiras'),capuz:_t('Com capuz'),casaco:_t('Casaco'),real:_t('Manto real'),manto:_t('Túnica de anjo'),estelar:_t('Camisola estelar')};
 const PTN={calcas:_t('Calças'),calcoes:_t('Calções'),saia:_t('Saia')};
 const PETN={fossil:_t('Dino fóssil'),galinha:_t('Galinha'),tartaruga:_t('Tartaruga'),dragao:_t('Dragão'),fenix:_t('Fénix'),nada:_t('Nenhum'),pinto:_t('Pintainho'),sapo:_t('Sapo'),gato:_t('Gato'),cao:_t('Cão'),coelho:_t('Coelho'),raposa:_t('Raposa'),coruja:_t('Coruja'),gatopreto:_t('Gato preto'),morcego:_t('Morcego')};
 // colours that only come out of the daily chest have names, so the reveal can say what you got
-const COLN={'hc:#c8d0dc':_t('Cabelo prateado'),'hc:#ff6d8a':_t('Cabelo rosa-choque'),'tc:#1f2a5a':_t('Camisola azul-noite'),'ec:#8a4ad0':_t('Olhos violeta'),'sc:#f4c54f':_t('Sapatos dourados'),'hc:#d8f4ff':_t('Cabelo de gelo'),'hc:#d01848':_t('Cabelo carmim'),'hc:#8a5aff':_t('Cabelo estelar'),'tc:#bfe8ff':_t('Roupa de gelo'),'tc:#2a0a3a':_t('Roupa do abismo')};
+const COLN={'hc:#c8d0dc':_t('Cabelo prateado'),'hc:#ff6d8a':_t('Cabelo rosa-choque'),'tc:#1f2a5a':_t('Camisola azul-noite'),'ec:#8a4ad0':_t('Olhos violeta'),'sc:#f4c54f':_t('Sapatos dourados'),'hc:#d8f4ff':_t('Cabelo de gelo'),'hc:#d01848':_t('Cabelo carmim'),'hc:#8a5aff':_t('Cabelo estelar'),'tc:#bfe8ff':_t('Roupa de gelo'),'tc:#2a0a3a':_t('Roupa do abismo'),
+  'hc:#ffd0e0':_t('Cabelo rosa pastel'),'hc:#a8f0d8':_t('Cabelo menta'),'hc:#c8b4ff':_t('Cabelo lilás'),'hc:#ffe27a':_t('Cabelo dourado'),'hc:#ff3aa8':_t('Cabelo rosa néon'),'hc:#16e0ff':_t('Cabelo néon'),'hc:#1a1060':_t('Cabelo meia-noite'),
+  'ec:#e060a8':_t('Olhos rosa'),'ec:#5aff8a':_t('Olhos de jade'),'ec:#ffd23a':_t('Olhos de ouro'),'ec:#ff3a5a':_t('Olhos de rubi'),'ec:#f4f8ff':_t('Olhos estelares'),'ec:#ff5ae6':_t('Olhos néon'),'ec:#36e8ff':_t('Olhos de cristal'),'ec:#ff8a2a':_t('Olhos de brasa'),'ec:#b46aff':_t('Olhos arcanos')};
 const EMO={heart:[['.r.r.','rrrrr','rrrrr','.rrr.','..r..'],{r:'#ef5a7f'}],note:[['..ww','..w.','..w.','www.','ww..'],{w:'#f3efe2'}],zz:[['zzz','..z','.z.','zzz'],{z:'#cfe0ff'}],
   '!':[['y','y','y','.','y'],{y:'#f4d04a'}],'?':[['yyy','..y','.y.','...','.y.'],{y:'#f3efe2'}],star:[['.y.','yyy','.y.'],{y:'#f4d04a'}],grr:[['.ccc.','ccccc','.ccc.'],{c:'#8a94a0'}],sweat:[['.b.','bbb','bbb','.b.'],{b:'#9fd3f5'}]};
 for(const k in EMO){const[m,p]=EMO[k];const o={map:m,pal:p,emit:Object.keys(p).join('')};prepSprite(o,m);EMO[k]=o}
@@ -7204,6 +7366,7 @@ function drawAvatar(){
   if(env.night>.25&&NGL_OK){const ng=lookGlow(LK);if(ng)drawHalo(AV.x,fy,ng[1],ng[0],ng[2]*Math.min(1,env.night*1.4))}
   const am=mix(env.amb,[1,1,1],.28),{left,top}=a2Draw(lowX,e,AV.x,fy,fl,am,true,AV.blink>0,AV.jy);
   if(pl.v!=='l'){const wc=a2At(e,[e.head[0]-15,e.head[1]+12],left,top,fl);avWingFx(LK,wc[0]-7,wc[1]-11,fl,'f')}
+  if(pl.v!=='l')try{avAuraFx(lowX,LK,e,left,top,fl,AV)}catch(err){}
   if(AV.emo){const E=EMO[AV.emo.k];if(E){const hp=a2At(e,e.head,left,top,fl),rise=RM?0:Math.round(AV.emo.t*3);drawSprite(E,E.map,Math.round(hp[0])-2,Math.round(top+e.top/4)-4-rise,false)}}
 }
 function avPortrait(look,cls){return a2Svg(look||S.av.look,A2BOX.port,cls||'')
@@ -7841,7 +8004,7 @@ const kitDone=id=>{const K=KITS.find(x=>x.id===id);return!!K&&K.p.every(kitOk)};
 for(const K of KITS){TITLES.push(['k'+K.id,K.nome,_t('Completa o conjunto «{0}».',K.nome),()=>kitDone(K.id)]);TITN['k'+K.id]=K.nome}
 IC.kit=[['kkkkkkkkk','kwyyyyyyk','kyyycyyyk','kycccccyk','kyyycyyyk','kyyycyyyk','.kyycyyk.','..kyyyk..','...kyk...','....k....'],{k:'#20263a',w:'#dfe8f8',y:'#8a9ab8',c:'#f4c54f'}];
 const kitTh=k=>k==='acc'?'cape':AVSLOT[k].th;
-const kitLook=(K,only)=>{const L={...S.av.look};for(const p of K.p)if(!only||kitOk(p))L[p[0]]=p[1];return L};
+const kitLook=(K,only)=>{const L={...S.av.look};delete L.hd;for(const p of K.p)if(!only||kitOk(p))L[p[0]]=p[1];return L};
 function kitWear(K){const L=S.av.look;let last=null;for(const p of K.p)if(kitOk(p)){L[p[0]]=p[1];last=p}if(last)avApply(last[0],last[1])}
 // the three sets of your bloodline, shown with the knight sets: each piece opens with a rank
 function linKits(){const LN=S&&S.lin;if(!LN||!LIN[LN.b]||!LSETS[LN.b])return[];const b=LN.b,I=LIN[b],RK=[[1,2,3],[4,5,7],[8,9,10]];
@@ -7917,7 +8080,8 @@ const titHTML=(t,cls)=>t&&TITN[t]?`<span class="tit tr${titR(t)} ${cls||''}">${_
 const lvFr=n=>n>=200?'lf4':n>=100?'lf3':n>=50?'lf2':n>=25?'lf1':'';
 function sanLook(v){v=v&&typeof v==='object'?v:{};const hx=(c,d)=>typeof c==='string'&&/^#[0-9a-fA-F]{6}$/.test(c)?c:d,en=(x,a,d)=>a.includes(x)?x:d;
   return{hair:en(v.hair,Object.keys(HN),'curto'),hc:hx(v.hc,'#5a3a22'),skin:Number.isInteger(v.skin)&&v.skin>=0&&v.skin<AVSKIN.length?v.skin:0,hat:en(v.hat,Object.keys(HATN),'nada'),acc:en(v.acc,Object.keys(ACCN),'nada'),top:en(v.top,Object.keys(TOPN),'lisa'),tc:hx(v.tc,'#5d8c4a'),pc:hx(v.pc,'#5a4632'),
-    pt:en(v.pt,Object.keys(PTN),'calcas'),ec:hx(v.ec,'#1b1512'),sc:hx(v.sc,'#2e2420'),pet:en(v.pet,Object.keys(PETN),'nada'),arm:en(v.arm,Object.keys(ARMN),'nada'),pch:Number.isInteger(v.pch)&&v.pch>=0&&v.pch<PCH.length?v.pch:0,tit:TITN[v.tit]?v.tit:''}}
+    pt:en(v.pt,Object.keys(PTN),'calcas'),ec:hx(v.ec,'#1b1512'),sc:hx(v.sc,'#2e2420'),pet:en(v.pet,Object.keys(PETN),'')||(typeof v.pet==='string'&&Object.prototype.hasOwnProperty.call(PETS,v.pet)?v.pet:'nada'),arm:en(v.arm,Object.keys(ARMN),'nada'),pch:Number.isInteger(v.pch)&&v.pch>=0&&v.pch<PCH.length?v.pch:0,tit:TITN[v.tit]?v.tit:'',
+    aura:en(v.aura,Object.keys(AURAN),'nada'),hd:Array.isArray(v.hd)?AVHIDE.filter(k=>v.hd.includes(k)):[]}}
 const nInt=(v,a,b,d)=>Number.isFinite(v)?clamp(Math.round(v),a,b):d;
 function quando(ms){if(!Number.isFinite(ms))return'';const s=(now()-ms)/1000;if(s<300)return _t('agora');if(s<3600)return _t("há {0} min",Math.floor(s/60));if(s<86400)return _t("há {0} h",Math.floor(s/3600));const d=Math.floor(s/86400);return d===1?_t('ontem'):_t("há {0} dias",d)}
 async function loadAmigos(){
@@ -9602,10 +9766,10 @@ function renderSheet0(live){
   if(sheetName==='quarto'&&!ptPrevOn){ptPrevOn=true;requestAnimationFrame(ptPrevLoop)}
 }
 /* ============ character editor ============ */
-const AVTABS=[['sets',_t('Conjuntos')],['hair',_t('Cabelo')],['face',_t('Rosto')],['hat',_t('Chapéu')],['acc',_t('Extras')],['top',_t('Roupa')],['arm',_t('Arma')],['pt',_t('Calças')],['pet',_t('Animal')],['trait',_t('Feitio')]];
-const AVSLOT={hair:{arr:AVH,nm:HN,th:'head'},hat:{arr:AVHATS,nm:HATN,th:'head'},acc:{arr:AVACC,nm:ACCN,th:'bust'},top:{arr:AVTOPS,nm:TOPN,th:'bust'},pt:{arr:AVPT,nm:PTN,th:'legs'},pet:{arr:AVPETS,nm:PETN,th:'pet'},arm:{arr:AVARM,nm:ARMN,th:'arm'}};
+const AVTABS=[['sets',_t('Conjuntos')],['hair',_t('Cabelo')],['face',_t('Rosto')],['hat',_t('Chapéu')],['acc',_t('Extras')],['top',_t('Roupa')],['aura',_t('Aura')],['arm',_t('Arma')],['pt',_t('Calças')],['pet',_t('Animal')],['trait',_t('Feitio')]];
+const AVSLOT={hair:{arr:AVH,nm:HN,th:'head'},hat:{arr:AVHATS,nm:HATN,th:'head'},acc:{arr:AVACC,nm:ACCN,th:'bust'},top:{arr:AVTOPS,nm:TOPN,th:'bust'},pt:{arr:AVPT,nm:PTN,th:'legs'},pet:{arr:AVPETS,nm:PETN,th:'pet'},aura:{arr:AVAURA,nm:AURAN,th:'aura'},arm:{arr:AVARM,nm:ARMN,th:'arm'}};
 const AVCOL={hc:AVHAIR,tc:AVTOPC,pc:AVPANTS,ec:AVEYE,sc:AVSHOE};
-const AVTABOF={hair:'hair',hc:'hair',skin:'face',ec:'face',hat:'hat',acc:'acc',top:'top',tc:'top',pt:'pt',pc:'pt',sc:'pt',pet:'pet',arm:'arm'};
+const AVTABOF={hair:'hair',hc:'hair',skin:'face',ec:'face',hat:'hat',acc:'acc',top:'top',tc:'top',pt:'pt',pc:'pt',sc:'pt',pet:'pet',arm:'arm',aura:'aura'};
 const AVED={tab:'hair',try:null,pose:0};const AVPOSES=['stand','water','wave'];
 // unlock state of one option: {ok, kind:'lvl'|'gem'|'bau'|'ev', n}
 function avUnlock(k,v,u){
@@ -9623,8 +9787,10 @@ function avCode(k,v){
 const avVal=(k,v)=>k==='skin'?+v:v;
 function avName(k,v){if(AVSLOT[k])return AVSLOT[k].nm[v]||v;return COLN[k+':'+v]||_t('Cor')}
 // thumbnails show the option on your own character, in a fixed frame so the grid lines up
-function avThumb(look,mode){
-  if(mode==='pet')return petSvg(look.pet);
+function avThumb(look,mode,keepHide){
+  // a preview shows the piece even where the wardrobe hides it (the wardrobe cards keep the other hidden pieces hidden)
+  if(!keepHide&&look&&look.hd&&look.hd.length){look={...look};delete look.hd}
+  if(mode==='pet')return petSvg(look.pet);if(mode==='aura')return a2Svg(look.acc&&/^(asas|capa|manto)/.test(look.acc)?{...look,acc:'nada'}:look,A2BOX.aura,'');
   // a head on its own: wings and capes would only crowd it
   if(mode==='head'&&look.acc&&/^(asas|capa|manto)/.test(look.acc))look={...look,acc:'nada'};
   if(mode==='arm')return a2Svg(look,A2BOX.arm,'','wave');if(mode==='cape')return a2Svg(look,A2BOX.cape,'');
@@ -9634,13 +9800,13 @@ function avThumb(look,mode){
 // and an armour or robe gives way to a plain top so the colour of the clothes can be seen
 const AV_TOPS_TC=['lisa','vestido','riscas','xadrez','jardineiras','capuz','casaco'];
 function avFocus(L,k){if((k==='hair'||k==='hc'||k==='ec'||k==='skin')&&L.hat&&L.hat!=='nada')return{...L,hat:'nada'};if(k==='tc'&&!AV_TOPS_TC.includes(L.top))return{...L,top:'lisa'};return L}
-function avPreviewLook(){const L={...S.av.look};if(AVED.try){L[AVED.try.k]=avVal(AVED.try.k,AVED.try.v);return avFocus(L,AVED.try.k)}return L}
+function avPreviewLook(){const L={...S.av.look};if(AVED.try){const k=AVED.try.k;L[k]=avVal(k,AVED.try.v);if(lookHid(L,k))L.hd=L.hd.filter(x=>x!==k);return avFocus(L,k)}return L}
 function avLockText(U){if(U.kind==='lin')return linLockText(U);if(U.kind==='kit')return U.p?U.p[3]():'';return U.kind==='lvl'?_t('Abre no nível {0}',U.n):U.kind==='gem'?_t('{0} cristais',U.n):U.kind==='em'?_t('{0} gemas',U.n):U.kind==='bau'?_t('Sai no baú do dia · {0}',RN[U.n]):U.kind==='mina'?_t('Chega a «{0}» na mina',mnPhName(U.n)):U.kind==='craft'?_t('Cria-se na Oficina · {0}',RN[U.n]):_t('Só num evento')}
 function avEditorHTML(){
   // on the hair and face tabs the hat comes off on the stage too, so what is being chosen can be seen
   const L=S.av.look,P=!AVED.try&&(AVED.tab==='hair'||AVED.tab==='face')?avFocus({...L},'hair'):avPreviewLook(),pose=AVPOSES[AVED.pose%AVPOSES.length];
-  let h=`<div class="avtop"><div class="avstage${AVED.try?' try':''}"><span class="me ac-${P.acc}">${a2Svg(P,A2BOX.full,'',pose==='stand'?'idle':pose)}</span>`;
-  if(P.pet&&PETS[P.pet]){const F=PETS[P.pet].F[2],hd=PETS[P.pet].hd;h+=`<span class="pet">${pxsvg(F.map,F.pal,hd?'nohd':'').replace('<svg ',`<svg style="height:${F.h*(hd?2.8:5.6)}px" `)}</span>`}
+  const PS=lookShown(P);let h=`<div class="avtop"><div class="avstage${AVED.try?' try':''}">${auraStage(PS.aura)}<span class="me ac-${PS.acc}${AURAD[PS.aura]?' au':''}" style="${auraVar(PS.aura)}">${a2Svg(P,A2BOX.full,'',pose==='stand'?'idle':pose)}</span>`;
+  if(PS.pet&&PETS[PS.pet]){const F=PETS[P.pet].F[2],hd=PETS[P.pet].hd;h+=`<span class="pet">${pxsvg(F.map,F.pal,hd?'nohd':'').replace('<svg ',`<svg style="height:${F.h*(hd?2.8:5.6)}px" `)}</span>`}
   if(!AVED.try)h+=`<button class="ab l" data-avrand="1">${icon('spark')}<span>${_t('Aleatório')}</span></button><button class="ab r" data-avturn="1" aria-label="${_t('Rodar')}">${icon('up')}<span>${_t('Rodar')}</span></button>`;
   if(AVED.try){const{k,v}=AVED.try,U=avUnlock(k,avVal(k,v),avCode(k,avVal(k,v)));
     h+=`<div class="avtry" style="--rc:${U.kind==='kit'&&U.K?U.K.c:U.kind==='bau'||U.kind==='craft'?RC[U.n]:U.kind==='gem'?'#86e1f5':U.kind==='em'?'#2fd47a':'#4a5a42'}"><p><b>${avName(k,v)}</b>${avLockText(U)}</p>`+
@@ -9648,27 +9814,36 @@ function avEditorHTML(){
   h+=`</div><div class="avtabs" role="tablist">${AVTABS.map(([id,n])=>`<button role="tab" aria-selected="${id===AVED.tab}" class="${id===AVED.tab?'on':''}" data-avtab="${id}">${n}</button>`).join('')}</div></div>`;
   const tryOn=(k,v)=>AVED.try&&AVED.try.k===k&&String(AVED.try.v)===String(v);
   const card=(k,v,u)=>{const U=avUnlock(k,v,u),on=String(L[k])===String(v);if(U.kind==='ev'&&!U.ok&&!on&&!eventoHat(v))return'';
-    const th=AVSLOT[k].th,img=avThumb(avFocus({...L,[k]:v},k),k==='acc'&&/^(capa|manto)/.test(v)?'cape':th);let tg='';
+    const th=AVSLOT[k].th,img=avThumb(avFocus({...L,[k]:v,hd:(L.hd||[]).filter(x=>x!==k)},k),k==='acc'&&/^(capa|manto)/.test(v)?'cape':th,1);let tg='';
     if(!U.ok)tg=U.kind==='lin'?linTag(U):U.kind==='lvl'?`<span class="tg">${icon('lock')}${NM(U.n,'xs')}</span>`:U.kind==='gem'?`<span class="tg gem">${icon('gem')}${NM(U.n,'xs')}</span>`:U.kind==='em'?`<span class="tg em">${icon('em')}${NM(U.n,'xs')}</span>`:U.kind==='mina'?`<span class="tg">${icon('helmet')}</span>`:U.kind==='kit'&&U.p?`<span class="tg kit" style="--kc:${U.K.c}">${icon('kit')}${kitPct(U.p)}%</span>`:U.kind==='bau'?`<span class="tg bau">${icon('chestGold')}</span>`:U.kind==='craft'?`<span class="tg bau">${icon('anvil')}</span>`:`<span class="tg">${_t('Evento')}</span>`;
     return`<button class="avo ${on?'on':''} ${U.ok?'':'lk'} ${tryOn(k,v)?'try':''} ${U.kind==='craft'?'cr':''}" style="${U.kind==='bau'||U.kind==='craft'?`--rc:${RC[U.n]}`:''}" data-avk="${k}" data-avv="${v}" aria-pressed="${on}" aria-label="${esc(AVSLOT[k].nm[v]+(U.ok?'':' · '+avLockText(U)))}"><span class="th ${th==='pet'?'pet':''}">${img}</span><span class="nm">${AVSLOT[k].nm[v]}</span>${tg}</button>`};
   const grid=k=>`<div class="avgrid">${AVSLOT[k].arr.map(([v,u])=>card(k,v,u)).join('')}</div>`;
   const sw=(k,v,u,col)=>{const U=avUnlock(k,v,u),on=String(L[k])===String(v);
-    return`<button class="swb ${on?'on':''} ${U.ok?'':'lk '+U.kind} ${tryOn(k,v)?'try':''}" style="--c:${col};${U.kind==='bau'||U.kind==='craft'?`--rc:${RC[U.n]}`:''}" data-avk="${k}" data-avv="${v}" aria-pressed="${on}" aria-label="${esc(U.ok?avName(k,v):avLockText(U))}">${U.ok?'':U.kind==='lvl'?NM(U.n,'xs'):icon(U.kind==='gem'?'gem':U.kind==='mina'?'helmet':U.kind==='craft'?'anvil':'chestGold')}</button>`};
+    return`<button class="swb ${on?'on':''} ${U.ok?'':'lk '+U.kind} ${tryOn(k,v)?'try':''}${k==='ec'&&EGLOW[v]?' eyg':''}" style="--c:${col};${U.kind==='bau'||U.kind==='craft'?`--rc:${RC[U.n]}`:''}" data-avk="${k}" data-avv="${v}" aria-pressed="${on}" aria-label="${esc(U.ok?avName(k,v):avLockText(U))}">${U.ok?'':U.kind==='lvl'?NM(U.n,'xs'):icon(U.kind==='gem'?'gem':U.kind==='mina'?'helmet':U.kind==='craft'?'anvil':'chestGold')}</button>`};
   const sws=(k,title)=>`<h4 class="sub">${title}</h4><div class="opts sws">${AVCOL[k].map(([c,u])=>sw(k,c,u,c)).join('')}</div>`;
+  // hide a piece and keep it on: it still counts for the sets, and a hidden pet still gives its bonus
+  const hide=k=>{const on=lookHid(L,k);if(!on&&!(L[k]&&L[k]!=='nada')&&!(k==='pet'&&curPetRaw()))return'';
+    return`<button class="tog avhide" data-avhide="${k}" role="switch" aria-checked="${on}"><span>${{hat:_t('Esconder o chapéu'),acc:_t('Esconder os extras'),arm:_t('Esconder a arma'),pet:_t('Esconder o animal')}[k]}<span class="note">${k==='pet'?_t('Continua contigo e o bónus do pet mantém-se.'):_t('Continua equipado e conta para os conjuntos.')}</span></span><span class="sw2"></span></button>`};
   const t=AVED.tab;
   if(t==='hair')h+=grid('hair')+sws('hc',_t('Cor do cabelo'));
+  else if(t==='aura')h+=`<p class="lead" style="margin-top:10px">${_t('Uma luz à volta da tua personagem, no jardim, em casa e onde te virem.')}</p>`+grid('aura');
   else if(t==='face')h+=`<h4 class="sub">${_t("Pele")}</h4><div class="opts sws">${SKINORD.map(i=>sw('skin',i,0,AVSKIN[i][0])).join('')}</div>`+sws('ec',_t('Olhos'));
   else if(t==='sets')h+=kitsHTML();
-  else if(t==='arm')h+=grid('arm')+`<p class="note">${_t('As outras armas fazem parte dos conjuntos: vê as metas no separador Conjuntos.')}</p>`;
-  else if(t==='hat')h+=grid('hat');
-  else if(t==='acc')h+=grid('acc');
+  else if(t==='arm')h+=hide('arm')+grid('arm')+`<p class="note">${_t('As outras armas fazem parte dos conjuntos: vê as metas no separador Conjuntos.')}</p>`;
+  else if(t==='hat')h+=hide('hat')+grid('hat');
+  else if(t==='acc')h+=hide('acc')+grid('acc');
   else if(t==='top')h+=grid('top')+sws('tc',_t('Cor'));
   else if(t==='pt')h+=grid('pt')+sws('pc',_t('Cor'))+sws('sc',_t('Sapatos'));
-  else if(t==='pet')h+=grid('pet')+`<p class="note">${_t("O animal segue a tua personagem pela cena e fica ao pé dela quando descansa.")}</p>`;
+  else if(t==='pet')h+=hide('pet')+grid('pet')+`<p class="note">${_t("O animal segue a tua personagem pela cena e fica ao pé dela quando descansa.")}</p>`;
   else h+=`<p class="lead" style="margin-top:10px">${_t("Como a tua personagem passa o tempo quando não estás a tocar.")}</p>`+TRAITS.map(([id,n,d])=>`<button class="tog trait ${S.av.trait===id?'on':''}" data-trait="${id}" aria-pressed="${S.av.trait===id}"><span>${n}<br><span class="note" style="margin:0">${d}</span></span>${S.av.trait===id?icon('check'):''}</button>`).join('');
   return h;
 }
-function avApply(k,v){S.av.look[k]=v;S.stats.looks=(S.stats.looks||0)+1;dirtySave=true;if(AV&&!AV.hidden&&!visiting)AV.plan=[{k:'pose',p:'wave',d:1.2,emo:'heart'}]}
+// the aura on the editor's stage: the figure glows (CSS) and motes drift around it, in the colours of the aura
+const AUGRP={rise:'up',bub:'up',ember:'up',flame:'up',heart:'up',shard:'up',rune:'up',wisp:'up',fall:'dn',snow:'dn',leaf:'dn',twinkle:'tw',spark:'tw',zap:'tw',orbit:'or'};
+function auraVar(id){const A=AURAD[id];if(!A)return'';const c=A.c==='rb'?[[255,120,170],[120,200,255]]:A.c,k=c[0];return`--au:${k.join(',')};--a1:${A.p[0]};--a2:${A.p[A.p.length-1]}`}
+function auraStage(id){const A=AURAD[id];if(!A)return'';const g=AUGRP[A.k]||'up';let d='';for(let i=0;i<12;i++)d+=`<i style="--x:${(7+i*37%86)}%;--y:${(8+i*53%74)}%;--d:${(-(i*.43)%2.6).toFixed(2)}s;--s:${(1.9+(i%4)*.45).toFixed(2)}s;--c:var(--a${i%2+1})"></i>`;
+  return`<span class="auFx g-${g}${A.c==='rb'?' rb':''}" style="${auraVar(id)}" aria-hidden="true">${d}</span>`}
+function avApply(k,v){if(lookHid(S.av.look,k)&&v!=='nada')S.av.look.hd=S.av.look.hd.filter(x=>x!==k);S.av.look[k]=v;S.stats.looks=(S.stats.looks||0)+1;dirtySave=true;if(AV&&!AV.hidden&&!visiting)AV.plan=[{k:'pose',p:'wave',d:1.2,emo:'heart'}]}
 function avRandom(){
   const L=S.av.look,pick=(k,arr)=>{const ok=arr.filter(([v,u])=>avUnlock(k,v,u).ok);return ok.length?ok[(Math.random()*ok.length)|0][0]:L[k]};
   const n={...L,hair:pick('hair',AVH),hc:pick('hc',AVHAIR),top:pick('top',AVTOPS),tc:pick('tc',AVTOPC),pt:pick('pt',AVPT),pc:pick('pc',AVPANTS),sc:pick('sc',AVSHOE),hat:Math.random()<.45?'nada':pick('hat',AVHATS),acc:Math.random()<.5?'nada':pick('acc',AVACC),arm:Math.random()<.7?'nada':pick('arm',AVARM)};
@@ -9684,6 +9859,8 @@ function avClick(t){
   if(t.dataset.avbuy){const tr=AVED.try;if(!tr)return true;const v=avVal(tr.k,tr.v),u=avCode(tr.k,v),U=avUnlock(tr.k,v,u);if(U.ok||U.kind!=='gem')return true;
     if(S.gems<U.n){toast(_t('Faltam {0} cristais.',U.n-S.gems));return true}
     S.gems-=U.n;S.cos=S.cos||{};S.cos[tr.k+':'+v]=1;S.stats.cosBuy=(S.stats.cosBuy||0)+1;avApply(tr.k,v);AVED.try=null;SND.play('buy');toast(_t('{0} é teu.',avName(tr.k,v)),'lvl');saveLocal();pushCloud(true);sheetSig='';renderSheet();hud();return true}
+  if(t.dataset.avhide){const k=t.dataset.avhide;if(!AVHIDE.includes(k))return true;const L=S.av.look,was=lookHid(L,k);L.hd=AVHIDE.filter(x=>x===k?!was:lookHid(L,x));
+    dirtySave=true;SND.play(was?'pop':'click');sheetSig='';renderSheet();return true}
   if(t.dataset.avrand){avRandom();AVED.try=null;SND.play('pop');sheetSig='';renderSheet();return true}
   if(t.dataset.avturn){AVED.pose++;SND.play('click');sheetSig='';renderSheet();return true}
   if(t.dataset.m2==='daily'){AVED.try=null;closeSheet();dailyModal();return true}
@@ -11451,7 +11628,7 @@ function lojaHTML(){const em=S.em||0;let h=`<div class="emBal">${icon('em')}<div
   else if(lojaTab==='toques'){h+=`<p class="lead">${_t('O que fica no ar a cada toque. Escolhe um e experimenta no jardim.')}</p><div class="tfxGrid">`;
     TFX.forEach(f=>{const own=!f.cost||emOwn('t:'+f.id),on=(S.tfx||'musgo')===f.id;h+=`<div class="tfx ${on?'on':''}"><canvas class="tfxC" data-fx="${f.id}" width="48" height="36" aria-hidden="true"></canvas><b>${f.nome}</b>${own?`<button class="btn ${on?'ghost':''}" data-tfxuse="${f.id}" ${on?'disabled':''}>${on?_t('A usar'):_t('Usar')}</button>`:buy(`data-tfx="${f.id}"`,f.cost)}</div>`});h+=`</div>`}
   else if(lojaTab==='visual'){h+=`<p class="lead">${_t('Peças únicas que só se ganham com gemas.')}</p>`;
-    AVHATS.filter(x=>typeof x[1]==='string'&&x[1][0]==='e').forEach(([v,u])=>{const own=!!(S.cos&&S.cos['hat:'+v]),c=+u.slice(1);h+=`<div class="item emi"><span class="ico av">${avPortrait({...S.av.look,hat:v})}</span><span class="meta"><h3>${HATN[v]}</h3><p>${_t('Chapéu')}</p></span>${own?(S.av.look.hat===v?`<span class="tag">${_t('A usar')}</span>`:`<button class="btn ghost" data-emwear="${v}">${_t('Usar')}</button>`):buy(`data-emhat="${v}"`,c)}</div>`})}
+    AVHATS.filter(x=>typeof x[1]==='string'&&x[1][0]==='e').forEach(([v,u])=>{const own=!!(S.cos&&S.cos['hat:'+v]),c=+u.slice(1);h+=`<div class="item emi"><span class="ico av">${avPortrait({...S.av.look,hat:v,hd:[]})}</span><span class="meta"><h3>${HATN[v]}</h3><p>${_t('Chapéu')}</p></span>${own?(S.av.look.hat===v?`<span class="tag">${_t('A usar')}</span>`:`<button class="btn ghost" data-emwear="${v}">${_t('Usar')}</button>`):buy(`data-emhat="${v}"`,c)}</div>`})}
   else if(lojaTab==='musgos'){h+=`<p class="lead">${_t('Musgos que nenhum nível abre. Rendem muito mais do que qualquer outro.')}</p>`;
     SPEC.forEach((s,i)=>{if(!s.em)return;const own=emOwn('m:'+i);h+=`<div class="item emi"><span class="sw">${s.c.map(c=>`<i style="background:${c}"></i>`).join('')}</span><span class="meta"><h3>${_t('Musgo {0}',s.nome)}</h3><p>${_t('rende {0}× o verde',dec(s.val))}</p></span>${own?`<button class="btn ghost" data-loja="moss">${_t('Semear')}</button>`:buy(`data-emm="${i}"`,s.em)}</div>`})}
   else if(lojaTab==='ovos'){if(!ptOpen())h+=`<p class="note">${_t('Os pets abrem no nível {0}.',PT_LVL)}</p>`;else PEGG.forEach((E,i)=>{if(!E.em)return;h+=`<div class="item emi"><span class="ico">${eggSvg(i)}</span><span class="meta"><h3>${E.nome}</h3><p class="eggOdds">${eggOdds(E)}</p></span>${buy(`data-pt="buy:${i}"`,E.em)}</div>`})}
@@ -12558,7 +12735,7 @@ function mnDrawAv(dt){const M=S.mina,pt=performance.now();
   if(dd>.25){const st=Math.min(dd,dt*(Math.abs(dy)>Math.abs(dx)?30:22)*(dd>50?1.5:1));MAV.x+=dx/dd*st;MAV.y+=dy/dd*st;walk=Math.abs(dx)>.6&&Math.abs(dx)>=Math.abs(dy)*.5}
   if(walk){MAV.wt=(MAV.wt||0)+dt;MAV.fl=dx<0}else{MAV.wt=0;const tc=mnAvT();if(tc>=0){const gx=MX0+(tc%MW)*MCS;if(Math.abs(gx-MAV.x)>2)MAV.fl=gx<MAV.x}}
   if(MAV.sw>0)MAV.sw-=dt;
-  const LKm={...S.av.look,hat:'mineiro',arm:'nada'},e=a2Pick(LKm,walk?'walk':'mine',walk?Math.floor(MAV.wt*7)%8:(RM?0:Math.floor(performance.now()/700)%2),{}),ax=Math.round(MAV.x),ay=Math.round(MAV.y-(mnBio(M.p)==='lua'&&!RM?1.5+1.5*Math.sin(performance.now()/600):0)),lt=mnDark()?[.92,.88,.8]:[1,1,1];
+  const LKm={...S.av.look,hat:'mineiro',arm:'nada',hd:(S.av.look.hd||[]).filter(k=>k!=='hat')},e=a2Pick(LKm,walk?'walk':'mine',walk?Math.floor(MAV.wt*7)%8:(RM?0:Math.floor(performance.now()/700)%2),{}),ax=Math.round(MAV.x),ay=Math.round(MAV.y-(mnBio(M.p)==='lua'&&!RM?1.5+1.5*Math.sin(performance.now()/600):0)),lt=mnDark()?[.92,.88,.8]:[1,1,1];
   // the rope from the pulley down to the miner
   {const deep=mnDark(),rx=MX0+M.ex*MCS+1.5,ry=deep?-2:MY0-23;if(mnBio(M.p)!=='lua'&&(ay>MY0+3||deep)){lowX.fillStyle='rgba(200,170,120,.85)';const steps=Math.max(4,Math.round(Math.hypot(ax-rx,ay-20-ry)));for(let i=0;i<=steps;i++){const u=i/steps;lowX.fillRect(rx+(ax-rx)*u,ry+(ay-20-ry)*u,.5,.5)}}}
   lowX.fillStyle='rgba(0,0,0,.3)';lowX.fillRect(ax-3,ay,7,1);
@@ -12936,7 +13113,7 @@ function frame(t){
   tick(dt);draw();guideTick();
 }
 /* versões novas: quando o jogo muda no servidor, guarda o progresso e recarrega a página */
-const BUILD='43967750a90b',UKEY='tapmoss.upd';const UPD={on:false,go:false,at:0};
+const BUILD='49269ccea551',UKEY='tapmoss.upd';const UPD={on:false,go:false,at:0};
 // the new version downloads in the background while the game goes on; the reload only comes once the whole page is here,
 // so a slow network never leaves a half-built page on screen. The offline helper (sw.js) hands this copy over at the reload.
 const NEXTC='tapmoss-next',pgKey=()=>{let p=location.pathname.replace(/index\.html$/,'');if(!p.endsWith('/'))p+='/';return p};
@@ -13240,7 +13417,7 @@ const lchSvg=b=>pxsvg(lchMap(b),LCH_PAL[b],'lchs');
 
 /* ============ the screens: intro, choice, more info, confirmation, welcome, the bloodline panel and the chest ============ */
 const LNU={on:false,mode:'',b:'',tier:2,sc:0,T:[],raf:0,bg:null,from:''};
-const lnLook=(b,t,base)=>{const L={...(base||S.av.look)};if(b&&t>=0){const s=LSETS[b][t];L.hat=s[0];L.top=s[1];L.acc=s[2]}return L};
+const lnLook=(b,t,base)=>{const L={...(base||S.av.look)};if(b&&t>=0){const s=LSETS[b][t];L.hat=s[0];L.top=s[1];L.acc=s[2];delete L.hd}return L};
 function lnAv(L,h,cls){const svg=wf=>a2Svg(L,A2BOX.full,'','idle',wf?{wf:1}:{}).replace('<svg ',`<svg style="height:${Math.round(h*1.12)}px;width:auto" `),fl=!!(LWING[L.acc]||WFLAP[L.acc]);
   return`<span class="lnav ac-${L.acc} ${cls||''} ${fl?'fl':''}">${svg(0)}${fl?svg(1):''}</span>`}
 const lnPet=(id,h)=>{const P=PETS[id];if(!P)return'';const F=P.F;return`<span class="lnpet ${P.hop?'hop':''}">${pxsvg(F[0].map,F[0].pal,'nohd').replace('<svg ',`<svg style="height:${h}px;width:auto" `)}${pxsvg(F[1].map,F[1].pal,'nohd').replace('<svg ',`<svg style="height:${h}px;width:auto" `)}</span>`};
@@ -14723,9 +14900,10 @@ function hsPoseName(A,t){const p=A.pose;if(p==='walk')return Math.floor(A.ft*5.5
 function hsDrawAv(x,A,t){const pn=hsPoseName(A,t),pl=AVP[pn];if(!pl)return;const LK=A.look||hsLook(),[ps,pf]=a2Pose(pn,A.ft),e=a2Pick(LK,ps,pf,{wf:avWF(LK)});if(!e)return;const fl=A.fl;
   if(!A.seat){x.fillStyle='rgba(10,8,6,.26)';x.beginPath();x.ellipse(A.x,A.y+.4,3.6,.9,0,0,7);x.fill()}
   const ax=Math.round(A.x*4)/4,top=Math.round(A.y*2)/2+.5-e.feet/4+(A.jy||0),left=ax-e.w/8;
-  A._lt=e.lc?{e,left,top,fl,t}:null;x.save();if(fl){x.translate(left*2+e.w/4,0);x.scale(-1,1)}x.drawImage(e.cv,left,top,e.w/4,e.h/4);
+  A._lt=e.lc?{e,left,top,fl,t}:null;x.save();if(fl){x.translate(left*2+e.w/4,0);x.scale(-1,1)}if(e.ac){x.globalAlpha=auB();x.drawImage(e.ac,left,top,e.w/4,e.h/4);x.globalAlpha=1}x.drawImage(e.cv,left,top,e.w/4,e.h/4);
   if(A.blink>0&&e.blink){for(const[bx,by,c]of e.blink){x.fillStyle=`rgb(${c[0]},${c[1]},${c[2]})`;x.fillRect(left+bx/4,top+by/4,.25,.25)}}x.restore();
   if(pl.v!=='l'&&!A.look){const wc=a2At(e,[e.head[0]-15,e.head[1]+12],left,top,fl);try{avWingFx(LK,wc[0]-7,wc[1]-11,fl,'f')}catch(err){}}
+  if(pl.v!=='l')try{avAuraFx(x,LK,e,left,top,fl,A)}catch(err){}
   if(A.emo){const E=EMO[A.emo.k];if(E&&E.map){const hp=a2At(e,e.head,left,top,fl),rise=RM?0:Math.round(A.emo.t*3);drawSprite(E,E.map,Math.round(hp[0])-2,Math.round(top+e.top/4)-4-rise,false)}}}
 // asleep: only the head shows on the pillow, the blanket goes back over the rest
 function hsSleeper(x,A,o,t,alt){const LK=A.look||hsLook(),e=a2Get(LK,'idle',0,{}),d=o.d,pw=d.id==='camadupla'?(((o.it[4]?1:0)^(alt?1:0))?d.w-5.5:5.5):d.w/2+(alt?2.5:0),hx=o.x+pw,hy=o.y+(d.id==='camanuvem'?3:3.6);
@@ -15116,7 +15294,7 @@ function hsDom(){const dock=$('#dock');if(!dock||$('#bCasa'))return;
     <div id="hsTb" class="pn hidden" role="toolbar" aria-label="${_t('Móvel escolhido')}"><button type="button" data-hst="flip">${icon('flip')}<span>${_t('Virar')}</span></button><button type="button" data-hst="cor">${icon('palette')}<span id="hsTbCor">${_t('Cor')}</span></button><button type="button" data-hst="inv">${icon('box')}<span>${_t('Arrumar')}</span></button></div>`);
   const on=(id,f)=>{const el=$('#'+id);if(el)el.addEventListener('click',f)};
   on('bCasa',()=>{SND.play('click');hsOpen()});on('hsDec',hsEdit);on('hsLoja',()=>{hsShopTab=hsShopTab||'sentar';openSheet('hsloja')});on('hsOut',()=>hsFora(!HSV.fora));
-  on('hsPet',()=>{if(!curPet()){toast(_t('Ainda não tens um pet. Os pets chegam no nível {0}.',PT_LVL));return}S.casa.pet=S.casa.pet===0?1:0;SND.play('click');hsSave();hsUI();toast(S.casa.pet?_t('O teu pet está em casa.'):_t('O teu pet foi brincar lá para fora.'))});
+  on('hsPet',()=>{if(!curPetRaw()){toast(_t('Ainda não tens um pet. Os pets chegam no nível {0}.',PT_LVL));return}S.casa.pet=S.casa.pet===0?1:0;SND.play('click');hsSave();hsUI();toast(S.casa.pet?_t('O teu pet está em casa.'):_t('O teu pet foi brincar lá para fora.'))});
   on('hsVis',()=>{openSheet('hsvis');if(CONTA&&!NET.amigos)loadAmigos();if(HSX_OK)hsxFriends().then(()=>{if(sheetName==='hsvis'){sheetSig='';renderSheet()}})});on('hsBack',()=>hsClose());
   on('hseLoja',()=>openSheet('hsloja'));on('hseInv',()=>openSheet('hsinv'));on('hseSty',()=>openSheet('hssty'));on('hseUndo',hsUndo);on('hseDone',()=>hsEditEnd());
   on('hsvOut',()=>hsFora(!HSV.fora));on('hsvBack',()=>{hsClose(true);renderVisitBar()});on('hsPrev',()=>hsRoom(-1));on('hsNext',()=>hsRoom(1));
@@ -16163,7 +16341,7 @@ var NGL={vestearcanjo:[[255,170,215],13,1.1],vestidoquerubim:[[255,214,236],10,.
   asasarcanjo:[[255,180,220],15,1.2],asasquerubim:[[255,220,238],11,.8],asasrosa:[[255,190,215],8,.5],asasanjo:[[255,240,200],12,.85],asasfenix:[[255,160,60],14,1.1],asasvazio:[[150,100,255],13,1],asaseclipse:[[255,210,110],13,1],asasaurora:[[120,255,200],13,1],
   asasgelo:[[200,240,255],11,.8],asasdragao:[[255,110,40],13,1],asasserafim:[[255,240,190],13,.95],asasprisma:[[200,190,255],13,1],asasneon:[[255,90,210],12,.9],asasfantasma:[[220,246,255],10,.7],asaszenite:[[255,214,110],13,1],asasborboleta:[[255,180,90],9,.6],asasmariposa:[[200,190,255],10,.7],capaestelar:[[255,240,200],9,.6],
   coroaarcanjo:[[255,226,150],9,.6],coroachamas:[[255,170,60],9,.7],nimbo:[[190,150,255],9,.6],espadagelo:[[170,236,255],8,.5],laminaestelar:[[150,170,255],8,.5],tocha:[[255,170,60],10,.8],lanternaabobora:[[255,170,60],10,.8],varinhacoracao:[[255,150,200],7,.45]};
-function lookGlow(L){let b=null;for(const k of['top','acc','hat','arm']){const g=L&&NGL[L[k]];if(g&&(!b||g[2]>b[2]))b=g}return b}
+function lookGlow(L){L=lookShown(L);let b=null;for(const k of['top','acc','hat','arm']){const g=L&&NGL[L[k]];if(g&&(!b||g[2]>b[2]))b=g}return b}
 var NGL_OK=1,ANJ_OK=1;
 // at night the wings shine: a round soft light behind them, brighter the rarer they are
 const WNC=new Map();
