@@ -2211,7 +2211,7 @@ function ofName(R){if(R.t==='item')return ITEM[R.id].nome;if(R.t==='tint')return
 function tintSvg(c,cls){const C=PCH[c]||PCH[1],k=hex(C.col),d=shadeHex(C.col,.62),l=shadeHex(C.col,1.3);
   return pxsvg(['..www..','.wcccw.','.wwwww.','wpPPPpw','wpPLPpw','wpPPPpw','wppppdw','.wwwww.'],{w:'#2a2014',c:'#a06a3a',p:d,P:C.col,L:l,d:shadeHex(C.col,.45)},(cls||'')+' chr'+c)}
 function ofIcon(R){if(R.t==='item')return pxsvg(ITEM[R.id].map,ITEM[R.id].pal);if(R.t==='tint')return tintSvg(R.c);
-  const L={...S.av.look,[R.k]:R.v},th=R.k==='hat'||R.k==='hc'?'head':R.k==='arm'?'arm':'bust';return avThumb(L,th)}
+  const L=avFocus({...S.av.look,[R.k]:R.v},R.k),th=R.k==='hat'||R.k==='hc'?'head':R.k==='arm'?'arm':'bust';return avThumb(L,th)}
 function ofDo(id){const R=RCPI[id];if(!R)return;if(!ofOn())return;if(ofDone(R)){toast(_t('Já é teu.'));return}if(!ofHave(R)){toast(_t('Faltam ingredientes.'));return}
   const ins=[];for(const k in R.need){S.coll[k]-=R.need[k];ins.push(pxsvg(ITEM[k].map,ITEM[k].pal))}for(const k in R.mat){S.mat[k]-=R.mat[k];ins.push(matSvg(k))}S.gems-=R.g;
   let isNew=true;
@@ -2222,7 +2222,7 @@ function ofDo(id){const R=RCPI[id];if(!R)return;if(!ofOn())return;if(ofDone(R)){
   S.stats.craft=(S.stats.craft||0)+1;if(R.r>=5)S.stats.craftLeg=(S.stats.craftLeg||0)+1;dirtySave=true;ev('oficina',R.id);saveLocal();pushCloud(true);hud();
   sheetSig='';renderSheet();ofReveal(R,ins)}
 // the reveal: what went in circles the core and melts into it; the rarer the thing, the longer and louder
-function ofReveal(R,ins){const vr=R.r,rc=RC[vr],nm=ofName(R),big=R.t==='cos'?avThumb({...S.av.look,[R.k]:R.v},R.k==='hat'||R.k==='hc'?'head':'full'):R.t==='tint'?tintSvg(R.c):pxsvg(ITEM[R.id].map,ITEM[R.id].pal);
+function ofReveal(R,ins){const vr=R.r,rc=RC[vr],nm=ofName(R),big=R.t==='cos'?avThumb(avFocus({...S.av.look,[R.k]:R.v},R.k),R.k==='hat'||R.k==='hc'?'head':'full'):R.t==='tint'?tintSvg(R.c):pxsvg(ITEM[R.id].map,ITEM[R.id].pal);
   const n=Math.max(1,ins.length),sub=R.t==='item'?_t('Coleção: +{0}% moedas para sempre.',Math.round(RBON[vr]*100))+(RELIC[R.id]?' '+relTxt(R.id)+'.':''):R.t==='cos'?_t('Já está no teu guarda-roupa.'):_t('Usa-a num pet, em Oficina › Tintas.');
   const btn=R.t==='cos'?`<button class="btn gold" data-m="ofwear:${R.id}">${_t('Vestir já')}</button>`:R.t==='tint'&&ptOpen()?`<button class="btn gold" data-m="oftint:${R.c}">${_t('Pintar um pet')}</button>`:'';
   SND.play('click');
@@ -9630,10 +9630,15 @@ function avThumb(look,mode){
   if(mode==='arm')return a2Svg(look,A2BOX.arm,'','wave');if(mode==='cape')return a2Svg(look,A2BOX.cape,'');
   return a2Svg(look,A2BOX[mode==='head'?'head':mode==='bust'?'bust':mode==='legs'?'legs':'full'],'');
 }
-function avPreviewLook(){const L={...S.av.look};if(AVED.try)L[AVED.try.k]=avVal(AVED.try.k,AVED.try.v);return L}
+// a preview of one piece shows that piece: a hat, helmet or mask comes off to show the hair, the eyes and the skin,
+// and an armour or robe gives way to a plain top so the colour of the clothes can be seen
+const AV_TOPS_TC=['lisa','vestido','riscas','xadrez','jardineiras','capuz','casaco'];
+function avFocus(L,k){if((k==='hair'||k==='hc'||k==='ec'||k==='skin')&&L.hat&&L.hat!=='nada')return{...L,hat:'nada'};if(k==='tc'&&!AV_TOPS_TC.includes(L.top))return{...L,top:'lisa'};return L}
+function avPreviewLook(){const L={...S.av.look};if(AVED.try){L[AVED.try.k]=avVal(AVED.try.k,AVED.try.v);return avFocus(L,AVED.try.k)}return L}
 function avLockText(U){if(U.kind==='lin')return linLockText(U);if(U.kind==='kit')return U.p?U.p[3]():'';return U.kind==='lvl'?_t('Abre no nível {0}',U.n):U.kind==='gem'?_t('{0} cristais',U.n):U.kind==='em'?_t('{0} gemas',U.n):U.kind==='bau'?_t('Sai no baú do dia · {0}',RN[U.n]):U.kind==='mina'?_t('Chega a «{0}» na mina',mnPhName(U.n)):U.kind==='craft'?_t('Cria-se na Oficina · {0}',RN[U.n]):_t('Só num evento')}
 function avEditorHTML(){
-  const L=S.av.look,P=avPreviewLook(),pose=AVPOSES[AVED.pose%AVPOSES.length];
+  // on the hair and face tabs the hat comes off on the stage too, so what is being chosen can be seen
+  const L=S.av.look,P=!AVED.try&&(AVED.tab==='hair'||AVED.tab==='face')?avFocus({...L},'hair'):avPreviewLook(),pose=AVPOSES[AVED.pose%AVPOSES.length];
   let h=`<div class="avtop"><div class="avstage${AVED.try?' try':''}"><span class="me ac-${P.acc}">${a2Svg(P,A2BOX.full,'',pose==='stand'?'idle':pose)}</span>`;
   if(P.pet&&PETS[P.pet]){const F=PETS[P.pet].F[2],hd=PETS[P.pet].hd;h+=`<span class="pet">${pxsvg(F.map,F.pal,hd?'nohd':'').replace('<svg ',`<svg style="height:${F.h*(hd?2.8:5.6)}px" `)}</span>`}
   if(!AVED.try)h+=`<button class="ab l" data-avrand="1">${icon('spark')}<span>${_t('Aleatório')}</span></button><button class="ab r" data-avturn="1" aria-label="${_t('Rodar')}">${icon('up')}<span>${_t('Rodar')}</span></button>`;
@@ -9643,7 +9648,7 @@ function avEditorHTML(){
   h+=`</div><div class="avtabs" role="tablist">${AVTABS.map(([id,n])=>`<button role="tab" aria-selected="${id===AVED.tab}" class="${id===AVED.tab?'on':''}" data-avtab="${id}">${n}</button>`).join('')}</div></div>`;
   const tryOn=(k,v)=>AVED.try&&AVED.try.k===k&&String(AVED.try.v)===String(v);
   const card=(k,v,u)=>{const U=avUnlock(k,v,u),on=String(L[k])===String(v);if(U.kind==='ev'&&!U.ok&&!on&&!eventoHat(v))return'';
-    const th=AVSLOT[k].th,img=avThumb({...L,[k]:v},k==='acc'&&/^(capa|manto)/.test(v)?'cape':th);let tg='';
+    const th=AVSLOT[k].th,img=avThumb(avFocus({...L,[k]:v},k),k==='acc'&&/^(capa|manto)/.test(v)?'cape':th);let tg='';
     if(!U.ok)tg=U.kind==='lin'?linTag(U):U.kind==='lvl'?`<span class="tg">${icon('lock')}${NM(U.n,'xs')}</span>`:U.kind==='gem'?`<span class="tg gem">${icon('gem')}${NM(U.n,'xs')}</span>`:U.kind==='em'?`<span class="tg em">${icon('em')}${NM(U.n,'xs')}</span>`:U.kind==='mina'?`<span class="tg">${icon('helmet')}</span>`:U.kind==='kit'&&U.p?`<span class="tg kit" style="--kc:${U.K.c}">${icon('kit')}${kitPct(U.p)}%</span>`:U.kind==='bau'?`<span class="tg bau">${icon('chestGold')}</span>`:U.kind==='craft'?`<span class="tg bau">${icon('anvil')}</span>`:`<span class="tg">${_t('Evento')}</span>`;
     return`<button class="avo ${on?'on':''} ${U.ok?'':'lk'} ${tryOn(k,v)?'try':''} ${U.kind==='craft'?'cr':''}" style="${U.kind==='bau'||U.kind==='craft'?`--rc:${RC[U.n]}`:''}" data-avk="${k}" data-avv="${v}" aria-pressed="${on}" aria-label="${esc(AVSLOT[k].nm[v]+(U.ok?'':' · '+avLockText(U)))}"><span class="th ${th==='pet'?'pet':''}">${img}</span><span class="nm">${AVSLOT[k].nm[v]}</span>${tg}</button>`};
   const grid=k=>`<div class="avgrid">${AVSLOT[k].arr.map(([v,u])=>card(k,v,u)).join('')}</div>`;
@@ -9717,7 +9722,7 @@ function grantCos(d7){
   let pool=[];for(let q=r;q>=2&&!pool.length;q--)pool=COS_BAU.filter(c=>c.r===q&&!own(c));if(!pool.length)return null;
   const c=pool[(rnd()*pool.length)|0];S.cos=S.cos||{};S.cos[c.k+':'+c.v]=1;S.stats.cos=(S.stats.cos||0)+1;return c;
 }
-function cosThumb(c){const L={...S.av.look,[c.k]:c.v};if(c.k==='pet')return petSvg(c.v);const th=AVSLOT[c.k]?AVSLOT[c.k].th:c.k==='tc'?'bust':c.k==='sc'||c.k==='pc'?'legs':'head';return avThumb(L,th)}
+function cosThumb(c){const L=avFocus({...S.av.look,[c.k]:c.v},c.k);if(c.k==='pet')return petSvg(c.v);const th=AVSLOT[c.k]?AVSLOT[c.k].th:c.k==='tc'?'bust':c.k==='sc'||c.k==='pc'?'legs':'head';return avThumb(L,th)}
 let lastCos=null;
 function dailyReveal(o){
   const best=Math.max(...o.items.map(g=>g.it.r),o.cos?o.cos.r:0),nw=o.items.filter(g=>g.isNew),pct=Math.round(nw.reduce((a,g)=>a+RBON[g.it.r],0)*100);
@@ -12931,7 +12936,7 @@ function frame(t){
   tick(dt);draw();guideTick();
 }
 /* versões novas: quando o jogo muda no servidor, guarda o progresso e recarrega a página */
-const BUILD='2032597d494a',UKEY='tapmoss.upd';const UPD={on:false,go:false,at:0};
+const BUILD='43967750a90b',UKEY='tapmoss.upd';const UPD={on:false,go:false,at:0};
 // the new version downloads in the background while the game goes on; the reload only comes once the whole page is here,
 // so a slow network never leaves a half-built page on screen. The offline helper (sw.js) hands this copy over at the reload.
 const NEXTC='tapmoss-next',pgKey=()=>{let p=location.pathname.replace(/index\.html$/,'');if(!p.endsWith('/'))p+='/';return p};
