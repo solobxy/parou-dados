@@ -1690,13 +1690,17 @@ const WXM={clear:1,cloudy:1.15,rain:1.5};
 const SVGHD=new Map(),HDG=new Map();
 const shadeRgb=(c,s)=>s===1?[c[0]+(255-c[0])*.16,c[1]+(255-c[1])*.16,c[2]+(255-c[2])*.16]:s===-1?[c[0]*.8,c[1]*.8,c[2]*.82]:s===2?[c[0]*.4,c[1]*.4,c[2]*.44]:c;
 function pxsvg(map,P,cls){
-  if(map.__hi&&!(cls&&cls.includes('lo'))){const o=map.__hi,sl=P&&Object.values(P).every(v=>v==='#2a382c');return pxsvg(o.map,sl?sil(o.map):o.pal,(cls||'')+' nohd')}
+  if(map.__hi&&!(cls&&cls.includes('lo'))){const o=map.__hi,sl=P&&Object.values(P).every(v=>v==='#2a382c');return pxsvg(o.map,sl?sil(o.map):o.pal,(cls||'')+' hd1')}
   const h=map.length,w=Math.max(...map.map(r=>r.length));
-  if(w<=24&&h<=24&&typeof hdUp==='function'&&!(cls&&cls.includes('nohd'))){const key=map.join('|')+JSON.stringify(P)+(cls||'');const c=SVGHD.get(key);if(c)return c;
+  if(w<=48&&h<=48&&typeof hdUp==='function'&&!(cls&&cls.includes('nohd'))){const key=map.join('|')+JSON.stringify(P)+(cls||'');const c=SVGHD.get(key);if(c)return c;
     // the interface pictures at 4× like the scene: smoothed twice, lit on the top left, shaded on the bottom right, a soft shadow; one image each
-    const R=hdUp(map,2),hx=v=>/^#[0-9a-f]{6}$/i.test(v||'')?hex(v):null,cv=document.createElement('canvas');cv.width=R.w;cv.height=R.h;const X=cv.getContext('2d');
-    for(const[x,y,ch,sh]of R.px){if(!P[ch])continue;const base=hx(P[ch]);if(sh===3){if(!base)continue;X.fillStyle=`rgba(${base[0]*.15|0},${base[1]*.15|0},${base[2]*.18|0},.35)`}else X.fillStyle=base?css(shade4(base,sh)):P[ch];X.fillRect(x,y,1,1)}
-    const o=`<svg class="pxi ${cls||''}" viewBox="2 2 ${w*4+1} ${h*4+1}" aria-hidden="true"><image href="${cv.toDataURL()}" width="${R.w}" height="${R.h}" style="image-rendering:pixelated"/></svg>`;
+    const one=!!(cls&&cls.includes('hd1')),f=one?2:4,R=hdUp(map,one?1:2),hx=v=>/^#[0-9a-f]{6}$/i.test(v||'')?hex(v):null,cv=document.createElement('canvas');cv.width=R.w;cv.height=R.h;const X=cv.getContext('2d');
+    // a chest's outline is a dark shade of its own wood or metal, not black
+    const kSoft=P.K&&P.w&&P.W&&P.L?mix(hex(P.K),hex(P.w),.42):null;
+    for(const[x,y,ch,sh]of R.px){if(!P[ch])continue;let base=ch==='K'&&kSoft?kSoft:hx(P[ch]);
+      // chests get volume: lit from the top left, darker towards the bottom right, a soft dither between the steps
+      if(kSoft&&base&&sh!==3){const u=x/R.w,v=y/R.h,d=((x&1)^(y&1))*.015,k=1.1-v*.26-(u-.5)*.1+d;base=[Math.min(255,base[0]*k),Math.min(255,base[1]*k),Math.min(255,base[2]*k)]}if(sh===3){if(!base)continue;X.fillStyle=`rgba(${base[0]*.15|0},${base[1]*.15|0},${base[2]*.18|0},.35)`}else X.fillStyle=base?css(shade4(base,sh)):P[ch];X.fillRect(x,y,1,1)}
+    const o=`<svg class="pxi ${cls||''}" viewBox="2 2 ${w*f+1} ${h*f+1}" aria-hidden="true"><image href="${cv.toDataURL()}" width="${R.w}" height="${R.h}" style="image-rendering:pixelated"/></svg>`;
     SVGHD.set(key,o);if(SVGHD.size>2000)SVGHD.delete(SVGHD.keys().next().value);return o}
   let s=`<svg class="pxi ${cls||''}" viewBox="0 0 ${w} ${h}" shape-rendering="crispEdges" aria-hidden="true">`;
   for(let y=0;y<h;y++){const row=map[y];let x=0;while(x<row.length){const ch=row[x];if(ch==='.'||ch===' '){x++;continue}let e=x+1;while(e<row.length&&row[e]===ch)e++;s+=`<rect x="${x}" y="${y}" width="${e-x}" height="1" fill="${P[ch]}"/>`;x=e}}
@@ -6167,8 +6171,9 @@ function ubBurst(el,r){const box=el.querySelector('.ub-parts');if(!box)return;co
 /* the big moment for the best finds: the screen darkens, light spirals in from every edge and the chest swallows it,
    then it all blows out across the whole screen. Drawn on a small canvas scaled up, so it stays pixel-art and cheap on the battery */
 let VX=null;
-function vortexStart(el,r,dur){if(RM&&r>=4)GRQ=r;if(RM||VX||!el)return null;if(r>=4)return grStart(el,r,dur);const D=3,w=Math.ceil(innerWidth/D),h=Math.ceil(innerHeight/D),cv=document.createElement('canvas');cv.className='vortex';cv.width=w;cv.height=h;document.body.appendChild(cv);
-  const x=cv.getContext('2d'),R0=Math.hypot(w,h)*.62,big=r>=4,myth=r>=5,vd=r>=7;
+const q4=v=>Math.round(v*4)/4;
+function vortexStart(el,r,dur){if(RM&&r>=4)GRQ=r;if(RM||VX||!el)return null;if(r>=4)return grStart(el,r,dur);const D=3,w=Math.ceil(innerWidth/D),h=Math.ceil(innerHeight/D),cv=document.createElement('canvas');cv.className='vortex';cv.width=w*D;cv.height=h*D;document.body.appendChild(cv);
+  const x=cv.getContext('2d'),_tf=x.setTransform(D,0,0,D,0,0),R0=Math.hypot(w,h)*.62,big=r>=4,myth=r>=5,vd=r>=7;
   const pal=vd?['#9a5aff','#5a1cc8','#e2d0ff','#ffffff','#3a0e86','#c8a8ff']:r>=6?['#ff6a8a','#ffb040','#f0e050','#4ad890','#4aa8ff','#a070ff','#ffffff']:myth?['#ffd45e','#ffb23e','#fff3b8','#ffffff','#ffe08a']:big?['#ff7ad9','#ff6d8a','#ffc2e6','#ffffff','#b88cff']:['#c79bff','#e7d2ff','#ffffff','#a77bff'];
   const V={cv,x,w,h,r,dur,t0:performance.now(),last:performance.now(),ps:[],bs:[],boom:0,acc:0,glow:0,stop:false,raf:0};
   const ctr=()=>{const b=el.getBoundingClientRect();return[(b.left+b.width/2)/D,(b.top+b.height*.5)/D]};
@@ -6182,8 +6187,8 @@ function vortexStart(el,r,dur){if(RM&&r>=4)GRQ=r;if(RM||VX||!el)return null;if(r
       for(let i=V.ps.length-1;i>=0;i--){const p=V.ps[i];p.rad-=(24+R0*1.9*u*u+(R0-p.rad)*1.6)*dt;p.a+=p.arm*(1.8+95/(p.rad+6))*dt;
         if(p.rad<3){V.ps.splice(i,1);V.glow=Math.min(1,V.glow+.012);continue}
         const X=cx+Math.cos(p.a)*p.rad,Y=cy+Math.sin(p.a)*p.rad*.92;
-        if(p.px!=null){x.strokeStyle=p.c;x.globalAlpha=.55+.45*Math.min(1,(R0-p.rad)/R0*2);x.lineWidth=p.s;x.beginPath();x.moveTo(p.px,p.py);x.lineTo(X,Y);x.stroke()}
-        x.globalAlpha=1;x.fillStyle=p.c;x.fillRect(Math.round(X),Math.round(Y),p.s,p.s);p.px=X;p.py=Y}
+        if(p.px!=null){x.strokeStyle=p.c;x.globalAlpha=.55+.45*Math.min(1,(R0-p.rad)/R0*2);x.lineWidth=p.s*.55;x.beginPath();x.moveTo(p.px,p.py);x.lineTo(X,Y);x.stroke()}
+        x.globalAlpha=1;x.fillStyle=p.c;x.fillRect(q4(X),q4(Y),p.s*.6,p.s*.6);p.px=X;p.py=Y}
       // the chest drinks the light: its glow grows with everything it has swallowed
       const gr=6+V.glow*26+u*10,gg=x.createRadialGradient(cx,cy,0,cx,cy,gr);gg.addColorStop(0,pal[0]+'cc');gg.addColorStop(1,pal[0]+'00');x.fillStyle=gg;x.globalAlpha=.35+.5*u;x.fillRect(cx-gr,cy-gr,gr*2,gr*2);x.globalAlpha=1;x.globalCompositeOperation='source-over'}
     else{const k=(now-V.boom)/1000;
@@ -6191,7 +6196,7 @@ function vortexStart(el,r,dur){if(RM&&r>=4)GRQ=r;if(RM||VX||!el)return null;if(r
       x.globalCompositeOperation='lighter';
       for(let j=0;j<(r>=6?5:myth?3:big?2:1);j++){const kk=k-j*.09;if(kk<=0||kk>.75)continue;x.strokeStyle=pal[j%pal.length];x.globalAlpha=1-kk/.75;x.lineWidth=Math.max(1,4*(1-kk/.75));x.beginPath();x.arc(cx,cy,kk/.75*R0*1.25,0,6.283);x.stroke()}
       x.globalAlpha=1;
-      for(const b of V.bs){b.vx*=Math.pow(.25,dt);b.vy=b.vy*Math.pow(.25,dt)+40*dt;b.x+=b.vx*dt;b.y+=b.vy*dt;const a=1-k/b.life;if(a<=0)continue;x.globalAlpha=a;x.fillStyle=b.c;x.fillRect(Math.round(b.x),Math.round(b.y),b.s,b.s)}
+      for(const b of V.bs){b.vx*=Math.pow(.25,dt);b.vy=b.vy*Math.pow(.25,dt)+40*dt;b.x+=b.vx*dt;b.y+=b.vy*dt;const a=1-k/b.life;if(a<=0)continue;x.globalAlpha=a;x.fillStyle=b.c;x.fillRect(q4(b.x),q4(b.y),b.s,b.s)}
       x.globalAlpha=1;x.globalCompositeOperation='source-over';
       if(k>1.4){vortexEnd();return}}
     V.raf=requestAnimationFrame(step)};
@@ -6216,20 +6221,20 @@ function grStamp(r){const o=$('#grst');if(o)o.remove();if(r<4)return;const d=doc
   d.id='grst';d.className='grst r'+r;d.style.setProperty('--rc',RC[r]);d.setAttribute('aria-hidden','true');
   d.innerHTML=`<span class="grsi">${g}</span><b>${[...t].map((c,i)=>`<i style="--i:${i}">${c===' '?'&nbsp;':c}</i>`).join('')}</b><span class="grsi">${g}</span>`;
   document.body.appendChild(d);setTimeout(()=>d.remove(),r>=7?2900:2400)}
-function grStart(el,r,dur){const D=3,w=Math.ceil(innerWidth/D),h=Math.ceil(innerHeight/D),cv=document.createElement('canvas');cv.className='vortex';cv.width=w;cv.height=h;document.body.appendChild(cv);
-  const x=cv.getContext('2d'),R0=Math.hypot(w,h)*.62,app=$('#app'),card=$('#mcard'),Rn=Math.random,TAU=6.2832,soft=SOFT,lift=el.classList.contains('ub-chest')?el.parentElement:el;
+function grStart(el,r,dur){const D=3,w=Math.ceil(innerWidth/D),h=Math.ceil(innerHeight/D),cv=document.createElement('canvas');cv.className='vortex';cv.width=w*D;cv.height=h*D;document.body.appendChild(cv);
+  const x=cv.getContext('2d'),_tf=x.setTransform(D,0,0,D,0,0),R0=Math.hypot(w,h)*.62,app=$('#app'),card=$('#mcard'),Rn=Math.random,TAU=6.2832,soft=SOFT,lift=el.classList.contains('ub-chest')?el.parentElement:el;
   const V={cv,x,w,h,r,dur,t0:performance.now(),last:performance.now(),ps:[],bs:[],rings:[],cracks:[],stars:[],beats:[],thump:0,glow:0,acc:0,rot:0,boom:0,stop:false,raf:0,T:[]};
   const ctr=()=>{const b=el.getBoundingClientRect();return[(b.left+b.width/2)/D,(b.top+b.height*.5)/D]};
   const later=(ms,fn)=>V.T.push(setTimeout(()=>{if(!V.stop&&!V.boom)fn()},ms));
   const ease=u=>1-Math.pow(1-clamp(u,0,1),3),A=a=>clamp(a,0,1);
   const rad=(cx,cy,r0,r1,st)=>{const g=x.createRadialGradient(cx,cy,r0,cx,cy,r1);st.forEach(([o,c])=>g.addColorStop(o,c));return g};
-  const dot=(X,Y,c,s)=>{x.fillStyle=c;x.fillRect(Math.round(X),Math.round(Y),s||1,s||1)};
+  const dot=(X,Y,c,s)=>{x.fillStyle=c;x.fillRect(q4(X),q4(Y),(s||1)*.6,(s||1)*.6)};
   const ring=(cx,cy,R,c,lw,a)=>{x.globalAlpha=A(a);x.strokeStyle=c;x.lineWidth=lw;x.beginPath();x.arc(cx,cy,Math.max(0,R),0,TAU);x.stroke();x.globalAlpha=1};
   const ray=(cx,cy,a,L,wd,c)=>{x.fillStyle=c;x.beginPath();x.moveTo(cx,cy);x.lineTo(cx+Math.cos(a-wd)*L,cy+Math.sin(a-wd)*L);x.lineTo(cx+Math.cos(a+wd)*L,cy+Math.sin(a+wd)*L);x.fill()};
   const path=p=>{x.beginPath();p.forEach(([X,Y],i)=>i?x.lineTo(X,Y):x.moveTo(X,Y));x.stroke()};
   const crack=(cx,cy,a,len)=>{const p=[[cx,cy]];let X=cx,Y=cy,an=a;const n=7+((Rn()*4)|0);for(let i=0;i<n;i++){an+=(Rn()-.5)*.9;const s=len/n*(.6+Rn()*.8);X+=Math.cos(an)*s;Y+=Math.sin(an)*s;p.push([X,Y])}return p};
-  const glitch=n=>{for(let i=0;i<n;i++){const y=(Rn()*h)|0,bh=1+((Rn()*6)|0),dx=((Rn()-.5)*14)|0;try{x.drawImage(cv,0,y,w,bh,dx,y,w,bh)}catch(e){}}};
-  const map=(ic,X0,Y0,s)=>{const[m,p]=ic;m.forEach((row,y)=>{for(let i=0;i<row.length;i++){const ch=row[i];if(ch==='.')continue;x.fillStyle=p[ch];x.fillRect(Math.round(X0+i*s),Math.round(Y0+y*s),s,s)}})};
+  const glitch=n=>{for(let i=0;i<n;i++){const y=(Rn()*h)|0,bh=1+((Rn()*6)|0),dx=((Rn()-.5)*14)|0;try{x.drawImage(cv,0,y*D,w*D,bh*D,dx,y,w,bh)}catch(e){}}};
+  const map=(ic,X0,Y0,s)=>{const[m,p]=ic;m.forEach((row,y)=>{for(let i=0;i<row.length;i++){const ch=row[i];if(ch==='.')continue;x.fillStyle=p[ch];x.fillRect(q4(X0+i*s),q4(Y0+y*s),s,s)}})};
   const jit=()=>{if(soft||!card)return;card.classList.remove('grjit');void card.offsetWidth;card.classList.add('grjit')};
   // each tier sets its own stage
   if(r===4){let t=dur*.16,iv=dur*.21;while(t<dur*.96){V.beats.push(t);t+=iv;iv=Math.max(110,iv*.72)}}
@@ -6245,7 +6250,7 @@ function grStart(el,r,dur){const D=3,w=Math.ceil(innerWidth/D),h=Math.ceil(inner
     V.acc+=(70+260*u*u)*dt;while(V.acc>=1){V.acc--;V.ps.push({a:Rn()*TAU,rad:R0*(.8+Rn()*.4),c:PK4[(Rn()*PK4.length)|0],ph:Rn()*TAU,arm:Rn()<.5?1:-1})}
     x.globalCompositeOperation='lighter';
     for(let i=V.ps.length-1;i>=0;i--){const p=V.ps[i];p.rad-=(16+R0*1.1*u*u+(R0-p.rad)*.9)*dt;p.a+=p.arm*(.9+60/(p.rad+8))*dt;if(p.rad<4){V.ps.splice(i,1);continue}
-      const X=cx+Math.cos(p.a)*p.rad,Y=cy+Math.sin(p.a)*p.rad*.9,fl=Math.sin(e/90+p.ph);x.fillStyle=p.c;x.fillRect(Math.round(X),Math.round(Y),fl>0?2:1,fl>0?1:2)}
+      const X=cx+Math.cos(p.a)*p.rad,Y=cy+Math.sin(p.a)*p.rad*.9,fl=Math.sin(e/90+p.ph);x.fillStyle=p.c;x.fillRect(q4(X),q4(Y),fl>0?2:1,fl>0?1:2)}
     for(const q of V.rings){q.t+=dt;ring(cx,cy,6+q.t*90,'#ff6d8a',Math.max(1,3-q.t*6),.8-q.t*1.6)}V.rings=V.rings.filter(q=>q.t<.5);
     const gr=7+u*10+V.thump*14;x.fillStyle=rad(cx,cy,0,gr,[[0,'rgba(255,190,210,.9)'],[.5,'rgba(255,109,138,.45)'],[1,'rgba(255,109,138,0)']]);x.globalAlpha=A(.4+.45*u+.3*V.thump);x.fillRect(cx-gr,cy-gr,gr*2,gr*2);x.globalAlpha=1;x.globalCompositeOperation='source-over'};
   const chg5=(cx,cy,u,e,dt,now)=>{const dk=.9*Math.min(1,u*1.8);
@@ -6253,7 +6258,7 @@ function grStart(el,r,dur){const D=3,w=Math.ceil(innerWidth/D),h=Math.ceil(inner
     x.globalCompositeOperation='lighter';
     const ra=Math.min(1,u*1.4);for(let i=0;i<14;i++)ray(cx,cy,e/1000*.35+i*TAU/14,R0*(.5+.5*ra),.07,`rgba(255,214,94,${((.05+.11*u)*ra).toFixed(3)})`);
     const pd=ease((u-.04)/.4),by=cy*pd,bw=3+9*ease(u);
-    if(pd>0){for(const[m,a]of[[2.4,.1],[1.4,.18],[.55,.5]]){const ww=bw*m;x.fillStyle=a>.4?`rgba(255,246,200,${a*(.5+.5*u)})`:`rgba(255,214,94,${a*(.5+.5*u)})`;x.fillRect(Math.round(cx-ww/2),0,Math.round(ww),Math.round(by))}
+    if(pd>0){for(const[m,a]of[[2.4,.1],[1.4,.18],[.55,.5]]){const ww=bw*m;x.fillStyle=a>.4?`rgba(255,246,200,${a*(.5+.5*u)})`:`rgba(255,214,94,${a*(.5+.5*u)})`;x.fillRect(q4(cx-ww/2),0,q4(ww),q4(by))}
       if(Rn()<dt*40)V.ps.push({X:cx+(Rn()-.5)*bw,Y:by,vy:-(20+Rn()*30),t:0,life:1.2,c:Rn()<.5?'#fff3b8':'#ffd45e'})}
     if(Rn()<dt*(20+60*u))V.ps.push({X:Rn()*w,Y:h+2,vy:-(18+Rn()*28),vx:(Rn()-.5)*6,t:0,life:3,c:Rn()<.6?'#ffb23e':'#ffe08a'});
     for(let i=V.ps.length-1;i>=0;i--){const p=V.ps[i];p.t+=dt;p.Y+=p.vy*dt;p.X+=(p.vx||0)*dt;if(p.t>p.life||p.Y<-2){V.ps.splice(i,1);continue}x.globalAlpha=A((1-p.t/p.life)*(.6+.4*Math.sin(now/60+i)));dot(p.X,p.Y,p.c)}x.globalAlpha=1;
@@ -6293,11 +6298,11 @@ function grStart(el,r,dur){const D=3,w=Math.ceil(innerWidth/D),h=Math.ceil(inner
     if(r===7)for(const j of[0,.08,.16]){const kk=k-j;if(kk>0&&kk<1)ring(cx,cy,kk*R0*1.3,j===.08?'#3a0e86':'#c8a8ff',Math.max(1,5*(1-kk)),1-kk)}
     for(const b of V.bs){b.vx*=Math.pow(b.dr,dt);b.vy=b.vy*Math.pow(b.dr,dt)+b.g*dt;if(b.k==='void'&&k>.7){b.vx+=(cx-b.x)*.7*dt;b.vy+=(cy-b.y)*.7*dt}
       b.x+=b.vx*dt;b.y+=b.vy*dt;const a=1-k/b.life;if(a<=0)continue;x.globalAlpha=A(a*1.4);
-      if(b.k==='petal'){b.x+=Math.sin(now/300+b.ph)*12*dt;const f=Math.sin(now/90+b.ph);x.fillStyle=b.c;x.fillRect(Math.round(b.x),Math.round(b.y),f>0?2:1,f>0?1:2)}
-      else if(b.k==='coin'){const cw=[3,2,1,2][((now/90+b.ph*3)|0)%4],X=Math.round(b.x-cw/2),Y=Math.round(b.y);x.globalCompositeOperation='source-over';x.fillStyle='#b07a14';x.fillRect(X,Y,cw,3);x.fillStyle='#f4c54f';x.fillRect(X,Y,Math.max(1,cw-1),2);if(cw>1){x.fillStyle='#fff3b8';x.fillRect(X,Y,1,1)}x.globalCompositeOperation='lighter'}
+      if(b.k==='petal'){b.x+=Math.sin(now/300+b.ph)*12*dt;const f=Math.sin(now/90+b.ph);x.fillStyle=b.c;x.fillRect(q4(b.x),q4(b.y),f>0?2:1,f>0?1:2)}
+      else if(b.k==='coin'){const cw=[3,2,1,2][((now/90+b.ph*3)|0)%4],X=q4(b.x-cw/2),Y=q4(b.y);x.globalCompositeOperation='source-over';x.fillStyle='#b07a14';x.fillRect(X,Y,cw,3);x.fillStyle='#f4c54f';x.fillRect(X,Y,Math.max(1,cw-1),2);if(cw>1){x.fillStyle='#fff3b8';x.fillRect(X,Y,1,1)}x.globalCompositeOperation='lighter'}
       else if(b.k==='shard'){const s=2+(Math.sin(now/70+b.ph)>0?1:0);x.fillStyle=`hsl(${(b.hu+k*120)%360},95%,64%)`;x.beginPath();x.moveTo(b.x,b.y-s);x.lineTo(b.x+s,b.y+s);x.lineTo(b.x-s,b.y+s);x.fill()}
-      else if(b.k==='conf'){x.fillStyle=`hsl(${(b.hu+k*120)%360},95%,64%)`;x.fillRect(Math.round(b.x),Math.round(b.y),b.s,b.s)}
-      else{x.fillStyle=b.c;x.fillRect(Math.round(b.x),Math.round(b.y),b.s,b.s)}}
+      else if(b.k==='conf'){x.fillStyle=`hsl(${(b.hu+k*120)%360},95%,64%)`;x.fillRect(q4(b.x),q4(b.y),b.s,b.s)}
+      else{x.fillStyle=b.c;x.fillRect(q4(b.x),q4(b.y),b.s,b.s)}}
     x.globalAlpha=1;x.globalCompositeOperation='source-over';if(r===7&&!soft&&k<.6&&Rn()<.3)glitch(2)};
   const step=now=>{if(V.stop)return;const dt=Math.min(.05,(now-V.last)/1000);V.last=now;const[cx,cy]=ctr();x.clearRect(0,0,w,h);
     if(!V.boom){const e=now-V.t0,u=Math.min(1,e/dur);if(r===4)chg4(cx,cy,u,e,dt);else if(r===5)chg5(cx,cy,u,e,dt,now);else if(r===6)chg6(cx,cy,u,e,dt);else chg7(cx,cy,u,e,dt)}
@@ -11233,7 +11238,7 @@ function frame(t){
   tick(dt);draw();guideTick();
 }
 /* versões novas: quando o jogo muda no servidor, guarda o progresso e recarrega a página */
-const BUILD='74d6d712f6d5',UKEY='tapmoss.upd';const UPD={on:false,go:false,at:0};
+const BUILD='fd8c81da412f',UKEY='tapmoss.upd';const UPD={on:false,go:false,at:0};
 // the new version downloads in the background while the game goes on; the reload only comes once the whole page is here,
 // so a slow network never leaves a half-built page on screen. The offline helper (sw.js) hands this copy over at the reload.
 const NEXTC='tapmoss-next',pgKey=()=>{let p=location.pathname.replace(/index\.html$/,'');if(!p.endsWith('/'))p+='/';return p};
