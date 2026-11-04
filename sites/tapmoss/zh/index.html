@@ -8643,35 +8643,67 @@ const paPal=t=>({...IC.shovel[1],...PA_T[t].pal});
 // shovels at 4× (48×48), louder as they go up: plain iron, riveted bronze, engraved silver, a golden spade with a gem, then blades
 // made of emerald, ruby (a heart), sapphire waves, diamond, a rainbow, obsidian with lava and flames, a night sky full of stars, a rift
 const PAHD=new Map(),PAURL=new Map();
-function paHD(t){let c=PAHD.get(t);if(c)return c;const P=PA_T[t],pal=P.pal,h=v=>hex(v),M=h(pal.M),m=h(pal.m),HL=h(pal.H),SD=h(pal.S),WD=pal.W?h(pal.W):[122,82,46],wd=pal.w?h(pal.w):[84,54,28],fx=P.fx;
-  const N=48;c=document.createElement('canvas');c.width=N;c.height=N;const X=c.getContext('2d'),img=X.createImageData(N,N),d=img.data,L=(a,b,k)=>[a[0]+(b[0]-a[0])*k,a[1]+(b[1]-a[1])*k,a[2]+(b[2]-a[2])*k];
-  const set=(x,y,col,a)=>{if(x<0||y<0||x>=N||y>=N)return;const j=(y*N+x)<<2,al=a==null?1:a;d[j]=d[j]*(1-al)+col[0]*al;d[j+1]=d[j+1]*(1-al)+col[1]*al;d[j+2]=d[j+2]*(1-al)+col[2]*al;d[j+3]=Math.max(d[j+3],al*255)};
-  // u runs along the shovel from the grip (top right, u<0) to the tip of the blade (bottom left, u>0), v across it
-  const UV=(x,y)=>{const dx=x+.5-24,dy=y+.5-24;return[(-dx+dy)*.7071,(dx+dy)*.7071]};
-  const glow=(u0,R,col,a)=>{for(let y=0;y<N;y++)for(let x=0;x<N;x++){const[u,v]=UV(x,y),r=Math.hypot(u-u0,v)/R;if(r<1){const j=(y*N+x)<<2;if(d[j+3]<30){d[j]=col[0];d[j+1]=col[1];d[j+2]=col[2];d[j+3]=Math.max(d[j+3],(1-r)*(1-r)*a*255)}}}};
-  if(t>=4)glow(13,16+t*.6,fx,.22+t*.02);
-  // the blade: a spade whose width along u is w(u); its shape changes with the strength
-  const bw=u=>{const q=(u-3)/18;if(q<0||q>1)return -1;if(t===5)return 9.5*Math.sqrt(Math.max(0,Math.sin(Math.PI*Math.min(1,q*1.2))))*(1-q*.25)+(q<.45?Math.abs(Math.sin(q*7))*2:0);if(t>=3)return 9*Math.sin(Math.PI*Math.min(1,q*.9+.1))*(q>.75?(1-q)*4:1);return 8.5*(q<.8?1:(1-q)*5)};
-  for(let y=0;y<N;y++)for(let x=0;x<N;x++){const[u,v]=UV(x,y),w=bw(u);if(w<=0||Math.abs(v)>w)continue;const e=(w-Math.abs(v)),q=(u-3)/18;
-    let k=.55-v/w*.3+(e<1.2?-.25:0)+(Math.abs(v)<1.2&&q<.7?.18:0);let col=L(SD,L(m,M,clamp(k*1.4,0,1)),clamp(k*1.6,0,1));
-    if(t===8)col=L([(Math.sin(u*.45)*.5+.5)*255,(Math.sin(u*.45+2.1)*.5+.5)*255,(Math.sin(u*.45+4.2)*.5+.5)*255],[255,255,255],clamp(k-.4,0,.5));
-    if(t===4||t===5||t===7){const f=Math.floor((u+v*1.7)/3.2)+Math.floor((u-v*1.7)/3.2);col=L(col,(f&1)?HL:SD,.28)}
-    if(t===6&&Math.abs(Math.sin(u*.9+v*.4))<.18)col=L(col,HL,.6);
-    if(t===2&&Math.abs(Math.abs(v)-w*.55)<.5&&q<.8)col=L(col,HL,.6);
-    if(t===9){const n=Math.abs(tnz(x*6+3,y*6)-.5);col=L([40,10,8],[90,24,16],k);if(n<.05)col=[255,170,60];else if(n<.09)col=[220,70,30]}
-    if(t>=10){col=L(SD,m,clamp(k,0,1));if(th(x*3,y*5+t)<.06)col=[255,255,255];if(t===11){const r=Math.hypot(u-12,v);col=r<4?[4,2,10]:r<5.4?L(HL,[255,255,255],.3):col}}
-    if(e<.9)col=L(col,[255,255,255],k>.5&&v<0?.35:0);set(x,y,col)}
-  // the neck and rivets, the handle, the grip
+// the shovels, drawn at 4x along a frame like the pickaxes: a D grip, a wrapped shaft, a collar and a blade whose shape,
+// carving and gems grow with the tier (round spade, pointed, heart, engraved gold, faceted gem, serrated ruby, winged sapphire,
+// diamond shards, a prism, an obsidian blade split by lava, a night sky with a crescent, and the void with its ring)
+const PAD=[
+  {sh:'round',hd:'wood'},{sh:'point',hd:'wood',rv:1,wrap:1},{sh:'heart',hd:'wood',wrap:1,fuller:1},{sh:'heart',hd:'gold',wrap:1,scroll:1,gem:[232,58,90],rings:1},
+  {sh:'heart',hd:'gold',facet:1,gem:1,rings:1,pom:1},{sh:'serr',hd:'dark',gem:1,rings:1,pom:1,fuller:1},{sh:'wing',hd:'silver',gem:1,rings:1,pom:1,scroll:1},
+  {sh:'shard',hd:'silver',facet:1,gem:1,rings:1,pom:1},{sh:'heart',hd:'prism',prism:1,gem:1,rings:1,pom:1,wing:1},{sh:'flame',hd:'dark',lava:1,gem:[255,190,60],rings:1,pom:1,horns:1},
+  {sh:'heart',hd:'night',stars:1,moon:1,gem:1,rings:1,pom:1,wing:1},{sh:'heart',hd:'void',vring:1,gem:[200,170,255],rings:1,pom:1,horns:1,wing:1}];
+function paHD(t){let c=PAHD.get(t);if(c)return c;const P=PA_T[t],D=PAD[t]||PAD[0],pal=P.pal,h=v=>hex(v),fx=P.fx;
+  const N=64;c=document.createElement('canvas');c.width=N;c.height=N;const X=c.getContext('2d'),img=X.createImageData(N,N),d=img.data;
+  const BY=[0,8,2,10,12,4,14,6,3,11,1,9,15,7,13,5].map(x=>(x+.5)/16),ramp=(rp,I,x,y)=>{I=clamp(I,0,.999);const f=I*(rp.length-1),i=Math.floor(f);return rp[Math.min(rp.length-1,i+((f-i)>BY[((y&3)<<2)|(x&3)]?1:0))]};
+  const MET=[h(pal.S),h(pal.m),h(pal.M),h(pal.H),[255,255,255]];
+  const HND={wood:[[58,34,16],[90,56,28],[124,82,44],[160,112,64]],gold:[[110,70,12],[170,116,26],[222,170,52],[255,226,130]],dark:[[22,16,20],[40,30,36],[62,48,56],[92,74,82]],
+    silver:[[80,88,100],[130,140,156],[186,196,210],[236,242,250]],prism:[[90,60,160],[150,90,220],[220,120,220],[255,200,240]],night:[[20,16,52],[40,30,96],[70,54,150],[120,100,210]],void:[[16,8,30],[34,16,60],[64,32,110],[120,80,190]]}[D.hd];
+  const GLD=[[110,70,12],[170,116,26],[222,170,52],[255,226,130],[255,248,210]];
+  const z=new Float32Array(N*N).fill(-1);const put=(x,y,col,zz,a)=>{x|=0;y|=0;if(x<0||y<0||x>=N||y>=N)return;const k=y*N+x;if(zz<z[k])return;z[k]=zz;const j=k<<2;d[j]=col[0];d[j+1]=col[1];d[j+2]=col[2];d[j+3]=255*(a==null?1:a)};
+  // u along the shovel from the grip (top right) to the tip (bottom left), v across it (v<0 is the side towards the light)
+  const UV=(x,y)=>{const dx=x+.5-32,dy=y+.5-32;return[(-dx+dy)*.7071+30,(dx+dy)*.7071]};
+  const q0=33,q1=62,bw=u=>{const q=(u-q0)/(q1-q0);if(q<0||q>1)return-1;
+    switch(D.sh){case'round':return q<.72?9.5:9.5*Math.sqrt(Math.max(0,1-((q-.72)/.28)**2));case'point':return q<.45?9.5:9.5*(1-(q-.45)/.55);
+      case'serr':return 10.5*Math.pow(Math.sin(Math.PI*(.14+.86*q)),.6)+((Math.floor(q*11)%2)&&q>.1&&q<.85?1.6:0);
+      case'wing':return 10*Math.pow(Math.sin(Math.PI*(.14+.86*q)),.6)+(q<.3?5*(1-q/.3):0);
+      case'shard':return 10*Math.pow(Math.sin(Math.PI*(.14+.86*q)),.6)+([.3,.52,.72].some(k=>Math.abs(q-k)<.05)?4.5*(1-Math.abs(q-[.3,.52,.72].reduce((a,k)=>Math.abs(q-k)<Math.abs(q-a)?k:a))/.05):0);
+      case'flame':return 10*Math.pow(Math.sin(Math.PI*(.14+.86*q)),.6)+Math.max(0,Math.sin(q*18))*1.8*q;
+      default:return 10.5*Math.pow(Math.sin(Math.PI*(.14+.86*q)),.6)}};
+  // a soft aura behind the strong ones
+  if(t>=4)for(let y=0;y<N;y++)for(let x=0;x<N;x++){const[u,v]=UV(x,y),r=Math.hypot(u-47,v)/(18+t);if(r<1){const j=(y*N+x)<<2;d[j]=fx[0];d[j+1]=fx[1];d[j+2]=fx[2];d[j+3]=(1-r)*(1-r)*(.2+t*.015)*255}}
   for(let y=0;y<N;y++)for(let x=0;x<N;x++){const[u,v]=UV(x,y);
-    if(u>-19&&u<4&&Math.abs(v)<1.8){const k=.5-v*.22;set(x,y,t>=9?L(wd,WD,k):L(L(wd,WD,k),[150,110,70],th(x*2,y*9)*.15))}
-    if(u>=1.5&&u<5&&Math.abs(v)<2.8)set(x,y,L(SD,M,.6-v*.12));
-    if(u>-23&&u<-18&&Math.abs(v)<4.2&&!(u>-21.6&&u<-19.4&&Math.abs(v)<2.6))set(x,y,L(SD,t>=3?HL:M,.5-v*.1))}
-  if(t>=1)for(const v of[-1.6,1.6]){const u=3.2,x=Math.round(24+(-u+v)*.7071-.5),y=Math.round(24+(u+v)*.7071-.5);set(x,y,HL)}
-  if(t===3||t>=9){const u=-20.5,x=Math.round(24-u*.7071-.5),y=Math.round(24+u*.7071-.5);for(const[dx,dy]of[[0,0],[1,0],[0,1],[1,1]])set(x+dx,y+dy,t===3?[232,58,90]:HL)}
-  if(t===9)for(let y=0;y<16;y++)for(let x=0;x<24;x++){const[u,v]=UV(x,y+20),fl=tnz(x*9,y*13)*1.1-Math.abs(v)/10-(u<6?1:0);if(fl>.6&&u>4)set(x,y+20,fl>.8?[255,230,120]:[255,120,40],.75)}
-  if(t>=7)for(let i=0;i<5;i++){const a=i*1.26+t,x=Math.round(14+Math.cos(a)*14),y=Math.round(34+Math.sin(a)*11);set(x,y,[255,255,255],.9);set(x+1,y,HL,.5);set(x-1,y,HL,.5);set(x,y+1,HL,.5);set(x,y-1,HL,.5)}
+    // the blade
+    const w=bw(u);if(w>0&&Math.abs(v)<=w){const q=(u-q0)/(q1-q0),s=v/w,edge=w-Math.abs(v)<1.3,cx=Math.abs(v)<1.1&&q>.08&&q<.8&&D.fuller;
+      let I=.5-s*.3-q*.1+(edge?.2:0)-(cx?.2:0),col;
+      if(D.facet){const a=Math.atan2(v,(u-47)*1.4),f=Math.floor((a+Math.PI)/(Math.PI/3));I+=(f%2?.14:-.06)+(f%3===0?.08:0)}
+      if(D.scroll&&!edge){const sc=Math.abs(Math.sin(u*.9)*3.4-v);if(sc<.6&&q>.15&&q<.8)I-=.24}
+      col=ramp(MET,I,x,y);
+      if(D.prism){const hh=((u*9+v*7)%360+360)%360,k=hh/60,f=k-Math.floor(k),cs=[[255,90,120],[255,200,70],[120,240,120],[80,200,255],[150,110,255],[255,110,220]];const a=cs[Math.floor(k)%6],b=cs[(Math.floor(k)+1)%6];col=[a[0]+(b[0]-a[0])*f,a[1]+(b[1]-a[1])*f,a[2]+(b[2]-a[2])*f].map(v=>v*(.75+I*.45))}
+      if(D.lava){const n=tnz(x*5,y*5),cr=Math.abs(n-.5)<.06;col=cr?[255,140+(n*200|0)%100,40]:ramp([[14,8,10],[28,16,18],[46,28,28],[72,44,40],[110,64,52]],I,x,y);if(q>.82)col=[255,190+(q*200|0)%60,90]}
+      if(D.stars){col=ramp([[10,8,30],[18,14,52],[30,24,84],[48,40,120],[80,70,170]],I,x,y);if(hash2(x,y,t)<.05)col=[240,240,255]}
+      if(D.moon){const mr=Math.hypot(u-49,v+2),mr2=Math.hypot(u-47.6,v+3.4);if(mr<4.2&&mr2>3.6)col=[255,240,190]}
+      if(D.vring){const r=Math.hypot(u-48,v);col=ramp([[6,2,12],[14,6,26],[30,14,54],[54,28,92],[90,56,150]],I,x,y);if(r<4.4)col=[0,0,0];else if(r<6)col=r<5.2?[226,206,255]:[150,110,230]}
+      put(x,y,col,10)}
+    // the collar between shaft and blade
+    if(u>=29.5&&u<=33.5&&Math.abs(v)<=4.6-(u<30.5||u>32.5?1:0)){const I=.62-v/4.6*.3+(u>32.5?-.1:0);put(x,y,ramp(t>=3?GLD:MET,I,x,y),12)}
+    // the shaft, wrapped and ringed; the D grip at the end
+    if(u>=6&&u<29.5&&Math.abs(v)<=1.8){let I=.6-v/1.8*.32;const wr=D.wrap&&u>8&&u<17&&((u*2|0)%3===0);if(wr)I-=.22;let col=ramp(HND,I,x,y);
+      if(D.rings&&(Math.abs(u-12)<.8||Math.abs(u-24)<.8))col=ramp(GLD,I+.1,x,y);put(x,y,col,8)}
+    if(u>=0&&u<6.5&&Math.abs(v)<=5.2&&!(u>1.6&&u<4.8&&Math.abs(v)<3)){const I=.6-v/5.2*.3+(u<1?.12:0);put(x,y,ramp(t>=3?GLD:HND,I,x,y),9)}}
+  // a gem in the collar or the blade, and one on the grip of the strong ones
+  const gemAt=(u0,v0,r,gc)=>{for(let y=0;y<N;y++)for(let x=0;x<N;x++){const[u,v]=UV(x,y),dd=Math.hypot(u-u0,v-v0)/r;if(dd>1)continue;const I=.7-(v-v0)/r*.3-(u-u0)/r*.15;put(x,y,dd<.35&&v<v0?[255,255,255]:gc.map(c=>Math.min(255,c*(.55+I*.6))),14)}};
+  if(D.gem){const gc=Array.isArray(D.gem)?D.gem:fx;gemAt(D.vring?38:37,0,2.8,gc)}
+  if(D.pom)gemAt(0,0,2.4,Array.isArray(D.gem)?D.gem:fx);
+  // little wings on the collar, horns at the shoulders of the blade
+  if(D.wing||D.horns)for(let y=0;y<N;y++)for(let x=0;x<N;x++){const[u,v]=UV(x,y),av=Math.abs(v);
+    if(D.wing&&u>25&&u<33&&av>4&&av<4+(u-25)*1.1&&av<12){const I=.75-(u-25)/8*.3+(v<0?.1:-.1);put(x,y,ramp(t>=8?GLD:MET,I,x,y),11)}
+    if(D.horns&&u>28&&u<34&&av>9&&av<9+(34-u)*.9&&((u-28)*1.2+(av-9))<8){put(x,y,ramp([[30,24,22],[60,50,44],[100,90,80],[160,150,136],[220,212,196]],.4+(34-u)*.08,x,y),11)}}
+  // sparkles on the shine of the best ones
+  if(t>=7)for(let i=0;i<6;i++){const a=i*1.05+t,x=Math.round(20+Math.cos(a)*16),y=Math.round(44+Math.sin(a)*12);for(const[dx,dy,al]of[[0,0,1],[1,0,.55],[-1,0,.55],[0,1,.55],[0,-1,.55]]){const j=((y+dy)*N+x+dx)<<2;if(x+dx<0||y+dy<0||x+dx>=N||y+dy>=N)continue;if(d[j+3]<200){d[j]=255;d[j+1]=255;d[j+2]=255;d[j+3]=al*230}}}
+  // a soft dark rim round the shovel so it reads on any ground
+  const A=new Uint8ClampedArray(d);for(let y=0;y<N;y++)for(let x=0;x<N;x++){const j=(y*N+x)<<2;if(z[y*N+x]>=0)continue;let n=0;for(const[dx,dy]of[[1,0],[-1,0],[0,1],[0,-1]]){const xx=x+dx,yy=y+dy;if(xx>=0&&yy>=0&&xx<N&&yy<N&&z[yy*N+xx]>=0)n++}
+    if(n){const a=Math.max(A[j+3],120);d[j]=d[j]*.3;d[j+1]=d[j+1]*.3;d[j+2]=d[j+2]*.32;d[j+3]=a}}
   X.putImageData(img,0,0);PAHD.set(t,c);return c}
-const paSvg=(t,cls)=>{let u=PAURL.get(t);if(!u){u=paHD(t).toDataURL();PAURL.set(t,u)}return`<svg class="pxi ${cls||''}${PA_T[t].chr?' chr4':''}" viewBox="0 0 48 48" aria-hidden="true"><image href="${u}" width="48" height="48" style="image-rendering:pixelated"/></svg>`};
+const paSvg=(t,cls)=>{let u=PAURL.get(t);if(!u){u=paHD(t).toDataURL();PAURL.set(t,u)}return`<svg class="pxi ${cls||''}${PA_T[t].chr?' chr4':''}" viewBox="0 0 64 64" aria-hidden="true"><image href="${u}" width="48" height="48" style="image-rendering:pixelated"/></svg>`};
 const PA_COST=[25e3,1e6,4e7,15e8,6e10,25e11,1e14,5e15,2e17,1e19],PA_EM=50,paEmT=t=>t===PA_T.length-2,paCost=t=>paEmT(t)?0:PA_COST[clamp(t|0,0,PA_COST.length-1)],paCan=t=>paEmT(t)?(S.em||0)>=PA_EM:S.coins>=paCost(t);
 const shovelCd=()=>[8,5,3][Math.min(2,perk('pa'))]*60000*(1-.03*paT());
 const shovelAtNow=()=>(SC().sh||0);
@@ -11429,7 +11461,7 @@ function frame(t){
   tick(dt);draw();guideTick();
 }
 /* versões novas: quando o jogo muda no servidor, guarda o progresso e recarrega a página */
-const BUILD='9a79302fcd94',UKEY='tapmoss.upd';const UPD={on:false,go:false,at:0};
+const BUILD='92f76a2d3e7d',UKEY='tapmoss.upd';const UPD={on:false,go:false,at:0};
 // the new version downloads in the background while the game goes on; the reload only comes once the whole page is here,
 // so a slow network never leaves a half-built page on screen. The offline helper (sw.js) hands this copy over at the reload.
 const NEXTC='tapmoss-next',pgKey=()=>{let p=location.pathname.replace(/index\.html$/,'');if(!p.endsWith('/'))p+='/';return p};
