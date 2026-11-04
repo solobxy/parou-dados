@@ -2854,10 +2854,36 @@ function drawHDOcc(map,rgb,x0,y0,w,fl,fy,am,rk,nat,big){
   const cx0=Math.floor(left),cx1=Math.ceil(left+cw/4),cy0=Math.floor(top),cy1=Math.ceil(top+ch/4);
   for(let cy=cy0;cy<cy1;cy++){if(cy<0||cy>=H)continue;for(let cx=cx0;cx<cx1;cx++){if(cx<0||cx>=W)continue;if(dep[cy*W+cx]>fy)OCX.clearRect((cx-left)*4,(cy-top)*4,4,4)}}
   lowX.drawImage(OCS,0,0,cw,ch,left,top,cw/4,ch/4)}
+// the dragon pets: the abyss dragon's body in their own colours, perched pose (wings folded), drawn at half its size
+const DRG_PAL={
+  dragao:{sc:['#160404','#2a0808','#440e0c','#621610','#842218','#a83622','#cc5432'],belly:['#3a1c08','#5e300e','#845016','#a8701e','#cc962e','#ecc04a'],mem:['#200406','#36080a','#540e10','#741816','#94241c','#b43a24']},
+  dragaogelo:{sc:['#081220','#0e1e34','#16304e','#22466c','#34628e','#4e84b4','#78acd8'],belly:['#2e3c4c','#4a5c6e','#68808e','#8ca4b4','#b2c8d6','#dcecf6'],mem:['#0a1426','#12223c','#1c3658','#284e78','#386a98','#4e86b8'],lava:['#0a3060','#1a5ea0','#3a94dc','#6cc4ff','#a8e2ff','#e0f6ff','#ffffff']},
+  dragaodourado:{sc:['#241604','#3e2808','#5e3e0c','#825a12','#a87a1c','#d0a032','#f2cc5c'],belly:['#4a3a20','#6e5830','#947a46','#baa064','#dcc88c','#f6ecc4'],mem:['#2a1404','#44220a','#643410','#864c16','#a8661e','#c8862c'],lava:['#7a4a08','#c08014','#f0b030','#ffd460','#ffeca0','#fff8d8','#ffffff']},
+  dragaovazio:{sc:['#05030a','#0c0716','#150c24','#201234','#2c1a48','#3c2462','#543682'],belly:['#140a20','#221232','#321a48','#442460','#58307a','#703e96'],mem:['#08040e','#12081e','#1e0c32','#2c124a','#3c1a64','#522682'],lava:['#28084e','#481894','#7836d8','#a466ff','#cca2ff','#ecdcff','#ffffff']}};
+const DRGP=new Map();
+function drgPetArt(id,pose,ch,st){const k=id+'|'+pose+'|'+(ch||0)+'|'+(st||0);let A=DRGP.get(k);if(A)return A;
+  const r=drgArt(pose,DRG_PAL[id]);if(ch)for(let i=0;i<r.px.length;i+=4){if(!r.px[i+3])continue;const c=chromaRgb([r.px[i],r.px[i+1],r.px[i+2]],ch,'a',st);r.px[i]=c[0];r.px[i+1]=c[1];r.px[i+2]=c[2]}
+  const full=document.createElement('canvas');full.width=r.w;full.height=r.h;const fx=full.getContext('2d'),im=fx.createImageData(r.w,r.h);im.data.set(r.px);fx.putImageData(im,0,0);
+  const w=Math.ceil(r.w/2),h=Math.ceil(r.h/2),cv=document.createElement('canvas');cv.width=w;cv.height=h;const x=cv.getContext('2d');x.imageSmoothingEnabled=true;x.imageSmoothingQuality='high';x.drawImage(full,0,0,w,h);
+  A={cv,w,h,eye:[r.eye[0]/2,r.eye[1]/2],mouth:[r.mouth[0]/2,r.mouth[1]/2]};DRGP.set(k,A);if(DRGP.size>60)DRGP.delete(DRGP.keys().next().value);return A}
+// drawn like the other pets: tinted by the scene's light, cut where something stands in front of it
+function drawDrgPet(id){const P=PETS[id],c=curPch(),st=PCH_CYC(c)&&!RM?Math.floor(performance.now()/160)%6:0,pose=PET.mv&&!RM?(Math.floor(PET.t*5)%2?'rest2':'rest'):'rest',A=drgPetArt(id,pose,c,st);
+  const fy=Math.round(PET.y),hop=PET.mv&&!RM?-Math.round(Math.abs(Math.sin(PET.t*7))*1.5):0,bw=A.w/4,bh=A.h/4,x0=Math.round((PET.x-bw/2)*4)/4,y0=fy+1-bh+hop,am=mix(env.amb,[1,1,1],.28),fl=PET.fl;
+  lowX.fillStyle='rgba(10,14,8,.26)';for(let dx=-9;dx<=9;dx++){const x=Math.round(PET.x)+dx,i=(fy+1)*W+x;if(x>=0&&x<W&&fy+1<H&&dep[i]<=fy)lowX.fillRect(x,fy+1,1,1)}
+  OCX.clearRect(0,0,A.w,A.h);OCX.save();if(fl){OCX.translate(A.w,0);OCX.scale(-1,1)}OCX.drawImage(A.cv,0,0);OCX.restore();
+  OCX.globalCompositeOperation='multiply';OCX.fillStyle=`rgb(${Math.min(255,am[0]*255)|0},${Math.min(255,am[1]*255)|0},${Math.min(255,am[2]*255)|0})`;OCX.fillRect(0,0,A.w,A.h);OCX.globalCompositeOperation='destination-in';
+  OCX.save();if(fl){OCX.translate(A.w,0);OCX.scale(-1,1)}OCX.drawImage(A.cv,0,0);OCX.restore();OCX.globalCompositeOperation='source-over';
+  for(let cy=Math.floor(y0);cy<Math.ceil(y0+bh);cy++){if(cy<0||cy>=H)continue;for(let cx=Math.floor(x0);cx<Math.ceil(x0+bw);cx++){if(cx<0||cx>=W)continue;if(dep[cy*W+cx]>fy)OCX.clearRect((cx-x0)*4,(cy-y0)*4,4,4)}}
+  lowX.drawImage(OCS,0,0,A.w,A.h,x0,y0,bw,bh);
+  // an accessory sits on top of the head
+  {const pa=!visiting&&S&&S.pt&&ptOpen()?ptAct():null,AC=accOf(pa);if(AC){const ex=fl?A.w-A.eye[0]:A.eye[0],ax=x0+ex/4,ay=y0+(A.eye[1]-7)/4,s=1,aw=AC.om[0].length*.5*s*2,ah=AC.om.length*.5*s*2;const[rgb,rk]=accRgb(AC);
+    drawHDOcc(AC.om,rgb,Math.round((ax-aw/2)*2)/2,Math.round((ay-ah+(AC.halo?-1.5:1))*2)/2,aw,fl,fy,am,'a'+AC.id+rk,!!P.hd,true);PET.acc={x:ax,y:ay-ah,A:AC}}else PET.acc=null}
+  {const tn=performance.now(),dt=Math.min(.05,(tn-(PFX.lt||tn))/1000),pa=!visiting&&S&&S.pt&&ptOpen()?ptAct():null,AC=accOf(pa);PFX.lt=tn;
+    pfxSpawn(PFX.sc,c,AC,PET.acc?[PET.acc.x,PET.acc.y]:null,x0,y0,bw,bh,1,dt,PET.mv,tn/1000);pfxRun(PFX.sc,lowX,dt,1);if(c===7||c===11)pfxOrbit(lowX,x0+bw/2,y0+bh*.55,bw*.75,bh*.35,tn/1000,1)}}
 // dragons and the mythical ones are far bigger than the gardener
 const PET_BIG=new Set(['dragao','dragaogelo','dragaodourado','dragaovazio','fenix','alicornio','pegaso','unicornio','kitsune']);
 function drawPet(){
-  const id=curPet();if(!id||PET.x<0)return;const P=PETS[id],fi=PET.mv?(Math.floor(PET.t*7)%2):2,F=petFrame(P.F[fi],curPch());
+  const id=curPet();if(!id||PET.x<0)return;if(DRG_PAL[id]){drawDrgPet(id);return}const P=PETS[id],fi=PET.mv?(Math.floor(PET.t*7)%2):2,F=petFrame(P.F[fi],curPch());
   const BIG=PET_BIG.has(id)?2:1,hd=(P.hd?.5:1)*BIG,hop=P.fly?-7-(RM?0:Math.round(Math.sin(PET.t*4)*2)):P.hop&&PET.mv&&!RM?-Math.round(Math.abs(Math.sin(PET.t*9))*3):0,fy=Math.round(PET.y),x0=Math.round(PET.x)-Math.round(F.w*hd/2),y0=fy-Math.round(F.h*hd)+2+hop,am=mix(env.amb,[1,1,1],.28);
   lowX.fillStyle='rgba(10,14,8,.24)';for(let dx=-2*BIG;dx<=2*BIG;dx++){const x=Math.round(PET.x)+dx,i=(fy+1)*W+x;if(x>=0&&x<W&&fy+1<H&&dep[i]<=fy)lowX.fillRect(x,fy+1,1,1)}
   drawHDOcc(F.map,F.rgb,x0,y0,F.w*hd,PET.fl,fy,am,F.rk,!!P.hd,BIG>1);
@@ -9170,14 +9196,15 @@ const drgReady=()=>!!scene._drgSky&&!visiting&&now()>=(Number.isFinite(S.drgAt)?
 // bat wings with finger bones and ember-lit edges, a spined back and a bladed tail. Lit from the top left by the sky and
 // from below by the lava. Facing right. pose: 'up' | 'mid' | 'down' | 'glide' (flying) or 'rest' | 'rest2' | 'sleep' (perched).
 // Returns {w,h,px (RGBA, rows from the top), glow:[[x,y]...] (lava points for the effects), mouth:[x,y], eye:[x,y]}
-function drgArt(pose){
+function drgArt(pose,pal){
   const fly=pose==='up'||pose==='mid'||pose==='down'||pose==='glide',WD=fly?300:286,HT=fly?196:150,OY=fly?16:0,OX=fly?12:14,N=WD*HT;
   const hx=h=>[parseInt(h.slice(1,3),16),parseInt(h.slice(3,5),16),parseInt(h.slice(5,7),16)],R=a=>a.map(hx);
-  const SC=R(['#070506','#100a0c','#1a1013','#26181b','#342124','#462c2e','#5e3c3c']);
-  const BELLY=R(['#1e0e0c','#341712','#4e2216','#6c301c','#8c4224','#ad5a30']);
-  const MEM=R(['#120406','#20080b','#320c10','#481216','#621a1a','#80261e']);
+  let SC=R(['#070506','#100a0c','#1a1013','#26181b','#342124','#462c2e','#5e3c3c']);
+  let BELLY=R(['#1e0e0c','#341712','#4e2216','#6c301c','#8c4224','#ad5a30']);
+  let MEM=R(['#120406','#20080b','#320c10','#481216','#621a1a','#80261e']);
   const BONE=R(['#1e1a18','#36302a','#58504a','#82786c','#ada190','#d6ccb8','#f4ecdc']);
-  const LAVA=R(['#5a1004','#a02808','#e2480c','#ff7a1c','#ffb040','#ffe28a','#fff8dc']);
+  let LAVA=R(['#5a1004','#a02808','#e2480c','#ff7a1c','#ffb040','#ffe28a','#fff8dc']);
+  if(pal){if(pal.sc)SC=R(pal.sc);if(pal.belly)BELLY=R(pal.belly);if(pal.mem)MEM=R(pal.mem);if(pal.lava)LAVA=R(pal.lava)}
   const BY=[0,8,2,10,12,4,14,6,3,11,1,9,15,7,13,5].map(x=>(x+.5)/16);
   const ramp=(rp,I,x,y)=>{I=Math.max(0,Math.min(.999,I));const f=I*(rp.length-1),i=Math.floor(f);return rp[Math.min(rp.length-1,i+((f-i)>BY[((y&3)<<2)|(x&3)]?1:0))]};
   const L=[-.5,-.68,.53],lam=(nx,ny,nz)=>Math.max(0,nx*L[0]+ny*L[1]+nz*L[2]);
@@ -9659,7 +9686,12 @@ function chromaRgb(rgb,c,ch,step){if(!c||ch==='E'||ch==='k'||!rgb)return rgb;con
   const h=((step||0)*60+(c===3?l*120:l*300))%360,s=c===3?.55:.85,L=c===3?.45+l*.4:.4+l*.35,k=n=>{const a=s*Math.min(L,1-L),kk=(n+h/30)%12;return 255*(L-a*Math.max(-1,Math.min(kk-3,9-kk,1)))};return[k(0),k(8),k(4)]}
 const ptHex=c=>'#'+c.map(v=>clamp(Math.round(v),0,255).toString(16).padStart(2,'0')).join('');
 function ptPal(id,c){const P=PETS[id];if(!P)return{};if(!c)return P.pal;const o={};for(const k in P.pal){const v=P.pal[k];o[k]=v.startsWith('#')?ptHex(chromaRgb(hex(v),c,k,0)):v}return o}
-const ptSvg=(id,c,cls)=>{const P=PETS[id];if(!P)return'';return pxsvg(P.F[2].map,ptPal(id,c),(cls||'')+(P.hd?' nohd':''))};
+const PTSV=new Map();
+// the pet pictures in the menus: the dragons with their new body, the others smoothed like the rest of the interface
+const ptSvg=(id,c,cls)=>{const P=PETS[id];if(!P)return'';
+  if(DRG_PAL[id]){const k=id+'|'+(c|0)+'|'+(cls||'');let o=PTSV.get(k);if(o)return o;const A=drgPetArt(id,'rest',c|0,0);
+    o=`<svg class="pxi ${cls||''}" viewBox="0 ${-((A.w*.8-A.h)/2)} ${A.w} ${A.w*.8}" aria-hidden="true"><image href="${A.cv.toDataURL()}" width="${A.w}" height="${A.h}" style="image-rendering:pixelated"/></svg>`;PTSV.set(k,o);return o}
+  return pxsvg(P.F[2].map,ptPal(id,c),(cls||'')+(P.hd?' hd1':''))};
 // eggs drawn from rules: speckled shell in the colours of its tier
 function eggSvg(e,cr){const E=PEGG[e]||PEGG[0],m=['..kkk..','.kaaak.','kaabaak','kabaaak','kaaabak','kabaaak','kaaaaak','.kaaak.','..kkk..'];
   const crack=cr?['..kkk..','.kaaak.','kaakaak','kakaaak','kaaakak','kakaaak','kaaaaak','.kaaak.','..kkk..']:m;return pxsvg(crack,{k:'#2a2014',a:E.c[0],b:E.c[1]},'egg e'+e)}
@@ -11397,7 +11429,7 @@ function frame(t){
   tick(dt);draw();guideTick();
 }
 /* versões novas: quando o jogo muda no servidor, guarda o progresso e recarrega a página */
-const BUILD='ee019bfeae04',UKEY='tapmoss.upd';const UPD={on:false,go:false,at:0};
+const BUILD='9a79302fcd94',UKEY='tapmoss.upd';const UPD={on:false,go:false,at:0};
 // the new version downloads in the background while the game goes on; the reload only comes once the whole page is here,
 // so a slow network never leaves a half-built page on screen. The offline helper (sw.js) hands this copy over at the reload.
 const NEXTC='tapmoss-next',pgKey=()=>{let p=location.pathname.replace(/index\.html$/,'');if(!p.endsWith('/'))p+='/';return p};
