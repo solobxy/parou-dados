@@ -199,10 +199,15 @@
   function erro(msg, fich, l, c) {
     msg = corta(msg, 300); if (!msg) return;
     var k = msg + l; if (errosVistos[k] || fila.x.length >= 10) return; errosVistos[k] = 1;
-    fila.x.push({ m: msg, f: corta((fich || '').split('?')[0], 200), l: l || 0, c: c || 0 });
+    fila.x.push({ m: msg, f: corta(String(fich || '').split('?')[0], 200), l: l || 0, c: c || 0 });
   }
   w.addEventListener('error', function (ev) {
-    if (ev.target && ev.target !== w && ev.target.tagName) { var s = ev.target.src || ev.target.href || ''; if (s) erro('Não carregou: ' + ev.target.tagName.toLowerCase(), s, 0, 0); return; }
+    if (ev.target && ev.target !== w && ev.target.tagName) {
+      // num <image> de SVG o href é um objeto (SVGAnimatedString), não texto: lê-se o baseVal
+      var s = ev.target.src || ev.target.href || ''; if (s && typeof s !== 'string') s = s.baseVal || s.animVal || '';
+      s = String(s || ''); if (s.slice(0, 5) === 'data:') s = s.slice(0, 40);
+      if (s) erro('Não carregou: ' + ev.target.tagName.toLowerCase(), s, 0, 0); return;
+    }
     erro(ev.message, ev.filename, ev.lineno, ev.colno);
   }, true);
   w.addEventListener('unhandledrejection', function (ev) {
