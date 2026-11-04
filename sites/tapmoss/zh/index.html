@@ -2587,6 +2587,8 @@ const AVP={
     '...P.P....',
     '..OO.OO...']},
 };
+// walking towards us faces front; a jump made while walking sideways stays side on
+AVP.walkf={...AVP.stand,v:'f'};AVP.jumps={...AVP.jump,v:'s'};
 const AVO={// overlays relative to head anchor (hx=1 in body frame, hy per pose)
   hair:{
     curto:{f:[],s:[]},
@@ -3030,23 +3032,35 @@ function poseOf(pose,f){const D=PI/180,P={bd:40*D,lean:0,bob:0,tF:.07,tB:-.05,kF
   case'read':case'read2':Object.assign(P,{lean:.06,tF:1.45,kF:.05,tB:2.15,kB:2.45,ground:'seat',hold:pose==='read2'?'book2':'book',ikF:[9.5,5.5],ikB:[6.5,6.5],capeW:-.2});break;
   case'lie':Object.assign(P,{tF:.02,tB:-.02,kF:0,kB:0,sF:.04,eF:.06,sB:-.04,eB:.06,closed:true});break;
   case'wave':Object.assign(P,{bd:-75*D,tF:.17,tB:-.14,kF:.1,kB:.05,lean:.02,sF:2.35,eF:f%2?-.15:.5,sB:-.06,hairW:.3});break;
-  case'jump':Object.assign(P,{bd:-45*D,tF:.95,kF:1.55,tB:.35,kB:1.35,sF:2.55,eF:.3,sB:2.25,eB:.45,lean:-.05,capeW:1.6,hairW:1.4,air:1});break;
+  case'walkf':{const ph=f/8*2*PI,s=Math.sin(ph);Object.assign(P,{bob:-(Math.round(Math.abs(s)*1.2)),liftF:Math.max(0,s)*2.6,liftB:Math.max(0,-s)*2.6,capeW:.8+.4*Math.sin(ph*2),hairW:.5+.4*Math.sin(ph*2+1),sw:s});break}
+  case'jump':case'jumps':Object.assign(P,{bd:-45*D,tF:.95,kF:1.55,tB:.35,kB:1.35,sF:2.55,eF:.3,sB:2.25,eB:.45,lean:-.05,capeW:1.6,hairW:1.4,air:1});break;
   case'flute':Object.assign(P,{tF:.12,tB:-.12,kF:.06,kB:.04,lean:-.03,hold:'flute',ikF:[12.5,1.2],ikB:[8,-.8],hairW:f%2?.4:.1});break;
   case'water':Object.assign(P,{tF:.25,tB:-.12,kF:.12,kB:.04,lean:.1,hold:'can',ikF:[10.5,10.5],sB:-.1,eB:.3});break;
   case'mine':{const k=f%2;Object.assign(P,{tF:.2,tB:-.15,kF:.12,kB:.06,lean:.06,sF:.75,eF:.55,sB:-.1,eB:.4,bob:k*.5,breath:k});break}
   }
   return P}
-function rig(pose,f,B,opt){const P=poseOf(pose,f);if(opt&&opt.umb&&!P.hold&&pose!=='lie'){P.ikF=[8.5,4.5];P.sF=P.eF=0}const J={pose,f,P,B,bd:P.bd,lean:P.lean,breath:P.breath,hairW:P.hairW,capeW:P.capeW};
+// standing still, waving and jumping face the camera; walking and everything done with the hands keep the side view
+const FRONT=new Set(['idle','wave','jump','walkf']);
+function rig(pose,f,B,opt){const P=poseOf(pose,f),fr=FRONT.has(pose)&&!(opt&&opt.side);if(opt&&opt.umb&&!P.hold&&pose!=='lie'){P.ikF=fr?[8.8,5.8]:[8.5,4.5];P.sF=P.eF=0}
+  if(fr){// facing us: the body straight and even, the legs side by side, both arms at the sides
+    const k=P.breath||0;P.lean=0;P.tF=.035;P.tB=-.035;P.kF=P.kB=.02;
+    if(pose==='idle'){P.sF=.11+.025*k;P.eF=-.1;P.sB=-.11-.025*k;P.eB=.1}
+    else if(pose==='wave'){P.sF=2.55;P.eF=f%2?-.2:.45;P.sB=-.12;P.eB=.1;P.bd=-60*PI/180}
+    else if(pose==='walkf'){const s=P.sw||0;P.sF=.14+.06*s;P.eF=-.12-.22*Math.max(0,-s);P.sB=-.14+.06*s;P.eB=.12+.22*Math.max(0,s)}
+    else{P.sF=2.6;P.eF=.25;P.sB=-2.6;P.eB=-.25;P.tF=.25;P.tB=-.25;P.kF=P.kB=.5}}
+  const J={pose,f,P,B,front:fr,bd:P.bd,lean:P.lean,breath:P.breath,hairW:P.hairW,capeW:P.capeW};
   const pel=[CX,GY-(LEN.th+LEN.sh)-2.5+P.bob];J.pel=pel;
   const leg=(hx,ta,ka)=>{const hip=[pel[0]+hx,pel[1]],kn=[hip[0]+rot(ta,LEN.th)[0],hip[1]+rot(ta,LEN.th)[1]],an=[kn[0]+rot(ta-ka,LEN.sh)[0],kn[1]+rot(ta-ka,LEN.sh)[1]];return{hip,kn,an,ta,ka}};
-  J.lF=leg(B.hip*.5,P.tF,P.kF);J.lB=leg(-B.hip*.5,P.tB,P.kB);
+  const hx0=fr?B.hip*.6:B.hip*.5;J.lF=leg(hx0,P.tF,P.kF);J.lB=leg(-hx0,P.tB,fr?-P.kB:P.kB);
   // what touches the ground: the lower foot, a knee when kneeling, the seat when sitting
   let low=Math.max(J.lF.an[1],J.lB.an[1]);if(P.ground==='knee')low=Math.max(low,J.lF.kn[1]+2,J.lB.kn[1]+2.6);
   let dy=GY-2-low;if(P.ground==='seat')dy=GY-6-pel[1];if(P.air)dy-=1;
   for(const l of[J.lF,J.lB])for(const k of['hip','kn','an'])l[k][1]+=dy;pel[1]+=dy;
-  const nk=[pel[0]+Math.sin(P.lean)*LEN.torso+.5,pel[1]-Math.cos(P.lean)*LEN.torso-P.breath*.5];J.nk=nk;
-  J.head=[nk[0]+(Math.sin(P.lean)*6+1)*HS,nk[1]-6.5*HS];
-  J.shF=[nk[0]+B.sh*.42+Math.sin(P.lean),nk[1]+2.4];J.shB=[nk[0]-B.sh*.4,nk[1]+2];
+  // walking towards us: the leg that steps comes up, the knee forward (seen from the front it only gets shorter)
+  if(P.liftF||P.liftB)for(const[l,h]of[[J.lF,P.liftF],[J.lB,P.liftB]]){l.an[1]-=h;l.kn[1]-=h*.4}
+  const nk=[pel[0]+(fr?0:Math.sin(P.lean)*LEN.torso+.5),pel[1]-Math.cos(P.lean)*LEN.torso-P.breath*.5];J.nk=nk;
+  J.head=[nk[0]+(fr?.25:Math.sin(P.lean)*6+1)*HS,nk[1]-6.5*HS];
+  if(fr){J.shF=[nk[0]+B.sh*.47,nk[1]+2.3];J.shB=[nk[0]-B.sh*.47,nk[1]+2.3]}else{J.shF=[nk[0]+B.sh*.42+Math.sin(P.lean),nk[1]+2.4];J.shB=[nk[0]-B.sh*.4,nk[1]+2]}
   const arm=(sh,sa,ea)=>{const el=[sh[0]+rot(sa,LEN.ua)[0],sh[1]+rot(sa,LEN.ua)[1]],ha=[el[0]+rot(sa+ea,LEN.fa)[0],el[1]+rot(sa+ea,LEN.fa)[1]];return{sh,el,ha,sa,ea}};
   let sF=P.sF,eF=P.eF,sB=P.sB,eB=P.eB;
   if(P.ikF)[sF,eF]=ik(J.shF,[nk[0]+P.ikF[0],nk[1]+P.ikF[1]],LEN.ua,LEN.fa+.8);
@@ -3058,27 +3072,30 @@ function rig(pose,f,B,opt){const P=poseOf(pose,f);if(opt&&opt.umb&&!P.hold&&pose
 const darker=k=>Math.max(0,k-1);   // the far side of the body is one step darker
 function limb(F,a,b,ra,rb,mat,kind,z,grp,mod,pat){return draw(F,{sh:capsule(a[0],a[1],b[0],b[1],ra,rb),r:mat,kind,z,grp,mod,pat})}
 const ZH=21;   // what hangs from the waist is drawn over the near thigh
-function drawBody(F,J,O){const B=J.B,sk=O.skin;
+function drawBody(F,J,O){const B=J.B,sk=O.skin,FR=J.front;
   for(const fn of O.back)fn(F,J);
-  for(const[l,front]of[[J.lB,false],[J.lF,true]]){const z=front?20:8,g=front?'legF':'legB',dk=front?null:darker;
+  for(const[l,front]of[[J.lB,false],[J.lF,true]]){const z=FR?(front?20:19.8):front?20:8,g=front?'legF':'legB',dk=front||FR?null:darker;
     limb(F,l.hip,l.kn,B.th,B.th*.85,O.thigh,O.thighKind,z,g,dk,O.thighPat);
     limb(F,l.kn,l.an,B.th*.82,B.th*.66,O.shin,O.shinKind,z+.1,g,dk,O.shinPat);
-    const toe=[l.an[0]+4,l.an[1]+.7];draw(F,{sh:capsule(l.an[0]-.5,l.an[1]+.2,toe[0],toe[1],2.2,1.65),r:O.boots,kind:'leather',z:z+.2,grp:g+'f',mod:dk});
-    draw(F,{sh:capsule(l.an[0]-.4,l.an[1]-2.4,l.an[0]+.2,l.an[1]+.4,2.35,2.25),r:O.boots,kind:'leather',z:z+.15,grp:g+'f',mod:dk});
-    for(const fn of O.leg)fn(F,l,z+.5,front,g)}
+    if(FR){// a shoe seen from the front: round toes, turned a little out
+      const s=front?1:-1;draw(F,{sh:ellipse(l.an[0]+s*.5,l.an[1]+1,2.5,1.75,s*.12),r:O.boots,kind:'leather',z:z+.2,grp:g+'f'})}
+    else{const toe=[l.an[0]+4,l.an[1]+.7];draw(F,{sh:capsule(l.an[0]-.5,l.an[1]+.2,toe[0],toe[1],2.2,1.65),r:O.boots,kind:'leather',z:z+.2,grp:g+'f',mod:dk})}
+    draw(F,{sh:capsule(l.an[0]-.4*(FR?0:1),l.an[1]-2.4,l.an[0]+.2*(FR?0:1),l.an[1]+.4,2.35,2.25),r:O.boots,kind:'leather',z:z+.15,grp:g+'f',mod:dk});
+    for(const fn of O.leg)fn(F,l,z+.5,front||FR,g)}
   const torsoZ=16,nk=J.nk,pel=J.pel;
-  const T=[[nk[0]-B.sh*.46,nk[1]+1.4],[nk[0]+B.sh*.46,nk[1]+1.6],[nk[0]+B.sh*.5+.8,nk[1]+6],[pel[0]+B.hip*.82,pel[1]-4],[pel[0]+B.hip,pel[1]+1.5],[pel[0]-B.hip,pel[1]+1.5],[pel[0]-B.hip*.8,pel[1]-4],[nk[0]-B.sh*.5,nk[1]+6]];
+  const T=FR?[[nk[0]-B.sh*.47,nk[1]+1.5],[nk[0]+B.sh*.47,nk[1]+1.5],[nk[0]+B.sh*.5+.3,nk[1]+6],[pel[0]+B.hip*.86,pel[1]-4],[pel[0]+B.hip,pel[1]+1.5],[pel[0]-B.hip,pel[1]+1.5],[pel[0]-B.hip*.86,pel[1]-4],[nk[0]-B.sh*.5-.3,nk[1]+6]]
+    :[[nk[0]-B.sh*.46,nk[1]+1.4],[nk[0]+B.sh*.46,nk[1]+1.6],[nk[0]+B.sh*.5+.8,nk[1]+6],[pel[0]+B.hip*.82,pel[1]-4],[pel[0]+B.hip,pel[1]+1.5],[pel[0]-B.hip,pel[1]+1.5],[pel[0]-B.hip*.8,pel[1]-4],[nk[0]-B.sh*.5,nk[1]+6]];
   J.torsoPoly=T;draw(F,{sh:poly(T,4,[-.1,-.04]),r:O.top,kind:O.topKind,z:torsoZ,grp:'torso',pat:O.topPat});
   for(const fn of O.torso)fn(F,J,torsoZ+.5);
   draw(F,{sh:capsule(nk[0]+.6,nk[1]+1.5,J.head[0]-.2,J.head[1]+3,2,2),r:sk,kind:'skin',z:torsoZ-.5,grp:'neck'});
   for(const fn of O.neck)fn(F,J,torsoZ+1.5);
   drawHead(F,J,O,torsoZ+2);
   for(const fn of O.hang)fn(F,J);
-  for(const[a,front]of[[J.aB,false],[J.aF,true]]){const z=front?30:6,g=front?'armF':'armB',dk=front?null:darker;
+  for(const[a,front]of[[J.aB,false],[J.aF,true]]){const z=FR?(front?30:29.8):front?30:6,g=front?'armF':'armB',dk=front||FR?null:darker;
     limb(F,a.sh,a.el,B.ua,B.ua*.86,O.sleeves,O.sleeveKind,z,g,dk,O.sleevePat);
     limb(F,a.el,a.ha,B.ua*.84,B.ua*.72,O.fore,O.foreKind,z+.1,g,dk,O.forePat);
     draw(F,{sh:ellipse(a.fist[0],a.fist[1],2,2.2,-(a.sa+a.ea)),r:O.gloves,kind:O.glovesKind,z:z+.2,grp:g+'h',mod:dk});
-    for(const fn of O.arm)fn(F,a,z+.5,front,g)}
+    for(const fn of O.arm)fn(F,a,z+.5,front||FR,g)}
   if(O.held)O.held(F,J);if(O.weapon)O.weapon(F,J)}
 // the head, drawn in real pixels so the face stays the same from frame to frame: a lit skull, the face, then hair, glasses and hat
 const FACE={W:[246,242,238],w:[204,204,218]};
@@ -3246,11 +3263,12 @@ function hatClip(id){const src=hatSrc(id);if(!src)return null;const g=hatGrid(id
 const CREAM=R(['#6a5a44','#9a8a6c','#c8b892','#e6dab8','#f6eed6','#fffbf0']),GOLDR=R(['#4a2e08','#7a5212','#b07e24','#e0aa40','#ffd877','#fff4c8']),LEATH=R(['#1e120c','#33201a','#4e3226','#6c4834','#8c6246','#ac8060']);
 const pr=(J)=>{const[nX,nY]=J.nk,[pX,pY]=J.pel;return{nX,nY,pX,pY,B:J.B,m:((J.lF.kn[0]+J.lB.kn[0])/2-J.pel[0])}};
 // pieces used by many clothes
-function collar(r,shape){return(F,J,z)=>{const{nX,nY}=pr(J);if(shape==='v')draw(F,{sh:poly([[nX-3.4,nY+1.2],[nX+4.2,nY+1.4],[nX+1.6,nY+5]],1),r,kind:'cloth',z:z+.3,grp:'collar'});
-  else draw(F,{sh:capsule(nX-3.2,nY+1.7,nX+4.2,nY+1.9,1.15,1.15),r,kind:'cloth',z:z+.3,grp:'collar'})}}
+const fo=J=>J.front?1:0;   // 1 when the figure faces us
+function collar(r,shape){return(F,J,z)=>{const{nX,nY}=pr(J),f=fo(J);if(shape==='v')draw(F,{sh:poly(f?[[nX-3.9,nY+1.3],[nX+3.9,nY+1.3],[nX,nY+5]]:[[nX-3.4,nY+1.2],[nX+4.2,nY+1.4],[nX+1.6,nY+5]],1),r,kind:'cloth',z:z+.3,grp:'collar'});
+  else draw(F,{sh:capsule(nX-(f?3.7:3.2),nY+1.7,nX+(f?3.7:4.2),nY+(f?1.7:1.9),1.15,1.15),r,kind:'cloth',z:z+.3,grp:'collar'})}}
 function cuffs(r){return(F,a,z,front,g)=>{const d=rot(a.sa+a.ea,1);draw(F,{sh:capsule(a.ha[0]-d[0]*1.6,a.ha[1]-d[1]*1.6,a.ha[0]-d[0]*.3,a.ha[1]-d[1]*.3,2.05,2),r,kind:'cloth',z,grp:g+'c',mod:front?null:darker})}}
 function hemLine(c,dy){return(F,J,z)=>{const{pX,pY,B}=pr(J);line(F,null,pX-B.hip-.2,pY+(dy||1.2),pX+B.hip+.4,pY+(dy||1.2)-.3,c)}}
-function buttons(c,n){return(F,J,z)=>{const{nX,nY,pY}=pr(J);for(let i=0;i<n;i++){const y=nY+5+i*(pY-nY-6)/n;px(F,null,nX+2.4+i*.1,y,c)}}}
+function buttons(c,n){return(F,J,z)=>{const{nX,nY,pY}=pr(J),f=fo(J);for(let i=0;i<n;i++){const y=nY+5+i*(pY-nY-6)/n;px(F,null,nX+(f?0:2.4+i*.1),y,c)}}}
 // a skirt, a dress or a robe: hangs from the waist, flares, and follows the knees as the legs move
 function skirt(r,len,o){o=o||{};return(F,J)=>{const{pX,pY,B,m}=pr(J),w=B.hip+1,fl=(o.flare||3),y0=pY-(o.top||3.4),L=len,sw=J.pose==='walk'?m*.7:m*.5,sit=J.P.ground==='seat';
   const bot=sit?[[pX-w-1,pY+3],[pX+w+fl+10,pY+1.5],[pX+w+fl+10.5,pY+4.5],[pX-w-2,pY+5]]:[[pX+w+fl+sw,pY+L-.4],[pX+1+sw,pY+L+1],[pX-w-fl+sw,pY+L-.2]];
@@ -3263,15 +3281,16 @@ function pauldron(F,a,z,mat,front,o){o=o||{};const[x,y]=a.sh,rx=o.rx||5,ry=o.ry|
   for(let i=2;i>=0;i--)draw(F,{sh:ellipse(x+.4,y+.6+i*2.1,rx-i*.6,ry-i*.9,.2+a.sa*.2),r:mat,kind:o.kind||'metal',z:z+(2-i)*.01,mod:dk});
   if(o.trim)for(let t=-1.3;t<=1.3;t+=.07){const X=x+.4+Math.sin(t)*(rx-.5),Y=y+.6-Math.cos(t)*(ry-.5);px(F,F.parts.length-1,X,Y,o.trim)}}
 function breastplate(F,J,z,mat,o){o=o||{};const{nX,nY,pX,pY,B}=pr(J),sh=B.sh+1.2;
-  const P=[[nX-sh*.44,nY+1.8],[nX+sh*.5,nY+2.2],[nX+sh*.52+1,nY+7.5],[pX+B.hip*.8+.4,pY-4],[pX+1.5,pY-2.4],[pX-B.hip*.8-.4,pY-4],[nX-sh*.5-.4,nY+7.5]];
+  const f=fo(J),P=f?[[nX-sh*.5,nY+2],[nX+sh*.5,nY+2],[nX+sh*.52+.5,nY+7.5],[pX+B.hip*.8+.4,pY-4],[pX,pY-2.4],[pX-B.hip*.8-.4,pY-4],[nX-sh*.52-.5,nY+7.5]]
+    :[[nX-sh*.44,nY+1.8],[nX+sh*.5,nY+2.2],[nX+sh*.52+1,nY+7.5],[pX+B.hip*.8+.4,pY-4],[pX+1.5,pY-2.4],[pX-B.hip*.8-.4,pY-4],[nX-sh*.5-.4,nY+7.5]];
   const id=draw(F,{sh:poly(P,4.4,[-.16,-.06]),r:mat,kind:o.kind||'metal',z,grp:'chest'});
-  const cx=(nX+pX)/2+1.6;line(F,id,nX+1.6,nY+3.2,cx,pY-3,mat[4]);line(F,id,nX+2.6,nY+3.6,cx+1,pY-3.4,mat[1]);
+  const c0=f?0:1.6,cx=(nX+pX)/2+c0;line(F,id,nX+c0,nY+3.2,cx,pY-3,mat[4]);line(F,id,nX+c0+1,nY+3.6,cx+1,pY-3.4,mat[1]);
   if(o.trim)for(const[a,b]of[[0,1],[1,2],[6,0]])line(F,id,P[a][0],P[a][1]+.7,P[b][0],P[b][1]+.7,o.trim);
   for(let i=0;i<2;i++){const y=pY-3.2+i*2.8;draw(F,{sh:poly([[pX-B.hip-.6+i*.3,y],[pX+B.hip+.6-i*.3,y-.4],[pX+B.hip+1-i*.2,y+2.8],[pX-B.hip-1+i*.3,y+3.1]],1.4),r:mat,kind:o.kind||'metal',z:ZH+.1+i*.01});if(o.trim)line(F,F.parts.length-1,pX-B.hip+.2,y+2.4,pX+B.hip+.4,y+2,o.trim)}
   return id}
-function belt(F,J,mat,buckle){const{pX,pY,B}=pr(J);draw(F,{sh:poly([[pX-B.hip-1,pY-4.4],[pX+B.hip+1.4,pY-4.8],[pX+B.hip+1.4,pY-2.8],[pX-B.hip-1,pY-2.4]],.9),r:mat,kind:'leather',z:ZH+1,grp:'belt'});
-  draw(F,{sh:poly([[pX+1.4,pY-5],[pX+4,pY-5.2],[pX+4,pY-2.4],[pX+1.4,pY-2.2]],.8),r:buckle,kind:'metal',z:ZH+1.1,grp:'buckle'});px(F,F.parts.length-1,pX+2.6,pY-3.8,buckle[1])}
-function tabard(F,J,mat,o){o=o||{};const{pX,pY,m}=pr(J),mm=m*.55,len=o.len||13,w=o.w||3.6,sw=Math.sin(J.f*.9)*(J.pose==='walk'?.6:.2);if(J.P.ground==='seat')return;
+function belt(F,J,mat,buckle){const{pX,pY,B}=pr(J),f=fo(J),b=f?-2.7:0;draw(F,{sh:poly(f?[[pX-B.hip-1.2,pY-4.6],[pX+B.hip+1.2,pY-4.6],[pX+B.hip+1.2,pY-2.6],[pX-B.hip-1.2,pY-2.6]]:[[pX-B.hip-1,pY-4.4],[pX+B.hip+1.4,pY-4.8],[pX+B.hip+1.4,pY-2.8],[pX-B.hip-1,pY-2.4]],.9),r:mat,kind:'leather',z:ZH+1,grp:'belt'});
+  draw(F,{sh:poly([[pX+1.4+b,pY-5],[pX+4+b,pY-5.2],[pX+4+b,pY-2.4],[pX+1.4+b,pY-2.2]],.8),r:buckle,kind:'metal',z:ZH+1.1,grp:'buckle'});px(F,F.parts.length-1,pX+2.6+b,pY-3.8,buckle[1])}
+function tabard(F,J,mat,o){o=o||{};let{pX,pY,m}=pr(J);if(fo(J))pX-=1;const mm=m*.55,len=o.len||13,w=o.w||3.6,sw=Math.sin(J.f*.9)*(J.pose==='walk'?.6:.2);if(J.P.ground==='seat')return;
   const P=[[pX-w+.6,pY-3.6],[pX+w+1.4,pY-3.8],[pX+w+1+mm+sw,pY+len-1],[pX+.9+mm+sw,pY+len+1.2],[pX-w+.4+mm+sw,pY+len-.6]];
   const id=draw(F,{sh:poly(P,1.8,[-.05,0]),r:mat,kind:'cloth',z:ZH+.6,grp:'tabard',mod:(k,n,X,Y)=>k+((X+Y)%9===0?-1:0)});
   if(o.trim)for(let i=1;i<P.length;i++){const a=P[i],b2=P[(i+1)%P.length];line(F,id,a[0],a[1]-.6,b2[0],b2[1]-.6,o.trim)}
@@ -3293,21 +3312,25 @@ function topSpec(O,look){const id=look.top,tc=rmp(look.tc),sk=O.skin;O.top=tc;O.
   case'vestido':O.fore=sk;O.foreKind='skin';O.thigh=sk;O.thighKind='skin';O.shin=sk;O.shinKind='skin';O.hang.push(skirt(tc,9.5,{flare:3.2,hem:tc[1],band:tc[1]}));O.neck.push(collar(tc,'v'));
     O.arm.push((F,a,z,front,g)=>{draw(F,{sh:capsule(a.el[0]-rot(a.sa,2.2)[0],a.el[1]-rot(a.sa,2.2)[1],a.el[0]+rot(a.sa+a.ea,.2)[0],a.el[1]+rot(a.sa+a.ea,.2)[1],2.7,2.5),r:tc,kind:'cloth',z,grp:g+'c',mod:front?null:darker})});O.noBelt=1;break;
   case'jardineiras':{const pc=O.thigh;O.neck.push(collar(tc));O.arm.push(cuffs(tc));
-    O.torso.push((F,J,z)=>{const{nX,nY,pX,pY}=pr(J);draw(F,{sh:poly([[nX-2.6,nY+5.2],[nX+5.4,nY+4.8],[pX+5.4,pY-3],[pX+5.6,pY+1.6],[pX-5.4,pY+1.8],[pX-5.2,pY-3]],1.8),r:pc,kind:'cloth',z:z+.2,grp:'bib'});
+    O.torso.push((F,J,z)=>{let{nX,nY,pX,pY}=pr(J);const f=fo(J);if(f){nX-=1.4}
+      draw(F,{sh:poly([[nX-2.6,nY+5.2],[nX+5.4,nY+4.8],[pX+5.4,pY-3],[pX+5.6,pY+1.6],[pX-5.4,pY+1.8],[pX-5.2,pY-3]],1.8),r:pc,kind:'cloth',z:z+.2,grp:'bib'});
       draw(F,{sh:poly([[nX-1.4,nY+6.4],[nX+4,nY+6.2],[nX+4.2,nY+9.6],[nX-1.2,nY+9.8]],1),r:pc.map(c=>mixc(c,[0,0,0],.12)),kind:'cloth',z:z+.3,grp:'pkt'});
-      line(F,null,nX-2.4,nY+5.4,nX-4.2,nY+1.4,pc[2]);line(F,null,nX+5,nY+5,nX+3.8,nY+1.4,pc[1]);px(F,null,nX-2.2,nY+5.6,[244,197,79]);px(F,null,nX+4.8,nY+5.2,[244,197,79])});break}
-  case'capuz':O.arm.push(cuffs(tc.map(c=>mixc(c,[0,0,0],.15))));O.back.push((F,J)=>{const{nX,nY}=pr(J);draw(F,{sh:ellipse(nX-3.6,nY+1.4,4.6,3.4,-.5),r:tc,kind:'cloth',z:17.3,grp:'hood',mod:(k,n)=>n.ny<-.2?k:k-1})});
-    O.torso.push((F,J,z)=>{const{nX,nY,pX,pY}=pr(J);draw(F,{sh:poly([[pX-3.4,pY-6.6],[pX+5.2,pY-7],[pX+6,pY-1.6],[pX-3.8,pY-1.4]],1.4),r:tc.map(c=>mixc(c,[0,0,0],.08)),kind:'cloth',z:z+.2,grp:'pocket'});
+      line(F,null,nX-2.4,nY+5.4,nX-(f?3.6:4.2),nY+1.4,pc[2]);line(F,null,nX+5,nY+5,nX+(f?5.6:3.8),nY+1.4,pc[1]);px(F,null,nX-2.2,nY+5.6,[244,197,79]);px(F,null,nX+4.8,nY+5.2,[244,197,79])});break}
+  case'capuz':O.arm.push(cuffs(tc.map(c=>mixc(c,[0,0,0],.15))));O.back.push((F,J)=>{const{nX,nY}=pr(J);
+      // the hood lies on the back; facing us only its rim shows round the neck
+      if(fo(J))draw(F,{sh:ellipse(nX,nY+.9,5.4,2.6),r:tc,kind:'cloth',z:15.5,grp:'hood',mod:(k,n)=>n.ny<-.2?k:k-1});else draw(F,{sh:ellipse(nX-3.6,nY+1.4,4.6,3.4,-.5),r:tc,kind:'cloth',z:17.3,grp:'hood',mod:(k,n)=>n.ny<-.2?k:k-1})});
+    O.torso.push((F,J,z)=>{let{nX,nY,pX,pY}=pr(J);const f=fo(J);if(f){nX-=2.1;pX-=1.3}draw(F,{sh:poly([[pX-3.4,pY-6.6],[pX+5.2,pY-7],[pX+6,pY-1.6],[pX-3.8,pY-1.4]],1.4),r:tc.map(c=>mixc(c,[0,0,0],.08)),kind:'cloth',z:z+.2,grp:'pocket'});
       line(F,null,nX+1,nY+2.4,nX+.8,nY+6.4,[239,228,200]);line(F,null,nX+3.2,nY+2.4,nX+3.4,nY+6,[239,228,200])});O.torso.push(hemLine(tc[1],1));break;
   case'casaco':{const inner=CREAM;O.arm.push(cuffs(tc.map(c=>mixc(c,[0,0,0],.12))));
-    O.torso.push((F,J,z)=>{const{nX,nY,pX,pY}=pr(J);draw(F,{sh:poly([[nX+.4,nY+1.8],[nX+3.4,nY+1.8],[pX+3.6,pY-1],[pX+.6,pY-1]],1.2),r:inner,kind:'cloth',z:z+.1,grp:'inner'});
-      draw(F,{sh:poly([[nX+3.2,nY+1.2],[nX+5.6,nY+2],[nX+4.6,nY+7.4],[nX+3.4,nY+5]],1),r:tc.map(c=>mixc(c,[0,0,0],.1)),kind:'cloth',z:z+.2,grp:'lapel'});
+    O.torso.push((F,J,z)=>{let{nX,nY,pX,pY}=pr(J);const f=fo(J),lp=tc.map(c=>mixc(c,[0,0,0],.1));if(f){nX-=1.9;pX-=1.9}draw(F,{sh:poly([[nX+.4,nY+1.8],[nX+3.4,nY+1.8],[pX+3.6,pY-1],[pX+.6,pY-1]],1.2),r:inner,kind:'cloth',z:z+.1,grp:'inner'});
+      draw(F,{sh:poly([[nX+3.2,nY+1.2],[nX+5.6,nY+2],[nX+4.6,nY+7.4],[nX+3.4,nY+5]],1),r:lp,kind:'cloth',z:z+.2,grp:'lapel'});
+      if(f){draw(F,{sh:poly([[nX+.6,nY+1.2],[nX-1.8,nY+2],[nX-.8,nY+7.4],[nX+.4,nY+5]],1),r:lp,kind:'cloth',z:z+.2,grp:'lapel2'});line(F,null,nX+.4,nY+5.6,pX+.6,pY-1,tc[0])}
       line(F,null,nX+3.4,nY+5.6,pX+3.6,pY-1,tc[0]);draw(F,{sh:poly([[pX+3.8,pY-4.4],[pX+6.2,pY-4.6],[pX+6.2,pY-3.8],[pX+3.8,pY-3.6]],.6),r:tc.map(c=>mixc(c,[0,0,0],.25)),kind:'cloth',z:z+.2,grp:'pk2'})});
     O.hang.push(skirt(tc,2.6,{flare:.6,top:2,grp:'jhem',z:-.2}));break}
   case'real':{const gd=hx('#f4c54f');O.topPat=O.sleevePat=(X,Y)=>((X+Y*2)%9===0)?GOLDR:null;O.neck.push(collar(GOLDR));O.arm.push(cuffs(GOLDR));
-    O.hang.push(skirt(tc,6.5,{flare:1.6,hem:gd,top:2.6,pat:(X,Y)=>((X+Y*2)%9===0)?GOLDR:null}));O.torso.push((F,J,z)=>{const{nX,nY,pY}=pr(J);line(F,null,nX+1.8,nY+3,nX+2.2,pY-3,gd)});O.noBelt=1;break}
+    O.hang.push(skirt(tc,6.5,{flare:1.6,hem:gd,top:2.6,pat:(X,Y)=>((X+Y*2)%9===0)?GOLDR:null}));O.torso.push((F,J,z)=>{const{nX,nY,pY}=pr(J),c=fo(J)?0:2;line(F,null,nX+c-.2,nY+3,nX+c+.2,pY-3,gd)});O.noBelt=1;break}
   case'manto':{const W=R(['#7a6e58','#b0a488','#d8ceb4','#f6f1e4','#fffcf2','#ffffff']);O.top=O.sleeves=O.fore=W;O.neck.push(collar(GOLDR,'v'));O.arm.push(cuffs(GOLDR));
-    O.hang.push(skirt(W,21,{flare:3,hem:[244,197,79],band:[244,197,79]}));O.torso.push((F,J,z)=>{const{nX,nY,pY}=pr(J);line(F,null,nX+2,nY+5,nX+2.4,pY-3,[244,197,79])});O.noBelt=1;O.longRobe=1;break}
+    O.hang.push(skirt(W,21,{flare:3,hem:[244,197,79],band:[244,197,79]}));O.torso.push((F,J,z)=>{const{nX,nY,pY}=pr(J),c=fo(J)?0:2.2;line(F,null,nX+c-.2,nY+5,nX+c+.2,pY-3,[244,197,79])});O.noBelt=1;O.longRobe=1;break}
   case'estelar':{const N=R(['#06081e','#0c1236','#151d4a','#1f2a6a','#2c3c8c','#4256b4']),star=R(['#b8b080','#e0d8a8','#fff4c8','#fffbe6','#ffffff','#ffffff']);O.top=O.sleeves=O.fore=N;
     O.topPat=O.sleevePat=O.forePat=(X,Y)=>((X*7+Y*11)%23===0)?star:null;O.neck.push(collar(R(['#2a3a8a','#3a4aa8','#5a6ac8','#8a9ae0','#c0c8f4','#ffffff'])));
     O.torso.push((F,J)=>{const{nX,nY}=pr(J);glow(F,nX-1,nY+6,[255,250,220],.6);glow(F,nX+3,nY+10,[255,250,220],.5)});break}
@@ -3342,6 +3365,12 @@ function pantsSpec(O,look){const pc=rmp(look.pc,{cool:250}),sk=O.skin;O.thigh=pc
 const J0=O=>BODY;
 // ---------- what is carried and worn on top ----------
 function cape(F,J,z,out,lin,o){o=o||{};const[nX,nY]=J.nk,w=J.capeW||0,len=(o.len||34)*(J.P.ground==='seat'?.6:1),N=7,hem=[];
+  if(J.front){const L=len*.86,sw=Math.sin(J.f*.9)*w*.6;for(let i=0;i<=N;i++){const a=i/N;hem.push([nX-12.6+a*25.2+sw*(1-Math.abs(a-.5)),nY+L+Math.sin(a*PI*3+J.f*.9)*.9-Math.abs(a-.5)*1.6+(o.points&&i%2?2:0)])}
+    const P=[[nX-7.6,nY+1.4],[nX+7.6,nY+1.4],[nX+11,nY+L*.45],...hem.slice().reverse(),[nX-11,nY+L*.45]];
+    draw(F,{sh:poly(P,2.2,[.05,0]),r:out,kind:'cloth',z,noShadow:true,grp:'cape',pat:o.pat,mod:(k,n,X,Y)=>{const fold=Math.sin((X/U-nX)*1.1+J.f*.6*w);if(o.tatter&&Y/U>nY+L-5&&((X*7+Y*3)%6)<1)return null;return k+(fold>.55?1:fold<-.6?-1:0)}});
+    for(const s of[-1,1])draw(F,{sh:poly([[nX+s*7.6,nY+1.4],[nX+s*11,nY+L*.45],[hem[s<0?0:N][0],hem[s<0?0:N][1]-.5],[hem[s<0?1:N-1][0],hem[s<0?1:N-1][1]-1],[nX+s*9,nY+L*.42]],1.2),r:lin,kind:'cloth',z:z+.01,noShadow:true,grp:'cape'+s});
+    if(o.trim)for(let i=0;i<N;i++)line(F,null,hem[i][0],hem[i][1]-1,hem[i+1][0],hem[i+1][1]-1,o.trim);
+    if(o.clasp)for(const s of[-1,1])draw(F,{sh:ellipse(nX+s*3.4,nY+2.2,1.2,1.1),r:o.clasp,kind:'metal',z:17.9,grp:'clasp'+s});return}
   const w2=w+.9;for(let i=0;i<=N;i++){const a=i/N;hem.push([nX-12.5-w2*2.6+a*15.5+Math.sin(J.f*.8+a*5)*w*.9,nY+len+Math.sin(a*PI*3+J.f*.9)*1.3-a*2.4+(o.points&&i%2?2.2:0)])}
   const P=[[nX-6.4,nY+1.2],[nX+3,nY+1],[nX+4.4,nY+len*.55],...hem.slice().reverse(),[nX-10.4-w2*1.2,nY+len*.52],[nX-8.6,nY+len*.2]];
   draw(F,{sh:poly(P,2.2,[.05,0]),r:out,kind:'cloth',z,noShadow:true,grp:'cape',pat:o.pat,mod:(k,n,X,Y)=>{const fold=Math.sin((X/U-nX)*.9+Y/U*.12+J.f*.6*w);if(o.tatter&&Y/U>nY+len-5&&((X*7+Y*3)%6)<1)return null;return k+(fold>.55?1:fold<-.6?-1:0)}});
@@ -3352,9 +3381,9 @@ function cape(F,J,z,out,lin,o){o=o||{};const[nX,nY]=J.nk,w=J.capeW||0,len=(o.len
 function wingPal(id,wf){const P=(typeof LWPAL!=='undefined'&&LWPAL[id])||WPAL[id]||{X:'#e4f3fb',x:'#9ac8e0',Z:'#ffffff',z:'#7aa8c0'};const q=Array.isArray(P)?P[wf?1:0]:P;return q}
 const WTYPE={asas:['f',.62],asasanjo:['f',1],asasfenix:['f',1],asaszenite:['f',1.15],asasaurora:['f',.95],asasdiabo:['b',.95],asasvazio:['b',1],asaseclipse:['b',1.05],asasfada:['i',.85],asasborboleta:['i',.95],asasmariposa:['i',1],asasgelo:['c',1.4],asasfolha:['l',1.45]};
 function wing(F,J,id,wf,far){if(WTYPE[id][0]==='s')return wingS(F,J,id,wf,far);const[t,sz]=WTYPE[id],pal=wingPal(id,wf),ro=pal.cool!=null?{hs:1,cool:pal.cool}:{hs:1},X=rmp(pal.X,ro),xs=rmp(pal.x,ro),Z=rmp(pal.Z,pal.cool!=null?{hs:.6,cool:pal.cool}:{hs:.6}),zz=rmp(pal.z||pal.x,ro);
-  const[nX,nY]=J.nk,R0=[nX-2.4,nY+4],S=24*sz,fl=wf?1:0,dk=far?(k=>Math.max(0,k-1)):null,z=far?1:2.5,g='w'+(far?'f':'n'),rs=far?.75:1;
+  const[nX,nY]=J.nk,FR=J.front,R0=[nX-(FR?1.3:2.4),nY+4],S=24*sz,fl=wf?1:0,dk=far&&!FR?(k=>Math.max(0,k-1)):null,z=far?(FR?2.4:1):2.5,g='w'+(far?'f':'n'),rs=far&&!FR?.75:1;
   // the far wing is the near one seen from the other side: mirrored to the right, narrower, a little higher
-  const mp=far?p=>[R0[0]+(R0[0]-p[0])*.5+3.4,p[1]-1.6]:p=>p,M=a=>a.map(mp),flapY=fl?-.12:0,lift=p=>[p[0],p[1]+(p[1]-R0[1])*flapY];
+  const mp=far?(FR?p=>[2*nX-p[0],p[1]]:p=>[R0[0]+(R0[0]-p[0])*.5+3.4,p[1]-1.6]):p=>p,M=a=>a.map(mp),flapY=fl?-.12:0,lift=p=>[p[0],p[1]+(p[1]-R0[1])*flapY];
   const pt=(dx,dy)=>mp(lift([R0[0]+dx*S,R0[1]+dy*S]));
   if(t==='f'){// a leading edge up to the wrist and out to the tip; feathers hang from it, longer towards the tip
     const N=9,lead=[],tips=[];for(let i=0;i<=N;i++){const u=i/N;let p;if(u<.5){const v=u/.5;p=[-.3*v,-.78*v+.1*v*v]}else{const v=(u-.5)/.5;p=[-.3-.5*v,-.68+.38*v*v]}
@@ -3374,11 +3403,11 @@ function wing(F,J,id,wf,far){if(WTYPE[id][0]==='s')return wingS(F,J,id,wf,far);c
     if(!far&&(id==='asaseclipse'||id==='asasvazio'||id==='asasdragao'||id==='asasmorcego'))for(const q of f)glow(F,q[0],q[1],hx(pal.Z),id==='asaseclipse'||id==='asasdragao'?.7:.5);
     return}
   if(t==='i'){// insect: a big fore wing and a round hind wing, veins and a darker border with spots
-    const R=mp(R0),lobe=(c,rx,ry,a,r,zz2)=>{const C=pt(c[0],c[1]);draw(F,{sh:ellipse(C[0],C[1],rx*S*(far?.6:1),ry*S,far?-a:a),r,kind:'cloth',z:zz2,grp:g+zz2,noShadow:true,mod:(k,n)=>{const e=Math.hypot(n.nx,n.ny);return(dk?dk(k):k)-(e>.82?1:0)},
+    const R=mp(R0),lobe=(c,rx,ry,a,r,zz2)=>{const C=pt(c[0],c[1]);draw(F,{sh:ellipse(C[0],C[1],rx*S*(far&&!FR?.6:1),ry*S,far?-a:a),r,kind:'cloth',z:zz2,grp:g+zz2,noShadow:true,mod:(k,n)=>{const e=Math.hypot(n.nx,n.ny);return(dk?dk(k):k)-(e>.82?1:0)},
       pat:(x,y,k,n)=>{const e=Math.hypot(n.nx,n.ny);return e>.86?xs:(id!=='asasfada'&&e>.62&&((x*3+y*5)%13===0))?Z:null}});return C};
     const C1=lobe([-.36,-.42],.42,.22,.75,X,z),C2=lobe([-.3,.08],.27,.17,-.4,X,z-.02);
     for(let i=0;i<4;i++){const q=pt(-.36-.42*Math.cos(.75-.3+i*.22)*1.1,-.42-.42*Math.sin(.75-.3+i*.22)*1.1+.04*i);line(F,null,R[0],R[1],q[0],q[1],xs[far?0:1])}
-    if(id==='asasmariposa')draw(F,{sh:ellipse(C1[0],C1[1]+1,1.8*(far?.6:1),1.8),r:zz,kind:'gem',z:z+.1,grp:g+'e'});
+    if(id==='asasmariposa')draw(F,{sh:ellipse(C1[0],C1[1]+1,1.8*(far&&!FR?.6:1),1.8),r:zz,kind:'gem',z:z+.1,grp:g+'e'});
     if(id==='asasfada'&&!far)for(let i=0;i<5;i++)glow(F,C1[0]+Math.cos(i*1.7)*S*.25,C1[1]+Math.sin(i*2.3)*S*.12,[255,240,252],.45);
     return}
   if(t==='l'){// leaves fanned like feathers, each with its rib
@@ -3542,7 +3571,7 @@ function outfit(look,pose,opt){const sk=skinRamp(((AVSKIN[look.skin]||AVSKIN[0])
   {const g=EGLOW[look.ec];if(g){O.eyeGlow=g;O.eyeL=mixc(O.eye,[255,255,255],.5)}}
   pantsSpec(O,look);topSpec(O,look);
   if(O.longRobe){O.thigh=O.top;O.shin=O.top}
-  if(!O.noBelt&&!O.belt&&look.pt!=='saia'){O.hang.push((F,J)=>{const{pX,pY,B}=pr(J);draw(F,{sh:poly([[pX-B.hip-.8,pY-3.6],[pX+B.hip+1,pY-3.9],[pX+B.hip+1,pY-2.5],[pX-B.hip-.8,pY-2.2]],.7),r:LEATH,kind:'leather',z:ZH+.9,grp:'belt'});px(F,null,pX+2.4,pY-3.1,[232,192,96]);px(F,null,pX+3.2,pY-3.1,[176,130,60])})}
+  if(!O.noBelt&&!O.belt&&look.pt!=='saia'){O.hang.push((F,J)=>{const{pX,pY,B}=pr(J),f=fo(J),b=f?-2.8:0;draw(F,{sh:poly(f?[[pX-B.hip-.9,pY-3.7],[pX+B.hip+.9,pY-3.7],[pX+B.hip+.9,pY-2.4],[pX-B.hip-.9,pY-2.4]]:[[pX-B.hip-.8,pY-3.6],[pX+B.hip+1,pY-3.9],[pX+B.hip+1,pY-2.5],[pX-B.hip-.8,pY-2.2]],.7),r:LEATH,kind:'leather',z:ZH+.9,grp:'belt'});px(F,null,pX+2.4+b,pY-3.1,[232,192,96]);px(F,null,pX+3.2+b,pY-3.1,[176,130,60])})}
   if(O.belt){const[b,k]=O.belt;O.hang.push((F,J)=>belt(F,J,b,k))}
   // hair, then whatever covers it
   const hat=look.hat&&look.hat!=='nada'&&!opt.noHat?look.hat:null,hair=look.hair||'curto',KH=hat&&KIT_HAT[hat],clip=hat&&!HKEEP[hat]&&!(KH&&KH.keep)?-8:null;
@@ -3569,9 +3598,9 @@ function render(look,pose,f,opt){opt=opt||{};GID=0;const lie=pose==='lie';if(lie
     px=out;blink=null}
   let top=CH;for(let y=0;y<CH&&top===CH;y++)for(let x=0;x<CW;x++)if(px[(y*CW+x)*4+3]>128){top=y;break}
   const lit=lie?null:F.glow.filter(q=>q[0]>=0&&q[1]>=0&&q[0]<CW&&q[1]<CH&&q[3]>=.3);
-  return{px,w:CW,h:CH,feet:Math.round(GY*U),top,head:[hxp,hyp],hand,blink,wings:!!O.wings,lit}}
+  return{px,w:CW,h:CH,feet:Math.round(GY*U),top,head:[hxp,hyp],hand,blink,wings:!!O.wings,lit,front:!!J.front}}
 function meta(pose,f){const J=rig(pose,f,BODY,{});return{head:headPx(J),hand:[Math.round(J.aF.fist[0]*U),Math.round(J.aF.fist[1]*U)],feet:Math.round(GY*U)}}
-const POSES={idle:6,walk:8,crouch:1,sit:1,read:1,read2:1,lie:1,wave:2,jump:1,flute:2,water:1,mine:2};
+const POSES={idle:6,walk:8,walkf:8,crouch:1,sit:1,read:1,read2:1,lie:1,wave:2,jump:1,jumps:1,flute:2,water:1,mine:2};
 
 // ---------- five more sets (November): the crimson dragon, the seraph, the Halloween reaper, the abyss and the prism ----------
 const KIT2={
@@ -3794,8 +3823,8 @@ Object.assign(KIT_TOP,{
     O.noBelt=1}});
 // wings of feathers turned to any angle: the archangel has three pairs, the top ones lifted, the low ones folded down
 function featherW(F,J,pal,sz,ang,far,fl,z0,g,glw){const ro=pal.cool!=null?{hs:1,cool:pal.cool}:{hs:1},X=rmp(pal.X,ro),xs=rmp(pal.x,ro),Z=rmp(pal.Z,{...ro,hs:.6});
-  const[nX,nY]=J.nk,R0=[nX-2.4,nY+4],S=24*sz,dk=far?(k=>Math.max(0,k-1)):null,z=(far?1:2.5)+z0,rs=far?.75:1,ca=Math.cos(ang),sa=Math.sin(ang);
-  const mp=far?p=>[R0[0]+(R0[0]-p[0])*.5+3.4,p[1]-1.6]:p=>p,flapY=fl?-.12:0,lift=p=>[p[0],p[1]+(p[1]-R0[1])*flapY];
+  const[nX,nY]=J.nk,FR=J.front,R0=[nX-(FR?1.3:2.4),nY+4],S=24*sz,dk=far&&!FR?(k=>Math.max(0,k-1)):null,z=(far?(FR?2.4:1):2.5)+z0,rs=far&&!FR?.75:1,ca=Math.cos(ang),sa=Math.sin(ang);
+  const mp=far?(FR?p=>[2*nX-p[0],p[1]]:p=>[R0[0]+(R0[0]-p[0])*.5+3.4,p[1]-1.6]):p=>p,flapY=fl?-.12:0,lift=p=>[p[0],p[1]+(p[1]-R0[1])*flapY];
   const pt=(dx,dy)=>mp(lift([R0[0]+(dx*ca-dy*sa)*S,R0[1]+(dx*sa+dy*ca)*S]));
   const N=9,lead=[],tips=[];for(let i=0;i<=N;i++){const u=i/N;let p;if(u<.5){const v=u/.5;p=[-.3*v,-.78*v+.1*v*v]}else{const v=(u-.5)/.5;p=[-.3-.5*v,-.68+.38*v*v]}
     const a=PI/2+.1+u*.75+(fl?.1:0),len=.34+.5*Math.pow(u,.8);lead.push(pt(p[0],p[1]));tips.push(pt(p[0]+Math.cos(a)*len,p[1]+Math.sin(a)*len))}
@@ -3875,10 +3904,10 @@ function a2Run(dl){a2PT=0;const t0=performance.now(),more=()=>dl&&dl.timeRemaini
     a2Fill(h,u);setTimeout(()=>a2Fill(h,u),600)}
   if(A2W.size||A2P.size)a2PT=a2Idle(a2Run)}
 // make the usual frames of a look ahead of time, so walking never waits
-function a2Warm(look,o){o=o||{};for(let f=0;f<6;f++)a2Get(look,'idle',f,o,true);for(let f=0;f<8;f++)a2Get(look,'walk',f,o,true);if(o.wf==null&&WFLAP[look.acc]){a2Warm(look,{...o,wf:1})}}
+function a2Warm(look,o){o=o||{};for(let f=0;f<6;f++)a2Get(look,'idle',f,o,true);for(let f=0;f<8;f++)a2Get(look,'walk',f,o,true);for(let f=0;f<8;f+=2)a2Get(look,'walkf',f,o,true);if(o.wf==null&&WFLAP[look.acc]){a2Warm(look,{...o,wf:1})}}
 // the old pose names, and which frame of the new ones they show now
 function a2Pose(pn,ft){const T2=performance.now()/1000;
-  if(pn==='stand')return['idle',RM?0:Math.floor(T2*4)%6];if(pn==='walkA'||pn==='walkB'||pn==='walk')return['walk',Math.floor((ft||0)*7)%8];
+  if(pn==='stand')return['idle',RM?0:Math.floor(T2*4)%6];if(pn==='walkA'||pn==='walkB'||pn==='walk')return['walk',Math.floor((ft||0)*7)%8];if(pn==='walkf')return['walkf',Math.floor((ft||0)*7)%8];
   if(pn==='wave'||pn==='wave2')return['wave',pn==='wave2'?1:0];if(pn==='flute')return['flute',RM?0:Math.floor(T2*2.5)%2];return[pn,0]}
 // draw a frame with its feet at (gx, fy) in game pixels: occluded where the scene is in front, tinted by the light
 function a2Draw(X,e,gx,fy,fl,am,occ,blink,dy){const W4=e.w/4,H4=e.h/4,left=Math.round(gx*4)/4-W4/2,top=fy+1-e.feet/4+(dy||0),O=A2OX;
@@ -7317,8 +7346,8 @@ function avTick(dt){
     if(d<.7){if(s.k==='go'){AV.x=s.x;AV.y=s.y;AV.plan.shift()}return}
     const sp=(s.k==='chase'?15:9)*dt,nx=AV.x+dx/d*Math.min(sp,d),ny=AV.y+dy/d*Math.min(sp,d);
     if(!avWalkable(nx,ny)){AV.plan=s.k==='chase'?AV.plan.slice(1):null;return}
-    AV.x=nx;AV.y=ny;if(Math.abs(dx)>.3)AV.fl=dx<0;AV.ft+=dt*(s.k==='chase'?1.6:1);
-    if(!RM){const bio=avBio();if(bio==='lua'){const ph=AV.mb||0,nb=ph+dt*1.5;if(Math.floor(nb)>Math.floor(ph))avLand('moonstep');AV.mb=nb;AV.jy=-Math.round(Math.sin((nb%1)*Math.PI)*6);if(AV.jy<-2)AV.pose='jump'}
+    AV.x=nx;AV.y=ny;if(Math.abs(dx)>.3)AV.fl=dx<0;AV.vd=dy>0&&Math.abs(dy)>Math.abs(dx)*1.3?1:0;AV.ft+=dt*(s.k==='chase'?1.6:1);
+    if(!RM){const bio=avBio();if(bio==='lua'){const ph=AV.mb||0,nb=ph+dt*1.5;if(Math.floor(nb)>Math.floor(ph))avLand('moonstep');AV.mb=nb;AV.jy=-Math.round(Math.sin((nb%1)*Math.PI)*6);if(AV.jy<-2)AV.pose=AV.vd?'jump':'jumps'}
       else if(s.march)AV.jy=-Math.round(Math.abs(Math.sin(AV.ft*7))*1.5);
       else if(bio==='abismo'&&rnd()<dt*1.5)parts.push({x:AV.x+(rnd()-.5)*4,y:AV.y,vx:(rnd()-.5)*4,vy:-8-rnd()*6,g:-4,t:0,life:.9,c:[255,140,50],lit:1})}
     return}
@@ -7350,7 +7379,7 @@ function avTick(dt){
 }
 function avPoseName(){
   const p=AV.pose;
-  if(p==='walk')return Math.floor(AV.ft*5.5)%2?'walkB':'walkA';
+  if(p==='walk')return AV.vd?'walkf':Math.floor(AV.ft*5.5)%2?'walkB':'walkA';
   if(p==='wave')return Math.floor(T*4)%2?'wave2':'wave';
   if(p==='read')return(T%3.2)<.35?'read2':'read';
   return p;
@@ -7365,7 +7394,7 @@ function drawAvatar(){
   lowX.fillStyle='rgba(10,14,8,.28)';for(let dx=-4;dx<=4;dx++){const x=Math.round(AV.x)+dx,i=(fy+1)*W+x;if(x>=0&&x<W&&fy+1<H&&dep[i]<=fy&&(pl.v!=='l'||Math.abs(dx)<4))lowX.fillRect(x,fy+1,1,1)}
   if(env.night>.25&&NGL_OK){const ng=lookGlow(LK);if(ng)drawHalo(AV.x,fy,ng[1],ng[0],ng[2]*Math.min(1,env.night*1.4))}
   const am=mix(env.amb,[1,1,1],.28),{left,top}=a2Draw(lowX,e,AV.x,fy,fl,am,true,AV.blink>0,AV.jy);
-  if(pl.v!=='l'){const wc=a2At(e,[e.head[0]-15,e.head[1]+12],left,top,fl);avWingFx(LK,wc[0]-7,wc[1]-11,fl,'f')}
+  if(pl.v!=='l'){const wc=a2At(e,[e.head[0]-(e.front?1:15),e.head[1]+12],left,top,fl);avWingFx(LK,wc[0]-7,wc[1]-11,fl,'f')}
   if(pl.v!=='l')try{avAuraFx(lowX,LK,e,left,top,fl,AV)}catch(err){}
   if(AV.emo){const E=EMO[AV.emo.k];if(E){const hp=a2At(e,e.head,left,top,fl),rise=RM?0:Math.round(AV.emo.t*3);drawSprite(E,E.map,Math.round(hp[0])-2,Math.round(top+e.top/4)-4-rise,false)}}
 }
@@ -13113,7 +13142,7 @@ function frame(t){
   tick(dt);draw();guideTick();
 }
 /* versões novas: quando o jogo muda no servidor, guarda o progresso e recarrega a página */
-const BUILD='49269ccea551',UKEY='tapmoss.upd';const UPD={on:false,go:false,at:0};
+const BUILD='ff0b33e3c3bc',UKEY='tapmoss.upd';const UPD={on:false,go:false,at:0};
 // the new version downloads in the background while the game goes on; the reload only comes once the whole page is here,
 // so a slow network never leaves a half-built page on screen. The offline helper (sw.js) hands this copy over at the reload.
 const NEXTC='tapmoss-next',pgKey=()=>{let p=location.pathname.replace(/index\.html$/,'');if(!p.endsWith('/'))p+='/';return p};
@@ -14896,13 +14925,13 @@ function hsDrawInterior(x,c,ri,t,live){const room=c.r[ri],E=HSV.edit;x.drawImage
 /* ---------- the gardener and the pet, at home ---------- */
 const HSAVC=new Map();
 function hsLook(){return HSV.vis?HSV.vis.look:S.av.look}
-function hsPoseName(A,t){const p=A.pose;if(p==='walk')return Math.floor(A.ft*5.5)%2?'walkB':'walkA';if(p==='wave')return Math.floor(t*4)%2?'wave2':'wave';if(p==='read')return(t%3.2)<.35?'read2':'read';return p}
+function hsPoseName(A,t){const p=A.pose;if(p==='walk')return A.vd?'walkf':Math.floor(A.ft*5.5)%2?'walkB':'walkA';if(p==='wave')return Math.floor(t*4)%2?'wave2':'wave';if(p==='read')return(t%3.2)<.35?'read2':'read';return p}
 function hsDrawAv(x,A,t){const pn=hsPoseName(A,t),pl=AVP[pn];if(!pl)return;const LK=A.look||hsLook(),[ps,pf]=a2Pose(pn,A.ft),e=a2Pick(LK,ps,pf,{wf:avWF(LK)});if(!e)return;const fl=A.fl;
   if(!A.seat){x.fillStyle='rgba(10,8,6,.26)';x.beginPath();x.ellipse(A.x,A.y+.4,3.6,.9,0,0,7);x.fill()}
   const ax=Math.round(A.x*4)/4,top=Math.round(A.y*2)/2+.5-e.feet/4+(A.jy||0),left=ax-e.w/8;
   A._lt=e.lc?{e,left,top,fl,t}:null;x.save();if(fl){x.translate(left*2+e.w/4,0);x.scale(-1,1)}if(e.ac){x.globalAlpha=auB();x.drawImage(e.ac,left,top,e.w/4,e.h/4);x.globalAlpha=1}x.drawImage(e.cv,left,top,e.w/4,e.h/4);
   if(A.blink>0&&e.blink){for(const[bx,by,c]of e.blink){x.fillStyle=`rgb(${c[0]},${c[1]},${c[2]})`;x.fillRect(left+bx/4,top+by/4,.25,.25)}}x.restore();
-  if(pl.v!=='l'&&!A.look){const wc=a2At(e,[e.head[0]-15,e.head[1]+12],left,top,fl);try{avWingFx(LK,wc[0]-7,wc[1]-11,fl,'f')}catch(err){}}
+  if(pl.v!=='l'&&!A.look){const wc=a2At(e,[e.head[0]-(e.front?1:15),e.head[1]+12],left,top,fl);try{avWingFx(LK,wc[0]-7,wc[1]-11,fl,'f')}catch(err){}}
   if(pl.v!=='l')try{avAuraFx(x,LK,e,left,top,fl,A)}catch(err){}
   if(A.emo){const E=EMO[A.emo.k];if(E&&E.map){const hp=a2At(e,e.head,left,top,fl),rise=RM?0:Math.round(A.emo.t*3);drawSprite(E,E.map,Math.round(hp[0])-2,Math.round(top+e.top/4)-4-rise,false)}}}
 // asleep: only the head shows on the pillow, the blanket goes back over the rest
@@ -14931,7 +14960,7 @@ function hsGo(A,to,then,allow){const c=HSV.c;if(!c)return;A.seat=null;A.sleep=nu
   if(HSV.fora){A.path=[[clamp(to[0],2,HRW-2),clamp(to[1],84,100)]];A.then=then;return}
   const p=hsPath(c.r[HSV.ri],[A.x,A.y],to,allow);A.path=p||[[to[0],to[1]]];A.then=then}
 function hsAvTick(A,dt,t){A.blinkT=(A.blinkT||2)-dt;if(A.blinkT<=0){A.blink=.13;A.blinkT=2+rnd()*4}if(A.blink>0)A.blink-=dt;if(A.emo){A.emo.t+=dt;if(A.emo.t>=A.emo.d)A.emo=null}
-  if(A.path&&A.path.length){const p=A.path[0],dx=p[0]-A.x,dy=p[1]-A.y,d=Math.hypot(dx,dy),sp=(A.run?26:15)*dt;A.pose='walk';A.ft=(A.ft||0)+dt;if(Math.abs(dx)>.2)A.fl=dx<0;
+  if(A.path&&A.path.length){const p=A.path[0],dx=p[0]-A.x,dy=p[1]-A.y,d=Math.hypot(dx,dy),sp=(A.run?26:15)*dt;A.pose='walk';A.ft=(A.ft||0)+dt;if(Math.abs(dx)>.2)A.fl=dx<0;A.vd=dy>0&&Math.abs(dy)>Math.abs(dx)*1.3?1:0;
     if(d<=sp){A.x=p[0];A.y=p[1];A.path.shift();if(!A.path.length){A.pose='stand';A.run=0;const th=A.then;A.then=null;if(th)th()}}else{A.x+=dx/d*sp;A.y+=dy/d*sp}return}
   if(A.until){if(t<=A.until)return;A.until=0;A.sleep=null;A.pose='stand';if(A.seat){const b=A.seat.base;A.seat=null;if(!HSV.fora)A.path=[[A.x,Math.min(b+1.5,HWH+HFD-1)]]}}
   A.idle=(A.idle||0)+dt;if(A.idle>(A.next||6)&&!HSV.edit){A.idle=0;A.next=7+rnd()*12;hsIdle(A,t)}}
