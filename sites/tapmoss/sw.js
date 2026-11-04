@@ -2,7 +2,7 @@
 // version.json fica sempre fora da cache: é por ele que o jogo sabe que há versão nova.
 // Cada página (o jogo em cada língua, os guias) guarda-se com o seu próprio endereço.
 // A versão nova descarrega-se enquanto se joga e fica em NEXT; ao recarregar, sai daí sem esperar pela rede.
-const V='tapmoss-96',NEXT='tapmoss-next';
+const V='tapmoss-97',NEXT='tapmoss-next';
 const CORE=['/','/manifest.json','/tapmoss-192.png','/tapmoss-512.png','/tapmoss-maskable.png','/tapmoss-180.png','/tapmoss-64.png','/badge-96.png'];
 // the pages already kept by the previous version come along, so an update does not download the whole game again just to have it offline
 self.addEventListener('install',e=>{e.waitUntil((async()=>{const c=await caches.open(V);let pages=0;
