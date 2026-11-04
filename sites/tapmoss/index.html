@@ -1409,6 +1409,12 @@ h4.mnrealm{color:#f4c54f;margin-top:14px}
 @keyframes auOr{0%{transform:translate(48px,0);opacity:1}12.5%{transform:translate(34px,10px);opacity:1}25%{transform:translate(0,14px);opacity:1}37.5%{transform:translate(-34px,10px);opacity:.8}50%{transform:translate(-48px,0);opacity:.3}62.5%{transform:translate(-34px,-10px);opacity:.25}75%{transform:translate(0,-14px);opacity:.25}87.5%{transform:translate(34px,-10px);opacity:.5}100%{transform:translate(48px,0);opacity:1}}
 .swb.eyg{background:radial-gradient(circle,#fff 0 14%,var(--c) 42%,color-mix(in srgb,var(--c) 50%,#000) 100%);animation:swGl 2.2s ease-in-out infinite}
 @keyframes swGl{50%{filter:brightness(1.3) saturate(1.2)}}
+.mnmany span b{position:absolute;right:2px;bottom:1px;font-size:11px;line-height:1;color:#fff;--nsh:#0a0f0b;text-shadow:1px 0 0 #0a0f0b,-1px 0 0 #0a0f0b,0 1px 0 #0a0f0b,0 -1px 0 #0a0f0b}
+.mnsum{margin:2px auto 0;max-width:320px;font-size:12px;line-height:1.45;color:var(--tx2)}
+.minemode #side{pointer-events:none}
+.minemode #side>.sbtn,.minemode #hud .chips>.mn{pointer-events:auto;transition:opacity .25s ease,transform .25s ease}
+.minemode #side>.sbtn.thru,.minemode #hud .chips>.thru{opacity:.16;pointer-events:none;transform:translateX(8px)}
+.minemode #hud .chips>.thru{transform:translateX(-8px)}
 </style>
 <script>document.documentElement.classList.add('js')</script>
 </head>
@@ -1526,6 +1532,7 @@ Object.assign(TR,{"{0} baús de nível por abrir": ["{0} level chests to open", 
 Object.assign(TR,{"Ainda há {0} baús e achados na rocha: usa uma lanterna para os soltares antes de desceres.": ["There are still {0} chests and finds in the rock: use a lantern to dig them out before you go down.", "Aún quedan {0} cofres y hallazgos en la roca: usa un farol para sacarlos antes de bajar.", "Il reste {0} coffres et trouvailles dans la roche : utilise une lanterne pour les dégager avant de descendre.", "Im Gestein stecken noch {0} Truhen und Funde: Nimm eine Laterne und hol sie heraus, bevor du hinabsteigst.", "岩の中にまだ宝箱と見つけものが{0}個ある。降りる前にランタンで掘り出そう。", "岩石里还有 {0} 个宝箱和收藏品：下到下一阶段之前，用灯笼把它们挖出来。"], "Todas as tuas cenas rendem moedas, mesmo quando não estás a olhar para elas. Nas outras cenas o musgo também cresce, e vês o que cresceu quando lá voltas.": ["All your scenes earn coins, even when you're not looking at them. Moss grows in your other scenes too, and you'll see how much when you go back.", "Todas tus escenas dan monedas, aunque no las estés mirando. En las otras escenas el musgo también crece, y verás cuánto cuando vuelvas.", "Toutes tes scènes rapportent des pièces, même quand tu ne les regardes pas. La mousse pousse aussi dans tes autres scènes, et tu verras combien en y revenant.", "Alle deine Szenen bringen Münzen, auch wenn du sie gerade nicht ansiehst. In den anderen Szenen wächst das Moos auch, und du siehst, wie viel, wenn du zurückkommst.", "見ていない時も、すべてのシーンがコインを生みます。ほかのシーンでもコケは育ち、戻ったときにどれだけ育ったかがわかります。", "所有场景都会产出金币，即使你没在看。其他场景里的苔藓也会生长，回去时就能看到长了多少。"], "De dia, de vez em quando; de noite, um ou dois no máximo, para veres ao acordar.": ["Now and then during the day; at night, one or two at most, for when you wake up.", "De día, de vez en cuando; de noche, uno o dos como mucho, para que los veas al despertar.", "De temps en temps dans la journée ; la nuit, une ou deux au plus, à voir au réveil.", "Tagsüber ab und zu, nachts höchstens ein oder zwei, die du beim Aufwachen siehst.", "日中はときどき、夜は多くても1〜2回。起きたときに見られます。", "白天偶尔提醒；夜里最多一两条，醒来就能看到。"], "Quando te regam, te deixam um baú, começam a jogar ou te passam à frente. No máximo um a cada 10 minutos.": ["When they water you, leave you a chest, start playing or pass you. At most one every 10 minutes.", "Cuando te riegan, te dejan un cofre, empiezan a jugar o te adelantan. Como mucho uno cada 10 minutos.", "Quand ils t’arrosent, te laissent un coffre, commencent à jouer ou te dépassent. Au plus une toutes les 10 minutes.", "Wenn sie dich gießen, dir eine Truhe dalassen, zu spielen beginnen oder dich überholen. Höchstens eine alle 10 Minuten.", "水やり、宝箱、プレイ開始、追い抜きのとき。10分に1回まで。", "好友给你浇水、留宝箱、开始游戏或超过你时。最多每 10 分钟一条。"], "Ao longo do dia e logo de manhã, com um baú extra se entrares pelo aviso. Também medalhas, ovos e o pet. Para sozinho ao fim de duas semanas sem jogar.": ["Through the day and first thing in the morning, with an extra chest if you come in through it. Also medals, eggs and your pet. Stops by itself after two weeks without playing.", "A lo largo del día y a primera hora de la mañana, con un cofre extra si entras desde el aviso. También medallas, huevos y la mascota. Se detiene solo tras dos semanas sin jugar.", "Au fil de la journée et dès le matin, avec un coffre en plus si tu entres par la notification. Aussi les médailles, les œufs et ton familier. S’arrête tout seul après deux semaines sans jouer.", "Über den Tag verteilt und gleich am Morgen, mit einer Extra-Truhe, wenn du über die Mitteilung kommst. Auch Medaillen, Eier und dein Haustier. Hört nach zwei Wochen ohne Spielen von selbst auf.", "日中と朝いちばんに。通知から入ると宝箱がもう1つ。メダル、タマゴ、ペットのお知らせも。2週間遊ばないと自動で止まります。", "白天和一早都会提醒，从通知进入多得一个宝箱。也包括奖牌、蛋和宠物。两周不玩会自动停止。"], "Avisos ao longo do dia e um logo de manhã, com o que o jardim fez de noite. E quando um amigo te regar ou te deixar um baú.": ["Notices through the day and one first thing in the morning with what your garden made overnight. And when a friend waters you or leaves you a chest.", "Avisos a lo largo del día y uno a primera hora de la mañana con lo que tu jardín hizo de noche. Y cuando un amigo te riegue o te deje un cofre.", "Des notifications dans la journée et une dès le matin avec ce que ton jardin a fait pendant la nuit. Et quand un ami t’arrose ou te laisse un coffre.", "Mitteilungen über den Tag und eine gleich am Morgen mit dem, was dein Garten über Nacht geschafft hat. Und wenn ein Freund dich gießt oder dir eine Truhe dalässt.", "日中に何回かと、朝いちばんに1回。夜のあいだに庭が育てたものをお知らせします。友だちが水やりや宝箱をくれたときも。", "白天会有几条提醒，一早还有一条告诉你花园夜里的收获。好友给你浇水或留宝箱时也会提醒。"], "Guardamos o nome que escolheste, a cidade (zona aproximada), o país e o progresso do jogo, para guardar o jogo e para os teus amigos. O email só se o deres, e serve apenas para recuperares o jardim: nunca o mostramos nem enviamos publicidade. Não guardamos a localização exata. Os teus amigos veem o teu perfil e a tua cena; se apareceres num ranking, quem o abrir também pode ver a tua cena. O planeta mostra só totais por país.": ["We keep the name you chose, your city (rough area), your country and your game progress, to save the game and for your friends. Your email only if you give it, and only so you can get your garden back: we never show it or send ads. We don't keep your exact location. Your friends see your profile and scene; if you appear in a ranking, whoever opens it can also see your scene. The planet only shows totals per country.", "Guardamos el nombre que elegiste, la ciudad (zona aproximada), el país y el progreso del juego, para guardar la partida y para tus amigos. El email solo si nos lo das, y sirve únicamente para recuperar tu jardín: nunca lo mostramos ni enviamos publicidad. No guardamos la ubicación exacta. Tus amigos ven tu perfil y tu escena; si apareces en un ranking, quien lo abra también puede ver tu escena. El planeta solo muestra totales por país.", "Nous gardons le nom que tu as choisi, ta ville (zone approximative), ton pays et ta progression, pour sauvegarder le jeu et pour tes amis. L'email seulement si tu le donnes, et uniquement pour récupérer ton jardin : on ne le montre jamais et on n'envoie pas de pub. Nous ne gardons pas ta position exacte. Tes amis voient ton profil et ta scène ; si tu apparais dans un classement, qui l’ouvre peut aussi voir ta scène. La planète ne montre que des totaux par pays.", "Wir speichern den Namen, den du gewählt hast, deine Stadt (ungefähre Gegend), dein Land und deinen Spielfortschritt, um das Spiel zu sichern und für deine Freunde. Die E-Mail nur, wenn du sie angibst, und nur, damit du deinen Garten zurückbekommst: Wir zeigen sie nie und schicken keine Werbung. Deinen genauen Standort speichern wir nicht. Deine Freunde sehen dein Profil und deine Szene; wenn du in einer Rangliste stehst, kann jeder, der sie öffnet, auch deine Szene sehen. Der Planet zeigt nur Summen pro Land.", "選んだ名前、都市（おおよその地域）、国、ゲームの進行を、セーブと友だちのために保存します。メールは登録した場合だけで、庭を取り戻すためにだけ使います。表示も広告送信もしません。正確な位置は保存しません。プロフィールと景色は友だちに見えます。ランキングに載ると、それを開いた人もあなたの景色を見られます。地球には国ごとの合計だけが表示されます。", "我们会保存你选的名字、城市（大致区域）、国家和游戏进度，用来存档和给好友看。邮箱只有你提供时才保存，只用来找回花园：我们从不公开，也不发广告。我们不保存精确位置。好友能看到你的资料和场景；如果你上了排行榜，打开榜单的人也能看到你的场景。地球上只显示各国的总数。"]});
 Object.assign(TR,{"musgo secou": ["moss dried", "musgo seco", "mousse séchée", "Moos vertrocknet", "コケが枯れた", "苔藓干了"], "Sem ti, o musgo seca devagar. Com toques e rega volta a crescer.": ["Without you, the moss slowly dries out. Taps and watering bring it back.", "Sin ti, el musgo se seca poco a poco. Con toques y riego vuelve a crecer.", "Sans toi, la mousse sèche doucement. Avec des touches et de l’eau, elle repousse.", "Ohne dich trocknet das Moos langsam aus. Mit Tippen und Gießen wächst es wieder.", "あなたがいないと、コケは少しずつ枯れていく。タップと水やりでまた育つ。", "没有你，苔藓会慢慢变干。点一点、浇浇水，它就会再长起来。"], "A subir… quanto mais fundo, mais demora, e a luz continua a gastar-se.": ["Climbing… the deeper you are, the longer it takes, and the light keeps burning.", "Subiendo… cuanto más hondo, más tarda, y la luz se sigue gastando.", "Tu remontes… plus c’est profond, plus c’est long, et la lumière continue de baisser.", "Du kletterst hoch … je tiefer, desto länger dauert es, und das Licht brennt weiter.", "のぼっている… 深いほど時間がかかり、明かりは減り続ける。", "正在往上爬……越深越慢，灯光还在不停消耗。"], "A subir…": ["Climbing…", "Subiendo…", "Tu remontes…", "Kletterst hoch …", "のぼり中…", "往上爬…"], "Mais fundo na mina · {0}": ["Deepest in the mine · {0}", "Más hondo en la mina · {0}", "Le plus profond dans la mine · {0}", "Am tiefsten in der Mine · {0}", "鉱山の最深記録 · {0}", "矿井最深 · {0}"], "Ainda ninguém deste país desceu à mina.": ["Nobody from this country has gone down the mine yet.", "Todavía nadie de este país ha bajado a la mina.", "Personne de ce pays n’est encore descendu dans la mine.", "Aus diesem Land ist noch niemand in die Mine gestiegen.", "この国からはまだ誰も鉱山に降りていない。", "这个国家还没有人下过矿井。"], "O teu fundo: {0} m": ["Your depth: {0} m", "Tu fondo: {0} m", "Ta profondeur : {0} m", "Deine Tiefe: {0} m", "あなたの深さ：{0} m", "你的深度：{0} 米"]});
 Object.assign(TR,{"Rapado": ["Buzz cut", "Rapado", "Coupe rasée", "Kurzgeschoren", "坊主", "寸头"], "Tigela": ["Bowl cut", "Corte tazón", "Coupe au bol", "Topfschnitt", "マッシュ", "蘑菇头"], "Liso comprido": ["Long and straight", "Largo y liso", "Long et lisse", "Lang und glatt", "ロングストレート", "长直发"], "Chiquinhas": ["Pigtails", "Coletas", "Couettes", "Zwei Zöpfchen", "ツインテール", "双马尾"], "Topete": ["Quiff", "Tupé", "Banane", "Tolle", "リーゼント", "飞机头"], "Caracóis": ["Short curls", "Rizos cortos", "Boucles courtes", "Kurze Locken", "ショートカール", "短卷发"], "Dois carrapitos": ["Space buns", "Dos moños", "Deux chignons", "Zwei Dutts", "ダブルおだんご", "双丸子头"], "Rabo alto": ["High ponytail", "Coleta alta", "Queue haute", "Hoher Pferdeschwanz", "ハイポニー", "高马尾"], "Trança de lado": ["Side braid", "Trenza de lado", "Tresse sur le côté", "Seitlicher Zopf", "サイド三つ編み", "侧边辫"], "Cachos longos": ["Long curls", "Rizos largos", "Longues boucles", "Lange Locken", "ロングカール", "长卷发"], "Mullet": ["Mullet", "Mullet", "Mulet", "Vokuhila", "マレット", "鲻鱼头"], "Samurai": ["Topknot", "Samurái", "Samouraï", "Samurai", "ちょんまげ", "武士髻"], "Brisa": ["Breeze", "Brisa", "Brise", "Brise", "そよ風", "微风"], "Raio de sol": ["Sunbeam", "Rayo de sol", "Rayon de soleil", "Sonnenstrahl", "陽だまり", "阳光"], "Luar": ["Moonlight", "Luz de luna", "Clair de lune", "Mondschein", "月明かり", "月光"], "Pétalas": ["Petals", "Pétalos", "Pétales", "Blütenblätter", "花びら", "花瓣"], "Maré": ["Tide", "Marea", "Marée", "Gezeiten", "潮", "潮汐"], "Brasas": ["Embers", "Brasas", "Braises", "Glut", "残り火", "余烬"], "Geada": ["Frost", "Escarcha", "Givre", "Raureif", "霜", "霜"], "Corações": ["Hearts", "Corazones", "Cœurs", "Herzen", "ハート", "爱心"], "Poeira de estrelas": ["Stardust", "Polvo de estrellas", "Poussière d'étoiles", "Sternenstaub", "星くず", "星尘"], "Trovão": ["Thunder", "Trueno", "Tonnerre", "Donner", "雷", "雷霆"], "Runas": ["Runes", "Runas", "Runes", "Runen", "ルーン", "符文"], "Cabelo rosa pastel": ["Pastel pink hair", "Pelo rosa pastel", "Cheveux rose pastel", "Pastellrosa Haare", "パステルピンクの髪", "淡粉色头发"], "Cabelo menta": ["Mint hair", "Pelo menta", "Cheveux menthe", "Mintgrüne Haare", "ミントの髪", "薄荷色头发"], "Cabelo lilás": ["Lilac hair", "Pelo lila", "Cheveux lilas", "Fliederfarbene Haare", "ライラックの髪", "丁香紫头发"], "Cabelo dourado": ["Golden hair", "Pelo dorado", "Cheveux dorés", "Goldene Haare", "金色の髪", "金色头发"], "Cabelo rosa néon": ["Neon pink hair", "Pelo rosa neón", "Cheveux rose néon", "Neonpinke Haare", "ネオンピンクの髪", "霓虹粉头发"], "Cabelo néon": ["Neon hair", "Pelo neón", "Cheveux néon", "Neonhaare", "ネオンの髪", "霓虹头发"], "Cabelo meia-noite": ["Midnight hair", "Pelo medianoche", "Cheveux minuit", "Mitternachtshaare", "真夜中の髪", "午夜色头发"], "Olhos rosa": ["Pink eyes", "Ojos rosa", "Yeux roses", "Rosa Augen", "ピンクの目", "粉色眼睛"], "Olhos de jade": ["Jade eyes", "Ojos de jade", "Yeux de jade", "Jadeaugen", "翡翠の目", "翡翠之眼"], "Olhos de ouro": ["Golden eyes", "Ojos de oro", "Yeux d'or", "Goldene Augen", "黄金の目", "黄金之眼"], "Olhos de rubi": ["Ruby eyes", "Ojos de rubí", "Yeux de rubis", "Rubinaugen", "ルビーの目", "红宝石之眼"], "Olhos estelares": ["Starry eyes", "Ojos estelares", "Yeux stellaires", "Sternenaugen", "星の目", "星辰之眼"], "Olhos néon": ["Neon eyes", "Ojos neón", "Yeux néon", "Neonaugen", "ネオンの目", "霓虹之眼"], "Olhos de cristal": ["Crystal eyes", "Ojos de cristal", "Yeux de cristal", "Kristallaugen", "水晶の目", "水晶之眼"], "Olhos de brasa": ["Ember eyes", "Ojos de brasa", "Yeux de braise", "Glutaugen", "残り火の目", "余烬之眼"], "Olhos arcanos": ["Arcane eyes", "Ojos arcanos", "Yeux arcaniques", "Arkane Augen", "秘術の目", "奥术之眼"], "Aura": ["Aura", "Aura", "Aura", "Aura", "オーラ", "光环"], "Esconder o chapéu": ["Hide the hat", "Ocultar el sombrero", "Masquer le chapeau", "Hut ausblenden", "帽子を隠す", "隐藏帽子"], "Esconder os extras": ["Hide the extras", "Ocultar los extras", "Masquer les extras", "Extras ausblenden", "アクセサリーを隠す", "隐藏配饰"], "Esconder a arma": ["Hide the weapon", "Ocultar el arma", "Masquer l'arme", "Waffe ausblenden", "武器を隠す", "隐藏武器"], "Esconder o animal": ["Hide the pet", "Ocultar la mascota", "Masquer l'animal", "Tier ausblenden", "ペットを隠す", "隐藏宠物"], "Continua contigo e o bónus do pet mantém-se.": ["It stays with you and the pet bonus still counts.", "Sigue contigo y el bonus de la mascota se mantiene.", "Il reste avec toi et le bonus de l'animal est conservé.", "Es bleibt bei dir und der Tierbonus gilt weiter.", "一緒にいて、ペットのボーナスはそのまま。", "它仍陪着你，宠物加成照常生效。"], "Continua equipado e conta para os conjuntos.": ["It stays equipped and counts towards the sets.", "Sigue equipado y cuenta para los conjuntos.", "Il reste équipé et compte pour les ensembles.", "Es bleibt angelegt und zählt für die Sets.", "装備したままで、セットにも数えられる。", "仍保持装备，并计入套装。"], "Uma luz à volta da tua personagem, no jardim, em casa e onde te virem.": ["A light around your character, in the garden, at home and wherever you're seen.", "Una luz alrededor de tu personaje, en el jardín, en casa y donde te vean.", "Une lumière autour de ton personnage, au jardin, à la maison et partout où on te voit.", "Ein Licht um deine Figur, im Garten, zu Hause und überall, wo man dich sieht.", "キャラクターを包む光。庭でも家でも、どこで見られても。", "环绕角色的光芒，在花园、在家，在任何被看到的地方。"]});
+Object.assign(TR,{"Estão nos teus ovos, no jardim.": ["They’re with your eggs, in the garden.", "Están con tus huevos, en el jardín.", "Ils sont avec tes œufs, au jardin.", "Sie liegen bei deinen Eiern im Garten.", "庭のタマゴに入っています。", "都在花园的蛋里。"], "{0} baús da mina · {1}": ["{0} mine chests · {1}", "{0} cofres de la mina · {1}", "{0} coffres de la mine · {1}", "{0} Minentruhen · {1}", "鉱山の宝箱 {0}個 · {1}", "{0} 个矿洞宝箱 · {1}"], "1 peça nova · +{0}% de prata": ["1 new piece · +{0}% silver", "1 pieza nueva · +{0}% de plata", "1 nouvelle pièce · +{0} % d’argent", "1 neues Stück · +{0}% Silber", "新しい発見 1個 · 銀+{0}%", "1 件新收藏 · 银 +{0}%"], "{0} peças novas · +{1}% de prata": ["{0} new pieces · +{1}% silver", "{0} piezas nuevas · +{1}% de plata", "{0} nouvelles pièces · +{1} % d’argent", "{0} neue Stücke · +{1}% Silber", "新しい発見 {0}個 · 銀+{1}%", "{0} 件新收藏 · 银 +{1}%"], "1 repetida · +{0} rubis": ["1 duplicate · +{0} rubies", "1 repetida · +{0} rubíes", "1 en double · +{0} rubis", "1 doppelt · +{0} Rubine", "ダブり 1個 · ルビー+{0}", "1 件重复 · +{0} 红宝石"], "{0} repetidas · +{1} rubis": ["{0} duplicates · +{1} rubies", "{0} repetidas · +{1} rubíes", "{0} en double · +{1} rubis", "{0} doppelt · +{1} Rubine", "ダブり {0}個 · ルビー+{1}", "{0} 件重复 · +{1} 红宝石"], "+{0} picaretas na mochila": ["+{0} pickaxes in your backpack", "+{0} picos en la mochila", "+{0} pioches dans le sac", "+{0} Spitzhacken im Rucksack", "バッグにツルハシ+{0}", "背包里 +{0} 把镐"], "+{0} derretidas por {1} rubis": ["+{0} melted for {1} rubies", "+{0} fundidos por {1} rubíes", "+{0} fondues pour {1} rubis", "+{0} für {1} Rubine eingeschmolzen", "+{0}本を溶かしてルビー{1}個に", "+{0} 把熔成 {1} 颗红宝石"]});
 </script>
 <script>
 (()=>{
@@ -3044,10 +3051,13 @@ const FRONT=new Set(['idle','wave','jump','walkf']);
 function rig(pose,f,B,opt){const P=poseOf(pose,f),fr=FRONT.has(pose)&&!(opt&&opt.side);if(opt&&opt.umb&&!P.hold&&pose!=='lie'){P.ikF=fr?[8.8,5.8]:[8.5,4.5];P.sF=P.eF=0}
   if(fr){// facing us: the body straight and even, the legs side by side, both arms at the sides
     const k=P.breath||0;P.lean=0;P.tF=.035;P.tB=-.035;P.kF=P.kB=.02;
-    if(pose==='idle'){P.sF=.11+.025*k;P.eF=-.1;P.sB=-.11-.025*k;P.eB=.1}
-    else if(pose==='wave'){P.sF=2.55;P.eF=f%2?-.2:.45;P.sB=-.12;P.eB=.1;P.bd=-60*PI/180}
-    else if(pose==='walkf'){const s=P.sw||0;P.sF=.14+.06*s;P.eF=-.12-.22*Math.max(0,-s);P.sB=-.14+.06*s;P.eB=.12+.22*Math.max(0,s)}
-    else{P.sF=2.6;P.eF=.25;P.sB=-2.6;P.eB=-.25;P.tF=.25;P.tB=-.25;P.kF=P.kB=.5}}
+    // a big weapon is held a little away from the body, so it stands clear of the face
+    const big=opt&&/[spb]/.test(opt.wpn||'');
+    if(pose==='idle'){P.sF=(big?.36:.11)+.025*k;P.eF=big?-.16:-.1;P.sB=-.11-.025*k;P.eB=.1}
+    // with a big weapon in the right hand, the free left hand waves
+    else if(pose==='wave'){if(big){P.sB=-2.55;P.eB=f%2?.2:-.45;P.sF=.36;P.eF=-.16}else{P.sF=2.55;P.eF=f%2?-.2:.45;P.sB=-.12;P.eB=.1;P.bd=-60*PI/180}}
+    else if(pose==='walkf'){const s=P.sw||0;P.sF=(big?.34:.14)+.06*s;P.eF=-.12-.22*Math.max(0,-s);P.sB=-.14+.06*s;P.eB=.12+.22*Math.max(0,s)}
+    else{P.sF=big?.5:2.6;P.eF=big?-.3:.25;P.sB=-2.6;P.eB=-.25;P.tF=.25;P.tB=-.25;P.kF=P.kB=.5}}
   const J={pose,f,P,B,front:fr,bd:P.bd,lean:P.lean,breath:P.breath,hairW:P.hairW,capeW:P.capeW};
   const pel=[CX,GY-(LEN.th+LEN.sh)-2.5+P.bob];J.pel=pel;
   const leg=(hx,ta,ka)=>{const hip=[pel[0]+hx,pel[1]],kn=[hip[0]+rot(ta,LEN.th)[0],hip[1]+rot(ta,LEN.th)[1]],an=[kn[0]+rot(ta-ka,LEN.sh)[0],kn[1]+rot(ta-ka,LEN.sh)[1]];return{hip,kn,an,ta,ka}};
@@ -3493,7 +3503,9 @@ function sword(F,J,z,o){const H=J.aF.fist,dx=Math.cos(J.bd),dy=Math.sin(J.bd),qx
   const id=draw(F,{sh:poly(P,1.5,[-.1,-.1]),r:o.blade,kind:o.bladeKind||'metal',z:z+.1,grp:'swb',litEdge:4});
   line(F,id,g[0]+dx*2,g[1]+dy*2,g[0]+dx*(len-6),g[1]+dy*(len-6),o.blade[o.fuller==null?2:o.fuller]);
   if(o.glow)for(let s=3;s<len;s+=3)glow(F,g[0]+dx*s+qx*(w-.5)*(s%2?1:-1),g[1]+dy*s+qy*(w-.5)*(s%2?1:-1),o.glow2||o.glow,.55);
-  if(o.gem)glow(F,g[0],g[1],o.gem,1);return{g,tip,dx,dy}}
+  if(o.gem)glow(F,g[0],g[1],o.gem,1);return{g,tip,dx,dy,qx,qy,len,w}}
+// a spike off a blade or guard: from b, pointing along (ux,uy), length L, half width h
+function spike(F,b,ux,uy,L,h,mat,kind,z,grp){const px=-uy,py=ux;draw(F,{sh:poly([[b[0]+px*h,b[1]+py*h],[b[0]+ux*L,b[1]+uy*L],[b[0]-px*h,b[1]-py*h]],.5),r:mat,kind:kind||'metal',z,grp,noShadow:true,litEdge:4})}
 // the four sets: their colours, and each piece as a drawing
 const KIT={
   gelo:{ice:R(['#1e3a66','#2f5c94','#4f8cc4','#8cc4ec','#c8ecff','#ffffff']),plate:R(['#1a2236','#2c3a5c','#4a6290','#7a96c2','#b6cceb','#f0f8ff']),cloak:R(['#0a1230','#142254','#1e3484','#2c4aac','#4a6ad0','#7c9ae8']),
@@ -3555,14 +3567,29 @@ const KIT_ACC={
 const KIT_ARM={
   enxada(F,J){const H=J.aF.fist,dx=Math.cos(J.bd),dy=Math.sin(J.bd);const a=[H[0]-dx*5,H[1]-dy*5],b=[H[0]+dx*19,H[1]+dy*19];limb(F,a,b,.9,.9,rmp('#a87644'),'leather',34,'hoe');const qx=-dy,qy=dx,e=[b[0]+qx*.4,b[1]+qy*.4];
     draw(F,{sh:poly([[e[0]-dx*1.2,e[1]-dy*1.2],[e[0]+qx*4.6-dx*1.5,e[1]+qy*4.6-dy*1.5],[e[0]+qx*5+dx*1.3,e[1]+qy*5+dy*1.3],[e[0]+dx*1.2,e[1]+dy*1.2]],1),r:STEELR,kind:'metal',z:34.2,grp:'hoeB'})},
-  espadagelo(F,J){const K=KIT.gelo;sword(F,J,34,{blade:K.ice,bladeKind:'crystal',guard:K.plate,len:22,w:2.3,gw:4,glow:[200,245,255],glow2:[120,200,255],fuller:4,gem:[150,230,255]})},
-  laminaestelar(F,J){sword(F,J,34,{blade:R(['#141a5a','#2a2fa0','#4a50e0','#7a8cff','#c2d0ff','#ffffff']),bladeKind:'crystal',guard:GOLDR,len:21,w:2.1,glow:[150,170,255],glow2:[220,140,255],fuller:5,gem:[90,240,255]})},
-  laminaraio(F,J){const s=sword(F,J,34,{blade:R(['#0e4a6a','#1a78a0','#38b4dc','#7ae6ff','#c8f8ff','#ffffff']),bladeKind:'crystal',guard:GOLDR,len:20,w:1.9,glow:[150,240,255],glow2:[255,255,255],fuller:5});
-    let p=[s.g[0],s.g[1]];for(let i=1;i<=5;i++){const k=i/5,q=[s.g[0]+(s.tip[0]-s.g[0])*k+((J.f*7+i*13)%5-2)*.5,s.g[1]+(s.tip[1]-s.g[1])*k+((J.f*5+i*11)%5-2)*.5];gline(F,p[0],p[1],q[0],q[1],[220,250,255],.7);p=q}},
-  laminaforja(F,J){const K=KIT.cinzas,s=sword(F,J,34,{blade:R(['#140c0a','#2a1a14','#4a2e22','#7a4a30','#c07040','#ffb070']),guard:K.ir,len:22,w:2.9,gw:4.2,fuller:1});
-    for(let k=4;k<22;k+=2){const q=[s.g[0]+s.dx*k,s.g[1]+s.dy*k];glow(F,q[0]-s.dy*2.4,q[1]+s.dx*2.4,[255,110+k*4,40],.7)}}};
-// ---------- a look becomes an outfit ----------
-// what hangs below a hat and so stays when one is worn (buns and knots on top go under it)
+  // ice: a long crystal blade, icicles hanging off the guard and frost shards growing from the edges
+  espadagelo(F,J){const K=KIT.gelo,s=sword(F,J,34,{blade:K.ice,bladeKind:'crystal',guard:K.plate,len:34,w:3.3,gw:6.4,glow:[200,245,255],glow2:[120,200,255],fuller:4,gem:[150,230,255]});
+    for(const sd of[-1,1]){const b=[s.g[0]+s.qx*5.8*sd,s.g[1]+s.qy*5.8*sd];spike(F,b,-s.dx*.55+s.qx*.84*sd,-s.dy*.55+s.qy*.84*sd,4.2,1.1,K.ice,'crystal',34.3,'ic'+sd);spike(F,b,s.dx*.7+s.qx*.7*sd,s.dy*.7+s.qy*.7*sd,3,.9,K.ice,'crystal',34.3,'ic2'+sd)}
+    for(let k=7,i=0;k<29;k+=4.4,i++){const sd=i%2?1:-1,b=[s.g[0]+s.dx*k+s.qx*(s.w-.4)*(1-k/40)*sd,s.g[1]+s.dy*k+s.qy*(s.w-.4)*(1-k/40)*sd];spike(F,b,s.dx*.5+s.qx*.86*sd,s.dy*.5+s.qy*.86*sd,2.6-k/18,.8,K.ice,'crystal',34.25,'fs'+i)}
+    glow(F,s.tip[0],s.tip[1],[230,250,255],.9)},
+  // the star blade: deep blue, a crescent moon for a guard, stars along it and a bright point
+  laminaestelar(F,J){const s=sword(F,J,34,{blade:R(['#141a5a','#2a2fa0','#4a50e0','#7a8cff','#c2d0ff','#ffffff']),bladeKind:'crystal',guard:GOLDR,len:33,w:3,gw:2,glow:[150,170,255],glow2:[220,140,255],fuller:5,gem:[90,240,255]});
+    for(const sd of[-1,1]){let p=[s.g[0]+s.qx*1.6*sd,s.g[1]+s.qy*1.6*sd];for(let i=1;i<=5;i++){const a=i/5,q=[s.g[0]+s.qx*(1.6+a*4.6)*sd-s.dx*Math.sin(a*2.2)*3.2,s.g[1]+s.qy*(1.6+a*4.6)*sd-s.dy*Math.sin(a*2.2)*3.2];limb(F,p,q,1.1-a*.6,1.1-(a+.2)*.6,GOLDR,'metal',34.25,'moon'+sd);p=q}}
+    for(const k of[8,15,22,28])glow(F,s.g[0]+s.dx*k,s.g[1]+s.dy*k,[255,250,220],.85);glow(F,s.tip[0]+s.dx*1.4,s.tip[1]+s.dy*1.4,[255,255,255],1)},
+  // lightning: a jagged blade, wings for a guard and a live arc down the middle
+  laminaraio(F,J){const s=sword(F,J,34,{blade:R(['#0e4a6a','#1a78a0','#38b4dc','#7ae6ff','#c8f8ff','#ffffff']),bladeKind:'crystal',guard:GOLDR,len:32,w:2.7,gw:3,glow:[150,240,255],glow2:[255,255,255],fuller:5});
+    for(let k=5,i=0;k<28;k+=3.4,i++)for(const sd of[-1,1])spike(F,[s.g[0]+s.dx*k+s.qx*(s.w-.5)*sd,s.g[1]+s.dy*k+s.qy*(s.w-.5)*sd],s.dx*.45+s.qx*.89*sd,s.dy*.45+s.qy*.89*sd,1.6,.7,R(['#0e4a6a','#1a78a0','#38b4dc','#7ae6ff','#c8f8ff','#ffffff']),'crystal',34.22,'zz'+i+sd);
+    for(const sd of[-1,1])spike(F,[s.g[0]+s.qx*2.4*sd,s.g[1]+s.qy*2.4*sd],-s.dx*.25+s.qx*.97*sd,-s.dy*.25+s.qy*.97*sd,6.4,1.6,GOLDR,'metal',34.3,'wg'+sd);
+    let p=[s.g[0],s.g[1]];for(let i=1;i<=7;i++){const k=i/7,q=[s.g[0]+(s.tip[0]-s.g[0])*k+((J.f*7+i*13)%5-2)*.55,s.g[1]+(s.tip[1]-s.g[1])*k+((J.f*5+i*11)%5-2)*.55];gline(F,p[0],p[1],q[0],q[1],[220,250,255],.75);p=q}glow(F,s.tip[0],s.tip[1],[200,250,255],1)},
+  // the forge: a heavy dark cleaver, cracks glowing like coals, a spiked guard
+  laminaforja(F,J){const K=KIT.cinzas,s=sword(F,J,34,{blade:R(['#140c0a','#2a1a14','#4a2e22','#7a4a30','#c07040','#ffb070']),guard:K.ir,len:34,w:4.4,gw:6,fuller:1});
+    for(const sd of[-1,1])spike(F,[s.g[0]+s.qx*5.4*sd,s.g[1]+s.qy*5.4*sd],s.dx*.6+s.qx*.8*sd,s.dy*.6+s.qy*.8*sd,3.4,1,K.ir,'metal',34.3,'gs'+sd);
+    for(let k=4,i=0;k<31;k+=2.4,i++){const q=[s.g[0]+s.dx*k,s.g[1]+s.dy*k],o=((i*7)%5-2)*.8;glow(F,q[0]+s.qx*o,q[1]+s.qy*o,[255,110+Math.min(140,k*5),40],.75)}
+    for(const k of[10,19,26])line(F,null,s.g[0]+s.dx*k-s.qx*3,s.g[1]+s.dy*k-s.qy*3,s.g[0]+s.dx*(k+2)+s.qx*1.5,s.g[1]+s.dy*(k+2)+s.qy*1.5,[255,150,60])}};
+// how a weapon is carried: the big ones stand up beside you (facing us) or are raised in front when walking, so they never drag on the ground
+const WCARRY={espadagelo:'s',laminaestelar:'s',laminaraio:'s',laminaforja:'s',espadadragao:'s',lancaserafim:'p',foice:'p',tridenteabismo:'p',cetroprisma:'p',cajado:'p',arcocupido:'b',tocha:'h',varinha:'h',lanternaabobora:'h',pirulito:'h',varinhacoracao:'h'};
+function wpnBd(id,J){const t=WCARRY[id],D=PI/180,p=J.pose;if(!t||p==='crouch'||(t==='h'&&(p==='wave'||p==='jump')))return J.bd;if(p==='jumps')return(t==='s'?-52:t==='p'?-64:t==='b'?-10:-48)*D;
+  if(J.front)return(t==='s'?-80:t==='p'?-84:t==='b'?-8:-66)*D;if(p==='walk')return(t==='s'?-52:t==='p'?-64:t==='b'?-10:-48)*D+(J.bd-38*D)*.25;return J.bd}
 const HLONG=new Set(['comprido','ondulado','rabo','trancas','liso','mullet','chiquinhas','rabalto','trancalado']);
 const HKEEP=typeof HATKEEP!=='undefined'?HATKEEP:{};
 function outfit(look,pose,opt){const sk=skinRamp(((AVSKIN[look.skin]||AVSKIN[0])[0])),hr=rmp(look.hc||'#5a3a22',{hs:1.1});
@@ -3580,11 +3607,11 @@ function outfit(look,pose,opt){const sk=skinRamp(((AVSKIN[look.skin]||AVSKIN[0])
   accSpec(O,look,opt);
   if(KH)O.head.push(KH.fn);else if(hat){const h=hatDraw(hat,look.hc);if(h)O.head.push(h)}
   // a blade or a tool in the hand, put away when the hands are busy
-  if(look.arm&&KIT_ARM[look.arm]&&!opt.umb&&!['sit','read','read2','lie','flute','water','mine'].includes(pose))O.weapon=KIT_ARM[look.arm];
+  if(look.arm&&KIT_ARM[look.arm]&&!opt.umb&&!['sit','read','read2','lie','flute','water','mine'].includes(pose)){const fn=KIT_ARM[look.arm],id=look.arm;O.weapon=(F,J)=>{const b=J.bd;J.bd=wpnBd(id,J);try{fn(F,J)}finally{J.bd=b}}}
   heldSpec(O,pose,opt);
   return O}
 // ---------- one frame: pixels and what the game needs to know about them ----------
-function render(look,pose,f,opt){opt=opt||{};GID=0;const lie=pose==='lie';if(lie&&look.acc&&WTYPE[look.acc])look={...look,acc:'nada'};const J=rig(lie?'lie':pose,f,BODY,opt),O=outfit(look,pose,opt),F=new Frame();F.__sk=O.skin;
+function render(look,pose,f,opt){opt=opt||{};GID=0;const lie=pose==='lie';if(lie&&look.acc&&WTYPE[look.acc])look={...look,acc:'nada'};const J=rig(lie?'lie':pose,f,BODY,look.arm&&!opt.umb&&typeof WCARRY!=='undefined'&&WCARRY[look.arm]?{...opt,wpn:WCARRY[look.arm]}:opt),O=outfit(look,pose,opt),F=new Frame();F.__sk=O.skin;
   if(lie)setLight(.72,-.55,.52);
   try{drawBody(F,J,O)}finally{if(lie)setLight(-.55,-.72,.52)}
   let px=finish(F);
@@ -3695,38 +3722,57 @@ Object.assign(KIT_ACC,{
 // held: blades, a spear, a scythe, a trident, a sceptre, and things for the hand that are not weapons
 function shaft(F,J,back,fwd,r,mat,kind){const H=J.aF.fist,dx=Math.cos(J.bd),dy=Math.sin(J.bd),a=[H[0]-dx*back,H[1]-dy*back],b=[H[0]+dx*fwd,H[1]+dy*fwd];limb(F,a,b,r,r,mat,kind||'leather',34,'shaft');return{a,b,dx,dy,qx:-dy,qy:dx,H}}
 Object.assign(KIT_ARM,{
-  espadadragao(F,J){const K=KIT2.dragao,s=sword(F,J,34,{blade:R(['#2a0a06','#5a1408','#a02a0e','#e85a1a','#ffae4a','#fff0b0']),guard:K.sc,len:24,w:2.9,gw:4.8,fuller:4,gem:[255,150,60]});
-    for(let k=5;k<24;k+=2.5)glow(F,s.g[0]+s.dx*k-s.dy*2.8,s.g[1]+s.dy*k+s.dx*2.8,[255,90+k*5,30],.6)},
-  lancaserafim(F,J){const K=KIT2.serafim,S=shaft(F,J,9,26,.75,GOLDR,'metal'),t=S.b;draw(F,{sh:poly([[t[0]-S.qx*1.8,t[1]-S.qy*1.8],[t[0]+S.dx*8,t[1]+S.dy*8],[t[0]+S.qx*1.8,t[1]+S.qy*1.8],[t[0]-S.dx*1.4,t[1]-S.dy*1.4]],1),r:K.pl,kind:'crystal',z:34.3,grp:'spear',litEdge:3});
-    for(const s of[-1,1])draw(F,{sh:poly([[t[0]-S.dx*1.6,t[1]-S.dy*1.6],[t[0]-S.dx*3+S.qx*4.6*s,t[1]-S.dy*3+S.qy*4.6*s],[t[0]-S.dx*.4+S.qx*1.4*s,t[1]-S.dy*.4+S.qy*1.4*s]],.6),r:K.cl,kind:'cloth',z:34.2,grp:'sw'+s,noShadow:true});
-    glow(F,t[0]+S.dx*4,t[1]+S.dy*4,K.lt,1);glow(F,t[0]+S.dx*8,t[1]+S.dy*8,[255,255,255],.6)},
+  // the dragon greatsword: as tall as you, teeth along the back of the blade, horns off the guard, fire running up the edge
+  espadadragao(F,J){const K=KIT2.dragao,BL=R(['#2a0a06','#5a1408','#a02a0e','#e85a1a','#ffae4a','#fff0b0']),s=sword(F,J,34,{blade:BL,guard:K.sc,len:40,w:4.4,gw:7.4,fuller:4,gem:[255,150,60]});
+    for(let k=6,i=0;k<34;k+=3.4,i++)spike(F,[s.g[0]+s.dx*k-s.qx*(s.w-.6)*(1-k/60),s.g[1]+s.dy*k-s.qy*(s.w-.6)*(1-k/60)],s.dx*.6-s.qx*.8,s.dy*.6-s.qy*.8,2.4,.9,BL,'metal',34.2,'dt'+i);
+    for(const sd of[-1,1]){const b=[s.g[0]+s.qx*6.8*sd,s.g[1]+s.qy*6.8*sd];spike(F,b,s.dx*.8+s.qx*.6*sd,s.dy*.8+s.qy*.6*sd,6.4,1.4,K.horn,'metal',34.3,'dh'+sd)}
+    for(let k=5;k<38;k+=2.4)glow(F,s.g[0]+s.dx*k+s.qx*(s.w-.4),s.g[1]+s.dy*k+s.qy*(s.w-.4),[255,90+Math.min(150,k*4),30],.65);glow(F,s.tip[0],s.tip[1],[255,200,90],.9)},
+  // the seraph's lance: taller than you, a long crystal head between two pairs of wings, a ring of light round it
+  lancaserafim(F,J){const K=KIT2.serafim,S=shaft(F,J,18,38,.85,GOLDR,'metal'),t=S.b,c=[t[0]+S.dx*6.5,t[1]+S.dy*6.5];
+    draw(F,{sh:poly([[t[0]-S.qx*2.8,t[1]-S.qy*2.8],[t[0]+S.dx*4+S.qx*.9,t[1]+S.dy*4+S.qy*.9],[t[0]+S.dx*14,t[1]+S.dy*14],[t[0]+S.dx*4-S.qx*.9,t[1]+S.dy*4-S.qy*.9],[t[0]+S.qx*2.8,t[1]+S.qy*2.8],[t[0]-S.dx*2,t[1]-S.dy*2]],1),r:K.pl,kind:'crystal',z:34.3,grp:'spear',litEdge:3});
+    for(const s of[-1,1])for(const[l,o]of[[7.4,0],[5,2.2]])draw(F,{sh:poly([[t[0]-S.dx*(1.6+o),t[1]-S.dy*(1.6+o)],[t[0]-S.dx*(3.4+o)+S.qx*l*s,t[1]-S.dy*(3.4+o)+S.qy*l*s],[t[0]-S.dx*(1.6+o)+S.qx*(l-1.6)*s+S.dx*1.2,t[1]-S.dy*(1.6+o)+S.qy*(l-1.6)*s+S.dy*1.2],[t[0]-S.dx*(.2+o)+S.qx*1.6*s,t[1]-S.dy*(.2+o)+S.qy*1.6*s]],.6),r:K.cl,kind:'cloth',z:34.2,grp:'sw'+s+o,noShadow:true});
+    for(let i=0;i<10;i++){const a=i/10*2*PI;glow(F,c[0]+Math.cos(a)*5,c[1]+Math.sin(a)*2.2,K.lt,.5)}
+    for(let k=-14;k<30;k+=8)draw(F,{sh:ellipse(S.H[0]+S.dx*k,S.H[1]+S.dy*k,1.25,1.25),r:GOLDR,kind:'metal',z:34.15,grp:'sr'+k});glow(F,t[0]+S.dx*6,t[1]+S.dy*6,K.lt,1);glow(F,t[0]+S.dx*14,t[1]+S.dy*14,[255,255,255],.8)},
   // the reaper's scythe: a long dark shaft and a moon of a blade at the top, its edge alight
-  foice(F,J){const K=KIT2.ceifeiro,S=shaft(F,J,12,17,.8,K.wood),t=S.b,P=[];
-    for(let i=0;i<=8;i++){const u=i/8,ang=u*2.3,r=11.5;P.push([t[0]-S.dx*(1-Math.cos(ang))*r*.55+S.qx*Math.sin(ang)*r*.95,t[1]-S.dy*(1-Math.cos(ang))*r*.55+S.qy*Math.sin(ang)*r*.95])}
-    const inner=P.slice(1,-1).map((p,i)=>[p[0]+(t[0]-p[0])*.32+S.dx*.6,p[1]+(t[1]-p[1])*.32+S.dy*.6]);
-    const id=draw(F,{sh:poly([...P,...inner.reverse()],1.2),r:R(['#141420','#2a2a3e','#4a4a66','#7a7a9a','#b4b4cc','#eeeeff']),kind:'metal',z:34.3,grp:'scy',litEdge:3});
-    for(let i=1;i<P.length;i++)gline(F,P[i-1][0],P[i-1][1],P[i][0],P[i][1],K.vi,.55);draw(F,{sh:ellipse(t[0],t[1],1.3,1.3),r:K.bone,kind:'metal',z:34.4,grp:'scyk'});glow(F,P[8][0],P[8][1],K.vi,.8)},
-  tridenteabismo(F,J){const K=KIT2.abismo,S=shaft(F,J,8,22,.75,K.sh,'metal'),t=S.b;draw(F,{sh:capsule(t[0]-S.qx*3.6,t[1]-S.qy*3.6,t[0]+S.qx*3.6,t[1]+S.qy*3.6,.8,.8),r:K.pe,kind:'metal',z:34.2,grp:'tb'});
-    for(const s of[-1,0,1]){const b=[t[0]+S.qx*3.4*s,t[1]+S.qy*3.4*s],e=[b[0]+S.dx*(s?6:8),b[1]+S.dy*(s?6:8)];limb(F,b,e,.7,.35,K.pe,'metal',34.25,'tp'+s);draw(F,{sh:poly([[e[0]-S.qx*1.1,e[1]-S.qy*1.1],[e[0]+S.dx*2,e[1]+S.dy*2],[e[0]+S.qx*1.1,e[1]+S.qy*1.1]],.6),r:K.pe,kind:'metal',z:34.3,grp:'th'+s});bioDot(F,e[0],e[1],.55)}},
-  cetroprisma(F,J){const K=KIT2.prisma,S=shaft(F,J,6,17,.7,K.pl,'metal'),t=S.b,c=[t[0]+S.dx*4.4,t[1]+S.dy*4.4];draw(F,{sh:ellipse(t[0],t[1],1.5,1.5),r:K.pl,kind:'metal',z:34.2,grp:'cr0'});
-    draw(F,{sh:poly([[c[0]-S.dx*3.4,c[1]-S.dy*3.4],[c[0]+S.qx*2.2,c[1]+S.qy*2.2],[c[0]+S.dx*3.4,c[1]+S.dy*3.4],[c[0]-S.qx*2.2,c[1]-S.qy*2.2]],.9),r:K.cr,kind:'crystal',z:34.4,grp:'cr1',litEdge:3});
-    for(let i=0;i<5;i++){const a=i/5*2*PI+J.f*.4;rainbow(F,c[0]+Math.cos(a)*4.4,c[1]+Math.sin(a)*4.4,i,.55)}glow(F,c[0],c[1],[255,255,255],.8)},
+  // the reaper's scythe: a tall black shaft bound with bone, and a great crescent of a blade sweeping out from the top, its edge burning violet
+  foice(F,J){const K=KIT2.ceifeiro,S=shaft(F,J,20,32,1,K.wood),t=S.b,P=[],side=1,qx=S.qx*side,qy=S.qy*side;
+    for(let i=0;i<=12;i++){const u=i/12,ang=u*2.5,r=18;P.push([t[0]-S.dx*(1-Math.cos(ang))*r*.5+qx*Math.sin(ang)*r,t[1]-S.dy*(1-Math.cos(ang))*r*.5+qy*Math.sin(ang)*r])}
+    const inner=P.slice(1,-1).map((p,i)=>{const u=(i+1)/12,k=.22+.2*Math.sin(u*PI);return[p[0]+(t[0]-p[0])*k+S.dx*1.2,p[1]+(t[1]-p[1])*k+S.dy*1.2]});
+    const BL=R(['#141420','#2a2a3e','#4a4a66','#7a7a9a','#b4b4cc','#eeeeff']),id=draw(F,{sh:poly([...P,...inner.reverse()],1.4),r:BL,kind:'metal',z:34.3,grp:'scy',litEdge:3});
+    for(let i=1;i<P.length;i++)gline(F,P[i-1][0],P[i-1][1],P[i][0],P[i][1],K.vi,.7);
+    spike(F,[t[0]-S.dx*.6,t[1]-S.dy*.6],-qx,-qy,4.6,1.3,BL,'metal',34.32,'scs');spike(F,[t[0]+S.dx*1.2,t[1]+S.dy*1.2],S.dx,S.dy,3.4,1,K.bone,'metal',34.33,'sct');
+    draw(F,{sh:ellipse(t[0],t[1],2.2,2.2),r:K.bone,kind:'metal',z:34.4,grp:'scyk'});px(F,null,t[0]-.6,t[1]-.2,[20,10,30]);px(F,null,t[0]+.6,t[1]-.2,[20,10,30]);glow(F,t[0],t[1]-.2,K.vi,.6);
+    for(const k of[-16,-8,2,12,22])draw(F,{sh:capsule(S.H[0]+S.dx*k-S.qx*1.2,S.H[1]+S.dy*k-S.qy*1.2,S.H[0]+S.dx*k+S.qx*1.2,S.H[1]+S.dy*k+S.qy*1.2,.55,.55),r:K.bone,kind:'metal',z:34.15,grp:'sb'+k});
+    glow(F,P[12][0],P[12][1],K.vi,1);glow(F,P[6][0],P[6][1],K.vi,.6)},
+  // the abyss trident: taller than you, three long barbed prongs curving out of a coral crown, a pearl glowing between them
+  tridenteabismo(F,J){const K=KIT2.abismo,S=shaft(F,J,16,34,.9,K.sh,'metal'),t=S.b;draw(F,{sh:poly([[t[0]-S.qx*5.6,t[1]-S.qy*5.6],[t[0]+S.qx*5.6,t[1]+S.qy*5.6],[t[0]+S.qx*2.4-S.dx*2.6,t[1]+S.qy*2.4-S.dy*2.6],[t[0]-S.qx*2.4-S.dx*2.6,t[1]-S.qy*2.4-S.dy*2.6]],1),r:K.co,kind:'metal',z:34.2,grp:'tb'});
+    for(const s of[-1,0,1]){const b=[t[0]+S.qx*4.8*s,t[1]+S.qy*4.8*s],m=[b[0]+S.dx*5+S.qx*1.4*s,b[1]+S.dy*5+S.qy*1.4*s],e=[m[0]+S.dx*(s?6:9)-S.qx*.6*s,m[1]+S.dy*(s?6:9)-S.qy*.6*s];
+      limb(F,b,m,.95,.8,K.pe,'metal',34.25,'tp'+s);limb(F,m,e,.8,.45,K.pe,'metal',34.26,'tq'+s);
+      draw(F,{sh:poly([[e[0]-S.qx*1.6,e[1]-S.qy*1.6],[e[0]+S.dx*3.4,e[1]+S.dy*3.4],[e[0]+S.qx*1.6,e[1]+S.qy*1.6]],.6),r:K.pe,kind:'metal',z:34.3,grp:'th'+s});
+      spike(F,[e[0]-S.dx*1.6+S.qx*.6*(s||1),e[1]-S.dy*1.6+S.qy*.6*(s||1)],-S.dx*.6+S.qx*.8*(s||1),-S.dy*.6+S.qy*.8*(s||1),2,.6,K.pe,'metal',34.31,'tbb'+s);bioDot(F,e[0],e[1],.7)}
+    const c=[t[0]+S.dx*4,t[1]+S.dy*4];draw(F,{sh:ellipse(c[0],c[1],1.7,1.7),r:K.pe,kind:'gem',z:34.35,grp:'tpl'});bioDot(F,c[0],c[1],.9);for(let k=-12;k<28;k+=7)bioDot(F,S.H[0]+S.dx*k,S.H[1]+S.dy*k,.35)},
+  // the prism sceptre: a tall staff, a crown of silver claws holding a big crystal, light of every colour going round it
+  cetroprisma(F,J){const K=KIT2.prisma,S=shaft(F,J,12,28,.85,K.pl,'metal'),t=S.b,c=[t[0]+S.dx*6.4,t[1]+S.dy*6.4];draw(F,{sh:ellipse(t[0],t[1],2.2,2.2),r:K.pl,kind:'metal',z:34.2,grp:'cr0'});
+    for(const s of[-1,1]){let p=[t[0]+S.qx*1.4*s,t[1]+S.qy*1.4*s];for(let i=1;i<=4;i++){const a=i/4,q=[t[0]+S.dx*a*7.4+S.qx*(1.4+Math.sin(a*PI)*3.6)*s,t[1]+S.dy*a*7.4+S.qy*(1.4+Math.sin(a*PI)*3.6)*s];limb(F,p,q,.7,.55,K.pl,'metal',34.45,'cc'+s+i);p=q}}
+    draw(F,{sh:poly([[c[0]-S.dx*5.6,c[1]-S.dy*5.6],[c[0]+S.qx*3.3-S.dx*1.2,c[1]+S.qy*3.3-S.dy*1.2],[c[0]+S.dx*5.6,c[1]+S.dy*5.6],[c[0]-S.qx*3.3-S.dx*1.2,c[1]-S.qy*3.3-S.dy*1.2]],.9),r:K.cr,kind:'crystal',z:34.4,grp:'cr1',litEdge:3});
+    line(F,null,c[0]-S.dx*4,c[1]-S.dy*4,c[0]+S.dx*4.4,c[1]+S.dy*4.4,K.cr[5]);
+    for(let i=0;i<7;i++){const a=i/7*2*PI+J.f*.4;rainbow(F,c[0]+Math.cos(a)*7,c[1]+Math.sin(a)*3.4,i,.7)}glow(F,c[0],c[1],[255,255,255],1);glow(F,c[0]+S.dx*5.6,c[1]+S.dy*5.6,[255,255,255],.7)},
   // Halloween: a pumpkin lantern on a crooked stick, its face lit
-  lanternaabobora(F,J){const S=shaft(F,J,3,10,.6,LEATH),t=S.b,c=[t[0]+S.dx*1.6+3.2,t[1]+S.dy*1.6+3];limb(F,t,[c[0],c[1]-3.2],.25,.25,R(['#1a1a1a','#2a2a2a','#3a3a3a','#4e4e4e','#6a6a6a','#8a8a8a']),'metal',34.1,'lh');
-    draw(F,{sh:ellipse(c[0],c[1],3.6,3,0),r:R(['#3a1404','#6a2808','#b04a0e','#f07a1a','#ffae4a','#ffe0a0']),kind:'cloth',z:34.3,grp:'pump',mod:(k,n,X,Y)=>k-(((X+1)%3===0)?1:0)});
+  lanternaabobora(F,J){const S=shaft(F,J,4,13,.7,LEATH),t=S.b,c=[t[0]+S.dx*1.6+3.2,t[1]+S.dy*1.6+3];limb(F,t,[c[0],c[1]-3.2],.25,.25,R(['#1a1a1a','#2a2a2a','#3a3a3a','#4e4e4e','#6a6a6a','#8a8a8a']),'metal',34.1,'lh');
+    draw(F,{sh:ellipse(c[0],c[1],4.6,3.9,0),r:R(['#3a1404','#6a2808','#b04a0e','#f07a1a','#ffae4a','#ffe0a0']),kind:'cloth',z:34.3,grp:'pump',mod:(k,n,X,Y)=>k-(((X+1)%3===0)?1:0)});
     draw(F,{sh:capsule(c[0],c[1]-3,c[0]+.4,c[1]-4.2,.5,.4),r:R(['#1a2a08','#2a4410','#3e6018','#5a8024','#7aa034','#9ac04a']),kind:'cloth',z:34.35,grp:'stem'});
     for(const[a,b]of[[-1.2,-.6],[1.2,-.6]]){px(F,null,c[0]+a,c[1]+b,[255,230,120]);px(F,null,c[0]+a+.4,c[1]+b,[255,200,80])}line(F,null,c[0]-1.4,c[1]+1.2,c[0]+1.6,c[1]+1.2,[255,210,90]);glow(F,c[0],c[1],[255,170,60],1)},
-  varinha(F,J){const S=shaft(F,J,2,10,.45,R(['#120a06','#22140c','#3a2414','#56381e','#74502a','#946a38'])),t=S.b;
-    for(let i=0;i<5;i++){const a=i/5*2*PI-PI/2,b=a+PI/5;draw(F,{sh:poly([[t[0],t[1]],[t[0]+Math.cos(a)*2.6,t[1]+Math.sin(a)*2.6],[t[0]+Math.cos(b)*1.1,t[1]+Math.sin(b)*1.1]],.4),r:GOLDR,kind:'metal',z:34.3+i*.01,grp:'star'+i,noShadow:true})}
+  varinha(F,J){const S=shaft(F,J,2,13,.5,R(['#120a06','#22140c','#3a2414','#56381e','#74502a','#946a38'])),t=S.b;
+    for(let i=0;i<5;i++){const a=i/5*2*PI-PI/2,b=a+PI/5;draw(F,{sh:poly([[t[0],t[1]],[t[0]+Math.cos(a)*3.6,t[1]+Math.sin(a)*3.6],[t[0]+Math.cos(b)*1.5,t[1]+Math.sin(b)*1.5]],.4),r:GOLDR,kind:'metal',z:34.3+i*.01,grp:'star'+i,noShadow:true})}
     glow(F,t[0],t[1],[255,236,150],1);glow(F,t[0]-S.dx*4,t[1]-S.dy*4,[255,220,140],.35)},
-  tocha(F,J){const S=shaft(F,J,4,8,.7,R(['#1a0e06','#2e1a0c','#4a2c14','#68401e','#86582a','#a87236'])),t=S.b;draw(F,{sh:capsule(t[0]-S.dx*1.2,t[1]-S.dy*1.2,t[0]+S.dx*.8,t[1]+S.dy*.8,1.4,1.5),r:LEATH,kind:'leather',z:34.2,grp:'wrap'});
-    const f=[t[0]+S.dx*2,t[1]+S.dy*2],fl=J.f%2;for(const[i,dx2,h]of[[0,-1,4.6],[1,.3,6.4+fl],[2,1.4,4.2-fl*.6]])draw(F,{sh:poly([[f[0]+dx2-1.4,f[1]],[f[0]+dx2+(fl?.4:-.4),f[1]-h],[f[0]+dx2+1.4,f[1]]],.9),r:i===1?R(['#7a2a04','#c04a0a','#ff7a1a','#ffb43a','#ffe27a','#fffbe0']):R(['#5a1404','#9a2a06','#e0480e','#ff8a2a','#ffc260','#fff0b0']),kind:'cloth',z:34.4+i*.01,grp:'fl'+i,noShadow:true});
+  tocha(F,J){const S=shaft(F,J,5,11,.85,R(['#1a0e06','#2e1a0c','#4a2c14','#68401e','#86582a','#a87236'])),t=S.b;draw(F,{sh:capsule(t[0]-S.dx*1.2,t[1]-S.dy*1.2,t[0]+S.dx*.8,t[1]+S.dy*.8,1.4,1.5),r:LEATH,kind:'leather',z:34.2,grp:'wrap'});
+    const f=[t[0]+S.dx*2,t[1]+S.dy*2],fl=J.f%2;for(const[i,dx2,h]of[[0,-1.4,6],[1,.3,8.6+fl],[2,1.8,5.6-fl*.6]])draw(F,{sh:poly([[f[0]+dx2-1.9,f[1]],[f[0]+dx2+(fl?.5:-.5),f[1]-h],[f[0]+dx2+1.9,f[1]]],.9),r:i===1?R(['#7a2a04','#c04a0a','#ff7a1a','#ffb43a','#ffe27a','#fffbe0']):R(['#5a1404','#9a2a06','#e0480e','#ff8a2a','#ffc260','#fff0b0']),kind:'cloth',z:34.4+i*.01,grp:'fl'+i,noShadow:true});
     glow(F,f[0],f[1]-2.4,[255,170,60],1);glow(F,f[0],f[1]-5,[255,220,120],.6)},
-  cajado(F,J){const S=shaft(F,J,12,20,.85,R(['#1e1208','#36200e','#523218','#6e4622','#8c5c2e','#aa7640'])),t=S.b;
-    for(let i=0;i<3;i++){const a=i*2.1+.5;limb(F,t,[t[0]+S.dx*2.6+Math.cos(a)*2.6,t[1]+S.dy*2.6+Math.sin(a)*2.6],.5,.35,R(['#1e1208','#36200e','#523218','#6e4622','#8c5c2e','#aa7640']),'leather',34.2,'tw'+i)}
-    const c=[t[0]+S.dx*2.4,t[1]+S.dy*2.4];draw(F,{sh:ellipse(c[0],c[1],1.7,1.9),r:R(['#04260e','#0a4a1c','#167a2e','#2eb048','#7ae67a','#d4ffd0']),kind:'gem',z:34.3,grp:'gem'});glow(F,c[0],c[1],[120,255,140],.9)},
-  pirulito(F,J){const S=shaft(F,J,2,11,.4,R(['#9a9a9a','#bcbcbc','#d8d8d8','#ececec','#f8f8f8','#ffffff']),'cloth'),t=S.b,c=[t[0]+S.dx*3.6,t[1]+S.dy*3.6];
-    draw(F,{sh:ellipse(c[0],c[1],4,4),r:R(['#5a0a2a','#9a1a4a','#e0306a','#ff6a9a','#ffaccc','#ffe6f0']),kind:'cloth',z:34.3,grp:'pop',mod:(k,n,X,Y)=>{const a=Math.atan2(Y/U-c[1],X/U-c[0]),d=Math.hypot(X/U-c[0],Y/U-c[1]);return Math.sin(a*1+d*1.6)>.2?k:Math.min(5,k+2)}});glow(F,c[0]-1.2,c[1]-1.4,[255,255,255],.35)},
+  cajado(F,J){const S=shaft(F,J,18,28,.95,R(['#1e1208','#36200e','#523218','#6e4622','#8c5c2e','#aa7640'])),t=S.b;
+    for(let i=0;i<3;i++){const a=i*2.1+.5;limb(F,t,[t[0]+S.dx*3.4+Math.cos(a)*3.6,t[1]+S.dy*3.4+Math.sin(a)*3.6],.6,.4,R(['#1e1208','#36200e','#523218','#6e4622','#8c5c2e','#aa7640']),'leather',34.2,'tw'+i)}
+    const c=[t[0]+S.dx*3,t[1]+S.dy*3];draw(F,{sh:ellipse(c[0],c[1],2.5,2.8),r:R(['#04260e','#0a4a1c','#167a2e','#2eb048','#7ae67a','#d4ffd0']),kind:'gem',z:34.3,grp:'gem'});glow(F,c[0],c[1],[120,255,140],1);glow(F,c[0]-.8,c[1]-1,[220,255,220],.5)},
+  pirulito(F,J){const S=shaft(F,J,2,14,.5,R(['#9a9a9a','#bcbcbc','#d8d8d8','#ececec','#f8f8f8','#ffffff']),'cloth'),t=S.b,c=[t[0]+S.dx*4.8,t[1]+S.dy*4.8];
+    draw(F,{sh:ellipse(c[0],c[1],5.4,5.4),r:R(['#5a0a2a','#9a1a4a','#e0306a','#ff6a9a','#ffaccc','#ffe6f0']),kind:'cloth',z:34.3,grp:'pop',mod:(k,n,X,Y)=>{const a=Math.atan2(Y/U-c[1],X/U-c[0]),d=Math.hypot(X/U-c[0],Y/U-c[1]);return Math.sin(a*1+d*1.6)>.2?k:Math.min(5,k+2)}});glow(F,c[0]-1.2,c[1]-1.4,[255,255,255],.35)},
   ramoflores(F,J){const H=J.aF.fist,FC=['#ff7aa0','#ffd65a','#b48cff','#ffffff','#ff9650'];for(let i=0;i<5;i++){const a=-2.2+i*.35,e=[H[0]+Math.cos(a)*6.4,H[1]+Math.sin(a)*6.4-1];limb(F,[H[0],H[1]+1],e,.3,.3,R(['#0e2a0a','#1a4210','#2a5e1a','#3e7a24','#56962e','#78b23e']),'cloth',34.1,'st'+i);
       draw(F,{sh:ellipse(e[0],e[1],1.6,1.4),r:rmp(FC[i]),kind:'cloth',z:34.3+i*.01,grp:'fl'+i});px(F,null,e[0],e[1],[255,240,160])}
     draw(F,{sh:poly([[H[0]-2,H[1]-.6],[H[0]+2.2,H[1]-1],[H[0]+1.2,H[1]+3],[H[0]-1.2,H[1]+3]],.8),r:R(['#5a2a3a','#8a4a5a','#c07a8a','#e6aab4','#f6d4da','#fff0f2']),kind:'cloth',z:34.4,grp:'wrap'})}});
@@ -3841,17 +3887,17 @@ Object.assign(WTYPE,{asasrosa:['f',1.15],asasquerubim:['f',1.5],asasarcanjo:['s'
   asasanjo:['f',1.38],asasdiabo:['b',1.38],asasborboleta:['i',1.45],asasfenix:['f',1.45],asasaurora:['f',1.44],asasvazio:['b',1.6],asaseclipse:['b',1.66],asasfada:['i',1.15],asaszenite:['f',1.45],asasmariposa:['i',1.45],asasgelo:['c',1.75]});
 // hand things: a wand with a heart of glass, and Cupid's bow with a heart-tipped arrow
 Object.assign(KIT_ARM,{
-  varinhacoracao(F,J){const S=shaft(F,J,2,11,.42,R(['#8a6a7a','#b89aa8','#e0c8d4','#f4e8ee','#fff8fb','#ffffff']),'metal'),t=S.b,c=[t[0]+S.dx*2.4,t[1]+S.dy*2.4];
-    draw(F,{sh:capsule(t[0]-S.qx*1.4,t[1]-S.qy*1.4,t[0]+S.qx*1.4,t[1]+S.qy*1.4,.55,.55),r:GOLDR,kind:'metal',z:34.25,grp:'wc'});
-    heartG(F,c[0],c[1],2.1,ANJ.gem,34.4,'hw');glow(F,c[0],c[1]-.4,ANJ.lt,1);glow(F,c[0]-.8,c[1]-1.2,[255,255,255],.6);
+  varinhacoracao(F,J){const S=shaft(F,J,2,14,.5,R(['#8a6a7a','#b89aa8','#e0c8d4','#f4e8ee','#fff8fb','#ffffff']),'metal'),t=S.b,c=[t[0]+S.dx*3.2,t[1]+S.dy*3.2];
+    draw(F,{sh:capsule(t[0]-S.qx*1.9,t[1]-S.qy*1.9,t[0]+S.qx*1.9,t[1]+S.qy*1.9,.65,.65),r:GOLDR,kind:'metal',z:34.25,grp:'wc'});
+    heartG(F,c[0],c[1],2.9,ANJ.gem,34.4,'hw');glow(F,c[0],c[1]-.4,ANJ.lt,1);glow(F,c[0]-.8,c[1]-1.2,[255,255,255],.6);
     for(let i=0;i<4;i++){const a=i/4*2*PI+J.f*.5;glow(F,c[0]+Math.cos(a)*3.6,c[1]+Math.sin(a)*3.6,ANJ.lt2,.4)}},
-  arcocupido(F,J){const H=J.aF.fist,dx=Math.cos(J.bd),dy=Math.sin(J.bd),qx=-dy,qy=dx,L=11,P=[];
-    for(let i=0;i<=10;i++){const u=i/10*2-1,b=(1-u*u)*3.4;P.push([H[0]+qx*u*L+dx*b,H[1]+qy*u*L+dy*b])}
+  arcocupido(F,J){const H=J.aF.fist,dx=Math.cos(J.bd),dy=Math.sin(J.bd),qx=-dy,qy=dx,L=16,P=[];
+    for(let i=0;i<=10;i++){const u=i/10*2-1,b=(1-u*u)*4.8;P.push([H[0]+qx*u*L+dx*b,H[1]+qy*u*L+dy*b])}
     for(let i=1;i<P.length;i++)limb(F,P[i-1],P[i],i===5||i===6?.9:.62,i===5||i===6?.9:.62,GOLDR,'metal',34.2+i*.001,'bow'+i);
     line(F,null,P[0][0],P[0][1],P[10][0],P[10][1],[255,236,246]);
-    for(const e of[P[0],P[10]])heartG(F,e[0],e[1],.9,ANJ.gem,34.3,'bt'+e[0]);
-    const a=[H[0]-dx*6,H[1]-dy*6],b=[H[0]+dx*10,H[1]+dy*10];limb(F,a,b,.35,.35,R(['#6a4a3a','#8e6a50','#b48a6a','#d8b08a','#f0d0b0','#fff0dc']),'cloth',34.35,'arw');
-    heartG(F,b[0]+dx*1.4,b[1]+dy*1.4,1.35,ANJ.gem,34.45,'arh');glow(F,b[0]+dx*1.4,b[1]+dy*1.4,ANJ.lt,.9);
+    for(const e of[P[0],P[10]])heartG(F,e[0],e[1],1.3,ANJ.gem,34.3,'bt'+e[0]);
+    const a=[H[0]-dx*8,H[1]-dy*8],b=[H[0]+dx*14,H[1]+dy*14];limb(F,a,b,.4,.4,R(['#6a4a3a','#8e6a50','#b48a6a','#d8b08a','#f0d0b0','#fff0dc']),'cloth',34.35,'arw');
+    heartG(F,b[0]+dx*1.8,b[1]+dy*1.8,1.9,ANJ.gem,34.45,'arh');glow(F,b[0]+dx*1.4,b[1]+dy*1.4,ANJ.lt,.9);
     for(const s of[-1,1])draw(F,{sh:poly([[a[0],a[1]],[a[0]+dx*2.6+qx*1.6*s,a[1]+dy*2.6+qy*1.6*s],[a[0]+dx*3.6,a[1]+dy*3.6]],.5),r:ANJ.tule,kind:'cloth',z:34.4,grp:'fl'+s,noShadow:true})}});
 
 
@@ -3923,7 +3969,7 @@ function a2Draw(X,e,gx,fy,fl,am,occ,blink,dy){const W4=e.w/4,H4=e.h/4,left=Math.
 // where things sit on a drawn frame, in game pixels
 const a2At=(e,p,left,top,fl)=>[left+(fl?e.w-1-p[0]:p[0])/4,top+p[1]/4];
 // portraits and thumbnails: one picture per look and pose, cut by the viewBox; made a few at a time
-const A2BOX={aura:[30,4,72,72],arm:[48,0,48,48],cape:[30,22,66,66],port:[47,11,40,53.33],head:[48,7,38,38],bust:[40,22,52,52],legs:[38,56,56,38],full:[20,6,92,88]};
+const A2BOX={aura:[30,4,72,72],arm:[52,4,60,74],cape:[30,22,66,66],port:[47,11,40,53.33],head:[48,7,38,38],bust:[40,22,52,52],legs:[38,56,56,38],full:[20,6,92,88]};
 function a2H(s){let h=2166136261;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619)}return'a'+(h>>>0).toString(36)}
 function a2Url(look,pose,o){o=o||{};const k=a2K(look,pose,0,o),h=a2H(k);let u=A2U.get(h);if(!u){const e=A2F.get(k);if(e){u=a2Pic(e);A2U.set(h,u)}}if(u)return{h,u};if(!A2P.has(h)){A2P.set(h,[look,pose,o]);a2Pump()}return{h,u:''}}
 function a2Svg(look,box,cls,pose,o){const{h,u}=a2Url(look,pose||'idle',o);return`<svg class="pxi ${cls||''}" viewBox="${box.join(' ')}" aria-hidden="true"><image data-a2="${h}" href="${u}" width="${A2.CW}" height="${A2.CH}" image-rendering="optimizeSpeed" style="image-rendering:pixelated"/></svg>`}
@@ -9822,7 +9868,7 @@ function avThumb(look,mode,keepHide){
   if(mode==='pet')return petSvg(look.pet);if(mode==='aura')return a2Svg(look.acc&&/^(asas|capa|manto)/.test(look.acc)?{...look,acc:'nada'}:look,A2BOX.aura,'');
   // a head on its own: wings and capes would only crowd it
   if(mode==='head'&&look.acc&&/^(asas|capa|manto)/.test(look.acc))look={...look,acc:'nada'};
-  if(mode==='arm')return a2Svg(look,A2BOX.arm,'','wave');if(mode==='cape')return a2Svg(look,A2BOX.cape,'');
+  if(mode==='arm')return a2Svg(look,A2BOX.arm,'','idle');if(mode==='cape')return a2Svg(look,A2BOX.cape,'');
   return a2Svg(look,A2BOX[mode==='head'?'head':mode==='bust'?'bust':mode==='legs'?'legs':'full'],'');
 }
 // a preview of one piece shows that piece: a hat, helmet or mask comes off to show the hair, the eyes and the skin,
@@ -12514,24 +12560,40 @@ const MN_CHP=new Map();
 function mnChestPal(v){v=v|0;let o=MN_CHP.get(v);if(o)return o;const r=v&7,k=v>>3;o={...CHEST_PAL[Math.min(5,r)]};if(MN_CHM[r])Object.assign(o,MN_CHM[r]);if(MN_CHW[k])Object.assign(o,MN_CHW[k]);MN_CHP.set(v,o);return o}
 // opening a chest from the mine
 const MN_CR={pr:[40,90,200,450,900,2000,4500,10000],ru:[1,2,4,8,15,30,60,120],it:[.15,.3,.5,.7,.9,1,1,1],pk:[0,.08,.15,.25,.4,.6,.8,1],melt:[1,2,4,8,15,30,60,120]};
-function mnChestOpen(){const M=S.mina;if(!M.bq.length||UB.busy)return;const v=M.bq.shift(),r=v&7;M.st.bau++;S.stats.opened++;
-  const cf=1+.25*(M.rp.cofre|0),pr=Math.max(30*(r+1)*mnPY(M.p)*mnPrMul(),mnRateNow()*MN_CR.pr[r])*cf,ru=MN_CR.ru[r];M.pr+=pr;M.st.pr+=pr;M.ru+=ru;M.st.ru+=ru;
-  let it=null,isNew=false,pk=null,em=0;const xs=[];
-  if(rnd()<MN_CR.it[r]){const pool=mnPool(M.p).filter(x=>x.r<=r+1),P=pool.length?pool:mnPool(M.p);const tot=P.reduce((a,x)=>a+[6,4,2.5,1.4,.6,.25][x.r],0);let z=rnd()*tot;it=P[0];for(const x of P){z-=[6,4,2.5,1.4,.6,.25][x.r];if(z<=0){it=x;break}}isNew=!M.coll[it.id];mnGetItem(it,true)}
-  if(rnd()<MN_CR.pk[r]){pk={r:Math.max(0,r-(rnd()<.5?1:0)),e:MRE_K[(rnd()*MRE_K.length)|0]};if(!M.rar)M.rar=pk;else if(M.inv.length<12)M.inv.push(pk);else{const g=MN_CR.melt[pk.r];M.ru+=g;pk.melt=g}}
-  if(r>=4){em=r>=7?2:1+(r>=5&&rnd()<.3?1:0);addEm(em,'minabau')}
+// one chest's worth of loot, added to acc (the rolls are the same as ever; a batch only shows them together)
+function mnChestRoll(M,v,A){const r=v&7;M.st.bau++;S.stats.opened++;
+  const cf=1+.25*(M.rp.cofre|0),pr=Math.max(30*(r+1)*mnPY(M.p)*mnPrMul(),mnRateNow()*MN_CR.pr[r])*cf,ru=MN_CR.ru[r];M.pr+=pr;M.st.pr+=pr;M.ru+=ru;M.st.ru+=ru;A.pr+=pr;A.ru+=ru;
+  if(rnd()<MN_CR.it[r]){const pool=mnPool(M.p).filter(x=>x.r<=r+1),P=pool.length?pool:mnPool(M.p);const tot=P.reduce((a,x)=>a+[6,4,2.5,1.4,.6,.25][x.r],0);let z=rnd()*tot,it=P[0];for(const x of P){z-=[6,4,2.5,1.4,.6,.25][x.r];if(z<=0){it=x;break}}A.it.push([it,!M.coll[it.id]]);mnGetItem(it,true)}
+  if(rnd()<MN_CR.pk[r]){const pk={r:Math.max(0,r-(rnd()<.5?1:0)),e:MRE_K[(rnd()*MRE_K.length)|0]};if(!M.rar)M.rar=pk;else if(M.inv.length<12)M.inv.push(pk);else{const g=MN_CR.melt[pk.r];M.ru+=g;pk.melt=g}A.pk.push(pk)}
+  if(r>=4)A.em+=r>=7?2:1+(r>=5&&rnd()<.3?1:0);
   // the rest of the loot: dynamite, drill time, a pet egg for the garden, a pickaxe look
-  if(r>=1&&M.up.tnt&&!mnTntAuto()&&rnd()<.3){const n=1+Math.floor(r/3);M.tq=Math.min(mnTntCap(M.up.tnt)+2,(M.tq|0)+n);xs.push([icon('tnt'),n===1?_t('Uma TNT'):_t('{0} TNT',n),_t('Já no botão da TNT.')])}
-  if(r>=2&&rnd()<.22){const mi=2*r,t=now();M.bro=Math.max(t,M.bro)+mi*60000;xs.push([icon('drill'),_t('Broca · {0} min',mi),_t('Escavas ao dobro, já a contar.')])}
-  if(r>=5&&rnd()<.35&&typeof ptOpen==='function'&&ptOpen()){const e=r>=7?4:r>=6?3:2;ptGiveEgg(e,'mina');xs.push([eggSvg(e),PEGG[e].nome,_t('Está nos teus ovos, no jardim.')])}
-  if(r>=6){const L=MSK.filter(k=>!M.skins[k.id]);if(L.length&&rnd()<.5){const K=L[(rnd()*L.length)|0];M.skins[K.id]=1;xs.push([pkIco(M.pk,K.id),_t('Picareta {0}',K.nome),_t('Aspeto novo, já é teu.')])}}
-  const top=Math.max(r,it?it.r:0,pk?pk.r:0);
-  let h=`<div class="reveal" style="--rc:${RC[top]}"><div class="rn">${_t('Baú {0} da mina',lc(RN[r]))}</div>`;
-  if(it)h+=`<div class="mnfind" style="--rc:${RC[it.r]}">${pxsvg(it.map,it.pal)}<span><b>${it.nome}</b><i>${isNew?_t('Nova peça · +{0}% de prata',Math.round(MCB[it.r]*100)):_t('Repetida · +{0} rubis',[1,2,3,5,8,12][it.r])}</i></span></div>`;
-  if(pk)h+=`<div class="mnfind" style="--rc:${RC[pk.r]}">${mnPickSvg(M.pk,pk)}<span><b>${mnRarName(pk)}</b><i>${pk.melt?_t('Mochila cheia: derretida por {0} rubis',pk.melt):MRE[pk.e].t(pk.r)}</i></span></div>`;
-  for(const[ic,n,d]of xs)h+=`<div class="mnfind" style="--rc:${RC[Math.min(r,5)]}">${ic}<span><b>${n}</b><i>${d}</i></span></div>`;
-  h+=mnGainHTML(pr,ru,em)+'</div>';
-  CHB.pal.mnbau=mnChestPal(v);unbox('mnbau',top,it?pxsvg(it.map,it.pal):'',h,[['close',_t('Boa!')]]);dirtySave=true;saveLocal();hud()}
+  if(r>=1&&M.up.tnt&&!mnTntAuto()&&rnd()<.3)A.tnt+=1+Math.floor(r/3);
+  if(r>=2&&rnd()<.22)A.bro+=2*r;
+  if(r>=5&&rnd()<.35&&typeof ptOpen==='function'&&ptOpen()){const e=r>=7?4:r>=6?3:2;ptGiveEgg(e,'mina');A.eggs.push(e)}
+  if(r>=6){const L=MSK.filter(k=>!M.skins[k.id]);if(L.length&&rnd()<.5){const K=L[(rnd()*L.length)|0];M.skins[K.id]=1;A.sk.push(K)}}}
+// the next batch: every chest of the plainest rarity waiting, opened together in one chest of that rarity
+const mnNextR=M=>M.bq.length?Math.min(...M.bq.map(v=>v&7)):-1;
+function mnChestOpen(){const M=S.mina;if(!M.bq.length||UB.busy)return;const r=mnNextR(M),grp=M.bq.filter(v=>(v&7)===r),n=grp.length;M.bq=M.bq.filter(v=>(v&7)!==r);
+  const A={pr:0,ru:0,em:0,it:[],pk:[],tnt:0,bro:0,eggs:[],sk:[]};for(const v of grp)mnChestRoll(M,v,A);
+  if(A.tnt)M.tq=Math.min(mnTntCap(M.up.tnt)+2,(M.tq|0)+A.tnt);if(A.bro){const t=now();M.bro=Math.max(t,M.bro)+A.bro*60000}if(A.em)addEm(A.em,'minabau');
+  const xs=[];if(A.tnt)xs.push([icon('tnt'),A.tnt===1?_t('Uma TNT'):_t('{0} TNT',A.tnt),_t('Já no botão da TNT.')]);
+  if(A.bro)xs.push([icon('drill'),_t('Broca · {0} min',A.bro),_t('Escavas ao dobro, já a contar.')]);
+  {const E=new Map();for(const e of A.eggs)E.set(e,(E.get(e)||0)+1);for(const[e,k]of E)xs.push([eggSvg(e),k>1?PEGG[e].nome+' ×'+k:PEGG[e].nome,k>1?_t('Estão nos teus ovos, no jardim.'):_t('Está nos teus ovos, no jardim.')])}
+  for(const K of A.sk)xs.push([pkIco(M.pk,K.id),_t('Picareta {0}',K.nome),_t('Aspeto novo, já é teu.')]);
+  const best=A.it.reduce((b,x)=>!b||x[0].r>b[0].r||(x[0].r===b[0].r&&x[1]&&!b[1])?x:b,null),top=Math.max(r,best?best[0].r:0,...A.pk.map(p=>p.r));
+  let h=`<div class="reveal" style="--rc:${RC[top]}"><div class="rn">${n>1?_t('{0} baús da mina · {1}',n,RN[r]):_t('Baú {0} da mina',lc(RN[r]))}</div>`;
+  if(n===1){if(best){const[it,isNew]=best;h+=`<div class="mnfind" style="--rc:${RC[it.r]}">${pxsvg(it.map,it.pal)}<span><b>${it.nome}</b><i>${isNew?_t('Nova peça · +{0}% de prata',Math.round(MCB[it.r]*100)):_t('Repetida · +{0} rubis',[1,2,3,5,8,12][it.r])}</i></span></div>`}}
+  else if(A.it.length){// the finds side by side, each once with how many came
+    const G=new Map();for(const[it,nw]of A.it){const q=G.get(it.id)||{it,k:0,nw:0};q.k++;if(nw)q.nw=1;G.set(it.id,q)}
+    h+=`<div class="many mnmany">${[...G.values()].sort((a,b)=>b.it.r-a.it.r||b.nw-a.nw).map(q=>`<span style="--rc:${RC[q.it.r]}" title="${esc(q.it.nome)}">${pxsvg(q.it.map,q.it.pal)}${q.nw?'<em></em>':''}${q.k>1?`<b>×${q.k}</b>`:''}</span>`).join('')}</div>`;
+    const nw=A.it.filter(x=>x[1]),rp=A.it.filter(x=>!x[1]),pc=Math.round(nw.reduce((a,x)=>a+MCB[x[0].r],0)*100),rr=rp.reduce((a,x)=>a+[1,2,3,5,8,12][x[0].r],0);
+    h+=`<p class="mnsum">${[nw.length?(nw.length===1?_t('1 peça nova · +{0}% de prata',pc):_t('{0} peças novas · +{1}% de prata',nw.length,pc)):'',rp.length?(rp.length===1?_t('1 repetida · +{0} rubis',rr):_t('{0} repetidas · +{1} rubis',rp.length,rr)):''].filter(Boolean).join('<br>')}</p>`}
+  // pickaxes: the best ones shown, the rest counted
+  const PK=A.pk.slice().sort((a,b)=>b.r-a.r);for(const pk of PK.slice(0,3))h+=`<div class="mnfind" style="--rc:${RC[pk.r]}">${mnPickSvg(M.pk,pk)}<span><b>${mnRarName(pk)}</b><i>${pk.melt?_t('Mochila cheia: derretida por {0} rubis',pk.melt):MRE[pk.e].t(pk.r)}</i></span></div>`;
+  if(PK.length>3){const rest=PK.slice(3),ml=rest.filter(p=>p.melt),kept=rest.length-ml.length;h+=`<p class="mnsum">${[kept?_t('+{0} picaretas na mochila',kept):'',ml.length?_t('+{0} derretidas por {1} rubis',ml.length,ml.reduce((a,p)=>a+p.melt,0)):''].filter(Boolean).join('<br>')}</p>`}
+  for(const[ic,nm,d]of xs)h+=`<div class="mnfind" style="--rc:${RC[Math.min(r,5)]}">${ic}<span><b>${nm}</b><i>${d}</i></span></div>`;
+  h+=mnGainHTML(A.pr,A.ru,A.em)+'</div>';
+  CHB.pal.mnbau=mnChestPal(grp[grp.length-1]);unbox('mnbau',top,best?pxsvg(best[0].map,best[0].pal):'',h,[['close',_t('Boa!')]]);dirtySave=true;saveLocal();hud()}
 function mnGainHTML(pr,ru,em){return`<div class="gain">${pr?`<span>${icon('prata')}<b class="cu" data-cu="${Math.round(pr)}">${NM('+'+fmt(pr),'mid')}</b></span>`:''}${ru?`<span class="g">${icon('rubi')}<b class="cu" data-cu="${ru}">${NM('+'+ru,'mid')}</b></span>`:''}${em?`<span class="g">${icon('em')}<b>${NM('+'+em,'mid')}</b></span>`:''}</div>`}
 /* buying */
 function mnBuyPk(yes){const M=S.mina,t=M.pk;if(t>=MPK.length-1)return;const N=MPK[t+1];
@@ -12805,7 +12867,17 @@ const mnFx={
   tick(dt){const lg=mnBio(S.mina.p)==='lua'||mnBio(S.mina.p)==='lun'?.3:1;for(let i=mnP.length-1;i>=0;i--){const p=mnP[i];p.t+=dt;if(p.t>=p.life){mnP.splice(i,1);continue}p.vy+=p.g*dt*lg;p.x+=p.vx*dt;p.y+=p.vy*dt;if(!p.smoke&&!p.glow&&p.y>=MY0){const cx=Math.floor((p.x-MX0)/MCS),cy=Math.floor((p.y-MY0)/MCS);if(cx>=0&&cx<MW&&cy>=0&&cy<MH&&!mClr(cy*MW+cx)&&p.vy>0){p.vy*=-.25;p.vx*=.5;p.y-=.5}}}
     if(mnP.length>600)mnP.splice(0,mnP.length-600);if(mnShake>0)mnShake-=dt;if(mnFlash>0)mnFlash-=dt*2.4;if(mnDesc>0)mnDesc-=dt*.8;if(mE.ring){mE.ring.t+=dt;if(mE.ring.t>.45)mE.ring=null}if(mE.lift){mE.lift.t+=dt;if(mE.lift.t>1.4)mE.lift=null}}};
 let mnLastDraw=0;
-function mnDraw(){const M=S.mina,t=performance.now(),dt=Math.min(.1,(t-(mnLastDraw||t))/1000);mnLastDraw=t;if(mE.loaded!==M.p)mnLoad();
+/* the buttons over the mine step aside so they never get in the way of a tap: while you are hitting the rock they fade and let the
+   taps through, and any one with something to catch under it (a soul, a float, a vein, a pearl) does the same. They come back as soon as you stop */
+let mnTapAt=0,mnThruT=0;
+function mnThru(t){if(t-mnThruT<70)return;mnThruT=t;const busy=t-mnTapAt<700,cr=cv.getBoundingClientRect(),P=[],add=(lx,ly)=>{const[x,y]=toScreen(lx,ly);P.push([x+cr.left,y+cr.top])};
+  for(const s of mDS.souls)add(s.x,s.y);for(const f of mDS.fl)add(f.x,f.y);if(mE.pearl){const c=mE.pearl.c;add(MX0+(c%MW)*MCS+1,MY0+((c/MW)|0)*MCS)}
+  if(mE.vein)for(const c of mE.vein.cells)add(MX0+(c%MW)*MCS+1,MY0+((c/MW)|0)*MCS+1);
+  for(const b of document.querySelectorAll('#side>.sbtn.mn,#side>#autoB,#hud .chips>.mn')){if(b.classList.contains('hidden')){b.classList.remove('thru');continue}const r=b.getBoundingClientRect();let on=busy&&r.bottom>cr.top+MY0*view.s+view.oy;
+    if(!on)for(const[x,y]of P)if(x>r.left-16&&x<r.right+16&&y>r.top-16&&y<r.bottom+16){on=true;break}
+    if(b.classList.contains('thru')!==on){b.classList.toggle('thru',on);if(on&&b.contains(document.activeElement))document.activeElement.blur()}}}
+function mnThruOff(){for(const b of document.querySelectorAll('#side>.thru,#hud .chips>.thru'))b.classList.remove('thru')}
+function mnDraw(){const M=S.mina,t=performance.now(),dt=Math.min(.1,(t-(mnLastDraw||t))/1000);mnLastDraw=t;if(mE.loaded!==M.p)mnLoad();try{mnThru(t)}catch(e){}
   mnFlush();if(mE.fogD&&t-mnFogT>140){mnFogT=t;mnFog()}mnBg();
   lowX.globalCompositeOperation='source-over';lowX.imageSmoothingEnabled=false;
   const surf=!mnDark(),bio=mnBio(M.p);if(surf&&bio!=='lua')lowX.drawImage(skyCv,0,0,WK,MY0*KH,0,0,W,MY0);
@@ -12891,7 +12963,7 @@ function mnOpen(){if(HSR)hsClose(true);if(!mnOpenOk()||visiting||titleShown)retu
   if(M.ds&&!mDS.on)mnDsBank();mE.objHint=0;if(M.dsPick)setTimeout(()=>mnDsCards(),1500);
   mnFosCheck(true);if(M.fbox&&M.seen)setTimeout(mnFosCard,1200);
   ev('mina','abrir');htmlCache.clear();hud()}
-function mnClose(){if(!MNR)return;if(mDS.on)mnDsEnd(mnDsSafe(),true);mE.tntArm=0;MNR=false;$('#app').classList.remove('minemode');if(mE.tnt){mE.tnt=null;mnTntBoom(-1,true)}mnSave();saveLocal();
+function mnClose(){if(!MNR)return;mnThruOff();if(mDS.on)mnDsEnd(mnDsSafe(),true);mE.tntArm=0;MNR=false;$('#app').classList.remove('minemode');if(mE.tnt){mE.tnt=null;mnTntBoom(-1,true)}mnSave();saveLocal();
   $('#icCoin').innerHTML=icon('coin');$('#icGem').innerHTML=icon('gem');$('#icCoin')._mn=0;$('#icAuto').innerHTML=icon('autoHand');$('#icAuto')._mn=null;autoH.x=autoH.tx=W/2+(rnd()-.5)*40;autoH.y=autoH.ty=clamp(HOR+40+rnd()*40,HOR+22,H-48);autoH.press=0;htmlCache.clear();uiR=null;hud()}
 function mnIntro(){if(!MNR)return;showModal(`<div class="reveal ms" style="--rc:#c8a070"><div class="it">${icon('helmet')}</div><div class="rn">${_t('Mina')}</div><h3>${_t('Bem-vindo à mina')}</h3><ul class="gl msl">
   <li>${icon('pick')}<span>${_t('Toca onde queres escavar: o buraco cresce para o teu dedo.')}</span></li>
@@ -12911,7 +12983,7 @@ function mnHud(){const M=S.mina,t=now();
   setH('#lvN',pxNum(String(M.lv)));setH('#bossT',`<span class="sc">${esc(mnPhName(M.p))}</span>`);$('#bossF').style.width=Math.min(100,M.xp/mnNeed(M.lv)*100)+'%';
   $('#boss').setAttribute('aria-label',_t('Mina nível {0} · {1} de {2} pontos',M.lv,fmt(M.xp),fmt(mnNeed(M.lv))));
   setH('#mnDepT',`${pxNum(mnDepth()+' m')}<span>${Math.floor(mE.L/MNS*100)}%</span>`);
-  {const b=$('#mnBau'),n=M.bq.length;b.classList.toggle('hidden',!n);b.classList.toggle('ready',n>0);b.classList.toggle('has-badge',n>1);setH('#mnBauN',String(n>99?'99+':n));if(n){const r=M.bq[0];if(b._r!==r){b._r=r;$('#icMnBau').innerHTML=pxsvg(CH_SR[Math.min(5,r&7)],mnChestPal(r))}}}
+  {const b=$('#mnBau'),n=M.bq.length;b.classList.toggle('hidden',!n);b.classList.toggle('ready',n>0);b.classList.toggle('has-badge',n>1);setH('#mnBauN',String(n>99?'99+':n));if(n){const nr=mnNextR(M),r=M.bq.find(v=>(v&7)===nr);if(b._r!==r){b._r=r;$('#icMnBau').innerHTML=pxsvg(CH_SR[Math.min(5,r&7)],mnChestPal(r))}}}
   {const b=$('#mnJogo');if(b){const on=M.lv>=MN_MG[0].lv;b.classList.toggle('hidden',!on);if(on){const R=MN_MG.filter(mgMnReady).length,L=MN_MG.filter(mgMnOk).map(mgMnLeft).filter(x=>x>0);b.classList.toggle('ready',R>0);b.classList.toggle('has-badge',R>0);setH('#mnJogoN',String(R));setH('#mnJogoL',R?'':L.length?pxNum(shortTime(Math.min(...L))):'')}}}
   {const b=$('#mnFos');if(b){b.classList.toggle('hidden',!M.fbox);b.classList.toggle('has-badge',M.fbox>1);setH('#mnFosN',String(M.fbox))}}
   {const b=$('#mnTnt'),hand=mDS.on?mDS.tnt:0,on=M.up.tnt>0||hand>0;b.classList.toggle('hidden',!on);b.classList.toggle('on',!!mE.tntArm);if(on){const left=Math.max(0,M.tntAt-t),au=M.up.tnt>0&&mnTntAuto(),q=(M.up.tnt>0&&!au?M.tq|0:0)+hand,full=M.up.tnt>0&&!au&&(M.tq|0)>=mnTntCap(M.up.tnt);b.classList.toggle('ready',q>0||(au&&(left<1500||!!mE.tnt)));b.classList.toggle('has-badge',q>0);setH('#mnTntN',String(q));setH('#mnTntL',mE.tnt||full||!M.up.tnt?'':pxNum(mmss(left/1000)))}}
@@ -12943,7 +13015,7 @@ function mnTap(e){if(titleShown||sheetName||modalOn||UB.busy||BOT.on)return;botD
   let th=mnTapHits();if(mDS.on)th=Math.max(th*2,MNBIO[mnBio(M.p)].h*mnHP(M.p)*.7)*(1+.12*mnCd('forca'));
   // a sure blow: now and then a tap is worth eight
   if(M.up.crt&&rnd()<.02*M.up.crt){th*=8;M.st.crt++;const[px,py]=toScreen(lx,ly-6);floatNum(px,py,_t('Certeiro!'),'mnru');SND.play('ore',3);if(!RM)mnShake=Math.max(mnShake,.12)}
-  mE.ttAt=performance.now();
+  mE.ttAt=performance.now();mnTapAt=mE.ttAt;
   mnHitAt(th,ax,ay);mnSwing(1);S.fresh=false;
   const c0=mE.tt>=0?mE.tt:mE.lastP,m=c0>=0?mM(mg[c0]):0;SND.play('mhit',m||M_PEDRA);if(c0>=0)mE.mark={c:c0,t:performance.now()};
   if(ly>MY0-8)mnP.push({x:lx,y:ly,vx:0,vy:0,g:0,t:0,life:.25,c:[255,250,220],glow:1,sz:1})}
@@ -13142,7 +13214,7 @@ function frame(t){
   tick(dt);draw();guideTick();
 }
 /* versões novas: quando o jogo muda no servidor, guarda o progresso e recarrega a página */
-const BUILD='ff0b33e3c3bc',UKEY='tapmoss.upd';const UPD={on:false,go:false,at:0};
+const BUILD='04567dcdebe1',UKEY='tapmoss.upd';const UPD={on:false,go:false,at:0};
 // the new version downloads in the background while the game goes on; the reload only comes once the whole page is here,
 // so a slow network never leaves a half-built page on screen. The offline helper (sw.js) hands this copy over at the reload.
 const NEXTC='tapmoss-next',pgKey=()=>{let p=location.pathname.replace(/index\.html$/,'');if(!p.endsWith('/'))p+='/';return p};
