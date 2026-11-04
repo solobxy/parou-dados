@@ -3668,7 +3668,7 @@ function renderWorld0(){RWV++;
       for(let k=0;k<12;k++){const rx=cx-14+Math.floor(q()*28),c0=BS[1+Math.floor(q()*3)];put(rx,Y(36),c0,4,1)}
       for(let c=1;c<=49;c++)if(hash2(c,7,seed)<.82)glowPx(X(c),by+2,LV[c%4===0?1:0],1);
       sc._eglow.push([cx,by+2,[255,96,24],16]);
-      sc._drgSky={cx,by,dir,seed,alt:Y(37),fire:[[X(4.5),Y(15)],[X(45.5),Y(15)]]}}
+      {let k=0;for(const ps of['mid','up','down','glide','rest','rest2','sleep'])setTimeout(()=>{try{drgFrame(ps)}catch(e){}},400+(k++)*90)}sc._drgSky={cx,by,dir,seed,alt:Y(37),fire:[[X(4.5),Y(15)],[X(45.5),Y(15)]]}}
   }
 
   // the kitsune statue: painted at 4x once per stage, laid into the scene pixel by pixel, a soft shadow away from the sun
@@ -9166,16 +9166,175 @@ function drgPos(t,s){const R=drgRestP(s);if(RM)return{...R,ph:'rest'};
   if(tc<DRG_CYC-DRG_UT)return{...R,ph:'rest',tc};
   const k=(tc-(DRG_CYC-DRG_UT))/DRG_UT,e=ease(k),b=drgFly(t+(DRG_CYC-tc),s);return{x:R.x+(b.x-R.x)*e,y:R.y+(b.y-R.y)*e-Math.sin(k*Math.PI)*8,dir:k<.12?R.dir:(b.x>=R.x?1:-1),ph:'up',k}}
 const drgReady=()=>!!scene._drgSky&&!visiting&&now()>=(Number.isFinite(S.drgAt)?S.drgAt:0);
+// the abyss dragon, painted at 4x: obsidian scales split by glowing lava veins, a horned head with a lit eye and teeth,
+// bat wings with finger bones and ember-lit edges, a spined back and a bladed tail. Lit from the top left by the sky and
+// from below by the lava. Facing right. pose: 'up' | 'mid' | 'down' | 'glide' (flying) or 'rest' | 'rest2' | 'sleep' (perched).
+// Returns {w,h,px (RGBA, rows from the top), glow:[[x,y]...] (lava points for the effects), mouth:[x,y], eye:[x,y]}
+function drgArt(pose){
+  const fly=pose==='up'||pose==='mid'||pose==='down'||pose==='glide',WD=fly?300:286,HT=fly?196:150,OY=fly?16:0,OX=fly?12:14,N=WD*HT;
+  const hx=h=>[parseInt(h.slice(1,3),16),parseInt(h.slice(3,5),16),parseInt(h.slice(5,7),16)],R=a=>a.map(hx);
+  const SC=R(['#070506','#100a0c','#1a1013','#26181b','#342124','#462c2e','#5e3c3c']);
+  const BELLY=R(['#1e0e0c','#341712','#4e2216','#6c301c','#8c4224','#ad5a30']);
+  const MEM=R(['#120406','#20080b','#320c10','#481216','#621a1a','#80261e']);
+  const BONE=R(['#1e1a18','#36302a','#58504a','#82786c','#ada190','#d6ccb8','#f4ecdc']);
+  const LAVA=R(['#5a1004','#a02808','#e2480c','#ff7a1c','#ffb040','#ffe28a','#fff8dc']);
+  const BY=[0,8,2,10,12,4,14,6,3,11,1,9,15,7,13,5].map(x=>(x+.5)/16);
+  const ramp=(rp,I,x,y)=>{I=Math.max(0,Math.min(.999,I));const f=I*(rp.length-1),i=Math.floor(f);return rp[Math.min(rp.length-1,i+((f-i)>BY[((y&3)<<2)|(x&3)]?1:0))]};
+  const L=[-.5,-.68,.53],lam=(nx,ny,nz)=>Math.max(0,nx*L[0]+ny*L[1]+nz*L[2]);
+  const col=new Array(N).fill(null),zb=new Float32Array(N).fill(-1e9),idb=new Int16Array(N).fill(-1),glw=new Uint8Array(N);let id=0;
+  const put=(x,y,c,z,i,g)=>{x=Math.round(x+OX);y=Math.round(y+OY);if(x<0||y<0||x>=WD||y>=HT)return;const k=y*WD+x;if(z<zb[k])return;zb[k]=z;col[k]=c;idb[k]=i;glw[k]=g?1:0};
+  const nz=(x,y)=>{const n=Math.sin(x*12.9898+y*78.233)*43758.5453;return n-Math.floor(n)};
+  const vn=(x,y)=>{const xi=Math.floor(x),yi=Math.floor(y),fx=x-xi,fy=y-yi,a=nz(xi,yi),b=nz(xi+1,yi),c=nz(xi,yi+1),d=nz(xi+1,yi+1),u=fx*fx*(3-2*fx),v=fy*fy*(3-2*fy);return a+(b-a)*u+(c-a)*v+(a-b-c+d)*u*v};
+  // scales: a staggered grid of small plates; lava runs along a few of the seams
+  const scale=(x,y,I,shadeOnly)=>{const sx=x/5,sy=y/4,row=Math.floor(sy),cx=sx+(row&1)*.5,fx=cx-Math.floor(cx),fy=sy-row;const edge=fy<.18||Math.abs(fx-.5)>.42;return I+(edge?-.1:fy<.45?.05:0)};
+  const lavaAt=(x,y)=>{const v=vn(x*.07,y*.07)*.7+vn(x*.19,y*.19)*.3;return Math.abs(v-.5)<.028};
+  const bez=(P,t)=>{if(P.length===3){const s=1-t;return[s*s*P[0][0]+2*s*t*P[1][0]+t*t*P[2][0],s*s*P[0][1]+2*s*t*P[1][1]+t*t*P[2][1]]}const s=1-t;return[s*s*s*P[0][0]+3*s*s*t*P[1][0]+3*s*t*t*P[2][0]+t*t*t*P[3][0],s*s*s*P[0][1]+3*s*s*t*P[1][1]+3*s*t*t*P[2][1]+t*t*t*P[3][1]]};
+  // a round tube along a curve; rad(t) the half width; the underside (relative to 'down') gets belly plates
+  const tube=(P,rad,z,o)=>{o=o||{};const myid=id++,NS=70,pts=[];for(let i=0;i<=NS;i++)pts.push(bez(P,i/NS));
+    const xs=pts.map(p=>p[0]),ys=pts.map(p=>p[1]),mr=Math.max(...pts.map((p,i)=>rad(i/NS)))+2;
+    for(let y=Math.max(0,Math.floor(Math.min(...ys)-mr));y<=Math.min(HT-1,Math.ceil(Math.max(...ys)+mr));y++)for(let x=Math.max(0,Math.floor(Math.min(...xs)-mr));x<=Math.min(WD-1,Math.ceil(Math.max(...xs)+mr));x++){
+      let b=1e9,bi=0;for(let i=0;i<pts.length;i++){const dx=x-pts[i][0],dy=y-pts[i][1],d=dx*dx+dy*dy;if(d<b){b=d;bi=i}}const t=bi/NS,r=rad(t);if(Math.sqrt(b)>r)continue;
+      const p=pts[bi],q=pts[Math.min(NS,bi+1)],pp=pts[Math.max(0,bi-1)],tx=q[0]-pp[0],ty=q[1]-pp[1],tl=Math.hypot(tx,ty)||1;let nx=-ty/tl,ny=tx/tl;if(ny<0){nx=-nx;ny=-ny}
+      const sd=((x-p[0])*nx+(y-p[1])*ny)/r,nn=Math.sqrt(Math.max(0,1-sd*sd));const Nx=nx*sd,Ny=ny*sd;
+      let I=.06+.86*lam(Nx,Ny,nn)+(o.dark||0),c;const under=sd>(o.belly!=null?o.belly:.35)&&o.belly!==false;
+      // the lava below lights the underside
+      const up=Math.max(0,Ny)*.5;
+      if(under){const band=((t*o.len/5)%1)<.16;c=ramp(BELLY,I+.1+up*.35-(band?.1:0),x,y)}
+      else{I=scale(x,y,I);c=ramp(SC,I+up*.12,x,y);if(o.lava!==false&&lavaAt(x,y)&&Math.abs(sd)<.85){c=ramp(LAVA,.45+(1-Math.abs(sd))*.35,x,y);put(x,y,c,z,myid,1);continue}}
+      if(up>.25&&!under){const k=(up-.25)*.5;c=[c[0]+(255-c[0])*k*.35,c[1]+(110-c[1])*k*.12,c[2]*(1-k*.3)]}
+      put(x,y,c,z,myid,0)}
+    return{pts,id:myid}};
+  // spikes along the top of a curve: triangles leaning back
+  const spikes=(P,from,to,n,h0,h1,z,rf)=>{const myid=id++;for(let k=0;k<n;k++){const t=from+(to-from)*(k+.5)/n,p0=bez(P,t),q=bez(P,Math.min(1,t+.02)),tx=q[0]-p0[0],ty=q[1]-p0[1],tl=Math.hypot(tx,ty)||1;let nx=ty/tl,ny=-tx/tl;if(ny>0){nx=-nx;ny=-ny}const rr=rf?rf(t)-2.5:0,p=[p0[0]+nx*rr,p0[1]+ny*rr];
+      const h=(h0+(h1-h0)*(k/(n-1||1)))*(k%2?.7:1),base=4+h*.25,tip=[p[0]+nx*h-tx/tl*h*.55,p[1]+ny*h-ty/tl*h*.55],b1=[p[0]-tx/tl*base,p[1]-ty/tl*base],b2=[p[0]+tx/tl*base,p[1]+ty/tl*base];
+      tri(b1,b2,tip,(u,v,w,x,y)=>w>.7?ramp(LAVA,.25+(w-.7)*1.2,x,y):ramp(BONE,.08+w*.4+u*.12,x,y),z,myid)}};
+  const tri=(a,b,c,shade,z,myid,g)=>{const x0=Math.floor(Math.min(a[0],b[0],c[0])),x1=Math.ceil(Math.max(a[0],b[0],c[0])),y0=Math.floor(Math.min(a[1],b[1],c[1])),y1=Math.ceil(Math.max(a[1],b[1],c[1]));
+    const d=(b[1]-c[1])*(a[0]-c[0])+(c[0]-b[0])*(a[1]-c[1]);if(Math.abs(d)<1e-6)return;
+    for(let y=Math.max(0,y0);y<=Math.min(HT-1,y1);y++)for(let x=Math.max(0,x0);x<=Math.min(WD-1,x1);x++){const l1=((b[1]-c[1])*(x-c[0])+(c[0]-b[0])*(y-c[1]))/d,l2=((c[1]-a[1])*(x-c[0])+(a[0]-c[0])*(y-c[1]))/d,l3=1-l1-l2;if(l1<0||l2<0||l3<0)continue;put(x,y,shade(l1,l2,l3,x,y),z,myid,g)}};
+  // a horn or a claw: a tapered curved tube of bone, dark at the tip
+  const horn=(P,r0,z)=>{const myid=id++,NS=40,pts=[];for(let i=0;i<=NS;i++)pts.push(bez(P,i/NS));
+    for(let i=0;i<=NS;i++){const t=i/NS,r=r0*(1-t*.9);for(let y=Math.floor(pts[i][1]-r);y<=pts[i][1]+r;y++)for(let x=Math.floor(pts[i][0]-r);x<=pts[i][0]+r;x++){const dx=x-pts[i][0],dy=y-pts[i][1];if(dx*dx+dy*dy>r*r)continue;
+        const I=.2+.55*(1-t)*(.6+.4*(-dy/(r+.01)))+(dx<0?.08:-.05)+(((i>>1)&1)?.04:0);put(x,y,ramp(BONE,I-t*.25,x,y),z+t*.01,myid,0)}}};
+  const poly=(pts,shade,z,g)=>{const myid=id++;const xs=pts.map(p=>p[0]),ys=pts.map(p=>p[1]);for(let y=Math.max(0,Math.floor(Math.min(...ys)));y<=Math.min(HT-1,Math.ceil(Math.max(...ys)));y++)for(let x=Math.max(0,Math.floor(Math.min(...xs)));x<=Math.min(WD-1,Math.ceil(Math.max(...xs)));x++){
+      let ins=false;for(let i=0,j=pts.length-1;i<pts.length;j=i++){const a=pts[i],b=pts[j];if((a[1]>y)!==(b[1]>y)&&x<(b[0]-a[0])*(y-a[1])/(b[1]-a[1])+a[0])ins=!ins}if(ins)put(x,y,shade(x,y),z,myid,g)}return myid};
+  // a bat wing: arm, forearm and four fingers of bone; the membrane between them with a scalloped trailing edge, veins,
+  // and edges lit like embers
+  const wing=(S,E,Wr,tips,back,z,far)=>{const dk=far?-.12:0;
+    const edge=[];const pts=[S,E,Wr,tips[0]];for(let i=0;i<tips.length;i++){edge.push(tips[i]);const nx=i+1<tips.length?tips[i+1]:back;const m=[(tips[i][0]+nx[0])/2,(tips[i][1]+nx[1])/2],toW=[Wr[0]-m[0],Wr[1]-m[1]],k=i+1<tips.length?.22:.12;
+      for(let s=1;s<8;s++){const u=s/8,bulge=Math.sin(u*Math.PI)*k;edge.push([tips[i][0]+(nx[0]-tips[i][0])*u+toW[0]*bulge,tips[i][1]+(nx[1]-tips[i][1])*u+toW[1]*bulge])}}
+    const memPts=[S,E,Wr,...edge,back];
+    const fing=tips.map(t=>[Wr,t]);
+    poly(memPts,(x,y)=>{let I=.3+dk+.18*vn(x*.08,y*.08);
+        // veins radiate from the wrist
+        const a=Math.atan2(y-Wr[1],x-Wr[0]),vv=Math.abs(Math.sin(a*9+vn(x*.05,y*.05)*2));if(vv<.08)I-=.12;
+        // translucent near the trailing edge: the lava light shows through
+        let dmin=1e9;for(let i=0;i<edge.length;i+=2){const dx=x-edge[i][0],dy=y-edge[i][1];dmin=Math.min(dmin,dx*dx+dy*dy)}dmin=Math.sqrt(dmin);
+        if(dmin<2.2&&!far)return ramp(LAVA,.42+(2.2-dmin)*.12,x,y);
+        if(dmin<7)I+=(7-dmin)*.035;
+        return ramp(MEM,I,x,y)},z,0);
+    // the bones over the membrane
+    const bone=(a,b,r0,r1,zz)=>{const myid=id++,n=Math.ceil(Math.hypot(b[0]-a[0],b[1]-a[1]));for(let i=0;i<=n;i++){const t=i/n,x0=a[0]+(b[0]-a[0])*t,y0=a[1]+(b[1]-a[1])*t,r=r0+(r1-r0)*t;
+        for(let y=Math.floor(y0-r);y<=y0+r;y++)for(let x=Math.floor(x0-r);x<=x0+r;x++){const dx=x-x0,dy=y-y0;if(dx*dx+dy*dy>r*r)continue;const I=.18+dk+(-dy/(r+.1))*.12+(-dx/(r+.1))*.05;put(x,y,ramp(SC,I+.1,x,y),zz,myid,0)}}};
+    bone(S,E,4.2,3.4,z+1);bone(E,Wr,3.4,2.6,z+1);for(const t of tips)bone(Wr,t,2.2,.8,z+1);
+    // a hooked claw on the wrist
+    horn([Wr,[Wr[0]+3,Wr[1]-7],[Wr[0]+8,Wr[1]-9]],2.2,z+2)};
+  const out={glow:[],mouth:null,eye:null};
+  const fold=!fly;
+  // ---------- the skeleton for each pose
+  let spine,tail,neck,head,hip,chest,wN,wF,legs;
+  if(fly){
+    const bob={up:-3,mid:0,down:4,glide:0}[pose];
+    hip=[112,104+bob];chest=[178,98+bob];
+    spine=[hip,[135,96+bob],[158,94+bob],chest];
+    tail=[[hip[0]+4,hip[1]],[70,122+bob],[34,92+bob],[6,84+bob]];
+    neck=[[chest[0]-2,chest[1]-6],[200,86+bob],[206,70+bob],[224,62+bob]];
+    head={x:226,y:60+bob,ang:.12,jaw:pose==='glide'?.08:.18};
+    const S=[164,88+bob],F=[156,84+bob];
+    const W={up:{E:[178,46],Wr:[196,14],tips:[[150,4],[120,14],[100,34],[92,56]]},mid:{E:[186,62],Wr:[214,40],tips:[[178,8],[136,18],[110,40],[98,66]]},
+      down:{E:[180,112],Wr:[200,138],tips:[[176,170],[140,164],[116,146],[104,120]]},glide:{E:[192,70],Wr:[226,58],tips:[[204,20],[160,22],[124,42],[104,70]]}}[pose];
+    wN={S,E:[W.E[0],W.E[1]+bob],Wr:[W.Wr[0],W.Wr[1]+bob],tips:W.tips.map(t=>[t[0],t[1]+bob]),back:[124,98+bob]};
+    const off=[-14,-6];wF={S:F,E:[W.E[0]+off[0],W.E[1]+off[1]+bob-(pose==='down'?-4:6)],Wr:[W.Wr[0]+off[0]-6,W.Wr[1]+off[1]+bob-(pose==='down'?-6:10)],tips:W.tips.map(t=>[t[0]+off[0]-10,t[1]+off[1]+bob+(pose==='down'?6:-14)]),back:[120,94+bob]};
+    legs=[{a:[118,112+bob],b:[106,126+bob],c:[92,128+bob]},{a:[172,108+bob],b:[180,120+bob],c:[190,122+bob]}]}
+  else{
+    // perched: crouched on the arch, neck raised, wings folded along the back, the tail hanging down; asleep, the head rests low
+    const sl=pose==='sleep',br=pose==='rest2'?-1:0;
+    hip=[96,118];chest=[150,112+br];
+    spine=[hip,[110,104+br],[132,100+br],chest];
+    tail=[[hip[0]-2,hip[1]+4],[66,134],[52,146],[22,148]];
+    neck=sl?[[chest[0]+2,chest[1]-6],[170,108],[184,120],[198,124]]:[[chest[0]+2,chest[1]-8],[166,86+br],[168,64+br],[186,52+br]];
+    head=sl?{x:200,y:122,ang:.2,jaw:0,closed:1}:{x:188,y:50+br,ang:.32,jaw:.1};
+    wN={S:[132,96+br],E:[118,62+br],Wr:[86,52+br],tips:[[64,70],[60,84],[66,98],[78,104]],back:[100,104]};
+    wF={S:[124,92+br],E:[110,56+br],Wr:[80,46+br],tips:[[58,62],[54,76],[60,90],[72,98]],back:[96,100]};
+    legs=[{a:[100,124],b:[108,140],c:[120,148]},{a:[150,122],b:[156,138],c:[168,148]}]}
+  // ---------- painting, back to front
+  wing(wF.S,wF.E,wF.Wr,wF.tips,wF.back,2,true);
+  const tR=t=>Math.max(1.6,14*(1-t*.88)),tl=tube(tail,tR,6,{len:150});
+  spikes(tail,.05,.85,9,11,5,7,tR);
+  // the blade at the end of the tail
+  {const e=bez(tail,1),p=bez(tail,.94),dx=e[0]-p[0],dy=e[1]-p[1],l=Math.hypot(dx,dy)||1,ux=dx/l,uy=dy/l;
+    poly([[e[0]-uy*11,e[1]+ux*11],[e[0]+ux*22,e[1]+uy*22],[e[0]+uy*11,e[1]-ux*11],[e[0]-ux*6,e[1]-uy*6]],(x,y)=>{const a=(x-e[0])*ux+(y-e[1])*uy,b=(x-e[0])*-uy+(y-e[1])*ux;return Math.abs(b)<1.2&&a>-2?ramp(LAVA,.55,x,y):ramp(BONE,.2+(b>0?.15:0)+a*.012,x,y)},7)}
+  for(const lg of legs.slice(0,1)){tube([lg.a,[(lg.a[0]+lg.b[0])/2-4,(lg.a[1]+lg.b[1])/2],lg.b],t=>10-t*4,7,{len:30,lava:false});for(let k=-1;k<=1;k++)horn([lg.b,[lg.b[0]-4+k*3,lg.b[1]+5],[lg.c[0]+k*5,lg.c[1]+3+k*2]],2.6,8)}
+  const bR=t=>18+Math.sin(t*Math.PI)*8+t*5,bd=tube(spine,bR,10,{len:80});
+  spikes(spine,.05,.95,6,15,12,11,bR);
+  for(const lg of legs.slice(1)){tube([lg.a,[(lg.a[0]+lg.b[0])/2+3,(lg.a[1]+lg.b[1])/2],lg.b],t=>9-t*3.5,12,{len:30,lava:false});for(let k=-1;k<=1;k++)horn([lg.b,[lg.b[0]+4+k*2,lg.b[1]+5],[lg.c[0]+3+k*4,lg.c[1]+3+k*2]],2.4,13)}
+  const nR=t=>14-t*4.5,nk=tube(neck,nR,14,{len:60});
+  spikes(neck,.08,.9,6,12,8,15,nR);
+  // ---------- the head: a wedge of a skull, brow ridge over a lit eye, a jaw with teeth, horns swept back, cheek spikes
+  {const H=head,ca=Math.cos(H.ang),sa=Math.sin(H.ang),HS=1.3,T=(u,v)=>[H.x+(u*ca-v*sa)*HS,H.y+(u*sa+v*ca)*HS];
+    const skull=[T(-12,-11),T(4,-13),T(22,-9),T(40,-4),T(46,1),T(44,5),T(20,5),T(-6,8),T(-14,2)];
+    const jo=H.jaw*18,jaw=[T(-8,6),T(18,6+jo*.4),T(40,6+jo),T(38,10+jo),T(14,13+jo*.5),T(-8,12)];
+    // the inside of the mouth glows when it is open
+    if(jo>1)poly([T(4,5),T(40,4),T(40,6+jo),T(10,8+jo*.4)],(x,y)=>ramp(LAVA,.35+vn(x*.3,y*.3)*.3,x,y),15,1);
+    poly(jaw,(x,y)=>{const v=(y-H.y)/14;return ramp(SC,.2+.25*(1-v)+(scale(x,y,0)),x,y)},16);
+    // teeth on the jaw and the skull
+    for(let k=0;k<5;k++){const u=10+k*7,a=T(u,5),b=T(u+3,5),c=T(u+1.5,5+3.5+(k===4?1:0));tri(a,b,c,(l1,l2,l3)=>ramp(BONE,.75+l3*.2,0,0),17,id++);const a2=T(u+2,6+jo),b2=T(u+5,6+jo),c2=T(u+3.5,6+jo-3);tri(a2,b2,c2,(l1,l2,l3)=>ramp(BONE,.6+l3*.25,0,0),17,id++)}
+    poly(skull,(x,y)=>{const p=[((x-H.x)*ca+(y-H.y)*sa)/HS,(-(x-H.x)*sa+(y-H.y)*ca)/HS];let I=.16+.4*Math.max(0,(-p[1]+8)/20)+(p[0]>30?.05:0);I=scale(x,y,I);
+        if(lavaAt(x+40,y)&&p[0]<24)return ramp(LAVA,.5,x,y);return ramp(SC,I,x,y)},18);
+    // the brow ridge, heavy over the eye
+    poly([T(-4,-12),T(14,-11),T(20,-7),T(4,-6)],(x,y)=>ramp(SC,.42,x,y),19);
+    // the eye: a lit slit (closed when it sleeps)
+    const E=T(9,-5);out.eye=E;
+    if(H.closed)poly([T(5,-5),T(14,-5),T(14,-4),T(5,-4)],()=>ramp(LAVA,.25,0,0),20,1);
+    else{poly([T(4,-6),T(10,-7.5),T(15,-6),T(10,-3.5)],(x,y)=>{const d=Math.hypot(x-E[0],y-E[1]);return d<1.4?hx('#fff6c8'):ramp(LAVA,.78-d*.06,x,y)},20,1);poly([T(9.4,-7),T(10.6,-7),T(10.6,-4),T(9.4,-4)],()=>hx('#1a0604'),21)}
+    // a nostril that smoulders
+    const Nn=T(41,-1);out.mouth=T(46,4);poly([T(39,-2),T(42,-2.5),T(42,-.5),T(39,0)],()=>ramp(LAVA,.6,0,0),20,1);
+    // horns: two great ones swept back, two smaller below them, spikes along the cheek
+    horn([T(-2,-11),T(-14,-22),T(-30,-26),T(-42,-20)],4.4,9);
+    horn([T(4,-12),T(-6,-26),T(-20,-34),T(-30,-32)],4,22);
+    horn([T(-8,-4),T(-18,-6),T(-26,-2)],2.6,8);
+    for(let k=0;k<3;k++)horn([T(-6+k*5,9),T(-12+k*5,13),T(-16+k*5,14+k)],1.6,15);
+    for(let k=0;k<3;k++)tri(T(-14+k*5,-10-k),T(-10+k*5,-11-k),T(-16+k*4,-16-k*1.5),(a,b,c)=>ramp(BONE,.3+c*.3,0,0),9,id++)}
+  // the near wing in front of everything but the head
+  if(fold){wing(wN.S,wN.E,wN.Wr,wN.tips,wN.back,15,false)}else wing(wN.S,wN.E,wN.Wr,wN.tips,wN.back,24,false);
+  // ---------- soft depth between parts and a dark rim on the outside
+  const px=new Uint8ClampedArray(N*4),em=new Uint8ClampedArray(N*4);
+  for(let y=0;y<HT;y++)for(let x=0;x<WD;x++){const i=y*WD+x,c=col[i];if(!c)continue;let f=1;
+    for(const[dx,dy]of[[1,0],[-1,0],[0,1],[0,-1]]){const xx=x+dx,yy=y+dy;if(xx<0||yy<0||xx>=WD||yy>=HT){f=Math.min(f,.8);continue}const j=yy*WD+xx;
+      if(!col[j])f=Math.min(f,glw[i]?1:.72);else if(idb[j]!==idb[i]&&zb[j]>zb[i]+.5)f=Math.min(f,glw[i]?.9:.62)}
+    const o=i*4;px[o]=c[0]*f;px[o+1]=c[1]*f;px[o+2]=c[2]*f;px[o+3]=255;if(glw[i]){em[o]=c[0];em[o+1]=c[1];em[o+2]=c[2];em[o+3]=255}if(glw[i]&&((x*7+y*13)%23===0))out.glow.push([x,y])}
+  const sh=q=>q?[q[0]+OX,q[1]+OY]:null;return{w:WD,h:HT,px,em,mouth:sh(out.mouth),eye:sh(out.eye)};
+}
+// the abyss dragon at 4x: one picture per pose, tinted by the scene's light, with the lava veins glowing on top at night
+const DRGHD={a:new Map(),c:new Map()};
+function drgFrame(pose){let A=DRGHD.a.get(pose);if(!A){const r=drgArt(pose),mk=d=>{const c=document.createElement('canvas');c.width=r.w;c.height=r.h;const x=c.getContext('2d'),im=x.createImageData(r.w,r.h);im.data.set(d);x.putImageData(im,0,0);return c};
+  A={w:r.w,h:r.h,base:mk(r.px),em:mk(r.em),mouth:r.mouth};DRGHD.a.set(pose,A)}return A}
+function drgDraw(pose,x,y,flip){const A=drgFrame(pose),a=env.amb,k=pose+'|'+((a[0]*32)|0)+'.'+((a[1]*32)|0)+'.'+((a[2]*32)|0);let c=DRGHD.c.get(k);
+  if(!c){c=document.createElement('canvas');c.width=A.w;c.height=A.h;const X=c.getContext('2d');X.drawImage(A.base,0,0);X.globalCompositeOperation='multiply';X.fillStyle=`rgb(${Math.min(255,a[0]*255)|0},${Math.min(255,a[1]*255)|0},${Math.min(255,a[2]*255)|0})`;X.fillRect(0,0,A.w,A.h);
+    X.globalCompositeOperation='destination-in';X.drawImage(A.base,0,0);DRGHD.c.set(k,c);if(DRGHD.c.size>40)DRGHD.c.delete(DRGHD.c.keys().next().value)}
+  const w=A.w/4,h=A.h/4,x0=Math.round((x-w/2)*4)/4,y0=Math.round((y+1-h)*4)/4;
+  lowX.save();if(flip){lowX.translate(x0*2+w,0);lowX.scale(-1,1)}
+  lowX.drawImage(c,x0,y0,w,h);lowX.globalAlpha=.3+.6*env.night;lowX.globalCompositeOperation='lighter';lowX.drawImage(A.em,x0,y0,w,h);lowX.restore();
+  const mx=A.mouth[0]/4-w/2;return{mx:x+(flip?-mx:mx),my:y0+A.mouth[1]/4}}
 function drawDragonSky(){const s=scene._drgSky;if(!s){DRG.p=null;return}const t=RM?37:T;let p=drgPos(t,s);
   if(!RM&&DRG.wake!=null&&T-DRG.wake<3.5){const k=Math.max(0,(T-DRG.wake)/3.5),e=1-(1-k)**3;p={x:s.cx+(p.x-s.cx)*e,y:s.by-24+(p.y-s.by+24)*e,dir:p.dir,ph:'up'}}
   // the fire bowls on the pillars
   if(!RM&&s.fire)for(const[fx,fy]of s.fire)if(rnd()<.55)parts.push({x:fx+(rnd()-.5)*3,y:fy,vx:(rnd()-.5)*5,vy:-12-rnd()*12,g:-6,t:0,life:.45+rnd()*.35,c:[255,110+((rnd()*120)|0),30],lit:1,glow:1,sz:rnd()<.25?2:1});
-  if(p.ph==='rest'){const sl=!RM&&p.tc>DRG_FT+DRG_LT+5&&p.tc<DRG_CYC-DRG_UT-4,fi=RM?0:sl?2:Math.floor(t/1.5)%2,fr=DRG_REST[fi];drawSprite(fr,fr.map,p.x,s.alt-1,p.dir<0);
-    if(!RM&&(t%3.2)<.05){const nx=p.x+p.dir*21,ny=s.alt-31;for(let i=0;i<3;i++)parts.push({x:nx,y:ny,vx:p.dir*(4+rnd()*4),vy:-4-rnd()*3,g:-4,t:0,life:1.1,c:sl?[120,110,120]:[255,140,50],lit:sl?0:1,glow:sl?0:1})}}
+  if(p.ph==='rest'){const sl=!RM&&p.tc>DRG_FT+DRG_LT+5&&p.tc<DRG_CYC-DRG_UT-4,fi=RM?0:sl?2:Math.floor(t/1.5)%2,Mo=drgDraw(['rest','rest2','sleep'][fi],p.x,s.alt-1,p.dir<0);
+    if(!RM&&(t%3.2)<.05){const nx=Mo.mx,ny=Mo.my;for(let i=0;i<3;i++)parts.push({x:nx,y:ny,vx:p.dir*(4+rnd()*4),vy:-4-rnd()*3,g:-4,t:0,life:1.1,c:sl?[120,110,120]:[255,140,50],lit:sl?0:1,glow:sl?0:1})}}
   else{const air=p.ph==='fly'?1:p.ph==='land'?1-p.k:p.k,lo=Math.max(0,(p.y-HOR+60)/24),sy=Math.round(HOR+62+lo*8),a=(.08+.14*lo)*air;
     if(a>.01){lowX.fillStyle=`rgba(10,4,4,${a.toFixed(3)})`;for(let dx=-22;dx<=22;dx++){const w=Math.round(Math.sqrt(Math.max(0,1-(dx/22.5)**2))*3);lowX.fillRect(Math.round(p.x)+dx,sy-w,1,w*2+1)}}
-    const glide=p.ph==='fly'&&Math.sin(t*.37)>.6,fi=glide?1:[0,1,2,1][Math.floor(t*(p.ph==='fly'?4:7))%4],fr=DRG_FLY[fi];drawSprite(fr,fr.map,p.x,Math.round(p.y)+21-(fi===2?1:0),p.dir<0);
-    if(p.ph==='fly'){const fp=t%11;if(fp<1.3){const mx=p.x+p.dir*29,my=p.y-8;for(let i=0;i<5;i++)parts.push({x:mx,y:my,vx:p.dir*(46+rnd()*34),vy:8+rnd()*14,g:-10,t:0,life:.45+rnd()*.3,c:[255,120+((rnd()*110)|0),30],lit:1,glow:1,sz:rnd()<.3?2:1});if(fp<.05)SND.play('roar')}
+    const glide=p.ph==='fly'&&Math.sin(t*.37)>.6,fi=glide?1:[0,1,2,1][Math.floor(t*(p.ph==='fly'?4:7))%4],Mo=drgDraw(glide?'glide':['up','mid','down'][fi],p.x,Math.round(p.y)+21,p.dir<0);
+    if(p.ph==='fly'){const fp=t%11;if(fp<1.3){const mx=Mo.mx,my=Mo.my;for(let i=0;i<5;i++)parts.push({x:mx,y:my,vx:p.dir*(46+rnd()*34),vy:8+rnd()*14,g:-10,t:0,life:.45+rnd()*.3,c:[255,120+((rnd()*110)|0),30],lit:1,glow:1,sz:rnd()<.3?2:1});if(fp<.05)SND.play('roar')}
       if(rnd()<.4)parts.push({x:p.x-p.dir*(rnd()*8),y:p.y+3,vx:-p.dir*6,vy:3,g:-6,t:0,life:.9,c:[255,150,50],lit:1})}
     else if(p.k>.9&&p.ph==='land'&&rnd()<.6)parts.push({x:p.x+(rnd()-.5)*30,y:s.alt,vx:(rnd()-.5)*20,vy:-6-rnd()*6,g:20,t:0,life:.6,c:[120,100,96],lit:0})}
   if(drgReady()&&(RM||Math.sin(T*4)>.3))sparkle(Math.round(p.x+p.dir*4),Math.round(p.y)-12,.9);DRG.p=p}
@@ -11238,7 +11397,7 @@ function frame(t){
   tick(dt);draw();guideTick();
 }
 /* versões novas: quando o jogo muda no servidor, guarda o progresso e recarrega a página */
-const BUILD='fd8c81da412f',UKEY='tapmoss.upd';const UPD={on:false,go:false,at:0};
+const BUILD='ee019bfeae04',UKEY='tapmoss.upd';const UPD={on:false,go:false,at:0};
 // the new version downloads in the background while the game goes on; the reload only comes once the whole page is here,
 // so a slow network never leaves a half-built page on screen. The offline helper (sw.js) hands this copy over at the reload.
 const NEXTC='tapmoss-next',pgKey=()=>{let p=location.pathname.replace(/index\.html$/,'');if(!p.endsWith('/'))p+='/';return p};
