@@ -1507,9 +1507,10 @@ Object.assign(TR,{"Linhagem do Sol": ["Sun Bloodline", "Linaje del Sol", "Ligné
 /* ============ base ============ */
 const W=160,H=256,HOR=116,N=W*H;
 const DBG=window.__TM_DEBUG||{};
-document.head.insertAdjacentHTML('beforeend',`<style>#app img,#app svg,#app canvas{-webkit-touch-callout:none;-webkit-user-drag:none;user-select:none}.pxi,.pxi image{pointer-events:none}#autoB.hid #icAuto{opacity:.8}#autoB.hid::after{content:'';position:absolute;right:0;top:0;width:24px;height:24px;background:url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 13 13%27 shape-rendering=%27crispEdges%27%3E%3Crect x=%270%27 y=%270%27 width=%2713%27 height=%2713%27 fill=%27%230f1810%27/%3E%3Crect x=%27.5%27 y=%27.5%27 width=%2712%27 height=%2712%27 fill=%27none%27 stroke=%27%239fd86a%27/%3E%3Cpath fill=%27%23e8f0dc%27 d=%27M4 4h5v1H4zM3 5h7v1H3zM2 6h9v1H2zM3 7h7v1H3zM4 8h5v1H4z%27/%3E%3Cpath fill=%27%230f1810%27 d=%27M5 5h3v3H5z%27/%3E%3Cpath fill=%27%23ff5a4a%27 d=%27M2 10h2v1h-2zM3 9h2v1h-2zM4 8h2v1h-2zM5 7h2v1h-2zM6 6h2v1h-2zM7 5h2v1h-2zM8 4h2v1h-2zM9 3h2v1h-2z%27/%3E%3C/svg%3E") center/contain no-repeat;image-rendering:pixelated;pointer-events:none}#ofB{position:relative}#ofB.dotOn::after{content:'';position:absolute;right:8px;top:2px;width:9px;height:9px;background:#e8604a;box-shadow:0 0 0 2px #0f1810;pointer-events:none}.mnars .card .pxi.pk{width:44px;height:44px;margin:-2px auto 0}.item .ico .pxi.pk{width:30px;height:30px}</style>`);
+document.head.insertAdjacentHTML('beforeend',`<style>#app img,#app svg,#app canvas{-webkit-touch-callout:none;-webkit-user-drag:none;user-select:none}.pxi,.pxi image{pointer-events:none}#autoB .pxi{width:34px;height:30px}#autoB:not(.on) .nm{color:#ff7a66}#autoB:not(.on) #icAuto{opacity:.85}#guide .gtip{pointer-events:auto;cursor:pointer}#autoB.hid::after{content:'';position:absolute;right:6px;top:0;width:18px;height:18px;background:url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 13 13%27 shape-rendering=%27crispEdges%27%3E%3Crect x=%270%27 y=%270%27 width=%2713%27 height=%2713%27 fill=%27%230f1810%27/%3E%3Crect x=%27.5%27 y=%27.5%27 width=%2712%27 height=%2712%27 fill=%27none%27 stroke=%27%239fd86a%27/%3E%3Cpath fill=%27%23e8f0dc%27 d=%27M4 4h5v1H4zM3 5h7v1H3zM2 6h9v1H2zM3 7h7v1H3zM4 8h5v1H4z%27/%3E%3Cpath fill=%27%230f1810%27 d=%27M5 5h3v3H5z%27/%3E%3Cpath fill=%27%23ff5a4a%27 d=%27M2 10h2v1h-2zM3 9h2v1h-2zM4 8h2v1h-2zM5 7h2v1h-2zM6 6h2v1h-2zM7 5h2v1h-2zM8 4h2v1h-2zM9 3h2v1h-2z%27/%3E%3C/svg%3E") center/contain no-repeat;image-rendering:pixelated;pointer-events:none}#ofB{position:relative}#ofB.dotOn::after{content:'';position:absolute;right:8px;top:2px;width:9px;height:9px;background:#e8604a;box-shadow:0 0 0 2px #0f1810;pointer-events:none}.mnars .card .pxi.pk{width:44px;height:44px;margin:-2px auto 0}.item .ico .pxi.pk{width:30px;height:30px}</style>`);
 document.addEventListener('contextmenu',e=>{const t=e.target;if(t&&t.closest&&t.closest('#app')&&!t.closest('input,textarea,[contenteditable]'))e.preventDefault()});
-try{Object.assign(TR,{'Toques automáticos ligados, sem se verem na cena.':['Auto taps on, hidden from the scene.','Toques automáticos activados, sin verse en la escena.','Taps automatiques activés, cachés dans la scène.','Auto-Taps an, in der Szene unsichtbar.','自動タップがオンになった。画面には表示されない。','自动点击已开启,场景中不显示。']})}catch(e){}
+try{Object.assign(TR,{"Estátua da kitsune":["Kitsune statue", "Estatua de la kitsune", "Statue de la kitsune", "Kitsune-Statue", "狐の像", "九尾狐雕像"],"Uma raposa de nove caudas em mármore branco, num pedestal ao lado do templo.":["A nine-tailed fox in white marble, on a pedestal beside the temple.", "Un zorro de nueve colas en mármol blanco, sobre un pedestal junto al templo.", "Un renard à neuf queues en marbre blanc, sur un piédestal à côté du temple.", "Ein neunschwänziger Fuchs aus weißem Marmor auf einem Sockel neben dem Tempel.", "白い大理石の九尾の狐。神社の横の台座に座っている。", "一只白色大理石的九尾狐,立在神殿旁的基座上。"],"Fogo de raposa":["Foxfire", "Fuego de zorro", "Feu de renard", "Fuchsfeuer", "狐火", "狐火"],"Os olhos, a joia e as pontas das caudas acendem-se, e chamas azuis rodam à volta da estátua.":["The eyes, the jewel and the tail tips light up, and blue flames circle the statue.", "Los ojos, la joya y las puntas de las colas se encienden, y llamas azules giran alrededor de la estatua.", "Les yeux, le joyau et le bout des queues s’allument, et des flammes bleues tournent autour de la statue.", "Augen, Juwel und Schwanzspitzen leuchten auf, und blaue Flammen kreisen um die Statue.", "目と宝珠と尾の先が光り、青い炎が像のまわりを回る。", "眼睛、宝珠和尾尖亮起来,蓝色火焰绕着雕像旋转。"],"Kitsune desperta":["Kitsune awakened", "Kitsune despierta", "Kitsune éveillée", "Erwachte Kitsune", "目覚めた狐", "觉醒的九尾狐"],"Ouro nas caudas e nas orelhas, pétalas no ar e, à noite, uma coluna de luz até ao céu.":["Gold on the tails and ears, petals in the air and, at night, a column of light up to the sky.", "Oro en las colas y las orejas, pétalos en el aire y, de noche, una columna de luz hasta el cielo.", "De l’or sur les queues et les oreilles, des pétales dans l’air et, la nuit, une colonne de lumière jusqu’au ciel.", "Gold an Schwänzen und Ohren, Blütenblätter in der Luft und nachts eine Lichtsäule bis zum Himmel.", "尾と耳に金、舞う花びら、夜には空まで届く光の柱。", "尾巴和耳朵镶上金色,花瓣飘落,夜里一道光柱直冲天空。"],"Templo e kitsune completos. Rende mais 108% nesta cena.":["Temple and kitsune complete. Earns 108% more in this scene.", "Templo y kitsune completos. Rinde un 108% más en esta escena.", "Temple et kitsune terminés. Rapporte 108 % de plus dans cette scène.", "Tempel und Kitsune fertig. Bringt in dieser Szene 108 % mehr.", "神社と狐が完成。このシーンの収入が108%アップ。", "神殿和九尾狐都完成了。这个场景的收益多 108%。"],"A kitsune acordou":["The kitsune has awakened", "La kitsune ha despertado", "La kitsune s’est éveillée", "Die Kitsune ist erwacht", "狐が目覚めた", "九尾狐苏醒了"],"A estátua guarda a cidade. À noite, uma coluna de luz sobe até ao céu.":["The statue watches over the city. At night, a column of light rises to the sky.", "La estatua protege la ciudad. De noche, una columna de luz sube hasta el cielo.", "La statue veille sur la ville. La nuit, une colonne de lumière monte jusqu’au ciel.", "Die Statue wacht über die Stadt. Nachts steigt eine Lichtsäule zum Himmel.", "像が街を見守っている。夜には光の柱が空へのぼる。", "雕像守护着这座城市。夜里,一道光柱升上天空。"],'O musgo já está regado. Quando o regador voltar a encher, toca nele.':['The moss is already watered. When the can fills up again, tap it.','El musgo ya está regado. Cuando la regadera se vuelva a llenar, tócala.','La mousse est déjà arrosée. Quand l’arrosoir sera de nouveau plein, touche-le.','Das Moos ist schon gegossen. Wenn die Kanne wieder voll ist, tippe darauf.','コケはもう水やり済み。じょうろがまた満タンになったらタップしよう。','苔藓已经浇过水了。等洒水壶再次装满后点它。'],
+'O regador ainda está a encher. Quando estiver cheio, toca nele.':['The watering can is still filling. When it is full, tap it.','La regadera aún se está llenando. Cuando esté llena, tócala.','L’arrosoir se remplit encore. Quand il sera plein, touche-le.','Die Gießkanne füllt sich noch. Wenn sie voll ist, tippe darauf.','じょうろはまだ水をためているところ。満タンになったらタップしよう。','洒水壶还在装水。装满后点它。'],'Toques automáticos ligados, sem se verem na cena.':['Auto taps on, hidden from the scene.','Toques automáticos activados, sin verse en la escena.','Taps automatiques activés, cachés dans la scène.','Auto-Taps an, in der Szene unsichtbar.','自動タップがオンになった。画面には表示されない。','自动点击已开启,场景中不显示。']})}catch(e){}
 // errors on players' devices go to a private log (no account, no address): a bug shows up the day it appears, not when someone complains
 const ERRLOG={n:0,seen:new Set(),q:[]};
 function reportErr(msg,onde,pilha){
@@ -1584,6 +1585,7 @@ const GL={
 ' ':['..','..','..','..','..','..','..'],':':['.','.','#','.','.','#','.'],
 'h':['#...','#...','###.','#..#','#..#','#..#','#..#'],'A':['.###.','#...#','#...#','#####','#...#','#...#','#...#'],'i':['.','#','.','#','#','#','#'],'x':['....','....','#..#','.##.','.##.','#..#','#..#'],'p':['....','....','###.','#..#','###.','#...','#...'],'c':['...','...','.##','#..','#..','#..','.##'],'o':['....','....','.##.','#..#','#..#','#..#','.##.'],'e':['....','....','.##.','#..#','####','#...','.###'],'S':['.###','#...','#...','.##.','...#','...#','###.'],'N':['#...#','##..#','#.#.#','#.#.#','#..##','#...#','#...#'],'D':['###.','#..#','#..#','#..#','#..#','#..#','###.'],'U':['#...#','#...#','#...#','#...#','#...#','#...#','.###.'],'O':['.###.','#...#','#...#','#...#','#...#','#...#','.###.'],'m':['.....','.....','##.#.','#.#.#','#.#.#','#.#.#','#.#.#'],'\u202F':['.','.','.','.','.','.','.'],
 };
+GL.F=['#####','#....','#....','####.','#....','#....','#....'];
 const numCache=new Map();
 function pxNum(str){
   str=String(str);if(numCache.has(str))return numCache.get(str);
@@ -3192,7 +3194,22 @@ function genScene(sd){
     if(sc.site){const st=sc.site;fix(st,o=>o.x0+o.w/2,o=>o.by,st.w/2+3,46,3,(o,m)=>{o.x0=m.x-Math.round(o.w/2);o.by=m.y;o.box=m.b;if(sc.house){sc.house.x0=o.x0;sc.house.by=o.by}})}
     if(sc.temple)fix(sc.temple,o=>o.cx,o=>o.by,24,40,4,(o,m)=>{o.cx=m.x;o.by=m.y;o.box=m.b;if(!visiting)sd.tpp={x:m.x,y:m.y}});
     for(const k of['ship','forge'])if(sc[k])fix(sc[k],o=>o.cx,o=>o.by,26,44,4,(o,m)=>{o.cx=m.x;o.by=m.y;o.box=m.b;o.dir=m.x<80?1:-1;if(!visiting)sd[k==='ship'?'nvp':'fjp']={x:m.x,y:m.y}});
-    if(sc.millSite)fix(sc.millSite,o=>o.cx,o=>o.by,11,34,3,(o,m)=>{o.cx=m.x;o.by=m.y;o.box=m.b;if(sc.mill){sc.mill.x=m.x;sc.mill.y=m.y-30;sc.mill.by=m.y}if(!visiting)sd.mvp={x:m.x,y:m.y}})}
+    if(sc.millSite)fix(sc.millSite,o=>o.cx,o=>o.by,11,34,3,(o,m)=>{o.cx=m.x;o.by=m.y;o.box=m.b;if(sc.mill){sc.mill.x=m.x;sc.mill.y=m.y-30;sc.mill.by=m.y}if(!visiting)sd.mvp={x:m.x,y:m.y}})
+    // the kitsune statue (the temple's steps 7 to 9) stands beside the temple, on dry ground; if the square is full, a ruined wall,
+    // a stone or a log next to the temple makes room for it (never a building, the water or something the player put down).
+    // The spot is kept once found
+    if(sc.temple&&biome==='cidade'&&(sd.tp|0)>=7){const T0=sc.temple,hw=18,up=50,dn=2,bx=(x,y)=>({x0:x-hw,x1:x+hw,y0:y-up,y1:y+dn,big:1}),ov=(a,o)=>!(a.x1<o.x0-2||a.x0>o.x1+2||a.y1<o.y0-2||a.y0>o.y1+2);
+      const exB=new Set((sc._ex||[]).map(e=>e.box).filter(Boolean)),softB=new Set([...sc.walls.map(w=>w.box),...sc.rocks.map(r=>r.box),...(sc.log?[sc.log.box]:[]),...(sc.stump?[sc.stump.box]:[])].filter(b=>b&&!exB.has(b)));
+      const fits=(b,soft)=>b.x0>=4&&b.x1<=W-4&&b.y1<=H-34&&!wetB(b)&&occ.every(o=>!ov(b,o)||soft&&softB.has(o));
+      let st=null;const sv=sd.ksp&&Number.isFinite(sd.ksp.x)&&Number.isFinite(sd.ksp.y)?sd.ksp:null;
+      if(sv&&fits(bx(sv.x,sv.y),true))st={x:sv.x,y:sv.y};
+      if(!st){const pref=T0.cx<80?1:-1,C=[];for(const dx of[42,46,38,50])for(const sg of[pref,-pref])for(const dy of[0,-3,3,-6,6,-9,9,-12,12,15,18,22])C.push({x:T0.cx+sg*dx,y:T0.by+dy});
+        const ok=q=>q.y>=HOR+46&&q.y<=H-38;
+        for(const soft of[false,true]){st=C.find(q=>ok(q)&&fits(bx(q.x,q.y),soft))||null;if(st)break}
+        if(!st){const C2=[];for(let x=22;x<=W-22;x+=2)for(let y=HOR+46;y<=H-38;y+=2)C2.push({x,y});C2.sort((a,b)=>Math.hypot(a.x-T0.cx,(a.y-T0.by)*1.4)-Math.hypot(b.x-T0.cx,(b.y-T0.by)*1.4));
+          for(const soft of[false,true]){st=C2.find(q=>fits(bx(q.x,q.y),soft))||null;if(st)break}}}
+      if(st){const b=bx(st.x,st.y);for(const o of occ.filter(o=>ov(b,o)&&softB.has(o))){const i=occ.indexOf(o);if(i>=0)occ.splice(i,1);sc.walls=sc.walls.filter(w=>w.box!==o);sc.rocks=sc.rocks.filter(r=>r.box!==o);if(sc.log&&sc.log.box===o)sc.log=null;if(sc.stump&&sc.stump.box===o)sc.stump=null}
+        if(!visiting&&(!sd.ksp||sd.ksp.x!==st.x||sd.ksp.y!==st.y))sd.ksp={x:st.x,y:st.y};occ.push(b);sc.kitsune={cx:st.x,by:st.y,lv:clamp((sd.tp|0)-6,1,3),box:b}}}}
   // stepping stones drawn by the player
   sc.path=Array.isArray(sd.path)?sd.path.filter(a=>Array.isArray(a)&&Number.isFinite(a[0])&&Number.isFinite(a[1])).slice(0,PATHMAX).map(a=>[a[0],a[1],clamp(a[2]|0||1,1,3)]):[];
   return sc;
@@ -3642,6 +3659,14 @@ function renderWorld0(){RWV++;
       sc._drgSky={cx,by,dir,seed,alt:Y(37),fire:[[X(4.5),Y(15)],[X(45.5),Y(15)]]}}
   }
 
+  // the kitsune statue: painted at 4x once per stage, laid into the scene pixel by pixel, a soft shadow away from the sun
+  function kitsune(o){const A=kitArtC(o.lv,sunSide>0),X0=o.cx*4+2-72,Y0=o.by*4+4-A.h;
+    for(let Y=o.by*4-2;Y<=o.by*4+14;Y++)for(let X=o.cx*4-74;X<=o.cx*4+74;X++){const dx=(X-o.cx*4+sunSide*10)/68,dy=(Y-o.by*4-5)/9,e=dx*dx+dy*dy;if(e<1)shH(X,Y,.6+.4*e,false)}
+    for(let r=0;r<A.h;r++)for(let c=0;c<A.w;c++){const i=r*A.w+c,m=A.mat[i];if(!m)continue;const j=i*4,X=X0+c,Y=Y0+r;pH(X,Y,[A.px[j],A.px[j+1],A.px[j+2]],12,m===3?3:2)}
+    const P=p=>[o.cx+.5+p[0]/4,o.by+.75-p[1]/4];
+    sc._kit={cx:o.cx,by:o.by,lv:o.lv,tips:A.tips.map(P),eyes:A.eyes.map(P),jewel:P(A.jewel)};
+    if(o.lv>=2){for(const e of sc._kit.eyes)sc._eglow.push([e[0],e[1],o.lv>=3?[255,214,120]:[120,210,255],4]);const j=sc._kit.jewel;sc._eglow.push([j[0],j[1],o.lv>=3?[255,200,90]:[110,190,255],8])}
+  }
   function temple(o){
     const lv=o.lv,{cx,by}=o,P=PAL.wall,RD=[[110,28,22],[150,40,28],[196,64,40],[226,98,58]],RF=[[30,32,40],[44,48,60],[62,68,84],[86,94,112]],GD=[[150,104,30],[214,160,52],[255,214,96]],ST=[[150,146,134],[188,184,170],[220,216,202]];
     const W2=18;for(let x=cx-W2-1;x<=cx+W2+1;x++)for(let k=1;k<=3;k++)shade(x-sunSide*k,by+k,.7,true);
@@ -4028,7 +4053,7 @@ function renderWorld0(){RWV++;
   sc.walls.forEach(o=>items.push([wall,o,o.by]));
   if(sc.house)items.push([house,sc.house,sc.house.by]);
   if(sc.millSite)items.push([windmill,sc.millSite,sc.millSite.by]);
-  if(sc.temple)items.push([temple,sc.temple,sc.temple.by]);
+  if(sc.temple)items.push([temple,sc.temple,sc.temple.by]);if(sc.kitsune)items.push([kitsune,sc.kitsune,sc.kitsune.by]);
   if(sc.ship)items.push([ship,sc.ship,sc.ship.by]);if(sc.forge)items.push([forge,sc.forge,sc.forge.by]);
   if(sc.cst)items.push([castle,sc.cst,sc.cst.by]);
   if(sc.azSite)items.push([azenha,sc.azSite,sc.azSite.top]);
@@ -4040,7 +4065,7 @@ function renderWorld0(){RWV++;
   (sc.stones||[]).forEach(o=>items.push([rock,o,o.by]));
   sc.trees.forEach(o=>items.push([tree,o,o.by]));
   items.sort((a,b)=>a[2]-b[2]);
-  for(const[fn,o,ky]of items){curDep=Math.min(255,Math.round(ky));NOFL=fn===bench||fn===pot||fn===house||fn===windmill||fn===azenha||fn===temple||fn===castle||fn===ship||fn===forge?1:0;UPG=fn===house?1:fn===windmill?2:fn===azenha?3:fn===castle?5:fn===temple?6:fn===ship?7:fn===forge?8:0;fn(o)}NOFL=0;UPG=0;
+  for(const[fn,o,ky]of items){curDep=Math.min(255,Math.round(ky));NOFL=fn===bench||fn===pot||fn===house||fn===windmill||fn===azenha||fn===temple||fn===kitsune||fn===castle||fn===ship||fn===forge?1:0;UPG=fn===house?1:fn===windmill?2:fn===azenha?3:fn===castle?5:fn===temple||fn===kitsune?6:fn===ship?7:fn===forge?8:0;fn(o)}NOFL=0;UPG=0;
   // the forgotten city's street lamps: on the cobbles, behind whatever stands in front of them, lit at night
   if(sc.biome==='cidade'){const q=mulberry32(sc.seed^0x1a3b);let n=0;for(let k=0;k<60&&n<3;k++){const x=10+Math.floor(q()*(W-20)),y=HOR+24+Math.floor(q()*(H-HOR-70)),i0=y*W+x;
     if(surf[i0]!==1||nofl[i0]||dep[i0]>y)continue;let ok=true;for(let h=1;h<=15&&ok;h++){const j=(y-h)*W+x;if(dep[j]>y||surf[j]===12||surf[j]===4||surf[j]===11)ok=false}if(!ok)continue;n++;
@@ -4558,7 +4583,7 @@ function gardenBed(){const sc=scene;if(!sc||!spots)return null;if(sc._bed!==unde
     if(best)break}
   // a scene crowded with things the player put down: the bed still has to be there, on the spot where it covers the fewest of them
   // (never on water, lava, a building or the lamp); new things can no longer be put on it, so it stays clean from then on
-  if(!best){let bs=1e9;const big=[sc.house,sc.site,sc.temple,sc.forge,sc.ship,sc.millSite,sc.azSite,sc.bigBridge,sc.castle].filter(o=>o&&o.box).map(o=>o.box);
+  if(!best){let bs=1e9;const big=[sc.house,sc.site,sc.temple,sc.kitsune,sc.forge,sc.ship,sc.millSite,sc.azSite,sc.bigBridge,sc.castle].filter(o=>o&&o.box).map(o=>o.box);
     for(const[rx,ry]of[[16,6.5],[13,5.5],[11,4.5]])
       for(let cy=Math.ceil(HOR+10+ry);cy<=H-40-ry;cy+=2)for(let cx=Math.ceil(FLX0-4+rx);cx<=FLX1+4-rx;cx+=2){
         if(uiBlocked(cx,cy,6)||uiBlocked(cx-rx+3,cy,3)||uiBlocked(cx+rx-3,cy,3))continue;
@@ -4813,6 +4838,145 @@ function buyHouse(){
 
 
 /* the fox temple in the forgotten city: six steps, each one +12% in this scene; once whole, a spirit fox comes at night with a gift */
+// the kitsune statue in front of the city temple, painted at 4x: a nine-tailed fox sitting on a granite pedestal with a
+// straw rope and paper streamers. lv 1 = carved marble, lv 2 = spirit fire in the eyes, the jewel and the tail tips,
+// lv 3 = awakened, gold on the tails, ears, bib and pedestal. Light comes from the left (mirrored when the sun is on the right).
+// Returns the picture (u from -64 to 63 across, v from 0 at the ground up to 199) with a material per pixel and the
+// points the animated effects need (tail tips, eyes, jewel).
+function kitArt(lv,flip){
+  const WD=144,HT=196,HW=72,N=WD*HT,hx=h=>[parseInt(h.slice(1,3),16),parseInt(h.slice(3,5),16),parseInt(h.slice(5,7),16)];
+  const R=a=>a.map(hx);
+  const STONE=R(['#3e3a48','#5c5768','#7e7889','#a39dae','#c6c0cc','#e2dde3','#f6f3f2','#ffffff']);
+  const PED=R(['#16141d','#211f2b','#2d2b3a','#3c3a4c','#4f4d61','#666479','#807e93']);
+  const ROPE=R(['#4a3412','#6e5222','#957434','#bb9a4e','#dcc072','#f2e0a0']);
+  const RED=R(['#3e0b10','#68151a','#961f22','#c3352c','#e2573e','#f6845e']);
+  const GOLD=R(['#4e330c','#7c5614','#ad7e22','#d8a836','#f2cc5a','#ffe696','#fff8d8']);
+  const SPI=R(['#0e2458','#18469e','#2a78dc','#55aaf6','#94d4ff','#d2f0ff','#ffffff']);
+  const PAPER=R(['#9c968c','#c4beb2','#e2ddd2','#f8f6f0']);
+  const DARK=hx('#231d29');
+  const L=(()=>{const v=[-.56,.62,.55],n=Math.hypot(...v);return v.map(x=>x/n)})();
+  const BY=[0,8,2,10,12,4,14,6,3,11,1,9,15,7,13,5].map(x=>(x+.5)/16);
+  const col=new Array(N).fill(null),zb=new Float32Array(N).fill(-1),idb=new Int16Array(N).fill(-1),mat=new Uint8Array(N);
+  // light value -> colour on a ramp, dithered between steps
+  const ramp=(rp,I,u,v)=>{I=Math.max(0,Math.min(.999,I));const f=I*(rp.length-1),i=Math.floor(f),fr=f-i;const b=BY[((v&3)<<2)|(u&3)];return rp[Math.min(rp.length-1,i+(fr>b?1:0))]};
+  const lam=(nx,ny,nz)=>Math.max(0,nx*L[0]+ny*L[1]+nz*L[2])*1.08-.04;
+  const put=(u,v,c,z,id,m)=>{u=Math.round(u);v=Math.round(v);if(u<-HW||u>HW-1||v<0||v>=HT)return;const i=v*WD+(u+HW);if(z<zb[i])return;zb[i]=z;col[i]=c;idb[i]=id;mat[i]=m||1};
+  const ell=(cx,cy,rx,ry)=>(u,v)=>{const x=(u-cx)/rx,y=(v-cy)/ry,d=x*x+y*y;return d<=1?[x,y,Math.sqrt(1-d)]:null};
+  const each=(x0,x1,y0,y1,f)=>{for(let v=Math.max(0,Math.floor(y0));v<=Math.min(HT-1,Math.ceil(y1));v++)for(let u=Math.max(-HW,Math.floor(x0));u<=Math.min(HW-1,Math.ceil(x1));u++)f(u,v)};
+  const gold=lv>=3,spirit=lv>=2;
+  const tipR=gold?GOLD:spirit?SPI:STONE;
+  const out={tips:[],eyes:[],jewel:null,panel:null};
+
+  // ---------- the pedestal: a plinth, a polished die with a carved panel, a cornice; a straw rope with paper streamers
+  let id=0;
+  const block=(x0,x1,y0,y1,z,rp,bev,k)=>{const myid=id++;each(x0,x1,y0,y1,(u,v)=>{
+      let I=.5+(v-y0)/(y1-y0+1)*.12;if(u<=x0+bev)I+=.22;else if(u>=x1-bev)I-=.2;if(v>=y1-bev)I+=.26;else if(v<=y0+1)I-=.14;
+      if(k){const row=Math.floor((v-y0)/k.h),off=row%2*k.w/2;if(((u-x0+off+640)%k.w)===0||(v-y0)%k.h===0&&v>y0)I-=.2;
+        const n=Math.sin(u*12.9898+v*78.233)*43758.5453;I+=((n-Math.floor(n))-.5)*.08}
+      put(u,v,ramp(rp,I,u,v),z,myid,2)})};
+  block(-58,58,0,10,1,PED,2,{w:20,h:6});
+  block(-46,46,11,38,2,PED,2,null);
+  // the recessed panel, its inner edges in shadow on the lit side, an emblem of the fox's flame-jewel in relief
+  {const myid=id++,x0=-31,x1=31,y0=15,y1=34;out.panel=[0,(y0+y1)/2];each(x0,x1,y0,y1,(u,v)=>{let I=.3;if(u<=x0+1||v>=y1-1)I=.18;else if(u>=x1-1||v<=y0+1)I=.46;put(u,v,ramp(PED,I,u,v),3,myid,2)});
+    const em=(u,v)=>{const x=u,y=v-24,r=Math.hypot(x,y*1.08);if(r<=6.5)return 1-r/6.5;
+      // a flame on top of the jewel and two curls either side
+      if(y>4&&y<14&&Math.abs(x)<=(14-y)*.55+Math.sin(y*.9)*1.2)return .5;
+      const a=Math.abs(x)-15,b=y+1;if(Math.abs(Math.hypot(a,b)-5)<1.1&&b<3)return .4;return -1};
+    each(-24,24,16,34,(u,v)=>{const e=em(u,v);if(e<0)return;const rp=gold?GOLD:spirit?SPI:PED,I=gold||spirit?.45+e*.5:.62+e*.25;put(u,v,ramp(rp,I,u,v),4,myid,gold||spirit?3:2)})}
+  // gold or pale stone mouldings above and below the die
+  {const myid=id++;for(const yy of[11,12,37,38])each(-47,47,yy,yy,(u,v)=>{const I=(yy===12||yy===38?.78:.5)+(u<-40?.1:u>40?-.1:0);put(u,v,gold?ramp(GOLD,I,u,v):ramp(PED,I+.08,u,v),5,myid,gold?3:2)})}
+  block(-54,54,39,47,2,PED,2,null);
+  // the straw rope sags between the corners of the cornice, twisted, with three white paper streamers
+  {const myid=id++,vc=u=>40-5.5*(1-(u/50)*(u/50));each(-52,52,30,44,(u,v)=>{const c=vc(u),d=v-c;if(Math.abs(d)>2.6)return;const tw=((u+d*1.6)%7+7)%7,I=.35+(tw<3.5?.35:0)+(-d/2.6)*.25;put(u,v,ramp(ROPE,I,u,v),6,myid,2)});
+    for(const sx of[-30,0,30]){const top=Math.round(vc(sx))-2;for(let k=0;k<16;k++){const v=top-k,seg=Math.floor(k/4),o=(seg%2?2:-1);for(let w=0;w<4;w++){const u=sx+o+w-1,I=w===0?.3:w===3?.95:.68;put(u,v,ramp(PAPER,I,u,v),7,myid,2)}}}}
+
+  // ---------- the nine tails, fanned out behind the fox, round in section, furred, the tips lit
+  for(let k=-4;k<=4;k++){const a=k*.31,len=86-Math.abs(k)*5,myid=id++,z=8+(4-Math.abs(k)),sg=Math.sign(k)||1,root=[k*1.6,70];
+    const P0=root,P1=[root[0]+Math.sin(a*.5)*len*.5,root[1]+Math.cos(a*.5)*len*.5],P2=[root[0]+Math.sin(a)*len,root[1]+Math.cos(a)*len];
+    // the end of each tail curls outward like a flame
+    const ca=a+.95*sg*(k?1:.4),P3=[P2[0]+Math.sin(ca)*9,P2[1]+Math.cos(ca)*9];
+    const B=t=>{if(t<.86){const tt=t/.86,ss=1-tt;return[ss*ss*P0[0]+2*ss*tt*P1[0]+tt*tt*P2[0],ss*ss*P0[1]+2*ss*tt*P1[1]+tt*tt*P2[1]]}const q=(t-.86)/.14;return[P2[0]+(P3[0]-P2[0])*q,P2[1]+(P3[1]-P2[1])*q]};
+    const NS=80,pts=[];for(let i=0;i<=NS;i++)pts.push(B(i/NS));
+    const rad=t=>{const w=t<.14?4.5+t*32:12.2*Math.pow(Math.sin(Math.PI*(.07+.93*t)),.75);return Math.max(.5,w*(1+.1*Math.sin(t*len*.8+k*1.7)))};
+    let xs=pts.map(p=>p[0]),ys=pts.map(p=>p[1]);
+    each(Math.min(...xs)-14,Math.max(...xs)+14,Math.min(...ys)-14,Math.max(...ys)+14,(u,v)=>{
+      let best=1e9,bi=0;for(let i=0;i<pts.length;i++){const dx=u-pts[i][0],dy=v-pts[i][1],d=dx*dx+dy*dy;if(d<best){best=d;bi=i}}
+      const t=bi/NS,r=rad(t),d=Math.sqrt(best);if(d>r)return;
+      const p=pts[bi],q=pts[Math.min(NS,bi+1)],o=pts[Math.max(0,bi-1)],tx=q[0]-o[0],ty=q[1]-o[1],tl=Math.hypot(tx,ty)||1,nx0=-ty/tl,ny0=tx/tl;
+      const side=((u-p[0])*nx0+(v-p[1])*ny0)/r,nz=Math.sqrt(Math.max(0,1-side*side));
+      // the tails sit behind the fox, a little greyer than it, the outer ones darker still
+      let I=.08+.8*lam(nx0*side,ny0*side,nz)-Math.abs(k)*.03;
+      // fur: soft strands along the tail
+      I+=Math.sin(t*len*.6+side*5)*.045+Math.sin(t*len*1.9-side*11)*.03;
+      let c=ramp(STONE,I,u,v),m=2;
+      // the tips: spirit fire or gold, blending in from the fur, brightest at the very end
+      if(t>.58&&(spirit||gold)){const g=Math.min(1,(t-.58)/.36),e=g*g*(3-2*g),rp=gold?GOLD:SPI,J=.3+.5*lam(nx0*side,ny0*side,nz)+g*.35+(gold?0:(1-Math.abs(side))*.15),c2=ramp(rp,J,u,v);
+        c=[c[0]+(c2[0]-c[0])*e,c[1]+(c2[1]-c[1])*e,c[2]+(c2[2]-c[2])*e];if(e>.5)m=3}
+      else if(t>.62)c=ramp(STONE,I+(t-.62)*.3,u,v);
+      // a gold vein down the middle of each tail once awakened
+      if(gold&&Math.abs(side)<.15&&t>.2&&t<.7){c=ramp(GOLD,.55+(1-Math.abs(side)*6.6)*.35+lam(0,0,1)*.05,u,v);m=3}
+      put(u,v,c,z,myid,m)});
+    const tp=B(.96);out.tips.push(flip?[-tp[0],tp[1]]:tp)}
+
+  // ---------- the body: haunches, an egg-shaped chest, two front legs with paws
+  const solid=(fn,x0,x1,y0,y1,z,rp,bias,m)=>{const myid=id++;each(x0,x1,y0,y1,(u,v)=>{const r=fn(u,v);if(!r)return;const I=.24+.76*lam(r[0],r[1],r[2])+(bias?bias(u,v,r):0);put(u,v,ramp(rp,I,u,v),z,myid,m||2)});return myid};
+  for(const s of[-1,1])solid(ell(s*20,62,16,14),s*20-17,s*20+17,47,77,20,STONE);
+  solid((u,v)=>{const rx=19-5*Math.max(0,(v-80)/28),r=ell(0,78,rx,31)(u,v);return r},-20,20,47,110,21,STONE,(u,v,r)=>{
+    // the pale fluff of the chest
+    const f=Math.abs(u)<9-(v-84)*.12&&v>82&&v<104;return f?.1+((u*3+v*5)%7===0?-.08:0):0});
+  for(const s of[-1,1]){solid((u,v)=>{const x=(u-s*8)/4.2;if(Math.abs(x)>1||v<50||v>86)return null;const nz=Math.sqrt(1-x*x);return[x,(v-68)/60,nz]},s*8-5,s*8+5,50,86,30,STONE);
+    const pid=solid(ell(s*8.5,51.5,6.4,4.2),s*8.5-7,s*8.5+7,47,56,31,STONE);
+    each(s*8.5-6,s*8.5+6,47,53,(u,v)=>{if((u===Math.round(s*8.5-2)||u===Math.round(s*8.5+2))&&v<=52&&v>=48){const i=v*WD+(u+HW);if(idb[i]===pid)col[i]=ramp(STONE,.3,u,v)}})}
+  // the flame-jewel the fox guards between its paws
+  {const jx=0,jy=56,myid=id++;each(-8,8,48,70,(u,v)=>{const x=u-jx,y=v-jy,r=Math.hypot(x,y);let ok=r<=5.8,flame=false;
+      if(!ok&&y>3&&y<13&&Math.abs(x)<=(13-y)*.5){ok=true;flame=true}
+      if(!ok)return;const nx=x/6,ny=y/6,nz=Math.sqrt(Math.max(0,1-nx*nx-ny*ny));let I=.3+.7*lam(nx,ny,nz);if(flame)I=.55+(13-y)/22;
+      const rp=gold?GOLD:spirit?SPI:STONE;put(u,v,ramp(rp,I,u,v),40,myid,spirit||gold?3:2)});out.jewel=[jx,jy+2]}
+
+  // ---------- the red bib round the neck, a bell on it once the spirit is in the statue
+  {const myid=id++;each(-17,17,80,106,(u,v)=>{const top=104-Math.abs(u)*.12,bot=83+Math.abs(u)*1.25;if(v>top||v<bot)return;
+      const edge=v>top-1.5||v<bot+1.4,I=.42+(v-bot)/(top-bot)*.3+(-u/17)*.14+(((u+v*2)%9===0)?-.08:0);
+      put(u,v,edge?(gold?ramp(GOLD,.8,u,v):ramp(PAPER,.9,u,v)):ramp(RED,I,u,v),35,myid,edge&&gold?3:2)});
+    if(spirit){const b=ell(0,88,3.6,3.6);each(-4,4,84,92,(u,v)=>{const r=b(u,v);if(!r)return;let I=.3+.7*lam(r[0],r[1],r[2]);if(v===87&&Math.abs(u)<=2)I=.1;put(u,v,ramp(GOLD,I,u,v),36,myid,3)})}}
+
+  // ---------- the head: round, a fluffed ruff at the cheeks, a narrow muzzle, slanted eyes, red markings
+  const hid=solid(ell(0,119,17,13.5),-18,18,104,133,45,STONE);
+  for(const s of[-1,1])solid((u,v)=>{const x=(u-s*16)*s,y=v-112;if(x<-3||x>6||Math.abs(y)>6.5-x*.7)return null;return[s*.75,-.15,.64]},s*16-4,s*16+7,104,120,44,STONE,(u,v)=>((u*5+v*3)%6===0?-.08:.04));
+  // the muzzle narrows down to the nose, paler than the top of the head
+  solid((u,v)=>{const y=(v-102)/16;if(y<0||y>1)return null;const hw=2.5+y*9.5;if(Math.abs(u)>hw)return null;const x=u/hw;return[x*.7,(y-.6)*.6,Math.sqrt(Math.max(.05,1-x*x*.5-.1))]},-12,12,101,118,46,STONE,()=>.08);
+  {const myid=id++;each(-3,3,101,105,(u,v)=>{const x=u/2.7,y=(v-103.2)/1.8;if(x*x+y*y>1)return;put(u,v,v>=104&&u<0?hx('#4a4252'):DARK,47,myid,2)});
+    each(-3,3,98,99,(u,v)=>{if(v===99&&Math.abs(u)<=0||v===98&&Math.abs(u)>=1&&Math.abs(u)<=3)put(u,v,ramp(STONE,.25,u,v),47,myid,2)})}
+  // the ears, tall and pointed, the inner part red (gold when awakened), the rim gold too
+  for(const s of[-1,1]){const A=[s*17.5,125],Bp=[s*5,131.5],C=[s*15,157];const myid=id++;
+    const inside=(u,v,a,b,c)=>{const d=(p,q,r)=>(p[0]-r[0])*(q[1]-r[1])-(q[0]-r[0])*(p[1]-r[1]);const P=[u,v],d1=d(P,a,b),d2=d(P,b,c),d3=d(P,c,a);return!((d1<0||d2<0||d3<0)&&(d1>0||d2>0||d3>0))};
+    each(Math.min(A[0],Bp[0],C[0])-1,Math.max(A[0],Bp[0],C[0])+1,124,158,(u,v)=>{if(!inside(u,v,A,Bp,C))return;
+      const cA=[A[0]+(Bp[0]-A[0])*.3+(C[0]-A[0])*.1,A[1]+6],cB=[Bp[0]+(A[0]-Bp[0])*.28,Bp[1]+4],cC=[C[0]+(Bp[0]-C[0])*.1,C[1]-9];
+      const inn=inside(u,v,cA,cB,cC),I=.3+(s<0?.32:0)+(v-125)/32*.25;
+      let c=ramp(STONE,I,u,v),m=2;if(inn){c=gold?ramp(GOLD,.45+(v-128)/40,u,v):ramp(RED,.4+(v-128)/50,u,v);m=gold?3:2}
+      else if(gold&&!inside(u,v,[A[0]+(Bp[0]-A[0])*.12,A[1]+1.5],[Bp[0]+(A[0]-Bp[0])*.12,Bp[1]+1.5],[C[0],C[1]-3])){c=ramp(GOLD,.75,u,v);m=3}
+      put(u,v,c,43,myid,m)})}
+  // eyes: narrow and slanted up at the outer corner; dark stone, then spirit blue, then gold-white
+  {const myid=id++;for(const s of[-1,1]){const ex=s*7.2,ey=119.5;each(ex-5,ex+5,114,123,(u,v)=>{const x=u-ex,y=v-ey-x*s*.38;if(Math.abs(x)>4.2||Math.abs(y)>(1.35-Math.abs(x)/4.2*.65))return;
+      const c=gold?(Math.abs(x)<1.2?hx('#ffffff'):ramp(GOLD,.85,u,v)):spirit?(Math.abs(x)<1.3?hx('#f2fcff'):ramp(SPI,.75,u,v)):DARK;put(u,v,c,48,myid,spirit?3:2)});
+      out.eyes.push([flip?-ex:ex,ey])
+      // the red line above each eye that sweeps up to the temple of the head
+      ;each(ex-6,ex+8,119,129,(u,v)=>{const x=(u-ex)*s;if(x<-2||x>7)return;const yc=ey+3.2+x*.55+x*x*.04;if(Math.abs(v-yc)>.6)return;put(u,v,ramp(RED,.6,u,v),48,myid,2)})}
+    // a small flame mark on the brow
+    each(-2,2,126,132,(u,v)=>{const y=v-126;if(Math.abs(u)>(6-y)*.35)return;put(u,v,gold?ramp(GOLD,.7,u,v):ramp(RED,.55+y*.05,u,v),48,myid,gold?3:2)})}
+
+  // ---------- soft depth: where a shape meets one in front of it, a contact shadow; the outside edge a little darker
+  const res=new Uint8ClampedArray(N*4);
+  for(let v=0;v<HT;v++)for(let u=0;u<WD;u++){const i=v*WD+u,c=col[i];if(!c)continue;let f=1;const me=zb[i];
+    for(const[du,dv]of[[1,0],[-1,0],[0,1],[0,-1]]){const uu=u+du,vv=v+dv;if(uu<0||vv<0||uu>=WD||vv>=HT){f=Math.min(f,.86);continue}const j=vv*WD+uu;
+      if(!col[j])f=Math.min(f,dv===1?.8:.88);else if(idb[j]!==idb[i]&&zb[j]>me)f=Math.min(f,.72)}
+    if(mat[i]===3)f=Math.max(f,.92);
+    // the picture is stored with v going up; rows of the result go down from the top
+    const uo=flip?WD-1-u:u,o=((HT-1-v)*WD+uo)*4;res[o]=c[0]*f;res[o+1]=c[1]*f;res[o+2]=c[2]*f;res[o+3]=255;
+    mat[i]=mat[i]}
+  const m2=new Uint8Array(N);for(let v=0;v<HT;v++)for(let u=0;u<WD;u++){const uo=flip?WD-1-u:u;m2[(HT-1-v)*WD+uo]=col[v*WD+u]?mat[v*WD+u]:0}
+  return{w:WD,h:HT,px:res,mat:m2,...out};
+}
+const KITC=new Map(),kitArtC=(lv,f)=>{const k=lv+'|'+(f?1:0);let a=KITC.get(k);if(!a){a=kitArt(lv,f);KITC.set(k,a)}return a};
 const TEMPLO=[
   {nome:_t('Plataforma de pedra'),desc:_t('Os blocos voltam ao lugar e a escadaria fica direita.')},
   {nome:_t('Pilares vermelhos'),desc:_t('Dois pilares lacados de vermelho seguram o salão.')},
@@ -4820,13 +4984,18 @@ const TEMPLO=[
   {nome:_t('Raposas de pedra'),desc:_t('Duas raposas guardam a entrada.')},
   {nome:_t('Lanternas e fitas'),desc:_t('Lanternas de pedra acesas à noite e fitas sob o beiral.')},
   {nome:_t('Templo da raposa'),desc:_t('Cumeeira dourada, o emblema da raposa e olhos que brilham. À noite vem um espírito.')},
+  {nome:_t('Estátua da kitsune'),desc:_t('Uma raposa de nove caudas em mármore branco, num pedestal ao lado do templo.')},
+  {nome:_t('Fogo de raposa'),desc:_t('Os olhos, a joia e as pontas das caudas acendem-se, e chamas azuis rodam à volta da estátua.')},
+  {nome:_t('Kitsune desperta'),desc:_t('Ouro nas caudas e nas orelhas, pétalas no ar e, à noite, uma coluna de luz até ao céu.')},
 ];
-const TEMPLO_COST=[2e5,7e5,2.5e6,8e6,3e7,1.2e8];
+const TEMPLO_COST=[2e5,7e5,2.5e6,8e6,3e7,1.2e8,6e8,3e9,1.5e10];
 const tpLv=sd=>((sd||SC()).biome==='cidade'?(sd||SC()).tp|0:0);
 const tpCost=lv=>Math.round(TEMPLO_COST[lv]*Math.pow(25,S.cur));
-function buyTemple(){const sd=SC(),lv=tpLv(sd);if(sd.biome!=='cidade'||lv>=6||!scene.temple)return;const c=tpCost(lv);if(S.coins<c)return;
+function buyTemple(){const sd=SC(),lv=tpLv(sd);if(sd.biome!=='cidade'||lv>=TEMPLO.length||!scene.temple)return;const c=tpCost(lv);if(S.coins<c)return;
   spend(c);sd.tp=lv+1;S.fresh=false;rebuildScene();ev('templo',String(lv+1));if(lv+1>=6)S.stats.temple=1;const t=scene.temple;if(t)puff(t.cx,t.by-16,[[200,64,40],[244,197,79],[200,190,170]],34,34,1.3);SND.play('place');SND.play('level');
-  toast(_t('{0}. O templo rende mais 12% nesta cena.',TEMPLO[lv].nome),'lvl');if(lv+1>=6)setTimeout(()=>msQueue({ic:'flame',tag:_t('Templo da raposa'),title:_t('O templo está completo'),text:_t('Às noites, um espírito de raposa visita a cidade e deixa um presente a quem o tocar.'),rc:'#ff9a5a'}),1200);sheetSig='';renderSheet();hud();saveLocal()}
+  toast(_t('{0}. O templo rende mais 12% nesta cena.',TEMPLO[lv].nome),'lvl');if(lv+1>=7){const k=scene.kitsune;if(k)puff(k.cx,k.by-24,lv+1>=9?[[255,214,96],[255,240,190],[255,180,200]]:[[120,200,255],[220,240,255],[244,240,236]],40,40,1.5)}
+  if(lv+1>=TEMPLO.length)setTimeout(()=>msQueue({ic:'flame',tag:_t('Kitsune desperta'),title:_t('A kitsune acordou'),text:_t('A estátua guarda a cidade. À noite, uma coluna de luz sobe até ao céu.'),rc:'#ffd37a'}),1200);
+  if(lv+1===6)setTimeout(()=>msQueue({ic:'flame',tag:_t('Templo da raposa'),title:_t('O templo está completo'),text:_t('Às noites, um espírito de raposa visita a cidade e deixa um presente a quem o tocar.'),rc:'#ff9a5a'}),1200);sheetSig='';renderSheet();hud();saveLocal()}
 // the spirit fox: a blue flame with ears, floating near the temple at night; tap it for a gift, once a night
 let foxT=0;
 /* the moon's ship. A wreck nose-down in a crater; then cleared; patched on three legs; engines; a glass cockpit; antenna, lights and an
@@ -4900,6 +5069,28 @@ function buyForja(){const sd=SC(),lv=fjLv(sd);if(sd.biome!=='abismo'||lv>=FORJA.
   SND.play('place');SND.play('level');
   toast(_t('{0}. O dragão rende mais 12% nesta cena.',FORJA[lv].nome),'lvl');if(lv+1>=FORJA.length)setTimeout(()=>msQueue({ic:'flame',tag:_t('Dragão do abismo'),title:_t('O dragão acordou!'),text:_t('Agora voa por cima do abismo. Toca nele a cada meia hora e larga brasas de ouro. Rende mais 84% nesta cena.'),rc:'#ff8a3a'}),RM?900:3800);sheetSig='';renderSheet();hud();saveLocal()}
 function foxReady(){const sd=SC();return sd.biome==='cidade'&&tpLv()>=6&&env&&env.night>.5&&!visiting&&scene._fox&&(S.foxNight||'')!==dayKey(now()-12*36e5)}
+// the kitsune statue alive: the eyes and the jewel breathe, a soft fire at each tail tip, spirit flames circling it
+// (dimmer when they pass behind), and once awakened a golden aura, falling petals and a column of light on clear nights
+function drawKit(){const K=scene&&scene._kit;if(!K||titleShown||visiting&&!scene._kit||K.lv<2)return;const t=RM?0:T,X=lowX,nt=env.night,gd=K.lv>=3;
+  const C=gd?[255,196,84]:[84,166,255],C2=gd?[255,244,200]:[200,238,255],pl=.78+.22*Math.sin(t*2.1),k=.4+.6*nt;
+  const glow=(x,y,r,c,a)=>{if(a<=.01)return;const g=X.createRadialGradient(x,y,0,x,y,r);g.addColorStop(0,`rgba(${c[0]},${c[1]},${c[2]},${Math.min(1,a)})`);g.addColorStop(1,`rgba(${c[0]},${c[1]},${c[2]},0)`);X.fillStyle=g;X.fillRect(x-r,y-r,r*2,r*2)};
+  X.save();X.globalCompositeOperation='lighter';
+  if(gd)glow(K.cx+.5,K.by-24,34,[255,190,90],(.07+.08*nt)*pl);
+  // a column of light from the jewel up to the sky on clear nights
+  if(gd&&nt>.4&&env.wx!=='rain'){const a=(nt-.4)/.6*.16*pl,x=K.jewel[0];const g=X.createLinearGradient(0,K.by-12,0,0);g.addColorStop(0,`rgba(255,220,140,${a})`);g.addColorStop(1,'rgba(255,220,140,0)');X.fillStyle=g;X.fillRect(x-1.5,0,3,K.by-12);X.fillStyle=`rgba(255,250,220,${a*.9})`;X.fillRect(x-.25,0,.5,K.by-12)}
+  for(const e of K.eyes)glow(e[0],e[1],2.6,C2,.5*pl*k+.12);
+  glow(K.jewel[0],K.jewel[1],6,C,(.3+.3*pl)*k+.08);
+  K.tips.forEach((p,i)=>{const f=.6+.4*Math.sin(t*3.1+i*1.7);glow(p[0],p[1]-.5,3.4+f*1.4,C,(.16+.2*f)*(.45+.55*nt))});
+  // spirit flames: a bright core, a coloured body and a flickering tip, on an ellipse round the statue
+  const n=gd?9:5;for(let i=0;i<n;i++){const a=t*.5+i/n*Math.PI*2,x=K.cx+.5+Math.cos(a)*21,y=K.by-20+Math.sin(a)*4.5+Math.sin(t*2.3+i*2)*1.4,back=Math.sin(a)<-.15;
+    const al=(back?.22:.9)*(.55+.45*nt),fl=Math.sin(t*9+i*3)*.25;glow(x,y,3.2,C,.35*al);
+    X.fillStyle=`rgba(${C[0]},${C[1]},${C[2]},${al})`;X.fillRect(x-.5,y-.5,1,1.25);X.fillRect(x-.25,y-1.25+fl,.5,.75);
+    X.fillStyle=`rgba(${C2[0]},${C2[1]},${C2[2]},${al})`;X.fillRect(x-.25,y-.25,.5,.75)}
+  X.restore();
+  // petals drifting down round the awakened statue
+  if(gd&&!RM){for(let i=0;i<10;i++){const sp=.18+(i%4)*.05,ph=(t*sp+i*.137)%1,x=K.cx-26+((i*23.7)%52)+Math.sin(t*1.3+i)*3,y=K.by-52+ph*58;if(y>K.by+3)continue;
+      const a=ph<.1?ph*10:ph>.85?(1-ph)/.15:1;X.fillStyle=`rgba(255,${180+(i%3)*18},${206+(i%2)*20},${.85*a})`;const w=(Math.floor(t*4+i)%2)?.75:.5;X.fillRect(Math.round(x*4)/4,Math.round(y*4)/4,w,.5)}}
+}
 function drawFox(){if(!foxReady())return;const f=scene._fox,t=T,x=Math.round(f.x+Math.sin(t*.7)*18),y=Math.round(f.y+20+Math.sin(t*1.3)*4);foxT=t;
   lowX.globalCompositeOperation='lighter';const g=lowX.createRadialGradient(x,y,1,x,y,14);g.addColorStop(0,'rgba(120,200,255,.55)');g.addColorStop(1,'rgba(80,140,255,0)');lowX.fillStyle=g;lowX.fillRect(x-14,y-14,28,28);lowX.globalCompositeOperation='source-over';
   const M=['b...b','bb.bb','bwbwb','bbbbb','.bbb.','..b..'];for(let r=0;r<6;r++)for(let c=0;c<5;c++){const ch=M[r][c];if(ch==='.')continue;lowX.fillStyle=ch==='w'?'#ffffff':`rgba(140,210,255,${.75+.25*Math.sin(t*5+r)})`;lowX.fillRect(x-2+c,y-3+r,1,1)}
@@ -5018,7 +5209,7 @@ const TORCH=[{map:['.y.','yoy','.o.','.s.','.s.'],pal:{y:'#ffe068',o:'#f08a30',s
 for(const o of[BANNER,...FLAG,...TORCH]){const rgb={};for(const k in o.pal)rgb[k]=hex(o.pal[k]);o.rgb=rgb}
 /* what can still be built up (house, windmill, water mill, bridge, castle) gets a faint breathing rim, so it reads apart from the rest of the scene */
 const UPGRIM={cv:null,key:''};
-function upgOpen(t){const sd=SC();if(t===7)return sd.biome==='lua'&&!!scene.ship&&nvLv()<NAVE.length;if(t===8)return sd.biome==='abismo'&&!!scene.forge&&fjLv()<FORJA.length;if(t===6)return sd.biome==='cidade'&&tpLv()<6;return t===1?!!sd.house&&houseLv()<HOUSE.length:t===2?mvLv()<MOINHO.length:t===3?upL('moinho')<20:t===4?pdLv()<PONTE.length:t===5?restoLv()<RESTO.length:false}
+function upgOpen(t){const sd=SC();if(t===7)return sd.biome==='lua'&&!!scene.ship&&nvLv()<NAVE.length;if(t===8)return sd.biome==='abismo'&&!!scene.forge&&fjLv()<FORJA.length;if(t===6)return sd.biome==='cidade'&&tpLv()<TEMPLO.length;return t===1?!!sd.house&&houseLv()<HOUSE.length:t===2?mvLv()<MOINHO.length:t===3?upL('moinho')<20:t===4?pdLv()<PONTE.length:t===5?restoLv()<RESTO.length:false}
 function drawUpgRim(){if(visiting||titleShown||photo)return;
   const key=scene.seed+':'+S.cur+':'+[1,2,3,4,5,6,7,8].map(t=>upgOpen(t)?1:0).join('')+':'+RWV;
   if(UPGRIM.key!==key){UPGRIM.key=key;const on=[0,1,2,3,4,5,6,7,8].map(t=>t&&upgOpen(t));let n=0;const cv=UPGRIM.cv||(UPGRIM.cv=document.createElement('canvas'));cv.width=W;cv.height=H;const x=cv.getContext('2d'),id=x.createImageData(W,H),D=id.data;
@@ -6253,7 +6444,7 @@ function guideFor(id){const P=f=>({pt:f}),E=q=>({sel:q}),sc=SC(),near=L=>{const 
     case'mu':return{tip:_t('Toca nos cogumelos para os apanhar.'),wait:_t('Os cogumelos nascem no musgo denso. Toca neles quando aparecerem.'),steps:[P(()=>near(SC().mush))]};
     case'vi':return{tip:_t('Toca no bicho que veio ao musgo.'),wait:_t('Os bichos vêm sozinhos quando há musgo. Toca neles quando aparecerem.'),steps:[P(()=>near(visitors))]};
     case'ch':return sceneChest?{tip:_t('Toca no baú.'),steps:[P(()=>sceneChest?[sceneChest.x,sceneChest.y-3]:null)]}:S.lvlChests>0?{tip:_t('Abre aqui os teus baús de nível.'),steps:[E('#sideLvl')]}:{tip:_t('Os baús caem na cena de vez em quando e ganhas um a cada nível.'),steps:[]};
-    case'wa':return{tip:_t('Toca no regador.'),steps:[E('#sideWater')]};
+    case'wa':{const t=now();return{tip:t<S.waterUntil?_t('O musgo já está regado. Quando o regador voltar a encher, toca nele.'):t<S.waterReady?_t('O regador ainda está a encher. Quando estiver cheio, toca nele.'):_t('Toca no regador.'),steps:[E('#sideWater')]}}
     case'sh':return{tip:_t('Toca na pá e depois no musgo.'),steps:[E('#sideShovel')]};
     case'up':return{tip:_t('Abre Melhorar e compra uma melhoria.'),steps:[E('#bUp'),{sel:'#recBox [data-rec]',tip:_t('Esta é a melhoria que mais rende agora.')}]};
     case'de':return{tip:_t('Toca em Decorar para pôr objetos na cena.'),steps:[E('#editB')]};
@@ -6266,6 +6457,8 @@ function guideStart(i){const x=misToday().list[i];if(!x||x.c)return;const g=guid
   GD={on:true,id:x.id,g,t0:performance.now(),p0:misProg(x),cur:-2,el:null,tip:''};$('#guide .ghand').innerHTML=icon('hand');$('#guide').classList.remove('hidden');ev('missao','mostrar '+x.id);SND.play('click')}
 function guideFree(g){GD={on:true,free:true,g,t0:performance.now(),cur:-2,el:null,tip:''};$('#guide .ghand').innerHTML=icon('hand');$('#guide').classList.remove('hidden')}
 function guideEnd(){if(!GD.on)return;GD.on=false;$('#guide').classList.add('hidden')}
+document.addEventListener('click',e=>{if(!GD.on)return;const t=e.target;if(t&&t.closest&&t.closest('#guide .gtip')){guideEnd();return}
+  if(GD.el&&GD.g&&GD.cur===GD.g.steps.length-1&&GD.el.contains(t))setTimeout(guideEnd,60)},true);
 function gVis(el){if(!el||!el.getClientRects().length||el.closest('.hidden'))return false;if(el.disabled)return false;
   if(modalOn&&!el.closest('#modal'))return false;if(sheetName&&!el.closest('#sheet')&&!el.closest('#modal'))return false;return true}
 function guideTick(){if(!GD.on)return;const g=GD.g,now_=performance.now();
@@ -6277,6 +6470,11 @@ function guideTick(){if(!GD.on)return;const g=GD.g,now_=performance.now();
     if(st.sel){const e=document.querySelector(st.sel);if(gVis(e)){const r=e.getBoundingClientRect();tx=r.left-A.left+r.width/2;ty=r.top-A.top+r.height/2;tw=r.width+10;th=r.height+10;cur=i;el=e;break}}
     else if(!sheetName&&!placing&&!editing&&!photo){const p=st.pt();if(p){[tx,ty]=toScreen(p[0],p[1]);tw=th=Math.max(30,view.s*9);cur=i;break}}}
   {const t=cur<0&&g.wait?g.wait:(cur>=0&&g.steps[cur].tip)||g.tip;if(t!==GD.tip){GD.tip=t;root.querySelector('.gtip').textContent=t}}
+  // nothing to point at for a while (the player went somewhere else, or what it points at is not there yet): the hint goes away
+  if(cur<0){if(!GD.lost)GD.lost=now_;else if(now_-GD.lost>6000){guideEnd();return}}else GD.lost=0;
+  // a menu, the editor or the camera is open and the hint is not about it: it stays out of the way
+  const busy=sheetName||editing||placing||photo||(typeof PTR!=='undefined'&&PTR)||(typeof MNR!=='undefined'&&MNR);
+  if(busy&&!(el&&(el.closest('#sheet')||el.closest('#modal')))){root.style.visibility='hidden';return}
   if(modalOn&&!(el&&el.closest('#modal'))){root.style.visibility='hidden';return}root.style.visibility='';root.style.zIndex=el&&el.closest('#modal')?'27':'';
   if(cur!==GD.cur){GD.cur=cur;GD.el=el;if(el&&el.closest('#sheet'))try{el.scrollIntoView({block:'nearest',behavior:RM?'auto':'smooth'})}catch(e){}}
   root.classList.toggle('nohand',tx==null);
@@ -6339,7 +6537,7 @@ function meuPais(){if(S.loc){if(/^[A-Z]{2}$/.test(S.loc.pais||''))return S.loc.p
 let paisDN=null;
 const paisNome=c=>{if(!/^[A-Z]{2}$/.test(c||''))return'—';try{paisDN=paisDN||new Intl.DisplayNames([LOCALE],{type:'region'});return paisDN.of(c)||c}catch(e){return c}};
 function musgoTotal(){let m=0;S.scenes.forEach((s,i)=>{m+=(i===S.cur&&!visiting?cov():(s.cov||0))*100});return Math.round(m*10)/10}
-function cenaPub(){const sd=SC();return{seed:sd.seed,biome:sd.biome,tp:sd.tp|0,tpp:sd.tpp||null,nv:sd.nv|0,nvp:sd.nvp||null,fj:sd.fj|0,fjp:sd.fjp||null,resto:sd.resto|0,lago:sd.lago|0,mv:sd.mv|0,pd:sd.pd|0,mvp:sd.mvp||null,pdp:sd.pdp||null,az:(sd.up&&sd.up.moinho)|0,azp:sd.azp||null,path:(sd.path||[]).slice(0,PATHMAX),extras:(sd.extras||[]).filter(e=>e.ok!==false).slice(0,30).map(e=>e.p?{t:e.t,seed:e.seed,p:e.p}:{t:e.t,seed:e.seed}),house:{lv:sd.house?sd.house.lv:0},
+function cenaPub(){const sd=SC();return{seed:sd.seed,biome:sd.biome,tp:sd.tp|0,tpp:sd.tpp||null,ksp:sd.ksp||null,nv:sd.nv|0,nvp:sd.nvp||null,fj:sd.fj|0,fjp:sd.fjp||null,resto:sd.resto|0,lago:sd.lago|0,mv:sd.mv|0,pd:sd.pd|0,mvp:sd.mvp||null,pdp:sd.pdp||null,az:(sd.up&&sd.up.moinho)|0,azp:sd.azp||null,path:(sd.path||[]).slice(0,PATHMAX),extras:(sd.extras||[]).filter(e=>e.ok!==false).slice(0,30).map(e=>e.p?{t:e.t,seed:e.seed,p:e.p}:{t:e.t,seed:e.seed}),house:{lv:sd.house?sd.house.lv:0},
   lamp:sd.lamp?{x:sd.lamp.x,y:sd.lamp.y,on:!!sd.lamp.on}:null,moss:encodeMoss(),flowers:sd.flowers.slice(0,20).map(f=>({x:f.x,y:f.y,r:f.r})),name:sd.name||scene.name,cov:cov()}}
 function pubDados(full){
   const c=here(),d={nome:S.name,pais:meuPais(),cidade:c.nome,lat:Math.round(c.lat*10)/10,lon:Math.round(c.lon*10)/10,nivel:S.level,visual:{...S.av.look,...(ptAct()&&ptOpen()?{pet:ptAct().s,pch:ptAct().c|0}:{}),tit:myTit()||'nada'},feitio:S.av.trait,musgo:musgoTotal(),top:S.top!==false,
@@ -6549,7 +6747,7 @@ function sanScene(c){
     else if(!['rock','log','wall','pond'].includes(e.t))return null;return o}).filter(Boolean);
   const path=(Array.isArray(c.path)?c.path:[]).slice(0,PATHMAX).filter(a=>Array.isArray(a)&&Number.isFinite(a[0])&&Number.isFinite(a[1])).map(a=>[I(a[0],0,W-1,0),I(a[1],HOR,H-1,HOR),I(a[2],1,3,1)]);
   const lv=I(c.house&&c.house.lv,0,6,0);
-  return{seed:I(c.seed,1,2147483646,1),biome:['clareira','ruina','ribeiro','cidade','lua','abismo'].includes(c.biome)?c.biome:'clareira',resto:I(c.resto,0,9,0),lago:I(c.lago,0,4,0),mv:I(c.mv,0,6,0),pd:I(c.pd,0,6,0),tp:I(c.tp,0,6,0),nv:I(c.nv,0,7,0),fj:I(c.fj,0,7,0),...Object.fromEntries(['tpp','nvp','fjp'].map(k=>[k,c[k]&&Number.isFinite(c[k].x)&&Number.isFinite(c[k].y)?{x:I(c[k].x,0,W-1,80),y:I(c[k].y,HOR,H-1,HOR+40),...(k==='tpp'&&c[k].w?{w:1}:{})}:null])),
+  return{seed:I(c.seed,1,2147483646,1),biome:['clareira','ruina','ribeiro','cidade','lua','abismo'].includes(c.biome)?c.biome:'clareira',resto:I(c.resto,0,9,0),lago:I(c.lago,0,4,0),mv:I(c.mv,0,6,0),pd:I(c.pd,0,6,0),tp:I(c.tp,0,9,0),nv:I(c.nv,0,7,0),fj:I(c.fj,0,7,0),...Object.fromEntries(['tpp','nvp','fjp','ksp'].map(k=>[k,c[k]&&Number.isFinite(c[k].x)&&Number.isFinite(c[k].y)?{x:I(c[k].x,0,W-1,80),y:I(c[k].y,HOR,H-1,HOR+40),...(k==='tpp'&&c[k].w?{w:1}:{})}:null])),
     mvp:c.mvp&&Number.isFinite(c.mvp.x)&&Number.isFinite(c.mvp.y)?{x:I(c.mvp.x,0,W-1,80),y:I(c.mvp.y,HOR,H-1,HOR+20)}:null,pdp:c.pdp&&Number.isFinite(c.pdp.x)?{x:I(c.pdp.x,0,W-1,80)}:null,azp:c.azp&&Number.isFinite(c.azp.x)?{x:I(c.azp.x,0,W-1,80),f:c.azp.f?1:0}:null,up:{moinho:I(c.az,0,20,0)},extras:ex,path,house:lv?{lv}:null,
     lamp:c.lamp&&typeof c.lamp==='object'?{x:I(c.lamp.x,6,153,80),y:I(c.lamp.y,HOR+16,H-30,180),on:c.lamp.on===true}:null,
     moss:typeof c.moss==='string'&&c.moss.length<=60000&&/^[A-Za-z0-9+/=]*$/.test(c.moss)?c.moss:'',
@@ -7680,7 +7878,7 @@ function normalize(o){
   s.scenes.forEach(x=>{const src=x.up;x.up={};for(const u of UPS)x.up[u.id]=Math.floor(fin(src[u.id],0,0,u.max));
     x.mv=Math.floor(fin(x.mv,0,0,6));x.pd=Math.floor(fin(x.pd,0,0,6));x.mvp=x.mvp&&Number.isFinite(x.mvp.x)&&Number.isFinite(x.mvp.y)?{x:clamp(x.mvp.x|0,0,W-1),y:clamp(x.mvp.y|0,HOR,H-1)}:null;x.pdp=x.pdp&&Number.isFinite(x.pdp.x)?{x:clamp(x.pdp.x|0,0,W-1)}:null;x.azp=x.azp&&Number.isFinite(x.azp.x)?{x:clamp(x.azp.x|0,0,W-1),f:x.azp.f?1:0}:null;x.act=x.act&&typeof x.act==='object'?Object.fromEntries(Object.keys(ACTK).filter(k=>Number.isFinite(+x.act[k])).map(k=>[k,clamp(+x.act[k],0,T0+864e5)])):{};x.tpp=x.tpp&&Number.isFinite(x.tpp.x)&&Number.isFinite(x.tpp.y)?{x:clamp(x.tpp.x|0,0,W-1),y:clamp(x.tpp.y|0,HOR,H-1),...(x.tpp.w?{w:1}:{})}:null;x.nv=Math.floor(fin(x.nv,0,0,7));x.fj=Math.floor(fin(x.fj,0,0,7));for(const k of['nvp','fjp'])x[k]=x[k]&&Number.isFinite(x[k].x)&&Number.isFinite(x[k].y)?{x:clamp(x[k].x|0,0,W-1),y:clamp(x[k].y|0,HOR,H-1)}:null;
     x.sh=fin(x.sh,0,0,FUT);
-    x.mush=Array.isArray(x.mush)?x.mush.filter(m=>m&&Number.isFinite(m.x)&&Number.isFinite(m.y)).slice(0,8).map(m=>({x:clamp(m.x|0,0,W-1),y:clamp(m.y|0,0,H-1),k:clamp(m.k|0,0,2)})):[];if(x.house&&typeof x.house!=='object')x.house=null;if(x.house)x.house.lv=Math.floor(fin(x.house.lv,0,0,6));x.resto=Math.floor(fin(x.resto,0,0,9));x.lago=Math.floor(fin(x.lago,0,0,4));x.tp=Math.floor(fin(x.tp,0,0,6));x.base=fin(x.base,0,0,1e300);x.tAct=fin(x.tAct,T0,0,FUT);x.moss=typeof x.moss==='string'&&x.moss.length%4===0&&/^[A-Za-z0-9+/=]*$/.test(x.moss)?x.moss:'';
+    x.mush=Array.isArray(x.mush)?x.mush.filter(m=>m&&Number.isFinite(m.x)&&Number.isFinite(m.y)).slice(0,8).map(m=>({x:clamp(m.x|0,0,W-1),y:clamp(m.y|0,0,H-1),k:clamp(m.k|0,0,2)})):[];if(x.house&&typeof x.house!=='object')x.house=null;if(x.house)x.house.lv=Math.floor(fin(x.house.lv,0,0,6));x.resto=Math.floor(fin(x.resto,0,0,9));x.lago=Math.floor(fin(x.lago,0,0,4));x.tp=Math.floor(fin(x.tp,0,0,9));x.ksp=x.ksp&&Number.isFinite(x.ksp.x)&&Number.isFinite(x.ksp.y)?{x:clamp(x.ksp.x|0,0,W-1),y:clamp(x.ksp.y|0,HOR,H-1)}:null;x.base=fin(x.base,0,0,1e300);x.tAct=fin(x.tAct,T0,0,FUT);x.moss=typeof x.moss==='string'&&x.moss.length%4===0&&/^[A-Za-z0-9+/=]*$/.test(x.moss)?x.moss:'';
     x.flowers=x.flowers.filter(f=>f&&Number.isFinite(f.x)&&Number.isFinite(f.y)).slice(0,20).map(f=>({x:clamp(f.x|0,0,W-1),y:clamp(f.y|0,0,H-1),r:clamp(f.r|0,0,5),...(f.b?{b:1}:{})}));x.debris=x.debris.filter(b=>b&&Number.isFinite(b.x)&&Number.isFinite(b.y)).slice(0,8).map(b=>({x:clamp(b.x|0,0,W-1),y:clamp(b.y|0,0,H-1),k:clamp(b.k|0,0,2)}))});
   s.gq=(Array.isArray(o.gq)?o.gq:[]).slice(0,60).filter(g=>g&&typeof g==='object').map(g=>({n:String(g.n||'').slice(0,16),w:String(g.w||'').slice(0,40),m:clamp(g.m|0,0,7)}));s.jardim=/^[A-Z2-9]{8}$/.test(o.jardim||'')?o.jardim:'';s.autoName=[1,2].includes(o.autoName)?o.autoName:0;
   {const m=o.mail&&typeof o.mail==='object'?o.mail:{},em=v=>typeof v==='string'&&v.length<=120&&/^[^\s@<>"]+@[^\s@<>"]+$/.test(v)?v:'';s.mail={st:['pendente','ok'].includes(m.st)?m.st:'',e:em(m.e),p:em(m.p),ask:clamp(m.ask|0,0,7),nx:fin(m.nx,0,0,FUT),got:m.got?1:0,rep:clamp(m.rep|0,0,3),nov:m.nov?1:0,bt:fin(m.bt,0,0,FUT)}}
@@ -7842,7 +8040,7 @@ function hud(){
   $('#meB').classList.toggle('has-dot',achClaimable()>0||NET.pedidos>0||!!S.colNew);{const k=JSON.stringify(S.av.look);if(k!==hudLook){hudLook=k;$('#icMe').innerHTML=avPortrait(S.av.look)}}
   {const rb=$('#sideReb'),on=!visiting&&!rebFx&&rebGood();rb.classList.toggle('hidden',!on);if(on){if(!rb._i){rb._i=1;$('#icReb').innerHTML=icon('spore')}setH('#rebL',pxNum('+'+fmt(espGain())))}}
   {const sb=$('#sideShovel'),un=S.level>=2&&!visiting,rd=shovelReady();sb.classList.toggle('hidden',!un);sb.classList.toggle('ready',un&&rd);sb.classList.toggle('cool',un&&!rd);setH('#shovelL',rd?'':pxNum(shortTime(shovelAtNow()-now())));if(sb._t!==paT()){sb._t=paT();$('#icShovel').innerHTML=paSvg(paT())}}
-  {const ab=$('#autoB'),on=!!S.auto;ab.classList.toggle('on',on);ab.classList.toggle('hid',on&&!!S.autoHide);ab.setAttribute('aria-pressed',String(on))}
+  {const ab=$('#autoB'),on=!!S.auto;ab.classList.toggle('on',on);ab.classList.toggle('hid',on&&!!S.autoHide);ab.setAttribute('aria-pressed',String(on));const lb=$('#autoL'),w=on?'ON':'OFF';if(lb._w!==w){lb._w=w;lb.innerHTML=pxNum(w)}}
   {const gn=(NET.caixa|0)+((S.gq&&S.gq.length)|0);$('#sideGift').classList.toggle('hidden',!gn);$('#sideGift').classList.toggle('has-badge',gn>0);$('#sideGift').classList.toggle('ready',gn>0);setH('#giftN',String(gn>99?'99+':gn))}
   {const EV=evPend();$('#sideEv').classList.toggle('hidden',!EV);if(EV){const st=evState(EV),ph=evPhase(st),sk=EV.spr==='ovo'?'ovo':EV.spr,Es=evSpr(sk,ph);setH('#icEv',pxsvg(Es.map,Es.pal));if(!titleShown&&!visiting&&!EV.past)evCheck(EV,st);setH('#evL',pxNum(Math.min(EV_GOAL,st.n-ph*EV_GOAL)+'/'+EV_GOAL));$('#sideEv').classList.toggle('has-badge',st.box>0);setH('#evN',String(st.box))}}
   if(visiting)setH('#bossT',`<span class="vs">${_t("Visita")}</span><span class="sc">${esc(sceneName(scene))}</span>`);
@@ -7874,7 +8072,7 @@ function updateUpSheet(){
   b.querySelectorAll('[data-house]').forEach(el=>{el.disabled=S.coins<houseCost(houseLv())});
   b.querySelectorAll('[data-pa]').forEach(el=>{const t=paT();if(t<PA_T.length-1)el.disabled=!paCan(t)});
   b.querySelectorAll('[data-lago]').forEach(el=>{const lv=lagoLv();if(lv<LAGO_COST.length)el.disabled=S.coins<lagoCost(lv)});
-  b.querySelectorAll('[data-temple]').forEach(el=>{const lv=tpLv();if(lv<6)el.disabled=S.coins<tpCost(lv)});
+  b.querySelectorAll('[data-temple]').forEach(el=>{const lv=tpLv();if(lv<TEMPLO.length)el.disabled=S.coins<tpCost(lv)});
   b.querySelectorAll('[data-nave]').forEach(el=>{const lv=nvLv();if(lv<NAVE.length)el.disabled=S.coins<nvCost(lv)});b.querySelectorAll('[data-forja]').forEach(el=>{const lv=fjLv();if(lv<FORJA.length)el.disabled=S.coins<fjCost(lv)});
   b.querySelectorAll('[data-rib]').forEach(el=>{const m=el.dataset.rib==='mv',lv=m?mvLv():pdLv();if(lv<6)el.disabled=S.coins<(m?mvCost(lv):pdCost(lv))});
   b.querySelectorAll('[data-perk]').forEach(el=>{const pk=PERKS.find(x=>x.id===el.dataset.perk);if(pk)el.disabled=S.gems<pk.cost(perk(pk.id))});b.querySelectorAll('[data-gem]').forEach(el=>{const g=el.dataset.gem;el.disabled=g==='spring'?(S.gems<5||t<S.boostUntil):g==='bloom'?S.gems<8:S.gems<1});
@@ -7909,7 +8107,7 @@ function renderSheet0(live){
       if(scene.bigBridge){const lv=pdLv();h+=`<div class="item"><span class="ico">${icon('bridge')}</span><span class="meta"><h3>${_t('Ponte de pedra')} <span class="lv">${lv}/6</span></h3><p>${lv>=6?_t('Ponte completa. Rende mais 48% nesta cena.'):`${PONTE[lv].nome}: ${PONTE[lv].desc} ${_t('Mais 8% de moedas nesta cena.')}`}</p></span>${lv>=6?`<span class="tag">${_t('Pronta')}</span>`:`<button class="btn" data-rib="pd" ${S.coins<pdCost(lv)?'disabled':''}>${icon('coin')}${NM(fmt(pdCost(lv)))}</button>`}</div>`}}
     if(SC().biome==='lua'&&scene.ship){const lv=nvLv(),mx=NAVE.length;h+=`<div class="item"><span class="ico">${icon('moon')}</span><span class="meta"><h3>${_t('Nave da lua')} <span class="lv">${lv}/${mx}</span></h3><p>${lv>=mx?_t('A nave voa. Rende mais 84% nesta cena.'):`${NAVE[lv].nome}: ${NAVE[lv].desc} ${_t('Mais 12% de moedas nesta cena.')}`}</p></span>${lv>=mx?`<span class="tag">${_t('Pronto')}</span>`:`<button class="btn" data-nave="1" ${S.coins<nvCost(lv)?'disabled':''}>${icon('coin')}${NM(fmt(nvCost(lv)))}</button>`}</div>`}
     if(SC().biome==='abismo'&&scene.forge){const lv=fjLv(),mx=FORJA.length;h+=`<div class="item"><span class="ico">${icon('flame')}</span><span class="meta"><h3>${_t('Dragão do abismo')} <span class="lv">${lv}/${mx}</span></h3><p>${lv>=mx?_t('O dragão acordou e voa por cima da cena. Rende mais 84% nesta cena.'):`${FORJA[lv].nome}: ${FORJA[lv].desc} ${_t('Mais 12% de moedas nesta cena.')}`}</p></span>${lv>=mx?`<span class="tag">${_t('Pronto')}</span>`:`<button class="btn" data-forja="1" ${S.coins<fjCost(lv)?'disabled':''}>${icon('coin')}${NM(fmt(fjCost(lv)))}</button>`}</div>`}
-    if(SC().biome==='cidade'&&scene.temple){const lv=tpLv();h+=`<div class="item"><span class="ico">${icon('flame')}</span><span class="meta"><h3>${_t('Templo da raposa')} <span class="lv">${lv}/6</span></h3><p>${lv>=6?_t('Templo completo. Rende mais 72% nesta cena, e um espírito vem à noite.'):`${TEMPLO[lv].nome}: ${TEMPLO[lv].desc} ${_t('Mais 12% de moedas nesta cena.')}`}</p></span>${lv>=6?`<span class="tag">${_t('Pronto')}</span>`:`<button class="btn" data-temple="1" ${S.coins<tpCost(lv)?'disabled':''}>${icon('coin')}${NM(fmt(tpCost(lv)))}</button>`}</div>`}
+    if(SC().biome==='cidade'&&scene.temple){const lv=tpLv();h+=`<div class="item"><span class="ico">${icon('flame')}</span><span class="meta"><h3>${_t('Templo da raposa')} <span class="lv">${lv}/${TEMPLO.length}</span></h3><p>${lv>=TEMPLO.length?_t('Templo e kitsune completos. Rende mais 108% nesta cena.'):`${TEMPLO[lv].nome}: ${TEMPLO[lv].desc} ${_t('Mais 12% de moedas nesta cena.')}`}</p></span>${lv>=TEMPLO.length?`<span class="tag">${_t('Pronto')}</span>`:`<button class="btn" data-temple="1" ${S.coins<tpCost(lv)?'disabled':''}>${icon('coin')}${NM(fmt(tpCost(lv)))}</button>`}</div>`}
     if(scene.pond&&!visiting){const lv=lagoLv(),N=LAGO_COST.length,fo=scene.pond.fountain;h+=`<div class="item"><span class="ico">${icon('wave')}</span><span class="meta"><h3>${fo?_t('Fonte maior'):_t('Lago maior')} <span class="lv">${lv}/${N}</span></h3><p>${lv>=N?(fo?_t('A maior fonte possível. Rende mais 20% nesta cena.'):_t('O maior lago possível. Rende mais 20% nesta cena.')):_t('A água cresce e a cena rende mais 5%.')}</p></span>${lv>=N?`<span class="tag">${_t('Pronto')}</span>`:`<button class="btn" data-lago="1" ${S.coins<lagoCost(lv)?'disabled':''}>${icon('coin')}${NM(fmt(lagoCost(lv)))}</button>`}</div>`}
     if(SC().biome==='ruina'){const lv=restoLv(),N=RESTO.length;h+=`<div class="item"><span class="ico">${icon('tower')}</span><span class="meta"><h3>${_t('Restaurar o castelo')} <span class="lv">${lv}/${N}</span></h3><p>${lv>=N?_t('Castelo real. Rende mais {0}% nesta cena.',N*10):`${RESTO[lv].nome}: ${RESTO[lv].desc} ${_t('Mais 10% de moedas nesta cena.')}`}</p></span>${lv>=N?`<span class="tag">${_t('Pronto')}</span>`:`<button class="btn" data-resto="1" ${S.coins<restoCost(lv)?'disabled':''}>${icon('coin')}${NM(fmt(restoCost(lv)))}</button>`}</div>`}
     if(scene.site){const lv=houseLv();
@@ -9063,7 +9261,7 @@ function draw(){
     if(scene.pond&&!['lua','cidade','abismo'].includes(scene.biome)){const p=scene.pond;for(let k=0;k<5;k++){const x=p.cx-p.rx*.6+((RM?k*9:T*3+k*13)%(p.rx*1.2)),y=p.cy+(k%3)-1;lowX.fillRect(Math.round(x*4)/4,Math.round(y)+.25,2,.5)}}
     if(scene.stream&&!['abismo','lua','cidade'].includes(scene.biome)){const st=scene.stream;for(let k=0;k<12;k++){const x=((RM?k*14:T*10+k*14)%(W+8))-4;const y=streamY(st,x)+((k%3)-1)*1.5;lowX.fillRect(Math.round(x*4)/4,Math.round(y)+.25,2,.5)}}}
   if(now()>=S.wishAt&&spots.water.length&&!RM&&Math.sin(T*2.4)>.55){const c=spots.water[(Math.floor(T*.5)*7919)%spots.water.length];lowX.fillStyle='rgba(255,246,200,.95)';lowX.fillRect(c%W,(c/W)|0,1,1);lowX.fillStyle='rgba(255,246,200,.45)';lowX.fillRect(c%W-1,(c/W)|0,3,1);lowX.fillRect(c%W,((c/W)|0)-1,1,3)}
-  drawWaterFx();drawWindows();if(scene._lava&&scene._lava.length)drawLava();drawEmit();drawDragon();drawMossFx();drawCastle();drawFox();drawDragonSky();if(!titleShown)drawAct();
+  drawWaterFx();drawWindows();if(scene._lava&&scene._lava.length)drawLava();drawEmit();drawDragon();drawMossFx();drawCastle();drawFox();drawKit();drawDragonSky();if(!titleShown)drawAct();
   for(const p of smoke){const a=(1-p.t/p.life)*(p.t<.4?p.t/.4:1)*.42;const c=mul([206,204,206],env.amb);lowX.fillStyle=css(c,a);const sz=p.t>2.2?1.25:.75;lowX.fillRect(Math.round(p.x*4)/4,Math.round(p.y*4)/4,sz,sz)}
   drawBed();
   const dl=[],L=VS().lamp,EV=eventoAtivo();if(EV&&!titleShown)drawEventFx(EV);
@@ -10813,7 +11011,7 @@ function mnHud(){const M=S.mina,t=now();
   {const b=$('#mnFos');if(b){b.classList.toggle('hidden',!M.fbox);b.classList.toggle('has-badge',M.fbox>1);setH('#mnFosN',String(M.fbox))}}
   {const b=$('#mnTnt'),on=M.up.tnt>0;b.classList.toggle('hidden',!on);if(on){const left=Math.max(0,M.tntAt-t),au=mnTntAuto(),q=M.tq|0,full=!au&&q>=mnTntCap(M.up.tnt);b.classList.toggle('ready',au?left<1500||!!mE.tnt:q>0);b.classList.toggle('has-badge',!au&&q>0);setH('#mnTntN',String(q));setH('#mnTntL',mE.tnt||full?'':pxNum(mmss(left/1000)))}}
   {const b=$('#mnBro'),act=t<M.bro,cd=t<M.broCd;b.classList.toggle('on',act);b.classList.toggle('cool',!act&&cd);b.classList.toggle('ready',!act&&!cd);setH('#mnBroL',act?pxNum(mmss((M.bro-t)/1000)):cd?pxNum(shortTime(M.broCd-t)):'')}
-  {const ab=$('#autoB'),on=!!S.auto,k=M.pk+M.sk;ab.classList.toggle('on',on);ab.setAttribute('aria-pressed',String(on));if($('#icAuto')._mn!==k){$('#icAuto')._mn=k;$('#icAuto').innerHTML=mnPickSvg(M.pk)}}
+  {const ab=$('#autoB'),on=!!S.auto,k=M.pk+M.sk;ab.classList.toggle('on',on);ab.classList.toggle('hid',on&&!!S.autoHide);ab.setAttribute('aria-pressed',String(on));{const lb=$('#autoL'),w=on?'ON':'OFF';if(lb._w!==w){lb._w=w;lb.innerHTML=pxNum(w)}}if($('#icAuto')._mn!==k){$('#icAuto')._mn=k;$('#icAuto').innerHTML=mnPickSvg(M.pk)}}
   $('#mnDesc').classList.toggle('hidden',!M.pend.includes(M.p)||modalOn);if(M.pend.includes(M.p))setH('#mnDesc',`${icon('layers')}<span>${_t('Descer para a fase {0}',M.p+2)}</span>`);
   const nx=MPK[M.pk+1];$('#bmPk').classList.toggle('has-dot',!!nx&&(nx.em?false:M.pr>=nx.c));
   $('#bmUp').classList.toggle('has-dot',MUP.some(u=>M.up[u.id]<u.max&&M.pr>=u.cost(M.up[u.id]))||MRP.some(u=>M.rp[u.id]<u.max&&M.ru>=u.cost(M.rp[u.id])));
@@ -11027,7 +11225,7 @@ function frame(t){
   tick(dt);draw();guideTick();
 }
 /* versões novas: quando o jogo muda no servidor, guarda o progresso e recarrega a página */
-const BUILD='4100f528bbfd',UKEY='tapmoss.upd';const UPD={on:false,go:false,at:0};
+const BUILD='8a159d5a7402',UKEY='tapmoss.upd';const UPD={on:false,go:false,at:0};
 // the new version downloads in the background while the game goes on; the reload only comes once the whole page is here,
 // so a slow network never leaves a half-built page on screen. The offline helper (sw.js) hands this copy over at the reload.
 const NEXTC='tapmoss-next',pgKey=()=>{let p=location.pathname.replace(/index\.html$/,'');if(!p.endsWith('/'))p+='/';return p};
@@ -11507,7 +11705,7 @@ const LWFX={
 /* ============ boot ============ */
 $('#icAuto').innerHTML=icon('autoHand');$('#icPraca').innerHTML=icon('stall');
 $('#pracaB').insertAdjacentHTML('afterend',`<button class="tbtn hidden" id="ofB"><span id="icOf">${icon('anvil')}</span><span class="tl">${_t('Oficina')}</span></button>`);
-$('#ofB').addEventListener('click',()=>{if(visiting||titleShown||!ofOn())return;SND.play('click');if(typeof AVED!=='undefined')AVED.try=null;colTab='o';ofTab='criar';openSheet('col')});$('#icScr').innerHTML=icon('games');$('#icLangT').innerHTML=flagSvg(LANGF[LANG]);$('#autoL').innerHTML=pxNum('AUTO');$('#icFsT').innerHTML=icon('full');$('#icGift').innerHTML=icon('gift');$('#icCam').innerHTML=icon('camera');$('#icBell').innerHTML=icon('bell');$('#icMailT').innerHTML=icon('mail');$('#icEye').innerHTML=icon('eye');$('#icEdit').innerHTML=icon('edit');$('#icCoin').innerHTML=icon('coin');$('#icGem').innerHTML=icon('gem');$('#icTrophy').innerHTML=icon('trophy');$('#icLvlChest').innerHTML=icon('chestLvl');$('#icGear').innerHTML=icon('gear');
+$('#ofB').addEventListener('click',()=>{if(visiting||titleShown||!ofOn())return;SND.play('click');if(typeof AVED!=='undefined')AVED.try=null;colTab='o';ofTab='criar';openSheet('col')});$('#icScr').innerHTML=icon('games');$('#icLangT').innerHTML=flagSvg(LANGF[LANG]);$('#autoL').innerHTML=pxNum('OFF');$('#icFsT').innerHTML=icon('full');$('#icGift').innerHTML=icon('gift');$('#icCam').innerHTML=icon('camera');$('#icBell').innerHTML=icon('bell');$('#icMailT').innerHTML=icon('mail');$('#icEye').innerHTML=icon('eye');$('#icEdit').innerHTML=icon('edit');$('#icCoin').innerHTML=icon('coin');$('#icGem').innerHTML=icon('gem');$('#icTrophy').innerHTML=icon('trophy');$('#icLvlChest').innerHTML=icon('chestLvl');$('#icGear').innerHTML=icon('gear');
 $('#icWater').innerHTML=icon('can');$('#icEm').innerHTML=icon('em');$('#icPdFeed').innerHTML=icon('apple');$('#icPdPlay').innerHTML=icon('heart');$('#icPdWash').innerHTML=icon('drop');$('#icPdEggs').innerHTML=icon('egg');$('#icPdPets').innerHTML=icon('paw');$('#icPdBack').innerHTML=icon('back');$('#icUp').innerHTML=icon('up');$('#icScn').innerHTML=icon('map');$('#shX').innerHTML=icon('x');
 mq.addEventListener&&mq.addEventListener('change',setRM);
 window.addEventListener('appinstalled',()=>{ev('instalar','pwa');if(S){S.inst={...(S.inst||{}),ok:1};dirtySave=true}});
