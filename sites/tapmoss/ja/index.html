@@ -2843,6 +2843,533 @@ function hdNat(map){const o=[];map.forEach((row,y)=>{for(let x=0;x<row.length;x+
 // the character and the pet, hidden where something stands in front of them
 // drawn at 4× like the rest of the scene (smoothed, lit on the top-left, a soft shadow instead of an outline), kept in a small canvas
 // per frame of animation; whatever stands in front of the figure is cut out of a scratch copy before it is drawn
+/* ============ o jardineiro novo: corpo com esqueleto e roupa em camadas ============ */
+const A2=(()=>{
+const U=1.15,HS=1.5/U,CW=128,CH=96,GY=78,CX=64/U;
+const clamp=(v,a,b)=>v<a?a:v>b?b:v,PI=Math.PI;
+// ---------- colour: ramps of six shades, the shadows cooler and the lights warmer (hue shifting) ----------
+const hx=h=>{h=h.replace('#','');return[parseInt(h.slice(0,2),16),parseInt(h.slice(2,4),16),parseInt(h.slice(4,6),16)]};
+function toHsl([r,g,b]){r/=255;g/=255;b/=255;const M=Math.max(r,g,b),m=Math.min(r,g,b),l=(M+m)/2;let h=0,s=0;if(M!==m){const d=M-m;s=l>.5?d/(2-M-m):d/(M+m);h=M===r?(g-b)/d+(g<b?6:0):M===g?(b-r)/d+2:(r-g)/d+4;h*=60}return[h,s,l]}
+function toRgb(h,s,l){h=((h%360)+360)%360/360;if(!s){const v=l*255;return[v,v,v]}const q=l<.5?l*(1+s):l+s-l*s,p=2*l-q,f=t=>{t<0&&(t+=1);t>1&&(t-=1);return t<1/6?p+(q-p)*6*t:t<.5?q:t<2/3?p+(q-p)*(2/3-t)*6:p};return[f(h+1/3)*255,f(h)*255,f(h-1/3)*255]}
+const toward=(h,t,k)=>{let d=((t-h+540)%360)-180;return h+d*k};
+function ramp(base,o){o=o||{};const[h,s,l]=toHsl(hx(base)),st=o.st||[-.32,-.2,-.1,0,.1,.2],out=[];
+  // shadows lean towards a cool hue and lights towards a warm one, but never more than ~26° and ~12°
+  const lean=(H,t,max,k)=>{let d=((t-H+540)%360)-180;d=clamp(d,-max,max);return H+d*k};
+  const kk=o.k||(l>.8?1.5:l>.66?1.22:1);for(const d of st){let H=h,S=s,L=clamp(l+d*(d<0?kk:1),.03,.97);if(d<0){H=lean(h,o.cool==null?235:o.cool,o.cmax||26,-d/.32*(o.hs||1));S=clamp(s*(1+(-d)*.35)*(l>.7?1-(-d)*1.3:1),0,1)}else if(d>0){H=lean(h,o.warm==null?50:o.warm,o.wmax||12,d/.2*(o.hs||1));S=clamp(s*(1-d*.5),0,1)}out.push(toRgb(H,S,L).map(Math.round))}
+  return out}
+const R=a=>a.map(hx);                          // a hand-made ramp
+// ---------- light ----------
+let L,HV;function setLight(x,y,z){const m=Math.hypot(x,y,z);L=[x/m,y/m,z/m];const h=[L[0],L[1],L[2]+1],n=Math.hypot(...h);HV=h.map(v=>v/n)}setLight(-.55,-.72,.52);
+// ---------- shapes: each one says whether a pixel is inside and which way the surface faces there ----------
+function capsule(ax,ay,bx,by,ra,rb){const dx=bx-ax,dy=by-ay,L2=dx*dx+dy*dy||1e-6,M=Math.max(ra,rb)+1;
+  return{bb:[Math.floor(Math.min(ax,bx)-M),Math.floor(Math.min(ay,by)-M),Math.ceil(Math.max(ax,bx)+M),Math.ceil(Math.max(ay,by)+M)],
+    s(px,py){let t=((px-ax)*dx+(py-ay)*dy)/L2;t=t<0?0:t>1?1:t;const qx=ax+dx*t,qy=ay+dy*t,r=ra+(rb-ra)*t,ux=px-qx,uy=py-qy,d2=ux*ux+uy*uy;if(d2>r*r)return null;
+      const nx=ux/r,ny=uy/r;return{nx,ny,nz:Math.sqrt(Math.max(0,1-nx*nx-ny*ny)),t,w:Math.sqrt(d2)/r,side:(ux*dy-uy*dx)>0?1:-1}}}}
+function ellipse(cx,cy,rx,ry,rot){rot=rot||0;const c=Math.cos(rot),s=Math.sin(rot),M=Math.max(rx,ry)+1;
+  return{bb:[Math.floor(cx-M),Math.floor(cy-M),Math.ceil(cx+M),Math.ceil(cy+M)],
+    s(px,py){const x=px-cx,y=py-cy,u=(x*c+y*s)/rx,v=(-x*s+y*c)/ry,q=u*u+v*v;if(q>1)return null;const nx=u*c-v*s,ny=u*s+v*c,k=Math.hypot(nx,ny)>1?1/Math.hypot(nx,ny):1;return{nx:nx*k,ny:ny*k,nz:Math.sqrt(Math.max(0,1-q)),u,v}}}}
+// a flat plate with bevelled edges; bev is how wide the bevel is, tilt leans the whole face a little
+function poly(P,bev,tilt){bev=bev||2.2;tilt=tilt||[0,0];let A=0;for(let i=0;i<P.length;i++){const[a,b]=P[i],[c,d]=P[(i+1)%P.length];A+=a*d-c*b}const cw=A>0;
+  const xs=P.map(p=>p[0]),ys=P.map(p=>p[1]);
+  return{bb:[Math.floor(Math.min(...xs))-1,Math.floor(Math.min(...ys))-1,Math.ceil(Math.max(...xs))+1,Math.ceil(Math.max(...ys))+1],
+    s(px,py){let inside=false;for(let i=0,j=P.length-1;i<P.length;j=i++){const[xi,yi]=P[i],[xj,yj]=P[j];if(((yi>py)!==(yj>py))&&(px<(xj-xi)*(py-yi)/(yj-yi)+xi))inside=!inside}if(!inside)return null;
+      let best=1e9,bn=[0,0];for(let i=0;i<P.length;i++){const[ax,ay]=P[i],[bx,by]=P[(i+1)%P.length],dx=bx-ax,dy=by-ay,l2=dx*dx+dy*dy||1e-6;let t=((px-ax)*dx+(py-ay)*dy)/l2;t=t<0?0:t>1?1:t;const d=Math.hypot(px-ax-dx*t,py-ay-dy*t);if(d<best){best=d;const l=Math.sqrt(l2);bn=cw?[dy/l,-dx/l]:[-dy/l,dx/l]}}
+      const k=Math.max(0,1-best/bev),nx=bn[0]*k*.95+tilt[0],ny=bn[1]*k*.95+tilt[1],n2=Math.min(.96,nx*nx+ny*ny);return{nx,ny,nz:Math.sqrt(1-n2),e:best}}}}
+
+// ---------- the frame being drawn ----------
+function Frame(){this.c=new Uint8ClampedArray(CW*CH*4);this.id=new Int16Array(CW*CH).fill(-1);this.z=new Float32Array(CW*CH).fill(-1e9);this.k=new Uint8Array(CW*CH);this.glow=[];this.smear=[];this.parts=[]}
+// how a material turns light into one of its six shades
+const KIND={metal:{a:.06,b:1.05,spec:.95,lo:[.2,.34,.5,.68,.86]},cloth:{a:.2,b:.82,spec:2,lo:[.22,.38,.52,.7,.9]},skin:{a:.3,b:.74,spec:2,lo:[.2,.4,.56,.74,.93]},
+  hair:{a:.18,b:.86,spec:.97,lo:[.2,.36,.52,.7,.88]},leather:{a:.18,b:.84,spec:.985,lo:[.22,.38,.52,.7,.9]},gem:{a:.3,b:.8,spec:.93,lo:[.24,.4,.56,.72,.86]},crystal:{a:.32,b:.75,spec:.9,lo:[.26,.42,.56,.7,.84]}};
+function shadeIdx(kind,n){const K=KIND[kind]||KIND.cloth;const d=Math.max(0,n.nx*L[0]+n.ny*L[1]+n.nz*L[2]);let v=K.a+K.b*d;
+  if(K.spec<2){const sp=n.nx*HV[0]+n.ny*HV[1]+n.nz*HV[2];if(sp>K.spec)return 5}
+  if(kind==='metal'&&n.ny>.3&&n.nz<.8)v-=.1;       // polished plate: a darker band where it turns down to the ground
+  let i=0;while(i<5&&v>K.lo[i])i++;return i}
+let GID=0;
+// draw one part. Every pixel inside gets a shade of the part's ramp. The part's group decides where seams are drawn later:
+// pieces of one group (a thigh and its shin) blend, pieces of different groups get a dark line between them.
+function draw(F,P){const pix=P.sh.pix,q=pix?1:U,T=pix?null:F.T,b=T?[T.cx+(P.sh.bb[0]-T.cx)*T.s,T.cy+(P.sh.bb[1]-T.cy)*T.s,T.cx+(P.sh.bb[2]-T.cx)*T.s,T.cy+(P.sh.bb[3]-T.cy)*T.s]:P.sh.bb,x0=Math.floor(b[0]*q),y0=Math.floor(b[1]*q),x1=Math.ceil(b[2]*q),y1=Math.ceil(b[3]*q),id=F.parts.length;if(P.grp==null)P.grp='g'+(GID++);F.parts.push(P);const mask=[];
+  for(let y=Math.max(0,y0);y<=Math.min(CH-1,y1);y++)for(let x=Math.max(0,x0);x<=Math.min(CW-1,x1);x++){const n=pix?P.sh.s(x+.5,y+.5):T?P.sh.s(T.cx+((x+.5)/U-T.cx)/T.s,T.cy+((y+.5)/U-T.cy)/T.s):P.sh.s((x+.5)/U,(y+.5)/U);if(!n)continue;const i=y*CW+x;if(F.z[i]>P.z)continue;
+    let k=n.k!=null?n.k:shadeIdx(P.kind,n);if(P.mod)k=P.mod(k,n,x,y);if(k==null)continue;k=clamp(k,0,5);const rr=P.pat?P.pat(x,y,k,n)||P.r:P.r;const c=n.c||rr[k];const j=i*4;F.c[j]=c[0];F.c[j+1]=c[1];F.c[j+2]=c[2];F.c[j+3]=255;F.id[i]=id;F.z[i]=P.z;F.k[i]=k;mask.push(i)}
+  // a soft contact shadow on what lies under and to the right of this part
+  if(!P.noShadow){const M=new Set(mask);for(const i of mask)for(const o of[CW+1,CW,1]){const q=i+o;if(q>=CW*CH||M.has(q)||F.id[q]<0||F.z[q]>=P.z)continue;const Q=F.parts[F.id[q]];if(Q.noRecv||Q.grp===P.grp)continue;
+    if(!(F.sh||(F.sh=new Set())).has(q)){F.sh.add(q);F.k[q]=Math.max(0,F.k[q]-1);const j=q*4;F.c[j]*=.8;F.c[j+1]*=.8;F.c[j+2]*=.85}}}
+  return id}
+// a hand-drawn piece: rows of characters; '0'…'5' are shades of the ramp, letters come from the colour map, '.' is empty
+function tpl(rows,ox,oy,map){return{pix:1,bb:[ox,oy,ox+rows[0].length-1,oy+rows.length-1],s(px,py){const x=Math.floor(px)-ox,y=Math.floor(py)-oy,r=rows[y];if(!r)return null;const ch=r[x];if(!ch||ch==='.')return null;
+  if(ch>='0'&&ch<='5')return{k:+ch};const c=map&&map[ch];return c?{k:3,c}:null}}}
+// single pixels of detail (plate lines, rivets, runes), only where that part is on top
+const tf=(F,x,y)=>F.T?[F.T.cx+(x-F.T.cx)*F.T.s,F.T.cy+(y-F.T.cy)*F.T.s]:[x,y];
+function px(F,id,x,y,c){[x,y]=tf(F,x,y);pxp(F,id,Math.floor(x*U),Math.floor(y*U),c)}
+function pxp(F,id,x,y,c){if(x<0||y<0||x>=CW||y>=CH)return;const i=y*CW+x;if(id!=null&&F.id[i]!==id)return;if(id==null&&!F.c[i*4+3])return;const j=i*4;F.c[j]=c[0];F.c[j+1]=c[1];F.c[j+2]=c[2];F.c[j+3]=255;F.lock=F.lock||new Set();F.lock.add(i)}
+function line(F,id,x0,y0,x1,y1,c){[x0,y0]=tf(F,x0,y0);[x1,y1]=tf(F,x1,y1);x0*=U;y0*=U;x1*=U;y1*=U;const n=Math.max(1,Math.ceil(Math.max(Math.abs(x1-x0),Math.abs(y1-y0))));for(let s=0;s<=n;s++)pxp(F,id,Math.floor(x0+(x1-x0)*s/n),Math.floor(y0+(y1-y0)*s/n),c)}
+// light that comes from the outfit itself: a bright core and a soft halo
+function glow(F,x,y,c,a){[x,y]=tf(F,x,y);F.glow.push([Math.floor(x*U),Math.floor(y*U),c,a==null?1:a])}
+function glowp(F,x,y,c,a){F.glow.push([x|0,y|0,c,a==null?1:a])}
+function gline(F,x0,y0,x1,y1,c,a){[x0,y0]=tf(F,x0,y0);[x1,y1]=tf(F,x1,y1);x0*=U;y0*=U;x1*=U;y1*=U;const n=Math.max(1,Math.ceil(Math.max(Math.abs(x1-x0),Math.abs(y1-y0))));const seen=new Set();for(let s=0;s<=n;s++){const X=Math.floor(x0+(x1-x0)*s/n),Y=Math.floor(y0+(y1-y0)*s/n),k=X+','+Y;if(seen.has(k))continue;seen.add(k);F.glow.push([X,Y,c,a==null?1:a])}}
+// the finish: seams between pieces, the silhouette in each piece's own darkest shades (never black), then the light
+function finish(F){const C=F.c,out=new Uint8ClampedArray(C),lock=F.lock||new Set();
+  const at=(x,y)=>x<0||y<0||x>=CW||y>=CH?-1:F.id[y*CW+x];
+  for(let y=0;y<CH;y++)for(let x=0;x<CW;x++){const i=y*CW+x,a=F.id[i];if(a<0)continue;const P=F.parts[a];if(P.noSel)continue;
+    let edgeDark=0,edgeLit=0,seam=0;
+    for(const[dx,dy]of[[1,0],[0,1],[-1,0],[0,-1]]){const b=at(x+dx,y+dy);if(b<0){if(dx>0||dy>0)edgeDark=1;else edgeLit=1;continue}
+      const Q=F.parts[b];if(b!==a&&Q.grp!==P.grp&&!Q.noSeam&&F.z[(y+dy)*CW+x+dx]>F.z[i])seam=1}
+    if(lock.has(i)&&!edgeDark&&!edgeLit)continue;
+    let c=null;if(edgeDark)c=P.r[0];else if(seam)c=P.r[Math.max(0,Math.min(1,F.k[i]-2))];else if(edgeLit)c=P.r[Math.min(F.k[i],P.litEdge==null?2:P.litEdge)];
+    if(c){out[i*4]=c[0];out[i*4+1]=c[1];out[i*4+2]=c[2]}}
+  // smears of a fast swing: translucent, under the light
+  for(const[x,y,c,a]of F.smear){if(x<0||y<0||x>=CW||y>=CH)continue;const j=(y*CW+x)*4,b=out[j+3]/255;if(b){out[j]=out[j]*(1-a)+c[0]*a;out[j+1]=out[j+1]*(1-a)+c[1]*a;out[j+2]=out[j+2]*(1-a)+c[2]*a}else{out[j]=c[0];out[j+1]=c[1];out[j+2]=c[2];out[j+3]=a*255}}
+  // halo first (soft), then the bright core
+  const halo=new Float32Array(CW*CH*4);
+  for(const[x,y,c,a]of F.glow)for(let dy=-2;dy<=2;dy++)for(let dx=-2;dx<=2;dx++){const X=x+dx,Y=y+dy;if(X<0||Y<0||X>=CW||Y>=CH)continue;const d=Math.abs(dx)+Math.abs(dy);if(!d||d>3)continue;const w=(d===1?.4:d===2?.18:.07)*a,j=(Y*CW+X)*4;halo[j]+=c[0]*w;halo[j+1]+=c[1]*w;halo[j+2]+=c[2]*w;halo[j+3]+=w}
+  for(let i=0;i<CW*CH;i++){const j=i*4,s=halo[j+3];if(s<=0)continue;const ha=Math.min(.7,s),hr=halo[j]/s,hg=halo[j+1]/s,hb=halo[j+2]/s;
+    if(out[j+3]){const k=ha*.5;out[j]=Math.min(255,out[j]+hr*k);out[j+1]=Math.min(255,out[j+1]+hg*k);out[j+2]=Math.min(255,out[j+2]+hb*k)}else{out[j]=hr;out[j+1]=hg;out[j+2]=hb;out[j+3]=Math.round(ha*200)}}
+  for(const[x,y,c,a]of F.glow){if(x<0||y<0||x>=CW||y>=CH)continue;const j=(y*CW+x)*4;if(a>=1||!out[j+3]){out[j]=c[0];out[j+1]=c[1];out[j+2]=c[2];out[j+3]=Math.max(out[j+3],Math.round(255*Math.min(1,a+.2)))}else{out[j]=out[j]*(1-a)+c[0]*a;out[j+1]=out[j+1]*(1-a)+c[1]*a;out[j+2]=out[j+2]*(1-a)+c[2]*a}}
+  return out}
+// ---------- the skeleton and its poses ----------
+const rot=(a,len)=>[Math.sin(a)*len,Math.cos(a)*len];   // a limb hanging down, swung forward (to the right) by angle a
+const LEN={th:11.5,sh:11,ua:8.5,fa:7.5,torso:15.5};
+const BODY={sh:13.5,hip:5,th:3.2,ua:2.3};
+// two bones reaching for a point: the elbow (or knee) bends down and back
+function ik(s,t,l1,l2,up){let dx=t[0]-s[0],dy=t[1]-s[1],d=Math.hypot(dx,dy);const lo=Math.abs(l1-l2)+.2,hi=l1+l2-.05;if(d<lo){dx*=lo/(d||1);dy*=lo/(d||1);d=lo}if(d>hi){dx*=hi/d;dy*=hi/d;d=hi}
+  const a=Math.atan2(dy,dx),c=clamp((l1*l1+d*d-l2*l2)/(2*l1*d),-1,1),b=a+(up?-1:1)*Math.acos(c),e=[s[0]+Math.cos(b)*l1,s[1]+Math.sin(b)*l1],h=[s[0]+dx,s[1]+dy];
+  const sa=Math.atan2(e[0]-s[0],e[1]-s[1]),fa=Math.atan2(h[0]-e[0],h[1]-e[1]);return[sa,fa-sa]}
+// each pose: leg angles (t thigh, k knee), arm angles (s shoulder, e elbow), the lean of the back, how far the body drops,
+// and what the hands hold. Angles are from straight down, forward positive
+function poseOf(pose,f){const P={lean:0,bob:0,tF:.07,tB:-.05,kF:.02,kB:.02,sF:.1,eF:.3,sB:-.06,eB:.22,breath:0,capeW:0,hairW:0,hold:null,ground:null,closed:false};
+  switch(pose){
+  case'idle':{const k=[0,0,1,1,1,0][f%6];Object.assign(P,{breath:k,tF:.17,tB:-.14,kF:.1+.03*k,kB:.05,bob:k*.5,lean:.02,sF:.1+.03*k,sB:-.05-.02*k,capeW:Math.sin(f/6*2*PI)*.5,hairW:Math.sin(f/6*2*PI)*.5});break}
+  case'walk':{const ph=f/8*2*PI,s=Math.sin(ph);Object.assign(P,{tF:.46*s,tB:-.46*s,kF:Math.max(0,.8*Math.sin(ph-1.1)),kB:Math.max(0,.8*Math.sin(ph+PI-1.1)),bob:-(Math.round(Math.abs(Math.cos(ph))*1.2)-1),
+    sF:-.38*s+.08,sB:.38*s-.04,eF:.3+.15*Math.max(0,-s),eB:.3+.15*Math.max(0,s),lean:.05,capeW:1+.6*Math.sin(ph*2),hairW:.8+.5*Math.sin(ph*2+1)});break}
+  case'crouch':Object.assign(P,{lean:.42,tF:1.75,kF:2.55,tB:.65,kB:2.25,sF:.75,eF:.25,sB:.35,eB:.7,ground:'knee',capeW:.3});break;
+  case'sit':Object.assign(P,{lean:-.08,tF:1.45,kF:.05,tB:2.15,kB:2.45,sF:-.55,eF:.15,sB:-.6,eB:.1,ground:'seat',capeW:-.2});break;
+  case'read':case'read2':Object.assign(P,{lean:.06,tF:1.45,kF:.05,tB:2.15,kB:2.45,ground:'seat',hold:pose==='read2'?'book2':'book',ikF:[9.5,5.5],ikB:[6.5,6.5],capeW:-.2});break;
+  case'lie':Object.assign(P,{tF:.02,tB:-.02,kF:0,kB:0,sF:.04,eF:.06,sB:-.04,eB:.06,closed:true});break;
+  case'wave':Object.assign(P,{tF:.17,tB:-.14,kF:.1,kB:.05,lean:.02,sF:2.35,eF:f%2?-.15:.5,sB:-.06,hairW:.3});break;
+  case'jump':Object.assign(P,{tF:.95,kF:1.55,tB:.35,kB:1.35,sF:2.55,eF:.3,sB:2.25,eB:.45,lean:-.05,capeW:1.6,hairW:1.4,air:1});break;
+  case'flute':Object.assign(P,{tF:.12,tB:-.12,kF:.06,kB:.04,lean:-.03,hold:'flute',ikF:[12.5,1.2],ikB:[8,-.8],hairW:f%2?.4:.1});break;
+  case'water':Object.assign(P,{tF:.25,tB:-.12,kF:.12,kB:.04,lean:.1,hold:'can',ikF:[10.5,10.5],sB:-.1,eB:.3});break;
+  case'mine':{const k=f%2;Object.assign(P,{tF:.2,tB:-.15,kF:.12,kB:.06,lean:.06,sF:.75,eF:.55,sB:-.1,eB:.4,bob:k*.5,breath:k});break}
+  }
+  return P}
+function rig(pose,f,B,opt){const P=poseOf(pose,f);if(opt&&opt.umb&&!P.hold&&pose!=='lie'){P.ikF=[8.5,4.5];P.sF=P.eF=0}const J={pose,f,P,B,lean:P.lean,breath:P.breath,hairW:P.hairW,capeW:P.capeW};
+  const pel=[CX,GY-(LEN.th+LEN.sh)-2.5+P.bob];J.pel=pel;
+  const leg=(hx,ta,ka)=>{const hip=[pel[0]+hx,pel[1]],kn=[hip[0]+rot(ta,LEN.th)[0],hip[1]+rot(ta,LEN.th)[1]],an=[kn[0]+rot(ta-ka,LEN.sh)[0],kn[1]+rot(ta-ka,LEN.sh)[1]];return{hip,kn,an,ta,ka}};
+  J.lF=leg(B.hip*.5,P.tF,P.kF);J.lB=leg(-B.hip*.5,P.tB,P.kB);
+  // what touches the ground: the lower foot, a knee when kneeling, the seat when sitting
+  let low=Math.max(J.lF.an[1],J.lB.an[1]);if(P.ground==='knee')low=Math.max(low,J.lF.kn[1]+2,J.lB.kn[1]+2.6);
+  let dy=GY-2-low;if(P.ground==='seat')dy=GY-6-pel[1];if(P.air)dy-=1;
+  for(const l of[J.lF,J.lB])for(const k of['hip','kn','an'])l[k][1]+=dy;pel[1]+=dy;
+  const nk=[pel[0]+Math.sin(P.lean)*LEN.torso+.5,pel[1]-Math.cos(P.lean)*LEN.torso-P.breath*.5];J.nk=nk;
+  J.head=[nk[0]+(Math.sin(P.lean)*6+1)*HS,nk[1]-6.5*HS];
+  J.shF=[nk[0]+B.sh*.42+Math.sin(P.lean),nk[1]+2.4];J.shB=[nk[0]-B.sh*.4,nk[1]+2];
+  const arm=(sh,sa,ea)=>{const el=[sh[0]+rot(sa,LEN.ua)[0],sh[1]+rot(sa,LEN.ua)[1]],ha=[el[0]+rot(sa+ea,LEN.fa)[0],el[1]+rot(sa+ea,LEN.fa)[1]];return{sh,el,ha,sa,ea}};
+  let sF=P.sF,eF=P.eF,sB=P.sB,eB=P.eB;
+  if(P.ikF)[sF,eF]=ik(J.shF,[nk[0]+P.ikF[0],nk[1]+P.ikF[1]],LEN.ua,LEN.fa+.8);
+  if(P.ikB)[sB,eB]=ik(J.shB,[nk[0]+P.ikB[0],nk[1]+P.ikB[1]],LEN.ua,LEN.fa+.8);
+  J.aF=arm(J.shF,sF,eF);J.aB=arm(J.shB,sB,eB);
+  for(const a of[J.aF,J.aB])a.fist=[a.ha[0]+rot(a.sa+a.ea,.8)[0],a.ha[1]+rot(a.sa+a.ea,.8)[1]];
+  return J}
+// ---------- the body ----------
+const darker=k=>Math.max(0,k-1);   // the far side of the body is one step darker
+function limb(F,a,b,ra,rb,mat,kind,z,grp,mod,pat){return draw(F,{sh:capsule(a[0],a[1],b[0],b[1],ra,rb),r:mat,kind,z,grp,mod,pat})}
+const ZH=21;   // what hangs from the waist is drawn over the near thigh
+function drawBody(F,J,O){const B=J.B,sk=O.skin;
+  for(const fn of O.back)fn(F,J);
+  for(const[l,front]of[[J.lB,false],[J.lF,true]]){const z=front?20:8,g=front?'legF':'legB',dk=front?null:darker;
+    limb(F,l.hip,l.kn,B.th,B.th*.85,O.thigh,O.thighKind,z,g,dk,O.thighPat);
+    limb(F,l.kn,l.an,B.th*.82,B.th*.66,O.shin,O.shinKind,z+.1,g,dk,O.shinPat);
+    const toe=[l.an[0]+4,l.an[1]+.7];draw(F,{sh:capsule(l.an[0]-.5,l.an[1]+.2,toe[0],toe[1],2.2,1.65),r:O.boots,kind:'leather',z:z+.2,grp:g+'f',mod:dk});
+    draw(F,{sh:capsule(l.an[0]-.4,l.an[1]-2.4,l.an[0]+.2,l.an[1]+.4,2.35,2.25),r:O.boots,kind:'leather',z:z+.15,grp:g+'f',mod:dk});
+    for(const fn of O.leg)fn(F,l,z+.5,front,g)}
+  const torsoZ=16,nk=J.nk,pel=J.pel;
+  const T=[[nk[0]-B.sh*.46,nk[1]+1.4],[nk[0]+B.sh*.46,nk[1]+1.6],[nk[0]+B.sh*.5+.8,nk[1]+6],[pel[0]+B.hip*.82,pel[1]-4],[pel[0]+B.hip,pel[1]+1.5],[pel[0]-B.hip,pel[1]+1.5],[pel[0]-B.hip*.8,pel[1]-4],[nk[0]-B.sh*.5,nk[1]+6]];
+  J.torsoPoly=T;draw(F,{sh:poly(T,4,[-.1,-.04]),r:O.top,kind:O.topKind,z:torsoZ,grp:'torso',pat:O.topPat});
+  for(const fn of O.torso)fn(F,J,torsoZ+.5);
+  draw(F,{sh:capsule(nk[0]+.6,nk[1]+1.5,J.head[0]-.2,J.head[1]+3,2,2),r:sk,kind:'skin',z:torsoZ-.5,grp:'neck'});
+  for(const fn of O.neck)fn(F,J,torsoZ+1.5);
+  drawHead(F,J,O,torsoZ+2);
+  for(const fn of O.hang)fn(F,J);
+  for(const[a,front]of[[J.aB,false],[J.aF,true]]){const z=front?30:6,g=front?'armF':'armB',dk=front?null:darker;
+    limb(F,a.sh,a.el,B.ua,B.ua*.86,O.sleeves,O.sleeveKind,z,g,dk,O.sleevePat);
+    limb(F,a.el,a.ha,B.ua*.84,B.ua*.72,O.fore,O.foreKind,z+.1,g,dk,O.forePat);
+    draw(F,{sh:ellipse(a.fist[0],a.fist[1],2,2.2,-(a.sa+a.ea)),r:O.gloves,kind:O.glovesKind,z:z+.2,grp:g+'h',mod:dk});
+    for(const fn of O.arm)fn(F,a,z+.5,front,g)}
+  if(O.held)O.held(F,J)}
+// the head, drawn in real pixels so the face stays the same from frame to frame: a lit skull, the face, then hair, glasses and hat
+const FACE={W:[246,242,238],w:[204,204,218]};
+const ellP=(cx,cy,rx,ry,r)=>Object.assign(ellipse(cx,cy,rx,ry,r),{pix:1});
+function headPx(J){return[Math.round(J.head[0]*U),Math.round(J.head[1]*U)]}
+function drawHead(F,J,O,z){const[x,y]=headPx(J),sk=O.skin;
+  const T0={cx:J.head[0],cy:J.head[1],s:HS};
+  for(const fn of O.hairBack){F.T=T0;fn(F,J,4);F.T=null}
+  draw(F,{sh:ellP(x+.5,y+.5,7.6,8.8,.04),r:sk,kind:'skin',z,grp:'head'});
+  draw(F,{sh:ellP(x+3,y+5,5.2,4.8,.3),r:sk,kind:'skin',z:z+.01,grp:'head'});
+  // three quarters to the right: the near eye, the far eye close to the edge, brows, nose, mouth, the ear
+  const e=O.eye,ed=e.map(v=>v*.5|0),la=O.lash,br=O.brow,p=(dx,dy,c)=>pxp(F,null,x+dx,y+dy,c);
+  if(J.P.closed&&!O.awake){p(0,1,la);p(1,1,la);p(0,2,sk[3]);p(1,2,sk[3]);p(5,1,la);p(5,2,sk[3])}
+  else{p(0,0,la);p(1,0,la);p(0,1,FACE.W);p(1,1,e);p(0,2,FACE.w);p(1,2,ed);p(5,0,la);p(5,1,e);p(5,2,ed);
+    F.eyes=[[x,y],[x+1,y],[x,y+1],[x+1,y+1],[x,y+2],[x+1,y+2],[x+5,y],[x+5,y+1],[x+5,y+2]].map(([X,Y])=>[X,Y,(Y-y)===1?la:sk[3]])}
+  p(-1,-2,br);p(0,-2,br);p(1,-2,br);p(5,-2,br);p(6,-2,br);
+  p(6,2,sk[4]);p(6,4,sk[1]);p(5,4,sk[2]);
+  p(3,7,O.lip||sk[1]);p(4,7,O.lip?O.lip.map(v=>v*.8|0):sk[1]);
+  p(-3,1,sk[4]);p(-3,2,sk[3]);p(-3,3,sk[2]);p(-2,2,sk[1]);p(-2,3,sk[2]);p(-3,4,sk[1]);
+  if(O.blush){p(1,4,O.blush);p(2,4,O.blush)}
+  for(const fn of O.head){F.T=T0;fn(F,J,z+.6);F.T=null}}
+// ---------- ramps, made once per colour ----------
+const RMP=new Map();function rmp(h,o){const k=h+(o?JSON.stringify(o):'');let r=RMP.get(k);if(!r){r=ramp(h,o);RMP.set(k,r)}return r}
+const mixc=(a,b,t)=>a.map((v,i)=>Math.round(v+(b[i]-v)*t));
+// skin: warm shadows that lean to red, never grey
+function skinRamp(base){const k='skin'+base;let r=RMP.get(k);if(r)return r;const b=hx(base);
+  r=[mixc(b,[58,26,30],.68),mixc(b,[92,40,40],.42),mixc(b,[128,58,50],.18),b,mixc(b,[255,238,222],.28),mixc(b,[255,248,238],.55)];RMP.set(k,r);return r}
+// ---------- hair: the shape is drawn by hand ('#' hair, '-' a dark parting between locks, '+' a bright strand); the light comes from a sphere ----------
+// (0,0) of each picture sits 11 px left of and 14 px above the centre of the head
+const HAIR={
+ curto:['........#..##.........','.......###.###.#......','.....######-#####.....','....#########-####....','...################...','..#################...','..##-##############...','.###################..','.######-####-###-###..','.##########.###.##.#..','.#######..#..##..#....','.#######.....#........','.#######..............','.#######..............','..######..............','..######..............','...#####..............','....###...............','.....#................'],
+ comprido:['..........###.........','........#######.......','......##########......','....##############....','...################...','..#################...','..##################..','.###################..','.####-##############..','.#############-#####..','.##########..#####....','.#########.....###....','.########.......#.....','.#######..............','.#########............','.#########............','..########............','..##-#####............','...#######............','....######............','.....#####............','......###.............','.......##.............','........#.............'],
+ franja:['......................','..........###.........','.......########.......','......###-#######.....','.....#############....','....#####-#########...','...################...','...###-#############..','...#################..','..###-###-##-##-###...','..#################...','..########.#.#.#.#....','..#######.............','..#######.............','..######..............','..######..............','..######..............','...#####..............','...####...............','....##................'],
+ risca:['......................','......................','........#######.......','.....###-#########....','....####-##########...','...#####-###########..','..######-###########..','..#####-#############.','..####-#############..','..###-###############.','..##########..#####...','..######.......###....','..######.......#......','..######..............','...#####..............','...#####..............','....###...............'],
+ ondulado:['..........###.........','........#######.......','......##########......','....######-#######....','...################...','..####-############...','..##################..','.######-#############.','.###-##############...','.##############-###...','.##########..##.##....','.##-######......#.....','.#########............','.#########............','.##-######............','..########............','..##-#####............','.#########............','.##-#####.............','..######..............','..#####...............','...###................','....#.................'],
+ rabo:['......................','......................','........#######.......','.....###########......','....######-#######....','...################...','..##################..','..##################..','.###-##############...','.###########-####.....','.##########...........','.#######..............','.#######..............','..######..............','..######..............','...####...............'],
+ carrapito:['......................','......................','........#######.......','.....###########......','....######-#######....','...################...','..##################..','..##################..','.###-##############...','.###########-####.....','.##########...........','.#######..............','.#######..............','..######..............','..######..............','...####...............'],
+ espetado:['.....#.....#..........','.....##...##...#......','.#...###.###..##......','.##..##########.......','..#############.#.....','..###########-####.#...','...#################..','..#################...','.##-################..','###################...','.######-##-#######....','.##########.##..#.....','.######.....#.........','.######...............','.#######..............','..######..............','...####...............','....##................'],
+ trancas:['......................','..........###.........','.......########.......','.....#####-#####......','....#####-#########...','...######-#########...','..#######-##########..','..######-###########..','.######-###########...','.#####-#######-####...','.##########..####.....','.#########......#.....','.########.............','.########.............','..#######.............','..######..............','...####...............'],
+
+ moicano:null};
+// drawn by rule: a big round afro, and the crest of a mohawk following the top of the skull
+const HAIRO={afro:[-15,-19],moicano:[-11,-16]};
+function genMask(w,h,ox,oy,fn){const rows=[];for(let r=0;r<h;r++){let row='';for(let c=0;c<w;c++)row+=fn(c+ox+.5,r+oy+.5);rows.push(row)}return rows}
+HAIR.afro=genMask(30,30,-15,-19,(x,y)=>{const d=((x+1.2)/11.6)**2+((y+3.6)/12)**2,n=Math.sin(x*1.7)*Math.cos(y*1.3)*.05;if(d>1+n)return'.';if(y>-3.2&&x>-3.2)return'.';if(y>2.4&&x>-5.4)return'.';if(y>7)return'.';return(Math.sin(x*.9+y*1.1)>.92)?'+':((x*3+y*5)%11===0?'-':'#')});
+HAIR.moicano=genMask(22,16,-11,-16,(x,y)=>{const a=Math.atan2(y-.5,(x-.5)/1.05),r=Math.hypot((x-.5)/7.8,(y-.5)/8.9);if(a>-1.05||a<-2.85)return'.';const tall=.36+.18*Math.abs(Math.sin(a*6.5));if(r<.9||r>1+tall*(1-Math.max(0,(-a-2.4))*1.7))return'.';return(r>1.1&&Math.abs(Math.sin(a*6.5))<.12)?'-':'#'});
+// sides of a shaved head: the skull with a dark dusting of stubble
+const STUB=['......................','......................','......................','......................','......................','.....~~~~~~~~~~.......','....~~~~~~~~~~~~~.....','...~~~~~~~~~~~~~~~....','..~~~~~~~~~~~~~~~~....','..~~~~~~~~~~~~~~~.....','..~~~~~~~~............','..~~~~~~..............','..~~~~~~..............','..~~~~~~..............','...~~~~~..............','...~~~~...............'];
+function hairShape(rows,ox,oy,cx,cy,R,clip){return{pix:1,bb:[ox,oy,ox+rows[0].length-1,oy+rows.length-1],s(px,py){if(clip!=null&&py<clip)return null;const r=rows[Math.floor(py)-oy];if(!r)return null;const ch=r[Math.floor(px)-ox];if(!ch||ch==='.')return null;
+  let nx=(px-cx)/R,ny=(py-cy)/R;const d=Math.hypot(nx,ny);if(d>.97){nx*=.97/d;ny*=.97/d}return{nx,ny,nz:Math.sqrt(Math.max(0,1-nx*nx-ny*ny)),m:ch}}}}
+const hairMod=(k,n,X,Y)=>n.m==='-'?k-2:n.m==='+'?k+1:k-(((X*2+Y)%7===0)?1:0);
+// with a hat on, the hair above the brim is hidden (clip, in pixels from the centre of the head)
+function hairDraw(style,r,clip){return(F,J,z)=>{const[x,y]=headPx(J),cy=clip==null?null:y+clip;
+  if(style==='moicano'){draw(F,{sh:hairShape(STUB,x-11,y-14,x-1,y-4,11.5,cy),r:mixRamp(r,F.__sk,.8),kind:'hair',z:z-.01,grp:'head',noSel:1,mod:(k,n,X,Y)=>k-((X+Y*3)%3===0?1:0)})}
+  const o=HAIRO[style]||[-11,-14];draw(F,{sh:hairShape(HAIR[style],x+o[0],y+o[1],x-1,y-4,style==='afro'?14:11.5,cy),r,kind:'hair',z,grp:'hair',mod:style==='afro'?(k,n,X,Y)=>k-(((X*3+Y*2)%5===0)?1:0)-((X+Y*4)%9===0?1:0)+(n.m==='+'?1:0):hairMod})}}
+function mixRamp(a,b,t){if(!b)return a;return a.map((c,i)=>mixc(b[i],c,1-t))}
+// what grows down the back (design units, around the centre of the head; scaled with it)
+function hairFlow(style,r,J){const f=J.f,w=J.hairW||0,[x,y]=J.head;
+  if(style==='comprido'||style==='ondulado'){const long=style==='comprido',L=[],Rr=[],n=6,len=long?17:11;
+    for(let i=0;i<=n;i++){const a=i/n;L.push([x-6.2-a*(long?3.4:2.4)-w*a*a*3+Math.sin(f*.9+a*4)*w*.5+(style==='ondulado'?Math.sin(a*9)*.7:0),y-2+a*len])}
+    for(let i=n;i>=0;i--){const a=i/n;Rr.push([x-1.6-a*(long?3.2:2)-w*a*a*2.4+Math.sin(f*.9+a*4+1)*w*.4+(i%2?.7:0),y+2+a*(len-1.5)])}
+    return[{sh:poly([[x+1,y-6],...Rr.slice().reverse(),...L.slice().reverse(),[x-2,y-6.5]],2.6,[.06,-.04]),mod:(k,n,X,Y)=>k-(((X*3+Y)%7===0)?1:0)-(((X+Y*2)%11===0)?1:0)}]}
+  if(style==='rabo'){const out=[],seg=6;let p=[x-6.4,y-2.2];out.push({sh:ellipse(x-6.2,y-2.4,1.6,1.4),tie:1});
+    for(let i=1;i<=seg;i++){const a=i/seg,q=[x-7.4-a*3-w*a*a*3.2+Math.sin(f*.9+a*3)*w*.6,y-2.2+a*11];out.push({sh:capsule(p[0],p[1],q[0],q[1],2.2-a*.9,2.2-(a+1/seg)*.9)});p=q}return out}
+  if(style==='carrapito')return[{sh:ellipse(x-4.2,y-8.4,3.4,3,-.4),bun:1},{sh:ellipse(x-3.6,y-6.2,1.8,.9,-.4),tie:1}];
+  if(style==='trancas'){const out=[];for(const[side,ox]of[[0,-4.4],[1,-1.4]]){let p=[x+ox,y+1];for(let i=1;i<=6;i++){const a=i/6,q=[x+ox-1.2-a*1.6-w*a*.8,y+1+a*12];out.push({sh:ellipse((p[0]+q[0])/2,(p[1]+q[1])/2,1.5,1.3,.3),front:side,braid:i});p=q}out.push({sh:ellipse(p[0],p[1]+.6,.9,.7),front:side,tie:1})}return out}
+  return[]}
+function hairBackFn(style,r){return(F,J,z)=>{for(const s of hairFlow(style,r,J)){if(s.front||s.bun)continue;draw(F,{sh:s.sh,r:s.tie?rmp('#c84a5a'):r,kind:'hair',z:z+(s.tie?.1:0),grp:'hairB',mod:s.mod||(s.braid?(k,n,X,Y)=>k-((X+Y)%3===0?1:0):null)})}}}
+function hairFrontFn(style,r){return(F,J,z)=>{for(const s of hairFlow(style,r,J)){if(!s.front&&!s.bun&&!(s.tie&&style==='carrapito'))continue;draw(F,{sh:s.sh,r:s.tie?rmp('#c84a5a'):r,kind:'hair',z:s.front?17.2:z+.05,grp:s.front?'braid':'hair',mod:s.bun?(k,n,X,Y)=>k-(((X*2+Y*3)%6===0)?1:0):(k,n,X,Y)=>k-((X+Y)%3===0?1:0)})}}}
+// ---------- hats ----------
+// Every hat of the old wardrobe is kept: its side picture is smoothed to four times its size, fitted to the new head
+// (a little wider than tall), then lit like the rest: a dome of light from the top left, a bevel at every edge, metal that shines.
+const HKX=3.05,HKY=3.2,HDY=1.6;            // pixels of the new head per old cell
+const HAT_METAL={coroa:1,coroaesm:1,tiara:1,coroagelo:1,coroafogo:1,coroaeclipse:1,viking:1,cristal:1,nucleo:1,mineiro:1,aureola:1,prismahalo:1,lunar:1,vazio:1,solaurora:1,solraios:1,solzenite:1,luacresc:1,luaminguante:1,luacheia:1,astronauta:1};
+const HAT_GLOW={aureola:'Yy',prismahalo:'RYGBPCO',nimbo:'VW',estrelas:'WY',nucleo:'Oo',coroafogo:'Y',coroagelo:'W',magma:'o',solzenite:'W',solraios:'W',luacheia:'M',raizancia:'G',coroaeclipse:'E',cristal:'C',lunar:'M',mineiro:'L'};
+function scale2x(g){const h=g.length,w=g[0].length,a=(x,y)=>y<0||y>=h||x<0||x>=w?'.':g[y][x],o=[];for(let y=0;y<h*2;y++)o.push(new Array(w*2).fill('.'));
+  for(let y=0;y<h;y++)for(let x=0;x<w;x++){const P=a(x,y),A=a(x,y-1),B=a(x+1,y),C=a(x-1,y),D=a(x,y+1);let p1=P,p2=P,p3=P,p4=P;
+    if(C===A&&C!==D&&A!==B)p1=A;if(A===B&&A!==C&&B!==D)p2=B;if(D===C&&D!==B&&C!==A)p3=C;if(B===D&&B!==A&&D!==C)p4=D;
+    o[2*y][2*x]=p1;o[2*y][2*x+1]=p2;o[2*y+1][2*x]=p3;o[2*y+1][2*x+1]=p4}return o}
+const HATC=new Map();
+// the converted hat: a grid of palette letters in pixels around the centre of the head, and a light field for the shading
+function hatGrid(id,src){let g=HATC.get(id);if(g)return g;const[dx,dy0,rows]=src,w=Math.max(...rows.map(r=>r.length));
+  let G=rows.map(r=>r.padEnd(w,'.').split(''));G=scale2x(scale2x(G));const S=4;
+  // old cell (u,v) from the head anchor; the old head is 6 cells wide and 5 tall, its middle at (3,2.5)
+  const x0=Math.floor((dx-3)*HKX)-1,x1=Math.ceil((dx+w-3)*HKX)+1,y0=Math.floor((dy0-2.5)*HKY+HDY)-1,y1=Math.ceil((dy0+rows.length-2.5)*HKY+HDY)+1,W=x1-x0+1,H=y1-y0+1;
+  const m=[];for(let y=0;y<H;y++){const row=[];for(let x=0;x<W;x++){const u=(x0+x+.5)/HKX+3-dx,v=(y0+y+.5-HDY)/HKY+2.5-dy0,gx=Math.floor(u*S),gy=Math.floor(v*S);row.push(gy>=0&&gy<G.length&&gx>=0&&gx<G[0].length?G[gy][gx]:'.')}m.push(row)}
+  // a soft field of coverage gives each pixel a slope: domes in the middle, bevels at the edges
+  const cov=(x,y)=>y<0||y>=H||x<0||x>=W||m[y][x]==='.'?0:1,bl=[];for(let y=0;y<H;y++){bl.push([]);for(let x=0;x<W;x++){let s=0,n=0;for(let j=-2;j<=2;j++)for(let i=-2;i<=2;i++){const wgt=3-Math.max(Math.abs(i),Math.abs(j));s+=cov(x+i,y+j)*wgt;n+=wgt}bl[y].push(s/n)}}
+  let cx=0,cy=0,cn=0;for(let y=0;y<H;y++)for(let x=0;x<W;x++)if(cov(x,y)){cx+=x;cy+=y;cn++}cx/=cn||1;cy/=cn||1;const rx=Math.max(3,W/2),ry=Math.max(3,H/2);
+  const nrm=[];for(let y=0;y<H;y++){nrm.push([]);for(let x=0;x<W;x++){const gx=(bl[y][Math.min(W-1,x+1)]-bl[y][Math.max(0,x-1)]),gy=((bl[Math.min(H-1,y+1)]||bl[y])[x]-(bl[Math.max(0,y-1)]||bl[y])[x]);
+    let nx=-gx*1.3+(x-cx)/rx*.35,ny=-gy*1.3+(y-cy)/ry*.35;const l=Math.hypot(nx,ny);if(l>.92){nx*=.92/l;ny*=.92/l}nrm[y].push([nx,ny,Math.sqrt(Math.max(0,1-nx*nx-ny*ny))])}}
+  g={m,nrm,x0,y0,W,H};HATC.set(id,g);return g}
+function hatSrc(id){if(typeof LHAT!=='undefined'&&LHAT[id])return LHAT[id].f;const h=AVO.hat[id];return h?(h.s||h.f):null}
+function hatPal(id,hc){const P=(typeof LHATPAL!=='undefined'&&LHATPAL[id])||HATPAL[id]||{},out={};for(const k in P)out[k]=P[k]==='HAIR'?hc:P[k];return out}
+// one part per colour, so a band or a gem keeps its edge from the felt around it
+function hatDraw(id,hc){const src=hatSrc(id);if(!src)return null;const pal=hatPal(id,hc),metal=HAT_METAL[id],gl=HAT_GLOW[id]||'';
+  return(F,J,z)=>{const g=hatGrid(id,src),[x,y]=headPx(J),ox=x+g.x0,oy=y+g.y0,letters=new Set();for(const r of g.m)for(const c of r)if(c!=='.')letters.add(c);
+    for(const L of letters){const hexc=pal[L];if(!hexc)continue;const r=rmp(hexc,{hs:1.1}),isG=gl.includes(L);
+      draw(F,{sh:{pix:1,bb:[ox,oy,ox+g.W-1,oy+g.H-1],s(px,py){const X=Math.floor(px)-ox,Y=Math.floor(py)-oy;if(Y<0||Y>=g.H||X<0||X>=g.W||g.m[Y][X]!==L)return null;const n=g.nrm[Y][X];return{nx:n[0],ny:n[1],nz:n[2]}}},
+        r,kind:metal?'metal':'cloth',z:z+1+(isG?.02:0),grp:'hat',noSel:isG,litEdge:3});
+      if(isG&&!F.flat)for(let Y=0;Y<g.H;Y+=2)for(let X=(Y/2)%2;X<g.W;X+=2)if(g.m[Y][X]===L)glowp(F,ox+X,oy+Y,hx(hexc),.35)}}}
+// how far a hat reaches over the hair: hair above this line (pixels from the centre of the head) is hidden
+function hatClip(id){const src=hatSrc(id);if(!src)return null;const g=hatGrid(id,src);let lo=-99;for(let y=g.H-1;y>=0;y--){let n=0;for(let x=0;x<g.W;x++)if(g.m[y][x]!=='.')n++;if(n>=Math.min(8,g.W*.5)){lo=g.y0+y;break}}return Math.min(-3,lo-1)}
+// ---------- clothes ----------
+const CREAM=R(['#6a5a44','#9a8a6c','#c8b892','#e6dab8','#f6eed6','#fffbf0']),GOLDR=R(['#4a2e08','#7a5212','#b07e24','#e0aa40','#ffd877','#fff4c8']),LEATH=R(['#1e120c','#33201a','#4e3226','#6c4834','#8c6246','#ac8060']);
+const pr=(J)=>{const[nX,nY]=J.nk,[pX,pY]=J.pel;return{nX,nY,pX,pY,B:J.B,m:((J.lF.kn[0]+J.lB.kn[0])/2-J.pel[0])}};
+// pieces used by many clothes
+function collar(r,shape){return(F,J,z)=>{const{nX,nY}=pr(J);if(shape==='v')draw(F,{sh:poly([[nX-3.4,nY+1.2],[nX+4.2,nY+1.4],[nX+1.6,nY+5]],1),r,kind:'cloth',z:z+.3,grp:'collar'});
+  else draw(F,{sh:capsule(nX-3.2,nY+1.7,nX+4.2,nY+1.9,1.15,1.15),r,kind:'cloth',z:z+.3,grp:'collar'})}}
+function cuffs(r){return(F,a,z,front,g)=>{const d=rot(a.sa+a.ea,1);draw(F,{sh:capsule(a.ha[0]-d[0]*1.6,a.ha[1]-d[1]*1.6,a.ha[0]-d[0]*.3,a.ha[1]-d[1]*.3,2.05,2),r,kind:'cloth',z,grp:g+'c',mod:front?null:darker})}}
+function hemLine(c,dy){return(F,J,z)=>{const{pX,pY,B}=pr(J);line(F,null,pX-B.hip-.2,pY+(dy||1.2),pX+B.hip+.4,pY+(dy||1.2)-.3,c)}}
+function buttons(c,n){return(F,J,z)=>{const{nX,nY,pY}=pr(J);for(let i=0;i<n;i++){const y=nY+5+i*(pY-nY-6)/n;px(F,null,nX+2.4+i*.1,y,c)}}}
+// a skirt, a dress or a robe: hangs from the waist, flares, and follows the knees as the legs move
+function skirt(r,len,o){o=o||{};return(F,J)=>{const{pX,pY,B,m}=pr(J),w=B.hip+1,fl=(o.flare||3),y0=pY-(o.top||3.4),L=len,sw=J.pose==='walk'?m*.7:m*.5,sit=J.P.ground==='seat';
+  const bot=sit?[[pX-w-1,pY+3],[pX+w+fl+10,pY+1.5],[pX+w+fl+10.5,pY+4.5],[pX-w-2,pY+5]]:[[pX+w+fl+sw,pY+L-.4],[pX+1+sw,pY+L+1],[pX-w-fl+sw,pY+L-.2]];
+  const P=[[pX-w,y0],[pX+w+.6,y0-.3],...bot];
+  const id=draw(F,{sh:poly(P,2.2,[-.04,0]),r,kind:o.kind||'cloth',z:ZH+(o.z||.4),grp:o.grp||'skirt',pat:o.pat,mod:(k,n,X,Y)=>{const fold=Math.sin((X/U-pX)*1.1+(Y/U)*.15);return k+(fold>.7?1:fold<-.75?-1:0)}});
+  if(o.hem&&!sit)line(F,id,bot[2][0]+.4,bot[2][1]-.9,bot[0][0]-.4,bot[0][1]-.9,o.hem);
+  if(o.band)line(F,null,pX-w+.2,y0+.7,pX+w+.4,y0+.4,o.band);return id}}
+// armour, from the prototype sets
+function pauldron(F,a,z,mat,front,o){o=o||{};const[x,y]=a.sh,rx=o.rx||5,ry=o.ry||4.2,dk=front?null:darker;
+  for(let i=2;i>=0;i--)draw(F,{sh:ellipse(x+.4,y+.6+i*2.1,rx-i*.6,ry-i*.9,.2+a.sa*.2),r:mat,kind:o.kind||'metal',z:z+(2-i)*.01,mod:dk});
+  if(o.trim)for(let t=-1.3;t<=1.3;t+=.07){const X=x+.4+Math.sin(t)*(rx-.5),Y=y+.6-Math.cos(t)*(ry-.5);px(F,F.parts.length-1,X,Y,o.trim)}}
+function breastplate(F,J,z,mat,o){o=o||{};const{nX,nY,pX,pY,B}=pr(J),sh=B.sh+1.2;
+  const P=[[nX-sh*.44,nY+1.8],[nX+sh*.5,nY+2.2],[nX+sh*.52+1,nY+7.5],[pX+B.hip*.8+.4,pY-4],[pX+1.5,pY-2.4],[pX-B.hip*.8-.4,pY-4],[nX-sh*.5-.4,nY+7.5]];
+  const id=draw(F,{sh:poly(P,4.4,[-.16,-.06]),r:mat,kind:o.kind||'metal',z,grp:'chest'});
+  const cx=(nX+pX)/2+1.6;line(F,id,nX+1.6,nY+3.2,cx,pY-3,mat[4]);line(F,id,nX+2.6,nY+3.6,cx+1,pY-3.4,mat[1]);
+  if(o.trim)for(const[a,b]of[[0,1],[1,2],[6,0]])line(F,id,P[a][0],P[a][1]+.7,P[b][0],P[b][1]+.7,o.trim);
+  for(let i=0;i<2;i++){const y=pY-3.2+i*2.8;draw(F,{sh:poly([[pX-B.hip-.6+i*.3,y],[pX+B.hip+.6-i*.3,y-.4],[pX+B.hip+1-i*.2,y+2.8],[pX-B.hip-1+i*.3,y+3.1]],1.4),r:mat,kind:o.kind||'metal',z:ZH+.1+i*.01});if(o.trim)line(F,F.parts.length-1,pX-B.hip+.2,y+2.4,pX+B.hip+.4,y+2,o.trim)}
+  return id}
+function belt(F,J,mat,buckle){const{pX,pY,B}=pr(J);draw(F,{sh:poly([[pX-B.hip-1,pY-4.4],[pX+B.hip+1.4,pY-4.8],[pX+B.hip+1.4,pY-2.8],[pX-B.hip-1,pY-2.4]],.9),r:mat,kind:'leather',z:ZH+1,grp:'belt'});
+  draw(F,{sh:poly([[pX+1.4,pY-5],[pX+4,pY-5.2],[pX+4,pY-2.4],[pX+1.4,pY-2.2]],.8),r:buckle,kind:'metal',z:ZH+1.1,grp:'buckle'});px(F,F.parts.length-1,pX+2.6,pY-3.8,buckle[1])}
+function tabard(F,J,mat,o){o=o||{};const{pX,pY,m}=pr(J),mm=m*.55,len=o.len||13,w=o.w||3.6,sw=Math.sin(J.f*.9)*(J.pose==='walk'?.6:.2);if(J.P.ground==='seat')return;
+  const P=[[pX-w+.6,pY-3.6],[pX+w+1.4,pY-3.8],[pX+w+1+mm+sw,pY+len-1],[pX+.9+mm+sw,pY+len+1.2],[pX-w+.4+mm+sw,pY+len-.6]];
+  const id=draw(F,{sh:poly(P,1.8,[-.05,0]),r:mat,kind:'cloth',z:ZH+.6,grp:'tabard',mod:(k,n,X,Y)=>k+((X+Y)%9===0?-1:0)});
+  if(o.trim)for(let i=1;i<P.length;i++){const a=P[i],b2=P[(i+1)%P.length];line(F,id,a[0],a[1]-.6,b2[0],b2[1]-.6,o.trim)}
+  if(o.emblem)o.emblem(F,id,pX+1+mm*.4+sw*.5,pY+3.4);return id}
+const EMB={
+  sun(F,id,x,y,c){for(let i=0;i<8;i++){const a=i/8*2*PI;line(F,id,x+Math.cos(a)*1.6,y+Math.sin(a)*1.6,x+Math.cos(a)*2.8,y+Math.sin(a)*2.8,c)}draw(F,{sh:ellipse(x,y,1.4,1.4),r:GOLDR,kind:'metal',z:ZH+.7,grp:'emb'})},
+  moon(F,id,x,y,c,full){draw(F,{sh:{bb:[x-2,y-2,x+2,y+2],s(px,py){const a=Math.hypot(px-x,py-y)<1.9,b=!full&&Math.hypot(px-x-1,py-y+.4)<1.5;return a&&!b?{nx:(px-x)/2,ny:(py-y)/2,nz:.8}:null}},r:R(['#8a7a40','#b8a660','#e0d090','#fff4c8','#fffbe6','#ffffff']),kind:'metal',z:ZH+.7,grp:'emb',noSel:1});glow(F,x,y,[255,244,200],.45)},
+  leaf(F,id,x,y,c){draw(F,{sh:poly([[x,y-2.6],[x+1.6,y],[x,y+2.4],[x-1.6,y]],1),r:R(['#2a4a1a','#3a7a28','#5aa838','#8fd65a','#c8ff7a','#eaffc0']),kind:'cloth',z:ZH+.7,grp:'emb'});line(F,null,x,y-2,x,y+2,[42,90,30])}};
+const STARS=(c,d)=>(k,n,X,Y)=>((X*7+Y*13)%d===0)?5:k;
+// the shirts, dresses and robes; each sets what the torso, sleeves and legs show
+function topSpec(O,look){const id=look.top,tc=rmp(look.tc),sk=O.skin;O.top=tc;O.sleeves=tc;O.fore=tc;
+  const ltop=typeof LTOP!=='undefined'&&LTOP[id];
+  if(ltop){const p=ltop.pal,T=rmp(p.T,{hs:1}),c1=p['1']&&hx(p['1']),c2=p['2']&&hx(p['2']),c3=p['3']&&hx(p['3']),r2=p['2']&&rmp(p['2']),r3=p['3']&&rmp(p['3']),r1=p['1']&&rmp(p['1']);return linTop(O,id,T,c1,c2,c3,r1,r2,r3,p)}
+  switch(id){
+  case'lisa':O.neck.push(collar(tc));O.arm.push(cuffs(tc));O.torso.push(hemLine(tc[1]));break;
+  case'riscas':{const st=R(['#7a6a50','#a8987a','#d2c4a2','#efe4c8','#fbf4e0','#ffffff']);O.topPat=O.sleevePat=O.forePat=(X,Y)=>Y%5<2?st:null;O.neck.push(collar(tc));O.arm.push(cuffs(tc));break}
+  case'xadrez':{const d1=tc.map(c=>mixc(c,[20,14,10],.4)),d2=tc.map(c=>mixc(c,[20,14,10],.62));O.topPat=O.sleevePat=O.forePat=(X,Y)=>{const a=X%7<2,b=Y%7<2;return a&&b?d2:a||b?d1:null};O.neck.push(collar(tc.map(c=>mixc(c,[20,14,10],.4)),'v'));O.torso.push(buttons([238,226,200],4));break}
+  case'vestido':O.fore=sk;O.foreKind='skin';O.thigh=sk;O.thighKind='skin';O.shin=sk;O.shinKind='skin';O.hang.push(skirt(tc,9.5,{flare:3.2,hem:tc[1],band:tc[1]}));O.neck.push(collar(tc,'v'));
+    O.arm.push((F,a,z,front,g)=>{draw(F,{sh:capsule(a.el[0]-rot(a.sa,2.2)[0],a.el[1]-rot(a.sa,2.2)[1],a.el[0]+rot(a.sa+a.ea,.2)[0],a.el[1]+rot(a.sa+a.ea,.2)[1],2.7,2.5),r:tc,kind:'cloth',z,grp:g+'c',mod:front?null:darker})});O.noBelt=1;break;
+  case'jardineiras':{const pc=O.thigh;O.neck.push(collar(tc));O.arm.push(cuffs(tc));
+    O.torso.push((F,J,z)=>{const{nX,nY,pX,pY}=pr(J);draw(F,{sh:poly([[nX-2.6,nY+5.2],[nX+5.4,nY+4.8],[pX+5.4,pY-3],[pX+5.6,pY+1.6],[pX-5.4,pY+1.8],[pX-5.2,pY-3]],1.8),r:pc,kind:'cloth',z:z+.2,grp:'bib'});
+      draw(F,{sh:poly([[nX-1.4,nY+6.4],[nX+4,nY+6.2],[nX+4.2,nY+9.6],[nX-1.2,nY+9.8]],1),r:pc.map(c=>mixc(c,[0,0,0],.12)),kind:'cloth',z:z+.3,grp:'pkt'});
+      line(F,null,nX-2.4,nY+5.4,nX-4.2,nY+1.4,pc[2]);line(F,null,nX+5,nY+5,nX+3.8,nY+1.4,pc[1]);px(F,null,nX-2.2,nY+5.6,[244,197,79]);px(F,null,nX+4.8,nY+5.2,[244,197,79])});break}
+  case'capuz':O.arm.push(cuffs(tc.map(c=>mixc(c,[0,0,0],.15))));O.back.push((F,J)=>{const{nX,nY}=pr(J);draw(F,{sh:ellipse(nX-3.6,nY+1.4,4.6,3.4,-.5),r:tc,kind:'cloth',z:17.3,grp:'hood',mod:(k,n)=>n.ny<-.2?k:k-1})});
+    O.torso.push((F,J,z)=>{const{nX,nY,pX,pY}=pr(J);draw(F,{sh:poly([[pX-3.4,pY-6.6],[pX+5.2,pY-7],[pX+6,pY-1.6],[pX-3.8,pY-1.4]],1.4),r:tc.map(c=>mixc(c,[0,0,0],.08)),kind:'cloth',z:z+.2,grp:'pocket'});
+      line(F,null,nX+1,nY+2.4,nX+.8,nY+6.4,[239,228,200]);line(F,null,nX+3.2,nY+2.4,nX+3.4,nY+6,[239,228,200])});O.torso.push(hemLine(tc[1],1));break;
+  case'casaco':{const inner=CREAM;O.arm.push(cuffs(tc.map(c=>mixc(c,[0,0,0],.12))));
+    O.torso.push((F,J,z)=>{const{nX,nY,pX,pY}=pr(J);draw(F,{sh:poly([[nX+.4,nY+1.8],[nX+3.4,nY+1.8],[pX+3.6,pY-1],[pX+.6,pY-1]],1.2),r:inner,kind:'cloth',z:z+.1,grp:'inner'});
+      draw(F,{sh:poly([[nX+3.2,nY+1.2],[nX+5.6,nY+2],[nX+4.6,nY+7.4],[nX+3.4,nY+5]],1),r:tc.map(c=>mixc(c,[0,0,0],.1)),kind:'cloth',z:z+.2,grp:'lapel'});
+      line(F,null,nX+3.4,nY+5.6,pX+3.6,pY-1,tc[0]);draw(F,{sh:poly([[pX+3.8,pY-4.4],[pX+6.2,pY-4.6],[pX+6.2,pY-3.8],[pX+3.8,pY-3.6]],.6),r:tc.map(c=>mixc(c,[0,0,0],.25)),kind:'cloth',z:z+.2,grp:'pk2'})});
+    O.hang.push(skirt(tc,2.6,{flare:.6,top:2,grp:'jhem',z:-.2}));break}
+  case'real':{const gd=hx('#f4c54f');O.topPat=O.sleevePat=(X,Y)=>((X+Y*2)%9===0)?GOLDR:null;O.neck.push(collar(GOLDR));O.arm.push(cuffs(GOLDR));
+    O.hang.push(skirt(tc,6.5,{flare:1.6,hem:gd,top:2.6,pat:(X,Y)=>((X+Y*2)%9===0)?GOLDR:null}));O.torso.push((F,J,z)=>{const{nX,nY,pY}=pr(J);line(F,null,nX+1.8,nY+3,nX+2.2,pY-3,gd)});O.noBelt=1;break}
+  case'manto':{const W=R(['#7a6e58','#b0a488','#d8ceb4','#f6f1e4','#fffcf2','#ffffff']);O.top=O.sleeves=O.fore=W;O.neck.push(collar(GOLDR,'v'));O.arm.push(cuffs(GOLDR));
+    O.hang.push(skirt(W,21,{flare:3,hem:[244,197,79],band:[244,197,79]}));O.torso.push((F,J,z)=>{const{nX,nY,pY}=pr(J);line(F,null,nX+2,nY+5,nX+2.4,pY-3,[244,197,79])});O.noBelt=1;O.longRobe=1;break}
+  case'estelar':{const N=R(['#06081e','#0c1236','#151d4a','#1f2a6a','#2c3c8c','#4256b4']),star=R(['#b8b080','#e0d8a8','#fff4c8','#fffbe6','#ffffff','#ffffff']);O.top=O.sleeves=O.fore=N;
+    O.topPat=O.sleevePat=O.forePat=(X,Y)=>((X*7+Y*11)%23===0)?star:null;O.neck.push(collar(R(['#2a3a8a','#3a4aa8','#5a6ac8','#8a9ae0','#c0c8f4','#ffffff'])));
+    O.torso.push((F,J)=>{const{nX,nY}=pr(J);glow(F,nX-1,nY+6,[255,250,220],.6);glow(F,nX+3,nY+10,[255,250,220],.5)});break}
+  default:O.neck.push(collar(tc))}}
+// the bloodline clothes: tunics, armour and robes in their own colours
+function linTop(O,id,T,c1,c2,c3,r1,r2,r3,p){O.top=O.sleeves=O.fore=T;const sk=O.skin;
+  switch(id){
+  case'tsol1':O.neck.push(collar(GOLDR));O.arm.push(cuffs(GOLDR));O.hang.push(skirt(T,7,{flare:1.8,hem:c1,top:2.6}));O.torso.push((F,J)=>{const{nX,nY}=pr(J);EMB.sun(F,null,nX+2.2,nY+6.4,c2)});O.belt=[r2||LEATH,GOLDR];break;
+  case'tsol2':{const plate=R(['#5a3a08','#8a5e14','#c08a28','#eab84a','#ffdc7a','#fff6d0']);O.top=plate;O.topKind='metal';O.sleeves=O.fore=r2;
+    O.torso.push((F,J,z)=>{breastplate(F,J,z,plate,{trim:c1});const{nX,nY}=pr(J);EMB.sun(F,null,nX+2,nY+6.6,c2);glow(F,nX+2,nY+6.6,[255,214,110],.5)});
+    O.arm.push((F,a,z,front)=>pauldron(F,a,z+.3,plate,front,{trim:c1,rx:4.3,ry:3.7}));O.belt=[LEATH,GOLDR];O.mail=1;break}
+  case'tsol3':O.neck.push(collar(GOLDR,'v'));O.arm.push(cuffs(GOLDR));O.hang.push(skirt(T,21,{flare:3,hem:c1,band:c1}));O.torso.push((F,J)=>{const{nX,nY,pX,pY}=pr(J);for(let i=0;i<3;i++)line(F,null,nX-4+i*.6,nY+3+i*.4,pX+5+i*.6,pY-2+i*.4,c2)});O.longRobe=1;O.noBelt=1;break;
+  case'tlua1':O.topPat=O.sleevePat=O.forePat=(X,Y)=>((X*5+Y*3)%19===0)?r1:null;O.neck.push(collar(r2));O.arm.push(cuffs(r2));O.hang.push(skirt(T,6,{flare:1.4,hem:c2,top:2.6}));O.belt=[R(['#0c0e2a','#151a40','#1e2456','#2a3170','#3a4290','#5a62b0']),R(['#6a7090','#9aa0c0','#c8cee8','#e8eeff','#f4f8ff','#ffffff'])];break;
+  case'tlua2':O.neck.push(collar(r2,'v'));O.arm.push(cuffs(r2));O.hang.push(skirt(T,12,{flare:2.4,hem:c2,band:c3}));O.torso.push((F,J)=>{const{nX,nY}=pr(J);EMB.moon(F,null,nX+2.2,nY+6.4,c1)});O.noBelt=1;break;
+  case'tlua3':O.topPat=O.sleevePat=(X,Y)=>((X*7+Y*5)%29===0)?R(['#8a90b0','#b8c0e0','#e0e6ff','#ffffff','#ffffff','#ffffff']):null;O.neck.push(collar(r3,'v'));O.arm.push(cuffs(r3));
+    O.hang.push(skirt(T,21,{flare:3.2,hem:c3,band:c3,pat:(X,Y)=>((X*7+Y*5)%29===0)?R(['#8a90b0','#b8c0e0','#e0e6ff','#ffffff','#ffffff','#ffffff']):null}));O.torso.push((F,J)=>{const{nX,nY}=pr(J);EMB.moon(F,null,nX+2.2,nY+6.6,c2,1);glow(F,nX+2.2,nY+6.6,[255,244,200],.6)});O.longRobe=1;O.noBelt=1;break;
+  case'traiz1':O.topKind='leather';O.neck.push(collar(r3));O.hang.push(skirt(T,7,{flare:1.6,kind:'leather',top:2.6,hem:c2}));
+    O.torso.push((F,J)=>{const{nX,nY,pX,pY}=pr(J);for(let i=0;i<5;i++){const x=nX-3+i*1.8;EMB.leaf(F,null,x,nY+2.6+(i%2)*.6)}});O.belt=[LEATH,R(['#2a4a1a','#3a7a28','#5aa838','#8fd65a','#c8ff7a','#eaffc0'])];break;
+  case'traiz2':{O.topKind='leather';O.sleeves=O.fore=T;O.topPat=O.sleevePat=O.forePat=(X,Y)=>(X%5===0&&(Y>>1)%3!==0)?r1:((X*3+Y*7)%31===0?r3:null);
+    O.torso.push((F,J,z)=>{breastplate(F,J,z,T,{kind:'leather'});const{nX,nY}=pr(J);for(const[a,b]of[[-2,4],[4,8],[0,11]])draw(F,{sh:ellipse(nX+a,nY+b,1.4,1,.4),r:r3,kind:'cloth',z:z+.5,grp:'moss'+a})});
+    O.arm.push((F,a,z,front)=>pauldron(F,a,z+.3,T,front,{kind:'leather',rx:4.4,ry:3.8}));O.belt=[LEATH,R(['#3a2410','#5a3a20','#7a5232','#a07a4a','#c8a070','#e8c898'])];break}
+  case'traiz3':{const moss=T;O.topKind='leather';O.sleeves=O.fore=R(['#141c12','#1e2e1c','#2c4128','#3f5a3a','#5a7a52','#7a9a70']);
+    O.torso.push((F,J,z)=>{breastplate(F,J,z,moss,{kind:'leather',trim:c3});const{nX,nY}=pr(J);draw(F,{sh:ellipse(nX+2,nY+6.6,1.6,1.8),r:R(['#7a3a08','#b0601a','#e08a2a','#ffb64a','#ffd88a','#fff2c8']),kind:'gem',z:z+.6,grp:'amber'});glow(F,nX+2,nY+6.6,[255,182,74],.7);
+      for(const[a,b]of[[-2,9],[5,9.6],[-3,4.6]])glow(F,nX+a,nY+b,[200,255,122],.55)});
+    O.arm.push((F,a,z,front)=>pauldron(F,a,z+.3,moss,front,{kind:'leather',rx:4.5,ry:3.9,trim:c3}));O.belt=[LEATH,R(['#3a2410','#5a3a20','#7a5232','#a07a4a','#c8a070','#e8c898'])];O.mail=1;break}
+  }}
+function pantsSpec(O,look){const pc=rmp(look.pc,{cool:250}),sk=O.skin;O.thigh=pc;O.shin=pc;
+  if(look.pt==='calcoes'){O.thigh=sk;O.thighKind='skin';O.shin=sk;O.shinKind='skin';O.leg.push((F,l,z,front,g)=>{const e=[l.hip[0]+(l.kn[0]-l.hip[0])*.74,l.hip[1]+(l.kn[1]-l.hip[1])*.74];draw(F,{sh:capsule(l.hip[0],l.hip[1]-1,e[0],e[1],BODY.th*1.08,BODY.th*1.02),r:pc,kind:'cloth',z:z-.3,grp:g+'h',mod:front?null:darker});
+    draw(F,{sh:capsule(e[0]-(l.kn[0]-l.hip[0])*.05,e[1]-(l.kn[1]-l.hip[1])*.05,e[0],e[1],BODY.th*1.12,BODY.th*1.1),r:pc.map(c=>mixc(c,[0,0,0],.18)),kind:'cloth',z:z-.25,grp:g+'hm',mod:front?null:darker})})}
+  else if(look.pt==='saia'){O.thigh=sk;O.thighKind='skin';O.shin=sk;O.shinKind='skin';O.hang.push(skirt(pc,9,{flare:2.6,hem:pc[1],band:pc[1]}))}
+  else O.leg.push((F,l,z,front,g)=>{});}
+const J0=O=>BODY;
+// ---------- what is carried and worn on top ----------
+function cape(F,J,z,out,lin,o){o=o||{};const[nX,nY]=J.nk,w=J.capeW||0,len=(o.len||34)*(J.P.ground==='seat'?.6:1),N=7,hem=[];
+  const w2=w+.9;for(let i=0;i<=N;i++){const a=i/N;hem.push([nX-12.5-w2*2.6+a*15.5+Math.sin(J.f*.8+a*5)*w*.9,nY+len+Math.sin(a*PI*3+J.f*.9)*1.3-a*2.4+(o.points&&i%2?2.2:0)])}
+  const P=[[nX-6.4,nY+1.2],[nX+3,nY+1],[nX+4.4,nY+len*.55],...hem.slice().reverse(),[nX-10.4-w2*1.2,nY+len*.52],[nX-8.6,nY+len*.2]];
+  draw(F,{sh:poly(P,2.2,[.05,0]),r:out,kind:'cloth',z,noShadow:true,grp:'cape',pat:o.pat,mod:(k,n,X,Y)=>{const fold=Math.sin((X/U-nX)*.9+Y/U*.12+J.f*.6*w);if(o.tatter&&Y/U>nY+len-5&&((X*7+Y*3)%6)<1)return null;return k+(fold>.55?1:fold<-.6?-1:0)}});
+  draw(F,{sh:poly([[nX+3,nY+2],[nX+4.4,nY+len*.55],[hem[N][0]+.5,hem[N][1]-1],[hem[N][0]-2.5,hem[N][1]-2.5],[nX+2.2,nY+len*.5]],1.4),r:lin,kind:'cloth',z:z+.01,noShadow:true,grp:'cape'});
+  if(o.trim)for(let i=0;i<N;i++)line(F,null,hem[i][0],hem[i][1]-1,hem[i+1][0],hem[i+1][1]-1,o.trim);
+  if(o.clasp)draw(F,{sh:ellipse(nX+3.2,nY+2.4,1.3,1.2),r:o.clasp,kind:'metal',z:17.9,grp:'clasp'})}
+// wings: feathers, bat skin, insect lobes, leaves or crystal; the far wing higher and darker behind the near one
+function wingPal(id,wf){const P=(typeof LWPAL!=='undefined'&&LWPAL[id])||WPAL[id]||{X:'#e4f3fb',x:'#9ac8e0',Z:'#ffffff',z:'#7aa8c0'};const q=Array.isArray(P)?P[wf?1:0]:P;return q}
+const WTYPE={asas:['f',.62],asasanjo:['f',1],asasfenix:['f',1],asaszenite:['f',1.15],asasaurora:['f',.95],asasdiabo:['b',.95],asasvazio:['b',1],asaseclipse:['b',1.05],asasfada:['i',.85],asasborboleta:['i',.95],asasmariposa:['i',1],asasgelo:['c',1.4],asasfolha:['l',1.45]};
+function wing(F,J,id,wf,far){const[t,sz]=WTYPE[id],pal=wingPal(id,wf),X=rmp(pal.X,{hs:1}),xs=rmp(pal.x,{hs:1}),Z=rmp(pal.Z,{hs:.6}),zz=rmp(pal.z||pal.x,{hs:1});
+  const[nX,nY]=J.nk,R0=[nX-2.4,nY+4],S=24*sz,fl=wf?1:0,dk=far?(k=>Math.max(0,k-1)):null,z=far?1:2.5,g='w'+(far?'f':'n'),rs=far?.75:1;
+  // the far wing is the near one seen from the other side: mirrored to the right, narrower, a little higher
+  const mp=far?p=>[R0[0]+(R0[0]-p[0])*.5+3.4,p[1]-1.6]:p=>p,M=a=>a.map(mp),flapY=fl?-.12:0,lift=p=>[p[0],p[1]+(p[1]-R0[1])*flapY];
+  const pt=(dx,dy)=>mp(lift([R0[0]+dx*S,R0[1]+dy*S]));
+  if(t==='f'){// a leading edge up to the wrist and out to the tip; feathers hang from it, longer towards the tip
+    const N=9,lead=[],tips=[];for(let i=0;i<=N;i++){const u=i/N;let p;if(u<.5){const v=u/.5;p=[-.3*v,-.78*v+.1*v*v]}else{const v=(u-.5)/.5;p=[-.3-.5*v,-.68+.38*v*v]}
+      const ang=PI/2+.1+u*.75+(fl?.1:0),len=.34+.5*Math.pow(u,.8);lead.push(pt(p[0],p[1]));tips.push(pt(p[0]+Math.cos(ang)*len,p[1]+Math.sin(ang)*len))}
+    draw(F,{sh:poly([...lead,...tips.slice().reverse()],2.4,[.04,-.04]),r:xs,kind:'cloth',z:z-.05,grp:g,noShadow:true,mod:dk});
+    for(let i=N;i>=1;i--){const p=lead[i],q=tips[i];draw(F,{sh:capsule(p[0],p[1],q[0],q[1],(1.7+i*.1)*rs,.8*rs),r:X,kind:'cloth',z:z+i*.001,grp:g+i,noShadow:true,mod:(k,n)=>dk?dk(n.t>.8?k+1:k):(n.t>.8?k+1:k),pat:(x,y,k,n)=>n.t>.84?Z:null})}
+    for(let i=0;i<N;i++){const p=lead[i],q=lead[i+1];draw(F,{sh:capsule(p[0],p[1]+1.1,q[0],q[1]+1.3,2.3*rs,2.1*rs),r:Z,kind:'cloth',z:z+.02,grp:g+'c',noShadow:true,mod:dk})}
+    if(!far&&(id==='asasfenix'||id==='asaszenite'))for(let i=3;i<=N;i+=2)glow(F,tips[i][0],tips[i][1],hx(pal.Z),.6);
+    if(!far&&id==='asasaurora')for(let i=2;i<=N;i+=3)glow(F,tips[i][0],tips[i][1],hx(pal.z),.45);
+    return}
+  if(t==='b'){// bat: the arm to the wrist, fingers fanning out, skin between them with a scalloped edge
+    const Wr=pt(-.36,-.62),f=[pt(-.98,-.5),pt(-.95,-.06),pt(-.72,.26),pt(-.36,.4)],R=mp(R0),mid=(a,b,k)=>[(a[0]+b[0])/2+(R[0]-(a[0]+b[0])/2)*k,(a[1]+b[1])/2+(R[1]-(a[1]+b[1])/2)*k];
+    draw(F,{sh:poly([R,Wr,f[0],mid(f[0],f[1],.12),f[1],mid(f[1],f[2],.14),f[2],mid(f[2],f[3],.14),f[3],mid(f[3],[R[0],R[1]+S*.2],.1),[R[0]+.4,R[1]+S*.2]],2.2,[.05,-.02]),r:X,kind:'leather',z,grp:g,noShadow:true,mod:dk});
+    limb(F,R,Wr,1.3*rs,1*rs,xs,'leather',z+.1,g+'a',dk);for(const q of f)limb(F,Wr,q,.8*rs,.4*rs,xs,'leather',z+.1,g+'b',dk);
+    draw(F,{sh:poly([[Wr[0]-1.3,Wr[1]+.3],[Wr[0]-.4,Wr[1]-3.2],[Wr[0]+.8,Wr[1]]],.8),r:Z,kind:'metal',z:z+.2,grp:g+'z',mod:dk});
+    if(!far&&(id==='asaseclipse'||id==='asasvazio'))for(const q of f)glow(F,q[0],q[1],hx(pal.Z),id==='asaseclipse'?.7:.5);
+    return}
+  if(t==='i'){// insect: a big fore wing and a round hind wing, veins and a darker border with spots
+    const R=mp(R0),lobe=(c,rx,ry,a,r,zz2)=>{const C=pt(c[0],c[1]);draw(F,{sh:ellipse(C[0],C[1],rx*S*(far?.6:1),ry*S,far?-a:a),r,kind:'cloth',z:zz2,grp:g+zz2,noShadow:true,mod:(k,n)=>{const e=Math.hypot(n.nx,n.ny);return(dk?dk(k):k)-(e>.82?1:0)},
+      pat:(x,y,k,n)=>{const e=Math.hypot(n.nx,n.ny);return e>.86?xs:(id!=='asasfada'&&e>.62&&((x*3+y*5)%13===0))?Z:null}});return C};
+    const C1=lobe([-.36,-.42],.42,.22,.75,X,z),C2=lobe([-.3,.08],.27,.17,-.4,X,z-.02);
+    for(let i=0;i<4;i++){const q=pt(-.36-.42*Math.cos(.75-.3+i*.22)*1.1,-.42-.42*Math.sin(.75-.3+i*.22)*1.1+.04*i);line(F,null,R[0],R[1],q[0],q[1],xs[far?0:1])}
+    if(id==='asasmariposa')draw(F,{sh:ellipse(C1[0],C1[1]+1,1.8*(far?.6:1),1.8),r:zz,kind:'gem',z:z+.1,grp:g+'e'});
+    if(id==='asasfada'&&!far)for(let i=0;i<5;i++)glow(F,C1[0]+Math.cos(i*1.7)*S*.25,C1[1]+Math.sin(i*2.3)*S*.12,[255,240,252],.45);
+    return}
+  if(t==='l'){// leaves fanned like feathers, each with its rib
+    const R=mp(R0);for(let i=0;i<5;i++){const a=-3.05+i*.36,L=.74-Math.abs(i-2)*.08,q=pt(Math.cos(a)*L,Math.sin(a)*L),m=[(R[0]+q[0])/2,(R[1]+q[1])/2],dx=q[0]-R[0],dy=q[1]-R[1],l=Math.hypot(dx,dy),nx2=-dy/l,ny2=dx/l,wd=l*.2;
+      draw(F,{sh:poly([R,[m[0]+nx2*wd,m[1]+ny2*wd],q,[m[0]-nx2*wd,m[1]-ny2*wd]],1.6),r:i%2?xs:X,kind:'cloth',z:z+i*.01,grp:g+i,noShadow:true,mod:dk});line(F,null,R[0],R[1],q[0],q[1],Z[1])}
+    return}
+  if(t==='c'){// shards of ice fanned up and back
+    const R=mp(R0);for(let i=0;i<6;i++){const a=-3.1+i*.3,L=.86-Math.abs(i-2.5)*.1,q=pt(Math.cos(a)*L,Math.sin(a)*L),dx=q[0]-R[0],dy=q[1]-R[1],l=Math.hypot(dx,dy),nx2=-dy/l*2.9*rs,ny2=dx/l*2.9*rs;
+      draw(F,{sh:poly([[R[0]+nx2,R[1]+ny2],q,[R[0]-nx2,R[1]-ny2]],1),r:i%2?xs:X,kind:'crystal',z:z+i*.01,grp:g+i,noShadow:true,mod:dk});if(!far&&i%2===0)glow(F,q[0],q[1],hx(pal.Z),.5)}}}
+function accSpec(O,look,opt){const a=look.acc;if(!a||a==='nada')return;
+  if(WTYPE[a]){O.back.push((F,J)=>{wing(F,J,a,opt.wf,true);wing(F,J,a,opt.wf,false)});O.wings=1;return}
+  const P=wingPal(a,opt.wf),X=P&&P.X?rmp(P.X):null,xs=P&&P.x?rmp(P.x):null,Zc=P&&P.Z?hx(P.Z):null,Zr=P&&P.Z?rmp(P.Z):null;
+  switch(a){
+  case'capa':O.back.push((F,J)=>cape(F,J,2,rmp('#a0283a'),rmp('#701a28'),{clasp:GOLDR}));break;
+  case'capaestelar':O.back.push((F,J)=>{cape(F,J,2,X,xs,{trim:Zc,clasp:GOLDR,pat:(x,y)=>((x*7+y*11)%23===0)?Zr:null});const[nX,nY]=J.nk;glow(F,nX-6,nY+14,[255,250,220],.6);glow(F,nX-3,nY+24,[255,250,220],.5)});break;
+  case'capasol':O.back.push((F,J)=>cape(F,J,2,X,xs,{trim:Zc,clasp:GOLDR}));break;
+  case'capasol2':O.back.push((F,J)=>cape(F,J,2,X,xs,{trim:Zc,clasp:GOLDR,len:36,pat:(x,y)=>((x+y)%11===0)?Zr:null}));break;
+  case'capalua':O.back.push((F,J)=>cape(F,J,2,X,xs,{trim:Zc,clasp:R(['#6a7090','#9aa0c0','#c8cee8','#e8eeff','#f4f8ff','#ffffff']),pat:(x,y)=>((x*5+y*9)%29===0)?Zr:null}));break;
+  case'capalua2':O.back.push((F,J)=>cape(F,J,2,X,xs,{trim:Zc,len:36,clasp:R(['#6a7090','#9aa0c0','#c8cee8','#e8eeff','#f4f8ff','#ffffff']),points:1}));break;
+  case'caparaiz':O.back.push((F,J)=>cape(F,J,2,X,xs,{trim:Zc,points:1,clasp:LEATH}));break;
+  case'caparaiz2':O.back.push((F,J)=>cape(F,J,2,X,xs,{trim:Zc,len:36,tatter:1,clasp:LEATH,pat:(x,y)=>((x*3+y*7)%13===0)?Zr:null}));break;
+  case'cachecol':{const r=rmp('#d23a4e');O.neck.push((F,J,z)=>{const{nX,nY}=pr(J);draw(F,{sh:capsule(nX-3.4,nY+.8,nX+3.6,nY+1.4,2.2,2.2),r,kind:'cloth',z:z+.6,grp:'scarf',mod:(k,n,X,Y)=>k-((X+Y)%3===0?1:0)});
+      const sw=J.pose==='walk'?Math.sin(J.f*.8)*.6:0;draw(F,{sh:poly([[nX+1.4,nY+1.8],[nX+4,nY+2],[nX+4.6+sw,nY+10],[nX+2+sw,nY+10.2]],1.2),r,kind:'cloth',z:z+.55,grp:'scarf2',mod:(k,n,X,Y)=>k-((Y%4===0)?1:0)});
+      for(let i=0;i<3;i++)line(F,null,nX+2.2+i*.9+sw,nY+10.2,nX+2.2+i*.9+sw,nY+11.2,r[2])});break}
+  case'colar':O.neck.push((F,J,z)=>{const{nX,nY}=pr(J);for(let i=0;i<=8;i++){const t=i/8,x=nX-2.6+t*6.4,y=nY+2.4+Math.sin(t*PI)*2.4;px(F,null,x,y,i%2?[240,206,110]:[200,150,60])}
+      draw(F,{sh:ellipse(nX+.6,nY+5.6,1,1.2),r:R(['#5a1020','#8a1a30','#c02a48','#ef5a7f','#ff9ab4','#ffe0ea']),kind:'gem',z:z+.6,grp:'pend'})});break;
+  case'mochila':O.back.push((F,J)=>{const{nX,nY,pY,B}=pr(J),x0=nX-B.sh*.5-3.6;draw(F,{sh:poly([[x0,nY+3],[x0+4.4,nY+2.6],[x0+5,pY-2],[x0+.4,pY-1.4]],2,[-.05,0]),r:rmp('#a06a3a'),kind:'leather',z:15,grp:'pack'});
+      draw(F,{sh:poly([[x0-.3,nY+2.8],[x0+4.6,nY+2.4],[x0+4.4,nY+7.4],[x0-.2,nY+7.8]],1.4),r:rmp('#8a5a30'),kind:'leather',z:15.1,grp:'flap'});px(F,null,x0+2,nY+7,[232,192,96])});
+    O.torso.push((F,J,z)=>{const{nX,nY,pY}=pr(J);draw(F,{sh:capsule(nX+3.4,nY+1.6,nX+2.6,pY-4,.9,.9),r:rmp('#6a4424'),kind:'leather',z:z+.4,grp:'strap'})});break;
+  case'bolsa':O.back.push((F,J)=>{const{pX,pY,B}=pr(J);draw(F,{sh:poly([[pX-B.hip-4.4,pY-2],[pX-B.hip+.4,pY-2.4],[pX-B.hip+.6,pY+3.4],[pX-B.hip-4.2,pY+3.6]],1.6),r:rmp('#a06a3a'),kind:'leather',z:15,grp:'bag'})});
+    O.torso.push((F,J,z)=>{const{nX,nY,pX,pY}=pr(J);draw(F,{sh:capsule(nX+4,nY+1.6,pX-4,pY-1.6,.8,.8),r:rmp('#6a4424'),kind:'leather',z:z+.45,grp:'bstrap'})});break;
+  case'papillon':O.neck.push((F,J,z)=>{const{nX,nY}=pr(J),r=rmp('#d23a4e');draw(F,{sh:poly([[nX+.2,nY+1.6],[nX+2.2,nY+2.6],[nX+.2,nY+3.6]],.8),r,kind:'cloth',z:z+.7,grp:'bow'});draw(F,{sh:poly([[nX+4.4,nY+1.6],[nX+2.4,nY+2.6],[nX+4.4,nY+3.6]],.8),r,kind:'cloth',z:z+.7,grp:'bow2'});draw(F,{sh:ellipse(nX+2.3,nY+2.6,.9,.9),r:rmp('#8a1a2a'),kind:'cloth',z:z+.75,grp:'knot'})});break;
+  case'redondos':O.head.push((F,J,z)=>{const[x,y]=headPx(J),c=[214,164,70],d=[150,104,40];
+      for(const[X,Y,q]of[[-1,-1,c],[0,-1,c],[1,-1,c],[2,-1,d],[-2,0,c],[-2,1,c],[-2,2,d],[3,0,d],[3,1,d],[3,2,d],[-1,3,d],[0,3,d],[1,3,d],[2,3,d],[4,-1,c],[5,-1,c],[6,-1,d],[4,3,d],[5,3,d],[6,3,d],[4,0,d],[4,1,d],[4,2,d],[-3,0,d],[-4,0,d]])pxp(F,null,x+X,y+Y,q);pxp(F,null,x-1,y,[255,255,255])});break;
+  case'oculos':O.head.push((F,J,z)=>{const[x,y]=headPx(J),k=[22,20,26],g=[60,72,90];for(let X=-1;X<=2;X++)for(let Y=0;Y<=2;Y++)pxp(F,null,x+X,y+Y,Y===0?k:g);for(let Y=0;Y<=2;Y++){pxp(F,null,x+5,y+Y,Y===0?k:g);pxp(F,null,x+6,y+Y,Y===0?k:g)}
+      pxp(F,null,x+3,y+.5|0,k);pxp(F,null,x+4,y,k);pxp(F,null,x-2,y,k);pxp(F,null,x-3,y+1,k);pxp(F,null,x,y+1,[154,176,192]);pxp(F,null,x+5,y+1,[120,140,160])});O.eyesHidden=1;break;
+  case'bigode':O.head.push((F,J,z)=>{const[x,y]=headPx(J),r=O.hairR;const c=r[1],d=r[0],l=r[2];for(const[X,Y,q]of[[2,6,c],[3,5,l],[4,5,l],[5,5,c],[6,5,c],[3,6,d],[6,6,d],[7,6,d],[1,6,d]])pxp(F,null,x+X,y+Y,q)});break;
+  }}
+// what the hands hold in some poses
+function heldSpec(O,pose,opt){
+  if(pose==='read'||pose==='read2')O.held=(F,J)=>{const[a,b]=[J.aF.fist,J.aB.fist],c=[(a[0]+b[0])/2-.6,(a[1]+b[1])/2-1.6],r=rmp('#a03a2e'),pg=CREAM,u=[-.5,-.86],v=[.86,-.5],P=(s,t)=>[c[0]+u[0]*s+v[0]*t,c[1]+u[1]*s+v[1]*t];
+    // an open book tilted towards the face: the red cover, the block of pages, the page being read
+    draw(F,{sh:poly([P(-1,-4.4),P(-1,4),P(6.4,4.2),P(6.6,-4.2)],1.2),r,kind:'leather',z:30.12,grp:'cov'});
+    draw(F,{sh:poly([P(.2,-3.6),P(.2,3.4),P(5.8,3.4),P(5.9,-3.6)],1),r:pg,kind:'cloth',z:30.14,grp:'pgs'});
+    for(let i=0;i<3;i++)line(F,null,...P(1.4+i*1.4,-2.6),...P(1.4+i*1.4,2.4),[176,156,124]);
+    if(pose==='read2')draw(F,{sh:poly([P(.4,.2),P(.4,3.2),P(4.6,5.6),P(4.8,1.6)],.8),r:pg,kind:'cloth',z:30.16,grp:'pg3'})};
+  if(pose==='flute')O.held=(F,J)=>{const[x,y]=J.head,m=[x+3.4*HS,y+6*HS],d=[.86,.5],e=[m[0]+d[0]*13,m[1]+d[1]*13];limb(F,m,e,.75,.75,R(['#3a2a1a','#5a3e24','#8a6036','#b8864a','#e0b070','#fbe0b0']),'leather',33,'flute');
+    for(let i=1;i<5;i++)px(F,null,m[0]+d[0]*(3+i*2),m[1]+d[1]*(3+i*2)-.3,[40,26,16])};
+  if(pose==='water')O.held=(F,J)=>{const h=J.aF.fist,r=R(['#1a3a3a','#24584e','#3a8070','#5aa890','#8ad0b8','#c8f0e0']),c=[h[0]+2.4,h[1]+3.6];
+    draw(F,{sh:poly([[c[0]-3.4,c[1]-2.4],[c[0]+3,c[1]-2.6],[c[0]+3.4,c[1]+3],[c[0]-3.6,c[1]+3.2]],1.6),r,kind:'metal',z:31,grp:'can'});limb(F,[c[0]+2.6,c[1]+.6],[c[0]+9,c[1]-2.6],.8,.6,r,'metal',30.9,'spout');
+    draw(F,{sh:ellipse(c[0]+9.4,c[1]-2.8,1.2,.9,.5),r,kind:'metal',z:31,grp:'rose'});limb(F,[c[0]-2.6,c[1]-2.2],[h[0]-.4,h[1]-1.4],.55,.55,r,'metal',30.8,'hdl')};
+  if(opt.umb)O.held=(F,J)=>{const h=J.aF.fist,top=[h[0]+.4,J.head[1]-6.2*HS-3],r=rmp('#4f8a34');limb(F,[h[0],h[1]+1.6],top,.45,.45,R(['#2a1a10','#4a3020','#6a4830','#8a6040','#a87850','#c89a6a']),'leather',35,'shaft');
+    const W=11.5,P=[];for(let i=0;i<=10;i++){const t=i/10,a=PI+t*PI;P.push([top[0]+Math.cos(a)*W,top[1]+Math.sin(a)*W*.62+3])}for(let i=10;i>=0;i--){const t=i/10;P.push([top[0]-W+t*2*W,top[1]+3+(i%2?.9:0)])}
+    draw(F,{sh:poly(P,3,[0,-.15]),r,kind:'cloth',z:36,grp:'umb',mod:(k,n,X,Y)=>k-((Math.round(X/U-top[0])%5===0)?1:0)});draw(F,{sh:ellipse(top[0],top[1]-4,.8,.8),r:GOLDR,kind:'metal',z:36.1,grp:'tip'})}}
+// ---------- a look becomes an outfit ----------
+const HKEEP=typeof HATKEEP!=='undefined'?HATKEEP:{};
+function outfit(look,pose,opt){const sk=skinRamp(((AVSKIN[look.skin]||AVSKIN[0])[0])),hr=rmp(look.hc||'#5a3a22',{hs:1.1});
+  const O={skin:sk,eye:hx(look.ec||'#1b1512'),lash:hr[0].map(v=>v*.7|0),brow:hr[1],hairR:hr,lip:null,top:null,topKind:'cloth',sleeves:null,sleeveKind:'cloth',fore:null,foreKind:'cloth',thigh:null,thighKind:'cloth',shin:null,shinKind:'cloth',
+    boots:rmp(look.sc||'#2e2420',{k:.95}),gloves:sk,glovesKind:'skin',back:[],hairBack:[],torso:[],neck:[],head:[],hang:[],arm:[],leg:[],held:null,awake:!!opt.awake};
+  pantsSpec(O,look);topSpec(O,look);
+  if(O.longRobe){O.thigh=O.top;O.shin=O.top}
+  if(!O.noBelt&&!O.belt&&look.pt!=='saia'){O.hang.push((F,J)=>{const{pX,pY,B}=pr(J);draw(F,{sh:poly([[pX-B.hip-.8,pY-3.6],[pX+B.hip+1,pY-3.9],[pX+B.hip+1,pY-2.5],[pX-B.hip-.8,pY-2.2]],.7),r:LEATH,kind:'leather',z:ZH+.9,grp:'belt'});px(F,null,pX+2.4,pY-3.1,[232,192,96]);px(F,null,pX+3.2,pY-3.1,[176,130,60])})}
+  if(O.belt){const[b,k]=O.belt;O.hang.push((F,J)=>belt(F,J,b,k))}
+  // hair, then whatever covers it
+  const hat=look.hat&&look.hat!=='nada'&&!opt.noHat?look.hat:null,hair=look.hair||'curto',clip=hat&&!HKEEP[hat]?-8:null;
+  if(hair!=='careca'&&HAIR[hair]){O.head.push(hairDraw(hair,hr,clip));if(clip==null||hair==='comprido'||hair==='ondulado'||hair==='rabo'||hair==='trancas'){O.hairBack.push(hairBackFn(hair,hr));O.head.push(hairFrontFn(hair,hr))}}
+  accSpec(O,look,opt);
+  if(hat){const h=hatDraw(hat,look.hc);if(h)O.head.push(h)}
+  heldSpec(O,pose,opt);
+  return O}
+// ---------- one frame: pixels and what the game needs to know about them ----------
+function render(look,pose,f,opt){opt=opt||{};GID=0;const lie=pose==='lie';if(lie&&look.acc&&WTYPE[look.acc])look={...look,acc:'nada'};const J=rig(lie?'lie':pose,f,BODY,opt),O=outfit(look,pose,opt),F=new Frame();F.__sk=O.skin;
+  if(lie)setLight(.72,-.55,.52);
+  try{drawBody(F,J,O)}finally{if(lie)setLight(-.55,-.72,.52)}
+  let px=finish(F);
+  // eyes that can blink: only where nothing (glasses, a visor) covers them
+  let blink=null;if(F.eyes&&!O.eyesHidden&&!(J.P.closed&&!O.awake)){blink=[];for(const[X,Y,c]of F.eyes){const j=(Y*CW+X)*4;if(px[j+3])blink.push([X,Y,c])}}
+  const[hxp,hyp]=headPx(J),hand=[Math.round(J.aF.fist[0]*U),Math.round(J.aF.fist[1]*U)];
+  if(lie){// drawn standing, then laid on its back: rotated a quarter turn, the back on the ground
+    let x0=CW,x1=-1,y0=CH,y1=-1;for(let y=0;y<CH;y++)for(let x=0;x<CW;x++)if(px[(y*CW+x)*4+3]){if(x<x0)x0=x;if(x>x1)x1=x;if(y<y0)y0=y;if(y>y1)y1=y}
+    const out=new Uint8ClampedArray(CW*CH*4),FY=Math.round(GY*U)-1,ox=Math.round(CW/2-(y0+y1)/2);
+    for(let y=y0;y<=y1;y++)for(let x=x0;x<=x1;x++){const j=(y*CW+x)*4;if(!px[j+3])continue;const X=y+ox,Y=FY-(x-x0);if(X<0||Y<0||X>=CW||Y>=CH)continue;const k=(Y*CW+X)*4;out[k]=px[j];out[k+1]=px[j+1];out[k+2]=px[j+2];out[k+3]=px[j+3]}
+    px=out;blink=null}
+  let top=CH;for(let y=0;y<CH&&top===CH;y++)for(let x=0;x<CW;x++)if(px[(y*CW+x)*4+3]>128){top=y;break}
+  return{px,w:CW,h:CH,feet:Math.round(GY*U),top,head:[hxp,hyp],hand,blink,wings:!!O.wings}}
+function meta(pose,f){const J=rig(pose,f,BODY,{});return{head:headPx(J),hand:[Math.round(J.aF.fist[0]*U),Math.round(J.aF.fist[1]*U)],feet:Math.round(GY*U)}}
+const POSES={idle:6,walk:8,crouch:1,sit:1,read:1,read2:1,lie:1,wave:2,jump:1,flute:2,water:1,mine:2};
+return{render,meta,POSES,CW,CH,U,GY,hatGrid,outfit}})();
+
+/* ---- the new gardener in the game: frames kept in a cache, made a few at a time when there is room,
+   drawn behind what stands in front of it and in the light of the hour; portraits and thumbnails cut from one picture ---- */
+const A2F=new Map(),A2W=new Map(),A2P=new Map(),A2U=new Map(),A2OC=document.createElement('canvas');A2OC.width=A2.CW;A2OC.height=A2.CH;const A2OX=A2OC.getContext('2d');
+const a2K=(look,pose,f,o)=>JSON.stringify(look)+'|'+pose+'|'+f+'|'+(o.umb?1:0)+(o.wf?1:0)+(o.awake?1:0)+(o.noHat?1:0);
+function a2Make(look,pose,f,o){const r=A2.render(look,pose,f,o),c=document.createElement('canvas');c.width=r.w;c.height=r.h;c.getContext('2d').putImageData(new ImageData(r.px,r.w,r.h),0,0);r.cv=c;r.px=null;return r}
+// a frame now (lazy: only if it is ready; otherwise it is made when there is time)
+function a2Get(look,pose,f,o,lazy){o=o||{};const k=a2K(look,pose,f,o);let e=A2F.get(k);if(e){A2F.delete(k);A2F.set(k,e);return e}
+  if(lazy){if(!A2W.has(k)){A2W.set(k,[look,pose,f,o]);a2Pump()}return null}
+  try{e=a2Make(look,pose,f,o)}catch(err){try{console.error(err)}catch(_){}return null}
+  A2F.set(k,e);if(A2F.size>150)A2F.delete(A2F.keys().next().value);A2W.delete(k);return e}
+// what to draw this instant: the wanted frame, or while it is being made the first frame of the pose, or standing
+function a2Pick(look,pose,f,o){return a2Get(look,pose,f,o,true)||a2Get(look,pose,0,o,true)||a2Get(look,'idle',0,{awake:o&&o.awake})}
+// made in the browser's quiet moments, one at a time when the phone is slow
+// pictures put on the page after they were made still get theirs
+function a2Fill(h,u){try{document.querySelectorAll('image[data-a2="'+h+'"]').forEach(im=>{if(im.getAttribute('href')!==u)im.setAttribute('href',u)})}catch(_){}}
+let a2PT=0;const a2Idle=typeof requestIdleCallback==='function'?f=>requestIdleCallback(f,{timeout:250}):f=>setTimeout(()=>f(null),16);
+function a2Pump(){if(!a2PT)a2PT=a2Idle(a2Run)}
+function a2Run(dl){a2PT=0;const t0=performance.now(),more=()=>dl&&dl.timeRemaining?dl.timeRemaining()>6:performance.now()-t0<6;
+  for(const[k,v]of A2W){A2W.delete(k);a2Get(v[0],v[1],v[2],v[3]);if(!more())break}
+  for(const[h,v]of A2P){if(!more()&&performance.now()-t0>1)break;A2P.delete(h);const e=a2Get(v[0],v[1],0,v[2]);if(!e)continue;const u=e.cv.toDataURL();A2U.set(h,u);if(A2U.size>300)A2U.delete(A2U.keys().next().value);
+    a2Fill(h,u);setTimeout(()=>a2Fill(h,u),600)}
+  if(A2W.size||A2P.size)a2PT=a2Idle(a2Run)}
+// make the usual frames of a look ahead of time, so walking never waits
+function a2Warm(look,o){o=o||{};for(let f=0;f<6;f++)a2Get(look,'idle',f,o,true);for(let f=0;f<8;f++)a2Get(look,'walk',f,o,true);if(o.wf==null&&WFLAP[look.acc]){a2Warm(look,{...o,wf:1})}}
+// the old pose names, and which frame of the new ones they show now
+function a2Pose(pn,ft){const T2=performance.now()/1000;
+  if(pn==='stand')return['idle',RM?0:Math.floor(T2*4)%6];if(pn==='walkA'||pn==='walkB'||pn==='walk')return['walk',Math.floor((ft||0)*7)%8];
+  if(pn==='wave'||pn==='wave2')return['wave',pn==='wave2'?1:0];if(pn==='flute')return['flute',RM?0:Math.floor(T2*2.5)%2];return[pn,0]}
+// draw a frame with its feet at (gx, fy) in game pixels: occluded where the scene is in front, tinted by the light
+function a2Draw(X,e,gx,fy,fl,am,occ,blink,dy){const W4=e.w/4,H4=e.h/4,left=Math.round(gx*4)/4-W4/2,top=fy+1-e.feet/4+(dy||0),O=A2OX;
+  O.clearRect(0,0,e.w,e.h);O.save();if(fl){O.translate(e.w,0);O.scale(-1,1)}O.drawImage(e.cv,0,0);
+  if(blink&&e.blink)for(const[x,y,c]of e.blink){O.fillStyle=`rgb(${c[0]},${c[1]},${c[2]})`;O.fillRect(x,y,1,1)}O.restore();
+  if(am&&(am[0]<.995||am[1]<.995||am[2]<.995)){O.globalCompositeOperation='multiply';O.fillStyle=`rgb(${Math.min(255,am[0]*255)|0},${Math.min(255,am[1]*255)|0},${Math.min(255,am[2]*255)|0})`;O.fillRect(0,0,e.w,e.h);
+    O.globalCompositeOperation='destination-in';O.save();if(fl){O.translate(e.w,0);O.scale(-1,1)}O.drawImage(e.cv,0,0);O.restore();O.globalCompositeOperation='source-over'}
+  if(occ){const cx0=Math.floor(left),cx1=Math.ceil(left+W4),cy0=Math.floor(top),cy1=Math.ceil(top+H4);for(let cy=cy0;cy<cy1;cy++){if(cy<0||cy>=H)continue;for(let cx=cx0;cx<cx1;cx++){if(cx<0||cx>=W)continue;if(dep[cy*W+cx]>fy)O.clearRect((cx-left)*4,(cy-top)*4,4,4)}}}
+  X.drawImage(A2OC,0,0,e.w,e.h,left,top,W4,H4);return{left,top}}
+// where things sit on a drawn frame, in game pixels
+const a2At=(e,p,left,top,fl)=>[left+(fl?e.w-1-p[0]:p[0])/4,top+p[1]/4];
+// portraits and thumbnails: one picture per look and pose, cut by the viewBox; made a few at a time
+const A2BOX={port:[47,11,40,53.33],head:[48,7,38,38],bust:[40,22,52,52],legs:[38,56,56,38],full:[20,6,92,88]};
+function a2H(s){let h=2166136261;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619)}return'a'+(h>>>0).toString(36)}
+function a2Url(look,pose,o){o=o||{};const k=a2K(look,pose,0,o),h=a2H(k);let u=A2U.get(h);if(!u){const e=A2F.get(k);if(e){u=e.cv.toDataURL();A2U.set(h,u)}}if(u)return{h,u};if(!A2P.has(h)){A2P.set(h,[look,pose,o]);a2Pump()}return{h,u:''}}
+function a2Svg(look,box,cls,pose,o){const{h,u}=a2Url(look,pose||'idle',o);return`<svg class="pxi ${cls||''}" viewBox="${box.join(' ')}" aria-hidden="true"><image data-a2="${h}" href="${u}" width="${A2.CW}" height="${A2.CH}" image-rendering="optimizeSpeed" style="image-rendering:pixelated"/></svg>`}
+// the whole figure, cropped to its pixels, onto a big canvas (the pictures to share)
+function a2Blit(X,look,cx,by,s){const e=a2Get(look,'idle',0,{});if(!e)return;const c=e.cv.getContext('2d').getImageData(0,0,e.w,e.h).data;let x0=e.w,x1=0,y0=e.h,y1=0;
+  for(let y=0;y<e.h;y++)for(let x=0;x<e.w;x++)if(c[(y*e.w+x)*4+3]>40){if(x<x0)x0=x;if(x>x1)x1=x;if(y<y0)y0=y;if(y>y1)y1=y}
+  const w=x1-x0+1,h=y1-y0+1;X.save();X.imageSmoothingEnabled=false;X.drawImage(e.cv,x0,y0,w,h,Math.round(cx-w*s/2),Math.round(by-h*s),w*s,h*s);X.restore();return{w:w*s,h:h*s}}
+
 const OCC=new Map(),OCS=document.createElement('canvas');OCS.width=OCS.height=320;const OCX=OCS.getContext('2d');
 function drawHDOcc(map,rgb,x0,y0,w,fl,fy,am,rk,nat,big){
   const key=(map.__hk||(map.__hk=map.join('|')))+'|'+(fl?1:0)+'|'+((am[0]*48)|0)+'.'+((am[1]*48)|0)+'.'+((am[2]*48)|0)+'|'+(rk||'')+(nat?'|n':'')+(big?'|b':'');let c=OCC.get(key);
@@ -6270,25 +6797,19 @@ function avPoseName(){
   if(p==='read')return(T%3.2)<.35?'read2':'read';
   return p;
 }
+let a2Last='';
 function drawAvatar(){
   avDrawPg();if(!AV||AV.hidden)return;const pn=avPoseName(),pl=AVP[pn];if(!pl)return;
-  const st=AV.plan&&AV.plan[0],rain=env.wx==='rain'&&(pl.v==='f'||pn.startsWith('walk')||pn==='crouch')&&pn!=='jump'&&pn!=='wave'&&pn!=='wave2';
-  const LK=visiting?visiting.look:S.av.look,o=avCompose(LK,pn,{blink:AV.blink>0,umb:rain&&pn!=='sit'&&pn!=='read'&&pn!=='read2',awake:!!(st&&st.awake),wf:avWF(LK)});
-  const fy=Math.round(AV.y),x0=Math.round(AV.x)-7,y0=fy-19+AV.jy,fl=AV.fl&&pl.v!=='f';
-  lowX.fillStyle='rgba(10,14,8,.28)';for(let dx=-3;dx<=3;dx++){const x=Math.round(AV.x)+dx,i=(fy+1)*W+x;if(x>=0&&x<W&&fy+1<H&&dep[i]<=fy)lowX.fillRect(x,fy+1,1,1)}
-  const am=mix(env.amb,[1,1,1],.28);
-  drawHDOcc(o.map,o.rgb,x0,y0,15,fl,fy,am,'',true);avWingFx(LK,x0,y0,fl,pl.v);
-  if(AV.emo){const E=EMO[AV.emo.k];if(E){const lkh=(visiting?visiting.look:S.av.look).hat,top=y0+(pl.v==='l'?11:pn==='sit'||pn.startsWith('read')||pn==='crouch'?8+3:5)-(pl.v!=='l'?hatUp(lkh):0);
-    const rise=RM?0:Math.round(AV.emo.t*3);const ex=pl.v==='l'?Math.round(AV.x)+(fl?3:-3):Math.round(AV.x)+(fl?-1:1);drawSprite(E,E.map,ex,top-rise,false)}}
+  const st=AV.plan&&AV.plan[0],rain=env.wx==='rain'&&pn!=='sit'&&!pn.startsWith('read')&&pn!=='lie'&&pn!=='jump'&&pn!=='wave'&&pn!=='wave2'&&pn!=='flute'&&pn!=='water';
+  const LK=visiting?visiting.look:S.av.look,lk=JSON.stringify(LK);if(lk!==a2Last){a2Last=lk;a2Warm(LK)}
+  const[ps,pf]=a2Pose(pn,AV.ft),e=a2Pick(LK,ps,pf,{umb:rain,awake:!!(st&&st.awake),wf:avWF(LK)});if(!e)return;
+  const fy=Math.round(AV.y),fl=AV.fl;
+  lowX.fillStyle='rgba(10,14,8,.28)';for(let dx=-4;dx<=4;dx++){const x=Math.round(AV.x)+dx,i=(fy+1)*W+x;if(x>=0&&x<W&&fy+1<H&&dep[i]<=fy&&(pl.v!=='l'||Math.abs(dx)<4))lowX.fillRect(x,fy+1,1,1)}
+  const am=mix(env.amb,[1,1,1],.28),{left,top}=a2Draw(lowX,e,AV.x,fy,fl,am,true,AV.blink>0,AV.jy);
+  if(pl.v!=='l'){const wc=a2At(e,[e.head[0]-15,e.head[1]+12],left,top,fl);avWingFx(LK,wc[0]-7,wc[1]-11,fl,'f')}
+  if(AV.emo){const E=EMO[AV.emo.k];if(E){const hp=a2At(e,e.head,left,top,fl),rise=RM?0:Math.round(AV.emo.t*3);drawSprite(E,E.map,Math.round(hp[0])-2,Math.round(top+e.top/4)-4-rise,false)}}
 }
-function avPortrait(look,cls){
-  const o=avCompose(look||S.av.look,'stand',{});let y0=o.h,y1=0,x0=o.w,x1=0;
-  o.map.forEach((row,y)=>{for(let x=0;x<row.length;x++)if(row[x]!=='.'){y0=Math.min(y0,y);y1=Math.max(y1,y);x0=Math.min(x0,x);x1=Math.max(x1,x)}});
-  const m=o.map.slice(y0,y1+1).map(r=>r.slice(x0,x1+1).padEnd(x1-x0+1,'.'));
-  // every portrait has the same shape (3 wide by 4 tall), with the figure centred in it: a tall figure or a wide hat
-  // no longer spills out of the little frames in the lists, whatever size each list gives it
-  return pxsvg(m,o.pal,cls||'').replace(/viewBox="([-\d.]+) ([-\d.]+) ([\d.]+) ([\d.]+)"/,(q,a,b,c,d)=>{a=+a;b=+b;c=+c;d=+d;const R=.75;
-    if(c/d<R){const n=d*R;a-=(n-c)/2;c=n}else{const n=c/R;b-=(n-d)/2;d=n}return`viewBox="${a} ${b} ${c} ${d}"`});
+function avPortrait(look,cls){return a2Svg(look||S.av.look,A2BOX.port,cls||'')
 }
 
 /* ============ location & real weather ============ */
@@ -7582,7 +8103,7 @@ const PR_ERR={nivel:_t('Para vender na praça precisas do nível 10.'),email:_t(
 const prErr=c=>PR_ERR[c]||_t('Não deu. Tenta outra vez.');
 function prSheet(){PRI.length=0;const P=prS();prAucSettle();const D=PR.data;
   if(!PR.npc||PR.npcD!==prBK()){PR.npc=prNpcDeals();PR.npcD=prBK()}
-  let h=`<div class="prW"><canvas id="prCv" width="160" height="96" aria-label="${_t('A praça, com as bancas e quem anda por lá')}"></canvas><span class="prHint">${_t('Toca nas bancas e nas pessoas')}</span></div>`;
+  let h=`<div class="prW"><canvas id="prCv" width="640" height="384" aria-label="${_t('A praça, com as bancas e quem anda por lá')}"></canvas><span class="prHint">${_t('Toca nas bancas e nas pessoas')}</span></div>`;
   h+=`<div class="tabs prtabs" role="tablist">${[['bancas',_t('Bancas')],['leilao',_t('Leilão')],['vender',_t('Vender')]].map(([k,l])=>`<button role="tab" aria-selected="${k===PR.tab}" class="${k===PR.tab?'on':''}" data-prt="${k}">${l}${k==='vender'&&D&&D.minhas.length?` <span class="prn">${D.minhas.length}</span>`:''}</button>`).join('')}</div>`;
   // a row: r is the rarity (null for money, which has none)
   const row=(ic,r,tt,sub,btn,D)=>`<div class="item prd" style="--rc:${r==null?'#8d8a77':RC[r]}"${D?` data-pri="${PRI.push(D)-1}"`:''}><span class="ico">${ic}</span><span class="meta"><h3>${tt}${r==null?'':` <span class="prr">${RN[r]}</span>`}</h3><p>${sub}</p></span>${btn}</div>`;
@@ -7700,9 +8221,8 @@ function prDraw(x,t){const n=env?env.night:0,F=(c,a,b,w,h)=>{x.fillStyle=c;x.fil
   // people walking (sorted by depth)
   const P=prPeople();for(const p of P){if(!mv)continue;if(!p.w||Math.hypot(p.tx-p.x,p.ty-p.y)<1){p.w=1;p.tx=12+Math.random()*136;p.ty=68+Math.random()*24;if(Math.abs(p.tx-fx)<20&&p.ty<80)p.ty=84+Math.random()*8}
     const dx=p.tx-p.x,dy=p.ty-p.y,d=Math.hypot(dx,dy),sp=.25;if(p.pause>0){p.pause-=1}else{p.x+=dx/d*Math.min(sp,d);p.y+=dy/d*Math.min(sp,d)*.6;p.fl=dx<0;if(Math.random()<.004)p.pause=60+Math.random()*120}}
-  P.slice().sort((a,b)=>a.y-b.y).forEach(p=>{const pose=!mv||p.pause>0?'stand':((T*4+p.x)|0)%2?'walkA':'walkB',o=avCompose(p.look,pose,{}).lo;
-    const x0=Math.round(p.x)-8,y0=Math.round(p.y)-19;F('rgba(10,14,8,.28)',Math.round(p.x)-3,Math.round(p.y)+1,7,1);
-    for(let yy=0;yy<o.map.length;yy++){const row=o.map[yy];for(let xx=0;xx<row.length;xx++){const ch=row[xx];if(ch==='.')continue;const c=o.rgb[ch];if(!c)continue;x.fillStyle=c.length>3?`rgba(${c[0]},${c[1]},${c[2]},${c[3]})`:`rgb(${c[0]},${c[1]},${c[2]})`;x.fillRect(x0+(p.fl?15-xx:xx),y0+yy,1,1)}}
+  P.slice().sort((a,b)=>a.y-b.y).forEach(p=>{const still=!mv||p.pause>0,e=a2Pick(p.look,still?'idle':'walk',still?0:(((T*7+p.x)|0)%4)*2,{});
+    const x0=Math.round(p.x)-8,y0=Math.round(p.y)-19;F('rgba(10,14,8,.28)',Math.round(p.x)-3,Math.round(p.y)+1,7,1);if(e){const L=Math.round(p.x*4)/4-e.w/8,Tp=Math.round(p.y)+1-e.feet/4;x.save();if(p.fl){x.translate(L*2+e.w/4,0);x.scale(-1,1)}x.drawImage(e.cv,L,Tp,e.w/4,e.h/4);x.restore()}
     if(PR.bub&&PR.bub.p===p&&performance.now()<PR.bub.until){const tw=Math.min(60,p.nome.length*4+6);x.fillStyle='rgba(12,19,14,.88)';x.fillRect(Math.round(p.x)-(tw>>1),y0-8,tw,7);x.fillStyle=p.me?'#9ad65a':'#f2ead2';x.font='6px "Pixelify Sans",monospace';x.textAlign='center';x.textBaseline='top';x.fillText(p.nome,Math.round(p.x),y0-8)}})}
 // the merchants: small figures behind their counters
 function prNpcSprite(x,id,px,py,T){const F=(c,a,b,w,h)=>{x.fillStyle=c;x.fillRect(px+a,py+b,w,h)},bob=RM?0:Math.round(Math.sin(T*2+px)*.6);
@@ -7710,7 +8230,7 @@ function prNpcSprite(x,id,px,py,T){const F=(c,a,b,w,h)=>{x.fillStyle=c;x.fillRec
   else if(id==='ourico'){F('#6a4a2a',0,-5+bob,7,6);for(let i=0;i<7;i+=2)F('#4a3218',i,-6+bob,1,1);F('#e8c890',4,-2+bob,3,3);F('#1a1414',5,-2+bob,1,1);F('#f4f0e0',1,1+bob,5,5)}
   else if(id==='cambista'){F('#7a5a3a',1,-5+bob,5,5);F('#2a2a2a',1,-6+bob,5,1);F('#f0d070',4,-3+bob,2,2);F('#3a4a7a',0,0+bob,7,5)}
   else{F('#8a6ac8',0,-5+bob,7,7);F('#f4f0e0',1,-3+bob,2,2);F('#f4f0e0',4,-3+bob,2,2);F('#1a1414',2,-3+bob,1,1);F('#1a1414',5,-3+bob,1,1);F('#e0a040',3,-1+bob,1,1)}}
-function prLoop(){const cv=$('#prCv');if(!cv||sheetName!=='praca'){PR.raf=0;return}PR.raf=requestAnimationFrame(prLoop);const x=cv.getContext('2d');x.imageSmoothingEnabled=false;prDraw(x,performance.now())}
+function prLoop(){const cv=$('#prCv');if(!cv||sheetName!=='praca'){PR.raf=0;return}PR.raf=requestAnimationFrame(prLoop);const x=cv.getContext('2d');x.setTransform(4,0,0,4,0,0);x.imageSmoothingEnabled=false;prDraw(x,performance.now())}
 function prTap(e){const cv=$('#prCv');if(!cv)return;const r=cv.getBoundingClientRect(),lx=(e.clientX-r.left)/r.width*160,ly=(e.clientY-r.top)/r.height*96;
   for(const p of prPeople()){if(Math.abs(p.x-lx)<6&&ly>p.y-20&&ly<p.y+2){PR.bub={p,until:performance.now()+2500};SND.play('click');return}}
   for(const s of PR_STALLS){if(lx>=s.x-2&&lx<=s.x+s.w+2&&ly>=s.y-10&&ly<=s.y+14){const N=PR_NPC[s.npc];PR.tab='bancas';sheetSig='';renderSheet();toast(`${N.nome}: ${N.txt}`);return}}}
@@ -8575,14 +9095,15 @@ function avName(k,v){if(AVSLOT[k])return AVSLOT[k].nm[v]||v;return COLN[k+':'+v]
 // thumbnails show the option on your own character, in a fixed frame so the grid lines up
 function avThumb(look,mode){
   if(mode==='pet')return petSvg(look.pet);
-  const o=avCompose(look,'stand',{}),win=(mode==='head'?[1,1,14,14]:mode==='bust'?[0,3,16,15]:mode==='legs'?[0,6,16,14]:[0,0,16,20]).map(v=>v*2);
-  const[x0,y0,w,h]=win;return pxsvg(o.map.slice(y0,y0+h).map(r=>r.slice(x0,x0+w)),o.pal,'');
+  // a head on its own: wings and capes would only crowd it
+  if(mode==='head'&&look.acc&&/^(asas|capa)/.test(look.acc))look={...look,acc:'nada'};
+  return a2Svg(look,A2BOX[mode==='head'?'head':mode==='bust'?'bust':mode==='legs'?'legs':'full'],'');
 }
 function avPreviewLook(){const L={...S.av.look};if(AVED.try)L[AVED.try.k]=avVal(AVED.try.k,AVED.try.v);return L}
 function avLockText(U){if(U.kind==='lin')return linLockText(U);return U.kind==='lvl'?_t('Abre no nível {0}',U.n):U.kind==='gem'?_t('{0} cristais',U.n):U.kind==='em'?_t('{0} gemas',U.n):U.kind==='bau'?_t('Sai no baú do dia · {0}',RN[U.n]):U.kind==='mina'?_t('Chega a «{0}» na mina',mnPhName(U.n)):U.kind==='craft'?_t('Cria-se na Oficina · {0}',RN[U.n]):_t('Só num evento')}
 function avEditorHTML(){
   const L=S.av.look,P=avPreviewLook(),pose=AVPOSES[AVED.pose%AVPOSES.length];
-  const big=avCompose(P,pose,{});let h=`<div class="avtop"><div class="avstage"><span class="me ac-${P.acc}">${pxsvg(big.map,big.pal,'')}</span>`;
+  let h=`<div class="avtop"><div class="avstage"><span class="me ac-${P.acc}">${a2Svg(P,A2BOX.full,'',pose==='stand'?'idle':pose)}</span>`;
   if(P.pet&&PETS[P.pet]){const F=PETS[P.pet].F[2],hd=PETS[P.pet].hd;h+=`<span class="pet">${pxsvg(F.map,F.pal,hd?'nohd':'').replace('<svg ',`<svg style="height:${F.h*(hd?2.8:5.6)}px" `)}</span>`}
   if(!AVED.try)h+=`<button class="ab l" data-avrand="1">${icon('spark')}<span>${_t('Aleatório')}</span></button><button class="ab r" data-avturn="1" aria-label="${_t('Rodar')}">${icon('up')}<span>${_t('Rodar')}</span></button>`;
   if(AVED.try){const{k,v}=AVED.try,U=avUnlock(k,avVal(k,v),avCode(k,avVal(k,v)));
@@ -8837,10 +9358,9 @@ async function flexCard(){SND.play('click');const Wc=1080,Hc=1350,c=document.cre
   const rows=80,sy=Math.max(0,HOR-46)*lowCv.height/H,sh=rows*lowCv.height/H,bh=Math.round(Wc*sh/lowCv.width);x.drawImage(lowCv,0,sy,lowCv.width,sh,0,0,Wc,bh);
   const fade=x.createLinearGradient(0,bh-340,0,bh);fade.addColorStop(0,'rgba(10,17,11,0)');fade.addColorStop(.55,'rgba(10,17,11,.82)');fade.addColorStop(1,'rgba(10,17,11,1)');x.fillStyle=fade;x.fillRect(0,bh-340,Wc,340);x.fillStyle='#0a110b';x.fillRect(0,bh,Wc,Hc-bh);
   // avatar, cropped to its pixels, in a frame that follows the level
-  const o=avCompose(S.av.look,'stand',{});let y0=o.h||o.map.length,y1=0,x0=99,x1=0;o.map.forEach((row,yy)=>{for(let xx=0;xx<row.length;xx++)if(row[xx]!=='.'){y0=Math.min(y0,yy);y1=Math.max(y1,yy);x0=Math.min(x0,xx);x1=Math.max(x1,xx)}});
-  const px=6.5,aw=Math.round((x1-x0+1)*px),ah=(y1-y0+1)*px,bw=280,bhh=320,bx=70,by=bh-200,ax=bx+((bw-aw)>>1),ay=by+bhh-ah-28;
+  const bw=280,bhh=320,bx=70,by=bh-200;
   const frc={lf1:'#c08a50',lf2:'#d8dce8',lf3:'#f4c54f',lf4:'#5fe0a8'}[lvFr(S.level)]||'#41603c';x.fillStyle='#0f1810';x.fillRect(bx,by,bw,bhh);x.fillStyle='#1d3a14';x.fillRect(bx,by+bhh-60,bw,60);x.strokeStyle=frc;x.lineWidth=8;x.strokeRect(bx+4,by+4,bw-8,bhh-8);
-  for(let yy=y0;yy<=y1;yy++){const row=o.map[yy];for(let xx=x0;xx<=x1;xx++){const ch=row[xx];if(!ch||ch==='.')continue;const col=o.pal[ch];if(!col)continue;x.fillStyle=col;const X0=Math.round(ax+(xx-x0)*px),Y0=Math.round(ay+(yy-y0)*px);x.fillRect(X0,Y0,Math.round(ax+(xx-x0+1)*px)-X0,Math.round(ay+(yy-y0+1)*px)-Y0)}}
+  a2Blit(x,S.av.look,bx+bw/2,by+bhh-26,4);
   const tx=bx+bw+50,tw=Wc-tx-60;x.textBaseline='alphabetic';x.textAlign='left';let ty=by+90;
   x.fillStyle='#f2ead2';x.font=`700 76px ${F}`;x.fillText(S.name||'tapmoss',tx,ty,tw);ty+=62;
   const t=myTit();if(t){x.fillStyle='#f4c54f';x.font=`600 40px ${F}`;x.fillText(_t(TITN[t]),tx,ty,tw);ty+=58}
@@ -10580,10 +11100,8 @@ async function inviteCard(){const Wc=1200,Hc=630,c=document.createElement('canva
   g=x.createLinearGradient(0,Hc-200,0,Hc);g.addColorStop(0,'rgba(6,10,7,0)');g.addColorStop(1,'rgba(6,10,7,.85)');x.fillStyle=g;x.fillRect(0,Hc-200,Wc,200);
   // glow behind the gardener
   const rg=x.createRadialGradient(300,380,20,300,380,260);rg.addColorStop(0,'rgba(154,214,90,.35)');rg.addColorStop(1,'rgba(154,214,90,0)');x.fillStyle=rg;x.fillRect(40,120,520,500);
-  const o=avCompose(S.av.look,'stand',{});let y0=99,y1=0,x0=99,x1=0;o.map.forEach((row,yy)=>{for(let xx=0;xx<row.length;xx++)if(row[xx]!=='.'){y0=Math.min(y0,yy);y1=Math.max(y1,yy);x0=Math.min(x0,xx);x1=Math.max(x1,xx)}});
-  const px=10,ax=300-((x1-x0+1)*px>>1),ay=560-(y1-y0+1)*px;
   x.fillStyle='rgba(0,0,0,.35)';x.beginPath();x.ellipse(300,566,120,18,0,0,7);x.fill();
-  for(let yy=y0;yy<=y1;yy++){const row=o.map[yy];for(let xx=x0;xx<=x1;xx++){const ch=row[xx];if(!ch||ch==='.')continue;const col=o.pal[ch];if(!col)continue;x.fillStyle=col;x.fillRect(ax+(xx-x0)*px,ay+(yy-y0)*px,px,px)}}
+  a2Blit(x,S.av.look,300,566,5);
   // the pet beside, in its colour
   const id=curPet();if(id&&PETS[id]){const Fp=petFrame(PETS[id].F[2],curPch()),pp=PETS[id].hd?7:14,bx=450,by=566-Fp.h*pp;Fp.map.forEach((row,r)=>{for(let q=0;q<row.length;q++){const ch=row[q];if(ch==='.')continue;const k=Fp.rgb[ch];if(!k)continue;x.fillStyle=css(k,k[3]!=null?k[3]:1);x.fillRect(bx+q*pp,by+r*pp,pp,pp)}})}
   const tx=610,tw=Wc-tx-50;x.textAlign='left';x.textBaseline='alphabetic';
@@ -11474,18 +11992,17 @@ function mnDrawAv(dt){const M=S.mina,pt=performance.now();
   if(dd>.25){const st=Math.min(dd,dt*(Math.abs(dy)>Math.abs(dx)?30:22)*(dd>50?1.5:1));MAV.x+=dx/dd*st;MAV.y+=dy/dd*st;walk=Math.abs(dx)>.6&&Math.abs(dx)>=Math.abs(dy)*.5}
   if(walk){MAV.wt=(MAV.wt||0)+dt;MAV.fl=dx<0}else{MAV.wt=0;const tc=mnAvT();if(tc>=0){const gx=MX0+(tc%MW)*MCS;if(Math.abs(gx-MAV.x)>2)MAV.fl=gx<MAV.x}}
   if(MAV.sw>0)MAV.sw-=dt;
-  const o=avCompose(S.av.look,walk&&Math.floor(MAV.wt*6)%2?'walkB':'walkA',{noHat:true}),ax=Math.round(MAV.x),ay=Math.round(MAV.y-(mnBio(M.p)==='lua'&&!RM?1.5+1.5*Math.sin(performance.now()/600):0)),x0=ax-7,y0=ay-19,lt=mnDark()?[.92,.88,.8]:[1,1,1];
+  const LKm={...S.av.look,hat:'mineiro'},e=a2Pick(LKm,walk?'walk':'mine',walk?Math.floor(MAV.wt*7)%8:(RM?0:Math.floor(performance.now()/700)%2),{}),ax=Math.round(MAV.x),ay=Math.round(MAV.y-(mnBio(M.p)==='lua'&&!RM?1.5+1.5*Math.sin(performance.now()/600):0)),lt=mnDark()?[.92,.88,.8]:[1,1,1];
   // the rope from the pulley down to the miner
   {const deep=mnDark(),rx=MX0+M.ex*MCS+1.5,ry=deep?-2:MY0-23;if(mnBio(M.p)!=='lua'&&(ay>MY0+3||deep)){lowX.fillStyle='rgba(200,170,120,.85)';const steps=Math.max(4,Math.round(Math.hypot(ax-rx,ay-20-ry)));for(let i=0;i<=steps;i++){const u=i/steps;lowX.fillRect(rx+(ax-rx)*u,ry+(ay-20-ry)*u,.5,.5)}}}
   lowX.fillStyle='rgba(0,0,0,.3)';lowX.fillRect(ax-3,ay,7,1);
-  drawHDOcc(o.map,o.rgb,x0,y0,15,MAV.fl,9999,lt,'',true);
-  // helmet with a lamp
-  const hx=MAV.fl?x0+4:x0+3,hy=y0+7;lowX.fillStyle='#c9921e';lowX.fillRect(hx,hy,8,1.5);lowX.fillStyle='#f4c54f';lowX.fillRect(hx+1,hy-1.5,6,2);lowX.fillStyle='#fff3b8';lowX.fillRect(hx+2,hy-1.5,2,.5);
-  lowX.fillStyle='#8a5a0a';lowX.fillRect(MAV.fl?hx-1:hx+1,hy+1,8,.5);const lx=MAV.fl?hx-.5:hx+7;lowX.fillStyle='#fffbe0';lowX.fillRect(lx,hy-.5,1.5,1.5);
+  if(!e)return;const pos=a2Draw(lowX,e,MAV.x,ay,MAV.fl,lt,false,false,0);
+  // the lamp on the helmet lights the way in the dark
+  const hp=a2At(e,[e.head[0]+6,e.head[1]-10],pos.left,pos.top,MAV.fl),lx=hp[0],hy=hp[1];
   if(mnDark()){lowX.save();lowX.globalCompositeOperation='lighter';const g=lowX.createRadialGradient(lx,hy,1,lx+(MAV.fl?-10:10),hy+4,22);g.addColorStop(0,'rgba(255,240,190,.32)');g.addColorStop(1,'rgba(255,240,190,0)');lowX.fillStyle=g;lowX.fillRect(lx-26,hy-20,52,44);lowX.restore()}
   // the pickaxe in the hand: resting forward, lifted behind the head, then down on the rock
   let ang;if(MAV.sw>0){const u=(.28-MAV.sw)/.28;ang=u<.4?.6-u/.4*2:-1.4+(u-.4)/.6*2.7}else ang=.6+(RM?0:Math.sin(performance.now()/700)*.05);
-  mnPkDraw(MAV.fl?x0+6.5:x0+8.5,y0+15,ang,MAV.fl,.7)}
+  {const hd=a2At(e,e.hand,pos.left,pos.top,MAV.fl);mnPkDraw(hd[0]+(MAV.fl?-1:0),hd[1],ang,MAV.fl,.7)}}
 // the fossil pet walks behind the miner, at its own pace
 const MFOS={x:0,y:0,fl:false,wt:0};
 function mnDrawFos(dt){const F=mnFos();if(!F.p||!PETS.fossil)return;const c=F.p.c|0,tx=MAV.x+(MAV.fl?13:-13),ty=MAV.y;if(!MFOS.x){MFOS.x=tx;MFOS.y=ty}
@@ -11851,7 +12368,7 @@ function frame(t){
   tick(dt);draw();guideTick();
 }
 /* versões novas: quando o jogo muda no servidor, guarda o progresso e recarrega a página */
-const BUILD='5770bc6a12c0',UKEY='tapmoss.upd';const UPD={on:false,go:false,at:0};
+const BUILD='82d39eed3a4c',UKEY='tapmoss.upd';const UPD={on:false,go:false,at:0};
 // the new version downloads in the background while the game goes on; the reload only comes once the whole page is here,
 // so a slow network never leaves a half-built page on screen. The offline helper (sw.js) hands this copy over at the reload.
 const NEXTC='tapmoss-next',pgKey=()=>{let p=location.pathname.replace(/index\.html$/,'');if(!p.endsWith('/'))p+='/';return p};
@@ -12156,8 +12673,8 @@ const lchSvg=b=>pxsvg(lchMap(b),LCH_PAL[b],'lchs');
 /* ============ the screens: intro, choice, more info, confirmation, welcome, the bloodline panel and the chest ============ */
 const LNU={on:false,mode:'',b:'',tier:2,sc:0,T:[],raf:0,bg:null,from:''};
 const lnLook=(b,t,base)=>{const L={...(base||S.av.look)};if(b&&t>=0){const s=LSETS[b][t];L.hat=s[0];L.top=s[1];L.acc=s[2]}return L};
-function lnAv(L,h,cls){const svg=o=>pxsvg(o.map,o.pal,'').replace('<svg ',`<svg style="height:${h}px;width:auto" `),fl=!!(LWING[L.acc]||WFLAP[L.acc]);
-  return`<span class="lnav ac-${L.acc} ${cls||''} ${fl?'fl':''}">${svg(avCompose(L,'stand',{}))}${fl?svg(avCompose(L,'stand',{wf:1})):''}</span>`}
+function lnAv(L,h,cls){const svg=wf=>a2Svg(L,A2BOX.full,'','idle',wf?{wf:1}:{}).replace('<svg ',`<svg style="height:${Math.round(h*1.12)}px;width:auto" `),fl=!!(LWING[L.acc]||WFLAP[L.acc]);
+  return`<span class="lnav ac-${L.acc} ${cls||''} ${fl?'fl':''}">${svg(0)}${fl?svg(1):''}</span>`}
 const lnPet=(id,h)=>{const P=PETS[id];if(!P)return'';const F=P.F;return`<span class="lnpet ${P.hop?'hop':''}">${pxsvg(F[0].map,F[0].pal,'nohd').replace('<svg ',`<svg style="height:${h}px;width:auto" `)}${pxsvg(F[1].map,F[1].pal,'nohd').replace('<svg ',`<svg style="height:${h}px;width:auto" `)}</span>`};
 const lnBon=b=>b==='raiz'?_t('Sempre: mais {0}% de moedas. Chega a {1}% no posto 10.',linPct(b,1),linPct(b,LIN_MAX)):b==='sol'?_t('Das 7h às 19h: mais {0}% de moedas. Chega a {1}% no posto 10.',linPct(b,1),linPct(b,LIN_MAX)):_t('Das 19h às 7h: mais {0}% de moedas. Chega a {1}% no posto 10.',linPct(b,1),linPct(b,LIN_MAX));
 const lnBonS=b=>b==='raiz'?_t('+{0}% sempre',linPct(b,1)):b==='sol'?_t('+{0}% de dia',linPct(b,1)):_t('+{0}% à noite',linPct(b,1));
@@ -12594,7 +13111,7 @@ function crValHTML(k){const v=crCur(k);
   if(k==='hair')return`<span class="crv">${esc(HN[v]||v)}</span>`;
   if(k==='fit')return`<span class="crv">${esc(CR_FITN[v]||'')}</span>`;
   const col=k==='skin'?(AVSKIN[v]||AVSKIN[0])[0]:v;return`<span class="crv"><i class="crsw" style="--c:${esc(col)}"></i></span>`}
-function crStage(){const o=avCompose(S.av.look,CR.pose,{});return pxsvg(o.map,o.pal,'')}
+function crStage(){return a2Svg(S.av.look,A2BOX.full,'',CR.pose==='stand'?'idle':CR.pose)}
 function crTease(){const L={...S.av.look},E=eventoAtivo(),T=[];
   if(E&&E.hat)T.push([{...L,hat:E.hat},'head',_t('Evento')]);
   T.push([{...L,hat:'palha'},'head',_t('Nível {0}',8)]);T.push([{...L,acc:'asas'},'bust',_t('Baú do dia')]);T.push([{...L,hat:'feiticeiro'},'head',_t('Nível {0}',35)]);
@@ -13449,20 +13966,18 @@ function hsDrawInterior(x,c,ri,t,live){const room=c.r[ri],E=HSV.edit;x.drawImage
 
 /* ---------- the gardener and the pet, at home ---------- */
 const HSAVC=new Map();
-function hsAvCv(look,pose,blink){const o=avCompose(look,pose,{blink,wf:avWF(look)}),k=(o.map.__hk||(o.map.__hk=o.map.join('|')));let c=HSAVC.get(k);if(c)return c;
-  const R=hdUp(o.map,1);c=document.createElement('canvas');c.width=R.w;c.height=R.h;const x=c.getContext('2d');
-  for(const[hx,hy,ch,sh]of R.px){const r=o.rgb[ch];if(!r)continue;if(sh===3){x.fillStyle=`rgba(${(r[0]*.16)|0},${(r[1]*.14)|0},${(r[2]*.2)|0},.4)`}else{const q=shade4(r,sh);x.fillStyle=`rgba(${q[0]|0},${q[1]|0},${q[2]|0},${r.length>3?r[3]:1})`}x.fillRect(hx,hy,1,1)}
-  HSAVC.set(k,c);if(HSAVC.size>80)HSAVC.delete(HSAVC.keys().next().value);return c}
 function hsLook(){return HSV.vis?HSV.vis.look:S.av.look}
 function hsPoseName(A,t){const p=A.pose;if(p==='walk')return Math.floor(A.ft*5.5)%2?'walkB':'walkA';if(p==='wave')return Math.floor(t*4)%2?'wave2':'wave';if(p==='read')return(t%3.2)<.35?'read2':'read';return p}
-function hsDrawAv(x,A,t){const pn=hsPoseName(A,t),pl=AVP[pn];if(!pl)return;const LK=hsLook(),c=hsAvCv(LK,pn,A.blink>0),fl=A.fl&&pl.v!=='f',x0=Math.round(A.x*2)/2-7,y0=Math.round(A.y*2)/2-19+(A.jy||0);
-  if(!A.seat){x.fillStyle='rgba(10,8,6,.26)';x.beginPath();x.ellipse(A.x,A.y+.4,3,.9,0,0,7);x.fill()}
-  const left=fl?x0+15.5-c.width/4:x0-.5;if(fl){x.save();x.translate(left+c.width/4,0);x.scale(-1,1);x.drawImage(c,0,y0-.5,c.width/4,c.height/4);x.restore()}else x.drawImage(c,left,y0-.5,c.width/4,c.height/4);
-  try{avWingFx(LK,x0,y0,fl,pl.v)}catch(e){}
-  if(A.emo){const E=EMO[A.emo.k];if(E&&E.map){const top=y0+(pn==='sit'||pn.startsWith('read')?8+3:5)-hatUp(LK.hat),rise=RM?0:Math.round(A.emo.t*3);drawSprite(E,E.map,Math.round(A.x)+(fl?-1:1),top-rise,false)}}}
+function hsDrawAv(x,A,t){const pn=hsPoseName(A,t),pl=AVP[pn];if(!pl)return;const LK=hsLook(),[ps,pf]=a2Pose(pn,A.ft),e=a2Pick(LK,ps,pf,{wf:avWF(LK)});if(!e)return;const fl=A.fl;
+  if(!A.seat){x.fillStyle='rgba(10,8,6,.26)';x.beginPath();x.ellipse(A.x,A.y+.4,3.6,.9,0,0,7);x.fill()}
+  const ax=Math.round(A.x*4)/4,top=Math.round(A.y*2)/2+.5-e.feet/4+(A.jy||0),left=ax-e.w/8;
+  x.save();if(fl){x.translate(left*2+e.w/4,0);x.scale(-1,1)}x.drawImage(e.cv,left,top,e.w/4,e.h/4);
+  if(A.blink>0&&e.blink){for(const[bx,by,c]of e.blink){x.fillStyle=`rgb(${c[0]},${c[1]},${c[2]})`;x.fillRect(left+bx/4,top+by/4,.25,.25)}}x.restore();
+  if(pl.v!=='l'){const wc=a2At(e,[e.head[0]-15,e.head[1]+12],left,top,fl);try{avWingFx(LK,wc[0]-7,wc[1]-11,fl,'f')}catch(err){}}
+  if(A.emo){const E=EMO[A.emo.k];if(E&&E.map){const hp=a2At(e,e.head,left,top,fl),rise=RM?0:Math.round(A.emo.t*3);drawSprite(E,E.map,Math.round(hp[0])-2,Math.round(top+e.top/4)-4-rise,false)}}}
 // asleep: only the head shows on the pillow, the blanket goes back over the rest
-function hsSleeper(x,A,o,t){const LK=hsLook(),c=hsAvCv(LK,'stand',true),d=o.d,pw=d.id==='camadupla'?(o.it[4]?d.w-5.5:5.5):d.w/2,hx=o.x+pw,hy=o.y+(d.id==='camanuvem'?3:3.6);
-  x.drawImage(c,0,30,c.width,28,hx-c.width/8,hy,c.width/4,7);const cv=hsSpr(d.id,o.it[3],o.it[4],0,'cov');hsBlit(x,cv,o.x,o.y);
+function hsSleeper(x,A,o,t){const LK=hsLook(),e=a2Get(LK,'idle',0,{}),d=o.d,pw=d.id==='camadupla'?(o.it[4]?d.w-5.5:5.5):d.w/2,hx=o.x+pw,hy=o.y+(d.id==='camanuvem'?3:3.6);
+  if(e){const sx=e.head[0]-13,sy=e.head[1]-15;x.drawImage(e.cv,sx,sy,26,26,hx-3.25,hy-1,6.5,6.5);if(e.blink)for(const[bx,by,c]of e.blink){x.fillStyle=`rgb(${c[0]},${c[1]},${c[2]})`;x.fillRect(hx-3.25+(bx-sx)/4,hy-1+(by-sy)/4,.25,.25)}}const cv=hsSpr(d.id,o.it[3],o.it[4],0,'cov');hsBlit(x,cv,o.x,o.y);
   if(!RM&&(t%2.6)<.05&&!A.zt){A.zt=1;hsFx(hx+2,hy,'zz')}else if((t%2.6)>.1)A.zt=0}
 let HSDEP=null;
 function hsDrawPet(x,P,t){const id=curPet();if(!id||P.x==null)return;const sv=[PET.x,PET.y,PET.fl,PET.mv,PET.t];if(!HSDEP||HSDEP.length!==dep.length)HSDEP=new Uint8Array(dep.length);HSDEP.set(dep);dep.fill(0);
