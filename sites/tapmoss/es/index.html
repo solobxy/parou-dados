@@ -6975,7 +6975,7 @@ async function visitScene(d){const v=visiting;if(!v||v.pub||v.busyS||(v.n|0)<2||
   const H=v.help,leftF=H&&!H.done?H.nf-H.f:0,leftD=H&&!H.done?H.nd-H.d:0;
   v.ci=i;v.sd=sd;loadVisitScene(sd);SND.play('click');
   if(H&&!H.done&&(leftF||leftD)){const used=[];sd.flowers=helpSpots(leftF,used).map(o=>({x:o.x,y:o.y,r:rollRarity(.5+luckBase()*.5,0)}));sd.debris=helpSpots(leftD,used).map(o=>({x:o.x,y:o.y,k:(rnd()*3)|0}));rebuildBlock()}
-  renderVisitBar();hud()}
+  renderVisitBar();hud();setTimeout(helpUnderUI,400)}
 async function visitFriend(id){if(HSR)hsClose(true);if(MNR)mnClose();if(editing)editEnd();
   if(!UUID.test(id)||!CONTA||visiting||visitBusy)return;visitBusy=true;let p;try{p=await api('tm_perfil',{p_id:CONTA.id,p_seg:CONTA.seg,p_outro:id})}catch(e){toast(errMsg(e));return}finally{visitBusy=false}if(visiting)return;
   const sd=sanScene(p.cena);if(!sd){toast(_t('Este amigo ainda não tem cena guardada.'));return}
@@ -7049,6 +7049,8 @@ function helpSpots(n,used){const lim=helpYmax(),P=[];for(let i=0;i<mossCount;i++
     if(y<HOR+10||y>lim||x<FLX0||x>FLX1||nofl[c]||!tapSafe(x,y)||!tapSafe(x,y-3)||gBusy(x,y))continue;if(used.some(o=>Math.abs(o.x-x)<10&&Math.abs(o.y-y)<8))continue;
     const o={x,y};out.push(o);used.push(o)}return out}
 function helpStart(){const v=visiting;if(!v||v.pub||!CONTA)return;v.help=null;if(cdLeft(v.ajudaAt)>0)return;$('#vbHelp').classList.remove('hidden');
+  // the bar takes its final height first (with the help line), so no flower or leaf pile lands under it or under the scene arrows
+  v.help={nf:5,nd:2,f:0,d:0,done:false};renderVisitBar();uiR=null;v.help=null;setTimeout(helpUnderUI,400);
   const sd=v.sd,used=[];sd.flowers=helpSpots(5,used).map(o=>({x:o.x,y:o.y,r:rollRarity(.5+luckBase()*.5,0)}));sd.debris=helpSpots(2,used).map(o=>({x:o.x,y:o.y,k:(rnd()*3)|0}));rebuildBlock();
   if(!sd.flowers.length&&!sd.debris.length)return;v.help={nf:sd.flowers.length,nd:sd.debris.length,f:0,d:0,done:false}}
 function helpTap(lx,ly,px,py){const v=visiting,H=v&&v.help;if(!H||H.done)return false;const sd=v.sd;
@@ -7059,6 +7061,12 @@ function helpTap(lx,ly,px,py){const v=visiting,H=v&&v.help;if(!H||H.done)return 
   bi=-1;bd=10.5;sd.debris.forEach((b,i)=>{const d=Math.hypot(lx-b.x,ly-(b.y-1));if(d<bd){bd=d;bi=i}});
   if(bi>=0){const b=sd.debris.splice(bi,1)[0];rebuildBlock();H.d++;puff(b.x,b.y-1,[[150,110,60],[190,150,90]],12,22,.7);SND.play('pop');helpCheck();return true}
   return false}
+// the screen changed during a visit (the tablet turned, the bar grew): a help flower or leaf pile under a button or an arrow moves to a
+// free spot; if there is none it goes away and counts as done, so the help can always be finished
+function helpUnderUI(){const v=visiting,H=v&&v.help;if(!H||H.done||H.busy||!scene||v.pub)return;const sd=v.sd;let ch=false;uiR=null;
+  for(const[L,isF]of[[sd.flowers,1],[sd.debris,0]])for(let i=L.length-1;i>=0;i--){const o=L[i];if(tapSafe(o.x,o.y)&&tapSafe(o.x,o.y-3))continue;
+    ch=true;const p=helpSpots(1,sd.flowers.concat(sd.debris).filter(q=>q!==o))[0];if(p){o.x=p.x;o.y=p.y}else{L.splice(i,1);if(isF)H.nf=Math.max(0,H.nf-1);else H.nd=Math.max(0,H.nd-1)}}
+  if(!ch)return;rebuildBlock();if(H.nf+H.nd<=0){v.help=null;renderVisitBar();return}if(H.f||H.d)helpCheck();else renderVisitBar()}
 // the help is done: a friendship chest, as good as a present
 function helpChest(v){const coins=Math.round(Math.max(300,cps*900)),gems=3,res=grantItem(rollRarity(luckBase()+.6,1));if(ptOpen()&&rnd()<.06)ptGiveEgg(rnd()<.25?1:0,'ajuda');
   S.coins+=coins;S.gems+=gems;S.stats.opened++;addXp(40);dirtySave=true;saveLocal();hud();
@@ -8313,15 +8321,15 @@ function floatNum(px,py,txt,cls){const el=document.createElement('span');el.clas
 const toScreen=(lx,ly)=>[lx*view.s+view.ox,ly*view.s+view.oy];
 // nothing tappable may appear under a button: the HUD, the side column or the dock would swallow the tap
 let uiR=null,uiRT=0,uiSig='';
-function uiRects(){const t=performance.now(),sd=$('#side'),sig=(sd?sd.offsetHeight+'.'+sd.offsetWidth+'.'+sd.offsetTop:'')+'|'+view.cw+'|'+view.ch;if(uiR&&sig===uiSig&&t-uiRT<700)return uiR;uiRT=t;uiSig=sig;const a=$('#app').getBoundingClientRect(),R=[];
-  for(const el of document.querySelectorAll('#hud .top>*,#hud .chips>*,#side>*,#tools>*,#dock')){if(!el.offsetParent)continue;const r=el.getBoundingClientRect();if(r.width&&r.height)R.push([r.left-a.left,r.top-a.top,r.right-a.left,r.bottom-a.top])}
+function uiRects(){const t=performance.now(),sd=$('#side'),sig=(sd?sd.offsetHeight+'.'+sd.offsetWidth+'.'+sd.offsetTop:'')+'|'+view.cw+'|'+view.ch+'|'+(visiting?$('#visitBar').offsetHeight+'.'+$('#vNav').offsetWidth:'');if(uiR&&sig===uiSig&&t-uiRT<700)return uiR;uiRT=t;uiSig=sig;const a=$('#app').getBoundingClientRect(),R=[];
+  for(const el of document.querySelectorAll('#hud .top>*,#hud .chips>*,#side>*,#tools>*,#dock,#vNav>button,#visitBar')){if(!el.offsetParent)continue;const r=el.getBoundingClientRect();if(r.width&&r.height)R.push([r.left-a.left,r.top-a.top,r.right-a.left,r.bottom-a.top])}
   return uiR=R}
 function uiBlocked(lx,ly,pad){if(view.cw<=1)return false;pad=pad==null?6:pad;const[px,py]=toScreen(lx,ly);if(px<4||py<4||px>view.cw-4||py>view.ch-4)return true;for(const r of uiRects())if(px>=r[0]-pad&&px<=r[2]+pad&&py>=r[1]-pad&&py<=r[3]+pad)return true;return false}
 const tapSafe=(x,y)=>!uiBlocked(x,y)&&!uiBlocked(x,y-6)&&!uiBlocked(x-4,y-3)&&!uiBlocked(x+4,y-3);
 // the screen can change after something appeared (the browser bar hides, the phone turns, a button shows up, a save comes from another device):
 // anything you can pick up that ends up under a button walks to the nearest free spot, or goes away if there is none
 function clearUnderUI(){
-  if(visiting||titleShown||placing||!scene)return;const sd=SC(),near=(o,L,d)=>L.some(q=>q!==o&&Math.abs(q.x-o.x)<d&&Math.abs(q.y-o.y)<d*.8);
+  if(visiting){helpUnderUI();return}if(titleShown||placing||!scene)return;const sd=SC(),near=(o,L,d)=>L.some(q=>q!==o&&Math.abs(q.x-o.x)<d&&Math.abs(q.y-o.y)<d*.8);
   const move=(o,valid,L,d,lift)=>{for(let r=2;r<=70;r+=2){const n=Math.max(8,r*2);for(let a=0;a<n;a++){const t=a/n*Math.PI*2,x=Math.round(o.x+Math.cos(t)*r),y=Math.round(o.y+Math.sin(t)*r*.7);
       if(x<FLX0||x>FLX1||y<HOR+10||y>H-42)continue;const c=y*W+x;if(nofl[c]||!valid(c)||!tapSafe(x,y-(lift||0)))continue;const ox=o.x,oy=o.y;o.x=x;o.y=y;if(L&&near(o,L,d)){o.x=ox;o.y=oy;continue}return true}}return false};
   const anyGround=c=>{const s=surf[c];return s===1||s===2||s===5||s===6},flowerOk=c=>dens[c]>=120&&anyGround(c),groundOk=c=>surf[c]===1;let changed=false;
@@ -9397,7 +9405,7 @@ function resize(){if(titleShown)logoSize(),logoDraw(1,-99);uiR=null;setTimeout((
   const a=$('#app').getBoundingClientRect(),dpr=Math.min(3,window.devicePixelRatio||1);
   view.cw=a.width;view.ch=a.height;view.dpr=dpr;cv.width=Math.round(a.width*dpr);cv.height=Math.round(a.height*dpr);
   const wide=a.width/a.height>.86,s=wide?a.height/H:Math.max(a.width/W,a.height/H);view.s=s;view.ox=(a.width-W*s)/2;view.oy=wide?0:(a.height-H*s)/2;view.wide=wide;
-  const side=Math.max(0,(a.width-W*s)/2),app=$('#app');app.classList.toggle('wide',wide);app.classList.remove('panels');/* on a computer the game stays one tidy column, like on a phone, over the blurred scene */
+  const side=Math.max(0,(a.width-W*s)/2),app=$('#app');app.classList.toggle('wide',wide);app.classList.remove('panels');/* on a computer the game stays one tidy column, like on a phone, over a living sky */
   app.style.setProperty('--colw',Math.min(a.width,W*s)+'px');app.style.setProperty('--side',side+'px');
 }
 new ResizeObserver(resize).observe($('#app'));
@@ -9862,7 +9870,7 @@ function draw(){
   if(rebFx){const t=rebFx.t,a=t<.7?t/.7:Math.max(0,1-(t-.7)/1.9);lowX.fillStyle=`rgba(232,250,190,${a*.5})`;lowX.fillRect(0,0,W,H)}
   if(placing)drawPlacing();if(editing)drawEdit();
   dX.imageSmoothingEnabled=false;dX.fillStyle='#0b120d';dX.fillRect(0,0,cv.width,cv.height);
-  if(view.wide){bdX.drawImage(lowCv,0,0,lowCv.width,lowCv.height,0,0,10,16);dX.imageSmoothingEnabled=true;const k=Math.max(cv.width/10,cv.height/16)*1.15,bw=10*k,bh=16*k;dX.drawImage(bdCv,(cv.width-bw)/2,(cv.height-bh)/2,bw,bh);
+  if(view.wide&&!(BGK_OK&&bgkDraw('sky'))){bdX.drawImage(lowCv,0,0,lowCv.width,lowCv.height,0,0,10,16);dX.imageSmoothingEnabled=true;const k=Math.max(cv.width/10,cv.height/16)*1.15,bw=10*k,bh=16*k;dX.drawImage(bdCv,(cv.width-bw)/2,(cv.height-bh)/2,bw,bh);
     dX.fillStyle='rgba(5,9,6,.5)';dX.fillRect(0,0,cv.width,cv.height);const x0=Math.round(view.ox*view.dpr),x1=Math.round((view.ox+W*view.s)*view.dpr),gw=28*view.dpr;
     let g=dX.createLinearGradient(x0-gw,0,x0,0);g.addColorStop(0,'rgba(0,0,0,0)');g.addColorStop(1,'rgba(0,0,0,.45)');dX.fillStyle=g;dX.fillRect(x0-gw,0,gw,cv.height);
     g=dX.createLinearGradient(x1,0,x1+gw,0);g.addColorStop(0,'rgba(0,0,0,.45)');g.addColorStop(1,'rgba(0,0,0,0)');dX.fillStyle=g;dX.fillRect(x1,0,gw,cv.height);dX.imageSmoothingEnabled=false}
@@ -11502,7 +11510,7 @@ function mnDraw(){const M=S.mina,t=performance.now(),dt=Math.min(.1,(t-(mnLastDr
   if(mnDesc>0){lowX.fillStyle=`rgba(4,5,8,${Math.min(1,mnDesc*1.3)})`;lowX.fillRect(0,0,W,H)}
   const sx=mnShake>0?(rnd()-.5)*2*mnShake*4:0,sy=mnShake>0?(rnd()-.5)*2*mnShake*4:0;
   dX.imageSmoothingEnabled=false;dX.fillStyle='#07090b';dX.fillRect(0,0,cv.width,cv.height);
-  if(view.wide){bdX.drawImage(lowCv,0,0,lowCv.width,lowCv.height,0,0,10,16);dX.imageSmoothingEnabled=true;const k=Math.max(cv.width/10,cv.height/16)*1.15,bw=10*k,bh=16*k;dX.drawImage(bdCv,(cv.width-bw)/2,(cv.height-bh)/2,bw,bh);dX.fillStyle='rgba(5,7,9,.6)';dX.fillRect(0,0,cv.width,cv.height);dX.imageSmoothingEnabled=false}
+  if(view.wide&&!(BGK_OK&&bgkDraw('deep'))){bdX.drawImage(lowCv,0,0,lowCv.width,lowCv.height,0,0,10,16);dX.imageSmoothingEnabled=true;const k=Math.max(cv.width/10,cv.height/16)*1.15,bw=10*k,bh=16*k;dX.drawImage(bdCv,(cv.width-bw)/2,(cv.height-bh)/2,bw,bh);dX.fillStyle='rgba(5,7,9,.6)';dX.fillRect(0,0,cv.width,cv.height);dX.imageSmoothingEnabled=false}
   dX.drawImage(lowCv,0,0,lowCv.width,lowCv.height,Math.round((view.ox+sx*view.s)*view.dpr),Math.round((view.oy+sy*view.s)*view.dpr),Math.round(W*view.s*view.dpr),Math.round(H*view.s*view.dpr))}
 // how far a cell is from the dug hole, for the detector (cheap: a small search)
 function mFogDist0(c){const x=c%MW,y=(c/MW)|0;for(let r=0;r<16;r++){for(let dy=-r;dy<=r;dy++){const yy=y+dy;if(yy<0||yy>=MH)continue;const dx=r-Math.abs(dy);for(const xx of dx?[x-dx,x+dx]:[x]){if(xx<0||xx>=MW)continue;const k=yy*MW+xx;if(mClr(k)&&!(mg[k]&32))return r}}}return 99}
@@ -11776,7 +11784,7 @@ function frame(t){
   tick(dt);draw();guideTick();
 }
 /* versões novas: quando o jogo muda no servidor, guarda o progresso e recarrega a página */
-const BUILD='6bf84f41398d',UKEY='tapmoss.upd';const UPD={on:false,go:false,at:0};
+const BUILD='d920d99c20b0',UKEY='tapmoss.upd';const UPD={on:false,go:false,at:0};
 // the new version downloads in the background while the game goes on; the reload only comes once the whole page is here,
 // so a slow network never leaves a half-built page on screen. The offline helper (sw.js) hands this copy over at the reload.
 const NEXTC='tapmoss-next',pgKey=()=>{let p=location.pathname.replace(/index\.html$/,'');if(!p.endsWith('/'))p+='/';return p};
@@ -13589,7 +13597,7 @@ function hsDraw(){const t=performance.now()/1000,dt=Math.min(.1,t-(HSV.lt||t));H
   x.setTransform(RES,0,0,RES,0,0);
   if(HSV.trans>0){x.fillStyle=`rgba(6,5,4,${Math.min(1,HSV.trans).toFixed(3)})`;x.fillRect(0,0,W,H);HSV.trans=Math.max(0,HSV.trans-dt*3.2)}
   dX.imageSmoothingEnabled=false;dX.fillStyle='#070605';dX.fillRect(0,0,cv.width,cv.height);
-  if(view.wide){bdX.drawImage(lowCv,0,0,lowCv.width,lowCv.height,0,0,10,16);dX.imageSmoothingEnabled=true;const k=Math.max(cv.width/10,cv.height/16)*1.15,bw=10*k,bh=16*k;dX.drawImage(bdCv,(cv.width-bw)/2,(cv.height-bh)/2,bw,bh);dX.fillStyle='rgba(5,5,4,.6)';dX.fillRect(0,0,cv.width,cv.height);dX.imageSmoothingEnabled=false}
+  if(view.wide&&!(BGK_OK&&bgkDraw('sky'))){bdX.drawImage(lowCv,0,0,lowCv.width,lowCv.height,0,0,10,16);dX.imageSmoothingEnabled=true;const k=Math.max(cv.width/10,cv.height/16)*1.15,bw=10*k,bh=16*k;dX.drawImage(bdCv,(cv.width-bw)/2,(cv.height-bh)/2,bw,bh);dX.fillStyle='rgba(5,5,4,.6)';dX.fillRect(0,0,cv.width,cv.height);dX.imageSmoothingEnabled=false}
   dX.drawImage(lowCv,0,0,lowCv.width,lowCv.height,Math.round(view.ox*view.dpr),Math.round(view.oy*view.dpr),Math.round(W*view.s*view.dpr),Math.round(H*view.s*view.dpr));
   if(HSV.edit&&HSV.edit.sel)hsTbPos();}
 // a gramophone that is on plays a soft tune now and then
@@ -13864,6 +13872,195 @@ function hsIntro(){const tmp=e=>hsSan({est:e,ext:HS_PRESET[e].ext,r:[]});showMod
 function hsModalAct(a){const[k,v]=a.split(':');if(k==='est'&&HS_EST.includes(v)){S.casa=hsNew(v);closeModal();hsSave();ev('casa','escolher:'+v);setTimeout(()=>{hsOpen();setTimeout(()=>toast(_t('Bem-vindo a casa. Toca nos móveis para os usares, ou em Decorar para mudar tudo.')),600)},180)}}
 hsDom();
 var HS_MOD_OK=1;
+
+/* ============ ecrã largo: um céu vivo à volta do jogo ============ */
+// on a tablet or a computer held sideways the game is one column in the middle. The sides used to show a blurred copy of the scene;
+// now they show a sky in the same pixel art, made from the real sky of the town at this hour: soft clouds by day, warm colours at
+// dawn and dusk, and at night the stars, the Milky Way, a coloured nebula, fireflies over the hills and the odd shooting star.
+// In the mine it is the deep earth with glowing dust; on the moon, space; in the abyss, embers. It loops forever, costs little
+// (a small canvas drawn big, repainted about 20 times a second) and keeps moving, more gently, with the game's reduced motion on.
+const BGK={cv:document.createElement('canvas'),k:0,w:0,h:0,hz:0,sk:'',vk:'',sky:null,neb:null,nebs:{},nbj:null,nv:'',nf:0,land:null,vig:null,cl:null,
+  st:null,ff:null,rn:null,mo:null,em:null,t:0,lt:0,lu:0,pT:0,shoot:null,shT:3,bird:null,bdT:10};
+BGK.x=BGK.cv.getContext('2d');
+const BGK_BY=[0,8,2,10,12,4,14,6,3,11,1,9,15,7,13,5].map(v=>(v+.5)/16);
+const bgkBy=(x,y)=>BGK_BY[((y&3)<<2)|(x&3)];
+// a step from a smooth value: flat bands, dithered only near the seam between two bands
+const bgkQ=(v,x,y,sh)=>{const b=Math.floor(v),f=clamp((v-b-.5)*(sh||3)+.5,0,1);return f>bgkBy(x,y)?b+1:b};
+const bgkFbm=(x,y,s)=>vnoise(x,y,s)*.55+vnoise(x*2.1,y*2.1,s+7)*.3+vnoise(x*4.3,y*4.3,s+13)*.15;
+const bgkC=(w,h)=>{const c=document.createElement('canvas');c.width=w;c.height=h;return c};
+// what the sky is made of: the colours of the game's own sky at this hour, or a fixed palette under the ground
+function bgkPal(th){
+  if(th==='deep'||!env)return{th:'deep',deep:1,top:[34,24,32],bot:[78,48,34],night:1,day:0,wx:'clear',side:1,key:'deep'};
+  const e=env,night=e.space?1:clamp(e.night,0,1);
+  return{th,top:e.top,bot:e.bot,night,day:e.space||e.nether?0:e.day,wx:e.wx,space:e.space?1:0,nether:e.nether?1:0,side:e.side>0?1:-1,
+    far:e.far,mist:e.mist||e.bot,lit:e.cloudLit||[236,240,244],sh:e.cloudSh||[180,186,200],glow:e.sunGlow||[255,226,170],
+    key:[th,css(e.top),css(e.bot),e.wx,Math.round(night*24),e.space?1:0,e.nether?1:0,e.side>0?1:-1,css(e.far[2]),css(e.cloudLit||[0,0,0])].join('|')}}
+// the sky: a gradient in a few steps, dithered like old pixel art, with a wide soft light on the side of the sun or the moon
+function bgkSky(P){const{w,h,hz}=BGK,c=bgkC(w,h),x=c.getContext('2d'),img=x.createImageData(w,h),d=img.data,NB=14,GL=6;
+  const gx=P.side>0?w*.94:w*.06,gy=h*.15,gr=h*.95,gc=P.deep?[150,84,40]:P.nether?[255,96,40]:P.night>.5?[150,172,232]:P.glow,
+    ga=P.deep?.12:P.nether?.3:P.night>.5?.13:.32*(P.wx==='clear'?1:P.wx==='cloudy'?.55:.25),BC=[];
+  for(let i=0;i<=NB;i++)BC.push(mix(P.top,P.bot,i/NB));
+  for(let y=0;y<h;y++){const t0=clamp(y/hz,0,1),q0=Math.pow(t0,1.25)*NB,dy=(y-gy)*1.15,gyIn=Math.abs(dy)<gr;
+    for(let X=0;X<w;X++){const q=P.deep?Math.pow(clamp(t0+(bgkFbm(X*.016,y*.055,31)-.5)*.3,0,1),1.25)*NB:q0;let col=BC[Math.min(NB,bgkQ(q,X,y,2.4))];
+      if(gyIn){const dx=X-gx;if(dx<gr&&dx>-gr){const dg=Math.sqrt(dx*dx+dy*dy)/gr;if(dg<1){const vi=Math.min(GL,bgkQ((1-dg)*(1-dg)*GL,X+2,y+1,2.4));if(vi)col=mix(col,gc,vi/GL*ga)}}}
+      const j=(y*w+X)<<2;d[j]=col[0];d[j+1]=col[1];d[j+2]=col[2];d[j+3]=255}}
+  x.putImageData(img,0,0);return c}
+// the far sky, in one strip that joins up end to end so it can turn forever: the Milky Way as a gentle wave with a dark rift and
+// thousands of tiny stars, and two nebulae. Under the ground the same strip is loose patches of warm and cold light; in the abyss,
+// red haze. It is the heavy part, so it is made a few rows at a time over several frames, kept for each place, and fades in
+function bgkNebJob(v){const{w,h}=BGK;return{v,w,h,y:0,img:new ImageData(w,h),R:mulberry32(901),
+  pal:v==='deep'?[[196,116,50],[64,160,148],[150,74,44],[236,180,100]]:v==='nether'?[[196,48,22],[255,118,44],[110,20,14],[255,170,90]]:[[96,92,190],[70,120,206],[150,96,186],[96,170,196]],
+  amax:v==='sky'?.62:.5,blobs:[[w*.16,h*.6,h*.2],[w*.7,h*.16,h*.16]]}}
+function bgkNebRow(J,y){const{v,w,h,pal,amax,blobs,R}=J,d=J.img.data,TAU=Math.PI*2,L=8;
+  for(let X=0;X<w;X++){const u=X/w;let dens=0;
+    if(v==='sky'){const yc=h*(.3+.09*Math.sin(TAU*u)+.04*Math.sin(TAU*2*u+1.3)),hw=h*(.075+.03*Math.sin(TAU*3*u+.7)),dd=(y-yc)/hw;if(dd>-1.7&&dd<1.7)dens=(1-dd*dd/2.89)**1.5;
+      for(const[bx,by,br]of blobs){if(Math.abs(y-by)>br)continue;let dx=Math.abs(X-bx);dx=Math.min(dx,w-dx);if(dx>br*1.6)continue;const dd=Math.hypot(dx,(y-by)*1.3)/br*(.55+.9*bgkFbm(X*.045,y*.045,57));if(dd<1){const q=(1-dd)*(1-dd)*.6;if(q>dens)dens=q}}}
+    else{const g=bgkFbm(X*.02,y*.02,57)*(1-u)+bgkFbm((X-w)*.02,y*.02,57)*u;dens=clamp((g-.5)*3,0,1)}
+    if(dens<=0)continue;
+    const P=(sc,s)=>bgkFbm(X*sc,y*sc,s)*(1-u)+bgkFbm((X-w)*sc,y*sc,s)*u,n=P(.016,11),n2=P(.011,23);
+    let a=dens*(.2+n*1.05);if(v==='sky'){const rf=P(.03,41);if(rf>.56)a*=Math.max(0,1-(rf-.56)*4.2)}a=clamp(a,0,1);
+    const qi=Math.min(L,bgkQ(a*L,X,y,2.6)),j=(y*w+X)<<2;
+    const ci=clamp(n2*1.6-.3,0,.999)*3,i0=Math.floor(ci);let col=mix(pal[i0],pal[i0+1],ci-i0);if(qi>=L-1)col=mix(col,v==='sky'?[238,232,255]:pal[3],.3);
+    if(qi){d[j]=col[0];d[j+1]=col[1];d[j+2]=col[2];d[j+3]=Math.pow(qi/L,1.6)*amax*255}
+    if(v==='sky'&&R()<dens*(.008+n*.022)){const b=.4+R()*.45;d[j]=232;d[j+1]=236;d[j+2]=255;d[j+3]=Math.max(d[j+3],b*255)}}}
+// a few milliseconds of work per frame; when the strip is done it is kept for this place and starts to fade in
+function bgkNebStep(v,budget){if(BGK.nebs[v])return;let J=BGK.nbj;if(!J||J.v!==v||J.w!==BGK.w||J.h!==BGK.h)J=BGK.nbj=bgkNebJob(v);
+  const t0=performance.now();while(J.y<J.h){bgkNebRow(J,J.y++);if(performance.now()-t0>budget)break}
+  if(J.y>=J.h){const c=bgkC(J.w,J.h);c.getContext('2d').putImageData(J.img,0,0);BGK.nebs[v]=c;BGK.nbj=null}}
+// the land along the bottom, far to near: a soft ridge, hills with round crowns, and the near tree line with pines. Each row is
+// lit on the side of the sun and fades into mist at its foot (no outlines: the depth comes from the light and the air between rows).
+// On the moon, grey dunes; in the abyss, sharp rocks
+function bgkLand(P){const{w,h,hz}=BGK,c=bgkC(w,h),x=c.getContext('2d'),img=x.createImageData(w,h),d=img.data,R=mulberry32(P.space?77:P.nether?66:55),S2=h/360;
+  if(P.deep){const put=(X,y,cc)=>{const j=(y*w+X)<<2;d[j]=cc[0];d[j+1]=cc[1];d[j+2]=cc[2];d[j+3]=255};
+    for(const[ceil,y0,amp,col,lit,sd]of[[1,h*.1,h*.07,[13,9,11],[120,78,46],61],[0,h*.88,h*.06,[12,8,8],[150,98,54],62]]){const e=new Float32Array(w);
+      for(let X=0;X<w;X++)e[X]=y0+(ceil?1:-1)*amp*bgkFbm(X*.02,sd,sd);
+      let X=-4;while(X<w+4){const big=vnoise(X*.03,sd,sd+5),len=(ceil?8+R()*44:5+R()*26)*S2*(.35+big),hw=Math.max(1.5,len*(ceil?.17:.3)),xi=Math.round(X),b0=e[clamp(xi,0,w-1)];
+        for(let dx=-Math.ceil(hw);dx<=Math.ceil(hw);dx++){const xx=xi+dx;if(xx<0||xx>=w)continue;const k=1-Math.abs(dx)/hw;if(k<=0)continue;const t=b0+(ceil?1:-1)*len*Math.pow(k,1.5);if(ceil?t>e[xx]:t<e[xx])e[xx]=t}
+        X+=hw*2+R()*10*S2}
+      const hl=mix(col,lit,.38),rim=mix(col,lit,.18);
+      for(let X=0;X<w;X++){const edge=Math.round(e[X]);if(ceil){for(let y=0;y<=Math.min(h-1,edge);y++){const dy=edge-y;put(X,y,dy===0?hl:dy===1&&bgkBy(X,y)<.5?rim:col)}}
+        else for(let y=Math.max(0,edge);y<h;y++){const dy=y-edge;put(X,y,dy===0?hl:dy===1&&bgkBy(X,y)<.5?rim:bgkQ(clamp((y-y0)/(h-y0+1),0,1)*1.6,X,y,4)?mix(col,[0,0,0],.35):col)}}}
+    x.putImageData(img,0,0);return c}
+  const f=P.far,side=P.side,lit=P.lit,mist=P.mist;
+  const rows=P.space?[[hz-20*S2,9*S2,.012,f[0],0],[hz-5*S2,7*S2,.02,f[1],0],[hz+14*S2,5*S2,.03,f[2],0]]
+    :P.nether?[[hz-30*S2,22*S2,.02,f[0],3],[hz-10*S2,18*S2,.03,f[1],3],[hz+12*S2,14*S2,.04,f[2],3]]
+    :[[hz-30*S2,24*S2,.0065,f[0],0],[hz-6*S2,12*S2,.016,f[1],1],[hz+14*S2,7*S2,.026,f[2],2]];
+  rows.forEach(([base,amp,sc,col,tr],ri)=>{const top=new Float32Array(w);
+    for(let X=0;X<w;X++){let n=clamp((bgkFbm(X*sc,ri*9.7,ri*31+5)-.28)*1.9,0,1.25);if(tr===3){const p=(X*.07+ri*.37)%1,tri=Math.abs(p-.5)*2;n=n*.45+(1-tri)*.9*vnoise(X*.05,ri*3,77)}top[X]=base-amp*n}
+    if(tr===1||tr===2){let X=-4;while(X<w+4){const clump=vnoise(X*.035,ri*5,91),pine=tr===2?R()<.55:R()<.3,hh=(pine?(tr===2?6+R()*13:4+R()*6):(tr===2?3.5+R()*5:2.5+R()*3))*S2*(.55+clump*.8),xi=Math.round(X),by=top[clamp(xi,0,w-1)];
+        if(pine){const hw=hh*.44,tier=Math.max(2,Math.round(3*S2));for(let dy=0;dy<=hh;dy++){const half=(dy/hh)*hw*(.72+.28*((dy%tier)/tier));for(let dx=-Math.ceil(half);dx<=Math.ceil(half);dx++){const xx=xi+dx;if(xx<0||xx>=w||Math.abs(dx)>half+.25)continue;const yy=by+1-hh+dy;if(yy<top[xx])top[xx]=yy}}}
+        else{const r=hh,cy=by-r*.45;for(let dx=-Math.ceil(r);dx<=Math.ceil(r);dx++){const xx=xi+dx;if(xx<0||xx>=w||Math.abs(dx)>r)continue;const yy=cy-Math.sqrt(r*r-dx*dx);if(yy<top[xx])top[xx]=yy}}
+        X+=(pine?hh*.85:hh*1.4)*(.75+R()*.5)+(clump<.3&&R()<.5?R()*8*S2:0)}}
+    const hl=mix(col,lit,.24),rim=mix(col,lit,.1),shd=mix(col,[0,0,0],.14),haze=mix(col,mist,.34),deep=mix(col,[0,0,0],.3);
+    for(let X=0;X<w;X++){const t0=Math.max(0,Math.ceil(top[X])),face=top[clamp(X+side,0,w-1)]-top[X]>.35,back=top[clamp(X-side,0,w-1)]-top[X]>.35;
+      for(let y=t0;y<h;y++){const dy=y-t0,b=bgkBy(X,y);let cc=col;
+        if(dy===0)cc=face?hl:rim;else if(dy===1&&face&&b<.5)cc=hl;else if(back&&dy<3&&b<.6)cc=shd;
+        if(ri<2){if(bgkQ(clamp((y-(base-amp*.4))/(amp*.9+6*S2),0,1)*.98,X,y,4))cc=haze}
+        else if(bgkQ(clamp((y-base)/(h-base+1),0,1)*1.6,X,y,4))cc=deep
+        const j=(y*w+X)<<2;d[j]=cc[0];d[j+1]=cc[1];d[j+2]=cc[2];d[j+3]=255}}});
+  x.putImageData(img,0,0);return c}
+// one cloud: round tops from a few bumps, a flat base, the top edge lit on the side of the sun, the underside shaded in a dither
+function bgkCloud(R,cw,lit,sh,side){const ch=Math.max(6,Math.round(cw*.62)),c=bgkC(cw,ch),x=c.getContext('2d'),img=x.createImageData(cw,ch),d=img.data,yb=ch-1,top=new Float32Array(cw).fill(1e9);
+  const n=3+Math.round(cw/14);for(let i=0;i<n;i++){const u=(i+.5)/n,r=cw*(.11+.13*Math.sin(Math.PI*Math.pow(u,.85)))*(.7+R()*.6),bx=cw*(.1+.8*u)+(R()-.5)*cw*.08,by=yb-r*(.22+R()*.4);
+    for(let X=Math.max(0,Math.floor(bx-r));X<=Math.min(cw-1,Math.ceil(bx+r));X++){const dx=X-bx;if(Math.abs(dx)>r)continue;const t=by-Math.sqrt(r*r-dx*dx);if(t<top[X])top[X]=t}}
+  let tmin=1e9;for(let X=0;X<cw;X++)if(top[X]<tmin)tmin=top[X];
+  const hi=mix(lit,[255,255,255],.22),lo=mix(sh,lit,.15),mid=mix(lit,sh,.6);
+  for(let X=0;X<cw;X++){if(top[X]>yb-1)continue;const t0=Math.max(0,Math.ceil(top[X])),nb=X+side<0||X+side>=cw?1e9:top[X+side],face=nb>top[X]+.3;
+    for(let y=t0;y<=yb;y++){const v=(y-tmin)/(yb-tmin+1e-6);let cc;
+      if(y===t0)cc=face?hi:lit;else if(y===yb)cc=lo;else cc=bgkQ(clamp((v-.66)*2+.5,0,.99),X,y,3)?mid:lit;
+      const j=(y*cw+X)<<2;d[j]=cc[0];d[j+1]=cc[1];d[j+2]=cc[2];d[j+3]=255}}
+  x.putImageData(img,0,0);return c}
+// three layers of clouds, the far ones smaller, slower and closer to the colour of the sky; more of them, and darker, when it is grey or raining
+function bgkClouds(P){if(P.space||P.nether)return null;const{w,h}=BGK,S2=h/360,R=mulberry32(2024),cnt=P.wx==='rain'?[7,6,4]:P.wx==='cloudy'?[6,5,3]:[3,3,2],out=[];
+  const lit=P.wx==='rain'?mix(P.sh,P.lit,.35):P.lit,sh=P.wx==='rain'?mix(P.sh,[30,34,44],.25):P.sh;
+  for(let L=0;L<3;L++)for(let i=0;i<cnt[L];i++){const cw=Math.round([20,32,50][L]*(.75+R()*.6)*S2),fy=L===0?.05+R()*.3:L===1?.08+R()*.38:.14+R()*.4,
+    sky=mix(P.top,P.bot,Math.pow(fy,1.25)),k=[.45,.22,0][L];
+    out.push({c:bgkCloud(R,cw,mix(lit,sky,k),mix(sh,sky,k),P.side),x:R()*w*1.4,y:Math.round(h*fy),v:[1.6,2.8,4.6][L]*S2*(P.wx==='rain'?1.6:1),a:[.72,.9,1][L]})}
+  return out}
+// the moving bits are kept as lists made once for the size of the screen, so the same sky comes back every time
+function bgkLists(){const{w,h,hz}=BGK,R=mulberry32(4711),A=w*h,S2=h/360,st=[];
+  for(const[n,v,k]of[[A/700,.9,1],[A/2400,1.9,2],[A/9000,3.2,3]])for(let i=0;i<n;i++){const b=R(),warm=R(),cs=warm<.09?[255,214,170]:warm<.18?[172,200,255]:[236,240,255];
+    st.push({x:R()*w,y:R()*(hz-8*S2),b:k===1?.25+b*.45:k===2?.45+b*.5:.72+b*.28,v:v*S2,k,ph:R()*7,f:.6+R()*2.2,cs:css(cs),dc:css(R()<.5?[240,184,96]:[110,224,204])})}
+  BGK.st=st;
+  BGK.ff=Array.from({length:26},()=>({x:R()*w,y:hz-R()*h*.07+h*.025,ph:R()*7,f:1.2+R()*1.6,a:.5+R(),b:.5+R()}));
+  BGK.rn=Array.from({length:Math.round(A/1900)},()=>({x:R()*w,y:R()*h,v:(120+R()*60)*S2,a:.18+R()*.22}));
+  BGK.mo=Array.from({length:Math.round(A/3000)},()=>({x:R()*w,y:R()*h,v:(2+R()*5)*S2,f:.4+R()*.9,ph:R()*7,a:.35+R()*.45,big:R()<.25,c:css(R()<.55?[244,186,96]:[118,226,206])}));
+  BGK.em=Array.from({length:Math.round(A/4200)},()=>({x:R()*w,y:R()*h,v:(6+R()*10)*S2,f:.8+R()*1.6,ph:R()*7,big:R()<.3}))}
+// a gentle darkening towards the edges of the screen, so the eye always comes back to the game
+function bgkVig(cl,cr){const{w,h}=BGK,c=bgkC(w,h),x=c.getContext('2d'),s='rgba(3,5,7,';
+  if(cl>1){const g=x.createLinearGradient(0,0,cl,0);g.addColorStop(0,s+'.32)');g.addColorStop(1,s+'0)');x.fillStyle=g;x.fillRect(0,0,Math.ceil(cl),h)}
+  if(w-cr>1){const g=x.createLinearGradient(cr,0,w,0);g.addColorStop(0,s+'0)');g.addColorStop(1,s+'.32)');x.fillStyle=g;x.fillRect(Math.floor(cr),0,w-Math.floor(cr),h)}
+  const g=x.createLinearGradient(0,0,0,h);g.addColorStop(0,s+'.12)');g.addColorStop(.2,s+'0)');g.addColorStop(.82,s+'0)');g.addColorStop(1,s+'.18)');x.fillStyle=g;x.fillRect(0,0,w,h);return c}
+function bgkStarsDraw(P,T,nA){const{w}=BGK,x=BGK.x;
+  for(const s of BGK.st){if(P.deep&&s.k<2)continue;const tw=s.k===1?.8+.2*Math.sin(T*s.f+s.ph):.5+.5*Math.sin(T*s.f+s.ph),a=s.b*tw*nA;if(a<.04)continue;
+    const X=P.deep?s.x|0:((s.x-T*s.v)%w+w)%w|0,Y=s.y|0;x.fillStyle=P.deep?s.dc:s.cs;x.globalAlpha=Math.min(1,P.deep?a*1.3:a);x.fillRect(X,Y,1,1);
+    if(s.k===3){x.globalAlpha=a*.42;x.fillRect(X-1,Y,1,1);x.fillRect(X+1,Y,1,1);x.fillRect(X,Y-1,1,1);x.fillRect(X,Y+1,1,1);
+      if(tw>.86){x.globalAlpha=a*.18;x.fillRect(X-2,Y,1,1);x.fillRect(X+2,Y,1,1);x.fillRect(X,Y-2,1,1);x.fillRect(X,Y+2,1,1)}}}
+  x.globalAlpha=1}
+// a shooting star now and then, always on one of the sides where it can be seen
+function bgkShoot(P,T,dT,nA,cl,cr){const{w,h}=BGK,x=BGK.x;let s=BGK.shoot;
+  if(!s){if(nA<.45||P.deep||P.nether)return;BGK.shT-=dT;if(BGK.shT>0)return;BGK.shT=(RM?9:5)+rnd()*9;
+    const L=cl>36,Rt=w-cr>36;if(!L&&!Rt)return;const left=L&&(!Rt||rnd()<.5),x0=left?8+rnd()*(cl-16):cr+8+rnd()*(w-cr-16);
+    s=BGK.shoot={x:x0,y:h*(.04+rnd()*.34),dx:rnd()<.5?1:-1,dy:.42+rnd()*.2,v:(150+rnd()*60)*h/360,age:0,life:.7+rnd()*.4,len:(16+rnd()*12)*h/360}}
+  s.age+=dT;if(s.age>s.life){BGK.shoot=null;return}
+  const fa=Math.sin(Math.PI*Math.min(1,s.age/s.life*1.15))*nA,nn=Math.hypot(s.dx,s.dy),ux=s.dx/nn,uy=s.dy/nn,hx=s.x+ux*s.v*s.age,hy=s.y+uy*s.v*s.age;
+  x.fillStyle='rgb(240,244,255)';for(let i=1;i<s.len;i++){const a=fa*Math.pow(1-i/s.len,1.6);if(a<.03)break;x.globalAlpha=a;x.fillRect(Math.round(hx-ux*i),Math.round(hy-uy*i),1,1)}
+  x.globalAlpha=fa;x.fillRect(Math.round(hx)-1,Math.round(hy),3,1);x.fillRect(Math.round(hx),Math.round(hy)-1,1,3);x.globalAlpha=1}
+function bgkCloudsDraw(P,T){const{w}=BGK,x=BGK.x,f=1-P.night*.45;
+  for(const c of BGK.cl){const cw=c.c.width,span=w+cw,X=((c.x+T*c.v)%span+span)%span-cw;x.globalAlpha=c.a*f;x.drawImage(c.c,Math.round(X),c.y)}x.globalAlpha=1}
+function bgkRain(T){const{w,h}=BGK,x=BGK.x;x.fillStyle='rgb(198,212,230)';
+  for(const r of BGK.rn){const y=((r.y+T*r.v)%(h+8)+h+8)%(h+8)-8,X=((r.x-T*r.v*.22)%w+w)%w;x.globalAlpha=r.a;x.fillRect(X|0,y|0,1,3);x.fillRect((X|0)-1,(y|0)+3,1,2)}x.globalAlpha=1}
+// fireflies over the near trees at night: they wander a little and blink, a warm green with a soft halo
+function bgkFlies(T,nA){const x=BGK.x,S2=BGK.h/360;
+  for(const f of BGK.ff){const g=Math.max(0,Math.sin(T*f.f+f.ph));const a=g*g*nA;if(a<.05)continue;const X=Math.round(f.x+Math.sin(T*.31*f.a+f.ph)*7*S2),Y=Math.round(f.y+Math.sin(T*.47*f.b+f.ph*1.7)*3*S2);
+    x.globalAlpha=a*.32;x.fillStyle='rgb(180,232,110)';x.fillRect(X-1,Y,1,1);x.fillRect(X+1,Y,1,1);x.fillRect(X,Y-1,1,1);x.fillRect(X,Y+1,1,1);x.globalAlpha=a;x.fillStyle='rgb(232,255,160)';x.fillRect(X,Y,1,1)}
+  x.globalAlpha=1}
+// under the ground: specks of dust lit by the lanterns, rising slowly; in the abyss: embers that rise, flicker and go out
+function bgkMotes(T){const{h}=BGK,x=BGK.x,S2=h/360;
+  for(const m of BGK.mo){const Y=((m.y-T*m.v)%h+h)%h|0,X=Math.round(m.x+Math.sin(T*m.f+m.ph)*3*S2),a=m.a*(.55+.45*Math.sin(T*m.f*1.7+m.ph));x.fillStyle=m.c;x.globalAlpha=a;x.fillRect(X,Y,1,1);
+    if(m.big){x.globalAlpha=a*.35;x.fillRect(X-1,Y,1,1);x.fillRect(X+1,Y,1,1);x.fillRect(X,Y-1,1,1);x.fillRect(X,Y+1,1,1)}}x.globalAlpha=1}
+function bgkEmbers(T){const{h}=BGK,x=BGK.x,S2=h/360,top=h*.9;
+  for(const e of BGK.em){const u=((e.y+T*e.v)%top+top)%top,Y=Math.round(h-u),X=Math.round(e.x+Math.sin(T*e.f+e.ph)*4*S2),fl=.6+.4*Math.sin(T*e.f*5+e.ph),a=(1-u/top)*fl;if(a<.04)continue;
+    x.fillStyle=fl>.75?'rgb(255,190,90)':'rgb(255,104,40)';x.globalAlpha=a;x.fillRect(X,Y,1,1);if(e.big){x.globalAlpha=a*.4;x.fillRect(X,Y+1,1,1);x.fillRect(X-1,Y,1,1);x.fillRect(X+1,Y,1,1)}}x.globalAlpha=1}
+// by day, now and then a small flock crosses the sky in a V, flapping
+function bgkBirds(P,T,dT){const{w,h}=BGK,x=BGK.x,S2=h/360;let b=BGK.bird;
+  if(!b){if(P.day<.5||P.wx==='rain')return;BGK.bdT-=dT;if(BGK.bdT>0)return;BGK.bdT=22+rnd()*30;const dir=rnd()<.5?1:-1;
+    b=BGK.bird={x:dir>0?-14:w+14,y:h*(.12+rnd()*.3),dir,n:3+((rnd()*3)|0),v:(9+rnd()*5)*S2,ph:rnd()*7}}
+  b.x+=b.dir*b.v*dT;x.fillStyle=css(mix(P.top,[10,14,20],.6));x.globalAlpha=.8;
+  for(let i=0;i<b.n;i++){const r=Math.ceil(i/2),bx=Math.round(b.x-b.dir*r*6*S2),by=Math.round(b.y+Math.sin(T*.6+b.ph)*2+(i%2?-1:1)*r*3*S2),up=Math.sin(T*9+i*1.3+b.ph)>0,o=up?-1:1;
+    x.fillRect(bx,by,1,1);x.fillRect(bx-1,by+(up?-1:0),1,1);x.fillRect(bx+1,by+(up?-1:0),1,1);x.fillRect(bx-2,by+o,1,1);x.fillRect(bx+2,by+o,1,1)}
+  x.globalAlpha=1;if(b.x<-30||b.x>w+30)BGK.bird=null}
+function bgkPaint(P,T,dT,cl,cr){const{w,h}=BGK,x=BGK.x,nA=P.deep?1:P.night;
+  x.globalAlpha=1;x.drawImage(BGK.sky,0,0);
+  // the far sky turns slowly to the left
+  if(BGK.neb&&BGK.nf>0&&(nA>.02||P.nether)){const o=((T*.9*h/360)%w+w)%w|0;x.globalAlpha=BGK.nf*(P.nether?1:Math.min(1,nA*1.1));x.drawImage(BGK.neb,-o,0);x.drawImage(BGK.neb,w-o,0);x.globalAlpha=1}
+  if(!P.nether&&nA>.03)bgkStarsDraw(P,T,nA);
+  if(P.deep)bgkMotes(T);
+  bgkShoot(P,T,dT,nA,cl,cr);
+  if(BGK.cl)bgkCloudsDraw(P,T);
+  if(P.wx==='rain'&&!P.deep&&!P.space&&!P.nether)bgkRain(T);
+  if(BGK.land)x.drawImage(BGK.land,0,0);
+  if(P.nether)bgkEmbers(T);else if(!P.deep&&!P.space&&nA>.35&&P.wx!=='rain')bgkFlies(T,nA);
+  if(!P.deep&&!P.space&&!P.nether)bgkBirds(P,T,dT);
+  x.fillStyle=`rgba(4,7,9,${(P.deep?.04:.03+.05*(1-nA)).toFixed(3)})`;x.fillRect(0,0,w,h);
+  x.drawImage(BGK.vig,0,0)}
+// called by each renderer when the screen is wide ('sky' in the garden and the house, 'deep' in the mine)
+function bgkDraw(th){try{
+  const k=Math.max(1,Math.round(cv.height/360)),w=Math.ceil(cv.width/k),h=Math.ceil(cv.height/k);
+  if(w!==BGK.w||h!==BGK.h||k!==BGK.k){Object.assign(BGK,{k,w,h,hz:Math.round(h*.84),sk:'',vk:'',nebs:{},nbj:null,neb:null,nv:'',nf:0,shoot:null,bird:null});BGK.cv.width=w;BGK.cv.height=h;bgkLists()}
+  const P=bgkPal(th),v=P.deep?'deep':P.nether?'nether':'sky';
+  if(BGK.sk!==P.key){BGK.sk=P.key;BGK.sky=bgkSky(P);BGK.land=bgkLand(P);BGK.cl=P.deep?null:bgkClouds(P)}
+  const cl=view.ox*view.dpr/k,cr=(view.ox+W*view.s)*view.dpr/k,vk=Math.round(cl)+'|'+Math.round(cr);if(BGK.vk!==vk){BGK.vk=vk;BGK.vig=bgkVig(cl,cr)}
+  const pn=performance.now(),dt=Math.min(.1,(pn-(BGK.lt||pn))/1000);BGK.lt=pn;BGK.t+=dt*(RM?.5:1);
+  if(BGK.nv!==v){BGK.nv=v;BGK.neb=null;BGK.nf=0}if(!BGK.neb){bgkNebStep(v,5);if(BGK.nebs[v])BGK.neb=BGK.nebs[v]}else if(BGK.nf<1)BGK.nf=Math.min(1,BGK.nf+dt/1.6);
+  if(pn-BGK.lu>46||BGK.shoot||(BGK.neb&&BGK.nf<1)){BGK.lu=pn;const dT=Math.min(.2,BGK.t-BGK.pT);BGK.pT=BGK.t;bgkPaint(P,BGK.t,dT,cl,cr)}
+  dX.imageSmoothingEnabled=false;dX.globalAlpha=1;dX.drawImage(BGK.cv,0,0,w*k,h*k);
+  // a soft shadow where the game meets the sky, so the column sits above it
+  const x0=Math.round(view.ox*view.dpr),x1=Math.round((view.ox+W*view.s)*view.dpr),gw=Math.round(34*view.dpr);
+  let g=dX.createLinearGradient(x0-gw,0,x0,0);g.addColorStop(0,'rgba(0,0,0,0)');g.addColorStop(1,'rgba(0,0,0,.4)');dX.fillStyle=g;dX.fillRect(x0-gw,0,gw,cv.height);
+  g=dX.createLinearGradient(x1,0,x1+gw,0);g.addColorStop(0,'rgba(0,0,0,.4)');g.addColorStop(1,'rgba(0,0,0,0)');dX.fillStyle=g;dX.fillRect(x1,0,gw,cv.height);
+  return true}catch(e){BGK_OK=0;if(window.__TM_DEBUG)console.error(e);return false}}
+var BGK_OK=1;
 
 })();
 </script>
