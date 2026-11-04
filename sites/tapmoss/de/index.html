@@ -1507,6 +1507,9 @@ Object.assign(TR,{"Linhagem do Sol": ["Sun Bloodline", "Linaje del Sol", "Ligné
 /* ============ base ============ */
 const W=160,H=256,HOR=116,N=W*H;
 const DBG=window.__TM_DEBUG||{};
+document.head.insertAdjacentHTML('beforeend',`<style>#app img,#app svg,#app canvas{-webkit-touch-callout:none;-webkit-user-drag:none;user-select:none}.pxi,.pxi image{pointer-events:none}#autoB.hid #icAuto{opacity:.8}#autoB.hid::after{content:'';position:absolute;right:0;top:0;width:24px;height:24px;background:url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 13 13%27 shape-rendering=%27crispEdges%27%3E%3Crect x=%270%27 y=%270%27 width=%2713%27 height=%2713%27 fill=%27%230f1810%27/%3E%3Crect x=%27.5%27 y=%27.5%27 width=%2712%27 height=%2712%27 fill=%27none%27 stroke=%27%239fd86a%27/%3E%3Cpath fill=%27%23e8f0dc%27 d=%27M4 4h5v1H4zM3 5h7v1H3zM2 6h9v1H2zM3 7h7v1H3zM4 8h5v1H4z%27/%3E%3Cpath fill=%27%230f1810%27 d=%27M5 5h3v3H5z%27/%3E%3Cpath fill=%27%23ff5a4a%27 d=%27M2 10h2v1h-2zM3 9h2v1h-2zM4 8h2v1h-2zM5 7h2v1h-2zM6 6h2v1h-2zM7 5h2v1h-2zM8 4h2v1h-2zM9 3h2v1h-2z%27/%3E%3C/svg%3E") center/contain no-repeat;image-rendering:pixelated;pointer-events:none}#ofB{position:relative}#ofB.dotOn::after{content:'';position:absolute;right:8px;top:2px;width:9px;height:9px;background:#e8604a;box-shadow:0 0 0 2px #0f1810;pointer-events:none}.mnars .card .pxi.pk{width:44px;height:44px;margin:-2px auto 0}.item .ico .pxi.pk{width:30px;height:30px}</style>`);
+document.addEventListener('contextmenu',e=>{const t=e.target;if(t&&t.closest&&t.closest('#app')&&!t.closest('input,textarea,[contenteditable]'))e.preventDefault()});
+try{Object.assign(TR,{'Toques automáticos ligados, sem se verem na cena.':['Auto taps on, hidden from the scene.','Toques automáticos activados, sin verse en la escena.','Taps automatiques activés, cachés dans la scène.','Auto-Taps an, in der Szene unsichtbar.','自動タップがオンになった。画面には表示されない。','自动点击已开启,场景中不显示。']})}catch(e){}
 // errors on players' devices go to a private log (no account, no address): a bug shows up the day it appears, not when someone complains
 const ERRLOG={n:0,seen:new Set(),q:[]};
 function reportErr(msg,onde,pilha){
@@ -2812,8 +2815,15 @@ const curPch=()=>{if(!visiting){const p=S&&S.pt&&S.pt.at&&ptOpen()?ptAct():null;
 function petFrame(F,c){if(!c)return F;const st=PCH_CYC(c)&&!RM?Math.floor(performance.now()/160)%6:0,k='_c'+c+'_'+st;if(F[k])return F[k];const rgb={};for(const ch in F.rgb)rgb[ch]=ch==='k'?F.rgb[ch]:chromaRgb(F.rgb[ch],c,ch,st);return F[k]={map:F.map,rgb,w:F.w,h:F.h,rk:c+'.'+st}}
 function petTick(dt){
   const id=curPet();if(!id||!AV||AV.hidden||titleShown){PET.x=-1;return}if(PETS[id].fly)PET.mv=true;
-  if(PET.id!==id||PET.x<0){PET.id=id;PET.x=AV.x+(AV.fl?7:-7);PET.y=AV.y+1}
-  let tx=AV.x+(AV.fl?8:-8),ty=AV.y+1;if(!avWalkable(tx,ty)){tx=AV.x+(AV.fl?-8:8);if(!avWalkable(tx,ty)){tx=AV.x;ty=AV.y+2}}
+  // the pet keeps to the side of the gardener, far enough not to cover her; a big one also stands a step behind her
+  const P0=PETS[id],BG=PET_BIG.has(id),pw=P0.F[2].w*(P0.hd?.5:1)*(BG?2:1),off=Math.max(8,Math.round(pw/2+5)),by=BG?-2:1;
+  if(PET.id!==id||PET.x<0){PET.id=id;PET.x=AV.x+(AV.fl?off:-off);PET.y=AV.y+by}
+  let tx=0,ty=0,ok=false;
+  // on a narrow screen the edges of the scene are cut off: a side where the pet would be out of sight is the last choice
+  const vx0=-view.ox/view.s+pw/2+1,vx1=(view.cw-view.ox)/view.s-pw/2-1,seen=x=>x>=vx0&&x<=vx1;
+  const tries=(BG?[off,-off,off-4,-(off-4)]:[off,-off]).map(o=>AV.x+(AV.fl?o:-o));tries.sort((a,b)=>(seen(b)?1:0)-(seen(a)?1:0));
+  for(const x of tries){tx=x;ty=AV.y+by;if(avWalkable(tx,ty)){ok=true;break}}
+  if(!ok){tx=AV.x+(AV.fl?3:-3);ty=AV.y-3}
   const dx=tx-PET.x,dy=ty-PET.y,d=Math.hypot(dx,dy);PET.t+=dt;
   if(d>60){PET.x=tx;PET.y=ty;return}
   if(d>3||(PET.mv&&d>.6)){const sp=Math.min(d,(d>16?26:12)*dt);PET.x+=dx/d*sp;PET.y+=dy/d*sp;PET.mv=true;if(Math.abs(dx)>.3)PET.fl=dx<0}
@@ -4546,7 +4556,22 @@ function gardenBed(){const sc=scene;if(!sc||!spots)return null;if(sc._bed!==unde
       if(uiBlocked(cx,cy,6)||uiBlocked(cx-rx+3,cy,3)||uiBlocked(cx+rx-3,cy,3))continue;
       const sc2=-Math.abs(cx-80)-Math.abs(cy-(HOR+78))*.7;if(sc2<=bs||!bedClear(cx,cy,rx,ry))continue;bs=sc2;best={cx,cy,rx,ry}}
     if(best)break}
+  // a scene crowded with things the player put down: the bed still has to be there, on the spot where it covers the fewest of them
+  // (never on water, lava, a building or the lamp); new things can no longer be put on it, so it stays clean from then on
+  if(!best){let bs=1e9;const big=[sc.house,sc.site,sc.temple,sc.forge,sc.ship,sc.millSite,sc.azSite,sc.bigBridge,sc.castle].filter(o=>o&&o.box).map(o=>o.box);
+    for(const[rx,ry]of[[16,6.5],[13,5.5],[11,4.5]])
+      for(let cy=Math.ceil(HOR+10+ry);cy<=H-40-ry;cy+=2)for(let cx=Math.ceil(FLX0-4+rx);cx<=FLX1+4-rx;cx+=2){
+        if(uiBlocked(cx,cy,6)||uiBlocked(cx-rx+3,cy,3)||uiBlocked(cx+rx-3,cy,3))continue;
+        const k=bedCost(cx,cy,rx,ry,big);if(k<0)continue;const v=k-rx*6+(Math.abs(cx-80)+Math.abs(cy-(HOR+78))*.7)*.4;if(v<bs){bs=v;best={cx,cy,rx,ry}}}}
   sc._bed=best;return sc._bed}
+function bedCost(cx,cy,rx0,ry0,big){const L=VS().lamp,rx=rx0+2.5,ry=ry0+2;let n=0;
+  if(L&&Math.abs(L.x-cx)<rx+3&&L.y>cy-ry-2&&L.y-16<cy+ry+2)return-1;
+  for(const b of big)if(b.x1>cx-rx&&b.x0<cx+rx&&b.y1>cy-ry&&b.y0<cy+ry)return-1;
+  for(let y=Math.floor(cy-ry*1.55);y<=cy+ry*1.55;y++)for(let x=Math.floor(cx-rx*1.55);x<=cx+rx*1.55;x++){if(x<0||y<0||x>=W||y>=H)continue;const c=y*W+x,dx=(x-cx)/rx,dy=(y-cy)/ry,e=dx*dx+dy*dy,s=surf[c];
+    if(e<=2.3&&(s===8||s===13))return-1;
+    if(e>1)continue;
+    if((s!==1&&s!==12)||dep[c]||pthm[c]||(nofl[c]&&s!==12))n++}
+  return n}
 // the ring of the flower bed and a little room around it must be plain ground (small plants are fine): no stone, log, tree, wall,
 // house, bench or pot, no water or lava near it, no path, and not where the lamp stands
 function bedClear(cx,cy,rx0,ry0){const L=VS().lamp,rx=rx0+2.5,ry=ry0+2;
@@ -5035,6 +5060,7 @@ function boxOk(b,skip){
   const f=footOf(b);if(f.x0<2||f.x1>W-2||f.y0<HOR+6||f.y1>H-28||b.y0<HOR-30)return false;if(uiBlocked((f.x0+f.x1)/2,f.y1-2,0))return false;
   for(const o of scene._occ){if(o===skip)continue;const g=footOf(o);if(!(f.x1<g.x0-1||f.x0>g.x1+1||f.y1<g.y0-1||f.y0>g.y1+1))return false}
   const L=SC().lamp;if(L&&!(f.x1<L.x-3||f.x0>L.x+3||f.y1<L.y-3||f.y0>L.y+2))return false;
+  const B=placing&&scene&&scene._bed;if(B){const dx=(clamp(B.cx,f.x0,f.x1)-B.cx)/(B.rx+3),dy=(clamp(B.cy,f.y0,f.y1)-B.cy)/(B.ry+2.5);if(dx*dx+dy*dy<1)return false}
   for(let y=Math.max(0,f.y0);y<=Math.min(H-1,f.y1);y++)for(let x=Math.max(0,f.x0);x<=Math.min(W-1,f.x1);x++){const s=surf[y*W+x];if(s===8||s===13)return false}
   return true;
 }
@@ -5878,7 +5904,11 @@ function drawAvatar(){
 function avPortrait(look,cls){
   const o=avCompose(look||S.av.look,'stand',{});let y0=o.h,y1=0,x0=o.w,x1=0;
   o.map.forEach((row,y)=>{for(let x=0;x<row.length;x++)if(row[x]!=='.'){y0=Math.min(y0,y);y1=Math.max(y1,y);x0=Math.min(x0,x);x1=Math.max(x1,x)}});
-  const m=o.map.slice(y0,y1+1).map(r=>r.slice(x0,x1+1).padEnd(x1-x0+1,'.'));return pxsvg(m,o.pal,cls||'');
+  const m=o.map.slice(y0,y1+1).map(r=>r.slice(x0,x1+1).padEnd(x1-x0+1,'.'));
+  // every portrait has the same shape (3 wide by 4 tall), with the figure centred in it: a tall figure or a wide hat
+  // no longer spills out of the little frames in the lists, whatever size each list gives it
+  return pxsvg(m,o.pal,cls||'').replace(/viewBox="([-\d.]+) ([-\d.]+) ([\d.]+) ([\d.]+)"/,(q,a,b,c,d)=>{a=+a;b=+b;c=+c;d=+d;const R=.75;
+    if(c/d<R){const n=d*R;a-=(n-c)/2;c=n}else{const n=c/R;b-=(n-d)/2;d=n}return`viewBox="${a} ${b} ${c} ${d}"`});
 }
 
 /* ============ location & real weather ============ */
@@ -7585,11 +7615,17 @@ function autoTick(dt){
   if(!tapOk())return;
   const lx=clamp(h.x+(rnd()-.5)*6,12,W-12),ly=clamp(h.y+(rnd()-.5)*5,HOR+12,H-42);h.press=.07;
   const[px,py]=toScreen(lx,ly),v=tapRoll(lx,ly);S.coins+=v;S.stats.taps++;linTap();S.stats.atap=(S.stats.atap||0)+1;addXp(1);tapSpores(3+Math.floor(upE('tap')/2)+Math.floor(upE('gravidade')/3)+perk('eco'),true);S.fresh=false;dirtySave=true;
-  floatNum(px,py-6,'+'+fmt(v));tapFx(lx,ly,true);ptWarm(1);matTap(px,py,1);if(rnd()<.55)SND.play('atap');
+  if(!S.autoHide){floatNum(px,py-6,'+'+fmt(v));tapFx(lx,ly,true)}ptWarm(1);matTap(px,py,1);if(rnd()<.55)SND.play('atap');
 }
-function drawAutoHand(){const h=autoH;if(h.show<=0||!S.auto)return;lowX.globalAlpha=h.show*.95;const x0=Math.round(h.x)-1,y0=Math.round(h.y)+(h.press>0?1:0);
+function drawAutoHand(){const h=autoH;if(h.show<=0||!S.auto||S.autoHide)return;lowX.globalAlpha=h.show*.95;const x0=Math.round(h.x)-1,y0=Math.round(h.y)+(h.press>0?1:0);
   for(let r=0;r<HAND.map.length;r++){const row=HAND.map[r];for(let c=0;c<row.length;c++){const ch=row[c];if(ch==='.')continue;lowX.fillStyle=css(HAND.rgb[ch]);lowX.fillRect(x0+c,y0+r,1,1)}}lowX.globalAlpha=1}
-function autoToggle(){S.auto=!S.auto;dirtySave=true;SND.play('click');if(S.auto){autoH.tx=autoH.x=60+rnd()*40;autoH.ty=autoH.y=HOR+50+rnd()*40;autoH.t=.3;toast(_t('Toques automáticos ligados. Toca na mão para parar.'))}hud()}
+function autoToggle(){
+  // three states: off, on, and on without showing the hand or the taps in the scene (the coins still count)
+  if(!S.auto){S.auto=true;S.autoHide=false}else if(!S.autoHide){S.autoHide=true}else{S.auto=false;S.autoHide=false}
+  dirtySave=true;SND.play('click');
+  if(S.auto&&!S.autoHide){autoH.tx=autoH.x=60+rnd()*40;autoH.ty=autoH.y=HOR+50+rnd()*40;autoH.t=.3;toast(_t('Toques automáticos ligados. Toca na mão para parar.'))}
+  else if(S.auto)toast(_t('Toques automáticos ligados, sem se verem na cena.'));
+  hud()}
 
 /* ============ save / load ============ */
 const KEY='tapmoss.v1';
@@ -7781,7 +7817,7 @@ function hud(){
   const VV=visiting&&!visiting.pub?visiting:null,mc=VV?VV.moedas:S.coins,mg=VV?VV.gemas:S.gems;
   setH('#coins',pxNum(mc!=null?fmt(mc):'—'));$('#coins').setAttribute('aria-label',mc!=null?_t("{0} moedas",fmt(mc)):'');
   if(!VV){setH('#cps',pxNum('+'+fmtRate(cps)+'/s'));srcTick()}setH('#gems',pxNum(mg!=null?fmtK(mg):'—'));$('#gemP').setAttribute('aria-label',mg!=null?_t("{0} cristais",mg):'');setH('#emN',pxNum(fmtK(S.em||0)));$('#emP').setAttribute('aria-label',_t("{0} gemas",S.em||0));setH('#lvN',pxNum(String(VV?VV.nivel:S.level)));fitNums();
-  $('#editB').classList.toggle('on',!!editing);$('#pracaB').classList.toggle('hidden',S.level<8||!!visiting);tnotRender();
+  $('#editB').classList.toggle('on',!!editing);$('#pracaB').classList.toggle('hidden',S.level<8||!!visiting);{const ob=$('#ofB');if(ob){ob.classList.toggle('hidden',!ofOn()||!!visiting);ob.classList.toggle('dotOn',ofOn()&&!visiting&&ofCount()>0)}}tnotRender();
   // pets in the dock (locked until level 20), the watering can on the side with its timer
   {const pb=$('#bPet'),on=ptOpen();pb.classList.toggle('lock',!on);if(!on){if(pb._k!=='lock'){pb._k='lock';$('#icPet').innerHTML=icon('lock');$('#petLb').textContent=_t('Nv {0}',PT_LVL)}pb.classList.remove('has-badge')}
    else{const p=ptAct(),rd=ptReady(),low=p&&(ptDecay(p),Math.min(p.f,p.a,p.l)<30);pb.classList.toggle('has-badge',rd>0||!!low);setH('#petN',rd>0?String(rd):low?'!':'');const PP=ptS(),k=(p?p.s+p.c:'egg')+'|'+(PP.inc[0]?1:0);if(pb._k!==k){pb._k=k;$('#icPet').innerHTML=p?`<span class="chr${p.c}">${ptSvg(p.s,p.c)}</span>`:icon('egg');$('#petLb').textContent=_t('Pets')}}}
@@ -7806,7 +7842,7 @@ function hud(){
   $('#meB').classList.toggle('has-dot',achClaimable()>0||NET.pedidos>0||!!S.colNew);{const k=JSON.stringify(S.av.look);if(k!==hudLook){hudLook=k;$('#icMe').innerHTML=avPortrait(S.av.look)}}
   {const rb=$('#sideReb'),on=!visiting&&!rebFx&&rebGood();rb.classList.toggle('hidden',!on);if(on){if(!rb._i){rb._i=1;$('#icReb').innerHTML=icon('spore')}setH('#rebL',pxNum('+'+fmt(espGain())))}}
   {const sb=$('#sideShovel'),un=S.level>=2&&!visiting,rd=shovelReady();sb.classList.toggle('hidden',!un);sb.classList.toggle('ready',un&&rd);sb.classList.toggle('cool',un&&!rd);setH('#shovelL',rd?'':pxNum(shortTime(shovelAtNow()-now())));if(sb._t!==paT()){sb._t=paT();$('#icShovel').innerHTML=paSvg(paT())}}
-  {const ab=$('#autoB'),on=!!S.auto;ab.classList.toggle('on',on);ab.setAttribute('aria-pressed',String(on))}
+  {const ab=$('#autoB'),on=!!S.auto;ab.classList.toggle('on',on);ab.classList.toggle('hid',on&&!!S.autoHide);ab.setAttribute('aria-pressed',String(on))}
   {const gn=(NET.caixa|0)+((S.gq&&S.gq.length)|0);$('#sideGift').classList.toggle('hidden',!gn);$('#sideGift').classList.toggle('has-badge',gn>0);$('#sideGift').classList.toggle('ready',gn>0);setH('#giftN',String(gn>99?'99+':gn))}
   {const EV=evPend();$('#sideEv').classList.toggle('hidden',!EV);if(EV){const st=evState(EV),ph=evPhase(st),sk=EV.spr==='ovo'?'ovo':EV.spr,Es=evSpr(sk,ph);setH('#icEv',pxsvg(Es.map,Es.pal));if(!titleShown&&!visiting&&!EV.past)evCheck(EV,st);setH('#evL',pxNum(Math.min(EV_GOAL,st.n-ph*EV_GOAL)+'/'+EV_GOAL));$('#sideEv').classList.toggle('has-badge',st.box>0);setH('#evN',String(st.box))}}
   if(visiting)setH('#bossT',`<span class="vs">${_t("Visita")}</span><span class="sc">${esc(sceneName(scene))}</span>`);
@@ -8998,7 +9034,7 @@ function drawLights(){
 // the edge of the flower bed: stones in the glade and by the stream, cut blocks in the ruin, bricks in the city, pale rocks
 // with crystals on the Moon, obsidian with embers in the abyss. The back half sits a little darker, so it reads as a ring on the ground
 const BED_ST={clareira:['#6e695f','#8c867a','#b4ad9e','#2e2a24'],ribeiro:['#6a6f6a','#888d85','#b0b6aa','#2a2e2a'],ruina:['#7e7766','#9c9580','#c2b9a0','#36322a'],
-  cidade:['#8a3e2a','#a8543a','#cc7450','#341610'],lua:['#8a8a9a','#a8a8bc','#d0d0e0','#2e2e3a'],abismo:['#3a2a48','#56406c','#80649c','#0e0612']};
+  cidade:['#8a3e2a','#a8543a','#cc7450','#341610'],lua:['#8a8a9a','#a8a8bc','#d0d0e0','#2e2e3a'],abismo:['#2c2426','#4a3c3c','#78645c','#080404']};
 function drawBed(){const B=gardenBed();if(!B||titleShown)return;const P=BED_ST[scene.biome]||BED_ST.clareira,amb=env.amb,col=(h,k)=>css(mul(hex(h),amb),k),q=.25;
   lowX.save();lowX.fillStyle=scene.biome==='abismo'?'rgba(12,2,0,.32)':scene.biome==='lua'?'rgba(10,10,30,.26)':'rgba(28,18,8,.26)';lowX.beginPath();lowX.ellipse(B.cx,B.cy,B.rx-1,B.ry-.5,0,0,7);lowX.fill();
     const lip=scene.biome==='abismo'?`rgba(255,120,40,${RM?.35:.28+.1*Math.sin(T*1.6)})`:scene.biome==='lua'?'rgba(170,220,255,.32)':'rgba(255,246,214,.2)';lowX.strokeStyle=lip;lowX.lineWidth=.5;lowX.beginPath();lowX.ellipse(B.cx,B.cy+.25,B.rx-1.6,B.ry-1.1,0,0,7);lowX.stroke();lowX.restore();
@@ -10386,7 +10422,7 @@ function mnChestOpen(){const M=S.mina;if(!M.bq.length||UB.busy)return;const v=M.
   if(r>=1&&M.up.tnt&&!mnTntAuto()&&rnd()<.3){const n=1+Math.floor(r/3);M.tq=Math.min(mnTntCap(M.up.tnt)+2,(M.tq|0)+n);xs.push([icon('tnt'),n===1?_t('Uma TNT'):_t('{0} TNT',n),_t('Já no botão da TNT.')])}
   if(r>=2&&rnd()<.22){const mi=2*r,t=now();M.bro=Math.max(t,M.bro)+mi*60000;xs.push([icon('drill'),_t('Broca · {0} min',mi),_t('Escavas ao dobro, já a contar.')])}
   if(r>=5&&rnd()<.35&&typeof ptOpen==='function'&&ptOpen()){const e=r>=7?4:r>=6?3:2;ptGiveEgg(e,'mina');xs.push([eggSvg(e),PEGG[e].nome,_t('Está nos teus ovos, no jardim.')])}
-  if(r>=6){const L=MSK.filter(k=>!M.skins[k.id]);if(L.length&&rnd()<.5){const K=L[(rnd()*L.length)|0];M.skins[K.id]=1;xs.push([pxsvg(MPK_MAP(M.pk),{...MPK[M.pk].p,...mnSkinCols(K)}),_t('Picareta {0}',K.nome),_t('Aspeto novo, já é teu.')])}}
+  if(r>=6){const L=MSK.filter(k=>!M.skins[k.id]);if(L.length&&rnd()<.5){const K=L[(rnd()*L.length)|0];M.skins[K.id]=1;xs.push([pkIco(M.pk,K.id),_t('Picareta {0}',K.nome),_t('Aspeto novo, já é teu.')])}}
   const top=Math.max(r,it?it.r:0,pk?pk.r:0);
   let h=`<div class="reveal" style="--rc:${RC[top]}"><div class="rn">${_t('Baú {0} da mina',lc(RN[r]))}</div>`;
   if(it)h+=`<div class="mnfind" style="--rc:${RC[it.r]}">${pxsvg(it.map,it.pal)}<span><b>${it.nome}</b><i>${isNew?_t('Nova peça · +{0}% de prata',Math.round(MCB[it.r]*100)):_t('Repetida · +{0} rubis',[1,2,3,5,8,12][it.r])}</i></span></div>`;
@@ -10585,6 +10621,17 @@ function pkHD(t,diag){const sk=S&&S.mina?S.mina.sk:'',key=t+'|'+sk+'|'+(diag?1:0
 const pkAura=t=>t>=18?[170,110,255]:t>=15?[200,220,255]:t>=12?[160,255,230]:t>=9?[255,150,60]:t>=6?[200,160,255]:null;
 function mnPkCols(t){const K=MSK.find(s=>s.id===S.mina.sk),P=(MPK[t]||MPK[0]).p;return K?{...P,...mnSkinCols(K)}:P}
 const PKURL=new Map();
+// the new drawing of a pickaxe for any list: a tier with a given look (skin), or only its shape in the dark when it is still locked
+function pkIco(t,sk,dark){const k='i'+t+'|'+(sk||'')+'|'+(dark?1:0);let u=PKURL.get(k);
+  if(!u){const s0=S.mina.sk;S.mina.sk=sk||'';try{let c=pkHD(t,1);
+      if(dark){const d=document.createElement('canvas');d.width=c.width;d.height=c.height;const x=d.getContext('2d');x.drawImage(c,0,0);x.globalCompositeOperation='source-in';x.fillStyle='#2f3f37';x.fillRect(0,0,d.width,d.height);c=d}
+      // cut the empty room around it so every pickaxe fills its box the same way
+      const g=c.getContext('2d').getImageData(0,0,c.width,c.height).data;let x0=c.width,y0=c.height,x1=-1,y1=-1;
+      for(let y=0;y<c.height;y++)for(let x=0;x<c.width;x++)if(g[(y*c.width+x)*4+3]>20){if(x<x0)x0=x;if(x>x1)x1=x;if(y<y0)y0=y;if(y>y1)y1=y}
+      if(x1>=0){const n=Math.max(x1-x0,y1-y0)+3,q=document.createElement('canvas');q.width=q.height=n;q.getContext('2d').drawImage(c,x0,y0,x1-x0+1,y1-y0+1,((n-(x1-x0+1))/2)|0,((n-(y1-y0+1))/2)|0,x1-x0+1,y1-y0+1);c=q}
+      u=c.toDataURL();PKURL.set(k+'n',c.width)}finally{S.mina.sk=s0}PKURL.set(k,u)}
+  const n=PKURL.get(k+'n')||64;
+  return`<svg class="pxi pk" viewBox="0 0 ${n} ${n}" aria-hidden="true"><image href="${u}" width="${n}" height="${n}" style="image-rendering:pixelated"/></svg>`}
 function mnPickSvg(t,R){const k=t+'|'+(S.mina.sk||'');let u=PKURL.get(k);if(!u){u=pkHD(t,1).toDataURL();PKURL.set(k,u)}return`<svg class="pxi ${(R||S.mina.rar)?'chr0':''}" viewBox="0 0 64 64" aria-hidden="true"><image href="${u}" width="64" height="64" style="image-rendering:pixelated"/></svg>`}
 const mnPkCv=()=>pkHD(S.mina.pk);
 // the pickaxe drawn with the end of its handle at (px,py), turned by ang (0 points up), mirrored when facing left
@@ -10861,14 +10908,14 @@ function mnSheetPk(){const M=S.mina,t=M.pk,mx=t>=MPK.length-1,nx=mx?null:MPK[t+1
   h+=`<div class="item paup" style="--rc:${MPK[t].pal[1]}"><span class="ico">${mnPickSvg(t)}</span><span class="meta"><h3>${MPK[t].nome} <span class="lv">${t+1}/${MPK.length}</span></h3><p>${mx?_t('A melhor picareta que existe.'):_t('{0}: cada golpe vale {1}.',nx.nome,fmt(nx.pw))}</p><span class="paline">${MPK.map((P,i)=>`<i style="background:${P.pal[1]}" class="${i<=t?'on':''}"></i>`).join('')}</span></span>${mx?`<span class="tag">${_t('Máximo')}</span>`:nx.em?mnBtnEm(nx.em,'pk',(S.em||0)>=nx.em):mnBtnPr(nx.c,'pk',M.pr>=nx.c)}</div>`;
   h+=`<p class="note">${_t('Cada golpe vale {0}. Os toques, os ajudantes e a TNT usam a força da picareta. O preço de cada uma nunca muda.',fmt(mnPw()))}</p>`;
   // the arsenal: the ones you have, the next one, and the rest as shadows to aim for
-  h+=`<h4 class="sub">${_t('Arsenal')} <span class="lv">${t+1}/${MPK.length}</span></h4><div class="grid4 mnars">${MPK.map((P,i)=>{const own=i<=t,next=i===t+1;return`<div class="card ${own?'':'off'} ${i===t?'sel':''}" style="--rc:${P.pal[1]}">${pxsvg(MPK_MAP(i),own||next?P.p:sil(MPK_MAP(i)))}<h3>${own||next?P.nome:'???'}</h3>${NM('×'+fmt(P.pw),'xs')}</div>`}).join('')}</div>`;
+  h+=`<h4 class="sub">${_t('Arsenal')} <span class="lv">${t+1}/${MPK.length}</span></h4><div class="grid4 mnars">${MPK.map((P,i)=>{const own=i<=t,next=i===t+1;return`<div class="card ${own?'':'off'} ${i===t?'sel':''}" style="--rc:${P.pal[1]}">${pkIco(i,'',!(own||next))}<h3>${own||next?P.nome:'???'}</h3>${NM('×'+fmt(P.pw),'xs')}</div>`}).join('')}</div>`;
   h+=`<h4 class="sub">${_t('Picareta rara')}</h4>`;
   if(M.rar)h+=`<div class="item sel" style="--rc:${RC[M.rar.r]}"><span class="ico">${mnPickSvg(t,M.rar)}</span><span class="meta"><h3 style="color:${RC[M.rar.r]}">${mnRarName(M.rar)}</h3><p>${MRE[M.rar.e].t(M.rar.r)}</p></span><span class="tag">${_t('Na mão')}</span></div>`;
   else h+=`<p class="note">${_t('Sai nos baús da mina. Não muda a força: junta um efeito, e quanto mais rara mais forte.')}</p>`;
   M.inv.forEach((R,i)=>{h+=`<div class="item" style="--rc:${RC[R.r]}"><span class="ico">${mnPickSvg(t,R)}</span><span class="meta"><h3 style="color:${RC[R.r]}">${mnRarName(R)}</h3><p>${MRE[R.e].t(R.r)}</p></span><span class="mnbt"><button class="btn gold" data-mn="eq:${i}">${_t('Usar')}</button><button class="btn ghost" data-mn="melt:${i}">${icon('rubi')}${NM('+'+MN_CR.melt[R.r],'xs')}</button></span></div>`});
   if(M.inv.length)h+=`<p class="note">${_t('{0} de 12 na mochila. Derreter dá rubis.',M.inv.length)}</p>`;
-  h+=`<h4 class="sub">${_t('Aspeto')}</h4><div class="item ${M.sk?'':'sel'}"><span class="ico">${pxsvg(MPK_MAP(t),MPK[t].p)}</span><span class="meta"><h3>${_t('Normal')}</h3><p>${_t('A cor do metal da picareta.')}</p></span>${M.sk?`<button class="btn ghost" data-mn="sk:">${_t('Usar')}</button>`:`<span class="tag">${_t('Em uso')}</span>`}</div>`;
-  for(const K of MSK){const own=M.skins[K.id],on=M.sk===K.id;h+=`<div class="item ${on?'sel':''}"><span class="ico">${pxsvg(MPK_MAP(t),{...MPK[t].p,...mnSkinCols(K)})}</span><span class="meta"><h3>${_t('Picareta {0}',K.nome)}</h3><p>${_t('Só o aspeto e a cor do pó.')}</p></span>${on?`<span class="tag">${_t('Em uso')}</span>`:own?`<button class="btn ghost" data-mn="sk:${K.id}">${_t('Usar')}</button>`:mnBtnEm(K.em,'sk:'+K.id,(S.em||0)>=K.em)}</div>`}
+  h+=`<h4 class="sub">${_t('Aspeto')}</h4><div class="item ${M.sk?'':'sel'}"><span class="ico">${pkIco(t,'')}</span><span class="meta"><h3>${_t('Normal')}</h3><p>${_t('A cor do metal da picareta.')}</p></span>${M.sk?`<button class="btn ghost" data-mn="sk:">${_t('Usar')}</button>`:`<span class="tag">${_t('Em uso')}</span>`}</div>`;
+  for(const K of MSK){const own=M.skins[K.id],on=M.sk===K.id;h+=`<div class="item ${on?'sel':''}"><span class="ico">${pkIco(t,K.id)}</span><span class="meta"><h3>${_t('Picareta {0}',K.nome)}</h3><p>${_t('Só o aspeto e a cor do pó.')}</p></span>${on?`<span class="tag">${_t('Em uso')}</span>`:own?`<button class="btn ghost" data-mn="sk:${K.id}">${_t('Usar')}</button>`:mnBtnEm(K.em,'sk:'+K.id,(S.em||0)>=K.em)}</div>`}
   return[_t('Picareta'),h]}
 function mnSheetUp(){const M=S.mina,t=now();let h=`<div class="bonus">${icon('prata')}<div><b>${_t('+{0}% de prata',Math.round((mnPrMul()-1)*100))}</b><p>${_t('Do nível da mina, dos troféus, da coleção e do jardim.')}</p></div></div>`;
   h+=`<h4 class="sub">${_t('Com prata')}</h4>`;
@@ -10980,7 +11027,7 @@ function frame(t){
   tick(dt);draw();guideTick();
 }
 /* versões novas: quando o jogo muda no servidor, guarda o progresso e recarrega a página */
-const BUILD='9285aa197513',UKEY='tapmoss.upd';const UPD={on:false,go:false,at:0};
+const BUILD='4100f528bbfd',UKEY='tapmoss.upd';const UPD={on:false,go:false,at:0};
 // the new version downloads in the background while the game goes on; the reload only comes once the whole page is here,
 // so a slow network never leaves a half-built page on screen. The offline helper (sw.js) hands this copy over at the reload.
 const NEXTC='tapmoss-next',pgKey=()=>{let p=location.pathname.replace(/index\.html$/,'');if(!p.endsWith('/'))p+='/';return p};
@@ -11458,7 +11505,9 @@ const LWFX={
 
 
 /* ============ boot ============ */
-$('#icAuto').innerHTML=icon('autoHand');$('#icPraca').innerHTML=icon('stall');$('#icScr').innerHTML=icon('games');$('#icLangT').innerHTML=flagSvg(LANGF[LANG]);$('#autoL').innerHTML=pxNum('AUTO');$('#icFsT').innerHTML=icon('full');$('#icGift').innerHTML=icon('gift');$('#icCam').innerHTML=icon('camera');$('#icBell').innerHTML=icon('bell');$('#icMailT').innerHTML=icon('mail');$('#icEye').innerHTML=icon('eye');$('#icEdit').innerHTML=icon('edit');$('#icCoin').innerHTML=icon('coin');$('#icGem').innerHTML=icon('gem');$('#icTrophy').innerHTML=icon('trophy');$('#icLvlChest').innerHTML=icon('chestLvl');$('#icGear').innerHTML=icon('gear');
+$('#icAuto').innerHTML=icon('autoHand');$('#icPraca').innerHTML=icon('stall');
+$('#pracaB').insertAdjacentHTML('afterend',`<button class="tbtn hidden" id="ofB"><span id="icOf">${icon('anvil')}</span><span class="tl">${_t('Oficina')}</span></button>`);
+$('#ofB').addEventListener('click',()=>{if(visiting||titleShown||!ofOn())return;SND.play('click');if(typeof AVED!=='undefined')AVED.try=null;colTab='o';ofTab='criar';openSheet('col')});$('#icScr').innerHTML=icon('games');$('#icLangT').innerHTML=flagSvg(LANGF[LANG]);$('#autoL').innerHTML=pxNum('AUTO');$('#icFsT').innerHTML=icon('full');$('#icGift').innerHTML=icon('gift');$('#icCam').innerHTML=icon('camera');$('#icBell').innerHTML=icon('bell');$('#icMailT').innerHTML=icon('mail');$('#icEye').innerHTML=icon('eye');$('#icEdit').innerHTML=icon('edit');$('#icCoin').innerHTML=icon('coin');$('#icGem').innerHTML=icon('gem');$('#icTrophy').innerHTML=icon('trophy');$('#icLvlChest').innerHTML=icon('chestLvl');$('#icGear').innerHTML=icon('gear');
 $('#icWater').innerHTML=icon('can');$('#icEm').innerHTML=icon('em');$('#icPdFeed').innerHTML=icon('apple');$('#icPdPlay').innerHTML=icon('heart');$('#icPdWash').innerHTML=icon('drop');$('#icPdEggs').innerHTML=icon('egg');$('#icPdPets').innerHTML=icon('paw');$('#icPdBack').innerHTML=icon('back');$('#icUp').innerHTML=icon('up');$('#icScn').innerHTML=icon('map');$('#shX').innerHTML=icon('x');
 mq.addEventListener&&mq.addEventListener('change',setRM);
 window.addEventListener('appinstalled',()=>{ev('instalar','pwa');if(S){S.inst={...(S.inst||{}),ok:1};dirtySave=true}});
