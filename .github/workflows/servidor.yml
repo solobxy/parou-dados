@@ -153,6 +153,13 @@ jobs:
           source funcs.sh
           IP=$(h "$API/servers?name=parou" | jq -r '.servers[0].public_net.ipv4.ip // empty')
           [ -n "$IP" ] || { echo "Servidor não encontrado" >> resultado.txt; exit 1; }
+          # Chave do Resend só de envio, limitada ao duplicasa.pt: cifrada em servidor/duplicasa-resend.age
+          # (para a chave SSH deste repositório); tem prioridade sobre o segredo do GitHub
+          if [ -f servidor/duplicasa-resend.age ]; then
+            command -v age >/dev/null 2>&1 || sudo apt-get install -y -qq age >/dev/null 2>&1
+            R=$(age -d -i ~/.ssh/id_ed25519 servidor/duplicasa-resend.age 2>/dev/null) || R=""
+            if [ -n "$R" ]; then RESEND_API_KEY="$R"; else echo "RESEND_API_KEY: não deu para abrir servidor/duplicasa-resend.age" >> resultado.txt; fi
+          fi
           N=0
           for NOME in GOOGLE_ID GOOGLE_SEGREDO FACEBOOK_ID FACEBOOK_SEGREDO RESEND_API_KEY; do
             VALOR="${!NOME}"
