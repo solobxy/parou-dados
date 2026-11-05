@@ -1,0 +1,37 @@
+# tapmoss
+
+> tapmoss is a free, cozy idle game in pixel art that runs in the browser at https://tapmoss.com. You tap to spread spores, moss slowly covers stones, logs and old walls, and your garden keeps earning while you are away. The sky in the game follows the real time and weather of your city. Made by Dinis Sousa (dinissousa) in Portugal. Available in English, Portuguese, Spanish, French, German, Japanese and Chinese.
+
+Key facts:
+- Free to play in any browser on phone, tablet or computer; it can be added to the home screen and works offline. An Android app can also be downloaded from the game.
+- 6 garden worlds: Clearing (level 1), Brook (level 12), Castle ruin (level 20), Forgotten town (level 50), Moon garden (level 75), Ember abyss (level 100).
+- 36 flowers in 6 rarities, 18 animals, 175 achievements in the garden and 42 in the mine.
+- Pets from level 3: 35 pets hatched from eggs, 8 rarities from Common to Void, 13 colours (chromas) and fusion (5 pets of one rarity make 1 of the next).
+- The mine from level 15: a second game where you dig pixel by pixel through 9 worlds, from the surface to the Void, with 19 pickaxes, fossils of the Lourinhã dinosaur and rubies.
+- Bloodlines from level 5: Sun, Moon or Root, each with its own outfits, chests and pet.
+- Your house from level 10: decorate a house of your own and visit friends’ houses.
+- Season pass: 30-day seasons with 40 levels, a free track and the Stellar Pass. Minigames: wheel (level 10), scratch card (20) and plinko (30). Rebirth from level 30.
+- Social: friend codes, visiting gardens, watering friends’ moss, daily gifts, a world ranking by country and a player market.
+- Currencies: coins, crystals and gems (earned by playing), plus silver and rubies in the mine. Nothing in the game requires paying.
+
+## Guides (English)
+- [About tapmoss](https://tapmoss.com/about/): what the game is, how it plays, FAQ
+- [Flowers](https://tapmoss.com/guide/flowers/): all 36 flowers, world by world
+- [Animals](https://tapmoss.com/guide/animals/): where and when each animal shows up
+- [Pets](https://tapmoss.com/guide/pets/): all pets, eggs and odds, colours, fusion
+- [Worlds](https://tapmoss.com/guide/worlds/): the 6 garden worlds and how to unlock them
+- [The mine](https://tapmoss.com/guide/mine/): 9 worlds, pickaxes, finds and mine achievements
+- [Upgrades](https://tapmoss.com/guide/upgrades/): mosses, scene upgrades and crystal upgrades
+- [Achievements](https://tapmoss.com/guide/achievements/): all 175 garden achievements
+
+## Other languages
+- [Português](https://tapmoss.com/pt/): guides at https://tapmoss.com/pt/about/ and https://tapmoss.com/pt/guide/…
+- [Español](https://tapmoss.com/es/): guides at https://tapmoss.com/es/about/ and https://tapmoss.com/es/guide/…
+- [Français](https://tapmoss.com/fr/): guides at https://tapmoss.com/fr/about/ and https://tapmoss.com/fr/guide/…
+- [Deutsch](https://tapmoss.com/de/): guides at https://tapmoss.com/de/about/ and https://tapmoss.com/de/guide/…
+- [日本語](https://tapmoss.com/ja/): guides at https://tapmoss.com/ja/about/ and https://tapmoss.com/ja/guide/…
+- [中文](https://tapmoss.com/zh/): guides at https://tapmoss.com/zh/about/ and https://tapmoss.com/zh/guide/…
+
+## Optional
+- [Privacy policy](https://tapmoss.com/privacy/)
+- [Terms of use](https://tapmoss.com/terms/)
