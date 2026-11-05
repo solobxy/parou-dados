@@ -1,0 +1,14 @@
+[
+  {
+    "relation": [
+      "delegate_permission/common.handle_all_urls"
+    ],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.tapmoss.app",
+      "sha256_cert_fingerprints": [
+        "8E:57:77:D4:33:CD:ED:BC:E4:5A:BC:D5:84:F4:B6:8E:F2:49:8D:A9:42:90:84:4E:2B:5E:B5:28:FE:96:6E:14"
+      ]
+    }
+  }
+]
