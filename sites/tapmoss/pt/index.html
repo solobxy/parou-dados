@@ -280,6 +280,7 @@ select.sel,.selb{width:100%;height:48px;padding:0 12px;background:#18241a;clip-p
 .sbtn:active .pxi{transform:scale(.92)}
 .sbtn .nm{color:var(--tx);--nsh:#05080a;min-height:12px;filter:drop-shadow(0 1px 0 #05080a)}
 .sbtn.ready .pxi{filter:drop-shadow(0 3px 0 rgba(4,8,5,.55)) drop-shadow(0 0 1px rgba(4,8,5,.9)) drop-shadow(0 0 9px rgba(244,197,79,.6));animation:wob 2.4s ease-in-out infinite}
+.sbtn.lp.ready .pxi{filter:drop-shadow(0 3px 0 rgba(4,8,5,.55)) drop-shadow(0 0 1px rgba(4,8,5,.9)) drop-shadow(0 0 9px rgba(143,209,106,.75))}.sbtn.lp.ready::before{background:radial-gradient(closest-side,rgba(143,209,106,.42),rgba(143,209,106,0))}
 .sbtn.lvl.ready .pxi{filter:drop-shadow(0 3px 0 rgba(4,8,5,.55)) drop-shadow(0 0 1px rgba(4,8,5,.9)) drop-shadow(0 0 7px rgba(230,222,190,.4))}
 .sbtn .badge{top:2px;right:0}
 .sbtn:focus-visible{outline:2px solid var(--moss);outline-offset:2px}
@@ -9794,7 +9795,7 @@ function hud(){
   const dr=chestReady(),mr=misReady();$('#sideDaily').classList.toggle('ready',dr||mr>0);$('#sideDaily').classList.toggle('has-badge',mr>0);setH('#dailyN',String(mr));setH('#icDaily',icon(dr?'chestGold':'chestOpen'));setH('#dailyL',dr?'':pxNum(shortTime(nextMidnight()-now())));
   {const so=S.level>=MG_LVL,ol=so?mgOpenList():[],nr=ol.filter(g=>mgReady(g.id)).length;$('#sideScr').classList.toggle('hidden',!so);$('#sideScr').classList.toggle('ready',nr>0);$('#sideScr').classList.toggle('has-badge',nr>1);setH('#mgN',String(nr));if(so)setH('#scrL',nr?'':pxNum(mmss(Math.max(0,(Math.min(...ol.map(g=>mgAt(g.id)))-now())/1000))));
    const nv=[...document.querySelectorAll('#side .sbtn')].filter(b=>!b.classList.contains('hidden')).length;$('#side').classList.toggle('dense',nv>5&&innerHeight<860)}
-  const nl=S.lvlChests;$('#sideLvl').classList.toggle('ready',nl>0);$('#sideLvl').classList.toggle('hidden',nl===0);$('#sideLvl').classList.toggle('has-badge',nl>0);setH('#lvlN',String(nl>99?'99+':nl));
+  const nl=S.lvlChests;$('#sideLvl').classList.toggle('ready',nl>0);$('#sideLvl').classList.toggle('hidden',nl===0);$('#sideLvl').classList.toggle('has-badge',nl>0);setH('#lvlN',String(nl>99?'99+':nl));lpBtn();
   $('#meB').classList.toggle('has-dot',achClaimable()>0||NET.pedidos>0||!!S.colNew||linChests()>0);{const k=JSON.stringify(S.av.look);if(k!==hudLook){hudLook=k;$('#icMe').innerHTML=avPortrait(S.av.look)}}
   {const rb=$('#sideReb'),on=!visiting&&!rebFx&&rebGood();rb.classList.toggle('hidden',!on);if(on){if(!rb._i){rb._i=1;$('#icReb').innerHTML=icon('spore')}setH('#rebL',pxNum('+'+fmt(espGain())))}}
   {const sb=$('#sideShovel'),un=S.level>=2&&!visiting,rd=shovelReady();sb.classList.toggle('hidden',!un);sb.classList.toggle('ready',un&&rd);sb.classList.toggle('cool',un&&!rd);setH('#shovelL',rd?'':pxNum(shortTime(shovelAtNow()-now())));if(sb._t!==paT()){sb._t=paT();$('#icShovel').innerHTML=paSvg(paT())}}
@@ -11904,6 +11905,9 @@ const wwAvail=()=>!!(S&&S.ww&&S.ww.on&&S.ww.n<7&&S.ww.last!==dayKey(now())),wwSh
 let fpSig='',fpT=0,wwShown=false,fpBusy=false;
 const LP_MIN=5,LP_MAX=30,lpR=l=>l<9?2:l<16?3:4;let lpLater=false;
 function lpQueue(l){if(!S||l<LP_MIN||l>LP_MAX)return;S.lp=Array.isArray(S.lp)?S.lp:[];if(!S.lp.includes(l)&&S.lp.length<5)S.lp.push(l);lpLater=false;dirtySave=true}
+function lpBtn(){let b=$('#sideLp');if(!b){const a=$('#sideLvl');if(!a)return;a.insertAdjacentHTML('afterend',`<button class="sbtn lp hidden" id="sideLp"><span id="icLp">${icon('star')}</span><span id="lpL" class="nm xs"></span><span class="badge" id="lpN"></span></button>`);b=$('#sideLp');b.addEventListener('click',()=>{SND.play('click');lpLater=false;lpModal()})}
+  const n=S.lp&&S.lp.length?S.lp.length:0,on=n>0&&!visiting;if(on&&b.classList.contains('hidden')){b.classList.add('obin');setTimeout(()=>b.classList.remove('obin'),1500)}
+  b.classList.toggle('hidden',!on);b.classList.toggle('ready',on);b.classList.toggle('has-badge',n>1);if(!n)return;setH('#lpN',String(n));setH('#lpL',pxNum(String(S.lp[0])));const al=_t('Nível {0}',S.lp[0])+' · '+_t('Escolhe um prémio');if(b.getAttribute('aria-label')!==al)b.setAttribute('aria-label',al)}
 function lpModal(){if(!S.lp||!S.lp.length)return;const l=S.lp[0];if(!S.lpo||S.lpo.length!==3){S.lpo=lootRoll(lpR(l),3);dirtySave=true;saveLocal()}ev('escolha','ver'+l);
   showModal(`<div class="reveal lpm" style="--rc:#8fd16a"><div class="rn">${_t('Nível {0}',l)}</div><h3>${_t('Escolhe um prémio')}</h3><div class="lpg">${S.lpo.map((p,i)=>`<button class="lpc" data-m="lp${i}" style="--rc:${RC[lootR(p,null)]};--i:${i}"><span class="lic">${przIcon(p)}</span><span class="lnm">${przName(p)}</span></button>`).join('')}</div>${S.lp.length>1?`<p class="note">${_t('Tens mais {0} à espera.',S.lp.length-1)}</p>`:''}</div><div class="mbtns"><button class="btn ghost" data-m="lplater">${_t('Depois')}</button></div>`)}
 function lpPick(i){const p=S.lpo&&S.lpo[i];if(!p||!S.lp||!S.lp.length)return;const l=S.lp.shift();S.lpo=null;const pay=przPay(p,'nivel',1);ev('escolha',l+':'+p.k);dirtySave=true;saveLocal();hud();closeModal();SND.play('level');
@@ -11928,8 +11932,7 @@ function fpTick(dt){if(!S||!S.started||titleShown||visiting)return;
     if(L.length){dirtySave=true;saveLocal();hud();SND.play('level');const big=L.some(x=>['mx','egg','dc','em','ac','cos'].includes(x.p.k));
       if(big||S.fp.done||chDone>=0)unbox('chestGift',Math.max(chDone>=1?3:2,lootTop(L)),'',`<div class="reveal"><div class="rn">${ch0?_t('Capítulo {0}',ch0+1):_t('Primeiros passos')}</div><h3>${chDone===0?_t('Primeiros passos feitos!'):chDone>0?_t('Capítulo {0} completo!',chDone+1):names.length>1?_t('{0} passos feitos',names.length):names[0]}</h3>${S.fp.done?'':`<p>${_t('A seguir: {0}',FP[S.fp.i].txt())}</p>`}</div>${lootCardsHTML(L,_t('Prémio'))}`,[['close',_t('Boa!')]]);
       else toast(_t('Feito: {0}. {1}',names[0],L.map(x=>przName(x.p)).join(' · ')),'lvl')}}
-  // a level prize to choose opens by itself, unless it was put off until the next level
-  if(S.lp&&S.lp.length&&!lpLater&&!CN&&!(typeof UF_OK!=='undefined'&&performance.now()-ufEnd<2500)&&!modalOn&&!sheetName&&!LNU.on&&!MNR&&!HSR&&!placing&&!editing&&!photo&&!PTR&&!(typeof UB!=='undefined'&&UB.busy)&&T>4){lpModal();return}
+  // a level prize to choose waits in its button by the level chests (#sideLp) and in the strip under the HUD
   // the welcome week opens by itself once per session, a few seconds in
   if(wwShow()&&!wwShown&&T>6&&!CN&&!(typeof UF_OK!=='undefined'&&performance.now()-ufEnd<2500)&&!modalOn&&!sheetName&&!LNU.on&&!MNR&&!HSR&&!placing&&!editing&&!photo&&!PTR&&!(typeof UB!=='undefined'&&UB.busy)){wwShown=true;wwModal()}
   fpRender();nxRender()}
@@ -13339,7 +13342,7 @@ function frame(t){
   tick(dt);draw();guideTick();
 }
 /* versões novas: quando o jogo muda no servidor, guarda o progresso e recarrega a página */
-const BUILD='40563c2191ca',UKEY='tapmoss.upd';const UPD={on:false,go:false,at:0};
+const BUILD='0841476fb4e8',UKEY='tapmoss.upd';const UPD={on:false,go:false,at:0};
 // the new version downloads in the background while the game goes on; the reload only comes once the whole page is here,
 // so a slow network never leaves a half-built page on screen. The offline helper (sw.js) hands this copy over at the reload.
 const NEXTC='tapmoss-next',pgKey=()=>{let p=location.pathname.replace(/index\.html$/,'');if(!p.endsWith('/'))p+='/';return p};
