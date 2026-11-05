@@ -13334,7 +13334,7 @@ function frame(t){
   tick(dt);draw();guideTick();
 }
 /* versões novas: quando o jogo muda no servidor, guarda o progresso e recarrega a página */
-const BUILD='c497d3b23865',UKEY='tapmoss.upd';const UPD={on:false,go:false,at:0};
+const BUILD='bb2ce861a9e7',UKEY='tapmoss.upd';const UPD={on:false,go:false,at:0};
 // the new version downloads in the background while the game goes on; the reload only comes once the whole page is here,
 // so a slow network never leaves a half-built page on screen. The offline helper (sw.js) hands this copy over at the reload.
 const NEXTC='tapmoss-next',pgKey=()=>{let p=location.pathname.replace(/index\.html$/,'');if(!p.endsWith('/'))p+='/';return p};
@@ -17130,7 +17130,7 @@ function bpGoalModal(){SND.play('click');const L=bpSetLook(),B=bpS(),own=BP_SET.
     <p>${_t('Brilha no escuro, as asas piscam como estrelas e o cetro tem uma pequena galáxia a girar.')}</p></div><div class="mbtns">${own?`<button class="btn ghost" data-m="close">${_t('Fechar')}</button><button class="btn gold" data-bpm="wearset">${_t('Vestir tudo')}</button>`:`<button class="btn" data-m="close">${_t('Fechar')}</button>`}</div>`)}
 /* ---------- the first time ---------- */
 function bpIntro(){const Z=bpSeason();if(!Z||!Z.live||!S||!S.started||S.level<5||visiting||titleShown)return;const B=bpS();if(!B||B.in)return;B.in=1;dirtySave=true;
-  msQueue({svg:a2Svg(bpSetLook(),A2BOX.full,'','wave'),itc:'kitc',tag:_t('Novidade'),title:_t('Chegou o passe da temporada'),text:_t('{0} dias, {1} níveis e recompensas todos os dias. No fim do Passe Estelar: o conjunto «{2}», com asas que brilham como estrelas.',Z.d,BP_LV,Z.set),btn:_t('Ver o passe'),go:'passe',rc:'#8a7bff'})}
+  if(!ufQueue('passe'))msQueue({svg:a2Svg(bpSetLook(),A2BOX.full,'','wave'),itc:'kitc',tag:_t('Novidade'),title:_t('Chegou o passe da temporada'),text:_t('{0} dias, {1} níveis e recompensas todos os dias. No fim do Passe Estelar: o conjunto «{2}», com asas que brilham como estrelas.',Z.d,BP_LV,Z.set),btn:_t('Ver o passe'),go:'passe',rc:'#8a7bff'})}
 setInterval(()=>{try{bpTick()}catch(e){}},2000);setInterval(()=>{try{bpIntro()}catch(e){}},15000);
 // the countdown in the banner moves on its own, once a minute
 setInterval(()=>{if(sheetName==='passe')renderSheet(true)},60000);
@@ -18104,6 +18104,133 @@ UF.mina={title:UFM.title,skipTo:UFM.title+.05,
 {const st=document.createElement('style');st.textContent=`
 .uf-mina .cinet h2{color:#ffe0a8;text-shadow:0 3px 0 #4a2a0c,0 0 18px rgba(255,180,90,.75),0 0 40px rgba(200,168,255,.35)}
 .uf-mina .cinek{color:#ffd0a0;text-shadow:0 0 8px #c8742a}
+`;document.head.appendChild(st)}
+
+
+/* ===== the season pass film: a night sky where the season's constellation draws itself, the 40 levels of the pass
+   as a road of light climbing into the stars (free track and Stellar track, rewards lighting up as XP fills the line),
+   and at the top the stars gather into the gardener wearing the season's set ===== */
+const UFB={star:.15,climb:1.95,top:5.15,gather:5.4,set:6.0,title:8.4,A:.2,D:.3,c0:.45};
+const ufBP=u=>{const A=UFB.A,D=UFB.D,vm=1/(1-A/2-D/2);u=u<0?0:u>1?1:u;return u<A?vm*u*u/(2*A):u<=1-D?vm*(A/2+u-A):1-vm*(1-u)*(1-u)/(2*D)};
+const ufBV=u=>u<0||u>1?0:u<UFB.A?u/UFB.A:u<=1-UFB.D?1:(1-u)/UFB.D;
+const ufBCam=t=>t<UFB.climb?UFB.c0:UFB.c0+(BP_LV-UFB.c0)*ufBP((t-UFB.climb)/(UFB.top-UFB.climb));
+// when the light reaches level i
+function ufBAt(i){const f=(i-UFB.c0)/(BP_LV-UFB.c0);let a=0,b=1;for(let k=0;k<30;k++){const m=(a+b)/2;if(ufBP(m)<f)a=m;else b=m}return UFB.climb+(a+b)/2*(UFB.top-UFB.climb)}
+// the constellation of the pass banner (bpConst), a little wider
+const UFBK=[[8,70],[19,52],[31,61],[42,38],[55,46],[63,24],[74,33],[36,18]],UFBKL=[[0,1],[1,2],[2,3],[3,4],[4,5],[5,6],[3,7]];
+function ufBCell(tr,lv){const I=bpCell(tr,lv).map(bpInfo),top=I.reduce((a,x)=>Math.max(a,x.r|0),0),ex=I.some(x=>x.ex);
+  return`<div class="bpc ${tr?'pr':'fr'}${ex?' ex':''}${top>=4?' hi':''}" style="--rc:${RC[top]}"><span class="bpci">${I.map(x=>`<span class="bpcic">${x.ic}</span>`).join('')}</span><span class="bpcn">${I.length>1?I.map(x=>x.sm||x.nm).join(' + '):I[0].lb||I[0].nm}</span></div>`}
+function ufBInit(C){const st=C.st;st.init=1;const T=document.createElement('div');T.className='ufBpT';
+  let h=`<div class="ufBpIn"><i class="ufBpLn"></i><i class="ufBpF"></i><i class="ufBpHd"></i><div class="ufBpLb"><span>${esc(_t('Grátis'))}</span><span></span><span class="pr">${esc(_t('Estelar'))}</span></div>`;
+  for(let i=1;i<=BP_LV;i++)h+=`<div class="ufBpR" data-i="${i}">${ufBCell(0,i)}<span class="ufBpN"><b>${NM(String(i),'xs')}</b></span>${ufBCell(1,i)}</div>`;
+  T.innerHTML=h+'</div>';C.stg.appendChild(T);st.T=T;st.In=T.querySelector('.ufBpIn');st.F=T.querySelector('.ufBpF');st.Ln=T.querySelector('.ufBpLn');st.Hd=T.querySelector('.ufBpHd');st.Lb=T.querySelector('.ufBpLb');
+  st.rows=[...T.querySelectorAll('.ufBpR')];st.ron=new Array(BP_LV+1).fill(-1);
+  st.av=ufAct(C,a2Svg(bpSetLook(),A2BOX.full,'','wave'));
+  const lb=document.createElement('div');lb.className='ufL';C.stg.appendChild(lb);st.lb={d:lb,k:''}}
+function ufBLay(C){const st=C.st,w=C.w,h=C.h,L=st.L={};st.lay=1;L.W=Math.min(w*.9,390);L.RH=Math.round(Math.min(84,Math.max(70,h*.09)));L.hy=h*.56;
+  st.T.style.width=L.W+'px';st.T.style.setProperty('--rh',L.RH+'px');ufSize(st.av,Math.min(w*.7,h*.42));
+  L.K=UFBK.map(([x,y])=>[w*(.12+(x-8)/66*.76),h*(.13+(y-18)/52*.27)]);
+  // the sky: stars in fixed places, a few big ones, two soft clouds of colour
+  L.S=[];for(let i=0;i<150;i++)L.S.push([ufHn(i,1)*w,ufHn(i,2)*h*1.4,ufHn(i,3)<.12?2:1,ufHn(i,4)*6.3,1.5+ufHn(i,5)*2.5]);
+  const dp=C.dpb,c=document.createElement('canvas');c.width=Math.round(w*dp);c.height=Math.round(h*dp);const x=c.getContext('2d');x.setTransform(dp,0,0,dp,0,0);
+  const g=x.createLinearGradient(0,0,0,h);g.addColorStop(0,'#04061a');g.addColorStop(.55,'#0b0f2e');g.addColorStop(1,'#141b4c');x.fillStyle=g;x.fillRect(0,0,w,h);
+  [[.78,.18,'rgba(108,72,204,.35)',.6],[.2,.62,'rgba(47,63,162,.35)',.7],[.55,.9,'rgba(74,43,156,.3)',.6]].forEach(([a,b,col,r])=>{const q=x.createRadialGradient(w*a,h*b,0,w*a,h*b,w*r);q.addColorStop(0,col);q.addColorStop(1,'rgba(0,0,0,0)');x.fillStyle=q;x.fillRect(0,0,w,h)});
+  st.sky=c;const v=document.createElement('canvas');v.width=c.width;v.height=c.height;const y=v.getContext('2d');y.setTransform(dp,0,0,dp,0,0);
+  const q=y.createRadialGradient(w/2,h*.48,Math.min(w,h)*.32,w/2,h*.48,Math.max(w,h)*.75);q.addColorStop(0,'rgba(0,0,0,0)');q.addColorStop(1,'rgba(0,0,0,.5)');y.fillStyle=q;y.fillRect(0,0,w,h);st.vig=v}
+function ufBDraw(C,t,dt){const st=C.st;if(!st.init)ufBInit(C);if(!st.lay)ufBLay(C);
+  const L=st.L,w=C.w,h=C.h,E=ufE,Q=UFB,bx=C.bx,fx=C.fx,dp=C.dpr,db=C.dpb;
+  const fire=(k,at,fn)=>{if(t>=at&&!C.ev.has(k)){C.ev.add(k);if(t-at<.3)fn()}},shake=a=>{C.shk=Math.max(C.shk,a)},flash=(a,col)=>{if(a>C.fl){C.fl=a;C.flc=col||'255,255,255'}};
+  const cam=ufBCam(t),climbK=E.cl((cam-Q.c0)/(BP_LV-Q.c0)),cx=w/2,cy=h*.42;
+  // ---- the sky: it slides down a little as we climb, then holds
+  bx.setTransform(db,0,0,db,0,0);bx.drawImage(st.sky,0,0,w,h);
+  const sh=climbK*h*.35;bx.globalCompositeOperation='lighter';
+  for(const[x,y0,s,ph,sp]of L.S){const y=((y0+sh)%(h*1.4))-h*.2;if(y<-4||y>h+4)continue;const a=.35+.45*(.5+.5*Math.sin(t*sp+ph));bx.globalAlpha=a;bx.fillStyle=s>1?'#fff4d6':'#dfe6ff';bx.fillRect(x,y,s,s);
+    if(s>1){bx.globalAlpha=a*.5;bx.drawImage(ufGlow('rgba(200,210,255,1)'),x-5,y-5,12,12)}}
+  bx.globalAlpha=1;bx.globalCompositeOperation='source-over';
+  // ---- the constellation: its stars light one by one and the lines draw between them; later they fly into the gardener
+  const kUp=climbK*h*.22,gat=E.ss(Q.gather,Q.set,t);st.kp=st.kp||[];
+  UFBK.forEach((p,i)=>{const at=Q.star+i*.17,[x0,y0]=L.K[i],ym=y0+kUp;const g=E.io(E.cl((t-Q.gather-i*.03)/(Q.set-Q.gather-.1)));st.kp[i]=[x0+(cx-x0)*g,ym+(cy-ym)*g]});
+  bx.globalCompositeOperation='lighter';const kA=(1-.45*E.ss(Q.climb,Q.climb+.6,t))*(t<Q.set?1:0);
+  for(let j=0;j<UFBKL.length;j++){const[a,b]=UFBKL[j],at=Q.star+b*.17-.05,k=E.cl((t-at)/.22);if(k<=0||kA<=0)continue;const A=st.kp[a],B=st.kp[b];bx.globalAlpha=kA*.7*(1-gat*.6);bx.strokeStyle='#ffd877';bx.lineWidth=1.4;bx.beginPath();bx.moveTo(A[0],A[1]);bx.lineTo(A[0]+(B[0]-A[0])*k,A[1]+(B[1]-A[1])*k);bx.stroke()}
+  UFBK.forEach((p,i)=>{const at=Q.star+i*.17,k=E.cl((t-at)/.15);if(k<=0||kA<=0)return;const[x,y]=st.kp[i],z=(7+3*Math.sin(t*3+i))*(1+.6*Math.exp(-(t-at)*8))*(1+gat*.5);bx.globalAlpha=kA*k;bx.drawImage(ufGlow('rgba(255,216,119,1)'),x-z,y-z,z*2,z*2);bx.fillStyle='#fffbea';bx.fillRect(x-1.5,y-1.5,3,3)});
+  bx.globalAlpha=1;bx.globalCompositeOperation='source-over';
+  UFBK.forEach((p,i)=>fire('k'+i,Q.star+i*.17,()=>{const[x,y]=st.kp[i];ufSpark(C,x,y,8,['255,216,119','255,255,255'],90,{life:.6,z:4})}));
+  // ---- the gardener in the season's set, out of the gathered stars
+  if(t>Q.set-.2){const k=E.ss(Q.set-.2,Q.set+.6,t);bx.globalCompositeOperation='lighter';
+    for(let i=0;i<14;i++){const a=t*.25+i*Math.PI/7,r=Math.max(w,h);bx.globalAlpha=k*(.06+.03*Math.sin(t*2+i));bx.fillStyle=i%2?'#ffd877':'#9c7cf0';bx.beginPath();bx.moveTo(cx,cy);bx.arc(cx,cy,r,a,a+.12);bx.closePath();bx.fill()}
+    bx.globalAlpha=k*.75;bx.drawImage(ufGlow('rgba(156,124,240,1)'),cx-w*.55,cy-w*.55,w*1.1,w*1.1);bx.globalAlpha=k*.5;bx.drawImage(ufGlow('rgba(255,216,119,1)'),cx-w*.3,cy-w*.3,w*.6,w*.6);
+    bx.globalAlpha=1;bx.globalCompositeOperation='source-over'}
+  fire('top',Q.top,()=>{flash(.25,'255,226,150');ufRing(C,w/2+L.W/4,L.hy,'255,216,119',10,w*.6,.7,5);ufSpark(C,w/2+L.W/4,L.hy,34,['255,216,119','255,255,255','156,124,240'],300,{life:1,z:5})});
+  fire('set',Q.set,()=>{flash(.85,'255,236,190');shake(4);ufRing(C,cx,cy,'255,216,119',20,w*.9,.8,7);ufRing(C,cx,cy,'190,170,255',10,w*.6,.6,4);ufSpark(C,cx,cy,50,['255,216,119','255,255,255','190,170,255'],380,{life:1.2,z:6})});
+  if(t>Q.set+.5&&t<Q.title+1&&t-(st.tw||0)>.16){st.tw=t;const a=Math.random()*6.28,r=w*(.18+Math.random()*.2);ufSpark(C,cx+Math.cos(a)*r,cy+Math.sin(a)*r*1.2,1,['255,236,190'],14,{life:.7,z:6})}
+  {const k=t<Q.set?0:E.back((t-Q.set)/.55),o=E.cl((t-Q.set)/.12);ufPut(st.av,cx,cy+Math.sin(t*1.8)*4,.6+.4*k,.6+.4*k,o,0,`drop-shadow(0 0 ${(8+4*Math.sin(t*3)).toFixed(1)}px rgba(255,216,119,.85)) drop-shadow(0 0 22px rgba(156,124,240,.6))`)}
+  // ---- the road of the 40 levels
+  {const T=st.T,RH=L.RH,inK=E.out(E.cl((t-Q.climb+.38)/.5)),outK=E.ss(Q.gather-.1,Q.set-.15,t),o=inK*(1-outK);
+    T.style.opacity=o.toFixed(3);T.style.transform=`translate3d(${(w/2-L.W/2).toFixed(1)}px,${(L.hy+(1-inK)*h*.25+outK*h*.18).toFixed(1)}px,0) perspective(900px) rotateX(34deg)`;
+    if(o>.003){st.In.style.transform=`translate3d(0,${((cam-1)*RH).toFixed(1)}px,0)`;
+      st.F.style.top=(-(cam-1)*RH).toFixed(1)+'px';st.F.style.height=Math.max(0,(cam-1)*RH+RH*.5).toFixed(1)+'px';st.Hd.style.top=(-(cam-1)*RH).toFixed(1)+'px';
+      st.Lb.style.opacity=(1-E.cl((cam-1)/1.2)).toFixed(3);
+      for(let i=1;i<=BP_LV;i++){const r=st.rows[i-1],d=i-cam,vis=d>-2.4&&d<11;if(!vis){if(r._v!==0){r._v=0;r.style.visibility='hidden'}continue}
+        if(r._v!==1){r._v=1;r.style.visibility=''}
+        if(cam>=i-.02&&st.ron[i]<0){st.ron[i]=t;r.classList.add('on');if(t-Q.climb<3.5){const big=i===1||i===10||i===20||i===BP_LV,n=big?14:4;ufSpark(C,w/2-L.W/4,L.hy,n,['165,140,255','224,214,255'],big?220:120,{life:.55,z:big?5:3.5});ufSpark(C,w/2+L.W/4,L.hy,n,['255,216,119','255,251,234'],big?220:120,{life:.55,z:big?5:3.5})}}
+        const ro=(1-E.ss(6.5,10.5,d))*(1-E.ss(.7,2.2,-d)),pop=st.ron[i]>=0?1+.12*Math.exp(-(t-st.ron[i])*9):1;
+        r.style.opacity=ro.toFixed(3);r.style.transform=`translate3d(0,${(-(i-1)*RH-RH/2).toFixed(1)}px,0) scale(${pop.toFixed(3)})`}}}
+  // ---- the words
+  {let tx='',sb='',col='#ffd877',o=0,p=1,ly=h*.8;
+    if(t<Q.climb){const Z=bpSeason();tx=Z?Z.nome:'';sb=_t('Temporada {0}',Z?Z.n:1);o=E.cl((t-.45)/.3)*(1-E.ss(Q.climb-.6,Q.climb-.35,t));ly=h*.66}
+    else if(t<Q.gather){const n=Math.max(1,Math.min(BP_LV,Math.floor(cam+.02)));tx=_t('Nível {0}',n);sb=n>=BP_LV?_t('Conjunto'):'';col=n>=BP_LV?'#ffd877':'#c8b8ff';o=E.cl((t-Q.climb-.15)/.25)*(1-E.ss(Q.gather-.15,Q.gather+.05,t));ly=h*.84;
+      if(st.ln!==n){st.ln=n;st.lt=t}p=1+(n>=BP_LV?.3:.12)*Math.exp(-(t-(st.lt||t))*12)}
+    else if(t>Q.set+.25){const Z=bpSeason();tx=Z?Z.set:'';sb=_t('Passe Estelar');o=E.cl((t-Q.set-.25)/.3);ly=h*.74;p=1+.15*Math.exp(-(t-Q.set-.25)*8)}
+    const lb=st.lb,k=tx+'|'+sb;if(lb.k!==k){lb.k=k;lb.d.innerHTML=tx?`<b>${esc(tx)}</b>${sb?`<small>${esc(sb)}</small>`:''}`:'';lb.d.style.setProperty('--c',col);lb.d.style.setProperty('--t',ufCss(ufMix(hex(col),[255,255,255],.35)))}
+    lb.d.style.opacity=(t>=Q.title-.1?0:o).toFixed(3);lb.d.style.transform=`translate3d(${(w/2).toFixed(1)}px,${ly.toFixed(1)}px,0) translate(-50%,0) scale(${p.toFixed(3)})`}
+  // ---- front: streaks of light while the road runs fast, sparks, flash, vignette
+  fx.setTransform(dp,0,0,dp,0,0);fx.clearRect(0,0,w,h);
+  if(t>Q.climb&&t<Q.top){const sp=ufBV((t-Q.climb)/(Q.top-Q.climb));fx.globalCompositeOperation='lighter';for(let k=0;k<18;k++){const X=ufHn(k,31)*w,Y=((ufHn(k,32)*h*1.3+t*h*2.2)%(h*1.3))-h*.15,len=20+120*sp;fx.globalAlpha=(.05+.16*sp)*(Math.abs(X-w/2)>L.W*.52?1:.25);fx.fillStyle=k%3?'#c8b8ff':'#ffe9a6';fx.fillRect(X,Y,1.5,len)}fx.globalAlpha=1;fx.globalCompositeOperation='source-over'}
+  ufParts(C,fx,dt);ufRings(C,fx,dt);
+  if(C.fl>.003){fx.fillStyle=`rgba(${C.flc},${Math.min(1,C.fl).toFixed(3)})`;fx.fillRect(0,0,w,h);C.fl*=Math.exp(-dt*5)}
+  fx.drawImage(st.vig,0,0,w,h);
+  let sx=0,sy=0;if(C.shk>.05){sx=(Math.random()-.5)*2*C.shk;sy=(Math.random()-.5)*2*C.shk;C.shk*=Math.exp(-dt*11)}else C.shk=0;
+  C.W0.style.transform=`translate3d(${sx.toFixed(1)}px,${sy.toFixed(1)}px,0)`}
+function ufBSnd(A){const{osc,pad,noise,N}=A,Q=UFB;
+  // the night: a soft open chord; every star of the constellation a little bell, climbing
+  pad([N(53),N(60),N(64),N(67)],0,2.1,.022);
+  [72,74,76,79,81,84,86,88].forEach((n,i)=>{const a=Q.star+i*.17;osc('sine',N(n),a,.6,.05,'mus',{a:.003});osc('sine',N(n+12),a+.005,.4,.016,'mus',{a:.003});osc('triangle',N(n-12),a,.25,.02,'mus',{a:.004})});
+  // the road: a pulse underneath, chords moving up, and a pluck for every level that lights, higher and higher
+  for(let i=0;i<7;i++)osc('sine',72,Q.climb+.05+i*.48,.3,.12,'sfx',{a:.004,to:44});
+  pad([N(53),N(57),N(60),N(64)],Q.climb-.1,1.25,.022);pad([N(55),N(59),N(62),N(67)],Q.climb+1.1,1.1,.022);pad([N(57),N(60),N(64),N(69)],Q.climb+2.15,1.15,.024);
+  const PS=[0,2,4,7,9];for(let i=1;i<=BP_LV;i++){const k=Math.floor((i-1)*14/(BP_LV-1)),n=60+PS[k%5]+12*Math.floor(k/5),a=ufBAt(i),v=i<=4||i>=BP_LV-2?.05:.026;osc('triangle',N(n),a,.16,v,'mus',{a:.002});if(i%5===0)osc('sine',N(n+12),a,.2,.016,'mus',{a:.002})}
+  [[0,700],[1.0,1200],[2.0,1900]].forEach(([a,f])=>noise(Q.climb+.2+a,1.2,.05,f,'sfx',.45));
+  // level 40: a bright chord; then the stars gather with a rising swell
+  [84,88,91,96].forEach((n,i)=>osc('sine',N(n),Q.top+i*.04,.9,.035,'mus',{a:.003}));osc('sine',90,Q.top,.6,.15,'sfx',{a:.004,to:45});
+  noise(Q.gather,Q.set-Q.gather+.05,.08,2600,'sfx',.5);osc('sine',N(67),Q.gather,Q.set-Q.gather,.03,'mus',{a:.3,to:N(79)});
+  // the set: a full chord, a low bloom and a falling run of bells
+  osc('sine',70,Q.set,1.2,.24,'sfx',{a:.004,to:36});noise(Q.set,.6,.14,1800);
+  pad([N(41),N(53),N(60),N(64),N(69)],Q.set,2.3,.03);
+  [93,89,86,81,77,74].forEach((n,i)=>{osc('sine',N(n),Q.set+.1+i*.11,.7,.04,'mus',{a:.003});osc('triangle',N(n-12),Q.set+.1+i*.11,.3,.02,'mus',{a:.003})});
+  ufBEnd(A,Q.title-.03)}
+function ufBEnd(A,at){const{osc,pad,N}=A;pad([N(41),N(53),N(57),N(60),N(64),N(69)],at,3.2,.03);osc('sine',N(84),at+.02,1.5,.035,'mus',{a:.004});osc('sine',N(88),at+.08,1.2,.022,'mus',{a:.004});osc('sine',N(91),at+.14,1.0,.016,'mus',{a:.004})}
+UF.passe={title:UFB.title,skipTo:UFB.title+.05,
+  tag:()=>_t('Novidade'),h2:()=>_t('Chegou o passe da temporada'),
+  p:()=>{const Z=bpSeason();return Z?_t('{0} dias, {1} níveis e recompensas todos os dias. No fim do Passe Estelar: o conjunto «{2}», com asas que brilham como estrelas.',Z.d,BP_LV,Z.set):''},
+  btn:()=>_t('Ver o passe'),later:()=>true,go:()=>{if(!visiting&&!titleShown)bpOpen()},drop:()=>!bpSeason()||sheetName==='passe',
+  music(C){const A=cnSynth();if(!A)return null;ufBSnd(A);return A},end(C){const A=cnSynth();if(!A)return null;ufBEnd(A,0);return A},draw:ufBDraw};
+{const st=document.createElement('style');st.textContent=`
+.ufBpT{position:absolute;left:0;top:0;transform-origin:50% 0;will-change:transform,opacity;pointer-events:none}
+.ufBpIn{position:absolute;left:0;right:0;top:0;height:0;will-change:transform}
+.ufBpR{position:absolute;left:0;right:0;top:0;height:calc(var(--rh) - 10px);display:grid;grid-template-columns:1fr 40px 1fr;gap:6px;transform-origin:50% 50%;will-change:transform,opacity}
+.ufBpR .bpc{height:100%;cursor:default;transition:none}
+.ufBpR.on .bpc.fr{box-shadow:inset 0 0 0 2px #a58cff,0 0 12px rgba(165,140,255,.55)}
+.ufBpR.on .bpc.pr{box-shadow:inset 0 0 0 2px #ffd36a,0 0 14px rgba(255,211,106,.55)}
+.ufBpN{display:grid;place-items:center}
+.ufBpN b{display:grid;place-items:center;width:32px;height:32px;color:#8d96c8;background:#11152f;box-shadow:inset 0 0 0 2px #283062;clip-path:var(--notch)}
+.ufBpR.on .ufBpN b{color:#fff;background:#2c2580;box-shadow:inset 0 0 0 2px #ffd36a,0 0 10px rgba(255,211,106,.6)}
+.ufBpLn{position:absolute;left:50%;width:4px;margin-left:-2px;top:calc(-${BP_LV-1}*var(--rh) - var(--rh)/2);height:calc(${BP_LV-1}*var(--rh) + var(--rh));background:#1b2142}
+.ufBpF{position:absolute;left:50%;width:4px;margin-left:-2px;background:linear-gradient(#ffe9a6,#a58cff);box-shadow:0 0 10px rgba(255,216,119,.8)}
+.ufBpHd{position:absolute;left:50%;width:14px;height:14px;margin:-7px 0 0 -7px;border-radius:50%;background:radial-gradient(#fffbea,#ffd877 45%,rgba(255,216,119,0) 72%);box-shadow:0 0 18px 6px rgba(255,216,119,.55)}
+.ufBpLb{position:absolute;left:0;right:0;top:calc(var(--rh)/2 - 2px);display:grid;grid-template-columns:1fr 40px 1fr;gap:6px;text-align:center;font-size:12px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:#a58cff}
+.ufBpLb .pr{color:#ffd36a}
+.uf-passe .cinet h2{color:#fff0c4;text-shadow:0 3px 0 #2a1d6e,0 0 18px rgba(255,216,119,.7),0 0 40px rgba(156,124,240,.5)}
+.uf-passe .cinek{color:#d8c8ff;text-shadow:0 0 8px #6c48cc}
 `;document.head.appendChild(st)}
 
 var UF_OK=1;
