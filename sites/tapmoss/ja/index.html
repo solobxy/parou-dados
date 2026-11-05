@@ -11799,7 +11799,7 @@ function msGo(g){closeModal();if(g==='passe'){if(typeof BP_OK!=='undefined')bpOp
 // what a level opens, as one card: pets at 20, plinko at 30, a scene to buy, a new moss...
 function msLevel(l){if(xpQuiet)return;const sp=SPEC.find(s=>s.lvl===l),bm=BIOMES.find(b=>b.lvl===l&&!b.soon),mg=MG.find(g=>g.lvl===l),mgU=MG.find(g=>g.up===l),L=[];
   if(l===PT_LVL&&!ptS().on){ptUnlock(true);const eg=obEggDrop();if(!ufQueue('pets')&&!eg)L.push({ic:'paw',title:_t('Os pets chegaram!'),text:_t('Ganhaste um ovo raro. Choca em 3 minutos, e cada toque no jardim aquece-o. Cuida do teu pet e ele dá-te um bónus em todas as cenas.'),btn:_t('Ver o meu pet'),go:'pet',rc:'#ff8ad8'})}
-  if(l===MN_LVL&&S.mina&&!S.mina.on){mnUnlock(true);L.push({ic:'helmet',title:_t('A mina abriu!'),text:_t('Um segundo jogo ao lado do jardim: escava a terra pixel a pixel, encontra baús, fósseis e rubis. Continua a escavar mesmo quando estás no jardim.'),btn:_t('Ir para a mina'),go:'mina',rc:'#c8a070'})}
+  if(l===MN_LVL&&S.mina&&!S.mina.on){mnUnlock(true);if(!ufQueue('mina'))L.push({ic:'helmet',title:_t('A mina abriu!'),text:_t('Um segundo jogo ao lado do jardim: escava a terra pixel a pixel, encontra baús, fósseis e rubis. Continua a escavar mesmo quando estás no jardim.'),btn:_t('Ir para a mina'),go:'mina',rc:'#c8a070'})}
   if(l===HS_LVL&&!S.casa&&ufQueue('casa')){S.casaNews=1}else if(l===HS_LVL&&!S.casa)L.push({ic:'house',title:_t('A tua casa abriu!'),text:_t('Um sítio só teu para decorar e descansar, sem metas nem pressa. Também podes visitar a casa dos amigos.'),btn:_t('Ver a casa'),go:'casa',rc:'#e8b06a'});
   if(bm)L.push({ic:bm.ic,title:_t('Nova cena: {0}',bm.nome),text:bm.desc,go:'scn',btn:_t('Ver as cenas'),rc:'#5fb0f0'});
   if(mg)L.push({ic:mg.ic,title:_t('Novo minijogo: {0}',mg.nome),text:_t('Uma jogada a cada {0} minutos, no botão dos minijogos. Quanto mais esperas, melhores os prémios.',mg.cd/60),go:'mg',btn:_t('Jogar'),rc:'#f4c54f'});
@@ -12742,7 +12742,7 @@ function mnAchCheck(){const M=S.mina;let n=0;for(const a of MACH){if(!M.achv[a[0
 const mnAchN=()=>MACH.filter(a=>S.mina.achv[a[0]]===1).length;
 // level 15: the mine opens with a first chest to show how it works
 function mnUnlock(quiet){const M=S.mina;if(M.on)return;M.on=1;M.t=now();M.bq.push(mnBq(1,0));mnLoad();mnSave();dirtySave=true;ev('mina','abriu');
-  if(!quiet)msQueue({ic:'helmet',title:_t('A mina abriu!'),text:_t('Um segundo jogo ao lado do jardim: escava a terra pixel a pixel, encontra baús, fósseis e rubis. Continua a escavar mesmo quando estás no jardim.'),btn:_t('Ir para a mina'),go:'mina',rc:'#c8a070'})}
+  if(!quiet&&!ufQueue('mina'))msQueue({ic:'helmet',title:_t('A mina abriu!'),text:_t('Um segundo jogo ao lado do jardim: escava a terra pixel a pixel, encontra baús, fósseis e rubis. Continua a escavar mesmo quando estás no jardim.'),btn:_t('Ir para a mina'),go:'mina',rc:'#c8a070'})}
 /* drawing the mine. The grid is painted once into its own picture (4x4 screen pixels a cell, with grain, lit edges and moss)
    and only the cells that change are painted again. Light, water, lava, the gardener and the dust are drawn on top each frame */
 // each cell of the mine is painted with 8×8 pixels (4× the scene's resolution, like the garden)
@@ -13334,7 +13334,7 @@ function frame(t){
   tick(dt);draw();guideTick();
 }
 /* versões novas: quando o jogo muda no servidor, guarda o progresso e recarrega a página */
-const BUILD='b0f993a93aca',UKEY='tapmoss.upd';const UPD={on:false,go:false,at:0};
+const BUILD='c497d3b23865',UKEY='tapmoss.upd';const UPD={on:false,go:false,at:0};
 // the new version downloads in the background while the game goes on; the reload only comes once the whole page is here,
 // so a slow network never leaves a half-built page on screen. The offline helper (sw.js) hands this copy over at the reload.
 const NEXTC='tapmoss-next',pgKey=()=>{let p=location.pathname.replace(/index\.html$/,'');if(!p.endsWith('/'))p+='/';return p};
@@ -17901,6 +17901,209 @@ UF.casa={title:UFH.title,skipTo:UFH.title+.05,
 {const st=document.createElement('style');st.textContent=`
 .uf-casa .cinet h2{color:#ffe0b8;text-shadow:0 3px 0 #5a2e10,0 0 18px rgba(255,180,100,.8),0 0 40px rgba(255,140,60,.45)}
 .uf-casa .cinek{color:#ffd0a0;text-shadow:0 0 8px #d8742a}
+`;document.head.appendChild(st)}
+
+
+/* ===== the mine film: at dusk a pickaxe bites the garden's ground; below it a lantern hangs in a small pocket of earth,
+   the dig grows pixel by pixel to a buried chest (rubies and a fossil), a mole tunnels past, a stick of TNT blows the
+   floor open and the lantern falls through the nine worlds of the mine down to the Void ===== */
+const UFM={hit:.62,dig:1.0,chest:2.3,open:2.6,mole:3.3,tnt:3.95,boom:4.6,fall:4.8,deep:8.0,title:8.7,
+  W:['sup','gru','rio','man','nuc','sub','lua','lun','vaz'],
+  P:{sup:[['#4a3423','#5c4129','#6e4f33','#82603f'],'#e0b27a'],gru:[['#40424e','#4c4e5c','#5a5c6c','#6a6c7e'],'#7fd8f0'],rio:[['#2a2628','#36302f','#433b38','#524844'],'#6ab4ff'],
+     man:[['#1e3a24','#2a4e2e','#36623a','#4a7a46'],'#ff9a4a'],nuc:[['#3a2e28','#4a3a30','#5e4a3a','#74584a'],'#f4c54f'],sub:[['#2a0a0e','#3a0e14','#4e141a','#621a22'],'#ff6a7a'],
+     lua:[['#5a5a62','#6e6e78','#86868f','#a0a0aa'],'#eeeef6'],lun:[['#3a4a6a','#4a5c80','#5e7296','#7a8eb0'],'#b0d0ff'],vaz:[['#06030c','#0a0614','#0e0a1c','#140e26'],'#d0b4ff']},
+  BH:150,VZ:320,TOP:140,CW:96,A:.08,D:.24};
+const ufHn=(x,y)=>{const s=Math.sin(x*12.9898+y*78.233)*43758.5453;return s-Math.floor(s)};
+// the fall: a quick start, a steady drop, a soft landing in the Void (p: 0..1 of the way, v: 0..1 of full speed)
+const ufMP=u=>{const A=UFM.A,D=UFM.D,vm=1/(1-A/2-D/2);u=u<0?0:u>1?1:u;return u<A?vm*u*u/(2*A):u<=1-D?vm*(A/2+u-A):1-vm*(1-u)*(1-u)/(2*D)};
+const ufMV=u=>u<0||u>1?0:u<UFM.A?u/UFM.A:u<=1-UFM.D?1:(1-u)/UFM.D;
+const ufMC0=()=>UFM.TOP+UFM.BH*.1,ufMC1=()=>UFM.TOP+8*UFM.BH+UFM.VZ*.5;
+// when the lantern crosses into world i (1..8)
+function ufMCross(i){const Q=UFM,f=(Q.TOP+i*Q.BH-ufMC0())/(ufMC1()-ufMC0());let a=0,b=1;for(let k=0;k<30;k++){const m=(a+b)/2;if(ufMP(m)<f)a=m;else b=m}return Q.fall+(a+b)/2*(Q.deep-Q.fall)}
+const ufMBd=(i,X)=>UFM.TOP+i*UFM.BH+Math.round(5*Math.sin(X*.13+i*2.1)+3*ufHn(X*.7,i));
+const ufMGy=X=>UFM.TOP-6+Math.round(Math.sin(X*.2)*1.5);
+// the column of the nine worlds, painted once in big pixels
+function ufMCol(){const Q=UFM,H=Q.TOP+8*Q.BH+Q.VZ,c=document.createElement('canvas');c.width=Q.CW;c.height=H;const x=c.getContext('2d'),F=(col,a,b,w,h)=>{x.fillStyle=col;x.fillRect(a,b,w||1,h||1)};
+  const id=x.createImageData(Q.CW,H),D=id.data,PAL=Q.W.map(k=>Q.P[k][0].map(hex)),s0=hex('#0b0a22'),s1=hex('#4a3a6e');
+  for(let X=0;X<Q.CW;X++){const gy=ufMGy(X),bd=[0];for(let i=1;i<9;i++)bd.push(ufMBd(i,X));
+    for(let y=0;y<H;y++){const o=(y*Q.CW+X)*4;let r;
+      if(y<gy){const k=y/gy;r=[s0[0]+(s1[0]-s0[0])*k,s0[1]+(s1[1]-s0[1])*k,s0[2]+(s1[2]-s0[2])*k]}
+      else{let b=0;for(let i=8;i>=1;i--)if(y>=bd[i]){b=i;break}const n=ufHn(X*.37+b*9,y*.41)*.7+ufHn((X/5)|0,(y/5|0)+b*40)*.3;r=PAL[b][Math.min(3,(n*4)|0)];
+        const e=b?y-bd[b]:99;if(e<2)r=r.map(v=>v*.6);else if(e<4)r=r.map(v=>v*.82)}
+      D[o]=r[0];D[o+1]=r[1];D[o+2]=r[2];D[o+3]=255}}
+  x.putImageData(id,0,0);
+  // the garden on top: stars, moss, grass and a few flowers
+  for(let i=0;i<46;i++){const X=(ufHn(i,1)*Q.CW)|0,Y=(ufHn(i,2)*(Q.TOP-30))|0;F(ufHn(i,3)<.2?'#fff2c0':'#ffffff',X,Y);if(ufHn(i,4)<.12){F('#d8ccff',X-1,Y);F('#d8ccff',X+1,Y);F('#d8ccff',X,Y-1);F('#d8ccff',X,Y+1)}}
+  x.fillStyle='#fff6dc';x.beginPath();x.arc(76,44,7,0,6.3);x.fill();x.fillStyle='#1a1640';x.beginPath();x.arc(73,42,6.4,0,6.3);x.fill();
+  for(let X=0;X<Q.CW;X++){const gy=ufMGy(X);F('#2f5a24',X,gy,1,4);F('#4f8a34',X,gy,1,1);F('#9ad65a',X,gy-1,1,1);if(ufHn(X,3)<.35)F('#6fae45',X,gy-2-((ufHn(X,4)*3)|0),1,2)}
+  [[14,'#ff8ad8'],[30,'#ffd45a'],[63,'#8ad8ff'],[82,'#ff8ad8']].forEach(([X,col])=>{const gy=ufMGy(X);F('#4f8a34',X,gy-4,1,4);F(col,X-1,gy-5);F(col,X+1,gy-5);F(col,X,gy-6);F(col,X,gy-4);F('#fff6dc',X,gy-5)});
+  Q.W.forEach((id,i)=>{const y0=Q.TOP+i*Q.BH,BH=id==='vaz'?Q.VZ:Q.BH,R=(a,b)=>ufHn(a+i*31,b+i*17);
+    if(id==='sup'){for(let k=0;k<14;k++){const X=(R(k,7)*90)|0,Y=(y0+30+R(k,8)*110)|0;F('#7a7a80',X,Y,4,3);F('#9a9aa2',X+1,Y,2,1)}for(let k=0;k<30;k++)F('#c9d2dc',(R(k,5)*Q.CW)|0,(y0+20+R(k,6)*125)|0)}
+    if(id==='gru'){for(let k=0;k<16;k++){const X=(R(k,1)*Q.CW)|0,Y=(y0+10+R(k,2)*(BH-20))|0;F('#3a6ab0',X,Y,3,4);F('#7fd8f0',X+1,Y,1,3);F('#e0fbff',X+1,Y,1,1)}for(let k=0;k<50;k++)F('#dfe6ee',(R(k,5)*Q.CW)|0,(y0+R(k,6)*BH)|0)}
+    if(id==='rio'){const wy=y0+52;for(let X=0;X<Q.CW;X++){const yy=wy+Math.round(Math.sin(X*.15)*3);F('#1a4a8a',X,yy,1,6);F('#4a9ad8',X,yy,1,1);if(X%7===0)F('#bfe4ff',X,yy+2)}
+      for(let k=0;k<3;k++){const X=(R(k,1)*80)|0,Y=y0+100+k*14;F('#e04a10',X,Y,12,3);F('#ff9a30',X+2,Y,8,1)}}
+    if(id==='man'){for(let k=0;k<3;k++){let Y=y0+30+k*40;for(let s=0;s<Q.CW;s++){Y+=Math.round(Math.sin(s*.12+k)*.9);F('#ff6a20',s,Y,1,2);F('#ffd060',s,Y,1,1)}}for(let k=0;k<7;k++)F('#bfefff',(R(k,3)*Q.CW)|0,(y0+R(k,4)*BH)|0,2,2)}
+    if(id==='nuc'){for(let k=0;k<70;k++){F(R(k,9)<.3?'#fff0a0':'#f4c54f',(R(k,5)*Q.CW)|0,(y0+R(k,6)*BH)|0,R(k,7)<.2?2:1,1)}}
+    if(id==='sub'){for(let k=0;k<6;k++){const X=(R(k,1)*84)|0,Y=(y0+20+R(k,2)*110)|0;F('#e8e0d0',X,Y,8,2);F('#e8e0d0',X,Y-1,2,4);F('#e8e0d0',X+6,Y-1,2,4)}for(let k=0;k<8;k++)F('#7fe3fe',(R(k,3)*Q.CW)|0,(y0+R(k,4)*BH)|0,2,2)}
+    if(id==='lua'){for(let k=0;k<9;k++){const X=R(k,1)*Q.CW,Y=y0+15+R(k,2)*(BH-30),r=3+R(k,3)*6;x.strokeStyle='#4a4a52';x.lineWidth=1;x.beginPath();x.ellipse(X,Y,r,r*.6,0,0,6.3);x.stroke();F('#c8c8d0',X-r*.6,Y-r*.4,2,1)}}
+    if(id==='lun'){for(let k=0;k<34;k++)F('#cfe4ff',(R(k,5)*Q.CW)|0,(y0+R(k,6)*BH)|0);for(let k=0;k<5;k++)F('#e8f4ff',(R(k,8)*Q.CW)|0,(y0+R(k,9)*BH)|0,2,2)}
+    if(id==='vaz'){for(let k=0;k<170;k++){const X=(R(k,5)*Q.CW)|0,Y=(y0+8+R(k,6)*(BH-8))|0;F(R(k,7)<.15?'#fff0a0':R(k,7)<.3?'#d0b4ff':'#ffffff',X,Y);if(R(k,8)<.08){F('#a888ff',X-1,Y);F('#a888ff',X+1,Y);F('#a888ff',X,Y-1);F('#a888ff',X,Y+1)}}}});
+  return c}
+function ufMInit(C){const st=C.st;st.init=1;st.col=ufMCol();
+  st.pick=ufAct(C,icon('pick'));st.pk2=ufAct(C,icon('pick'));st.lamp=ufAct(C,icon('lantern'));st.chest=ufAct(C,icon('chestGold'));st.chestO=ufAct(C,icon('chestOpen'));st.mole=ufAct(C,icon('mole'));st.tnt=ufAct(C,icon('tnt'));
+  st.loot=[icon('rubi'),icon('bone'),icon('rubi'),icon('rubi')].map(h=>ufAct(C,h));
+  const lb=document.createElement('div');lb.className='ufL';C.stg.appendChild(lb);st.lb={d:lb,k:''};
+  // the crack the pickaxe leaves: a few jagged lines, in column units from the point it hits
+  const cr=[];const br=(x,y,a,n,w)=>{const p=[[x,y]];for(let i=0;i<n;i++){a+=(Math.random()-.5)*.9;x+=Math.cos(a)*2;y+=Math.sin(a)*2;p.push([x,y])}cr.push({p,w});return p};
+  const m=br(0,0,1.6,9,1.3);br(m[3][0],m[3][1],.5,4,.9);br(m[5][0],m[5][1],2.6,4,.9);br(0,0,.15,4,.8);br(0,0,3.0,4,.8);st.cr=cr}
+function ufMLay(C){const st=C.st,w=C.w,h=C.h,L=st.L={};st.lay=1;L.P=w/UFM.CW;L.VH=h/L.P;L.cs=w/40;L.gw=40;L.gh=Math.ceil(h/L.cs)+1;
+  ufSize(st.pick,w*.34);ufSize(st.pk2,L.cs*4.4);ufSize(st.chest,L.cs*7);ufSize(st.chestO,L.cs*7);ufSize(st.mole,L.cs*6);ufSize(st.tnt,L.cs*4.5);st.loot.forEach(a=>ufSize(a,w*.13));
+  // the dig: earth just under the garden, the shaft the pickaxe opened, a pocket with the lantern, a chest buried to the right
+  const gw=L.gw,gh=L.gh,G=new Uint8Array(gw*gh),sh=new Uint8Array(gw*gh),mt=new Uint8Array(gw*gh);L.sky=9;
+  for(let y=0;y<gh;y++)for(let x=0;x<gw;x++){const i=y*gw+x;sh[i]=Math.min(3,((ufHn(x*.53,y*.61)*.7+ufHn((x/4)|0,(y/4)|0)*.3)*4)|0);if(y<=L.sky)G[i]=2}
+  const put=(x,y,v)=>{if(x>=0&&y>L.sky&&x<gw&&y<gh)mt[y*gw+x]=v};
+  for(let k=0;k<7;k++){const x=(ufHn(k,41)*gw)|0,y=L.sky+4+((ufHn(k,42)*(gh-8))|0);put(x,y,1);put(x+1,y,1);put(x,y+1,1);if(ufHn(k,43)<.5)put(x+1,y+1,1)}
+  for(let k=0;k<5;k++){let x=ufHn(k,51)*gw,y=L.sky+1;for(let s=0;s<6+((ufHn(k,52)*6)|0);s++){put(x|0,y|0,2);y+=1;x+=Math.sin(s+k)*.7}}
+  for(let k=0;k<6;k++)put((ufHn(k,61)*gw)|0,L.sky+6+((ufHn(k,62)*(gh-10))|0),3);
+  for(let k=0;k<26;k++)put((ufHn(k,71)*gw)|0,L.sky+2+((ufHn(k,72)*(gh-4))|0),4);
+  L.cy=Math.round(gh*.42);L.hx=20;L.chx=29;L.chy=L.cy-3;
+  for(let y=L.sky+1;y<L.cy;y++)for(let x=L.hx-1;x<=L.hx+1;x++)G[y*gw+x]=1;
+  for(let y=-3;y<=3;y++)for(let x=-3;x<=3;x++)if(x*x+y*y<=10)G[(L.cy+y)*gw+L.hx+x]=1;
+  for(let y=L.chy-1;y<=L.chy+7;y++)for(let x=L.chx-1;x<=L.chx+7;x++)if(y>=0&&y<gh&&x>=0&&x<gw)mt[y*gw+x]=0;
+  st.G=G;st.sh=sh;st.mt=mt;
+  const dp=C.dpb,c=document.createElement('canvas');c.width=Math.round(w*dp);c.height=Math.round(h*dp);const x=c.getContext('2d');x.setTransform(dp,0,0,dp,0,0);
+  const g=x.createRadialGradient(w/2,h*.47,Math.min(w,h)*.32,w/2,h*.47,Math.max(w,h)*.75);g.addColorStop(0,'rgba(0,0,0,0)');g.addColorStop(1,'rgba(0,0,0,.5)');x.fillStyle=g;x.fillRect(0,0,w,h);st.vig=c}
+const UFMC={1:'#7a7a80',2:'#2e2016',3:'#c8203a',4:'#c9d2dc'};
+// one hit: a few earth cells next to the hole give way, the ones nearest to (tx,ty) first
+function ufMHit(C,n,tx,ty){const st=C.st,L=st.L,G=st.G,W2=L.gw,cand=[];for(let y=L.sky+1;y<L.gh-1;y++)for(let x=1;x<W2-1;x++){const i=y*W2+x;if(G[i])continue;if(G[i-1]===1||G[i+1]===1||G[i-W2]===1||G[i+W2]===1)cand.push([Math.hypot(x-tx,(y-ty)*1.5)+Math.random()*2.5,x,y])}
+  cand.sort((a,b)=>a[0]-b[0]);for(const[,x,y]of cand.slice(0,n)){ufMOpen(C,x,y,0,0,.75);if(Math.abs(y-L.cy)<=2)st.front=Math.max(st.front||0,x)}}
+function ufMOpen(C,X,Y,dx,dy,p){const st=C.st,L=st.L,i=Y*L.gw+X;if(st.G[i])return;st.G[i]=1;
+  if(Math.random()<p){const m=st.mt[i],col=m?UFMC[m]:UFM.P.sup[0][st.sh[i]];C.P.push({k:'shell',x:(X+.5)*L.cs,y:(Y+.5)*L.cs,vx:dx*30+(Math.random()-.5)*70,vy:dy*30-60-Math.random()*70,g:560,dr:.6,t:0,life:.8,z:L.cs*.42,c:ufRgb(col),r:0,vr:(Math.random()-.5)*12})}}
+function ufMDig(C,cx,cy,r,p){const L=C.st.L;for(let y=-r;y<=r;y++)for(let x=-r;x<=r;x++){if(x*x+y*y>r*r+r*.6)continue;const X=cx+x,Y=cy+y;if(X<0||Y<=L.sky||X>=L.gw||Y>=L.gh)continue;ufMOpen(C,X,Y,x,y,p)}}
+function ufMDraw(C,t,dt){const st=C.st;if(!st.init)ufMInit(C);if(!st.lay)ufMLay(C);
+  const L=st.L,w=C.w,h=C.h,E=ufE,Q=UFM,bx=C.bx,fx=C.fx,dp=C.dpr,db=C.dpb;
+  const fire=(k,at,fn)=>{if(t>=at&&!C.ev.has(k)){C.ev.add(k);if(t-at<.3)fn()}},shake=a=>{C.shk=Math.max(C.shk,a)},flash=(a,col)=>{if(a>C.fl){C.fl=a;C.flc=col||'255,255,255'}};
+  const shot=t<Q.dig?'top':t<Q.fall?'dig':'fall',cs=L.cs;
+  // the column: where the camera looks (in column units) and how big it is
+  let V=null;const colDraw=(cam,Z)=>{const vw=Q.CW/Z,vh=L.VH/Z,vx=(Q.CW-vw)/2,vy=cam-vh/2,s=w/vw,H=st.col.height;bx.fillStyle='#0b0a22';bx.fillRect(0,0,w,h);
+    const y0=Math.max(0,vy),y1=Math.min(H,vy+vh);if(y1>y0)bx.drawImage(st.col,vx,y0,vw,y1-y0,0,(y0-vy)*s,w,(y1-y0)*s);V={vx,vy,s};return V};
+  const toS=(X,Y)=>[(X-V.vx)*V.s,(Y-V.vy)*V.s];
+  // ---- what happens when
+  fire('dig',Q.dig,()=>{flash(.45,'255,226,180')});
+  if(shot==='dig'&&t>Q.dig+.05&&t<Q.chest-.05&&t-(st.ht||0)>.05){st.ht=t;ufMHit(C,3,L.chx+3.5,L.chy+3.5)}
+  if(shot==='dig'&&t<Q.chest&&t-(st.gt||0)>.32){st.gt=t;ufSpark(C,(L.chx+1+Math.random()*5)*cs,(L.chy+1+Math.random()*5)*cs,1,['255,224,140'],10,{life:.5,z:6})}
+  fire('reveal',Q.chest,()=>{ufMDig(C,L.chx+3,L.chy+3,5,.5);ufSpark(C,(L.chx+3.5)*cs,(L.chy+3.5)*cs,16,['244,197,79','255,255,255'],200,{life:.7})});
+  fire('open',Q.open,()=>{shake(3);flash(.3,'255,230,160');const c=[(L.chx+3.5)*cs,(L.chy+2)*cs];ufRing(C,c[0],c[1],'255,214,120',8,w*.5,.6,5);ufSpark(C,c[0],c[1],30,['244,197,79','232,58,90','255,255,255'],320,{life:1,z:5})});
+  const moleX=v=>-3+v*(L.gw*.56),moleY=v=>L.gh*.72+Math.sin(v*9)*1.2;
+  if(shot==='dig'&&t>Q.mole&&t<Q.mole+.9){const v=(t-Q.mole)/.9;ufMDig(C,Math.round(moleX(v)),Math.round(moleY(v)),2,.4)}
+  const tx=Math.round(L.gw*.74),ty=Math.round(L.gh*.7);
+  fire('boom',Q.boom,()=>{ufMDig(C,tx,ty,7,.5);shake(13);flash(.8,'255,170,80');ufRing(C,(tx+.5)*cs,(ty+.5)*cs,'255,200,120',10,w*.8,.7,8);
+    ufSpark(C,(tx+.5)*cs,(ty+.5)*cs,44,['255,190,90','255,240,200','224,178,122'],460,{life:1,z:6})});
+  fire('fall',Q.fall,()=>{flash(.6,'255,214,160');shake(5);for(let k=0;k<22;k++){const c=UFM.P.sup[0][k%4];C.P.push({k:'shell',x:Math.random()*w,y:h*(.45+Math.random()*.6),vx:(Math.random()-.5)*60,vy:-120-Math.random()*380,g:-260,dr:.2,t:0,life:1.1,z:5+Math.random()*7,c:ufRgb(c),r:0,vr:(Math.random()-.5)*10})}});
+  // ---- the pictures behind
+  bx.setTransform(db,0,0,db,0,0);bx.imageSmoothingEnabled=false;let camF=0;
+  if(shot==='top'){const Z=1+.05*E.io(t/Q.dig)+.035*(t>Q.hit?Math.exp(-(t-Q.hit)*9):0);colDraw(Q.TOP-30,Z);
+  fire('hit',Q.hit,()=>{shake(6);const p=toS(48,ufMGy(48));ufSpark(C,p[0],p[1],16,['224,178,122','154,214,90','255,240,200'],240,{k:'dot',life:.6,z:5,up:90,dr:2.5});
+    for(let k=0;k<12;k++)C.P.push({k:'shell',x:p[0]+(Math.random()-.5)*20,y:p[1],vx:(Math.random()-.5)*220,vy:-140-Math.random()*200,g:900,dr:.3,t:0,life:.9,z:4+Math.random()*4,c:ufRgb(k%3?'#6e4f33':'#4f8a34'),r:0,vr:(Math.random()-.5)*14});
+    ufRing(C,p[0],p[1],'255,230,180',8,w*.35,.45,4)});
+    // the crack spreading from where the pickaxe bit, then the ground giving way
+    const k=E.ss(Q.hit,Q.hit+.28,t),o=toS(48,ufMGy(48));if(k>0){bx.lineCap='round';bx.lineJoin='round';for(const c of st.cr){const n=Math.max(1,Math.round(c.p.length*k));bx.beginPath();c.p.slice(0,n).forEach(([a,b],j)=>{const X=o[0]+a*V.s,Y=o[1]+b*V.s;j?bx.lineTo(X,Y):bx.moveTo(X,Y)});
+      bx.strokeStyle='rgba(20,12,6,.95)';bx.lineWidth=Math.max(2,V.s*c.w);bx.stroke()}
+      const hr=V.s*(1.5+4*E.ss(Q.hit,Q.dig,t));bx.fillStyle='#120a05';bx.beginPath();bx.ellipse(o[0],o[1]+hr*.25,hr*1.3,hr*.6,0,0,6.3);bx.fill()}}
+  else if(shot==='dig'){const P=Q.P.sup[0],G=st.G,mt=st.mt,gw=L.gw;
+    // behind the earth: the dark of the dug holes, warmer where the lantern is
+    bx.fillStyle='#140d09';bx.fillRect(0,0,w,h);
+    for(let y=0;y<L.gh;y++)for(let x=0;x<gw;x++){const i=y*gw+x,g=G[i];if(g===1)continue;
+      if(g===2){const k=y/(L.sky+1);bx.fillStyle=y===L.sky?'#2f5a24':ufCss(ufMix(hex('#0b0a22'),hex('#4a3a6e'),k));bx.fillRect(x*cs,y*cs,cs+.5,cs+.5);if(y===L.sky){bx.fillStyle='#9ad65a';bx.fillRect(x*cs,y*cs,cs+.5,cs*.25)}continue}
+      const m=mt[i];bx.fillStyle=m?UFMC[m]:P[st.sh[i]];bx.fillRect(x*cs,y*cs,cs+.5,cs+.5);
+      if(m===3||m===4){bx.fillStyle=m===3?'#ff8aa0':'#ffffff';bx.fillRect(x*cs+cs*.2,y*cs+cs*.2,cs*.3,cs*.3)}
+      // the edges of the hole catch the light, the floor under it is in shade
+      if(G[i-gw]===1){bx.fillStyle='rgba(255,226,170,.22)';bx.fillRect(x*cs,y*cs,cs+.5,cs*.28)}
+      if(G[i+gw]===1){bx.fillStyle='rgba(0,0,0,.35)';bx.fillRect(x*cs,y*cs+cs*.72,cs+.5,cs*.28)}}
+    // the chest glows a little under the earth before it is found
+    if(t<Q.chest){bx.globalCompositeOperation='lighter';bx.globalAlpha=.22+.12*Math.sin(t*5);bx.drawImage(ufGlow('rgba(255,200,90,1)'),(L.chx-2)*cs,(L.chy-2)*cs,cs*11,cs*11);bx.globalAlpha=1;bx.globalCompositeOperation='source-over'}
+    // the rope down the shaft and the lantern's warm light in the pocket
+    bx.fillStyle='#c8a070';bx.fillRect((L.hx+.45)*cs,(L.sky+1)*cs,Math.max(1.5,cs*.12),(L.cy-L.sky-1.6)*cs);
+    bx.globalCompositeOperation='lighter';bx.globalAlpha=.55+.05*Math.sin(t*7);bx.drawImage(ufGlow('rgba(255,190,110,1)'),(L.hx-7)*cs,(L.cy-7)*cs,cs*15,cs*15);bx.globalAlpha=1;bx.globalCompositeOperation='source-over'}
+  else{const u=(t-Q.fall)/(Q.deep-Q.fall);camF=t<Q.deep?ufMC0()+(ufMC1()-ufMC0())*ufMP(u):ufMC1()+(t-Q.deep)*5;st.cam=camF;colDraw(camF,1);
+    const vz=E.ss(Q.TOP+8*Q.BH-50,Q.TOP+8*Q.BH+40,camF);
+    // the shaft the lantern leaves behind it
+    if(vz<1){bx.globalAlpha=1-vz;for(let y=Math.floor(V.vy);y<camF;y++){const hw=7+2.5*Math.sin(y*.21)+2*ufHn(y,5),a=toS(48-hw,y);bx.fillStyle='rgba(6,4,10,.8)';bx.fillRect(a[0],a[1],hw*2*V.s,V.s+.5);bx.fillStyle='rgba(255,220,170,.1)';bx.fillRect(a[0],a[1],V.s,V.s+.5);bx.fillRect(a[0]+hw*2*V.s-V.s,a[1],V.s,V.s+.5)}bx.globalAlpha=1}
+    const g=bx.createRadialGradient(w/2,h*.5,w*.2,w/2,h*.5,w*.9);g.addColorStop(0,'rgba(4,2,8,0)');g.addColorStop(1,`rgba(4,2,8,${(.82-.25*vz).toFixed(3)})`);bx.fillStyle=g;bx.fillRect(0,0,w,h);
+    bx.globalCompositeOperation='lighter';bx.globalAlpha=.55;bx.drawImage(ufGlow('rgba(255,200,120,1)'),w/2-w*.36,h*.5-w*.36,w*.72,w*.72);
+    // the Void: a few stars twinkle
+    if(vz>0)for(let k=0;k<16;k++){const X=ufHn(k,91)*w,Y=ufHn(k,92)*h,z=4+ufHn(k,93)*7;bx.globalAlpha=vz*(.25+.35*(.5+.5*Math.sin(t*(2+ufHn(k,94)*3)+k)));bx.drawImage(ufGlow(k%3?'rgba(220,200,255,1)':'rgba(255,240,190,1)'),X-z,Y-z,z*2,z*2)}
+    bx.globalAlpha=1;bx.globalCompositeOperation='source-over'}
+  bx.imageSmoothingEnabled=true;
+  // ---- the actors
+  {// the pickaxe swings from over the shoulder and bites the ground at its tip
+    const S=w*.34,o=V&&shot==='top'?toS(48,ufMGy(48)):[w/2,h*.6],rh=-150*Math.PI/180,px=o[0]-.84*S*Math.sin(rh),py=o[1]+.84*S*Math.cos(rh);
+    let r=t<.28?-10+35*E.out(t/.28):t<Q.hit?25+(-150-25)*Math.pow((t-.28)/(Q.hit-.28),2.2):-150+10*Math.exp(-(t-Q.hit)*7)*Math.cos((t-Q.hit)*30);const ra=r*Math.PI/180;
+    ufPut(st.pick,px+.42*S*Math.sin(ra),py-.42*S*Math.cos(ra),1,1,shot==='top'?E.cl(t/.15)*(1-E.ss(Q.dig-.12,Q.dig,t)):0,r,'drop-shadow(0 3px 0 rgba(0,0,0,.45))')}
+  {// a little pickaxe works at the end of the tunnel, one swing per crunch
+    const on=shot==='dig'&&t>Q.dig+.05&&t<Q.chest+.1,f=(st.front||L.hx+3)+1.3,ph=Math.abs(Math.sin(Math.PI*(t-Q.dig)/.104));
+    ufPut(st.pk2,f*cs,(L.cy-1.2)*cs,1,1,on?E.cl((t-Q.dig-.05)/.1)*(1-E.ss(Q.chest-.05,Q.chest+.1,t)):0,-55-55*ph,'drop-shadow(0 2px 0 rgba(0,0,0,.5))')}
+  {// the lantern hangs in the pocket, then falls with us
+    let x=w/2,y=h*.5,s=w*.13,o=0,sw=Math.sin(t*5)*8;
+    if(shot==='dig'){x=(L.hx+.5)*cs;y=(L.cy-.4)*cs+Math.sin(t*2.4)*1.5;s=cs*4.2;sw=Math.sin(t*2.4)*6;o=E.cl((t-Q.dig)/.15);
+      if(t>Q.boom){const k=(t-Q.boom)/(Q.fall-Q.boom);y+=k*k*h*.4;sw+=k*40}}
+    else if(shot==='fall'){const k=E.out((t-Q.fall)/.35);s=cs*4.2+(w*.13-cs*4.2)*k;y=h*.5+Math.sin(t*3)*4;o=1}
+    ufSize(st.lamp,s);ufPut(st.lamp,x,y,1,1,o,sw,'drop-shadow(0 0 10px rgba(255,200,120,.9))')}
+  {const cx=(L.chx+3.5)*cs,cy=(L.chy+3.5)*cs,o=shot==='dig'&&t>=Q.chest?1:0,pop=1+.25*Math.exp(-(t-Q.chest)*9),jump=t>Q.open?-8*Math.sin(Math.min(1,(t-Q.open)/.25)*Math.PI):0;
+    ufPut(st.chest,cx,cy+jump,pop,pop,t<Q.open?o:0,0,'drop-shadow(0 0 8px rgba(244,197,79,.8))');ufPut(st.chestO,cx,cy+jump,1,1,t>=Q.open?o*(1-E.ss(Q.mole-.1,Q.mole+.2,t)):0,0,'drop-shadow(0 0 10px rgba(244,197,79,.9))');
+    st.loot.forEach((a,i)=>{const u=t-Q.open-.05-i*.07;if(u<0||shot!=='dig'){ufPut(a,0,0,1,1,0);return}const v=E.out(u/.45),tx2=w*(.2+i*.2),ty2=h*.17,x=cx+(tx2-cx)*v,y=cy+(ty2-cy)*v-Math.sin(v*Math.PI)*60,s=.4+.6*E.back(u/.45);
+      ufPut(a,x,y+Math.sin(t*3+i)*3,s,s,(1-E.ss(Q.mole-.1,Q.mole+.25,t)),0,`drop-shadow(0 0 8px ${i===1?'#f4c54f':'#ff5a7a'})`)})}
+  {const v=Math.min(1,(t-Q.mole)/.9);ufPut(st.mole,(moleX(v)+.5)*cs,(moleY(v)+.5)*cs,1,1,shot==='dig'&&v>=0?Math.min(1,v*5)*(1-E.ss(Q.boom-.25,Q.boom,t)):0,Math.sin(t*20)*6,'')}
+  {const u=t-Q.tnt,on=shot==='dig'&&u>0&&t<Q.boom,bl=on?(Math.floor(u*(6+u*10))%2?'brightness(1.8)':''):'',sc=(1+.2*E.ss(Q.boom-.3,Q.boom,t))*(.4+.6*E.back(u/.25));ufPut(st.tnt,(tx+.5)*cs,(ty+.5)*cs,sc,sc,on?1:0,0,bl);
+    if(on&&Math.random()<.6)C.P.push({k:'star',x:(tx+.9)*cs,y:(ty-1.6)*cs,vx:(Math.random()-.5)*60,vy:-40-Math.random()*40,g:0,dr:2,t:0,life:.3,z:3,c:'255,200,90',r:0,vr:0})}
+  // ---- the words
+  {let tx3='',sb='',col='#ffd9a0',o=0,p=1;
+    if(shot==='top'&&t>.2){tx3=_t('Mina');col='#e0b27a';o=E.cl((t-.2)/.25)*(1-E.ss(Q.dig-.15,Q.dig,t))}
+    else if(shot==='dig'&&t<Q.open){tx3=_t('Escavar');col='#e0b27a';o=E.cl((t-Q.dig-.15)/.25)}
+    else if(shot==='dig'&&t<Q.mole){tx3=_t('Baús');col='#f4c54f';o=1-E.ss(Q.mole-.2,Q.mole,t);p=1+.35*Math.exp(-(t-Q.open)*10)}
+    else if(shot==='dig'){tx3=_t('Ajudantes');col='#ffb070';o=E.cl((t-Q.mole)/.25)*(1-E.ss(Q.boom-.2,Q.boom,t));p=1+.3*Math.exp(-(t-Q.mole)*10)}
+    else if(shot==='fall'&&t<Q.deep+.1){const i=Math.max(0,Math.min(8,Math.floor((camF-Q.TOP)/Q.BH))),id=Q.W[i];tx3=MNBIO[id]?MNBIO[id].nome:'';sb=(i+1)+' / 9';col=Q.P[id][1];o=E.cl((t-Q.fall-.1)/.2)*(1-E.ss(Q.deep-.1,Q.deep+.1,t));
+      if(st.wi!==i){st.wi=i;st.wt=t}p=1+.3*Math.exp(-(t-(st.wt||t))*12)}
+    const lb=st.lb,k=tx3+'|'+sb;if(lb.k!==k){lb.k=k;lb.d.innerHTML=tx3?`<b>${esc(tx3)}</b>${sb?`<small>${esc(sb)}</small>`:''}`:'';lb.d.style.setProperty('--c',col);lb.d.style.setProperty('--t',ufCss(ufMix(hex(col),[255,255,255],.3)))}
+    lb.d.style.opacity=o.toFixed(3);lb.d.style.transform=`translate3d(${(w/2).toFixed(1)}px,${(h*.8).toFixed(1)}px,0) translate(-50%,0) scale(${p.toFixed(3)})`}
+  // ---- front: speed lines while falling, sparks, the flash, the vignette
+  fx.setTransform(dp,0,0,dp,0,0);fx.clearRect(0,0,w,h);
+  if(shot==='fall'&&t<Q.deep){const sp=ufMV((t-Q.fall)/(Q.deep-Q.fall));fx.globalCompositeOperation='lighter';for(let k=0;k<16;k++){const X=ufHn(k,31)*w,Y=((ufHn(k,32)*h*1.3-t*h*2.6)%(h*1.3)+h*1.3)%(h*1.3)-h*.15,len=30+110*sp;fx.globalAlpha=(.06+.14*sp)*(Math.abs(X-w/2)>w*.12?1:.3);fx.fillStyle='#ffe8c8';fx.fillRect(X,Y,1.5,len)}fx.globalAlpha=1;fx.globalCompositeOperation='source-over'}
+  ufParts(C,fx,dt);ufRings(C,fx,dt);
+  if(C.fl>.003){fx.fillStyle=`rgba(${C.flc},${Math.min(1,C.fl).toFixed(3)})`;fx.fillRect(0,0,w,h);C.fl*=Math.exp(-dt*5)}
+  fx.drawImage(st.vig,0,0,w,h);
+  let sx=0,sy=0;if(C.shk>.05){sx=(Math.random()-.5)*2*C.shk;sy=(Math.random()-.5)*2*C.shk;C.shk*=Math.exp(-dt*11)}else C.shk=0;
+  C.W0.style.transform=`translate3d(${sx.toFixed(1)}px,${sy.toFixed(1)}px,0)`}
+function ufMSnd(A){const{osc,pad,noise,N}=A,Q=UFM;
+  // dusk over the garden: a low drone and a curious little line
+  pad([N(38),N(45),N(50)],0,1.2,.03);[[62,.02],[65,.17],[69,.32]].forEach(([n,a])=>osc('triangle',N(n),a,.24,.05,'mus',{a:.003}));
+  // the swing, the clink of the tip and the thud, the crack running out
+  noise(Q.hit-.22,.2,.1,2400,'sfx',.16);osc('triangle',2100,Q.hit,.22,.11,'sfx',{a:.001,to:1500});osc('sine',120,Q.hit,.3,.3,'sfx',{a:.002,to:45});noise(Q.hit,.3,.26,1300);
+  for(let i=0;i<5;i++)noise(Q.hit+.08+i*.05,.05,.07,3200-i*300);noise(Q.dig-.08,.3,.16,700);
+  // digging: a walking bass and quick crunches; the chest glints, then opens
+  [50,53,55,57,55,53,50,48,50,53].forEach((n,i)=>osc('triangle',N(n),Q.dig+.05+i*.3,.24,.1,'mus',{a:.004}));pad([N(50),N(57)],Q.dig,3.0,.016);
+  [[74,0],[77,.6],[79,.9],[77,1.2],[81,1.8],[79,2.1],[77,2.4],[74,3.0]].forEach(([n,a])=>{osc('triangle',N(n),Q.dig+.05+a,.22,.045,'mus',{a:.003});osc('sine',N(n+12),Q.dig+.06+a,.15,.012,'mus',{a:.003})});
+  for(let i=0;i<24;i++)noise(Q.dig+.08+i*.052,.035,.08+.03*(i%3),1600+(i%4)*450);
+  [0,4,7,12].forEach((d,i)=>osc('sine',N(79+d),Q.chest+i*.05,.4,.04,'mus',{a:.003}));osc('sine',190,Q.open,.3,.18,'sfx',{a:.003,to:90});
+  [72,76,79,84,88].forEach((n,i)=>{osc('triangle',N(n),Q.open+.05+i*.07,.35,.05,'mus',{a:.003});osc('sine',N(n+12),Q.open+.06+i*.07,.25,.018,'mus',{a:.003})});pad([N(48),N(52),N(55),N(60)],Q.open,.8,.028);
+  // the mole scratches along; the fuse hisses and a note climbs; the bang
+  for(let i=0;i<10;i++)noise(Q.mole+i*.085,.03,.05,3000);osc('sine',900,Q.mole+.12,.08,.04,'sfx',{a:.003,to:1300});
+  noise(Q.tnt,Q.boom-Q.tnt,.07,6000,'sfx',.1);osc('triangle',N(57),Q.tnt,Q.boom-Q.tnt,.04,'mus',{a:.1,to:N(69)});
+  osc('sine',62,Q.boom,1.4,.3,'sfx',{a:.003,to:28});noise(Q.boom,1.2,.32,700);noise(Q.boom,.3,.18,3500);
+  // the fall: wind and a sinking drone; a knock and a bell for every world, each lower than the last
+  [[0,1000],[1.05,850],[2.1,700]].forEach(([a,f])=>noise(Q.fall+a,1.3,.11,f,'sfx',.35));pad([N(38),N(45),N(50)],Q.fall,Q.deep-Q.fall+.3,.022);osc('sawtooth',N(50),Q.fall,1.6,.03,'mus',{a:.2,to:N(38),lp:700});
+  osc('triangle',N(76),Q.fall+.05,.3,.045,'mus',{a:.003});
+  [74,72,69,67,64,62,60,57].forEach((n,k)=>{const a=ufMCross(k+1);osc('sine',95-k*6,a,.25,.15,'sfx',{a:.004,to:40});osc('triangle',N(n),a,.32,.055,'mus',{a:.003});osc('sine',N(n+12),a+.01,.26,.016,'mus',{a:.003})});
+  pad([N(38),N(45),N(50),N(57)],Q.deep-.5,1.3,.03);
+  ufMEnd(A,Q.title-.03)}
+function ufMEnd(A,at){const{osc,pad,N}=A;pad([N(38),N(50),N(54),N(57),N(62),N(66)],at,3.2,.03);osc('sine',N(86),at+.02,1.5,.035,'mus',{a:.004});osc('sine',N(90),at+.08,1.2,.022,'mus',{a:.004});osc('sine',N(93),at+.14,1.0,.016,'mus',{a:.004})}
+UF.mina={title:UFM.title,skipTo:UFM.title+.05,
+  tag:()=>_t('Novidade'),h2:()=>_t('A mina abriu!'),p:()=>_t('Um segundo jogo ao lado do jardim: escava a terra pixel a pixel, encontra baús, fósseis e rubis. Continua a escavar mesmo quando estás no jardim.'),
+  btn:()=>_t('Ir para a mina'),later:()=>true,go:()=>{if(!visiting&&!titleShown&&mnOpenOk())mnOpen()},drop:()=>!!MNR,
+  music(C){const A=cnSynth();if(!A)return null;ufMSnd(A);return A},end(C){const A=cnSynth();if(!A)return null;ufMEnd(A,0);return A},draw:ufMDraw};
+{const st=document.createElement('style');st.textContent=`
+.uf-mina .cinet h2{color:#ffe0a8;text-shadow:0 3px 0 #4a2a0c,0 0 18px rgba(255,180,90,.75),0 0 40px rgba(200,168,255,.35)}
+.uf-mina .cinek{color:#ffd0a0;text-shadow:0 0 8px #c8742a}
 `;document.head.appendChild(st)}
 
 var UF_OK=1;
