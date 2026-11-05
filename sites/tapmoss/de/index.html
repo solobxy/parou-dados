@@ -474,7 +474,7 @@ select.sel,.selb{width:100%;height:48px;padding:0 12px;background:#18241a;clip-p
 .titl button.on{box-shadow:inset 0 0 0 2px #f4c54f;background:#2a2412}.titl button.lock{opacity:.5;cursor:default}.titl button.lock b{color:var(--tx2)}
 .flexim{display:block;width:100%;max-width:340px;margin:8px auto 0;clip-path:var(--notch)}
 .rank{display:flex;align-items:center;gap:10px;padding:8px 10px;background:#18241a;clip-path:var(--notch);margin-bottom:6px;font-size:14px}
-.rank.me{box-shadow:inset 0 0 0 2px #7a5a18}.rank .n{width:26px;color:var(--tx3)}.rank .p{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.rank .m{color:var(--moss);min-width:64px;text-align:right}.rank .j{color:var(--tx3);font-size:12px}
+.rank.me{box-shadow:inset 0 0 0 2px #7a5a18}.rank.rk{cursor:pointer;-webkit-tap-highlight-color:transparent;transition:background .15s}.rank.rk:active{background:#22331f}.rank.rk.on{background:#1f3320;box-shadow:inset 0 0 0 2px var(--moss)}.rank.rk.me.on{box-shadow:inset 0 0 0 2px var(--moss),inset 0 0 0 4px #7a5a18}.rank .n{width:26px;color:var(--tx3)}.rank .p{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.rank .m{color:var(--moss);min-width:64px;text-align:right}.rank .j{color:var(--tx3);font-size:12px}
 .evcard{padding:14px;background:#1e1a10;clip-path:var(--notch);box-shadow:inset 0 0 0 2px #5a4618;margin-bottom:10px}
 .evcard .row{display:flex;gap:12px;align-items:center}
 .evph{display:flex;align-items:center;justify-content:center;gap:0;margin:12px 0 2px}.evph>i{width:14px;height:2px;background:#2b3e2d}
@@ -8742,6 +8742,8 @@ function globeMove(e){const g=globe;if(!g)return;if(g.pts.has(e.pointerId))g.pts
   if(!g.drag)return;const[x,y]=globePt(e);const dx=x-g.drag.x,dy=y-g.drag.y;g.drag.x=x;g.drag.y=y;if(Math.abs(x-g.drag.x0)+Math.abs(y-g.drag.y0)>3)g.drag.moved=true;
   g.rot=((g.rot-dx*.9/g.z)+540)%360-180;g.tilt=clamp(g.tilt+dy*.7/g.z,-75,75);g.idle=0}
 function globeUp(e){const g=globe;if(!g)return;g.pts.delete(e.pointerId);if(g.pinch){if(g.pts.size<2)g.pinch=null;g.drag=null;return}if(!g.drag)return;const moved=g.drag.moved;g.drag=null;if(moved)return;const[x,y]=globePt(e),ll=globeLL(x,y);if(!ll)return;const v=cellAt(ll[0],ll[1]);if(!v)return;g.sel=WORLD.codes[v-1];SND.play('click');globeInfo()}
+// a country in the list: the globe turns to it and its ranking opens below
+function paisSel(c){const g=globe;if(!g||!/^[A-Z]{2}$/.test(c))return;g.sel=c;g.idle=0;const p=gCentroid(c);if(p){g.rotT=p[1];g.tiltT=clamp(p[0],-75,75)}if(RM&&g.rotT!=null){g.rot=g.rotT;g.tilt=g.tiltT;g.rotT=g.tiltT=null}SND.play('click');document.querySelectorAll('.rank.rk').forEach(r=>r.classList.toggle('on',r.dataset.rpais===c));globeInfo();const b=$('#topBox');if(b)setTimeout(()=>{try{b.scrollIntoView({behavior:RM?'auto':'smooth',block:'start'})}catch(e){}},60)}
 function globeInfo(){const el=$('#globeInfo');if(!el||!globe)return;const c=globe.sel,G=globe.data,m=G.m[c],rank=m?Object.values(G.m).sort((a,b)=>b.musgo-a.musgo).findIndex(x=>x.pais===c)+1:0;
   el.innerHTML=`<b>${flagSvg(c)}${esc(paisNome(c))}</b><span>${m?_t("{0} {1} · {2} m² de musgo · {3}.º lugar",fmt(m.jogadores),m.jogadores===1?_t('jogador'):_t('jogadores'),fmt(Math.round(m.musgo)),rank):_t('Ainda sem musgo. Convida alguém de lá.')}</span>`;
   if(m){loadTop(c);loadTopW(c);loadTopW(c,true);if(topMode==='fundo')loadTopF(c)}topRender(c)}
@@ -9472,8 +9474,8 @@ function mundoHTML(){
   h+=`<h4 class="sub">${_t("Países com mais musgo")}</h4>`;
   if(!NET.mundo)return h+`<p class="note">${NET.mundoErr?esc(NET.mundoErr):_t('A carregar…')}</p>${NET.mundoErr?`<button class="btn ghost wide" id="mundoRetry">${_t("Tentar outra vez")}</button>`:''}`;
   if(!L.length)return h+`<p class="note">${_t("Ainda ninguém. O teu país pode ser o primeiro.")}</p>`;
-  h+=L.slice(0,10).map((x,k)=>`<div class="rank ${x.pais===me?'me':''}"><span class="n">${k+1}.</span><span class="p">${flagSvg(x.pais)}${esc(paisNome(x.pais))}</span><span class="j">${fmt(x.jogadores)} ${x.jogadores===1?_t('jogador'):_t('jogadores')}</span><span class="m">${fmt(Math.round(x.musgo))} m²</span></div>`).join('');
-  if(i>=10)h+=`<div class="rank me"><span class="n">${i+1}.</span><span class="p">${flagSvg(me)}${esc(paisNome(me))}</span><span class="j">${fmt(L[i].jogadores)} ${L[i].jogadores===1?_t('jogador'):_t('jogadores')}</span><span class="m">${fmt(Math.round(L[i].musgo))} m²</span></div>`;
+  const gs=globe&&globe.sel;h+=L.slice(0,10).map((x,k)=>`<div class="rank rk ${x.pais===me?'me':''} ${x.pais===gs?'on':''}" role="button" tabindex="0" data-rpais="${x.pais}" aria-label="${esc(paisNome(x.pais))}"><span class="n">${k+1}.</span><span class="p">${flagSvg(x.pais)}${esc(paisNome(x.pais))}</span><span class="j">${fmt(x.jogadores)} ${x.jogadores===1?_t('jogador'):_t('jogadores')}</span><span class="m">${fmt(Math.round(x.musgo))} m²</span></div>`).join('');
+  if(i>=10)h+=`<div class="rank rk me ${me===gs?'on':''}" role="button" tabindex="0" data-rpais="${me}"><span class="n">${i+1}.</span><span class="p">${flagSvg(me)}${esc(paisNome(me))}</span><span class="j">${fmt(L[i].jogadores)} ${L[i].jogadores===1?_t('jogador'):_t('jogadores')}</span><span class="m">${fmt(Math.round(L[i].musgo))} m²</span></div>`;
   h+=`<div id="topBox"></div>`;
   h+=`<p class="note">${_t("Cada cena tem 100 m². O musgo que cresce nas tuas cenas conta para {0}. No top de cada país aparecem o nome, o nível e o visual dos 20 jogadores com nível mais alto; podes sair dele nas definições.",esc(paisNome(me)))}</p>`;
   return h;
@@ -10098,6 +10100,7 @@ $('#shB').addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.id==='frIn
 $('#shB').addEventListener('click',e=>{
   const ifx=e.target.closest('[data-itfx]');if(ifx){itFxInfo(ifx.dataset.itfx);return}
   const rv=e.target.closest('[data-rvis]');if(rv){rankVisit(rv.dataset.rvis);return}
+  const rp=e.target.closest('[data-rpais]');if(rp){paisSel(rp.dataset.rpais);return}
   const fr=e.target.closest('[data-fr]');if(fr&&!e.target.closest('button')){friendProfile(fr.dataset.fr);return}
   const pri=e.target.closest('[data-pri]');if(pri&&!e.target.closest('button')){prInfo(PRI[+pri.dataset.pri]);return}
   if(e.target.id==='prCv'){prTap(e);return}
@@ -13312,7 +13315,7 @@ function frame(t){
   tick(dt);draw();guideTick();
 }
 /* versões novas: quando o jogo muda no servidor, guarda o progresso e recarrega a página */
-const BUILD='7fff431feead',UKEY='tapmoss.upd';const UPD={on:false,go:false,at:0};
+const BUILD='1e4efad66660',UKEY='tapmoss.upd';const UPD={on:false,go:false,at:0};
 // the new version downloads in the background while the game goes on; the reload only comes once the whole page is here,
 // so a slow network never leaves a half-built page on screen. The offline helper (sw.js) hands this copy over at the reload.
 const NEXTC='tapmoss-next',pgKey=()=>{let p=location.pathname.replace(/index\.html$/,'');if(!p.endsWith('/'))p+='/';return p};
