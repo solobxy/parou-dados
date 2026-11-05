@@ -1,0 +1,149 @@
+name: tapmoss Android (APK e Google Play)
+
+# Gera a app Android do tapmoss (Trusted Web Activity: a app abre o tapmoss.com em ecrã inteiro,
+# com os avisos do Android) com o Bubblewrap da Google.
+# Resultado: o .apk em sites/tapmoss/tapmoss.apk (para descarregar no jogo), o assetlinks.json do site,
+# e a release "tapmoss-android" com o .aab (para a Play Store) e o .apk.
+# A chave de assinatura fica cifrada em android-tapmoss/upload.keystore.enc (palavra-passe = HCLOUD_TOKEN).
+
+on:
+  workflow_dispatch:
+    inputs:
+      versao:
+        description: "Versão (ex.: 1.0.0)"
+        required: false
+        default: "1.0.0"
+      codigo:
+        description: "Número da versão (sobe 1 em cada envio para a Play Store)"
+        required: false
+        default: "1"
+
+permissions:
+  contents: write
+
+defaults:
+  run:
+    shell: bash -o pipefail {0}
+
+jobs:
+  android:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    env:
+      HCLOUD_TOKEN: ${{ secrets.HCLOUD_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Chave de assinatura (cria uma se ainda não existir)
+        working-directory: android-tapmoss
+        run: |
+          exec > >(tee -a $GITHUB_WORKSPACE/registo-android.txt) 2>&1
+          set -e
+          if [ -f upload.keystore.enc ] && [ -f chave.json.enc ]; then
+            openssl enc -d -aes-256-cbc -pbkdf2 -iter 200000 -pass env:HCLOUD_TOKEN -in upload.keystore.enc -out upload.keystore
+            openssl enc -d -aes-256-cbc -pbkdf2 -iter 200000 -pass env:HCLOUD_TOKEN -in chave.json.enc -out chave.json
+          else
+            PASS=$(openssl rand -hex 20)
+            keytool -genkeypair -v -keystore upload.keystore -alias tapmoss -keyalg RSA -keysize 4096 -validity 10000 \
+              -storepass "$PASS" -keypass "$PASS" -dname "CN=tapmoss, O=tapmoss, L=Gondomar, C=PT"
+            printf '{"storePass":"%s","keyPass":"%s","alias":"tapmoss"}' "$PASS" "$PASS" > chave.json
+            openssl enc -aes-256-cbc -pbkdf2 -iter 200000 -salt -pass env:HCLOUD_TOKEN -in upload.keystore -out upload.keystore.enc
+            openssl enc -aes-256-cbc -pbkdf2 -iter 200000 -salt -pass env:HCLOUD_TOKEN -in chave.json -out chave.json.enc
+            git config user.name "Dinis Sousa"; git config user.email "diniscash@gmail.com"
+            git add upload.keystore.enc chave.json.enc
+            git commit -q -m "tapmoss Android: chave de assinatura (cifrada)" && git pull -q --rebase && git push -q
+          fi
+          echo "KS_PASS=$(jq -r .storePass chave.json)" >> $GITHUB_ENV
+          echo "::add-mask::$(jq -r .storePass chave.json)"
+          keytool -list -v -keystore upload.keystore -alias tapmoss -storepass "$(jq -r .storePass chave.json)" | grep -E "SHA256:" | head -1 | sed 's/.*SHA256: //' > sha256.txt
+          echo "SHA-256: $(cat sha256.txt)"
+
+      - name: Gerar o projeto Android
+        working-directory: android-tapmoss
+        run: |
+          exec > >(tee -a $GITHUB_WORKSPACE/registo-android.txt) 2>&1
+          set -e
+          mkdir -p ~/.bubblewrap
+          # O Bubblewrap procura o SDK no formato antigo (pasta "tools"): monta uma vista assim
+          SDK="$HOME/android-sdk"; mkdir -p "$SDK"
+          for d in "$ANDROID_HOME"/*; do ln -sfn "$d" "$SDK/$(basename "$d")"; done
+          ln -sfn "$ANDROID_HOME/cmdline-tools/latest" "$SDK/tools"
+          ls "$SDK"; ls "$SDK/tools/bin" | head
+          printf '{"jdkPath":"%s","androidSdkPath":"%s"}' "$JAVA_HOME" "$SDK" > ~/.bubblewrap/config.json
+          jq --arg v "${{ inputs.versao }}" --argjson c "${{ inputs.codigo }}" --arg fp "$(cat sha256.txt)" \
+            '.appVersionName=$v | .appVersion=$v | .appVersionCode=$c | .fingerprints=[{"name":"upload","value":$fp}]' \
+            twa-manifest.json > twa.tmp && mv twa.tmp twa-manifest.json
+          npm i -g @bubblewrap/cli@1 >/dev/null 2>&1
+          yes "" | bubblewrap update --skipVersionUpgrade --manifest=./twa-manifest.json 2>&1 | tail -20 || true
+          ls
+
+      - name: Compilar (.aab e .apk)
+        working-directory: android-tapmoss
+        run: |
+          exec > >(tee -a $GITHUB_WORKSPACE/registo-android.txt) 2>&1
+          set -e
+          echo "sdk.dir=$ANDROID_HOME" > local.properties
+          yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses >/dev/null 2>&1 || true
+          chmod +x gradlew
+          ./gradlew --no-daemon --stacktrace bundleRelease assembleRelease > $GITHUB_WORKSPACE/gradle.txt 2>&1 || { grep -v "^\s*at " $GITHUB_WORKSPACE/gradle.txt | tail -80; exit 1; }
+          tail -15 $GITHUB_WORKSPACE/gradle.txt
+          AAB=$(ls app/build/outputs/bundle/release/*.aab | head -1)
+          APK=$(ls app/build/outputs/apk/release/*.apk | head -1)
+          echo "AAB=$AAB APK=$APK"
+          # Assinar com a chave de envio
+          cp "$AAB" app-release-bundle.aab
+          jarsigner -sigalg SHA256withRSA -digestalg SHA-256 -keystore upload.keystore -storepass "$KS_PASS" -keypass "$KS_PASS" app-release-bundle.aab tapmoss
+          BT=$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)
+          "$BT/zipalign" -f -p 4 "$APK" alinhado.apk
+          "$BT/apksigner" sign --ks upload.keystore --ks-pass "pass:$KS_PASS" --key-pass "pass:$KS_PASS" --ks-key-alias tapmoss --out app-release-signed.apk alinhado.apk
+          "$BT/apksigner" verify app-release-signed.apk && echo "APK assinado e verificado"
+          ls -la *.aab *.apk
+
+      - name: assetlinks.json
+        working-directory: android-tapmoss
+        run: |
+          exec > >(tee -a $GITHUB_WORKSPACE/registo-android.txt) 2>&1
+          jq -n --arg fp "$(cat sha256.txt)" '[{"relation":["delegate_permission/common.handle_all_urls"],"target":{"namespace":"android_app","package_name":"com.tapmoss.app","sha256_cert_fingerprints":[$fp]}}]' > assetlinks.json
+          cat assetlinks.json
+
+      - name: Publicar no site e na release "tapmoss-android"
+        working-directory: android-tapmoss
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          exec > >(tee -a $GITHUB_WORKSPACE/registo-android.txt) 2>&1
+          set -e
+          cp app-release-bundle.aab "tapmoss-${{ inputs.versao }}.aab"
+          cp app-release-signed.apk "tapmoss-${{ inputs.versao }}.apk"
+          gh release view tapmoss-android >/dev/null 2>&1 || gh release create tapmoss-android --title "tapmoss Android" --notes "App Android do tapmoss (Trusted Web Activity)."
+          gh release upload tapmoss-android "tapmoss-${{ inputs.versao }}.aab" "tapmoss-${{ inputs.versao }}.apk" assetlinks.json sha256.txt --clobber
+          gh release edit tapmoss-android --notes "Versão ${{ inputs.versao }} (código ${{ inputs.codigo }}). SHA-256 da chave: $(cat sha256.txt)"
+          # o APK que o jogo oferece para descarregar, e a ligação entre a app e o site (sem ela a app mostrava a barra de endereço)
+          cd $GITHUB_WORKSPACE
+          git pull -q --rebase origin main || true
+          cp android-tapmoss/app-release-signed.apk sites/tapmoss/tapmoss.apk
+          mkdir -p sites/tapmoss/.well-known && cp android-tapmoss/assetlinks.json sites/tapmoss/.well-known/assetlinks.json
+          printf '{"v":"%s","c":%s,"bytes":%s}\n' "${{ inputs.versao }}" "${{ inputs.codigo }}" "$(stat -c %s sites/tapmoss/tapmoss.apk)" > sites/tapmoss/android.json
+          git config user.name "Dinis Sousa"; git config user.email "diniscash@gmail.com"; git config commit.gpgsign false
+          git add sites/tapmoss/tapmoss.apk sites/tapmoss/.well-known/assetlinks.json sites/tapmoss/android.json
+          git commit -q -m "tapmoss: app Android ${{ inputs.versao }} para descarregar" && git push -q origin HEAD:main
+
+      - name: Guardar o registo
+        if: always()
+        run: |
+          mkdir pub && cp registo-android.txt pub/ 2>/dev/null || echo "sem registo" > pub/registo-android.txt
+          cp gradle.txt pub/ 2>/dev/null || true
+          ls android >> pub/registo-android.txt 2>&1 || true
+          cd pub && git init -q -b tapmoss-android-resultado
+          git config user.name "Dinis Sousa"; git config user.email "diniscash@gmail.com"
+          git add -A && git commit -q -m "tapmoss Android $(date -u +%Y-%m-%dT%H:%MZ)"
+          git push -q -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" tapmoss-android-resultado

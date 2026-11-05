@@ -565,9 +565,20 @@ www.apalavrado.pt {
 		Cross-Origin-Opener-Policy "same-origin"
 		-Server
 	}
-	@escondidos path_regexp ^/\.
+	# hidden files stay hidden, except the link between the Android app and the site (without it the app shows the address bar)
+	@escondidos {
+		path_regexp ^/\.
+		not path /.well-known/assetlinks.json
+	}
 	handle @escondidos {
 		respond 404
+	}
+	# the Android app to download: its own type, saved as a file, never kept by a cache
+	@apk path /tapmoss.apk
+	header @apk {
+		Content-Type "application/vnd.android.package-archive"
+		Content-Disposition "attachment; filename=\"tapmoss.apk\""
+		Cache-Control "no-cache"
 	}
 	# Jogo online (contas, amigos, mapa): só as funções tm_* do Supabase, e só com a chave deste servidor
 	handle_path /api/* {
