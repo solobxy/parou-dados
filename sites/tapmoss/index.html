@@ -13298,7 +13298,7 @@ function frame(t){
   tick(dt);draw();guideTick();
 }
 /* versões novas: quando o jogo muda no servidor, guarda o progresso e recarrega a página */
-const BUILD='f03b3d04062c',UKEY='tapmoss.upd';const UPD={on:false,go:false,at:0};
+const BUILD='a4ea59c50017',UKEY='tapmoss.upd';const UPD={on:false,go:false,at:0};
 // the new version downloads in the background while the game goes on; the reload only comes once the whole page is here,
 // so a slow network never leaves a half-built page on screen. The offline helper (sw.js) hands this copy over at the reload.
 const NEXTC='tapmoss-next',pgKey=()=>{let p=location.pathname.replace(/index\.html$/,'');if(!p.endsWith('/'))p+='/';return p};
@@ -16798,7 +16798,7 @@ var AD_MOD_OK=1;
    (missions, the chest of the day, a capped share of everything else) and from four weekly challenges. The Stellar track opens
    with gems (later also with money), gives back more gems than it costs by level 20, and ends in a full set with its own effects ============ */
 const BP_SEAS=[{n:1,a:Date.UTC(2026,10,4),d:30,nome:_t('Constelações'),set:_t('Tecelão de Estrelas')}];
-const BP_LV=40,BP_XL=1000,BP_EM=120,BP_GR=7*864e5,BP_BUY=15,BP_BOOST=1.2,BP_OV=20,BP_WXP=750;
+const BP_LV=40,BP_XL=400,BP_OVXL=1000,BP_EM=120,BP_GR=7*864e5,BP_BUY=15,BP_BOOST=1.2,BP_OV=20,BP_WXP=750;
 function bpSeason(t){t=t||now();for(const s of BP_SEAS){const e=s.a+s.d*864e5;if(t>=s.a&&t<e+BP_GR)return{...s,e,live:t<e}}return null}
 // what each level gives: [free, Stellar]. A cell may hold more than one reward
 const BPR=[
@@ -16830,7 +16830,7 @@ function bpS(){const Z=bpSeason();if(!Z||!S)return null;const id='s'+Z.n;let B=S
   const fin=(v,a,b)=>{v=Math.floor(+v);return Number.isFinite(v)?clamp(v,a,b):a},bits=s=>typeof s==='string'?s.replace(/[^01]/g,'').slice(0,BP_LV):'';
   B.xp=fin(B.xp,0,1e7);B.p=B.p?1:0;B.cf=bits(B.cf);B.cp=bits(B.cp);B.ov=fin(B.ov,0,BP_OV);B.dn=fin(B.dn,0,99);B.lb=fin(B.lb,0,BP_LV);B.seen=fin(B.seen,0,BP_LV+BP_OV);
   if(!B.dx||typeof B.dx!=='object')B.dx={};if(!Array.isArray(B.w))B.w=[];if(B.s0&&typeof B.s0!=='object')B.s0=null;return B}
-const bpLv=B=>Math.min(BP_LV,Math.floor(B.xp/BP_XL)),bpOvN=B=>Math.min(BP_OV,Math.max(0,Math.floor((B.xp-BP_LV*BP_XL)/BP_XL)));
+const bpLv=B=>Math.min(BP_LV,Math.floor(B.xp/BP_XL)),bpOvN=B=>Math.min(BP_OV,Math.max(0,Math.floor((B.xp-BP_LV*BP_XL)/BP_OVXL)));
 const bpGot=(B,tr,lv)=>(tr?B.cp:B.cf)[lv-1]==='1';
 function bpMark(B,tr,lv){const k=tr?'cp':'cf';let s=B[k].padEnd(BP_LV,'0');s=s.slice(0,lv-1)+'1'+s.slice(lv);B[k]=s.replace(/0+$/,'');dirtySave=true}
 const bpCan=(B,tr,lv)=>lv>=1&&lv<=bpLv(B)&&(!tr||B.p)&&!bpGot(B,tr,lv);
@@ -16959,15 +16959,15 @@ function bpStars(n,seed){const r=mulberry32(seed*7919+13);let h='';for(let i=0;i
 function bpConst(){const P=[[8,70],[19,52],[31,61],[42,38],[55,46],[63,24],[74,33]],L=P.slice(1).map((p,i)=>`<line x1="${P[i][0]}" y1="${P[i][1]}" x2="${p[0]}" y2="${p[1]}" style="--i:${i}"/>`).join('')+`<line x1="${P[3][0]}" y1="${P[3][1]}" x2="36" y2="18" style="--i:6"/>`;
   return`<svg class="bpcon" viewBox="0 0 100 80" preserveAspectRatio="none" aria-hidden="true">${L}${[...P,[36,18]].map((p,i)=>`<circle cx="${p[0]}" cy="${p[1]}" r="1" style="--i:${i}"/>`).join('')}</svg>`}
 function bpBadge(n){return`<span class="bpbdg">${pxsvg(IC.bpass[0],IC.bpass[1])}${n!=null?`<b>${NM(String(n))}</b>`:''}</span>`}
-function bpHero(Z,B){const lv=bpLv(B),ov=bpOvN(B),xp=lv>=BP_LV?(ov>=BP_OV?BP_XL:B.xp%BP_XL):B.xp%BP_XL,pct=Math.round(xp/BP_XL*100),L=bpSetLook();
+function bpHero(Z,B){const lv=bpLv(B),ov=bpOvN(B),top=lv>=BP_LV,step=top?BP_OVXL:BP_XL,xp=top?(ov>=BP_OV?BP_OVXL:(B.xp-BP_LV*BP_XL)%BP_OVXL):B.xp%BP_XL,pct=Math.round(xp/step*100),L=bpSetLook();
   const left=Z.live?_t('Acaba em {0}',bpLeftTxt(bpLeft(Z))):_t('Acabou. Recebe o que falta até {0}.',new Date(Z.e+BP_GR).toLocaleDateString(LANG||'pt',{day:'numeric',month:'long'}));
   return`<div class="bphero${B.p?' prem':''}${performance.now()-bpOpenT<400?' intro':''}"><div class="bpsky" aria-hidden="true">${bpStars(46,Z.n)}</div>${bpConst()}
     <div class="bphd"><span class="bpey">${_t('Temporada {0}',Z.n)}</span><span class="bpcd${Z.live&&bpLeft(Z)<3*864e5?' hot':''}">${icon('moon')}<span>${left}</span></span></div>
     <h2 class="bpttl">${Z.nome}</h2>
     <div class="bprow"><div class="bplvl"><div class="bplt">${bpBadge()}<span class="bpnum">${NM(String(lv))}</span><span class="bpof">${lv>=BP_LV?_t('nível máximo'):_t('de {0}',BP_LV)}</span></div>
       ${B.p?`<span class="bpstl">${pxsvg(IC.bpass[0],IC.bpass[1])}${_t('Estelar')} · ${_t('+{0}% XP',Math.round((BP_BOOST-1)*100))}</span>`:`<span class="bpstl fr">${_t('Faixa grátis')}</span>`}
-      <span class="bpbar" role="progressbar" aria-valuemin="0" aria-valuemax="${BP_XL}" aria-valuenow="${xp}" aria-label="${esc(_t('XP do passe'))}"><i style="width:${pct}%"></i></span>
-      <span class="bpxpn">${lv>=BP_LV&&ov>=BP_OV?_t('Tudo feito'):lv>=BP_LV?_t('{0} XP para o próximo baú',NM(fmt(BP_XL-xp),'xs')):_t('{0} XP para o nível {1}',NM(fmt(BP_XL-xp),'xs'),lv+1)}</span></div>
+      <span class="bpbar" role="progressbar" aria-valuemin="0" aria-valuemax="${step}" aria-valuenow="${xp}" aria-label="${esc(_t('XP do passe'))}"><i style="width:${pct}%"></i></span>
+      <span class="bpxpn">${lv>=BP_LV&&ov>=BP_OV?_t('Tudo feito'):lv>=BP_LV?_t('{0} XP para o próximo baú',NM(fmt(BP_OVXL-xp),'xs')):_t('{0} XP para o nível {1}',NM(fmt(BP_XL-xp),'xs'),lv+1)}</span></div>
       <button type="button" class="bpgoal" data-bp="goal" aria-label="${esc(_t('Nível {0}: {1}',BP_LV,BP_SEAS[0].set))}"><span class="bpme">${auraStage('fioestrelas')}<span class="me au" style="${auraVar('fioestrelas')}">${a2Svg(L,A2BOX.full,'','idle')}</span></span><span class="bpgl"><b>${_t('Nível {0}',BP_LV)}</b>${BP_SEAS[0].set}</span></button></div></div>`}
 function bpBuyCard(Z,B){if(B.p||!Z.live)return'';const V=bpValue(),n=bpLockedN(B),em=S.em||0;
   return`<div class="bpbuyc"><div class="bpbt"><b>${_t('Passe Estelar')}</b><span>${_t('Pagas {0} gemas, recebes {1} de volta. E o conjunto «{2}».',BP_EM,V.em,BP_SEAS[0].set)}</span>${n?`<span class="bpwait">${icon('lock')}${n===1?_t('1 recompensa dourada já ganha, à espera'):_t('{0} recompensas douradas já ganhas, à espera',n)}</span>`:''}</div>
@@ -16981,7 +16981,7 @@ function bpTrackHTML(Z,B){const lv=bpLv(B),fill=lv>=BP_LV?100:(B.xp%BP_XL)/BP_XL
   for(let i=1;i<=BP_LV;i++){const on=i<=lv,cur=i===lv+1;h+=`<div class="bpr${on?' on':''}${cur?' cur':''}${i===BP_LV?' last':''}" data-bplv="${i}">${bpCellHTML(B,0,i)}<span class="bpn"><i class="bpln"${cur?` style="--f:${Math.round(fill*100)}%"`:''}></i><b>${NM(String(i),'xs')}</b></span>${bpCellHTML(B,1,i)}</div>`}
   h+=`</div>`;
   // past the end: a chest for every 1000 XP more
-  const ov=bpOvN(B),ovr=ov-B.ov;h+=`<div class="bpover${lv>=BP_LV?' on':''}"><span class="bpoi">${bpChestIc(B.p?4:2)}</span><span class="bpot"><b>${_t('Depois do nível {0}',BP_LV)}</b><span>${_t('Um {0} por cada {1} XP a mais.',lc(bpChestN(B.p?4:2)),fmt(BP_XL))} ${_t('Já recebeste {0} de {1}.',B.ov,BP_OV)}</span></span>${ovr>0?`<button class="btn gold" data-bp="over">${_t('Receber')}${ovr>1?` ${NM('×'+ovr,'xs')}`:''}</button>`:''}</div>`;
+  const ov=bpOvN(B),ovr=ov-B.ov;h+=`<div class="bpover${lv>=BP_LV?' on':''}"><span class="bpoi">${bpChestIc(B.p?4:2)}</span><span class="bpot"><b>${_t('Depois do nível {0}',BP_LV)}</b><span>${_t('Um {0} por cada {1} XP a mais.',lc(bpChestN(B.p?4:2)),fmt(BP_OVXL))} ${_t('Já recebeste {0} de {1}.',B.ov,BP_OV)}</span></span>${ovr>0?`<button class="btn gold" data-bp="over">${_t('Receber')}${ovr>1?` ${NM('×'+ovr,'xs')}`:''}</button>`:''}</div>`;
   if(bpFinal(Z)&&lv<BP_LV)h+=`<div class="bpfin"><span>${_t('Reta final: sobe um nível com gemas.')}</span><button class="btn em" data-bp="lvbuy" ${(S.em||0)<BP_BUY?'disabled':''}>${icon('em')}${NM(String(BP_BUY))}</button></div>`;
   return h}
 function bpXpHTML(Z,B){const D=B.dx||{},tot=BP_DAY.reduce((a,x)=>a+x[4],0),got=BP_DAY.reduce((a,x)=>a+Math.min(x[4],D[x[0]]|0),0);
