@@ -5619,7 +5619,9 @@ function growStep(boost){
 const cov=()=>mossable?mossCount/mossable:0;
 function growthMult(){const t=now();return(t<(S.soilUntil||0)?2:1)*petMul('grow')*(t<(S.stormUntil||0)?6:1)*espGrow()*(1+.12*upE('grow'))*(1+.04*upE('soil'))*WXM[realWx()]*(t<S.waterUntil?2:1)*(t<S.boostUntil?3:1)}
 // a little slower than it was (about 30%): a garden fills over days of care, not in one sitting
-function growthRate(){return Math.min(4200,mossCount*.005*growthMult()*(1.6-1.25*cov())+.4)}
+function growthRate(){return Math.min(4200,(mossCount*.005*growthMult()*(1.6-1.25*cov())+.4)*(fsOn()?10:1))}
+// fast start: a new garden visibly fills its first patches in a few minutes, then grows at the slow, usual pace for good
+function fsOn(){if(!S||S.fsDone||visiting||(S.cur|0)!==0||(S.reb|0)>0)return false;if(cov()>=.12||(S.scenes||[]).length>1){S.fsDone=1;dirtySave=true;return false}return true}
 // a long absence dries the moss: after half a day away it slowly thins from the edges (up to half of it after about four and a half days)
 const fadeOf=sec=>sec>12*3600?Math.min(.5,(sec/3600-12)/96*.5):0;
 function mossFade(f){if(!(f>0)||!mossCount)return 0;const tg=Math.floor(mossCount*Math.min(.5,f));let n=0,tries=0;
@@ -10531,7 +10533,9 @@ function wish(px,py){
 }
 function tapSpores(n,show){
   // taps spread a little less than they did (about 30%), like the growth itself: a garden fills over days, not in one sitting
-  n=Math.max(1,Math.round(n*.7));
+  const fs=fsOn();n=Math.max(1,Math.round(n*.7*(fs?8:1)));
+  // in the fast start a tap also throws a spore that lands somewhere else in the scene (never where you tapped) and sprouts a new patch
+  if(fs&&show&&TAPFROM&&rnd()<.45){const spot=randomSpot(false);if(spot!=null){plantPatch(spot,2,S.sel);obFlight(TAPFROM[0],TAPFROM[1],spot,hex(SPEC[S.sel].c[4]))}}
   for(let i=0;i<n;i++){growStep(false);if(show&&i<2&&mossCount){const c=growStep.last;if(TAPFROM)obFlight(TAPFROM[0],TAPFROM[1],c,hex(SPEC[spec[c]].c[4]));else puff(c%W,(c/W)|0,[hex(SPEC[spec[c]].c[4]),[240,250,220]],2,6,.7)}}
   const ch=(1.5+upE('wind'))/100;if(rnd()<ch){const spot=randomSpot(false);if(spot!=null){plantPatch(spot,1,S.sel);puff(spot%W,(spot/W)|0,SPEC[S.sel].c.slice(2).map(hex),8,20,.8)}}
 }
@@ -10792,7 +10796,7 @@ document.addEventListener('keydown',e=>{if(!titleShown||e.key!=='Enter'||modalOn
 function askOk(min,noGap){if(!S)return false;const A=S.askG||(S.askG={d:'',n:0,t:0}),d=dayKey(now());if(A.d!==d){A.d=d;A.n=0}
   return(now()-(S.created||0)>=(min||0)*60e3||S.level>=15)&&A.n<3&&(noGap||now()-(A.t||0)>=10*60e3)}
 function askMark(){if(!S)return;askOk();S.askG.n++;S.askG.t=now();dirtySave=true}
-function nameTick(){if(!S||S.autoName!==1||S.level<4||titleShown||document.hidden||modalOn||sheetName||placing||editing||photo||visiting||rebFx||(typeof UB!=='undefined'&&UB.busy))return;S.autoName=2;dirtySave=true;askMark();nameAsk()}
+function nameTick(){if(!S||S.autoName!==1||S.level<6||titleShown||document.hidden||modalOn||sheetName||placing||editing||photo||visiting||rebFx||(typeof UB!=='undefined'&&UB.busy))return;S.autoName=2;dirtySave=true;askMark();nameAsk()}
 function nameCity(){return S.loc?S.loc.nome:cityById(S.city).nome}
 function nameAsk(){ev('nome','convite');
   showModal(`<div class="reveal nmask" style="--rc:#9ad65a"><div class="it">${avPortrait(S.av.look)}</div><div class="rn">${_t('O teu nome')}</div><h3>${_t('Escolhe o teu nome de jogador')}</h3><p>${S.nmNo&&S.name&&S.nmNo===S.name.toLowerCase()?_t('O nome {0} já é de outro jogador. Escolhe um que seja só teu: serve também para recuperares o jardim.',`<b>${esc(S.name)}</b>`):_t('É só teu: mais ninguém o pode usar. Aparece no ranking e serve para recuperares o jardim. Para já és {0}.',`<b>${esc(S.name)}</b>`)}</p><input class="inp" id="nameIn3" maxlength="16" autocomplete="nickname" enterkeyhint="done" placeholder="${_t('O teu nome')}" aria-label="${_t('O teu nome')}"><p class="err" id="nameErr3" role="alert"></p><p class="ncity" id="nCity">${_t('O dia, a noite e o tempo seguem {0}.',`<b>${esc(nameCity())}</b>`)} <button data-m="ncity">${_t('Trocar')}</button></p></div><div class="mbtns"><button class="btn ghost" data-m="close">${_t('Fica assim')}</button><button class="btn" data-m="nsave">${_t('Guardar')}</button></div>`)}
@@ -13315,7 +13319,7 @@ function frame(t){
   tick(dt);draw();guideTick();
 }
 /* versões novas: quando o jogo muda no servidor, guarda o progresso e recarrega a página */
-const BUILD='1e4efad66660',UKEY='tapmoss.upd';const UPD={on:false,go:false,at:0};
+const BUILD='ac29eaddd64d',UKEY='tapmoss.upd';const UPD={on:false,go:false,at:0};
 // the new version downloads in the background while the game goes on; the reload only comes once the whole page is here,
 // so a slow network never leaves a half-built page on screen. The offline helper (sw.js) hands this copy over at the reload.
 const NEXTC='tapmoss-next',pgKey=()=>{let p=location.pathname.replace(/index\.html$/,'');if(!p.endsWith('/'))p+='/';return p};
@@ -13937,7 +13941,7 @@ const OBR=[
   ['wx','#wxB',()=>S.level>=2],
   ['cov','#covB',()=>S.level>=2],
   ['nx','#nxC',()=>S.level>=3],
-  ['ev','#sideEv',()=>S.level>=3],
+  ['ev','#sideEv',()=>S.level>=6],
   ['trophy','#profB',()=>S.level>=4],
   ['scn','#bScn',()=>S.level>=4],
   ['water','#sideWater',()=>S.level>=4],
@@ -14312,6 +14316,8 @@ const instState=()=>isStandalone()||instRel||(S&&S.inst&&(S.inst.ok||S.inst.tem)
 function instTick(dt){if(!S||!S.started||titleShown||document.hidden||(!ONLINE&&!DBG.inst))return;
   if(isStandalone()){if(!S.instGift&&!visiting&&!modalOn){S.instGift=1;S.gems+=10;addEm(2,'instalar');dirtySave=true;ev('instalar','aberta');toast(_t('Obrigado por instalares o tapmoss. Ganhaste 10 cristais e 2 gemas.'),'lvl');hud();if(pushIOS())pushWant('ios')}return}
   if(S.inst&&S.inst.ok)return;instPlay+=dt;
+  // the app is only offered after the first minutes, when the player already knows the game
+  if(S.level<6)return;
   if(instPlay<75||modalOn||sheetName||placing||editing||photo||visiting||rebFx||(typeof UB!=='undefined'&&UB.busy))return;
   const I=S.inst||(S.inst={d:'',n:0,t:0}),d=dayKey(now());if(I.d!==d){I.d=d;I.n=0}
   if(instPlay<instNext)return;instNext=instPlay+600;if(I.n>=2||!askOk(60))return;askMark();
@@ -17080,7 +17086,7 @@ function bpBtn(Z,B){let b=$('#sideBp');if(!b){const d=$('#sideDaily');if(!d)retu
   b.classList.toggle('has-badge',n>0);b.classList.toggle('ready',n>0);b.classList.toggle('prem',!!B.p);const nb=$('#bpN');if(nb&&nb.textContent!==String(n))nb.textContent=String(n);
   const f=b.querySelector('.bpsb i'),w=(lv>=BP_LV?100:Math.round(B.xp%BP_XL/BP_XL*100))+'%';if(f&&f.style.width!==w)f.style.width=w}
 function bpUI(){const Z=bpSeason(),B=Z&&bpS();if(Z&&B)bpBtn(Z,B)}
-OBR.push(['bp','#sideBp',()=>S.level>=3]);
+OBR.push(['bp','#sideBp',()=>S.level>=6]);
 /* ---------- clicks ---------- */
 document.addEventListener('click',e=>{const t=e.target.closest&&e.target.closest('[data-bp],[data-bpc],[data-bptab],[data-bpm],[data-bpgo]');if(!t)return;
   if(t.dataset.bpgo){bpOpen();return}
@@ -17106,7 +17112,7 @@ function bpGoalModal(){SND.play('click');const L=bpSetLook(),B=bpS(),own=BP_SET.
     <ul class="gl bpset">${BP_SET.map(([k,v])=>`<li>${icon(own?'check':'spark')}<span>${avName(k,v)}</span></li>`).join('')}<li>${icon('trophy')}<span>${_t('Título «{0}»',BP_TIT.bp1[0])}</span></li></ul>
     <p>${_t('Brilha no escuro, as asas piscam como estrelas e o cetro tem uma pequena galáxia a girar.')}</p></div><div class="mbtns">${own?`<button class="btn ghost" data-m="close">${_t('Fechar')}</button><button class="btn gold" data-bpm="wearset">${_t('Vestir tudo')}</button>`:`<button class="btn" data-m="close">${_t('Fechar')}</button>`}</div>`)}
 /* ---------- the first time ---------- */
-function bpIntro(){const Z=bpSeason();if(!Z||!Z.live||!S||!S.started||S.level<3||visiting||titleShown)return;const B=bpS();if(!B||B.in)return;B.in=1;dirtySave=true;
+function bpIntro(){const Z=bpSeason();if(!Z||!Z.live||!S||!S.started||S.level<6||visiting||titleShown)return;const B=bpS();if(!B||B.in)return;B.in=1;dirtySave=true;
   msQueue({svg:a2Svg(bpSetLook(),A2BOX.full,'','wave'),itc:'kitc',tag:_t('Novidade'),title:_t('Chegou o passe da temporada'),text:_t('{0} dias, {1} níveis e recompensas todos os dias. No fim do Passe Estelar: o conjunto «{2}», com asas que brilham como estrelas.',Z.d,BP_LV,Z.set),btn:_t('Ver o passe'),go:'passe',rc:'#8a7bff'})}
 setInterval(()=>{try{bpTick()}catch(e){}},2000);setInterval(()=>{try{bpIntro()}catch(e){}},15000);
 // the countdown in the banner moves on its own, once a minute
