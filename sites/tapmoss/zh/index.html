@@ -8393,7 +8393,9 @@ function renderVisitBar(){
   if(v.pub){$('#vbName').textContent=_t('Jardim de {0}',v.nome);$('#vbName').insertAdjacentHTML('beforeend',medal(v.reb));$('#vbSub').textContent=v.pais?_t("Nível {0} · {1}",v.nivel,paisNome(v.pais)):_t("Nível {0}",v.nivel);
     const novo=!S.started,fb=$('#vbFriend'),fr=!novo&&!!jardimAmigo&&ONLINE;$('#vbStart').classList.toggle('hidden',!novo);$('#vbHome').classList.toggle('hidden',novo);fb.classList.toggle('hidden',!fr);
     fb.disabled=!!v.pedido;fb.textContent=v.pedido?_t('Pedido enviado'):_t('Ficar amigos');
-    const n=$('#vbNote');n.classList.toggle('hidden',!(novo&&jardimAmigo));if(novo&&jardimAmigo)n.textContent=_t('Ao começar, enviamos um pedido de amizade a {0}.',v.nome);return}
+    const n=$('#vbNote');n.classList.toggle('hidden',!(novo&&jardimAmigo));if(novo&&jardimAmigo)n.textContent=_t('Ao começar, enviamos um pedido de amizade a {0}.',v.nome);
+    // a public garden has no help line and one scene: nothing left over from the last friend's visit
+    $('#vbHelp').classList.add('hidden');$('#vNav').classList.add('hidden');return}
   $('#vbName').textContent=v.nome;$('#vbName').insertAdjacentHTML('beforeend',medal(v.reb)+titHTML(v.look&&v.look.tit,'sm'));$('#vbAv').className='vbav '+lvFr(v.nivel);$('#vbSub').textContent=(v.n>1?_t('Cena {0} de {1}',v.ci+1,v.n)+' · ':'')+_t("Nível {0} · {1}",v.nivel,v.loc.nome);
   $('#vNav').classList.toggle('hidden',!(v.n>1));
   const w=$('#vbWater'),g=$('#vbGift'),rw=cdLeft(v.regaAt),gw=cdLeft(v.bauAt);
@@ -13319,7 +13321,7 @@ function frame(t){
   tick(dt);draw();guideTick();
 }
 /* versões novas: quando o jogo muda no servidor, guarda o progresso e recarrega a página */
-const BUILD='ac29eaddd64d',UKEY='tapmoss.upd';const UPD={on:false,go:false,at:0};
+const BUILD='2552dffcff0d',UKEY='tapmoss.upd';const UPD={on:false,go:false,at:0};
 // the new version downloads in the background while the game goes on; the reload only comes once the whole page is here,
 // so a slow network never leaves a half-built page on screen. The offline helper (sw.js) hands this copy over at the reload.
 const NEXTC='tapmoss-next',pgKey=()=>{let p=location.pathname.replace(/index\.html$/,'');if(!p.endsWith('/'))p+='/';return p};
