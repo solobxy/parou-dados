@@ -9714,7 +9714,9 @@ const toScreen=(lx,ly)=>[lx*view.s+view.ox,ly*view.s+view.oy];
 // nothing tappable may appear under a button: the HUD, the side column or the dock would swallow the tap
 let uiR=null,uiRT=0,uiSig='',uiHot=false;
 function uiRects(){if(uiR&&uiHot)return uiR;uiHot=true;Promise.resolve().then(()=>{uiHot=false});const t=performance.now(),sd=$('#side'),sig=(sd?sd.offsetHeight+'.'+sd.offsetWidth+'.'+sd.offsetTop:'')+'|'+view.cw+'|'+view.ch+'|'+(visiting?$('#visitBar').offsetHeight+'.'+$('#vNav').offsetWidth:'');if(uiR&&sig===uiSig&&t-uiRT<700)return uiR;uiRT=t;uiSig=sig;const a=$('#app').getBoundingClientRect(),R=[];
-  for(const el of document.querySelectorAll('#hud .top>*,#hud .chips>*,#side>*,#tools>*,#dock,#vNav>button,#visitBar')){if(!el.offsetParent)continue;const r=el.getBoundingClientRect();if(r.width&&r.height)R.push([r.left-a.left,r.top-a.top,r.right-a.left,r.bottom-a.top])}
+  for(const el of document.querySelectorAll('#hud .top>*,#hud .chips>*,#side,#side>*,#tools>*,#dock,#vNav>button,#visitBar,#fp,#guide .gtip')){if(!el.offsetParent)continue;
+    // the side column catches taps between its buttons too, unless it lets them through
+    if(el.id==='side'&&getComputedStyle(el).pointerEvents==='none')continue;const r=el.getBoundingClientRect();if(r.width&&r.height)R.push([r.left-a.left,r.top-a.top,r.right-a.left,r.bottom-a.top])}
   return uiR=R}
 function uiBlocked(lx,ly,pad){if(view.cw<=1)return false;pad=pad==null?6:pad;const[px,py]=toScreen(lx,ly);if(px<4||py<4||px>view.cw-4||py>view.ch-4)return true;for(const r of uiRects())if(px>=r[0]-pad&&px<=r[2]+pad&&py>=r[1]-pad&&py<=r[3]+pad)return true;return false}
 const tapSafe=(x,y)=>!uiBlocked(x,y)&&!uiBlocked(x,y-6)&&!uiBlocked(x-4,y-3)&&!uiBlocked(x+4,y-3);
@@ -9735,6 +9737,11 @@ function clearUnderUI(){
   for(let i=visitors.length-1;i>=0;i--){const v=visitors[i];if(!tapSafe(v.x,v.y))visitors.splice(i,1)}
   if(changed)dirtySave=true}
 
+// the buttons can move without the screen changing size: a new one pops in, the side column grows, the first-steps card or a tip appears.
+// Twice a second the game checks where they are, and when anything moved, whatever you can pick up that ended under them walks to a free spot
+let uiWT=0,uiWSig='';
+function uiWatch(dt){uiWT+=dt;if(uiWT<.5)return;uiWT=0;if(!scene||titleShown||view.cw<=1||modalOn||sheetName||placing||editing||photo||PTR||MNR||HSR||LNU.on)return;
+  uiR=null;const R=uiRects(),sig=R.map(r=>r.map(v=>Math.round(v)).join(',')).join('|');if(sig===uiWSig)return;uiWSig=sig;clearUnderUI()}
 /* ============ HUD ============ */
 let hudT=0;const htmlCache=new Map();
 function setH(sel,h){if(htmlCache.get(sel)===h)return;htmlCache.set(sel,h);$(sel).innerHTML=h}
@@ -13283,7 +13290,7 @@ function tick(dt){
   for(const v of visitors){if(v.hop>0)v.hop=Math.max(0,v.hop-dt);if(pt>v.next){v.next=pt+500+rnd()*2400;v.fr=rnd()<.35?1:0;if(HOPPY.has(v.id)&&rnd()<.25&&!RM){v.hop=.4;if(v.id!=='bolhamagma'||rnd()<.5)v.flip=!v.flip}}}
   ringDt=dt;for(let i=parts.length-1;i>=0;i--){const p=parts[i];p.t+=dt;if(p.t>=p.life||p.y>H+4){parts.splice(i,1);continue}p.vy+=p.g*dt;p.x+=p.vx*dt+(p.sway!=null?Math.sin(T*3+p.sway)*dt*9:0);p.y+=p.vy*dt;if(p.drop&&p.y>HOR+20+rnd()*120)parts.splice(i,1)}
   if(waterFlash>0)waterFlash=Math.max(0,waterFlash-dt*1.2);
-  instTick(dt);nameTick();mailTick();if(NET.ok&&!document.hidden)medCheck();pushTick();avisoTick();placar();mgTick();pulse();cdTick();msTick();ghostTick(dt);ntfTick(dt);fpTick(dt);obTick(dt);tnotTick(dt);
+  instTick(dt);nameTick();mailTick();if(NET.ok&&!document.hidden)medCheck();pushTick();avisoTick();placar();mgTick();pulse();cdTick();uiWatch(dt);msTick();ghostTick(dt);ntfTick(dt);fpTick(dt);obTick(dt);tnotTick(dt);
   if(S.level>=PT_LVL&&!(S.pt&&S.pt.on)&&S.started&&!titleShown&&!visiting)ptUnlock();
   if(S.level>=MN_LVL&&S.mina&&!S.mina.on&&S.started&&!titleShown&&!visiting)mnUnlock();
   if(visiting&&ONLINE){verT-=dt;if(verT<=0){verT=40;verPing()}}else verT=1.2;
@@ -13321,7 +13328,7 @@ function frame(t){
   tick(dt);draw();guideTick();
 }
 /* versões novas: quando o jogo muda no servidor, guarda o progresso e recarrega a página */
-const BUILD='2552dffcff0d',UKEY='tapmoss.upd';const UPD={on:false,go:false,at:0};
+const BUILD='5207230ff105',UKEY='tapmoss.upd';const UPD={on:false,go:false,at:0};
 // the new version downloads in the background while the game goes on; the reload only comes once the whole page is here,
 // so a slow network never leaves a half-built page on screen. The offline helper (sw.js) hands this copy over at the reload.
 const NEXTC='tapmoss-next',pgKey=()=>{let p=location.pathname.replace(/index\.html$/,'');if(!p.endsWith('/'))p+='/';return p};
