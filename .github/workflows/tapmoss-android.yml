@@ -142,7 +142,7 @@ jobs:
         run: |
           mkdir pub && cp registo-android.txt pub/ 2>/dev/null || echo "sem registo" > pub/registo-android.txt
           cp gradle.txt pub/ 2>/dev/null || true
-          ls android >> pub/registo-android.txt 2>&1 || true
+          ls android-tapmoss >> pub/registo-android.txt 2>&1 || true
           cd pub && git init -q -b tapmoss-android-resultado
           git config user.name "Dinis Sousa"; git config user.email "diniscash@gmail.com"
           git add -A && git commit -q -m "tapmoss Android $(date -u +%Y-%m-%dT%H:%MZ)"
