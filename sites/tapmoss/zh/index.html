@@ -1726,7 +1726,10 @@ Object.assign(TR,{
 "Cúpula e telescópio":["Dome and telescope", "Cúpula y telescopio", "Coupole et télescope", "Kuppel und Teleskop", "ドームと望遠鏡", "穹顶与望远镜"],
 "A cúpula abre uma fenda e o telescópio aponta às estrelas.":["The dome opens a slit and the telescope points at the stars.", "La cúpula abre una rendija y el telescopio apunta a las estrellas.", "La coupole s’ouvre en fente et le télescope vise les étoiles.", "Die Kuppel öffnet einen Spalt und das Teleskop zielt auf die Sterne.", "ドームが細く開き、望遠鏡が星を向く。", "穹顶打开一道缝,望远镜对准群星。"],
 "Observatório estelar":["Star observatory", "Observatorio estelar", "Observatoire stellaire", "Sternwarte", "星の天文台", "星辰天文台"],
-"Uma cúpula de vidro com o céu lá dentro, cristais acesos e um anel de órbita.":["A glass dome with the sky inside, glowing crystals and a ring of orbit.", "Una cúpula de cristal con el cielo dentro, cristales encendidos y un anillo de órbita.", "Une coupole de verre avec le ciel à l’intérieur, des cristaux allumés et un anneau d’orbite.", "Eine Glaskuppel mit dem Himmel darin, leuchtende Kristalle und ein Orbitring.", "空を閉じこめたガラスのドーム、灯る水晶、軌道の輪。", "装着星空的玻璃穹顶、发光的晶体和一圈轨道环。"]
+"Uma cúpula de vidro com o céu lá dentro, cristais acesos e um anel de órbita.":["A glass dome with the sky inside, glowing crystals and a ring of orbit.", "Una cúpula de cristal con el cielo dentro, cristales encendidos y un anillo de órbita.", "Une coupole de verre avec le ciel à l’intérieur, des cristaux allumés et un anneau d’orbite.", "Eine Glaskuppel mit dem Himmel darin, leuchtende Kristalle und ein Orbitring.", "空を閉じこめたガラスのドーム、灯る水晶、軌道の輪。", "装着星空的玻璃穹顶、发光的晶体和一圈轨道环。"],
+"Canteiro cheio":["Flower bed full", "Arriate lleno", "Parterre plein", "Beet voll", "花壇がいっぱい", "花坛已满"],
+"Cheio":["Full", "Lleno", "Plein", "Voll", "満杯", "已满"],
+"O canteiro está cheio: apanha flores para dar espaço.":["The flower bed is full: pick some flowers to make room.", "El arriate está lleno: recoge flores para hacer sitio.", "Le parterre est plein : cueille des fleurs pour faire de la place.", "Das Beet ist voll: Pflücke Blumen, um Platz zu schaffen.", "花壇がいっぱい。花を摘んで場所を空けよう。", "花坛满了:摘些花腾出空间。"]
 });
 </script>
 <script>
@@ -10230,7 +10233,7 @@ function updateUpSheet(){
   b.querySelectorAll('[data-temple]').forEach(el=>{const lv=tpLv();if(lv<TEMPLO.length)el.disabled=S.coins<tpCost(lv)});
   b.querySelectorAll('[data-nave]').forEach(el=>{const lv=nvLv();if(lv<NAVE.length)el.disabled=S.coins<nvCost(lv)});b.querySelectorAll('[data-forja]').forEach(el=>{const lv=fjLv();if(lv<FORJA.length)el.disabled=S.coins<fjCost(lv)});
   b.querySelectorAll('[data-rib]').forEach(el=>{const m=el.dataset.rib==='mv',lv=m?mvLv():pdLv();if(lv<6)el.disabled=S.coins<(m?mvCost(lv):pdCost(lv))});
-  b.querySelectorAll('[data-perk]').forEach(el=>{const pk=PERKS.find(x=>x.id===el.dataset.perk);if(pk)el.disabled=S.gems<pk.cost(perk(pk.id))});b.querySelectorAll('[data-gem]').forEach(el=>{const g=el.dataset.gem;el.disabled=g==='spring'?(S.gems<5||t<S.boostUntil):g==='bloom'?(S.gems<8||blmRest()):S.gems<1});if(blmRest()&&b.querySelector('[data-gem="bloom"]')){sheetSig='';renderSheet(true)}
+  b.querySelectorAll('[data-perk]').forEach(el=>{const pk=PERKS.find(x=>x.id===el.dataset.perk);if(pk)el.disabled=S.gems<pk.cost(perk(pk.id))});b.querySelectorAll('[data-gem]').forEach(el=>{const g=el.dataset.gem;el.disabled=g==='spring'?(S.gems<5||t<S.boostUntil):g==='bloom'?(S.gems<8||blmRest()):S.gems<1});if((blmRest()&&b.querySelector('[data-gem="bloom"]'))||(b.querySelector('[data-bfull]')&&bloomRoom())||(b.querySelector('[data-gem="bloom"]')&&!bloomRoom())){sheetSig='';renderSheet(true)}
 }
 function itemCard(it,n){const on=n>0,fx=!!RELIC[it.id],mk=trkMark('i',it.id);return`<div class="card ${on?'':'off'} ${it.cr?'crc':''} ${fx?'fx':''} ${mk?'trkM':''}" style="--rc:${RC[it.r]}"${fx?` data-itfx="${it.id}" role="button" tabindex="0" aria-label="${esc((on?it.nome:'???')+' · '+relTxt(it.id))}"`:''}>${mk}${fx?`<span class="fxb">${icon('spark')}</span>`:''}${pxsvg(it.map,on?it.pal:sil(it.map))}<h3>${on?it.nome:'???'}</h3>${on?NM('×'+n,'xs'):it.cr?`<p class="crh">${icon('anvil')}${_t('Oficina')}</p>`:'<p>—</p>'}</div>`}
 function renderSheet(live){try{renderSheet0(live)}catch(e){const b=$('#shB');if(b){b.innerHTML=`<p class="note">${_t('Não deu para mostrar isto. Fecha e volta a abrir.')}</p>`;sheetSig=''}setTimeout(()=>{throw e})}}
@@ -10281,7 +10284,7 @@ function renderSheet0(live){
     h+=`<h4 class="sub">${_t("Para usar")}</h4>`;
     const t=now(),cool=t<S.waterReady&&t>=S.waterUntil;
     h+=`<div class="item"><span class="ico">${icon('spark')}</span><span class="meta"><h3>${_t("Brisa de primavera")}</h3><p>${_t("O musgo cresce 3× durante 5 minutos.")}</p></span><button class="btn gem" data-gem="spring" ${S.gems<5||t<S.boostUntil?'disabled':''}>${icon('gem')}${NM(5)}</button></div>`;
-    if(S.level>=2)h+=`<div class="item"><span class="ico">${icon('flower')}</span><span class="meta"><h3>${_t("Florada")}</h3><p>${_t("Nascem 3 flores já, com um pouco mais de sorte.")} ${_t('Dão moedas como as outras, mas pouca experiência e nenhum cristal. Até 5 vezes a cada 10 minutos.')}</p></span>${(()=>{const B=S.blm,end=B&&B.n>=5?(B.t||0)+600e3:0;return end>now()?`<button class="btn ghost bcd" disabled data-cd="${end}" data-sh="1" aria-label="${_t('As flores estão a descansar')}">${icon('flower')}<b>${mmss((end-now())/1000)}</b></button>`:`<button class="btn gem" data-gem="bloom" ${S.gems<8?'disabled':''}>${icon('gem')}${NM(8)}</button>`})()}</div>`;
+    if(S.level>=2)h+=`<div class="item"><span class="ico">${icon('flower')}</span><span class="meta"><h3>${_t("Florada")}</h3><p>${_t("Nascem 3 flores já, com um pouco mais de sorte.")} ${_t('Dão moedas como as outras, mas pouca experiência e nenhum cristal. Até 5 vezes a cada 10 minutos.')}${!blmRest()&&!bloomRoom()?` <b>${_t('O canteiro está cheio: apanha flores para dar espaço.')}</b>`:''}</p></span>${(()=>{const B=S.blm,end=B&&B.n>=5?(B.t||0)+600e3:0;return end>now()?`<button class="btn ghost bcd" disabled data-cd="${end}" data-sh="1" aria-label="${_t('As flores estão a descansar')}">${icon('flower')}<b>${mmss((end-now())/1000)}</b></button>`:!bloomRoom()?`<button class="btn ghost" disabled data-bfull="1" aria-label="${_t('Canteiro cheio')}">${icon('flower')}<b>${_t('Cheio')}</b></button>`:`<button class="btn gem" data-gem="bloom" ${S.gems<8?'disabled':''}>${icon('gem')}${NM(8)}</button>`})()}</div>`;
     if(cool)h+=`<div class="item"><span class="ico">${icon('drop')}</span><span class="meta"><h3>${_t("Regar já")}</h3><p>${_t("Rega sem esperar pelo regador.")}</p></span><button class="btn gem" data-gem="water" ${S.gems<1?'disabled':''}>${icon('gem')}${NM(1)}</button></div>`;
     hg=h;h='';
     h+=`<h4 class="sub">${_t('Poderes para sempre')}</h4>`;EMP.forEach(p=>{const l=emPerk(p.id),mx=l>=p.max;h+=`<div class="item perk emi"><span class="ico">${icon(p.ic)}</span><span class="meta"><h3>${p.nome}${p.max>1?` <span class="lv">${l}/${p.max}</span>`:''}</h3><p>${l?p.eff(l):p.next}</p></span>${mx?`<span class="tag">${_t('Teu')}</span>`:`<button class="btn em" data-emp="${p.id}" ${(S.em||0)<p.cost(l)?'disabled':''}>${icon('em')}${NM(String(p.cost(l)))}</button>`}</div>`});
@@ -10638,11 +10641,17 @@ function sow(i){
   setDockIcons();sheetSig='';renderSheet();hud();toast(n?_t("Semeaste musgo {0}. Os toques espalham agora este musgo.",SPEC[i].nome):_t("Musgo {0} ativo.",SPEC[i].nome));
 }
 function blmRest(){const B=S.blm;return !!(B&&B.n>=5&&(B.t||0)+600e3>now())}
+// how many of the 3 flowers of a Florada still fit in the bed right now: tried on a copy, nothing is planted
+let BRC={k:'',t:0,n:0};
+function bloomRoom(fresh){if(!mossCount||visiting)return 0;const fl=SC().flowers,k=(S.cur|0)+'|'+fl.length+'|'+mossCount,tn=performance.now();if(!fresh&&BRC.k===k&&tn-BRC.t<1500)return BRC.n;
+  const tg={flowers:fl.slice()};let n=0;for(let i=0;i<3;i++)if(spawnFlower('bloom',tg))n++;BRC={k,t:tn,n};return n}
 function useGem(id){
   const t=now();
   if(id==='spring'&&S.gems>=5&&t>=S.boostUntil){S.gems-=5;S.boostUntil=t+300000;toast(_t('Brisa de primavera: 3× durante 5 minutos'));puff(W/2,H*.5,['#cfe8a8','#f3efe2','#9ad65a'].map(hex),30,50,1.4)}
   else if(id==='bloom'&&S.gems>=8){const B=S.blm&&typeof S.blm==='object'?S.blm:(S.blm={t:0,n:0});if(now()-(B.t||0)>600e3){B.t=now();B.n=0}
-    if(B.n>=5){toast(_t('As flores precisam de descansar. Volta daqui a {0} min.',Math.max(1,Math.ceil((B.t+600e3-now())/60e3))));return}B.n++;S.gems-=8;let n=0;for(let i=0;i<3;i++)if(spawnFlower('bloom'))n++;toast(n?_t("Nasceram {0} flores",n):SC().flowers.length?_t('Já não há espaço para mais flores. Apanha as que tens e volta a tentar.'):_t('Ainda não há musgo que chegue para flores'));if(!n){S.gems+=8;B.n--}sheetSig='';if(sheetName)renderSheet(true)}
+    if(B.n>=5){toast(_t('As flores precisam de descansar. Volta daqui a {0} min.',Math.max(1,Math.ceil((B.t+600e3-now())/60e3))));return}
+    if(!bloomRoom(true)){toast(SC().flowers.length?_t('Já não há espaço para mais flores. Apanha as que tens e volta a tentar.'):_t('Ainda não há musgo que chegue para flores'));sheetSig='';if(sheetName)renderSheet(true);return}
+    B.n++;S.gems-=8;let n=0;for(let i=0;i<3;i++)if(spawnFlower('bloom'))n++;if(n>0&&n<3)S.gems+=n===1?5:2;toast(n?_t("Nasceram {0} flores",n):SC().flowers.length?_t('Já não há espaço para mais flores. Apanha as que tens e volta a tentar.'):_t('Ainda não há musgo que chegue para flores'));if(!n){S.gems+=8;B.n--}sheetSig='';if(sheetName)renderSheet(true)}
   else if(id==='water'&&S.gems>=1){S.gems-=1;S.waterReady=0;doWater()}
   SND.play('buy');S.fresh=false;dirtySave=true;sheetSig='';renderSheet();hud();
 }
@@ -13802,7 +13811,7 @@ function frame(t){
   tick(dt);draw();guideTick();
 }
 /* versões novas: quando o jogo muda no servidor, guarda o progresso e recarrega a página */
-const BUILD='4fb6660ca1b5',UKEY='tapmoss.upd';const UPD={on:false,go:false,at:0};
+const BUILD='c9b57917e369',UKEY='tapmoss.upd';const UPD={on:false,go:false,at:0};
 // the new version downloads in the background while the game goes on; the reload only comes once the whole page is here,
 // so a slow network never leaves a half-built page on screen. The offline helper (sw.js) hands this copy over at the reload.
 const NEXTC='tapmoss-next',pgKey=()=>{let p=location.pathname.replace(/index\.html$/,'');if(!p.endsWith('/'))p+='/';return p};
