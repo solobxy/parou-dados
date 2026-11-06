@@ -1,0 +1,7 @@
+Starting: Intent { cmp=com.tapmoss.app/.LauncherActivity }
+Status: ok
+LaunchState: COLD
+Activity: com.tapmoss.app/.LauncherActivity
+TotalTime: 1836
+WaitTime: 1837
+Complete
