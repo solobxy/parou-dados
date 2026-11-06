@@ -9,9 +9,10 @@ Key facts:
 - Pets from level 3: 35 pets hatched from eggs, 8 rarities from Common to Void, 13 colours (chromas) and fusion (5 pets of one rarity make 1 of the next).
 - The mine from level 9: a second game where you dig pixel by pixel through 9 worlds, from the surface to the Void, with 19 pickaxes, fossils of the Lourinhã dinosaur and rubies.
 - Bloodlines from level 7: Sun, Moon or Root, each with its own outfits, chests and pet.
-- The greenhouse from level 40: cross two mosses to discover 20 hybrid mosses in 4 tiers, each with a rare mutant. Every hybrid found adds coins in every scene for good, and the legendary ones earn more than void moss.
+- The greenhouse from level 40: cross any two different mosses and every pair grows a moss. 48 hybrid mosses in 6 rarities (20 named recipes and 28 wild ones), each with a rare mutant. The rarer the parents, the rarer the result and the longer it grows (5 minutes up to 24 hours); the hardest crosses give chromatic and void mosses. Every hybrid found adds coins in every scene for good.
 - Your house from level 8: decorate a house of your own and visit friends’ houses.
 - Season pass: 30-day seasons with 40 levels, a free track and the Stellar Pass. Minigames: wheel (level 10), scratch card (20) and plinko (30). Rebirth from level 30.
+- Daily chest that grows with every day in a row, with no cap, streak shields that save the streak over a missed day, and loyalty prizes at 14, 30, 60 and 100 days in a row.
 - Social: friend codes, visiting gardens, watering friends’ moss, daily gifts, daily and weekly rankings by country that count only what a player does by hand, so every level competes on equal terms, and a player market.
 - Currencies: coins, crystals and gems (earned by playing), plus silver and rubies in the mine. Nothing in the game requires paying.
 
