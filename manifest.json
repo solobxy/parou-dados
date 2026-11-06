@@ -1,7 +1,7 @@
 {
-  "built_at": "2026-11-06T11:30:43.306557+00:00",
+  "built_at": "2026-11-06T20:58:28.148909+00:00",
   "db_bytes": 657895424,
-  "gz_bytes": 129373227,
+  "gz_bytes": 129373189,
   "totals": {
     "lines": 2664,
     "stops": 46398,
@@ -118,7 +118,7 @@
       "validade": "ok",
       "dias_validade": 2247,
       "horario_prolongado": false,
-      "url": "https://files.mobilitydatabase.org/mdb-2408/latest.zip",
+      "url": "https://mts.pt/imt/MTS-20240129.zip",
       "last_error": null,
       "servicos_associados": null,
       "servicos_sem_calendario": null,
@@ -916,10 +916,10 @@
         },
         "servicos_com_data_hoje": [
           "DU",
-          "FU",
           "CU",
           "BexpU",
           "AU",
+          "FU",
           "BU",
           "EU"
         ],
@@ -976,5 +976,5 @@
       }
     }
   },
-  "duration_s": 403
+  "duration_s": 256
 }
