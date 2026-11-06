@@ -1,0 +1,114 @@
+::add-mask::f7192716a3c8efcfad3f4df0b5d0015ac5606899
+SHA-256: 8E:57:77:D4:33:CD:ED:BC:E4:5A:BC:D5:84:F4:B6:8E:F2:49:8D:A9:42:90:84:4E:2B:5E:B5:28:FE:96:6E:14
+build-tools
+cmake
+cmdline-tools
+extras
+licenses
+ndk
+packages-list.txt
+platform-tools
+platforms
+tools
+apkanalyzer
+avdmanager
+d8
+lint
+profgen
+r8
+resourceshrinker
+retrace
+screenshot2
+sdkmanager
+,-----.        ,--.  ,--.  ,--.
+|  |) /_,--.,--|  |-.|  |-.|  |,---.,--.   ,--,--.--.,--,--.,---.
+|  .-.  |  ||  | .-. | .-. |  | .-. |  |.'.|  |  .--' ,-.  | .-. |
+|  '--' '  ''  | `-' | `-' |  \   --|   .'.   |  |  \ '-'  | '-' '
+`------' `----' `---' `---'`--'`----'--'   '--`--'   `--`--|  |-'
+                                                           `--'    
+Generating Android Project.
+
+Project updated successfully.
+Build it by running bubblewrap build
+yes: standard output: Broken pipe
+app
+build.gradle
+chave.json
+chave.json.enc
+gradle
+gradle.properties
+gradlew
+gradlew.bat
+manifest-checksum.txt
+settings.gradle
+sha256.txt
+store_icon.png
+twa-manifest.json
+upload.keystore
+upload.keystore.enc
+yes: standard output: Broken pipe
+> Task :app:packageReleaseBundle
+> Task :app:signReleaseBundle
+> Task :app:produceReleaseBundleIdeListingFile
+> Task :app:createReleaseBundleListingFileRedirect
+> Task :app:bundleRelease
+[Incubating] Problems report is available at: file:///home/runner/work/parou-dados/parou-dados/android-tapmoss/build/reports/problems/problems-report.html
+
+Deprecated Gradle features were used in this build, making it incompatible with Gradle 9.0.
+
+You can use '--warning-mode all' to show the individual deprecation warnings and determine if they come from your own scripts or plugins.
+
+For more on this, please refer to https://docs.gradle.org/8.11.1/userguide/command_line_interface.html#sec:command_line_warnings in the Gradle documentation.
+
+BUILD SUCCESSFUL in 1m 4s
+45 actionable tasks: 45 executed
+AAB=app/build/outputs/bundle/release/app-release.aab APK=app/build/outputs/apk/release/app-release-unsigned.apk
+jar signed.
+
+Warning: 
+The signer's certificate is self-signed.
+APK assinado e verificado
+-rw-r--r-- 1 runner runner  956763 Nov  6 22:50 alinhado.apk
+-rw-r--r-- 1 runner runner 1071730 Nov  6 22:50 app-release-bundle.aab
+-rw-r--r-- 1 runner runner 1005612 Nov  6 22:50 app-release-signed.apk
+[
+  {
+    "relation": [
+      "delegate_permission/common.handle_all_urls"
+    ],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.tapmoss.app",
+      "sha256_cert_fingerprints": [
+        "8E:57:77:D4:33:CD:ED:BC:E4:5A:BC:D5:84:F4:B6:8E:F2:49:8D:A9:42:90:84:4E:2B:5E:B5:28:FE:96:6E:14"
+      ]
+    }
+  }
+]
+https://github.com/solobxy/parou-dados/releases/tag/tapmoss-android
+error: cannot pull with rebase: You have unstaged changes.
+error: Please commit or stash them.
+alinhado.apk
+app
+app-release-bundle.aab
+app-release-signed.apk
+app-release-signed.apk.idsig
+assetlinks.json
+build
+build.gradle
+chave.json
+chave.json.enc
+gradle
+gradle.properties
+gradlew
+gradlew.bat
+local.properties
+manifest-checksum.txt
+settings.gradle
+sha256.txt
+store_icon.png
+tapmoss-1.0.2.aab
+tapmoss-1.0.2.apk
+twa-manifest.json
+upload.keystore
+upload.keystore.enc
