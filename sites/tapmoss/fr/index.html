@@ -1781,7 +1781,13 @@ Object.assign(TR,{
 "Nada de novo":["Nothing new", "Nada nuevo", "Rien de neuf", "Nichts Neues", "新しいものなし", "没有新东西"],
 "Este cruzamento dá musgo {0}, que já tens, e também a sua variante mutante. Escolhe outro par.":["This cross gives {0} moss, which you already have, along with its mutant. Pick another pair.", "Este cruce da musgo {0}, que ya tienes, y también su variante mutante. Elige otra pareja.", "Ce croisement donne la mousse {0}, que tu as déjà, ainsi que sa variante mutante. Choisis une autre paire.", "Diese Kreuzung ergibt Moos {0}, das du schon hast, samt seiner Mutante. Wähle ein anderes Paar.", "この交配は{0}の苔になるが、もう持っていて突然変異種もある。別の組み合わせを選ぼう。", "这个杂交会得到{0}苔藓,你已经有了,突变种也有了。换一对吧。"],
 "Dá musgo {0}, que já tens: desta vez nasce a variante mutante, com brilho dourado e +50% no herbário. Demora {1}.":["Gives {0} moss, which you already have: this time its mutant grows, with a golden shine and +50% in the herbarium. Takes {1}.", "Da musgo {0}, que ya tienes: esta vez nace la variante mutante, con brillo dorado y +50% en el herbario. Tarda {1}.", "Donne la mousse {0}, que tu as déjà : cette fois naît la variante mutante, avec un éclat doré et +50 % dans l’herbier. Prend {1}.", "Ergibt Moos {0}, das du schon hast: Diesmal wächst die Mutante, mit goldenem Glanz und +50 % im Herbarium. Dauert {1}.", "{0}の苔になる(持っている)。今回は突然変異種が育ち、金の輝きと標本帳+50%。{1}かかる。", "会得到{0}苔藓(你已拥有):这次长出突变种,带金色光泽,图鉴加成 +50%。需要 {1}。"],
-"Musgo {0} está na tua mistura.":["{0} moss is in your mix.", "El musgo {0} está en tu mezcla.", "La mousse {0} est dans ton mélange.", "Moos {0} ist in deiner Mischung.", "{0}の苔をミックスに入れた。", "{0}苔藓已加入你的混搭。"]
+"Musgo {0} está na tua mistura.":["{0} moss is in your mix.", "El musgo {0} está en tu mezcla.", "La mousse {0} est dans ton mélange.", "Moos {0} ist in deiner Mischung.", "{0}の苔をミックスに入れた。", "{0}苔藓已加入你的混搭。"],
+"O musgo cobre {0}% do país":["Moss covers {0}% of the country", "El musgo cubre el {0}% del país", "La mousse couvre {0} % du pays", "Moos bedeckt {0} % des Landes", "苔が国の {0}% を覆っている", "苔藓覆盖了该国的 {0}%"],
+"O planeta do ranking, refeito":["The ranking planet, remade", "El planeta del ranking, renovado", "La planète du classement, refaite", "Der Ranglisten-Planet, neu gemacht", "ランキングの惑星をリニューアル", "排行榜星球焕然一新"],
+"O musgo de cada país cresce conforme o tamanho do país: um país pequeno já não fica coberto com poucos jardins, e nunca fica todo coberto.":["Each country’s moss grows according to its size: a small country no longer gets covered by a few gardens, and none is ever fully covered.", "El musgo de cada país crece según su tamaño: un país pequeño ya no queda cubierto con pocos jardines, y nunca se cubre del todo.", "La mousse de chaque pays pousse selon sa taille : un petit pays n’est plus couvert par quelques jardins, et aucun ne l’est jamais entièrement.", "Das Moos jedes Landes wächst nach seiner Größe: Ein kleines Land wird nicht mehr von wenigen Gärten bedeckt, und keines wird je ganz bedeckt.", "国の苔は国の大きさに合わせて育つ。小さな国が少しの庭で覆われることはもうなく、全部が覆われることもない。", "每个国家的苔藓按国土大小生长:小国不会再被几座花园盖满,也不会被完全覆盖。"],
+"As manchas têm as cores dos musgos que as pessoas de lá plantam, e à noite brilham nessas cores.":["The patches take the colours of the mosses people there grow, and glow in those colours at night.", "Las manchas tienen los colores de los musgos que planta la gente de allí, y de noche brillan en esos colores.", "Les taches prennent les couleurs des mousses que les gens de là-bas cultivent, et brillent de ces couleurs la nuit.", "Die Flecken haben die Farben der Moose, die die Leute dort pflanzen, und leuchten nachts in diesen Farben.", "苔の色はその国の人たちが育てる苔の色になり、夜はその色で光る。", "斑块是当地玩家种的苔藓的颜色,夜里会发出这些颜色的光。"],
+"Nuvens, atmosfera e o sol a brilhar no mar. Ao tocar num país vês quanto do país o musgo cobre.":["Clouds, an atmosphere and the sun shining on the sea. Tap a country to see how much of it the moss covers.", "Nubes, atmósfera y el sol brillando en el mar. Al tocar un país ves cuánto cubre el musgo.", "Des nuages, une atmosphère et le soleil qui brille sur la mer. Touche un pays pour voir quelle part la mousse en couvre.", "Wolken, Atmosphäre und die Sonne, die auf dem Meer glänzt. Tippe auf ein Land, um zu sehen, wie viel davon Moos bedeckt.", "雲、大気、海にきらめく太陽。国をタップすると苔がどれだけ覆っているかわかる。", "云层、大气,还有阳光照在海面。点一个国家就能看到苔藓覆盖了多少。"],
+"Ver o planeta":["See the planet", "Ver el planeta", "Voir la planète", "Planeten ansehen", "惑星を見る", "查看星球"]
 });
 </script>
 <script>
@@ -9059,7 +9065,9 @@ let worldGrid=null;
 function worldInit(){if(worldGrid)return;const b=atob(WORLD.rle),g=new Uint8Array(WORLD.w*WORLD.h);let i=0;for(let k=0;k+1<b.length;k+=2){const v=b.charCodeAt(k),n=b.charCodeAt(k+1);g.fill(v,i,i+n);i+=n}worldGrid=g}
 async function loadMundo(force){
   if(!ONLINE){return}if(!force&&performance.now()-NET.mundoT<300000&&NET.mundo)return;NET.mundoT=performance.now();
-  try{const r=await api('tm_mundo',{});NET.mundo=Array.isArray(r)?r.filter(x=>x&&/^[A-Z]{2}$/.test(x.pais)).map(x=>({pais:x.pais,jogadores:nInt(x.jogadores,0,1e9,0),musgo:Number.isFinite(x.musgo)?Math.max(0,x.musgo):0})):[]}catch(e){NET.mundoErr=errMsg(e)}
+  const san=r=>Array.isArray(r)?r.filter(x=>x&&/^[A-Z]{2}$/.test(x.pais)).map(x=>({pais:x.pais,jogadores:nInt(x.jogadores,0,1e9,0),musgo:Number.isFinite(x.musgo)?Math.max(0,x.musgo):0,
+    cores:Array.isArray(x.cores)?x.cores.filter(c=>Array.isArray(c)&&SPEC[c[0]|0]&&Number.isFinite(c[1])&&c[1]>0).slice(0,4).map(c=>[c[0]|0,+c[1]]):[]})):[];
+  try{NET.mundo=san(await api('tm_mundo2',{}))}catch(e){try{NET.mundo=san(await api('tm_mundo',{}))}catch(e2){NET.mundoErr=errMsg(e2)}}
   if(sheetName==='mundo'){sheetSig='';renderSheet(true);globeMount()}
 }
 let globe=null;
@@ -9109,12 +9117,17 @@ function gSeeds(code){const G=globe.data,m=G.m[code];if(!m||!(m.musgo>0))return 
   if(!pick.length){const ct=gCentroid(code);if(ct)pick=[['',ct[0],ct[1],1]]}
   const extra=Math.min(14,Math.max(0,m.jogadores-pick.length)),cells=extra?gCells(code):[];
   for(let i=0;i<extra&&cells.length;i++){const id=cells[(hash2(i,7,code.charCodeAt(0)*31+code.charCodeAt(1))*cells.length)|0];pick.push(['',90-(Math.floor(id/WORLD.w)+.5)*180/WORLD.h,(id%WORLD.w+.5)*360/WORLD.w-180,.25])}
-  const ws=pick.reduce((a,s)=>a+s[3],0)||1;
-  const s=pick.map(([nm,la,lo,w])=>({nm,la,lo,w,cl:Math.cos(la*Math.PI/180),r:clamp(.05*Math.sqrt(m.musgo*w/ws),.2,5)}));
+  const ws=pick.reduce((a,s)=>a+s[3],0)||1,A=gArea(code)*.25*(m.F||0);
+  const s=pick.map(([nm,la,lo,w])=>({nm,la,lo,w,cl:Math.cos(la*Math.PI/180),r:clamp(Math.sqrt(A*w/ws/Math.PI),.12,8)}));
   C[code]={k:m.musgo+':'+m.jogadores,s};return s}
-function gMoss(code,la,lo){const S_=gSeeds(code);if(!S_)return 0;let q=0;
-  for(const s of S_){const dy=la-s.la;if(Math.abs(dy)>s.r*1.4)continue;const dx=(lo-s.lo)*s.cl;if(Math.abs(dx)>s.r*1.4)continue;
-    const v=1-Math.sqrt(dx*dx+dy*dy)/s.r+(gvn(la*3+s.w*7,lo*3)-.5)*.6+(gvn(la*9,lo*9)-.5)*.3;if(v>q)q=v}return q}
+let GM_S=null;
+function gMoss(code,la,lo){const S_=gSeeds(code);GM_S=null;if(!S_)return 0;let q=0;
+  for(const s of S_){const r=Math.max(s.r*1.3,GM_RMIN),dy=la-s.la;if(Math.abs(dy)>r*1.6)continue;const dx=(lo-s.lo)*s.cl;if(Math.abs(dx)>r*1.6)continue;
+    // a ragged edge at the scale of the patch, the way moss creeps out in a scene; every town with moss shows, however small
+    const f=1.6/r,v=1-Math.sqrt(dx*dx+dy*dy)/r+(gvn(la*f+s.w*7,lo*s.cl*f)-.5)*.75+(gvn(la*f*3.1,lo*s.cl*f*3.1)-.5)*.3;if(v>q){q=v;GM_S=s}}return q}
+// which moss grows at a spot of a patch: the country's mosses, each in its share, in organic islands of colour
+function gSpec(code,la,lo,s){const x=globe.data.m[code],C=x&&x.cw;if(!C||C.length<2)return C?C[0][0]:0;const k=2.4/(s?s.r:1),cl=s?s.cl:1,w=gvn(la*k*.6+3,lo*cl*k*.6)*1.1;
+  const h=hash2(Math.floor(la*k+w),Math.floor(lo*cl*k+w),code.charCodeAt(0)*256+code.charCodeAt(1));let a=0;for(const[sp,wt]of C){a+=wt;if(h<=a)return sp}return C[C.length-1][0]}
 const GZ_MAX=12;
 function globeZoom(f){const g=globe;if(!g)return;const z0=g.zt;g.zt=clamp(g.zt*f,1,GZ_MAX);
   // zooming in from far away flies to the country you picked
@@ -9205,8 +9218,16 @@ function flagMap(code){const sp=FLG[code]||FLG.XX;let rows=[],pal={};
 function flagSvg(code){if(code==='WW')return FLAG_WW||(FLAG_WW=pxsvg(FLAG_WWM[0],FLAG_WWM[1],'flag'));code=/^[A-Z]{2}$/.test(code||'')?code:'XX';if(FLGC[code])return FLGC[code];const[m,p]=flagMap(code);return FLGC[code]=pxsvg(m,p,'flag')}
 
 let FLAG_WW='';const FLAG_WWM=[['....kkkkkk....','..kkbgggbbkk..','.kbbgggbbbgbk.','.kbggggbbggbk.','kbbbgggbbgggbk','kbbbbgbbbggbbk','kbgbbbbbbgbbbk','.kggbbbbbbbbk.','.kgggbbbggbbk.','..kkggbbbbkk..','....kkkkkk....'],{k:'#0e1a2e',b:'#3a78c8',g:'#7ccf52'}];
-function globeData(){const m={};let max=0;(NET.mundo||[]).forEach(x=>{m[x.pais]=x;if(x.musgo>max)max=x.musgo});const me=meuPais();
-  if(!m[me]&&me!=='XX'){m[me]={pais:me,jogadores:1,musgo:musgoTotal()};max=Math.max(max,m[me].musgo)}return{m,max:Math.max(1,max),me}}
+const GL_K=90,GL_FMAX=.82,GAREA={};let GM_RMIN=.2;
+// the size of a country in grid cells, each counted by how big it really is (cells shrink towards the poles)
+function gArea(code){if(code in GAREA)return GAREA[code];let a=0;for(const i of gCells(code))a+=Math.cos((90-(Math.floor(i/WORLD.w)+.5)*180/WORLD.h)*Math.PI/180);return GAREA[code]=Math.max(1,a)}
+function globeData(){const m={};let max=0;(NET.mundo||[]).forEach(x=>{m[x.pais]={...x};if(x.musgo>max)max=x.musgo});const me=meuPais();
+  if(!m[me]&&me!=='XX'){m[me]={pais:me,jogadores:1,musgo:musgoTotal(),cores:[]};max=Math.max(max,m[me].musgo)}
+  // your own mix shows in your country right away
+  if(m[me]&&S){const mine=mixS(),t=mine.reduce((a,e)=>a+e.p,0)||1,C=new Map((m[me].cores||[]).map(c=>[c[0],c[1]]));if(!C.size)for(const e of mine)C.set(e.i,(C.get(e.i)||0)+musgoTotal()*e.p/t);m[me].cores=[...C.entries()].sort((a,b)=>b[1]-a[1]).slice(0,4)}
+  for(const c in m){const x=m[c];x.F=x.musgo>0?Math.min(GL_FMAX,1-Math.exp(-x.musgo/(gArea(c)*GL_K))):0;if(!x.cores||!x.cores.length)x.cores=[[0,1]];const t=x.cores.reduce((a,q)=>a+q[1],0)||1;x.cw=x.cores.map(q=>[q[0],q[1]/t]);
+    let r=0,g=0,b=0;for(const[sp,w]of x.cw){const k=SPEC[sp].rgb[3];r+=k[0]*w;g+=k[1]*w;b+=k[2]*w}x.col=[r,g,b]}
+  return{m,max:Math.max(1,max),me}}
 function globeMount(){
   const cv=$('#globeCv');if(!cv)return;worldInit();const N=128;cv.width=N;cv.height=N;const c=here();
   if(!globe||globe.cv!==cv){const o=globe;if(o&&o.raf)cancelAnimationFrame(o.raf);
@@ -9231,23 +9252,24 @@ function globeFrame(t){
     if(g.tiltT!=null){const e=g.tiltT-g.tilt;g.tilt+=e*k;if(Math.abs(e)>.05)dn=false}if(dn)g.rotT=g.tiltT=null}
   if(!g.drag&&!RM&&g.z<1.3&&g.rotT==null){g.idle+=dt;if(g.idle>2.5)g.rot=(g.rot+dt*7+540)%360-180}
   if(RM){const k=[g.z,g.rot,g.tilt,g.sel,Math.floor(now()/6e4)].join();if(k===g.key)return;g.key=k}
-  const Z=g.z,R=58*Z,det=clamp((Z-1.3)/.9,0,1),pd=57.3/R,bo=Math.min(.6,pd*.9);
+  const Z=g.z,R=58*Z,det=clamp((Z-1.3)/.9,0,1),pd=57.3/R,bo=Math.min(.6,pd*.9);GM_RMIN=1.7*pd;
   const N=128,d=globe.img.data,G=globe.data,f0=globe.tilt*Math.PI/180,sf=Math.sin(f0),cf=Math.cos(f0),l0=globe.rot*Math.PI/180;
   const now_=new Date(now()),doy=(Date.UTC(now_.getUTCFullYear(),now_.getUTCMonth(),now_.getUTCDate())-Date.UTC(now_.getUTCFullYear(),0,0))/864e5,dec=23.44*Math.sin(2*Math.PI*(284+doy)/365)*Math.PI/180,
     sl=(-(now_.getUTCHours()+now_.getUTCMinutes()/60-12)*15)*Math.PI/180,sd_=Math.sin(dec),cd=Math.cos(dec),sel=globe.sel,pulse=RM?1:(.6+.4*Math.sin(t/260));
   for(let py=0;py<N;py++)for(let px=0;px<N;px++){
     const j=(py*N+px)<<2,x=(px+.5-N/2)/R,y=-(py+.5-N/2)/R,r2=x*x+y*y;
-    if(r2>1){const k=(r2-1);if(k<.07){d[j]=120;d[j+1]=184;d[j+2]=216;d[j+3]=Math.round(255*(1-k/.07)*.55)}else{d[j+3]=0;if(hash2(px,py,7)<.012){d[j]=d[j+1]=d[j+2]=220;d[j+3]=150}}continue}
+    if(r2>1){const rr=Math.sqrt(r2)-1,hk=.11/Math.max(1,Z*.6);if(rr<hk){const a=(1-rr/hk)**2,lit=clamp(.55+(-x*.5+y*.4)*.6,.25,1);d[j]=90+60*lit;d[j+1]=150+60*lit;d[j+2]=230;d[j+3]=Math.round(255*a*.62*lit)}
+      else{d[j+3]=0;const hs=hash2(px,py,7);if(hs<.014){const tw=RM?.7:.5+.5*Math.sin(t/(380+hs*9e4)+hs*900);d[j]=d[j+1]=225;d[j+2]=240;d[j+3]=Math.round(90+150*tw)}}continue}
     const rho=Math.sqrt(r2),cc=Math.asin(Math.min(1,rho)),z=Math.cos(cc);let lat,lon;
     if(rho<1e-6){lat=f0;lon=l0}else{lat=Math.asin(z*sf+y*Math.sin(cc)*cf/rho);lon=l0+Math.atan2(x*Math.sin(cc),rho*z*cf-y*Math.sin(cc)*sf)}
     const la=lat*180/Math.PI,lo=((lon*180/Math.PI+540)%360)-180,v=cellAt(la,lo),code=v?WORLD.codes[v-1]:null;
-    let col,q=0;const clat=Math.max(.2,Math.cos(lat));
+    let col,q=0,msp=-1;const clat=Math.max(.2,Math.cos(lat));
     if(!v){col=GL_OCEAN[clamp(Math.floor(z*2.4+(bay(px,py)-.5)*.8),0,2)];if(det>0&&(cellAt(la+pd,lo)||cellAt(la-pd,lo)||cellAt(la,lo+pd/clat)||cellAt(la,lo-pd/clat)))col=mix(col,GL_SHORE,.55*det)}
     else if(code==='AQ'||Math.abs(la)>80)col=GL_ICE;
-    else{const gm=G.m[code],kc=gm&&gm.musgo>0?Math.log(1+gm.musgo)/Math.log(1+G.max):0;
-      const ca=kc>0?GL_MOSS[clamp(Math.floor(kc*3.2+bay(px,py)*.6),0,3)]:GL_LAND[v&1];
+    else{const gm=G.m[code],kc=gm&&gm.F>0?gm.F:0;
+      const ca=kc>0?mix(GL_LAND[v&1],gm.col,clamp(.14+kc*1.7+(bay(px,py)-.5)*.08,0,.88)):GL_LAND[v&1];
       if(det>0){q=kc>0?gMoss(code,la,lo):0;let cb=mix(GL_LAND[v&1],GL_LAND2,gvn(la*1.4,lo*1.4)*.7);
-        if(q>0)cb=GL_MOSS[clamp(Math.floor(q*4.2),0,3)];else if(kc>0)cb=mix(cb,GL_MOSS[0],.16*kc);
+        if(q>0){msp=gSpec(code,la,lo,GM_S);const P=msp===SP_CR?CRPAL[(((la*7+lo*5)|0)%36+36)%36]:SPEC[msp].rgb;cb=q<.1?mix(P[1],cb,.35):P[clamp(2+Math.floor(q*2.8),2,4)]}else if(kc>0)cb=mix(cb,gm.col,.1+.2*kc);
         col=det>=1?cb:mix(ca,cb,det);
         const n2=cellAt(la+pd,lo),e2=cellAt(la,lo+pd/clat),s2=cellAt(la-pd,lo),w2=cellAt(la,lo-pd/clat);
         if((n2&&n2!==v)||(e2&&e2!==v)||(s2&&s2!==v)||(w2&&w2!==v))col=mix(col,GL_BORDER,.5*det)}
@@ -9257,7 +9279,11 @@ function globeFrame(t){
       if(n!==v||e!==v||s!==v||w!==v)col=code===sel?mix(col,[255,246,214],.85*pulse):mix(col,[244,208,74],.75)}
     const sun=Math.sin(lat)*sd_+Math.cos(lat)*cd*Math.cos(lon-sl),day=clamp(sun*5+.5,0,1),nb=.32+.26*det,shade=(.55+.45*z)*(nb+(1-nb)*day);
     let r_=col[0]*shade,g_=col[1]*shade,b_=col[2]*shade*(day<.5?1.15:1);
-    if(day<.35&&v&&G.m[code]&&G.m[code].jogadores>0&&(det>0?q>.5&&hash2(Math.floor(la*10),Math.floor(lo*10),11)<.3:hash2(Math.floor(la*2),Math.floor(lo*2),11)<.22)){r_=255;g_=214;b_=130}
+    if(!v&&sun>0){const gl=Math.pow(sun,9)*Math.pow(z,5)*90;r_+=gl;g_+=gl*.95;b_+=gl*.8}
+    if(day<.4&&v&&G.m[code]&&G.m[code].jogadores>0){const nk=1-day/.4;
+      if(q>0&&msp>=0){const P=SPEC[msp].rgb[4],gw=(.18+.3*Math.min(1,q))*nk*(RM?1:.85+.15*Math.sin(t/700+la*3+lo*2));r_+=P[0]*gw;g_+=P[1]*gw;b_+=P[2]*gw}
+      else if(det<1&&hash2(Math.floor(la*2),Math.floor(lo*2),11)<.25*Math.min(1,G.m[code].F*8+.2)){const P=G.m[code].col;r_=r_*(1-nk)+Math.min(255,P[0]*1.3+40)*nk;g_=g_*(1-nk)+Math.min(255,P[1]*1.3+40)*nk;b_=b_*(1-nk)+Math.min(255,P[2]*1.3+40)*nk}}
+    if(det<.85){const lo2=lo+(RM?0:t/1000*1.2),cl=gvn(lo2*.07,la*.11+40)*.62+gvn(lo2*.21,la*.33+9)*.38;if(cl>.64){const a=Math.min(.45,(cl-.64)*3)*(1-det/.85),w=255*(.35+.65*Math.max(day,.12))*(.6+.4*z);r_+=(w-r_)*a;g_+=(w-g_)*a;b_+=(w*1.02-b_)*a}}
     d[j]=r_;d[j+1]=g_;d[j+2]=b_;d[j+3]=255}
   globe.ctx.putImageData(globe.img,0,0);
   // up close, a bright dot in the middle of every town with moss, and the names of the biggest
@@ -9278,7 +9304,9 @@ function paisSel(c){const g=globe;if(!g||!/^[A-Z]{2}$/.test(c))return;g.sel=c;g.
 function globeInfo(){const el=$('#globeInfo');if(!el||!globe)return;const c=globe.sel,G=globe.data;
   if(c==='WW'){const L=Object.values(G.m),J=L.reduce((a,x)=>a+x.jogadores,0),M=L.reduce((a,x)=>a+x.musgo,0);el.innerHTML=`<b>${flagSvg('WW')}${esc(_t('Global'))}</b><span>${_t('{0} {1} · {2} m² de musgo · {3} países',fmt(J),J===1?_t('jogador'):_t('jogadores'),fmt(Math.round(M)),fmt(L.length))}</span>`;loadTop(c);loadTopW(c);loadTopW(c,true);if(topMode==='fundo')loadTopF(c);topRender(c);return}
   const m=G.m[c],rank=m?Object.values(G.m).sort((a,b)=>b.musgo-a.musgo).findIndex(x=>x.pais===c)+1:0;
-  el.innerHTML=`<b>${flagSvg(c)}${esc(paisNome(c))}</b><span>${m?_t("{0} {1} · {2} m² de musgo · {3}.º lugar",fmt(m.jogadores),m.jogadores===1?_t('jogador'):_t('jogadores'),fmt(Math.round(m.musgo)),rank):_t('Ainda sem musgo. Convida alguém de lá.')}</span>`;
+  const pc=m&&m.F>0?m.F*100:0,cov=m?`<span class="glc">${(m.cw||[]).map(([sp])=>`<i style="background:${SPEC[sp].c[3]}" title="${esc(SPEC[sp].nome)}"></i>`).join('')}${_t('O musgo cobre {0}% do país',dec(pc<1?pc.toFixed(2):pc<10?pc.toFixed(1):Math.round(pc)))}</span>`:'';
+  if(!document.getElementById('glccss')){const st=document.createElement('style');st.id='glccss';st.textContent='.glc{display:flex;align-items:center;gap:4px;margin-top:3px;font-size:12px;color:var(--tx2)}.glc i{display:inline-block;width:10px;height:10px;clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%)}.glc i:last-of-type{margin-right:4px}';document.head.appendChild(st)}
+  el.innerHTML=`<b>${flagSvg(c)}${esc(paisNome(c))}</b><span>${m?_t("{0} {1} · {2} m² de musgo · {3}.º lugar",fmt(m.jogadores),m.jogadores===1?_t('jogador'):_t('jogadores'),fmt(Math.round(m.musgo)),rank):_t('Ainda sem musgo. Convida alguém de lá.')}</span>${cov}`;
   if(m){loadTop(c);loadTopW(c);loadTopW(c,true);if(topMode==='fundo')loadTopF(c)}topRender(c)}
 /* weekly ranking: everyone starts at zero every Monday (Lisbon time). Points come from playing this week, not from what was piled up before */
 const WK_W={taps:1,flowers:6,cleaned:5,opened:15,shovels:8,waters:4,regas:10,mgPr:12,wishes:5,mush:5,birds:6,giftsSent:15,petFed:3,hatched:20,tasks:25,ups:2};
@@ -14008,7 +14036,7 @@ function frame(t){
   tick(dt);draw();guideTick();
 }
 /* versões novas: quando o jogo muda no servidor, guarda o progresso e recarrega a página */
-const BUILD='5ddf0fe71c90',UKEY='tapmoss.upd';const UPD={on:false,go:false,at:0};
+const BUILD='b4fee216a0a5',UKEY='tapmoss.upd';const UPD={on:false,go:false,at:0};
 // the new version downloads in the background while the game goes on; the reload only comes once the whole page is here,
 // so a slow network never leaves a half-built page on screen. The offline helper (sw.js) hands this copy over at the reload.
 const NEXTC='tapmoss-next',pgKey=()=>{let p=location.pathname.replace(/index\.html$/,'');if(!p.endsWith('/'))p+='/';return p};
@@ -17469,7 +17497,11 @@ const NEWS=[{id:3,d:'2026-11-04',ic:'heart',c:'#ff9ac8',t:_t('Anjinhos rosa e as
      _t('Escolhe até 4 musgos para o jardim com uma barra para cada um, e repinta a cena num toque. Grátis e sem perder nada.'),
      _t('Os musgos têm raridade e níveis. Subir um musgo de nível vale +10% para sempre.'),
      _t('Os híbridos ganharam cores próprias, padrões (pintas, mármore, veios, furta-cor) e efeitos: brasas, pétalas, bolhas, relâmpagos, estrelas, auroras e mais.'),
-     _t('Na Estufa já não se gasta dinheiro num cruzamento que não dá nada novo: um híbrido que já tens volta como variante mutante, dourada.')],go:'moss',btn:_t('Ver os musgos')}];
+     _t('Na Estufa já não se gasta dinheiro num cruzamento que não dá nada novo: um híbrido que já tens volta como variante mutante, dourada.')],go:'moss',btn:_t('Ver os musgos')},
+  {id:17,d:'2026-11-06',ic:'trophy',c:'#8ad0ff',t:_t('O planeta do ranking, refeito'),
+  b:[_t('O musgo de cada país cresce conforme o tamanho do país: um país pequeno já não fica coberto com poucos jardins, e nunca fica todo coberto.'),
+     _t('As manchas têm as cores dos musgos que as pessoas de lá plantam, e à noite brilham nessas cores.'),
+     _t('Nuvens, atmosfera e o sol a brilhar no mar. Ao tocar num país vês quanto do país o musgo cobre.')],go:'mundo',btn:_t('Ver o planeta')}];
 const newsCur=()=>{if(!S)return null;const seen=S.newsSeen|0,t=now();return NEWS.find(n=>n.id>seen&&t-Date.parse(n.d)<10*864e5&&(S.created||0)<Date.parse(n.d)+864e5)||null};
 function newsRow(){const n=newsCur();if(!n)return'';return`<button type="button" class="tnew" data-tnew="${n.id}" style="--nc:${n.c}"><b>${_t('Novo')}</b><span>${n.t}</span>${icon('back')}</button>`}
 function newsOpen(id){const n=NEWS.find(x=>x.id===id);if(!n)return;S.newsSeen=Math.max(S.newsSeen|0,id);dirtySave=true;saveLocal();
