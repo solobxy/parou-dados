@@ -13811,7 +13811,7 @@ function frame(t){
   tick(dt);draw();guideTick();
 }
 /* versões novas: quando o jogo muda no servidor, guarda o progresso e recarrega a página */
-const BUILD='c9b57917e369',UKEY='tapmoss.upd';const UPD={on:false,go:false,at:0};
+const BUILD='ad0c1ff6a443',UKEY='tapmoss.upd';const UPD={on:false,go:false,at:0};
 // the new version downloads in the background while the game goes on; the reload only comes once the whole page is here,
 // so a slow network never leaves a half-built page on screen. The offline helper (sw.js) hands this copy over at the reload.
 const NEXTC='tapmoss-next',pgKey=()=>{let p=location.pathname.replace(/index\.html$/,'');if(!p.endsWith('/'))p+='/';return p};
@@ -16079,7 +16079,7 @@ function hsBuy(id,vi){const d=HSF[id];if(!d||d.evo||!hsOwn())return;const c=S.ca
 function hsFromInv(i){const c=S.casa,a=c.inv[i];if(!a)return;const room=c.r[HSV.ri];if(!hsFree(room,a[0])){toast(_t('Não há espaço nesta divisão.'));return}c.inv.splice(i,1);closeSheet();SND.play('place');hsPut(a[0],a[1])}
 /* ---------- friends' houses ---------- */
 async function hsVisitOpen(){const v=visiting;if(!v||HSR||HSV.busy)return;HSV.busy=true;let r=null;
-  try{r=v.pub?await api('tm_ver_casa',{p_outro:v.id}):await api('tm_perfil_casa',{p_id:CONTA.id,p_seg:CONTA.seg,p_outro:v.id})}catch(e){toast(errMsg(e))}finally{HSV.busy=false}
+  try{r=v.pub?await api('tm_ver_casa2',v.rank?{p_alvo:v.id.slice(2),p_jardim:null}:{p_alvo:null,p_jardim:v.id.slice(2)}):await api('tm_perfil_casa',{p_id:CONTA.id,p_seg:CONTA.seg,p_outro:v.id})}catch(e){toast(e.code==='jardim'?_t('Este jardim não está disponível.'):errMsg(e))}finally{HSV.busy=false}
   if(visiting!==v)return;const c=hsSan(r&&r.casa);if(!c){toast(_t('{0} ainda não tem casa.',v.nome));return}
   c.col=hsSanCol(r.casa.col);HSR=true;HSV.vis={c,look:v.pub?v.look:S.av.look,nome:v.nome,id:v.id,pub:!!v.pub};HSV.edit=null;HSV.c=c;HSV.ri=0;HSV.fora=true;HSV.trans=1;HSV.fx.length=0;hsPlaceAv();
   if(sheetName)closeSheet();histPush();$('#app').classList.add('casamode','casavis');SND.play('door');ev('casa','visitar');hsUI()}
