@@ -1,0 +1,43 @@
+name: tapmoss Android (testar a app num emulador)
+
+# Instala o tapmoss.apk do site num Android com Chrome, abre a app e guarda o que aconteceu:
+# a atividade aberta, uma captura do ecrã e o registo (logcat) com erros, na branch tapmoss-android-teste.
+
+on:
+  workflow_dispatch:
+    inputs:
+      api:
+        description: "Versão do Android (API)"
+        required: false
+        default: "34"
+
+permissions:
+  contents: write
+
+jobs:
+  teste:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - name: KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules && sudo udevadm trigger --name-match=kvm
+      - name: Emulador e teste
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: ${{ inputs.api }}
+          target: google_apis_playstore
+          arch: x86_64
+          disable-animations: true
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          script: bash .github/teste-android.sh
+      - name: Publicar o resultado
+        if: always()
+        run: |
+          mkdir -p out && cp -r res/* out/ 2>/dev/null || echo "sem resultado" > out/nada.txt
+          cd out && git init -q -b tapmoss-android-teste
+          git config user.name "Dinis Sousa"; git config user.email "diniscash@gmail.com"
+          git add -A && git commit -q -m "teste da app Android $(date -u +%Y-%m-%dT%H:%MZ)"
+          git push -q -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" tapmoss-android-teste
