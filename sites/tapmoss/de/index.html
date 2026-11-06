@@ -9104,7 +9104,7 @@ async function loadMundo(force){
   if(!ONLINE){return}if(!force&&performance.now()-NET.mundoT<300000&&NET.mundo)return;NET.mundoT=performance.now();
   const san=r=>Array.isArray(r)?r.filter(x=>x&&/^[A-Z]{2}$/.test(x.pais)).map(x=>({pais:x.pais,jogadores:nInt(x.jogadores,0,1e9,0),musgo:Number.isFinite(x.musgo)?Math.max(0,x.musgo):0,
     cores:Array.isArray(x.cores)?x.cores.filter(c=>Array.isArray(c)&&SPEC[c[0]|0]&&Number.isFinite(c[1])&&c[1]>0).slice(0,4).map(c=>[c[0]|0,+c[1]]):[]})):[];
-  try{NET.mundo=san(await api('tm_mundo2',{}))}catch(e){try{NET.mundo=san(await api('tm_mundo',{}))}catch(e2){NET.mundoErr=errMsg(e2)}}
+  try{NET.mundo=san(await api('tm_mundo_cores',{}))}catch(e){try{NET.mundo=san(await api('tm_mundo',{}))}catch(e2){NET.mundoErr=errMsg(e2)}}
   if(sheetName==='mundo'){sheetSig='';renderSheet(true);globeMount()}
 }
 let globe=null;
@@ -14106,7 +14106,7 @@ function frame(t){
   tick(dt);draw();guideTick();
 }
 /* versões novas: quando o jogo muda no servidor, guarda o progresso e recarrega a página */
-const BUILD='f86bd9bbcf4c',UKEY='tapmoss.upd';const UPD={on:false,go:false,at:0};
+const BUILD='d13ef88524b4',UKEY='tapmoss.upd';const UPD={on:false,go:false,at:0};
 // the new version downloads in the background while the game goes on; the reload only comes once the whole page is here,
 // so a slow network never leaves a half-built page on screen. The offline helper (sw.js) hands this copy over at the reload.
 const NEXTC='tapmoss-next',pgKey=()=>{let p=location.pathname.replace(/index\.html$/,'');if(!p.endsWith('/'))p+='/';return p};
@@ -16374,7 +16374,7 @@ function hsBuy(id,vi){const d=HSF[id];if(!d||d.evo||!hsOwn())return;const c=S.ca
 function hsFromInv(i){const c=S.casa,a=c.inv[i];if(!a)return;const room=c.r[HSV.ri];if(!hsFree(room,a[0])){toast(_t('Não há espaço nesta divisão.'));return}c.inv.splice(i,1);closeSheet();SND.play('place');hsPut(a[0],a[1])}
 /* ---------- friends' houses ---------- */
 async function hsVisitOpen(){const v=visiting;if(!v||HSR||HSV.busy)return;HSV.busy=true;let r=null;
-  try{r=v.pub?await api('tm_ver_casa2',v.rank?{p_alvo:v.id.slice(2),p_jardim:null}:{p_alvo:null,p_jardim:v.id.slice(2)}):await api('tm_perfil_casa',{p_id:CONTA.id,p_seg:CONTA.seg,p_outro:v.id})}catch(e){toast(e.code==='jardim'?_t('Este jardim não está disponível.'):errMsg(e))}finally{HSV.busy=false}
+  try{r=v.pub?await api('tm_ver_casa_pub',v.rank?{p_alvo:v.id.slice(2),p_jardim:null}:{p_alvo:null,p_jardim:v.id.slice(2)}):await api('tm_perfil_casa',{p_id:CONTA.id,p_seg:CONTA.seg,p_outro:v.id})}catch(e){toast(e.code==='jardim'?_t('Este jardim não está disponível.'):errMsg(e))}finally{HSV.busy=false}
   if(visiting!==v)return;const c=hsSan(r&&r.casa);if(!c){toast(_t('{0} ainda não tem casa.',v.nome));return}
   c.col=hsSanCol(r.casa.col);HSR=true;HSV.vis={c,look:v.pub?v.look:S.av.look,nome:v.nome,id:v.id,pub:!!v.pub};HSV.edit=null;HSV.c=c;HSV.ri=0;HSV.fora=true;HSV.trans=1;HSV.fx.length=0;hsPlaceAv();
   if(sheetName)closeSheet();histPush();$('#app').classList.add('casamode','casavis');SND.play('door');ev('casa','visitar');hsUI()}
