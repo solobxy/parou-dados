@@ -1,0 +1,52 @@
+--- https://tapmoss.com/contact/ -> 200 0.591500s 12793B
+HTTP/2 200 
+cache-control: no-cache
+content-security-policy: default-src 'self'; script-src 'self' 'unsafe-inline' https:; style-src 'self' 'unsafe-inline' https:; img-src 'self' data: https:; font-src 'self' data: https:; connect-src 'self' https:; frame-src https:; worker-src 'self'; manifest-src 'self'; object-src 'none'; form-action 'self'; frame-ancestors 'none'; base-uri 'none'
+content-type: text/html; charset=utf-8
+permissions-policy: geolocation=(self), camera=(), microphone=(), payment=(), usb=(), interest-cohort=()
+referrer-policy: strict-origin-when-cross-origin
+strict-transport-security: max-age=31536000
+x-content-type-options: nosniff
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Contact · tapmoss</title>
+<meta name="description" content="How to reach the maker of tapmoss: questions, ideas, problems with the game or your account.">
+<link rel="alternate" hreflang="en" href="https://tapmoss.com/contact/"><link rel="alternate" hreflang="pt" href="https://tapmoss.com/pt/contact/"><link rel="alternate" hreflang="x-default" href="https://tapmoss.com/contact/"><link rel="canonical" href="https://tapmoss.com/contact/">
+
+<link rel="manifest" href="/manifest.json"><link rel="icon" href="/favicon.ico" sizes="48x48"><link rel="icon" type="image/png" sizes="96x96" href="/favicon-96.png"><link rel="icon" type="image/png" sizes="192x192" href="/tapmoss-192.png"><link rel="apple-touch-icon" href="/tapmoss-180.png">
+<meta name="theme-color" content="#0b120d"><meta name="color-scheme" content="dark"><meta name="application-name" content="tapmoss"><meta name="apple-mobile-web-app-title" content="tapmoss">
+<meta property="og:type" content="website"><meta property="og:site_name" content="tapmoss"><meta property="og:locale" content="en_US"><meta property="og:locale:alternate" content="pt_PT"><meta property="og:locale:alternate" content="es_ES"><meta property="og:locale:alternate" content="fr_FR"><meta property="og:locale:alternate" content="de_DE"><meta property="og:locale:alternate" content="ja_JP"><meta property="og
+--- https://tapmoss.com/pt/contact/ -> 200 0.564256s 12861B
+HTTP/2 200 
+cache-control: no-cache
+content-security-policy: default-src 'self'; script-src 'self' 'unsafe-inline' https:; style-src 'self' 'unsafe-inline' https:; img-src 'self' data: https:; font-src 'self' data: https:; connect-src 'self' https:; frame-src https:; worker-src 'self'; manifest-src 'self'; object-src 'none'; form-action 'self'; frame-ancestors 'none'; base-uri 'none'
+content-type: text/html; charset=utf-8
+permissions-policy: geolocation=(self), camera=(), microphone=(), payment=(), usb=(), interest-cohort=()
+referrer-policy: strict-origin-when-cross-origin
+strict-transport-security: max-age=31536000
+x-content-type-options: nosniff
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Contacto · tapmoss</title>
+<meta name="description" content="Como falar com quem faz o tapmoss: dúvidas, ideias, problemas no jogo ou na conta.">
+<link rel="alternate" hreflang="en" href="https://tapmoss.com/contact/"><link rel="alternate" hreflang="pt" href="https://tapmoss.com/pt/contact/"><link rel="alternate" hreflang="x-default" href="https://tapmoss.com/contact/"><link rel="canonical" href="https://tapmoss.com/pt/contact/">
+
+<link rel="manifest" href="/manifest.json"><link rel="icon" href="/favicon.ico" sizes="48x48"><link rel="icon" type="image/png" sizes="96x96" href="/favicon-96.png"><link rel="icon" type="image/png" sizes="192x192" href="/tapmoss-192.png"><link rel="apple-touch-icon" href="/tapmoss-180.png">
+<meta name="theme-color" content="#0b120d"><meta name="color-scheme" content="dark"><meta name="application-name" content="tapmoss"><meta name="apple-mobile-web-app-title" content="tapmoss">
+<meta property="og:type" content="website"><meta property="og:site_name" content="tapmoss"><meta property="og:locale" content="pt_PT"><meta property="og:locale:alternate" content="en_US"><meta property="og:locale:alternate" content="es_ES"><meta property="og:locale:alternate" content="fr_FR"><meta property="og:locale:alternate" content="de_DE"><meta property="og:locale:alternate" content="ja_JP"><meta property="og:l
+--- https://tapmoss.com/ads.txt -> 200 0.415394s 59B
+HTTP/2 200 
+content-security-policy: default-src 'self'; script-src 'self' 'unsafe-inline' https:; style-src 'self' 'unsafe-inline' https:; img-src 'self' data: https:; font-src 'self' data: https:; connect-src 'self' https:; frame-src https:; worker-src 'self'; manifest-src 'self'; object-src 'none'; form-action 'self'; frame-ancestors 'none'; base-uri 'none'
+content-type: text/plain; charset=utf-8
+permissions-policy: geolocation=(self), camera=(), microphone=(), payment=(), usb=(), interest-cohort=()
+referrer-policy: strict-origin-when-cross-origin
+strict-transport-security: max-age=31536000
+x-content-type-options: nosniff
+google.com, pub-1822590300790787, DIRECT, f08c47fec0942fa0
+
