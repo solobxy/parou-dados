@@ -5,6 +5,7 @@
 // - o mesmo nome a poucos metros (um poste por sentido, vários operadores) é uma só sugestão;
 // - sem a tabela de locais (base antiga) continua a dar as paragens;
 // - «aeroporto ponta delgada», «continente maia»: o nome e a terra (sítio) em separado;
+// - «mar shopping» encontra o MarShopping; o nome exato vem antes dos que só o contêm;
 // - o aeroporto leva à porta (estação ou paragem «Aeroporto»), não ao meio das pistas onde o mapa o põe.
 // Monta uma base pequena com as funções da própria app. Uso: APP=<pasta da app> tsx auditoria/pesquisa-locais.mjs
 import fs from 'node:fs';
@@ -64,6 +65,10 @@ const LOCAIS = [
   ['Aeroporto João Paulo II', 'aeroporto', 'Ponta Delgada', 37.7427, -25.6997, 0.98, ''],
   ['Continente', 'supermercado', 'Travagem, Maia', 41.2200, -8.5620, 0.30, ''],
   ['Continente', 'supermercado', 'Odivelas', 38.7930, -9.1730, 0.30, ''],
+  ['MarShopping', 'centro_comercial', 'Matosinhos', 41.2088, -8.6870, 0.77, ''],
+  ['Marinha Grande', 'cidade', '', 39.7496, -8.9299, 1.0, ''],
+  ['Avenida da Liberdade', 'praca', 'Santa Justa, Lisboa', 38.7166, -9.1418, 0.48, ''],
+  ['AVANI Avenida Liberdade Lisbon Hotel', 'hotel', 'Coração de Jesus, Lisboa', 38.7204, -9.1474, 0.75, ''],
 ];
 const ins = db.prepare('INSERT INTO locais VALUES (?, ?, ?, ?, ?, ?, ?, ?)');
 const insF = db.prepare('INSERT INTO locais_fts (rowid, texto) VALUES (?, ?)');
@@ -106,6 +111,10 @@ r = await sugestoes('aeroporto', ...LX);
 const aero = r.find((x) => x.title === 'Aeroporto Humberto Delgado');
 const dPorta = aero ? Math.hypot((aero.latitude - 38.7686) * 111000, (aero.longitude + 9.1283) * 87000) : Infinity;
 ok('[porta] o aeroporto de Lisboa leva à estação Aeroporto (à porta), não às pistas', dPorta < 50, `${Math.round(dPorta)} m`);
+r = await sugestoes('mar shopping');
+ok('[uma palavra] «mar shopping» encontra o MarShopping (no mapa é uma palavra só)', r[0]?.title === 'MarShopping', JSON.stringify(titulos(r)));
+r = await sugestoes('avenida da liberdade', ...LX);
+ok('[nome exato] «avenida da liberdade» dá a avenida antes do hotel que tem o nome dela', r[0]?.title === 'Avenida da Liberdade', JSON.stringify(titulos(r)));
 const t0 = Date.now();
 for (let i = 0; i < 50; i++) await sugestoes(i % 2 ? 'continente' : 'colombo', ...LX);
 ok('[rapidez] 50 pesquisas em menos de 1 s', Date.now() - t0 < 1000, `${Date.now() - t0} ms`);
