@@ -1,7 +1,7 @@
 {
-  "built_at": "2026-11-08T10:47:24.759163+00:00",
-  "db_bytes": 603234304,
-  "gz_bytes": 117335645,
+  "built_at": "2026-11-08T15:23:49.398629+00:00",
+  "db_bytes": 635301888,
+  "gz_bytes": 131912034,
   "totals": {
     "lines": 2662,
     "stops": 46398,
@@ -584,7 +584,7 @@
     }
   ],
   "desenhos": {
-    "bytes": 5690558,
+    "bytes": 7773176,
     "por_operador": {
       "carris": {
         "viagens": 24925,
@@ -598,7 +598,8 @@
       },
       "cp": {
         "viagens": 1672,
-        "com_desenho": 0
+        "com_desenho": 1672,
+        "desenhos": 248
       },
       "fertagus": {
         "viagens": 260,
@@ -633,7 +634,7 @@
       "metro_porto": {
         "viagens": 2941,
         "com_desenho": 2941,
-        "desenhos": 12
+        "desenhos": 20
       },
       "mobiave": {
         "viagens": 2690,
@@ -714,9 +715,14 @@
         "viagens": 1048,
         "com_desenho": 1048,
         "desenhos": 305
+      },
+      "unir": {
+        "viagens": 0,
+        "com_desenho": 0,
+        "desenhos": 788
       }
     },
-    "unir_linhas_com_desenho": 0
+    "unir_linhas_com_desenho": 788
   },
   "verificacao": {
     "data_hoje": "2026-11-08",
@@ -901,12 +907,12 @@
           "total": 397
         },
         "servicos_com_data_hoje": [
-          "EDF",
-          "CDF",
+          "DDF",
           "ADF",
-          "FDF",
           "BDF",
-          "DDF"
+          "FDF",
+          "EDF",
+          "CDF"
         ],
         "viagens_por_servico": [
           {
@@ -961,5 +967,5 @@
       }
     }
   },
-  "duration_s": 312
+  "duration_s": 209
 }
