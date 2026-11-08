@@ -1,12 +1,12 @@
 {
-  "built_at": "2026-11-08T16:33:01.428915+00:00",
-  "db_bytes": 644276224,
-  "gz_bytes": 133294219,
+  "built_at": "2026-11-08T19:46:17.577764+00:00",
+  "db_bytes": 644288512,
+  "gz_bytes": 133311931,
   "totals": {
     "lines": 2662,
     "stops": 46398,
     "trips": 127782,
-    "stop_times": 3886619,
+    "stop_times": 3886690,
     "operators": 30,
     "operators_ok": 27,
     "operators_desatualizados": 2
@@ -198,7 +198,7 @@
       "last_error": null,
       "servicos_associados": null,
       "servicos_sem_calendario": null,
-      "viagens_hoje": 799,
+      "viagens_hoje": 0,
       "viagens_amanha": 2104,
       "dias_uteis_sem_servico": 0
     },
@@ -907,12 +907,12 @@
           "total": 397
         },
         "servicos_com_data_hoje": [
-          "EDF",
+          "CDF",
+          "ADF",
           "FDF",
           "BDF",
-          "CDF",
-          "DDF",
-          "ADF"
+          "EDF",
+          "DDF"
         ],
         "viagens_por_servico": [
           {
@@ -967,5 +967,5 @@
       }
     }
   },
-  "duration_s": 229
+  "duration_s": 239
 }
