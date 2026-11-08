@@ -729,8 +729,10 @@ async function seletor(browser) {
   const mundo = criarMundo({ xParado: 70 });
   const { ctx, p, erros } = await abrir(browser, { tema: 'claro', mundo });
   try {
-    await p.locator('[data-teste="botao-tema"]:visible').first().click();
+    // O tema está no menu do topo (junto com o idioma e o instalar)
+    await p.locator('[data-teste="botao-menu"]:visible').first().click();
     await p.waitForSelector('[data-teste="menu-tema"]', { timeout: 5000 });
+    for (const l of ['pt', 'en', 'de', 'fr']) ok(`${rot} o menu tem o idioma «${l}»`, (await p.locator(`[data-teste="idioma-${l}"]`).count()) === 1);
     for (const id of ['claro', 'escuro', 'ambar', 'porto']) ok(`${rot} o seletor tem «${id}»`, (await p.locator(`[data-teste="tema-${id}"]`).count()) === 1);
     await p.screenshot({ path: `${SAIDA}/seletor_temas.png` }).catch(() => {});
     ok(`${rot} o tema azul chama-se só «Azul»`, ((await p.locator('[data-teste="tema-porto"]').innerText()).split('\n')[0] || '').trim() === 'Azul', (await p.locator('[data-teste="tema-porto"]').innerText()).split('\n')[0]);

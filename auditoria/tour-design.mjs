@@ -58,7 +58,12 @@ async function foto(p, nome, extra = {}) {
   console.log(nome, m.scrollLateral ? 'SCROLL-LATERAL' : '', `alvos<40: ${(m.alvosPequenos || []).length}`, `cortados: ${(m.cortados || []).length}`);
 }
 const ir = async (p, caminho, ms = 3500) => { try { await p.goto(BASE + caminho, { waitUntil: 'load', timeout: 60000 }); } catch (e) { rel.consola.push('goto ' + caminho + ' ' + String(e).slice(0, 120)); } await p.waitForTimeout(ms); };
-const tocar = async (p, loc, ms = 1500) => { try { await loc.first().click({ timeout: 6000 }); await p.waitForTimeout(ms); return true; } catch { return false; } };
+const tocar = async (p, loc, ms = 1500) => {
+  try { await loc.first().click({ timeout: 6000 }); }
+  catch { try { await loc.first().click({ timeout: 4000, force: true }); } catch { return false; } }
+  await p.waitForTimeout(ms);
+  return true;
+};
 
 (async () => {
   const browser = await chromium.launch({ args: ['--no-sandbox'] });
@@ -77,12 +82,13 @@ const tocar = async (p, loc, ms = 1500) => { try { await loc.first().click({ tim
       await campo.first().fill('colombo');
       await p.waitForTimeout(1800);
       await foto(p, `${k}_02_pesquisa`);
-      if (await tocar(p, p.locator('button:has-text("Centro Comercial Colombo")'), 7000)) {
+      if (await tocar(p, p.locator('button:visible:has-text("Centro Comercial Colombo")'), 7000)) {
         await foto(p, `${k}_03_opcoes`);
         if (completo) await foto(p, `${k}_03b_opcoes_inteiro`, { inteira: true });
         if (await tocar(p, p.locator('[data-teste="opcao-rota"]'), 2500)) await foto(p, `${k}_04_opcao_aberta`);
       }
     }
+    if (!completo && w === 390) { await ir(p, '/', 4000); if (await tocar(p, p.locator('[data-teste="botao-menu"]:visible'), 900)) await foto(p, `${k}_23_menu`); }
     // 3. Paragem perto (detalhe)
     await ir(p, '/', 6000);
     if (await tocar(p, p.locator('[data-teste="paragem-perto"]'), 3500)) await foto(p, `${k}_05_paragem`);
@@ -102,6 +108,8 @@ const tocar = async (p, loc, ms = 1500) => { try { await loc.first().click({ tim
       await ir(p, '/', 4000);
       if (w >= 1024) { if (await tocar(p, p.locator('button:has-text("Mais")'), 800)) await foto(p, `${k}_19_menu_mais`); }
       if (await tocar(p, p.locator('[data-teste="botao-entrar"]'), 1500)) await foto(p, `${k}_20_entrar`);
+      await ir(p, '/', 4000);
+      if (await tocar(p, p.locator('[data-teste="botao-menu"]:visible'), 900)) await foto(p, `${k}_23_menu`);
       await ir(p, '/', 4000);
       if (await tocar(p, p.locator('[aria-label="Abrir pesquisa"]'), 1200)) await foto(p, `${k}_21_pesquisa_geral`);
       await ir(p, '/', 4000);
