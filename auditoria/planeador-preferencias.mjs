@@ -85,6 +85,14 @@ const CENARIOS = {};
   linha(FEEDS.metro, 1, 'M', [[mA, 0], [mZ, 42]], 10, 5);
   CENARIOS.semana = { O: ponto(c, 0, 0), D: ponto(c, 6.5, -6) };
 }
+// 3. Uma só linha (autocarro a cada 15 min): tem de aparecer também o seguinte, para quem perde o primeiro
+{
+  const c = CIDADE(2);
+  const a = novaParagem(FEEDS.bus, 'b2:A', 'Praça', ponto(c, 0.05, 0));
+  const z = novaParagem(FEEDS.bus, 'b2:Z', 'Hospital', ponto(c, 4, -4));
+  linha(FEEDS.bus, 3, '77', [[a, 0], [z, 20]], 15, 4);
+  CENARIOS.umaLinha = { O: ponto(c, 0, 0), D: ponto(c, 4.03, -4) };
+}
 B.batchInsertStops(paragens);
 for (let i = 0; i < 400 && !I.indicePronto(); i++) await new Promise((r) => setTimeout(r, 50));
 ok('o motor em memória do planeador ficou pronto', !!I.indicePronto(), I.estadoIndice);
@@ -113,6 +121,17 @@ const plano = (n) => P.planearViagem(CENARIOS[n].O.lat, CENARIOS[n].O.lon, CENAR
   ok('[semana] o metro direto vem em primeiro (melhor opção)', r.routes[0] === metro, resumo(r));
   if (metro) ok('[semana] o metro está marcado "Melhor opção"', metro.badgeLabel === 'Melhor opção' && metro.highlight === 'melhor', `${metro.badgeLabel} ${metro.highlight}`);
   if (bus) ok('[semana] os autocarros, que chegam antes, ficam marcados "Mais rápido"', /^Mais rápido/.test(bus.badgeLabel) && bus.highlight === 'mais_rapido', `${bus.badgeLabel} ${bus.highlight}`);
+}
+
+{
+  const r = await plano('umaLinha');
+  const tr = r.routes.filter((o) => o.id !== 'a-pe');
+  ok('[uma linha] além do primeiro autocarro aparece o seguinte', tr.length >= 2, resumo(r));
+  if (tr.length >= 2) {
+    const h = (x) => { const [a, b] = x.departureTime.split(':').map(Number); return a * 60 + b; };
+    ok('[uma linha] o seguinte sai pelo menos 3 min depois', h(tr[1]) - h(tr[0]) >= 3, `${tr[0].departureTime} → ${tr[1].departureTime}`);
+    ok('[uma linha] o primeiro (o que sai antes) vem à frente', h(tr[0]) < h(tr[1]));
+  }
 }
 
 // ---------------------------------------------------------------- a mesma regra na app (ordem da lista)
