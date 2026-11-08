@@ -93,6 +93,26 @@ const CENARIOS = {};
   linha(FEEDS.bus, 3, '77', [[a, 0], [z, 20]], 15, 4);
   CENARIOS.umaLinha = { O: ponto(c, 0, 0), D: ponto(c, 4.03, -4) };
 }
+// 4. Viagens que se ultrapassam (um expresso passa à frente de uma viagem lenta que hoje não circula): o motor não pode
+//    apanhar uma viagem que já passou (Baixa → Colombo dava autocarros com horas a andar para trás, marcado «Mais rápido»)
+{
+  const c = CIDADE(3);
+  B.batchInsertCalendar([{ feed_id: FEEDS.bus.id, service_id: 'nunca', monday: 0, tuesday: 0, wednesday: 0, thursday: 0, friday: 0, saturday: 0, sunday: 0, start_date: '20200101', end_date: '20991231' }]);
+  const o = novaParagem(FEEDS.bus, 'b3:O', 'Largo', ponto(c, 0.05, 0));
+  const xA = novaParagem(FEEDS.bus, 'b3:XA', 'Início X', ponto(c, 0.05, -3));
+  const cc = novaParagem(FEEDS.bus, 'b3:C', 'Cruzamento', ponto(c, 3, 0));
+  const cc2 = novaParagem(FEEDS.bus, 'b3:C2', 'Cruzamento (outro lado)', ponto(c, 3.05, 0));
+  const dd = novaParagem(FEEDS.bus, 'b3:D', 'Fim', ponto(c, 6, 3));
+  // linha Y: Largo → Cruzamento, chega às 12:30 (sai às 12:05)
+  linha(FEEDS.bus, 3, 'Y', [[o, 0], [cc, 25]], 60, 7 * 60 + 5);
+  // linha X: Início X → Cruzamento (outro lado) → Fim. No Cruzamento: 12:00, 12:10, 12:40 (lenta, não circula hoje), 12:25 (expresso)
+  const rota = `${FEEDS.bus.id}:X`;
+  B.batchInsertRoutes([{ route_id: rota, feed_id: FEEDS.bus.id, route_short_name: 'X', route_long_name: 'X teste', route_type: 3 }]);
+  const viagens = [['X1', 'todos', 11 * 60 + 40, 20, 30], ['X2', 'todos', 11 * 60 + 50, 20, 30], ['X3', 'nunca', 11 * 60 + 55, 45, 55], ['X4', 'todos', 12 * 60 + 15, 10, 15], ['X5', 'todos', 12 * 60 + 30, 20, 30]];
+  B.batchInsertTrips(viagens.map(([id, svc]) => ({ trip_id: `${rota}:${id}`, feed_id: FEEDS.bus.id, route_id: rota, service_id: svc, trip_headsign: 'Fim' })));
+  B.batchInsertStopTimes(viagens.flatMap(([id, , ini, aC, aD]) => [[xA, 0], [cc2, aC], [dd, aD]].map(([st, m], i) => ({ feed_id: FEEDS.bus.id, trip_id: `${rota}:${id}`, stop_id: st, arrival_secs: (ini + m) * 60, departure_secs: (ini + m) * 60, stop_sequence: i + 1 }))));
+  CENARIOS.ultrapassa = { O: ponto(c, 0, 0), D: ponto(c, 6.03, 3) };
+}
 B.batchInsertStops(paragens);
 for (let i = 0; i < 400 && !I.indicePronto(); i++) await new Promise((r) => setTimeout(r, 50));
 ok('o motor em memória do planeador ficou pronto', !!I.indicePronto(), I.estadoIndice);
@@ -132,6 +152,17 @@ const plano = (n) => P.planearViagem(CENARIOS[n].O.lat, CENARIOS[n].O.lon, CENAR
     ok('[uma linha] o seguinte sai pelo menos 3 min depois', h(tr[1]) - h(tr[0]) >= 3, `${tr[0].departureTime} → ${tr[1].departureTime}`);
     ok('[uma linha] o primeiro (o que sai antes) vem à frente', h(tr[0]) < h(tr[1]));
   }
+}
+
+{
+  const r = await plano('ultrapassa');
+  const h = (x) => { const [a, b] = String(x || '0:0').split(':').map(Number); return a * 60 + b; };
+  const voltaAtras = r.routes.filter((o) => {
+    const tr = o.legs.filter((l) => l.mode === 'TRANSIT');
+    return tr.some((l, i) => i > 0 && h(l.departureTime) < h(tr[i - 1].arrivalTime));
+  });
+  ok('[ultrapassa] há opções', r.routes.some((o) => o.id !== 'a-pe'), resumo(r));
+  ok('[ultrapassa] nenhuma opção apanha um autocarro que já passou', voltaAtras.length === 0, voltaAtras.map((o) => o.legs.filter((l) => l.mode === 'TRANSIT').map((l) => `${l.lineCode} ${l.departureTime}→${l.arrivalTime}`).join(' > ')).join(' | '));
 }
 
 // ---------------------------------------------------------------- a mesma regra na app (ordem da lista)
