@@ -3,7 +3,9 @@
 // - entre iguais ganha o mais perto (o Continente da rua de quem procura);
 // - quem escreve só o tipo ("praia") vê esse tipo primeiro; "colombo shopping" encontra o Centro Comercial Colombo;
 // - o mesmo nome a poucos metros (um poste por sentido, vários operadores) é uma só sugestão;
-// - sem a tabela de locais (base antiga) continua a dar as paragens.
+// - sem a tabela de locais (base antiga) continua a dar as paragens;
+// - «aeroporto ponta delgada», «continente maia»: o nome e a terra (sítio) em separado;
+// - o aeroporto leva à porta (estação ou paragem «Aeroporto»), não ao meio das pistas onde o mapa o põe.
 // Monta uma base pequena com as funções da própria app. Uso: APP=<pasta da app> tsx auditoria/pesquisa-locais.mjs
 import fs from 'node:fs';
 import os from 'node:os';
@@ -28,6 +30,9 @@ B.batchInsertStops([
   { stop_id: 'bus_t:3', feed_id: 'bus_t', stop_name: 'Gare do Oriente', stop_lat: 38.7681, stop_lon: -9.0992 }, // outro sentido, 30 m
   { stop_id: 'metro_t:9', feed_id: 'metro_t', stop_name: 'Oriente', stop_lat: 38.7678, stop_lon: -9.0995 },
   { stop_id: 'bus_t:4', feed_id: 'bus_t', stop_name: 'Praia Nova', stop_lat: 38.70, stop_lon: -9.20 },
+  // à porta do terminal de Lisboa: a estação de metro e uma paragem de autocarro (o ponto do mapa fica a ~1 km, nas pistas)
+  { stop_id: 'metro_t:20', feed_id: 'metro_t', stop_name: 'Aeroporto', stop_lat: 38.7686, stop_lon: -9.1283 },
+  { stop_id: 'bus_t:21', feed_id: 'bus_t', stop_name: 'Aeroporto (Partidas)', stop_lat: 38.7700, stop_lon: -9.1290 },
 ]);
 
 const sugestoes = (q, lat, lon) => E.sugestoesLocais(q, lat, lon);
@@ -56,6 +61,9 @@ const LOCAIS = [
   ['Continente Bom Dia', 'supermercado', 'Arroios, Lisboa', 38.7260, -9.1350, 0.30, ''],
   ['Continente Bom Dia', 'supermercado', 'Bolhão, Porto', 41.1490, -8.6060, 0.30, ''],
   ['Rua Cristóvão Colombo', 'rua', 'Odivelas', 38.7900, -9.1800, 0.09, ''],
+  ['Aeroporto João Paulo II', 'aeroporto', 'Ponta Delgada', 37.7427, -25.6997, 0.98, ''],
+  ['Continente', 'supermercado', 'Travagem, Maia', 41.2200, -8.5620, 0.30, ''],
+  ['Continente', 'supermercado', 'Odivelas', 38.7930, -9.1730, 0.30, ''],
 ];
 const ins = db.prepare('INSERT INTO locais VALUES (?, ?, ?, ?, ?, ?, ?, ?)');
 const insF = db.prepare('INSERT INTO locais_fts (rowid, texto) VALUES (?, ?)');
@@ -90,6 +98,14 @@ ok('[tipo] «praia» perto do palácio Praia e Monforte: a praia vem primeiro', 
 ok('[tipo] cada local traz o tipo para a app traduzir', r.find((x) => x.title === 'Praia de Algés')?.category === 'praia');
 r = await sugestoes('aer', ...LX);
 ok('[a escrever] «aer» já mostra o aeroporto', r[0]?.title === 'Aeroporto Humberto Delgado', JSON.stringify(titulos(r)));
+r = await sugestoes('aeroporto ponta delgada');
+ok('[terra] «aeroporto ponta delgada» encontra o aeroporto de Ponta Delgada', r[0]?.title === 'Aeroporto João Paulo II', JSON.stringify(titulos(r)));
+r = await sugestoes('continente maia', ...LX);
+ok('[terra] «continente maia» (em Lisboa) dá o Continente da Maia primeiro', r[0]?.place?.includes('Maia'), JSON.stringify(r.slice(0, 3).map((x) => `${x.title} ${x.place}`)));
+r = await sugestoes('aeroporto', ...LX);
+const aero = r.find((x) => x.title === 'Aeroporto Humberto Delgado');
+const dPorta = aero ? Math.hypot((aero.latitude - 38.7686) * 111000, (aero.longitude + 9.1283) * 87000) : Infinity;
+ok('[porta] o aeroporto de Lisboa leva à estação Aeroporto (à porta), não às pistas', dPorta < 50, `${Math.round(dPorta)} m`);
 const t0 = Date.now();
 for (let i = 0; i < 50; i++) await sugestoes(i % 2 ? 'continente' : 'colombo', ...LX);
 ok('[rapidez] 50 pesquisas em menos de 1 s', Date.now() - t0 < 1000, `${Date.now() - t0} ms`);
