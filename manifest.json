@@ -1,12 +1,12 @@
 {
-  "built_at": "2026-11-08T15:23:49.398629+00:00",
-  "db_bytes": 635301888,
-  "gz_bytes": 131912034,
+  "built_at": "2026-11-08T16:33:01.428915+00:00",
+  "db_bytes": 644276224,
+  "gz_bytes": 133294219,
   "totals": {
     "lines": 2662,
     "stops": 46398,
-    "trips": 125359,
-    "stop_times": 3831240,
+    "trips": 127782,
+    "stop_times": 3886619,
     "operators": 30,
     "operators_ok": 27,
     "operators_desatualizados": 2
@@ -265,18 +265,18 @@
       "status": "OK",
       "lines": 230,
       "stops": 1529,
-      "trips": 4506,
+      "trips": 6929,
       "valid_until": "2026-11-12",
       "validade": "a_caducar",
       "dias_validade": 4,
-      "horario_prolongado": false,
+      "horario_prolongado": true,
       "url": "https://gtfs-api.smtuc.pt/api/static/",
-      "last_error": null,
+      "last_error": "O operador não atualizou as datas do calendário para alguns dias (10 dias sem horário publicado); a usar o horário semanal mais recente.",
       "servicos_associados": null,
       "servicos_sem_calendario": null,
       "viagens_hoje": 790,
       "viagens_amanha": 2407,
-      "dias_uteis_sem_servico": 1
+      "dias_uteis_sem_servico": 0
     },
     {
       "id": "vamus",
@@ -652,8 +652,8 @@
         "desenhos": 26
       },
       "smtuc": {
-        "viagens": 4506,
-        "com_desenho": 4506,
+        "viagens": 6929,
+        "com_desenho": 6929,
         "desenhos": 442
       },
       "sobe_desce_tavira": {
@@ -907,12 +907,12 @@
           "total": 397
         },
         "servicos_com_data_hoje": [
-          "DDF",
-          "ADF",
-          "BDF",
-          "FDF",
           "EDF",
-          "CDF"
+          "FDF",
+          "BDF",
+          "CDF",
+          "DDF",
+          "ADF"
         ],
         "viagens_por_servico": [
           {
@@ -967,5 +967,5 @@
       }
     }
   },
-  "duration_s": 209
+  "duration_s": 229
 }
