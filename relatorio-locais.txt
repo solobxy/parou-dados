@@ -1,0 +1,103 @@
+Lidos 1217551 objetos; 308 concelhos; 311902 locais
+  rua: 212135
+  localidade: 24347
+  igreja: 11097
+  bairro: 6850
+  escola: 6492
+  monumento: 3933
+  alojamento: 3544
+  aldeia: 3520
+  supermercado: 3373
+  pico: 2918
+  hotel: 2863
+  atracao: 2857
+  parque: 2535
+  clinica: 2364
+  servico_publico: 2128
+  praca: 2081
+  camara: 1963
+  pavilhao: 1739
+  miradouro: 1404
+  museu: 1238
+  jardim: 1130
+  praia: 1018
+  policia: 946
+  correios: 853
+  mercado: 657
+  cultura: 626
+  vila: 606
+  castelo: 594
+  bombeiros: 563
+  centro_comercial: 541
+  biblioteca: 521
+  loja: 449
+  estadio: 436
+  campismo: 388
+  teatro: 384
+  reserva: 338
+  hospital: 337
+  tribunal: 267
+  universidade: 260
+  grande_armazem: 188
+  terminal_autocarros: 176
+  cabo: 173
+  cidade: 159
+  cinema: 154
+  marina: 141
+  golfe: 102
+  aeroporto: 100
+  terminal_fluvial: 94
+  faculdade: 91
+  parque_aquatico: 56
+  centro_saude: 53
+  parque_tematico: 45
+  ilha: 33
+  zoo: 31
+  aquario: 9
+  palacio: 2
+Os 40 mais importantes:
+  1.00 cidade             Abrantes ()
+  1.00 aeroporto          Aeroporto Francisco Sá Carneiro (Vila do Conde)
+  1.00 aeroporto          Aeroporto Gago Coutinho (Faro)
+  1.00 aeroporto          Aeroporto Humberto Delgado (Loures)
+  1.00 aeroporto          Aeroporto Internacional da Madeira - Cristiano Ronaldo (Santa Cruz)
+  1.00 aeroporto          Aeroporto João Paulo II (Ponta Delgada)
+  1.00 cidade             Agualva-Cacém (Sintra)
+  1.00 cidade             Albergaria-a-Velha ()
+  1.00 cidade             Albufeira ()
+  1.00 cidade             Alcobaça ()
+  1.00 cidade             Alcácer do Sal ()
+  1.00 cidade             Alfena (Valongo)
+  1.00 cidade             Almada ()
+  1.00 cidade             Almancil (Loulé)
+  1.00 cidade             Almeirim ()
+  1.00 cidade             Alverca do Ribatejo (Vila Franca de Xira)
+  1.00 cidade             Amadora ()
+  1.00 cidade             Amarante ()
+  1.00 cidade             Amora (Seixal)
+  1.00 cidade             Anadia ()
+  1.00 cidade             Angra do Heroísmo ()
+  1.00 cidade             Aveiro ()
+  1.00 cidade             Barcelos ()
+  1.00 cidade             Barreiro ()
+  1.00 cidade             Beja ()
+  1.00 cidade             Borba ()
+  1.00 cidade             Braga ()
+  1.00 cidade             Bragança ()
+  1.00 cidade             Caldas da Rainha ()
+  1.00 cidade             Caniço (Santa Cruz)
+  1.00 cidade             Cantanhede ()
+  1.00 cidade             Cartaxo ()
+  1.00 cidade             Castelo Branco ()
+  1.00 cidade             Chaves ()
+  1.00 cidade             Coimbra ()
+  1.00 cidade             Costa da Caparica (Almada)
+  1.00 cidade             Covilhã ()
+  1.00 cidade             Câmara de Lobos ()
+  1.00 cidade             Elvas ()
+  1.00 cidade             Entroncamento ()
+  verificação «Torre de Belém»: [['Torre de Belém', 'atracao', 'Pedrouços, Lisboa', 38.691439, -9.216035, 0.62, 'Torre de São Vicente de Belém|Torre de São Vicente|Tower of Belém|Torre de São Vicente a Par de Belém']]
+  verificação «Centro Comercial Colombo»: [['Centro Comercial Colombo', 'centro_comercial', 'Carnide, Lisboa', 38.75488, -9.188767, 0.933, '']]
+  verificação «Hospital de São João»: [['Hospital de São João', 'clinica', 'Asprela, Porto', 41.183099, -8.601287, 0.32, '']]
+  verificação «NorteShopping»: [['NorteShopping', 'centro_comercial', 'Azenha de Cima, Matosinhos', 41.180382, -8.655629, 0.928, '']]
+  verificação «Aeroporto Humberto Delgado»: [['Aeroporto Humberto Delgado', 'aeroporto', 'Loures', 38.78953, -9.138408, 1.0, 'Aeroporto da Portela|Aeroporto Internacional de Lisboa Humberto Delgado|Aeroporto Internacional de Lisboa|Aeroporto de Lisboa|Lisbon Airport']]
