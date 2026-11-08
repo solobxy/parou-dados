@@ -98,6 +98,8 @@ RUAS = {"motorway": 0.04, "trunk": 0.12, "primary": 0.16, "secondary": 0.14, "te
         "residential": 0.08, "living_street": 0.08, "pedestrian": 0.12}
 
 AEROPORTOS_GRANDES = {"LIS", "OPO", "FAO", "FNC", "PDL"}
+# Sem localização, "aeroporto" dá os aeroportos pelo número de passageiros (todos chegavam a 1,0 e ficavam por ordem alfabética)
+ORDEM_AEROPORTOS = {"LIS": 1.0, "OPO": 0.995, "FAO": 0.99, "FNC": 0.985, "PDL": 0.98}
 # Lojas grandes que as pessoas procuram pelo nome (o resto das lojas de móveis, bricolage ou desporto não entra)
 MARCAS_LOJA = re.compile(r"(?i)\b(ikea|leroy merlin|decathlon|worten|fnac|media ?markt|conforama|aki|bricomarch[eé]|maxmat|primark|el corte ingl[eé]s|auchan|jumbo|makro|staples|radio popular)\b")
 
@@ -219,6 +221,7 @@ def principal():
                     ruas[chave] = {"nome": nome, "cat": "rua", "lat": lat, "lon": lon, "imp_base": imp, "comp": comp,
                                    "alt": [], "wd": False}
                 continue
+            iata = ""
             if p.get("aeroway") == "aerodrome":
                 # Os grandes aeroportos primeiro; os outros com voos (código IATA) a seguir; aeródromos e pistas pouco
                 iata = str(p.get("iata") or "").upper()
@@ -246,7 +249,7 @@ def principal():
                 except ValueError:
                     pass
             locais.append({"nome": nome, "cat": cat, "lat": lat, "lon": lon, "imp": imp, "alt": alt, "wd": wd,
-                           "cidade": (p.get("addr:city") or "").strip()})
+                           "cidade": (p.get("addr:city") or "").strip(), "iata": iata})
 
     for r in ruas.values():
         imp = r["imp_base"] + min(0.06, 0.02 * math.log10(max(1.0, r["comp"] / 100))) if r["comp"] > 100 else r["imp_base"]
@@ -307,6 +310,8 @@ def principal():
                 partes.append(v)
         sitio = ", ".join(partes[:2])
         imp = max(0.0, min(1.0, loc["imp"]))
+        if loc.get("iata") in ORDEM_AEROPORTOS:
+            imp = ORDEM_AEROPORTOS[loc["iata"]]
         linhas.append([loc["nome"], loc["cat"], sitio, round(loc["lat"], 6), round(loc["lon"], 6), round(imp, 3), "|".join(loc["alt"][:6])])
     # Ordem: os mais importantes primeiro (a pesquisa da app conta com isto: o rowid é a posição)
     linhas.sort(key=lambda x: (-x[5], x[0]))
