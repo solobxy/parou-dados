@@ -151,6 +151,9 @@ DISCOVERY_SKIP = [
 WINDOW_DAYS = 14
 # Dias a prolongar o horário semanal quando o operador não atualiza as datas.
 EXTEND_DAYS = 60
+# Operadores que publicam só as próximas semanas (SMTUC): continua-se o horário semanal até este número de dias depois
+# do fim das datas, se havia serviço na última semana (o ficheiro novo costuma chegar entretanto).
+PONTE_DIAS = 21
 
 ROUTE_TYPE_MODE = {0: "Elétrico", 1: "Metro", 2: "Comboio", 3: "Autocarro", 4: "Barco",
                    5: "Elétrico", 6: "Teleférico", 7: "Funicular", 11: "Autocarro", 12: "Comboio"}
@@ -681,11 +684,31 @@ def ingest_gtfs(conn, feed_id, zip_bytes, today_dt, extend_calendar=False, max_b
         # ou com buracos): usa o mesmo dia da semana mais recente que tinha serviço, escolhendo o
         # mais completo de até 4 semanas (evita copiar um feriado). Feeds expirados só são
         # preenchidos se extend_calendar (operadores marcados com calendario_semanal).
+        # Ponte: as datas acabam dentro da janela (ou acabaram há pouco) e o operador tinha serviço na última semana antes
+        # do fim. Ex.: SMTUC com datas até quinta: sem isto, Coimbra ficava sem autocarros a partir de sexta.
+        ponte = False
+        if v_until and not extend_calendar:
+            try:
+                fim = datetime.date(int(v_until[:4]), int(v_until[4:6]), int(v_until[6:8]))
+                hoje_d = today_dt.date()
+                if (fim - hoje_d).days <= WINDOW_DAYS and (hoje_d - fim).days <= PONTE_DIAS:
+                    dias_com = sum(1 for back in range(7)
+                                   if any(svc_trips.get(x) for x in active_on(
+                                       (fim - datetime.timedelta(days=back)).strftime("%Y%m%d"),
+                                       (fim - datetime.timedelta(days=back)).weekday())))
+                    ponte = dias_com >= 3
+            except ValueError:
+                ponte = False
+
+        def depois_do_fim(ymd):
+            return (datetime.date(int(ymd[:4]), int(ymd[4:6]), int(ymd[6:8]))
+                    - datetime.date(int(v_until[:4]), int(v_until[4:6]), int(v_until[6:8]))).days
+
         filled_days = 0
         for ymd, wd in window_days(today_dt):
             if v_from and ymd < v_from:
                 continue
-            if v_until and ymd > v_until and not extend_calendar:
+            if v_until and ymd > v_until and not extend_calendar and not (ponte and depois_do_fim(ymd) <= PONTE_DIAS):
                 continue
             if any(svc_trips.get(x) for x in active_on(ymd, wd)):
                 continue

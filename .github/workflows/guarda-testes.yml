@@ -41,7 +41,9 @@ jobs:
           node-version: 22
 
       - name: Construtor da base (desenhos dos percursos)
-        run: python3 auditoria/test_formas.py
+        run: |
+          python3 auditoria/test_formas.py
+          python3 auditoria/test_calendario_ponte.py
 
       - name: Instalar e verificar os tipos
         working-directory: app
