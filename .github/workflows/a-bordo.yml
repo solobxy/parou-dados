@@ -111,6 +111,16 @@ jobs:
           APP=$PWD node --import tsx ../auditoria/planeador-modos.mjs 2>&1 | tee ../res/planeador-modos.txt | tail -60
           exit ${PIPESTATUS[0]}
 
+      - name: Testes da pesquisa de destinos, da cache com limite e do idioma do aparelho
+        continue-on-error: true
+        working-directory: app
+        run: |
+          mkdir -p ../res
+          for t in pesquisa-locais cache-limitada idioma-aparelho; do
+            echo "== $t"
+            APP=$PWD node --import tsx ../auditoria/$t.mjs 2>&1 | grep -v "Experimental\|trace-warnings" | tee ../res/$t.txt | tail -40
+          done
+
       - name: Arrancar a app
         working-directory: app
         env:
