@@ -97,6 +97,10 @@ LOCALIDADES = {
 RUAS = {"motorway": 0.04, "trunk": 0.12, "primary": 0.16, "secondary": 0.14, "tertiary": 0.12, "unclassified": 0.08,
         "residential": 0.08, "living_street": 0.08, "pedestrian": 0.12}
 
+AEROPORTOS_GRANDES = {"LIS", "OPO", "FAO", "FNC", "PDL"}
+# Lojas grandes que as pessoas procuram pelo nome (o resto das lojas de móveis, bricolage ou desporto não entra)
+MARCAS_LOJA = re.compile(r"(?i)\b(ikea|leroy merlin|decathlon|worten|fnac|media ?markt|conforama|aki|bricomarch[eé]|maxmat|primark|el corte ingl[eé]s|auchan|jumbo|makro|staples|radio popular)\b")
+
 GRANDES = {"aeroporto", "universidade", "parque", "reserva", "golfe", "praia", "estadio", "parque_tematico", "zoo", "parque_aquatico", "cidade", "vila", "ilha"}
 SEM_LUGAR = {"aeroporto", "cidade", "vila", "ilha", "reserva"}
 
@@ -116,6 +120,8 @@ def tipo_de(p):
     for chave, valores, cat, imp in TIPOS:
         if p.get(chave) in valores:
             return cat, imp
+    if p.get("shop") and MARCAS_LOJA.search(f"{p.get('brand') or ''} {p.get('name') or ''}"):
+        return "loja", 0.5
     if p.get("highway") in RUAS:
         return "rua", RUAS[p["highway"]]
     return None
@@ -214,8 +220,9 @@ def principal():
                                    "alt": [], "wd": False}
                 continue
             if p.get("aeroway") == "aerodrome":
-                # Aeroportos com voos (código IATA) contam muito; aeródromos e pistas pouco
-                imp = 0.95 if p.get("iata") else (0.4 if p.get("icao") else 0.2)
+                # Os grandes aeroportos primeiro; os outros com voos (código IATA) a seguir; aeródromos e pistas pouco
+                iata = str(p.get("iata") or "").upper()
+                imp = 0.98 if iata in AEROPORTOS_GRANDES else (0.7 if iata else (0.35 if p.get("icao") else 0.18))
             if cat in ("parque", "jardim", "praia", "reserva", "golfe", "estadio", "universidade", "hospital", "centro_comercial") and geo.geom_type in ("Polygon", "MultiPolygon"):
                 a = area_m2(geo)
                 if a > 2000:

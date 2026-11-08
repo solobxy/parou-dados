@@ -44,7 +44,7 @@ jobs:
         run: |
           osmium tags-filter portugal.osm.pbf \
             nwr/place \
-            nwr/shop=mall,department_store,supermarket \
+            nwr/shop=mall,department_store,supermarket,furniture,doityourself,hardware,sports,electronics \
             nwr/amenity=hospital,clinic,university,college,school,townhall,courthouse,library,theatre,cinema,arts_centre,exhibition_centre,conference_centre,events_venue,marketplace,bus_station,ferry_terminal,police,fire_station,post_office,embassy,community_centre,public_building,place_of_worship \
             nwr/healthcare=hospital,centre,clinic \
             nwr/tourism=zoo,theme_park,aquarium,museum,gallery,attraction,viewpoint,hotel,hostel,guest_house,apartment,camp_site \
