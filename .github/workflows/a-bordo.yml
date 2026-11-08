@@ -109,7 +109,11 @@ jobs:
         run: |
           mkdir -p ../res
           APP=$PWD node --import tsx ../auditoria/planeador-modos.mjs 2>&1 | tee ../res/planeador-modos.txt | tail -60
-          exit ${PIPESTATUS[0]}
+          a=${PIPESTATUS[0]}
+          # o que uma pessoa que conhece a zona escolheria: só metro em vez de autocarro + metro; melhor opção em primeiro
+          APP=$PWD node --import tsx ../auditoria/planeador-preferencias.mjs 2>&1 | grep -v "Experimental\|trace-warnings" | tee ../res/planeador-preferencias.txt | tail -40
+          b=${PIPESTATUS[0]}
+          exit $(( a || b ))
 
       - name: Testes da pesquisa de destinos, da cache com limite e do idioma do aparelho
         continue-on-error: true

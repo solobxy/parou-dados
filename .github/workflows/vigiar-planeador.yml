@@ -50,6 +50,8 @@ jobs:
             ("Porto: São Bento → Matosinhos Sul", (41.1457, -8.6107), (41.1809, -8.6903), "Metro"),
             ("Lisboa: Rossio → Sintra (comboio)", (38.7140, -9.1394), (38.7980, -9.3870), "Comboio"),
             ("Lisboa: Cais do Sodré → Cacilhas (barco)", (38.7062, -9.1447), (38.6877, -9.1480), "Barco"),
+            # quem conhece a zona vai só de metro (Levada, F e depois C); um autocarro que chega antes não o pode apagar
+            ("Porto: Parque Nascente → Parque Maia (só metro)", (41.1750, -8.5651), (41.2290, -8.6269), "Só Metro"),
           ]
           def pedir(o, d):
               q = urllib.parse.urlencode({"originLat": o[0], "originLon": o[1], "destLat": d[0], "destLon": d[1], "destName": "Destino", "quando": quando})
@@ -73,7 +75,9 @@ jobs:
               rotas = resp.get("routes") or []
               meios = [[l.get("transportMode") for l in r.get("legs", []) if l.get("mode") == "TRANSIT"] for r in rotas]
               resumo = " | ".join(f"{'>'.join(str(m) for m in ms) or 'a pé'} {r.get('totalDurationMinutes')}min" for ms, r in zip(meios, rotas))
-              if any(modo in ms for ms in meios):
+              # "Só Metro": uma opção só com metro (sem autocarros nem outros meios)
+              so = modo[3:] if modo.startswith("Só ") else None
+              if (any(ms and all(m == so for m in ms) for ms in meios) if so else any(modo in ms for ms in meios)):
                   print(f"OK      {nome}: {resumo}")
               else:
                   falhas.append(f"{nome}: nenhuma opção de {modo} (opções: {resumo or 'nenhuma'})")
