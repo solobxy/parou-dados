@@ -33,12 +33,13 @@ const alturaOk = (p) => p.evaluate(() => { const d = document.querySelector('[ro
 
 const cabeSemDeslizar = (p) => p.evaluate(() => { const c = document.querySelector('[role="dialog"] .overflow-y-auto'); return c ? c.scrollHeight <= c.clientHeight + 1 : false; });
 
-const PASSOS = ['idioma', 'perto', 'destinos', 'horarios', 'alertas', 'comunidade', 'conta'];
+// Quatro passos; o idioma vem do telemóvel e muda-se nas bandeiras do primeiro passo
+const PASSOS = ['perto', 'destinos', 'alertas', 'conta'];
 
 (async () => {
   const browser = await chromium.launch({ args: ['--no-sandbox'] });
 
-  // A) Primeira visita: aparece, percorre os 7 passos nos 3 temas e em 3 tamanhos
+  // A) Primeira visita: aparece, percorre os 4 passos nos 3 temas e em 3 tamanhos
   for (const [w, h] of [[390, 780], [320, 568], [1280, 800]]) {
     for (const tema of ['claro', 'escuro', 'ambar']) {
       if (w === 320 && tema !== 'claro') continue;
@@ -48,16 +49,14 @@ const PASSOS = ['idioma', 'perto', 'destinos', 'horarios', 'alertas', 'comunidad
       ok(`[${w} ${tema}] aparece na primeira visita`, viu);
       if (!viu) { await foto(p, `${w}_${tema}_FALHA`); await ctx.close(); continue; }
       await p.waitForTimeout(500);
-      await foto(p, `${w}_${tema}_0_idioma`);
       ok(`[${w} ${tema}] diálogo cabe no ecrã (passo 0)`, await alturaOk(p));
-      ok(`[${w} ${tema}] idioma: tudo visível sem deslizar`, await cabeSemDeslizar(p));
-      await p.locator('[data-teste="bv-idioma-pt"]').click();
-      for (let i = 1; i < PASSOS.length; i++) {
-        await p.waitForTimeout(450);
+      ok(`[${w} ${tema}] primeiro passo com as bandeiras dos idiomas (português marcado)`, (await p.locator('[data-teste="bv-idioma-pt"][aria-pressed="true"]').count()) === 1);
+      for (let i = 0; i < PASSOS.length; i++) {
+        if (i > 0) await p.waitForTimeout(450);
         const a = await passoAtivo(p);
         ok(`[${w} ${tema}] passo ${i} = ${PASSOS[i]}`, a === PASSOS[i], a);
-        if (w !== 320 || i === 1 || i === 6) await foto(p, `${w}_${tema}_${i}_${PASSOS[i]}`);
-        if (i === 3 || i === 6) ok(`[${w} ${tema}] diálogo cabe no ecrã (passo ${i})`, await alturaOk(p));
+        if (w !== 320 || i === 0 || i === 3) await foto(p, `${w}_${tema}_${i}_${PASSOS[i]}`);
+        if (i === 0 || i === 3) ok(`[${w} ${tema}] diálogo cabe no ecrã (passo ${i})`, await alturaOk(p));
         ok(`[${w} ${tema}] passo ${i}: tudo visível sem deslizar`, await cabeSemDeslizar(p));
         if (i < PASSOS.length - 1) await p.getByRole('button', { name: /^Seguinte$/ }).click();
       }
@@ -72,24 +71,25 @@ const PASSOS = ['idioma', 'perto', 'destinos', 'horarios', 'alertas', 'comunidad
     }
   }
 
-  // B) Mudar de idioma a meio: recarrega e retoma no passo 1 já em inglês
+  // B) Mudar de idioma nas bandeiras do primeiro passo: recarrega e retoma no mesmo passo já em inglês
   {
     const { ctx, p } = await contexto(browser, { w: 390, h: 780 });
     await p.goto(BASE + '/', { waitUntil: 'load' });
     await aparece(p);
     await Promise.all([p.waitForNavigation({ waitUntil: 'load', timeout: 20000 }), p.locator('[data-teste="bv-idioma-en"]').click()]);
     ok('[idioma] depois de escolher inglês volta a abrir o carrossel', await aparece(p));
-    await p.waitForTimeout(600);
-    ok('[idioma] retoma no passo 2 (perto)', (await passoAtivo(p)) === 'perto', await passoAtivo(p));
+    await p.waitForTimeout(1200);
+    ok('[idioma] retoma no primeiro passo (perto)', (await passoAtivo(p)) === 'perto', await passoAtivo(p));
     const titulo = await p.locator('[data-passo="perto"] h3').innerText();
     ok('[idioma] texto em inglês', /near you|nearby/i.test(titulo) || /passing/i.test(titulo) || !/Vê o que/.test(titulo), titulo);
-    await foto(p, 'idioma_en_passo1');
-    ok('[idioma] estado guardado "curso:1"', (await estado(p)) === 'curso:1', await estado(p));
+    ok('[idioma] inglês marcado nas bandeiras', (await p.locator('[data-teste="bv-idioma-en"][aria-pressed="true"]').count()) === 1);
+    await foto(p, 'idioma_en_passo0');
+    ok('[idioma] estado guardado "curso:0"', (await estado(p)) === 'curso:0', await estado(p));
     await p.getByRole('button', { name: /^Next$/ }).click();
     await p.waitForTimeout(450);
-    await foto(p, 'idioma_en_passo2');
+    await foto(p, 'idioma_en_passo1');
     // vai até ao fim e termina
-    for (let i = 0; i < 4; i++) { await p.getByRole('button', { name: /^Next$/ }).click(); await p.waitForTimeout(350); }
+    for (let i = 0; i < 2; i++) { await p.getByRole('button', { name: /^Next$/ }).click(); await p.waitForTimeout(350); }
     await foto(p, 'idioma_en_conta');
     await p.getByRole('button', { name: /^Finish$/ }).click();
     await p.waitForTimeout(300);
@@ -103,8 +103,8 @@ const PASSOS = ['idioma', 'perto', 'destinos', 'horarios', 'alertas', 'comunidad
     await aparece(p);
     await Promise.all([p.waitForNavigation({ waitUntil: 'load', timeout: 20000 }), p.locator(`[data-teste="bv-idioma-${l}"]`).click()]);
     await aparece(p);
-    await p.waitForTimeout(600);
-    await foto(p, `idioma_${l}_passo1`);
+    await p.waitForTimeout(1200);
+    await foto(p, `idioma_${l}_passo0`);
     await ctx.close();
   }
 
@@ -160,9 +160,7 @@ const PASSOS = ['idioma', 'perto', 'destinos', 'horarios', 'alertas', 'comunidad
   const verDemo = async (p, nome) => {
     ok(`[admin ${nome}] abre o carrossel`, await aparece(p, 4000));
     await p.waitForTimeout(500);
-    await p.locator('[data-teste="bv-idioma-pt"]').click();
-    await p.waitForTimeout(450);
-    ok(`[admin ${nome}] segue para o passo 2`, (await passoAtivo(p)) === 'perto');
+    ok(`[admin ${nome}] começa no primeiro passo`, (await passoAtivo(p)) === 'perto');
     await p.getByRole('button', { name: 'Fechar' }).first().click();
     await p.waitForTimeout(300);
     ok(`[admin ${nome}] fecha`, (await dialogo(p).count()) === 0);
@@ -219,7 +217,7 @@ const PASSOS = ['idioma', 'perto', 'destinos', 'horarios', 'alertas', 'comunidad
     await Promise.all([p.waitForNavigation({ waitUntil: 'load', timeout: 20000 }), p.locator('[data-teste="bv-idioma-en"]').click()]);
     ok('[demo idioma] depois de escolher inglês a demonstração continua', await aparece(p, 6000));
     await p.waitForTimeout(600);
-    ok('[demo idioma] no passo 2 (perto)', (await passoAtivo(p)) === 'perto', await passoAtivo(p));
+    ok('[demo idioma] no mesmo passo (perto)', (await passoAtivo(p)) === 'perto', await passoAtivo(p));
     ok('[demo idioma] estado real continua "visto"', (await estado(p)) === 'visto', await estado(p));
     await foto(p, 'demo_idioma_en_passo1');
     await p.keyboard.press('Escape');
@@ -235,7 +233,6 @@ const PASSOS = ['idioma', 'perto', 'destinos', 'horarios', 'alertas', 'comunidad
     const { ctx, p } = await contexto(browser, { w: 1280, h: 800 });
     await p.goto(BASE + '/', { waitUntil: 'load' });
     await aparece(p);
-    await p.locator('[data-teste="bv-idioma-pt"]').click();
     await p.waitForTimeout(400);
     await p.keyboard.press('ArrowRight');
     await p.waitForTimeout(400);
@@ -247,6 +244,18 @@ const PASSOS = ['idioma', 'perto', 'destinos', 'horarios', 'alertas', 'comunidad
     await p.waitForTimeout(300);
     ok('[teclado] Esc fecha', (await dialogo(p).count()) === 0);
     ok('[teclado] Esc deixa guardado como visto', (await estado(p)) === 'visto', await estado(p));
+    await ctx.close();
+  }
+
+  // H) «Saltar» no primeiro passo: fecha logo e não volta a aparecer
+  {
+    const { ctx, p } = await contexto(browser, { w: 390, h: 780 });
+    await p.goto(BASE + '/', { waitUntil: 'load' });
+    await aparece(p);
+    await p.locator('[data-teste="bv-saltar"]').click();
+    await p.waitForTimeout(300);
+    ok('[saltar] fecha', (await dialogo(p).count()) === 0);
+    ok('[saltar] fica guardado como visto', (await estado(p)) === 'visto', await estado(p));
     await ctx.close();
   }
 

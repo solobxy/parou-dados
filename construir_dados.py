@@ -1358,13 +1358,27 @@ URL_DESENHOS_EXTRA = os.environ.get(
     "PAROU_DESENHOS_URL", "https://github.com/solobxy/parou-dados/releases/download/desenhos/desenhos-extra.json.gz")
 
 
+def descarregar_gz_json(url, tentativas=4, espera_s=20):
+    """JSON comprimido de uma release, com várias tentativas: quando o workflow que o faz o está a substituir
+    (upload --clobber), o ficheiro desaparece uns segundos e a base saía sem ele (aconteceu a 8/11/2026 com os desenhos)."""
+    ultimo = None
+    for i in range(tentativas):
+        try:
+            req = urllib.request.Request(url, headers={"User-Agent": "parou-dados"})
+            with urllib.request.urlopen(req, timeout=120) as r:
+                return json.loads(gzip.decompress(r.read()).decode("utf-8"))
+        except Exception as e:  # noqa: BLE001
+            ultimo = e
+            if i < tentativas - 1:
+                time.sleep(espera_s)
+    raise ultimo
+
+
 def carregar_desenhos_extra():
     """Desenhos pela estrada das linhas que não os trazem (UNIR, CP, metros), feitos à parte pelo workflow «Estradas»
     (auditoria/estradas.py). Se não existirem ou não se conseguirem ler, a base sai sem eles: nada falha."""
     try:
-        req = urllib.request.Request(URL_DESENHOS_EXTRA, headers={"User-Agent": "parou-dados"})
-        with urllib.request.urlopen(req, timeout=90) as r:
-            dados = json.loads(gzip.decompress(r.read()).decode("utf-8"))
+        dados = descarregar_gz_json(URL_DESENHOS_EXTRA)
         if isinstance(dados, dict) and isinstance(dados.get("caminhos"), dict):
             log(f"Desenhos extra: {len(dados['caminhos'])} sequências ({dados.get('criado', '?')})")
             return dados
@@ -1439,9 +1453,7 @@ def carregar_locais():
     """Locais de Portugal (OpenStreetMap) para a pesquisa «Para onde vais?», feitos à parte pelo workflow «Locais»
     (locais.py). Se não existirem ou não se conseguirem ler, a base sai sem eles: a app usa só as paragens."""
     try:
-        req = urllib.request.Request(URL_LOCAIS, headers={"User-Agent": "parou-dados"})
-        with urllib.request.urlopen(req, timeout=120) as r:
-            dados = json.loads(gzip.decompress(r.read()).decode("utf-8"))
+        dados = descarregar_gz_json(URL_LOCAIS)
         if isinstance(dados, dict) and isinstance(dados.get("linhas"), list) and len(dados["linhas"]) > 1000:
             log(f"Locais: {len(dados['linhas'])} ({dados.get('criado', '?')})")
             return dados
