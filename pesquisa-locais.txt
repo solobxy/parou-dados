@@ -1,0 +1,22 @@
+[SQLite DB] Base de dados sem feeds. A registar feeds oficiais do catálogo...
+[SQLite DB] 29 feeds registados com sucesso.
+OK      [sem locais] continua a dar as paragens ["Oriente","Oriente","Gare do Oriente","Lisboa - Oriente","Rua de Viseu 21"]
+OK      [paragens] o mesmo nome a 30 m é uma só sugestão 1
+OK      [paragens] a estação de metro vem antes da paragem de autocarro 
+OK      [paragens] a estação traz o tipo e o operador 
+OK      [importância] «colombo» sem localização: o centro comercial primeiro ["Centro Comercial Colombo","Colombo","Continente Colombo","Rua Cristóvão Colombo"]
+OK      [importância] a paragem «Colombo» de Porto Santo fica depois 
+OK      [importância] «colombo» no Porto: o centro comercial continua primeiro ["Centro Comercial Colombo","Colombo","Continente Colombo","Rua Cristóvão Colombo"]
+OK      [tipo] «colombo shopping» encontra o Centro Comercial Colombo ["Centro Comercial Colombo","Continente Colombo","Rua Cristóvão Colombo"]
+OK      [distância] «continente» em Lisboa: o mais perto primeiro ["Continente Bom Dia Arroios, Lisboa","Continente Colombo Carnide, Lisboa","Continente Bom Dia Bolhão, Porto"]
+OK      [distância] «continente» no Porto: o do Porto primeiro ["Continente Bom Dia Bolhão, Porto","Continente Colombo Carnide, Lisboa","Continente Bom Dia Arroios, Lisboa"]
+OK      [distância] «aeroporto» no Porto: o do Porto primeiro ["Aeroporto Francisco Sá Carneiro","Aeroporto Humberto Delgado","Aeroporto","Aeroporto","Aeroporto de Francisco Sá Carneiro","Aeroporto (AVIS)","Aeroporto (carga)","Aeroporto Francisco Sá Carneiro"]
+OK      [distância] «aeroporto» em Lisboa: o de Lisboa primeiro ["Aeroporto Humberto Delgado","Aeroporto Francisco Sá Carneiro","Aeroporto","Aeroporto","Aeroporto da Portela","Aeroporto Humberto Delgado"]
+OK      [acentos] «torre de belem» sem acento encontra a Torre de Belém ["Torre de Belém","Avenida da Torre de Belém","Miradouro da Torre de Belém","Réplica da Torre de Belém","Jardim António Viana Barreto","Rua Bartolomeu Dias 172B","Embaixada Grecia","Praça de Malaca 3"]
+OK      [outros nomes] «belem tower» (nome inglês) encontra a Torre de Belém ["Torre de Belém"]
+OK      [tipo] «praia» perto do palácio Praia e Monforte: a praia vem primeiro ["Praia de Algés","Palácio Praia e Monforte","Praia Nova"]
+OK      [tipo] cada local traz o tipo para a app traduzir 
+OK      [a escrever] «aer» já mostra o aeroporto ["Aeroporto Humberto Delgado","Aeroporto Francisco Sá Carneiro","Aeroporto","Aeroporto Humberto Delgado","Arroios","Areeiro"]
+OK      [rapidez] 50 pesquisas em menos de 1 s 11 ms
+OK      [robustez] aspas e símbolos não partem a pesquisa 
+Todos os testes passaram

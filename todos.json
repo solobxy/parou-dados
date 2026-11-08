@@ -1,0 +1,114 @@
+{
+ "testes": [
+  {
+   "nome": "[ao abrir] o mapa está ao nível de zoom 16 (medido no ecrã)",
+   "ok": true,
+   "extra": "16"
+  },
+  {
+   "nome": "[ao abrir] todos os autocarros do ecrã estão no mapa (16: as duas linhas da paragem e 14 de outras linhas)",
+   "ok": true,
+   "extra": "16 à vista"
+  },
+  {
+   "nome": "[ao abrir] e nenhum a mais (os que estão fora do ecrã não aparecem à vista)",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[ao abrir] aparecem os três operadores (STCP, Carris Metropolitana e TUB)",
+   "ok": true,
+   "extra": "stcp,cm,tub"
+  },
+  {
+   "nome": "[ao abrir] com o zoom de perto cada autocarro é uma roda com número (≥ 30 px)",
+   "ok": true,
+   "extra": "36 px"
+  },
+  {
+   "nome": "[ao abrir] o pedido é pela caixa do ecrã, sem lista de linhas",
+   "ok": true,
+   "extra": "linhas=[]"
+  },
+  {
+   "nome": "[ao abrir] a caixa cobre o ecrã com folga e não é exagerada (entre 0,5 e 3 km de altura)",
+   "ok": true,
+   "extra": "1113 m de altura"
+  },
+  {
+   "nome": "[arrastar] ao arrastar o mapa para este aparecem os autocarros da zona nova (≥ 7 dos 8)",
+   "ok": true,
+   "extra": "8 de 8 (B1 B7 B2 B3 B4 B5 B6 B8)"
+  },
+  {
+   "nome": "[arrastar] os da zona que saiu do ecrã já não estão à vista",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[arrastar] a app pediu uma caixa nova, mais a este",
+   "ok": true,
+   "extra": "oeste -8.6200 → -8.6100"
+  },
+  {
+   "nome": "[afastar] o mapa afastou-se (pelo menos 2 níveis)",
+   "ok": true,
+   "extra": "16 → 13"
+  },
+  {
+   "nome": "[afastar] com o mapa afastado vêem-se todos os autocarros do ecrã maior (40 esperados, mais que ao início)",
+   "ok": true,
+   "extra": "46 à vista"
+  },
+  {
+   "nome": "[afastar] ao nível de zoom 14 ou menos cada autocarro mostra o número da linha, com letra legível (≥ 11 px)",
+   "ok": true,
+   "extra": "fontes 12px"
+  },
+  {
+   "nome": "[afastar] e o número cabe inteiro na bola (nenhum cortado, nem o de 5 caracteres)",
+   "ok": true,
+   "extra": "cortados: nenhum"
+  },
+  {
+   "nome": "[afastar] as bolas afastadas são mais pequenas do que as de perto (altura ≤ 30 px) para não taparem o mapa",
+   "ok": true,
+   "extra": "altura 26–26 px, largura até 42 px"
+  },
+  {
+   "nome": "[afastar] as bolas continuam a ter a cor do operador",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "nome": "[muito longe] com o mapa muito afastado aparece o aviso para aproximar",
+   "ok": true,
+   "extra": "Aproxima o mapa para ver os autocarros em direto"
+  },
+  {
+   "nome": "[muito longe] e não fica nenhum autocarro desenhado",
+   "ok": true,
+   "extra": "0 marcadores"
+  },
+  {
+   "nome": "[muito longe] a app nunca pediu uma caixa maior do que o servidor aceita",
+   "ok": true,
+   "extra": "0 pedidos recusados"
+  },
+  {
+   "nome": "[aproximar] ao aproximar outra vez o aviso desaparece e os autocarros voltam",
+   "ok": true,
+   "extra": "57 marcadores, zoom 13"
+  },
+  {
+   "nome": "[tudo] sem erros de consola",
+   "ok": true,
+   "extra": ""
+  }
+ ],
+ "notas": [
+  "mapa ao nível 16; ecrã do mapa 390×277 px; 18 marcadores desenhados",
+  "zoom 16 → 13; 57 marcadores; pontos: true",
+  "depois de 2 voltas na roda: aviso visível: true; marcadores: 0"
+ ]
+}
