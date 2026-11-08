@@ -1431,6 +1431,57 @@ def aplicar_desenhos_extra(conn, extras):
     return contagem
 
 
+URL_LOCAIS = os.environ.get(
+    "PAROU_LOCAIS_URL", "https://github.com/solobxy/parou-dados/releases/download/locais/locais.json.gz")
+
+
+def carregar_locais():
+    """Locais de Portugal (OpenStreetMap) para a pesquisa «Para onde vais?», feitos à parte pelo workflow «Locais»
+    (locais.py). Se não existirem ou não se conseguirem ler, a base sai sem eles: a app usa só as paragens."""
+    try:
+        req = urllib.request.Request(URL_LOCAIS, headers={"User-Agent": "parou-dados"})
+        with urllib.request.urlopen(req, timeout=120) as r:
+            dados = json.loads(gzip.decompress(r.read()).decode("utf-8"))
+        if isinstance(dados, dict) and isinstance(dados.get("linhas"), list) and len(dados["linhas"]) > 1000:
+            log(f"Locais: {len(dados['linhas'])} ({dados.get('criado', '?')})")
+            return dados
+        log("Locais: lista vazia ou curta demais, fica sem eles")
+    except Exception as e:  # noqa: BLE001
+        log(f"Sem locais ({str(e)[:100]}): a pesquisa de destinos fica só com as paragens")
+    return None
+
+
+def celula_locais(lat, lon):
+    """Palavra da zona (~10 km) de um local, para a pesquisa perto de quem procura (a app usa a mesma conta)"""
+    return f"zq{int(math.floor(lat * 10))}y{int(math.floor(-lon * 10))}"
+
+
+def gravar_locais(conn, dados):
+    """Tabela locais (pela ordem de importância: o rowid é a posição) e o índice de texto locais_fts (FTS5, sem acentos).
+    Cada local entra no índice com os nomes e a palavra da sua zona (zq…), para se procurar só perto de alguém."""
+    conn.execute("DROP TABLE IF EXISTS locais")
+    conn.execute("DROP TABLE IF EXISTS locais_fts")
+    conn.execute("CREATE TABLE locais (id INTEGER PRIMARY KEY, nome TEXT NOT NULL, cat TEXT NOT NULL, sitio TEXT, "
+                 "lat REAL NOT NULL, lon REAL NOT NULL, imp REAL NOT NULL, alt TEXT)")
+    conn.execute("CREATE VIRTUAL TABLE locais_fts USING fts5(texto, content='', columnsize=0, detail='none', "
+                 "tokenize='unicode61 remove_diacritics 2')")
+    linhas = []
+    fts = []
+    for i, l in enumerate(dados["linhas"], 1):
+        nome, cat, sitio, lat, lon, imp, alt = (l + [None] * 7)[:7]
+        if not nome or lat is None or lon is None:
+            continue
+        linhas.append((i, nome, cat, sitio or "", float(lat), float(lon), float(imp or 0), alt or ""))
+        fts.append((i, f"{nome} {(alt or '').replace('|', ' ')} {celula_locais(float(lat), float(lon))}"))
+    conn.executemany("INSERT INTO locais VALUES (?, ?, ?, ?, ?, ?, ?, ?)", linhas)
+    conn.executemany("INSERT INTO locais_fts (rowid, texto) VALUES (?, ?)", fts)
+    conn.execute("INSERT INTO locais_fts (locais_fts) VALUES ('optimize')")
+    conn.execute("INSERT OR REPLACE INTO app_state (key, value) VALUES (?, ?)",
+                 ("locais_versao", json.dumps({"criado": dados.get("criado"), "n": len(linhas)})))
+    conn.commit()
+    return len(linhas)
+
+
 def completar_destinos(conn):
     """Viagens sem destino (alguns operadores, como a Carris, não preenchem o trip_headsign): usa o nome da última
     paragem da viagem, que é o sítio para onde ela realmente vai. Percursos circulares (acabam onde começam) ficam
@@ -1569,6 +1620,15 @@ def main():
     extras = carregar_desenhos_extra()
     if extras:
         log(f"Desenhos extra ligados: {aplicar_desenhos_extra(conn, extras)}")
+    locais = carregar_locais()
+    if locais:
+        try:
+            log(f"Locais gravados na base: {gravar_locais(conn, locais)}")
+        except sqlite3.Error as e:
+            log(f"AVISO: não deu para gravar os locais ({e}); a base sai sem eles")
+            conn.rollback()
+            conn.execute("DROP TABLE IF EXISTS locais")
+            conn.execute("DROP TABLE IF EXISTS locais_fts")
 
     ok = [r for r in results if r.get("status") == "OK"]
     built_at = now_iso()

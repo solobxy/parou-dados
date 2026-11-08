@@ -97,6 +97,9 @@ LOCALIDADES = {
 RUAS = {"motorway": 0.04, "trunk": 0.12, "primary": 0.16, "secondary": 0.14, "tertiary": 0.12, "unclassified": 0.08,
         "residential": 0.08, "living_street": 0.08, "pedestrian": 0.12}
 
+GRANDES = {"aeroporto", "universidade", "parque", "reserva", "golfe", "praia", "estadio", "parque_tematico", "zoo", "parque_aquatico", "cidade", "vila", "ilha"}
+SEM_LUGAR = {"aeroporto", "cidade", "vila", "ilha", "reserva"}
+
 NOMES_ALT = ("alt_name", "short_name", "official_name", "name:pt", "name:en", "loc_name", "int_name", "old_name")
 
 
@@ -279,7 +282,9 @@ def principal():
     for loc in sorted(locais, key=lambda x: -x["imp"]):
         k = (norm(loc["nome"]), loc["cat"])
         perto = vistos.setdefault(k, [])
-        if any(abs(a - loc["lat"]) < 0.004 and abs(o - loc["lon"]) < 0.005 for a, o in perto):
+        # Locais grandes (aeroportos, parques, universidades) aparecem como ponto e como área com o centro longe: raio maior
+        r = 0.02 if loc["cat"] in GRANDES else 0.004
+        if any(abs(a - loc["lat"]) < r and abs(o - loc["lon"]) < r * 1.25 for a, o in perto):
             continue
         perto.append((loc["lat"], loc["lon"]))
         finais.append(loc)
@@ -287,9 +292,10 @@ def principal():
     linhas = []
     for loc in finais:
         conc = concelho(loc["lat"], loc["lon"])
-        lugar = "" if loc["cat"] in ("cidade", "vila") else localidade(loc["lat"], loc["lon"])
+        lugar = "" if loc["cat"] in SEM_LUGAR else localidade(loc["lat"], loc["lon"])
         partes = []
-        for v in (lugar, loc["cidade"], conc):
+        # O concelho manda; a localidade escrita no próprio local (addr:city) só quando não se sabe o concelho
+        for v in (lugar, conc or loc["cidade"]):
             if v and v != loc["nome"] and norm(v) not in [norm(x) for x in partes]:
                 partes.append(v)
         sitio = ", ".join(partes[:2])
