@@ -175,6 +175,14 @@ jobs:
           mkdir -p ../res
           SAIDA=../res RAPIDO=${{ inputs.rapido }} timeout 1800 node a-bordo.mjs 2>&1 | tee ../res/consola.txt | tail -250
 
+      - name: Testar que um erro não aparece como «sem resultados» (planeador e horários, browser)
+        continue-on-error: true
+        working-directory: auditoria
+        run: |
+          mkdir -p ../res
+          SAIDA=../res timeout 300 node estados-erro.mjs 2>&1 | tee ../res/estados-erro.txt | tail -40
+          exit ${PIPESTATUS[0]}
+
       - name: Testar as linhas mais procuradas (servidor e browser)
         continue-on-error: true
         working-directory: auditoria
