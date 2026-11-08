@@ -1,0 +1,84 @@
+name: Locais (pesquisa «Para onde vais?»)
+
+# Lista de locais de Portugal com nome (centros comerciais, hospitais, universidades, praias, monumentos, localidades,
+# ruas…) tirada do OpenStreetMap (Geofabrik), com a importância de cada um, para a pesquisa de destinos da PAROU.
+# Vai para a release "locais" (locais.json.gz). O gerador diário dos dados (main.yml) junta-a à base (tabela locais).
+# Os locais mudam pouco: basta uma vez por semana (domingo), ou à mão depois de mudar locais.py.
+
+on:
+  schedule:
+    - cron: "10 2 * * 0"
+  workflow_dispatch:
+    inputs:
+      publicar:
+        description: "1 = publicar na release locais (0 = só o relatório)"
+        required: false
+        default: "1"
+
+permissions:
+  contents: write
+
+jobs:
+  locais:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Ferramentas
+        run: |
+          sudo apt-get update -q && sudo apt-get install -y -q osmium-tool
+          pip install -q shapely
+          osmium --version | head -1
+
+      - name: Mapa de Portugal (Geofabrik)
+        run: |
+          curl -fL --retry 3 --retry-delay 10 -o portugal.osm.pbf https://download.geofabrik.de/europe/portugal-latest.osm.pbf
+          ls -l portugal.osm.pbf
+
+      - name: Só os locais que interessam
+        run: |
+          osmium tags-filter portugal.osm.pbf \
+            nwr/place \
+            nwr/shop=mall,department_store,supermarket \
+            nwr/amenity=hospital,clinic,university,college,school,townhall,courthouse,library,theatre,cinema,arts_centre,exhibition_centre,conference_centre,events_venue,marketplace,bus_station,ferry_terminal,police,fire_station,post_office,embassy,community_centre,public_building,place_of_worship \
+            nwr/healthcare=hospital,centre,clinic \
+            nwr/tourism=zoo,theme_park,aquarium,museum,gallery,attraction,viewpoint,hotel,hostel,guest_house,apartment,camp_site \
+            nwr/historic=castle,palace,fort,monument,memorial,archaeological_site,city_gate \
+            nwr/leisure=stadium,sports_centre,park,garden,water_park,marina,golf_course,nature_reserve \
+            nwr/natural=beach,peak,cape \
+            nwr/aeroway=aerodrome \
+            nwr/office=government \
+            w/highway=trunk,primary,secondary,tertiary,unclassified,residential,living_street,pedestrian \
+            r/boundary=administrative \
+            -o filtrado.osm.pbf --overwrite
+          ls -l filtrado.osm.pbf
+          osmium export filtrado.osm.pbf -f geojsonseq -a type,id -x print_record_separator=false \
+            --geometry-types=point,linestring,polygon -o locais.geojsonseq --overwrite
+          ls -l locais.geojsonseq
+          wc -l locais.geojsonseq
+
+      - name: Lista com a importância de cada local
+        run: |
+          python locais.py locais.geojsonseq locais.json.gz | tee relatorio-locais.txt
+          ls -l locais.json.gz
+
+      - name: Publicar na release "locais"
+        if: ${{ (inputs.publicar || '1') == '1' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release view locais >/dev/null 2>&1 || gh release create locais --title "Locais para a pesquisa" --notes "Locais de Portugal (OpenStreetMap, ODbL) com a importância de cada um, para a pesquisa «Para onde vais?». Atualizado todos os domingos."
+          gh release upload locais locais.json.gz --clobber
+
+      - name: Relatório no ramo locais-resultado
+        if: always()
+        run: |
+          mkdir -p /tmp/r && cp relatorio-locais.txt /tmp/r/ 2>/dev/null || echo "sem relatório" > /tmp/r/relatorio-locais.txt
+          cd /tmp/r && git init -q -b locais-resultado && git config user.name "parou-dados" && git config user.email "actions@users.noreply.github.com"
+          git add -A && git commit -q -m "Locais $(date -u +%Y-%m-%dT%H:%MZ)"
+          git push -q -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" locais-resultado
