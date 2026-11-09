@@ -1,0 +1,2396 @@
+{
+ "ecras": [
+  {
+   "nome": "390_claro_01_inicio",
+   "scrollLateral": false,
+   "alvosPequenos": [
+    "Encolher a lista e ver o mapa 358×24",
+    "Todos 63×32",
+    "autocarro 85×32",
+    "metro 60×32",
+    "comboio 78×32",
+    "barco 59×32",
+    "Favoritas 80×32",
+    " 26×26",
+    "M 26×26"
+   ],
+   "cortados": [],
+   "foraDoEcra": [
+    "Favoritas",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    ""
+   ]
+  },
+  {
+   "nome": "390_claro_01b_inicio_inteiro",
+   "scrollLateral": false,
+   "alvosPequenos": [
+    "Encolher a lista e ver o mapa 358×24",
+    "Todos 63×32",
+    "autocarro 85×32",
+    "metro 60×32",
+    "comboio 78×32",
+    "barco 59×32",
+    "Favoritas 80×32",
+    " 26×26",
+    "M 26×26"
+   ],
+   "cortados": [],
+   "foraDoEcra": [
+    "Favoritas",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    ""
+   ]
+  },
+  {
+   "nome": "390_claro_02_pesquisa",
+   "scrollLateral": false,
+   "alvosPequenos": [
+    "Encolher a lista e ver o mapa 358×24",
+    "Todos 63×32",
+    "autocarro 85×32",
+    "metro 60×32",
+    "comboio 78×32",
+    "barco 59×32",
+    "Favoritas 80×32",
+    "Limpar pesquisa 26×26",
+    " 26×26",
+    "M 26×26"
+   ],
+   "cortados": [
+    "Placa Comemorativa do Desembarque de Cri Stovão Co",
+    "Posto Policial do Centro Comercial Colombo",
+    "Escola Profissional Cristóvão Colombo - Pólo de Se",
+    "Escola Profissional Cristóvão Colombo",
+    "R Cristovão Colombo 2 (Casal Chapim)"
+   ],
+   "foraDoEcra": [
+    "Favoritas",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    ""
+   ]
+  },
+  {
+   "nome": "390_claro_03_opcoes",
+   "scrollLateral": false,
+   "alvosPequenos": [
+    "Encolher a lista e ver o mapa 358×24",
+    "Limpar pesquisa 26×26",
+    " 26×26",
+    "M 26×26"
+   ],
+   "cortados": [],
+   "foraDoEcra": [
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    ""
+   ]
+  },
+  {
+   "nome": "390_claro_03b_opcoes_inteiro",
+   "scrollLateral": false,
+   "alvosPequenos": [
+    "Encolher a lista e ver o mapa 358×24",
+    "Limpar pesquisa 26×26",
+    " 26×26",
+    "M 26×26"
+   ],
+   "cortados": [],
+   "foraDoEcra": [
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    ""
+   ]
+  },
+  {
+   "nome": "390_claro_04_opcao_aberta",
+   "scrollLateral": false,
+   "alvosPequenos": [
+    "Encolher a lista e ver o mapa 358×24",
+    "Limpar pesquisa 26×26",
+    " 26×26",
+    "M 26×26",
+    "Az 40×22",
+    "DIV 28×28"
+   ],
+   "cortados": [],
+   "foraDoEcra": []
+  },
+  {
+   "nome": "390_claro_04c_troco_a_pe",
+   "scrollLateral": false,
+   "alvosPequenos": [
+    "Encolher a lista e ver o mapa 358×24",
+    "Limpar pesquisa 26×26",
+    " 26×26",
+    "M 26×26"
+   ],
+   "cortados": [],
+   "foraDoEcra": [
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "M",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    ""
+   ]
+  },
+  {
+   "nome": "390_claro_05_paragem",
+   "scrollLateral": false,
+   "alvosPequenos": [
+    "Encolher a lista e ver o mapa 358×24",
+    "Todos 63×32",
+    "autocarro 85×32",
+    "metro 60×32",
+    "comboio 78×32",
+    "barco 59×32",
+    "Favoritas 80×32",
+    "Encolher o painel 366×24",
+    "Voltar às partidas da paragem 91×36",
+    "DIV 26×26"
+   ],
+   "cortados": [],
+   "foraDoEcra": [
+    "Favoritas"
+   ]
+  },
+  {
+   "nome": "390_claro_06_horarios",
+   "scrollLateral": false,
+   "alvosPequenos": [
+    "Todos 59×36",
+    "Metro 54×36",
+    "Comboio 74×36",
+    "Autocarro 80×36",
+    "Barco 56×36"
+   ],
+   "cortados": [
+    "Odivelas (B. Dr. Lima Pimentel)",
+    "Alameda D. A. Henriques",
+    "Estação Oriente (Interface)",
+    "Pólo Universitário Ajuda"
+   ],
+   "foraDoEcra": []
+  },
+  {
+   "nome": "390_claro_07_alertas",
+   "scrollLateral": false,
+   "alvosPequenos": [
+    "continental 75×32",
+    "madeira 54×32",
+    "Açores 51×32",
+    "! 26×26",
+    "▲ 26×26",
+    "8 36×32",
+    "7 36×32",
+    " 30×30",
+    "2 36×32",
+    "39 42×38",
+    "Fogos.pt 45×13",
+    "Incêndios3 102×32",
+    "Tempo20 92×32",
+    "Estrada1 92×32",
+    "Transportes47 122×32",
+    "Comunidade31 124×32",
+    "Aproximar 32×32",
+    "Afastar 32×32",
+    "Centrar Portugal 32×32",
+    "Aviso laranja: Precipitação em Évora 293×25",
+    "Ver todas 51×32"
+   ],
+   "cortados": [],
+   "foraDoEcra": [
+    "Transportes47",
+    "Comunidade31"
+   ]
+  },
+  {
+   "nome": "390_claro_08_noticias",
+   "scrollLateral": false,
+   "alvosPequenos": [
+    "Escolher distrito 130×34",
+    "Tudo 59×36",
+    "Incêndios 86×36",
+    "Greves 71×36",
+    "Rede 60×36",
+    "Trânsito 79×36",
+    "Tempo 71×36",
+    "Obras 63×36",
+    "Ver no mapa 74×20"
+   ],
+   "cortados": [],
+   "foraDoEcra": [
+    "Trânsito",
+    "Tempo",
+    "Obras"
+   ]
+  },
+  {
+   "nome": "390_claro_09_comunidade",
+   "scrollLateral": false,
+   "alvosPequenos": [],
+   "cortados": [],
+   "foraDoEcra": [
+    "Conversas",
+    "Novidades",
+    "Avisos",
+    "Todos os operadoresCP - Comboios de Port"
+   ]
+  },
+  {
+   "nome": "390_claro_10_ocorrencias",
+   "scrollLateral": false,
+   "alvosPequenos": [
+    "Distrito 154×36",
+    "Concelho 154×36",
+    "Gravidade 316×36",
+    "Mais recentes 91×32",
+    "Gravidade 71×32"
+   ],
+   "cortados": [
+    "Aviso amarelo: Vento em Viseu",
+    "Aviso amarelo: Vento em Évora",
+    "Aviso amarelo: Precipitação em Bragança",
+    "Aviso amarelo: Precipitação em Viseu",
+    "Aviso amarelo: Precipitação em Lisboa"
+   ],
+   "foraDoEcra": []
+  },
+  {
+   "nome": "390_claro_11_favoritos",
+   "scrollLateral": false,
+   "alvosPequenos": [
+    "Como instalar 133×36",
+    "Todos (0) 75×36",
+    "Paragens (0) 93×36",
+    "Linhas (0) 78×36",
+    "Locais (0) 78×36"
+   ],
+   "cortados": [],
+   "foraDoEcra": []
+  },
+  {
+   "nome": "390_claro_12_greves",
+   "scrollLateral": false,
+   "alvosPequenos": [
+    "PAROU — início 92×28",
+    "Início 31×24",
+    "Alertas da PAROU 130×19"
+   ],
+   "cortados": [],
+   "foraDoEcra": []
+  },
+  {
+   "nome": "390_claro_13_sobre",
+   "scrollLateral": false,
+   "alvosPequenos": [
+    "Voltar 70×36"
+   ],
+   "cortados": [],
+   "foraDoEcra": []
+  },
+  {
+   "nome": "390_claro_14_seo_linhas",
+   "scrollLateral": false,
+   "alvosPequenos": [
+    "PAROU — início 92×28",
+    "Início 31×24",
+    "Lisboa 46×19",
+    "Porto 39×19",
+    "Braga 39×19",
+    "Coimbra 56×19",
+    "Aveiro 44×19",
+    "Faro 30×19",
+    "Setúbal 50×19",
+    "Leiria 38×19",
+    "Viseu 37×19",
+    "Évora 40×19",
+    "Santarém 65×19",
+    "Vila Real 56×19",
+    "Bragança 63×19",
+    "Guarda 46×19",
+    "Castelo Branco 102×19",
+    "Portalegre 70×19",
+    "Beja 30×19",
+    "Funchal 52×19",
+    "Ponta Delgada 97×19",
+    "Maia 31×19",
+    "Matosinhos 79×19",
+    "Vila Nova de Gaia 114×19",
+    "Gondomar 69×19"
+   ],
+   "cortados": [],
+   "foraDoEcra": []
+  },
+  {
+   "nome": "390_claro_15_seo_operador",
+   "scrollLateral": false,
+   "alvosPequenos": [
+    "PAROU — início 92×28",
+    "Início 31×24",
+    "Linhas 38×24"
+   ],
+   "cortados": [],
+   "foraDoEcra": []
+  },
+  {
+   "nome": "390_claro_16_seo_cidade",
+   "scrollLateral": false,
+   "alvosPequenos": [
+    "Perto 28×28",
+    "Horários 47×28",
+    "Cidades 45×28",
+    "Linhas 38×28",
+    "Notícias 45×28",
+    "Ocorrências 65×28",
+    "Comunidade 70×28",
+    "Catálogo 50×28",
+    "Sobre 32×28",
+    "Privacidade 63×28",
+    "Termos 41×28",
+    "Apagar conta 73×28",
+    "Contactar 54×28",
+    "Linhas e horários 94×28",
+    "Greves 37×28",
+    "Carris Metropolitana 105×28",
+    "Metro de Lisboa 82×28",
+    "Carris 31×28",
+    "CP 28×28",
+    "STCP 28×28",
+    "Metro do Porto 76×28",
+    "Fertagus 47×28",
+    "Transtejo e Soflusa 99×28"
+   ],
+   "cortados": [],
+   "foraDoEcra": []
+  },
+  {
+   "nome": "390_claro_17_seo_linha",
+   "scrollLateral": false,
+   "alvosPequenos": [
+    "PAROU — início 92×28",
+    "Início 31×24",
+    "Linhas 38×24",
+    "Carris 35×24"
+   ],
+   "cortados": [],
+   "foraDoEcra": []
+  },
+  {
+   "nome": "390_claro_17b_seo_linha_inteira",
+   "scrollLateral": false,
+   "alvosPequenos": [
+    "PAROU — início 92×28",
+    "Início 31×24",
+    "Linhas 38×24",
+    "Carris 35×24"
+   ],
+   "cortados": [],
+   "foraDoEcra": []
+  },
+  {
+   "nome": "390_claro_20_entrar",
+   "scrollLateral": false,
+   "alvosPequenos": [
+    "Encolher a lista e ver o mapa 358×24",
+    "Todos 63×32",
+    "autocarro 85×32",
+    "metro 60×32",
+    "comboio 78×32",
+    "barco 59×32",
+    "Favoritas 80×32",
+    " 26×26",
+    "M 26×26",
+    "Fechar 36×36",
+    "Iniciar sessão 153×36",
+    "Criar conta 153×36",
+    "Esqueci-me da palavra-passe 161×32"
+   ],
+   "cortados": [],
+   "foraDoEcra": [
+    "Favoritas",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    ""
+   ]
+  },
+  {
+   "nome": "390_claro_23_menu",
+   "scrollLateral": false,
+   "alvosPequenos": [
+    "Encolher a lista e ver o mapa 358×24",
+    "Todos 63×32",
+    "autocarro 85×32",
+    "metro 60×32",
+    "comboio 78×32",
+    "barco 59×32",
+    "Favoritas 80×32",
+    " 26×26",
+    "M 26×26"
+   ],
+   "cortados": [],
+   "foraDoEcra": [
+    "Favoritas",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    ""
+   ]
+  },
+  {
+   "nome": "390_claro_22_notificacoes",
+   "scrollLateral": false,
+   "alvosPequenos": [
+    "Encolher a lista e ver o mapa 358×24",
+    "Todos 63×32",
+    "autocarro 85×32",
+    "metro 60×32",
+    "comboio 78×32",
+    "barco 59×32",
+    "Favoritas 80×32",
+    " 26×26",
+    "M 26×26",
+    "Fechar 36×36",
+    "Definições 83×38",
+    "Histórico 75×38",
+    "Ligar avisos 52×30",
+    "Lisboa 58×32",
+    "Porto 51×32",
+    "Braga 52×32",
+    "Coimbra 67×32",
+    "Setúbal 63×32",
+    "Aveiro 53×32",
+    "Faro 44×32",
+    "Leiria 50×32",
+    "Santarém 75×32",
+    "Viseu 50×32",
+    "Viana do Castelo 112×32",
+    "Évora 51×32"
+   ],
+   "cortados": [],
+   "foraDoEcra": [
+    "Favoritas",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    ""
+   ]
+  },
+  {
+   "nome": "390_escuro_01_inicio",
+   "scrollLateral": false,
+   "alvosPequenos": [
+    "Encolher a lista e ver o mapa 358×24",
+    "Todos 63×32",
+    "autocarro 85×32",
+    "metro 60×32",
+    "comboio 78×32",
+    "barco 59×32",
+    "Favoritas 80×32",
+    " 26×26",
+    "M 26×26"
+   ],
+   "cortados": [],
+   "foraDoEcra": [
+    "Favoritas",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    ""
+   ]
+  },
+  {
+   "nome": "390_escuro_02_pesquisa",
+   "scrollLateral": false,
+   "alvosPequenos": [
+    "Encolher a lista e ver o mapa 358×24",
+    "Todos 63×32",
+    "autocarro 85×32",
+    "metro 60×32",
+    "comboio 78×32",
+    "barco 59×32",
+    "Favoritas 80×32",
+    "Limpar pesquisa 26×26",
+    " 26×26",
+    "M 26×26"
+   ],
+   "cortados": [
+    "Placa Comemorativa do Desembarque de Cri Stovão Co",
+    "Posto Policial do Centro Comercial Colombo",
+    "Escola Profissional Cristóvão Colombo - Pólo de Se",
+    "Escola Profissional Cristóvão Colombo",
+    "R Cristovão Colombo 2 (Casal Chapim)"
+   ],
+   "foraDoEcra": [
+    "Favoritas",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    ""
+   ]
+  },
+  {
+   "nome": "390_escuro_03_opcoes",
+   "scrollLateral": false,
+   "alvosPequenos": [
+    "Encolher a lista e ver o mapa 358×24",
+    "Limpar pesquisa 26×26",
+    " 26×26",
+    "M 26×26",
+    "Az 40×22",
+    "DIV 28×28"
+   ],
+   "cortados": [],
+   "foraDoEcra": []
+  },
+  {
+   "nome": "390_escuro_04_opcao_aberta",
+   "scrollLateral": false,
+   "alvosPequenos": [
+    "Encolher a lista e ver o mapa 358×24",
+    "Limpar pesquisa 26×26",
+    " 26×26",
+    "M 26×26",
+    "Az 40×22",
+    "DIV 28×28"
+   ],
+   "cortados": [],
+   "foraDoEcra": []
+  },
+  {
+   "nome": "390_escuro_23_menu",
+   "scrollLateral": false,
+   "alvosPequenos": [
+    "Encolher a lista e ver o mapa 358×24",
+    "Todos 63×32",
+    "autocarro 85×32",
+    "metro 60×32",
+    "comboio 78×32",
+    "barco 59×32",
+    "Favoritas 80×32",
+    " 26×26",
+    "M 26×26"
+   ],
+   "cortados": [],
+   "foraDoEcra": [
+    "Favoritas",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    ""
+   ]
+  },
+  {
+   "nome": "390_escuro_05_paragem",
+   "scrollLateral": false,
+   "alvosPequenos": [
+    "Encolher a lista e ver o mapa 358×24",
+    "Todos 63×32",
+    "autocarro 85×32",
+    "metro 60×32",
+    "comboio 78×32",
+    "barco 59×32",
+    "Favoritas 80×32",
+    "Encolher o painel 366×24",
+    "Voltar às partidas da paragem 91×36",
+    "DIV 26×26"
+   ],
+   "cortados": [],
+   "foraDoEcra": [
+    "Favoritas"
+   ]
+  },
+  {
+   "nome": "390_escuro_06_horarios",
+   "scrollLateral": false,
+   "alvosPequenos": [
+    "Todos 59×36",
+    "Metro 54×36",
+    "Comboio 74×36",
+    "Autocarro 80×36",
+    "Barco 56×36"
+   ],
+   "cortados": [
+    "Campo Ourique (Prazeres)",
+    "Estação Oriente (Interface)",
+    "Pólo Universitário Ajuda"
+   ],
+   "foraDoEcra": []
+  },
+  {
+   "nome": "390_escuro_07_alertas",
+   "scrollLateral": false,
+   "alvosPequenos": [
+    "continental 75×32",
+    "madeira 54×32",
+    "Açores 51×32",
+    "! 26×26",
+    "▲ 26×26",
+    "8 36×32",
+    "7 36×32",
+    " 30×30",
+    "2 36×32",
+    "39 42×38",
+    "Fogos.pt 45×13",
+    "Incêndios3 102×32",
+    "Tempo20 92×32",
+    "Estrada1 92×32",
+    "Transportes47 122×32",
+    "Comunidade31 124×32",
+    "Aproximar 32×32",
+    "Afastar 32×32",
+    "Centrar Portugal 32×32",
+    "Aviso laranja: Precipitação em Évora 293×25",
+    "Ver todas 51×32"
+   ],
+   "cortados": [],
+   "foraDoEcra": [
+    "Transportes47",
+    "Comunidade31"
+   ]
+  },
+  {
+   "nome": "390_escuro_09_comunidade",
+   "scrollLateral": false,
+   "alvosPequenos": [],
+   "cortados": [],
+   "foraDoEcra": [
+    "Conversas",
+    "Novidades",
+    "Avisos",
+    "Todos os operadoresCP - Comboios de Port"
+   ]
+  },
+  {
+   "nome": "390_ambar_01_inicio",
+   "scrollLateral": false,
+   "alvosPequenos": [
+    "Encolher a lista e ver o mapa 358×24",
+    "Todos 63×32",
+    "autocarro 85×32",
+    "metro 60×32",
+    "comboio 78×32",
+    "barco 59×32",
+    "Favoritas 80×32",
+    " 26×26",
+    "M 26×26"
+   ],
+   "cortados": [
+    "Estação Oriente (Interface)"
+   ],
+   "foraDoEcra": [
+    "Favoritas",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    ""
+   ]
+  },
+  {
+   "nome": "390_ambar_02_pesquisa",
+   "scrollLateral": false,
+   "alvosPequenos": [
+    "Encolher a lista e ver o mapa 358×24",
+    "Todos 63×32",
+    "autocarro 85×32",
+    "metro 60×32",
+    "comboio 78×32",
+    "barco 59×32",
+    "Favoritas 80×32",
+    "Limpar pesquisa 26×26",
+    " 26×26",
+    "M 26×26"
+   ],
+   "cortados": [
+    "Estação Oriente (Interface)",
+    "Placa Comemorativa do Desembarque de Cri Stovão Co",
+    "Posto Policial do Centro Comercial Colombo",
+    "Escola Profissional Cristóvão Colombo - Pólo de Se",
+    "Escola Profissional Cristóvão Colombo",
+    "R Cristovão Colombo 2 (Casal Chapim)"
+   ],
+   "foraDoEcra": [
+    "Favoritas",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    ""
+   ]
+  },
+  {
+   "nome": "390_ambar_03_opcoes",
+   "scrollLateral": false,
+   "alvosPequenos": [
+    "Encolher a lista e ver o mapa 358×24",
+    "Limpar pesquisa 26×26",
+    " 26×26",
+    "M 26×26",
+    "Az 40×22",
+    "DIV 28×28"
+   ],
+   "cortados": [],
+   "foraDoEcra": []
+  },
+  {
+   "nome": "390_ambar_04_opcao_aberta",
+   "scrollLateral": false,
+   "alvosPequenos": [
+    "Encolher a lista e ver o mapa 358×24",
+    "Limpar pesquisa 26×26",
+    " 26×26",
+    "M 26×26",
+    "Az 40×22",
+    "DIV 28×28"
+   ],
+   "cortados": [],
+   "foraDoEcra": []
+  },
+  {
+   "nome": "390_ambar_23_menu",
+   "scrollLateral": false,
+   "alvosPequenos": [
+    "Encolher a lista e ver o mapa 358×24",
+    "Todos 63×32",
+    "autocarro 85×32",
+    "metro 60×32",
+    "comboio 78×32",
+    "barco 59×32",
+    "Favoritas 80×32",
+    " 26×26",
+    "M 26×26"
+   ],
+   "cortados": [
+    "Estação Oriente (Interface)"
+   ],
+   "foraDoEcra": [
+    "Favoritas",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    ""
+   ]
+  },
+  {
+   "nome": "390_ambar_05_paragem",
+   "scrollLateral": false,
+   "alvosPequenos": [
+    "Encolher a lista e ver o mapa 358×24",
+    "Todos 63×32",
+    "autocarro 85×32",
+    "metro 60×32",
+    "comboio 78×32",
+    "barco 59×32",
+    "Favoritas 80×32",
+    "Encolher o painel 366×24",
+    "Voltar às partidas da paragem 91×36",
+    "DIV 26×26"
+   ],
+   "cortados": [
+    "Estação Oriente (Interface)"
+   ],
+   "foraDoEcra": [
+    "Favoritas"
+   ]
+  },
+  {
+   "nome": "390_ambar_06_horarios",
+   "scrollLateral": false,
+   "alvosPequenos": [
+    "Todos 59×36",
+    "Metro 54×36",
+    "Comboio 74×36",
+    "Autocarro 80×36",
+    "Barco 56×36"
+   ],
+   "cortados": [
+    "Campo Ourique (Prazeres)",
+    "Odivelas (B. Dr. Lima Pimentel)"
+   ],
+   "foraDoEcra": []
+  },
+  {
+   "nome": "390_ambar_07_alertas",
+   "scrollLateral": false,
+   "alvosPequenos": [
+    "continental 75×32",
+    "madeira 54×32",
+    "Açores 51×32",
+    "! 26×26",
+    "▲ 26×26",
+    "8 36×32",
+    "7 36×32",
+    " 30×30",
+    "2 36×32",
+    "39 42×38",
+    "Fogos.pt 45×13",
+    "Incêndios3 102×32",
+    "Tempo20 92×32",
+    "Estrada1 92×32",
+    "Transportes47 122×32",
+    "Comunidade31 124×32",
+    "Aproximar 32×32",
+    "Afastar 32×32",
+    "Centrar Portugal 32×32",
+    "Aviso laranja: Precipitação em Évora 293×25",
+    "Ver todas 51×32"
+   ],
+   "cortados": [],
+   "foraDoEcra": [
+    "Transportes47",
+    "Comunidade31"
+   ]
+  },
+  {
+   "nome": "390_ambar_09_comunidade",
+   "scrollLateral": false,
+   "alvosPequenos": [],
+   "cortados": [],
+   "foraDoEcra": [
+    "Conversas",
+    "Novidades",
+    "Avisos",
+    "Todos os operadoresCP - Comboios de Port"
+   ]
+  },
+  {
+   "nome": "320_claro_01_inicio",
+   "scrollLateral": false,
+   "alvosPequenos": [
+    "Notificações 36×40",
+    "Abrir o menu 36×40",
+    "Entrar ou criar conta 36×40",
+    "Encolher a lista e ver o mapa 288×24",
+    "Todos 63×32",
+    "autocarro 85×32",
+    "metro 60×32",
+    "comboio 78×32",
+    "barco 59×32",
+    "Favoritas 80×32",
+    " 26×26",
+    "M 26×26"
+   ],
+   "cortados": [
+    "Sentido Campo Ourique (Prazeres) · Pç. Figueira",
+    "Campo Ourique (Prazeres)"
+   ],
+   "foraDoEcra": [
+    "barco",
+    "Favoritas",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    ""
+   ]
+  },
+  {
+   "nome": "320_claro_02_pesquisa",
+   "scrollLateral": false,
+   "alvosPequenos": [
+    "Notificações 36×40",
+    "Abrir o menu 36×40",
+    "Entrar ou criar conta 36×40",
+    "Encolher a lista e ver o mapa 288×24",
+    "Todos 63×32",
+    "autocarro 85×32",
+    "metro 60×32",
+    "comboio 78×32",
+    "barco 59×32",
+    "Favoritas 80×32",
+    "Limpar pesquisa 26×26",
+    " 26×26",
+    "M 26×26"
+   ],
+   "cortados": [
+    "Sentido Campo Ourique (Prazeres) · Pç. Figueira",
+    "Campo Ourique (Prazeres)",
+    "Centro Comercial Colombo",
+    "Centro comercial · Carnide, Lisboa",
+    "Placa Comemorativa do Desembarque de Cri Stovão Co",
+    "Posto Policial do Centro Comercial Colombo",
+    "Museu · Vila Baleira, Porto Santo",
+    "Supermercado · Carnide, Lisboa",
+    "Escola Profissional Cristóvão Colombo - Pólo de Se",
+    "Escola · São Domingos, Setúbal",
+    "Escola Profissional Cristóvão Colombo",
+    "R Cristovão Colombo 2 (Casal Chapim)",
+    "Paragem · Carris Metropolitana"
+   ],
+   "foraDoEcra": [
+    "barco",
+    "Favoritas",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    ""
+   ]
+  },
+  {
+   "nome": "320_claro_03_opcoes",
+   "scrollLateral": false,
+   "alvosPequenos": [
+    "Notificações 36×40",
+    "Abrir o menu 36×40",
+    "Entrar ou criar conta 36×40",
+    "Encolher a lista e ver o mapa 288×24",
+    "Limpar pesquisa 26×26",
+    " 26×26",
+    "M 26×26",
+    "Az 40×22",
+    "DIV 28×28"
+   ],
+   "cortados": [
+    "Posição aproximada (cerca de 150 metros)"
+   ],
+   "foraDoEcra": []
+  },
+  {
+   "nome": "320_claro_04_opcao_aberta",
+   "scrollLateral": false,
+   "alvosPequenos": [
+    "Notificações 36×40",
+    "Abrir o menu 36×40",
+    "Entrar ou criar conta 36×40",
+    "Encolher a lista e ver o mapa 288×24",
+    "5 min antes 95×36",
+    "Limpar pesquisa 26×26",
+    " 26×26",
+    "M 26×26",
+    "Az 40×22",
+    "DIV 28×28"
+   ],
+   "cortados": [
+    "Posição aproximada (cerca de 150 metros)"
+   ],
+   "foraDoEcra": []
+  },
+  {
+   "nome": "320_claro_05_paragem",
+   "scrollLateral": false,
+   "alvosPequenos": [
+    "Notificações 36×40",
+    "Abrir o menu 36×40",
+    "Entrar ou criar conta 36×40",
+    "Encolher a lista e ver o mapa 288×24",
+    "Todos 63×32",
+    "autocarro 85×32",
+    "metro 60×32",
+    "comboio 78×32",
+    "barco 59×32",
+    "Favoritas 80×32",
+    "Encolher o painel 296×24",
+    "Voltar às partidas da paragem 36×36",
+    "DIV 26×26"
+   ],
+   "cortados": [
+    "149 paragens até 1 km · a afinar a posição…",
+    "Sentido Campo Ourique (Prazeres) · Pç. Figueira",
+    "Campo Ourique (Prazeres)",
+    "Posição aproximada (cerca de 300 metros)"
+   ],
+   "foraDoEcra": [
+    "barco",
+    "Favoritas"
+   ]
+  },
+  {
+   "nome": "320_claro_06_horarios",
+   "scrollLateral": false,
+   "alvosPequenos": [
+    "Notificações 36×40",
+    "Abrir o menu 36×40",
+    "Entrar ou criar conta 36×40",
+    "Todos 59×36",
+    "Metro 54×36",
+    "Comboio 74×36",
+    "Autocarro 80×36",
+    "Barco 56×36"
+   ],
+   "cortados": [
+    "Santa Apolónia",
+    "Sta. Justa - R. Ouro",
+    "Sta. Justa - Lg. Carmo",
+    "Pç. Luis Camões (B. Alto)"
+   ],
+   "foraDoEcra": [
+    "Barco"
+   ]
+  },
+  {
+   "nome": "320_claro_07_alertas",
+   "scrollLateral": false,
+   "alvosPequenos": [
+    "Abrir pesquisa 36×40",
+    "Notificações 36×40",
+    "Abrir o menu 36×40",
+    "Entrar ou criar conta 36×40",
+    "continental 75×32",
+    "madeira 54×32",
+    "Açores 51×32",
+    "! 26×26",
+    "▲ 26×26",
+    "8 36×32",
+    "7 36×32",
+    " 30×30",
+    "2 36×32",
+    "39 42×38",
+    "Fogos.pt 45×13",
+    "Incêndios3 102×32",
+    "Tempo20 92×32",
+    "Estrada1 92×32",
+    "Transportes47 122×32",
+    "Comunidade31 124×32",
+    "Aproximar 32×32",
+    "Afastar 32×32",
+    "Centrar Portugal 32×32"
+   ],
+   "cortados": [],
+   "foraDoEcra": [
+    "Estrada1",
+    "Transportes47",
+    "Comunidade31"
+   ]
+  },
+  {
+   "nome": "320_claro_08_noticias",
+   "scrollLateral": false,
+   "alvosPequenos": [
+    "Notificações 36×40",
+    "Abrir o menu 36×40",
+    "Entrar ou criar conta 36×40",
+    "Escolher distrito 168×34"
+   ],
+   "cortados": [
+    "Aguaceiros e possibilidade de trovoada",
+    "Aviso laranja · Precipitação · a partir de 10/11, ",
+    "Aviso laranja · Agitação Marítima · a partir de 11",
+    "Aviso laranja · Vento · a partir de 11/11, 12:00",
+    "Aviso amarelo · Agitação Marítima · até 11/11, 06:"
+   ],
+   "foraDoEcra": []
+  },
+  {
+   "nome": "320_claro_09_comunidade",
+   "scrollLateral": false,
+   "alvosPequenos": [
+    "Notificações 36×40",
+    "Abrir o menu 36×40",
+    "Entrar ou criar conta 36×40"
+   ],
+   "cortados": [
+    "Escreve algo à comunidade…"
+   ],
+   "foraDoEcra": [
+    "Elogios",
+    "Conversas",
+    "Novidades",
+    "Avisos",
+    "Todos os operadoresCP - Comboios de Port"
+   ]
+  },
+  {
+   "nome": "320_claro_10_ocorrencias",
+   "scrollLateral": false,
+   "alvosPequenos": [
+    "Notificações 36×40",
+    "Abrir o menu 36×40",
+    "Entrar ou criar conta 36×40",
+    "Distrito 119×36",
+    "Concelho 119×36",
+    "Gravidade 246×36",
+    "Mais recentes 91×32",
+    "Gravidade 71×32"
+   ],
+   "cortados": [
+    "Aviso amarelo: Vento em Viseu",
+    "Aviso amarelo: Vento em Évora"
+   ],
+   "foraDoEcra": []
+  },
+  {
+   "nome": "320_claro_11_favoritos",
+   "scrollLateral": false,
+   "alvosPequenos": [
+    "Notificações 36×40",
+    "Abrir o menu 36×40",
+    "Entrar ou criar conta 36×40",
+    "Como instalar 133×36",
+    "Todos (0) 75×36",
+    "Paragens (0) 93×36",
+    "Linhas (0) 78×36",
+    "Locais (0) 78×36"
+   ],
+   "cortados": [],
+   "foraDoEcra": [
+    "Locais (0)"
+   ]
+  },
+  {
+   "nome": "320_claro_12_greves",
+   "scrollLateral": false,
+   "alvosPequenos": [
+    "PAROU — início 92×28",
+    "Início 31×24",
+    "Alertas da PAROU 130×19"
+   ],
+   "cortados": [],
+   "foraDoEcra": []
+  },
+  {
+   "nome": "320_claro_13_sobre",
+   "scrollLateral": false,
+   "alvosPequenos": [
+    "Notificações 36×40",
+    "Abrir o menu 36×40",
+    "Entrar ou criar conta 36×40",
+    "Voltar 70×36"
+   ],
+   "cortados": [],
+   "foraDoEcra": []
+  },
+  {
+   "nome": "320_claro_14_seo_linhas",
+   "scrollLateral": false,
+   "alvosPequenos": [
+    "PAROU — início 92×28",
+    "Início 31×24",
+    "Abre a PAROU 101×19",
+    "Lisboa 46×19",
+    "Porto 39×19",
+    "Braga 39×19",
+    "Coimbra 56×19",
+    "Aveiro 44×19",
+    "Faro 30×19",
+    "Setúbal 50×19",
+    "Leiria 38×19",
+    "Viseu 37×19",
+    "Évora 40×19"
+   ],
+   "cortados": [],
+   "foraDoEcra": []
+  },
+  {
+   "nome": "320_claro_15_seo_operador",
+   "scrollLateral": false,
+   "alvosPequenos": [
+    "PAROU — início 92×28",
+    "Início 31×24",
+    "Linhas 38×24"
+   ],
+   "cortados": [],
+   "foraDoEcra": []
+  },
+  {
+   "nome": "320_claro_16_seo_cidade",
+   "scrollLateral": false,
+   "alvosPequenos": [
+    "Notificações 36×40",
+    "Abrir o menu 36×40",
+    "Entrar ou criar conta 36×40",
+    "Perto 28×28",
+    "Horários 47×28",
+    "Cidades 45×28",
+    "Linhas 38×28",
+    "Notícias 45×28",
+    "Ocorrências 65×28",
+    "Comunidade 70×28",
+    "Catálogo 50×28",
+    "Sobre 32×28",
+    "Privacidade 63×28",
+    "Termos 41×28",
+    "Apagar conta 73×28",
+    "Contactar 54×28",
+    "Linhas e horários 94×28",
+    "Greves 37×28"
+   ],
+   "cortados": [],
+   "foraDoEcra": []
+  },
+  {
+   "nome": "1280_claro_01_inicio",
+   "scrollLateral": false,
+   "alvosPequenos": [
+    "Todos 63×32",
+    "autocarro 85×32",
+    "metro 60×32",
+    "comboio 78×32",
+    "barco 59×32",
+    "Favoritas 80×32",
+    " 26×26",
+    "M 26×26"
+   ],
+   "cortados": [
+    "Sentido Campo Ourique (Prazeres) · Pç. Figueira",
+    "Sentido Campo Ourique (Prazeres) · Pç. Luis Camões"
+   ],
+   "foraDoEcra": [
+    "",
+    "",
+    "",
+    ""
+   ]
+  },
+  {
+   "nome": "1280_claro_01b_inicio_inteiro",
+   "scrollLateral": false,
+   "alvosPequenos": [
+    "Todos 63×32",
+    "autocarro 85×32",
+    "metro 60×32",
+    "comboio 78×32",
+    "barco 59×32",
+    "Favoritas 80×32",
+    " 26×26",
+    "M 26×26"
+   ],
+   "cortados": [
+    "Sentido Campo Ourique (Prazeres) · Pç. Figueira",
+    "Sentido Campo Ourique (Prazeres) · Pç. Luis Camões"
+   ],
+   "foraDoEcra": [
+    "",
+    "",
+    "",
+    ""
+   ]
+  },
+  {
+   "nome": "1280_claro_02_pesquisa",
+   "scrollLateral": false,
+   "alvosPequenos": [
+    "Limpar pesquisa 22×22",
+    "Todos 63×32",
+    "autocarro 85×32",
+    "metro 60×32",
+    "comboio 78×32",
+    "barco 59×32",
+    "Favoritas 80×32",
+    " 26×26",
+    "M 26×26"
+   ],
+   "cortados": [
+    "Placa Comemorativa do Desembarque de Cri Stovão Co",
+    "Escola Profissional Cristóvão Colombo - Pólo de Se",
+    "Sentido Campo Ourique (Prazeres) · Pç. Figueira",
+    "Sentido Campo Ourique (Prazeres) · Pç. Luis Camões"
+   ],
+   "foraDoEcra": [
+    "",
+    "",
+    "",
+    ""
+   ]
+  },
+  {
+   "nome": "1280_claro_03_opcoes",
+   "scrollLateral": false,
+   "alvosPequenos": [
+    "Limpar pesquisa 22×22",
+    "Voltar aos transportes perto 36×36",
+    "Adicionar paragens à rota 36×36",
+    " 26×26",
+    "M 26×26",
+    "Az 40×22",
+    "DIV 28×28"
+   ],
+   "cortados": [],
+   "foraDoEcra": []
+  },
+  {
+   "nome": "1280_claro_03b_opcoes_inteiro",
+   "scrollLateral": false,
+   "alvosPequenos": [
+    "Limpar pesquisa 22×22",
+    "Voltar aos transportes perto 36×36",
+    "Adicionar paragens à rota 36×36",
+    " 26×26",
+    "M 26×26",
+    "Az 40×22",
+    "DIV 28×28"
+   ],
+   "cortados": [],
+   "foraDoEcra": []
+  },
+  {
+   "nome": "1280_claro_04_opcao_aberta",
+   "scrollLateral": false,
+   "alvosPequenos": [
+    "Limpar pesquisa 22×22",
+    "Voltar aos transportes perto 36×36",
+    "Adicionar paragens à rota 36×36",
+    "5 min antes 95×36",
+    " 26×26",
+    "M 26×26",
+    "Az 40×22",
+    "DIV 28×28"
+   ],
+   "cortados": [],
+   "foraDoEcra": []
+  },
+  {
+   "nome": "1280_claro_04c_troco_a_pe",
+   "scrollLateral": false,
+   "alvosPequenos": [
+    "Limpar pesquisa 22×22",
+    "Voltar aos transportes perto 36×36",
+    "Adicionar paragens à rota 36×36",
+    "5 min antes 95×36",
+    " 26×26",
+    "M 26×26"
+   ],
+   "cortados": [],
+   "foraDoEcra": [
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    ""
+   ]
+  },
+  {
+   "nome": "1280_claro_05_paragem",
+   "scrollLateral": false,
+   "alvosPequenos": [
+    "Todos 63×32",
+    "autocarro 85×32",
+    "metro 60×32",
+    "comboio 78×32",
+    "barco 59×32",
+    "Favoritas 80×32",
+    "Voltar às partidas da paragem 91×36",
+    "DIV 26×26"
+   ],
+   "cortados": [
+    "Sentido Campo Ourique (Prazeres) · Pç. Figueira",
+    "Sentido Campo Ourique (Prazeres) · Pç. Luis Camões"
+   ],
+   "foraDoEcra": []
+  },
+  {
+   "nome": "1280_claro_06_horarios",
+   "scrollLateral": false,
+   "alvosPequenos": [
+    "Todos 59×36",
+    "Metro 54×36",
+    "Comboio 74×36",
+    "Autocarro 80×36",
+    "Barco 56×36"
+   ],
+   "cortados": [],
+   "foraDoEcra": []
+  },
+  {
+   "nome": "1280_claro_07_alertas",
+   "scrollLateral": false,
+   "alvosPequenos": [
+    "Pesquisar... 192×30",
+    "Aviso laranja: Precipitação em Évora 293×25",
+    "Ver todas 51×32",
+    "continental 79×32",
+    "madeira 58×32",
+    "Açores 55×32",
+    "! 26×26",
+    "▲ 26×26",
+    "8 36×32",
+    "7 36×32",
+    " 30×30",
+    "2 36×32",
+    "39 42×38",
+    "Fogos.pt 45×13",
+    "Incêndios3 102×32",
+    "Tempo20 92×32",
+    "Estrada1 92×32",
+    "Transportes47 122×32",
+    "Comunidade31 124×32",
+    "Aproximar 32×32",
+    "Afastar 32×32",
+    "Centrar Portugal 32×32",
+    "Distrito 150×28",
+    "Concelho 120×28",
+    "Operador 150×28"
+   ],
+   "cortados": [],
+   "foraDoEcra": []
+  },
+  {
+   "nome": "1280_claro_08_noticias",
+   "scrollLateral": false,
+   "alvosPequenos": [
+    "Escolher distrito 168×34"
+   ],
+   "cortados": [],
+   "foraDoEcra": []
+  },
+  {
+   "nome": "1280_claro_09_comunidade",
+   "scrollLateral": false,
+   "alvosPequenos": [],
+   "cortados": [],
+   "foraDoEcra": []
+  },
+  {
+   "nome": "1280_claro_10_ocorrencias",
+   "scrollLateral": false,
+   "alvosPequenos": [
+    "Distrito 285×36",
+    "Concelho 285×36",
+    "Gravidade 285×36",
+    "Mais recentes 91×32",
+    "Gravidade 71×32"
+   ],
+   "cortados": [],
+   "foraDoEcra": []
+  },
+  {
+   "nome": "1280_claro_11_favoritos",
+   "scrollLateral": false,
+   "alvosPequenos": [
+    "Instalar 95×36",
+    "Todos (0) 75×36",
+    "Paragens (0) 93×36",
+    "Linhas (0) 78×36",
+    "Locais (0) 78×36"
+   ],
+   "cortados": [],
+   "foraDoEcra": []
+  },
+  {
+   "nome": "1280_claro_12_greves",
+   "scrollLateral": false,
+   "alvosPequenos": [
+    "PAROU — início 92×28",
+    "Início 31×24",
+    "Alertas da PAROU 130×19",
+    "PAROU 49×19",
+    "horários das linhas 125×19"
+   ],
+   "cortados": [],
+   "foraDoEcra": []
+  },
+  {
+   "nome": "1280_claro_13_sobre",
+   "scrollLateral": false,
+   "alvosPequenos": [
+    "Voltar 70×36",
+    "Ver todos os contactos 154×24"
+   ],
+   "cortados": [],
+   "foraDoEcra": []
+  },
+  {
+   "nome": "1280_claro_14_seo_linhas",
+   "scrollLateral": false,
+   "alvosPequenos": [
+    "PAROU — início 92×28",
+    "Início 31×24",
+    "Abre a PAROU 101×19",
+    "Lisboa 46×19",
+    "Porto 39×19",
+    "Braga 39×19",
+    "Coimbra 56×19",
+    "Aveiro 44×19",
+    "Faro 30×19",
+    "Setúbal 50×19",
+    "Leiria 38×19",
+    "Viseu 37×19",
+    "Évora 40×19",
+    "Santarém 65×19",
+    "Viana do Castelo 111×19",
+    "Vila Real 56×19",
+    "Bragança 63×19",
+    "Guarda 46×19",
+    "Castelo Branco 102×19",
+    "Portalegre 70×19",
+    "Beja 30×19",
+    "Funchal 52×19",
+    "Ponta Delgada 97×19",
+    "Maia 31×19",
+    "Matosinhos 79×19"
+   ],
+   "cortados": [],
+   "foraDoEcra": []
+  },
+  {
+   "nome": "1280_claro_15_seo_operador",
+   "scrollLateral": false,
+   "alvosPequenos": [
+    "PAROU — início 92×28",
+    "Início 31×24",
+    "Linhas 38×24"
+   ],
+   "cortados": [],
+   "foraDoEcra": []
+  },
+  {
+   "nome": "1280_claro_16_seo_cidade",
+   "scrollLateral": false,
+   "alvosPequenos": [
+    "Perto 28×28",
+    "Horários 47×28",
+    "Cidades 45×28",
+    "Linhas 38×28",
+    "Notícias 45×28",
+    "Ocorrências 65×28",
+    "Comunidade 70×28",
+    "Catálogo 50×28",
+    "Sobre 32×28",
+    "Privacidade 63×28",
+    "Termos 41×28",
+    "Apagar conta 73×28",
+    "Contactar 54×28",
+    "Linhas e horários 94×28",
+    "Greves 37×28",
+    "Carris Metropolitana 105×28",
+    "Metro de Lisboa 82×28",
+    "Carris 31×28",
+    "CP 28×28",
+    "STCP 28×28",
+    "Metro do Porto 76×28",
+    "Fertagus 47×28",
+    "Transtejo e Soflusa 99×28",
+    "MobiCascais 66×28",
+    "Metro Sul do Tejo 88×28"
+   ],
+   "cortados": [],
+   "foraDoEcra": []
+  },
+  {
+   "nome": "1280_claro_17_seo_linha",
+   "scrollLateral": false,
+   "alvosPequenos": [
+    "PAROU — início 92×28",
+    "Início 31×24",
+    "Linhas 38×24",
+    "Carris 35×24"
+   ],
+   "cortados": [],
+   "foraDoEcra": []
+  },
+  {
+   "nome": "1280_claro_17b_seo_linha_inteira",
+   "scrollLateral": false,
+   "alvosPequenos": [
+    "PAROU — início 92×28",
+    "Início 31×24",
+    "Linhas 38×24",
+    "Carris 35×24"
+   ],
+   "cortados": [],
+   "foraDoEcra": []
+  },
+  {
+   "nome": "1280_claro_19_menu_mais",
+   "scrollLateral": false,
+   "alvosPequenos": [
+    "Todos 63×32",
+    "autocarro 85×32",
+    "metro 60×32",
+    "comboio 78×32",
+    "barco 59×32",
+    "Favoritas 80×32",
+    " 26×26",
+    "M 26×26"
+   ],
+   "cortados": [
+    "Sentido Campo Ourique (Prazeres) · Pç. Figueira",
+    "Sentido Campo Ourique (Prazeres) · Pç. Luis Camões"
+   ],
+   "foraDoEcra": [
+    "",
+    "",
+    "",
+    ""
+   ]
+  },
+  {
+   "nome": "1280_claro_20_entrar",
+   "scrollLateral": false,
+   "alvosPequenos": [
+    "Todos 63×32",
+    "autocarro 85×32",
+    "metro 60×32",
+    "comboio 78×32",
+    "barco 59×32",
+    "Favoritas 80×32",
+    " 26×26",
+    "M 26×26",
+    "Fechar 36×36",
+    "Iniciar sessão 166×36",
+    "Criar conta 166×36",
+    "Esqueci-me da palavra-passe 161×32"
+   ],
+   "cortados": [
+    "Sentido Campo Ourique (Prazeres) · Pç. Figueira",
+    "Sentido Campo Ourique (Prazeres) · Pç. Luis Camões"
+   ],
+   "foraDoEcra": [
+    "",
+    "",
+    "",
+    ""
+   ]
+  },
+  {
+   "nome": "1280_claro_23_menu",
+   "scrollLateral": false,
+   "alvosPequenos": [
+    "Todos 63×32",
+    "autocarro 85×32",
+    "metro 60×32",
+    "comboio 78×32",
+    "barco 59×32",
+    "Favoritas 80×32",
+    " 26×26",
+    "M 26×26"
+   ],
+   "cortados": [
+    "Sentido Campo Ourique (Prazeres) · Pç. Figueira",
+    "Sentido Campo Ourique (Prazeres) · Pç. Luis Camões"
+   ],
+   "foraDoEcra": [
+    "",
+    "",
+    "",
+    ""
+   ]
+  },
+  {
+   "nome": "1280_claro_22_notificacoes",
+   "scrollLateral": false,
+   "alvosPequenos": [
+    "Todos 63×32",
+    "autocarro 85×32",
+    "metro 60×32",
+    "comboio 78×32",
+    "barco 59×32",
+    "Favoritas 80×32",
+    " 26×26",
+    "M 26×26",
+    "Fechar 36×36",
+    "Definições 83×38",
+    "Histórico 75×38",
+    "Ligar avisos 52×30",
+    "Lisboa 58×32",
+    "Porto 51×32",
+    "Braga 52×32",
+    "Coimbra 67×32",
+    "Setúbal 63×32",
+    "Aveiro 53×32",
+    "Faro 44×32",
+    "Leiria 50×32",
+    "Santarém 75×32",
+    "Viseu 50×32",
+    "Viana do Castelo 112×32",
+    "Évora 51×32",
+    "Vila Real 66×32"
+   ],
+   "cortados": [
+    "Sentido Campo Ourique (Prazeres) · Pç. Figueira",
+    "Sentido Campo Ourique (Prazeres) · Pç. Luis Camões"
+   ],
+   "foraDoEcra": [
+    "",
+    "",
+    "",
+    ""
+   ]
+  },
+  {
+   "nome": "1280_escuro_01_inicio",
+   "scrollLateral": false,
+   "alvosPequenos": [
+    "Todos 63×32",
+    "autocarro 85×32",
+    "metro 60×32",
+    "comboio 78×32",
+    "barco 59×32",
+    "Favoritas 80×32",
+    " 26×26",
+    "M 26×26"
+   ],
+   "cortados": [
+    "Sentido Campo Ourique (Prazeres) · Pç. Figueira",
+    "Sentido Campo Ourique (Prazeres) · Pç. Luis Camões"
+   ],
+   "foraDoEcra": [
+    "",
+    "",
+    "",
+    ""
+   ]
+  },
+  {
+   "nome": "1280_escuro_02_pesquisa",
+   "scrollLateral": false,
+   "alvosPequenos": [
+    "Limpar pesquisa 22×22",
+    "Todos 63×32",
+    "autocarro 85×32",
+    "metro 60×32",
+    "comboio 78×32",
+    "barco 59×32",
+    "Favoritas 80×32",
+    " 26×26",
+    "M 26×26"
+   ],
+   "cortados": [
+    "Placa Comemorativa do Desembarque de Cri Stovão Co",
+    "Escola Profissional Cristóvão Colombo - Pólo de Se",
+    "Sentido Campo Ourique (Prazeres) · Pç. Figueira",
+    "Sentido Campo Ourique (Prazeres) · Pç. Luis Camões"
+   ],
+   "foraDoEcra": [
+    "",
+    "",
+    "",
+    ""
+   ]
+  },
+  {
+   "nome": "1280_escuro_03_opcoes",
+   "scrollLateral": false,
+   "alvosPequenos": [
+    "Limpar pesquisa 22×22",
+    "Voltar aos transportes perto 36×36",
+    "Adicionar paragens à rota 36×36",
+    " 26×26",
+    "M 26×26",
+    "Az 40×22",
+    "DIV 28×28"
+   ],
+   "cortados": [],
+   "foraDoEcra": []
+  },
+  {
+   "nome": "1280_escuro_04_opcao_aberta",
+   "scrollLateral": false,
+   "alvosPequenos": [
+    "Limpar pesquisa 22×22",
+    "Voltar aos transportes perto 36×36",
+    "Adicionar paragens à rota 36×36",
+    " 26×26",
+    "M 26×26",
+    "Az 40×22",
+    "DIV 28×28"
+   ],
+   "cortados": [],
+   "foraDoEcra": []
+  },
+  {
+   "nome": "1280_escuro_05_paragem",
+   "scrollLateral": false,
+   "alvosPequenos": [
+    "Todos 63×32",
+    "autocarro 85×32",
+    "metro 60×32",
+    "comboio 78×32",
+    "barco 59×32",
+    "Favoritas 80×32",
+    "Voltar às partidas da paragem 91×36",
+    "DIV 26×26"
+   ],
+   "cortados": [
+    "Sentido Campo Ourique (Prazeres) · Pç. Figueira",
+    "Sentido Campo Ourique (Prazeres) · Pç. Luis Camões"
+   ],
+   "foraDoEcra": []
+  },
+  {
+   "nome": "1280_escuro_06_horarios",
+   "scrollLateral": false,
+   "alvosPequenos": [
+    "Todos 59×36",
+    "Metro 54×36",
+    "Comboio 74×36",
+    "Autocarro 80×36",
+    "Barco 56×36"
+   ],
+   "cortados": [],
+   "foraDoEcra": []
+  },
+  {
+   "nome": "1280_escuro_07_alertas",
+   "scrollLateral": false,
+   "alvosPequenos": [
+    "Pesquisar... 192×30",
+    "Aviso laranja: Precipitação em Évora 293×25",
+    "Ver todas 51×32",
+    "continental 79×32",
+    "madeira 58×32",
+    "Açores 55×32",
+    "! 26×26",
+    "▲ 26×26",
+    "8 36×32",
+    "7 36×32",
+    " 30×30",
+    "2 36×32",
+    "39 42×38",
+    "Fogos.pt 45×13",
+    "Incêndios3 102×32",
+    "Tempo20 92×32",
+    "Estrada1 92×32",
+    "Transportes47 122×32",
+    "Comunidade31 124×32",
+    "Aproximar 32×32",
+    "Afastar 32×32",
+    "Centrar Portugal 32×32",
+    "Distrito 150×28",
+    "Concelho 120×28",
+    "Operador 150×28"
+   ],
+   "cortados": [],
+   "foraDoEcra": []
+  },
+  {
+   "nome": "1280_escuro_09_comunidade",
+   "scrollLateral": false,
+   "alvosPequenos": [],
+   "cortados": [],
+   "foraDoEcra": []
+  },
+  {
+   "nome": "390_claro_24_convite_instalar",
+   "scrollLateral": false,
+   "alvosPequenos": [
+    "Encolher a lista e ver o mapa 358×24",
+    "Limpar pesquisa 26×26",
+    " 26×26",
+    "M 26×26",
+    "Az 40×22",
+    "DIV 28×28"
+   ],
+   "cortados": [],
+   "foraDoEcra": []
+  },
+  {
+   "nome": "390_claro_25_convite_passos",
+   "scrollLateral": false,
+   "alvosPequenos": [
+    "Encolher a lista e ver o mapa 358×24",
+    "Limpar pesquisa 26×26",
+    " 26×26",
+    "M 26×26",
+    "Az 40×22",
+    "DIV 28×28"
+   ],
+   "cortados": [],
+   "foraDoEcra": []
+  },
+  {
+   "nome": "390_escuro_24_convite_instalar",
+   "scrollLateral": false,
+   "alvosPequenos": [
+    "Encolher a lista e ver o mapa 358×24",
+    "Limpar pesquisa 26×26",
+    " 26×26",
+    "M 26×26",
+    "Az 40×22",
+    "DIV 28×28"
+   ],
+   "cortados": [],
+   "foraDoEcra": []
+  },
+  {
+   "nome": "390_escuro_25_convite_passos",
+   "scrollLateral": false,
+   "alvosPequenos": [
+    "Encolher a lista e ver o mapa 358×24",
+    "Limpar pesquisa 26×26",
+    " 26×26",
+    "M 26×26",
+    "Az 40×22",
+    "DIV 28×28"
+   ],
+   "cortados": [],
+   "foraDoEcra": []
+  },
+  {
+   "nome": "390_ambar_24_convite_instalar",
+   "scrollLateral": false,
+   "alvosPequenos": [
+    "Encolher a lista e ver o mapa 358×24",
+    "Limpar pesquisa 26×26",
+    " 26×26",
+    "M 26×26",
+    "Az 40×22",
+    "DIV 28×28"
+   ],
+   "cortados": [],
+   "foraDoEcra": []
+  },
+  {
+   "nome": "390_ambar_25_convite_passos",
+   "scrollLateral": false,
+   "alvosPequenos": [
+    "Encolher a lista e ver o mapa 358×24",
+    "Limpar pesquisa 26×26",
+    " 26×26",
+    "M 26×26",
+    "Az 40×22",
+    "DIV 28×28"
+   ],
+   "cortados": [],
+   "foraDoEcra": []
+  },
+  {
+   "nome": "320_claro_24_convite_instalar",
+   "scrollLateral": false,
+   "alvosPequenos": [
+    "Notificações 36×40",
+    "Abrir o menu 36×40",
+    "Entrar ou criar conta 36×40",
+    "Encolher a lista e ver o mapa 288×24",
+    "Limpar pesquisa 26×26",
+    " 26×26",
+    "M 26×26",
+    "Az 40×22",
+    "DIV 28×28"
+   ],
+   "cortados": [],
+   "foraDoEcra": []
+  },
+  {
+   "nome": "320_claro_25_convite_passos",
+   "scrollLateral": false,
+   "alvosPequenos": [
+    "Notificações 36×40",
+    "Abrir o menu 36×40",
+    "Entrar ou criar conta 36×40",
+    "Encolher a lista e ver o mapa 288×24",
+    "Limpar pesquisa 26×26",
+    " 26×26",
+    "M 26×26",
+    "Az 40×22",
+    "DIV 28×28"
+   ],
+   "cortados": [],
+   "foraDoEcra": []
+  },
+  {
+   "nome": "390_claro_iphone_24_convite_instalar",
+   "scrollLateral": false,
+   "alvosPequenos": [
+    "Encolher a lista e ver o mapa 358×24",
+    "Limpar pesquisa 26×26",
+    " 26×26",
+    "M 26×26",
+    "Az 40×22",
+    "DIV 28×28"
+   ],
+   "cortados": [],
+   "foraDoEcra": []
+  },
+  {
+   "nome": "390_claro_iphone_25_convite_passos",
+   "scrollLateral": false,
+   "alvosPequenos": [
+    "Encolher a lista e ver o mapa 358×24",
+    "Limpar pesquisa 26×26",
+    " 26×26",
+    "M 26×26",
+    "Az 40×22",
+    "DIV 28×28"
+   ],
+   "cortados": [],
+   "foraDoEcra": []
+  },
+  {
+   "nome": "390_claro_00_sem_localizacao",
+   "scrollLateral": false,
+   "alvosPequenos": [
+    "Encolher a lista e ver o mapa 358×24",
+    "Todos 63×32",
+    "autocarro 85×32",
+    "metro 60×32",
+    "comboio 78×32",
+    "barco 59×32",
+    "Favoritas 80×32"
+   ],
+   "cortados": [],
+   "foraDoEcra": [
+    "Favoritas"
+   ]
+  }
+ ],
+ "consola": [],
+ "trocosAPe": {
+  "390_claro": [
+   {
+    "pontos": 3,
+    "x": 263,
+    "y": 309,
+    "w": 8,
+    "h": 2
+   },
+   {
+    "pontos": 2,
+    "x": 119,
+    "y": 146,
+    "w": 0,
+    "h": 6
+   }
+  ],
+  "1280_claro": [
+   {
+    "pontos": 3,
+    "x": 1008,
+    "y": 610,
+    "w": 15,
+    "h": 4
+   },
+   {
+    "pontos": 2,
+    "x": 719,
+    "y": 284,
+    "w": 0,
+    "h": 12
+   }
+  ]
+ }
+}

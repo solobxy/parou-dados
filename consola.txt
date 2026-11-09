@@ -1,0 +1,133 @@
+390_claro_01_inicio  alvos<40: 9 cortados: 0
+390_claro_01b_inicio_inteiro  alvos<40: 9 cortados: 0
+390_claro_02_pesquisa  alvos<40: 10 cortados: 5
+390_claro_03_opcoes  alvos<40: 4 cortados: 0
+390_claro_03b_opcoes_inteiro  alvos<40: 4 cortados: 0
+390_claro_04_opcao_aberta  alvos<40: 6 cortados: 0
+[390_claro] pedidos do caminho a pé: nenhum
+OK      [390_claro] troços a pé pelas ruas: 1/2 (3 pontos, 2 pontos)
+390_claro_04c_troco_a_pe  alvos<40: 4 cortados: 0
+390_claro_05_paragem  alvos<40: 10 cortados: 0
+390_claro_06_horarios  alvos<40: 5 cortados: 4
+390_claro_07_alertas  alvos<40: 21 cortados: 0
+390_claro_08_noticias  alvos<40: 9 cortados: 0
+390_claro_09_comunidade  alvos<40: 0 cortados: 0
+390_claro_10_ocorrencias  alvos<40: 5 cortados: 5
+390_claro_11_favoritos  alvos<40: 5 cortados: 0
+390_claro_12_greves  alvos<40: 3 cortados: 0
+390_claro_13_sobre  alvos<40: 1 cortados: 0
+390_claro_14_seo_linhas  alvos<40: 25 cortados: 0
+390_claro_15_seo_operador  alvos<40: 3 cortados: 0
+390_claro_16_seo_cidade  alvos<40: 23 cortados: 0
+390_claro_17_seo_linha  alvos<40: 4 cortados: 0
+390_claro_17b_seo_linha_inteira  alvos<40: 4 cortados: 0
+390_claro_20_entrar  alvos<40: 13 cortados: 0
+390_claro_23_menu  alvos<40: 9 cortados: 0
+390_claro_22_notificacoes  alvos<40: 25 cortados: 0
+390_escuro_01_inicio  alvos<40: 9 cortados: 0
+390_escuro_02_pesquisa  alvos<40: 10 cortados: 5
+390_escuro_03_opcoes  alvos<40: 6 cortados: 0
+390_escuro_04_opcao_aberta  alvos<40: 6 cortados: 0
+390_escuro_23_menu  alvos<40: 9 cortados: 0
+390_escuro_05_paragem  alvos<40: 10 cortados: 0
+390_escuro_06_horarios  alvos<40: 5 cortados: 3
+390_escuro_07_alertas  alvos<40: 21 cortados: 0
+390_escuro_09_comunidade  alvos<40: 0 cortados: 0
+390_ambar_01_inicio  alvos<40: 9 cortados: 1
+390_ambar_02_pesquisa  alvos<40: 10 cortados: 6
+390_ambar_03_opcoes  alvos<40: 6 cortados: 0
+390_ambar_04_opcao_aberta  alvos<40: 6 cortados: 0
+390_ambar_23_menu  alvos<40: 9 cortados: 1
+390_ambar_05_paragem  alvos<40: 10 cortados: 1
+390_ambar_06_horarios  alvos<40: 5 cortados: 2
+390_ambar_07_alertas  alvos<40: 21 cortados: 0
+390_ambar_09_comunidade  alvos<40: 0 cortados: 0
+320_claro_01_inicio  alvos<40: 12 cortados: 2
+320_claro_02_pesquisa  alvos<40: 13 cortados: 13
+320_claro_03_opcoes  alvos<40: 9 cortados: 1
+320_claro_04_opcao_aberta  alvos<40: 10 cortados: 1
+320_claro_05_paragem  alvos<40: 13 cortados: 4
+320_claro_06_horarios  alvos<40: 8 cortados: 4
+320_claro_07_alertas  alvos<40: 23 cortados: 0
+320_claro_08_noticias  alvos<40: 4 cortados: 5
+320_claro_09_comunidade  alvos<40: 3 cortados: 1
+320_claro_10_ocorrencias  alvos<40: 8 cortados: 2
+320_claro_11_favoritos  alvos<40: 8 cortados: 0
+320_claro_12_greves  alvos<40: 3 cortados: 0
+320_claro_13_sobre  alvos<40: 4 cortados: 0
+320_claro_14_seo_linhas  alvos<40: 13 cortados: 0
+320_claro_15_seo_operador  alvos<40: 3 cortados: 0
+320_claro_16_seo_cidade  alvos<40: 18 cortados: 0
+1280_claro_01_inicio  alvos<40: 8 cortados: 2
+1280_claro_01b_inicio_inteiro  alvos<40: 8 cortados: 2
+1280_claro_02_pesquisa  alvos<40: 9 cortados: 4
+1280_claro_03_opcoes  alvos<40: 7 cortados: 0
+1280_claro_03b_opcoes_inteiro  alvos<40: 7 cortados: 0
+1280_claro_04_opcao_aberta  alvos<40: 8 cortados: 0
+[1280_claro] pedidos do caminho a pé: nenhum
+OK      [1280_claro] troços a pé pelas ruas: 1/2 (3 pontos, 2 pontos)
+1280_claro_04c_troco_a_pe  alvos<40: 6 cortados: 0
+1280_claro_05_paragem  alvos<40: 8 cortados: 2
+1280_claro_06_horarios  alvos<40: 5 cortados: 0
+1280_claro_07_alertas  alvos<40: 25 cortados: 0
+1280_claro_08_noticias  alvos<40: 1 cortados: 0
+1280_claro_09_comunidade  alvos<40: 0 cortados: 0
+1280_claro_10_ocorrencias  alvos<40: 5 cortados: 0
+1280_claro_11_favoritos  alvos<40: 5 cortados: 0
+1280_claro_12_greves  alvos<40: 5 cortados: 0
+1280_claro_13_sobre  alvos<40: 2 cortados: 0
+1280_claro_14_seo_linhas  alvos<40: 25 cortados: 0
+1280_claro_15_seo_operador  alvos<40: 3 cortados: 0
+1280_claro_16_seo_cidade  alvos<40: 25 cortados: 0
+1280_claro_17_seo_linha  alvos<40: 4 cortados: 0
+1280_claro_17b_seo_linha_inteira  alvos<40: 4 cortados: 0
+1280_claro_19_menu_mais  alvos<40: 8 cortados: 2
+1280_claro_20_entrar  alvos<40: 12 cortados: 2
+1280_claro_23_menu  alvos<40: 8 cortados: 2
+1280_claro_22_notificacoes  alvos<40: 25 cortados: 2
+1280_escuro_01_inicio  alvos<40: 8 cortados: 2
+1280_escuro_02_pesquisa  alvos<40: 9 cortados: 4
+1280_escuro_03_opcoes  alvos<40: 7 cortados: 0
+1280_escuro_04_opcao_aberta  alvos<40: 7 cortados: 0
+1280_escuro_05_paragem  alvos<40: 8 cortados: 2
+1280_escuro_06_horarios  alvos<40: 5 cortados: 0
+1280_escuro_07_alertas  alvos<40: 25 cortados: 0
+1280_escuro_09_comunidade  alvos<40: 0 cortados: 0
+OK      [390_claro] sem convite à entrada
+OK      [390_claro] convite aparece depois de abrir a opção, dentro do ecrã {"x":12,"y":636.375,"width":366,"height":131.625}
+390_claro_24_convite_instalar  alvos<40: 6 cortados: 0
+OK      [390_claro] sem pedido do browser, mostra como instalar
+390_claro_25_convite_passos  alvos<40: 6 cortados: 0
+OK      [390_claro] "agora não" fecha e lembra-se {"fechadoEm":1794265776031,"vezes":1}
+OK      [390_claro] não volta a aparecer na mesma sessão
+OK      [390_escuro] sem convite à entrada
+OK      [390_escuro] convite aparece depois de abrir a opção, dentro do ecrã {"x":12,"y":636.375,"width":366,"height":131.625}
+390_escuro_24_convite_instalar  alvos<40: 6 cortados: 0
+OK      [390_escuro] sem pedido do browser, mostra como instalar
+390_escuro_25_convite_passos  alvos<40: 6 cortados: 0
+OK      [390_escuro] "agora não" fecha e lembra-se {"fechadoEm":1794265804547,"vezes":1}
+OK      [390_escuro] não volta a aparecer na mesma sessão
+OK      [390_ambar] sem convite à entrada
+OK      [390_ambar] convite aparece depois de abrir a opção, dentro do ecrã {"x":12,"y":636.375,"width":366,"height":131.625}
+390_ambar_24_convite_instalar  alvos<40: 6 cortados: 0
+OK      [390_ambar] sem pedido do browser, mostra como instalar
+390_ambar_25_convite_passos  alvos<40: 6 cortados: 0
+OK      [390_ambar] "agora não" fecha e lembra-se {"fechadoEm":1794265833081,"vezes":1}
+OK      [390_ambar] não volta a aparecer na mesma sessão
+OK      [320_claro] sem convite à entrada
+OK      [320_claro] convite aparece depois de abrir a opção, dentro do ecrã {"x":12,"y":413.125,"width":296,"height":150.875}
+320_claro_24_convite_instalar  alvos<40: 9 cortados: 0
+OK      [320_claro] sem pedido do browser, mostra como instalar
+320_claro_25_convite_passos  alvos<40: 9 cortados: 0
+OK      [320_claro] "agora não" fecha e lembra-se {"fechadoEm":1794265861529,"vezes":1}
+OK      [320_claro] não volta a aparecer na mesma sessão
+OK      [390_claro_iphone] sem convite à entrada
+OK      [390_claro_iphone] convite aparece depois de abrir a opção, dentro do ecrã {"x":12,"y":636.375,"width":366,"height":131.625}
+390_claro_iphone_24_convite_instalar  alvos<40: 6 cortados: 0
+OK      [390_claro_iphone] sem pedido do browser, mostra como instalar
+390_claro_iphone_25_convite_passos  alvos<40: 6 cortados: 0
+OK      [390_claro_iphone] "agora não" fecha e lembra-se {"fechadoEm":1794265889943,"vezes":1}
+OK      [390_claro_iphone] não volta a aparecer na mesma sessão
+OK      [1280] no computador não há convite
+390_claro_00_sem_localizacao  alvos<40: 7 cortados: 0
+consola: 0 erros
