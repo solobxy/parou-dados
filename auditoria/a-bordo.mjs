@@ -275,6 +275,8 @@ async function testarBraga() {
   const comRumo = aAndar.filter((v) => typeof v.rumo === 'number');
   nota(`Braga: 2.ª leitura: ${tub2.length} autocarros, ${aAndar.length} a andar (≥ 10 km/h), ${comRumo.length} com rumo`);
   ok('Braga: os autocarros que andam têm rumo (calculado pelo caminho)', aAndar.length === 0 || comRumo.length > 0, `${comRumo.length}/${aAndar.length}`);
+  // Perto do fim do serviço o último autocarro pode acabar entre as duas leituras: sem nenhum, o resto não se testa (não é falha)
+  if (!tub2.length) { nota('Braga: na 2.ª leitura já não havia autocarros da TUB (fim do serviço): o resto não foi testado'); return; }
 
   // Partidas perto dos autocarros: devem trazer a hora em direto da TUB
   let rt = 0, total = 0; const exemplos = []; const incoerentes = [];
