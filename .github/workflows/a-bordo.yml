@@ -113,7 +113,10 @@ jobs:
           # o que uma pessoa que conhece a zona escolheria: só metro em vez de autocarro + metro; melhor opção em primeiro
           APP=$PWD node --import tsx ../auditoria/planeador-preferencias.mjs 2>&1 | grep -v "Experimental\|trace-warnings" | tee ../res/planeador-preferencias.txt | tail -40
           b=${PIPESTATUS[0]}
-          exit $(( a || b ))
+          # os minutos e metros a pé contam-se pelas ruas (paragem do outro lado da linha do comboio não é "2 min")
+          APP=$PWD node --import tsx ../auditoria/planeador-a-pe-ruas.mjs 2>&1 | grep -v "Experimental\|trace-warnings" | tee ../res/planeador-a-pe-ruas.txt | tail -40
+          c=${PIPESTATUS[0]}
+          exit $(( a || b || c ))
 
       - name: Testes da pesquisa de destinos, da cache com limite e do idioma do aparelho
         continue-on-error: true

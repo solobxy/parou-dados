@@ -66,6 +66,8 @@ jobs:
           ETQ="${{ inputs.etiqueta || 'caminhos' }}"
           gh release view "$ETQ" >/dev/null 2>&1 || gh release create "$ETQ" --title "Caminhos a pé ($ETQ)" --notes "Rede de caminhos a pé de Portugal (OpenStreetMap, ODbL) em mosaicos, para desenhar os troços a pé pelas ruas. Atualizado todos os domingos."
           gh release upload "$ETQ" caminhos.sqlite.gz --clobber
+          # a release de ensaio só serve até se publicar a a sério
+          if [ "$ETQ" = "caminhos" ]; then gh release delete caminhos-teste --cleanup-tag -y 2>/dev/null || true; fi
 
       - name: Relatório no ramo caminhos-resultado
         if: always()

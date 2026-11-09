@@ -79,6 +79,10 @@ jobs:
         working-directory: app
         run: APP=$PWD node --import tsx ../auditoria/planeador-preferencias.mjs 2>&1 | grep -v "Experimental\|trace-warnings" | tail -40; exit ${PIPESTATUS[0]}
 
+      - name: Planeador (minutos e metros a pé pelas ruas)
+        working-directory: app
+        run: APP=$PWD node --import tsx ../auditoria/planeador-a-pe-ruas.mjs 2>&1 | grep -v "Experimental\|trace-warnings" | tail -40; exit ${PIPESTATUS[0]}
+
       - name: Movimento dos autocarros (suave, sem teleportes)
         working-directory: app
         run: APP=$PWD node --import tsx ../auditoria/trajeto-veiculo.mjs 2>&1 | grep -v "Experimental\|trace-warnings" | tail -90; exit ${PIPESTATUS[0]}
