@@ -9330,7 +9330,7 @@ function mailSug(addr){const at=addr.lastIndexOf('@');if(at<1)return'';const u=a
   return bd===1||(bd===2&&dm.length>=8&&MAIL_TOP.includes(best))?u+'@'+best:''}
 let mailSugSkip='';
 let mailBusy=false,mailChkT=-1e9,mailEdit=false;
-function mailTick(){const M=S&&S.mail;if(!M||!ONLINE||!CONTA||M.st==='ok'||!S.started||!askOk(6,true)||now()-((S.askG&&S.askG.t)||0)<3*60e3||T<(DBG.mailT!=null?DBG.mailT:75)||titleShown||document.hidden||modalOn||sheetName||placing||editing||photo||visiting||rebFx||(typeof UB!=='undefined'&&UB.busy))return;
+function mailTick(){const M=S&&S.mail;if(!M||!ONLINE||!CONTA||M.st==='ok'||!S.started||!askOk(6,true)||now()-((S.askG&&S.askG.t)||0)<3*60e3||T<(DBG.mailT!=null?DBG.mailT:75)||ecraOcupado())return;
   let due=false;for(let i=0;i<MAIL_LV.length;i++)if(S.level>=MAIL_LV[i]&&!(M.ask>>i&1)){due=true;M.ask|=1<<i}
   if(due){for(let i=0;i<MAIL_LV.length;i++)if(S.level>=MAIL_LV[i])M.ask|=1<<i;if(S.level>=10)M.nx=now()+(18+30*Math.random())*3600000}
   else if(S.level>=10&&M.ask===7&&(M.rep|0)<3&&now()>=M.nx){M.rep=(M.rep|0)+1;M.nx=now()+[2,4,8][M.rep-1]*864e5;due=true}
@@ -10236,7 +10236,7 @@ function avShow(){const p=S.avPend;S.avPend=null;dirtySave=true;
   else if(p.t==='mina'){if(mnOpenOk()&&S.mina&&S.mina.on)mnOpen()}
   saveLocal()}
 function avisoTick(){if(AVIS.q&&!AVIS.busy)avClaim();
-  if(S&&S.avPend&&S.started&&!titleShown&&!document.hidden&&!modalOn&&!sheetName&&!placing&&!editing&&!photo&&!rebFx&&!visiting&&!PTR&&!MNR&&!PIR&&!PLK&&!(typeof UB!=='undefined'&&UB.busy))avShow()}
+  if(S&&S.avPend&&S.started&&!ecraOcupado())avShow()}
 function pushLoad(){if(PUSH.st)return PUSH.st;let o={};try{o=JSON.parse(localStorage.getItem('tapmoss.push')||'{}')||{}}catch(e){}
   PUSH.st={on:o.on===1?1:0,amigos:o.amigos===0?0:1,diario:o.diario===0?0:1,ask:Math.min(9,o.ask|0),askT:+o.askT||0,syncT:+o.syncT||0,lang:String(o.lang||''),ep:String(o.ep||''),acc:String(o.acc||''),bellT:+o.bellT||0,offT:+o.offT||0};return PUSH.st}
 function pushSave(){try{localStorage.setItem('tapmoss.push',JSON.stringify(PUSH.st))}catch(e){}}
@@ -10282,7 +10282,7 @@ function pushWant(ctx){const st=pushLoad();if(!CONTA||st.ask>=2||now()-st.askT<7
   if(!pushOk()){if(ONLINE&&pushIOS()&&!isStandalone()&&!window.claude&&!(S.inst&&S.inst.tem)){PUSH.want=ctx;PUSH.ios=1;PUSH.wantT=now()+1800}return}
   if(st.on||pushPerm()!=='default')return;PUSH.want=ctx;PUSH.ios=0;PUSH.wantT=now()+1800}
 function pushTick(){if(!PUSH.checked&&CONTA&&NET.ok){PUSH.checked=true;pushCheck()}
-  if(!PUSH.want||now()<PUSH.wantT||!S||titleShown||document.hidden||modalOn||sheetName||placing||editing||photo||rebFx||(typeof UB!=='undefined'&&UB.busy))return;
+  if(!PUSH.want||now()<PUSH.wantT||!S||ecraOcupado())return;
   const c=PUSH.want,io=PUSH.ios;PUSH.want='';PUSH.ios=0;if(!askOk(c==='pet'||c==='diario'?3:15,true))return;askMark();if(io)iosPushAsk(c);else pushAsk(c)}
 function iosPushAsk(ctx){const st=pushLoad();st.ask++;st.askT=now();pushSave();ev('avisos','ios_convite_'+ctx);setTimeout(instCode,50);
   const h=ctx==='sino'?(S.notifGift?_t('Ligar os avisos?'):_t('Liga os avisos e ganha 2 gemas')):ctx==='diario'?_t('Lembrar o baú do dia?'):ctx==='caixa'?_t('Queres saber quando chega outro?'):_t('Queres saber quando te devolvem?');
@@ -11776,7 +11776,7 @@ document.addEventListener('keydown',e=>{if(!titleShown||e.key!=='Enter'||modalOn
 function askOk(min,noGap){if(!S)return false;const A=S.askG||(S.askG={d:'',n:0,t:0}),d=dayKey(now());if(A.d!==d){A.d=d;A.n=0}
   return(now()-(S.created||0)>=(min||0)*60e3||S.level>=15)&&A.n<3&&(noGap||now()-(A.t||0)>=10*60e3)}
 function askMark(){if(!S)return;askOk();S.askG.n++;S.askG.t=now();dirtySave=true}
-function nameTick(){if(!S||S.autoName!==1||S.level<6||titleShown||document.hidden||modalOn||sheetName||placing||editing||photo||visiting||rebFx||(typeof UB!=='undefined'&&UB.busy))return;S.autoName=2;dirtySave=true;askMark();nameAsk()}
+function nameTick(){if(!S||S.autoName!==1||S.level<6||ecraOcupado())return;S.autoName=2;dirtySave=true;askMark();nameAsk()}
 function nameCity(){return S.loc?S.loc.nome:cityById(S.city).nome}
 function nameAsk(){ev('nome','convite');
   showModal(`<div class="reveal nmask" style="--rc:#9ad65a"><div class="it">${avPortrait(S.av.look)}</div><div class="rn">${_t('O teu nome')}</div><h3>${_t('Escolhe o teu nome de jogador')}</h3><p>${S.nmNo&&S.name&&S.nmNo===S.name.toLowerCase()?_t('O nome {0} já é de outro jogador. Escolhe um que seja só teu: serve também para recuperares o jardim.',`<b>${esc(S.name)}</b>`):_t('É só teu: mais ninguém o pode usar. Aparece no ranking e serve para recuperares o jardim. Para já és {0}.',`<b>${esc(S.name)}</b>`)}</p><input class="inp" id="nameIn3" maxlength="16" autocomplete="nickname" enterkeyhint="done" placeholder="${_t('O teu nome')}" aria-label="${_t('O teu nome')}"><p class="err" id="nameErr3" role="alert"></p><p class="ncity" id="nCity">${_t('O dia, a noite e o tempo seguem {0}.',`<b>${esc(nameCity())}</b>`)} <button data-m="ncity">${_t('Trocar')}</button></p></div><div class="mbtns"><button class="btn ghost" data-m="close">${_t('Fica assim')}</button><button class="btn" data-m="nsave">${_t('Guardar')}</button></div>`)}
@@ -12821,12 +12821,16 @@ function ptRoomDraw(x,t,lv,ghost){const n=env?env.night:0,F=(c,a,b,w,h)=>{x.fill
   }}
 var ptPrevOn=false;function ptPrevLoop(){const cv=$('#ptPrev');if(!cv||sheetName!=='quarto'){ptPrevOn=false;return}requestAnimationFrame(ptPrevLoop);const x=cv.getContext('2d');x.imageSmoothingEnabled=false;const l=ptRoomLv();ptRoomDraw(x,performance.now(),l,l<PTUP.length?l:undefined)}
 
+/* what is on screen right now. Everything that opens by itself (cards, the name, the lineage, asking for notices,
+   installing the app, the unlock films) waits until this is false, so it never lands on top of the house, the mine,
+   the lineages, a film or a chest being opened. One list for all of them: a new screen only has to be added here. */
+function ecraOcupado(){try{return !!(titleShown||document.hidden||modalOn||sheetName||visiting||placing||editing||photo||PTR||MNR||HSR||LNU.on||CN||rebFx||PLK||BOT.on||UB.busy)}catch(e){return true}}
 /* big moments get their own card, one at a time, never on top of something else */
 const msQ=[];
 function msQueue(m){msQ.push(m)}
 // two cards in a row at most: the rest wait half a minute each, so coming back after days is not a wall of cards
 let msLast=-1e9,msRun=0;
-function msTick(){if(!msQ.length||CN||(typeof UF_OK!=='undefined'&&(ufReady()||performance.now()-ufEnd<2500))||modalOn||sheetName||titleShown||visiting||placing||editing||photo||PTR||MNR||rebFx||LNU.on)return;const pt=performance.now();if(pt-msLast>45000)msRun=0;if(msRun>=2&&pt-msLast<30000)return;msRun++;msLast=pt;const m=msQ.shift();SND.play('level');
+function msTick(){if(!msQ.length||(typeof UF_OK!=='undefined'&&(ufReady()||performance.now()-ufEnd<2500))||ecraOcupado())return;const pt=performance.now();if(pt-msLast>45000)msRun=0;if(msRun>=2&&pt-msLast<30000)return;msRun++;msLast=pt;const m=msQ.shift();SND.play('level');
   showModal(`<div class="reveal ms" style="--rc:${m.rc||'#9ad65a'}"><div class="it${m.svg?' big':''}${m.itc?' '+m.itc:''}">${m.svg||icon(m.ic)}</div><div class="rn">${m.tag||_t('Desbloqueado')}</div><h3>${m.title}</h3>${m.html||`<p>${m.text}</p>`}</div><div class="mbtns"><button class="btn ghost" data-m="close">${_t('Depois')}</button>${m.go?`<button class="btn gold" data-m="msgo:${m.go}">${m.btn||_t('Ver')}</button>`:''}</div>`)}
 function msGo(g){closeModal();if(g==='passe'){if(typeof BP_OK!=='undefined')bpOpen();return}if(g==='anuncio'){if(typeof AD_MOD_OK!=='undefined')adWatch('aviso');return}if(kitGo(g))return;if(g==='titulos'){titModal();return}if(g==='evento'){openSheet('evento');return}if(g==='evpbox'){evOpenPBox();return}if(g==='pet')ptOpenRoom();else if(g==='mg')mgModal();else if(g==='scn')openSheet('scn');else if(g==='loja')openSheet('loja');else if(g==='up')openSheet('up');else if(g==='moss')openSheet('moss');else if(g==='prof')openSheet('prof');else if(g==='demo')demoModal();else if(g==='mina')mnOpen();else if(g==='casa')hsOpen();else if(g==='hsloja'){hsOpen();if(HSR){hsShopTab='teto';openSheet('hsloja');setTimeout(()=>{const b=document.querySelector('.hsTabs .on');if(b)b.scrollIntoView({inline:'center',block:'nearest'})},80)}}}
 // what a level opens, as one card: pets at 20, plinko at 30, a scene to buy, a new moss...
@@ -12955,7 +12959,7 @@ function fpTick(dt){if(!S||!S.started||titleShown||visiting)return;
   ftTick();
   fpT-=dt;if(fpT>0)return;fpT=.5;
   // steps already met are paid together, in one card
-  if(!S.fp.done&&!modalOn&&!sheetName&&!LNU.on&&!MNR&&!HSR&&!placing&&!editing&&!photo&&!(typeof UB!=='undefined'&&UB.busy)){const L=[],names=[],ch0=fpCh(S.fp.i);let chDone=-1;while(S.fp.i<FP.length&&FP[S.fp.i].ok()){if(FP_CH.includes(S.fp.i+1))chDone=fpCh(S.fp.i);const f=FP[S.fp.i];L.push(...fpPay(f.rw,'passos'));names.push(f.txt());ev('passos',f.id);S.fp.i++}
+  if(!S.fp.done&&!ecraOcupado()){const L=[],names=[],ch0=fpCh(S.fp.i);let chDone=-1;while(S.fp.i<FP.length&&FP[S.fp.i].ok()){if(FP_CH.includes(S.fp.i+1))chDone=fpCh(S.fp.i);const f=FP[S.fp.i];L.push(...fpPay(f.rw,'passos'));names.push(f.txt());ev('passos',f.id);S.fp.i++}
     if(S.fp.i>=FP.length)S.fp.done=1;if(chDone===0)pushWant('diario');
     if(L.length){dirtySave=true;saveLocal();hud();SND.play('level');const big=L.some(x=>['mx','egg','dc','em','ac','cos'].includes(x.p.k));
       if(big||S.fp.done||chDone>=0)unbox('chestGift',Math.max(chDone>=1?3:2,lootTop(L)),'',`<div class="reveal"><div class="rn">${ch0?_t('Capítulo {0}',ch0+1):_t('Primeiros passos')}</div><h3>${chDone===0?_t('Primeiros passos feitos!'):chDone>0?_t('Capítulo {0} completo!',chDone+1):names.length>1?_t('{0} passos feitos',names.length):names[0]}</h3>${S.fp.done?'':`<p>${_t('A seguir: {0}',FP[S.fp.i].txt())}</p>`}</div>${lootCardsHTML(L,_t('Prémio'))}`,[['close',_t('Boa!')]]);
@@ -12985,7 +12989,7 @@ function ftLeave(){const F=S&&S.ft;if(!F||!F.t0||F.d.saiu||now()-F.t0>6*3600e3)r
 document.addEventListener('visibilitychange',()=>{if(document.hidden)ftLeave()});
 function ntfTick(dt){if(!S||!S.started||titleShown||document.hidden||visiting||!pushOk()||!CONTA)return;const st=pushLoad();if(st.on&&pushPerm()==='granted'){if(!S.notifGift)ntfGift();return}
   if(pushPerm()!=='default'||PUSH.busy)return;ntfPlay+=dt;if(ntfPlay<ntfNext)return;
-  if(modalOn||sheetName||placing||editing||photo||rebFx||PTR||PIR||PLK||(typeof UB!=='undefined'&&UB.busy))return;const nn=(S.ntf&&S.ntf.n)|0;if(nn>=4||!askOk(20)||now()-((S.ntf&&S.ntf.t)||0)<[0,8*3600e3,2*864e5,5*864e5][nn])return;askMark();ntfNext=ntfPlay+900;S.ntf=S.ntf||{t:0,n:0};S.ntf.n++;S.ntf.t=now();dirtySave=true;ntfModal()}
+  if(ecraOcupado())return;const nn=(S.ntf&&S.ntf.n)|0;if(nn>=4||!askOk(20)||now()-((S.ntf&&S.ntf.t)||0)<[0,8*3600e3,2*864e5,5*864e5][nn])return;askMark();ntfNext=ntfPlay+900;S.ntf=S.ntf||{t:0,n:0};S.ntf.n++;S.ntf.t=now();dirtySave=true;ntfModal()}
 let ntfSrc='premio';
 function ntfModal(src){ntfSrc=src||'premio';ev('avisos',ntfSrc==='sino'?'sino_convite':'premio_convite');showModal(`<div class="reveal pushask" style="--rc:#2fd47a"><div class="it">${icon('bell')}</div><div class="rn">${_t('Avisos')}</div><h3>${_t('Liga os avisos e ganha 2 gemas')}</h3><p>${_t('Avisamos-te quando o baú do dia abrir, um ovo chocar, um amigo começar a jogar ou te passar à frente.')}</p><ul class="gl"><li>${icon('gift')}<span>${_t('Alguns avisos trazem um presente quando entras por eles.')}</span></li><li>${icon('em')}<span>${_t('2 gemas e 20 cristais, já.')}</span></li><li>${icon('up')}<span>${_t('Rendes mais 10% quando estás fora, enquanto os avisos estiverem ligados.')}</span></li><li>${icon('check')}<span>${_t('De dia, de vez em quando; de noite, um ou dois no máximo, para veres ao acordar.')}</span></li></ul></div><div class="mbtns"><button class="btn ghost" data-m="close">${_t('Agora não')}</button><button class="btn gold" data-ntf="on">${icon('bell')}${_t('Ligar e ganhar')}</button></div>`)}
 async function ntfAction(a){if(a==='on'){closeModal();await pushOn(ntfSrc||'premio');tnotSig=''}}
@@ -14580,7 +14584,7 @@ function frame(t){
   tick(dt);draw();guideTick();
 }
 /* versões novas: quando o jogo muda no servidor, guarda o progresso e recarrega a página */
-const BUILD='c5419c5a180f',UKEY='tapmoss.upd';const UPD={on:false,go:false,at:0};
+const BUILD='fba9b2cd6ac0',UKEY='tapmoss.upd';const UPD={on:false,go:false,at:0};
 // the new version downloads in the background while the game goes on; the reload only comes once the whole page is here,
 // so a slow network never leaves a half-built page on screen. The offline helper (sw.js) hands this copy over at the reload.
 const NEXTC='tapmoss-next',pgKey=()=>{let p=location.pathname.replace(/index\.html$/,'');if(!p.endsWith('/'))p+='/';return p};
@@ -15115,7 +15119,7 @@ function lnClick(e){const t=e.target.closest('[data-ln]');
 }
 // asked once at level 5, again a few hours after "decide later"
 function linMaybe(){try{linSan()}catch(e){}if(!S||S.lin||S.level<LIN_LVL||LNU.on)return;if(S.linLater&&now()-S.linLater<6*36e5)return;
-  if(titleShown||modalOn||sheetName||visiting||placing||editing||photo||PTR||MNR){setTimeout(linMaybe,15000);return}
+  if(ecraOcupado()){setTimeout(linMaybe,15000);return}
   if(S.linLater){LNU.b='';lnOpen('pick')}else lnOpen('intro')}
 function linProfHTML(){if(S.level<LIN_LVL&&!S.lin)return'';const L=S.lin;
   if(!L)return`<button class="lnprof lnpick0" data-ln-open="pick">${LIN_IDS.map(b=>lcrHTML(b,'sm')).join('')}<span><b>${_t('Escolhe a tua linhagem')}</b>${_t('Sol, Lua ou Raiz')}</span><span class="chv">›</span></button>`;
@@ -15223,7 +15227,7 @@ function obTick(dt){if(!obOn()||!S.started||titleShown)return;OB.t-=dt;OB.qt-=dt
     if(!OB.q.length&&OBR.every(r=>S.ob.r[r[0]])&&S.level>=6&&!OB.egg&&!(S.ob.egg&&!(S.stats.hatched|0)&&S.pt&&S.pt.inc&&S.pt.inc.some(x=>x.k===S.ob.egg))){S.ob.done=1;dirtySave=true;obApply()}
     obGuides()}
   // one at a time, never behind a card: the player sees each thing arrive
-  if(OB.q.length&&OB.qt<=0&&!modalOn&&!sheetName&&!PTR&&!visiting&&!CN&&!(typeof UB!=='undefined'&&UB.busy)){OB.qt=.55;obReveal(OB.q.shift())}
+  if(OB.q.length&&OB.qt<=0&&!ecraOcupado()){OB.qt=.55;obReveal(OB.q.shift())}
   obEggTick(dt)}
 // the hand shows the next thing to do, one thing at a time
 function guideOb(g,done,max){if(!g)return;GD={on:true,free:true,ob:{done,max:max||60000},g,t0:performance.now(),cur:-2,el:null,tip:''};$('#guide .ghand').innerHTML=icon('hand');$('#guide').classList.remove('hidden')}
@@ -15579,7 +15583,7 @@ function instTick(dt){if(!S||!S.started||titleShown||document.hidden||(!ONLINE&&
   if(S.inst&&S.inst.ok)return;instPlay+=dt;
   // the app is only offered after the first minutes, when the player already knows the game
   if(S.level<6)return;
-  if(instPlay<75||modalOn||sheetName||placing||editing||photo||visiting||rebFx||(typeof UB!=='undefined'&&UB.busy))return;
+  if(instPlay<75||ecraOcupado())return;
   const I=S.inst||(S.inst={d:'',n:0,t:0}),d=dayKey(now());if(I.d!==d){I.d=d;I.n=0}
   if(instPlay<instNext)return;instNext=instPlay+600;if(I.n>=2||!askOk(60))return;askMark();
   I.n++;I.t=now();dirtySave=true;if(typeof APK_OK!=='undefined'&&apkCan()){if(apkOn())apkShow();return}if(instState()==='talvez')instAskHave();else instShow()}
@@ -18681,7 +18685,7 @@ function ufQueue(id){if(typeof UF_OK==='undefined'||!S||!UF[id])return false;S.u
 function ufPending(){if(typeof UF_OK==='undefined')return null;const u=S&&S.uf;if(!u)return null;for(const k in u)if(u[k]===0&&UF[k])return k;return null}
 function ufTick(dt){if(typeof UF_OK==='undefined')return;const id=ufPending();if(!id){ufCalm=0;return}const D=UF[id];
   if(D.drop&&D.drop()){S.uf[id]=1;dirtySave=true;return}
-  if(CN||performance.now()-ufEnd<UF_GAP||modalOn||sheetName||titleShown||visiting||placing||editing||photo||PTR||MNR||rebFx||LNU.on||document.hidden||(OB.q&&OB.q.length)){ufCalm=0;return}
+  if(performance.now()-ufEnd<UF_GAP||ecraOcupado()||(OB.q&&OB.q.length)){ufCalm=0;return}
   ufCalm+=dt;if(ufCalm>=1.2){ufCalm=0;ufOpen(id)}}
 function ufOpen(id){const D=UF[id];if(CN||!D)return;S.uf[id]=1;dirtySave=true;try{saveLocal()}catch(e){}SND.unlock();ev('filme',id+'_ver');
   const el=document.createElement('div');el.id='cine';el.className='cine uf uf-'+id;el.setAttribute('role','dialog');el.setAttribute('aria-modal','true');el.setAttribute('aria-label',D.h2());
