@@ -1,0 +1,46 @@
+name: Ver percurso no parou.pt
+
+# Abre o parou.pt (produção) com uma localização, pesquisa um destino, abre a primeira opção e fotografa os troços a pé
+# de perto, no mapa a sério. Não altera nada no site. Resultado no ramo "ver-percurso-resultado".
+
+on:
+  workflow_dispatch:
+    inputs:
+      lat:
+        description: "Latitude de partida"
+        default: "41.1488"
+      lon:
+        description: "Longitude de partida"
+        default: "-8.5856"
+      destino:
+        description: "O que escrever em «Para onde vais?»"
+        default: "Rua da Picaria"
+
+permissions:
+  contents: write
+
+jobs:
+  ver:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Ver
+        working-directory: auditoria
+        env:
+          LAT: ${{ inputs.lat }}
+          LON: ${{ inputs.lon }}
+          DESTINO: ${{ inputs.destino }}
+        run: |
+          npm init -y >/dev/null && npm i --no-audit --no-fund playwright@1 >/dev/null && npx playwright install --with-deps chromium >/dev/null
+          mkdir -p ../res && SAIDA=../res timeout 400 node ver-percurso-real.mjs 2>&1 | tee ../res/consola.txt | tail -60
+      - name: Guardar
+        if: always()
+        run: |
+          mkdir -p pub && cp -r res/* pub/ 2>/dev/null || echo "sem resultados" > pub/vazio.txt
+          cd pub && git init -q -b ver-percurso-resultado
+          git config user.name "parou-dados"; git config user.email "actions@users.noreply.github.com"
+          git add -A && git commit -q -m "Ver percurso $(date -u +%Y-%m-%dT%H:%MZ)" && git push -q -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" ver-percurso-resultado
