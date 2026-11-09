@@ -2,7 +2,7 @@
 // tentar outra vez, em vez de mostrar a mensagem de «sem resultados».
 //
 // O problema que isto impede: no planeador, uma falha de rede acabava em «Sem ligações encontradas — não encontrámos ligações
-// em transportes daqui para lá», o que é falso. A resposta do servidor é simulada; o que se testa é a app.
+// em transportes daqui para lá», o que é falso; nos Horários, em «Ainda não temos linhas de …». A resposta do servidor é simulada; o que se testa é a app.
 // Uso: BASE=http://127.0.0.1:3000 SAIDA=res node estados-erro.mjs
 import { chromium } from 'playwright';
 import fs from 'fs';
@@ -71,12 +71,42 @@ async function planeador(browser) {
   await ctx.close();
 }
 
+async function horarios(browser) {
+  console.log('== Horários: a lista de todas as linhas falha e depois responde vazia');
+  const { ctx, p, erros } = await contexto(browser);
+  let pedidos = 0;
+  await ctx.route(/\/api\/lines\?/, (r) => {
+    const u = r.request().url();
+    if (/[?&]near=/.test(u)) return r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ lines: [] }) });
+    pedidos++;
+    if (pedidos === 1) return r.abort('failed');
+    return r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ lines: [], total: 0, page: 1, total_pages: 1 }) });
+  });
+  await p.goto(BASE + '/horarios', { waitUntil: 'load', timeout: 60000 });
+  await p.waitForTimeout(5000);
+  await p.screenshot({ path: `${SAIDA}/estados-erro_horarios_falha.png` });
+  ok('a lista de linhas foi pedida', pedidos >= 1, `pedidos=${pedidos}`);
+  ok('com a rede a falhar aparece «Não foi possível carregar a lista»', await visivel(p, '[data-teste="linhas-erro"]'));
+  ok('…e NÃO diz que não há linhas', !(await visivel(p, '[data-teste="sem-linhas"]')));
+  const antes = pedidos;
+  await p.locator('[data-teste="linhas-tentar"]').first().click({ timeout: 5000 }).catch(() => {});
+  await p.waitForTimeout(2500);
+  await p.screenshot({ path: `${SAIDA}/estados-erro_horarios_vazia.png` });
+  ok('«Tentar outra vez» volta a pedir', pedidos === antes + 1, `pedidos=${pedidos}`);
+  ok('com a resposta vazia (a sério) aparece a mensagem de «sem linhas»', await visivel(p, '[data-teste="sem-linhas"]'));
+  ok('…e o aviso de erro desaparece', !(await visivel(p, '[data-teste="linhas-erro"]')));
+  ok('sem erros de JavaScript', erros.length === 0, erros.join(' | '));
+  await ctx.close();
+}
+
 (async () => {
   const browser = await chromium.launch({ args: ['--no-sandbox'] });
-  try {
-    await planeador(browser);
-  } catch (e) {
-    falhas++; console.log('FALHOU  o teste parou:', String(e).slice(0, 300));
+  for (const teste of [planeador, horarios]) {
+    try {
+      await teste(browser);
+    } catch (e) {
+      falhas++; console.log('FALHOU  o teste parou:', String(e).slice(0, 300));
+    }
   }
   await browser.close();
   console.log(`${total - falhas}/${total} testes OK`);
