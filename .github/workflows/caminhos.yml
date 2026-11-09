@@ -14,6 +14,10 @@ on:
         description: "1 = publicar na release caminhos (0 = só o relatório)"
         required: false
         default: "1"
+      etiqueta:
+        description: "release onde publicar (caminhos; caminhos-teste para ensaiar)"
+        required: false
+        default: "caminhos"
 
 permissions:
   contents: write
@@ -59,8 +63,9 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release view caminhos >/dev/null 2>&1 || gh release create caminhos --title "Caminhos a pé" --notes "Rede de caminhos a pé de Portugal (OpenStreetMap, ODbL) em mosaicos, para desenhar os troços a pé pelas ruas. Atualizado todos os domingos."
-          gh release upload caminhos caminhos.sqlite.gz --clobber
+          ETQ="${{ inputs.etiqueta || 'caminhos' }}"
+          gh release view "$ETQ" >/dev/null 2>&1 || gh release create "$ETQ" --title "Caminhos a pé ($ETQ)" --notes "Rede de caminhos a pé de Portugal (OpenStreetMap, ODbL) em mosaicos, para desenhar os troços a pé pelas ruas. Atualizado todos os domingos."
+          gh release upload "$ETQ" caminhos.sqlite.gz --clobber
 
       - name: Relatório no ramo caminhos-resultado
         if: always()

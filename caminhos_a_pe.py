@@ -20,11 +20,12 @@ PASSO = 100  # mosaicos por grau (0,01°)
 LAT0, LON0 = 30.0, -32.0
 LARGURA = 4000
 
-# Por onde se anda a pé. Autoestradas e vias rápidas não (a não ser que digam foot=yes).
+# Por onde se anda a pé. Autoestradas não (a não ser que digam foot=yes); estradas «trunk» sim (em Portugal são muitas
+# vezes nacionais com paragens dos dois lados), menos as vias reservadas a automóveis (motorroad=yes).
 A_PE = {
     "footway", "pedestrian", "path", "steps", "living_street", "residential", "unclassified", "tertiary", "tertiary_link",
     "secondary", "secondary_link", "primary", "primary_link", "service", "track", "cycleway", "bridleway", "corridor",
-    "platform", "road", "crossing",
+    "platform", "road", "crossing", "trunk", "trunk_link",
 }
 PE_SIM = {"yes", "designated", "permissive", "official"}
 SEM_ACESSO = {"no", "private"}
@@ -38,6 +39,8 @@ def anda_a_pe(p):
     if pe == "no" or hw not in A_PE:
         return False
     if p.get("access") in SEM_ACESSO:
+        return False
+    if p.get("motorroad") == "yes":
         return False
     if p.get("area") == "yes" and hw not in ("pedestrian", "footway"):
         return False
