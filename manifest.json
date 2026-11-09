@@ -1,15 +1,15 @@
 {
-  "built_at": "2026-11-09T12:04:22.963971+00:00",
-  "db_bytes": 691228672,
-  "gz_bytes": 191509082,
+  "built_at": "2026-11-09T23:51:46.584311+00:00",
+  "db_bytes": 690401280,
+  "gz_bytes": 191293191,
   "totals": {
     "lines": 2662,
-    "stops": 46398,
-    "trips": 121003,
-    "stop_times": 3638441,
+    "stops": 46407,
+    "trips": 120815,
+    "stop_times": 3632201,
     "operators": 30,
     "operators_ok": 27,
-    "operators_desatualizados": 2
+    "operators_desatualizados": 3
   },
   "feeds": [
     {
@@ -150,19 +150,19 @@
       "operator_name": "STCP (Porto)",
       "status": "OK",
       "lines": 71,
-      "stops": 2539,
-      "trips": 12711,
-      "valid_until": "2026-12-09",
-      "validade": "ok",
-      "dias_validade": 30,
-      "horario_prolongado": false,
-      "url": "https://api.stcp.pt:8443/v1/ficheiros/estatico/ficheirozip",
-      "last_error": null,
+      "stops": 2548,
+      "trips": 12523,
+      "valid_until": "2026-09-23",
+      "validade": "caducado",
+      "dias_validade": -47,
+      "horario_prolongado": true,
+      "url": "https://dadosabertos.cm-porto.pt/dataset/71490e40-9e19-11f1-84ed-6abdb6d5cf34/resource/51340c18-0ef5-4895-b099-cf7247ea54f4/download/gtfs_feed.zip",
+      "last_error": "O operador não atualizou as datas do calendário (terminam em 2026-09-23); a usar o horário semanal em vigor.",
       "servicos_associados": null,
       "servicos_sem_calendario": null,
-      "viagens_hoje": 5632,
-      "viagens_amanha": 5632,
-      "dias_uteis_sem_servico": 0
+      "viagens_hoje": 0,
+      "viagens_amanha": 5386,
+      "dias_uteis_sem_servico": 1
     },
     {
       "id": "metro_porto",
@@ -584,7 +584,7 @@
     }
   ],
   "desenhos": {
-    "bytes": 7770683,
+    "bytes": 7767231,
     "por_operador": {
       "carris": {
         "viagens": 24925,
@@ -662,9 +662,9 @@
         "desenhos": 16
       },
       "stcp": {
-        "viagens": 12711,
-        "com_desenho": 12711,
-        "desenhos": 222
+        "viagens": 12523,
+        "com_desenho": 12523,
+        "desenhos": 219
       },
       "tcb_barreiro": {
         "viagens": 1601,
@@ -732,25 +732,23 @@
       "stcp": {
         "calendar": [],
         "datas_soltas": {
-          "primeira": "20261106",
-          "ultima": "20261209",
-          "total": 34
+          "primeira": "20260901",
+          "ultima": "20261122",
+          "total": 36
         },
-        "servicos_com_data_hoje": [
-          "UTIL ESCOLAR:FLUXO 3 20261107"
-        ],
+        "servicos_com_data_hoje": [],
         "viagens_por_servico": [
           {
-            "service": "UTIL ESCOLAR:FLUXO 3 20261107",
-            "viagens": 5632
+            "service": "UTIL FERIAS:FLUXO 3 20260831",
+            "viagens": 5386
           },
           {
-            "service": "SABADO:FLUXO 3 20261107",
-            "viagens": 3847
+            "service": "SABADO:FLUXO 3 20260831",
+            "viagens": 3871
           },
           {
-            "service": "DOM|FERIADO:FLUXO 3 20261107",
-            "viagens": 3232
+            "service": "DOM|FERIADO:FLUXO 3 20260831",
+            "viagens": 3266
           }
         ]
       },
@@ -907,13 +905,13 @@
           "total": 398
         },
         "servicos_com_data_hoje": [
-          "AU",
-          "DU",
           "CU",
           "BexpU",
           "EU",
+          "AU",
+          "FU",
           "BU",
-          "FU"
+          "DU"
         ],
         "viagens_por_servico": [
           {
@@ -968,5 +966,5 @@
       }
     }
   },
-  "duration_s": 250
+  "duration_s": 262
 }
