@@ -13,13 +13,13 @@ const UA_PC = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHT
 const LX = { latitude: 38.7107, longitude: -9.1365 };
 const rel = { ecras: [], consola: [] };
 
-async function contexto(browser, w, h, tema) {
+async function contexto(browser, w, h, tema, opcoes = {}) {
   const ctx = await browser.newContext({
     viewport: { width: w, height: h }, locale: 'pt-PT', timezoneId: 'Europe/Lisbon', hasTouch: w < 1024, isMobile: w < 700,
-    userAgent: w < 700 ? UA_TEL : UA_PC, geolocation: LX, permissions: ['geolocation'], deviceScaleFactor: w < 700 ? 2 : 1,
+    userAgent: opcoes.ua || (w < 700 ? UA_TEL : UA_PC), geolocation: LX, permissions: ['geolocation'], deviceScaleFactor: w < 700 ? 2 : 1,
   });
   await ctx.addInitScript({ content: `try{ Object.defineProperty(Navigator.prototype,'webdriver',{get:()=>false,configurable:true}); }catch(e){}
-    try{ localStorage.setItem('parou_tema','${tema}'); localStorage.setItem('parou_aviso_instalar','1'); localStorage.setItem('parou_bemvindo','visto'); }catch(e){}` });
+    try{ localStorage.setItem('parou_tema','${tema}'); ${opcoes.convite ? '' : "localStorage.setItem('parou_aviso_instalar','1');"} localStorage.setItem('parou_bemvindo','visto'); }catch(e){}` });
   await ctx.route(/(tile|openstreetmap|arcgisonline|cartocdn|basemaps)\./i, (r) => r.fulfill({ status: 200, contentType: 'image/png', body: PNG }));
   const p = await ctx.newPage();
   p.on('console', (m) => { if (m.type() === 'error' && !/Failed to load resource|favicon|ERR_/.test(m.text())) rel.consola.push(`${w} ${tema}: ${m.text().slice(0, 180)}`); });
@@ -146,6 +146,59 @@ async function trocosAPe(p, k) {
       if (await tocar(p, p.locator('[aria-label="Abrir pesquisa"]'), 1200)) await foto(p, `${k}_21_pesquisa_geral`);
       await ir(p, '/', 4000);
       if (await tocar(p, p.locator('[aria-label="Notificações"]'), 1200)) await foto(p, `${k}_22_notificacoes`);
+    }
+    await ctx.close();
+  }
+  // Convite para instalar: aparece depois de abrir uma opção de viagem (só no telemóvel, uma vez por sessão)
+  const UA_IPHONE = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1';
+  for (const [w, h, tema, ua] of [[390, 844, 'claro', null], [390, 844, 'escuro', null], [390, 844, 'ambar', null], [320, 640, 'claro', null], [390, 844, 'claro', UA_IPHONE]]) {
+    const { ctx, p } = await contexto(browser, w, h, tema, { convite: true, ua });
+    const k = `${w}_${tema}${ua ? '_iphone' : ''}`;
+    await ir(p, '/', 7000);
+    const semConvite = !(await p.locator('[data-teste="convite-instalar"]').isVisible().catch(() => false));
+    console.log(`${semConvite ? 'OK     ' : 'FALHOU '} [${k}] sem convite à entrada`);
+    const campo = p.locator('input[placeholder="Para onde vais?"]:visible');
+    if (await tocar(p, campo, 600)) {
+      await campo.first().fill('colombo');
+      await p.waitForTimeout(1800);
+      if (await tocar(p, p.locator('button:visible:has-text("Centro Comercial Colombo")'), 7000) && await tocar(p, p.locator('[data-teste="opcao-rota"]'), 2500)) {
+        await p.waitForTimeout(1500);
+        const cartao = p.locator('[data-teste="convite-instalar"]');
+        const ve = await cartao.isVisible().catch(() => false);
+        const caixa = ve ? await cartao.boundingBox() : null;
+        const dentro = !!caixa && caixa.x >= 0 && caixa.x + caixa.width <= w + 1 && caixa.y + caixa.height <= h;
+        console.log(`${ve && dentro ? 'OK     ' : 'FALHOU '} [${k}] convite aparece depois de abrir a opção, dentro do ecrã`, caixa ? JSON.stringify(caixa) : '');
+        await foto(p, `${k}_24_convite_instalar`);
+        if (await tocar(p, p.locator('[data-teste="convite-instalar-botao"]'), 3200)) {
+          const passos = await p.locator('[data-teste="convite-instalar-passos"]').isVisible().catch(() => false);
+          console.log(`${passos ? 'OK     ' : 'FALHOU '} [${k}] sem pedido do browser, mostra como instalar`);
+          await foto(p, `${k}_25_convite_passos`);
+        }
+        if (await tocar(p, p.locator('[data-teste="convite-instalar-fechar"]'), 600)) {
+          const foi = !(await cartao.isVisible().catch(() => false));
+          const mem = await p.evaluate(() => localStorage.getItem('parou_convite_instalar')).catch(() => null);
+          console.log(`${foi && /"vezes":1/.test(mem || '') ? 'OK     ' : 'FALHOU '} [${k}] "agora não" fecha e lembra-se`, mem || '');
+          // abrir outra opção na mesma sessão: não volta a aparecer
+          await tocar(p, p.locator('[data-teste="opcao-rota"]').nth(1), 2600);
+          const outraVez = await cartao.isVisible().catch(() => false);
+          console.log(`${!outraVez ? 'OK     ' : 'FALHOU '} [${k}] não volta a aparecer na mesma sessão`);
+        }
+      } else console.log(`FALHOU  [${k}] não consegui abrir uma opção de viagem`);
+    }
+    await ctx.close();
+  }
+  // No computador nunca aparece (instala-se pelo menu)
+  {
+    const { ctx, p } = await contexto(browser, 1280, 800, 'claro', { convite: true });
+    await ir(p, '/', 7000);
+    const campo = p.locator('input[placeholder="Para onde vais?"]:visible');
+    if (await tocar(p, campo, 600)) {
+      await campo.first().fill('colombo');
+      await p.waitForTimeout(1800);
+      if (await tocar(p, p.locator('button:visible:has-text("Centro Comercial Colombo")'), 7000) && await tocar(p, p.locator('[data-teste="opcao-rota"]'), 4000)) {
+        const ve = await p.locator('[data-teste="convite-instalar"]').isVisible().catch(() => false);
+        console.log(`${!ve ? 'OK     ' : 'FALHOU '} [1280] no computador não há convite`);
+      }
     }
     await ctx.close();
   }
