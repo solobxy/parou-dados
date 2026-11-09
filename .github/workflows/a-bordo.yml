@@ -120,7 +120,7 @@ jobs:
         working-directory: app
         run: |
           mkdir -p ../res
-          for t in pesquisa-locais cache-limitada idioma-aparelho; do
+          for t in pesquisa-locais cache-limitada idioma-aparelho caminho-a-pe; do
             echo "== $t"
             APP=$PWD node --import tsx ../auditoria/$t.mjs 2>&1 | grep -v "Experimental\|trace-warnings" | tee ../res/$t.txt | tail -40
           done

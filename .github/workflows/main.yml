@@ -60,6 +60,7 @@ jobs:
           python auditoria/test_ttsl_fonte.py
           python auditoria/test_smtuc_fonte.py
           python auditoria/test_calendario_ponte.py
+          python auditoria/test_caminhos_a_pe.py
 
       - name: Construir a base de dados
         run: python construir_dados.py

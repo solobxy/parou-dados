@@ -1468,6 +1468,58 @@ def aplicar_desenhos_extra(conn, extras):
     return contagem
 
 
+URL_CAMINHOS = os.environ.get(
+    "PAROU_URL_CAMINHOS", "https://github.com/solobxy/parou-dados/releases/download/caminhos/caminhos.sqlite.gz")
+
+
+def juntar_caminhos_a_pe(conn, url=None, tentativas=4, espera_s=20):
+    """Rede de caminhos a pé (ruas, passeios, escadas) em mosaicos, feita pelo workflow «Caminhos a pé»
+    (caminhos_a_pe.py): a app usa-a para desenhar os troços a pé pelas ruas. Sem ela (ou estragada) a base sai sem a
+    tabela e a app desenha em linha reta, como antes. Devolve quantos mosaicos ficaram."""
+    url = url or URL_CAMINHOS
+    tmp = None
+    try:
+        dados = None
+        for i in range(tentativas):
+            try:
+                req = urllib.request.Request(url, headers={"User-Agent": "parou-dados"})
+                with urllib.request.urlopen(req, timeout=300) as r:
+                    dados = gzip.decompress(r.read())
+                break
+            except Exception:  # noqa: BLE001
+                if i == tentativas - 1:
+                    raise
+                time.sleep(espera_s)
+        tmp = os.path.join(os.path.dirname(os.path.abspath(__file__)), f".caminhos-{os.getpid()}.sqlite")
+        with open(tmp, "wb") as f:
+            f.write(dados)
+        conn.execute("ATTACH DATABASE ? AS fonte_ape", (tmp,))
+        try:
+            # "main." sempre: sem isso o DROP apagava a tabela da base anexada (mesmo nome) quando a principal não a tem
+            conn.execute("DROP TABLE IF EXISTS main.ape")
+            conn.execute("CREATE TABLE main.ape (t INTEGER PRIMARY KEY, d BLOB NOT NULL)")
+            conn.execute("INSERT INTO main.ape (t, d) SELECT t, d FROM fonte_ape.ape")
+            conn.commit()
+        finally:
+            conn.execute("DETACH DATABASE fonte_ape")
+        n = conn.execute("SELECT COUNT(*) FROM main.ape").fetchone()[0]
+        if conn.execute("SELECT 1 FROM sqlite_master WHERE name = 'app_state'").fetchone():
+            conn.execute("INSERT OR REPLACE INTO app_state (key, value) VALUES ('caminhos_a_pe', ?)", (str(n),))
+            conn.commit()
+        return n
+    except Exception as e:  # noqa: BLE001
+        log(f"Sem caminhos a pé ({str(e)[:100]}): a app desenha os troços a pé em linha reta")
+        try:
+            conn.rollback()
+            conn.execute("DROP TABLE IF EXISTS main.ape")
+        except sqlite3.Error:
+            pass
+        return 0
+    finally:
+        if tmp and os.path.exists(tmp):
+            os.remove(tmp)
+
+
 URL_LOCAIS = os.environ.get(
     "PAROU_LOCAIS_URL", "https://github.com/solobxy/parou-dados/releases/download/locais/locais.json.gz")
 
@@ -1664,6 +1716,8 @@ def main():
             conn.rollback()
             conn.execute("DROP TABLE IF EXISTS locais")
             conn.execute("DROP TABLE IF EXISTS locais_fts")
+
+    log(f"Caminhos a pé (mosaicos): {juntar_caminhos_a_pe(conn)}")
 
     ok = [r for r in results if r.get("status") == "OK"]
     built_at = now_iso()
