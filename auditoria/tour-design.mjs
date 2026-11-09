@@ -24,6 +24,11 @@ async function contexto(browser, w, h, tema) {
   const p = await ctx.newPage();
   p.on('console', (m) => { if (m.type() === 'error' && !/Failed to load resource|favicon|ERR_/.test(m.text())) rel.consola.push(`${w} ${tema}: ${m.text().slice(0, 180)}`); });
   p.on('pageerror', (e) => rel.consola.push(`${w} ${tema} PAGEERROR ${String(e).slice(0, 180)}`));
+  p.on('response', async (r) => {
+    if (!r.url().includes('/api/transit/caminho-a-pe')) return;
+    const j = await r.json().catch(() => null);
+    respostasAPe.push(`HTTP ${r.status()} ${j?.caminho ? j.metros + ' m' : 'reta'}`);
+  });
   return { ctx, p };
 }
 
@@ -70,17 +75,22 @@ const tocar = async (p, loc, ms = 1500) => {
 const trocosDoMapa = (p) => p.evaluate(() => [...document.querySelectorAll('.leaflet-container svg path')]
   .filter((e) => /^1[ ,]+9$/.test((e.getAttribute('stroke-dasharray') || '').trim()))
   .map((e) => { const r = e.getBoundingClientRect(); return { pontos: ((e.getAttribute('d') || '').match(/[ML]/g) || []).length, x: r.x, y: r.y, w: r.width, h: r.height }; }));
+const respostasAPe = [];
 async function trocosAPe(p, k) {
   await p.waitForTimeout(3000); // o caminho pelas ruas chega depois da linha reta
+  console.log(`[${k}] pedidos do caminho a pé: ${respostasAPe.splice(0).join(' | ') || 'nenhum'}`);
   const trocos = await trocosDoMapa(p).catch(() => []);
-  const pelasRuas = trocos.filter((t) => t.pontos > 2).length;
-  console.log(`${pelasRuas ? 'OK     ' : 'FALHOU '} [${k}] troços a pé desenhados pelas ruas: ${pelasRuas}/${trocos.length} (${trocos.map((t) => t.pontos + ' pontos').join(', ')})`);
+  // (o Leaflet simplifica as linhas ao nível de zoom: os pontos contam-se outra vez depois de aproximar)
+  console.log(`[${k}] troços a pé no mapa: ${trocos.map((t) => t.pontos + ' pontos').join(', ')}`);
   rel.trocosAPe = { ...(rel.trocosAPe || {}), [k]: trocos };
   const maior = [...trocos].sort((a, b) => b.w * b.h - a.w * a.h)[0];
   if (!maior) return;
   await p.mouse.move(maior.x + maior.w / 2, maior.y + maior.h / 2);
   for (let i = 0; i < 4; i++) { await p.mouse.wheel(0, -240); await p.waitForTimeout(450); }
   await p.waitForTimeout(1200);
+  const perto = await trocosDoMapa(p).catch(() => []);
+  const pelasRuas = perto.filter((t) => t.pontos > 4).length;
+  console.log(`${pelasRuas ? 'OK     ' : 'FALHOU '} [${k}] troços a pé pelas ruas (de perto): ${pelasRuas}/${perto.length} (${perto.map((t) => t.pontos + ' pontos').join(', ')})`);
   await foto(p, `${k}_04c_troco_a_pe`);
 }
 
