@@ -78,19 +78,19 @@ const trocosDoMapa = (p) => p.evaluate(() => [...document.querySelectorAll('.lea
 const respostasAPe = [];
 async function trocosAPe(p, k) {
   await p.waitForTimeout(3000); // o caminho pelas ruas chega depois da linha reta
+  // (as respostas guardadas são as desta página e das voltas anteriores sem esta verificação)
   console.log(`[${k}] pedidos do caminho a pé: ${respostasAPe.splice(0).join(' | ') || 'nenhum'}`);
   const trocos = await trocosDoMapa(p).catch(() => []);
-  // (o Leaflet simplifica as linhas ao nível de zoom: os pontos contam-se outra vez depois de aproximar)
-  console.log(`[${k}] troços a pé no mapa: ${trocos.map((t) => t.pontos + ' pontos').join(', ')}`);
+  // Em linha reta cada troço tem 2 pontos; pelas ruas tem mais (o Leaflet simplifica ao nível de zoom: uma rua a direito
+  // continua com poucos pontos, por isso basta um troço com mais de 2)
+  const pelasRuas = trocos.filter((t) => t.pontos > 2).length;
+  console.log(`${pelasRuas ? 'OK     ' : 'FALHOU '} [${k}] troços a pé pelas ruas: ${pelasRuas}/${trocos.length} (${trocos.map((t) => t.pontos + ' pontos').join(', ')})`);
   rel.trocosAPe = { ...(rel.trocosAPe || {}), [k]: trocos };
   const maior = [...trocos].sort((a, b) => b.w * b.h - a.w * a.h)[0];
   if (!maior) return;
   await p.mouse.move(maior.x + maior.w / 2, maior.y + maior.h / 2);
   for (let i = 0; i < 4; i++) { await p.mouse.wheel(0, -240); await p.waitForTimeout(450); }
   await p.waitForTimeout(1200);
-  const perto = await trocosDoMapa(p).catch(() => []);
-  const pelasRuas = perto.filter((t) => t.pontos > 4).length;
-  console.log(`${pelasRuas ? 'OK     ' : 'FALHOU '} [${k}] troços a pé pelas ruas (de perto): ${pelasRuas}/${perto.length} (${perto.map((t) => t.pontos + ' pontos').join(', ')})`);
   await foto(p, `${k}_04c_troco_a_pe`);
 }
 
