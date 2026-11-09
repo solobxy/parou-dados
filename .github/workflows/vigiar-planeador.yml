@@ -82,6 +82,18 @@ jobs:
               else:
                   falhas.append(f"{nome}: nenhuma opção de {modo} (opções: {resumo or 'nenhuma'})")
                   print(f"FALHOU  {nome}: nenhuma opção de {modo}. Opções: {resumo or 'nenhuma'}")
+          # Troços a pé desenhados pelas ruas: sem a tabela dos caminhos na base, o mapa volta à linha reta sem ninguém dar por isso
+          try:
+              with urllib.request.urlopen(f"{site}/api/transit/caminho-a-pe?de=38.71070,-9.13650&para=38.71067,-9.13909", timeout=30) as r:
+                  ape = json.load(r)
+              if ape.get("caminho") and 230 <= (ape.get("metros") or 0) <= 400:
+                  print(f"OK      Caminho a pé pelas ruas (Baixa): {ape.get('metros')} m")
+              else:
+                  falhas.append(f"Caminho a pé pelas ruas (Baixa): {ape} (o mapa desenha os troços a pé em linha reta)")
+                  print(f"FALHOU  Caminho a pé pelas ruas (Baixa): {ape}")
+          except Exception as e:
+              falhas.append(f"Caminho a pé pelas ruas: o servidor não respondeu ({e})")
+              print(f"FALHOU  Caminho a pé pelas ruas: sem resposta ({e})")
           if falhas:
               print("\nViagens sem o meio de transporte esperado:")
               for f in falhas: print(" -", f)
