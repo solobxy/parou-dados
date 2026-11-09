@@ -65,6 +65,25 @@ const tocar = async (p, loc, ms = 1500) => {
   return true;
 };
 
+// Troços a pé no mapa (linha às bolinhas): pelas ruas têm muitos pontos; em linha reta só 2. Aproxima o mapa do maior
+// troço (roda do rato por cima dele) e fotografa.
+const trocosDoMapa = (p) => p.evaluate(() => [...document.querySelectorAll('.leaflet-container svg path')]
+  .filter((e) => /^1[ ,]+9$/.test((e.getAttribute('stroke-dasharray') || '').trim()))
+  .map((e) => { const r = e.getBoundingClientRect(); return { pontos: ((e.getAttribute('d') || '').match(/[ML]/g) || []).length, x: r.x, y: r.y, w: r.width, h: r.height }; }));
+async function trocosAPe(p, k) {
+  await p.waitForTimeout(3000); // o caminho pelas ruas chega depois da linha reta
+  const trocos = await trocosDoMapa(p).catch(() => []);
+  const pelasRuas = trocos.filter((t) => t.pontos > 2).length;
+  console.log(`${pelasRuas ? 'OK     ' : 'FALHOU '} [${k}] troços a pé desenhados pelas ruas: ${pelasRuas}/${trocos.length} (${trocos.map((t) => t.pontos + ' pontos').join(', ')})`);
+  rel.trocosAPe = { ...(rel.trocosAPe || {}), [k]: trocos };
+  const maior = [...trocos].sort((a, b) => b.w * b.h - a.w * a.h)[0];
+  if (!maior) return;
+  await p.mouse.move(maior.x + maior.w / 2, maior.y + maior.h / 2);
+  for (let i = 0; i < 4; i++) { await p.mouse.wheel(0, -240); await p.waitForTimeout(450); }
+  await p.waitForTimeout(1200);
+  await foto(p, `${k}_04c_troco_a_pe`);
+}
+
 (async () => {
   const browser = await chromium.launch({ args: ['--no-sandbox'] });
   const CONF = [[390, 844, 'claro'], [390, 844, 'escuro'], [390, 844, 'ambar'], [320, 640, 'claro'], [1280, 800, 'claro'], [1280, 800, 'escuro']];
@@ -85,7 +104,10 @@ const tocar = async (p, loc, ms = 1500) => {
       if (await tocar(p, p.locator('button:visible:has-text("Centro Comercial Colombo")'), 7000)) {
         await foto(p, `${k}_03_opcoes`);
         if (completo) await foto(p, `${k}_03b_opcoes_inteiro`, { inteira: true });
-        if (await tocar(p, p.locator('[data-teste="opcao-rota"]'), 2500)) await foto(p, `${k}_04_opcao_aberta`);
+        if (await tocar(p, p.locator('[data-teste="opcao-rota"]'), 2500)) {
+          await foto(p, `${k}_04_opcao_aberta`);
+          if (completo) await trocosAPe(p, k);
+        }
       }
     }
     if (!completo && w === 390) { await ir(p, '/', 4000); if (await tocar(p, p.locator('[data-teste="botao-menu"]:visible'), 900)) await foto(p, `${k}_23_menu`); }
