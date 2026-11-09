@@ -37,8 +37,9 @@ n3 = cd.juntar_caminhos_a_pe(conn2, "file://" + estragado, tentativas=1)
 ok("ficheiro estragado: sem a tabela, sem falhar", n3 == 0)
 
 # Que vias contam para andar a pé
-ok("estrada trunk (nacional com paragens) conta", ca.anda_a_pe({"highway": "trunk"}))
-ok("trunk reservada a automóveis não conta", not ca.anda_a_pe({"highway": "trunk", "motorroad": "yes"}))
+ok("via rápida (trunk) não conta", not ca.anda_a_pe({"highway": "trunk"}))
+ok("via rápida com foot=yes conta", ca.anda_a_pe({"highway": "trunk", "foot": "yes"}))
+ok("estrada reservada a automóveis não conta", not ca.anda_a_pe({"highway": "primary", "motorroad": "yes"}))
 ok("autoestrada não conta", not ca.anda_a_pe({"highway": "motorway"}))
 ok("autoestrada com foot=yes conta", ca.anda_a_pe({"highway": "motorway", "foot": "yes"}))
 ok("rua privada não conta", not ca.anda_a_pe({"highway": "service", "access": "private"}))

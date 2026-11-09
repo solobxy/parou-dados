@@ -27,6 +27,7 @@ const vias = [
   { highway: 'residential', c: [P(0, -40), P(0, 0), P(0, 150), P(0, 190)] },          // rua do lado sul
   { highway: 'footway', c: [P(150, -40), P(150, 0), P(150, 150), P(150, 190)] },     // passeio do lado norte
   { highway: 'motorway', c: [P(75, -40), P(75, 190)] },                                // autoestrada a atravessar: não é a pé
+  { highway: 'platform', c: [P(65, -5), P(85, -5)] },                                  // plataforma da paragem, solta (sem ligação às ruas)
 ];
 const geo = path.join(dir, 'vias.geojsonseq');
 fs.writeFileSync(geo, vias.map((v) => JSON.stringify({ type: 'Feature', properties: { highway: v.highway }, geometry: { type: 'LineString', coordinates: v.c } })).join('\n') + '\n');
@@ -61,6 +62,14 @@ if (r) {
   ok('[quarteirão] não usa a autoestrada (atravessaria o quarteirão)', !r.pontos.some((p) => Math.abs((p.lat - LAT) * mLat - 75) < 3 && (p.lon - LON) * mLon > 20 && (p.lon - LON) * mLon < 130));
   ok('[quarteirão] vem codificado para a app', typeof r.caminho === 'string' && r.caminho.length > 4);
 }
+// A partida está a 5 m da plataforma solta e a 10 m da rua: tem de encaixar na rua (antes encaixava na plataforma e
+// ficava sem caminho, em linha reta)
+ok('[plataforma solta ao lado da paragem] encaixa na rua e há caminho', !!r && r.pontos.length > 3);
+// Partida e chegada ao longo da mesma rua (no mesmo segmento): vai a direito, sem ir à esquina e voltar
+const [sLon, sLat] = P(30, -10);
+const [tLon, tLat] = P(120, -10);
+const r2 = D2.caminhoAPe(sLat, sLon, tLat, tLon);
+ok('[mesma rua] vai a direito pela rua (sem ir à esquina e voltar)', !!r2 && r2.metros < 115, r2 ? `${r2.metros} m (reta 90 m)` : 'null');
 const [fLon, fLat] = P(4000, 0);
 ok('[longe] mais de 3 km a pé não se calcula (fica a reta)', D2.caminhoAPe(aLat, aLon, fLat, fLon) === null);
 const [lLon, lLat] = P(75, 900);
