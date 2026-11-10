@@ -913,6 +913,7 @@ def ingest_gtfs(conn, feed_id, zip_bytes, today_dt, extend_calendar=False, max_b
             }
             conn.execute("UPDATE trips SET shape_id = NULL WHERE feed_id = ? AND shape_id IS NOT NULL "
                          "AND shape_id NOT IN (SELECT shape_id FROM shapes WHERE feed_id = ?)", (feed_id, feed_id))
+            stats["nomes_de_linha"] = nomes_de_linha_em_falta(conn, feed_id)
             if stats["stops"] == 0:
                 member = next((n for n in zf.namelist() if os.path.basename(n).lower() == "stops.txt"), None)
                 head = zf.read(member)[:160] if member else b""
@@ -931,6 +932,33 @@ def ingest_gtfs(conn, feed_id, zip_bytes, today_dt, extend_calendar=False, max_b
                   "filled_days": filled_days, "past_end": bool(v_until and v_until < today),
                   "aliases": aliases, "sem_calendario": [{"service": x, "viagens": n} for n, x in sem_calendario]})
     return stats
+
+
+def nomes_de_linha_em_falta(conn, feed_id):
+    """Linhas sem nome comprido (vazio ou só «-», como as do Metro do Porto): o nome passa a ser os dois destinos principais
+    («Estádio do Dragão – Póvoa de Varzim»: o destino do sentido 1, depois o do sentido 0). Sem isto a app mostrava «-».
+    Só quando há dois destinos diferentes.
+    Devolve quantas linhas mudaram."""
+    vazias = [r[0] for r in conn.execute(
+        "SELECT route_id FROM routes WHERE feed_id = ? AND TRIM(COALESCE(route_long_name, ''), ' -–—.') = ''", (feed_id,))]
+    mudadas = 0
+    for rid in vazias:
+        destinos = {}
+        for sentido, destino, n in conn.execute(
+                "SELECT COALESCE(direction_id, 0), TRIM(trip_headsign), COUNT(*) FROM trips "
+                "WHERE feed_id = ? AND route_id = ? AND TRIM(COALESCE(trip_headsign, '')) <> '' "
+                "GROUP BY 1, 2 ORDER BY 3 DESC", (feed_id, rid)):
+            destinos.setdefault(int(sentido), destino)
+        nomes = []
+        for sentido in sorted(destinos, reverse=True):
+            if destinos[sentido] not in nomes:
+                nomes.append(destinos[sentido])
+        # Só com dois destinos diferentes (um percurso de ida e volta). Linhas de um só sentido (ex.: CP, uma por
+        # origem e destino, que a app agrupa à parte) ficam como estão.
+        if len(nomes) >= 2:
+            conn.execute("UPDATE routes SET route_long_name = ? WHERE route_id = ?", (" – ".join(nomes[:2]), rid))
+            mudadas += 1
+    return mudadas
 
 
 def delete_feed(conn, feed_id):
