@@ -87,6 +87,10 @@ jobs:
         working-directory: app
         run: APP=$PWD node --import tsx ../auditoria/convite-instalar.mjs 2>&1 | grep -v "Experimental\|trace-warnings" | tail -30; exit ${PIPESTATUS[0]}
 
+      - name: Memória (linhas perto de um ponto com limite; raio entre 100 e 2000 m)
+        working-directory: app
+        run: APP=$PWD node --import tsx ../auditoria/cache-linhas-perto.mjs 2>&1 | grep -v "Experimental\|trace-warnings" | tail -20; exit ${PIPESTATUS[0]}
+
       - name: Movimento dos autocarros (suave, sem teleportes)
         working-directory: app
         run: APP=$PWD node --import tsx ../auditoria/trajeto-veiculo.mjs 2>&1 | grep -v "Experimental\|trace-warnings" | tail -90; exit ${PIPESTATUS[0]}
