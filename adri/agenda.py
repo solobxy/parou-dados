@@ -42,7 +42,7 @@ SERVICOS = {
     'daith': ('Daith', 35), 'rook': ('Rook', 35), 'snug': ('Snug', 35), 'industrial': ('Industrial', 35),
     # rosto
     'narina': ('Narina', 30), 'septo': ('Septo', 40), 'labio': ('Lábio', 35), 'medusa': ('Medusa', 35), 'smiley': ('Smiley', 40),
-    'sobrancelha': ('Sobrancelha', 35), 'lingua': ('Língua', 45),
+    'sobrancelha': ('Sobrancelha', 35),
     # corpo
     'umbigo': ('Umbigo', 50), 'mamilo': ('Mamilos', 50), 'surface': ('Surface', 60), 'microdermal': ('Microdermal', 60),
     # serviços
