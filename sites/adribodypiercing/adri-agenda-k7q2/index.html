@@ -217,7 +217,7 @@ function cartao(m){
   return '<article class="card" data-id="' + m.id + '">' +
     '<div class="cab"><div class="hora"><b>' + m.hora.replace(':', 'h') + '</b><span>' + esc(fmtCurto.format(dParse(m.data))) + '</span></div>' +
     '<div style="min-width:0"><h3>' + esc(m.nome) + '</h3><div class="serv">' + esc(m.servicos.join(', ')) + '</div>' +
-    '<div class="mini">' + eur.format(m.total) + (m.origem === 'adriano' ? ' · marcada por ti' : ' com 10 % online') + '</div>' +
+    '<div class="mini">' + eur.format(m.total) + (m.origem === 'adriano' ? ' · marcada por ti' : ' · pedido no site') + '</div>' +
     '<span class="pill ' + m.estado + '"><i></i>' + NOMES_EST[m.estado] + '</span>' + (m.motivo ? '<div class="mini">Motivo: ' + esc(m.motivo) + '</div>' : '') + '</div></div>' +
     (m.notas ? '<div class="notas">' + esc(m.notas) + '</div>' : '') +
     '<div class="contacto"><a class="btn esc peq" href="tel:+351' + m.tel + '">Ligar ' + m.tel.replace(/(\d{3})(\d{3})(\d{3})/, '$1 $2 $3') + '</a><a class="btn esc peq" target="_blank" rel="noopener" href="' + wa(m.tel, mensagem(m, '')) + '">' + ICON_WA + ' WhatsApp</a></div>' +
@@ -319,7 +319,7 @@ function bloqueios(c){
     '<button class="btn" id="bBlq">Bloquear</button></form><div class="painel" id="lBlq"><p style="color:var(--sec)">A carregar…</p></div>';
   function horasSelect(){
     var d = dParse($('#bDia').value).getDay();
-    var hs = d >= 2 && d <= 6 ? ['10:00','11:00','12:00','14:00','15:00','16:00','17:00'] : [];
+    var hs = d === 6 ? ['10:00','11:00','12:00','13:00','14:00','15:00','16:00'] : [];
     $('#bHora').innerHTML = '<option value="">O dia inteiro</option>' + hs.map(function(h){ return '<option value="' + h + '">' + h.replace(':', 'h') + '</option>'; }).join('');
   }
   horasSelect(); $('#bDia').addEventListener('change', horasSelect);

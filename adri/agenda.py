@@ -30,21 +30,26 @@ MAX_CORPO = 8 * 1024
 SESSAO_H = 12
 JANELA_DIAS = 75          # até quando se pode marcar
 ANTECEDENCIA_H = 2        # marcações com pelo menos 2 horas de antecedência
-DESCONTO = 0.10           # desconto da marcação online
+DESCONTO = 0              # sem campanha de desconto online (retirada a 10/11/2026)
 TETO_PENDENTES = 60       # pedidos por confirmar no total
 COOKIE = '__Host-adri_admin'
 
 # Iguais aos do site (sites/adribodypiercing). Preço em euros, com a joia básica incluída.
 SERVICOS = {
-    'lobulo': ('Lóbulo', 30), 'lobulo-alto': ('Lóbulo alto', 30), 'helix': ('Hélix', 35), 'helix-frontal': ('Hélix frontal', 35),
-    'flat': ('Flat', 40), 'tragus': ('Tragus', 35), 'antitragus': ('Anti-tragus', 40), 'conch': ('Conch', 40),
-    'daith': ('Daith', 45), 'rook': ('Rook', 45), 'snug': ('Snug', 45), 'industrial': ('Industrial', 55),
-    'narina': ('Narina', 35), 'septo': ('Septo', 45), 'labio': ('Lábio (labret)', 40), 'medusa': ('Medusa', 40),
-    'sobrancelha': ('Sobrancelha', 40), 'lingua': ('Língua', 45), 'umbigo': ('Umbigo', 45), 'mamilo': ('Mamilo (cada)', 50),
-    'microdermal': ('Microdermal', 70), 'consulta': ('Consulta', 0), 'troca': ('Troca de joia', 10), 'retirar': ('Retirar joia', 5),
+    # orelha: todos os piercings de orelha a 35 €
+    'lobulo': ('Lóbulo', 35), 'lobulo-alto': ('Lóbulo alto', 35), 'helix': ('Hélix', 35), 'helix-frontal': ('Hélix frontal', 35),
+    'flat': ('Flat', 35), 'tragus': ('Tragus', 35), 'antitragus': ('Anti-tragus', 35), 'conch': ('Conch', 35),
+    'daith': ('Daith', 35), 'rook': ('Rook', 35), 'snug': ('Snug', 35), 'industrial': ('Industrial', 35),
+    # rosto
+    'narina': ('Narina', 30), 'septo': ('Septo', 40), 'labio': ('Lábio', 35), 'medusa': ('Medusa', 35), 'smiley': ('Smiley', 40),
+    'sobrancelha': ('Sobrancelha', 35), 'lingua': ('Língua', 45),
+    # corpo
+    'umbigo': ('Umbigo', 50), 'mamilo': ('Mamilos', 50), 'surface': ('Surface', 60), 'microdermal': ('Microdermal', 60),
+    # serviços
+    'consulta': ('Consulta', 0), 'troca': ('Troca de joia', 10), 'retirar': ('Retirar joia', 5),
 }
-_DIA = ['10:00', '11:00', '12:00', '14:00', '15:00', '16:00', '17:00']  # terça a sábado, 10h–18h (a última marcação começa às 17h)
-HORAS = {1: _DIA, 2: _DIA, 3: _DIA, 4: _DIA, 5: _DIA}  # 0 = segunda
+# por agora só aos sábados, das 10h às 17h30, no Kaos Tattoo (a última marcação começa às 16h)
+HORAS = {5: ['10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00']}  # 0 = segunda
 ATIVOS = ('pendente', 'confirmada')
 ESTADOS = ('pendente', 'confirmada', 'recusada', 'cancelada', 'concluida', 'faltou')
 
