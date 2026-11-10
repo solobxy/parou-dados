@@ -189,6 +189,14 @@ def email_normal(t):
     return t if RE_EMAIL.match(t) else None
 
 
+ORELHA = ('lobulo', 'lobulo-alto', 'helix', 'helix-frontal', 'flat', 'tragus', 'antitragus', 'conch', 'daith', 'rook', 'snug', 'industrial')
+
+
+def desde(ids):
+    # na orelha o preço começa nos 35 € e pode subir conforme a complexidade
+    return any(i in ORELHA for i in ids)
+
+
 def nomes(ids):
     return [SERVICOS[i][0] for i in ids if i in SERVICOS]
 
@@ -202,13 +210,14 @@ def total_de(ids, online=True):
 def publico(r):
     ids = json.loads(r['servicos'])
     return {'codigo': r['codigo'], 'estado': r['estado'], 'data': r['data'], 'hora': r['hora'],
-            'servicos': nomes(ids), 'total': r['total'], 'motivo': r['motivo']}
+            'servicos': nomes(ids), 'total': r['total'], 'desde': desde(ids), 'motivo': r['motivo']}
 
 
 def completo(r):
     d = dict(r)
     d['servicos_ids'] = json.loads(r['servicos'])
     d['servicos'] = nomes(d['servicos_ids'])
+    d['desde'] = desde(d['servicos_ids'])
     d['historico'] = json.loads(r['historico'] or '[]')
     return d
 

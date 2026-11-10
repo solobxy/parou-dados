@@ -8,7 +8,7 @@
 <meta name="theme-color" content="#0E0C0B">
 <meta name="color-scheme" content="dark light">
 <meta property="og:title" content="AdriBodyPiercing · Body piercing no Porto">
-<meta property="og:description" content="Piercings desde 30 €, com a joia em titânio incluída. Agulha americana de uso único e preço fechado. Aos sábados no Kaos Tattoo, Rua da Torrinha 202. Marca online em 2 minutos.">
+<meta property="og:description" content="Piercings desde 30 €, com a joia em titânio incluída. Agulha americana de uso único e preço dito antes de começar. Aos sábados no Kaos Tattoo, Rua da Torrinha 202. Marca online em 2 minutos.">
 <meta property="og:type" content="website">
 <meta property="og:locale" content="pt_PT">
 <meta property="og:url" content="https://adribodypiercing.2-31-13-85.sslip.io/">
@@ -291,6 +291,9 @@ section{position:relative}
 .selecao li button{width:36px;height:36px;border:0;border-radius:50%;background:transparent;font-size:20px;line-height:1}
 .selecao li button:hover{background:var(--osso-3)}
 .selecao .total{display:flex;justify-content:space-between;align-items:baseline;margin-top:14px;padding-top:14px;font-weight:600}
+.nota-desde{font-size:13px;line-height:1.45;color:var(--sec-claro);margin:8px 0 0}
+.de{font-style:normal;font-size:.62em;font-weight:500;opacity:.72;letter-spacing:0}
+.resumo .nota-desde{color:var(--sec-escuro);margin-top:10px}
 .selecao .total .grande{font-family:var(--serif);font-size:30px;font-weight:500}
 .selecao .btn{width:100%;margin-top:18px}
 @media (max-width:900px){.mapa{grid-template-columns:minmax(0,1fr)}.painel{position:static}.orelha{width:min(100%,420px)}}
@@ -664,7 +667,7 @@ dialog.doc[open] .doc-cx{animation:pop .5s var(--ease)}
   <div class="wrap mosaico">
     <figure class="f-orelha rv"><div class="ph"><img src="/img/nariz.webp" alt="Perfil de uma cliente com um ponto de titânio na narina, feito pelo Adri" width="1000" height="1500" loading="lazy" decoding="async"></div><figcaption><b>Preço fechado</b><span>Narina, 30 €. Joia em titânio, soro e revisão às 4–8 semanas já incluídos.</span></figcaption></figure>
     <figure class="f-estudio rv" style="--d:.08s"><div class="ph"><img src="/img/umbigo.webp" alt="Piercing no umbigo com uma joia de titânio, feito pelo Adri" width="1500" height="1000" loading="lazy" decoding="async"></div><figcaption><b>Uma pessoa de cada vez</b><span>Umbigo, 50 €. Sem filas nem pressa. Marcas online e pagas só no estúdio.</span></figcaption></figure>
-    <figure class="f-joias rv" style="--d:.12s"><div class="ph"><img src="/img/conch.webp" alt="Orelha com um ponto de titânio na concha e uma argola no lóbulo, feitos pelo Adri" width="844" height="1500" loading="lazy" decoding="async"></div><figcaption><b>Joias certificadas</b><span>Orelha, 35 €. Só titânio de implante, sem níquel.</span></figcaption></figure>
+    <figure class="f-joias rv" style="--d:.12s"><div class="ph"><img src="/img/conch.webp" alt="Orelha com um ponto de titânio na concha e uma argola no lóbulo, feitos pelo Adri" width="844" height="1500" loading="lazy" decoding="async"></div><figcaption><b>Joias certificadas</b><span>Orelha, desde 35 €. Só titânio de implante, sem níquel.</span></figcaption></figure>
     <figure class="f-prep rv" style="--d:.16s"><div class="ph"><video src="/vid/narina.mp4" poster="/img/narina-poster.webp" autoplay muted loop playsinline preload="metadata" aria-label="O Adri, de luvas, a preparar um piercing na narina com a pinça"></video></div><figcaption><b>Agulha americana</b><span>Estéril e de uso único, aberta à tua frente. Nunca pistola.</span></figcaption></figure>
   </div>
 </section>
@@ -709,7 +712,8 @@ dialog.doc[open] .doc-cx{animation:pop .5s var(--ease)}
         <div class="selecao" id="selecao" hidden>
           <h4>A tua seleção</h4>
           <ul id="selLista"></ul>
-          <div class="total"><span>Total</span><span class="grande num" id="selTotal">0 €</span></div>
+          <div class="total"><span>Total</span><span class="grande num" id="selTotal">0 €</span></div>
+          <p class="nota-desde">Na orelha, o preço começa nos 35 € e pode subir conforme a complexidade. Digo-te sempre o valor antes de começar.</p>
           <a class="btn escuro" href="#marcar" id="selMarcar">Marcar estes piercings</a>
         </div>
       </div>
@@ -720,8 +724,8 @@ dialog.doc[open] .doc-cx{animation:pop .5s var(--ease)}
 <section class="bloco" id="precos" aria-labelledby="t-precos">
   <div class="wrap">
     <div class="cab">
-      <h2 id="t-precos" class="rv">Preço fechado, joia incluída.</h2>
-      <p class="sec rv" style="--d:.08s">O que vês é o que pagas: joia em titânio de implante, soro para os cuidados e revisão às 4–8 semanas. Se quiseres outra joia em titânio, pagas só a diferença.</p>
+      <h2 id="t-precos" class="rv">Preço claro, joia incluída.</h2>
+      <p class="sec rv" style="--d:.08s">Já inclui a joia em titânio de implante, o soro para os cuidados e a revisão às 4–8 semanas. Na orelha começa nos 35 € e pode subir conforme a complexidade, mas digo-te sempre o valor antes de começar.</p>
     </div>
     <div class="precos" id="tabelaPrecos"></div>
     <div class="servicos rv">
@@ -854,7 +858,7 @@ dialog.doc[open] .doc-cx{animation:pop .5s var(--ease)}
       <p class="sec rv" style="--d:.12s">Atendo uma pessoa de cada vez. Se um sítio não resultar com a tua anatomia, digo-te logo na consulta e proponho uma alternativa que funcione.</p>
       <div class="valores">
         <div class="rv"><b>Esterilizado</b><span class="sec">Agulha americana e material de uso único, aberto à tua frente.</span></div>
-        <div class="rv" style="--d:.08s"><b>Honesto</b><span class="sec">Preço fechado antes de começar, com a joia incluída.</span></div>
+        <div class="rv" style="--d:.08s"><b>Honesto</b><span class="sec">Digo-te o preço antes de começar, com a joia incluída.</span></div>
         <div class="rv" style="--d:.16s"><b>Por perto</b><span class="sec">Respondo a dúvidas durante toda a cicatrização.</span></div>
       </div>
     </div>
@@ -931,7 +935,8 @@ dialog.doc[open] .doc-cx{animation:pop .5s var(--ease)}
       <aside class="resumo" id="resumo" aria-label="Resumo da marcação">
         <h3>Resumo</h3>
         <div id="rLinhas"><p class="sec">Ainda não escolheste nada.</p></div>
-        <div class="tot"><span>Total</span><b class="num" id="rTotal">0 €</b></div>
+        <div class="tot"><span>Total</span><b class="num" id="rTotal">0 €</b></div>
+        <p class="nota-desde" id="rDesde" hidden>Na orelha, o preço começa nos 35 € e pode subir conforme a complexidade. Digo-te sempre o valor antes de começar.</p>
         <p class="codigo" id="rQuando">Dia e hora por escolher.</p>
         <p class="form-msg" id="formMsg" role="alert" hidden></p>
         <button class="btn" type="submit" form="form" id="pedir">Pedir marcação</button>
@@ -1048,6 +1053,9 @@ var S = [
 var byId = {}; S.forEach(function(s){ byId[s.id] = s; });
 var eur = new Intl.NumberFormat('pt-PT', {style:'currency', currency:'EUR', minimumFractionDigits:0, maximumFractionDigits:2});
 var eur2 = new Intl.NumberFormat('pt-PT', {style:'currency', currency:'EUR', minimumFractionDigits:2, maximumFractionDigits:2});
+function pr(s){ return (s.z === 'orelha' ? 'desde ' : '') + fmt(s.p); }
+var DE = '<i class="de">desde </i>';
+function prH(s){ return (s.z === 'orelha' ? DE : '') + fmt(s.p); }
 function fmt(v){ v = Math.round(v*100)/100; return (v % 1 ? eur2 : eur).format(v); }
 function $(s, c){ return (c||document).querySelector(s); }
 function $$(s, c){ return Array.prototype.slice.call((c||document).querySelectorAll(s)); }
@@ -1131,7 +1139,7 @@ S.filter(function(s){ return s.z === 'orelha'; }).forEach(function(s, i){
   b.style.left = ((s.x - VB.x) / VB.w * 100) + '%'; b.style.top = ((s.y - VB.y) / VB.h * 100) + '%';
   b.style.setProperty('--pd', (i * .19) + 's');
   b.setAttribute('aria-pressed', 'false');
-  b.setAttribute('aria-label', s.n + ', ' + fmt(s.p));
+  b.setAttribute('aria-label', s.n + ', ' + pr(s));
   if ((s.x - VB.x) / VB.w > .55) b.classList.add('esq');
   b.innerHTML = '<i></i><span class="et" aria-hidden="true">' + s.n + '</span>';
   b.addEventListener('click', function(){ mostrar(s.id); });
@@ -1141,7 +1149,7 @@ mapa.classList.add('vivo');
 var lc = $('#listaCorpo');
 S.filter(function(s){ return s.z === 'rosto' || s.z === 'corpo'; }).forEach(function(s){
   var b = document.createElement('button'); b.type = 'button'; b.dataset.id = s.id; b.setAttribute('aria-pressed','false');
-  b.innerHTML = '<span>' + s.n + '</span><small class="num">' + fmt(s.p) + '</small>';
+  b.innerHTML = '<span>' + s.n + '</span><small class="num">' + prH(s) + '</small>';
   b.addEventListener('click', function(){ mostrar(s.id); });
   lc.appendChild(b);
 });
@@ -1151,7 +1159,7 @@ orelha.appendChild(pop);
 var inl = document.createElement('div'); inl.className = 'ficha-inline'; inl.setAttribute('aria-live', 'polite');
 function miniHTML(s, ja){
   return '<button type="button" class="x" aria-label="Fechar">×</button>' +
-    '<div class="mini"><img src="' + IMG[s.img] + '" alt="" width="64" height="64"><div><b>' + s.n + '</b><span class="pr num">' + fmt(s.p) + '</span></div></div>' +
+    '<div class="mini"><img src="' + IMG[s.img] + '" alt="" width="64" height="64"><div><b>' + s.n + '</b><span class="pr num">' + prH(s) + '</span></div></div>' +
     '<dl><dt>Cicatriza em</dt><dd>' + s.c + '</dd><dt>Joia incluída</dt><dd>' + s.j + '</dd></dl>' +
     '<div class="acao">' + (ja ? '<button type="button" class="btn cinza js-add">Retirar</button><a class="btn" href="#marcar">Marcar já</a>' : '<button type="button" class="btn js-add">Juntar à seleção</button>') + '</div>';
 }
@@ -1192,7 +1200,7 @@ function mostrar(id){
     var f = $('#ficha');
     f.innerHTML = '<div class="troca"><img class="img-joia" src="' + IMG[s.img] + '" alt="" width="120" height="120">' +
       '<h3>' + s.n + '</h3>' +
-      '<div class="linha"><span class="preco num">' + fmt(s.p) + '</span></div>' +
+      '<div class="linha"><span class="preco num">' + prH(s) + '</span></div>' +
       '<dl><dt>Cicatrização</dt><dd>' + s.c + '</dd><dt>Joia incluída</dt><dd>' + s.j + '</dd></dl>' +
       '<div class="acao"><button type="button" class="btn ' + (ja ? 'cinza' : 'escuro') + '" id="fichaAdd">' + (ja ? 'Retirar da seleção' : 'Juntar à seleção') + '</button></div></div>';
     $('#fichaAdd').addEventListener('click', function(){ toggle(id); mostrar(id); });
@@ -1217,12 +1225,12 @@ function desenharSelecao(){
   visiveis.forEach(function(id){
     var s = byId[id]; t += s.p;
     var li = document.createElement('li');
-    li.innerHTML = '<span>' + s.n + '</span><span style="margin-left:auto" class="num">' + fmt(s.p) + '</span>';
+    li.innerHTML = '<span>' + s.n + '</span><span style="margin-left:auto" class="num">' + prH(s) + '</span>';
     var x = document.createElement('button'); x.type = 'button'; x.textContent = '×'; x.setAttribute('aria-label', 'Retirar ' + s.n);
     x.addEventListener('click', function(){ toggle(id); if (atual === id && (!mq.matches || !pop.hidden || inl.parentNode)) mostrar(id); });
     li.appendChild(x); ul.appendChild(li);
   });
-  contar($('#selTotal'), t);
+  contar($('#selTotal'), t, visiveis.length ? DE : '');
   marcarPontos();
 }
 listeners.push(desenharSelecao);
@@ -1237,17 +1245,18 @@ tabs.forEach(function(t, i){
 });
 
 /* números animados */
-function contar(el, alvo){
+function contar(el, alvo, pre){
+  pre = pre || '';
   var de = parseFloat(el.dataset.v || 0), t0 = performance.now(), dur = 600;
   el.dataset.v = alvo;
-  function f(t){ var k = Math.min(1, (t - t0) / dur); k = 1 - Math.pow(1 - k, 3); el.textContent = fmt(de + (alvo - de) * k); if (k < 1) requestAnimationFrame(f); }
+  function f(t){ var k = Math.min(1, (t - t0) / dur); k = 1 - Math.pow(1 - k, 3); el.innerHTML = pre + fmt(de + (alvo - de) * k); if (k < 1) requestAnimationFrame(f); }
   requestAnimationFrame(f);
 }
 
 /* ---------- Tabela de preços ---------- */
 function lista(z){ return '<ul>' + S.filter(function(s){ return s.z === z; }).map(function(s){
     var info = 'Cicatriza em ' + s.c + (s.j && s.j !== '—' ? ' · ' + s.j.charAt(0).toLowerCase() + s.j.slice(1) : '');
-    return '<li><b>' + s.n + '</b><span class="v num">' + fmt(s.p) + '</span><small>' + info + '</small>' +
+    return '<li><b>' + s.n + '</b><span class="v num">' + prH(s) + '</span><small>' + info + '</small>' +
       '<button type="button" class="mais" data-id="' + s.id + '" aria-pressed="false" aria-label="Juntar ' + s.n + ' à marcação"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path class="p" d="M12 5v14M5 12h14"/><path class="ok" d="M5 12.5l4.5 4.5L19 7"/></svg></button></li>'; }).join('') + '</ul>'; }
 $('#tabelaPrecos').innerHTML = '<div class="orelha-l rv"><h3>Orelha</h3>' + lista('orelha') + '</div>' +
   '<div class="lado"><div class="rv" style="--d:.08s"><h3>Rosto</h3>' + lista('rosto') + '</div><div class="rv" style="--d:.16s"><h3>Corpo</h3>' + lista('corpo') + '</div></div>';
@@ -1339,7 +1348,7 @@ scrollFx();
 var addServ = $('#addServ');
 [['orelha','Orelha'],['rosto','Rosto'],['corpo','Corpo'],['servico','Serviços']].forEach(function(g){
   var og = document.createElement('optgroup'); og.label = g[1];
-  S.filter(function(s){ return s.z === g[0]; }).forEach(function(s){ var o = document.createElement('option'); o.value = s.id; o.textContent = s.n + ' — ' + (s.p ? fmt(s.p) : 'grátis'); og.appendChild(o); });
+  S.filter(function(s){ return s.z === g[0]; }).forEach(function(s){ var o = document.createElement('option'); o.value = s.id; o.textContent = s.n + ' — ' + (s.p ? pr(s) : 'grátis'); og.appendChild(o); });
   addServ.appendChild(og);
 });
 addServ.addEventListener('change', function(){ if (addServ.value && sel.indexOf(addServ.value) < 0) setSel(sel.concat(addServ.value)); addServ.value = ''; limparErro('c-serv'); });
@@ -1347,7 +1356,7 @@ function desenharEscolhidos(){
   var ul = $('#escolhidos'); ul.innerHTML = '';
   sel.forEach(function(id){
     var s = byId[id], li = document.createElement('li');
-    li.innerHTML = '<span>' + s.n + '</span><span class="v num">' + (s.p ? fmt(s.p) : 'Grátis') + '</span>';
+    li.innerHTML = '<span>' + s.n + '</span><span class="v num">' + (s.p ? prH(s) : 'Grátis') + '</span>';
     var x = document.createElement('button'); x.type = 'button'; x.textContent = '×'; x.setAttribute('aria-label', 'Retirar ' + s.n);
     x.addEventListener('click', function(){ toggle(id); });
     li.appendChild(x); ul.appendChild(li);
@@ -1427,14 +1436,15 @@ $('#mesSeg').addEventListener('click', function(){ mesVis = new Date(mesVis.getF
 
 function totais(){
   var sub = sel.reduce(function(a, id){ return a + byId[id].p; }, 0);
-  return {sub:sub, tot:sub};
+  return {sub:sub, tot:sub, desde: sel.some(function(id){ return byId[id].z === 'orelha'; })};
 }
 function resumo(){
   var l = $('#rLinhas');
   if (!sel.length) l.innerHTML = '<p class="sec">Ainda não escolheste nada.</p>';
-  else l.innerHTML = sel.map(function(id){ var s = byId[id]; return '<div class="lin"><span>' + s.n + '</span><span class="num">' + (s.p ? fmt(s.p) : 'Grátis') + '</span></div>'; }).join('');
+  else l.innerHTML = sel.map(function(id){ var s = byId[id]; return '<div class="lin"><span>' + s.n + '</span><span class="num">' + (s.p ? prH(s) : 'Grátis') + '</span></div>'; }).join('');
   var t = totais();
-  contar($('#rTotal'), t.tot);
+  contar($('#rTotal'), t.tot, t.desde ? DE : '');
+  $('#rDesde').hidden = !t.desde;
   $('#rQuando').textContent = diaSel && horaSel ? cap(fmtDia.format(diaSel)) + ', às ' + horaSel.replace(':', 'h') : (diaSel ? cap(fmtDia.format(diaSel)) + ': falta escolher a hora.' : 'Dia e hora por escolher.');
 }
 function cap(s){ return s.charAt(0).toUpperCase() + s.slice(1); }
@@ -1467,14 +1477,14 @@ $('#form').addEventListener('submit', function(e){
   var notas = $('#notas').value.trim();
   if (CFG.api) return enviarAgenda({servicos:sel.slice(), data:chave(diaSel), hora:horaSel, nome:nome, tel:tel, email:email, notas:notas, idade:true, empresa:$('#empresa').value, ms:t0 ? Date.now() - t0 : 0}, lista, quando, t);
   var msg = 'Olá Adri! Quero marcar pelo site:\n' +
-    '• ' + lista + '\n• ' + quando + '\n• Total: ' + fmt(t.tot) + '\n• Nome: ' + nome + '\n• Telemóvel: ' + tel +
+    '• ' + lista + '\n• ' + quando + '\n• Total: ' + (t.desde ? 'desde ' : '') + fmt(t.tot) + '\n• Nome: ' + nome + '\n• Telemóvel: ' + tel +
     ($('#notas').value.trim() ? '\n• Notas: ' + $('#notas').value.trim() : '');
   store.set('adri-pedido', {lista:lista, quando:quando, tot:t.tot, nome:nome, msg:msg, t:Date.now()});
   var z = $('#zonaMarcar');
   z.style.display = 'block';
   z.innerHTML = '<div class="sucesso troca" tabindex="-1" id="ok"><h3>Pedido pronto, ' + esc(nome.split(' ')[0]) + '.</h3>' +
     '<p class="sec">Falta um passo: envia o pedido ao Adri pelo WhatsApp. A marcação fica confirmada quando ele responder.</p>' +
-    '<dl><dt>Piercing</dt><dd>' + esc(lista) + '</dd><dt>Quando</dt><dd>' + quando + '</dd><dt>Total</dt><dd class="num">' + fmt(t.tot) + '</dd></dl>' +
+    '<dl><dt>Piercing</dt><dd>' + esc(lista) + '</dd><dt>Quando</dt><dd>' + quando + '</dd><dt>Total</dt><dd class="num">' + (t.desde ? 'desde ' : '') + fmt(t.tot) + '</dd></dl>' +
     '<div class="acoes"><a class="btn" href="' + waLink(msg) + '" target="_blank" rel="noopener">' + WA + ' Enviar pelo WhatsApp</a><button class="btn osso" type="button" id="denovo">Fazer outro pedido</button></div></div>';
   $('#ok').focus({preventScroll:true});
   z.scrollIntoView({behavior:'smooth', block:'start'});
@@ -1517,7 +1527,7 @@ function sucessoAgenda(j, nome){
   var aviso = 'Olá Adri! Fiz um pedido no site (' + j.codigo + '): ' + j.servicos.join(', ') + ', ' + quandoTxt(j.data, j.hora).toLowerCase() + '.';
   z.innerHTML = '<div class="sucesso troca" tabindex="-1" id="ok"><span class="estado-pill"><i></i>À espera de confirmação</span><h3 style="margin-top:18px">Pedido enviado, ' + esc(nome.split(' ')[0]) + '.</h3>' +
     '<p class="sec">A hora fica guardada para ti. O Adri confirma normalmente no próprio dia, e aqui no site vês sempre o estado do pedido.</p>' +
-    '<dl><dt>Piercing</dt><dd>' + esc(j.servicos.join(', ')) + '</dd><dt>Quando</dt><dd>' + quandoTxt(j.data, j.hora) + '</dd><dt>Total</dt><dd class="num">' + fmt(j.total) + '</dd><dt>Código</dt><dd class="num">' + esc(j.codigo) + '</dd></dl>' +
+    '<dl><dt>Piercing</dt><dd>' + esc(j.servicos.join(', ')) + '</dd><dt>Quando</dt><dd>' + quandoTxt(j.data, j.hora) + '</dd><dt>Total</dt><dd class="num">' + (j.desde ? 'desde ' : '') + fmt(j.total) + '</dd><dt>Código</dt><dd class="num">' + esc(j.codigo) + '</dd></dl>' +
     '<div class="acoes"><a class="btn" href="' + waLink(aviso) + '" target="_blank" rel="noopener">' + WA + ' Avisar o Adri</a><button class="btn osso" type="button" id="denovo">Fazer outro pedido</button></div></div>';
   $('#ok').focus({preventScroll:true});
   z.scrollIntoView({behavior:'smooth', block:'start'});
