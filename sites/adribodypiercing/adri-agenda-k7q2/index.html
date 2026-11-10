@@ -118,7 +118,7 @@ dialog::backdrop{background:rgba(0,0,0,.7)}
 <section class="entrar" id="vEntrar" hidden>
   <form id="fEntrar" autocomplete="on">
     <div class="m"><svg xmlns="http://www.w3.org/2000/svg" viewBox="-227 -880 1100 1100" aria-hidden="true" focusable="false"><g class="bar" fill="#D9B676"><rect x="-64" y="-245.0" width="776" height="66" rx="33.0"/><circle cx="-64" cy="-212" r="60"/><circle cx="712" cy="-212" r="60"/></g><g fill="currentColor" transform="translate(0.0 0.0) scale(1 -1)"><path transform="translate(0.0 0)" d="M5 0 230 660H418L641 0H485L325 542H320L160 0Z"/></g></svg></div>
-    <h1>Agenda do Adriano</h1>
+    <h1>Agenda do Adri</h1>
     <p>Escreve a password para ver e gerir as marcações.</p>
     <div class="campo"><label for="senha">Password</label><input id="senha" type="password" autocomplete="current-password" required></div>
     <p class="erro" id="eEntrar" role="alert" hidden></p>
@@ -168,16 +168,16 @@ function api(m, url, corpo){
 function primeiro(n){ return String(n || '').split(' ')[0]; }
 function wa(tel, msg){ return 'https://wa.me/351' + tel + '?text=' + encodeURIComponent(msg); }
 function quando(m){ return fmtDia.format(dParse(m.data)) + ', às ' + m.hora.replace(':', 'h'); }
-/* ---------- mensagens prontas (o Adriano pode mudar o texto no separador Mensagens) ---------- */
+/* ---------- mensagens prontas (o Adri pode mudar o texto no separador Mensagens) ---------- */
 var PADRAO = {
-  confirmar: 'Olá {nome}! A tua marcação está confirmada para {dia}, às {hora}: {piercings}. Total de {total}, pagas no estúdio. É no Kaos Tattoo, Rua da Torrinha 202, Porto. Até lá!\nAdriano',
-  lembrete: 'Olá {nome}! Só para lembrar a tua marcação: {dia}, às {hora} ({piercings}), no Kaos Tattoo, Rua da Torrinha 202, Porto. Come qualquer coisa antes de vir. Se não puderes, avisa-me para eu dar a hora a outra pessoa.\nAdriano',
-  reagendar: 'Olá {nome}! Mudei a tua marcação ({piercings}) para {dia}, às {hora}. Se não der jeito, diz-me e vemos outra hora.\nAdriano',
-  recusar: 'Olá {nome}! Infelizmente não consigo fazer a marcação de {dia}, às {hora}. {motivo}Podes escolher outro dia em {site}\nAdriano',
-  cancelar: 'Olá {nome}! A tua marcação de {dia}, às {hora}, ficou cancelada. {motivo}Quando quiseres, marcamos outra.\nAdriano',
-  atraso: 'Olá {nome}! Estou com uns minutos de atraso, desculpa. Aviso-te assim que puderes entrar.\nAdriano',
-  cuidados: 'Olá {nome}! Obrigado pela confiança. Para o piercing cicatrizar bem: soro estéril uma a duas vezes por dia, mãos sempre lavadas e não rodes a joia. Se tiveres alguma dúvida, manda-me uma foto por aqui. Daqui a 4 a 8 semanas passa cá para a revisão, que é grátis.\nAdriano',
-  partilha: 'Olá {nome}! Como está o piercing? Se gostaste, uma foto no Instagram a identificar @adrifilhoo ajuda-me imenso. Obrigado!\nAdriano',
+  confirmar: 'Olá {nome}! A tua marcação está confirmada para {dia}, às {hora}: {piercings}. Total de {total}, pagas no estúdio. É no Kaos Tattoo, Rua da Torrinha 202, Porto. Até lá!\nAdri',
+  lembrete: 'Olá {nome}! Só para lembrar a tua marcação: {dia}, às {hora} ({piercings}), no Kaos Tattoo, Rua da Torrinha 202, Porto. Come qualquer coisa antes de vir. Se não puderes, avisa-me para eu dar a hora a outra pessoa.\nAdri',
+  reagendar: 'Olá {nome}! Mudei a tua marcação ({piercings}) para {dia}, às {hora}. Se não der jeito, diz-me e vemos outra hora.\nAdri',
+  recusar: 'Olá {nome}! Infelizmente não consigo fazer a marcação de {dia}, às {hora}. {motivo}Podes escolher outro dia em {site}\nAdri',
+  cancelar: 'Olá {nome}! A tua marcação de {dia}, às {hora}, ficou cancelada. {motivo}Quando quiseres, marcamos outra.\nAdri',
+  atraso: 'Olá {nome}! Estou com uns minutos de atraso, desculpa. Aviso-te assim que puderes entrar.\nAdri',
+  cuidados: 'Olá {nome}! Obrigado pela confiança. Para o piercing cicatrizar bem: soro estéril uma a duas vezes por dia, mãos sempre lavadas e não rodes a joia. Se tiveres alguma dúvida, manda-me uma foto por aqui. Daqui a 4 a 8 semanas passa cá para a revisão, que é grátis.\nAdri',
+  partilha: 'Olá {nome}! Como está o piercing? Se gostaste, uma foto no Instagram a identificar @adrifilhoo ajuda-me imenso. Obrigado!\nAdri',
   livre: 'Olá {nome}! Sobre a tua marcação de {dia}, às {hora}: '
 };
 var NOME_MOD = {confirmar:'Confirmação', lembrete:'Lembrete', reagendar:'Nova hora', recusar:'Recusa', cancelar:'Cancelamento', atraso:'Atraso', cuidados:'Cuidados', partilha:'Pedir partilha', livre:'Em branco'};
@@ -421,7 +421,7 @@ function bloqueios(c){
   });
 }
 
-/* ---------- mensagens prontas: o Adriano muda o texto base ---------- */
+/* ---------- mensagens prontas: o Adri muda o texto base ---------- */
 function editarModelos(c){
   var ordem = ['confirmar','lembrete','reagendar','recusar','cancelar','atraso','cuidados','partilha','livre'];
   c.innerHTML = '<div class="painel"><h2 style="font-size:22px;margin-bottom:6px">Mensagens prontas</h2><p style="color:var(--sec);margin:0">Estas palavras trocam-se sozinhas pelos dados de cada marcação:</p>' +
