@@ -1,0 +1,48 @@
+
+== paragem-stcp /paragens/stcp/1-de-dezembro (claro) estado 200 em 6887 ms
+   tempos: TTFB 584 ms · FCP 724 ms · LCP 724 ms · CLS 0 · 7900 B
+   diálogos ocupam 0% do ecrã
+   por cima: sticky 390x57 @0: PAROU Abrir a app
+   depois de "Ver em tempo real": /
+
+== paragem-cm /paragens/carris-metropolitana/4-marcos-em1023-xr-aceiro-ant-aleixo (claro) estado 200 em 6770 ms
+   tempos: TTFB 489 ms · FCP 624 ms · LCP 624 ms · CLS 0 · 7616 B
+   diálogos ocupam 0% do ecrã
+   por cima: sticky 390x57 @0: PAROU Abrir a app
+
+== linha-carris /linhas/carris/10b-campo-cebolas-circulacao-graca (claro) estado 200 em 6684 ms
+   tempos: TTFB 397 ms · FCP 536 ms · LCP 536 ms · CLS 0 · 8139 B
+   diálogos ocupam 0% do ecrã
+   por cima: sticky 390x57 @0: PAROU Abrir a app
+
+== cidade-lisboa /cidade/lisboa (claro) estado 200 em 6652 ms
+   tempos: TTFB 377 ms · FCP 516 ms · LCP 516 ms · CLS 0 · 9305 B
+   diálogos ocupam 0% do ecrã
+   por cima: sticky 390x57 @0: PAROU Abrir a app
+
+== greves /greves (claro) estado 200 em 6663 ms
+   tempos: TTFB 382 ms · FCP 512 ms · LCP 512 ms · CLS 0 · 7406 B
+   diálogos ocupam 0% do ecrã
+   por cima: sticky 390x57 @0: PAROU Abrir a app
+
+== app-inicio / (claro) estado 200 em 7019 ms
+   tempos: TTFB 385 ms · FCP 972 ms · LCP 1148 ms · CLS 0 · 5357 B
+   diálogos ocupam 67% do ecrã
+   por cima: sticky 390x57 @0: PAROU
+   por cima: fixed 390x844 @0: Bem-vindo à PAROU Passo 1 de 4 Português English Français Deutsch Av. Aliados 80 m 500 Hospital S. João 3 min 
+   por cima: DIÁLOGO 390x565 @279: Bem-vindo à PAROU Passo 1 de 4 Português English Français Deutsch Av. Aliados 80 m 500 Hospital S. João 3 min 
+   por cima: fixed 390x65 @779: Perto Horários Alertas Notícias Comunidade
+
+== app-inicio / (escuro) estado 200 em 7022 ms
+   tempos: TTFB 379 ms · FCP 956 ms · LCP 1144 ms · CLS 0 · 5357 B
+   diálogos ocupam 67% do ecrã
+   por cima: sticky 390x57 @0: PAROU
+   por cima: fixed 390x844 @0: Bem-vindo à PAROU Passo 1 de 4 Português English Français Deutsch Av. Aliados 80 m 500 Hospital S. João 3 min 
+   por cima: DIÁLOGO 390x565 @279: Bem-vindo à PAROU Passo 1 de 4 Português English Français Deutsch Av. Aliados 80 m 500 Hospital S. João 3 min 
+   por cima: fixed 390x65 @779: Perto Horários Alertas Notícias Comunidade
+
+== app-horarios /transportes (claro) estado 200 em 6962 ms
+   tempos: TTFB 365 ms · FCP 904 ms · LCP 1216 ms · CLS 0 · 4843 B
+   diálogos ocupam 0% do ecrã
+   por cima: sticky 390x57 @0: PAROU
+   por cima: fixed 390x65 @779: Perto Horários Alertas Notícias Comunidade
