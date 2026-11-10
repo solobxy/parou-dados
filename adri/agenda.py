@@ -119,7 +119,10 @@ def preparar():
     CREATE TABLE IF NOT EXISTS bloqueios(id INTEGER PRIMARY KEY, data TEXT NOT NULL, hora TEXT NOT NULL DEFAULT '',
       motivo TEXT NOT NULL DEFAULT '', criado INTEGER NOT NULL, UNIQUE(data, hora));
     CREATE TABLE IF NOT EXISTS sessoes(h TEXT PRIMARY KEY, expira INTEGER NOT NULL);
+    CREATE TABLE IF NOT EXISTS config(chave TEXT PRIMARY KEY, valor TEXT NOT NULL);
     ''')
+    if 'email' not in [r[1] for r in c.execute('PRAGMA table_info(marcacoes)')]:
+        c.execute("ALTER TABLE marcacoes ADD COLUMN email TEXT NOT NULL DEFAULT ''")
     c.close()
 
 
@@ -173,6 +176,17 @@ def tel_normal(t):
     t = re.sub(r'[\s.\-()]', '', str(t or ''))
     t = re.sub(r'^(\+351|00351)', '', t)
     return t if re.fullmatch(r'[923]\d{8}', t) else None
+
+
+RE_EMAIL = re.compile(r'^[^@\s]{1,64}@[^@\s]+\.[^@\s.]{2,}$')
+# mensagens prontas que o Adriano pode editar na agenda (o texto por omissão vive na página da agenda)
+MODELOS = ('confirmar', 'lembrete', 'reagendar', 'recusar', 'cancelar', 'atraso', 'cuidados', 'partilha', 'livre')
+CANAIS = ('whatsapp', 'sms', 'email', 'copiar')
+
+
+def email_normal(t):
+    t = limpar_texto(t, 120).lower()
+    return t if RE_EMAIL.match(t) else None
 
 
 def nomes(ids):
@@ -282,6 +296,9 @@ class H(BaseHTTPRequestHandler):
                     pend = c.execute("SELECT COUNT(*) FROM marcacoes WHERE estado='pendente' AND data>=?", (hoje.isoformat(),)).fetchone()[0]
                     return self.responder(200, {'marcacoes': [completo(r) for r in rs], 'pendentes': pend, 'hoje': hoje.isoformat(),
                                                 'servicos': {k: {'nome': v[0], 'preco': v[1]} for k, v in SERVICOS.items()}})
+                if caminho == '/api/admin/modelos':
+                    r = c.execute("SELECT valor FROM config WHERE chave='modelos'").fetchone()
+                    return self.responder(200, {'modelos': json.loads(r['valor']) if r else {}})
                 if caminho == '/api/admin/bloqueios':
                     rs = c.execute('SELECT id, data, hora, motivo FROM bloqueios WHERE data>=? ORDER BY data, hora', (dt.date.today().isoformat(),)).fetchall()
                     return self.responder(200, {'bloqueios': [dict(r) for r in rs]})
@@ -347,6 +364,8 @@ class H(BaseHTTPRequestHandler):
                     return self.criar(c, corpo, admin=True)
                 if caminho == '/api/admin/bloqueios':
                     return self.bloquear(c, corpo)
+                if caminho == '/api/admin/modelos':
+                    return self.guardar_modelos(c, corpo)
                 m = re.fullmatch(r'/api/admin/bloqueios/(\d+)/apagar', caminho)
                 if m:
                     c.execute('DELETE FROM bloqueios WHERE id=?', (int(m.group(1)),))
@@ -374,9 +393,14 @@ class H(BaseHTTPRequestHandler):
         if not tel:
             erros['tel'] = 'Escreve um número com 9 algarismos, a começar por 9, 2 ou 3.'
         notas = limpar_texto(corpo.get('notas'), 500)
+        email = ''
+        if str(corpo.get('email') or '').strip():
+            email = email_normal(corpo.get('email'))
+            if not email:
+                erros['email'] = 'Esse email não parece certo. Podes deixar em branco.'
         if not admin and corpo.get('idade') is not True:
             erros['idade'] = 'Confirma a idade para continuar.'
-        return dict(ids=ids, data=d.isoformat() if d else '', hora=hora, nome=nome, tel=tel, notas=notas), erros
+        return dict(ids=ids, data=d.isoformat() if d else '', hora=hora, nome=nome, tel=tel, notas=notas, email=email or ''), erros
 
     def criar(self, c, corpo, admin=False):
         ip = self.ip()
@@ -409,10 +433,10 @@ class H(BaseHTTPRequestHandler):
         hist = [{'t': agora, 'o': 'criada pelo Adriano' if admin else 'pedido pelo site'}]
         try:
             c.execute('BEGIN IMMEDIATE')
-            c.execute('INSERT INTO marcacoes(codigo, criado, atualizado, estado, data, hora, servicos, total, nome, tel, notas, origem, historico) '
-                      'VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)',
+            c.execute('INSERT INTO marcacoes(codigo, criado, atualizado, estado, data, hora, servicos, total, nome, tel, notas, origem, historico, email) '
+                      'VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)',
                       (codigo, agora, agora, estado, dados['data'], dados['hora'], json.dumps(dados['ids']), total_de(dados['ids'], online=not admin),
-                       dados['nome'], dados['tel'], dados['notas'], 'adriano' if admin else 'site', json.dumps(hist)))
+                       dados['nome'], dados['tel'], dados['notas'], 'adriano' if admin else 'site', json.dumps(hist), dados['email']))
             c.execute('COMMIT')
         except sqlite3.IntegrityError:
             c.execute('ROLLBACK')
@@ -451,6 +475,15 @@ class H(BaseHTTPRequestHandler):
         if not r:
             return self.erro(404, 'nao_existe')
         a = corpo.get('acao')
+        if a == 'mensagem':
+            # só regista no histórico que o Adriano mandou uma mensagem (não muda o estado)
+            tipo, canal = corpo.get('tipo'), corpo.get('canal')
+            if tipo not in MODELOS or canal not in CANAIS:
+                return self.erro(400, 'acao_invalida')
+            hist = json.loads(r['historico'] or '[]')[-40:]
+            hist.append({'t': int(time.time()), 'o': 'mensagem: %s (%s)' % (tipo, canal), 'msg': tipo})
+            c.execute('UPDATE marcacoes SET historico=? WHERE id=?', (json.dumps(hist), mid))
+            return self.responder(200, completo(c.execute('SELECT * FROM marcacoes WHERE id=?', (mid,)).fetchone()))
         motivo = limpar_texto(corpo.get('motivo'), 300)
         permitido = {'aprovar': ('pendente',), 'recusar': ('pendente',), 'cancelar': ATIVOS, 'concluir': ('confirmada',),
                      'faltou': ('confirmada',), 'reagendar': ATIVOS, 'reabrir': ('recusada', 'cancelada', 'faltou', 'concluida')}
@@ -483,6 +516,22 @@ class H(BaseHTTPRequestHandler):
             c.execute('ROLLBACK')
             return self.erro(409, 'hora_ocupada')
         return self.responder(200, completo(c.execute('SELECT * FROM marcacoes WHERE id=?', (mid,)).fetchone()))
+
+    def guardar_modelos(self, c, corpo):
+        ms = corpo.get('modelos')
+        if not isinstance(ms, dict) or any(k not in MODELOS or not isinstance(v, str) for k, v in ms.items()):
+            return self.erro(400, 'pedido_invalido')
+        # junta aos que já estão guardados (guarda-se uma mensagem de cada vez); texto vazio volta ao original
+        r = c.execute("SELECT valor FROM config WHERE chave='modelos'").fetchone()
+        limpo = json.loads(r['valor']) if r else {}
+        for k, v in ms.items():
+            v = limpar_texto(v, 700)
+            if v:
+                limpo[k] = v
+            else:
+                limpo.pop(k, None)
+        c.execute("INSERT INTO config(chave, valor) VALUES('modelos', ?) ON CONFLICT(chave) DO UPDATE SET valor=excluded.valor", (json.dumps(limpo, ensure_ascii=False),))
+        return self.responder(200, {'modelos': limpo})
 
     def bloquear(self, c, corpo):
         d = data_ok(corpo.get('data'))

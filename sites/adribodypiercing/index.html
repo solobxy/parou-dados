@@ -85,6 +85,7 @@ p{margin:0}
 .btn.cinza:hover{background:#cdc2b1}
 .btn.osso:hover{background:#fff}
 .lnk{display:inline-flex;align-items:center;gap:8px;min-height:48px;font-weight:600;text-decoration:underline;text-decoration-thickness:2px;text-underline-offset:6px;text-decoration-color:color-mix(in srgb, currentColor 35%, transparent);transition:text-decoration-color .2s var(--ease)}
+.lnk.em-linha{display:inline;min-height:0;padding:12px 0}
 .lnk:hover{text-decoration-color:currentColor}
 
 /* navegação */
@@ -530,6 +531,7 @@ legend{font-family:var(--serif);font-size:clamp(26px,2.4vw,32px);margin-bottom:1
 .contacto .dados{grid-column:8/13;display:grid;gap:28px;align-content:start}
 .contacto .dados b{display:block;font-size:14px;font-weight:600;color:var(--sec-escuro);margin-bottom:6px}
 .contacto .dados a,.contacto .dados span{font-family:var(--serif);font-size:clamp(22px,2vw,28px);text-decoration:none}
+.contacto .dados a:not(.lnk){display:inline-block;padding:9px 0;margin:-9px 0}
 .contacto .dados a:hover{text-decoration:underline;text-underline-offset:6px;text-decoration-thickness:2px}
 .contacto .principal .lead{margin-top:22px}
 .contacto .principal .acoes{display:flex;flex-wrap:wrap;align-items:center;gap:12px 24px;margin-top:34px}
@@ -687,7 +689,7 @@ dialog.doc[open] .doc-cx{animation:pop .5s var(--ease)}
         <div class="ficha" id="ficha" aria-live="polite">
           <p class="vazio">Toca num dos pontos para começar. O preço já inclui a joia em titânio, o soro para os cuidados e a revisão às 4–8 semanas.</p>
         </div>
-        <div class="foto-wa"><p class="sec">Não sabes o que te fica bem? Manda uma foto da tua orelha e o Adriano sugere uma combinação.</p><a class="btn escuro" href="#" data-wa="Olá Adriano! Envio uma foto da minha orelha. O que me sugeres?">Mandar foto pelo WhatsApp</a></div>
+        <div class="foto-wa"><p class="sec">Não sabes o que te fica bem? Manda-me uma foto da tua orelha e eu sugiro uma combinação.</p><a class="btn escuro" href="#" data-wa="Olá Adriano! Envio uma foto da minha orelha. O que me sugeres?">Mandar foto pelo WhatsApp</a></div>
         <div class="selecao" id="selecao" hidden>
           <h4>A tua seleção</h4>
           <ul id="selLista"></ul>
@@ -713,7 +715,7 @@ dialog.doc[open] .doc-cx{animation:pop .5s var(--ease)}
       <div><b>Retirar joia</b><p>Com cuidado e sem danificar a pele.</p><span class="v num">5 €</span></div>
     </div>
     <div class="aviso-online rv">
-      <p class="lead">Ainda não sabes qual escolher? A <strong style="color:var(--ouro)">consulta é grátis</strong>: o Adriano vê a tua anatomia e ajuda-te a decidir.</p>
+      <p class="lead">Ainda não sabes qual escolher? A <strong style="color:var(--ouro)">consulta é grátis</strong>: vejo a tua anatomia e ajudo-te a decidir.</p>
       <a class="btn" href="#marcar" data-consulta="1">Marcar consulta grátis</a>
     </div>
   </div>
@@ -841,7 +843,7 @@ dialog.doc[open] .doc-cx{animation:pop .5s var(--ease)}
 
 <section class="bloco" id="perguntas" aria-labelledby="t-faq">
   <div class="wrap">
-    <div class="cab"><h2 id="t-faq" class="rv">Perguntas que toda a gente faz.</h2><p class="sec rv" style="--d:.08s">Não encontras a tua? <a class="lnk" href="#" data-wa="Olá Adriano! Tenho uma pergunta:">Pergunta ao Adriano no WhatsApp</a> ou <a class="lnk" href="https://ig.me/m/adrifilhoo" target="_blank" rel="noopener">no Instagram</a></p></div>
+    <div class="cab"><h2 id="t-faq" class="rv">Perguntas que toda a gente faz.</h2><p class="sec rv" style="--d:.08s">Não encontras a tua? Pergunta-me no <a class="lnk em-linha" href="#" data-wa="Olá Adriano! Tenho uma pergunta:">WhatsApp</a> ou no <a class="lnk em-linha" href="https://ig.me/m/adrifilhoo" target="_blank" rel="noopener">Instagram</a>.</p></div>
     <div class="faq">
       <details class="rv"><summary>Dói muito?<i aria-hidden="true"></i></summary><p class="r">É uma picada forte que dura um ou dois segundos. A cartilagem costuma doer um pouco mais do que o lóbulo e fica sensível uns dias. Se estiveres com nervos, diz: vamos com calma e explico cada passo antes de o fazer.</p></details>
       <details class="rv"><summary>Quanto tempo demora a cicatrizar?<i aria-hidden="true"></i></summary><p class="r">Depende do sítio: o lóbulo leva 6–8 semanas, a narina 4–6 meses e a cartilagem 6–12 meses. Por fora pode parecer pronto antes de estar cicatrizado por dentro, por isso não troques a joia sozinho: passa cá e vemos juntos.</p></details>
@@ -887,7 +889,7 @@ dialog.doc[open] .doc-cx{animation:pop .5s var(--ease)}
             </div>
             <div class="dias-sem" aria-hidden="true"><span>S</span><span>T</span><span>Q</span><span>Q</span><span>S</span><span>S</span><span>D</span></div>
             <div class="dias" id="dias" role="group" aria-label="Dias do mês"></div>
-            <div id="horasWrap"><p class="horas-vazio" id="horasVazio">Escolhe um dia para veres as horas. Por agora, o Adriano fura só aos sábados.</p><div class="horas" id="horas" role="group" aria-label="Horas"></div><p class="horas-nota" id="horasNota" hidden>Só aparecem as horas livres. A hora fica guardada para ti assim que enviares o pedido.</p></div>
+            <div id="horasWrap"><p class="horas-vazio" id="horasVazio">Escolhe um dia para veres as horas. Por agora, só furo aos sábados.</p><div class="horas" id="horas" role="group" aria-label="Horas"></div><p class="horas-nota" id="horasNota" hidden>Só aparecem as horas livres. A hora fica guardada para ti assim que enviares o pedido.</p></div>
           </div>
           <div class="campo" id="c-quando" style="margin-top:10px"><span class="err" id="e-quando">Escolhe o dia e a hora.</span></div>
         </fieldset>
@@ -896,6 +898,7 @@ dialog.doc[open] .doc-cx{animation:pop .5s var(--ease)}
           <div class="duas">
             <div class="campo" id="c-nome"><label for="nome">Nome</label><input id="nome" name="nome" autocomplete="name" required><span class="err">Escreve o teu nome.</span></div>
             <div class="campo" id="c-tel"><label for="tel">Telemóvel</label><input id="tel" name="tel" type="tel" inputmode="tel" autocomplete="tel" placeholder="9xx xxx xxx" required><span class="ajuda">Só para confirmar a marcação.</span><span class="err">Escreve um número com 9 algarismos, a começar por 9, 2 ou 3.</span></div>
+            <div class="campo" id="c-email" hidden><label for="email">Email <span class="sec" style="font-weight:400">(opcional)</span></label><input id="email" name="email" type="email" inputmode="email" autocomplete="email" spellcheck="false"><span class="ajuda">Se preferires receber a confirmação por email.</span><span class="err">Esse email não parece certo. Podes deixar em branco.</span></div>
           </div>
           <div class="campo"><label for="notas">Notas <span class="sec" style="font-weight:400">(opcional)</span></label><textarea id="notas" name="notas" placeholder="Joia que gostavas, dúvidas, se é o teu primeiro piercing…"></textarea></div>
           <div class="hp" aria-hidden="true"><label>Empresa <input id="empresa" name="empresa" tabindex="-1" autocomplete="off"></label></div>
@@ -923,7 +926,7 @@ dialog.doc[open] .doc-cx{animation:pop .5s var(--ease)}
   <div class="wrap grelha">
     <div class="principal">
       <h2 id="t-cont" class="rv">Ainda com dúvidas?</h2>
-      <p class="lead sec rv" style="--d:.08s">Pergunta à vontade: um sítio, uma joia, um piercing que já tens. O Adriano responde por WhatsApp ou no Instagram, normalmente no mesmo dia.</p>
+      <p class="lead sec rv" style="--d:.08s">Pergunta à vontade: um sítio, uma joia, um piercing que já tens. Respondo por WhatsApp ou no Instagram, normalmente no mesmo dia.</p>
       <div class="acoes rv" style="--d:.12s">
         <a class="btn" id="waGrande" href="#" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm0 18.2a8.2 8.2 0 0 1-4.2-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2z"/><path d="M16.6 14.1c-.3-.1-1.6-.8-1.8-.9-.3-.1-.4-.1-.6.1l-.8 1c-.2.2-.3.2-.6.1a6.7 6.7 0 0 1-3.3-2.9c-.3-.4.2-.4.6-1.3.1-.2 0-.3 0-.4l-.8-1.9c-.2-.5-.4-.4-.6-.4h-.5c-.2 0-.4.1-.7.3-.2.3-.9.9-.9 2.2s.9 2.5 1 2.7c.1.2 1.8 2.8 4.4 3.9 1.6.7 2.3.8 3.1.6.5-.1 1.6-.6 1.8-1.3.2-.6.2-1.2.2-1.3-.1-.1-.3-.2-.5-.3z"/></svg> Falar no WhatsApp</a>
         <a class="btn osso" href="https://ig.me/m/adrifilhoo" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5.5"/><circle cx="12" cy="12" r="4.2"/><circle cx="17.4" cy="6.6" r="1.2" fill="currentColor" stroke="none"/></svg> Mensagem no Instagram</a>
@@ -967,7 +970,7 @@ dialog.doc[open] .doc-cx{animation:pop .5s var(--ease)}
 <dialog class="doc" id="docPriv" aria-labelledby="t-priv"><div class="doc-cx"><button class="doc-x" type="button" aria-label="Fechar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
   <h2 id="t-priv">Privacidade</h2>
   <h3>Quem trata os teus dados</h3><p>Adriano Filho, AdriBodyPiercing, Porto. Contacto: adrianosillvaa@icloud.com.</p>
-  <h3>O que recolhemos</h3><p>O site não usa cookies nem ferramentas de análise. Quando pedes uma marcação, guardamos o nome, o telemóvel, as notas e os piercings escolhidos, só para gerir a marcação, e apagamos tudo 12 meses depois da data marcada. Os pedidos de vale seguem na mensagem de WhatsApp que tu envias.</p>
+  <h3>O que recolhemos</h3><p>O site não usa cookies nem ferramentas de análise. Quando pedes uma marcação, guardamos o nome, o telemóvel, o email (se o deres), as notas e os piercings escolhidos, só para gerir a marcação, e apagamos tudo 12 meses depois da data marcada. Os pedidos de vale seguem na mensagem de WhatsApp que tu envias.</p>
   <h3>No teu aparelho</h3><p>O site guarda no teu navegador os piercings que escolheste e o código do teu pedido, para te mostrar o estado quando voltares.</p>
   <p><button type="button" class="btn cinza" id="apagarDados">Apagar estes dados</button></p>
   <h3>WhatsApp</h3><p>A conversa no WhatsApp segue as regras de privacidade do WhatsApp (Meta).</p>
@@ -1420,7 +1423,8 @@ function cap(s){ return s.charAt(0).toUpperCase() + s.slice(1); }
 /* validação */
 function erro(id){ $('#' + id).classList.add('invalido'); }
 function limparErro(id){ var c = $('#' + id); if (c) c.classList.remove('invalido'); }
-['nome','tel'].forEach(function(k){ $('#' + k).addEventListener('input', function(){ limparErro('c-' + k); }); });
+['nome','tel','email'].forEach(function(k){ $('#' + k).addEventListener('input', function(){ limparErro('c-' + k); }); });
+if (CFG.api) $('#c-email').hidden = false;  /* só com a agenda online: no modo WhatsApp não há onde guardar o email */
 $$('#zonaMarcar .err').forEach(function(e){ e.dataset.def = e.textContent; });
 var t0 = 0; $('#zonaMarcar').addEventListener('focusin', function(){ if (!t0) t0 = Date.now(); });
 $('#zonaMarcar').addEventListener('pointerdown', function(){ if (!t0) t0 = Date.now(); });
@@ -1429,19 +1433,20 @@ $('#form').addEventListener('submit', function(e){
   e.preventDefault();
   var primeiro = null;
   function falha(id, foco){ erro(id); if (!primeiro) primeiro = foco; }
-  ['c-serv','c-quando','c-nome','c-tel','c-idade'].forEach(limparErro);
+  ['c-serv','c-quando','c-nome','c-tel','c-email','c-idade'].forEach(limparErro);
   $$('#zonaMarcar .err').forEach(function(e){ if (e.dataset.def) e.textContent = e.dataset.def; }); msgForm('');
   if (!sel.length) falha('c-serv', addServ);
   if (!diaSel || !horaSel) falha('c-quando', $('#dias button:not(:disabled)') || $('#mesSeg'));
   var nome = $('#nome').value.trim(); if (nome.length < 2) falha('c-nome', $('#nome'));
   var tel = $('#tel').value.replace(/[\s.-]/g, '').replace(/^(\+351|00351)/, ''); if (!/^[923]\d{8}$/.test(tel)) falha('c-tel', $('#tel'));
+  var email = $('#email').value.trim(); if (email && !/^[^@\s]+@[^@\s]+\.[^@\s.]{2,}$/.test(email)) falha('c-email', $('#email'));
   if (!$('#idade').checked) falha('c-idade', $('#idade'));
   if (primeiro){ primeiro.focus({preventScroll:true}); primeiro.scrollIntoView({behavior:'smooth', block:'center'}); toast('Falta completar alguns campos.'); return; }
   var t = totais();
   var quando = cap(fmtDia.format(diaSel)) + ', às ' + horaSel.replace(':', 'h');
   var lista = sel.map(function(id){ return byId[id].n; }).join(', ');
   var notas = $('#notas').value.trim();
-  if (CFG.api) return enviarAgenda({servicos:sel.slice(), data:chave(diaSel), hora:horaSel, nome:nome, tel:tel, notas:notas, idade:true, empresa:$('#empresa').value, ms:t0 ? Date.now() - t0 : 0}, lista, quando, t);
+  if (CFG.api) return enviarAgenda({servicos:sel.slice(), data:chave(diaSel), hora:horaSel, nome:nome, tel:tel, email:email, notas:notas, idade:true, empresa:$('#empresa').value, ms:t0 ? Date.now() - t0 : 0}, lista, quando, t);
   var msg = 'Olá Adriano! Quero marcar pelo site:\n' +
     '• ' + lista + '\n• ' + quando + '\n• Total: ' + fmt(t.tot) + '\n• Nome: ' + nome + '\n• Telemóvel: ' + tel +
     ($('#notas').value.trim() ? '\n• Notas: ' + $('#notas').value.trim() : '');
@@ -1466,7 +1471,7 @@ function enviarAgenda(dados, lista, quando, t){
       if (x.s === 201) return sucessoAgenda(x.j, dados.nome);
       var e = x.j.erro, wa = '<a href="' + waLink('Olá Adriano! Quero marcar ' + lista + ', ' + quando.charAt(0).toLowerCase() + quando.slice(1) + '.') + '" target="_blank" rel="noopener">fala com o Adriano no WhatsApp</a>';
       if (e === 'campos'){
-        var mapa = {servicos:'c-serv', quando:'c-quando', nome:'c-nome', tel:'c-tel', idade:'c-idade'}, primeiro = null;
+        var mapa = {servicos:'c-serv', quando:'c-quando', nome:'c-nome', tel:'c-tel', email:'c-email', idade:'c-idade'}, primeiro = null;
         Object.keys(x.j.campos || {}).forEach(function(k){ var c = $('#' + mapa[k]); if (!c) return; erro(mapa[k]); var er = c.querySelector('.err'); if (er) er.textContent = x.j.campos[k]; if (!primeiro) primeiro = c; });
         if (primeiro) primeiro.scrollIntoView({behavior:'smooth', block:'center'});
         return toast('Corrige os campos assinalados.');
