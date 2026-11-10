@@ -729,6 +729,22 @@ def ingest_gtfs(conn, feed_id, zip_bytes, today_dt, extend_calendar=False, max_b
                     candidates.append((sum(svc_trips[x] for x in on), ref_ymd, on))
                     if len(candidates) >= 4:
                         break
+            if not candidates and ref_wd < 5 and v_until and ymd > v_until:
+                # Depois do fim das datas, um dia útil sem nenhum dia igual com viagens (ex.: STCP, com as segundas-feiras
+                # só no serviço escolar, que não tem viagens) usa o dia útil mais recente com viagens. Nunca um fim de
+                # semana nem um feriado; dentro das datas do operador não se inventa.
+                for back in range(1, max_back_days + 1):
+                    ref_day = day - datetime.timedelta(days=back)
+                    ref_ymd = ref_day.strftime("%Y%m%d")
+                    if v_from and ref_ymd < v_from:
+                        break
+                    if ref_day.weekday() >= 5 or feriado_nacional(ref_day):
+                        continue
+                    on = {x for x in active_on(ref_ymd, ref_day.weekday()) if svc_trips.get(x)}
+                    if on:
+                        candidates.append((sum(svc_trips[x] for x in on), ref_ymd, on))
+                        if len(candidates) >= 4:
+                            break
             if not candidates:
                 continue
             best = max(candidates, key=lambda c: (c[0], c[1]))
