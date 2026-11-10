@@ -46,7 +46,7 @@ SERVICOS = {
     # corpo
     'umbigo': ('Umbigo', 50), 'mamilo': ('Mamilos', 50), 'surface': ('Surface', 60), 'microdermal': ('Microdermal', 60),
     # serviços
-    'consulta': ('Consulta', 0), 'troca': ('Troca de joia', 10), 'retirar': ('Retirar joia', 5),
+    'consulta': ('Consulta', 0), 'troca': ('Troca de joia', 0),  # troca: preço sob consulta
 }
 # por agora só aos sábados, das 10h às 17h30, no Kaos Tattoo (a última marcação começa às 16h)
 HORAS = {5: ['10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00']}  # 0 = segunda
@@ -197,6 +197,13 @@ def desde(ids):
     return any(i in ORELHA for i in ids)
 
 
+SOB_CONSULTA = ('troca',)
+
+
+def sob_consulta(ids):
+    return any(i in SOB_CONSULTA for i in ids)
+
+
 def nomes(ids):
     return [SERVICOS[i][0] for i in ids if i in SERVICOS]
 
@@ -210,7 +217,7 @@ def total_de(ids, online=True):
 def publico(r):
     ids = json.loads(r['servicos'])
     return {'codigo': r['codigo'], 'estado': r['estado'], 'data': r['data'], 'hora': r['hora'],
-            'servicos': nomes(ids), 'total': r['total'], 'desde': desde(ids), 'motivo': r['motivo']}
+            'servicos': nomes(ids), 'total': r['total'], 'desde': desde(ids), 'sob_consulta': sob_consulta(ids), 'motivo': r['motivo']}
 
 
 def completo(r):
@@ -218,6 +225,7 @@ def completo(r):
     d['servicos_ids'] = json.loads(r['servicos'])
     d['servicos'] = nomes(d['servicos_ids'])
     d['desde'] = desde(d['servicos_ids'])
+    d['sob_consulta'] = sob_consulta(d['servicos_ids'])
     d['historico'] = json.loads(r['historico'] or '[]')
     return d
 

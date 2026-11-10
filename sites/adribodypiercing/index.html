@@ -320,7 +320,7 @@ section{position:relative}
 .precos li b{font-weight:500}
 .precos li .v{font-family:var(--serif);font-size:22px;text-align:right}
 .precos li small{color:var(--sec-escuro);font-size:14px;line-height:1.35}
-.servicos{margin-top:clamp(48px,6vw,80px);display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+.servicos{margin-top:clamp(48px,6vw,80px);display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
 .servicos div{background:var(--cartao);border:1px solid transparent;border-radius:20px;padding:24px;display:flex;flex-direction:column}
 .servicos b{display:block;font-weight:600;margin-bottom:6px}
 .servicos .v{font-family:var(--serif);font-size:28px;display:block;margin-top:auto;padding-top:14px} /* preço sempre no fundo do cartão: alinhado com os do lado */
@@ -731,8 +731,7 @@ dialog.doc[open] .doc-cx{animation:pop .5s var(--ease)}
     <div class="servicos rv">
       <div><b>Consulta</b><p>15 minutos para ver a tua anatomia e escolher, sem compromisso.</p><span class="v">Grátis</span></div>
       <div><b>Revisão e troca de barra</b><p>Às 4–8 semanas, troco a barra por uma mais curta.</p><span class="v">Grátis</span></div>
-      <div><b>Troca de joia</b><p>Ponho a joia nova por ti, num piercing já cicatrizado.</p><span class="v num">10 €</span></div>
-      <div><b>Retirar joia</b><p>Com cuidado e sem danificar a pele.</p><span class="v num">5 €</span></div>
+      <div><b>Troca de joia</b><p>Ponho a joia nova por ti, num piercing já cicatrizado.</p><span class="v">Sob consulta</span></div>
     </div>
     <div class="aviso-online rv">
       <p class="lead">Ainda não sabes qual escolher? A <strong style="color:var(--ouro)">consulta é grátis</strong>: vejo a tua anatomia e ajudo-te a decidir.</p>
@@ -1047,8 +1046,7 @@ var S = [
  {id:'microdermal', n:'Microdermal', z:'corpo', p:60, c:'2–3 meses', j:'Base e topo em titânio', img:'cacho'},
  // serviços
  {id:'consulta', n:'Consulta', z:'servico', p:0, c:'—', j:'—', img:'clicker'},
- {id:'troca', n:'Troca de joia', z:'servico', p:10, c:'—', j:'—', img:'clicker'},
- {id:'retirar', n:'Retirar joia', z:'servico', p:5, c:'—', j:'—', img:'clicker'}
+ {id:'troca', n:'Troca de joia', z:'servico', p:0, sc:true, c:'—', j:'—', img:'clicker'}
 ];
 var byId = {}; S.forEach(function(s){ byId[s.id] = s; });
 var eur = new Intl.NumberFormat('pt-PT', {style:'currency', currency:'EUR', minimumFractionDigits:0, maximumFractionDigits:2});
@@ -1056,6 +1054,8 @@ var eur2 = new Intl.NumberFormat('pt-PT', {style:'currency', currency:'EUR', min
 function pr(s){ return (s.z === 'orelha' ? 'desde ' : '') + fmt(s.p); }
 var DE = '<i class="de">desde </i>';
 function prH(s){ return (s.z === 'orelha' ? DE : '') + fmt(s.p); }
+function prL(s, html){ return s.sc ? 'Sob consulta' : (s.p ? (html ? prH(s) : pr(s)) : 'Grátis'); }
+function totTxt(t){ return t.sc && !t.tot ? 'sob consulta' : (t.desde || t.sc ? 'desde ' : '') + fmt(t.tot); }
 function fmt(v){ v = Math.round(v*100)/100; return (v % 1 ? eur2 : eur).format(v); }
 function $(s, c){ return (c||document).querySelector(s); }
 function $$(s, c){ return Array.prototype.slice.call((c||document).querySelectorAll(s)); }
@@ -1348,7 +1348,7 @@ scrollFx();
 var addServ = $('#addServ');
 [['orelha','Orelha'],['rosto','Rosto'],['corpo','Corpo'],['servico','Serviços']].forEach(function(g){
   var og = document.createElement('optgroup'); og.label = g[1];
-  S.filter(function(s){ return s.z === g[0]; }).forEach(function(s){ var o = document.createElement('option'); o.value = s.id; o.textContent = s.n + ' — ' + (s.p ? pr(s) : 'grátis'); og.appendChild(o); });
+  S.filter(function(s){ return s.z === g[0]; }).forEach(function(s){ var o = document.createElement('option'); o.value = s.id; o.textContent = s.n + ' — ' + prL(s).toLowerCase(); og.appendChild(o); });
   addServ.appendChild(og);
 });
 addServ.addEventListener('change', function(){ if (addServ.value && sel.indexOf(addServ.value) < 0) setSel(sel.concat(addServ.value)); addServ.value = ''; limparErro('c-serv'); });
@@ -1356,7 +1356,7 @@ function desenharEscolhidos(){
   var ul = $('#escolhidos'); ul.innerHTML = '';
   sel.forEach(function(id){
     var s = byId[id], li = document.createElement('li');
-    li.innerHTML = '<span>' + s.n + '</span><span class="v num">' + (s.p ? prH(s) : 'Grátis') + '</span>';
+    li.innerHTML = '<span>' + s.n + '</span><span class="v num">' + prL(s, true) + '</span>';
     var x = document.createElement('button'); x.type = 'button'; x.textContent = '×'; x.setAttribute('aria-label', 'Retirar ' + s.n);
     x.addEventListener('click', function(){ toggle(id); });
     li.appendChild(x); ul.appendChild(li);
@@ -1436,14 +1436,15 @@ $('#mesSeg').addEventListener('click', function(){ mesVis = new Date(mesVis.getF
 
 function totais(){
   var sub = sel.reduce(function(a, id){ return a + byId[id].p; }, 0);
-  return {sub:sub, tot:sub, desde: sel.some(function(id){ return byId[id].z === 'orelha'; })};
+  return {sub:sub, tot:sub, desde: sel.some(function(id){ return byId[id].z === 'orelha'; }), sc: sel.some(function(id){ return byId[id].sc; })};
 }
 function resumo(){
   var l = $('#rLinhas');
   if (!sel.length) l.innerHTML = '<p class="sec">Ainda não escolheste nada.</p>';
-  else l.innerHTML = sel.map(function(id){ var s = byId[id]; return '<div class="lin"><span>' + s.n + '</span><span class="num">' + (s.p ? prH(s) : 'Grátis') + '</span></div>'; }).join('');
+  else l.innerHTML = sel.map(function(id){ var s = byId[id]; return '<div class="lin"><span>' + s.n + '</span><span class="num">' + prL(s, true) + '</span></div>'; }).join('');
   var t = totais();
-  contar($('#rTotal'), t.tot, t.desde ? DE : '');
+  if (t.sc && !t.tot) { $('#rTotal').dataset.v = 0; $('#rTotal').textContent = 'Sob consulta'; }
+  else contar($('#rTotal'), t.tot, t.desde || t.sc ? DE : '');
   $('#rDesde').hidden = !t.desde;
   $('#rQuando').textContent = diaSel && horaSel ? cap(fmtDia.format(diaSel)) + ', às ' + horaSel.replace(':', 'h') : (diaSel ? cap(fmtDia.format(diaSel)) + ': falta escolher a hora.' : 'Dia e hora por escolher.');
 }
@@ -1477,14 +1478,14 @@ $('#form').addEventListener('submit', function(e){
   var notas = $('#notas').value.trim();
   if (CFG.api) return enviarAgenda({servicos:sel.slice(), data:chave(diaSel), hora:horaSel, nome:nome, tel:tel, email:email, notas:notas, idade:true, empresa:$('#empresa').value, ms:t0 ? Date.now() - t0 : 0}, lista, quando, t);
   var msg = 'Olá Adri! Quero marcar pelo site:\n' +
-    '• ' + lista + '\n• ' + quando + '\n• Total: ' + (t.desde ? 'desde ' : '') + fmt(t.tot) + '\n• Nome: ' + nome + '\n• Telemóvel: ' + tel +
+    '• ' + lista + '\n• ' + quando + '\n• Total: ' + totTxt(t) + '\n• Nome: ' + nome + '\n• Telemóvel: ' + tel +
     ($('#notas').value.trim() ? '\n• Notas: ' + $('#notas').value.trim() : '');
   store.set('adri-pedido', {lista:lista, quando:quando, tot:t.tot, nome:nome, msg:msg, t:Date.now()});
   var z = $('#zonaMarcar');
   z.style.display = 'block';
   z.innerHTML = '<div class="sucesso troca" tabindex="-1" id="ok"><h3>Pedido pronto, ' + esc(nome.split(' ')[0]) + '.</h3>' +
     '<p class="sec">Falta um passo: envia o pedido ao Adri pelo WhatsApp. A marcação fica confirmada quando ele responder.</p>' +
-    '<dl><dt>Piercing</dt><dd>' + esc(lista) + '</dd><dt>Quando</dt><dd>' + quando + '</dd><dt>Total</dt><dd class="num">' + (t.desde ? 'desde ' : '') + fmt(t.tot) + '</dd></dl>' +
+    '<dl><dt>Piercing</dt><dd>' + esc(lista) + '</dd><dt>Quando</dt><dd>' + quando + '</dd><dt>Total</dt><dd class="num">' + totTxt(t) + '</dd></dl>' +
     '<div class="acoes"><a class="btn" href="' + waLink(msg) + '" target="_blank" rel="noopener">' + WA + ' Enviar pelo WhatsApp</a><button class="btn osso" type="button" id="denovo">Fazer outro pedido</button></div></div>';
   $('#ok').focus({preventScroll:true});
   z.scrollIntoView({behavior:'smooth', block:'start'});
@@ -1527,7 +1528,7 @@ function sucessoAgenda(j, nome){
   var aviso = 'Olá Adri! Fiz um pedido no site (' + j.codigo + '): ' + j.servicos.join(', ') + ', ' + quandoTxt(j.data, j.hora).toLowerCase() + '.';
   z.innerHTML = '<div class="sucesso troca" tabindex="-1" id="ok"><span class="estado-pill"><i></i>À espera de confirmação</span><h3 style="margin-top:18px">Pedido enviado, ' + esc(nome.split(' ')[0]) + '.</h3>' +
     '<p class="sec">A hora fica guardada para ti. O Adri confirma normalmente no próprio dia, e aqui no site vês sempre o estado do pedido.</p>' +
-    '<dl><dt>Piercing</dt><dd>' + esc(j.servicos.join(', ')) + '</dd><dt>Quando</dt><dd>' + quandoTxt(j.data, j.hora) + '</dd><dt>Total</dt><dd class="num">' + (j.desde ? 'desde ' : '') + fmt(j.total) + '</dd><dt>Código</dt><dd class="num">' + esc(j.codigo) + '</dd></dl>' +
+    '<dl><dt>Piercing</dt><dd>' + esc(j.servicos.join(', ')) + '</dd><dt>Quando</dt><dd>' + quandoTxt(j.data, j.hora) + '</dd><dt>Total</dt><dd class="num">' + totTxt({tot:j.total, desde:j.desde, sc:j.sob_consulta}) + '</dd><dt>Código</dt><dd class="num">' + esc(j.codigo) + '</dd></dl>' +
     '<div class="acoes"><a class="btn" href="' + waLink(aviso) + '" target="_blank" rel="noopener">' + WA + ' Avisar o Adri</a><button class="btn osso" type="button" id="denovo">Fazer outro pedido</button></div></div>';
   $('#ok').focus({preventScroll:true});
   z.scrollIntoView({behavior:'smooth', block:'start'});

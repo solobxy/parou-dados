@@ -186,8 +186,9 @@ var ASSUNTO = {confirmar:'marcação confirmada', lembrete:'lembrete da tua marc
 var ACAO_MOD = {aprovar:'confirmar', recusar:'recusar', reagendar:'reagendar', cancelar:'cancelar'};
 var modelos = {};
 function listaPT(a){ a = a.map(function(x){ return x.charAt(0).toLowerCase() + x.slice(1); }); return a.length < 2 ? a.join('') : a.slice(0, -1).join(', ') + ' e ' + a[a.length - 1]; }
+function totalTxt(m, de){ return m.sob_consulta && !m.total ? 'sob consulta' : (m.desde || m.sob_consulta ? de : '') + eur.format(m.total).replace(/,00(?=\s)/, ''); }
 function preencher(m, tipo){
-  var v = {nome: primeiro(m.nome), dia: fmtDia.format(dParse(m.data)), hora: m.hora.replace(':', 'h'), piercings: listaPT(m.servicos), total: (m.desde ? 'a partir de ' : '') + eur.format(m.total).replace(/,00(?=\s)/, ''),
+  var v = {nome: primeiro(m.nome), dia: fmtDia.format(dParse(m.data)), hora: m.hora.replace(':', 'h'), piercings: listaPT(m.servicos), total: totalTxt(m, 'a partir de '),
     motivo: m.motivo ? m.motivo.replace(/\s*[.!?]?\s*$/, '. ') : '', site: location.host};
   return (modelos[tipo] || PADRAO[tipo]).replace(/\{(\w+)\}/g, function(x, k){ return k in v ? v[k] : x; }).replace(/[ \t]{2,}/g, ' ').replace(/ +\n/g, '\n');
 }
@@ -260,7 +261,7 @@ function cartao(m){
   return '<article class="card" data-id="' + m.id + '">' +
     '<div class="cab"><div class="hora"><b>' + m.hora.replace(':', 'h') + '</b><span>' + esc(fmtCurto.format(dParse(m.data))) + '</span></div>' +
     '<div style="min-width:0"><h3>' + esc(m.nome) + '</h3><div class="serv">' + esc(m.servicos.join(', ')) + '</div>' +
-    '<div class="mini">' + (m.desde ? 'desde ' : '') + eur.format(m.total) + (m.origem === 'adriano' ? ' · marcada por ti' : ' · pedido no site') + '</div>' +
+    '<div class="mini">' + totalTxt(m, 'desde ') + (m.origem === 'adriano' ? ' · marcada por ti' : ' · pedido no site') + '</div>' +
     (m.email ? '<div class="mini" style="overflow-wrap:anywhere">' + esc(m.email) + '</div>' : '') +
     '<span class="pill ' + m.estado + '"><i></i>' + NOMES_EST[m.estado] + '</span>' + (m.estado === 'confirmada' && enviouLembrete(m) ? '<span class="feito">Lembrete enviado</span>' : '') + (m.motivo ? '<div class="mini">Motivo: ' + esc(m.motivo) + '</div>' : '') + '</div></div>' +
     (m.notas ? '<div class="notas">' + esc(m.notas) + '</div>' : '') +
