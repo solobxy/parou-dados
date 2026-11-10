@@ -179,6 +179,11 @@ def norm(text):
 # Fontes com credenciais (por URL). Os valores vêm do ambiente e nunca se escrevem em registos nem na base.
 CABECALHOS_POR_URL = {}
 STCP_ESTATICO = "https://api.stcp.pt:8443/v1/ficheiros/estatico/ficheirozip"
+# Cópia do último ficheiro oficial da STCP que veio bem (guardada na cache privada do GitHub Actions, não é publicada).
+# A API tem uma quota diária partilhada com o tempo real do servidor: à noite responde 429 e, sem cópia, o Porto voltava
+# ao ficheiro do portal aberto (datas até 23/09, sem o horário escolar). Confirmado a 9/11/2026 às 23:49.
+STCP_COPIA = os.path.join("fontes", "stcp-oficial.zip")
+STCP_COPIA_MAX_DIAS = 21
 
 
 def http_get_full(url, timeout=180, insecure=False):
@@ -221,6 +226,8 @@ def download_zip(url):
                     file_day = email.utils.parsedate_to_datetime(modified).date().isoformat()
                 except (TypeError, ValueError):
                     file_day = None
+            if url == STCP_ESTATICO:
+                guardar_copia_stcp(body)
             return body, status, int((time.time() - t0) * 1000), file_day
         except Exception as err:  # noqa: BLE001
             last_err = err
@@ -229,7 +236,45 @@ def download_zip(url):
                 insecure = True
                 continue
             time.sleep(3 * (attempt + 1))
+    if url == STCP_ESTATICO:
+        copia = ler_copia_stcp()
+        if copia:
+            body, dia = copia
+            log(f"  stcp: API oficial falhou ({last_err}); a usar a cópia do ficheiro oficial de {dia}")
+            return body, 200, int((time.time() - t0) * 1000), dia
     raise RuntimeError(str(last_err))
+
+
+def guardar_copia_stcp(body):
+    """Guarda o ficheiro oficial da STCP que acabou de chegar bem (para os dias em que a API recusa)."""
+    try:
+        os.makedirs(os.path.dirname(STCP_COPIA), exist_ok=True)
+        with open(STCP_COPIA + ".novo", "wb") as f:
+            f.write(body)
+        os.replace(STCP_COPIA + ".novo", STCP_COPIA)
+        with open(os.path.join(os.path.dirname(STCP_COPIA), ".stcp-atualizada"), "w") as f:
+            f.write(now_iso())
+    except OSError as err:
+        log(f"  stcp: não deu para guardar a cópia ({err})")
+
+
+def ler_copia_stcp(hoje=None):
+    """(bytes, dia AAAA-MM-DD) da cópia do ficheiro oficial, se existir, for um ZIP e tiver no máximo STCP_COPIA_MAX_DIAS."""
+    try:
+        if not os.path.exists(STCP_COPIA):
+            return None
+        dia = datetime.datetime.fromtimestamp(os.path.getmtime(STCP_COPIA), datetime.timezone.utc).date()
+        hoje = hoje or datetime.datetime.now(datetime.timezone.utc).date()
+        if (hoje - dia).days > STCP_COPIA_MAX_DIAS:
+            log(f"  stcp: cópia do ficheiro oficial de {dia} é antiga demais; não se usa")
+            return None
+        with open(STCP_COPIA, "rb") as f:
+            body = f.read()
+        if body[:2] != b"PK":
+            return None
+        return body, dia.isoformat()
+    except OSError:
+        return None
 
 
 def secs(value):
