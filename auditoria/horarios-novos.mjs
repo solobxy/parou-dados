@@ -1,7 +1,8 @@
 // Testa, num browser simulado (Chromium, 390 px), o separador Horários para quem é novo:
 //   - sem favoritos, linhas abertas nem pesquisas: aparece «Mais procuradas» com as linhas que o servidor indica, pela mesma ordem;
 //   - abrir uma dessas linhas avisa o servidor (contagem anónima da linha);
-//   - quem já tem pesquisas recentes não vê a secção; sem dados no servidor, a secção não aparece.
+//   - quem já tem pesquisas recentes não vê a secção; sem dados no servidor, a secção não aparece;
+//   - o lugar fica reservado enquanto carrega (sem empurrar a página: CLS < 0,1).
 // O pedido /api/estatisticas/populares é simulado (a base de teste não tem procuras); as linhas são reais. Não é num telemóvel a sério.
 import { chromium } from 'playwright';
 import fs from 'fs';
@@ -18,7 +19,7 @@ const nomes = new Map((todas.lines || []).map((l) => [l.id, String(l.name || l.c
 ok('[preparar] há linhas reais na base de teste', ids.length === 3, ids.join(', '));
 
 const browser = await chromium.launch();
-async function abrir({ populares, local = {} }) {
+async function abrir({ populares, local = {}, atrasoMs = 0 }) {
   const ctx = await browser.newContext({
     viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true, locale: 'pt-PT', timezoneId: 'Europe/Lisbon', serviceWorkers: 'block',
     userAgent: 'Mozilla/5.0 (Linux; Android 14; Pixel 7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Mobile Safari/537.36',
@@ -26,7 +27,8 @@ async function abrir({ populares, local = {} }) {
   const extra = Object.entries(local).map(([k, v]) => `localStorage.setItem(${JSON.stringify(k)}, ${JSON.stringify(JSON.stringify(v))});`).join('');
   await ctx.addInitScript({ content: `try{ Object.defineProperty(Navigator.prototype,'webdriver',{get:()=>false,configurable:true}); localStorage.setItem('parou_aviso_instalar','1'); localStorage.setItem('parou_bemvindo','visto'); ${extra} }catch(e){}` });
   const avisos = [];
-  await ctx.route('**/api/estatisticas/populares**', (rt) => rt.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ linhas: populares }) }));
+  await ctx.addInitScript({ content: `window.__cls=0;try{new PerformanceObserver(function(l){for(var e of l.getEntries())if(!e.hadRecentInput)window.__cls+=e.value}).observe({type:'layout-shift',buffered:true})}catch(e){}` });
+  await ctx.route('**/api/estatisticas/populares**', async (rt) => { if (atrasoMs) await new Promise((r) => setTimeout(r, atrasoMs)); rt.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ linhas: populares }) }); });
   await ctx.route('**/api/estatisticas/procura', (rt) => { try { avisos.push(JSON.parse(rt.request().postData() || '{}')); } catch {} rt.fulfill({ status: 204, body: '' }); });
   const p = await ctx.newPage();
   const erros = [];
@@ -78,6 +80,22 @@ async function abrir({ populares, local = {} }) {
   await p.waitForTimeout(2500);
   ok('[sem dados] a secção não aparece', await p.locator('[data-teste="mais-procuradas"]').count() === 0);
   ok('[sem dados] sem erros na página', erros.length === 0, erros.join(' | '));
+  await ctx.close();
+}
+
+// 4. Layout estável: a secção chega 1,5 s depois e não empurra a página (CLS 0,264 em produção a 10/11/2026)
+{
+  const seis = (todas.lines || []).slice(5, 11).map((l) => l.id);
+  const { ctx, p, erros } = await abrir({ populares: seis, atrasoMs: 1500 });
+  const esqueleto = await p.locator('[data-teste="mais-procuradas-a-carregar"]').waitFor({ timeout: 15000 }).then(() => true).catch(() => false);
+  ok('[estável] enquanto carrega, o lugar fica reservado', esqueleto);
+  await p.locator('[data-teste="mais-procuradas"]').waitFor({ timeout: 25000 }).catch(() => {});
+  await p.waitForTimeout(2500);
+  const cls = await p.evaluate(() => window.__cls);
+  ok('[estável] CLS abaixo de 0,1 com 6 linhas que chegam depois', cls < 0.1, cls.toFixed(3));
+  ok('[estável] o esqueleto sai quando as linhas chegam', await p.locator('[data-teste="mais-procuradas-a-carregar"]').count() === 0);
+  ok('[estável] sem erros na página', erros.length === 0, erros.join(' | '));
+  await p.screenshot({ path: `${SAIDA}/mais-procuradas-estavel.png` });
   await ctx.close();
 }
 
