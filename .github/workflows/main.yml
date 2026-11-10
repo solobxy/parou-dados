@@ -62,6 +62,7 @@ jobs:
           python auditoria/test_calendario_ponte.py
           python auditoria/test_calendario_dia_util.py
           python auditoria/test_stcp_copia.py
+          python auditoria/test_nomes_linhas.py
           python auditoria/test_caminhos_a_pe.py
 
       # Cópia do último ficheiro oficial da STCP (cache privada do Actions; não é publicada). Usada quando a API
