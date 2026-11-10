@@ -167,8 +167,8 @@ p{margin:0}
 .mosaico{display:grid;grid-template-columns:5fr 4fr 3fr;gap:clamp(16px,2vw,28px);align-items:stretch}
 .mosaico figure,.f-marca{margin:0;display:flex;flex-direction:column;gap:14px}
 .ph{overflow:hidden;border-radius:22px;background:var(--noite-2)}
-.ph img{width:100%;height:100%;object-fit:cover;scale:1.16;translate:0 var(--py,0px);transition:scale 1.8s var(--ease)}
-.in .ph img,.ph.in img{scale:1.07}
+.ph img,.ph video{display:block;width:100%;height:100%;object-fit:cover;scale:1.16;translate:0 var(--py,0px);transition:scale 1.8s var(--ease)}
+.in .ph img,.ph.in img,.in .ph video{scale:1.07}
 .mosaico figcaption b,.f-marca figcaption b{display:block;font-family:var(--serif);font-weight:600;font-size:clamp(19px,1.5vw,22px);letter-spacing:-.02em;color:var(--osso)}
 .mosaico figcaption span{color:var(--sec-escuro);font-size:15px}
 .f-orelha{grid-row:1/3}
@@ -409,14 +409,12 @@ section{position:relative}
 /* sobre */
 .sobre{background:var(--osso-2)}
 .sobre .grelha{display:grid;grid-template-columns:5fr 7fr;gap:clamp(32px,6vw,96px);align-items:center}
-.mono{aspect-ratio:1;background:var(--tinta);color:var(--osso);border-radius:28px;display:grid;place-items:center;overflow:hidden}
-.mono svg{width:62%;height:auto}
-.mono .bar{transform-box:fill-box;transform:translateX(-140%);transition:transform 1.6s var(--ease)}
-.mono.in .bar{transform:none}
 .sobre h2{margin-bottom:20px}
 .sobre p.lead+p{margin-top:16px}
-/* cartão de quem é: monograma com nome, ofício e Instagram */
-.cartao-adri{display:grid;gap:18px}
+/* cartão de quem é: vídeo real do Adriano com nome, ofício e Instagram */
+.cartao-adri{display:grid;gap:18px;margin:0}
+.cartao-adri .ph{aspect-ratio:4/5;border-radius:28px;background:var(--tinta)}
+.cartao-adri .ph video,.in .cartao-adri .ph video,.cartao-adri .ph.in video{scale:1;object-position:50% 22%}
 .quem{display:grid;gap:2px;padding-left:4px}
 .quem b{font-family:var(--serif);font-weight:650;font-size:22px;letter-spacing:-.02em}
 .quem span{color:var(--sec-claro);font-size:15px}
@@ -431,11 +429,8 @@ section{position:relative}
 .valores span{display:block;font-size:15px;line-height:1.5}
 @media (max-width:900px){
   .sobre .grelha{grid-template-columns:1fr;gap:36px}
-  .cartao-adri{grid-template-columns:auto 1fr;align-items:center;gap:0;background:var(--tinta);color:var(--osso);border-radius:24px;padding:14px;max-width:460px}
-  .cartao-adri .mono{width:92px;border-radius:16px;background:#1E1B18}
-  .quem{padding:0 6px 0 18px}
-  .quem span{color:var(--sec-escuro)}
-  .quem a{color:var(--ouro)}
+  .cartao-adri{max-width:460px;gap:14px}
+  .cartao-adri .ph{border-radius:24px}
   .valores{grid-template-columns:1fr;margin-top:32px}
   .valores>div{padding:16px 0}
   .valores>div:last-child{padding-bottom:0}
@@ -649,10 +644,10 @@ dialog.doc[open] .doc-cx{animation:pop .5s var(--ease)}
 
 <section class="fotos" aria-label="O estúdio e o que está incluído">
   <div class="wrap mosaico">
-    <figure class="f-orelha rv"><div class="ph"><img src="/img/orelha.webp" alt="Orelha com várias joias finas em ouro: argola no hélix e pontos no flat, no tragus e no lóbulo" width="1200" height="1500" loading="lazy" decoding="async"></div><figcaption><b>Preço fechado</b><span>Joia em titânio, soro e revisão às 4–8 semanas já incluídos.</span></figcaption></figure>
-    <figure class="f-estudio rv" style="--d:.08s"><div class="ph"><img src="/img/estudio.webp" alt="Sala do estúdio, luminosa, com cadeira de piercing, autoclave e espelho" width="1024" height="688" loading="lazy" decoding="async"></div><figcaption><b>Uma pessoa de cada vez</b><span>Sem filas nem pressa. Marcas online e pagas só no estúdio.</span></figcaption></figure>
-    <figure class="f-joias rv" style="--d:.12s"><div class="ph"><img src="/img/joias.webp" alt="Tabuleiro com joias de piercing: argolas em ouro, labrets em titânio com pedras e uma ferradura preta" width="900" height="900" loading="lazy" decoding="async"></div><figcaption><b>Joias certificadas</b><span>Titânio de implante e ouro maciço.</span></figcaption></figure>
-    <figure class="f-prep rv" style="--d:.16s"><div class="ph"><img src="/img/preparacao.webp" alt="Mãos com luvas a abrir a embalagem esterilizada de uma agulha de uso único" width="800" height="1000" loading="lazy" decoding="async"></div><figcaption><b>Agulha de uso único</b><span>Nunca pistola. Tudo aberto à tua frente.</span></figcaption></figure>
+    <figure class="f-orelha rv"><div class="ph"><img src="/img/nariz.webp" alt="Perfil de uma cliente com um ponto de titânio na narina, feito pelo Adriano" width="1000" height="1500" loading="lazy" decoding="async"></div><figcaption><b>Preço fechado</b><span>Narina, 30 €. Joia em titânio, soro e revisão às 4–8 semanas já incluídos.</span></figcaption></figure>
+    <figure class="f-estudio rv" style="--d:.08s"><div class="ph"><img src="/img/umbigo.webp" alt="Piercing no umbigo com uma joia de titânio, feito pelo Adriano" width="1500" height="1000" loading="lazy" decoding="async"></div><figcaption><b>Uma pessoa de cada vez</b><span>Umbigo, 50 €. Sem filas nem pressa. Marcas online e pagas só no estúdio.</span></figcaption></figure>
+    <figure class="f-joias rv" style="--d:.12s"><div class="ph"><img src="/img/conch.webp" alt="Orelha com um ponto de titânio na concha e uma argola no lóbulo, feitos pelo Adriano" width="844" height="1500" loading="lazy" decoding="async"></div><figcaption><b>Joias certificadas</b><span>Orelha, 35 €. Titânio de implante e ouro maciço.</span></figcaption></figure>
+    <figure class="f-prep rv" style="--d:.16s"><div class="ph"><video src="/vid/narina.mp4" poster="/img/narina-poster.webp" autoplay muted loop playsinline preload="metadata" aria-label="O Adriano, de luvas, a preparar um piercing na narina com a pinça"></video></div><figcaption><b>Agulha de uso único</b><span>Nunca pistola. Tudo aberto à tua frente.</span></figcaption></figure>
   </div>
 </section>
 
@@ -731,7 +726,7 @@ dialog.doc[open] .doc-cx{animation:pop .5s var(--ease)}
       <p class="sec rv" style="--d:.08s">Cerca de 20 minutos, do momento em que te sentas até saíres com os cuidados explicados. Se estiveres com nervos, vamos ao teu ritmo.</p>
     </div>
     <div class="como-grelha">
-    <figure class="f-marca rv"><div class="ph"><img src="/img/marcacao.webp" alt="Cliente a sorrir confirma ao espelho o ponto marcado antes do piercing" width="800" height="1000" loading="lazy" decoding="async"></div><figcaption class="sec">Só furo depois de confirmares o ponto ao espelho.</figcaption></figure>
+    <figure class="f-marca rv"><div class="ph"><video src="/vid/orelha.mp4" poster="/img/orelha-poster.webp" autoplay muted loop playsinline preload="metadata" aria-label="O Adriano a fazer um piercing no lóbulo de uma cliente"></video></div><figcaption class="sec">Só furo depois de confirmares o ponto ao espelho.</figcaption></figure>
     <div class="passos" id="passos">
       <div class="trilho" aria-hidden="true"><i></i></div>
       <div class="passo rv"><span class="t num">10 min</span><h3>Conversa</h3><p class="sec">Vejo a tua orelha ou o sítio que queres, escolhes a joia e tiras dúvidas. Se o sítio não for bom para a tua anatomia, digo-te.</p></div>
@@ -827,10 +822,10 @@ dialog.doc[open] .doc-cx{animation:pop .5s var(--ease)}
 
 <section class="bloco sobre claro" id="sobre" aria-labelledby="t-sobre">
   <div class="wrap grelha">
-    <div class="cartao-adri">
-      <div class="mono rv" id="mono"><svg xmlns="http://www.w3.org/2000/svg" viewBox="-227 -880 1100 1100" aria-hidden="true" focusable="false"><g class="bar" fill="#D9B676"><rect x="-64" y="-245.0" width="776" height="66" rx="33.0"/><circle cx="-64" cy="-212" r="60"/><circle cx="712" cy="-212" r="60"/></g><g fill="currentColor" transform="translate(0.0 0.0) scale(1 -1)"><path transform="translate(0.0 0)" d="M5 0 230 660H418L641 0H485L325 542H320L160 0Z"/></g></svg></div>
-      <div class="quem rv" style="--d:.1s"><b>Adriano Filho</b><span>Body piercer no Kaos Tattoo, Porto</span><a href="https://www.instagram.com/adrifilhoo" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5.5"/><circle cx="12" cy="12" r="4.2"/><circle cx="17.4" cy="6.6" r="1.2" fill="currentColor" stroke="none"/></svg>@adrifilhoo</a></div>
-    </div>
+    <figure class="cartao-adri">
+      <div class="ph rv"><video src="/vid/adriano.mp4" poster="/img/adriano-poster.webp" autoplay muted loop playsinline preload="metadata" aria-label="O Adriano a sorrir enquanto calça as luvas no estúdio"></video></div>
+      <figcaption class="quem rv" style="--d:.1s"><b>Adriano Filho</b><span>Body piercer no Kaos Tattoo, Porto</span><a href="https://www.instagram.com/adrifilhoo" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5.5"/><circle cx="12" cy="12" r="4.2"/><circle cx="17.4" cy="6.6" r="1.2" fill="currentColor" stroke="none"/></svg>@adrifilhoo</a></figcaption>
+    </figure>
     <div>
       <h2 id="t-sobre" class="rv">Olá, sou o Adriano.</h2>
       <p class="lead rv" style="--d:.08s">O AdriBodyPiercing é o meu estúdio. Gosto de explicar tudo com calma, de aliviar os nervos com conversa e de te ver sair com um piercing de que gostas mesmo.</p>
@@ -1088,7 +1083,20 @@ $$('h2.rv').forEach(function(h){
   h.classList.add('split');
 });
 var io = new IntersectionObserver(function(es){ es.forEach(function(e){ if (e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target); } }); }, {rootMargin:'0px 0px -8% 0px', threshold:.12});
-$$('.rv, .orelha, .mono').forEach(function(el){ io.observe(el); });
+$$('.rv, .orelha').forEach(function(el){ io.observe(el); });
+/* vídeos reais: só correm quando estão à vista; quem pede menos movimento vê a imagem parada */
+(function(){
+  var vs = $$('.ph video'); if (!vs.length) return;
+  var calmo = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  vs.forEach(function(v){ v.muted = true; v.defaultMuted = true; v.setAttribute('muted',''); });
+  if (calmo) { vs.forEach(function(v){ v.removeAttribute('autoplay'); v.pause(); }); return; }
+  if (!('IntersectionObserver' in window)) return;
+  var vo = new IntersectionObserver(function(es){ es.forEach(function(e){
+    var v = e.target;
+    if (e.isIntersecting) { var pr = v.play(); if (pr && pr.catch) pr.catch(function(){}); } else v.pause();
+  }); }, { rootMargin: '120px 0px' });
+  vs.forEach(function(v){ vo.observe(v); });
+})();
 
 /* ---------- Orelha ---------- */
 var orelha = $('#orelha'), mapa = $('#mapa');
