@@ -1,0 +1,20 @@
+{
+ "telemovel": {
+  "erros": [],
+  "imagens": 24,
+  "imagens_partidas": 0,
+  "exemplos_partidas": [],
+  "letras_em_vez_de_foto": 0,
+  "transbordo": false,
+  "altura": 14615
+ },
+ "computador": {
+  "erros": [],
+  "imagens": 24,
+  "imagens_partidas": 0,
+  "exemplos_partidas": [],
+  "letras_em_vez_de_foto": 0,
+  "transbordo": false,
+  "altura": 9204
+ }
+}
