@@ -2,6 +2,10 @@
 
 > Dinis Sousa faz sites de raiz para marcas e negócios em Portugal: desenho próprio para cada cliente, preço fechado (de 75 € a 690 €) e contacto direto com ele do primeiro esboço até o site estar no ar. Só se paga depois de aprovar o desenho.
 
+## Preços
+
+- [Quanto custa um site em Portugal](https://dinissousa.pt/quanto-custa-um-site/): página única 149 €, site completo (até 5 páginas) 299 €, loja online desde 499 €, à medida desde 690 €, com o domínio e o alojamento do 1.º ano incluídos.
+
 ## Projetos feitos por ele
 
 - [PAROU](https://parou.pt): app de transportes públicos para todo o país, com tempo real e avisos de greves.
