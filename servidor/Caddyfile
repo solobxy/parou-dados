@@ -764,7 +764,7 @@ www.caiu.pt {
 		Cross-Origin-Resource-Policy "same-origin"
 		-Server
 	}
-	@escondidos path_regexp ^/\.
+	@escondidos path_regexp /\.
 	handle @escondidos {
 		respond 404
 	}

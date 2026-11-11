@@ -74,7 +74,9 @@ def main():
     empresas = {}
     for eid, nome, prof, v, ip, disp, contrato in q:
         empresas.setdefault(eid, []).append({'nome': nome, 'prof': prof, 'v': v, 'ip': ip, 'disp': disp, 'contrato': contrato})
-    novo = SAIDA + '.novo'
+    # dentro da própria pasta: o serviço só pode escrever aí (ProtectSystem=strict); o Caddy não serve pastas com ponto
+    os.makedirs(SAIDA, exist_ok=True)
+    novo = os.path.join(SAIDA, '.novo')
     shutil.rmtree(novo, ignore_errors=True)
     os.makedirs(os.path.join(novo, 'empresa'))
     publicadas = []
@@ -144,7 +146,7 @@ Metade ganha entre {euro(geral["p25"])} e {euro(geral["p75"])}.</p>
         f.write('<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'
                 f'<url><loc>https://ganhas.pt/empresa/</loc><lastmod>{hoje}</lastmod></url>{urls}</urlset>\n')
     # troca atómica: o Caddy nunca vê uma pasta a meio
-    velho = SAIDA + '.velho'
+    velho = os.path.join(SAIDA, '.velho')
     shutil.rmtree(velho, ignore_errors=True)
     os.makedirs(SAIDA, exist_ok=True)
     for nome in os.listdir(novo):
