@@ -4,14 +4,14 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>ganhas.pt · Quanto ganhas? Compara o teu salário em Portugal</title>
-<meta name="description" content="Compara o teu salário com os números oficiais: em 2024, metade de quem trabalhava a tempo completo ganhava menos de 1.191 €. Calculadora de líquido 2026, profissões e concelhos.">
+<meta name="description" content="Em 2024, metade de quem trabalhava a tempo completo ganhava menos de 1.191 €. Compara o teu salário e calcula o líquido de 2026.">
 <link rel="canonical" href="https://ganhas.pt/">
 
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="ganhas.pt">
 <meta property="og:locale" content="pt_PT">
 <meta property="og:title" content="Quanto ganhas? Compara o teu salário em Portugal">
-<meta property="og:description" content="Compara o teu salário com os números oficiais: em 2024, metade de quem trabalhava a tempo completo ganhava menos de 1.191 €. Calculadora de líquido 2026, profissões e concelhos.">
+<meta property="og:description" content="Em 2024, metade de quem trabalhava a tempo completo ganhava menos de 1.191 €. Compara o teu salário e calcula o líquido de 2026.">
 <meta property="og:url" content="https://ganhas.pt/">
 <meta property="og:image" content="https://ganhas.pt/og/geral.png">
 <meta property="og:image:width" content="1200">
@@ -25,9 +25,9 @@
 <link rel="manifest" href="/manifest.webmanifest">
 <link rel="preload" href="/fontes/bricolage.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="/fontes/schibsted.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="/estilo.css?v=feff48744f">
+<link rel="stylesheet" href="/estilo.css?v=72c2ae728b">
 <script defer src="/_e.js" data-site="ganhas"></script>
-<script defer src="/app.js?v=0670c92a87"></script>
+<script defer src="/app.js?v=7ec2636f15"></script>
 <script type="application/ld+json">{"@context": "https://schema.org", "@graph": [{"@type": "Organization", "@id": "https://ganhas.pt/#org", "name": "ganhas.pt", "url": "https://ganhas.pt/", "logo": "https://ganhas.pt/icone-512.png", "founder": {"@type": "Person", "name": "Dinis Sousa", "url": "https://dinissousa.pt"}}, {"@type": "WebSite", "@id": "https://ganhas.pt/#site", "name": "ganhas.pt", "url": "https://ganhas.pt/", "inLanguage": "pt-PT", "publisher": {"@id": "https://ganhas.pt/#org"}}, {"@type": "WebApplication", "name": "Comparador de salários ganhas.pt", "url": "https://ganhas.pt/", "applicationCategory": "FinanceApplication", "operatingSystem": "Todos", "inLanguage": "pt-PT", "offers": {"@type": "Offer", "price": "0", "priceCurrency": "EUR"}}]}</script>
 </head>
 <body>
@@ -59,6 +59,7 @@
 <div class="resultado" aria-live="polite">
 <p class="res-frase" id="res-frase">Em 2024, metade de quem trabalhava a tempo completo tinha um vencimento base abaixo de <span class="mk">950 €</span>.</p>
 <p class="res-extra" id="res-extra">Escreve o teu salário para veres onde estás.</p>
+<p class="res-partilha" id="res-partilha" hidden><button class="ligacao-botao" type="button" id="partilhar-resultado">Partilhar o resultado</button><span id="partilha-ok" class="res-nota" hidden>Copiado. Cola onde quiseres.</span></p>
 <figure class="histo" data-histo="base"><div class="histo-barras" style="--n:14"><i style="--h:100%"><span class="vis">800–900 €: 20,4 %</span></i><i style="--h:71.2%"><span class="vis">900–1000 €: 14,5 %</span></i><i style="--h:37.1%"><span class="vis">1000–1100 €: 7,6 %</span></i><i style="--h:25.3%"><span class="vis">1100–1200 €: 5,1 %</span></i><i style="--h:22.1%"><span class="vis">1200–1300 €: 4,5 %</span></i><i style="--h:19.3%"><span class="vis">1300–1400 €: 3,9 %</span></i><i style="--h:19.3%"><span class="vis">1400–1500 €: 3,9 %</span></i><i style="--h:7.7%"><span class="vis">1500–1600 €: 1,6 %</span></i><i style="--h:7.7%"><span class="vis">1600–1700 €: 1,6 %</span></i><i style="--h:7.7%"><span class="vis">1700–1800 €: 1,6 %</span></i><i style="--h:7.7%"><span class="vis">1800–1900 €: 1,6 %</span></i><i style="--h:7.7%"><span class="vis">1900–2000 €: 1,6 %</span></i><i style="--h:7.7%"><span class="vis">2000–2100 €: 1,6 %</span></i><i style="--h:52.1%" class=resto><span class="vis">2100 € ou mais: 10,6 %</span></i></div><div class="histo-tu" hidden><b>Tu</b></div><figcaption class="histo-eixo"><span>800 €</span><span>1.500 €</span><span>2.100 € ou mais</span></figcaption></figure><figure class="histo" data-histo="ganho" hidden><div class="histo-barras" style="--n:19"><i style="--h:48.3%"><span class="vis">800–900 €: 8,8 %</span></i><i style="--h:100%"><span class="vis">900–1000 €: 18,2 %</span></i><i style="--h:76.3%"><span class="vis">1000–1100 €: 13,9 %</span></i><i style="--h:53.4%"><span class="vis">1100–1200 €: 9,7 %</span></i><i style="--h:37.9%"><span class="vis">1200–1300 €: 6,9 %</span></i><i style="--h:30.0%"><span class="vis">1300–1400 €: 5,5 %</span></i><i style="--h:25.5%"><span class="vis">1400–1500 €: 4,7 %</span></i><i style="--h:20.9%"><span class="vis">1500–1600 €: 3,8 %</span></i><i style="--h:16.0%"><span class="vis">1600–1700 €: 2,9 %</span></i><i style="--h:16.0%"><span class="vis">1700–1800 €: 2,9 %</span></i><i style="--h:15.4%"><span class="vis">1800–1900 €: 2,8 %</span></i><i style="--h:7.3%"><span class="vis">1900–2000 €: 1,3 %</span></i><i style="--h:7.3%"><span class="vis">2000–2100 €: 1,3 %</span></i><i style="--h:7.3%"><span class="vis">2100–2200 €: 1,3 %</span></i><i style="--h:7.3%"><span class="vis">2200–2300 €: 1,3 %</span></i><i style="--h:7.3%"><span class="vis">2300–2400 €: 1,3 %</span></i><i style="--h:7.3%"><span class="vis">2400–2500 €: 1,3 %</span></i><i style="--h:7.3%"><span class="vis">2500–2600 €: 1,3 %</span></i><i style="--h:58.2%" class=resto><span class="vis">2600 € ou mais: 10,6 %</span></i></div><div class="histo-tu" hidden><b>Tu</b></div><figcaption class="histo-eixo"><span>800 €</span><span>1.750 €</span><span>2.600 € ou mais</span></figcaption></figure>
 <p class="fonte">Quem trabalha por conta de outrem a tempo completo, Continente, outubro de 2024. Cada barra junta 100 €. <a href="https://www.dgcp.mtsss.gov.pt/documents/10182/10928/seriesqp_2014_2024.xlsx/d0805880-6aef-4eb1-8602-56c1b8a989a1" rel="noopener">DGCP/MTSSS, Quadros de Pessoal</a>.</p>
 </div>
@@ -148,7 +149,7 @@ Em novembro de 2026, a retenção de IRS é metade.</p>
 </div>
 <p class="peq">Dados oficiais do INE, GEP/MTSSS, AT, DGAEP e Eurostat, com a fonte em cada número. Atualizado a 11/11/2026.</p>
 </div></footer>
-<div class="barra-fixa" aria-hidden="false"><a class="botao" href="/partilhar/">Partilhar o meu salário</a></div>
+
 <script type="application/json" id="dados">{"distribuicao":{"ano":2024,"minimo":820,"minimo_hoje":920,"base":{"pontos":[[820,20],[850,30],[898,40],[950,50],[1052,60],[1246,70],[1500,80],[2140,90]],"mediana":950,"eixo":[800,2200]},"ganho":{"pontos":[[820,0],[911,10],[958,20],[1018,30],[1091,40],[1191,50],[1336,60],[1551,70],[1893,80],[2644,90]],"mediana":1191,"eixo":[800,2700]}},"irs":{"ano":2026,"ss":0.11,"subsidio_dinheiro":6.15,"subsidio_cartao":10.46,"tabelas":{"I":{"linhas":[[920.0,0.0,0.0],[1042.0,0.125,{"t":0.125,"f":2.6,"b":1273.85}],[1108.0,0.157,{"t":0.157,"f":1.35,"b":1554.83}],[1154.0,0.157,94.71],[1212.0,0.212,158.18],[1819.0,0.241,193.33],[2119.0,0.311,320.66],[2499.0,0.349,401.19],[3305.0,0.3836,487.66],[5547.0,0.3969,531.62],[20221.0,0.4495,823.4],[null,0.4717,1272.31]],"dependente":21.43},"II":{"linhas":[[920.0,0.0,0.0],[1042.0,0.125,{"t":0.125,"f":2.6,"b":1273.85}],[1108.0,0.157,{"t":0.157,"f":1.35,"b":1554.83}],[1154.0,0.157,94.71],[1212.0,0.212,158.18],[1819.0,0.241,193.33],[2119.0,0.311,320.66],[2499.0,0.349,401.19],[3305.0,0.3836,487.66],[5547.0,0.3969,531.62],[20221.0,0.4495,823.4],[null,0.4717,1272.31]],"dependente":34.29},"III":{"linhas":[[991.0,0.0,0.0],[1042.0,0.125,{"t":0.125,"f":2.6,"b":1372.15}],[1108.0,0.125,{"t":0.125,"f":1.35,"b":1677.85}],[1119.0,0.125,96.17],[1432.0,0.1272,98.64],[1962.0,0.157,141.32],[2240.0,0.1938,213.53],[2773.0,0.2277,289.47],[3389.0,0.257,370.72],[5965.0,0.2881,476.12],[20265.0,0.3843,1049.96],[null,0.4717,2821.13]],"dependente":42.86}},"novembro":{"fator":0.5,"limite":{"I":20221.0,"II":20221.0,"III":20265.0}},"nota":"Em novembro de 2026 a retenção é reduzida a metade (Circular n.º 5/2026), exceto acima do penúltimo escalão.","tsu_empresa":0.2375}}</script>
 </body>
 </html>

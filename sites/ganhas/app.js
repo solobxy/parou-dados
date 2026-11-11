@@ -159,6 +159,7 @@
           '<span class="mk on">' + euro(S.mediana) + '</span>.';
         extra.textContent = 'Escreve o teu salário para veres onde estás.';
         if (marca) marca.hidden = true;
+        ultimoTexto = null; const rp0 = $('#res-partilha'); if (rp0) rp0.hidden = true;
         return;
       }
       const meses = $('input[name="meses"]:checked', comp);
@@ -193,9 +194,25 @@
         (D.irs ? ' Em líquido, ficam cerca de <strong>' + euro(liquido({ bruto: v14, meses: 14, tabela: 'I', dependentes: 0 }).liquidoMes) + '</strong> por mês (não casado, sem dependentes).' : '') +
         '<span class="res-nota" style="display:block">Os salários subiram desde ' + DD.ano + ' (o mínimo passou de ' + euro(DD.minimo) + ' para ' + euro(DD.minimo_hoje) + '), por isso hoje a tua posição real é um pouco mais baixa.</span>';
       guardar('ultimo', String(v));
+      ultimoTexto = (p >= 90 ? 'Em ' + DD.ano + ', eu estaria nos 10 % que mais ganhavam em Portugal.'
+        : v14 < DD.minimo_hoje || (v14 <= S.pontos[0][0] && S.pontos[0][1] > 0) ? null
+        : 'Em ' + DD.ano + ', ' + pct(Math.max(1, p)) + ' de quem trabalhava a tempo completo em Portugal ganhava menos do que eu.') ;
+      const rp = $('#res-partilha'); if (rp) rp.hidden = !ultimoTexto;
       if (registar && Date.now() - ultimoEnvio > 4000) { ultimoEnvio = Date.now(); estat('comparou', tipo + ':' + Math.round(p / 10) * 10); }
     };
-    let tempo;
+    let tempo, ultimoTexto = null;
+    const bp = $('#partilhar-resultado');
+    if (bp) bp.addEventListener('click', async () => {
+      if (!ultimoTexto) return;
+      const texto = ultimoTexto + ' E tu?';
+      const url = location.origin + '/';
+      estat('partilhou_resultado', navigator.share ? 'nativo' : 'copiado');
+      try {
+        if (navigator.share) { await navigator.share({ text: texto, url }); return; }
+        await navigator.clipboard.writeText(texto + ' ' + url);
+        const ok = $('#partilha-ok'); if (ok) { ok.hidden = false; setTimeout(() => { ok.hidden = true; }, 3000); }
+      } catch (e) { /* a pessoa cancelou */ }
+    });
     inp.addEventListener('input', () => { clearTimeout(tempo); tempo = setTimeout(() => atualizar(true), 180); });
     $$('input[name="meses"], input[name="tipo"]', comp).forEach((r) => r.addEventListener('change', () => atualizar(true)));
     addEventListener('resize', () => atualizar(false), { passive: true });
@@ -241,6 +258,7 @@
       const nov = $('#c-l-nov');
       if (nov) { const ate = new Date() < new Date('2026-12-01T00:00:00'); nov.hidden = !ate || Math.abs(r.liquidoNovembro - r.liquidoMes) < 0.5; out('c-r-nov', euro(r.liquidoNovembro, 2)); }
       clearTimeout(correr.t); correr.t = setTimeout(() => estat('calculou', String(Math.round(bruto / 100) * 100)), 1500);
+      const ch = $('#c-chamada'); if (ch) ch.hidden = !(bruto >= 100);
     };
     campos.forEach((c) => c.addEventListener('input', correr));
     const fc = $('#form-calc'); if (fc) fc.addEventListener('submit', (ev) => ev.preventDefault());

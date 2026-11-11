@@ -69,13 +69,18 @@ def pagina(caminho, titulo, descricao, corpo, *, dados=None, ld=None, prioridade
     """Escreve sites/ganhas<caminho>index.html"""
     url = DOMINIO + caminho
     og = og or '/og/geral.png'
-    tit = h_titulo or (titulo + ' · ganhas.pt')
+    # o Google corta perto dos 60 caracteres no título e dos 160 na descrição
+    def curto(t, n):
+        return t if len(t) <= n else t[:n - 1].rsplit(' ', 1)[0].rstrip(',;:(') + '…'
+    titulo_meta = curto(titulo, 65)
+    tit = h_titulo or (titulo_meta + ' · ganhas.pt' if len(titulo_meta) <= 50 else titulo_meta)
+    descricao = curto(descricao, 160)
     nav = ''.join(f'<a href="{h}"{" aria-current=\"page\"" if caminho.startswith(h) else ""}>{t}</a>' for h, t in NAV)
     lds = [ORG, SITE] + (ld or [])
     head_extra = f'<meta name="google-site-verification" content="{e(GOOGLE_VERIFICACAO)}">' if GOOGLE_VERIFICACAO else ''
     robots = '' if indexar else '<meta name="robots" content="noindex">'
     dados_html = ('<script type="application/json" id="dados">' + json.dumps(dados, ensure_ascii=False, separators=(',', ':')).replace('</', '<\\/') + '</script>') if dados else ''
-    barra_html = ('<div class="barra-fixa" aria-hidden="false"><a class="botao" href="/partilhar/">Partilhar o meu salário</a></div>' if barra else '')
+    barra_html = ''  # o botão «Partilhar» do topo já está sempre à vista; uma segunda barra fixa tapava o conteúdo
     doc = f'''<!doctype html>
 <html lang="pt-PT" class="sem-js">
 <head>
@@ -88,7 +93,7 @@ def pagina(caminho, titulo, descricao, corpo, *, dados=None, ld=None, prioridade
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="ganhas.pt">
 <meta property="og:locale" content="pt_PT">
-<meta property="og:title" content="{e(titulo)}">
+<meta property="og:title" content="{e(titulo_meta)}">
 <meta property="og:description" content="{e(descricao)}">
 <meta property="og:url" content="{e(url)}">
 <meta property="og:image" content="{DOMINIO}{og}">
@@ -239,6 +244,7 @@ def inicio():
 <div class="resultado" aria-live="polite">
 <p class="res-frase" id="res-frase">Em {ano}, metade de quem trabalhava a tempo completo tinha um vencimento base abaixo de <span class="mk">{euro(b["mediana"])}</span>.</p>
 <p class="res-extra" id="res-extra">Escreve o teu salário para veres onde estás.</p>
+<p class="res-partilha" id="res-partilha" hidden><button class="ligacao-botao" type="button" id="partilhar-resultado">Partilhar o resultado</button><span id="partilha-ok" class="res-nota" hidden>Copiado. Cola onde quiseres.</span></p>
 {histograma_html(d, "base", True)}{histograma_html(d, "ganho", False)}
 <p class="fonte">Quem trabalha por conta de outrem a tempo completo, {e(d["ambito"])}, outubro de {ano}. Cada barra junta 100 €. <a href="{e(O["fontes"]["decis"]["url"])}" rel="noopener">DGCP/MTSSS, Quadros de Pessoal</a>.</p>
 </div>
@@ -311,7 +317,7 @@ Em novembro de 2026, a retenção de IRS é metade.</p>
     ld = [{'@type': 'WebApplication', 'name': 'Comparador de salários ganhas.pt', 'url': DOMINIO + '/', 'applicationCategory': 'FinanceApplication',
            'operatingSystem': 'Todos', 'inLanguage': 'pt-PT', 'offers': {'@type': 'Offer', 'price': '0', 'priceCurrency': 'EUR'}}]
     pagina('/', 'Quanto ganhas? Compara o teu salário em Portugal',
-           f'Compara o teu salário com os números oficiais: em {ano}, metade de quem trabalhava a tempo completo ganhava menos de {euro(g["mediana"])}. Calculadora de líquido 2026, profissões e concelhos.',
+           f'Em {ano}, metade de quem trabalhava a tempo completo ganhava menos de {euro(g["mediana"])}. Compara o teu salário e calcula o líquido de 2026.',
            corpo, dados={'distribuicao': dados_distribuicao(), 'irs': dados_irs()}, ld=ld, prioridade=1.0, barra=True,
            h_titulo='ganhas.pt · Quanto ganhas? Compara o teu salário em Portugal')
 
@@ -388,6 +394,10 @@ def calculadora():
 <div class="linha"><span class="r">Custo para a empresa</span><span class="p"></span><span class="v" id="c-r-custo">—</span></div>
 <p class="fonte">A retenção é um adiantamento do IRS: o imposto final só se sabe na declaração anual. {e(irs.get("nota", ""))}
 O custo para a empresa soma {pct(100 * irs["tsu_empresa"], 2)} de TSU ao salário. Não aplicamos o IRS Jovem nem as regras para pessoas com deficiência.</p>
+</div>
+<div class="chamada" id="c-chamada" hidden>
+<p><strong>Estás a ganhar o justo?</strong> Partilha este salário de forma anónima e vê quanto ganham outras pessoas na tua profissão.</p>
+<p class="acoes"><a class="botao" href="/partilhar/" id="c-ir-partilhar">Partilhar e comparar</a><a class="botao sec2" href="/">Ver onde fico em Portugal</a></p>
 </div>
 </div>
 </div></section>
@@ -614,7 +624,7 @@ def concelhos():
     ano = O['concelhos_ano']
     med_nac = media_nacional()
     linhas = ''.join(f'<tr data-nome="{e(slug(c["nome"]).replace("-", " "))}"><td class="n">{c["pos"]}.</td><td><a href="/concelhos/{c["id"]}/">{e(c["nome"])}</a></td>'
-                     f'<td>{e(O["nuts2"].get(c["nuts2"], ""))}</td><td class="n">{euro(c["ganho_medio"])}</td></tr>' for c in cs)
+                     f'<td class="col-reg">{e(O["nuts2"].get(c["nuts2"], ""))}</td><td class="n">{euro(c["ganho_medio"])}</td></tr>' for c in cs)
     corpo = f'''
 {migalhas([(None, "Concelhos")])[0]}
 <section class="sec" style="padding-top:24px"><div class="mold">
@@ -623,7 +633,7 @@ def concelhos():
 <div class="f" style="max-width:560px;margin-top:32px"><label for="filtro-conc">Procurar concelho</label>
 <input type="search" id="filtro-conc" data-filtro="#lista-conc" data-vazio="#conc-vazio" placeholder="Gondomar, Braga, Faro…" autocomplete="off"></div>
 <p class="vazio" id="conc-vazio" hidden style="margin-top:16px">Não encontrámos esse concelho.</p>
-<table class="tabela" style="margin-top:32px"><thead><tr><th class="n">#</th><th>Concelho</th><th>Região</th><th class="n">Ganho médio</th></tr></thead>
+<table class="tabela" style="margin-top:32px"><thead><tr><th class="n">#</th><th>Concelho</th><th class="col-reg">Região</th><th class="n">Ganho médio</th></tr></thead>
 <tbody id="lista-conc">{linhas}</tbody></table>
 {fonte("concelhos")}
 </div></section>'''
@@ -795,6 +805,8 @@ def carreiras_fp():
             sl, titulo, quem = FP_NOMES[nome_c]
         else:
             sl, titulo, quem = slug(nome_c), nome_c, None
+            if len(sl) > 60:
+                sl = sl[:60].rsplit('-', 1)[0]
         x = por.setdefault(sl, {'id': sl, 'titulo': titulo, 'quem': quem, 'carreira': nome_c, 'grupo': c['grupo'], 'categorias': []})
         x['categorias'].append(c)
     formacao = re.compile(r'cadete|aluno|aspirante|estagi|instrução|tirocin|formação|pré-carreira|interno', re.I)
@@ -885,25 +897,66 @@ def pagina_carreira(x, fp):
 # ---------------------------------------------------------------- empresas, imprensa, dados
 
 def empresas_b2b():
+    from urllib.parse import quote
+    g2 = O['grupos'].get('2') or {}
+    norte = (g2.get('regioes') or {}).get('11')
+    porto = next((c for c in O['concelhos'] if c['id'] == 'porto'), None)
+    enf = carreiras_fp().get('enfermeiros') or {}
+    assunto = quote('ganhas.pt - pedido de dados')
+    corpo_mail = quote('Olá,\n\nEmpresa:\nFunção ou funções:\nRegião:\nPara quando:\nPara que é (bandas salariais, anúncio, estudo, peça):\n\nObrigado.')
+    amostra = quote('ganhas.pt - amostra grátis')
+    corpo_amostra = quote('Olá,\n\nGostava de uma amostra para esta função e região:\nFunção:\nRegião:\n\nObrigado.')
     corpo = f'''
 {migalhas([(None, "Para empresas e jornalistas")])[0]}
-<section class="sec" style="padding-top:24px"><div class="mold texto">
-<h1>Para empresas e jornalistas</h1>
-<p class="lede">O ganhas.pt junta dados oficiais e partilhas anónimas de quem trabalha em Portugal. Se precisas de referências salariais
-para definir bandas, cumprir a transparência salarial ou escrever uma peça, falamos contigo.</p>
-<h2>Relatórios salariais</h2>
-<p>Por profissão, região e dimensão de empresa, com mediana, quartis e evolução. Sempre agregados: nunca uma resposta individual
-e nunca uma célula com menos de 5 pessoas.</p>
-<h2>Dados para a transparência salarial</h2>
-<p>A diretiva europeia obriga a indicar o salário ou a banda salarial nos anúncios e a justificar diferenças. Preparamos
-comparações de mercado por função para apoiar essas decisões.</p>
-<h2>Jornalistas</h2>
-<p>Podes usar os números do site com uma ligação para a página de onde vieram. Para dados à medida, cruzamentos ou gráficos, escreve-nos.</p>
-<h2>Contacto</h2>
-<p><a class="botao" href="mailto:{legal.EMAIL}?subject=ganhas.pt%20-%20dados%20e%20relat%C3%B3rios">Pedir dados ou relatório</a></p>
+<section class="sec" style="padding-top:24px"><div class="mold">
+<h1 class="h1-pag">Quanto paga o mercado, em números que podes defender</h1>
+<p class="lede">Dados oficiais e partilhas anónimas de quem trabalha em Portugal, por função e região. Para definir um salário,
+preparar as bandas salariais que a diretiva europeia vai exigir, ou escrever uma peça.</p>
+<p class="acoes"><a class="botao" href="mailto:{legal.EMAIL}?subject={amostra}&amp;body={corpo_amostra}">Pedir uma amostra grátis</a>
+<a class="botao sec2" href="mailto:{legal.EMAIL}?subject={assunto}&amp;body={corpo_mail}">Pedir proposta</a></p>
+</div></section>
+
+<section class="sec"><div class="mold ofertas">
+<div class="entra"><h2>Relatório por função</h2>
+<p>Ganho médio e mediano por função e região, com as fontes oficiais ao lado e, quando há 5 ou mais pessoas, as partilhas da comunidade.
+Para quem vai contratar e não quer errar na proposta.</p></div>
+<div class="entra"><h2>Bandas para a transparência salarial</h2>
+<p>A diretiva europeia obriga a mostrar o salário ou a banda nos anúncios e a justificar diferenças entre pessoas na mesma função.
+Preparamos as comparações de mercado que sustentam essas bandas.</p></div>
+<div class="entra"><h2>Imprensa e estudos</h2>
+<p>Números à medida, cruzamentos e gráficos prontos a publicar. Podes sempre usar os números do site com uma ligação para a página de onde vieram.</p></div>
+</div></section>
+
+<section class="sec folha"><div class="mold grelha2">
+<div class="entra"><h2>Um exemplo do que recebes</h2>
+<p class="lede espaco">Uma amostra com números reais para enfermeiros no Norte. Num relatório, cada função vem assim, com a fonte de cada número.</p>
+<p class="espaco"><a class="botao" href="mailto:{legal.EMAIL}?subject={amostra}&amp;body={corpo_amostra}">Pedir a minha amostra</a></p></div>
+<div class="recibo entra" aria-label="Exemplo de relatório">
+<h3>Enfermeiro, Norte</h3>
+{f'<div class="linha"><span class="r">Grupo dos especialistas, Norte ({g2.get("ano")})</span><span class="p"></span><span class="v">{euro(norte)}</span></div>' if norte else ''}
+{f'<div class="linha"><span class="r">Grupo dos especialistas, Portugal</span><span class="p"></span><span class="v">{euro(g2.get("ganho"))}</span></div>' if g2.get("ganho") else ''}
+{f'<div class="linha"><span class="r">Ganho médio no Porto, todas as funções</span><span class="p"></span><span class="v">{euro(porto["ganho_medio"])}</span></div>' if porto else ''}
+{f'<div class="linha"><span class="r">Função pública, 1.ª posição ({O["funcao_publica"]["ano"]})</span><span class="p"></span><span class="v">{euro(enf["min"], 2)}</span></div>' if enf.get("min") else ''}
+{f'<div class="linha"><span class="r">Função pública, topo da carreira</span><span class="p"></span><span class="v">{euro(enf["max"], 2)}</span></div>' if enf.get("max") else ''}
+<div class="linha"><span class="r">Partilhas da comunidade</span><span class="p"></span><span class="v">com 5 ou mais</span></div>
+<p class="fonte">Fontes: INE e GEP/MTSSS, Quadros de Pessoal (setor privado, ganho bruto mensal); DGAEP (remuneração base).</p>
+</div>
+</div></section>
+
+<section class="sec"><div class="mold">
+<h2 class="entra">Porque podes confiar nos números</h2>
+<div class="ofertas" style="margin-top:32px">
+<div class="entra"><h3>Fontes oficiais</h3><p>INE, Ministério do Trabalho, Autoridade Tributária, DGAEP e Eurostat. Cada número diz de onde vem e de que ano é.
+O <a href="/metodo/">método</a> está publicado.</p></div>
+<div class="entra"><h3>Nunca uma pessoa</h3><p>Só agregados, com pelo menos 5 pessoas diferentes por número, publicados 24 horas depois e arredondados à dezena.</p></div>
+<div class="entra"><h3>RGPD de raiz</h3><p>Sem contas, sem cookies e sem guardar o IP. Os dados ficam em servidores na União Europeia.</p></div>
+</div>
+<p class="acoes" style="margin-top:56px"><a class="botao" href="mailto:{legal.EMAIL}?subject={assunto}&amp;body={corpo_mail}">Pedir proposta</a>
+<a class="botao sec2" href="/dados/">Ver os dados abertos</a></p>
 </div></section>'''
-    pagina('/para-empresas/', 'Dados salariais para empresas e jornalistas', 'Relatórios salariais agregados por profissão e região, dados para a transparência salarial e apoio a jornalistas.',
-           corpo, prioridade=0.5)
+    pagina('/para-empresas/', 'Dados salariais para empresas, RH e jornalistas',
+           'Relatórios salariais por função e região, bandas para a transparência salarial e dados para jornalistas, com fontes oficiais e partilhas anónimas.',
+           corpo, prioridade=0.6)
 
 
 def dados_abertos():
