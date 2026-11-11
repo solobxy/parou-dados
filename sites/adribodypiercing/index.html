@@ -293,6 +293,11 @@ section{position:relative}
 .selecao .total{display:flex;justify-content:space-between;align-items:baseline;margin-top:14px;padding-top:14px;font-weight:600}
 .nota-desde{font-size:13px;line-height:1.45;color:var(--sec-claro);margin:8px 0 0}
 .de{font-style:normal;font-size:.62em;font-weight:500;opacity:.72;letter-spacing:0}
+.combina{margin:14px 0 4px;padding-top:14px;border-top:1px solid rgba(238,232,223,.12)}
+.combina p{margin:0 0 8px;font-size:13px;color:var(--sec-escuro)}
+.combina button{display:inline-flex;align-items:center;gap:6px;min-height:40px;margin:0 6px 6px 0;padding:0 14px;border-radius:999px;border:1px solid rgba(217,182,118,.45);background:transparent;color:var(--osso);font-size:14px;font-weight:500;cursor:pointer;transition:background-color .2s var(--ease),border-color .2s var(--ease)}
+.combina button:hover{background:rgba(217,182,118,.12);border-color:var(--ouro)}
+.combina button b{color:var(--ouro);font-weight:600}
 .resumo .nota-desde{color:var(--sec-escuro);margin-top:10px}
 .selecao .total .grande{font-family:var(--serif);font-size:30px;font-weight:500}
 .selecao .btn{width:100%;margin-top:18px}
@@ -326,7 +331,7 @@ section{position:relative}
 .servicos .v{font-family:var(--serif);font-size:28px;display:block;margin-top:auto;padding-top:14px} /* preço sempre no fundo do cartão: alinhado com os do lado */
 .servicos p{color:var(--sec-escuro);font-size:15px}
 .aviso-online{margin-top:40px;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:20px}
-@media (max-width:900px){.precos{grid-template-columns:1fr}.precos .orelha-l ul{columns:1}.servicos{grid-template-columns:1fr 1fr}}
+@media (max-width:900px){.precos{grid-template-columns:1fr}.precos .orelha-l ul{columns:1}.servicos{grid-template-columns:1fr;gap:10px}.servicos div{display:grid;grid-template-columns:1fr auto;column-gap:16px;padding:18px 20px}.servicos b,.servicos p{grid-column:1}.servicos .v{grid-column:2;grid-row:1/3;align-self:center;margin:0;padding:0;font-size:19px;text-align:right;white-space:nowrap}}
 @media (max-width:520px){.servicos{gap:10px}.servicos div{padding:18px 16px}.servicos .v{font-size:24px;padding-top:10px}.servicos p{font-size:14px}}
 
 /* joias */
@@ -478,7 +483,7 @@ section{position:relative}
 fieldset{border:0;margin:0 0 48px;padding:0;min-width:0}
 legend{font-family:var(--serif);font-size:clamp(26px,2.4vw,32px);margin-bottom:18px;padding:0}
 .passo-n{color:var(--sec-claro);font-family:var(--sans);font-size:15px;font-weight:600;display:block;margin-bottom:4px}
-.campo{display:grid;gap:8px;margin-bottom:18px}
+.campo{display:grid;gap:8px;margin-bottom:18px;align-content:start}
 .campo label{font-weight:600;font-size:15px}
 .campo .ajuda{font-size:14px;color:var(--sec-claro)}
 .campo input,.campo select,.campo textarea{width:100%;min-height:56px;padding:14px 18px;border-radius:14px;border:2px solid transparent;background:var(--osso-2);color:var(--tinta);font-size:17px;transition:border-color .2s var(--ease),background-color .2s var(--ease)}
@@ -487,7 +492,8 @@ legend{font-family:var(--serif);font-size:clamp(26px,2.4vw,32px);margin-bottom:1
 .campo .err{color:var(--erro);font-size:14px;font-weight:600;display:none}
 .campo.invalido input,.campo.invalido select{border-color:var(--erro)}
 .campo.invalido .err{display:block}
-.duas{display:grid;grid-template-columns:1fr 1fr;gap:0 16px}
+.duas{display:grid;grid-template-columns:1fr 1fr;gap:0 16px;align-items:start}
+.duas #c-nome{grid-column:1/-1}
 @media (max-width:620px){.duas{grid-template-columns:1fr}}
 .escolhidos{list-style:none;margin:0 0 14px;padding:0;display:grid;gap:6px}
 .escolhidos li{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:56px;padding:0 8px 0 18px;border-radius:14px;background:var(--tinta);color:var(--osso);animation:troca .35s var(--ease)}
@@ -504,7 +510,7 @@ legend{font-family:var(--serif);font-size:clamp(26px,2.4vw,32px);margin-bottom:1
 .dias{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
 .dias button{height:48px;border:0;border-radius:12px;background:transparent;font-weight:600;font-variant-numeric:tabular-nums;transition:background-color .2s var(--ease),transform .15s var(--ease)}
 .dias button:not(:disabled):hover{background:var(--osso-3)}
-.dias button:disabled{color:#9C9389;font-weight:400;cursor:not-allowed}
+.dias button:disabled{color:#82786D;font-weight:400;cursor:not-allowed}
 .cal[aria-busy] .dias{opacity:.4}
 .hp{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden}
 .form-msg{background:#3a1d1a;color:#ffd9d2;border-radius:14px;padding:14px 16px;font-size:15px;margin-top:16px}
@@ -523,7 +529,7 @@ legend{font-family:var(--serif);font-size:clamp(26px,2.4vw,32px);margin-bottom:1
 .horas-vazio{margin-top:16px;color:var(--sec-claro)}
 .horas-nota{margin-top:14px;font-size:14px;color:var(--sec-claro)}
 .check{display:flex;gap:14px;align-items:flex-start;margin:6px 0 4px;cursor:pointer}
-.check input{width:24px;height:24px;margin:2px 0 0;accent-color:var(--tinta);flex:none}
+.check input{width:24px;height:24px;min-height:0;padding:0;margin:0;accent-color:var(--tinta);flex:none}
 .resumo{position:sticky;top:100px;background:var(--tinta);color:var(--osso);border-radius:26px;padding:28px}
 .resumo h3{margin-bottom:18px}
 .resumo .lin{display:flex;justify-content:space-between;gap:12px;padding:6px 0}
@@ -934,6 +940,7 @@ dialog.doc[open] .doc-cx{animation:pop .5s var(--ease)}
       <aside class="resumo" id="resumo" aria-label="Resumo da marcação">
         <h3>Resumo</h3>
         <div id="rLinhas"><p class="sec">Ainda não escolheste nada.</p></div>
+        <div class="combina" id="rCombina" hidden><p>Fica bem com</p><div id="rCombinaB"></div></div>
         <div class="tot"><span>Total</span><b class="num" id="rTotal">0 €</b></div>
         <p class="nota-desde" id="rDesde" hidden>Na orelha, o preço começa nos 35 € e pode subir conforme a complexidade. Digo-te sempre o valor antes de começar.</p>
         <p class="codigo" id="rQuando">Dia e hora por escolher.</p>
@@ -1446,9 +1453,22 @@ function resumo(){
   if (t.sc && !t.tot) { $('#rTotal').dataset.v = 0; $('#rTotal').textContent = 'Sob consulta'; }
   else contar($('#rTotal'), t.tot, t.desde || t.sc ? DE : '');
   $('#rDesde').hidden = !t.desde;
+  combina();
   $('#rQuando').textContent = diaSel && horaSel ? cap(fmtDia.format(diaSel)) + ', às ' + horaSel.replace(':', 'h') : (diaSel ? cap(fmtDia.format(diaSel)) + ': falta escolher a hora.' : 'Dia e hora por escolher.');
 }
 function cap(s){ return s.charAt(0).toUpperCase() + s.slice(1); }
+/* combinações que costumam ficar bem juntas; só aparecem até 3 piercings, o máximo por sessão */
+var COMBINA = {lobulo:['lobulo-alto','helix'], 'lobulo-alto':['lobulo','helix'], helix:['helix-frontal','flat'], 'helix-frontal':['helix','tragus'], flat:['helix','conch'],
+  tragus:['antitragus','helix-frontal'], antitragus:['tragus','lobulo'], conch:['flat','helix'], daith:['rook','conch'], rook:['daith','helix'], snug:['antitragus','conch'], industrial:['helix','lobulo'],
+  narina:['septo','helix'], septo:['narina','smiley'], labio:['medusa','septo'], medusa:['labio','narina'], smiley:['septo','narina'], sobrancelha:['narina','septo']};
+function combina(){
+  var box = $('#rCombina'), furos = sel.filter(function(id){ return byId[id].z !== 'servico'; });
+  var ult = furos[furos.length - 1], sug = [];
+  if (ult && furos.length < 3 && COMBINA[ult]) sug = COMBINA[ult].filter(function(id){ return byId[id] && sel.indexOf(id) < 0; }).slice(0, 2);
+  box.hidden = !sug.length; if (!sug.length) return;
+  $('#rCombinaB').innerHTML = sug.map(function(id){ var s = byId[id]; return '<button type="button" data-c="' + id + '">+ ' + s.n + ' <b>' + pr(s) + '</b></button>'; }).join('');
+  $$('#rCombinaB button').forEach(function(b){ b.addEventListener('click', function(){ toggle(b.dataset.c); }); });
+}
 
 /* validação */
 function erro(id){ $('#' + id).classList.add('invalido'); }
