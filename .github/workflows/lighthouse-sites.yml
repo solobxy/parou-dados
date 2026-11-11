@@ -1,0 +1,76 @@
+# Lighthouse (telemóvel, rede simulada, 3 medições por endereço, fica a mediana) dos sites.
+# Resultado no ramo "lighthouse-resultado": resumo.txt (notas, LCP, CLS, TBT e o que falha) e os JSON completos.
+name: Lighthouse dos sites
+
+on:
+  workflow_dispatch:
+    inputs:
+      urls:
+        description: "Endereços separados por espaços"
+        required: true
+        default: "https://parou.pt/ https://caiu.pt/ https://ganhas.pt/ https://duplicasa.pt/ https://dinissousa.pt/ https://adribodypiercing.pt/ https://tapmoss.com/"
+
+permissions:
+  contents: write
+
+jobs:
+  medir:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Medir
+        env:
+          URLS: ${{ inputs.urls }}
+        run: |
+          npm i -g lighthouse@12 >/dev/null 2>&1
+          mkdir -p saida
+          for U in $URLS; do
+            N=$(echo "$U" | sed 's#https\?://##; s#[^a-zA-Z0-9]#_#g')
+            for i in 1 2 3; do
+              timeout 180 lighthouse "$U" --quiet --only-categories=performance,accessibility,best-practices,seo \
+                --output=json --output-path="saida/$N-$i.json" --chrome-flags="--headless=new --no-sandbox" || true
+            done
+          done
+          cat > resumo.js <<'JS'
+          const fs = require('fs');
+          const fich = fs.readdirSync('saida').filter(f => f.endsWith('.json'));
+          const por = {};
+          for (const f of fich) {
+            try { const j = JSON.parse(fs.readFileSync('saida/' + f)); (por[j.finalDisplayedUrl || j.requestedUrl] ||= []).push(j); } catch (e) {}
+          }
+          for (const [u, rs] of Object.entries(por)) {
+            rs.sort((a, b) => (a.categories.performance.score || 0) - (b.categories.performance.score || 0));
+            const j = rs[Math.floor(rs.length / 2)];
+            const c = Object.fromEntries(Object.entries(j.categories).map(([k, v]) => [k, Math.round((v.score || 0) * 100)]));
+            const a = j.audits, v = id => a[id] && a[id].displayValue;
+            console.log(`\n=== ${u}  (${rs.length} medições, todas: ${rs.map(r => Math.round(r.categories.performance.score * 100)).join('/')})`);
+            console.log(`  notas ${JSON.stringify(c)}`);
+            console.log(`  LCP ${v('largest-contentful-paint')} | CLS ${v('cumulative-layout-shift')} | TBT ${v('total-blocking-time')} | FCP ${v('first-contentful-paint')} | peso ${v('total-byte-weight')}`);
+            for (const [cat, obj] of Object.entries(j.categories)) {
+              for (const ref of obj.auditRefs) {
+                const x = a[ref.id];
+                if (!x || x.score === null || x.scoreDisplayMode === 'informative' || x.scoreDisplayMode === 'manual' || x.scoreDisplayMode === 'notApplicable') continue;
+                if (x.score < 0.9 && (ref.weight > 0 || cat !== 'performance')) {
+                  const poup = x.details && x.details.overallSavingsMs ? ` (poupa ~${Math.round(x.details.overallSavingsMs)} ms)` : '';
+                  console.log(`  ✗ [${cat}] ${x.title}${x.displayValue ? ': ' + x.displayValue : ''}${poup}`);
+                }
+              }
+            }
+            for (const x of Object.values(a)) {
+              if (x.details && x.details.type === 'opportunity' && (x.details.overallSavingsMs || 0) >= 150)
+                console.log(`  → ${x.title}: ~${Math.round(x.details.overallSavingsMs)} ms`);
+            }
+          }
+          JS
+          node resumo.js | tee resumo.txt
+
+      - name: Guardar
+        if: always()
+        run: |
+          mkdir pub && cp resumo.txt pub/ 2>/dev/null; mkdir -p pub/json && cp saida/*-2.json pub/json/ 2>/dev/null; cd pub && git init -q -b lighthouse-resultado
+          git config user.name "parou-dados"; git config user.email "actions@users.noreply.github.com"
+          git add -A && git commit -q -m "Lighthouse" && git push -q -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" lighthouse-resultado
