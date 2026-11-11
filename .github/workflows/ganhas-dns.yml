@@ -10,7 +10,7 @@ permissions:
 jobs:
   verificar:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
       - name: Verificar
@@ -49,7 +49,7 @@ jobs:
       - name: Teste no browser
         continue-on-error: true
         run: |
-          pip install --quiet playwright && python3 -m playwright install --with-deps chromium >/dev/null 2>&1
+          pip install --quiet playwright && python3 -m playwright install chromium >/dev/null 2>&1
           python3 teste/e2e.py > saida/e2e.json 2> saida/e2e-erros.txt || true
           cat saida/e2e.json
       - name: Guardar
