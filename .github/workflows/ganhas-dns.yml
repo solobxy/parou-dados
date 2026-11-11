@@ -1,4 +1,4 @@
-name: ganhas.pt - verificar DNS e HTTPS
+name: ganhas.pt - verificar DNS, HTTPS e o site no browser
 
 on:
   push:
@@ -45,6 +45,13 @@ jobs:
             echo | timeout 15 openssl s_client -connect ganhas.pt:443 -servername ganhas.pt 2>/dev/null | openssl x509 -noout -subject -issuer -dates 2>&1 | head -5
           } > saida/resultado.txt 2>&1
           cat saida/resultado.txt
+      - uses: actions/checkout@v4
+      - name: Teste no browser
+        continue-on-error: true
+        run: |
+          pip install --quiet playwright && python3 -m playwright install --with-deps chromium >/dev/null 2>&1
+          python3 teste/e2e.py > saida/e2e.json 2> saida/e2e-erros.txt || true
+          cat saida/e2e.json
       - name: Guardar
         if: always()
         run: |
