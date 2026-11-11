@@ -55,6 +55,8 @@ body[data-world="adri"]{--bg:#0E0C0B;--ink:#EEE8DF;--muted:#BDB5A9;--surface:#1E
 body[data-world="tapmoss"]{--bg:#0B120D;--ink:#F2EAD2;--muted:#AEB8A4;--surface:#18241A;--accent:#A8DC5C;--on-accent:#0B120D;--frame:#0F1810;--mark:#A8DC5C}
 body[data-world="goodman"]{--bg:#0E3A2C;--ink:#F0F5F1;--muted:#B4CABE;--surface:#17503D;--accent:#C7372A;--on-accent:#FFFFFF;--frame:#0A2A20;--mark:#C7372A}
 body[data-world="duplicasa"]{--bg:#F3F5F4;--ink:#10241B;--muted:#4A5A52;--surface:#E0E8E3;--accent:#0E6B4F;--on-accent:#FFFFFF;--frame:#10241B;--mark:#0E6B4F}
+body[data-world="caiu"]{--bg:#FFD83D;--ink:#141414;--muted:#3F3B2A;--surface:#FFE57A;--accent:#141414;--on-accent:#FFD83D;--frame:#141414;--mark:#D0242C}
+body[data-world="ganhas"]{--bg:#0F110F;--ink:#F1F2EC;--muted:#B9BDB5;--surface:#1E221E;--accent:#FFE500;--on-accent:#111311;--frame:#2C302C;--mark:#FFE500}
 
 *,*::before,*::after{box-sizing:border-box}
 html{background:var(--paper)}
@@ -284,7 +286,8 @@ p{margin:0}
 .sub .nw{white-space:nowrap}
 .sub a:hover{border-bottom-color:transparent}
 .sub a.solto,.sub .nw.solto{white-space:normal}
-.c-adri{color:#7A5820}.c-good{color:#0E3A2C}.c-goth{color:#B0101C}.c-coq{color:#B4436A}.c-trans{color:#B84A0E}.c-casa{color:#0E6B4F}.c-moss{color:#3A7A25}
+.c-adri{color:#7A5820}.c-good{color:#0E3A2C}.c-goth{color:#B0101C}.c-coq{color:#B4436A}.c-trans{color:#B84A0E}.c-casa{color:#0E6B4F}.c-moss{color:#3A7A25}.c-ganhas{color:#1F3FD8}
+.sub a.c-caiu{color:#141414;background:linear-gradient(transparent 58%,#FFD83D 58%)}
 .ctas{margin-top:26px;display:flex;gap:10px;flex-wrap:wrap}
 .risco{margin-top:12px;font-size:14px;color:var(--muted)}
 .ctas .btn{flex:1 1 150px}
@@ -300,7 +303,10 @@ p{margin:0}
 .brand-tile img{width:auto;max-width:100%;object-fit:contain}
 .t-adri{background:#0E0C0B}.t-parou{background:#16151A}.t-anjinho{background:#DCE8F4}.t-jinxed{background:#110D0E}.t-duplicasa{background:#FFFFFF}.t-goodman{background:#0E3A2C}.t-tapmoss{background:#0B120D url("img/px_relva.svg") repeat-x left bottom/auto 18px;image-rendering:pixelated;grid-column:1/-1;position:relative}
 .t-tapmoss img{image-rendering:auto}
-.t-tapmoss .novo{position:absolute;top:10px;right:10px;padding:4px 8px 3px;background:#A8DC5C;color:#0B120D;font:600 12px/1 "Pixelify Sans",var(--font);letter-spacing:.02em}
+.t-caiu{background:#FFD83D;position:relative}.t-ganhas{background:#0F110F;position:relative}
+.brand-tile .novo{position:absolute;top:10px;right:10px;padding:5px 8px 4px;font:800 11px/1 var(--font);letter-spacing:.06em;text-transform:uppercase}
+.t-caiu .novo{background:#141414;color:#FFD83D;transform:rotate(3deg)}
+.t-ganhas .novo{background:#FFE500;color:#111311}
 @media (hover:hover){.brand-tile:hover{transform:translateY(-4px)}}
 .project{padding-block:88px}
 .project .wrap{display:grid;gap:32px;align-items:center}
@@ -587,6 +593,69 @@ img.fx{height:auto}
 .tm-vaga{z-index:3;width:5px;height:5px;background:#D7F05A;box-shadow:0 0 0 1px rgba(110,140,20,.35),0 0 14px 5px rgba(200,232,80,.5);transition:opacity .6s var(--ease) var(--d)}
 .js .c-tapmoss:not(.on) .tm-vaga{opacity:0}
 .c-tapmoss.on .tm-vaga{animation:pxvaga 2.8s ease-in-out calc(var(--d) + .6s) 2 alternate}
+/* CAIU: a etiqueta amarela cai do ecrã; saem duas etiquetas, uma que caiu a sério e outra carimbada como promoção falsa */
+.r-cai .abre{transform-origin:12% 0;transition:transform .85s cubic-bezier(.55,0,.75,.25) 1.1s}
+.r-cai.on .abre{transform:translateY(112%) rotate(9deg)}
+.c-caiu .abre img{transition:transform .6s var(--mola) .2s,opacity .3s var(--ease) .2s}
+.js .c-caiu:not(.on) .abre img{opacity:0;transform:translateY(calc(-30px * var(--k)))}
+.etq{z-index:5;display:grid;gap:2px;width:min(196px,calc(var(--pw) * .66));padding:14px 16px 14px 30px;background:#fff;color:#141414;border-radius:6px 14px 14px 6px;
+  box-shadow:0 22px 36px -18px rgba(20,20,20,.55);transition:transform .8s var(--mola) var(--d),opacity .3s var(--ease) var(--d)}
+.etq .furo{position:absolute;left:11px;top:50%;width:9px;height:9px;margin-top:-4.5px;border-radius:50%;background:#FFD83D;box-shadow:inset 0 0 0 2px #141414}
+.e-prod{font-size:12px;font-weight:600;color:#55554F;line-height:1.25}
+.e-antes{position:relative;justify-self:start;font-size:15px;font-weight:700;color:#55554F}
+.e-antes::after{content:"";position:absolute;left:-2px;right:-2px;top:52%;height:2.5px;background:#D0242C;transform-origin:0 50%;transform:scaleX(0);transition:transform .35s var(--ease) calc(var(--d) + .7s)}
+.c-caiu.on .e-antes::after{transform:scaleX(1)}
+.e-agora{font-size:28px;line-height:1;font-weight:900;letter-spacing:-.03em;font-variant-numeric:tabular-nums}
+.e-real .e-agora{transition:transform .55s var(--mola) calc(var(--d) + 1s),opacity .2s var(--ease) calc(var(--d) + 1s)}
+.js .c-caiu:not(.on) .e-real .e-agora{opacity:0;transform:translateY(calc(-22px * var(--k)))}
+.e-selo{justify-self:start;margin-top:6px;padding:4px 8px;border-radius:999px;background:#0B7A43;color:#fff;font-size:11px;font-weight:800;letter-spacing:.02em;
+  transition:opacity .25s var(--ease) calc(var(--d) + 1.45s),transform .45s var(--mola) calc(var(--d) + 1.45s)}
+.js .c-caiu:not(.on) .e-selo{opacity:0;transform:scale(.6)}
+.e-real{--d:1.95s;left:calc(-1 * var(--fora));top:18%;rotate:-4deg}
+.e-falsa{--d:3.05s;right:calc(-1 * var(--fora));top:55%;rotate:3deg}
+.e-promo{justify-self:start;padding:2px 7px;background:#FFD83D;color:#141414;font-size:12px;font-weight:800}
+.js .c-caiu:not(.on) .etq{opacity:0;transform:translateY(calc(-40px * var(--k))) rotate(calc(-6deg * var(--k)))}
+.carimbo-f{position:absolute;right:-12px;bottom:-14px;display:grid;padding:6px 12px 5px;border:3px solid #D0242C;border-radius:8px;color:#D0242C;background:rgba(255,255,255,.92);
+  font-size:18px;font-weight:900;letter-spacing:.06em;text-transform:uppercase;line-height:1;text-align:center;rotate:-10deg;opacity:0}
+.carimbo-f small{font-size:9.5px;letter-spacing:.04em;margin-top:3px;font-weight:800}
+.c-caiu.on .carimbo-f{animation:carimba .45s cubic-bezier(.3,0,.4,1) 4s both}
+@keyframes carimba{0%{opacity:0;transform:scale(2.2)}60%{opacity:1;transform:scale(.92)}100%{opacity:1;transform:none}}
+.c-seta b{display:inline-block;padding:9px 14px;border-radius:999px;background:#141414;color:#FFD83D;font-size:15px;font-weight:900;font-variant-numeric:tabular-nums;white-space:nowrap;box-shadow:0 14px 26px -14px rgba(0,0,0,.6)}
+.c-seta b::before{content:"↓ ";color:#fff}
+
+/* GANHAS: um traço de marcador passa pelo nome e o ecrã abre-se como uma página; sai o recibo com o líquido sublinhado e a mediana */
+.r-marca .abre{clip-path:inset(0 0 0 0);transition:clip-path .8s cubic-bezier(.7,0,.25,1) 1.25s}
+.r-marca.on .abre{clip-path:inset(0 0 0 100%)}
+.gn-logo{position:relative;display:block;width:68%}
+.gn-logo img{position:relative;z-index:1;width:100%}
+.gn-risco{position:absolute;z-index:0;left:-5%;right:-5%;top:64%;height:30%;background:#FFE500;opacity:.9;transform:skewX(-8deg) scaleX(0);transform-origin:0 50%;transition:transform .55s cubic-bezier(.6,0,.2,1) .35s}
+.c-ganhas.on .gn-risco{transform:skewX(-8deg) scaleX(1)}
+.recibo{--d:2.05s;z-index:5;left:calc(-1 * var(--fora));top:16%;display:grid;gap:7px;width:min(232px,calc(var(--pw) * .78));padding:16px 16px 14px;background:#F7F7F2;color:#111311;border-radius:4px;
+  box-shadow:0 26px 40px -18px rgba(0,0,0,.75);font-size:13px;transition:transform .85s var(--mola) var(--d),opacity .3s var(--ease) var(--d);
+  -webkit-mask:radial-gradient(circle 5px at 50% 100%,transparent 98%,#000) 0 0/14px 100% repeat-x;mask:radial-gradient(circle 5px at 50% 100%,transparent 98%,#000) 0 0/14px 100% repeat-x;padding-bottom:20px}
+.js .c-ganhas:not(.on) .recibo{opacity:0;transform:translateY(calc(34px * var(--k))) rotate(calc(-3deg * var(--k)))}
+.rc-t{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#4A4F4A;padding-bottom:6px;border-bottom:1px dashed #BFC1B8}
+.rc-l{display:flex;justify-content:space-between;gap:12px}
+.rc-l i{font-style:normal;color:#4A4F4A}
+.rc-l b{font-variant-numeric:tabular-nums;font-weight:700;white-space:nowrap}
+.rc-m b{color:#B42318}
+.rc-liq{margin-top:4px;padding-top:8px;border-top:2px solid #111311;font-size:15px}
+.rc-liq i{color:#111311;font-weight:800}
+.rc-liq em{font-style:normal;font-weight:900;background:linear-gradient(#FFE500,#FFE500) no-repeat 0 60%/0% 70%;transition:background-size .6s cubic-bezier(.6,0,.2,1) calc(var(--d) + 1.05s);padding:0 3px}
+.c-ganhas.on .rc-liq em{background-size:100% 70%}
+.metade{--d:3.15s;z-index:5;right:calc(-1 * var(--fora));top:60%;display:flex;align-items:flex-end;gap:12px;padding:12px 14px;background:#1E221E;color:#F1F2EC;border-radius:16px;
+  box-shadow:0 0 0 1px #2C302C,0 22px 36px -16px rgba(0,0,0,.8);max-width:min(250px,calc(var(--pw) * .82));transition:transform .8s var(--mola) var(--d),opacity .3s var(--ease) var(--d)}
+.js .c-ganhas:not(.on) .metade{opacity:0;transform:translateX(calc(30px * var(--k))) scale(calc(1 - .2 * var(--k)))}
+.barras{display:flex;align-items:flex-end;gap:3px;height:40px;flex:none}
+.barras i{width:7px;height:calc(var(--h) * 100%);background:#7A7E74;transform-origin:50% 100%;transition:transform .5s var(--mola) calc(var(--d) + .3s)}
+.barras i:nth-child(-n+3){background:#FFE500}
+.js .c-ganhas:not(.on) .barras i{transform:scaleY(.08)}
+.barras i:nth-child(2){transition-delay:calc(var(--d) + .36s)}.barras i:nth-child(3){transition-delay:calc(var(--d) + .42s)}.barras i:nth-child(4){transition-delay:calc(var(--d) + .48s)}
+.barras i:nth-child(5){transition-delay:calc(var(--d) + .54s)}.barras i:nth-child(6){transition-delay:calc(var(--d) + .6s)}.barras i:nth-child(7){transition-delay:calc(var(--d) + .66s)}
+.m-txt{font-size:13px;line-height:1.3;color:#B9BDB5}
+.m-txt b{display:block;font-size:20px;line-height:1.05;color:#FFE500;font-weight:900;letter-spacing:-.02em}
+.m-txt small{font-size:11px;opacity:.8}
+@media (max-width:719px){.etq{width:min(178px,calc(var(--pw) * .62))}.e-agora{font-size:24px}.recibo{width:min(212px,calc(var(--pw) * .74));font-size:12px}}
 .c-goodman .h-juiz{z-index:6}
 .c-goodman.on .j-martelo{animation:martela 1s 4.1s both}
 .c-goodman.on .j-base{animation:pancada .3s linear 4.58s}
@@ -698,6 +767,7 @@ footer a{min-height:44px;display:inline-flex;align-items:center}
   .styles{grid-template-columns:repeat(4,minmax(0,1fr))}
   .brands{grid-template-columns:repeat(3,minmax(0,1fr))}
   .brand-tile{height:120px}
+  .t-tapmoss{grid-column:auto}
   .plans{grid-template-columns:repeat(3,minmax(0,1fr));align-items:stretch}
   .plan.rec{order:0;margin-top:0;margin-block:-14px;padding-block:42px;box-shadow:0 30px 60px -30px rgba(0,0,0,.45)}
   .garante{grid-template-columns:repeat(3,minmax(0,1fr));gap:24px}
@@ -726,6 +796,7 @@ footer a{min-height:44px;display:inline-flex;align-items:center}
   .project:nth-of-type(even) .shot{grid-column:1 / span 6;order:1}
   .project .cena{--pw:340px}
   .brands{grid-template-columns:repeat(6,minmax(0,1fr))}
+  .t-tapmoss,.t-caiu,.t-ganhas{grid-column:span 2}
   .faq-list{grid-template-columns:repeat(2,minmax(0,1fr))}
 }
 
@@ -835,7 +906,7 @@ footer a{min-height:44px;display:inline-flex;align-items:center}
       <div class="hero-text">
         <h1 class="name"><span>Dinis</span><span>Sousa.</span></h1>
         <p class="lead">Faço sites que não se parecem uns com os outros.</p>
-        <p class="sub"><a class="c-adri" href="#adri">Um estúdio de piercing</a>, <a class="c-coq" href="#anjinho">uma loja coquette</a>, <a class="c-goth" href="#jinxed">uma marca gótica</a>, <a class="c-trans" href="#parou">uma app de transportes</a>, <a class="c-casa" href="#duplicasa">um site de arrendamento</a>, <a class="c-good" href="#goodman">um advogado com IA</a> <span class="nw">e <a class="c-moss" href="#tapmoss">um jogo em pixel art</a>.</span> <span class="fim">Todos feitos por mim. <span class="nw">O próximo pode ser o teu.</span></span></p>
+        <p class="sub"><a class="c-adri" href="#adri">Um estúdio de piercing</a>, <a class="c-coq" href="#anjinho">uma loja coquette</a>, <a class="c-goth" href="#jinxed">uma marca gótica</a>, <a class="c-trans" href="#parou">uma app de transportes</a>, <a class="c-casa" href="#duplicasa">um site de arrendamento</a>, <a class="c-good" href="#goodman">um advogado com IA</a>, <a class="c-moss" href="#tapmoss">um jogo em pixel art</a>, <a class="c-caiu" href="#caiu">um comparador de preços</a> <span class="nw">e <a class="c-ganhas" href="#ganhas">um site de salários</a>.</span> <span class="fim">Todos feitos por mim. <span class="nw">O próximo pode ser o teu.</span></span></p>
         <div class="ctas">
           <a class="btn btn-primary wa" data-msg="Olá Dinis! Quero um site." href="https://wa.me/351913488258">Pedir o meu site</a>
           <a class="btn btn-secondary" href="#projetos">Ver projetos</a>
@@ -940,7 +1011,9 @@ footer a{min-height:44px;display:inline-flex;align-items:center}
         <a class="brand-tile t-jinxed" href="#jinxed"><img src="img/logo_jinxed.webp" width="200" height="90" alt="jinxed" style="height:40px"></a>
         <a class="brand-tile t-duplicasa" href="#duplicasa"><img src="img/logo_duplicasa.svg" width="592" height="123" alt="DupliCasa" style="height:30px"></a>
         <a class="brand-tile t-goodman" href="#goodman"><img src="img/logo_goodman.webp" width="441" height="66" alt="Goodman" style="height:24px"></a>
-        <a class="brand-tile t-tapmoss" href="#tapmoss"><img src="img/logo_tapmoss.webp" width="588" height="124" alt="tapmoss" style="height:30px"><span class="novo">Novo</span></a>
+        <a class="brand-tile t-tapmoss" href="#tapmoss"><img src="img/logo_tapmoss.webp" width="588" height="124" alt="tapmoss" style="height:30px"></a>
+        <a class="brand-tile t-caiu" href="#caiu"><img src="img/logo_caiu.webp" width="389" height="140" alt="caiu.pt" style="height:34px"><span class="novo">Novo</span></a>
+        <a class="brand-tile t-ganhas" href="#ganhas"><img src="img/logo_ganhas.webp" width="597" height="120" alt="ganhas.pt" style="height:28px"><span class="novo">Novo</span></a>
       </nav>
     </div>
 
@@ -1025,6 +1098,29 @@ footer a{min-height:44px;display:inline-flex;align-items:center}
           <a class="btn btn-secondary rv" href="https://tapmoss.com" target="_blank" rel="noopener">Jogar em tapmoss.com ↗</a>
         </div>
         <div class="shot"><figure class="cena c-tapmoss r-pixel" style="--abre:#0B120D"><div class="phone"><div class="ecra"><img class="site" src="img/tapmoss.webp" width="640" height="1386" alt="Jogo tapmoss no telemóvel" loading="lazy"><div class="abre" aria-hidden="true"><span class="pix"><i style="--d:1.28s"></i><i style="--d:1.17s"></i><i style="--d:1.48s"></i><i style="--d:1.12s"></i><i style="--d:1.41s"></i><i style="--d:1.31s"></i><i style="--d:1.12s"></i><i style="--d:1.39s"></i><i style="--d:1.10s"></i><i style="--d:1.35s"></i><i style="--d:1.12s"></i><i style="--d:1.14s"></i><i style="--d:1.34s"></i><i style="--d:1.59s"></i><i style="--d:1.16s"></i><i style="--d:1.22s"></i><i style="--d:1.47s"></i><i style="--d:1.67s"></i><i style="--d:1.44s"></i><i style="--d:1.33s"></i><i style="--d:1.69s"></i><i style="--d:1.11s"></i><i style="--d:1.61s"></i><i style="--d:1.26s"></i><i style="--d:1.17s"></i><i style="--d:1.15s"></i><i style="--d:1.27s"></i><i style="--d:1.59s"></i><i style="--d:1.19s"></i><i style="--d:1.44s"></i><i style="--d:1.48s"></i><i style="--d:1.31s"></i><i style="--d:1.42s"></i><i style="--d:1.12s"></i><i style="--d:1.12s"></i><i style="--d:1.21s"></i><i style="--d:1.50s"></i><i style="--d:1.35s"></i><i style="--d:1.27s"></i><i style="--d:1.44s"></i><i style="--d:1.36s"></i><i style="--d:1.27s"></i><i style="--d:1.57s"></i><i style="--d:1.51s"></i><i style="--d:1.23s"></i><i style="--d:1.44s"></i><i style="--d:1.41s"></i><i style="--d:1.62s"></i><i style="--d:1.53s"></i><i style="--d:1.26s"></i><i style="--d:1.69s"></i><i style="--d:1.15s"></i><i style="--d:1.34s"></i><i style="--d:1.55s"></i><i style="--d:1.17s"></i><i style="--d:1.38s"></i><i style="--d:1.10s"></i><i style="--d:1.49s"></i><i style="--d:1.55s"></i><i style="--d:1.44s"></i><i style="--d:1.62s"></i><i style="--d:1.27s"></i><i style="--d:1.51s"></i><i style="--d:1.45s"></i><i style="--d:1.44s"></i><i style="--d:1.36s"></i><i style="--d:1.60s"></i><i style="--d:1.67s"></i><i style="--d:1.37s"></i><i style="--d:1.49s"></i><i style="--d:1.12s"></i><i style="--d:1.51s"></i><i style="--d:1.48s"></i><i style="--d:1.70s"></i><i style="--d:1.59s"></i><i style="--d:1.26s"></i><i style="--d:1.32s"></i><i style="--d:1.49s"></i></span><img class="tm-logo" src="img/logo_tapmoss.webp" width="588" height="124" alt=""></div></div></div><div class="fx tm-aviso" aria-hidden="true"><img class="pxi" src="img/px_musgo_roxo.svg" alt=""><span><b>Musgo novo!</b>Desbloqueaste o musgo roxo</span></div><span class="fx sai-fx tm-moeda" aria-hidden="true" style="right:calc(-.7 * var(--fora));top:47%;--fx:calc(var(--pw) * -.45);--fy:calc(var(--pw) * .1);--d:2.95s"><img class="pxi" src="img/px_moeda.svg" alt=""></span><span class="fx sai-fx tm-moeda" aria-hidden="true" style="right:calc(-.25 * var(--fora));top:52%;width:20px;--fx:calc(var(--pw) * -.3);--fy:calc(var(--pw) * .05);--d:3.05s"><img class="pxi" src="img/px_moeda.svg" alt=""></span><span class="fx sai-fx tm-moeda" aria-hidden="true" style="right:calc(-.95 * var(--fora));top:56%;width:18px;--fx:calc(var(--pw) * -.55);--fy:calc(var(--pw) * -.05);--d:3.15s"><img class="pxi" src="img/px_moeda.svg" alt=""></span><b class="fx tm-ganho" aria-hidden="true">+36</b><span class="fx sai-fx tm-bau" aria-hidden="true" style="left:calc(-.75 * var(--fora));top:72%;--fx:calc(var(--pw) * .5);--fy:calc(var(--pw) * -.25);--d:3.9s"><img class="pxi" src="img/px_bau.svg" alt=""><b>Baú do dia</b></span><span class="fx sai-fx atras" aria-hidden="true" style="right:calc(-.6 * var(--fora));top:16%;width:26px;--fx:calc(var(--pw) * -.4);--fy:calc(var(--pw) * .3);--d:2.6s;--r:8deg"><img class="pxi" src="img/px_flor.svg" alt=""></span><i class="fx tm-vaga" aria-hidden="true" style="left:calc(-.5 * var(--fora));top:40%;--d:1.9s"></i><i class="fx tm-vaga" aria-hidden="true" style="right:calc(-.4 * var(--fora));top:30%;--d:2.1s"></i><i class="fx tm-vaga" aria-hidden="true" style="right:calc(-.8 * var(--fora));top:86%;--d:2.3s"></i></figure></div>
+      </div>
+    </article>
+    <article class="project" id="caiu" data-world="caiu" aria-labelledby="t-caiu">
+      <div class="wrap">
+        <div class="info">
+          <img class="logo rv" src="img/logo_caiu.webp" width="389" height="140" alt="caiu.pt" loading="lazy" style="max-height:50px">
+          <h3 class="rv" id="t-caiu">O preço caiu mesmo?</h3>
+          <p class="rv">Comparador de preços do Continente, Pingo Doce e Auchan, com mais de 16&nbsp;000 produtos. Fiz o nome, a marca e o site: os preços atualizam-se sozinhos três vezes por dia, apanha as promoções falsas e diz onde o cabaz fica mais barato.</p>
+          <a class="btn btn-secondary rv" href="https://caiu.pt" target="_blank" rel="noopener">Abrir caiu.pt ↗</a>
+        </div>
+        <div class="shot"><figure class="cena c-caiu r-cai" style="--abre:#FFD83D"><div class="phone"><div class="ecra"><img class="site" src="img/caiu.webp" width="640" height="1385" alt="Site caiu.pt no telemóvel: o preço caiu mesmo?" loading="lazy"><div class="abre" aria-hidden="true"><img src="img/logo_caiu.webp" width="389" height="140" alt="" style="width:46%"></div></div></div><div class="fx etq e-real" aria-hidden="true"><i class="furo"></i><span class="e-prod">Azeite virgem extra · 1&nbsp;L</span><span class="e-antes">8,99&nbsp;€</span><b class="e-agora">6,49&nbsp;€</b><span class="e-selo">↓ caiu a sério</span></div><div class="fx etq e-falsa" aria-hidden="true"><i class="furo"></i><span class="e-prod">Café em cápsulas · 10&nbsp;un.</span><span class="e-promo">Promoção −25%</span><b class="e-agora">3,79&nbsp;€</b><span class="carimbo-f">Falsa<small>igual há 30 dias</small></span></div><span class="fx sai-fx c-seta" aria-hidden="true" style="left:calc(-.7 * var(--fora));top:83%;--fx:calc(var(--pw) * .5);--fy:calc(var(--pw) * -.4);--d:3.1s"><b>−2,50&nbsp;€</b></span></figure></div>
+      </div>
+    </article>
+
+    <article class="project" id="ganhas" data-world="ganhas" aria-labelledby="t-ganhas">
+      <div class="wrap">
+        <div class="info">
+          <img class="logo rv" src="img/logo_ganhas.webp" width="597" height="120" alt="ganhas.pt" loading="lazy" style="max-height:36px">
+          <h3 class="rv" id="t-ganhas">Quanto ganhas?</h3>
+          <p class="rv">Salários reais em Portugal, sem conta e sem nome. Fiz o nome, a marca e o site: comparas o teu salário com os números oficiais e com quem faz o mesmo que tu, e a calculadora passa de bruto a líquido com as tabelas de IRS do ano, que se atualizam sozinhas.</p>
+          <a class="btn btn-secondary rv" href="https://ganhas.pt" target="_blank" rel="noopener">Abrir ganhas.pt ↗</a>
+        </div>
+        <div class="shot"><figure class="cena c-ganhas r-marca" style="--abre:#0F110F"><div class="phone"><div class="ecra"><img class="site" src="img/ganhas.webp" width="640" height="1385" alt="Site ganhas.pt no telemóvel: quanto ganhas?" loading="lazy"><div class="abre" aria-hidden="true"><span class="gn-logo"><i class="gn-risco"></i><img src="img/logo_ganhas.webp" width="597" height="120" alt=""></span></div></div></div><div class="fx recibo" aria-hidden="true"><span class="rc-t">Recibo · tabela I, 2026</span><span class="rc-l"><i>Bruto</i><b>1&nbsp;400,00&nbsp;€</b></span><span class="rc-l rc-m"><i>Segurança Social</i><b>−154,00&nbsp;€</b></span><span class="rc-l rc-m"><i>IRS</i><b>−144,00&nbsp;€</b></span><span class="rc-l rc-liq"><i>Líquido</i><b><em>1&nbsp;102,00&nbsp;€</em></b></span></div><div class="fx metade" aria-hidden="true"><span class="barras"><i style="--h:.34"></i><i style="--h:.78"></i><i style="--h:1"></i><i style="--h:.62"></i><i style="--h:.38"></i><i style="--h:.22"></i><i style="--h:.12"></i></span><span class="m-txt"><b>Metade</b> tinha base abaixo de 950&nbsp;€ <small>(2024)</small></span></div></figure></div>
       </div>
     </article>
   </section>

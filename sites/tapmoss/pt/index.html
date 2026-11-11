@@ -1548,7 +1548,7 @@ html.tinfo #app *{overscroll-behavior:contain}
     <div class="tFoot"><div id="tBody"></div>
     <button id="fsT" aria-label="Ecrã inteiro"><span id="icFsT"></span></button>
     <button id="tLangW" aria-label="Língua" aria-haspopup="listbox"><span id="icLangT"></span><span id="tLangN"></span></button>
-    <p class="t-credit"><span class="tInfoW"><a href="#info" id="tInfo">Como se joga</a> · </span><a href="/about/" id="tAbout" data-i>Sobre o jogo</a> · <a href="/guide/flowers/" id="tGuide" data-i>Guia</a> · made by <a href="https://dinissousa.pt" target="_blank" rel="noopener">dinissousa</a></p></div>
+    <p class="t-credit"><span class="tInfoW"><a href="#info" id="tInfo">Como se joga</a> · </span><a href="/about/" id="tAbout" data-i>Sobre o jogo</a> · <a href="/guide/flowers/" id="tGuide" data-i>Guia</a> · made by <a href="https://dinissousa.pt" target="_blank" rel="noopener">dinissousa.pt</a></p></div>
   </div>
 </div>
 
@@ -10888,7 +10888,7 @@ function renderSheet0(live){
     h+=`<p class="note">${LIVE.wx?_t('O tempo vem do Open-Meteo e atualiza a cada 20 minutos.'):_t('Sem ligação ao serviço do tempo, o sol, as nuvens e a chuva são simulados para este sítio.')}</p>`;
     h+=confirmNew?`<div class="confirm"><p>${_t("Perdes todo o progresso. Queres mesmo recomeçar?")}</p><div class="row2"><button class="btn ghost" id="noNew">${_t("Cancelar")}</button><button class="btn danger" id="yesNew">${_t("Sim, recomeçar")}</button></div></div>`:`<button class="btn ghost wide" id="newScene" style="margin-top:8px">${_t("Recomeçar do zero")}</button>`;
     h+=contaHTML();
-    h+=`<p class="credit"><a href="${LPRE}/about/">${_t('Sobre o jogo')}</a> · <a href="${LPRE}/guide/flowers/">${_t('Guia')}</a> · made by <a href="https://dinissousa.pt" target="_blank" rel="noopener">dinissousa</a></p>`;
+    h+=`<p class="credit"><a href="${LPRE}/about/">${_t('Sobre o jogo')}</a> · <a href="${LPRE}/guide/flowers/">${_t('Guia')}</a> · made by <a href="https://dinissousa.pt" target="_blank" rel="noopener">dinissousa.pt</a></p>`;
   }
   else if(sheetName==='prof'){title=_t('Perfil');h+=tabsHTML('prof');
     const c=here(),tr=TRAITS.find(t=>t[0]===S.av.trait)||TRAITS[0],d=new Date(S.created||now());
@@ -14624,7 +14624,7 @@ function frame(t){
   tick(dt);draw();guideTick();
 }
 /* versões novas: quando o jogo muda no servidor, guarda o progresso e recarrega a página */
-const BUILD='6c544045f55b',UKEY='tapmoss.upd';const UPD={on:false,go:false,at:0};
+const BUILD='378db209e6ec',UKEY='tapmoss.upd';const UPD={on:false,go:false,at:0};
 // the new version downloads in the background while the game goes on; the reload only comes once the whole page is here,
 // so a slow network never leaves a half-built page on screen. The offline helper (sw.js) hands this copy over at the reload.
 const NEXTC='tapmoss-next',pgKey=()=>{let p=location.pathname.replace(/index\.html$/,'');if(!p.endsWith('/'))p+='/';return p};
