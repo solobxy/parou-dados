@@ -16,9 +16,10 @@ let falhas = 0;
 const ok = (nome, cond, extra = '') => { if (!cond) falhas++; console.log(cond ? 'OK     ' : 'FALHOU ', nome, extra); };
 
 const procurar = async (q) => ((await (await fetch(`${BASE}/api/lines?q=${encodeURIComponent(q)}`)).json()).lines || []);
-const cm = [...(await procurar('1001')), ...(await procurar('Carris Metropolitana'))].filter((l) => String(l.id).startsWith('cm:'));
+const unicas = (ls) => [...new Map(ls.map((l) => [l.id, l])).values()];
+const cm = unicas([...(await procurar('1001')), ...(await procurar('Carris Metropolitana')), ...(await procurar('2001'))].filter((l) => String(l.id).startsWith('cm:')));
 const outras = (await procurar('200')).concat(await procurar('Porto')).filter((l) => !/^cm:|^metro_lisboa:/.test(String(l.id)) && !/carris metropolitana|metro de lisboa/i.test(String(l.operator)));
-ok('[preparar] há linhas reais da Carris Metropolitana e de outro operador', cm.length >= 2 && outras.length >= 1, `${cm.slice(0, 2).map((l) => l.id)} ${outras[0]?.id}`);
+ok('[preparar] há duas linhas reais diferentes da Carris Metropolitana e uma de outro operador', cm.length >= 2 && cm[0].id !== cm[1].id && outras.length >= 1, `${cm.slice(0, 2).map((l) => l.id)} ${outras[0]?.id}`);
 
 const browser = await chromium.launch();
 // Notificações e push simulados: a permissão começa em `perm`; o push devolve uma subscrição falsa
