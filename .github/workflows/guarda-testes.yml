@@ -50,6 +50,11 @@ jobs:
       - name: Pagamentos da DupliCasa (ifthenpay simulada)
         run: python3 duaschaves/testes/testar_pagamentos.py
 
+      - name: Páginas de piercings do Adri em dia com os preços do site
+        run: |
+          python3 adri/paginas.py
+          git diff --exit-code -- sites/adribodypiercing/piercing sites/adribodypiercing/sitemap.xml || { echo "Corre python3 adri/paginas.py e publica as páginas"; exit 1; }
+
       - name: Instalar e verificar os tipos
         working-directory: app
         run: |

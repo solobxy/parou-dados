@@ -985,6 +985,7 @@ dialog.doc[open] .doc-cx{animation:pop .5s var(--ease)}
       <span>© 2026 AdriBodyPiercing</span>
       <nav aria-label="Rodapé">
         <a href="#precos">Preços</a>
+        <a href="/piercing/">Todos os piercings</a>
         <a href="#cuidados">Cuidados</a>
         <a href="#vale">Vale de oferta</a>
         <a href="https://www.instagram.com/adrifilhoo" target="_blank" rel="noopener">Instagram</a>
@@ -1649,6 +1650,11 @@ function vagaHeroi(){
   }
   el.hidden = true;
 }
+/* vindo de uma página de piercing (/?p=helix#marcar): já fica escolhido */
+(function(){ try{ var p = new URLSearchParams(location.search).get('p');
+  if (p && byId[p] && byId[p].z !== 'servico' && sel.indexOf(p) < 0) toggle(p);
+  if (p) history.replaceState(null, '', location.pathname + location.hash);
+}catch(e){} })();
 desenharSelecao(); desenharEscolhidos(); desenharHoras();
 carregarMes(mesVis, escolherMes);
 })();
