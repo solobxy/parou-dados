@@ -133,11 +133,28 @@
   window.ganhasLiquido = liquido;
 
   // ---------- comparador do herói ----------
+  // A pergunta, o campo e o resultado ficam no mesmo ecrã: o número grande muda enquanto se escreve.
   const comp = $('#comparador');
-  if (comp && D.distribuicao) {
+  const cartao = $('#resultado');
+  if (comp && cartao && D.distribuicao) {
     const inp = $('#salario', comp);
-    const frase = $('#res-frase');
-    const extra = $('#res-extra');
+    const pre = $('#res-pre'), numEl = $('#res-num'), pos = $('#res-pos');
+    const dadosEl = $('#res-dados'), erro = $('#salario-erro'), resumo = $('#afinar-resumo');
+    const liqEl = $('#res-liq'), liqA = $('#res-liq-a'), medEl = $('#res-med'), difEl = $('#res-dif');
+    const seguirLiq = $('#seguir-liquido');
+    // O recibo de exemplo mais abaixo passa a ser o da pessoa
+    const ex = ['ex-tit', 'ex-base', 'ex-ss', 'ex-irs', 'ex-liq'].map((id) => $('#' + id));
+    ex.forEach((el) => { if (el) el.dataset.orig = el.textContent; });
+    const recibo = (v) => {
+      if (!ex[0]) return;
+      if (!v) { ex.forEach((el) => { if (el) el.textContent = el.dataset.orig; }); return; }
+      const r = liquido({ bruto: v, meses: 14, tabela: 'I', dependentes: 0 });
+      ex[0].textContent = 'Com o teu salário: ' + euro(v) + ' brutos';
+      if (ex[1]) ex[1].textContent = euro(v, 2);
+      if (ex[2]) ex[2].textContent = '− ' + euro(r.ss, 2);
+      if (ex[3]) ex[3].textContent = '− ' + euro(r.irs, 2);
+      if (ex[4]) ex[4].textContent = euro(r.liquidoMes, 2);
+    };
     const DD = D.distribuicao;
     let ultimoEnvio = 0;
     const ler_valor = () => {
@@ -145,8 +162,16 @@
       return parseFloat(t);
     };
     const histos = $$('[data-histo]');
+    const ligacoes = (v) => {
+      const q = v ? '?bruto=' + Math.round(v) : '';
+      if (liqA) liqA.href = '/calculadora/' + q;
+      if (seguirLiq) seguirLiq.href = '/calculadora/' + q;
+    };
     const atualizar = (registar) => {
       const tipo = ($('input[name="tipo"]:checked', comp) || {}).value || 'base';
+      const meses = $('input[name="meses"]:checked', comp);
+      const doze = !!(meses && meses.value === '12');
+      if (resumo) resumo.textContent = (tipo === 'base' ? 'Só o vencimento base' : 'Com prémios e subsídios') + ' · ' + (doze ? '12 meses' : '14 meses');
       const S = DD[tipo];
       histos.forEach((h) => { h.hidden = h.dataset.histo !== tipo; });
       const h = histos.find((x) => x.dataset.histo === tipo);
@@ -154,16 +179,23 @@
       const barras = h ? $$('.histo-barras i', h) : [];
       const v = ler_valor();
       barras.forEach((b) => b.classList.remove('tu'));
+      const rp = $('#res-partilha');
       if (!v || v < 100) {
-        frase.innerHTML = 'Em ' + DD.ano + ', metade de quem trabalhava a tempo completo ' + (tipo === 'base' ? 'tinha um vencimento base abaixo de ' : 'ganhava menos de ') +
-          '<span class="mk on">' + euro(S.mediana) + '</span>.';
-        extra.textContent = 'Escreve o teu salário para veres onde estás.';
+        cartao.dataset.estado = 'vazio';
+        pre.textContent = 'Metade de quem trabalha a tempo completo ' + (tipo === 'base' ? 'tem um vencimento base abaixo de' : 'ganha menos de');
+        numEl.dataset.v = '0';
+        numEl.textContent = euro(S.mediana);
+        pos.textContent = 'E tu? Escreve o teu salário.';
+        if (dadosEl) dadosEl.hidden = true;
         if (marca) marca.hidden = true;
-        ultimoTexto = null; const rp0 = $('#res-partilha'); if (rp0) rp0.hidden = true;
+        if (rp) rp.hidden = true;
+        ultimoTexto = null;
+        ligacoes(0);
+        recibo(0);
         return;
       }
-      const meses = $('input[name="meses"]:checked', comp);
-      const v14 = meses && meses.value === '12' ? v * 12 / 14 : v;
+      if (erro) erro.hidden = true;
+      const v14 = doze ? v * 12 / 14 : v;
       const p = percentil(v14, S.pontos);
       const [xmin, xmax] = S.eixo;
       const x = Math.max(0, Math.min(1, (v14 - xmin) / (xmax - xmin)));
@@ -176,28 +208,35 @@
       }
       const idx = Math.min(barras.length - 1, Math.floor((v14 - xmin) / 100));
       if (idx >= 0) barras[idx] && barras[idx].classList.add('tu');
-      const oQue = tipo === 'base' ? 'tinha um vencimento base mais baixo' : 'ganhava menos';
-      let texto;
+      cartao.dataset.estado = 'cheio';
       if (v14 < DD.minimo_hoje) {
-        texto = 'Esse valor fica abaixo do salário mínimo de ' + (DD.minimo_ano || '') + ' a tempo completo (' + euro(DD.minimo_hoje) + '). Se trabalhas a tempo parcial, a comparação não serve.';
-      } else if (v14 <= S.pontos[0][0] && S.pontos[0][1] > 0) {
-        texto = 'Em ' + DD.ano + ', <span class="mk on">' + pct(S.pontos[0][1]) + '</span> de quem trabalhava a tempo completo recebia o salário mínimo de então.';
+        pre.textContent = 'O salário mínimo a tempo completo' + (DD.minimo_ano ? ' em ' + DD.minimo_ano : '') + ' é de';
+        numEl.dataset.v = '0';
+        numEl.textContent = euro(DD.minimo_hoje);
+        pos.textContent = 'O valor que escreveste fica abaixo. Se trabalhas a tempo parcial, esta comparação não serve.';
       } else if (p >= 90) {
-        texto = 'Em ' + DD.ano + ', estarias nos <span class="mk on">10 % que mais ganhavam</span> em Portugal.';
+        pre.textContent = 'Estás nos';
+        numEl.dataset.v = '0';
+        numEl.textContent = pct(10);
+        pos.textContent = 'que mais ganham em Portugal.';
       } else {
-        texto = 'Em ' + DD.ano + ', <span class="mk on num">' + pct(Math.max(1, p)) + '</span> de quem trabalhava a tempo completo ' + oQue + ' do que isto.';
+        pre.textContent = 'Ganhas mais do que';
+        if (!/%/.test(numEl.textContent)) numEl.dataset.v = '0';
+        contar(numEl, Math.max(1, Math.round(p)), (n) => pct(Math.round(n)), reduzido ? 1 : 500);
+        pos.textContent = 'de quem trabalha a tempo completo em Portugal' + (tipo === 'base' ? '.' : ', contando prémios e subsídios.');
       }
-      frase.innerHTML = texto;
       const dif = v14 - S.mediana;
-      extra.innerHTML = 'A mediana era <strong>' + euro(S.mediana) + '</strong>' + (tipo === 'base' ? ' de vencimento base. ' : '. ') +
-        (Math.abs(dif) < 15 ? 'Estás mesmo no meio.' : 'Estás ' + euro(Math.abs(dif)) + (dif > 0 ? ' acima.' : ' abaixo.')) +
-        (D.irs ? ' Em líquido, ficam cerca de <strong>' + euro(liquido({ bruto: v14, meses: 14, tabela: 'I', dependentes: 0 }).liquidoMes) + '</strong> por mês (não casado, sem dependentes).' : '') +
-        '<span class="res-nota" style="display:block">Os salários subiram desde ' + DD.ano + ' (o mínimo passou de ' + euro(DD.minimo) + ' para ' + euro(DD.minimo_hoje) + '), por isso hoje a tua posição real é um pouco mais baixa.</span>';
-      guardar('ultimo', String(v));
+      if (liqEl && D.irs) liqEl.textContent = euro(liquido({ bruto: v14, meses: 14, tabela: 'I', dependentes: 0 }).liquidoMes);
+      if (medEl) medEl.textContent = euro(S.mediana);
+      if (difEl) difEl.textContent = Math.abs(dif) < 15 ? 'Estás mesmo no meio' : 'Estás ' + euro(Math.abs(dif)) + (dif > 0 ? ' acima' : ' abaixo');
+      if (dadosEl) dadosEl.hidden = false;
+      ligacoes(v14);
+      recibo(D.irs && v14 >= DD.minimo_hoje ? v14 : 0);
+      guardar('ultimo', (inp.value || '').trim().slice(0, 12));
       ultimoTexto = (p >= 90 ? 'Em ' + DD.ano + ', eu estaria nos 10 % que mais ganhavam em Portugal.'
         : v14 < DD.minimo_hoje || (v14 <= S.pontos[0][0] && S.pontos[0][1] > 0) ? null
-        : 'Em ' + DD.ano + ', ' + pct(Math.max(1, p)) + ' de quem trabalhava a tempo completo em Portugal ganhava menos do que eu.') ;
-      const rp = $('#res-partilha'); if (rp) rp.hidden = !ultimoTexto;
+        : 'Em ' + DD.ano + ', ' + pct(Math.max(1, p)) + ' de quem trabalhava a tempo completo em Portugal ganhava menos do que eu.');
+      if (rp) rp.hidden = !ultimoTexto;
       if (registar && Date.now() - ultimoEnvio > 4000) { ultimoEnvio = Date.now(); estat('comparou', tipo + ':' + Math.round(p / 10) * 10); }
     };
     let tempo, ultimoTexto = null;
@@ -213,17 +252,26 @@
         const ok = $('#partilha-ok'); if (ok) { ok.hidden = false; setTimeout(() => { ok.hidden = true; }, 3000); }
       } catch (e) { /* a pessoa cancelou */ }
     });
-    inp.addEventListener('input', () => { clearTimeout(tempo); tempo = setTimeout(() => atualizar(true), 180); });
+    inp.addEventListener('input', () => { clearTimeout(tempo); tempo = setTimeout(() => atualizar(true), 150); });
     $$('input[name="meses"], input[name="tipo"]', comp).forEach((r) => r.addEventListener('change', () => atualizar(true)));
+    // «Comparar» (ou Enter): fecha o teclado e traz o resultado para o ecrã
+    comp.addEventListener('submit', (ev) => {
+      ev.preventDefault();
+      const v = ler_valor();
+      if (!v || v < 100) { if (erro) erro.hidden = false; inp.focus(); return; }
+      clearTimeout(tempo);
+      atualizar(true);
+      inp.blur();
+      estat('comparar_botao', '1');
+      setTimeout(() => {
+        const r = cartao.getBoundingClientRect();
+        if (r.top > innerHeight * 0.45 || r.top < 0) cartao.scrollIntoView({ behavior: reduzido ? 'auto' : 'smooth', block: 'start' });
+      }, 300);
+    });
     addEventListener('resize', () => atualizar(false), { passive: true });
     const antes = ler('ultimo');
     if (antes && !inp.value) inp.value = antes;
     atualizar(false);
-    // barra fixa no telemóvel quando o comparador sai do ecrã
-    const fixa = $('.barra-fixa');
-    if (fixa && io) {
-      new IntersectionObserver(([e]) => fixa.classList.toggle('on', !e.isIntersecting && e.boundingClientRect.top < 0)).observe(comp);
-    }
   }
 
   // ---------- calculadora de salário líquido ----------
@@ -260,6 +308,10 @@
       clearTimeout(correr.t); correr.t = setTimeout(() => estat('calculou', String(Math.round(bruto / 100) * 100)), 1500);
       const ch = $('#c-chamada'); if (ch) ch.hidden = !(bruto >= 100);
     };
+    try {
+      const q = new URLSearchParams(location.search).get('bruto');
+      if (q && /^\d{3,6}$/.test(q)) $('#c-bruto').value = q;
+    } catch (e) { /* sem parâmetros */ }
     campos.forEach((c) => c.addEventListener('input', correr));
     const fc = $('#form-calc'); if (fc) fc.addEventListener('submit', (ev) => ev.preventDefault());
     correr();

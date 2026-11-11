@@ -131,7 +131,7 @@ def pagina(caminho, titulo, descricao, corpo, *, dados=None, ld=None, prioridade
 <header class="topo"><div class="mold">
 <a class="marca" href="/" aria-label="ganhas.pt, início">ganhas<span>.pt</span></a>
 <nav class="nav" aria-label="Principal">{nav}</nav>
-<a class="botao" href="/partilhar/">Partilhar</a>
+<a class="botao topo-sec" href="/partilhar/">Partilhar</a>
 </div></header>
 <main id="conteudo">
 {corpo}
@@ -236,16 +236,23 @@ def inicio():
     fp_lista = ''.join(f'<li><a href="/funcao-publica/{k}/">{e(por[k]["titulo"])}</a><span class="cifra">desde {euro(por[k]["min"])}</span></li>'
                        for k in ('professores', 'enfermeiros', 'medicos', 'psp', 'tecnico-superior', 'assistente-operacional') if k in por)
     g, b = d['ganho'], d['base']
+    n_prof = len(CAT['profissoes'])
     corpo = f'''
-<section class="heroi"><div class="mold">
+<section class="heroi"><div class="mold heroi-grelha">
+<div class="heroi-esq">
 <h1>Quanto ganhas?</h1>
-<p class="lede">Compara o teu salário com os números oficiais de Portugal e com quem faz o mesmo que tu. Sem conta, sem nome, sem cookies.</p>
-<div class="comparador" id="comparador">
-<div class="campo-grande">
-<label for="salario">O teu salário bruto por mês</label>
-<div class="linha-valor"><input id="salario" name="salario" inputmode="decimal" autocomplete="off" placeholder="1 100" aria-describedby="salario-ajuda"><span class="unid">€ brutos</span></div>
-<p class="ajuda" id="salario-ajuda">O valor antes de descontos, como aparece no recibo.</p>
-<div class="opcoes" role="radiogroup" aria-label="O que estás a escrever">
+<p class="lede curta">Vê onde está o teu salário no país, em 5 segundos. Sem conta, sem nome.</p>
+<form class="comparador" id="comparador" action="/" novalidate>
+<label class="caixa-salario" for="salario">
+<span class="caixa-rotulo">O teu salário bruto por mês</span>
+<span class="caixa-linha"><input id="salario" name="salario" inputmode="decimal" enterkeyhint="done" autocomplete="off" placeholder="ex.: 1200" aria-describedby="salario-ajuda"><span class="unid">€</span></span>
+</label>
+<p class="ajuda" id="salario-ajuda">Antes dos descontos, como aparece no recibo.</p>
+<p class="erro-campo" id="salario-erro" role="alert" hidden>Escreve um valor, por exemplo 1200.</p>
+<button class="botao largo" type="submit" id="comparar">Comparar</button>
+<details class="afinar">
+<summary><span id="afinar-resumo">Só o vencimento base · 14 meses</span><span class="afinar-mudar">Mudar</span></summary>
+<div class="opcoes" role="radiogroup" aria-label="O que escreveste">
 <label><input type="radio" name="tipo" value="base" checked><span>Só o vencimento base</span></label>
 <label><input type="radio" name="tipo" value="ganho"><span>Com prémios e subsídios regulares</span></label>
 </div>
@@ -253,25 +260,45 @@ def inicio():
 <label><input type="radio" name="meses" value="14" checked><span>14 meses</span></label>
 <label><input type="radio" name="meses" value="12"><span>12 meses (duodécimos)</span></label>
 </div>
+</details>
+</form>
 </div>
-<div class="resultado" aria-live="polite">
-<p class="res-frase" id="res-frase">Em {ano}, metade de quem trabalhava a tempo completo tinha um vencimento base abaixo de <span class="mk">{euro(b["mediana"])}</span>.</p>
-<p class="res-extra" id="res-extra">Escreve o teu salário para veres onde estás.</p>
-<p class="res-partilha" id="res-partilha" hidden><button class="ligacao-botao" type="button" id="partilhar-resultado">Partilhar o resultado</button><span id="partilha-ok" class="res-nota" hidden>Copiado. Cola onde quiseres.</span></p>
+<div class="res-cartao" id="resultado" data-estado="vazio" tabindex="-1">
+<div aria-live="polite">
+<p class="res-pre" id="res-pre">Metade de quem trabalha a tempo completo ganha menos de</p>
+<p class="res-grande"><span class="mk on" id="res-num">{euro(b["mediana"])}</span></p>
+<p class="res-pos" id="res-pos">E tu? Escreve o teu salário.</p>
+</div>
 {histograma_html(d, "base", True)}{histograma_html(d, "ganho", False)}
-<p class="fonte">Quem trabalha por conta de outrem a tempo completo, {e(d["ambito"])}, outubro de {ano}. Cada barra junta 100 €. <a href="{e(O["fontes"]["decis"]["url"])}" rel="noopener">DGCP/MTSSS, Quadros de Pessoal</a>.</p>
+<div class="res-dados" id="res-dados" hidden>
+<a class="rd" id="res-liq-a" href="/calculadora/"><span class="rd-r">Levas para casa</span><span class="rd-v" id="res-liq">–</span><span class="rd-n">por mês, sem dependentes ›</span></a>
+<div class="rd"><span class="rd-r">Metade ganha menos de</span><span class="rd-v" id="res-med">{euro(b["mediana"])}</span><span class="rd-n" id="res-dif">–</span></div>
+</div>
+<p class="res-partilha" id="res-partilha" hidden><button class="ligacao-botao" type="button" id="partilhar-resultado">Partilhar o resultado</button><span id="partilha-ok" class="res-nota" hidden>Copiado. Cola onde quiseres.</span></p>
+<p class="fonte" id="res-fonte">Quem trabalhava a tempo completo, {e(d["ambito"])}, outubro de {ano}: os dados oficiais mais recentes (<a href="{e(O["fontes"]["decis"]["url"])}" rel="noopener">DGCP/MTSSS</a>). Os salários subiram desde então, por isso hoje a tua posição é um pouco mais baixa.</p>
 </div>
 </div>
-<p class="acoes"><a class="botao" href="/partilhar/">Comparar com a minha profissão</a>
-<a class="botao sec2" href="/calculadora/">Calcular o meu líquido</a></p>
+<div class="mold">
+<h2 class="vis">Compara mais</h2>
+<nav class="seguir" aria-label="Compara mais">
+<a class="cartao-seguir principal" id="seguir-liquido" href="/calculadora/"><b>Quanto levas para casa</b><span>O recibo linha a linha, com o IRS de {O["irs"]["ano"]}</span></a>
+<a class="cartao-seguir" href="/profissoes/"><b>Na tua profissão</b><span>{n_prof} profissões</span></a>
+<a class="cartao-seguir" href="/concelhos/"><b>No teu concelho</b><span>Os 308 concelhos</span></a>
+<a class="cartao-seguir" href="/funcao-publica/"><b>No Estado</b><span>{len(por)} carreiras, bruto e líquido</span></a>
+<a class="cartao-seguir" href="/europa/"><b>Na Europa</b><span>Portugal ao lado dos outros</span></a>
+<a class="cartao-seguir" href="/partilhar/"><b>A tua empresa paga bem?</b><span>Partilha o teu salário em 30 segundos</span></a>
+</nav>
 <p class="fonte" data-contador hidden></p>
 </div></section>
 
-<section class="sec"><div class="mold par">
-<div class="entra"><h2>Metade ganhava menos de {euro(g["mediana"])}</h2></div>
-<div class="entra"><p class="lede">Contando prémios e subsídios regulares, o ganho médio era {euro(d["media"])}, mas a média engana: os salários mais altos puxam-na para cima.
-A mediana diz o que ganha a pessoa do meio. Em outubro de {ano}, com o salário mínimo nos {euro(d["minimo"])}, {pct(b["ate_1000"])} de quem trabalhava a tempo completo tinha
-um vencimento base até {euro(1000)}, e só 1 em cada 10 ganhava mais de {euro(g["d9"])}.</p>{fonte("decis")}</div>
+<section class="sec"><div class="mold">
+<h2 class="entra">Portugal em {ano}, em 3 números</h2>
+<div class="tres-numeros">
+<div class="entra"><p class="gigante-n">{euro(g["mediana"])}</p><p>Metade ganhava menos do que isto, contando prémios e subsídios. A média era {euro(d["media"])}, puxada pelos salários mais altos.</p></div>
+<div class="entra"><p class="gigante-n">{pct(b["ate_1000"])}</p><p>tinha um vencimento base até {euro(1000)}, com o salário mínimo nos {euro(d["minimo"])}.</p></div>
+<div class="entra"><p class="gigante-n">1 em 10</p><p>ganhava mais de {euro(g["d9"])} por mês.</p></div>
+</div>
+{fonte("decis")}
 </div></section>
 
 <section class="sec folha"><div class="mold grelha2">
@@ -279,11 +306,11 @@ um vencimento base até {euro(1000)}, e só 1 em cada 10 ganhava mais de {euro(g
 <p class="lede espaco">Com as tabelas de IRS de {O["irs"]["ano"]}, a Segurança Social e o subsídio de alimentação, a calculadora mostra o teu recibo linha a linha.{(chr(10) + f'Em novembro de {O["irs"]["ano"]}, a retenção de IRS é metade.') if NOV else ''}</p>
 <p class="espaco"><a class="botao" href="/calculadora/">Abrir a calculadora</a></p></div>
 <div class="recibo entra" aria-label="Exemplo de recibo">
-<h3>Exemplo: {euro(O["exemplo"]["bruto"])} brutos</h3>
-<div class="linha"><span class="r">Vencimento base</span><span class="p"></span><span class="v">{euro(O["exemplo"]["bruto"], 2)}</span></div>
-<div class="linha menos"><span class="r">Segurança Social (11 %)</span><span class="p"></span><span class="v">− {euro(O["exemplo"]["ss"], 2)}</span></div>
-<div class="linha menos"><span class="r">Retenção de IRS</span><span class="p"></span><span class="v">− {euro(O["exemplo"]["irs"], 2)}</span></div>
-<div class="linha total"><span class="r">Líquido</span><span class="p"></span><span class="v"><span class="mk">{euro(O["exemplo"]["liquido"], 2)}</span></span></div>
+<h3 id="ex-tit">Exemplo: {euro(O["exemplo"]["bruto"])} brutos</h3>
+<div class="linha"><span class="r">Vencimento base</span><span class="p"></span><span class="v" id="ex-base">{euro(O["exemplo"]["bruto"], 2)}</span></div>
+<div class="linha menos"><span class="r">Segurança Social (11 %)</span><span class="p"></span><span class="v" id="ex-ss">− {euro(O["exemplo"]["ss"], 2)}</span></div>
+<div class="linha menos"><span class="r">Retenção de IRS</span><span class="p"></span><span class="v" id="ex-irs">− {euro(O["exemplo"]["irs"], 2)}</span></div>
+<div class="linha total"><span class="r">Líquido</span><span class="p"></span><span class="v"><span class="mk" id="ex-liq">{euro(O["exemplo"]["liquido"], 2)}</span></span></div>
 <p class="fonte">Não casado, sem dependentes, Continente, tabela I de {O["irs"]["ano"]}, sem subsídio de alimentação.</p>
 </div>
 </div></section>
@@ -320,8 +347,7 @@ um vencimento base até {euro(1000)}, e só 1 em cada 10 ganhava mais de {euro(g
 <section class="sec"><div class="mold par">
 <div class="entra"><p class="gigante" aria-hidden="true">5+</p></div>
 <div class="entra"><h2>A tua empresa paga bem?</h2>
-<p class="lede espaco">Partilha o teu salário em 30 segundos. Só mostramos a mediana de uma empresa ou profissão quando há pelo menos 5 pessoas diferentes,
-24 horas depois, arredondada à dezena. Não guardamos o teu IP nem pedimos o teu nome.</p>
+<p class="lede espaco">Partilha o teu salário em 30 segundos, sem nome. Uma empresa só aparece quando há pelo menos 5 pessoas.</p>
 <p class="espaco"><a class="botao" href="/partilhar/">Partilhar o meu salário</a></p></div>
 </div></section>
 {secao_europa_curta(eu, pt)}
