@@ -185,6 +185,22 @@ www.jinxed.world {
 		root * /var/lib/duaschaves-dados/seo
 		file_server
 	}
+	# As mesmas páginas em inglês, espanhol e francês (paginas_idiomas.py)
+	handle /en/* {
+		root * /var/lib/duaschaves-dados/seo
+		file_server
+	}
+	handle /es/* {
+		root * /var/lib/duaschaves-dados/seo
+		file_server
+	}
+	handle /fr/* {
+		root * /var/lib/duaschaves-dados/seo
+		file_server
+	}
+	redir /en /en/rent/ 302
+	redir /es /es/alquiler/ 302
+	redir /fr /fr/location/ 302
 	# Versão longa do llms.txt, com os números de hoje (gerada com as páginas)
 	handle /llms-full.txt {
 		root * /var/lib/duaschaves-dados/seo

@@ -213,7 +213,7 @@ if [ -f "$SERV/duaschaves-recolha.service" ]; then
     echo "$FR" > /var/lib/duaschaves-dados/.forcar && systemctl restart --no-block duaschaves-recolha.service
   fi
   # Páginas para o Google: geradas logo que o gerador muda (e depois de cada recolha, pelo serviço)
-  PV=$(sha256sum "$BASE/servidor/duaschaves/paginas.py" 2>/dev/null | cut -c1-16)
+  PV=$(cat "$BASE/servidor/duaschaves/paginas.py" "$BASE/servidor/duaschaves/paginas_idiomas.py" 2>/dev/null | sha256sum | cut -c1-16)
   if [ -n "$PV" ] && [ "$(cat /var/lib/duaschaves-dados/.paginas.versao 2>/dev/null)" != "$PV" ]; then
     runuser -u parou -- /usr/bin/python3 "$BASE/servidor/duaschaves/paginas.py" /var/lib/duaschaves-dados/anuncios.json /var/lib/duaschaves-dados/seo \
       && echo "$PV" > /var/lib/duaschaves-dados/.paginas.versao

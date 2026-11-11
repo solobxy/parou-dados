@@ -147,23 +147,70 @@ def desconto(a):
     return round(pct * 100) if 0.15 <= pct < 0.40 and med - a['renda'] >= 40 else 0
 
 
-def cartao(a):
+UI = {
+    'pt': {'html': 'pt-PT', 'og': 'pt_PT', 'mes': '/mês', 'consulta': 'Preço sob consulta', 'abaixo': '{d}% abaixo do normal', 'alt': '{t} para arrendar em {l}',
+           'tipos': {}, 'casa': 'Casa', 'aqui': 'Estás aqui', 'faq': 'Perguntas frequentes', 'ver': 'Ver casas', 'botao': 'Pesquisar com filtros e alertas',
+           'og_alt': 'DupliCasa: casas para arrendar em Portugal, num só lugar',
+           'burla_t': 'Arrendar sem cair numa burla',
+           'burla': ['Visita a casa antes de pagar qualquer valor.', 'Desconfia de rendas muito abaixo das outras na zona.', 'Confirma que quem anuncia é mesmo o dono.',
+                     'Em breve, com o pagamento seguro da DupliCasa, a entrada só vai chegar ao senhorio quando receberes as chaves.'],
+           'burla_links': '<a href="/arrendar/guias/como-evitar-burlas-no-arrendamento/">Guia: como evitar burlas no arrendamento</a> · <a href="/arrendar/guias/">Todos os guias</a>',
+           'rodape': 'DupliCasa · casas e quartos para alugar em Portugal, num só lugar. Anúncios atualizados a {d}.',
+           'rodape_links': '<a href="/arrendar/">Todas as cidades</a><a href="/arrendar/precos/">Preço das rendas</a><a href="/arrendar/guias/">Guias</a><a href="/">Início</a><a href="/#senhorios">Para senhorios</a><a href="/#termos">Termos e privacidade</a><a href="/en/rent/" hreflang="en">English</a><a href="/es/alquiler/" hreflang="es">Español</a><a href="/fr/location/" hreflang="fr">Français</a>'},
+    'en': {'html': 'en', 'og': 'en_GB', 'mes': '/month', 'consulta': 'Price on request', 'abaixo': '{d}% below typical', 'alt': '{t} for rent in {l}',
+           'tipos': {'Quarto': 'Room', 'Apartamento': 'Apartment', 'Moradia': 'House', 'T0': 'Studio', 'T1': '1-bed (T1)', 'T2': '2-bed (T2)', 'T3+': '3+ bed'},
+           'casa': 'Home', 'aqui': 'You are here', 'faq': 'Frequently asked questions', 'ver': 'See homes', 'botao': 'Search with filters and alerts',
+           'og_alt': 'DupliCasa: homes for rent in Portugal, in one place',
+           'burla_t': 'Renting without falling for a scam',
+           'burla': ['Visit the home before paying anything.', 'Be wary of rents far below the others in the area.', 'Check that the advertiser really is the owner.',
+                     'Never pay a deposit to someone you have not met, by transfer, to "hold" a home.'],
+           'burla_links': '',
+           'rodape': 'DupliCasa · apartments and rooms for rent in Portugal, in one place. Listings updated on {d}.',
+           'rodape_links': '<a href="/en/rent/">All cities</a><a href="/en/rent/prices/">Rent prices</a><a href="/">DupliCasa (Portuguese)</a><a href="/es/alquiler/" hreflang="es">Español</a><a href="/fr/location/" hreflang="fr">Français</a>'},
+    'es': {'html': 'es', 'og': 'es_ES', 'mes': '/mes', 'consulta': 'Precio a consultar', 'abaixo': '{d}% por debajo de lo normal', 'alt': '{t} en alquiler en {l}',
+           'tipos': {'Quarto': 'Habitación', 'Apartamento': 'Piso', 'Moradia': 'Casa', 'T0': 'Estudio', 'T1': 'T1 (1 dorm.)', 'T2': 'T2 (2 dorm.)', 'T3+': 'T3 o más'},
+           'casa': 'Vivienda', 'aqui': 'Estás aquí', 'faq': 'Preguntas frecuentes', 'ver': 'Ver viviendas', 'botao': 'Buscar con filtros y alertas',
+           'og_alt': 'DupliCasa: viviendas en alquiler en Portugal, en un solo lugar',
+           'burla_t': 'Alquilar sin caer en una estafa',
+           'burla': ['Visita la vivienda antes de pagar nada.', 'Desconfía de alquileres muy por debajo de los demás de la zona.', 'Confirma que quien anuncia es de verdad el propietario.',
+                     'No pagues una señal por transferencia a alguien que no conoces para «reservar» una vivienda.'],
+           'burla_links': '',
+           'rodape': 'DupliCasa · pisos y habitaciones en alquiler en Portugal, en un solo lugar. Anuncios actualizados el {d}.',
+           'rodape_links': '<a href="/es/alquiler/">Todas las ciudades</a><a href="/es/alquiler/precios/">Precio del alquiler</a><a href="/">DupliCasa (portugués)</a><a href="/en/rent/" hreflang="en">English</a><a href="/fr/location/" hreflang="fr">Français</a>'},
+    'fr': {'html': 'fr', 'og': 'fr_FR', 'mes': '/mois', 'consulta': 'Prix sur demande', 'abaixo': '{d} % sous le prix habituel', 'alt': '{t} à louer à {l}',
+           'tipos': {'Quarto': 'Chambre', 'Apartamento': 'Appartement', 'Moradia': 'Maison', 'T0': 'Studio', 'T1': 'T1 (1 chambre)', 'T2': 'T2 (2 chambres)', 'T3+': 'T3 ou plus'},
+           'casa': 'Logement', 'aqui': 'Vous êtes ici', 'faq': 'Questions fréquentes', 'ver': 'Voir les logements', 'botao': 'Chercher avec filtres et alertes',
+           'og_alt': 'DupliCasa : logements à louer au Portugal, en un seul endroit',
+           'burla_t': 'Louer sans tomber dans une arnaque',
+           'burla': ['Visitez le logement avant de payer quoi que ce soit.', 'Méfiez-vous des loyers très en dessous des autres dans le quartier.',
+                     'Vérifiez que l’annonceur est bien le propriétaire.', 'Ne payez jamais d’acompte par virement à un inconnu pour « réserver » un logement.'],
+           'burla_links': '',
+           'rodape': 'DupliCasa · appartements et chambres à louer au Portugal, en un seul endroit. Annonces mises à jour le {d}.',
+           'rodape_links': '<a href="/fr/location/">Toutes les villes</a><a href="/fr/location/prix/">Prix des loyers</a><a href="/">DupliCasa (portugais)</a><a href="/en/rent/" hreflang="en">English</a><a href="/es/alquiler/" hreflang="es">Español</a>'},
+}
+
+
+def cartao(a, lang='pt'):
+    u = UI[lang]
     i = str(id_num(a['id']))
     t = tip(a) or a.get('tipo') or 'Casa'
+    t = u['tipos'].get(t, u['casa'] if t == 'Casa' else t)
     partes = [t] + ([f"{a['area']} m²"] if area_ok(a) else []) + [a.get('bairro') or a.get('cidade') or '']
     foto = (a.get('fotos') or [''])[0]
-    preco = f"{num(a['renda'])} €<small> /mês</small>" if a.get('renda') else 'Preço sob consulta'
-    img = (f'<img src="{e(foto)}" alt="{e(t)} para arrendar em {e(a.get("bairro") or a.get("cidade") or "")}" '
+    preco = (f"{num(a['renda']) if lang != 'en' else num(a['renda']).replace('.', ',')} €<small> {u['mes']}</small>") if a.get('renda') else u['consulta']
+    img = (f'<img src="{e(foto)}" alt="{e(u["alt"].format(t=t, l=a.get("bairro") or a.get("cidade") or ""))}" '
            f'loading="lazy" width="400" height="250" referrerpolicy="no-referrer">' if foto else '<div class="sem"></div>')
     d = desconto(a)
-    selo = f'<span class="neg">{d}% abaixo do normal</span>' if d else ''
+    selo = f'<span class="neg">{u["abaixo"].format(d=d)}</span>' if d else ''
     return f'<a class="c" href="/#casa-{i}">{selo}{img}<div class="cc"><p class="p">{preco}</p><p class="l">{e(" · ".join(partes))}</p></div></a>'
 
 
-def item_ld(a):
+def item_ld(a, lang='pt'):
     """Cada casa como Accommodation (sem endereço da casa: só a localidade), com o preço como oferta."""
+    u = UI[lang]
     t = tip(a) or a.get('tipo') or 'Casa'
-    d = {'@type': 'Accommodation', 'name': f"{t} para arrendar em {a.get('bairro') or a.get('cidade') or ''}".strip(),
+    t = u['tipos'].get(t, u['casa'] if t == 'Casa' else t)
+    d = {'@type': 'Accommodation', 'name': u['alt'].format(t=t, l=a.get('bairro') or a.get('cidade') or '').strip(),
          'address': {'@type': 'PostalAddress', 'addressLocality': a.get('cidade') or '', 'addressRegion': a.get('distrito') or '', 'addressCountry': 'PT'}}
     if area_ok(a):
         d['floorSize'] = {'@type': 'QuantitativeValue', 'value': a['area'], 'unitCode': 'MTK'}
@@ -175,7 +222,9 @@ def item_ld(a):
     return d
 
 
-def pagina(caminho, titulo, descricao, h1, intro, migalhas, cartoes, links, ver_todas, atualizado, extra='', faq=None, tabela='', artigo=None, botao='Pesquisar com filtros e alertas'):
+def pagina(caminho, titulo, descricao, h1, intro, migalhas, cartoes, links, ver_todas, atualizado, extra='', faq=None, tabela='', artigo=None, botao=None, lang='pt'):
+    u = UI[lang]
+    botao = botao or u['botao']
     url = SITE + caminho
     if len(titulo) > 65 and titulo.endswith(' | DupliCasa'):     # o Google corta títulos compridos: a marca sai primeiro
         titulo = titulo[:-len(' | DupliCasa')]
@@ -183,7 +232,7 @@ def pagina(caminho, titulo, descricao, h1, intro, migalhas, cartoes, links, ver_
         {'@type': 'ListItem', 'position': n + 1, 'name': nome, 'item': SITE + c} for n, (nome, c) in enumerate(migalhas)]}]
     if cartoes:
         lds.append({'@context': 'https://schema.org', '@type': 'ItemList', 'name': h1, 'numberOfItems': len(cartoes),
-                    'itemListElement': [{'@type': 'ListItem', 'position': n + 1, 'item': item_ld(a)} for n, a in enumerate(cartoes)]})
+                    'itemListElement': [{'@type': 'ListItem', 'position': n + 1, 'item': item_ld(a, lang)} for n, a in enumerate(cartoes)]})
     if faq:
         lds.append({'@context': 'https://schema.org', '@type': 'FAQPage', 'mainEntity': [
             {'@type': 'Question', 'name': q, 'acceptedAnswer': {'@type': 'Answer', 'text': re.sub(r'<[^>]+>', '', r)}} for q, r in faq]})
@@ -192,24 +241,25 @@ def pagina(caminho, titulo, descricao, h1, intro, migalhas, cartoes, links, ver_
                     'datePublished': artigo, 'dateModified': artigo, 'mainEntityOfPage': url, 'image': SITE + '/marca/duaschaves-og.png',
                     'author': {'@type': 'Organization', 'name': 'DupliCasa', 'url': SITE + '/'},
                     'publisher': {'@type': 'Organization', 'name': 'DupliCasa', 'logo': {'@type': 'ImageObject', 'url': SITE + '/marca/duaschaves-icone.png'}}})
-    lds.append({'@context': 'https://schema.org', '@type': 'WebPage', 'name': titulo, 'url': url, 'inLanguage': 'pt-PT',
+    lds.append({'@context': 'https://schema.org', '@type': 'WebPage', 'name': titulo, 'url': url, 'inLanguage': u['html'],
                 'description': descricao, 'isPartOf': {'@type': 'WebSite', 'name': 'DupliCasa', 'url': SITE + '/'},
                 'publisher': {'@type': 'Organization', 'name': 'DupliCasa', 'url': SITE + '/', 'logo': SITE + '/marca/duaschaves-icone.png'}})
     nav = ' <span>›</span> '.join(f'<a href="{c}">{e(n)}</a>' if k < len(migalhas) - 1 else f'<span aria-current="page">{e(n)}</span>'
                                   for k, (n, c) in enumerate(migalhas))
-    faq_html = ('<section class="cx"><h2 style="margin-top:0">Perguntas frequentes</h2>' + ''.join(
+    faq_html = (f'<section class="cx"><h2 style="margin-top:0">{u["faq"]}</h2>' + ''.join(
         f'<details><summary>{e(q)}</summary><p>{r}</p></details>' for q, r in faq) + '</section>') if faq else ''
-    grelha = f'<div class="g">{"".join(cartao(a) for a in cartoes)}</div>' if cartoes else ''
+    grelha = f'<div class="g">{"".join(cartao(a, lang) for a in cartoes)}</div>' if cartoes else ''
+    burla = ''.join(f'<li>{e(x)}</li>' for x in u['burla'])
     ld_html = ''.join('<script type="application/ld+json">' + json.dumps(x, ensure_ascii=False).replace('</', '<\\/') + '</script>' for x in lds)
     return f'''<!DOCTYPE html>
-<html lang="pt-PT"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>{e(titulo)}</title><meta name="description" content="{e(descricao)}"><link rel="canonical" href="{url}">
+<html lang="{u['html']}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{e(titulo)}</title><meta name="description" content="{e(descricao)}"><link rel="canonical" href="{url}"><!--alternos-->
 <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1">
 <meta name="theme-color" content="#F3F5F4"><meta name="color-scheme" content="light">
-<meta property="og:type" content="website"><meta property="og:site_name" content="DupliCasa"><meta property="og:locale" content="pt_PT">
+<meta property="og:type" content="website"><meta property="og:site_name" content="DupliCasa"><meta property="og:locale" content="{u['og']}">
 <meta property="og:title" content="{e(titulo)}"><meta property="og:description" content="{e(descricao)}"><meta property="og:url" content="{url}">
 <meta property="og:image" content="{SITE}/marca/duaschaves-og.png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">
-<meta property="og:image:alt" content="DupliCasa: casas para arrendar em Portugal, num só lugar"><meta name="twitter:card" content="summary_large_image">
+<meta property="og:image:alt" content="{e(u['og_alt'])}"><meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="/marca/duaschaves-simbolo.svg" type="image/svg+xml"><link rel="apple-touch-icon" href="/marca/duaschaves-icone-180.png">
 {ld_html}
 <style>
@@ -234,9 +284,9 @@ details{{border-top:1px solid var(--b);padding:12px 0}}details:first-of-type{{bo
 footer{{margin-top:56px;border-top:1px solid var(--b);padding:28px 0 40px;font-size:14px;color:var(--t3)}}footer a{{margin-right:14px;white-space:nowrap;display:inline-block;line-height:2}}
 @media(min-width:900px){{h1{{font-size:46px}}}}
 </style><script defer src="/_e.js" data-site="duplicasa"></script></head><body>
-<header><div class="w"><a class="logo" href="/" aria-label="DupliCasa, início">{LOGO}</a><a class="bt" href="{ver_todas}">Ver casas</a></div></header>
+<header><div class="w"><a class="logo" href="/" aria-label="DupliCasa, início">{LOGO}</a><a class="bt" href="{ver_todas}">{u['ver']}</a></div></header>
 <main class="w">
-<nav class="mig" aria-label="Estás aqui">{nav}</nav>
+<nav class="mig" aria-label="{u['aqui']}">{nav}</nav>
 <h1>{e(h1)}</h1>
 <p class="intro">{intro}</p>
 <p><a class="bt" href="{ver_todas}">{botao}</a></p>
@@ -244,14 +294,13 @@ footer{{margin-top:56px;border-top:1px solid var(--b);padding:28px 0 40px;font-s
 {tabela}
 {links}
 {faq_html}
-<section class="cx"><h2 style="margin-top:0">Arrendar sem cair numa burla</h2>
-<ul><li>Visita a casa antes de pagar qualquer valor.</li><li>Desconfia de rendas muito abaixo das outras na zona.</li>
-<li>Confirma que quem anuncia é mesmo o dono.</li><li>Em breve, com o pagamento seguro da DupliCasa, a entrada só vai chegar ao senhorio quando receberes as chaves.</li></ul>
-<p><a href="/arrendar/guias/como-evitar-burlas-no-arrendamento/">Guia: como evitar burlas no arrendamento</a> · <a href="/arrendar/guias/">Todos os guias</a></p></section>
+<section class="cx"><h2 style="margin-top:0">{u['burla_t']}</h2>
+<ul>{burla}</ul>
+{f'<p>{u["burla_links"]}</p>' if u['burla_links'] else ''}</section>
 {extra}
 </main>
-<footer><div class="w"><p>DupliCasa · casas e quartos para alugar em Portugal, num só lugar. Anúncios atualizados a {atualizado}.</p>
-<p><a href="/arrendar/">Todas as cidades</a><a href="/arrendar/precos/">Preço das rendas</a><a href="/arrendar/guias/">Guias</a><a href="/">Início</a><a href="/#senhorios">Para senhorios</a><a href="/#termos">Termos e privacidade</a><a href="https://dinissousa.pt" rel="noopener">Feito por dinissousa.pt</a></p></div></footer>
+<footer><div class="w"><p>{e(u['rodape'].format(d=atualizado))}</p>
+<p>{u['rodape_links']}<a href="https://dinissousa.pt" rel="noopener">Feito por dinissousa.pt</a></p></div></footer>
 </body></html>
 '''
 
@@ -724,6 +773,15 @@ def llms_full(resumo, n_total, hoje):
     return '\n'.join(t)
 
 
+def com_alternos(html_txt, grupo):
+    """Põe as ligações hreflang (pt, en, es, fr e x-default = pt) no lugar marcado no <head>."""
+    if not grupo:
+        return html_txt.replace('<!--alternos-->', '', 1)
+    ls = ''.join(f'<link rel="alternate" hreflang="{"pt-PT" if l == "pt" else l}" href="{SITE}{c}">' for l, c in grupo.items())
+    ls += f'<link rel="alternate" hreflang="x-default" href="{SITE}{grupo["pt"]}">'
+    return html_txt.replace('<!--alternos-->', ls, 1)
+
+
 def avisar_indexnow(urls, pasta):
     """Avisa o Bing (e quem usa IndexNow) das páginas novas, no máximo uma vez por dia. Falhas não param nada."""
     marca = os.path.join(pasta, '.indexnow')
@@ -758,6 +816,11 @@ def main():
         return
     paginas, resumo = gerar(anuncios, atualizado)
     gerar_guias(paginas, data_pt(atualizado))
+    # as mesmas páginas em inglês, espanhol e francês, ligadas por hreflang
+    import paginas_idiomas
+    outras, alternos = paginas_idiomas.gerar(anuncios, atualizado, resumo)
+    paginas.update(outras)
+    paginas = {c: com_alternos(h, alternos.get(c)) for c, h in paginas.items()}
     pai = os.path.dirname(os.path.abspath(destino))
     os.makedirs(pai, exist_ok=True)
     tmp = tempfile.mkdtemp(prefix='.seo-', dir=pai)
