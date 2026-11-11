@@ -203,6 +203,14 @@ jobs:
           SAIDA=../res timeout 300 node horarios-novos.mjs 2>&1 | tee ../res/horarios-novos.txt | tail -40
           (cd ../app && APP=$PWD node --import tsx ../auditoria/cm-passagens.mjs 2>&1 | grep -v "Experimental\|trace-warnings") | tee ../res/cm-passagens.txt | tail -20
 
+      - name: Testar os avisos das linhas guardadas (servidor e browser)
+        continue-on-error: true
+        working-directory: auditoria
+        run: |
+          mkdir -p ../res
+          (cd ../app && APP=$PWD node --import tsx ../auditoria/avisos-linha.mjs 2>&1 | grep -v "Experimental\|trace-warnings") | tee ../res/avisos-linha.txt | tail -40
+          SAIDA=../res timeout 300 node avisos-linha-ui.mjs 2>&1 | tee ../res/avisos-linha-ui.txt | tail -40
+
       - name: Testar o movimento dos autocarros no mapa (browser)
         continue-on-error: true
         working-directory: auditoria
