@@ -30,7 +30,7 @@ escrever_estado() {
     echo "caiu.pt recolha: $(systemctl show caiu-recolha.service -p ActiveState -p Result -p ExecMainStatus 2>/dev/null | tr '\n' ' ')"
     echo "caiu.pt últimas linhas: $(journalctl -u caiu-recolha -n 4 --no-pager -o cat 2>/dev/null | cut -c1-200 | tr '\n' ';')"
     echo "ganhas.pt API: $(systemctl is-active ganhas-api 2>/dev/null) $(curl -s -m 3 http://127.0.0.1:3140/api/estado 2>/dev/null | cut -c1-80)"
-    echo "ganhas.pt páginas: $(systemctl show ganhas-paginas.service -p Result -p ExecMainStatus 2>/dev/null | tr '\n' ' ') $(journalctl -u ganhas-paginas -n 2 --no-pager -o cat 2>/dev/null | cut -c1-160 | tr '\n' ';')"
+    echo "ganhas.pt páginas: $(systemctl show ganhas-paginas.service -p Result -p ExecMainStatus 2>/dev/null | tr '\n' ' ') $(journalctl -u ganhas-paginas -n 12 --no-pager -o cat 2>/dev/null | grep -v -E '^(Starting|Started|Finished|Failed to start|ganhas-paginas)' | tail -3 | cut -c1-200 | tr '\n' ';')"
     echo
     echo "--- Últimas linhas da app ---"
     # Esta página é pública: esconde emails e endereços IP que alguma linha possa ter
