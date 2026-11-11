@@ -95,6 +95,22 @@ const codigo = String(cm[0]?.code || '');
 }
 
 // 3. Avisos já ligados: confirmação uma vez e a lista nova chega ao servidor
+// (depois da 1.ª estrela, «Mais procuradas» desaparece: a 2.ª linha guarda-se pela pesquisa e tiram-se as duas nos Favoritos)
+const guardarPelaPesquisa = async (p, linha) => {
+  await p.getByPlaceholder(/Pesquisar número de linha/).fill(String(linha.code));
+  await p.waitForTimeout(3000);
+  return p.evaluate(({ code, id }) => {
+    for (const b of document.querySelectorAll('button[aria-label="Guardar nos favoritos"]')) {
+      let el = b;
+      for (let k = 0; k < 6 && el; k++) {
+        el = el.parentElement;
+        const t = (el && el.textContent) || '';
+        if (t.includes(code) && /Carris Metropolitana/.test(t) && t.length < 400) { b.click(); return true; }
+      }
+    }
+    return false;
+  }, { code: String(linha.code), id: linha.id });
+};
 {
   const { ctx, p, pedidos } = await abrir({ perm: 'granted', populares: [cm[0].id, cm[1].id], local: { parou_notification_preferences_v1: { enabled: true, selectedDistrict: 'Todas', districts: ['Lisboa'], importantTransportOnly: true, severeOnly: false, soundEnabled: false, pushSubscribed: true } } });
   await p.waitForTimeout(6500); // a app sincroniza ao abrir
@@ -108,15 +124,24 @@ const codigo = String(cm[0]?.code || '');
   ok('[ligados] o servidor recebe a linha nova', (novo.linhas || []).some((l) => l.ln === codigo), JSON.stringify(novo.linhas));
   ok('[ligados] mantém os distritos', JSON.stringify(novo.distritos) === '["Lisboa"]', JSON.stringify(novo.distritos));
   await p.waitForTimeout(6500); // a confirmação sai sozinha
-  await estrela(p, 1).click({ timeout: 8000 }).catch(() => {});
-  await p.waitForTimeout(2500);
+  const n0 = pedidos.length;
+  const guardou = await guardarPelaPesquisa(p, cm[1]);
+  await p.waitForTimeout(3000);
+  ok('[ligados] guarda a 2.ª linha pela pesquisa', guardou, String(cm[1].code));
   ok('[ligados] a confirmação só aparece uma vez', await cartao(p).count() === 0);
+  const dois = pedidos.slice(n0).pop() || {};
+  ok('[ligados] o servidor fica com as duas linhas', ['' + cm[0].code, '' + cm[1].code].every((c) => (dois.linhas || []).some((l) => l.ln === c)), JSON.stringify(dois.linhas));
+  await p.getByPlaceholder(/Pesquisar número de linha/).fill('');
+  await p.waitForTimeout(2500);
   const n = pedidos.length;
-  await estrela(p, 0).click({ timeout: 8000 }).catch(() => {}); // tirar a primeira
-  await estrela(p, 1).click({ timeout: 8000 }).catch(() => {}); // e a segunda
+  const tirar = p.getByRole('button', { name: 'Remover dos favoritos' });
+  await tirar.first().click({ timeout: 8000 }).catch(() => {});
+  await p.waitForTimeout(250);
+  await tirar.first().click({ timeout: 8000 }).catch(() => {});
   await p.waitForTimeout(3500);
   const fim = pedidos.slice(n);
-  ok('[ligados] tirar duas linhas seguidas: um só pedido, sem as linhas', fim.length === 1 && !(fim[0].linhas || []).some((l) => l.ln === codigo), `${fim.length} ${JSON.stringify(fim.map((x) => x.linhas))}`);
+  ok('[ligados] tirar duas linhas seguidas: um só pedido, já sem linhas', fim.length === 1 && (fim[0].linhas || []).length === 0, `${fim.length} ${JSON.stringify(fim.map((x) => x.linhas))}`);
+  await p.screenshot({ path: `${SAIDA}/avisos-linha-tirar.png` });
   await ctx.close();
 }
 
@@ -127,9 +152,9 @@ const codigo = String(cm[0]?.code || '');
   await cartao(p).waitFor({ timeout: 6000 }).catch(() => {});
   await p.locator('[data-teste="convite-avisos-linha-fechar"]').click({ timeout: 5000 }).catch(() => {});
   await p.waitForTimeout(800);
-  await estrela(p, 1).click({ timeout: 8000 }).catch(() => {});
+  const guardou = await guardarPelaPesquisa(p, cm[1]);
   await p.waitForTimeout(2500);
-  ok('[agora não] ao guardar outra linha, não volta a aparecer', await cartao(p).count() === 0);
+  ok('[agora não] ao guardar outra linha, não volta a aparecer', guardou && await cartao(p).count() === 0, String(guardou));
   await ctx.close();
 }
 
