@@ -1,0 +1,26 @@
+name: ganhas.pt - descarregar as fontes oficiais
+
+# Descarrega as fontes oficiais do ganhas.pt (INE, Eurostat, DGAEP, DGCP) e guarda-as em bruto no ramo
+# ganhas-fontes-auto, para conferir. A atualização do site é feita pelo workflow «ganhas.pt - atualizar sozinho».
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  fontes:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Descarregar
+        run: python3 ganhas/recolha/fontes_auto.py saida
+      - name: Guardar no ramo ganhas-fontes-auto
+        if: always()
+        run: |
+          mkdir -p saida && cd saida && git init -q -b ganhas-fontes-auto
+          git config user.name "parou-dados"; git config user.email "actions@users.noreply.github.com"
+          git add -A && git commit -q -m "Fontes $(date -u +%Y-%m-%dT%H:%MZ)"
+          git push -q -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" ganhas-fontes-auto
