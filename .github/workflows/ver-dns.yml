@@ -1,0 +1,59 @@
+name: Ver o DNS de um domínio
+
+# Mostra, visto de fora, o que o registo .pt (ou outro) diz do domínio: servidores de nomes,
+# registos A do @ e do www em vários DNS públicos e nos servidores do próprio domínio.
+# Guarda o resultado no ramo "ver-dns".
+
+on:
+  workflow_dispatch:
+    inputs:
+      dominios:
+        description: "Domínios separados por espaço"
+        required: true
+        default: "caiu.pt"
+
+permissions:
+  contents: write
+
+jobs:
+  ver:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Ver
+        env:
+          DOMINIOS: ${{ inputs.dominios }}
+        run: |
+          sudo apt-get -qq install -y dnsutils whois >/dev/null 2>&1 || true
+          out=resultado.txt; : > $out
+          for d in $DOMINIOS; do
+            echo "################ $d ($(date -u +%H:%M:%S) UTC)" >> $out
+            tld="${d##*.}"
+            ns_tld=$(dig +short NS "$tld." @1.1.1.1 | head -1)
+            echo "== delegação no registo ($ns_tld)" >> $out
+            dig +norecurse +noall +comments +authority +additional NS "$d" @"$ns_tld" >> $out 2>&1
+            for r in 1.1.1.1 8.8.8.8 9.9.9.9; do
+              echo "== $r: NS / A @ / A www / estado" >> $out
+              echo "NS:  $(dig +short NS "$d" @$r | tr '\n' ' ')" >> $out
+              echo "A @: $(dig +short A "$d" @$r | tr '\n' ' ')" >> $out
+              echo "A www: $(dig +short A "www.$d" @$r | tr '\n' ' ')" >> $out
+              echo "AAAA @: $(dig +short AAAA "$d" @$r | tr '\n' ' ')" >> $out
+              echo "estado: $(dig +noall +comments A "$d" @$r | grep -o 'status: [A-Z]*')" >> $out
+            done
+            for ns in $(dig +short NS "$d" @1.1.1.1; dig +norecurse +noall +authority NS "$d" @"$ns_tld" | awk '{print $NF}'); do
+              echo "== servidor do domínio $ns" >> $out
+              echo "A @: $(dig +short +time=3 +tries=1 A "$d" @"$ns" | tr '\n' ' ')  A www: $(dig +short +time=3 +tries=1 A "www.$d" @"$ns" | tr '\n' ' ')" >> $out
+            done
+            echo "== whois" >> $out
+            timeout 20 whois "$d" 2>&1 | grep -iE "domain|status|expir|creation|name ?server|registrar|DNSSEC" | head -25 >> $out
+            echo "== https" >> $out
+            curl -s -o /dev/null -m 20 -w "https://$d -> %{http_code} (ip %{remote_ip})\n" "https://$d/" >> $out 2>&1 || echo "https://$d -> falhou" >> $out
+            echo >> $out
+          done
+          cat $out
+      - name: Guardar
+        if: always()
+        run: |
+          mkdir pub && cp resultado.txt pub/ && cd pub && git init -q -b ver-dns
+          git config user.name "parou-dados"; git config user.email "actions@users.noreply.github.com"
+          git add -A && git commit -q -m "DNS" && git push -q -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" ver-dns
