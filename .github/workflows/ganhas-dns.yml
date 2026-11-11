@@ -53,9 +53,13 @@ jobs:
       - name: Teste no browser
         continue-on-error: true
         run: |
-          pip install --quiet playwright && python3 -m playwright install --with-deps chromium >/dev/null 2>&1
-          python3 teste/e2e.py > saida/e2e.json 2> saida/e2e-erros.txt || true
-          cat saida/e2e.json
+          set +e
+          python3 -m pip install --quiet playwright > saida/instalar.txt 2>&1
+          python3 -m playwright install --with-deps chromium >> saida/instalar.txt 2>&1
+          echo "instalar: $?" >> saida/instalar.txt
+          timeout 900 python3 teste/e2e.py > saida/e2e.json 2> saida/e2e-erros.txt
+          echo "teste: $?" >> saida/instalar.txt
+          tail -5 saida/instalar.txt; cat saida/e2e.json; tail -20 saida/e2e-erros.txt
       - name: Guardar
         if: always()
         run: |
