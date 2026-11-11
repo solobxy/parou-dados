@@ -30,7 +30,7 @@
 <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"Organization","@id":"https://duplicasa.pt/#org","name":"DupliCasa","alternateName":"DupliCasa","url":"https://duplicasa.pt/","logo":"https://duplicasa.pt/marca/duaschaves-icone.png","email":"ola@duplicasa.pt","taxID":"273728156","address":{"@type":"PostalAddress","streetAddress":"Avenida General Humberto Delgado, 875, 1.º Esq.","postalCode":"4420-155","addressLocality":"Gondomar","addressCountry":"PT"},"description":"Agregador de casas, apartamentos e quartos para arrendar em Portugal, com alertas de casas novas."},{"@type":"WebSite","@id":"https://duplicasa.pt/#site","name":"DupliCasa","url":"https://duplicasa.pt/","inLanguage":"pt-PT","publisher":{"@id":"https://duplicasa.pt/#org"}},{"@type":"FAQPage","mainEntity":[{"@type":"Question","name":"De onde vêm as casas?","acceptedAnswer":{"@type":"Answer","text":"Juntamos num só lugar os anúncios dos principais sites de arrendamento em Portugal, sem repetir a mesma casa. Atualizamos de 30 em 30 minutos e retiramos as que já não estão disponíveis."}},{"@type":"Question","name":"Como sabem se uma casa é um bom negócio?","acceptedAnswer":{"@type":"Answer","text":"Comparamos a renda com o normal: a mediana dos anúncios da mesma tipologia, na mesma cidade, nos últimos 30 dias. Só marcamos quando há pelo menos 6 anúncios para comparar. Se uma renda estiver 40% ou mais abaixo do normal, não a mostramos como negócio: avisamos que pode ser um erro ou uma burla."}},{"@type":"Question","name":"Quanto custa?","acceptedAnswer":{"@type":"Answer","text":"Ver as casas, guardá-las e criar alertas é grátis. O acesso para contactar quem anuncia e receber os alertas no minuto custa 1 € nos primeiros 30 dias e depois 9,99 € a cada 30 dias, se quiseres continuar."}},{"@type":"Question","name":"Renova sozinho?","acceptedAnswer":{"@type":"Answer","text":"Não. Pagas com MB WAY, referência Multibanco ou cartão e o acesso dura o período que pagaste. 3 dias antes do fim mandamos-te por e-mail a referência para renovares. Se não pagares, o acesso acaba e não ficas a dever nada."}},{"@type":"Question","name":"As casas são verificadas?","acceptedAnswer":{"@type":"Answer","text":"Os anúncios que vêm de outros sites não são verificados pela DupliCasa. Visite sempre a casa antes de pagar, desconfie de rendas muito abaixo das outras na zona e confirme que quem anuncia é o dono."}}]}]}</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" media="print" onload="this.media='all'"><noscript><link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet"></noscript>
 <style>
 :root{
   --fundo:#F3F5F4;--superficie:#FFFFFF;--tinta:#0F1A17;--texto2:#3E4A46;--texto3:#55625E;
@@ -3523,6 +3523,8 @@ function abrirAlertaPop(){
 
 atualizarTopo();
 rota();
+/* o início não precisa da lista para aparecer: a abertura fecha quando a animação acaba (~1 s), sem esperar pelas casas */
+if(window.dcFecharAbertura)dcFecharAbertura();
 try{
   api('saude').then(function(r){
     if(r._estado!==200)return;
@@ -3590,7 +3592,11 @@ function receber(d){
 }
 try{
   var json=function(u){return fetch(u,{cache:'no-cache'}).then(function(r){return r.ok?r.json():null;}).catch(function(){return null;});};
-  json('lista.json').then(function(d){if(!receber(d)){FALHOU=true;if(window.dcFecharAbertura)dcFecharAbertura();var h=location.hash.slice(1)||'inicio';if(/^(inicio|pesquisa|casa-\d+)/.test(h))rota();}});
+  /* a lista (1,8 MB) só começa a vir depois de o início estar pintado: o texto aparece logo e o telemóvel não fica ocupado antes disso */
+  var pedida=false,carregar=function(){if(pedida)return;pedida=true;
+    json('lista.json').then(function(d){if(!receber(d)){FALHOU=true;if(window.dcFecharAbertura)dcFecharAbertura();var h=location.hash.slice(1)||'inicio';if(/^(inicio|pesquisa|casa-\d+)/.test(h))rota();}});};
+  /* com a abertura no ecrã (1.ª visita), a lista vem quando ela acaba (~1 s): o início aparece primeiro, sem disputar a rede */
+  if(document.getElementById('abertura'))setTimeout(carregar,1100);else{requestAnimationFrame(function(){setTimeout(carregar,0);});setTimeout(carregar,800);}
 }catch(e){}
 })();
 </script>
