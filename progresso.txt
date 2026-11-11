@@ -1,0 +1,24 @@
+[     4s] url eurostat_toc.txt 1985119 B
+[    16s] ERRO url gep_qp.html: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)>
+[    22s] url earn_ses_monthly.json 5343244 B
+[    23s] url ine_0012656_meta.json 79425 B
+[   214s] ERRO pesquisa escalão de ganho: The read operation timed out
+[   404s] ERRO pesquisa escalão de remuneração: The read operation timed out
+[   558s] 2 códigos nas pesquisas
+[   561s] ine 0012649 ok
+[   632s] ine 0014413 ok
+[   702s] ine 0014410 ok
+[   705s] ine 0014411 ok
+[   775s] ine 0006916 ok
+[   778s] ine 0006917 ok
+[   849s] ine 0010379 ok
+[   918s] ine 0012657 ok
+[   988s] ine 0012658 ok
+[   989s] ine 0012664 ok
+[   991s] ine 0006848 ok
+[   991s] ine 0009864 ok
+[   993s] ine 0006889 ok
+[   994s] ine 0006847 ok
+[  1066s] ine 0010385 ok
+[  1067s] ine 0001993 ok
+[  1067s] fim
