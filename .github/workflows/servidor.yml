@@ -181,10 +181,16 @@ jobs:
           IP=$(h "$API/servers?name=parou" | jq -r '.servers[0].public_net.ipv4.ip // empty')
           [ -n "$IP" ] || { echo "Servidor não encontrado" >> resultado.txt; exit 1; }
           command -v age >/dev/null 2>&1 || { sudo apt-get update -qq >/dev/null 2>&1; sudo apt-get install -y -qq age >/dev/null 2>&1; } || true
+          if ! command -v age >/dev/null 2>&1; then
+            curl -fsSL https://github.com/FiloSottile/age/releases/download/v1.2.1/age-v1.2.1-linux-amd64.tar.gz | tar -xz -C /tmp \
+              && sudo install /tmp/age/age /usr/local/bin/age || true
+          fi
           # servidor/caiu-api.age: linhas NOME=valor (chave do Resend só de envio, remetente, e-mail do administrador),
           # cifradas para a chave SSH deste repositório; vão pelo stdin e nunca aparecem no resultado
-          VALOR=$(age -d -i ~/.ssh/id_ed25519 servidor/caiu-api.age 2>/dev/null) || VALOR=""
-          if [ -z "$VALOR" ]; then echo "caiu: não deu para abrir servidor/caiu-api.age" >> resultado.txt; exit 1; fi
+          VALOR=$(age -d -i ~/.ssh/id_ed25519 servidor/caiu-api.age 2>/tmp/age.err) || VALOR=""
+          if [ -z "$VALOR" ]; then
+            echo "caiu: não deu para abrir servidor/caiu-api.age ($(command -v age || echo 'sem age'); $(ls -l ~/.ssh/id_ed25519 2>&1 | cut -c1-60); $(head -c 200 /tmp/age.err))" >> resultado.txt; exit 1
+          fi
           printf '%s\n' "$VALOR" | ssh root@$IP "install -d -m 750 -o root -g parou /etc/caiu; F=/etc/caiu/api.env; cat > \$F.novo; chown root:parou \$F.novo; chmod 640 \$F.novo; mv \$F.novo \$F"
           echo "caiu: $(printf '%s\n' "$VALOR" | cut -d= -f1 | tr '\n' ' ')copiados para o servidor" >> resultado.txt
           ssh root@$IP "systemctl restart caiu-api 2>&1; sleep 2; systemctl is-active caiu-api; curl -s -m 5 http://127.0.0.1:3150/api/saude" >> resultado.txt 2>&1
