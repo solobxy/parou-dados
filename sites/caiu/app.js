@@ -985,7 +985,7 @@
     const series = Object.entries(h).filter(([, v]) => v.length);
     const dias = [...new Set(series.flatMap(([, v]) => v.map(x => x[0])))].sort();
     if (dias.length < 2) return `<p>Começámos a guardar o preço deste produto a ${dataCurta(dias[0] || hojeLx())}. O gráfico vai-se enchendo a cada dia.</p>`;
-    const H = 190, e = 44, d = 12, t = 12, b = 26, passo = Math.min(150, (W - e) / 3);
+    const H = 190, e = 44, d = 12, t = 12, b = 26, estreito = W < 500, passo = estreito ? W / 3 : 150, l0 = estreito ? 0 : e, tl = estreito ? 18 : 26;
     const vals = series.flatMap(([, v]) => v.map(x => x[1]));
     let mn = Math.min(...vals), mx = Math.max(...vals);
     if (mx - mn < 0.1) { mn -= 0.1; mx += 0.1; }
@@ -994,7 +994,7 @@
     const tracos = { c: '', p: '7 5', a: '2 4' };
     const linhas = series.map(([c, v]) => `<polyline fill="none" stroke="#141414" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round" ${tracos[c] ? `stroke-dasharray="${tracos[c]}"` : ''} points="${v.map(p => `${x(p[0]).toFixed(1)},${y(p[1]).toFixed(1)}`).join(' ')}"/>`).join('');
     const fmtD = s => new Date(s + 'T12:00:00').toLocaleDateString('pt-PT', { day: 'numeric', month: 'short' }).replace('.', '');
-    const leg = series.map(([c], k) => `<g transform="translate(${e + k * passo},${H + 18})"><line x1="0" x2="26" y1="-4" y2="-4" stroke="#141414" stroke-width="2.5" ${tracos[c] ? `stroke-dasharray="${tracos[c]}"` : ''}/><text x="32" y="0">${LOJAS[c]}</text></g>`).join('');
+    const leg = series.map(([c], k) => `<g transform="translate(${l0 + k * passo},${H + 18})"><line x1="0" x2="${tl}" y1="-4" y2="-4" stroke="#141414" stroke-width="2.5" ${tracos[c] ? `stroke-dasharray="${tracos[c]}"` : ''}/><text x="${tl + 6}" y="0">${LOJAS[c]}</text></g>`).join('');
     const minimo = series.flatMap(([c, v]) => v.map(p => [p[1], c, p[0]])).sort((a, b) => a[0] - b[0])[0];
     return `<svg class="grafico" viewBox="0 0 ${W} ${H + 28}" role="img" aria-label="Preço desde ${fmtD(dias[0])}: o mais baixo foi ${eur(minimo[0])} no ${LOJAS[minimo[1]]} a ${fmtD(minimo[2])}">
       <text x="${e - 8}" y="${y(mx) + 4}" text-anchor="end">${nf.format(mx)}</text>
