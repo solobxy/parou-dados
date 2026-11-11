@@ -1,0 +1,48 @@
+################ caiu.pt (18:10:51 UTC)
+== delegação em cada servidor do registo .pt
+a.dns.pt. -> ns5.mydnspt.net. ns6.mydnspt.net.  | DS: 
+b.dns.pt. -> ns5.mydnspt.net. ns6.mydnspt.net.  | DS: 
+c.dns.pt. -> ns5.mydnspt.net. ns6.mydnspt.net.  | DS: 
+d.dns.pt. -> ns5.mydnspt.net. ns6.mydnspt.net.  | DS: 
+e.dns.pt. -> ns5.mydnspt.net. ns6.mydnspt.net.  | DS: 
+g.dns.pt. -> ns5.mydnspt.net. ns6.mydnspt.net.  | DS: 
+h.dns.pt. -> ns5.mydnspt.net. ns6.mydnspt.net.  | DS: 
+ns.dns.br. -> ns5.mydnspt.net. ns6.mydnspt.net.  | DS: 
+ns2.nic.fr. -> ns5.mydnspt.net. ns6.mydnspt.net.  | DS: 
+== cada servidor delegado, diretamente (A @, A www, SOA, DNSKEY)
+ns5.mydnspt.net. (130.185.80.65 ): A @=2.31.13.85  | www=caiu.pt. 2.31.13.85  | status: NOERROR flags: qr aa  | SOA=ns5.mydnspt.net. reports.ptisp.pt. 2026111104 3600 7200 1209600 86400 | DNSKEY=0
+ns6.mydnspt.net. (78.47.250.232 ): A @=2.31.13.85  | www=caiu.pt. 2.31.13.85  | status: NOERROR flags: qr aa  | SOA=ns5.mydnspt.net. reports.ptisp.pt. 2026111104 3600 7200 1209600 86400 | DNSKEY=0
+== sem validar DNSSEC (+cd) em 1.1.1.1 e 8.8.8.8
+1.1.1.1 cd: 2.31.13.85  | 8.8.8.8 cd: 2.31.13.85 
+== erro detalhado (EDE) em 1.1.1.1
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 59549
+== 1.1.1.1: NS / A @ / A www / estado
+NS:  ns5.mydnspt.net. ns6.mydnspt.net. 
+A @: 2.31.13.85 
+A www: caiu.pt. 2.31.13.85 
+AAAA @: 
+estado: status: NOERROR
+== 8.8.8.8: NS / A @ / A www / estado
+NS:  ns6.mydnspt.net. ns5.mydnspt.net. 
+A @: 2.31.13.85 
+A www: caiu.pt. 2.31.13.85 
+AAAA @: 
+estado: status: NOERROR
+== 9.9.9.9: NS / A @ / A www / estado
+NS:  
+A @: 
+A www: caiu.pt. 2.31.13.85 
+AAAA @: 
+estado: status: SERVFAIL
+== servidor do domínio ns5.mydnspt.net.
+A @: 2.31.13.85   A www: caiu.pt. 2.31.13.85 
+== servidor do domínio ns6.mydnspt.net.
+A @: 2.31.13.85   A www: caiu.pt. 2.31.13.85 
+== servidor do domínio ns6.mydnspt.net.
+A @: 2.31.13.85   A www: caiu.pt. 2.31.13.85 
+== servidor do domínio ns5.mydnspt.net.
+A @: 2.31.13.85   A www: caiu.pt. 2.31.13.85 
+== whois
+== https
+https://caiu.pt -> 200 (ip 2.31.13.85)
+
