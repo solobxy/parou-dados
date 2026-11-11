@@ -1,13 +1,13 @@
 name: ganhas.pt - descarregar fontes
 
-# Descarrega as fontes públicas de salários (INE, Eurostat, DGAEP, IRS) com ganhas/fontes/descarregar.py
+# Descarrega as fontes públicas de salários (INE, Eurostat, DGAEP, IRS) com ganhas/recolha/descarregar.py
 # e guarda tudo, em bruto, no ramo "ganhas-fontes-brutas". Corre quando há push no ramo ganhas-recolha,
 # à mão, e uma vez por mês (os dados oficiais mudam pouco).
 
 on:
   push:
     branches: [ganhas-recolha]
-    paths: ["ganhas/fontes/**", ".github/workflows/ganhas-fontes.yml"]
+    paths: ["ganhas/recolha/**", ".github/workflows/ganhas-fontes.yml"]
   workflow_dispatch:
   schedule:
     - cron: "40 4 3 * *"
@@ -28,7 +28,7 @@ jobs:
       - name: Descarregar
         run: |
           pip install --quiet pdfplumber
-          python3 ganhas/fontes/descarregar.py saida 2>&1 | tee saida-log.txt
+          python3 ganhas/recolha/descarregar.py saida 2>&1 | tee saida-log.txt
           du -sh saida; ls -la saida saida/docs | head -40
       - name: Guardar no ramo ganhas-fontes-brutas
         if: always()
