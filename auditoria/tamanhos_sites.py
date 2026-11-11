@@ -9,7 +9,7 @@ import subprocess, sys, time, json, os, socket
 from pathlib import Path
 from playwright.sync_api import sync_playwright
 
-R = Path(os.environ.get('FONTES_LOCAIS', '/home/claude/rec'))
+R = Path(os.environ.get('FONTES_LOCAIS', '/tmp/rec'))
 FONT_CSS = {
  'Archivo': "@font-face{font-family:'Archivo';src:url(/__f/archivo.ttf);font-weight:100 900;font-stretch:62% 125%}",
  'Source+Serif+4': "@font-face{font-family:'Source Serif 4';src:url(/__f/sourceserif.ttf);font-weight:200 900}@font-face{font-family:'Source Serif 4';font-style:italic;src:url(/__f/sourceserif-i.ttf);font-weight:200 900}",
@@ -111,7 +111,7 @@ def porta_livre():
 MOTOR = next((a.split('=')[1] for a in sys.argv if a.startswith('--motor=')), 'chromium')
 # no Safari não há «tamanho do texto» para sites; o zoom da página equivale a um ecrã mais estreito (250 px = 375 px a 150 %)
 COMBOS=((280,1),(320,1),(360,1),(390,1),(768,1),(1440,1),(320,1.3),(390,1.3),(320,1.5)) if MOTOR=='chromium' else ((250,1),(320,1),(375,1),(390,1),(768,1),(1440,1))
-def auditar(raiz, paginas, fotos=False, saida='/home/claude/check/tam', combos=COMBOS, espera=1800):
+def auditar(raiz, paginas, fotos=False, saida='/tmp/check/tam', combos=COMBOS, espera=1800):
     os.makedirs(saida, exist_ok=True)
     porta = porta_livre()
     srv = subprocess.Popen([sys.executable, '-m', 'http.server', str(porta), '-d', raiz], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
@@ -172,7 +172,7 @@ def resumo(rel):
 if __name__ == '__main__':
     args = [a for a in sys.argv[1:] if not a.startswith('--')]
     nome = next((a.split('=')[1] for a in sys.argv if a.startswith('--nome=')), 'ultimo')
-    base = os.environ.get('SAIDA', '/home/claude/check/tam')
+    base = os.environ.get('SAIDA', '/tmp/check/tam')
     rel = auditar(args[0], args[1:], fotos='--fotos' in sys.argv, saida=f'{base}/{nome}')
     json.dump(rel, open(f'{base}/{nome}.json', 'w'), ensure_ascii=False, indent=1)
     resumo(rel)

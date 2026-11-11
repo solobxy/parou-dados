@@ -1,0 +1,11 @@
+[Unit]
+Description=Vigia dos projetos de 10 em 10 minutos
+
+[Timer]
+OnBootSec=4min
+OnUnitActiveSec=10min
+RandomizedDelaySec=30
+Persistent=true
+
+[Install]
+WantedBy=timers.target

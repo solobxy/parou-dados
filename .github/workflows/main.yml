@@ -15,6 +15,7 @@ on:
 permissions:
   contents: write
   issues: write
+  actions: write
 
 jobs:
   construir:
@@ -111,3 +112,15 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: python avisos.py
+
+      # No GitHub, os agendamentos de um repositório público desligam-se sozinhos ao fim de 60 dias sem
+      # atividade. Voltar a «ligar» cada workflow agendado reinicia essa contagem: assim nunca param.
+      - name: Manter os agendamentos ligados
+        if: always()
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          for f in $(grep -l "^  schedule:" .github/workflows/*.yml); do
+            gh api -X PUT "repos/${{ github.repository }}/actions/workflows/$(basename "$f")/enable" >/dev/null && echo "ligado: $(basename "$f")" || echo "falhou: $(basename "$f")"
+          done

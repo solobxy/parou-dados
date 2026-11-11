@@ -10,12 +10,16 @@ name: Cópias de segurança
 # - Cada execução testa a cópia como se fosse restaurá-la (decifra, abre e conta os registos).
 #   Se algo falhar, ou se a cópia do servidor estiver velha, a execução falha e o GitHub avisa por email.
 #
-# Também guarda a lista de espera da anjinho.pt (/var/lib/anjinho/lista.jsonl) num ficheiro cifrado à parte.
+# Também guarda a lista de espera da anjinho.pt (/var/lib/anjinho/lista.jsonl) num ficheiro cifrado à parte,
+# e os dados dos outros projetos (servidor/copia-projetos.sh: DupliCasa, caiu.pt, ganhas.pt, agenda do Adri
+# e o site da Jinxed) em projetos.tgz.enc.
 #
 # Para restaurar: descarregar o artefacto "copia-AAAA-MM-DD", e correr
 #   openssl enc -d -aes-256-cbc -pbkdf2 -iter 200000 -pass env:HCLOUD_TOKEN -in copia.tgz.enc | tar xzf -
 #   openssl enc -d -aes-256-cbc -pbkdf2 -iter 200000 -pass env:HCLOUD_TOKEN -in anjinho-lista.jsonl.enc > lista.jsonl
 #   (e no servidor: copiar para /var/lib/anjinho/lista.jsonl e systemctl restart anjinho)
+#   openssl enc -d -aes-256-cbc -pbkdf2 -iter 200000 -pass env:HCLOUD_TOKEN -in projetos.tgz.enc | tar xzf -
+#   (cada pasta volta para /var/lib/<pasta>, com o serviço respetivo parado, e o dono parou:parou)
 
 on:
   schedule:
@@ -24,6 +28,7 @@ on:
 
 permissions:
   contents: read
+  actions: write
 
 concurrency:
   group: copias
@@ -67,6 +72,13 @@ jobs:
           ssh root@$IP 'cat /var/lib/anjinho/lista.jsonl 2>/dev/null || true' > anjinho-lista.jsonl
           echo "Emails na lista da anjinho: $(grep -c . anjinho-lista.jsonl || true)"
 
+      - name: Buscar os dados dos outros projetos (DupliCasa, caiu.pt, ganhas.pt, agenda do Adri, Jinxed)
+        continue-on-error: true
+        run: |
+          ssh root@$IP 'bash -s' < servidor/copia-projetos.sh > projetos.tgz
+          ls -l projetos.tgz
+          tar tzf projetos.tgz | head -40
+
       - name: Cifrar
         run: |
           DIA=$(date -u +%Y-%m-%d)
@@ -74,6 +86,9 @@ jobs:
           openssl enc -aes-256-cbc -pbkdf2 -iter 200000 -salt -pass env:HCLOUD_TOKEN -in ultima.tgz -out copia.tgz.enc
           openssl enc -aes-256-cbc -pbkdf2 -iter 200000 -salt -pass env:HCLOUD_TOKEN -in anjinho-lista.jsonl -out anjinho-lista.jsonl.enc
           shred -u anjinho-lista.jsonl
+          if [ -s projetos.tgz ]; then
+            openssl enc -aes-256-cbc -pbkdf2 -iter 200000 -salt -pass env:HCLOUD_TOKEN -in projetos.tgz -out projetos.tgz.enc && rm -f projetos.tgz
+          fi
           ls -l copia.tgz.enc anjinho-lista.jsonl.enc
 
       - name: Testar como se fosse restaurar
@@ -123,5 +138,39 @@ jobs:
           path: |
             copia.tgz.enc
             anjinho-lista.jsonl.enc
+            projetos.tgz.enc
           retention-days: 90
           if-no-files-found: error
+
+      # Depois de guardar: testa a cópia dos outros projetos como se fosse restaurá-la (falha e avisa se estiver estragada)
+      - name: Testar a cópia dos outros projetos
+        run: |
+          test -s projetos.tgz.enc || { echo "Não houve cópia dos outros projetos hoje"; exit 1; }
+          mkdir -p teste-projetos && cd teste-projetos
+          openssl enc -d -aes-256-cbc -pbkdf2 -iter 200000 -pass env:HCLOUD_TOKEN -in ../projetos.tgz.enc | tar xzf -
+          python3 - <<'PY'
+          import glob, os, sqlite3, sys
+          linhas, falhou = [], False
+          for f in sorted(glob.glob('**/*.db', recursive=True)):
+              c = sqlite3.connect(f)
+              ok = c.execute('PRAGMA integrity_check').fetchone()[0]
+              n = sum(c.execute(f'SELECT COUNT(*) FROM "{t}"').fetchone()[0] for (t,) in c.execute("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'"))
+              linhas.append(f'{f}: integridade={ok}, {n} registos'); falhou |= ok != 'ok'
+          j = os.path.exists('www/jinxed/index.html')
+          linhas.append('Jinxed: ' + ('site completo' if j else 'EM FALTA')); falhou |= not j
+          print('\n'.join(linhas))
+          open(os.environ['GITHUB_STEP_SUMMARY'], 'a').write('### Outros projetos\n```\n' + '\n'.join(linhas) + '\n```\n')
+          sys.exit(1 if falhou else 0)
+          PY
+
+      # No GitHub, os agendamentos de um repositório público desligam-se sozinhos ao fim de 60 dias sem
+      # atividade. Voltar a «ligar» cada workflow agendado reinicia essa contagem: assim nunca param.
+      - name: Manter os agendamentos ligados
+        if: always()
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          for f in $(grep -l "^  schedule:" .github/workflows/*.yml); do
+            gh api -X PUT "repos/${{ github.repository }}/actions/workflows/$(basename "$f")/enable" >/dev/null && echo "ligado: $(basename "$f")" || echo "falhou: $(basename "$f")"
+          done

@@ -33,6 +33,7 @@ escrever_estado() {
     echo "caiu.pt avisos: $(cat /var/lib/caiu-api/alertas.json 2>/dev/null | cut -c1-240)"
     echo "ganhas.pt API: $(systemctl is-active ganhas-api 2>/dev/null) $(curl -s -m 3 http://127.0.0.1:3140/api/estado 2>/dev/null | cut -c1-80)"
     echo "ganhas.pt páginas: $(systemctl show ganhas-paginas.service -p Result -p ExecMainStatus 2>/dev/null | tr '\n' ' ') $(journalctl -u ganhas-paginas -n 12 --no-pager -o cat 2>/dev/null | grep -v -E '^(Starting|Started|Finished|Failed to start|ganhas-paginas)' | tail -3 | cut -c1-200 | tr '\n' ';')"
+    cat /var/lib/parou-estado/vigia-projetos.txt 2>/dev/null | sed -E 's/([0-9]{1,3}\.){3}[0-9]{1,3}/<ip>/g' | cut -c1-300
     echo
     echo "--- Últimas linhas da app ---"
     # Esta página é pública: esconde emails e endereços IP que alguma linha possa ter
@@ -77,7 +78,15 @@ if [ -f "$EJ" ] && ! cmp -s "$EJ" /var/www/_estatisticas/e.js; then
   install -d -m 755 /var/www/_estatisticas && install -m 644 "$EJ" /var/www/_estatisticas/e.js.novo \
     && mv /var/www/_estatisticas/e.js.novo /var/www/_estatisticas/e.js
 fi
-# A Jinxed foi copiada à mão (fora do repositório): junta-lhe o script se ainda não o tiver
+# Jinxed: site estático em sites/jinxed (antes só existia no servidor, copiado à mão).
+# Copia só quando mudou, para uma pasta nova, e troca de uma vez (nunca fica meio copiado).
+JX=$BASE/servidor/sites/jinxed
+if [ -f "$JX/index.html" ] && ! diff -rq "$JX" /var/www/jinxed >/dev/null 2>&1; then
+  rm -rf /var/www/jinxed.novo && mkdir -p /var/www && cp -r "$JX" /var/www/jinxed.novo \
+    && chmod -R a+rX /var/www/jinxed.novo \
+    && rm -rf /var/www/jinxed.velho && { [ ! -d /var/www/jinxed ] || mv /var/www/jinxed /var/www/jinxed.velho; } \
+    && mv /var/www/jinxed.novo /var/www/jinxed && rm -rf /var/www/jinxed.velho
+fi
 if [ -f /var/www/jinxed/index.html ] && ! grep -q '/_e.js' /var/www/jinxed/index.html; then
   sed -i '0,/<\/head>/s##<script defer src="/_e.js" data-site="jinxed"></script></head>#' /var/www/jinxed/index.html
 fi
@@ -349,6 +358,16 @@ if [ -f "$SERV/ganhas-api.service" ] && [ -f "$BASE/servidor/ganhas/api.py" ]; t
   if [ -n "$PV" ] && [ "$(cat /etc/ganhas/paginas.versao 2>/dev/null)" != "$PV" ]; then
     systemctl start --no-block ganhas-paginas.service && echo "$PV" > /etc/ganhas/paginas.versao
   fi
+fi
+
+# Vigia dos projetos (de 10 em 10 minutos): serviços parados, APIs bloqueadas, dados velhos e o Supabase do Goodman acordado
+if [ -f "$SERV/vigia-projetos.sh" ]; then
+  if ! cmp -s "$SERV/vigia-projetos.sh" /usr/local/bin/vigia-projetos; then install -m 755 "$SERV/vigia-projetos.sh" /usr/local/bin/vigia-projetos; fi
+  for f in vigia-projetos.service vigia-projetos.timer; do
+    if ! cmp -s "$SERV/$f" "/etc/systemd/system/$f"; then cp "$SERV/$f" "/etc/systemd/system/$f" && systemctl daemon-reload; fi
+  done
+  systemctl is-enabled --quiet vigia-projetos.timer 2>/dev/null || systemctl enable --now vigia-projetos.timer >/dev/null 2>&1
+  systemctl is-active --quiet vigia-projetos.timer || systemctl start vigia-projetos.timer
 fi
 
 # O próprio atualizador, se mudou no repositório

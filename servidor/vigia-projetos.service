@@ -1,0 +1,9 @@
+[Unit]
+Description=Vigia dos projetos (serviços, dados frescos e Supabase acordado)
+After=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/vigia-projetos
+Environment=TZ=Europe/Lisbon
+TimeoutStartSec=300

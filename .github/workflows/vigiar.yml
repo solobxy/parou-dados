@@ -39,3 +39,39 @@ jobs:
           done
           echo "Sites testados: $sites" >> "$GITHUB_STEP_SUMMARY"
           exit $falhou
+
+  # Os outros sites: cada um tem de abrir e mostrar a sua marca. Os dados automáticos têm de estar frescos
+  # (preços do caiu.pt de hoje, anúncios da DupliCasa a mexer). O servidor já se corrige sozinho
+  # (vigia-projetos.sh); isto só avisa por email se algo continuar partido.
+  outros:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Testar os outros sites
+        run: |
+          testar() { # url texto
+            curl -fsSL -m 25 "$1" -o /tmp/p.html || { echo "$1 não abriu"; return 1; }
+            grep -qi "$2" /tmp/p.html || { echo "$1 abriu sem «$2»"; return 1; }
+            echo "$1 OK"
+          }
+          falhou=0
+          while read -r url texto; do
+            [ -n "$url" ] || continue
+            ok=0; for i in 1 2 3; do if testar "$url" "$texto"; then ok=1; break; fi; sleep 40; done
+            [ $ok = 1 ] || falhou=1
+          done <<'LISTA'
+          https://dinissousa.pt/ dinissousa
+          https://duplicasa.pt/ DupliCasa
+          https://caiu.pt/ caiu
+          https://ganhas.pt/ ganhas
+          https://tapmoss.com/ tapmoss
+          https://goodman.pt/ Goodman
+          https://anjinho.pt/ anjinho
+          https://jinxed.world/ jinxed
+          https://adribodypiercing.pt/ Adri
+          LISTA
+          # caiu.pt: os preços têm de ser de hoje ou de ontem (há 3 recolhas por dia)
+          dia=$(curl -fsS -m 25 https://caiu.pt/dados/resumo.json | python3 -c "import json,sys; print(json.load(sys.stdin).get('dia',''))" 2>/dev/null || true)
+          hoje=$(TZ=Europe/Lisbon date +%F); ontem=$(TZ=Europe/Lisbon date -d yesterday +%F)
+          if [ "$dia" = "$hoje" ] || [ "$dia" = "$ontem" ]; then echo "caiu.pt preços de $dia"; else echo "caiu.pt: preços velhos ($dia)"; falhou=1; fi
+          exit $falhou
