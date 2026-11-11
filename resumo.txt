@@ -1,0 +1,11 @@
+INE 0012656: 2024..2024
+INE 0012655: 2024..2024
+INE 0014412: 2024..2024
+INE 0012653: 2024..2024
+INE 0012651: 2024..2024
+Eurostat earn_nt_net: atualizado 2026-11-10T11:00:00+0100
+Eurostat earn_mw_cur: atualizado 2026-07-31T11:00:00+0200
+DGAEP: 918941 bytes
+DGCP /documents/10182/10928/seriesqp_2014_2026.xlsx: ERRO 404
+DGCP /documents/10182/10928/seriesqp_2014_2025.xlsx: ERRO 404
+DGCP: seriesqp_2014_2024.xlsx (843104 bytes) de /documents/10182/10928/seriesqp_2014_2024.xlsx
