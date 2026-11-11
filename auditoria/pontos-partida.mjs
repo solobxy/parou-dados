@@ -38,11 +38,11 @@ for (const [nome, vw, vh] of [['telemovel', 390, 844], ['computador', 1280, 800]
   await p.screenshot({ path: `${SAIDA}/pontos-partida-${nome}.png` });
   if (n) {
     await lista.locator('button', { hasText: 'Cais do Sodré' }).first().click();
-    // a lista de paragens perto do Cais do Sodré tem de aparecer (a app passa a usar o local escolhido)
+    // a lista de paragens perto do Cais do Sodré tem de aparecer (cartões com a distância, «46 metros»)
     let viu = false;
     for (let i = 0; i < 40 && !viu; i++) {
       await p.waitForTimeout(1000);
-      viu = (await p.locator('[data-teste="pontos-partida"]').count()) === 0 && await p.getByText(/Cais do Sodr/i).first().isVisible().catch(() => false);
+      viu = (await p.locator('[data-teste="pontos-partida"]').count()) === 0 && await p.locator('text=/\\d+ metros/').first().isVisible().catch(() => false);
     }
     ok(`${nome}: tocar em Cais do Sodré mostra os transportes de lá`, viu);
     await p.waitForTimeout(2500);
