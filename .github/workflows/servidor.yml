@@ -129,7 +129,7 @@ jobs:
           fi
           # STCP (API oficial de tempo real): credenciais cifradas em servidor/stcp.age (linha 1 = app-id, linha 2 = chave)
           if [ -f servidor/stcp.age ]; then
-            command -v age >/dev/null 2>&1 || sudo apt-get install -y -qq age >/dev/null 2>&1
+            command -v age >/dev/null 2>&1 || { sudo apt-get update -qq >/dev/null 2>&1; sudo apt-get install -y -qq age >/dev/null 2>&1; } || true
             STCP_DADOS=$(age -d -i ~/.ssh/id_ed25519 servidor/stcp.age 2>/dev/null) || STCP_DADOS=""
             STCP_APP_ID=$(printf '%s' "$STCP_DADOS" | sed -n 1p)
             STCP_API_KEY=$(printf '%s' "$STCP_DADOS" | sed -n 2p)
@@ -158,7 +158,7 @@ jobs:
           # Chave do Resend só de envio, limitada ao duplicasa.pt: cifrada em servidor/duplicasa-resend.age
           # (para a chave SSH deste repositório); tem prioridade sobre o segredo do GitHub
           if [ -f servidor/duplicasa-resend.age ]; then
-            command -v age >/dev/null 2>&1 || sudo apt-get install -y -qq age >/dev/null 2>&1
+            command -v age >/dev/null 2>&1 || { sudo apt-get update -qq >/dev/null 2>&1; sudo apt-get install -y -qq age >/dev/null 2>&1; } || true
             R=$(age -d -i ~/.ssh/id_ed25519 servidor/duplicasa-resend.age 2>/dev/null) || R=""
             if [ -n "$R" ]; then RESEND_API_KEY="$R"; else echo "RESEND_API_KEY: não deu para abrir servidor/duplicasa-resend.age" >> resultado.txt; fi
           fi
@@ -180,7 +180,7 @@ jobs:
           source funcs.sh
           IP=$(h "$API/servers?name=parou" | jq -r '.servers[0].public_net.ipv4.ip // empty')
           [ -n "$IP" ] || { echo "Servidor não encontrado" >> resultado.txt; exit 1; }
-          command -v age >/dev/null 2>&1 || sudo apt-get install -y -qq age >/dev/null 2>&1
+          command -v age >/dev/null 2>&1 || { sudo apt-get update -qq >/dev/null 2>&1; sudo apt-get install -y -qq age >/dev/null 2>&1; } || true
           # servidor/caiu-api.age: linhas NOME=valor (chave do Resend só de envio, remetente, e-mail do administrador),
           # cifradas para a chave SSH deste repositório; vão pelo stdin e nunca aparecem no resultado
           VALOR=$(age -d -i ~/.ssh/id_ed25519 servidor/caiu-api.age 2>/dev/null) || VALOR=""
@@ -195,7 +195,7 @@ jobs:
           source funcs.sh
           IP=$(h "$API/servers?name=parou" | jq -r '.servers[0].public_net.ipv4.ip // empty')
           [ -n "$IP" ] || { echo "Servidor não encontrado" >> resultado.txt; exit 1; }
-          command -v age >/dev/null 2>&1 || sudo apt-get install -y -qq age >/dev/null 2>&1
+          command -v age >/dev/null 2>&1 || { sudo apt-get update -qq >/dev/null 2>&1; sudo apt-get install -y -qq age >/dev/null 2>&1; } || true
           VALOR=$(age -d -i ~/.ssh/id_ed25519 servidor/adri-agenda.age 2>/dev/null) || VALOR=""
           if [ -z "$VALOR" ]; then echo "ADRI_SENHA_HASH: não deu para abrir servidor/adri-agenda.age" >> resultado.txt; exit 1; fi
           # Só o hash (scrypt) e pelo stdin: nunca aparece em comandos nem no resultado
