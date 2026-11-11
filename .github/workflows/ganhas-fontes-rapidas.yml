@@ -1,0 +1,35 @@
+name: ganhas.pt - recolha rápida de fontes
+
+# Versão incremental e com orçamento de tempo de ganhas/recolha/rapido.py. Guarda no ramo ganhas-fontes-rapidas.
+on:
+  push:
+    branches: [ganhas-recolha-rapida]
+    paths: ["ganhas/recolha/**", ".github/workflows/ganhas-fontes-rapidas.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ganhas-fontes-rapidas
+  cancel-in-progress: true
+
+jobs:
+  recolher:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - name: Recolher
+        timeout-minutes: 30
+        run: |
+          pip install --quiet pdfplumber
+          python3 ganhas/recolha/rapido.py saida 22
+      - name: Guardar no ramo ganhas-fontes-rapidas
+        if: always()
+        run: |
+          set -e
+          mkdir -p saida && cd saida && git init -q -b ganhas-fontes-rapidas
+          git config user.name "parou-dados"; git config user.email "actions@users.noreply.github.com"
+          git add -A && git commit -q -m "Fontes $(date -u +%Y-%m-%dT%H:%MZ)"
+          git push -q -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" ganhas-fontes-rapidas
