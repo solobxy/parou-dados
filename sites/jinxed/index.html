@@ -56,6 +56,15 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
 a{color:var(--bone)}
 a:focus-visible,button:focus-visible,input:focus-visible{outline:2px solid var(--bone);outline-offset:4px}
 button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;touch-action:manipulation}
+/* o primeiro ecrã diz logo o que é (uma linha) e convida a descer; tudo some ao começar a descer */
+.hcap,.hcue{position:absolute;z-index:48;pointer-events:none;bottom:calc(22px + env(safe-area-inset-bottom,0px));opacity:calc(1 - var(--hp,0) * 4);transition:opacity .2s linear}
+.hcap{left:var(--gut);margin:0;display:grid;gap:2px;font-family:var(--display);font-size:clamp(20px,2.4vw,30px);line-height:1;color:var(--bone);letter-spacing:.01em}
+.hcap span+span{color:var(--ash);font-size:.78em}
+.hcue{right:var(--gutR);display:grid;justify-items:center;gap:8px;font:600 10px/1 ui-monospace,Menlo,Consolas,monospace;letter-spacing:.32em;text-transform:uppercase;color:var(--ash);padding-left:.32em}
+.hcue i{display:block;width:1px;height:44px;background:linear-gradient(var(--blood),transparent);transform-origin:50% 0;animation:hcue 1.8s cubic-bezier(.6,0,.2,1) infinite}
+@keyframes hcue{0%{transform:scaleY(0);opacity:1}60%{transform:scaleY(1);opacity:1}100%{transform:scaleY(1);opacity:0}}
+.js .hcap,.js .hcue{animation:hcin .9s cubic-bezier(.2,.7,.2,1) 1.2s backwards}
+@keyframes hcin{from{opacity:0;translate:0 12px}}
 .sr{position:absolute!important;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 .skip{position:fixed;left:16px;top:-80px;z-index:100;background:var(--bone);color:var(--ink);padding:10px 16px;text-decoration:none}
 .skip:focus{top:calc(12px + env(safe-area-inset-top,0px))}
@@ -119,7 +128,7 @@ main,.foot{position:relative;z-index:1}
 
 /* herói */
 .hero{position:relative;height:100svh;min-height:600px}
-.js .hero{height:240vh}
+.js .hero{height:165vh}
 .stage{position:sticky;top:0;height:100vh;height:100svh;min-height:600px;overflow:hidden}
 #gl{position:fixed;inset:0;width:100%;height:100%;display:block;z-index:47;pointer-events:none;transition:opacity 200ms}
 .fallback{position:absolute;inset:0;display:flex;align-items:center;justify-content:center}
@@ -462,6 +471,8 @@ a:hover,a:focus-visible{--lit:1!important}
         </svg>
       </div>
       <h1 id="h1" class="sr">Jinxed</h1>
+      <p class="hcap" aria-hidden="true"><span>gothic menswear</span><span>made in portugal</span></p>
+      <span class="hcue" aria-hidden="true"><i></i>scroll</span>
     </div>
   </section>
 
@@ -705,7 +716,7 @@ a:hover,a:focus-visible{--lit:1!important}
 
   /* pré-carregamento */
   const pre = document.getElementById('pre');
-  const t0 = performance.now(); const PRE = RM ? 350 : 1350;
+  const t0 = performance.now(); const PRE = RM ? 300 : 900;
   let preDone = false;
   const endPre = () => { if (preDone) return; preDone = true; pre.classList.add('done'); setTimeout(() => { pre.hidden = true; }, 950); };
   (function tick(now) {
@@ -1306,7 +1317,7 @@ a:hover,a:focus-visible{--lit:1!important}
     progMk.style.transform = 'translateY(' + (gp * ph) + 'px)' + (RM ? '' : ' rotate(' + (gp * 720) + 'deg)');
     ticks.forEach((t) => t.classList.toggle('on', gp >= parseFloat(t.dataset.at) - .002));
 
-    const p = progress(hero);
+    const p = progress(hero); hero.style.setProperty('--hp', p.toFixed(3));
     if (gl) {
       if (!RM) { tx += (ptx - tx) * .05; ty += (pty - ty) * .05; }
       // no fim do herói o símbolo desliza até à barra do topo (animação no tempo, não presa ao scroll)
