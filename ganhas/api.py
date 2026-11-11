@@ -40,7 +40,19 @@ DISTRITOS = {d['id']: d for d in CATALOGO['distritos']}
 CONTRATOS = {'efetivo', 'termo', 'temporario', 'recibos', 'estagio', 'outro'}
 EXPERIENCIA = {'0-2', '3-5', '6-10', '11-20', '21+'}
 GENEROS = {'', 'mulher', 'homem', 'outro'}
-SMN = CATALOGO.get('salario_minimo', 920)
+SMN_FIXO = CATALOGO.get('salario_minimo', 920)
+try:
+    with open(os.path.join(AQUI, 'dados', 'oficial.json'), encoding='utf-8') as _f:
+        SMN_ANOS = {int(a): v for a, v in json.load(_f).get('smn', {}).items()}
+except Exception:  # noqa: BLE001
+    SMN_ANOS = {}
+
+
+def smn():
+    """Salário mínimo em vigor hoje (muda sozinho a 1 de janeiro, com os valores de dados/oficial.json)."""
+    ano = time.localtime().tm_year
+    anos = [a for a in SMN_ANOS if a <= ano]
+    return SMN_ANOS[max(anos)] if anos else SMN_FIXO
 
 _bloqueio = threading.Lock()
 _limites = {}  # chave -> [instantes]
@@ -244,7 +256,7 @@ def validar_pow(d, nonce):
 
 def avaliar(bruto40, profissao):
     """Marca como suspeito o que é pouco plausível (fica guardado, mas não conta)."""
-    if bruto40 < SMN * 0.75:
+    if bruto40 < smn() * 0.75:
         return 'suspeito'
     ref = PROFISSOES.get(profissao, {}).get('ganho_grupo')
     if bruto40 > 15000 or (ref and bruto40 > ref * 6):

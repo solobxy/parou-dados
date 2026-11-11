@@ -141,7 +141,7 @@ aparecem só para identificar empresas.</p>
 '''
 
 
-def metodologia(fontes_html):
+def metodologia(fontes_html, ano_irs=2026):
     return f'''
 <h1>Método e fontes</h1>
 <p class="lede">Cada número do ganhas.pt tem uma origem. Aqui está de onde vêm, como são tratados e o que não dizem.</p>
@@ -172,6 +172,6 @@ com estimativas próprias.</p>
 paga numa empresa ou numa função concreta, não para substituir os números oficiais.</p>
 
 <h2>Calculadora de salário líquido</h2>
-<p>Usa as tabelas de retenção na fonte do IRS para 2026 no Continente, a contribuição de 11 % para a Segurança Social e
+<p>Usa as tabelas de retenção na fonte do IRS para {ano_irs} no Continente, a contribuição de 11 % para a Segurança Social e
 os limites de isenção do subsídio de alimentação. Explicamos cada passo na própria página.</p>
 '''

@@ -179,7 +179,7 @@
       const oQue = tipo === 'base' ? 'tinha um vencimento base mais baixo' : 'ganhava menos';
       let texto;
       if (v14 < DD.minimo_hoje) {
-        texto = 'Esse valor fica abaixo do salário mínimo de 2026 a tempo completo (' + euro(DD.minimo_hoje) + '). Se trabalhas a tempo parcial, a comparação não serve.';
+        texto = 'Esse valor fica abaixo do salário mínimo de ' + (DD.minimo_ano || '') + ' a tempo completo (' + euro(DD.minimo_hoje) + '). Se trabalhas a tempo parcial, a comparação não serve.';
       } else if (v14 <= S.pontos[0][0] && S.pontos[0][1] > 0) {
         texto = 'Em ' + DD.ano + ', <span class="mk on">' + pct(S.pontos[0][1]) + '</span> de quem trabalhava a tempo completo recebia o salário mínimo de então.';
       } else if (p >= 90) {
@@ -256,7 +256,7 @@
       out('c-r-taxa', pct(r.R ? (r.irs / (r.R + r.duo)) * 100 : 0, 1));
       out('c-r-custo', euro(r.custoEmpresa, 2));
       const nov = $('#c-l-nov');
-      if (nov) { const ate = new Date() < new Date('2026-12-01T00:00:00'); nov.hidden = !ate || Math.abs(r.liquidoNovembro - r.liquidoMes) < 0.5; out('c-r-nov', euro(r.liquidoNovembro, 2)); }
+      if (nov) { const ate = !!(D.irs && D.irs.novembro) && new Date() < new Date((D.irs.ano || 2026) + '-12-01T00:00:00'); nov.hidden = !ate || Math.abs(r.liquidoNovembro - r.liquidoMes) < 0.5; out('c-r-nov', euro(r.liquidoNovembro, 2)); }
       clearTimeout(correr.t); correr.t = setTimeout(() => estat('calculou', String(Math.round(bruto / 100) * 100)), 1500);
       const ch = $('#c-chamada'); if (ch) ch.hidden = !(bruto >= 100);
     };

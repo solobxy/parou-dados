@@ -21,6 +21,19 @@ with open(os.path.join(AQUI, 'dados', 'oficial.json'), encoding='utf-8') as f:
     O = json.load(f)
 
 HOJE = dt.date.today().isoformat()
+ANO = dt.date.today().year
+
+
+def smn_hoje():
+    """(ano, valor) do salário mínimo em vigor: o do ano corrente, ou o mais recente que já se conhece."""
+    d = O['smn']
+    anos = [int(a) for a in d if int(a) <= ANO]
+    a = str(max(anos)) if anos else min(d, key=int)
+    return int(a), d[a]
+
+
+# Novembro com metade da retenção: só enquanto for esse novembro (a regra é de um ano só)
+NOV = bool(O['irs'].get('novembro')) and HOJE < f"{O['irs']['ano']}-12-01"
 PAGINAS = []  # (caminho, prioridade) para o sitemap
 e = html.escape
 
@@ -175,14 +188,14 @@ def paginas_texto():
                     f'(<a href="{e(f["url"])}" rel="noopener">fonte</a>{", " + e(f["ref"]) if f.get("ref") else ""}).</li>'
                     for f in O['fontes'].values())
     pagina('/metodo/', 'Método e fontes', 'De onde vêm os números do ganhas.pt, como são tratados e o que não dizem.',
-           f'<section class="sec"><div class="mold texto">{legal.metodologia("<ul>" + lista + "</ul>")}</div></section>', prioridade=0.4)
+           f'<section class="sec"><div class="mold texto">{legal.metodologia("<ul>" + lista + "</ul>", O["irs"]["ano"])}</div></section>', prioridade=0.4)
 
 
 # ---------------------------------------------------------------- dados partilhados com o JavaScript
 
 def dados_distribuicao():
     d = O['distribuicao']
-    return {'ano': d['ano'], 'minimo': d['minimo'], 'minimo_hoje': O['smn']['2026'],
+    return {'ano': d['ano'], 'minimo': d['minimo'], 'minimo_hoje': smn_hoje()[1], 'minimo_ano': smn_hoje()[0],
             'base': {k: d['base'][k] for k in ('pontos', 'mediana', 'eixo')},
             'ganho': {k: d['ganho'][k] for k in ('pontos', 'mediana', 'eixo')}}
 
@@ -263,8 +276,7 @@ um vencimento base até {euro(1000)}, e só 1 em cada 10 ganhava mais de {euro(g
 
 <section class="sec folha"><div class="mold grelha2">
 <div class="entra"><h2>Bruto não é o que levas para casa</h2>
-<p class="lede espaco">Com as tabelas de IRS de 2026, a Segurança Social e o subsídio de alimentação, a calculadora mostra o teu recibo linha a linha.
-Em novembro de 2026, a retenção de IRS é metade.</p>
+<p class="lede espaco">Com as tabelas de IRS de {O["irs"]["ano"]}, a Segurança Social e o subsídio de alimentação, a calculadora mostra o teu recibo linha a linha.{(chr(10) + f'Em novembro de {O["irs"]["ano"]}, a retenção de IRS é metade.') if NOV else ''}</p>
 <p class="espaco"><a class="botao" href="/calculadora/">Abrir a calculadora</a></p></div>
 <div class="recibo entra" aria-label="Exemplo de recibo">
 <h3>Exemplo: {euro(O["exemplo"]["bruto"])} brutos</h3>
@@ -272,7 +284,7 @@ Em novembro de 2026, a retenção de IRS é metade.</p>
 <div class="linha menos"><span class="r">Segurança Social (11 %)</span><span class="p"></span><span class="v">− {euro(O["exemplo"]["ss"], 2)}</span></div>
 <div class="linha menos"><span class="r">Retenção de IRS</span><span class="p"></span><span class="v">− {euro(O["exemplo"]["irs"], 2)}</span></div>
 <div class="linha total"><span class="r">Líquido</span><span class="p"></span><span class="v"><span class="mk">{euro(O["exemplo"]["liquido"], 2)}</span></span></div>
-<p class="fonte">Não casado, sem dependentes, Continente, tabela I de 2026, sem subsídio de alimentação.</p>
+<p class="fonte">Não casado, sem dependentes, Continente, tabela I de {O["irs"]["ano"]}, sem subsídio de alimentação.</p>
 </div>
 </div></section>
 
@@ -317,7 +329,7 @@ Em novembro de 2026, a retenção de IRS é metade.</p>
     ld = [{'@type': 'WebApplication', 'name': 'Comparador de salários ganhas.pt', 'url': DOMINIO + '/', 'applicationCategory': 'FinanceApplication',
            'operatingSystem': 'Todos', 'inLanguage': 'pt-PT', 'offers': {'@type': 'Offer', 'price': '0', 'priceCurrency': 'EUR'}}]
     pagina('/', 'Quanto ganhas? Compara o teu salário em Portugal',
-           f'Em {ano}, metade de quem trabalhava a tempo completo ganhava menos de {euro(g["mediana"])}. Compara o teu salário e calcula o líquido de 2026.',
+           f'Em {ano}, metade de quem trabalhava a tempo completo ganhava menos de {euro(g["mediana"])}. Compara o teu salário e calcula o líquido de {O["irs"]["ano"]}.',
            corpo, dados={'distribuicao': dados_distribuicao(), 'irs': dados_irs()}, ld=ld, prioridade=1.0, barra=True,
            h_titulo='ganhas.pt · Quanto ganhas? Compara o teu salário em Portugal')
 
@@ -390,9 +402,9 @@ def calculadora():
 <div class="linha total"><span class="r">Líquido por mês</span><span class="p"></span><span class="v" id="c-r-liq">—</span></div>
 <div class="linha"><span class="r">Líquido por ano</span><span class="p"></span><span class="v" id="c-r-ano">—</span></div>
 <div class="linha"><span class="r">Taxa de retenção</span><span class="p"></span><span class="v" id="c-r-taxa">—</span></div>
-<div class="linha destaque" id="c-l-nov" hidden><span class="r">Líquido em novembro de 2026</span><span class="p"></span><span class="v" id="c-r-nov">—</span></div>
+<div class="linha destaque" id="c-l-nov" hidden><span class="r">Líquido em novembro de {irs["ano"]}</span><span class="p"></span><span class="v" id="c-r-nov">—</span></div>
 <div class="linha"><span class="r">Custo para a empresa</span><span class="p"></span><span class="v" id="c-r-custo">—</span></div>
-<p class="fonte">A retenção é um adiantamento do IRS: o imposto final só se sabe na declaração anual. {e(irs.get("nota", ""))}
+<p class="fonte">A retenção é um adiantamento do IRS: o imposto final só se sabe na declaração anual. {e(irs.get("nota", "")) if NOV else ""}
 O custo para a empresa soma {pct(100 * irs["tsu_empresa"], 2)} de TSU ao salário. Não aplicamos o IRS Jovem nem as regras para pessoas com deficiência.</p>
 </div>
 <div class="chamada" id="c-chamada" hidden>
@@ -409,7 +421,7 @@ O custo para a empresa soma {pct(100 * irs["tsu_empresa"], 2)} de TSU ao salári
 ({euro(T["II"]["dependente"], 2)} se não fores casado, {euro(T["I"]["dependente"], 2)} se forem dois a ganhar, {euro(T["III"]["dependente"], 2)} se só um ganhar).
 Com 3 ou mais dependentes, a taxa desce 1 ponto. O valor é arredondado para o euro de baixo.</li>
 <li><strong>Subsídios de férias e de Natal:</strong> são retidos à parte, cada um com a mesma tabela. Em duodécimos, cada fração paga a taxa do subsídio inteiro.</li>
-<li><strong>Novembro de 2026:</strong> a retenção é metade, também sobre o subsídio de Natal pago nesse mês, exceto para salários acima de {euro(irs["novembro"]["limite"]["I"])} (Despacho n.º 12523-A/2026). Em dezembro volta ao normal.</li>
+{('<li><strong>Novembro de ' + str(irs["ano"]) + ':</strong> a retenção é metade, também sobre o subsídio de Natal pago nesse mês, exceto para salários acima de ' + euro(irs["novembro"]["limite"]["I"]) + ' (Despacho n.º 12523-A/2026). Em dezembro volta ao normal.</li>') if NOV else ''}
 <li><strong>Subsídio de alimentação:</strong> até {euro(irs["subsidio_dinheiro"], 2)} por dia (dinheiro) ou {euro(irs["subsidio_cartao"], 2)} (cartão) não paga IRS nem Segurança Social.</li>
 </ol>
 <h3>Tabela I de {irs["ano"]}: não casado sem dependentes, ou casado com dois titulares</h3>
@@ -779,7 +791,7 @@ PROF_FP = {'enfermeiro': 'enfermeiros', 'medico-de-medicina-geral': 'medicos', '
 
 
 def reter(R, tab='I', dep=0):
-    """Retenção de IRS de 2026 (mesmas regras do app.js)."""
+    """Retenção de IRS do ano das tabelas em oficial.json (mesmas regras do app.js)."""
     T = O['irs']['tabelas'][tab]
     for lim, taxa, parc in T['linhas']:
         if lim is None or R <= lim:
@@ -814,7 +826,7 @@ def carreiras_fp():
         cats = [c for c in x['categorias'] if not formacao.search(c['nome'] + ' ' + (c.get('subgrupo') or ''))]
         if x['id'] in FP_PRINCIPAL:
             cats = [c for c in cats if c['nome'] == FP_PRINCIPAL[x['id']]] or cats
-        vals = [p['valor'] for c in cats for p in c['posicoes'] if p['valor'] >= O['smn']['2026']]
+        vals = [p['valor'] for c in cats for p in c['posicoes'] if p['valor'] >= smn_hoje()[1]]
         x['min'], x['max'] = (min(vals), max(vals)) if vals else (None, None)
         x['principal'] = FP_PRINCIPAL.get(x['id'])
     return por
@@ -1060,7 +1072,8 @@ def llms():
         f'  - ganho mensal mediano (com prémios e subsídios regulares): {euro(d["ganho"]["mediana"])}; ganho médio: {euro(d["media"])};',
         f'  - 10 % ganhavam mais de {euro(d["ganho"]["d9"])} (9.º decil do ganho).',
         f'- Ganho médio mensal em Portugal, {O["concelhos_ano"]} (INE, Quadros de Pessoal): {euro(O["media_nacional"])}; por concelho em https://ganhas.pt/concelhos/.',
-        f'- Salário mínimo nacional em 2026: {euro(O["smn"]["2026"])} brutos por mês (970 € previstos para 2027).',
+        f'- Salário mínimo nacional em {smn_hoje()[0]}: {euro(smn_hoje()[1])} brutos por mês'
+        + (f' ({euro(O["smn"][str(smn_hoje()[0] + 1)])} previstos para {smn_hoje()[0] + 1}).' if str(smn_hoje()[0] + 1) in O['smn'] else '.'),
     ]
     if pt:
         linhas.append(f'- Salário líquido anual de uma pessoa sozinha sem filhos com o salário médio em Portugal, {eu["ano"]}: {euro(pt["eur"])} (Eurostat).')
@@ -1068,7 +1081,7 @@ def llms():
         linhas.append(f'- Base remuneratória da Administração Pública em {O["funcao_publica"]["ano"]}: {euro(O["funcao_publica"]["brap"], 2)}.')
     linhas += ['', '## Páginas', '',
                '- [Comparador de salários](https://ganhas.pt/): onde estás na distribuição dos salários em Portugal.',
-               '- [Calculadora de salário líquido 2026](https://ganhas.pt/calculadora/): bruto para líquido com as tabelas oficiais de IRS.',
+               f'- [Calculadora de salário líquido {O["irs"]["ano"]}](https://ganhas.pt/calculadora/): bruto para líquido com as tabelas oficiais de IRS.',
                '- [Salários por profissão](https://ganhas.pt/profissoes/)', '- [Salários por concelho](https://ganhas.pt/concelhos/)',
                '- [Função pública: todas as carreiras com bruto e líquido](https://ganhas.pt/funcao-publica/)', '- [Portugal e a Europa](https://ganhas.pt/europa/)',
                '- [Método e fontes](https://ganhas.pt/metodo/)', '- [Dados abertos](https://ganhas.pt/dados/)', '',

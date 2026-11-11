@@ -1,0 +1,62 @@
+name: ganhas.pt - atualizar sozinho
+
+# Mantém o ganhas.pt certo sem ninguém mexer:
+# - no início de cada mês (e de 3 em 3 dias em janeiro e fevereiro, quando saem as tabelas novas) procura as tabelas
+#   de retenção na fonte do IRS do ano novo e, se passarem nas verificações, põe-nas (ganhas/irs_novo_ano.py);
+# - volta a gerar o site, para os textos que dependem da data (salário mínimo do ano, novembro com metade da
+#   retenção, datas das páginas) estarem sempre certos. Só publica se alguma coisa mudou.
+
+on:
+  schedule:
+    - cron: "23 6 1 * *"
+    - cron: "41 7 */3 1,2 *"
+  workflow_dispatch:
+    inputs:
+      teste:
+        description: "1 = só testar a leitura da circular do ano das tabelas atuais, sem publicar"
+        required: false
+        default: ""
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ganhas-atualizar
+  cancel-in-progress: false
+
+jobs:
+  atualizar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Ferramentas
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq poppler-utils >/dev/null
+      - name: Testar a leitura da circular (só à mão)
+        if: inputs.teste == '1'
+        run: |
+          ANO=$(python3 -c "import json; print(json.load(open('ganhas/dados/oficial.json'))['irs']['ano'])")
+          IRS_TESTE=1 python3 ganhas/irs_novo_ano.py "$ANO"
+      - name: Tabelas de IRS do ano novo
+        if: inputs.teste != '1'
+        continue-on-error: true
+        run: python3 ganhas/irs_novo_ano.py
+      - name: Gerar o site
+        if: inputs.teste != '1'
+        run: python3 ganhas/gerar.py
+      - name: Publicar se mudou
+        if: inputs.teste != '1'
+        run: |
+          git config user.name "parou-dados"
+          git config user.email "actions@users.noreply.github.com"
+          git add ganhas/dados/oficial.json sites/ganhas
+          if git diff --cached --quiet; then echo "Nada mudou"; exit 0; fi
+          git commit -q -m "ganhas.pt: atualização automática ($(date -u +%Y-%m-%d))"
+          for i in 1 2 3 4 5; do
+            git push -q && break
+            git pull -q --rebase origin main || true
+            sleep $((i * 5))
+          done
