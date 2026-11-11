@@ -315,6 +315,13 @@ if [ -f "$SERV/caiu-recolha.service" ] && [ -f "$BASE/servidor/caiu/recolher.py"
     fi
     systemctl is-active --quiet caiu-api.service || systemctl start caiu-api.service
   fi
+  # Páginas de preços (/preco/): geradas depois de cada recolha; aqui também quando o gerador ou os termos mudam
+  PG=$( { sha256sum "$BASE/servidor/caiu/paginas.py" "$BASE/servidor/caiu/comum.py" "$BASE/servidor/caiu/termos.txt" 2>/dev/null; } | sha256sum | cut -c1-16)
+  if [ -f /var/lib/caiu-dados/lista.json ] && [ "$(cat /var/lib/caiu-estado/paginas 2>/dev/null)" != "$PG" ]; then
+    if runuser -u parou -- /usr/bin/python3 "$BASE/servidor/caiu/paginas.py" /var/lib/caiu-dados >/tmp/caiu-paginas.log 2>&1; then
+      install -d -m 755 /var/lib/caiu-estado && echo "$PG" > /var/lib/caiu-estado/paginas
+    fi
+  fi
   # Recolha já (na primeira instalação e sempre que caiu/forcar-recolha muda)
   FR=$(cat "$BASE/servidor/caiu/forcar-recolha" 2>/dev/null)
   if [ -n "$FR" ] && [ "$(cat /var/lib/caiu-estado/forcar 2>/dev/null)" != "$FR" ]; then

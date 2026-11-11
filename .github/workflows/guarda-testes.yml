@@ -45,6 +45,7 @@ jobs:
           python3 auditoria/test_formas.py
           python3 auditoria/test_calendario_ponte.py
           python3 auditoria/test_caminhos_a_pe.py
+          python3 caiu/verificar/test_paginas.py
 
       - name: Instalar e verificar os tipos
         working-directory: app

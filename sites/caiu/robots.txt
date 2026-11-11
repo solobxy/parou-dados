@@ -3,3 +3,4 @@ Allow: /
 Disallow: /dados/
 
 Sitemap: https://caiu.pt/sitemap.xml
+Sitemap: https://caiu.pt/preco/sitemap.xml

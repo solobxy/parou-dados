@@ -14,6 +14,8 @@ Environment=TZ=Europe/Lisbon
 ExecStart=/usr/bin/python3 /opt/parou/servidor/caiu/recolher.py /var/lib/caiu-dados
 # depois de cada recolha: avisos de preço (e-mail e telemóvel)
 ExecStartPost=+/bin/systemctl start --no-block caiu-alertas.service
+# páginas «Azeite mais barato hoje» para o Google (/preco/); se falharem, a recolha conta na mesma
+ExecStartPost=-/usr/bin/python3 /opt/parou/servidor/caiu/paginas.py /var/lib/caiu-dados
 TimeoutStartSec=90min
 Nice=10
 NoNewPrivileges=yes
