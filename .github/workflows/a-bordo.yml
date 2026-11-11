@@ -186,6 +186,14 @@ jobs:
           SAIDA=../res timeout 300 node estados-erro.mjs 2>&1 | tee ../res/estados-erro.txt | tail -40
           exit ${PIPESTATUS[0]}
 
+      - name: Testar o primeiro ecrã sem localização (pontos de partida, browser)
+        continue-on-error: true
+        working-directory: auditoria
+        run: |
+          mkdir -p ../res
+          SAIDA=../res timeout 300 node pontos-partida.mjs 2>&1 | tee ../res/pontos-partida.txt | tail -20
+          exit ${PIPESTATUS[0]}
+
       - name: Testar as linhas mais procuradas (servidor e browser)
         continue-on-error: true
         working-directory: auditoria
