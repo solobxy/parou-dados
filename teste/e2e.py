@@ -35,6 +35,8 @@ with sync_playwright() as p:
     liq = pg.inner_text('#c-r-liq'); irs = pg.inner_text('#c-r-irs'); passo('calculadora', '€' in liq, f'líquido {liq} irs {irs}')
     passo('chamada para partilhar', pg.is_visible('#c-chamada')); pg.close()
     # partilha completa e apagar
+    TOKEN = 'teste-automatico-' + str(int(time.time()))
+    ctx.add_init_script(f"try{{localStorage.setItem('ganhas.dispositivo','{TOKEN}')}}catch(e){{}}")
     pg = ctx.new_page(); api = []
     pg.on('response', lambda r: api.append(f'{r.status} {r.url.split(B)[-1]}') if '/api/' in r.url else None)
     pg.goto(B + '/partilhar/?p=enfermeiro', wait_until='networkidle')
@@ -52,11 +54,15 @@ with sync_playwright() as p:
     R['api'] = api
     pg.goto(B + '/partilhar/', wait_until='networkidle')
     try:
+        pg.click('#apagar-partilha button', timeout=5000); pg.wait_for_timeout(400)
+        passo('apagar pede confirmação', 'outra vez' in pg.inner_text('#apagar-partilha button'))
         pg.click('#apagar-partilha button', timeout=5000); pg.wait_for_selector('#apagar-partilha .ok-msg', timeout=15000)
         passo('apagar partilha', True)
     except Exception as e:
         passo('apagar partilha', False, str(e)[:150])
     R['api'] = api
+    # garantia: apagar pela API com o mesmo identificador
+    R['apagar_api'] = ctx.request.post(B + '/api/apagar', data=json.dumps({'dispositivo': TOKEN}), headers={'Content-Type': 'application/json', 'Origin': B}).text()
     R['estado_final'] = ctx.request.get(B + '/api/estado').text()
     nav.close()
 print(json.dumps(R, ensure_ascii=False, indent=1))
