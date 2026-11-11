@@ -1,0 +1,48 @@
+name: ganhas.pt - verificar DNS e HTTPS
+
+on:
+  push:
+    branches: [ganhas-dns]
+
+permissions:
+  contents: write
+
+jobs:
+  verificar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Verificar
+        run: |
+          mkdir -p saida
+          {
+            echo "Hora: $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+            for n in ganhas.pt www.ganhas.pt; do
+              for t in A AAAA CNAME TXT CAA; do
+                for r in 8.8.8.8 1.1.1.1; do
+                  echo "== $n $t @$r: $(dig +short $n $t @$r | tr '\n' ' ')"
+                done
+              done
+            done
+            echo "== _dmarc TXT: $(dig +short _dmarc.ganhas.pt TXT @8.8.8.8 | tr '\n' ' ')"
+            echo "== NS: $(dig +short ganhas.pt NS @8.8.8.8 | tr '\n' ' ')"
+            echo "== SOA: $(dig +short ganhas.pt SOA @8.8.8.8)"
+            echo "== NS no .pt: $(dig +short ganhas.pt NS @a.dns.pt | tr '\n' ' ')"
+            dig ganhas.pt NS @a.dns.pt +noall +authority | head -5
+            for u in https://ganhas.pt/ https://www.ganhas.pt/ http://ganhas.pt/ https://ganhas.pt/api/estado https://ganhas.pt/robots.txt; do
+              echo "== $u"
+              curl -sS -m 20 -o /dev/null -w 'codigo=%{http_code} destino=%{redirect_url} ip=%{remote_ip} ssl=%{ssl_verify_result}\n' "$u" 2>&1 | head -3
+            done
+            echo "== cabeçalhos https://ganhas.pt/"
+            curl -sS -m 20 -I https://ganhas.pt/ 2>&1 | head -20
+            echo "== certificado"
+            echo | timeout 15 openssl s_client -connect ganhas.pt:443 -servername ganhas.pt 2>/dev/null | openssl x509 -noout -subject -issuer -dates 2>&1 | head -5
+          } > saida/resultado.txt 2>&1
+          cat saida/resultado.txt
+      - name: Guardar
+        if: always()
+        run: |
+          cd saida && git init -q -b ganhas-dns-resultado
+          git config user.name "parou-dados"; git config user.email "actions@users.noreply.github.com"
+          git add -A && git commit -q -m "DNS $(date -u +%H:%M)"
+          git push -q -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" ganhas-dns-resultado
