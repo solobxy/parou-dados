@@ -1,0 +1,20 @@
+[Unit]
+Description=ganhas.pt - páginas das empresas (só com 5 ou mais pessoas) e cópia de segurança das partilhas
+
+[Service]
+Type=oneshot
+User=parou
+Group=parou
+StateDirectory=ganhas-paginas ganhas-copias
+StateDirectoryMode=0755
+UMask=0022
+Environment=TZ=Europe/Lisbon PYTHONDONTWRITEBYTECODE=1
+ExecStart=/usr/bin/python3 /opt/parou/servidor/ganhas/paginas_empresas.py /var/lib/ganhas-api/dados.db /var/lib/ganhas-paginas /var/www/ganhas/.modelo.html
+TimeoutStartSec=10min
+Nice=10
+NoNewPrivileges=yes
+ProtectSystem=strict
+ReadWritePaths=/var/lib/ganhas-api
+ProtectHome=yes
+PrivateTmp=yes
+MemoryMax=300M

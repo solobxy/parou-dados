@@ -1,0 +1,11 @@
+{
+ "fonte": "DGCP/MTSSS, Quadros de Pessoal, séries 2014-2024 (quadros 31 e 33)",
+ "url": "https://www.dgcp.mtsss.gov.pt/documents/10182/10928/seriesqp_2014_2024.xlsx/d0805880-6aef-4eb1-8602-56c1b8a989a1",
+ "ref": "outubro de 2024, Continente, trabalhadores por conta de outrem a tempo completo com remuneração completa",
+ "ano": 2024,
+ "ambito": "Continente",
+ "minimo": 820,
+ "ganho": {"decis": [911, 958, 1018, 1091, 1191, 1336, 1551, 1893, 2644], "media_por_decil": [851, 939, 985, 1053, 1138, 1258, 1437, 1706, 2210, 4250], "media": 1582.8},
+ "base": {"decis": [820, 820, 850, 898, 950, 1052, 1246, 1500, 2140]},
+ "verificacao": "A média das médias por decil do ganho (1 582,7 €) coincide com o ganho médio publicado no quadro 34 (1 582,8 €)."
+}

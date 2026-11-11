@@ -29,6 +29,8 @@ escrever_estado() {
     echo "Reinícios pela vigia: $(tail -n 3 /var/lib/parou-estado/reinicios.log 2>/dev/null | tr '\n' ';' || true)"
     echo "caiu.pt recolha: $(systemctl show caiu-recolha.service -p ActiveState -p Result -p ExecMainStatus 2>/dev/null | tr '\n' ' ')"
     echo "caiu.pt últimas linhas: $(journalctl -u caiu-recolha -n 4 --no-pager -o cat 2>/dev/null | cut -c1-200 | tr '\n' ';')"
+    echo "ganhas.pt API: $(systemctl is-active ganhas-api 2>/dev/null) $(curl -s -m 3 http://127.0.0.1:3140/api/estado 2>/dev/null | cut -c1-80)"
+    echo "ganhas.pt páginas: $(systemctl show ganhas-paginas.service -p Result -p ExecMainStatus 2>/dev/null | tr '\n' ' ') $(journalctl -u ganhas-paginas -n 2 --no-pager -o cat 2>/dev/null | cut -c1-160 | tr '\n' ';')"
     echo
     echo "--- Últimas linhas da app ---"
     # Esta página é pública: esconde emails e endereços IP que alguma linha possa ter
@@ -49,7 +51,7 @@ sed -e "s/{HOST_TESTE}/$HOST_TESTE/g" -e "s/{ESTAT_CHAVE}/${ESTAT_CHAVE:-sem-cha
 # O domínio só entra quando já aponta para este servidor (senão o Caddy falhava o
 # certificado e ficava a tentar com esperas cada vez maiores)
 MEU_IP="$(echo "${HOST_TESTE%%.sslip.io}" | tr '-' '.')"
-for DOM in parou.pt www.parou.pt goodman.pt www.goodman.pt anjinho.pt www.anjinho.pt jinxed.world www.jinxed.world duplicasa.pt www.duplicasa.pt chave.pt www.chave.pt dinissousa.pt www.dinissousa.pt adribodypiercing.pt www.adribodypiercing.pt jaesta.pt www.jaesta.pt apalavrado.pt www.apalavrado.pt tapmoss.com www.tapmoss.com caiu.pt www.caiu.pt; do
+for DOM in parou.pt www.parou.pt goodman.pt www.goodman.pt anjinho.pt www.anjinho.pt jinxed.world www.jinxed.world duplicasa.pt www.duplicasa.pt chave.pt www.chave.pt dinissousa.pt www.dinissousa.pt adribodypiercing.pt www.adribodypiercing.pt jaesta.pt www.jaesta.pt apalavrado.pt www.apalavrado.pt tapmoss.com www.tapmoss.com caiu.pt www.caiu.pt ganhas.pt www.ganhas.pt; do
   # Pergunta a dois DNS: basta um dizer que o domínio aponta para aqui (durante uma mudança
   # de DNS uns ainda dão o endereço antigo e o domínio entrava e saía a cada 2 minutos)
   IPS="$( (dig +short +time=3 +tries=2 A "$DOM" @1.1.1.1; dig +short +time=3 +tries=2 A "$DOM" @8.8.8.8) 2>/dev/null | grep -E '^[0-9.]+$' | sort -u)"
@@ -293,6 +295,39 @@ if [ -f "$SERV/caiu-recolha.service" ] && [ -f "$BASE/servidor/caiu/recolher.py"
   if [ -n "$FR" ] && [ "$(cat /var/lib/caiu-estado/forcar 2>/dev/null)" != "$FR" ]; then
     install -d -m 755 /var/lib/caiu-estado && echo "$FR" > /var/lib/caiu-estado/forcar
     systemctl start --no-block caiu-recolha.service
+  fi
+fi
+
+# ganhas.pt: salários reais em Portugal. Site estático em sites/ganhas (gerado por ganhas/gerar.py); API das partilhas
+# em ganhas-api.service (127.0.0.1:3140, dados em /var/lib/ganhas-api, fora do repositório); páginas das empresas e
+# cópias de segurança de hora a hora (ganhas-paginas.timer). Configuração em /etc/ganhas/api.env.
+GA=$BASE/servidor/sites/ganhas
+if [ -f "$GA/index.html" ] && ! diff -rq "$GA" /var/www/ganhas >/dev/null 2>&1; then
+  rm -rf /var/www/ganhas.novo && mkdir -p /var/www && cp -r "$GA" /var/www/ganhas.novo \
+    && chmod -R a+rX /var/www/ganhas.novo \
+    && rm -rf /var/www/ganhas.velho && { [ ! -d /var/www/ganhas ] || mv /var/www/ganhas /var/www/ganhas.velho; } \
+    && mv /var/www/ganhas.novo /var/www/ganhas && rm -rf /var/www/ganhas.velho
+fi
+if [ -f "$SERV/ganhas-api.service" ] && [ -f "$BASE/servidor/ganhas/api.py" ]; then
+  install -d -m 750 -o root -g parou /etc/ganhas
+  if [ ! -f /etc/ganhas/api.env ]; then
+    printf 'ORIGENS=https://ganhas.pt https://www.ganhas.pt https://ganhas.%s\nPOW_BITS=17\n' "$HOST_TESTE" > /etc/ganhas/api.env
+    chown root:parou /etc/ganhas/api.env && chmod 640 /etc/ganhas/api.env
+  fi
+  for f in ganhas-api.service ganhas-paginas.service ganhas-paginas.timer; do
+    if [ -f "$SERV/$f" ] && ! cmp -s "$SERV/$f" "/etc/systemd/system/$f"; then cp "$SERV/$f" "/etc/systemd/system/$f" && systemctl daemon-reload; fi
+  done
+  systemctl is-enabled --quiet ganhas-api.service 2>/dev/null || systemctl enable --now ganhas-api.service >/dev/null 2>&1
+  systemctl is-enabled --quiet ganhas-paginas.timer 2>/dev/null || systemctl enable --now ganhas-paginas.timer >/dev/null 2>&1
+  V=$( { sha256sum "$BASE/servidor/ganhas/api.py" "$BASE/servidor/ganhas/catalogo.json" /etc/ganhas/api.env 2>/dev/null; } | sha256sum | cut -c1-16)
+  if [ "$(cat /etc/ganhas/api.versao 2>/dev/null)" != "$V" ]; then
+    systemctl restart ganhas-api.service && echo "$V" > /etc/ganhas/api.versao
+  fi
+  systemctl is-active --quiet ganhas-api.service || systemctl start ganhas-api.service
+  # Páginas das empresas: logo que o gerador muda (e depois de hora a hora, pelo timer)
+  PV=$(sha256sum "$BASE/servidor/ganhas/paginas_empresas.py" 2>/dev/null | cut -c1-16)
+  if [ -n "$PV" ] && [ "$(cat /etc/ganhas/paginas.versao 2>/dev/null)" != "$PV" ]; then
+    systemctl start --no-block ganhas-paginas.service && echo "$PV" > /etc/ganhas/paginas.versao
   fi
 fi
 

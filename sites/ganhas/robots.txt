@@ -1,0 +1,10 @@
+User-agent: *
+Allow: /
+Disallow: /api/
+
+# Recolha automática dos dados não é permitida (ver /termos/)
+User-agent: CCBot
+Disallow: /
+
+Sitemap: https://ganhas.pt/sitemap.xml
+Sitemap: https://ganhas.pt/sitemap-empresas.xml

@@ -2,3 +2,5 @@ __pycache__/
 *.pyc
 sites/duaschaves/anuncios.json
 fontes/
+!ganhas/modelo/fontes/
+!sites/ganhas/fontes/

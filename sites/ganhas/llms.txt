@@ -1,0 +1,30 @@
+# ganhas.pt
+
+> Salários reais em Portugal: dados oficiais (INE, GEP/MTSSS, AT, DGAEP, Eurostat) e partilhas anónimas de quem trabalha. Em português de Portugal.
+
+## Números principais
+
+- Outubro de 2024, Continente, trabalhadores por conta de outrem a tempo completo (Quadros de Pessoal, DGCP/MTSSS):
+  - remuneração base mediana: 950 €; 55 % tinham base até 1 000 €;
+  - ganho mensal mediano (com prémios e subsídios regulares): 1.191 €; ganho médio: 1.583 €;
+  - 10 % ganhavam mais de 2.644 € (9.º decil do ganho).
+- Ganho médio mensal em Portugal, 2024 (INE, Quadros de Pessoal): 1.576 €; por concelho em https://ganhas.pt/concelhos/.
+- Salário mínimo nacional em 2026: 920 € brutos por mês (970 € previstos para 2027).
+- Salário líquido anual de uma pessoa sozinha sem filhos com o salário médio em Portugal, 2025: 21.449 € (Eurostat).
+- Base remuneratória da Administração Pública em 2026: 934,99 €.
+
+## Páginas
+
+- [Comparador de salários](https://ganhas.pt/): onde estás na distribuição dos salários em Portugal.
+- [Calculadora de salário líquido 2026](https://ganhas.pt/calculadora/): bruto para líquido com as tabelas oficiais de IRS.
+- [Salários por profissão](https://ganhas.pt/profissoes/)
+- [Salários por concelho](https://ganhas.pt/concelhos/)
+- [Função pública: todas as carreiras com bruto e líquido](https://ganhas.pt/funcao-publica/)
+- [Portugal e a Europa](https://ganhas.pt/europa/)
+- [Método e fontes](https://ganhas.pt/metodo/)
+- [Dados abertos](https://ganhas.pt/dados/)
+
+## Regras dos dados da comunidade
+
+- Só aparecem números com pelo menos 5 pessoas diferentes, 24 horas depois e arredondados à dezena.
+- Ao citar, indicar a fonte original e ligar para a página do ganhas.pt.

@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="pt-PT" class="sem-js">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ganhas.pt · Quanto ganhas? Compara o teu salário em Portugal</title>
+<meta name="description" content="Compara o teu salário com os números oficiais: em 2024, metade de quem trabalhava a tempo completo ganhava menos de 1.191 €. Calculadora de líquido 2026, profissões e concelhos.">
+<link rel="canonical" href="https://ganhas.pt/">
+
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="ganhas.pt">
+<meta property="og:locale" content="pt_PT">
+<meta property="og:title" content="Quanto ganhas? Compara o teu salário em Portugal">
+<meta property="og:description" content="Compara o teu salário com os números oficiais: em 2024, metade de quem trabalhava a tempo completo ganhava menos de 1.191 €. Calculadora de líquido 2026, profissões e concelhos.">
+<meta property="og:url" content="https://ganhas.pt/">
+<meta property="og:image" content="https://ganhas.pt/og/geral.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#F7F7F2" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0F110F" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="/icone-180.png">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="preload" href="/fontes/bricolage.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/fontes/schibsted.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/estilo.css?v=feff48744f">
+<script defer src="/_e.js" data-site="ganhas"></script>
+<script defer src="/app.js?v=0670c92a87"></script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@graph": [{"@type": "Organization", "@id": "https://ganhas.pt/#org", "name": "ganhas.pt", "url": "https://ganhas.pt/", "logo": "https://ganhas.pt/icone-512.png", "founder": {"@type": "Person", "name": "Dinis Sousa", "url": "https://dinissousa.pt"}}, {"@type": "WebSite", "@id": "https://ganhas.pt/#site", "name": "ganhas.pt", "url": "https://ganhas.pt/", "inLanguage": "pt-PT", "publisher": {"@id": "https://ganhas.pt/#org"}}, {"@type": "WebApplication", "name": "Comparador de salários ganhas.pt", "url": "https://ganhas.pt/", "applicationCategory": "FinanceApplication", "operatingSystem": "Todos", "inLanguage": "pt-PT", "offers": {"@type": "Offer", "price": "0", "priceCurrency": "EUR"}}]}</script>
+</head>
+<body>
+<a class="salto" href="#conteudo">Saltar para o conteúdo</a>
+<header class="topo"><div class="mold">
+<a class="marca" href="/" aria-label="ganhas.pt, início">ganhas<span>.pt</span></a>
+<nav class="nav" aria-label="Principal"><a href="/calculadora/">Calculadora</a><a href="/profissoes/">Profissões</a><a href="/concelhos/">Concelhos</a><a href="/empresa/">Empresas</a></nav>
+<a class="botao" href="/partilhar/">Partilhar</a>
+</div></header>
+<main id="conteudo">
+
+<section class="heroi"><div class="mold">
+<h1>Quanto ganhas?</h1>
+<p class="lede">Compara o teu salário com os números oficiais de Portugal e com quem faz o mesmo que tu. Sem conta, sem nome, sem cookies.</p>
+<div class="comparador" id="comparador">
+<div class="campo-grande">
+<label for="salario">O teu salário bruto por mês</label>
+<div class="linha-valor"><input id="salario" name="salario" inputmode="decimal" autocomplete="off" placeholder="1 100" aria-describedby="salario-ajuda"><span class="unid">€ brutos</span></div>
+<p class="ajuda" id="salario-ajuda">O valor antes de descontos, como aparece no recibo.</p>
+<div class="opcoes" role="radiogroup" aria-label="O que estás a escrever">
+<label><input type="radio" name="tipo" value="base" checked><span>Só o vencimento base</span></label>
+<label><input type="radio" name="tipo" value="ganho"><span>Com prémios e subsídios regulares</span></label>
+</div>
+<div class="opcoes" role="radiogroup" aria-label="Quantos salários recebes por ano">
+<label><input type="radio" name="meses" value="14" checked><span>14 meses</span></label>
+<label><input type="radio" name="meses" value="12"><span>12 meses (duodécimos)</span></label>
+</div>
+</div>
+<div class="resultado" aria-live="polite">
+<p class="res-frase" id="res-frase">Em 2024, metade de quem trabalhava a tempo completo tinha um vencimento base abaixo de <span class="mk">950 €</span>.</p>
+<p class="res-extra" id="res-extra">Escreve o teu salário para veres onde estás.</p>
+<figure class="histo" data-histo="base"><div class="histo-barras" style="--n:14"><i style="--h:100%"><span class="vis">800–900 €: 20,4 %</span></i><i style="--h:71.2%"><span class="vis">900–1000 €: 14,5 %</span></i><i style="--h:37.1%"><span class="vis">1000–1100 €: 7,6 %</span></i><i style="--h:25.3%"><span class="vis">1100–1200 €: 5,1 %</span></i><i style="--h:22.1%"><span class="vis">1200–1300 €: 4,5 %</span></i><i style="--h:19.3%"><span class="vis">1300–1400 €: 3,9 %</span></i><i style="--h:19.3%"><span class="vis">1400–1500 €: 3,9 %</span></i><i style="--h:7.7%"><span class="vis">1500–1600 €: 1,6 %</span></i><i style="--h:7.7%"><span class="vis">1600–1700 €: 1,6 %</span></i><i style="--h:7.7%"><span class="vis">1700–1800 €: 1,6 %</span></i><i style="--h:7.7%"><span class="vis">1800–1900 €: 1,6 %</span></i><i style="--h:7.7%"><span class="vis">1900–2000 €: 1,6 %</span></i><i style="--h:7.7%"><span class="vis">2000–2100 €: 1,6 %</span></i><i style="--h:52.1%" class=resto><span class="vis">2100 € ou mais: 10,6 %</span></i></div><div class="histo-tu" hidden><b>Tu</b></div><figcaption class="histo-eixo"><span>800 €</span><span>1.500 €</span><span>2.100 € ou mais</span></figcaption></figure><figure class="histo" data-histo="ganho" hidden><div class="histo-barras" style="--n:19"><i style="--h:48.3%"><span class="vis">800–900 €: 8,8 %</span></i><i style="--h:100%"><span class="vis">900–1000 €: 18,2 %</span></i><i style="--h:76.3%"><span class="vis">1000–1100 €: 13,9 %</span></i><i style="--h:53.4%"><span class="vis">1100–1200 €: 9,7 %</span></i><i style="--h:37.9%"><span class="vis">1200–1300 €: 6,9 %</span></i><i style="--h:30.0%"><span class="vis">1300–1400 €: 5,5 %</span></i><i style="--h:25.5%"><span class="vis">1400–1500 €: 4,7 %</span></i><i style="--h:20.9%"><span class="vis">1500–1600 €: 3,8 %</span></i><i style="--h:16.0%"><span class="vis">1600–1700 €: 2,9 %</span></i><i style="--h:16.0%"><span class="vis">1700–1800 €: 2,9 %</span></i><i style="--h:15.4%"><span class="vis">1800–1900 €: 2,8 %</span></i><i style="--h:7.3%"><span class="vis">1900–2000 €: 1,3 %</span></i><i style="--h:7.3%"><span class="vis">2000–2100 €: 1,3 %</span></i><i style="--h:7.3%"><span class="vis">2100–2200 €: 1,3 %</span></i><i style="--h:7.3%"><span class="vis">2200–2300 €: 1,3 %</span></i><i style="--h:7.3%"><span class="vis">2300–2400 €: 1,3 %</span></i><i style="--h:7.3%"><span class="vis">2400–2500 €: 1,3 %</span></i><i style="--h:7.3%"><span class="vis">2500–2600 €: 1,3 %</span></i><i style="--h:58.2%" class=resto><span class="vis">2600 € ou mais: 10,6 %</span></i></div><div class="histo-tu" hidden><b>Tu</b></div><figcaption class="histo-eixo"><span>800 €</span><span>1.750 €</span><span>2.600 € ou mais</span></figcaption></figure>
+<p class="fonte">Quem trabalha por conta de outrem a tempo completo, Continente, outubro de 2024. Cada barra junta 100 €. <a href="https://www.dgcp.mtsss.gov.pt/documents/10182/10928/seriesqp_2014_2024.xlsx/d0805880-6aef-4eb1-8602-56c1b8a989a1" rel="noopener">DGCP/MTSSS, Quadros de Pessoal</a>.</p>
+</div>
+</div>
+<p class="acoes"><a class="botao" href="/partilhar/">Comparar com a minha profissão</a>
+<a class="botao sec2" href="/calculadora/">Calcular o meu líquido</a></p>
+<p class="fonte" data-contador hidden></p>
+</div></section>
+
+<section class="sec"><div class="mold par">
+<div class="entra"><h2>Metade ganhava menos de 1.191 €</h2></div>
+<div class="entra"><p class="lede">Contando prémios e subsídios regulares, o ganho médio era 1.583 €, mas a média engana: os salários mais altos puxam-na para cima.
+A mediana diz o que ganha a pessoa do meio. Em outubro de 2024, com o salário mínimo nos 820 €, 55 % de quem trabalhava a tempo completo tinha
+um vencimento base até 1.000 €, e só 1 em cada 10 ganhava mais de 2.644 €.</p><p class="fonte">Fonte: <a href="https://www.dgcp.mtsss.gov.pt/documents/10182/10928/seriesqp_2014_2024.xlsx/d0805880-6aef-4eb1-8602-56c1b8a989a1" rel="noopener">DGCP/MTSSS, Quadros de Pessoal, séries 2014-2024 (quadros 31 e 33)</a>, outubro de 2024, Continente, trabalhadores por conta de outrem a tempo completo com remuneração completa.</p></div>
+</div></section>
+
+<section class="sec folha"><div class="mold grelha2">
+<div class="entra"><h2>Bruto não é o que levas para casa</h2>
+<p class="lede espaco">Com as tabelas de IRS de 2026, a Segurança Social e o subsídio de alimentação, a calculadora mostra o teu recibo linha a linha.
+Em novembro de 2026, a retenção de IRS é metade.</p>
+<p class="espaco"><a class="botao" href="/calculadora/">Abrir a calculadora</a></p></div>
+<div class="recibo entra" aria-label="Exemplo de recibo">
+<h3>Exemplo: 1.200 € brutos</h3>
+<div class="linha"><span class="r">Vencimento base</span><span class="p"></span><span class="v">1.200,00 €</span></div>
+<div class="linha menos"><span class="r">Segurança Social (11 %)</span><span class="p"></span><span class="v">− 132,00 €</span></div>
+<div class="linha menos"><span class="r">Retenção de IRS</span><span class="p"></span><span class="v">− 96,00 €</span></div>
+<div class="linha total"><span class="r">Líquido</span><span class="p"></span><span class="v"><span class="mk">972,00 €</span></span></div>
+<p class="fonte">Não casado, sem dependentes, Continente, tabela I de 2026, sem subsídio de alimentação.</p>
+</div>
+</div></section>
+
+<section class="sec"><div class="mold">
+<div class="entra"><h2>Onde trabalhas muda tudo</h2>
+<p class="lede espaco">O ganho médio mensal varia muito de concelho para concelho. Estes são os extremos de 2024.</p></div>
+<div class="grelha2" style="margin-top:48px">
+<table class="tabela entra"><caption class="vis">Concelhos com maior ganho médio</caption><thead><tr><th>Mais alto</th><th class="n">Ganho médio</th></tr></thead><tbody>
+<tr><td><a href="/concelhos/alcochete/">Alcochete</a></td><td class="n">2.498 €</td></tr><tr><td><a href="/concelhos/castro-verde/">Castro Verde</a></td><td class="n">2.346 €</td></tr><tr><td><a href="/concelhos/vila-do-porto/">Vila do Porto</a></td><td class="n">2.223 €</td></tr><tr><td><a href="/concelhos/oeiras/">Oeiras</a></td><td class="n">2.214 €</td></tr><tr><td><a href="/concelhos/sines/">Sines</a></td><td class="n">2.190 €</td></tr>
+</tbody></table>
+<table class="tabela entra"><caption class="vis">Concelhos com menor ganho médio</caption><thead><tr><th>Mais baixo</th><th class="n">Ganho médio</th></tr></thead><tbody>
+<tr><td><a href="/concelhos/penedono/">Penedono</a></td><td class="n">1.034 €</td></tr><tr><td><a href="/concelhos/marvao/">Marvão</a></td><td class="n">1.055 €</td></tr><tr><td><a href="/concelhos/porto-moniz/">Porto Moniz</a></td><td class="n">1.057 €</td></tr><tr><td><a href="/concelhos/vila-de-rei/">Vila de Rei</a></td><td class="n">1.063 €</td></tr><tr><td><a href="/concelhos/mesao-frio/">Mesão Frio</a></td><td class="n">1.083 €</td></tr>
+</tbody></table>
+</div>
+<p class="fonte">Fonte: <a href="https://www.ine.pt/xurl/indx/0012656/PT" rel="noopener">INE, GEP/MTSSS, Quadros de Pessoal (indicador 0012656)</a>, 2024.</p>
+<p class="espaco"><a class="ligacao" href="/concelhos/">Ver os 308 concelhos</a></p>
+</div></section>
+
+<section class="sec"><div class="mold grelha2">
+<div class="entra"><h2>Na tua profissão</h2>
+<p class="lede espaco">Ganho médio mensal por grupo de profissões no setor privado, 2024. Do grupo que mais ganha ao que menos ganha.</p>
+<p class="espaco"><a class="botao sec2" href="/profissoes/">Procurar a minha profissão</a></p></div>
+<table class="tabela entra"><thead><tr><th>Grupo de profissões</th><th class="n">Ganho médio</th></tr></thead><tbody><tr><td><a href="/profissoes/#g1">Dirigentes, diretores e gestores</a></td><td class="n">3.280 €</td></tr><tr><td><a href="/profissoes/#g2">Especialistas das atividades intelectuais e científicas</a></td><td class="n">2.396 €</td></tr><tr><td><a href="/profissoes/#g3">Técnicos e profissões de nível intermédio</a></td><td class="n">1.949 €</td></tr><tr><td><a href="/profissoes/#g4">Pessoal administrativo</a></td><td class="n">1.390 €</td></tr><tr><td><a href="/profissoes/#g8">Operadores de máquinas e montagem</a></td><td class="n">1.341 €</td></tr><tr><td><a href="/profissoes/#g7">Indústria, construção e artífices</a></td><td class="n">1.247 €</td></tr><tr><td><a href="/profissoes/#g6">Agricultura, pesca e floresta</a></td><td class="n">1.163 €</td></tr><tr><td><a href="/profissoes/#g5">Serviços pessoais, proteção e segurança, e vendedores</a></td><td class="n">1.162 €</td></tr><tr><td><a href="/profissoes/#g9">Trabalhadores não qualificados</a></td><td class="n">1.060 €</td></tr></tbody></table>
+</div><div class="mold"><p class="fonte">Fonte: <a href="https://www.ine.pt/xurl/indx/0012655/PT" rel="noopener">INE, GEP/MTSSS, Quadros de Pessoal (indicador 0012655)</a>, 2024.</p></div></section>
+
+<section class="sec folha"><div class="mold grelha2">
+<div class="entra"><h2>E no Estado?</h2>
+<p class="lede espaco">Na função pública o salário está na lei. Juntámos 76 carreiras, de professores a juízes, com o bruto e o líquido de cada posição em 2026.</p>
+<p class="espaco"><a class="botao sec2" href="/funcao-publica/">Ver as carreiras</a></p></div>
+<ul class="lista-colunas larga entra"><li><a href="/funcao-publica/professores/">Professores e educadores</a><span class="cifra">desde 1.771 €</span></li><li><a href="/funcao-publica/enfermeiros/">Enfermeiros</a><span class="cifra">desde 1.657 €</span></li><li><a href="/funcao-publica/medicos/">Médicos</a><span class="cifra">desde 2.517 €</span></li><li><a href="/funcao-publica/psp/">Polícia de Segurança Pública (PSP)</a><span class="cifra">desde 1.075 €</span></li><li><a href="/funcao-publica/tecnico-superior/">Técnico superior</a><span class="cifra">desde 1.499 €</span></li><li><a href="/funcao-publica/assistente-operacional/">Assistente operacional</a><span class="cifra">desde 935 €</span></li></ul>
+</div></section>
+
+<section class="sec"><div class="mold par">
+<div class="entra"><p class="gigante" aria-hidden="true">5+</p></div>
+<div class="entra"><h2>A tua empresa paga bem?</h2>
+<p class="lede espaco">Partilha o teu salário em 30 segundos. Só mostramos a mediana de uma empresa ou profissão quando há pelo menos 5 pessoas diferentes,
+24 horas depois, arredondada à dezena. Não guardamos o teu IP nem pedimos o teu nome.</p>
+<p class="espaco"><a class="botao" href="/partilhar/">Partilhar o meu salário</a></p></div>
+</div></section>
+<section class="sec"><div class="mold par">
+<div class="entra"><h2>Portugal ao lado da Europa</h2>
+<p class="lede espaco">Salário líquido anual de uma pessoa sozinha, sem filhos, que ganha o salário médio, em 2025.</p>
+<p class="espaco"><a class="ligacao" href="/europa/">Ver todos os países e o poder de compra</a></p></div>
+<div class="barras-h entra"><div class="barra-h"><span>Luxemburgo</span><i style="--w:100.0%"></i><b>55.877 €</b></div><div class="barra-h"><span>Alemanha</span><i style="--w:65.4%"></i><b>36.535 €</b></div><div class="barra-h"><span>França</span><i style="--w:57.9%"></i><b>32.346 €</b></div><div class="barra-h"><span>Média da UE</span><i style="--w:53.6%"></i><b>29.954 €</b></div><div class="barra-h"><span>Itália</span><i style="--w:49.7%"></i><b>27.788 €</b></div><div class="barra-h"><span>Espanha</span><i style="--w:48.4%"></i><b>27.041 €</b></div><div class="barra-h pt"><span>Portugal</span><i style="--w:38.4%"></i><b>21.449 €</b></div><div class="barra-h"><span>Polónia</span><i style="--w:34.2%"></i><b>19.086 €</b></div><div class="barra-h"><span>Bulgária</span><i style="--w:25.9%"></i><b>14.450 €</b></div></div>
+</div><div class="mold"><p class="fonte">Fonte: <a href="https://ec.europa.eu/eurostat/databrowser/view/earn_nt_net/default/table" rel="noopener">Eurostat, earn_nt_net</a>, 2025, pessoa sozinha sem filhos com 100 % do salário médio.</p></div></section>
+
+</main>
+<footer class="rodape"><div class="mold">
+<a class="marca" href="/">ganhas<span>.pt</span></a>
+<div class="rodape-grelha">
+<div><p>Salários reais em Portugal: números oficiais e partilhas anónimas de quem trabalha. Sem contas, sem cookies.</p>
+<p class="credito">Feito por <a href="https://dinissousa.pt">dinissousa</a></p></div>
+<ul><li><a href="/calculadora/">Calculadora de salário líquido</a></li><li><a href="/profissoes/">Salários por profissão</a></li>
+<li><a href="/concelhos/">Salários por concelho</a></li><li><a href="/funcao-publica/">Função pública</a></li><li><a href="/europa/">Portugal e a Europa</a></li><li><a href="/empresa/">Quanto pagam as empresas</a></li></ul>
+<ul><li><a href="/partilhar/">Partilhar o meu salário</a></li><li><a href="/metodo/">Método e fontes</a></li><li><a href="/dados/">Dados abertos</a></li>
+<li><a href="/para-empresas/">Para empresas e jornalistas</a></li></ul>
+<ul><li><a href="/privacidade/">Privacidade</a></li><li><a href="/termos/">Termos</a></li><li><a href="/cookies/">Cookies</a></li>
+<li><a href="mailto:diniscash@gmail.com">Contacto</a></li></ul>
+</div>
+<p class="peq">Dados oficiais do INE, GEP/MTSSS, AT, DGAEP e Eurostat, com a fonte em cada número. Atualizado a 11/11/2026.</p>
+</div></footer>
+<div class="barra-fixa" aria-hidden="false"><a class="botao" href="/partilhar/">Partilhar o meu salário</a></div>
+<script type="application/json" id="dados">{"distribuicao":{"ano":2024,"minimo":820,"minimo_hoje":920,"base":{"pontos":[[820,20],[850,30],[898,40],[950,50],[1052,60],[1246,70],[1500,80],[2140,90]],"mediana":950,"eixo":[800,2200]},"ganho":{"pontos":[[820,0],[911,10],[958,20],[1018,30],[1091,40],[1191,50],[1336,60],[1551,70],[1893,80],[2644,90]],"mediana":1191,"eixo":[800,2700]}},"irs":{"ano":2026,"ss":0.11,"subsidio_dinheiro":6.15,"subsidio_cartao":10.46,"tabelas":{"I":{"linhas":[[920.0,0.0,0.0],[1042.0,0.125,{"t":0.125,"f":2.6,"b":1273.85}],[1108.0,0.157,{"t":0.157,"f":1.35,"b":1554.83}],[1154.0,0.157,94.71],[1212.0,0.212,158.18],[1819.0,0.241,193.33],[2119.0,0.311,320.66],[2499.0,0.349,401.19],[3305.0,0.3836,487.66],[5547.0,0.3969,531.62],[20221.0,0.4495,823.4],[null,0.4717,1272.31]],"dependente":21.43},"II":{"linhas":[[920.0,0.0,0.0],[1042.0,0.125,{"t":0.125,"f":2.6,"b":1273.85}],[1108.0,0.157,{"t":0.157,"f":1.35,"b":1554.83}],[1154.0,0.157,94.71],[1212.0,0.212,158.18],[1819.0,0.241,193.33],[2119.0,0.311,320.66],[2499.0,0.349,401.19],[3305.0,0.3836,487.66],[5547.0,0.3969,531.62],[20221.0,0.4495,823.4],[null,0.4717,1272.31]],"dependente":34.29},"III":{"linhas":[[991.0,0.0,0.0],[1042.0,0.125,{"t":0.125,"f":2.6,"b":1372.15}],[1108.0,0.125,{"t":0.125,"f":1.35,"b":1677.85}],[1119.0,0.125,96.17],[1432.0,0.1272,98.64],[1962.0,0.157,141.32],[2240.0,0.1938,213.53],[2773.0,0.2277,289.47],[3389.0,0.257,370.72],[5965.0,0.2881,476.12],[20265.0,0.3843,1049.96],[null,0.4717,2821.13]],"dependente":42.86}},"novembro":{"fator":0.5,"limite":{"I":20221.0,"II":20221.0,"III":20265.0}},"nota":"Em novembro de 2026 a retenção é reduzida a metade (Circular n.º 5/2026), exceto acima do penúltimo escalão.","tsu_empresa":0.2375}}</script>
+</body>
+</html>
