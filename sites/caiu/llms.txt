@@ -5,6 +5,8 @@
 ## Páginas principais
 
 - [Início e pesquisa de produtos](https://caiu.pt/): procurar um produto e ver o preço nas três lojas, as promoções a sério e as que são mais caras do que noutra loja.
+- [Promoções da semana](https://caiu.pt/promocoes/): as promoções de cada loja verificadas todos os dias ([Continente](https://caiu.pt/promocoes/continente/), [Pingo Doce](https://caiu.pt/promocoes/pingo-doce/), [Auchan](https://caiu.pt/promocoes/auchan/)): quais descem mesmo de preço e quais estão mais baratas noutra loja.
+- [Qual é o supermercado mais barato](https://caiu.pt/supermercado-mais-barato/): os mesmos produtos (mesma marca e embalagem) somados em cada loja, todos os dias.
 - [Preços por produto](https://caiu.pt/preco/): uma página por produto do dia a dia (azeite, leite, café, atum, detergentes…) com o preço mais barato de hoje em cada loja e o preço por litro ou quilo. Atualizadas todos os dias.
 - [Privacidade](https://caiu.pt/privacidade.html)
 

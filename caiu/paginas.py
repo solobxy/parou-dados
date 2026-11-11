@@ -160,12 +160,14 @@ def destaca(g, o):
     return len(g['o']) > 1 and igual(o['p'], g['min']) and not all(igual(x['p'], g['min']) for x in g['o'])
 
 
-def linha(g, extra=''):
+def linha(g, extra='', o_loja=None):
+    """Uma linha de produto. Com o_loja (página de uma loja): o preço grande e o carimbo são os dessa loja."""
     ordem = sorted(g['o'], key=lambda o: o['p'])
     lojas = ''.join(f'<span class="{"melhor" if destaca(g, o) else ""}">{LOJAS[o["l"]]} <b>{eur(o["p"])}</b></span>' for o in ordem)
-    carimbo = f'<span class="carimbo carimbo--{g["v"]} carimbo--fixo">{CARIMBO[g["v"]]}</span>' if g['v'] in CARIMBO else ''
+    v = o_loja['v'] if o_loja else g['v']
+    carimbo = f'<span class="carimbo carimbo--{v} carimbo--fixo">{CARIMBO[v]}</span>' if v in CARIMBO else ''
     return (f'<li class="ln">{img_html(g, "ln__img", 64)}'
-            f'<p class="ln__nome"><a href="/#p={e(g["i"])}">{e(g["n"])}</a></p>{preco_html(g["min"])}'
+            f'<p class="ln__nome"><a href="/#p={e(g["i"])}">{e(g["n"])}</a></p>{preco_html(o_loja["p"] if o_loja else g["min"])}'
             f'<p class="ln__meta"><span>{e(qtd_texto(g["q"]))}</span>{lojas}{extra}</p>'
             f'<div class="ln__pe">{carimbo}</div></li>')
 
@@ -188,8 +190,8 @@ def motivo(o):
     return ''
 
 
-def cartao(g):
-    o = next((x for x in g['o'] if x['v'] == g['v']), g['o'][0])
+def cartao(g, o=None):
+    o = o or next((x for x in g['o'] if x['v'] == g['v']), g['o'][0])
     outras = sorted((x for x in g['o'] if x is not o), key=lambda x: x['p'])
     tag = ''
     if o['r'] and o['p'] < o['r']:
@@ -232,7 +234,7 @@ def cabeca(titulo, descricao, url, ld, dia):
 .pp-migalhas{{font-size:14px;color:var(--tinta-2);margin:0 0 14px}}
 .pp-heroi{{padding-top:28px}}
 .pp-migalhas a{{color:inherit}}
-.pp-heroi h1{{margin:0 0 10px}}
+.pp-heroi h1{{margin:0 0 10px;font-size:clamp(34px,10.4vw,88px);overflow-wrap:break-word}}
 .pp-heroi .talao{{margin:22px 0 18px;max-width:440px}}
 .pp-acoes{{display:flex;flex-wrap:wrap;gap:10px;margin-top:6px}}
 .pp-rel{{display:flex;flex-wrap:wrap;gap:8px;padding:0;margin:14px 0 0;list-style:none}}
@@ -243,6 +245,15 @@ def cabeca(titulo, descricao, url, ld, dia):
 .pp-indice h2{{margin:34px 0 4px}}
 .pp-indice .pp-rel a small{{margin-left:8px;font-weight:500;color:var(--tinta-2)}}
 .pp-nota{{font-size:14px;color:var(--tinta-2);margin-top:12px}}
+.pp-sec h3{{font-size:19px;line-height:1.3;margin:26px 0 6px}}
+.etiquetas > .et{{min-width:0}}
+.et__cab{{grid-template-columns:84px minmax(0,1fr)}}
+.ln{{grid-template-columns:64px minmax(0,1fr) auto}}
+.ln__nome{{overflow-wrap:break-word}}
+.et__nome{{overflow-wrap:break-word}}
+.pp-acoes .botao{{max-width:100%;white-space:normal;text-align:center}}
+.topo__nav{{gap:14px}}
+.pp-sec h3 + p{{margin-top:0}}
 </style>
 <script defer src="/_e.js" data-site="caiu"></script>
 <script type="application/ld+json">{json.dumps(ld, ensure_ascii=False, separators=(",", ":"))}</script>
@@ -252,7 +263,7 @@ def cabeca(titulo, descricao, url, ld, dia):
 <header class="topo">
   <div class="topo__in">
     <a class="marca" href="/" aria-label="caiu.pt, início"><span class="marca__txt" aria-hidden="true">ca<span class="marca__i">ı<span class="marca__ponto"></span></span>u</span></a>
-    <nav class="topo__nav" aria-label="Atalhos"><a class="topo__link" href="/preco/">Todos os preços</a><a class="topo__link" href="/">Pesquisar</a></nav>
+    <nav class="topo__nav" aria-label="Atalhos"><a class="topo__link" href="/promocoes/">Promoções</a><a class="topo__link" href="/preco/">Preços</a></nav>
   </div>
 </header>
 '''
@@ -263,7 +274,7 @@ def rodape(dia, hora):
   <div class="caixa rodape__in">
     <p class="rodape__marca" aria-hidden="true">ca<span class="marca__i">ı<span class="marca__ponto"></span></span>u</p>
     <p class="rodape__dados">Preços recolhidos a {data_longa(dia)}, às {hora}, nas lojas online do Continente, Pingo Doce e Auchan. Podem mudar durante o dia e ser diferentes na loja física ou com cartão de cliente. O caiu.pt não tem ligação a estas lojas.</p>
-    <p class="rodape__links"><a href="/preco/">Preços por produto</a> · <a href="/#avisos">Avisos de preço</a> · <a href="/privacidade.html">Privacidade</a></p>
+    <p class="rodape__links"><a href="/promocoes/">Promoções da semana</a> · <a href="/supermercado-mais-barato/">Supermercado mais barato</a> · <a href="/preco/">Preços por produto</a> · <a href="/#avisos">Avisos de preço</a> · <a href="/privacidade.html">Privacidade</a></p>
     <p class="rodape__autor">Feito por <a href="https://dinissousa.pt" rel="noopener">dinissousa.pt</a></p>
   </div>
 </footer>
@@ -429,6 +440,220 @@ def pagina_indice(D, secoes, hora):
 </main>''', rodape(D.dia, hora)])
 
 
+# ---------- promoções da semana por loja e «qual é o supermercado mais barato» ----------
+SLUG_LOJA = {'c': 'continente', 'p': 'pingo-doce', 'a': 'auchan'}
+DIAS_SEMANA = ['segunda-feira', 'terça-feira', 'quarta-feira', 'quinta-feira', 'sexta-feira', 'sábado', 'domingo']
+
+
+def desconto(o):
+    """Desconto em relação ao preço anterior (ou ao PVPR, se não houver), de 0 a 1."""
+    ref = o['a'] if o['a'] and o['a'] > o['p'] else (o['r'] if o['r'] and o['r'] > o['p'] else None)
+    return (ref - o['p']) / ref if ref else 0.0
+
+
+def promos_loja(D, l):
+    """[(g, o)] das promoções da loja l, com o = a oferta dessa loja."""
+    res = []
+    for i, a in D.P.g.items():
+        if any(x[0] == l and x[8] for x in a[7]):
+            g = D.g(i)
+            res.append((g, next(o for o in g['o'] if o['l'] == l)))
+    return res
+
+
+def fim_promocoes(pares, dia):
+    """Dia em que acaba a maioria das promoções («Promoção até 16/11»), se a loja o indicar."""
+    c = Counter()
+    for _, o in pares:
+        m = re.search(r'até (\d{1,2})/(\d{1,2})|a (\d{1,2})/(\d{1,2})/\d{4}', o['t'] or '')
+        if m:
+            d, mes = (m.group(1), m.group(2)) if m.group(1) else (m.group(3), m.group(4))
+            c[(int(d), int(mes))] += 1
+    if not c:
+        return None, 0
+    (d, mes), n = c.most_common(1)[0]
+    if n < 0.4 * len(pares):
+        return None, 0
+    try:
+        ano = int(dia[:4]) + (1 if int(dia[5:7]) == 12 and mes == 1 else 0)
+        semana = DIAS_SEMANA[datetime(ano, mes, d).weekday()]
+    except ValueError:
+        return None, 0
+    return f'{semana}, {d} de {MESES[mes - 1]}', n
+
+
+def no_dia(fim):
+    """«no sábado, 15 de novembro» / «na segunda-feira, 17 de novembro»"""
+    return ('no ' if fim.startswith(('sábado', 'domingo')) else 'na ') + fim
+
+
+def talao_html(nome, hora, linhas_t, pe):
+    return (f'<figure class="talao" aria-label="Resumo de hoje"><div class="talao__cab"><strong>{e(nome)} · hoje</strong><span>às {hora}</span></div>'
+            '<dl class="talao__linhas">' + ''.join(f'<div><dt>{e(a)}</dt><dd>{b}</dd></div>' for a, b in linhas_t)
+            + f'</dl><p class="talao__pe">{e(pe)}</p></figure>')
+
+
+def curta(d):
+    return d if len(d) <= 160 else d[:157].rsplit(' ', 1)[0] + '…'
+
+
+def migalhas_ld(*itens):
+    return {'@type': 'BreadcrumbList', 'itemListElement': [
+        {'@type': 'ListItem', 'position': k + 1, 'name': n, 'item': u} for k, (n, u) in enumerate(itens)]}
+
+
+def bloco_cartoes(ident, tit, lead, itens, classe=''):
+    if not itens:
+        return ''
+    return (f'<section class="bloco pp-sec{classe}" aria-labelledby="t-{ident}"><div class="caixa">\n'
+            f'<h2 id="t-{ident}">{tit}</h2>\n<p class="lead">{lead}</p>\n'
+            f'<ul class="etiquetas">{"".join(cartao(g, o) for g, o in itens)}</ul>\n</div></section>')
+
+
+def pagina_loja(D, l, pares, hora):
+    nome = LOJAS[l]
+    url = f'{SITE}/promocoes/{SLUG_LOJA[l]}/'
+    dia_l = data_longa(D.dia)
+    reais = sorted((p for p in pares if p[1]['v'] == 'real'), key=lambda p: -desconto(p[1]))
+    fach = sorted((p for p in pares if p[1]['v'] == 'fachada'), key=lambda p: -sum(1 for m in p[1]['m'] if m[0] == 'outra'))
+    pvpr = [p for p in pares if p[1]['v'] == 'pvpr']
+    maiores = sorted((p for p in pares if p[1]['v'] in ('promo', 'real') and desconto(p[1]) > 0), key=lambda p: -desconto(p[1]))
+    todas = sorted(pares, key=lambda p: ({'real': 0, 'promo': 1, 'fachada': 2, 'pvpr': 3}.get(p[1]['v'], 4), -desconto(p[1])))
+    fim, nfim = fim_promocoes(pares, D.dia)
+    linhas_t = [('Produtos em promoção', str(len(pares))), ('Desceram a sério', str(len(reais))),
+                ('Mais baratos noutra loja', str(len(fach)))]
+    if pvpr:
+        linhas_t.append(('Desconto sobre o PVPR', str(len(pvpr))))
+    pe = f'{nfim} destas promoções acabam {no_dia(fim)}.' if fim else 'Verificamos todas as promoções três vezes por dia.'
+    titulo = f'Promoções {nome} esta semana: as que são a sério | caiu.pt'
+    descricao = curta(f'As {len(pares)} promoções do {nome} hoje, {dia_l}: {len(reais)} desceram a sério e {len(fach)} são mais baratas '
+                      'noutra loja. Verificamos três vezes por dia.')
+    ld = {'@context': 'https://schema.org', '@graph': [
+        migalhas_ld(('caiu.pt', SITE + '/'), ('Promoções', SITE + '/promocoes/'), (nome, url)),
+        {'@type': 'WebPage', 'name': titulo, 'url': url, 'inLanguage': 'pt-PT', 'dateModified': D.atualizado, 'description': descricao}]}
+    vistos = {g['i'] for g, _ in reais[:12]}
+    outras = [x for x in LOJAS if x != l]
+    rel = ''.join(f'<li><a href="/promocoes/{SLUG_LOJA[x]}/">Promoções {LOJAS[x]}</a></li>' for x in outras)
+    linhas_todas = ''.join(linha(g, f'<span>−{round(desconto(o) * 100)} %</span>' if desconto(o) >= 0.01 else '', o) for g, o in todas[:80])
+    corpo = [
+        cabeca(titulo, descricao, url, ld, D.dia), '<main id="conteudo">',
+        '<section class="bloco pp-heroi"><div class="caixa">',
+        f'<p class="pp-migalhas"><a href="/">caiu.pt</a> › <a href="/promocoes/">Promoções</a> › {e(nome)}</p>',
+        f'<h1>Promoções do {e(nome)} esta semana</h1>',
+        f'<p class="lead">As promoções da loja online do {e(nome)} hoje, {dia_l}, verificadas uma a uma: quais descem mesmo de preço, '
+        'quais estão mais baratas noutra loja e quais são só desconto sobre o PVPR.</p>',
+        talao_html(nome, hora, linhas_t, pe),
+        '<p class="pp-acoes"><a class="botao" href="/">Comparar e fazer a lista</a></p>',
+        '</div></section>',
+        bloco_cartoes('reais', 'Desceram a sério', 'Hoje mais baratos do que em qualquer dia do último mês.', reais[:12], ' bloco--reais'),
+        bloco_cartoes('maiores', 'Os maiores descontos', 'Em relação ao preço a que a loja vendia antes da promoção.',
+                      [p for p in maiores if p[0]['i'] not in vistos][:12]),
+        bloco_cartoes('fachada', 'Em promoção, mas mais barato noutra loja',
+                      'O mesmo produto custa menos noutra loja, ou já esteve a este preço há pouco.', fach[:12]),
+        '<section class="bloco pp-sec" aria-labelledby="t-todas"><div class="caixa">',
+        f'<h2 id="t-todas">Todas as promoções ({len(pares)})</h2>',
+        '<p class="lead">Primeiro as que descem mesmo de preço, depois as de maior desconto. Toca numa para ver o histórico e seguir o preço.</p>',
+        f'<ol class="linhas">{linhas_todas}</ol>',
+        '</div></section>',
+        '<section class="bloco pp-sec" aria-labelledby="t-outras"><div class="caixa">',
+        '<h2 id="t-outras">Promoções noutras lojas</h2>',
+        f'<ul class="pp-rel">{rel}<li><a href="/supermercado-mais-barato/">Qual é o mais barato?</a></li><li><a href="/preco/">Preços por produto</a></li></ul>',
+        '</div></section>',
+        METODO, '</main>', rodape(D.dia, hora)]
+    return '\n'.join(x for x in corpo if x)
+
+
+def pagina_promocoes(D, por_loja, hora):
+    url = SITE + '/promocoes/'
+    dia_l = data_longa(D.dia)
+    total = sum(len(v) for v in por_loja.values())
+    reais = sum(1 for v in por_loja.values() for p in v if p[1]['v'] == 'real')
+    titulo = 'Promoções da semana: Continente, Pingo Doce e Auchan | caiu.pt'
+    descricao = curta(f'{total} promoções do Continente, Pingo Doce e Auchan verificadas hoje, {dia_l}: {reais} descem mesmo de preço. '
+                      'Vê quais são a sério em cada loja.')
+    ld = {'@context': 'https://schema.org', '@graph': [
+        migalhas_ld(('caiu.pt', SITE + '/'), ('Promoções', url)),
+        {'@type': 'CollectionPage', 'name': titulo, 'url': url, 'inLanguage': 'pt-PT', 'dateModified': D.atualizado, 'description': descricao}]}
+    corpo = [cabeca(titulo, descricao, url, ld, D.dia), '<main id="conteudo">',
+             '<section class="bloco pp-heroi"><div class="caixa">',
+             '<p class="pp-migalhas"><a href="/">caiu.pt</a> › Promoções</p>',
+             '<h1>Promoções da semana nos supermercados</h1>',
+             f'<p class="lead">Hoje, {dia_l}, verificámos {total} promoções nas lojas online do Continente, Pingo Doce e Auchan. '
+             'Uma promoção só é «a sério» se o preço estiver abaixo de todos os do último mês.</p>',
+             '</div></section>']
+    for l, pares in por_loja.items():
+        top = sorted(pares, key=lambda p: ({'real': 0, 'promo': 1}.get(p[1]['v'], 2), -desconto(p[1])))[:4]
+        nr = sum(1 for p in pares if p[1]['v'] == 'real')
+        nf = sum(1 for p in pares if p[1]['v'] == 'fachada')
+        fim, _ = fim_promocoes(pares, D.dia)
+        corpo += [f'<section class="bloco pp-sec" aria-labelledby="t-{l}"><div class="caixa">',
+                  f'<h2 id="t-{l}">{LOJAS[l]}: {len(pares)} promoções</h2>',
+                  f'<p class="lead">{nr} desceram a sério e {nf} estão mais baratas noutra loja.' + (f' A maioria acaba {no_dia(fim)}.' if fim else '') + '</p>',
+                  f'<ul class="etiquetas">{"".join(cartao(g, o) for g, o in top)}</ul>',
+                  f'<p class="pp-acoes"><a class="botao botao--leve" href="/promocoes/{SLUG_LOJA[l]}/">Ver as promoções do {LOJAS[l]}</a></p>',
+                  '</div></section>']
+    corpo += [METODO, '</main>', rodape(D.dia, hora)]
+    return '\n'.join(corpo)
+
+
+def pagina_mais_barato(D, hora):
+    cz = D.R.get('cabaz') or {}
+    tot = cz.get('totais') or {}
+    if not cz.get('n') or len(tot) < 3:
+        return None
+    url = SITE + '/supermercado-mais-barato/'
+    dia_l = data_longa(D.dia)
+    ordem = sorted(tot, key=lambda l: tot[l])
+    l1, l2, l3 = ordem
+    titulo = f'Supermercado mais barato hoje: {LOJAS[l1]}, {LOJAS[l2]} ou {LOJAS[l3]}?'
+    descricao = curta(f'Comparámos hoje, {dia_l}, {cz["n"]} produtos iguais nas três lojas. O {LOJAS[l1]} sai mais barato: '
+                      f'{eur(tot[l3] - tot[l1])} menos do que o {LOJAS[l3]} no total.')
+    perguntas = [('Qual é o supermercado mais barato em Portugal?',
+                  f'Hoje, {dia_l}, nos {cz["n"]} produtos iguais à venda no Continente, Pingo Doce e Auchan online, o mais barato no total é '
+                  f'o {LOJAS[l1]} ({eur(tot[l1])}), seguido do {LOJAS[l2]} ({eur(tot[l2])}) e do {LOJAS[l3]} ({eur(tot[l3])}). Muda de dia para dia.')]
+    if cz.get('dividir'):
+        perguntas.append(('Vale a pena dividir as compras por várias lojas?',
+                          f'Se comprasses cada um destes produtos na loja onde está mais barato, pagavas {eur(cz["dividir"])}, '
+                          f'menos {eur(tot[l1] - cz["dividir"])} do que tudo no {LOJAS[l1]}.'))
+    ld = {'@context': 'https://schema.org', '@graph': [
+        migalhas_ld(('caiu.pt', SITE + '/'), ('Supermercado mais barato', url)),
+        {'@type': 'WebPage', 'name': titulo, 'url': url, 'inLanguage': 'pt-PT', 'dateModified': D.atualizado, 'description': descricao},
+        {'@type': 'FAQPage', 'mainEntity': [{'@type': 'Question', 'name': q, 'acceptedAnswer': {'@type': 'Answer', 'text': r}} for q, r in perguntas]}]}
+    ind = cz.get('indice') or {}
+    vence = cz.get('vence') or {}
+    linhas_t = [(LOJAS[l], eur(tot[l])) for l in ordem]
+    if cz.get('dividir'):
+        linhas_t.append(('Cada um na loja mais barata', eur(cz['dividir'])))
+    vtxt = ''
+    if vence:
+        vtxt = ('<p class="lead">Produto a produto, o mais barato foi o '
+                + ', o '.join(f'{LOJAS[l]} em {vence[l]}' for l in sorted(vence, key=lambda l: -vence[l]))
+                + ' dos produtos. Nenhuma loja é a mais barata em tudo.</p>')
+    rel = ''.join(f'<li><a href="/promocoes/{SLUG_LOJA[x]}/">Promoções {LOJAS[x]}</a></li>' for x in LOJAS)
+    corpo = [cabeca(titulo, descricao, url, ld, D.dia), '<main id="conteudo">',
+             '<section class="bloco pp-heroi"><div class="caixa">',
+             '<p class="pp-migalhas"><a href="/">caiu.pt</a> › Supermercado mais barato</p>',
+             '<h1>Qual é o supermercado mais barato hoje?</h1>',
+             f'<p class="lead">Comparámos os mesmos {cz["n"]} produtos (mesma marca e mesma embalagem) à venda nas lojas online do Continente, '
+             f'Pingo Doce e Auchan, hoje, {dia_l}, já com as promoções do dia.</p>',
+             talao_html(f'{cz["n"]} produtos iguais', hora, linhas_t,
+                        ('Índice (100 = a mais barata): ' + ', '.join(f'{LOJAS[l]} {ind[l]}' for l in ordem if l in ind) + '.') if ind else 'Total dos mesmos produtos em cada loja.'),
+             vtxt,
+             '<p class="pp-acoes"><a class="botao" href="/">Somar a minha lista em cada loja</a></p>',
+             '</div></section>',
+             '<section class="bloco pp-sec" aria-labelledby="t-perg"><div class="caixa">',
+             '<h2 id="t-perg">Perguntas</h2>',
+             ''.join(f'<h3>{e(q)}</h3><p>{e(r)}</p>' for q, r in perguntas),
+             '<p class="pp-nota">Só contam os produtos iguais nas três lojas, sem as marcas próprias, que não se podem comparar. '
+             'Os preços são os das lojas online e não incluem descontos em cartão nem portes.</p>',
+             '</div></section>',
+             '<section class="bloco pp-sec" aria-labelledby="t-promos"><div class="caixa">',
+             '<h2 id="t-promos">Promoções desta semana</h2>',
+             f'<ul class="pp-rel">{rel}<li><a href="/preco/">Preços por produto</a></li></ul>',
+             '</div></section>', METODO, '</main>', rodape(D.dia, hora)]
+    return '\n'.join(x for x in corpo if x)
+
+
 def main():
     pasta = sys.argv[1] if len(sys.argv) > 1 else 'dados'
     D = Dados(pasta)
@@ -458,7 +683,31 @@ def main():
             f.write(doc)
     with open(os.path.join(novo, 'index.html'), 'w', encoding='utf-8') as f:
         f.write(pagina_indice(D, feitos, hora))
+    # promoções da semana por loja (/promocoes/<loja>/) e «qual é o mais barato» (/supermercado-mais-barato/)
+    extra = []
+    por_loja = OrderedDict((l, v) for l, v in ((l, promos_loja(D, l)) for l in LOJAS) if v)
+    if por_loja:
+        os.makedirs(os.path.join(novo, 'promocoes'))
+        with open(os.path.join(novo, 'promocoes', 'index.html'), 'w', encoding='utf-8') as f:
+            f.write(pagina_promocoes(D, por_loja, hora))
+        extra.append(SITE + '/promocoes/')
+        for l, pares in por_loja.items():
+            os.makedirs(os.path.join(novo, 'promocoes', SLUG_LOJA[l]))
+            with open(os.path.join(novo, 'promocoes', SLUG_LOJA[l], 'index.html'), 'w', encoding='utf-8') as f:
+                f.write(pagina_loja(D, l, pares, hora))
+            extra.append(f'{SITE}/promocoes/{SLUG_LOJA[l]}/')
+    mb = pagina_mais_barato(D, hora)
+    if mb:
+        os.makedirs(os.path.join(novo, 'supermercado-mais-barato'))
+        with open(os.path.join(novo, 'supermercado-mais-barato', 'index.html'), 'w', encoding='utf-8') as f:
+            f.write(mb)
+        extra.append(SITE + '/supermercado-mais-barato/')
     urls = [SITE + '/preco/'] + [f'{SITE}/preco/{slug(t)}/' for t in gss]
+    # sitemap de todo o site (servido em /sitemap.xml): início, promoções, mais barato e preços
+    with open(os.path.join(novo, 'sitemap-raiz.xml'), 'w', encoding='utf-8') as f:
+        f.write('<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
+                + ''.join(f'  <url><loc>{u}</loc><lastmod>{D.dia}</lastmod><changefreq>daily</changefreq></url>\n' for u in [SITE + '/'] + extra + urls)
+                + '</urlset>\n')
     with open(os.path.join(novo, 'sitemap.xml'), 'w', encoding='utf-8') as f:
         f.write('<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
                 + ''.join(f'  <url><loc>{u}</loc><lastmod>{D.dia}</lastmod><changefreq>daily</changefreq></url>\n' for u in urls)

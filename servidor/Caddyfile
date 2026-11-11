@@ -720,6 +720,25 @@ www.tapmoss.com {
 		header Cache-Control "public, max-age=300"
 		file_server
 	}
+	# Promoções da semana por loja e «qual é o supermercado mais barato» (também do paginas.py), e o sitemap do site todo
+	redir /promocoes /promocoes/ 308
+	redir /supermercado-mais-barato /supermercado-mais-barato/ 308
+	handle /promocoes/* {
+		root * /var/lib/caiu-dados/paginas
+		header Cache-Control "public, max-age=300"
+		file_server
+	}
+	handle /supermercado-mais-barato/* {
+		root * /var/lib/caiu-dados/paginas
+		header Cache-Control "public, max-age=300"
+		file_server
+	}
+	handle /sitemap.xml {
+		root * /var/lib/caiu-dados/paginas
+		rewrite * /sitemap-raiz.xml
+		header Cache-Control "public, max-age=1800"
+		file_server
+	}
 	# API: pesquisa, seguir preços e avisos (caiu-api.service)
 	handle /api/* {
 		reverse_proxy 127.0.0.1:3150 {

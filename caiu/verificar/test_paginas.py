@@ -38,7 +38,8 @@ if existe('limao', 'index.html'):
     lim = ler('limao', 'index.html')
     ok('[relevância] a página do limão não tem ice tea nem detergente', 'Ice Tea' not in lim and 'Detergente' not in lim)
 
-for s in [d for d in os.listdir(P) if os.path.isdir(os.path.join(P, d))]:
+EXTRA = {'promocoes', 'supermercado-mais-barato'}
+for s in [d for d in os.listdir(P) if os.path.isdir(os.path.join(P, d)) and d not in EXTRA]:
     h = ler(s, 'index.html')
     t = re.search(r'<title>([^<]*)</title>', h).group(1)
     d = re.search(r'<meta name="description" content="([^"]*)"', h).group(1)
@@ -61,11 +62,39 @@ ok('[leite] o leite «6 × 1 L a 1,29 €» (0,22 €/L, erro da loja) não apar
 
 sm = ler('sitemap.xml')
 urls = re.findall(r'<loc>([^<]+)</loc>', sm)
-paginas = [d for d in os.listdir(P) if os.path.isdir(os.path.join(P, d))]
+paginas = [d for d in os.listdir(P) if os.path.isdir(os.path.join(P, d)) and d not in EXTRA]
 ok('[sitemap] tem o índice e todas as páginas', 'https://caiu.pt/preco/' in urls and len(urls) == len(paginas) + 1, f'{len(urls)} {len(paginas)}')
 ind = ler('index.html')
 ok('[índice] liga a todas as páginas', all(f'href="/preco/{s}/"' in ind for s in paginas))
 ok('[rodapé] feito por dinissousa.pt', 'Feito por <a href="https://dinissousa.pt"' in az and 'claude' not in az.lower())
+
+# promoções da semana por loja e «qual é o supermercado mais barato»
+for loja, nome in (('continente', 'Continente'), ('pingo-doce', 'Pingo Doce'), ('auchan', 'Auchan')):
+    ok(f'[promoções] página do {nome}', existe('promocoes', loja, 'index.html'))
+    h = ler('promocoes', loja, 'index.html')
+    t = re.search(r'<title>([^<]*)</title>', h).group(1); d = re.search(r'<meta name="description" content="([^"]*)"', h).group(1)
+    ok(f'[promoções {nome}] título, descrição, h1, canonical e sem valores partidos',
+       t.startswith(f'Promoções {nome} esta semana') and len(t) <= 70 and len(d) <= 160 and h.count('<h1') == 1
+       and f'<link rel="canonical" href="https://caiu.pt/promocoes/{loja}/">' in h and 'NaN' not in h and 'None' not in h, f'{len(t)} {len(d)}')
+    outras = [x for x in ('continente', 'pingo-doce', 'auchan') if x != loja]
+    ok(f'[promoções {nome}] liga às outras lojas e ao mais barato', all(f'href="/promocoes/{x}/"' in h for x in outras) and 'href="/supermercado-mais-barato/"' in h)
+pd = ler('promocoes', 'pingo-doce', 'index.html')
+ok('[promoções Pingo Doce] diz quando acaba a maioria («Promoção até 16/11» = segunda-feira)', 'acabam na segunda-feira, 16 de novembro' in pd, re.findall(r'acabam [^.<]*', pd)[:2])
+hub = ler('promocoes', 'index.html')
+ok('[promoções] página geral liga às três lojas', all(f'href="/promocoes/{x}/"' in hub for x in ('continente', 'pingo-doce', 'auchan')))
+mb = ler('supermercado-mais-barato', 'index.html')
+ok('[mais barato] ordem certa (Auchan, Pingo Doce, Continente) e totais com €',
+   '<title>Supermercado mais barato hoje: Auchan, Pingo Doce ou Continente?</title>' in mb and '1161,74\xa0€' in mb and '1087,36\xa0€' in mb)
+ok('[mais barato] FAQ em JSON-LD válido', '"@type":"FAQPage"' in mb)
+import json as _j
+for f in [os.path.join(r, n) for r, _, fs in os.walk(P) for n in fs if n == 'index.html']:
+    for b in re.findall(r'<script type="application/ld\+json">(.*?)</script>', open(f, encoding='utf-8').read(), re.S):
+        _j.loads(b)
+ok('[JSON-LD] válido em todas as páginas', True)
+raiz = re.findall(r'<loc>([^<]+)</loc>', ler('sitemap-raiz.xml'))
+ok('[sitemap do site] início, promoções, mais barato e preços', {'https://caiu.pt/', 'https://caiu.pt/promocoes/', 'https://caiu.pt/promocoes/pingo-doce/',
+   'https://caiu.pt/supermercado-mais-barato/', 'https://caiu.pt/preco/azeite/'} <= set(raiz) and len(raiz) == len(set(raiz)))
+ok('[rodapé] liga às promoções e ao mais barato', 'href="/promocoes/"' in az and 'href="/supermercado-mais-barato/"' in az)
 
 shutil.rmtree(pasta, ignore_errors=True)
 print(f'\n{falhas} falha(s)' if falhas else '\nTudo OK')
