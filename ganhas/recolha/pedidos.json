@@ -1,0 +1,10 @@
+{
+ "urls": {
+  "eurostat_toc.txt": "https://ec.europa.eu/eurostat/api/dissemination/catalogue/toc/txt?lang=EN",
+  "gep_qp.html": "https://www.gep.mtsss.gov.pt/estatisticas-quadros-de-pessoal",
+  "earn_ses_monthly.json": "https://ec.europa.eu/eurostat/api/dissemination/statistics/1.0/data/earn_ses_monthly?format=JSON&lang=EN&geo=PT&geo=EU27_2020",
+  "ine_0012656_meta.json": "https://www.ine.pt/ine/json_indicador/pindicaMeta.jsp?varcd=0012656&lang=PT"
+ },
+ "pesquisas": ["escalão de ganho", "escalão de remuneração", "ganho mensal mediano", "ganho mediano", "remuneração mediana", "quartil ganho", "decil", "rendimento salarial mensal líquido", "trabalhadores por conta de outrem escalão"],
+ "ine": ["0012649", "0014413", "0014410", "0014411", "0006916", "0006917", "0010379", "0012657", "0012658", "0012664", "0006848", "0009864", "0006889", "0006847", "0010385", "0001993"]
+}

@@ -24,7 +24,7 @@ jobs:
         timeout-minutes: 30
         run: |
           pip install --quiet pdfplumber
-          python3 ganhas/recolha/rapido.py saida 22
+          python3 ganhas/recolha/pedidos.py saida 18
       - name: Guardar no ramo ganhas-fontes-rapidas
         if: always()
         run: |

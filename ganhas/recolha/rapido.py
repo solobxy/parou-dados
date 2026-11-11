@@ -10,7 +10,7 @@ ORCAMENTO = 60 * float(sys.argv[2] if len(sys.argv) > 2 else 25)
 T0 = time.time()
 for p in ('ine', 'eurostat', 'docs'):
     os.makedirs(os.path.join(SAIDA, p), exist_ok=True)
-UA = 'ganhas.pt recolha de dados publicos (contacto: diniscash@gmail.com)'
+UA = 'Mozilla/5.0 (compatible; ganhas-recolha/1.0)'
 LOG = open(os.path.join(SAIDA, 'progresso.txt'), 'a', encoding='utf-8')
 
 
