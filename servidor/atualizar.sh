@@ -325,6 +325,10 @@ if [ -f "$SERV/ganhas-api.service" ] && [ -f "$BASE/servidor/ganhas/api.py" ]; t
   fi
   systemctl is-active --quiet ganhas-api.service || systemctl start ganhas-api.service
   # Páginas das empresas: logo que o gerador muda (e depois de hora a hora, pelo timer)
+  # limpeza única: a partilha de teste feita pelo teste automático de 11/11/2026 (14:20–14:45 UTC)
+  if [ -f /var/lib/ganhas-api/dados.db ] && [ ! -f /etc/ganhas/limpeza-teste-20261111 ]; then
+    runuser -u parou -- python3 -c "import sqlite3; c=sqlite3.connect('/var/lib/ganhas-api/dados.db'); n=c.execute(\"DELETE FROM partilhas WHERE profissao='enfermeiro' AND distrito='porto' AND bruto_mes=1650 AND horas=40 AND contrato='efetivo' AND experiencia='3-5' AND criado BETWEEN 1794406800 AND 1794408300\").rowcount; c.commit(); print(n)" > /etc/ganhas/limpeza-teste-20261111 2>&1
+  fi
   PV=$(sha256sum "$BASE/servidor/ganhas/paginas_empresas.py" 2>/dev/null | cut -c1-16)
   if [ -n "$PV" ] && [ "$(cat /etc/ganhas/paginas.versao 2>/dev/null)" != "$PV" ]; then
     systemctl start --no-block ganhas-paginas.service && echo "$PV" > /etc/ganhas/paginas.versao

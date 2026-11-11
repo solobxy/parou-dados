@@ -440,8 +440,16 @@
   if (apagar) {
     const p = ler('partilhado');
     if (p) apagar.hidden = false;
-    $('button', apagar) && $('button', apagar).addEventListener('click', async () => {
-      if (!confirm('Apagar todas as partilhas feitas neste navegador?')) return;
+    const btn = $('button', apagar);
+    let armado = 0;
+    btn && btn.addEventListener('click', async () => {
+      // confirmação no próprio botão (sem janelas do navegador): o 2.º toque nos 6 s seguintes apaga
+      if (Date.now() - armado > 6000) {
+        armado = Date.now(); const antes = btn.textContent; btn.textContent = 'Toca outra vez para apagar';
+        setTimeout(() => { if (Date.now() - armado >= 6000) btn.textContent = antes; }, 6100);
+        return;
+      }
+      btn.setAttribute('aria-busy', 'true');
       const r = await fetch('/api/apagar', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ dispositivo: dispositivo() }) }).catch(() => null);
       if (r && r.ok) { try { localStorage.removeItem('ganhas.partilhado'); } catch (e) { /* */ } apagar.innerHTML = '<p class="ok-msg" role="status">Apagado. Não fica nada teu nas nossas contas.</p>'; }
       else alertaCurto('Não foi possível apagar agora. Tenta mais tarde ou escreve-nos.');
