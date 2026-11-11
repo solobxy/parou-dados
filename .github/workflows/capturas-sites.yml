@@ -1,0 +1,38 @@
+name: Capturas dos sites
+
+# Tira capturas do primeiro ecrã (telemóvel e computador) e da página inteira de cada site e guarda-as no ramo
+# capturas-sites. Serve para rever o impacto inicial dos sites e para as imagens do portfólio.
+#   sites: uma linha por site, "nome url" (ex.: "caiu https://caiu.pt/")
+
+on:
+  workflow_dispatch:
+    inputs:
+      sites:
+        description: "Linhas 'nome url' (separadas por ;)"
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  capturas:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - name: Playwright (com o Chrome da máquina)
+        run: pip install -q playwright
+      - name: Capturas
+        env:
+          SITES: ${{ inputs.sites }}
+        run: |
+          IFS=';' read -ra L <<< "$SITES"
+          ARGS=(); for x in "${L[@]}"; do x="$(echo "$x" | xargs)"; [ -n "$x" ] && ARGS+=("$x"); done
+          python3 auditoria/capturas_sites.py capturas "${ARGS[@]}"
+      - name: Guardar
+        if: always()
+        run: |
+          cd capturas && git init -q -b capturas-sites
+          git config user.name "parou-dados"; git config user.email "actions@users.noreply.github.com"
+          git add -A && git commit -q -m "Capturas $(date -u +%Y-%m-%dT%H:%MZ)"
+          git push -q -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" capturas-sites
