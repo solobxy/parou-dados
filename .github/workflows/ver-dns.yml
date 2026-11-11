@@ -30,8 +30,18 @@ jobs:
             echo "################ $d ($(date -u +%H:%M:%S) UTC)" >> $out
             tld="${d##*.}"
             ns_tld=$(dig +short NS "$tld." @1.1.1.1 | head -1)
-            echo "== delegação no registo ($ns_tld)" >> $out
-            dig +norecurse +noall +comments +authority +additional NS "$d" @"$ns_tld" >> $out 2>&1
+            echo "== delegação em cada servidor do registo .$tld" >> $out
+            for t in $(dig +short NS "$tld." @1.1.1.1 | sort); do
+              echo "$t -> $(dig +norecurse +noall +authority NS "$d" @"$t" | awk '$4=="NS"{print $5}' | sort | tr '\n' ' ') | DS: $(dig +norecurse +noall +answer +authority DS "$d" @"$t" | awk '$4=="DS"{print $5,$6,$7}' | tr '\n' ';')" >> $out
+            done
+            echo "== cada servidor delegado, diretamente (A @, A www, SOA, DNSKEY)" >> $out
+            for ns in $(dig +norecurse +noall +authority NS "$d" @"$ns_tld" | awk '$4=="NS"{print $5}' | sort -u); do
+              echo "$ns ($(dig +short A "$ns" @1.1.1.1 | tr '\n' ' ')): A @=$(dig +norecurse +short +time=3 +tries=1 A "$d" @"$ns" | tr '\n' ' ') | www=$(dig +norecurse +short +time=3 +tries=1 A "www.$d" @"$ns" | tr '\n' ' ') | $(dig +norecurse +noall +comments +time=3 +tries=1 SOA "$d" @"$ns" | grep -o 'status: [A-Z]*\|flags: [a-z ]*' | tr '\n' ' ') | SOA=$(dig +norecurse +short +time=3 +tries=1 SOA "$d" @"$ns") | DNSKEY=$(dig +norecurse +short +time=3 +tries=1 DNSKEY "$d" @"$ns" | wc -l)" >> $out
+            done
+            echo "== sem validar DNSSEC (+cd) em 1.1.1.1 e 8.8.8.8" >> $out
+            echo "1.1.1.1 cd: $(dig +cd +short A "$d" @1.1.1.1 | tr '\n' ' ') | 8.8.8.8 cd: $(dig +cd +short A "$d" @8.8.8.8 | tr '\n' ' ')" >> $out
+            echo "== erro detalhado (EDE) em 1.1.1.1" >> $out
+            dig +noall +comments A "$d" @1.1.1.1 | grep -iE "status|EDE|extended" >> $out
             for r in 1.1.1.1 8.8.8.8 9.9.9.9; do
               echo "== $r: NS / A @ / A www / estado" >> $out
               echo "NS:  $(dig +short NS "$d" @$r | tr '\n' ' ')" >> $out
