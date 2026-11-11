@@ -707,8 +707,17 @@ www.tapmoss.com {
 		@privado path /historico.db* /*.tmp
 		respond @privado 404
 		root * /var/lib/caiu-dados
-		header Cache-Control "public, max-age=600"
+		@dia path /resumo.json /lista.json /estado.json
+		header @dia Cache-Control "no-cache"
+		@resto not path /resumo.json /lista.json /estado.json
+		header @resto Cache-Control "public, max-age=600"
 		file_server
+	}
+	# API: pesquisa, seguir preços e avisos (caiu-api.service)
+	handle /api/* {
+		reverse_proxy 127.0.0.1:3150 {
+			header_up X-Forwarded-For {remote_host}
+		}
 	}
 	handle {
 		root * /var/www/caiu
@@ -716,7 +725,7 @@ www.tapmoss.com {
 		header @fontes Cache-Control "public, max-age=31536000, immutable"
 		@imagens path /*.png /favicon.svg
 		header @imagens Cache-Control "public, max-age=604800"
-		@revalidar path / /index.html /app.js /estilo.css /manifest.webmanifest
+		@revalidar path / /index.html /app.js /estilo.css /manifest.webmanifest /sw.js /privacidade.html
 		header @revalidar Cache-Control "no-cache"
 		@manifesto path /manifest.webmanifest
 		header @manifesto Content-Type "application/manifest+json"

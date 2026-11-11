@@ -4,25 +4,28 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>caiu.pt — O preço caiu mesmo? Promoções do Continente, Pingo Doce e Auchan</title>
-<meta name="description" content="Comparamos todos os dias os preços do Continente, Pingo Doce e Auchan e dizemos que promoções são a sério e quais são só fachada.">
+<meta name="description" content="Comparamos todos os dias os preços do Continente, Pingo Doce e Auchan, dizemos que promoções são a sério e avisamos quando o que compras baixa de preço.">
 <meta name="theme-color" content="#FFD83D">
 <meta name="color-scheme" content="light">
 <link rel="canonical" href="https://caiu.pt/">
 <meta property="og:type" content="website">
 <meta property="og:locale" content="pt_PT">
+<meta property="og:site_name" content="caiu.pt">
 <meta property="og:title" content="O preço caiu mesmo?">
 <meta property="og:description" content="Promoções do Continente, Pingo Doce e Auchan verificadas todos os dias.">
 <meta property="og:url" content="https://caiu.pt/">
 <meta property="og:image" content="https://caiu.pt/partilha.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="/icone-180.png">
 <link rel="manifest" href="/manifest.webmanifest">
 <link rel="preload" href="/fontes/mona.woff" as="font" type="font/woff" crossorigin>
 <link rel="preload" href="/dados/resumo.json" as="fetch" crossorigin>
-<link rel="stylesheet" href="/estilo.css">
+<link rel="stylesheet" href="/estilo.css?v=3">
 <script>document.documentElement.classList.add('js');window.estat=window.estat||function(){(estat.q=estat.q||[]).push(arguments)}</script>
-<script defer src="/app.js"></script>
+<script defer src="/app.js?v=3"></script>
 <script defer src="/_e.js" data-site="caiu"></script>
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"WebSite","name":"caiu.pt","url":"https://caiu.pt/","inLanguage":"pt-PT","description":"Comparador de preços e verificador de promoções do Continente, Pingo Doce e Auchan.","potentialAction":{"@type":"SearchAction","target":"https://caiu.pt/#q={q}","query-input":"required name=q"}}</script>
 </head>
@@ -34,7 +37,10 @@
     <a class="marca" href="/" aria-label="caiu.pt, início">
       <span class="marca__txt" aria-hidden="true">ca<span class="marca__i">ı<span class="marca__ponto"></span></span>u</span>
     </a>
-    <a class="topo__lista" href="#lista" id="botaoLista">A minha lista <span class="topo__n" id="nLista" hidden>0</span></a>
+    <nav class="topo__nav" aria-label="Atalhos">
+      <a class="topo__link" href="#seguidos" id="linkSeguidos" hidden>Segues <span class="topo__n" id="nSeguidos">0</span></a>
+      <a class="topo__link" href="#lista" id="botaoLista">Lista <span class="topo__n" id="nLista" hidden>0</span></a>
+    </nav>
   </div>
 </header>
 
@@ -47,10 +53,10 @@
         <form class="busca" id="busca" role="search" action="#" autocomplete="off">
           <label class="busca__rotulo" for="q">Procura um produto</label>
           <div class="busca__linha">
-            <input id="q" name="q" type="search" inputmode="search" enterkeyhint="search" placeholder="azeite, leite Mimosa, Nutella…" spellcheck="false">
+            <input id="q" name="q" type="search" inputmode="search" enterkeyhint="search" placeholder="azeite, leite Mimosa, Nutella…" spellcheck="false" autocapitalize="off">
             <button class="botao" type="submit">Ver preços</button>
           </div>
-          <p class="busca__sug">Experimenta: <a href="#q=azeite">azeite</a>, <a href="#q=café cápsulas">café em cápsulas</a>, <a href="#q=detergente roupa">detergente da roupa</a>, <a href="#q=atum">atum</a></p>
+          <p class="busca__sug"><span>Experimenta:</span> <a href="#q=azeite">azeite</a> <a href="#q=café cápsulas">café em cápsulas</a> <a href="#q=detergente roupa">detergente</a> <a href="#q=atum">atum</a></p>
         </form>
       </div>
       <figure class="talao" id="talaoDia" aria-labelledby="t-talao">
@@ -63,9 +69,21 @@
           <div><dt>Em promoção</dt><dd data-k="promos">—</dd></div>
           <div><dt>Desconto sobre o PVPR</dt><dd data-k="pvpr">—</dd></div>
           <div><dt>Em promoção, mais caro ao lado</dt><dd data-k="outra">—</dd></div>
+          <div><dt>Desceram a sério</dt><dd data-k="reais">—</dd></div>
         </dl>
         <p class="talao__pe" id="talaoPe">Continente · Pingo Doce · Auchan</p>
       </figure>
+    </div>
+  </section>
+
+  <section class="bloco bloco--seguidos" id="seguidos" aria-labelledby="t-seg" hidden>
+    <div class="caixa">
+      <div class="resultados__cab">
+        <h2 id="t-seg">Os produtos que segues</h2>
+        <a class="botao botao--leve botao--pequeno" href="#avisos" id="segAvisos">Receber avisos</a>
+      </div>
+      <p class="lead" id="segLead"></p>
+      <ol class="linhas" id="segLista"></ol>
     </div>
   </section>
 
@@ -73,7 +91,7 @@
     <div class="caixa">
       <div class="resultados__cab">
         <h2 id="t-res">Resultados</h2>
-        <button class="botao botao--leve" type="button" id="limparBusca">Limpar pesquisa</button>
+        <button class="botao botao--leve botao--pequeno" type="button" id="limparBusca">Limpar pesquisa</button>
       </div>
       <p class="resultados__info" id="resInfo" aria-live="polite"></p>
       <ol class="linhas" id="resLista"></ol>
@@ -94,6 +112,7 @@
       <div class="cabaz__texto">
         <h2 id="t-cabaz">Nenhum é o mais barato em tudo</h2>
         <p class="lead" id="cabazLead"></p>
+        <p class="cabaz__meu" id="cabazMeu" hidden></p>
         <a class="botao" href="#lista">Fazer a minha lista</a>
       </div>
       <ol class="barras" id="cabazBarras"></ol>
@@ -124,15 +143,63 @@
     </div>
   </section>
 
+  <section class="avisos" id="avisos" aria-labelledby="t-avisos">
+    <div class="caixa avisos__in">
+      <div class="avisos__texto">
+        <h2 id="t-avisos">Avisamos quando o preço cai</h2>
+        <p class="avisos__lead">Segue o que compras e recebe um e-mail ou uma notificação quando baixar. À quinta, se quiseres, mandamos os descontos a sério da semana.</p>
+        <form class="avisos__form" id="formAvisos" novalidate>
+          <label for="emailAvisos">O teu e-mail</label>
+          <div class="avisos__linha">
+            <input id="emailAvisos" type="email" inputmode="email" autocomplete="email" placeholder="nome@exemplo.pt" required>
+            <button class="botao botao--amarelo" type="submit">Quero receber</button>
+          </div>
+          <label class="caixinha"><input type="checkbox" id="semanalAvisos" checked> Também o resumo de quinta-feira</label>
+          <input class="isco" type="text" name="site" tabindex="-1" autocomplete="off" aria-hidden="true">
+          <p class="avisos__erro" id="erroAvisos" role="alert" hidden></p>
+        </form>
+        <div class="avisos__push" id="pushBloco">
+          <button class="botao botao--leve-claro" type="button" id="ativarPush">Avisar no telemóvel</button>
+          <p id="pushNota">Notificações neste telemóvel, sem e-mail.</p>
+        </div>
+        <p class="avisos__letra">Guardamos só o e-mail e o que segues. Sais com um clique em qualquer e-mail. <a href="/privacidade.html">Privacidade</a></p>
+      </div>
+      <div class="notif" id="notifExemplo" aria-hidden="true">
+        <div class="notif__app"><span class="notif__icone">ı</span>caiu.pt<span class="notif__hora">agora</span></div>
+        <p class="notif__titulo" id="notifTitulo">Baixou: o que segues</p>
+        <p class="notif__corpo" id="notifCorpo">Avisamos com o preço novo e a loja.</p>
+      </div>
+    </div>
+  </section>
+
   <section class="bloco bloco--lista" id="lista" aria-labelledby="t-lista">
     <div class="caixa lista">
       <div class="lista__texto">
         <h2 id="t-lista">A tua lista, somada em cada loja</h2>
-        <p class="lead">Junta produtos com «Pôr na lista» e vemos onde a compra fica mais barata. A lista fica guardada neste telemóvel.</p>
+        <p class="lead">Junta produtos com «Pôr na lista» e vemos onde a compra fica mais barata, já com os <a href="#descontos">descontos dos teus cartões</a>. Fica guardada neste telemóvel.</p>
       </div>
       <div class="talao talao--lista" id="talaoLista" aria-live="polite">
-        <p class="talao__vazio" id="listaVazia">Ainda não tens nada na lista. Procura um produto lá em cima.</p>
+        <p class="talao__vazio">Ainda não tens nada na lista. Procura um produto lá em cima.</p>
       </div>
+    </div>
+  </section>
+
+  <section class="bloco bloco--descontos" id="descontos" aria-labelledby="t-desc">
+    <div class="caixa">
+      <h2 id="t-desc">Conta com os teus cartões</h2>
+      <p class="lead">Cartões e parcerias dão saldo ou desconto em cada loja. Marca o que tens e a tua lista passa a mostrar quanto pagas mesmo. Fica só neste telemóvel.</p>
+      <div class="descontos" id="descontosForm"></div>
+      <p class="descontos__resumo" id="descontosResumo" aria-live="polite"></p>
+      <details class="descontos__mais">
+        <summary>Combustível e outras vantagens</summary>
+        <ul>
+          <li><b>Continente e Galp:</b> cada compra de 30 € ou mais (25 € no Continente Bom Dia) dá um vale de 10 cêntimos por litro na Galp, até 60 litros. Quem tem COMBINA não recebe este vale. <a href="https://feed.continente.pt/parceria-galp-continente" rel="noopener" target="_blank">Condições</a></li>
+          <li><b>Pingo Doce e bp:</b> com o Poupa Mais, cada 30 € em compras dá 3 € de desconto em combustível na bp, em abastecimentos acima de 16 litros. <a href="https://www.sabado.pt/comunicados-imprensa/detalhe/bp-e-pingo-doce-reforcam-programa-poupa-mais-com-novas-oportunidades-de-poupanca" rel="noopener" target="_blank">Anúncio</a></li>
+          <li><b>Clube Auchan:</b> cupões semanais com 10 % em saldo nos produtos da marca Auchan e cupões personalizados na app. <a href="https://www.auchan.pt/pt/clube-auchan/" rel="noopener" target="_blank">Clube Auchan</a></li>
+          <li><b>App do Pingo Doce:</b> campanhas de saldo que mudam todas as semanas (por exemplo, 20 % em algumas categorias durante 3 dias). Não entram nas contas porque não são fixas.</li>
+        </ul>
+      </details>
+      <p class="descontos__nota">Condições confirmadas a 11 de novembro de 2026 nas páginas oficiais de cada programa. Mudam com frequência: confirma antes de contar com elas. O saldo em cartão fica para a compra seguinte.</p>
     </div>
   </section>
 
@@ -146,29 +213,30 @@
         </div>
         <div class="metodo__item">
           <span class="carimbo carimbo--fachada carimbo--fixo">Fachada</span>
-          <p>Está em promoção mas outra loja vende mais barato sem promoção, o preço riscado não aparece nos nossos registos ou já esteve a este preço no último mês.</p>
+          <p>Está em promoção mas outra loja vende mais barato, o preço riscado não aparece nos nossos registos ou já esteve a este preço no último mês.</p>
         </div>
         <div class="metodo__item">
           <span class="carimbo carimbo--pvpr carimbo--fixo">Sobre o PVPR</span>
           <p>O desconto é calculado sobre o preço de venda recomendado pela marca, que muitas vezes nenhuma loja pratica. O preço pode ser bom; a percentagem é que engana.</p>
         </div>
       </div>
-      <p class="metodo__nota">Usamos os preços das lojas online, recolhidos todos os dias. Na loja física, por zona ou com cartão de cliente podem ser diferentes. O caiu.pt não tem ligação ao Continente, ao Pingo Doce nem ao Auchan.</p>
+      <p class="metodo__nota">Usamos os preços das lojas online, recolhidos três vezes por dia. Na loja física, por zona ou com cartão de cliente podem ser diferentes. O caiu.pt não tem ligação ao Continente, ao Pingo Doce nem ao Auchan.</p>
     </div>
   </section>
 </main>
 
 <footer class="rodape">
   <div class="caixa rodape__in">
-    <p class="rodape__marca" aria-hidden="true">ca<span class="marca__i">ı<span class="marca__ponto marca__ponto--parado"></span></span>u</p>
+    <p class="rodape__marca" aria-hidden="true">ca<span class="marca__i">ı<span class="marca__ponto"></span></span>u</p>
     <p class="rodape__dados" id="rodapeDados">Preços do Continente, Pingo Doce e Auchan online.</p>
+    <p class="rodape__links"><a href="#avisos">Avisos de preço</a> · <a href="#descontos">Os teus cartões</a> · <a href="/privacidade.html">Privacidade</a></p>
     <p class="rodape__autor">Feito por <a href="https://dinissousa.pt" rel="noopener">dinissousa</a></p>
   </div>
 </footer>
 
 <dialog class="folha" id="folha" aria-labelledby="folhaTitulo">
   <div class="folha__in">
-    <button class="folha__fechar" type="button" id="fecharFolha" aria-label="Fechar">×</button>
+    <div class="folha__barra"><span class="folha__pega" aria-hidden="true"></span><button class="folha__fechar" type="button" id="fecharFolha" aria-label="Fechar">×</button></div>
     <div id="folhaCorpo"></div>
   </div>
 </dialog>

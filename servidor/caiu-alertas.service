@@ -1,0 +1,20 @@
+[Unit]
+Description=caiu.pt - avisos de preço por e-mail e no telemóvel (depois de cada recolha)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=parou
+Group=parou
+StateDirectory=caiu-api
+StateDirectoryMode=0700
+EnvironmentFile=-/etc/caiu/api.env
+Environment=CAIU_DADOS=/var/lib/caiu-dados CAIU_ESTADO=/var/lib/caiu-api TZ=Europe/Lisbon
+ExecStart=/usr/bin/python3 /opt/parou/servidor/caiu/alertas.py
+TimeoutStartSec=20min
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+MemoryMax=300M

@@ -164,7 +164,7 @@ def ler_continente(t):
             else:
                 antes = num(tx)
         # Etiquetas da promoção (imagens com texto alternativo e o texto por cima delas)
-        badge = re.search(r'ct-product-tile-badge(.*?)ct-tile-favorite', b, re.S)
+        badge = re.search(r'<div class="ct-product-tile-badge[^"]*"[^>]*>(.*?)<[^<>]*ct-tile-favorite', b, re.S)
         promo = []
         if badge:
             for a in re.findall(r'alt="([^"]*)"', badge.group(1)):
@@ -172,7 +172,8 @@ def ler_continente(t):
                 if a and 'PVP Recomendado' not in a:
                     promo.append(a)
             txt = limpo(badge.group(1))
-            if txt and not pvpr:
+            if (txt and not pvpr and re.search(r'\d', txt) and not re.search(r'[<>="]|class', txt)
+                    and not any('%' in x for x in promo)):
                 promo.append(txt)
         img = re.search(r'class="ct-tile-image[^"]*"[^>]*data-src="([^"]+)"', b, re.S)
         url = re.search(r'class="image-link[^"]*" href="([^"]+)"', b)
@@ -353,7 +354,19 @@ def main():
     pasta = sys.argv[1] if len(sys.argv) > 1 else 'dados'
     max_termos = int(sys.argv[sys.argv.index('--max-termos') + 1]) if '--max-termos' in sys.argv else 9999
     os.makedirs(os.path.join(pasta, 'h'), exist_ok=True)
-    termos = [l.strip() for l in open(os.path.join(AQUI, 'termos.txt'), encoding='utf-8') if l.strip() and not l.startswith('#')][:max_termos]
+    termos = [l.strip() for l in open(os.path.join(AQUI, 'termos.txt'), encoding='utf-8') if l.strip() and not l.startswith('#')]
+    # pesquisas feitas no site que não deram nada (escritas por alertas.py): entram na recolha
+    extra = os.environ.get('CAIU_TERMOS_EXTRA', '/var/lib/caiu-api/termos-extra.txt')
+    try:
+        vistos_t = {norm(t) for t in termos}
+        for l in open(extra, encoding='utf-8'):
+            t = l.strip()[:40]
+            if t and re.fullmatch(r"[\w' .&-]{3,40}", t) and norm(t) not in vistos_t:
+                termos.append(t)
+                vistos_t.add(norm(t))
+    except OSError:
+        pass
+    termos = termos[:max_termos]
     agora = datetime.now(ZoneInfo('Europe/Lisbon'))
     hoje = agora.date().isoformat()
     db = sqlite3.connect(os.path.join(pasta, 'historico.db'))

@@ -1,0 +1,27 @@
+[Unit]
+Description=caiu.pt - API (pesquisa, seguir preços, avisos)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=parou
+Group=parou
+StateDirectory=caiu-api
+StateDirectoryMode=0700
+EnvironmentFile=-/etc/caiu/api.env
+Environment=CAIU_DADOS=/var/lib/caiu-dados CAIU_ESTADO=/var/lib/caiu-api TZ=Europe/Lisbon
+ExecStart=/usr/bin/python3 /opt/parou/servidor/caiu/api.py
+Restart=always
+RestartSec=3
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectKernelTunables=yes
+ProtectControlGroups=yes
+RestrictSUIDSGID=yes
+MemoryMax=300M
+
+[Install]
+WantedBy=multi-user.target

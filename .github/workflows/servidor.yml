@@ -10,6 +10,8 @@ name: Servidor (Hetzner)
 #   chaves-duplicasa - copia os segredos da DupliCasa guardados no GitHub (GOOGLE_ID, GOOGLE_SEGREDO,
 #              FACEBOOK_ID, FACEBOOK_SEGREDO, RESEND_API_KEY) para /etc/duaschaves/api.env e reinicia
 #              só a API da DupliCasa (o PAROU não é tocado)
+#   chaves-caiu - copia os segredos do caiu.pt (servidor/caiu-api.age, cifrado para a chave SSH do servidor)
+#              para /etc/caiu/api.env e reinicia só a API do caiu.pt
 #   chaves-adri - põe o hash da password da agenda do AdriBodyPiercing (servidor/adri-agenda.age, cifrado
 #              para a chave SSH do servidor) em /etc/adri-agenda/agenda.env e reinicia só a agenda
 # O resultado fica no ramo "servidor-resultado", em resultado.txt.
@@ -21,7 +23,7 @@ on:
   workflow_dispatch:
     inputs:
       acao:
-        description: "estado, recriar, comando, chaves, chaves-duplicasa ou chaves-adri"
+        description: "estado, recriar, comando, chaves, chaves-duplicasa, chaves-caiu ou chaves-adri"
         required: true
         default: "estado"
       comando:
@@ -171,6 +173,21 @@ jobs:
           if [ "$N" -gt 0 ]; then
             ssh root@$IP "systemctl restart duaschaves-api && sleep 2 && systemctl is-active duaschaves-api" >> resultado.txt 2>&1
           fi
+
+      - name: Segredos do caiu.pt para o servidor
+        if: inputs.acao == 'chaves-caiu'
+        run: |
+          source funcs.sh
+          IP=$(h "$API/servers?name=parou" | jq -r '.servers[0].public_net.ipv4.ip // empty')
+          [ -n "$IP" ] || { echo "Servidor não encontrado" >> resultado.txt; exit 1; }
+          command -v age >/dev/null 2>&1 || sudo apt-get install -y -qq age >/dev/null 2>&1
+          # servidor/caiu-api.age: linhas NOME=valor (chave do Resend só de envio, remetente, e-mail do administrador),
+          # cifradas para a chave SSH deste repositório; vão pelo stdin e nunca aparecem no resultado
+          VALOR=$(age -d -i ~/.ssh/id_ed25519 servidor/caiu-api.age 2>/dev/null) || VALOR=""
+          if [ -z "$VALOR" ]; then echo "caiu: não deu para abrir servidor/caiu-api.age" >> resultado.txt; exit 1; fi
+          printf '%s\n' "$VALOR" | ssh root@$IP "install -d -m 750 -o root -g parou /etc/caiu; F=/etc/caiu/api.env; cat > \$F.novo; chown root:parou \$F.novo; chmod 640 \$F.novo; mv \$F.novo \$F"
+          echo "caiu: $(printf '%s\n' "$VALOR" | cut -d= -f1 | tr '\n' ' ')copiados para o servidor" >> resultado.txt
+          ssh root@$IP "systemctl restart caiu-api 2>&1; sleep 2; systemctl is-active caiu-api; curl -s -m 5 http://127.0.0.1:3150/api/saude" >> resultado.txt 2>&1
 
       - name: Password da agenda do AdriBodyPiercing para o servidor
         if: inputs.acao == 'chaves-adri'

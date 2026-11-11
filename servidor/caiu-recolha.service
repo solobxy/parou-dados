@@ -12,6 +12,8 @@ StateDirectoryMode=0755
 UMask=0022
 Environment=TZ=Europe/Lisbon
 ExecStart=/usr/bin/python3 /opt/parou/servidor/caiu/recolher.py /var/lib/caiu-dados
+# depois de cada recolha: avisos de preço (e-mail e telemóvel)
+ExecStartPost=+/bin/systemctl start --no-block caiu-alertas.service
 TimeoutStartSec=90min
 Nice=10
 NoNewPrivileges=yes

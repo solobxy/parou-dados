@@ -29,6 +29,8 @@ escrever_estado() {
     echo "Reinícios pela vigia: $(tail -n 3 /var/lib/parou-estado/reinicios.log 2>/dev/null | tr '\n' ';' || true)"
     echo "caiu.pt recolha: $(systemctl show caiu-recolha.service -p ActiveState -p Result -p ExecMainStatus 2>/dev/null | tr '\n' ' ')"
     echo "caiu.pt últimas linhas: $(journalctl -u caiu-recolha -n 4 --no-pager -o cat 2>/dev/null | cut -c1-200 | tr '\n' ';')"
+    echo "caiu.pt API: $(systemctl is-active caiu-api 2>/dev/null) $(curl -s -m 3 http://127.0.0.1:3150/api/saude 2>/dev/null | cut -c1-120)"
+    echo "caiu.pt avisos: $(cat /var/lib/caiu-api/alertas.json 2>/dev/null | cut -c1-240)"
     echo "ganhas.pt API: $(systemctl is-active ganhas-api 2>/dev/null) $(curl -s -m 3 http://127.0.0.1:3140/api/estado 2>/dev/null | cut -c1-80)"
     echo "ganhas.pt páginas: $(systemctl show ganhas-paginas.service -p Result -p ExecMainStatus 2>/dev/null | tr '\n' ' ') $(journalctl -u ganhas-paginas -n 12 --no-pager -o cat 2>/dev/null | grep -v -E '^(Starting|Started|Finished|Failed to start|ganhas-paginas)' | tail -3 | cut -c1-200 | tr '\n' ';')"
     echo
@@ -290,6 +292,20 @@ if [ -f "$SERV/caiu-recolha.service" ] && [ -f "$BASE/servidor/caiu/recolher.py"
     if ! cmp -s "$SERV/$f" "/etc/systemd/system/$f"; then cp "$SERV/$f" "/etc/systemd/system/$f" && systemctl daemon-reload; fi
   done
   systemctl is-enabled --quiet caiu-recolha.timer 2>/dev/null || systemctl enable --now caiu-recolha.timer >/dev/null 2>&1
+  # API (pesquisa, seguir preços, avisos) e avisos depois de cada recolha. Segredos em /etc/caiu/api.env
+  # (ação «chaves-caiu» do workflow Servidor); sem eles a API funciona, só não envia e-mails.
+  install -d -m 750 -o root -g parou /etc/caiu
+  for f in caiu-api.service caiu-alertas.service; do
+    if [ -f "$SERV/$f" ] && ! cmp -s "$SERV/$f" "/etc/systemd/system/$f"; then cp "$SERV/$f" "/etc/systemd/system/$f" && systemctl daemon-reload; fi
+  done
+  if [ -f /etc/systemd/system/caiu-api.service ]; then
+    systemctl is-enabled --quiet caiu-api.service 2>/dev/null || systemctl enable --now caiu-api.service >/dev/null 2>&1
+    V=$( { sha256sum "$BASE/servidor/caiu/api.py" "$BASE/servidor/caiu/comum.py" /etc/caiu/api.env 2>/dev/null; } | sha256sum | cut -c1-16)
+    if [ "$(cat /etc/caiu/api.versao 2>/dev/null)" != "$V" ]; then
+      systemctl restart caiu-api.service && echo "$V" > /etc/caiu/api.versao
+    fi
+    systemctl is-active --quiet caiu-api.service || systemctl start caiu-api.service
+  fi
   # Recolha já (na primeira instalação e sempre que caiu/forcar-recolha muda)
   FR=$(cat "$BASE/servidor/caiu/forcar-recolha" 2>/dev/null)
   if [ -n "$FR" ] && [ "$(cat /var/lib/caiu-estado/forcar 2>/dev/null)" != "$FR" ]; then

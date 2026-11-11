@@ -1,9 +1,10 @@
 [Unit]
-Description=caiu.pt - recolha dos preços duas vezes por dia (de manhã e à tarde)
+Description=caiu.pt - recolha dos preços três vezes por dia
 
 [Timer]
 OnCalendar=*-*-* 07:20:00 Europe/Lisbon
-OnCalendar=*-*-* 16:20:00 Europe/Lisbon
+OnCalendar=*-*-* 12:50:00 Europe/Lisbon
+OnCalendar=*-*-* 18:20:00 Europe/Lisbon
 RandomizedDelaySec=300
 Persistent=true
 

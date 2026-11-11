@@ -6,7 +6,10 @@ U = sys.argv[1].rstrip('/') + '/'
 os.makedirs('capturas', exist_ok=True)
 res = {}
 with sync_playwright() as p:
-    b = p.chromium.launch()
+    try:
+        b = p.chromium.launch(channel='chrome')
+    except Exception:
+        b = p.chromium.launch()
     for nome, (w, h, toque) in {'telemovel': (390, 844, True), 'computador': (1440, 900, False)}.items():
         ctx = b.new_context(viewport={'width': w, 'height': h}, has_touch=toque, device_scale_factor=1)
         pg = ctx.new_page(); erros = []

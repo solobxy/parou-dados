@@ -19,9 +19,10 @@ jobs:
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
-      - name: Instalar o Chromium
-        run: pip install -q playwright && python3 -m playwright install --with-deps chromium > /dev/null
+      - name: Instalar o Playwright (usa o Chrome que já vem na máquina do GitHub)
+        run: pip install -q playwright
       - name: Capturas
+        timeout-minutes: 8
         run: python3 caiu/verificar/capturas.py "${{ inputs.url }}"
       - name: Guardar
         if: always()

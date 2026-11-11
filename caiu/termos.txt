@@ -137,3 +137,125 @@ leite infantil
 comida gato
 comida cão
 areia gato
+# Marcas e produtos muito procurados
+mimosa
+agros
+gresso
+terra nostra
+danone
+activia
+oikos
+yoplait
+nestlé
+nescafé
+delta
+sical
+nicola
+compal
+sumol
+um bongo
+pepsi
+coca-cola zero
+fanta
+7up
+red bull
+monster
+super bock
+sagres
+heineken
+luso
+água do caramulo
+pedras salgadas
+kellogg's
+chocapic
+milka
+oreo
+pringles
+lay's
+ruffles
+doritos
+filipinos
+bolachas cerelac
+cigala
+nacional massa
+milaneza
+barilla
+gallo
+oliveira da serra
+fula
+vaqueiro
+planta
+tulicreme
+nutella
+paladin
+knorr
+compal essencial
+ramirez
+bom petisco
+tenório
+izidoro
+nobre
+campofrio
+primor
+sanytol
+ariel
+skip
+persil
+xau
+fairy
+finish
+sonasol
+domestos
+renova
+scottex
+colgate
+oral-b
+nivea
+dove
+gillette
+pantene
+elseve
+dodot
+continente
+pingo doce
+auchan
+# Mais categorias
+peixe congelado
+carne de porco
+frango inteiro
+peru
+pão
+broa
+bolos
+croissants
+cereais de pequeno almoço
+granola
+iogurte líquido
+leite de soja
+bebida de amêndoa
+kefir
+queijo da serra
+queijo flamengo
+queijo mozarela
+manteiga com sal
+massa folhada
+farinha de trigo
+fermento
+especiarias
+pimenta
+tomate pelado
+feijão preto
+lentilhas
+cuscuz
+quinoa
+batata doce
+cogumelos frescos
+espinafres
+couve
+pepino
+pimento
+abacate
+kiwi
+mirtilos
+ananás
+melancia
