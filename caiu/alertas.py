@@ -246,6 +246,13 @@ def vigiar_recolha(agora):
             problemas.append('%s: %d de %d pesquisas falharam (códigos %s)' % (loja, fal, ped, e.get('codigos')))
         elif prod < 1500:
             problemas.append('%s: só %d produtos' % (loja, prod))
+    ess = est.get('essencial') or {}
+    if ess.get('erro'):
+        problemas.append('cabaz do essencial: erro %s' % ess['erro'])
+    elif ess.get('total') and ess.get('artigos', 0) < ess['total'] * 0.9:
+        nomes = {'c': 'Continente', 'p': 'Pingo Doce', 'a': 'Auchan'}
+        faltam = '; '.join('%s (sem %s)' % (n, ', '.join(nomes.get(l, l) for l in ls)) for n, ls in ess.get('faltam') or [])
+        problemas.append('cabaz do essencial: só %d de %d artigos nas três lojas. Faltam: %s' % (ess.get('artigos', 0), ess['total'], faltam))
     if not problemas:
         return
     f = os.path.join(C.ESTADO, 'aviso-admin.txt')

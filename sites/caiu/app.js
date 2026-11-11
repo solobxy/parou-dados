@@ -298,6 +298,8 @@
     $('#talaoDia').classList.add('imprime');
     $('#rodapeDados').textContent = `Preços recolhidos a ${dataCurta(r.atualizado.slice(0, 10))}, às ${hora(r.atualizado)}, nas lojas online do Continente, Pingo Doce e Auchan. Podem mudar durante o dia.`;
 
+    try { mostrarEssencial(); } catch (e) { $('#essencial').hidden = true; }
+
     const fach = (r.fachada || []).map(dec);
     if (fach.length) {
       $('#fachadaLead').innerHTML = `Hoje, <strong>${ni.format(r.outra)} produtos</strong> em promoção estão mais baratos noutro supermercado. Estes são os casos com maior diferença.`;
@@ -373,6 +375,136 @@
     el.innerHTML = `Com os teus cartões: ${ord.map(c => `${LOJAS[c]} <b>${eur(tot[c])}</b>`).join(', ')}.`;
     el.hidden = false;
   }
+
+  // ---------- cabaz do essencial (caiu/cabaz.py) ----------
+  const ESS = { p: Math.min(4, Math.max(1, +ler('caiu-ess-pessoas', 2) || 2)), m: ler('caiu-ess-periodo', 's') === 'm' ? 'm' : 's' };
+  const UN_ART = { ovos: ['ovo', 'ovos'], papel: ['rolo', 'rolos'], roupa: ['lavagem', 'lavagens'] };
+  const fatorEss = () => ESS.p * (ESS.m === 'm' ? (R.essencial.semanas_mes || 52 / 12) : 1);
+  function qtdEss(a, f) {
+    const v = a.q * f;
+    if (a.u === 'kg' || a.u === 'L') {
+      if (v < 1) return `${ni.format(Math.max(10, Math.round(v * 1000 / (v < 0.1 ? 5 : 10)) * (v < 0.1 ? 5 : 10)))}${NB}${a.u === 'kg' ? 'g' : 'ml'}`;
+      return `${v.toLocaleString('pt-PT', { maximumFractionDigits: 1 })}${NB}${a.u === 'kg' ? 'kg' : 'L'}`;
+    }
+    const n = v >= 3 ? Math.round(v) : Math.round(v * 2) / 2;
+    const [um, varios] = UN_ART[a.id] || ['unidade', 'unidades'];
+    return `${n.toLocaleString('pt-PT', { maximumFractionDigits: 1 })}${NB}${n === 1 ? um : varios}`;
+  }
+  const porUnidade = (a, pu) => `${nf.format(pu)}${NB}€/${{ kg: 'kg', L: 'L', un: UN_ART[a.id] ? UN_ART[a.id][0] : 'un', dose: 'lavagem' }[a.u]}`;
+  function contasEss() {
+    const e = R.essencial, f = fatorEss();
+    const linhas = e.artigos.map(a => {
+      const v = {};
+      for (const c of 'cpa') if (a.l[c]) v[c] = Math.round(a.l[c][2] * a.q * f * 100) / 100;
+      return { a, v, min: Object.keys(v).length ? Math.min(...Object.values(v)) : 0 };
+    });
+    const comuns = linhas.filter(x => x.a.comum);
+    const tot = { c: 0, p: 0, a: 0 };
+    let div = 0;
+    for (const x of comuns) { for (const c of 'cpa') tot[c] += x.v[c]; div += x.min; }
+    for (const c of 'cpa') tot[c] = Math.round(tot[c] * 100) / 100;
+    return { f, linhas, comuns, tot, div: Math.round(div * 100) / 100 };
+  }
+  function mostrarEssencial() {
+    const e = R.essencial;
+    if (!e || !e.artigos || e.n < 10) return;
+    const k = contasEss();
+    const ord = Object.keys(k.tot).sort((a, b) => k.tot[a] - k.tot[b]);
+    const melhor = ord[0], pior = ord[2];
+    const quem = `${ESS.p === 1 ? '1 pessoa' : ESS.p + ' pessoas'}`, quando = ESS.m === 'm' ? 'um mês' : 'uma semana';
+    const difMax = k.tot[pior] - k.tot[melhor];
+    const empata = difMax / k.tot[melhor] < 0.015;
+    $('#essLead').innerHTML = `${ni.format(e.n)} produtos básicos, do arroz ao detergente. Em cada loja escolhemos o mais barato ao quilo, ao litro ou à unidade e somamos as quantidades de uma semana normal. Muda sozinho a cada recolha de preços.`;
+    $('#essFrase').innerHTML = empata
+      ? `Para ${quem}, ${quando}: as três lojas quase empatam. Entre a mais barata e a mais cara vão <strong>${eur(difMax)}</strong>.`
+      : `Para ${quem}, ${quando}, o mais barato é o <strong>${LOJAS[melhor]}</strong>: menos ${eur(difMax)} do que no ${LOJAS[pior]}.`;
+    $('#essLojas').innerHTML = ord.map((c, i) => {
+      const dif = k.tot[c] - k.tot[melhor];
+      const sub = i === 0 ? (igual(k.tot[ord[1]], k.tot[c]) ? 'empata com o ' + LOJAS[ord[1]] : 'o total mais baixo') : igual(dif, 0) ? 'o mesmo total' : `+${eur(dif)} (${(dif / k.tot[melhor] * 100).toLocaleString('pt-PT', { maximumFractionDigits: 1 })}${NB}%)`;
+      return `<li class="pl${i === 0 ? ' pl--melhor' : ''}">
+        <span class="pl__loja">${LOJAS[c]}</span>
+        ${precoHTML(k.tot[c], 'pl__total')}
+        <span class="pl__sub">${sub}</span>
+        ${i === 0 ? '<span class="carimbo carimbo--real pl__carimbo">Mais barato</span>' : ''}
+      </li>`;
+    }).join('');
+    animar($('#essLojas'));
+    const poup = k.tot[melhor] - k.div;
+    // quantas lojas é preciso visitar para ter tudo ao preço mais baixo (empates contam para qualquer uma)
+    const mins = k.comuns.map(x => 'cpa'.split('').filter(c => igual(x.v[c], x.min)));
+    const lojasPrecisas = new Set(mins.filter(m => m.length === 1).map(m => m[0]));
+    for (const m of mins) if (!m.some(c => lojasPrecisas.has(c))) lojasPrecisas.add(m[0]);
+    const idas = lojasPrecisas.size === 3 ? 'três idas' : 'duas idas';
+    $('#essDividir').innerHTML = poup > 0.05 && lojasPrecisas.size > 1
+      ? `Comprando cada coisa na loja onde está mais barata, pagas <strong>${eur(k.div)}</strong>: menos ${eur(poup)} do que tudo no ${LOJAS[melhor]}, mas são ${idas} às compras.`
+      : 'Dividir a compra pelas três lojas quase não poupa nada: o melhor é ir a uma só.';
+    // produtos
+    $('#essResumo').textContent = `Ver os ${ni.format(e.artigos.length)} produtos`;
+    const grupos = e.grupos || [];
+    $('#essTabela').innerHTML = `<div class="arts__cab" aria-hidden="true"><span>Produto</span>${'cpa'.split('').map(c => `<span>${LOJAS[c]}</span>`).join('')}</div>` +
+      grupos.map(([g, nome]) => {
+        const xs = k.linhas.filter(x => x.a.g === g);
+        if (!xs.length) return '';
+        return `<h3 class="arts__g">${nome}</h3>` + xs.map(({ a, v, min }) => {
+          const todosIguais = Object.values(v).every(x => igual(x, min));
+          const celula = c => v[c] == null ? `<span class="arts__v arts__v--nao">não há<span class="sr"> no ${LOJAS[c]}</span></span>`
+            : `<span class="arts__v${!todosIguais && igual(v[c], min) ? ' arts__v--min' : ''}"><span class="sr">${LOJAS[c]}: </span>${eur(v[c])}${!todosIguais && igual(v[c], min) ? '<span class="sr"> (mais barato)</span>' : ''}</span>`;
+          const escolhas = 'cpa'.split('').filter(c => a.l[c]).map(c => {
+            const [nome, preco, pu, , url, promo] = a.l[c];
+            const ir = url ? ` <a href="${esc(/^https?:/.test(url) ? url : BASE[c] + url)}" target="_blank" rel="noopener" data-loja="${c}">Ver na loja</a>` : '';
+            return `<li><b>${LOJAS[c]}</b> ${esc(nome)}: ${eur(preco)} (${porUnidade(a, pu)})${promo ? ' · em promoção' : ''}.${ir}</li>`;
+          }).join('');
+          return `<details class="art${a.comum ? '' : ' art--fora'}">
+            <summary><span class="art__n"><span class="art__t">${esc(a.n)}</span><small>${qtdEss(a, k.f)}${a.comum ? '' : ' · fora das contas hoje'}</small></span>${'cpa'.split('').map(celula).join('')}</summary>
+            <ul class="art__esc">${escolhas}</ul>
+          </details>`;
+        }).join('');
+      }).join('') +
+      `<p class="arts__pe">Toca num produto para ver o que escolhemos em cada loja. Contamos o preço ao quilo ou ao litro, por isso o valor é o da quantidade da lista e não o da embalagem inteira.</p>`;
+    // como tem mudado
+    const pts = (e.hist || []).filter(h => h[5] === e.n);
+    const hh = { c: [], p: [], a: [] };
+    for (const h of pts) { if (h[1]) hh.c.push([h[0], h[1] * k.f]); if (h[2]) hh.p.push([h[0], h[2] * k.f]); if (h[3]) hh.a.push([h[0], h[3] * k.f]); }
+    $('#essHist').innerHTML = `<h3>Como tem mudado</h3>` + (pts.length >= 2
+      ? grafico(hh, innerWidth < 560 ? 340 : 600).replace(/<p>O mais baixo desde/, '<p>O total mais baixo desde')
+      : (e.hist || []).length >= 2
+        ? '<p>Hoje há um produto que não encontrámos nas três lojas, por isso não comparamos com os outros dias. O gráfico volta quando estiver tudo outra vez.</p>'
+        : `<p>Começámos a guardar o total do cabaz a ${dataCurta(e.dia)}. O gráfico enche-se a cada dia.</p>`);
+    const faltam = e.artigos.filter(a => !a.comum);
+    $('#essNota').innerHTML = `Preços online de ${dataCurta(R.atualizado.slice(0, 10))}, às ${hora(R.atualizado)}. Quantidades de referência que escolhemos para um adulto; o mês conta 52 semanas a dividir por 12.` +
+      (faltam.length ? ` Hoje ${faltam.length === 1 ? 'fica de fora' : 'ficam de fora'} das contas: ${juntar(faltam.map(a => a.n.toLowerCase()))}, que não encontrámos nas três lojas.` : '');
+    $('#essencial').hidden = false;
+    $('#linkEssencial').hidden = false;
+  }
+  function marcarControlos() {
+    document.querySelectorAll('#essCtl input[name="pessoas"]').forEach(i => { i.checked = +i.value === ESS.p; });
+    document.querySelectorAll('#essCtl input[name="periodo"]').forEach(i => { i.checked = i.value === ESS.m; });
+  }
+  marcarControlos();
+  $('#essCtl').addEventListener('submit', e => e.preventDefault());
+  $('#essCtl').addEventListener('change', e => {
+    if (e.target.name === 'pessoas') { ESS.p = +e.target.value; gravar('caiu-ess-pessoas', ESS.p); }
+    if (e.target.name === 'periodo') { ESS.m = e.target.value; gravar('caiu-ess-periodo', ESS.m); }
+    const aberto = [...document.querySelectorAll('#essTabela details[open]')].map(d => [...d.parentNode.children].indexOf(d));
+    mostrarEssencial();
+    const filhos = $('#essTabela').children;
+    aberto.forEach(i => { if (filhos[i] && filhos[i].tagName === 'DETAILS') filhos[i].open = true; });
+    $('#essLojas').classList.remove('muda'); void $('#essLojas').offsetWidth; $('#essLojas').classList.add('muda');
+    window.estat('essencial', `${ESS.p}${ESS.m}`);
+  });
+  $('#essArtigos').addEventListener('toggle', e => { if (e.target.open) window.estat('essencial', 'produtos'); });
+  $('#essEnviar').addEventListener('click', async () => {
+    const k = contasEss();
+    const ord = Object.keys(k.tot).sort((a, b) => k.tot[a] - k.tot[b]);
+    const txt = `O essencial para ${ESS.p === 1 ? '1 pessoa' : ESS.p + ' pessoas'}, ${ESS.m === 'm' ? 'um mês' : 'uma semana'} (${R.essencial.n} produtos, preços de ${new Date(R.atualizado).toLocaleDateString('pt-PT')}):\n` +
+      ord.map(c => `${LOJAS[c]}: ${eur(k.tot[c])}`).join('\n') + `\nCada coisa onde está mais barata: ${eur(k.div)}\n\nhttps://caiu.pt/#essencial`;
+    window.estat('essencial', 'enviar');
+    try {
+      if (navigator.share) { await navigator.share({ text: txt }); return; }
+      await navigator.clipboard.writeText(txt);
+      aviso('Copiado. Cola onde quiseres.');
+    } catch (err) { if (err && err.name !== 'AbortError') aviso('Não deu para copiar neste navegador.'); }
+  });
 
   // ---------- lista completa (só se a API não responder) ----------
   function obterLista() {
@@ -849,11 +981,11 @@
   $('#fecharFolha').addEventListener('click', fecharFolha);
   folha.addEventListener('click', e => { const a = e.target.closest('[data-loja]'); if (a) window.estat('loja', LOJAS[a.dataset.loja]); });
 
-  function grafico(h) {
+  function grafico(h, W = 600) {
     const series = Object.entries(h).filter(([, v]) => v.length);
     const dias = [...new Set(series.flatMap(([, v]) => v.map(x => x[0])))].sort();
     if (dias.length < 2) return `<p>Começámos a guardar o preço deste produto a ${dataCurta(dias[0] || hojeLx())}. O gráfico vai-se enchendo a cada dia.</p>`;
-    const W = 600, H = 190, e = 44, d = 12, t = 12, b = 26;
+    const H = 190, e = 44, d = 12, t = 12, b = 26, passo = Math.min(150, (W - e) / 3);
     const vals = series.flatMap(([, v]) => v.map(x => x[1]));
     let mn = Math.min(...vals), mx = Math.max(...vals);
     if (mx - mn < 0.1) { mn -= 0.1; mx += 0.1; }
@@ -862,7 +994,7 @@
     const tracos = { c: '', p: '7 5', a: '2 4' };
     const linhas = series.map(([c, v]) => `<polyline fill="none" stroke="#141414" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round" ${tracos[c] ? `stroke-dasharray="${tracos[c]}"` : ''} points="${v.map(p => `${x(p[0]).toFixed(1)},${y(p[1]).toFixed(1)}`).join(' ')}"/>`).join('');
     const fmtD = s => new Date(s + 'T12:00:00').toLocaleDateString('pt-PT', { day: 'numeric', month: 'short' }).replace('.', '');
-    const leg = series.map(([c], k) => `<g transform="translate(${e + k * 150},${H + 18})"><line x1="0" x2="26" y1="-4" y2="-4" stroke="#141414" stroke-width="2.5" ${tracos[c] ? `stroke-dasharray="${tracos[c]}"` : ''}/><text x="32" y="0">${LOJAS[c]}</text></g>`).join('');
+    const leg = series.map(([c], k) => `<g transform="translate(${e + k * passo},${H + 18})"><line x1="0" x2="26" y1="-4" y2="-4" stroke="#141414" stroke-width="2.5" ${tracos[c] ? `stroke-dasharray="${tracos[c]}"` : ''}/><text x="32" y="0">${LOJAS[c]}</text></g>`).join('');
     const minimo = series.flatMap(([c, v]) => v.map(p => [p[1], c, p[0]])).sort((a, b) => a[0] - b[0])[0];
     return `<svg class="grafico" viewBox="0 0 ${W} ${H + 28}" role="img" aria-label="Preço desde ${fmtD(dias[0])}: o mais baixo foi ${eur(minimo[0])} no ${LOJAS[minimo[1]]} a ${fmtD(minimo[2])}">
       <text x="${e - 8}" y="${y(mx) + 4}" text-anchor="end">${nf.format(mx)}</text>
@@ -957,7 +1089,7 @@
     }
     desenharLista();
     desenharSeguidos();
-    if (location.hash === '#lista' || location.hash === '#metodo' || location.hash === '#descontos' || location.hash === '#avisos' || location.hash === '#seguidos') {
+    if (location.hash === '#essencial' || location.hash === '#lista' || location.hash === '#metodo' || location.hash === '#descontos' || location.hash === '#avisos' || location.hash === '#seguidos') {
       const alvo = document.querySelector(location.hash);
       if (alvo && !alvo.hidden) setTimeout(() => alvo.scrollIntoView(), 50);
     }

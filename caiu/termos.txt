@@ -259,3 +259,11 @@ kiwi
 mirtilos
 ananás
 melancia
+# Cabaz do essencial (para apanhar as marcas próprias de cada loja)
+esparguete
+iogurte natural
+queijo flamengo
+carne picada de porco
+pescada congelada
+pasta dentífrica
+água garrafão

@@ -23,9 +23,9 @@
 <link rel="manifest" href="/manifest.webmanifest">
 <link rel="preload" href="/fontes/mona.woff" as="font" type="font/woff" crossorigin>
 <link rel="preload" href="/dados/resumo.json" as="fetch" crossorigin>
-<link rel="stylesheet" href="/estilo.css?v=3">
+<link rel="stylesheet" href="/estilo.css?v=4">
 <script>document.documentElement.classList.add('js');window.estat=window.estat||function(){(estat.q=estat.q||[]).push(arguments)}</script>
-<script defer src="/app.js?v=3"></script>
+<script defer src="/app.js?v=4"></script>
 <script defer src="/_e.js" data-site="caiu"></script>
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"WebSite","name":"caiu.pt","url":"https://caiu.pt/","inLanguage":"pt-PT","description":"Comparador de preços e verificador de promoções do Continente, Pingo Doce e Auchan.","potentialAction":{"@type":"SearchAction","target":"https://caiu.pt/#q={q}","query-input":"required name=q"}}</script>
 </head>
@@ -39,6 +39,7 @@
     </a>
     <nav class="topo__nav" aria-label="Atalhos">
       <a class="topo__link" href="#seguidos" id="linkSeguidos" hidden>Segues <span class="topo__n" id="nSeguidos">0</span></a>
+      <a class="topo__link" href="#essencial" id="linkEssencial" hidden>Essencial</a>
       <a class="topo__link" href="#lista" id="botaoLista">Lista <span class="topo__n" id="nLista" hidden>0</span></a>
     </nav>
   </div>
@@ -96,6 +97,45 @@
       <p class="resultados__info" id="resInfo" aria-live="polite"></p>
       <ol class="linhas" id="resLista"></ol>
       <button class="botao botao--leve mais" type="button" id="resMais" hidden>Ver mais resultados</button>
+    </div>
+  </section>
+
+  <section class="bloco bloco--essencial" id="essencial" aria-labelledby="t-ess" hidden>
+    <div class="caixa essencial">
+      <div class="essencial__cab">
+        <h2 id="t-ess">Quanto custa o essencial</h2>
+        <p class="lead" id="essLead"></p>
+      </div>
+      <form class="essencial__ctl" id="essCtl">
+        <fieldset class="seg">
+          <legend>Pessoas</legend>
+          <div class="seg__op">
+            <label><input type="radio" name="pessoas" value="1"><span>1</span></label>
+            <label><input type="radio" name="pessoas" value="2"><span>2</span></label>
+            <label><input type="radio" name="pessoas" value="3"><span>3</span></label>
+            <label><input type="radio" name="pessoas" value="4"><span>4</span></label>
+          </div>
+        </fieldset>
+        <fieldset class="seg">
+          <legend>Contas para</legend>
+          <div class="seg__op">
+            <label><input type="radio" name="periodo" value="s"><span>uma semana</span></label>
+            <label><input type="radio" name="periodo" value="m"><span>um mês</span></label>
+          </div>
+        </fieldset>
+      </form>
+      <p class="essencial__frase" id="essFrase" aria-live="polite"></p>
+      <ol class="lojas3" id="essLojas"></ol>
+      <p class="essencial__dividir" id="essDividir"></p>
+      <details class="essencial__artigos" id="essArtigos">
+        <summary id="essResumo">Ver os produtos</summary>
+        <div class="arts" id="essTabela"></div>
+      </details>
+      <div class="essencial__hist" id="essHist"></div>
+      <div class="essencial__pe">
+        <button class="botao botao--pequeno" type="button" id="essEnviar">Enviar estes preços</button>
+        <p class="essencial__nota" id="essNota"></p>
+      </div>
     </div>
   </section>
 

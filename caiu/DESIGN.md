@@ -40,6 +40,9 @@ Uma família: **Mona Sans** variável (wdth 75–125, wght 200–900), auto-aloj
 - **Botões**: planos, tinta sobre papel ou papel sobre tinta, totalmente redondos, 48 px de altura.
   Estados: foco (contorno 3 px tinta, afastado 3 px), ativo (escala 0,97), desativado (40 %).
 - **Talão**: superfície branca, borda de baixo em zigue-zague (máscara), linhas com pontos até ao valor.
+- **Cabaz do essencial** (`#essencial`): 28 produtos básicos com quantidades de referência de 1 adulto por semana
+  (`caiu/cabaz.py`). Botões segmentados (pessoas, semana/mês), três cartões de loja com o total (o mais barato
+  em amarelo com o carimbo «Mais barato»), lista de produtos em `<details>` e gráfico do total por dia.
 - **Folha do produto**: `<dialog>` que sobe de baixo no telemóvel e fica ao centro no computador.
 
 ## 5. Layout

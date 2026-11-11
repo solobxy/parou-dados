@@ -12,6 +12,8 @@ o preço do dia numa base SQLite (historico.db) e escreve na pasta os ficheiros 
 Só leitura de páginas públicas, um pedido de cada vez, com pausa entre pedidos.
 """
 import gzip, html, json, os, re, sqlite3, sys, time, unicodedata, urllib.parse, urllib.request
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import cabaz
 from datetime import datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
 
@@ -198,6 +200,11 @@ def ler_pingodoce(t):
             continue
         un_txt = limpo((re.search(r'class="product-unit">(.*?)</div>', b, re.S) or [None, ''])[1])
         pu, un = preco_unidade(un_txt)
+        if pu is None:
+            # fruta, legumes, carne e peixe a granel: o preço de venda já é ao kg («1,19 €/Kg»)
+            kg = re.search(r'<span class="sales[^"]*">\s*<span class="value" content="([\d.]+)"></span>\s*[\d.,]+\s*(?:&euro;|€)\s*/\s*(Kg|kg|KG|L|Lt|lt)\b', b)
+            if kg:
+                pu, un = round(float(kg.group(1)), 2), ('kg' if kg.group(2).lower() == 'kg' else 'L')
         antes = re.search(r'class="strike-through[^"]*">\s*<span class="value" content="([\d.]+)"', b)
         promo = [limpo(x) for x in re.findall(r'class="promo-message">(.*?)</span>', b, re.S)]
         promo += [limpo(x) for x in re.findall(r'class="product-tile-promo-label"[^>]*>(.*?)</div>', b, re.S)]
@@ -559,6 +566,14 @@ def main():
         'fachada': [comp(g) for g in variados(fach, 12)],
         'pvpr_top': [comp(g) for g in variados(pv, 12)],
     }
+
+    # Cabaz do essencial: se falhar, o resto da recolha segue (o administrador é avisado por alertas.py)
+    try:
+        resumo['essencial'] = cabaz.montar(prods, db, agora, tamanho)
+        e = resumo['essencial']
+        estado['essencial'] = {'artigos': e['n'], 'total': e['total_artigos'], 'faltam': e['faltam']}
+    except Exception as ex:
+        estado['essencial'] = {'erro': f'{type(ex).__name__}: {ex}'[:300]}
 
     def escrever(nome, obj):
         tmp = os.path.join(pasta, nome + '.tmp')
