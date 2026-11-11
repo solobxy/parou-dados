@@ -6,12 +6,14 @@
   const $$ = (s, r = document) => [...r.querySelectorAll(s)];
   const reduzido = matchMedia('(prefers-reduced-motion: reduce)').matches;
   // mesmo formato das páginas: 1.234,50 € (ponto nos milhares, vírgula nas casas decimais)
+  // nas páginas em inglês: 1,234.50 e €1,234.50
+  const EN = document.documentElement.lang === 'en';
   const num = (v, casas = 0) => {
     const [i, d] = Math.abs(v).toFixed(casas).split('.');
-    return (v < 0 ? '−' : '') + i.replace(/\B(?=(\d{3})+(?!\d))/g, '.') + (d ? ',' + d : '');
+    return (v < 0 ? '−' : '') + i.replace(/\B(?=(\d{3})+(?!\d))/g, EN ? ',' : '.') + (d ? (EN ? '.' : ',') + d : '');
   };
-  const euro = (v, casas = 0) => num(v, casas) + '\u00a0€';
-  const pct = (v, casas = 0) => num(v, casas) + '\u00a0%';
+  const euro = (v, casas = 0) => (EN ? (v < 0 ? '−€' + num(-v, casas) : '€' + num(v, casas)) : num(v, casas) + '\u00a0€');
+  const pct = (v, casas = 0) => num(v, casas) + (EN ? '%' : '\u00a0%');
   const guardar = (k, v) => { try { localStorage.setItem('ganhas.' + k, v); } catch (e) { /* modo privado */ } };
   const ler = (k) => { try { return localStorage.getItem('ganhas.' + k); } catch (e) { return null; } };
   const estat = (n, v) => { try { window.estat && window.estat(n, v); } catch (e) { /* sem estatísticas */ } };

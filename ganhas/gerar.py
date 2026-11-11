@@ -77,9 +77,13 @@ SITE = {'@type': 'WebSite', '@id': DOMINIO + '/#site', 'name': 'ganhas.pt', 'url
 NAV = [('/calculadora/', 'Calculadora'), ('/profissoes/', 'Profissões'), ('/concelhos/', 'Concelhos'), ('/empresa/', 'Empresas')]
 
 
+NAV_EN = [('/en/salary-calculator/', 'Salary calculator'), ('/en/average-salary-portugal/', 'Average salary'),
+          ('/en/minimum-wage-portugal/', 'Minimum wage')]
+
+
 def pagina(caminho, titulo, descricao, corpo, *, dados=None, ld=None, prioridade=0.6, og=None, barra=False, h_titulo=None,
-           indexar=True, sitemap=True, destino=None):
-    """Escreve sites/ganhas<caminho>index.html"""
+           indexar=True, sitemap=True, destino=None, lang='pt', alternos=None):
+    """Escreve sites/ganhas<caminho>index.html. alternos = {'pt': caminho, 'en': caminho} (hreflang)."""
     url = DOMINIO + caminho
     og = og or '/og/geral.png'
     # o Google corta perto dos 60 caracteres no título e dos 160 na descrição
@@ -88,24 +92,27 @@ def pagina(caminho, titulo, descricao, corpo, *, dados=None, ld=None, prioridade
     titulo_meta = curto(titulo, 65)
     tit = h_titulo or (titulo_meta + ' · ganhas.pt' if len(titulo_meta) <= 50 else titulo_meta)
     descricao = curto(descricao, 160)
-    nav = ''.join(f'<a href="{h}"{" aria-current=\"page\"" if caminho.startswith(h) else ""}>{t}</a>' for h, t in NAV)
+    nav = ''.join(f'<a href="{h}"{" aria-current=\"page\"" if caminho.startswith(h) else ""}>{t}</a>' for h, t in (NAV_EN if lang == 'en' else NAV))
+    alt_html = ''.join(f'<link rel="alternate" hreflang="{"pt-PT" if l == "pt" else l}" href="{DOMINIO}{c}">' for l, c in (alternos or {}).items())
+    if alternos:
+        alt_html += f'<link rel="alternate" hreflang="x-default" href="{DOMINIO}{alternos["pt"]}">'
     lds = [ORG, SITE] + (ld or [])
     head_extra = f'<meta name="google-site-verification" content="{e(GOOGLE_VERIFICACAO)}">' if GOOGLE_VERIFICACAO else ''
     robots = '' if indexar else '<meta name="robots" content="noindex">'
     dados_html = ('<script type="application/json" id="dados">' + json.dumps(dados, ensure_ascii=False, separators=(',', ':')).replace('</', '<\\/') + '</script>') if dados else ''
     barra_html = ''  # o botão «Partilhar» do topo já está sempre à vista; uma segunda barra fixa tapava o conteúdo
     doc = f'''<!doctype html>
-<html lang="pt-PT" class="sem-js">
+<html lang="{"en" if lang == "en" else "pt-PT"}" class="sem-js">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>{e(tit)}</title>
 <meta name="description" content="{e(descricao)}">
-<link rel="canonical" href="{e(url)}">
+<link rel="canonical" href="{e(url)}">{alt_html}
 {robots}{head_extra}
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="ganhas.pt">
-<meta property="og:locale" content="pt_PT">
+<meta property="og:locale" content="{"en_GB" if lang == "en" else "pt_PT"}">
 <meta property="og:title" content="{e(titulo_meta)}">
 <meta property="og:description" content="{e(descricao)}">
 <meta property="og:url" content="{e(url)}">
@@ -127,16 +134,16 @@ def pagina(caminho, titulo, descricao, corpo, *, dados=None, ld=None, prioridade
 {jsonld({'@context': 'https://schema.org', '@graph': lds})}
 </head>
 <body>
-<a class="salto" href="#conteudo">Saltar para o conteúdo</a>
+<a class="salto" href="#conteudo">{"Skip to content" if lang == "en" else "Saltar para o conteúdo"}</a>
 <header class="topo"><div class="mold">
-<a class="marca" href="/" aria-label="ganhas.pt, início">ganhas<span>.pt</span></a>
-<nav class="nav" aria-label="Principal">{nav}</nav>
-<a class="botao topo-sec" href="/partilhar/">Partilhar</a>
+<a class="marca" href="{"/en/salary-calculator/" if lang == "en" else "/"}" aria-label="{"ganhas.pt, home" if lang == "en" else "ganhas.pt, início"}">ganhas<span>.pt</span></a>
+<nav class="nav" aria-label="{"Main" if lang == "en" else "Principal"}">{nav}</nav>
+{'<a class="botao topo-sec" href="/" hreflang="pt-PT">Português</a>' if lang == 'en' else '<a class="botao topo-sec" href="/partilhar/">Partilhar</a>'}
 </div></header>
 <main id="conteudo">
 {corpo}
 </main>
-{rodape()}
+{rodape_en() if lang == 'en' else rodape()}
 {barra_html}
 {dados_html}
 </body>
@@ -157,10 +164,10 @@ def rodape():
 <div class="rodape-grelha">
 <div><p>Salários reais em Portugal: números oficiais e partilhas anónimas de quem trabalha. Sem contas, sem cookies.</p>
 <p class="credito">Feito por <a href="https://dinissousa.pt">dinissousa.pt</a></p></div>
-<ul><li><a href="/calculadora/">Calculadora de salário líquido</a></li><li><a href="/profissoes/">Salários por profissão</a></li>
+<ul><li><a href="/calculadora/">Calculadora de salário líquido</a></li><li><a href="/salario-minimo/">Salário mínimo</a></li><li><a href="/salario-medio/">Salário médio</a></li><li><a href="/profissoes/">Salários por profissão</a></li>
 <li><a href="/concelhos/">Salários por concelho</a></li><li><a href="/funcao-publica/">Função pública</a></li><li><a href="/europa/">Portugal e a Europa</a></li><li><a href="/empresa/">Quanto pagam as empresas</a></li></ul>
 <ul><li><a href="/partilhar/">Partilhar o meu salário</a></li><li><a href="/metodo/">Método e fontes</a></li><li><a href="/dados/">Dados abertos</a></li>
-<li><a href="/para-empresas/">Para empresas e jornalistas</a></li></ul>
+<li><a href="/para-empresas/">Para empresas e jornalistas</a></li><li><a href="/en/salary-calculator/" hreflang="en">English</a></li></ul>
 <ul><li><a href="/privacidade/">Privacidade</a></li><li><a href="/termos/">Termos</a></li><li><a href="/cookies/">Cookies</a></li>
 <li><a href="mailto:{legal.EMAIL}">Contacto</a></li></ul>
 </div>
@@ -168,11 +175,27 @@ def rodape():
 </div></footer>'''
 
 
-def migalhas(itens):
-    partes = ['<a href="/">Início</a>'] + [f'<a href="{h}">{e(t)}</a>' if h else e(t) for h, t in itens]
+def migalhas(itens, lang='pt'):
+    ini = ('/en/salary-calculator/', 'ganhas.pt') if lang == 'en' else ('/', 'Início')
+    partes = [f'<a href="{ini[0]}">{ini[1]}</a>'] + [f'<a href="{h}">{e(t)}</a>' if h else e(t) for h, t in itens]
     ld = {'@type': 'BreadcrumbList', 'itemListElement': [
-        {'@type': 'ListItem', 'position': i + 1, 'name': t, 'item': DOMINIO + (h or '')} for i, (h, t) in enumerate([('/', 'Início')] + itens)]}
-    return '<nav class="migalhas mold" aria-label="Estás aqui">' + ' / '.join(partes) + '</nav>', ld
+        {'@type': 'ListItem', 'position': i + 1, 'name': t, 'item': DOMINIO + (h or '')} for i, (h, t) in enumerate([ini] + itens)]}
+    return f'<nav class="migalhas mold" aria-label="{"You are here" if lang == "en" else "Estás aqui"}">' + ' / '.join(partes) + '</nav>', ld
+
+
+def rodape_en():
+    return f'''<footer class="rodape"><div class="mold">
+<a class="marca" href="/en/salary-calculator/">ganhas<span>.pt</span></a>
+<div class="rodape-grelha">
+<div><p>Real salaries in Portugal: official figures and anonymous shares from people who work here. No accounts, no cookies.</p>
+<p class="credito">Made by <a href="https://dinissousa.pt">dinissousa.pt</a></p></div>
+<ul><li><a href="/en/salary-calculator/">Net salary calculator</a></li><li><a href="/en/average-salary-portugal/">Average salary in Portugal</a></li>
+<li><a href="/en/minimum-wage-portugal/">Minimum wage in Portugal</a></li></ul>
+<ul><li><a href="/" hreflang="pt-PT">ganhas.pt em português</a></li><li><a href="/profissoes/" hreflang="pt-PT">Salários por profissão (PT)</a></li>
+<li><a href="/concelhos/" hreflang="pt-PT">Salários por concelho (PT)</a></li><li><a href="/privacidade/">Privacy (PT)</a></li></ul>
+</div>
+<p class="peq">Official data from INE, GEP/MTSSS, the Tax Authority (AT), DGAEP and Eurostat, with the source under each figure. Updated {dt.date.fromisoformat(O["atualizado"]).strftime("%d/%m/%Y")}.</p>
+</div></footer>'''
 
 
 # ---------------------------------------------------------------- páginas de texto
@@ -462,7 +485,8 @@ Com 3 ou mais dependentes, a taxa desce 1 ponto. O valor é arredondado para o e
            'offers': {'@type': 'Offer', 'price': '0', 'priceCurrency': 'EUR'}}, migalhas([('/calculadora/', 'Calculadora')])[1]]
     pagina('/calculadora/', f'Calculadora de salário líquido {irs["ano"]}',
            f'Calcula o teu salário líquido em {irs["ano"]} com as tabelas oficiais de IRS, a Segurança Social e o subsídio de alimentação. Recibo linha a linha.',
-           corpo, dados={'irs': dados_irs()}, ld=ld, prioridade=0.9, og='/og/calculadora.png')
+           corpo, dados={'irs': dados_irs()}, ld=ld, prioridade=0.9, og='/og/calculadora.png',
+           alternos={'pt': '/calculadora/', 'en': '/en/salary-calculator/'})
 
 
 # ---------------------------------------------------------------- partilhar
@@ -1121,11 +1145,286 @@ def llms():
         f.write('\n'.join(linhas))
 
 
+# ---------------------------------------------------------------- salário mínimo, salário médio e páginas em inglês
+# Pesquisas reais (sugestões do Google, 11/11/2026): «salário mínimo 2026», «ordenado minimo portugal 2027», «salário médio
+# portugal», «salary portugal calculator», «net salary portugal», «average salary in portugal», «portugal tax calculator».
+
+def hora_smn(v, horas=40):
+    """Valor por hora: (retribuição mensal × 12) / (52 × horas por semana), artigo 271.º do Código do Trabalho."""
+    return v * 12 / (52 * horas)
+
+
+def euro_en(v, casas=0):
+    if v is None:
+        return '—'
+    return '€' + f'{v:,.{casas}f}'
+
+
+def tabela_html(cab, linhas, legenda=''):
+    th = ''.join(f'<th{" class=\"n\"" if i else ""}>{e(c)}</th>' for i, c in enumerate(cab))
+    tr = ''.join('<tr>' + ''.join(f'<td{" class=\"n\"" if i else ""}>{c}</td>' for i, c in enumerate(l)) + '</tr>' for l in linhas)
+    cap = f'<caption class="vis">{e(legenda)}</caption>' if legenda else ''
+    return f'<div class="rolar"><table class="tabela">{cap}<thead><tr>{th}</tr></thead><tbody>{tr}</tbody></table></div>'
+
+
+def perguntas_html(perg):
+    return ''.join(f'<h3>{e(q)}</h3><p>{r}</p>' for q, r in perg)
+
+
+def faq_ld(perg):
+    return {'@type': 'FAQPage', 'mainEntity': [{'@type': 'Question', 'name': q, 'acceptedAnswer': {'@type': 'Answer', 'text': re.sub(r'<[^>]+>', '', r)}} for q, r in perg]}
+
+
+def salario_minimo():
+    d = O['smn']
+    a, v = smn_hoje()
+    prox = d.get(str(a + 1))
+    liq = liquido_simples(v)
+    irs_ano = O['irs']['ano']
+    anos = sorted(d, key=int)
+    linhas = []
+    for i, x in enumerate(anos):
+        ant = d[anos[i - 1]] if i else None
+        linhas.append([x, euro(d[x]), (('+' + euro(d[x] - ant)) if ant else '—'), euro(d[x] * 14)])
+    perg = [
+        (f'Qual é o salário mínimo em {a}?', f'O salário mínimo nacional em {a} é de {euro(v)} brutos por mês, pagos 14 vezes por ano ({euro(v * 14)} por ano).'),
+        (f'Quanto é o salário mínimo líquido em {a}?', f'Para quem não é casado e não tem dependentes, {euro(liq, 2)} por mês: o salário mínimo não paga retenção de IRS '
+         f'e desconta {pct(100 * O["irs"]["ss"])} para a Segurança Social (tabelas de retenção de {irs_ano}).'
+         if reter(v) == 0 else f'Para quem não é casado e não tem dependentes, cerca de {euro(liq, 2)} por mês (tabelas de retenção de {irs_ano}).'),
+        (f'Quanto é o salário mínimo à hora?', f'Com 40 horas por semana, {euro(hora_smn(v), 2)} por hora: (salário mensal × 12) ÷ (52 × 40), como manda o artigo 271.º do Código do Trabalho.'),
+    ]
+    if prox:
+        perg.append((f'Qual vai ser o salário mínimo em {a + 1}?', f'{euro(prox)} por mês, mais {euro(prox - v)} do que em {a}, segundo o acordo de Concertação Social. '
+                     f'Com as tabelas de retenção de {irs_ano}, ficariam {euro(liquido_simples(prox), 2)} líquidos; as tabelas de {a + 1} ainda podem mudar este valor.'))
+    corpo = f'''
+{migalhas([(None, "Salário mínimo")])[0]}
+<section class="sec" style="padding-top:24px"><div class="mold">
+<h1 class="h1-pag">Salário mínimo {a}: {euro(v)}</h1>
+<p class="lede">Em {a}, o salário mínimo nacional é de <strong>{euro(v)}</strong> brutos por mês, 14 vezes por ano. Líquido, para quem é solteiro e sem dependentes, ficam <strong>{euro(liq, 2)}</strong>.{f" Em {a + 1} passa para {euro(prox)}." if prox else ""}</p>
+<p class="acoes" style="margin-top:24px"><a class="botao" href="/calculadora/?bruto={int(v)}">Calcular o meu líquido</a><a class="botao sec2" href="/">Comparar com Portugal</a></p>
+</div></section>
+<section class="sec"><div class="mold texto">
+<h2>Evolução do salário mínimo</h2>
+{tabela_html(["Ano", "Por mês", "Aumento", "Por ano (14 meses)"], linhas, "Salário mínimo nacional por ano")}
+{fonte("smn")}
+<h2>Perguntas</h2>
+{perguntas_html(perg)}
+<p>Quanto ganham as outras pessoas? Vê o <a href="/salario-medio/">salário médio em Portugal</a>, os <a href="/profissoes/">salários por profissão</a> e por <a href="/concelhos/">concelho</a>.</p>
+</div></section>'''
+    pagina('/salario-minimo/', f'Salário mínimo {a} em Portugal: {euro(v)} bruto e líquido',
+           f'O salário mínimo em {a} é de {euro(v)} brutos ({euro(liq, 2)} líquidos, {euro(hora_smn(v), 2)} à hora).' + (f' Em {a + 1}: {euro(prox)}.' if prox else '') + ' Valores oficiais e evolução.',
+           corpo, ld=[migalhas([('/salario-minimo/', 'Salário mínimo')])[1], faq_ld(perg)], prioridade=0.8,
+           alternos={'pt': '/salario-minimo/', 'en': '/en/minimum-wage-portugal/'})
+
+
+REGIOES_EN = {'Grande Lisboa': 'Greater Lisbon', 'Península de Setúbal': 'Setúbal Peninsula', 'Norte': 'North', 'Centro': 'Centre',
+              'Oeste e Vale do Tejo': 'Oeste and Tagus Valley', 'Alentejo': 'Alentejo', 'Algarve': 'Algarve',
+              'Região Autónoma dos Açores': 'Azores', 'Região Autónoma da Madeira': 'Madeira'}
+EDU_EN = {'Inferior ao 1.º ciclo': 'Less than primary school', '1.º ciclo do ensino básico': 'Primary (4 years)', '2.º ciclo do ensino básico': '6 years of school',
+          '3.º ciclo do ensino básico': '9 years of school', 'Ensino secundário': 'Secondary school', 'Curso técnico superior profissional': 'Higher technical course',
+          'Bacharelato': 'Bachelor (3 years, old system)', 'Licenciatura': "Bachelor's degree", 'Mestrado': "Master's degree", 'Doutoramento': 'PhD'}
+
+
+def dados_medio():
+    sx = O['sexo']
+    dist = O['distribuicao']
+    reg = [(O['nuts2'].get(k, k), v) for k, v in O['sexo_regioes'].items()]
+    reg.sort(key=lambda x: -(x[1]['H'] + x[1]['M']))
+    idades = sorted(((k, v) for k, v in O['idades'].items() if k != 'Desconhecido'), key=lambda kv: int(re.findall(r'\d+', kv[0])[0]) if re.findall(r'\d+', kv[0]) else 0)
+    idades = [x for x in idades if not x[0].startswith('Menos')]
+    edu = [(k, v) for k, v in O['educacao']['valores'].items() if k != 'Total']
+    edu.sort(key=lambda kv: kv[1])
+    dim = list(O['dimensao']['valores'].items())
+    return sx, dist, reg, idades, edu, dim
+
+
+def salario_medio():
+    sx, dist, reg, idades, edu, dim = dados_medio()
+    ano = sx['ano']
+    media, med = sx['HM'], dist['ganho']['mediana']
+    liq = liquido_simples(round(media))
+    perg = [
+        ('Qual é o salário médio em Portugal?', f'Em {ano}, o ganho médio mensal bruto de quem trabalhava a tempo completo no setor privado foi de {euro(media)} '
+         f'(INE e GEP/MTSSS, Quadros de Pessoal). Líquido, para quem é solteiro e sem dependentes, ficam cerca de {euro(liq)}.'),
+        ('E o salário mais comum?', f'A média é puxada para cima pelos salários altos. A mediana, o salário do meio, foi de {euro(med)}: metade de quem trabalhava a tempo completo '
+         f'no Continente ganhava menos do que isso ({dist["ref"]}).'),
+        ('Os homens ganham mais do que as mulheres?', f'Sim: {euro(sx["H"])} contra {euro(sx["M"])} em média, uma diferença de {pct(100 * (sx["H"] - sx["M"]) / sx["H"])}.'),
+    ]
+    corpo = f'''
+{migalhas([(None, "Salário médio")])[0]}
+<section class="sec" style="padding-top:24px"><div class="mold">
+<h1 class="h1-pag">Salário médio em Portugal: {euro(media)}</h1>
+<p class="lede">Em {ano}, quem trabalhava a tempo completo no setor privado ganhava em média <strong>{euro(media)}</strong> brutos por mês. Mas metade ganhava menos de <strong>{euro(med)}</strong>.</p>
+<p class="acoes" style="margin-top:24px"><a class="botao" href="/">Ver onde fico em Portugal</a><a class="botao sec2" href="/calculadora/?bruto={int(round(media))}">Quanto fica líquido</a></p>
+</div></section>
+<section class="sec"><div class="mold texto">
+<h2>Por região</h2>
+{tabela_html(["Região", "Homens", "Mulheres"], [[e(n), euro(v["H"]), euro(v["M"])] for n, v in reg], "Ganho médio mensal por região e sexo")}
+<h2>Por idade</h2>
+{tabela_html(["Idade", "Ganho médio"], [[e(k.replace(" - ", "–")), euro(v)] for k, v in idades], "Ganho médio mensal por idade")}
+{fonte("sexo_idade")}
+<h2>Por escolaridade</h2>
+{tabela_html(["Escolaridade", "Ganho médio"], [[e(k), euro(v)] for k, v in edu], "Ganho médio mensal por escolaridade")}
+{fonte("educacao")}
+<h2>Pelo tamanho da empresa</h2>
+{tabela_html(["Pessoas na empresa", "Ganho médio"], [[e(k), euro(v)] for k, v in dim], "Ganho médio mensal pela dimensão da empresa")}
+{fonte("dimensao")}
+<h2>Perguntas</h2>
+{perguntas_html(perg)}
+{fonte("qp")}
+<p>Vê também o <a href="/salario-minimo/">salário mínimo</a>, os <a href="/profissoes/">salários por profissão</a>, por <a href="/concelhos/">concelho</a> e na <a href="/funcao-publica/">função pública</a>.</p>
+</div></section>'''
+    pagina('/salario-medio/', f'Salário médio em Portugal: {euro(media)} ({ano}), por região e idade',
+           f'O salário médio em Portugal é de {euro(media)} brutos por mês e a mediana de {euro(med)}. Por região, idade, escolaridade e tamanho da empresa, com dados do INE.',
+           corpo, ld=[migalhas([('/salario-medio/', 'Salário médio')])[1], faq_ld(perg)], prioridade=0.8,
+           alternos={'pt': '/salario-medio/', 'en': '/en/average-salary-portugal/'})
+
+
+def paginas_en():
+    irs = O['irs']
+    a, v = smn_hoje()
+    prox = O['smn'].get(str(a + 1))
+    liq_min = liquido_simples(v)
+    sx, dist, reg, idades, edu, dim = dados_medio()
+    media, med = sx['HM'], dist['ganho']['mediana']
+    liq_med = liquido_simples(round(media))
+    src = lambda k: (f'<p class="fonte">Source: <a href="{e(O["fontes"][k]["url"])}" rel="noopener">{e(O["fontes"][k]["nome"])}</a>'
+                     f'{", " + e(O["fontes"][k]["ref"]) if O["fontes"][k].get("ref") else ""}.</p>')
+
+    # calculadora (o mesmo app.js: os ids são os da página portuguesa)
+    perg = [
+        ('How is net salary calculated in Portugal?', f'Gross salary minus {pct(100 * irs["ss"])} Social Security and the IRS withholding tax from the official {irs["ano"]} tables, '
+         'which depend on your marital status and number of dependants. Holiday and Christmas pay are taxed separately.'),
+        ('Is this the final income tax?', 'No. Withholding is an advance on your income tax (IRS). The final tax is settled in the annual tax return, the following spring.'),
+        (f'What is the net minimum wage in {a}?', f'The minimum wage is {euro_en(v)} gross a month in {a}. For a single person without dependants it is {euro_en(liq_min, 2)} net.'),
+        ('Does it include IRS Jovem or the non-habitual resident regime?', 'No. The calculator uses the standard withholding tables for residents of mainland Portugal. '
+         'IRS Jovem and special regimes lower the tax and are not included.'),
+    ]
+    corpo = f'''
+{migalhas([(None, "Net salary calculator")], 'en')[0]}
+<section class="sec" style="padding-top:24px"><div class="mold">
+<h1 class="h1-pag">Portugal net salary calculator {irs["ano"]}</h1>
+<p class="lede">From gross to net pay with the official {irs["ano"]} IRS withholding tables (mainland Portugal), Social Security and meal allowance. Amounts in euros, per month.</p>
+<div class="grelha2" style="margin-top:48px" id="calculadora">
+<form class="form" id="form-calc" aria-label="Your details">
+<div class="f"><label for="c-bruto">Gross monthly salary</label><input type="text" id="c-bruto" inputmode="decimal" autocomplete="off" placeholder="1 200" value="1500"></div>
+<div class="f"><label for="c-situacao">Status</label><select id="c-situacao">
+<option value="nc">Single (or divorced, widowed)</option>
+<option value="c2">Married or civil partners, both earning</option>
+<option value="c1">Married or civil partners, one earning</option></select></div>
+<div class="f"><label for="c-dep">Dependants</label><select id="c-dep"><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5 or more</option></select></div>
+<div class="f"><label for="c-meses">Paid in</label><select id="c-meses"><option value="14">14 payments (holiday and Christmas pay separate)</option><option value="12">12 payments (bonuses spread monthly)</option></select></div>
+<div class="f"><label for="c-subs">Meal allowance per day <span class="opc">(optional)</span></label><input type="text" id="c-subs" inputmode="decimal" placeholder="{str(irs["subsidio_dinheiro"]).replace(".", ",")}"></div>
+<div class="f"><label for="c-subs-tipo">Paid as</label><select id="c-subs-tipo"><option value="cartao">Meal card or voucher</option><option value="dinheiro">Cash, with the salary</option></select>
+<p class="dica">Tax-free up to {euro_en(irs["subsidio_dinheiro"], 2)} a day in cash and {euro_en(irs["subsidio_cartao"], 2)} on a meal card. We count 22 days a month.</p></div>
+</form>
+<div class="recibo" aria-live="polite">
+<h3>Your payslip</h3>
+<div class="linha"><span class="r">Base salary</span><span class="p"></span><span class="v" id="c-r-base">—</span></div>
+<div class="linha" id="c-l-subs" hidden><span class="r">Meal allowance</span><span class="p"></span><span class="v" id="c-r-subs">—</span></div>
+<div class="linha" id="c-l-duo" hidden><span class="r">Holiday and Christmas pay (spread)</span><span class="p"></span><span class="v" id="c-r-duo">—</span></div>
+<div class="linha menos"><span class="r">Social Security ({pct(100 * irs["ss"])})</span><span class="p"></span><span class="v" id="c-r-ss">—</span></div>
+<div class="linha menos"><span class="r">IRS withholding tax</span><span class="p"></span><span class="v" id="c-r-irs">—</span></div>
+<div class="linha total"><span class="r">Net per month</span><span class="p"></span><span class="v" id="c-r-liq">—</span></div>
+<div class="linha"><span class="r">Net per year</span><span class="p"></span><span class="v" id="c-r-ano">—</span></div>
+<div class="linha"><span class="r">Withholding rate</span><span class="p"></span><span class="v" id="c-r-taxa">—</span></div>
+<div class="linha destaque" id="c-l-nov" hidden><span class="r">Net in November {irs["ano"]}</span><span class="p"></span><span class="v" id="c-r-nov">—</span></div>
+<div class="linha"><span class="r">Cost to the employer</span><span class="p"></span><span class="v" id="c-r-custo">—</span></div>
+<p class="fonte">Withholding is an advance on income tax: the final tax is settled in the annual return. The employer cost adds {pct(100 * irs["tsu_empresa"], 2)} Social Security (TSU). IRS Jovem and special regimes are not included.</p>
+</div>
+</div>
+</div></section>
+<section class="sec"><div class="mold texto">
+<h2>Questions</h2>
+{perguntas_html(perg)}
+<p>See also the <a href="/en/average-salary-portugal/">average salary in Portugal</a> and the <a href="/en/minimum-wage-portugal/">minimum wage</a>.</p>
+{src("irs")}
+{src("tsu")}
+</div></section>'''
+    ld = [{'@type': 'WebApplication', 'name': f'Portugal net salary calculator {irs["ano"]}', 'url': DOMINIO + '/en/salary-calculator/',
+           'applicationCategory': 'FinanceApplication', 'operatingSystem': 'All', 'inLanguage': 'en',
+           'offers': {'@type': 'Offer', 'price': '0', 'priceCurrency': 'EUR'}}, migalhas([('/en/salary-calculator/', 'Net salary calculator')], 'en')[1], faq_ld(perg)]
+    pagina('/en/salary-calculator/', f'Portugal net salary calculator {irs["ano"]}: gross to net',
+           f'Calculate your net salary in Portugal for {irs["ano"]} with the official IRS withholding tables, Social Security and meal allowance. Free, in euros.',
+           corpo, dados={'irs': dados_irs()}, ld=ld, prioridade=0.9, og='/og/calculadora.png', lang='en',
+           alternos={'pt': '/calculadora/', 'en': '/en/salary-calculator/'})
+
+    # salário médio
+    perg = [
+        ('What is the average salary in Portugal?', f'In {sx["ano"]}, the average gross monthly earnings of full-time private-sector employees were {euro_en(media)} '
+         f'(INE and GEP/MTSSS, Quadros de Pessoal). That is about {euro_en(liq_med)} net for a single person without dependants, paid 14 times a year.'),
+        ('What is the median salary in Portugal?', f'{euro_en(med)} a month: half of full-time employees in mainland Portugal earned less than this (October {dist["ano"]}).'),
+        ('Is the salary paid 14 times a year?', 'Yes. Most employees in Portugal receive 14 payments: 12 monthly salaries plus holiday pay (summer) and Christmas pay.'),
+        ('Where are salaries highest?', f'In Greater Lisbon: {euro_en(O["sexo_regioes"].get("1A", {}).get("H"))} for men and {euro_en(O["sexo_regioes"].get("1A", {}).get("M"))} for women on average.'),
+    ]
+    corpo = f'''
+{migalhas([(None, "Average salary in Portugal")], 'en')[0]}
+<section class="sec" style="padding-top:24px"><div class="mold">
+<h1 class="h1-pag">Average salary in Portugal: {euro_en(media)} a month</h1>
+<p class="lede">In {sx["ano"]}, full-time private-sector employees in Portugal earned on average <strong>{euro_en(media)}</strong> gross a month, paid 14 times a year. Half earned less than <strong>{euro_en(med)}</strong>.</p>
+<p class="acoes" style="margin-top:24px"><a class="botao" href="/en/salary-calculator/?bruto={int(round(media))}">Calculate net pay</a></p>
+</div></section>
+<section class="sec"><div class="mold texto">
+<h2>By region</h2>
+{tabela_html(["Region", "Men", "Women"], [[e(REGIOES_EN.get(n, n)), euro_en(v["H"]), euro_en(v["M"])] for n, v in reg], "Average monthly earnings by region and sex")}
+<h2>By age</h2>
+{tabela_html(["Age", "Average earnings"], [[e(re.sub(r" anos$", "", k).replace(" - ", "–").replace("65 e mais", "65 and over")), euro_en(v)] for k, v in idades], "Average monthly earnings by age")}
+{src("sexo_idade")}
+<h2>By education</h2>
+{tabela_html(["Education", "Average earnings"], [[e(EDU_EN.get(k, k)), euro_en(v)] for k, v in edu], "Average monthly earnings by education")}
+{src("educacao")}
+<h2>By company size</h2>
+{tabela_html(["Employees", "Average earnings"], [[e(k.replace(" pessoas", "").replace(" a ", "–").replace(" ou mais", " or more")), euro_en(v)] for k, v in dim], "Average monthly earnings by company size")}
+{src("dimensao")}
+<h2>Questions</h2>
+{perguntas_html(perg)}
+{src("qp")}
+<p>Salaries by profession and municipality are on <a href="/profissoes/" hreflang="pt-PT">ganhas.pt in Portuguese</a>.</p>
+</div></section>'''
+    pagina('/en/average-salary-portugal/', f'Average salary in Portugal: {euro_en(media)} a month ({sx["ano"]})',
+           f'The average salary in Portugal is {euro_en(media)} gross a month and the median {euro_en(med)}. By region, age, education and company size, with official INE data.',
+           corpo, ld=[migalhas([('/en/average-salary-portugal/', 'Average salary in Portugal')], 'en')[1], faq_ld(perg)], prioridade=0.8, lang='en',
+           alternos={'pt': '/salario-medio/', 'en': '/en/average-salary-portugal/'})
+
+    # salário mínimo
+    d = O['smn']
+    anos = sorted(d, key=int)
+    linhas = [[x, euro_en(d[x]), (('+' + euro_en(d[x] - d[anos[i - 1]])) if i else '—'), euro_en(d[x] * 14)] for i, x in enumerate(anos)]
+    perg = [
+        (f'What is the minimum wage in Portugal in {a}?', f'{euro_en(v)} gross a month, paid 14 times a year ({euro_en(v * 14)} a year).'),
+        (f'What is the net minimum wage in Portugal?', f'{euro_en(liq_min, 2)} a month for a single person without dependants: the minimum wage pays no IRS withholding '
+         f'and {pct(100 * irs["ss"])} goes to Social Security.' if reter(v) == 0 else f'About {euro_en(liq_min, 2)} a month for a single person without dependants.'),
+        ('What is the hourly minimum wage?', f'{euro_en(hora_smn(v), 2)} an hour for a 40-hour week: (monthly wage × 12) ÷ (52 × 40), as set by article 271 of the Labour Code.'),
+    ]
+    if prox:
+        perg.append((f'What will the minimum wage be in {a + 1}?', f'{euro_en(prox)} a month, {euro_en(prox - v)} more than in {a}, under the social partners agreement.'))
+    corpo = f'''
+{migalhas([(None, "Minimum wage in Portugal")], 'en')[0]}
+<section class="sec" style="padding-top:24px"><div class="mold">
+<h1 class="h1-pag">Minimum wage in Portugal {a}: {euro_en(v)}</h1>
+<p class="lede">In {a}, the national minimum wage in Portugal is <strong>{euro_en(v)}</strong> gross a month, paid 14 times a year. Net, for a single person without dependants: <strong>{euro_en(liq_min, 2)}</strong>.{f" In {a + 1} it rises to {euro_en(prox)}." if prox else ""}</p>
+<p class="acoes" style="margin-top:24px"><a class="botao" href="/en/salary-calculator/?bruto={int(v)}">Calculate net pay</a></p>
+</div></section>
+<section class="sec"><div class="mold texto">
+<h2>Minimum wage by year</h2>
+{tabela_html(["Year", "Per month", "Increase", "Per year (14 payments)"], linhas, "National minimum wage in Portugal by year")}
+{src("smn")}
+<h2>Questions</h2>
+{perguntas_html(perg)}
+<p>See also the <a href="/en/average-salary-portugal/">average salary in Portugal</a>.</p>
+</div></section>'''
+    pagina('/en/minimum-wage-portugal/', f'Minimum wage in Portugal {a}: {euro_en(v)} gross and net',
+           f'The minimum wage in Portugal in {a} is {euro_en(v)} gross a month ({euro_en(liq_min, 2)} net, {euro_en(hora_smn(v), 2)} an hour).' + (f' In {a + 1}: {euro_en(prox)}.' if prox else ''),
+           corpo, ld=[migalhas([('/en/minimum-wage-portugal/', 'Minimum wage in Portugal')], 'en')[1], faq_ld(perg)], prioridade=0.8, lang='en',
+           alternos={'pt': '/salario-minimo/', 'en': '/en/minimum-wage-portugal/'})
+
+
 def main():
     if os.path.isdir(SAIDA):
         shutil.rmtree(SAIDA)
     os.makedirs(SAIDA)
     inicio(); calculadora(); partilhar(); profissoes(); concelhos(); europa(); funcao_publica()
+    salario_minimo(); salario_medio(); paginas_en()
     empresas_b2b(); dados_abertos(); paginas_texto(); nao_encontrada(); modelo_empresa(); ficheiros()
     print(len(PAGINAS), 'páginas em', SAIDA)
 
