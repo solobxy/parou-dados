@@ -1,7 +1,7 @@
 """ganhas.pt: textos das páginas legais e de método (HTML simples, PT-PT). Usado por gerar.py."""
 
 RESPONSAVEL = 'Dinis Sousa'
-MORADA = ''  # morada postal: só se o Dinis decidir publicá-la (o RGPD pede identidade e um contacto; o e-mail serve)
+MORADA = 'Avenida General Humberto Delgado, 875, 1.º Esq., 4420-155 Gondomar'
 EMAIL = 'diniscash@gmail.com'
 ATUALIZADO = '11 de novembro de 2026'
 
