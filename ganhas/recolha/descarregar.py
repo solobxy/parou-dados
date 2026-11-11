@@ -16,7 +16,7 @@ SAIDA = sys.argv[1] if len(sys.argv) > 1 else 'saida'
 os.makedirs(os.path.join(SAIDA, 'ine'), exist_ok=True)
 os.makedirs(os.path.join(SAIDA, 'eurostat'), exist_ok=True)
 os.makedirs(os.path.join(SAIDA, 'docs'), exist_ok=True)
-UA = 'ganhas.pt recolha de dados publicos (contacto: diniscash@gmail.com)'
+UA = 'Mozilla/5.0 (compatible; ganhas-recolha/1.0)'
 resumo = []
 
 
