@@ -4,7 +4,7 @@ B = 'https://ganhas.pt'
 R = {'paginas': {}, 'consola': {}, 'rede_falhas': [], 'passos': []}
 def passo(n, ok, extra=''): R['passos'].append(f"{'OK ' if ok else 'FALHA'} {n} {extra}".strip())
 with sync_playwright() as p:
-    nav = p.chromium.launch()
+    nav = p.chromium.launch(channel='chrome')
     ctx = nav.new_context(viewport={'width': 390, 'height': 844}, has_touch=True, locale='pt-PT')
     for u in ['/', '/calculadora/', '/partilhar/', '/profissoes/', '/profissoes/enfermeiro/', '/concelhos/', '/concelhos/porto/', '/funcao-publica/',
               '/funcao-publica/professores/', '/europa/', '/para-empresas/', '/dados/', '/metodo/', '/privacidade/', '/termos/', '/cookies/',

@@ -55,7 +55,7 @@ jobs:
         run: |
           set +e
           python3 -m pip install --quiet playwright > saida/instalar.txt 2>&1
-          python3 -m playwright install --with-deps chromium >> saida/instalar.txt 2>&1
+          which google-chrome >> saida/instalar.txt 2>&1
           echo "instalar: $?" >> saida/instalar.txt
           timeout 900 python3 teste/e2e.py > saida/e2e.json 2> saida/e2e-erros.txt
           echo "teste: $?" >> saida/instalar.txt
