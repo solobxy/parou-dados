@@ -984,7 +984,7 @@ def dados_abertos():
             g = c.get('grupos') or {}
             f.write(f'{c["nome"]};{c["geocod"]};{O["nuts2"].get(c["nuts2"], "")};{c.get("nuts3_nome", "")};{O["concelhos_ano"]};{c["ganho_medio"]};'
                     + ';'.join(str(g.get(k, '')) for k in '123456789') + '\n')
-    with open(os.path.join(SAIDA, 'dados-abertos', 'funcao-publica-2026.csv'), 'w', encoding='utf-8') as f:
+    with open(os.path.join(SAIDA, 'dados-abertos', f'funcao-publica-{O["funcao_publica"]["ano"]}.csv'), 'w', encoding='utf-8') as f:
         f.write('grupo;carreira;subgrupo;categoria;posicao;nivel;indice;bruto_mensal_eur\n')
         for c in O['funcao_publica']['carreiras']:
             for q in c['posicoes']:
@@ -997,7 +997,7 @@ def dados_abertos():
 <ul>
 <li><a href="/dados-abertos/ganhas-oficial.json">ganhas-oficial.json</a>: distribuição nacional, grupos de profissões, concelhos e função pública.</li>
 <li><a href="/dados-abertos/concelhos.csv">concelhos.csv</a>: ganho médio dos 308 concelhos, total e por grupo de profissões ({O["concelhos_ano"]}).</li>
-<li><a href="/dados-abertos/funcao-publica-2026.csv">funcao-publica-2026.csv</a>: remuneração de cada categoria e posição das carreiras da função pública ({O["funcao_publica"]["ano"]}).</li>
+<li><a href="/dados-abertos/funcao-publica-{O["funcao_publica"]["ano"]}.csv">funcao-publica-{O["funcao_publica"]["ano"]}.csv</a>: remuneração de cada categoria e posição das carreiras da função pública ({O["funcao_publica"]["ano"]}).</li>
 </ul>
 <p>Podes reutilizar estes ficheiros, também para fins comerciais, desde que indiques a fonte original (INE e GEP/MTSSS, DGAEP) e o ganhas.pt
 (<a href="https://creativecommons.org/licenses/by/4.0/deed.pt" rel="noopener">licença CC BY 4.0</a>).</p>
@@ -1008,8 +1008,8 @@ def dados_abertos():
            'spatialCoverage': 'Portugal', 'distribution': [
                {'@type': 'DataDownload', 'encodingFormat': 'application/json', 'contentUrl': DOMINIO + '/dados-abertos/ganhas-oficial.json'},
                {'@type': 'DataDownload', 'encodingFormat': 'text/csv', 'contentUrl': DOMINIO + '/dados-abertos/concelhos.csv'},
-               {'@type': 'DataDownload', 'encodingFormat': 'text/csv', 'contentUrl': DOMINIO + '/dados-abertos/funcao-publica-2026.csv'}],
-           'license': 'https://creativecommons.org/licenses/by/4.0/', 'temporalCoverage': f'{O["concelhos_ano"]}/2026'}]
+               {'@type': 'DataDownload', 'encodingFormat': 'text/csv', 'contentUrl': DOMINIO + f'/dados-abertos/funcao-publica-{O["funcao_publica"]["ano"]}.csv'}],
+           'license': 'https://creativecommons.org/licenses/by/4.0/', 'temporalCoverage': f'{O["concelhos_ano"]}/{O["funcao_publica"]["ano"]}'}]
     pagina('/dados/', 'Dados abertos sobre salários em Portugal', 'Descarrega os dados oficiais de salários em Portugal já tratados: concelhos, profissões e distribuição nacional.',
            corpo, ld=ld, prioridade=0.4)
 

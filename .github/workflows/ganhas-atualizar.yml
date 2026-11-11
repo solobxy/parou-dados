@@ -1,14 +1,17 @@
 name: ganhas.pt - atualizar sozinho
 
-# Mantém o ganhas.pt certo sem ninguém mexer:
-# - no início de cada mês (e de 3 em 3 dias em janeiro e fevereiro, quando saem as tabelas novas) procura as tabelas
-#   de retenção na fonte do IRS do ano novo e, se passarem nas verificações, põe-nas (ganhas/irs_novo_ano.py);
+# Mantém o ganhas.pt certo sem ninguém mexer, todas as semanas (e de 3 em 3 dias em janeiro e fevereiro):
+# - descarrega as fontes oficiais (INE, Eurostat, DGAEP, DGCP) e põe os números mais recentes que passem nas
+#   verificações (ganhas/recolha/fontes_auto.py e ganhas/oficiais_auto.py): concelhos, profissões, sexo e idade,
+#   educação, dimensão da empresa, Europa, função pública e decis;
+# - procura as tabelas de retenção na fonte do IRS do ano novo e, se passarem nas verificações, põe-nas (ganhas/irs_novo_ano.py);
+# - quando os números mudam, refaz as imagens de partilha;
 # - volta a gerar o site, para os textos que dependem da data (salário mínimo do ano, novembro com metade da
 #   retenção, datas das páginas) estarem sempre certos. Só publica se alguma coisa mudou.
 
 on:
   schedule:
-    - cron: "23 6 1 * *"
+    - cron: "23 6 * * 1"
     - cron: "41 7 */3 1,2 *"
   workflow_dispatch:
     inputs:
@@ -34,7 +37,9 @@ jobs:
         with:
           python-version: "3.12"
       - name: Ferramentas
-        run: sudo apt-get update -qq && sudo apt-get install -y -qq poppler-utils >/dev/null
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq poppler-utils >/dev/null
+          pip install -q playwright openpyxl
       - name: Testar a leitura da circular (só à mão)
         if: inputs.teste == '1'
         run: |
@@ -44,6 +49,17 @@ jobs:
         if: inputs.teste != '1'
         continue-on-error: true
         run: python3 ganhas/irs_novo_ano.py
+      - name: Números oficiais mais recentes
+        if: inputs.teste != '1'
+        continue-on-error: true
+        run: |
+          python3 ganhas/recolha/fontes_auto.py "$RUNNER_TEMP/fontes"
+          python3 ganhas/oficiais_auto.py "$RUNNER_TEMP/fontes" | tee -a "$GITHUB_STEP_SUMMARY"
+      - name: Imagens de partilha (só se os números mudaram)
+        if: inputs.teste != '1'
+        continue-on-error: true
+        run: |
+          if ! git diff --quiet -- ganhas/dados; then python3 ganhas/imagens.py; else echo "Números iguais"; fi
       - name: Gerar o site
         if: inputs.teste != '1'
         run: python3 ganhas/gerar.py
@@ -52,7 +68,7 @@ jobs:
         run: |
           git config user.name "parou-dados"
           git config user.email "actions@users.noreply.github.com"
-          git add ganhas/dados/oficial.json sites/ganhas
+          git add ganhas/dados sites/ganhas ganhas/modelo/imagens
           if git diff --cached --quiet; then echo "Nada mudou"; exit 0; fi
           git commit -q -m "ganhas.pt: atualização automática ($(date -u +%Y-%m-%d))"
           for i in 1 2 3 4 5; do

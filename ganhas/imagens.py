@@ -63,11 +63,14 @@ def main():
         og('og-concelhos.png', 'E no teu <span class="mk">concelho</span>?', f'O ganho médio dos 308 concelhos de Portugal, do mais alto ao mais baixo ({O["concelhos_ano"]}).'),
         og('og-europa.png', 'Portugal ao lado da <span class="mk">Europa</span>', (f'Salário médio líquido de uma pessoa sozinha: {euro(pt["eur"])} por ano ({eu["ano"]}).' if pt else 'Salários líquidos e poder de compra.'), False),
         og('og-partilhar.png', 'Partilha o teu <span class="mk">salário</span>', '30 segundos, sem nome, sem conta. Só mostramos números com 5 ou mais pessoas.'),
-        og('og-funcao-publica.png', 'Função <span class="mk">pública</span> 2026', 'Professores, enfermeiros, médicos, polícias: bruto e líquido de cada carreira.', False),
+        og('og-funcao-publica.png', f'Função <span class="mk">pública</span> {O["funcao_publica"]["ano"]}', 'Professores, enfermeiros, médicos, polícias: bruto e líquido de cada carreira.', False),
     ]
     svg = (IMG / 'favicon.svg').read_text()
     with sync_playwright() as p:
-        nav = p.chromium.launch()
+        try:
+            nav = p.chromium.launch(channel='chrome')  # o Chrome da máquina do GitHub
+        except Exception:  # noqa: BLE001
+            nav = p.chromium.launch()
         pg = nav.new_page(viewport={'width': 1200, 'height': 630})
         for nome, html in paginas:
             pg.set_content(html, wait_until='load')
