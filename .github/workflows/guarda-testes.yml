@@ -47,6 +47,9 @@ jobs:
           python3 auditoria/test_caminhos_a_pe.py
           python3 caiu/verificar/test_paginas.py
 
+      - name: Pagamentos da DupliCasa (ifthenpay simulada)
+        run: python3 duaschaves/testes/testar_pagamentos.py
+
       - name: Instalar e verificar os tipos
         working-directory: app
         run: |

@@ -8,8 +8,10 @@ name: Servidor (Hetzner)
 #   chaves   - copia chaves de APIs guardadas como segredos do GitHub (ex.: FOGOS_API_KEY)
 #              para /etc/parou.env no servidor e reinicia a app (nunca aparecem no resultado)
 #   chaves-duplicasa - copia os segredos da DupliCasa guardados no GitHub (GOOGLE_ID, GOOGLE_SEGREDO,
-#              FACEBOOK_ID, FACEBOOK_SEGREDO, RESEND_API_KEY) para /etc/duaschaves/api.env e reinicia
-#              só a API da DupliCasa (o PAROU não é tocado)
+#              FACEBOOK_ID, FACEBOOK_SEGREDO, RESEND_API_KEY e as chaves da ifthenpay IFTHEN_MBWAY,
+#              IFTHEN_MB, IFTHEN_CCARD, IFTHEN_BO, IFTHEN_SANDBOX) para /etc/duaschaves/api.env, cria a chave
+#              anti-phishing (IFTHEN_ANTI) se ainda não existir, reinicia só a API da DupliCasa (o PAROU não
+#              é tocado) e, havendo chaves da ifthenpay, regista lá o endereço dos avisos de pagamento
 #   chaves-caiu - copia os segredos do caiu.pt (servidor/caiu-api.age, cifrado para a chave SSH do servidor)
 #              para /etc/caiu/api.env e reinicia só a API do caiu.pt
 #   chaves-adri - põe o hash da password da agenda do AdriBodyPiercing (servidor/adri-agenda.age, cifrado
@@ -151,6 +153,11 @@ jobs:
           FACEBOOK_ID: ${{ secrets.FACEBOOK_ID }}
           FACEBOOK_SEGREDO: ${{ secrets.FACEBOOK_SEGREDO }}
           RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          IFTHEN_MBWAY: ${{ secrets.IFTHEN_MBWAY }}
+          IFTHEN_MB: ${{ secrets.IFTHEN_MB }}
+          IFTHEN_CCARD: ${{ secrets.IFTHEN_CCARD }}
+          IFTHEN_BO: ${{ secrets.IFTHEN_BO }}
+          IFTHEN_SANDBOX: ${{ secrets.IFTHEN_SANDBOX }}
         run: |
           source funcs.sh
           IP=$(h "$API/servers?name=parou" | jq -r '.servers[0].public_net.ipv4.ip // empty')
@@ -162,16 +169,25 @@ jobs:
             R=$(age -d -i ~/.ssh/id_ed25519 servidor/duplicasa-resend.age 2>/dev/null) || R=""
             if [ -n "$R" ]; then RESEND_API_KEY="$R"; else echo "RESEND_API_KEY: não deu para abrir servidor/duplicasa-resend.age" >> resultado.txt; fi
           fi
-          N=0
-          for NOME in GOOGLE_ID GOOGLE_SEGREDO FACEBOOK_ID FACEBOOK_SEGREDO RESEND_API_KEY; do
+          N=0; PAGOU=0
+          for NOME in GOOGLE_ID GOOGLE_SEGREDO FACEBOOK_ID FACEBOOK_SEGREDO RESEND_API_KEY IFTHEN_MBWAY IFTHEN_MB IFTHEN_CCARD IFTHEN_BO IFTHEN_SANDBOX; do
             VALOR="${!NOME}"
             if [ -z "$VALOR" ]; then echo "$NOME: sem segredo no GitHub (fica como está)" >> resultado.txt; continue; fi
             # Passa o valor pelo stdin (não aparece em comandos nem no resultado); mantém o dono e as permissões
             printf '%s' "$VALOR" | ssh root@$IP "V=\$(cat); F=/etc/duaschaves/api.env; touch \$F; grep -v '^$NOME=' \$F > \$F.novo; echo \"$NOME=\$V\" >> \$F.novo; chown root:parou \$F.novo; chmod 640 \$F.novo; mv \$F.novo \$F"
             echo "$NOME: copiado para o servidor" >> resultado.txt; N=$((N+1))
+            case "$NOME" in IFTHEN_*) PAGOU=1;; esac
           done
+          if [ "$PAGOU" = 1 ]; then
+            # Chave anti-phishing dos avisos de pagamento: criada no servidor, uma vez, e nunca sai de lá
+            ssh root@$IP "F=/etc/duaschaves/api.env; grep -q '^IFTHEN_ANTI=' \$F || { echo \"IFTHEN_ANTI=\$(python3 -c 'import secrets;print(secrets.token_hex(24))')\" >> \$F; echo 'IFTHEN_ANTI: criada no servidor'; }" >> resultado.txt 2>&1
+          fi
           if [ "$N" -gt 0 ]; then
-            ssh root@$IP "systemctl restart duaschaves-api && sleep 2 && systemctl is-active duaschaves-api" >> resultado.txt 2>&1
+            ssh root@$IP "systemctl restart duaschaves-api && sleep 2 && systemctl is-active duaschaves-api; curl -s -m 5 http://127.0.0.1:3110/api/saude; echo" >> resultado.txt 2>&1
+          fi
+          if [ "$PAGOU" = 1 ]; then
+            echo "Avisos de pagamento na ifthenpay:" >> resultado.txt
+            ssh root@$IP "bash -c 'set -a; . /etc/duaschaves/api.env; set +a; python3 /opt/parou/servidor/duaschaves/pagamentos.py ativar-avisos'" >> resultado.txt 2>&1 || echo "ativar-avisos falhou (ver acima)" >> resultado.txt
           fi
 
       - name: Segredos do caiu.pt para o servidor

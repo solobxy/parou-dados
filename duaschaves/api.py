@@ -18,6 +18,7 @@ import base64, hashlib, hmac, json, os, re, secrets, sqlite3, sys, threading, ti
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import estatisticas as est
+import pagamentos as pg
 
 DB = os.environ.get('DC_DB', '/var/lib/duaschaves-api/dados.db')
 PORTA = int(os.environ.get('DC_PORTA', '3110'))
@@ -137,6 +138,7 @@ def criar_tabelas():
         if 'ultimo_envio' not in cols:
             c.execute('ALTER TABLE alertas ADD COLUMN ultimo_envio INTEGER')
         est.criar(c)
+        pg.criar_tabela(c)
         if not c.execute("SELECT 1 FROM config WHERE chave='segredo'").fetchone():
             c.execute("INSERT INTO config VALUES('segredo', ?)", (secrets.token_hex(32),))
 
@@ -156,7 +158,6 @@ def assinatura_mkt(c, uid):
 # for confirmado (ativar_subscricao, chamada pelo aviso do serviço de pagamentos). Aí envia-se um link para
 # acabar a conta; ao entrar com esse e-mail, o acesso passa também para a conta.
 DISP_DIAS = 400
-PAGAMENTOS = os.environ.get('PAGAMENTOS', '')      # vazio: ainda não há serviço de pagamentos ligado
 
 # Pedidos sem conta: campos aceites por tipo (tipo, tamanho máximo ou valor máximo)
 PEDIDO_CAMPOS = {
@@ -194,8 +195,9 @@ def cookie_disp(t):
     return '__Host-dc_disp=%s; Path=/; Max-Age=%d; HttpOnly; Secure; SameSite=Lax' % (t, DISP_DIAS * 86400)
 
 
-def ativar_subscricao(c, sub_id, base, dias=30):
-    """Chamada quando o pagamento é confirmado. Ativa no dispositivo e, se já houver conta com o e-mail, na conta."""
+def ativar_subscricao(c, sub_id, base, dias=30, primeira=True):
+    """Chamada quando o pagamento é confirmado. Ativa no dispositivo e, se já houver conta com o e-mail, na conta.
+    Os dias somam-se ao que ainda falta (quem renova antes do fim não perde dias)."""
     r = c.execute('SELECT * FROM subscricoes WHERE id=?', (sub_id,)).fetchone()
     if not r:
         return False
@@ -203,7 +205,9 @@ def ativar_subscricao(c, sub_id, base, dias=30):
     c.execute("UPDATE subscricoes SET estado='ativa', ate=? WHERE id=?", (ate, sub_id))
     u = c.execute('SELECT * FROM utilizadores WHERE email=? AND apagado=0', (r['email'],)).fetchone()
     if u:
-        c.execute('UPDATE utilizadores SET acesso_ate=MAX(COALESCE(acesso_ate,0), ?), renova=1 WHERE id=?', (ate, u['id']))
+        c.execute('UPDATE utilizadores SET acesso_ate=MAX(COALESCE(acesso_ate,0), ?), renova=0 WHERE id=?', (ate, u['id']))
+    if u or not primeira:              # já tem conta (ou é uma renovação): não há conta para acabar
+        return True
     t = secrets.token_urlsafe(32)
     c.execute('INSERT INTO links(hash, email, expira) VALUES(?,?,?)', (h(t), r['email'], int(time.time()) + 7 * 86400))
     email_acabar_conta(r['email'], base + '/api/entrar/confirmar?t=' + t)
@@ -403,7 +407,36 @@ class API(BaseHTTPRequestHandler):
         url = urllib.parse.urlsplit(self.path)
         if url.path == '/api/saude':
             return self.responder(200, {'ok': True, 'email': bool(RESEND), 'google': bool(GOOGLE_ID and GOOGLE_SEGREDO),
-                                        'facebook': bool(FACEBOOK_ID and FACEBOOK_SEGREDO), 'senha': True})
+                                        'facebook': bool(FACEBOOK_ID and FACEBOOK_SEGREDO), 'senha': True,
+                                        'pagamentos': pg.metodos() if pg.ligado() else []})
+        if url.path == '/api/ifthenpay/aviso':  # aviso de pagamento da ifthenpay (callback); a chave anti-phishing prova a origem
+            if not limite('aviso:' + self.ip(), 600, 600):
+                return self.responder(429, {'erro': 'muitos_pedidos'})
+            with ligar() as c:
+                cod, txt = pg.aviso_ifthenpay(c, urllib.parse.parse_qs(url.query))
+            return self.responder(cod, {'ok': cod == 200, 'r': txt})
+        if url.path == '/api/pagamento':    # estado de um pagamento: só para o dispositivo ou a conta que o pediu
+            q = urllib.parse.parse_qs(url.query)
+            try:
+                pid = int((q.get('id') or [''])[0])
+            except ValueError:
+                return self.responder(400, {'erro': 'pedido'})
+            if not limite('pag:' + self.ip(), 240, 600):
+                return self.responder(429, {'erro': 'muitos_pedidos'})
+            m = re.search(r'(?:^|;\s*)__Host-dc_disp=([A-Za-z0-9_\-]{20,100})', self.headers.get('Cookie') or '')
+            with ligar() as c:
+                r = c.execute('SELECT p.email, s.disp FROM pagamentos p JOIN subscricoes s ON s.id=p.sub_id WHERE p.id=?', (pid,)).fetchone()
+                u = self.sessao(c)
+                if not r or not ((m and hmac.compare_digest(h(m.group(1)), r['disp'])) or (u and u['email'] == r['email'])):
+                    return self.responder(404, {'erro': 'pagamento'})
+                p = pg.estado(c, pid)
+                s = c.execute('SELECT estado, ate FROM subscricoes WHERE id=?', (p['sub_id'],)).fetchone()
+                ativo = s['estado'] == 'ativa' and (s['ate'] or 0) > time.time()
+                corpo = {'estado': p['estado'], 'metodo': p['metodo'], 'valor': p['valor'], 'dias': p['dias'],
+                         'acesso': {'ate': s['ate'] * 1000} if ativo else None}
+                if p['metodo'] == 'multibanco':
+                    corpo.update(entidade=p['entidade'], referencia=p['referencia'], validade=p['validade'])
+            return self.responder(200, corpo)
         if url.path == '/api/dispositivo':  # acesso pago neste dispositivo, sem conta
             m = re.search(r'(?:^|;\s*)__Host-dc_disp=([A-Za-z0-9_\-]{20,100})', self.headers.get('Cookie') or '')
             if not m:
@@ -605,19 +638,71 @@ class API(BaseHTTPRequestHandler):
         if p == '/api/subscrever':          # pagar só com o e-mail, sem criar conta antes
             email = str(corpo.get('email') or '').strip().lower()
             plano = corpo.get('plano') if corpo.get('plano') in ('p30', 'p60', 'p90') else 'p30'
-            metodo = corpo.get('metodo') if corpo.get('metodo') in ('mbway', 'cartao') else ''
+            metodo = corpo.get('metodo') if corpo.get('metodo') in ('mbway', 'multibanco', 'cartao') else ''
             if not RE_EMAIL.match(email):
                 return self.responder(400, {'erro': 'email'})
             if not limite('sub:' + ip, 10, 900):
                 return self.responder(429, {'erro': 'muitos_pedidos'})
+            if pg.ligado():
+                if metodo not in pg.metodos():
+                    return self.responder(400, {'erro': 'metodo'})
+                if metodo == 'mbway' and not pg.telemovel(corpo.get('telemovel')):
+                    return self.responder(400, {'erro': 'telemovel'})
             m = re.search(r'(?:^|;\s*)__Host-dc_disp=([A-Za-z0-9_\-]{20,100})', self.headers.get('Cookie') or '')
             t = m.group(1) if m else secrets.token_urlsafe(32)
+            ck = [('Set-Cookie', cookie_disp(t))]
+            agora = int(time.time())
             with ligar() as c:
-                c.execute('INSERT INTO subscricoes(email, disp, estado, plano, metodo, criado, marketing) VALUES(?,?,?,?,?,?,?)',
-                          (email, h(t), 'pendente', plano, metodo, int(time.time()), 0 if corpo.get('sem_mkt') else 1))
-            # Sem serviço de pagamentos ligado não se ativa nada (senão o acesso seria grátis).
-            return self.responder(200, {'ok': True, 'estado': 'pendente', 'pagamento': 'por_ligar' if not PAGAMENTOS else 'iniciar'},
-                                  [('Set-Cookie', cookie_disp(t))])
+                sub = c.execute('SELECT * FROM subscricoes WHERE disp=? AND email=? ORDER BY id DESC LIMIT 1', (h(t), email)).fetchone()
+                if sub and sub['estado'] == 'ativa' and (sub['ate'] or 0) > agora:
+                    return self.responder(200, {'ok': True, 'estado': 'ativa', 'acesso': {'ate': sub['ate'] * 1000}}, ck)
+                if sub:
+                    c.execute('UPDATE subscricoes SET plano=?, metodo=?, marketing=? WHERE id=?',
+                              (plano, metodo, 0 if corpo.get('sem_mkt') else 1, sub['id']))
+                else:
+                    c.execute('INSERT INTO subscricoes(email, disp, estado, plano, metodo, criado, marketing) VALUES(?,?,?,?,?,?,?)',
+                              (email, h(t), 'pendente', plano, metodo, agora, 0 if corpo.get('sem_mkt') else 1))
+                sub = c.execute('SELECT * FROM subscricoes WHERE disp=? AND email=? ORDER BY id DESC LIMIT 1', (h(t), email)).fetchone()
+                # Sem serviço de pagamentos ligado não se ativa nada (senão o acesso seria grátis).
+                if not pg.ligado():
+                    return self.responder(200, {'ok': True, 'estado': 'pendente', 'pagamento': 'por_ligar'}, ck)
+                try:
+                    r = pg.iniciar(c, sub, metodo, 'inicio', corpo.get('telemovel'), self.base())
+                except pg.ErroPagamento as e:
+                    return self.responder(400 if e.codigo in ('telemovel', 'metodo') else 502, {'erro': 'pagamento', 'motivo': e.codigo}, ck)
+            pg.email_referencia(email, r)
+            r['ok'] = True
+            return self.responder(200, r, ck)
+
+        if p == '/api/renovar':             # renovar (sem renovação automática): mais dias, a somar aos que faltam
+            metodo = corpo.get('metodo') if corpo.get('metodo') in ('mbway', 'multibanco', 'cartao') else ''
+            if not limite('ren:' + ip, 10, 900):
+                return self.responder(429, {'erro': 'muitos_pedidos'})
+            if not pg.ligado():
+                return self.responder(503, {'erro': 'por_ligar'})
+            if metodo not in pg.metodos():
+                return self.responder(400, {'erro': 'metodo'})
+            m = re.search(r'(?:^|;\s*)__Host-dc_disp=([A-Za-z0-9_\-]{20,100})', self.headers.get('Cookie') or '')
+            with ligar() as c:
+                u = self.sessao(c)
+                sub = None
+                if u:
+                    sub = c.execute("SELECT * FROM subscricoes WHERE email=? AND estado='ativa' ORDER BY ate DESC LIMIT 1", (u['email'],)).fetchone()
+                if not sub and m:
+                    sub = c.execute("SELECT * FROM subscricoes WHERE disp=? AND estado='ativa' ORDER BY ate DESC LIMIT 1", (h(m.group(1)),)).fetchone()
+                if not sub:
+                    return self.responder(404, {'erro': 'sem_subscricao'})
+                if corpo.get('plano') in ('p30', 'p60', 'p90') and corpo.get('plano') != sub['plano']:
+                    c.execute('UPDATE subscricoes SET plano=? WHERE id=?', (corpo['plano'], sub['id']))
+                    sub = c.execute('SELECT * FROM subscricoes WHERE id=?', (sub['id'],)).fetchone()
+                try:
+                    r = pg.iniciar(c, sub, metodo, 'renovacao', corpo.get('telemovel'), self.base())
+                except pg.ErroPagamento as e:
+                    return self.responder(400 if e.codigo in ('telemovel', 'metodo') else 502, {'erro': 'pagamento', 'motivo': e.codigo})
+                email_sub = sub['email']
+            pg.email_referencia(email_sub, r)
+            r['ok'] = True
+            return self.responder(200, r)
 
         if p == '/api/entrar':
             email = str(corpo.get('email') or '').strip().lower()
@@ -902,6 +987,8 @@ API.oauth = _oauth
 
 def main():
     criar_tabelas()
+    pg.configurar(enviar_email, lambda c, sub_id, dias, primeira: ativar_subscricao(c, sub_id, pg.SITE, dias, primeira))
+    pg.vigia_renovacoes(ligar)
     srv = ThreadingHTTPServer(('127.0.0.1', PORTA), API)
     srv.daemon_threads = True
     print('DupliCasa API em 127.0.0.1:%d (e-mail %s)' % (PORTA, 'ligado' if RESEND else 'por ligar'), file=sys.stderr)

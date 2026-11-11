@@ -718,7 +718,7 @@ def llms_full(resumo, n_total, hoje):
           '- Fiador: nenhuma lei o obriga; não existe garantia do Estado que o substitua no arrendamento.',
           '- Atualização das rendas em 2027: até 2,56% (coeficiente 1,0256, Aviso n.º 24199/2026/2), 1 ano após o início ou a última atualização, com 30 dias de aviso.',
           f'- Guias com fontes: {SITE}/arrendar/guias/', '',
-          '## Sobre a DupliCasa', '- Ver casas e criar alertas é grátis. O acesso para contactar quem anuncia custa 1 € nos primeiros 30 dias e depois 9,99 € a cada 30 dias, até cancelar.',
+          '## Sobre a DupliCasa', '- Ver casas e criar alertas é grátis. O acesso para contactar quem anuncia custa 1 € nos primeiros 30 dias e depois 9,99 € a cada 30 dias, se quiser continuar (sem renovação automática).',
           '- Pagamento seguro (em breve): a entrada só chega ao senhorio quando os dois confirmam a entrega das chaves.',
           f'- Mais: {SITE}/llms.txt · {SITE}/arrendar/precos/', '']
     return '\n'.join(t)

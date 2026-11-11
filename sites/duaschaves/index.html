@@ -27,7 +27,7 @@
 <meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="sitemap" type="application/xml" href="/sitemap.xml">
-<script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"Organization","@id":"https://duplicasa.pt/#org","name":"DupliCasa","alternateName":"DupliCasa","url":"https://duplicasa.pt/","logo":"https://duplicasa.pt/marca/duaschaves-icone.png","email":"ola@duplicasa.pt","taxID":"273728156","address":{"@type":"PostalAddress","streetAddress":"Avenida General Humberto Delgado, 875, 1.º Esq.","postalCode":"4420-155","addressLocality":"Gondomar","addressCountry":"PT"},"description":"Agregador de casas, apartamentos e quartos para arrendar em Portugal, com alertas de casas novas."},{"@type":"WebSite","@id":"https://duplicasa.pt/#site","name":"DupliCasa","url":"https://duplicasa.pt/","inLanguage":"pt-PT","publisher":{"@id":"https://duplicasa.pt/#org"}},{"@type":"FAQPage","mainEntity":[{"@type":"Question","name":"De onde vêm as casas?","acceptedAnswer":{"@type":"Answer","text":"Juntamos num só lugar os anúncios dos principais sites de arrendamento em Portugal, sem repetir a mesma casa. Atualizamos de 30 em 30 minutos e retiramos as que já não estão disponíveis."}},{"@type":"Question","name":"Como sabem se uma casa é um bom negócio?","acceptedAnswer":{"@type":"Answer","text":"Comparamos a renda com o normal: a mediana dos anúncios da mesma tipologia, na mesma cidade, nos últimos 30 dias. Só marcamos quando há pelo menos 6 anúncios para comparar. Se uma renda estiver 40% ou mais abaixo do normal, não a mostramos como negócio: avisamos que pode ser um erro ou uma burla."}},{"@type":"Question","name":"Quanto custa?","acceptedAnswer":{"@type":"Answer","text":"Ver as casas, guardá-las e criar alertas é grátis. O acesso para contactar quem anuncia e receber os alertas no minuto custa 1 € nos primeiros 30 dias e depois 9,99 € a cada 30 dias, até cancelar."}},{"@type":"Question","name":"Como cancelo?","acceptedAnswer":{"@type":"Answer","text":"Na conta, com um toque. O acesso continua até ao fim do período pago e não há nova cobrança. Avisamos por e-mail 3 dias antes de cada renovação."}},{"@type":"Question","name":"As casas são verificadas?","acceptedAnswer":{"@type":"Answer","text":"Os anúncios que vêm de outros sites não são verificados pela DupliCasa. Visite sempre a casa antes de pagar, desconfie de rendas muito abaixo das outras na zona e confirme que quem anuncia é o dono."}}]}]}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"Organization","@id":"https://duplicasa.pt/#org","name":"DupliCasa","alternateName":"DupliCasa","url":"https://duplicasa.pt/","logo":"https://duplicasa.pt/marca/duaschaves-icone.png","email":"ola@duplicasa.pt","taxID":"273728156","address":{"@type":"PostalAddress","streetAddress":"Avenida General Humberto Delgado, 875, 1.º Esq.","postalCode":"4420-155","addressLocality":"Gondomar","addressCountry":"PT"},"description":"Agregador de casas, apartamentos e quartos para arrendar em Portugal, com alertas de casas novas."},{"@type":"WebSite","@id":"https://duplicasa.pt/#site","name":"DupliCasa","url":"https://duplicasa.pt/","inLanguage":"pt-PT","publisher":{"@id":"https://duplicasa.pt/#org"}},{"@type":"FAQPage","mainEntity":[{"@type":"Question","name":"De onde vêm as casas?","acceptedAnswer":{"@type":"Answer","text":"Juntamos num só lugar os anúncios dos principais sites de arrendamento em Portugal, sem repetir a mesma casa. Atualizamos de 30 em 30 minutos e retiramos as que já não estão disponíveis."}},{"@type":"Question","name":"Como sabem se uma casa é um bom negócio?","acceptedAnswer":{"@type":"Answer","text":"Comparamos a renda com o normal: a mediana dos anúncios da mesma tipologia, na mesma cidade, nos últimos 30 dias. Só marcamos quando há pelo menos 6 anúncios para comparar. Se uma renda estiver 40% ou mais abaixo do normal, não a mostramos como negócio: avisamos que pode ser um erro ou uma burla."}},{"@type":"Question","name":"Quanto custa?","acceptedAnswer":{"@type":"Answer","text":"Ver as casas, guardá-las e criar alertas é grátis. O acesso para contactar quem anuncia e receber os alertas no minuto custa 1 € nos primeiros 30 dias e depois 9,99 € a cada 30 dias, se quiseres continuar."}},{"@type":"Question","name":"Renova sozinho?","acceptedAnswer":{"@type":"Answer","text":"Não. Pagas com MB WAY, referência Multibanco ou cartão e o acesso dura o período que pagaste. 3 dias antes do fim mandamos-te por e-mail a referência para renovares. Se não pagares, o acesso acaba e não ficas a dever nada."}},{"@type":"Question","name":"As casas são verificadas?","acceptedAnswer":{"@type":"Answer","text":"Os anúncios que vêm de outros sites não são verificados pela DupliCasa. Visite sempre a casa antes de pagar, desconfie de rendas muito abaixo das outras na zona e confirme que quem anuncia é o dono."}}]}]}</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -681,6 +681,26 @@ dialog{overscroll-behavior:contain}
 .pw-metodo:has(input:checked){border-color:var(--verde);background:var(--verde-claro)}.pw-metodo input{accent-color:var(--verde);width:18px;height:18px;margin:0}.pw-ic{flex:0 0 auto;display:block}.pw-metodo img.pw-ic{width:22px;height:22px;border-radius:5px;box-shadow:0 0 0 1px rgba(15,26,23,.08)}.pw-metodo{gap:7px}
 .pw .botao.largo{min-height:50px}
 .pw-nota{margin:0;text-align:center;font-size:12px;color:var(--texto3)}
+/* pagamento: à espera do MB WAY, referência Multibanco, confirmado */
+.pg-estado{text-align:center;padding:28px 22px 22px;gap:14px}
+.pg-estado h2{margin:0;font-size:24px;line-height:1.2;font-weight:800;letter-spacing:-.01em;outline:0}
+.pg-estado p{margin:0;color:var(--texto2);font-size:16px;line-height:1.45}
+.pg-estado .botao-texto{align-self:center}
+.pg-tel{position:relative;width:76px;height:76px;margin:0 auto;display:grid;place-items:center;border-radius:22px;background:var(--verde-claro)}
+.pg-tel img{width:44px;height:44px;border-radius:10px;position:relative;z-index:1}
+.pg-onda{position:absolute;inset:0;border-radius:22px;border:2px solid var(--verde);animation:pg-onda 1.8s ease-out infinite}
+@keyframes pg-onda{from{transform:scale(1);opacity:.6}to{transform:scale(1.35);opacity:0}}
+.pg-relogio{font-size:15px!important}.pg-relogio strong{font-variant-numeric:tabular-nums;color:var(--tinta)}
+.nw{white-space:nowrap}
+.pg-ref{margin:0;background:var(--fundo);border-radius:14px;padding:4px 16px;text-align:left}
+.pg-ref div{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:11px 0;border-bottom:1px solid var(--borda)}
+.pg-ref div:last-child{border-bottom:0}
+.pg-ref dt{font-size:14px;color:var(--texto3)}
+.pg-ref dd{margin:0;font-size:22px;font-weight:800;font-variant-numeric:tabular-nums;letter-spacing:.02em;color:var(--tinta)}
+.pg-estado .pg-nota{font-size:14px;color:var(--texto3)}
+.pg-selo{width:64px;height:64px;margin:0 auto;border-radius:50%;display:grid;place-items:center;background:var(--verde);color:#fff;animation:pg-selo .35s cubic-bezier(.2,.8,.2,1.2) both}
+@keyframes pg-selo{from{transform:scale(.6);opacity:0}to{transform:scale(1);opacity:1}}
+@media (prefers-reduced-motion:reduce){.pg-onda{animation:none;opacity:.35}.pg-selo{animation:none}}
 .pw-facto{margin:0;font-size:15px;line-height:1.45}.pw-fonte{display:block;font-size:12px;color:var(--texto3);margin-top:2px}
 .dispo{display:inline-flex;align-items:center;gap:4px;color:#0B6E4F;font-weight:600}
 .barra-cta{position:fixed;left:0;right:0;bottom:calc(64px + env(safe-area-inset-bottom));z-index:19;display:flex;gap:12px;align-items:center;justify-content:space-between;background:#fff;border-top:1px solid var(--borda);padding:10px 16px;box-shadow:0 -6px 18px rgba(15,26,23,.08);transform:translateY(0);transition:transform .2s ease-out,opacity .2s ease-out}
@@ -1021,7 +1041,7 @@ a.botao[aria-disabled="true"]{opacity:.6;pointer-events:none}
 <h2>Guias</h2>
 <ul><li><a href="/arrendar/guias/como-arrendar-casa-em-portugal/">Como arrendar casa em Portugal</a></li><li><a href="/arrendar/guias/arrendar-casa-sem-fiador/">Arrendar casa sem fiador</a></li><li><a href="/arrendar/guias/arrendar-casa-sem-caucao/">Arrendar casa sem caução</a></li><li><a href="/arrendar/guias/arrendar-casa-sem-contrato-riscos/">Arrendar sem contrato: o que diz a lei</a></li><li><a href="/arrendar/guias/aumento-das-rendas-em-2027/">Aumento das rendas em 2027</a></li><li><a href="/arrendar/guias/como-evitar-burlas-no-arrendamento/">Como evitar burlas no arrendamento</a></li></ul>
 <h2>Quanto custa</h2>
-<p>Ver as casas, guardá-las e criar alertas é grátis. O acesso para contactar quem anuncia e receber os alertas no minuto custa 1 € nos primeiros 30 dias e depois 9,99 € a cada 30 dias, até cancelares.</p>
+<p>Ver as casas, guardá-las e criar alertas é grátis. O acesso para contactar quem anuncia e receber os alertas no minuto custa 1 € nos primeiros 30 dias e depois 9,99 € a cada 30 dias, se quiseres continuar. Não há renovação automática.</p>
 </div></main>
 
 <footer class="rodape">
@@ -1227,7 +1247,7 @@ function criarAlerta(a){ev('alerta',{cidade:a.cidade||'',preco:a.precoMax||0});v
 function descAlerta(a){var p=[];p.push(a.cidade?a.cidade:'Todo o país');if(a.precoMax)p.push('até '+eur(a.precoMax));if(a.tip)p.push(a.tip);if(a.soProt)p.push('só com pagamento seguro');return p.join(' · ');}
 
 /* ---------- servidor (contas reais quando a API existe; sem API fica tudo no dispositivo) ---------- */
-var servidor=false,emailLigado=false,metodos={};
+var servidor=false,emailLigado=false,metodos={},PAG=[];   /* PAG: formas de pagamento ligadas (ifthenpay) */
 function notaEnvio(){return emailLigado?'':(servidor?' Os e-mails começam a ser enviados em breve.':'');}
 /* ---------- estatísticas (sem cookies; ver duaschaves/estatisticas.py) ---------- */
 var evPrimeiro=true,evUltimo={};
@@ -1353,7 +1373,136 @@ function listaInclui(){
     '<li>'+svg(P.visto,{s:20,w:2.4})+'<span>Alertas <strong>no minuto</strong> em que aparece uma casa para ti (sem acesso, só um resumo por dia)</span></li>'+
   '</ul>';
 }
-function avisoRenovacao(){return '<p class="aviso-preco">Depois dos 30 dias, <strong>'+P2+' a cada 30 dias</strong>, até cancelares. Cancelas com um toque na tua conta e avisamos-te por e-mail 3 dias antes de cada renovação.</p>';}
+function avisoRenovacao(){return '<p class="aviso-preco">Depois dos 30 dias, <strong>'+P2+' a cada 30 dias</strong>, só se quiseres. Não há renovação automática: 3 dias antes do fim mandamos-te a referência para renovares.</p>';}
+/* ---------- pagamentos (ifthenpay): MB WAY, referência Multibanco e cartão. Sem renovação automática. ---------- */
+var IC_MBREF='<svg class="pw-ic" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" fill="none" stroke="#3E4A46" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6M9 16h3"/></svg>';
+var IC_CARTAO='<svg class="pw-ic" viewBox="0 0 28 20" width="28" height="20" aria-hidden="true"><rect x="0.75" y="0.75" width="26.5" height="18.5" rx="3" fill="#fff" stroke="#3E4A46" stroke-width="1.5"/><rect x="1" y="5" width="26" height="3.2" fill="#3E4A46"/><rect x="4" y="12.5" width="9" height="2" rx="1" fill="#9AA8A3"/></svg>';
+function lerTel(){try{return localStorage.getItem('dc-tel')||'';}catch(e){return '';}}
+function telOk(v){var d=String(v||'').replace(/\D/g,'');if(/^00351/.test(d))d=d.slice(5);else if(/^351/.test(d)&&d.length===12)d=d.slice(3);return /^9[1236]\d{7}$/.test(d)?d:'';}
+function telBonito(d){return d.slice(0,3)+' '+d.slice(3,6)+' '+d.slice(6);}
+function metodosHtml(n){
+  var ms=PAG.length?PAG:['mbway','cartao'],rot={mbway:['MB WAY','<img class="pw-ic" src="'+MB+'" alt="" width="22" height="22">'],multibanco:['Multibanco',IC_MBREF],cartao:['Cartão',IC_CARTAO]};
+  return '<fieldset class="pw-metodos"><legend class="isco">Pagar com</legend>'+ms.map(function(m,i){return '<label class="pw-metodo"><input type="radio" name="'+n+'-metodo" value="'+m+'"'+(i===0?' checked':'')+'>'+rot[m][1]+'<span>'+rot[m][0]+'</span></label>';}).join('')+'</fieldset>'+
+    (ms.indexOf('mbway')>=0&&PAG.length?'<div class="campo pw-tel" id="'+n+'-tel-campo"><label for="'+n+'-tel">Número com MB WAY</label><input id="'+n+'-tel" type="tel" inputmode="numeric" autocomplete="tel-national" placeholder="912 345 678" value="'+(lerTel()?telBonito(lerTel()):'')+'"></div>':'');
+}
+/* mostra o número só com MB WAY escolhido */
+function ligarMetodos(form,n){
+  var campo=form.querySelector('#'+n+'-tel-campo');if(!campo)return;
+  function ver(){var m=(form.querySelector('[name="'+n+'-metodo"]:checked')||{}).value;campo.hidden=m!=='mbway';}
+  form.querySelectorAll('[name="'+n+'-metodo"]').forEach(function(r){r.addEventListener('change',ver);});ver();
+}
+/* subscrever (1.º pagamento) ou renovar: pede o pagamento e segue-o até ficar confirmado */
+function pedirPagamento(form,n,caminho,corpo,voltar,depois){
+  var met=(form.querySelector('[name="'+n+'-metodo"]:checked')||{}).value||'',tel=form.querySelector('#'+n+'-tel'),num='';
+  if(met==='mbway'&&PAG.length){num=telOk(tel&&tel.value);if(!erroCampo(tel,num?'':'Escreve o número com MB WAY, por exemplo 912 345 678.')){tel.focus();return;}try{localStorage.setItem('dc-tel',num);}catch(e){}}
+  ev('pagar_clique',{metodo:met,tipo:caminho});
+  var bt=form.querySelector('button[type=submit]');bt.disabled=true;bt.setAttribute('aria-busy','true');
+  corpo.metodo=met;if(num)corpo.telemovel=num;
+  api(caminho,corpo).then(function(r){
+    bt.disabled=false;bt.removeAttribute('aria-busy');
+    if(r._estado===429){toast('Muitas tentativas. Espera uns minutos.');return;}
+    if(r.erro==='telemovel'){erroCampo(tel,'Esse número não parece ter MB WAY. Confirma-o, por exemplo 912 345 678.');tel&&tel.focus();return;}
+    if(r._estado===502){toast(met==='mbway'?'O MB WAY não aceitou o pedido. Confirma o número ou escolhe outra forma de pagar.':'O pagamento não arrancou. Tenta outra vez ou escolhe outra forma de pagar.');return;}
+    if(r._estado!==200){toast(r.erro==='sem_subscricao'?'Não encontrámos o teu acesso neste dispositivo. Entra na tua conta e tenta outra vez.':'Não deu. Tenta outra vez.');return;}
+    if(corpo.email&&!conta.email){conta.email=corpo.email;guardarConta();}
+    if(r.pagamento==='por_ligar'){dlg.close();toast('Os pagamentos abrem em breve. Guardámos o teu e-mail e avisamos-te no dia em que abrirem. Não cobrámos nada.');return;}
+    if(r.estado==='ativa'){pagamentoConfirmado(r.acesso,depois);return;}
+    if(r.pagamento==='cartao'&&r.url){try{sessionStorage.setItem('dc-pag',String(r.id));}catch(e){}location.href=r.url;return;}
+    seguirPagamento(r,{tel:num,voltar:voltar,depois:depois});
+  }).catch(function(){bt.disabled=false;bt.removeAttribute('aria-busy');toast('Sem ligação. Tenta outra vez.');});
+}
+function pagamentoConfirmado(ac,depois){
+  if(ac&&ac.ate){conta.acessoDisp={ate:ac.ate};if(conta.sessao){conta.acesso={ate:Math.max(ac.ate,(conta.acesso&&conta.acesso.ate)||0),renova:false};}guardarConta();}
+  abrirDialogo('<div class="dialogo-corpo pg-estado pg-ok" role="status">'+
+    '<div class="pg-selo" aria-hidden="true">'+svg(P.visto,{s:30,w:3})+'</div>'+
+    '<h2 tabindex="-1">Pagamento confirmado</h2>'+
+    '<p>'+(ac&&ac.ate?'Tens acesso até <strong>'+fmtDia.format(new Date(ac.ate))+'</strong>. ':'')+'Já podes contactar quem anuncia.</p>'+
+    '<p class="pg-nota">Não há renovação automática. 3 dias antes do fim mandamos-te a referência para continuares, se quiseres.</p>'+
+    '<button class="botao largo" type="button" id="pg-continuar">Continuar</button></div>');
+  var h=dlg.querySelector('h2');if(h)h.focus();
+  document.getElementById('pg-continuar').addEventListener('click',function(){dlg.close();if(depois)depois();else rota();});
+}
+/* MB WAY: espera pela confirmação na app; Multibanco: mostra a referência e ativa sozinho quando for paga */
+function seguirPagamento(r,ctx){
+  var vivo=true,t=null,fim=Date.now()+(r.segundos||270)*1000,valor=(r.valor||0).toFixed(2).replace('.',',')+'&nbsp;€';
+  function parar(){vivo=false;clearTimeout(t);clearInterval(rel);}
+  var rel=null;
+  if(r.pagamento==='mbway'){
+    abrirDialogo('<div class="dialogo-corpo pg-estado" role="status" aria-live="polite">'+
+      '<div class="pg-tel" aria-hidden="true"><img src="'+MB+'" alt="" width="44" height="44"><span class="pg-onda"></span></div>'+
+      '<h2 tabindex="-1">Confirma na app MB WAY</h2>'+
+      '<p>Enviámos um pedido de <strong>'+valor+'</strong> para o <strong class="nw">'+esc(telBonito(ctx.tel||''))+'</strong>. Abre a app MB WAY e confirma.</p>'+
+      '<p class="pg-relogio">Tens <strong id="pg-tempo">4:30</strong> para confirmar</p>'+
+      '<button class="botao-texto" type="button" id="pg-mudar">Pagar de outra forma</button></div>');
+    var el=document.getElementById('pg-tempo');
+    rel=setInterval(function(){var s=Math.max(0,Math.round((fim-Date.now())/1000));if(el)el.textContent=Math.floor(s/60)+':'+('0'+s%60).slice(-2);},1000);
+  }else{
+    abrirDialogo('<div class="dialogo-corpo pg-estado" role="status" aria-live="polite">'+
+      '<h2 tabindex="-1">Paga no multibanco ou no homebanking</h2>'+
+      '<p>Em «Pagamentos de serviços», com estes dados:</p>'+
+      '<dl class="pg-ref">'+
+        '<div><dt>Entidade</dt><dd>'+esc(r.entidade)+'</dd></div>'+
+        '<div><dt>Referência</dt><dd>'+esc(String(r.referencia).replace(/(\d{3})(\d{3})(\d{3})/,'$1 $2 $3'))+'</dd></div>'+
+        '<div><dt>Valor</dt><dd>'+valor+'</dd></div></dl>'+
+      '<button class="botao-sec largo" type="button" id="pg-copiar">Copiar a referência</button>'+
+      '<p class="pg-nota">Válida até '+esc(String(r.validade||'daqui a 3 dias').replace(/-/g,'/'))+'. Assim que pagares, o acesso fica ativo sozinho, normalmente em poucos minutos. Também te mandámos estes dados por e-mail.</p>'+
+      '<button class="botao largo" type="button" id="pg-feito">Já paguei</button>'+
+      '<button class="botao-texto" type="button" id="pg-mudar">Pagar de outra forma</button></div>');
+    document.getElementById('pg-copiar').addEventListener('click',function(){
+      try{navigator.clipboard.writeText(String(r.referencia)).then(function(){toast('Referência copiada.');});}catch(e){toast(String(r.referencia));}
+    });
+    document.getElementById('pg-feito').addEventListener('click',function(){toast('Obrigado! Quando a ifthenpay confirmar, o acesso fica ativo sozinho e avisamos-te aqui.');});
+  }
+  var h=dlg.querySelector('h2');if(h)h.focus();
+  document.getElementById('pg-mudar').addEventListener('click',function(){parar();if(ctx.voltar)ctx.voltar();});
+  dlg.addEventListener('close',function fechou(){dlg.removeEventListener('close',fechou);if(r.pagamento==='mbway')parar();},{once:true});
+  function falhou(txt){
+    parar();
+    abrirDialogo('<div class="dialogo-corpo pg-estado" role="alert">'+
+      '<h2 tabindex="-1">O pagamento não foi feito</h2><p>'+txt+' Não cobrámos nada.</p>'+
+      '<button class="botao largo" type="button" id="pg-outra">Tentar outra vez</button>'+
+      '<button class="botao-texto" type="button" data-fechar>Agora não</button></div>');
+    var h2=dlg.querySelector('h2');if(h2)h2.focus();
+    document.getElementById('pg-outra').addEventListener('click',function(){if(ctx.voltar)ctx.voltar();});
+  }
+  function ver(){
+    if(!vivo)return;
+    api('pagamento?id='+r.id).then(function(e){
+      if(!vivo)return;
+      if(e.estado==='pago'){parar();ev('pago',{metodo:r.pagamento,valor:r.valor});pagamentoConfirmado(e.acesso,ctx.depois);return;}
+      if(e.estado==='falhou'){falhou('O pedido foi recusado na app.');return;}
+      if(e.estado==='expirado'){falhou('O tempo para confirmar acabou.');return;}
+      t=setTimeout(ver,r.pagamento==='mbway'?3000:10000);
+    }).catch(function(){if(vivo)t=setTimeout(ver,6000);});
+  }
+  t=setTimeout(ver,r.pagamento==='mbway'?3000:8000);
+}
+/* volta da página do cartão: ?pagamento=<id>&r=ok|erro|cancelado */
+function voltaDoCartao(){
+  var q=new URLSearchParams(location.search),id=q.get('pagamento'),res=q.get('r');
+  if(!id||!/^\d{1,10}$/.test(id))return;
+  history.replaceState(null,'',location.pathname+location.hash);
+  if(res!=='ok'){toast('O pagamento com cartão não foi concluído. Não cobrámos nada.');return;}
+  abrirDialogo('<div class="dialogo-corpo pg-estado" role="status" aria-live="polite"><h2 tabindex="-1">A confirmar o pagamento…</h2><p>Só um momento: estamos a receber a confirmação do cartão.</p></div>');
+  var n=0;
+  (function ver(){api('pagamento?id='+id).then(function(e){
+    if(e.estado==='pago'){ev('pago',{metodo:'cartao',valor:e.valor});pagamentoConfirmado(e.acesso);return;}
+    if(++n<20&&e._estado===200&&e.estado==='pendente'){setTimeout(ver,3000);return;}
+    abrirDialogo('<div class="dialogo-corpo pg-estado" role="status"><h2 tabindex="-1">Ainda não recebemos a confirmação</h2><p>Se o cartão foi cobrado, o acesso fica ativo sozinho em poucos minutos e avisamos-te por e-mail. Se não ficar, escreve-nos para ola@duplicasa.pt.</p><button class="botao largo" type="button" data-fechar>Fechar</button></div>');
+  }).catch(function(){if(++n<20)setTimeout(ver,3000);});})();
+}
+/* renovar: mais dias, a somar aos que faltam */
+function abrirRenovar(){
+  if(!servidor||!PAG.length){toast('A renovação abre em breve.');return;}
+  var pl=planoAtual(),a=conta.acesso&&conta.acesso.ate>Date.now()?conta.acesso:conta.acessoDisp;
+  abrirDialogo('<form class="dialogo-corpo pw" id="f-renovar" novalidate>'+cabecaDialogo('Renovar o acesso')+
+    '<p style="margin:0">'+(a&&a.ate?'O teu acesso vai até <strong>'+fmtDia.format(new Date(a.ate))+'</strong>. ':'')+'Renovas por <strong>'+precoPlano(pl)+'</strong> e ficas com mais '+pl.dias+' dias, a somar aos que faltam.</p>'+
+    metodosHtml('rn')+
+    '<button class="botao largo pw-pagar" type="submit">'+svg(P.cadeado,{s:18})+'Pagar '+precoPlano(pl)+'</button>'+
+    '<p class="pw-legal">Pagamento único. Não há renovação automática.</p></form>');
+  var f=document.getElementById('f-renovar');ligarMetodos(f,'rn');
+  f.addEventListener('submit',function(e){e.preventDefault();pedirPagamento(f,'rn','renovar',{plano:pl.id},abrirRenovar,function(){rota();});});
+}
 /* prova social: só números reais e só quando já são expressivos; senão, o facto do mercado */
 var PUBLICO=null;
 function provaSocial(){
@@ -1362,6 +1511,7 @@ function provaSocial(){
   if(n.n24>=20)return '<p class="pw-facto"><strong>'+fmtN(n.n24)+' casas novas</strong> hoje.</p>';
   return '';
 }
+var MB='data:image/png;base64,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';
 function abrirAcesso(depois,c){
   var semSessao=!conta.sessao;
   ev('paywall',{origem:c?'casa':(dlg.classList.contains('dlg-promo')?'oferta':(location.hash.slice(1)||'inicio').split('-')[0])});
@@ -1370,7 +1520,6 @@ function abrirAcesso(depois,c){
     (eNegocio(c)?'<p class="pw-neg">'+svg(P.desce,{s:18,w:2.4})+'<span>'+negocio(c).pct+'% abaixo do normal '+esc(emCidade(negocio(c).cid))+': pagas menos <strong>'+eur(negocio(c).poupa)+' por mês</strong>.</span></p>':''):'';
   var nc=numerosCasas(),pl=planoAtual(),fimTeste=new Date(Date.now()+30*DIA);
   var ben=function(ic,t){return '<li>'+svg(ic,{s:22,w:1.8})+'<span>'+t+'</span></li>';};
-  var MB='data:image/png;base64,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';
   abrirDialogo('<form class="dialogo-corpo pw pw-cheia" id="f-acesso" novalidate>'+
     '<div class="pw-topo"><ol class="pw-passos" aria-label="Passos">'+(semSessao?'<li class="atual" aria-current="step"><span>1</span>E-mail</li><li><span>2</span>Pagar</li>':'<li class="feito"><span>'+svg(P.visto,{s:14,w:3})+'</span>Conta</li><li class="atual" aria-current="step"><span>2</span>Pagar</li>')+'<li><span>3</span>Contactar</li></ol>'+
       '<button type="button" class="icone" aria-label="Fechar" data-fechar>'+svg(P.fechar)+'</button></div>'+
@@ -1383,34 +1532,25 @@ function abrirAcesso(depois,c){
       ben(P.sino,'Alertas <strong>no minuto</strong> em que a casa aparece')+
       ben(P.telefone,'Contactas <strong>todas</strong> as casas, antes dos outros')+
     '</ul>'+
-    '<div class="pw-caixa"><p class="pw-caixa-p">Pagar '+riscado()+comVisto(P1)+' por 30 dias</p><p class="pw-caixa-s">Depois '+precoPlano(pl)+' a cada '+pl.dias+' dias. Cancelas quando quiseres.</p></div>'+
+    '<div class="pw-caixa"><p class="pw-caixa-p">Pagar '+riscado()+comVisto(P1)+' por 30 dias</p><p class="pw-caixa-s">Depois, '+precoPlano(pl)+' a cada '+pl.dias+' dias, só se renovares.</p></div>'+
     (semSessao?'<div class="campo"><label for="ac-email">O teu e-mail</label><input id="ac-email" type="email" autocomplete="email" inputmode="email" placeholder="nome@gmail.com"></div>':'')+
-    '<fieldset class="pw-metodos"><legend class="isco">Pagar com</legend>'+
-      '<label class="pw-metodo"><input type="radio" name="ac-metodo" value="mbway" checked><img class="pw-ic" src="'+MB+'" alt="" width="22" height="22"><span>MB WAY</span></label>'+
-      '<label class="pw-metodo"><input type="radio" name="ac-metodo" value="cartao"><svg class="pw-ic" viewBox="0 0 28 20" width="28" height="20" aria-hidden="true"><rect x="0.75" y="0.75" width="26.5" height="18.5" rx="3" fill="#fff" stroke="#3E4A46" stroke-width="1.5"/><rect x="1" y="5" width="26" height="3.2" fill="#3E4A46"/><rect x="4" y="12.5" width="9" height="2" rx="1" fill="#9AA8A3"/></svg><span>Cartão</span></label>'+
-    '</fieldset>'+
+    metodosHtml('ac')+
     '<button class="botao largo pw-pagar" type="submit">'+svg(P.cadeado,{s:18})+'Pagar '+P1+' agora</button>'+
-    '<ul class="pw-marcas" aria-label="Formas de pagamento aceites">'+['MB WAY','Visa','Mastercard','Apple Pay','Google Pay'].map(function(m){return '<li>'+m+'</li>';}).join('')+'</ul>'+
-    '<p class="pw-legal">Pagas '+P1+' agora por 30 dias. Se não cancelares até '+fmtDia.format(fimTeste)+', passas a pagar '+precoPlano(pl)+' a cada '+pl.dias+' dias. Cancelas a qualquer momento na tua conta e avisamos-te por e-mail 3 dias antes de cada cobrança.</p>'+
+    '<ul class="pw-marcas" aria-label="Formas de pagamento aceites">'+['MB WAY','Multibanco','Visa','Mastercard'].map(function(m){return '<li>'+m+'</li>';}).join('')+'</ul>'+
+    '<p class="pw-legal">Pagas '+P1+' agora por 30 dias de acesso, até '+fmtDia.format(fimTeste)+'. Não há renovação automática: 3 dias antes do fim mandamos-te por e-mail a referência para continuares por '+precoPlano(pl)+', se quiseres. Se não pagares, o acesso acaba e não ficas a dever nada.</p>'+
     '<label class="consent pw-mkt"><input type="checkbox" id="ac-sem-mkt"><span>Não quero ofertas por e-mail.</span></label></form>');
   dlg.classList.add('dlg-cheia');
+  ligarMetodos(document.getElementById('f-acesso'),'ac');
   document.getElementById('f-acesso').addEventListener('submit',function(e){
     e.preventDefault();
     /* subscrever só com o e-mail: sem criar conta antes. O acesso fica neste dispositivo e enviamos um link para acabar a conta. */
     var emS=document.getElementById('ac-email');
     if(emS&&!erroCampo(emS,emailOk(emS.value.trim())?'':ERRO_EMAIL)){emS.focus();return;}
     var emailS=emS?emS.value.trim():conta.email;
-    if(servidor){   /* site real: o acesso só fica ativo depois de o pagamento ser confirmado pelo servidor */
-      var met0=(main.ownerDocument.querySelector('[name="ac-metodo"]:checked')||{}).value||'',sm=document.getElementById('ac-sem-mkt');ev('pagar_clique',{metodo:met0});
-      var bt=e.target.querySelector('button[type=submit]');bt.disabled=true;
-      api('subscrever',{email:emailS,metodo:met0,plano:planoAtual().id,sem_mkt:!!(sm&&sm.checked)}).then(function(r){
-        bt.disabled=false;
-        if(r._estado!==200){toast(r.erro==='muitos_pedidos'?'Muitas tentativas. Espera uns minutos.':'Não deu. Confirma o e-mail e tenta outra vez.');return;}
-        if(!conta.email){conta.email=emailS;guardarConta();}
-        dlg.close();
-        if(r.pagamento==='por_ligar'){toast('Os pagamentos abrem em breve. Guardámos o teu e-mail e avisamos-te no dia em que abrirem. Não cobrámos nada.');return;}
-        if(r.url)location.href=r.url;
-      }).catch(function(){bt.disabled=false;toast('Sem ligação. Tenta outra vez.');});
+    if(servidor){   /* site real: o acesso só fica ativo depois de a ifthenpay confirmar o pagamento */
+      var sm=document.getElementById('ac-sem-mkt');
+      pedirPagamento(e.target,'ac','subscrever',{email:emailS,plano:planoAtual().id,sem_mkt:!!(sm&&sm.checked)},
+        function(){abrirAcesso(depois,c);},depois);
       return;
     }
     if(!conta.sessao){   /* protótipo sem servidor: acesso só neste dispositivo, sem conta */
@@ -1427,7 +1567,7 @@ function abrirAcesso(depois,c){
     /* cliente: pode receber ofertas de serviços parecidos, salvo se recusar aqui (art. 13.º-A, n.º 3, da Lei 41/2004) */
     var semMkt=document.getElementById('ac-sem-mkt');if(semMkt)conta.marketing={sim:!semMkt.checked,quando:agora,base:'cliente'};
     guardarConta();dlg.close();
-    toast('Acesso ativo. A 1.ª renovação é a '+fmtDia.format(new Date(conta.acesso.ate))+', por '+precoPlano(planoAtual()).replace('&nbsp;',' ')+'.');
+    toast('Acesso ativo até '+fmtDia.format(new Date(conta.acesso.ate))+'. Não há renovação automática.');
     if(depois)depois();
   });
 }
@@ -1616,7 +1756,7 @@ function ctaLista(x,k){
   }
   return '<div class="ctl v-'+tipo+'">'+vis+'<div class="ctl-txt"><h3>'+h+'</h3><p>'+p+'</p>'+
     '<button class="botao" type="button" data-cta-lista="'+tipo+'"'+(c?' data-casa="'+c.id+'"':'')+'>Começar por '+P1+'</button>'+
-    '<p class="ctl-pe">Depois, '+P2+' a cada 30 dias. Cancelas quando quiseres.</p></div></div>';
+    '<p class="ctl-pe">Depois, '+P2+' a cada 30 dias, só se renovares.</p></div></div>';
 }
 function cartao(c){
   var cid=(c.cidade||c.bairro||'').trim(),sub=[],tit=tituloCasa(c);
@@ -1731,8 +1871,8 @@ function vantagens(nf){
 /* perguntas frequentes: as mesmas no início (as 5 primeiras de PERGUNTAS_INICIO) e na página de ajuda */
 function perguntas(){return {
   origem:['De onde vêm as casas?','Juntamos num só lugar os anúncios dos principais sites de arrendamento em Portugal, sem repetir a mesma casa. Atualizamos de 30 em 30 minutos e retiramos as que já não estão disponíveis.'],
-  custo:['Quanto custa?','Ver as casas, guardá-las e criar alertas é grátis. O acesso para contactar quem anuncia e receber os alertas no minuto custa '+P1+' nos primeiros 30 dias e depois '+P2+' a cada 30 dias, até cancelares.'],
-  cancelar:['Como cancelo?','Na tua conta, com um toque. Continuas com acesso até ao fim do período que pagaste e não voltas a ser cobrado. Avisamos-te por e-mail 3 dias antes de cada renovação, para não haver surpresas.'],
+  custo:['Quanto custa?','Ver as casas, guardá-las e criar alertas é grátis. O acesso para contactar quem anuncia e receber os alertas no minuto custa '+P1+' nos primeiros 30 dias e depois '+P2+' a cada 30 dias, se quiseres continuar. Pagas com MB WAY, referência Multibanco ou cartão.'],
+  cancelar:['Renova sozinho?','Não. O acesso dura o período que pagaste. 3 dias antes do fim mandamos-te por e-mail a referência para renovares, se quiseres. Se não pagares, o acesso acaba e não ficas a dever nada.'],
   contactar:['Como contacto quem anuncia?','Com o acesso, abres o anúncio original com um toque e falas diretamente com quem anuncia. Damos-te também uma mensagem pronta a enviar.'],
   negocio:['Como sabem se uma casa é um bom negócio?','Comparamos a renda com o normal: a mediana dos anúncios da mesma tipologia, na mesma cidade, nos últimos 30 dias. Só marcamos quando há pelo menos 6 anúncios para comparar. Se uma renda estiver 40% ou mais abaixo do normal, não a mostramos como negócio: avisamos que pode ser um erro ou uma burla.'],
   verificadas:['As casas são verificadas?','Os anúncios que vêm de outros sites não são verificados por nós. Visita sempre a casa antes de pagar, desconfia de rendas muito abaixo das outras na zona e confirma que quem anuncia é o dono.'],
@@ -2445,7 +2585,7 @@ function vPrecos(){
   var ativo=acessoAtivo();
   main.innerHTML='<div class="contentor pag-simples" style="max-width:1000px">'+
     '<h1 class="titulo" tabindex="-1">Todos os contactos por '+P1+'</h1>'+
-    '<p class="apoio">Nos primeiros 30 dias. Depois, '+P2+' a cada 30 dias, e cancelas quando quiseres.</p>'+
+    '<p class="apoio">Nos primeiros 30 dias. Depois, '+P2+' a cada 30 dias, só se quiseres continuar: não há renovação automática.</p>'+
     '<div class="planos">'+
       '<div class="plano"><h2>Grátis</h2><p class="preco-plano">0&nbsp;€</p>'+
         '<ul class="inclui">'+
@@ -2589,12 +2729,10 @@ function vConta(){
   if(!conta.sessao){vEntrar();return;}
   titulo('A minha conta');
   var a=conta.acesso,ativo=acessoAtivo(),blocoAcesso;
-  if(ativo&&a.renova){
-    blocoAcesso='<div class="bloco ativo"><h2>Acesso ativo</h2><p>Podes marcar visitas, ligar e enviar mensagens em qualquer anúncio. A próxima renovação é a <strong>'+fmtDia.format(new Date(a.ate))+'</strong>, por '+P2+'. Avisamos-te por e-mail 3 dias antes.</p>'+
-      '<button class="botao-sec" type="button" id="b-cancelar-acesso" style="align-self:flex-start">Cancelar renovação</button></div>';
-  }else if(ativo){
-    blocoAcesso='<div class="bloco"><h2>Acesso ativo até '+fmtDia.format(new Date(a.ate))+'</h2><p>Cancelaste a renovação. Não voltas a ser cobrado.</p>'+
-      '<button class="botao-sec" type="button" id="b-retomar" style="align-self:flex-start">Retomar renovação</button></div>';
+  if(ativo){
+    var fimA=Math.max((a&&a.ate)||0,(conta.acessoDisp&&conta.acessoDisp.ate)||0);
+    blocoAcesso='<div class="bloco ativo"><h2>Acesso ativo até '+fmtDia.format(new Date(fimA))+'</h2><p>Podes marcar visitas, ligar e enviar mensagens em qualquer anúncio. Não há renovação automática: 3 dias antes do fim mandamos-te a referência por e-mail, ou renovas já aqui. Os dias somam-se aos que faltam.</p>'+
+      '<button class="botao-sec" type="button" id="b-renovar" style="align-self:flex-start">Renovar por '+P2+'</button></div>';
   }else{
     blocoAcesso='<div class="bloco"><h2>Sem acesso aos contactos</h2><p>Por '+P1+' nos primeiros 30 dias, marcas visitas, ligas e envias mensagens em qualquer anúncio, e recebes os alertas no momento.</p>'+
       '<button class="botao" type="button" id="b-acesso" style="align-self:flex-start">Começar por '+P1+'</button></div>';
@@ -2627,16 +2765,8 @@ function vConta(){
         conta.sessao=false;conta.servidor=false;conta.acesso=null;conta.email='';conta.guardadas=[];conta.marketing=null;guardarConta();apagarPrefs();toast('Conta apagada.');ir('inicio');}).catch(function(){toast('Sem ligação. Tenta outra vez.');});
     });
   });
-  var bc=document.getElementById('b-cancelar-acesso');
-  if(bc)bc.addEventListener('click',function(){
-    abrirDialogo('<div class="dialogo-corpo">'+cabecaDialogo('Cancelar a renovação?')+
-      '<p style="margin:0">Continuas com acesso até '+fmtDia.format(new Date(a.ate))+'. Depois disso, não voltas a ser cobrado.</p>'+
-      '<button class="botao-sec largo" type="button" id="b-confirma-cancelar">Cancelar renovação</button>'+
-      '<button class="botao largo" type="button" data-fechar>Manter o acesso</button></div>');
-    document.getElementById('b-confirma-cancelar').addEventListener('click',function(){a.renova=false;guardarConta();dlg.close();toast('Renovação cancelada. Não voltas a ser cobrado.');vConta();foco();});
-  });
-  var br=document.getElementById('b-retomar');
-  if(br)br.addEventListener('click',function(){a.renova=true;guardarConta();toast('Renovação retomada.');vConta();foco();});
+  var brn=document.getElementById('b-renovar');
+  if(brn)brn.addEventListener('click',abrirRenovar);
   var ba=document.getElementById('b-acesso');
   if(ba)ba.addEventListener('click',function(){abrirAcesso(function(){vConta();foco();});});
 }
@@ -2940,9 +3070,9 @@ function vTermos(){
       'Nunca pagues uma entrada sem ver a casa e sem saber com quem estás a falar. Se não tiveres a certeza, usa o pagamento seguro.'])+
     sec('t-acesso','Acesso pago',[
       'O acesso deixa-te contactar quem anuncia em todas as casas e receber alertas no momento em que aparece uma casa nova. Nas casas publicadas noutros sites, o contacto é feito no anúncio original, que abres a partir da DupliCasa.',
-      'A primeira subscrição custa 1 € pelos primeiros 30 dias. Depois renova-se automaticamente por 9,99 € a cada 30 dias, até cancelares. Também há planos de 60 e 90 dias, com o preço que vês antes de pagar. Os preços que mostramos são finais.',
-      'Avisamos-te por e-mail 3 dias antes de cada renovação. Podes cancelar a qualquer momento na tua conta ou pelo link desse e-mail. Ao cancelar, continuas com acesso até ao fim do período que já pagaste e não voltas a ser cobrado.',
-      'Se uma cobrança falhar, o acesso fica suspenso até o pagamento ser feito.'])+
+      'O primeiro pagamento custa 1 € e dá 30 dias de acesso. Depois, se quiseres continuar, cada renovação custa 9,99 € por 30 dias. Também há planos de 60 e 90 dias, com o preço que vês antes de pagar. Os preços que mostramos são finais.',
+      'Pagas com MB WAY, referência Multibanco ou cartão, através da ifthenpay, instituição de pagamento autorizada pelo Banco de Portugal. Não há renovação automática nem cobranças sem a tua confirmação: cada pagamento dá os dias que escolheste, que se somam aos que ainda te faltam.',
+      '3 dias antes do fim do acesso mandamos-te por e-mail a referência Multibanco e um botão para renovares. Se não pagares, o acesso acaba nesse dia e não ficas a dever nada.'])+
     sec('t-resolucao','Desistir nos primeiros 14 dias',[
       'Tens 14 dias depois da primeira subscrição para desistir, sem dares motivo. Basta escreveres para '+mail+' com o e-mail que usaste.',
       'Como o acesso começa logo, a teu pedido, devolvemos a parte do valor que corresponde aos dias que faltam, no prazo de 14 dias e pelo mesmo meio de pagamento.'])+
@@ -2959,7 +3089,7 @@ function vTermos(){
       'Se tiveres uma reclamação, fala connosco primeiro em '+mail+'. Podes também usar o <a href="https://www.livroreclamacoes.pt" target="_blank" rel="noopener">Livro de Reclamações Eletrónico</a>.',
       'Em caso de litígio, podes recorrer a uma entidade de resolução alternativa de litígios de consumo, como o <a href="https://www.cniacc.pt" target="_blank" rel="noopener">CNIACC</a> (Centro Nacional de Informação e Arbitragem de Conflitos de Consumo). Aplica-se a lei portuguesa.'])+
     sec('t-mudancas','Mudanças nestes termos',[
-      'Se mudarmos o preço ou as condições do acesso, avisamos por e-mail pelo menos 30 dias antes. Se não concordares, podes cancelar antes da mudança.'])+
+      'Se mudarmos o preço ou as condições do acesso, avisamos por e-mail pelo menos 30 dias antes. O que já pagaste mantém-se até ao fim do período.'])+
 
     '<h2 class="termos-parte" id="t-privacidade">Política de privacidade</h2>'+
     sec('p-resp','Responsável',['O responsável pelos teus dados é '+quem+'. Contacto: '+mail+'.'])+
@@ -2970,7 +3100,7 @@ function vTermos(){
         '<li><strong>Conta:</strong> e-mail, palavra-passe (guardada cifrada, nunca a conseguimos ler), alertas, casas guardadas e preferências.</li>'+
         '<li><strong>Perfil (opcional):</strong> nome, idade, género, emprego, foto, cidade, o que procuras e descrição. Só preenches o que quiseres.</li>'+
         '<li><strong>Entrar com Google ou Facebook:</strong> recebemos o teu nome e e-mail. Nada é publicado em teu nome.</li>'+
-        '<li><strong>Acesso pago:</strong> e-mail, plano, datas e estado dos pagamentos. Os dados do cartão ou do MB WAY ficam no serviço de pagamentos e nunca passam por nós.</li>'+
+        '<li><strong>Acesso pago:</strong> e-mail, plano, datas e estado dos pagamentos. O número do MB WAY passa por nós só para pedir o pagamento e não o guardamos (fica neste dispositivo, se quiseres, para a próxima vez). Os dados do cartão são escritos na página segura do serviço de pagamentos e nunca passam por nós.</li>'+
         '<li><strong>Lista de espera do pagamento seguro:</strong> nome, e-mail e, se os deres, onde viste a casa, a renda e o link do anúncio.</li>'+
         '<li><strong>Senhorios:</strong> os dados da casa e os teus contactos que nos envias para publicar.</li>'+
       '</ul>'])+
@@ -2982,7 +3112,7 @@ function vTermos(){
         '<li>Para cumprir a lei, por exemplo guardar os dados de faturação.</li>'+
       '</ul>'])+
     sec('p-partilha','Com quem partilhamos',[
-      'Só com os serviços de que precisamos para funcionar: o alojamento do site (servidores na União Europeia), o envio de e-mails, o serviço de pagamentos e, se os usares para entrar, a Google e a Facebook. Quando algum destes serviços trata dados fora da União Europeia, fá-lo com as garantias previstas no RGPD. Não vendemos os teus dados.',
+      'Só com os serviços de que precisamos para funcionar: o alojamento do site (servidores na União Europeia), o envio de e-mails, o serviço de pagamentos (ifthenpay) e, se os usares para entrar, a Google e a Facebook. Quando algum destes serviços trata dados fora da União Europeia, fá-lo com as garantias previstas no RGPD. Não vendemos os teus dados.',
       'As fotos dos anúncios são carregadas a partir dos servidores onde estão publicadas, e o tipo de letra a partir dos servidores da Google (Google Fonts). Para os mostrar, o teu navegador liga-se a esses servidores, que ficam a saber o teu endereço IP.'])+
     sec('p-tempo','Durante quanto tempo',[
       'Os dados da conta ficam até a apagares. Os pedidos da lista de espera e dos senhorios ficam até o serviço abrir ou a casa ser publicada, e no máximo 12 meses. As estatísticas são apagadas ao fim de 400 dias. Os dados de faturação são guardados durante o prazo que a lei exige.'])+
@@ -3259,6 +3389,7 @@ function rota(){
   else if(h==='alerta-parado'){vAlertas();base='alertas';setTimeout(function(){toast('Alerta parado. Não voltas a receber e-mails dele.');},50);}
   else if(h==='perfil'){vPerfil();base='conta';}
   else if(h==='painel'){vPainel();base='conta';}
+  else if(h==='renovar'){if(conta.sessao)vConta();else vInicio();base=conta.sessao?'conta':'inicio';try{history.replaceState(null,'','#'+base);}catch(e){}setTimeout(function(){if(acessoAtivo())abrirRenovar();else abrirAcesso(function(){rota();});},60);}
   else if(h==='ajuda')vAjuda();
   else if(h==='termos')vTermos();
   else{vInicio();base='inicio';}
@@ -3325,7 +3456,7 @@ function abrirPromo(){
       '<p class="promo-preco">'+riscado()+'<strong>'+comVisto(P1)+'</strong> nos primeiros 30 dias</p>'+
       listaInclui()+
       '<div class="po-acao"><button class="botao largo" type="button" id="b-promo">Começar por '+P1+'</button>'+
-      '<p class="ajuda centro">Depois, '+P2+' a cada 30 dias. Cancelas quando quiseres.</p></div>'+
+      '<p class="ajuda centro">Depois, '+P2+' a cada 30 dias, só se renovares.</p></div>'+
     '</div>'+
   '</div>');
   var tt=dlg.querySelector('.promo-tit');if(tt)tt.focus();
@@ -3395,7 +3526,7 @@ rota();
 try{
   api('saude').then(function(r){
     if(r._estado!==200)return;
-    servidor=true;emailLigado=!!r.email;api('publico').then(function(q){if(q._estado===200)PUBLICO=q;}).catch(function(){});
+    servidor=true;emailLigado=!!r.email;PAG=r.pagamentos||[];voltaDoCartao();api('publico').then(function(q){if(q._estado===200)PUBLICO=q;}).catch(function(){});
     api('dispositivo').then(function(d){if(d._estado!==200)return;var antes=acessoAtivo();conta.acessoDisp=d.acesso||null;if(d.email&&!conta.email)conta.email=d.email;guardarConta();if(antes!==acessoAtivo())rota();}).catch(function(){});metodos={google:!!r.google,facebook:!!r.facebook,senha:!!r.senha};
     if(!conta.sessao&&/^(entrar|conta)/.test(location.hash.slice(1)))rota();
     return api('eu').then(function(u){
