@@ -247,23 +247,60 @@ def totais(melhor):
     return comuns, tot, div
 
 
+def guardar_dia(db, dia, melhor):
+    for it in ITENS:
+        for l, m in melhor[it['id']].items():
+            db.execute('insert or replace into essencial_pu values (?,?,?,?)', (dia, it['id'], COD[l], m['pu']))
+
+
+def historico(db, agora, comuns):
+    """Total de cada dia (1 pessoa, 1 semana) com os artigos que entram hoje nas contas. Se num dia faltar o preço
+    de um artigo numa loja, usa o do dia mais próximo (no máximo 3 buracos por dia; com mais, o dia não entra)."""
+    desde = (agora.date() - timedelta(days=HIST_DIAS)).isoformat()
+    pu = {}
+    for dia, art, loja, v in db.execute('select dia, artigo, loja, pu from essencial_pu where dia>=?', (desde,)):
+        pu.setdefault((art, loja), {})[dia] = v
+    dias = sorted({d for v in pu.values() for d in v})
+    out = []
+    for dia in dias:
+        tot, div, buracos = {'c': 0.0, 'p': 0.0, 'a': 0.0}, 0.0, 0
+        for it in comuns:
+            vs = {}
+            for c in 'cpa':
+                serie = pu.get((it['id'], c), {})
+                if dia in serie:
+                    v = serie[dia]
+                else:
+                    antes = [d for d in serie if d < dia]
+                    depois = [d for d in serie if d > dia]
+                    if not antes and not depois:
+                        v = None
+                    else:
+                        v = serie[max(antes)] if antes else serie[min(depois)]
+                        buracos += 1
+                vs[c] = v
+            if None in vs.values():
+                buracos = 99
+                break
+            for c in 'cpa':
+                tot[c] += vs[c] * it['q']
+            div += min(vs.values()) * it['q']
+        if buracos <= 3:
+            out.append([dia, round(tot['c'], 2), round(tot['p'], 2), round(tot['a'], 2), round(div, 2), len(comuns)])
+    return out
+
+
 def montar(prods, db, agora, tamanho, compacto_img=lambda u: u):
-    """Escolhe os produtos de hoje, guarda o ponto de hoje no histórico e devolve o bloco do resumo."""
+    """Escolhe os produtos de hoje, guarda os preços de hoje no histórico e devolve o bloco do resumo."""
     hoje = agora.date().isoformat()
     melhor = escolher(prods, tamanho)
     comuns, tot, div = totais(melhor)
-    db.execute('create table if not exists essencial(dia text, loja text, total real, artigos int, primary key(dia, loja))')
-    if not db.execute('select 1 from essencial limit 1').fetchone():
+    db.execute('create table if not exists essencial_pu(dia text, artigo text, loja text, pu real, primary key(dia, artigo, loja))')
+    if not db.execute('select 1 from essencial_pu limit 1').fetchone():
         reconstruir(db, agora, tamanho)
-    if comuns:
-        for l in ORDEM:
-            db.execute('insert or replace into essencial values (?,?,?,?)', (hoje, COD[l], tot[COD[l]], len(comuns)))
-        db.execute('insert or replace into essencial values (?,?,?,?)', (hoje, 'd', div, len(comuns)))
+    db.execute('delete from essencial_pu where dia=?', (hoje,))
+    guardar_dia(db, hoje, melhor)
     db.commit()
-    desde = (agora.date() - timedelta(days=HIST_DIAS)).isoformat()
-    hist = {}
-    for dia, loja, total, n in db.execute('select dia, loja, total, artigos from essencial where dia>=? order by dia', (desde,)):
-        hist.setdefault(dia, {'n': n})[loja] = total
     artigos = []
     for it in ITENS:
         lojas = {}
@@ -272,21 +309,24 @@ def montar(prods, db, agora, tamanho, compacto_img=lambda u: u):
             if not m:
                 continue
             p = m['p']
-            lojas[COD[l]] = [p['nome'], round(p['preco'], 2), round(m['pu'], 4), m['emb'], p.get('url') or '', 1 if (p.get('antes') or p.get('pvpr') or p.get('promo')) else 0]
+            nome = p['nome']
+            if p.get('marca') and norm(p['marca']) not in norm(nome):
+                nome = f"{nome} {p['marca']}"
+            lojas[COD[l]] = [nome, round(p['preco'], 2), round(m['pu'], 4), m['emb'], p.get('url') or '', 1 if (p.get('antes') or p.get('pvpr') or p.get('promo')) else 0]
         artigos.append({'id': it['id'], 'n': it['nome'], 'g': it['g'], 'q': it['q'], 'u': it['u'], 'l': lojas,
                         'comum': it in comuns})
     return {
         'dia': hoje, 'semanas_mes': round(SEMANAS_MES, 4), 'grupos': GRUPOS,
         'artigos': artigos, 'n': len(comuns), 'total_artigos': len(ITENS),
         'totais': tot, 'dividir': div,
-        'hist': [[d, v.get('c'), v.get('p'), v.get('a'), v.get('d'), v['n']] for d, v in sorted(hist.items())],
+        'hist': historico(db, agora, comuns),
         'faltam': [[it['nome'], [COD[l] for l in ORDEM if l not in melhor[it['id']]]] for it in ITENS if it not in comuns],
     }
 
 
 def reconstruir(db, agora, tamanho):
-    """Primeira vez: refaz o histórico do cabaz com os preços diários já guardados (preço por unidade de hoje
-    corrigido pela variação do preço da embalagem nesse dia)."""
+    """Primeira vez: refaz os preços do cabaz dos dias anteriores com os preços diários já guardados (preço por
+    unidade de hoje corrigido pela variação do preço da embalagem nesse dia)."""
     dias = [r[0] for r in db.execute('select distinct dia from precos where dia<? order by dia', (agora.date().isoformat(),))]
     if not dias:
         return
@@ -306,11 +346,4 @@ def reconstruir(db, agora, tamanho):
             if b['pun'] and ult.get((loja, pid)):
                 p['pun'] = b['pun'] * preco / ult[(loja, pid)]
             prods.append(p)
-        melhor = escolher(prods, tamanho)
-        comuns, tot, div = totais(melhor)
-        # só dias com quase todo o cabaz (no início a recolha tinha menos pesquisas)
-        if len(comuns) < len(ITENS) * 0.8:
-            continue
-        for l in ORDEM:
-            db.execute('insert or replace into essencial values (?,?,?,?)', (dia, COD[l], tot[COD[l]], len(comuns)))
-        db.execute('insert or replace into essencial values (?,?,?,?)', (dia, 'd', div, len(comuns)))
+        guardar_dia(db, dia, escolher(prods, tamanho))
