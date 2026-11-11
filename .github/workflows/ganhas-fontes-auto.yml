@@ -15,6 +15,8 @@ jobs:
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
+      - name: Playwright (com o Chrome da máquina)
+        run: pip install -q playwright
       - name: Descarregar
         run: python3 ganhas/recolha/fontes_auto.py saida
       - name: Guardar no ramo ganhas-fontes-auto

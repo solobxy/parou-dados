@@ -69,26 +69,47 @@ try:
 except Exception as e:  # noqa: BLE001
     resumo.append(f'ERRO DGAEP: {e}')
 
-# DGCP: série dos Quadros de Pessoal. O nome do ficheiro tem o último ano; tenta os anos seguintes ao que já se conhece.
-ano = dt.date.today().year
-for a in range(ano, 2023, -1):
-    for u in (f'https://www.dgcp.mtsss.gov.pt/documents/10182/10928/seriesqp_2014_{a}.xlsx',):
-        try:
-            b = obter(u, 120, tent=1)
-            if b[:2] == b'PK':
-                guardar(f'dgcp/seriesqp_2014_{a}.xlsx', b)
-                resumo.append(f'DGCP: série até {a} ({len(b)} bytes)')
-                break
-            resumo.append(f'DGCP {a}: resposta não é xlsx')
-        except Exception as e:  # noqa: BLE001
-            resumo.append(f'DGCP {a}: {e}')
-    if os.path.exists(os.path.join(SAIDA, f'dgcp/seriesqp_2014_{a}.xlsx')):
-        break
-for nome, u in (('estatisticas.html', 'https://www.dgcp.mtsss.gov.pt/estatisticas'), ('gep_qp.html', 'https://www.gep.mtsss.gov.pt/estatisticas-quadros-de-pessoal')):
-    try:
-        guardar('dgcp/' + nome, obter(u, 60, tent=1))
-    except Exception as e:  # noqa: BLE001
-        resumo.append(f'DGCP página {nome}: {e}')
+# DGCP: série dos Quadros de Pessoal (decis). O site da DGCP não manda o certificado intermédio, por isso o Python
+# recusa a ligação; o Chrome vai buscá-lo sozinho. O nome do ficheiro tem o último ano: tenta do ano corrente para trás.
+def dgcp():
+    from playwright.sync_api import sync_playwright
+    ano = dt.date.today().year
+    with sync_playwright() as p:
+        b = p.chromium.launch(channel='chrome')
+        pg = b.new_page()
+        for nome, u in (('estatisticas.html', 'https://www.dgcp.mtsss.gov.pt/estatisticas'), ('inicio.html', 'https://www.dgcp.mtsss.gov.pt/')):
+            try:
+                pg.goto(u, wait_until='domcontentloaded', timeout=60000)
+                guardar('dgcp/' + nome, pg.content().encode())
+            except Exception as e:  # noqa: BLE001
+                resumo.append(f'DGCP página {nome}: {e}')
+        html = b''.join(open(os.path.join(SAIDA, 'dgcp', n), 'rb').read() for n in ('estatisticas.html', 'inicio.html') if os.path.exists(os.path.join(SAIDA, 'dgcp', n)))
+        ligacoes = sorted(set(re.findall(rb'(/documents/[^"\'<>\s]*seriesqp_[0-9_]+\.xlsx[^"\'<>\s]*)', html)), reverse=True)
+        tentar = [l.decode() for l in ligacoes] + [f'/documents/10182/10928/seriesqp_2014_{a}.xlsx' for a in range(ano, 2023, -1)]
+        for u in tentar:
+            try:
+                b64 = pg.evaluate("""async (u) => { const r = await fetch(u, {credentials: 'omit'}); if (!r.ok) return 'ERRO ' + r.status;
+                  const a = new Uint8Array(await r.arrayBuffer()); let s = ''; for (let i = 0; i < a.length; i += 32768) s += String.fromCharCode.apply(null, a.subarray(i, i + 32768)); return btoa(s); }""", 'https://www.dgcp.mtsss.gov.pt' + u)
+            except Exception as e:  # noqa: BLE001
+                resumo.append(f'DGCP {u}: {e}'); continue
+            if b64.startswith('ERRO'):
+                resumo.append(f'DGCP {u}: {b64}'); continue
+            import base64
+            dados = base64.b64decode(b64)
+            if dados[:2] != b'PK':
+                resumo.append(f'DGCP {u}: não é xlsx'); continue
+            nome = re.search(r'seriesqp_[0-9_]+\.xlsx', u).group(0)
+            guardar('dgcp/' + nome, dados)
+            open(os.path.join(SAIDA, 'dgcp', 'url.txt'), 'w').write('https://www.dgcp.mtsss.gov.pt' + u)
+            resumo.append(f'DGCP: {nome} ({len(dados)} bytes) de {u}')
+            break
+        b.close()
+
+
+try:
+    dgcp()
+except Exception as e:  # noqa: BLE001
+    resumo.append(f'ERRO DGCP: {e}')
 
 open(os.path.join(SAIDA, 'resumo.txt'), 'w', encoding='utf-8').write('\n'.join(resumo) + '\n')
 print('\n'.join(resumo))
