@@ -29,6 +29,12 @@ jobs:
             echo "== SOA: $(dig +short ganhas.pt SOA @8.8.8.8)"
             echo "== NS no .pt: $(dig +short ganhas.pt NS @a.dns.pt | tr '\n' ' ')"
             dig ganhas.pt NS @a.dns.pt +noall +authority | head -5
+            for ns in ns1.mydnspt.net ns2.mydnspt.net; do
+              for q in "ganhas.pt SOA" "ganhas.pt A" "www.ganhas.pt A" "www.ganhas.pt CNAME" "ganhas.pt AAAA"; do
+                echo "== @$ns $q: $(dig $q @$ns +norecurse +noall +comments +answer | grep -E 'status|IN' | tr '\n' ' ' | cut -c1-300)"
+              done
+            done
+            echo "== 8.8.8.8 estado: $(dig ganhas.pt A @8.8.8.8 +noall +comments | grep status)"
             for u in https://ganhas.pt/ https://www.ganhas.pt/ http://ganhas.pt/ https://ganhas.pt/api/estado https://ganhas.pt/robots.txt; do
               echo "== $u"
               curl -sS -m 20 -o /dev/null -w 'codigo=%{http_code} destino=%{redirect_url} ip=%{remote_ip} ssl=%{ssl_verify_result}\n' "$u" 2>&1 | head -3
