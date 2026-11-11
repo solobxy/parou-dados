@@ -1,0 +1,64 @@
+{
+ "paginas": {
+  "/": 200,
+  "/calculadora/": 200,
+  "/partilhar/": 200,
+  "/profissoes/": 200,
+  "/profissoes/enfermeiro/": 200,
+  "/concelhos/": 200,
+  "/concelhos/porto/": 200,
+  "/funcao-publica/": 200,
+  "/funcao-publica/professores/": 200,
+  "/europa/": 200,
+  "/para-empresas/": 200,
+  "/dados/": 200,
+  "/metodo/": 200,
+  "/privacidade/": 200,
+  "/termos/": 200,
+  "/cookies/": 200,
+  "/empresa/": 200,
+  "/pagina-que-nao-existe/": 404,
+  "/sitemap.xml": 200,
+  "/sitemap-empresas.xml": 200,
+  "/robots.txt": 200,
+  "/llms.txt": 200,
+  "/_e.js": 200,
+  "/og/geral.png": 200,
+  "/fontes/bricolage.woff2": 200,
+  "/manifest.webmanifest": 200,
+  "/api/estado": 200,
+  "/.modelo.html": 404
+ },
+ "consola": {
+  "/pagina-que-nao-existe/": [
+   "error: Failed to load resource: the server responded with a status of 404 ()"
+  ]
+ },
+ "rede_falhas": [],
+ "passos": [
+  "OK  comparador Em 2024, 74 % de quem trabalhava a tempo completo tinha um vencimento base mais baixo do q",
+  "OK  partilhar resultado visível",
+  "FALHA estatísticas enviadas 0",
+  "OK  calculadora líquido 1.479,00 € irs − 301,00 €",
+  "OK  chamada para partilhar",
+  "OK  profissão pré-preenchida Enfermeiro",
+  "OK  partilha enviada 0.2s · Obrigado. A tua resposta conta a partir de amanhã.  Em 2024, 82 % de quem trabalhava a tempo completo tinha um vencimento base mais baixo.  No teu grupo de prof",
+  "OK  apagar pede confirmação",
+  "OK  apagar partilha"
+ ],
+ "cabecalhos": {
+  "content-security-policy": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' da",
+  "strict-transport-security": "max-age=31536000",
+  "x-frame-options": "DENY",
+  "x-content-type-options": "nosniff",
+  "referrer-policy": "strict-origin-when-cross-origin",
+  "cache-control": "no-cache"
+ },
+ "api": [
+  "200 /api/desafio",
+  "200 /api/partilhar",
+  "200 /api/apagar"
+ ],
+ "apagar_api": "{\"ok\":true,\"apagadas\":0}",
+ "estado_final": "{\"partilhas\":2}"
+}

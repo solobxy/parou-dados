@@ -1,0 +1,3 @@
+/usr/bin/google-chrome
+instalar: 0
+teste: 0

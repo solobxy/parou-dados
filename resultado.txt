@@ -1,0 +1,72 @@
+Hora: 2026-11-11T14:28:03Z
+== ganhas.pt A @8.8.8.8: 2.31.13.85 
+== ganhas.pt A @1.1.1.1: 2.31.13.85 
+== ganhas.pt AAAA @8.8.8.8: 
+== ganhas.pt AAAA @1.1.1.1: 
+== ganhas.pt CNAME @8.8.8.8: 
+== ganhas.pt CNAME @1.1.1.1: 
+== ganhas.pt TXT @8.8.8.8: "v=spf1 +a +mx +ip4:94.46.22.171 +include:_spf.cleanmx.pt ~all" "v=spf1 -all" 
+== ganhas.pt TXT @1.1.1.1: "v=spf1 -all" "v=spf1 +a +mx +ip4:94.46.22.171 +include:_spf.cleanmx.pt ~all" 
+== ganhas.pt CAA @8.8.8.8: 
+== ganhas.pt CAA @1.1.1.1: 
+== www.ganhas.pt A @8.8.8.8: ganhas.pt. 2.31.13.85 
+== www.ganhas.pt A @1.1.1.1: ganhas.pt. 2.31.13.85 
+== www.ganhas.pt AAAA @8.8.8.8: ganhas.pt. 
+== www.ganhas.pt AAAA @1.1.1.1: ganhas.pt. 
+== www.ganhas.pt CNAME @8.8.8.8: ganhas.pt. 
+== www.ganhas.pt CNAME @1.1.1.1: ganhas.pt. 
+== www.ganhas.pt TXT @8.8.8.8: ganhas.pt. "v=spf1 -all" "v=spf1 +a +mx +ip4:94.46.22.171 +include:_spf.cleanmx.pt ~all" 
+== www.ganhas.pt TXT @1.1.1.1: ganhas.pt. "v=spf1 -all" "v=spf1 +a +mx +ip4:94.46.22.171 +include:_spf.cleanmx.pt ~all" 
+== www.ganhas.pt CAA @8.8.8.8: ganhas.pt. 
+== www.ganhas.pt CAA @1.1.1.1: ganhas.pt. 
+== _dmarc TXT: "v=DMARC1;p=none;sp=none;" "v=DMARC1; p=reject;" 
+== NS: ns6.mydnspt.net. ns5.mydnspt.net. 
+== SOA: ns5.mydnspt.net. reports.ptisp.pt. 2026111105 3600 7200 1209600 86400
+== NS no .pt: 
+ganhas.pt.		7200	IN	NS	ns6.mydnspt.net.
+ganhas.pt.		7200	IN	NS	ns5.mydnspt.net.
+== @ns1.mydnspt.net ganhas.pt SOA: ;; ->>HEADER<<- opcode: QUERY, status: REFUSED, id: 64204 
+== @ns1.mydnspt.net ganhas.pt A: ;; ->>HEADER<<- opcode: QUERY, status: REFUSED, id: 18916 
+== @ns1.mydnspt.net www.ganhas.pt A: ;; ->>HEADER<<- opcode: QUERY, status: REFUSED, id: 40534 
+== @ns1.mydnspt.net www.ganhas.pt CNAME: ;; ->>HEADER<<- opcode: QUERY, status: REFUSED, id: 39554 
+== @ns1.mydnspt.net ganhas.pt AAAA: ;; ->>HEADER<<- opcode: QUERY, status: REFUSED, id: 22051 
+== @ns2.mydnspt.net ganhas.pt SOA: ;; ->>HEADER<<- opcode: QUERY, status: REFUSED, id: 64813 
+== @ns2.mydnspt.net ganhas.pt A: ;; ->>HEADER<<- opcode: QUERY, status: REFUSED, id: 41241 
+== @ns2.mydnspt.net www.ganhas.pt A: ;; ->>HEADER<<- opcode: QUERY, status: REFUSED, id: 17346 
+== @ns2.mydnspt.net www.ganhas.pt CNAME: ;; ->>HEADER<<- opcode: QUERY, status: REFUSED, id: 51951 
+== @ns2.mydnspt.net ganhas.pt AAAA: ;; ->>HEADER<<- opcode: QUERY, status: REFUSED, id: 30788 
+== 8.8.8.8 estado: ;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 40737
+== https://ganhas.pt/
+codigo=200 destino= ip=2.31.13.85 ssl=0
+== https://www.ganhas.pt/
+codigo=301 destino=https://ganhas.pt/ ip=2.31.13.85 ssl=0
+== http://ganhas.pt/
+codigo=308 destino=https://ganhas.pt/ ip=2.31.13.85 ssl=0
+== https://ganhas.pt/api/estado
+codigo=200 destino= ip=2.31.13.85 ssl=0
+== https://ganhas.pt/robots.txt
+codigo=200 destino= ip=2.31.13.85 ssl=0
+== cabeçalhos https://ganhas.pt/
+HTTP/2 200 
+accept-ranges: bytes
+alt-svc: h3=":443"; ma=2592000
+cache-control: no-cache
+content-security-policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; worker-src 'self'; manifest-src 'self'; form-action 'self'; frame-ancestors 'none'; base-uri 'none'; object-src 'none'
+content-type: text/html; charset=utf-8
+cross-origin-opener-policy: same-origin
+cross-origin-resource-policy: same-origin
+etag: "tocc2ufio"
+last-modified: Wed, 11 Nov 2026 13:56:54 GMT
+permissions-policy: geolocation=(), camera=(), microphone=(), payment=(), usb=()
+referrer-policy: strict-origin-when-cross-origin
+strict-transport-security: max-age=31536000
+x-content-type-options: nosniff
+x-frame-options: DENY
+content-length: 20112
+date: Wed, 11 Nov 2026 14:28:15 GMT
+
+== certificado
+subject=CN=ganhas.pt
+issuer=C=US, O=Let's Encrypt, CN=YE1
+notBefore=Nov 11 12:26:42 2026 GMT
+notAfter=Feb  9 12:26:41 2027 GMT
