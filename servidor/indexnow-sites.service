@@ -1,0 +1,16 @@
+[Unit]
+Description=IndexNow dos sites estáticos (caiu, ganhas, dinissousa, adribodypiercing, tapmoss)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=parou
+Group=parou
+StateDirectory=indexnow-sites
+ExecStart=/usr/bin/python3 /opt/parou/servidor/servidor/indexnow-sites.py
+TimeoutStartSec=1800
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes

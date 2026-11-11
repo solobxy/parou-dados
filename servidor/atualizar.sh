@@ -377,6 +377,15 @@ if [ -f "$SERV/vigia-projetos.sh" ]; then
   systemctl is-active --quiet vigia-projetos.timer || systemctl start vigia-projetos.timer
 fi
 
+# IndexNow dos sites estáticos (de 6 em 6 horas): avisa o Bing só das páginas novas ou mudadas
+if [ -f "$SERV/indexnow-sites.py" ]; then
+  for f in indexnow-sites.service indexnow-sites.timer; do
+    if ! cmp -s "$SERV/$f" "/etc/systemd/system/$f"; then cp "$SERV/$f" "/etc/systemd/system/$f" && systemctl daemon-reload; fi
+  done
+  systemctl is-enabled --quiet indexnow-sites.timer 2>/dev/null || systemctl enable --now indexnow-sites.timer >/dev/null 2>&1
+  systemctl is-active --quiet indexnow-sites.timer || systemctl start indexnow-sites.timer
+fi
+
 # O próprio atualizador, se mudou no repositório
 if ! cmp -s "$SERV/parou-atualizar" /usr/local/bin/parou-atualizar; then
   install -m 755 "$SERV/parou-atualizar" /usr/local/bin/parou-atualizar

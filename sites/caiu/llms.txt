@@ -1,0 +1,20 @@
+# caiu.pt
+
+> Comparador de preços dos supermercados em Portugal (Continente, Pingo Doce e Auchan). Os preços são recolhidos automaticamente várias vezes por dia. O caiu.pt diz se uma promoção é a sério (compara com o preço dos dias anteriores e com as outras lojas), soma a lista de compras em cada loja e avisa por e-mail ou notificação quando um produto seguido baixa de preço. Gratuito, sem conta.
+
+## Páginas principais
+
+- [Início e pesquisa de produtos](https://caiu.pt/): procurar um produto e ver o preço nas três lojas, as promoções a sério e as que são mais caras do que noutra loja.
+- [Preços por produto](https://caiu.pt/preco/): uma página por produto do dia a dia (azeite, leite, café, atum, detergentes…) com o preço mais barato de hoje em cada loja e o preço por litro ou quilo. Atualizadas todos os dias.
+- [Privacidade](https://caiu.pt/privacidade.html)
+
+## Como funciona
+
+- Lojas: Continente, Pingo Doce e Auchan (online, Portugal continental).
+- «Promoção a sério»: o preço de hoje é mais baixo do que o habitual nos dias anteriores, e não só mais baixo do que o PVPR.
+- «Em promoção, mais caro ao lado»: o produto está em promoção numa loja, mas outra loja tem o mesmo produto mais barato.
+- Os preços podem diferir dos da loja física e mudam ao longo do dia; a fonte é sempre o site de cada loja.
+
+## Contacto
+
+- Feito por Dinis Sousa (https://dinissousa.pt).

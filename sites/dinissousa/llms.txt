@@ -1,0 +1,18 @@
+# Dinis Sousa
+
+> Dinis Sousa faz sites de raiz para marcas e negócios em Portugal: desenho próprio para cada cliente, preço fechado (de 75 € a 690 €) e contacto direto com ele do primeiro esboço até o site estar no ar. Só se paga depois de aprovar o desenho.
+
+## Projetos feitos por ele
+
+- [PAROU](https://parou.pt): app de transportes públicos para todo o país, com tempo real e avisos de greves.
+- [DupliCasa](https://duplicasa.pt): casas e quartos para arrendar em Portugal, num só sítio.
+- [caiu.pt](https://caiu.pt): comparador de preços do Continente, Pingo Doce e Auchan.
+- [ganhas.pt](https://ganhas.pt): salários reais em Portugal e calculadora de salário líquido.
+- [AdriBodyPiercing](https://adribodypiercing.pt): site e marca de um estúdio de body piercing no Porto.
+- [tapmoss](https://tapmoss.com): jogo de browser em pixel art.
+
+## Contacto
+
+- Site: https://dinissousa.pt
+- E-mail: diniscash@gmail.com
+- Telefone: +351 913 488 258

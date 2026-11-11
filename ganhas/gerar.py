@@ -1070,6 +1070,9 @@ def ficheiros():
         destino = os.path.join(SAIDA, 'og' if nome.startswith('og-') else '', nome.replace('og-', '') if nome.startswith('og-') else nome)
         os.makedirs(os.path.dirname(destino), exist_ok=True)
         shutil.copy(os.path.join(MODELO, 'imagens', nome), destino)
+    # chave do IndexNow (servidor/indexnow-sites.py avisa o Bing das páginas novas ou mudadas)
+    with open(os.path.join(SAIDA, '442644c16cf8fc26416691d7b34ead8e.txt'), 'w') as f:
+        f.write('442644c16cf8fc26416691d7b34ead8e')
     with open(os.path.join(SAIDA, 'robots.txt'), 'w') as f:
         f.write('User-agent: *\nAllow: /\nDisallow: /api/\n\n'
                 '# Recolha automática dos dados não é permitida (ver /termos/)\n'
