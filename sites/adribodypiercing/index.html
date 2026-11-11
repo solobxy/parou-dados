@@ -129,6 +129,7 @@ p{margin:0}
 .heroi canvas{opacity:0;transition:opacity 1.2s var(--ease)}
 .heroi.pronto canvas{opacity:1}
 .heroi.pronto .palco img{opacity:0}
+.heroi.sem-3d .controlos{display:none}
 .heroi > .wrap{width:100%}
 .heroi .texto{position:relative;z-index:2;max-width:760px}
 .heroi h1 .l{display:block;overflow:hidden;padding-bottom:.2em;margin-bottom:-.14em}
@@ -1656,7 +1657,8 @@ carregarMes(mesVis, escolherMes);
 <script type="importmap">{"imports":{"three":"/three.module.min.js"}}</script>
 <script type="module">
 // Joias 3D da AdriBodyPiercing (partilhado entre o site e o render das fotos)
-import * as THREE from 'three';
+// three.js só é descarregado quando o 3D arranca (depois de a página carregar)
+let THREE;
 
 // Ambiente de estúdio (adaptado do RoomEnvironment do three.js, licença MIT)
 function studioEnv(renderer) {
@@ -1703,7 +1705,7 @@ function gemaGeo() {
   const geo = new THREE.LatheGeometry(pts, 8);
   return geo.toNonIndexed();
 }
-const GEMA = gemaGeo();
+let GEMA;
 
 function gema(r, cor) {
   const m = new THREE.Mesh(GEMA, gemaMat(cor));
@@ -1837,11 +1839,30 @@ const palco = document.getElementById('palco');
 const heroi = document.getElementById('topo');
 let renderer;
 const poupar = navigator.connection && navigator.connection.saveData;
-if (!poupar) try {
-  renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'high-performance' });
+/* O 3D arranca só depois de a página carregar e de o telemóvel estar livre: a imagem fixa aparece logo
+   e o texto fica utilizável sem esperar pelos shaders. */
+function agendar3D() { (window.requestIdleCallback || (f => setTimeout(f, 400)))(iniciar3D, { timeout: 2500 }); }
+if (document.readyState === 'complete') agendar3D(); else addEventListener('load', agendar3D, { once: true });
+async function iniciar3D() {
+const sem3D = () => heroi.classList.add('sem-3d');   // fica a imagem fixa e escondem-se os botões do 3D
+if (poupar) return sem3D();
+try { THREE = await import('three'); GEMA = gemaGeo(); } catch (e) { return sem3D(); }
+try {
+  // sem placa gráfica (só software) não há 3D: fica a imagem fixa, que é igual
+  renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'high-performance', failIfMajorPerformanceCaveat: true });
 } catch (e) { renderer = null; }
 if (renderer) {
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  // placa gráfica em software (SwiftShader, llvmpipe…): o 3D ficaria lento, por isso fica a imagem fixa
+  try {
+    const gl = renderer.getContext(), ext = gl.getExtension('WEBGL_debug_renderer_info');
+    const placa = ext ? gl.getParameter(ext.UNMASKED_RENDERER_WEBGL) : gl.getParameter(gl.RENDERER);
+    if (/swiftshader|llvmpipe|softpipe|software|basic render/i.test(placa || '')) { renderer.dispose(); renderer = null; }
+  } catch (e) {}
+}
+if (!renderer) sem3D();
+if (renderer) {
+  const toque = matchMedia('(pointer: coarse)').matches;
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, toque ? 1.5 : 2));
   renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.05;
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.setClearColor(0x000000, 0);
@@ -1870,6 +1891,7 @@ if (renderer) {
     const m = METAIS[b.dataset.metal]; corAlvo.set(m.color); rough = m.roughness;
     document.getElementById('nomeMetal').textContent = nomes[b.dataset.metal];
     giroAlvo += Math.PI * 2;
+    loop();
   }));
 
   let pausado = false;
@@ -1890,6 +1912,7 @@ if (renderer) {
     if (!arrastar) return;
     const dx = e.clientX - arrastar.x; arrastar.x = e.clientX;
     drag += dx * 0.012; dragV = dx * 0.012;
+    loop();
   }, { passive: true });
   window.addEventListener('pointerup', () => { arrastar = null; });
   window.addEventListener('pointercancel', () => { arrastar = null; });
@@ -1909,11 +1932,15 @@ if (renderer) {
   new IntersectionObserver(es => { visivel = es[0].isIntersecting; if (visivel) loop(); }, { threshold: 0 }).observe(heroi);
   document.addEventListener('visibilitychange', () => { if (!document.hidden) loop(); });
 
-  const t0 = performance.now();
+  let t0 = performance.now();
   let ang = 0, last = performance.now(), primeiro = true, aCorrer = false;
+  /* Se cada imagem custa demasiado ao processador (telemóvel fraco, poupança de energia, sem placa gráfica),
+     passa a modo leve: a joia fica parada e só se mexe quando lhe tocas ou mudas o metal. */
+  let leve = false, nFrames = 0; const custos = [], passos = [];
   function frame(t) {
     aCorrer = false;
     if (!visivel || document.hidden) return;
+    if (nFrames > 3 && passos.length < 8) passos.push(t - last);
     const dt = Math.min(0.05, (t - last) / 1000); last = t;
     const e = (t - t0) / 1000;
     if (!pausado) osc += dt;
@@ -1933,12 +1960,24 @@ if (renderer) {
     bola.position.y = 1.05 + Math.cos(e * 0.7) * 0.07;
     cor.copy([...mats][0].color).lerp(corAlvo, 0.08);
     mats.forEach(m => { m.color.copy(cor); m.roughness += (rough - m.roughness) * 0.08; });
+    const r0 = performance.now();
     renderer.render(scene, cam);
+    if (++nFrames > 3 && custos.length < 8) {
+      custos.push(performance.now() - r0);
+      const med = v => v.slice().sort((a, b) => a - b)[v.length >> 1];
+      // mais de 28 ms por imagem no processador, ou menos de ~22 imagens por segundo: modo leve
+      if (custos.length === 8 && (med(custos) > 28 || med(passos) > 45)) {
+        leve = true; renderer.setPixelRatio(1); tamanho(); t0 = performance.now() - 2000;
+      }
+    }
     if (primeiro) { primeiro = false; heroi.classList.add('pronto'); }
-    loop();
+    if (!leve || arrastar || Math.abs(dragV) > 0.0005 || Math.abs(giroAlvo - giro) > 0.002) loop();
   }
   function loop() { if (!aCorrer) { aCorrer = true; requestAnimationFrame(frame); } }
+  // compila os shaders sem bloquear o telemóvel, quando o browser o permite
+  try { if (renderer.compileAsync) await renderer.compileAsync(scene, cam); } catch (e) {}
   loop();
+}
 }
 </script>
 <script>
