@@ -1,0 +1,243 @@
+name: CI ilhas (cópia do a-bordo para um commit)
+on:
+  push:
+    branches: [ci-ilhas]
+permissions:
+  contents: write
+
+jobs:
+  a-bordo:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/checkout@v4
+        with:
+          repository: solobxy/parou
+          ref: 22b2cba0e041f8bc5c88c3cf1611037ab9508436
+          path: app
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Previsão do IPMA da costa norte da Madeira (São Vicente)
+        continue-on-error: true
+        run: |
+          mkdir -p res
+          for id in 2311000 2310900 2310300; do curl -s -m 20 "https://api.ipma.pt/open-data/forecast/meteorology/cities/daily/$id.json" | head -c 300 > res/ipma-$id.txt; echo " <- $id" >> res/ipma-$id.txt; done
+          curl -s -m 30 https://api.ipma.pt/public-data/forecast/locations.json -o res/ipma-locais.json || true
+
+      - name: Compilar a app e verificar os tipos
+        working-directory: app
+        run: |
+          npm ci --no-audit --no-fund --legacy-peer-deps || npm install --no-audit --no-fund --legacy-peer-deps
+          npx tsc --noEmit -p . > ../tipos.txt 2>&1 || true
+          echo "linhas de erro de tipos: $(wc -l < ../tipos.txt)"
+          head -60 ../tipos.txt
+          npm run build 2>&1 | tail -25
+
+      - name: Teste do detetor
+        continue-on-error: true
+        working-directory: app
+        run: |
+          mkdir -p ../res
+          APP=$PWD node --import tsx ../auditoria/a-bordo-detetor.mjs 2>&1 | tee ../res/detetor.txt | tail -60
+
+      - name: Teste da leitura da TUB (ficheiros reais da TUB e testes montados à mão)
+        continue-on-error: true
+        working-directory: app
+        run: |
+          mkdir -p ../res/tub-real
+          curl -s -m 30 -o ../res/tub-real/vehicle_positions.pb https://mobibus-gateway.fleetaware.pt/gtfs-rt/feed/vehicle_positions.pb || true
+          curl -s -m 30 -o ../res/tub-real/trip_updates.pb https://mobibus-gateway.fleetaware.pt/gtfs-rt/feed/trip_updates.pb || true
+          ls -l ../res/tub-real
+          REAIS=""
+          if [ -s ../res/tub-real/vehicle_positions.pb ] && [ -s ../res/tub-real/trip_updates.pb ]; then REAIS="$(cd ../res/tub-real && pwd)"; fi
+          FICHEIROS_TUB="$REAIS" APP=$PWD node --import tsx ../auditoria/tub-leitor.mjs 2>&1 | tee ../res/tub-leitor.txt | tail -90
+
+      - name: Teste do movimento dos autocarros (suave, sem teleportes; séries reais medidas no servidor)
+        continue-on-error: true
+        working-directory: app
+        run: |
+          mkdir -p ../res
+          APP=$PWD node --import tsx ../auditoria/trajeto-veiculo.mjs 2>&1 | grep -v "Experimental\|trace-warnings" | tee ../res/trajeto-veiculo.txt | tail -90
+          r1=${PIPESTATUS[0]}
+          APP=$PWD node --import tsx ../auditoria/seguir-pessoa.mjs 2>&1 | grep -v "Experimental\|trace-warnings" | tee ../res/seguir-pessoa.txt | tail -40
+          r2=${PIPESTATUS[0]}
+          APP=$PWD node --import tsx ../auditoria/seguir-mapa.mjs 2>&1 | grep -v "Experimental\|trace-warnings" | tee ../res/seguir-mapa.txt | tail -40
+          r3=${PIPESTATUS[0]}
+          APP=$PWD node --import tsx ../auditoria/distritos.mjs 2>&1 | grep -v "Experimental\|trace-warnings" | tee ../res/distritos.txt | tail -50
+          r4=${PIPESTATUS[0]}
+          exit $((r1 || r2 || r3 || r4))
+
+      - name: Teste dos autocarros no ecrã (todos os da zona que se vê, qualquer operador e linha; raio largo)
+        continue-on-error: true
+        working-directory: app
+        run: |
+          mkdir -p ../res
+          APP=$PWD node --import tsx ../auditoria/veiculos-no-ecra.mjs 2>&1 | grep -v "Experimental\|trace-warnings" | tee ../res/veiculos-no-ecra.txt | tail -60
+          exit ${PIPESTATUS[0]}
+
+      - name: Teste das novidades (imagens, limites de texto, nome do tema Azul)
+        continue-on-error: true
+        working-directory: app
+        run: |
+          mkdir -p ../res
+          APP=$PWD node --import tsx ../auditoria/novidades.mjs 2>&1 | grep -v "Experimental\|trace-warnings" | tee ../res/novidades.txt | tail -80
+          exit ${PIPESTATUS[0]}
+
+      - name: Teste do planeador (metro, comboio e barco têm de aparecer nas opções de viagem)
+        continue-on-error: true
+        working-directory: app
+        run: |
+          mkdir -p ../res
+          APP=$PWD node --import tsx ../auditoria/planeador-modos.mjs 2>&1 | tee ../res/planeador-modos.txt | tail -60
+          a=${PIPESTATUS[0]}
+          # o que uma pessoa que conhece a zona escolheria: só metro em vez de autocarro + metro; melhor opção em primeiro
+          APP=$PWD node --import tsx ../auditoria/planeador-preferencias.mjs 2>&1 | grep -v "Experimental\|trace-warnings" | tee ../res/planeador-preferencias.txt | tail -40
+          b=${PIPESTATUS[0]}
+          # os minutos e metros a pé contam-se pelas ruas (paragem do outro lado da linha do comboio não é "2 min")
+          APP=$PWD node --import tsx ../auditoria/planeador-a-pe-ruas.mjs 2>&1 | grep -v "Experimental\|trace-warnings" | tee ../res/planeador-a-pe-ruas.txt | tail -40
+          c=${PIPESTATUS[0]}
+          exit $(( a || b || c ))
+
+      - name: Testes da pesquisa de destinos, da cache com limite e do idioma do aparelho
+        continue-on-error: true
+        working-directory: app
+        run: |
+          mkdir -p ../res
+          for t in pesquisa-locais cache-limitada cache-linhas-perto idioma-aparelho caminho-a-pe convite-instalar nomes-paragens ilhas; do
+            echo "== $t"
+            APP=$PWD node --import tsx ../auditoria/$t.mjs 2>&1 | grep -v "Experimental\|trace-warnings" | tee ../res/$t.txt | tail -40
+          done
+
+      - name: Arrancar a app
+        working-directory: app
+        env:
+          DADOS_PEDIDOS: 
+        run: |
+          mkdir -p dados
+          if [ -n "$DADOS_PEDIDOS" ]; then export PAROU_DADOS_URL="$DADOS_PEDIDOS"; fi
+          NODE_ENV=production PORT=3000 PAROU_DATA_DIR=$PWD/dados TZ=Europe/Lisbon FOGOS_TESTE=1 nohup node --import tsx server.ts > app.log 2>&1 &
+          for i in $(seq 1 60); do curl -s -m 5 http://127.0.0.1:3000/api/transit/loading-status | grep -q '"isLoading":false' && break; sleep 5; done
+          sleep 5
+
+      - name: "Teste dos desenhos pela estrada (dados reais: linhas e viagens seguem a estrada, não atravessam prédios)"
+        continue-on-error: true
+        working-directory: app
+        run: |
+          mkdir -p ../res
+          APP=$PWD BASE=http://127.0.0.1:3000 DB=$PWD/dados/gtfs.db node --import tsx ../auditoria/percurso-estrada.mjs 2>&1 | grep -v "Experimental\|trace-warnings" | tee ../res/percurso-estrada.txt | tail -90
+          exit ${PIPESTATUS[0]}
+
+      - name: "Teste da rapidez das páginas das paragens (e o /health com carga)"
+        continue-on-error: true
+        working-directory: app
+        run: |
+          mkdir -p ../res
+          APP=$PWD BASE=http://127.0.0.1:3000 node ../auditoria/paginas-rapidas.mjs 2>&1 | tee ../res/paginas-rapidas.txt | tail -30
+          BASE=http://127.0.0.1:3000 node ../auditoria/seo-paginas.mjs 2>&1 | tee ../res/seo-paginas.txt | tail -60
+          BASE=http://127.0.0.1:3000 node ../auditoria/seo-linguas.mjs 2>&1 | tee ../res/seo-linguas.txt | tail -60
+          BASE=http://127.0.0.1:3000 node ../auditoria/seo-respostas.mjs 2>&1 | tee ../res/seo-respostas.txt | tail -60
+          (APP=$PWD node --import tsx ../auditoria/robos.mjs 2>&1 | grep -v "Experimental\|trace-warnings") | tee ../res/robos.txt | tail -30
+          (APP=$PWD node --import tsx ../auditoria/titulos-linhas.mjs 2>&1 | grep -v "Experimental\|trace-warnings") | tee ../res/titulos-linhas.txt | tail -20
+          BASE=http://127.0.0.1:3000 node ../auditoria/estatisticas-etiqueta.mjs 2>&1 | tee ../res/estatisticas-etiqueta.txt | tail -20
+          exit ${PIPESTATUS[0]}
+
+      - name: "Teste das funções do desenho (polilinha, encaixe das paragens, troços)"
+        continue-on-error: true
+        working-directory: app
+        run: |
+          mkdir -p ../res
+          APP=$PWD node --import tsx ../auditoria/caminho.mjs 2>&1 | grep -v "Experimental\|trace-warnings" | tee ../res/caminho.txt | tail -60
+          exit ${PIPESTATUS[0]}
+
+      - name: Instalar Playwright
+        run: |
+          cd auditoria && npm init -y >/dev/null && npm i --no-audit --no-fund playwright@1 >/dev/null && npx playwright install --with-deps chromium webkit >/dev/null
+
+      - name: Testar e fotografar
+        continue-on-error: true
+        working-directory: auditoria
+        run: |
+          mkdir -p ../res
+          SAIDA=../res RAPIDO=1 timeout 1800 node a-bordo.mjs 2>&1 | tee ../res/consola.txt | tail -250
+
+      - name: Testar que um erro não aparece como «sem resultados» (planeador e horários, browser)
+        continue-on-error: true
+        working-directory: auditoria
+        run: |
+          mkdir -p ../res
+          SAIDA=../res timeout 300 node estados-erro.mjs 2>&1 | tee ../res/estados-erro.txt | tail -40
+          exit ${PIPESTATUS[0]}
+
+      - name: Testar o primeiro ecrã sem localização (pontos de partida, browser)
+        continue-on-error: true
+        working-directory: auditoria
+        run: |
+          mkdir -p ../res
+          SAIDA=../res timeout 300 node pontos-partida.mjs 2>&1 | tee ../res/pontos-partida.txt | tail -20
+          exit ${PIPESTATUS[0]}
+
+      - name: Testar as linhas mais procuradas (servidor e browser)
+        continue-on-error: true
+        working-directory: auditoria
+        run: |
+          mkdir -p ../res
+          (cd ../app && APP=$PWD node --import tsx ../auditoria/mais-procuradas.mjs 2>&1 | grep -v "Experimental\|trace-warnings") | tee ../res/mais-procuradas.txt | tail -30
+          SAIDA=../res timeout 300 node horarios-novos.mjs 2>&1 | tee ../res/horarios-novos.txt | tail -40
+          (cd ../app && APP=$PWD node --import tsx ../auditoria/cm-passagens.mjs 2>&1 | grep -v "Experimental\|trace-warnings") | tee ../res/cm-passagens.txt | tail -20
+
+      - name: Testar os avisos das linhas guardadas (servidor e browser)
+        continue-on-error: true
+        working-directory: auditoria
+        run: |
+          mkdir -p ../res
+          (cd ../app && APP=$PWD node --import tsx ../auditoria/avisos-linha.mjs 2>&1 | grep -v "Experimental\|trace-warnings") | tee ../res/avisos-linha.txt | tail -40
+          SAIDA=../res timeout 300 node avisos-linha-ui.mjs 2>&1 | tee ../res/avisos-linha-ui.txt | tail -40
+
+      - name: Testar o movimento dos autocarros no mapa (browser)
+        continue-on-error: true
+        working-directory: auditoria
+        run: |
+          mkdir -p ../res
+          SAIDA=../res timeout 300 node mapa-suave.mjs 2>&1 | tee ../res/suave.txt | tail -40
+          exit ${PIPESTATUS[0]}
+
+      - name: Testar que o mapa mostra todos os autocarros do ecrã (browser)
+        continue-on-error: true
+        working-directory: auditoria
+        run: |
+          mkdir -p ../res
+          SAIDA=../res timeout 300 node mapa-todos.mjs 2>&1 | tee ../res/todos.txt | tail -40
+          exit ${PIPESTATUS[0]}
+
+      - name: Testar as imagens dos posts da Comunidade (browser)
+        continue-on-error: true
+        working-directory: auditoria
+        run: |
+          mkdir -p ../res
+          SAIDA=../res timeout 300 node post-imagem.mjs 2>&1 | tee ../res/post-imagem.txt | tail -50
+          exit ${PIPESTATUS[0]}
+
+      - name: Testar que a bola do autocarro vai em cima de mim quando estou a bordo (browser)
+        continue-on-error: true
+        working-directory: auditoria
+        run: |
+          mkdir -p ../res
+          SAIDA=../res timeout 400 node a-bordo-segue.mjs 2>&1 | tee ../res/a-bordo-segue.txt | tail -40
+          exit ${PIPESTATUS[0]}
+
+      - name: Guardar
+        if: always()
+        env:
+          RAMO_RESULTADO: ci-ilhas-resultado
+        run: |
+          cp tipos.txt res/ 2>/dev/null || true
+          tail -80 app/app.log > res/servidor.txt 2>/dev/null || true
+          mkdir -p pub && cp -r res/* pub/ 2>/dev/null || echo "sem resultados" > pub/vazio.txt
+          cd pub && git init -q -b "${RAMO_RESULTADO}"
+          git config user.name "parou-dados"; git config user.email "actions@users.noreply.github.com"
+          git add -A && git commit -q -m "A bordo 22b2cba0e041f8bc5c88c3cf1611037ab9508436 $(date -u +%Y-%m-%dT%H:%MZ)" && git push -q -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" "${RAMO_RESULTADO}"
