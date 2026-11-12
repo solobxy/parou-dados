@@ -1,0 +1,12 @@
+webkit nova 1633 ms: {"src":"img/caiu-480.webp","completo":true,"larg":480,"op":"1","vis":"visible","cls":"carta s0"}
+webkit nova 3547 ms: {"src":"img/caiu-480.webp","completo":true,"larg":480,"op":"1","vis":"visible","cls":"carta s0"}
+webkit nova 5236 ms: {"src":"img/caiu-480.webp","completo":true,"larg":480,"op":"1","vis":"visible","cls":"carta s0"}
+webkit antiga 1562 ms: {"src":"img/adri-480.webp","completo":true,"larg":480,"op":"1","vis":"visible","cls":"carta s0"}
+webkit antiga 4599 ms: {"src":"img/adri-480.webp","completo":true,"larg":480,"op":"1","vis":"visible","cls":"carta s0"}
+webkit antiga 6351 ms: {"src":"img/anjinho-480.webp","completo":true,"larg":480,"op":"1","vis":"visible","cls":"carta s0"}
+chromium nova 1222 ms: {"src":"img/caiu-480.webp","completo":true,"larg":480,"op":"1","vis":"visible","cls":"carta s0"}
+chromium nova 2992 ms: {"src":"img/caiu-480.webp","completo":true,"larg":480,"op":"1","vis":"visible","cls":"carta s0"}
+chromium nova 4506 ms: {"src":"img/caiu-480.webp","completo":true,"larg":480,"op":"1","vis":"visible","cls":"carta s0"}
+chromium antiga 1152 ms: {"src":"img/adri-480.webp","completo":true,"larg":480,"op":"1","vis":"visible","cls":"carta s0"}
+chromium antiga 2920 ms: {"src":"img/adri-480.webp","completo":true,"larg":480,"op":"1","vis":"visible","cls":"carta s0"}
+chromium antiga 4489 ms: {"src":"img/adri-480.webp","completo":true,"larg":480,"op":"1","vis":"visible","cls":"carta s0"}
