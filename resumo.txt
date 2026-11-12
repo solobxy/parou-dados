@@ -1,0 +1,55 @@
+
+=== https://adribodypiercing.pt/  (3 medições, todas: 98/99/100)
+  notas {"performance":99,"accessibility":100,"best-practices":100,"seo":100}
+  LCP 1.3 s | CLS 0 | TBT 110 ms | FCP 1.3 s | peso Total size was 1,327 KiB
+  ✗ [best-practices] Missing source maps for large first-party JavaScript
+
+=== https://caiu.pt/  (3 medições, todas: 98/100/100)
+  notas {"performance":100,"accessibility":100,"best-practices":100,"seo":100}
+  LCP 1.4 s | CLS 0.014 | TBT 10 ms | FCP 1.4 s | peso Total size was 266 KiB
+  ✗ [accessibility] Elements with visible text labels do not have matching accessible names.
+  → Eliminate render-blocking resources: ~204 ms
+
+=== https://dinissousa.pt/  (3 medições, todas: 92/93/97)
+  notas {"performance":93,"accessibility":96,"best-practices":100,"seo":100}
+  LCP 3.0 s | CLS 0 | TBT 160 ms | FCP 1.1 s | peso Total size was 710 KiB
+  ✗ [performance] Largest Contentful Paint: 3.0 s
+  ✗ [accessibility] Background and foreground colors do not have a sufficient contrast ratio.
+  → Properly size images: ~300 ms
+
+=== https://duplicasa.pt/  (3 medições, todas: 75/75/81)
+  notas {"performance":75,"accessibility":100,"best-practices":96,"seo":100}
+  LCP 3.7 s | CLS 0 | TBT 480 ms | FCP 2.1 s | peso Total size was 474 KiB
+  ✗ [performance] First Contentful Paint: 2.1 s
+  ✗ [performance] Largest Contentful Paint: 3.7 s
+  ✗ [performance] Total Blocking Time: 480 ms
+  ✗ [best-practices] Browser errors were logged to the console
+  → Reduce unused JavaScript: ~280 ms
+
+=== https://ganhas.pt/  (3 medições, todas: 99/100/100)
+  notas {"performance":100,"accessibility":100,"best-practices":100,"seo":100}
+  LCP 1.7 s | CLS 0 | TBT 0 ms | FCP 0.8 s | peso Total size was 214 KiB
+
+=== https://parou.pt/  (3 medições, todas: 68/76/76)
+  notas {"performance":76,"accessibility":100,"best-practices":96,"seo":100}
+  LCP 4.9 s | CLS 0.005 | TBT 0 ms | FCP 3.1 s | peso Total size was 726 KiB
+  ✗ [performance] First Contentful Paint: 3.1 s
+  ✗ [performance] Largest Contentful Paint: 4.9 s
+  ✗ [best-practices] Serves images with low resolution
+  ✗ [best-practices] Missing source maps for large first-party JavaScript
+  → Preload Largest Contentful Paint image: ~624 ms
+  → Reduce unused JavaScript: ~600 ms
+  → Serve images in next-gen formats: ~450 ms
+
+=== https://parou.pt/linhas/unir/8017-fanzeres-montezelo-campanha-estacao-via-centro-de-saude  (3 medições, todas: 100/100/100)
+  notas {"performance":100,"accessibility":100,"best-practices":100,"seo":100}
+  LCP 1.7 s | CLS 0 | TBT 20 ms | FCP 0.9 s | peso Total size was 106 KiB
+
+=== Dados reais (CrUX, 28 dias, perfil mobile)
+https://parou.pt/ | página: sem dados | origem: sem dados
+https://parou.pt/linhas/unir/8017-fanzeres-montezelo-campanha-estacao-via-centro-de-saude | página: sem dados | origem: sem dados
+https://caiu.pt/ | página: sem dados | origem: sem dados
+https://ganhas.pt/ | página: sem dados | origem: sem dados
+https://duplicasa.pt/ | página: sem dados | origem: sem dados
+https://dinissousa.pt/ | página: sem dados | origem: sem dados
+https://adribodypiercing.pt/ | página: sem dados | origem: sem dados
