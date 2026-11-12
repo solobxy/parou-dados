@@ -43,8 +43,10 @@ recebe um identificador que muda todos os dias. Estes dados são agregados e gua
 
 <h2>O que publicamos e o que nunca publicamos</h2>
 <p>Publicamos números agregados: por exemplo, a mediana de uma profissão num distrito ou numa empresa. Só aparece um
-número quando há pelo menos 5 pessoas diferentes, os valores são arredondados à dezena e cada partilha só entra nas
-contas 24 horas depois, para não se perceber quem acabou de responder.</p>
+número quando há pelo menos 5 pessoas diferentes, os valores são arredondados (a 50 € enquanto houver menos de 10
+pessoas, à dezena a partir daí) e cada partilha só entra nas contas 24 horas depois, para não se perceber quem acabou de
+responder. Um recorte mais pequeno, como uma profissão num distrito, só aparece se o resto também tiver 5 ou mais
+pessoas, para não se chegar a alguém pela diferença entre dois números.</p>
 <p>Nunca publicamos nem vendemos respostas individuais. Podemos usar e disponibilizar, também a empresas, estatísticas
 agregadas que respeitem estas mesmas regras.</p>
 
@@ -163,7 +165,8 @@ com estimativas próprias.</p>
 <ul>
 <li>Só aparece um número quando há <strong>pelo menos 5 pessoas diferentes</strong> (contadas por dispositivo e por ligação).</li>
 <li>Cada partilha só entra nas contas <strong>24 horas depois</strong>.</li>
-<li>Os valores são <strong>arredondados à dezena</strong> e mostramos mediana e quartis, nunca valores individuais.</li>
+<li>Os valores são <strong>arredondados a 50 € enquanto houver menos de 10 pessoas</strong> e à dezena a partir daí. Mostramos mediana e quartis, nunca valores individuais.</li>
+<li>Uma profissão num distrito ou numa empresa só aparece se o resto da profissão (ou da empresa) também tiver 0 ou pelo menos 5 pessoas: assim não se chega a uma pessoa pela diferença entre dois números.</li>
 <li>Salários abaixo de 75 % do salário mínimo a tempo completo, ou fora do plausível para a profissão, ficam de fora.</li>
 <li>Para travar robôs, cada envio resolve um pequeno cálculo no teu aparelho (prova de trabalho) e há limites por ligação e por aparelho.</li>
 <li>Salários de quem trabalha menos horas são convertidos para 40 horas semanais antes de comparar.</li>

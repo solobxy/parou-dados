@@ -516,9 +516,9 @@
     fetch('/api/resumo?' + com.dataset.comunidade, { cache: 'default' }).then((r) => r.json()).then((j) => {
       if (j.mediana) {
         com.innerHTML = '<p class="res-frase">Mediana na comunidade: <span class="mk on">' + euro(j.mediana) + '</span></p>' +
-          '<p class="res-extra">Metade entre ' + euro(j.p25) + ' e ' + euro(j.p75) + ' · ' + j.n + ' pessoas · valores brutos a 40 h por semana, arredondados à dezena.</p>';
+          '<p class="res-extra">Metade entre ' + euro(j.p25) + ' e ' + euro(j.p75) + ' · ' + j.n + ' pessoas · valores brutos a 40 h por semana, ' + (j.passo === 50 ? 'arredondados a 50 €' : 'arredondados à dezena') + '.</p>';
       } else {
-        com.innerHTML = '<p class="lede">Ainda há ' + (j.n || 0) + ' ' + ((j.n || 0) === 1 ? 'partilha' : 'partilhas') + '. Mostramos a mediana quando houver 5 pessoas diferentes (faltam ' + (j.faltam || 5) + ').</p>';
+        com.innerHTML = '<p class="lede">Ainda há ' + (j.n || 0) + ' ' + ((j.n || 0) === 1 ? 'partilha' : 'partilhas') + '. Mostramos a mediana, o intervalo e o número de respostas quando houver 5 pessoas diferentes (faltam ' + (j.faltam || 5) + ').</p>';
       }
     }).catch(() => { com.innerHTML = '<p class="lede">Não foi possível carregar as partilhas agora.</p>'; });
   }

@@ -800,7 +800,7 @@ www.caiu.pt {
 
 # GANHAS.PT - salários reais em Portugal (estático em /var/www/ganhas, gerado por ganhas/gerar.py para sites/ganhas).
 # Partilhas anónimas pela API ganhas-api.service (127.0.0.1:3140). Páginas das empresas (só com 5 ou mais pessoas)
-# geradas no servidor por ganhas/paginas_empresas.py para /var/lib/ganhas-paginas.
+# e da comunidade por profissão e distrito geradas no servidor por ganhas/paginas_empresas.py para /var/lib/ganhas-paginas.
 (ganhas) {
 	import estatisticas
 	encode zstd gzip
@@ -839,6 +839,25 @@ www.caiu.pt {
 	handle /sitemap-empresas.xml {
 		root * /var/lib/ganhas-paginas
 		header Cache-Control "public, max-age=3600"
+		file_server
+	}
+	handle /sitemap-comunidade.xml {
+		root * /var/lib/ganhas-paginas
+		header Cache-Control "public, max-age=3600"
+		file_server
+	}
+	# Profissões com números da comunidade (5 ou mais pessoas) e profissão num distrito: geradas de hora a hora no
+	# servidor; quando não há versão do servidor, serve a página estática (e um distrito sem números dá 404).
+	@comunidade {
+		path /profissoes/*
+		file {
+			root /var/lib/ganhas-paginas
+			try_files {path}index.html
+		}
+	}
+	handle @comunidade {
+		root * /var/lib/ganhas-paginas
+		header Cache-Control "public, max-age=900"
 		file_server
 	}
 	handle {

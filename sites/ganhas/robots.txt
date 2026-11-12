@@ -8,3 +8,4 @@ Disallow: /
 
 Sitemap: https://ganhas.pt/sitemap.xml
 Sitemap: https://ganhas.pt/sitemap-empresas.xml
+Sitemap: https://ganhas.pt/sitemap-comunidade.xml

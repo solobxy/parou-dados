@@ -16,7 +16,8 @@ diferentes numa empresa, nunca para seguir alguém de um dia para o outro).
 Proteções: prova de trabalho assinada (HMAC) e de uso único; campo-isco; tempo mínimo de preenchimento;
 limites por IP-dia e por dispositivo; teto global por hora; só JSON, até 8 KB, de uma origem aceite;
 validação de todos os campos no servidor; valores fora do plausível ficam marcados e não entram nas contas;
-os números públicos usam só partilhas com mais de 24 h, n ≥ 5 pessoas diferentes e valores arredondados.
+os números públicos usam só partilhas com mais de 24 h, n ≥ 5 pessoas diferentes, valores arredondados e supressão
+complementar (regras em agregados.py).
 """
 import hashlib, hmac, json, math, os, re, secrets, sqlite3, sys, threading, time, unicodedata
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -28,10 +29,12 @@ PORTA = int(os.environ.get('GANHAS_PORTA', '3140'))
 ORIGENS = set((os.environ.get('ORIGENS') or 'https://ganhas.pt https://www.ganhas.pt').split())
 POW_BITS_BASE = int(os.environ.get('POW_BITS', '17'))
 MAX_CORPO = 8 * 1024
-K_MIN = 5                   # pessoas diferentes antes de mostrar qualquer número da comunidade
 ATRASO_PUBLICO = 24 * 3600  # uma partilha só entra nos números públicos ao fim de 24 h
 TETO_HORA = 400             # partilhas por hora no site todo antes de endurecer a prova de trabalho
 SALARIO_MIN, SALARIO_MAX = 200, 40000  # € brutos por mês aceites (fora disto é recusado)
+
+sys.path.insert(0, AQUI)
+import agregados  # noqa: E402  regras dos números públicos (K, arredondamento, supressão complementar)
 
 with open(os.path.join(AQUI, 'catalogo.json'), encoding='utf-8') as f:
     CATALOGO = json.load(f)
@@ -189,29 +192,24 @@ def normalizar_empresa(nome):
     return mostrar, ident
 
 
-def quantil(ordenados, q):
-    if not ordenados:
-        return None
-    pos = (len(ordenados) - 1) * q
-    a, b = math.floor(pos), math.ceil(pos)
-    return ordenados[a] + (ordenados[b] - ordenados[a]) * (pos - a)
-
-
-def arred(v, passo=10):
-    return int(round(v / passo) * passo) if v is not None else None
+def linhas_publicas(c, onde, args):
+    limiar = int(time.time()) - ATRASO_PUBLICO
+    return c.execute(f"SELECT bruto_mes * 40.0 / horas, ip_dia, dispositivo, id FROM partilhas WHERE estado='ok' "
+                     f"AND criado < ? AND {onde}", [limiar] + list(args)).fetchall()
 
 
 def resumo(c, onde, args):
-    limiar = int(time.time()) - ATRASO_PUBLICO
-    linhas = c.execute(f"SELECT bruto_mes * 40.0 / horas, ip_dia, dispositivo FROM partilhas WHERE estado='ok' "
-                       f"AND criado < ? AND {onde}", [limiar] + list(args)).fetchall()
-    pessoas = len({(r[1], r[2]) for r in linhas})
-    ips = len({r[1] for r in linhas})
-    n = min(pessoas, ips)
-    if n < K_MIN:
-        return {'n': n, 'faltam': K_MIN - n}
-    v = sorted(r[0] for r in linhas)
-    return {'n': n, 'p25': arred(quantil(v, .25)), 'mediana': arred(quantil(v, .5)), 'p75': arred(quantil(v, .75))}
+    return agregados.resumo(linhas_publicas(c, onde, args))
+
+
+def resumo_distrito(c, prof, dist):
+    """Profissão num distrito: as mesmas regras da página /profissoes/<p>/<distrito>/ (supressão complementar)."""
+    sub = linhas_publicas(c, 'profissao=? AND distrito=?', [prof, dist])
+    pai = linhas_publicas(c, 'profissao=?', [prof])
+    r = agregados.resumo(sub)
+    if 'mediana' in r and not agregados.pode_mostrar(sub, pai):
+        return {'n': r['n'], 'oculto': True}
+    return r
 
 
 # ---------- validação ----------
@@ -307,16 +305,15 @@ class Pedido(BaseHTTPRequestHandler):
                     return self.responder(400, {'erro': 'Distrito desconhecido.'})
                 if emp and not re.fullmatch(r'[a-z0-9-]{1,80}', emp):
                     return self.responder(400, {'erro': 'Empresa inválida.'})
-                onde, args = ['1=1'], []
-                if prof:
-                    onde.append('profissao=?'); args.append(prof)
-                if dist:
-                    onde.append('distrito=?'); args.append(dist)
-                if emp:
-                    onde.append('empresa_id=?'); args.append(emp)
-                if not (prof or emp):
-                    return self.responder(400, {'erro': 'Indica a profissão ou a empresa.'})
-                return self.responder(200, resumo(c, ' AND '.join(onde), args), cache='public, max-age=600')
+                # só as combinações que também aparecem nas páginas: profissão, profissão num distrito, ou empresa.
+                # Cruzar mais (empresa com profissão ou distrito) deixava chegar a muito poucas pessoas por diferença.
+                if prof and not emp:
+                    r = resumo_distrito(c, prof, dist) if dist else resumo(c, 'profissao=?', [prof])
+                elif emp and not (prof or dist):
+                    r = resumo(c, 'empresa_id=?', [emp])
+                else:
+                    return self.responder(400, {'erro': 'Indica a profissão (com ou sem distrito) ou só a empresa.'})
+                return self.responder(200, r, cache='public, max-age=600')
             finally:
                 c.close()
         if u.path == '/api/estado':
