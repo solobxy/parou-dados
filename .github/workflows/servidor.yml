@@ -32,6 +32,10 @@ on:
         description: "Comando a correr no servidor (só para acao=comando)"
         required: false
         default: "uptime"
+      ramo:
+        description: "Ramo onde fica o resultado (para pedidos em paralelo)"
+        required: false
+        default: "servidor-resultado"
 
 permissions:
   contents: write
@@ -260,8 +264,8 @@ jobs:
       - name: Guardar o resultado
         if: always()
         run: |
-          mkdir pub && cp resultado.txt pub/ && cd pub && git init -q -b servidor-resultado
+          mkdir pub && cp resultado.txt pub/ && cd pub && git init -q -b "${{ inputs.ramo || 'servidor-resultado' }}"
           git config user.name "parou-dados"
           git config user.email "actions@users.noreply.github.com"
           git add -A && git commit -q -m "Servidor ${{ inputs.acao }} $(date -u +%Y-%m-%dT%H:%MZ)"
-          git push -q -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" servidor-resultado
+          git push -q -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" "${{ inputs.ramo || 'servidor-resultado' }}"
