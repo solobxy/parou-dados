@@ -1,0 +1,49 @@
+
+=== https://adribodypiercing.pt/  (3 medições, todas: 100/100/100)
+  notas {"performance":100,"accessibility":100,"best-practices":100,"seo":100}
+  LCP 0.4 s | CLS 0.036 | TBT 0 ms | FCP 0.4 s | peso Total size was 1,327 KiB
+  ✗ [best-practices] Missing source maps for large first-party JavaScript
+
+=== https://caiu.pt/  (3 medições, todas: 0/0/98)
+  notas {"performance":0,"accessibility":100,"best-practices":0,"seo":100}
+  LCP undefined | CLS undefined | TBT undefined | FCP undefined | peso Total size was 330 KiB
+
+=== https://dinissousa.pt/  (3 medições, todas: 100/100/100)
+  notas {"performance":100,"accessibility":96,"best-practices":100,"seo":100}
+  LCP 0.5 s | CLS 0 | TBT 0 ms | FCP 0.5 s | peso Total size was 828 KiB
+  ✗ [accessibility] Background and foreground colors do not have a sufficient contrast ratio.
+
+=== https://duplicasa.pt/  (3 medições, todas: 91/92/92)
+  notas {"performance":92,"accessibility":100,"best-practices":96,"seo":100}
+  LCP 1.5 s | CLS 0.034 | TBT 10 ms | FCP 1.0 s | peso Total size was 604 KiB
+  ✗ [performance] First Contentful Paint: 1.0 s
+  ✗ [performance] Largest Contentful Paint: 1.5 s
+  ✗ [performance] Speed Index: 1.4 s
+  ✗ [best-practices] Browser errors were logged to the console
+  → Reduce unused JavaScript: ~160 ms
+
+=== https://ganhas.pt/  (3 medições, todas: 100/100/100)
+  notas {"performance":100,"accessibility":100,"best-practices":100,"seo":100}
+  LCP 0.4 s | CLS 0 | TBT 0 ms | FCP 0.2 s | peso Total size was 214 KiB
+
+=== https://parou.pt/  (3 medições, todas: 90/90/90)
+  notas {"performance":90,"accessibility":100,"best-practices":100,"seo":100}
+  LCP 1.8 s | CLS 0.004 | TBT 0 ms | FCP 1.0 s | peso Total size was 1,228 KiB
+  ✗ [performance] First Contentful Paint: 1.0 s
+  ✗ [performance] Largest Contentful Paint: 1.8 s
+  ✗ [performance] Speed Index: 1.4 s
+  ✗ [best-practices] Missing source maps for large first-party JavaScript
+  → Serve images in next-gen formats: ~280 ms
+
+=== https://parou.pt/linhas/unir/8017-fanzeres-montezelo-campanha-estacao-via-centro-de-saude  (3 medições, todas: 100/100/100)
+  notas {"performance":100,"accessibility":100,"best-practices":100,"seo":100}
+  LCP 0.6 s | CLS 0.003 | TBT 0 ms | FCP 0.3 s | peso Total size was 106 KiB
+
+=== Dados reais (CrUX, 28 dias, perfil desktop)
+https://parou.pt/ | página: sem dados | origem: sem dados
+https://parou.pt/linhas/unir/8017-fanzeres-montezelo-campanha-estacao-via-centro-de-saude | página: sem dados | origem: sem dados
+https://caiu.pt/ | página: sem dados | origem: sem dados
+https://ganhas.pt/ | página: sem dados | origem: sem dados
+https://duplicasa.pt/ | página: sem dados | origem: sem dados
+https://dinissousa.pt/ | página: sem dados | origem: sem dados
+https://adribodypiercing.pt/ | página: sem dados | origem: sem dados
