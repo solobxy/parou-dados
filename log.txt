@@ -1,0 +1,30 @@
+chromium-390: nome no baralho depois de ~13 s: PAROU
+  grelha: #caiu@160,28x163 #ganhas@160,199x163 #parou@272,28x163 #adri@272,199x163 #duplicasa@384,28x163 #goodman@384,199x163 #tapmoss@496,28x334 #anjinho@608,28x163 #jinxed@608,199x163
+  artigos: caiu ganhas parou adri duplicasa goodman tapmoss anjinho jinxed
+  frase: Um comparador de preços, um site de salários, uma app de transportes, um estúdio de piercing, um site de arrendamento, um advogado com IA, um jogo em pixel art, uma loja coquette e uma marca gótica. Todos feitos por mim. O próximo pode ser o teu.
+  scroll lateral: false
+  erros: nenhum
+chromium-1280: nome no baralho depois de ~13 s: PAROU
+  grelha: #caiu@340,64x379 #ganhas@340,451x379 #parou@340,837x185 #adri@340,1031x185 #duplicasa@468,64x185 #goodman@468,257x185 #tapmoss@468,451x379 #anjinho@468,837x185 #jinxed@468,1031x185
+  artigos: caiu ganhas parou adri duplicasa goodman tapmoss anjinho jinxed
+  frase: Um comparador de preços, um site de salários, uma app de transportes, um estúdio de piercing, um site de arrendamento, um advogado com IA, um jogo em pixel art, uma loja coquette e uma marca gótica. Todos feitos por mim. O próximo pode ser o teu.
+  scroll lateral: false
+  erros: nenhum
+chromium-800: nome no baralho depois de ~13 s: PAROU
+  grelha: #caiu@326,48x229 #ganhas@326,285x229 #parou@326,523x229 #adri@454,48x229 #duplicasa@454,285x229 #goodman@454,523x229 #tapmoss@582,48x229 #anjinho@582,285x229 #jinxed@582,523x229
+  artigos: caiu ganhas parou adri duplicasa goodman tapmoss anjinho jinxed
+  frase: Um comparador de preços, um site de salários, uma app de transportes, um estúdio de piercing, um site de arrendamento, um advogado com IA, um jogo em pixel art, uma loja coquette e uma marca gótica. Todos feitos por mim. O próximo pode ser o teu.
+  scroll lateral: false
+  erros: nenhum
+webkit-390: nome no baralho depois de ~13 s: PAROU
+  grelha: #caiu@160,28x163 #ganhas@160,199x163 #parou@272,28x163 #adri@272,199x163 #duplicasa@384,28x163 #goodman@384,199x163 #tapmoss@496,28x334 #anjinho@608,28x163 #jinxed@608,199x163
+  artigos: caiu ganhas parou adri duplicasa goodman tapmoss anjinho jinxed
+  frase: Um comparador de preços, um site de salários, uma app de transportes, um estúdio de piercing, um site de arrendamento, um advogado com IA, um jogo em pixel art, uma loja coquette e uma marca gótica. Todos feitos por mim. O próximo pode ser o teu.
+  scroll lateral: false
+  erros: nenhum
+webkit-1280: nome no baralho depois de ~13 s: PAROU
+  grelha: #caiu@340,64x379 #ganhas@340,451x379 #parou@340,837x185 #adri@340,1031x185 #duplicasa@468,64x185 #goodman@468,257x185 #tapmoss@468,451x379 #anjinho@468,837x185 #jinxed@468,1031x185
+  artigos: caiu ganhas parou adri duplicasa goodman tapmoss anjinho jinxed
+  frase: Um comparador de preços, um site de salários, uma app de transportes, um estúdio de piercing, um site de arrendamento, um advogado com IA, um jogo em pixel art, uma loja coquette e uma marca gótica. Todos feitos por mim. O próximo pode ser o teu.
+  scroll lateral: false
+  erros: nenhum
