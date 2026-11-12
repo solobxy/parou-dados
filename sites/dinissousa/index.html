@@ -1,10 +1,11 @@
+{{- $L := lt (dateInZone "20060102" now "UTC") "20261201" -}}
 <!DOCTYPE html>
 <html lang="pt-PT" class="no-js">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Dinis Sousa, sites feitos de raiz</title>
-<meta name="description" content="Faço sites de raiz para marcas e negócios em Portugal. Desenho próprio, preço fechado e falas sempre comigo, do primeiro esboço ao site no ar.">
+<title>Dinis Sousa · Criação de sites de raiz, com preço fechado</title>
+<meta name="description" content="Faço sites e lojas online de raiz para negócios em Portugal. Vês o desenho sem pagar, pagas metade quando o aprovas e fica no ar em 1 a 3 dias.">
 <meta name="theme-color" content="#F1F1EF">
 <meta name="color-scheme" content="light">
 <link rel="canonical" href="https://dinissousa.pt/">
@@ -27,9 +28,7 @@
 <meta name="twitter:description" content="Sites desenhados de raiz para marcas e negócios em Portugal. O próximo pode ser o teu.">
 <meta name="twitter:image" content="https://{{.Host}}/og.jpg">
 <link rel="preload" href="fonts/archivo.woff" as="font" type="font/woff" crossorigin>
-<script type="application/ld+json">
-{"@context":"https://schema.org","@type":"ProfessionalService","name":"Dinis Sousa","url":"https://dinissousa.pt/","description":"Sites feitos de raiz para marcas e negócios em Portugal.","areaServed":"PT","priceRange":"75 € – 690 €","telephone":"+351913488258","email":"diniscash@gmail.com","founder":{"@type":"Person","name":"Dinis Sousa"}}
-</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@graph": [{"@type": "WebSite", "@id": "https://dinissousa.pt/#site", "url": "https://dinissousa.pt/", "name": "Dinis Sousa", "inLanguage": "pt-PT", "publisher": {"@id": "https://dinissousa.pt/#dinis"}}, {"@type": "Person", "@id": "https://dinissousa.pt/#dinis", "name": "Dinis Sousa", "url": "https://dinissousa.pt/", "email": "diniscash@gmail.com", "telephone": "+351913488258", "jobTitle": "Criador de sites", "knowsLanguage": "pt-PT"}, {"@type": "ProfessionalService", "@id": "https://dinissousa.pt/#servico", "name": "Dinis Sousa", "url": "https://dinissousa.pt/", "description": "Sites e lojas online feitos de raiz para negócios em Portugal, com preço fechado e desenho antes de pagar.", "image": "https://dinissousa.pt/og.jpg", "logo": "https://dinissousa.pt/apple-touch-icon.png", "telephone": "+351913488258", "email": "diniscash@gmail.com", "founder": {"@id": "https://dinissousa.pt/#dinis"}, "priceRange": "{{if $L}}75{{else}}149{{end}} – 690 €", "areaServed": [{"@type": "City", "name": "Porto"}, {"@type": "City", "name": "Gondomar"}, {"@type": "Country", "name": "Portugal"}], "hasOfferCatalog": {"@type": "OfferCatalog", "name": "Sites", "itemListElement": [{"@type": "Offer", "itemOffered": {"@type": "Service", "name": "Página única"}, "priceCurrency": "EUR", "price": "149"}, {"@type": "Offer", "name": "Página única, preço de lançamento", "itemOffered": {"@type": "Service", "name": "Página única"}, "priceCurrency": "EUR", "price": "75", "validThrough": "2026-11-30T23:59:59+00:00", "priceValidUntil": "2026-11-30"}, {"@type": "Offer", "itemOffered": {"@type": "Service", "name": "Site completo (até 5 páginas)"}, "priceCurrency": "EUR", "price": "299"}, {"@type": "Offer", "name": "Site completo (até 5 páginas), preço de lançamento", "itemOffered": {"@type": "Service", "name": "Site completo (até 5 páginas)"}, "priceCurrency": "EUR", "price": "149", "validThrough": "2026-11-30T23:59:59+00:00", "priceValidUntil": "2026-11-30"}, {"@type": "Offer", "itemOffered": {"@type": "Service", "name": "Loja online"}, "priceCurrency": "EUR", "price": "499", "priceSpecification": {"@type": "PriceSpecification", "minPrice": "499", "priceCurrency": "EUR"}}, {"@type": "Offer", "name": "Loja online, preço de lançamento", "itemOffered": {"@type": "Service", "name": "Loja online"}, "priceCurrency": "EUR", "price": "249", "validThrough": "2026-11-30T23:59:59+00:00", "priceValidUntil": "2026-11-30"}, {"@type": "Offer", "itemOffered": {"@type": "Service", "name": "Sistema à medida"}, "priceCurrency": "EUR", "price": "690", "priceSpecification": {"@type": "PriceSpecification", "minPrice": "690", "priceCurrency": "EUR"}}]}}, {"@type": "WebPage", "@id": "https://dinissousa.pt/#pagina", "url": "https://dinissousa.pt/", "name": "Dinis Sousa · Criação de sites de raiz, com preço fechado", "inLanguage": "pt-PT", "isPartOf": {"@id": "https://dinissousa.pt/#site"}, "about": {"@id": "https://dinissousa.pt/#servico"}, "dateModified": "2026-11-12"}]}</script>
 <style>
 @font-face{font-family:"Archivo";src:url("fonts/archivo.woff") format("woff");font-weight:100 900;font-stretch:62% 125%;font-display:swap}
 @font-face{font-family:"Pixelify Sans";src:url("fonts/pixelify.woff") format("woff");font-weight:400 700;font-display:swap}
@@ -757,6 +756,9 @@ img.fx{height:auto}
 footer{padding-block:48px 64px}
 footer .wrap{display:flex;flex-wrap:wrap;gap:16px 32px;align-items:center;justify-content:space-between;font-size:15px;color:var(--muted)}
 footer a{min-height:44px;display:inline-flex;align-items:center}
+.rod-nav{display:flex;flex-wrap:wrap;column-gap:22px}.rod-nav a{color:var(--muted)}
+.caso-lk{display:inline-flex;align-items:center;min-height:54px;margin-left:14px;font-weight:600;text-underline-offset:4px}
+.risco a{color:inherit;text-underline-offset:3px}
 
 @media (max-width:379px){.top .brand-name{display:none}}
 /* Telemóvel largo / tablet */
@@ -911,7 +913,7 @@ footer a{min-height:44px;display:inline-flex;align-items:center}
           <a class="btn btn-primary wa" data-msg="Olá Dinis! Quero um site." href="https://wa.me/351913488258">Pedir o meu site</a>
           <a class="btn btn-secondary" href="#projetos">Ver projetos</a>
         </div>
-        <p class="risco">Só pagas depois de aprovares o desenho.</p>
+        <p class="risco">Só pagas depois de aprovares o desenho. Sou de Gondomar e faço sites para o <a href="/criacao-de-sites-porto/">Porto</a>, <a href="/criacao-de-sites-gondomar/">Gondomar</a> e todo o país.</p>
       </div>
       <div class="fan" id="palco" role="group" aria-roledescription="carrossel" aria-label="Sites que fiz">
         <div class="fundos" aria-hidden="true">
@@ -989,9 +991,9 @@ footer a{min-height:44px;display:inline-flex;align-items:center}
           </div>
         </div>
         <div class="baralho">
-          <div class="carta s0 junto"><div class="cel" style="background:#2A2622"><div class="scr"><img class="on" src="img/adri.webp" width="640" height="1385" alt="Site AdriBodyPiercing" fetchpriority="high"><img alt=""></div></div></div>
-          <div class="carta s1 junto" aria-hidden="true"><div class="cel" style="background:#1D1719"><div class="scr"><img class="on" src="img/anjinho.webp" width="640" height="1385" alt=""><img alt=""></div></div></div>
-          <div class="carta s2 junto" aria-hidden="true"><div class="cel" style="background:#2B2325"><div class="scr"><img class="on" src="img/jinxed.webp" width="640" height="1385" alt=""><img alt=""></div></div></div>
+          <div class="carta s0 junto"><div class="cel" style="background:#2A2622"><div class="scr"><img class="on" src="img/adri-480.webp" width="480" height="1039" alt="Site AdriBodyPiercing" fetchpriority="high"><img alt=""></div></div></div>
+          <div class="carta s1 junto" aria-hidden="true"><div class="cel" style="background:#1D1719"><div class="scr"><img class="on" src="img/anjinho-480.webp" width="480" height="928" alt=""><img alt=""></div></div></div>
+          <div class="carta s2 junto" aria-hidden="true"><div class="cel" style="background:#2B2325"><div class="scr"><img class="on" src="img/jinxed-480.webp" width="480" height="994" alt=""><img alt=""></div></div></div>
           <div class="bolhas" aria-hidden="true"><span class="bolha b-adri" style="background:#0E0C0B"><img src="img/logo_adri.webp" width="325" height="70" alt=""></span><span class="bolha b-anjinho" style="background:#DCE8F4"><img src="img/logo_anjinho.svg" width="200" height="69" alt=""></span><span class="bolha b-jinxed" style="background:#110D0E"><img src="img/logo_jinxed.webp" width="200" height="90" alt=""></span><span class="bolha b-parou" style="background:#16151A"><img src="img/logo_parou.webp" width="235" height="85" alt=""></span><span class="bolha b-duplicasa" style="background:#FFFFFF"><img src="img/logo_duplicasa.svg" width="592" height="123" alt=""></span><span class="bolha b-goodman" style="background:#0E3A2C"><img src="img/logo_goodman.webp" width="441" height="66" alt=""></span><span class="bolha b-tapmoss" style="background:#0B120D"><img src="img/logo_tapmoss.webp" width="588" height="124" alt=""></span></div>
         </div>
         <p class="sr" id="palcoNome" aria-live="polite">AdriBodyPiercing</p>
@@ -1023,7 +1025,7 @@ footer a{min-height:44px;display:inline-flex;align-items:center}
           <img class="logo rv" src="img/logo_adri.webp" width="325" height="70" alt="AdriBodyPiercing" loading="lazy" style="max-height:44px">
           <h3 class="rv" id="t-adri">O teu piercing, sem stress.</h3>
           <p class="rv">Estúdio de body piercing do Adriano, que está a começar. Fiz o logótipo, a joia em 3D que roda no topo e o site, com preços à vista e marcação online.</p>
-          <a class="btn btn-secondary rv" href="https://adribodypiercing.pt" target="_blank" rel="noopener">Ver o site ↗</a>
+          <a class="btn btn-secondary rv" href="https://adribodypiercing.pt" target="_blank" rel="noopener">Ver o site ↗</a> <a class="caso-lk rv" href="/projetos/adribodypiercing/">Como foi feito</a>
         </div>
         <div class="shot"><figure class="cena c-adri r-sobe" style="--abre:#0E0C0B"><div class="fx talao" aria-hidden="true"><div class="papel"><span class="t-topo">Marcação</span><strong>Sábado, 15h00</strong><span>Helix · titânio de implante</span></div><span class="selo-ag s-talao" aria-hidden="true"><img src="img/selo_agendado.svg" alt=""></span></div><div class="phone"><div class="ecra"><img class="site" src="img/adri.webp" width="640" height="1385" alt="Site AdriBodyPiercing no telemóvel" loading="lazy"><div class="abre" aria-hidden="true"><img src="img/logo_adri.webp" width="325" height="70" alt="" style="width:58%"><i class="linha"></i><i class="barra"></i></div></div></div><img class="fx bola joia b1" src="img/joia_barra_ouro.svg" alt="" aria-hidden="true"><img class="fx bola joia b2" src="img/joia_argola_prata.svg" alt="" aria-hidden="true"><img class="fx bola joia b3" src="img/joia_brinco_ouro.svg" alt="" aria-hidden="true"></figure></div>
       </div>
@@ -1034,8 +1036,8 @@ footer a{min-height:44px;display:inline-flex;align-items:center}
         <div class="info">
           <img class="logo rv" src="img/logo_parou.webp" width="235" height="85" alt="PAROU" loading="lazy" style="max-height:48px">
           <h3 class="rv" id="t-parou">Quando passa o próximo?</h3>
-          <p class="rv">App de transportes para todo o país. Fiz a marca, o design e a app: tempo real onde existe, horário oficial onde não existe, e avisos de greves e ocorrências. É gratuita, sem fins lucrativos e, sem publicidade paga, já recebe centenas de pessoas por dia.</p>
-          <a class="btn btn-secondary rv" href="https://parou.pt" target="_blank" rel="noopener">Abrir parou.pt ↗</a>
+          <p class="rv">App de transportes para todo o país. Fiz a marca, o design e a app: tempo real onde existe, horário oficial onde não existe, e avisos de greves e ocorrências. É gratuita, sem fins lucrativos e, sem publicidade paga, já recebe perto de 450 visitas por dia (1 a 11 de novembro de 2026).</p>
+          <a class="btn btn-secondary rv" href="https://parou.pt" target="_blank" rel="noopener">Abrir parou.pt ↗</a> <a class="caso-lk rv" href="/projetos/parou/">Ver os números</a>
         </div>
         <div class="shot"><figure class="cena c-parou r-circulo" style="--abre:#16151A" data-passos="2700,3500,4300"><div class="fx painel" aria-hidden="true"><span class="p-linha">8027</span><span class="p-dest">Sebolido<small>Campanhã Estação</small></span><span class="flap"><b class="ativo">3 min</b><b>2 min</b><b>1 min</b><b class="chega">a chegar</b></span></div><div class="phone"><div class="ecra"><img class="site" src="img/parou.webp" width="640" height="1325" alt="App PAROU no telemóvel: transportes perto, com autocarros a chegar" loading="lazy"><div class="abre" aria-hidden="true"><img src="img/logo_parou.webp" width="235" height="85" alt="" style="width:52%"><i class="ping"></i><i class="ping p2"></i></div></div></div><span class="fx vivo" aria-hidden="true"><i></i>Ao vivo</span><svg class="fx p-rota" aria-hidden="true"><path/></svg><img class="fx p-bus" src="img/autocarro.svg" alt="" aria-hidden="true"><img class="fx p-pino" src="img/alfinete.svg" alt="" aria-hidden="true"></figure></div>
       </div>
@@ -1158,13 +1160,13 @@ footer a{min-height:44px;display:inline-flex;align-items:center}
   <section class="section" id="precos" data-world="base" aria-labelledby="t-precos" style="padding-top:0">
     <div class="wrap">
       <h2 class="h2 rv" id="t-precos">Preço fechado. Sem surpresas.</h2>
-      <p class="intro rv">Vês o desenho antes de pagares um cêntimo. <span data-normal="">Preços de lançamento até 30 de novembro; a 1 de dezembro voltam ao normal.</span></p>
+      <p class="intro rv">Vês o desenho antes de pagares um cêntimo. {{if $L}}<span data-normal="">Preços de lançamento até 30 de novembro; a 1 de dezembro voltam ao normal.</span>{{end}}</p>
       <div class="plans">
         <div class="plan rv">
           <p class="p-para">Para seres encontrado</p>
-          <div class="row"><h3>Página única</h3><span class="price" data-normal="149&nbsp;€">75&nbsp;€</span></div>
-          <p class="p-div" data-normal="2 × 74,50&nbsp;€, o primeiro só depois do desenho">2 × 37,50&nbsp;€, o primeiro só depois do desenho</p>
-          <p class="lanc">Preço de lançamento até 30/11. Depois, 149&nbsp;€.</p>
+          <div class="row"><h3>Página única</h3><span class="price" data-normal="149&nbsp;€">{{if $L}}75&nbsp;€{{else}}149&nbsp;€{{end}}</span></div>
+          <p class="p-div" data-normal="2 × 74,50&nbsp;€, o primeiro só depois do desenho">{{if $L}}2 × 37,50&nbsp;€, o primeiro só depois do desenho{{else}}2 × 74,50&nbsp;€, o primeiro só depois do desenho{{end}}</p>
+          {{if $L}}<p class="lanc">Preço de lançamento até 30/11. Depois, 149&nbsp;€.</p>{{end}}
           <ul class="inclui">
             <li>1 página desenhada de raiz</li>
             <li>Contacto por WhatsApp, telefone e e&#8209;mail</li>
@@ -1173,14 +1175,14 @@ footer a{min-height:44px;display:inline-flex;align-items:center}
             <li class="nao"><span class="sr">Não inclui: </span>Até 5 páginas</li>
             <li class="nao"><span class="sr">Não inclui: </span>Preparada para o Google</li>
           </ul>
-          <a class="btn btn-secondary wa" data-msg="Olá Dinis! Quero a página única (75 €)." data-normal-msg="Olá Dinis! Quero a página única (149 €)." href="https://wa.me/351913488258">Pedir página única</a>
+          <a class="btn btn-secondary wa" data-msg="{{if $L}}Olá Dinis! Quero a página única (75 €).{{else}}Olá Dinis! Quero a página única (149 €).{{end}}" data-normal-msg="Olá Dinis! Quero a página única (149 €)." href="https://wa.me/351913488258">Pedir página única</a>
         </div>
         <div class="plan rec rv">
           <span class="rec-tag">Recomendado</span>
           <p class="p-para">Para vender o teu serviço</p>
-          <div class="row"><h3>Site completo</h3><span class="price" data-normal="299&nbsp;€">149&nbsp;€</span></div>
-          <p class="p-div" data-normal="2 × 149,50&nbsp;€, o primeiro só depois do desenho">2 × 74,50&nbsp;€, o primeiro só depois do desenho</p>
-          <p class="lanc">Preço de lançamento até 30/11. Depois, 299&nbsp;€.</p>
+          <div class="row"><h3>Site completo</h3><span class="price" data-normal="299&nbsp;€">{{if $L}}149&nbsp;€{{else}}299&nbsp;€{{end}}</span></div>
+          <p class="p-div" data-normal="2 × 149,50&nbsp;€, o primeiro só depois do desenho">{{if $L}}2 × 74,50&nbsp;€, o primeiro só depois do desenho{{else}}2 × 149,50&nbsp;€, o primeiro só depois do desenho{{end}}</p>
+          {{if $L}}<p class="lanc">Preço de lançamento até 30/11. Depois, 299&nbsp;€.</p>{{end}}
           <ul class="inclui">
             <li>Até 5 páginas desenhadas de raiz</li>
             <li>Contacto por WhatsApp, telefone e e&#8209;mail</li>
@@ -1188,19 +1190,19 @@ footer a{min-height:44px;display:inline-flex;align-items:center}
             <li>Preparado para o Google</li>
             <li>Domínio e alojamento no 1.º ano</li>
           </ul>
-          <a class="btn wa" data-msg="Olá Dinis! Quero o site completo (149 €)." data-normal-msg="Olá Dinis! Quero o site completo (299 €)." href="https://wa.me/351913488258">Pedir site completo</a>
+          <a class="btn wa" data-msg="{{if $L}}Olá Dinis! Quero o site completo (149 €).{{else}}Olá Dinis! Quero o site completo (299 €).{{end}}" data-normal-msg="Olá Dinis! Quero o site completo (299 €)." href="https://wa.me/351913488258">Pedir site completo</a>
         </div>
         <div class="plan rv">
           <p class="p-para">Para vender produtos</p>
-          <div class="row"><h3>Loja online</h3><span class="price" data-normal="<small>desde</small> 499&nbsp;€"><small>desde</small> 249&nbsp;€</span></div>
-          <p class="p-div" data-normal="2 × 249,50&nbsp;€, o primeiro só depois do desenho">2 × 124,50&nbsp;€, o primeiro só depois do desenho</p>
-          <p class="lanc">Preço de lançamento até 30/11. Depois, desde 499&nbsp;€.</p>
+          <div class="row"><h3>Loja online</h3><span class="price" data-normal="<small>desde</small> 499&nbsp;€">{{if $L}}<small>desde</small> 249&nbsp;€{{else}}<small>desde</small> 499&nbsp;€{{end}}</span></div>
+          <p class="p-div" data-normal="2 × 249,50&nbsp;€, o primeiro só depois do desenho">{{if $L}}2 × 124,50&nbsp;€, o primeiro só depois do desenho{{else}}2 × 249,50&nbsp;€, o primeiro só depois do desenho{{end}}</p>
+          {{if $L}}<p class="lanc">Preço de lançamento até 30/11. Depois, desde 499&nbsp;€.</p>{{end}}
           <ul class="inclui">
             <li>Tudo o que tem o site completo</li>
             <li>Produtos, carrinho e pagamentos online</li>
             <li>Domínio e alojamento no 1.º ano</li>
           </ul>
-          <a class="btn btn-secondary wa" data-msg="Olá Dinis! Quero uma loja online (desde 249 €)." data-normal-msg="Olá Dinis! Quero uma loja online (desde 499 €)." href="https://wa.me/351913488258">Pedir loja online</a>
+          <a class="btn btn-secondary wa" data-msg="{{if $L}}Olá Dinis! Quero uma loja online (desde 249 €).{{else}}Olá Dinis! Quero uma loja online (desde 499 €).{{end}}" data-normal-msg="Olá Dinis! Quero uma loja online (desde 499 €)." href="https://wa.me/351913488258">Pedir loja online</a>
         </div>
         <div class="plan medida rv">
           <div class="m-topo">
@@ -1247,6 +1249,7 @@ footer a{min-height:44px;display:inline-flex;align-items:center}
         <details class="rv"><summary>O site aparece no Google?</summary><p>Deixo-o pronto para o Google: rápido, com título e descrição certos e o teu negócio bem identificado. Ninguém pode garantir o primeiro lugar, por isso também não o prometo.</p></details>
         <details class="rv"><summary>E o domínio e o alojamento?</summary><p>O 1.º ano está incluído no preço. Depois, renovas só se quiseres, e digo-te o valor antes.</p></details>
         <details class="rv"><summary>Como pago?</summary><p>Em duas vezes: metade quando aprovas o desenho, a outra metade quando o site fica no ar.</p></details>
+        <details class="rv"><summary>Trabalhas só no Porto?</summary><p>Sou de Gondomar e faço sites para negócios de todo o país. Falamos por WhatsApp ou chamada e vês o desenho no telemóvel. Vê como funciona a <a href="/criacao-de-sites-porto/">criação de sites no Porto</a> e em <a href="/criacao-de-sites-gondomar/">Gondomar</a>.</p></details>
         <details class="rv"><summary>Fica a funcionar no telemóvel?</summary><p>Sim. Desenho primeiro para o telemóvel, porque é aí que a maioria dos teus clientes te vai encontrar.</p></details>
       </div>
     </div>
@@ -1267,6 +1270,7 @@ footer a{min-height:44px;display:inline-flex;align-items:center}
   <div class="wrap">
     <span class="brand"><svg class="mark" viewBox="10 6 80 88" aria-hidden="true"><mask id="ds2" maskUnits="userSpaceOnUse" x="0" y="0" width="100" height="100"><rect width="100" height="100" fill="#fff"/><path d="M96 24H50A13 13 0 0 0 50 50A13 13 0 0 1 50 76H4" pathLength="100" fill="none" stroke="#000" stroke-width="10"/></mask><path d="M14 10H46A40 40 0 0 1 46 90H14Z" mask="url(#ds2)"/></svg><span class="brand-name" style="color:var(--ink)">Dinis Sousa</span></span>
     <span>© 2026 Dinis Sousa · Portugal</span>
+    <nav class="rod-nav" aria-label="Rodapé"><a href="/criacao-de-sites-porto/">Criação de sites no Porto</a> <a href="/criacao-de-sites-gondomar/">Criação de sites em Gondomar</a> <a href="/quanto-custa-um-site/">Quanto custa um site</a> <a href="/projetos/parou/">Caso PAROU</a> <a href="/projetos/adribodypiercing/">Caso AdriBodyPiercing</a> <a href="tel:+351913488258">913 488 258</a> <a href="mailto:diniscash@gmail.com">diniscash@gmail.com</a></nav>
     <a href="https://www.livroreclamacoes.pt">Livro de Reclamações</a>
   </div>
 </footer>
@@ -1365,7 +1369,9 @@ footer a{min-height:44px;display:inline-flex;align-items:center}
     var links={}; [].slice.call(document.querySelectorAll('.sub a')).forEach(function(a){ links[a.className.split(' ')[0]]=a; });
     var reduz=window.matchMedia('(prefers-reduced-motion: reduce)');
     var bolhas=[].slice.call(palco.querySelectorAll('.bolha'));
-    P.forEach(function(p){ var im=new Image(); im.src=p.img; });
+    /* as imagens das outras cartas só se pedem depois de a página carregar, para não roubarem rede à primeira */
+    function preCarga(){ P.forEach(function(p){ var im=new Image(); im.src=p.img; }); }
+    if(document.readyState==='complete') setTimeout(preCarga,1200); else addEventListener('load',function(){ setTimeout(preCarga,1200); });
     /* a linha da PAROU é desenhada em píxeis do palco, para o autocarro a poder seguir sem se deformar */
     var rota=palco.querySelector('.h-rota'), bus=palco.querySelector('.bus');
     function desenhaRota(){
@@ -1507,7 +1513,7 @@ footer a{min-height:44px;display:inline-flex;align-items:center}
 })();
 </script>
 
-<aside class="oferta" id="oferta" role="dialog" aria-modal="false" aria-labelledby="oferta-t" hidden>
+{{if $L}}<aside class="oferta" id="oferta" role="dialog" aria-modal="false" aria-labelledby="oferta-t" hidden>
   <div class="of-cab">
     <h2 id="oferta-t">Preço de lançamento</h2>
     <button class="of-x" type="button" aria-label="Fechar"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 3l10 10M13 3L3 13"/></svg></button>
@@ -1522,7 +1528,7 @@ footer a{min-height:44px;display:inline-flex;align-items:center}
   </div>
   <a class="of-cta" data-msg="Olá Dinis! Quero reservar o preço de lançamento para o meu site." href="https://wa.me/351913488258">Reservar este preço<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
   <p class="of-nota">Só pagas depois de veres o desenho.</p>
-</aside>
+</aside>{{end}}
 <script>
 /* Oferta de lançamento: aparece a meio da página, no máximo 1 vez por dispositivo a cada 24 h, e desaparece sozinha a 30/11 às 23:59 (Lisboa) */
 (function(){

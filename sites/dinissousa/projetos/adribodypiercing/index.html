@@ -1,0 +1,193 @@
+{{- $L := lt (dateInZone "20060102" now "UTC") "20261201" -}}<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Site para um estúdio de piercing no Porto: AdriBodyPiercing</title>
+<meta name="description" content="Caso real: o site do AdriBodyPiercing, no Kaos Tattoo (Porto), com marcação online, preço por piercing e uma página por sítio do corpo.">
+<link rel="canonical" href="https://dinissousa.pt/projetos/adribodypiercing/">
+<meta name="theme-color" content="#0E0C0B">
+<meta name="color-scheme" content="light">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta property="og:type" content="article"><meta property="og:site_name" content="Dinis Sousa"><meta property="og:locale" content="pt_PT">
+<meta property="og:title" content="Site para um estúdio de piercing no Porto: AdriBodyPiercing"><meta property="og:description" content="Caso real: o site do AdriBodyPiercing, no Kaos Tattoo (Porto), com marcação online, preço por piercing e uma página por sítio do corpo.">
+<meta property="og:url" content="https://dinissousa.pt/projetos/adribodypiercing/"><meta property="og:image" content="https://dinissousa.pt/og.jpg">
+<meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="preload" href="/fonts/archivo.woff" as="font" type="font/woff" crossorigin>
+<script>document.documentElement.classList.add('js')</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@graph": [{"@type": "Person", "@id": "https://dinissousa.pt/#dinis", "name": "Dinis Sousa", "url": "https://dinissousa.pt/", "email": "diniscash@gmail.com", "telephone": "+351913488258", "jobTitle": "Criador de sites", "knowsLanguage": "pt-PT"}, {"@type": "ProfessionalService", "@id": "https://dinissousa.pt/#servico", "name": "Dinis Sousa", "url": "https://dinissousa.pt/", "image": "https://dinissousa.pt/og.jpg", "telephone": "+351913488258", "email": "diniscash@gmail.com", "founder": {"@id": "https://dinissousa.pt/#dinis"}, "areaServed": [{"@type": "City", "name": "Porto"}, {"@type": "City", "name": "Gondomar"}, {"@type": "Country", "name": "Portugal"}]}, {"@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "Dinis Sousa", "item": "https://dinissousa.pt/"}, {"@type": "ListItem", "position": 2, "name": "Caso AdriBodyPiercing", "item": "https://dinissousa.pt/projetos/adribodypiercing/"}]}, {"@type": "Article", "@id": "https://dinissousa.pt/projetos/adribodypiercing/#artigo", "headline": "Um estúdio de piercing do Porto, com site próprio", "inLanguage": "pt-PT", "datePublished": "2026-11-12", "dateModified": "2026-11-12", "author": {"@id": "https://dinissousa.pt/#dinis"}, "publisher": {"@id": "https://dinissousa.pt/#dinis"}, "mainEntityOfPage": "https://dinissousa.pt/projetos/adribodypiercing/", "image": "https://dinissousa.pt/img/adri.webp", "about": {"@type": "WebSite", "name": "AdriBodyPiercing", "url": "https://adribodypiercing.pt/"}}]}</script>
+<style>@font-face{font-family:"Archivo";src:url("/fonts/archivo.woff") format("woff");font-weight:100 900;font-stretch:62% 125%;font-display:swap}
+:root{--paper:#F1F1EF;--ink:#0E0E0E;--muted:#55554F;--surface:#E2E2DE;--bg:var(--paper);--tx:var(--ink);--mt:var(--muted);--sf:var(--surface);--ac:var(--ink);--on:#F1F1EF;
+--font:"Archivo","Helvetica Neue",Arial,sans-serif;--gut:20px;--sec:96px;--ease:cubic-bezier(.2,.7,.2,1)}
+@media(min-width:720px){:root{--gut:56px;--sec:144px}}
+*{box-sizing:border-box}html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--tx);font:400 18px/1.55 var(--font);-webkit-font-smoothing:antialiased;touch-action:manipulation}
+img{display:block;max-width:100%;height:auto}a{color:inherit}
+:focus-visible{outline:3px solid currentColor;outline-offset:3px;border-radius:4px}
+.saltar{position:absolute;left:-9999px}.saltar:focus{left:var(--gut);top:8px;z-index:20;background:var(--ink);color:var(--paper);padding:10px 16px;border-radius:999px}
+.w{max-width:1320px;margin:0 auto;padding-inline:var(--gut)}
+.estreito>*{max-width:800px}
+header.top{position:sticky;top:0;z-index:10;background:var(--paper);color:var(--ink)}
+header.top .w{display:flex;align-items:center;justify-content:space-between;gap:16px;min-height:68px}
+.brand{display:inline-flex;align-items:center;gap:10px;text-decoration:none;font-weight:700;letter-spacing:-.01em;min-height:44px}
+.mark{width:24px;height:26px;flex-shrink:0;fill:currentColor}
+nav.nav{display:flex;align-items:center;gap:22px}nav.nav .lk{text-decoration:none;font-weight:500;display:none}
+@media(min-width:720px){nav.nav .lk{display:inline-flex;min-height:44px;align-items:center}}
+.btn{display:inline-flex;align-items:center;justify-content:center;min-height:54px;padding:10px 26px;border-radius:999px;text-decoration:none;font-weight:600;font-size:16px;line-height:1.2;text-align:center;background:var(--ac);color:var(--on);transition:transform .25s var(--ease)}
+.btn:active{transform:scale(.98)}.btn.sec{background:var(--sf);color:var(--tx)}.btn.peq{min-height:44px;padding:8px 18px;font-size:15px}
+.mig{font-size:15px;color:var(--mt);margin:28px 0 0}.mig a{color:var(--mt)}
+h1,h2,h3{margin:0;font-weight:800;letter-spacing:-.035em;text-wrap:balance}
+h1{font-size:clamp(38px,8.4vw,112px);line-height:.92;font-stretch:108%;margin-top:22px;max-width:15ch}
+.caso h1{font-size:clamp(36px,6.4vw,92px);max-width:18ch}
+h2{font-size:clamp(32px,5.2vw,64px);line-height:.96;font-stretch:106%}
+h3{font-size:22px;line-height:1.2;letter-spacing:-.02em;font-weight:700}
+.js h1.estica{animation:estica 1.1s var(--ease) both}
+@keyframes estica{from{font-stretch:66%;opacity:.2}to{font-stretch:108%;opacity:1}}
+.resp{margin-top:30px;font-size:clamp(19px,2.2vw,24px);line-height:1.42;max-width:38ch}
+.resp strong{font-weight:700}
+.acoes{display:flex;flex-wrap:wrap;gap:12px;margin-top:30px}
+.risco{margin-top:14px;font-size:15px;color:var(--mt)}
+.atual{margin-top:18px;font-size:14px;color:var(--mt)}
+section{padding-block:var(--sec) 0}
+.intro{margin-top:18px;max-width:52ch;color:var(--mt);font-size:19px}
+p{margin:0}p+p{margin-top:14px}
+.duas{display:grid;gap:40px;align-items:center}
+.duas h2{font-size:clamp(32px,4vw,54px)}
+.heroi{display:grid;gap:36px;align-items:center;padding-bottom:8px}
+.heroi>.topo{grid-column:1/-1}
+@media(min-width:900px){.heroi{grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);gap:56px}}
+.leque{position:relative;height:clamp(330px,40vw,560px);margin-inline:auto;width:100%;max-width:620px}
+.leque .tel{position:absolute;left:50%;top:6%;width:clamp(136px,16vw,236px);margin:0;transform:translateX(-50%) translateX(var(--x)) rotate(var(--r))}
+.leque .t1{--x:-62%;--r:-7deg;z-index:1}.leque .t2{--x:0%;--r:0deg;z-index:2;top:0}.leque .t3{--x:62%;--r:7deg;z-index:1}
+.js .leque .tel{animation:leque .9s var(--ease) .15s both}
+@keyframes leque{from{opacity:0;transform:translateX(-50%) translateY(30px) rotate(0deg)}to{opacity:1}}
+@media(min-width:900px){.duas{grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:72px}.duas.inv>:first-child{order:2}}
+.tel{width:min(300px,72vw);margin-inline:auto;padding:7px;border-radius:34px;background:var(--fr,#2A2622)}
+.tel img{border-radius:27px;width:100%;aspect-ratio:640/1385;object-fit:cover;object-position:top}
+.lista{list-style:none;padding:0;margin:30px 0 0;display:grid;gap:12px}
+@media(min-width:720px){.lista{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.lista li{background:var(--sf);padding:22px 24px;font-size:17px}
+.lista li b{display:block;font-size:19px;margin-bottom:4px;letter-spacing:-.01em}
+.planos{display:grid;gap:12px;margin-top:36px}
+@media(min-width:720px){.planos{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(min-width:1080px){.planos{grid-template-columns:repeat(4,minmax(0,1fr))}}
+.plano{background:var(--sf);padding:26px;display:flex;flex-direction:column;gap:8px}
+.plano.rec{background:var(--ink);color:var(--paper)}.plano.rec .pm{color:#C9C9C3}
+.plano .pr{font-size:44px;font-weight:800;font-stretch:104%;letter-spacing:-.03em;font-variant-numeric:tabular-nums;line-height:1}
+.plano .pr small{font-size:16px;font-weight:600;letter-spacing:0;margin-right:6px}
+.pm{color:var(--mt);font-size:15.5px}
+.lanc{font-size:14.5px;font-weight:600}
+.passos{list-style:none;padding:0;margin:30px 0 0;display:grid;gap:12px;counter-reset:p}
+@media(min-width:900px){.passos{grid-template-columns:repeat(3,minmax(0,1fr))}}
+.passos li{padding:24px;background:var(--sf)}.passos li b{display:block;font-size:20px;margin-bottom:6px}
+.faq{margin-top:30px;display:grid;gap:12px}
+.faq details{background:var(--sf)}
+.faq summary{list-style:none;cursor:pointer;min-height:64px;padding:20px 60px 20px 24px;position:relative;font-weight:700;font-size:19px;line-height:1.3}
+.faq summary::-webkit-details-marker{display:none}
+.faq summary::after{content:"";position:absolute;right:26px;top:50%;width:12px;height:12px;margin-top:-9px;border-right:3px solid currentColor;border-bottom:3px solid currentColor;transform:rotate(45deg);transition:transform .3s var(--ease)}
+.faq details[open] summary::after{transform:rotate(225deg);margin-top:-3px}
+.faq details p{padding:0 24px 24px;color:var(--mt);max-width:62ch}
+.numeros{display:grid;gap:12px;margin-top:36px;grid-template-columns:repeat(2,minmax(0,1fr))}
+@media(min-width:900px){.numeros{grid-template-columns:repeat(4,minmax(0,1fr))}}
+.numeros div{background:var(--sf);padding:24px}
+.numeros b{display:block;font-size:clamp(38px,5vw,60px);font-weight:800;font-stretch:104%;letter-spacing:-.035em;line-height:1;font-variant-numeric:tabular-nums}
+.numeros span{display:block;margin-top:10px;color:var(--mt);font-size:16px}
+.tabela{margin-top:28px;overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums;font-size:16px}
+@media(max-width:480px){table{font-size:14.5px}th,td{padding:10px 7px}}
+th,td{text-align:left;padding:12px 14px}th{color:var(--mt);font-weight:600}
+tbody tr:nth-child(odd){background:var(--sf)}td.n,th.n{text-align:right}
+.nota{margin-top:16px;font-size:15px;color:var(--mt);max-width:70ch}
+.chips{display:flex;flex-wrap:wrap;gap:10px;list-style:none;padding:0;margin:26px 0 0}
+.chips li{background:var(--sf);padding:12px 18px;border-radius:999px;font-weight:600;font-size:16px}
+.fim{padding-block:var(--sec)}
+.fim .caixa{background:var(--ink);color:var(--paper);padding:clamp(28px,6vw,72px)}
+.fim .caixa h2{max-width:20ch}.fim .caixa p{color:#C9C9C3;margin-top:16px;max-width:52ch}
+.fim .caixa .btn{background:var(--paper);color:var(--ink)}
+.fim .caixa .btn.sec{background:#26262A;color:var(--paper)}
+footer{background:var(--paper);color:var(--ink);padding-block:56px 72px}
+footer .w{display:grid;gap:28px}
+@media(min-width:900px){footer .w{grid-template-columns:1.2fr 1fr 1fr}}
+footer h2{font-size:15px;letter-spacing:0;font-weight:700;margin-bottom:8px;font-stretch:100%}
+footer ul{list-style:none;margin:0;padding:0}footer li a,footer p a{display:inline-flex;align-items:center;min-height:44px;color:var(--muted)}
+footer p{color:var(--muted);font-size:15.5px}
+.banda{background:var(--bg);color:var(--tx)}
+.banda .w{padding-block:clamp(36px,6vw,96px) clamp(56px,8vw,112px)}
+[data-mundo="parou"]{--bg:#16151A;--tx:#FFFFFF;--mt:#A8A6AE;--sf:#25242B;--ac:#FF6B1A;--on:#111111;--fr:#2E2D35}
+[data-mundo="adri"]{--bg:#0E0C0B;--tx:#EEE8DF;--mt:#BDB5A9;--sf:#1D1A17;--ac:#D9B676;--on:#141210;--fr:#2A2622}
+.banda .mig,.banda .mig a{color:var(--mt)}
+.rv{opacity:1}
+.js .rv{opacity:0;transform:translateY(24px);transition:opacity .7s var(--ease),transform .7s var(--ease)}
+.js .rv.on{opacity:1;transform:none}
+@media (prefers-reduced-motion:reduce){.js h1.estica,.js .leque .tel{animation:aparece .6s ease both}@keyframes aparece{from{opacity:0}to{opacity:1}}
+.js .rv{transform:none;transition:opacity .5s ease}.btn{transition:none}}
+</style>
+<script defer src="/_e.js" data-site="dinissousa"></script>
+</head>
+<body>
+<a class="saltar" href="#conteudo">Saltar para o conteúdo</a>
+<header class="top"><div class="w">
+<a class="brand" href="/"><svg class="mark" viewBox="10 6 80 88" aria-hidden="true"><mask id="m1" maskUnits="userSpaceOnUse" x="0" y="0" width="100" height="100"><rect width="100" height="100" fill="#fff"/><path d="M96 24H50A13 13 0 0 0 50 50A13 13 0 0 1 50 76H4" fill="none" stroke="#000" stroke-width="10"/></mask><path d="M14 10H46A40 40 0 0 1 46 90H14Z" mask="url(#m1)"/></svg><span>Dinis Sousa</span></a>
+<nav class="nav" aria-label="Principal"><a class="lk" href="/#projetos">Projetos</a><a class="lk" href="/#precos">Preços</a>
+<a class="btn peq" href="https://wa.me/351913488258?text=Ol%C3%A1%20Dinis%21%20Quero%20um%20site.">Pedir o meu site</a></nav>
+</div></header>
+<main id="conteudo">
+<div class="banda caso" data-mundo="adri"><div class="w heroi">
+<div class="topo"><nav class="mig" aria-label="Estás aqui"><a href="/">Dinis Sousa</a> › Caso AdriBodyPiercing</nav>
+<h1 class="estica">Um estúdio de piercing do Porto</h1></div>
+<div><p class="resp" style="margin-top:0">O Adri estava a começar no body piercing e precisava de um sítio onde as pessoas vissem o preço, percebessem como trabalha e marcassem sem trocar dez mensagens. Fiz o logótipo e o site, com marcação online, preço por piercing e uma página para cada sítio do corpo.</p>
+<div class="acoes"><a class="btn" href="https://wa.me/351913488258?text=Ol%C3%A1%20Dinis%21%20Vi%20o%20site%20do%20Adri%20e%20quero%20um%20para%20o%20meu%20neg%C3%B3cio.">Quero um site assim</a><a class="btn sec" href="https://adribodypiercing.pt" rel="noopener">Abrir o site</a></div>
+<p class="atual">Publicado em novembro de 2026. Página atualizada a 12 de novembro de 2026.</p></div>
+<div class="tel"><img src="/img/adri-480.webp" width="480" height="1039" alt="Página inicial do AdriBodyPiercing no telemóvel" fetchpriority="high"></div>
+</div></div>
+
+<section aria-labelledby="t-tem"><div class="w">
+<h2 id="t-tem" class="rv">O que o site faz</h2>
+<ul class="lista">
+<li class="rv"><b>Mapa da orelha</b>Tocas num ponto e vês o preço, quanto tempo demora a cicatrizar e a joia com que sais.</li>
+<li class="rv"><b>Marcação online</b>Escolhes o sábado e a hora, e o pedido fica à espera da aprovação do Adri. Sem sinal: paga-se no estúdio.</li>
+<li class="rv"><b>Uma página por piercing</b>22 páginas, do lóbulo ao microdermal, cada uma com o preço, a joia incluída e os cuidados.</li>
+<li class="rv"><b>Vales de oferta</b>Pagos por MB WAY e entregues por WhatsApp, prontos a oferecer.</li>
+<li class="rv"><b>WhatsApp sempre à mão</b>Para tirar uma dúvida ou mandar a foto da orelha antes de escolher.</li>
+<li class="rv"><b>Uma joia em 3D no topo</b>Roda com o dedo e mostra logo que o site é dele e de mais ninguém.</li>
+</ul>
+</div></section>
+
+<section aria-labelledby="t-res"><div class="w estreito">
+<h2 id="t-res" class="rv">O que já se vê</h2>
+<p class="intro rv">A 12 de novembro de 2026, a página inicial já estava no índice do Google (confirmado no Search Console). As páginas de cada piercing foram publicadas a 11 de novembro e ainda estão a entrar. Ainda é cedo para contar marcações, por isso não ponho aqui números que não existem.</p>
+<p class="intro rv">Se também tens um negócio no Porto, vê como funciona a <a href="/criacao-de-sites-porto/">criação de sites no Porto</a>: preço à vista, contacto num toque e a morada certa.</p>
+</div></section>
+
+<section class="fim"><div class="w"><div class="caixa rv">
+<h2>O próximo pode ser o teu.</h2><p>Diz-me o que fazes. O desenho vem primeiro e só pagas metade quando o aprovares.</p>
+<div class="acoes"><a class="btn" href="https://wa.me/351913488258?text=Ol%C3%A1%20Dinis%21%20Vi%20o%20site%20do%20Adri%20e%20quero%20um%20para%20o%20meu%20neg%C3%B3cio.">Pedir o meu site</a><a class="btn sec" href="mailto:diniscash@gmail.com">Escrever por e-mail</a></div>
+</div></div></section>
+</main>
+<footer>
+<div class="w">
+<div><a class="brand" href="/"><svg class="mark" viewBox="10 6 80 88" aria-hidden="true"><mask id="m2" maskUnits="userSpaceOnUse" x="0" y="0" width="100" height="100"><rect width="100" height="100" fill="#fff"/><path d="M96 24H50A13 13 0 0 0 50 50A13 13 0 0 1 50 76H4" fill="none" stroke="#000" stroke-width="10"/></mask><path d="M14 10H46A40 40 0 0 1 46 90H14Z" mask="url(#m2)"/></svg><span>Dinis Sousa</span></a>
+<p style="margin-top:10px">Sites feitos de raiz, a partir de Gondomar e do Porto, para todo o país.</p>
+<p><a href="https://wa.me/351913488258?text=Ol%C3%A1%20Dinis%21%20Quero%20um%20site.">WhatsApp 913 488 258</a> · <a href="mailto:diniscash@gmail.com">diniscash@gmail.com</a></p></div>
+<nav aria-label="Serviço"><h2>Serviço</h2><ul>
+<li><a href="/criacao-de-sites-porto/">Criação de sites no Porto</a></li>
+<li><a href="/criacao-de-sites-gondomar/">Criação de sites em Gondomar</a></li>
+<li><a href="/quanto-custa-um-site/">Quanto custa um site</a></li></ul></nav>
+<nav aria-label="Casos"><h2>Casos</h2><ul>
+<li><a href="/projetos/parou/">PAROU, app de transportes</a></li>
+<li><a href="/projetos/adribodypiercing/">AdriBodyPiercing, estúdio no Porto</a></li>
+<li><a href="/#projetos">Todos os projetos</a></li>
+<li><a href="https://www.livroreclamacoes.pt" rel="noopener">Livro de Reclamações</a></li></ul></nav>
+</div>
+</footer>
+<script>
+(function(){var rv=[].slice.call(document.querySelectorAll('.rv'));
+if(!('IntersectionObserver' in window)){rv.forEach(function(el){el.classList.add('on')});return;}
+var o=new IntersectionObserver(function(es){es.forEach(function(x){if(x.isIntersecting){x.target.classList.add('on');o.unobserve(x.target);}})},{rootMargin:'0px 0px -6% 0px'});
+rv.forEach(function(el){o.observe(el)});
+setTimeout(function(){rv.forEach(function(el){el.classList.add('on')})},2500);})();
+</script>
+</body>
+</html>

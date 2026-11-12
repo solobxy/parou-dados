@@ -308,9 +308,19 @@ www.chave.pt {
 	}
 	@estaticos path /fonts/* /img/* /vid/*
 	header @estaticos Cache-Control "public, max-age=2592000"
-	@pagina path / /index.html
+	# Páginas HTML sempre revalidadas (os preços mudam sozinhos a 1/12 pelos templates)
+	@pagina path / /index.html */ *.html
 	header @pagina Cache-Control "no-cache"
+	# /projetos/ não tem página própria: os projetos estão na página inicial
+	redir /projetos /#projetos 302
+	redir /projetos/ /#projetos 302
 	file_server
+	# Página 404 com a marca (em vez da página vazia do servidor)
+	handle_errors {
+		root * /var/www/dinissousa
+		rewrite * /404.html
+		file_server
+	}
 }
 
 # Endereço de testes (funciona antes de o domínio apontar para aqui; fica fora do Google)
