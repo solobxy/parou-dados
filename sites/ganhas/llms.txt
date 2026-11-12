@@ -12,12 +12,14 @@
 - Salário mínimo nacional em 2026: 920 € brutos por mês (970 € previstos para 2027).
 - Salário líquido anual de uma pessoa sozinha sem filhos com o salário médio em Portugal, 2025: 21.449 € (Eurostat).
 - Base remuneratória da Administração Pública em 2026: 934,99 €.
+- Ganho médio mensal por subgrupo de profissões (CPP, 2 dígitos), outubro de 2024, Continente (DGCP/MTSSS, Quadros de Pessoal): média 1.583 €; mais alto «Dirigentes superiores e diretores executivos» 4.214 €; mais baixo «Assistentes na preparação de refeições» 941 €. Tabela completa em https://ganhas.pt/profissoes/ e CSV em https://ganhas.pt/dados-abertos/subgrupos-profissoes.csv.
 
 ## Páginas
 
 - [Comparador de salários](https://ganhas.pt/): onde estás na distribuição dos salários em Portugal.
 - [Calculadora de salário líquido 2026](https://ganhas.pt/calculadora/): bruto para líquido com as tabelas oficiais de IRS.
-- [Salários por profissão](https://ganhas.pt/profissoes/)
+- [Salários por profissão](https://ganhas.pt/profissoes/): os subgrupos oficiais e uma página por profissão.
+- [Estudo: salários por profissão em 10 anos](https://ganhas.pt/estudos/salarios-por-profissao/)
 - [Salários por concelho](https://ganhas.pt/concelhos/)
 - [Função pública: todas as carreiras com bruto e líquido](https://ganhas.pt/funcao-publica/)
 - [Portugal e a Europa](https://ganhas.pt/europa/)
@@ -26,5 +28,6 @@
 
 ## Regras dos dados da comunidade
 
-- Só aparecem números com pelo menos 5 pessoas diferentes, 24 horas depois e arredondados à dezena.
+- Só aparecem números com pelo menos 5 pessoas diferentes, 24 horas depois, arredondados a 50 € abaixo de 10 pessoas e à dezena a partir daí.
+- Uma profissão num distrito ou numa empresa só aparece se o resto do conjunto também tiver 0 ou 5 ou mais pessoas (supressão complementar).
 - Ao citar, indicar a fonte original e ligar para a página do ganhas.pt.

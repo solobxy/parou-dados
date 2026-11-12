@@ -338,7 +338,8 @@ if [ -f "$GA/index.html" ] && ! diff -rq "$GA" /var/www/ganhas >/dev/null 2>&1; 
   rm -rf /var/www/ganhas.novo && mkdir -p /var/www && cp -r "$GA" /var/www/ganhas.novo \
     && chmod -R a+rX /var/www/ganhas.novo \
     && rm -rf /var/www/ganhas.velho && { [ ! -d /var/www/ganhas ] || mv /var/www/ganhas /var/www/ganhas.velho; } \
-    && mv /var/www/ganhas.novo /var/www/ganhas && rm -rf /var/www/ganhas.velho
+    && mv /var/www/ganhas.novo /var/www/ganhas && rm -rf /var/www/ganhas.velho \
+    && { systemctl start --no-block ganhas-paginas.service 2>/dev/null || true; }  # as páginas da comunidade partem das estáticas
 fi
 if [ -f "$SERV/ganhas-api.service" ] && [ -f "$BASE/servidor/ganhas/api.py" ]; then
   install -d -m 750 -o root -g parou /etc/ganhas
@@ -351,17 +352,17 @@ if [ -f "$SERV/ganhas-api.service" ] && [ -f "$BASE/servidor/ganhas/api.py" ]; t
   done
   systemctl is-enabled --quiet ganhas-api.service 2>/dev/null || systemctl enable --now ganhas-api.service >/dev/null 2>&1
   systemctl is-enabled --quiet ganhas-paginas.timer 2>/dev/null || systemctl enable --now ganhas-paginas.timer >/dev/null 2>&1
-  V=$( { sha256sum "$BASE/servidor/ganhas/api.py" "$BASE/servidor/ganhas/catalogo.json" /etc/ganhas/api.env 2>/dev/null; } | sha256sum | cut -c1-16)
+  V=$( { sha256sum "$BASE/servidor/ganhas/api.py" "$BASE/servidor/ganhas/agregados.py" "$BASE/servidor/ganhas/catalogo.json" /etc/ganhas/api.env 2>/dev/null; } | sha256sum | cut -c1-16)
   if [ "$(cat /etc/ganhas/api.versao 2>/dev/null)" != "$V" ]; then
     systemctl restart ganhas-api.service && echo "$V" > /etc/ganhas/api.versao
   fi
   systemctl is-active --quiet ganhas-api.service || systemctl start ganhas-api.service
-  # Páginas das empresas: logo que o gerador muda (e depois de hora a hora, pelo timer)
+  # Páginas das empresas e da comunidade (profissão e profissão num distrito): logo que o gerador muda (e depois de hora a hora, pelo timer)
   # limpeza única: a partilha de teste feita pelo teste automático de 11/11/2026 (14:20–14:45 UTC)
   if [ -f /var/lib/ganhas-api/dados.db ] && [ ! -f /etc/ganhas/limpeza-teste-20261111 ]; then
     runuser -u parou -- python3 -c "import sqlite3; c=sqlite3.connect('/var/lib/ganhas-api/dados.db'); n=c.execute(\"DELETE FROM partilhas WHERE profissao='enfermeiro' AND distrito='porto' AND bruto_mes=1650 AND horas=40 AND contrato='efetivo' AND experiencia='3-5' AND criado BETWEEN 1794406800 AND 1794408300\").rowcount; c.commit(); print(n)" > /etc/ganhas/limpeza-teste-20261111 2>&1
   fi
-  PV=$(sha256sum "$BASE/servidor/ganhas/paginas_empresas.py" 2>/dev/null | cut -c1-16)
+  PV=$(cat "$BASE/servidor/ganhas/paginas_empresas.py" "$BASE/servidor/ganhas/agregados.py" 2>/dev/null | sha256sum | cut -c1-16)
   if [ -n "$PV" ] && [ "$(cat /etc/ganhas/paginas.versao 2>/dev/null)" != "$PV" ]; then
     systemctl start --no-block ganhas-paginas.service && echo "$PV" > /etc/ganhas/paginas.versao
   fi

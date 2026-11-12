@@ -218,7 +218,7 @@ parte('Dimensão da empresa', por_dim('0012651', 'dimensao', 'dimensao'))
 parte('Europa', europa)
 
 # Função pública e decis: módulos próprios (só se existirem)
-for nome, mod in (('Função pública', 'oficiais_fp'), ('Decis', 'oficiais_decis')):
+for nome, mod in (('Função pública', 'oficiais_fp'), ('Decis', 'oficiais_decis'), ('Subgrupos de profissões', 'oficiais_subgrupos')):
     if os.path.exists(os.path.join(AQUI, mod + '.py')):
         sys.path.insert(0, AQUI)
         m = __import__(mod)

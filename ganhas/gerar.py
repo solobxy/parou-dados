@@ -89,7 +89,7 @@ def pagina(caminho, titulo, descricao, corpo, *, dados=None, ld=None, prioridade
     # o Google corta perto dos 60 caracteres no título e dos 160 na descrição
     def curto(t, n):
         return t if len(t) <= n else t[:n - 1].rsplit(' ', 1)[0].rstrip(',;:(') + '…'
-    titulo_meta = curto(titulo, 65)
+    titulo_meta = curto(titulo, 62)
     tit = h_titulo or (titulo_meta + ' · ganhas.pt' if len(titulo_meta) <= 50 else titulo_meta)
     descricao = curto(descricao, 160)
     nav = ''.join(f'<a href="{h}"{" aria-current=\"page\"" if caminho.startswith(h) else ""}>{t}</a>' for h, t in (NAV_EN if lang == 'en' else NAV))
@@ -98,7 +98,8 @@ def pagina(caminho, titulo, descricao, corpo, *, dados=None, ld=None, prioridade
         alt_html += f'<link rel="alternate" hreflang="x-default" href="{DOMINIO}{alternos["pt"]}">'
     lds = [ORG, SITE] + (ld or [])
     head_extra = f'<meta name="google-site-verification" content="{e(GOOGLE_VERIFICACAO)}">' if GOOGLE_VERIFICACAO else ''
-    robots = '' if indexar else '<meta name="robots" content="noindex">'
+    # entre marcas: o servidor (paginas_empresas.py) tira o noindex quando a página passa a ter números da comunidade
+    robots = '<!--robots-->' + ('' if indexar else '<meta name="robots" content="noindex, follow">') + '<!--/robots-->'
     dados_html = ('<script type="application/json" id="dados">' + json.dumps(dados, ensure_ascii=False, separators=(',', ':')).replace('</', '<\\/') + '</script>') if dados else ''
     barra_html = ''  # o botão «Partilhar» do topo já está sempre à vista; uma segunda barra fixa tapava o conteúdo
     doc = f'''<!doctype html>
@@ -165,7 +166,8 @@ def rodape():
 <div><p>Salários reais em Portugal: números oficiais e partilhas anónimas de quem trabalha. Sem contas, sem cookies.</p>
 <p class="credito">Feito por <a href="https://dinissousa.pt">dinissousa.pt</a></p></div>
 <ul><li><a href="/calculadora/">Calculadora de salário líquido</a></li><li><a href="/salario-minimo/">Salário mínimo</a></li><li><a href="/salario-medio/">Salário médio</a></li><li><a href="/profissoes/">Salários por profissão</a></li>
-<li><a href="/concelhos/">Salários por concelho</a></li><li><a href="/funcao-publica/">Função pública</a></li><li><a href="/europa/">Portugal e a Europa</a></li><li><a href="/empresa/">Quanto pagam as empresas</a></li></ul>
+<li><a href="/concelhos/">Salários por concelho</a></li><li><a href="/funcao-publica/">Função pública</a></li><li><a href="/europa/">Portugal e a Europa</a></li><li><a href="/empresa/">Quanto pagam as empresas</a></li>
+<li><a href="/estudos/salarios-por-profissao/">Estudo: 10 anos de salários por profissão</a></li></ul>
 <ul><li><a href="/partilhar/">Partilhar o meu salário</a></li><li><a href="/metodo/">Método e fontes</a></li><li><a href="/dados/">Dados abertos</a></li>
 <li><a href="/para-empresas/">Para empresas e jornalistas</a></li><li><a href="/en/salary-calculator/" hreflang="en">English</a></li></ul>
 <ul><li><a href="/privacidade/">Privacidade</a></li><li><a href="/termos/">Termos</a></li><li><a href="/cookies/">Cookies</a></li>
@@ -442,7 +444,7 @@ def calculadora():
 <p class="dica">Isento até {euro(irs["subsidio_dinheiro"], 2)} por dia em dinheiro e {euro(irs["subsidio_cartao"], 2)} em cartão. Contamos 22 dias por mês.</p></div>
 </form>
 <div class="recibo" aria-live="polite">
-<h3>O teu recibo</h3>
+<h2 class="recibo-t">O teu recibo</h2>
 <div class="linha"><span class="r">Vencimento base</span><span class="p"></span><span class="v" id="c-r-base">—</span></div>
 <div class="linha" id="c-l-subs" hidden><span class="r">Subsídio de alimentação</span><span class="p"></span><span class="v" id="c-r-subs">—</span></div>
 <div class="linha" id="c-l-duo" hidden><span class="r">Duodécimos (férias e Natal)</span><span class="p"></span><span class="v" id="c-r-duo">—</span></div>
@@ -507,7 +509,7 @@ def partilhar():
 <p class="lede">30 segundos. Sem nome, sem e-mail, sem conta. A tua resposta ajuda quem vai negociar a seguir.</p>
 <ul class="texto" style="margin-top:24px;padding-left:20px">
 <li>Só mostramos números com pelo menos 5 pessoas diferentes.</li>
-<li>As partilhas só contam 24 horas depois, arredondadas à dezena.</li>
+<li>As partilhas só contam 24 horas depois, arredondadas a 50 € até haver 10 pessoas e à dezena a partir daí.</li>
 <li>Não guardamos o teu IP. Podes apagar a partilha neste navegador quando quiseres.</li>
 </ul>
 <div id="apagar-partilha" hidden style="margin-top:24px"><p class="dica">Já partilhaste neste navegador.</p>
@@ -572,112 +574,376 @@ def media_nacional():
     return O['media_nacional']  # INE, Portugal, mesma fonte dos concelhos e dos grupos
 
 
+# Uma página por profissão indexada só quando tem números que são dela (Google penaliza páginas em massa iguais):
+# - o representante de cada subgrupo (CPP, 2 dígitos) leva o dado oficial do subgrupo, que é igual para todas as
+#   profissões desse subgrupo; as outras do mesmo subgrupo ficam com noindex (continuam a existir para quem lá chega);
+# - a profissão «dona» de uma carreira da função pública (tabela que é só dela) também é indexada;
+# - quando uma profissão chega às 5 pessoas na comunidade, o servidor tira o noindex (paginas_empresas.py).
+# Escolha do representante: o nome mais procurado do subgrupo, por critério editorial (sem volumes de pesquisa).
+REPRESENTA = {
+    '11': 'diretor-geral', '12': 'diretor-financeiro', '13': 'diretor-de-informatica', '14': 'gerente-de-loja',
+    '21': 'engenheiro-civil', '22': 'enfermeiro', '23': 'professor-do-3-o-ciclo-e-secundario', '24': 'contabilista-certificado',
+    '25': 'programador', '26': 'advogado', '31': 'encarregado-de-obra', '32': 'tecnico-de-radiologia',
+    '33': 'assistente-administrativo', '34': 'chefe-de-cozinha', '35': 'tecnico-de-apoio-informatico', '41': 'empregado-de-escritorio',
+    '42': 'operador-de-call-center', '43': 'fiel-de-armazem', '44': 'carteiro', '51': 'cozinheiro', '52': 'operador-de-loja',
+    '53': 'auxiliar-de-saude', '54': 'vigilante', '61': 'agricultor', '71': 'pedreiro', '72': 'mecanico-de-automoveis',
+    '74': 'eletricista', '75': 'padeiro-ou-pasteleiro', '81': 'operador-de-maquinas-de-alimentacao',
+    '82': 'montador-de-componentes-eletronicos', '83': 'motorista-de-pesados', '91': 'trabalhador-de-limpeza',
+    '93': 'operador-de-armazem', '94': 'ajudante-de-cozinha', '96': 'estafeta'}
+# parte da carreira pública que é desta profissão (posto, categoria); sem filtro, a carreira toda
+PROF_FP_FILTRO = {'oficial-das-forcas-armadas': ('subgrupo', 'Oficiais', None), 'sargento-das-forcas-armadas': ('subgrupo', 'Sargentos', None),
+                  'praca-das-forcas-armadas': ('subgrupo', 'Praças', None),
+                  'agente-de-policia': ('subgrupo', 'Agentes de polícia', 'de agente a agente coordenador'),
+                  'guarda-prisional': ('subgrupo', 'Guarda prisional', 'de guarda a guarda principal'),
+                  'bombeiro': ('subgrupo', 'Bombeiro sapador', 'de bombeiro sapador a chefe principal, sem os cargos de comando'),
+                  'medico-de-medicina-geral': ('subgrupo', '40H/semana', 'no regime de 40 horas, conforme a categoria'),
+                  'medico-especialista': ('subgrupo', '40H/semana', 'no regime de 40 horas, conforme a categoria'),
+                  'nutricionista': ('subgrupo', 'Tempo Completo', 'a 35 horas por semana, de assistente a assessor superior')}
+# quem fica com a tabela pública para efeitos de indexação (as outras profissões ligadas à mesma tabela repetiam-na)
+FP_DONO = {'enfermeiros': 'enfermeiro', 'medicos': 'medico-de-medicina-geral', 'professores': 'professor-do-3-o-ciclo-e-secundario',
+           'docente-universitario': 'professor-do-ensino-superior', 'psp': 'agente-de-policia', 'guarda-prisional': 'guarda-prisional',
+           'bombeiros-sapadores': 'bombeiro', 'teph': 'tecnico-de-emergencia-medica', 'tsdt': 'fisioterapeuta',
+           'farmaceuticos': 'farmaceutico', 'tecnico-auxiliar-de-saude': 'auxiliar-de-saude',
+           'assistente-operacional': 'assistente-operacional-escolar', 'assistente-tecnico': 'assistente-administrativo',
+           'especialista-de-informatica': 'programador', 'tecnico-de-informatica': 'tecnico-de-apoio-informatico',
+           'tecnico-superior-de-saude': 'nutricionista'}
+# carreiras públicas que juntam várias profissões (o texto diz «a carreira onde entram os …»)
+CARREIRA_GENERICA = {'especialista-de-informatica': 'especialista de informática', 'tecnico-de-informatica': 'técnico de informática',
+                     'tecnico-superior': 'técnico superior', 'assistente-tecnico': 'assistente técnico', 'assistente-operacional': 'assistente operacional',
+                     'tsdt': 'técnico superior de diagnóstico e terapêutica', 'tecnico-superior-de-saude': 'técnico superior de saúde',
+                     'tecnico-auxiliar-de-saude': 'técnico auxiliar de saúde'}
+NOMES_SG_EXTRA = {'95': 'Vendedores ambulantes e prestadores de serviços na rua'}
+
+
+def data_pt(d):
+    return dt.date.fromisoformat(d).strftime('%d/%m/%Y')
+
+
+def fontes_curtas(chaves):
+    ls = [f'<a href="{e(O["fontes"][k]["url"])}" rel="noopener">{e(O["fontes"][k]["nome"])}</a>' for k in chaves]
+    return ('Fonte: ' if len(ls) == 1 else 'Fontes: ') + '; '.join(ls)
+
+
+def nome_sg(k):
+    return (CAT.get('subgrupos') or {}).get(k) or NOMES_SG_EXTRA.get(k) or ((O.get('subgrupos') or {}).get('linhas', {}).get(k) or {}).get('nome_oficial', k)
+
+
+def dados_sg(k):
+    """(ganho, base, tco, ganho do 1.º ano) do subgrupo no último ano, ou None."""
+    s = (O.get('subgrupos') or {}).get('linhas', {}).get(k)
+    if not s or not s.get('ganho') or s['ganho'][-1] is None:
+        return None
+    return {'ganho': s['ganho'][-1], 'base': s['base'][-1], 'tco': s['tco'][-1], 'ganho0': s['ganho'][0], 'serie': s['ganho']}
+
+
+def fp_da_profissao(pid):
+    """(carreira, mínimo, máximo, texto do âmbito) da parte da carreira pública que é desta profissão."""
+    fp_id = PROF_FP.get(pid)
+    x = carreiras_fp().get(fp_id) if fp_id else None
+    if not x:
+        return None
+    filtro = PROF_FP_FILTRO.get(pid)
+    if not filtro:
+        return (x, x['min'], x['max'], None) if x.get('min') else None
+    campo, valor, texto = filtro
+    formacao = re.compile(r'cadete|aluno|aspirante|estagi|instrução|tirocin|\bformação|pré-carreira|interno', re.I)  # «\b»: «informação» não é formação
+    cats = [c for c in x['categorias'] if (c.get(campo) or '').startswith(valor) and not formacao.search(c['nome'])]
+    vals = [q['valor'] for c in cats for q in c['posicoes'] if q['valor'] >= smn_hoje()[1]]
+    if not vals:
+        return None
+    if not texto:  # militares: do posto mais baixo ao mais alto («de alferes a general»)
+        texto = f'de {minusc(cats[-1]["nome"].split(" / ")[-1])} a {minusc(cats[0]["nome"].split(" / ")[-1])}'
+    return (x, min(vals), max(vals), texto)
+
+
+def indexavel(p):
+    fp_id = PROF_FP.get(p['id'])
+    return (REPRESENTA.get(p['subgrupo']) == p['id'] or (fp_id and FP_DONO.get(fp_id) == p['id'])
+            or (p['id'] in PROF_FP_FILTRO and fp_da_profissao(p['id'])))
+
+
+def milhares(n):
+    return f'{n:,}'.replace(',', '.')
+
+
+def resposta_profissao(p, sg, fpd):
+    """A resposta direta do topo (40 a 60 palavras), só com números oficiais. A comunidade entra no servidor."""
+    nome = minusc(p['nome'])
+    a = (O.get('subgrupos') or {}).get('ano')
+    a_fp = O['funcao_publica']['ano']
+    sub = f'«{e(nome_sg(p["subgrupo"]))}»' if sg else ''
+    if fpd:
+        x, mn, mx, ambito = fpd
+        if x['id'] in CARREIRA_GENERICA:  # a carreira não tem o nome da profissão: diz-se qual é
+            txt = (f'Na função pública, a carreira de {e(CARREIRA_GENERICA[x["id"]])}, onde entram os {e(plural(nome))}, paga em {a_fp} '
+                   f'entre <span class="mk">{euro(mn)}</span> e {euro(mx)} brutos por mês{", " + e(ambito) if ambito else ""}.')
+            return txt + (f' Nas empresas, privadas e públicas, o subgrupo {sub} ganhava em média {euro(sg["ganho"])} em outubro de {a}.' if sg else '')
+        onde = (f', {e(ambito)}' if ambito else ', conforme a posição na carreira' if x.get('principal')
+                else ', conforme a categoria e a posição')
+        txt = f'Na função pública, um {e(nome)} ganha em {a_fp} entre <span class="mk">{euro(mn)}</span> e {euro(mx)} brutos por mês{onde}.'
+        if sg:
+            return txt + (f' Nas empresas, privadas e públicas, não há número oficial só para {e(plural(nome))}: o subgrupo onde entram, {sub}, '
+                          f'ganhava em média {euro(sg["ganho"])} em outubro de {a}.')
+        return txt + (' Os militares não entram nos Quadros de Pessoal, por isso não há uma média do setor privado para comparar.'
+                      if p['grupo'] == '0' else '')
+    if sg:
+        return (f'Não há um número oficial só para {e(plural(nome))}. O mais próximo é o do subgrupo {sub}: '
+                f'em outubro de {a} ganhavam em média <span class="mk">{euro(sg["ganho"])}</span> brutos por mês no Continente, '
+                f'com uma remuneração base média de {euro(sg["base"])}. É a média de todas as profissões desse subgrupo.')
+    return 'Ainda não temos um número oficial para esta profissão.'
+
+
+def plural(nome):
+    """Plural do nome da profissão (para frases); os casos que a regra simples erra estão escritos à mão."""
+    fixos = {'diretor-geral': 'diretores-gerais', 'estatístico ou atuário': 'estatísticos ou atuários', 'designer gráfico': 'designers gráficos',
+             'personal trainer': 'personal trainers', 'fiel de armazém': 'fiéis de armazém', 'barman': 'barmen',
+             'técnico instalador de telecomunicações': 'técnicos instaladores de telecomunicações', 'padeiro ou pasteleiro': 'padeiros ou pasteleiros'}
+    if nome in fixos:
+        return fixos[nome]
+    excecoes = {'técnico': 'técnicos', 'agente': 'agentes', 'operador': 'operadores', 'motorista': 'motoristas'}
+    partes = nome.split(' ')
+    w = partes[0]
+    if w in excecoes:
+        w = excecoes[w]
+    elif w.endswith('ão'):
+        w = w[:-2] + 'ões'
+    elif w.endswith('l'):
+        w = w[:-1] + 'is'
+    elif w.endswith(('r', 'z', 's')):
+        w = w + 'es' if not w.endswith('s') else w
+    elif w.endswith('m'):
+        w = w[:-1] + 'ns'
+    else:
+        w = w + 's'
+    # adjetivos logo a seguir concordam («engenheiros civis», «assistentes operacionais escolares»)
+    adj = {'civil': 'civis', 'mecânico': 'mecânicos', 'químico': 'químicos', 'eletrotécnico': 'eletrotécnicos', 'industrial': 'industriais',
+           'especialista': 'especialistas', 'dentista': 'dentistas', 'veterinário': 'veterinários', 'gráfico': 'gráficos', 'social': 'sociais',
+           'financeiro': 'financeiros', 'certificado': 'certificados', 'administrativo': 'administrativos', 'fabril': 'fabris',
+           'imobiliário': 'imobiliários', 'familiar': 'familiares', 'operacional': 'operacionais', 'prisional': 'prisionais',
+           'geral': 'gerais', 'web': 'web', 'técnico': 'técnicos', 'doméstico': 'domésticos', 'superior': 'superiores',
+           'comercial': 'comerciais', 'escolar': 'escolares', 'clínico': 'clínicos'}
+    resto = partes[1:]
+    for i, x in enumerate(resto):
+        if x not in adj:
+            break
+        resto[i] = adj[x]
+    return ' '.join([w] + resto)
+
+
 def profissoes():
     grupos = O['grupos']
     ano = grupos_ano()
-    por_g = {}
+    sgs = O.get('subgrupos') or {}
+    a_sg = sgs.get('ano')
+    por_g, por_sg = {}, {}
     for p in CAT['profissoes']:
         por_g.setdefault(p['grupo'], []).append(p)
+        por_sg.setdefault(p['subgrupo'], []).append(p)
     blocos = []
     for k in sorted(por_g, key=lambda s: -((grupos.get(s) or {}).get('ganho') or 0)):
         g = grupos.get(k) or {}
-        itens = ''.join(f'<li data-nome="{e(slug(p["pesquisa"] + " " + p["nome"]).replace("-", " "))}"><a href="/profissoes/{p["id"]}/">{e(p["nome"])}</a></li>'
+        itens = ''.join(f'<li data-nome="{e(slug(p["pesquisa"] + " " + p["nome"]).replace("-", " "))}"><a href="/profissoes/{p["id"]}/">{e(p["nome"])}</a>'
+                        f'{"<span class=cifra>" + euro(dados_sg(p["subgrupo"])["ganho"]) + "</span>" if dados_sg(p["subgrupo"]) else ""}</li>'
                         for p in sorted(por_g[k], key=lambda x: x['nome']))
-        info = (f'Ganho médio do grupo: <strong>{euro(g["ganho"])}</strong> brutos por mês, {ano}' if g.get('ganho')
-                else 'Sem dado nos Quadros de Pessoal: vê a <a href="/funcao-publica/militares/">tabela dos militares</a>')
+        info = (f'Ganho médio do grupo: <strong>{euro(g["ganho"])}</strong> brutos por mês, {ano}. Ao lado de cada profissão, o ganho médio do seu subgrupo ({a_sg}).'
+                if g.get('ganho') else 'Sem dado nos Quadros de Pessoal: vê a <a href="/funcao-publica/militares/">tabela dos militares</a>')
         blocos.append(f'<div class="entra bloco-grupo" id="g{k}"><h2 class="h3-pag">{e(GC.get(k, k))}</h2>'
                       f'<p class="res-extra" style="margin-top:6px">{info}</p>'
                       f'<ul class="lista-colunas" style="margin-top:16px">{itens}</ul></div>')
     linhas = ''.join(f'<tr><td><a href="#g{k}">{e(GC[k])}</a></td><td class="n">{euro(v["ganho"])}</td></tr>'
                      for k, v in sorted(grupos.items(), key=lambda kv: -kv[1]['ganho']))
+    subs = sorted(((k, dados_sg(k)) for k in sgs.get('linhas', {}) if len(k) == 2 and dados_sg(k)), key=lambda kv: -kv[1]['ganho'])
+    def sg_nome_ligado(k):
+        rep = REPRESENTA.get(k)
+        return f'<a href="/profissoes/{rep}/">{e(nome_sg(k))}</a>' if rep else e(nome_sg(k))
+    tab_sg = ''
+    resposta = ''
+    if subs:
+        tab_sg = (f'<section class="sec"><div class="mold"><h2 class="h2-pag">Os {len(subs)} subgrupos de profissões, do que mais ganha ao que menos ganha</h2>'
+                  f'<p class="lede" style="margin-top:16px">É o dado oficial mais fino que existe por profissão em Portugal: o subgrupo junta profissões parecidas '
+                  f'(por exemplo, todos os especialistas de informática). Outubro de {a_sg}, Continente, quem trabalha a tempo completo no setor privado e nas empresas públicas.</p>'
+                  + tabela_html(['Subgrupo de profissões', 'Ganho médio', 'Base média', 'Trabalhadores'],
+                                [[sg_nome_ligado(k), euro(v['ganho']), euro(v['base']), milhares(v['tco'])] for k, v in subs],
+                                f'Ganho médio mensal por subgrupo de profissões, {a_sg}')
+                  + fonte('subgrupos', 'O ganho junta à base os subsídios regulares, prémios e horas extra do mês. «Trabalhadores» conta todos os trabalhadores por conta de outrem do subgrupo.')
+                  + '<p class="espaco"><a class="ligacao" href="/estudos/salarios-por-profissao/">O que mudou em 10 anos, por profissão</a> · '
+                    '<a class="ligacao" href="/dados-abertos/subgrupos-profissoes.csv">Descarregar os dados (CSV)</a></p></div></section>')
+        topo, fundo = subs[0], subs[-1]
+        resposta = (f'<p class="lede resposta">Em outubro de {a_sg}, quem trabalhava a tempo completo em empresas privadas e públicas ganhava em média {euro(sgs["linhas"]["T"]["ganho"][-1])} brutos por mês. '
+                    f'O subgrupo mais bem pago era o dos {e(minusc(nome_sg(topo[0])))} (<span class="mk">{euro(topo[1]["ganho"])}</span>) e o menos pago o dos '
+                    f'{e(minusc(nome_sg(fundo[0])))} ({euro(fundo[1]["ganho"])}).</p>'
+                    f'<p class="fonte">Dados atualizados a {data_pt(O["atualizado"])} · {fontes_curtas(["subgrupos"])}</p>')
     corpo = f'''
 {migalhas([(None, "Profissões")])[0]}
 <section class="sec" style="padding-top:24px"><div class="mold">
 <h1 class="h1-pag">Quanto se ganha em cada profissão</h1>
-<p class="lede">Ganho médio mensal bruto de quem trabalha a tempo completo no setor privado, por grupo de profissões ({ano}), e as partilhas de quem trabalha.
-Na função pública, os salários estão na <a href="/funcao-publica/">tabela de cada carreira</a>.</p>
+{resposta}
+<p class="lede" style="margin-top:20px">Procura a tua profissão: cada página junta o número oficial do subgrupo, a tabela da função pública quando existe e as partilhas de quem trabalha, a partir de 5 pessoas.</p>
 <div class="grelha2" style="margin-top:40px">
 <div><div class="f" style="max-width:560px"><label for="filtro-prof">Procurar profissão</label>
 <input type="search" id="filtro-prof" data-filtro="#lista-prof" data-vazio="#prof-vazio" placeholder="Enfermeiro, programador, caixa…" autocomplete="off"></div>
 <p class="vazio" id="prof-vazio" hidden style="margin-top:16px">Não encontrámos essa profissão. <a href="/partilhar/">Partilha o teu salário</a> e escolhe a mais próxima.</p></div>
-<table class="tabela"><caption class="vis">Ganho médio por grupo de profissões</caption><thead><tr><th>Grupo de profissões</th><th class="n">Ganho médio</th></tr></thead><tbody>{linhas}</tbody></table>
+<table class="tabela"><caption class="vis">Ganho médio por grupo de profissões</caption><thead><tr><th>Grande grupo de profissões ({ano})</th><th class="n">Ganho médio</th></tr></thead><tbody>{linhas}</tbody></table>
 </div>
 <div id="lista-prof">{"".join(blocos)}</div>
 {fonte("grupos")}
-</div></section>'''
-    pagina('/profissoes/', 'Salários por profissão em Portugal', f'Quanto se ganha em Portugal em cada profissão: ganho médio mensal por grupo de profissões ({ano}), {len(CAT["profissoes"])} profissões e partilhas anónimas.',
-           corpo, prioridade=0.9, ld=[migalhas([('/profissoes/', 'Profissões')])[1]], og='/og/profissoes.png')
+</div></section>
+{tab_sg}'''
+    ld = [migalhas([('/profissoes/', 'Profissões')])[1]]
+    if subs:
+        ld.append(dataset_subgrupos())
+    pagina('/profissoes/', 'Salários por profissão em Portugal',
+           (f'Ganho médio de {len(subs)} subgrupos de profissões em {a_sg}, do que mais ganha ao que menos ganha, '
+            f'e {len(CAT["profissoes"])} profissões com dados oficiais e partilhas anónimas.') if subs else
+           f'Quanto se ganha em Portugal em cada profissão: ganho médio mensal por grupo de profissões ({ano}) e partilhas anónimas.',
+           corpo, prioridade=0.9, ld=ld, og='/og/profissoes.png')
     for p in CAT['profissoes']:
-        pagina_profissao(p, por_g[p['grupo']])
+        pagina_profissao(p, por_sg[p['subgrupo']], por_g[p['grupo']])
 
 
-def pagina_profissao(p, irmas):
+def dataset_subgrupos():
+    sgs = O['subgrupos']
+    return {'@type': 'Dataset', 'name': f'Salários por subgrupo de profissões em Portugal, {sgs["anos"][0]}–{sgs["ano"]}',
+            'description': 'Ganho médio mensal, remuneração base média e número de trabalhadores por conta de outrem em cada subgrupo da '
+                           'Classificação Portuguesa das Profissões (CPP/2010, 2 dígitos), Continente, a partir dos Quadros de Pessoal (DGCP/MTSSS).',
+            'url': DOMINIO + '/dados/', 'inLanguage': 'pt-PT', 'creator': {'@id': DOMINIO + '/#org'}, 'isAccessibleForFree': True,
+            'license': 'https://creativecommons.org/licenses/by/4.0/', 'spatialCoverage': 'Portugal Continental',
+            'temporalCoverage': f'{sgs["anos"][0]}/{sgs["ano"]}', 'isBasedOn': O['fontes']['subgrupos']['url'],
+            'distribution': [{'@type': 'DataDownload', 'encodingFormat': 'text/csv', 'contentUrl': DOMINIO + '/dados-abertos/subgrupos-profissoes.csv'}]}
+
+
+def pagina_profissao(p, irmas_sg, irmas_g):
     g = O['grupos'].get(p['grupo']) or {}
     nome = p['nome']
     titulo_h1 = f'Quanto ganha {artigo(nome)} {minusc(nome)}?'
-    ganho = g.get('ganho')
     ano = g.get('ano') or grupos_ano()
-    med = media_nacional()
-    fp_id = PROF_FP.get(p['id'])
-    fp = carreiras_fp().get(fp_id) if fp_id else None
-    comparacao = ''
-    if ganho:
-        dif = ganho - med
-        comparacao = (f'<p class="lede" style="margin-top:20px">{e(nome)} pertence ao grupo <strong>{e(GC[p["grupo"]])}</strong>. Em {ano}, quem trabalhava neste grupo a tempo completo, '
-                      f'no setor privado, ganhava em média <span class="mk">{euro(ganho)}</span> brutos por mês: {euro(abs(dif))} {"acima" if dif > 0 else "abaixo"} da média nacional ({euro(med)}).</p>'
-                      f'<p class="dica" style="margin-top:12px">É a média do grupo inteiro, não desta profissão em concreto. As partilhas ao lado mostram esta profissão.</p>')
+    sg = dados_sg(p['subgrupo'])
+    a_sg = (O.get('subgrupos') or {}).get('ano')
+    fpd = fp_da_profissao(p['id'])
+    idx = bool(indexavel(p))
+    fontes_usadas = []
+    recibo_sg = ''
+    if sg:
+        fontes_usadas.append('subgrupos')
+        sobe = 100 * (sg['ganho'] / sg['ganho0'] - 1) if sg['ganho0'] else None
+        tot = (O['subgrupos']['linhas'].get('T') or {}).get('ganho') or [None]
+        sobe_t = 100 * (tot[-1] / tot[0] - 1) if tot[0] else None
+        anos = O['subgrupos']['anos']
+        mx = max(v for v in sg['serie'] if v) or 1
+        barras = ''.join(f'<div class="barra-h{" pt" if i == len(anos) - 1 else ""}"><span>{a}</span><i style="--w:{round(100 * v / mx, 1)}%"></i><b>{euro(v)}</b></div>'
+                         for i, (a, v) in enumerate(zip(anos, sg['serie'])) if v)
+        recibo_sg = (f'<div class="recibo" style="margin-top:40px"><h2 class="recibo-t">Subgrupo «{e(nome_sg(p["subgrupo"]))}»</h2>'
+                     f'<div class="linha"><span class="r">Ganho médio ({a_sg})</span><span class="p"></span><span class="v">{euro(sg["ganho"])}</span></div>'
+                     f'<div class="linha"><span class="r">Remuneração base média</span><span class="p"></span><span class="v">{euro(sg["base"])}</span></div>'
+                     f'<div class="linha"><span class="r">Média de todas as profissões</span><span class="p"></span><span class="v">{euro(tot[-1])}</span></div>'
+                     f'<div class="linha"><span class="r">Trabalhadores no subgrupo</span><span class="p"></span><span class="v">{milhares(sg["tco"])}</span></div>'
+                     + (f'<div class="linha"><span class="r">Subida desde {anos[0]}</span><span class="p"></span><span class="v">{"+" if sobe >= 0 else ""}{pct(sobe)}</span></div>' if sobe is not None else '')
+                     + f'<p class="fonte">Continente, outubro de cada ano, quem trabalha a tempo completo no setor privado e no setor empresarial do Estado. '
+                       f'De {anos[0]} a {a_sg}, a média de todas as profissões subiu {pct(sobe_t)}. Os números são do subgrupo inteiro, iguais para todas as profissões que o compõem.</p></div>'
+                     f'<h2 class="h2-pag" style="margin-top:56px">Ganho médio do subgrupo, {anos[0]} a {a_sg}</h2>'
+                     f'<div class="barras-h" style="margin-top:24px">{barras}</div>'
+                     + fonte('subgrupos'))
+    publico = ''
+    if fpd:
+        x, mn, mx_, ambito = fpd
+        fontes_usadas.append('tru')
+        publico = (f'<div class="recibo" style="margin-top:40px"><h2 class="recibo-t">Na função pública, {O["funcao_publica"]["ano"]}</h2>'
+                   f'<div class="linha"><span class="r">Primeira posição</span><span class="p"></span><span class="v">{euro(mn, 2)}</span></div>'
+                   f'<div class="linha"><span class="r">Topo</span><span class="p"></span><span class="v">{euro(mx_, 2)}</span></div>'
+                   f'<p class="fonte"><a href="/funcao-publica/{x["id"]}/">{e(x["titulo"])}: tabela completa de {O["funcao_publica"]["ano"]}, com o líquido</a>. '
+                   f'Remuneração base, sem suplementos.</p></div>')
+    elif p['grupo'] == '0':
+        publico = '<p class="lede" style="margin-top:20px">As Forças Armadas não entram nos Quadros de Pessoal. O salário de cada posto está na <a href="/funcao-publica/militares/">tabela dos militares</a>.</p>'
     reg = g.get('regioes') or {}
     tab_reg = ''
     if reg:
-        linhas = ''.join(f'<tr><td>{e(O["nuts2"].get(r, r))}</td><td class="n">{euro(reg[r])}</td></tr>' for r in sorted((r for r in reg if r != 'PT'), key=lambda r: -reg[r]))
-        tab_reg = (f'<h2 class="h2-pag" style="margin-top:56px">O mesmo grupo em cada região</h2>'
-                   f'<table class="tabela" style="margin-top:20px"><thead><tr><th>Região</th><th class="n">Ganho médio</th></tr></thead><tbody>{linhas}</tbody></table>'
+        filas = ''.join(f'<tr><td>{e(O["nuts2"].get(r, r))}</td><td class="n">{euro(reg[r])}</td></tr>' for r in sorted((r for r in reg if r != 'PT'), key=lambda r: -reg[r]))
+        tab_reg = (f'<h2 class="h2-pag" style="margin-top:56px">O grande grupo em cada região</h2>'
+                   f'<p class="dica" style="margin-top:12px">«{e(GC[p["grupo"]])}», ganho médio mensal, {ano}. É o único corte oficial por região: junta mais profissões do que o subgrupo.</p>'
+                   f'<table class="tabela" style="margin-top:20px"><thead><tr><th>Região</th><th class="n">Ganho médio</th></tr></thead><tbody>{filas}</tbody></table>'
                    + fonte('grupos', 'Pelo local de trabalho.'))
-    publico = ''
-    if fp and fp.get('min'):
-        publico = (f'<div class="recibo" style="margin-top:40px"><h3>Na função pública</h3>'
-                   f'<div class="linha"><span class="r">Primeira posição</span><span class="p"></span><span class="v">{euro(fp["min"], 2)}</span></div>'
-                   f'<div class="linha"><span class="r">Topo da carreira</span><span class="p"></span><span class="v">{euro(fp["max"], 2)}</span></div>'
-                   f'<p class="fonte"><a href="/funcao-publica/{fp["id"]}/">{e(fp["titulo"])}: tabela completa de {O["funcao_publica"]["ano"]}</a></p></div>')
-    elif p['grupo'] == '0':
-        publico = '<p class="lede" style="margin-top:20px">As Forças Armadas não entram nos Quadros de Pessoal. O salário de cada posto está na <a href="/funcao-publica/militares/">tabela dos militares</a>.</p>'
-    outras = ''.join(f'<li><a href="/profissoes/{x["id"]}/">{e(x["nome"])}</a></li>' for x in irmas if x['id'] != p['id'])
+    outras_sg = ''.join(f'<li><a href="/profissoes/{x["id"]}/">{e(x["nome"])}</a></li>' for x in sorted(irmas_sg, key=lambda x: x['nome']) if x['id'] != p['id'])
+    outras_g = ''.join(f'<li><a href="/profissoes/{x["id"]}/">{e(x["nome"])}</a></li>' for x in sorted(irmas_g, key=lambda x: x['nome'])
+                       if x['id'] != p['id'] and x['subgrupo'] != p['subgrupo'])
+    comunidade = (f'<!--comunidade--><div><h2 class="h2-pag">Na comunidade ganhas.pt</h2>'
+                  f'<div data-comunidade="profissao={p["id"]}" style="margin-top:20px"><p class="lede">Ainda não há 5 pessoas desta profissão a partilhar o salário. '
+                  f'Mostramos a mediana, o intervalo e o número de respostas a partir de 5 pessoas diferentes, também por distrito.</p></div>'
+                  f'<p style="margin-top:28px;display:flex;flex-wrap:wrap;gap:12px"><a class="botao" href="/partilhar/?p={p["id"]}">Partilhar o meu salário</a>'
+                  f'<a class="botao sec2" href="/calculadora/">Calcular o líquido</a></p></div><!--/comunidade-->')
     corpo = f'''
 {migalhas([("/profissoes/", "Profissões"), (None, nome)])[0]}
 <section class="sec" style="padding-top:24px"><div class="mold grelha2">
 <div>
 <h1 class="h1-pag h1-media">{e(titulo_h1)}</h1>
-{comparacao}
-{fonte("grupos", "O ganho inclui a remuneração base, subsídios regulares, prémios e horas extra do mês. Não inclui a Administração Pública.") if ganho else ""}
+<!--resposta--><p class="lede resposta" style="margin-top:20px">{resposta_profissao(p, sg, fpd)}</p><!--/resposta-->
+<p class="fonte">Dados atualizados a {data_pt(O["atualizado"])} · {fontes_curtas(fontes_usadas or ["grupos"])} · <a href="/metodo/">método</a></p>
+{recibo_sg}
 {publico}
 {tab_reg}
 </div>
-<div>
-<h2 class="h2-pag">Na comunidade ganhas.pt</h2>
-<div data-comunidade="profissao={p["id"]}" style="margin-top:20px"><p class="lede">A carregar as partilhas…</p></div>
-<p style="margin-top:28px;display:flex;flex-wrap:wrap;gap:12px"><a class="botao" href="/partilhar/?p={p["id"]}">Partilhar o meu salário</a>
-<a class="botao sec2" href="/calculadora/">Calcular o líquido</a></p>
-</div>
+{comunidade}
 </div></section>
 <section class="sec"><div class="mold">
-<h2 class="h2-pag">Outras profissões do mesmo grupo</h2>
-<ul class="lista-colunas" style="margin-top:24px">{outras or '<li>Não há outras na nossa lista.</li>'}</ul>
+{('<h2 class="h2-pag">No mesmo subgrupo</h2><p class="dica" style="margin-top:12px">Têm os mesmos números oficiais do subgrupo; mudam a função pública e as partilhas.</p><ul class="lista-colunas" style="margin-top:24px">' + outras_sg + '</ul>') if outras_sg else ''}
+{('<h2 class="h2-pag" style="margin-top:64px">No mesmo grande grupo</h2><ul class="lista-colunas" style="margin-top:24px">' + outras_g + '</ul>') if outras_g else ''}
+<p style="margin-top:40px"><a class="ligacao" href="/profissoes/">Todas as profissões</a> · <a class="ligacao" href="/estudos/salarios-por-profissao/">O que mudou em 10 anos</a></p>
 </div></section>'''
     ld = [migalhas([('/profissoes/', 'Profissões'), (f'/profissoes/{p["id"]}/', nome)])[1]]
-    if ganho:
-        ld.append({'@type': 'Occupation', 'name': nome, 'occupationalCategory': f'CPP {p["cpp"]}', 'occupationLocation': {'@type': 'Country', 'name': 'Portugal'},
-                   'estimatedSalary': {'@type': 'MonetaryAmountDistribution', 'name': 'ganho médio mensal do grande grupo de profissões', 'currency': 'EUR',
-                                       'duration': 'P1M', 'median': round(ganho)}, 'description': f'Ganho médio mensal bruto do grupo «{GC[p["grupo"]]}» em {ano}, setor privado.'})
-    if ganho:
-        desc = f'Quanto ganha {artigo(nome)} {minusc(nome)} em Portugal: ganho médio do grupo de {euro(ganho)} brutos por mês ({ano}), por região, e partilhas anónimas.'
-    elif fp and fp.get('min'):
-        desc = f'Quanto ganha {artigo(nome)} {minusc(nome)} em Portugal: de {euro(fp["min"])} a {euro(fp["max"])} brutos na tabela de {O["funcao_publica"]["ano"]}, e partilhas anónimas.'
+    salarios = []
+    if fpd:
+        salarios.append({'@type': 'MonetaryAmount', 'name': f'função pública, {O["funcao_publica"]["ano"]} (DGAEP)', 'currency': 'EUR',
+                         'value': {'@type': 'QuantitativeValue', 'minValue': round(fpd[1], 2), 'maxValue': round(fpd[2], 2), 'unitText': 'MONTH'}})
+    if sg:
+        salarios.append({'@type': 'MonetaryAmount', 'name': f'ganho médio do subgrupo «{nome_sg(p["subgrupo"])}», setor privado, {a_sg} (DGCP/MTSSS)',
+                         'currency': 'EUR', 'value': {'@type': 'QuantitativeValue', 'value': round(sg['ganho'], 2), 'unitText': 'MONTH'}})
+    if salarios:
+        ld.append({'@type': 'Occupation', 'name': nome, 'occupationalCategory': f'CPP {p["cpp"]}',
+                   'occupationLocation': {'@type': 'Country', 'name': 'Portugal'}, 'estimatedSalary': salarios})
+    if fpd and sg:
+        desc = (f'Quanto ganha {artigo(nome)} {minusc(nome)}: de {euro(fpd[1])} a {euro(fpd[2])} brutos na função pública ({O["funcao_publica"]["ano"]}) '
+                f'e {euro(sg["ganho"])} de média nas empresas ({a_sg}). Partilhas anónimas.')
+    elif fpd:
+        desc = f'Quanto ganha {artigo(nome)} {minusc(nome)} em {O["funcao_publica"]["ano"]}: de {euro(fpd[1])} a {euro(fpd[2])} brutos por mês, posto a posto, com o líquido.'
+    elif sg:
+        desc = (f'Quanto ganha {artigo(nome)} {minusc(nome)} em Portugal: {euro(sg["ganho"])} brutos de média no subgrupo ({a_sg}), '
+                f'evolução desde {O["subgrupos"]["anos"][0]} e partilhas anónimas.')
     else:
         desc = f'Quanto ganha {artigo(nome)} {minusc(nome)} em Portugal: dados oficiais e partilhas anónimas.'
-    pagina(f'/profissoes/{p["id"]}/', f'Quanto ganha {artigo(nome)} {minusc(nome)} em Portugal', desc, corpo, ld=ld, prioridade=0.7, og='/og/profissoes.png')
+    titulo = f'Quanto ganha {artigo(nome)} {minusc(nome)} em Portugal'
+    if len(titulo) > 60:  # o Google corta perto dos 60 caracteres: sai o «em Portugal», que já está na descrição
+        titulo = f'Quanto ganha {artigo(nome)} {minusc(nome)}'
+    pagina(f'/profissoes/{p["id"]}/', titulo, desc, corpo, ld=ld, prioridade=0.7,
+           og='/og/profissoes.png', indexar=idx)
 
 
 # ---------------------------------------------------------------- concelhos
+
+# artigo dos concelhos que o levam («no Porto», «na Amadora», «nos Arcos de Valdevez», «nas Caldas da Rainha»)
+CONC_ARTIGO = {
+    'o': ['Porto', 'Barreiro', 'Seixal', 'Montijo', 'Cartaxo', 'Entroncamento', 'Bombarral', 'Cadaval', 'Crato', 'Gavião', 'Redondo',
+          'Alandroal', 'Sabugal', 'Fundão', 'Funchal', 'Corvo', 'Nordeste', 'Marco de Canaveses', 'Porto Moniz', 'Porto Santo',
+          'Sardoal', 'Peso da Régua', 'Carregal do Sal', 'Sobral de Monte Agraço'],
+    'a': ['Amadora', 'Moita', 'Nazaré', 'Golegã', 'Lourinhã', 'Batalha', 'Figueira da Foz', 'Figueira de Castelo Rodrigo', 'Guarda', 'Maia',
+          'Mealhada', 'Covilhã', 'Trofa', 'Póvoa de Varzim', 'Póvoa de Lanhoso', 'Ribeira Grande', 'Ribeira Brava', 'Ribeira de Pena',
+          'Horta', 'Lousã', 'Murtosa', 'Sertã', 'Chamusca', 'Azambuja', 'Mêda', 'Pampilhosa da Serra', 'Ponta do Sol',
+          'Calheta (R.A.A.)', 'Calheta (R.A.M.)', 'Marinha Grande', 'Madalena', 'Povoação', 'Castanheira de Pêra', 'Vidigueira',
+          'Vila da Praia da Vitória'],
+    'os': ['Arcos de Valdevez'],
+    'as': ['Caldas da Rainha', 'Lajes das Flores', 'Lajes do Pico', 'Velas'],
+}
+_ART = {n: a for a, ns in CONC_ARTIGO.items() for n in ns}
+
+
+def no(nome):
+    """«em Lisboa», «no Porto», «na Amadora»."""
+    a = _ART.get(nome)
+    return {'o': 'no', 'a': 'na', 'os': 'nos', 'as': 'nas'}[a] + ' ' + nome if a else 'em ' + nome
+
+
+def do(nome):
+    a = _ART.get(nome)
+    return {'o': 'do', 'a': 'da', 'os': 'dos', 'as': 'das'}[a] + ' ' + nome if a else 'de ' + nome
+
 
 def concelhos():
     cs = sorted(O['concelhos'], key=lambda c: -c['ganho_medio'])
@@ -700,7 +966,13 @@ def concelhos():
 {fonte("concelhos")}
 </div></section>'''
     pagina('/concelhos/', 'Salário médio por concelho em Portugal', f'Ranking dos 308 concelhos de Portugal pelo ganho médio mensal de quem trabalha a tempo completo ({ano}). Procura o teu concelho.',
-           corpo, prioridade=0.9, ld=[migalhas([('/concelhos/', 'Concelhos')])[1]], og='/og/concelhos.png')
+           corpo, prioridade=0.9, og='/og/concelhos.png', ld=[migalhas([('/concelhos/', 'Concelhos')])[1], {
+               '@type': 'Dataset', 'name': f'Ganho médio mensal nos 308 concelhos de Portugal ({ano})',
+               'description': 'Ganho médio mensal bruto de quem trabalha por conta de outrem a tempo completo, pelo concelho do local de trabalho, total e por grande grupo de profissões (INE e GEP/MTSSS, Quadros de Pessoal).',
+               'url': DOMINIO + '/dados/', 'inLanguage': 'pt-PT', 'creator': {'@id': DOMINIO + '/#org'}, 'isAccessibleForFree': True,
+               'license': 'https://creativecommons.org/licenses/by/4.0/', 'spatialCoverage': 'Portugal', 'temporalCoverage': str(ano),
+               'isBasedOn': O['fontes']['concelhos']['url'],
+               'distribution': [{'@type': 'DataDownload', 'encodingFormat': 'text/csv', 'contentUrl': DOMINIO + '/dados-abertos/concelhos.csv'}]}])
     por_nuts3 = {}
     for c in cs:
         por_nuts3.setdefault(c.get('nuts3', ''), []).append(c)
@@ -713,7 +985,7 @@ def concelhos():
         if len(gr) >= 3:
             linhas = ''.join(f'<tr><td><a href="/profissoes/#g{k}">{e(GC.get(k, k))}</a></td><td class="n">{euro(v)}</td>'
                              f'<td class="n">{euro((O["grupos"].get(k) or {}).get("ganho"))}</td></tr>' for k, v in sorted(gr.items(), key=lambda kv: -kv[1]))
-            tab_g = (f'<section class="sec"><div class="mold"><h2 class="h2-pag">Por grupo de profissões em {e(c["nome"])}</h2>'
+            tab_g = (f'<section class="sec"><div class="mold"><h2 class="h2-pag">Por grupo de profissões {e(no(c["nome"]))}</h2>'
                      f'<div class="rolar"><table class="tabela" style="margin-top:24px"><thead><tr><th>Grupo de profissões</th><th class="n">{e(c["nome"])}</th><th class="n">Portugal</th></tr></thead>'
                      f'<tbody>{linhas}</tbody></table></div><p class="dica" style="margin-top:12px">Grupos sem linha: o INE não publica o valor (poucos trabalhadores ou segredo estatístico).</p>'
                      f'{fonte("grupos")}</div></section>')
@@ -727,11 +999,10 @@ def concelhos():
         corpo = f'''
 {migalhas([("/concelhos/", "Concelhos"), (None, c["nome"])])[0]}
 <section class="sec" style="padding-top:24px"><div class="mold par">
-<div><h1 class="h1-pag h1-media">Salário médio em {e(c["nome"])}</h1>
-<p class="lede" style="margin-top:20px">Em {ano}, quem trabalhava a tempo completo em {e(c["nome"])} ganhava em média <span class="mk">{euro(c["ganho_medio"])}</span> brutos por mês:
-{c["pos"]}.º de 308 concelhos, {euro(abs(dif))} {"acima" if dif > 0 else "abaixo"} da média nacional ({euro(med_nac)}).</p>
-{fonte("concelhos", "Pelo local de trabalho, não pela residência. Não inclui a Administração Pública.")}</div>
-<div class="recibo"><h3>{e(c["nome"])}, {ano}</h3>
+<div><h1 class="h1-pag h1-media">Salário médio {e(no(c["nome"]))}</h1>
+<p class="lede resposta" style="margin-top:20px">Em {ano}, quem trabalhava a tempo completo {e(no(c["nome"]))} ganhava em média <span class="mk">{euro(c["ganho_medio"])}</span> brutos por mês: {c["pos"]}.º de 308 concelhos, {euro(abs(dif))} {"acima" if dif > 0 else "abaixo"} da média nacional ({euro(med_nac)}). Contam todas as pessoas que trabalham no concelho, vivam onde viverem.</p>
+{fonte("concelhos", f"Pelo local de trabalho, não pela residência. Não inclui a Administração Pública. Dados atualizados a {data_pt(O['atualizado'])}.")}</div>
+<div class="recibo"><h2 class="recibo-t">{e(c["nome"])}, {ano}</h2>
 <div class="linha"><span class="r">Ganho médio</span><span class="p"></span><span class="v">{euro(c["ganho_medio"])}</span></div>
 <div class="linha"><span class="r">Posição no país</span><span class="p"></span><span class="v">{c["pos"]}.º de 308</span></div>
 <div class="linha"><span class="r">Média nacional</span><span class="p"></span><span class="v">{euro(med_nac)}</span></div>
@@ -745,8 +1016,8 @@ def concelhos():
 <p style="margin-top:40px;display:flex;flex-wrap:wrap;gap:12px"><a class="botao" href="/">Comparar o meu salário</a><a class="botao sec2" href="/partilhar/">Partilhar o meu salário</a></p>
 </div></section>'''
         ld = [migalhas([('/concelhos/', 'Concelhos'), (f'/concelhos/{c["id"]}/', c['nome'])])[1]]
-        pagina(f'/concelhos/{c["id"]}/', f'Salário médio em {c["nome"]} ({ano})',
-               f'Em {c["nome"]}, o ganho médio mensal bruto era {euro(c["ganho_medio"])} em {ano} ({c["pos"]}.º de 308 concelhos). Por grupo de profissões e comparado com o país.',
+        pagina(f'/concelhos/{c["id"]}/', f'Salário médio {no(c["nome"])} ({ano})',
+               f'{no(c["nome"])[:1].upper() + no(c["nome"])[1:]}, o ganho médio mensal bruto era {euro(c["ganho_medio"])} em {ano} ({c["pos"]}.º de 308 concelhos). Por grupo de profissões e comparado com o país.',
                corpo, ld=ld, prioridade=0.6, og='/og/concelhos.png')
 
 
@@ -871,7 +1142,7 @@ def carreiras_fp():
                 sl = sl[:60].rsplit('-', 1)[0]
         x = por.setdefault(sl, {'id': sl, 'titulo': titulo, 'quem': quem, 'carreira': nome_c, 'grupo': c['grupo'], 'categorias': []})
         x['categorias'].append(c)
-    formacao = re.compile(r'cadete|aluno|aspirante|estagi|instrução|tirocin|formação|pré-carreira|interno', re.I)
+    formacao = re.compile(r'cadete|aluno|aspirante|estagi|instrução|tirocin|\bformação|pré-carreira|interno', re.I)  # «\b»: «informação» não é formação
     for x in por.values():
         cats = [c for c in x['categorias'] if not formacao.search(c['nome'] + ' ' + (c.get('subgrupo') or ''))]
         if x['id'] in FP_PRINCIPAL:
@@ -917,7 +1188,13 @@ Aqui tens {len(por)} carreiras, com o bruto e uma estimativa do líquido.</p>
 </div></section>'''
     pagina('/funcao-publica/', f'Salários da função pública {fp["ano"]}: todas as carreiras e a TRU',
            f'Quanto ganha um professor, enfermeiro, médico, polícia ou técnico superior em {fp["ano"]}: {len(por)} carreiras da função pública, bruto e líquido, e a Tabela Remuneratória Única.',
-           corpo, prioridade=0.8, ld=[migalhas([('/funcao-publica/', 'Função pública')])[1]], og='/og/funcao-publica.png')
+           corpo, prioridade=0.8, og='/og/funcao-publica.png', ld=[migalhas([('/funcao-publica/', 'Função pública')])[1], {
+               '@type': 'Dataset', 'name': f'Remuneração das carreiras da função pública em {fp["ano"]}',
+               'description': 'Remuneração base mensal de cada categoria e posição das carreiras da Administração Pública, com a Tabela Remuneratória Única (DGAEP).',
+               'url': DOMINIO + '/dados/', 'inLanguage': 'pt-PT', 'creator': {'@id': DOMINIO + '/#org'}, 'isAccessibleForFree': True,
+               'license': 'https://creativecommons.org/licenses/by/4.0/', 'spatialCoverage': 'Portugal', 'temporalCoverage': str(fp['ano']),
+               'isBasedOn': O['fontes']['tru']['url'],
+               'distribution': [{'@type': 'DataDownload', 'encodingFormat': 'text/csv', 'contentUrl': DOMINIO + f'/dados-abertos/funcao-publica-{fp["ano"]}.csv'}]}])
     for x in por.values():
         pagina_carreira(x, fp)
 
@@ -932,7 +1209,8 @@ def pagina_carreira(x, fp):
             sub_atual = sg
         linhas = ''.join(f'<tr><td>{e(p["posicao"])}</td><td class="n">{e(p["nivel"])}</td>{"<td class=n>" + e(p.get("indice") or "") + "</td>" if tem_indice else ""}'
                          f'<td class="n">{euro(p["valor"], 2)}</td><td class="n">{euro(liquido_simples(p["valor"]), 2) if p["valor"] >= 400 else "—"}</td></tr>' for p in c['posicoes'])
-        blocos.append(f'<div class="entra" style="margin-top:40px"><h3>{e(c["nome"])}</h3><div class="rolar"><table class="tabela" style="margin-top:16px"><thead><tr>'
+        nivel = 'h3' if sub_atual else 'h2 class="h3-pag"'  # sem subgrupo por cima, a categoria é o 2.º nível
+        blocos.append(f'<div class="entra" style="margin-top:40px"><{nivel}>{e(c["nome"])}</{nivel.split()[0]}><div class="rolar"><table class="tabela" style="margin-top:16px"><thead><tr>'
                       f'<th>Posição</th><th class="n">Nível</th>{"<th class=n>Índice</th>" if tem_indice else ""}<th class="n">Bruto</th><th class="n">Líquido</th></tr></thead>'
                       f'<tbody>{linhas}</tbody></table></div></div>')
     quem = x['quem'] or ('quem está na carreira de ' + minusc(x['titulo']))
@@ -950,10 +1228,124 @@ def pagina_carreira(x, fp):
 <a class="botao sec2" href="/funcao-publica/">Ver todas as carreiras</a></p>
 </div></section>'''
     titulo = f'Quanto ganha {x["quem"]} em {fp["ano"]}' if x['quem'] else f'{x["titulo"]}: salários na função pública em {fp["ano"]}'
+    if len(titulo) > 60:
+        titulo = f'{x["titulo"]}: salários em {fp["ano"]}'
     desc = (f'{x["titulo"]}: salário bruto e líquido de cada categoria e posição em {fp["ano"]}, de {euro(x["min"])} a {euro(x["max"])} por mês. Dados oficiais da DGAEP.'
             if x['min'] else f'{x["titulo"]}: remuneração de cada categoria em {fp["ano"]}, com dados oficiais da DGAEP.')
     pagina(f'/funcao-publica/{x["id"]}/', titulo, desc, corpo, prioridade=0.6, og='/og/funcao-publica.png',
            ld=[migalhas([('/funcao-publica/', 'Função pública'), (f'/funcao-publica/{x["id"]}/', x['titulo'])])[1]])
+
+
+# ---------------------------------------------------------------- estudo: salários por profissão em 10 anos
+# Tudo calculado a partir dos quadros 19, 28 e 40 da série dos Quadros de Pessoal (DGCP/MTSSS). Muda sozinho
+# quando sai um ano novo: os textos dizem «subiu/desceu», «estreitou/alargou» conforme os números.
+SMN_OUTUBRO = {2014: (505, 'Decreto-Lei n.º 144/2014'), 2024: (820, 'Decreto-Lei n.º 107/2023')}
+
+
+def estudo_profissoes():
+    sgs = O.get('subgrupos')
+    if not sgs:
+        return
+    a0, a1 = sgs['anos'][0], sgs['ano']
+    T = sgs['linhas']['T']
+    subs = {k: v for k, v in sgs['linhas'].items() if len(k) == 2 and v['ganho'][-1] and v['ganho'][0]}
+    media, media0 = T['ganho'][-1], T['ganho'][0]
+    sobe_t = 100 * (media / media0 - 1)
+    ordem = sorted(subs, key=lambda k: -subs[k]['ganho'][-1])
+    topo, fundo = ordem[0], ordem[-1]
+    razao = subs[topo]['ganho'][-1] / subs[fundo]['ganho'][-1]
+    o0 = sorted(subs, key=lambda k: -subs[k]['ganho'][0])
+    razao0 = subs[o0[0]]['ganho'][0] / subs[o0[-1]]['ganho'][0]
+    abaixo = sum(v['tco'][-1] or 0 for v in subs.values() if v['ganho'][-1] < media)
+    p_abaixo = 100 * abaixo / T['tco'][-1]
+    sobe = {k: 100 * (v['ganho'][-1] / v['ganho'][0] - 1) for k, v in subs.items()}
+    mais = sorted(subs, key=lambda k: -sobe[k])[:5]
+    menos = sorted(subs, key=lambda k: sobe[k])[:5]
+    extra = {k: 100 * (1 - v['base'][-1] / v['ganho'][-1]) for k, v in subs.items() if v['base'][-1]}
+    ex_mais = sorted(extra, key=lambda k: -extra[k])[:5]
+    ex_menos = sorted(extra, key=lambda k: extra[k])[:3]
+    mediana = (O.get('distribuicao') or {}).get('ganho', {}).get('mediana') if (O.get('distribuicao') or {}).get('ano') == a1 else None
+    baixos0, altos0 = o0[-10:], o0[:10]  # os 10 subgrupos que menos e mais ganhavam no 1.º ano
+    sobe_baixos = sum(sobe[k] for k in baixos0) / len(baixos0)
+    sobe_altos = sum(sobe[k] for k in altos0) / len(altos0)
+    fracoes = {75: 'Três em cada quatro', 67: 'Dois em cada três', 50: 'Metade', 80: 'Quatro em cada cinco', 60: 'Três em cada cinco'}
+    perto = min(fracoes, key=lambda f: abs(f - p_abaixo))
+    tit_abaixo = (f'{fracoes[perto]} trabalham abaixo da média' if abs(perto - p_abaixo) <= 2.5 else f'{pct(p_abaixo)} trabalham abaixo da média')
+    smn0, smn1 = SMN_OUTUBRO.get(a0), SMN_OUTUBRO.get(a1)
+
+    def lst(ks, f):
+        return '<ul class="lista-colunas" style="margin-top:20px;columns:1">' + ''.join(
+            f'<li><span>{sg_link(k)}</span><span class="cifra">{f(k)}</span></li>' for k in ks) + '</ul>'
+
+    def sg_link(k):
+        rep = REPRESENTA.get(k)
+        return f'<a href="/profissoes/{rep}/">{e(nome_sg(k))}</a>' if rep else e(nome_sg(k))
+
+    resposta = (f'Em outubro de {a1}, quem trabalhava a tempo completo em empresas privadas e públicas ganhava em média {euro(media)} brutos por mês, '
+                f'{pct(abs(sobe_t), 1)} {"mais" if sobe_t >= 0 else "menos"} do que em {a0}. Mas {pct(p_abaixo)} dos trabalhadores estavam em '
+                f'subgrupos de profissões com ganho médio abaixo desse valor, e o subgrupo mais bem pago ganhava {str(round(razao, 1)).replace(".", ",")} vezes '
+                f'o menos pago.')
+    tabela = tabela_html(
+        ['Subgrupo de profissões', f'Ganho {a0}', f'Ganho {a1}', 'Variação', 'Base', 'Extras', 'Trabalhadores'],
+        [[sg_link(k), euro(subs[k]['ganho'][0]), euro(subs[k]['ganho'][-1]), ('+' if sobe[k] >= 0 else '') + pct(sobe[k], 1),
+          euro(subs[k]['base'][-1]), pct(extra.get(k, 0)), milhares(subs[k]['tco'][-1])] for k in ordem],
+        f'Ganho médio mensal por subgrupo de profissões, {a0} e {a1}')
+    corpo = f'''
+{migalhas([("/profissoes/", "Profissões"), (None, "Estudo: salários por profissão")])[0]}
+<section class="sec" style="padding-top:24px"><div class="mold texto">
+<p class="fonte" style="margin-top:0">Estudo ganhas.pt · edição de {data_pt(sgs.get("entrou") or O["atualizado"])} · dados de outubro de {a1}</p>
+<h1>Salários por profissão em Portugal: o que mudou de {a0} a {a1}</h1>
+<p class="lede resposta">{resposta}</p>
+<p class="fonte">{fontes_curtas(["subgrupos"])} Cálculos do ganhas.pt. Valores nominais (sem descontar a inflação). Dados atualizados a {data_pt(O["atualizado"])}.</p>
+
+<h2>{tit_abaixo}</h2>
+<p>A média é puxada para cima pelos salários mais altos. Em {a1}, {milhares(abaixo)} dos {milhares(T["tco"][-1])} trabalhadores por conta de outrem
+({pct(p_abaixo)}) estavam em subgrupos cujo ganho médio ficava abaixo dos {euro(media)}.{f" O salário do meio, a mediana, era {euro(mediana)}." if mediana else ""}
+Só {sum(1 for k in subs if subs[k]["ganho"][-1] >= media)} dos {len(subs)} subgrupos ficavam acima da média.</p>
+
+<h2>{"Quem ganhava menos subiu mais" if sobe_baixos > sobe_altos else "Quem ganhava mais subiu mais"}</h2>
+<p>De {a0} a {a1}, o ganho médio de todas as profissões subiu {pct(sobe_t, 1)}.{f" No mesmo período, o salário mínimo passou de {euro(smn0[0])} ({smn0[1]}) para {euro(smn1[0])} ({smn1[1]}), mais {pct(100 * (smn1[0] / smn0[0] - 1), 1)}." if smn0 and smn1 else ""}
+Os 10 subgrupos que menos ganhavam em {a0} subiram em média {pct(sobe_baixos, 1)}; os 10 que mais ganhavam, {pct(sobe_altos, 1)}.
+As maiores subidas:</p>
+{lst(mais, lambda k: "+" + pct(sobe[k], 1))}
+<p style="margin-top:24px">E as mais pequenas:</p>
+{lst(menos, lambda k: ("+" if sobe[k] >= 0 else "") + pct(sobe[k], 1))}
+<p style="margin-top:24px">A distância entre o topo e o fundo {"estreitou" if razao < razao0 else "alargou"}: em {a0}, o subgrupo mais bem pago ganhava
+{str(round(razao0, 1)).replace(".", ",")} vezes o menos pago; em {a1}, {str(round(razao, 1)).replace(".", ",")} vezes
+({e(minusc(nome_sg(topo)))}, {euro(subs[topo]["ganho"][-1])}, contra {e(minusc(nome_sg(fundo)))}, {euro(subs[fundo]["ganho"][-1])}).</p>
+
+<h2>Onde os extras pesam mais</h2>
+<p>O ganho junta à remuneração base os subsídios regulares, prémios e horas extra do mês. A diferença entre os dois mostra quem depende mais
+do que não está no salário base:</p>
+{lst(ex_mais, lambda k: pct(extra[k]) + " do ganho")}
+<p style="margin-top:24px">No outro extremo, com quase tudo no salário base: {", ".join(f"{e(minusc(nome_sg(k)))} ({pct(extra[k])})" for k in ex_menos)}.</p>
+
+<h2>Os {len(subs)} subgrupos, lado a lado</h2>
+</div>
+<div class="mold" style="margin-top:24px">{tabela}
+<p class="dica" style="margin-top:12px">«Extras»: parte do ganho que não é remuneração base. «Trabalhadores»: todos os trabalhadores por conta de outrem do subgrupo, incluindo a tempo parcial.</p>
+{fonte("subgrupos")}
+<p class="espaco"><a class="botao" href="/dados-abertos/subgrupos-profissoes.csv">Descarregar os dados (CSV, {a0} a {a1})</a></p></div>
+<div class="mold texto" style="margin-top:64px">
+<h2>Como foi feito</h2>
+<ul>
+<li><strong>Fonte:</strong> <a href="{e(O["fontes"]["subgrupos"]["url"])}" rel="noopener">{e(O["fontes"]["subgrupos"]["nome"])}</a>, a partir dos Quadros de Pessoal que as empresas entregam todos os anos ao Ministério do Trabalho.</li>
+<li><strong>Quem conta:</strong> trabalhadores por conta de outrem a tempo completo com remuneração completa em outubro, no {e(sgs["ambito"])}, no setor privado e no setor empresarial do Estado. A Administração Pública não entra: os salários do Estado estão na <a href="/funcao-publica/">tabela de cada carreira</a>.</li>
+<li><strong>Profissões:</strong> os {len(subs)} subgrupos da Classificação Portuguesa das Profissões (CPP/2010, 2 dígitos). Não há números oficiais publicados por profissão mais fina.</li>
+<li><strong>O que não diz:</strong> são médias, não medianas; valores nominais, sem descontar a inflação; não separa homens e mulheres nem anos de experiência.</li>
+<li><strong>Como citar:</strong> «Fonte: DGCP/MTSSS, Quadros de Pessoal; cálculos do ganhas.pt», com ligação para esta página.</li>
+</ul>
+</div></section>'''
+    ld = [migalhas([('/profissoes/', 'Profissões'), ('/estudos/salarios-por-profissao/', 'Estudo: salários por profissão')])[1],
+          {'@type': 'Article', 'headline': f'Salários por profissão em Portugal: o que mudou de {a0} a {a1}', 'inLanguage': 'pt-PT',
+           'datePublished': sgs.get('entrou') or O['atualizado'], 'dateModified': O['atualizado'],
+           'author': {'@id': DOMINIO + '/#org'}, 'publisher': {'@id': DOMINIO + '/#org'},
+           'mainEntityOfPage': DOMINIO + '/estudos/salarios-por-profissao/', 'image': DOMINIO + '/og/profissoes.png',
+           'isBasedOn': O['fontes']['subgrupos']['url']},
+          dataset_subgrupos()]
+    pagina('/estudos/salarios-por-profissao/', f'Salários por profissão em Portugal: {a0} a {a1}',
+           f'{pct(p_abaixo)} dos trabalhadores estão em profissões com ganho médio abaixo dos {euro(media)}. Os {len(subs)} subgrupos, de {a0} a {a1}, com dados oficiais.',
+           corpo, ld=ld, prioridade=0.8, og='/og/profissoes.png')
 
 
 # ---------------------------------------------------------------- empresas, imprensa, dados
@@ -986,7 +1378,8 @@ Para quem vai contratar e não quer errar na proposta.</p></div>
 <p>A diretiva europeia obriga a mostrar o salário ou a banda nos anúncios e a justificar diferenças entre pessoas na mesma função.
 Preparamos as comparações de mercado que sustentam essas bandas.</p></div>
 <div class="entra"><h2>Imprensa e estudos</h2>
-<p>Números à medida, cruzamentos e gráficos prontos a publicar. Podes sempre usar os números do site com uma ligação para a página de onde vieram.</p></div>
+<p>Números à medida, cruzamentos e gráficos prontos a publicar. Podes sempre usar os números do site com uma ligação para a página de onde vieram.
+O estudo mais recente: <a href="/estudos/salarios-por-profissao/">10 anos de salários por profissão</a>.</p></div>
 </div></section>
 
 <section class="sec folha"><div class="mold grelha2">
@@ -1010,7 +1403,7 @@ Preparamos as comparações de mercado que sustentam essas bandas.</p></div>
 <div class="ofertas" style="margin-top:32px">
 <div class="entra"><h3>Fontes oficiais</h3><p>INE, Ministério do Trabalho, Autoridade Tributária, DGAEP e Eurostat. Cada número diz de onde vem e de que ano é.
 O <a href="/metodo/">método</a> está publicado.</p></div>
-<div class="entra"><h3>Nunca uma pessoa</h3><p>Só agregados, com pelo menos 5 pessoas diferentes por número, publicados 24 horas depois e arredondados à dezena.</p></div>
+<div class="entra"><h3>Nunca uma pessoa</h3><p>Só agregados, com pelo menos 5 pessoas diferentes por número, publicados 24 horas depois e arredondados (a 50 € abaixo de 10 pessoas). Um recorte pequeno, como uma profissão num distrito, só aparece se o resto também tiver 5 ou mais.</p></div>
 <div class="entra"><h3>RGPD de raiz</h3><p>Sem contas, sem cookies e sem guardar o IP. Os dados ficam em servidores na União Europeia.</p></div>
 </div>
 <p class="acoes" style="margin-top:56px"><a class="botao" href="mailto:{legal.EMAIL}?subject={assunto}&amp;body={corpo_mail}">Pedir proposta</a>
@@ -1025,7 +1418,7 @@ def dados_abertos():
     os.makedirs(os.path.join(SAIDA, 'dados-abertos'), exist_ok=True)
     pub = {'aviso': 'Dados oficiais tratados pelo ganhas.pt. Cite a fonte original e o ganhas.pt.', 'fontes': O['fontes'],
            'distribuicao': O['distribuicao'], 'grupos_profissionais': O['grupos'], 'concelhos': O['concelhos'],
-           'funcao_publica': O.get('funcao_publica'), 'atualizado': O['atualizado']}
+           'funcao_publica': O.get('funcao_publica'), 'subgrupos_profissoes': O.get('subgrupos'), 'atualizado': O['atualizado']}
     with open(os.path.join(SAIDA, 'dados-abertos', 'ganhas-oficial.json'), 'w', encoding='utf-8') as f:
         json.dump(pub, f, ensure_ascii=False, indent=1)
     with open(os.path.join(SAIDA, 'dados-abertos', 'concelhos.csv'), 'w', encoding='utf-8') as f:
@@ -1039,6 +1432,15 @@ def dados_abertos():
         for c in O['funcao_publica']['carreiras']:
             for q in c['posicoes']:
                 f.write(';'.join(str(x).replace(';', ',') for x in (c['grupo'], c['carreira'], c.get('subgrupo', ''), c['nome'], q['posicao'], q['nivel'], q.get('indice', ''), q['valor'])) + '\n')
+    sgs = O.get('subgrupos')
+    if sgs:
+        with open(os.path.join(SAIDA, 'dados-abertos', 'subgrupos-profissoes.csv'), 'w', encoding='utf-8') as f:
+            f.write('cpp_2digitos;subgrupo;ano;ganho_medio_eur;remuneracao_base_media_eur;trabalhadores_por_conta_de_outrem;ambito\n')
+            for k in sorted((k for k in sgs['linhas'] if len(k) == 2), key=int):
+                v = sgs['linhas'][k]
+                for i, a in enumerate(sgs['anos']):
+                    f.write(f'{k};{nome_sg(k)};{a};{v["ganho"][i] if v["ganho"][i] is not None else ""};'
+                            f'{v["base"][i] if v["base"][i] is not None else ""};{v["tco"][i] if v["tco"][i] is not None else ""};{sgs["ambito"]}\n')
     corpo = f'''
 {migalhas([(None, "Dados abertos")])[0]}
 <section class="sec" style="padding-top:24px"><div class="mold texto">
@@ -1048,8 +1450,10 @@ def dados_abertos():
 <li><a href="/dados-abertos/ganhas-oficial.json">ganhas-oficial.json</a>: distribuição nacional, grupos de profissões, concelhos e função pública.</li>
 <li><a href="/dados-abertos/concelhos.csv">concelhos.csv</a>: ganho médio dos 308 concelhos, total e por grupo de profissões ({O["concelhos_ano"]}).</li>
 <li><a href="/dados-abertos/funcao-publica-{O["funcao_publica"]["ano"]}.csv">funcao-publica-{O["funcao_publica"]["ano"]}.csv</a>: remuneração de cada categoria e posição das carreiras da função pública ({O["funcao_publica"]["ano"]}).</li>
+{f'<li><a href="/dados-abertos/subgrupos-profissoes.csv">subgrupos-profissoes.csv</a>: ganho médio, remuneração base média e trabalhadores de cada subgrupo de profissões (CPP, 2 dígitos), {sgs["anos"][0]} a {sgs["ano"]}, {sgs["ambito"]} (DGCP/MTSSS).</li>' if sgs else ''}
 </ul>
-<p>Podes reutilizar estes ficheiros, também para fins comerciais, desde que indiques a fonte original (INE e GEP/MTSSS, DGAEP) e o ganhas.pt
+<p class="fonte">Dados atualizados a {data_pt(O["atualizado"])}.</p>
+<p>Podes reutilizar estes ficheiros, também para fins comerciais, desde que indiques a fonte original (INE, GEP/MTSSS e DGCP/MTSSS, DGAEP) e o ganhas.pt
 (<a href="https://creativecommons.org/licenses/by/4.0/deed.pt" rel="noopener">licença CC BY 4.0</a>).</p>
 <p>Os dados da comunidade (partilhas) não são publicados em bruto. Para estatísticas agregadas, vê a página <a href="/para-empresas/">Para empresas e jornalistas</a>.</p>
 </div></section>'''
@@ -1058,7 +1462,9 @@ def dados_abertos():
            'spatialCoverage': 'Portugal', 'distribution': [
                {'@type': 'DataDownload', 'encodingFormat': 'application/json', 'contentUrl': DOMINIO + '/dados-abertos/ganhas-oficial.json'},
                {'@type': 'DataDownload', 'encodingFormat': 'text/csv', 'contentUrl': DOMINIO + '/dados-abertos/concelhos.csv'},
-               {'@type': 'DataDownload', 'encodingFormat': 'text/csv', 'contentUrl': DOMINIO + f'/dados-abertos/funcao-publica-{O["funcao_publica"]["ano"]}.csv'}],
+               {'@type': 'DataDownload', 'encodingFormat': 'text/csv', 'contentUrl': DOMINIO + f'/dados-abertos/funcao-publica-{O["funcao_publica"]["ano"]}.csv'}]
+               + ([{'@type': 'DataDownload', 'encodingFormat': 'text/csv', 'contentUrl': DOMINIO + '/dados-abertos/subgrupos-profissoes.csv'}] if O.get('subgrupos') else []),
+           'dateModified': O['atualizado'],
            'license': 'https://creativecommons.org/licenses/by/4.0/', 'temporalCoverage': f'{O["concelhos_ano"]}/{O["funcao_publica"]["ano"]}'}]
     pagina('/dados/', 'Dados abertos sobre salários em Portugal', 'Descarrega os dados oficiais de salários em Portugal já tratados: concelhos, profissões e distribuição nacional.',
            corpo, ld=ld, prioridade=0.4)
@@ -1100,8 +1506,10 @@ def ficheiros():
     with open(os.path.join(SAIDA, 'robots.txt'), 'w') as f:
         f.write('User-agent: *\nAllow: /\nDisallow: /api/\n\n'
                 '# Recolha automática dos dados não é permitida (ver /termos/)\n'
-                'User-agent: CCBot\nDisallow: /\n\nSitemap: https://ganhas.pt/sitemap.xml\nSitemap: https://ganhas.pt/sitemap-empresas.xml\n')
-    urls = ''.join(f'<url><loc>{DOMINIO}{c}</loc><lastmod>{HOJE}</lastmod><priority>{p:.1f}</priority></url>' for c, p in sorted(PAGINAS))
+                'User-agent: CCBot\nDisallow: /\n\nSitemap: https://ganhas.pt/sitemap.xml\nSitemap: https://ganhas.pt/sitemap-empresas.xml\n'
+                'Sitemap: https://ganhas.pt/sitemap-comunidade.xml\n')
+    datas = datas_de_mudanca()
+    urls = ''.join(f'<url><loc>{DOMINIO}{c}</loc><lastmod>{datas.get(c, HOJE)}</lastmod></url>' for c, p in sorted(PAGINAS))
     with open(os.path.join(SAIDA, 'sitemap.xml'), 'w', encoding='utf-8') as f:
         f.write('<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' + urls + '</urlset>\n')
     with open(os.path.join(SAIDA, 'manifest.webmanifest'), 'w', encoding='utf-8') as f:
@@ -1110,6 +1518,29 @@ def ficheiros():
                    'icons': [{'src': '/icone-192.png', 'sizes': '192x192', 'type': 'image/png'},
                              {'src': '/icone-512.png', 'sizes': '512x512', 'type': 'image/png'}]}, f, ensure_ascii=False)
     llms()
+
+
+def datas_de_mudanca():
+    """lastmod verdadeiro: a data em que o conteúdo de cada página mudou (título, descrição e <main>), guardada em
+    ganhas/dados/paginas.json. Antes, todas as páginas diziam «hoje» a cada geração e o Google deixa de confiar nisso."""
+    fe = os.path.join(AQUI, 'dados', 'paginas.json')
+    try:
+        antes = json.load(open(fe, encoding='utf-8'))
+    except Exception:  # noqa: BLE001
+        antes = {}
+    agora = {}
+    for c, _ in PAGINAS:
+        f = os.path.join(SAIDA, 'index.html') if c == '/' else os.path.join(SAIDA, c.strip('/'), 'index.html')
+        t = open(f, encoding='utf-8').read()
+        m = re.search(r'<title>.*?</title>', t, re.S)
+        parte = (m.group(0) if m else '') + re.search(r'<meta name="description"[^>]*>', t).group(0) + t[t.find('<main'):t.find('</main>')]
+        h = hashlib.sha256(parte.encode()).hexdigest()[:16]
+        v = antes.get(c)
+        agora[c] = [h, v[1] if v and v[0] == h else HOJE]
+    if agora != antes:
+        with open(fe, 'w', encoding='utf-8') as f:  # uma página por linha, para o histórico do git ler bem
+            f.write('{\n' + ',\n'.join(f'{json.dumps(c, ensure_ascii=False)}: {json.dumps(agora[c])}' for c in sorted(agora)) + '\n}\n')
+    return {c: v[1] for c, v in agora.items()}
 
 
 def llms():
@@ -1132,14 +1563,24 @@ def llms():
         linhas.append(f'- Salário líquido anual de uma pessoa sozinha sem filhos com o salário médio em Portugal, {eu["ano"]}: {euro(pt["eur"])} (Eurostat).')
     if O.get('funcao_publica'):
         linhas.append(f'- Base remuneratória da Administração Pública em {O["funcao_publica"]["ano"]}: {euro(O["funcao_publica"]["brap"], 2)}.')
+    sgs = O.get('subgrupos')
+    if sgs:
+        T = sgs['linhas']['T']
+        subs = sorted(((k, v) for k, v in sgs['linhas'].items() if len(k) == 2 and v['ganho'][-1]), key=lambda kv: -kv[1]['ganho'][-1])
+        linhas.append(f'- Ganho médio mensal por subgrupo de profissões (CPP, 2 dígitos), outubro de {sgs["ano"]}, {sgs["ambito"]} (DGCP/MTSSS, Quadros de Pessoal): '
+                      f'média {euro(T["ganho"][-1])}; mais alto «{nome_sg(subs[0][0])}» {euro(subs[0][1]["ganho"][-1])}; mais baixo «{nome_sg(subs[-1][0])}» '
+                      f'{euro(subs[-1][1]["ganho"][-1])}. Tabela completa em https://ganhas.pt/profissoes/ e CSV em https://ganhas.pt/dados-abertos/subgrupos-profissoes.csv.')
     linhas += ['', '## Páginas', '',
                '- [Comparador de salários](https://ganhas.pt/): onde estás na distribuição dos salários em Portugal.',
                f'- [Calculadora de salário líquido {O["irs"]["ano"]}](https://ganhas.pt/calculadora/): bruto para líquido com as tabelas oficiais de IRS.',
-               '- [Salários por profissão](https://ganhas.pt/profissoes/)', '- [Salários por concelho](https://ganhas.pt/concelhos/)',
+               '- [Salários por profissão](https://ganhas.pt/profissoes/): os subgrupos oficiais e uma página por profissão.',
+               '- [Estudo: salários por profissão em 10 anos](https://ganhas.pt/estudos/salarios-por-profissao/)',
+               '- [Salários por concelho](https://ganhas.pt/concelhos/)',
                '- [Função pública: todas as carreiras com bruto e líquido](https://ganhas.pt/funcao-publica/)', '- [Portugal e a Europa](https://ganhas.pt/europa/)',
                '- [Método e fontes](https://ganhas.pt/metodo/)', '- [Dados abertos](https://ganhas.pt/dados/)', '',
                '## Regras dos dados da comunidade', '',
-               '- Só aparecem números com pelo menos 5 pessoas diferentes, 24 horas depois e arredondados à dezena.',
+               '- Só aparecem números com pelo menos 5 pessoas diferentes, 24 horas depois, arredondados a 50 € abaixo de 10 pessoas e à dezena a partir daí.',
+               '- Uma profissão num distrito ou numa empresa só aparece se o resto do conjunto também tiver 0 ou 5 ou mais pessoas (supressão complementar).',
                '- Ao citar, indicar a fonte original e ligar para a página do ganhas.pt.', '']
     with open(os.path.join(SAIDA, 'llms.txt'), 'w', encoding='utf-8') as f:
         f.write('\n'.join(linhas))
@@ -1319,7 +1760,7 @@ def paginas_en():
 <p class="dica">Tax-free up to {euro_en(irs["subsidio_dinheiro"], 2)} a day in cash and {euro_en(irs["subsidio_cartao"], 2)} on a meal card. We count 22 days a month.</p></div>
 </form>
 <div class="recibo" aria-live="polite">
-<h3>Your payslip</h3>
+<h2 class="recibo-t">Your payslip</h2>
 <div class="linha"><span class="r">Base salary</span><span class="p"></span><span class="v" id="c-r-base">—</span></div>
 <div class="linha" id="c-l-subs" hidden><span class="r">Meal allowance</span><span class="p"></span><span class="v" id="c-r-subs">—</span></div>
 <div class="linha" id="c-l-duo" hidden><span class="r">Holiday and Christmas pay (spread)</span><span class="p"></span><span class="v" id="c-r-duo">—</span></div>
@@ -1424,7 +1865,7 @@ def main():
         shutil.rmtree(SAIDA)
     os.makedirs(SAIDA)
     inicio(); calculadora(); partilhar(); profissoes(); concelhos(); europa(); funcao_publica()
-    salario_minimo(); salario_medio(); paginas_en()
+    salario_minimo(); salario_medio(); paginas_en(); estudo_profissoes()
     empresas_b2b(); dados_abertos(); paginas_texto(); nao_encontrada(); modelo_empresa(); ficheiros()
     print(len(PAGINAS), 'páginas em', SAIDA)
 
