@@ -1,1 +1,21 @@
 # nome url
+erse_ele https://simuladorprecos.erse.pt/eletricidade/
+erse_gas https://simuladorprecos.erse.pt/gas/
+erse_dual https://simuladorprecos.erse.pt/eletricidade-e-gas-natural/
+erse_cp https://simuladorprecos.erse.pt/config/PostalCodes.json?q=4420
+galp_planos https://casa.galp.pt/planos-eletricidade-e-gas
+galp_combina https://casa.galp.pt/planos-eletricidade-e-gas/combina
+galp_casaestrada https://casa.galp.pt/planos-eletricidade-e-gas/casa-estrada
+galp_flexivel https://casa.galp.pt/planos-eletricidade-e-gas/flexivel
+galp_pdf_combina_0926 https://www.galp.com/pt/casa/system/files/2026-09/galp-plano-combina-tabela-precos-descontos-0926.pdf
+galp_pdf_combina_1026 https://www.galp.com/pt/casa/system/files/2026-10/galp-plano-combina-tabela-precos-descontos-1026.pdf
+galp_pdf_combina_0626 https://www.galp.com/pt/casa/system/files/2026-06/galp-plano-combina-tabela-precos-descontos-0626.pdf
+galp_pdf_ce_0626 https://www.galp.com/pt/casa/system/files/2026-06/galp-plano-casa-estrada-tabela-precos-descontos-0626.pdf
+galp_pdf_ce_0926 https://www.galp.com/pt/casa/system/files/2026-09/galp-plano-casa-estrada-tabela-precos-descontos-0926.pdf
+worten_combina https://www.worten.pt/combina
+continente_galp https://feed.continente.pt/parceria-galp-continente
+edp_pingodoce https://www.edp.pt/particulares/pingo-doce/
+edp_eletricidade https://www.edp.pt/particulares/energia/eletricidade/
+repsol_vodafone https://www.repsol.pt/particulares/parceiros/outros-parceiros/vodafone/
+repsol_parceiros https://www.repsol.pt/particulares/parceiros/eletricidade-e-gas/
+poupamais https://www.poupamais.pt/
