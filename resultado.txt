@@ -1,0 +1,55 @@
+== 2026-11-12T04:53:06Z acao=comando
+IP: 2.31.13.85
+== Saída no servidor
+m1794459158200290335
+clonado 797eea8 dinissousa.pt: SEO local e casos reais
+== validar o Caddyfile completo do ramo
+Valid configuration
+Valid configuration
+/ -> 200  154340B cc=no-cache tpl=0
+/quanto-custa-um-site/ -> 200  13510B cc=no-cache tpl=0
+/criacao-de-sites-porto/ -> 200  25301B cc=no-cache tpl=0
+/criacao-de-sites-gondomar/ -> 200  24554B cc=no-cache tpl=0
+/projetos/parou/ -> 200  20583B cc=no-cache tpl=0
+/projetos/adribodypiercing/ -> 200  17880B cc=no-cache tpl=0
+/projetos/ -> 302 http://127.0.0.1:18082/#projetos 0B cc=no-cache tpl=0
+/projetos -> 302 http://127.0.0.1:18082/#projetos 0B cc= tpl=0
+/nao-existe -> 404  12050B cc= tpl=0
+/quanto-custa-um-site -> 308 http://127.0.0.1:18082/quanto-custa-um-site/ 58B cc= tpl=0
+/img/adri-480.webp -> 200  22528B cc=public, max-age=2592000 tpl=0
+/sitemap.xml -> 200  677B cc= tpl=0
+/llms.txt -> 200  2223B cc= tpl=0
+== lançamento (hoje)
+<span class="price" data-normal="149&nbsp;€">75&nbsp;€<
+<span class="price" data-normal="299&nbsp;€">149&nbsp;€<
+<span class="price" data-normal="<small>desde<
+1
+<p class="pr">75 €
+<p class="pr">149 €
+data-msg="Olá Dinis! Quero a página única (75 €)."
+== a partir de 1/12 (simulado)
+<span class="price" data-normal="149&nbsp;€">149&nbsp;€<
+<span class="price" data-normal="299&nbsp;€">299&nbsp;€<
+<span class="price" data-normal="<small>desde<
+oferta: 0 lanc: 0
+<p class="pr">149 €
+<p class="pr">299 €
+<p class="resp" style="margin-top:0">Faço sites de raiz para negócios do Porto, com desenho próprio e preço fechado. Uma página custa <strong>149 €</strong> e um site de até 5 páginas <strong>299 €</strong>, com domínio e alojamento do 1
+0
+== JSON-LD válido nos dois casos
+http://127.0.0.1:18082/ JSON-LD ok 1
+http://127.0.0.1:18082/criacao-de-sites-porto/ JSON-LD ok 1
+http://127.0.0.1:18082/criacao-de-sites-gondomar/ JSON-LD ok 1
+http://127.0.0.1:18082/projetos/parou/ JSON-LD ok 1
+http://127.0.0.1:18082/projetos/adribodypiercing/ JSON-LD ok 1
+http://127.0.0.1:18082/quanto-custa-um-site/ JSON-LD ok 1
+http://127.0.0.1:18083/ JSON-LD ok 1
+http://127.0.0.1:18083/criacao-de-sites-porto/ JSON-LD ok 1
+http://127.0.0.1:18083/criacao-de-sites-gondomar/ JSON-LD ok 1
+http://127.0.0.1:18083/projetos/parou/ JSON-LD ok 1
+http://127.0.0.1:18083/projetos/adribodypiercing/ JSON-LD ok 1
+http://127.0.0.1:18083/quanto-custa-um-site/ JSON-LD ok 1
+fim
+== Teste de fora
+https://2-31-13-85.sslip.io/health 200 0.444306s
+https://2-31-13-85.sslip.io/api/transit/loading-status 200 0.685099s
