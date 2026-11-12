@@ -1199,6 +1199,15 @@ Aqui tens {len(por)} carreiras, com o bruto e uma estimativa do líquido.</p>
         pagina_carreira(x, fp)
 
 
+def profs_da_carreira(cid):
+    """Ligação de volta às páginas de profissão que usam esta carreira (público e empresas lado a lado)."""
+    ps = [p for p in CAT['profissoes'] if PROF_FP.get(p['id']) == cid]
+    if not ps:
+        return ''
+    return ('<p class="espaco">Público e empresas lado a lado, com as partilhas de quem trabalha: ' +
+            ', '.join(f'<a href="/profissoes/{p["id"]}/">quanto ganha {artigo(p["nome"])} {e(minusc(p["nome"]))}</a>' for p in ps) + '.</p>')
+
+
 def pagina_carreira(x, fp):
     blocos, sub_atual = [], None
     tem_indice = any(p.get('indice') for c in x['categorias'] for p in c['posicoes'])
@@ -1226,6 +1235,7 @@ def pagina_carreira(x, fp):
 {"".join(blocos)}
 <p style="margin-top:56px;display:flex;flex-wrap:wrap;gap:12px"><a class="botao" href="/calculadora/">Calcular o meu líquido</a>
 <a class="botao sec2" href="/funcao-publica/">Ver todas as carreiras</a></p>
+{profs_da_carreira(x["id"])}
 </div></section>'''
     titulo = f'Quanto ganha {x["quem"]} em {fp["ano"]}' if x['quem'] else f'{x["titulo"]}: salários na função pública em {fp["ano"]}'
     if x['id'] in set(PROF_FP.values()):
