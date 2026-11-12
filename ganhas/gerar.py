@@ -621,7 +621,7 @@ def data_pt(d):
 
 def fontes_curtas(chaves):
     ls = [f'<a href="{e(O["fontes"][k]["url"])}" rel="noopener">{e(O["fontes"][k]["nome"])}</a>' for k in chaves]
-    return ('Fonte: ' if len(ls) == 1 else 'Fontes: ') + '; '.join(ls)
+    return ('Fonte: ' if len(ls) == 1 else 'Fontes: ') + '; '.join(ls) + '.'
 
 
 def nome_sg(k):
@@ -659,7 +659,7 @@ def fp_da_profissao(pid):
 def indexavel(p):
     fp_id = PROF_FP.get(p['id'])
     return (REPRESENTA.get(p['subgrupo']) == p['id'] or (fp_id and FP_DONO.get(fp_id) == p['id'])
-            or (p['id'] in PROF_FP_FILTRO and fp_da_profissao(p['id'])))
+            or (p['grupo'] == '0' and fp_da_profissao(p['id'])))  # cada posto militar tem a sua parte da tabela
 
 
 def milhares(n):
@@ -1279,17 +1279,16 @@ def estudo_profissoes():
 
     def sg_link(k):
         rep = REPRESENTA.get(k)
-        return f'<a href="/profissoes/{rep}/">{e(nome_sg(k))}</a>' if rep else e(nome_sg(k))
+        return f'<a href="/profissoes/{rep}/">{e(nome_sg(k))}</a>' if rep else f'<span style="font-weight:600">{e(nome_sg(k))}</span>'
 
     resposta = (f'Em outubro de {a1}, quem trabalhava a tempo completo em empresas privadas e públicas ganhava em média {euro(media)} brutos por mês, '
                 f'{pct(abs(sobe_t), 1)} {"mais" if sobe_t >= 0 else "menos"} do que em {a0}. Mas {pct(p_abaixo)} dos trabalhadores estavam em '
                 f'subgrupos de profissões com ganho médio abaixo desse valor, e o subgrupo mais bem pago ganhava {str(round(razao, 1)).replace(".", ",")} vezes '
                 f'o menos pago.')
-    tabela = tabela_html(
-        ['Subgrupo de profissões', f'Ganho {a0}', f'Ganho {a1}', 'Variação', 'Base', 'Extras', 'Trabalhadores'],
-        [[sg_link(k), euro(subs[k]['ganho'][0]), euro(subs[k]['ganho'][-1]), ('+' if sobe[k] >= 0 else '') + pct(sobe[k], 1),
-          euro(subs[k]['base'][-1]), pct(extra.get(k, 0)), milhares(subs[k]['tco'][-1])] for k in ordem],
-        f'Ganho médio mensal por subgrupo de profissões, {a0} e {a1}')
+    tabela = tabela_html(  # poucas colunas, para caber no telemóvel; o resto está no CSV
+        ['Subgrupo de profissões', f'Ganho {a1}', f'Desde {a0}', 'Trabalhadores'],
+        [[sg_link(k), euro(subs[k]['ganho'][-1]), ('+' if sobe[k] >= 0 else '') + pct(sobe[k], 1), milhares(subs[k]['tco'][-1])] for k in ordem],
+        f'Ganho médio mensal por subgrupo de profissões, {a1}, e variação desde {a0}')
     corpo = f'''
 {migalhas([("/profissoes/", "Profissões"), (None, "Estudo: salários por profissão")])[0]}
 <section class="sec" style="padding-top:24px"><div class="mold texto">
@@ -1323,7 +1322,7 @@ do que não está no salário base:</p>
 <h2>Os {len(subs)} subgrupos, lado a lado</h2>
 </div>
 <div class="mold" style="margin-top:24px">{tabela}
-<p class="dica" style="margin-top:12px">«Extras»: parte do ganho que não é remuneração base. «Trabalhadores»: todos os trabalhadores por conta de outrem do subgrupo, incluindo a tempo parcial.</p>
+<p class="dica" style="margin-top:12px">«Trabalhadores»: todos os trabalhadores por conta de outrem do subgrupo, incluindo a tempo parcial. A remuneração base e todos os anos estão no CSV.</p>
 {fonte("subgrupos")}
 <p class="espaco"><a class="botao" href="/dados-abertos/subgrupos-profissoes.csv">Descarregar os dados (CSV, {a0} a {a1})</a></p></div>
 <div class="mold texto" style="margin-top:64px">
