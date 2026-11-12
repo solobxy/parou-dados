@@ -1,0 +1,26 @@
+OK      existe zonaSemHorarios 
+OK      existem as zonas de aviso das ilhas 
+OK      [zona] Machico → madeira 
+OK      [zona] Porto Santo → madeira 
+OK      [zona] Ponta Delgada → acores 
+OK      [zona] Flores → acores 
+OK      [zona] Lisboa → nada 
+OK      [zona] Faro → nada 
+OK      [zona] sem posição → nada 
+OK      [zona] link da SIGA 
+OK      [aviso] grupo oriental = Ponta Delgada Ponta Delgada
+OK      [aviso] grupo central = Angra do Heroísmo Angra do Heroísmo
+OK      [aviso] grupo ocidental = Santa Cruz das Flores Santa Cruz das Flores
+OK      [aviso] costa norte da Madeira existe 
+OK      [aviso] serras da Madeira existem 
+OK      [aviso] continente sem Madeira não ganha zonas 
+OK      [aviso] no Funchal contam as duas costas e as serras MCS,MCN,MRM
+OK      [aviso] costa norte e serras não são locais à parte 
+OK      [aviso] Porto Santo só Porto Santo 
+OK      [aviso] zonas extra usam uma previsão que existe 2310300,2310300
+OK      [aviso] em Lisboa só Lisboa 
+OK      [aviso] nome das serras 
+OK      [aviso] nome no continente é o distrito 
+OK      [aviso] notificações chegam à região 
+
+Todos os testes OK
