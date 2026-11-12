@@ -172,7 +172,7 @@ w = len(H.unescape(re.sub(r'<[^>]+>', '', m.group(1))).split()) if m else 0
 ok('[cabaz] resposta no topo com 40 a 60 palavras e as três lojas', 40 <= w <= 60 and all(n in m.group(1) for n in ('Continente', 'Pingo Doce', 'Auchan')), str(w))
 ok('[cabaz] Dataset com CSV, e o CSV existe', '"@type":"Dataset"' in cz and existe('cabaz-mais-barato', 'historico.csv')
    and ler('cabaz-mais-barato', 'historico.csv').startswith('dia,continente,pingo_doce,auchan'))
-ok('[cabaz] título', '<title>Cabaz mais barato esta semana: Continente, Pingo Doce ou Auchan?</title>' in cz)
+ok('[cabaz] título', '<title>Cabaz mais barato esta semana: Continente, Pingo Doce, Auchan</title>' in cz)
 ok('[estudos] ainda sem estudo (o mês não acabou): página fora do Google e fora do sitemap', 'noindex' in ler('estudos', 'index.html') and '/estudos/' not in ler('sitemap-paginas.xml'))
 
 # ---------- segunda recolha: endereços iguais, produto que desaparece, produtos que se juntam ----------

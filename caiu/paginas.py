@@ -1043,9 +1043,11 @@ def pagina_produto(D, P, hora, irmaos):
     precos = precos_lojas(ofs)
     ant = [r[1] for v in P['h'].values() for r in v if dia_mais(hoje, -30) <= r[0] < hoje]
     if P['presente']:
-        descricao = curta(f'Preço hoje, {data_longa(hoje)}: {precos}.'
-                          + (f' Mínimo dos 30 dias anteriores: {eur(min(ant))}.' if ant else '')
-                          + ' Histórico e se a promoção é a sério.')
+        base_d = f'Preço hoje, {data_longa(hoje)}: {precos}.'
+        mn_d = f' Mínimo dos 30 dias anteriores: {eur(min(ant))}.' if ant else ''
+        cands = [base_d + mn_d + ' Histórico e se a promoção é a sério.', base_d + mn_d + ' Com histórico.', base_d + mn_d,
+                 base_d + ' Histórico e se a promoção é a sério.', base_d]
+        descricao = curta(next((d for d in cands if len(d) <= 155), base_d))
     else:
         descricao = curta(f'Último preço visto: {precos}. Histórico de preços no Continente, Pingo Doce e Auchan.')
     sec_t = P.get('termo')
@@ -1386,7 +1388,7 @@ def pagina_cabaz(D, hora):
             resposta += extra
     if palavras_n(resposta) < 40:
         resposta += ' Se comprasses cada produto na loja onde está mais barato, pagavas ' + eur(me['div']) + ' por pessoa e por semana.'
-    titulo = 'Cabaz mais barato esta semana: Continente, Pingo Doce ou Auchan?'
+    titulo = 'Cabaz mais barato esta semana: Continente, Pingo Doce, Auchan'
     descricao = curta(f'Esta semana, o cabaz de {n} produtos essenciais custa {eur(me[l1])} por pessoa no {LOJAS[l1]}, '
                       f'{eur(me[l2])} no {LOJAS[l2]} e {eur(me[l3])} no {LOJAS[l3]}. Atualizado todos os dias.')
     d0 = hist[0][0]
