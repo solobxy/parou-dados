@@ -1,0 +1,38 @@
+name: Vigiar a Madeira e os Açores
+
+# Todos os dias confirma que o que a PAROU mostra nas ilhas é igual ao que os operadores publicam:
+# paragens, linhas e viagens dos Horários do Funchal contra o ficheiro oficial; linhas do Funchal contra a lista
+# oficial da rede SIGA; a app a sério (Perto no Funchal, avisos do IPMA, aviso onde não há horários); e fontes
+# novas das ilhas no catálogo Mobility Database (entram sozinhas na base). Detalhes em auditoria/vigiar_ilhas.py.
+#
+# Só falha (e o GitHub manda um email) quando alguma coisa está errada. Relatório no ramo vigiar-ilhas-resultado.
+# Corre depois da construção diária dos dados.
+
+on:
+  schedule:
+    - cron: "17 9 * * *"
+  push:
+    branches: [vigiar-ilhas-agora]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  vigiar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Verificar as ilhas
+        run: SAIDA=res python auditoria/vigiar_ilhas.py
+      - name: Guardar o relatório
+        if: always()
+        run: |
+          mkdir -p pub && cp -r res/* pub/ 2>/dev/null || echo "sem relatório" > pub/vazio.txt
+          cd pub && git init -q -b vigiar-ilhas-resultado
+          git config user.name "parou-dados"; git config user.email "actions@users.noreply.github.com"
+          git add -A && git commit -q -m "Vigia das ilhas $(date -u +%Y-%m-%dT%H:%MZ)" && git push -q -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" vigiar-ilhas-resultado
