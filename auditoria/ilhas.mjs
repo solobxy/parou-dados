@@ -7,7 +7,7 @@ const A = await import(`${caminho}/src/server/zonasAvisoIlhas.ts`).catch((e) => 
 let falhas = 0;
 const ok = (nome, cond, extra = '') => { if (!cond) falhas++; console.log(cond ? 'OK     ' : 'FALHOU ', nome, extra); };
 ok('existe zonaSemHorarios', typeof Z.zonaSemHorarios === 'function', Z.erro?.message || '');
-ok('existem as zonas de aviso das ilhas', typeof A.porAreaPreferida === 'function' && typeof A.areaPelaPosicao === 'function', A.erro?.message || '');
+ok('existem as zonas de aviso das ilhas', typeof A.porAreaPreferida === 'function' && typeof A.zonaSoDeAvisos === 'function', A.erro?.message || '');
 
 if (typeof Z.zonaSemHorarios === 'function') {
   const z = Z.zonaSemHorarios;
@@ -40,12 +40,13 @@ if (typeof A.porAreaPreferida === 'function') {
   ok('[aviso] costa norte da Madeira existe', m.has('MCN'));
   ok('[aviso] serras da Madeira existem', m.has('MRM'));
   ok('[aviso] continente sem Madeira não ganha zonas', !A.porAreaPreferida([{ area: 'LSB', nome: 'Lisboa', globalIdLocal: 1, lat: 38.7, lon: -9.1, idRegiao: 1 }]).has('MCN'));
-  ok('[aviso] Santana fica na costa norte', A.areaPelaPosicao('MCS', 32.805) === 'MCN');
-  ok('[aviso] Porto Moniz fica na costa norte', A.areaPelaPosicao('MCS', 32.866) === 'MCN');
-  ok('[aviso] Funchal fica na costa sul', A.areaPelaPosicao('MCS', 32.648) === 'MCS');
-  ok('[aviso] Calheta fica na costa sul', A.areaPelaPosicao('MCS', 32.72) === 'MCS');
-  ok('[aviso] Porto Santo não muda', A.areaPelaPosicao('MPS', 33.06) === 'MPS');
-  ok('[aviso] no Funchal as serras contam como aqui', A.areasLocaisAviso('MCS').includes('MRM'));
+  const ilha = A.areasLocaisAviso('MCS');
+  ok('[aviso] no Funchal contam as duas costas e as serras', ['MCS', 'MCN', 'MRM'].every((a) => ilha.includes(a)), ilha.join());
+  ok('[aviso] costa norte e serras não são locais à parte', A.zonaSoDeAvisos('MCN') && A.zonaSoDeAvisos('MRM') && !A.zonaSoDeAvisos('MCS') && !A.zonaSoDeAvisos('AOR'));
+  ok('[aviso] Porto Santo só Porto Santo', A.areasLocaisAviso('MPS').join() === 'MPS');
+  // O IPMA só tem previsão diária para as cidades de distrits-islands.json (na Madeira, Funchal e Porto Santo):
+  // um número inventado deixava a zona sem previsão (2311000 dá 404)
+  ok('[aviso] zonas extra usam uma previsão que existe', (A.ZONAS_EXTRA || []).every((z) => [2310300, 2320100].includes(z.globalIdLocal)), (A.ZONAS_EXTRA || []).map((z) => z.globalIdLocal).join());
   ok('[aviso] em Lisboa só Lisboa', A.areasLocaisAviso('LSB').join() === 'LSB');
   ok('[aviso] nome das serras', A.nomeDaZona('MRM', m) === 'Madeira (serras)');
   ok('[aviso] nome no continente é o distrito', A.nomeDaZona('LSB', new Map([['LSB', { nome: 'Lisboa' }]])) === 'Lisboa');

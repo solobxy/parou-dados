@@ -27,6 +27,11 @@ const casos = [
   ['Centro - Teleférico JRD Botânico', 'Centro - Teleférico Jardim Botânico'],
   ['Funchal - CFreiras (via FJ Cardos)', 'Funchal - Curral das Freiras (via FJ Cardos)'],
   ['Galerias (31)', 'Galerias (31)'],
+  ['Jamboto Via Hospital', 'Jamboto via Hospital'],
+  ['C Saúde Trapiche Barreira LMB Aguiares', 'Centro de Saúde Trapiche Barreira Lombo Aguiares'],
+  ['Infantado (X) Via Rápida', 'Infantado (X) Via Rápida'],
+  ['Lisboa (Areeiro) - Via Rara', 'Lisboa (Areeiro) - Via Rara'],
+  ['S. Bartolomeu de Via Glória (X)', 'S. Bartolomeu de Via Glória (X)'],
   // Siglas e numeração romana no resto do país
   ['Cç. Ajuda (GNR)', 'Cç. Ajuda (GNR)'],
   ['Av. João XXI', 'Av. João XXI'],
