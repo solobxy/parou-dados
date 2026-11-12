@@ -52,6 +52,14 @@ for i, u in enumerate(sorted(scripts)[:12]):
         csvs.add(urllib.parse.urljoin(final, m.decode('utf-8', 'replace')))
     for m in re.findall(rb'''["'`](/?api/[^"'`\s]{2,160})["'`]''', b2):
         registo.append({'api': m.decode('utf-8', 'replace'), 'de': u})
+s3, b3, _ = guardar('erse_settings.json', urllib.parse.urljoin(final, '/config/Settings.json'))
+try:
+    for k, v in json.loads(b3.decode('utf-8-sig')).items():
+        if isinstance(v, str) and v.startswith('http') and ('csv' in k.lower() or re.search(r'\.(csv|zip)', v, re.I)):
+            csvs.add(v)
+except ValueError:
+    pass
+guardar('erse_config.json', urllib.parse.urljoin(final, '/connectors/config'))
 for extra in (sys.argv[2:] if len(sys.argv) > 2 else []):
     csvs.add(extra)
 for i, u in enumerate(sorted(csvs)[:20]):
