@@ -1,0 +1,29 @@
+name: Confirmar as ilhas em produção (só leitura)
+on:
+  push:
+    branches: [confirmar-ilhas]
+permissions:
+  contents: write
+jobs:
+  confirmar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      HCLOUD_TOKEN: ${{ secrets.HCLOUD_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Ler no servidor
+        run: |
+          mkdir -p ~/.ssh && chmod 700 ~/.ssh
+          (umask 077; openssl enc -d -aes-256-cbc -pbkdf2 -iter 200000 -pass env:HCLOUD_TOKEN -in servidor/chave-ssh.enc -out ~/.ssh/id_ed25519)
+          printf 'Host *\n  StrictHostKeyChecking no\n  UserKnownHostsFile /dev/null\n  LogLevel ERROR\n  ConnectTimeout 15\n  ServerAliveInterval 20\n' > ~/.ssh/config
+          IP=$(curl -fsS -H "Authorization: Bearer $HCLOUD_TOKEN" "https://api.hetzner.cloud/v1/servers?name=parou" | jq -r '.servers[0].public_net.ipv4.ip')
+          ssh root@$IP 'bash -s' < .github/confirmar/confirmar.sh > resultado.txt 2>&1 || echo "ssh terminou com erro $?" >> resultado.txt
+          sed -i -E 's/([0-9]{1,3}\.){3}[0-9]{1,3}/<ip>/g' resultado.txt
+      - name: Guardar
+        if: always()
+        run: |
+          mkdir -p pub && cp resultado.txt pub/ 2>/dev/null || echo "sem resultado" > pub/resultado.txt
+          cd pub && git init -q -b confirmar-ilhas-resultado
+          git config user.name "parou-dados"; git config user.email "actions@users.noreply.github.com"
+          git add -A && git commit -q -m "confirmação $(date -u +%H:%MZ)" && git push -q -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" confirmar-ilhas-resultado
