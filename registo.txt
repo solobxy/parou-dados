@@ -1,0 +1,16 @@
+ea ok 22
+eb ok 22
+g1a ok 14
+g1b ok 14
+g2a ok 14
+g2b ok 14
+g3a ok 14
+g3b ok 14
+g4a ok 14
+g4b ok 14
+c1 ok 22
+c2 ok 22
+c3 ok 22
+c4 ok 22
+c5 ok 14
+c6 ok 288
