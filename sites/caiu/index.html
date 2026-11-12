@@ -23,9 +23,9 @@
 <link rel="manifest" href="/manifest.webmanifest">
 <link rel="preload" href="/fontes/mona.woff" as="font" type="font/woff" crossorigin>
 <link rel="preload" href="/dados/resumo.json" as="fetch" crossorigin>
-<link rel="stylesheet" href="/estilo.css?v=5">
+<link rel="stylesheet" href="/estilo.css?v=6">
 <script>document.documentElement.classList.add('js');window.estat=window.estat||function(){(estat.q=estat.q||[]).push(arguments)}</script>
-<script defer src="/app.js?v=5"></script>
+<script defer src="/app.js?v=6"></script>
 <script defer src="/_e.js" data-site="caiu"></script>
 <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"Organization","@id":"https://caiu.pt/#organizacao","name":"caiu.pt","url":"https://caiu.pt/","logo":"https://caiu.pt/icone-512.png"},{"@type":"WebSite","@id":"https://caiu.pt/#site","name":"caiu.pt","url":"https://caiu.pt/","inLanguage":"pt-PT","description":"Comparador de preços e verificador de promoções do Continente, Pingo Doce e Auchan.","publisher":{"@id":"https://caiu.pt/#organizacao"}}]}</script>
 </head>
@@ -39,7 +39,8 @@
     </a>
     <nav class="topo__nav" aria-label="Atalhos">
       <a class="topo__link" href="#seguidos" id="linkSeguidos" hidden>Segues <span class="topo__n" id="nSeguidos">0</span></a>
-      <a class="topo__link" href="#essencial" id="linkEssencial" hidden>Essencial</a>
+      <a class="topo__link topo__link--largo" href="#essencial" id="linkEssencial" hidden>Essencial</a>
+      <a class="topo__link" href="/luz-e-gas/">Luz e gás</a>
       <a class="topo__link" href="#lista" id="botaoLista">Lista <span class="topo__n" id="nLista" hidden>0</span></a>
     </nav>
   </div>
@@ -50,7 +51,7 @@
     <div class="heroi__in">
       <div class="heroi__texto">
         <h1 id="t-heroi">O preço caiu mesmo?</h1>
-        <p class="heroi__apoio">Vemos todos os dias os preços do Continente, Pingo Doce e Auchan e dizemos que promoções são a sério.</p>
+        <p class="heroi__apoio">Vemos três vezes por dia os preços do Continente, Pingo Doce e Auchan e dizemos que promoções são a sério.</p>
         <form class="busca" id="busca" role="search" action="#" autocomplete="off">
           <label class="busca__rotulo" for="q">Procura um produto</label>
           <div class="busca__linha">
@@ -60,20 +61,21 @@
           <p class="busca__sug"><span>Experimenta:</span> <a href="#q=azeite">azeite</a> <a href="#q=café cápsulas">café em cápsulas</a> <a href="#q=detergente roupa">detergente</a> <a href="#q=atum">atum</a></p>
         </form>
       </div>
-      <figure class="talao" id="talaoDia" aria-labelledby="t-talao">
-        <figcaption class="talao__cab">
-          <strong id="t-talao">Talão de hoje</strong>
-          <span id="talaoHora">a recolher…</span>
-        </figcaption>
-        <dl class="talao__linhas" id="talaoLinhas">
-          <div><dt>Preços vistos</dt><dd data-k="ofertas">—</dd></div>
-          <div><dt>Em promoção</dt><dd data-k="promos">—</dd></div>
-          <div><dt>Desconto sobre o PVPR</dt><dd data-k="pvpr">—</dd></div>
-          <div><dt>Em promoção, mais caro ao lado</dt><dd data-k="outra">—</dd></div>
-          <div><dt>Desceram a sério</dt><dd data-k="reais">—</dd></div>
-        </dl>
-        <p class="talao__pe" id="talaoPe">Continente · Pingo Doce · Auchan</p>
-      </figure>
+      <div class="top3" id="top3" aria-labelledby="top3Frase">
+        <div class="top3__cab">
+          <p class="top3__frase" id="top3Frase">As promoções de hoje, vistas à lupa</p>
+          <div class="top3__ops" id="top3Ops" role="group" aria-label="Mostrar" hidden>
+            <button class="top3__op" type="button" data-v="fachada" aria-pressed="true">Fachadas <span id="top3NF"></span></button>
+            <button class="top3__op" type="button" data-v="real" aria-pressed="false">A sério <span id="top3NR"></span></button>
+          </div>
+        </div>
+        <ol class="top3__lista" id="top3Lista">
+          <li class="t3 t3--espera" aria-hidden="true"></li>
+          <li class="t3 t3--espera" aria-hidden="true"></li>
+          <li class="t3 t3--espera" aria-hidden="true"></li>
+        </ol>
+        <a class="top3__mais" id="top3Mais" href="#fachada" hidden></a>
+      </div>
     </div>
   </section>
 
@@ -97,6 +99,14 @@
       <p class="resultados__info" id="resInfo" aria-live="polite"></p>
       <ol class="linhas" id="resLista"></ol>
       <button class="botao botao--leve mais" type="button" id="resMais" hidden>Ver mais resultados</button>
+    </div>
+  </section>
+
+  <section class="bloco bloco--fachada" id="fachada" aria-labelledby="t-fachada" hidden>
+    <div class="caixa">
+      <h2 id="t-fachada">Em promoção, e mais caro ao lado</h2>
+      <p class="lead" id="fachadaLead"></p>
+      <ul class="etiquetas" id="fachadaLista"></ul>
     </div>
   </section>
 
@@ -140,11 +150,39 @@
     </div>
   </section>
 
-  <section class="bloco bloco--fachada" id="fachada" aria-labelledby="t-fachada" hidden>
+  <section class="bloco bloco--luz" id="luzgas" aria-labelledby="t-luz" hidden>
     <div class="caixa">
-      <h2 id="t-fachada">Em promoção, e mais caro ao lado</h2>
-      <p class="lead" id="fachadaLead"></p>
-      <ul class="etiquetas" id="fachadaLista"></ul>
+      <a class="luz" href="/luz-e-gas/" id="luzLink">
+        <span class="luz__texto">
+          <span class="luz__t" id="t-luz">Luz e gás: quem é mais barato hoje</span>
+          <span class="luz__sub" id="luzSub"></span>
+        </span>
+        <ol class="luz__top" id="luzTop"></ol>
+        <span class="botao botao--amarelo luz__ir">Comparar a minha conta</span>
+      </a>
+    </div>
+  </section>
+
+  <section class="bloco bloco--talao" id="talao" aria-labelledby="t-contas">
+    <div class="caixa contas">
+      <div class="contas__texto">
+        <h2 id="t-contas">As contas de hoje</h2>
+        <p class="lead">Cada preço é comparado com as outras duas lojas e com os dias anteriores. É assim que sabemos se uma promoção é a sério. <a href="#metodo">Como decidimos</a></p>
+      </div>
+      <figure class="talao" id="talaoDia" aria-labelledby="t-talao">
+        <figcaption class="talao__cab">
+          <strong id="t-talao">Talão de hoje</strong>
+          <span id="talaoHora">a recolher…</span>
+        </figcaption>
+        <dl class="talao__linhas" id="talaoLinhas">
+          <div><dt>Preços vistos</dt><dd data-k="ofertas">—</dd></div>
+          <div><dt>Em promoção</dt><dd data-k="promos">—</dd></div>
+          <div><dt>Desconto sobre o PVPR</dt><dd data-k="pvpr">—</dd></div>
+          <div><dt>Em promoção, mais caro ao lado</dt><dd data-k="outra">—</dd></div>
+          <div><dt>Desceram a sério</dt><dd data-k="reais">—</dd></div>
+        </dl>
+        <p class="talao__pe" id="talaoPe">Continente · Pingo Doce · Auchan</p>
+      </figure>
     </div>
   </section>
 

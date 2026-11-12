@@ -99,6 +99,16 @@ def parcerias(D):
     return ''.join(out)
 
 
+def resumo(D):
+    """O pouco que a página inicial do caiu.pt mostra (dados/energia-resumo.json): os três mais baratos do caso tipo."""
+    def caso(k):
+        c = D['casos'][k]
+        return {'nome': c['nome'], 'desc': c['desc'],
+                'top': [{'com': nome_com(D, l['com']), 'n': l['n'], 'mes': round(l['total'] / 12, 2)} for l in c['top'][:3]]}
+    return {'dia': D['dia'], 'atualizado': D['atualizado'], 'ofertas': len(D['of']),
+            'comercializadores': len({o['com'] for o in D['of']}), 'luz': caso('e2'), 'gas': caso('g2')}
+
+
 def pagina(D):
     dia, hora = D['dia'], D['atualizado'][11:16]
     n_of = len(D['of'])

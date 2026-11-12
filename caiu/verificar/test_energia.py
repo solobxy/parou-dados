@@ -117,6 +117,13 @@ ok('crédito no rodapé', 'Feito por <a href="https://dinissousa.pt"' in h)
 ok('título e descrição com tamanho para o Google',
    len(re.search(r'<title>(.*?)</title>', h).group(1)) <= 70 and len(re.search(r'name="description" content="(.*?)"', h).group(1)) <= 170)
 
+# ---- resumo para a página inicial (pequeno, com os mesmos três do topo)
+rs = json.load(open(os.path.join(pasta, 'energia-resumo.json'), encoding='utf-8'))
+ok('resumo para a página inicial com os três do topo', [x['com'] for x in rs['luz']['top']] == top
+   and all(20 < x['mes'] < 300 for x in rs['luz']['top']) and len(rs['gas']['top']) == 3, str(rs['luz']['top']))
+ok('resumo pequeno (menos de 2 KB)', os.path.getsize(os.path.join(pasta, 'energia-resumo.json')) < 2048,
+   os.path.getsize(os.path.join(pasta, 'energia-resumo.json')))
+
 shutil.rmtree(pasta, ignore_errors=True)
 shutil.rmtree(estado, ignore_errors=True)
 print('\nTudo OK' if not falhas else f'\n{falhas} falha(s)')

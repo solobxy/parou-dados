@@ -33,6 +33,16 @@ Uma família: **Mona Sans** variável (wdth 75–125, wght 200–900), auto-aloj
 | pequeno | 14px | 100 | 500 | datas, preço por unidade |
 
 ## 4. Componentes
+- **Topo da página inicial**: amarelo, título curto e logo a seguir os três casos do dia (`#top3`): «Fachadas» (a
+  promoção de uma loja contra o preço mais baixo noutra) ou «A sério» (hoje contra o mínimo dos dias anteriores),
+  escolhidos com um interruptor. Cada caso é um cartão branco com foto, carimbo, o preço riscado a vermelho (a linha
+  risca-se ao entrar) e o preço bom num bloco amarelo com «−N %». No telemóvel só isto e a pesquisa; no computador
+  também a frase de apoio e as sugestões. Os três do topo não se repetem na secção das fachadas.
+- **As contas de hoje** (`#talao`): o talão do dia passou do topo para o meio da página.
+- **Luz e gás na página inicial** (`#luzgas`): bloco escuro com os três comercializadores mais baratos do caso tipo
+  (`/dados/energia-resumo.json`, escrito por `caiu/energia.py`) e o botão amarelo para `/luz-e-gas/`.
+- **Folha do produto**: a loja mais barata tem o botão «Comprar no <loja> ↗» (abre a página do produto na loja);
+  as outras ficam com a ligação pequena «Ver no <loja> ↗».
 - **Etiqueta** (cartão de produto): superfície branca, foto em cima à esquerda, nome, preço grande; faixa
   amarela com o preço da loja em promoção; carimbo por cima, rodado −7°.
 - **Carimbo**: contorno de 3 px na cor do veredito, texto na mesma cor, cantos 4 px, rodado. Entra com um

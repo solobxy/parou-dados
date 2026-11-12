@@ -750,9 +750,9 @@ www.tapmoss.com {
 		@privado path /historico.db* /*.tmp /estado-paginas.json /estado-estudos.json /estudos-para-enviar/* /energia-paginas/*
 		respond @privado 404
 		root * /var/lib/caiu-dados
-		@dia path /resumo.json /lista.json /estado.json /energia.json /energia-estado.json
+		@dia path /resumo.json /lista.json /estado.json /energia.json /energia-estado.json /energia-resumo.json
 		header @dia Cache-Control "no-cache"
-		@resto not path /resumo.json /lista.json /estado.json /energia.json /energia-estado.json
+		@resto not path /resumo.json /lista.json /estado.json /energia.json /energia-estado.json /energia-resumo.json
 		header @resto Cache-Control "public, max-age=600"
 		file_server
 	}

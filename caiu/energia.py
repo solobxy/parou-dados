@@ -12,6 +12,7 @@ Fontes (só leitura, um pedido de cada vez):
 Escreve:
   <dados>/energia.json                ofertas, parâmetros e vantagens que o site usa (o cálculo é feito no telemóvel)
   <dados>/energia-estado.json         como correu (fontes, contas confirmadas, avisos)
+  <dados>/energia-resumo.json         os três mais baratos do caso tipo, para a página inicial
   <dados>/energia-paginas/luz-e-gas/index.html  página /luz-e-gas/ (o Caddy serve-a; paginas.py põe-na no sitemap)
   <estado>/energia.db                 histórico diário (preço de cada oferta nos casos tipo)
   <estado>/erse/<data>.zip, galp/*.pdf  ficheiros originais
@@ -831,6 +832,7 @@ def correr(pasta, estado, fixtures=None):
     import energia_pagina
     # fora de paginas/ (essa pasta é trocada inteira por paginas.py em cada recolha)
     escrever(os.path.join(pasta, 'energia-paginas', 'luz-e-gas', 'index.html'), energia_pagina.pagina(dados))
+    escrever(os.path.join(pasta, 'energia-resumo.json'), json.dumps(energia_pagina.resumo(dados), ensure_ascii=False, separators=(',', ':')))
     est = {'dia': dia, 'hora': agora().strftime('%H:%M'), 'segundos': round(time.time() - t0),
            'erse': {'ficheiro': nome, 'ofertas': len(ofertas) - len(galp), 'comercializadores': len(coms)},
            'galp': fontes_galp, 'param': param, 'confirmado': conf,

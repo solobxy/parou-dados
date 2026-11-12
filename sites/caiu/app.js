@@ -285,6 +285,74 @@
     ul.after(bt);
   }
 
+  // ---------- topo: os três casos do dia (fachadas ou descidas a sério) ----------
+  // Fachada: a loja em promoção contra a loja mais barata. A sério: hoje contra o mínimo dos dias anteriores.
+  function casoFachada(g) {
+    const o = g.o.find(x => x.m.some(m => m[0] === 'outra'));
+    if (!o) return null;
+    const m = o.m.find(x => x[0] === 'outra');
+    const l = COD[m[1]];
+    if (!l || !(m[2] < o.p)) return null;
+    return { g, v: 'fachada', de: o.p, deTxt: `Promoção<br>no${NB}${LOJAS[o.l]}`, para: m[2], paraTxt: naLoja(l), l,
+      fala: `${g.n}: em promoção a ${eur(o.p)} no ${LOJAS[o.l]}, mas a ${eur(m[2])} no ${LOJAS[l]}.` };
+  }
+  function casoReal(g) {
+    const o = g.o.find(x => x.v === 'real');
+    const m = o && o.m.find(x => x[0] === 'min30');
+    if (!m || !(o.p < m[1])) return null;
+    return { g, v: 'real', de: m[1], deTxt: 'Antes, nunca<br>abaixo de', para: o.p, paraTxt: `Hoje no ${LOJAS[o.l]}`, l: o.l,
+      fala: `${g.n}: hoje a ${eur(o.p)} no ${LOJAS[o.l]}; nos ${m[2]} dias anteriores nunca esteve abaixo de ${eur(m[1])}.` };
+  }
+  const TOP = { fachada: [], real: [], v: 'fachada', primeira: true };
+  function cartaoTop(c) {
+    const li = document.createElement('li');
+    li.className = 't3 t3--' + c.v;
+    const menos = Math.round((c.de - c.para) / c.de * 100);
+    li.innerHTML = `<a class="t3__a" href="#p=${encodeURIComponent(c.g.i)}" aria-label="${esc(c.fala)}">
+        ${imgHTML(c.g, 't3__img', 72)}
+        <span class="carimbo carimbo--${c.v} t3__carimbo" aria-hidden="true">${CARIMBO[c.v]}</span>
+        <span class="t3__nome" aria-hidden="true">${esc(c.g.n)}<small>${esc(qtdTexto(c.g.q))}</small></span>
+        <span class="t3__de" aria-hidden="true"><small>${c.deTxt}</small><span class="t3__risca">${eur(c.de)}</span></span>
+        <span class="t3__para" aria-hidden="true"><small>${c.paraTxt}</small>${precoHTML(c.para)}<em>−${menos}${NB}%</em></span>
+      </a>`;
+    return li;
+  }
+  function desenharTop(v) {
+    TOP.v = v;
+    const r = R, ul = $('#top3Lista'), xs = TOP[v];
+    const n = v === 'fachada' ? r.outra : ((r.classes || {}).real || 0);
+    $('#top3Frase').innerHTML = v === 'fachada'
+      ? `Hoje, <strong>${ni.format(n)} promoções</strong> estão mais caras do que noutra loja.`
+      : `Hoje, <strong>${ni.format(n)} preços</strong> estão abaixo de todos os dos dias anteriores.`;
+    document.querySelectorAll('.top3__op').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.v === v)));
+    ul.replaceChildren(...xs.map(cartaoTop));
+    ul.classList.toggle('entra', TOP.primeira && !reduzido);
+    if (!TOP.primeira && !reduzido) { ul.classList.remove('troca'); void ul.offsetWidth; ul.classList.add('troca'); }
+    TOP.primeira = false;
+    animar(ul);
+    const mais = $('#top3Mais');
+    mais.href = v === 'fachada' ? '#fachada' : '#reais';
+    mais.textContent = v === 'fachada' ? `Ver mais ${ni.format(Math.max(0, n - 3))} fachadas` : 'Ver mais descidas a sério';
+    mais.hidden = !(n > 3);
+  }
+  function mostrarTop3(fach, reais) {
+    const unicos = (xs, f) => { const out = []; for (const g of xs) { const c = f(g); if (c && !out.some(x => x.g.i === g.i)) out.push(c); } return out; };
+    TOP.fachada = unicos(fach, casoFachada).slice(0, 3);
+    TOP.real = unicos(reais, casoReal).sort((a, b) => (b.de - b.para) / b.de - (a.de - a.para) / a.de).slice(0, 3);
+    if (!TOP.fachada.length && !TOP.real.length) { $('#top3').hidden = true; return; }
+    $('#top3NF').textContent = ni.format(R.outra || 0);
+    $('#top3NR').textContent = ni.format((R.classes || {}).real || 0);
+    $('#top3Ops').hidden = !(TOP.fachada.length && TOP.real.length);
+    desenharTop(TOP.fachada.length ? 'fachada' : 'real');
+  }
+  $('#top3Ops').addEventListener('click', e => {
+    const b = e.target.closest('.top3__op');
+    if (!b || b.dataset.v === TOP.v) return;
+    desenharTop(b.dataset.v);
+    window.estat('topo', b.dataset.v);
+  });
+  $('#top3Lista').addEventListener('click', e => { if (e.target.closest('.t3__a')) window.estat('topo', 'produto'); });
+
   function mostrarResumo() {
     const r = R;
     const deHoje = r.dia === hojeLx();
@@ -295,15 +363,25 @@
     $('#talaoPe').textContent = deHoje
       ? `${ni.format(r.produtos)} produtos · atualizamos às 7:20, 12:50 e 18:20`
       : `Ainda não há preços de hoje: estes são os últimos que conseguimos recolher.`;
-    $('#talaoDia').classList.add('imprime');
+    // o talão está a meio da página: imprime quando aparece
+    const talao = $('#talaoDia');
+    if ('IntersectionObserver' in window && !reduzido) {
+      const io = new IntersectionObserver(es => { if (es.some(x => x.isIntersecting)) { talao.classList.add('imprime'); io.disconnect(); } }, { rootMargin: '0px 0px -15% 0px' });
+      io.observe(talao);
+    } else talao.classList.add('imprime');
     $('#rodapeDados').textContent = `Preços recolhidos a ${dataCurta(r.atualizado.slice(0, 10))}, às ${hora(r.atualizado)}, nas lojas online do Continente, Pingo Doce e Auchan. Podem mudar durante o dia.`;
 
     try { mostrarEssencial(); } catch (e) { $('#essencial').hidden = true; }
 
     const fach = (r.fachada || []).map(dec);
-    if (fach.length) {
+    const reais = (r.reais || []).map(dec);
+    try { mostrarTop3(fach, reais); } catch (e) { $('#top3').hidden = true; }
+    // os três do topo não se repetem logo a seguir
+    const noTopo = new Set(TOP.fachada.map(c => c.g.i));
+    const fachResto = fach.filter(g => !noTopo.has(g.i));
+    if (fachResto.length) {
       $('#fachadaLead').innerHTML = `Hoje, <strong>${ni.format(r.outra)} produtos</strong> em promoção estão mais baratos noutro supermercado. Estes são os casos com maior diferença.`;
-      preencher($('#fachadaLista'), fach, g => cartao(g, g.o.find(o => o.m.some(m => m[0] === 'outra'))));
+      preencher($('#fachadaLista'), fachResto, g => cartao(g, g.o.find(o => o.m.some(m => m[0] === 'outra'))));
       $('#fachada').hidden = false;
     }
 
@@ -344,7 +422,6 @@
       $('#diferenca').hidden = false;
     }
 
-    const reais = (r.reais || []).map(dec);
     $('#reais').hidden = false;
     if (reais.length) {
       $('#reaisLead').textContent = 'Preços de hoje abaixo de todos os dos 30 dias anteriores. Segue os que compras e avisamos da próxima vez.';
@@ -913,7 +990,7 @@
     if (!g) { aviso('Este produto já não está nos preços de hoje.'); history.replaceState(null, '', location.pathname); return; }
     const ord = [...g.o].sort((a, b) => a.p - b.p);
     $('#folhaCorpo').innerHTML = `
-      <div class="fp__cab">${imgHTML(g, 'fp__img', 96)}<div><h2 id="folhaTitulo">${esc(g.n)}</h2><p class="fp__q">${esc(qtdTexto(g.q))}${g.m ? ' · ' + esc(g.m) : ''}</p></div></div>
+      <div class="fp__cab">${imgHTML(g, 'fp__img', 96)}<div><h2 id="folhaTitulo">${esc(g.n)}</h2><p class="fp__q">${[qtdTexto(g.q), g.m].filter(Boolean).map(esc).join(' · ')}</p></div></div>
       <ul class="fp__lojas">${ord.map(o => {
         const tag = etiquetaPromo(o);
         const mot = motivo(o, g);
@@ -924,7 +1001,9 @@
           <span class="fp__precos">${precoHTML(o.p)}${pl ? `<small>${eur(o.p * (1 - pl / 100))} com os teus cartões</small>` : ''}</span>
           ${o.v || tag ? `<div class="fp__extra">${o.v ? `<span class="carimbo carimbo--${o.v}">${CARIMBO[o.v]}</span>` : ''}${tag ? `<span>${tag}</span>` : ''}</div>` : ''}
           ${mot && o.v ? `<p class="fp__motivo">${mot}</p>` : ''}
-          <a class="fp__ir" href="${esc(BASE[o.l] + o.url)}" target="_blank" rel="noopener" data-loja="${o.l}">Ver no ${LOJAS[o.l]} ↗</a>
+          ${o === ord[0]
+            ? `<a class="botao botao--pequeno fp__comprar" href="${esc(BASE[o.l] + o.url)}" target="_blank" rel="noopener" data-loja="${o.l}">Comprar no ${LOJAS[o.l]} ↗</a>`
+            : `<a class="fp__ir" href="${esc(BASE[o.l] + o.url)}" target="_blank" rel="noopener" data-loja="${o.l}">Ver no ${LOJAS[o.l]} ↗</a>`}
         </li>`;
       }).join('')}</ul>
       <div class="fp__acoes" id="fpAcoes"></div>
@@ -1087,6 +1166,20 @@
     history.replaceState(null, '', location.pathname + location.hash);
   }
 
+  async function mostrarLuz() {
+    try {
+      const r = await fetch('/dados/energia-resumo.json');
+      if (!r.ok) return;
+      const E = await r.json();
+      const c = E.luz;
+      if (!c || !c.top || !c.top.length) return;
+      $('#luzSub').textContent = `${c.nome}, com impostos, campanhas e parcerias. ${ni.format(E.ofertas)} ofertas vistas ${E.dia === hojeLx() ? 'hoje' : 'a ' + dataCurta(E.dia)}.`;
+      $('#luzTop').innerHTML = c.top.map((x, i) => `<li class="luz__l${i ? '' : ' luz__l--melhor'}"><span class="luz__com">${esc(x.com)}<small>${esc(x.n)}</small></span>${precoHTML(x.mes, 'luz__preco')}<small class="luz__mes">/mês</small></li>`).join('');
+      $('#luzgas').hidden = false;
+    } catch (e) { /* sem resumo: a secção fica escondida */ }
+  }
+  $('#luzLink').addEventListener('click', () => window.estat('luz', 'inicio'));
+
   async function iniciar() {
     mensagens();
     desenharDescontos();
@@ -1099,10 +1192,13 @@
       mostrarResumo();
     } catch (e) {
       $('#talaoHora').textContent = 'sem dados';
+      $('#talaoDia').classList.add('imprime');
+      $('#top3').hidden = true;
       $('#talaoPe').textContent = 'Estamos a recolher os preços de hoje. Volta daqui a pouco.';
     }
     desenharLista();
     desenharSeguidos();
+    mostrarLuz();
     if (location.hash === '#essencial' || location.hash === '#lista' || location.hash === '#metodo' || location.hash === '#descontos' || location.hash === '#avisos' || location.hash === '#seguidos') {
       const alvo = document.querySelector(location.hash);
       if (alvo && !alvo.hidden) setTimeout(() => alvo.scrollIntoView(), 50);
