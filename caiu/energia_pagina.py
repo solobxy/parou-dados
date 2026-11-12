@@ -12,13 +12,14 @@ e = html.escape
 SITE = PG.SITE
 URL = SITE + '/luz-e-gas/'
 CSS_V = '1'
-JS_V = '1'
+JS_V = '2'
 MESES = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro']
 
 
 def eur(v, casas=2):
-    s = ('{:,.%df}' % casas).format(v).replace(',', ' ').replace('.', ',')
-    return s + ' €'
+    # espaços que não partem: «1 153 €» nunca fica «1» numa linha e «153 €» na seguinte
+    s = ('{:,.%df}' % casas).format(v).replace(',', '\u00a0').replace('.', ',')
+    return s + '\u00a0€'
 
 
 def mes(v):

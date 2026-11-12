@@ -24,7 +24,7 @@
     casas = casas == null ? 2 : casas;
     var s = Math.abs(v).toFixed(casas).replace('.', ',');
     var p = s.split(','); p[0] = p[0].replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
-    return (v < 0 ? '−' : '') + p.join(',') + ' €';
+    return (v < 0 ? '−' : '') + p.join(',') + '\u00a0€';
   }
   function esc(t) { return String(t == null ? '' : t).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
   function nomeCom(com) {
