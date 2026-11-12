@@ -1,0 +1,23 @@
+à espera da versão (da55e4c9f52d9335eaaffd424f4a12b6670c8f5b)
+à espera da versão (da55e4c9f52d9335eaaffd424f4a12b6670c8f5b)
+à espera da versão (da55e4c9f52d9335eaaffd424f4a12b6670c8f5b)
+à espera da versão (da55e4c9f52d9335eaaffd424f4a12b6670c8f5b)
+== versão no servidor: ec1b4ff49850fb31ed8a44aebf9e7e1702f8cc64  esperada: ec1b4ff49850fb31ed8a44aebf9e7e1702f8cc64
+== serviço: active  reinícios: 0
+== Perto no Funchal
+paragens 36 com partidas 8
+Palácio S Lourenço (6) |  Fundoa Via Universidade 08:50 ;  Nó do Lido Via Porto 08:53
+Palácio S Lourenço (29) |  Amparo ESCL S Martinho 17:17 ;  Ponta da Cruz 17:22
+Palácio S Lourenço (29) |  Courelas 17:32 ;  Courelas 17:52
+Palácio S Lourenço (CF29A) |  Curral Freiras 17:32 ;  Curral Freiras 18:12
+Funchal -> Funchal MCS previsão 3 dias; escolha: Angra do Heroísmo, Aveiro, Funchal, Ponta Delgada, Porto Santo, Santa Cruz das Flores
+Santana -> Funchal MCS previsão 3 dias; escolha: Angra do Heroísmo, Aveiro, Funchal, Ponta Delgada, Porto Santo, Santa Cruz das Flores
+PortoSanto -> Porto Santo MPS previsão 3 dias; escolha: Angra do Heroísmo, Aveiro, Funchal, Ponta Delgada, Porto Santo, Santa Cruz das Flores
+PontaDelgada -> Ponta Delgada AOR previsão 3 dias; escolha: Angra do Heroísmo, Aveiro, Funchal, Ponta Delgada, Porto Santo, Santa Cruz das Flores
+== páginas públicas
+paragem antiga 750B: 200
+<title>Caminho Trapiche (750B) (Horários do Funchal): próximos… | PAROU
+linha 027: 200
+<title>027 Centro – Caminho Ferro: horário Horários do Funchal | PAROU
+== erros desde o arranque
+[TML GO Hub] Erro em /alerts: HTTP 404 Not Found
