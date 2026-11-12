@@ -47,6 +47,11 @@ def local(d):
     return LOCAL.get(d, (f'no distrito de {DIST[d]["nome"]}', f'Distrito de {DIST[d]["nome"]}'))
 
 
+def curto(d):
+    """Nome curto do distrito para listas («Porto», «Açores»)."""
+    return {'acores': 'Açores', 'madeira': 'Madeira'}.get(d, DIST[d]['nome'])
+
+
 def minusc(nome):
     return nome[:1].lower() + nome[1:] if len(nome) > 1 and not nome[1].isupper() else nome
 
@@ -172,8 +177,8 @@ def bloco_comunidade(pid, r, distritos):
     p = PROF[pid]
     lista = ''
     if distritos:
-        lista = ('<h3 style="margin-top:40px">Por distrito</h3><ul class="lista-colunas" style="margin-top:16px">' +
-                 ''.join(f'<li><a href="/profissoes/{pid}/{d}/">{e(local(d)[1])}</a><span class="cifra">{euro(s["mediana"])}</span></li>'
+        lista = ('<h3 style="margin-top:40px">Por distrito</h3><ul class="lista-colunas" style="margin-top:16px;columns:1">' +
+                 ''.join(f'<li><a href="/profissoes/{pid}/{d}/">{e(curto(d))}</a><span class="cifra">{euro(s["mediana"])}</span></li>'
                          for d, s in sorted(distritos, key=lambda x: -x[1]['n'])) + '</ul>'
                  '<p class="dica" style="margin-top:12px">Só aparecem os distritos com pelo menos 5 pessoas, e só quando o resto do país também tem 5 ou mais.</p>')
     return (f'<!--comunidade--><div><h2 class="h2-pag">Na comunidade ganhas.pt</h2>'
@@ -212,6 +217,7 @@ def pagina_profissao(pid, r, distritos, novo):
         i = t.find('<!--resposta-->')
         j = t.find('<!--/resposta-->')
         oficial = t[i + len('<!--resposta-->'):j].replace('class="lede resposta"', 'class="lede" style="margin-top:20px"')
+        oficial = re.sub(r'<span class="mk">(.*?)</span>', r'\1', oficial)  # um só traço de marcador: o da comunidade
         t = t[:i] + f'<!--resposta--><p class="lede resposta">{frase_comunidade(pid, r)}</p>{oficial}<!--/resposta-->' + t[j + len('<!--/resposta-->'):]
     except ValueError as ex:
         print(pid, ex)
@@ -252,7 +258,7 @@ def pagina_distrito(pid, d, r, rn, outros, modelo, novo):
     lo = ''
     if outros:
         lo = ('<h2 class="h2-pag" style="margin-top:64px">A mesma profissão noutros distritos</h2><ul class="lista-colunas" style="margin-top:24px">' +
-              ''.join(f'<li><a href="/profissoes/{pid}/{x}/">{e(local(x)[1])}</a><span class="cifra">{euro(s["mediana"])}</span></li>' for x, s in outros) + '</ul>')
+              ''.join(f'<li><a href="/profissoes/{pid}/{x}/">{e(curto(x))}</a><span class="cifra">{euro(s["mediana"])}</span></li>' for x, s in outros) + '</ul>')
     mig, mig_ld = migalhas([('/profissoes/', 'Profissões'), (f'/profissoes/{pid}/', nome), (caminho, rotulo)])
     occ = {'@context': 'https://schema.org', '@type': 'Occupation', 'name': nome, 'occupationalCategory': f'CPP {p.get("cpp", "")}',
            'occupationLocation': {'@type': 'AdministrativeArea', 'name': rotulo, 'containedInPlace': {'@type': 'Country', 'name': 'Portugal'}},
