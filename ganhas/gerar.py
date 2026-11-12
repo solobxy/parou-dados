@@ -1228,6 +1228,11 @@ def pagina_carreira(x, fp):
 <a class="botao sec2" href="/funcao-publica/">Ver todas as carreiras</a></p>
 </div></section>'''
     titulo = f'Quanto ganha {x["quem"]} em {fp["ano"]}' if x['quem'] else f'{x["titulo"]}: salários na função pública em {fp["ano"]}'
+    if x['id'] in set(PROF_FP.values()):
+        # a página da profissão já responde a «quanto ganha um …»; esta fica com a «tabela salarial» (sem canibalizar)
+        titulo = f'{x["titulo"]}: tabela salarial {fp["ano"]}' + (' na função pública' if x['id'] in PUBLICO_E_PRIVADO else '')
+        if len(titulo) > 60:
+            titulo = f'{x["titulo"]}: tabela salarial {fp["ano"]}'
     if len(titulo) > 60:
         titulo = f'{x["titulo"]}: salários em {fp["ano"]}'
     desc = (f'{x["titulo"]}: salário bruto e líquido de cada categoria e posição em {fp["ano"]}, de {euro(x["min"])} a {euro(x["max"])} por mês. Dados oficiais da DGAEP.'
