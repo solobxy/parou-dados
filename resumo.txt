@@ -1,0 +1,35 @@
+
+=== https://ganhas.pt/  (3 medições, todas: 99/100/100)
+  notas {"performance":100,"accessibility":100,"best-practices":100,"seo":100}
+  LCP 0.4 s | CLS 0 | TBT 0 ms | FCP 0.2 s | peso Total size was 214 KiB
+
+=== https://ganhas.pt/calculadora/  (3 medições, todas: 0/100/100)
+  notas {"performance":100,"accessibility":98,"best-practices":100,"seo":100}
+  LCP 0.4 s | CLS 0.001 | TBT 0 ms | FCP 0.3 s | peso Total size was 212 KiB
+  ✗ [accessibility] Heading elements are not in a sequentially-descending order
+
+=== https://ganhas.pt/concelhos/porto/  (3 medições, todas: 100/100/100)
+  notas {"performance":100,"accessibility":98,"best-practices":100,"seo":100}
+  LCP 0.4 s | CLS 0 | TBT 0 ms | FCP 0.3 s | peso Total size was 210 KiB
+  ✗ [accessibility] Heading elements are not in a sequentially-descending order
+
+=== https://ganhas.pt/profissoes/  (3 medições, todas: 100/100/100)
+  notas {"performance":100,"accessibility":100,"best-practices":100,"seo":100}
+  LCP 0.4 s | CLS 0 | TBT 0 ms | FCP 0.2 s | peso Total size was 214 KiB
+
+=== https://ganhas.pt/profissoes/enfermeiro/  (3 medições, todas: 0/100/100)
+  notas {"performance":100,"accessibility":98,"best-practices":100,"seo":100}
+  LCP 0.4 s | CLS 0.001 | TBT 0 ms | FCP 0.2 s | peso Total size was 211 KiB
+  ✗ [accessibility] Heading elements are not in a sequentially-descending order
+
+=== https://ganhas.pt/salario-minimo/  (3 medições, todas: 100/100/100)
+  notas {"performance":100,"accessibility":100,"best-practices":100,"seo":100}
+  LCP 0.4 s | CLS 0 | TBT 0 ms | FCP 0.3 s | peso Total size was 210 KiB
+
+=== Dados reais (CrUX, 28 dias, perfil desktop)
+https://ganhas.pt/ | página: sem dados | origem: sem dados
+https://ganhas.pt/profissoes/ | página: sem dados | origem: sem dados
+https://ganhas.pt/profissoes/enfermeiro/ | página: sem dados | origem: sem dados
+https://ganhas.pt/calculadora/ | página: sem dados | origem: sem dados
+https://ganhas.pt/concelhos/porto/ | página: sem dados | origem: sem dados
+https://ganhas.pt/salario-minimo/ | página: sem dados | origem: sem dados
