@@ -269,6 +269,34 @@ def vigiar_recolha(agora):
             fh.write(hoje)
 
 
+def aviso_estudos():
+    """Quando paginas.py publica um estudo novo, manda ao administrador o comunicado pronto a enviar aos jornalistas
+    (uma vez por estudo). O comunicado fica em <dados>/estudos-para-enviar/, fora do que o site mostra."""
+    pasta = os.path.join(C.DADOS, 'estudos-para-enviar')
+    if not C.ADMIN or not os.path.isdir(pasta):
+        return 0
+    f = os.path.join(C.ESTADO, 'estudos-avisados.txt')
+    try:
+        feitos = set(open(f, encoding='utf-8').read().split())
+    except OSError:
+        feitos = set()
+    n = 0
+    for nome in sorted(os.listdir(pasta)):
+        slug = nome[:-4]
+        if not nome.endswith('.txt') or slug in feitos:
+            continue
+        txt = open(os.path.join(pasta, nome), encoding='utf-8').read()
+        corpo = ('O estudo deste mês já está no site: https://caiu.pt/estudos/%s/\n\nComunicado pronto a enviar (acrescenta o teu '
+                 'contacto no fim):\n\n%s' % (slug, txt))
+        if C.enviar_email(C.ADMIN, 'caiu.pt: estudo pronto para os jornalistas', corpo,
+                          C.molde_email('Estudo pronto', '<pre style="white-space:pre-wrap;font-family:inherit">%s</pre>' % C.esc(corpo), '')):
+            feitos.add(slug)
+            n += 1
+            with open(f, 'w', encoding='utf-8') as fh:
+                fh.write('\n'.join(sorted(feitos)) + '\n')
+    return n
+
+
 def termos_extra(c):
     """As pesquisas sem resultado dos últimos 14 dias (até 40) passam para a recolha seguinte."""
     lim = int(time.time()) - 14 * 86400
@@ -296,8 +324,13 @@ def main():
         c.execute('DELETE FROM envios WHERE ts<?', (int(time.time()) - 90 * 86400,))
         n_termos = termos_extra(c)
     vigiar_recolha(agora)
+    try:
+        n_estudos = aviso_estudos()
+    except Exception as ex:  # o resto dos avisos não pode parar por isto
+        print('estudos: %s: %s' % (type(ex).__name__, ex), file=sys.stderr)
+        n_estudos = 0
     estado = {'quando': agora.isoformat(timespec='seconds'), 'site': base, 'email_ligado': bool(C.RESEND),
-              'confirmacoes': n_conf, 'avisos_email': n_mail, 'avisos_push': n_push, 'semanal': n_sem, 'termos_extra': n_termos}
+              'confirmacoes': n_conf, 'avisos_email': n_mail, 'avisos_push': n_push, 'semanal': n_sem, 'termos_extra': n_termos, 'estudos': n_estudos}
     with open(os.path.join(C.ESTADO, 'alertas.json'), 'w') as f:
         json.dump(estado, f)
     print(json.dumps(estado, ensure_ascii=False))

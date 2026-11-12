@@ -26,9 +26,14 @@ caiu.pt, comparador de preços do Continente, Pingo Doce e Auchan que diz se a p
 Desenho em `caiu/DESIGN.md`.
 
 - Publicar: alterar `sites/caiu/` e fazer push para `main` (passo «caiu.pt» em `servidor/atualizar.sh`).
-- Preços: `caiu/recolher.py` corre no servidor às 07:20 e 16:20 (`caiu-recolha.timer`) e escreve em
+- Preços: `caiu/recolher.py` corre no servidor às 07:20, 12:50 e 18:20 (`caiu-recolha.timer`) e escreve em
   `/var/lib/caiu-dados` (o site lê `/dados/resumo.json`, `/dados/lista.json` e `/dados/h/<id>.json`).
   O histórico fica em `historico.db` (SQLite, nunca servido). Para forçar uma recolha, mudar `caiu/forcar-recolha`.
   As pesquisas feitas em cada loja estão em `caiu/termos.txt`. Teste à mão: workflow «Caiu - recolha de preços (teste)».
+- Páginas para o Google e as IAs: `caiu/paginas.py` corre depois de cada recolha e escreve em
+  `/var/lib/caiu-dados/paginas` (o Caddy serve-as com o mesmo caminho): `/preco/<termo>/`, `/produto/<nome>/`
+  (só produtos com dados que cheguem), `/promocoes/<loja>/`, `/supermercado-mais-barato/`, `/cabaz-mais-barato/`
+  (com `historico.csv`), `/estudos/` (só quando um mês tem dados completos) e os sitemaps (`/sitemap.xml` é um
+  índice). O endereço de cada produto fica em `estado-paginas.json` e não muda. Testes: `python3 caiu/verificar/test_paginas.py`.
 - Endereço de testes: `https://caiu.<ip-com-tracos>.sslip.io`, fora do Google.
 - Domínio: blocos prontos para `caiu.pt` e `www.caiu.pt`; ligam-se sozinhos quando o registo A apontar para o servidor.

@@ -173,7 +173,7 @@ ok('[cabaz] resposta no topo com 40 a 60 palavras e as três lojas', 40 <= w <= 
 ok('[cabaz] Dataset com CSV, e o CSV existe', '"@type":"Dataset"' in cz and existe('cabaz-mais-barato', 'historico.csv')
    and ler('cabaz-mais-barato', 'historico.csv').startswith('dia,continente,pingo_doce,auchan'))
 ok('[cabaz] título', '<title>Cabaz mais barato esta semana: Continente, Pingo Doce ou Auchan?</title>' in cz)
-ok('[estudos] ainda sem estudo (o mês não acabou)', not existe('estudos'))
+ok('[estudos] ainda sem estudo (o mês não acabou): página fora do Google e fora do sitemap', 'noindex' in ler('estudos', 'index.html') and '/estudos/' not in ler('sitemap-paginas.xml'))
 
 # ---------- segunda recolha: endereços iguais, produto que desaparece, produtos que se juntam ----------
 antes = {s: json.dumps(est['s'][s].get('k')) for s in pags}
@@ -224,6 +224,46 @@ ok('[2.ª recolha] dois produtos que se juntam: um endereço fica, o outro reenc
 juntos = ler('produto', fica, 'index.html')
 ok('[2.ª recolha] o produto junto mostra as duas lojas', 'Continente' in juntos and 'Auchan' in juntos and juntos.count('<li class="fp__loja') == 2, fica)
 
-print("PASTA", pasta) if falhas else shutil.rmtree(pasta, ignore_errors=True)
+# ---------- estudo do mês: só quando o mês acabou e há dados que cheguem ----------
+res = json.load(open(os.path.join(pasta, 'resumo.json'), encoding='utf-8'))
+n_ess = res['essencial']['n']
+res['essencial']['hist'] = [[f'2026-12-{d:02d}', 18 + d * 0.02, 18.5 + d * 0.01, 19 - d * 0.01, 17.5, n_ess] for d in range(1, 32)]
+res['dia'] = '2027-01-01'
+json.dump(res, open(os.path.join(pasta, 'resumo.json'), 'w', encoding='utf-8'), ensure_ascii=False)
+lista['dia'] = '2027-01-01'
+json.dump(lista, open(os.path.join(pasta, 'lista.json'), 'w', encoding='utf-8'), ensure_ascii=False)
+ee = json.load(open(os.path.join(pasta, 'estado-estudos.json'), encoding='utf-8'))
+foto = next(iter(ee['dias'].values()))
+for d in range(1, 32):
+    ee['dias'][f'2026-12-{d:02d}'] = dict(foto, dias_historico=40)
+json.dump(ee, open(os.path.join(pasta, 'estado-estudos.json'), 'w', encoding='utf-8'))
+r = correr(pasta)
+ok('[estudo] termina sem erro nem avisos', r.returncode == 0 and 'AVISO' not in r.stderr, (r.stderr or '')[-400:])
+sl_e = 'precos-supermercado-dezembro-2026'
+f_com = os.path.join(pasta, 'estudos-para-enviar', sl_e + '.txt')
+ok('[estudo] dezembro de 2026: página e dados públicos, comunicado fora da pasta pública', existe('estudos', sl_e, 'index.html') and os.path.exists(f_com)
+   and existe('estudos', sl_e, 'dados.csv') and not existe('estudos', sl_e, 'comunicado.txt'))
+if existe('estudos', sl_e, 'index.html'):
+    es = ler('estudos', sl_e, 'index.html')
+    t_e = H.unescape(re.search(r'<title>([^<]*)</title>', es).group(1))
+    ok('[estudo] título até 60, Article no JSON-LD, no sitemap e no índice dos estudos', len(t_e) <= 60 and '"@type":"Article"' in es
+       and f'https://caiu.pt/estudos/{sl_e}/' in ler('sitemap-paginas.xml') and f'/estudos/{sl_e}/' in ler('estudos', 'index.html')
+       and 'noindex' not in ler('estudos', 'index.html'), t_e)
+    com = open(f_com, encoding='utf-8').read()
+    ok('[estudo] comunicado com a amostra, o endereço e as três lojas', 'Amostra: 31 dias' in com and f'https://caiu.pt/estudos/{sl_e}/' in com
+       and 'no Continente, desceu 1,3 % no Auchan e subiu 1,3 % no Pingo Doce' in com, com[:300])
+    ok('[estudo] subida certa no Continente (média de 18,08 € para 18,56 €: +2,7 %)', 'subiu 2,7 % no Continente' in es and '<td>+2,7 %</td>' in es
+       and '18,08' in es and '18,56' in es, re.findall(r'[+−]\d+,\d %', es)[:4])
+ok('[estudo] novembro não sai (só 20 dias com o cabaz calculado na recolha)', not existe('estudos', 'precos-supermercado-novembro-2026'))
+res['essencial']['hist'] = [[h[0], h[1] * 1.1, h[2], h[3], h[4], h[5]] for h in res['essencial']['hist']]
+res['dia'] = lista['dia'] = '2027-01-02'
+json.dump(res, open(os.path.join(pasta, 'resumo.json'), 'w', encoding='utf-8'), ensure_ascii=False)
+json.dump(lista, open(os.path.join(pasta, 'lista.json'), 'w', encoding='utf-8'), ensure_ascii=False)
+r = correr(pasta)
+es2 = ler('estudos', sl_e, 'index.html') if existe('estudos', sl_e, 'index.html') else ''
+ok('[estudo] depois de publicado, os números e a data não mudam', r.returncode == 0 and '<td>+2,7 %</td>' in es2 and '18,08' in es2
+   and 'Publicado a <time datetime="2027-01-01">' in es2)
+
+print("PASTA", pasta) if falhas or os.environ.get("MANTER") else shutil.rmtree(pasta, ignore_errors=True)
 print(f'\n{falhas} falha(s)' if falhas else '\nTudo OK')
 sys.exit(1 if falhas else 0)
