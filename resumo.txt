@@ -1,0 +1,26 @@
+
+=== https://caiu.pt/  (3 medições, todas: 99/99/99)
+  notas {"performance":99,"accessibility":100,"best-practices":100,"seo":100}
+  LCP 0.7 s | CLS 0.042 | TBT 0 ms | FCP 0.7 s | peso Total size was 330 KiB
+  ✗ [accessibility] Elements with visible text labels do not have matching accessible names.
+
+=== https://caiu.pt/preco/azeite/  (3 medições, todas: 98/98/98)
+  notas {"performance":98,"accessibility":100,"best-practices":100,"seo":100}
+  LCP 1.0 s | CLS 0 | TBT 0 ms | FCP 0.7 s | peso Total size was 306 KiB
+  ✗ [accessibility] Elements with visible text labels do not have matching accessible names.
+
+=== https://caiu.pt/promocoes/continente/  (3 medições, todas: 0/100/100)
+  notas {"performance":100,"accessibility":100,"best-practices":100,"seo":100}
+  LCP 0.4 s | CLS 0 | TBT 0 ms | FCP 0.2 s | peso Total size was 501 KiB
+  ✗ [accessibility] Elements with visible text labels do not have matching accessible names.
+
+=== https://caiu.pt/supermercado-mais-barato/  (3 medições, todas: 100/100/100)
+  notas {"performance":100,"accessibility":100,"best-practices":100,"seo":100}
+  LCP 0.4 s | CLS 0.005 | TBT 0 ms | FCP 0.3 s | peso Total size was 170 KiB
+  ✗ [accessibility] Elements with visible text labels do not have matching accessible names.
+
+=== Dados reais (CrUX, 28 dias, perfil desktop)
+https://caiu.pt/ | página: sem dados | origem: sem dados
+https://caiu.pt/preco/azeite/ | página: sem dados | origem: sem dados
+https://caiu.pt/promocoes/continente/ | página: sem dados | origem: sem dados
+https://caiu.pt/supermercado-mais-barato/ | página: sem dados | origem: sem dados
