@@ -1,0 +1,25 @@
+
+=== https://duplicasa.pt/  (3 medições, todas: 92/94/96)
+  notas {"performance":94,"accessibility":100,"best-practices":96,"seo":100}
+  LCP 1.3 s | CLS 0.034 | TBT 20 ms | FCP 0.9 s | peso Total size was 604 KiB
+  ✗ [performance] Largest Contentful Paint: 1.3 s
+  ✗ [best-practices] Browser errors were logged to the console
+
+=== https://duplicasa.pt/arrendar/lisboa/  (3 medições, todas: 99/99/99)
+  notas {"performance":99,"accessibility":100,"best-practices":100,"seo":100}
+  LCP 1.0 s | CLS 0 | TBT 0 ms | FCP 0.5 s | peso Total size was 701 KiB
+
+=== https://duplicasa.pt/arrendar/porto/t1/  (3 medições, todas: 96/96/98)
+  notas {"performance":96,"accessibility":100,"best-practices":100,"seo":100}
+  LCP 1.4 s | CLS 0 | TBT 0 ms | FCP 0.5 s | peso Total size was 1,283 KiB
+  ✗ [performance] Largest Contentful Paint: 1.4 s
+
+=== https://duplicasa.pt/arrendar/precos/  (3 medições, todas: 100/100/100)
+  notas {"performance":100,"accessibility":100,"best-practices":100,"seo":100}
+  LCP 0.2 s | CLS 0 | TBT 0 ms | FCP 0.2 s | peso Total size was 15 KiB
+
+=== Dados reais (CrUX, 28 dias, perfil desktop)
+https://duplicasa.pt/ | página: sem dados | origem: sem dados
+https://duplicasa.pt/arrendar/lisboa/ | página: sem dados | origem: sem dados
+https://duplicasa.pt/arrendar/precos/ | página: sem dados | origem: sem dados
+https://duplicasa.pt/arrendar/porto/t1/ | página: sem dados | origem: sem dados
