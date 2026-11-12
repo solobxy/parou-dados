@@ -1,0 +1,29 @@
+[Unit]
+Description=PAROU.PT - gravação contínua do tempo real dos autocarros (pontualidade)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=parou
+Group=parou
+StateDirectory=parou-pontualidade
+StateDirectoryMode=0750
+Environment=TZ=Europe/Lisbon
+Environment=PAROU_GTFS=/var/lib/parou/gtfs.db
+ExecStart=/usr/bin/python3 /opt/parou/servidor/pontualidade/recolher.py /var/lib/parou-pontualidade
+Restart=always
+RestartSec=30
+# Serviço à parte da app, com prioridade baixa e limites: nunca tira recursos ao site
+Nice=15
+IOSchedulingClass=idle
+CPUQuota=20%
+MemoryMax=200M
+NoNewPrivileges=yes
+ProtectSystem=strict
+ReadOnlyPaths=/var/lib/parou
+ProtectHome=yes
+PrivateTmp=yes
+
+[Install]
+WantedBy=multi-user.target

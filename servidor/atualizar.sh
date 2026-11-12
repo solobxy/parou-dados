@@ -27,6 +27,7 @@ escrever_estado() {
     echo "Ligado desde: $(uptime -s)"
     echo "Estatísticas (hash da chave): $(printf '%s' "${ESTAT_CHAVE:-}" | sha256sum | cut -c1-64)"
     echo "Reinícios pela vigia: $(tail -n 3 /var/lib/parou-estado/reinicios.log 2>/dev/null | tr '\n' ';' || true)"
+    echo "PAROU pontualidade: $(systemctl is-active parou-pontualidade 2>/dev/null) $(cat /var/lib/parou-pontualidade/estado.json 2>/dev/null | cut -c1-220) último resumo: $(ls /var/lib/parou-pontualidade/dias 2>/dev/null | grep -E '^[0-9]' | tail -1)"
     echo "caiu.pt recolha: $(systemctl show caiu-recolha.service -p ActiveState -p Result -p ExecMainStatus 2>/dev/null | tr '\n' ' ')"
     echo "caiu.pt últimas linhas: $(journalctl -u caiu-recolha -n 4 --no-pager -o cat 2>/dev/null | cut -c1-200 | tr '\n' ';')"
     echo "caiu.pt API: $(systemctl is-active caiu-api 2>/dev/null) $(curl -s -m 3 http://127.0.0.1:3150/api/saude 2>/dev/null | cut -c1-120)"
@@ -285,6 +286,23 @@ if [ -f "$APA/site/index.html" ] && [ -f "$APA/api/api.py" ]; then
     systemctl restart apalavrado-api.service && echo "$V" > /etc/apalavrado/api.versao
   fi
   systemctl is-active --quiet apalavrado-api.service || systemctl start apalavrado-api.service
+fi
+
+# PAROU - pontualidade: grava sempre o tempo real dos autocarros (serviço à parte, com limites, não toca no site)
+# e faz um resumo diário detalhado às 00:40 em /var/lib/parou-pontualidade/dias/
+if [ -f "$SERV/parou-pontualidade.service" ] && [ -f "$BASE/servidor/pontualidade/recolher.py" ]; then
+  MUDOU_PONT=""
+  for f in parou-pontualidade.service parou-pontualidade-resumo.service parou-pontualidade-resumo.timer; do
+    if ! cmp -s "$SERV/$f" "/etc/systemd/system/$f"; then cp "$SERV/$f" "/etc/systemd/system/$f" && systemctl daemon-reload && MUDOU_PONT=1; fi
+  done
+  systemctl is-enabled --quiet parou-pontualidade-resumo.timer 2>/dev/null || systemctl enable --now parou-pontualidade-resumo.timer >/dev/null 2>&1
+  systemctl is-enabled --quiet parou-pontualidade.service 2>/dev/null || systemctl enable parou-pontualidade.service >/dev/null 2>&1
+  V=$(cat "$BASE/servidor/pontualidade/recolher.py" "$BASE/servidor/pontualidade/paragens.json" 2>/dev/null | sha256sum | cut -c1-16)
+  if [ -n "$MUDOU_PONT" ] || [ "$V" != "$(cat /var/lib/parou-estado/pontualidade.versao 2>/dev/null)" ]; then
+    systemctl restart parou-pontualidade.service && echo "$V" > /var/lib/parou-estado/pontualidade.versao
+  else
+    systemctl is-active --quiet parou-pontualidade.service || systemctl start parou-pontualidade.service
+  fi
 fi
 
 # caiu.pt: comparador de preços dos supermercados. Site estático em sites/caiu; os preços são recolhidos

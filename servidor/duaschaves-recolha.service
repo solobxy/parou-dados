@@ -11,6 +11,8 @@ StateDirectory=duaschaves-dados
 StateDirectoryMode=0755
 UMask=0022
 ExecStart=/usr/bin/python3 /opt/parou/servidor/duaschaves/recolher.py /var/lib/duaschaves-dados/anuncios.json
+# histórico dos anúncios (quando entram e saem, cada renda): se falhar, a recolha conta na mesma
+ExecStartPost=-/usr/bin/python3 /opt/parou/servidor/duaschaves/arquivar.py /var/lib/duaschaves-dados
 ExecStartPost=/usr/bin/python3 /opt/parou/servidor/duaschaves/paginas.py /var/lib/duaschaves-dados/anuncios.json /var/lib/duaschaves-dados/seo
 TimeoutStartSec=40min
 Nice=10
