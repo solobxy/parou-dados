@@ -1,0 +1,32 @@
+
+=== https://adribodypiercing.pt/  (3 medições, todas: 75/96/99)
+  notas {"performance":96,"accessibility":100,"best-practices":100,"seo":100}
+  LCP 1.3 s | CLS 0 | TBT 220 ms | FCP 1.2 s | peso Total size was 1,327 KiB
+  ✗ [performance] Total Blocking Time: 220 ms
+  ✗ [best-practices] Missing source maps for large first-party JavaScript
+
+=== https://adribodypiercing.pt/piercing/  (3 medições, todas: 100/100/100)
+  notas {"performance":100,"accessibility":100,"best-practices":100,"seo":100}
+  LCP 0.8 s | CLS 0 | TBT 0 ms | FCP 0.8 s | peso Total size was 167 KiB
+
+=== https://adribodypiercing.pt/piercing/helix/  (3 medições, todas: 100/100/100)
+  notas {"performance":100,"accessibility":100,"best-practices":100,"seo":100}
+  LCP 0.8 s | CLS 0 | TBT 0 ms | FCP 0.8 s | peso Total size was 179 KiB
+
+=== https://dinissousa.pt/  (3 medições, todas: 74/91/91)
+  notas {"performance":91,"accessibility":100,"best-practices":100,"seo":100}
+  LCP 2.9 s | CLS 0 | TBT 240 ms | FCP 1.1 s | peso Total size was 710 KiB
+  ✗ [performance] Largest Contentful Paint: 2.9 s
+  ✗ [performance] Total Blocking Time: 240 ms
+  → Properly size images: ~300 ms
+
+=== https://dinissousa.pt/quanto-custa-um-site/  (3 medições, todas: 100/100/100)
+  notas {"performance":100,"accessibility":100,"best-practices":100,"seo":100}
+  LCP 0.8 s | CLS 0 | TBT 0 ms | FCP 0.8 s | peso Total size was 134 KiB
+
+=== Dados reais (CrUX, 28 dias, perfil mobile)
+https://dinissousa.pt/ | página: sem dados | origem: sem dados
+https://dinissousa.pt/quanto-custa-um-site/ | página: sem dados | origem: sem dados
+https://adribodypiercing.pt/ | página: sem dados | origem: sem dados
+https://adribodypiercing.pt/piercing/ | página: sem dados | origem: sem dados
+https://adribodypiercing.pt/piercing/helix/ | página: sem dados | origem: sem dados
