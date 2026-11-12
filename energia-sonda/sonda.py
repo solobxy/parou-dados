@@ -9,6 +9,8 @@ registo = []
 
 
 def ler(u, maximo=40_000_000):
+    sp = urllib.parse.urlsplit(u)
+    u = urllib.parse.urlunsplit((sp.scheme, sp.netloc, urllib.parse.quote(urllib.parse.unquote(sp.path)), sp.query, ''))
     r = urllib.request.Request(u, headers={'User-Agent': UA, 'Accept': '*/*', 'Accept-Language': 'pt-PT,pt;q=0.9',
                                            'Accept-Encoding': 'gzip'})
     try:
