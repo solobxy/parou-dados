@@ -16,9 +16,12 @@ jobs:
       - name: Capturas
         run: |
           (cd sites/dinissousa && nohup python3 -m http.server 8080 >/dev/null 2>&1 &)
+          mkdir -p /tmp/antigo && cp -r sites/dinissousa/. /tmp/antigo/ && git fetch -q --depth 1 origin main && git show FETCH_HEAD:sites/dinissousa/index.html > /tmp/antigo/index.html
+          (cd /tmp/antigo && nohup python3 -m http.server 8081 >/dev/null 2>&1 &)
           sleep 2
           cd .github/ver-dinis && npm init -y >/dev/null && npm i --no-audit --no-fund playwright@1 >/dev/null && npx playwright install --with-deps chromium webkit >/dev/null
           node capturar.mjs || true
+          node webkit-primeira.mjs || true
       - name: Guardar
         if: always()
         run: |
