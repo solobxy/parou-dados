@@ -31,6 +31,16 @@ for (const u of amostra) {
   if (/^.*Hoje, /.test(t) && !/Hoje não há/.test(t)) ok(`[linha ${op}] «Hoje» com primeira e última hora`, (t.match(/\b\d\d:\d\d\b/g) || []).length >= 2, t);
   ok(`[linha ${op}] sem «undefined», «null» ou «NaN»`, !/undefined|null|NaN/.test(t), t);
 }
+// Variantes da mesma linha: uma por par de pontas no sitemap; percursos de eventos fora; todas continuam no ar
+const sintra = linhas.filter((u) => /^\/linhas\/cp\/linha-de-sintra-/.test(u));
+ok('[variantes] Linha de Sintra: no máximo 3 páginas no sitemap (antes 6, uma por sentido)', sintra.length >= 1 && sintra.length <= 3, sintra.join(' '));
+ok('[variantes] nenhum percurso de evento (Ironman, Maratona) no sitemap', !linhas.some((u) => /ironman|maratona/.test(u)), linhas.filter((u) => /ironman|maratona/.test(u)).slice(0, 3).join(' '));
+for (const u of ['/linhas/cp/linha-de-sintra-lisboa-rossio-sintra', '/linhas/cp/linha-de-sintra-sintra-lisboa-rossio', '/linhas/mobicascais/14-cascais-murches-chesol-cascais-ironman']) {
+  const r = await pedir(u);
+  if (/ironman/.test(u) && r.estado === 404) { console.log('NOTA    percurso Ironman já não existe nos dados de hoje:', u); continue; }
+  ok(`[variantes] ${u} continua no ar (200 ou 301 para a variante atual)`, r.estado === 200, r.estado);
+  if (/ironman/.test(u) && r.estado === 200) ok('[variantes] percurso de evento com noindex', /noindex/.test(robots(r.h)), robots(r.h));
+}
 // Versão inglesa
 const en = amostra.find((u) => !/\/unir\//.test(u));
 if (en) {
