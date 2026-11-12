@@ -1,0 +1,216 @@
+<!doctype html>
+<html lang="pt-PT" dir="ltr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script>
+      // Guarda logo o pedido de instalação do browser (pode chegar antes de a app carregar),
+      // para o botão de instalar abrir diretamente o pedido nativo de "Instalar app".
+      window.addEventListener('beforeinstallprompt', function (e) {
+        e.preventDefault();
+        window.__parouInstalar = e;
+        window.dispatchEvent(new CustomEvent('parou_pode_instalar'));
+      });
+      window.addEventListener('appinstalled', function () {
+        window.__parouInstalar = null;
+        try { if (typeof window.estat === 'function') window.estat('instalar', 'instalada'); else { window.estat = window.estat || {}; (window.estat.q = window.estat.q || []).push(['instalar', 'instalada']); } } catch (e) {}
+      });
+    </script>
+    <title>Cobertura de horários e dados de transportes | PAROU</title>
+    <meta name="description" content="Que operadores e linhas de transportes públicos a PAROU cobre em Portugal e de onde vêm os dados." />
+    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
+    <link rel="canonical" href="https://parou.pt/cobertura" />
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://parou.pt/cobertura" />
+    <meta property="og:site_name" content="PAROU" />
+    <meta property="og:title" content="Cobertura de horários e dados de transportes | PAROU" />
+    <meta property="og:description" content="Que operadores e linhas de transportes públicos a PAROU cobre em Portugal e de onde vêm os dados." />
+    <meta property="og:image" content="https://parou.pt/og-image.png" />
+    <meta property="og:image:secure_url" content="https://parou.pt/og-image.png" />
+    <meta property="og:image:type" content="image/png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="PAROU — o que passa perto de ti, em tempo real" />
+    <meta property="og:locale" content="pt_PT" />
+
+    <!-- Twitter / X Cards -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Cobertura de horários e dados de transportes | PAROU" />
+    <meta name="twitter:description" content="Que operadores e linhas de transportes públicos a PAROU cobre em Portugal e de onde vêm os dados." />
+    <meta name="twitter:image" content="https://parou.pt/og-image.png" />
+    <meta name="twitter:image:alt" content="PAROU — o que passa perto de ti, em tempo real" />
+
+    <!-- PWA & Mobile Web App Meta -->
+    <meta name="theme-color" content="#FFFFFF" />
+    <meta name="color-scheme" content="light" />
+    <script>
+      // Tema guardado neste aparelho (claro é o de todos): aplica já, antes de pintar, para não piscar
+      (function () {
+        try {
+          var t = localStorage.getItem('parou_tema');
+          if (t === 'escuro' || t === 'ambar' || t === 'porto') {
+            document.documentElement.setAttribute('data-tema', t);
+            var cores = { escuro: '#161618', ambar: '#FFE9D2', porto: '#FFFFFF' };
+            var m = document.querySelector('meta[name="theme-color"]'); if (m) m.setAttribute('content', cores[t]);
+            var c = document.querySelector('meta[name="color-scheme"]'); if (c) c.setAttribute('content', t === 'escuro' ? 'dark' : 'light');
+          }
+        } catch (e) {}
+      })();
+    </script>
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="PAROU" />
+    <meta name="application-name" content="PAROU" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png" />
+
+    <!-- Schema.org Structured Data (JSON-LD) -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "WebSite",
+          "@id": "https://parou.pt/#website",
+          "url": "https://parou.pt/",
+          "name": "PAROU",
+          "alternateName": ["PAROU app", "PAROU Transportes", "parou.pt", "Parou"],
+          "description": "Transportes perto de ti em tempo real, horários dos principais operadores, greves e alertas em Portugal. Gratuita e sem fins lucrativos.",
+          "inLanguage": "pt-PT",
+          "publisher": { "@id": "https://parou.pt/#organization" },
+          "potentialAction": {
+            "@type": "SearchAction",
+            "target": { "@type": "EntryPoint", "urlTemplate": "https://parou.pt/pesquisa?q={search_term_string}" },
+            "query-input": "required name=search_term_string"
+          }
+        },
+        {
+          "@type": "Organization",
+          "@id": "https://parou.pt/#organization",
+          "name": "PAROU",
+          "alternateName": ["PAROU app", "PAROU Transportes", "parou.pt"],
+          "url": "https://parou.pt/",
+          "logo": { "@type": "ImageObject", "url": "https://parou.pt/icon-512.png", "width": 512, "height": 512 },
+          "email": "contacto@parou.pt",
+          "areaServed": { "@type": "Country", "name": "Portugal" },
+          "nonprofitStatus": "Nonprofit"
+        },
+        {
+          "@type": "WebApplication",
+          "@id": "https://parou.pt/#app",
+          "name": "PAROU",
+          "url": "https://parou.pt/",
+          "applicationCategory": "TravelApplication",
+          "operatingSystem": "Android, iOS, Web",
+          "inLanguage": "pt-PT",
+          "isAccessibleForFree": true,
+          "description": "Próximos autocarros, metro, comboios e barcos perto de ti em tempo real, horários dos principais operadores, greves, avisos de tempo e incêndios em Portugal.",
+          "offers": { "@type": "Offer", "price": "0", "priceCurrency": "EUR" },
+          "publisher": { "@id": "https://parou.pt/#organization" }
+        }
+      ]
+    }
+    </script>
+    
+
+    <!-- Web Typography: Barlow & Barlow Condensed -->
+    <link rel="preconnect" href="https://tile.openstreetmap.org" />
+    <!-- Letras da marca (Barlow e Barlow Condensed) servidas pelo próprio PAROU: sem pedidos ao Google. Sem "preload": numa ligação lenta competiam com o CSS e o JavaScript e atrasavam o primeiro ecrã (~0,3 s); com font-display:swap o texto aparece logo e as letras entram quando chegam -->
+    <style>@font-face{font-family:Barlow;font-style:normal;font-weight:400;font-display:swap;src:url(/fontes/barlow-400.woff)format("woff")}@font-face{font-family:Barlow;font-style:normal;font-weight:500;font-display:swap;src:url(/fontes/barlow-500.woff)format("woff")}@font-face{font-family:Barlow;font-style:normal;font-weight:600;font-display:swap;src:url(/fontes/barlow-600.woff)format("woff")}@font-face{font-family:Barlow;font-style:normal;font-weight:700;font-display:swap;src:url(/fontes/barlow-700.woff)format("woff")}@font-face{font-family:Barlow Condensed;font-style:normal;font-weight:500;font-display:swap;src:url(/fontes/barlowcondensed-500.woff)format("woff")}@font-face{font-family:Barlow Condensed;font-style:normal;font-weight:600;font-display:swap;src:url(/fontes/barlowcondensed-600.woff)format("woff")}@font-face{font-family:Barlow Condensed;font-style:normal;font-weight:700;font-display:swap;src:url(/fontes/barlowcondensed-700.woff)format("woff")}@font-face{font-family:Barlow Condensed;font-style:normal;font-weight:800;font-display:swap;src:url(/fontes/barlowcondensed-800.woff)format("woff")}</style>
+    <!-- Estatísticas próprias (sem cookies): no servidor real o Caddy serve /_e.js e recebe /_e -->
+    <script defer src="/_e.js" data-site="parou"></script>
+    <script type="module" crossorigin src="/assets/index-BVjjeoSf.js"></script>
+    <link rel="modulepreload" crossorigin href="/assets/jsx-runtime-E5KbDr0q.js">
+    <link rel="modulepreload" crossorigin href="/assets/rotasApp-BmrCDp0Q.js">
+    <link rel="modulepreload" crossorigin href="/assets/triangle-alert-B6_xHg0o.js">
+    <link rel="modulepreload" crossorigin href="/assets/map-pin-BqdE7-8u.js">
+    <link rel="modulepreload" crossorigin href="/assets/chevron-right-B4ADe9ir.js">
+    <link rel="modulepreload" crossorigin href="/assets/thumbs-up-DjS0GdZD.js">
+    <link rel="modulepreload" crossorigin href="/assets/check-CbHjc-z4.js">
+    <link rel="modulepreload" crossorigin href="/assets/clock-fZyTV98b.js">
+    <link rel="modulepreload" crossorigin href="/assets/search-Bh-av5Bp.js">
+    <link rel="modulepreload" crossorigin href="/assets/i18n-Co9yWNo-.js">
+    <link rel="modulepreload" crossorigin href="/assets/x-Bw3OuQiT.js">
+    <link rel="modulepreload" crossorigin href="/assets/janelas-C5URUqQE.js">
+    <link rel="modulepreload" crossorigin href="/assets/Folha-Cwsf9SZQ.js">
+    <link rel="modulepreload" crossorigin href="/assets/SeletorCidades-CVC1e26z.js">
+    <link rel="modulepreload" crossorigin href="/assets/Bandeira-CoKuKCu7.js">
+    <link rel="modulepreload" crossorigin href="/assets/Avatar-D_G0S2o7.js">
+    <link rel="modulepreload" crossorigin href="/assets/pencil-Bl2AgPXH.js">
+    <link rel="modulepreload" crossorigin href="/assets/admin-Bz4WCVKk.js">
+    <link rel="modulepreload" crossorigin href="/assets/conta-tP9GIWL_.js">
+    <link rel="modulepreload" crossorigin href="/assets/PontoDiario-DFBaJc0J.js">
+    <link rel="modulepreload" crossorigin href="/assets/favoritesService-CR_WGW86.js">
+    <link rel="modulepreload" crossorigin href="/assets/notifications-Ce7m_8nY.js">
+    <link rel="modulepreload" crossorigin href="/assets/star-D-iKItim.js">
+    <link rel="modulepreload" crossorigin href="/assets/chevron-up-BarhfEOJ.js">
+    <link rel="modulepreload" crossorigin href="/assets/users-BHwP9Kwd.js">
+    <link rel="modulepreload" crossorigin href="/assets/message-circle-CRicrMck.js">
+    <link rel="modulepreload" crossorigin href="/assets/refresh-cw-DoJXKScm.js">
+    <link rel="modulepreload" crossorigin href="/assets/chevron-left-BNWI8ubC.js">
+    <link rel="modulepreload" crossorigin href="/assets/quando--6DJw6JZ.js">
+    <link rel="modulepreload" crossorigin href="/assets/leaflet-src-C4CZid4c.js">
+    <link rel="modulepreload" crossorigin href="/assets/mockData-J-iO7CRp.js">
+    <link rel="modulepreload" crossorigin href="/assets/transitApi-DsHKI5PY.js">
+    <link rel="modulepreload" crossorigin href="/assets/plus--mMvDWZ_.js">
+    <link rel="modulepreload" crossorigin href="/assets/bemVindo-C0xrjedR.js">
+    <link rel="modulepreload" crossorigin href="/assets/share-2-BUEs1fWs.js">
+    <link rel="modulepreload" crossorigin href="/assets/resumo-SoKRzxiW.js">
+    <link rel="modulepreload" crossorigin href="/assets/locate-fixed-CpH_fgh3.js">
+    <link rel="modulepreload" crossorigin href="/assets/unirAmp-BkcDX-oQ.js">
+    <link rel="modulepreload" crossorigin href="/assets/LineChip-DJuwP9dV.js">
+    <link rel="modulepreload" crossorigin href="/assets/trash-2-OhYaHuR-.js">
+    <link rel="modulepreload" crossorigin href="/assets/paginasInfoBase-GLrldYbc.js">
+    <link rel="modulepreload" crossorigin href="/assets/lock-B77M_dhH.js">
+    <link rel="modulepreload" crossorigin href="/assets/shield-check-CKQhjnmU.js">
+    <link rel="modulepreload" crossorigin href="/assets/circle-check-CfwMrOrF.js">
+    <link rel="modulepreload" crossorigin href="/assets/ligacoes-RkbutsRT.js">
+    <link rel="modulepreload" crossorigin href="/assets/BotaoWhatsApp-BbgJ4J7H.js">
+    <link rel="modulepreload" crossorigin href="/assets/nationalTransitCatalog-DTpwPBEO.js">
+    <link rel="modulepreload" crossorigin href="/assets/comunidade-kmzsQA8M.js">
+    <link rel="stylesheet" crossorigin href="/assets/index-BjAQ7ZkP.css">
+  <link rel="manifest" href="/manifest.webmanifest"><script id="vite-plugin-pwa:register-sw" src="/registerSW.js"></script><meta name="google-site-verification" content="gEGDEaQ4bJZgw46L3sFJuJdDydFahC2Tk_H0eNKNv4g" />
+</head>
+  <body class="bg-[#FFFFFF] text-[#111111] antialiased selection:bg-[#FF6B1A] selection:text-[#111111]">
+    <div id="root">
+      <!-- Esqueleto da app: aparece logo (antes do JavaScript) e o React substitui-o ao arrancar -->
+      <div id="parou-arranque" aria-hidden="true" style="min-height:100vh;display:flex;flex-direction:column;background:#FFFFFF">
+        <div style="height:64px;display:flex;align-items:center;gap:10px;padding:0 16px;border-bottom:1px solid #E6E6E3">
+          <img src="/icon.svg" width="28" height="28" alt="" style="display:block" />
+          <span style="font:800 26px/1 'Barlow Condensed','Arial Narrow',system-ui,sans-serif;letter-spacing:.02em;color:#111111">PAROU</span>
+        </div>
+        <div style="height:42vh;background:#F4F4F2"></div>
+        <div id="parou-arranque-texto" style="flex:1;margin-top:-16px;background:#FFFFFF;border-radius:20px 20px 0 0;padding:20px 16px">
+          <div style="font:700 22px/1 'Barlow Condensed','Arial Narrow',system-ui,sans-serif;color:#111111">Transportes perto</div>
+          <div style="margin-top:8px;font:400 13px/1.3 system-ui,sans-serif;color:#6B6B6B">A preparar o que passa perto de ti…</div>
+          <div style="margin-top:18px;height:72px;border-radius:14px;background:#F4F4F2"></div>
+          <div style="margin-top:10px;height:72px;border-radius:14px;background:#F4F4F2"></div>
+        </div>
+      </div>
+      <script>if (location.pathname !== '/') { var e = document.getElementById('parou-arranque-texto'); if (e) e.style.visibility = 'hidden'; }</script>
+      <section id="parou-seo" style="max-width:860px;margin:0 auto;padding:32px 20px 48px;font:16px/1.55 system-ui,-apple-system,Segoe UI,sans-serif;color:#111;background:#fff">
+<h1 style="font-size:28px;line-height:1.15;margin:0">Cobertura de horários e dados de transportes</h1>
+<p style="margin:10px 0 0">Que operadores e linhas de transportes públicos a PAROU cobre em Portugal e de onde vêm os dados.</p>
+<h2 style="font-size:20px;margin:28px 0 0">Também na PAROU</h2>
+<ul style="padding-left:20px;margin:8px 0 0"><li><a href="/" style="color:#111">Transportes perto de ti, em tempo real</a></li><li><a href="/linhas" style="color:#111">Linhas e horários de todos os operadores</a></li><li><a href="/greves" style="color:#111">Greves nos transportes</a></li><li><a href="/alertas" style="color:#111">Alertas e perturbações</a></li><li><a href="/cidades" style="color:#111">Transportes por cidade</a></li><li><a href="/sobre" style="color:#111">Sobre a PAROU</a></li></ul>
+</section>
+      <noscript>
+        <div style="padding:24px;font-family:system-ui,sans-serif;max-width:860px;margin:0 auto;color:#111">
+          <p style="font-size:24px;font-weight:700;margin:0 0 12px">PAROU — autocarros, metro e comboios perto de ti em tempo real</p>
+          <p>A PAROU mostra-te o que passa perto de ti: tempo real da Carris Metropolitana, Carris, STCP, Metro de Lisboa, Metro do Porto e CP, horários dos principais operadores, greves e alertas em Portugal. Gratuita e sem anúncios. Para usar a app, ativa o JavaScript.</p>
+          <ul>
+            <li><a href="/linhas">Linhas e horários de todos os operadores</a></li>
+            <li><a href="/greves">Greves nos transportes hoje</a></li>
+            <li><a href="/linhas/carris-metropolitana">Horários Carris Metropolitana</a> · <a href="/linhas/metro-de-lisboa">Metro de Lisboa</a> · <a href="/linhas/carris">Carris</a> · <a href="/linhas/cp">CP</a> · <a href="/linhas/stcp">STCP</a> · <a href="/linhas/metro-do-porto">Metro do Porto</a></li>
+            <li><a href="/sobre">Sobre a PAROU</a> · <a href="/privacidade">Privacidade</a> · <a href="/termos">Termos</a></li>
+          </ul>
+        </div>
+      </noscript>
+    </div>
+  </body>
+</html>
+

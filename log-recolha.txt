@@ -1,0 +1,68 @@
+perto funchal-centro 200 2.866629s
+alertas funchal-centro 200 0.953288s
+perto funchal-monte 200 1.042211s
+alertas funchal-monte 200 0.410176s
+perto funchal-lido 200 1.023377s
+alertas funchal-lido 200 0.408706s
+perto funchal-hospital 200 0.915715s
+alertas funchal-hospital 200 0.413525s
+perto camara-de-lobos 200 1.059328s
+alertas camara-de-lobos 200 0.412645s
+perto canico 200 0.543366s
+alertas canico 200 0.432062s
+perto aeroporto-madeira 200 0.332295s
+alertas aeroporto-madeira 200 0.458799s
+perto machico 200 0.316606s
+alertas machico 200 0.429826s
+perto santana 200 0.312558s
+alertas santana 200 0.434432s
+perto calheta 200 0.324266s
+alertas calheta 200 0.420100s
+perto porto-santo 200 0.328268s
+alertas porto-santo 200 0.417266s
+perto ponta-delgada 200 0.318764s
+alertas ponta-delgada 200 0.416003s
+perto angra 200 0.341731s
+alertas angra 200 0.564911s
+perto horta 200 0.318244s
+alertas horta 200 0.415380s
+pesquisa Funchal 200
+pesquisa Monte 200
+pesquisa Lido 200
+pesquisa Hospital Dr. Nélio Mendonça 200
+pesquisa Câmara de Lobos 200
+pesquisa Machico 200
+pesquisa Aeroporto da Madeira 200
+pesquisa Santana 200
+pesquisa Porto Santo 200
+pesquisa Ponta Delgada 200
+pesquisa Angra do Heroísmo 200
+pesquisa Mercado dos Lavradores 200
+pesquisa Teleférico 200
+mapa 200
+cidades 200
+pagina /linhas/horarios-do-funchal 200
+pagina /paragens/horarios-do-funchal 200
+pagina /cidade/funchal 200
+pagina /cidade/ponta-delgada 200
+pagina /cobertura 200
+ipma distritos 200
+ipma avisos 200
+hf gtfs 200 3933994
+total 1556
+drwxr-xr-x 2 runner runner    4096 Nov 12 17:17 .
+drwxr-xr-x 3 runner runner    4096 Nov 12 17:17 ..
+-rw-rw-rw- 1 runner runner     275 Oct 29 12:00 agency.txt
+-rw-rw-rw- 1 runner runner    7790 Oct 29 12:00 calendar_dates.txt
+-rw-rw-rw- 1 runner runner     298 Oct 29 12:00 feed_info.txt
+-rw-rw-rw- 1 runner runner   33102 Oct 29 12:00 routes.txt
+-rw-rw-rw- 1 runner runner  221996 Oct 29 12:00 stops.txt
+-rw-rw-rw- 1 runner runner 1305659 Oct 29 12:00 trips.txt
+siga lista 200
+siga 1000 200
+siga 71 200
+siga 2029 200
+siga 4022 200
+curl: (6) Could not resolve host: transportes.azores.gov.pt
+acores portal 000
+mdb 200

@@ -1,0 +1,2 @@
+agency_id,agency_name,agency_url,agency_timezone,agency_lang,agency_phone,agency_fare_url,agency_email
+1,HF,https://www.horariosdofunchal.pt/,Europe/Lisbon,pt,(+351) 291 705 555,https://www.horariosdofunchal.pt/index.php/viajar/titulos-e-tarifas,geral@horariosdofunchal.pt

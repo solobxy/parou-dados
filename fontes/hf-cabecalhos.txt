@@ -1,0 +1,15 @@
+HTTP/1.1 200 OK
+Date: Thu, 12 Nov 2026 17:17:18 GMT
+Server: Apache/2.4.58 (Ubuntu)
+Strict-Transport-Security: max-age=31536000; includeSubDomains
+X-Content-Type-Options: nosniff
+X-Frame-Options: SAMEORIGIN
+X-XSS-Protection: 1; mode=block
+Referrer-Policy: strict-origin-when-cross-origin
+Permissions-Policy: camera=(), microphone=(), geolocation=(self)
+Last-Modified: Thu, 29 Oct 2026 12:08:29 GMT
+ETag: "3c072a-65ef989a10684"
+Accept-Ranges: bytes
+Content-Length: 3933994
+Content-Type: application/zip
+

@@ -1,0 +1,12 @@
+funchal-centro perto: ok
+funchal-centro alertas: ok
+funchal-monte perto: ok
+machico perto: ok
+santana perto: ok
+santana alertas: ok
+porto-santo perto: ok
+porto-santo alertas: ok
+ponta-delgada perto: ok
+ponta-delgada alertas: ok
+angra perto: ok
+angra alertas: ok

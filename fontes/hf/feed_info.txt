@@ -1,0 +1,2 @@
+feed_type,feed_publisher_name,feed_publisher_url,feed_lang,feed_start_date,feed_end_date,feed_version,feed_desc,feed_remarks,feed_contact_email,feed_contact_url
+,HF,https://www.horariosdofunchal.pt/,pt,20260909,20270830,202610261706,,,geral@horariosdofunchal.pt,https://www.horariosdofunchal.pt/
