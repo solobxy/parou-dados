@@ -478,7 +478,7 @@ h1{{font-size:34px;line-height:1.1;letter-spacing:-.03em;margin:0 0 12px}}h2{{fo
 .num dt{{font-size:14px;color:var(--t3)}}.num dd{{margin:2px 0 0;font-size:22px;font-weight:800;letter-spacing:-.01em;font-variant-numeric:tabular-nums}}
 .fonte{{font-size:14px;color:var(--t3);margin:16px 0 0;max-width:820px}}.fonte a{{color:var(--v)}}
 details{{border-top:1px solid var(--b);padding:12px 0}}details:first-of-type{{border-top:0}}summary{{font-weight:700;cursor:pointer;min-height:24px}}details p{{margin:8px 0 0}}
-.tab{{width:100%;border-collapse:collapse;background:#fff;border-radius:18px;overflow:hidden;font-size:15px}}.tab th,.tab td{{text-align:left;padding:10px 12px;border-bottom:1px solid var(--b)}}.tab th{{color:var(--t3);font-weight:700}}.tab td.n,.tab th.n{{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}}.tab td a{{color:var(--v);font-weight:600}}.rolar .tab{{min-width:620px}}.tab tr.peq td{{color:var(--t3)}}
+.tab{{width:100%;border-collapse:collapse;background:#fff;border-radius:18px;overflow:hidden;font-size:15px}}.tab th,.tab td{{text-align:left;padding:10px 12px;border-bottom:1px solid var(--b)}}.tab th{{color:var(--t3);font-weight:700}}.tab td.n,.tab th.n{{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}}.tab td a,.tab th a{{color:var(--v);font-weight:600}}.tab th[scope=row]{{color:var(--t);font-weight:600;min-width:8.5em}}.tab small{{display:block;font-weight:500;color:var(--t3);font-size:13px}}.rolar .tab{{min-width:620px}}.tab tr.peq td{{color:var(--t3)}}
 .rolar{{overflow-x:auto;border-radius:18px}}
 .guia{{max-width:760px}}.guia h2{{margin-top:36px}}.guia p,.guia li{{font-size:17px;line-height:1.65;color:var(--t2)}}.guia li{{margin-bottom:6px}}.guia strong{{color:var(--t)}}.nota{{font-size:14px;color:var(--t3);margin-top:28px}}
 footer{{margin-top:56px;border-top:1px solid var(--b);padding:28px 0 40px;font-size:14px;color:var(--t3)}}footer a{{margin-right:14px;white-space:nowrap;display:inline-block;line-height:2}}
@@ -1181,7 +1181,7 @@ def gerar_estudo(paginas, ficheiros, anuncios, hoje):
         h = link_d(d)
         nome = f'<a href="{h}">{e(nome_d(d))}</a>' if h else e(nome_d(d))
         peq = st['n'] < 10
-        corpo += (f'<tr{" class=peq" if peq else ""}><th scope="row">{nome}{" (amostra pequena)" if peq else ""}</th><td class="n">{num(st["n"])}</td>'
+        corpo += (f'<tr{" class=peq" if peq else ""}><th scope="row">{nome}{"<small>amostra pequena</small>" if peq else ""}</th><td class="n">{num(st["n"])}</td>'
                   f'<td class="n">{eur(st["media"])}</td><td class="n">{eur(st["mediana"])}</td>'
                   f'<td class="n">{(num(st["p25"]) + " a " + eur(st["p75"])) if st.get("p25") else "—"}</td><td class="n">{e(tend["curto"])}</td></tr>')
     for d in poucos:
@@ -1438,7 +1438,7 @@ def llms_full(resumo, n_total, hoje):
     if d:
         t += ['## Quanto custa um T1 em cada distrito', f'Fonte: {SITE}/arrendar/precos/t1-por-distrito/ (CSV do dia: {SITE}/arrendar/precos/t1-por-distrito/dados.csv)', '']
         for nome, v in sorted(d, key=lambda x: -x[1][1]):
-            t.append(f'- {NOME_DIST.get(nome, nome)}: preço médio {eur(v[2])}, mediana {eur(v[1])} por mês ({num(v[0])} anúncios de T1'
+            t.append(f'- {NOME_DIST.get(nome, "Distrito " + de(nome))}: preço médio {eur(v[2])}, mediana {eur(v[1])} por mês ({num(v[0])} anúncios de T1'
                      + ('; amostra pequena)' if v[0] < 10 else ')'))
         t.append('')
     t += ['## Renda mediana por concelho', '']
