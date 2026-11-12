@@ -155,6 +155,8 @@ jobs:
           APP=$PWD BASE=http://127.0.0.1:3000 node ../auditoria/paginas-rapidas.mjs 2>&1 | tee ../res/paginas-rapidas.txt | tail -30
           BASE=http://127.0.0.1:3000 node ../auditoria/seo-paginas.mjs 2>&1 | tee ../res/seo-paginas.txt | tail -60
           BASE=http://127.0.0.1:3000 node ../auditoria/seo-linguas.mjs 2>&1 | tee ../res/seo-linguas.txt | tail -60
+          BASE=http://127.0.0.1:3000 node ../auditoria/seo-respostas.mjs 2>&1 | tee ../res/seo-respostas.txt | tail -60
+          (APP=$PWD node --import tsx ../auditoria/robos.mjs 2>&1 | grep -v "Experimental\|trace-warnings") | tee ../res/robos.txt | tail -30
           (APP=$PWD node --import tsx ../auditoria/titulos-linhas.mjs 2>&1 | grep -v "Experimental\|trace-warnings") | tee ../res/titulos-linhas.txt | tail -20
           BASE=http://127.0.0.1:3000 node ../auditoria/estatisticas-etiqueta.mjs 2>&1 | tee ../res/estatisticas-etiqueta.txt | tail -20
           exit ${PIPESTATUS[0]}
