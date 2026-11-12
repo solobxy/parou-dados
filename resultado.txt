@@ -1,0 +1,76 @@
+== 2026-11-12T05:04:17Z acao=comando
+IP: 2.31.13.85
+== Saída no servidor
+m1794459847845773181
+== clonar o ramo
+b4dfb3b caiu.pt: logótipo com nome acessível igual ao texto, marcas com maiúscula a meio da frase
+== copiar os dados (só leitura das pastas reais)
+h
+historico.db
+lista.json
+resumo.json
+93M	/tmp/caiu-seo-teste/dados
+== gerar (1.ª vez)
+{"paginas": 231, "produtos": 5029, "produtos_no_google": 5029, "reencaminhados": 0, "fora_de_hoje": 0, "estudos": [], "estudos_por_fazer": ["novembro de 2026: o mês ainda não acabou"], "dia": "2026-11-11", "secoes": {"Mercearia": 34, "Pequeno-almoço e bebidas quentes": 6, "Laticínios e frio": 18, "Talho, peixaria e congelados": 11, "Fruta e legumes": 14, "Bebidas": 10, "Casa e limpeza": 13, "Higiene e bebé": 12, "Animais": 3, "Marcas e produtos muito procurados": 72, "Mais categorias": 38}}
+tempo 16.41 s, memória máx 106028 KB
+== gerar (2.ª vez, com o estado)
+{"paginas": 231, "produtos": 5029, "produtos_no_google": 5029, "reencaminhados": 0, "fora_de_hoje": 0, "estudos": [], "estudos_por_fazer": ["novembro de 2026: o mês ainda não acabou"], "dia": "2026-
+tempo 16.93 s, memória máx 116432 KB
+124M	/tmp/caiu-seo-teste/dados/paginas
+5031
+-rw-r--r-- 1 root root     504 Nov 12 05:04 /tmp/caiu-seo-teste/dados/estado-estudos.json
+-rw-r--r-- 1 root root 2604536 Nov 12 05:04 /tmp/caiu-seo-teste/dados/estado-paginas.json
+== validar
+páginas: 5269 (produtos 5029); no sitemap: 5268 (produtos 5029); noindex: 2
+palavras na resposta (intervalos de 5): {40: 41, 45: 479, 50: 1185, 55: 2879, 60: 446}
+ligações recebidas pelos produtos: mín 1 mediana 1
+Tudo OK
+alertas.py compila
+== testes do ramo
+
+1 de janeiro de 2027. O caiu.pt, comparador gratuito que verifica todos os dias os preços do Continente, Pingo Doce e Auchan online, mediu o custo de um cabaz de 28 produtos essenciais ao longo de dezembro de 2026. Entre a primeira
+
+Tudo OK
+== Caddy com o Caddyfile do ramo (127.0.0.1:18080, pastas de teste)
+Valid configuration
+200 text/html; charset=utf-8 [] cache=no-cache /
+200 text/html; charset=utf-8 [] cache=public, max-age=300 /preco/azeite/
+308  [http://127.0.0.1:18080/preco/] cache= /preco
+200 text/html; charset=utf-8 [] cache=public, max-age=300 /preco/
+200 text/html; charset=utf-8 [] cache=public, max-age=300 /produto/abelharuco-alentejano-vinho-tinto-garrafa-75-cl/
+308 text/html; charset=utf-8 [http://127.0.0.1:18080/produto/abelharuco-alentejano-vinho-tinto-garrafa-75-cl/] cache=public, max-age=300 /produto/abelharuco-alentejano-vinho-tinto-garrafa-75-cl
+200 text/html; charset=utf-8 [] cache=public, max-age=300 /produto/
+200 application/json [] cache=public, max-age=300 /produto/ids.json
+200 text/html; charset=utf-8 [] cache=public, max-age=300 /cabaz-mais-barato/
+308  [http://127.0.0.1:18080/cabaz-mais-barato/] cache= /cabaz-mais-barato
+200 text/csv; charset=utf-8 [] cache=public, max-age=300 /cabaz-mais-barato/historico.csv
+200 text/html; charset=utf-8 [] cache=public, max-age=300 /promocoes/continente/
+200 text/html; charset=utf-8 [] cache=public, max-age=300 /supermercado-mais-barato/
+200 text/xml; charset=utf-8 [] cache=public, max-age=1800 /sitemap.xml
+200 text/xml; charset=utf-8 [] cache=public, max-age=1800 /sitemap-paginas.xml
+200 text/xml; charset=utf-8 [] cache=public, max-age=1800 /sitemap-produtos.xml
+200 text/xml; charset=utf-8 [] cache=public, max-age=1800 /preco/sitemap.xml
+404  [] cache=public, max-age=300 /preco/promocoes/
+404  [] cache=public, max-age=300 /preco/sitemap-raiz.xml
+200 application/json [] cache=no-cache /dados/resumo.json
+404  [] cache=public, max-age=600 /dados/estado-paginas.json
+404  [] cache=public, max-age=600 /dados/historico.db
+200 text/plain; charset=utf-8 [] cache= /robots.txt
+200 text/plain; charset=utf-8 [] cache= /llms.txt
+200 text/css; charset=utf-8 [] cache=public, max-age=604800 /paginas.css
+200 text/html; charset=utf-8 [] cache=public, max-age=300 /estudos/
+404  [] cache= /nao-existe/
+<?xml version="1.0" encoding="UTF-8"?>
+<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <sitemap><loc>https://caiu.pt/sitemap-paginas.xml</loc><lastmod>2026-11-11</lastmod></sitemap>
+  <sitemap><loc>https://caiu.pt/sitemap-produtos.xml</loc><lastmod>2026-11-11</lastmod></sitemap>
+</sitemapindex>
+Allow: /dados/resumo.json
+Disallow: /dados/
+
+Sitemap: https://caiu.pt/sitemap.xml
+== exemplo de produto (texto)
+Abelharuco Alentejano Vinho Tinto garrafa 75 cl: hoje, 11 de novembro, custa 2,99 € no Continente. O desconto do Continente é sobre o PVPR de 5,99 €, o preço recomendado pela marca, e não sobre o preço a que vendia. Nos 10 dias anteriores, o mais baixo foi 2,99 €, no Continente, a 10 de novembro.
+== Teste de fora
+https://2-31-13-85.sslip.io/health 200 0.506326s
+https://2-31-13-85.sslip.io/api/transit/loading-status 200 0.500468s
