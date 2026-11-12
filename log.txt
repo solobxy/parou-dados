@@ -1,0 +1,11 @@
+funchal-centro-claro-390: ok
+funchal-centro-escuro-390: ok
+funchal-centro-claro-320: ok
+funchal-monte-claro-390: ok
+funchal-monte-escuro-390: ok
+machico-claro-390: ok
+machico-escuro-390: ok
+machico-claro-320: ok
+ponta-delgada-claro-390: ok
+ponta-delgada-escuro-390: ok
+ponta-delgada-claro-320: ok
