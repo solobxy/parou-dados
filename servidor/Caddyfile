@@ -159,6 +159,25 @@ www.jinxed.world {
 }
 # FIM www.jinxed.world
 
+# DUPLICASA (antes Duas Chaves) - páginas para o Google, geradas por duaschaves/paginas.py em /var/lib/duaschaves-dados/seo.
+# Uma página que ficou sem casas tem só 410.html na pasta: responde 410 (o Google tira-a do índice), com ligações para
+# continuar a procurar. O 410.html pedido diretamente dá 404.
+(duaschaves_seo) {
+	root * /var/lib/duaschaves-dados/seo
+	@saiu file {path}410.html {path}/410.html
+	handle @saiu {
+		rewrite * {file_match.relative}
+		file_server {
+			status 410
+		}
+	}
+	handle {
+		file_server {
+			hide 410.html
+		}
+	}
+}
+
 # DUAS CHAVES - site de arrendamento (protótipo estático em /var/www/duaschaves, vindo de sites/duaschaves deste repositório)
 # O endereço de testes (sslip.io) fica fora do Google; o domínio a sério (duplicasa.pt) é indexado.
 (duaschaves) {
@@ -182,21 +201,17 @@ www.jinxed.world {
 		redir * /arrendar/ 308
 	}
 	handle /arrendar/* {
-		root * /var/lib/duaschaves-dados/seo
-		file_server
+		import duaschaves_seo
 	}
 	# As mesmas páginas em inglês, espanhol e francês (paginas_idiomas.py)
 	handle /en/* {
-		root * /var/lib/duaschaves-dados/seo
-		file_server
+		import duaschaves_seo
 	}
 	handle /es/* {
-		root * /var/lib/duaschaves-dados/seo
-		file_server
+		import duaschaves_seo
 	}
 	handle /fr/* {
-		root * /var/lib/duaschaves-dados/seo
-		file_server
+		import duaschaves_seo
 	}
 	redir /en /en/rent/ 302
 	redir /es /es/alquiler/ 302
@@ -227,11 +242,13 @@ www.jinxed.world {
 	handle /lista.json {
 		root * /var/lib/duaschaves-dados
 		header Cache-Control "no-cache"
+		header X-Robots-Tag "noindex"
 		file_server
 	}
 	handle /det/* {
 		root * /var/lib/duaschaves-dados
 		header Cache-Control "public, max-age=300"
+		header X-Robots-Tag "noindex"
 		file_server
 	}
 	# App instalável (PWA): o service worker nunca fica em cache no browser
