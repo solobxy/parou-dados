@@ -1,0 +1,26 @@
+NOTA    mapa ao nível 16; ecrã do mapa 390×277 px; 18 marcadores desenhados
+OK      [ao abrir] o mapa está ao nível de zoom 16 (medido no ecrã) 16
+OK      [ao abrir] todos os autocarros do ecrã estão no mapa (16: as duas linhas da paragem e 14 de outras linhas) 16 à vista
+OK      [ao abrir] e nenhum a mais (os que estão fora do ecrã não aparecem à vista) 
+OK      [ao abrir] aparecem os três operadores (STCP, Carris Metropolitana e TUB) stcp,cm,tub
+OK      [ao abrir] com o zoom de perto cada autocarro é uma roda com número (≥ 30 px) 36 px
+OK      [ao abrir] o pedido é pela caixa do ecrã, sem lista de linhas linhas=[]
+OK      [ao abrir] a caixa cobre o ecrã com folga e não é exagerada (entre 0,5 e 3 km de altura) 1113 m de altura
+OK      [arrastar] ao arrastar o mapa para este aparecem os autocarros da zona nova (≥ 7 dos 8) 8 de 8 (B1 B7 B2 B3 B4 B5 B6 B8)
+OK      [arrastar] os da zona que saiu do ecrã já não estão à vista 
+OK      [arrastar] a app pediu uma caixa nova, mais a este oeste -8.6200 → -8.6100
+NOTA    zoom 16 → 13; 57 marcadores; pontos: true
+OK      [afastar] o mapa afastou-se (pelo menos 2 níveis) 16 → 13
+OK      [afastar] com o mapa afastado vêem-se todos os autocarros do ecrã maior (40 esperados, mais que ao início) 46 à vista
+OK      [afastar] ao nível de zoom 14 ou menos cada autocarro mostra o número da linha, com letra legível (≥ 11 px) fontes 12px
+OK      [afastar] e o número cabe inteiro na bola (nenhum cortado, nem o de 5 caracteres) cortados: nenhum
+OK      [afastar] as bolas afastadas são mais pequenas do que as de perto (altura ≤ 30 px) para não taparem o mapa altura 26–26 px, largura até 42 px
+OK      [afastar] as bolas continuam a ter a cor do operador 
+NOTA    depois de 2 voltas na roda: aviso visível: true; marcadores: 0
+OK      [muito longe] com o mapa muito afastado aparece o aviso para aproximar Aproxima o mapa para ver os autocarros em direto
+OK      [muito longe] e não fica nenhum autocarro desenhado 0 marcadores
+OK      [muito longe] a app nunca pediu uma caixa maior do que o servidor aceita 0 pedidos recusados
+OK      [aproximar] ao aproximar outra vez o aviso desaparece e os autocarros voltam 57 marcadores, zoom 13
+OK      [tudo] sem erros de consola 
+
+21/21 testes OK

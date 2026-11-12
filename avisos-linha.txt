@@ -1,0 +1,41 @@
+OK      [chave] CM: «1001» (app) = «1001_0» (aviso, com sentido) carris-metropolitana|1001
+OK      [chave] CM pelo feed do id («cm:1001») 
+OK      [chave] CM: aviso do TML com prefixo [..] carris-metropolitana|1001
+OK      [chave] Metro de Lisboa: «Linha Azul» (aviso) = «AZ» (código) = cor só no nome metro-lisboa|azul metro-lisboa|azul metro-lisboa|azul
+OK      [chave] Carris (Lisboa) 728 ≠ Carris Metropolitana 728 
+OK      [chave] sem linha ou sem operador: vazia 
+OK      [avisos] o mesmo aviso pelas duas fontes: um só, com as linhas das duas [["carris-metropolitana|1001","carris-metropolitana|1002"]]
+OK      [avisos] fora: rede inteira (31 linhas), horários novos, a mais de 12 h, começou há mais de 6 h, já acabou, aviões, IPMA linha:tml-1@2026-11-12T06:12:00.147Z linha:breve@2026-11-12T09:12:00.147Z linha:greve-ml@2026-11-12T06:12:00.147Z
+OK      [avisos] dentro: o que começa daqui a 2 h, com a hora no texto Obras na Avenida · hoje às 09:12
+OK      [avisos] greve no Metro: diz que é greve e vai para quem segue a Linha Verde {"id":"linha:greve-ml@2026-11-12T06:12:00.147Z","grupo":"linha:metro-lisboa|paralisacaodostrabalhadores","pausaHoras":2,"titulo":"Metro de Lisboa","corpo":"Greve: Paralisação dos trabalhadores","distritos":[],"urgente":false,"url":"/alertas","categoria":"greve","linhas":["metro-lisboa|verde"],"opNome":"Metro de Lisboa"}
+OK      [avisos] nenhum aviso de linha vai por distrito 
+OK      [app] só linhas (paragens ficam de fora), sem repetir a da lista antiga [{"op":"Carris Metropolitana","ln":"1001","nome":"Algés - Linda-a-Velha"},{"op":"Metro de Lisboa","ln":"2","nome":"Linha Amarela"},{"op":"carris","ln":"728"}]
+OK      [app] linha da lista antiga usa o feed do id 
+OK      [app] no servidor, cada uma dá a chave certa carris-metropolitana|1001 metro-lisboa|amarela carris|728
+OK      [app] nunca mais de 40 
+OK      [app] avisos por linha só onde existem (CM e Metro de Lisboa) 
+OK      [convite] 1.ª vez: convida 
+OK      [convite] já tem os avisos ligados: não 
+OK      [convite] bloqueou as notificações: não 
+OK      [convite] aparelho sem notificações (iPhone fora da app instalada): não 
+OK      [convite] disse «agora não» há 3 dias: não 
+OK      [convite] disse «agora não» há 20 dias: volta 
+OK      [convite] disse «agora não» 2 vezes: nunca mais 
+OK      [convite] memória estragada conta como nova 
+[Push] Início: 0 avisos atuais registados (não enviados)
+[Push] Avisos por linha: 1 já ativos registados (não enviados)
+OK      [servidor] logo a seguir a ligar a novidade, os avisos de linha já ativos não chegam de uma vez 
+[Push] 2 avisos novos (Carris Metropolitana | Carris Metropolitana); 2 entregues, 0 falhas, 3 subscrições
+OK      [servidor] quem segue a 1001 recebe uma só vez, com a linha no título ana: Linha 1001 · Carris Metropolitana | bruno: Carris Metropolitana
+OK      [servidor] quem não segue a linha recebe o aviso geral do distrito ana: Linha 1001 · Carris Metropolitana | bruno: Carris Metropolitana
+OK      [servidor] quem não segue a linha nem é do distrito não recebe nada ana: Linha 1001 · Carris Metropolitana | bruno: Carris Metropolitana
+[Push] 1 avisos novos (Carris Metropolitana); 0 entregues, 0 falhas, 3 subscrições
+OK      [servidor] aviso de uma linha que ninguém segue: ninguém recebe 
+[Push] 1 avisos novos (Metro de Lisboa); 1 entregues, 0 falhas, 3 subscrições
+OK      [servidor] Linha Azul: chega a quem a segue, mesmo noutro distrito carla: Linha Azul · Metro de Lisboa
+OK      [servidor] a mesma linha volta a ter perturbação 15 min depois: não repete (pausa de 2 h) 
+[Push] 1 avisos novos (Metro de Lisboa); 1 entregues, 0 falhas, 3 subscrições
+OK      [servidor] nova perturbação horas depois: volta a avisar (o id muda com o início) carla: Linha Azul · Metro de Lisboa
+OK      [servidor] título com várias linhas seguidas 
+
+Tudo OK
