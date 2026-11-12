@@ -1,0 +1,3 @@
+estudo http://127.0.0.1:8080/estudos/salarios-por-profissao/: m LCP~132 ms; d LCP~92 ms
+hub http://127.0.0.1:8080/profissoes/: m LCP~148 ms; d LCP~144 ms
+fp http://127.0.0.1:8080/funcao-publica/enfermeiros/: m LCP~84 ms; d LCP~92 ms
