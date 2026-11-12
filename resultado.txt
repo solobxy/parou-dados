@@ -1,0 +1,114 @@
+== 2026-11-12T04:59:01Z acao=comando
+IP: 2.31.13.85
+== Saída no servidor
+m1794459529532166097
+== clone
+5781046 ganhas.pt: cada carreira pública liga de volta às páginas das profissões que a usam
+Python 3.12.3
+== gerar.py (saída em /tmp/g-teste/sites/ganhas)
+451 páginas em /tmp/g-teste/sites/ganhas
+mudou depois de gerar no servidor:
+0
+== paginas_empresas.py com a base real (só leitura), saída em /tmp/g-paginas
+0 empresas publicadas; 0 profissões e 0 profissões num distrito com números da comunidade; 0 partilhas públicas
+/empresa/index.html
+/.estado-comunidade.json
+/sitemap-comunidade.xml
+/sitemap-empresas.xml
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"></urlset>
+
+<!--robots--><meta name="robots" content="noindex, follow"><!--/robots-->
+== teste com dados inventados (base temporária)
+sitemap-comunidade: ['https://ganhas.pt/profissoes/enfermeiro/porto/', 'https://ganhas.pt/profissoes/enfermeiro/lisboa/']
+enfermeiro/lisboa números: [1239, 1244, 1254, 1256, 1314, 1331, 1341, 1388, 1464, 1527, 1531, 1532]
+aviso: há números não múltiplos de 50 (podem ser oficiais)
+API profissao=enfermeiro (200, {'n': 25, 'p25': 1640, 'mediana': 1720, 'p75': 1900, 'passo': 10})
+API profissao=enfermeiro&distrito=lisboa (200, {'n': 6, 'p25': 1700, 'mediana': 1750, 'p75': 2000, 'passo': 50})
+API profissao=programador&distrito=lisboa (200, {'n': 9, 'oculto': True})
+API profissao=canalizador (200, {'n': 4, 'faltam': 1})
+API empresa=hospital-teste (200, {'n': 7, 'p25': 1700, 'mediana': 1750, 'p75': 2100, 'passo': 50})
+API empresa=hospital-teste&profissao=enfermeiro (400, {'erro': 'Indica a profissão (com ou sem distrito) ou só a empresa.'})
+API distrito=porto (400, {'erro': 'Indica a profissão (com ou sem distrito) ou só a empresa.'})
+API profissao=enfermeiro&distrito=braga (200, {'n': 2, 'faltam': 3})
+TUDO OK
+== caddy validate do Caddyfile do ramo
+{"level":"info","ts":1794459549.9997149,"logger":"tls.cache.maintenance","msg":"stopped background certificate maintenance","cache":"0xc0001d2540"}
+Valid configuration
+== caddy à parte (127.0.0.1:18080) com as regras do ramo
+/profissoes/enfermeiro/ -> 200  | servidor:1 noindex:0 mediana:1
+/profissoes/enfermeiro -> 308 http://127.0.0.1:18080/profissoes/enfermeiro/ | servidor:0 noindex:0 mediana:0
+/profissoes/enfermeiro/porto/ -> 200  | servidor:0 noindex:0 mediana:1
+/profissoes/enfermeiro/braga/ -> 404  | servidor:0 noindex:1 mediana:0
+/profissoes/canalizador/ -> 200  | servidor:0 noindex:1 mediana:0
+/profissoes/ -> 200  | servidor:0 noindex:0 mediana:0
+/sitemap-comunidade.xml -> 200  | servidor:0 noindex:0 mediana:0
+/empresa/ -> 200  | servidor:0 noindex:0 mediana:1
+/empresa/hospital-teste/ -> 200  | servidor:0 noindex:0 mediana:0
+/estudos/salarios-por-profissao/ -> 200  | servidor:0 noindex:0 mediana:0
+/profissoes/.estado -> 404  | servidor:0 noindex:0 mediana:0
+/.estado-comunidade.json -> 404  | servidor:0 noindex:0 mediana:0
+{"level":"warn","ts":1794459553.2252448,"msg":"exiting; byeee!! 👋","signal":"SIGTERM"}
+{"level":"info","ts":1794459553.2253392,"logger":"tls.cache.maintenance","msg":"stopped background certificate maintenance","cache":"0xc0001c6850"}
+{"level":"info","ts":1794459553.2253675,"msg":"shutdown complete","signal":"SIGTERM","exit_code":0}
+== clone
+5781046 ganhas.pt: cada carreira pública liga de volta às páginas das profissões que a usam
+Python 3.12.3
+== gerar.py (saída em /tmp/g-teste/sites/ganhas)
+451 páginas em /tmp/g-teste/sites/ganhas
+mudou depois de gerar no servidor:
+0
+== paginas_empresas.py com a base real (só leitura), saída em /tmp/g-paginas
+0 empresas publicadas; 0 profissões e 0 profissões num distrito com números da comunidade; 0 partilhas públicas
+/empresa/index.html
+/.estado-comunidade.json
+/sitemap-comunidade.xml
+/sitemap-empresas.xml
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"></urlset>
+
+<!--robots--><meta name="robots" content="noindex, follow"><!--/robots-->
+== teste com dados inventados (base temporária)
+sitemap-comunidade: ['https://ganhas.pt/profissoes/enfermeiro/porto/', 'https://ganhas.pt/profissoes/enfermeiro/lisboa/']
+enfermeiro/lisboa números: [1239, 1244, 1254, 1256, 1314, 1331, 1341, 1388, 1464, 1527, 1531, 1532]
+aviso: há números não múltiplos de 50 (podem ser oficiais)
+API profissao=enfermeiro (200, {'n': 25, 'p25': 1640, 'mediana': 1720, 'p75': 1900, 'passo': 10})
+API profissao=enfermeiro&distrito=lisboa (200, {'n': 6, 'p25': 1700, 'mediana': 1750, 'p75': 2000, 'passo': 50})
+API profissao=programador&distrito=lisboa (200, {'n': 9, 'oculto': True})
+API profissao=canalizador (200, {'n': 4, 'faltam': 1})
+API empresa=hospital-teste (200, {'n': 7, 'p25': 1700, 'mediana': 1750, 'p75': 2100, 'passo': 50})
+API empresa=hospital-teste&profissao=enfermeiro (400, {'erro': 'Indica a profissão (com ou sem distrito) ou só a empresa.'})
+API distrito=porto (400, {'erro': 'Indica a profissão (com ou sem distrito) ou só a empresa.'})
+API profissao=enfermeiro&distrito=braga (200, {'n': 2, 'faltam': 3})
+TUDO OK
+== caddy validate do Caddyfile do ramo
+{"level":"info","ts":1794459556.8933337,"logger":"tls.cache.maintenance","msg":"stopped background certificate maintenance","cache":"0xc0001d8930"}
+Valid configuration
+== caddy à parte (127.0.0.1:18080) com as regras do ramo
+/profissoes/enfermeiro/ -> 200  | servidor:1 noindex:0 mediana:1
+/profissoes/enfermeiro -> 308 http://127.0.0.1:18080/profissoes/enfermeiro/ | servidor:0 noindex:0 mediana:0
+/profissoes/enfermeiro/porto/ -> 200  | servidor:0 noindex:0 mediana:1
+/profissoes/enfermeiro/braga/ -> 404  | servidor:0 noindex:1 mediana:0
+/profissoes/canalizador/ -> 200  | servidor:0 noindex:1 mediana:0
+/profissoes/ -> 200  | servidor:0 noindex:0 mediana:0
+/sitemap-comunidade.xml -> 200  | servidor:0 noindex:0 mediana:0
+/empresa/ -> 200  | servidor:0 noindex:0 mediana:1
+/empresa/hospital-teste/ -> 200  | servidor:0 noindex:0 mediana:0
+/estudos/salarios-por-profissao/ -> 200  | servidor:0 noindex:0 mediana:0
+/profissoes/.estado -> 404  | servidor:0 noindex:0 mediana:0
+/.estado-comunidade.json -> 404  | servidor:0 noindex:0 mediana:0
+{"level":"info","ts":1794459556.9608395,"logger":"http.log","msg":"server running","name":"srv0","protocols":["h1","h2","h3"]}
+{"level":"info","ts":1794459556.960961,"msg":"autosaved config (load with --resume flag)","file":"/root/.config/caddy/autosave.json"}
+{"level":"info","ts":1794459556.960966,"msg":"serving initial configuration"}
+== IndexNow (1 endereço, a página inicial)
+0000000   4   4   2   6   4   4   c   1   6   c   f   8   f   c   2   6
+0000020   4   1   6   6   9   1   d   7   b   3   4   e   a   d   8   e
+0000040
+HTTP 200
+
+Bing HTTP 200
+
+fim
+== Teste de fora
+https://2-31-13-85.sslip.io/health 200 0.489242s
+https://2-31-13-85.sslip.io/api/transit/loading-status 200 0.648238s
