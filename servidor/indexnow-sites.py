@@ -18,7 +18,7 @@ SITES = {
 }
 PASTA = os.environ.get('STATE_DIRECTORY', '/var/lib/indexnow-sites')
 ESTADO = os.path.join(PASTA, 'estado.json')
-MAX_URLS = 3000
+MAX_URLS = 20000  # o caiu.pt tem milhares de páginas de produto
 UA = 'Mozilla/5.0 (compatible; indexnow-sites/1.0)'
 
 
@@ -50,9 +50,14 @@ def urls_de(sm, prof=0):
 
 
 def impressao(html):
-    """Texto visível da página (sem scripts, estilos nem espaços), para saber se o conteúdo mudou."""
-    html = re.sub(r'(?is)<(script|style|noscript)[^>]*>.*?</\1>', ' ', html)
+    """Texto visível da página (sem scripts, estilos nem espaços), para saber se o conteúdo mudou.
+    Datas e horas em <time> não contam (a página não «muda» só porque diz a hora da última verificação).
+    Se a página marcar o que interessa com <!--indexnow-->…<!--/indexnow--> (preços do caiu.pt), só isso conta."""
     m = re.search(r'(?is)<title>(.*?)</title>', html)
+    marcado = re.findall(r'(?s)<!--indexnow-->(.*?)<!--/indexnow-->', html)
+    if marcado:
+        html = ' '.join(marcado)
+    html = re.sub(r'(?is)<(script|style|noscript|time)[^>]*>.*?</\1>', ' ', html)
     t = re.sub(r'(?s)<[^>]+>', ' ', html)
     t = re.sub(r'\s+', ' ', t).strip()
     return hashlib.sha256(((m.group(1) if m else '') + '|' + t).encode()).hexdigest()[:20]

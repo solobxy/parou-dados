@@ -730,7 +730,7 @@ www.tapmoss.com {
 	}
 	# Preços do dia (resumo.json, lista.json, h/<produto>.json, estado.json); a base de dados não sai daqui
 	handle_path /dados/* {
-		@privado path /historico.db* /*.tmp
+		@privado path /historico.db* /*.tmp /estado-paginas.json /estado-estudos.json
 		respond @privado 404
 		root * /var/lib/caiu-dados
 		@dia path /resumo.json /lista.json /estado.json
@@ -739,30 +739,24 @@ www.tapmoss.com {
 		header @resto Cache-Control "public, max-age=600"
 		file_server
 	}
-	# Preços por produto («Azeite mais barato hoje»), gerados por caiu/paginas.py depois de cada recolha
+	# Páginas geradas por caiu/paginas.py depois de cada recolha, com o mesmo caminho que têm na pasta:
+	# preços por termo (/preco/) e por produto (/produto/), promoções da semana, mais barato, cabaz, estudos e sitemaps
 	redir /preco /preco/ 308
-	handle_path /preco/* {
-		root * /var/lib/caiu-dados/paginas
-		header Cache-Control "public, max-age=300"
-		file_server
-	}
-	# Promoções da semana por loja e «qual é o supermercado mais barato» (também do paginas.py), e o sitemap do site todo
+	redir /produto /produto/ 308
 	redir /promocoes /promocoes/ 308
 	redir /supermercado-mais-barato /supermercado-mais-barato/ 308
-	handle /promocoes/* {
+	redir /cabaz-mais-barato /cabaz-mais-barato/ 308
+	redir /estudos /estudos/ 308
+	@gerado path /preco/* /produto/* /promocoes/* /supermercado-mais-barato/* /cabaz-mais-barato/* /estudos/* /sitemap.xml /sitemap-paginas.xml /sitemap-produtos*.xml
+	handle @gerado {
 		root * /var/lib/caiu-dados/paginas
 		header Cache-Control "public, max-age=300"
-		file_server
-	}
-	handle /supermercado-mais-barato/* {
-		root * /var/lib/caiu-dados/paginas
-		header Cache-Control "public, max-age=300"
-		file_server
-	}
-	handle /sitemap.xml {
-		root * /var/lib/caiu-dados/paginas
-		rewrite * /sitemap-raiz.xml
-		header Cache-Control "public, max-age=1800"
+		@sitemaps path /sitemap*.xml /preco/sitemap.xml
+		header @sitemaps Cache-Control "public, max-age=1800"
+		@csv path *.csv
+		header @csv Content-Type "text/csv; charset=utf-8"
+		@txt path *.txt
+		header @txt Content-Type "text/plain; charset=utf-8"
 		file_server
 	}
 	# API: pesquisa, seguir preços e avisos (caiu-api.service)
@@ -775,7 +769,7 @@ www.tapmoss.com {
 		root * /var/www/caiu
 		@fontes path /fontes/*
 		header @fontes Cache-Control "public, max-age=31536000, immutable"
-		@imagens path /*.png /favicon.svg
+		@imagens path /*.png /favicon.svg /paginas.css
 		header @imagens Cache-Control "public, max-age=604800"
 		@revalidar path / /index.html /app.js /estilo.css /manifest.webmanifest /sw.js /privacidade.html
 		header @revalidar Cache-Control "no-cache"

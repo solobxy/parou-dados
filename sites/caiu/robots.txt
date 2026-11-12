@@ -1,6 +1,8 @@
+# caiu.pt: todos os motores de pesquisa e assistentes (Googlebot, Bingbot, OAI-SearchBot, PerplexityBot…) são bem-vindos.
+# /dados/ são os ficheiros que o comparador lê; o resumo do dia fica aberto para quem mostra a página inicial já desenhada.
 User-agent: *
 Allow: /
+Allow: /dados/resumo.json
 Disallow: /dados/
 
 Sitemap: https://caiu.pt/sitemap.xml
-Sitemap: https://caiu.pt/preco/sitemap.xml

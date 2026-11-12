@@ -902,6 +902,12 @@
     if (!folha.open) folha.showModal();
     $('#fecharFolha').focus();
   }
+  // páginas próprias dos produtos com dados que chegam (/produto/<nome>/), feitas no servidor depois de cada recolha
+  let paginasProd = null;
+  function paginaProduto(id) {
+    if (!paginasProd) paginasProd = fetch('/produto/ids.json').then(r => (r.ok ? r.json() : {})).catch(() => ({}));
+    return paginasProd.then(m => (m[id] ? `/produto/${m[id]}/` : ''));
+  }
   async function abrirProduto(id) {
     let g = conhecidos.get(id) || (await obterProdutos([id]))[0];
     if (!g) { aviso('Este produto já não está nos preços de hoje.'); history.replaceState(null, '', location.pathname); return; }
@@ -938,6 +944,14 @@
       else mostrarComoAvisar(g);
     });
     acoes.append(bs);
+    paginaProduto(g.i).then(u => {
+      if (!u || !folha.open || !acoes.isConnected) return;
+      const a = document.createElement('a');
+      a.className = 'add add--leve';
+      a.href = u;
+      a.textContent = 'Página e histórico';
+      acoes.append(a);
+    });
     abrirFolha();
     window.estat('produto', g.n.slice(0, 60));
     try {

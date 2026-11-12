@@ -259,6 +259,7 @@ h2 { font-size: clamp(32px, 5.4vw, 60px); font-stretch: 108%; line-height: 1; le
   transition: transform .12s var(--sai);
 }
 .add:active { transform: scale(.94); }
+a.add { display: inline-flex; align-items: center; text-decoration: none; }
 .add[aria-pressed="true"] { background: var(--etiqueta); color: var(--tinta); box-shadow: inset 0 0 0 2px var(--tinta); }
 .add--leve, .add--seguir { background: transparent; color: var(--tinta); box-shadow: inset 0 0 0 2px var(--tinta); }
 .add--leve:hover { background: var(--papel); }
