@@ -22,6 +22,10 @@ jobs:
       - uses: actions/checkout@v4
       - name: Playwright (com o Chrome da máquina)
         run: pip install -q playwright
+      - name: Servir o ramo localmente (só para testes)
+        run: |
+          (cd sites/ganhas && nohup python3 -m http.server 8080 --bind 127.0.0.1 >/tmp/http.log 2>&1 &)
+          sleep 2; curl -s -o /dev/null -w '%{http_code}\n' http://127.0.0.1:8080/
       - name: Capturas
         env:
           SITES: ${{ inputs.sites }}
@@ -32,7 +36,7 @@ jobs:
       - name: Guardar
         if: always()
         run: |
-          cd capturas && git init -q -b capturas-sites
+          cd capturas && git init -q -b capturas-ganhas
           git config user.name "parou-dados"; git config user.email "actions@users.noreply.github.com"
           git add -A && git commit -q -m "Capturas $(date -u +%Y-%m-%dT%H:%MZ)"
-          git push -q -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" capturas-sites
+          git push -q -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" capturas-ganhas
