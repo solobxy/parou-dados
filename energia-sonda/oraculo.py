@@ -14,16 +14,22 @@ FILTROS = {'idioma': '1', 'socialOffer': '1', 'filtro_IndexacaoSpot': '1', 'filt
            'filtro_TipoOfertaGas': '1', 'filtro_gas100Renovavel': '0', 'filtro_comercializadorUnico': '0'}
 
 PERFIS = [
-    ('e1', 'simular_eletricidade', {'caseType': '3', 'electSupply': '2', 'cycle': '1', 'electCalendar': '2', 'electPonta': '1900', 'showElectPrice': 'false'}),
-    ('e2', 'simular_eletricidade', {'caseType': '3', 'electSupply': '5', 'cycle': '1', 'electCalendar': '2', 'electPonta': '5000', 'showElectPrice': 'false'}),
-    ('e3', 'simular_eletricidade', {'caseType': '3', 'electSupply': '5', 'cycle': '2', 'electCalendar': '2', 'electPonta': '3000', 'electCheias': '2000', 'showElectPrice': 'false'}),
-    ('e4', 'simular_eletricidade', {'caseType': '3', 'electSupply': '7', 'cycle': '1', 'electCalendar': '2', 'electPonta': '10900', 'showElectPrice': 'false'}),
-    ('e5', 'simular_eletricidade', {'caseType': '3', 'electSupply': '3', 'cycle': '1', 'electCalendar': '2', 'electPonta': '2500', 'showElectPrice': 'false'}),
-    ('e6', 'simular_eletricidade', {'caseType': '3', 'electSupply': '2', 'cycle': '1', 'electCalendar': '0', 'electPonta': '150', 'showElectPrice': 'false'}),
-    ('g1', 'simular_gas', {'caseType': '3', 'gasCodPostal': '4420', 'codPostal': '4420', 'gasCalendar': '2', 'gasConsumo': '3407', 'showGasPrice': 'false'}),
-    ('g2', 'simular_gas', {'caseType': '3', 'gasCodPostal': '1000', 'codPostal': '1000', 'gasCalendar': '2', 'gasConsumo': '1610', 'showGasPrice': 'false'}),
-    ('d1', 'simular_dual', {'caseType': '3', 'electSupply': '5', 'cycle': '1', 'electCalendar': '2', 'electPonta': '5000', 'showElectPrice': 'false',
-                            'gasCaseType': '3', 'gasCodPostal': '1000', 'codPostal': '1000', 'gasCalendar': '2', 'gasConsumo': '3407', 'showGasPrice': 'false'}),
+    ('ea', 'simular_eletricidade', {'caseType': '3', 'electSupply': '2', 'cycle': '1', 'electCalendar': '2', 'electPonta': '1900', 'showElectPrice': 'false'}),
+    ('eb', 'simular_eletricidade', {'caseType': '3', 'electSupply': '2', 'cycle': '1', 'electCalendar': '2', 'electPonta': '3800', 'showElectPrice': 'false'}),
+    ('ec', 'simular_eletricidade', {'caseType': '3', 'electSupply': '0', 'cycle': '1', 'electCalendar': '2', 'electPonta': '900', 'showElectPrice': 'false'}),
+    ('ed', 'simular_eletricidade', {'caseType': '3', 'electSupply': '5', 'cycle': '2', 'electCalendar': '2', 'electPonta': '3000', 'electCheias': '2000', 'showElectPrice': 'false'}),
+    ('ee', 'simular_eletricidade', {'caseType': '3', 'electSupply': '2', 'cycle': '2', 'electCalendar': '2', 'electPonta': '1000', 'electCheias': '1400', 'showElectPrice': 'false'}),
+    ('ef', 'simular_eletricidade', {'caseType': '3', 'electSupply': '5', 'cycle': '3', 'electCalendar': '2', 'electPonta': '800', 'electCheias': '2200', 'electVazio': '2000', 'showElectPrice': 'false'}),
+    ('g3a', 'simular_gas', {'caseType': '3', 'gasCodPostal': '1000', 'codPostal': '1000', 'gasCalendar': '2', 'gasConsumo': '7467', 'showGasPrice': 'false'}),
+    ('g3b', 'simular_gas', {'caseType': '3', 'gasCodPostal': '1000', 'codPostal': '1000', 'gasCalendar': '2', 'gasConsumo': '10000', 'showGasPrice': 'false'}),
+    ('g4a', 'simular_gas', {'caseType': '3', 'gasCodPostal': '1000', 'codPostal': '1000', 'gasCalendar': '2', 'gasConsumo': '15000', 'showGasPrice': 'false'}),
+    ('g4b', 'simular_gas', {'caseType': '3', 'gasCodPostal': '1000', 'codPostal': '1000', 'gasCalendar': '2', 'gasConsumo': '30000', 'showGasPrice': 'false'}),
+    ('g1b', 'simular_gas', {'caseType': '3', 'gasCodPostal': '4420', 'codPostal': '4420', 'gasCalendar': '2', 'gasConsumo': '2400', 'showGasPrice': 'false'}),
+    ('g2b', 'simular_gas', {'caseType': '3', 'gasCodPostal': '4420', 'codPostal': '4420', 'gasCalendar': '2', 'gasConsumo': '5000', 'showGasPrice': 'false'}),
+    ('d2', 'simular_dual', {'caseType': '3', 'electSupply': '2', 'cycle': '1', 'electCalendar': '2', 'electPonta': '1900', 'showElectPrice': 'false',
+                            'gasCaseType': '3', 'gasCodPostal': '4420', 'codPostal': '4420', 'gasCalendar': '2', 'gasConsumo': '1610', 'showGasPrice': 'false'}),
+    ('ea_todos', 'simular_eletricidade', {'caseType': '3', 'electSupply': '5', 'cycle': '1', 'electCalendar': '2', 'electPonta': '5000', 'showElectPrice': 'false',
+                                          'filtro_SemRestricoesAdicionais': '0', 'filtro_SemReembolsos': '0', 'filtro_NovosClientes': '0', 'filtro_ServicosAdicionais': '0', 'filtro_Fidelizacao': '0', 'filtro_IndexacaoSpot': '0'}),
 ]
 
 for nome, servico, campos in PERFIS:
