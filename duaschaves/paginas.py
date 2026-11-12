@@ -13,16 +13,30 @@ Por isso as páginas de cidade, quartos e apartamentos usam «alugar» no títul
 usam «arrendar» («t1 para arrendar lisboa» 390 contra «alugar t1» 140). Corre depois de cada recolha. Cada página tem título, descrição, canonical, Open Graph,
 dados estruturados (BreadcrumbList e ItemList) e texto com números reais da cidade, para não ser conteúdo fino.
 
+Dados próprios em cada página de zona (12/11/2026): preço médio (média aparada), mediana, metade das rendas entre, n.º de
+anúncios, tendência e data/hora da atualização, com uma resposta direta de 40 a 60 palavras no topo. Os anúncios em si
+nunca são páginas próprias (só aparecem como cartões que abrem /#casa-N): quem vai para o Google são as páginas de zona.
+Regras de índice: uma página só vai para o Google e para o sitemap com pelo menos MIN_AMOSTRA anúncios com preço. As que
+já existiram e agora têm menos ficam com noindex (fora do sitemap); as que ficaram sem anúncios nenhuns respondem 410
+(ficheiro 410.html na pasta, servido com esse código pelo Caddy) durante REG_DIAS dias e depois 404.
+Tendência: guarda-se por dia a mediana de cada zona e tipologia (historico-rendas.json, ao lado da pasta de saída) e
+compara-se com a de há cerca de 30 dias (entre 14 e 45), só com pelo menos TEND_MIN_N anúncios nos dois dias.
+Estudo para imprensa: /arrendar/precos/t1-por-distrito/ (quanto custa um T1 em cada distrito), com CSV por dia.
+
 Uso: python3 paginas.py anuncios.json pasta_de_saida
 """
-import datetime, html, json, os, re, shutil, sys, tempfile, time, unicodedata, urllib.request
+import collections, datetime, hashlib, html, json, os, re, shutil, sys, tempfile, time, unicodedata, urllib.request
 from urllib.parse import quote
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from ids import id_num
 
 SITE = 'https://duplicasa.pt'
 INDEXNOW = '386c1a2d4d17b112c59bb9e697abc415'      # chave pública do IndexNow (Bing, Yandex, Seznam…); o ficheiro com ela está na raiz do site
-MIN_CIDADE, MIN_TIPO, MAX_CARTOES = 5, 3, 30
+MIN_CIDADE, MIN_TIPO, MAX_CARTOES = 5, 3, 24
+MIN_AMOSTRA = 5       # anúncios com preço para uma página ir para o Google e para se mostrar média e mediana
+TEND_MIN_N, TEND_DIAS = 10, (14, 45)     # tendência: pelo menos 10 anúncios hoje e no dia de comparação, há 14 a 45 dias
+HIST_DIAS, REG_DIAS = 400, 180
+TIPOS_ZONA = ('quartos', 't0', 't1', 't2')     # tipologias com página própria em cada freguesia (com amostra)
 # Páginas por renda máxima («casas para alugar em gaia até 400 euros» 590/mês, «casas para alugar 250€» 480, KD 0): só com
 # pelo menos MIN_PRECO casas e quando a faixa não repete a cidade inteira
 TETOS, MIN_PRECO = (300, 400, 500, 600, 800, 1000), 5
@@ -64,12 +78,16 @@ def tip(a):
     return t
 
 
-NO = {'porto', 'funchal', 'barreiro', 'seixal', 'cartaxo', 'entroncamento', 'fundao', 'sabugal', 'bombarral', 'crato', 'montijo', 'peso da regua', 'redondo', 'sardoal', 'gavião', 'alandroal'}
-NA = {'amadora', 'maia', 'nazare', 'figueira da foz', 'guarda', 'lourinha', 'batalha', 'golega', 'mealhada', 'trofa', 'murtosa', 'sertã', 'chamusca', 'covilha', 'povoa de varzim', 'povoa de lanhoso', 'moita', 'ribeira grande', 'ribeira brava', 'calheta', 'horta', 'praia da vitoria', 'madalena', 'lagoa', 'nazaré', 'vidigueira', 'vila do porto'}
-
-
 def norm_t(t):
     return unicodedata.normalize('NFD', t or '').encode('ascii', 'ignore').decode().lower()
+
+
+# «no Porto», «na Amadora» (cidades e freguesias); o resto leva «em»
+NO = {norm_t(x) for x in ('porto', 'funchal', 'barreiro', 'seixal', 'cartaxo', 'entroncamento', 'fundão', 'sabugal', 'bombarral', 'crato', 'montijo',
+                          'peso da régua', 'redondo', 'sardoal', 'gavião', 'alandroal', 'areeiro', 'lumiar', 'beato', 'bonfim', 'parque das nações', 'restelo')}
+NA = {norm_t(x) for x in ('amadora', 'maia', 'nazaré', 'figueira da foz', 'guarda', 'lourinhã', 'batalha', 'golegã', 'mealhada', 'trofa', 'murtosa', 'sertã',
+                          'chamusca', 'covilhã', 'póvoa de varzim', 'póvoa de lanhoso', 'moita', 'ribeira grande', 'ribeira brava', 'calheta', 'horta',
+                          'praia da vitória', 'madalena', 'lagoa', 'vidigueira', 'vila do porto', 'ajuda', 'estrela', 'misericórdia', 'penha de frança', 'graça')}
 
 
 def nome_pesquisa(cidade):
@@ -90,10 +108,198 @@ def num(n):
     return f'{n:,.0f}'.replace(',', '.')
 
 
-def mediana(v, minimo=3):
-    """Mediana só com pelo menos 3 valores: com menos, um anúncio estranho faria de «preço típico»."""
+def mediana(v, minimo=MIN_AMOSTRA):
+    """Mediana (com número par de valores, a média dos dois do meio), só com pelo menos MIN_AMOSTRA valores:
+    com menos, um anúncio estranho faria de «preço típico»."""
     v = sorted(v)
-    return v[len(v) // 2] if len(v) >= minimo else None
+    n = len(v)
+    if n < max(minimo, 1):
+        return None
+    return v[n // 2] if n % 2 else (v[n // 2 - 1] + v[n // 2]) / 2
+
+
+def quantil(v, q):
+    """Quantil por interpolação linear (v já ordenado)."""
+    i = (len(v) - 1) * q
+    lo = int(i)
+    hi = min(lo + 1, len(v) - 1)
+    return v[lo] + (v[hi] - v[lo]) * (i - lo)
+
+
+def numeros(rendas):
+    """Números de um conjunto de rendas pedidas: n, mais baixa e, com amostra, média aparada (sem os 10% mais
+    baixos e os 10% mais altos, pelo menos 1 de cada lado, arredondada a 5 €), mediana e, com 10 ou mais, o intervalo
+    onde fica a metade do meio (1.º e 3.º quartis)."""
+    v = sorted(rendas)
+    n = len(v)
+    r = {'n': n, 'min': v[0] if v else None}
+    if n >= MIN_AMOSTRA:
+        k = max(1, n // 10)
+        meio = v[k:n - k]
+        r['media'] = int(round(sum(meio) / len(meio) / 5) * 5)
+        r['mediana'] = int(round(mediana(v)))
+        if n >= 10:
+            r['p25'], r['p75'] = int(round(quantil(v, .25))), int(round(quantil(v, .75)))
+    return r
+
+
+def conjunto(lista, tt=None):
+    """Números de uma zona (e tipologia): só anúncios com renda plausível; €/m² só de casas (sem quartos)."""
+    sel = [a for a in lista if plausivel(a) and (tt is None or tipo_ok(a, tt))]
+    r = numeros([a['renda'] for a in sel])
+    r['total'] = sum(1 for a in lista if tt is None or tipo_ok(a, tt))
+    r['m2'] = mediana([a['renda'] / a['area'] for a in sel if area_ok(a) and a.get('tipo') != 'Quarto'])
+    limite = (AGORA - datetime.timedelta(days=7)).isoformat()
+    r['novos7'] = sum(1 for a in lista if (tt is None or tipo_ok(a, tt)) and (a.get('data') or '')[:19] >= limite[:19])
+    return r
+
+
+def eur(v):
+    return f'{num(v)} €'
+
+
+def m2txt(v):
+    return (str(round(v, 1)).replace('.', ',') + ' €') if v else '—'
+
+
+# Histórico das medianas (para a tendência) e registo das páginas (para lastmod, noindex e 410)
+HIST = {'dias': {}}
+SNAP = {}
+REG = {'paginas': {}, 'zonas': {}}
+INDEXAVEIS = set()
+VOLATEIS = set()          # textos que mudam a cada volta (data e hora): não contam para saber se a página mudou
+AGORA = datetime.datetime.now(datetime.timezone.utc)
+
+
+def guardar(chave, st, completo=False):
+    """Guarda os números de hoje para a tendência de amanhã (só com amostra)."""
+    if st.get('mediana') is None:
+        return
+    v = [st['n'], st['mediana'], st['media']]
+    if completo:
+        v += [st.get('p25'), st.get('p75'), st.get('min')]
+    SNAP[chave] = v
+
+
+def inicio_hist():
+    dias = sorted(HIST.get('dias') or {})
+    return datetime.date.fromisoformat(dias[0]) if dias else AGORA.date()
+
+
+def tendencia(chave, st):
+    """Variação da mediana face a há cerca de 30 dias. Devolve {'curto', 'frase'} ou {'curto', 'nota'} se ainda não dá."""
+    if st.get('mediana') is None or st['n'] < TEND_MIN_N:
+        return {'curto': '—', 'nota': f'Tendência só com pelo menos {TEND_MIN_N} anúncios com preço.'}
+    hoje = AGORA.date()
+    melhor = None
+    for dia, snap in (HIST.get('dias') or {}).items():
+        try:
+            idade = (hoje - datetime.date.fromisoformat(dia)).days
+        except ValueError:
+            continue
+        v = snap.get(chave)
+        if TEND_DIAS[0] <= idade <= TEND_DIAS[1] and v and v[0] >= TEND_MIN_N and v[1]:
+            if melhor is None or abs(idade - 30) < abs(melhor[0] - 30):
+                melhor = (idade, dia, v[1])
+    if not melhor:
+        i = inicio_hist()
+        return {'curto': 'a recolher', 'nota': f'Guardamos o histórico desde {data_pt(i.isoformat())}; a tendência aparece a partir de '
+                                                f'{data_pt((i + datetime.timedelta(days=TEND_DIAS[0])).isoformat())}.'}
+    _, dia, ref = melhor
+    pct = (st['mediana'] - ref) / ref * 100
+    quando = data_pt(dia)
+    if abs(pct) < 2:
+        return {'curto': 'estável', 'frase': f'a mediana manteve-se estável (menos de 2% de diferença) desde {quando}'}
+    p = round(abs(pct))
+    return {'curto': f'{"+" if pct > 0 else "-"}{p}%', 'frase': f'a mediana {"subiu" if pct > 0 else "desceu"} {p}% desde {quando} ({eur(ref)})'}
+
+
+def palavras(t):
+    return len(re.sub(r'<[^>]+>', ' ', t).split())
+
+
+def resposta(frases, minimo=40, maximo=60):
+    """Junta frases pela ordem até ter pelo menos `minimo` palavras, sem passar de `maximo` (salta as que não cabem)."""
+    out = []
+    for f in frases:
+        if not f:
+            continue
+        if palavras(' '.join(out + [f])) <= maximo:
+            out.append(f)
+        if palavras(' '.join(out)) >= minimo:
+            break
+    return ' '.join(out)
+
+
+def artigo_tt(tt):
+    return {'Quarto': 'um quarto', 'T0': 'um T0', 'T1': 'um T1', 'T2': 'um T2', 'T3+': 'um T3 ou maior',
+            'Apartamento': 'um apartamento', 'Moradia': 'uma moradia'}.get(tt, 'uma casa')
+
+
+def plural_tt(tt):
+    return {'Quarto': 'quartos', 'T0': 'T0', 'T1': 'T1', 'T2': 'T2', 'T3+': 'T3 ou maiores', 'Apartamento': 'apartamentos', 'Moradia': 'moradias'}.get(tt, 'casas')
+
+
+def quando_html():
+    """«12 de novembro de 2026, 03:56» (hora de Lisboa), dentro de <time>."""
+    try:
+        from zoneinfo import ZoneInfo
+        local = AGORA.astimezone(ZoneInfo('Europe/Lisbon'))
+    except Exception:
+        local = AGORA
+    hora = f'{local.hour:02d}:{local.minute:02d}'
+    VOLATEIS.add(hora)
+    VOLATEIS.add(AGORA.strftime('%Y-%m-%dT%H:%M:%SZ'))
+    dia = data_pt(local.date().isoformat())
+    VOLATEIS.add(dia)
+    return f'<time datetime="{AGORA.strftime("%Y-%m-%dT%H:%M:%SZ")}">{dia}, {hora}</time>'
+
+
+FONTE_NUM = ('Rendas pedidas nos anúncios ativos na DupliCasa (vários sites de arrendamento, sem casas repetidas). '
+             'É o preço pedido, não o do contrato.')
+
+
+def caixa(titulo, st, tend, extra=None):
+    """Caixa «em números» de uma zona e tipologia."""
+    itens = [('Preço médio', eur(st['media']) if st.get('media') else '—'), ('Mediana', eur(st['mediana']) if st.get('mediana') else '—')]
+    if st.get('p25'):
+        itens.append(('Metade pede entre', f'{num(st["p25"])} e {eur(st["p75"])}'))
+    if st.get('min'):
+        itens.append(('O mais barato agora', eur(st['min'])))
+    itens.append(('Anúncios com preço', num(st['n'])))
+    if st.get('m2'):
+        itens.append(('Preço por m²', m2txt(st['m2'])))
+    itens.append(('Tendência (30 dias)', tend['curto']))
+    itens += extra or []
+    nota = tend.get('frase')
+    nota = (nota[0].upper() + nota[1:] + '. ') if nota else (tend.get('nota', '') + ' ')
+    return (f'<section class="num" aria-labelledby="num-t"><h2 id="num-t">{e(titulo)}</h2><dl>'
+            + ''.join(f'<div><dt>{e(k)}</dt><dd>{e(v)}</dd></div>' for k, v in itens) + '</dl>'
+            f'<p class="fonte">{e(nota)}{e(FONTE_NUM)} Atualizado a {quando_html()}. <a href="/arrendar/precos/#metodo">Como calculamos</a></p></section>')
+
+
+def mapa_distritos(anuncios):
+    """Distrito de cada cidade (o mais frequente nos anúncios que o trazem): há sites que não o dizem."""
+    c = {}
+    for a in anuncios:
+        if a.get('distrito') and a.get('cidade'):
+            c.setdefault(a['cidade'].strip(), collections.Counter())[a['distrito']] += 1
+    return {k: v.most_common(1)[0][0] for k, v in c.items()}
+
+
+DIST = {}
+
+
+def distrito_de(a):
+    return a.get('distrito') or DIST.get((a.get('cidade') or '').strip(), '')
+
+
+STOP_ZONA = {'e', 'de', 'do', 'da', 'dos', 'das', 'sao', 'santo', 'santa', 's'}
+
+
+def chave_zona(z):
+    """A mesma freguesia escrita de maneiras diferentes («Cedofeita, Ildefonso, Sé…» e «Cedofeita, Santo Ildefonso, Sé…») dá a mesma chave."""
+    return ' '.join(sorted({t for t in re.findall(r'[a-z0-9]+', norm_t(z)) if t not in STOP_ZONA}))
 
 
 def plausivel(a):
@@ -156,7 +362,7 @@ UI = {
                      'Em breve, com o pagamento seguro da DupliCasa, a entrada só vai chegar ao senhorio quando receberes as chaves.'],
            'burla_links': '<a href="/arrendar/guias/como-evitar-burlas-no-arrendamento/">Guia: como evitar burlas no arrendamento</a> · <a href="/arrendar/guias/">Todos os guias</a>',
            'rodape': 'DupliCasa · casas e quartos para alugar em Portugal, num só lugar. Anúncios atualizados a {d}.',
-           'rodape_links': '<a href="/arrendar/">Todas as cidades</a><a href="/arrendar/precos/">Preço das rendas</a><a href="/arrendar/guias/">Guias</a><a href="/">Início</a><a href="/#senhorios">Para senhorios</a><a href="/#termos">Termos e privacidade</a><a href="/en/rent/" hreflang="en">English</a><a href="/es/alquiler/" hreflang="es">Español</a><a href="/fr/location/" hreflang="fr">Français</a>'},
+           'rodape_links': '<a href="/arrendar/">Todas as cidades</a><a href="/arrendar/precos/">Preço das rendas</a><a href="/arrendar/precos/t1-por-distrito/">T1 por distrito</a><a href="/arrendar/guias/">Guias</a><a href="/">Início</a><a href="/#senhorios">Para senhorios</a><a href="/#termos">Termos e privacidade</a><a href="/en/rent/" hreflang="en">English</a><a href="/es/alquiler/" hreflang="es">Español</a><a href="/fr/location/" hreflang="fr">Français</a>'},
     'en': {'html': 'en', 'og': 'en_GB', 'mes': '/month', 'consulta': 'Price on request', 'abaixo': '{d}% below typical', 'alt': '{t} for rent in {l}',
            'tipos': {'Quarto': 'Room', 'Apartamento': 'Apartment', 'Moradia': 'House', 'T0': 'Studio', 'T1': '1-bed (T1)', 'T2': '2-bed (T2)', 'T3+': '3+ bed'},
            'casa': 'Home', 'aqui': 'You are here', 'faq': 'Frequently asked questions', 'ver': 'See homes', 'botao': 'Search with filters and alerts',
@@ -205,56 +411,46 @@ def cartao(a, lang='pt'):
     return f'<a class="c" href="/#casa-{i}">{selo}{img}<div class="cc"><p class="p">{preco}</p><p class="l">{e(" · ".join(partes))}</p></div></a>'
 
 
-def item_ld(a, lang='pt'):
-    """Cada casa como Accommodation (sem endereço da casa: só a localidade), com o preço como oferta."""
-    u = UI[lang]
-    t = tip(a) or a.get('tipo') or 'Casa'
-    t = u['tipos'].get(t, u['casa'] if t == 'Casa' else t)
-    d = {'@type': 'Accommodation', 'name': u['alt'].format(t=t, l=a.get('bairro') or a.get('cidade') or '').strip(),
-         'address': {'@type': 'PostalAddress', 'addressLocality': a.get('cidade') or '', 'addressRegion': a.get('distrito') or '', 'addressCountry': 'PT'}}
-    if area_ok(a):
-        d['floorSize'] = {'@type': 'QuantitativeValue', 'value': a['area'], 'unitCode': 'MTK'}
-    if (a.get('fotos') or [''])[0]:
-        d['image'] = a['fotos'][0]
-    if a.get('renda'):
-        d['offers'] = {'@type': 'Offer', 'price': a['renda'], 'priceCurrency': 'EUR', 'businessFunction': 'http://purl.org/goodrelations/v1#LeaseOut',
-                       'priceSpecification': {'@type': 'UnitPriceSpecification', 'price': a['renda'], 'priceCurrency': 'EUR', 'unitCode': 'MON'}}
-    return d
-
-
-def pagina(caminho, titulo, descricao, h1, intro, migalhas, cartoes, links, ver_todas, atualizado, extra='', faq=None, tabela='', artigo=None, botao=None, lang='pt'):
+def pagina(caminho, titulo, descricao, h1, intro, migalhas, cartoes, links, ver_todas, atualizado, extra='', faq=None, tabela='', artigo=None, botao=None,
+           lang='pt', numeros_html='', titulo_cartoes='', indexar=True, dados=None, canonico=None, refrescar=None):
+    """Uma página estática. `intro` é a resposta direta (40 a 60 palavras) nas páginas que respondem a uma pergunta.
+    Sem `indexar`, leva noindex e fica fora do sitemap. `dados` acrescenta um Dataset (schema.org)."""
     u = UI[lang]
     botao = botao or u['botao']
     url = SITE + caminho
+    if indexar and not refrescar:
+        INDEXAVEIS.add(caminho)
     if len(titulo) > 65 and titulo.endswith(' | DupliCasa'):     # o Google corta títulos compridos: a marca sai primeiro
         titulo = titulo[:-len(' | DupliCasa')]
+    org = {'@type': 'Organization', '@id': SITE + '/#org', 'name': 'DupliCasa', 'url': SITE + '/', 'logo': SITE + '/marca/duaschaves-icone.png'}
     lds = [{'@context': 'https://schema.org', '@type': 'BreadcrumbList', 'itemListElement': [
         {'@type': 'ListItem', 'position': n + 1, 'name': nome, 'item': SITE + c} for n, (nome, c) in enumerate(migalhas)]}]
-    if cartoes:
-        lds.append({'@context': 'https://schema.org', '@type': 'ItemList', 'name': h1, 'numberOfItems': len(cartoes),
-                    'itemListElement': [{'@type': 'ListItem', 'position': n + 1, 'item': item_ld(a, lang)} for n, a in enumerate(cartoes)]})
-    if faq:
-        lds.append({'@context': 'https://schema.org', '@type': 'FAQPage', 'mainEntity': [
-            {'@type': 'Question', 'name': q, 'acceptedAnswer': {'@type': 'Answer', 'text': re.sub(r'<[^>]+>', '', r)}} for q, r in faq]})
+    # Sem ItemList dos anúncios (são de outros sites e não têm endereço próprio aqui) e sem FAQPage (o Google já não
+    # mostra a caixa): as perguntas ficam só como texto, onde ajudam quem lê.
     if artigo:
         lds.append({'@context': 'https://schema.org', '@type': 'Article', 'headline': h1, 'description': descricao, 'inLanguage': 'pt-PT',
-                    'datePublished': artigo, 'dateModified': artigo, 'mainEntityOfPage': url, 'image': SITE + '/marca/duaschaves-og.png',
-                    'author': {'@type': 'Organization', 'name': 'DupliCasa', 'url': SITE + '/'},
-                    'publisher': {'@type': 'Organization', 'name': 'DupliCasa', 'logo': {'@type': 'ImageObject', 'url': SITE + '/marca/duaschaves-icone.png'}}})
-    lds.append({'@context': 'https://schema.org', '@type': 'WebPage', 'name': titulo, 'url': url, 'inLanguage': u['html'],
-                'description': descricao, 'isPartOf': {'@type': 'WebSite', 'name': 'DupliCasa', 'url': SITE + '/'},
-                'publisher': {'@type': 'Organization', 'name': 'DupliCasa', 'url': SITE + '/', 'logo': SITE + '/marca/duaschaves-icone.png'}})
+                    'datePublished': artigo, 'dateModified': artigo if isinstance(artigo, str) and len(artigo) == 10 and not dados else '__MOD__',
+                    'mainEntityOfPage': url, 'image': SITE + '/marca/duaschaves-og.png', 'author': org, 'publisher': org})
+    if dados:
+        lds.append(dict({'@context': 'https://schema.org', '@type': 'Dataset', 'url': url, 'inLanguage': u['html'], 'isAccessibleForFree': True,
+                         'license': 'https://creativecommons.org/licenses/by/4.0/', 'creator': org, 'publisher': org,
+                         'dateModified': '__MOD__', 'spatialCoverage': {'@type': 'Place', 'name': 'Portugal'}}, **dados))
+    lds.append({'@context': 'https://schema.org', '@type': 'WebPage', '@id': url + '#pagina', 'name': titulo, 'url': url, 'inLanguage': u['html'],
+                'description': descricao, 'dateModified': '__MOD__',
+                'isPartOf': {'@type': 'WebSite', '@id': SITE + '/#site', 'name': 'DupliCasa', 'url': SITE + '/'}, 'publisher': org})
     nav = ' <span>›</span> '.join(f'<a href="{c}">{e(n)}</a>' if k < len(migalhas) - 1 else f'<span aria-current="page">{e(n)}</span>'
                                   for k, (n, c) in enumerate(migalhas))
     faq_html = (f'<section class="cx"><h2 style="margin-top:0">{u["faq"]}</h2>' + ''.join(
         f'<details><summary>{e(q)}</summary><p>{r}</p></details>' for q, r in faq) + '</section>') if faq else ''
-    grelha = f'<div class="g">{"".join(cartao(a, lang) for a in cartoes)}</div>' if cartoes else ''
+    grelha = ((f'<h2>{e(titulo_cartoes)}</h2>' if titulo_cartoes else '') + f'<div class="g">{"".join(cartao(a, lang) for a in cartoes)}</div>') if cartoes else ''
     burla = ''.join(f'<li>{e(x)}</li>' for x in u['burla'])
     ld_html = ''.join('<script type="application/ld+json">' + json.dumps(x, ensure_ascii=False).replace('</', '<\\/') + '</script>' for x in lds)
+    robots = 'index, follow, max-image-preview:large, max-snippet:-1' if indexar and not refrescar else 'noindex, follow'
+    meta_refrescar = f'<meta http-equiv="refresh" content="0; url={refrescar}">' if refrescar else ''
     return f'''<!DOCTYPE html>
 <html lang="{u['html']}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>{e(titulo)}</title><meta name="description" content="{e(descricao)}"><link rel="canonical" href="{url}"><!--alternos-->
-<meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1">
+<title>{e(titulo)}</title><meta name="description" content="{e(descricao)}"><link rel="canonical" href="{SITE + (canonico or caminho)}">{meta_refrescar}<!--alternos-->
+<meta name="robots" content="{robots}">
 <meta name="theme-color" content="#F3F5F4"><meta name="color-scheme" content="light">
 <meta property="og:type" content="website"><meta property="og:site_name" content="DupliCasa"><meta property="og:locale" content="{u['og']}">
 <meta property="og:title" content="{e(titulo)}"><meta property="og:description" content="{e(descricao)}"><meta property="og:url" content="{url}">
@@ -263,7 +459,7 @@ def pagina(caminho, titulo, descricao, h1, intro, migalhas, cartoes, links, ver_
 <link rel="icon" href="/marca/duaschaves-simbolo.svg" type="image/svg+xml"><link rel="apple-touch-icon" href="/marca/duaschaves-icone-180.png">
 {ld_html}
 <style>
-:root{{--f:#F3F5F4;--t:#0F1A17;--t2:#3E4A46;--t3:#55625E;--b:#DDE3E0;--v:#0B6E4F}}
+:root{{--f:#F3F5F4;--t:#0F1A17;--t2:#3E4A46;--t3:#55625E;--b:#DDE3E0;--v:#0B6E4F;--vc:#E3F1EA}}
 *{{box-sizing:border-box}}body{{margin:0;font-family:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;background:var(--f);color:var(--t);font-size:16px;line-height:1.5}}
 a{{color:inherit}}.w{{max-width:1120px;margin:0 auto;padding:0 20px}}
 header{{border-bottom:1px solid var(--b);background:var(--f)}}header .w{{display:flex;align-items:center;justify-content:space-between;height:64px}}
@@ -271,17 +467,22 @@ header{{border-bottom:1px solid var(--b);background:var(--f)}}header .w{{display
 .bt{{display:inline-flex;align-items:center;justify-content:center;min-height:48px;padding:0 20px;border-radius:14px;background:var(--v);color:#fff;font-weight:700;text-decoration:none}}
 .mig{{font-size:14px;color:var(--t3);margin:20px 0 8px}}.mig a{{color:var(--t3)}}.mig span{{margin:0 2px}}
 h1{{font-size:34px;line-height:1.1;letter-spacing:-.03em;margin:0 0 12px}}h2{{font-size:22px;margin:40px 0 12px;letter-spacing:-.01em}}
-.intro{{font-size:18px;color:var(--t2);max-width:760px;margin:0 0 20px}}
+.intro{{font-size:18px;color:var(--t2);max-width:760px;margin:0 0 20px}}.intro strong{{color:var(--t)}}
 .g{{display:grid;gap:16px;grid-template-columns:repeat(auto-fill,minmax(260px,1fr))}}
 .c{{position:relative;display:block;background:#fff;border-radius:18px;overflow:hidden;text-decoration:none}}.c .neg{{position:absolute;left:10px;top:10px;padding:4px 10px;border-radius:999px;background:#F2A33A;color:#2A1A00;font-size:12.5px;font-weight:800}}.c img,.c .sem{{display:block;width:100%;aspect-ratio:16/10;object-fit:cover;background:#D6DDDA}}
 .cc{{padding:14px 16px}}.p{{margin:0;font-weight:800;font-size:20px}}.p small{{font-weight:600;color:var(--t3);font-size:14px}}.l{{margin:4px 0 0;color:var(--t2);font-size:15px}}
-.ch{{display:flex;flex-wrap:wrap;gap:8px;padding:0;margin:0;list-style:none}}.ch a{{display:inline-flex;min-height:44px;align-items:center;padding:0 16px;border:1px solid #C9D3CF;border-radius:999px;background:#fff;text-decoration:none;font-weight:600}}
+.ch{{display:flex;flex-wrap:wrap;gap:8px;padding:0;margin:0;list-style:none}}.ch a{{display:inline-flex;min-height:44px;align-items:center;padding:0 16px;border:1px solid #C9D3CF;border-radius:999px;background:#fff;text-decoration:none;font-weight:600}}.ch a span{{font-weight:500;color:var(--t3);margin-left:6px;font-variant-numeric:tabular-nums}}
 .cx{{background:#fff;border-radius:18px;padding:20px;margin-top:32px}}.cx p,.cx li{{color:var(--t2)}}
+.num{{background:#fff;border-radius:18px;padding:20px;margin:28px 0 8px;border:1px solid var(--b)}}.num h2{{margin:0 0 14px;font-size:20px}}
+.num dl{{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px 20px;margin:0}}.num dl div{{border-top:1px solid var(--b);padding-top:10px}}
+.num dt{{font-size:14px;color:var(--t3)}}.num dd{{margin:2px 0 0;font-size:22px;font-weight:800;letter-spacing:-.01em;font-variant-numeric:tabular-nums}}
+.fonte{{font-size:14px;color:var(--t3);margin:16px 0 0;max-width:820px}}.fonte a{{color:var(--v)}}
 details{{border-top:1px solid var(--b);padding:12px 0}}details:first-of-type{{border-top:0}}summary{{font-weight:700;cursor:pointer;min-height:24px}}details p{{margin:8px 0 0}}
-.tab{{width:100%;border-collapse:collapse;background:#fff;border-radius:18px;overflow:hidden;font-size:15px}}.tab th,.tab td{{text-align:left;padding:10px 12px;border-bottom:1px solid var(--b)}}.tab th{{color:var(--t3);font-weight:700}}.tab td.n,.tab th.n{{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}}.rolar .tab{{min-width:620px}}
+.tab{{width:100%;border-collapse:collapse;background:#fff;border-radius:18px;overflow:hidden;font-size:15px}}.tab th,.tab td{{text-align:left;padding:10px 12px;border-bottom:1px solid var(--b)}}.tab th{{color:var(--t3);font-weight:700}}.tab td.n,.tab th.n{{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}}.tab td a{{color:var(--v);font-weight:600}}.rolar .tab{{min-width:620px}}.tab tr.peq td{{color:var(--t3)}}
 .rolar{{overflow-x:auto;border-radius:18px}}
 .guia{{max-width:760px}}.guia h2{{margin-top:36px}}.guia p,.guia li{{font-size:17px;line-height:1.65;color:var(--t2)}}.guia li{{margin-bottom:6px}}.guia strong{{color:var(--t)}}.nota{{font-size:14px;color:var(--t3);margin-top:28px}}
 footer{{margin-top:56px;border-top:1px solid var(--b);padding:28px 0 40px;font-size:14px;color:var(--t3)}}footer a{{margin-right:14px;white-space:nowrap;display:inline-block;line-height:2}}
+@media(min-width:720px){{.num dl{{grid-template-columns:repeat(4,minmax(0,1fr))}}}}
 @media(min-width:900px){{h1{{font-size:46px}}}}
 </style><script defer src="/_e.js" data-site="duplicasa"></script></head><body>
 <header><div class="w"><a class="logo" href="/" aria-label="DupliCasa, início">{LOGO}</a><a class="bt" href="{ver_todas}">{u['ver']}</a></div></header>
@@ -290,6 +491,7 @@ footer{{margin-top:56px;border-top:1px solid var(--b);padding:28px 0 40px;font-s
 <h1>{e(h1)}</h1>
 <p class="intro">{intro}</p>
 <p><a class="bt" href="{ver_todas}">{botao}</a></p>
+{numeros_html}
 {grelha}
 {tabela}
 {links}
@@ -322,232 +524,715 @@ def palavra_alugar(tt):
     return 'alugar' if tt in (None, 'Quarto', 'Apartamento') else 'arrendar'
 
 
+NOME_LINHA = {'Quarto': 'Quarto', 'T0': 'T0 (estúdio)', 'T1': 'T1', 'T2': 'T2', 'T3+': 'T3 ou mais', 'Apartamento': 'Apartamento', 'Moradia': 'Moradia'}
+TT_LINHAS = ('Quarto', 'T0', 'T1', 'T2', 'T3+')
+SLUG_TT = {tt: ts for ts, _, tt in TIPOS}
+
+
+def cap(t):
+    return t[:1].upper() + t[1:]
+
+
+def de(c):
+    """«de Lisboa», «do Porto», «da Amadora» (a partir de em())."""
+    x = em(c)
+    return {'no ': 'do ', 'na ': 'da '}.get(x[:3], 'de ') + x[3:]
+
+
+def chips(titulo, itens):
+    """Lista de ligações em pastilhas. itens: (href, texto, número opcional)."""
+    if not itens:
+        return ''
+    return f'<h2>{e(titulo)}</h2><ul class="ch">' + ''.join(
+        f'<li><a href="{h}">{e(t)}{f"<span>{e(x)}</span>" if x else ""}</a></li>' for h, t, x in itens) + '</ul>'
+
+
+def linha_fonte(extra=''):
+    return (f'<p class="fonte">{e(FONTE_NUM)} Preço médio sem os 10% de rendas mais altas e mais baixas; sem número quando há menos de '
+            f'{MIN_AMOSTRA} anúncios. {extra}Atualizado a {quando_html()}. <a href="/arrendar/precos/#metodo">Como calculamos</a></p>')
+
+
+def tabela_tipologias(titulo, linhas, nome_cmp=None):
+    """linhas: (tt, números, tendência, ligação, números para comparar)."""
+    if not linhas:
+        return ''
+    cab = ('<th scope="col">Tipologia</th><th scope="col" class="n">Anúncios</th><th scope="col" class="n">Preço médio</th><th scope="col" class="n">Mediana</th>'
+           + (f'<th scope="col" class="n">Mediana {e(em(nome_cmp))}</th>' if nome_cmp else '') + '<th scope="col" class="n">Tendência</th>')
+    corpo = ''
+    for tt, st, tend, href, cmp in linhas:
+        nome = f'<a href="{href}">{e(NOME_LINHA[tt])}</a>' if href else e(NOME_LINHA[tt])
+        corpo += (f'<tr{"" if st.get("media") else " class=peq"}><th scope="row">{nome}</th><td class="n">{num(st["n"])}</td>'
+                  f'<td class="n">{eur(st["media"]) if st.get("media") else "—"}</td><td class="n">{eur(st["mediana"]) if st.get("mediana") else "—"}</td>'
+                  + (f'<td class="n">{eur(cmp["mediana"]) if cmp and cmp.get("mediana") else "—"}</td>' if nome_cmp else '')
+                  + f'<td class="n">{e(tend["curto"]) if st.get("media") else "—"}</td></tr>')
+    return f'<h2>{e(titulo)}</h2><div class="rolar"><table class="tab"><thead><tr>{cab}</tr></thead><tbody>{corpo}</tbody></table></div>'
+
+
+def tabela_zonas(titulo, linhas, colunas):
+    """linhas: (nome, ligação, n, {coluna: números}); colunas: [(rótulo, chave, campo)]."""
+    if not linhas:
+        return ''
+    cab = '<th scope="col">Freguesia</th><th scope="col" class="n">Anúncios</th>' + ''.join(f'<th scope="col" class="n">{e(r)}</th>' for r, _, _ in colunas)
+    corpo = ''.join(f'<tr><th scope="row"><a href="{h}">{e(z)}</a></th><td class="n">{num(n)}</td>' + ''.join(
+        f'<td class="n">{eur(d[k][c]) if d.get(k) and d[k].get(c) else "—"}</td>' for _, k, c in colunas) + '</tr>' for z, h, n, d in linhas)
+    return f'<h2>{e(titulo)}</h2><div class="rolar"><table class="tab"><thead><tr>{cab}</tr></thead><tbody>{corpo}</tbody></table></div>'
+
+
+def ordenar_cartoes(lista, tt=None):
+    """Para a grelha: com fotografia, das mais baratas para as mais caras (as sem preço no fim)."""
+    sel = [a for a in lista if a.get('fotos') and (tt is None or tipo_ok(a, tt))]
+    return sorted(sel, key=lambda a: (not plausivel(a), a.get('renda') or 10 ** 9))
+
+
+def frase_principal(st, tt, onde, hoje, pal='arrendar'):
+    return (f'{cap(artigo_tt(tt))} para {pal} {onde} custa em média <strong>{eur(st["media"])}</strong> por mês (mediana de {eur(st["mediana"])}), '
+            f'segundo {num(st["n"])} anúncios ativos a {hoje}.')
+
+
+def frase_outras(sts, ordem):
+    o = [t for t in ordem if sts.get(t, {}).get('media')][:2]
+    if not o:
+        return ''
+    t = f'{cap(artigo_tt(o[0]))} custa em média {eur(sts[o[0]]["media"])}'
+    if len(o) > 1:
+        t += f' e {artigo_tt(o[1])} {eur(sts[o[1]]["media"])}'
+    return t + '.'
+
+
+def titulo_de(*bases):
+    """O 1.º título que cabe: com a marca até 65 caracteres, sem ela até 60; se nenhum couber, o mais curto."""
+    bases = [b for b in bases if b]
+    for b in bases:
+        if len(b) + 12 <= 65:
+            return b + ' | DupliCasa'
+        if len(b) <= 60:
+            return b
+    return min(bases, key=len)
+
+
+def descricao_de(*frases, maximo=155):
+    """Junta frases até 155 caracteres (salta as que não cabem)."""
+    out = ''
+    for f in frases:
+        if f and len((out + ' ' + f).strip()) <= maximo:
+            out = (out + ' ' + f).strip()
+    return out
+
+
+def curto_z(nz):
+    """Nome curto de uma união de freguesias, para títulos («Almada, Cova da Piedade, Pragal e Cacilhas» -> «Almada»)."""
+    return re.split(r',| e ', nz)[0].strip() if len(nz) > 24 else nz
+
+
+def frases_extra(lista, tt=None):
+    """Frases de apoio para a resposta direta (entram só se faltar texto): composição, €/m², novos, particulares, intervalo."""
+    sel = [a for a in lista if tt is None or tipo_ok(a, tt)]
+    pl = sorted(a['renda'] for a in sel if plausivel(a))
+    out = []
+    if tt is None:
+        comp = []
+        for t in TT_LINHAS:
+            k = sum(1 for a in sel if tipo_ok(a, t))
+            if k:
+                comp.append(f'{num(k)} ' + ({'Quarto': 'quarto', 'T3+': 'T3 ou maior'}.get(t, t) if k == 1 else plural_tt(t)))
+        if len(comp) > 1:
+            out.append('Entre os anúncios há ' + ', '.join(comp[:-1]) + ' e ' + comp[-1] + '.')
+    m2 = mediana([a['renda'] / a['area'] for a in sel if plausivel(a) and area_ok(a) and a.get('tipo') != 'Quarto'])
+    if m2 and tt != 'Quarto':
+        out.append(f'Por m², a mediana é de {m2txt(m2)} por mês.')
+    limite = (AGORA - datetime.timedelta(days=7)).isoformat()[:19]
+    k = sum(1 for a in sel if (a.get('data') or '')[:19] >= limite)
+    if k:
+        out.append(f'{num(k)} {"anúncio é" if k == 1 else "anúncios são"} dos últimos 7 dias.')
+    k = sum(1 for a in sel if a.get('particular'))
+    if k:
+        out.append(f'{num(k)} {"é de um particular" if k == 1 else "são de particulares"}, sem agência.')
+    if len(pl) >= 2:
+        out.append(f'As rendas pedidas vão de {eur(pl[0])} a {eur(pl[-1])} por mês.')
+    return out
+
+
+def comparar(v, ref):
+    """«12% abaixo» / «8% acima» / None se a diferença for pequena."""
+    if not v or not ref:
+        return None
+    p = (v - ref) / ref * 100
+    if abs(p) < 3:
+        return 'ao nível'
+    return f'{round(abs(p))}% {"abaixo" if p < 0 else "acima"}'
+
+
 def gerar(anuncios, atualizado):
+    global AGORA
     hoje = data_pt(atualizado)
     try:
         agora = datetime.datetime.fromisoformat((atualizado or '').replace('Z', '+00:00'))
     except ValueError:
         agora = datetime.datetime.now(datetime.timezone.utc)
+    AGORA = agora
+    VOLATEIS.add(hoje)
+    SNAP.clear()
+    INDEXAVEIS.clear()
+    DIST.clear()
+    DIST.update(mapa_distritos(anuncios))
     calc_normal(anuncios, agora)
+    conhecidas = REG['paginas']
+    paginas, mudou = {}, {}       # mudou: endereço antigo (zona escrita de outra maneira) -> endereço novo
     por_cidade = {}
     for a in anuncios:
         c = (a.get('cidade') or '').strip()
         if c:
             por_cidade.setdefault(c, []).append(a)
-    cidades = sorted([(c, l) for c, l in por_cidade.items() if len(l) >= MIN_CIDADE], key=lambda x: -len(x[1]))
-    paginas = {}
-    resumo = []      # para a página de preços e para o llms.txt
-    for cidade, lista in cidades:
+
+    def com_amostra(lista, minimo=MIN_CIDADE):
+        """Vai para o Google: pelo menos 5 anúncios com preço e pelo menos uma tipologia com 5 (para haver média e mediana nossas)."""
+        return (len(lista) >= minimo and sum(1 for a in lista if plausivel(a)) >= MIN_AMOSTRA
+                and any(sum(1 for a in lista if plausivel(a) and tipo_ok(a, tt)) >= MIN_AMOSTRA for tt in TT_LINHAS))
+
+    cidades = sorted([(c, l) for c, l in por_cidade.items() if com_amostra(l)], key=lambda x: -len(x[1]))
+    nomes_idx = {c for c, _ in cidades}
+    slugs_conhecidos = {p.split('/')[2] for p in conhecidas if p.startswith('/arrendar/') and p.count('/') >= 3}
+    # cidades que já tiveram página e agora têm pouco: a página fica (sem índice) enquanto houver casas
+    restantes = [(c, l) for c, l in por_cidade.items() if c not in nomes_idx and slug(c) in slugs_conhecidos]
+    resumo = []      # para a página de preços, as outras línguas e o llms.txt
+    for cidade, lista in cidades + restantes:
         s = slug(cidade)
-        boas = sorted([a for a in lista if plausivel(a) and a.get('fotos')], key=lambda a: a['renda'])
-        meds = {tt: mediana([a['renda'] for a in lista if plausivel(a) and tipo_ok(a, tt)]) for _, _, tt in TIPOS}
-        m2 = mediana([a['renda'] / a['area'] for a in lista if plausivel(a) and area_ok(a) and a.get('tipo') != 'Quarto'])
-        n_part = sum(1 for a in lista if a.get('particular'))
-        tipos_pag = [(ts, tn, tt) for ts, tn, tt in TIPOS if sum(1 for a in lista if tipo_ok(a, tt)) >= MIN_TIPO]
-        resumo.append({'cidade': cidade, 'slug': s, 'n': len(lista), 'quarto': meds.get('Quarto'), 'T0': meds.get('T0'), 'T1': meds.get('T1'),
-                       'T2': meds.get('T2'), 'm2': m2, 'min': boas[0]['renda'] if boas else None, 'distrito': lista[0].get('distrito') or ''})
-        frases = [f'Há {num(len(lista))} casas, apartamentos e quartos para alugar {e(em(cidade))} na DupliCasa, juntos de vários sites e atualizados a {hoje}.']
-        if meds.get('T1'):
-            frases.append(f'Um T1 pede, a meio da tabela, {num(meds["T1"])} € por mês.')
-        if meds.get('Quarto'):
-            frases.append(f'Um quarto anda pelos {num(meds["Quarto"])} €.')
-        if boas:
-            frases.append(f'A renda mais baixa agora é de {num(boas[0]["renda"])} €.')
+        idx_c = cidade in nomes_idx
+        base = f'/arrendar/{s}/'
         plaus = sorted([a for a in lista if plausivel(a)], key=lambda a: a['renda'])
+        sts = {tt: conjunto(lista, tt) for _, _, tt in TIPOS}
+        st_all = conjunto(lista)
+        if idx_c:
+            for tt, st in sts.items():
+                guardar(f'c:{s}|{tt}', st)
+        tends = {tt: tendencia(f'c:{s}|{tt}', st) for tt, st in sts.items()}
+        meds = {tt: st.get('mediana') for tt, st in sts.items()}
+        n_part = sum(1 for a in lista if a.get('particular'))
+        minimo = plaus[0]['renda'] if plaus else None
+        tipos_idx = [(ts, tn, tt) for ts, tn, tt in TIPOS if idx_c and sts[tt]['n'] >= MIN_AMOSTRA]
+        tipos_fracos = [(ts, tn, tt) for ts, tn, tt in TIPOS if (ts, tn, tt) not in tipos_idx and sts[tt]['total'] and f'{base}{ts}/' in conhecidas]
+        if idx_c:
+            resumo.append({'cidade': cidade, 'slug': s, 'n': len(lista), 'quarto': meds.get('Quarto'), 'T0': meds.get('T0'), 'T1': meds.get('T1'),
+                           'T2': meds.get('T2'), 't1_media': sts['T1'].get('media'), 'n_t1': sts['T1']['n'], 'm2': st_all['m2'], 'min': minimo,
+                           'distrito': DIST.get(cidade, '')})
+        # ---------- freguesias (zonas) da cidade ----------
+        grupos = {}
+        for a in lista:
+            z = (a.get('bairro') or '').strip()
+            if z and norm_t(z) != norm_t(cidade) and slug(z):
+                grupos.setdefault(chave_zona(z), []).append(a)
+        zonas = []
+        for k, lz in grupos.items():
+            variantes = collections.Counter(a['bairro'].strip() for a in lz)
+            nome = variantes.most_common(1)[0][0]
+            rk = f'{s}|{k}'
+            zs = REG['zonas'].get(rk)
+            if not zs:
+                ja = [v for v, _ in variantes.most_common() if f'{base}zona/{slug(v)}/' in conhecidas]
+                zs = slug(ja[0] if ja else nome)
+            idx_z = idx_c and com_amostra(lz, MIN_ZONA)
+            zst = {tt: conjunto(lz, tt) for tt in TT_LINHAS}
+            if idx_z:
+                for tt, st in zst.items():
+                    guardar(f'z:{s}/{zs}|{tt}', st)
+            zonas.append({'zs': zs, 'nome': nome, 'lista': lz, 'idx': idx_z, 'st': zst, 'rk': rk,
+                          'outros': {slug(v) for v in variantes} - {zs}})
+        zonas.sort(key=lambda z: -len(z['lista']))
+        zonas_idx = [z for z in zonas if z['idx']]
+        for z in zonas_idx:
+            REG['zonas'][z['rk']] = z['zs']
+        # ---------- página da cidade ----------
+        ordem = ['T1', 'T2', 'T0', 'Quarto', 'T3+']
+        p = next((t for t in ordem if sts[t].get('media')), None)
+        onde = e(em(cidade))
+        frases = []
+        if p:
+            frases.append(frase_principal(sts[p], p, onde, hoje))
+            frases.append(frase_outras(sts, [t for t in ordem if t != p]))
+            if tends[p].get('frase'):
+                frases.append(f'Nos {plural_tt(p)}, {tends[p]["frase"]}.')
+        frases.append(f'Há {num(len(lista))} casas e quartos para alugar {onde} na DupliCasa' + (f'; a renda mais baixa agora é de {eur(minimo)}.' if minimo else '.'))
+        intro = resposta(frases + frases_extra(lista))
+        linhas = [(tt, sts[tt], tends[tt], f'{base}{SLUG_TT[tt]}/' if any(x[2] == tt for x in tipos_idx) else None, None)
+                  for tt in TT_LINHAS if sts[tt]['n']]
+        extra_fonte = (f'Preço por m² (apartamentos e moradias): {m2txt(st_all["m2"])}. ' if st_all['m2'] else '') + \
+                      (f'{num(st_all["novos7"])} anúncios novos nos últimos 7 dias. ' if st_all['novos7'] else '')
+        bloco_num = (tabela_tipologias(f'Quanto custa arrendar {em(cidade)}', linhas) + linha_fonte(extra_fonte)) if linhas else ''
+        lz_tab = [(z['nome'], f'{base}zona/{z["zs"]}/', len(z['lista']), z['st']) for z in zonas_idx[:40]]
+        links = tabela_zonas(f'Rendas por freguesia {em(cidade)}', lz_tab, [('Quarto', 'Quarto', 'mediana'), ('T1', 'T1', 'mediana'), ('T2', 'T2', 'mediana')])
+        if lz_tab:
+            links += '<p class="fonte">Mediana das rendas pedidas em cada freguesia; «—» quando há menos de 5 anúncios dessa tipologia.</p>'
+        links += chips('Por tipo de casa', [(f'{base}{ts}/', f'{nome_tipo(tt, tn)} {em(cidade)}', eur(sts[tt]['media']) if sts[tt].get('media') else '') for ts, tn, tt in tipos_idx])
         precos_pag = []
         for teto in TETOS:
             n_t = sum(1 for a in plaus if a['renda'] <= teto)
-            if n_t >= MIN_PRECO and n_t <= 0.85 * len(plaus) and any(a['renda'] <= teto and a.get('fotos') for a in plaus):
-                precos_pag.append((teto, n_t))
-        zonas = {}
-        for a in lista:
-            z = (a.get('bairro') or '').strip()
-            if z and norm_t(z) != norm_t(cidade):
-                zonas.setdefault(z, []).append(a)
-        zonas_pag = sorted([(z, l) for z, l in zonas.items() if len(l) >= MIN_ZONA and slug(z)], key=lambda x: -len(x[1]))
-        links = ('<h2>Por tipo de casa</h2><ul class="ch">' + ''.join(
-            f'<li><a href="/arrendar/{s}/{ts}/">{e(nome_tipo(tt, tn))} {e(em(cidade))}</a></li>' for ts, tn, tt in tipos_pag) + '</ul>') if tipos_pag else ''
-        if precos_pag:
-            links += '<h2>Por renda máxima</h2><ul class="ch">' + ''.join(f'<li><a href="/arrendar/{s}/ate-{t}/">Até {num(t)} € ({n})</a></li>' for t, n in precos_pag) + '</ul>'
-        if zonas_pag:
-            links += '<h2>Por zona</h2><ul class="ch">' + ''.join(f'<li><a href="/arrendar/{s}/zona/{slug(z)}/">{e(z)} ({len(l)})</a></li>' for z, l in zonas_pag[:30]) + '</ul>'
-        vizinhas = [c for c, _ in cidades if c != cidade and (por_cidade[c][0].get('distrito') == lista[0].get('distrito'))][:12]
-        if vizinhas:
-            links += '<h2>Perto de ' + e(cidade) + '</h2><ul class="ch">' + ''.join(f'<li><a href="/arrendar/{slug(c)}/">Casas para alugar {e(em(c))}</a></li>' for c in vizinhas) + '</ul>'
-        faq = []
-        if meds.get('T1'):
-            faq.append((f'Quanto custa alugar um T1 {em(cidade)}?', f'A meio da tabela, um T1 para arrendar {e(em(cidade))} pede {num(meds["T1"])} € por mês, nos anúncios da DupliCasa a {hoje}.'
-                        + (f' O mais barato que temos agora custa {num(min(a["renda"] for a in lista if plausivel(a) and tip(a) == "T1"))} €.' if any(plausivel(a) and tip(a) == 'T1' for a in lista) else '')))
-        if meds.get('Quarto'):
-            faq.append((f'Quanto custa um quarto {em(cidade)}?', f'Um quarto para alugar {e(em(cidade))} anda pelos {num(meds["Quarto"])} € por mês (mediana dos anúncios a {hoje}). Há quartos para estudantes e para quem trabalha.'))
-        if m2:
-            faq.append((f'Qual é o preço por m² das rendas {em(cidade)}?', f'Nos apartamentos e moradias anunciados {e(em(cidade))}, a renda mediana é de {str(round(m2, 1)).replace(".", ",")} € por m² por mês.'))
-        faq.append((f'Há casas para alugar a particulares {em(cidade)}?', f'Sim. Dos {num(len(lista))} anúncios {e(em(cidade))}, {num(n_part)} são de particulares, sem agência. Na pesquisa da DupliCasa podes mostrar só esses.' if n_part
-                    else f'Neste momento os anúncios {e(em(cidade))} são de agências. Cria um alerta e avisamos-te quando aparecer uma casa de um particular.'))
-        faq.append(('Como recebo as casas novas primeiro?', 'Cria um alerta grátis na DupliCasa: recebes um resumo por dia. Com o acesso, o aviso chega no minuto em que a casa aparece.'))
-        desde = f' desde {num(boas[0]["renda"])} €' if boas else ''
-        paginas[f'/arrendar/{s}/'] = pagina(
-            f'/arrendar/{s}/', f'Casas para alugar {em(CURTO.get(cidade, cidade))}{desde} | DupliCasa',
-            f'{num(len(lista))} casas, apartamentos e quartos para alugar {em(cidade)}, dos mais baratos para os mais caros. Arrenda sem burlas e sabe das casas novas no minuto.',
-            f'Casas para alugar {em(nome_pesquisa(cidade))}', ' '.join(frases),
-            [('Início', '/'), ('Arrendar', '/arrendar/'), (cidade, f'/arrendar/{s}/')],
-            boas[:MAX_CARTOES], links, '/#pesquisa?cidade=' + quote(cidade), hoje, faq=faq)
-        for ts, tn, tt in tipos_pag:
-            sub = sorted([a for a in lista if tipo_ok(a, tt) and plausivel(a) and a.get('fotos')], key=lambda a: a['renda'])
-            if not sub:
-                continue
+            bom = idx_c and n_t >= MIN_PRECO and n_t <= 0.85 * len(plaus) and any(a['renda'] <= teto and a.get('fotos') for a in plaus)
+            if bom or (n_t and f'{base}ate-{teto}/' in conhecidas):
+                precos_pag.append((teto, n_t, bom))
+        links += chips('Por renda máxima', [(f'{base}ate-{t}/', f'Até {num(t)} €', f'{n}') for t, n, b in precos_pag if b])
+        if idx_c:
+            vizinhas = [c for c, _ in cidades if c != cidade and DIST.get(c) and DIST.get(c) == DIST.get(cidade)][:12]
+            links += chips('Perto ' + de(cidade), [(f'/arrendar/{slug(c)}/', f'Casas para alugar {em(c)}', '') for c in vizinhas])
+        links += chips('Preços em todo o país', [('/arrendar/precos/', 'Preço das rendas por concelho', ''),
+                                                  ('/arrendar/precos/t1-por-distrito/', 'Quanto custa um T1 em cada distrito', '')])
+        faq = [(f'Há casas para alugar a particulares {em(cidade)}?',
+                f'Sim. Dos {num(len(lista))} anúncios {e(em(cidade))}, {num(n_part)} são de particulares, sem agência. Na pesquisa da DupliCasa podes mostrar só esses.'
+                if n_part else f'Neste momento os anúncios {e(em(cidade))} são de agências. Cria um alerta e avisamos-te quando aparecer uma casa de um particular.'),
+               ('Como recebo as casas novas primeiro?', 'Cria um alerta grátis na DupliCasa: recebes um resumo por dia. Com o acesso, o aviso chega no minuto em que a casa aparece.')]
+        desde = f' desde {eur(minimo)}' if minimo else ''
+        desc = f'{num(len(lista))} casas e quartos para alugar {em(cidade)}.'
+        if sts['T1'].get('media'):
+            desc += f' Um T1 custa em média {eur(sts["T1"]["media"])}' + (f' e um quarto {eur(sts["Quarto"]["media"])}.' if sts['Quarto'].get('media') else '.')
+        desc += ' Preços por tipologia e freguesia, atualizados todos os dias.'
+        paginas[base] = pagina(
+            base, f'Casas para alugar {em(CURTO.get(cidade, cidade))}{desde} | DupliCasa', desc,
+            f'Casas para alugar {em(nome_pesquisa(cidade))}', intro,
+            [('Início', '/'), ('Arrendar', '/arrendar/'), (cidade, base)],
+            ordenar_cartoes(lista)[:MAX_CARTOES], links, '/#pesquisa?cidade=' + quote(cidade), hoje, faq=faq,
+            numeros_html=bloco_num, titulo_cartoes=f'As mais baratas {em(cidade)} agora', indexar=idx_c)
+        # ---------- cidade + tipologia ----------
+        for ts, tn, tt in tipos_idx + tipos_fracos:
+            st, tend = sts[tt], tends[tt]
+            idx_t = (ts, tn, tt) in tipos_idx
             nome = nome_tipo(tt, tn)
             pal = palavra_alugar(tt)
-            md = meds.get(tt)
-            n_t = sum(1 for a in lista if tipo_ok(a, tt))
-            intro = (f'{num(n_t)} {nome.lower() if tt in ("Quarto", "Apartamento", "Moradia") else tn} para arrendar {e(em(cidade))}, '
-                     f'do mais barato para o mais caro. Desde {num(sub[0]["renda"])} €' + (f', a meio da tabela {num(md)} €' if md else '') +
-                     f' por mês. Atualizado a {hoje}.' + (' Há quartos para estudantes e para quem trabalha.' if tt == 'Quarto' else ''))
-            outros = '<h2>Outros tipos de casa ' + e(em(cidade)) + '</h2><ul class="ch">' + ''.join(
-                f'<li><a href="/arrendar/{s}/{x}/">{e(nome_tipo(t2, n))}</a></li>' for x, n, t2 in tipos_pag if x != ts) + f'<li><a href="/arrendar/{s}/">Todas</a></li></ul>'
-            faq_t = [(f'Quanto custa {"um quarto" if tt == "Quarto" else ("um apartamento" if tt == "Apartamento" else ("uma moradia" if tt == "Moradia" else "um " + tn))} {em(cidade)}?',
-                      f'Desde {num(sub[0]["renda"])} € por mês' + (f'; a meio da tabela, {num(md)} €' if md else '') + f' (anúncios da DupliCasa a {hoje}).')]
+            cam = f'{base}{ts}/'
+            zt = [(z, z['st'].get(tt) or conjunto(z['lista'], tt)) for z in zonas_idx]
+            zt = [(z, x) for z, x in zt if x.get('mediana')]
+            if st.get('media'):
+                frases = [frase_principal(st, tt, onde, hoje, pal)]
+                frases.append(f'Metade pede entre {num(st["p25"])} e {eur(st["p75"])}; o mais barato agora custa {eur(st["min"])}.' if st.get('p25')
+                              else f'O mais barato agora custa {eur(st["min"])}.')
+                if tend.get('frase'):
+                    frases.append(cap(tend['frase']) + '.')
+                if len(zt) >= 2:
+                    zb = min(zt, key=lambda x: x[1]['mediana'])
+                    frases.append(f'Na freguesia mais barata, {e(zb[0]["nome"])}, a mediana é de {eur(zb[1]["mediana"])}.')
+                intro = resposta(frases + frases_extra(lista, tt))
+            else:
+                intro = (f'Há {num(st["total"])} {plural_tt(tt)} para {pal} {onde} na DupliCasa a {hoje}. Com menos de {MIN_AMOSTRA} anúncios com preço, '
+                         f'não calculamos média nem mediana: vê as casas ou cria um alerta para saberes das novas.')
+            caixa_html = caixa(f'{nome} {em(cidade)} em números', st, tend) if st.get('media') else ''
+            tab_z = tabela_zonas(f'{nome} por freguesia {em(cidade)}', [
+                (z['nome'], f'{base}zona/{z["zs"]}/' + (f'{ts}/' if ts in TIPOS_ZONA and x['n'] >= MIN_AMOSTRA else ''), x['n'], {'x': x})
+                for z, x in sorted(zt, key=lambda y: -y[1]['n'])[:40]], [('Preço médio', 'x', 'media'), ('Mediana', 'x', 'mediana')])
+            outros = chips(f'Outros tipos de casa {em(cidade)}', [(f'{base}{x}/', f'{nome_tipo(t2, n)} {em(cidade)}', eur(sts[t2]['media']) if sts[t2].get('media') else '')
+                                                                   for x, n, t2 in tipos_idx if x != ts] + [(base, f'Todas as casas {em(cidade)}', '')])
             tips_q = {'Quarto': 'Quarto', 'Apartamento': '', 'Moradia': ''}.get(tt, tt)
-            paginas[f'/arrendar/{s}/{ts}/'] = pagina(
-                f'/arrendar/{s}/{ts}/', f'{nome} para {pal} {em(cidade)} desde {num(sub[0]["renda"])} € | DupliCasa',
-                f'{nome} para {pal} {em(cidade)}, dos mais baratos para os mais caros, desde {num(sub[0]["renda"])} € por mês. Alertas de casas novas no minuto em que aparecem.',
-                f'{nome} para {pal} {em(cidade)}', intro,
-                [('Início', '/'), ('Arrendar', '/arrendar/'), (cidade, f'/arrendar/{s}/'), (nome, f'/arrendar/{s}/{ts}/')],
-                sub[:MAX_CARTOES], outros, '/#pesquisa?cidade=' + quote(cidade) + ('&amp;tips=' + quote(tips_q) if tips_q else ''), hoje, faq=faq_t)
-        voltar = f'<h2>Mais {e(em(cidade))}</h2><ul class="ch"><li><a href="/arrendar/{s}/">Todas as casas {e(em(cidade))}</a></li>' + ''.join(
-            f'<li><a href="/arrendar/{s}/{ts}/">{e(nome_tipo(tt, tn))}</a></li>' for ts, tn, tt in tipos_pag) + '</ul>'
-        for teto, n_t in precos_pag:
+            if st.get('media'):
+                cc = CURTO.get(cidade, cidade)
+                titulo = titulo_de(f'{nome} para {pal} {em(cidade)} desde {eur(st["min"])}, média {eur(st["media"])}',
+                                   f'{nome} para {pal} {em(cc)} desde {eur(st["min"])}, média {eur(st["media"])}',
+                                   f'{nome} para {pal} {em(cc)}: média {eur(st["media"])}', f'{nome} {em(cc)}: média {eur(st["media"])}')
+                desc = descricao_de(f'{nome} para {pal} {em(cidade)}: preço médio {eur(st["media"])} por mês, mediana {eur(st["mediana"])}, {num(st["n"])} anúncios.',
+                                    'Por freguesia e os mais baratos, atualizados todos os dias.', 'Atualizado todos os dias.')
+            else:
+                titulo = f'{nome} para {pal} {em(cidade)} | DupliCasa'
+                desc = f'{nome} para {pal} {em(cidade)}, dos mais baratos para os mais caros. Alertas de casas novas no minuto em que aparecem.'
+            paginas[cam] = pagina(
+                cam, titulo, desc, f'{nome} para {pal} {em(cidade)}', intro,
+                [('Início', '/'), ('Arrendar', '/arrendar/'), (cidade, base), (nome, cam)],
+                ordenar_cartoes(lista, tt)[:MAX_CARTOES], tab_z + outros,
+                '/#pesquisa?cidade=' + quote(cidade) + ('&amp;tips=' + quote(tips_q) if tips_q else ''), hoje,
+                numeros_html=caixa_html, titulo_cartoes=f'{cap(plural_tt(tt))} mais {"baratas" if tt == "Moradia" else "baratos"} {em(cidade)} agora',
+                indexar=idx_t)
+        voltar = chips(f'Mais {em(cidade)}', [(base, f'Todas as casas {em(cidade)}', '')] + [(f'{base}{ts}/', f'{nome_tipo(tt, tn)} {em(cidade)}', '') for ts, tn, tt in tipos_idx])
+        # ---------- renda máxima na cidade ----------
+        for teto, n_t, bom in precos_pag:
             sub = [a for a in plaus if a['renda'] <= teto and a.get('fotos')]
             n_q = sum(1 for a in plaus if a['renda'] <= teto and a.get('tipo') == 'Quarto')
             n_c = n_t - n_q
             partes = [f'{num(n_c)} {"casa" if n_c == 1 else "casas"}'] if n_c else []
             if n_q:
                 partes.append(f'{num(n_q)} {"quarto" if n_q == 1 else "quartos"}')
-            intro = (f'{" e ".join(partes).capitalize()} para arrendar {e(em(cidade))} com renda até {num(teto)} € por mês, '
-                     f'da mais barata para a mais cara. A mais barata custa {num(plaus[0]["renda"])} €. Atualizado a {hoje}.')
+            intro = (f'{cap(" e ".join(partes))} para arrendar {onde} com renda até {num(teto)} € por mês, '
+                     f'da mais barata para a mais cara. A mais barata custa {eur(plaus[0]["renda"])}. Atualizado a {hoje}.')
             oque = 'Quartos' if not n_c else ('Casas' if not n_q else 'Casas e quartos')   # o título diz o que há mesmo
-            outros_t = '<h2>Outras faixas de preço</h2><ul class="ch">' + ''.join(f'<li><a href="/arrendar/{s}/ate-{t}/">Até {num(t)} €</a></li>' for t, _ in precos_pag if t != teto) + '</ul>'
+            outros_t = chips('Outras faixas de preço', [(f'{base}ate-{t}/', f'Até {num(t)} €', '') for t, _, b in precos_pag if t != teto and b])
             faq_p = [(f'Há casas para alugar {em(cidade)} até {num(teto)} €?', f'Sim: {" e ".join(partes)} com renda até {num(teto)} € por mês, nos anúncios da DupliCasa a {hoje}.'),
                      ('Como sei das casas baratas antes dos outros?', 'Cria um alerta com a renda máxima que queres pagar. Recebes um resumo grátis por dia; com o acesso, o aviso chega no minuto em que a casa aparece.')]
-            paginas[f'/arrendar/{s}/ate-{teto}/'] = pagina(
-                f'/arrendar/{s}/ate-{teto}/', f'{oque} para alugar {em(CURTO.get(cidade, cidade))} até {num(teto)} € | DupliCasa',
-                f'{" e ".join(partes).capitalize()} para alugar {em(cidade)} com renda até {num(teto)} € por mês, das mais baratas para as mais caras. Sabe das novas no minuto.',
+            paginas[f'{base}ate-{teto}/'] = pagina(
+                f'{base}ate-{teto}/', f'{oque} para alugar {em(CURTO.get(cidade, cidade))} até {num(teto)} € | DupliCasa',
+                f'{cap(" e ".join(partes))} para alugar {em(cidade)} com renda até {num(teto)} € por mês, das mais baratas para as mais caras. Sabe das novas no minuto.',
                 f'{oque} para alugar {em(CURTO.get(cidade, cidade))} até {num(teto)} €', intro,
-                [('Início', '/'), ('Arrendar', '/arrendar/'), (cidade, f'/arrendar/{s}/'), (f'Até {num(teto)} €', f'/arrendar/{s}/ate-{teto}/')],
-                sub[:MAX_CARTOES], outros_t + voltar, '/#pesquisa?cidade=' + quote(cidade) + f'&amp;max={teto}', hoje, faq=faq_p)
-        for z, lz in zonas_pag:
-            zs = slug(z)
-            pz = sorted([a for a in lz if plausivel(a)], key=lambda a: a['renda'])
-            sub = [a for a in pz if a.get('fotos')]
-            if not sub:
+                [('Início', '/'), ('Arrendar', '/arrendar/'), (cidade, base), (f'Até {num(teto)} €', f'{base}ate-{teto}/')],
+                sub[:MAX_CARTOES], outros_t + voltar, '/#pesquisa?cidade=' + quote(cidade) + f'&amp;max={teto}', hoje, faq=faq_p, indexar=bom)
+        # ---------- freguesias ----------
+        for z in zonas:
+            zs, nz, lz, zst = z['zs'], z['nome'], z['lista'], z['st']
+            cam_z = f'{base}zona/{zs}/'
+            if not z['idx'] and cam_z not in conhecidas:
                 continue
-            md_z = mediana([a['renda'] for a in pz if a.get('tipo') != 'Quarto'])
-            intro = (f'{num(len(lz))} casas, apartamentos e quartos para arrendar {e(em(z))}, {e(em(cidade))}, do mais barato para o mais caro. '
-                     f'Desde {num(pz[0]["renda"])} € por mês' + (f'; a meio da tabela, {num(md_z)} €' if md_z else '') + f'. Atualizado a {hoje}.')
-            outras_z = '<h2>Outras zonas ' + e(em(cidade)) + '</h2><ul class="ch">' + ''.join(
-                [f'<li><a href="/arrendar/{s}/zona/{slug(x)}/">{e(x)}</a></li>' for x, _ in zonas_pag if x != z][:20]) + '</ul>'
-            faq_z = [(f'Quanto custa arrendar casa {em(z)}?', f'Desde {num(pz[0]["renda"])} € por mês' + (f'; a meio da tabela, {num(md_z)} € (sem contar quartos)' if md_z else '') + f', nos anúncios da DupliCasa a {hoje}.')]
-            paginas[f'/arrendar/{s}/zona/{zs}/'] = pagina(
-                f'/arrendar/{s}/zona/{zs}/', f'Casas para alugar {em(z)} ({CURTO.get(cidade, cidade)}) | DupliCasa',
-                f'{num(len(lz))} casas, apartamentos e quartos para alugar {em(z)}, {em(cidade)}, desde {num(pz[0]["renda"])} € por mês. Alertas de casas novas no minuto em que aparecem.',
-                f'Casas para alugar {em(z)}', intro,
-                [('Início', '/'), ('Arrendar', '/arrendar/'), (cidade, f'/arrendar/{s}/'), (z, f'/arrendar/{s}/zona/{zs}/')],
-                sub[:MAX_CARTOES], outras_z + voltar, '/#pesquisa?cidade=' + quote(z), hoje, faq=faq_z)
-    # regiões: distritos (com o nome por que se pesquisam) e grupos de cidades (Margem Sul, Grande Porto)
+            ondez = e(em(nz))
+            tends_z = {tt: tendencia(f'z:{s}/{zs}|{tt}', st) for tt, st in zst.items()}
+            pz = sorted([a for a in lz if plausivel(a)], key=lambda a: a['renda'])
+            tz_idx = [ts for ts in TIPOS_ZONA if z['idx'] and zst[TT_DE_SLUG[ts]]['n'] >= MIN_AMOSTRA]
+            pz_t = next((t for t in ordem if zst[t].get('media')), None)
+            frases = []
+            if pz_t:
+                frases.append(f'{cap(ondez)}, {e(cidade)}, {artigo_tt(pz_t)} para arrendar custa em média <strong>{eur(zst[pz_t]["media"])}</strong> por mês '
+                              f'(mediana de {eur(zst[pz_t]["mediana"])}), segundo {num(zst[pz_t]["n"])} anúncios ativos a {hoje}.')
+                frases.append(frase_outras(zst, [t for t in ordem if t != pz_t]))
+                cmp = comparar(zst[pz_t]['media'], sts[pz_t].get('media'))
+                if cmp and cmp != 'ao nível':
+                    frases.append(f'É {cmp} da média dos {plural_tt(pz_t)} {e(de(cidade))} ({eur(sts[pz_t]["media"])}).')
+            frases.append(f'Há {num(len(lz))} casas e quartos para alugar {ondez} na DupliCasa' + (f'; a renda mais baixa é de {eur(pz[0]["renda"])}.' if pz else '.'))
+            intro = resposta(frases + frases_extra(lz))
+            linhas = [(tt, zst[tt], tends_z[tt], f'{cam_z}{SLUG_TT[tt]}/' if SLUG_TT[tt] in tz_idx else None, sts[tt]) for tt in TT_LINHAS if zst[tt]['n']]
+            bloco = (tabela_tipologias(f'Quanto custa arrendar {em(nz)}', linhas, nome_cmp=cidade) + linha_fonte()) if linhas else ''
+            outras_z = chips('Outras freguesias ' + em(cidade), [(f'{base}zona/{x["zs"]}/', x['nome'], f'{len(x["lista"])}') for x in zonas_idx if x is not z][:24])
+            tipos_z = chips(f'Por tipologia {em(nz)}', [(f'{cam_z}{ts}/', f'{nome_tipo(tt, tn)} {em(nz)}', '') for ts, tn, tt in TIPOS if ts in tz_idx])
+            t1z = zst['T1'].get('media')
+            desc = descricao_de(f'{num(len(lz))} casas e quartos para alugar {em(nz)}, {cidade}.', f'Um T1 custa em média {eur(t1z)}.' if t1z else '',
+                                'Preço médio e mediana por tipologia, atualizados todos os dias.', 'Atualizado todos os dias.')
+            cc = CURTO.get(cidade, cidade)
+            paginas[cam_z] = pagina(
+                cam_z, titulo_de(f'Casas para alugar {em(nz)} ({cc})', f'Casas para alugar {em(nz)}', f'Casas para alugar {em(curto_z(nz))} ({cc})',
+                                 f'Casas para alugar {em(curto_z(nz))}'), desc,
+                f'Casas para alugar {em(nz)}, {cidade}', intro,
+                [('Início', '/'), ('Arrendar', '/arrendar/'), (cidade, base), (nz, cam_z)],
+                ordenar_cartoes(lz)[:MAX_CARTOES], tipos_z + outras_z + voltar, '/#pesquisa?cidade=' + quote(nz), hoje,
+                numeros_html=bloco, titulo_cartoes=f'As mais baratas {em(nz)} agora', indexar=z['idx'])
+            # ---------- freguesia + tipologia (T0, T1, T2, quartos) ----------
+            for ts, tn, tt in TIPOS:
+                if ts not in TIPOS_ZONA:
+                    continue
+                cam_t = f'{cam_z}{ts}/'
+                st = zst[tt]
+                idx_t = ts in tz_idx
+                if not idx_t and not (st['total'] and cam_t in conhecidas):
+                    continue
+                nome, pal = nome_tipo(tt, tn), palavra_alugar(tt)
+                tend = tends_z[tt]
+                stc = sts[tt]
+                if st.get('media'):
+                    frases = [f'{cap(artigo_tt(tt))} para {pal} {ondez}, {e(cidade)}, custa em média <strong>{eur(st["media"])}</strong> por mês '
+                              f'(mediana de {eur(st["mediana"])}), segundo {num(st["n"])} anúncios ativos a {hoje}.']
+                    cmp = comparar(st['media'], stc.get('media'))
+                    if cmp:
+                        frases.append(f'Está ao nível da média dos {plural_tt(tt)} {e(de(cidade))} ({eur(stc["media"])}).' if cmp == 'ao nível'
+                                      else f'Fica {cmp} da média dos {plural_tt(tt)} {e(de(cidade))} ({eur(stc["media"])}).')
+                    frases.append(f'Metade pede entre {num(st["p25"])} e {eur(st["p75"])}; o mais barato agora custa {eur(st["min"])}.' if st.get('p25')
+                                  else f'O mais barato agora custa {eur(st["min"])}.')
+                    if tend.get('frase'):
+                        frases.append(cap(tend['frase']) + '.')
+                    intro = resposta(frases + frases_extra(lz, tt))
+                else:
+                    intro = (f'Há {num(st["total"])} {plural_tt(tt)} para {pal} {ondez}, {e(cidade)}, na DupliCasa a {hoje}. Com menos de {MIN_AMOSTRA} anúncios com preço, '
+                             'não calculamos média nem mediana: vê também as outras freguesias.')
+                extra_c = [(f'Média {de(cidade)}', eur(stc['media']) if stc.get('media') else '—')]
+                caixa_html = caixa(f'{nome} {em(nz)} em números', st, tend, extra_c) if st.get('media') else ''
+                outras = [(x, x['st'][tt]) for x in zonas_idx if x is not z and x['st'][tt].get('media')]
+                outras.sort(key=lambda y: -y[1]['n'])
+                lk = chips(f'{nome} noutras freguesias {de(cidade)}', [(f'{base}zona/{x["zs"]}/' + (f'{ts}/' if xs['n'] >= MIN_AMOSTRA else ''), f'{nome} {em(x["nome"])}', eur(xs['media']))
+                                                                     for x, xs in outras[:24]])
+                lk += chips(f'Mais {em(nz)}', [(cam_z, f'Todas as casas {em(nz)}', '')] + [(f'{cam_z}{x}/', f'{nome_tipo(t2, n2)} {em(nz)}', '') for x, n2, t2 in TIPOS if x in tz_idx and x != ts])
+                lk += chips(f'Mais {em(cidade)}', [(f'{base}{ts}/', f'{nome} {em(cidade)}', eur(stc['media']) if stc.get('media') else ''), (base, f'Todas as casas {em(cidade)}', '')])
+                tips_q = 'Quarto' if tt == 'Quarto' else tt
+                if st.get('media'):
+                    cc = CURTO.get(cidade, cidade)
+                    md = eur(st['media'])
+                    titulo = titulo_de(f'{nome} para {pal} {em(nz)} ({cc}): média {md}', f'{nome} para {pal} {em(nz)}: média {md}',
+                                       f'{nome} {em(nz)} ({cc}): média {md}', f'{nome} para {pal} {em(curto_z(nz))} ({cc}): média {md}',
+                                       f'{nome} {em(curto_z(nz))} ({cc}): média {md}', f'{nome} {em(curto_z(nz))}: média {md}')
+                    desc = descricao_de(f'{nome} para {pal} {em(nz)}, {cidade}: preço médio {md}, mediana {eur(st["mediana"])} e {num(st["n"])} anúncios.',
+                                        f'Comparados com o resto {de(cidade)} e atualizados todos os dias.', 'Atualizado todos os dias.')
+                else:
+                    titulo = titulo_de(f'{nome} para {pal} {em(nz)} ({CURTO.get(cidade, cidade)})', f'{nome} para {pal} {em(curto_z(nz))} ({CURTO.get(cidade, cidade)})')
+                    desc = f'{nome} para {pal} {em(nz)}, {cidade}, dos mais baratos para os mais caros. Alertas de casas novas no minuto em que aparecem.'
+                paginas[cam_t] = pagina(
+                    cam_t, titulo, desc, f'{nome} para {pal} {em(nz)}, {cidade}', intro,
+                    [('Início', '/'), ('Arrendar', '/arrendar/'), (cidade, base), (nz, cam_z), (nome, cam_t)],
+                    ordenar_cartoes(lz, tt)[:MAX_CARTOES], lk, '/#pesquisa?cidade=' + quote(nz) + '&amp;tips=' + quote(tips_q), hoje,
+                    numeros_html=caixa_html, titulo_cartoes=f'{cap(plural_tt(tt))} mais baratos {em(nz)} agora', indexar=idx_t)
+            # a mesma freguesia escrita de outra maneira (endereço antigo): passa para o endereço novo
+            if z['idx']:
+                for velho in z['outros']:
+                    for suf in [''] + [f'{ts}/' for ts in TIPOS_ZONA]:
+                        antigo = f'{base}zona/{velho}/{suf}'
+                        if antigo in conhecidas:
+                            novo = f'{cam_z}{suf}' if (not suf or suf[:-1] in tz_idx) else cam_z
+                            mudou[antigo] = novo
+    # ---------- regiões: distritos (com o nome por que se pesquisam) e grupos de cidades ----------
     regioes = {}
-    for c, l in cidades:
-        d = (l[0].get('distrito') or '').strip()
+    medias = sorted([(c, l) for c, l in por_cidade.items() if len(l) >= MIN_CIDADE], key=lambda x: -len(x[1]))
+    for c, l in medias:
+        d = DIST.get(c, '')
         if d:
             nome = REGIAO_NOME.get(d, 'Distrito ' + ('do ' if norm_t(d) in NO else ('da ' if norm_t(d) in NA else 'de ')) + d)
             regioes.setdefault(nome, []).append((c, l))
     for g, cs in GRUPOS.items():
-        regioes[g] = [(c, por_cidade[c]) for c in cs if c in dict(cidades)]
+        regioes[g] = [(c, por_cidade[c]) for c in cs if c in por_cidade and len(por_cidade[c]) >= MIN_CIDADE]
     regioes_pag = {}
     for nome, cs in regioes.items():
         todas = [a for _, l in cs for a in l]
-        if len(todas) < 10 or len(cs) < 2:
-            continue
         rs = slug(nome)
+        bom = len(cs) >= 2 and com_amostra(todas, 10)
+        if not bom and f'/arrendar/regiao/{rs}/' not in conhecidas:
+            continue
         prep = REGIAO_EM.get(nome, ('no ' + nome[0].lower() + nome[1:]) if nome.startswith('Distrito') else em(nome))
         pr = sorted([a for a in todas if plausivel(a)], key=lambda a: a['renda'])
         sub = [a for a in pr if a.get('fotos')]
-        md = mediana([a['renda'] for a in pr if tip(a) == 'T1'])
-        intro = (f'{num(len(todas))} casas, apartamentos e quartos para arrendar {e(prep)}, em {len(cs)} cidades. Desde {num(pr[0]["renda"])} € por mês'
-                 + (f'; um T1 pede, a meio da tabela, {num(md)} €' if md else '') + f'. Atualizado a {hoje}.') if pr else ''
-        lk = '<h2>Cidades</h2><ul class="ch">' + ''.join(f'<li><a href="/arrendar/{slug(c)}/">Casas para alugar {e(em(CURTO.get(c, c)))} ({len(l)})</a></li>' for c, l in sorted(cs, key=lambda x: -len(x[1]))) + '</ul>'
-        regioes_pag[nome] = (rs, len(todas))
+        st1 = conjunto(todas, 'T1')
+        frases = []
+        if st1.get('media'):
+            frases.append(frase_principal(st1, 'T1', e(prep), hoje))
+        stq = conjunto(todas, 'Quarto')
+        if stq.get('media'):
+            frases.append(f'Um quarto custa em média {eur(stq["media"])}.')
+        if pr:
+            frases.append(f'Há {num(len(todas))} casas, apartamentos e quartos para arrendar {e(prep)}, em {len(cs)} cidades; a renda mais baixa é de {eur(pr[0]["renda"])}.')
+        intro = resposta(frases + frases_extra(todas))
+        cs_ord = sorted(cs, key=lambda x: -len(x[1]))
+        r_cid = {c: {tt: conjunto(l, tt) for tt in ('Quarto', 'T1', 'T2')} for c, l in cs_ord}
+        tab = ('<h2>Rendas por cidade</h2><div class="rolar"><table class="tab"><thead><tr><th scope="col">Cidade</th><th scope="col" class="n">Anúncios</th>'
+               '<th scope="col" class="n">Quarto</th><th scope="col" class="n">T1</th><th scope="col" class="n">T2</th></tr></thead><tbody>' + ''.join(
+                   '<tr><th scope="row">' + (f'<a href="/arrendar/{slug(c)}/">{e(c)}</a>' if c in nomes_idx else e(c)) + f'</th><td class="n">{num(len(l))}</td>' + ''.join(
+                       f'<td class="n">{eur(r_cid[c][tt]["mediana"]) if r_cid[c][tt].get("mediana") else "—"}</td>' for tt in ('Quarto', 'T1', 'T2')) + '</tr>'
+                   for c, l in cs_ord) + '</tbody></table></div>' + linha_fonte('Valores da tabela: mediana. ')) if cs_ord else ''
+        if bom:
+            regioes_pag[nome] = (rs, len(todas))
         paginas[f'/arrendar/regiao/{rs}/'] = pagina(
             f'/arrendar/regiao/{rs}/', f'Casas para alugar {prep} | DupliCasa',
-            f'{num(len(todas))} casas, apartamentos e quartos para alugar {prep}, das mais baratas para as mais caras. Alertas de casas novas no minuto em que aparecem.',
+            f'{num(len(todas))} casas, apartamentos e quartos para alugar {prep}.' + (f' Um T1 custa em média {eur(st1["media"])}.' if st1.get('media') else '')
+            + ' Rendas por cidade, atualizadas todos os dias.',
             f'Casas para alugar {prep}', intro,
             [('Início', '/'), ('Arrendar', '/arrendar/'), (nome, f'/arrendar/regiao/{rs}/')],
-            sub[:MAX_CARTOES], lk, '/#pesquisa', hoje)
-    # renda máxima em todo o país («casas para alugar até 300 euros», «até 600 euros»)
+            sub[:MAX_CARTOES], '', '/#pesquisa', hoje, numeros_html=tab, titulo_cartoes=f'As mais baratas {prep} agora', indexar=bom)
+    # ---------- renda máxima em todo o país ----------
     plaus_pt = sorted([a for a in anuncios if plausivel(a)], key=lambda a: a['renda'])
+    tetos_pt = []
     for teto in TETOS:
         sub = [a for a in plaus_pt if a['renda'] <= teto]
-        if len(sub) < MIN_PRECO:
+        if len(sub) < MIN_PRECO and f'/arrendar/ate-{teto}/' not in conhecidas:
             continue
-        por_c = {}
-        for a in sub:
-            por_c[a.get('cidade') or ''] = por_c.get(a.get('cidade') or '', 0) + 1
-        lk = '<h2>Onde há mais</h2><ul class="ch">' + ''.join(
-            f'<li><a href="/arrendar/{slug(c)}/{("ate-" + str(teto) + "/") if (c, teto) in [(cc, t) for cc, _ in cidades for t in TETOS] else ""}">{e(c)} ({n})</a></li>'
-            for c, n in sorted(por_c.items(), key=lambda x: -x[1])[:24] if c and slug(c) in {slug(x) for x, _ in cidades}) + '</ul>'
+        if not sub:
+            continue
+        bom = len(sub) >= MIN_PRECO
+        if bom:
+            tetos_pt.append(teto)
+        por_c = collections.Counter(a.get('cidade') or '' for a in sub)
+        com_teto = {(cc, t) for cc, l in cidades for t in TETOS if f'/arrendar/{slug(cc)}/ate-{t}/' in paginas and f'/arrendar/{slug(cc)}/ate-{t}/' in INDEXAVEIS}
+        lk = chips('Onde há mais', [(f'/arrendar/{slug(c)}/' + (f'ate-{teto}/' if (c, teto) in com_teto else ''), c, f'{n}')
+                                    for c, n in por_c.most_common(40) if c in nomes_idx][:24])
         paginas[f'/arrendar/ate-{teto}/'] = pagina(
             f'/arrendar/ate-{teto}/', f'Casas para alugar até {num(teto)} € em Portugal | DupliCasa',
             f'{num(len(sub))} casas e quartos para alugar em Portugal com renda até {num(teto)} € por mês, das mais baratas para as mais caras. Sabe das novas no minuto.',
             f'Casas para alugar até {num(teto)} € em Portugal',
             f'{num(len(sub))} casas e quartos para arrendar com renda até {num(teto)} € por mês, de vários sites, num só lugar. Atualizado a {hoje}.',
             [('Início', '/'), ('Arrendar', '/arrendar/'), (f'Até {num(teto)} €', f'/arrendar/ate-{teto}/')],
-            [a for a in sub if a.get('fotos')][:MAX_CARTOES], lk, f'/#pesquisa?max={teto}', hoje)
-    # índice de cidades, agrupado por distrito
+            [a for a in sub if a.get('fotos')][:MAX_CARTOES], lk, f'/#pesquisa?max={teto}', hoje, indexar=bom)
+    # ---------- índice de cidades, agrupado por distrito ----------
     por_distrito = {}
     for c, l in cidades:
-        por_distrito.setdefault(l[0].get('distrito') or 'Outros', []).append((c, len(l)))
-    blocos = ''.join('<h2>' + e(d) + '</h2><ul class="ch">' + ''.join(
-        f'<li><a href="/arrendar/{slug(c)}/">{e(c)} ({n})</a></li>' for c, n in sorted(cs)) + '</ul>' for d, cs in sorted(por_distrito.items()))
-    blocos = ('<p><a href="/arrendar/precos/">Ver o preço das rendas em cada cidade</a></p>'
-              '<h2>Por renda máxima</h2><ul class="ch">' + ''.join(f'<li><a href="/arrendar/ate-{t}/">Até {num(t)} €</a></li>' for t in TETOS if f'/arrendar/ate-{t}/' in paginas) + '</ul>'
-              '<h2>Por região</h2><ul class="ch">' + ''.join(f'<li><a href="/arrendar/regiao/{rs}/">{e(n)} ({num(k)})</a></li>' for n, (rs, k) in sorted(regioes_pag.items())) + '</ul>' + blocos)
+        por_distrito.setdefault(DIST.get(c) or 'Outros', []).append((c, len(l)))
+    blocos = ''.join(chips(d, [(f'/arrendar/{slug(c)}/', c, f'{n}') for c, n in sorted(cs)]) for d, cs in sorted(por_distrito.items()))
+    blocos = (chips('Quanto custa arrendar', [('/arrendar/precos/', 'Preço das rendas por concelho', ''), ('/arrendar/precos/t1-por-distrito/', 'Quanto custa um T1 em cada distrito', '')])
+              + chips('Por renda máxima', [(f'/arrendar/ate-{t}/', f'Até {num(t)} €', '') for t in tetos_pt])
+              + chips('Por região', [(f'/arrendar/regiao/{rs}/', n, num(k)) for n, (rs, k) in sorted(regioes_pag.items())]) + blocos)
     baratas = sorted([a for a in anuncios if plausivel(a) and a.get('fotos') and tip(a) in ('T0', 'T1', 'Quarto')], key=lambda a: a['renda'])[:12]
+    st_pt = {tt: conjunto(anuncios, tt) for tt in TT_LINHAS}
+    for tt, st in st_pt.items():
+        guardar(f'pt|{tt}', st, completo=True)
+    frases = []
+    if st_pt['T1'].get('media'):
+        frases.append(frase_principal(st_pt['T1'], 'T1', 'em Portugal', hoje))
+    frases.append(frase_outras(st_pt, ['Quarto', 'T2']))
+    frases.append(f'Há {num(len(anuncios))} casas, apartamentos e quartos para arrendar em {len(cidades)} cidades, de vários sites, num só lugar. Escolhe a cidade.')
     paginas['/arrendar/'] = pagina(
         '/arrendar/', 'Casas e quartos para alugar em Portugal, por cidade | DupliCasa',
         f'{num(len(anuncios))} casas, apartamentos e quartos para alugar em {len(cidades)} cidades de Portugal, juntos num só lugar. Alertas de casas novas no minuto em que aparecem.',
-        'Casas e quartos para alugar em Portugal',
-        f'{num(len(anuncios))} casas, apartamentos e quartos para arrendar, de vários sites, num só lugar. Escolhe a cidade. Atualizado a {hoje}.',
-        [('Início', '/'), ('Arrendar', '/arrendar/')], baratas, blocos, '/#pesquisa', hoje)
-    # preço das rendas por cidade: dados próprios (mediana dos anúncios), úteis para quem pesquisa e para quem cita
+        'Casas e quartos para alugar em Portugal', resposta(frases),
+        [('Início', '/'), ('Arrendar', '/arrendar/')], baratas, blocos, '/#pesquisa', hoje, titulo_cartoes='T0, T1 e quartos mais baratos agora')
+    ficheiros = {}
+    gerar_precos(paginas, ficheiros, resumo, hoje, anuncios)
+    gerar_estudo(paginas, ficheiros, anuncios, hoje)
+    return paginas, resumo, ficheiros, mudou
+
+
+NOME_DIST = {'Ilha da Madeira': 'Madeira', 'Ilha de São Miguel': 'Açores (São Miguel)', 'Ilha Terceira': 'Açores (Terceira)'}
+TT_DE_SLUG = {ts: tt for ts, _, tt in TIPOS}
+
+
+def metodo_html():
+    i = inicio_hist()
+    return ('<section class="cx guia" id="metodo"><h2 style="margin-top:0">Como calculamos</h2><ul>'
+            '<li><strong>Fonte:</strong> anúncios públicos de arrendamento de vários sites portugueses, recolhidos pela DupliCasa de 30 em 30 minutos. '
+            'A mesma casa anunciada em mais de um site conta uma vez.</li>'
+            '<li><strong>Que anúncios:</strong> os que estão ativos, publicados há menos de 60 dias. Quando saem do site de origem, saem também daqui.</li>'
+            '<li><strong>Preço pedido, não preço de contrato:</strong> são as rendas que os senhorios pedem nos anúncios. As estatísticas do INE medem os '
+            'contratos novos, em euros por m², e por isso não se comparam diretamente com estas.</li>'
+            '<li><strong>Rendas implausíveis ficam de fora:</strong> quartos abaixo de 150 € e casas abaixo de 300 € por mês (quase sempre erros).</li>'
+            '<li><strong>Preço médio:</strong> média sem os 10% de rendas mais baixas e os 10% mais altas (pelo menos uma de cada lado), arredondada a 5 €, '
+            'para que um anúncio de luxo ou um erro não puxem a média.</li>'
+            '<li><strong>Mediana:</strong> a renda do meio: metade dos anúncios pede menos, metade pede mais.</li>'
+            f'<li><strong>Amostra mínima:</strong> só mostramos média e mediana com pelo menos {MIN_AMOSTRA} anúncios com preço; a tendência, com pelo menos '
+            f'{TEND_MIN_N} no dia de hoje e no dia com que comparamos. Páginas com menos de {MIN_AMOSTRA} anúncios não vão para o Google.</li>'
+            f'<li><strong>Tendência:</strong> diferença da mediana face a há cerca de 30 dias (entre {TEND_DIAS[0]} e {TEND_DIAS[1]}), com o histórico diário '
+            f'que guardamos desde {data_pt(i.isoformat())}.</li>'
+            '<li><strong>Tipologias:</strong> T0, T1, T2… pelo número de quartos de apartamentos e moradias; «quarto» é um quarto para alugar numa casa partilhada.</li>'
+            '<li><strong>Distrito:</strong> o do concelho da casa. A Madeira e os Açores aparecem como regiões autónomas.</li></ul>'
+            '<p>Pode usar estes números citando a DupliCasa (duplicasa.pt), com a licença CC BY 4.0.</p></section>')
+
+
+def csv_txt(linhas):
+    """CSV para abrir no Excel em português: ponto e vírgula, vírgula decimal e BOM UTF-8."""
+    def c(v):
+        if v is None:
+            return ''
+        if isinstance(v, float):
+            return str(round(v, 2)).replace('.', ',')
+        v = str(v)
+        return '"' + v.replace('"', '""') + '"' if any(x in v for x in ';"\n') else v
+    return '﻿' + ''.join(';'.join(c(v) for v in l) + '\r\n' for l in linhas)
+
+
+def gerar_precos(paginas, ficheiros, resumo, hoje, anuncios):
+    """Preço das rendas por concelho: a tabela, a resposta direta, o método e os dados para descarregar (Dataset)."""
     linhas = sorted([r for r in resumo if r['n'] >= 10], key=lambda r: -r['n'])
-    f = lambda v: (num(v) + ' €') if v else '—'
-    tabela = ('<h2>Renda mediana por cidade</h2><div class="rolar"><table class="tab"><thead><tr><th>Cidade</th><th class="n">Anúncios</th><th class="n">Quarto</th>'
-              '<th class="n">T0</th><th class="n">T1</th><th class="n">T2</th><th class="n">€/m²</th></tr></thead><tbody>' + ''.join(
-                  f'<tr><td><a href="/arrendar/{r["slug"]}/">{e(r["cidade"])}</a></td><td class="n">{num(r["n"])}</td><td class="n">{f(r["quarto"])}</td>'
-                  f'<td class="n">{f(r["T0"])}</td><td class="n">{f(r["T1"])}</td><td class="n">{f(r["T2"])}</td>'
-                  f'<td class="n">{(str(round(r["m2"], 1)).replace(".", ",") + " €") if r["m2"] else "—"}</td></tr>' for r in linhas) +
-              '</tbody></table></div><p class="intro" style="font-size:15px;margin-top:12px">Mediana das rendas pedidas nos anúncios ativos na DupliCasa a ' + hoje +
-              '. É o preço pedido, não o preço final do contrato. Cidades com pelo menos 10 anúncios.</p>')
+    f = lambda v: eur(v) if v else '—'
+    tabela = ('<h2>Renda mediana por concelho</h2><div class="rolar"><table class="tab"><thead><tr><th scope="col">Concelho</th><th scope="col">Distrito</th>'
+              '<th scope="col" class="n">Anúncios</th><th scope="col" class="n">Quarto</th><th scope="col" class="n">T0</th><th scope="col" class="n">T1</th>'
+              '<th scope="col" class="n">T2</th><th scope="col" class="n">€/m²</th></tr></thead><tbody>' + ''.join(
+                  f'<tr><th scope="row"><a href="/arrendar/{r["slug"]}/">{e(r["cidade"])}</a></th><td>{e(NOME_DIST.get(r["distrito"], r["distrito"]))}</td>'
+                  f'<td class="n">{num(r["n"])}</td><td class="n">{f(r["quarto"])}</td><td class="n">{f(r["T0"])}</td><td class="n">{f(r["T1"])}</td>'
+                  f'<td class="n">{f(r["T2"])}</td><td class="n">{m2txt(r["m2"])}</td></tr>' for r in linhas) +
+              '</tbody></table></div>' + linha_fonte('Concelhos com pelo menos 10 anúncios. Valores da tabela: mediana. ') +
+              '<p><a class="bt" href="/arrendar/precos/rendas-por-concelho.csv" download>Descarregar os dados (CSV)</a></p>')
+    dia = AGORA.date().isoformat()
+    ficheiros['/arrendar/precos/rendas-por-concelho.csv'] = csv_txt(
+        [['data', 'concelho', 'distrito', 'anuncios', 'quarto_mediana', 't0_mediana', 't1_mediana', 't1_preco_medio', 't1_anuncios_com_preco', 't2_mediana', 'eur_m2_mediana', 'pagina']] +
+        [[dia, r['cidade'], NOME_DIST.get(r['distrito'], r['distrito']), r['n'], r['quarto'], r['T0'], r['T1'], r['t1_media'], r['n_t1'], r['T2'], r['m2'],
+          f'{SITE}/arrendar/{r["slug"]}/'] for r in linhas])
+    st1 = conjunto(anuncios, 'T1')
+    frases = []
+    if st1.get('media'):
+        frases.append(frase_principal(st1, 'T1', 'em Portugal', hoje))
     lx = next((r for r in linhas if r['cidade'] == 'Lisboa'), None)
     pt = next((r for r in linhas if r['cidade'] == 'Porto'), None)
-    intro_p = f'Quanto custa arrendar casa em Portugal, cidade a cidade, a {hoje}.'
     if lx and lx['T1']:
-        intro_p += f' Em Lisboa, um T1 pede a meio da tabela {num(lx["T1"])} € por mês'
-        intro_p += (f'; no Porto, {num(pt["T1"])} €.' if pt and pt['T1'] else '.')
-    faq_p = []
-    if lx and lx['T1']:
-        faq_p.append(('Qual é a renda média de um T1 em Lisboa?', f'A meio da tabela, {num(lx["T1"])} € por mês nos anúncios da DupliCasa a {hoje}.'))
-    if pt and pt['T1']:
-        faq_p.append(('Qual é a renda média de um T1 no Porto?', f'A meio da tabela, {num(pt["T1"])} € por mês nos anúncios da DupliCasa a {hoje}.'))
-    if lx and lx['quarto']:
-        faq_p.append(('Quanto custa um quarto em Lisboa?', f'Cerca de {num(lx["quarto"])} € por mês (mediana dos anúncios a {hoje}).'))
-    faq_p.append(('De onde vêm estes números?', 'Da mediana das rendas pedidas nos anúncios ativos na DupliCasa, que junta vários sites de arrendamento em Portugal. Atualizamos de 30 em 30 minutos.'))
+        frases.append(f'Em Lisboa, a mediana de um T1 é de {eur(lx["T1"])}' + (f'; no Porto, de {eur(pt["T1"])}.' if pt and pt['T1'] else '.'))
+    t1s = [r for r in linhas if r['T1'] and r['n_t1'] >= 10]
+    if len(t1s) >= 3:
+        mx, mn = max(t1s, key=lambda r: r['T1']), min(t1s, key=lambda r: r['T1'])
+        frases.append(f'Nos concelhos com pelo menos 10 anúncios de T1, o mais caro é {e(mx["cidade"])} ({eur(mx["T1"])}) e o mais barato {e(mn["cidade"])} ({eur(mn["T1"])}).')
+    frases.append(f'A tabela tem {len(linhas)} concelhos.')
+    mes = f'{MESES[AGORA.month - 1]} {AGORA.year}'
     paginas['/arrendar/precos/'] = pagina(
-        '/arrendar/precos/', f'Preço das rendas em Portugal por cidade ({MESES[datetime.date.today().month - 1]} {datetime.date.today().year}) | DupliCasa',
-        'Quanto custa arrendar casa em Lisboa, Porto, Braga, Coimbra e outras cidades: renda mediana de quartos, T0, T1 e T2 e preço por m², com dados atualizados.',
-        'Preço das rendas em Portugal, por cidade', intro_p,
+        '/arrendar/precos/', f'Preço das rendas por concelho ({mes}) | DupliCasa',
+        f'Quanto custa arrendar casa em {len(linhas)} concelhos: renda mediana de quartos, T0, T1 e T2 e preço por m², com os anúncios de hoje. Dados para descarregar.',
+        'Preço das rendas por concelho', resposta(frases),
         [('Início', '/'), ('Arrendar', '/arrendar/'), ('Preço das rendas', '/arrendar/precos/')],
-        [], '', '/#pesquisa', hoje, faq=faq_p, tabela=tabela)
-    return paginas, resumo
+        [], chips('Mais preços', [('/arrendar/precos/t1-por-distrito/', 'Quanto custa um T1 em cada distrito', '')]), '/#pesquisa', hoje, tabela=tabela,
+        extra=metodo_html(),
+        dados={'name': 'Rendas pedidas por concelho em Portugal (DupliCasa)',
+               'description': ('Mediana das rendas pedidas nos anúncios de arrendamento ativos em Portugal, por concelho e tipologia (quarto, T0, T1, T2) e '
+                               'preço por m², a partir dos anúncios públicos de vários sites, sem casas repetidas. Atualizado todos os dias.'),
+               'temporalCoverage': dia, 'variableMeasured': ['renda mediana pedida (euros por mês)', 'preço médio de um T1 (euros por mês)', 'preço por m² (euros por mês)', 'número de anúncios'],
+               'distribution': [{'@type': 'DataDownload', 'encodingFormat': 'text/csv', 'contentUrl': SITE + '/arrendar/precos/rendas-por-concelho.csv'}]})
+
+
+
+def gerar_estudo(paginas, ficheiros, anuncios, hoje):
+    """Estudo para a imprensa: quanto custa um T1 em cada distrito. Números de hoje, CSV de cada dia (para citar com data) e método."""
+    cam = '/arrendar/precos/t1-por-distrito/'
+    por_d = {}
+    for a in anuncios:
+        d = distrito_de(a)
+        if d:
+            por_d.setdefault(d, []).append(a)
+    sts = {d: {tt: conjunto(l, tt) for tt in TT_LINHAS} for d, l in por_d.items()}
+    for d, s_ in sts.items():
+        for tt, st in s_.items():
+            guardar(f'd:{d}|{tt}', st, completo=True)
+    st_pt = {tt: conjunto(anuncios, tt) for tt in TT_LINHAS}
+    com = sorted([d for d in sts if sts[d]['T1'].get('mediana')], key=lambda d: -sts[d]['T1']['mediana'])
+    poucos = sorted([d for d in sts if not sts[d]['T1'].get('mediana')], key=lambda d: NOME_DIST.get(d, d))
+    fortes = [d for d in com if sts[d]['T1']['n'] >= 10]
+
+    def nome_d(d):
+        return NOME_DIST.get(d, d)
+
+    def com_artigo(d):
+        n = nome_d(d)
+        if n == 'Madeira':
+            return 'a Madeira'
+        if n.startswith('Açores'):
+            return 'os ' + n
+        return 'o distrito ' + de(d)
+
+    def link_d(d):
+        nome = REGIAO_NOME.get(d, 'Distrito ' + ('do ' if norm_t(d) in NO else ('da ' if norm_t(d) in NA else 'de ')) + d)
+        c = f'/arrendar/regiao/{slug(nome)}/'
+        return c if c in INDEXAVEIS else None
+
+    frases = []
+    if st_pt['T1'].get('media'):
+        frases.append(frase_principal(st_pt['T1'], 'T1', 'em Portugal', hoje))
+    if len(fortes) >= 2:
+        mx, mn = fortes[0], fortes[-1]
+        frases.append(f'Nos distritos e regiões com pelo menos 10 anúncios de T1, o mais caro é {e(com_artigo(mx))} (mediana de {eur(sts[mx]["T1"]["mediana"])}) '
+                      f'e o mais barato {e(com_artigo(mn))} ({eur(sts[mn]["T1"]["mediana"])}).')
+    intro = resposta(frases)
+    corpo = ''
+    for d in com:
+        st = sts[d]['T1']
+        tend = tendencia(f'd:{d}|T1', st)
+        h = link_d(d)
+        nome = f'<a href="{h}">{e(nome_d(d))}</a>' if h else e(nome_d(d))
+        peq = st['n'] < 10
+        corpo += (f'<tr{" class=peq" if peq else ""}><th scope="row">{nome}{" (amostra pequena)" if peq else ""}</th><td class="n">{num(st["n"])}</td>'
+                  f'<td class="n">{eur(st["media"])}</td><td class="n">{eur(st["mediana"])}</td>'
+                  f'<td class="n">{(num(st["p25"]) + " a " + eur(st["p75"])) if st.get("p25") else "—"}</td><td class="n">{e(tend["curto"])}</td></tr>')
+    for d in poucos:
+        corpo += f'<tr class="peq"><th scope="row">{e(nome_d(d))}</th><td class="n">{num(sts[d]["T1"]["n"])}</td><td class="n" colspan="4">menos de {MIN_AMOSTRA} anúncios de T1 com preço</td></tr>'
+    dia = AGORA.date().isoformat()
+    tabela = ('<h2>Renda de um T1 em cada distrito</h2><div class="rolar"><table class="tab"><thead><tr><th scope="col">Distrito</th>'
+              '<th scope="col" class="n">Anúncios de T1</th><th scope="col" class="n">Preço médio</th><th scope="col" class="n">Mediana</th>'
+              f'<th scope="col" class="n">Metade pede entre</th><th scope="col" class="n">Tendência</th></tr></thead><tbody>{corpo}</tbody></table></div>'
+              + linha_fonte('«Amostra pequena»: entre 5 e 9 anúncios, o número é indicativo. '))
+    tabela += ('<h2>As outras tipologias</h2><div class="rolar"><table class="tab"><thead><tr><th scope="col">Distrito</th><th scope="col" class="n">Quarto</th>'
+               '<th scope="col" class="n">T0</th><th scope="col" class="n">T1</th><th scope="col" class="n">T2</th></tr></thead><tbody>' + ''.join(
+                   f'<tr><th scope="row">{e(nome_d(d))}</th>' + ''.join(f'<td class="n">{eur(sts[d][tt]["mediana"]) if sts[d][tt].get("mediana") else "—"}</td>'
+                                                                       for tt in ('Quarto', 'T0', 'T1', 'T2')) + '</tr>' for d in com + poucos)
+               + '</tbody></table></div><p class="fonte">Mediana das rendas pedidas; «—» com menos de 5 anúncios.</p>')
+    # dados de cada dia (os de hoje e os guardados no histórico), para se poder citar um número com a data
+    cab = ['data', 'distrito', 'tipologia', 'anuncios_com_preco', 'preco_medio', 'mediana', 'p25', 'p75', 'mais_barato']
+    dias = {k: v for k, v in (HIST.get('dias') or {}).items()}
+    dias[dia] = dict(SNAP)
+    edicoes = []
+    for k in sorted(dias):
+        ls = []
+        for chave, v in sorted(dias[k].items()):
+            if chave.startswith('d:') and len(v) >= 6:
+                dd, tt = chave[2:].rsplit('|', 1)
+                ls.append([k, nome_d(dd), tt, *v[:1], v[2], v[1], v[3], v[4], v[5]])
+        if ls:
+            ficheiros[f'{cam}dados-{k}.csv'] = csv_txt([cab] + ls)
+            edicoes.append(k)
+    if dia in edicoes:
+        ficheiros[f'{cam}dados.csv'] = ficheiros[f'{cam}dados-{dia}.csv']
+    arquivo = [k for k in reversed(edicoes) if k != dia][:12]
+    tabela += ('<p><a class="bt" href="dados.csv" download>Descarregar os dados de hoje (CSV)</a></p>'
+               f'<p class="fonte">Cada dia fica guardado num ficheiro próprio, para poder citar os números com a data: <a href="dados-{dia}.csv">{data_pt(dia)}</a>'
+               + ''.join(f' · <a href="dados-{k}.csv">{data_pt(k)}</a>' for k in arquivo) + '. CSV separado por ponto e vírgula.</p>')
+    cidades_t1 = [(c, f'/arrendar/{slug(c)}/t1/') for c in ('Lisboa', 'Porto', 'Braga', 'Coimbra', 'Faro', 'Aveiro', 'Setúbal', 'Leiria', 'Funchal', 'Viseu')
+                  if f'/arrendar/{slug(c)}/t1/' in INDEXAVEIS]
+    links = chips('T1 para arrendar por cidade', [(h, f'T1 {em(c)}', '') for c, h in cidades_t1]) + chips(
+        'Mais preços', [('/arrendar/precos/', 'Preço das rendas por concelho', '')])
+    mes = f'{MESES[AGORA.month - 1]} {AGORA.year}'
+    paginas[cam] = pagina(
+        cam, f'Quanto custa um T1 em cada distrito ({mes}) | DupliCasa',
+        'Preço médio e mediana da renda de um T1 em cada distrito, com o número de anúncios e a tendência. Dados próprios, atualizados todos os dias.',
+        'Quanto custa um T1 em cada distrito', intro,
+        [('Início', '/'), ('Arrendar', '/arrendar/'), ('Preço das rendas', '/arrendar/precos/'), ('T1 por distrito', cam)],
+        [], links, '/#pesquisa?tips=T1', hoje, tabela=tabela, extra=metodo_html(), artigo=inicio_hist().isoformat(), botao='Ver T1 para arrendar',
+        dados={'name': 'Renda pedida de T1 (e de quartos, T0 e T2) por distrito em Portugal (DupliCasa)',
+               'description': ('Preço médio, mediana, quartis e número de anúncios das rendas pedidas por um T1, um T0, um T2 e um quarto em cada distrito de '
+                               'Portugal e nas regiões autónomas, a partir dos anúncios de arrendamento ativos em vários sites, sem casas repetidas. Um ficheiro por dia.'),
+               'temporalCoverage': f'{edicoes[0] if edicoes else dia}/{dia}',
+               'variableMeasured': ['renda pedida: preço médio (euros por mês)', 'renda pedida: mediana (euros por mês)', 'número de anúncios com preço'],
+               'distribution': [{'@type': 'DataDownload', 'encodingFormat': 'text/csv', 'contentUrl': SITE + cam + 'dados.csv'}]})
 
 
 # Guias: respostas às perguntas que mais aparecem nas sugestões do Google («como arrendar casa em portugal»,
@@ -743,20 +1428,30 @@ def gerar_guias(paginas, hoje):
 def llms_full(resumo, n_total, hoje):
     """Versão longa do llms.txt, com os números de hoje: para os assistentes de IA citarem dados atuais."""
     linhas = sorted([r for r in resumo if r['n'] >= 10], key=lambda r: -r['n'])
-    f = lambda v: (num(v) + ' €') if v else 'sem dados suficientes'
+    f = lambda v: eur(v) if v else 'sem dados suficientes'
     t = [f'# DupliCasa: casas e quartos para alugar em Portugal (dados de {hoje})', '',
-         f'> {num(n_total)} casas, apartamentos e quartos para arrendar em Portugal, juntos de vários sites na DupliCasa (duplicasa.pt). '
-         'Os valores abaixo são a mediana das rendas pedidas nos anúncios ativos (não o preço final do contrato), atualizados de 30 em 30 minutos.', '',
-         '## Renda mediana por cidade', '']
+         f'> {num(n_total)} casas, apartamentos e quartos para arrendar em Portugal, juntos de vários sites na DupliCasa (duplicasa.pt), sem casas repetidas. '
+         'Os valores abaixo são rendas pedidas nos anúncios ativos (não o preço final do contrato), atualizados de 30 em 30 minutos. '
+         f'Mediana = renda do meio; preço médio = média sem os 10% de rendas mais baixas e mais altas. Só com pelo menos {MIN_AMOSTRA} anúncios. '
+         f'Método: {SITE}/arrendar/precos/#metodo', '']
+    d = [(k[2:].rsplit('|', 1)[0], v) for k, v in SNAP.items() if k.startswith('d:') and k.endswith('|T1')]
+    if d:
+        t += ['## Quanto custa um T1 em cada distrito', f'Fonte: {SITE}/arrendar/precos/t1-por-distrito/ (CSV do dia: {SITE}/arrendar/precos/t1-por-distrito/dados.csv)', '']
+        for nome, v in sorted(d, key=lambda x: -x[1][1]):
+            t.append(f'- {NOME_DIST.get(nome, nome)}: preço médio {eur(v[2])}, mediana {eur(v[1])} por mês ({num(v[0])} anúncios de T1'
+                     + ('; amostra pequena)' if v[0] < 10 else ')'))
+        t.append('')
+    t += ['## Renda mediana por concelho', '']
     for r in linhas:
         t.append(f'### {r["cidade"]}')
         t.append(f'- Anúncios: {num(r["n"])} ({SITE}/arrendar/{r["slug"]}/)')
         t.append(f'- Quarto: {f(r["quarto"])} por mês')
-        t.append(f'- T0: {f(r["T0"])}; T1: {f(r["T1"])}; T2: {f(r["T2"])} por mês')
+        t.append(f'- T0: {f(r["T0"])}; T1: {f(r["T1"])}' + (f' (preço médio {eur(r["t1_media"])})' if r.get('t1_media') else '') + f'; T2: {f(r["T2"])} por mês')
         if r['m2']:
-            t.append(f'- Preço por m² (apartamentos e moradias): {str(round(r["m2"], 1)).replace(".", ",")} € por mês')
+            t.append(f'- Preço por m² (apartamentos e moradias): {m2txt(r["m2"])} por mês')
         if r['min']:
-            t.append(f'- Renda mais baixa agora: {num(r["min"])} €')
+            t.append(f'- Renda mais baixa agora: {eur(r["min"])}')
+        t.append(f'- Por freguesia e tipologia: {SITE}/arrendar/{r["slug"]}/ (secção «Rendas por freguesia»)')
         t.append('')
     t += [f'## Regras do arrendamento em Portugal (confirmadas a {LEI_CONFIRMADA})',
           '- Caução: no máximo o valor de 2 rendas; rendas adiantadas: no máximo 2 meses, com acordo escrito (artigo 1076.º do Código Civil). '
@@ -783,24 +1478,78 @@ def com_alternos(html_txt, grupo):
 
 
 def avisar_indexnow(urls, pasta):
-    """Avisa o Bing (e quem usa IndexNow) das páginas novas, no máximo uma vez por dia. Falhas não param nada."""
+    """Avisa o Bing (e quem usa IndexNow) das páginas novas, mudadas ou retiradas, no máximo uma vez por dia. Falhas não param nada."""
     marca = os.path.join(pasta, '.indexnow')
     try:
         if time.time() - os.path.getmtime(marca) < 86400:
-            return
+            return False
     except OSError:
         pass
+    if not urls:
+        return False
     try:
         open(marca, 'w').write(str(int(time.time())))     # uma tentativa por dia, corra bem ou mal
     except OSError:
-        return
+        return False
     corpo = json.dumps({'host': SITE.split('//')[1], 'key': INDEXNOW, 'keyLocation': f'{SITE}/{INDEXNOW}.txt', 'urlList': urls[:10000]}).encode()
     try:
         req = urllib.request.Request('https://api.indexnow.org/indexnow', data=corpo, method='POST', headers={'Content-Type': 'application/json; charset=utf-8'})
         with urllib.request.urlopen(req, timeout=15) as r:
-            print('IndexNow:', r.status)
+            print('IndexNow:', r.status, len(urls), 'endereços')
     except Exception as ex:
         print('IndexNow falhou:', type(ex).__name__, getattr(ex, 'code', ''), file=sys.stderr)
+    return True
+
+
+def ler_json(caminho, omissao):
+    try:
+        with open(caminho, encoding='utf-8') as f:
+            return json.load(f)
+    except (OSError, ValueError):
+        return omissao
+
+
+def escrever_json(caminho, dados):
+    with open(caminho + '.tmp', 'w', encoding='utf-8') as f:
+        json.dump(dados, f, ensure_ascii=False, separators=(',', ':'))
+    os.replace(caminho + '.tmp', caminho)
+
+
+def podar_hist(hist, hoje):
+    """Guarda HIST_DIAS dias. Depois de 60 dias, de cada dia só ficam os distritos e o país (para os CSV do estudo),
+    menos no dia 1 de cada mês, que fica inteiro."""
+    for dia in list(hist['dias']):
+        try:
+            idade = (hoje - datetime.date.fromisoformat(dia)).days
+        except ValueError:
+            del hist['dias'][dia]
+            continue
+        if idade > HIST_DIAS:
+            del hist['dias'][dia]
+        elif idade > 60 and not dia.endswith('-01'):
+            hist['dias'][dia] = {k: v for k, v in hist['dias'][dia].items() if k.startswith('d:') or k.startswith('pt|')}
+
+
+def impressao(txt):
+    """O que conta para saber se a página mudou: o HTML sem a data e a hora da atualização."""
+    for v in sorted(VOLATEIS, key=len, reverse=True):
+        txt = txt.replace(v, '')
+    return hashlib.sha256(txt.encode()).hexdigest()[:16]
+
+
+def pagina_saiu(caminho, paginas, hoje):
+    """Resposta 410 (servida pelo Caddy): a página já não tem casas. Liga à página de cima que ainda existe."""
+    partes = caminho.strip('/').split('/')
+    cima = '/arrendar/'
+    for k in range(len(partes) - 1, 0, -1):
+        c = '/' + '/'.join(partes[:k]) + '/'
+        if c in paginas and c in INDEXAVEIS:
+            cima = c
+            break
+    lk = chips('Continuar a procurar', [(cima, 'Casas nesta zona' if cima != '/arrendar/' else 'Todas as cidades', ''), ('/arrendar/precos/', 'Preço das rendas', ''), ('/#pesquisa', 'Pesquisar com filtros', '')])
+    return pagina(caminho, 'Já não há casas aqui | DupliCasa', 'As casas desta página já foram arrendadas ou saíram dos anúncios.',
+                  'Já não há casas aqui', 'As casas desta página já foram arrendadas ou saíram dos sites de origem. Vê as que há agora na zona ou cria um alerta para saberes das novas.',
+                  [('Início', '/'), ('Arrendar', '/arrendar/')], [], lk, cima, hoje, indexar=False)
 
 
 def main():
@@ -814,26 +1563,97 @@ def main():
     if len(anuncios) < 50:
         print('Poucos anúncios: mantenho as páginas anteriores.', file=sys.stderr)
         return
-    paginas, resumo = gerar(anuncios, atualizado)
-    gerar_guias(paginas, data_pt(atualizado))
+    pai = os.path.dirname(os.path.abspath(destino))
+    os.makedirs(pai, exist_ok=True)
+    f_hist, f_reg = os.path.join(pai, 'historico-rendas.json'), os.path.join(pai, 'paginas-registo.json')
+    HIST.clear()
+    HIST.update(ler_json(f_hist, {'dias': {}}))
+    HIST.setdefault('dias', {})
+    REG.clear()
+    REG.update(ler_json(f_reg, {}))
+    REG.setdefault('paginas', {})
+    REG.setdefault('zonas', {})
+    if not REG['paginas']:
+        # 1.ª vez: as páginas que já estavam no sitemap contam como conhecidas (não passam a 404 de repente)
+        try:
+            velhas = re.findall(r'<loc>' + re.escape(SITE) + r'([^<]*)</loc>', open(os.path.join(destino, 'sitemap.xml'), encoding='utf-8').read())
+        except OSError:
+            velhas = []
+        REG['paginas'] = {c: {'h': '', 'mod': '', 'visto': ''} for c in velhas if c != '/'}
+    paginas, resumo, ficheiros, mudou = gerar(anuncios, atualizado)
+    hoje = data_pt(atualizado)
+    gerar_guias(paginas, hoje)
     # as mesmas páginas em inglês, espanhol e francês, ligadas por hreflang
+    sys.modules.setdefault('paginas', sys.modules[__name__])     # o paginas_idiomas usa este mesmo módulo (mesmos registos), não uma 2.ª cópia
     import paginas_idiomas
     outras, alternos = paginas_idiomas.gerar(anuncios, atualizado, resumo)
     paginas.update(outras)
+    for L in ('en', 'es', 'fr'):
+        VOLATEIS.add(paginas_idiomas.data(atualizado, L))
     paginas = {c: com_alternos(h, alternos.get(c)) for c, h in paginas.items()}
-    pai = os.path.dirname(os.path.abspath(destino))
-    os.makedirs(pai, exist_ok=True)
+    # endereços antigos de freguesias escritas de outra maneira: redirecionamento imediato (o Google trata-o como 301)
+    for antigo, novo in mudou.items():
+        if antigo not in paginas:
+            paginas[antigo] = pagina(antigo, 'Esta página mudou de endereço | DupliCasa', 'Esta página mudou de endereço.', 'Esta página mudou de endereço',
+                                     f'As casas desta freguesia estão agora em <a href="{novo}">{SITE}{novo}</a>.', [('Início', '/'), ('Arrendar', '/arrendar/')],
+                                     [], '', novo, hoje, canonico=novo, refrescar=novo)
+    dia = AGORA.date().isoformat()
+    # registo: data da última mudança de cada página (lastmod), páginas que deixaram de existir (410)
+    novas_ou_mudadas = []
+    for c, h in list(paginas.items()):
+        imp = impressao(h)
+        r = REG['paginas'].get(c) or {}
+        if r.get('h') != imp:
+            r['h'], r['mod'] = imp, dia
+            if c in INDEXAVEIS:
+                novas_ou_mudadas.append(SITE + c)
+        r['visto'] = dia
+        REG['paginas'][c] = r
+        paginas[c] = h.replace('__MOD__', r['mod'])
+    saiu = {}
+    for c, r in list(REG['paginas'].items()):
+        if c in paginas:
+            continue
+        visto = r.get('visto') or dia
+        try:
+            idade = (AGORA.date() - datetime.date.fromisoformat(visto)).days
+        except ValueError:
+            idade = 0
+        if idade > REG_DIAS:
+            del REG['paginas'][c]
+            continue
+        if not r.get('visto'):
+            r['visto'] = dia            # conhecida do sitemap antigo: começa a contar hoje
+        saiu[c] = pagina_saiu(c, paginas, hoje).replace('__MOD__', dia)
+        if not r.get('saiu'):
+            r['saiu'] = dia
+            novas_ou_mudadas.append(SITE + c)
     tmp = tempfile.mkdtemp(prefix='.seo-', dir=pai)
     for caminho, conteudo in paginas.items():
         p = os.path.join(tmp, caminho.strip('/'), 'index.html')
         os.makedirs(os.path.dirname(p), exist_ok=True)
         open(p, 'w', encoding='utf-8').write(conteudo)
-    lastmod = (atualizado or datetime.datetime.now(datetime.timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ'))[:10]
-    urls = [SITE + '/'] + [SITE + c for c in sorted(paginas)]
-    open(os.path.join(tmp, 'llms-full.txt'), 'w', encoding='utf-8').write(llms_full(resumo, len(anuncios), data_pt(atualizado)))
+    for caminho, conteudo in saiu.items():
+        p = os.path.join(tmp, caminho.strip('/'), '410.html')
+        os.makedirs(os.path.dirname(p), exist_ok=True)
+        open(p, 'w', encoding='utf-8').write(conteudo)
+    for caminho, conteudo in ficheiros.items():
+        p = os.path.join(tmp, caminho.strip('/'))
+        os.makedirs(os.path.dirname(p), exist_ok=True)
+        open(p, 'w', encoding='utf-8').write(conteudo)
+    for c in paginas:
+        if c in REG['paginas']:
+            REG['paginas'][c].pop('saiu', None)
+    try:
+        mod_inicio = datetime.datetime.fromtimestamp(os.path.getmtime('/var/www/duaschaves/index.html'), datetime.timezone.utc).date().isoformat()
+    except OSError:
+        mod_inicio = dia
+    no_mapa = sorted(c for c in paginas if c in INDEXAVEIS)
+    open(os.path.join(tmp, 'llms-full.txt'), 'w', encoding='utf-8').write(llms_full(resumo, len(anuncios), hoje))
     open(os.path.join(tmp, 'sitemap.xml'), 'w', encoding='utf-8').write(
-        '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n' +
-        ''.join(f'  <url><loc>{u}</loc><lastmod>{lastmod}</lastmod></url>\n' for u in urls) + '</urlset>\n')
+        '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
+        f'  <url><loc>{SITE}/</loc><lastmod>{mod_inicio}</lastmod></url>\n' +
+        ''.join(f'  <url><loc>{SITE}{c}</loc><lastmod>{REG["paginas"][c]["mod"]}</lastmod></url>\n' for c in no_mapa) + '</urlset>\n')
     os.chmod(tmp, 0o755)
     for raiz, ds, fs in os.walk(tmp):
         for d in ds:
@@ -846,9 +1666,20 @@ def main():
         os.rename(destino, velho)
     os.rename(tmp, destino)
     shutil.rmtree(velho, ignore_errors=True)
-    print(f'Páginas SEO: {len(paginas)} + sitemap.xml ({len(urls)} endereços)')
+    # histórico (tendência) e registo, escritos ao lado e trocados de uma vez
+    HIST['dias'][dia] = dict(SNAP)
+    podar_hist(HIST, AGORA.date())
     if os.environ.get('DC_INDEXNOW', '1') == '1':
-        avisar_indexnow(urls, pai)
+        ultimo = REG.get('indexnow') or ''
+        mudadas = sorted({SITE + c for c, r in REG['paginas'].items() if c in INDEXAVEIS and r.get('mod', '') > ultimo}
+                         | {SITE + c for c, r in REG['paginas'].items() if r.get('saiu', '') > ultimo})
+        if avisar_indexnow(mudadas, pai):
+            REG['indexnow'] = dia
+    escrever_json(f_hist, HIST)
+    escrever_json(f_reg, REG)
+    n_noidx = sum(1 for c in paginas if c not in INDEXAVEIS)
+    print(f'Páginas SEO: {len(paginas)} ({len(no_mapa)} no sitemap, {n_noidx} sem índice ou redirecionadas, {len(saiu)} com 410) + {len(ficheiros)} CSV; '
+          f'mudadas hoje: {len(novas_ou_mudadas)}; histórico: {len(HIST["dias"])} dias')
 
 
 if __name__ == '__main__':

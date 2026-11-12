@@ -180,7 +180,8 @@ def gerar(anuncios, atualizado, resumo):
         c = (a.get('cidade') or '').strip()
         if c:
             por_cidade.setdefault(c, []).append(a)
-    cidades = sorted([(c, l) for c, l in por_cidade.items() if len(l) >= MIN_CIDADE], key=lambda x: -len(x[1]))[:MAX_CIDADES]
+    # só cidades cuja página em português vai para o Google (o hreflang não pode apontar para uma página sem índice)
+    cidades = sorted([(c, l) for c, l in por_cidade.items() if len(l) >= MIN_CIDADE and caminho_pt(c) in P.INDEXAVEIS], key=lambda x: -len(x[1]))[:MAX_CIDADES]
     if not cidades:
         return paginas, alternos
 
@@ -195,7 +196,7 @@ def gerar(anuncios, atualizado, resumo):
         boas = [a for a in plaus if a.get('fotos')]
         meds = {tt: P.mediana([a['renda'] for a in plaus if P.tipo_ok(a, tt)]) for tt in ('Quarto', 'Apartamento', 'T1')}
         m2 = P.mediana([a['renda'] / a['area'] for a in plaus if P.area_ok(a) and a.get('tipo') != 'Quarto'])
-        tipos = [tt for tt in ('Quarto', 'Apartamento') if sum(1 for a in lista if P.tipo_ok(a, tt)) >= P.MIN_TIPO
+        tipos = [tt for tt in ('Quarto', 'Apartamento') if caminho_pt(cidade, tt) in P.INDEXAVEIS
                  and any(P.tipo_ok(a, tt) and a.get('fotos') for a in plaus)]
         grupo_cidade = {L: caminho(L, cidade) for L in T}
         grupo_tipos = {tt: {L: caminho(L, cidade, tt) for L in T} for tt in tipos}
