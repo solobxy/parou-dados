@@ -1,0 +1,137 @@
+PAROU
+Cobertura de Feeds
+
+Dados de 12/11/2026 · 27 de 30 operadores
+
+Feeds registados
+30
+Linhas
+2662
+Paragens
+46 413
+Operacionais
+27
+Tabela
+Checklist
+Operador	Modo	Estado	Linhas	Paragens	Ação
+A Onda - Mobilidade Urbana	Autocarro	
+OK
+	10	306	
+AUTNA SL	Autocarro	
+OK
+	1	8	
+Apanha-me! - Transportes Urbanos	Autocarro	
+OK
+	7	141	
+CP - Comboios de Portugal	Comboio	
+OK
+	184	457	
+Carris (Lisboa)	Autocarro	
+OK
+	177	2343	
+Carris Metropolitana	Autocarro	
+OK
+	717	12752	
+Cascais Próxima, E.M., S.A. (MobiCascais)	Autocarro	
+OK
+	163	1083	
+Circuito Olhão	Autocarro	
+OK
+	4	87	
+Fertagus	Comboio	
+OK
+	3	14	
+GIRO	Autocarro	
+OK
+	11	232	
+Guimabus (Guimarães)	Autocarro	
+OK
+	59	1522	
+Horários do Funchal	Autocarro	
+OK
+	164	1743	
+Metro Transportes do Sul	Metro	
+OK
+	3	19	
+Metro de Lisboa	Metro	
+OK
+	4	74	
+Metro do Porto	Metro	
+OK
+	7	85	
+Mobiave (Famalicão)	Autocarro	
+Desatualizado
+	90	2452	
+Próximo (Faro)	Autocarro	
+OK
+	14	189	
+RDL RODOVIÁRIA DO LIS	Autocarro	Sem dados	0	0	
+RDL RODOVIÁRIA DO LIS II	Autocarro	Sem dados	0	0	
+RMTEJO II - Transportes Rodoviários de Passageiros	Autocarro	Sem dados	0	0	
+SMTUC (Coimbra)	Autocarro	
+OK
+	230	1529	
+STCP (Porto)	Autocarro	
+OK
+	71	2554	
+Sobe e Desce (Tavira)	Autocarro	
+OK
+	2	51	
+TCB Barreiro	Autocarro	
+OK
+	75	280	
+TUB Braga	Autocarro	
+OK
+	80	2014	
+TUBA Barcelos	Autocarro	
+Desatualizado
+	60	1626	
+Transtejo Soflusa	Barco	
+OK
+	6	10	
+UNIR	Autocarro	
+OK
+	432	11513	
+Vai e Vem - Circuito Urbano	Autocarro	
+OK
+	16	477	
+Vamus Algarve	Autocarro	
+OK
+	72	2852	
+PAROU
+·
+Informação em direto de transportes em Portugal
+Perto
+Horários
+Cidades
+Linhas
+Notícias
+Ocorrências
+Comunidade
+Catálogo
+Sobre
+Privacidade
+Termos
+Apagar conta
+Contactar
+Linhas e horários
+Greves
+Horários:
+Carris Metropolitana
+Metro de Lisboa
+Carris
+CP
+STCP
+Metro do Porto
+Fertagus
+Transtejo e Soflusa
+MobiCascais
+Metro Sul do Tejo
+SMTUC
+TUB Braga
+Gratuita e sem fins lucrativos · Dados dos operadores, IPMA, Fogos.pt/ANEPC · Mapas © OpenStreetMap · Feito por dinissousa.pt
+Perto
+Horários
+Alertas
+Notícias
+Comunidade

@@ -1,0 +1,4 @@
+1-perto-funchal: ok https://parou.pt/perto
+2-mapa-funchal: ok https://parou.pt/mapa
+3-horarios: ok https://parou.pt/horarios
+4-cobertura: ok https://parou.pt/cobertura
