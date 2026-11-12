@@ -720,7 +720,7 @@ www.tapmoss.com {
 	}
 	# Preços do dia (resumo.json, lista.json, h/<produto>.json, estado.json); a base de dados não sai daqui
 	handle_path /dados/* {
-		@privado path /historico.db* /*.tmp /estado-paginas.json /estado-estudos.json
+		@privado path /historico.db* /*.tmp /estado-paginas.json /estado-estudos.json /estudos-para-enviar/*
 		respond @privado 404
 		root * /var/lib/caiu-dados
 		@dia path /resumo.json /lista.json /estado.json
@@ -740,9 +740,10 @@ www.tapmoss.com {
 	@gerado path /preco/* /produto/* /promocoes/* /supermercado-mais-barato/* /cabaz-mais-barato/* /estudos/* /sitemap.xml /sitemap-paginas.xml /sitemap-produtos*.xml
 	handle @gerado {
 		root * /var/lib/caiu-dados/paginas
-		header Cache-Control "public, max-age=300"
 		@sitemaps path /sitemap*.xml /preco/sitemap.xml
 		header @sitemaps Cache-Control "public, max-age=1800"
+		@paginas not path /sitemap*.xml /preco/sitemap.xml
+		header @paginas Cache-Control "public, max-age=300"
 		@csv path *.csv
 		header @csv Content-Type "text/csv; charset=utf-8"
 		@txt path *.txt

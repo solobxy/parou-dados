@@ -323,7 +323,7 @@ def rodape(dia, hora):
     return f'''<footer class="rodape">
   <div class="caixa rodape__in">
     <p class="rodape__marca" aria-hidden="true">ca<span class="marca__i">ı<span class="marca__ponto"></span></span>u</p>
-    <p class="rodape__dados">Preços recolhidos a <time datetime="{dia}">{data_longa(dia)}</time>, às <time>{hora}</time>, nas lojas online do Continente, Pingo Doce e Auchan. Podem mudar durante o dia e ser diferentes na loja física ou com cartão de cliente. O caiu.pt não tem ligação a estas lojas.</p>
+    <p class="rodape__dados">Preços recolhidos a <time datetime="{dia}">{data_longa(dia)}</time>{f", às <time>{hora}</time>" if hora else ""}, nas lojas online do Continente, Pingo Doce e Auchan. Podem mudar durante o dia e ser diferentes na loja física ou com cartão de cliente. O caiu.pt não tem ligação a estas lojas.</p>
     <p class="rodape__links"><a href="/promocoes/">Promoções da semana</a> · <a href="/cabaz-mais-barato/">Cabaz mais barato</a> · <a href="/supermercado-mais-barato/">Supermercado mais barato</a> · <a href="/preco/">Preços por produto</a> · <a href="/#avisos">Avisos de preço</a> · <a href="/privacidade.html">Privacidade</a></p>
     <p class="rodape__autor">Feito por <a href="https://dinissousa.pt" rel="noopener">dinissousa.pt</a></p>
   </div>
@@ -1325,6 +1325,14 @@ def pct(a, b):
     return (b - a) / a * 100 if a else 0.0
 
 
+def e_lista(xs):
+    return xs[0] if len(xs) == 1 else ', '.join(xs[:-1]) + ' e ' + xs[-1]
+
+
+def pct_abs(v):
+    return ('%.1f' % abs(v)).replace('.', ',') + ' %'
+
+
 def pct_txt(v):
     s = ('%.1f' % abs(v)).replace('.', ',')
     return ('+' if v > 0.05 else '−' if v < -0.05 else '') + s + ' %'
@@ -1510,7 +1518,8 @@ def pagina_cabaz(D, hora):
 def mudancas_semana(D, hoje):
     """Para cada loja: produtos cujo preço mudou desde há 7 dias. {loja: {'n': acompanhados, 'sobe': [...], 'desce': [...]}}"""
     lim = dia_mais(hoje, -7)
-    out = {l: {'n': 0, 'sobe': [], 'desce': []} for l in LOJAS}
+    lim30 = dia_mais(hoje, -30)
+    out = {l: {'n': 0, 'sobe': [], 'desce': [], 'pvpr_7d': 0, 'pvpr_habitual': 0} for l in LOJAS}
     for i, a in D.P.g.items():
         if max(x[11] or 0 for x in a[7]) < 8:
             continue
@@ -1519,6 +1528,13 @@ def mudancas_semana(D, hoje):
         for l, v in h.items():
             if not v or v[-1][0] != hoje:
                 continue
+            # desconto só sobre o PVPR: o preço «com desconto» é o mesmo que a loja já cobrava? (para os estudos)
+            ult = v[-1]
+            ant30 = [r[1] for r in v[:-1] if r[0] >= lim30]
+            if ult[3] and not ult[2] and ult[1] < ult[3] and len(ant30) >= 7:
+                out[l]['pvpr_7d'] += 1
+                if max(ant30) <= ult[1] + 0.005:
+                    out[l]['pvpr_habitual'] += 1
             antes = [r for r in v if r[0] <= lim and r[0] >= dia_mais(lim, -3)]
             if not antes:
                 continue
@@ -1565,8 +1581,9 @@ def bloco_semana_loja(D, l, ms):
 
 
 # ---------- estudos (para jornalistas): só quando há dados para os fazer ----------
-def foto_do_dia(D):
-    """Números de hoje para os estudos: promoções por loja e por veredito (guardados em estado-estudos.json)."""
+def foto_do_dia(D, semana=None):
+    """Números de hoje para os estudos: promoções por loja e por veredito (guardados em estado-estudos.json).
+    semana (de mudancas_semana): descontos sobre o PVPR em que o preço é o mesmo que a loja já cobrava nos 30 dias anteriores."""
     out = {}
     for l in LOJAS:
         ofs = [x for a in D.P.g.values() for x in a[7] if x[0] == l]
@@ -1576,7 +1593,8 @@ def foto_do_dia(D):
                   'real': sum(1 for x in promo if x[8] == 'real'), 'fachada': sum(1 for x in promo if x[8] == 'fachada'),
                   'pvpr': sum(1 for x in promo if ms(x, 'pvpr')), 'outra': sum(1 for x in promo if ms(x, 'outra')),
                   'igual': sum(1 for x in promo if ms(x, 'igual')), 'antes': sum(1 for x in promo if ms(x, 'antes')),
-                  'sem_confirmar': sum(1 for x in promo if x[8] == 'promo')}
+                  'sem_confirmar': sum(1 for x in promo if x[8] == 'promo'),
+                  'pvpr_7d': (semana or {}).get(l, {}).get('pvpr_7d', 0), 'pvpr_habitual': (semana or {}).get(l, {}).get('pvpr_habitual', 0)}
     out['dias_historico'] = D.R.get('dias_historico') or 0
     return out
 
@@ -1591,12 +1609,18 @@ def estudo_mes(D, est_estudos, ano, mes):
     nome_mes = f'{MESES[mes - 1]} de {ano}'
     if D.dia <= fim:
         return None, f'{nome_mes}: o mês ainda não acabou'
-    E = D.R.get('essencial') or {}
-    hist = [r for r in hist_cabaz(E) if ini <= r[0] <= fim and r[0] >= ESSENCIAL_DESDE]
-    if len(hist) < 25:
-        return None, f'{nome_mes}: só {len(hist)} dias com o cabaz calculado na recolha (são precisos 25)'
-    fotos = {d: f for d, f in (est_estudos.get('dias') or {}).items() if ini <= d <= fim and f.get('dias_historico', 0) >= 30}
     slug_e = f'precos-supermercado-{MESES[mes - 1]}-{ano}'.replace('ç', 'c')
+    cong = (est_estudos.get('congelados') or {}).get(slug_e)
+    if cong:  # já publicado: os números ficam os do dia em que saiu
+        hist, fotos, pub = cong['hist'], cong['fotos'], cong['pub']
+    else:
+        E = D.R.get('essencial') or {}
+        hist = [r for r in hist_cabaz(E) if ini <= r[0] <= fim and r[0] >= ESSENCIAL_DESDE]
+        if len(hist) < 25:
+            return None, f'{nome_mes}: só {len(hist)} dias com o cabaz calculado na recolha (são precisos 25)'
+        fotos = {d: f for d, f in (est_estudos.get('dias') or {}).items() if ini <= d <= fim and f.get('dias_historico', 0) >= 30}
+        pub = D.dia
+        est_estudos.setdefault('congelados', {})[slug_e] = {'hist': hist, 'fotos': fotos, 'pub': pub}
     url = f'{SITE}/estudos/{slug_e}/'
     p1, p2 = hist[:7], hist[-7:]
     m1, m2 = media_lojas(p1), media_lojas(p2)
@@ -1606,7 +1630,7 @@ def estudo_mes(D, est_estudos, ano, mes):
     linhas_c = ''.join(f'<tr><th scope="row">{LOJAS[l]}</th><td>{eur(m1[l])}</td><td>{eur(m2[l])}</td><td>{pct_txt(var[l])}</td></tr>' for l in ordem)
     sobe = max('cpa', key=lambda l: var[l])
     titular = (f'Em {nome_mes}, o cabaz do essencial {"subiu" if var[sobe] > 0.05 else "não subiu"} '
-               + (f'{pct_txt(var[sobe])} no {LOJAS[sobe]}' if var[sobe] > 0.05 else 'em nenhuma das três lojas'))
+               + (f'{pct_abs(var[sobe])} no {LOJAS[sobe]}' if var[sobe] > 0.05 else 'em nenhuma das três lojas'))
     promo_html, promo_com = '', ''
     if len(fotos) >= 15:
         soma = {l: Counter() for l in LOJAS}
@@ -1628,21 +1652,28 @@ def estudo_mes(D, est_estudos, ano, mes):
                       f'<th scope="col">Fachada</th><th scope="col">Sobre o PVPR</th></tr></thead><tbody>{linhas_p}</tbody></table></div>')
         promo_com = (f' Nas promoções, {tot_f / max(1, tot_p) * 100:.0f} % das que verificámos eram fachada e '
                      f'{tot_v / max(1, tot_p) * 100:.0f} % calculavam o desconto sobre o PVPR.')
-    titulo = curta(f'Preços do supermercado em {nome_mes}: o que subiu')[:60]
+        p7 = sum(soma[l]['pvpr_7d'] for l in LOJAS)
+        if p7:
+            hab = sum(soma[l]['pvpr_habitual'] for l in LOJAS)
+            frase_hab = (f' Em {hab / p7 * 100:.0f} % dos descontos sobre o PVPR, o preço «com desconto» não estava abaixo de nenhum '
+                         'preço que a loja cobrou nos 30 dias anteriores.')
+            promo_com += frase_hab
+            promo_html += f'<p class="lead">{e(frase_hab.strip())}</p>'
+    titulo = f'Preços do supermercado em {nome_mes}: o que mudou'
     descricao = curta(f'{titular}. Dados diários do Continente, Pingo Doce e Auchan online, com método e dados para descarregar.')
     ld = {'@context': 'https://schema.org', '@graph': [
         migalhas_ld(('caiu.pt', SITE + '/'), ('Estudos', SITE + '/estudos/'), (f'Preços em {nome_mes}', url)),
-        {'@type': 'Article', '@id': url, 'headline': titular[:110], 'url': url, 'inLanguage': 'pt-PT', 'datePublished': D.dia,
-         'dateModified': D.dia, 'author': {'@id': SITE + '/#organizacao'}, 'publisher': {'@id': SITE + '/#organizacao'},
+        {'@type': 'Article', '@id': url, 'headline': titular[:110], 'url': url, 'inLanguage': 'pt-PT', 'datePublished': pub,
+         'dateModified': pub, 'author': {'@id': SITE + '/#organizacao'}, 'publisher': {'@id': SITE + '/#organizacao'},
          'description': descricao, 'image': SITE + '/partilha.png'}]}
-    corpo = [cabeca(titulo, descricao, url, ld, D.dia, '', 'article'), '<main id="conteudo">',
+    corpo = [cabeca(titulo, descricao, url, ld, pub, '', 'article'), '<main id="conteudo">',
              '<section class="bloco pp-heroi"><div class="caixa es-texto">',
              f'<p class="pp-migalhas"><a href="/">caiu.pt</a> › <a href="/estudos/">Estudos</a> › {e(nome_mes)}</p>',
              f'<h1>{e(titular)}</h1>',
-             f'<p class="pr-resposta">Comparámos a média dos primeiros sete dias de {nome_mes} ({data_longa(p1[0][0])} a {data_longa(p1[-1][0])}) com a dos últimos sete '
-             f'({data_longa(p2[0][0])} a {data_longa(p2[-1][0])}) num cabaz de {n} produtos essenciais para uma pessoa, durante uma semana. '
+             f'<p class="pr-resposta">Comparámos a média dos primeiros sete dias de {nome_mes} ({intervalo(p1[0][0], p1[-1][0])}) com a dos últimos sete '
+             f'({intervalo(p2[0][0], p2[-1][0])}) num cabaz de {n} produtos essenciais para uma pessoa, durante uma semana. '
              f'No fim do mês, o mais barato era o {LOJAS[ordem[0]]} ({eur(m2[ordem[0]])}) e o mais caro o {LOJAS[ordem[-1]]} ({eur(m2[ordem[-1]])}).{promo_com}</p>',
-             f'<p class="pr-data">Publicado a <time datetime="{D.dia}">{data_ano(D.dia)}</time>. Amostra: {len(hist)} dias, {n} produtos, 3 lojas online.</p>',
+             f'<p class="pr-data">Publicado a <time datetime="{pub}">{data_ano(pub)}</time>. Amostra: {len(hist)} dias, {n} produtos, 3 lojas online.</p>',
              '</div></section>',
              '<section class="bloco pp-sec" aria-labelledby="t-cabaz"><div class="caixa es-texto">',
              '<h2 id="t-cabaz">O cabaz do essencial</h2>',
@@ -1655,13 +1686,14 @@ def estudo_mes(D, est_estudos, ano, mes):
              f'<p class="pp-acoes"><a class="botao botao--leve" href="/estudos/{slug_e}/dados.csv" download>Descarregar os dados (CSV)</a>'
              '<a class="botao botao--leve" href="/cabaz-mais-barato/">O cabaz desta semana</a></p>',
              '<p class="pp-nota">Para jornalistas: os dados são livres para usar (CC BY 4.0), citando o caiu.pt.</p>',
-             '</div></section>', '</main>', rodape(D.dia, '')]
+             '</div></section>', '</main>', rodape(pub, '')]
     comunicado = (f'{titular}\n\n'
-                  f'{data_ano(D.dia)[:1].upper() + data_ano(D.dia)[1:]}. O caiu.pt, comparador gratuito que verifica todos os dias os preços do Continente, Pingo Doce e Auchan online, '
+                  f'{data_ano(pub)[:1].upper() + data_ano(pub)[1:]}. O caiu.pt, comparador gratuito que verifica todos os dias os preços do Continente, Pingo Doce e Auchan online, '
                   f'mediu o custo de um cabaz de {n} produtos essenciais ao longo de {nome_mes}. Entre a primeira e a última semana do mês, o cabaz '
-                  + ', '.join(f'{"subiu" if var[l] > 0.05 else "desceu" if var[l] < -0.05 else "ficou igual"} {pct_txt(var[l])} no {LOJAS[l]}' for l in ordem)
+                  + e_lista([(f'{"subiu" if var[l] > 0 else "desceu"} {pct_abs(var[l])}' if abs(var[l]) > 0.05 else 'ficou igual') + f' no {LOJAS[l]}' for l in ordem])
                   + f'. No fim do mês, o mais barato era o {LOJAS[ordem[0]]}, com {eur(m2[ordem[0]])} por pessoa e por semana.{promo_com}\n\n'
-                  f'Amostra: {len(hist)} dias, {n} produtos, 3 supermercados online. Método e dados: {url}\n')
+                  f'Amostra: {len(hist)} dias, {n} produtos, 3 supermercados online. Método e dados: {url}\n'
+                  'Os dados são livres para usar (CC BY 4.0), citando o caiu.pt.\n')
     csv = 'dia,continente,pingo_doce,auchan,cada_um_na_loja_mais_barata,artigos\n' + ''.join(
         f'{r[0]},{r[1]:.2f},{r[2]:.2f},{r[3]:.2f},{r[4]:.2f},{r[5]}\n' for r in hist)
     return slug_e, ('\n'.join(x for x in corpo if x), comunicado, csv, titular)
@@ -1674,10 +1706,24 @@ def pagina_estudos(D, feitos, hora):
     ld = {'@context': 'https://schema.org', '@graph': [migalhas_ld(('caiu.pt', SITE + '/'), ('Estudos', url)),
                                                          {'@type': 'CollectionPage', '@id': url, 'name': titulo, 'url': url, 'inLanguage': 'pt-PT'}]}
     itens = ''.join(f'<li><a href="/estudos/{s}/">{e(t)}</a></li>' for s, t in feitos)
-    return '\n'.join([cabeca(titulo, descricao, url, ld, D.dia), '<main id="conteudo"><section class="bloco pp-heroi"><div class="caixa">',
+    if not itens:  # ainda sem estudos: a página existe (para quem a procura) mas fica fora do Google
+        itens = ('<li><p>O primeiro estudo sai quando houver um mês inteiro de dados com todos os critérios a valer. '
+                 'Até lá, os dados diários do cabaz estão em <a href="/cabaz-mais-barato/">cabaz mais barato</a> '
+                 '(<a href="/cabaz-mais-barato/historico.csv">CSV</a>).</p></li>')
+    return '\n'.join([cabeca(titulo, descricao, url, ld, D.dia, '' if feitos else 'noindex, follow'),
+                      '<main id="conteudo"><section class="bloco pp-heroi"><div class="caixa es-texto">',
                       '<p class="pp-migalhas"><a href="/">caiu.pt</a> › Estudos</p><h1>Estudos</h1>',
                       '<p class="lead">Um estudo por mês, feito com os preços que recolhemos todos os dias. Dados livres para usar, citando o caiu.pt.</p>',
-                      f'<ul class="pp-rel">{itens}</ul></div></section></main>', rodape(D.dia, hora)])
+                      f'<ul class="{"pp-rel" if feitos else "es-vazio"}">{itens}</ul></div></section></main>', rodape(D.dia, hora)])
+
+
+def opcional(nome, f, padrao):
+    """Partes que não podem impedir as outras páginas de sair: se falharem, fica o aviso e segue."""
+    try:
+        return f()
+    except Exception as ex:  # noqa: BLE001
+        print(f'AVISO: {nome} falhou: {type(ex).__name__}: {ex}', file=sys.stderr)
+        return padrao
 
 
 def escrever(raiz, caminho, texto):
@@ -1743,7 +1789,7 @@ def main():
     escrever(novo, 'produto/index.html', pagina_produtos_indice(D, prods, gss, hora))
 
     # promoções da semana por loja (/promocoes/<loja>/) e «qual é o mais barato» (/supermercado-mais-barato/)
-    ms = mudancas_semana(D, hoje)
+    ms = opcional('mudanças da semana', lambda: mudancas_semana(D, hoje), {})
     por_loja = OrderedDict((l, v) for l, v in ((l, promos_loja(D, l)) for l in LOJAS) if v)
     if por_loja:
         escrever(novo, 'promocoes/index.html', pagina_promocoes(D, por_loja, hora))
@@ -1755,7 +1801,7 @@ def main():
     if mb:
         escrever(novo, 'supermercado-mais-barato/index.html', mb)
         lastmod[SITE + '/supermercado-mais-barato/'] = hoje
-    cz, csv = pagina_cabaz(D, hora)
+    cz, csv = opcional('cabaz', lambda: pagina_cabaz(D, hora), (None, None))
     if cz:
         escrever(novo, 'cabaz-mais-barato/index.html', cz)
         escrever(novo, 'cabaz-mais-barato/historico.csv', csv)
@@ -1764,24 +1810,25 @@ def main():
     # estudos: guarda os números de hoje e faz o estudo de cada mês que já tem dados que cheguem
     f_estudos = os.path.join(pasta, 'estado-estudos.json')
     ee = ler_json(f_estudos, {})
-    ee.setdefault('dias', {})[hoje] = foto_do_dia(D)
+    ee.setdefault('dias', {})[hoje] = opcional('números do dia', lambda: foto_do_dia(D, ms), {})
     ee['dias'] = dict(sorted(ee['dias'].items())[-400:])
     feitos_e, motivos = [], []
     a, m = int(ESSENCIAL_DESDE[:4]), int(ESSENCIAL_DESDE[5:7])
     while (a, m) <= (int(hoje[:4]), int(hoje[5:7])):
-        s_e, r = estudo_mes(D, ee, a, m)
+        s_e, r = opcional(f'estudo {m}/{a}', lambda: estudo_mes(D, ee, a, m), (None, f'{m}/{a}: erro'))
         if s_e:
             pag, com, csv_e, tit = r
             escrever(novo, f'estudos/{s_e}/index.html', pag)
-            escrever(novo, f'estudos/{s_e}/comunicado.txt', com)
             escrever(novo, f'estudos/{s_e}/dados.csv', csv_e)
+            # o comunicado não fica público: alertas.py manda-o por e-mail ao administrador para ele o enviar
+            escrever(pasta, f'estudos-para-enviar/{s_e}.txt', com)
             feitos_e.append((s_e, tit))
             lastmod[f'{SITE}/estudos/{s_e}/'] = ee.setdefault('publicados', {}).setdefault(s_e, hoje)
         else:
             motivos.append(r)
         a, m = (a + 1, 1) if m == 12 else (a, m + 1)
+    escrever(novo, 'estudos/index.html', pagina_estudos(D, list(reversed(feitos_e)), hora))
     if feitos_e:
-        escrever(novo, 'estudos/index.html', pagina_estudos(D, list(reversed(feitos_e)), hora))
         lastmod[SITE + '/estudos/'] = hoje
 
     # sitemaps: índice em /sitemap.xml, páginas e produtos (só os que entram no Google) à parte

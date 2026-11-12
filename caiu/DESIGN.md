@@ -44,6 +44,17 @@ Uma família: **Mona Sans** variável (wdth 75–125, wght 200–900), auto-aloj
   (`caiu/cabaz.py`). Botões segmentados (pessoas, semana/mês), três cartões de loja com o total (o mais barato
   em amarelo com o carimbo «Mais barato»), lista de produtos em `<details>` e gráfico do total por dia.
 - **Folha do produto**: `<dialog>` que sobe de baixo no telemóvel e fica ao centro no computador.
+- **Página do produto** (`/produto/<nome>/`, feita por `caiu/paginas.py`, estilos em `sites/caiu/paginas.css`):
+  a folha do produto em página inteira. Topo: migalhas, foto, nome (H1), resposta direta de 40 a 60 palavras e a
+  hora da recolha em `<time>`; ao lado (computador) ou logo a seguir (telemóvel) os cartões das lojas, o mais
+  barato em amarelo, com carimbo, preço riscado e o mais baixo dos 30 dias anteriores. Depois «A promoção é a
+  sério?», o histórico (gráfico igual ao da folha, desenhado no servidor em duas larguras, tabela de 30 dias,
+  últimas mudanças com «subiu/desceu» e os preços dia a dia num `<details>`), outros produtos do mesmo termo e o
+  método. Movimento: o carimbo bate uma vez ao abrir; as linhas do gráfico riscam-se ao entrar no ecrã (só onde
+  há `animation-timeline`); com movimento reduzido fica tudo parado.
+- **Cabaz mais barato** (`/cabaz-mais-barato/`): resposta direta, os três cartões de loja do cabaz do essencial
+  (média da semana), tabela por agregado e mês, tabela dos produtos com a loja mais barata a amarelo, gráfico e
+  tabela por semana, CSV com os dados (CC BY 4.0).
 
 ## 5. Layout
 Base 4 px (4, 8, 12, 16, 24, 32, 48, 64, 96, 160). Margem 20 px no telemóvel, 48 px no computador,
@@ -64,6 +75,11 @@ Separação por degrau de tom (papel → branco → amarelo).
 Sem scroll horizontal a 320 px. `env(safe-area-inset-bottom)` na folha do produto.
 
 ## 9. Para agentes
+Páginas para o Google: `caiu/paginas.py` (testes em `caiu/verificar/test_paginas.py`). Regras: resposta direta no
+topo (40 a 60 palavras) com números do dia, data visível em `<time>`, schema só com dados verdadeiros, uma página
+de produto só quando há dados que cheguem (2+ lojas, ou 7+ dias com mudança de preço ou promoção), endereços que
+não mudam. O que está entre `<!--indexnow-->` é o que conta para avisar o Bing de que a página mudou.
+
 Tokens em `sites/caiu/estilo.css` (`:root`). Dados em `/dados/*.json`, escritos por `caiu/recolher.py`
 (formato compacto descrito na função `comp`). Estatísticas: `data-site="caiu"`; eventos próprios
 `pesquisa`, `lista`, `loja`, `produto`.
