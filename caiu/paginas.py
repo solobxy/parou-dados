@@ -312,7 +312,7 @@ def cabeca(titulo, descricao, url, ld, dia, robots='', og='website'):
 <a class="saltar" href="#conteudo">Saltar para o conteúdo</a>
 <header class="topo">
   <div class="topo__in">
-    <a class="marca" href="/" aria-label="caiu.pt, início"><span class="marca__txt" aria-hidden="true">ca<span class="marca__i">ı<span class="marca__ponto"></span></span>u</span></a>
+    <a class="marca" href="/"><span class="sr">caiu.pt, início</span><span class="marca__txt" aria-hidden="true">ca<span class="marca__i">ı<span class="marca__ponto"></span></span>u</span></a>
     <nav class="topo__nav" aria-label="Atalhos"><a class="topo__link" href="/promocoes/">Promoções</a><a class="topo__link" href="/cabaz-mais-barato/">Cabaz</a><a class="topo__link" href="/preco/">Preços</a></nav>
   </div>
 </header>
@@ -423,7 +423,7 @@ def pagina_termo(D, sec, termo, gs, irmaos, hora):
     resto = [g for g in gs[30:] if g['i'] in URLS]
     mais_html = ''
     if resto:
-        mais_html = (f'<h3>Mais {e(termo)} com histórico de preço</h3><ul class="pp-lista">'
+        mais_html = (f'<h3>Mais {e(termo_frase((sec, termo)))} com histórico de preço</h3><ul class="pp-lista">'
                      + ''.join(f'<li><a href="{e(URLS[g["i"]])}">{e(g["n"])}</a> <span>{e(qtd_texto(g["q"]))} · {eur(g["min"])}</span></li>' for g in resto)
                      + '</ul>')
     corpo = [cabeca(titulo, descricao, url, ld, D.dia), '<main id="conteudo">']
