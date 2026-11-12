@@ -117,7 +117,7 @@ p{margin:0}
 .bolha.on{opacity:1;transform:none;transition:opacity .3s var(--ease) .4s,transform .8s var(--mola) .4s}
 .bolha img{height:21px;width:auto;max-width:none;display:block}
 .b-duplicasa{box-shadow:0 0 0 1px rgba(16,36,27,.1),0 16px 30px -14px rgba(0,0,0,.4)}
-.b-anjinho img{height:19px}.b-jinxed img{height:27px}.b-parou img{height:24px}.b-goodman img{height:17px}.b-tapmoss img{height:20px}.b-duplicasa img{height:22px}
+.b-caiu img{height:26px}.b-ganhas img{height:19px}.b-anjinho img{height:19px}.b-jinxed img{height:27px}.b-parou img{height:24px}.b-goodman img{height:17px}.b-tapmoss img{height:20px}.b-duplicasa img{height:22px}
 .carta.s1 .scr::after,.carta.s2 .scr::after{opacity:.16}
 .scr::after{content:"";position:absolute;inset:0;background:#000;opacity:0;transition:opacity .6s var(--ease);pointer-events:none}
 .scr img{transition:opacity .45s var(--ease)}
@@ -258,6 +258,34 @@ p{margin:0}
 .h-art{padding:7px 11px;border-radius:11px;font-weight:700}
 .h-art b{color:#C7372A;font-size:15px}
 .h-art i{width:16px;height:16px;border-radius:50%;background:#2E8B57;color:#fff;font-style:normal;font-size:10px;display:grid;place-items:center}
+/* CAIU: etiquetas de preço; a promoção falsa leva o carimbo e o preço que caiu mesmo desce */
+.hc-etq{display:grid;gap:1px;padding:9px 12px 9px 21px;background:#fff;color:#141414;border-radius:6px 12px 12px 6px;box-shadow:0 1px 2px rgba(0,0,0,.08),0 16px 30px -14px rgba(0,0,0,.4);font-size:12px;line-height:1.2;white-space:nowrap;rotate:var(--r,0deg)}
+.hc-etq i{position:absolute;left:7px;top:50%;width:7px;height:7px;margin-top:-3.5px;border-radius:50%;background:#E2E2DE;box-shadow:inset 0 1px 1px rgba(0,0,0,.25)}
+.hc-etq s{color:#6B6B6B}
+.hc-etq b{font-size:17px;font-weight:800;letter-spacing:-.01em}
+.hc-etq em{font-style:normal;font-weight:800;color:#D0242C}
+.hc-carimbo{position:absolute;right:-16px;top:-13px;padding:3px 8px;border:2px solid #D0242C;border-radius:5px;background:rgba(255,255,255,.94);color:#D0242C;font-weight:800;font-size:12px;letter-spacing:.06em;text-transform:uppercase;rotate:12deg;opacity:0}
+.h-caiu.on .hc-carimbo{animation:carimba .35s cubic-bezier(.55,0,.8,.2) 1.5s both}
+.hc-caiu{display:inline-flex;align-items:center;gap:8px;padding:9px 13px;border-radius:12px;background:#FFD83D;color:#141414;font-weight:800;font-size:13px;white-space:nowrap;box-shadow:0 1px 2px rgba(0,0,0,.08),0 16px 30px -14px rgba(0,0,0,.4)}
+.hc-caiu b{background:#141414;color:#FFD83D;padding:2px 7px;border-radius:5px}
+.hc-seta{display:grid;place-items:center;width:44px;height:44px;border-radius:50%;background:#141414;color:#FFD83D;font-size:22px;font-weight:800;box-shadow:0 16px 26px -12px rgba(0,0,0,.55)}
+.h-caiu.on .hc-seta{animation:cai-seta 1.3s var(--suave) 1.3s 2}
+@keyframes cai-seta{40%{translate:0 calc(14px * var(--k))}}
+.hc-cabaz{display:inline-flex;align-items:center;gap:6px;padding:8px 13px;border-radius:999px;background:#fff;color:#141414;font-size:12.5px;white-space:nowrap;box-shadow:0 1px 2px rgba(0,0,0,.08),0 16px 30px -14px rgba(0,0,0,.4)}
+.hc-cabaz b{font-weight:800}
+/* GANHAS: o recibo dá o líquido e as barras dos salários sobem */
+.hg-eur{display:grid;place-items:center;width:40px;height:40px;border-radius:50%;background:#FFE500;color:#111311;font-weight:900;font-size:20px;box-shadow:inset 0 0 0 3px #111311,0 14px 22px -10px rgba(0,0,0,.5);rotate:var(--r,0deg)}
+.hg-eur.hg-p{width:30px;height:30px;font-size:15px}
+.h-ganhas.on .hg-eur{animation:flutua 3.2s ease-in-out calc(var(--d) + .7s) 1}
+.hg-liq{display:inline-flex;align-items:baseline;gap:10px;padding:10px 14px;border-radius:12px;background:#0F110F;color:#F1F2EC;font-size:13px;white-space:nowrap;box-shadow:0 1px 2px rgba(0,0,0,.08),0 16px 30px -14px rgba(0,0,0,.4)}
+.hg-liq i{font-style:normal;color:#B9BDB5}
+.hg-liq b{color:#FFE500;font-size:17px;font-weight:800}
+.hg-barras{display:flex;align-items:flex-end;gap:4px;height:60px;padding:10px;border-radius:12px;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.08),0 16px 30px -14px rgba(0,0,0,.4)}
+.hg-barras i{width:8px;height:calc(40px * var(--h));border-radius:2px 2px 0 0;background:#111311;transform:scaleY(.1);transform-origin:50% 100%;transition:transform .3s}
+.hg-barras i:nth-child(3){background:#FFE500;box-shadow:inset 0 0 0 1.5px #111311}
+.h-ganhas.on .hg-barras i{transform:none;transition:transform .8s var(--mola) calc(var(--d) + .35s)}
+.hg-irs{display:inline-flex;align-items:center;gap:8px;padding:7px 11px;border-radius:11px;background:#fff;color:#121212;font-weight:700;font-size:13px;white-space:nowrap;box-shadow:0 1px 2px rgba(0,0,0,.08),0 16px 30px -14px rgba(0,0,0,.4)}
+.hg-irs i{width:16px;height:16px;border-radius:50%;background:#2E8B57;color:#fff;font-style:normal;font-size:10px;display:grid;place-items:center}
 @media (max-width:719px){
   .fan{height:450px}.baralho{top:66px}
   .h-agend{left:22% !important;top:20% !important}
@@ -908,7 +936,7 @@ footer a{min-height:44px;display:inline-flex;align-items:center}
       <div class="hero-text">
         <h1 class="name"><span>Dinis</span><span>Sousa.</span></h1>
         <p class="lead">Faço sites que não se parecem uns com os outros.</p>
-        <p class="sub"><a class="c-adri" href="#adri">Um estúdio de piercing</a>, <a class="c-coq" href="#anjinho">uma loja coquette</a>, <a class="c-goth" href="#jinxed">uma marca gótica</a>, <a class="c-trans" href="#parou">uma app de transportes</a>, <a class="c-casa" href="#duplicasa">um site de arrendamento</a>, <a class="c-good" href="#goodman">um advogado com IA</a>, <a class="c-moss" href="#tapmoss">um jogo em pixel art</a>, <a class="c-caiu" href="#caiu">um comparador de preços</a> <span class="nw">e <a class="c-ganhas" href="#ganhas">um site de salários</a>.</span> <span class="fim">Todos feitos por mim. <span class="nw">O próximo pode ser o teu.</span></span></p>
+        <p class="sub"><a class="c-caiu" href="#caiu">Um comparador de preços</a>, <a class="c-ganhas" href="#ganhas">um site de salários</a>, <a class="c-trans" href="#parou">uma app de transportes</a>, <a class="c-adri" href="#adri">um estúdio de piercing</a>, <a class="c-casa" href="#duplicasa">um site de arrendamento</a>, <a class="c-good" href="#goodman">um advogado com IA</a>, <a class="c-moss" href="#tapmoss">um jogo em pixel art</a>, <a class="c-coq" href="#anjinho">uma loja coquette</a> <span class="nw">e <a class="c-goth" href="#jinxed">uma marca gótica</a>.</span> <span class="fim">Todos feitos por mim. <span class="nw">O próximo pode ser o teu.</span></span></p>
         <div class="ctas">
           <a class="btn btn-primary wa" data-msg="Olá Dinis! Quero um site." href="https://wa.me/351913488258">Pedir o meu site</a>
           <a class="btn btn-secondary" href="#projetos">Ver projetos</a>
@@ -917,6 +945,20 @@ footer a{min-height:44px;display:inline-flex;align-items:center}
       </div>
       <div class="fan" id="palco" role="group" aria-roledescription="carrossel" aria-label="Sites que fiz">
         <div class="fundos" aria-hidden="true">
+          <div class="hf h-caiu">
+            <span class="hc-etq" style="left:3%;top:30%;--ex:110px;--ey:60px;--d:.35s;--r:-9deg"><i></i><s>8,99&nbsp;€</s><b>6,49&nbsp;€</b></span>
+            <span class="hc-etq so-d" style="left:2%;top:66%;--ex:120px;--ey:-30px;--d:.55s;--r:7deg"><i></i><em>Promoção −25%</em><b>3,79&nbsp;€</b><span class="hc-carimbo">Falsa</span></span>
+            <span class="hc-caiu m-topo" style="left:60%;top:14%;--ex:-100px;--ey:70px;--d:.45s">↓ caiu a sério <b>−2,50&nbsp;€</b></span>
+            <span class="hc-seta" style="left:82%;top:56%;--ex:-60px;--ey:-90px;--d:.8s">↓</span>
+            <span class="hc-cabaz so-d" style="left:60%;top:86%;--ex:-80px;--ey:-70px;--d:1.1s"><b>Cabaz</b> comparado em 3 lojas</span>
+          </div>
+          <div class="hf h-ganhas">
+            <span class="hg-eur" style="left:7%;top:26%;--ex:110px;--ey:60px;--d:.35s;--r:-12deg">€</span>
+            <span class="hg-eur hg-p so-d" style="left:88%;top:70%;--ex:-110px;--ey:-20px;--d:.5s;--r:10deg">€</span>
+            <span class="hg-liq m-topo" style="left:58%;top:12%;--ex:-90px;--ey:70px;--d:.45s"><i>Líquido</i><b>1&nbsp;102,00&nbsp;€</b></span>
+            <span class="hg-barras" style="left:77%;top:46%;--ex:-90px;--ey:20px;--d:.6s"><i style="--h:.34"></i><i style="--h:.78"></i><i style="--h:1"></i><i style="--h:.62"></i><i style="--h:.38"></i></span>
+            <span class="hg-irs so-d" style="left:3%;top:78%;--ex:100px;--ey:-70px;--d:.9s">Tabelas de IRS 2026 <i>✓</i></span>
+          </div>
           <div class="hf h-adri">
             <span class="h-agend" style="left:20%;top:16%;--d:0s"><span class="selo-ag" aria-hidden="true"><img src="img/selo_agendado.svg" alt=""></span></span>
             <img class="flut" src="img/joia_barra_ouro.svg" alt="" style="left:76%;top:8%;width:58px;--ex:-110px;--ey:110px;--d:0.35s;--r:-22deg">
@@ -991,12 +1033,12 @@ footer a{min-height:44px;display:inline-flex;align-items:center}
           </div>
         </div>
         <div class="baralho">
-          <div class="carta s0 junto"><div class="cel" style="background:#2A2622"><div class="scr"><img class="on" src="img/adri-480.webp" width="480" height="1039" alt="Site AdriBodyPiercing" fetchpriority="high"><img alt=""></div></div></div>
-          <div class="carta s1 junto" aria-hidden="true"><div class="cel" style="background:#1D1719"><div class="scr"><img class="on" src="img/anjinho-480.webp" width="480" height="928" alt=""><img alt=""></div></div></div>
-          <div class="carta s2 junto" aria-hidden="true"><div class="cel" style="background:#2B2325"><div class="scr"><img class="on" src="img/jinxed-480.webp" width="480" height="994" alt=""><img alt=""></div></div></div>
-          <div class="bolhas" aria-hidden="true"><span class="bolha b-adri" style="background:#0E0C0B"><img src="img/logo_adri.webp" width="325" height="70" alt=""></span><span class="bolha b-anjinho" style="background:#DCE8F4"><img src="img/logo_anjinho.svg" width="200" height="69" alt=""></span><span class="bolha b-jinxed" style="background:#110D0E"><img src="img/logo_jinxed.webp" width="200" height="90" alt=""></span><span class="bolha b-parou" style="background:#16151A"><img src="img/logo_parou.webp" width="235" height="85" alt=""></span><span class="bolha b-duplicasa" style="background:#FFFFFF"><img src="img/logo_duplicasa.svg" width="592" height="123" alt=""></span><span class="bolha b-goodman" style="background:#0E3A2C"><img src="img/logo_goodman.webp" width="441" height="66" alt=""></span><span class="bolha b-tapmoss" style="background:#0B120D"><img src="img/logo_tapmoss.webp" width="588" height="124" alt=""></span></div>
+          <div class="carta s0 junto"><div class="cel" style="background:#141414"><div class="scr"><img class="on" src="img/caiu-480.webp" width="480" height="1039" alt="Site caiu.pt" fetchpriority="high"><img alt=""></div></div></div>
+          <div class="carta s1 junto" aria-hidden="true"><div class="cel" style="background:#2C302C"><div class="scr"><img class="on" src="img/ganhas-480.webp" width="480" height="1039" alt=""><img alt=""></div></div></div>
+          <div class="carta s2 junto" aria-hidden="true"><div class="cel" style="background:#2E2D35"><div class="scr"><img class="on" src="img/parou-480.webp" width="480" height="994" alt=""><img alt=""></div></div></div>
+          <div class="bolhas" aria-hidden="true"><span class="bolha b-caiu" style="background:#FFD83D"><img src="img/logo_caiu.webp" width="389" height="140" alt=""></span><span class="bolha b-ganhas" style="background:#0F110F"><img src="img/logo_ganhas.webp" width="597" height="120" alt=""></span><span class="bolha b-parou" style="background:#16151A"><img src="img/logo_parou.webp" width="235" height="85" alt=""></span><span class="bolha b-adri" style="background:#0E0C0B"><img src="img/logo_adri.webp" width="325" height="70" alt=""></span><span class="bolha b-duplicasa" style="background:#FFFFFF"><img src="img/logo_duplicasa.svg" width="592" height="123" alt=""></span><span class="bolha b-goodman" style="background:#0E3A2C"><img src="img/logo_goodman.webp" width="441" height="66" alt=""></span><span class="bolha b-tapmoss" style="background:#0B120D"><img src="img/logo_tapmoss.webp" width="588" height="124" alt=""></span><span class="bolha b-anjinho" style="background:#DCE8F4"><img src="img/logo_anjinho.svg" width="200" height="69" alt=""></span><span class="bolha b-jinxed" style="background:#110D0E"><img src="img/logo_jinxed.webp" width="200" height="90" alt=""></span></div>
         </div>
-        <p class="sr" id="palcoNome" aria-live="polite">AdriBodyPiercing</p>
+        <p class="sr" id="palcoNome" aria-live="polite">caiu.pt</p>
         
       </div>
     </div>
@@ -1007,27 +1049,39 @@ footer a{min-height:44px;display:inline-flex;align-items:center}
       <h2 class="h2 rv" id="t-projetos">O que já fiz</h2>
       <p class="intro rv">Projetos meus e de clientes, do nome ao último pormenor. Ao descer, o site muda para o mundo de cada um.</p>
       <nav class="brands rv" aria-label="Projetos">
-        <a class="brand-tile t-adri" href="#adri"><img src="img/logo_adri.webp" width="325" height="70" alt="AdriBodyPiercing" style="height:34px"></a>
+        <a class="brand-tile t-caiu" href="#caiu"><img src="img/logo_caiu.webp" width="389" height="140" alt="caiu.pt" style="height:34px"><span class="novo">Novo</span></a>
+        <a class="brand-tile t-ganhas" href="#ganhas"><img src="img/logo_ganhas.webp" width="597" height="120" alt="ganhas.pt" style="height:28px"><span class="novo">Novo</span></a>
         <a class="brand-tile t-parou" href="#parou"><img src="img/logo_parou.webp" width="235" height="85" alt="PAROU" style="height:36px"></a>
-        <a class="brand-tile t-anjinho" href="#anjinho"><img src="img/logo_anjinho.svg" width="200" height="69" alt="anjinho" style="height:30px"></a>
-        <a class="brand-tile t-jinxed" href="#jinxed"><img src="img/logo_jinxed.webp" width="200" height="90" alt="jinxed" style="height:40px"></a>
+        <a class="brand-tile t-adri" href="#adri"><img src="img/logo_adri.webp" width="325" height="70" alt="AdriBodyPiercing" style="height:34px"></a>
         <a class="brand-tile t-duplicasa" href="#duplicasa"><img src="img/logo_duplicasa.svg" width="592" height="123" alt="DupliCasa" style="height:30px"></a>
         <a class="brand-tile t-goodman" href="#goodman"><img src="img/logo_goodman.webp" width="441" height="66" alt="Goodman" style="height:24px"></a>
         <a class="brand-tile t-tapmoss" href="#tapmoss"><img src="img/logo_tapmoss.webp" width="588" height="124" alt="tapmoss" style="height:30px"></a>
-        <a class="brand-tile t-caiu" href="#caiu"><img src="img/logo_caiu.webp" width="389" height="140" alt="caiu.pt" style="height:34px"><span class="novo">Novo</span></a>
-        <a class="brand-tile t-ganhas" href="#ganhas"><img src="img/logo_ganhas.webp" width="597" height="120" alt="ganhas.pt" style="height:28px"><span class="novo">Novo</span></a>
+        <a class="brand-tile t-anjinho" href="#anjinho"><img src="img/logo_anjinho.svg" width="200" height="69" alt="anjinho" style="height:30px"></a>
+        <a class="brand-tile t-jinxed" href="#jinxed"><img src="img/logo_jinxed.webp" width="200" height="90" alt="jinxed" style="height:40px"></a>
       </nav>
     </div>
 
-    <article class="project" id="adri" data-world="adri" aria-labelledby="t-adri">
+    <article class="project" id="caiu" data-world="caiu" aria-labelledby="t-caiu">
       <div class="wrap">
         <div class="info">
-          <img class="logo rv" src="img/logo_adri.webp" width="325" height="70" alt="AdriBodyPiercing" loading="lazy" style="max-height:44px">
-          <h3 class="rv" id="t-adri">O teu piercing, sem stress.</h3>
-          <p class="rv">Estúdio de body piercing do Adriano, que está a começar. Fiz o logótipo, a joia em 3D que roda no topo e o site, com preços à vista e marcação online.</p>
-          <a class="btn btn-secondary rv" href="https://adribodypiercing.pt" target="_blank" rel="noopener">Ver o site ↗</a> <a class="caso-lk rv" href="/projetos/adribodypiercing/">Como foi feito</a>
+          <img class="logo rv" src="img/logo_caiu.webp" width="389" height="140" alt="caiu.pt" loading="lazy" style="max-height:50px">
+          <h3 class="rv" id="t-caiu">O preço caiu mesmo?</h3>
+          <p class="rv">Comparador de preços do Continente, Pingo Doce e Auchan, com mais de 16&nbsp;000 produtos. Fiz o nome, a marca e o site: os preços atualizam-se sozinhos três vezes por dia, apanha as promoções falsas e diz onde o cabaz fica mais barato.</p>
+          <a class="btn btn-secondary rv" href="https://caiu.pt" target="_blank" rel="noopener">Abrir caiu.pt ↗</a>
         </div>
-        <div class="shot"><figure class="cena c-adri r-sobe" style="--abre:#0E0C0B"><div class="fx talao" aria-hidden="true"><div class="papel"><span class="t-topo">Marcação</span><strong>Sábado, 15h00</strong><span>Helix · titânio de implante</span></div><span class="selo-ag s-talao" aria-hidden="true"><img src="img/selo_agendado.svg" alt=""></span></div><div class="phone"><div class="ecra"><img class="site" src="img/adri.webp" width="640" height="1385" alt="Site AdriBodyPiercing no telemóvel" loading="lazy"><div class="abre" aria-hidden="true"><img src="img/logo_adri.webp" width="325" height="70" alt="" style="width:58%"><i class="linha"></i><i class="barra"></i></div></div></div><img class="fx bola joia b1" src="img/joia_barra_ouro.svg" alt="" aria-hidden="true"><img class="fx bola joia b2" src="img/joia_argola_prata.svg" alt="" aria-hidden="true"><img class="fx bola joia b3" src="img/joia_brinco_ouro.svg" alt="" aria-hidden="true"></figure></div>
+        <div class="shot"><figure class="cena c-caiu r-cai" style="--abre:#FFD83D"><div class="phone"><div class="ecra"><img class="site" src="img/caiu.webp" width="640" height="1385" alt="Site caiu.pt no telemóvel: o preço caiu mesmo?" loading="lazy"><div class="abre" aria-hidden="true"><img src="img/logo_caiu.webp" width="389" height="140" alt="" style="width:46%"></div></div></div><div class="fx etq e-real" aria-hidden="true"><i class="furo"></i><span class="e-prod">Azeite virgem extra · 1&nbsp;L</span><span class="e-antes">8,99&nbsp;€</span><b class="e-agora">6,49&nbsp;€</b><span class="e-selo">↓ caiu a sério</span></div><div class="fx etq e-falsa" aria-hidden="true"><i class="furo"></i><span class="e-prod">Café em cápsulas · 10&nbsp;un.</span><span class="e-promo">Promoção −25%</span><b class="e-agora">3,79&nbsp;€</b><span class="carimbo-f">Falsa<small>igual há 30 dias</small></span></div><span class="fx sai-fx c-seta" aria-hidden="true" style="left:calc(-.7 * var(--fora));top:83%;--fx:calc(var(--pw) * .5);--fy:calc(var(--pw) * -.4);--d:3.1s"><b>−2,50&nbsp;€</b></span></figure></div>
+      </div>
+    </article>
+
+    <article class="project" id="ganhas" data-world="ganhas" aria-labelledby="t-ganhas">
+      <div class="wrap">
+        <div class="info">
+          <img class="logo rv" src="img/logo_ganhas.webp" width="597" height="120" alt="ganhas.pt" loading="lazy" style="max-height:36px">
+          <h3 class="rv" id="t-ganhas">Quanto ganhas?</h3>
+          <p class="rv">Salários reais em Portugal, sem conta e sem nome. Fiz o nome, a marca e o site: comparas o teu salário com os números oficiais e com quem faz o mesmo que tu, e a calculadora passa de bruto a líquido com as tabelas de IRS do ano, que se atualizam sozinhas.</p>
+          <a class="btn btn-secondary rv" href="https://ganhas.pt" target="_blank" rel="noopener">Abrir ganhas.pt ↗</a>
+        </div>
+        <div class="shot"><figure class="cena c-ganhas r-marca" style="--abre:#0F110F"><div class="phone"><div class="ecra"><img class="site" src="img/ganhas.webp" width="640" height="1385" alt="Site ganhas.pt no telemóvel: quanto ganhas?" loading="lazy"><div class="abre" aria-hidden="true"><span class="gn-logo"><i class="gn-risco"></i><img src="img/logo_ganhas.webp" width="597" height="120" alt=""></span></div></div></div><div class="fx recibo" aria-hidden="true"><span class="rc-t">Recibo · tabela I, 2026</span><span class="rc-l"><i>Bruto</i><b>1&nbsp;400,00&nbsp;€</b></span><span class="rc-l rc-m"><i>Segurança Social</i><b>−154,00&nbsp;€</b></span><span class="rc-l rc-m"><i>IRS</i><b>−144,00&nbsp;€</b></span><span class="rc-l rc-liq"><i>Líquido</i><b><em>1&nbsp;102,00&nbsp;€</em></b></span></div><div class="fx metade" aria-hidden="true"><span class="barras"><i style="--h:.34"></i><i style="--h:.78"></i><i style="--h:1"></i><i style="--h:.62"></i><i style="--h:.38"></i><i style="--h:.22"></i><i style="--h:.12"></i></span><span class="m-txt"><b>Metade</b> tinha base abaixo de 950&nbsp;€ <small>(2024)</small></span></div></figure></div>
       </div>
     </article>
 
@@ -1043,27 +1097,15 @@ footer a{min-height:44px;display:inline-flex;align-items:center}
       </div>
     </article>
 
-    <article class="project" id="anjinho" data-world="anjinho" aria-labelledby="t-anjinho">
+    <article class="project" id="adri" data-world="adri" aria-labelledby="t-adri">
       <div class="wrap">
         <div class="info">
-          <img class="logo rv" src="img/logo_anjinho.svg" width="200" height="69" alt="anjinho" loading="lazy" style="max-height:40px">
-          <h3 class="rv" id="t-anjinho">quase uma anjinha.</h3>
-          <p class="rv">Marca de moda coquette. Fiz a marca, a loja e a direção das imagens das peças, com o preço a aparecer só quando se abre cada uma.</p>
-          <a class="btn btn-secondary rv" href="https://anjinho.pt" target="_blank" rel="noopener">Visitar anjinho.pt ↗</a>
+          <img class="logo rv" src="img/logo_adri.webp" width="325" height="70" alt="AdriBodyPiercing" loading="lazy" style="max-height:44px">
+          <h3 class="rv" id="t-adri">O teu piercing, sem stress.</h3>
+          <p class="rv">Estúdio de body piercing do Adriano, que está a começar. Fiz o logótipo, a joia em 3D que roda no topo e o site, com preços à vista e marcação online.</p>
+          <a class="btn btn-secondary rv" href="https://adribodypiercing.pt" target="_blank" rel="noopener">Ver o site ↗</a> <a class="caso-lk rv" href="/projetos/adribodypiercing/">Como foi feito</a>
         </div>
-        <div class="shot"><figure class="cena c-anjinho r-nuvem" style="--abre:#DCE8F4"><img class="fx nuvem n1" src="img/px_nuvem.svg" width="18" height="9" alt="" aria-hidden="true"><img class="fx nuvem n2" src="img/px_nuvem.svg" width="18" height="9" alt="" aria-hidden="true"><div class="phone"><div class="ecra"><img class="site" src="img/anjinho.webp" width="640" height="1385" alt="Loja anjinho.pt no telemóvel" loading="lazy"><div class="abre" aria-hidden="true"><span class="a-logo"><img src="img/logo_anjinho.svg" width="200" height="69" alt="" style="width:100%"><img class="a-laco" src="img/px_laco.svg" width="11" height="10" alt=""></span></div></div></div><span class="fx borb o1" aria-hidden="true"><i><img src="img/px_borboleta.svg" width="11" height="9" alt=""></i></span><span class="fx borb o2" aria-hidden="true"><i><img src="img/px_borboleta.svg" width="11" height="9" alt=""></i></span><span class="fx borb o3" aria-hidden="true"><i><img src="img/px_borboleta.svg" width="11" height="9" alt=""></i></span><div class="fx balao" aria-hidden="true"><img src="img/px_coracao.svg" width="9" height="8" alt=""><span><small>anjinho · agora</small>A tua encomenda chegou&nbsp;♡</span></div><img class="fx cor c1" src="img/px_coracao.svg" width="9" height="8" alt="" aria-hidden="true"><img class="fx cor c2" src="img/px_coracao.svg" width="9" height="8" alt="" aria-hidden="true"></figure></div>
-      </div>
-    </article>
-
-    <article class="project" id="jinxed" data-world="jinxed" aria-labelledby="t-jinxed">
-      <div class="wrap">
-        <div class="info">
-          <img class="logo rv" src="img/logo_jinxed.webp" width="200" height="90" alt="jinxed" loading="lazy" style="max-height:52px">
-          <h3 class="rv" id="t-jinxed" lang="en">Gothic menswear.</h3>
-          <p class="rv">Marca de roupa para homem, feita em Portugal. Fiz o logótipo e a loja, toda em inglês, escura e cheia de movimento.</p>
-          <a class="btn btn-secondary rv" href="https://jinxed.world" target="_blank" rel="noopener">Visitar jinxed.world ↗</a>
-        </div>
-        <div class="shot"><figure class="cena c-jinxed r-fatias" style="--abre:#110D0E"><i class="fx meio-tom" aria-hidden="true"></i><i class="fx aura" aria-hidden="true"></i><div class="phone"><div class="ecra"><img class="site" src="img/jinxed.webp" width="640" height="1325" alt="Loja jinxed.world no telemóvel, com casacos e calças de ganga" loading="lazy"><div class="abre" aria-hidden="true"><span class="fatias"><i></i><i></i><i></i><i></i><i></i><i></i></span><img src="img/logo_jinxed.webp" width="200" height="90" alt="" style="width:50%"></div></div></div><span class="fx carimbo" aria-hidden="true" lang="en">out of stock</span><span class="fx sai-fx flut2" aria-hidden="true" style="left:calc(-.7 * var(--fora));top:9%;width:34px;--fx:calc(var(--pw) * 0.5);--fy:calc(var(--pw) * 0.6);--d:2.1s;--r:-14deg"><img src="img/x_jinxed.webp" alt=""></span><span class="fx sai-fx flut2" aria-hidden="true" style="right:calc(-.6 * var(--fora));top:27%;width:26px;--fx:calc(var(--pw) * -0.5);--fy:calc(var(--pw) * 0.3);--d:2.25s;--r:12deg"><img src="img/x_jinxed.webp" alt=""></span><span class="fx sai-fx flut2" aria-hidden="true" style="left:calc(-.55 * var(--fora));top:72%;width:40px;--fx:calc(var(--pw) * 0.5);--fy:calc(var(--pw) * -0.4);--d:2.4s;--r:8deg"><img src="img/x_jinxed.webp" alt=""></span><span class="fx sai-fx bat" aria-hidden="true" style="right:calc(-.75 * var(--fora));top:5%;width:46px;--fx:calc(var(--pw) * -0.5);--fy:calc(var(--pw) * 0.7);--d:2.2s;--r:0deg"><img src="img/morcego_osso.svg" alt=""></span><span class="fx sai-fx bat" aria-hidden="true" style="left:calc(-.85 * var(--fora));top:44%;width:38px;--fx:calc(var(--pw) * 0.5);--fy:calc(var(--pw) * 0.1);--d:2.35s;--r:0deg"><img src="img/morcego_osso.svg" alt=""></span><span class="fx sai-fx bat" aria-hidden="true" style="right:calc(-.5 * var(--fora));top:86%;width:30px;--fx:calc(var(--pw) * -0.4);--fy:calc(var(--pw) * -0.6);--d:2.5s;--r:0deg"><img src="img/morcego_osso.svg" alt=""></span></figure></div>
+        <div class="shot"><figure class="cena c-adri r-sobe" style="--abre:#0E0C0B"><div class="fx talao" aria-hidden="true"><div class="papel"><span class="t-topo">Marcação</span><strong>Sábado, 15h00</strong><span>Helix · titânio de implante</span></div><span class="selo-ag s-talao" aria-hidden="true"><img src="img/selo_agendado.svg" alt=""></span></div><div class="phone"><div class="ecra"><img class="site" src="img/adri.webp" width="640" height="1385" alt="Site AdriBodyPiercing no telemóvel" loading="lazy"><div class="abre" aria-hidden="true"><img src="img/logo_adri.webp" width="325" height="70" alt="" style="width:58%"><i class="linha"></i><i class="barra"></i></div></div></div><img class="fx bola joia b1" src="img/joia_barra_ouro.svg" alt="" aria-hidden="true"><img class="fx bola joia b2" src="img/joia_argola_prata.svg" alt="" aria-hidden="true"><img class="fx bola joia b3" src="img/joia_brinco_ouro.svg" alt="" aria-hidden="true"></figure></div>
       </div>
     </article>
 
@@ -1102,27 +1144,28 @@ footer a{min-height:44px;display:inline-flex;align-items:center}
         <div class="shot"><figure class="cena c-tapmoss r-pixel" style="--abre:#0B120D"><div class="phone"><div class="ecra"><img class="site" src="img/tapmoss.webp" width="640" height="1386" alt="Jogo tapmoss no telemóvel" loading="lazy"><div class="abre" aria-hidden="true"><span class="pix"><i style="--d:1.28s"></i><i style="--d:1.17s"></i><i style="--d:1.48s"></i><i style="--d:1.12s"></i><i style="--d:1.41s"></i><i style="--d:1.31s"></i><i style="--d:1.12s"></i><i style="--d:1.39s"></i><i style="--d:1.10s"></i><i style="--d:1.35s"></i><i style="--d:1.12s"></i><i style="--d:1.14s"></i><i style="--d:1.34s"></i><i style="--d:1.59s"></i><i style="--d:1.16s"></i><i style="--d:1.22s"></i><i style="--d:1.47s"></i><i style="--d:1.67s"></i><i style="--d:1.44s"></i><i style="--d:1.33s"></i><i style="--d:1.69s"></i><i style="--d:1.11s"></i><i style="--d:1.61s"></i><i style="--d:1.26s"></i><i style="--d:1.17s"></i><i style="--d:1.15s"></i><i style="--d:1.27s"></i><i style="--d:1.59s"></i><i style="--d:1.19s"></i><i style="--d:1.44s"></i><i style="--d:1.48s"></i><i style="--d:1.31s"></i><i style="--d:1.42s"></i><i style="--d:1.12s"></i><i style="--d:1.12s"></i><i style="--d:1.21s"></i><i style="--d:1.50s"></i><i style="--d:1.35s"></i><i style="--d:1.27s"></i><i style="--d:1.44s"></i><i style="--d:1.36s"></i><i style="--d:1.27s"></i><i style="--d:1.57s"></i><i style="--d:1.51s"></i><i style="--d:1.23s"></i><i style="--d:1.44s"></i><i style="--d:1.41s"></i><i style="--d:1.62s"></i><i style="--d:1.53s"></i><i style="--d:1.26s"></i><i style="--d:1.69s"></i><i style="--d:1.15s"></i><i style="--d:1.34s"></i><i style="--d:1.55s"></i><i style="--d:1.17s"></i><i style="--d:1.38s"></i><i style="--d:1.10s"></i><i style="--d:1.49s"></i><i style="--d:1.55s"></i><i style="--d:1.44s"></i><i style="--d:1.62s"></i><i style="--d:1.27s"></i><i style="--d:1.51s"></i><i style="--d:1.45s"></i><i style="--d:1.44s"></i><i style="--d:1.36s"></i><i style="--d:1.60s"></i><i style="--d:1.67s"></i><i style="--d:1.37s"></i><i style="--d:1.49s"></i><i style="--d:1.12s"></i><i style="--d:1.51s"></i><i style="--d:1.48s"></i><i style="--d:1.70s"></i><i style="--d:1.59s"></i><i style="--d:1.26s"></i><i style="--d:1.32s"></i><i style="--d:1.49s"></i></span><img class="tm-logo" src="img/logo_tapmoss.webp" width="588" height="124" alt=""></div></div></div><div class="fx tm-aviso" aria-hidden="true"><img class="pxi" src="img/px_musgo_roxo.svg" alt=""><span><b>Musgo novo!</b>Desbloqueaste o musgo roxo</span></div><span class="fx sai-fx tm-moeda" aria-hidden="true" style="right:calc(-.7 * var(--fora));top:47%;--fx:calc(var(--pw) * -.45);--fy:calc(var(--pw) * .1);--d:2.95s"><img class="pxi" src="img/px_moeda.svg" alt=""></span><span class="fx sai-fx tm-moeda" aria-hidden="true" style="right:calc(-.25 * var(--fora));top:52%;width:20px;--fx:calc(var(--pw) * -.3);--fy:calc(var(--pw) * .05);--d:3.05s"><img class="pxi" src="img/px_moeda.svg" alt=""></span><span class="fx sai-fx tm-moeda" aria-hidden="true" style="right:calc(-.95 * var(--fora));top:56%;width:18px;--fx:calc(var(--pw) * -.55);--fy:calc(var(--pw) * -.05);--d:3.15s"><img class="pxi" src="img/px_moeda.svg" alt=""></span><b class="fx tm-ganho" aria-hidden="true">+36</b><span class="fx sai-fx tm-bau" aria-hidden="true" style="left:calc(-.75 * var(--fora));top:72%;--fx:calc(var(--pw) * .5);--fy:calc(var(--pw) * -.25);--d:3.9s"><img class="pxi" src="img/px_bau.svg" alt=""><b>Baú do dia</b></span><span class="fx sai-fx atras" aria-hidden="true" style="right:calc(-.6 * var(--fora));top:16%;width:26px;--fx:calc(var(--pw) * -.4);--fy:calc(var(--pw) * .3);--d:2.6s;--r:8deg"><img class="pxi" src="img/px_flor.svg" alt=""></span><i class="fx tm-vaga" aria-hidden="true" style="left:calc(-.5 * var(--fora));top:40%;--d:1.9s"></i><i class="fx tm-vaga" aria-hidden="true" style="right:calc(-.4 * var(--fora));top:30%;--d:2.1s"></i><i class="fx tm-vaga" aria-hidden="true" style="right:calc(-.8 * var(--fora));top:86%;--d:2.3s"></i></figure></div>
       </div>
     </article>
-    <article class="project" id="caiu" data-world="caiu" aria-labelledby="t-caiu">
+
+    <article class="project" id="anjinho" data-world="anjinho" aria-labelledby="t-anjinho">
       <div class="wrap">
         <div class="info">
-          <img class="logo rv" src="img/logo_caiu.webp" width="389" height="140" alt="caiu.pt" loading="lazy" style="max-height:50px">
-          <h3 class="rv" id="t-caiu">O preço caiu mesmo?</h3>
-          <p class="rv">Comparador de preços do Continente, Pingo Doce e Auchan, com mais de 16&nbsp;000 produtos. Fiz o nome, a marca e o site: os preços atualizam-se sozinhos três vezes por dia, apanha as promoções falsas e diz onde o cabaz fica mais barato.</p>
-          <a class="btn btn-secondary rv" href="https://caiu.pt" target="_blank" rel="noopener">Abrir caiu.pt ↗</a>
+          <img class="logo rv" src="img/logo_anjinho.svg" width="200" height="69" alt="anjinho" loading="lazy" style="max-height:40px">
+          <h3 class="rv" id="t-anjinho">quase uma anjinha.</h3>
+          <p class="rv">Marca de moda coquette. Fiz a marca, a loja e a direção das imagens das peças, com o preço a aparecer só quando se abre cada uma.</p>
+          <a class="btn btn-secondary rv" href="https://anjinho.pt" target="_blank" rel="noopener">Visitar anjinho.pt ↗</a>
         </div>
-        <div class="shot"><figure class="cena c-caiu r-cai" style="--abre:#FFD83D"><div class="phone"><div class="ecra"><img class="site" src="img/caiu.webp" width="640" height="1385" alt="Site caiu.pt no telemóvel: o preço caiu mesmo?" loading="lazy"><div class="abre" aria-hidden="true"><img src="img/logo_caiu.webp" width="389" height="140" alt="" style="width:46%"></div></div></div><div class="fx etq e-real" aria-hidden="true"><i class="furo"></i><span class="e-prod">Azeite virgem extra · 1&nbsp;L</span><span class="e-antes">8,99&nbsp;€</span><b class="e-agora">6,49&nbsp;€</b><span class="e-selo">↓ caiu a sério</span></div><div class="fx etq e-falsa" aria-hidden="true"><i class="furo"></i><span class="e-prod">Café em cápsulas · 10&nbsp;un.</span><span class="e-promo">Promoção −25%</span><b class="e-agora">3,79&nbsp;€</b><span class="carimbo-f">Falsa<small>igual há 30 dias</small></span></div><span class="fx sai-fx c-seta" aria-hidden="true" style="left:calc(-.7 * var(--fora));top:83%;--fx:calc(var(--pw) * .5);--fy:calc(var(--pw) * -.4);--d:3.1s"><b>−2,50&nbsp;€</b></span></figure></div>
+        <div class="shot"><figure class="cena c-anjinho r-nuvem" style="--abre:#DCE8F4"><img class="fx nuvem n1" src="img/px_nuvem.svg" width="18" height="9" alt="" aria-hidden="true"><img class="fx nuvem n2" src="img/px_nuvem.svg" width="18" height="9" alt="" aria-hidden="true"><div class="phone"><div class="ecra"><img class="site" src="img/anjinho.webp" width="640" height="1385" alt="Loja anjinho.pt no telemóvel" loading="lazy"><div class="abre" aria-hidden="true"><span class="a-logo"><img src="img/logo_anjinho.svg" width="200" height="69" alt="" style="width:100%"><img class="a-laco" src="img/px_laco.svg" width="11" height="10" alt=""></span></div></div></div><span class="fx borb o1" aria-hidden="true"><i><img src="img/px_borboleta.svg" width="11" height="9" alt=""></i></span><span class="fx borb o2" aria-hidden="true"><i><img src="img/px_borboleta.svg" width="11" height="9" alt=""></i></span><span class="fx borb o3" aria-hidden="true"><i><img src="img/px_borboleta.svg" width="11" height="9" alt=""></i></span><div class="fx balao" aria-hidden="true"><img src="img/px_coracao.svg" width="9" height="8" alt=""><span><small>anjinho · agora</small>A tua encomenda chegou&nbsp;♡</span></div><img class="fx cor c1" src="img/px_coracao.svg" width="9" height="8" alt="" aria-hidden="true"><img class="fx cor c2" src="img/px_coracao.svg" width="9" height="8" alt="" aria-hidden="true"></figure></div>
       </div>
     </article>
 
-    <article class="project" id="ganhas" data-world="ganhas" aria-labelledby="t-ganhas">
+    <article class="project" id="jinxed" data-world="jinxed" aria-labelledby="t-jinxed">
       <div class="wrap">
         <div class="info">
-          <img class="logo rv" src="img/logo_ganhas.webp" width="597" height="120" alt="ganhas.pt" loading="lazy" style="max-height:36px">
-          <h3 class="rv" id="t-ganhas">Quanto ganhas?</h3>
-          <p class="rv">Salários reais em Portugal, sem conta e sem nome. Fiz o nome, a marca e o site: comparas o teu salário com os números oficiais e com quem faz o mesmo que tu, e a calculadora passa de bruto a líquido com as tabelas de IRS do ano, que se atualizam sozinhas.</p>
-          <a class="btn btn-secondary rv" href="https://ganhas.pt" target="_blank" rel="noopener">Abrir ganhas.pt ↗</a>
+          <img class="logo rv" src="img/logo_jinxed.webp" width="200" height="90" alt="jinxed" loading="lazy" style="max-height:52px">
+          <h3 class="rv" id="t-jinxed" lang="en">Gothic menswear.</h3>
+          <p class="rv">Marca de roupa para homem, feita em Portugal. Fiz o logótipo e a loja, toda em inglês, escura e cheia de movimento.</p>
+          <a class="btn btn-secondary rv" href="https://jinxed.world" target="_blank" rel="noopener">Visitar jinxed.world ↗</a>
         </div>
-        <div class="shot"><figure class="cena c-ganhas r-marca" style="--abre:#0F110F"><div class="phone"><div class="ecra"><img class="site" src="img/ganhas.webp" width="640" height="1385" alt="Site ganhas.pt no telemóvel: quanto ganhas?" loading="lazy"><div class="abre" aria-hidden="true"><span class="gn-logo"><i class="gn-risco"></i><img src="img/logo_ganhas.webp" width="597" height="120" alt=""></span></div></div></div><div class="fx recibo" aria-hidden="true"><span class="rc-t">Recibo · tabela I, 2026</span><span class="rc-l"><i>Bruto</i><b>1&nbsp;400,00&nbsp;€</b></span><span class="rc-l rc-m"><i>Segurança Social</i><b>−154,00&nbsp;€</b></span><span class="rc-l rc-m"><i>IRS</i><b>−144,00&nbsp;€</b></span><span class="rc-l rc-liq"><i>Líquido</i><b><em>1&nbsp;102,00&nbsp;€</em></b></span></div><div class="fx metade" aria-hidden="true"><span class="barras"><i style="--h:.34"></i><i style="--h:.78"></i><i style="--h:1"></i><i style="--h:.62"></i><i style="--h:.38"></i><i style="--h:.22"></i><i style="--h:.12"></i></span><span class="m-txt"><b>Metade</b> tinha base abaixo de 950&nbsp;€ <small>(2024)</small></span></div></figure></div>
+        <div class="shot"><figure class="cena c-jinxed r-fatias" style="--abre:#110D0E"><i class="fx meio-tom" aria-hidden="true"></i><i class="fx aura" aria-hidden="true"></i><div class="phone"><div class="ecra"><img class="site" src="img/jinxed.webp" width="640" height="1325" alt="Loja jinxed.world no telemóvel, com casacos e calças de ganga" loading="lazy"><div class="abre" aria-hidden="true"><span class="fatias"><i></i><i></i><i></i><i></i><i></i><i></i></span><img src="img/logo_jinxed.webp" width="200" height="90" alt="" style="width:50%"></div></div></div><span class="fx carimbo" aria-hidden="true" lang="en">out of stock</span><span class="fx sai-fx flut2" aria-hidden="true" style="left:calc(-.7 * var(--fora));top:9%;width:34px;--fx:calc(var(--pw) * 0.5);--fy:calc(var(--pw) * 0.6);--d:2.1s;--r:-14deg"><img src="img/x_jinxed.webp" alt=""></span><span class="fx sai-fx flut2" aria-hidden="true" style="right:calc(-.6 * var(--fora));top:27%;width:26px;--fx:calc(var(--pw) * -0.5);--fy:calc(var(--pw) * 0.3);--d:2.25s;--r:12deg"><img src="img/x_jinxed.webp" alt=""></span><span class="fx sai-fx flut2" aria-hidden="true" style="left:calc(-.55 * var(--fora));top:72%;width:40px;--fx:calc(var(--pw) * 0.5);--fy:calc(var(--pw) * -0.4);--d:2.4s;--r:8deg"><img src="img/x_jinxed.webp" alt=""></span><span class="fx sai-fx bat" aria-hidden="true" style="right:calc(-.75 * var(--fora));top:5%;width:46px;--fx:calc(var(--pw) * -0.5);--fy:calc(var(--pw) * 0.7);--d:2.2s;--r:0deg"><img src="img/morcego_osso.svg" alt=""></span><span class="fx sai-fx bat" aria-hidden="true" style="left:calc(-.85 * var(--fora));top:44%;width:38px;--fx:calc(var(--pw) * 0.5);--fy:calc(var(--pw) * 0.1);--d:2.35s;--r:0deg"><img src="img/morcego_osso.svg" alt=""></span><span class="fx sai-fx bat" aria-hidden="true" style="right:calc(-.5 * var(--fora));top:86%;width:30px;--fx:calc(var(--pw) * -0.4);--fy:calc(var(--pw) * -0.6);--d:2.5s;--r:0deg"><img src="img/morcego_osso.svg" alt=""></span></figure></div>
       </div>
     </article>
   </section>
@@ -1353,14 +1396,17 @@ footer a{min-height:44px;display:inline-flex;align-items:center}
   /* Topo: um baralho de três telemóveis. A carta da frente sai para o lado e vai para trás;
      o fundo fica branco e só mudam os efeitos da marca que está à frente; a frase dela acende. */
   (function(){
+    /* por ordem de importância: os novos primeiro */
     var P=[
-      {k:'adri',t:5000,n:'AdriBodyPiercing',img:'img/adri.webp',fr:'#2A2622',lk:'c-adri'},
-      {k:'anjinho',t:4400,n:'anjinho',img:'img/anjinho.webp',fr:'#1D1719',lk:'c-coq'},
-      {k:'jinxed',t:4400,n:'jinxed',img:'img/jinxed.webp',fr:'#2B2325',lk:'c-goth'},
+      {k:'caiu',t:5000,n:'caiu.pt',img:'img/caiu.webp',fr:'#141414',lk:'c-caiu'},
+      {k:'ganhas',t:5000,n:'ganhas.pt',img:'img/ganhas.webp',fr:'#2C302C',lk:'c-ganhas'},
       {k:'parou',t:5400,n:'PAROU',img:'img/parou.webp',fr:'#2E2D35',lk:'c-trans'},
+      {k:'adri',t:5000,n:'AdriBodyPiercing',img:'img/adri.webp',fr:'#2A2622',lk:'c-adri'},
       {k:'duplicasa',t:5000,n:'DupliCasa',img:'img/duplicasa.webp',fr:'#10241B',lk:'c-casa'},
       {k:'goodman',t:5000,n:'Goodman',img:'img/goodman.webp',fr:'#0A2A20',lk:'c-good'},
-      {k:'tapmoss',t:5200,n:'tapmoss',img:'img/tapmoss.webp',fr:'#0F1810',lk:'c-moss'}
+      {k:'tapmoss',t:5200,n:'tapmoss',img:'img/tapmoss.webp',fr:'#0F1810',lk:'c-moss'},
+      {k:'anjinho',t:4400,n:'anjinho',img:'img/anjinho.webp',fr:'#1D1719',lk:'c-coq'},
+      {k:'jinxed',t:4400,n:'jinxed',img:'img/jinxed.webp',fr:'#2B2325',lk:'c-goth'}
     ], N=P.length;
     var palco=document.getElementById('palco'); if(!palco) return;
     var cartas=[].slice.call(palco.querySelectorAll('.carta'));

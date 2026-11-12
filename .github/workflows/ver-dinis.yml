@@ -1,0 +1,28 @@
+name: Ver dinissousa.pt (cópia local)
+on:
+  push:
+    branches: [ver-dinis]
+permissions:
+  contents: write
+jobs:
+  ver:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Capturas
+        run: |
+          (cd sites/dinissousa && nohup python3 -m http.server 8080 >/dev/null 2>&1 &)
+          sleep 2
+          cd .github/ver-dinis && npm init -y >/dev/null && npm i --no-audit --no-fund playwright@1 >/dev/null && npx playwright install --with-deps chromium webkit >/dev/null
+          node capturar.mjs || true
+      - name: Guardar
+        if: always()
+        run: |
+          mkdir -p pub && cp -r .github/ver-dinis/res/* pub/ 2>/dev/null || echo vazio > pub/vazio.txt
+          cd pub && git init -q -b ver-dinis-resultado
+          git config user.name "parou-dados"; git config user.email "actions@users.noreply.github.com"
+          git add -A && git commit -q -m "dinis $(date -u +%H:%MZ)" && git push -q -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" ver-dinis-resultado
