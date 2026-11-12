@@ -1,0 +1,2 @@
+fim (código 124)
+{"carris_metropolitana": {"n": 1576, "mediana_min": 0.7, "media_min": 1.1, "p90_min": 6.9, "adiantado_pct": 27.2, "a_horas_pct": 56.9, "atrasado_pct": 15.9, "muito_atrasado_pct": 4.1}, "tub_braga": {"n": 239, "mediana_min": 1.2, "media_min": 0.8, "p90_min": 7.6, "adiantado_pct": 39.3, "a_horas_pct": 40.6, "atrasado_pct": 20.1, "muito_atrasado_pct": 4.2}, "stcp": {"n": 100, "mediana_min": 4.0, "media_min": 6.9, "p90_min": 15.8, "adiantado_pct": 8.0, "a_horas_pct": 48.0, "atrasado_pct": 44.0, "muito_atrasado_pct": 24.0}}

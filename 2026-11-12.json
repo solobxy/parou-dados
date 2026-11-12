@@ -1,0 +1,275 @@
+{
+ "dia": "2026-11-12",
+ "gerado": "2026-11-12T13:28:24+00:00",
+ "definicoes": "adiantado < -1 min; a horas -1 a +5 min; atrasado > +5 min; muito atrasado > +10 min",
+ "carris_metropolitana": {
+  "passagens": {
+   "n": 1576,
+   "mediana_min": 0.7,
+   "media_min": 1.1,
+   "p90_min": 6.9,
+   "adiantado_pct": 27.2,
+   "a_horas_pct": 56.9,
+   "atrasado_pct": 15.9,
+   "muito_atrasado_pct": 4.1
+  },
+  "por_hora": {
+   "13": {
+    "n": 1576,
+    "mediana_min": 0.7,
+    "media_min": 1.1,
+    "p90_min": 6.9,
+    "adiantado_pct": 27.2,
+    "a_horas_pct": 56.9,
+    "atrasado_pct": 15.9,
+    "muito_atrasado_pct": 4.1
+   }
+  },
+  "por_concelho": {
+   "Almada": {
+    "n": 163,
+    "mediana_min": 0.6,
+    "media_min": 0.9,
+    "p90_min": 8.1,
+    "adiantado_pct": 31.3,
+    "a_horas_pct": 50.3,
+    "atrasado_pct": 18.4,
+    "muito_atrasado_pct": 4.3
+   },
+   "Amadora": {
+    "n": 128,
+    "mediana_min": 0.4,
+    "media_min": 0.2,
+    "p90_min": 4.5,
+    "adiantado_pct": 30.5,
+    "a_horas_pct": 62.5,
+    "atrasado_pct": 7.0,
+    "muito_atrasado_pct": 0.8
+   },
+   "Cascais": {
+    "n": 34,
+    "mediana_min": 0.4,
+    "media_min": -0.4,
+    "p90_min": 4.5,
+    "adiantado_pct": 38.2,
+    "a_horas_pct": 52.9,
+    "atrasado_pct": 8.8,
+    "muito_atrasado_pct": 0.0
+   },
+   "Lisboa": {
+    "n": 75,
+    "mediana_min": 1.0,
+    "media_min": 1.2,
+    "p90_min": 6.1,
+    "adiantado_pct": 28.0,
+    "a_horas_pct": 56.0,
+    "atrasado_pct": 16.0,
+    "muito_atrasado_pct": 5.3
+   },
+   "Loures": {
+    "n": 284,
+    "mediana_min": 1.8,
+    "media_min": 2.6,
+    "p90_min": 8.8,
+    "adiantado_pct": 20.4,
+    "a_horas_pct": 54.9,
+    "atrasado_pct": 24.6,
+    "muito_atrasado_pct": 7.4
+   },
+   "Mafra": {
+    "n": 33,
+    "mediana_min": 3.1,
+    "media_min": 1.8,
+    "p90_min": 6.1,
+    "adiantado_pct": 24.2,
+    "a_horas_pct": 48.5,
+    "atrasado_pct": 27.3,
+    "muito_atrasado_pct": 0.0
+   },
+   "Odivelas": {
+    "n": 170,
+    "mediana_min": 1.2,
+    "media_min": 1.0,
+    "p90_min": 4.6,
+    "adiantado_pct": 17.1,
+    "a_horas_pct": 72.9,
+    "atrasado_pct": 10.0,
+    "muito_atrasado_pct": 1.8
+   },
+   "Oeiras": {
+    "n": 134,
+    "mediana_min": 1.1,
+    "media_min": 2.6,
+    "p90_min": 10.1,
+    "adiantado_pct": 23.1,
+    "a_horas_pct": 52.2,
+    "atrasado_pct": 24.6,
+    "muito_atrasado_pct": 11.9
+   },
+   "Seixal": {
+    "n": 116,
+    "mediana_min": -0.0,
+    "media_min": -0.1,
+    "p90_min": 4.9,
+    "adiantado_pct": 37.1,
+    "a_horas_pct": 52.6,
+    "atrasado_pct": 10.3,
+    "muito_atrasado_pct": 0.0
+   },
+   "Sesimbra": {
+    "n": 36,
+    "mediana_min": 0.5,
+    "media_min": 0.6,
+    "p90_min": 6.0,
+    "adiantado_pct": 25.0,
+    "a_horas_pct": 58.3,
+    "atrasado_pct": 16.7,
+    "muito_atrasado_pct": 0.0
+   },
+   "Setúbal": {
+    "n": 24,
+    "mediana_min": -0.9,
+    "media_min": 1.1,
+    "p90_min": 5.9,
+    "adiantado_pct": 37.5,
+    "a_horas_pct": 37.5,
+    "atrasado_pct": 25.0,
+    "muito_atrasado_pct": 8.3
+   },
+   "Sintra": {
+    "n": 243,
+    "mediana_min": 0.2,
+    "media_min": 0.0,
+    "p90_min": 4.3,
+    "adiantado_pct": 30.5,
+    "a_horas_pct": 61.3,
+    "atrasado_pct": 8.2,
+    "muito_atrasado_pct": 2.9
+   },
+   "Vila Franca de Xira": {
+    "n": 107,
+    "mediana_min": 0.4,
+    "media_min": 1.1,
+    "p90_min": 5.1,
+    "adiantado_pct": 32.7,
+    "a_horas_pct": 56.1,
+    "atrasado_pct": 11.2,
+    "muito_atrasado_pct": 1.9
+   }
+  },
+  "por_area": {
+   "área 1": {
+    "n": 563,
+    "mediana_min": 0.5,
+    "media_min": 0.6,
+    "p90_min": 5.1,
+    "adiantado_pct": 29.8,
+    "a_horas_pct": 58.8,
+    "atrasado_pct": 11.4,
+    "muito_atrasado_pct": 4.3
+   },
+   "área 2": {
+    "n": 636,
+    "mediana_min": 1.4,
+    "media_min": 1.9,
+    "p90_min": 7.2,
+    "adiantado_pct": 21.5,
+    "a_horas_pct": 59.4,
+    "atrasado_pct": 19.0,
+    "muito_atrasado_pct": 4.7
+   },
+   "área 3": {
+    "n": 338,
+    "mediana_min": 0.5,
+    "media_min": 0.3,
+    "p90_min": 6.6,
+    "adiantado_pct": 34.6,
+    "a_horas_pct": 51.2,
+    "atrasado_pct": 14.2,
+    "muito_atrasado_pct": 2.1
+   },
+   "área 4": {
+    "n": 39,
+    "mediana_min": 5.0,
+    "media_min": 3.2,
+    "p90_min": 9.5,
+    "adiantado_pct": 17.9,
+    "a_horas_pct": 35.9,
+    "atrasado_pct": 46.2,
+    "muito_atrasado_pct": 7.7
+   }
+  },
+  "por_linha": {},
+  "colados": {
+   "pares_com_horario_8min_ou_mais": 0,
+   "colados": 0,
+   "colados_pct": null
+  },
+  "velocidade_kmh": {
+   "mediana_linhas": null,
+   "por_linha": {}
+  },
+  "viagens": {
+   "programadas": 21830,
+   "com_gps": 940,
+   "com_gps_pct": 4.3
+  },
+  "autocarros_em_servico_max_por_hora": {
+   "13": 833
+  }
+ },
+ "tub_braga": {
+  "passagens": {
+   "n": 239,
+   "mediana_min": 1.2,
+   "media_min": 0.8,
+   "p90_min": 7.6,
+   "adiantado_pct": 39.3,
+   "a_horas_pct": 40.6,
+   "atrasado_pct": 20.1,
+   "muito_atrasado_pct": 4.2
+  },
+  "por_hora": {
+   "13": {
+    "n": 239,
+    "mediana_min": 1.2,
+    "media_min": 0.8,
+    "p90_min": 7.6,
+    "adiantado_pct": 39.3,
+    "a_horas_pct": 40.6,
+    "atrasado_pct": 20.1,
+    "muito_atrasado_pct": 4.2
+   }
+  },
+  "por_linha": {},
+  "viagens_com_gps": 79
+ },
+ "stcp": {
+  "nota": "40 paragens de referência (as com mais partidas)",
+  "passagens": {
+   "n": 100,
+   "mediana_min": 4.0,
+   "media_min": 6.9,
+   "p90_min": 15.8,
+   "adiantado_pct": 8.0,
+   "a_horas_pct": 48.0,
+   "atrasado_pct": 44.0,
+   "muito_atrasado_pct": 24.0
+  },
+  "por_hora": {
+   "13": {
+    "n": 100,
+    "mediana_min": 4.0,
+    "media_min": 6.9,
+    "p90_min": 15.8,
+    "adiantado_pct": 8.0,
+    "a_horas_pct": 48.0,
+    "atrasado_pct": 44.0,
+    "muito_atrasado_pct": 24.0
+   }
+  },
+  "por_linha": {},
+  "por_paragem": {}
+ },
+ "erros": {}
+}

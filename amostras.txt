@@ -1,0 +1,41 @@
+cm.jsonl 6170
+{"id":"[LA77N]1842","trip_id":"[7DQC0][LA77N]1014_0_1_1300_1329_0_1","line_id":"1014","pattern_id":"[7DQC0][LA77N]1014_0_1","stop_id":"030457","current_status":"STOPPED_AT","timestamp":1794489734000,"lat":38.750927,"lon":-9.229389,"speed":0,"bearing":73,"schedule_relationship":"SCHEDULED","occupancy_status":"NO_DATA_AVAILABLE","door_status":"CLOSED","t":1794489744,"atraso_s":14}
+{"id":"[LA77N]1110","trip_id":"[7DQC0][LA77N]1204_0_3_1300_1329_0_1","line_id":"1204","pattern_id":"[7DQC0][LA77N]1204_0_3","stop_id":"170168","current_status":"INCOMING_AT","timestamp":1794489734000,"lat":38.78435,"lon":-9.320239,"speed":24,"bearing":103,"schedule_relationship":"SCHEDULED","occupancy_status":"NO_DATA_AVAILABLE","door_status":"CLOSED","t":1794489744}
+{"id":"[LA77N]1156","trip_id":"[7DQC0][LA77N]1709_0_2_1300_1329_1_1","line_id":"1709","pattern_id":"[7DQC0][LA77N]1709_0_2","stop_id":"110051","current_status":"INCOMING_AT","timestamp":1794489734000,"lat":38.778465,"lon":-9.215302,"speed":44,"bearing":351,"schedule_relationship":"SCHEDULED","occupancy_status":"NO_DATA_AVAILABLE","door_status":"CLOSED","t":1794489744}
+{"id":"[LA77N]1251","trip_id":"[7DQC0][LA77N]1733_0_2_1300_1329_0_1","line_id":"1733","pattern_id":"[7DQC0][LA77N]1733_0_2","stop_id":"121219","current_status":"IN_TRANSIT_TO","timestamp":1794489734000,"lat":38.71176,"lon":-9.29808,"speed":38,"bearing":200,"schedule_relationship":"SCHEDULED","occupancy_status":"NO_DATA_AVAILABLE","door_status":"CLOSED","t":1794489744}
+{"id":
+cm_frota.jsonl 10
+{"t":1794489744,"n":833,"com_viagem":833}
+{"t":1794489774,"n":830,"com_viagem":830}
+{"t":1794489804,"n":821,"com_viagem":821}
+{"t":1794489834,"n":815,"com_viagem":815}
+{"t":1794489864,"n":816,"com_viagem":816}
+{"t":1794489894,"n":821,"com_viagem":821}
+{"t":1794489924,"n":823,"com_viagem":823}
+{"t":1794489954,"n":824,"com_viagem":824}
+{"t":1794489984,"n":824,"com_viagem":824}
+{"t":1794490014,"n":816,"com_viagem":816}
+
+stcp.jsonl 100
+{"t":1794489744,"stop":"CMO","linha":"900","trip":"900_0_1|334|D1|T4|N8","destino":"Francelos","atraso_min":0.8,"faltam_min":0,"estado":"ARRIVING","veic":null,"fonte":"realtime"}
+{"t":1794489744,"stop":"CMO","linha":"501","trip":"501_0_1|334|D1|T3|N7","destino":"Matosinhos (Praia)","atraso_min":6,"faltam_min":0,"estado":"DELAYED","veic":null,"fonte":"realtime"}
+{"t":1794489744,"stop":"CMO","linha":"207","trip":"207_0_1|334|D1|T3|N8","destino":"Foz (Mercado)","atraso_min":6.6,"faltam_min":1,"estado":"DELAYED","veic":null,"fonte":"realtime"}
+{"t":1794489744,"stop":"CMO","linha":"305","trip":"305_0_2|334|D1|T7|N11","destino":"Cordoaria","atraso_min":3.6,"faltam_min":1,"estado":"ON_TIME","veic":null,"fonte":"realtime"}
+{"t":1794489744,"stop":"CMO","linha":"201","trip":"201_0_1|334|D1|T5|N10","destino":"Viso","atraso_min":3.1,"faltam_min":3,"estado":"ON_TIME","veic":null,"fonte":"realtime"}
+{"t":1794489744,"stop":"CMO","linha":"703","trip":"703_0_2|334|D1|T3|N7","destino":"Cordoaria","atraso_min":-2,"faltam_min":3,"estado":"ON_TIME","veic":null,"fonte":"realtime"}
+{"t":1794489744,"stop":"CMO","linha":"601","trip":"601_0_1|334|D1|T2|N10","destino":"Aeroporto","atraso_min":13.2,"faltam_min":5,"estado":"DELAYED","veic":null,"fonte":"realtime"}
+{"t":1794489744,"stop":"CMO","linha":"200","trip":"200_0_1|334|D1|T7|N10","destino":"Cast. Queijo","atraso_min":-0.1,"faltam_min":6,"estado":"ON_TIME","veic":null,"fonte":"realtime"}
+{"t":1794489744,"stop":"PRFL","linha":"201","trip":"201_0_1|3
+tub.jsonl 267
+{"t":1794489744,"trip":"13_33","data":"20261112","route":"13","veic":"909","stop":"845","seq":40,"hora":1794489744,"atraso_s":477}
+{"t":1794489744,"trip":"14_27","data":"20261112","route":"14","veic":"1037","stop":"855","seq":24,"hora":1794489760,"atraso_s":-413}
+{"t":1794489744,"trip":"14_4","data":"20261112","route":"14","veic":"250","stop":"229","seq":9,"hora":1794489737,"atraso_s":353}
+{"t":1794489744,"trip":"19_71","data":"20261112","route":"19","veic":"1077","stop":"71","seq":9,"hora":1794489822,"atraso_s":-102}
+{"t":1794489744,"trip":"21_6","data":"20261112","route":"21","veic":"1022","stop":"229","seq":9,"hora":1794489749,"atraso_s":657}
+{"t":1794489744,"trip":"21_69","data":"20261112","route":"21","veic":"920","stop":"43","seq":26,"hora":1794489773,"atraso_s":98}
+{"t":1794489744,"trip":"24_117","data":"20261112","route":"24","veic":"1053","stop":"1434","seq":34,"hora":1794489731,"atraso_s":-241}
+{"t":1794489744,"trip":"24_118","data":"20261112","route":"24","veic":"1061","stop":"43","seq":19,"hora":1794489727,"atraso_s":-185}
+{"t":1794489744,"trip":"24_119","data":"20261112","route":"24","veic":"1051","stop":"1059","seq":4,"hora":1794489755,"atraso_s":-97}
+{"t":1794489744,"trip":"24_160","data":"20261112","route":"24","veic":"1059","stop":"314","seq":29,"hora":1794489737,"atraso_s":269}
+{"t":1794489744,"trip":"24_162","data":"20261112","route":"24","veic":"1052","stop":"1512","seq":5,"hora":1794489765,"atraso_s":-159}
+{"t":1794489744,"trip":"2_317","data":"20261112",
