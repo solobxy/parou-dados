@@ -1,0 +1,36 @@
+name: Vigiar a luz e gás do caiu.pt
+
+# Todos os dias, depois da recolha da manhã (06:47 em Lisboa), confere no site verdadeiro que:
+#  - a recolha correu hoje ou ontem, com pelo menos 400 ofertas da ERSE;
+#  - as contas do caiu batem com as do simulador da ERSE;
+#  - as tabelas da Galp COMBINA estão lidas e em vigor;
+#  - as parcerias que entram nas contas (COMBINA, Casa & Estrada, My Repsol, EDP + Pingo Doce) ainda se confirmam na fonte;
+#  - a página /luz-e-gas/ abre com os números de hoje.
+# Só falha (e o GitHub manda um email) se alguma destas verificações falhar. Também se pode correr à mão.
+
+on:
+  schedule:
+    - cron: "23 9 * * *"
+  workflow_dispatch:
+    inputs:
+      site:
+        description: "Endereço do site (vazio = https://caiu.pt)"
+        required: false
+        default: ""
+
+permissions:
+  contents: read
+
+jobs:
+  vigiar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Conferir a luz e gás
+        env:
+          SITE_PEDIDO: ${{ inputs.site }}
+        run: |
+          python3 caiu/verificar/vigiar_energia.py "${SITE_PEDIDO:-https://caiu.pt}" 2>&1 | tee -a "$GITHUB_STEP_SUMMARY"
+          exit ${PIPESTATUS[0]}

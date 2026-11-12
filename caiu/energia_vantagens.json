@@ -1,0 +1,74 @@
+{
+  "_leia": "Vantagens fora da fatura (saldo em cartão, desconto em combustível) que contam no custo real de cada oferta. Cada uma só conta se a fonte ainda o disser: caiu/energia.py confirma-as todos os dias (estado ok, velho = confirmada há menos de 15 dias, parado = não conta). tipo: combina | cpl (cênt./l numa marca) | cpl_oferta (cênt./l lido do texto da própria oferta na ERSE) | credito_oferta (% da fatura com limite, lido da ERSE) | nota (só aparece escrito, não conta). requer: o que a pessoa tem de ter (perfil.tem). fonte.tipo: erse (texto das ofertas desse comercializador), galp (tabela de preços em vigor) ou url (página oficial com as frases de prova).",
+  "vantagens": [
+    {
+      "id": "combina",
+      "nome": "COMBINA (Galp, Continente e NOS)",
+      "tipo": "combina",
+      "aplica": {"com": "GALP", "nome": "^COMBINA"},
+      "requer": ["cartao_continente"],
+      "marca": "galp",
+      "niveis": [{"cpl": 0.20, "continente": 0.02}, {"cpl": 0.25, "continente": 0.05}, {"cpl": 0.30, "continente": 0.10}],
+      "limites": {"continente_mes": 450, "litros_mes": 250},
+      "perde": {"cpl": 0.10, "litros_por_vale": 60, "compra_minima": 30},
+      "resumo": "Saldo no Cartão Continente: desconto nas compras do Continente e em combustível Galp. Sobe com o número de serviços (luz, gás, solar Galp e pacote NOS com TV). Quem tem COMBINA deixa de receber o vale de 10 cênt./l das compras no Continente.",
+      "fonte": {"tipo": "galp", "tabela": "combina", "url": "https://www.galp.com/pt/energias/pt/combina"}
+    },
+    {
+      "id": "combina_pagina",
+      "nome": "COMBINA na página da Galp",
+      "tipo": "nota",
+      "aplica": {"com": "GALP", "nome": "^COMBINA"},
+      "resumo": "A página do COMBINA confirma os níveis: 20, 25 ou 30 cênt./l na Galp e 2, 5 ou 10 % no Continente, até 250 litros por mês.",
+      "fonte": {"url": "https://www.galp.com/pt/energias/pt/combina", "prova": ["20 cênt/l na Galp", "2 % no Continente", "30 cênt/l na Galp", "10 % no Continente"]}
+    },
+    {
+      "id": "casa_estrada",
+      "nome": "Cashback em combustível Galp",
+      "tipo": "cpl",
+      "aplica": {"com": "GALP", "nome": "^Casa & Estrada"},
+      "requer": [],
+      "marca": "galp",
+      "cpl": 0.08,
+      "litros_mes": 250,
+      "resumo": "Desconto em cashback na app Mundo Galp em cada litro abastecido na Galp (até 250 litros por mês).",
+      "fonte": {"tipo": "galp", "tabela": "casa_estrada", "url": "https://www.galp.com/pt/casa/planos-eletricidade-e-gas/casa-estrada/contrato-luz-online"}
+    },
+    {
+      "id": "my_repsol",
+      "nome": "Saldo My Repsol em combustível",
+      "tipo": "cpl_oferta",
+      "aplica": {"com": "REPSOL"},
+      "requer": [],
+      "marca": "repsol",
+      "resumo": "Saldo na app My Repsol por cada litro abastecido na Repsol (contamos só o saldo garantido; com o cartão de um parceiro o desconto pode ser maior). O saldo de 2 a 3 % da fatura já está na conta da fatura.",
+      "fonte": {"tipo": "erse", "com": "REPSOL", "prova": ["cent./l em saldo"]}
+    },
+    {
+      "id": "edp_pingodoce",
+      "nome": "Saldo no Pingo Doce",
+      "tipo": "credito_oferta",
+      "aplica": {"com": "EDPC"},
+      "requer": ["pingodoce"],
+      "gasto_minimo": "pingodoce",
+      "resumo": "Parte da fatura volta em saldo na app O Meu Pingo Doce, todos os meses, enquanto tiver o contrato.",
+      "fonte": {"tipo": "erse", "com": "EDPC", "prova": ["credito de 10% do valor da fatura", "pingo doce"]}
+    },
+    {
+      "id": "edp_poupamais_bp",
+      "nome": "Poupa Mais na bp",
+      "tipo": "nota",
+      "aplica": {"com": "EDPC"},
+      "resumo": "A EDP também desconta na fatura a quem abastece na bp com o cartão Poupa Mais (2 € por cada 40 litros, até 10 € por mês). Não entra nas contas: não há uma página oficial com as condições atuais que possamos confirmar todos os dias.",
+      "fonte": {"url": "https://www.poupamais.pt/pt/welcome/faq", "prova": ["edp"]}
+    },
+    {
+      "id": "meo_dados",
+      "nome": "Dados ilimitados MEO",
+      "tipo": "nota",
+      "aplica": {"com": "MEOENERGIA", "nome": "M4e|M5e"},
+      "resumo": "Clientes MEO M4e e M5e com MEO Energia têm dados móveis ilimitados em todos os cartões do pacote. O preço mais baixo da luz já está na conta.",
+      "fonte": {"tipo": "erse", "com": "MEOENERGIA", "prova": ["dados ilimitados"]}
+    }
+  ]
+}

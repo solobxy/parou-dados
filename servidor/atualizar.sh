@@ -346,6 +346,20 @@ if [ -f "$SERV/caiu-recolha.service" ] && [ -f "$BASE/servidor/caiu/recolher.py"
     install -d -m 755 /var/lib/caiu-estado && echo "$FR" > /var/lib/caiu-estado/forcar
     systemctl start --no-block caiu-recolha.service
   fi
+  # Luz e gás (/luz-e-gas/): ofertas da ERSE, tabelas da Galp (precisam do pdftotext) e parcerias, duas vezes por dia.
+  # Corre logo quando o código muda (caiu/energia*.py, energia_vantagens.json ou o cálculo do site).
+  if [ -f "$SERV/caiu-energia.service" ] && [ -f "$BASE/servidor/caiu/energia.py" ]; then
+    command -v pdftotext >/dev/null 2>&1 || DEBIAN_FRONTEND=noninteractive apt-get -o DPkg::Lock::Timeout=600 install -y -q poppler-utils >/dev/null 2>&1 || true
+    for f in caiu-energia.service caiu-energia.timer; do
+      if ! cmp -s "$SERV/$f" "/etc/systemd/system/$f"; then cp "$SERV/$f" "/etc/systemd/system/$f" && systemctl daemon-reload; fi
+    done
+    systemctl is-enabled --quiet caiu-energia.timer 2>/dev/null || systemctl enable --now caiu-energia.timer >/dev/null 2>&1
+    EN=$( { cat "$BASE"/servidor/caiu/energia*.py "$BASE/servidor/caiu/energia_vantagens.json" "$BASE/servidor/caiu/energia_cli.js" "$BASE/servidor/sites/caiu/energia-calc.js" 2>/dev/null; } | sha256sum | cut -c1-16)
+    if [ "$(cat /var/lib/caiu-estado/energia 2>/dev/null)" != "$EN" ]; then
+      install -d -m 755 /var/lib/caiu-estado && echo "$EN" > /var/lib/caiu-estado/energia
+      systemctl start --no-block caiu-energia.service
+    fi
+  fi
 fi
 
 # ganhas.pt: salários reais em Portugal. Site estático em sites/ganhas (gerado por ganhas/gerar.py); API das partilhas

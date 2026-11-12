@@ -47,6 +47,9 @@ jobs:
           python3 auditoria/test_caminhos_a_pe.py
           python3 caiu/verificar/test_paginas.py
 
+      - name: caiu.pt luz e gás (contas iguais às da ERSE, Galp COMBINA, parcerias, página)
+        run: python3 caiu/verificar/test_energia.py
+
       - name: Pagamentos da DupliCasa (ifthenpay simulada)
         run: python3 duaschaves/testes/testar_pagamentos.py
 

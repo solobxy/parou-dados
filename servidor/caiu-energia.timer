@@ -1,0 +1,11 @@
+[Unit]
+Description=caiu.pt - luz e gás duas vezes por dia (a ERSE atualiza o ficheiro das ofertas durante a manhã)
+
+[Timer]
+OnCalendar=*-*-* 06:47:00 Europe/Lisbon
+OnCalendar=*-*-* 14:47:00 Europe/Lisbon
+RandomizedDelaySec=300
+Persistent=true
+
+[Install]
+WantedBy=timers.target

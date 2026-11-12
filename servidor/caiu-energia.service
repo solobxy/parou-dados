@@ -1,0 +1,21 @@
+[Unit]
+Description=caiu.pt - ofertas de luz e gás (ERSE, Galp e parcerias), confirmadas com o simulador da ERSE
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=parou
+Group=parou
+StateDirectory=caiu-energia caiu-dados
+StateDirectoryMode=0755
+UMask=0022
+Environment=TZ=Europe/Lisbon
+ExecStart=/usr/bin/python3 /opt/parou/servidor/caiu/energia.py /var/lib/caiu-dados --estado /var/lib/caiu-energia
+TimeoutStartSec=20min
+Nice=10
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+MemoryMax=500M

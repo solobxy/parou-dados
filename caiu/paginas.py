@@ -313,7 +313,7 @@ def cabeca(titulo, descricao, url, ld, dia, robots='', og='website'):
 <header class="topo">
   <div class="topo__in">
     <a class="marca" href="/"><span class="sr">caiu.pt, início</span><span class="marca__txt" aria-hidden="true">ca<span class="marca__i">ı<span class="marca__ponto"></span></span>u</span></a>
-    <nav class="topo__nav" aria-label="Atalhos"><a class="topo__link" href="/promocoes/">Promoções</a><a class="topo__link" href="/cabaz-mais-barato/">Cabaz</a><a class="topo__link" href="/preco/">Preços</a></nav>
+    <nav class="topo__nav" aria-label="Atalhos"><a class="topo__link" href="/promocoes/">Promoções</a><a class="topo__link" href="/cabaz-mais-barato/">Cabaz</a><a class="topo__link" href="/luz-e-gas/">Luz e gás</a></nav>
   </div>
 </header>
 '''
@@ -324,7 +324,7 @@ def rodape(dia, hora):
   <div class="caixa rodape__in">
     <p class="rodape__marca" aria-hidden="true">ca<span class="marca__i">ı<span class="marca__ponto"></span></span>u</p>
     <p class="rodape__dados">Preços recolhidos a <time datetime="{dia}">{data_longa(dia)}</time>{f", às <time>{hora}</time>" if hora else ""}, nas lojas online do Continente, Pingo Doce e Auchan. Podem mudar durante o dia e ser diferentes na loja física ou com cartão de cliente. O caiu.pt não tem ligação a estas lojas.</p>
-    <p class="rodape__links"><a href="/promocoes/">Promoções da semana</a> · <a href="/cabaz-mais-barato/">Cabaz mais barato</a> · <a href="/supermercado-mais-barato/">Supermercado mais barato</a> · <a href="/preco/">Preços por produto</a> · <a href="/#avisos">Avisos de preço</a> · <a href="/privacidade.html">Privacidade</a></p>
+    <p class="rodape__links"><a href="/promocoes/">Promoções da semana</a> · <a href="/cabaz-mais-barato/">Cabaz mais barato</a> · <a href="/supermercado-mais-barato/">Supermercado mais barato</a> · <a href="/preco/">Preços por produto</a> · <a href="/luz-e-gas/">Luz e gás</a> · <a href="/#avisos">Avisos de preço</a> · <a href="/privacidade.html">Privacidade</a></p>
     <p class="rodape__autor">Feito por <a href="https://dinissousa.pt" rel="noopener">dinissousa.pt</a></p>
   </div>
 </footer>
@@ -1832,6 +1832,11 @@ def main():
     escrever(novo, 'estudos/index.html', pagina_estudos(D, list(reversed(feitos_e)), hora))
     if feitos_e:
         lastmod[SITE + '/estudos/'] = hoje
+
+    # luz e gás: página feita por energia.py (fora desta pasta)
+    f_lg = os.path.join(pasta, 'energia-paginas', 'luz-e-gas', 'index.html')
+    if os.path.exists(f_lg):
+        lastmod[SITE + '/luz-e-gas/'] = datetime.fromtimestamp(os.path.getmtime(f_lg), ZoneInfo('Europe/Lisbon')).date().isoformat()
 
     # sitemaps: índice em /sitemap.xml, páginas e produtos (só os que entram no Google) à parte
     paginas_sm = [(SITE + '/', hoje)] + sorted(lastmod.items(), key=lambda x: x[0])

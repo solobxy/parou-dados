@@ -55,6 +55,15 @@ Uma família: **Mona Sans** variável (wdth 75–125, wght 200–900), auto-aloj
 - **Cabaz mais barato** (`/cabaz-mais-barato/`): resposta direta, os três cartões de loja do cabaz do essencial
   (média da semana), tabela por agregado e mês, tabela dos produtos com a loja mais barata a amarelo, gráfico e
   tabela por semana, CSV com os dados (CC BY 4.0).
+- **Luz e gás** (`/luz-e-gas/`, feita por `caiu/energia_pagina.py`, estilos em `sites/caiu/energia.css`, contas em
+  `sites/caiu/energia-calc.js`, ecrã em `sites/caiu/energia.js`): topo com a pergunta (H1) e os três comercializadores
+  mais baratos do caso tipo (um por marca, o primeiro em amarelo com o carimbo «Mais barata»). Depois «A tua conta»:
+  botões segmentados (luz, gás ou os dois; tamanho da casa), os números da fatura num `<details>`, «Tens…?» como
+  botões de escolha (6 à vista e «Mais N»), gastos no Continente e no Pingo Doce, onde abasteces e os litros. O
+  resultado é um talão com as linhas da fatura (campanha, saldo, parceria) e «Fica-te a X €/mês», seguido da lista
+  ordenada (posição, preço por mês, etiquetas curtas, detalhe ao toque). Barras do que se paga a mais do que a mais
+  barata (rótulo à direita). Parcerias em cartões com a data da última confirmação. Tabelas dos casos tipo em
+  `<details>`. Preços mensais com IVA; o ano 1 conta campanhas e parcerias, o 2.º ano mostra-se à parte.
 
 ## 5. Layout
 Base 4 px (4, 8, 12, 16, 24, 32, 48, 64, 96, 160). Margem 20 px no telemóvel, 48 px no computador,
@@ -79,6 +88,13 @@ Páginas para o Google: `caiu/paginas.py` (testes em `caiu/verificar/test_pagina
 topo (40 a 60 palavras) com números do dia, data visível em `<time>`, schema só com dados verdadeiros, uma página
 de produto só quando há dados que cheguem (2+ lojas, ou 7+ dias com mudança de preço ou promoção), endereços que
 não mudam. O que está entre `<!--indexnow-->` é o que conta para avisar o Bing de que a página mudou.
+
+Luz e gás: `caiu/energia.py` corre às 06:47 e 14:47 (`caiu-energia.timer`) e escreve `/dados/energia.json`,
+`/dados/energia-estado.json` e `energia-paginas/luz-e-gas/index.html` (fora de `paginas/`, que é trocada inteira).
+Fontes: ficheiro aberto do simulador da ERSE (ofertas e condições), PDFs da Galp (COMBINA e Casa & Estrada, que não
+estão na ERSE) e `caiu/energia_vantagens.json` (parcerias, cada uma com a frase que a prova na fonte; sem prova há 15
+dias fica «parado» e sai das contas). Em cada recolha as contas são confirmadas contra o simulador da ERSE
+(tolerância de 1 € ou 0,75 %). Testes em `caiu/verificar/test_energia.py`; vigia diária `vigiar-energia.yml`.
 
 Tokens em `sites/caiu/estilo.css` (`:root`). Dados em `/dados/*.json`, escritos por `caiu/recolher.py`
 (formato compacto descrito na função `comp`). Estatísticas: `data-site="caiu"`; eventos próprios
