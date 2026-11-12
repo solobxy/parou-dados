@@ -102,6 +102,16 @@ if D:
     ok('preços do caso tipo com sentido (200 a 3000 € por ano)',
        all(isinstance(p, (int, float)) and 200 < p < 3000 for p in precos), precos)
 
+# 2b. resumo da página inicial
+try:
+    st, txt = ler('/dados/energia-resumo.json')
+    rs = json.loads(txt)
+    d = dia(rs.get('dia'))
+    ok('resumo da página inicial de hoje ou de ontem', d is not None and (HOJE - d).days <= 1, rs.get('dia'))
+    ok('resumo com três comercializadores', len(((rs.get('luz') or {}).get('top')) or []) == 3)
+except Exception as e:  # noqa: BLE001
+    ok('resumo da página inicial (/dados/energia-resumo.json)', False, e)
+
 # 3. a página
 try:
     st, h = ler('/luz-e-gas/')
