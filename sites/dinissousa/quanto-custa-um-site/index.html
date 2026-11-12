@@ -1,3 +1,4 @@
+{{- $L := lt (dateInZone "20060102" now "UTC") "20261201" -}}
 <!DOCTYPE html>
 <html lang="pt-PT">
 <head>
@@ -18,8 +19,8 @@
 <script type="application/ld+json">
 {"@context":"https://schema.org","@graph":[
 {"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Dinis Sousa","item":"https://dinissousa.pt/"},{"@type":"ListItem","position":2,"name":"Quanto custa um site","item":"https://dinissousa.pt/quanto-custa-um-site/"}]},
-{"@type":"Article","headline":"Quanto custa um site em Portugal?","inLanguage":"pt-PT","datePublished":"2026-11-11","dateModified":"2026-11-11","author":{"@type":"Person","name":"Dinis Sousa","url":"https://dinissousa.pt/"},"mainEntityOfPage":"https://dinissousa.pt/quanto-custa-um-site/","image":"https://dinissousa.pt/og.jpg"},
-{"@type":"ProfessionalService","@id":"https://dinissousa.pt/#servico","name":"Dinis Sousa","url":"https://dinissousa.pt/","areaServed":"PT","telephone":"+351913488258","email":"diniscash@gmail.com","priceRange":"149 € – 690 €",
+{"@type":"Article","headline":"Quanto custa um site em Portugal?","inLanguage":"pt-PT","datePublished":"2026-11-11","dateModified":"2026-11-12","author":{"@type":"Person","name":"Dinis Sousa","url":"https://dinissousa.pt/"},"mainEntityOfPage":"https://dinissousa.pt/quanto-custa-um-site/","image":"https://dinissousa.pt/og.jpg"},
+{"@type":"ProfessionalService","@id":"https://dinissousa.pt/#servico","name":"Dinis Sousa","url":"https://dinissousa.pt/","areaServed":[{"@type":"City","name":"Porto"},{"@type":"City","name":"Gondomar"},{"@type":"Country","name":"Portugal"}],"telephone":"+351913488258","email":"diniscash@gmail.com","priceRange":"149 € – 690 €",
  "hasOfferCatalog":{"@type":"OfferCatalog","name":"Sites","itemListElement":[
   {"@type":"Offer","itemOffered":{"@type":"Service","name":"Página única"},"price":"149","priceCurrency":"EUR"},
   {"@type":"Offer","itemOffered":{"@type":"Service","name":"Site completo (até 5 páginas)"},"price":"299","priceCurrency":"EUR"},
@@ -77,16 +78,17 @@ footer{margin-top:72px;border-top:1px solid #D6D6D1;padding:28px 0 44px;font-siz
 <nav class="mig" aria-label="Estás aqui"><a href="/">Dinis Sousa</a> › Quanto custa um site</nav>
 <h1>Quanto custa um site <em>em Portugal?</em></h1>
 <p class="lead">Depende do que o site tem de fazer. Aqui estão os preços que pratico, o que entra em cada um e quanto se costuma pagar no mercado, para poderes comparar.</p>
-<div class="resp"><p><strong>Resposta curta:</strong> uma página para seres encontrado custa <strong>149 €</strong>, um site de até 5 páginas <strong>299 €</strong> e uma loja online <strong>desde 499 €</strong>, com o domínio e o alojamento do 1.º ano incluídos. No mercado, um site de 5 páginas custa normalmente 350 a 500 €.</p></div>
+<div class="resp"><p><strong>Resposta curta:</strong> uma página para seres encontrado custa <strong>149 €</strong>, um site de até 5 páginas <strong>299 €</strong> e uma loja online <strong>desde 499 €</strong>, com o domínio e o alojamento do 1.º ano incluídos. No mercado, um site de 5 páginas custa normalmente 350 a 500 €.{{if $L}} Até 30 de novembro há preço de lançamento: <strong>75 €</strong>, <strong>149 €</strong> e <strong>desde 249 €</strong>.{{end}}</p></div>
+<p class="nota" style="margin-top:14px">Atualizado a 12 de novembro de 2026.</p>
 
 <h2>Os meus preços</h2>
 <p>Preço fechado, pago em duas partes: metade quando aprovas o desenho e o resto com o site no ar.</p>
 <div class="planos">
-<div class="plano"><h3>Página única</h3><p class="preco">149 €</p><p class="lanc">Até 30 de novembro: 75 €.</p>
+<div class="plano"><h3>Página única</h3><p class="preco">149 €</p>{{if $L}}<p class="lanc">Até 30 de novembro: 75 €.</p>{{end}}
 <ul><li>1 página desenhada de raiz</li><li>Contacto por WhatsApp, telefone e e-mail</li><li>Rápida no telemóvel</li><li>Domínio e alojamento no 1.º ano</li></ul></div>
-<div class="plano"><h3>Site completo</h3><p class="preco">299 €</p><p class="lanc">Até 30 de novembro: 149 €.</p>
+<div class="plano"><h3>Site completo</h3><p class="preco">299 €</p>{{if $L}}<p class="lanc">Até 30 de novembro: 149 €.</p>{{end}}
 <ul><li>Até 5 páginas desenhadas de raiz</li><li>Preparado para o Google</li><li>Rápido no telemóvel</li><li>Domínio e alojamento no 1.º ano</li></ul></div>
-<div class="plano"><h3>Loja online</h3><p class="preco"><small>desde</small> 499 €</p><p class="lanc">Até 30 de novembro: desde 249 €.</p>
+<div class="plano"><h3>Loja online</h3><p class="preco"><small>desde</small> 499 €</p>{{if $L}}<p class="lanc">Até 30 de novembro: desde 249 €.</p>{{end}}
 <ul><li>Tudo o que tem o site completo</li><li>Produtos, carrinho e pagamentos online</li><li>Domínio e alojamento no 1.º ano</li></ul></div>
 <div class="plano"><h3>À medida</h3><p class="preco"><small>desde</small> 690 €</p>
 <ul><li>Área de cliente e painel só teu</li><li>Base de dados e CRM com os teus clientes</li><li>Marcações, orçamentos ou encomendas</li><li>Ligação à faturação (Moloni ou InvoiceXpress)</li></ul></div>
@@ -123,11 +125,12 @@ footer{margin-top:72px;border-top:1px solid #D6D6D1;padding:28px 0 44px;font-siz
 <p>Ajudo-te com os textos e com as imagens. Se tiveres fotos do teu trabalho, melhor: são as que mais convencem quem visita.</p>
 
 <h2>Sites que já fiz</h2>
+<p>Dois casos contados com números e pormenores: <a href="/projetos/parou/">a PAROU, com perto de 450 visitas por dia</a>, e <a href="/projetos/adribodypiercing/">o site de um estúdio de piercing no Porto</a>.</p>
 <ul class="ch"><li><a href="https://parou.pt">PAROU</a></li><li><a href="https://duplicasa.pt">DupliCasa</a></li><li><a href="https://caiu.pt">caiu.pt</a></li><li><a href="https://ganhas.pt">ganhas.pt</a></li><li><a href="https://adribodypiercing.pt">AdriBodyPiercing</a></li><li><a href="https://tapmoss.com">tapmoss</a></li></ul>
 <p class="acoes"><a class="btn" href="https://wa.me/351913488258?text=Ol%C3%A1%20Dinis!%20Quero%20um%20site.">Pedir o meu site</a></p>
 </main>
 <footer><div class="w"><p>Dinis Sousa · sites feitos de raiz em Portugal · <a href="tel:+351913488258">913 488 258</a> · <a href="mailto:diniscash@gmail.com">diniscash@gmail.com</a></p>
-<p><a href="/">Início</a> · <a href="https://www.livroreclamacoes.pt">Livro de Reclamações</a></p></div></footer>
+<p><a href="/">Início</a> · <a href="/criacao-de-sites-porto/">Criação de sites no Porto</a> · <a href="/criacao-de-sites-gondomar/">Criação de sites em Gondomar</a> · <a href="https://www.livroreclamacoes.pt">Livro de Reclamações</a></p></div></footer>
 <script>
 /* os preços de lançamento acabam a 30/11 às 23:59 (Lisboa): depois disso a nota desaparece */
 if (Date.now() >= Date.parse('2026-12-01T00:00:00Z')) document.querySelectorAll('.lanc').forEach(function (e) { e.remove(); });

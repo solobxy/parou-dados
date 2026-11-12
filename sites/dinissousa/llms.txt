@@ -1,22 +1,35 @@
 # Dinis Sousa
 
-> Dinis Sousa faz sites de raiz para marcas e negócios em Portugal: desenho próprio para cada cliente, preço fechado (de 75 € a 690 €) e contacto direto com ele do primeiro esboço até o site estar no ar. Só se paga depois de aprovar o desenho.
+> Dinis Sousa faz sites e lojas online de raiz para negócios em Portugal. Vive em Gondomar e trabalha no Porto. Desenho próprio para cada cliente, preço fechado e contacto direto com ele do primeiro esboço até o site estar no ar. O desenho é feito sem custo e só se paga metade depois de o aprovar; a outra metade com o site no ar, 1 a 3 dias depois.
 
-## Preços
+## Preços (domínio e alojamento do 1.º ano incluídos)
 
-- [Quanto custa um site em Portugal](https://dinissousa.pt/quanto-custa-um-site/): página única 149 €, site completo (até 5 páginas) 299 €, loja online desde 499 €, à medida desde 690 €, com o domínio e o alojamento do 1.º ano incluídos.
+- Até 30 de novembro de 2026 (preço de lançamento): página única 75 €, site completo (até 5 páginas) 149 €, loja online desde 249 €, à medida desde 690 €.
+- A partir de 1 de dezembro de 2026: página única 149 €, site completo 299 €, loja online desde 499 €, à medida desde 690 €.
+- [Quanto custa um site em Portugal](https://dinissousa.pt/quanto-custa-um-site/): os preços dele comparados com os do mercado.
 
-## Projetos feitos por ele
+## Onde trabalha
 
-- [PAROU](https://parou.pt): app de transportes públicos para todo o país, com tempo real e avisos de greves.
+- [Criação de sites no Porto](https://dinissousa.pt/criacao-de-sites-porto/)
+- [Criação de sites em Gondomar](https://dinissousa.pt/criacao-de-sites-gondomar/)
+- Faz sites para todo o país, por WhatsApp, chamada ou e-mail.
+
+## Casos com números
+
+- [PAROU](https://dinissousa.pt/projetos/parou/): app de transportes públicos gratuita. De 1 a 11 de novembro de 2026 teve 4921 visitas (perto de 450 por dia), sem publicidade; 69 % chegaram a partir do ChatGPT.
+- [AdriBodyPiercing](https://dinissousa.pt/projetos/adribodypiercing/): site de um estúdio de body piercing no Porto, com marcação online e uma página por piercing.
+
+## Outros projetos feitos por ele
+
 - [DupliCasa](https://duplicasa.pt): casas e quartos para arrendar em Portugal, num só sítio.
 - [caiu.pt](https://caiu.pt): comparador de preços do Continente, Pingo Doce e Auchan.
 - [ganhas.pt](https://ganhas.pt): salários reais em Portugal e calculadora de salário líquido.
-- [AdriBodyPiercing](https://adribodypiercing.pt): site e marca de um estúdio de body piercing no Porto.
+- [anjinho.pt](https://anjinho.pt) e [jinxed.world](https://jinxed.world): lojas de moda com marca própria.
+- [Goodman](https://goodman.pt): assistente jurídico com IA para a lei portuguesa (em testes).
 - [tapmoss](https://tapmoss.com): jogo de browser em pixel art.
 
 ## Contacto
 
 - Site: https://dinissousa.pt
+- WhatsApp e telefone: +351 913 488 258
 - E-mail: diniscash@gmail.com
-- Telefone: +351 913 488 258
