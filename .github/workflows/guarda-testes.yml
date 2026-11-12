@@ -119,3 +119,11 @@ jobs:
       - name: Autocarros no ecrã (todos os da zona que se vê)
         working-directory: app
         run: APP=$PWD node --import tsx ../auditoria/veiculos-no-ecra.mjs 2>&1 | grep -v "Experimental\|trace-warnings" | tail -60; exit ${PIPESTATUS[0]}
+
+      - name: Nomes das paragens (abreviaturas do Funchal, siglas, numeração romana; endereços que não mudam)
+        working-directory: app
+        run: APP=$PWD node --import tsx ../auditoria/nomes-paragens.mjs 2>&1 | grep -v "Experimental\|trace-warnings" | tail -60; exit ${PIPESTATUS[0]}
+
+      - name: Madeira e Açores (aviso onde não há horários, zonas de aviso do IPMA nas ilhas)
+        working-directory: app
+        run: APP=$PWD node --import tsx ../auditoria/ilhas.mjs 2>&1 | grep -v "Experimental\|trace-warnings" | tail -40; exit ${PIPESTATUS[0]}
