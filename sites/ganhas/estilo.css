@@ -256,6 +256,7 @@ figure.histo{margin:8px 0 0}
 [hidden]{display:none!important}
 li::marker{font-variant-numeric:normal}
 .rolar .tabela td,.rolar .tabela th{white-space:nowrap}
+.rolar .tabela td:first-child:not(.n){white-space:normal;min-width:9em}  /* nomes compridos partem; os números não */
 @media (max-width:480px){.tabela{font-size:15px}.tabela td,.tabela th{padding-right:6px}.tabela td{padding-top:10px;padding-bottom:10px}}
 @media (prefers-color-scheme:dark){.rodape{background:#070807;box-shadow:inset 0 2px 0 #2C302C}}
 :root[data-tema="escuro"] .rodape{background:#070807;box-shadow:inset 0 2px 0 #2C302C}
