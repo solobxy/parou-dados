@@ -1,1 +1,7 @@
 # nome url
+pd_bp https://www.pingodoce.pt/parcerias/bp/
+poupamais_faq https://www.poupamais.pt/pt/welcome/faq
+edp_poupamais https://www.edp.pt/particulares/servicos/poupa-mais/
+repsol_vodafone https://www.repsol.pt/particulares/parceiros/outros-parceiros/vodafone/
+continente_combina https://www.continente.pt/combina/
+galp_combina2 https://www.galp.com/pt/energias/pt/combina
