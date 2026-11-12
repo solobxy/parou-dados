@@ -16,7 +16,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Sondar
-        run: python3 energia-sonda/sonda.py energia-sonda/urls.txt $(cat energia-sonda/extra.txt 2>/dev/null) 2>&1 | tee registo.txt
+        run: python3 energia-sonda/oraculo2.py 2>&1 | tee registo.txt
       - name: Guardar
         if: always()
         run: |
