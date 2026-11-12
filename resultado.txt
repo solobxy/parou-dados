@@ -1,0 +1,28 @@
+== 2026-11-12T04:57:18Z acao=comando
+IP: 2.31.13.85
+== Saída no servidor
+m1794459429089137778
+0
+2879046
+Páginas SEO: 1443 (1200 no sitemap, 243 sem índice ou redirecionadas, 27 com 410) + 3 CSV; mudadas hoje: 1227; histórico: 1 dias
+páginas 1443 · no sitemap 1201 · 410 27 · CSV 3 · órfãs 0 · títulos repetidos 0
+avisos por tipo: {}
+Valid configuration
+== pastas reais intactas
+drwxr-xr-x  4 parou parou     4096 04:26 .
+drwxr-xr-x 54 root  root      4096 22:58 ..
+-rw-r--r--  1 parou parou 19424926 04:26 anuncios.json
+-rw-r--r--  1 parou parou       13 04:26 cursor.json
+drwxr-xr-x  2 parou parou     4096 04:26 det
+-rw-r--r--  1 parou parou      352 04:26 estado-recolha.json
+-rw-r--r--  1 root  root        21 16:23 .forcar
+-rw-r--r--  1 parou parou       10 20:27 .indexnow
+-rw-r--r--  1 parou parou   876499 04:26 links.json
+-rw-r--r--  1 parou parou  7147048 04:26 lista.json
+-rw-r--r--  1 root  root        17 23:19 .paginas.versao
+drwxr-xr-x  6 parou parou     4096 04:26 seo
+sem ficheiros novos nas pastas reais
+limpo
+== Teste de fora
+https://2-31-13-85.sslip.io/health 200 0.506284s
+https://2-31-13-85.sslip.io/api/transit/loading-status 200 0.502207s
