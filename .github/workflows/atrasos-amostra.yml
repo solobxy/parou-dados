@@ -1,0 +1,35 @@
+name: Amostra de atrasos em tempo real
+
+# Recolhe durante umas horas os dados de tempo real da Carris Metropolitana, STCP e TUB (só leitura) para o estudo
+# de pontualidade. Resultado (dados em bruto) no ramo "atrasos-resultado", atualizado de 30 em 30 min.
+
+on:
+  push:
+    branches: [estudo-atrasos]
+  workflow_dispatch:
+    inputs:
+      minutos:
+        description: "Duração da recolha em minutos"
+        required: false
+        default: "300"
+
+permissions:
+  contents: write
+
+jobs:
+  amostra:
+    runs-on: ubuntu-latest
+    timeout-minutes: 345
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Recolher
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          DURACAO_MIN: ${{ inputs.minutos || '315' }}
+        run: |
+          pip install --quiet gtfs-realtime-bindings protobuf
+          python auditoria/atrasos-amostra.py
