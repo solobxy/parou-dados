@@ -1,0 +1,12 @@
+
+=== https://caiu.pt/  (3 medições, todas: 98/99/99)
+  notas {"performance":99,"accessibility":100,"best-practices":100,"seo":100}
+  LCP 0.9 s | CLS 0.006 | TBT 0 ms | FCP 0.7 s | peso Total size was 330 KiB
+
+=== https://caiu.pt/cabaz-mais-barato/  (3 medições, todas: 100/100/100)
+  notas {"performance":100,"accessibility":100,"best-practices":100,"seo":100}
+  LCP 0.4 s | CLS 0 | TBT 0 ms | FCP 0.2 s | peso Total size was 176 KiB
+
+=== Dados reais (CrUX, 28 dias, perfil desktop)
+https://caiu.pt/ | página: sem dados | origem: sem dados
+https://caiu.pt/cabaz-mais-barato/ | página: sem dados | origem: sem dados
