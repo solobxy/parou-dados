@@ -2,7 +2,7 @@
 import { chromium, webkit } from 'playwright';
 import fs from 'node:fs';
 fs.mkdirSync('res', { recursive: true });
-const B = 'http://127.0.0.1:8080/';
+const B = process.env.BASE || 'http://127.0.0.1:8080/';
 const log = [];
 for (const [motor, nomeMotor] of [[chromium, 'chromium'], [webkit, 'webkit']]) {
   const browser = await motor.launch();

@@ -1,0 +1,30 @@
+name: Ver dinissousa.pt em produção
+on:
+  push:
+    branches: [ver-dinis-producao]
+permissions:
+  contents: write
+jobs:
+  ver:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Esperar pela versão nova
+        run: |
+          for i in $(seq 1 40); do curl -s -m 20 "https://dinissousa.pt/?v=$i" | grep -q 'class="hf h-caiu"' && echo "versão nova no ar" && break; echo "à espera ($i)"; sleep 20; done
+          curl -s -m 20 https://dinissousa.pt/ | grep -o 'brand-tile t-[a-z]*' | tr '\n' ' '; echo
+      - name: Capturas
+        run: |
+          cd .github/ver-dinis && npm init -y >/dev/null && npm i --no-audit --no-fund playwright@1 >/dev/null && npx playwright install --with-deps chromium webkit >/dev/null
+          BASE=https://dinissousa.pt/ node capturar.mjs || true
+      - name: Guardar
+        if: always()
+        run: |
+          mkdir -p pub && cp -r .github/ver-dinis/res/* pub/ 2>/dev/null || echo vazio > pub/vazio.txt
+          cd pub && git init -q -b ver-dinis-producao-resultado
+          git config user.name "parou-dados"; git config user.email "actions@users.noreply.github.com"
+          git add -A && git commit -q -m "dinis produção $(date -u +%H:%MZ)" && git push -q -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" ver-dinis-producao-resultado
