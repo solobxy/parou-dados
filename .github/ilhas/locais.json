@@ -1,0 +1,16 @@
+[
+ {"id":"funchal-centro","lat":32.6478,"lon":-16.9105,"tz":"Atlantic/Madeira"},
+ {"id":"funchal-monte","lat":32.6747,"lon":-16.9027,"tz":"Atlantic/Madeira"},
+ {"id":"funchal-lido","lat":32.6379,"lon":-16.9372,"tz":"Atlantic/Madeira"},
+ {"id":"funchal-hospital","lat":32.6582,"lon":-16.9264,"tz":"Atlantic/Madeira"},
+ {"id":"camara-de-lobos","lat":32.6489,"lon":-16.9767,"tz":"Atlantic/Madeira"},
+ {"id":"canico","lat":32.6453,"lon":-16.8455,"tz":"Atlantic/Madeira"},
+ {"id":"aeroporto-madeira","lat":32.6979,"lon":-16.7745,"tz":"Atlantic/Madeira"},
+ {"id":"machico","lat":32.7166,"lon":-16.7666,"tz":"Atlantic/Madeira"},
+ {"id":"santana","lat":32.8050,"lon":-16.8820,"tz":"Atlantic/Madeira"},
+ {"id":"calheta","lat":32.7206,"lon":-17.1756,"tz":"Atlantic/Madeira"},
+ {"id":"porto-santo","lat":33.0600,"lon":-16.3400,"tz":"Atlantic/Madeira"},
+ {"id":"ponta-delgada","lat":37.7400,"lon":-25.6680,"tz":"Atlantic/Azores"},
+ {"id":"angra","lat":38.6550,"lon":-27.2190,"tz":"Atlantic/Azores"},
+ {"id":"horta","lat":38.5330,"lon":-28.6300,"tz":"Atlantic/Azores"}
+]
