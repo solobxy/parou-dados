@@ -48,6 +48,7 @@ if (en) {
   const t = resposta(r.h);
   console.log('        /en' + en, '\n         resposta:', t);
   ok('[en] resposta em inglês', !!t && /\b(Line|runs|stops|Official timetable)\b/.test(t) && !/paragens|Horário oficial/.test(t), t);
+  ok('[en] sem «Line Line»', !!t && !/Line Line/.test(t), t);
 }
 // Paragens
 const sp = await (await fetch(`${BASE}/sitemap-paragens-1.xml`)).text();
@@ -67,6 +68,8 @@ for (const u of ap.slice(0, 14)) {
   console.log('       ', u, '\n         resposta:', t);
   ok(`[paragem ${op}] diz as linhas`, /passa(m)? |não passa hoje nenhuma linha/.test(t), t.slice(0, 80));
   ok(`[paragem ${op}] sem «undefined», «null» ou «NaN»`, !/undefined|null|NaN/.test(t), t);
+  ok(`[paragem ${op}] sem parênteses seguidos «) (»`, !/\) \(/.test(t), t);
+
   if (/não passa hoje nenhuma linha/.test(t)) { semLinhas++; ok(`[paragem ${op}] sem linhas → noindex`, /noindex/.test(robots(r.h)), robots(r.h)); }
   else ok(`[paragem ${op}] com linhas → index`, /^index/.test(robots(r.h)), robots(r.h));
 }
