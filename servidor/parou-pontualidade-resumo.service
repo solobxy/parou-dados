@@ -1,0 +1,21 @@
+[Unit]
+Description=PAROU.PT - resumo diário da pontualidade (dia anterior)
+
+[Service]
+Type=oneshot
+User=parou
+Group=parou
+StateDirectory=parou-pontualidade
+Environment=TZ=Europe/Lisbon
+Environment=PAROU_GTFS=/var/lib/parou/gtfs.db
+ExecStart=/usr/bin/python3 /opt/parou/servidor/pontualidade/resumir.py /var/lib/parou-pontualidade
+TimeoutStartSec=60min
+Nice=19
+IOSchedulingClass=idle
+CPUQuota=30%
+MemoryMax=600M
+NoNewPrivileges=yes
+ProtectSystem=strict
+ReadOnlyPaths=/var/lib/parou
+ProtectHome=yes
+PrivateTmp=yes

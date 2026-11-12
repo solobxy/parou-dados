@@ -1,0 +1,42 @@
+name: Teste da gravação de pontualidade
+
+# Corre o pontualidade/recolher.py contra as fontes reais durante uns minutos e o resumir.py no fim.
+# Resultado no ramo "teste-pontualidade-resultado".
+
+on:
+  push:
+    branches: [teste-pontualidade]
+
+permissions:
+  contents: write
+
+jobs:
+  teste:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Base de horários
+        run: curl -sSL https://github.com/solobxy/parou-dados/releases/download/dados/gtfs.db.gz | gunzip > /tmp/gtfs.db && ls -la /tmp/gtfs.db
+      - name: Gravar 6 minutos e resumir
+        env:
+          PAROU_GTFS: /tmp/gtfs.db
+          TZ: Europe/Lisbon
+        run: |
+          mkdir -p res
+          timeout 360 python pontualidade/recolher.py /tmp/pont > res/saida.txt 2>&1 || echo "fim (código $?)" >> res/saida.txt
+          DIA=$(TZ=Europe/Lisbon date +%Y-%m-%d)
+          python pontualidade/resumir.py /tmp/pont "$DIA" >> res/saida.txt 2>&1 || echo "resumo falhou" >> res/saida.txt
+          cp /tmp/pont/estado.json res/ 2>/dev/null || true
+          cp /tmp/pont/dias/*.json res/ 2>/dev/null || true
+          for f in /tmp/pont/bruto/*/*.jsonl; do echo "$(basename $f) $(wc -l < $f)"; head -c 1500 "$f"; echo; done > res/amostras.txt 2>&1
+      - name: Guardar
+        if: always()
+        run: |
+          mkdir -p pub && cp -r res/* pub/ 2>/dev/null || echo "sem resultados" > pub/vazio.txt
+          cd pub && git init -q -b teste-pontualidade-resultado
+          git config user.name "parou-dados"; git config user.email "actions@users.noreply.github.com"
+          git add -A && git commit -q -m "teste $(date -u +%H:%MZ)" && git push -q -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" teste-pontualidade-resultado
