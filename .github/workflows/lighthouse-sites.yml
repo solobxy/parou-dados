@@ -9,6 +9,14 @@ on:
         description: "Endereços separados por espaços"
         required: true
         default: "https://parou.pt/ https://caiu.pt/ https://ganhas.pt/ https://duplicasa.pt/ https://dinissousa.pt/ https://adribodypiercing.pt/ https://tapmoss.com/"
+      perfil:
+        description: "mobile ou desktop"
+        required: false
+        default: "mobile"
+      ramo:
+        description: "Ramo onde fica o resultado"
+        required: false
+        default: "lighthouse-resultado"
 
 permissions:
   contents: write
@@ -25,14 +33,16 @@ jobs:
       - name: Medir
         env:
           URLS: ${{ inputs.urls }}
+          PERFIL: ${{ inputs.perfil }}
         run: |
+          EXTRA=""; [ "$PERFIL" = "desktop" ] && EXTRA="--preset=desktop"
           npm i -g lighthouse@12 >/dev/null 2>&1
           mkdir -p saida
           for U in $URLS; do
             N=$(echo "$U" | sed 's#https\?://##; s#[^a-zA-Z0-9]#_#g')
             for i in 1 2 3; do
               timeout 180 lighthouse "$U" --quiet --only-categories=performance,accessibility,best-practices,seo \
-                --output=json --output-path="saida/$N-$i.json" --chrome-flags="--headless=new --no-sandbox" || true
+                $EXTRA --output=json --output-path="saida/$N-$i.json" --chrome-flags="--headless=new --no-sandbox" || true
             done
           done
           cat > resumo.js <<'JS'
@@ -67,10 +77,17 @@ jobs:
           }
           JS
           node resumo.js | tee resumo.txt
+          # Dados reais de utilizadores (CrUX) quando o Google os tem
+          echo "" >> resumo.txt; echo "=== Dados reais (CrUX, 28 dias, perfil $PERFIL)" >> resumo.txt
+          ESTR=mobile; [ "$PERFIL" = "desktop" ] && ESTR=desktop
+          for U in $URLS; do
+            curl -s -m 90 "https://www.googleapis.com/pagespeedonline/v5/runPagespeed?url=$U&strategy=$ESTR&category=performance" -o psi.json || true
+            node -e 'const j=JSON.parse(require("fs").readFileSync("psi.json"));const f=(x)=>x&&x.metrics?Object.entries(x.metrics).map(([k,v])=>k.replace("_MS","").replace("EXPERIMENTAL_","")+"="+v.percentile+"("+v.category+")").join(" "):"sem dados";console.log(process.argv[1],"| página:",f(j.loadingExperience),"| origem:",f(j.originLoadingExperience))' "$U" >> resumo.txt 2>/dev/null || echo "$U erro PSI" >> resumo.txt
+          done
 
       - name: Guardar
         if: always()
         run: |
-          mkdir pub && cp resumo.txt pub/ 2>/dev/null; mkdir -p pub/json && cp saida/*-2.json pub/json/ 2>/dev/null; cd pub && git init -q -b lighthouse-resultado
+          mkdir pub && cp resumo.txt pub/ 2>/dev/null; mkdir -p pub/json && cp saida/*-2.json pub/json/ 2>/dev/null; cd pub && git init -q -b "${{ inputs.ramo }}"
           git config user.name "parou-dados"; git config user.email "actions@users.noreply.github.com"
-          git add -A && git commit -q -m "Lighthouse" && git push -q -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" lighthouse-resultado
+          git add -A && git commit -q -m "Lighthouse" && git push -q -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" "${{ inputs.ramo }}"
