@@ -1,12 +1,12 @@
 {
-  "built_at": "2026-11-13T11:31:19.895137+00:00",
-  "db_bytes": 757248000,
-  "gz_bytes": 202834459,
+  "built_at": "2026-11-13T21:31:21.437401+00:00",
+  "db_bytes": 757284864,
+  "gz_bytes": 202832900,
   "totals": {
     "lines": 2662,
-    "stops": 46413,
+    "stops": 46411,
     "trips": 133505,
-    "stop_times": 4091279,
+    "stop_times": 4091039,
     "operators": 30,
     "operators_ok": 27,
     "operators_desatualizados": 3
@@ -321,7 +321,7 @@
       "operator_name": "GIRO",
       "status": "OK",
       "lines": 11,
-      "stops": 232,
+      "stops": 230,
       "trips": 541,
       "valid_until": "2026-12-31",
       "validade": "ok",
@@ -584,7 +584,7 @@
     }
   ],
   "desenhos": {
-    "bytes": 7814418,
+    "bytes": 7813488,
     "por_operador": {
       "carris": {
         "viagens": 24961,
@@ -659,7 +659,7 @@
       "sobe_desce_tavira": {
         "viagens": 27,
         "com_desenho": 27,
-        "desenhos": 16
+        "desenhos": 15
       },
       "stcp": {
         "viagens": 18343,
@@ -911,13 +911,13 @@
           "total": 399
         },
         "servicos_com_data_hoje": [
-          "BU",
           "CU",
-          "BexpU",
+          "AU",
+          "BU",
+          "FU",
           "EU",
           "DU",
-          "FU",
-          "AU"
+          "BexpU"
         ],
         "viagens_por_servico": [
           {
@@ -972,5 +972,5 @@
       }
     }
   },
-  "duration_s": 237
+  "duration_s": 294
 }
