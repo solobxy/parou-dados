@@ -156,17 +156,17 @@ def dor(x):
 
 CSS = '''@font-face{font-family:"Bricolage Grotesque";src:url(/fonts/bricolage.woff) format("woff");font-weight:200 800;font-display:swap}
 @font-face{font-family:Figtree;src:url(/fonts/figtree.woff) format("woff");font-weight:300 900;font-display:swap}
-:root{--noite:#0E0C0B;--osso:#EEE8DF;--sec:#BDB5A9;--ouro:#D9B676;--tinta:#141210;--cartao:#1D1A17;--linha:#2E2925}
+:root{--fundo:#EFEAE3;--tinta:#1C1B1D;--sec:#55524E;--acento:#4258DE;--acento-tinta:#2F49D1;--cartao:#E5DFD6;--linha:#D6CFC4}
 *{box-sizing:border-box}html{-webkit-text-size-adjust:100%}
-body{margin:0;background:var(--noite);color:var(--osso);font:400 17px/1.6 Figtree,"Avenir Next","Segoe UI",system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+body{margin:0;background:var(--fundo);color:var(--tinta);font:400 17px/1.6 Figtree,"Avenir Next","Segoe UI",system-ui,sans-serif;-webkit-font-smoothing:antialiased}
 a{color:inherit}img,svg{display:block;max-width:100%}
-:focus-visible{outline:3px solid var(--ouro);outline-offset:3px;border-radius:4px}
+:focus-visible{outline:3px solid var(--acento-tinta);outline-offset:3px;border-radius:4px}
 .w{max-width:960px;margin:0 auto;padding:0 clamp(20px,4vw,40px)}
-header{position:sticky;top:0;z-index:5;background:rgba(14,12,11,.92);backdrop-filter:blur(10px);border-bottom:1px solid var(--linha)}
+header{position:sticky;top:0;z-index:5;background:rgba(239,234,227,.94);backdrop-filter:blur(10px);border-bottom:1px solid var(--linha)}
 header .w{display:flex;align-items:center;justify-content:space-between;height:68px;gap:12px}
 .logo svg{height:30px;width:auto}
-.btn{display:inline-flex;align-items:center;justify-content:center;min-height:52px;padding:0 26px;border-radius:999px;background:var(--ouro);color:var(--tinta);font-weight:600;text-decoration:none;text-align:center}
-.btn.sec{background:transparent;color:var(--osso);box-shadow:inset 0 0 0 1.5px rgba(238,232,223,.35)}
+.btn{display:inline-flex;align-items:center;justify-content:center;min-height:52px;padding:0 26px;border-radius:999px;background:var(--acento);color:#fff;font-weight:600;text-decoration:none;text-align:center}
+.btn.sec{background:transparent;color:var(--tinta);box-shadow:inset 0 0 0 1.5px rgba(28,27,29,.3)}
 header .btn{min-height:44px;padding:0 18px;font-size:15px}
 .mig{font-size:14px;color:var(--sec);margin:28px 0 10px}.mig a{color:var(--sec)}
 h1,h2,h3{font-family:"Bricolage Grotesque","Avenir Next",system-ui,sans-serif;letter-spacing:-.025em;margin:0}
@@ -174,20 +174,20 @@ h1{font-size:clamp(38px,8vw,72px);line-height:1;font-weight:700;text-wrap:balanc
 h2{font-size:clamp(26px,4.4vw,38px);line-height:1.1;margin:56px 0 14px;font-weight:650}
 h3{font-size:19px;margin:22px 0 4px}
 .lead{font-size:clamp(18px,2.2vw,21px);color:var(--sec);max-width:640px;margin:18px 0 26px}
-.ficha{display:grid;grid-template-columns:110px 1fr;gap:18px;align-items:center;background:#1A1715;border:1px solid var(--linha);border-radius:22px;padding:20px;max-width:560px}
-.ficha img{width:110px;height:110px;object-fit:contain}
+.ficha{display:grid;grid-template-columns:110px 1fr;gap:18px;align-items:center;background:var(--cartao);border:1px solid var(--linha);border-radius:22px;padding:20px;max-width:560px}
+.ficha img{width:110px;height:110px;object-fit:contain;background:var(--tinta);border-radius:50%}
 .ficha dl{margin:0;display:grid;grid-template-columns:1fr;gap:2px;font-size:15.5px}.ficha dt{color:var(--sec);font-size:13.5px;margin-top:8px}.ficha dt:first-child{margin-top:0}.ficha dd{margin:0;font-weight:600}
-.preco{font-family:"Bricolage Grotesque",system-ui,sans-serif;font-size:34px;font-weight:600;color:var(--ouro);font-variant-numeric:tabular-nums}
+.preco{font-family:"Bricolage Grotesque",system-ui,sans-serif;font-size:34px;font-weight:600;color:var(--acento-tinta);font-variant-numeric:tabular-nums}
 .acoes{display:flex;flex-wrap:wrap;gap:12px;margin:26px 0 0}
-p,li{color:var(--sec)}strong{color:var(--osso)}
+p,li{color:var(--sec)}strong{color:var(--tinta)}
 ul.l{padding-left:20px}ul.l li{margin:6px 0}
 .ch{display:flex;flex-wrap:wrap;gap:8px;list-style:none;padding:0;margin:14px 0 0}
-.ch a{display:inline-flex;align-items:center;min-height:44px;padding:0 16px;border-radius:999px;background:#1A1715;border:1px solid var(--linha);text-decoration:none;color:var(--osso)}
-.ch a small{color:var(--ouro);margin-left:8px;font-weight:600}
+.ch a{display:inline-flex;align-items:center;min-height:44px;padding:0 16px;border-radius:999px;background:var(--cartao);border:1px solid var(--linha);text-decoration:none;color:var(--tinta)}
+.ch a small{color:var(--acento-tinta);margin-left:8px;font-weight:600}
 .tab{width:100%;border-collapse:collapse;font-size:16px}.tab td,.tab th{padding:12px 6px;border-bottom:1px solid var(--linha);text-align:left}.tab th{color:var(--sec);font-weight:500}.tab td.n,.tab th.n{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
-.tab a{color:var(--osso)}
-.cic{display:grid;gap:10px;margin:18px 0 0;max-width:640px}.cic div{background:#1A1715;border:1px solid var(--linha);border-radius:18px;padding:16px 18px}
-.cic b{display:block;color:var(--osso);font-size:20px;font-family:"Bricolage Grotesque",system-ui,sans-serif}.cic small{color:var(--sec);font-size:14px}
+.tab a{color:var(--tinta)}
+.cic{display:grid;gap:10px;margin:18px 0 0;max-width:640px}.cic div{background:var(--cartao);border:1px solid var(--linha);border-radius:18px;padding:16px 18px}
+.cic b{display:block;color:var(--tinta);font-size:20px;font-family:"Bricolage Grotesque",system-ui,sans-serif}.cic small{color:var(--sec);font-size:14px}
 .fontes{font-size:14px}.fontes li{margin:4px 0}
 footer{margin-top:72px;border-top:1px solid var(--linha);padding:30px 0 44px;font-size:14px;color:var(--sec)}footer a{color:var(--sec)}
 @media(max-width:420px){.ficha{grid-template-columns:84px 1fr}.ficha img{width:84px;height:84px}.preco{font-size:28px}}'''
@@ -214,7 +214,7 @@ def doc(titulo, descricao, url, ld, corpo, logo, rodape_links):
     return f'''<!DOCTYPE html>
 <html lang="pt-PT"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{e(titulo)}</title><meta name="description" content="{e(descricao)}"><link rel="canonical" href="{SITE}{url}">
-<meta name="theme-color" content="#0E0C0B"><meta property="og:type" content="website"><meta property="og:locale" content="pt_PT">
+<meta name="theme-color" content="#EFEAE3"><meta property="og:type" content="website"><meta property="og:locale" content="pt_PT">
 <meta property="og:site_name" content="AdriBodyPiercing"><meta property="og:title" content="{e(titulo)}"><meta property="og:description" content="{e(descricao)}">
 <meta property="og:url" content="{SITE}{url}"><meta property="og:image" content="{SITE}/og.jpg"><meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="/icon-192.png"><link rel="apple-touch-icon" href="/apple-touch-icon.png">

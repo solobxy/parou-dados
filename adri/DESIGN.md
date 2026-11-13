@@ -3,19 +3,21 @@
 Ler antes de mexer em `sites/adribodypiercing/index.html` (página única, CSS e JS dentro do ficheiro).
 
 ## Tema
-Estúdio de um piercer só, no Kaos Tattoo (Porto). Escuro e calmo, com o osso e o dourado do logótipo, mas com cara de pessoa: o Adri aparece logo no herói e a secção «Quem te vai furar» vem a seguir às fotos. Tom de conversa, sem ar de luxo.
+Estúdio de um piercer só, no Kaos Tattoo (Porto). Claro, limpo e descontraído, sem ar de luxo. O Adri aparece logo no herói e a secção «Quem te vai furar» vem a seguir às fotos. A cor vem do titânio: grafite como o metal e o azul do titânio anodizado.
 
-## Paleta
+## Paleta (60-30-10)
 | Nome | Hex | Função |
 |---|---|---|
-| noite | #0E0C0B | fundo escuro principal |
-| noite-2 | #171513 | degrau de tom (joias, vale, perguntas) |
-| cartão | #211E1B / #2A2622 | cartões em fundo escuro, planos, sem contorno nem brilho |
-| osso | #EEE8DF | fundo claro e texto em fundo escuro |
-| osso-2 | #E4DCD0 | degrau claro (secção «Quem te vai furar») |
-| tinta | #141210 | texto em fundo claro |
-| ouro | #D9B676 | botão principal e pouco mais |
-| ouro-tinta | #7A5820 | dourado em fundo claro (contraste) |
+| osso | #EFEAE3 | 60 %: fundo da maior parte das secções |
+| osso-2 | #E5DFD6 | degrau de tom (quem te vai furar, preços, vale, perguntas) |
+| grafite (noite / tinta) | #1C1B1D | 30 %: texto, herói, fotos, joias, contacto, cartões escuros |
+| noite-2 | #232225 | degrau escuro (joias) |
+| acento (azul anodizado) | #4258DE | 10 %: botões, ponto escolhido no mapa, barra do logótipo. Texto branco 5,7:1 |
+| acento-tinta | #2F49D1 | azul em texto sobre fundo claro (5,3:1 ou mais) |
+| acento-claro | #9AA8FF | azul em texto ou foco sobre fundo escuro (7,7:1) |
+| sec-claro / sec-escuro | #55524E / #B9B7BC | texto secundário no claro / no escuro |
+
+Nada de dourado: contradiz «Só titânio». As páginas /piercing/ (adri/paginas.py), o 404, o ícone e a imagem de partilha seguem a mesma paleta.
 
 ## Tipo
 Bricolage Grotesque nos títulos e preços, Figtree no texto. Maiúscula só no início.
@@ -24,7 +26,7 @@ Bricolage Grotesque nos títulos e preços, Figtree no texto. Maiúscula só no 
 herói → fotos de trabalhos → quem te vai furar → escolhe o sítio (orelha) → preços → como corre → só titânio → vale → depois do piercing → perguntas → marcar → contacto.
 
 ## Regras
-- A joia é sempre titânio: nada de dourado nas imagens de joias nem no 3D. A imagem fixa do herói é um render do mesmo `monograma('titanio')` do 3D.
+- A joia é sempre titânio: nada de dourado nas imagens de joias, no 3D nem na interface. A imagem fixa do herói é um render do mesmo `monograma('titanio')` do 3D.
 - Na tabela de preços, a orelha diz o preço uma vez (é igual em todos os sítios); cada linha fica com nome, tempo de cicatrização e o «+».
 - A lista `S` e o `COMBINA` são lidos por `adri/paginas.py`: não mudar os nomes. Depois de mexer nos preços, correr `python3 adri/paginas.py`.
 - No computador, o painel ao lado da orelha começa com o hélix como exemplo; no telemóvel a ficha abre ao tocar.
