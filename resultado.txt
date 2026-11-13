@@ -1,0 +1,16 @@
+== 2026-11-13T03:15:03Z acao=comando
+IP: 2.31.13.85
+== Saída no servidor
+a espera (1)
+a espera (2)
+a espera (3)
+a espera (4)
+a espera (5)
+versao: 72089390dde5252da68909e7b92339126c440da0
+linha bytes: 35390
+minutos dentro da ligacao: 69  fora: 0
+paragem /paragens/stcp/matosinhos-praia: partidas ligadas: 10  div antigas: 0
+unir /paragens/unir/arouca-cct: data-app: 1  chipT: 1  ligacao: 1
+== Teste de fora
+https://2-31-13-85.sslip.io/health 200 0.703685s
+https://2-31-13-85.sslip.io/api/transit/loading-status 200 0.515459s
