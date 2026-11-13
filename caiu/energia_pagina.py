@@ -252,7 +252,7 @@ def pagina(D):
 '''
     rod = f'''<footer class="rodape">
   <div class="caixa rodape__in">
-    <p class="rodape__marca" aria-hidden="true">ca<span class="marca__i">ı<span class="marca__ponto"></span></span>u</p>
+    <p class="rodape__marca" aria-hidden="true">ca<span class="marca__i">ı</span>u<span class="marca__ponto"></span></p>
     <p class="rodape__dados">Ofertas de luz e gás atualizadas a <time datetime="{dia}">{data_longa(dia)}</time>, às <time>{hora}</time>, com os dados da ERSE e as tabelas da Galp.</p>
     <p class="rodape__links"><a href="/">Supermercados</a> · <a href="/promocoes/">Promoções da semana</a> · <a href="/cabaz-mais-barato/">Cabaz mais barato</a> · <a href="/luz-e-gas/">Luz e gás</a> · <a href="/privacidade.html">Privacidade</a></p>
     <p class="rodape__autor">Feito por <a href="https://dinissousa.pt" rel="noopener">dinissousa.pt</a></p>

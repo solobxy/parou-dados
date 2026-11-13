@@ -176,6 +176,9 @@
       return p || extra ? `${LOJAS[l]} ${p ? p.toLocaleString('pt-PT') + NB + '%' : ''}${extra}` : '';
     }).filter(Boolean);
     $('#descontosResumo').textContent = partes.length ? 'A contar com: ' + partes.join(' · ') + '.' : 'Sem descontos marcados: as contas usam o preço na caixa.';
+    // com os cartões recolhidos, o resumo fica à vista na linha que os abre
+    const sub = $('#cartoesSub');
+    if (sub) sub.textContent = partes.length ? 'A contar com: ' + partes.join(' · ') : 'Continente, Pingo Doce, Auchan, Galp, EDP e outros';
   }
   $('#descontosForm').addEventListener('change', e => {
     const el = e.target.closest('[data-d]');
@@ -349,8 +352,8 @@
     TOP.primeira = false;
     animar(ul);
     const mais = $('#top3Mais');
-    mais.href = v === 'fachada' ? '#fachada' : '#reais';
-    mais.textContent = v === 'fachada' ? `Ver mais ${ni.format(Math.max(0, n - 3))} fachadas` : 'Ver mais descidas a sério';
+    mais.href = '/promocoes/';
+    mais.textContent = v === 'fachada' ? 'Ver mais fachadas, loja a loja' : 'Ver mais descidas a sério, loja a loja';
     mais.hidden = !(n > 3);
   }
   function mostrarTop3(fach, reais) {
@@ -394,70 +397,11 @@
     const fach = (r.fachada || []).map(dec);
     const reais = (r.reais || []).map(dec);
     try { mostrarTop3(fach, reais); } catch (e) { $('#top3').hidden = true; }
-    // os três do topo não se repetem logo a seguir
-    const noTopo = new Set(TOP.fachada.map(c => c.g.i));
-    const fachResto = fach.filter(g => !noTopo.has(g.i));
-    if (fachResto.length) {
-      $('#fachadaLead').innerHTML = `Mais casos com grande diferença, além dos três lá de cima. Em cada um, a promoção perde para o preço de outra loja.`;
-      preencher($('#fachadaLista'), fachResto, g => cartao(g, g.o.find(o => o.m.some(m => m[0] === 'outra'))));
-      $('#fachada').hidden = false;
-    }
-
-    const cb = r.cabaz;
-    if (cb && cb.n >= 5) {
-      const ord = Object.keys(cb.totais).sort((a, b) => cb.totais[a] - cb.totais[b]);
-      const max = Math.max(...Object.values(cb.totais));
-      const div = cb.dividir || Math.min(...Object.values(cb.totais));
-      const poup = cb.totais[ord[0]] - div;
-      const p1 = v => (v < 1 ? v.toLocaleString('pt-PT', { maximumFractionDigits: 1 }) : Math.round(v)) + NB + '%';
-      $('#cabazLead').innerHTML = `Somámos <strong>${ni.format(cb.n)} produtos</strong> iguais à venda nos três. Os totais quase empatam, mas cada loja é a mais barata (ou empata) em parte deles: o Continente em ${ni.format(cb.vence.c)}, o Pingo Doce em ${ni.format(cb.vence.p)} e o Auchan em ${ni.format(cb.vence.a)}. Com outros produtos, como no essencial lá em cima, o vencedor pode mudar.` +
-        (poup > 0.5 ? ` Comprar cada coisa onde está mais barata poupa <strong>${eur(poup)}</strong>.` : '');
-      const linhaBarra = (nome, sub, v, cls, mais) => `
-        <li class="barra${cls}">
-          <div class="barra__topo"><span class="barra__loja">${nome}<small>${sub}</small></span>${precoHTML(v, 'barra__total')}</div>
-          <div class="barra__pista" aria-hidden="true"><div class="barra__enche" style="width:${(v / max * 100).toFixed(1)}%">${mais ? `<div class="barra__mais" style="width:${mais.toFixed(1)}%"></div>` : ''}</div></div>
-        </li>`;
-      const ol = $('#cabazBarras');
-      ol.innerHTML = ord.map(c => linhaBarra('Tudo no ' + LOJAS[c], `+${eur(cb.totais[c] - div)} (${p1((cb.totais[c] - div) / div * 100)} mais)`, cb.totais[c], '', (cb.totais[c] - div) / cb.totais[c] * 100)).join('') +
-        (poup > 0.5 ? linhaBarra('Cada coisa no mais barato', 'dividindo a compra pelas lojas', div, ' barra--melhor', 0) : '');
-      $('#cabaz').hidden = false;
-      if (obs) { ol.classList.add('espera'); obs.observe(ol); }
-      cabazMeu();
-    }
-
-    const pv = (r.pvpr_top || []).map(dec);
-    if (pv.length) {
-      $('#pvprLead').innerHTML = `PVPR é o preço de venda recomendado pela marca. ${r.dia === hojeLx() ? 'Hoje' : `A ${dataCurta(r.dia)}`}, <strong>${ni.format(r.pvpr)} das ${ni.format(r.promos)} promoções</strong> (${Math.round(r.pvpr / r.promos * 100)}${NB}%) calculam o desconto sobre ele, e não sobre o preço a que a loja vendia antes.`;
-      preencher($('#pvprLista'), pv, g => cartao(g, g.o.find(o => o.m.some(m => m[0] === 'pvpr'))));
-      $('#pvpr').hidden = false;
-    }
-
-    const dif = (r.diferenca || []).map(dec).filter(g => !vistos.has(g.i));
-    if (dif.length) {
-      // «mais caro» conta-se sobre o preço mais baixo (2,20 € a mais sobre 1,99 € são +111 %, não 53 %).
-      // O pc que vem do servidor é a poupança sobre o preço mais alto: serve para ordenar, não para escrever aqui.
-      const caro = g => Math.round(g.dif / g.min * 100);
-      $('#t-dif').textContent = `O mesmo produto, até ${ni.format(Math.max(...dif.map(caro)))}${NB}% mais caro`;
-      $('#difLead').textContent = 'Mesmo nome, mesma marca, mesmo tamanho. Só muda a loja.';
-      preencher($('#difLista'), dif, g => linha(g, `<span class="ln__dif">+${eur(g.dif)} (+${ni.format(caro(g))}${NB}%)</span>`));
-      $('#diferenca').hidden = false;
-    }
-
-    $('#reais').hidden = false;
-    if (reais.length) {
-      $('#reaisLead').textContent = 'Preços de hoje abaixo de todos os dos 30 dias anteriores. Segue os que compras e avisamos da próxima vez.';
-      preencher($('#reaisLista'), reais, g => cartao(g, g.o.find(o => o.v === 'real')));
-    } else {
-      const ini = new Date((r.inicio_historico || r.dia) + 'T12:00:00');
-      const pronto = new Date(ini.getTime() + 7 * 864e5);
-      $('#reaisLead').innerHTML = (Date.now() < pronto.getTime())
-        ? `Para dizer que um preço desceu mesmo, comparamos com os dias anteriores. As primeiras descidas confirmadas aparecem a <strong>${dataCurta(pronto.toISOString().slice(0, 10))}</strong>.`
-        : 'Hoje não encontrámos nenhum preço abaixo do mínimo dos 30 dias anteriores.';
-    }
-
+    // As listas grandes (mais fachadas, PVPR, diferenças, descidas a sério, cabaz dos produtos iguais) vivem nas páginas
+    // próprias (/promocoes/, /supermercado-mais-barato/); o início fica com o topo, a pesquisa e as ferramentas.
     // exemplo real para a notificação desenhada nos avisos
     if (obs) { $('#notifExemplo').classList.add('espera'); obs.observe($('#notifExemplo')); }
-    const ex = reais[0] || dif[0] || fach[0];
+    const ex = reais[0] || fach[0];
     if (ex) {
       const o = ex.o.reduce((a, b) => (b.p < a.p ? b : a));
       $('#notifTitulo').textContent = 'Baixou: ' + ex.n;
@@ -465,8 +409,23 @@
       $('#notifCorpo').textContent = `Agora ${eur(o.p)} no ${LOJAS[o.l]}` + (ref > o.p ? ` (antes ${eur(ref)}).` : '.');
     }
   }
+  // Os cartões estão recolhidos por baixo da lista: as ligações «#descontos» abrem-nos
+  function abrirCartoes() {
+    const d = $('#descontos');
+    if (!d) return;
+    d.open = true;
+    setTimeout(() => d.scrollIntoView({ behavior: reduzido ? 'auto' : 'smooth', block: 'start' }), 30);
+  }
+  document.addEventListener('click', e => {
+    const a = e.target.closest('a[href="#descontos"]');
+    if (!a) return;
+    e.preventDefault();
+    abrirCartoes();
+    history.replaceState(null, '', '#descontos');
+  });
   function cabazMeu() {
     const cb = R && R.cabaz, el = $('#cabazMeu');
+    if (!el) return;
     if (!cb || !temDescontos()) { el.hidden = true; return; }
     const tot = Object.fromEntries(Object.keys(cb.totais).map(c => [c, cb.totais[c] - descontosLoja(c, cb.totais[c]).v]));
     const ord = Object.keys(tot).sort((a, b) => tot[a] - tot[b]);
@@ -1219,7 +1178,12 @@
     desenharLista();
     desenharSeguidos();
     mostrarLuz();
-    if (location.hash === '#essencial' || location.hash === '#lista' || location.hash === '#metodo' || location.hash === '#descontos' || location.hash === '#avisos' || location.hash === '#seguidos') {
+    if (location.hash === '#reais' || location.hash === '#fachada') {
+      const v = location.hash === '#reais' ? 'real' : 'fachada';
+      if (TOP[v].length && !$('#top3').hidden) { desenharTop(v); setTimeout(() => $('#top3').scrollIntoView(), 50); }
+    }
+    if (location.hash === '#descontos') abrirCartoes();
+    if (location.hash === '#essencial' || location.hash === '#lista' || location.hash === '#metodo' || location.hash === '#avisos' || location.hash === '#seguidos') {
       const alvo = document.querySelector(location.hash);
       if (alvo && !alvo.hidden) setTimeout(() => alvo.scrollIntoView(), 50);
     }

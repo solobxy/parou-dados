@@ -23,9 +23,9 @@
 <link rel="manifest" href="/manifest.webmanifest">
 <link rel="preload" href="/fontes/mona.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="/dados/resumo.json" as="fetch" crossorigin>
-<link rel="stylesheet" href="/estilo.css?v=9">
+<link rel="stylesheet" href="/estilo.css?v=10">
 <script>document.documentElement.classList.add('js');window.estat=window.estat||function(){(estat.q=estat.q||[]).push(arguments)}</script>
-<script defer src="/app.js?v=8"></script>
+<script defer src="/app.js?v=9"></script>
 <script defer src="/_e.js" data-site="caiu"></script>
 <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"Organization","@id":"https://caiu.pt/#organizacao","name":"caiu.pt","url":"https://caiu.pt/","logo":"https://caiu.pt/icone-512.png"},{"@type":"WebSite","@id":"https://caiu.pt/#site","name":"caiu.pt","url":"https://caiu.pt/","inLanguage":"pt-PT","description":"Comparador de preços e verificador de promoções do Continente, Pingo Doce e Auchan.","publisher":{"@id":"https://caiu.pt/#organizacao"}}]}</script>
 </head>
@@ -35,7 +35,7 @@
 <header class="topo">
   <div class="topo__in">
     <a class="marca" href="/"><span class="sr">caiu.pt, início</span>
-      <span class="marca__txt" aria-hidden="true">ca<span class="marca__i">ı<span class="marca__ponto"></span></span>u</span>
+      <span class="marca__txt" aria-hidden="true">ca<span class="marca__i">ı</span>u<span class="marca__ponto"></span></span>
     </a>
     <nav class="topo__nav" aria-label="Principal">
       <a class="topo__link" href="#seguidos" id="linkSeguidos" hidden>Segues <span class="topo__n" id="nSeguidos">0</span></a>
@@ -103,14 +103,6 @@
     </div>
   </section>
 
-  <section class="bloco bloco--fachada" id="fachada" aria-labelledby="t-fachada" hidden>
-    <div class="caixa">
-      <h2 id="t-fachada">Em promoção, e mais caro ao lado</h2>
-      <p class="lead" id="fachadaLead"></p>
-      <ul class="etiquetas" id="fachadaLista"></ul>
-    </div>
-  </section>
-
   <section class="bloco bloco--essencial" id="essencial" aria-labelledby="t-ess" hidden>
     <div class="caixa essencial">
       <div class="essencial__cab">
@@ -164,64 +156,36 @@
     </div>
   </section>
 
-  <section class="bloco bloco--talao" id="talao" aria-labelledby="t-contas">
-    <div class="caixa contas">
-      <div class="contas__texto">
-        <h2 id="t-contas">As contas de hoje</h2>
-        <p class="lead">Cada preço é comparado com as outras duas lojas e com os dias anteriores. É assim que sabemos se uma promoção é a sério. <a href="#metodo">Como decidimos</a></p>
+  <section class="bloco bloco--lista" id="lista" aria-labelledby="t-lista">
+    <div class="caixa lista">
+      <div class="lista__texto">
+        <h2 id="t-lista">A tua lista, somada em cada loja</h2>
+        <p class="lead">Junta produtos com «Pôr na lista» e vemos onde a compra fica mais barata, já com os <a href="#descontos">descontos dos teus cartões</a>. Fica guardada neste telemóvel.</p>
       </div>
-      <figure class="talao" id="talaoDia" aria-labelledby="t-talao">
-        <figcaption class="talao__cab">
-          <strong id="t-talao">Talão de hoje</strong>
-          <span id="talaoHora">a recolher…</span>
-        </figcaption>
-        <dl class="talao__linhas" id="talaoLinhas">
-          <div><dt>Preços vistos</dt><dd data-k="ofertas">—</dd></div>
-          <div><dt>Em promoção</dt><dd data-k="promos">—</dd></div>
-          <div><dt>Desconto sobre o PVPR</dt><dd data-k="pvpr">—</dd></div>
-          <div><dt>Em promoção, mais caro ao lado</dt><dd data-k="outra">—</dd></div>
-          <div><dt>Desceram a sério</dt><dd data-k="reais">—</dd></div>
-        </dl>
-        <p class="talao__pe" id="talaoPe">Continente · Pingo Doce · Auchan</p>
-      </figure>
-    </div>
-  </section>
-
-  <section class="bloco bloco--cabaz" id="cabaz" aria-labelledby="t-cabaz" hidden>
-    <div class="caixa cabaz">
-      <div class="cabaz__texto">
-        <h2 id="t-cabaz">Nenhum é o mais barato em tudo</h2>
-        <p class="lead" id="cabazLead"></p>
-        <p class="cabaz__meu" id="cabazMeu" hidden></p>
-        <a class="botao" href="#lista">Fazer a minha lista</a>
+      <div class="talao talao--lista" id="talaoLista" aria-live="polite">
+        <p class="talao__vazio">Ainda não tens nada na lista. Procura um produto lá em cima.</p>
       </div>
-      <ol class="barras" id="cabazBarras"></ol>
+    </div>
+    <div class="caixa">
+    <details class="cartoes" id="descontos">
+      <summary class="cartoes__sum"><span><span class="cartoes__t" id="t-desc">Conta com os teus cartões</span><span class="cartoes__sub" id="cartoesSub">Continente, Pingo Doce, Auchan, Galp, EDP e outros</span></span></summary>
+      <p class="lead">Cartões e parcerias dão saldo ou desconto em cada loja. Marca o que tens e a tua lista passa a mostrar quanto pagas mesmo. Fica só neste telemóvel.</p>
+      <div class="descontos" id="descontosForm"></div>
+      <p class="descontos__resumo" id="descontosResumo" aria-live="polite"></p>
+      <details class="descontos__mais">
+        <summary>Combustível e outras vantagens</summary>
+        <ul>
+          <li><b>Continente e Galp:</b> cada compra de 30 € ou mais (25 € no Continente Bom Dia) dá um vale de 10 cêntimos por litro na Galp, até 60 litros. Quem tem COMBINA não recebe este vale. <a href="https://feed.continente.pt/parceria-galp-continente" rel="noopener" target="_blank">Condições</a></li>
+          <li><b>Pingo Doce e bp:</b> com o Poupa Mais, cada 30 € em compras dá 3 € de desconto em combustível na bp, em abastecimentos acima de 16 litros. <a href="https://www.sabado.pt/comunicados-imprensa/detalhe/bp-e-pingo-doce-reforcam-programa-poupa-mais-com-novas-oportunidades-de-poupanca" rel="noopener" target="_blank">Anúncio</a></li>
+          <li><b>Clube Auchan:</b> cupões semanais com 10 % em saldo nos produtos da marca Auchan e cupões personalizados na app. <a href="https://www.auchan.pt/pt/clube-auchan/" rel="noopener" target="_blank">Clube Auchan</a></li>
+          <li><b>App do Pingo Doce:</b> campanhas de saldo que mudam todas as semanas (por exemplo, 20 % em algumas categorias durante 3 dias). Não entram nas contas porque não são fixas.</li>
+        </ul>
+      </details>
+      <p class="descontos__nota">Condições confirmadas a 11 de novembro de 2026 nas páginas oficiais de cada programa. Mudam com frequência: confirma antes de contar com elas. O saldo em cartão fica para a compra seguinte.</p>
+    </details>
     </div>
   </section>
 
-  <section class="bloco bloco--pvpr" id="pvpr" aria-labelledby="t-pvpr" hidden>
-    <div class="caixa">
-      <h2 id="t-pvpr">Desconto, mas sobre o PVPR</h2>
-      <p class="lead" id="pvprLead"></p>
-      <ul class="etiquetas" id="pvprLista"></ul>
-    </div>
-  </section>
-
-  <section class="bloco bloco--dif" id="diferenca" aria-labelledby="t-dif" hidden>
-    <div class="caixa">
-      <h2 id="t-dif">O mesmo produto, outro preço</h2>
-      <p class="lead" id="difLead"></p>
-      <ol class="linhas" id="difLista"></ol>
-    </div>
-  </section>
-
-  <section class="bloco bloco--reais" id="reais" aria-labelledby="t-reais" hidden>
-    <div class="caixa">
-      <h2 id="t-reais">Desceram a sério</h2>
-      <p class="lead" id="reaisLead"></p>
-      <ul class="etiquetas" id="reaisLista"></ul>
-    </div>
-  </section>
 
   <section class="avisos" id="avisos" aria-labelledby="t-avisos">
     <div class="caixa avisos__in">
@@ -252,34 +216,26 @@
     </div>
   </section>
 
-  <section class="bloco bloco--lista" id="lista" aria-labelledby="t-lista">
-    <div class="caixa lista">
-      <div class="lista__texto">
-        <h2 id="t-lista">A tua lista, somada em cada loja</h2>
-        <p class="lead">Junta produtos com «Pôr na lista» e vemos onde a compra fica mais barata, já com os <a href="#descontos">descontos dos teus cartões</a>. Fica guardada neste telemóvel.</p>
+  <section class="bloco bloco--talao" id="talao" aria-labelledby="t-contas">
+    <div class="caixa contas">
+      <div class="contas__texto">
+        <h2 id="t-contas">As contas de hoje</h2>
+        <p class="lead">Cada preço é comparado com as outras duas lojas e com os dias anteriores. É assim que sabemos se uma promoção é a sério. <a href="#metodo">Como decidimos</a></p>
       </div>
-      <div class="talao talao--lista" id="talaoLista" aria-live="polite">
-        <p class="talao__vazio">Ainda não tens nada na lista. Procura um produto lá em cima.</p>
-      </div>
-    </div>
-  </section>
-
-  <section class="bloco bloco--descontos" id="descontos" aria-labelledby="t-desc">
-    <div class="caixa">
-      <h2 id="t-desc">Conta com os teus cartões</h2>
-      <p class="lead">Cartões e parcerias dão saldo ou desconto em cada loja. Marca o que tens e a tua lista passa a mostrar quanto pagas mesmo. Fica só neste telemóvel.</p>
-      <div class="descontos" id="descontosForm"></div>
-      <p class="descontos__resumo" id="descontosResumo" aria-live="polite"></p>
-      <details class="descontos__mais">
-        <summary>Combustível e outras vantagens</summary>
-        <ul>
-          <li><b>Continente e Galp:</b> cada compra de 30 € ou mais (25 € no Continente Bom Dia) dá um vale de 10 cêntimos por litro na Galp, até 60 litros. Quem tem COMBINA não recebe este vale. <a href="https://feed.continente.pt/parceria-galp-continente" rel="noopener" target="_blank">Condições</a></li>
-          <li><b>Pingo Doce e bp:</b> com o Poupa Mais, cada 30 € em compras dá 3 € de desconto em combustível na bp, em abastecimentos acima de 16 litros. <a href="https://www.sabado.pt/comunicados-imprensa/detalhe/bp-e-pingo-doce-reforcam-programa-poupa-mais-com-novas-oportunidades-de-poupanca" rel="noopener" target="_blank">Anúncio</a></li>
-          <li><b>Clube Auchan:</b> cupões semanais com 10 % em saldo nos produtos da marca Auchan e cupões personalizados na app. <a href="https://www.auchan.pt/pt/clube-auchan/" rel="noopener" target="_blank">Clube Auchan</a></li>
-          <li><b>App do Pingo Doce:</b> campanhas de saldo que mudam todas as semanas (por exemplo, 20 % em algumas categorias durante 3 dias). Não entram nas contas porque não são fixas.</li>
-        </ul>
-      </details>
-      <p class="descontos__nota">Condições confirmadas a 11 de novembro de 2026 nas páginas oficiais de cada programa. Mudam com frequência: confirma antes de contar com elas. O saldo em cartão fica para a compra seguinte.</p>
+      <figure class="talao" id="talaoDia" aria-labelledby="t-talao">
+        <figcaption class="talao__cab">
+          <strong id="t-talao">Talão de hoje</strong>
+          <span id="talaoHora">a recolher…</span>
+        </figcaption>
+        <dl class="talao__linhas" id="talaoLinhas">
+          <div><dt>Preços vistos</dt><dd data-k="ofertas">—</dd></div>
+          <div><dt>Em promoção</dt><dd data-k="promos">—</dd></div>
+          <div><dt>Desconto sobre o PVPR</dt><dd data-k="pvpr">—</dd></div>
+          <div><dt>Em promoção, mais caro ao lado</dt><dd data-k="outra">—</dd></div>
+          <div><dt>Desceram a sério</dt><dd data-k="reais">—</dd></div>
+        </dl>
+        <p class="talao__pe" id="talaoPe">Continente · Pingo Doce · Auchan</p>
+      </figure>
     </div>
   </section>
 
@@ -307,7 +263,7 @@
 
 <footer class="rodape">
   <div class="caixa rodape__in">
-    <p class="rodape__marca" aria-hidden="true">ca<span class="marca__i">ı<span class="marca__ponto"></span></span>u</p>
+    <p class="rodape__marca" aria-hidden="true">ca<span class="marca__i">ı</span>u<span class="marca__ponto"></span></p>
     <p class="rodape__dados" id="rodapeDados">Preços do Continente, Pingo Doce e Auchan online.</p>
     <p class="rodape__links"><a href="/promocoes/">Promoções da semana</a> · <a href="/cabaz-mais-barato/">Cabaz mais barato</a> · <a href="/supermercado-mais-barato/">Supermercado mais barato</a> · <a href="/preco/">Preços por produto</a> · <a href="/luz-e-gas/">Luz e gás mais baratos</a> · <a href="#avisos">Avisos de preço</a> · <a href="#descontos">Os teus cartões</a> · <a href="/privacidade.html">Privacidade</a></p>
     <p class="rodape__autor">Feito por <a href="https://dinissousa.pt" rel="noopener">dinissousa.pt</a></p>

@@ -33,7 +33,7 @@ LIGAS = {'de', 'do', 'da', 'dos', 'das', 'e', 'com', 'para', 'em', 'sem'}
 FORA = {'auchan', 'continente', 'pingo doce'}  # marcas próprias das lojas: não dão uma página de «produto»
 MESES = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro']
 MESES_C = ['jan.', 'fev.', 'mar.', 'abr.', 'mai.', 'jun.', 'jul.', 'ago.', 'set.', 'out.', 'nov.', 'dez.']
-ESTILO_V = '9'      # estilo.css (o mesmo do início)
+ESTILO_V = '10'      # estilo.css (o mesmo do início)
 PAGINAS_V = '3'     # paginas.css (só destas páginas)
 ORG = {'@type': 'Organization', '@id': SITE + '/#organizacao', 'name': 'caiu.pt', 'url': SITE + '/', 'logo': SITE + '/icone-512.png'}
 WEBSITE = {'@type': 'WebSite', '@id': SITE + '/#site', 'name': 'caiu.pt', 'url': SITE + '/', 'inLanguage': 'pt-PT',
@@ -316,7 +316,7 @@ def topo(url):
     um script pequeno mostra quantos produtos tem, sem carregar o app.js."""
     return f'''<header class="topo">
   <div class="topo__in">
-    <a class="marca" href="/"><span class="sr">caiu.pt, início</span><span class="marca__txt" aria-hidden="true">ca<span class="marca__i">ı<span class="marca__ponto"></span></span>u</span></a>
+    <a class="marca" href="/"><span class="sr">caiu.pt, início</span><span class="marca__txt" aria-hidden="true">ca<span class="marca__i">ı</span>u<span class="marca__ponto"></span></span></a>
     <nav class="topo__nav" aria-label="Principal">{atalhos(url)}</nav>
     <a class="topo__link topo__link--forte topo__lista" href="/#lista">{LISTA_IC}Lista <span class="topo__n" id="nLista" hidden>0</span></a>
   </div>
@@ -365,7 +365,7 @@ def cabeca(titulo, descricao, url, ld, dia, robots='', og='website'):
 def rodape(dia, hora):
     return f'''<footer class="rodape">
   <div class="caixa rodape__in">
-    <p class="rodape__marca" aria-hidden="true">ca<span class="marca__i">ı<span class="marca__ponto"></span></span>u</p>
+    <p class="rodape__marca" aria-hidden="true">ca<span class="marca__i">ı</span>u<span class="marca__ponto"></span></p>
     <p class="rodape__dados">Preços recolhidos a <time datetime="{dia}">{data_longa(dia)}</time>{f", às <time>{hora}</time>" if hora else ""}, nas lojas online do Continente, Pingo Doce e Auchan. Podem mudar durante o dia e ser diferentes na loja física ou com cartão de cliente. O caiu.pt não tem ligação a estas lojas.</p>
     <p class="rodape__links"><a href="/promocoes/">Promoções da semana</a> · <a href="/cabaz-mais-barato/">Cabaz mais barato</a> · <a href="/supermercado-mais-barato/">Supermercado mais barato</a> · <a href="/preco/">Preços por produto</a> · <a href="/luz-e-gas/">Luz e gás</a> · <a href="/#avisos">Avisos de preço</a> · <a href="/privacidade.html">Privacidade</a></p>
     <p class="rodape__autor">Feito por <a href="https://dinissousa.pt" rel="noopener">dinissousa.pt</a></p>

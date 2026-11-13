@@ -33,6 +33,15 @@ Uma família: **Mona Sans** variável (wdth 75–125, wght 200–900), auto-aloj
 | pequeno | 14px | 100 | 500 | datas, preço por unidade |
 
 ## 4. Componentes
+- **Logótipo «caıu.»:** o «i» sem ponto e o ponto como ponto final. Ao abrir, o ponto salta do «ı», passa por cima do «u»
+  e cai no chão (`cai-x` com `translate`, `cai-y` com `transform`, 1,5 s, uma vez). Parado lê-se «caiu.». Antes o ponto
+  ficava debaixo do «ı» e lia-se «caju». O favicon já tinha o ponto no chão, ao lado.
+- **Página inicial (por esta ordem):** topo amarelo (três casos e pesquisa), os que segues, resultados, o essencial,
+  luz e gás, a lista (com os cartões recolhidos por baixo, `<details id="descontos">`, que abre com as ligações
+  «#descontos»), avisos, as contas de hoje e «Como decidimos». As listas grandes (mais fachadas, PVPR, diferenças entre
+  lojas, descidas a sério, cabaz dos produtos iguais) ficam em `/promocoes/` e `/supermercado-mais-barato/`; o «Ver
+  mais» do topo vai para `/promocoes/`. As ligações antigas `/#reais` e `/#fachada` (notificações, e-mails) abrem o
+  topo na escolha certa.
 - **Topo (igual em todas as páginas):** marca, «Promoções», «Cabaz», «Luz e gás» (botões brancos) e «Lista» (o único
   escuro, com o número de produtos). No telemóvel a marca e a «Lista» ficam na 1.ª linha e os outros três na 2.ª
   (40 px de altura, rola de lado se não couber); no computador tudo numa linha. A página atual leva contorno de 2,5 px
