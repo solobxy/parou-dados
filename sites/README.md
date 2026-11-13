@@ -37,3 +37,19 @@ Desenho em `caiu/DESIGN.md`.
   índice). O endereço de cada produto fica em `estado-paginas.json` e não muda. Testes: `python3 caiu/verificar/test_paginas.py`.
 - Endereço de testes: `https://caiu.<ip-com-tracos>.sslip.io`, fora do Google.
 - Domínio: blocos prontos para `caiu.pt` e `www.caiu.pt`; ligam-se sozinhos quando o registo A apontar para o servidor.
+
+## webase/
+webase.pt, CRM para negócios portugueses (fichas de cliente, pontos, pacotes, leads, chamadas, contratos, equipa
+com permissões, marketplace e fórum). Site e app em `sites/webase/` (app em `/app/`, sem compilação); API em
+`webase/` (Python, sem dependências). Desenho em `webase/DESIGN.md`.
+
+- Publicar: alterar e fazer push para `main` (passo «webase» em `servidor/atualizar.sh`). A API reinicia sozinha
+  quando os `.py` mudam (`webase-api.service`, 127.0.0.1:3160, dados em `/var/lib/webase-api`, configuração em
+  `/etc/webase/api.env`).
+- Páginas geradas (soluções, preços, marketplace, privacidade, termos): `python3 webase/gerar_paginas.py`
+  depois de mudar `sites/webase/index.html`.
+- Testes: `python3 webase/testes/teste_api.py` (local) e o workflow «webase - verificar ao vivo» (servidor).
+- Endereço de testes: `https://webase.<ip-com-tracos>.sslip.io`, fora do Google. Domínio: blocos prontos para
+  `webase.pt` e `www.webase.pt`; ligam-se sozinhos quando o registo A apontar para o servidor.
+- Pagamentos desligados (`WB_PAGAMENTOS=desligado`): planos pagos e vendas pagas do marketplace ficam em
+  «interesse»/«reservada» até haver um fornecedor de pagamentos.

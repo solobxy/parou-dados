@@ -1,0 +1,30 @@
+[Unit]
+Description=webase - API do CRM (contas, equipa, clientes, leads, chamadas, contratos, pontos, pacotes, marketplace, fórum)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=parou
+Group=parou
+StateDirectory=webase-api
+StateDirectoryMode=0700
+EnvironmentFile=-/etc/webase/api.env
+Environment=TZ=Europe/Lisbon PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1
+ExecStart=/usr/bin/python3 /opt/parou/servidor/webase/api.py
+Restart=always
+RestartSec=3
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+RestrictSUIDSGID=yes
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+LockPersonality=yes
+MemoryMax=400M
+
+[Install]
+WantedBy=multi-user.target

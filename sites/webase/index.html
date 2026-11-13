@@ -1,0 +1,297 @@
+<!doctype html>
+<html lang="pt-PT">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>webase — CRM português: fichas de clientes, pontos, pacotes e vendas</title>
+<meta name="description" content="O CRM feito em Portugal para barbearias, cafés, ginásios e equipas de vendas. Fichas de cliente, pontos, pacotes, leads, chamadas e contratos. Começa grátis.">
+<link rel="canonical" href="https://webase.pt/">
+<meta name="theme-color" content="#F4F4F1">
+<meta property="og:type" content="website">
+<meta property="og:locale" content="pt_PT">
+<meta property="og:title" content="webase — os teus clientes, numa base só tua">
+<meta property="og:description" content="CRM português para barbearias, cafés, ginásios e equipas de vendas. Começa grátis.">
+<meta property="og:url" content="https://webase.pt/">
+<meta property="og:image" content="https://webase.pt/img/partilha.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="preload" href="/fontes/instrument.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/css/base.css">
+<link rel="stylesheet" href="/css/site.css">
+<script src="/js/js.js"></script>
+<script type="module" src="/js/site.js"></script>
+<script defer src="/_e.js" data-site="webase"></script>
+<script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"Organization","@id":"https://webase.pt/#org","name":"webase","url":"https://webase.pt/","logo":"https://webase.pt/favicon.svg","founder":{"@type":"Person","name":"Dinis Sousa","url":"https://dinissousa.pt"}},{"@type":"SoftwareApplication","name":"webase","applicationCategory":"BusinessApplication","operatingSystem":"Web, Android, iOS, Windows, macOS","inLanguage":"pt-PT","url":"https://webase.pt/","publisher":{"@id":"https://webase.pt/#org"},"offers":[{"@type":"Offer","name":"Grátis","price":"0","priceCurrency":"EUR"},{"@type":"Offer","name":"Negócio","price":"19","priceCurrency":"EUR"},{"@type":"Offer","name":"Equipa","price":"49","priceCurrency":"EUR"}]}]}</script>
+</head>
+<body class="site">
+<a class="salto" href="#conteudo">Saltar para o conteúdo</a>
+<header class="cab">
+  <div class="envolve">
+    <a href="/" class="logo-wb" aria-label="webase, início"><svg viewBox="0 0 32 32" aria-hidden="true" fill="none"><circle cx="16" cy="16" r="13" stroke="currentColor" stroke-width="3"/><path d="M8.5 17h15a7.5 7.5 0 0 1-15 0z" fill="currentColor"/><circle cx="16" cy="11" r="2.2" fill="currentColor"/></svg>webase</a>
+    <nav aria-label="Principal">
+      <a href="/solucoes/">Soluções</a>
+      <a href="/precos/">Preços</a>
+      <a href="/marketplace/">Marketplace</a>
+    </nav>
+    <div class="dir">
+      <a class="bt bt-limpo entrar" href="/app/entrar">Entrar</a>
+      <a class="bt bt-p" href="/app/registar" data-estat="topo">Criar conta grátis</a>
+      <button class="bt bt-icone bt-limpo menu-tel" type="button" aria-label="Menu" aria-expanded="false" aria-controls="menu-folha"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+    </div>
+  </div>
+  <nav class="menu-folha" id="menu-folha" aria-label="Menu">
+    <a href="/solucoes/">Soluções</a>
+    <a href="/precos/">Preços</a>
+    <a href="/marketplace/">Marketplace</a>
+    <a href="/app/entrar">Entrar</a>
+  </nav>
+</header>
+
+<main id="conteudo">
+  <section class="heroi">
+    <div class="envolve">
+      <div class="topo-h">
+        <h1 class="mega">Os teus clientes, numa base só&nbsp;tua.</h1>
+        <div style="display:grid;gap:20px">
+          <p class="apoio">O CRM feito em Portugal para barbearias, cafés, ginásios e equipas de vendas. Fichas de cliente, pontos, pacotes, leads, chamadas e contratos: ligas só o que usas.</p>
+          <div class="acoes">
+            <a class="bt bt-p" href="/app/registar" data-estat="heroi">Criar conta grátis</a>
+            <a class="bt" href="/precos/">Ver preços</a>
+          </div>
+          <p class="miudo">Sem cartão. Exportas os teus dados quando quiseres.<span data-bloco-fundadores> <strong data-fundadores>Há lugares de fundador</strong>: 40&nbsp;% de desconto para sempre.</span></p>
+        </div>
+      </div>
+
+      <div class="vitrine">
+        <div class="trocas" role="tablist" aria-label="Ver a webase em uso" data-palco="palco-heroi" data-legenda="legenda-heroi">
+          <button type="button" role="tab" aria-selected="true" data-vista="painel" data-legenda="Barbearia: aniversários, chamadas por fazer e números do dia.">Ao balcão</button>
+          <button type="button" role="tab" aria-selected="false" tabindex="-1" data-vista="ficha" data-legenda="A ficha de um cliente: dados, pontos, pacotes e tudo o que aconteceu.">Na ficha</button>
+          <button type="button" role="tab" aria-selected="false" tabindex="-1" data-vista="leads" data-legenda="Equipa de vendas: as oportunidades por fases, com valor e próximo passo.">No funil</button>
+          <button type="button" role="tab" aria-selected="false" tabindex="-1" data-vista="chamadas" data-legenda="Chamadas de hoje, quem atendeu e a quem voltar a ligar.">Ao telefone</button>
+          <button type="button" role="tab" aria-selected="false" tabindex="-1" data-vista="permissoes" data-legenda="O que cada pessoa da equipa pode ver, criar, editar e apagar.">Na equipa</button>
+        </div>
+
+        <div class="legenda-vitrine"><span id="legenda-heroi" aria-live="polite">Barbearia: aniversários, chamadas por fazer e números do dia.</span><span>Capturas reais da app, com dados de exemplo.</span></div>
+        <div class="tabuleiro tem-tel">
+          <div class="palco" id="palco-heroi">
+            <picture class="ativa" data-vista="painel"><source media="(max-width: 699px)" srcset="/img/tel-painel-780.webp 780w, /img/tel-painel-1170.webp 1170w" sizes="300px" width="780" height="1688"><img src="/img/painel-1600.webp" srcset="/img/painel-1000.webp 1000w, /img/painel-1600.webp 1600w, /img/painel-2400.webp 2400w" sizes="(min-width: 1300px) 1216px, 94vw" width="1600" height="1000" alt="Ecrã inicial da webase de uma barbearia: clientes, mensalidades, pontos dados, aniversário de um cliente e chamada por fazer." fetchpriority="high"></picture>
+            <picture data-vista="ficha"><source media="(max-width: 699px)" srcset="/img/tel-ficha-780.webp 780w, /img/tel-ficha-1170.webp 1170w" sizes="300px" width="780" height="1688"><img src="/img/ficha-1600.webp" srcset="/img/ficha-1000.webp 1000w, /img/ficha-1600.webp 1600w, /img/ficha-2400.webp 2400w" sizes="(min-width: 1300px) 1216px, 94vw" width="1600" height="1000" loading="lazy" alt="Ficha de cliente com contactos, campos próprios, pontos, pacote de 10 cortes e cronologia."></picture>
+            <picture data-vista="leads"><source media="(max-width: 699px)" srcset="/img/tel-leads-780.webp 780w, /img/tel-leads-1170.webp 1170w" sizes="300px" width="780" height="1688"><img src="/img/leads-1600.webp" srcset="/img/leads-1000.webp 1000w, /img/leads-1600.webp 1600w, /img/leads-2400.webp 2400w" sizes="(min-width: 1300px) 1216px, 94vw" width="1600" height="1000" loading="lazy" alt="Funil de leads de uma equipa de telecomunicações, por fases, com valores e datas."></picture>
+            <picture data-vista="chamadas"><source media="(max-width: 699px)" srcset="/img/tel-chamadas-780.webp 780w, /img/tel-chamadas-1170.webp 1170w" sizes="300px" width="780" height="1688"><img src="/img/chamadas-1600.webp" srcset="/img/chamadas-1000.webp 1000w, /img/chamadas-1600.webp 1600w, /img/chamadas-2400.webp 2400w" sizes="(min-width: 1300px) 1216px, 94vw" width="1600" height="1000" loading="lazy" alt="Lista de chamadas do dia com resultado, duração e chamadas por fazer."></picture>
+            <picture data-vista="permissoes"><source media="(max-width: 699px)" srcset="/img/tel-permissoes-780.webp 780w, /img/tel-permissoes-1170.webp 1170w" sizes="300px" width="780" height="1688"><img src="/img/permissoes-1600.webp" srcset="/img/permissoes-1000.webp 1000w, /img/permissoes-1600.webp 1600w, /img/permissoes-2400.webp 2400w" sizes="(min-width: 1300px) 1216px, 94vw" width="1600" height="1000" loading="lazy" alt="Permissões de uma pessoa da equipa: caixas para ver, criar, editar e apagar em cada módulo."></picture>
+          </div>
+        </div>
+        <div class="cartao-c" aria-hidden="true">
+          <div class="cab-c"><strong>Barbearia Avenida</strong><span>cartão de cliente</span></div>
+          <div class="furos">
+            <span class="furo"><span class="carimbo" style="--i:0"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7"/></svg></span></span>
+            <span class="furo"><span class="carimbo" style="--i:1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7"/></svg></span></span>
+            <span class="furo"><span class="carimbo" style="--i:2"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7"/></svg></span></span>
+            <span class="furo"><span class="carimbo" style="--i:3"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7"/></svg></span></span>
+            <span class="furo"><span class="carimbo" style="--i:4"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7"/></svg></span></span>
+            <span class="furo"><span class="carimbo" style="--i:5"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7"/></svg></span></span>
+            <span class="furo"><span class="carimbo" style="--i:6"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7"/></svg></span></span>
+            <span class="furo"></span><span class="furo"></span><span class="furo">10.º grátis</span>
+          </div>
+          <p class="pe-c">10.º corte grátis, sem cartão no bolso.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="seccao primeira" aria-labelledby="t-ficha">
+    <div class="envolve duas-c">
+      <div class="lado-texto surge">
+        <h2 class="titulo" id="t-ficha">Tudo sobre cada cliente, numa ficha.</h2>
+        <p class="apoio">Os contactos de um negócio costumam andar espalhados, entre o caderno do balcão e as conversas do WhatsApp. Na webase ficam num sítio só, ao alcance de toda a equipa.</p>
+        <ul class="factos">
+          <li><strong>Cronologia.</strong> Cada chamada, compra, nota e pacote fica na ficha, com a data e quem o fez.</li>
+          <li><strong>Aniversários.</strong> Aparecem no início, no próprio dia.</li>
+          <li><strong>Campos teus.</strong> Corte preferido, alergias, operadora atual, número de sócio: juntas os que precisares.</li>
+          <li><strong>O que já tens entra.</strong> Importas a lista do Excel e a webase reconhece as colunas em português, sem duplicar quem já existe.</li>
+        </ul>
+      </div>
+      <div class="tabuleiro tem-tel surge"><picture><source media="(max-width: 699px)" srcset="/img/tel-ficha-780.webp 780w, /img/tel-ficha-1170.webp 1170w" sizes="300px" width="780" height="1688"><img src="/img/sec-ficha-1400.webp" srcset="/img/sec-ficha-800.webp 800w, /img/sec-ficha-1400.webp 1400w" sizes="(min-width: 960px) 700px, 94vw" width="1400" height="1415" loading="lazy" alt="Ficha da cliente Rita Fonseca: telefone, e-mail, corte preferido, barbeiro, pontos, pacote de 10 cortes e cronologia."></picture></div>
+    </div>
+  </section>
+
+  <section class="seccao noite" aria-labelledby="t-pontos">
+    <div class="envolve duas-c inverte">
+      <div class="lado-texto surge">
+        <h2 class="titulo" id="t-pontos">Pontos sem cartões de papel.</h2>
+        <p class="apoio">Cada compra dá pontos e o cliente troca-os por um prémio. Os pacotes, como 10 cortes ou 8 aulas, descontam a cada visita.</p>
+        <ul class="factos">
+          <li><strong>Regras tuas.</strong> Quantos pontos por euro, quanto custa cada prémio e quantos pontos de boas-vindas.</li>
+          <li><strong>Pacotes e mensalidades.</strong> Vês quem está em atraso, quem renova esta semana e quantos usos faltam a cada um.</li>
+          <li><strong>No telemóvel, ao balcão.</strong> Procuras o cliente, escreves o valor da compra e os pontos ficam dados.</li>
+        </ul>
+      </div>
+      <div class="palco-tel surge">
+        <div class="cartao-c" aria-hidden="true">
+          <div class="cab-c"><strong>Café Central</strong><span>cartão de cliente</span></div>
+          <div class="furos">
+            <span class="furo"><span class="carimbo" style="--i:0"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7"/></svg></span></span>
+            <span class="furo"><span class="carimbo" style="--i:1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7"/></svg></span></span>
+            <span class="furo"><span class="carimbo" style="--i:2"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7"/></svg></span></span>
+            <span class="furo"><span class="carimbo" style="--i:3"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7"/></svg></span></span>
+            <span class="furo"></span><span class="furo"></span><span class="furo"></span><span class="furo"></span><span class="furo"></span><span class="furo">Café grátis</span>
+          </div>
+          <p class="pe-c">Antes: um cartão no bolso de cada cliente.</p>
+        </div>
+        <div class="tel"><img src="/img/tel-pontos-780.webp" srcset="/img/tel-pontos-780.webp 780w, /img/tel-pontos-1170.webp 1170w" sizes="300px" width="780" height="1688" loading="lazy" alt="No telemóvel: dar pontos a uma cliente pelo valor da compra, com a previsão de pontos a ganhar."></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="seccao" aria-labelledby="t-vendas">
+    <div class="envolve duas-c inverte">
+      <div class="lado-texto surge">
+        <h2 class="titulo" id="t-vendas">Leads, chamadas e contratos.</h2>
+        <p class="apoio">Para equipas de vendas e de telecomunicações: o funil por fases, as chamadas de cada dia e os contratos que estão a acabar.</p>
+        <ul class="factos">
+          <li><strong>Fases com os teus nomes.</strong> Por contactar, Proposta enviada, Fecho… mudas quando quiseres. Arrastas no computador; no telemóvel, tocas em «Mover».</li>
+          <li><strong>Chamadas com resultado.</strong> Atendeu, não atendeu, ligar depois. Com cronómetro e lembrete para voltar a ligar.</li>
+          <li><strong>Contratos e fidelizações.</strong> Receita por mês, renovação automática e aviso nos 30 dias antes do fim.</li>
+        </ul>
+      </div>
+      <div class="tabuleiro tem-tel surge"><picture><source media="(max-width: 699px)" srcset="/img/tel-leads-780.webp 780w, /img/tel-leads-1170.webp 1170w" sizes="300px" width="780" height="1688"><img src="/img/sec-leads-1400.webp" srcset="/img/sec-leads-800.webp 800w, /img/sec-leads-1400.webp 1400w" sizes="(min-width: 960px) 700px, 94vw" width="1400" height="1118" loading="lazy" alt="Funil de leads com as fases Por contactar, Contactado, Proposta enviada, Fecho e Ganho."></picture></div>
+    </div>
+  </section>
+
+  <section class="seccao" aria-labelledby="t-equipa">
+    <div class="envolve empilha">
+      <div class="topo-e surge">
+        <div class="lado-texto"><h2 class="titulo" id="t-equipa">Cada pessoa vê o que deve.</h2>
+          <p class="apoio">Dás acesso à equipa sem lhe entregar a base inteira.</p></div>
+        <ul class="factos duas-col">
+          <li><strong>Papéis prontos.</strong> Administrador, gestor, comercial, operador de chamadas, balcão e só leitura.</li>
+          <li><strong>Caixa a caixa.</strong> Ver, criar, editar e apagar, em cada módulo.</li>
+          <li><strong>Só os seus clientes.</strong> Um comercial pode ver apenas a sua carteira, e não a dos colegas.</li>
+          <li><strong>Exportar é à parte.</strong> Ninguém descarrega a tua base sem tu deixares.</li>
+          <li><strong>Registo de atividade.</strong> Quem entrou, quem exportou, quem apagou.</li>
+        </ul>
+      </div>
+      <div class="tabuleiro tem-tel surge"><picture><source media="(max-width: 699px)" srcset="/img/tel-permissoes-780.webp 780w, /img/tel-permissoes-1170.webp 1170w" sizes="300px" width="780" height="1688"><img src="/img/sec-permissoes-1400.webp" srcset="/img/sec-permissoes-800.webp 800w, /img/sec-permissoes-1400.webp 1400w" sizes="(min-width: 960px) 900px, 94vw" width="1400" height="1091" loading="lazy" alt="Janela de permissões de um comercial: papel, módulos com caixas de ver, criar, editar e apagar."></picture></div>
+    </div>
+  </section>
+
+  <section class="seccao" aria-labelledby="t-maneira">
+    <div class="envolve duas-c inverte">
+      <div class="lado-texto surge">
+        <h2 class="titulo" id="t-maneira">Montas o CRM à tua maneira.</h2>
+        <p class="apoio">Uma barbearia pode usar só fichas e pontos; uma equipa de vendas, leads e chamadas. Ligas e desligas módulos quando quiseres, e nada se perde.</p>
+        <ul class="factos">
+          <li><strong>A tua marca.</strong> O logótipo e a cor do teu negócio em toda a app.</li>
+          <li><strong>Claro ou escuro.</strong> Cada pessoa escolhe; por omissão segue o telemóvel.</li>
+          <li><strong>Em qualquer ecrã.</strong> Telemóvel, tablet e computador, no navegador. Dá para pôr no ecrã principal como uma app.</li>
+        </ul>
+      </div>
+      <div class="tabuleiro tem-tel surge"><picture><source media="(max-width: 699px)" srcset="/img/tel-modulos-780.webp 780w, /img/tel-modulos-1170.webp 1170w" sizes="300px" width="780" height="1688"><img src="/img/sec-modulos-1400.webp" srcset="/img/sec-modulos-800.webp 800w, /img/sec-modulos-1400.webp 1400w" sizes="(min-width: 960px) 700px, 94vw" width="1400" height="1415" loading="lazy" alt="Definições dos módulos: fichas de clientes, leads, chamadas, contratos, pontos, subscrições, marketplace e fórum, cada um com a sua caixa."></picture></div>
+    </div>
+  </section>
+
+  <section class="seccao" aria-labelledby="t-troca">
+    <div class="envolve">
+      <div class="lado-texto surge">
+        <h2 class="titulo largo" id="t-troca">Troca contactos e ideias com outros negócios.</h2>
+        <p class="apoio">As contas da webase podem comprar, vender e partilhar bases de contactos entre si, e conversar no fórum.</p>
+      </div>
+      <div class="galeria">
+        <figure class="surge">
+          <div class="tabuleiro tem-tel"><picture><source media="(max-width: 699px)" srcset="/img/tel-marketplace-780.webp 780w, /img/tel-marketplace-1170.webp 1170w" sizes="300px" width="780" height="1688"><img src="/img/sec-marketplace-1400.webp" srcset="/img/sec-marketplace-800.webp 800w, /img/sec-marketplace-1400.webp 1400w" sizes="(min-width: 900px) 600px, 94vw" width="1400" height="1415" loading="lazy" alt="Marketplace com uma base de comércio local do Grande Porto à venda."></picture></div>
+          <figcaption><strong>Marketplace</strong><span>Publicas uma base a partir de uma etiqueta, escolhes os campos e o preço. Quem compra vê uma amostra escondida antes. Quem vende declara que tem base legal para ceder os dados.</span></figcaption>
+        </figure>
+        <figure class="surge">
+          <div class="tabuleiro tem-tel"><picture><source media="(max-width: 699px)" srcset="/img/tel-forum-780.webp 780w, /img/tel-forum-1170.webp 1170w" sizes="300px" width="780" height="1688"><img src="/img/sec-forum-1400.webp" srcset="/img/sec-forum-800.webp 800w, /img/sec-forum-1400.webp 1400w" sizes="(min-width: 900px) 600px, 94vw" width="1400" height="1415" loading="lazy" alt="Tópico do fórum: como lidar com clientes que faltam à marcação."></picture></div>
+          <figcaption><strong>Fórum</strong><span>Perguntas, dicas e notícias do setor entre quem usa a webase, com o nome do negócio de quem escreve.</span></figcaption>
+        </figure>
+      </div>
+    </div>
+  </section>
+
+  <section class="seccao" aria-labelledby="t-dados">
+    <div class="envolve">
+      <h2 class="titulo surge" id="t-dados">Os dados são teus.</h2>
+      <div class="garantias">
+        <div class="surge"><strong>Exportas tudo, quando quiseres.</strong><p>Clientes, leads, chamadas e contratos em CSV para o Excel, ou a conta inteira num ficheiro só.</p></div>
+        <div class="surge"><strong>Pedidos do RGPD num clique.</strong><p>Descarregas tudo o que guardas sobre uma pessoa. Se pedir para ser esquecida, apagas a ficha e o que está ligado a ela.</p></div>
+        <div class="surge"><strong>Cada conta só vê o que é seu.</strong><p>Cada pedido é verificado no servidor contra a conta e as permissões de quem o faz, não só no ecrã.</p></div>
+        <div class="surge"><strong>Palavras-passe protegidas.</strong><p>Guardadas com scrypt, nunca em texto. As sessões expiram e podes fechá-las à distância noutros aparelhos.</p></div>
+        <div class="surge"><strong>A webase não vende os teus dados.</strong><p>Nem os partilha. Só tu decides se publicas alguma coisa no marketplace.</p></div>
+        <div class="surge"><strong>Feito em Portugal.</strong><p>Em português de Portugal, com datas, euros e NIF como cá se usam. Falas com quem faz a webase.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="seccao" aria-labelledby="t-precos">
+    <div class="envolve">
+      <div class="lado-texto surge">
+        <h2 class="titulo" id="t-precos">Um preço por negócio, não por pessoa.</h2>
+        <p class="apoio">Durante o acesso antecipado, todas as contas têm tudo aberto, sem pagar. Quando os planos pagos abrirem, avisamos com 30 dias de antecedência.</p>
+      </div>
+      <div class="planos">
+        <div class="plano surge"><h3>Grátis</h3><p class="preco">0&nbsp;€</p><p class="para">Para começar sozinho.</p>
+          <ul><li>1 pessoa</li><li>Até 300 clientes</li><li>Fichas, pontos e leads</li></ul>
+          <a class="bt" href="/app/registar" data-estat="plano-gratis">Criar conta grátis</a></div>
+        <div class="plano destaque surge"><h3>Negócio</h3><p class="preco">19&nbsp;€ <small>por mês + IVA</small></p><p class="para">Para a loja, o café ou a barbearia com equipa.</p>
+          <ul><li>Até 5 pessoas</li><li>Clientes sem limite</li><li>Todos os módulos</li><li>Importar e exportar</li></ul>
+          <a class="bt bt-p" href="/app/registar" data-estat="plano-negocio">Começar grátis</a></div>
+        <div class="plano surge"><h3>Equipa</h3><p class="preco">49&nbsp;€ <small>por mês + IVA</small></p><p class="para">Para equipas de vendas e telecomunicações.</p>
+          <ul><li>Até 25 pessoas</li><li>Permissões por pessoa</li><li>Vender no marketplace</li><li>Registo de atividade</li></ul>
+          <a class="bt" href="/app/registar?setor=telecom" data-estat="plano-equipa">Começar grátis</a></div>
+      </div>
+      <div class="ancora surge">
+        <div><p class="n">5 pessoas: 19&nbsp;€ por mês.</p>
+          <p class="apoio" style="margin-top:10px">Na Salesforce Starter, a mesma equipa paga 125&nbsp;€ por mês (25&nbsp;€ por pessoa).</p>
+          <p class="fonte" style="margin-top:8px">Preço de tabela da Salesforce Starter em salesforce.com, consultado a 13/11/2026. Os planos não têm as mesmas funções.</p></div>
+        <a class="bt" href="/precos/">Comparar planos</a>
+      </div>
+      <div class="fundadores surge" data-bloco-fundadores>
+        <span class="carimbo" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1-4.4-4.3 6.1-.9z"/></svg></span>
+        <p><strong data-fundadores>Lugares de fundador</strong><br><span class="miudo">As primeiras 100 contas ficam com 40&nbsp;% de desconto para sempre, quando os planos pagos abrirem.</span></p>
+      </div>
+    </div>
+  </section>
+
+  <section class="seccao" aria-labelledby="t-perguntas">
+    <div class="envolve">
+      <h2 class="titulo" id="t-perguntas">Perguntas.</h2>
+      <div class="perguntas">
+        <details><summary>É mesmo grátis?</summary><p>Sim. O plano Grátis não tem prazo. Durante o acesso antecipado, todas as contas têm todos os módulos abertos. Quando os planos pagos abrirem, avisamos 30 dias antes e só pagas se quiseres mais pessoas ou mais clientes.</p></details>
+        <details><summary>Funciona no telemóvel?</summary><p>Sim: no navegador do telemóvel, do tablet e do computador, com a mesma conta. Também dá para pôr a webase no ecrã principal, como uma app. Ao tocar em «Ligar» numa ficha, o telemóvel marca o número.</p></details>
+        <details><summary>Consigo trazer os clientes que já tenho?</summary><p>Sim. Guardas a lista do Excel como CSV e importas. A webase reconhece colunas como «Nome», «Telemóvel» ou «E-mail», mostra uma pré-visualização e não duplica quem já tens.</p></details>
+        <details><summary>E se eu quiser sair?</summary><p>Exportas tudo num ficheiro e apagas a conta nas definições. Não há fidelização.</p></details>
+        <details><summary>O marketplace de contactos é legal?</summary><p>Contactos de empresas circulam com frequência. Para particulares, a lei exige o consentimento da pessoa para cada empresa que recebe os dados (Diretriz 1/2022 da CNPD). Quem publica declara que tem essa base legal e responde por ela. Os contactos comprados chegam sempre sem consentimento de marketing marcado, para não os usares sem confirmar.</p></details>
+        <details><summary>Quem está por trás da webase?</summary><p>A webase é feita por Dinis Sousa, em Gondomar. Tens o contacto na <a class="ligacao" href="/privacidade/">política de privacidade</a>.</p></details>
+      </div>
+    </div>
+  </section>
+
+  <section class="seccao" aria-labelledby="t-final">
+    <div class="envolve">
+      <div class="final surge">
+        <div style="display:grid;gap:16px"><h2 class="titulo" id="t-final">Começa com uma ficha.</h2>
+          <p>Cria a conta, importa a lista que já tens e liga só o que precisas.</p></div>
+        <a class="bt" href="/app/registar" data-estat="final">Criar conta grátis</a>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="rodape">
+  <div class="envolve">
+    <div class="grelha-r">
+      <div class="marca-r"><a href="/" class="logo-wb"><svg viewBox="0 0 32 32" aria-hidden="true" fill="none"><circle cx="16" cy="16" r="13" stroke="currentColor" stroke-width="3"/><path d="M8.5 17h15a7.5 7.5 0 0 1-15 0z" fill="currentColor"/><circle cx="16" cy="11" r="2.2" fill="currentColor"/></svg>webase</a>
+        <p>O CRM português para negócios de todos os tamanhos.</p></div>
+      <div><h2>Produto</h2><ul><li><a href="/solucoes/">Soluções</a></li><li><a href="/precos/">Preços</a></li><li><a href="/marketplace/">Marketplace</a></li></ul></div>
+      <div><h2>Conta</h2><ul><li><a href="/app/registar">Criar conta</a></li><li><a href="/app/entrar">Entrar</a></li></ul></div>
+      <div><h2>Legal</h2><ul><li><a href="/privacidade/">Privacidade</a></li><li><a href="/termos/">Termos</a></li><li><a href="https://www.livroreclamacoes.pt" rel="noopener">Livro de Reclamações</a></li></ul></div>
+    </div>
+    <div class="base"><span>© 2026 webase</span><span>feito por <a href="https://dinissousa.pt">dinissousa.pt</a></span></div>
+  </div>
+</footer>
+</body>
+</html>

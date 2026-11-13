@@ -33,6 +33,7 @@ escrever_estado() {
     echo "caiu.pt API: $(systemctl is-active caiu-api 2>/dev/null) $(curl -s -m 3 http://127.0.0.1:3150/api/saude 2>/dev/null | cut -c1-120)"
     echo "caiu.pt avisos: $(cat /var/lib/caiu-api/alertas.json 2>/dev/null | cut -c1-240)"
     echo "ganhas.pt API: $(systemctl is-active ganhas-api 2>/dev/null) $(curl -s -m 3 http://127.0.0.1:3140/api/estado 2>/dev/null | cut -c1-80)"
+    echo "webase API: $(systemctl is-active webase-api 2>/dev/null) $(curl -s -m 3 http://127.0.0.1:3160/api/publico/estado 2>/dev/null | cut -c1-70)"
     echo "ganhas.pt páginas: $(systemctl show ganhas-paginas.service -p Result -p ExecMainStatus 2>/dev/null | tr '\n' ' ') $(journalctl -u ganhas-paginas -n 12 --no-pager -o cat 2>/dev/null | grep -v -E '^(Starting|Started|Finished|Failed to start|ganhas-paginas)' | tail -3 | cut -c1-200 | tr '\n' ';')"
     cat /var/lib/parou-estado/vigia-projetos.txt 2>/dev/null | sed -E 's/([0-9]{1,3}\.){3}[0-9]{1,3}/<ip>/g' | cut -c1-300
     echo
@@ -55,7 +56,7 @@ sed -e "s/{HOST_TESTE}/$HOST_TESTE/g" -e "s/{ESTAT_CHAVE}/${ESTAT_CHAVE:-sem-cha
 # O domínio só entra quando já aponta para este servidor (senão o Caddy falhava o
 # certificado e ficava a tentar com esperas cada vez maiores)
 MEU_IP="$(echo "${HOST_TESTE%%.sslip.io}" | tr '-' '.')"
-for DOM in parou.pt www.parou.pt goodman.pt www.goodman.pt anjinho.pt www.anjinho.pt jinxed.world www.jinxed.world duplicasa.pt www.duplicasa.pt chave.pt www.chave.pt dinissousa.pt www.dinissousa.pt adribodypiercing.pt www.adribodypiercing.pt jaesta.pt www.jaesta.pt apalavrado.pt www.apalavrado.pt tapmoss.com www.tapmoss.com caiu.pt www.caiu.pt ganhas.pt www.ganhas.pt; do
+for DOM in parou.pt www.parou.pt goodman.pt www.goodman.pt anjinho.pt www.anjinho.pt jinxed.world www.jinxed.world duplicasa.pt www.duplicasa.pt chave.pt www.chave.pt dinissousa.pt www.dinissousa.pt adribodypiercing.pt www.adribodypiercing.pt jaesta.pt www.jaesta.pt apalavrado.pt www.apalavrado.pt tapmoss.com www.tapmoss.com caiu.pt www.caiu.pt ganhas.pt www.ganhas.pt webase.pt www.webase.pt; do
   # Pergunta a dois DNS: basta um dizer que o domínio aponta para aqui (durante uma mudança
   # de DNS uns ainda dão o endereço antigo e o domínio entrava e saía a cada 2 minutos)
   IPS="$( (dig +short +time=3 +tries=2 A "$DOM" @1.1.1.1; dig +short +time=3 +tries=2 A "$DOM" @8.8.8.8) 2>/dev/null | grep -E '^[0-9.]+$' | sort -u)"
@@ -398,6 +399,32 @@ if [ -f "$SERV/ganhas-api.service" ] && [ -f "$BASE/servidor/ganhas/api.py" ]; t
   if [ -n "$PV" ] && [ "$(cat /etc/ganhas/paginas.versao 2>/dev/null)" != "$PV" ]; then
     systemctl start --no-block ganhas-paginas.service && echo "$PV" > /etc/ganhas/paginas.versao
   fi
+fi
+
+# webase: CRM. Site estático em sites/webase (copiado só quando muda, para uma pasta nova, e trocado de uma vez); API em
+# webase/ (webase-api.service, 127.0.0.1:3160, dados em /var/lib/webase-api, fora do repositório). Configuração em /etc/webase/api.env.
+WBS=$BASE/servidor/sites/webase
+if [ -f "$WBS/index.html" ] && ! diff -rq "$WBS" /var/www/webase >/dev/null 2>&1; then
+  rm -rf /var/www/webase.novo && mkdir -p /var/www && cp -r "$WBS" /var/www/webase.novo \
+    && chmod -R a+rX /var/www/webase.novo \
+    && rm -rf /var/www/webase.velho && { [ ! -d /var/www/webase ] || mv /var/www/webase /var/www/webase.velho; } \
+    && mv /var/www/webase.novo /var/www/webase && rm -rf /var/www/webase.velho
+fi
+if [ -f "$SERV/webase-api.service" ] && [ -f "$BASE/servidor/webase/api.py" ]; then
+  install -d -m 750 -o root -g parou /etc/webase
+  if [ ! -f /etc/webase/api.env ]; then
+    printf 'ORIGENS=https://webase.pt https://www.webase.pt https://webase.%s\nWB_PAGAMENTOS=desligado\n' "$HOST_TESTE" > /etc/webase/api.env
+    chown root:parou /etc/webase/api.env && chmod 640 /etc/webase/api.env
+  fi
+  if ! cmp -s "$SERV/webase-api.service" /etc/systemd/system/webase-api.service; then
+    cp "$SERV/webase-api.service" /etc/systemd/system/webase-api.service && systemctl daemon-reload
+  fi
+  systemctl is-enabled --quiet webase-api.service 2>/dev/null || systemctl enable --now webase-api.service >/dev/null 2>&1
+  V=$( { cat "$BASE"/servidor/webase/*.py /etc/webase/api.env 2>/dev/null; } | sha256sum | cut -c1-16)
+  if [ "$(cat /etc/webase/api.versao 2>/dev/null)" != "$V" ]; then
+    systemctl restart webase-api.service && echo "$V" > /etc/webase/api.versao
+  fi
+  systemctl is-active --quiet webase-api.service || systemctl start webase-api.service
 fi
 
 # Vigia dos projetos (de 10 em 10 minutos): serviços parados, APIs bloqueadas, dados velhos e o Supabase do Goodman acordado

@@ -1,0 +1,88 @@
+name: webase - verificar ao vivo
+
+# 1. Espera que o servidor tenha a versão do site e da API que está no repositório.
+# 2. Corre os testes da API (webase/testes/teste_api.py) numa máquina limpa.
+# 3. Pede as páginas, os cabeçalhos de segurança e ficheiros que nunca podem aparecer.
+# 4. Corre webase/testes/ao_vivo.py: cria uma conta de teste, usa a app no telemóvel e apaga a conta.
+# Resultado (texto e capturas) no ramo "webase-verificar-resultado".
+
+on:
+  workflow_dispatch:
+    inputs:
+      url:
+        description: "Endereço (vazio = endereço de testes)"
+        required: false
+        default: ""
+  push:
+    branches: [webase-verificar]
+
+permissions:
+  contents: write
+
+jobs:
+  verificar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Esperar pela versão nova no servidor
+        env:
+          URL_IN: ${{ inputs.url }}
+        run: |
+          U="${URL_IN:-https://webase.2-31-13-85.sslip.io}"; U="${U%/}"; echo "U=$U" >> "$GITHUB_ENV"
+          mkdir -p res
+          QUER=$(sha256sum sites/webase/index.html | cut -c1-64)
+          for i in $(seq 1 45); do
+            TEM=$(curl -s -m 20 "$U/" | sha256sum | cut -c1-64)
+            API=$(curl -s -o /dev/null -w '%{http_code}' -m 20 "$U/api/publico/estado")
+            echo "tentativa $i: site $([ "$TEM" = "$QUER" ] && echo 'igual ao repositório' || echo diferente), API $API" | tee -a res/espera.txt
+            if [ "$TEM" = "$QUER" ] && [ "$API" = 200 ]; then break; fi
+            sleep 20
+          done
+
+      - name: Testes da API
+        run: timeout 300 python webase/testes/teste_api.py 2>&1 | tail -30 | tee res/teste_api.txt || true
+
+      - name: Páginas, cabeçalhos e ficheiros proibidos
+        run: |
+          {
+          echo "--- páginas (código, tipo, tamanho, tempo):"
+          for c in / /solucoes/ /precos/ /marketplace/ /privacidade/ /termos/ /app/ /app/clientes /robots.txt /sitemap.xml /_e.js /img/painel-1600.webp /fontes/instrument.woff2 /api/publico/estado /nao-existe; do
+            echo "$c -> $(curl -s -o /dev/null -w '%{http_code} %{content_type} %{size_download}B %{time_total}s' -m 30 "$U$c")"
+          done
+          echo "--- não podem aparecer (404 ou 403):"
+          for c in /.env /.git/config /.git/HEAD /api.py /base.py /DESIGN.md /gerar_paginas.py /app/.env /.DS_Store; do
+            echo "$c -> $(curl -s -o /dev/null -w '%{http_code}' -m 30 "$U$c")"
+          done
+          echo "--- sem sessão:"
+          echo "GET /api/eu -> $(curl -s -o /dev/null -w '%{http_code}' -m 30 "$U/api/eu")"
+          echo "GET /api/clientes -> $(curl -s -o /dev/null -w '%{http_code}' -m 30 "$U/api/clientes")"
+          echo "POST /api/conta/entrar sem X-Wb -> $(curl -s -o /dev/null -w '%{http_code}' -m 30 -X POST -H 'Content-Type: application/json' -d '{}' "$U/api/conta/entrar")"
+          echo "POST /api/conta/entrar de outra origem -> $(curl -s -o /dev/null -w '%{http_code}' -m 30 -X POST -H 'Content-Type: application/json' -H 'X-Wb: 1' -H 'Origin: https://exemplo.com' -d '{}' "$U/api/conta/entrar")"
+          echo "--- http vai para https:"; curl -sI -m 30 "${U/https:/http:}/" | grep -iE '^(HTTP|location)' || true
+          for c in / /app/ /api/publico/estado; do echo "--- cabeçalhos $c:"; curl -sI -m 30 "$U$c" | grep -viE '^(date|content-length|etag|last-modified|alt-svc|vary|accept-ranges):' || true; done
+          echo "--- estado da API:"; curl -s -m 30 "$U/api/publico/estado"; echo
+          } 2>&1 | tee res/paginas.txt
+
+      - name: Teste no browser (conta de teste criada e apagada)
+        run: |
+          pip install -q playwright >/dev/null && python -m playwright install --with-deps chromium >/dev/null 2>&1
+          cd res && set +e
+          timeout 900 python ../webase/testes/ao_vivo.py "$U" > ao_vivo.txt 2>&1
+          echo "saída: $?" >> ao_vivo.txt
+          cat ao_vivo.txt
+
+      - name: Guardar
+        if: always()
+        run: |
+          mkdir -p pub && cp -r res/* pub/ 2>/dev/null || echo "sem resultados" > pub/vazio.txt
+          cd pub && git init -q -b webase-verificar-resultado
+          git config user.name "parou-dados"; git config user.email "actions@users.noreply.github.com"
+          git add -A && git commit -q -m "webase $(date -u +%Y-%m-%dT%H:%MZ)" && git push -q -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" webase-verificar-resultado

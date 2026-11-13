@@ -1,0 +1,123 @@
+/* webase — base partilhada pelo site e pela app (tokens, letra, controlos). Ver DESIGN.md */
+@font-face {
+  font-family: 'Instrument Sans';
+  font-style: normal;
+  font-display: swap;
+  font-weight: 400 700;
+  font-stretch: 75% 100%;
+  src: url(/fontes/instrument.woff2) format('woff2-variations'), url(/fontes/instrument.woff2) format('woff2');
+}
+
+:root {
+  --papel: #F4F4F1;
+  --folha: #FFFFFF;
+  --folha2: #ECECE7;
+  --folha3: #E2E2DB;
+  --tinta: #14161B;
+  --tinta2: #4B505B;
+  --tinta3: #6A6F79;
+  --linha: #E4E4DE;
+  --campo-borda: #C9CAC2;
+  --acento: #2B3FD6;
+  --acento-escuro: color-mix(in oklab, var(--acento) 78%, black);
+  --acento-suave: color-mix(in oklab, var(--acento) 10%, var(--folha));
+  --sobre-acento: #FFFFFF;
+  --noite: #0F1438;
+  --verde: #1E7A4C;
+  --ambar: #8A5A00;
+  --vermelho: #B42318;
+  --sombra-flutua: 0 1px 2px rgb(20 22 27 / .06), 0 12px 32px rgb(20 22 27 / .14);
+  --raio-campo: 6px;
+  --raio-ficha: 8px;
+  --letra: 'Instrument Sans', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif;
+  --entra: cubic-bezier(.2, .8, .2, 1);
+  --sai: cubic-bezier(.4, 0, 1, 1);
+  color-scheme: light;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+body {
+  margin: 0;
+  font-family: var(--letra);
+  font-size: 16px;
+  line-height: 1.5;
+  color: var(--tinta);
+  background: var(--papel);
+  font-variant-numeric: tabular-nums;
+  -webkit-font-smoothing: antialiased;
+  touch-action: manipulation;
+}
+img, svg { display: block; max-width: 100%; }
+h1, h2, h3, h4 { margin: 0; font-weight: 600; font-stretch: 88%; letter-spacing: -0.02em; line-height: 1.12; text-wrap: balance; }
+p { margin: 0; text-wrap: pretty; }
+a { color: inherit; }
+button, input, select, textarea { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 3px solid color-mix(in oklab, var(--acento) 55%, transparent); outline-offset: 2px; border-radius: 4px; }
+.salto { position: absolute; left: 12px; top: -60px; z-index: 100; background: var(--tinta); color: #fff; padding: 10px 16px;
+  border-radius: 999px; text-decoration: none; transition: top .15s; }
+.salto:focus { top: 12px; }
+.so-leitor { position: absolute !important; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+.logo-wb { display: inline-flex; align-items: center; gap: 10px; font-weight: 700; font-size: 20px; letter-spacing: -0.02em; text-decoration: none; color: inherit; }
+.logo-wb svg { width: 30px; height: 30px; flex: none; }
+
+/* ---------- botões */
+.bt {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  min-height: 44px; padding: 0 20px; border: 0; border-radius: 999px;
+  background: var(--folha2); color: var(--tinta); font-size: 15px; font-weight: 600; text-decoration: none;
+  white-space: nowrap; transition: background-color .15s, transform .12s var(--entra), opacity .15s;
+}
+.bt:hover { background: var(--folha3); }
+.bt:active { transform: scale(.98); }
+.bt[disabled], .bt[aria-disabled="true"] { opacity: .55; cursor: not-allowed; transform: none; }
+.bt-p { background: var(--acento); color: var(--sobre-acento); }
+.bt-p:hover { background: var(--acento-escuro); }
+.bt-perigo { color: var(--vermelho); }
+.bt-perigo.cheio { background: var(--vermelho); color: #fff; }
+.bt-pq { min-height: 36px; padding: 0 14px; font-size: 14px; }
+.bt-icone { width: 44px; padding: 0; }
+.bt-icone.bt-pq { width: 36px; }
+.bt-limpo { background: transparent; }
+.bt-limpo:hover { background: var(--folha2); }
+.bt svg { width: 18px; height: 18px; flex: none; }
+.ligacao { color: var(--acento); font-weight: 600; text-decoration: underline; text-underline-offset: 3px; text-decoration-thickness: 1.5px;
+  background: none; border: 0; padding: 0; cursor: pointer; }
+
+/* ---------- campos */
+.campo { display: grid; gap: 6px; align-content: start; }
+.campo > label, .rotulo { font-size: 14px; font-weight: 600; color: var(--tinta); }
+.campo .ajuda { font-size: 13px; color: var(--tinta2); }
+.entrada, .campo input:not([type=checkbox]):not([type=radio]):not([type=color]):not([type=file]), .campo select, .campo textarea {
+  width: 100%; min-height: 44px; padding: 10px 12px; border: 0; border-radius: var(--raio-campo);
+  background: var(--folha); box-shadow: inset 0 0 0 1.5px var(--campo-borda); font-size: 16px; line-height: 1.4;
+  transition: box-shadow .15s;
+}
+.campo textarea { min-height: 96px; resize: vertical; }
+.campo select { appearance: none; background-image: linear-gradient(45deg, transparent 50%, var(--tinta2) 50%), linear-gradient(135deg, var(--tinta2) 50%, transparent 50%);
+  background-position: calc(100% - 18px) 50%, calc(100% - 13px) 50%; background-size: 5px 5px; background-repeat: no-repeat; padding-right: 36px; }
+.entrada:focus, .campo input:focus, .campo select:focus, .campo textarea:focus { outline: none; box-shadow: inset 0 0 0 2px var(--acento); }
+.campo.erro input, .campo.erro select, .campo.erro textarea { box-shadow: inset 0 0 0 2px var(--vermelho); }
+.erro-campo { color: var(--vermelho); font-size: 13px; font-weight: 600; }
+.opcao { display: flex; gap: 10px; align-items: flex-start; font-size: 15px; cursor: pointer; }
+.opcao input { width: 20px; height: 20px; margin: 2px 0 0; accent-color: var(--acento); flex: none; }
+
+/* ---------- o carimbo (movimento assinatura) */
+.carimbo {
+  --tam: 56px;
+  width: var(--tam); height: var(--tam); border-radius: 50%; flex: none;
+  display: grid; place-items: center; color: var(--acento);
+  box-shadow: inset 0 0 0 3px currentColor, inset 0 0 0 6px var(--folha), inset 0 0 0 7.5px currentColor;
+  transform: rotate(-4deg);
+}
+.carimbo svg { width: 45%; height: 45%; }
+.carimbo.pousa { animation: pousa .26s var(--entra) both; }
+@keyframes pousa {
+  from { opacity: 0; transform: scale(1.18) rotate(-10deg); }
+  to { opacity: 1; transform: scale(1) rotate(-4deg); }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .001ms !important; animation-iteration-count: 1 !important; transition-duration: .001ms !important; scroll-behavior: auto !important; }
+}
