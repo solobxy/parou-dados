@@ -6,7 +6,7 @@ os.makedirs('saida', exist_ok=True)
 for i in range(40):
     try:
         h = urllib.request.urlopen(urllib.request.Request(U + '?v=' + str(time.time()), headers={'Cache-Control': 'no-cache'}), timeout=20).read().decode()
-        if 'id="top3"' in h: print('topo novo no ar'); break
+        if 'topo__link--forte' in h: print('botões novos no ar'); break
     except Exception as e:
         print('erro', e)
     time.sleep(10)
