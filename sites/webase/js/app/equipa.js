@@ -101,18 +101,34 @@ const ACOES_AUD = { 'entrar': 'Entrou', 'entrar.falhou': 'Palavra-passe errada',
   'contrato.apagar': 'Apagou contrato', 'chamada.apagar': 'Apagou chamada', 'mk.publicar': 'Publicou no marketplace', 'mk.comprar': 'Recebeu base',
   'mk.reservar': 'Reservou base', 'mk.mudar': 'Mudou anúncio', 'partilha.enviar': 'Partilhou contactos', 'partilha.aceitar': 'Aceitou partilha',
   'senha.mudar': 'Mudou a palavra-passe', 'sessoes.terminar': 'Terminou sessões', 'conta.modulos': 'Mudou módulos', 'conta.dados': 'Mudou dados do negócio',
-  'conta.cor': 'Mudou a cor', 'conta.logo': 'Mudou o logótipo', 'conta.fases': 'Mudou as fases', 'conta.campos': 'Mudou os campos', 'plano.interesse': 'Pediu plano' };
+  'conta.cor': 'Mudou a cor', 'conta.logo': 'Mudou o logótipo', 'conta.fases': 'Mudou as fases', 'conta.campos': 'Mudou os campos', 'plano.interesse': 'Pediu plano',
+  'telemovel.ligar': 'Ligou um telemóvel', 'telemovel.desligar': 'Desligou um telemóvel', 'forum.apagar': 'Apagou tópico do fórum' };
 
 async function auditoria(caixa) {
   const r = await get('/api/auditoria');
-  caixa.replaceChildren(r.registos.length ? h('div', { class: 'lista' }, r.registos.map((x) => h('div', { class: 'linha', style: 'min-height:48px' },
-    h('span', { class: 'principal-l' }, h('span', { class: 't' }, (ACOES_AUD[x.acao] || x.acao), x.detalhe ? h('span', { style: 'font-weight:400;color:var(--tinta2)' }, ' · ' + x.detalhe) : null),
-      h('span', { class: 's' }, [x.quem, dataHora(x.quando)].filter(Boolean).join(' · '))))))
-    : h('p', { style: 'color:var(--tinta2)' }, 'Sem registos.'));
+  let comEntradas = false;
+  const lista = h('div');
+  const pintar = () => {
+    const regs = r.registos.filter((x) => comEntradas || x.acao !== 'entrar');
+    lista.replaceChildren(regs.length ? h('div', { class: 'lista' }, regs.map((x) => {
+      const det = x.detalhe || x.alvo_nome;
+      return h('div', { class: 'linha', style: 'min-height:48px' },
+        h('span', { class: 'principal-l' }, h('span', { class: 't' }, (ACOES_AUD[x.acao] || x.acao), det ? h('span', { style: 'font-weight:400;color:var(--tinta2)' }, ' · ' + det) : null),
+          h('span', { class: 's' }, [x.quem, dataHora(x.quando)].filter(Boolean).join(' · '))));
+    })) : h('p', { style: 'color:var(--tinta2)' }, 'Sem registos.'));
+  };
+  const caixaEnt = h('label', { class: 'opcao', style: 'margin-bottom:8px' }, h('input', { type: 'checkbox', onchange: (e) => { comEntradas = e.target.checked; pintar(); } }),
+    h('span', null, 'Mostrar também as entradas na conta'));
+  pintar();
+  caixa.replaceChildren(caixaEnt, lista);
 }
 
 export async function mostrar(raiz) {
-  if (!podeX('equipa')) { raiz.replaceChildren(vazio({ titulo: 'Sem acesso', texto: 'Só quem gere a conta vê esta página.' })); return; }
+  if (!podeX('equipa')) {
+    raiz.replaceChildren(h('header', { class: 'cabeca' }, h('h1', null, 'Equipa e permissões')),
+      vazio({ titulo: 'Não tens acesso a esta parte', icone: 'equipa', texto: 'Só quem gere a equipa vê e muda as permissões. Se precisas de outro acesso, pede a quem gere a conta.' }));
+    return;
+  }
   const carregar = async () => {
     const cfg = await get('/api/equipa');
     const ativos = cfg.equipa.filter((u) => u.ativo).length;

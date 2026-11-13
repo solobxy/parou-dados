@@ -1,5 +1,5 @@
 // webase — início: o que há para fazer hoje e os números do negócio.
-import { estado, h, icone, get, euros, num, plural, relativo, ligacao, ligado, pode, data, dataIso, carimbo, avatar } from './nucleo.js';
+import { estado, h, icone, get, euros, num, plural, relativo, ligacao, ligado, pode, podeX, data, dataIso, carimbo, avatar } from './nucleo.js';
 import { novoCliente } from './clientes.js';
 
 const ICONE_TIPO = { aniversario: 'presente', seguimento: 'chamadas', lead: 'leads', contrato: 'contratos', renovacao: 'adesoes' };
@@ -52,7 +52,7 @@ export async function mostrar(raiz) {
     h('p', { style: 'color:var(--tinta2);font-size:13px;margin-top:8px' }, `Últimas 12 semanas · ${num(semanas[semanas.length - 1] || 0)} esta semana`)) : null;
 
   const funil = p.leads && p.leads.por_fase.length ? h('section', { class: 'ficha' },
-    h('header', null, h('h2', null, 'Funil'), ligacao('/app/leads', { class: 'ligacao' }, 'Ver leads')),
+    h('header', null, h('h2', null, 'Funil'), ligacao('/app/leads', { class: 'ligacao ligacao-toque' }, 'Ver leads')),
     h('div', { class: 'lista' }, p.leads.por_fase.map((f) => h('div', { class: 'linha', style: 'min-height:44px' },
       h('span', { class: 'principal-l' }, f.nome), h('strong', null, num(f.n)))))) : null;
 
@@ -69,9 +69,10 @@ export async function mostrar(raiz) {
       h('div', { class: 'acoes' }, acoes)),
     primeiroUso ? h('section', { class: 'ficha' }, h('div', { class: 'vazio', style: 'padding:8px 0' }, carimbo('clientes', false),
       h('h3', null, 'Começa pelos teus clientes'),
-      h('p', null, 'Cria a primeira ficha ou importa a lista que já tens (Excel ou CSV). Em poucos minutos tens a base pronta.'),
+      h('p', null, podeX('importar') ? 'Cria a primeira ficha ou importa a lista que já tens (Excel ou CSV). Em poucos minutos tens a base pronta.'
+        : 'Ainda não tens clientes teus. As fichas que criares ficam aqui, com o histórico de cada pessoa.'),
       h('div', { class: 'acoes-rapidas' }, pode('clientes', 'c') ? h('button', { class: 'bt bt-p', type: 'button', onclick: () => novoCliente() }, 'Criar ficha') : null,
-        ligacao('/app/clientes?importar=1', { class: 'bt' }, icone('enviar'), 'Importar contactos')))) : null,
+        podeX('importar') ? ligacao('/app/clientes?importar=1', { class: 'bt' }, icone('enviar'), 'Importar contactos') : null))) : null,
     numeros.length && !primeiroUso ? h('div', { class: 'numeros', style: `--cols:${numeros.length <= 4 ? numeros.length : numeros.length <= 6 ? 3 : 4}` }, numeros) : null,
     h('div', { class: primeiroUso ? 'grelha' : 'grelha lado' },
       h('section', { class: 'ficha' }, h('header', null, h('h2', null, 'Para hoje')),

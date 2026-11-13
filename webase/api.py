@@ -141,15 +141,19 @@ def conta_criar(h, c, u, m, d):
 def conta_entrar(h, c, u, m, d):
     email = (d.get('email') or '').strip().lower() if isinstance(d.get('email'), str) else ''
     senha = d.get('senha') if isinstance(d.get('senha'), str) else ''
-    precisa(h.limitar('entrar', 12, 900) and B.limite('entrar-email:' + B.sha(email), 8, 900),
-            'Demasiadas tentativas. Espera 15 minutos e tenta outra vez.', 429)
+    # só as tentativas falhadas contam: uma equipa inteira a entrar da mesma rede não fica bloqueada
+    k_ip, k_email = 'entrar:' + h.ip_h, 'entrar-email:' + B.sha(email)
+    precisa(B.limite(k_ip, 30, 900, contar=False) and B.limite(k_email, 8, 900, contar=False),
+            'Demasiadas tentativas erradas. Espera 15 minutos e tenta outra vez.', 429)
     precisa(email and senha and len(senha) <= 128, 'Escreve o e-mail e a palavra-passe.')
     r = c.execute('SELECT * FROM utilizadores WHERE email=?', (email,)).fetchone()
-    if not r:
-        B.gastar_tempo(senha)
-        raise Erro(401, 'E-mail ou palavra-passe errados.')
-    if not B.confere_senha(senha, r['senha']):
-        N.auditar(h, c, r, 'entrar.falhou')
+    if not r or not B.confere_senha(senha, r['senha']):
+        B.limite(k_ip, 30, 900)
+        B.limite(k_email, 8, 900)
+        if r:
+            N.auditar(h, c, r, 'entrar.falhou')
+        else:
+            B.gastar_tempo(senha)
         raise Erro(401, 'E-mail ou palavra-passe errados.')
     conta = c.execute('SELECT apagada FROM contas WHERE id=?', (r['conta'],)).fetchone()
     precisa(r['ativo'] and conta and not conta['apagada'], 'Esta conta está desativada. Fala com quem gere a conta do teu negócio.', 403)
@@ -328,6 +332,9 @@ def conta_plano(h, c, u, m, d):
     """Enquanto os pagamentos não abrem, guarda o interesse no plano (para avisar quando abrirem)."""
     plano = d.get('plano')
     precisa(plano in ('negocio', 'equipa', 'empresa'), 'Plano inválido.')
+    precisa(h.limitar('plano', 20, 3600), 'Já registámos o teu interesse. Obrigado!', 429)
+    if c.execute('SELECT 1 FROM interesse WHERE conta=? AND plano=?', (u['conta'], plano)).fetchone():
+        return 200, {'ok': True, 'ja': True}
     c.execute('INSERT INTO interesse(conta, plano, criado) VALUES(?,?,?)', (u['conta'], plano, B.agora()))
     N.auditar(h, c, u, 'plano.interesse', plano)
     return 200, {'ok': True}
@@ -448,18 +455,19 @@ def membro(c, u, uid):
     precisa(r, 'Pessoa não encontrada.', 404)
     precisa(not r['dono'], 'Quem criou a conta tem sempre acesso total.', 403)
     precisa(r['id'] != u['id'], 'Não podes mudar as tuas próprias permissões.', 403)
+    if not u['dono']:
+        # quem não é dono não mexe em quem tem mais do que ele (mudar, dar palavra-passe nova ou remover):
+        # senão podia dar-se uma palavra-passe nova a um administrador e entrar como ele
+        alvo, meu = P.perm_efetiva(r), P.perm_efetiva(u)
+        maior = any(a not in meu['m'].get(mod, '') for mod, letras in alvo['m'].items() for a in letras) or \
+            any(x not in meu['x'] for x in alvo['x']) or (alvo['ambito'] == 'todos' and meu['ambito'] == 'meus')
+        precisa(not maior, 'Esta pessoa tem permissões que tu não tens. Só quem criou a conta a pode mudar.', 403)
     return r
 
 
 @rota('POST', r'/api/equipa/([0-9]{1,10})', extra='equipa')
 def equipa_mudar(h, c, u, m, d):
     r = membro(c, u, int(m.group(1)))
-    if not u['dono']:
-        # quem não é dono não mexe em quem tem mais do que ele (ex.: outro administrador)
-        alvo, meu = P.perm_efetiva(r), P.perm_efetiva(u)
-        maior = any(a not in meu['m'].get(mod, '') for mod, letras in alvo['m'].items() for a in letras) or \
-            any(x not in meu['x'] for x in alvo['x'])
-        precisa(not maior, 'Esta pessoa tem mais permissões do que tu. Só quem criou a conta a pode mudar.', 403)
     nome = N.campo(d, 'nome', 80, True, 'o nome') if 'nome' in d else r['nome']
     papel, p = perm_pedida(u, d) if 'papel' in d else (r['papel'], P.perm_efetiva(r))
     ativo = r['ativo']
@@ -506,6 +514,7 @@ def auditoria(h, c, u, m, d):
     antes = int(h.q['antes']) if h.q.get('antes', '').isdigit() and len(h.q['antes']) < 13 else 10 ** 12
     nomes = {r['id']: r['nome'] for r in c.execute('SELECT id, nome FROM utilizadores WHERE conta=?', (u['conta'],))}
     l = [{'id': r['id'], 'quem': nomes.get(r['uid'], ''), 'acao': r['acao'], 'alvo': r['alvo'], 'detalhe': r['detalhe'],
+          'alvo_nome': nomes.get(int(r['alvo'])) if r['acao'].startswith('equipa.') and (r['alvo'] or '').isdigit() else None,
           'quando': r['criado']}
          for r in c.execute('SELECT * FROM auditoria WHERE conta=? AND id<? ORDER BY id DESC LIMIT 100', (u['conta'], antes))]
     return 200, {'registos': l}

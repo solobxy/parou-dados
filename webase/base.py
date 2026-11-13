@@ -260,15 +260,16 @@ _bloq = threading.Lock()
 _contagens = {}
 
 
-def limite(chave, n, janela):
-    """True se ainda cabe (e conta este pedido); False se passou o limite."""
+def limite(chave, n, janela, contar=True):
+    """True se ainda cabe (e conta este pedido, a não ser com contar=False); False se passou o limite."""
     t = time.time()
     with _bloq:
         l = [x for x in _contagens.get(chave, ()) if t - x < janela]
         if len(l) >= n:
             _contagens[chave] = l
             return False
-        l.append(t)
+        if contar:
+            l.append(t)
         _contagens[chave] = l
         if len(_contagens) > 100000:
             _contagens.clear()

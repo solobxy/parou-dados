@@ -1,6 +1,6 @@
 // webase — chamadas recebidas e feitas, com cronómetro, resultado, notas e quem ligar a seguir.
 import { estado, h, icone, get, post, num, relativo, dataHora, ligacao, campo, formFolha, aviso, falhou, confirmar, pode, podeX,
-  vazio, debounce, descarregar, escolherCliente, agoraLocal, tsParaLocal, minutos, navegar } from './nucleo.js';
+  vazio, debounce, descarregar, escolherCliente, agoraLocal, tsParaLocal, minutos, navegar, telefone } from './nucleo.js';
 import { botaoLigar } from './ligar.js';
 
 const RES = { atendida: 'Atendida', nao_atendida: 'Não atendida', ocupado: 'Ocupado', voicemail: 'Caixa de correio', venda: 'Venda',
@@ -90,7 +90,7 @@ export async function mostrar(raiz) {
         h('span', { class: 'icone-linha' + (seg ? ' acento' : '') }, icone(seg ? 'relogio' : x.direcao === 'entrada' ? 'entra' : 'sai_')),
         h('button', { class: 'principal-l', type: 'button', style: 'border:0;background:none;text-align:left;padding:0;min-width:0;min-height:44px', onclick: abrir },
           h('span', { style: 'display:flex;gap:8px;align-items:baseline;justify-content:space-between' },
-            h('span', { class: 't' }, x.nome || x.numero || 'Sem nome'),
+            h('span', { class: 't' }, x.nome || telefone(x.numero) || 'Sem nome'),
             h('span', { class: 'quando-d' }, seg ? relativo(x.seguimento) : relativo(x.quando))),
           h('span', { class: 's duas-l' }, seg ? (x.notas || 'Voltar a ligar') :
             [h('span', { class: MAUS.includes(x.resultado) ? 'res-mau' : '' }, RES[x.resultado]), x.duracao ? ' · ' + minutos(x.duracao) : '', x.quem ? ' · ' + x.quem : '', x.notas ? ' · ' + x.notas : ''])),

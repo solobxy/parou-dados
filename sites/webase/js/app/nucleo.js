@@ -178,6 +178,11 @@ export function iniciais(nome) {
   return ((p[0]?.[0] || '?') + (p.length > 1 ? p[p.length - 1][0] : '')).toUpperCase();
 }
 export function avatar(nome, empresa = false) { return h('span', { class: 'avatar' + (empresa ? ' empresa' : ''), 'aria-hidden': 'true' }, iniciais(nome)); }
+export function telefone(n) {
+  const s = String(n || '').replace(/\s/g, '');
+  if (/^\d{9}$/.test(s)) return s.replace(/(\d{3})(\d{3})(\d{3})/, '$1 $2 $3');
+  return s;
+}
 export const plural = (n, um, varios) => `${num(n)} ${n === 1 ? um : varios}`;
 export function minutos(s) { s = s || 0; return s >= 60 ? `${Math.floor(s / 60)} min ${String(s % 60).padStart(2, '0')} s` : `${s} s`; }
 

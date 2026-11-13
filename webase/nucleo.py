@@ -86,7 +86,8 @@ def telefone_ok(v):
         return ''
     so = re.sub(r'[\s().-]', '', v)
     precisa(re.fullmatch(r'\+?[0-9]{6,15}', so), 'O telefone só pode ter números (e o + do indicativo).', campo='telefone')
-    return so
+    pt = re.fullmatch(r'(?:\+|00)351([0-9]{9})', so)      # +351 912 345 678 e 912 345 678 são o mesmo número
+    return pt.group(1) if pt else so
 
 
 def nif_ok(v):
@@ -107,9 +108,11 @@ def euros_para_centimos(v, campo_nome='valor', maximo=10_000_000):
     if v in (None, ''):
         return 0
     if isinstance(v, str):
-        v = v.replace('€', '').replace(' ', '').replace(' ', '')
+        v = v.replace('€', '').replace(' ', '').replace(' ', '').replace(' ', '')
         if ',' in v:
             v = v.replace('.', '').replace(',', '.')
+        elif re.fullmatch(r'[0-9]{1,3}(\.[0-9]{3})+', v):      # «1.250» em Portugal é mil duzentos e cinquenta
+            v = v.replace('.', '')
         try:
             v = float(v)
         except ValueError:

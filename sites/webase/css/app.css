@@ -353,3 +353,20 @@ dialog.folha[open] { display: flex; flex-direction: column; animation: folha-ent
 .passos-ligar { margin: 0; padding-left: 20px; display: grid; gap: 6px; color: var(--tinta2); max-width: 62ch; }
 .passos-ligar strong { color: var(--tinta); font-weight: 600; }
 .mono-curto { font-weight: 600; color: var(--tinta); overflow-wrap: anywhere; }
+
+/* ---------------------------------------------------------------- linhas com ações (pacotes, subscrições) */
+.linha.com-acoes { flex-wrap: wrap; row-gap: 8px; }
+.acoes-l { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; margin-left: auto; }
+.acoes-l:empty { display: none; }
+@media (max-width: 699px) {
+  .linha.com-acoes .principal-l { flex: 1 1 0; }
+  .linha.com-acoes .acoes-l { flex: 1 0 100%; justify-content: flex-start; }
+  .linha.com-acoes:has(.icone-linha) .acoes-l { padding-left: 52px; }
+  .linha.com-acoes .acoes-l .bt-pq { min-height: 40px; }
+}
+.ligacao-toque { display: inline-flex; align-items: center; min-height: 32px; }
+.nav-def { flex-wrap: wrap; }
+@media (max-width: 699px) {
+  .nav-def { flex-wrap: nowrap; margin-inline: -16px; padding-inline: 16px; scroll-padding-inline: 16px;
+    mask-image: linear-gradient(90deg, #000 85%, transparent); -webkit-mask-image: linear-gradient(90deg, #000 85%, transparent); }
+}

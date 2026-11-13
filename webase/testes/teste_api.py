@@ -269,8 +269,21 @@ def correr():
     e, r = adm.post('/api/equipa/criar', {'nome': 'Sub', 'email': 'sub@barbearia.test', 'papel': 'personalizado',
                                           'perm': {'m': {'clientes': 'vcea'}, 'ambito': 'todos', 'x': ['equipa', 'exportar']}})
     ok(e == 201, 'administrador cria pessoas')
+    sub_temp = r['senha_temporaria']
     e, r = adm.post('/api/equipa/1', {'ativo': False})
     ok(e == 403, 'ninguém mexe na dona da conta')
+    sub = Sessao()
+    sub.post('/api/conta/entrar', {'email': 'sub@barbearia.test', 'senha': sub_temp})
+    sub.post('/api/eu/senha', {'atual': sub_temp, 'nova': 'porta-verde-sul-88'})
+    adm_id = [x for x in a.get('/api/equipa')[1]['equipa'] if x['email'] == 'adm2@barbearia.test'][0]['id']
+    e, r = sub.post('/api/equipa/%d/senha' % adm_id)
+    ok(e == 403, 'quem gere a equipa não dá palavra-passe nova a quem tem mais permissões')
+    e, r = sub.post('/api/equipa/%d/apagar' % adm_id)
+    ok(e == 403, 'nem remove quem tem mais permissões')
+    e, r = sub.post('/api/equipa/%d' % paulo_id, {'ativo': False})
+    ok(e == 403, 'nem desativa quem tem módulos que não tem')
+    e, r = p.post('/api/clientes', {'nome': 'Outro João', 'telefone': '912 345 678'})
+    ok(e == 409 and 'João' not in r.get('erro', '') and 'duplicado' not in r, 'repetido de outra pessoa: avisa sem mostrar a ficha')
 
     print('— importar e exportar')
     csvtxt = 'Nome;Telemóvel;E-mail;Cidade;Tags\nMaria Lopes;913 000 001;maria@x.pt;Porto;importados\n' \
@@ -308,7 +321,9 @@ def correr():
 
     print('— chamadas')
     e, r = a.post('/api/chamadas', {'direcao': 'entrada', 'resultado': 'atendida', 'numero': '+351 912 345 678', 'duracao': 125})
-    ok(e == 201 and r['chamada']['cliente'] is None, 'chamada com indicativo não confunde')
+    ok(e == 201 and r['chamada']['cliente'] == joao and r['chamada']['numero'] == '912345678', 'número com +351 é o mesmo do cliente')
+    e, r = a.post('/api/chamadas', {'direcao': 'entrada', 'resultado': 'atendida', 'numero': '+34 612 345 678'})
+    ok(e == 201 and r['chamada']['cliente'] is None and r['chamada']['numero'] == '+34612345678', 'números estrangeiros ficam com indicativo')
     e, r = a.post('/api/chamadas', {'direcao': 'saida', 'resultado': 'ligar_depois', 'numero': '912345678',
                                     'seguimento': time.strftime('%Y-%m-%dT%H:%M')})
     ok(e == 201 and r['chamada']['cliente'] == joao and r['chamada']['nome'] == 'João Gonçalves', 'chamada liga-se ao cliente pelo número')
@@ -410,6 +425,12 @@ def correr():
     e, r = a.post('/api/contratos', {'cliente': joao, 'titulo': 'Avença mensal', 'valor': 30, 'periodicidade': 'mensal',
                                      'inicio': '2026-01-01', 'renovacao': True})
     ok(e == 201, 'criar contrato')
+    e, r = a.post('/api/contratos', {'cliente': joao, 'titulo': 'Obra', 'valor': '1.250', 'periodicidade': 'unico', 'inicio': '2026-01-01'})
+    ok(e == 201 and r['contrato']['valor'] == 125000, '«1.250» é mil duzentos e cinquenta euros')
+    e, r = a.post('/api/contratos', {'cliente': joao, 'titulo': 'Obra 2', 'valor': '1.250,50', 'periodicidade': 'unico', 'inicio': '2026-01-01'})
+    ok(e == 201 and r['contrato']['valor'] == 125050, '«1.250,50» com cêntimos')
+    for kk in (r['contrato']['id'],):
+        a.post('/api/contratos/%s/apagar' % kk)
     e, r = a.get('/api/contratos')
     ok(e == 200 and r['resumo']['mensal'] == 3000, 'receita mensal dos contratos')
 
@@ -521,6 +542,15 @@ def correr():
     ok(e == 401, 'depois de apagar não há sessão')
     e, r = Sessao().post('/api/conta/entrar', {'email': 'zé@cafe.test', 'senha': 'cavalo-azul-correto-77'})
     ok(e == 401, 'conta apagada não entra')
+
+    print('— limites de entrada')
+    for _ in range(10):
+        e, r = Sessao().post('/api/conta/entrar', {'email': 'rui@telecom.test', 'senha': 'cavalo-azul-correto-77'})
+    ok(e == 200, 'entradas certas seguidas não bloqueiam (equipa na mesma rede)')
+    for _ in range(8):
+        Sessao().post('/api/conta/entrar', {'email': 'rui@telecom.test', 'senha': 'errada-errada-1'})
+    e, r = Sessao().post('/api/conta/entrar', {'email': 'rui@telecom.test', 'senha': 'cavalo-azul-correto-77'})
+    ok(e == 429, 'depois de 8 tentativas erradas, a conta fica 15 minutos fechada')
 
 
 if __name__ == '__main__':

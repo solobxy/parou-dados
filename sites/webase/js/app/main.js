@@ -127,7 +127,8 @@ function ecraEntrar() {
     campo({ nome: 'senha', rotulo: 'Palavra-passe', tipo: 'password', autocomplete: 'current-password', obrig: true }),
     h('button', { class: 'bt bt-p', type: 'submit' }, 'Entrar'),
     h('p', { class: 'ajuda' }, 'Ainda não tens conta? ', ligacao('/app/registar', { class: 'ligacao' }, 'Criar conta grátis')),
-    h('p', { class: 'ajuda', style: 'color:var(--tinta2);font-size:13.5px' }, 'Esqueceste-te da palavra-passe? Se a conta é de uma equipa, pede a quem a gere para te dar uma nova. Se és o dono, escreve-nos a partir do e-mail da conta.'));
+    h('p', { class: 'ajuda', style: 'color:var(--tinta2);font-size:13.5px' }, 'Esqueceste-te da palavra-passe? Se a conta é de uma equipa, pede a quem a gere para te dar uma nova. Se criaste a conta, ',
+      h('a', { class: 'ligacao', href: 'mailto:diniscash@gmail.com?subject=' + encodeURIComponent('webase: recuperar a palavra-passe') }, 'escreve-nos'), ' a partir do e-mail da conta.'));
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
     limparErros(form);
@@ -153,7 +154,8 @@ function ecraRegistar() {
     h('div', null, h('h1', null, 'Criar conta grátis'), h('p', { class: 'ajuda', style: 'color:var(--tinta2);margin-top:6px' }, 'Sem cartão. Exportas os teus dados quando quiseres.')),
     campo({ nome: 'nome', rotulo: 'O teu nome', autocomplete: 'name', obrig: true }),
     campo({ nome: 'negocio', rotulo: 'Nome do negócio', autocomplete: 'organization', obrig: true }),
-    campo({ nome: 'setor', rotulo: 'Tipo de negócio', tipo: 'select', valor: params.get('setor') || 'barbearia', opcoes: setores.map((s) => [s.id, s.nome]) }),
+    // o tipo de negócio escolhe-se logo a seguir, no primeiro passo (aqui só passa o que vem da página de soluções)
+    setores.some((s) => s.id === params.get('setor')) ? h('input', { type: 'hidden', name: 'setor', value: params.get('setor') }) : null,
     campo({ nome: 'email', rotulo: 'E-mail', tipo: 'email', autocomplete: 'email', obrig: true, inputmode: 'email' }),
     campo({ nome: 'senha', rotulo: 'Palavra-passe', tipo: 'password', autocomplete: 'new-password', obrig: true, ajuda: 'Pelo menos 10 caracteres. Uma frase curta é mais segura e mais fácil de lembrar.' }),
     h('div', { class: 'so-leitor', 'aria-hidden': 'true' }, h('label', null, 'Site', h('input', { name: 'site', tabindex: '-1', autocomplete: 'off' }))),

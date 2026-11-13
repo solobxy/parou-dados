@@ -1,7 +1,7 @@
 // webase — clientes: lista, pesquisa, importar/exportar, ficha com cronologia e ações rápidas.
 import { estado, h, icone, get, post, euros, num, relativo, data, dataIso, ligacao, navegar, campo, opcao, formFolha, folha,
   aviso, falhou, confirmar, pode, podeX, ligado, avatar, vazio, carregando, debounce, descarregar, estadoTxt, aGuardar, iniciais,
-  dataHora, minutos } from './nucleo.js';
+  dataHora, minutos, telefone } from './nucleo.js';
 import { botaoLigar, formatarNumero } from './ligar.js';
 
 const TIPOS_ATIV = { nota: 'nota', chamada: 'chamadas', contrato: 'contratos', pontos: 'pontos', adesao: 'adesoes', uso: 'adesoes',
@@ -138,7 +138,7 @@ function importar(aoAcabar) {
       etq,
       previa.exemplo?.length ? h('div', null, h('p', { class: 'rotulo' }, 'Primeiros contactos'),
         h('div', { class: 'lista' }, previa.exemplo.filter(Boolean).map((c) => h('div', { class: 'linha', style: 'min-height:44px' },
-          h('span', { class: 'principal-l' }, h('span', { class: 't' }, c.nome), h('span', { class: 's' }, [c.telefone, c.email, c.localidade].filter(Boolean).join(' · '))))))) : null);
+          h('span', { class: 'principal-l' }, h('span', { class: 't' }, c.nome), h('span', { class: 's' }, [telefone(c.telefone), c.email, c.localidade].filter(Boolean).join(' · '))))))) : null);
     bOk.disabled = false;
   };
   inpF.addEventListener('change', async () => {
@@ -194,7 +194,7 @@ async function lista(raiz) {
       h('tbody', null, r.itens.map((c) => h('tr', { onclick: (e) => { if (e.target.closest('a')) return; navegar('/app/clientes/' + c.id); } },
         h('td', null, h('div', { style: 'display:flex;align-items:center;gap:10px' }, avatar(c.nome, c.tipo === 'empresa'),
           h('div', null, ligacao('/app/clientes/' + c.id, { class: 't' }, c.nome), c.empresa && c.tipo !== 'empresa' ? h('div', { class: 'ajuda', style: 'font-size:13px;color:var(--tinta2)' }, c.empresa) : null))),
-        h('td', null, h('div', null, c.telefone || ''), h('div', { style: 'font-size:13px;color:var(--tinta2)' }, c.email || '')),
+        h('td', null, h('div', null, telefone(c.telefone)), h('div', { style: 'font-size:13px;color:var(--tinta2)' }, c.email || '')),
         h('td', null, c.etiquetas.slice(0, 3).map((e) => h('span', { class: 'etiqueta' }, e))),
         usaPontos ? h('td', { class: 'num' }, num(c.pontos)) : null,
         h('td', { class: 'num' }, euros(c.gasto)),
@@ -202,7 +202,7 @@ async function lista(raiz) {
         h('td', { style: 'color:var(--tinta2);white-space:nowrap' }, relativo(c.atualizado))))));
     const cartoes = h('div', { class: 'lista so-tel' }, r.itens.map((c) => ligacao('/app/clientes/' + c.id, { class: 'linha' },
       avatar(c.nome, c.tipo === 'empresa'),
-      h('span', { class: 'principal-l' }, h('span', { class: 't' }, c.nome), h('span', { class: 's' }, [c.telefone, c.email, c.localidade].filter(Boolean).join(' · ') || '—')),
+      h('span', { class: 'principal-l' }, h('span', { class: 't' }, c.nome), h('span', { class: 's' }, [telefone(c.telefone), c.email, c.localidade].filter(Boolean).join(' · ') || '—')),
       usaPontos && c.pontos ? h('span', { class: 'lado-d' }, h('strong', null, num(c.pontos)), 'pontos') : null)));
     const paginas = Math.ceil(r.total / r.por_pagina);
     const pag = paginas > 1 ? h('div', { class: 'paginacao' },
@@ -298,10 +298,21 @@ async function ficha(raiz, id) {
     h('div', { class: 'saldo' }, h('span', { class: 'n' }, num(c.pontos)), h('span', { style: 'color:var(--tinta2)' }, 'pontos', h('br'), `Gastou ${euros(c.gasto)} no total`)),
     c.ultima_visita ? h('p', { style: 'color:var(--tinta2);font-size:13.5px;margin-top:8px' }, 'Última visita ' + relativo(c.ultima_visita)) : null));
   if (r.adesoes && r.adesoes.length) blocos.push(h('section', { class: 'ficha' }, h('header', null, h('h2', null, 'Subscrições e pacotes'), ligacao('/app/subscricoes', { class: 'ligacao' }, 'Ver todas')),
-    h('div', { class: 'lista' }, r.adesoes.map((a) => h('div', { class: 'linha' },
-      h('span', { class: 'principal-l' }, h('span', { class: 't' }, a.produto_nome),
-        h('span', { class: 's' }, a.tipo === 'pacote' ? `Faltam ${a.usos} de ${a.usos_total}` : `Próximo pagamento ${data(a.proxima)}`)),
-      estadoAdesao(a))))));
+    h('div', { class: 'lista' }, r.adesoes.map((a) => {
+      // ao balcão, o uso do pacote marca-se aqui mesmo, sem sair da ficha
+      const acao = (caminho, msg) => async (ev) => {
+        try { await aGuardar(ev.currentTarget, () => post(caminho, {}), '…'); aviso(msg, { carimbo: true, icone: 'certo' }); recarregar(); } catch (e) { falhou(e); }
+      };
+      const ativa = ['ativa', 'em_atraso'].includes(a.estado);
+      const fim = ['em_atraso', 'esgotado', 'expirada'].includes(a.estado);
+      return h('div', { class: 'linha com-acoes' },
+        h('span', { class: 'principal-l' }, h('span', { class: 't' }, a.produto_nome),
+          h('span', { class: 's' }, a.tipo === 'pacote' ? `Faltam ${a.usos} de ${a.usos_total}` : `Próximo pagamento ${data(a.proxima)}`)),
+        estadoAdesao(a),
+        h('span', { class: 'acoes-l' },
+          pode('adesoes', 'c') && ativa ? h('button', { class: 'bt bt-pq', type: 'button', onclick: acao('/api/adesoes/' + a.id + '/usar', a.tipo === 'pacote' ? 'Uso registado.' : 'Visita registada.') }, a.tipo === 'pacote' ? 'Usar' : 'Visita') : null,
+          pode('adesoes', 'e') && fim ? h('button', { class: 'bt bt-pq bt-p', type: 'button', onclick: acao('/api/adesoes/' + a.id + '/pagamento', a.tipo === 'pacote' ? 'Pacote renovado.' : 'Pagamento registado.') }, a.tipo === 'pacote' ? 'Renovar' : 'Pago') : null));
+    }))));
   if (r.leads && r.leads.length) blocos.push(h('section', { class: 'ficha' }, h('header', null, h('h2', null, 'Oportunidades'), ligacao('/app/leads', { class: 'ligacao' }, 'Ver leads')),
     h('div', { class: 'lista' }, r.leads.map((l) => h('div', { class: 'linha' }, h('span', { class: 'principal-l' }, h('span', { class: 't' }, l.titulo),
       h('span', { class: 's' }, nomeFase(l.fase))), h('strong', null, euros(l.valor)))))));

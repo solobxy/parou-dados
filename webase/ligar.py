@@ -342,8 +342,10 @@ def pedido_resultado(h, c, u, m, d):
     precisa(not r['teste'], 'Isto era só um teste.')
     precisa(r['estado'] in ('pendente', 'aberto'), 'Esta chamada já foi registada.' if r['estado'] == 'feito' else 'Este pedido já não está ativo.', 409)
     precisa(r['criado'] >= B.agora() - 6 * 3600, 'Este pedido é antigo. Regista a chamada em Chamadas.', 409)
-    dados = {'direcao': 'saida', 'resultado': d.get('resultado'), 'numero': r['numero'], 'cliente': r['cliente'],
-             'nome': '' if r['cliente'] else r['nome'], 'duracao': d.get('duracao') or 0, 'notas': d.get('notas') or '',
+    cliente = r['cliente'] if r['cliente'] and c.execute('SELECT 1 FROM clientes WHERE id=? AND conta=?' + N.filtro_ambito(u),
+                                                        (r['cliente'], u['conta'])).fetchone() else None
+    dados = {'direcao': 'saida', 'resultado': d.get('resultado'), 'numero': r['numero'], 'cliente': cliente,
+             'nome': '' if cliente else r['nome'], 'duracao': d.get('duracao') or 0, 'notas': d.get('notas') or '',
              'seguimento': d.get('seguimento')}
     f = crm.validar_chamada(c, u, dados)
     f.setdefault('quando', r['aberto'] or B.agora())

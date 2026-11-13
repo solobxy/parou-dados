@@ -176,7 +176,7 @@ function plano() {
   const k = estado.eu.conta;
   const planos = [
     ['gratis', 'Grátis', '0 €', ['1 pessoa', 'Até 300 clientes', 'Fichas, pontos e leads', 'Importar e exportar']],
-    ['negocio', 'Negócio', '19 € por mês', ['Até 5 pessoas', 'Clientes sem limite', 'Todos os módulos', 'Importar e exportar']],
+    ['negocio', 'Negócio', '19 € por mês', ['Até 5 pessoas', 'Clientes sem limite', 'Pacotes, chamadas e contratos', 'Papéis prontos para a equipa']],
     ['equipa', 'Equipa', '49 € por mês', ['Até 25 pessoas', 'Permissões por pessoa', 'Vender no marketplace', 'Registo de atividade']],
   ];
   return [h('section', { class: 'ficha grelha', style: 'gap:16px' }, h('header', null, h('h2', null, 'O teu plano')),
@@ -256,9 +256,10 @@ export async function mostrar(raiz, caminho) {
   const disp = SECOES.filter(([, , x]) => !x || podeX(x));
   let atual = (caminho.split('/')[3] || '');
   if (!disp.find(([id]) => id === atual)) atual = disp[0][0];
-  const nav = h('nav', { class: 'separadores', 'aria-label': 'Secções das definições', style: 'flex-wrap:wrap' }, disp.map(([id, nome]) =>
+  const nav = h('nav', { class: 'separadores nav-def', 'aria-label': 'Secções das definições' }, disp.map(([id, nome]) =>
     ligacao('/app/definicoes/' + id, { 'aria-current': id === atual ? 'page' : null }, nome)));
   raiz.replaceChildren(h('header', { class: 'cabeca' }, h('div', null, h('h1', null, 'Definições'), h('p', { class: 'sub' }, estado.eu.conta.nome))),
     nav, h('div', { id: 'def-zona', class: 'grelha' }));
+  nav.querySelector('[aria-current="page"]')?.scrollIntoView({ block: 'nearest', inline: 'center' });
   await mostrarSecao(atual);
 }

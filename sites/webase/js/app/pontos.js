@@ -95,7 +95,7 @@ export async function mostrar(raiz) {
             : vazio({ titulo: 'Ainda sem pontos', icone: 'pontos', texto: 'Cada compra dá pontos ao cliente. Quando junta pontos suficientes, troca por um prémio. Sem cartões de papel a perder-se.',
               acao: pode('pontos', 'c') ? h('button', { class: 'bt bt-p', type: 'button', onclick: () => darPontos({ depois: carregar }) }, 'Dar os primeiros pontos') : null })),
         h('div', { class: 'grelha' },
-          h('section', { class: 'ficha' }, h('header', null, h('h2', null, 'Prémios'), podeEditar ? h('button', { class: 'ligacao', type: 'button', onclick: () => recompensa(null, carregar) }, 'Novo prémio') : null),
+          h('section', { class: 'ficha' }, h('header', null, h('h2', null, 'Prémios'), podeEditar ? h('button', { class: 'bt bt-pq', type: 'button', onclick: () => recompensa(null, carregar) }, icone('mais'), 'Novo prémio') : null),
             r.recompensas.length ? h('div', { class: 'lista' }, r.recompensas.map((x) => h('button', { class: 'linha', type: 'button', disabled: !podeEditar, onclick: () => recompensa(x, carregar) },
               carimbo('presente', false), h('span', { class: 'principal-l' }, h('span', { class: 't' }, x.nome), h('span', { class: 's' }, x.ativa ? 'Ativo' : 'Escondido')),
               h('strong', null, num(x.custo), ' pts'))))

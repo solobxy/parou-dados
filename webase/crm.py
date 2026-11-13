@@ -133,11 +133,20 @@ def validar_cliente(c, u, conta, d, atual=None):
 def duplicado(c, u, f, excluir=None):
     for col in ('email', 'telefone'):
         if f.get(col):
-            r = c.execute('SELECT id, nome FROM clientes WHERE conta=? AND %s=? AND id<>?' % col,
+            r = c.execute('SELECT id, nome, responsavel FROM clientes WHERE conta=? AND %s=? AND id<>?' % col,
                           (u['conta'], f[col], excluir or '')).fetchone()
             if r:
                 return r, col
     return None, None
+
+
+def erro_duplicado(u, dup, col, outro=False):
+    qual = 'e-mail' if col == 'email' else 'telefone'
+    if P.so_meus(u) and dup['responsavel'] != u['id']:
+        # a ficha é de outra pessoa da equipa: avisa sem mostrar quem é
+        return Erro(409, 'Este %s já está numa ficha de outra pessoa da equipa. Fala com quem gere a conta.' % qual, campo=col)
+    return Erro(409, 'Já tens %scliente com este %s: %s.' % ('outro ' if outro else 'um ', qual, dup['nome']),
+                duplicado={'id': dup['id'], 'nome': dup['nome']}, campo=col)
 
 
 def inserir_cliente(c, u, conta, f, origem_atividade='Ficha criada'):
@@ -203,8 +212,7 @@ def cliente_criar(h, c, u, m, d):
     if not d.get('forcar'):
         dup, col = duplicado(c, u, f)
         if dup:
-            raise Erro(409, 'Já tens um cliente com este %s: %s.' % ('e-mail' if col == 'email' else 'telefone', dup['nome']),
-                       duplicado={'id': dup['id'], 'nome': dup['nome']}, campo=col)
+            raise erro_duplicado(u, dup, col)
     cid = inserir_cliente(c, u, conta, f)
     r = c.execute('SELECT * FROM clientes WHERE id=?', (cid,)).fetchone()
     return 201, {'cliente': cli_json(c, r, nomes_equipa(c, u), True)}
@@ -217,7 +225,7 @@ def cliente_ver(h, c, u, m, d):
     nomes = nomes_equipa(c, u)
     out = {'cliente': cli_json(c, r, nomes, True)}
     out['atividade'] = [{'tipo': a['tipo'], 'texto': a['texto'], 'quem': nomes.get(a['uid'], ''), 'quando': a['criado']}
-                        for a in c.execute('SELECT * FROM atividade WHERE cliente=? AND conta=? ORDER BY id DESC LIMIT 100',
+                        for a in c.execute('SELECT * FROM atividade WHERE cliente=? AND conta=? ORDER BY criado DESC, id DESC LIMIT 100',
                                            (r['id'], u['conta']))]
     if P.pode(u, conta, 'chamadas'):
         out['chamadas'] = [cham_json(x, nomes) for x in c.execute(
@@ -250,8 +258,7 @@ def cliente_mudar(h, c, u, m, d):
     if mudou_contacto and not d.get('forcar'):
         dup, col = duplicado(c, u, {k: f[k] for k in ('email', 'telefone') if f[k] != r[k]}, excluir=r['id'])
         if dup:
-            raise Erro(409, 'Já tens outro cliente com este %s: %s.' % ('e-mail' if col == 'email' else 'telefone', dup['nome']),
-                       duplicado={'id': dup['id'], 'nome': dup['nome']}, campo=col)
+            raise erro_duplicado(u, dup, col, outro=True)
     f['atualizado'] = B.agora()
     sets = ','.join('%s=?' % k for k in f)
     c.execute('UPDATE clientes SET %s WHERE id=? AND conta=?' % sets, list(f.values()) + [r['id'], u['conta']])
@@ -996,6 +1003,7 @@ def pontos(h, c, u, m, d):
 @rota('POST', '/api/pontos/movimento', modulo='pontos', acao='c')
 def pontos_movimento(h, c, u, m, d):
     conta = N.conta_de(c, u)
+    precisa(d.get('cliente'), 'Escolhe o cliente.', campo='cliente')
     cli = N.cliente_acessivel(c, u, d.get('cliente'))
     tipo = d.get('tipo')
     precisa(tipo in ('compra', 'resgate', 'ajuste'), 'Escolhe o que queres fazer.')
@@ -1100,9 +1108,6 @@ def adesoes(h, c, u, m, d):
         args += [N.like(N.normalizar(q)), N.like(q)]
     rows = c.execute(SQL_ADESAO + 'WHERE ' + where + ' ORDER BY a.estado<>\'ativa\', a.criado DESC LIMIT 1000', args).fetchall()
     itens = [adesao_json(c, r) for r in rows]
-    filtro = h.q.get('estado')
-    if filtro:
-        itens = [x for x in itens if x['estado'] == filtro]
     agora = B.agora()
     resumo = {'ativas': sum(1 for x in itens if x['estado'] == 'ativa'),
               'em_atraso': sum(1 for x in itens if x['estado'] == 'em_atraso'),
@@ -1110,6 +1115,9 @@ def adesoes(h, c, u, m, d):
                                and x['proxima'] < agora + 7 * DIA),
               'mensal': int(sum(x['preco'] / PERIODOS.get(x['periodo'], 1) for x in itens
                                 if x['tipo'] == 'subscricao' and x['estado'] in ('ativa', 'em_atraso')))}
+    filtro = h.q.get('estado')
+    if filtro:
+        itens = [x for x in itens if x['estado'] == filtro]
     prods = [produto_json(r) for r in c.execute('SELECT * FROM produtos WHERE conta=? ORDER BY ativo DESC, nome', (u['conta'],))]
     return 200, {'produtos': prods, 'itens': itens, 'resumo': resumo}
 
@@ -1156,6 +1164,7 @@ def produto_mudar(h, c, u, m, d):
 
 @rota('POST', '/api/adesoes', modulo='adesoes', acao='c')
 def adesao_criar(h, c, u, m, d):
+    precisa(d.get('cliente'), 'Escolhe o cliente.', campo='cliente')
     cli = N.cliente_acessivel(c, u, d.get('cliente'))
     p = c.execute('SELECT * FROM produtos WHERE id=? AND conta=? AND ativo=1', (d.get('produto'), u['conta'])).fetchone()
     precisa(p, 'Escolhe o plano ou o pacote.', campo='produto')
@@ -1198,9 +1207,10 @@ def adesao_usar(h, c, u, m, d):
         c.execute('UPDATE adesoes SET usos=usos-1 WHERE id=? AND usos>0', (r['id'],))
     c.execute("INSERT INTO adesao_usos(adesao, tipo, nota, uid, criado) VALUES(?, 'uso', ?, ?, ?)", (r['id'], nota, u['id'], B.agora()))
     c.execute('UPDATE clientes SET ultima_visita=?, atualizado=? WHERE id=?', (B.agora(), B.agora(), r['cliente']))
-    texto = 'Usou %s' % r['pnome']
     if a['tipo'] == 'pacote':
-        texto += ' (faltam %d de %d)' % (a['usos'] - 1, r['pusos'])
+        texto = 'Usou o pacote «%s» (faltam %d de %d)' % (r['pnome'], a['usos'] - 1, r['pusos'])
+    else:
+        texto = 'Visita com o plano «%s»' % r['pnome']
     N.atividade(c, u, r['cliente'], 'uso', texto + (' — ' + nota if nota else ''))
     return 200, {'adesao': adesao_json(c, adesao_acessivel(c, u, r['id']))}
 
@@ -1259,8 +1269,10 @@ def painel(h, c, u, m, d):
                                   (u['conta'], hoje - (i + 1) * 7 * DIA + DIA, hoje - i * 7 * DIA + DIA)).fetchone()[0]
                         for i in range(11, -1, -1)]}
         md = dt.strftime('%m-%d')
-        for r in c.execute("SELECT id, nome, nascimento FROM clientes WHERE conta=? AND nascimento<>'' AND substr(nascimento,6,5)=?" + amb +
-                           ' LIMIT 20', (u['conta'], md)):
+        bissexto = dt.year % 4 == 0 and (dt.year % 100 != 0 or dt.year % 400 == 0)
+        md2 = '02-29' if md == '02-28' and not bissexto else md
+        for r in c.execute("SELECT id, nome, nascimento FROM clientes WHERE conta=? AND nascimento<>'' AND substr(nascimento,6,5) IN (?,?)" + amb +
+                           ' LIMIT 20', (u['conta'], md, md2)):
             out['hoje'].append({'tipo': 'aniversario', 'texto': 'Faz anos hoje: %s' % r['nome'], 'cliente': r['id']})
         out['recentes'] = [{'tipo': a['tipo'], 'texto': a['texto'], 'cliente': a['cliente'], 'cliente_nome': a['cnome'],
                             'quem': nomes.get(a['uid'], ''), 'quando': a['criado']}
@@ -1316,8 +1328,9 @@ def painel(h, c, u, m, d):
                                                                                    'em atraso' if x['estado'] == 'em_atraso' else 'renova hoje'),
                                     'quando': x['proxima'], 'atrasado': x['estado'] == 'em_atraso', 'cliente': x['cliente']})
     if P.pode(u, conta, 'pontos'):
-        st = c.execute('SELECT SUM(CASE WHEN delta>0 THEN delta ELSE 0 END), SUM(CASE WHEN delta<0 THEN -delta ELSE 0 END) FROM pontos '
-                       'WHERE conta=? AND criado>?', (u['conta'], agora - 30 * DIA)).fetchone()
+        st = c.execute('SELECT SUM(CASE WHEN p.delta>0 THEN p.delta ELSE 0 END), SUM(CASE WHEN p.delta<0 THEN -p.delta ELSE 0 END) '
+                       'FROM pontos p JOIN clientes cl ON cl.id=p.cliente WHERE p.conta=? AND p.criado>?' + N.filtro_ambito(u, alias='cl.'),
+                       (u['conta'], agora - 30 * DIA)).fetchone()
         out['pontos'] = {'dados': st[0] or 0, 'trocados': st[1] or 0}
     out['hoje'] = out['hoje'][:30]
     return 200, out

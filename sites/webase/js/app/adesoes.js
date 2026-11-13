@@ -63,13 +63,13 @@ export async function mostrar(raiz) {
       h('button', { type: 'button', role: 'tab', 'aria-selected': String(filtros.estado === v), onclick: () => { filtros.estado = v; carregar().catch(falhou); } }, t)));
     const inpQ = h('input', { class: 'entrada', type: 'search', placeholder: 'Procurar cliente ou plano', 'aria-label': 'Procurar', value: filtros.q });
     inpQ.addEventListener('input', debounce(() => { filtros.q = inpQ.value.trim(); carregar().then(() => { const n = raiz.querySelector('input[type=search]'); n?.focus(); n?.setSelectionRange(n.value.length, n.value.length); }).catch(falhou); }));
-    const itens = r.itens.map((a) => h('div', { class: 'linha' },
+    const itens = r.itens.map((a) => h('div', { class: 'linha com-acoes' },
       h('span', { class: 'icone-linha' }, icone(a.tipo === 'pacote' ? 'pacote' : 'adesoes')),
       h('span', { class: 'principal-l' }, ligacao('/app/clientes/' + a.cliente, { class: 't', style: 'display:block;text-decoration:none' }, a.cliente_nome),
         h('span', { class: 's', style: 'display:block' }, a.produto_nome, ' · ',
           a.tipo === 'pacote' ? `faltam ${a.usos} de ${a.usos_total}` : (a.estado === 'em_atraso' ? `devia ter pago ${relativo(a.proxima)}` : `próximo pagamento ${data(a.proxima)}`))),
       estadoAdesao(a),
-      h('span', { style: 'display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end' },
+      h('span', { class: 'acoes-l' },
         podeC && ['ativa', 'em_atraso'].includes(a.estado) ? h('button', { class: 'bt bt-pq', type: 'button', onclick: () => acao('/api/adesoes/' + a.id + '/usar', a.tipo === 'pacote' ? 'Uso registado.' : 'Visita registada.') }, a.tipo === 'pacote' ? 'Usar' : 'Visita') : null,
         podeEd && a.estado !== 'cancelada' ? h('button', { class: 'bt bt-pq' + (a.estado === 'em_atraso' || a.estado === 'esgotado' ? ' bt-p' : ''), type: 'button',
           onclick: () => acao('/api/adesoes/' + a.id + '/pagamento', a.tipo === 'pacote' ? 'Pacote renovado.' : 'Pagamento registado.', {}) }, a.tipo === 'pacote' ? 'Renovar' : 'Pago') : null,
@@ -86,7 +86,7 @@ export async function mostrar(raiz) {
         h('section', { class: 'ficha' }, h('div', { class: 'barra-filtros', style: 'margin-bottom:8px' }, sep, h('div', { class: 'pesquisa' }, icone('procurar'), inpQ)),
           itens.length ? h('div', { class: 'lista' }, itens) : (r.produtos.length ? h('p', { style: 'color:var(--tinta2);padding:12px 4px' }, 'Nada aqui.')
             : vazio({ titulo: 'Vende pacotes e mensalidades', icone: 'pacote', texto: 'Cria um pacote (ex.: 10 cortes por 90 €) ou uma mensalidade (ex.: ginásio a 30 € por mês). Depois vendes a um cliente e registas cada uso ou pagamento.' }))),
-        h('section', { class: 'ficha' }, h('header', null, h('h2', null, 'Planos e pacotes'), podeEd ? h('button', { class: 'ligacao', type: 'button', onclick: () => produtoForm(null, carregar) }, 'Novo') : null),
+        h('section', { class: 'ficha' }, h('header', null, h('h2', null, 'Planos e pacotes'), podeEd ? h('button', { class: 'bt bt-pq', type: 'button', onclick: () => produtoForm(null, carregar) }, icone('mais'), 'Novo') : null),
           r.produtos.length ? h('div', { class: 'lista' }, r.produtos.map((p) => h('button', { class: 'linha', type: 'button', disabled: !podeEd, onclick: () => produtoForm(p, carregar) },
             h('span', { class: 'principal-l' }, h('span', { class: 't' }, p.nome), h('span', { class: 's' }, p.tipo === 'pacote' ? `${p.usos} usos${p.validade ? ` · ${p.validade} dias` : ''}` : 'Subscrição ' + PER[p.periodo], p.ativo ? '' : ' · fora de venda')),
             h('strong', null, euros(p.preco)))))
