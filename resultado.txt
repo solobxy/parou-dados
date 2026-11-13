@@ -1,0 +1,3 @@
+adri https://adribodypiercing.pt/: m LCP~1528 ms; d LCP~796 ms
+adriav https://adribodypiercing.pt/avaliar/#xxxxxxxxxxxxxxxxxxxxxxxx: m LCP~1324 ms; d LCP~1364 ms
+adripainel https://adribodypiercing.pt/adri-agenda-k7q2/: m LCP~696 ms; d LCP~728 ms
