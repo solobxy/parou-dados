@@ -989,7 +989,12 @@ www.ganhas.pt {
 		}
 		reverse_proxy 127.0.0.1:3160
 	}
-	handle /app* {
+	# A app (com rota de recurso para /app/index.html), exceto ficheiros escondidos, que caem no 404 de cima
+	@app {
+		path /app*
+		not path_regexp /\.
+	}
+	handle @app {
 		root * /var/www/webase
 		header Cache-Control "no-cache"
 		header X-Robots-Tag "noindex"
