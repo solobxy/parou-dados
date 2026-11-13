@@ -25,9 +25,9 @@
 <link rel="manifest" href="/manifest.webmanifest">
 <link rel="preload" href="/fontes/bricolage.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="/fontes/schibsted.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="/estilo.css?v=f65a6d8405">
+<link rel="stylesheet" href="/estilo.css?v=a973c4cc93">
 <script defer src="/_e.js" data-site="ganhas"></script>
-<script defer src="/app.js?v=dad43f2f35"></script>
+<script defer src="/app.js?v=2fdfb88dc0"></script>
 <script type="application/ld+json">{"@context": "https://schema.org", "@graph": [{"@type": "Organization", "@id": "https://ganhas.pt/#org", "name": "ganhas.pt", "url": "https://ganhas.pt/", "logo": "https://ganhas.pt/icone-512.png", "founder": {"@type": "Person", "name": "Dinis Sousa", "url": "https://dinissousa.pt"}}, {"@type": "WebSite", "@id": "https://ganhas.pt/#site", "name": "ganhas.pt", "url": "https://ganhas.pt/", "inLanguage": "pt-PT", "publisher": {"@id": "https://ganhas.pt/#org"}}, {"@type": "WebApplication", "name": "Portugal net salary calculator 2026", "url": "https://ganhas.pt/en/salary-calculator/", "applicationCategory": "FinanceApplication", "operatingSystem": "All", "inLanguage": "en", "offers": {"@type": "Offer", "price": "0", "priceCurrency": "EUR"}}, {"@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "ganhas.pt", "item": "https://ganhas.pt/en/salary-calculator/"}, {"@type": "ListItem", "position": 2, "name": "Net salary calculator", "item": "https://ganhas.pt/en/salary-calculator/"}]}, {"@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "How is net salary calculated in Portugal?", "acceptedAnswer": {"@type": "Answer", "text": "Gross salary minus 11 % Social Security and the IRS withholding tax from the official 2026 tables, which depend on your marital status and number of dependants. Holiday and Christmas pay are taxed separately."}}, {"@type": "Question", "name": "Is this the final income tax?", "acceptedAnswer": {"@type": "Answer", "text": "No. Withholding is an advance on your income tax (IRS). The final tax is settled in the annual tax return, the following spring."}}, {"@type": "Question", "name": "What is the net minimum wage in 2026?", "acceptedAnswer": {"@type": "Answer", "text": "The minimum wage is €920 gross a month in 2026. For a single person without dependants it is €818.80 net."}}, {"@type": "Question", "name": "Does it include IRS Jovem or the non-habitual resident regime?", "acceptedAnswer": {"@type": "Answer", "text": "No. The calculator uses the standard withholding tables for residents of mainland Portugal. IRS Jovem and special regimes lower the tax and are not included."}}]}]}</script>
 </head>
 <body>
@@ -36,6 +36,8 @@
 <a class="marca" href="/en/salary-calculator/" aria-label="ganhas.pt, home">ganhas<span>.pt</span></a>
 <nav class="nav" aria-label="Main"><a href="/en/salary-calculator/" aria-current="page">Salary calculator</a><a href="/en/average-salary-portugal/">Average salary</a><a href="/en/minimum-wage-portugal/">Minimum wage</a></nav>
 <a class="botao topo-sec" href="/" hreflang="pt-PT">Português</a>
+<details class="menu"><summary aria-label="Menu"><svg class="ic-abrir" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7h18M3 12h18M3 17h18"/></svg><svg class="ic-fechar" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5l14 14M19 5L5 19"/></svg></summary>
+<nav class="menu-folha" aria-label="Menu"><a href="/en/salary-calculator/" aria-current="page">Salary calculator</a><a href="/en/average-salary-portugal/">Average salary</a><a href="/en/minimum-wage-portugal/">Minimum wage</a><a href="/">ganhas.pt em português</a></nav></details>
 </div></header>
 <main id="conteudo">
 
@@ -47,13 +49,15 @@
 <form class="form" id="form-calc" aria-label="Your details">
 <div class="f"><label for="c-bruto">Gross monthly salary</label><input type="text" id="c-bruto" inputmode="decimal" autocomplete="off" placeholder="1 200" value="1500"></div>
 <div class="f"><label for="c-situacao">Status</label><select id="c-situacao">
-<option value="nc">Single (or divorced, widowed)</option>
-<option value="c2">Married or civil partners, both earning</option>
-<option value="c1">Married or civil partners, one earning</option></select></div>
+<option value="nc">Single</option>
+<option value="c2">Married, both earning</option>
+<option value="c1">Married, one earning</option></select>
+<p class="dica">Civil partners count as married. Divorced or widowed counts as single.</p></div>
 <div class="f"><label for="c-dep">Dependants</label><select id="c-dep"><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5 or more</option></select></div>
-<div class="f"><label for="c-meses">Paid in</label><select id="c-meses"><option value="14">14 payments (holiday and Christmas pay separate)</option><option value="12">12 payments (bonuses spread monthly)</option></select></div>
+<div class="f"><label for="c-meses">Paid in</label><select id="c-meses"><option value="14">14 payments</option><option value="12">12 payments</option></select>
+<p class="dica">With 14, holiday and Christmas pay come separately. With 12, they are spread over the months.</p></div>
 <div class="f"><label for="c-subs">Meal allowance per day <span class="opc">(optional)</span></label><input type="text" id="c-subs" inputmode="decimal" placeholder="6,15"></div>
-<div class="f"><label for="c-subs-tipo">Paid as</label><select id="c-subs-tipo"><option value="cartao">Meal card or voucher</option><option value="dinheiro">Cash, with the salary</option></select>
+<div class="f"><label for="c-subs-tipo">Paid as</label><select id="c-subs-tipo"><option value="cartao">Meal card</option><option value="dinheiro">Cash, with the salary</option></select>
 <p class="dica">Tax-free up to €6.15 a day in cash and €10.46 on a meal card. We count 22 days a month.</p></div>
 </form>
 <div class="recibo" aria-live="polite">

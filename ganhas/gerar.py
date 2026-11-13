@@ -74,7 +74,12 @@ ORG = {'@type': 'Organization', '@id': DOMINIO + '/#org', 'name': 'ganhas.pt', '
 SITE = {'@type': 'WebSite', '@id': DOMINIO + '/#site', 'name': 'ganhas.pt', 'url': DOMINIO + '/', 'inLanguage': 'pt-PT',
         'publisher': {'@id': DOMINIO + '/#org'}}
 
-NAV = [('/calculadora/', 'Calculadora'), ('/profissoes/', 'Profissões'), ('/concelhos/', 'Concelhos'), ('/empresa/', 'Empresas')]
+NAV = [('/calculadora/', 'Calculadora'), ('/profissoes/', 'Profissões'), ('/concelhos/', 'Concelhos'), ('/funcao-publica/', 'Função pública'),
+       ('/empresa/', 'Empresas')]
+# menu do telemóvel: o que está no topo do computador e mais umas páginas que as pessoas procuram
+MENU = [('/', 'Comparar o meu salário'), ('/calculadora/', 'Calculadora de salário líquido'), ('/profissoes/', 'Salários por profissão'),
+        ('/concelhos/', 'Salários por concelho'), ('/funcao-publica/', 'Função pública'), ('/empresa/', 'Quanto pagam as empresas'),
+        ('/salario-minimo/', 'Salário mínimo'), ('/salario-medio/', 'Salário médio'), ('/europa/', 'Portugal e a Europa')]
 
 
 NAV_EN = [('/en/salary-calculator/', 'Salary calculator'), ('/en/average-salary-portugal/', 'Average salary'),
@@ -93,6 +98,9 @@ def pagina(caminho, titulo, descricao, corpo, *, dados=None, ld=None, prioridade
     tit = h_titulo or (titulo_meta + ' · ganhas.pt' if len(titulo_meta) <= 50 else titulo_meta)
     descricao = curto(descricao, 160)
     nav = ''.join(f'<a href="{h}"{" aria-current=\"page\"" if caminho.startswith(h) else ""}>{t}</a>' for h, t in (NAV_EN if lang == 'en' else NAV))
+    menu_itens = NAV_EN + [('/', 'ganhas.pt em português')] if lang == 'en' else MENU
+    menu = ''.join(f'<a href="{h}"{" aria-current=\"page\"" if (caminho == h if h == "/" else caminho.startswith(h)) else ""}>{t}</a>' for h, t in menu_itens)
+    menu_cta = '' if lang == 'en' else '<a class="botao largo" href="/partilhar/">Partilhar o meu salário</a>'
     alt_html = ''.join(f'<link rel="alternate" hreflang="{"pt-PT" if l == "pt" else l}" href="{DOMINIO}{c}">' for l, c in (alternos or {}).items())
     if alternos:
         alt_html += f'<link rel="alternate" hreflang="x-default" href="{DOMINIO}{alternos["pt"]}">'
@@ -139,7 +147,9 @@ def pagina(caminho, titulo, descricao, corpo, *, dados=None, ld=None, prioridade
 <header class="topo"><div class="mold">
 <a class="marca" href="{"/en/salary-calculator/" if lang == "en" else "/"}" aria-label="{"ganhas.pt, home" if lang == "en" else "ganhas.pt, início"}">ganhas<span>.pt</span></a>
 <nav class="nav" aria-label="{"Main" if lang == "en" else "Principal"}">{nav}</nav>
-{'<a class="botao topo-sec" href="/" hreflang="pt-PT">Português</a>' if lang == 'en' else '<a class="botao topo-sec" href="/partilhar/">Partilhar</a>'}
+{'<a class="botao topo-sec" href="/" hreflang="pt-PT">Português</a>' if lang == 'en' else '<a class="botao topo-sec" href="/partilhar/">Partilhar salário</a>'}
+<details class="menu"><summary aria-label="Menu"><svg class="ic-abrir" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7h18M3 12h18M3 17h18"/></svg><svg class="ic-fechar" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5l14 14M19 5L5 19"/></svg></summary>
+<nav class="menu-folha" aria-label="Menu">{menu}{menu_cta}</nav></details>
 </div></header>
 <main id="conteudo">
 {corpo}
@@ -262,15 +272,17 @@ def inicio():
                        for k in ('professores', 'enfermeiros', 'medicos', 'psp', 'tecnico-superior', 'assistente-operacional') if k in por)
     g, b = d['ganho'], d['base']
     n_prof = len(CAT['profissoes'])
+    n_eu = len([x for x in eu['liquido'] if x['codigo'] != 'EU27_2020']) if eu else 0
+    eu_v = f'{n_eu} países' if n_eu else 'Portugal e a UE'
     corpo = f'''
 <section class="heroi"><div class="mold heroi-grelha">
 <div class="heroi-esq">
 <h1>Quanto ganhas?</h1>
-<p class="lede curta">Vê onde está o teu salário no país, em 5 segundos. Sem conta, sem nome.</p>
+<p class="lede curta">Escreve o teu salário e vê onde ficas no país. Sem conta e sem nome.</p>
 <form class="comparador" id="comparador" action="/" novalidate>
 <label class="caixa-salario" for="salario">
 <span class="caixa-rotulo">O teu salário bruto por mês</span>
-<span class="caixa-linha"><input id="salario" name="salario" inputmode="decimal" enterkeyhint="done" autocomplete="off" placeholder="ex.: 1200" aria-describedby="salario-ajuda"><span class="unid">€</span></span>
+<span class="caixa-linha"><input id="salario" name="salario" inputmode="decimal" enterkeyhint="done" autocomplete="off" placeholder="1200" aria-describedby="salario-ajuda"><span class="unid">€</span></span>
 </label>
 <p class="ajuda" id="salario-ajuda">Antes dos descontos, como aparece no recibo.</p>
 <p class="erro-campo" id="salario-erro" role="alert" hidden>Escreve um valor, por exemplo 1200.</p>
@@ -300,18 +312,18 @@ def inicio():
 <div class="rd"><span class="rd-r">Metade ganha menos de</span><span class="rd-v" id="res-med">{euro(b["mediana"])}</span><span class="rd-n" id="res-dif">–</span></div>
 </div>
 <p class="res-partilha" id="res-partilha" hidden><button class="ligacao-botao" type="button" id="partilhar-resultado">Partilhar o resultado</button><span id="partilha-ok" class="res-nota" hidden>Copiado. Cola onde quiseres.</span></p>
-<p class="fonte" id="res-fonte">Quem trabalhava a tempo completo, {e(d["ambito"])}, outubro de {ano}: os dados oficiais mais recentes (<a href="{e(O["fontes"]["decis"]["url"])}" rel="noopener">DGCP/MTSSS</a>). Os salários subiram desde então, por isso hoje a tua posição é um pouco mais baixa.</p>
+<p class="fonte" id="res-fonte">Quem trabalhava a tempo completo, {e(d["ambito"])}, outubro de {ano}: os dados oficiais mais recentes (<a href="{e(O["fontes"]["decis"]["url"])}" rel="noopener">DGCP/MTSSS</a>). As barras são estimadas a partir dos decis. Os salários subiram desde então, por isso hoje a tua posição é um pouco mais baixa.</p>
 </div>
 </div>
 <div class="mold">
 <h2 class="vis">Compara mais</h2>
-<nav class="seguir" aria-label="Compara mais">
-<a class="cartao-seguir principal" id="seguir-liquido" href="/calculadora/"><b>Quanto levas para casa</b><span>O recibo linha a linha, com o IRS de {O["irs"]["ano"]}</span></a>
-<a class="cartao-seguir" href="/profissoes/"><b>Na tua profissão</b><span>{n_prof} profissões</span></a>
-<a class="cartao-seguir" href="/concelhos/"><b>No teu concelho</b><span>Os 308 concelhos</span></a>
-<a class="cartao-seguir" href="/funcao-publica/"><b>No Estado</b><span>{len(por)} carreiras, bruto e líquido</span></a>
-<a class="cartao-seguir" href="/europa/"><b>Na Europa</b><span>Portugal ao lado dos outros</span></a>
-<a class="cartao-seguir" href="/partilhar/"><b>A tua empresa paga bem?</b><span>Partilha o teu salário em 30 segundos</span></a>
+<nav class="indice" aria-label="Compara mais">
+<a class="indice-l principal" id="seguir-liquido" href="/calculadora/"><span class="r"><span class="mk">Quanto levas para casa</span></span><span class="p"></span><span class="v">IRS de {O["irs"]["ano"]}</span></a>
+<a class="indice-l" href="/profissoes/"><span class="r">Na tua profissão</span><span class="p"></span><span class="v">{n_prof} profissões</span></a>
+<a class="indice-l" href="/concelhos/"><span class="r">No teu concelho</span><span class="p"></span><span class="v">308 concelhos</span></a>
+<a class="indice-l" href="/funcao-publica/"><span class="r">No Estado</span><span class="p"></span><span class="v">{len(por)} carreiras</span></a>
+<a class="indice-l" href="/europa/"><span class="r">Na Europa</span><span class="p"></span><span class="v">{eu_v}</span></a>
+<a class="indice-l" href="/partilhar/"><span class="r">A tua empresa paga bem?</span><span class="p"></span><span class="v">Partilhar</span></a>
 </nav>
 <p class="fonte" data-contador hidden></p>
 </div></section>
@@ -319,7 +331,7 @@ def inicio():
 <section class="sec"><div class="mold">
 <h2 class="entra">Portugal em {ano}, em 3 números</h2>
 <div class="tres-numeros">
-<div class="entra"><p class="gigante-n">{euro(g["mediana"])}</p><p>Metade ganhava menos do que isto, contando prémios e subsídios. A média era {euro(d["media"])}, puxada pelos salários mais altos.</p></div>
+<div class="entra"><p class="gigante-n">{euro(g["mediana"])}</p><p>Com prémios e subsídios, metade ganhava menos do que isto (só no vencimento base, {euro(b["mediana"])}). A média era {euro(d["media"])}, puxada pelos salários mais altos.</p></div>
 <div class="entra"><p class="gigante-n">{pct(b["ate_1000"])}</p><p>tinha um vencimento base até {euro(1000)}, com o salário mínimo nos {euro(d["minimo"])}.</p></div>
 <div class="entra"><p class="gigante-n">1 em 10</p><p>ganhava mais de {euro(g["d9"])} por mês.</p></div>
 </div>
@@ -328,7 +340,7 @@ def inicio():
 
 <section class="sec folha"><div class="mold grelha2">
 <div class="entra"><h2>Bruto não é o que levas para casa</h2>
-<p class="lede espaco">Com as tabelas de IRS de {O["irs"]["ano"]}, a Segurança Social e o subsídio de alimentação, a calculadora mostra o teu recibo linha a linha.{(chr(10) + f'Em novembro de {O["irs"]["ano"]}, a retenção de IRS é metade.') if NOV else ''}</p>
+<p class="lede espaco">Com as tabelas de IRS de {O["irs"]["ano"]}, a Segurança Social e o subsídio de alimentação, a calculadora mostra o teu recibo linha a linha.{(chr(10) + f'Em novembro de {O["irs"]["ano"]}, só te retêm metade do IRS habitual.') if NOV else ''}</p>
 <p class="espaco"><a class="botao" href="/calculadora/">Abrir a calculadora</a></p></div>
 <div class="recibo entra" aria-label="Exemplo de recibo">
 <h3 id="ex-tit">Exemplo: {euro(O["exemplo"]["bruto"])} brutos</h3>
@@ -369,11 +381,11 @@ def inicio():
 <ul class="lista-colunas larga entra">{fp_lista}</ul>
 </div></section>
 
-<section class="sec"><div class="mold par">
-<div class="entra"><p class="gigante" aria-hidden="true">5+</p></div>
+<section class="sec"><div class="mold par par-inv">
 <div class="entra"><h2>A tua empresa paga bem?</h2>
-<p class="lede espaco">Partilha o teu salário em 30 segundos, sem nome. Uma empresa só aparece quando há pelo menos 5 pessoas.</p>
+<p class="lede espaco">Partilha o teu salário de forma anónima. Quanto mais colegas partilharem, mais cedo a tua empresa passa a ter números.</p>
 <p class="espaco"><a class="botao" href="/partilhar/">Partilhar o meu salário</a></p></div>
+<div class="entra"><p class="gigante">5</p><p class="gigante-leg">pessoas diferentes, no mínimo, antes de uma empresa aparecer no ganhas.pt.</p></div>
 </div></section>
 {secao_europa_curta(eu, pt)}
 '''
@@ -434,16 +446,18 @@ def calculadora():
 <form class="form" id="form-calc" aria-label="Dados para o cálculo">
 <div class="f"><label for="c-bruto">Salário bruto mensal</label><input type="text" id="c-bruto" inputmode="decimal" autocomplete="off" placeholder="1 200" value="1200"></div>
 <div class="f"><label for="c-situacao">Situação</label><select id="c-situacao">
-<option value="nc">Não casado (solteiro, divorciado, viúvo)</option>
-<option value="c2">Casado ou unido de facto, os dois com rendimentos</option>
-<option value="c1">Casado ou unido de facto, só um com rendimentos</option></select></div>
+<option value="nc">Não casado</option>
+<option value="c2">Casado, os dois ganham</option>
+<option value="c1">Casado, só um ganha</option></select>
+<p class="dica">Unido de facto conta como casado. Solteiro, divorciado ou viúvo conta como não casado.</p></div>
 <div class="f"><label for="c-dep">Dependentes</label><select id="c-dep"><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5 ou mais</option></select></div>
-<div class="f"><label for="c-meses">Recebes em</label><select id="c-meses"><option value="14">14 meses (subsídios de férias e Natal à parte)</option><option value="12">12 meses (subsídios em duodécimos)</option></select></div>
+<div class="f"><label for="c-meses">Recebes em</label><select id="c-meses"><option value="14">14 meses</option><option value="12">12 meses (duodécimos)</option></select>
+<p class="dica">Com 14, os subsídios de férias e de Natal vêm à parte. Com 12, vêm divididos pelos meses.</p></div>
 <div class="f"><label for="c-subs">Subsídio de alimentação por dia <span class="opc">(opcional)</span></label><input type="text" id="c-subs" inputmode="decimal" placeholder="{str(irs["subsidio_dinheiro"]).replace(".", ",")}"></div>
-<div class="f"><label for="c-subs-tipo">Pago em</label><select id="c-subs-tipo"><option value="cartao">Cartão ou vale de refeição</option><option value="dinheiro">Dinheiro, junto com o salário</option></select>
+<div class="f"><label for="c-subs-tipo">Pago em</label><select id="c-subs-tipo"><option value="cartao">Cartão refeição</option><option value="dinheiro">Dinheiro, com o salário</option></select>
 <p class="dica">Isento até {euro(irs["subsidio_dinheiro"], 2)} por dia em dinheiro e {euro(irs["subsidio_cartao"], 2)} em cartão. Contamos 22 dias por mês.</p></div>
 </form>
-<div class="recibo" aria-live="polite">
+<div class="recibo" id="recibo" aria-live="polite">
 <h2 class="recibo-t">O teu recibo</h2>
 <div class="linha"><span class="r">Vencimento base</span><span class="p"></span><span class="v" id="c-r-base">—</span></div>
 <div class="linha" id="c-l-subs" hidden><span class="r">Subsídio de alimentação</span><span class="p"></span><span class="v" id="c-r-subs">—</span></div>
@@ -458,6 +472,7 @@ def calculadora():
 <p class="fonte">A retenção é um adiantamento do IRS: o imposto final só se sabe na declaração anual. {e(irs.get("nota", "")) if NOV else ""}
 O custo para a empresa soma {pct(100 * irs["tsu_empresa"], 2)} de TSU ao salário. Não aplicamos o IRS Jovem nem as regras para pessoas com deficiência.</p>
 </div>
+<a class="calc-barra" id="c-barra" href="#recibo" hidden><span class="calc-barra-r">Líquido por mês</span><b id="c-barra-v">—</b><span class="calc-barra-ir">Ver o recibo</span></a>
 <div class="chamada" id="c-chamada" hidden>
 <p><strong>Estás a ganhar o justo?</strong> Partilha este salário de forma anónima e vê quanto ganham outras pessoas na tua profissão.</p>
 <p class="acoes"><a class="botao" href="/partilhar/" id="c-ir-partilhar">Partilhar e comparar</a><a class="botao sec2" href="/">Ver onde fico em Portugal</a></p>
@@ -776,15 +791,15 @@ def profissoes():
     corpo = f'''
 {migalhas([(None, "Profissões")])[0]}
 <section class="sec" style="padding-top:24px"><div class="mold">
-<h1 class="h1-pag">Quanto se ganha em cada profissão</h1>
-{resposta}
-<p class="lede" style="margin-top:20px">Procura a tua profissão: cada página junta o número oficial do subgrupo, a tabela da função pública quando existe e as partilhas de quem trabalha, a partir de 5 pessoas.</p>
-<div class="grelha2" style="margin-top:40px">
-<div><div class="f" style="max-width:560px"><label for="filtro-prof">Procurar profissão</label>
+<div class="pag-topo">
+<div><h1 class="h1-pag">Quanto se ganha em cada profissão</h1>
+{resposta}</div>
+<div class="procura"><div class="f"><label for="filtro-prof">Procura a tua profissão</label>
 <input type="search" id="filtro-prof" data-filtro="#lista-prof" data-vazio="#prof-vazio" placeholder="Enfermeiro, programador, caixa…" autocomplete="off"></div>
+<p class="dica">Cada página junta o número oficial do subgrupo, a tabela da função pública quando existe e as partilhas de quem trabalha, a partir de 5 pessoas.</p>
 <p class="vazio" id="prof-vazio" hidden style="margin-top:16px">Não encontrámos essa profissão. <a href="/partilhar/">Partilha o teu salário</a> e escolhe a mais próxima.</p></div>
-<table class="tabela"><caption class="vis">Ganho médio por grupo de profissões</caption><thead><tr><th>Grande grupo de profissões ({ano})</th><th class="n">Ganho médio</th></tr></thead><tbody>{linhas}</tbody></table>
 </div>
+<table class="tabela tabela-media" style="margin-top:56px"><caption class="vis">Ganho médio por grupo de profissões</caption><thead><tr><th>Grande grupo de profissões ({ano})</th><th class="n">Ganho médio</th></tr></thead><tbody>{linhas}</tbody></table>
 <div id="lista-prof">{"".join(blocos)}</div>
 {fonte("grupos")}
 </div></section>
@@ -956,11 +971,13 @@ def concelhos():
     corpo = f'''
 {migalhas([(None, "Concelhos")])[0]}
 <section class="sec" style="padding-top:24px"><div class="mold">
-<h1 class="h1-pag">Quanto se ganha no teu concelho</h1>
-<p class="lede">Ganho mensal bruto de quem trabalha por conta de outrem a tempo completo, pelo local de trabalho, em {ano}. Os 308 concelhos, do mais alto ao mais baixo.</p>
-<div class="f" style="max-width:560px;margin-top:32px"><label for="filtro-conc">Procurar concelho</label>
+<div class="pag-topo">
+<div><h1 class="h1-pag">Quanto se ganha no teu concelho</h1>
+<p class="lede">Ganho mensal bruto de quem trabalha por conta de outrem a tempo completo, pelo local de trabalho, em {ano}. Os 308 concelhos, do mais alto ao mais baixo.</p></div>
+<div class="procura"><div class="f"><label for="filtro-conc">Procura o teu concelho</label>
 <input type="search" id="filtro-conc" data-filtro="#lista-conc" data-vazio="#conc-vazio" placeholder="Gondomar, Braga, Faro…" autocomplete="off"></div>
-<p class="vazio" id="conc-vazio" hidden style="margin-top:16px">Não encontrámos esse concelho.</p>
+<p class="vazio" id="conc-vazio" hidden style="margin-top:16px">Não encontrámos esse concelho.</p></div>
+</div>
 <table class="tabela" style="margin-top:32px"><thead><tr><th class="n">#</th><th>Concelho</th><th class="col-reg">Região</th><th class="n">Ganho médio</th></tr></thead>
 <tbody id="lista-conc">{linhas}</tbody></table>
 {fonte("concelhos")}
@@ -1041,9 +1058,10 @@ def europa():
     b3 = ''.join(f'<div class="barra-h{" pt" if x["codigo"] == "PT" else ""}"><span>{e(x["pais"])}</span><i style="--w:{round(100 * x["eur"] / mxm, 1)}%"></i><b>{euro(x["eur"])}</b></div>' for x in minimos)
     corpo = f'''
 {migalhas([(None, "Portugal e a Europa")])[0]}
-<section class="sec" style="padding-top:24px"><div class="mold">
-<h1 class="h1-pag">Portugal ao lado da Europa</h1>
-<p class="lede">Em {eu["ano"]}, uma pessoa sozinha, sem filhos, que ganhava o salário médio em Portugal levava para casa <span class="mk">{euro(pt["eur"])}</span> líquidos por ano: {pos}.º lugar entre os {len(so_paises)} países da União Europeia.</p>
+<section class="sec" style="padding-top:24px"><div class="mold pag-topo">
+<div><h1 class="h1-pag">Portugal ao lado da Europa</h1>
+<p class="lede">Em {eu["ano"]}, uma pessoa sozinha, sem filhos, que ganhava o salário médio em Portugal levava para casa <span class="mk">{euro(pt["eur"])}</span> líquidos por ano: {pos}.º lugar entre os {len(so_paises)} países da União Europeia.</p></div>
+{resumo_recibo(f"Líquido por ano, {eu['ano']}", [(e(x["pais"]), euro(x["eur"]), "mk" if x["codigo"] == "PT" else "") for x in sorted(eu["liquido"], key=lambda y: -y["eur"]) if x["codigo"] in ("LU", "EU27_2020", "ES", "PT")], "Pessoa sozinha, sem filhos, com o salário médio de cada país.", largo_so=True)}
 </div></section>
 <section class="sec"><div class="mold grelha2">
 <div class="entra"><h2>Em euros</h2><p class="lede" style="margin-top:16px">Salário líquido anual, pessoa sozinha sem filhos, a ganhar o salário médio.</p></div>
@@ -1129,6 +1147,20 @@ def liquido_simples(bruto):
     return round(bruto - reter(bruto) - round(bruto * O['irs']['ss'], 2), 2)
 
 
+def resumo_recibo(titulo, linhas, nota='', largo_so=False):
+    """O resumo ao lado do título das páginas interiores, desenhado como um recibo.
+    linhas: [(rótulo, valor, tipo)], tipo '' | 'menos' | 'total' | 'mk' (o total é uma conta e leva o traço de marcador;
+    'mk' só sublinha a linha que interessa, sem ser um total).
+    largo_so: só aparece no computador (no telemóvel o parágrafo de cima já diz o mesmo)."""
+    ls = []
+    for r, v, t in linhas:
+        val = f'<span class="mk">{v}</span>' if t in ('total', 'mk') else v
+        cls = {'menos': ' menos', 'total': ' total', 'mk': ' marcada'}.get(t, '')
+        ls.append(f'<div class="linha{cls}"><span class="r">{r}</span><span class="p"></span><span class="v">{val}</span></div>')
+    return (f'<aside class="recibo resumo{" so-largo" if largo_so else ""}" aria-label="{e(titulo)}"><p class="recibo-t">{e(titulo)}</p>'
+            + ''.join(ls) + (f'<p class="fonte">{nota}</p>' if nota else '') + '</aside>')
+
+
 def carreiras_fp():
     fp = O.get('funcao_publica') or {}
     por = {}
@@ -1173,10 +1205,13 @@ def funcao_publica():
     corpo = f'''
 {migalhas([(None, "Função pública")])[0]}
 <section class="sec" style="padding-top:24px"><div class="mold">
-<h1 class="h1-pag">Quanto se ganha na função pública em {fp["ano"]}</h1>
+<div class="pag-topo">
+<div><h1 class="h1-pag">Quanto se ganha na função pública em {fp["ano"]}</h1>
 <p class="lede">No Estado, o salário vem escrito na lei: cada carreira tem posições e cada posição um valor. A base é <span class="mk">{euro(fp["brap"], 2)}</span> brutos em {fp["ano"]}.
 Aqui tens {len(por)} carreiras, com o bruto e uma estimativa do líquido.</p>
-{fonte("tru")}
+{fonte("tru")}</div>
+{resumo_recibo(f"Quem começa, em {fp['ano']}", [("Base da função pública", euro(fp["brap"], 2), "mk")] + [(e(por[k]["titulo"]), euro(por[k]["min"]), "") for k in ("assistente-operacional", "tecnico-superior", "enfermeiros", "professores", "medicos") if k in por and por[k]["min"]], "Primeira posição de cada carreira, bruto por mês, sem suplementos.", largo_so=True)}
+</div>
 <h2 class="h2-pag" style="margin-top:64px">As carreiras mais procuradas</h2>
 <ul class="lista-colunas larga" style="margin-top:24px">{cartoes}</ul>
 <p class="dica" style="margin-top:16px">Do primeiro ao último escalão, em bruto por mês, sem suplementos.</p>
@@ -1653,10 +1688,11 @@ def salario_minimo():
                      f'Com as tabelas de retenção de {irs_ano}, ficariam {euro(liquido_simples(prox), 2)} líquidos; as tabelas de {a + 1} ainda podem mudar este valor.'))
     corpo = f'''
 {migalhas([(None, "Salário mínimo")])[0]}
-<section class="sec" style="padding-top:24px"><div class="mold">
-<h1 class="h1-pag">Salário mínimo {a}: {euro(v)}</h1>
+<section class="sec" style="padding-top:24px"><div class="mold pag-topo">
+<div><h1 class="h1-pag">Salário mínimo {a}: {euro(v)}</h1>
 <p class="lede">Em {a}, o salário mínimo nacional é de <strong>{euro(v)}</strong> brutos por mês, 14 vezes por ano. Líquido, para quem é solteiro e sem dependentes, ficam <strong>{euro(liq, 2)}</strong>.{f" Em {a + 1} passa para {euro(prox)}." if prox else ""}</p>
-<p class="acoes" style="margin-top:24px"><a class="botao" href="/calculadora/?bruto={int(v)}">Calcular o meu líquido</a><a class="botao sec2" href="/">Comparar com Portugal</a></p>
+<p class="acoes" style="margin-top:24px"><a class="botao" href="/calculadora/?bruto={int(v)}">Calcular o meu líquido</a><a class="botao sec2" href="/">Comparar o meu salário</a></p></div>
+{resumo_recibo(f"O recibo do salário mínimo em {a}", [("Vencimento base", euro(v, 2), ""), (f"Segurança Social ({pct(100 * O['irs']['ss'])})", "− " + euro(round(v * O["irs"]["ss"], 2), 2), "menos"), ("Retenção de IRS", ("− " + euro(reter(v), 2)) if reter(v) else euro(0, 2), "menos"), ("Líquido", euro(liq, 2), "total")], f"Não casado, sem dependentes, tabela I de {irs_ano}, sem subsídio de alimentação.")}
 </div></section>
 <section class="sec"><div class="mold texto">
 <h2>Evolução do salário mínimo</h2>
@@ -1707,10 +1743,11 @@ def salario_medio():
     ]
     corpo = f'''
 {migalhas([(None, "Salário médio")])[0]}
-<section class="sec" style="padding-top:24px"><div class="mold">
-<h1 class="h1-pag">Salário médio em Portugal: {euro(media)}</h1>
+<section class="sec" style="padding-top:24px"><div class="mold pag-topo">
+<div><h1 class="h1-pag">Salário médio em Portugal: {euro(media)}</h1>
 <p class="lede">Em {ano}, quem trabalhava a tempo completo no setor privado ganhava em média <strong>{euro(media)}</strong> brutos por mês. Mas metade ganhava menos de <strong>{euro(med)}</strong>.</p>
-<p class="acoes" style="margin-top:24px"><a class="botao" href="/">Ver onde fico em Portugal</a><a class="botao sec2" href="/calculadora/?bruto={int(round(media))}">Quanto fica líquido</a></p>
+<p class="acoes" style="margin-top:24px"><a class="botao" href="/">Ver onde fico em Portugal</a><a class="botao sec2" href="/calculadora/?bruto={int(round(media))}">Quanto fica líquido</a></p></div>
+{resumo_recibo(f"Portugal, {ano}, por mês", [("Média, bruto", euro(media), ""), ("Metade ganha menos de", euro(med), ""), ("Homens, em média", euro(sx["H"]), ""), ("Mulheres, em média", euro(sx["M"]), ""), ("Média, em líquido", euro(liq), "mk")], "Trabalhadores por conta de outrem a tempo completo. Líquido: não casado, sem dependentes.")}
 </div></section>
 <section class="sec"><div class="mold texto">
 <h2>Por região</h2>
@@ -1764,13 +1801,15 @@ def paginas_en():
 <form class="form" id="form-calc" aria-label="Your details">
 <div class="f"><label for="c-bruto">Gross monthly salary</label><input type="text" id="c-bruto" inputmode="decimal" autocomplete="off" placeholder="1 200" value="1500"></div>
 <div class="f"><label for="c-situacao">Status</label><select id="c-situacao">
-<option value="nc">Single (or divorced, widowed)</option>
-<option value="c2">Married or civil partners, both earning</option>
-<option value="c1">Married or civil partners, one earning</option></select></div>
+<option value="nc">Single</option>
+<option value="c2">Married, both earning</option>
+<option value="c1">Married, one earning</option></select>
+<p class="dica">Civil partners count as married. Divorced or widowed counts as single.</p></div>
 <div class="f"><label for="c-dep">Dependants</label><select id="c-dep"><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5 or more</option></select></div>
-<div class="f"><label for="c-meses">Paid in</label><select id="c-meses"><option value="14">14 payments (holiday and Christmas pay separate)</option><option value="12">12 payments (bonuses spread monthly)</option></select></div>
+<div class="f"><label for="c-meses">Paid in</label><select id="c-meses"><option value="14">14 payments</option><option value="12">12 payments</option></select>
+<p class="dica">With 14, holiday and Christmas pay come separately. With 12, they are spread over the months.</p></div>
 <div class="f"><label for="c-subs">Meal allowance per day <span class="opc">(optional)</span></label><input type="text" id="c-subs" inputmode="decimal" placeholder="{str(irs["subsidio_dinheiro"]).replace(".", ",")}"></div>
-<div class="f"><label for="c-subs-tipo">Paid as</label><select id="c-subs-tipo"><option value="cartao">Meal card or voucher</option><option value="dinheiro">Cash, with the salary</option></select>
+<div class="f"><label for="c-subs-tipo">Paid as</label><select id="c-subs-tipo"><option value="cartao">Meal card</option><option value="dinheiro">Cash, with the salary</option></select>
 <p class="dica">Tax-free up to {euro_en(irs["subsidio_dinheiro"], 2)} a day in cash and {euro_en(irs["subsidio_cartao"], 2)} on a meal card. We count 22 days a month.</p></div>
 </form>
 <div class="recibo" aria-live="polite">

@@ -25,28 +25,30 @@
 <link rel="manifest" href="/manifest.webmanifest">
 <link rel="preload" href="/fontes/bricolage.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="/fontes/schibsted.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="/estilo.css?v=f65a6d8405">
+<link rel="stylesheet" href="/estilo.css?v=a973c4cc93">
 <script defer src="/_e.js" data-site="ganhas"></script>
-<script defer src="/app.js?v=dad43f2f35"></script>
+<script defer src="/app.js?v=2fdfb88dc0"></script>
 <script type="application/ld+json">{"@context": "https://schema.org", "@graph": [{"@type": "Organization", "@id": "https://ganhas.pt/#org", "name": "ganhas.pt", "url": "https://ganhas.pt/", "logo": "https://ganhas.pt/icone-512.png", "founder": {"@type": "Person", "name": "Dinis Sousa", "url": "https://dinissousa.pt"}}, {"@type": "WebSite", "@id": "https://ganhas.pt/#site", "name": "ganhas.pt", "url": "https://ganhas.pt/", "inLanguage": "pt-PT", "publisher": {"@id": "https://ganhas.pt/#org"}}, {"@type": "WebApplication", "name": "Comparador de salários ganhas.pt", "url": "https://ganhas.pt/", "applicationCategory": "FinanceApplication", "operatingSystem": "Todos", "inLanguage": "pt-PT", "offers": {"@type": "Offer", "price": "0", "priceCurrency": "EUR"}}]}</script>
 </head>
 <body>
 <a class="salto" href="#conteudo">Saltar para o conteúdo</a>
 <header class="topo"><div class="mold">
 <a class="marca" href="/" aria-label="ganhas.pt, início">ganhas<span>.pt</span></a>
-<nav class="nav" aria-label="Principal"><a href="/calculadora/">Calculadora</a><a href="/profissoes/">Profissões</a><a href="/concelhos/">Concelhos</a><a href="/empresa/">Empresas</a></nav>
-<a class="botao topo-sec" href="/partilhar/">Partilhar</a>
+<nav class="nav" aria-label="Principal"><a href="/calculadora/">Calculadora</a><a href="/profissoes/">Profissões</a><a href="/concelhos/">Concelhos</a><a href="/funcao-publica/">Função pública</a><a href="/empresa/">Empresas</a></nav>
+<a class="botao topo-sec" href="/partilhar/">Partilhar salário</a>
+<details class="menu"><summary aria-label="Menu"><svg class="ic-abrir" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7h18M3 12h18M3 17h18"/></svg><svg class="ic-fechar" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5l14 14M19 5L5 19"/></svg></summary>
+<nav class="menu-folha" aria-label="Menu"><a href="/" aria-current="page">Comparar o meu salário</a><a href="/calculadora/">Calculadora de salário líquido</a><a href="/profissoes/">Salários por profissão</a><a href="/concelhos/">Salários por concelho</a><a href="/funcao-publica/">Função pública</a><a href="/empresa/">Quanto pagam as empresas</a><a href="/salario-minimo/">Salário mínimo</a><a href="/salario-medio/">Salário médio</a><a href="/europa/">Portugal e a Europa</a><a class="botao largo" href="/partilhar/">Partilhar o meu salário</a></nav></details>
 </div></header>
 <main id="conteudo">
 
 <section class="heroi"><div class="mold heroi-grelha">
 <div class="heroi-esq">
 <h1>Quanto ganhas?</h1>
-<p class="lede curta">Vê onde está o teu salário no país, em 5 segundos. Sem conta, sem nome.</p>
+<p class="lede curta">Escreve o teu salário e vê onde ficas no país. Sem conta e sem nome.</p>
 <form class="comparador" id="comparador" action="/" novalidate>
 <label class="caixa-salario" for="salario">
 <span class="caixa-rotulo">O teu salário bruto por mês</span>
-<span class="caixa-linha"><input id="salario" name="salario" inputmode="decimal" enterkeyhint="done" autocomplete="off" placeholder="ex.: 1200" aria-describedby="salario-ajuda"><span class="unid">€</span></span>
+<span class="caixa-linha"><input id="salario" name="salario" inputmode="decimal" enterkeyhint="done" autocomplete="off" placeholder="1200" aria-describedby="salario-ajuda"><span class="unid">€</span></span>
 </label>
 <p class="ajuda" id="salario-ajuda">Antes dos descontos, como aparece no recibo.</p>
 <p class="erro-campo" id="salario-erro" role="alert" hidden>Escreve um valor, por exemplo 1200.</p>
@@ -76,18 +78,18 @@
 <div class="rd"><span class="rd-r">Metade ganha menos de</span><span class="rd-v" id="res-med">950 €</span><span class="rd-n" id="res-dif">–</span></div>
 </div>
 <p class="res-partilha" id="res-partilha" hidden><button class="ligacao-botao" type="button" id="partilhar-resultado">Partilhar o resultado</button><span id="partilha-ok" class="res-nota" hidden>Copiado. Cola onde quiseres.</span></p>
-<p class="fonte" id="res-fonte">Quem trabalhava a tempo completo, Continente, outubro de 2024: os dados oficiais mais recentes (<a href="https://www.dgcp.mtsss.gov.pt/documents/10182/10928/seriesqp_2014_2024.xlsx/d0805880-6aef-4eb1-8602-56c1b8a989a1" rel="noopener">DGCP/MTSSS</a>). Os salários subiram desde então, por isso hoje a tua posição é um pouco mais baixa.</p>
+<p class="fonte" id="res-fonte">Quem trabalhava a tempo completo, Continente, outubro de 2024: os dados oficiais mais recentes (<a href="https://www.dgcp.mtsss.gov.pt/documents/10182/10928/seriesqp_2014_2024.xlsx/d0805880-6aef-4eb1-8602-56c1b8a989a1" rel="noopener">DGCP/MTSSS</a>). As barras são estimadas a partir dos decis. Os salários subiram desde então, por isso hoje a tua posição é um pouco mais baixa.</p>
 </div>
 </div>
 <div class="mold">
 <h2 class="vis">Compara mais</h2>
-<nav class="seguir" aria-label="Compara mais">
-<a class="cartao-seguir principal" id="seguir-liquido" href="/calculadora/"><b>Quanto levas para casa</b><span>O recibo linha a linha, com o IRS de 2026</span></a>
-<a class="cartao-seguir" href="/profissoes/"><b>Na tua profissão</b><span>134 profissões</span></a>
-<a class="cartao-seguir" href="/concelhos/"><b>No teu concelho</b><span>Os 308 concelhos</span></a>
-<a class="cartao-seguir" href="/funcao-publica/"><b>No Estado</b><span>76 carreiras, bruto e líquido</span></a>
-<a class="cartao-seguir" href="/europa/"><b>Na Europa</b><span>Portugal ao lado dos outros</span></a>
-<a class="cartao-seguir" href="/partilhar/"><b>A tua empresa paga bem?</b><span>Partilha o teu salário em 30 segundos</span></a>
+<nav class="indice" aria-label="Compara mais">
+<a class="indice-l principal" id="seguir-liquido" href="/calculadora/"><span class="r"><span class="mk">Quanto levas para casa</span></span><span class="p"></span><span class="v">IRS de 2026</span></a>
+<a class="indice-l" href="/profissoes/"><span class="r">Na tua profissão</span><span class="p"></span><span class="v">134 profissões</span></a>
+<a class="indice-l" href="/concelhos/"><span class="r">No teu concelho</span><span class="p"></span><span class="v">308 concelhos</span></a>
+<a class="indice-l" href="/funcao-publica/"><span class="r">No Estado</span><span class="p"></span><span class="v">76 carreiras</span></a>
+<a class="indice-l" href="/europa/"><span class="r">Na Europa</span><span class="p"></span><span class="v">27 países</span></a>
+<a class="indice-l" href="/partilhar/"><span class="r">A tua empresa paga bem?</span><span class="p"></span><span class="v">Partilhar</span></a>
 </nav>
 <p class="fonte" data-contador hidden></p>
 </div></section>
@@ -95,7 +97,7 @@
 <section class="sec"><div class="mold">
 <h2 class="entra">Portugal em 2024, em 3 números</h2>
 <div class="tres-numeros">
-<div class="entra"><p class="gigante-n">1.191 €</p><p>Metade ganhava menos do que isto, contando prémios e subsídios. A média era 1.583 €, puxada pelos salários mais altos.</p></div>
+<div class="entra"><p class="gigante-n">1.191 €</p><p>Com prémios e subsídios, metade ganhava menos do que isto (só no vencimento base, 950 €). A média era 1.583 €, puxada pelos salários mais altos.</p></div>
 <div class="entra"><p class="gigante-n">55 %</p><p>tinha um vencimento base até 1.000 €, com o salário mínimo nos 820 €.</p></div>
 <div class="entra"><p class="gigante-n">1 em 10</p><p>ganhava mais de 2.644 € por mês.</p></div>
 </div>
@@ -105,7 +107,7 @@
 <section class="sec folha"><div class="mold grelha2">
 <div class="entra"><h2>Bruto não é o que levas para casa</h2>
 <p class="lede espaco">Com as tabelas de IRS de 2026, a Segurança Social e o subsídio de alimentação, a calculadora mostra o teu recibo linha a linha.
-Em novembro de 2026, a retenção de IRS é metade.</p>
+Em novembro de 2026, só te retêm metade do IRS habitual.</p>
 <p class="espaco"><a class="botao" href="/calculadora/">Abrir a calculadora</a></p></div>
 <div class="recibo entra" aria-label="Exemplo de recibo">
 <h3 id="ex-tit">Exemplo: 1.200 € brutos</h3>
@@ -146,11 +148,11 @@ Em novembro de 2026, a retenção de IRS é metade.</p>
 <ul class="lista-colunas larga entra"><li><a href="/funcao-publica/professores/">Professores e educadores</a><span class="cifra">desde 1.771 €</span></li><li><a href="/funcao-publica/enfermeiros/">Enfermeiros</a><span class="cifra">desde 1.657 €</span></li><li><a href="/funcao-publica/medicos/">Médicos</a><span class="cifra">desde 2.517 €</span></li><li><a href="/funcao-publica/psp/">Polícia de Segurança Pública (PSP)</a><span class="cifra">desde 1.075 €</span></li><li><a href="/funcao-publica/tecnico-superior/">Técnico superior</a><span class="cifra">desde 1.499 €</span></li><li><a href="/funcao-publica/assistente-operacional/">Assistente operacional</a><span class="cifra">desde 935 €</span></li></ul>
 </div></section>
 
-<section class="sec"><div class="mold par">
-<div class="entra"><p class="gigante" aria-hidden="true">5+</p></div>
+<section class="sec"><div class="mold par par-inv">
 <div class="entra"><h2>A tua empresa paga bem?</h2>
-<p class="lede espaco">Partilha o teu salário em 30 segundos, sem nome. Uma empresa só aparece quando há pelo menos 5 pessoas.</p>
+<p class="lede espaco">Partilha o teu salário de forma anónima. Quanto mais colegas partilharem, mais cedo a tua empresa passa a ter números.</p>
 <p class="espaco"><a class="botao" href="/partilhar/">Partilhar o meu salário</a></p></div>
+<div class="entra"><p class="gigante">5</p><p class="gigante-leg">pessoas diferentes, no mínimo, antes de uma empresa aparecer no ganhas.pt.</p></div>
 </div></section>
 <section class="sec"><div class="mold par">
 <div class="entra"><h2>Portugal ao lado da Europa</h2>

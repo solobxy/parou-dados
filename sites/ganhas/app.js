@@ -19,6 +19,16 @@
   const estat = (n, v) => { try { window.estat && window.estat(n, v); } catch (e) { /* sem estatísticas */ } };
   document.documentElement.classList.remove('sem-js');
 
+  // ---------- menu do telemóvel: fecha com Esc, ao tocar fora e ao escolher uma página ----------
+  const menu = $('.menu');
+  if (menu) {
+    const fechar = () => { if (menu.open) menu.open = false; };
+    document.addEventListener('keydown', (ev) => { if (ev.key === 'Escape' && menu.open) { fechar(); $('summary', menu).focus(); } });
+    document.addEventListener('click', (ev) => { if (menu.open && !menu.contains(ev.target)) fechar(); });
+    $$('.menu-folha a', menu).forEach((a) => a.addEventListener('click', fechar));
+    menu.addEventListener('toggle', () => { if (menu.open) estat('menu', location.pathname); });
+  }
+
   // ---------- entradas e traço de marcador (uma vez) ----------
   // também mostra o que já ficou para trás (saltos com âncoras ou scroll muito rápido)
   const io = 'IntersectionObserver' in window ? new IntersectionObserver((es) => {
@@ -291,6 +301,8 @@
         subsidioDia: parseFloat(($('#c-subs').value || '0').replace(',', '.')) || 0,
         subsidioTipo: $('#c-subs-tipo').value,
       };
+      const barra = $('#c-barra');
+      if (barra) barra.hidden = !(bruto >= 1);
       if (!bruto || bruto < 1) { calc.classList.add('vazia'); return; }
       calc.classList.remove('vazia');
       const r = liquido(o);
@@ -302,6 +314,7 @@
       out('c-r-ss', '− ' + euro(r.ss, 2));
       out('c-r-irs', '− ' + euro(r.irs, 2));
       contar($('#c-r-liq'), r.liquidoMes, (v) => euro(v, 2));
+      out('c-barra-v', euro(r.liquidoMes, 2));
       out('c-r-ano', euro(r.anual, 0));
       out('c-r-taxa', pct(r.R ? (r.irs / (r.R + r.duo)) * 100 : 0, 1));
       out('c-r-custo', euro(r.custoEmpresa, 2));
@@ -315,6 +328,11 @@
       if (q && /^\d{3,6}$/.test(q)) $('#c-bruto').value = q;
     } catch (e) { /* sem parâmetros */ }
     campos.forEach((c) => c.addEventListener('input', correr));
+    // no telemóvel o recibo fica abaixo dos campos: uma barra em baixo mostra o líquido enquanto o recibo não está à vista
+    const barraC = $('#c-barra'), reciboC = $('#recibo');
+    if (barraC && reciboC && 'IntersectionObserver' in window) {
+      new IntersectionObserver((es) => { barraC.classList.toggle('fora', es.some((x) => x.isIntersecting)); }).observe(reciboC);
+    }
     const fc = $('#form-calc'); if (fc) fc.addEventListener('submit', (ev) => ev.preventDefault());
     correr();
   }

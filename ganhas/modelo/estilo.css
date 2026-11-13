@@ -293,7 +293,7 @@ li::marker{font-variant-numeric:normal}
 .caixa-linha{display:flex;align-items:baseline;gap:8px}
 .caixa-linha input{flex:1;min-width:0;width:100%;height:1.15em;border:0;background:transparent;color:var(--tinta);padding:0;outline:0;
   font:800 clamp(52px,14vw,88px)/1.1 var(--d);font-stretch:80%;letter-spacing:-.02em}
-.caixa-linha input::placeholder{font:500 24px/1 var(--t);letter-spacing:0;color:var(--tinta-2);opacity:.8}
+.caixa-linha input::placeholder{color:var(--tinta-2);opacity:.4}
 .caixa-linha .unid{font:800 34px/1 var(--d);color:var(--tinta-2)}
 .comparador .ajuda{font-size:14px;margin-top:8px}
 .erro-campo{margin-top:8px;color:var(--alerta);font-weight:700;font-size:15px}
@@ -305,8 +305,10 @@ li::marker{font-variant-numeric:normal}
 .afinar-mudar{font-weight:700;color:var(--caneta);text-decoration:underline;text-decoration-thickness:1.5px;text-underline-offset:3px}
 .afinar[open] .afinar-mudar{display:none}
 .afinar .opcoes{margin-top:6px}
-.res-cartao{background:var(--folha);padding:18px 16px 14px;box-shadow:inset 0 4px 0 var(--risco);scroll-margin-top:76px;outline:0;transition:box-shadow .3s}
-.res-cartao[data-estado="cheio"]{box-shadow:inset 0 6px 0 var(--marcador)}
+/* o resultado é um talão de recibo: folha branca com a borda de baixo rasgada */
+.res-cartao{position:relative;background:var(--folha);padding:18px 16px 16px;margin-bottom:10px;scroll-margin-top:76px;outline:0}
+.res-cartao::after{content:"";position:absolute;left:0;right:0;bottom:-10px;height:10px;
+  background:linear-gradient(-45deg,transparent 7px,var(--folha) 0) 0 0/14px 10px,linear-gradient(45deg,transparent 7px,var(--folha) 0) 0 0/14px 10px}
 .res-pre{font:700 18px/1.25 var(--t)}
 .res-grande{font:800 clamp(68px,20vw,136px)/.95 var(--d);font-stretch:78%;letter-spacing:-.03em;margin:8px 0 6px}
 .res-grande .mk{white-space:nowrap}
@@ -325,23 +327,94 @@ a.rd .rd-n{color:var(--caneta);font-weight:700}
 a.rd:hover .rd-n{text-decoration:underline}
 .res-cartao .res-partilha{margin-top:6px}
 .res-cartao .fonte{font-size:13px;margin-top:10px}
-.seguir{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:24px}
-@media (min-width:960px){.seguir{grid-template-columns:repeat(3,1fr);gap:16px;margin-top:56px}}
-.cartao-seguir{position:relative;display:flex;flex-direction:column;gap:6px;min-height:108px;padding:14px 14px 30px;background:var(--folha);color:var(--tinta);
-  text-decoration:none;box-shadow:inset 0 0 0 2px var(--risco);transition:box-shadow .15s,transform .1s}
-.cartao-seguir::after{content:"→";position:absolute;right:14px;bottom:10px;font:700 18px/1 var(--t)}
-.cartao-seguir b{font:700 19px/1.12 var(--d);letter-spacing:-.01em}
-.cartao-seguir span{font-size:14px;line-height:1.3;color:var(--tinta-2)}
-.cartao-seguir:hover{box-shadow:inset 0 0 0 2px var(--tinta)}
-.cartao-seguir:active{transform:translateY(1px)}
-.cartao-seguir.principal{background:var(--marcador);box-shadow:none;color:#111311}
-.cartao-seguir.principal span{color:#111311}
-@media (min-width:960px){.cartao-seguir{min-height:132px;padding:20px 20px 40px}.cartao-seguir b{font-size:24px}.cartao-seguir span{font-size:16px}}
 .tres-numeros{display:grid;gap:28px;margin-top:32px}
 @media (min-width:900px){.tres-numeros{grid-template-columns:repeat(3,1fr);gap:48px;margin-top:48px}}
 .tres-numeros>div{border-top:2px solid var(--tinta);padding-top:16px}
 .gigante-n{font:800 clamp(56px,14vw,96px)/.95 var(--d);font-stretch:78%;letter-spacing:-.03em;margin-bottom:10px;white-space:nowrap}
-@media (prefers-reduced-motion:reduce){.res-cartao{transition:none}}
 .heroi .comparador{display:block}
 /* texto sobre o marcador sempre escuro (no modo escuro ficava claro sobre amarelo) */
 .mk.on,.sem-js .mk{color:#111311}
+
+/* ---------- topo: menu do telemóvel ---------- */
+.topo .mold{gap:10px}
+.topo .botao.topo-sec{padding:0 14px}
+.menu summary{list-style:none;display:grid;place-items:center;width:44px;height:44px;cursor:pointer;color:var(--tinta);box-shadow:inset 0 0 0 2px var(--tinta);
+  transition:background-color .15s,color .15s}
+.menu summary::-webkit-details-marker{display:none}
+.menu summary svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2.2}
+.menu summary:focus-visible{outline:3px solid var(--caneta);outline-offset:2px}
+.menu[open] summary{background:var(--tinta);color:var(--papel)}
+.menu-folha{position:absolute;left:0;right:0;top:64px;display:grid;align-content:start;max-height:calc(100dvh - 64px);overflow:auto;overscroll-behavior:contain;
+  background:var(--folha);padding:4px var(--m) calc(24px + env(safe-area-inset-bottom));box-shadow:0 8px 24px rgb(0 0 0/.12)}
+.menu-folha a:not(.botao){display:flex;align-items:center;min-height:54px;color:var(--tinta);text-decoration:none;font:700 20px/1.15 var(--d);letter-spacing:-.01em;
+  border-bottom:2px solid var(--risco)}
+.menu-folha a[aria-current="page"]:not(.botao){box-shadow:inset 6px 0 0 var(--marcador);padding-left:14px}
+.menu-folha .botao{margin-top:20px}
+@media (prefers-reduced-motion:no-preference){.menu[open] .menu-folha{animation:menu-abre .2s var(--ease)}}
+@keyframes menu-abre{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:none}}
+@media (min-width:960px){.menu{display:none}.topo .mold{gap:24px}}
+@media (max-width:359px){.topo .botao.topo-sec{display:none}.menu{margin-left:auto}}
+
+/* ---------- índice «Compara mais»: linhas de recibo em vez de cartões ---------- */
+.indice{display:grid;grid-template-columns:minmax(0,1fr);margin-top:32px;border-top:2px solid var(--tinta)}
+.indice-l{display:flex;align-items:baseline;gap:10px;min-height:60px;padding:17px 0 14px;border-bottom:2px solid var(--risco);color:var(--tinta);text-decoration:none}
+.indice-l .r{flex:0 1 auto;min-width:0;font:700 20px/1.15 var(--d);letter-spacing:-.01em}
+.indice-l .p{flex:1;min-width:14px;border-bottom:2px dotted var(--barra);transform:translateY(-5px)}
+.indice-l .v{flex:none;font-size:15px;font-weight:600;color:var(--tinta-2);white-space:nowrap}
+.indice-l .v::after{content:"›";margin-left:8px;font-weight:800;color:var(--tinta)}
+.indice-l:hover .r{text-decoration:underline;text-decoration-thickness:2px;text-underline-offset:4px}
+.indice-l:active{transform:translateY(1px)}
+.indice-l .mk{color:#111311;white-space:normal;-webkit-box-decoration-break:clone;box-decoration-break:clone}
+@media (min-width:960px){.indice{grid-template-columns:minmax(0,1fr) minmax(0,1fr);column-gap:64px;margin-top:64px}.indice-l{min-height:72px}.indice-l .r{font-size:24px}.indice-l .v{font-size:16px}}
+
+/* «5»: o número tem legenda (não é decoração) */
+.gigante-leg{margin-top:12px;max-width:22em;font-size:17px;color:var(--tinta-2)}
+
+/* ---------- topo das páginas interiores: título à esquerda, resumo ou pesquisa à direita ---------- */
+.pag-topo{display:grid;gap:40px;align-items:start}
+.pag-topo .procura{align-self:end}
+.pag-topo .lede{max-width:36em}
+.resumo{width:100%;max-width:520px;align-self:start}
+.resumo .recibo-t{font:700 20px/1.2 var(--d);letter-spacing:-.01em;margin-bottom:8px}
+.resumo .linha{font-size:16px;padding:9px 0}
+.linha.marcada .v{font-weight:800}
+.so-largo{display:none}
+.procura{max-width:560px}
+.procura .dica{margin-top:10px}
+.tabela-media{max-width:760px}
+@media (min-width:960px){
+  .pag-topo{grid-template-columns:minmax(0,7fr) minmax(0,5fr);gap:72px}
+  .pag-topo .h1-pag{font-size:clamp(56px,5.8vw,84px)}
+  .so-largo{display:block}
+  .resumo{justify-self:end;margin-top:8px}
+}
+/* títulos condensados: um pouco mais de ar entre as letras (o «Q» e o «u» tocavam-se) */
+.heroi h1{letter-spacing:-.022em}
+.h1-pag{letter-spacing:-.02em}
+/* colunas de texto alinhadas à esquerda com o título e as migalhas (antes ficavam ao centro e fugiam da aresta) */
+.mold.texto{max-width:var(--max)}
+.mold.texto>*{max-width:44em}
+.mold.texto>.rolar,.mold.texto>table{max-width:min(100%,52em)}
+.menu:not([open]) .menu-folha{display:none}
+/* «Quanto ganhas?» não parte de linha: abaixo de 390 px a letra encolhe para não sair do ecrã (320 e 360 px) */
+.heroi h1{font-size:clamp(40px,12.4vw,132px)}
+@media (min-width:960px){.heroi h1{font-size:clamp(64px,6.8vw,96px)}}
+
+/* topo do telemóvel: o botão «Partilhar salário» com a mesma altura do menu (44 px) */
+.topo .botao{min-height:44px}
+.menu .ic-fechar,.menu[open] .ic-abrir{display:none}
+.menu[open] .ic-fechar{display:block}
+/* menu aberto: o resto da página escurece por trás da folha */
+.menu[open] summary::after{content:"";position:fixed;left:0;right:0;top:64px;bottom:0;background:rgb(17 19 17/.38);z-index:-1;cursor:default}
+/* «A tua empresa paga bem?»: o título primeiro; no computador o 5 fica à direita */
+@media (min-width:960px){.par-inv{grid-template-columns:minmax(0,7fr) minmax(0,5fr);align-items:center}}
+/* calculadora no telemóvel: o líquido sempre à vista até se chegar ao recibo */
+.calc-barra{position:fixed;left:0;right:0;bottom:0;z-index:30;display:flex;align-items:center;gap:12px;
+  padding:12px var(--m) calc(12px + env(safe-area-inset-bottom));background:var(--folha);color:var(--tinta);text-decoration:none;
+  box-shadow:0 -2px 0 var(--tinta);transition:transform .25s var(--ease)}
+.calc-barra-r{font-size:15px;font-weight:600;color:var(--tinta-2)}
+.calc-barra b{font:800 26px/1 var(--d);font-stretch:85%;background:var(--marcador);color:#111311;padding:2px 6px}
+.calc-barra-ir{margin-left:auto;font-weight:700;font-size:15px;color:var(--caneta);text-decoration:underline;text-underline-offset:3px}
+.calc-barra.fora{transform:translateY(110%)}
+@media (min-width:960px){.calc-barra{display:none}}
+@media (prefers-reduced-motion:reduce){.calc-barra{transition:none}}

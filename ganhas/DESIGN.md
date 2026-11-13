@@ -46,13 +46,22 @@ marcador igual (texto em `#111311` por cima), caneta `#8FA5FF`.
   Estados: hover escurece para `#F5D800`; foco = contorno 3 px caneta com 2 px de afastamento; ativo desce 1 px;
   a carregar mostra «A enviar…» e fica ativo até o pedido começar.
 - **Botão secundário:** sublinhado caneta, sem caixa.
-- **Campo de salário:** número gigante (Bricolage 56–96 px), `inputmode="decimal"`, sufixo «€ brutos por mês»,
-  linha inferior de 2 px tinta (como a linha do recibo); erro por baixo com ícone.
+- **Campo de salário:** caixa com o rótulo em cima e o número gigante (Bricolage 52–88 px); o exemplo («1200») aparece
+  no mesmo tamanho, a 32 % (sem buraco entre o rótulo e o número), `inputmode="decimal"`; erro por baixo com «!».
+- **Resultado do início:** talão de recibo (folha branca com a borda de baixo rasgada), sem riscas de cor em cima.
 - **Linhas de recibo:** pares rótulo · valor alinhados à direita com pontilhado de guia (o recibo verdadeiro).
 - **Traço de marcador:** `::before` com `transform: scaleX()` de 0 a 1 em 520 ms, origem à esquerda,
   ligeira inclinação de −1° e bordos irregulares (máscara SVG). É o movimento assinatura.
-- **Navegação:** marca «ganhas.pt» + 4 ligações (Calculadora, Profissões, Concelhos, Partilhar). No telemóvel,
-  barra inferior fixa só com «Partilhar o meu salário» quando o comparador já não está à vista.
+- **Navegação:** marca «ganhas.pt», 5 ligações no computador (Calculadora, Profissões, Concelhos, Função pública,
+  Empresas) e o botão «Partilhar salário». No telemóvel: marca, «Partilhar salário» e o botão do menu (≡, 44 px), que
+  abre uma folha com as páginas em linhas de 54 px e o botão «Partilhar o meu salário» (`<details>`, funciona sem
+  script; fecha com Esc, ao tocar fora ou ao escolher). Abaixo de 360 px o «Partilhar salário» sai do topo (fica no menu).
+- **Índice «Compara mais»** (início): linhas de recibo (pergunta · · · · detalhe ›), 2 colunas no computador; a
+  primeira leva o traço de marcador. Nada de cartões com setas.
+- **Resumo em recibo** (`resumo_recibo` em `gerar.py`): ao lado do título das páginas interiores no computador
+  (salário mínimo e médio, Europa, função pública; também nas páginas de concelho e profissão). O tipo «total» é só
+  para contas a sério (o líquido); para destacar uma linha sem ser total usa-se «mk». Em profissões e concelhos, o
+  lugar à direita do título é da pesquisa.
 
 ## 5. Layout e espaço
 
@@ -96,4 +105,5 @@ espaçadas; monoespaçada; emoji; numeração 01/02/03; urgência falsa; anúnci
 - Cores: papel F7F7F2, tinta 111311, marcador FFE500, caneta 1F3FD8.
 - Fontes: Bricolage (títulos/números), Schibsted (resto).
 - Regra de dados: cada número na página tem fonte, ano e ligação em `/fontes`. Comunidade só com n ≥ 5.
-- Crédito no rodapé: «Feito por dinissousa» com ligação para https://dinissousa.pt.
+- Crédito no rodapé: «Feito por dinissousa.pt» com ligação para https://dinissousa.pt.
+- Colunas de texto (`.mold.texto`) alinhadas à esquerda com o título e as migalhas, nunca ao centro.

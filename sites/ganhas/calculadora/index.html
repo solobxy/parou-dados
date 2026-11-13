@@ -25,17 +25,19 @@
 <link rel="manifest" href="/manifest.webmanifest">
 <link rel="preload" href="/fontes/bricolage.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="/fontes/schibsted.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="/estilo.css?v=f65a6d8405">
+<link rel="stylesheet" href="/estilo.css?v=a973c4cc93">
 <script defer src="/_e.js" data-site="ganhas"></script>
-<script defer src="/app.js?v=dad43f2f35"></script>
+<script defer src="/app.js?v=2fdfb88dc0"></script>
 <script type="application/ld+json">{"@context": "https://schema.org", "@graph": [{"@type": "Organization", "@id": "https://ganhas.pt/#org", "name": "ganhas.pt", "url": "https://ganhas.pt/", "logo": "https://ganhas.pt/icone-512.png", "founder": {"@type": "Person", "name": "Dinis Sousa", "url": "https://dinissousa.pt"}}, {"@type": "WebSite", "@id": "https://ganhas.pt/#site", "name": "ganhas.pt", "url": "https://ganhas.pt/", "inLanguage": "pt-PT", "publisher": {"@id": "https://ganhas.pt/#org"}}, {"@type": "WebApplication", "name": "Calculadora de salário líquido 2026", "url": "https://ganhas.pt/calculadora/", "applicationCategory": "FinanceApplication", "operatingSystem": "Todos", "inLanguage": "pt-PT", "offers": {"@type": "Offer", "price": "0", "priceCurrency": "EUR"}}, {"@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "Início", "item": "https://ganhas.pt/"}, {"@type": "ListItem", "position": 2, "name": "Calculadora", "item": "https://ganhas.pt/calculadora/"}]}]}</script>
 </head>
 <body>
 <a class="salto" href="#conteudo">Saltar para o conteúdo</a>
 <header class="topo"><div class="mold">
 <a class="marca" href="/" aria-label="ganhas.pt, início">ganhas<span>.pt</span></a>
-<nav class="nav" aria-label="Principal"><a href="/calculadora/" aria-current="page">Calculadora</a><a href="/profissoes/">Profissões</a><a href="/concelhos/">Concelhos</a><a href="/empresa/">Empresas</a></nav>
-<a class="botao topo-sec" href="/partilhar/">Partilhar</a>
+<nav class="nav" aria-label="Principal"><a href="/calculadora/" aria-current="page">Calculadora</a><a href="/profissoes/">Profissões</a><a href="/concelhos/">Concelhos</a><a href="/funcao-publica/">Função pública</a><a href="/empresa/">Empresas</a></nav>
+<a class="botao topo-sec" href="/partilhar/">Partilhar salário</a>
+<details class="menu"><summary aria-label="Menu"><svg class="ic-abrir" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7h18M3 12h18M3 17h18"/></svg><svg class="ic-fechar" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5l14 14M19 5L5 19"/></svg></summary>
+<nav class="menu-folha" aria-label="Menu"><a href="/">Comparar o meu salário</a><a href="/calculadora/" aria-current="page">Calculadora de salário líquido</a><a href="/profissoes/">Salários por profissão</a><a href="/concelhos/">Salários por concelho</a><a href="/funcao-publica/">Função pública</a><a href="/empresa/">Quanto pagam as empresas</a><a href="/salario-minimo/">Salário mínimo</a><a href="/salario-medio/">Salário médio</a><a href="/europa/">Portugal e a Europa</a><a class="botao largo" href="/partilhar/">Partilhar o meu salário</a></nav></details>
 </div></header>
 <main id="conteudo">
 
@@ -47,16 +49,18 @@
 <form class="form" id="form-calc" aria-label="Dados para o cálculo">
 <div class="f"><label for="c-bruto">Salário bruto mensal</label><input type="text" id="c-bruto" inputmode="decimal" autocomplete="off" placeholder="1 200" value="1200"></div>
 <div class="f"><label for="c-situacao">Situação</label><select id="c-situacao">
-<option value="nc">Não casado (solteiro, divorciado, viúvo)</option>
-<option value="c2">Casado ou unido de facto, os dois com rendimentos</option>
-<option value="c1">Casado ou unido de facto, só um com rendimentos</option></select></div>
+<option value="nc">Não casado</option>
+<option value="c2">Casado, os dois ganham</option>
+<option value="c1">Casado, só um ganha</option></select>
+<p class="dica">Unido de facto conta como casado. Solteiro, divorciado ou viúvo conta como não casado.</p></div>
 <div class="f"><label for="c-dep">Dependentes</label><select id="c-dep"><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5 ou mais</option></select></div>
-<div class="f"><label for="c-meses">Recebes em</label><select id="c-meses"><option value="14">14 meses (subsídios de férias e Natal à parte)</option><option value="12">12 meses (subsídios em duodécimos)</option></select></div>
+<div class="f"><label for="c-meses">Recebes em</label><select id="c-meses"><option value="14">14 meses</option><option value="12">12 meses (duodécimos)</option></select>
+<p class="dica">Com 14, os subsídios de férias e de Natal vêm à parte. Com 12, vêm divididos pelos meses.</p></div>
 <div class="f"><label for="c-subs">Subsídio de alimentação por dia <span class="opc">(opcional)</span></label><input type="text" id="c-subs" inputmode="decimal" placeholder="6,15"></div>
-<div class="f"><label for="c-subs-tipo">Pago em</label><select id="c-subs-tipo"><option value="cartao">Cartão ou vale de refeição</option><option value="dinheiro">Dinheiro, junto com o salário</option></select>
+<div class="f"><label for="c-subs-tipo">Pago em</label><select id="c-subs-tipo"><option value="cartao">Cartão refeição</option><option value="dinheiro">Dinheiro, com o salário</option></select>
 <p class="dica">Isento até 6,15 € por dia em dinheiro e 10,46 € em cartão. Contamos 22 dias por mês.</p></div>
 </form>
-<div class="recibo" aria-live="polite">
+<div class="recibo" id="recibo" aria-live="polite">
 <h2 class="recibo-t">O teu recibo</h2>
 <div class="linha"><span class="r">Vencimento base</span><span class="p"></span><span class="v" id="c-r-base">—</span></div>
 <div class="linha" id="c-l-subs" hidden><span class="r">Subsídio de alimentação</span><span class="p"></span><span class="v" id="c-r-subs">—</span></div>
@@ -71,6 +75,7 @@
 <p class="fonte">A retenção é um adiantamento do IRS: o imposto final só se sabe na declaração anual. Em novembro de 2026 a retenção é reduzida a metade (Circular n.º 5/2026), exceto acima do penúltimo escalão.
 O custo para a empresa soma 23,75 % de TSU ao salário. Não aplicamos o IRS Jovem nem as regras para pessoas com deficiência.</p>
 </div>
+<a class="calc-barra" id="c-barra" href="#recibo" hidden><span class="calc-barra-r">Líquido por mês</span><b id="c-barra-v">—</b><span class="calc-barra-ir">Ver o recibo</span></a>
 <div class="chamada" id="c-chamada" hidden>
 <p><strong>Estás a ganhar o justo?</strong> Partilha este salário de forma anónima e vê quanto ganham outras pessoas na tua profissão.</p>
 <p class="acoes"><a class="botao" href="/partilhar/" id="c-ir-partilhar">Partilhar e comparar</a><a class="botao sec2" href="/">Ver onde fico em Portugal</a></p>
