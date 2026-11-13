@@ -1,0 +1,11 @@
+[SQLite DB] Base de dados sem feeds. A registar feeds oficiais do catálogo...
+[SQLite DB] 29 feeds registados com sucesso.
+OK      existe getFeedTimezone 
+OK      Ponta Delgada (mdb-9001) → Atlantic/Azores Atlantic/Azores
+OK      Angra (mdb-9002) → Atlantic/Azores Atlantic/Azores
+OK      Funchal (mdb-9003) → Europe/Lisbon (a Madeira tem a hora de Lisboa) Europe/Lisbon
+OK      Lisboa (mdb-9004) → Europe/Lisbon Europe/Lisbon
+OK      operador sem paragens → Europe/Lisbon 
+OK      ids antigos com "acores" continuam 
+
+Todos os testes OK

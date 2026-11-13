@@ -1,0 +1,9 @@
+[SQLite DB] Base de dados sem feeds. A registar feeds oficiais do catálogo...
+[SQLite DB] 29 feeds registados com sucesso.
+OK      [limite] a app diz quantas zonas tem guardadas 
+OK      [limite] 2000 zonas pedidas: a cache fica com no máximo 300 300 zonas guardadas
+OK      [base nova] a cache das zonas esvazia quando chega uma base nova 0
+OK      [raio] r=1000000 conta como 2000 e r inválido como 500 2
+OK      [raio] limites 100 e 2000 m 
+OK      [base nova] as próximas partidas guardadas também se limpam 
+tudo OK

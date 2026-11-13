@@ -1,0 +1,27 @@
+[SQLite DB] Base de dados sem feeds. A registar feeds oficiais do catálogo...
+[SQLite DB] 29 feeds registados com sucesso.
+OK      [sem locais] continua a dar as paragens ["Oriente","Oriente","Gare do Oriente","Lisboa - Oriente","Rua de Viseu 21"]
+OK      [paragens] o mesmo nome a 30 m é uma só sugestão 1
+OK      [paragens] a estação de metro vem antes da paragem de autocarro 
+OK      [paragens] a estação traz o tipo e o operador 
+OK      [importância] «colombo» sem localização: o centro comercial primeiro ["Centro Comercial Colombo","Colombo","Continente Colombo","Rua Cristóvão Colombo"]
+OK      [importância] a paragem «Colombo» de Porto Santo fica depois 
+OK      [importância] «colombo» no Porto: o centro comercial continua primeiro ["Centro Comercial Colombo","Colombo","Continente Colombo","Rua Cristóvão Colombo"]
+OK      [tipo] «colombo shopping» encontra o Centro Comercial Colombo ["Centro Comercial Colombo","Continente Colombo","Rua Cristóvão Colombo"]
+OK      [distância] «continente» em Lisboa: o mais perto primeiro ["Continente Bom Dia Arroios, Lisboa","Continente Odivelas","Continente Colombo Carnide, Lisboa"]
+OK      [distância] «continente» no Porto: o do Porto primeiro ["Continente Bom Dia Bolhão, Porto","Continente Travagem, Maia","Continente Odivelas"]
+OK      [distância] «aeroporto» no Porto: o do Porto primeiro ["Aeroporto Francisco Sá Carneiro","Aeroporto Humberto Delgado","Aeroporto João Paulo II","Aeroporto","Aeroporto (Partidas)"]
+OK      [distância] «aeroporto» em Lisboa: o de Lisboa primeiro ["Aeroporto Humberto Delgado","Aeroporto Francisco Sá Carneiro","Aeroporto João Paulo II","Aeroporto","Aeroporto (Partidas)"]
+OK      [acentos] «torre de belem» sem acento encontra a Torre de Belém ["Torre de Belém","Avenida da Torre de Belém","Miradouro da Torre de Belém","Réplica da Torre de Belém","Jardim António Viana Barreto","Rua Bartolomeu Dias 172B","Embaixada Grecia","Praça de Malaca 3"]
+OK      [outros nomes] «belem tower» (nome inglês) encontra a Torre de Belém ["Torre de Belém"]
+OK      [tipo] «praia» perto do palácio Praia e Monforte: a praia vem primeiro ["Praia de Algés","Palácio Praia e Monforte","Praia Nova"]
+OK      [tipo] cada local traz o tipo para a app traduzir 
+OK      [a escrever] «aer» já mostra o aeroporto ["Aeroporto Humberto Delgado","Aeroporto Francisco Sá Carneiro","Aeroporto João Paulo II","Aeroporto","Aeroporto (Partidas)"]
+OK      [terra] «aeroporto ponta delgada» encontra o aeroporto de Ponta Delgada ["Aeroporto João Paulo II","Rua de Ponta Delgada","Rotunda do Aeroporto","Armazéns do Aeroporto","Aeroporto Velho"]
+OK      [terra] «continente maia» (em Lisboa) dá o Continente da Maia primeiro ["Continente Travagem, Maia","Continente Maia Zona Industrial de Alfena · Valongo · 4445-259","Continente Maia Jardim Nogueira · Nogueira e Silva Escura · 4475-452"]
+OK      [porta] o aeroporto de Lisboa leva à estação Aeroporto (à porta), não às pistas 0 m
+OK      [uma palavra] «mar shopping» encontra o MarShopping (no mapa é uma palavra só) ["MarShopping","Marinha Grande","Mar Shopping Algarve","Mar Shopping Nascente","Topcostura Norsec - MAR Shopping Matosinhos","Pingo Doce Loulé (Mar Shopping)","MarShopping - IKEA","Rua do Shopping"]
+OK      [nome exato] «avenida da liberdade» dá a avenida antes do hotel que tem o nome dela ["Avenida da Liberdade","AVANI Avenida Liberdade Lisbon Hotel"]
+OK      [rapidez] 50 pesquisas em menos de 1 s 10 ms
+OK      [robustez] aspas e símbolos não partem a pesquisa 
+Todos os testes passaram

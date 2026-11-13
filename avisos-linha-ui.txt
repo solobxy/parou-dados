@@ -1,0 +1,20 @@
+OK      [preparar] há duas linhas reais diferentes da Carris Metropolitana e uma de outro operador cm:1001,cm:1002 stcp:200
+OK      [convite] aparece ao guardar a linha Avisar-te sobre a linha 1001? Greves, desvios e perturbações nesta linha, mesmo com a app fechada. Avisar-me
+OK      [convite] diz qual é a linha 1001
+OK      [ligar] mostra «Avisos ligados» Avisos ligados Greves, desvios e perturbações na linha 1001 chegam-te mesmo com a app fechada.
+OK      [ligar] o servidor recebe a linha guardada [{"op":"Carris Metropolitana","ln":"1001","nome":"Alfragide (Estr Seminario) - Reboleira (Estação)"}]
+OK      [ligar] em modo de alertas (não só lembretes) alertas
+OK      [ligar] fica ligado nas preferências 
+OK      [ecrã] sem scroll lateral a 390 px 390
+OK      [ecrã] sem erros na página 
+OK      [outro operador] não aparece convite stcp:200
+OK      [ligados] confirma que a linha passa a ter avisos Vais saber o que se passa na linha 1001 As linhas que guardas também recebem avisos de greves, desvios e perturbações.
+OK      [ligados] o servidor recebe a linha nova [{"op":"Carris Metropolitana","ln":"1001","nome":"Alfragide (Estr Seminario) - Reboleira (Estação)"}]
+OK      [ligados] mantém os distritos ["Lisboa"]
+OK      [ligados] guarda a 2.ª linha pela pesquisa 1002
+OK      [ligados] a confirmação só aparece uma vez 
+OK      [ligados] o servidor fica com as duas linhas [{"op":"Carris Metropolitana","ln":"1002","nome":"Reboleira (Estação) | Circular via Alfragide (Centro comerci"},{"op":"Carris Metropolitana","ln":"1001","nome":"Alfragide (Estr Seminario) - Reboleira (Estação)"}]
+OK      [ligados] tirar duas linhas seguidas: um só pedido, já sem linhas 1 [[]]
+OK      [agora não] ao guardar outra linha, não volta a aparecer true
+
+Tudo OK
