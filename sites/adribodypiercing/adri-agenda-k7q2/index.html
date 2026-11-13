@@ -832,37 +832,49 @@ function imagemObrigado(d){
     x.fillStyle = OSSO; x.font = '600 44px "Bricolage Grotesque"'; x.fillText('Conta como correu', tx, py + 86);
     x.fillStyle = '#B9B7BC'; x.font = '400 26px Figtree';
     var ty = py + 132; linhasTxt(x, 'Aponta a câmara ao código, ou abre o link:', tmax).forEach(function(l){ x.fillText(l, tx, ty); ty += 36; });
-    var lnkTxt = d.link.replace(/^https?:\/\//, ''), lf = 26;
-    do { x.font = '600 ' + lf + 'px Figtree'; lf -= 1; } while (x.measureText(lnkTxt).width > tmax && lf > 15);
-    ty += 8; x.fillStyle = '#9AA8FF'; x.fillText(lnkTxt, tx, ty);
-    var lw = x.measureText(lnkTxt).width; x.fillRect(tx, ty + 6, lw, 2);
     x.fillStyle = '#B9B7BC'; x.font = '400 22px Figtree';
     var l = cfg && cfg.local; x.fillText(cortar(x, l ? l.nome + ', ' + l.rua.replace(/,\s*/, ' ') + ', ' + l.cidade : 'Kaos Tattoo, Rua da Torrinha 202, Porto', tmax), tx, py + ph - 40);
-    var zonas = [{x: qx, y: qy, w: qs, h: qs}, {x: tx, y: ty - 30, w: lw, h: 44}];
-    return new Promise(function(ok, ko){ cv.toBlob(function(b){ b ? ok({jpg: b, w: W, h: H, zonas: zonas}) : ko(); }, 'image/jpeg', 0.92); });
+    ty += 8;
+    var paraBlob = function(){ return new Promise(function(ok, ko){ cv.toBlob(function(b){ b ? ok(b) : ko(); }, 'image/jpeg', 0.92); }); };
+    return paraBlob().then(function(semLink){
+      var lnkTxt = d.link.replace(/^https?:\/\//, ''), lf = 26;
+      do { x.font = '600 ' + lf + 'px Figtree'; lf -= 1; } while (x.measureText(lnkTxt).width > tmax && lf > 15);
+      x.fillStyle = '#9AA8FF'; x.fillText(lnkTxt, tx, ty);
+      var lw = x.measureText(lnkTxt).width; x.fillRect(tx, ty + 6, lw, 2);
+      return paraBlob().then(function(comLink){
+        return {jpg: comLink, jpgPdf: semLink, w: W, h: H, qr: {x: qx, y: qy, w: qs, h: qs}, texto: {x: tx, y: ty, max: tmax, txt: d.link}};
+      });
+    });
   });
 }
 /* PDF de uma página com a imagem e zonas clicáveis para o link (sem bibliotecas) */
 function pdfDeImagem(img, url){
-  return img.jpg.arrayBuffer().then(function(buf){
+  return img.jpgPdf.arrayBuffer().then(function(buf){
     var jpg = new Uint8Array(buf), k = 0.4, PW = img.w * k, PH = img.h * k, partes = [], pos = 0, offs = [];
     var enc = new TextEncoder();
     function txt(s){ var b = enc.encode(s); partes.push(b); pos += b.length; }
     function bin(b){ partes.push(b); pos += b.length; }
     function obj(n, corpo){ offs[n] = pos; txt(n + ' 0 obj\n' + corpo + '\nendobj\n'); }
-    var u = url.replace(/[\\()]/g, function(c){ return '\\' + c; }), f = function(v){ return v.toFixed(2); };
-    var anots = img.zonas.map(function(z, i){ return (6 + i) + ' 0 R'; }).join(' ');
+    var esc2 = function(t){ return t.replace(/[\\()]/g, function(c){ return '\\' + c; }); }, f = function(v){ return v.toFixed(2); };
+    // o link escrito como texto a sério: os leitores de PDF reconhecem-no e deixam tocar, mesmo os que ignoram zonas clicáveis
+    var cvm = document.createElement('canvas').getContext('2d'); cvm.font = 'bold 100px Helvetica, Arial, sans-serif';
+    var t = img.texto, larg100 = cvm.measureText(t.txt).width / 100, fs = Math.min(26 * k, (t.max * k) / larg100), tw = larg100 * fs;
+    var bx = t.x * k, by = PH - t.y * k;
+    var zonas = [[img.qr.x * k, PH - (img.qr.y + img.qr.h) * k, (img.qr.x + img.qr.w) * k, PH - img.qr.y * k], [bx, by - 4, bx + tw, by + fs + 2]];
     txt('%PDF-1.4\n%\xE2\xE3\xCF\xD3\n');
     obj(1, '<< /Type /Catalog /Pages 2 0 R >>');
     obj(2, '<< /Type /Pages /Kids [3 0 R] /Count 1 >>');
-    obj(3, '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ' + f(PW) + ' ' + f(PH) + '] /Resources << /XObject << /Im0 4 0 R >> >> /Contents 5 0 R /Annots [' + anots + '] >>');
+    obj(3, '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ' + f(PW) + ' ' + f(PH) + '] /Resources << /XObject << /Im0 4 0 R >> /Font << /F1 6 0 R >> >> /Contents 5 0 R /Annots [7 0 R 8 0 R] >>');
     offs[4] = pos; txt('4 0 obj\n<< /Type /XObject /Subtype /Image /Width ' + img.w + ' /Height ' + img.h + ' /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ' + jpg.length + ' >>\nstream\n'); bin(jpg); txt('\nendstream\nendobj\n');
-    var cs = 'q ' + f(PW) + ' 0 0 ' + f(PH) + ' 0 0 cm /Im0 Do Q';
+    var cs = 'q ' + f(PW) + ' 0 0 ' + f(PH) + ' 0 0 cm /Im0 Do Q\n' +
+      'BT /F1 ' + f(fs) + ' Tf 0.604 0.659 1 rg ' + f(bx) + ' ' + f(by) + ' Td (' + esc2(t.txt) + ') Tj ET\n' +
+      '0.604 0.659 1 rg ' + f(bx) + ' ' + f(by - 2.6) + ' ' + f(tw) + ' 0.7 re f';
     obj(5, '<< /Length ' + cs.length + ' >>\nstream\n' + cs + '\nendstream');
-    img.zonas.forEach(function(z, i){ obj(6 + i, '<< /Type /Annot /Subtype /Link /Rect [' + [z.x * k, PH - (z.y + z.h) * k, (z.x + z.w) * k, PH - z.y * k].map(f).join(' ') + '] /Border [0 0 0] /A << /S /URI /URI (' + u + ') >> >>'); });
-    var total = 6 + img.zonas.length, xref = pos, s = 'xref\n0 ' + total + '\n0000000000 65535 f \n';
-    for (var i = 1; i < total; i++) s += String(offs[i]).padStart(10, '0') + ' 00000 n \n';
-    txt(s + 'trailer\n<< /Size ' + total + ' /Root 1 0 R >>\nstartxref\n' + xref + '\n%%EOF\n');
+    obj(6, '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>');
+    zonas.forEach(function(z, i){ obj(7 + i, '<< /Type /Annot /Subtype /Link /Rect [' + z.map(f).join(' ') + '] /Border [0 0 0] /F 4 /A << /S /URI /URI (' + esc2(url) + ') >> >>'); });
+    var total = 9, xref = pos, s2 = 'xref\n0 ' + total + '\n0000000000 65535 f \n';
+    for (var n = 1; n < total; n++) s2 += String(offs[n]).padStart(10, '0') + ' 00000 n \n';
+    txt(s2 + 'trailer\n<< /Size ' + total + ' /Root 1 0 R >>\nstartxref\n' + xref + '\n%%EOF\n');
     return new Blob(partes, {type: 'application/pdf'});
   });
 }
