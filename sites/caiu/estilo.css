@@ -1,7 +1,7 @@
 /* caiu.pt — ver caiu/DESIGN.md */
 @font-face {
   font-family: "Mona";
-  src: url("/fontes/mona.woff") format("woff");
+  src: url("/fontes/mona.woff2") format("woff2"), url("/fontes/mona.woff") format("woff");
   font-weight: 200 900;
   font-stretch: 75% 125%;
   font-display: swap;
@@ -44,7 +44,7 @@ img { max-width: 100%; display: block; }
 a { color: inherit; text-decoration-thickness: 2px; text-underline-offset: 3px; }
 h1, h2, h3 { margin: 0; font-weight: 800; text-wrap: balance; }
 p { margin: 0; }
-button, input { font: inherit; color: inherit; }
+button, input, select, textarea { font: inherit; color: inherit; }
 :focus-visible { outline: 3px solid var(--tinta); outline-offset: 3px; border-radius: 6px; }
 [hidden] { display: none !important; }
 .num, .preco, dd { font-variant-numeric: tabular-nums; }
@@ -70,7 +70,7 @@ button, input { font: inherit; color: inherit; }
 
 /* ---------- marca ---------- */
 .topo { background: var(--etiqueta); }
-.topo__in { max-width: var(--max); margin: 0 auto; padding: 14px var(--margem) 0; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.topo__in { max-width: var(--max); margin: 0 auto; padding: 8px var(--margem) 0; }
 .marca { text-decoration: none; display: inline-flex; min-height: 48px; align-items: center; flex: none; white-space: nowrap; }
 .marca__txt, .rodape__marca { font-weight: 900; font-stretch: 118%; letter-spacing: -.04em; line-height: 1; }
 .marca__txt { font-size: 34px; }
@@ -90,10 +90,21 @@ button, input { font: inherit; color: inherit; }
   90%  { transform: translateY(.84em); animation-timing-function: ease-in; }
   100% { transform: translateY(.88em); }
 }
-/* atalhos do topo: botões em pílula (branco sobre o amarelo; o principal, ou a página atual, a preto) */
-.topo__nav { display: flex; gap: 8px; align-items: center; }
+/* topo: igual em todas as páginas. Telemóvel: marca e «Lista» na 1.ª linha, Promoções, Cabaz e Luz e gás na 2.ª
+   (rola de lado se não couber). Computador: tudo numa linha. A «Lista» é sempre o botão escuro; a página onde se
+   está fica com contorno (aria-current). */
+.topo__in { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; grid-template-areas: "marca . lista" "nav nav nav"; row-gap: 4px; column-gap: 12px; }
+.marca { grid-area: marca; }
+.topo__lista { grid-area: lista; }
+.topo__nav {
+  grid-area: nav; display: flex; gap: 8px; align-items: center; overflow-x: auto; scrollbar-width: none;
+  margin: 0 calc(-1 * var(--margem)); padding: 2px var(--margem) 4px; scroll-padding: 0 var(--margem);
+}
+/* 2.ª linha do telemóvel um pouco mais baixa (40 px), para a pesquisa caber no primeiro ecrã */
+.topo__nav .topo__link { min-height: 40px; }
+.topo__nav::-webkit-scrollbar { display: none; }
 .topo__link {
-  display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 16px; border-radius: 999px;
+  display: inline-flex; align-items: center; flex: none; gap: 6px; min-height: 44px; padding: 0 16px; border-radius: 999px;
   background: var(--branco); color: var(--tinta); font-weight: 700; font-size: 15.5px; text-decoration: none; white-space: nowrap;
   box-shadow: 0 1px 0 rgba(20, 20, 20, .14), 0 2px 8px -4px rgba(20, 20, 20, .25);
   transition: background-color .15s, color .15s, transform .12s var(--sai);
@@ -101,6 +112,8 @@ button, input { font: inherit; color: inherit; }
 .topo__link:hover { background: var(--tinta); color: var(--papel); }
 .topo__link:active { transform: scale(.96); }
 .topo__link:focus-visible { outline: 3px solid var(--tinta); outline-offset: 2px; }
+.topo__link[aria-current="page"] { box-shadow: inset 0 0 0 2.5px var(--tinta); }
+.topo__link[aria-current="page"]:hover { background: var(--branco); color: var(--tinta); }
 .topo__link--forte { background: var(--tinta); color: var(--papel); box-shadow: none; }
 .topo__link--forte:hover { background: #3A3A34; }
 .topo__ic { width: 18px; height: 18px; flex: none; fill: currentColor; margin-left: -3px; }
@@ -108,20 +121,22 @@ button, input { font: inherit; color: inherit; }
 .topo__ic--traco circle { fill: currentColor; stroke: none; }
 .topo__n { display: inline-grid; place-items: center; min-width: 24px; height: 24px; padding: 0 7px; margin-right: -6px; border-radius: 999px; background: var(--tinta); color: var(--etiqueta); font-size: 13.5px; font-weight: 800; font-variant-numeric: tabular-nums; }
 .topo__link--forte .topo__n { background: var(--etiqueta); color: var(--tinta); }
-@media (max-width: 359px) {
-  .topo__link { padding: 0 11px; font-size: 15px; }
-  .topo__link:not(#botaoLista) .topo__ic { display: none; }
-  .topo__nav { gap: 6px; }
-  .topo__in { gap: 10px; }
+@media (min-width: 760px) {
+  .topo__in { display: flex; align-items: center; gap: 8px; }
+  .marca { margin-right: auto; }
+  .topo__nav { margin: 0; padding: 0; overflow: visible; }
+  .topo__in { padding-top: 14px; }
+  .topo__nav .topo__link { min-height: 44px; }
 }
+@media (max-width: 359px) { .topo__link { padding: 0 13px; font-size: 15px; } .topo__nav { gap: 6px; } }
 
 /* ---------- topo da página: os três casos do dia em cima, a pesquisa logo a seguir ---------- */
-.heroi { background: var(--etiqueta); padding: 10px 0 36px; }
+.heroi { background: var(--etiqueta); padding: 6px 0 32px; }
 .heroi__in { max-width: var(--max); margin: 0 auto; padding: 0 var(--margem); display: grid; grid-template-columns: minmax(0, 1fr); grid-template-areas: "h" "t" "b"; }
 .heroi__texto { display: contents; }
 .heroi h1 { grid-area: h; }
 .heroi__apoio { display: none; }
-.top3 { grid-area: t; margin-top: 14px; min-width: 0; }
+.top3 { grid-area: t; margin-top: 10px; min-width: 0; }
 .busca { grid-area: b; }
 h1 {
   font-size: clamp(46px, 10.4vw, 112px);
@@ -143,12 +158,12 @@ h1 {
 .top3__op[aria-pressed="true"] { background: var(--tinta); color: var(--papel); }
 .top3__op[aria-pressed="true"] span { color: #CFCFC6; }
 .top3__op:not([aria-pressed="true"]):hover { background: var(--papel); }
-.top3__lista { list-style: none; margin: 12px 0 0; padding: 0; display: grid; gap: 8px; }
+.top3__lista { list-style: none; margin: 10px 0 0; padding: 0; display: grid; gap: 6px; }
 .t3 { position: relative; background: var(--branco); border-radius: var(--raio); }
 .t3--espera { height: 128px; background: rgba(255, 255, 255, .5); }
 .t3__a {
   display: grid; grid-template-columns: 64px minmax(0, 1fr) auto; grid-template-areas: "img nome nome" "img de para";
-  gap: 6px 12px; padding: 12px 12px 12px 10px; color: inherit; text-decoration: none; align-items: end; border-radius: inherit;
+  gap: 6px 12px; padding: 10px 12px 10px 10px; color: inherit; text-decoration: none; align-items: end; border-radius: inherit;
   transition: transform .14s var(--sai);
 }
 .t3__a:active { transform: scale(.985); }
@@ -178,7 +193,7 @@ h1 {
 .t3__para small { color: #3A3A34; }
 .t3__para .preco { font-size: 30px; }
 .t3__para em { font-style: normal; font-weight: 800; font-size: 13px; font-variant-numeric: tabular-nums; }
-.top3__mais { display: inline-flex; align-items: center; min-height: 44px; margin-top: 4px; font-weight: 750; font-size: 15px; }
+.top3__mais { display: inline-flex; align-items: center; min-height: 44px; margin-top: 0; font-weight: 750; font-size: 15px; }
 .top3__mais::after { content: "↓"; margin-left: 6px; }
 @media (prefers-reduced-motion: no-preference) {
   .top3__lista.entra .t3 { animation: imprime .36s var(--sai) both; }
@@ -192,7 +207,7 @@ h1 {
 @keyframes risca { from { transform: rotate(-9deg) scaleX(0); } to { transform: rotate(-9deg) scaleX(1); } }
 @keyframes aparece-t3 { from { opacity: .3; } to { opacity: 1; } }
 
-.busca { margin-top: 20px; max-width: 620px; }
+.busca { margin-top: 10px; max-width: 620px; }
 .busca__rotulo { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 .busca__linha { display: flex; gap: 8px; background: var(--branco); border-radius: 999px; padding: 5px; box-shadow: inset 0 0 0 2px var(--tinta); }
 .busca__linha:focus-within { box-shadow: inset 0 0 0 3px var(--tinta); }
@@ -234,8 +249,6 @@ h1 {
   .t3 .t3__carimbo { top: 46px; left: 2px; font-size: 11px; padding: 0 5px 1px; }
   .t3__para { padding: 6px 7px 7px; }
 }
-/* atalhos do topo: em ecrãs estreitos fica só o essencial */
-@media (max-width: 639px) { .topo__link--largo { display: none !important; } }
 
 /* ---------- talão ---------- */
 .talao {
@@ -709,14 +722,21 @@ a.add { display: inline-flex; align-items: center; text-decoration: none; }
 .desc__item--sim .desc__nota { grid-column: 2; }
 .desc__item--fim { opacity: .55; }
 .desc__nome { font-weight: 750; font-size: 15.5px; line-height: 1.3; }
-.desc__item select { min-height: 44px; border-radius: 10px; border: 0; box-shadow: inset 0 0 0 2px var(--tinta); background: var(--branco); padding: 0 10px; font-size: 15px; width: 100%; color: var(--tinta); }
+.desc__item select {
+  min-height: 44px; border-radius: 10px; border: 0; box-shadow: inset 0 0 0 2px var(--tinta); padding: 0 40px 0 12px; font-size: 15px; width: 100%; color: var(--tinta);
+  appearance: none; -webkit-appearance: none; cursor: pointer;
+  background: var(--branco) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='9' viewBox='0 0 14 9'%3E%3Cpath d='M1 1l6 6 6-6' fill='none' stroke='%23141414' stroke-width='2.2'/%3E%3C/svg%3E") no-repeat right 14px center / 14px 9px;
+}
 .desc__valor { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 8px; font-size: 14.5px; }
 .desc__valor input { width: 84px; min-height: 44px; border-radius: 10px; border: 0; box-shadow: inset 0 0 0 2px var(--tinta); padding: 0 10px; font-size: 16px; color: var(--tinta); }
 .desc__nota { font-size: 13.5px; color: var(--tinta-2); line-height: 1.4; }
 .desc__nota a { color: var(--tinta); font-weight: 650; }
 .descontos__resumo { margin-top: 18px; font-weight: 700; }
 .descontos__mais { margin-top: 18px; background: var(--branco); border-radius: var(--raio); padding: 0 18px; }
-.descontos__mais summary { cursor: pointer; font-weight: 750; min-height: 52px; display: flex; align-items: center; }
+.descontos__mais summary { cursor: pointer; font-weight: 750; min-height: 52px; display: flex; align-items: center; justify-content: space-between; gap: 12px; list-style: none; }
+.descontos__mais summary::-webkit-details-marker { display: none; }
+.descontos__mais summary::after { content: "+"; font-size: 24px; line-height: 1; font-weight: 600; }
+.descontos__mais[open] summary::after { content: "−"; }
 .descontos__mais ul { margin: 0; padding: 0 0 16px 18px; display: grid; gap: 10px; font-size: 15px; }
 .descontos__mais a { font-weight: 650; }
 .descontos__nota { margin-top: 18px; color: var(--tinta-2); font-size: 14.5px; max-width: 70ch; }
@@ -749,3 +769,8 @@ a.add { display: inline-flex; align-items: center; text-decoration: none; }
 }
 
 #d-cartaoTeto { width: 112px; }
+
+/* ecrãs estreitos: o fim da 2.ª linha do topo esbate-se, para se perceber que dá para deslizar */
+@media (max-width: 400px) {
+  .topo__nav { -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 36px), transparent); mask-image: linear-gradient(90deg, #000 calc(100% - 36px), transparent); padding-right: 36px; }
+}

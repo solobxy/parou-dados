@@ -21,8 +21,11 @@
 
   // ---------- utilitários ----------
   const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
-  const nf = new Intl.NumberFormat('pt-PT', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-  const ni = new Intl.NumberFormat('pt-PT');
+  // Números sempre com o espaço dos milhares (o Intl em pt-PT não agrupa os de 4 algarismos: «5623» ao lado de «18 149»).
+  // O mesmo formato das páginas feitas no servidor (caiu/paginas.py, num e eur).
+  const milhares = s => s.replace(/\B(?=(\d{3})+(?!\d))/g, NB);
+  const nf = { format: v => { const [i, d] = Math.abs(v).toFixed(2).split('.'); return (v < 0 ? '−' : '') + milhares(i) + ',' + d; } };
+  const ni = { format: v => (v < 0 ? '−' : '') + milhares(String(Math.round(Math.abs(v)))) };
   const eur = v => v == null ? '' : nf.format(v) + NB + '€';
   const precoHTML = (v, cls = '') => `<span class="preco${cls ? ' ' + cls : ''}">${nf.format(v)}<span class="eur">€</span></span>`;
   const norm = s => (s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
@@ -194,20 +197,33 @@
     const fr = [];
     const ms = [...o.m].sort((a, b) => ORDEM[a[0]] - ORDEM[b[0]]);
     for (const m of (curto ? ms.slice(0, 1) : ms)) {
-      if (m[0] === 'min30') fr.push(`Está mais barato do que em qualquer um dos ${m[2]} dias anteriores. O mínimo tinha sido ${eur(m[1])}.`);
+      if (m[0] === 'min30') fr.push(`Nos ${m[2]} dias anteriores, nunca esteve abaixo de ${eur(m[1])}.`);
       if (m[0] === 'outra') fr.push(`${naLoja(COD[m[1]])} está mais barato: ${eur(m[2])}.`);
       if (m[0] === 'antes') fr.push(`O preço riscado (${eur(m[1])}) não aparece nos nossos registos: nos últimos ${m[3]} dias o mais alto foi ${eur(m[2])}.`);
       if (m[0] === 'igual') fr.push(`Nos últimos 30 dias já esteve a ${eur(m[1])}. Esta promoção não é o preço mais baixo do mês.`);
       if (m[0] === 'pvpr') fr.push(`O desconto é calculado sobre o PVPR de ${eur(m[1])}, o preço recomendado pela marca, e não sobre o preço a que a loja vendia.`);
     }
-    if (o.v === 'pvpr' && g && g.o.length > 1 && igual(o.p, g.min)) {
-      const outras = g.o.filter(x => x !== o);
-      if (outras.every(x => igual(x.p, o.p))) fr.push(`${outras.length > 1 ? 'As outras lojas vendem' : `${naLoja(outras[0].l)} vende`} ao mesmo preço${outras.some(x => x.v) ? '' : ', sem anunciar desconto'}.`);
-      else if (outras.some(x => igual(x.p, o.p))) fr.push('Mesmo assim, ninguém o vende mais barato.');
-      else fr.push(`Mesmo assim, é o mais barato ${g.o.length === 3 ? 'das três lojas' : 'das duas lojas que o vendem'}.`);
-    }
+    const extra = pvprExtra(o, g);
+    if (extra) fr.push(extra);
     if (o.v === 'promo' && !fr.length) fr.push(o.d < 7 ? 'Ainda temos poucos dias de registos para confirmar este desconto.' : 'Não encontrámos nada que contradiga esta promoção.');
     return fr.join(' ');
+  }
+  // Com um desconto sobre o PVPR, diz se mesmo assim é o mais barato (ou se as outras lojas vendem ao mesmo preço)
+  function pvprExtra(o, g) {
+    if (o.v !== 'pvpr' || !g || g.o.length < 2 || !igual(o.p, g.min)) return '';
+    const outras = g.o.filter(x => x !== o);
+    if (outras.every(x => igual(x.p, o.p))) return `${outras.length > 1 ? 'As outras lojas vendem' : `${naLoja(outras[0].l)} vende`} ao mesmo preço${outras.some(x => x.v) ? '' : ', sem anunciar desconto'}.`;
+    if (outras.some(x => igual(x.p, o.p))) return 'Mesmo assim, ninguém o vende mais barato.';
+    return `Mesmo assim, é o mais barato ${g.o.length === 3 ? 'das três lojas' : 'das duas lojas que o vendem'}.`;
+  }
+  // No cartão não se repete o que já está à vista: a loja mais barata já aparece na lista (diz-se quanto se poupa lá)
+  // e o PVPR já está na faixa amarela e no carimbo (fica só a comparação com as outras lojas, se houver).
+  function motivoCartao(o, g) {
+    const ms = [...o.m].sort((a, b) => ORDEM[a[0]] - ORDEM[b[0]]);
+    const m = ms[0];
+    if (m && m[0] === 'outra' && COD[m[1]] && m[2] < o.p) return `Poupas <b>${eur(o.p - m[2])}</b> se o comprares no ${LOJAS[COD[m[1]]]}.`;
+    if (m && m[0] === 'pvpr') return pvprExtra(o, g);
+    return motivo(o, g, true);
   }
   // Limpa restos de HTML que alguma loja deixe passar e etiquetas repetidas ("Mais de 10 %")
   function textoPromo(t) {
@@ -238,7 +254,7 @@
       ${o.v ? `<span class="carimbo carimbo--${o.v}">${CARIMBO[o.v]}</span>` : ''}
       <div class="et__fita"><div class="et__loja">${LOJAS[o.l]}${tag ? `<small>${tag}</small>` : ''}</div>${precoHTML(o.p)}</div>
       ${outras.length ? `<ul class="et__outras">${outras.map(x => `<li class="${destaca(g, x) && x.p < o.p - 0.005 ? 'melhor' : ''}"><span>${LOJAS[x.l]}</span><b>${eur(x.p)}</b></li>`).join('')}</ul>` : ''}
-      <p class="et__motivo">${motivo(o, g, true)}</p>`;
+      ${(t => t ? `<p class="et__motivo">${t}</p>` : '')(motivoCartao(o, g))}`;
     return li;
   }
   function linha(g, extra) {
@@ -293,7 +309,7 @@
     const m = o.m.find(x => x[0] === 'outra');
     const l = COD[m[1]];
     if (!l || !(m[2] < o.p)) return null;
-    return { g, v: 'fachada', de: o.p, deTxt: `Promoção<br>no${NB}${LOJAS[o.l]}`, para: m[2], paraTxt: naLoja(l), l,
+    return { g, v: 'fachada', de: o.p, deTxt: `Em promoção<br>no${NB}${LOJAS[o.l]}`, para: m[2], paraTxt: naLoja(l), l,
       fala: `${g.n}: em promoção a ${eur(o.p)} no ${LOJAS[o.l]}, mas a ${eur(m[2])} no ${LOJAS[l]}.` };
   }
   function casoReal(g) {
@@ -313,7 +329,7 @@
         <span class="carimbo carimbo--${c.v} t3__carimbo" aria-hidden="true">${CARIMBO[c.v]}</span>
         <span class="t3__nome" aria-hidden="true">${esc(c.g.n)}<small>${esc(qtdTexto(c.g.q))}</small></span>
         <span class="t3__de" aria-hidden="true"><small>${c.deTxt}</small><span class="t3__risca">${eur(c.de)}</span></span>
-        <span class="t3__para" aria-hidden="true"><small>${c.paraTxt}</small>${precoHTML(c.para)}<em>−${menos}${NB}%</em></span>
+        <span class="t3__para" aria-hidden="true"><small>${c.paraTxt}</small>${precoHTML(c.para)}<em>${menos}${NB}% menos</em></span>
       </a>`;
     return li;
   }
@@ -321,9 +337,11 @@
     TOP.v = v;
     const r = R, ul = $('#top3Lista'), xs = TOP[v];
     const n = v === 'fachada' ? r.outra : ((r.classes || {}).real || 0);
+    // «Hoje» só quando os preços são de hoje (de madrugada ainda são os de ontem)
+    const quando = r.dia === hojeLx() ? 'Hoje' : `A ${dataCurta(r.dia)}`;
     $('#top3Frase').innerHTML = v === 'fachada'
-      ? `Hoje, <strong>${ni.format(n)} promoções</strong> estão mais caras do que noutra loja.`
-      : `Hoje, <strong>${ni.format(n)} preços</strong> estão abaixo de todos os dos dias anteriores.`;
+      ? `${quando}, <strong>${ni.format(n)} promoções</strong> estão mais caras do que noutra loja.`
+      : `${quando}, <strong>${ni.format(n)} preços</strong> estão abaixo de todos os dos dias anteriores.`;
     document.querySelectorAll('.top3__op').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.v === v)));
     ul.replaceChildren(...xs.map(cartaoTop));
     ul.classList.toggle('entra', TOP.primeira && !reduzido);
@@ -357,7 +375,7 @@
     const r = R;
     const deHoje = r.dia === hojeLx();
     $('#t-talao').textContent = deHoje ? 'Talão de hoje' : `Talão de ${dataCurta(r.dia)}`;
-    $('#talaoHora').textContent = (deHoje ? 'às ' : `${r.dia.slice(8, 10)}/${r.dia.slice(5, 7)} · `) + hora(r.atualizado);
+    $('#talaoHora').textContent = 'às ' + hora(r.atualizado);
     const v = { ofertas: r.ofertas, promos: r.promos, pvpr: r.pvpr, outra: r.outra, reais: (r.classes || {}).real || 0 };
     document.querySelectorAll('#talaoLinhas dd').forEach(dd => { dd.textContent = ni.format(v[dd.dataset.k] ?? 0); });
     $('#talaoPe').textContent = deHoje
@@ -380,7 +398,7 @@
     const noTopo = new Set(TOP.fachada.map(c => c.g.i));
     const fachResto = fach.filter(g => !noTopo.has(g.i));
     if (fachResto.length) {
-      $('#fachadaLead').innerHTML = `Hoje, <strong>${ni.format(r.outra)} produtos</strong> em promoção estão mais baratos noutro supermercado. Estes são os casos com maior diferença.`;
+      $('#fachadaLead').innerHTML = `Mais casos com grande diferença, além dos três lá de cima. Em cada um, a promoção perde para o preço de outra loja.`;
       preencher($('#fachadaLista'), fachResto, g => cartao(g, g.o.find(o => o.m.some(m => m[0] === 'outra'))));
       $('#fachada').hidden = false;
     }
@@ -392,7 +410,7 @@
       const div = cb.dividir || Math.min(...Object.values(cb.totais));
       const poup = cb.totais[ord[0]] - div;
       const p1 = v => (v < 1 ? v.toLocaleString('pt-PT', { maximumFractionDigits: 1 }) : Math.round(v)) + NB + '%';
-      $('#cabazLead').innerHTML = `Somámos <strong>${ni.format(cb.n)} produtos</strong> iguais à venda nos três. Os totais quase empatam, mas cada loja ganha nalguns: o Continente em ${ni.format(cb.vence.c)}, o Pingo Doce em ${ni.format(cb.vence.p)} e o Auchan em ${ni.format(cb.vence.a)}.` +
+      $('#cabazLead').innerHTML = `Somámos <strong>${ni.format(cb.n)} produtos</strong> iguais à venda nos três. Os totais quase empatam, mas cada loja é a mais barata (ou empata) em parte deles: o Continente em ${ni.format(cb.vence.c)}, o Pingo Doce em ${ni.format(cb.vence.p)} e o Auchan em ${ni.format(cb.vence.a)}. Com outros produtos, como no essencial lá em cima, o vencedor pode mudar.` +
         (poup > 0.5 ? ` Comprar cada coisa onde está mais barata poupa <strong>${eur(poup)}</strong>.` : '');
       const linhaBarra = (nome, sub, v, cls, mais) => `
         <li class="barra${cls}">
@@ -409,16 +427,19 @@
 
     const pv = (r.pvpr_top || []).map(dec);
     if (pv.length) {
-      $('#pvprLead').innerHTML = `PVPR é o preço de venda recomendado pela marca. Hoje, <strong>${ni.format(r.pvpr)} das ${ni.format(r.promos)} promoções</strong> (${Math.round(r.pvpr / r.promos * 100)}${NB}%) calculam o desconto sobre ele, e não sobre o preço a que a loja vendia antes.`;
+      $('#pvprLead').innerHTML = `PVPR é o preço de venda recomendado pela marca. ${r.dia === hojeLx() ? 'Hoje' : `A ${dataCurta(r.dia)}`}, <strong>${ni.format(r.pvpr)} das ${ni.format(r.promos)} promoções</strong> (${Math.round(r.pvpr / r.promos * 100)}${NB}%) calculam o desconto sobre ele, e não sobre o preço a que a loja vendia antes.`;
       preencher($('#pvprLista'), pv, g => cartao(g, g.o.find(o => o.m.some(m => m[0] === 'pvpr'))));
       $('#pvpr').hidden = false;
     }
 
     const dif = (r.diferenca || []).map(dec).filter(g => !vistos.has(g.i));
     if (dif.length) {
-      $('#t-dif').textContent = `O mesmo produto, até ${dif[0].pc}${NB}% mais caro`;
+      // «mais caro» conta-se sobre o preço mais baixo (2,20 € a mais sobre 1,99 € são +111 %, não 53 %).
+      // O pc que vem do servidor é a poupança sobre o preço mais alto: serve para ordenar, não para escrever aqui.
+      const caro = g => Math.round(g.dif / g.min * 100);
+      $('#t-dif').textContent = `O mesmo produto, até ${ni.format(Math.max(...dif.map(caro)))}${NB}% mais caro`;
       $('#difLead').textContent = 'Mesmo nome, mesma marca, mesmo tamanho. Só muda a loja.';
-      preencher($('#difLista'), dif, g => linha(g, `<span class="ln__dif">+${eur(g.dif)} (${g.pc}${NB}%)</span>`));
+      preencher($('#difLista'), dif, g => linha(g, `<span class="ln__dif">+${eur(g.dif)} (+${ni.format(caro(g))}${NB}%)</span>`));
       $('#diferenca').hidden = false;
     }
 
@@ -551,7 +572,6 @@
     $('#essNota').innerHTML = `Preços online de ${dataCurta(R.atualizado.slice(0, 10))}, às ${hora(R.atualizado)}. Quantidades de referência que escolhemos para um adulto; o mês conta 52 semanas a dividir por 12.` +
       (faltam.length ? ` Hoje ${faltam.length === 1 ? 'fica de fora' : 'ficam de fora'} das contas: ${juntar(faltam.map(a => a.n.toLowerCase()))}, que não encontrámos nas três lojas.` : '');
     $('#essencial').hidden = false;
-    $('#linkEssencial').hidden = false;
   }
   function marcarControlos() {
     document.querySelectorAll('#essCtl input[name="pessoas"]').forEach(i => { i.checked = +i.value === ESS.p; });

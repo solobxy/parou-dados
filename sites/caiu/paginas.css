@@ -18,6 +18,15 @@
 .pp-sec h2 { margin-bottom: 6px; }
 .pp-indice h2 { margin: 34px 0 4px; }
 .pp-indice .pp-rel a small { margin-left: 8px; font-weight: 500; color: var(--tinta-2); }
+/* índice dos preços: linhas de talão (nome · · · número), em colunas, em vez de pílulas */
+.pp-indice h2 { font-size: clamp(26px, 3.6vw, 40px); max-width: none; }
+.pp-termos { list-style: none; margin: 10px 0 0; padding: 0; display: grid; grid-template-columns: minmax(0, 1fr); column-gap: 40px; }
+@media (min-width: 640px) { .pp-termos { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (min-width: 1000px) { .pp-termos { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+.pp-termos a { display: flex; align-items: baseline; gap: 8px; min-height: 46px; padding: 11px 0 9px; color: var(--tinta); text-decoration: none; font-weight: 700; font-size: 16.5px; box-shadow: 0 2px 0 #E4E4DC; }
+.pp-termos a span:first-child { min-width: 0; }
+.pp-termos small { font-size: 14px; font-weight: 650; color: var(--tinta-2); font-variant-numeric: tabular-nums; }
+.pp-termos a:hover span:first-child { text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 3px; }
 .pp-nota { font-size: 14px; color: var(--tinta-2); margin-top: 12px; max-width: 72ch; }
 .pp-sec h3 { font-size: 19px; line-height: 1.3; margin: 26px 0 6px; letter-spacing: 0; }
 .pp-sec h3 + p { margin-top: 0; }
@@ -30,13 +39,6 @@
 .et__cab { grid-template-columns: 84px minmax(0, 1fr); }
 .ln { grid-template-columns: 64px minmax(0, 1fr) auto; }
 .ln__nome, .et__nome { overflow-wrap: break-word; }
-.topo__in { flex-wrap: wrap; }
-@media (max-width: 599px) {
-  .topo__in { row-gap: 6px; }
-  .topo__nav { order: 3; width: calc(100% + 2 * var(--margem)); margin: 0 calc(-1 * var(--margem)); padding: 4px var(--margem) 2px;
-    overflow-x: auto; scrollbar-width: none; scroll-padding: 0 var(--margem); }
-  .topo__nav::-webkit-scrollbar { display: none; }
-}
 .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 
 /* ---------- página do produto ---------- */

@@ -23,7 +23,7 @@ Tom: direto, um pouco trocista com as promoções, nunca com as pessoas. Nada de
 Cor nunca é a única pista: cada carimbo tem a palavra.
 
 ## 3. Tipografia
-Uma família: **Mona Sans** variável (wdth 75–125, wght 200–900), auto-alojada (`fontes/mona.woff`, OFL).
+Uma família: **Mona Sans** variável (wdth 75–125, wght 200–900), auto-alojada (`fontes/mona.woff2`, com `mona.woff` de reserva, OFL).
 | uso | tamanho | wdth | wght | notas |
 |---|---|---|---|---|
 | H1 | clamp(44px, 9vw, 104px) | 112 | 850 | entrelinha 0,92, tracking −0,03 em |
@@ -33,10 +33,18 @@ Uma família: **Mona Sans** variável (wdth 75–125, wght 200–900), auto-aloj
 | pequeno | 14px | 100 | 500 | datas, preço por unidade |
 
 ## 4. Componentes
+- **Topo (igual em todas as páginas):** marca, «Promoções», «Cabaz», «Luz e gás» (botões brancos) e «Lista» (o único
+  escuro, com o número de produtos). No telemóvel a marca e a «Lista» ficam na 1.ª linha e os outros três na 2.ª
+  (40 px de altura, rola de lado se não couber); no computador tudo numa linha. A página atual leva contorno de 2,5 px
+  (`aria-current`). Nas páginas geradas, o número da lista vem do `localStorage` com um script pequeno (`paginas.topo`).
+- **Números:** milhares sempre com espaço que não parte (5 623, 1 202,20 €), no `app.js` e no `paginas.py` (`num`, `eur`).
+- **Cartões:** a última linha não repete o que já está à vista: na fachada diz quanto se poupa na loja mais barata
+  («Poupas 2,24 € se o comprares no Continente»); sobre o PVPR não diz nada (já está na faixa e no carimbo), a não ser
+  que mesmo assim seja o mais barato; a sério diz o mínimo dos dias anteriores.
 - **Topo da página inicial**: amarelo, título curto e logo a seguir os três casos do dia (`#top3`): «Fachadas» (a
   promoção de uma loja contra o preço mais baixo noutra) ou «A sério» (hoje contra o mínimo dos dias anteriores),
   escolhidos com um interruptor. Cada caso é um cartão branco com foto, carimbo, o preço riscado a vermelho (a linha
-  risca-se ao entrar) e o preço bom num bloco amarelo com «−N %». No telemóvel só isto e a pesquisa; no computador
+  risca-se ao entrar) e o preço bom num bloco amarelo com «N % menos». No telemóvel só isto e a pesquisa; no computador
   também a frase de apoio e as sugestões. Os três do topo não se repetem na secção das fachadas.
 - **As contas de hoje** (`#talao`): o talão do dia passou do topo para o meio da página.
 - **Luz e gás na página inicial** (`#luzgas`): bloco escuro com os três comercializadores mais baratos do caso tipo

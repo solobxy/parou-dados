@@ -33,8 +33,8 @@ LIGAS = {'de', 'do', 'da', 'dos', 'das', 'e', 'com', 'para', 'em', 'sem'}
 FORA = {'auchan', 'continente', 'pingo doce'}  # marcas próprias das lojas: não dão uma página de «produto»
 MESES = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro']
 MESES_C = ['jan.', 'fev.', 'mar.', 'abr.', 'mai.', 'jun.', 'jul.', 'ago.', 'set.', 'out.', 'nov.', 'dez.']
-ESTILO_V = '7'      # estilo.css (o mesmo do início)
-PAGINAS_V = '2'     # paginas.css (só destas páginas)
+ESTILO_V = '9'      # estilo.css (o mesmo do início)
+PAGINAS_V = '3'     # paginas.css (só destas páginas)
 ORG = {'@type': 'Organization', '@id': SITE + '/#organizacao', 'name': 'caiu.pt', 'url': SITE + '/', 'logo': SITE + '/icone-512.png'}
 WEBSITE = {'@type': 'WebSite', '@id': SITE + '/#site', 'name': 'caiu.pt', 'url': SITE + '/', 'inLanguage': 'pt-PT',
            'publisher': {'@id': SITE + '/#organizacao'}}
@@ -47,8 +47,14 @@ DIAS_ALIAS = 120      # endereço antigo de um produto que passou a ter outro: r
 e = html.escape
 
 
+def num(n):
+    """Inteiro com o espaço dos milhares, sempre (5 623, 18 149), como no início (app.js)."""
+    return f'{int(round(n)):,}'.replace(',', '\u00a0')
+
+
 def eur(v):
-    return ('%.2f' % v).replace('.', ',') + ' €'
+    """1 202,20 € (espaço dos milhares e antes do €, que não partem a linha)."""
+    return f'{v:,.2f}'.replace(',', '\u00a0').replace('.', ',') + '\u00a0€'
 
 
 def slug(t):
@@ -247,7 +253,7 @@ ORDEM_M = {'outra': 0, 'antes': 1, 'igual': 2, 'min30': 3, 'pvpr': 4}
 def motivo(o):
     for m in sorted(o['m'], key=lambda m: ORDEM_M.get(m[0], 9))[:1]:
         if m[0] == 'min30':
-            return f'Está mais barato do que em qualquer um dos {m[2]} dias anteriores. O mínimo tinha sido {eur(m[1])}.'
+            return f'Nos {m[2]} dias anteriores, nunca esteve abaixo de {eur(m[1])}.'
         if m[0] == 'outra':
             return f'No {LOJAS.get({"continente": "c", "pingodoce": "p", "auchan": "a"}.get(m[1], m[1]), m[1])} está mais barato: {eur(m[2])}.'
         if m[0] == 'antes':
@@ -273,21 +279,50 @@ def cartao(g, o=None):
             + (f'<span class="carimbo carimbo--{o["v"]} carimbo--fixo">{CARIMBO[o["v"]]}</span>' if o['v'] in CARIMBO else '')
             + f'<div class="et__fita"><div class="et__loja">{LOJAS[o["l"]]}{f"<small>{tag}</small>" if tag else ""}</div>{preco_html(o["p"])}</div>'
             + (f'<ul class="et__outras">{out}</ul>' if out else '')
-            + f'<p class="et__motivo">{e(motivo(o))}</p></li>')
+            + (f'<p class="et__motivo">{motivo_cartao(o)}</p>' if motivo_cartao(o) else '') + '</li>')
+
+
+def motivo_cartao(o):
+    """No cartão, a loja mais barata já está na lista de cima: em vez de a repetir, diz quanto se poupa lá (como o app.js)."""
+    ms = sorted(o['m'], key=lambda m: ORDEM_M.get(m[0], 9))
+    if ms and ms[0][0] == 'outra' and ms[0][2] < o['p']:
+        loja = LOJAS.get({'continente': 'c', 'pingodoce': 'p', 'auchan': 'a'}.get(ms[0][1], ms[0][1]), ms[0][1])
+        return f'Poupas <b>{eur(o["p"] - ms[0][2])}</b> se o comprares no {e(loja)}.'
+    if ms and ms[0][0] == 'pvpr':
+        return ''  # o PVPR já está na faixa amarela e no carimbo
+    return e(motivo(o))
 
 
 RAIO = '<svg class="topo__ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M13.2 2.5 4.8 13.4h6.1l-1.1 8.1 8.4-10.9h-6.1z"/></svg>'
 
 
+LISTA_IC = ('<svg class="topo__ic topo__ic--traco" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6.5h11M9 12h11M9 17.5h11"/>'
+            '<circle cx="4.5" cy="6.5" r="1.4"/><circle cx="4.5" cy="12" r="1.4"/><circle cx="4.5" cy="17.5" r="1.4"/></svg>')
+
+
 def atalhos(url):
-    """Os botões do topo; o da página onde se está fica marcado (aria-current) e escuro."""
+    """Os botões do topo, iguais em todas as páginas (a inicial está em sites/caiu/index.html); o da página onde se
+    está fica marcado com aria-current (contorno). A «Lista» é sempre o botão escuro, à direita."""
     xs = (('/promocoes/', 'Promoções', ''), ('/cabaz-mais-barato/', 'Cabaz', ''), ('/luz-e-gas/', 'Luz e gás', RAIO))
     out = []
     for href, nome, ic in xs:
         atual = url.rstrip('/').endswith(href.rstrip('/'))
-        out.append(f'<a class="topo__link{" topo__link--forte" if atual else ""}" href="{href}"'
-                   f'{" aria-current=\"page\"" if atual else ""}>{ic}{nome}</a>')
+        out.append(f'<a class="topo__link" href="{href}"{" aria-current=\"page\"" if atual else ""}>{ic}{nome}</a>')
     return ''.join(out)
+
+
+def topo(url):
+    """O topo de todas as páginas geradas. A lista de compras vive no telemóvel (localStorage, como no início):
+    um script pequeno mostra quantos produtos tem, sem carregar o app.js."""
+    return f'''<header class="topo">
+  <div class="topo__in">
+    <a class="marca" href="/"><span class="sr">caiu.pt, início</span><span class="marca__txt" aria-hidden="true">ca<span class="marca__i">ı<span class="marca__ponto"></span></span>u</span></a>
+    <nav class="topo__nav" aria-label="Principal">{atalhos(url)}</nav>
+    <a class="topo__link topo__link--forte topo__lista" href="/#lista">{LISTA_IC}Lista <span class="topo__n" id="nLista" hidden>0</span></a>
+  </div>
+</header>
+<script>try{{var l=JSON.parse(localStorage.getItem('caiu-lista'))||[],n=0;l.forEach(function(x){{n+=x.n||1}});if(n){{var c=document.getElementById('nLista');c.textContent=n;c.hidden=false}}}}catch(e){{}}</script>
+'''
 
 
 def cabeca(titulo, descricao, url, ld, dia, robots='', og='website'):
@@ -316,7 +351,7 @@ def cabeca(titulo, descricao, url, ld, dia, robots='', og='website'):
 <meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="/icone-180.png">
-<link rel="preload" href="/fontes/mona.woff" as="font" type="font/woff" crossorigin>
+<link rel="preload" href="/fontes/mona.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="/estilo.css?v={ESTILO_V}">
 <link rel="stylesheet" href="/paginas.css?v={PAGINAS_V}">
 <script defer src="/_e.js" data-site="caiu"></script>
@@ -324,13 +359,7 @@ def cabeca(titulo, descricao, url, ld, dia, robots='', og='website'):
 </head>
 <body>
 <a class="saltar" href="#conteudo">Saltar para o conteúdo</a>
-<header class="topo">
-  <div class="topo__in">
-    <a class="marca" href="/"><span class="sr">caiu.pt, início</span><span class="marca__txt" aria-hidden="true">ca<span class="marca__i">ı<span class="marca__ponto"></span></span>u</span></a>
-    <nav class="topo__nav" aria-label="Atalhos">{atalhos(url)}</nav>
-  </div>
-</header>
-'''
+{topo(url)}'''
 
 
 def rodape(dia, hora):
@@ -488,20 +517,20 @@ def pagina_indice(D, secoes, hora):
     url = SITE + '/preco/'
     titulo = 'Preços do supermercado hoje: Continente, Pingo Doce e Auchan'
     n = sum(len(v) for v in secoes.values())
-    descricao = f'Os preços de hoje de {n} produtos do Continente, Pingo Doce e Auchan, do azeite ao detergente, e as promoções que são a sério.'
+    descricao = f'Os preços de hoje de {num(n)} produtos do Continente, Pingo Doce e Auchan, do azeite ao detergente, e as promoções que são a sério.'
     ld = {'@context': 'https://schema.org', '@graph': [
         {'@type': 'BreadcrumbList', 'itemListElement': [
             {'@type': 'ListItem', 'position': 1, 'name': 'caiu.pt', 'item': SITE + '/'},
             {'@type': 'ListItem', 'position': 2, 'name': 'Preços', 'item': url}]},
         {'@type': 'CollectionPage', 'name': titulo, 'url': url, 'inLanguage': 'pt-PT', 'dateModified': D.atualizado}]}
     blocos = ''.join(
-        f'<h2>{e(sec)}</h2><ul class="pp-rel">' + ''.join(f'<li><a href="/preco/{slug(t)}/">{e(titulo_termo(t))}<small>{c}</small></a></li>' for t, c in itens) + '</ul>'
+        f'<h2>{e(sec)}</h2><ul class="pp-termos">' + ''.join(f'<li><a href="/preco/{slug(t)}/"><span>{e(titulo_termo(t))}</span><span class="pontos"></span><small>{num(c)}</small></a></li>' for t, c in itens) + '</ul>'
         for sec, itens in secoes.items())
     return '\n'.join([cabeca(titulo, descricao, url, ld, D.dia), f'''<main id="conteudo">
 <section class="bloco pp-heroi pp-indice"><div class="caixa">
 <p class="pp-migalhas"><a href="/">caiu.pt</a> › Preços</p>
 <h1>Preços do supermercado hoje</h1>
-<p class="lead">Os preços de hoje, {data_longa(D.dia)}, de {n} produtos do dia a dia no Continente, Pingo Doce e Auchan. Atualizamos três vezes por dia. O número ao lado diz quantos produtos comparamos em cada um.</p>
+<p class="lead">Os preços de hoje, {data_longa(D.dia)}, de {num(n)} produtos do dia a dia no Continente, Pingo Doce e Auchan. Atualizamos três vezes por dia. À direita, quantos produtos comparamos em cada um.</p>
 {blocos}
 </div></section>
 {METODO}
@@ -594,7 +623,7 @@ def pagina_loja(D, l, pares, hora, ms=None):
         linhas_t.append(('Desconto sobre o PVPR', str(len(pvpr))))
     pe = f'{nfim} destas promoções acabam {no_dia(fim)}.' if fim else 'Verificamos todas as promoções três vezes por dia.'
     titulo = f'Promoções {nome} esta semana: as que são a sério | caiu.pt'
-    descricao = curta(f'As {len(pares)} promoções do {nome} hoje, {dia_l}: {len(reais)} desceram a sério e {len(fach)} são mais baratas '
+    descricao = curta(f'As {num(len(pares))} promoções do {nome} hoje, {dia_l}: {len(reais)} desceram a sério e {len(fach)} são mais baratas '
                       'noutra loja. Verificamos três vezes por dia.')
     ld = {'@context': 'https://schema.org', '@graph': [
         migalhas_ld(('caiu.pt', SITE + '/'), ('Promoções', SITE + '/promocoes/'), (nome, url)),
@@ -620,7 +649,7 @@ def pagina_loja(D, l, pares, hora, ms=None):
                       'O mesmo produto custa menos noutra loja, ou já esteve a este preço há pouco.', fach[:12]),
         bloco_semana_loja(D, l, ms or {}),
         '<section class="bloco pp-sec" aria-labelledby="t-todas"><div class="caixa">',
-        f'<h2 id="t-todas">Todas as promoções ({len(pares)})</h2>',
+        f'<h2 id="t-todas">Todas as promoções ({num(len(pares))})</h2>',
         '<p class="lead">Primeiro as que descem mesmo de preço, depois as de maior desconto. Toca numa para ver o histórico e seguir o preço.</p>',
         f'<ol class="linhas">{linhas_todas}</ol>',
         '</div></section>',
@@ -638,7 +667,7 @@ def pagina_promocoes(D, por_loja, hora):
     total = sum(len(v) for v in por_loja.values())
     reais = sum(1 for v in por_loja.values() for p in v if p[1]['v'] == 'real')
     titulo = 'Promoções da semana: Continente, Pingo Doce e Auchan | caiu.pt'
-    descricao = curta(f'{total} promoções do Continente, Pingo Doce e Auchan verificadas hoje, {dia_l}: {reais} descem mesmo de preço. '
+    descricao = curta(f'{num(total)} promoções do Continente, Pingo Doce e Auchan verificadas hoje, {dia_l}: {num(reais)} descem mesmo de preço. '
                       'Vê quais são a sério em cada loja.')
     ld = {'@context': 'https://schema.org', '@graph': [
         migalhas_ld(('caiu.pt', SITE + '/'), ('Promoções', url)),
@@ -647,7 +676,7 @@ def pagina_promocoes(D, por_loja, hora):
              '<section class="bloco pp-heroi"><div class="caixa">',
              '<p class="pp-migalhas"><a href="/">caiu.pt</a> › Promoções</p>',
              '<h1>Promoções da semana nos supermercados</h1>',
-             f'<p class="lead">Hoje, {dia_l}, verificámos {total} promoções nas lojas online do Continente, Pingo Doce e Auchan. '
+             f'<p class="lead">Hoje, {dia_l}, verificámos {num(total)} promoções nas lojas online do Continente, Pingo Doce e Auchan. '
              'Uma promoção só é «a sério» se o preço estiver abaixo de todos os do último mês.</p>',
              '</div></section>']
     for l, pares in por_loja.items():
@@ -656,7 +685,7 @@ def pagina_promocoes(D, por_loja, hora):
         nf = sum(1 for p in pares if p[1]['v'] == 'fachada')
         fim, _ = fim_promocoes(pares, D.dia)
         corpo += [f'<section class="bloco pp-sec" aria-labelledby="t-{l}"><div class="caixa">',
-                  f'<h2 id="t-{l}">{LOJAS[l]}: {len(pares)} promoções</h2>',
+                  f'<h2 id="t-{l}">{LOJAS[l]}: {num(len(pares))} promoções</h2>',
                   f'<p class="lead">{nr} desceram a sério e {nf} estão mais baratas noutra loja.' + (f' A maioria acaba {no_dia(fim)}.' if fim else '') + '</p>',
                   f'<ul class="etiquetas">{"".join(cartao(g, o) for g, o in top)}</ul>',
                   f'<p class="pp-acoes"><a class="botao botao--leve" href="/promocoes/{SLUG_LOJA[l]}/">Ver as promoções do {LOJAS[l]}</a></p>',
@@ -1013,6 +1042,8 @@ def resposta_produto(P, hoje):
                 f'No dia anterior, o mais baixo foi {eur(mn)}, {lista_lojas(ls_mn)}.'
     elif P['h']:
         fh = f'Começámos a registar o preço a {data_longa(min(r[0] for v in P["h"].values() for r in v))}.'
+    if fh.startswith('É o preço mais baixo') and 'é a sério' in fp:
+        fh = ''  # a frase da promoção já disse o mesmo
     fu = ''
     o = ofs[0]
     if P['presente'] and o.get('pu') and o.get('u') in POR_UNID:
@@ -1298,7 +1329,7 @@ def pagina_produtos_indice(D, prods, gss, hora):
                     key=lambda P: C.norm(P['nome']))
     n = sum(1 for P in prods.values() if P['indexavel'])
     titulo = 'Produtos com histórico de preço | caiu.pt'
-    descricao = curta(f'{n} produtos do Continente, Pingo Doce e Auchan com preço de hoje, mínimo de 30 dias e histórico.')
+    descricao = curta(f'{num(n)} produtos do Continente, Pingo Doce e Auchan com preço de hoje, mínimo de 30 dias e histórico.')
     ld = {'@context': 'https://schema.org', '@graph': [migalhas_ld(('caiu.pt', SITE + '/'), ('Produtos', url)),
                                                          {'@type': 'CollectionPage', '@id': url, 'name': titulo, 'url': url, 'inLanguage': 'pt-PT'}]}
     secs = OrderedDict()
@@ -1315,7 +1346,7 @@ def pagina_produtos_indice(D, prods, gss, hora):
     return '\n'.join([cabeca(titulo, descricao, url, ld, D.dia, 'noindex, follow'), '<main id="conteudo">',
                       '<section class="bloco pp-heroi pp-indice"><div class="caixa">',
                       '<p class="pp-migalhas"><a href="/">caiu.pt</a> › Produtos</p>', '<h1>Produtos com histórico de preço</h1>',
-                      f'<p class="lead">{n} produtos com página própria: o preço de hoje em cada loja, o mais baixo dos 30 dias anteriores e o histórico. '
+                      f'<p class="lead">{num(n)} produtos com página própria: o preço de hoje em cada loja, o mais baixo dos 30 dias anteriores e o histórico. '
                       'Estão arrumados pelas páginas de preços; o número diz quantos tem cada uma.</p>', blocos, outros,
                       '</div></section>', '</main>', rodape(D.dia, hora)])
 

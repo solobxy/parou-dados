@@ -116,7 +116,7 @@ def pagina(D):
     n_com = len({o['com'] for o in D['of']})
     top = D['casos']['e2']['top']
     m = top[0]
-    resp = (f'Hoje, {data_longa(dia)}, a eletricidade mais barata para um casal com dois filhos (6,9 kVA, 5000 kWh por ano) '
+    resp = (f'Hoje, {data_longa(dia)}, a eletricidade mais barata para um casal com dois filhos (6,9 kVA, 5 000 kWh por ano) '
             f'é a {nome_com(D, m["com"])} ({m["n"]}): {mes(m["total"])} por mês, com impostos. Comparamos {n_of} ofertas de '
             f'{n_com} comercializadores com os dados da ERSE, as tabelas da Galp e as parcerias com supermercados e combustível.')
     titulo = 'Luz e gás mais baratos hoje: compara todas as ofertas | caiu.pt'
@@ -143,11 +143,10 @@ def pagina(D):
     corpo = f'''<main id="conteudo" class="lg">
   <section class="lg-topo" aria-labelledby="t-lg">
     <div class="caixa">
-      <p class="lg-topo__sobre">Luz e gás · <time datetime="{e(D["atualizado"])}">hoje às {hora}</time></p>
       <h1 id="t-lg">Quem tem a luz mais barata para ti?</h1>
       <p class="lg-topo__apoio">{n_of} ofertas de {n_com} comercializadores, com campanhas e parcerias somadas ao que gastas.</p>
       <ol class="lojas3 lg-top3">{"".join(cartao_top(D, l, i) for i, l in enumerate(top[:3]))}</ol>
-      <p class="lg-topo__nota">Casal com 2 filhos: 6,9 kVA, 5000 kWh por ano, com impostos. <a href="#conta">Faz a tua conta ↓</a></p>
+      <p class="lg-topo__nota">Casal com 2 filhos: 6,9 kVA, 5 000 kWh por ano, com impostos. Preços vistos <time datetime="{e(D["atualizado"])}">hoje às {hora}</time>. <a href="#conta">Faz a tua conta</a></p>
     </div>
   </section>
 

@@ -745,12 +745,12 @@ def verificar_vantagens(vs, cond, estado_ant, fontes_galp, regras_galp, fixtures
 # ---------------------------------------------------------------- saída
 CASOS = [  # casos tipo da ERSE
     ('e1', 'Casal sem filhos', {'tipo': 'E', 'ele': {'kva': '3,45', 'kvaN': 3.45, 'ciclo': 1, 'kwh': [1900]}}, '3,45 kVA, 1900 kWh por ano'),
-    ('e2', 'Casal com 2 filhos', {'tipo': 'E', 'ele': {'kva': '6,9', 'kvaN': 6.9, 'ciclo': 1, 'kwh': [5000]}}, '6,9 kVA, 5000 kWh por ano'),
+    ('e2', 'Casal com 2 filhos', {'tipo': 'E', 'ele': {'kva': '6,9', 'kvaN': 6.9, 'ciclo': 1, 'kwh': [5000]}}, '6,9 kVA, 5 000 kWh por ano'),
     ('e3', 'Casal com 4 filhos', {'tipo': 'E', 'ele': {'kva': '13,8', 'kvaN': 13.8, 'ciclo': 1, 'kwh': [10900]}}, '13,8 kVA, 10 900 kWh por ano'),
     ('g1', 'Gás: casal sem filhos', {'tipo': 'G', 'gas': {'kwh': 1610, 'ord': 'LIS'}}, '1610 kWh por ano (1.º escalão)'),
-    ('g2', 'Gás: casal com 2 filhos', {'tipo': 'G', 'gas': {'kwh': 3407, 'ord': 'LIS'}}, '3407 kWh por ano (2.º escalão)'),
+    ('g2', 'Gás: casal com 2 filhos', {'tipo': 'G', 'gas': {'kwh': 3407, 'ord': 'LIS'}}, '3 407 kWh por ano (2.º escalão)'),
     ('d2', 'Luz e gás: casal com 2 filhos', {'tipo': 'D', 'ele': {'kva': '6,9', 'kvaN': 6.9, 'ciclo': 1, 'kwh': [5000]}, 'gas': {'kwh': 3407, 'ord': 'LIS'}},
-     '6,9 kVA e 5000 kWh de luz, 3407 kWh de gás'),
+     '6,9 kVA e 5 000 kWh de luz, 3 407 kWh de gás'),
 ]
 PREF_GERAL = {'indexado': False}   # nas páginas: sem preços indexados (mudam todos os meses) e sem condições especiais
 

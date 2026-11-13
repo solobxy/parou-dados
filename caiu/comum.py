@@ -22,7 +22,7 @@ def norm(t):
 
 
 def eur(v):
-    return ('%.2f' % v).replace('.', ',') + '\u00a0€'
+    return f'{v:,.2f}'.replace(',', '\u00a0').replace('.', ',') + '\u00a0€'
 
 
 def esc(t):

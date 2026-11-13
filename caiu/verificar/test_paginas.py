@@ -93,7 +93,7 @@ hub = ler('promocoes', 'index.html')
 ok('[promoções] página geral liga às três lojas', all(f'href="/promocoes/{x}/"' in hub for x in ('continente', 'pingo-doce', 'auchan')))
 mb = ler('supermercado-mais-barato', 'index.html')
 ok('[mais barato] ordem certa (Auchan, Pingo Doce, Continente) e totais com €',
-   '<title>Supermercado mais barato hoje: Auchan, Pingo Doce ou Continente?</title>' in mb and '1161,74\xa0€' in mb and '1087,36\xa0€' in mb)
+   '<title>Supermercado mais barato hoje: Auchan, Pingo Doce ou Continente?</title>' in mb and '1\xa0161,74\xa0€' in mb and '1\xa0087,36\xa0€' in mb)  # milhares sempre com espaço
 ok('[mais barato] FAQ em JSON-LD válido', '"@type":"FAQPage"' in mb)
 
 
