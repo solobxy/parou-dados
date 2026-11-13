@@ -962,8 +962,12 @@ www.ganhas.pt {
 		Cross-Origin-Opener-Policy "same-origin"
 		-Server
 	}
-	# Ficheiros escondidos (.env, .git, ...) nunca existem aqui
-	@escondidos path_regexp ^/\.
+	# Ficheiros e pastas escondidos (.env, .git, ...) nunca existem aqui, em nenhuma pasta (nem em /app/, que
+	# de outra forma devolvia a página da app)
+	@escondidos {
+		path_regexp /\.
+		not path /.well-known/*
+	}
 	handle @escondidos {
 		respond 404
 	}
