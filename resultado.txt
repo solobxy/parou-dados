@@ -1,0 +1,21 @@
+== 2026-11-13T03:31:11Z acao=comando
+IP: 2.31.13.85
+== Saída no servidor
+a espera (1)
+agenda: active
+1
+{"versao": 1794540680358, "precos": {"lobulo": 35, "lobulo-alto": 35, "helix": 35, "helix-frontal": 35, "flat": 35, "tragus": 35, "antitragus": 35, "conch": 35, "daith": 35, "rook": 35, "snug": 35, "industrial": 35, "nar
+HASH_ESTAT b4ad8f92a73bb7909a14b69f64e1afb71be6ae24da3bcec1f03eac47f2021795
+tabelas ['marcacoes', 'bloqueios', 'sessoes', 'config', 'convites', 'avaliacoes']
+drwxr-xr-x 2 parou parou 4096 Nov 13 03:31 /var/lib/adri-agenda/fotos
+site 200
+HTTP/2 200 
+cache-control: no-cache
+x-robots-tag: noindex, nofollow
+upload sem sessao (20 KB) 401
+json grande noutra rota 400
+painel 200
+2
+== Teste de fora
+https://2-31-13-85.sslip.io/health 200 0.498248s
+https://2-31-13-85.sslip.io/api/transit/loading-status 200 0.557687s
