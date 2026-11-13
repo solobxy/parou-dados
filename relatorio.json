@@ -1,0 +1,23 @@
+{
+ "quando": "2026-11-13T17:10:48.340359+00:00",
+ "falhas": [],
+ "avisos": [],
+ "ok": [
+  "Horários do Funchal: horários publicados até 31/08/2027 (291 dias)",
+  "Base da PAROU construída há 6 h",
+  "Funchal: 1743 paragens iguais às oficiais (id, nome e posição)",
+  "Funchal: 60 linhas (164 variantes) iguais às oficiais",
+  "Funchal: viagens iguais às oficiais nos próximos 14 dias (13/11: 2441, 14/11: 1556, 15/11: 1332, 16/11: 2441, 17/11: 2441, 18/11: 2441, 19/11: 2441 …)",
+  "SIGA: 108 linhas na lista oficial da Madeira e do Porto Santo",
+  "SIGA: as 60 linhas dos Horários do Funchal na PAROU são as da lista oficial",
+  "Linhas da SIGA sem horários abertos (CAM, SIGA Rodoeste, Porto Santo): 48",
+  "App: centro do Funchal com 36 paragens, 8 com partidas",
+  "App: Machico com 0 paragens (o ecrã explica que ainda não há horários)",
+  "App: Ponta Delgada com 0 paragens (o ecrã explica que ainda não há horários)",
+  "Avisos: Funchal → Funchal (MCS), previsão de 3 dias",
+  "Avisos: Santana → Funchal (MCS), previsão de 3 dias",
+  "Avisos: Porto Santo → Porto Santo (MPS), previsão de 3 dias",
+  "Avisos: Ponta Delgada → Ponta Delgada (AOR), previsão de 3 dias",
+  "Fontes novas das ilhas no catálogo: nenhuma (CAM, SIGA Rodoeste e Açores ainda não publicam)"
+ ]
+}
