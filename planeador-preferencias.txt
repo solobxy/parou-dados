@@ -1,0 +1,26 @@
+[SQLite DB] Base de dados sem feeds. A registar feeds oficiais do catálogo...
+[SQLite DB] 29 feeds registados com sucesso.
+[Planeador] índice pronto (10 padrões, 19 paragens, 14 ms)
+OK      o motor em memória do planeador ficou pronto pronto (10 padrões, 19 paragens, 14 ms)
+OK      [domingo] autocarro + metro aparece Autocarro>Metro 47min pé5 [Mais rápido · 1 transbordo] | Metro>Metro 62min pé6 [1 transbordo]
+OK      [domingo] o percurso só de metro (F + C) também aparece Autocarro>Metro 47min pé5 [Mais rápido · 1 transbordo] | Metro>Metro 62min pé6 [1 transbordo]
+OK      [domingo] o cenário é o difícil: o só de metro chega mais tarde 62 > 47
+OK      [domingo] o que chega antes está marcado "Mais rápido" Mais rápido · 1 transbordo
+OK      [semana] os dois autocarros aparecem Metro 48min pé5 [Melhor opção] | Metro 58min pé5 [Direto] | Autocarro>Autocarro 42min pé20 [Mais rápido · 1 transbordo]
+OK      [semana] o metro direto aparece Metro 48min pé5 [Melhor opção] | Metro 58min pé5 [Direto] | Autocarro>Autocarro 42min pé20 [Mais rápido · 1 transbordo]
+OK      [semana] o cenário é o difícil: o metro chega depois dos autocarros 48 > 42
+OK      [semana] o metro direto vem em primeiro (melhor opção) Metro 48min pé5 [Melhor opção] | Metro 58min pé5 [Direto] | Autocarro>Autocarro 42min pé20 [Mais rápido · 1 transbordo]
+OK      [semana] o metro está marcado "Melhor opção" Melhor opção melhor
+OK      [semana] os autocarros, que chegam antes, ficam marcados "Mais rápido" Mais rápido · 1 transbordo mais_rapido
+OK      [uma linha] além do primeiro autocarro aparece o seguinte Autocarro 25min pé2 [Mais rápido] | Autocarro 40min pé2 [Direto]
+OK      [uma linha] o seguinte sai pelo menos 3 min depois 12:03 → 12:18
+OK      [uma linha] o primeiro (o que sai antes) vem à frente 
+OK      [ultrapassa] há opções Autocarro>Autocarro 61min pé3 [Mais rápido · 1 transbordo]
+OK      [ultrapassa] nenhuma opção apanha um autocarro que já passou 
+OK      [app] existe a regra comum de ordenação (custoDaOpcao) 
+OK      [app] autocarro + comboio + autocarro com 21 min a pé custa mais do que metro + metro com 6 min a pé (6 min depois) 
+OK      [app] um autocarro direto 8 min mais rápido continua à frente de um metro com transbordo 
+OK      [app] com o mesmo esforço, ganha a que chega primeiro 
+OK      [app] ir a pé conta só o tempo 
+
+Tudo OK

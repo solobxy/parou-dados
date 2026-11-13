@@ -1,0 +1,14 @@
+[SQLite DB] Base de dados sem feeds. A registar feeds oficiais do catálogo...
+[SQLite DB] 29 feeds registados com sucesso.
+[Planeador] índice pronto (2 padrões, 4 paragens, 5 ms)
+OK      o motor em memória do planeador ficou pronto 
+OK      há opções em transporte pé 350m/5min > LB de Paragem B (mesma rua) > pé 30m/1min [sai 12:01, chega 12:21] | pé 350m/5min > LB de Paragem B (mesma rua) > pé 30m/1min [sai 12:11, chega 12:31]
+OK      a melhor opção apanha o autocarro em B (mesma rua), não em A (outro lado da linha) pé 350m/5min > LB de Paragem B (mesma rua) > pé 30m/1min [sai 12:01, chega 12:21] | pé 350m/5min > LB de Paragem B (mesma rua) > pé 30m/1min [sai 12:11, chega 12:31]
+OK      opção por B: ~350 m a pé (pela rua) 350 m
+OK      opção por B: o desenho a pé vai pela rua (nenhum ponto fora dela) []
+OK      sair às 12:01 e andar 5 min chega antes do autocarro das 12:06 
+OK      opção por B: ~350 m a pé (pela rua) 350 m
+OK      opção por B: o desenho a pé vai pela rua (nenhum ponto fora dela) []
+OK      sair às 12:11 e andar 5 min chega antes do autocarro das 12:16 
+
+Tudo OK

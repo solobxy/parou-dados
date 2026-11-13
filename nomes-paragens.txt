@@ -1,0 +1,47 @@
+OK      existe formatTransitName 
+OK      existem nomeBonito e nomeParaEndereco 
+OK      [app] «CAM Trapiche  D2A (750B)» → «Caminho Trapiche (750B)» 
+OK      [app] «Antes CZ Torrinha (444B)» → «Antes Cruzamento Torrinha (444B)» 
+OK      [app] «Palácio S Lourenço (CF29A)» → «Palácio São Lourenço (CF29A)» 
+OK      [app] «Largo da Fonte  T-20 (540)» → «Largo da Fonte T-20 (540)» 
+OK      [app] «Rua João Paulo II  D1A (1162)» → «Rua João Paulo II (1162)» 
+OK      [app] «R 31 Janeiro Finanças (9C)» → «Rua 31 Janeiro Finanças (9C)» 
+OK      [app] «CAM do ENG Velho  Ford (38B)» → «Caminho do Engenho Velho Ford (38B)» 
+OK      [app] «CAM Terça  Poços CMF  D (602)» → «Caminho Terça Poços CMF (602)» 
+OK      [app] «ESTR CMDT C Freitas  D (100)» → «Estrada Comandante C Freitas (100)» 
+OK      [app] «Centro - LEV STA Luzia» → «Centro - Levada Santa Luzia» 
+OK      [app] «Centro - CAM Ferro» → «Centro - Caminho Ferro» 
+OK      [app] «Centro - Teleférico JRD Botânico» → «Centro - Teleférico Jardim Botânico» 
+OK      [app] «Funchal - CFreiras (via FJ Cardos)» → «Funchal - Curral das Freiras (via FJ Cardos)» 
+OK      [app] «Galerias (31)» → «Galerias (31)» 
+OK      [app] «Jamboto Via Hospital» → «Jamboto via Hospital» 
+OK      [app] «C Saúde Trapiche Barreira LMB Aguiares» → «Centro de Saúde Trapiche Barreira Lombo Aguiares» 
+OK      [app] «Infantado (X) Via Rápida» → «Infantado (X) Via Rápida» 
+OK      [app] «Lisboa (Areeiro) - Via Rara» → «Lisboa (Areeiro) - Via Rara» 
+OK      [app] «S. Bartolomeu de Via Glória (X)» → «S. Bartolomeu de Via Glória (X)» 
+OK      [app] «Cç. Ajuda (GNR)» → «Cç. Ajuda (GNR)» 
+OK      [app] «Av. João XXI» → «Av. João XXI» 
+OK      [app] «D.JOÃO II (METRO)» → «D. João II (Metro)» 
+OK      [app] «D. JOÃO IV» → «D. João IV» 
+OK      [app] «Figueira (EB1)» → «Figueira (EB1)» 
+OK      [app] «JI/EB1 Pontal 1» → «JI/EB1 Pontal 1» 
+OK      [app] «R Lyon 4A» → «Rua Lyon 4A» 
+OK      [app] «EB23/S Bemposta» → «EB23/S Bemposta» 
+OK      [app] «S Martinho (Viaduto)» → «São Martinho (Viaduto)» 
+OK      [app] «R. Manuel Martins Gomes Jnr - S António - Centro» → «R. Manuel Martins Gomes Jnr - Santo António - Centro» 
+OK      [app] «Carcavelos - CascaiShopping IronMan» → «Carcavelos - CascaiShopping IronMan» 
+OK      [app] «Frente ao RG3  T-48 (817A)» → «Frente ao RG3 T-48 (817A)» 
+OK      [app] «AV.ALIADOS» → «Av. Aliados» 
+OK      [app] «CORDOARIA-S.PEDRO DA COVA» → «Cordoaria - S. Pedro da Cova» 
+OK      [app] «Cais do Sodré» → «Cais do Sodré» 
+OK      [app] «VILA D'ESTE» → «Vila d'Este» 
+OK      [app] «BOAVISTA - CABO DO MUNDO (Via MAR Shop.)» → «Boavista - Cabo do Mundo (Via Mar Shop.)» 
+OK      [app] «HOSPITAL S. JOÃO» → «Hospital S. João» 
+OK      [páginas] nome do Funchal por extenso Caminho Trapiche (750B)
+OK      [páginas] endereço igual ao de antes cam-trapiche-d2a-750b
+OK      [páginas] endereço de linha igual ao de antes 
+OK      [iPhone antigo] src/utils/abreviaturas.ts sem lookbehind 
+OK      [iPhone antigo] src/utils/transitFormatter.ts sem lookbehind 
+OK      [iPhone antigo] src/utils/zonasSemHorarios.ts sem lookbehind 
+
+Todos os testes OK

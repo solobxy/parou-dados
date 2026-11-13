@@ -1,0 +1,16 @@
+mosaicos: vias a pé: 5, segmentos: 13, mosaicos: 3, 0.0 MB
+[SQLite DB] Base de dados sem feeds. A registar feeds oficiais do catálogo...
+[SQLite DB] 29 feeds registados com sucesso.
+OK      [base antiga] sem a tabela dos caminhos fica a linha reta (null) 
+OK      [quarteirão] há caminho pelas ruas 320 m (reta 170 m)
+OK      [quarteirão] nenhum ponto do caminho passa por dentro dos prédios []
+OK      [quarteirão] dá a volta (mais comprido do que a reta, mas sem voltas absurdas) 320 m
+OK      [quarteirão] começa na partida e acaba na chegada 
+OK      [quarteirão] não usa a autoestrada (atravessaria o quarteirão) 
+OK      [quarteirão] vem codificado para a app 
+OK      [plataforma solta ao lado da paragem] encaixa na rua e há caminho 
+OK      [mesma rua] vai a direito pela rua (sem ir à esquina e voltar) 91 m (reta 90 m)
+OK      [longe] mais de 3 km a pé não se calcula (fica a reta) 
+OK      [sem ruas] chegada longe de qualquer via fica a reta 
+
+Tudo OK

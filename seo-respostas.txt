@@ -1,0 +1,167 @@
+OK      [preparar] linhas de vários operadores 7
+        /linhas/stcp/1m-av-aliados-matosinhos-praia 
+         resposta: A Linha 1M (STCP) faz o percurso Av. Aliados – Matosinhos (Praia), com 38 paragens. Hoje, no sentido Aliados, a primeira partida é às 00:30 e a última às 05:30 (6 partidas). Horário oficial atualizado a 12 de novembro de 2026. (41 palavras)
+OK      [linha stcp] tem resposta direta logo a seguir ao H1 
+OK      [linha stcp] 20 a 75 palavras 41
+OK      [linha stcp] diz o percurso ou as paragens A Linha 1M (STCP) faz o percurso Av. Aliados – Matosinhos (P
+OK      [linha stcp] diz a data do horário tidas). Horário oficial atualizado a 12 de novembro de 2026.
+OK      [linha stcp] «Hoje» com primeira e última hora A Linha 1M (STCP) faz o percurso Av. Aliados – Matosinhos (Praia), com 38 paragens. Hoje, no sentido Aliados, a primeira partida é às 00:30 e a última às 05:30 (6 partidas). Horário oficial atualizado a 12 de novembro de 2026.
+OK      [linha stcp] sem «undefined», «null» ou «NaN» A Linha 1M (STCP) faz o percurso Av. Aliados – Matosinhos (Praia), com 38 paragens. Hoje, no sentido Aliados, a primeira partida é às 00:30 e a última às 05:30 (6 partidas). Horário oficial atualizado a 12 de novembro de 2026.
+        /linhas/carris/10b-campo-cebolas-circulacao-graca 
+         resposta: A Linha 10B (Carris) faz o percurso Campo Cebolas / circulação Graça, com 20 paragens. Hoje, no sentido Campo Cebolas, a primeira partida é às 07:30 e a última às 20:25 (52 partidas, de 25 em 25 minutos às horas de ponta). Horário oficial atualizado a 12 de novembro de 2026. (51 palavras)
+OK      [linha carris] tem resposta direta logo a seguir ao H1 
+OK      [linha carris] 20 a 75 palavras 51
+OK      [linha carris] diz o percurso ou as paragens A Linha 10B (Carris) faz o percurso Campo Cebolas / circulaç
+OK      [linha carris] diz a data do horário ponta). Horário oficial atualizado a 12 de novembro de 2026.
+OK      [linha carris] «Hoje» com primeira e última hora A Linha 10B (Carris) faz o percurso Campo Cebolas / circulação Graça, com 20 paragens. Hoje, no sentido Campo Cebolas, a primeira partida é às 07:30 e a última às 20:25 (52 partidas, de 25 em 25 minutos às horas de ponta). Horário oficial atualizado a 12 de novembro de 2026.
+OK      [linha carris] sem «undefined», «null» ou «NaN» A Linha 10B (Carris) faz o percurso Campo Cebolas / circulação Graça, com 20 paragens. Hoje, no sentido Campo Cebolas, a primeira partida é às 07:30 e a última às 20:25 (52 partidas, de 25 em 25 minutos às horas de ponta). Horário oficial atualizado a 12 de novembro de 2026.
+        /linhas/cp/alfa-pendular-braga-lisboa-santa-apolonia 
+         resposta: A linha Alfa Pendular (CP – Comboios de Portugal) faz o percurso Braga – Lisboa Santa Apolónia, com 9 paragens. Hoje, no sentido Lisboa Santa Apolónia, a primeira partida é às 06:00 e a última às 20:00 (4 partidas). Horário oficial atualizado a 12 de novembro de 2026. (48 palavras)
+OK      [linha cp] tem resposta direta logo a seguir ao H1 
+OK      [linha cp] 20 a 75 palavras 48
+OK      [linha cp] diz o percurso ou as paragens A linha Alfa Pendular (CP – Comboios de Portugal) faz o perc
+OK      [linha cp] diz a data do horário tidas). Horário oficial atualizado a 12 de novembro de 2026.
+OK      [linha cp] «Hoje» com primeira e última hora A linha Alfa Pendular (CP – Comboios de Portugal) faz o percurso Braga – Lisboa Santa Apolónia, com 9 paragens. Hoje, no sentido Lisboa Santa Apolónia, a primeira partida é às 06:00 e a última às 20:00 (4 partidas). Horário oficial atualizado a 12 de novembro de 2026.
+OK      [linha cp] sem «undefined», «null» ou «NaN» A linha Alfa Pendular (CP – Comboios de Portugal) faz o percurso Braga – Lisboa Santa Apolónia, com 9 paragens. Hoje, no sentido Lisboa Santa Apolónia, a primeira partida é às 06:00 e a última às 20:00 (4 partidas). Horário oficial atualizado a 12 de novembro de 2026.
+        /linhas/metro-do-porto/a-estadio-do-dragao-senhor-de-matosinhos 
+         resposta: A Linha A (Metro do Porto) faz o percurso Estádio do Dragão – Senhor de Matosinhos, com 23 paragens. Hoje, no sentido Estádio do Dragão, a primeira partida é às 05:59 e a última às 01:00 (84 partidas, de 12 em 12 minutos às horas de ponta). Horário oficial atualizado a 12 de novembro de 2026. (56 palavras)
+OK      [linha metro-do-porto] tem resposta direta logo a seguir ao H1 
+OK      [linha metro-do-porto] 20 a 75 palavras 56
+OK      [linha metro-do-porto] diz o percurso ou as paragens A Linha A (Metro do Porto) faz o percurso Estádio do Dragão 
+OK      [linha metro-do-porto] diz a data do horário ponta). Horário oficial atualizado a 12 de novembro de 2026.
+OK      [linha metro-do-porto] «Hoje» com primeira e última hora A Linha A (Metro do Porto) faz o percurso Estádio do Dragão – Senhor de Matosinhos, com 23 paragens. Hoje, no sentido Estádio do Dragão, a primeira partida é às 05:59 e a última às 01:00 (84 partidas, de 12 em 12 minutos às horas de ponta). Horário oficial atualizado a 12 de novembro de 2026.
+OK      [linha metro-do-porto] sem «undefined», «null» ou «NaN» A Linha A (Metro do Porto) faz o percurso Estádio do Dragão – Senhor de Matosinhos, com 23 paragens. Hoje, no sentido Estádio do Dragão, a primeira partida é às 05:59 e a última às 01:00 (84 partidas, de 12 em 12 minutos às horas de ponta). Horário oficial atualizado a 12 de novembro de 2026.
+        /linhas/unir/1001-arouca-cct-cabecais-via-tropeco 
+         resposta: A Linha 1001 (UNIR) faz o percurso Arouca (CCT) – Cabeçais (via Tropeço), com 39 paragens. Horário oficial atualizado a 12 de novembro de 2026. O horário de hoje vem da AMP (Área Metropolitana do Porto) e aparece em cada sentido. (41 palavras)
+OK      [linha unir] tem resposta direta logo a seguir ao H1 
+OK      [linha unir] 20 a 75 palavras 41
+OK      [linha unir] diz o percurso ou as paragens A Linha 1001 (UNIR) faz o percurso Arouca (CCT) – Cabeçais (
+OK      [linha unir] diz a data do horário AMP (Área Metropolitana do Porto) e aparece em cada sentido.
+OK      [linha unir] sem «undefined», «null» ou «NaN» A Linha 1001 (UNIR) faz o percurso Arouca (CCT) – Cabeçais (via Tropeço), com 39 paragens. Horário oficial atualizado a 12 de novembro de 2026. O horário de hoje vem da AMP (Área Metropolitana do Porto) e aparece em cada sentido.
+        /linhas/carris-metropolitana/1001-alfragide-estr-seminario-reboleira-estacao 
+         resposta: A Linha 1001 (Carris Metropolitana) faz o percurso Alfragide (Estr Seminario) – Reboleira (Estação), com 24 paragens. Hoje, no sentido Reboleira (Estação), a primeira partida é às 06:20 e a última às 22:25 (20 partidas, de 50 em 50 minutos às horas de ponta). Horário oficial atualizado a 12 de novembro de 2026. (53 palavras)
+OK      [linha carris-metropolitana] tem resposta direta logo a seguir ao H1 
+OK      [linha carris-metropolitana] 20 a 75 palavras 53
+OK      [linha carris-metropolitana] diz o percurso ou as paragens A Linha 1001 (Carris Metropolitana) faz o percurso Alfragide
+OK      [linha carris-metropolitana] diz a data do horário ponta). Horário oficial atualizado a 12 de novembro de 2026.
+OK      [linha carris-metropolitana] «Hoje» com primeira e última hora A Linha 1001 (Carris Metropolitana) faz o percurso Alfragide (Estr Seminario) – Reboleira (Estação), com 24 paragens. Hoje, no sentido Reboleira (Estação), a primeira partida é às 06:20 e a última às 22:25 (20 partidas, de 50 em 50 minutos às horas de ponta). Horário oficial atualizado a 12 de novembro de 2026.
+OK      [linha carris-metropolitana] sem «undefined», «null» ou «NaN» A Linha 1001 (Carris Metropolitana) faz o percurso Alfragide (Estr Seminario) – Reboleira (Estação), com 24 paragens. Hoje, no sentido Reboleira (Estação), a primeira partida é às 06:20 e a última às 22:25 (20 partidas, de 50 em 50 minutos às horas de ponta). Horário oficial atualizado a 12 de novembro de 2026.
+        /linhas/tub-braga/2-ponte-de-prado-bom-jesus 
+         resposta: A Linha 2 (TUB) faz o percurso Ponte de Prado – Bom Jesus, com 42 paragens. Hoje, no sentido Ponte de Prado, a primeira partida é às 07:00 e a última às 20:30 (28 partidas, de 30 em 30 minutos às horas de ponta). Horário oficial atualizado a 12 de novembro de 2026. (53 palavras)
+OK      [linha tub-braga] tem resposta direta logo a seguir ao H1 
+OK      [linha tub-braga] 20 a 75 palavras 53
+OK      [linha tub-braga] diz o percurso ou as paragens A Linha 2 (TUB) faz o percurso Ponte de Prado – Bom Jesus, c
+OK      [linha tub-braga] diz a data do horário ponta). Horário oficial atualizado a 12 de novembro de 2026.
+OK      [linha tub-braga] «Hoje» com primeira e última hora A Linha 2 (TUB) faz o percurso Ponte de Prado – Bom Jesus, com 42 paragens. Hoje, no sentido Ponte de Prado, a primeira partida é às 07:00 e a última às 20:30 (28 partidas, de 30 em 30 minutos às horas de ponta). Horário oficial atualizado a 12 de novembro de 2026.
+OK      [linha tub-braga] sem «undefined», «null» ou «NaN» A Linha 2 (TUB) faz o percurso Ponte de Prado – Bom Jesus, com 42 paragens. Hoje, no sentido Ponte de Prado, a primeira partida é às 07:00 e a última às 20:30 (28 partidas, de 30 em 30 minutos às horas de ponta). Horário oficial atualizado a 12 de novembro de 2026.
+OK      [variantes] Linha de Sintra: no máximo 3 páginas no sitemap (antes 6, uma por sentido) /linhas/cp/linha-de-sintra-lisboa-oriente-sintra /linhas/cp/linha-de-sintra-lisboa-rossio-mira-sintra-melecas /linhas/cp/linha-de-sintra-sintra-lisboa-rossio
+OK      [variantes] nenhum percurso de evento (Ironman, Maratona) no sitemap 
+OK      [variantes] /linhas/cp/linha-de-sintra-lisboa-rossio-sintra continua no ar (200 ou 301 para a variante atual) 200
+OK      [variantes] /linhas/cp/linha-de-sintra-sintra-lisboa-rossio continua no ar (200 ou 301 para a variante atual) 200
+OK      [variantes] /linhas/mobicascais/14-cascais-murches-chesol-cascais-ironman continua no ar (200 ou 301 para a variante atual) 200
+OK      [variantes] percurso de evento com noindex noindex, follow
+        /en/linhas/stcp/1m-av-aliados-matosinhos-praia 
+         resposta: Line 1M (STCP) runs Av. Aliados – Matosinhos (Praia), with 38 stops. Today, towards Aliados, the first departure is at 00:30 and the last at 05:30 (6 departures). Official timetable updated on 12 November 2026.
+OK      [en] resposta em inglês Line 1M (STCP) runs Av. Aliados – Matosinhos (Praia), with 38 stops. Today, towards Aliados, the first departure is at 00:30 and the last at 05:30 (6 departures). Official timetable updated on 12 November 2026.
+OK      [en] sem «Line Line» Line 1M (STCP) runs Av. Aliados – Matosinhos (Praia), with 38 stops. Today, towards Aliados, the first departure is at 00:30 and the last at 05:30 (6 departures). Official timetable updated on 12 November 2026.
+OK      [preparar] paragens de vários operadores 26
+OK      [paragem carris] tem resposta direta /paragens/carris/encarnacao-bombeiros
+        /paragens/carris/encarnacao-bombeiros 
+         resposta: Na paragem Encarnação (Bombeiros) passam 4 linhas da rede Carris: 208, 722, 744 e 783, com destino a Estação Oriente (Interface), Cais Sodré e Restauradores. Hoje, a primeira passagem é às 05:14 e a última às 00:23.
+OK      [paragem carris] diz as linhas Na paragem Encarnação (Bombeiros) passam 4 linhas da rede Carris: 208, 722, 744 
+OK      [paragem carris] sem «undefined», «null» ou «NaN» Na paragem Encarnação (Bombeiros) passam 4 linhas da rede Carris: 208, 722, 744 e 783, com destino a Estação Oriente (Interface), Cais Sodré e Restauradores. Hoje, a primeira passagem é às 05:14 e a última às 00:23.
+OK      [paragem carris] sem parênteses seguidos «) (» Na paragem Encarnação (Bombeiros) passam 4 linhas da rede Carris: 208, 722, 744 e 783, com destino a Estação Oriente (Interface), Cais Sodré e Restauradores. Hoje, a primeira passagem é às 05:14 e a última às 00:23.
+OK      [paragem carris] com linhas → index index, follow, max-image-preview:large, max-snippet:-1
+OK      [paragem mobicascais] tem resposta direta /paragens/mobicascais/estr-jose-justino-anjos-fabrica
+        /paragens/mobicascais/estr-jose-justino-anjos-fabrica 
+         resposta: Na paragem Estr. José Justino Anjos - Fábrica passa a linha 24 da rede MobiCascais, com destino a Manique e Carcavelos Estação. Hoje, a primeira passagem é às 06:32 e a última às 20:12.
+OK      [paragem mobicascais] diz as linhas Na paragem Estr. José Justino Anjos - Fábrica passa a linha 24 da rede MobiCasca
+OK      [paragem mobicascais] sem «undefined», «null» ou «NaN» Na paragem Estr. José Justino Anjos - Fábrica passa a linha 24 da rede MobiCascais, com destino a Manique e Carcavelos Estação. Hoje, a primeira passagem é às 06:32 e a última às 20:12.
+OK      [paragem mobicascais] sem parênteses seguidos «) (» Na paragem Estr. José Justino Anjos - Fábrica passa a linha 24 da rede MobiCascais, com destino a Manique e Carcavelos Estação. Hoje, a primeira passagem é às 06:32 e a última às 20:12.
+OK      [paragem mobicascais] com linhas → index index, follow, max-image-preview:large, max-snippet:-1
+OK      [paragem tcb-barreiro] tem resposta direta /paragens/tcb-barreiro/en-10-3-qt-das-rebelas
+        /paragens/tcb-barreiro/en-10-3-qt-das-rebelas 
+         resposta: Na paragem EN 10 - 3 - Qtª das Rebelas passam 4 linhas da rede TCB Barreiro: 6, 9, 10 e 16, com destino a Av. J.j. Fernandes e Coina - Estação. Hoje, a primeira passagem é às 05:40 e a última às 00:47.
+OK      [paragem tcb-barreiro] diz as linhas Na paragem EN 10 - 3 - Qtª das Rebelas passam 4 linhas da rede TCB Barreiro: 6, 
+OK      [paragem tcb-barreiro] sem «undefined», «null» ou «NaN» Na paragem EN 10 - 3 - Qtª das Rebelas passam 4 linhas da rede TCB Barreiro: 6, 9, 10 e 16, com destino a Av. J.j. Fernandes e Coina - Estação. Hoje, a primeira passagem é às 05:40 e a última às 00:47.
+OK      [paragem tcb-barreiro] sem parênteses seguidos «) (» Na paragem EN 10 - 3 - Qtª das Rebelas passam 4 linhas da rede TCB Barreiro: 6, 9, 10 e 16, com destino a Av. J.j. Fernandes e Coina - Estação. Hoje, a primeira passagem é às 05:40 e a última às 00:47.
+OK      [paragem tcb-barreiro] com linhas → index index, follow, max-image-preview:large, max-snippet:-1
+OK      [paragem transtejo-soflusa] tem resposta direta /paragens/transtejo-soflusa/cais-do-sodre
+        /paragens/transtejo-soflusa/cais-do-sodre 
+         resposta: No terminal Cais do Sodré passam 3 linhas da rede Transtejo e Soflusa: CA, MT e SX, com destino a Cais do Sodré, Cacilhas e Montijo. Hoje, a primeira passagem é às 05:12 e a última às 02:30.
+OK      [paragem transtejo-soflusa] diz as linhas No terminal Cais do Sodré passam 3 linhas da rede Transtejo e Soflusa: CA, MT e 
+OK      [paragem transtejo-soflusa] sem «undefined», «null» ou «NaN» No terminal Cais do Sodré passam 3 linhas da rede Transtejo e Soflusa: CA, MT e SX, com destino a Cais do Sodré, Cacilhas e Montijo. Hoje, a primeira passagem é às 05:12 e a última às 02:30.
+OK      [paragem transtejo-soflusa] sem parênteses seguidos «) (» No terminal Cais do Sodré passam 3 linhas da rede Transtejo e Soflusa: CA, MT e SX, com destino a Cais do Sodré, Cacilhas e Montijo. Hoje, a primeira passagem é às 05:12 e a última às 02:30.
+OK      [paragem transtejo-soflusa] com linhas → index index, follow, max-image-preview:large, max-snippet:-1
+OK      [paragem metro-de-lisboa] tem resposta direta /paragens/metro-de-lisboa/campo-pequeno
+        /paragens/metro-de-lisboa/campo-pequeno 
+         resposta: Na estação Campo Pequeno passa a linha Linha Amarela da rede Metro de Lisboa, com destino a Rato, Odivelas e Campo Grande. Hoje, a primeira passagem é às 06:35 e a última às 01:23.
+OK      [paragem metro-de-lisboa] diz as linhas Na estação Campo Pequeno passa a linha Linha Amarela da rede Metro de Lisboa, co
+OK      [paragem metro-de-lisboa] sem «undefined», «null» ou «NaN» Na estação Campo Pequeno passa a linha Linha Amarela da rede Metro de Lisboa, com destino a Rato, Odivelas e Campo Grande. Hoje, a primeira passagem é às 06:35 e a última às 01:23.
+OK      [paragem metro-de-lisboa] sem parênteses seguidos «) (» Na estação Campo Pequeno passa a linha Linha Amarela da rede Metro de Lisboa, com destino a Rato, Odivelas e Campo Grande. Hoje, a primeira passagem é às 06:35 e a última às 01:23.
+OK      [paragem metro-de-lisboa] com linhas → index index, follow, max-image-preview:large, max-snippet:-1
+OK      [paragem fertagus] tem resposta direta /paragens/fertagus/fogueteiro
+        /paragens/fertagus/fogueteiro 
+         resposta: Na estação Fogueteiro passa a linha Fertagus da rede Fertagus, com destino a Coina, Roma-Areeiro e Setúbal. Hoje, a primeira passagem é às 05:38 e a última às 01:52.
+OK      [paragem fertagus] diz as linhas Na estação Fogueteiro passa a linha Fertagus da rede Fertagus, com destino a Coi
+OK      [paragem fertagus] sem «undefined», «null» ou «NaN» Na estação Fogueteiro passa a linha Fertagus da rede Fertagus, com destino a Coina, Roma-Areeiro e Setúbal. Hoje, a primeira passagem é às 05:38 e a última às 01:52.
+OK      [paragem fertagus] sem parênteses seguidos «) (» Na estação Fogueteiro passa a linha Fertagus da rede Fertagus, com destino a Coina, Roma-Areeiro e Setúbal. Hoje, a primeira passagem é às 05:38 e a última às 01:52.
+OK      [paragem fertagus] com linhas → index index, follow, max-image-preview:large, max-snippet:-1
+OK      [paragem metro-sul-do-tejo] tem resposta direta /paragens/metro-sul-do-tejo/casa-do-povo
+        /paragens/metro-sul-do-tejo/casa-do-povo 
+         resposta: Na estação Casa do Povo passam 2 linhas da rede Metro Sul do Tejo: 1 e 2, com destino a Cacilhas, Corroios e Pragal. Hoje, a primeira passagem é às 05:17 e a última às 01:53.
+OK      [paragem metro-sul-do-tejo] diz as linhas Na estação Casa do Povo passam 2 linhas da rede Metro Sul do Tejo: 1 e 2, com de
+OK      [paragem metro-sul-do-tejo] sem «undefined», «null» ou «NaN» Na estação Casa do Povo passam 2 linhas da rede Metro Sul do Tejo: 1 e 2, com destino a Cacilhas, Corroios e Pragal. Hoje, a primeira passagem é às 05:17 e a última às 01:53.
+OK      [paragem metro-sul-do-tejo] sem parênteses seguidos «) (» Na estação Casa do Povo passam 2 linhas da rede Metro Sul do Tejo: 1 e 2, com destino a Cacilhas, Corroios e Pragal. Hoje, a primeira passagem é às 05:17 e a última às 01:53.
+OK      [paragem metro-sul-do-tejo] com linhas → index index, follow, max-image-preview:large, max-snippet:-1
+OK      [paragem unir] tem resposta direta /paragens/unir/escola-lourosa
+        /paragens/unir/escola-lourosa 
+         resposta: Na paragem Escola Lourosa, Santa Maria da Feira passam 2 linhas da rede UNIR: 2004 e 2023, com destino a Secundária, Ramil e Rua do Cedro.
+OK      [paragem unir] diz as linhas Na paragem Escola Lourosa, Santa Maria da Feira passam 2 linhas da rede UNIR: 20
+OK      [paragem unir] sem «undefined», «null» ou «NaN» Na paragem Escola Lourosa, Santa Maria da Feira passam 2 linhas da rede UNIR: 2004 e 2023, com destino a Secundária, Ramil e Rua do Cedro.
+OK      [paragem unir] sem parênteses seguidos «) (» Na paragem Escola Lourosa, Santa Maria da Feira passam 2 linhas da rede UNIR: 2004 e 2023, com destino a Secundária, Ramil e Rua do Cedro.
+OK      [paragem unir] com linhas → index index, follow, max-image-preview:large, max-snippet:-1
+OK      [paragem stcp] tem resposta direta /paragens/stcp/espido
+        /paragens/stcp/espido 
+         resposta: Na paragem Espido passa a linha 603 da rede STCP, com destino a Maia (Espido), Marquês e Hosp. S. João (Circunvalação)*. Hoje, a primeira passagem é às 05:45 e a última às 00:54.
+OK      [paragem stcp] diz as linhas Na paragem Espido passa a linha 603 da rede STCP, com destino a Maia (Espido), M
+OK      [paragem stcp] sem «undefined», «null» ou «NaN» Na paragem Espido passa a linha 603 da rede STCP, com destino a Maia (Espido), Marquês e Hosp. S. João (Circunvalação)*. Hoje, a primeira passagem é às 05:45 e a última às 00:54.
+OK      [paragem stcp] sem parênteses seguidos «) (» Na paragem Espido passa a linha 603 da rede STCP, com destino a Maia (Espido), Marquês e Hosp. S. João (Circunvalação)*. Hoje, a primeira passagem é às 05:45 e a última às 00:54.
+OK      [paragem stcp] com linhas → index index, follow, max-image-preview:large, max-snippet:-1
+OK      [paragem metro-do-porto] tem resposta direta /paragens/metro-do-porto/estadio-do-dragao
+        /paragens/metro-do-porto/estadio-do-dragao 
+         resposta: Na estação Estádio do Dragão passam 5 linhas da rede Metro do Porto: A, B, Bx, E e F, com destino a Estádio do Dragão, Senhor de Matosinhos e Póvoa de Varzim. Hoje, a primeira passagem é às 06:01 e a última às 01:41.
+OK      [paragem metro-do-porto] diz as linhas Na estação Estádio do Dragão passam 5 linhas da rede Metro do Porto: A, B, Bx, E
+OK      [paragem metro-do-porto] sem «undefined», «null» ou «NaN» Na estação Estádio do Dragão passam 5 linhas da rede Metro do Porto: A, B, Bx, E e F, com destino a Estádio do Dragão, Senhor de Matosinhos e Póvoa de Varzim. Hoje, a primeira passagem é às 06:01 e a última às 01:41.
+OK      [paragem metro-do-porto] sem parênteses seguidos «) (» Na estação Estádio do Dragão passam 5 linhas da rede Metro do Porto: A, B, Bx, E e F, com destino a Estádio do Dragão, Senhor de Matosinhos e Póvoa de Varzim. Hoje, a primeira passagem é às 06:01 e a última às 01:41.
+OK      [paragem metro-do-porto] com linhas → index index, follow, max-image-preview:large, max-snippet:-1
+OK      [paragem cp] tem resposta direta /paragens/cp/esmoriz
+        /paragens/cp/esmoriz 
+         resposta: Na estação Esmoriz passam 4 linhas da rede CP – Comboios de Portugal: Inter-regional, Linha de Aveiro, Linha de Leixoes e Regional, com destino a Porto Campanhã, Lisboa Santa Apolónia e Porto São Bento. Hoje, a primeira passagem é às 05:06 e a última às 00:33.
+OK      [paragem cp] diz as linhas Na estação Esmoriz passam 4 linhas da rede CP – Comboios de Portugal: Inter-regi
+OK      [paragem cp] sem «undefined», «null» ou «NaN» Na estação Esmoriz passam 4 linhas da rede CP – Comboios de Portugal: Inter-regional, Linha de Aveiro, Linha de Leixoes e Regional, com destino a Porto Campanhã, Lisboa Santa Apolónia e Porto São Bento. Hoje, a primeira passagem é às 05:06 e a última às 00:33.
+OK      [paragem cp] sem parênteses seguidos «) (» Na estação Esmoriz passam 4 linhas da rede CP – Comboios de Portugal: Inter-regional, Linha de Aveiro, Linha de Leixoes e Regional, com destino a Porto Campanhã, Lisboa Santa Apolónia e Porto São Bento. Hoje, a primeira passagem é às 05:06 e a última às 00:33.
+OK      [paragem cp] com linhas → index index, follow, max-image-preview:large, max-snippet:-1
+OK      [paragem mobiave] tem resposta direta /paragens/mobiave/ermida
+        /paragens/mobiave/ermida 
+         resposta: Na paragem Ermida passa a linha 104 da rede Mobiave, com destino a Estação Rodoviária. Hoje, a primeira passagem é às 07:13 e a última às 19:41.
+OK      [paragem mobiave] diz as linhas Na paragem Ermida passa a linha 104 da rede Mobiave, com destino a Estação Rodov
+OK      [paragem mobiave] sem «undefined», «null» ou «NaN» Na paragem Ermida passa a linha 104 da rede Mobiave, com destino a Estação Rodoviária. Hoje, a primeira passagem é às 07:13 e a última às 19:41.
+OK      [paragem mobiave] sem parênteses seguidos «) (» Na paragem Ermida passa a linha 104 da rede Mobiave, com destino a Estação Rodoviária. Hoje, a primeira passagem é às 07:13 e a última às 19:41.
+OK      [paragem mobiave] com linhas → index index, follow, max-image-preview:large, max-snippet:-1
+OK      [paragem tub-braga] tem resposta direta /paragens/tub-braga/escola-i
+        /paragens/tub-braga/escola-i 
+         resposta: Na paragem Escola I passam 4 linhas da rede TUB: 21, 37, 93 e 937, com destino a Tadim, Arentim e Cunha / Arentim. Hoje, a primeira passagem é às 06:50 e a última às 23:32.
+OK      [paragem tub-braga] diz as linhas Na paragem Escola I passam 4 linhas da rede TUB: 21, 37, 93 e 937, com destino a
+OK      [paragem tub-braga] sem «undefined», «null» ou «NaN» Na paragem Escola I passam 4 linhas da rede TUB: 21, 37, 93 e 937, com destino a Tadim, Arentim e Cunha / Arentim. Hoje, a primeira passagem é às 06:50 e a última às 23:32.
+OK      [paragem tub-braga] sem parênteses seguidos «) (» Na paragem Escola I passam 4 linhas da rede TUB: 21, 37, 93 e 937, com destino a Tadim, Arentim e Cunha / Arentim. Hoje, a primeira passagem é às 06:50 e a última às 23:32.
+OK      [paragem tub-braga] com linhas → index index, follow, max-image-preview:large, max-snippet:-1
+OK      [paragem tuba-barcelos] tem resposta direta /paragens/tuba-barcelos/chorente-monte-da-vila
+        /paragens/tuba-barcelos/chorente-monte-da-vila 
+         resposta: Na paragem Chorente (Monte da Vila) passam 2 linhas da rede TUBA: M43 e M94, com destino a Barcelos - Negreiros e Carvalhas - Viatodos. Hoje, a primeira passagem é às 07:23 e a última às 19:13.
+OK      [paragem tuba-barcelos] diz as linhas Na paragem Chorente (Monte da Vila) passam 2 linhas da rede TUBA: M43 e M94, com
+OK      [paragem tuba-barcelos] sem «undefined», «null» ou «NaN» Na paragem Chorente (Monte da Vila) passam 2 linhas da rede TUBA: M43 e M94, com destino a Barcelos - Negreiros e Carvalhas - Viatodos. Hoje, a primeira passagem é às 07:23 e a última às 19:13.
+OK      [paragem tuba-barcelos] sem parênteses seguidos «) (» Na paragem Chorente (Monte da Vila) passam 2 linhas da rede TUBA: M43 e M94, com destino a Barcelos - Negreiros e Carvalhas - Viatodos. Hoje, a primeira passagem é às 07:23 e a última às 19:13.
+OK      [paragem tuba-barcelos] com linhas → index index, follow, max-image-preview:large, max-snippet:-1
+        (0 paragens sem linhas na amostra)
+tudo OK
