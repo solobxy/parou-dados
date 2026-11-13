@@ -81,8 +81,8 @@ export function icone(nome, extra = {}) {
 export function logoWb() {
   const svg = h('svg', { viewBox: '0 0 32 32', 'aria-hidden': 'true', fill: 'none' });
   svg.append(h('circle', { cx: 16, cy: 16, r: 13, stroke: 'currentColor', 'stroke-width': 3 }));
-  svg.append(h('path', { d: 'M8.5 17h15a7.5 7.5 0 0 1-15 0z', fill: 'currentColor' }));
-  svg.append(h('circle', { cx: 16, cy: 11, r: 2.2, fill: 'currentColor' }));
+  svg.append(h('path', { d: 'M8.6 16.2C9.4 19.6 10.6 22 12.4 22C14.2 22 15.2 19.4 16 17.6C16.8 19.4 17.8 22 19.6 22C21.4 22 22.6 19.6 23.4 16.2', stroke: 'currentColor', 'stroke-width': 3, 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }));
+  svg.append(h('circle', { cx: 16, cy: 10.8, r: 2.2, fill: 'currentColor' }));
   return svg;
 }
 
