@@ -51,5 +51,8 @@ com permissões, marketplace e fórum). Site e app em `sites/webase/` (app em `/
 - Testes: `python3 webase/testes/teste_api.py` (local) e o workflow «webase - verificar ao vivo» (servidor).
 - Endereço de testes: `https://webase.<ip-com-tracos>.sslip.io`, fora do Google. Domínio: blocos prontos para
   `webase.pt` e `www.webase.pt`; ligam-se sozinhos quando o registo A apontar para o servidor.
+- «Ligar no telemóvel» (Web Push sem conteúdo, assinado com VAPID em Python puro): a chave fica em
+  `/var/lib/webase-api/vapid.json` e é criada sozinha. Se se perder, os telemóveis têm de voltar a ativar os avisos.
+  A API só envia para os serviços de notificações da Google, Mozilla, Apple e Microsoft.
 - Pagamentos desligados (`WB_PAGAMENTOS=desligado`): planos pagos e vendas pagas do marketplace ficam em
   «interesse»/«reservada» até haver um fornecedor de pagamentos.

@@ -152,6 +152,13 @@ CREATE INDEX IF NOT EXISTS i_fr_topico ON forum_respostas(topico, criado);
 CREATE TABLE IF NOT EXISTS forum_gostos(alvo TEXT NOT NULL, uid INTEGER NOT NULL, criado INTEGER NOT NULL, PRIMARY KEY(alvo, uid));
 CREATE TABLE IF NOT EXISTS forum_denuncias(id INTEGER PRIMARY KEY AUTOINCREMENT, alvo TEXT NOT NULL, uid INTEGER NOT NULL, motivo TEXT NOT NULL,
   estado TEXT NOT NULL DEFAULT 'aberta', criado INTEGER NOT NULL, UNIQUE(alvo, uid));
+CREATE TABLE IF NOT EXISTS dispositivos(id TEXT PRIMARY KEY, conta INTEGER NOT NULL, utilizador INTEGER NOT NULL, endpoint TEXT NOT NULL UNIQUE,
+  nome TEXT NOT NULL DEFAULT '', criado INTEGER NOT NULL, usado INTEGER, falhas INTEGER NOT NULL DEFAULT 0);
+CREATE INDEX IF NOT EXISTS i_disp_u ON dispositivos(utilizador);
+CREATE TABLE IF NOT EXISTS pedidos_ligar(id TEXT PRIMARY KEY, conta INTEGER NOT NULL, utilizador INTEGER NOT NULL, cliente TEXT,
+  numero TEXT NOT NULL, nome TEXT NOT NULL DEFAULT '', estado TEXT NOT NULL DEFAULT 'pendente', teste INTEGER NOT NULL DEFAULT 0,
+  criado INTEGER NOT NULL, aberto INTEGER, chamada TEXT, resultado TEXT, duracao INTEGER);
+CREATE INDEX IF NOT EXISTS i_pl_u ON pedidos_ligar(utilizador, estado, criado);
 CREATE TABLE IF NOT EXISTS interesse(id INTEGER PRIMARY KEY AUTOINCREMENT, conta INTEGER NOT NULL, plano TEXT NOT NULL, criado INTEGER NOT NULL);
 '''
 

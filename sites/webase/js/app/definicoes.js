@@ -2,11 +2,12 @@
 import { estado, h, icone, get, post, ligacao, navegar, campo, opcao, aviso, falhou, confirmar, podeX, lerForm, limparErros, mostrarErro,
   aGuardar, relativo, data, descarregar, carimbo, iniciais, vazio } from './nucleo.js';
 import { MODS, DESCR } from './main.js';
+import { secaoTelemovel } from './ligar.js';
 
 const CORES = ['#2B3FD6', '#0B5CAD', '#0F766E', '#1E7A4C', '#7A5A00', '#9A3412', '#B42318', '#A21CAF', '#6D28D9', '#14161B'];
 const SECOES = [
   ['negocio', 'Negócio', 'definicoes'], ['modulos', 'Módulos', 'definicoes'], ['marca', 'Marca', 'definicoes'], ['campos', 'Campos da ficha', 'definicoes'],
-  ['fases', 'Fases das leads', 'definicoes'], ['pontos', 'Pontos', 'definicoes'], ['plano', 'Plano', null], ['seguranca', 'Segurança e aparência', null], ['conta', 'Dados e conta', null],
+  ['fases', 'Fases das leads', 'definicoes'], ['pontos', 'Pontos', 'definicoes'], ['telemovel', 'Ligar do computador', null], ['plano', 'Plano', null], ['seguranca', 'Segurança e aparência', null], ['conta', 'Dados e conta', null],
 ];
 
 function atualizarEu(eu) { estado.eu = eu; window.dispatchEvent(new CustomEvent('wb:eu')); }
@@ -244,7 +245,7 @@ function conta() {
 
 let raizAtual;
 async function mostrarSecao(id) {
-  const fns = { negocio, modulos, marca, campos, fases, pontos, plano, seguranca, conta };
+  const fns = { negocio, modulos, marca, campos, fases, pontos, plano, seguranca, conta, telemovel: () => secaoTelemovel(() => mostrarSecao('telemovel')) };
   const zona = raizAtual.querySelector('#def-zona');
   zona.replaceChildren(h('div', { class: 'carregar' }));
   try { zona.replaceChildren(...await fns[id]()); } catch (e) { zona.replaceChildren(h('p', null, e.message)); }

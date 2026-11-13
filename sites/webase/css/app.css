@@ -323,3 +323,33 @@ dialog.folha[open] { display: flex; flex-direction: column; animation: folha-ent
 .entrada-anima > *:nth-child(2) { animation-delay: .04s; } .entrada-anima > *:nth-child(3) { animation-delay: .08s; }
 .entrada-anima > *:nth-child(4) { animation-delay: .12s; } .entrada-anima > *:nth-child(5) { animation-delay: .16s; }
 @keyframes sobe { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+
+/* ---------------------------------------------------------------- ligar no telemóvel */
+.bt-grande { min-height: 56px; font-size: 17px; padding: 0 24px; }
+.ligar-numero { font-size: clamp(28px, 8vw, 36px); font-weight: 650; font-variant-numeric: tabular-nums; letter-spacing: -.01em; line-height: 1.1; user-select: all; }
+.ligar-ajuda { color: var(--tinta2); max-width: 46ch; }
+.ligar-acoes { display: flex; flex-wrap: wrap; gap: 10px; }
+.ligar-acoes > .bt { flex: 1 1 200px; justify-content: center; }
+.ligar-passo { display: grid; grid-template-columns: 44px minmax(0, 1fr); gap: 12px; align-items: start; }
+.ligar-passo p { color: var(--tinta2); margin-top: 4px; }
+.ligar-ic { width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; background: var(--folha2); }
+.ligar-ic svg { width: 20px; height: 20px; }
+.ligar-estado { display: grid; justify-items: center; text-align: center; gap: 8px; padding: 16px 0 4px; }
+.ligar-estado strong { font-size: 19px; }
+.ligar-estado p { color: var(--tinta2); max-width: 40ch; }
+.ligar-onda { position: relative; width: 64px; height: 64px; border-radius: 50%; display: grid; place-items: center; background: var(--acento); color: var(--sobre-acento); margin-bottom: 8px; }
+.ligar-onda svg { width: 26px; height: 26px; }
+.a-espera .ligar-onda::before, .a-espera .ligar-onda::after { content: ''; position: absolute; inset: 0; border-radius: 50%; border: 2px solid var(--acento); opacity: 0; animation: onda 1.8s var(--entra) infinite; }
+.a-espera .ligar-onda::after { animation-delay: .9s; }
+@keyframes onda { from { transform: scale(1); opacity: .55; } to { transform: scale(1.9); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .a-espera .ligar-onda::before, .a-espera .ligar-onda::after { animation: none; } }
+.ligar-tel { display: grid; gap: 16px; }
+.ligar-tel .ligar-acoes > .bt-grande { flex-basis: 100%; }
+.ligar-resultado { margin-top: 16px; }
+.ligar-res { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.ligar-res .bt { justify-content: center; min-height: 48px; white-space: normal; text-align: center; }
+.ligar-texto { border: 0; background: none; padding: 0; font: inherit; color: inherit; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; font-variant-numeric: tabular-nums; }
+.ligar-texto:hover { color: var(--acento-texto, var(--acento)); }
+.passos-ligar { margin: 0; padding-left: 20px; display: grid; gap: 6px; color: var(--tinta2); max-width: 62ch; }
+.passos-ligar strong { color: var(--tinta); font-weight: 600; }
+.mono-curto { font-weight: 600; color: var(--tinta); overflow-wrap: anywhere; }

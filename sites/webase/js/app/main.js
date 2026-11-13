@@ -26,6 +26,7 @@ const VISTAS = [
   [/^\/app\/equipa\/?$/, () => import('./equipa.js')],
   [/^\/app\/definicoes(\/.*)?$/, () => import('./definicoes.js')],
   [/^\/app\/avisos\/?$/, () => import('./avisos.js')],
+  [/^\/app\/ligar(\/[A-Za-z0-9_-]{12})?\/?$/, () => import('./ligar.js')],
 ];
 
 const raiz = document.getElementById('app');

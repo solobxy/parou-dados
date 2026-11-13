@@ -95,7 +95,7 @@ with sync_playwright() as p:
         pg.wait_for_timeout(1500)
         passo('registar chamada', pg.locator('text=Cliente de Teste').count() > 0)
         pg.screenshot(path=OUT + '/app-chamadas-tel.png')
-        for url in ['/app', '/app/clientes', '/app/pontos', '/app/subscricoes', '/app/forum', '/app/marketplace', '/app/equipa', '/app/definicoes/marca']:
+        for url in ['/app', '/app/clientes', '/app/pontos', '/app/subscricoes', '/app/forum', '/app/marketplace', '/app/equipa', '/app/definicoes/marca', '/app/definicoes/telemovel', '/app/ligar']:
             pg.goto(URL + url)
             pg.wait_for_selector('.casca main h1', timeout=15000)
             pg.wait_for_timeout(400)

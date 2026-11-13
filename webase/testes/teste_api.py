@@ -22,6 +22,7 @@ PORTA = 3169
 URL = 'http://127.0.0.1:%d' % PORTA
 falhas = []
 n_ok = 0
+DADOS = tempfile.mkdtemp(prefix='wbtest')
 
 
 def ok(cond, nome):
@@ -90,9 +91,9 @@ def criar_conta(email, negocio='Barbearia Teste', setor='barbearia'):
 
 
 def main():
-    dados = tempfile.mkdtemp(prefix='wbtest')
+    dados = DADOS
     env = dict(os.environ, WB_DADOS=dados, WB_DEV='1', WB_PORTA=str(PORTA), ORIGENS=URL, ADMINS='admin@webase.test',
-               WB_PAGAMENTOS='teste', WB_FUNDADORES='2')
+               WB_PAGAMENTOS='teste', WB_FUNDADORES='2', WB_PUSH='registo')
     proc = subprocess.Popen([sys.executable, API], env=env, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     try:
         for _ in range(50):
@@ -315,6 +316,92 @@ def correr():
     ok(e == 200 and r['total'] == 1 and r['hoje']['saida'] == 1, 'lista de seguimentos e totais de hoje')
     e, r = a.post('/api/chamadas', {'direcao': 'saida', 'resultado': 'atendida', 'numero': '1', 'quando': '2099-01-01T10:00'})
     ok(e == 400, 'chamada no futuro recusada')
+
+    print('— ligar no telemóvel')
+    e, r = a.get('/api/ligar/dispositivos')
+    chave = base64.urlsafe_b64decode(r['chave'] + '=' * (-len(r['chave']) % 4))
+    ok(e == 200 and len(chave) == 65 and chave[0] == 4 and r['dispositivos'] == [], 'chave pública VAPID e lista vazia')
+    e, r = a.post('/api/ligar/pedir', {'cliente': joao})
+    ok(e == 409 and r.get('codigo') == 'sem_telemovel', 'sem telemóvel ligado, o pedido explica o que fazer')
+    for mau in ('http://fcm.googleapis.com/fcm/send/abcdefghij', 'https://evil.example.com/push/abcdefghij',
+                'https://fcm.googleapis.com:8443/fcm/send/abcdefghij', 'https://x@fcm.googleapis.com/fcm/send/abcdefghij',
+                'https://fcm.googleapis.com.evil.pt/fcm/send/abcdefghij', 'https://127.0.0.1/abcdefghijklmnopqrst'):
+        e, r = a.post('/api/ligar/dispositivos', {'endpoint': mau, 'nome': 'Android'})
+        ok(e == 400 and r.get('campo') == 'endpoint', 'endereço de notificações recusado: ' + mau[:40])
+    ep = 'https://fcm.googleapis.com/fcm/send/teste-' + 'x' * 40
+    e, r = a.post('/api/ligar/dispositivos', {'endpoint': ep, 'nome': 'Android · Chrome'})
+    ok(e == 201, 'ligar telemóvel')
+    did = r['dispositivo']['id']
+    e, r = b.post('/api/ligar/dispositivos/%s/apagar' % did)
+    ok(e == 404, 'IDOR: outra conta não desliga o telemóvel')
+    e, r = b.post('/api/ligar/dispositivos/%s/testar' % did)
+    ok(e == 404, 'IDOR: outra conta não envia testes')
+    e, r = a.post('/api/ligar/pedir', {'cliente': joao})
+    ok(e == 201 and r['pedido']['numero'] == '912345678' and r['pedido']['nome'] == 'João Gonçalves' and r['telemoveis'] == 1,
+       'pedir para ligar a um cliente')
+    pid = r['pedido']['id']
+    registo = []
+    for _ in range(30):
+        try:
+            registo = [json.loads(l) for l in open(os.path.join(DADOS, 'push.log'))]
+        except FileNotFoundError:
+            pass
+        if registo:
+            break
+        time.sleep(0.1)
+    ok(len(registo) == 1 and registo[0]['endpoint'] == ep, 'o telemóvel é acordado')
+    cab = registo[0]['cabecalhos'] if registo else {}
+    aut = cab.get('Authorization', '')
+    jwt = aut[len('vapid t='):].split(',')[0] if aut.startswith('vapid t=') else ''
+    partes = jwt.split('.')
+    dec = lambda x: base64.urlsafe_b64decode(x + '=' * (-len(x) % 4))  # noqa: E731
+    reclam = json.loads(dec(partes[1])) if len(partes) == 3 else {}
+    ok(reclam.get('aud') == 'https://fcm.googleapis.com' and reclam.get('exp', 0) > time.time() and reclam.get('sub')
+       and cab.get('Urgency') == 'high' and cab.get('Content-Length') == '0', 'pedido VAPID sem conteúdo e com o destino certo')
+    try:
+        from cryptography.hazmat.primitives import hashes
+        from cryptography.hazmat.primitives.asymmetric import ec, utils
+        pk = ec.EllipticCurvePublicNumbers(int.from_bytes(chave[1:33], 'big'), int.from_bytes(chave[33:], 'big'),
+                                           ec.SECP256R1()).public_key()
+        sg = dec(partes[2])
+        try:
+            pk.verify(utils.encode_dss_signature(int.from_bytes(sg[:32], 'big'), int.from_bytes(sg[32:], 'big')),
+                      (partes[0] + '.' + partes[1]).encode(), ec.ECDSA(hashes.SHA256()))
+            ok(True, 'assinatura ES256 válida')
+        except Exception:
+            ok(False, 'assinatura ES256 válida')
+    except ImportError:
+        pass
+    e, r = a.get('/api/ligar/pendente')
+    ok(e == 200 and r['pedido'] and r['pedido']['id'] == pid, 'o telemóvel encontra o pedido')
+    e, r = b.get('/api/ligar/pendente')
+    ok(e == 200 and r['pedido'] is None, 'outra conta não vê o pedido')
+    e, r = b.get('/api/ligar/' + pid)
+    ok(e == 404, 'IDOR: outra conta não abre o pedido')
+    e, r = b.post('/api/ligar/%s/resultado' % pid, {'resultado': 'atendida'})
+    ok(e in (403, 404), 'IDOR: outra conta não regista o resultado')
+    e, r = a.post('/api/ligar/%s/aberto' % pid)
+    ok(e == 200 and r['pedido']['estado'] == 'aberto', 'telemóvel marca que está a ligar')
+    e, r = a.post('/api/ligar/%s/resultado' % pid, {'resultado': 'nada'})
+    ok(e == 400 and r.get('campo') == 'resultado', 'resultado inválido recusado')
+    e, r = a.post('/api/ligar/%s/resultado' % pid, {'resultado': 'atendida', 'duracao': 95, 'notas': 'Marcou para sábado'})
+    ok(e == 201 and r['chamada']['cliente'] == joao and r['chamada']['direcao'] == 'saida' and r['pedido']['estado'] == 'feito',
+       'resultado fica registado como chamada feita')
+    e, r = a.post('/api/ligar/%s/resultado' % pid, {'resultado': 'atendida'})
+    ok(e == 409, 'não regista a mesma chamada duas vezes')
+    e, r = a.get('/api/ligar/' + pid)
+    ok(e == 200 and r['pedido']['estado'] == 'feito' and r['pedido']['duracao'] == 95, 'o computador vê o resultado')
+    e, r = a.post('/api/ligar/pedir', {'numero': '220 000 111', 'nome': 'Fornecedor'})
+    ok(e == 201 and r['pedido']['cliente'] is None and r['pedido']['nome'] == 'Fornecedor', 'pedir para um número que não é cliente')
+    p2 = r['pedido']['id']
+    e, r = a.post('/api/ligar/dispositivos/%s/testar' % did)
+    e2, r2 = a.get('/api/ligar/pendente')
+    ok(e == 200 and r2['pedido'] and r2['pedido']['teste'], 'teste de notificação')
+    e, r = a.get('/api/ligar/' + p2)
+    ok(r['pedido']['estado'] == 'substituido', 'um pedido novo substitui o anterior')
+    e, r = a.post('/api/ligar/dispositivos/%s/apagar' % did)
+    e2, r2 = a.get('/api/ligar/dispositivos')
+    ok(e == 200 and r2['dispositivos'] == [], 'desligar telemóvel')
 
     print('— contratos')
     e, r = a.post('/api/contratos', {'cliente': joao, 'titulo': 'Avença mensal', 'valor': 30, 'periodicidade': 'mensal',

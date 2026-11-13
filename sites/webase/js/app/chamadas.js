@@ -1,6 +1,7 @@
 // webase — chamadas recebidas e feitas, com cronómetro, resultado, notas e quem ligar a seguir.
 import { estado, h, icone, get, post, num, relativo, dataHora, ligacao, campo, formFolha, aviso, falhou, confirmar, pode, podeX,
   vazio, debounce, descarregar, escolherCliente, agoraLocal, tsParaLocal, minutos, navegar } from './nucleo.js';
+import { botaoLigar } from './ligar.js';
 
 const RES = { atendida: 'Atendida', nao_atendida: 'Não atendida', ocupado: 'Ocupado', voicemail: 'Caixa de correio', venda: 'Venda',
   ligar_depois: 'Ligar depois', sem_interesse: 'Sem interesse', errado: 'Número errado' };
@@ -94,8 +95,8 @@ export async function mostrar(raiz) {
           h('span', { class: 's duas-l' }, seg ? (x.notas || 'Voltar a ligar') :
             [h('span', { class: MAUS.includes(x.resultado) ? 'res-mau' : '' }, RES[x.resultado]), x.duracao ? ' · ' + minutos(x.duracao) : '', x.quem ? ' · ' + x.quem : '', x.notas ? ' · ' + x.notas : ''])),
         x.cliente ? ligacao('/app/clientes/' + x.cliente, { class: 'bt bt-pq bt-limpo so-pc-flex' }, 'Ficha') : null,
-        x.numero ? h('a', { class: 'bt bt-icone', href: 'tel:' + x.numero, 'aria-label': 'Ligar para ' + (x.nome || x.numero),
-          onclick: () => { if (seg) setTimeout(() => registarChamada({ cliente: x.cliente ? { id: x.cliente, nome: x.nome } : null, numero: x.numero, depois: carregar }), 400); } }, icone('telefone')) : null,
+        x.numero ? botaoLigar({ numero: x.numero, nome: x.nome, cliente: x.cliente, classe: 'bt bt-icone', soIcone: true, depois: carregar,
+          aoLigar: () => { if (seg) setTimeout(() => registarChamada({ cliente: x.cliente ? { id: x.cliente, nome: x.nome } : null, numero: x.numero, depois: carregar }), 400); } }) : null,
         seg && pode('chamadas', 'e') ? h('button', { class: 'bt bt-icone', type: 'button', 'aria-label': 'Marcar como feito', onclick: async () => {
           try { await post('/api/chamadas/' + x.id + '/feito'); aviso('Feito.'); carregar(); } catch (e) { falhou(e); }
         } }, icone('certo')) : null);

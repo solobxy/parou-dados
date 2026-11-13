@@ -56,16 +56,17 @@ jobs:
         run: |
           {
           echo "--- páginas (código, tipo, tamanho, tempo):"
-          for c in / /solucoes/ /precos/ /marketplace/ /privacidade/ /termos/ /app/ /app/clientes /robots.txt /sitemap.xml /_e.js /img/painel-1600.webp /fontes/instrument.woff2 /api/publico/estado /nao-existe; do
+          for c in / /solucoes/ /precos/ /marketplace/ /privacidade/ /termos/ /app/ /app/clientes /robots.txt /sitemap.xml /_e.js /img/painel-1600.webp /fontes/instrument.woff2 /app/sw.js /img/icone-192.png /manifest.webmanifest /api/publico/estado /nao-existe; do
             echo "$c -> $(curl -s -o /dev/null -w '%{http_code} %{content_type} %{size_download}B %{time_total}s' -m 30 "$U$c")"
           done
           echo "--- não podem aparecer (404 ou 403):"
-          for c in /.env /.git/config /.git/HEAD /api.py /base.py /DESIGN.md /gerar_paginas.py /app/.env /.DS_Store; do
+          for c in /.env /.git/config /.git/HEAD /api.py /base.py /DESIGN.md /gerar_paginas.py /app/.env /.DS_Store /vapid.json /dados.db; do
             echo "$c -> $(curl -s -o /dev/null -w '%{http_code}' -m 30 "$U$c")"
           done
           echo "--- sem sessão:"
           echo "GET /api/eu -> $(curl -s -o /dev/null -w '%{http_code}' -m 30 "$U/api/eu")"
           echo "GET /api/clientes -> $(curl -s -o /dev/null -w '%{http_code}' -m 30 "$U/api/clientes")"
+          echo "GET /api/ligar/pendente -> $(curl -s -o /dev/null -w '%{http_code}' -m 30 "$U/api/ligar/pendente")"
           echo "POST /api/conta/entrar sem X-Wb -> $(curl -s -o /dev/null -w '%{http_code}' -m 30 -X POST -H 'Content-Type: application/json' -d '{}' "$U/api/conta/entrar")"
           echo "POST /api/conta/entrar de outra origem -> $(curl -s -o /dev/null -w '%{http_code}' -m 30 -X POST -H 'Content-Type: application/json' -H 'X-Wb: 1' -H 'Origin: https://exemplo.com' -d '{}' "$U/api/conta/entrar")"
           echo "--- http vai para https:"; curl -sI -m 30 "${U/https:/http:}/" | grep -iE '^(HTTP|location)' || true

@@ -37,6 +37,7 @@ from nucleo import Erro, precisa, rota   # noqa: E402
 import crm                # noqa: E402,F401  (regista as rotas do CRM)
 import mk                 # noqa: E402,F401  (marketplace e partilhas)
 import forum              # noqa: E402,F401  (fórum)
+import ligar              # noqa: E402  (ligar no telemóvel)
 
 DIA = 86400
 SITE = os.environ.get('WB_SITE')     # só em testes locais: a API serve também o site
@@ -369,6 +370,8 @@ def conta_apagar(h, c, u, m, d):
         c.execute('DELETE FROM partilha_itens WHERE partilha IN (SELECT id FROM partilhas WHERE de=? OR para=?)', (cid, cid))
         c.execute("UPDATE partilhas SET estado='apagada' WHERE de=? OR para=?", (cid, cid))
         c.execute('DELETE FROM sessoes WHERE uid IN (SELECT id FROM utilizadores WHERE conta=?)', (cid,))
+        c.execute('DELETE FROM dispositivos WHERE conta=?', (cid,))
+        c.execute('DELETE FROM pedidos_ligar WHERE conta=?', (cid,))
         # utilizadores ficam sem dados pessoais (o e-mail fica livre para uma conta nova)
         for r in c.execute('SELECT id FROM utilizadores WHERE conta=?', (cid,)).fetchall():
             c.execute("UPDATE utilizadores SET email=?, nome='Conta apagada', senha='x', ativo=0 WHERE id=?",
@@ -469,6 +472,7 @@ def equipa_mudar(h, c, u, m, d):
     c.execute('UPDATE utilizadores SET nome=?, papel=?, perm=?, ativo=? WHERE id=?', (nome, papel, json.dumps(p), ativo, r['id']))
     if not ativo:
         c.execute('DELETE FROM sessoes WHERE uid=?', (r['id'],))
+        c.execute('DELETE FROM dispositivos WHERE utilizador=?', (r['id'],))
     N.auditar(h, c, u, 'equipa.mudar', r['id'], '%s: %s%s' % (nome, papel, '' if ativo else ', desativado'))
     return 200, {'utilizador': resumo_utilizador(c.execute('SELECT * FROM utilizadores WHERE id=?', (r['id'],)).fetchone())}
 
@@ -487,6 +491,8 @@ def equipa_senha(h, c, u, m, d):
 def equipa_apagar(h, c, u, m, d):
     r = membro(c, u, int(m.group(1)))
     c.execute('DELETE FROM sessoes WHERE uid=?', (r['id'],))
+    c.execute('DELETE FROM dispositivos WHERE utilizador=?', (r['id'],))
+    c.execute('DELETE FROM pedidos_ligar WHERE utilizador=?', (r['id'],))
     for t, col in (('clientes', 'responsavel'), ('leads', 'responsavel'), ('contratos', 'responsavel')):
         c.execute('UPDATE %s SET %s=? WHERE conta=? AND %s=?' % (t, col, col), (u['id'], u['conta'], r['id']))
     c.execute("UPDATE utilizadores SET email=?, nome=?, senha='x', ativo=0 WHERE id=?",
@@ -744,6 +750,7 @@ def ciclo():
         try:
             c = B.ligar()
             crm.trabalho_periodico(c)
+            ligar.limpar_antigos(c)
             c.execute('DELETE FROM sessoes WHERE expira<?', (B.agora(),))
             c.close()
         except Exception:

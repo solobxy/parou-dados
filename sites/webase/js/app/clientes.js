@@ -2,6 +2,7 @@
 import { estado, h, icone, get, post, euros, num, relativo, data, dataIso, ligacao, navegar, campo, opcao, formFolha, folha,
   aviso, falhou, confirmar, pode, podeX, ligado, avatar, vazio, carregando, debounce, descarregar, estadoTxt, aGuardar, iniciais,
   dataHora, minutos } from './nucleo.js';
+import { botaoLigar, formatarNumero } from './ligar.js';
 
 const TIPOS_ATIV = { nota: 'nota', chamada: 'chamadas', contrato: 'contratos', pontos: 'pontos', adesao: 'adesoes', uso: 'adesoes',
   lead: 'leads', ganho: 'ganho', perdido: 'fechar', criado: 'mais', editado: 'editar', consentimento: 'certo' };
@@ -237,7 +238,7 @@ async function ficha(raiz, id) {
   const c = r.cliente;
   const recarregar = () => ficha(raiz, id);
   const acoes = [];
-  if (c.telefone) acoes.push(h('a', { class: 'bt', href: 'tel:' + c.telefone, onclick: () => window.estat?.('ficha', 'ligar') }, icone('telefone'), 'Ligar'));
+  if (c.telefone) acoes.push(botaoLigar({ numero: c.telefone, nome: c.nome, cliente: c.id, depois: recarregar, aoLigar: () => window.estat?.('ficha', 'ligar') }));
   if (c.email) acoes.push(h('a', { class: 'bt', href: 'mailto:' + c.email }, icone('email'), 'E-mail'));
   if (pode('pontos', 'c')) acoes.push(h('button', { class: 'bt', type: 'button', onclick: async () => (await import('./pontos.js')).darPontos({ cliente: c, depois: recarregar }) }, icone('pontos'), 'Dar pontos'));
   if (pode('adesoes', 'c')) acoes.push(h('button', { class: 'bt', type: 'button', onclick: async () => (await import('./adesoes.js')).venderAdesao({ cliente: c, depois: recarregar }) }, icone('pacote'), 'Vender pacote'));
@@ -263,7 +264,7 @@ async function ficha(raiz, id) {
   const defs = estado.eu.conta.campos || [];
   const dado = (rot, val) => val ? h('div', { class: 'dado' }, h('dt', null, rot), h('dd', null, val)) : null;
   const dados = h('dl', { class: 'dados' },
-    dado('Telefone', c.telefone ? h('a', { href: 'tel:' + c.telefone }, c.telefone) : null),
+    dado('Telefone', c.telefone ? botaoLigar({ numero: c.telefone, nome: c.nome, cliente: c.id, depois: recarregar, classe: 'ligar-texto', texto: formatarNumero(c.telefone), semIcone: true }) : null),
     dado('E-mail', c.email ? h('a', { href: 'mailto:' + c.email }, c.email) : null),
     dado('Empresa', c.tipo !== 'empresa' ? c.empresa : null),
     dado('NIF', c.nif),
