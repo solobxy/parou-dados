@@ -360,6 +360,7 @@ section{position:relative}
 /* joias */
 .joias-sec{background:var(--noite-2)}
 #precos,#vale,#perguntas{background:var(--osso-2)}
+#vale{overflow-x:clip}
 .metais{display:grid;grid-template-columns:repeat(3,1fr);gap:clamp(24px,4vw,64px);margin-bottom:clamp(56px,7vw,96px)}
 .metais b{display:block;font-family:var(--serif);font-weight:600;font-size:clamp(22px,2vw,27px);margin-bottom:8px}
 .metais p{color:var(--sec-escuro)}
@@ -421,16 +422,29 @@ section{position:relative}
 .vale-acao{margin-top:22px}
 .vale-acao p{margin-top:14px;font-size:15px;max-width:30em}
 .vale-palco{perspective:1200px;display:grid;place-items:center}
-.vale{width:min(100%,420px);aspect-ratio:1.6;background:var(--tinta);color:var(--osso);border-radius:24px;padding:26px 28px;display:grid;grid-template-rows:auto 1fr auto auto;transform:rotate(-4deg) rotateX(var(--rx,0deg)) rotateY(var(--ry,0deg));transition:transform .5s var(--ease);box-shadow:0 30px 60px rgba(28,27,29,.28)}
+.vale-peca{position:relative;width:min(100%,420px);container-type:inline-size;transform:rotate(-4deg) rotateX(var(--rx,0deg)) rotateY(var(--ry,0deg));transition:transform .5s var(--ease)}
+.vale-peca::before{content:"";position:absolute;inset:0;border-radius:5.7cqw;box-shadow:0 30px 60px rgba(28,27,29,.28)}
+/* o cartão é furado no canto e uma argola de titânio atravessa-o: metade de trás por baixo do cartão, metade da frente por cima */
+.vale{position:relative;z-index:2;aspect-ratio:1.6;background:var(--tinta);color:var(--osso);border-radius:5.7cqw;padding:26px 28px;display:grid;grid-template-rows:auto 1fr auto auto;}
+.vale::after{content:"";position:absolute;left:84.77cqw;top:9.53cqw;width:3.8cqw;height:3.8cqw;border-radius:50%;background:#060607;box-shadow:inset 0 -1.5px 1px rgba(239,234,227,.22),inset 0 2px 3px rgba(0,0,0,.9)}
+.vale-argola{position:absolute;left:82.8cqw;top:-7.4cqw;width:17.26cqw;height:auto;pointer-events:none;transform-origin:22.4% 88.9%}
+.vale-argola{filter:drop-shadow(0 2px 2px rgba(0,0,0,.3))}
+.vale-argola.tras{z-index:1}
+.vale-argola.frente{z-index:3}
+.vale-palco.in .vale-argola{animation:balanca 2s .55s cubic-bezier(.3,.7,.4,1) both}
+.vale-peca.mexe .vale-argola{animation:balanca-curto 1.2s cubic-bezier(.3,.7,.4,1)}
+@keyframes balanca{0%{transform:rotate(0)}16%{transform:rotate(10deg)}36%{transform:rotate(-6.5deg)}56%{transform:rotate(3.5deg)}76%{transform:rotate(-1.4deg)}100%{transform:rotate(0)}}
+@keyframes balanca-curto{0%{transform:rotate(0)}22%{transform:rotate(-6deg)}50%{transform:rotate(3deg)}76%{transform:rotate(-1deg)}100%{transform:rotate(0)}}
+@media (prefers-reduced-motion:reduce){.vale-palco.in .vale-argola,.vale-peca.mexe .vale-argola{animation:none}}
 .vale-topo{display:flex;align-items:center;gap:10px;font-weight:600;font-size:15px}
 .vale-mono{display:block;width:40px;height:40px;background:var(--osso);color:var(--tinta);border-radius:10px;padding:4px}
 .vale-mono svg{width:100%;height:100%}
 .vale-v{font-family:var(--serif);font-weight:700;font-size:clamp(64px,7vw,96px);letter-spacing:-.05em;line-height:1;align-self:center}
 .vale-v.salta{animation:salta .5s var(--ease)}
 @keyframes salta{0%{transform:scale(.85);opacity:.4}60%{transform:scale(1.06)}100%{transform:none;opacity:1}}
-.vale-p{font-size:15px;color:var(--sec-escuro)}
+.vale-p{font-size:15px;line-height:1.4;color:var(--sec-escuro);text-wrap:balance}
 .vale-c{margin-top:12px;font-size:13px;color:var(--sec-escuro);line-height:1.35}
-@media (max-width:900px){.vale-grelha{grid-template-columns:1fr}.vale-palco{order:-1}.vale{width:min(100%,360px)}}
+@media (max-width:900px){.vale-grelha{grid-template-columns:1fr}.vale-palco{order:-1}.vale-peca{width:min(100%,360px)}}
 
 
 /* passos */
@@ -878,11 +892,15 @@ dialog.doc[open] .doc-cx{animation:pop .5s var(--ease)}
       </div>
     </div>
     <div class="vale-palco rv" style="--d:.1s" aria-hidden="true">
-      <div class="vale" id="valeCartao">
-        <div class="vale-topo"><span class="vale-mono"><svg xmlns="http://www.w3.org/2000/svg" viewBox="-227 -880 1100 1100" aria-hidden="true" focusable="false"><g class="bar" fill="#4258DE"><rect x="-64" y="-245.0" width="776" height="66" rx="33.0"/><circle cx="-64" cy="-212" r="60"/><circle cx="712" cy="-212" r="60"/></g><g fill="currentColor" transform="translate(0.0 0.0) scale(1 -1)"><path transform="translate(0.0 0)" d="M5 0 230 660H418L641 0H485L325 542H320L160 0Z"/></g></svg></span><span>Vale de oferta</span></div>
-        <b class="vale-v num" id="valeV">50 €</b>
-        <span class="vale-p">Para o piercing que quiseres, com a joia incluída.</span>
-        <span class="vale-c">AdriBodyPiercing<br>Válido 6 meses</span>
+      <div class="vale-peca" id="valeCartao">
+        <img class="vale-argola tras" src="/img/vale-argola-tras.webp" alt="" width="251" height="308" loading="lazy" decoding="async">
+        <div class="vale">
+          <div class="vale-topo"><span class="vale-mono"><svg xmlns="http://www.w3.org/2000/svg" viewBox="-227 -880 1100 1100" aria-hidden="true" focusable="false"><g class="bar" fill="#4258DE"><rect x="-64" y="-245.0" width="776" height="66" rx="33.0"/><circle cx="-64" cy="-212" r="60"/><circle cx="712" cy="-212" r="60"/></g><g fill="currentColor" transform="translate(0.0 0.0) scale(1 -1)"><path transform="translate(0.0 0)" d="M5 0 230 660H418L641 0H485L325 542H320L160 0Z"/></g></svg></span><span>Vale de oferta</span></div>
+          <b class="vale-v num" id="valeV">50 €</b>
+          <span class="vale-p">Para o piercing que quiseres, com a joia incluída.</span>
+          <span class="vale-c">AdriBodyPiercing<br>Válido 6 meses</span>
+        </div>
+        <img class="vale-argola frente" src="/img/vale-argola-frente.webp" alt="" width="251" height="308" loading="lazy" decoding="async">
       </div>
     </div>
   </div>
@@ -1668,10 +1686,12 @@ function estadoPedido(codigo){
 
 /* ---------- Vale de oferta ---------- */
 (function(){
-  var v = 50, cart = $('#valeCartao');
+  var v = 50, cart = $('#valeCartao'), pintado = false;
   function pintar(){
     $$('.vale-valores button').forEach(function(b){ b.setAttribute('aria-pressed', +b.dataset.v === v); });
     var el = $('#valeV'); el.textContent = fmt(v); el.classList.remove('salta'); void el.offsetWidth; el.classList.add('salta');
+    if (pintado) { cart.classList.remove('mexe'); void cart.offsetWidth; cart.classList.add('mexe'); }
+    pintado = true;
     var a = $('#valeBtn'); a.textContent = 'Pedir vale de ' + fmt(v);
     a.href = waLink('Olá Adri! Quero oferecer um vale de ' + fmt(v) + '. Como faço o pagamento?');
   }
