@@ -909,7 +909,7 @@ class H(BaseHTTPRequestHandler):
 
     # ---------- avaliações (link de uso único) ----------
     def criar_convite(self, c, corpo):
-        nome, piercing, mid = limpar_texto(corpo.get('nome'), 40), '', None
+        nome, piercing, mid = limpar_texto(corpo.get('nome'), 40), limpar_texto(corpo.get('piercing'), 80), None
         if type(corpo.get('marcacao')) is int:
             r = c.execute('SELECT id, nome, servicos FROM marcacoes WHERE id=?', (corpo['marcacao'],)).fetchone()
             if r:
@@ -917,14 +917,15 @@ class H(BaseHTTPRequestHandler):
                 ids = [i for i in json.loads(r['servicos']) if i not in ('consulta', 'troca')]
                 piercing = ', '.join(nomes(ids))[:80]
                 nome = nome or limpar_texto(r['nome'].split(' ')[0], 40)
-        t, agora = secrets.token_urlsafe(18), int(time.time())
+        # 12 caracteres (72 bits): curto para caber escrito no cartão de obrigado, e só serve uma vez durante 90 dias
+        t, agora = secrets.token_urlsafe(9), int(time.time())
         cur = c.execute('INSERT INTO convites(h, criado, expira, nome, piercing, marcacao) VALUES(?,?,?,?,?,?)',
                         (h(t), agora, agora + CONVITE_DIAS * 86400, nome, piercing, mid))
         return self.responder(201, {'token': t, 'id': cur.lastrowid, 'nome': nome, 'piercing': piercing})
 
     def convite_valido(self, c, corpo):
         t = corpo.get('token')
-        if not isinstance(t, str) or not re.fullmatch(r'[A-Za-z0-9_\-]{20,40}', t):
+        if not isinstance(t, str) or not re.fullmatch(r'[A-Za-z0-9_\-]{12,40}', t):
             return None, 'nao_existe'
         r = c.execute('SELECT * FROM convites WHERE h=?', (h(t),)).fetchone()
         if not r:

@@ -293,7 +293,7 @@ var PADRAO = {
   livre: 'Olá {nome}! Sobre a tua marcação de {dia}, às {hora}: '
 };
 var NOME_MOD = {confirmar:'Confirmação', lembrete:'Lembrete', reagendar:'Nova hora', recusar:'Recusa', cancelar:'Cancelamento', atraso:'Atraso', cuidados:'Cuidados', partilha:'Pedir partilha', avaliacao:'Pedir avaliação', vale:'Vale de oferta', livre:'Em branco'};
-var AJUDA_MOD = {confirmar:'Quando aprovas um pedido ou guardas uma marcação.', lembrete:'Um ou dois dias antes da marcação.', reagendar:'Quando mudas o dia ou a hora.', recusar:'Quando recusas um pedido. O motivo entra em {motivo}.', cancelar:'Quando cancelas uma marcação.', atraso:'No dia, se estiveres atrasado.', cuidados:'Depois de fazeres o piercing.', partilha:'Uns dias depois, para pedir uma foto no Instagram.', avaliacao:'Quando pedes uma avaliação. O link de uso único entra em {link}.', vale:'Quando envias um vale. Aqui {nome} é quem oferece, e {valor}, {codigo}, {validade} e {para} entram sozinhos.', livre:'Para escreveres o que quiseres.'};
+var AJUDA_MOD = {confirmar:'Quando aprovas um pedido ou guardas uma marcação.', lembrete:'Um ou dois dias antes da marcação.', reagendar:'Quando mudas o dia ou a hora.', recusar:'Quando recusas um pedido. O motivo entra em {motivo}.', cancelar:'Quando cancelas uma marcação.', atraso:'No dia, se estiveres atrasado.', cuidados:'Depois de fazeres o piercing.', partilha:'Uns dias depois, para pedir uma foto no Instagram.', avaliacao:'Vai com o cartão de obrigado. O link de uso único para avaliar entra em {link}.', vale:'Quando envias um vale. Aqui {nome} é quem oferece, e {valor}, {codigo}, {validade} e {para} entram sozinhos.', livre:'Para escreveres o que quiseres.'};
 var ASSUNTO = {confirmar:'marcação confirmada', lembrete:'lembrete da tua marcação', reagendar:'nova hora da tua marcação', recusar:'o teu pedido de marcação', cancelar:'marcação cancelada', atraso:'um pequeno atraso', cuidados:'cuidados com o teu piercing', partilha:'como está o piercing?', avaliacao:'como correu o teu piercing?', vale:'o teu vale de oferta', livre:'a tua marcação'};
 var ACAO_MOD = {aprovar:'confirmar', recusar:'recusar', reagendar:'reagendar', cancelar:'cancelar'};
 var modelos = {}, cfg = null;
@@ -388,7 +388,7 @@ function cartao(m){
     if (m.data <= hojeISO()) ac.push('<button class="btn peq" data-a="concluir">Feita</button>', '<button class="btn esc peq" data-a="faltou">Faltou</button>');
     ac.push('<button class="btn osso peq" data-a="reagendar">Reagendar</button>', '<button class="btn verm peq" data-a="cancelar">Cancelar</button>');
   }
-  if (m.estado === 'concluida') ac.push('<button class="btn peq" data-a="avaliar">Pedir avaliação</button>');
+  if (m.estado === 'concluida') ac.push('<button class="btn peq" data-a="avaliar">Cartão de obrigado</button>');
   if (['recusada','cancelada','faltou','concluida'].indexOf(m.estado) >= 0 && m.data >= hojeISO()) ac.push('<button class="btn esc peq" data-a="reabrir">Voltar a abrir</button>');
   var av = avisos[m.id];
   return '<article class="card" data-id="' + m.id + '">' +
@@ -777,22 +777,140 @@ function dlgTextos(k, blob, c){
 function estr(n){ var h = ''; for (var i = 1; i <= 5; i++) h += i <= n ? '★' : '<span class="v">★</span>'; return '<span class="estr" role="img" aria-label="' + n + ' de 5 estrelas">' + h + '</span>'; }
 var fmtData = new Intl.DateTimeFormat('pt-PT', {day: 'numeric', month: 'short', year: 'numeric'});
 function linkAvaliar(t){ return location.origin + '/avaliar/#' + t; }
+/* cartão de obrigado: resumo do piercing, cuidados e QR único para avaliar (com o link escrito ao lado) */
+function carregarQR(){
+  if (window.qrcode) return Promise.resolve(window.qrcode);
+  return carregarQR.p || (carregarQR.p = new Promise(function(ok, ko){
+    var s = document.createElement('script'); s.src = 'qrcode.js'; s.onload = function(){ ok(window.qrcode); }; s.onerror = function(){ carregarQR.p = null; ko(); }; document.head.appendChild(s);
+  }));
+}
+function maisDias(iso, n){ var d = dParse(iso); d.setDate(d.getDate() + n); return d; }
+var fmtDM = new Intl.DateTimeFormat('pt-PT', {day: 'numeric', month: 'long'});
+function cortar(x, t, max){ if (x.measureText(t).width <= max) return t; while (t.length > 1 && x.measureText(t + '…').width > max) t = t.slice(0, -1); return t.replace(/\s+$/, '') + '…'; }
+function imagemObrigado(d){
+  var fontes = Promise.all(['700 100px "Bricolage Grotesque"', '600 40px "Bricolage Grotesque"', '600 30px Figtree', '500 30px Figtree', '400 30px Figtree']
+    .map(function(f){ return document.fonts && document.fonts.load ? document.fonts.load(f) : null; })).catch(function(){});
+  return Promise.all([carregarQR(), fontes]).then(function(r){
+    var qrcode = r[0], W = 1080, H = 1350, P = 84, TINTA = '#1C1B1D', SEC = '#55524E', OSSO = '#EFEAE3';
+    var cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+    var x = cv.getContext('2d'), ls = function(t){ if ('letterSpacing' in x) x.letterSpacing = t; };
+    x.fillStyle = OSSO; x.fillRect(0, 0, W, H);
+    // marca e data
+    x.fillStyle = '#E5DFD6'; caixa(x, P, P, 88, 88, 22); x.fill(); monograma(x, P + 8, P + 8, 72);
+    x.textBaseline = 'middle'; x.fillStyle = TINTA; x.font = '600 34px "Bricolage Grotesque"'; x.fillText('AdriBodyPiercing', P + 108, P + 45);
+    x.textBaseline = 'alphabetic';
+    // título
+    var tit = d.nome ? 'Obrigado, ' + primeiro(d.nome) + '!' : 'Obrigado!', fs = 104;
+    ls('-3px'); do { x.font = '700 ' + fs + 'px "Bricolage Grotesque"'; fs -= 4; } while (x.measureText(tit).width > W - 2 * P && fs > 60);
+    x.fillStyle = TINTA; x.fillText(cortar(x, tit, W - 2 * P), P - 4, 300); ls('0px');
+    x.fillStyle = SEC; x.font = '400 32px Figtree'; x.fillText('Foi um gosto. Aqui fica o resumo do teu piercing.', P, 362);
+    // resumo
+    var rev = 'entre ' + fmtDM.format(maisDias(d.data, 28)) + ' e ' + fmtDM.format(maisDias(d.data, 56));
+    var pierc = d.piercing ? cap(listaPT(d.piercing.split(/\s*,\s*/).filter(Boolean))) : '';
+    var linhas = [pierc ? ['Piercing', pierc] : null, ['Joia', 'Titânio de implante'], ['Data', fmtLonga.format(dParse(d.data))], ['Revisão grátis', rev]].filter(Boolean);
+    var y = 446;
+    linhas.forEach(function(l){
+      x.fillStyle = SEC; x.font = '500 26px Figtree'; x.fillText(l[0], P, y);
+      x.fillStyle = TINTA; x.font = '600 32px Figtree'; x.fillText(cortar(x, l[1], W - 2 * P - 250), P + 250, y);
+      y += 58;
+    });
+    // cuidados
+    y += 40; x.fillStyle = TINTA; x.font = '600 36px "Bricolage Grotesque"'; x.fillText('Nos próximos dias', P, y);
+    x.font = '400 29px Figtree';
+    ['Limpa com soro estéril, uma a duas vezes por dia.', 'Lava as mãos antes de tocar e não rodes a joia.', 'Dúvidas? Manda uma foto por WhatsApp para o ' + telTxt() + '.'].forEach(function(t){ y += 46; x.fillText(cortar(x, t, W - 2 * P), P, y); });
+    // painel do QR
+    var ph = 330, py = H - P - ph, qs = 250, qx = W - P - 40 - qs, qy = py + (ph - qs) / 2;
+    x.fillStyle = TINTA; caixa(x, P, py, W - 2 * P, ph, 36); x.fill();
+    var qr = qrcode(0, 'M'); qr.addData(d.link); qr.make();
+    var n = qr.getModuleCount(), mz = 3, cel = qs / (n + 2 * mz);
+    x.fillStyle = '#FFFFFF'; caixa(x, qx, qy, qs, qs, 18); x.fill(); x.fillStyle = TINTA;
+    for (var rr = 0; rr < n; rr++) for (var cc = 0; cc < n; cc++) if (qr.isDark(rr, cc)) x.fillRect(Math.floor(qx + (cc + mz) * cel), Math.floor(qy + (rr + mz) * cel), Math.ceil(cel), Math.ceil(cel));
+    var tx = P + 44, tmax = qx - 36 - tx;
+    x.fillStyle = OSSO; x.font = '600 44px "Bricolage Grotesque"'; x.fillText('Conta como correu', tx, py + 86);
+    x.fillStyle = '#B9B7BC'; x.font = '400 26px Figtree';
+    var ty = py + 132; linhasTxt(x, 'Aponta a câmara ao código, ou abre o link:', tmax).forEach(function(l){ x.fillText(l, tx, ty); ty += 36; });
+    var lnkTxt = d.link.replace(/^https?:\/\//, ''), lf = 26;
+    do { x.font = '600 ' + lf + 'px Figtree'; lf -= 1; } while (x.measureText(lnkTxt).width > tmax && lf > 15);
+    ty += 8; x.fillStyle = '#9AA8FF'; x.fillText(lnkTxt, tx, ty);
+    var lw = x.measureText(lnkTxt).width; x.fillRect(tx, ty + 6, lw, 2);
+    x.fillStyle = '#B9B7BC'; x.font = '400 22px Figtree';
+    var l = cfg && cfg.local; x.fillText(cortar(x, l ? l.nome + ', ' + l.rua.replace(/,\s*/, ' ') + ', ' + l.cidade : 'Kaos Tattoo, Rua da Torrinha 202, Porto', tmax), tx, py + ph - 40);
+    var zonas = [{x: qx, y: qy, w: qs, h: qs}, {x: tx, y: ty - 30, w: lw, h: 44}];
+    return new Promise(function(ok, ko){ cv.toBlob(function(b){ b ? ok({jpg: b, w: W, h: H, zonas: zonas}) : ko(); }, 'image/jpeg', 0.92); });
+  });
+}
+/* PDF de uma página com a imagem e zonas clicáveis para o link (sem bibliotecas) */
+function pdfDeImagem(img, url){
+  return img.jpg.arrayBuffer().then(function(buf){
+    var jpg = new Uint8Array(buf), k = 0.4, PW = img.w * k, PH = img.h * k, partes = [], pos = 0, offs = [];
+    var enc = new TextEncoder();
+    function txt(s){ var b = enc.encode(s); partes.push(b); pos += b.length; }
+    function bin(b){ partes.push(b); pos += b.length; }
+    function obj(n, corpo){ offs[n] = pos; txt(n + ' 0 obj\n' + corpo + '\nendobj\n'); }
+    var u = url.replace(/[\\()]/g, function(c){ return '\\' + c; }), f = function(v){ return v.toFixed(2); };
+    var anots = img.zonas.map(function(z, i){ return (6 + i) + ' 0 R'; }).join(' ');
+    txt('%PDF-1.4\n%\xE2\xE3\xCF\xD3\n');
+    obj(1, '<< /Type /Catalog /Pages 2 0 R >>');
+    obj(2, '<< /Type /Pages /Kids [3 0 R] /Count 1 >>');
+    obj(3, '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ' + f(PW) + ' ' + f(PH) + '] /Resources << /XObject << /Im0 4 0 R >> >> /Contents 5 0 R /Annots [' + anots + '] >>');
+    offs[4] = pos; txt('4 0 obj\n<< /Type /XObject /Subtype /Image /Width ' + img.w + ' /Height ' + img.h + ' /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ' + jpg.length + ' >>\nstream\n'); bin(jpg); txt('\nendstream\nendobj\n');
+    var cs = 'q ' + f(PW) + ' 0 0 ' + f(PH) + ' 0 0 cm /Im0 Do Q';
+    obj(5, '<< /Length ' + cs.length + ' >>\nstream\n' + cs + '\nendstream');
+    img.zonas.forEach(function(z, i){ obj(6 + i, '<< /Type /Annot /Subtype /Link /Rect [' + [z.x * k, PH - (z.y + z.h) * k, (z.x + z.w) * k, PH - z.y * k].map(f).join(' ') + '] /Border [0 0 0] /A << /S /URI /URI (' + u + ') >> >>'); });
+    var total = 6 + img.zonas.length, xref = pos, s = 'xref\n0 ' + total + '\n0000000000 65535 f \n';
+    for (var i = 1; i < total; i++) s += String(offs[i]).padStart(10, '0') + ' 00000 n \n';
+    txt(s + 'trailer\n<< /Size ' + total + ' /Root 1 0 R >>\nstartxref\n' + xref + '\n%%EOF\n');
+    return new Blob(partes, {type: 'application/pdf'});
+  });
+}
 function dlgLink(r, m){
   var link = linkAvaliar(r.token), alvo = m ? Object.assign({}, m, {link: link}) : {nome: r.nome || '', link: link, data: hojeISO(), hora: '00:00', servicos: [], total: 0};
   var txt = preencher(alvo, 'avaliacao').replace(/^Olá !/, 'Olá!');
-  abrirDlg('<h2>Link para avaliar' + (r.nome ? ': ' + esc(r.nome) : '') + '</h2><p style="color:var(--sec);margin:0 0 12px">Só dá para usar uma vez e vale 90 dias. A avaliação aparece logo no site.</p>' +
-    '<div class="link-box"><label for="lnk" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)">Link</label><input id="lnk" readonly value="' + esc(link) + '"></div>' +
-    '<label for="msgTxt" style="display:block;font-weight:600;font-size:14px;margin:14px 0 6px">Mensagem</label><textarea id="msgTxt" class="msg-txt">' + esc(txt) + '</textarea>' +
-    '<div class="canais"><a class="btn" id="cWa" target="_blank" rel="noopener">' + ICON_WA + ' WhatsApp</a><button type="button" class="btn esc" id="cCop">Copiar mensagem</button></div>' +
-    '<div class="acoes"><button class="btn esc" data-fechar>Fechar</button></div>');
-  function ligar(){ var t = $('#msgTxt').value; $('#cWa').href = m && m.tel ? wa(m.tel, t) : 'https://wa.me/?text=' + encodeURIComponent(t); }
-  ligar(); $('#msgTxt').addEventListener('input', ligar);
-  $('#cWa').addEventListener('click', function(){ if (m) api('POST', '/admin/marcacoes/' + m.id + '/acao', {acao: 'mensagem', tipo: 'avaliacao', canal: 'whatsapp'}).then(function(){ carregar(); }).catch(function(){}); setTimeout(function(){ $('#dlg').close(); }, 200); });
+  var d = {nome: r.nome || (m ? m.nome : ''), piercing: r.piercing || '', data: m && m.data <= hojeISO() ? m.data : hojeISO(), link: link};
+  var base = 'obrigado-adribodypiercing-' + (primeiro(d.nome) || 'cliente').normalize('NFD').replace(/[^\w-]/g, '').toLowerCase() + '-' + d.data, urls = [], fJpg = null;
+  abrirDlg('<h2>Cartão de obrigado' + (d.nome ? ': ' + esc(primeiro(d.nome)) : '') + '</h2><p class="ajuda-t" style="margin:0 0 12px">Com o resumo do piercing, os cuidados e um QR para avaliar. O link só serve uma vez e vale 90 dias.</p>' +
+    '<div class="vale-img" id="oImgW"><p class="vazio">A preparar o cartão…</p></div>' +
+    '<div class="link-box" style="margin-top:12px"><label for="lnk" class="sr">Link para avaliar</label><input id="lnk" readonly value="' + esc(link) + '"></div>' +
+    '<label for="oEmail" class="lbl-b">Email da pessoa (opcional)</label><input id="oEmail" type="email" inputmode="email" autocomplete="off" maxlength="120" value="' + esc(m && m.email ? m.email : '') + '" placeholder="nome@exemplo.pt">' +
+    '<label for="msgTxt" class="lbl-b">Mensagem</label><textarea id="msgTxt" class="msg-txt">' + esc(txt) + '</textarea>' +
+    '<div class="canais"><button type="button" class="btn larga" id="cPart" hidden>Partilhar com o cartão</button>' +
+    '<a class="btn larga" id="cWa" target="_blank" rel="noopener">' + ICON_WA + ' WhatsApp</a>' +
+    '<a class="btn esc" id="cEmail">Email</a><a class="btn esc" id="cPdf" aria-disabled="true">Guardar PDF</a>' +
+    '<a class="btn esc" id="cImg" aria-disabled="true">Guardar imagem</a><button type="button" class="btn esc" id="cCop">Copiar texto</button></div>' +
+    '<p class="nota-c" id="cNota"></p><div class="acoes"><button class="btn esc" data-fechar>Fechar</button></div>');
+  function registar(canal){ if (m) api('POST', '/admin/marcacoes/' + m.id + '/acao', {acao: 'mensagem', tipo: 'avaliacao', canal: canal}).then(function(){ carregar(); }).catch(function(){}); }
+  function ligar(){
+    var t = $('#msgTxt').value, em = $('#oEmail').value.trim();
+    $('#cWa').href = m && m.tel ? wa(m.tel, t) : 'https://wa.me/?text=' + encodeURIComponent(t);
+    $('#cEmail').href = 'mailto:' + encodeURIComponent(em).replace(/%40/g, '@') + '?subject=' + encodeURIComponent('Obrigado pelo teu piercing') + '&body=' + encodeURIComponent(t);
+  }
+  ligar(); $('#msgTxt').addEventListener('input', ligar); $('#oEmail').addEventListener('input', ligar);
+  $('#cWa').addEventListener('click', function(){ registar('whatsapp'); });
+  $('#cEmail').addEventListener('click', function(){ registar('email'); });
   $('#cCop').addEventListener('click', function(){
     var t = $('#msgTxt'), ok = function(){ toast('Copiado. Cola onde quiseres.'); };
     if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(t.value).then(ok, function(){ t.select(); document.execCommand('copy'); ok(); });
     else { t.select(); document.execCommand('copy'); ok(); }
   });
+  $('#cPart').addEventListener('click', function(){
+    if (!fJpg) return;
+    navigator.share({files: [fJpg], text: $('#msgTxt').value}).then(function(){ registar('whatsapp'); toast('Enviado.'); }, function(e){ if (!e || e.name !== 'AbortError') toast('Não deu para partilhar. Guarda o cartão e junta-o à conversa.'); });
+  });
+  var dlg = $('#dlg');
+  dlg.addEventListener('close', function f(){ dlg.removeEventListener('close', f); urls.forEach(function(u){ URL.revokeObjectURL(u); }); urls = []; });
+  imagemObrigado(d).then(function(img){
+    return pdfDeImagem(img, link).then(function(pdf){ return [img, pdf]; });
+  }).then(function(r2){
+    if (!dlg.open) return;
+    var img = r2[0], pdf = r2[1], uJ = URL.createObjectURL(img.jpg), uP = URL.createObjectURL(pdf); urls.push(uJ, uP);
+    $('#oImgW').innerHTML = '<img src="' + uJ + '" alt="Cartão de obrigado' + (d.nome ? ' para ' + esc(primeiro(d.nome)) : '') + ', com o resumo do piercing e o QR para avaliar">';
+    var a = $('#cImg'); a.href = uJ; a.download = base + '.jpg'; a.removeAttribute('aria-disabled');
+    var b = $('#cPdf'); b.href = uP; b.download = base + '.pdf'; b.removeAttribute('aria-disabled');
+    try { fJpg = new File([img.jpg], base + '.jpg', {type: 'image/jpeg'}); } catch (e){ fJpg = null; }
+    var pode = !!(fJpg && navigator.canShare && navigator.share && navigator.canShare({files: [fJpg]}));
+    $('#cPart').hidden = !pode; $('#cWa').hidden = pode;
+    $('#cNota').textContent = (pode ? '«Partilhar com o cartão» manda a imagem e a mensagem juntas. ' : 'Para mandar o cartão, guarda a imagem ou o PDF e junta-o à conversa. ') + 'O link vai sempre na mensagem, para a pessoa poder tocar nele.';
+  }, function(){ $('#oImgW').innerHTML = '<p class="vazio">Não deu para preparar o cartão. Fecha e abre outra vez.</p>'; });
 }
 function pedirAvaliacao(m, b){
   if (b) b.disabled = true;
@@ -803,8 +921,9 @@ function vAvaliacoes(c){
   api('GET', '/admin/avaliacoes').then(function(j){
     var av = j.avaliacoes, vis = av.filter(function(a){ return a.visivel; }), med = vis.length ? vis.reduce(function(s, a){ return s + a.estrelas; }, 0) / vis.length : 0;
     var pend = j.convites.filter(function(x){ return !x.usado && x.expira > j.agora; });
-    c.innerHTML = '<form class="painel" id="fConv"><h2>Pedir uma avaliação</h2><p class="ajuda-t">Cria um link de uso único e manda-o a quem fez um piercing contigo. Também podes pedir no cartão de cada marcação feita, na Agenda.</p>' +
-      '<div class="campo"><label for="cNome">Nome do cliente (opcional)</label><input id="cNome" maxlength="40" autocomplete="off" placeholder="Ex.: Rita"></div><button class="btn" id="bConv">Criar link</button></form>' +
+    c.innerHTML = '<form class="painel" id="fConv"><h2>Cartão de obrigado</h2><p class="ajuda-t">Depois de furar, manda um cartão com o resumo do piercing, os cuidados e um QR único para avaliar. Nas marcações feitas, na Agenda, o cartão já vem preenchido.</p>' +
+      '<div class="duas"><div class="campo"><label for="cNome">Nome do cliente (opcional)</label><input id="cNome" maxlength="40" autocomplete="off" placeholder="Ex.: Rita"></div>' +
+      '<div class="campo"><label for="cPierc">Piercing (opcional)</label><input id="cPierc" maxlength="80" autocomplete="off" placeholder="Ex.: Hélix"></div></div><button class="btn" id="bConv">Criar cartão</button></form>' +
       '<div class="painel"><h2>No site</h2>' + (vis.length ? '<p style="margin:0 0 4px;font-size:18px"><b>' + med.toFixed(1).replace('.', ',') + '</b> ' + estr(Math.round(med)) + ' <span style="color:var(--sec)">em ' + vis.length + (vis.length === 1 ? ' avaliação' : ' avaliações') + '</span></p>' : '<p class="ajuda-t" style="margin:0">Ainda não há avaliações. A secção «Quem já furou comigo» aparece no site quando chegar a primeira.</p>') +
       (av.length ? av.map(function(a){ return '<div class="aval' + (a.visivel ? '' : ' escondida') + '" data-id="' + a.id + '">' + estr(a.estrelas) + (a.texto ? '<blockquote>' + esc(a.texto) + '</blockquote>' : '') +
         '<div class="meta">' + esc(a.nome) + (a.piercing ? ', ' + esc(a.piercing.toLowerCase()) : '') + ' · ' + fmtData.format(new Date(a.criado * 1000)) + (a.visivel ? '' : ' · escondida do site') + '</div>' +
@@ -814,7 +933,7 @@ function vAvaliacoes(c){
       '<div class="campo"><label for="gUrl">Link para avaliar no Google</label><input id="gUrl" type="url" inputmode="url" maxlength="300" value="' + esc(j.google || '') + '" placeholder="https://g.page/r/…/review"></div><p class="erro" id="eG" hidden></p><button class="btn" id="bG">Guardar link</button></form>' +
       (pend.length ? '<div class="painel"><h2>Links por usar</h2>' + pend.map(function(x){ return '<div class="blq"><div><b>' + esc(x.nome || 'Sem nome') + '</b><div class="mini" style="color:var(--sec)">' + (x.piercing ? esc(x.piercing) + ' · ' : '') + 'criado a ' + fmtData.format(new Date(x.criado * 1000)) + ', vale até ' + fmtData.format(new Date(x.expira * 1000)) + '</div></div><button type="button" class="btn esc peq" data-apagar="' + x.id + '">Apagar</button></div>'; }).join('') + '</div>' : '');
     $('#fConv').addEventListener('submit', function(e){ e.preventDefault(); var b = $('#bConv'); b.disabled = true;
-      api('POST', '/admin/convites', {nome: $('#cNome').value}).then(function(r){ dlgLink(r, null); $('#dlg').addEventListener('close', function f(){ $('#dlg').removeEventListener('close', f); if (vista === 'avaliacoes') vAvaliacoes(c); }); }, function(){ toast('Não deu para criar o link.'); }).then(function(){ b.disabled = false; }); });
+      api('POST', '/admin/convites', {nome: $('#cNome').value, piercing: $('#cPierc').value}).then(function(r){ $('#cNome').value = ''; $('#cPierc').value = ''; dlgLink(r, null); $('#dlg').addEventListener('close', function f(){ $('#dlg').removeEventListener('close', f); if (vista === 'avaliacoes') vAvaliacoes(c); }); }, function(){ toast('Não deu para criar o cartão.'); }).then(function(){ b.disabled = false; }); });
     $$('[data-vis]', c).forEach(function(b){ b.addEventListener('click', function(){ b.disabled = true;
       api('POST', '/admin/avaliacoes/' + b.closest('.aval').dataset.id + '/visivel', {visivel: b.dataset.vis === '1'}).then(function(){ toast(b.dataset.vis === '1' ? 'Já aparece no site.' : 'Escondida do site.'); vAvaliacoes(c); }, function(){ b.disabled = false; toast('Não deu. Tenta outra vez.'); }); }); });
     $$('[data-apagar]', c).forEach(function(b){ b.addEventListener('click', function(){ b.disabled = true;

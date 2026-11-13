@@ -147,7 +147,7 @@ box.addEventListener('mouseover', function(e){ var l = e.target.closest('label')
 box.addEventListener('mouseleave', function(){ pintar(nota); });
 $('#texto').addEventListener('input', function(){ $('#conta').textContent = this.value.length + ' / 600'; });
 
-if (!/^[A-Za-z0-9_-]{20,40}$/.test(token)) erro('nao_existe');
+if (!/^[A-Za-z0-9_-]{12,40}$/.test(token)) erro('nao_existe');
 else pedir('/api/convite', {token: token}).then(function(j){
   if (j.nome){ $('#fTitulo').textContent = 'Como correu, ' + j.nome + '?'; $('#nome').value = j.nome; }
   if (j.piercing) $('#fSub').textContent = (j.piercing.indexOf(',') >= 0 ? 'Os teus piercings: ' : 'O teu piercing: ') + j.piercing.toLowerCase() + '. Demora um minuto e ajuda quem ainda está com dúvidas.';

@@ -169,11 +169,12 @@ try:
     st, lista, _ = pedir('GET', '/api/admin/marcacoes')
     mid = lista['marcacoes'][0]['id']
     st, cv, _ = pedir('POST', '/api/admin/convites', {'marcacao': mid})
-    ok('[avaliações] cria link ligado à marcação (nome e piercings)', st == 201 and cv['nome'] == 'Rita' and cv['piercing'] == 'Narina, Hélix' and len(cv['token']) >= 20, cv)
+    ok('[avaliações] cria link ligado à marcação (nome e piercings)', st == 201 and cv['nome'] == 'Rita' and cv['piercing'] == 'Narina, Hélix' and len(cv['token']) == 12, cv)
     tok = cv['token']
     st, v, _ = pedir('POST', '/api/convite', {'token': tok}, com_cookie=False)
     ok('[avaliações] o link abre com o nome', st == 200 and v['nome'] == 'Rita', v)
-    ok('[avaliações] token inventado não serve', pedir('POST', '/api/convite', {'token': 'x' * 24}, com_cookie=False)[0] == 404)
+    ok('[avaliações] token inventado não serve', pedir('POST', '/api/convite', {'token': 'x' * 24}, com_cookie=False)[0] == 404
+       and pedir('POST', '/api/convite', {'token': 'x' * 12}, com_cookie=False)[0] == 404 and pedir('POST', '/api/convite', {'token': 'x' * 11}, com_cookie=False)[0] == 404)
     ok('[avaliações] recusa 6 estrelas', pedir('POST', '/api/avaliacoes', {'token': tok, 'estrelas': 6, 'texto': 'ok'}, com_cookie=False)[0] == 422)
     ok('[avaliações] recusa estrelas em texto', pedir('POST', '/api/avaliacoes', {'token': tok, 'estrelas': '5', 'texto': 'ok'}, com_cookie=False)[0] == 422)
     st, r1, _ = pedir('POST', '/api/avaliacoes', {'token': tok, 'estrelas': 5, 'texto': 'Super calmo <script>alert(1)</script> e explicou tudo.', 'nome': 'Rita'}, com_cookie=False)
@@ -190,6 +191,8 @@ try:
     aid = [a for a in adm['avaliacoes'] if a['estrelas'] == 3][0]['id']
     ok('[avaliações] esconder', pedir('POST', '/api/admin/avaliacoes/%d/visivel' % aid, {'visivel': False})[0] == 200 and pedir('GET', '/api/site')[1]['avaliacoes']['n'] == 1)
     ok('[avaliações] mostrar outra vez', pedir('POST', '/api/admin/avaliacoes/%d/visivel' % aid, {'visivel': True})[0] == 200 and pedir('GET', '/api/site')[1]['avaliacoes']['n'] == 2)
+    st, cv4, _ = pedir('POST', '/api/admin/convites', {'nome': 'Ana', 'piercing': '  Hélix  <b>'})
+    ok('[avaliações] link feito à mão guarda o piercing escrito', st == 201 and cv4['piercing'] == 'Hélix <b>' and pedir('POST', '/api/convite', {'token': cv4['token']}, com_cookie=False)[1].get('piercing') == 'Hélix <b>', cv4)
     st, cv3, _ = pedir('POST', '/api/admin/convites', {})
     ok('[avaliações] apagar um link por usar', pedir('POST', '/api/admin/convites/%d/apagar' % cv3['id'], {})[0] == 200 and pedir('POST', '/api/convite', {'token': cv3['token']}, com_cookie=False)[0] == 404)
     ok('[mensagens] modelo «avaliacao» aceite no histórico', pedir('POST', '/api/admin/marcacoes/%d/acao' % mid, {'acao': 'mensagem', 'tipo': 'avaliacao', 'canal': 'whatsapp'})[0] == 200)
