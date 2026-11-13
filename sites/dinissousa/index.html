@@ -54,6 +54,7 @@ body[data-world="adri"]{--bg:#0E0C0B;--ink:#EEE8DF;--muted:#BDB5A9;--surface:#1E
 body[data-world="tapmoss"]{--bg:#0B120D;--ink:#F2EAD2;--muted:#AEB8A4;--surface:#18241A;--accent:#A8DC5C;--on-accent:#0B120D;--frame:#0F1810;--mark:#A8DC5C}
 body[data-world="goodman"]{--bg:#0E3A2C;--ink:#F0F5F1;--muted:#B4CABE;--surface:#17503D;--accent:#C7372A;--on-accent:#FFFFFF;--frame:#0A2A20;--mark:#C7372A}
 body[data-world="duplicasa"]{--bg:#F3F5F4;--ink:#10241B;--muted:#4A5A52;--surface:#E0E8E3;--accent:#0E6B4F;--on-accent:#FFFFFF;--frame:#10241B;--mark:#0E6B4F}
+body[data-world="webase"]{--bg:#2B3FD6;--ink:#FFFFFF;--muted:#D3D8FB;--surface:#3B4EE0;--accent:#FFFFFF;--on-accent:#2B3FD6;--frame:#0F1438;--mark:#FFFFFF}
 body[data-world="caiu"]{--bg:#FFD83D;--ink:#141414;--muted:#3F3B2A;--surface:#FFE57A;--accent:#141414;--on-accent:#FFD83D;--frame:#141414;--mark:#D0242C}
 body[data-world="ganhas"]{--bg:#0F110F;--ink:#F1F2EC;--muted:#B9BDB5;--surface:#1E221E;--accent:#FFE500;--on-accent:#111311;--frame:#2C302C;--mark:#FFE500}
 
@@ -117,7 +118,7 @@ p{margin:0}
 .bolha.on{opacity:1;transform:none;transition:opacity .3s var(--ease) .4s,transform .8s var(--mola) .4s}
 .bolha img{height:21px;width:auto;max-width:none;display:block}
 .b-duplicasa{box-shadow:0 0 0 1px rgba(16,36,27,.1),0 16px 30px -14px rgba(0,0,0,.4)}
-.b-caiu img{height:26px}.b-ganhas img{height:19px}.b-anjinho img{height:19px}.b-jinxed img{height:27px}.b-parou img{height:24px}.b-goodman img{height:17px}.b-tapmoss img{height:20px}.b-duplicasa img{height:22px}
+.b-webase img{height:22px}.b-caiu img{height:26px}.b-ganhas img{height:19px}.b-anjinho img{height:19px}.b-jinxed img{height:27px}.b-parou img{height:24px}.b-goodman img{height:17px}.b-tapmoss img{height:20px}.b-duplicasa img{height:22px}
 .carta.s1 .scr::after,.carta.s2 .scr::after{opacity:.16}
 .scr::after{content:"";position:absolute;inset:0;background:#000;opacity:0;transition:opacity .6s var(--ease);pointer-events:none}
 .scr img{transition:opacity .45s var(--ease)}
@@ -258,6 +259,23 @@ p{margin:0}
 .h-art{padding:7px 11px;border-radius:11px;font-weight:700}
 .h-art b{color:#C7372A;font-size:15px}
 .h-art i{width:16px;height:16px;border-radius:50%;background:#2E8B57;color:#fff;font-style:normal;font-size:10px;display:grid;place-items:center}
+/* WEBASE: o cartão de cliente leva carimbos, o computador manda ligar e a chamada fica registada */
+.hw-pontos{display:inline-flex;align-items:center;gap:8px;padding:9px 13px;border-radius:12px;background:#2B3FD6;color:#fff;font-size:13px;white-space:nowrap;box-shadow:0 1px 2px rgba(0,0,0,.08),0 16px 30px -14px rgba(15,20,56,.55)}
+.hw-pontos b{background:#fff;color:#2B3FD6;padding:2px 7px;border-radius:5px;font-weight:800}
+.hw-pontos i{font-style:normal;font-size:14px;line-height:1}
+.hw-4 .hw-furos{grid-template-columns:repeat(4,16px);gap:4px}.hw-4 .hw-furos i{width:16px;height:16px}
+.hw-ganho{display:inline-flex;align-items:center;gap:8px;padding:8px 12px;border-radius:12px;background:#fff;color:#14161B;font-size:12.5px;white-space:nowrap;box-shadow:0 1px 2px rgba(0,0,0,.08),0 16px 30px -14px rgba(0,0,0,.4)}
+.hw-ganho b{color:#1E7A4C;font-weight:800}
+.hw-cartao{display:grid;gap:7px;padding:10px 12px;border-radius:12px;background:#fff;color:#14161B;box-shadow:0 1px 2px rgba(0,0,0,.08),0 16px 30px -14px rgba(0,0,0,.4);font-size:11.5px;line-height:1.1;rotate:var(--r,0deg)}
+.hw-cartao>b{font-size:12px;font-weight:800;letter-spacing:-.01em}
+.hw-furos{display:grid;grid-template-columns:repeat(5,18px);gap:5px}
+.hw-furos i{position:relative;width:18px;height:18px;border-radius:50%;background:#ECECE7;box-shadow:inset 0 1px 2px rgba(0,0,0,.18)}
+.hw-furos i.c::after{content:"";position:absolute;inset:-1px;border-radius:50%;background:#2B3FD6 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23fff' stroke-width='3.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12.5l4.5 4.5L19 7'/%3E%3C/svg%3E") center/62% no-repeat;opacity:0}
+.h-webase.on .hw-furos i.c::after{animation:carimba .35s cubic-bezier(.55,0,.8,.2) calc(var(--d) + .7s + var(--i) * .22s) both}
+.hw-furos i.g{background:none;box-shadow:inset 0 0 0 1.5px #2B3FD6}
+.hw-feito{display:inline-flex;align-items:center;gap:8px;padding:8px 13px 8px 8px;border-radius:999px;background:#0F1438;color:#fff;font-size:12.5px;white-space:nowrap;box-shadow:0 16px 30px -14px rgba(15,20,56,.6)}
+.hw-feito i{width:22px;height:22px;border-radius:50%;background:#2B3FD6 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23fff' stroke-width='3.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12.5l4.5 4.5L19 7'/%3E%3C/svg%3E") center/60% no-repeat;box-shadow:0 0 0 2px #fff inset}
+.h-webase.on .hw-feito i{animation:carimba .35s cubic-bezier(.55,0,.8,.2) calc(var(--d) + .5s) both}
 /* CAIU: etiquetas de preço; a promoção falsa leva o carimbo e o preço que caiu mesmo desce */
 .hc-etq{display:grid;gap:1px;padding:9px 12px 9px 21px;background:#fff;color:#141414;border-radius:6px 12px 12px 6px;box-shadow:0 1px 2px rgba(0,0,0,.08),0 16px 30px -14px rgba(0,0,0,.4);font-size:12px;line-height:1.2;white-space:nowrap;rotate:var(--r,0deg)}
 .hc-etq i{position:absolute;left:7px;top:50%;width:7px;height:7px;margin-top:-3.5px;border-radius:50%;background:#E2E2DE;box-shadow:inset 0 1px 1px rgba(0,0,0,.25)}
@@ -295,6 +313,8 @@ p{margin:0}
   .hf .hc-etq.so-m{display:grid}
   .hf .hc-falsa.so-m,.hf .hc-cabaz.so-m,.hf .hg-irs.so-m,.hf .hg-barras.so-m{display:inline-flex}
   .hf .hg-eur.so-m{display:grid}
+  .hf .hw-cartao.so-m{display:grid}
+  .hf .hw-feito.so-m{display:inline-flex}
   .hf .m-topo{left:50% !important;top:14px !important;translate:-50% 0;max-width:calc(100% - 32px);white-space:nowrap}
 }
 .sub a{transition:background-color .45s var(--ease),box-shadow .45s var(--ease)}
@@ -319,6 +339,7 @@ p{margin:0}
 .sub a.solto,.sub .nw.solto{white-space:normal}
 .c-adri{color:#7A5820}.c-good{color:#0E3A2C}.c-goth{color:#B0101C}.c-coq{color:#B4436A}.c-trans{color:#B84A0E}.c-casa{color:#0E6B4F}.c-moss{color:#3A7A25}.c-ganhas{color:#1F3FD8}
 .sub a.c-caiu{color:#141414;background:linear-gradient(transparent 58%,#FFD83D 58%)}
+.sub a.c-crm{color:#2B3FD6}
 .ctas{margin-top:26px;display:flex;gap:10px;flex-wrap:wrap}
 .risco{margin-top:12px;font-size:14px;color:var(--muted)}
 .ctas .btn{flex:1 1 150px}
@@ -334,6 +355,8 @@ p{margin:0}
 .brand-tile img{width:auto;max-width:100%;object-fit:contain}
 .t-adri{background:#0E0C0B}.t-parou{background:#16151A}.t-anjinho{background:#DCE8F4}.t-jinxed{background:#110D0E}.t-duplicasa{background:#FFFFFF}.t-goodman{background:#0E3A2C}.t-tapmoss{background:#0B120D url("img/px_relva.svg") repeat-x left bottom/auto 18px;image-rendering:pixelated;grid-column:1/-1;position:relative}
 .t-tapmoss img{image-rendering:auto}
+.t-webase{background:#2B3FD6;position:relative;grid-column:1/-1}
+.t-webase .novo{background:#fff;color:#2B3FD6}
 .t-caiu{background:#FFD83D;position:relative}.t-ganhas{background:#0F110F;position:relative}
 .brand-tile .novo{position:absolute;top:10px;right:10px;padding:5px 8px 4px;font:800 11px/1 var(--font);letter-spacing:.06em;text-transform:uppercase}
 .t-caiu .novo{background:#141414;color:#FFD83D;transform:rotate(3deg)}
@@ -654,6 +677,36 @@ img.fx{height:auto}
 .c-seta b{display:inline-block;padding:9px 14px;border-radius:999px;background:#141414;color:#FFD83D;font-size:15px;font-weight:900;font-variant-numeric:tabular-nums;white-space:nowrap;box-shadow:0 14px 26px -14px rgba(0,0,0,.6)}
 .c-seta b::before{content:"↓ ";color:#fff}
 
+/* WEBASE: o logótipo carimba o ecrã e abre-se em círculo; o cartão de cliente enche-se de carimbos,
+   chega o pedido do computador para ligar e a chamada fica registada */
+.r-carimbo .abre{clip-path:circle(80% at 50% 46%);transition:clip-path .8s cubic-bezier(.7,0,.3,1) 1.2s}
+.r-carimbo.on .abre{clip-path:circle(0% at 50% 46%)}
+.c-webase .abre img{transition:transform .45s cubic-bezier(.3,0,.4,1) .2s,opacity .25s var(--ease) .2s}
+.js .c-webase:not(.on) .abre img{opacity:0;transform:scale(calc(1 + .6 * var(--k)))}
+.wb-cartao{z-index:5;--d:1.85s;left:calc(-1 * var(--fora));top:14%;width:min(214px,calc(var(--pw) * .7));display:grid;gap:10px;padding:14px 15px;border-radius:14px;background:#fff;color:#14161B;rotate:-3deg;
+  box-shadow:0 22px 36px -18px rgba(15,20,56,.55);transition:transform .8s var(--mola) var(--d),opacity .3s var(--ease) var(--d)}
+.js .c-webase:not(.on) .wb-cartao{opacity:0;transform:translateX(calc(-36px * var(--k))) rotate(calc(-5deg * var(--k)))}
+.wb-cartao .wb-t{display:grid;gap:2px;font-size:13px;line-height:1.15}
+.wb-cartao .wb-t b{font-weight:800;letter-spacing:-.01em}.wb-cartao .wb-t span{color:#55554F;font-size:11.5px}
+.wb-furos{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:7px}
+.wb-furos i{position:relative;aspect-ratio:1;border-radius:50%;background:#ECECE7;box-shadow:inset 0 1px 2px rgba(0,0,0,.18)}
+.wb-furos i.c::after{content:"";position:absolute;inset:-1px;border-radius:50%;background:#2B3FD6 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23fff' stroke-width='3.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12.5l4.5 4.5L19 7'/%3E%3C/svg%3E") center/58% no-repeat;opacity:0}
+.c-webase.on .wb-furos i.c::after{animation:carimba .35s cubic-bezier(.55,0,.8,.2) calc(var(--d) + .55s + var(--i) * .2s) both}
+.wb-furos i.g{background:none;box-shadow:inset 0 0 0 2px #2B3FD6}
+.wb-furos i.g::before{content:"★";position:absolute;inset:0;display:grid;place-items:center;font-size:11px;color:#2B3FD6}
+.wb-cartao .wb-p{font-size:12px;color:#55554F}.wb-cartao .wb-p b{color:#2B3FD6}
+.wb-ligar{z-index:5;--d:3.25s;right:calc(-1 * var(--fora));top:47%;width:min(232px,calc(var(--pw) * .76));display:flex;gap:10px;align-items:center;padding:11px 13px 11px 11px;border-radius:18px;background:rgba(255,255,255,.98);color:#121212;
+  font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;font-size:13px;line-height:1.3;box-shadow:0 1px 2px rgba(0,0,0,.1),0 26px 40px -18px rgba(15,20,56,.6);transition:transform .7s var(--mola) var(--d),opacity .3s var(--ease) var(--d)}
+.js .c-webase:not(.on) .wb-ligar{opacity:0;transform:translateY(calc(-26px * var(--k))) scale(calc(1 - .1 * var(--k)))}
+.wb-ligar img{width:36px;height:36px;border-radius:10px;flex:none}
+.wb-ligar span{display:grid;min-width:0}.wb-ligar small{color:#6B6B6B;font-size:12px}
+.wb-ligar em{font-style:normal;display:flex;justify-content:space-between;color:#6B6B6B;font-size:11.5px}.wb-ligar em b{color:#121212}
+.wb-feito{z-index:5;--d:4.5s;left:calc(-1 * var(--fora) + 10px);bottom:9%;display:inline-flex;align-items:center;gap:9px;padding:9px 15px 9px 9px;border-radius:999px;background:#0F1438;color:#fff;font-size:13.5px;white-space:nowrap;
+  box-shadow:0 18px 30px -14px rgba(15,20,56,.7);transition:transform .7s var(--mola) var(--d),opacity .3s var(--ease) var(--d)}
+.js .c-webase:not(.on) .wb-feito{opacity:0;transform:translateY(calc(20px * var(--k)))}
+.wb-feito i{width:28px;height:28px;border-radius:50%;background:#2B3FD6 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23fff' stroke-width='3.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12.5l4.5 4.5L19 7'/%3E%3C/svg%3E") center/58% no-repeat;box-shadow:inset 0 0 0 2px #fff;opacity:0}
+.c-webase.on .wb-feito i{animation:carimba .4s cubic-bezier(.55,0,.8,.2) calc(var(--d) + .45s) both}
+.wb-feito small{color:#C9CFF7;font-size:12px}
 /* GANHAS: um traço de marcador passa pelo nome e o ecrã abre-se como uma página; sai o recibo com o líquido sublinhado e a mediana */
 .r-marca .abre{clip-path:inset(0 0 0 0);transition:clip-path .8s cubic-bezier(.7,0,.25,1) 1.25s}
 .r-marca.on .abre{clip-path:inset(0 0 0 100%)}
@@ -940,7 +993,7 @@ footer a{min-height:44px;display:inline-flex;align-items:center}
       <div class="hero-text">
         <h1 class="name"><span>Dinis</span><span>Sousa.</span></h1>
         <p class="lead">Faço sites que não se parecem uns com os outros.</p>
-        <p class="sub"><a class="c-caiu" href="#caiu">Um comparador de preços</a>, <a class="c-ganhas" href="#ganhas">um site de salários</a>, <a class="c-trans" href="#parou">uma app de transportes</a>, <a class="c-adri" href="#adri">um estúdio de piercing</a>, <a class="c-casa" href="#duplicasa">um site de arrendamento</a>, <a class="c-good" href="#goodman">um advogado com IA</a>, <a class="c-moss" href="#tapmoss">um jogo em pixel art</a>, <a class="c-coq" href="#anjinho">uma loja coquette</a> <span class="nw">e <a class="c-goth" href="#jinxed">uma marca gótica</a>.</span> <span class="fim">Todos feitos por mim. <span class="nw">O próximo pode ser o teu.</span></span></p>
+        <p class="sub"><a class="c-crm" href="#webase">Um CRM</a>, <a class="c-caiu" href="#caiu">um comparador de preços</a>, <a class="c-ganhas" href="#ganhas">um site de salários</a>, <a class="c-trans" href="#parou">uma app de transportes</a>, <a class="c-adri" href="#adri">um estúdio de piercing</a>, <a class="c-casa" href="#duplicasa">um site de arrendamento</a>, <a class="c-good" href="#goodman">um advogado com IA</a>, <a class="c-moss" href="#tapmoss">um jogo em pixel art</a>, <a class="c-coq" href="#anjinho">uma loja coquette</a> <span class="nw">e <a class="c-goth" href="#jinxed">uma marca gótica</a>.</span> <span class="fim">Todos feitos por mim. <span class="nw">O próximo pode ser o teu.</span></span></p>
         <div class="ctas">
           <a class="btn btn-primary wa" data-msg="Olá Dinis! Quero um site." href="https://wa.me/351913488258">Pedir o meu site</a>
           <a class="btn btn-secondary" href="#projetos">Ver projetos</a>
@@ -949,6 +1002,14 @@ footer a{min-height:44px;display:inline-flex;align-items:center}
       </div>
       <div class="fan" id="palco" role="group" aria-roledescription="carrossel" aria-label="Sites que fiz">
         <div class="fundos" aria-hidden="true">
+          <div class="hf h-webase">
+            <span class="hw-pontos m-topo" style="left:1%;top:3%;--ex:90px;--ey:60px;--d:.35s"><i>★</i><b>+12 pontos</b></span>
+            <span class="hw-cartao so-d" style="left:76%;top:3%;--ex:-90px;--ey:70px;--d:.5s;--r:4deg"><b>Barbearia Avenida</b><span class="hw-furos"><i class="c" style="--i:0"></i><i class="c" style="--i:1"></i><i class="c" style="--i:2"></i><i></i><i class="g"></i></span></span>
+            <span class="hw-ganho so-d" style="left:2%;top:92%;--ex:100px;--ey:-60px;--d:.75s">Negócio ganho <b>1&nbsp;437,60&nbsp;€</b></span>
+            <span class="hw-feito so-d" style="left:72%;top:91%;--ex:-70px;--ey:-60px;--d:1.1s"><i></i>Chamada registada</span>
+            <span class="hw-cartao hw-4 so-m" style="left:3%;top:13%;--ex:60px;--ey:40px;--d:.5s;--r:-4deg"><b>Avenida</b><span class="hw-furos"><i class="c" style="--i:0"></i><i class="c" style="--i:1"></i><i></i><i class="g"></i></span></span>
+            <span class="hw-feito so-m" style="left:58%;top:90%;--ex:-40px;--ey:-30px;--d:.9s"><i></i>Registada</span>
+          </div>
           <div class="hf h-caiu">
             <span class="hc-caiu m-topo" style="left:3%;top:3%;--ex:90px;--ey:60px;--d:.35s">↓ caiu a sério <b>−2,50&nbsp;€</b></span>
             <span class="hc-etq so-d" style="left:78%;top:4%;--ex:-90px;--ey:70px;--d:.5s;--r:6deg"><i></i><s>8,99&nbsp;€</s><b>6,49&nbsp;€</b></span>
@@ -1042,12 +1103,12 @@ footer a{min-height:44px;display:inline-flex;align-items:center}
           </div>
         </div>
         <div class="baralho">
-          <div class="carta s0 junto"><div class="cel" style="background:#141414"><div class="scr"><img class="on" src="img/caiu-480.webp" width="480" height="1039" alt="Site caiu.pt" fetchpriority="high"><img alt=""></div></div></div>
-          <div class="carta s1 junto" aria-hidden="true"><div class="cel" style="background:#2C302C"><div class="scr"><img class="on" src="img/ganhas-480.webp" width="480" height="1039" alt=""><img alt=""></div></div></div>
-          <div class="carta s2 junto" aria-hidden="true"><div class="cel" style="background:#2E2D35"><div class="scr"><img class="on" src="img/parou-480.webp" width="480" height="994" alt=""><img alt=""></div></div></div>
-          <div class="bolhas" aria-hidden="true"><span class="bolha b-caiu" style="background:#FFD83D"><img src="img/logo_caiu.webp" width="389" height="140" alt=""></span><span class="bolha b-ganhas" style="background:#0F110F"><img src="img/logo_ganhas.webp" width="597" height="120" alt=""></span><span class="bolha b-parou" style="background:#16151A"><img src="img/logo_parou.webp" width="235" height="85" alt=""></span><span class="bolha b-adri" style="background:#0E0C0B"><img src="img/logo_adri.webp" width="325" height="70" alt=""></span><span class="bolha b-duplicasa" style="background:#FFFFFF"><img src="img/logo_duplicasa.svg" width="592" height="123" alt=""></span><span class="bolha b-goodman" style="background:#0E3A2C"><img src="img/logo_goodman.webp" width="441" height="66" alt=""></span><span class="bolha b-tapmoss" style="background:#0B120D"><img src="img/logo_tapmoss.webp" width="588" height="124" alt=""></span><span class="bolha b-anjinho" style="background:#DCE8F4"><img src="img/logo_anjinho.svg" width="200" height="69" alt=""></span><span class="bolha b-jinxed" style="background:#110D0E"><img src="img/logo_jinxed.webp" width="200" height="90" alt=""></span></div>
+          <div class="carta s0 junto"><div class="cel" style="background:#0F1438"><div class="scr"><img class="on" src="img/webase-480.webp" width="480" height="1039" alt="Site e app webase" fetchpriority="high"><img alt=""></div></div></div>
+          <div class="carta s1 junto" aria-hidden="true"><div class="cel" style="background:#141414"><div class="scr"><img class="on" src="img/caiu-480.webp" width="480" height="1039" alt=""><img alt=""></div></div></div>
+          <div class="carta s2 junto" aria-hidden="true"><div class="cel" style="background:#2C302C"><div class="scr"><img class="on" src="img/ganhas-480.webp" width="480" height="1039" alt=""><img alt=""></div></div></div>
+          <div class="bolhas" aria-hidden="true"><span class="bolha b-webase" style="background:#2B3FD6"><img src="img/logo_webase.webp" width="520" height="103" alt=""></span><span class="bolha b-caiu" style="background:#FFD83D"><img src="img/logo_caiu.webp" width="389" height="140" alt=""></span><span class="bolha b-ganhas" style="background:#0F110F"><img src="img/logo_ganhas.webp" width="597" height="120" alt=""></span><span class="bolha b-parou" style="background:#16151A"><img src="img/logo_parou.webp" width="235" height="85" alt=""></span><span class="bolha b-adri" style="background:#0E0C0B"><img src="img/logo_adri.webp" width="325" height="70" alt=""></span><span class="bolha b-duplicasa" style="background:#FFFFFF"><img src="img/logo_duplicasa.svg" width="592" height="123" alt=""></span><span class="bolha b-goodman" style="background:#0E3A2C"><img src="img/logo_goodman.webp" width="441" height="66" alt=""></span><span class="bolha b-tapmoss" style="background:#0B120D"><img src="img/logo_tapmoss.webp" width="588" height="124" alt=""></span><span class="bolha b-anjinho" style="background:#DCE8F4"><img src="img/logo_anjinho.svg" width="200" height="69" alt=""></span><span class="bolha b-jinxed" style="background:#110D0E"><img src="img/logo_jinxed.webp" width="200" height="90" alt=""></span></div>
         </div>
-        <p class="sr" id="palcoNome" aria-live="polite">caiu.pt</p>
+        <p class="sr" id="palcoNome" aria-live="polite">webase</p>
         
       </div>
     </div>
@@ -1058,6 +1119,7 @@ footer a{min-height:44px;display:inline-flex;align-items:center}
       <h2 class="h2 rv" id="t-projetos">O que já fiz</h2>
       <p class="intro rv">Projetos meus e de clientes, do nome ao último pormenor. Ao descer, o site muda para o mundo de cada um.</p>
       <nav class="brands rv" aria-label="Projetos">
+        <a class="brand-tile t-webase" href="#webase"><img src="img/logo_webase.webp" width="520" height="103" alt="webase" style="height:34px"><span class="novo">Novo</span></a>
         <a class="brand-tile t-caiu" href="#caiu"><img src="img/logo_caiu.webp" width="389" height="140" alt="caiu.pt" style="height:34px"><span class="novo">Novo</span></a>
         <a class="brand-tile t-ganhas" href="#ganhas"><img src="img/logo_ganhas.webp" width="597" height="120" alt="ganhas.pt" style="height:28px"><span class="novo">Novo</span></a>
         <a class="brand-tile t-parou" href="#parou"><img src="img/logo_parou.webp" width="235" height="85" alt="PAROU" style="height:36px"></a>
@@ -1069,6 +1131,18 @@ footer a{min-height:44px;display:inline-flex;align-items:center}
         <a class="brand-tile t-jinxed" href="#jinxed"><img src="img/logo_jinxed.webp" width="200" height="90" alt="jinxed" style="height:40px"></a>
       </nav>
     </div>
+
+    <article class="project" id="webase" data-world="webase" aria-labelledby="t-webase">
+      <div class="wrap">
+        <div class="info">
+          <img class="logo rv" src="img/logo_webase.webp" width="520" height="103" alt="webase" loading="lazy" style="max-height:40px">
+          <h3 class="rv" id="t-webase">Onde estão os teus clientes?</h3>
+          <p class="rv">Um CRM para negócios portugueses, da barbearia à equipa de vendas. Fiz o nome, a marca, o site e o sistema: fichas de cliente, cartão de pontos sem papel, pacotes, leads, chamadas e contratos, e uma equipa em que cada pessoa vê só o que deve. Clicas em «Ligar» no computador e o telemóvel faz a chamada.</p>
+          <a class="btn btn-secondary rv" href="/ir/webase" target="_blank" rel="noopener">Abrir a webase ↗</a>
+        </div>
+        <div class="shot"><figure class="cena c-webase r-carimbo" style="--abre:#2B3FD6"><div class="phone"><div class="ecra"><img class="site" src="img/webase.webp" width="640" height="1385" alt="App webase no telemóvel: o início de uma barbearia, com aniversários e chamadas por fazer" loading="lazy"><div class="abre" aria-hidden="true"><img src="img/logo_webase.webp" width="520" height="103" alt="" style="width:58%"></div></div></div><div class="fx wb-cartao" aria-hidden="true"><span class="wb-t"><b>Barbearia Avenida</b><span>cartão de cliente</span></span><span class="wb-furos"><i class="c" style="--i:0"></i><i class="c" style="--i:1"></i><i class="c" style="--i:2"></i><i class="c" style="--i:3"></i><i class="c" style="--i:4"></i><i class="c" style="--i:5"></i><i class="c" style="--i:6"></i><i></i><i></i><i class="g"></i></span><span class="wb-p">10.º corte grátis · <b>+12 pontos</b> hoje</span></div><div class="fx wb-ligar" aria-hidden="true"><img src="img/ic_webase.webp" width="96" height="96" alt=""><span><em><b>webase</b>agora</em><b>Ligar a Rita Fonseca</b><small>912 345 678 · toca para ligar</small></span></div><div class="fx wb-feito" aria-hidden="true"><i></i><span>Chamada registada <small>· Atendida, 3 min</small></span></div></figure></div>
+      </div>
+    </article>
 
     <article class="project" id="caiu" data-world="caiu" aria-labelledby="t-caiu">
       <div class="wrap">
@@ -1407,6 +1481,7 @@ footer a{min-height:44px;display:inline-flex;align-items:center}
   (function(){
     /* por ordem de importância: os novos primeiro */
     var P=[
+      {k:'webase',t:5400,n:'webase',img:'img/webase.webp',fr:'#0F1438',lk:'c-crm'},
       {k:'caiu',t:5000,n:'caiu.pt',img:'img/caiu.webp',fr:'#141414',lk:'c-caiu'},
       {k:'ganhas',t:5000,n:'ganhas.pt',img:'img/ganhas.webp',fr:'#2C302C',lk:'c-ganhas'},
       {k:'parou',t:5400,n:'PAROU',img:'img/parou.webp',fr:'#2E2D35',lk:'c-trans'},

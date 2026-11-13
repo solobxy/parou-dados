@@ -21,6 +21,7 @@
 
 ## Outros projetos feitos por ele
 
+- [webase](https://dinissousa.pt/ir/webase): CRM para negócios portugueses (fichas de cliente, cartão de pontos, pacotes, leads, chamadas e contratos), com equipa e permissões por pessoa.
 - [DupliCasa](https://duplicasa.pt): casas e quartos para arrendar em Portugal, num só sítio.
 - [caiu.pt](https://caiu.pt): comparador de preços do Continente, Pingo Doce e Auchan.
 - [ganhas.pt](https://ganhas.pt): salários reais em Portugal e calculadora de salário líquido.

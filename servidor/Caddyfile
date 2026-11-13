@@ -328,6 +328,12 @@ www.chave.pt {
 	# Páginas HTML sempre revalidadas (os preços mudam sozinhos a 1/12 pelos templates)
 	@pagina path / /index.html */ *.html
 	header @pagina Cache-Control "no-cache"
+	# A webase no portfólio: vai para webase.pt quando o domínio já aponta para este servidor
+	# (o atualizador tira o bloco entre as marcas enquanto não aponta) e, até lá, para o endereço de testes
+# INICIO webase.pt
+	redir /ir/webase https://webase.pt/ 302
+# FIM webase.pt
+	redir /ir/webase https://webase.{HOST_TESTE}/ 302
 	# /projetos/ não tem página própria: os projetos estão na página inicial
 	redir /projetos /#projetos 302
 	redir /projetos/ /#projetos 302

@@ -16,6 +16,7 @@ Mundos (fundo / tinta / apoio / acento):
 - anjinho: #DCE8F4 / #1D1719 / #4D4A55 / #1D1719 (rosa #F2A7BD só em pormenor)
 - jinxed: #110D0E / #EAE3DA / #A69F98 / #D6101C
 - DupliCasa: #F3F5F4 / #10241B / #4A5A52 / #0E6B4F
+- webase: #2B3FD6 / #FFFFFF / #D3D8FB / #FFFFFF (aro #0F1438; carimbos azuis no cartão de cliente)
 
 ## 3. Tipografia
 - Archivo variável (largura 62–125, peso 100–900), alojada no próprio site.
