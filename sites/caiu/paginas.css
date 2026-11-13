@@ -30,7 +30,13 @@
 .et__cab { grid-template-columns: 84px minmax(0, 1fr); }
 .ln { grid-template-columns: 64px minmax(0, 1fr) auto; }
 .ln__nome, .et__nome { overflow-wrap: break-word; }
-.topo__nav { gap: 14px; }
+.topo__in { flex-wrap: wrap; }
+@media (max-width: 599px) {
+  .topo__in { row-gap: 6px; }
+  .topo__nav { order: 3; width: calc(100% + 2 * var(--margem)); margin: 0 calc(-1 * var(--margem)); padding: 4px var(--margem) 2px;
+    overflow-x: auto; scrollbar-width: none; scroll-padding: 0 var(--margem); }
+  .topo__nav::-webkit-scrollbar { display: none; }
+}
 .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 
 /* ---------- página do produto ---------- */

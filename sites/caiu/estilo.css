@@ -71,7 +71,7 @@ button, input { font: inherit; color: inherit; }
 /* ---------- marca ---------- */
 .topo { background: var(--etiqueta); }
 .topo__in { max-width: var(--max); margin: 0 auto; padding: 14px var(--margem) 0; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
-.marca { text-decoration: none; display: inline-flex; min-height: 48px; align-items: center; }
+.marca { text-decoration: none; display: inline-flex; min-height: 48px; align-items: center; flex: none; white-space: nowrap; }
 .marca__txt, .rodape__marca { font-weight: 900; font-stretch: 118%; letter-spacing: -.04em; line-height: 1; }
 .marca__txt { font-size: 34px; }
 .marca__i { position: relative; display: inline-block; }
@@ -90,10 +90,30 @@ button, input { font: inherit; color: inherit; }
   90%  { transform: translateY(.84em); animation-timing-function: ease-in; }
   100% { transform: translateY(.88em); }
 }
-.topo__nav { display: flex; gap: 6px 18px; align-items: center; }
-.topo__link { display: inline-flex; align-items: center; gap: 8px; min-height: 48px; font-weight: 650; text-decoration: none; }
-.topo__link:hover { text-decoration: underline; }
-.topo__n { display: inline-grid; place-items: center; min-width: 28px; height: 28px; padding: 0 8px; border-radius: 999px; background: var(--tinta); color: var(--etiqueta); font-size: 14px; font-weight: 800; }
+/* atalhos do topo: botões em pílula (branco sobre o amarelo; o principal, ou a página atual, a preto) */
+.topo__nav { display: flex; gap: 8px; align-items: center; }
+.topo__link {
+  display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 16px; border-radius: 999px;
+  background: var(--branco); color: var(--tinta); font-weight: 700; font-size: 15.5px; text-decoration: none; white-space: nowrap;
+  box-shadow: 0 1px 0 rgba(20, 20, 20, .14), 0 2px 8px -4px rgba(20, 20, 20, .25);
+  transition: background-color .15s, color .15s, transform .12s var(--sai);
+}
+.topo__link:hover { background: var(--tinta); color: var(--papel); }
+.topo__link:active { transform: scale(.96); }
+.topo__link:focus-visible { outline: 3px solid var(--tinta); outline-offset: 2px; }
+.topo__link--forte { background: var(--tinta); color: var(--papel); box-shadow: none; }
+.topo__link--forte:hover { background: #3A3A34; }
+.topo__ic { width: 18px; height: 18px; flex: none; fill: currentColor; margin-left: -3px; }
+.topo__ic--traco { fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; }
+.topo__ic--traco circle { fill: currentColor; stroke: none; }
+.topo__n { display: inline-grid; place-items: center; min-width: 24px; height: 24px; padding: 0 7px; margin-right: -6px; border-radius: 999px; background: var(--tinta); color: var(--etiqueta); font-size: 13.5px; font-weight: 800; font-variant-numeric: tabular-nums; }
+.topo__link--forte .topo__n { background: var(--etiqueta); color: var(--tinta); }
+@media (max-width: 359px) {
+  .topo__link { padding: 0 11px; font-size: 15px; }
+  .topo__link:not(#botaoLista) .topo__ic { display: none; }
+  .topo__nav { gap: 6px; }
+  .topo__in { gap: 10px; }
+}
 
 /* ---------- topo da página: os três casos do dia em cima, a pesquisa logo a seguir ---------- */
 .heroi { background: var(--etiqueta); padding: 10px 0 36px; }
@@ -215,7 +235,7 @@ h1 {
   .t3__para { padding: 6px 7px 7px; }
 }
 /* atalhos do topo: em ecrãs estreitos fica só o essencial */
-@media (max-width: 430px) { .topo__link--largo { display: none !important; } .topo__nav { gap: 6px 14px; } }
+@media (max-width: 639px) { .topo__link--largo { display: none !important; } }
 
 /* ---------- talão ---------- */
 .talao {

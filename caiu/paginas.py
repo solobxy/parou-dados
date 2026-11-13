@@ -33,8 +33,8 @@ LIGAS = {'de', 'do', 'da', 'dos', 'das', 'e', 'com', 'para', 'em', 'sem'}
 FORA = {'auchan', 'continente', 'pingo doce'}  # marcas próprias das lojas: não dão uma página de «produto»
 MESES = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro']
 MESES_C = ['jan.', 'fev.', 'mar.', 'abr.', 'mai.', 'jun.', 'jul.', 'ago.', 'set.', 'out.', 'nov.', 'dez.']
-ESTILO_V = '5'      # estilo.css (o mesmo do início)
-PAGINAS_V = '1'     # paginas.css (só destas páginas)
+ESTILO_V = '7'      # estilo.css (o mesmo do início)
+PAGINAS_V = '2'     # paginas.css (só destas páginas)
 ORG = {'@type': 'Organization', '@id': SITE + '/#organizacao', 'name': 'caiu.pt', 'url': SITE + '/', 'logo': SITE + '/icone-512.png'}
 WEBSITE = {'@type': 'WebSite', '@id': SITE + '/#site', 'name': 'caiu.pt', 'url': SITE + '/', 'inLanguage': 'pt-PT',
            'publisher': {'@id': SITE + '/#organizacao'}}
@@ -276,6 +276,20 @@ def cartao(g, o=None):
             + f'<p class="et__motivo">{e(motivo(o))}</p></li>')
 
 
+RAIO = '<svg class="topo__ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M13.2 2.5 4.8 13.4h6.1l-1.1 8.1 8.4-10.9h-6.1z"/></svg>'
+
+
+def atalhos(url):
+    """Os botões do topo; o da página onde se está fica marcado (aria-current) e escuro."""
+    xs = (('/promocoes/', 'Promoções', ''), ('/cabaz-mais-barato/', 'Cabaz', ''), ('/luz-e-gas/', 'Luz e gás', RAIO))
+    out = []
+    for href, nome, ic in xs:
+        atual = url.rstrip('/').endswith(href.rstrip('/'))
+        out.append(f'<a class="topo__link{" topo__link--forte" if atual else ""}" href="{href}"'
+                   f'{" aria-current=\"page\"" if atual else ""}>{ic}{nome}</a>')
+    return ''.join(out)
+
+
 def cabeca(titulo, descricao, url, ld, dia, robots='', og='website'):
     """<head> e topo comuns. ld: dicionário JSON-LD com @graph; junta-lhe a organização e o site."""
     if '@graph' in ld:
@@ -313,7 +327,7 @@ def cabeca(titulo, descricao, url, ld, dia, robots='', og='website'):
 <header class="topo">
   <div class="topo__in">
     <a class="marca" href="/"><span class="sr">caiu.pt, início</span><span class="marca__txt" aria-hidden="true">ca<span class="marca__i">ı<span class="marca__ponto"></span></span>u</span></a>
-    <nav class="topo__nav" aria-label="Atalhos"><a class="topo__link" href="/promocoes/">Promoções</a><a class="topo__link" href="/cabaz-mais-barato/">Cabaz</a><a class="topo__link" href="/luz-e-gas/">Luz e gás</a></nav>
+    <nav class="topo__nav" aria-label="Atalhos">{atalhos(url)}</nav>
   </div>
 </header>
 '''
