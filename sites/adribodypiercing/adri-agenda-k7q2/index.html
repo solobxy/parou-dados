@@ -5,25 +5,26 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="robots" content="noindex, nofollow">
 <meta name="referrer" content="no-referrer">
-<meta name="theme-color" content="#0E0C0B">
-<title>Agenda — AdriBodyPiercing</title>
+<meta name="theme-color" content="#1C1B1D">
+<title>Painel — AdriBodyPiercing</title>
 <link rel="icon" href="/apple-touch-icon.png">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <style>
 @font-face{font-family:"Bricolage Grotesque";src:url(/fonts/bricolage.woff) format("woff");font-weight:200 800;font-display:swap}
 @font-face{font-family:"Figtree";src:url(/fonts/figtree.woff) format("woff");font-weight:300 900;font-display:swap}
-:root{--noite:#0E0C0B;--noite-2:#171513;--noite-3:#211E1B;--osso:#EEE8DF;--osso-2:#E4DCD0;--osso-3:#D8CEBF;--tinta:#141210;--sec:#BDB5A9;--sec-c:#4D463E;--ouro:#D9B676;--verde:#2F8F4E;--ambar:#C98A1E;--verm:#B3261E;
+:root{--noite:#1C1B1D;--noite-2:#252427;--noite-3:#323135;--osso:#EFEAE3;--osso-2:#E5DFD6;--osso-3:#D6CFC4;--tinta:#1C1B1D;--sec:#B9B7BC;--sec-c:#55524E;--acento:#4258DE;--acento-2:#3449C9;--acento-claro:#9AA8FF;--verde:#2F8F4E;--ambar:#C98A1E;--verm:#B3261E;
   --serif:"Bricolage Grotesque",system-ui,sans-serif;--sans:"Figtree",system-ui,sans-serif;--ease:cubic-bezier(.2,.7,.2,1);color-scheme:dark}
 *,*::before,*::after{box-sizing:border-box}
 html{-webkit-text-size-adjust:100%}
 body{margin:0;background:var(--noite);color:var(--osso);font:400 16px/1.5 var(--sans);-webkit-font-smoothing:antialiased;min-height:100svh}
 button,input,select,textarea{font:inherit;color:inherit}
 button{cursor:pointer;touch-action:manipulation}
-:focus-visible{outline:3px solid var(--ouro);outline-offset:2px;border-radius:6px}
+:focus-visible{outline:3px solid var(--acento-claro);outline-offset:2px;border-radius:6px}
 [hidden]{display:none!important}
 h1,h2,h3{font-family:var(--serif);margin:0;letter-spacing:-.02em}
 .wrap{max-width:860px;margin:0 auto;padding:0 max(16px,env(safe-area-inset-left)) calc(40px + env(safe-area-inset-bottom))}
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:48px;padding:0 20px;border:0;border-radius:999px;background:var(--ouro);color:var(--tinta);font-weight:600;text-decoration:none;white-space:nowrap;transition:transform .15s var(--ease),background-color .2s}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:48px;padding:0 20px;border:0;border-radius:999px;background:var(--acento);color:#fff;font-weight:600;text-decoration:none;white-space:nowrap;transition:transform .15s var(--ease),background-color .2s}
+@media (hover:hover){.btn:hover{background:var(--acento-2)}.btn.esc:hover{background:#3C3B40}.btn.osso:hover{background:#fff}}
 .btn:active{transform:scale(.97)}
 .btn.esc{background:var(--noite-3);color:var(--osso)}
 .btn.osso{background:var(--osso);color:var(--tinta)}
@@ -40,7 +41,7 @@ h1,h2,h3{font-family:var(--serif);margin:0;letter-spacing:-.02em}
 .campo{display:grid;gap:6px;text-align:left;margin-bottom:14px}
 .campo label{font-weight:600;font-size:14px}
 input,select,textarea{width:100%;min-height:50px;padding:12px 14px;border-radius:12px;border:2px solid transparent;background:var(--noite-3);color:var(--osso)}
-input:focus,select:focus,textarea:focus{outline:none;border-color:var(--ouro)}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--acento-claro)}
 textarea{min-height:80px;resize:vertical}
 .erro{color:#ffb4a8;font-weight:600;font-size:14px;margin:4px 0 12px}
 /* topo */
@@ -52,7 +53,74 @@ textarea{min-height:80px;resize:vertical}
 .tabs::-webkit-scrollbar{display:none}
 .tabs button{flex:none;min-height:42px;padding:0 16px;border-radius:999px;border:0;background:var(--noite-3);color:var(--osso);font-weight:600;font-size:15px;display:inline-flex;align-items:center;gap:8px}
 .tabs button[aria-selected="true"]{background:var(--osso);color:var(--tinta)}
-.tabs .n{min-width:22px;height:22px;padding:0 6px;border-radius:999px;background:var(--ouro);color:var(--tinta);font-size:13px;display:inline-grid;place-items:center}
+.tabs .n{min-width:22px;height:22px;padding:0 6px;border-radius:999px;background:var(--acento);color:#fff;font-size:13px;display:inline-grid;place-items:center}
+/* secções (Agenda, Site, Números) */
+.secoes{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;background:var(--noite-2);padding:4px;border-radius:999px;margin-bottom:10px}
+.secoes button{min-height:42px;border:0;border-radius:999px;background:transparent;color:var(--osso);font-weight:600;font-size:15px;display:inline-flex;align-items:center;justify-content:center;gap:6px}
+.secoes button[aria-pressed="true"]{background:var(--osso);color:var(--tinta)}
+.secoes .n{min-width:20px;height:20px;padding:0 6px;border-radius:999px;background:var(--acento);color:#fff;font-size:12px;display:inline-grid;place-items:center}
+.ajuda-t{color:var(--sec);margin:0 0 14px;font-size:15px}
+.painel h2{font-size:22px;margin-bottom:6px}
+.grupo-t{font-family:var(--serif);font-weight:600;font-size:17px;margin:22px 0 6px;color:var(--osso)}
+.linha-p{display:grid;grid-template-columns:minmax(0,1fr) 112px;align-items:center;gap:12px;padding:8px 0;border-top:1px solid var(--noite-3)}
+.linha-p:first-of-type{border-top:0}
+.linha-p label{font-weight:500}
+.linha-p small{display:block;color:var(--sec);font-size:13px}
+.linha-p.mudou label{color:var(--acento-claro)}
+.euro{position:relative}
+.euro input{padding-right:34px;text-align:right;font-variant-numeric:tabular-nums;min-height:46px}
+.euro::after{content:"€";position:absolute;right:14px;top:50%;transform:translateY(-50%);color:var(--sec);pointer-events:none}
+.barra-guardar{position:sticky;bottom:0;z-index:5;margin:16px -18px -18px;padding:14px 18px calc(14px + env(safe-area-inset-bottom));background:var(--noite-2);border-top:1px solid var(--noite-3);border-radius:0 0 20px 20px;display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between}
+.barra-guardar p{margin:0;font-size:14px;color:var(--sec)}
+.dia-h{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px 12px;align-items:center;padding:12px 0;border-top:1px solid var(--noite-3)}
+.dia-h:first-of-type{border-top:0}
+.dia-h .nome{font-weight:600}
+.dia-h .horas-d{grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.dia-h .horas-d label{font-size:13px;color:var(--sec);display:grid;gap:4px}
+.dia-h select{min-height:46px}
+.interruptor{position:relative;width:52px;height:32px;flex:none}
+.interruptor input{position:absolute;inset:0;width:100%;height:100%;opacity:0;margin:0;cursor:pointer;min-height:0}
+.interruptor span{position:absolute;inset:0;border-radius:999px;background:var(--noite-3);transition:background-color .2s var(--ease);pointer-events:none}
+.interruptor span::after{content:"";position:absolute;left:4px;top:4px;width:24px;height:24px;border-radius:50%;background:var(--osso);transition:transform .2s var(--ease)}
+.interruptor input:checked+span{background:var(--acento)}
+.interruptor input:checked+span::after{transform:translateX(20px)}
+.interruptor input:focus-visible+span{outline:3px solid var(--acento-claro);outline-offset:2px}
+.previa{margin-top:14px;padding:14px;border-radius:14px;background:var(--noite-3);font-size:14px}
+.previa b{display:block;font-size:16px;margin-bottom:4px}
+.aviso-v{margin-top:12px;padding:12px;border-radius:14px;background:#3a1d1a;color:#ffd9d2;font-size:14px}
+.fotos-g{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px;margin-top:16px}
+.foto-c{background:var(--noite-2);border-radius:20px;padding:14px;display:flex;flex-direction:column;gap:10px}
+.foto-c .img{aspect-ratio:4/3;border-radius:14px;overflow:hidden;background:var(--noite-3)}
+.foto-c .img.redonda{aspect-ratio:1;width:120px;border-radius:50%;margin:0 auto}
+.foto-c img{width:100%;height:100%;object-fit:cover;display:block}
+.foto-c h3{font-size:17px}
+.foto-c p{margin:0;font-size:14px;color:var(--sec)}
+.foto-c .acoes{margin-top:auto}
+.etq{align-self:flex-start;display:inline-flex;align-items:center;gap:6px;padding:3px 10px;border-radius:999px;background:var(--noite-3);font-size:12px;font-weight:600;color:var(--sec)}
+.etq.nova{background:#20264d;color:var(--acento-claro)}
+.prev-nova{border-radius:14px;overflow:hidden;background:var(--noite-3);margin-bottom:14px;max-height:46vh;display:grid;place-items:center}
+.prev-nova img{max-width:100%;max-height:46vh;display:block}
+.estr{color:var(--acento-claro);letter-spacing:1px}
+.estr .v{color:var(--noite-3)}
+.aval{padding:14px 0;border-top:1px solid var(--noite-3)}
+.aval:first-of-type{border-top:0}
+.aval blockquote{margin:6px 0;white-space:pre-wrap;overflow-wrap:anywhere}
+.aval .meta{font-size:13px;color:var(--sec)}
+.aval.escondida{opacity:.55}
+.link-box{display:flex;gap:8px;align-items:stretch}
+.link-box input{font-size:14px;min-height:46px}
+.kpis{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px;margin-top:14px}
+.kpi{background:var(--noite-2);border-radius:18px;padding:14px 16px;min-width:0}
+.kpi b{display:block;font-family:var(--serif);font-weight:650;font-size:30px;line-height:1.1;letter-spacing:-.02em;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.kpi span{font-size:13px;color:var(--sec);display:block;margin-top:4px}
+.grafico{display:flex;align-items:flex-end;gap:3px;height:120px;margin-top:12px}
+.grafico i{flex:1;min-width:2px;background:var(--acento);border-radius:3px 3px 0 0;min-height:2px;position:relative}
+.grafico i.zero{background:var(--noite-3)}
+.eixo{display:flex;justify-content:space-between;font-size:12px;color:var(--sec);margin-top:6px}
+.barras-h{display:grid;gap:8px;margin-top:10px}
+.barras-h div{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 10px;font-size:14px}
+.barras-h i{grid-column:1/-1;height:6px;border-radius:6px;background:var(--noite-3);overflow:hidden;display:block}
+.barras-h i::before{content:"";display:block;height:100%;width:var(--w);background:var(--acento-claro);border-radius:6px}
 /* listas */
 .dia-t{font-family:var(--serif);font-weight:600;font-size:18px;margin:26px 0 10px;color:var(--sec)}
 .vazio{color:var(--sec);padding:30px 0;text-align:center}
@@ -79,7 +147,7 @@ details.hist ul{margin:6px 0 0;padding-left:18px}
 .painel{background:var(--noite-2);border-radius:20px;padding:18px;margin-top:16px}
 .servs{display:flex;flex-wrap:wrap;gap:6px}
 .servs label{display:inline-flex;align-items:center;gap:6px;min-height:40px;padding:0 12px;border-radius:999px;background:var(--noite-3);font-size:14px;cursor:pointer}
-.servs input{width:auto;min-height:0;accent-color:var(--ouro)}
+.servs input{width:auto;min-height:0;accent-color:var(--acento)}
 .horas{display:grid;grid-template-columns:repeat(auto-fill,minmax(80px,1fr));gap:6px}
 .horas button{min-height:44px;border-radius:10px;border:0;background:var(--noite-3);color:var(--osso);font-weight:600}
 .horas button[aria-pressed="true"]{background:var(--osso);color:var(--tinta)}
@@ -103,7 +171,7 @@ details.hist ul{margin:6px 0 0;padding-left:18px}
 .modelo p{color:var(--sec);font-size:14px;margin:0 0 10px}
 .modelo .acoes{margin-top:10px}
 .vars{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0 4px}
-.vars code{font:600 13px/1 var(--sans);background:var(--noite-3);padding:7px 10px;border-radius:8px;color:var(--ouro)}
+.vars code{font:600 13px/1 var(--sans);background:var(--noite-3);padding:7px 10px;border-radius:8px;color:var(--acento-claro)}
 .blq{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 0}
 .blq+.blq{border-top:1px solid var(--noite-3)}
 dialog{border:0;padding:0;background:transparent;color:var(--osso);width:min(520px,calc(100vw - 20px));max-height:calc(100dvh - 20px)}
@@ -117,9 +185,9 @@ dialog::backdrop{background:rgba(0,0,0,.7)}
 <body>
 <section class="entrar" id="vEntrar" hidden>
   <form id="fEntrar" autocomplete="on">
-    <div class="m"><svg xmlns="http://www.w3.org/2000/svg" viewBox="-227 -880 1100 1100" aria-hidden="true" focusable="false"><g class="bar" fill="#D9B676"><rect x="-64" y="-245.0" width="776" height="66" rx="33.0"/><circle cx="-64" cy="-212" r="60"/><circle cx="712" cy="-212" r="60"/></g><g fill="currentColor" transform="translate(0.0 0.0) scale(1 -1)"><path transform="translate(0.0 0)" d="M5 0 230 660H418L641 0H485L325 542H320L160 0Z"/></g></svg></div>
-    <h1>Agenda do Adri</h1>
-    <p>Escreve a password para ver e gerir as marcações.</p>
+    <div class="m"><svg xmlns="http://www.w3.org/2000/svg" viewBox="-227 -880 1100 1100" aria-hidden="true" focusable="false"><g class="bar" fill="#4258DE"><rect x="-64" y="-245.0" width="776" height="66" rx="33.0"/><circle cx="-64" cy="-212" r="60"/><circle cx="712" cy="-212" r="60"/></g><g fill="currentColor" transform="translate(0.0 0.0) scale(1 -1)"><path transform="translate(0.0 0)" d="M5 0 230 660H418L641 0H485L325 542H320L160 0Z"/></g></svg></div>
+    <h1>Painel do Adri</h1>
+    <p>Escreve a password para gerir as marcações e o site.</p>
     <div class="campo"><label for="senha">Password</label><input id="senha" type="password" autocomplete="current-password" required></div>
     <p class="erro" id="eEntrar" role="alert" hidden></p>
     <button class="btn" style="width:100%" id="bEntrar">Entrar</button>
@@ -128,14 +196,25 @@ dialog::backdrop{background:rgba(0,0,0,.7)}
 
 <div id="vApp" hidden>
   <header class="topo"><div class="wrap" style="padding-bottom:0">
-    <div class="linha"><div class="m"><svg xmlns="http://www.w3.org/2000/svg" viewBox="-227 -880 1100 1100" aria-hidden="true" focusable="false"><g class="bar" fill="#D9B676"><rect x="-64" y="-245.0" width="776" height="66" rx="33.0"/><circle cx="-64" cy="-212" r="60"/><circle cx="712" cy="-212" r="60"/></g><g fill="currentColor" transform="translate(0.0 0.0) scale(1 -1)"><path transform="translate(0.0 0)" d="M5 0 230 660H418L641 0H485L325 542H320L160 0Z"/></g></svg></div><h1>Agenda</h1><button class="btn esc peq" id="bAtualizar" aria-label="Atualizar">Atualizar</button><button class="btn esc peq" id="bSair">Sair</button></div>
-    <nav class="tabs" role="tablist">
+    <div class="linha"><div class="m"><svg xmlns="http://www.w3.org/2000/svg" viewBox="-227 -880 1100 1100" aria-hidden="true" focusable="false"><g class="bar" fill="#4258DE"><rect x="-64" y="-245.0" width="776" height="66" rx="33.0"/><circle cx="-64" cy="-212" r="60"/><circle cx="712" cy="-212" r="60"/></g><g fill="currentColor" transform="translate(0.0 0.0) scale(1 -1)"><path transform="translate(0.0 0)" d="M5 0 230 660H418L641 0H485L325 542H320L160 0Z"/></g></svg></div><h1>Painel</h1><button class="btn esc peq" id="bAtualizar" aria-label="Atualizar">Atualizar</button><button class="btn esc peq" id="bSair">Sair</button></div>
+    <div class="secoes" role="group" aria-label="Secção do painel">
+      <button type="button" data-s="agenda" aria-pressed="true">Agenda <span class="n" id="nPedS" hidden>0</span></button>
+      <button type="button" data-s="site" aria-pressed="false">Site</button>
+      <button type="button" data-s="numeros" aria-pressed="false">Números</button>
+    </div>
+    <nav class="tabs" role="tablist" aria-label="Agenda" data-secao="agenda">
       <button role="tab" data-v="pedidos" aria-selected="true">Pedidos <span class="n" id="nPed">0</span></button>
       <button role="tab" data-v="agenda" aria-selected="false">Agenda</button>
       <button role="tab" data-v="nova" aria-selected="false">Nova marcação</button>
       <button role="tab" data-v="bloqueios" aria-selected="false">Bloquear dias</button>
       <button role="tab" data-v="mensagens" aria-selected="false">Mensagens</button>
       <button role="tab" data-v="historico" aria-selected="false">Histórico</button>
+    </nav>
+    <nav class="tabs" role="tablist" aria-label="Site" data-secao="site" hidden>
+      <button role="tab" data-v="precos" aria-selected="false">Preços</button>
+      <button role="tab" data-v="horario" aria-selected="false">Horário</button>
+      <button role="tab" data-v="fotos" aria-selected="false">Fotos</button>
+      <button role="tab" data-v="avaliacoes" aria-selected="false">Avaliações</button>
     </nav>
   </div></header>
   <main class="wrap" id="conteudo"></main>
@@ -170,28 +249,30 @@ function wa(tel, msg){ return 'https://wa.me/351' + tel + '?text=' + encodeURICo
 function quando(m){ return fmtDia.format(dParse(m.data)) + ', às ' + m.hora.replace(':', 'h'); }
 /* ---------- mensagens prontas (o Adri pode mudar o texto no separador Mensagens) ---------- */
 var PADRAO = {
-  confirmar: 'Olá {nome}! A tua marcação está confirmada para {dia}, às {hora}: {piercings}. Total: {total}, pagas no estúdio. É no Kaos Tattoo, Rua da Torrinha 202, Porto. Até lá!\nAdri',
-  lembrete: 'Olá {nome}! Só para lembrar a tua marcação: {dia}, às {hora} ({piercings}), no Kaos Tattoo, Rua da Torrinha 202, Porto. Come qualquer coisa antes de vir. Se não puderes, avisa-me para eu dar a hora a outra pessoa.\nAdri',
+  confirmar: 'Olá {nome}! A tua marcação está confirmada para {dia}, às {hora}: {piercings}. Total: {total}, pagas no estúdio. É no {local}. Até lá!\nAdri',
+  lembrete: 'Olá {nome}! Só para lembrar a tua marcação: {dia}, às {hora} ({piercings}), no {local}. Come qualquer coisa antes de vir. Se não puderes, avisa-me para eu dar a hora a outra pessoa.\nAdri',
   reagendar: 'Olá {nome}! Mudei a tua marcação ({piercings}) para {dia}, às {hora}. Se não der jeito, diz-me e vemos outra hora.\nAdri',
   recusar: 'Olá {nome}! Infelizmente não consigo fazer a marcação de {dia}, às {hora}. {motivo}Podes escolher outro dia em {site}\nAdri',
   cancelar: 'Olá {nome}! A tua marcação de {dia}, às {hora}, ficou cancelada. {motivo}Quando quiseres, marcamos outra.\nAdri',
   atraso: 'Olá {nome}! Estou com uns minutos de atraso, desculpa. Aviso-te assim que puderes entrar.\nAdri',
   cuidados: 'Olá {nome}! Obrigado pela confiança. Para o piercing cicatrizar bem: soro estéril uma a duas vezes por dia, mãos sempre lavadas e não rodes a joia. Se tiveres alguma dúvida, manda-me uma foto por aqui. Daqui a 4 a 8 semanas passa cá para a revisão, que é grátis.\nAdri',
   partilha: 'Olá {nome}! Como está o piercing? Se gostaste, uma foto no Instagram a identificar @adrifilhoo ajuda-me imenso. Obrigado!\nAdri',
+  avaliacao: 'Olá {nome}! Obrigado por teres vindo. Se puderes, conta como correu, demora um minuto e ajuda imenso quem ainda está com dúvidas: {link}\nAdri',
   livre: 'Olá {nome}! Sobre a tua marcação de {dia}, às {hora}: '
 };
-var NOME_MOD = {confirmar:'Confirmação', lembrete:'Lembrete', reagendar:'Nova hora', recusar:'Recusa', cancelar:'Cancelamento', atraso:'Atraso', cuidados:'Cuidados', partilha:'Pedir partilha', livre:'Em branco'};
-var AJUDA_MOD = {confirmar:'Quando aprovas um pedido ou guardas uma marcação.', lembrete:'Um ou dois dias antes da marcação.', reagendar:'Quando mudas o dia ou a hora.', recusar:'Quando recusas um pedido. O motivo entra em {motivo}.', cancelar:'Quando cancelas uma marcação.', atraso:'No dia, se estiveres atrasado.', cuidados:'Depois de fazeres o piercing.', partilha:'Uns dias depois, para pedir uma foto no Instagram.', livre:'Para escreveres o que quiseres.'};
-var ASSUNTO = {confirmar:'marcação confirmada', lembrete:'lembrete da tua marcação', reagendar:'nova hora da tua marcação', recusar:'o teu pedido de marcação', cancelar:'marcação cancelada', atraso:'um pequeno atraso', cuidados:'cuidados com o teu piercing', partilha:'como está o piercing?', livre:'a tua marcação'};
+var NOME_MOD = {confirmar:'Confirmação', lembrete:'Lembrete', reagendar:'Nova hora', recusar:'Recusa', cancelar:'Cancelamento', atraso:'Atraso', cuidados:'Cuidados', partilha:'Pedir partilha', avaliacao:'Pedir avaliação', livre:'Em branco'};
+var AJUDA_MOD = {confirmar:'Quando aprovas um pedido ou guardas uma marcação.', lembrete:'Um ou dois dias antes da marcação.', reagendar:'Quando mudas o dia ou a hora.', recusar:'Quando recusas um pedido. O motivo entra em {motivo}.', cancelar:'Quando cancelas uma marcação.', atraso:'No dia, se estiveres atrasado.', cuidados:'Depois de fazeres o piercing.', partilha:'Uns dias depois, para pedir uma foto no Instagram.', avaliacao:'Quando pedes uma avaliação. O link de uso único entra em {link}.', livre:'Para escreveres o que quiseres.'};
+var ASSUNTO = {confirmar:'marcação confirmada', lembrete:'lembrete da tua marcação', reagendar:'nova hora da tua marcação', recusar:'o teu pedido de marcação', cancelar:'marcação cancelada', atraso:'um pequeno atraso', cuidados:'cuidados com o teu piercing', partilha:'como está o piercing?', avaliacao:'como correu o teu piercing?', livre:'a tua marcação'};
 var ACAO_MOD = {aprovar:'confirmar', recusar:'recusar', reagendar:'reagendar', cancelar:'cancelar'};
-var modelos = {};
+var modelos = {}, cfg = null;
 function listaPT(a){ a = a.map(function(x){ return x.charAt(0).toLowerCase() + x.slice(1); }); return a.length < 2 ? a.join('') : a.slice(0, -1).join(', ') + ' e ' + a[a.length - 1]; }
 function totalTxt(m, de){ return m.sob_consulta && !m.total ? 'sob consulta' : (m.desde || m.sob_consulta ? de : '') + eur.format(m.total).replace(/,00(?=\s)/, ''); }
 function preencher(m, tipo){
   var v = {nome: primeiro(m.nome), dia: fmtDia.format(dParse(m.data)), hora: m.hora.replace(':', 'h'), piercings: listaPT(m.servicos), total: totalTxt(m, 'a partir de '),
-    motivo: m.motivo ? m.motivo.replace(/\s*[.!?]?\s*$/, '. ') : '', site: location.host};
+    motivo: m.motivo ? m.motivo.replace(/\s*[.!?]?\s*$/, '. ') : '', site: location.host, local: localTxt(), link: m.link || '{link}'};
   return (modelos[tipo] || PADRAO[tipo]).replace(/\{(\w+)\}/g, function(x, k){ return k in v ? v[k] : x; }).replace(/[ \t]{2,}/g, ' ').replace(/ +\n/g, '\n');
 }
+function localTxt(){ var l = cfg && cfg.local; return l ? l.nome + ', ' + l.rua.replace(/,\s*/, ' ') + ', ' + l.cidade : 'Kaos Tattoo, Rua da Torrinha 202, Porto'; }
 function sugerido(m){
   var dd = (dParse(m.data) - dParse(hojeISO())) / 864e5;
   if (m.estado === 'confirmada') return dd <= 2 ? 'lembrete' : 'confirmar';
@@ -204,7 +285,8 @@ var ICON_WA = "<svg viewBox=\"0 0 24 24\" fill=\"currentColor\" aria-hidden=\"tr
 
 /* ---------- entrar e sair ---------- */
 function mostrarEntrar(){ $('#vApp').hidden = true; $('#vEntrar').hidden = false; setTimeout(function(){ $('#senha').focus(); }, 50); }
-function mostrarApp(){ $('#vEntrar').hidden = true; $('#vApp').hidden = false; carregar(); api('GET', '/admin/modelos').then(function(j){ modelos = j.modelos || {}; }).catch(function(){}); }
+function mostrarApp(){ $('#vEntrar').hidden = true; $('#vApp').hidden = false; carregar(); api('GET', '/admin/modelos').then(function(j){ modelos = j.modelos || {}; }).catch(function(){}); carregarCfg(); }
+function carregarCfg(){ return api('GET', '/admin/config').then(function(j){ cfg = j; return j; }); }
 $('#fEntrar').addEventListener('submit', function(e){
   e.preventDefault(); var b = $('#bEntrar'), er = $('#eEntrar'); b.disabled = true; er.hidden = true;
   api('POST', '/admin/entrar', {senha:$('#senha').value}).then(function(){ $('#senha').value = ''; mostrarApp(); }, function(x){
@@ -219,14 +301,26 @@ function carregar(avisar){
   return api('GET', '/admin/marcacoes').then(function(j){
     dados = j; $('#nPed').textContent = j.pendentes; $('#nPed').hidden = !j.pendentes;
     document.title = (j.pendentes ? '(' + j.pendentes + ') ' : '') + 'Agenda — AdriBodyPiercing';
-    if (vista !== 'nova' && vista !== 'bloqueios' && vista !== 'mensagens') desenhar();
+    $('#nPedS').textContent = j.pendentes; $('#nPedS').hidden = !j.pendentes || secao === 'agenda';
+    if (LISTAS.indexOf(vista) >= 0) desenhar();
     if (avisar) toast('Atualizado.');
   }).catch(function(){});
 }
-setInterval(function(){ if (!$('#vApp').hidden && !$('#dlg').open && vista !== 'nova' && vista !== 'mensagens') carregar(); }, 60000);
+setInterval(function(){ if (!$('#vApp').hidden && !$('#dlg').open && !document.hidden) carregar(); }, 60000);
 
-$$('.tabs button').forEach(function(t){ t.addEventListener('click', function(){
-  vista = t.dataset.v; $$('.tabs button').forEach(function(x){ x.setAttribute('aria-selected', x === t); }); desenhar(); window.scrollTo(0, 0);
+var LISTAS = ['pedidos', 'agenda', 'historico'], secao = 'agenda', ultima = {agenda: 'pedidos', site: 'precos', numeros: 'numeros'};
+function irPara(v){
+  vista = v; ultima[secao] = v;
+  $$('.tabs button').forEach(function(x){ x.setAttribute('aria-selected', x.dataset.v === v); });
+  desenhar(); window.scrollTo(0, 0);
+}
+$$('.tabs button').forEach(function(t){ t.addEventListener('click', function(){ irPara(t.dataset.v); }); });
+$$('.secoes button').forEach(function(b){ b.addEventListener('click', function(){
+  secao = b.dataset.s;
+  $$('.secoes button').forEach(function(x){ x.setAttribute('aria-pressed', x === b); });
+  $$('.tabs').forEach(function(n){ n.hidden = n.dataset.secao !== secao; });
+  $('#nPedS').hidden = !dados.pendentes || secao === 'agenda';
+  irPara(ultima[secao]);
 }); });
 
 /* ---------- vistas ---------- */
@@ -235,6 +329,11 @@ function desenhar(){
   if (vista === 'nova') return novaMarcacao(c);
   if (vista === 'bloqueios') return bloqueios(c);
   if (vista === 'mensagens') return editarModelos(c);
+  if (vista === 'precos') return comCfg(c, vPrecos);
+  if (vista === 'horario') return comCfg(c, vHorario);
+  if (vista === 'fotos') return comCfg(c, vFotos);
+  if (vista === 'avaliacoes') return vAvaliacoes(c);
+  if (vista === 'numeros') return vNumeros(c);
   var lista, vazio;
   if (vista === 'pedidos'){ lista = ms.filter(function(m){ return m.estado === 'pendente' && m.data >= h; }); vazio = 'Não há pedidos à espera. Quando alguém marcar no site, aparece aqui.'; }
   else if (vista === 'agenda'){ lista = ms.filter(function(m){ return (m.estado === 'confirmada' || m.estado === 'pendente') && m.data >= h; }); vazio = 'Ainda não há marcações daqui para a frente.'; }
@@ -256,6 +355,7 @@ function cartao(m){
     if (m.data <= hojeISO()) ac.push('<button class="btn peq" data-a="concluir">Feita</button>', '<button class="btn esc peq" data-a="faltou">Faltou</button>');
     ac.push('<button class="btn osso peq" data-a="reagendar">Reagendar</button>', '<button class="btn verm peq" data-a="cancelar">Cancelar</button>');
   }
+  if (m.estado === 'concluida') ac.push('<button class="btn peq" data-a="avaliar">Pedir avaliação</button>');
   if (['recusada','cancelada','faltou','concluida'].indexOf(m.estado) >= 0 && m.data >= hojeISO()) ac.push('<button class="btn esc peq" data-a="reabrir">Voltar a abrir</button>');
   var av = avisos[m.id];
   return '<article class="card" data-id="' + m.id + '">' +
@@ -280,6 +380,7 @@ function ligarCartoes(c){
   $$('[data-a]', c).forEach(function(b){ b.addEventListener('click', function(){
     var id = +b.closest('.card').dataset.id, m = dados.marcacoes.filter(function(x){ return x.id === id; })[0], a = b.dataset.a;
     if (a === 'reagendar') return dlgReagendar(m);
+    if (a === 'avaliar') return pedirAvaliacao(m, b);
     if (a === 'recusar' || a === 'cancelar') return dlgMotivo(m, a);
     acao(m, a, {}, b);
   }); });
@@ -402,10 +503,11 @@ function bloqueios(c){
     '<button class="btn" id="bBlq">Bloquear</button></form><div class="painel" id="lBlq"><p style="color:var(--sec)">A carregar…</p></div>';
   function horasSelect(){
     var d = dParse($('#bDia').value).getDay();
-    var hs = d === 6 ? ['10:00','11:00','12:00','13:00','14:00','15:00','16:00'] : [];
+    var hs = horasDoDia((d + 6) % 7);
     $('#bHora').innerHTML = '<option value="">O dia inteiro</option>' + hs.map(function(h){ return '<option value="' + h + '">' + h.replace(':', 'h') + '</option>'; }).join('');
   }
-  horasSelect(); $('#bDia').addEventListener('change', horasSelect);
+  if (cfg) horasSelect(); else carregarCfg().then(horasSelect, function(){});
+  $('#bDia').addEventListener('change', horasSelect);
   function lista(){
     api('GET', '/admin/bloqueios').then(function(j){
       var l = $('#lBlq'); if (!l) return;
@@ -424,9 +526,9 @@ function bloqueios(c){
 
 /* ---------- mensagens prontas: o Adri muda o texto base ---------- */
 function editarModelos(c){
-  var ordem = ['confirmar','lembrete','reagendar','recusar','cancelar','atraso','cuidados','partilha','livre'];
+  var ordem = ['confirmar','lembrete','reagendar','recusar','cancelar','atraso','cuidados','partilha','avaliacao','livre'];
   c.innerHTML = '<div class="painel"><h2 style="font-size:22px;margin-bottom:6px">Mensagens prontas</h2><p style="color:var(--sec);margin:0">Estas palavras trocam-se sozinhas pelos dados de cada marcação:</p>' +
-    '<div class="vars"><code>{nome}</code><code>{dia}</code><code>{hora}</code><code>{piercings}</code><code>{total}</code><code>{motivo}</code><code>{site}</code></div>' +
+    '<div class="vars"><code>{nome}</code><code>{dia}</code><code>{hora}</code><code>{piercings}</code><code>{total}</code><code>{motivo}</code><code>{site}</code><code>{local}</code><code>{link}</code></div>' +
     ordem.map(function(k){ return '<div class="modelo"><h3>' + NOME_MOD[k] + '</h3><p>' + AJUDA_MOD[k] + '</p><label for="md-' + k + '" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)">Texto: ' + NOME_MOD[k] + '</label>' +
       '<textarea id="md-' + k + '" class="msg-txt" maxlength="700">' + esc(modelos[k] || PADRAO[k]) + '</textarea>' +
       '<div class="acoes"><button class="btn peq" data-g="' + k + '">Guardar</button><button class="btn esc peq" data-r="' + k + '"' + (modelos[k] ? '' : ' hidden') + '>Repor o original</button></div></div>'; }).join('') + '</div>';
@@ -437,6 +539,292 @@ function editarModelos(c){
   }
   $$('[data-g]', c).forEach(function(b){ b.addEventListener('click', function(){ var k = b.dataset.g, v = $('#md-' + k).value.trim(); guardar(k, v === PADRAO[k] ? '' : v, b); }); });
   $$('[data-r]', c).forEach(function(b){ b.addEventListener('click', function(){ guardar(b.dataset.r, '', b); }); });
+}
+
+/* =================== SITE: o que o Adri muda aparece logo no site =================== */
+var DIAS = ['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado', 'Domingo'];
+var DIAS_PL = ['segundas', 'terças', 'quartas', 'quintas', 'sextas', 'sábados', 'domingos'];
+function minutos(t){ return +t.slice(0, 2) * 60 + +t.slice(3, 5); }
+function hhmm(m){ return String(Math.floor(m / 60)).padStart(2, '0') + ':' + String(m % 60).padStart(2, '0'); }
+function horasDe2(hor, wd){
+  var d = hor && hor.dias && hor.dias[String(wd)]; if (!d) return [];
+  var dur = hor.duracao || 60, a = minutos(d.abre), f = minutos(d.fecha), r = [];
+  for (var t = a; t + dur <= f; t += dur) r.push(hhmm(t));
+  return r;
+}
+function horasDoDia(wd){ return cfg ? horasDe2(cfg.horario, wd) : []; }
+function horarioTexto(hor){
+  var g = [];
+  for (var w = 0; w < 7; w++){
+    var d = hor.dias[String(w)]; if (!d) continue;
+    var k = d.abre + '-' + d.fecha;
+    if (g.length && g[g.length - 1].k === k && g[g.length - 1].w[g[g.length - 1].w.length - 1] === w - 1) g[g.length - 1].w.push(w); else g.push({k: k, a: d.abre, f: d.fecha, w: [w]});
+  }
+  var t = g.map(function(x){ var n = x.w.map(function(w){ return DIAS_PL[w]; }); return (n.length < 2 ? n[0] : n.slice(0, -1).join(', ') + ' e ' + n[n.length - 1]) + ', ' + x.a.replace(':', 'h') + '–' + x.f.replace(':', 'h'); }).join('; ');
+  return t ? cap(t) : '';
+}
+function comCfg(c, f){
+  if (cfg) return f(c);
+  c.innerHTML = '<p class="vazio">A carregar…</p>';
+  carregarCfg().then(function(){ if (vista && $('#conteudo') === c) desenhar(); }, function(){ c.innerHTML = '<p class="vazio">Não deu para carregar. Toca em «Atualizar».</p>'; });
+}
+function erroCampos(x){ var cs = x && x.j && x.j.campos; return cs ? Object.keys(cs).map(function(k){ return cs[k]; }).join(' ') : (x && x.s === 401 ? 'A sessão terminou. Entra outra vez.' : 'Não deu para guardar. Tenta outra vez.'); }
+function avisarSaida(on){ window.onbeforeunload = on ? function(){ return 'Tens alterações por guardar.'; } : null; }
+
+/* ---------- Preços ---------- */
+var GRUPOS = [['Orelha', ['lobulo','lobulo-alto','helix','helix-frontal','flat','tragus','antitragus','conch','daith','rook','snug','industrial']],
+  ['Rosto', ['narina','septo','labio','medusa','smiley','sobrancelha']], ['Corpo', ['umbigo','mamilo','surface','microdermal']]];
+function vPrecos(c){
+  var p = cfg.precos, base = JSON.stringify(p);
+  c.innerHTML = '<form class="painel" id="fPrecos" novalidate><h2>Preços</h2><p class="ajuda-t">Mudam logo no site e nas páginas de cada piercing. As marcações que já existem ficam com o preço com que foram pedidas. A consulta continua grátis e a troca de joia fica sob consulta.</p>' +
+    '<div class="duas" style="align-items:end"><div class="campo"><label for="todosOr">Todos os da orelha</label><div class="euro"><input id="todosOr" type="number" inputmode="numeric" min="0" max="999" step="1" placeholder="Ex.: 35"></div></div><div class="campo"><button type="button" class="btn esc" id="bTodosOr">Aplicar à orelha toda</button></div></div>' +
+    GRUPOS.map(function(g){ return '<h3 class="grupo-t">' + g[0] + '</h3>' + g[1].map(function(id){
+      return '<div class="linha-p" data-id="' + id + '"><label for="p-' + id + '">' + esc(cfg.servicos[id]) + (cfg.padrao[id] !== p[id] ? '<small>Original: ' + cfg.padrao[id] + ' €</small>' : '') + '</label>' +
+        '<div class="euro"><input id="p-' + id + '" type="number" inputmode="numeric" min="0" max="999" step="1" value="' + p[id] + '" required></div></div>';
+    }).join(''); }).join('') +
+    '<p class="erro" id="ePrecos" hidden></p><div class="barra-guardar"><p id="pEstado">Sem alterações.</p><button class="btn" id="bPrecos" disabled>Guardar preços</button></div></form>';
+  function ler(){
+    var o = {}, mal = [];
+    $$('.linha-p input', c).forEach(function(i){ var id = i.id.slice(2), v = i.value.trim(); if (!/^\d{1,3}$/.test(v)) mal.push(cfg.servicos[id]); else o[id] = +v; });
+    return {o: o, mal: mal};
+  }
+  function ver(){
+    var r = ler(), n = 0;
+    $$('.linha-p', c).forEach(function(l){ var id = l.dataset.id, m = r.o[id] !== p[id]; l.classList.toggle('mudou', m); if (m) n++; });
+    $('#pEstado').textContent = r.mal.length ? 'Falta o preço de: ' + r.mal.join(', ') + '.' : n ? (n === 1 ? '1 preço mudado.' : n + ' preços mudados.') : 'Sem alterações.';
+    $('#bPrecos').disabled = !n || r.mal.length > 0; avisarSaida(n > 0);
+  }
+  c.addEventListener('input', function(e){ if (e.target.closest('.linha-p')) ver(); });
+  $('#bTodosOr').addEventListener('click', function(){
+    var v = $('#todosOr').value.trim(); if (!/^\d{1,3}$/.test(v)) return toast('Escreve um preço de 0 a 999 €.');
+    GRUPOS[0][1].forEach(function(id){ $('#p-' + id).value = v; }); ver(); toast('Aplicado. Falta guardar.');
+  });
+  $('#fPrecos').addEventListener('submit', function(e){
+    e.preventDefault(); var r = ler(), b = $('#bPrecos'), er = $('#ePrecos');
+    if (r.mal.length){ er.textContent = 'Falta o preço de: ' + r.mal.join(', ') + '.'; er.hidden = false; return; }
+    b.disabled = true; er.hidden = true;
+    api('POST', '/admin/config/precos', {precos: r.o}).then(function(j){ cfg.precos = j.precos; avisarSaida(false); toast('Preços guardados. Já estão no site.'); carregar(); vPrecos(c); },
+      function(x){ er.textContent = erroCampos(x); er.hidden = false; b.disabled = false; });
+  });
+  void base;
+}
+
+/* ---------- Horário e morada ---------- */
+function opcoesHoras(sel){ var h = ''; for (var m = 6 * 60; m <= 23 * 60 + 45; m += 15){ var t = hhmm(m); h += '<option value="' + t + '"' + (t === sel ? ' selected' : '') + '>' + t.replace(':', 'h') + '</option>'; } return h; }
+function vHorario(c){
+  var hor = JSON.parse(JSON.stringify(cfg.horario)), loc = cfg.local;
+  c.innerHTML = '<form class="painel" id="fHor" novalidate><h2>Horário</h2><p class="ajuda-t">Os clientes só veem no site as horas destes dias. Bloqueios e marcações que já existem não mudam.</p>' +
+    DIAS.map(function(n, w){ var d = hor.dias[String(w)] || {abre: '10:00', fecha: '18:00'}; var on = !!hor.dias[String(w)];
+      return '<div class="dia-h" data-w="' + w + '"><span class="nome" id="dn' + w + '">' + n + '</span><span class="interruptor"><input type="checkbox" aria-labelledby="dn' + w + '"' + (on ? ' checked' : '') + '><span></span></span>' +
+        '<div class="horas-d"' + (on ? '' : ' hidden') + '><label>Abre às<select data-k="abre">' + opcoesHoras(d.abre) + '</select></label><label>Fecha às<select data-k="fecha">' + opcoesHoras(d.fecha) + '</select></label></div></div>'; }).join('') +
+    '<div class="campo" style="margin-top:16px"><span style="font-weight:600;font-size:14px" id="durT">Cada marcação dura</span><div class="chips" role="group" aria-labelledby="durT">' + cfg.duracoes.map(function(d){ return '<button type="button" data-d="' + d + '" aria-pressed="' + (d === hor.duracao) + '">' + (d < 60 ? d + ' min' : d === 60 ? '1 hora' : d === 90 ? '1h30' : '2 horas') + '</button>'; }).join('') + '</div></div>' +
+    '<div class="previa" id="hPrev"></div><p class="erro" id="eHor" hidden></p><div class="barra-guardar"><p id="hEstado">Sem alterações.</p><button class="btn" id="bHor" disabled>Guardar horário</button></div></form>' +
+    '<form class="painel" id="fLoc" novalidate><h2>Morada</h2><p class="ajuda-t">Aparece no site, no mapa e nas mensagens prontas (palavra {local}).</p>' +
+    '<div class="campo"><label for="lNome">Nome do sítio</label><input id="lNome" maxlength="60" value="' + esc(loc.nome) + '" placeholder="Ex.: Kaos Tattoo"></div>' +
+    '<div class="campo"><label for="lRua">Rua e número</label><input id="lRua" maxlength="80" value="' + esc(loc.rua) + '" placeholder="Ex.: Rua da Torrinha, 202" autocomplete="off"></div>' +
+    '<div class="duas"><div class="campo"><label for="lCp">Código postal</label><input id="lCp" maxlength="8" inputmode="numeric" value="' + esc(loc.cp) + '" placeholder="4050-610"></div><div class="campo"><label for="lCid">Cidade</label><input id="lCid" maxlength="40" value="' + esc(loc.cidade) + '"></div></div>' +
+    '<p class="erro" id="eLoc" hidden></p><div class="acoes"><button class="btn" id="bLoc">Guardar morada</button><a class="btn esc" id="lMapa" target="_blank" rel="noopener" href="' + esc(loc.mapa) + '">Ver no mapa</a></div></form>';
+  var base = JSON.stringify(hor);
+  function ler(){
+    var dias = {}, dur = +($('[data-d][aria-pressed="true"]', c) || {}).dataset.d || 60, mal = '';
+    $$('.dia-h', c).forEach(function(r){ var w = r.dataset.w; if (!$('input', r).checked) return;
+      var a = $('[data-k="abre"]', r).value, f = $('[data-k="fecha"]', r).value;
+      if (minutos(f) - minutos(a) < dur) mal = DIAS[w] + ': a hora de fecho tem de ficar pelo menos ' + (dur < 60 ? dur + ' minutos' : dur === 60 ? '1 hora' : dur / 60 + ' horas').replace('1.5 horas', '1h30') + ' depois da abertura.';
+      dias[w] = {abre: a, fecha: f}; });
+    return {dias: dias, duracao: dur, mal: mal};
+  }
+  function ver(){
+    var r = ler(), n = JSON.stringify({dias: r.dias, duracao: r.duracao}) !== base, t = horarioTexto(r);
+    var exemplo = Object.keys(r.dias)[0];
+    $('#hPrev').innerHTML = Object.keys(r.dias).length ? '<b>No site: ' + esc(t) + '</b>Horas para marcar' + (Object.keys(r.dias).length > 1 ? ' (' + DIAS[exemplo].toLowerCase() + ')' : '') + ': ' + (horasDe2(r, exemplo).map(function(h){ return h.replace(':', 'h'); }).join(', ') || 'nenhuma') + '.' :
+      '<b>Sem nenhum dia aberto, ninguém consegue marcar no site.</b>Liga pelo menos um dia.';
+    $('#eHor').textContent = r.mal; $('#eHor').hidden = !r.mal;
+    $('#hEstado').textContent = n ? 'Horário mudado.' : 'Sem alterações.';
+    $('#bHor').disabled = !n || !!r.mal; avisarSaida(n);
+  }
+  $$('.dia-h', c).forEach(function(r){ $('input', r).addEventListener('change', function(){ $('.horas-d', r).hidden = !this.checked; ver(); }); $$('select', r).forEach(function(s){ s.addEventListener('change', ver); }); });
+  $$('[data-d]', c).forEach(function(b){ b.addEventListener('click', function(){ $$('[data-d]', c).forEach(function(x){ x.setAttribute('aria-pressed', x === b); }); ver(); }); });
+  ver();
+  $('#fHor').addEventListener('submit', function(e){
+    e.preventDefault(); var r = ler(), b = $('#bHor'); if (r.mal) return;
+    b.disabled = true;
+    api('POST', '/admin/config/horario', {dias: r.dias, duracao: r.duracao}).then(function(j){ cfg.horario = {dias: j.horario.dias, duracao: j.horario.duracao}; avisarSaida(false); toast('Horário guardado. Já está no site.'); vHorario(c); },
+      function(x){ $('#eHor').textContent = erroCampos(x); $('#eHor').hidden = false; b.disabled = false; });
+  });
+  $('#fLoc').addEventListener('submit', function(e){
+    e.preventDefault(); var b = $('#bLoc'), er = $('#eLoc'); b.disabled = true; er.hidden = true;
+    api('POST', '/admin/config/local', {nome: $('#lNome').value, rua: $('#lRua').value, cp: $('#lCp').value, cidade: $('#lCid').value}).then(function(j){ cfg.local = j.local; $('#lMapa').href = j.local.mapa; toast('Morada guardada. Já está no site.'); b.disabled = false; },
+      function(x){ er.textContent = erroCampos(x); er.hidden = false; b.disabled = false; });
+  });
+}
+
+/* ---------- Fotos do site ---------- */
+var FOTOS = {
+  nariz: {t: 'Foto grande das fotos de trabalhos', onde: 'Logo a seguir ao início, à esquerda.', src: '/img/nariz.webp', alt: 'Perfil de uma cliente com um ponto de titânio na narina, feito pelo Adri', leg: 'Narina, {narina}. Joia em titânio, soro e revisão às 4–8 semanas já incluídos.', max: 1600},
+  umbigo: {t: 'Foto larga', onde: 'Fotos de trabalhos, em cima à direita.', src: '/img/umbigo.webp', alt: 'Piercing no umbigo com uma joia de titânio, feito pelo Adri', leg: 'Umbigo, {umbigo}. Sem filas nem pressa. Marcas online e pagas só no estúdio.', max: 1600},
+  conch: {t: 'Foto pequena', onde: 'Fotos de trabalhos, em baixo.', src: '/img/conch.webp', alt: 'Orelha com um ponto de titânio na concha e uma argola no lóbulo, feitos pelo Adri', leg: 'Orelha, desde {orelha}. Só titânio de implante, sem níquel.', max: 1400},
+  trabalho: {t: 'Foto do «Como corre a marcação»', onde: 'Ao lado dos passos da marcação.', src: '/img/trabalho.webp', alt: 'O Adri, de luvas pretas, a fazer um piercing na orelha de uma cliente deitada na marquesa', leg: 'Só furo depois de confirmares o ponto ao espelho.', max: 1400},
+  cara: {t: 'A tua cara', onde: 'Redonda e pequena, ao lado de «Sou o Adri», logo no início.', src: '/img/adri-cara.webp', alt: '', leg: '', max: 400, redonda: true}
+};
+function legPadrao(k){ var p = cfg.precos, o = Math.min.apply(null, GRUPOS[0][1].map(function(id){ return p[id]; }));
+  return FOTOS[k].leg.replace('{narina}', p.narina + ' €').replace('{umbigo}', p.umbigo + ' €').replace('{orelha}', o + ' €'); }
+function vFotos(c){
+  var f = cfg.fotos || {};
+  c.innerHTML = '<div class="painel"><h2>Fotos do site</h2><p class="ajuda-t" style="margin:0">Troca uma foto e ela aparece logo no site. Usa fotos tuas, com luz boa e de pessoas que deixaram mostrar. A foto fica mais pequena antes de ser enviada, por isso não gasta muitos dados.</p></div>' +
+    '<div class="fotos-g">' + Object.keys(FOTOS).map(function(k){
+      var d = FOTOS[k], o = f[k] || {}, src = o.src || d.src;
+      return '<article class="foto-c" data-k="' + k + '"><div class="img' + (d.redonda ? ' redonda' : '') + '"><img src="' + esc(src) + '" alt="" loading="lazy"></div>' +
+        '<div><h3>' + d.t + '</h3><p>' + d.onde + '</p></div>' + (o.src ? '<span class="etq nova">Foto tua</span>' : '<span class="etq">Foto original</span>') +
+        (d.redonda ? '' : '<p><b style="color:var(--osso);font-weight:600">Legenda:</b> ' + esc(o.legenda || legPadrao(k)) + '</p>') +
+        '<div class="acoes"><label class="btn peq" style="cursor:pointer">Trocar foto<input type="file" accept="image/*" hidden data-trocar></label>' +
+        (d.redonda ? '' : '<button type="button" class="btn esc peq" data-textos>Mudar textos</button>') + (o.src || o.legenda ? '<button type="button" class="btn esc peq" data-repor>Repor original</button>' : '') + '</div></article>';
+    }).join('') + '</div>';
+  $$('[data-trocar]', c).forEach(function(i){ i.addEventListener('change', function(){ var k = i.closest('.foto-c').dataset.k, fi = i.files && i.files[0]; i.value = ''; if (fi) prepararFoto(k, fi, c); }); });
+  $$('[data-textos]', c).forEach(function(b){ b.addEventListener('click', function(){ dlgTextos(b.closest('.foto-c').dataset.k, null, c); }); });
+  $$('[data-repor]', c).forEach(function(b){ b.addEventListener('click', function(){
+    var k = b.closest('.foto-c').dataset.k; if (!confirm('Voltar à foto e aos textos originais deste lugar?')) return;
+    b.disabled = true; api('POST', '/admin/fotos/' + k + '/repor', {}).then(function(j){ cfg.fotos = j.fotos; toast('Voltou ao original.'); vFotos(c); }, function(){ b.disabled = false; toast('Não deu. Tenta outra vez.'); });
+  }); });
+}
+/* reduz a foto no telemóvel antes de enviar (lado maior até d.max, WebP ou JPEG se o browser não fizer WebP) */
+function reduzir(file, max, quadrada){
+  function desenhar(src, w, h){
+    var cx = 0, cy = 0, cw = w, ch = h;
+    if (quadrada){ var l = Math.min(w, h); cx = (w - l) / 2; cy = (h - l) / 2; cw = ch = l; }
+    var k = Math.min(1, max / Math.max(cw, ch)), cv = document.createElement('canvas');
+    cv.width = Math.round(cw * k); cv.height = Math.round(ch * k);
+    var g = cv.getContext('2d'); g.imageSmoothingQuality = 'high'; g.drawImage(src, cx, cy, cw, ch, 0, 0, cv.width, cv.height);
+    return new Promise(function(ok, nao){
+      cv.toBlob(function(b){
+        if (b && b.type === 'image/webp') return ok(b);
+        cv.toBlob(function(j){ j ? ok(j) : nao(new Error('codificar')); }, 'image/jpeg', .85);
+      }, 'image/webp', .82);
+    });
+  }
+  if (window.createImageBitmap) return createImageBitmap(file, {imageOrientation: 'from-image'}).then(function(bm){ return desenhar(bm, bm.width, bm.height); }, function(){ return porImagem(); });
+  return porImagem();
+  function porImagem(){
+    return new Promise(function(ok, nao){ var u = URL.createObjectURL(file), im = new Image();
+      im.onload = function(){ desenhar(im, im.naturalWidth, im.naturalHeight).then(ok, nao); URL.revokeObjectURL(u); };
+      im.onerror = function(){ URL.revokeObjectURL(u); nao(new Error('abrir')); }; im.src = u; });
+  }
+}
+function prepararFoto(k, file, c){
+  if (!/^image\//.test(file.type || 'image/')) return toast('Escolhe uma imagem.');
+  toast('A preparar a foto…');
+  reduzir(file, FOTOS[k].max, !!FOTOS[k].redonda).then(function(blob){
+    if (blob.size > 3 * 1024 * 1024) return toast('A foto continua muito grande. Escolhe outra.');
+    dlgTextos(k, blob, c);
+  }, function(){ toast('Não consegui abrir esta foto. Tenta outra (JPG ou PNG).'); });
+}
+function dlgTextos(k, blob, c){
+  var d = FOTOS[k], o = (cfg.fotos || {})[k] || {}, url = blob ? URL.createObjectURL(blob) : null;
+  abrirDlg('<h2>' + (blob ? 'Foto nova: ' : 'Textos: ') + d.t.toLowerCase() + '</h2>' +
+    (url ? '<div class="prev-nova"><img src="' + url + '" alt="Pré-visualização da foto nova"></div>' : '') +
+    (d.redonda ? '' : '<div class="campo"><label for="fAlt">O que se vê na foto</label><input id="fAlt" maxlength="160" value="' + esc(blob ? '' : (o.alt || d.alt)) + '" placeholder="Ex.: Hélix com um labret de titânio, feito por mim"><span class="nota-c" style="margin:0">Quem não vê a imagem ouve este texto, e o Google também o lê.</span></div>' +
+      '<div class="campo"><label for="fLeg">Legenda (por baixo da foto)</label><textarea id="fLeg" maxlength="140" style="min-height:70px">' + esc(o.legenda || legPadrao(k)) + '</textarea></div>') +
+    '<p class="erro" id="eFoto" hidden></p><div class="acoes"><button class="btn" id="dOk">' + (blob ? 'Pôr no site' : 'Guardar textos') + '</button><button class="btn esc" data-fechar>Cancelar</button></div>');
+  $('#dlg').addEventListener('close', function f(){ if (url) URL.revokeObjectURL(url); $('#dlg').removeEventListener('close', f); });
+  $('#dOk').addEventListener('click', function(){
+    var b = $('#dOk'), er = $('#eFoto'), alt = d.redonda ? 'O Adri' : $('#fAlt').value.trim(), leg = d.redonda ? '' : $('#fLeg').value.trim();
+    if (!d.redonda && alt.length < 5){ er.textContent = 'Descreve a foto em poucas palavras.'; er.hidden = false; $('#fAlt').focus(); return; }
+    b.disabled = true; b.textContent = blob ? 'A enviar…' : 'A guardar…';
+    var envio = blob ? fetch('/api/admin/fotos/' + k, {method: 'POST', credentials: 'same-origin', headers: {'Content-Type': blob.type}, body: blob}).then(function(r){ return r.json().catch(function(){ return {}; }).then(function(j){ if (!r.ok) throw {s: r.status, j: j}; return j; }); }) : Promise.resolve();
+    envio.then(function(){ return api('POST', '/admin/fotos/' + k + '/texto', {alt: alt, legenda: leg === legPadrao(k) ? '' : leg}); }).then(function(j){
+      cfg.fotos = j.fotos; $('#dlg').close(); toast(blob ? 'Foto trocada. Já está no site.' : 'Textos guardados.'); vFotos(c);
+    }, function(x){
+      b.disabled = false; b.textContent = blob ? 'Pôr no site' : 'Guardar textos';
+      er.textContent = x && x.s === 413 ? 'A foto é grande demais. Escolhe outra.' : x && x.s === 415 ? 'Esse formato não dá. Usa JPG ou PNG.' : x && x.s === 401 ? 'A sessão terminou. Entra outra vez.' : 'Não deu para enviar. Verifica a internet e tenta outra vez.';
+      er.hidden = false;
+    });
+  });
+}
+
+/* ---------- Avaliações ---------- */
+function estr(n){ var h = ''; for (var i = 1; i <= 5; i++) h += i <= n ? '★' : '<span class="v">★</span>'; return '<span class="estr" role="img" aria-label="' + n + ' de 5 estrelas">' + h + '</span>'; }
+var fmtData = new Intl.DateTimeFormat('pt-PT', {day: 'numeric', month: 'short', year: 'numeric'});
+function linkAvaliar(t){ return location.origin + '/avaliar/#' + t; }
+function dlgLink(r, m){
+  var link = linkAvaliar(r.token), alvo = m ? Object.assign({}, m, {link: link}) : {nome: r.nome || '', link: link, data: hojeISO(), hora: '00:00', servicos: [], total: 0};
+  var txt = preencher(alvo, 'avaliacao').replace(/^Olá !/, 'Olá!');
+  abrirDlg('<h2>Link para avaliar' + (r.nome ? ': ' + esc(r.nome) : '') + '</h2><p style="color:var(--sec);margin:0 0 12px">Só dá para usar uma vez e vale 90 dias. A avaliação aparece logo no site.</p>' +
+    '<div class="link-box"><label for="lnk" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)">Link</label><input id="lnk" readonly value="' + esc(link) + '"></div>' +
+    '<label for="msgTxt" style="display:block;font-weight:600;font-size:14px;margin:14px 0 6px">Mensagem</label><textarea id="msgTxt" class="msg-txt">' + esc(txt) + '</textarea>' +
+    '<div class="canais"><a class="btn" id="cWa" target="_blank" rel="noopener">' + ICON_WA + ' WhatsApp</a><button type="button" class="btn esc" id="cCop">Copiar mensagem</button></div>' +
+    '<div class="acoes"><button class="btn esc" data-fechar>Fechar</button></div>');
+  function ligar(){ var t = $('#msgTxt').value; $('#cWa').href = m && m.tel ? wa(m.tel, t) : 'https://wa.me/?text=' + encodeURIComponent(t); }
+  ligar(); $('#msgTxt').addEventListener('input', ligar);
+  $('#cWa').addEventListener('click', function(){ if (m) api('POST', '/admin/marcacoes/' + m.id + '/acao', {acao: 'mensagem', tipo: 'avaliacao', canal: 'whatsapp'}).then(function(){ carregar(); }).catch(function(){}); setTimeout(function(){ $('#dlg').close(); }, 200); });
+  $('#cCop').addEventListener('click', function(){
+    var t = $('#msgTxt'), ok = function(){ toast('Copiado. Cola onde quiseres.'); };
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(t.value).then(ok, function(){ t.select(); document.execCommand('copy'); ok(); });
+    else { t.select(); document.execCommand('copy'); ok(); }
+  });
+}
+function pedirAvaliacao(m, b){
+  if (b) b.disabled = true;
+  api('POST', '/admin/convites', {marcacao: m.id}).then(function(r){ dlgLink(r, m); }, function(){ toast('Não deu para criar o link. Tenta outra vez.'); }).then(function(){ if (b) b.disabled = false; });
+}
+function vAvaliacoes(c){
+  c.innerHTML = '<p class="vazio">A carregar…</p>';
+  api('GET', '/admin/avaliacoes').then(function(j){
+    var av = j.avaliacoes, vis = av.filter(function(a){ return a.visivel; }), med = vis.length ? vis.reduce(function(s, a){ return s + a.estrelas; }, 0) / vis.length : 0;
+    var pend = j.convites.filter(function(x){ return !x.usado && x.expira > j.agora; });
+    c.innerHTML = '<form class="painel" id="fConv"><h2>Pedir uma avaliação</h2><p class="ajuda-t">Cria um link de uso único e manda-o a quem fez um piercing contigo. Também podes pedir no cartão de cada marcação feita, na Agenda.</p>' +
+      '<div class="campo"><label for="cNome">Nome do cliente (opcional)</label><input id="cNome" maxlength="40" autocomplete="off" placeholder="Ex.: Rita"></div><button class="btn" id="bConv">Criar link</button></form>' +
+      '<div class="painel"><h2>No site</h2>' + (vis.length ? '<p style="margin:0 0 4px;font-size:18px"><b>' + med.toFixed(1).replace('.', ',') + '</b> ' + estr(Math.round(med)) + ' <span style="color:var(--sec)">em ' + vis.length + (vis.length === 1 ? ' avaliação' : ' avaliações') + '</span></p>' : '<p class="ajuda-t" style="margin:0">Ainda não há avaliações. A secção «Quem já furou comigo» aparece no site quando chegar a primeira.</p>') +
+      (av.length ? av.map(function(a){ return '<div class="aval' + (a.visivel ? '' : ' escondida') + '" data-id="' + a.id + '">' + estr(a.estrelas) + (a.texto ? '<blockquote>' + esc(a.texto) + '</blockquote>' : '') +
+        '<div class="meta">' + esc(a.nome) + (a.piercing ? ', ' + esc(a.piercing.toLowerCase()) : '') + ' · ' + fmtData.format(new Date(a.criado * 1000)) + (a.visivel ? '' : ' · escondida do site') + '</div>' +
+        '<div class="acoes" style="margin-top:8px"><button type="button" class="btn esc peq" data-vis="' + (a.visivel ? 0 : 1) + '">' + (a.visivel ? 'Esconder do site' : 'Mostrar no site') + '</button></div></div>'; }).join('') : '') +
+      (av.length ? '<p class="nota-c">Esconder é só para textos ofensivos ou com dados pessoais. Esconder avaliações só por serem más engana quem lê e a lei não deixa.</p>' : '') + '</div>' +
+      '<form class="painel" id="fGoogle"><h2>Também no Google</h2><p class="ajuda-t">Depois de avaliar no site, o cliente vê um botão para avaliar no Google. Cola aqui o link do teu perfil (no Google: o teu negócio, «Pedir avaliações», copiar link).</p>' +
+      '<div class="campo"><label for="gUrl">Link para avaliar no Google</label><input id="gUrl" type="url" inputmode="url" maxlength="300" value="' + esc(j.google || '') + '" placeholder="https://g.page/r/…/review"></div><p class="erro" id="eG" hidden></p><button class="btn" id="bG">Guardar link</button></form>' +
+      (pend.length ? '<div class="painel"><h2>Links por usar</h2>' + pend.map(function(x){ return '<div class="blq"><div><b>' + esc(x.nome || 'Sem nome') + '</b><div class="mini" style="color:var(--sec)">' + (x.piercing ? esc(x.piercing) + ' · ' : '') + 'criado a ' + fmtData.format(new Date(x.criado * 1000)) + ', vale até ' + fmtData.format(new Date(x.expira * 1000)) + '</div></div><button type="button" class="btn esc peq" data-apagar="' + x.id + '">Apagar</button></div>'; }).join('') + '</div>' : '');
+    $('#fConv').addEventListener('submit', function(e){ e.preventDefault(); var b = $('#bConv'); b.disabled = true;
+      api('POST', '/admin/convites', {nome: $('#cNome').value}).then(function(r){ dlgLink(r, null); $('#dlg').addEventListener('close', function f(){ $('#dlg').removeEventListener('close', f); if (vista === 'avaliacoes') vAvaliacoes(c); }); }, function(){ toast('Não deu para criar o link.'); }).then(function(){ b.disabled = false; }); });
+    $$('[data-vis]', c).forEach(function(b){ b.addEventListener('click', function(){ b.disabled = true;
+      api('POST', '/admin/avaliacoes/' + b.closest('.aval').dataset.id + '/visivel', {visivel: b.dataset.vis === '1'}).then(function(){ toast(b.dataset.vis === '1' ? 'Já aparece no site.' : 'Escondida do site.'); vAvaliacoes(c); }, function(){ b.disabled = false; toast('Não deu. Tenta outra vez.'); }); }); });
+    $$('[data-apagar]', c).forEach(function(b){ b.addEventListener('click', function(){ b.disabled = true;
+      api('POST', '/admin/convites/' + b.dataset.apagar + '/apagar', {}).then(function(){ toast('Link apagado. Já não funciona.'); vAvaliacoes(c); }, function(){ b.disabled = false; }); }); });
+    $('#fGoogle').addEventListener('submit', function(e){ e.preventDefault(); var b = $('#bG'), er = $('#eG'); b.disabled = true; er.hidden = true;
+      api('POST', '/admin/config/google', {url: $('#gUrl').value.trim()}).then(function(){ toast('Link guardado.'); if (cfg) cfg.google = $('#gUrl').value.trim(); b.disabled = false; }, function(x){ er.textContent = erroCampos(x); er.hidden = false; b.disabled = false; }); });
+  }, function(){ c.innerHTML = '<p class="vazio">Não deu para carregar. Toca em «Atualizar».</p>'; });
+}
+
+/* =================== NÚMEROS =================== */
+var periodo = 30;
+var NOMES_ACAO = {whatsapp: 'WhatsApp', telefone: 'Chamadas', tel: 'Chamadas', email: 'Email', instagram: 'Instagram', mapa: 'Mapa', marcacao: 'Pedidos de marcação', vale: 'Vale de oferta'};
+function n0(v){ return v == null ? '—' : new Intl.NumberFormat('pt-PT').format(v); }
+function vNumeros(c){
+  c.innerHTML = '<div class="chips" role="group" aria-label="Período" style="margin-top:16px">' + [7, 30, 90].map(function(d){ return '<button type="button" data-p="' + d + '" aria-pressed="' + (d === periodo) + '">' + d + ' dias</button>'; }).join('') + '</div><div id="num"><p class="vazio">A carregar…</p></div>';
+  $$('[data-p]', c).forEach(function(b){ b.addEventListener('click', function(){ periodo = +b.dataset.p; vNumeros(c); }); });
+  api('GET', '/admin/numeros?dias=' + periodo).then(function(j){
+    var n = j.negocio, s = j.site && !j.site.erro ? j.site : null, r = s && s.resumo ? s.resumo : {};
+    var ocup = n.proximos.horas ? Math.round(n.proximos.marcadas / n.proximos.horas * 100) : 0;
+    var html = '<div class="kpis">' +
+      (s ? '<div class="kpi"><b>' + n0(r.visitantes) + '</b><span>pessoas no site</span></div>' : '') +
+      '<div class="kpi"><b>' + n0(n.pedidos_site) + '</b><span>pedidos pelo site</span></div>' +
+      '<div class="kpi"><b>' + n0(n.concluidas) + '</b><span>piercings feitos</span></div>' +
+      '<div class="kpi"><b>' + eur.format(n.faturacao).replace(/,00(?=\s)/, '') + '</b><span>faturação estimada (feitos)</span></div>' +
+      '<div class="kpi"><b>' + ocup + ' %</b><span>agenda cheia nos próximos 30 dias (' + n.proximos.marcadas + ' de ' + n.proximos.horas + ' horas)</span></div>' +
+      '<div class="kpi"><b>' + (n.avaliacoes.media ? String(n.avaliacoes.media).replace('.', ',') + ' ★' : '—') + '</b><span>' + (n.avaliacoes.n ? 'média de ' + n.avaliacoes.n + (n.avaliacoes.n === 1 ? ' avaliação' : ' avaliações') : 'ainda sem avaliações') + '</span></div></div>';
+    var sem = n.semanas, maxS = Math.max.apply(null, sem.map(function(x){ return x.n; }).concat(1));
+    html += '<div class="painel"><h2>Piercings por semana</h2><p class="ajuda-t" style="margin:0">Marcações confirmadas e feitas, nas últimas 8 semanas.</p><div class="grafico" role="img" aria-label="' + sem.map(function(x){ return x.n; }).join(', ') + '">' + sem.map(function(x){ return '<i class="' + (x.n ? '' : 'zero') + '" style="height:' + Math.max(2, x.n / maxS * 100) + '%" title="' + x.n + '"></i>'; }).join('') + '</div><div class="eixo"><span>há 8 semanas</span><span>esta semana</span></div></div>';
+    if (s){
+      var serie = s.serie || [], maxV = Math.max.apply(null, serie.map(function(x){ return x.visitantes; }).concat(1));
+      html += '<div class="painel"><h2>Pessoas no site por dia</h2><p class="ajuda-t" style="margin:0">' + n0(r.visitas) + ' visitas, ' + (r.tempo_medio_s != null ? r.tempo_medio_s + ' s em média' : 'sem tempo médio') + '. Cada pessoa conta uma vez por dia (sem cookies).</p><div class="grafico" role="img" aria-label="Pessoas por dia">' + serie.map(function(x){ return '<i class="' + (x.visitantes ? '' : 'zero') + '" style="height:' + Math.max(2, x.visitantes / maxV * 100) + '%" title="' + x.quando + ': ' + x.visitantes + '"></i>'; }).join('') + '</div><div class="eixo"><span>' + (serie[0] ? fmtCurto.format(dParse(serie[0].quando)) : '') + '</span><span>hoje</span></div></div>';
+      var fontes = (s.fontes || []).slice(0, 6), maxF = Math.max.apply(null, fontes.map(function(x){ return x.visitas; }).concat(1));
+      html += '<div class="painel"><h2>De onde vêm</h2>' + (fontes.length ? '<div class="barras-h">' + fontes.map(function(x){ return '<div><span>' + esc(x.fonte === 'Direto' ? 'Direto (link escrito ou guardado)' : x.fonte) + '</span><b>' + n0(x.visitas) + '</b><i style="--w:' + (x.visitas / maxF * 100) + '%"></i></div>'; }).join('') + '</div>' : '<p class="ajuda-t" style="margin:0">Ainda sem visitas neste período.</p>') + '</div>';
+      var ac = (s.acoes || []).filter(function(x){ return x.n; });
+      html += '<div class="painel"><h2>O que tocam</h2>' + (ac.length ? '<div class="barras-h">' + ac.map(function(x){ return '<div><span>' + esc(NOMES_ACAO[x.nome] || x.nome) + '</span><b>' + n0(x.n) + '</b></div>'; }).join('') + '</div>' : '<p class="ajuda-t" style="margin:0">Ninguém tocou ainda em WhatsApp, telefone ou Instagram neste período.</p>') + '</div>';
+    } else html += '<div class="painel"><h2>Pessoas no site</h2><p class="ajuda-t" style="margin:0">As visitas do site não estão disponíveis agora. Os números da agenda acima estão certos.</p></div>';
+    var top = n.top, maxT = Math.max.apply(null, top.map(function(x){ return x.n; }).concat(1));
+    html += '<div class="painel"><h2>Mais pedidos</h2>' + (top.length ? '<div class="barras-h">' + top.map(function(x){ return '<div><span>' + esc(x.nome) + '</span><b>' + x.n + '</b><i style="--w:' + (x.n / maxT * 100) + '%"></i></div>'; }).join('') + '</div>' : '<p class="ajuda-t" style="margin:0">Ainda sem marcações neste período.</p>') + '</div>';
+    var e = n.estados;
+    html += '<div class="painel"><h2>Como acabaram as marcações</h2><div class="barras-h"><div><span>Feitas</span><b>' + e.concluida + '</b></div><div><span>Confirmadas (ainda por fazer)</span><b>' + e.confirmada + '</b></div><div><span>À espera de resposta</span><b>' + e.pendente + '</b></div><div><span>Faltou</span><b>' + e.faltou + '</b></div><div><span>Canceladas</span><b>' + e.cancelada + '</b></div><div><span>Recusadas</span><b>' + e.recusada + '</b></div></div>' +
+      '<p class="nota-c">Conta as marcações com data nos últimos ' + periodo + ' dias. A faturação é estimada a partir do preço de cada marcação feita.</p></div>';
+    $('#num').innerHTML = html;
+  }, function(){ $('#num').innerHTML = '<p class="vazio">Não deu para carregar. Toca em «Atualizar».</p>'; });
 }
 
 /* ---------- arranque ---------- */

@@ -142,6 +142,22 @@ def preco(x):
     return ('desde ' if x['z'] == 'orelha' else '') + f'{x["p"]} €'
 
 
+def preco_h(x):
+    """Preço com marca para o site o atualizar sozinho com o que o Adri muda no painel (/api/site)."""
+    return f'<span data-p="{x["id"]}" data-z="{x["z"]}">{e(preco(x))}</span>'
+
+
+# Atualiza preços, horário e morada com o que o Adri mudou no painel (a página já vem com os valores de origem)
+VIVO = ("<script>(function(){try{fetch('/api/site').then(function(r){return r.ok?r.json():null}).then(function(d){if(!d)return;"
+        "var p=d.precos||{},q=function(s){return Array.prototype.slice.call(document.querySelectorAll(s))};"
+        "q('[data-p]').forEach(function(el){var v=p[el.getAttribute('data-p')];if(typeof v==='number')el.textContent=(el.getAttribute('data-z')==='orelha'?'desde ':'')+v+'\\u00a0€'});"
+        "var h=d.horario,l=d.local;if(h&&h.texto){q('[data-c=horario]').forEach(function(el){el.textContent=h.texto.charAt(0).toLowerCase()+h.texto.slice(1)});"
+        "q('[data-c=horario-frase]').forEach(function(el){el.textContent=h.texto})}"
+        "if(l){q('[data-c=morada]').forEach(function(el){el.textContent=l.nome+', '+l.rua+', '+l.cp+' '+l.cidade});"
+        "q('[data-c=local-nome]').forEach(function(el){el.textContent=l.nome});q('[data-c=morada-rua]').forEach(function(el){el.textContent=l.rua+', '+l.cp+' '+l.cidade})}"
+        "}).catch(function(){})}catch(e){}})();</script>")
+
+
 def caminho(x):
     return f'/piercing/{NOMES[x["id"]][1]}/'
 
@@ -226,9 +242,10 @@ def doc(titulo, descricao, url, ld, corpo, logo, rodape_links):
 <main class="w">
 {corpo}
 </main>
-<footer><div class="w"><p>AdriBodyPiercing, de Adriano Filho · {NAP} · <a href="tel:{TEL}">{TEL_TXT}</a> · aos sábados, das 10h às 17h30</p>
+<footer><div class="w"><p>AdriBodyPiercing, de Adriano Filho · <span data-c="morada">{NAP}</span> · <a href="tel:{TEL}">{TEL_TXT}</a> · <span data-c="horario">aos sábados, das 10h às 17h30</span></p>
 <p>{rodape_links}</p>
 <p><a href="/">Início</a> · <a href="/#precos">Preços</a> · <a href="/#perguntas">Perguntas</a> · <a href="https://www.instagram.com/adrifilhoo" rel="noopener">Instagram</a> · <a href="https://dinissousa.pt" rel="noopener">feito por dinissousa.pt</a></p></div></footer>
+{VIVO}
 </body></html>
 '''
 
@@ -269,14 +286,14 @@ def gerar():
             perg.append(('O daith ajuda nas enxaquecas?', 'Não há provas científicas de que ajude. Se o queres fazer, que seja por gostares dele, não para tratar enxaquecas: para isso, fala com o teu médico.'))
         comb = [por_id[c] for c in combina.get(x['id'], []) if c in por_id]
         img = imgs.get(x['img'], '').split('?')[0]
-        lead = (f'{e(nome)} com o Adri, no Kaos Tattoo (Porto): <strong>{e(pr)}</strong>, com a joia em titânio de implante, o soro e a revisão incluídos. '
+        lead = (f'{e(nome)} com o Adri, no Kaos Tattoo (Porto): <strong>{preco_h(x)}</strong>, com a joia em titânio de implante, o soro e a revisão incluídos. '
                 f'{e(d["onde"])} Feito com agulha americana de uso único, nunca pistola, aos sábados e uma pessoa de cada vez.')
         cuidados = ''.join(f'<li>{e(c)}</li>' for c in d['cuid'])
         corpo = f'''<nav class="mig" aria-label="Estás aqui"><a href="/">Início</a> › <a href="/piercing/">Piercings</a> › {e(nome)}</nav>
 <h1>{e(nome)} no Porto</h1>
 <p class="lead">{lead}</p>
 <div class="ficha">{f'<img src="{e(img)}" alt="{e(x["j"])}" width="110" height="110" loading="eager">' if img else ''}
-<div><p class="preco" style="margin:0 0 8px">{e(pr)}</p><dl><dt>Cicatriza em</dt><dd>{e(x["c"])}</dd><dt>Joia incluída</dt><dd>{e(x["j"])}</dd><dt>Também incluído</dt><dd>Soro e revisão às 4–8 semanas</dd></dl></div></div>
+<div><p class="preco" style="margin:0 0 8px">{preco_h(x)}</p><dl><dt>Cicatriza em</dt><dd>{e(x["c"])}</dd><dt>Joia incluída</dt><dd>{e(x["j"])}</dd><dt>Também incluído</dt><dd>Soro e revisão às 4–8 semanas</dd></dl></div></div>
 <p class="acoes"><a class="btn" href="/?p={quote(x["id"])}#marcar">Marcar este piercing</a><a class="btn sec" href="https://wa.me/351935837613?text={quote("Olá Adri! Tenho uma dúvida sobre o " + nome.lower() + ".")}" rel="noopener">Tirar uma dúvida no WhatsApp</a></p>
 <h2>Onde fica e o que pede</h2>
 <p>{e(d["onde"])} {e(d["nota"])}</p>
@@ -289,9 +306,9 @@ def gerar():
 <li>Não uses soro feito em casa, álcool, água oxigenada nem pomadas. Se a dor aumentar depois do terceiro dia, manda-me uma foto por WhatsApp. <a href="/#cuidados">Todos os cuidados</a>.</li></ul>
 <h2>Perguntas</h2>
 {"".join(f"<h3>{e(q)}</h3><p>{e(r)}</p>" for q, r in perg)}
-{('<h2>Fica bem com</h2><ul class="ch">' + "".join(f'<li><a href="{caminho(c)}">{e(NOMES[c["id"]][0])}<small>{e(preco(c))}</small></a></li>' for c in comb) + '</ul>') if comb else ''}
+{('<h2>Fica bem com</h2><ul class="ch">' + "".join(f'<li><a href="{caminho(c)}">{e(NOMES[c["id"]][0])}<small>{preco_h(c)}</small></a></li>' for c in comb) + '</ul>') if comb else ''}
 <h2>Onde</h2>
-<p>No <strong>Kaos Tattoo</strong>, Rua da Torrinha 202, 4050-610 Porto. Aos sábados, das 10h às 17h30, com marcação online. Telefone e WhatsApp: <a href="tel:{TEL}">{TEL_TXT}</a>. Pagas só no estúdio: MB WAY, Multibanco ou numerário.</p>
+<p>No <strong data-c="local-nome">Kaos Tattoo</strong>, <span data-c="morada-rua">Rua da Torrinha 202, 4050-610 Porto</span>. <span data-c="horario-frase">Aos sábados, das 10h às 17h30</span>, com marcação online. Telefone e WhatsApp: <a href="tel:{TEL}">{TEL_TXT}</a>. Pagas só no estúdio: MB WAY, Multibanco ou numerário.</p>
 <p class="acoes"><a class="btn" href="/?p={quote(x["id"])}#marcar">Marcar este piercing</a><a class="btn sec" href="{MAPA}" rel="noopener">Abrir no mapa</a></p>
 <h2>Fontes</h2>
 <ul class="l fontes">{"".join(f'<li><a href="{u}" rel="noopener">{e(t)}</a></li>' for t, u in fontes)}</ul>
@@ -310,7 +327,7 @@ def gerar():
     for z, zn in ZONA.items():
         zs = [x for x in itens if x['z'] == z]
         linhas += f'<h2>{zn}</h2><table class="tab"><thead><tr><th>Piercing</th><th>Cicatriza em</th><th class="n">Preço</th></tr></thead><tbody>' + ''.join(
-            f'<tr><td><a href="{caminho(x)}">{e(NOMES[x["id"]][0])}</a></td><td>{e(x["c"])}</td><td class="n">{e(preco(x))}</td></tr>' for x in zs) + '</tbody></table>'
+            f'<tr><td><a href="{caminho(x)}">{e(NOMES[x["id"]][0])}</a></td><td>{e(x["c"])}</td><td class="n">{preco_h(x)}</td></tr>' for x in zs) + '</tbody></table>'
     corpo = f'''<nav class="mig" aria-label="Estás aqui"><a href="/">Início</a> › Piercings</nav>
 <h1>Preços dos piercings no Porto</h1>
 <p class="lead">Todos os piercings do Adri, com a joia em titânio de implante, o soro e a revisão às 4–8 semanas já incluídos no preço. Na orelha, o preço pode subir conforme a complexidade e é sempre dito antes de começar.</p>
@@ -319,7 +336,7 @@ def gerar():
 <p style="margin-top:28px">A consulta de 15 minutos para escolher é grátis, e a troca da barra na revisão também. Não faço piercing de língua.</p>
 <p>«Cicatriza em» é o prazo com que conto no estúdio até o piercing estar pronto por dentro. Em cada página está também a referência médica, quando existe, e a fonte.</p>
 <h2>Onde</h2>
-<p>No <strong>Kaos Tattoo</strong>, Rua da Torrinha 202, 4050-610 Porto. Aos sábados, das 10h às 17h30, com marcação online. Telefone e WhatsApp: <a href="tel:{TEL}">{TEL_TXT}</a>.</p>
+<p>No <strong data-c="local-nome">Kaos Tattoo</strong>, <span data-c="morada-rua">Rua da Torrinha 202, 4050-610 Porto</span>. <span data-c="horario-frase">Aos sábados, das 10h às 17h30</span>, com marcação online. Telefone e WhatsApp: <a href="tel:{TEL}">{TEL_TXT}</a>.</p>
 <p class="acoes"><a class="btn" href="/#marcar">Marcar piercing</a><a class="btn sec" href="{MAPA}" rel="noopener">Abrir no mapa</a></p>'''
     ld = [NEGOCIO, {'@type': 'BreadcrumbList', 'itemListElement': [
         {'@type': 'ListItem', 'position': 1, 'name': 'Início', 'item': SITE + '/'}, {'@type': 'ListItem', 'position': 2, 'name': 'Piercings', 'item': SITE + '/piercing/'}]},

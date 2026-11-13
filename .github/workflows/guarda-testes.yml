@@ -58,6 +58,9 @@ jobs:
           python3 adri/paginas.py
           git diff --exit-code -- sites/adribodypiercing/piercing sites/adribodypiercing/sitemap.xml || { echo "Corre python3 adri/paginas.py e publica as páginas"; exit 1; }
 
+      - name: Agenda e painel do Adri (marcações, preços, horário, fotos, avaliações)
+        run: python3 adri/test_agenda.py
+
       - name: Instalar e verificar os tipos
         working-directory: app
         run: |

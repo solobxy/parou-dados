@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="no-referrer">
+<meta name="theme-color" content="#EFEAE3">
+<title>Avaliar o teu piercing — AdriBodyPiercing</title>
+<link rel="icon" href="/apple-touch-icon.png">
+<link rel="preload" href="/fonts/bricolage.woff" as="font" type="font/woff" crossorigin>
+<link rel="preload" href="/fonts/figtree.woff" as="font" type="font/woff" crossorigin>
+<style>
+@font-face{font-family:"Bricolage Grotesque";src:url(/fonts/bricolage.woff) format("woff");font-weight:200 800;font-display:swap}
+@font-face{font-family:"Figtree";src:url(/fonts/figtree.woff) format("woff");font-weight:300 900;font-display:swap}
+:root{--osso:#EFEAE3;--osso-2:#E5DFD6;--osso-3:#D6CFC4;--tinta:#1C1B1D;--sec:#55524E;--acento:#4258DE;--acento-2:#3449C9;--acento-tinta:#2F49D1;--erro:#B3261E;
+  --serif:"Bricolage Grotesque","Avenir Next","Segoe UI",system-ui,sans-serif;--sans:"Figtree","Avenir Next","Segoe UI",system-ui,sans-serif;--ease:cubic-bezier(.2,.7,.2,1)}
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;min-height:100svh;background:var(--osso);color:var(--tinta);font:400 17px/1.55 var(--sans);-webkit-font-smoothing:antialiased}
+a{color:inherit}
+button,input,textarea{font:inherit;color:inherit}
+button{cursor:pointer;touch-action:manipulation}
+:focus-visible{outline:3px solid var(--acento-tinta);outline-offset:3px;border-radius:6px}
+[hidden]{display:none!important}
+.topo{padding:calc(18px + env(safe-area-inset-top)) max(20px, env(safe-area-inset-left)) 0}
+.topo a{display:inline-block}
+.topo svg{height:34px;width:auto;color:var(--tinta)}
+main{width:min(100% - 40px, 560px);margin:clamp(28px,7vh,72px) auto calc(48px + env(safe-area-inset-bottom))}
+h1{font-family:var(--serif);font-weight:700;font-size:clamp(36px,9vw,54px);line-height:1;letter-spacing:-.035em;margin:0 0 14px;text-wrap:balance}
+.sub{color:var(--sec);margin:0 0 30px;font-size:18px}
+fieldset{border:0;margin:0 0 26px;padding:0;min-width:0}
+legend{font-weight:600;font-size:15px;margin-bottom:10px;padding:0}
+.estrelas{display:flex;gap:6px}
+.estrelas label{position:relative;width:56px;height:56px;display:grid;place-items:center;border-radius:14px;cursor:pointer;transition:transform .15s var(--ease)}
+.estrelas label:active{transform:scale(.92)}
+.estrelas input{position:absolute;opacity:0;inset:0;margin:0;cursor:pointer}
+.estrelas svg{width:44px;height:44px;fill:var(--osso-3);transition:fill .2s var(--ease),transform .2s var(--ease)}
+.estrelas label.on svg{fill:var(--acento)}
+.estrelas input:focus-visible+svg{outline:3px solid var(--acento-tinta);outline-offset:2px;border-radius:8px}
+.nota-txt{min-height:24px;margin:8px 0 0;font-weight:600;color:var(--acento-tinta)}
+.campo{display:grid;gap:8px;margin-bottom:20px}
+.campo label{font-weight:600;font-size:15px}
+.campo .ajuda{font-size:14px;color:var(--sec)}
+textarea,input[type=text]{width:100%;min-height:56px;padding:14px 16px;border-radius:14px;border:2px solid transparent;background:var(--osso-2);font-size:17px;transition:border-color .2s var(--ease),background-color .2s var(--ease)}
+textarea{min-height:130px;resize:vertical;line-height:1.5}
+textarea:focus,input[type=text]:focus{outline:none;border-color:var(--tinta);background:#fff}
+.conta{font-size:13px;color:var(--sec);text-align:right}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:10px;min-height:56px;padding:8px 30px;border:0;border-radius:999px;background:var(--acento);color:#fff;font-weight:600;font-size:16px;text-decoration:none;text-align:center;transition:transform .18s var(--ease),background-color .2s var(--ease)}
+.btn:hover{background:var(--acento-2)}
+.btn:active{transform:scale(.97)}
+.btn:disabled{opacity:.6;cursor:wait}
+.btn.claro{background:var(--osso-2);color:var(--tinta)}
+.btn.claro:hover{background:var(--osso-3)}
+.btn svg{width:20px;height:20px}
+.largo{width:100%}
+.aviso{font-size:14px;color:var(--sec);margin:14px 0 0}
+.erro{color:var(--erro);font-weight:600;font-size:15px;margin:0 0 14px}
+.acoes{display:flex;flex-wrap:wrap;gap:12px;margin-top:26px}
+.entra{animation:entra .5s var(--ease)}
+@keyframes entra{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.entra{animation:none}.estrelas svg,.btn,.estrelas label{transition:none}}
+@media (max-width:360px){.estrelas{gap:2px}.estrelas label{width:50px;height:50px}.estrelas svg{width:40px;height:40px}}
+</style>
+<script defer src="/_e.js" data-site="adribodypiercing"></script>
+</head>
+<body>
+<header class="topo"><a href="/" aria-label="AdriBodyPiercing, início"><svg xmlns="http://www.w3.org/2000/svg" viewBox="-200 -750 4031 840" aria-hidden="true" focusable="false"><g class="bar" fill="#4258DE"><rect x="-64" y="-245.0" width="776" height="66" rx="33.0"/><circle cx="-64" cy="-212" r="60"/><circle cx="712" cy="-212" r="60"/></g><g fill="currentColor" transform="translate(0.0 0.0) scale(1 -1)"><path transform="translate(0.0 0)" d="M5 0 230 660H418L641 0H485L325 542H320L160 0Z"/><path transform="translate(810.0 0)" d="M110 0V121H285Q329 121 364.5 140.5Q400 160 420.5 205.0Q441 250 441 328Q441 384 430.0 424.0Q419 464 397.0 489.5Q375 515 342.5 527.0Q310 539 266 539H110V660H260Q375 660 448.0 621.0Q521 582 556.0 509.5Q591 437 591 336Q591 258 573.5 201.0Q556 144 525.5 105.0Q495 66 456.5 43.0Q418 20 374.5 10.0Q331 0 289 0ZM43 0V660H187V0Z"/><path transform="translate(1442.0 0)" d="M43 0V660H306Q351 660 390.5 652.5Q430 645 462.0 629.5Q494 614 517.5 591.0Q541 568 553.5 536.5Q566 505 566 465Q566 435 556.0 407.0Q546 379 524.0 356.5Q502 334 466.0 319.5Q430 305 380 299V291Q442 288 476.5 266.5Q511 245 529.0 211.5Q547 178 557 136L592 0H433L408 126Q401 161 387.5 184.5Q374 208 349.0 220.0Q324 232 282 232H187V0ZM187 345H290Q352 345 384.5 368.5Q417 392 417 440Q417 492 386.5 517.5Q356 543 294 543H187Z"/><path transform="translate(2063.0 0)" d="M43 0V660H188V0Z"/></g><g fill="currentColor" transform="translate(2454.0 -405.0) scale(0.34 -0.34)"><path transform="translate(0.0 0)" d="M332 -12Q279 -12 239.0 11.0Q199 34 172 76L168 0H62V700H174V426Q200 467 240.0 489.5Q280 512 332 512Q400 512 450.5 479.5Q501 447 529.5 388.5Q558 330 558 250Q558 171 529.5 112.0Q501 53 450.5 20.5Q400 -12 332 -12ZM304 90Q344 90 375.0 110.5Q406 131 424.5 167.0Q443 203 443 250Q443 297 425.5 333.0Q408 369 377.0 389.0Q346 409 305 409Q267 409 237.0 389.0Q207 369 190.5 333.0Q174 297 174 250Q174 203 190.5 167.0Q207 131 236.5 110.5Q266 90 304 90Z"/><path transform="translate(602.0 0)" d="M292 -12Q217 -12 158.5 21.5Q100 55 67.0 114.0Q34 173 34 250Q34 327 66.5 386.0Q99 445 157.0 478.5Q215 512 290 512Q365 512 423.0 478.5Q481 445 513.5 386.0Q546 327 546 250Q546 173 514.0 114.0Q482 55 424.0 21.5Q366 -12 292 -12ZM292 91Q333 91 365.0 111.5Q397 132 415.0 167.5Q433 203 433 250Q433 297 414.5 332.5Q396 368 364.0 388.5Q332 409 290 409Q248 409 216.0 389.0Q184 369 166.0 333.0Q148 297 148 250Q148 203 166.5 167.5Q185 132 217.5 111.5Q250 91 292 91Z"/><path transform="translate(1193.0 0)" d="M260 -12Q192 -12 141.5 20.5Q91 53 62.5 112.0Q34 171 34 250Q34 330 62.5 388.5Q91 447 141.5 479.5Q192 512 260 512Q312 512 352.0 489.5Q392 467 418 426V700H529V0H423L419 76Q394 34 353.5 11.0Q313 -12 260 -12ZM288 90Q325 90 354.0 109.5Q383 129 399.5 163.5Q416 198 418 243V257Q416 302 399.5 336.5Q383 371 354.0 390.0Q325 409 287 409Q247 409 215.5 389.0Q184 369 166.5 333.0Q149 297 149 250Q149 203 167.0 167.0Q185 131 216.5 110.5Q248 90 288 90Z"/><path transform="translate(1794.0 0)" d="M141 -212Q117 -212 87.5 -203.0Q58 -194 31 -180L73 -89Q92 -98 108.0 -103.5Q124 -109 134 -109Q158 -109 174.5 -96.5Q191 -84 201 -60L228 4L6 500H128L280 132L429 500H551L319 -53Q298 -101 276.5 -137.0Q255 -173 223.0 -192.5Q191 -212 141 -212Z"/></g><g fill="currentColor" transform="translate(2454.0 -78.2) scale(0.34 -0.34)"><path transform="translate(0.0 0)" d="M67 -200V500H172L177 424Q203 466 243.5 489.0Q284 512 337 512Q405 512 455.5 479.5Q506 447 534.5 388.5Q563 330 563 250Q563 171 534.5 112.0Q506 53 455.5 20.5Q405 -12 337 -12Q285 -12 245.0 11.0Q205 34 179 74V-200ZM309 90Q349 90 380.0 110.5Q411 131 429.5 167.0Q448 203 448 250Q448 297 430.5 333.0Q413 369 382.0 389.0Q351 409 310 409Q272 409 242.0 389.0Q212 369 195.5 333.0Q179 297 179 250Q179 203 195.5 167.0Q212 131 241.5 110.5Q271 90 309 90Z"/><path transform="translate(607.0 0)" d="M69 0V500H180V0ZM125 595Q98 595 78.5 614.5Q59 634 59 661Q59 688 78.5 707.0Q98 726 125 726Q152 726 171.5 707.0Q191 688 191 661Q191 634 171.5 614.5Q152 595 125 595Z"/><path transform="translate(867.0 0)" d="M285 -12Q212 -12 155.5 21.5Q99 55 66.5 114.0Q34 173 34 250Q34 327 67.0 386.0Q100 445 157.5 478.5Q215 512 289 512Q356 512 410.0 477.5Q464 443 495.5 378.0Q527 313 527 223H150Q155 160 196.5 124.0Q238 88 295 88Q341 88 371.0 108.5Q401 129 418 162L517 120Q496 80 463.5 50.0Q431 20 386.5 4.0Q342 -12 285 -12ZM157 309H406Q403 345 385.0 368.5Q367 392 341.0 404.0Q315 416 286 416Q258 416 229.5 404.5Q201 393 181.0 369.0Q161 345 157 309Z"/><path transform="translate(1428.0 0)" d="M62 0V500H174V409Q204 456 252.0 479.0Q300 502 351 502V395Q305 395 264.5 382.5Q224 370 199.0 342.0Q174 314 174 268V0Z"/><path transform="translate(1801.0 0)" d="M296 -12Q219 -12 160.0 21.5Q101 55 67.5 114.0Q34 173 34 250Q34 327 67.5 386.0Q101 445 159.5 478.5Q218 512 294 512Q368 512 428.0 476.5Q488 441 517 375L413 335Q397 368 364.0 388.0Q331 408 289 408Q248 408 216.0 387.5Q184 367 166.0 331.5Q148 296 148 250Q148 204 166.5 168.5Q185 133 217.5 112.5Q250 92 291 92Q333 92 366.0 113.5Q399 135 415 172L519 132Q490 64 430.5 26.0Q371 -12 296 -12Z"/><path transform="translate(2355.0 0)" d="M69 0V500H180V0ZM125 595Q98 595 78.5 614.5Q59 634 59 661Q59 688 78.5 707.0Q98 726 125 726Q152 726 171.5 707.0Q191 688 191 661Q191 634 171.5 614.5Q152 595 125 595Z"/><path transform="translate(2615.0 0)" d="M62 0V500H167L172 429Q196 469 234.5 490.5Q273 512 323 512Q383 512 425.5 488.0Q468 464 490.5 413.5Q513 363 513 282V0H401V256Q401 316 387.5 348.5Q374 381 349.5 394.0Q325 407 292 407Q236 408 205.0 370.0Q174 332 174 261V0Z"/><path transform="translate(3189.0 0)" d="M277 -213Q224 -213 181.5 -204.0Q139 -195 110.0 -183.0Q81 -171 65 -160L108 -70Q122 -77 145.5 -87.5Q169 -98 201.0 -106.0Q233 -114 273 -114Q316 -114 350.0 -96.5Q384 -79 403.0 -43.0Q422 -7 422 49V99Q396 57 354.5 33.5Q313 10 260 10Q192 10 141.5 41.0Q91 72 62.5 127.5Q34 183 34 256Q34 334 62.5 391.0Q91 448 141.5 480.0Q192 512 260 512Q313 512 354.5 488.0Q396 464 422 419V500H534V52Q534 -33 502.0 -92.5Q470 -152 412.0 -182.5Q354 -213 277 -213ZM291 105Q329 105 357.5 125.0Q386 145 402.0 179.5Q418 214 418 259Q418 305 402.0 339.5Q386 374 357.0 393.5Q328 413 290 413Q250 413 219.5 393.5Q189 374 171.5 339.5Q154 305 154 259Q154 214 171.5 179.5Q189 145 220.0 125.0Q251 105 291 105Z"/></g></svg></a></header>
+<main>
+  <section id="vCarregar" aria-live="polite"><p class="sub">A abrir o teu link…</p></section>
+
+  <section id="vErro" hidden>
+    <h1 id="eTitulo">Este link já não dá.</h1>
+    <p class="sub" id="eTexto"></p>
+    <div class="acoes"><a class="btn" id="eWa" href="https://wa.me/351935837613" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm0 18.2a8.2 8.2 0 0 1-4.2-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2z"/></svg>Falar com o Adri</a><a class="btn claro" href="/">Ir para o site</a></div>
+  </section>
+
+  <section id="vForm" hidden>
+    <h1 id="fTitulo">Como correu?</h1>
+    <p class="sub" id="fSub">Demora um minuto e ajuda quem ainda está com dúvidas.</p>
+    <form id="form" novalidate>
+      <fieldset>
+        <legend>A tua nota</legend>
+        <div class="estrelas" id="estrelas"></div>
+        <p class="nota-txt" id="notaTxt" aria-live="polite"></p>
+      </fieldset>
+      <div class="campo">
+        <label for="texto">Conta como foi <span style="font-weight:400;color:var(--sec)">(opcional)</span></label>
+        <textarea id="texto" maxlength="600" placeholder="Ex.: Fiquei nervosa, mas explicou tudo com calma e quase não doeu."></textarea>
+        <span class="conta" id="conta" aria-live="polite">0 / 600</span>
+      </div>
+      <div class="campo">
+        <label for="nome">O teu nome no site</label>
+        <input type="text" id="nome" maxlength="40" autocomplete="given-name" placeholder="Ex.: Rita">
+        <span class="ajuda">Podes pôr só o primeiro nome. Se deixares em branco, aparece «Cliente».</span>
+      </div>
+      <p class="erro" id="fErro" role="alert" hidden></p>
+      <button class="btn largo" id="fEnviar">Publicar avaliação</button>
+      <p class="aviso">A tua avaliação aparece no site do AdriBodyPiercing com este nome, a nota e o mês. Para a apagares, pede ao Adri.</p>
+    </form>
+  </section>
+
+  <section id="vObrigado" hidden>
+    <h1>Obrigado!</h1>
+    <p class="sub">A tua avaliação já está no site.</p>
+    <div id="oGoogle" hidden>
+      <p>Se puderes, deixa a mesma avaliação no Google. Ajuda mais pessoas a encontrar o Adri.</p>
+      <div class="acoes"><a class="btn" id="oGoogleBtn" target="_blank" rel="noopener">Avaliar no Google</a></div>
+    </div>
+    <div class="acoes"><a class="btn claro" href="/#avaliacoes">Ver no site</a></div>
+  </section>
+</main>
+<script>
+(function(){
+'use strict';
+var $ = function(s){ return document.querySelector(s); };
+var token = (location.hash || '').slice(1);
+var NOTAS = ['', 'Correu mal', 'Podia ter sido melhor', 'Correu bem', 'Muito bom', 'Excelente'];
+var STAR = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.6l2.9 6.1 6.6.8-4.9 4.6 1.3 6.6L12 17.4l-5.9 3.3 1.3-6.6-4.9-4.6 6.6-.8z"/></svg>';
+var nota = 0;
+function mostrar(id){ ['#vCarregar', '#vErro', '#vForm', '#vObrigado'].forEach(function(v){ $(v).hidden = v !== id; }); $(id).classList.add('entra'); }
+function erro(tipo){
+  var t = {usado: ['Este link já foi usado.', 'Cada link só serve para uma avaliação. Se ainda não avaliaste, pede um novo ao Adri.'],
+           expirado: ['Este link expirou.', 'Os links valem 90 dias. Pede um novo ao Adri, se ainda quiseres avaliar.'],
+           nao_existe: ['Não encontrei este link.', 'Confirma que abriste o link completo que o Adri te mandou.'],
+           limite: ['Muitas tentativas.', 'Espera uns minutos e abre o link outra vez.'],
+           rede: ['Sem ligação.', 'Verifica a internet e abre o link outra vez.']}[tipo] || ['Algo correu mal.', 'Abre o link outra vez daqui a pouco.'];
+  $('#eTitulo').textContent = t[0]; $('#eTexto').textContent = t[1];
+  $('#eWa').href = 'https://wa.me/351935837613?text=' + encodeURIComponent('Olá Adri! O link para avaliar o meu piercing não está a dar. Podes mandar outro?');
+  mostrar('#vErro');
+}
+function pedir(url, corpo){
+  return fetch(url, {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(corpo), cache: 'no-store'})
+    .then(function(r){ return r.json().catch(function(){ return {}; }).then(function(j){ if (!r.ok) throw {s: r.status, j: j}; return j; }); });
+}
+function tipoErro(x){ return !x || !x.s ? 'rede' : x.s === 429 ? 'limite' : (x.j && x.j.erro) || 'outro'; }
+/* estrelas: botões de opção (funcionam com o teclado e o leitor de ecrã) com o desenho de uma estrela */
+var box = $('#estrelas');
+for (var i = 1; i <= 5; i++){
+  var l = document.createElement('label');
+  l.innerHTML = '<input type="radio" name="nota" value="' + i + '" aria-label="' + i + (i === 1 ? ' estrela' : ' estrelas') + ', ' + NOTAS[i].toLowerCase() + '">' + STAR;
+  box.appendChild(l);
+}
+function pintar(n){ Array.prototype.forEach.call(box.children, function(l, k){ l.classList.toggle('on', k < n); }); }
+box.addEventListener('change', function(e){ nota = +e.target.value; pintar(nota); $('#notaTxt').textContent = NOTAS[nota]; $('#fErro').hidden = true; });
+box.addEventListener('mouseover', function(e){ var l = e.target.closest('label'); if (l) pintar(Array.prototype.indexOf.call(box.children, l) + 1); });
+box.addEventListener('mouseleave', function(){ pintar(nota); });
+$('#texto').addEventListener('input', function(){ $('#conta').textContent = this.value.length + ' / 600'; });
+
+if (!/^[A-Za-z0-9_-]{20,40}$/.test(token)) erro('nao_existe');
+else pedir('/api/convite', {token: token}).then(function(j){
+  if (j.nome){ $('#fTitulo').textContent = 'Como correu, ' + j.nome + '?'; $('#nome').value = j.nome; }
+  if (j.piercing) $('#fSub').textContent = (j.piercing.indexOf(',') >= 0 ? 'Os teus piercings: ' : 'O teu piercing: ') + j.piercing.toLowerCase() + '. Demora um minuto e ajuda quem ainda está com dúvidas.';
+  mostrar('#vForm');
+}, function(x){ erro(tipoErro(x)); });
+
+$('#form').addEventListener('submit', function(e){
+  e.preventDefault();
+  var er = $('#fErro'), b = $('#fEnviar');
+  if (!nota){ er.textContent = 'Escolhe de 1 a 5 estrelas.'; er.hidden = false; box.querySelector('input').focus(); return; }
+  er.hidden = true; b.disabled = true; b.textContent = 'A publicar…';
+  pedir('/api/avaliacoes', {token: token, estrelas: nota, texto: $('#texto').value, nome: $('#nome').value}).then(function(j){
+    if (j.google && /^https:\/\//.test(j.google)){ $('#oGoogleBtn').href = j.google; $('#oGoogle').hidden = false; }
+    try { history.replaceState(null, '', location.pathname); } catch (e2) {}
+    mostrar('#vObrigado'); window.scrollTo(0, 0);
+  }, function(x){
+    b.disabled = false; b.textContent = 'Publicar avaliação';
+    var cs = x && x.j && x.j.campos;
+    if (cs){ er.textContent = Object.keys(cs).map(function(k){ return cs[k]; }).join(' '); er.hidden = false; return; }
+    var t = tipoErro(x);
+    if (t === 'usado' || t === 'expirado' || t === 'nao_existe') return erro(t);
+    er.textContent = t === 'rede' ? 'Sem ligação. Tenta outra vez.' : t === 'limite' ? 'Muitas tentativas. Espera uns minutos.' : 'Não deu para publicar. Tenta outra vez.'; er.hidden = false;
+  });
+});
+})();
+</script>
+</body>
+</html>

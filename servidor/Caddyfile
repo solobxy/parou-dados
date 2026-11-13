@@ -439,7 +439,20 @@ www.jaesta.pt {
 		Cache-Control "no-store"
 		X-Robots-Tag "noindex, nofollow"
 	}
-	# Agenda de marcações (adri/agenda.py)
+	# Página onde o cliente avalia com o link de uso único: fora dos motores de busca
+	@avaliar path /avaliar /avaliar/*
+	header @avaliar {
+		Cache-Control "no-cache"
+		X-Robots-Tag "noindex, nofollow"
+	}
+	# Fotos que o Adriano envia pelo painel (até 3 MB; a agenda confirma a sessão, a origem e o formato)
+	handle /api/admin/fotos/* {
+		request_body {
+			max_size 4MB
+		}
+		reverse_proxy 127.0.0.1:3120
+	}
+	# Agenda de marcações e painel (adri/agenda.py)
 	handle /api/* {
 		request_body {
 			max_size 8KB
