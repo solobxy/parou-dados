@@ -40,12 +40,14 @@ jobs:
           mkdir -p res
           QUER=$(sha256sum sites/webase/index.html | cut -c1-64)
           for i in $(seq 1 45); do
-            TEM=$(curl -s -m 20 "$U/" | sha256sum | cut -c1-64)
-            API=$(curl -s -o /dev/null -w '%{http_code}' -m 20 "$U/api/publico/estado")
+            TEM=$( { curl -s -m 20 "$U/" || true; } | sha256sum | cut -c1-64)
+            API=$(curl -s -o /dev/null -w '%{http_code}' -m 20 "$U/api/publico/estado" || true)
             echo "tentativa $i: site $([ "$TEM" = "$QUER" ] && echo 'igual ao repositório' || echo diferente), API $API" | tee -a res/espera.txt
             if [ "$TEM" = "$QUER" ] && [ "$API" = 200 ]; then break; fi
             sleep 20
           done
+          echo "--- estado do servidor:" >> res/espera.txt
+          curl -s -m 30 "https://2-31-13-85.sslip.io/_estado-servidor" | grep -viE 'chave|hash' >> res/espera.txt || true
 
       - name: Testes da API
         run: timeout 300 python webase/testes/teste_api.py 2>&1 | tail -30 | tee res/teste_api.txt || true
