@@ -3,7 +3,7 @@
 
 Uso: python3 adri/test_agenda.py
 Arranca o servidor numa porta livre e testa: marcações, preços, horário e local dinâmicos, /api/site,
-fotos (envio, recusa de ficheiros falsos, troca e reposição), avaliações com link de uso único e números.
+fotos (envio, recusa de ficheiros falsos, troca e reposição), avaliações com link de uso único, vales de oferta e números.
 """
 import datetime as dt, json, os, socket, subprocess, sys, tempfile, time, urllib.error, urllib.request
 
@@ -194,12 +194,59 @@ try:
     ok('[avaliações] apagar um link por usar', pedir('POST', '/api/admin/convites/%d/apagar' % cv3['id'], {})[0] == 200 and pedir('POST', '/api/convite', {'token': cv3['token']}, com_cookie=False)[0] == 404)
     ok('[mensagens] modelo «avaliacao» aceite no histórico', pedir('POST', '/api/admin/marcacoes/%d/acao' % mid, {'acao': 'mensagem', 'tipo': 'avaliacao', 'canal': 'whatsapp'})[0] == 200)
 
+    # ---------- vales de oferta ----------
+    ok('[vales] sem sessão não se criam nem verificam', pedir('POST', '/api/admin/vales', {'valor': 50}, com_cookie=False)[0] == 401
+       and pedir('GET', '/api/admin/vales/verificar?codigo=ABCD-EFGH', com_cookie=False)[0] == 401)
+    ok('[vales] recusa valor em texto ou fora do intervalo', pedir('POST', '/api/admin/vales', {'valor': '50'})[0] == 422
+       and pedir('POST', '/api/admin/vales', {'valor': 0})[0] == 422 and pedir('POST', '/api/admin/vales', {'valor': 5000})[0] == 422)
+    ok('[vales] recusa validade e telemóvel inválidos', pedir('POST', '/api/admin/vales', {'valor': 50, 'meses': 7})[0] == 422
+       and pedir('POST', '/api/admin/vales', {'valor': 50, 'tel': '12345'})[0] == 422)
+    st, v1, _ = pedir('POST', '/api/admin/vales', {'valor': 50, 'para': 'Maria', 'de': 'João Silva', 'tel': '912 345 678', 'mensagem': 'Feliz\nNatal <3', 'meses': 6})
+    hoje = dt.date.today()
+    m6 = hoje.month - 1 + 6
+    exp6 = dt.date(hoje.year + m6 // 12, m6 % 12 + 1, min(hoje.day, 28 if m6 % 12 + 1 == 2 else 30 if m6 % 12 + 1 in (4, 6, 9, 11) else 31))
+    ok('[vales] cria com código de 8 letras e números sem 0, O, 1, I nem L', st == 201 and len(v1['codigo']) == 8 and not set(v1['codigo']) & set('01OIL')
+       and v1['codigo_f'] == v1['codigo'][:4] + '-' + v1['codigo'][4:], v1)
+    ok('[vales] guarda nomes, telemóvel limpo, mensagem numa linha e validade de 6 meses',
+       v1['para'] == 'Maria' and v1['de'] == 'João Silva' and v1['tel'] == '912345678' and v1['mensagem'] == 'Feliz Natal <3'
+       and v1['expira'] == exp6.isoformat() and v1['situacao'] == 'valido', v1)
+    cods = {pedir('POST', '/api/admin/vales', {'valor': 30})[1]['codigo'] for _ in range(20)}
+    ok('[vales] códigos diferentes de cada vez', len(cods) == 20)
+    st, ver, _ = pedir('GET', '/api/admin/vales/verificar?codigo=' + v1['codigo'][:4].lower() + '%20-%20' + v1['codigo'][4:].lower())
+    ok('[vales] verificar aceita minúsculas, espaços e traço', st == 200 and ver['situacao'] == 'valido' and ver['vale']['id'] == v1['id'], ver)
+    ok('[vales] código que não existe', pedir('GET', '/api/admin/vales/verificar?codigo=2345-6789')[1]['situacao'] == 'nao_existe')
+    ok('[vales] código mal escrito', pedir('GET', '/api/admin/vales/verificar?codigo=OI')[1]['situacao'] == 'invalido')
+    st, u1, _ = pedir('POST', '/api/admin/vales/%d/usar' % v1['id'], {'nota': 'Hélix'})
+    ok('[vales] marcar como usado', st == 200 and u1['situacao'] == 'usado' and u1['nota'] == 'Hélix' and u1['usado'], u1)
+    st, u2, _ = pedir('POST', '/api/admin/vales/%d/usar' % v1['id'], {})
+    ok('[vales] não se usa duas vezes', st == 409 and u2.get('situacao') == 'usado', (st, u2))
+    ok('[vales] verificar mostra que já foi usado', pedir('GET', '/api/admin/vales/verificar?codigo=' + v1['codigo'])[1]['situacao'] == 'usado')
+    st, r1v, _ = pedir('POST', '/api/admin/vales/%d/repor' % v1['id'], {})
+    ok('[vales] desfazer volta a válido', st == 200 and r1v['situacao'] == 'valido' and not r1v['usado'], r1v)
+    # vale expirado (data mexida na base, como se tivesse passado o prazo)
+    import sqlite3
+    db = sqlite3.connect(env['AG_DB'])
+    db.execute('UPDATE vales SET expira=? WHERE id=?', ((hoje - dt.timedelta(days=1)).isoformat(), v1['id']))
+    db.commit()
+    db.close()
+    ok('[vales] expirado aparece como expirado', pedir('GET', '/api/admin/vales/verificar?codigo=' + v1['codigo'])[1]['situacao'] == 'expirado')
+    st, e1, _ = pedir('POST', '/api/admin/vales/%d/usar' % v1['id'], {})
+    ok('[vales] expirado não se usa sem confirmar', st == 409 and e1.get('situacao') == 'expirado', (st, e1))
+    ok('[vales] mas pode usar-se se o Adri quiser', pedir('POST', '/api/admin/vales/%d/usar' % v1['id'], {'forcar': True})[1]['situacao'] == 'usado')
+    st, lv, _ = pedir('GET', '/api/admin/vales')
+    ok('[vales] lista com todos, mais recentes primeiro', st == 200 and len(lv['vales']) == 21 and lv['vales'][-1]['id'] == v1['id'], len(lv.get('vales', [])))
+    ok('[vales] apagar', pedir('POST', '/api/admin/vales/%d/apagar' % v1['id'], {})[0] == 200
+       and pedir('GET', '/api/admin/vales/verificar?codigo=' + v1['codigo'])[1]['situacao'] == 'nao_existe')
+    ok('[vales] usar um que não existe dá 404', pedir('POST', '/api/admin/vales/999999/usar', {})[0] == 404)
+    ok('[mensagens] modelo «vale» pode ser editado', pedir('POST', '/api/admin/modelos', {'modelos': {'vale': 'Olá {nome}! Código {codigo}.'}})[0] == 200)
+
     # ---------- números ----------
     st, num, _ = pedir('GET', '/api/admin/numeros?dias=30')
     neg = num['negocio']
     ok('[números] negócio com estados, pedidos do site, ocupação e avaliações', st == 200 and neg['pedidos_site'] == 1 and neg['avaliacoes']['n'] == 2 and neg['proximos']['marcadas'] == 1 and neg['proximos']['horas'] > 0 and len(neg['semanas']) == 8, neg)
     ok('[números] visitas devolvem dados ou um erro claro (sem rede aqui)', isinstance(num['site'], (dict, list)), num['site'])
     ok('[números] dias fora do intervalo ficam entre 7 e 365', pedir('GET', '/api/admin/numeros?dias=9999')[1]['dias'] == 365)
+    ok('[números] vales vendidos no período e valor por usar', neg['vales']['n'] == 20 and neg['vales']['valor'] == 600 and neg['vales']['por_usar'] == 600, neg.get('vales'))
 finally:
     srv.terminate()
     srv.wait(5)

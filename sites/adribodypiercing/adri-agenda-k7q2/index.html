@@ -55,7 +55,7 @@ textarea{min-height:80px;resize:vertical}
 .tabs button[aria-selected="true"]{background:var(--osso);color:var(--tinta)}
 .tabs .n{min-width:22px;height:22px;padding:0 6px;border-radius:999px;background:var(--acento);color:#fff;font-size:13px;display:inline-grid;place-items:center}
 /* secções (Agenda, Site, Números) */
-.secoes{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;background:var(--noite-2);padding:4px;border-radius:999px;margin-bottom:10px}
+.secoes{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;background:var(--noite-2);padding:4px;border-radius:999px;margin-bottom:10px}
 .secoes button{min-height:42px;border:0;border-radius:999px;background:transparent;color:var(--osso);font-weight:600;font-size:15px;display:inline-flex;align-items:center;justify-content:center;gap:6px}
 .secoes button[aria-pressed="true"]{background:var(--osso);color:var(--tinta)}
 .secoes .n{min-width:20px;height:20px;padding:0 6px;border-radius:999px;background:var(--acento);color:#fff;font-size:12px;display:inline-grid;place-items:center}
@@ -158,8 +158,8 @@ details.hist ul{margin:6px 0 0;padding-left:18px}
 .chips button{min-height:40px;padding:0 14px;border-radius:999px;border:0;background:var(--noite-3);color:var(--osso);font-weight:600;font-size:14px}
 .chips button[aria-pressed="true"]{background:var(--osso);color:var(--tinta)}
 .msg-txt{min-height:170px;line-height:1.45}
-.canais{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}
-.canais .btn{width:100%}
+.canais{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:12px}
+.canais .btn{width:100%;padding:0 12px;white-space:normal;text-align:center;line-height:1.2}
 .canais .btn[aria-disabled="true"]{opacity:.4;pointer-events:none}
 .nota-c{color:var(--sec);font-size:13px;margin:10px 0 0}
 .lembra{margin-top:12px;padding:12px;border-radius:14px;background:#2a2316;display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between}
@@ -178,6 +178,36 @@ dialog{border:0;padding:0;background:transparent;color:var(--osso);width:min(520
 dialog::backdrop{background:rgba(0,0,0,.7)}
 .dlg{background:var(--noite-2);border-radius:22px;padding:20px;max-height:calc(100dvh - 20px);overflow:auto}
 .dlg h2{font-size:22px;margin-bottom:12px}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+@media (max-width:380px){.secoes button{font-size:14px;gap:4px}.secoes .n{min-width:18px;height:18px;font-size:11px;padding:0 5px}}
+/* vales de oferta */
+.campo .lbl,.lbl-b{display:block;font-weight:600;font-size:14px}
+.lbl-b{margin:14px 0 6px}
+.ver-linha{display:flex;flex-wrap:wrap;gap:8px}
+.ver-linha input{flex:1 1 200px;min-width:0}
+.ver-linha .btn{flex:1 0 auto}
+.nw{white-space:nowrap}
+.cod-in{font-weight:700;font-size:22px;letter-spacing:.14em;text-transform:uppercase;text-align:center;font-variant-numeric:tabular-nums}
+.cod-in::placeholder{letter-spacing:.14em;color:#6f6c72}
+.res{margin-top:12px;padding:14px 16px;border-radius:16px;animation:entra .3s var(--ease)}
+.res .t{display:block;font-family:var(--serif);font-weight:650;font-size:21px;margin-bottom:2px}
+.res p{margin:2px 0 0}
+.res .acoes{margin-top:12px}
+.res.ok{background:#1f2a1f}.res.ok .t{color:#9fe0b0}
+.res.usado{background:#2a2316}.res.usado .t{color:#f1c87a}
+.res.mal{background:#3a1d1a;color:#ffd9d2}
+.vl{padding:16px 0;border-top:1px solid var(--noite-3)}
+.vl:first-of-type{border-top:0}
+.vl-cab{display:flex;align-items:baseline;justify-content:space-between;gap:12px}
+.vl-cod{font-weight:700;font-size:18px;letter-spacing:.1em;font-variant-numeric:tabular-nums}
+.vl-valor{font-family:var(--serif);font-weight:650;font-size:22px;white-space:nowrap}
+.vl .mini{color:var(--sec);font-size:14px;margin-top:2px;overflow-wrap:anywhere}
+.vl .acoes{margin-top:10px}
+.pill.valido i{background:var(--verde)}.pill.usado i{background:var(--sec)}.pill.expirado i{background:var(--verm)}
+.vale-img{border-radius:16px;overflow:hidden;background:var(--osso);aspect-ratio:4/5;max-height:50vh;margin:0 auto 4px;display:grid;place-items:center}
+.vale-img img{width:100%;height:100%;object-fit:contain;display:block}
+.vale-img .vazio{color:var(--sec-c);padding:0}
+.canais .larga{grid-column:1/-1}
 .toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom));transform:translate(-50%,20px);opacity:0;background:var(--osso);color:var(--tinta);padding:12px 18px;border-radius:999px;font-weight:600;transition:.3s var(--ease);z-index:50;pointer-events:none;max-width:calc(100vw - 32px);text-align:center}
 .toast.on{opacity:1;transform:translate(-50%,0)}
 </style>
@@ -199,6 +229,7 @@ dialog::backdrop{background:rgba(0,0,0,.7)}
     <div class="linha"><div class="m"><svg xmlns="http://www.w3.org/2000/svg" viewBox="-227 -880 1100 1100" aria-hidden="true" focusable="false"><g class="bar" fill="#4258DE"><rect x="-64" y="-245.0" width="776" height="66" rx="33.0"/><circle cx="-64" cy="-212" r="60"/><circle cx="712" cy="-212" r="60"/></g><g fill="currentColor" transform="translate(0.0 0.0) scale(1 -1)"><path transform="translate(0.0 0)" d="M5 0 230 660H418L641 0H485L325 542H320L160 0Z"/></g></svg></div><h1>Painel</h1><button class="btn esc peq" id="bAtualizar" aria-label="Atualizar">Atualizar</button><button class="btn esc peq" id="bSair">Sair</button></div>
     <div class="secoes" role="group" aria-label="Secção do painel">
       <button type="button" data-s="agenda" aria-pressed="true">Agenda <span class="n" id="nPedS" hidden>0</span></button>
+      <button type="button" data-s="vales" aria-pressed="false">Vales</button>
       <button type="button" data-s="site" aria-pressed="false">Site</button>
       <button type="button" data-s="numeros" aria-pressed="false">Números</button>
     </div>
@@ -258,11 +289,12 @@ var PADRAO = {
   cuidados: 'Olá {nome}! Obrigado pela confiança. Para o piercing cicatrizar bem: soro estéril uma a duas vezes por dia, mãos sempre lavadas e não rodes a joia. Se tiveres alguma dúvida, manda-me uma foto por aqui. Daqui a 4 a 8 semanas passa cá para a revisão, que é grátis.\nAdri',
   partilha: 'Olá {nome}! Como está o piercing? Se gostaste, uma foto no Instagram a identificar @adrifilhoo ajuda-me imenso. Obrigado!\nAdri',
   avaliacao: 'Olá {nome}! Obrigado por teres vindo. Se puderes, conta como correu, demora um minuto e ajuda imenso quem ainda está com dúvidas: {link}\nAdri',
+  vale: 'Olá {nome}! Aqui está o vale de oferta de {valor}. O código é {codigo} e vale até {validade}. Para o usar, basta marcar em {site} ou falar comigo por aqui e dizer o código. Obrigado!\nAdri',
   livre: 'Olá {nome}! Sobre a tua marcação de {dia}, às {hora}: '
 };
-var NOME_MOD = {confirmar:'Confirmação', lembrete:'Lembrete', reagendar:'Nova hora', recusar:'Recusa', cancelar:'Cancelamento', atraso:'Atraso', cuidados:'Cuidados', partilha:'Pedir partilha', avaliacao:'Pedir avaliação', livre:'Em branco'};
-var AJUDA_MOD = {confirmar:'Quando aprovas um pedido ou guardas uma marcação.', lembrete:'Um ou dois dias antes da marcação.', reagendar:'Quando mudas o dia ou a hora.', recusar:'Quando recusas um pedido. O motivo entra em {motivo}.', cancelar:'Quando cancelas uma marcação.', atraso:'No dia, se estiveres atrasado.', cuidados:'Depois de fazeres o piercing.', partilha:'Uns dias depois, para pedir uma foto no Instagram.', avaliacao:'Quando pedes uma avaliação. O link de uso único entra em {link}.', livre:'Para escreveres o que quiseres.'};
-var ASSUNTO = {confirmar:'marcação confirmada', lembrete:'lembrete da tua marcação', reagendar:'nova hora da tua marcação', recusar:'o teu pedido de marcação', cancelar:'marcação cancelada', atraso:'um pequeno atraso', cuidados:'cuidados com o teu piercing', partilha:'como está o piercing?', avaliacao:'como correu o teu piercing?', livre:'a tua marcação'};
+var NOME_MOD = {confirmar:'Confirmação', lembrete:'Lembrete', reagendar:'Nova hora', recusar:'Recusa', cancelar:'Cancelamento', atraso:'Atraso', cuidados:'Cuidados', partilha:'Pedir partilha', avaliacao:'Pedir avaliação', vale:'Vale de oferta', livre:'Em branco'};
+var AJUDA_MOD = {confirmar:'Quando aprovas um pedido ou guardas uma marcação.', lembrete:'Um ou dois dias antes da marcação.', reagendar:'Quando mudas o dia ou a hora.', recusar:'Quando recusas um pedido. O motivo entra em {motivo}.', cancelar:'Quando cancelas uma marcação.', atraso:'No dia, se estiveres atrasado.', cuidados:'Depois de fazeres o piercing.', partilha:'Uns dias depois, para pedir uma foto no Instagram.', avaliacao:'Quando pedes uma avaliação. O link de uso único entra em {link}.', vale:'Quando envias um vale. Aqui {nome} é quem oferece, e {valor}, {codigo}, {validade} e {para} entram sozinhos.', livre:'Para escreveres o que quiseres.'};
+var ASSUNTO = {confirmar:'marcação confirmada', lembrete:'lembrete da tua marcação', reagendar:'nova hora da tua marcação', recusar:'o teu pedido de marcação', cancelar:'marcação cancelada', atraso:'um pequeno atraso', cuidados:'cuidados com o teu piercing', partilha:'como está o piercing?', avaliacao:'como correu o teu piercing?', vale:'o teu vale de oferta', livre:'a tua marcação'};
 var ACAO_MOD = {aprovar:'confirmar', recusar:'recusar', reagendar:'reagendar', cancelar:'cancelar'};
 var modelos = {}, cfg = null;
 function listaPT(a){ a = a.map(function(x){ return x.charAt(0).toLowerCase() + x.slice(1); }); return a.length < 2 ? a.join('') : a.slice(0, -1).join(', ') + ' e ' + a[a.length - 1]; }
@@ -308,7 +340,7 @@ function carregar(avisar){
 }
 setInterval(function(){ if (!$('#vApp').hidden && !$('#dlg').open && !document.hidden) carregar(); }, 60000);
 
-var LISTAS = ['pedidos', 'agenda', 'historico'], secao = 'agenda', ultima = {agenda: 'pedidos', site: 'precos', numeros: 'numeros'};
+var LISTAS = ['pedidos', 'agenda', 'historico'], secao = 'agenda', ultima = {agenda: 'pedidos', vales: 'vales', site: 'precos', numeros: 'numeros'};
 function irPara(v){
   vista = v; ultima[secao] = v;
   $$('.tabs button').forEach(function(x){ x.setAttribute('aria-selected', x.dataset.v === v); });
@@ -334,6 +366,7 @@ function desenhar(){
   if (vista === 'fotos') return comCfg(c, vFotos);
   if (vista === 'avaliacoes') return vAvaliacoes(c);
   if (vista === 'numeros') return vNumeros(c);
+  if (vista === 'vales') return vVales(c);
   var lista, vazio;
   if (vista === 'pedidos'){ lista = ms.filter(function(m){ return m.estado === 'pendente' && m.data >= h; }); vazio = 'Não há pedidos à espera. Quando alguém marcar no site, aparece aqui.'; }
   else if (vista === 'agenda'){ lista = ms.filter(function(m){ return (m.estado === 'confirmada' || m.estado === 'pendente') && m.data >= h; }); vazio = 'Ainda não há marcações daqui para a frente.'; }
@@ -526,7 +559,7 @@ function bloqueios(c){
 
 /* ---------- mensagens prontas: o Adri muda o texto base ---------- */
 function editarModelos(c){
-  var ordem = ['confirmar','lembrete','reagendar','recusar','cancelar','atraso','cuidados','partilha','avaliacao','livre'];
+  var ordem = ['confirmar','lembrete','reagendar','recusar','cancelar','atraso','cuidados','partilha','avaliacao','vale','livre'];
   c.innerHTML = '<div class="painel"><h2 style="font-size:22px;margin-bottom:6px">Mensagens prontas</h2><p style="color:var(--sec);margin:0">Estas palavras trocam-se sozinhas pelos dados de cada marcação:</p>' +
     '<div class="vars"><code>{nome}</code><code>{dia}</code><code>{hora}</code><code>{piercings}</code><code>{total}</code><code>{motivo}</code><code>{site}</code><code>{local}</code><code>{link}</code></div>' +
     ordem.map(function(k){ return '<div class="modelo"><h3>' + NOME_MOD[k] + '</h3><p>' + AJUDA_MOD[k] + '</p><label for="md-' + k + '" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)">Texto: ' + NOME_MOD[k] + '</label>' +
@@ -791,6 +824,262 @@ function vAvaliacoes(c){
   }, function(){ c.innerHTML = '<p class="vazio">Não deu para carregar. Toca em «Atualizar».</p>'; });
 }
 
+/* =================== VALES DE OFERTA =================== */
+var fmtLonga = new Intl.DateTimeFormat('pt-PT', {day: 'numeric', month: 'long', year: 'numeric'});
+var fmtNum = new Intl.DateTimeFormat('pt-PT', {day: '2-digit', month: '2-digit', year: 'numeric'});
+var NOMES_SIT = {valido: 'Por usar', usado: 'Usado', expirado: 'Expirado'};
+var filtroV = 'valido', valesCache = null, valorV = 50, ultimaVer = null;
+function euro(v){ return eur.format(v).replace(/,00(?=\s)/, ''); }
+function telTxt(){ var t = WA_NUM.replace(/^351/, ''); return t.slice(0, 3) + ' ' + t.slice(3, 6) + ' ' + t.slice(6); }
+function preencherVale(v){
+  var vars = {nome: primeiro(v.de), valor: euro(v.valor), codigo: v.codigo_f, validade: fmtLonga.format(dParse(v.expira)), para: v.para || '', site: location.host};
+  return (modelos.vale || PADRAO.vale).replace(/\{(\w+)\}/g, function(x, k){ return k in vars ? vars[k] : x; })
+    .replace(/^Olá !/, 'Olá!').replace(/[ \t]{2,}/g, ' ').replace(/ +\n/g, '\n');
+}
+function formatarCod(el){ var t = el.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 8); el.value = t.length > 4 ? t.slice(0, 4) + '-' + t.slice(4) : t; }
+function vVales(c){
+  c.innerHTML = '<div class="painel"><h2>Verificar um código</h2><p class="ajuda-t">Quando alguém vier com um vale, escreve o código para ver se ainda vale.</p>' +
+    '<form class="ver-linha" id="fVer" autocomplete="off"><label for="vCod" class="sr">Código do vale</label><input id="vCod" class="cod-in" maxlength="9" autocapitalize="characters" autocorrect="off" spellcheck="false" placeholder="XXXX-XXXX" enterkeyhint="search"><button class="btn" id="bVer">Verificar</button></form>' +
+    '<div id="vRes" aria-live="polite"></div></div>' +
+    '<form class="painel" id="fVale" novalidate><h2>Criar um vale</h2><p class="ajuda-t">Cria-o depois de receberes o pagamento. A seguir envias a imagem do vale, já com o código.</p>' +
+    '<div class="campo"><span class="lbl" id="lbV">Valor</span><div class="chips" role="group" aria-labelledby="lbV" id="vVal" style="margin:0">' +
+      [30, 50, 80].map(function(x){ return '<button type="button" data-v="' + x + '" aria-pressed="' + (valorV === x) + '">' + x + ' €</button>'; }).join('') +
+      '<button type="button" data-v="outro" aria-pressed="' + ([30, 50, 80].indexOf(valorV) < 0) + '">Outro valor</button></div>' +
+    '<div class="euro" id="vOutroW"' + ([30, 50, 80].indexOf(valorV) < 0 ? '' : ' hidden') + ' style="max-width:180px;margin-top:8px"><label for="vOutro" class="sr">Outro valor, em euros</label><input id="vOutro" type="number" inputmode="numeric" min="5" max="1000" step="1" placeholder="Ex.: 120"></div></div>' +
+    '<div class="duas"><div class="campo"><label for="vPara">Para quem é (opcional)</label><input id="vPara" maxlength="40" autocomplete="off" placeholder="Ex.: Maria"></div>' +
+    '<div class="campo"><label for="vDe">Quem oferece (opcional)</label><input id="vDe" maxlength="40" autocomplete="off" placeholder="Ex.: João"></div></div>' +
+    '<div class="duas"><div class="campo"><label for="vTel">Telemóvel de quem pagou (opcional)</label><input id="vTel" type="tel" inputmode="tel" autocomplete="off" placeholder="912 345 678"></div>' +
+    '<div class="campo"><label for="vMeses">Validade</label><select id="vMeses"><option value="3">3 meses</option><option value="6" selected>6 meses</option><option value="12">12 meses</option></select></div></div>' +
+    '<div class="campo"><label for="vMsg">Dedicatória no vale (opcional)</label><input id="vMsg" maxlength="90" autocomplete="off" placeholder="Ex.: Feliz aniversário!"></div>' +
+    '<p class="erro" id="eVale" role="alert" hidden></p><button class="btn" id="bVale">Criar vale</button></form>' +
+    '<div class="painel" id="pLista"><h2>Vales</h2><p class="vazio">A carregar…</p></div>';
+  var cod = $('#vCod');
+  cod.addEventListener('input', function(){ formatarCod(cod); });
+  $('#fVer').addEventListener('submit', function(e){ e.preventDefault(); verificar(cod.value); });
+  $$('#vVal button').forEach(function(b){ b.addEventListener('click', function(){
+    valorV = b.dataset.v === 'outro' ? 'outro' : +b.dataset.v;
+    $$('#vVal button').forEach(function(x){ x.setAttribute('aria-pressed', x === b); });
+    $('#vOutroW').hidden = valorV !== 'outro'; if (valorV === 'outro') $('#vOutro').focus();
+  }); });
+  $('#fVale').addEventListener('submit', function(e){
+    e.preventDefault();
+    var er = $('#eVale'), b = $('#bVale'), valor = valorV === 'outro' ? Number($('#vOutro').value) : valorV;
+    er.hidden = true;
+    if (!(Number.isInteger(valor) && valor >= 5 && valor <= 1000)){ er.textContent = 'Escolhe um valor entre 5 e 1000 € (sem cêntimos).'; er.hidden = false; $('#vOutro').focus(); return; }
+    b.disabled = true;
+    api('POST', '/admin/vales', {valor: valor, para: $('#vPara').value.trim(), de: $('#vDe').value.trim(), tel: $('#vTel').value.trim(), mensagem: $('#vMsg').value.trim(), meses: +$('#vMeses').value})
+      .then(function(v){
+        ['#vPara', '#vDe', '#vTel', '#vMsg', '#vOutro'].forEach(function(s){ $(s).value = ''; });
+        filtroV = 'valido'; carregarVales(); dlgVale(v);
+      }, function(x){ er.textContent = erroCampos(x); er.hidden = false; })
+      .then(function(){ b.disabled = false; });
+  });
+  $('#pLista').addEventListener('click', function(e){
+    var f = e.target.closest('[data-f]');
+    if (f){ filtroV = f.dataset.f; desenharVales(); return; }
+    var b = e.target.closest('[data-a]'); if (!b) return;
+    var id = +b.closest('.vl').dataset.id, v = (valesCache || []).filter(function(x){ return x.id === id; })[0]; if (!v) return;
+    accaoVale(v, b.dataset.a, b);
+  });
+  carregarVales();
+}
+function accaoVale(v, a, b){
+  if (a === 'enviar') return dlgVale(v);
+  if (a === 'usar' || a === 'forcar') return dlgUsar(v, a === 'forcar');
+  if (a === 'apagar') return dlgApagarVale(v);
+  if (a === 'repor'){
+    if (b) b.disabled = true;
+    api('POST', '/admin/vales/' + v.id + '/repor', {}).then(function(nv){ toast('O vale voltou a valer.'); depoisVale(nv); }, function(){ if (b) b.disabled = false; toast('Não deu. Atualiza e tenta outra vez.'); });
+  }
+}
+function carregarVales(){
+  return api('GET', '/admin/vales').then(function(j){ valesCache = j.vales; desenharVales(); }, function(){ var p = $('#pLista'); if (p) p.innerHTML = '<h2>Vales</h2><p class="vazio">Não deu para carregar. Toca em «Atualizar».</p>'; });
+}
+function depoisVale(nv){
+  if (valesCache) valesCache = valesCache.map(function(x){ return x.id === nv.id ? nv : x; });
+  desenharVales();
+  if (ultimaVer && ultimaVer.vale && ultimaVer.vale.id === nv.id) mostrarRes({situacao: nv.situacao, vale: nv});
+}
+function linhaVale(v){
+  var quando = v.situacao === 'usado' ? 'usado a ' + fmtData.format(new Date(v.usado * 1000)) : (v.situacao === 'expirado' ? 'expirou a ' : 'vale até ') + fmtData.format(dParse(v.expira));
+  var bts = '<button type="button" class="btn peq" data-a="enviar">Enviar</button>' +
+    (v.situacao === 'valido' ? '<button type="button" class="btn esc peq" data-a="usar">Marcar como usado</button>' :
+     v.situacao === 'usado' ? '<button type="button" class="btn esc peq" data-a="repor">Desfazer uso</button>' : '<button type="button" class="btn esc peq" data-a="forcar">Usar mesmo assim</button>') +
+    '<button type="button" class="btn esc peq" data-a="apagar">Apagar</button>';
+  return '<div class="vl" data-id="' + v.id + '"><div class="vl-cab"><b class="vl-cod">' + esc(v.codigo_f) + '</b><span class="vl-valor">' + euro(v.valor) + '</span></div>' +
+    '<div class="mini">' + cap([v.para ? 'para ' + esc(v.para) : '', v.de ? 'de ' + esc(v.de) : '', quando].filter(Boolean).join(' · ')) + '</div>' +
+    (v.nota ? '<div class="mini">' + esc(v.nota) + '</div>' : '') +
+    '<span class="pill ' + v.situacao + '"><i></i>' + NOMES_SIT[v.situacao] + '</span><div class="acoes">' + bts + '</div></div>';
+}
+function desenharVales(){
+  var p = $('#pLista'); if (!p || !valesCache) return;
+  var vs = valesCache, cont = {valido: 0, usado: 0, expirado: 0}, porUsar = 0;
+  vs.forEach(function(v){ cont[v.situacao]++; if (v.situacao === 'valido') porUsar += v.valor; });
+  var lista = filtroV === 'todos' ? vs : vs.filter(function(v){ return v.situacao === filtroV; });
+  var VAZIO = {valido: 'Nenhum vale por usar. Os que criares aparecem aqui.', usado: 'Ainda nenhum vale foi usado.', expirado: 'Nenhum vale expirou.', todos: 'Ainda não criaste vales.'};
+  p.innerHTML = '<h2>Vales</h2><p class="ajuda-t">' + (cont.valido ? cont.valido + (cont.valido === 1 ? ' vale por usar, ' : ' vales por usar, ') + euro(porUsar) + ' no total.' : 'Não há vales por usar.') + '</p>' +
+    '<div class="chips" role="group" aria-label="Mostrar vales">' + [['valido', 'Por usar'], ['usado', 'Usados'], ['expirado', 'Expirados'], ['todos', 'Todos']].map(function(f){
+      return '<button type="button" data-f="' + f[0] + '" aria-pressed="' + (filtroV === f[0]) + '">' + f[1] + ' (' + (f[0] === 'todos' ? vs.length : cont[f[0]]) + ')</button>'; }).join('') + '</div>' +
+    (lista.length ? lista.map(linhaVale).join('') : '<p class="vazio" style="padding:12px 0">' + VAZIO[filtroV] + '</p>');
+}
+function verificar(t){
+  var r = $('#vRes'), b = $('#bVer');
+  if (!t.trim()){ $('#vCod').focus(); return; }
+  b.disabled = true;
+  api('GET', '/admin/vales/verificar?codigo=' + encodeURIComponent(t)).then(mostrarRes, function(){ r.innerHTML = '<div class="res mal"><b class="t">Não deu para verificar</b><p>Confirma a ligação à internet e tenta outra vez.</p></div>'; })
+    .then(function(){ b.disabled = false; });
+}
+function mostrarRes(j){
+  var r = $('#vRes'); if (!r) return;
+  ultimaVer = j;
+  var v = j.vale, h;
+  if (j.situacao === 'invalido') h = '<div class="res mal"><b class="t">Código incompleto</b><p>Os códigos têm 8 letras e números, como 7K3M-Q9TX.</p></div>';
+  else if (j.situacao === 'nao_existe') h = '<div class="res mal"><b class="t">Este código não existe</b><p>Confirma se está bem escrito. Nos códigos não há 0, O, 1, I nem L, para não se confundirem.</p></div>';
+  else {
+    var det = '<p><b>' + esc(v.codigo_f) + '</b>, ' + euro(v.valor) + (v.para ? ' para ' + esc(v.para) : '') + (v.de ? ', oferecido por ' + esc(v.de) : '') + '.</p>';
+    if (j.situacao === 'valido') h = '<div class="res ok"><b class="t">Válido</b>' + det + '<p>Vale até ' + fmtLonga.format(dParse(v.expira)) + '.</p><div class="acoes"><button type="button" class="btn" data-r="usar">Marcar como usado</button></div></div>';
+    else if (j.situacao === 'usado') h = '<div class="res usado"><b class="t">Já foi usado</b>' + det + '<p>Usado a ' + fmtLonga.format(new Date(v.usado * 1000)) + (v.nota ? ': ' + esc(v.nota) : '') + '.</p><div class="acoes"><button type="button" class="btn esc" data-r="repor">Desfazer uso</button></div></div>';
+    else h = '<div class="res mal"><b class="t">Expirou</b>' + det + '<p>Valia até ' + fmtLonga.format(dParse(v.expira)) + '.</p><div class="acoes"><button type="button" class="btn esc" data-r="forcar">Usar mesmo assim</button></div></div>';
+  }
+  r.innerHTML = h;
+  $$('[data-r]', r).forEach(function(b){ b.addEventListener('click', function(){ accaoVale(v, b.dataset.r, b); }); });
+}
+function dlgUsar(v, forcar){
+  abrirDlg('<h2>Marcar como usado</h2><p class="ajuda-t"><b style="color:var(--osso)">' + esc(v.codigo_f) + '</b>, ' + euro(v.valor) + (v.para ? ' para ' + esc(v.para) : '') + '.' + (forcar ? ' Já expirou, mas podes aceitá-lo na mesma.' : '') + '</p>' +
+    '<div class="campo"><label for="uNota">Nota (opcional)</label><input id="uNota" maxlength="120" autocomplete="off" placeholder="Ex.: hélix, sábado 14"></div>' +
+    '<div class="acoes"><button type="button" class="btn" id="bUsar">Marcar como usado</button><button type="button" class="btn esc" data-fechar>Cancelar</button></div>');
+  $('#bUsar').addEventListener('click', function(){
+    var b = $('#bUsar'); b.disabled = true;
+    api('POST', '/admin/vales/' + v.id + '/usar', {nota: $('#uNota').value.trim(), forcar: !!forcar}).then(function(nv){ $('#dlg').close(); toast('Vale marcado como usado.'); depoisVale(nv); },
+      function(x){ b.disabled = false; toast(x && x.s === 409 ? 'Este vale já não está por usar. Toca em «Atualizar».' : 'Não deu. Tenta outra vez.'); });
+  });
+}
+function dlgApagarVale(v){
+  abrirDlg('<h2>Apagar o vale <span class="nw">' + esc(v.codigo_f) + '</span>?</h2><p class="ajuda-t">' + euro(v.valor) + (v.para ? ' para ' + esc(v.para) : '') + '. O código deixa de funcionar e o vale sai da lista. Não dá para desfazer.</p>' +
+    '<div class="acoes"><button type="button" class="btn verm" id="bApV">Apagar</button><button type="button" class="btn esc" data-fechar>Cancelar</button></div>');
+  $('#bApV').addEventListener('click', function(){
+    var b = $('#bApV'); b.disabled = true;
+    api('POST', '/admin/vales/' + v.id + '/apagar', {}).then(function(){
+      $('#dlg').close(); toast('Vale apagado.');
+      if (valesCache) valesCache = valesCache.filter(function(x){ return x.id !== v.id; });
+      desenharVales();
+      if (ultimaVer && ultimaVer.vale && ultimaVer.vale.id === v.id) mostrarRes({situacao: 'nao_existe'});
+    }, function(){ b.disabled = false; toast('Não deu. Tenta outra vez.'); });
+  });
+}
+/* imagem do vale: o mesmo cartão do site, furado no canto pela argola, com o código e a validade */
+var _imgs = {};
+function carregarImg(src){ return _imgs[src] || (_imgs[src] = new Promise(function(ok, ko){ var i = new Image(); i.onload = function(){ ok(i); }; i.onerror = function(){ delete _imgs[src]; ko(); }; i.src = src; })); }
+function caixa(x, X, Y, w, h, r){ x.beginPath(); if (x.roundRect) x.roundRect(X, Y, w, h, r); else { x.moveTo(X + r, Y); x.arcTo(X + w, Y, X + w, Y + h, r); x.arcTo(X + w, Y + h, X, Y + h, r); x.arcTo(X, Y + h, X, Y, r); x.arcTo(X, Y, X + w, Y, r); x.closePath(); } }
+function linhasTxt(x, t, max){
+  var ps = t.split(/\s+/), ls = [], l = '';
+  ps.forEach(function(p){ var n = l ? l + ' ' + p : p; if (l && x.measureText(n).width > max){ ls.push(l); l = p; } else l = n; });
+  if (l) ls.push(l);
+  return ls;
+}
+function monograma(x, X, Y, tam){
+  x.save(); x.translate(X, Y); x.scale(tam / 1100, tam / 1100); x.translate(227, 880);
+  x.fillStyle = '#4258DE'; caixa(x, -64, -245, 776, 66, 33); x.fill();
+  [-64, 712].forEach(function(cx){ x.beginPath(); x.arc(cx, -212, 60, 0, Math.PI * 2); x.fill(); });
+  x.scale(1, -1); x.fillStyle = '#1C1B1D'; x.fill(new Path2D('M5 0 230 660H418L641 0H485L325 542H320L160 0Z'));
+  x.restore();
+}
+function imagemVale(v){
+  var fontes = Promise.all(['700 100px "Bricolage Grotesque"', '600 40px "Bricolage Grotesque"', '700 30px Figtree', '600 30px Figtree', '400 30px Figtree']
+    .map(function(f){ return document.fonts && document.fonts.load ? document.fonts.load(f) : null; })).catch(function(){});
+  return Promise.all([carregarImg('/img/vale-argola-tras.webp'), carregarImg('/img/vale-argola-frente.webp'), fontes]).then(function(im){
+    var W = 1080, H = 1350, cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+    var x = cv.getContext('2d'), CW = 880, P = 64, OSSO = '#EFEAE3', SEC = '#B9B7BC', MAXT = CW - 2 * P;
+    var ls = function(t){ if ('letterSpacing' in x) x.letterSpacing = t; };
+    // 1) medir o conteúdo do cartão para saber a altura
+    var y = P + 88 + 40, plano = [];
+    x.font = '700 200px "Bricolage Grotesque"'; ls('-8px');
+    var vtxt = euro(v.valor), mv = x.measureText(vtxt), asc = mv.actualBoundingBoxAscent || 145;
+    plano.push(['valor', y + asc]); y += asc + 46;
+    ls('0px');
+    if (v.para){ plano.push(['para', y + 40]); y += 66; }
+    if (v.de){ plano.push(['de', y + 26]); y += 44; }
+    if (!v.para && !v.de){ x.font = '400 30px Figtree'; linhasTxt(x, 'Para o piercing que quiseres, com a joia incluída.', MAXT).forEach(function(l){ plano.push(['geral', y + 26, l]); y += 42; }); }
+    if (v.mensagem){ y += 10; x.font = '400 30px Figtree'; linhasTxt(x, '«' + v.mensagem + '»', MAXT).slice(0, 3).forEach(function(l){ plano.push(['msg', y + 26, l]); y += 42; }); }
+    var CH = Math.max(Math.round(CW / 1.6), y + 40 + 92 + P);
+    // 2) posição: tudo centrado na imagem (argola em cima, texto em baixo)
+    var acima = 0.09 * CW, abaixo = 210, topo = (H - (acima + CH + abaixo)) / 2, cy = topo + acima + CH / 2;
+    x.fillStyle = OSSO; x.fillRect(0, 0, W, H);
+    x.save(); x.translate(W / 2, cy); x.rotate(-4 * Math.PI / 180); x.translate(-CW / 2, -CH / 2);
+    var rw = 0.1726 * CW, rh = rw * 308 / 251, rx = 0.828 * CW, ry = -0.074 * CW;
+    x.shadowColor = 'rgba(0,0,0,.28)'; x.shadowBlur = 8; x.shadowOffsetY = 4;
+    x.drawImage(im[0], rx, ry, rw, rh);
+    x.shadowColor = 'rgba(28,27,29,.30)'; x.shadowBlur = 70; x.shadowOffsetY = 34;
+    x.fillStyle = '#1C1B1D'; caixa(x, 0, 0, CW, CH, 0.057 * CW); x.fill();
+    x.shadowColor = 'transparent'; x.shadowBlur = 0; x.shadowOffsetY = 0;
+    // furo
+    var fx = 0.8667 * CW, fy = 0.1143 * CW, fr = 0.019 * CW;
+    x.fillStyle = '#060607'; x.beginPath(); x.arc(fx, fy, fr, 0, Math.PI * 2); x.fill();
+    x.strokeStyle = 'rgba(239,234,227,.22)'; x.lineWidth = 2; x.beginPath(); x.arc(fx, fy, fr - 1, 0.15 * Math.PI, 0.85 * Math.PI); x.stroke();
+    // topo: monograma e «Vale de oferta»
+    x.fillStyle = OSSO; caixa(x, P, P, 88, 88, 22); x.fill();
+    monograma(x, P + 8, P + 8, 72);
+    x.fillStyle = OSSO; x.font = '600 36px Figtree'; x.textBaseline = 'middle'; x.fillText('Vale de oferta', P + 88 + 22, P + 46);
+    x.textBaseline = 'alphabetic';
+    plano.forEach(function(it){
+      if (it[0] === 'valor'){ x.font = '700 200px "Bricolage Grotesque"'; ls('-8px'); x.fillStyle = OSSO; x.fillText(vtxt, P - 6, it[1]); ls('0px'); }
+      else if (it[0] === 'para'){ x.font = '600 48px "Bricolage Grotesque"'; x.fillStyle = OSSO; x.fillText(linhasTxt(x, 'Para ' + v.para, MAXT)[0], P, it[1]); }
+      else if (it[0] === 'de'){ x.font = '400 30px Figtree'; x.fillStyle = SEC; x.fillText(linhasTxt(x, 'Oferecido por ' + v.de, MAXT)[0], P, it[1]); }
+      else { x.font = '400 30px Figtree'; x.fillStyle = it[0] === 'msg' ? OSSO : SEC; x.fillText(it[2], P, it[1]); }
+    });
+    // rodapé do cartão: código e validade
+    var yb = CH - P;
+    x.font = '500 24px Figtree'; x.fillStyle = SEC; x.fillText('Código', P, yb - 58);
+    x.textAlign = 'right'; x.fillText('Válido até', CW - P, yb - 58);
+    x.font = '700 40px Figtree'; x.fillStyle = OSSO; x.fillText(fmtNum.format(dParse(v.expira)), CW - P, yb);
+    x.textAlign = 'left'; x.font = '700 50px Figtree'; ls('6px'); x.fillText(v.codigo_f, P, yb + 2); ls('0px');
+    // argola por cima do cartão
+    x.shadowColor = 'rgba(0,0,0,.3)'; x.shadowBlur = 8; x.shadowOffsetY = 4;
+    x.drawImage(im[1], rx, ry, rw, rh);
+    x.restore();
+    // 3) como usar
+    var l = cfg && cfg.local, onde = l ? l.nome + ', ' + l.rua.replace(/,\s*/, ' ') + ', ' + l.cidade : 'Kaos Tattoo, Rua da Torrinha 202, Porto';
+    var yt = cy + CH / 2 + 110;
+    x.textAlign = 'center'; x.fillStyle = '#1C1B1D'; x.font = '600 42px "Bricolage Grotesque"'; x.fillText('Marca em ' + location.host, W / 2, yt);
+    x.fillStyle = '#55524E'; x.font = '400 30px Figtree'; x.fillText('ou pelo WhatsApp ' + telTxt() + ', e diz o código.', W / 2, yt + 50);
+    x.fillText(onde, W / 2, yt + 92);
+    return new Promise(function(ok, ko){ cv.toBlob(function(b){ b ? ok(b) : ko(); }, 'image/jpeg', 0.92); });
+  });
+}
+function dlgVale(v){
+  var nome = 'vale-adribodypiercing-' + v.codigo_f + '.jpg', url = null, fich = null;
+  abrirDlg('<h2>Enviar o vale <span class="nw">' + esc(v.codigo_f) + '</span></h2>' +
+    '<div class="vale-img" id="vImgW"><p class="vazio">A preparar a imagem…</p></div>' +
+    '<label for="msgTxt" class="lbl-b">Mensagem</label><textarea id="msgTxt" class="msg-txt">' + esc(preencherVale(v)) + '</textarea>' +
+    '<div class="canais"><button type="button" class="btn larga" id="cPart" hidden>Partilhar com a imagem</button>' +
+    '<a class="btn larga" id="cWa" target="_blank" rel="noopener">' + ICON_WA + ' WhatsApp' + (v.tel ? ' para ' + esc(primeiro(v.de) || v.tel) : '') + '</a>' +
+    '<a class="btn esc" id="cDesc" aria-disabled="true">Guardar imagem</a><button type="button" class="btn esc" id="cCop">Copiar texto</button></div>' +
+    '<p class="nota-c" id="cNota"></p><div class="acoes"><button type="button" class="btn esc" data-fechar>Fechar</button></div>');
+  function ligar(){ var t = $('#msgTxt').value; $('#cWa').href = v.tel ? wa(v.tel, t) : 'https://wa.me/?text=' + encodeURIComponent(t); }
+  ligar(); $('#msgTxt').addEventListener('input', ligar);
+  $('#cCop').addEventListener('click', function(){
+    var t = $('#msgTxt'), ok = function(){ toast('Mensagem copiada.'); };
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(t.value).then(ok, function(){ t.select(); document.execCommand('copy'); ok(); });
+    else { t.select(); document.execCommand('copy'); ok(); }
+  });
+  $('#cPart').addEventListener('click', function(){
+    if (!fich) return;
+    navigator.share({files: [fich], text: $('#msgTxt').value}).then(function(){ toast('Vale enviado.'); }, function(e){ if (!e || e.name !== 'AbortError') toast('Não deu para partilhar. Guarda a imagem e junta-a à conversa.'); });
+  });
+  var dlg = $('#dlg');
+  dlg.addEventListener('close', function f(){ dlg.removeEventListener('close', f); if (url) URL.revokeObjectURL(url); url = null; });
+  imagemVale(v).then(function(blob){
+    if (!dlg.open) return;
+    url = URL.createObjectURL(blob);
+    $('#vImgW').innerHTML = '<img src="' + url + '" alt="Imagem do vale de ' + esc(euro(v.valor)) + ' com o código ' + esc(v.codigo_f) + '">';
+    var d = $('#cDesc'); d.href = url; d.download = nome; d.removeAttribute('aria-disabled');
+    try { fich = new File([blob], nome, {type: 'image/jpeg'}); } catch (e){ fich = null; }
+    var pode = !!(fich && navigator.canShare && navigator.share && navigator.canShare({files: [fich]}));
+    $('#cPart').hidden = !pode; $('#cWa').hidden = pode;
+    $('#cNota').textContent = pode ? 'Toca em «Partilhar com a imagem» e escolhe o WhatsApp: a imagem e a mensagem vão juntas.' : 'Neste aparelho a imagem não vai sozinha: guarda-a e junta-a à conversa do WhatsApp.';
+  }, function(){ $('#vImgW').innerHTML = '<p class="vazio">Não deu para preparar a imagem. Fecha e abre outra vez.</p>'; });
+}
+
 /* =================== NÚMEROS =================== */
 var periodo = 30;
 var NOMES_ACAO = {whatsapp: 'WhatsApp', telefone: 'Chamadas', tel: 'Chamadas', email: 'Email', instagram: 'Instagram', mapa: 'Mapa', marcacao: 'Pedidos de marcação', vale: 'Vale de oferta'};
@@ -807,6 +1096,7 @@ function vNumeros(c){
       '<div class="kpi"><b>' + n0(n.concluidas) + '</b><span>piercings feitos</span></div>' +
       '<div class="kpi"><b>' + eur.format(n.faturacao).replace(/,00(?=\s)/, '') + '</b><span>faturação estimada (feitos)</span></div>' +
       '<div class="kpi"><b>' + ocup + ' %</b><span>agenda cheia nos próximos 30 dias (' + n.proximos.marcadas + ' de ' + n.proximos.horas + ' horas)</span></div>' +
+      (n.vales ? '<div class="kpi"><b>' + eur.format(n.vales.valor).replace(/,00(?=\s)/, '') + '</b><span>em vales vendidos (' + n.vales.n + '); ' + eur.format(n.vales.por_usar).replace(/,00(?=\s)/, '') + ' ainda por usar</span></div>' : '') +
       '<div class="kpi"><b>' + (n.avaliacoes.media ? String(n.avaliacoes.media).replace('.', ',') + ' ★' : '—') + '</b><span>' + (n.avaliacoes.n ? 'média de ' + n.avaliacoes.n + (n.avaliacoes.n === 1 ? ' avaliação' : ' avaliações') : 'ainda sem avaliações') + '</span></div></div>';
     var sem = n.semanas, maxS = Math.max.apply(null, sem.map(function(x){ return x.n; }).concat(1));
     html += '<div class="painel"><h2>Piercings por semana</h2><p class="ajuda-t" style="margin:0">Marcações confirmadas e feitas, nas últimas 8 semanas.</p><div class="grafico" role="img" aria-label="' + sem.map(function(x){ return x.n; }).join(', ') + '">' + sem.map(function(x){ return '<i class="' + (x.n ? '' : 'zero') + '" style="height:' + Math.max(2, x.n / maxS * 100) + '%" title="' + x.n + '"></i>'; }).join('') + '</div><div class="eixo"><span>há 8 semanas</span><span>esta semana</span></div></div>';

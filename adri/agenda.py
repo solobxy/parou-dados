@@ -19,10 +19,10 @@ Página do Adriano: password verificada com scrypt, sessão em cookie HttpOnly/S
 guardada só como hash, limite de tentativas, pedidos POST só com JSON e da origem do site.
 Dados pessoais apagados 12 meses depois da data da marcação.
 
-Painel do Adriano (além da agenda): preços, horário e local, fotos do site, avaliações com link de uso único
-e números (negócio + visitas do site). O site lê tudo em /api/site, por isso o que ele muda aparece logo.
+Painel do Adriano (além da agenda): preços, horário e local, fotos do site, avaliações com link de uso único,
+vales de oferta (código, verificação, usado) e números (negócio + visitas do site). O site lê tudo em /api/site, por isso o que ele muda aparece logo.
 """
-import base64, datetime as dt, hashlib, hmac, json, os, re, secrets, sqlite3, threading, time, unicodedata, urllib.parse, urllib.request
+import base64, calendar, datetime as dt, hashlib, hmac, json, os, re, secrets, sqlite3, threading, time, unicodedata, urllib.parse, urllib.request
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 DB = os.environ.get('AG_DB', '/var/lib/adri-agenda/agenda.db')
@@ -62,6 +62,9 @@ DIAS_PL = ('segundas', 'terças', 'quartas', 'quintas', 'sextas', 'sábados', 'd
 SLOTS = ('nariz', 'umbigo', 'conch', 'trabalho', 'cara')
 MAX_FOTO = 3 * 1024 * 1024
 CONVITE_DIAS = 90
+# Vales de oferta: código de 8 caracteres sem os que se confundem (0/O, 1/I/L), mostrado como XXXX-XXXX
+VALE_ALFABETO = '23456789ABCDEFGHJKMNPQRSTUVWXYZ'
+VALE_MESES = (3, 6, 12)
 SUPABASE = 'https://hvvvswhwcpavucwrvlsf.supabase.co/rest/v1/rpc/adri_numeros'
 SUPABASE_PUB = 'sb_publishable_aGAxV-VSm1YIjgd-sXWDgQ_dJkhYFpa'  # chave pública (a mesma que o Caddy usa); quem abre os números é a chave da agenda
 ATIVOS = ('pendente', 'confirmada')
@@ -138,6 +141,10 @@ def preparar():
       nome TEXT NOT NULL DEFAULT '', piercing TEXT NOT NULL DEFAULT '', marcacao INTEGER, usado INTEGER NOT NULL DEFAULT 0);
     CREATE TABLE IF NOT EXISTS avaliacoes(id INTEGER PRIMARY KEY, criado INTEGER NOT NULL, estrelas INTEGER NOT NULL,
       texto TEXT NOT NULL DEFAULT '', nome TEXT NOT NULL DEFAULT '', piercing TEXT NOT NULL DEFAULT '', visivel INTEGER NOT NULL DEFAULT 1);
+    CREATE TABLE IF NOT EXISTS vales(id INTEGER PRIMARY KEY, codigo TEXT UNIQUE NOT NULL, valor INTEGER NOT NULL, criado INTEGER NOT NULL,
+      expira TEXT NOT NULL, para TEXT NOT NULL DEFAULT '', de TEXT NOT NULL DEFAULT '', tel TEXT NOT NULL DEFAULT '',
+      mensagem TEXT NOT NULL DEFAULT '', estado TEXT NOT NULL DEFAULT 'ativo', usado INTEGER, nota TEXT NOT NULL DEFAULT '',
+      historico TEXT NOT NULL DEFAULT '[]');
     ''')
     if 'email' not in [r[1] for r in c.execute('PRAGMA table_info(marcacoes)')]:
         c.execute("ALTER TABLE marcacoes ADD COLUMN email TEXT NOT NULL DEFAULT ''")
@@ -265,6 +272,7 @@ def limpeza():
             c.execute('DELETE FROM marcacoes WHERE data < ?', (corte,))
             c.execute('DELETE FROM bloqueios WHERE data < ?', (dt.date.today().isoformat(),))
             c.execute('DELETE FROM sessoes WHERE expira < ?', (int(time.time()),))
+            c.execute('DELETE FROM vales WHERE expira < ?', (corte,))  # nomes e telemóvel saem 12 meses depois de o vale expirar
             c.close()
         except Exception:
             pass
@@ -310,7 +318,7 @@ def tel_normal(t):
 
 RE_EMAIL = re.compile(r'^[^@\s]{1,64}@[^@\s]+\.[^@\s.]{2,}$')
 # mensagens prontas que o Adriano pode editar na agenda (o texto por omissão vive na página da agenda)
-MODELOS = ('confirmar', 'lembrete', 'reagendar', 'recusar', 'cancelar', 'atraso', 'cuidados', 'partilha', 'avaliacao', 'livre')
+MODELOS = ('confirmar', 'lembrete', 'reagendar', 'recusar', 'cancelar', 'atraso', 'cuidados', 'partilha', 'avaliacao', 'vale', 'livre')
 CANAIS = ('whatsapp', 'sms', 'email', 'copiar')
 
 
@@ -348,6 +356,29 @@ def publico(r):
     ids = json.loads(r['servicos'])
     return {'codigo': r['codigo'], 'estado': r['estado'], 'data': r['data'], 'hora': r['hora'],
             'servicos': nomes(ids), 'total': r['total'], 'desde': desde(ids), 'sob_consulta': sob_consulta(ids), 'motivo': r['motivo']}
+
+
+def vale_codigo():
+    return ''.join(secrets.choice(VALE_ALFABETO) for _ in range(8))
+
+
+def vale_norm(t):
+    t = re.sub(r'[\s\-]', '', str(t or '')).upper()
+    return t if re.fullmatch('[%s]{8}' % VALE_ALFABETO, t) else None
+
+
+def mais_meses(d, n):
+    m = d.month - 1 + n
+    a, m = d.year + m // 12, m % 12 + 1
+    return dt.date(a, m, min(d.day, calendar.monthrange(a, m)[1]))
+
+
+def vale_dict(r):
+    d = dict(r)
+    d['historico'] = json.loads(r['historico'] or '[]')
+    d['codigo_f'] = r['codigo'][:4] + '-' + r['codigo'][4:]
+    d['situacao'] = 'usado' if r['estado'] == 'usado' else ('expirado' if r['expira'] < dt.date.today().isoformat() else 'valido')
+    return d
 
 
 def completo(r):
@@ -468,6 +499,18 @@ class H(BaseHTTPRequestHandler):
                     cv = c.execute('SELECT id, criado, expira, nome, piercing, usado FROM convites ORDER BY criado DESC LIMIT 60').fetchall()
                     return self.responder(200, {'avaliacoes': [dict(r) for r in av], 'convites': [dict(r) for r in cv], 'agora': int(time.time()),
                                                 'google': CFG['google']})
+                if caminho == '/api/admin/vales':
+                    rs = c.execute('SELECT * FROM vales ORDER BY criado DESC, id DESC LIMIT 1000').fetchall()
+                    return self.responder(200, {'vales': [vale_dict(r) for r in rs], 'hoje': dt.date.today().isoformat()})
+                if caminho == '/api/admin/vales/verificar':
+                    cod = vale_norm(urllib.parse.unquote_plus(args.get('codigo', '')))
+                    if not cod:
+                        return self.responder(200, {'situacao': 'invalido'})
+                    r = c.execute('SELECT * FROM vales WHERE codigo=?', (cod,)).fetchone()
+                    if not r:
+                        return self.responder(200, {'situacao': 'nao_existe'})
+                    v = vale_dict(r)
+                    return self.responder(200, {'situacao': v['situacao'], 'vale': v})
                 if caminho == '/api/admin/numeros':
                     try:
                         dias = max(7, min(365, int(args.get('dias', '30'))))
@@ -566,6 +609,11 @@ class H(BaseHTTPRequestHandler):
                 if m:
                     c.execute('DELETE FROM convites WHERE id=? AND usado=0', (int(m.group(1)),))
                     return self.responder(200, {'ok': True})
+                if caminho == '/api/admin/vales':
+                    return self.criar_vale(c, corpo)
+                m = re.fullmatch(r'/api/admin/vales/(\d+)/(usar|repor|apagar)', caminho)
+                if m:
+                    return self.mexer_vale(c, int(m.group(1)), m.group(2), corpo)
                 m = re.fullmatch(r'/api/admin/avaliacoes/(\d+)/visivel', caminho)
                 if m:
                     if not isinstance(corpo.get('visivel'), bool):
@@ -925,6 +973,63 @@ class H(BaseHTTPRequestHandler):
             return self.erro(500, 'erro')
         return self.responder(201, {'ok': True, 'google': CFG['google']})
 
+    # ---------- vales de oferta ----------
+    def criar_vale(self, c, corpo):
+        erros = {}
+        valor, meses = corpo.get('valor'), corpo.get('meses', 6)
+        if type(valor) is not int or not 5 <= valor <= 1000:
+            erros['valor'] = 'Escolhe um valor entre 5 e 1000 €.'
+        if meses not in VALE_MESES:
+            erros['meses'] = 'A validade é de 3, 6 ou 12 meses.'
+        tel = ''
+        if corpo.get('tel'):
+            tel = tel_normal(corpo.get('tel'))
+            if not tel:
+                erros['tel'] = 'Esse telemóvel não parece certo (9 dígitos). Podes deixar em branco.'
+        if erros:
+            return self.erro(422, 'campos', campos=erros)
+        para = limpar_texto(corpo.get('para'), 40)
+        de = limpar_texto(corpo.get('de'), 40)
+        msg = limpar_texto(str(corpo.get('mensagem') or '').replace('\n', ' '), 90)
+        agora = int(time.time())
+        expira = mais_meses(dt.date.today(), meses).isoformat()
+        hist = json.dumps([{'t': agora, 'o': 'criado'}])
+        for _ in range(8):
+            cod = vale_codigo()
+            try:
+                cur = c.execute('INSERT INTO vales(codigo, valor, criado, expira, para, de, tel, mensagem, historico) VALUES(?,?,?,?,?,?,?,?,?)',
+                                (cod, valor, agora, expira, para, de, tel, msg, hist))
+                break
+            except sqlite3.IntegrityError:
+                continue
+        else:
+            return self.erro(500, 'erro')
+        return self.responder(201, vale_dict(c.execute('SELECT * FROM vales WHERE id=?', (cur.lastrowid,)).fetchone()))
+
+    def mexer_vale(self, c, vid, acao, corpo):
+        r = c.execute('SELECT * FROM vales WHERE id=?', (vid,)).fetchone()
+        if not r:
+            return self.erro(404, 'nao_existe')
+        if acao == 'apagar':
+            c.execute('DELETE FROM vales WHERE id=?', (vid,))
+            return self.responder(200, {'ok': True})
+        agora, hoje = int(time.time()), dt.date.today().isoformat()
+        hist = json.loads(r['historico'] or '[]')[-40:]
+        if acao == 'usar':
+            nota = limpar_texto(corpo.get('nota'), 120)
+            limite_data = '0000-00-00' if corpo.get('forcar') is True else hoje
+            hist.append({'t': agora, 'o': 'usado' + (': ' + nota if nota else '')})
+            cur = c.execute("UPDATE vales SET estado='usado', usado=?, nota=?, historico=? WHERE id=? AND estado='ativo' AND expira>=?",
+                            (agora, nota, json.dumps(hist), vid, limite_data))
+            if cur.rowcount != 1:
+                return self.erro(409, 'estado', situacao=vale_dict(r)['situacao'])
+        else:
+            if r['estado'] != 'usado':
+                return self.erro(409, 'estado', situacao=vale_dict(r)['situacao'])
+            hist.append({'t': agora, 'o': 'voltou a valer'})
+            c.execute("UPDATE vales SET estado='ativo', usado=NULL, nota='', historico=? WHERE id=?", (json.dumps(hist), vid))
+        return self.responder(200, vale_dict(c.execute('SELECT * FROM vales WHERE id=?', (vid,)).fetchone()))
+
     # ---------- números do negócio ----------
     def numeros(self, c, dias):
         hoje = dt.date.today()
@@ -959,7 +1064,9 @@ class H(BaseHTTPRequestHandler):
                           (a.isoformat(), b.isoformat())).fetchone()[0]
             semanas.append({'de': a.isoformat(), 'n': n})
         av = c.execute('SELECT COUNT(*) n, AVG(estrelas) m FROM avaliacoes').fetchone()
-        return {'estados': est, 'pedidos_site': pedidos, 'concluidas': len(concl),
+        vl = c.execute('SELECT COUNT(*) n, COALESCE(SUM(valor), 0) s FROM vales WHERE criado>=?', (t0,)).fetchone()
+        por_usar = c.execute("SELECT COALESCE(SUM(valor), 0) FROM vales WHERE estado='ativo' AND expira>=?", (hoje.isoformat(),)).fetchone()[0]
+        return {'vales': {'n': vl['n'], 'valor': vl['s'], 'por_usar': por_usar},'estados': est, 'pedidos_site': pedidos, 'concluidas': len(concl),
                 'faturacao': round(sum(r['total'] for r in concl), 2), 'top': [{'id': k, 'nome': SERVICOS[k][0], 'n': v} for k, v in top],
                 'proximos': {'marcadas': ocup, 'horas': livres}, 'semanas': semanas,
                 'avaliacoes': {'n': av['n'], 'media': round(av['m'], 1) if av['m'] else None}}
