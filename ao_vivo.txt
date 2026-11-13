@@ -1,0 +1,23 @@
+ok site pc sem scroll horizontal — 1440
+ok site tel sem scroll horizontal — 390
+ok criar conta
+ok configurar módulos
+ok criar ficha
+ok dar pontos
+ok criar lead
+ok registar chamada
+ok abrir /app
+ok abrir /app/clientes
+ok abrir /app/pontos
+ok abrir /app/subscricoes
+ok abrir /app/forum
+ok abrir /app/marketplace
+ok abrir /app/equipa
+ok abrir /app/definicoes/marca
+ok abrir /app/definicoes/telemovel
+ok abrir /app/ligar
+ok cookie __Host- seguro — {"name": "__Host-wb", "value": "l33x_8e7CyoJ1T7DBd5JtcP6rndpVdH9rwprSnOsx5U", "domain": "webase.2-31-13-85.sslip.io", "path": "/", "expires": 1797199278.191846,
+ok pedido sem X-Wb recusado — 403
+ok apagar a conta de teste — 200
+erros de JavaScript/consola: []
+saída: 0

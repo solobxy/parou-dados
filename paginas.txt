@@ -1,0 +1,81 @@
+--- páginas (código, tipo, tamanho, tempo):
+/ -> 200 text/html; charset=utf-8 29575B 0.619809s
+/solucoes/ -> 200 text/html; charset=utf-8 16104B 0.548265s
+/precos/ -> 200 text/html; charset=utf-8 11764B 0.630369s
+/marketplace/ -> 200 text/html; charset=utf-8 8246B 0.493788s
+/privacidade/ -> 200 text/html; charset=utf-8 7884B 0.428149s
+/termos/ -> 200 text/html; charset=utf-8 7411B 0.515914s
+/app/ -> 200 text/html; charset=utf-8 1022B 0.506639s
+/app/clientes -> 200 text/html; charset=utf-8 1022B 0.505807s
+/robots.txt -> 200 text/plain; charset=utf-8 26B 0.374143s
+/sitemap.xml -> 200 text/xml; charset=utf-8 589B 0.501171s
+/_e.js -> 200 text/javascript; charset=utf-8 16030B 0.530749s
+/img/painel-1600.webp -> 200 image/webp 52808B 0.748515s
+/fontes/instrument.woff2 -> 200 font/woff2 57332B 0.617606s
+/app/sw.js -> 200 text/javascript; charset=utf-8 2504B 0.521672s
+/img/icone-192.png -> 200 image/png 7106B 0.515122s
+/manifest.webmanifest -> 200 application/manifest+json 690B 0.575369s
+/api/publico/estado -> 200 application/json; charset=utf-8 1341B 0.418811s
+/nao-existe -> 404 text/html; charset=utf-8 1337B 0.368724s
+--- não podem aparecer (404 ou 403):
+/.env -> 404
+/.git/config -> 404
+/.git/HEAD -> 404
+/api.py -> 404
+/base.py -> 404
+/DESIGN.md -> 404
+/gerar_paginas.py -> 404
+/app/.env -> 404
+/.DS_Store -> 404
+/vapid.json -> 404
+/dados.db -> 404
+--- sem sessão:
+GET /api/eu -> 401
+GET /api/clientes -> 401
+GET /api/ligar/pendente -> 401
+POST /api/conta/entrar sem X-Wb -> 403
+POST /api/conta/entrar de outra origem -> 403
+--- http vai para https:
+HTTP/1.1 308 Permanent Redirect
+Location: https://webase.2-31-13-85.sslip.io/
+--- cabeçalhos /:
+HTTP/2 200 
+cache-control: no-cache
+content-security-policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self'; worker-src 'self'; manifest-src 'self'; object-src 'none'; form-action 'self'; frame-ancestors 'none'; base-uri 'none'
+content-type: text/html; charset=utf-8
+cross-origin-opener-policy: same-origin
+permissions-policy: geolocation=(), camera=(), microphone=(), payment=(), usb=(), interest-cohort=()
+referrer-policy: strict-origin-when-cross-origin
+strict-transport-security: max-age=31536000
+x-content-type-options: nosniff
+x-frame-options: DENY
+x-robots-tag: noindex, nofollow
+
+--- cabeçalhos /app/:
+HTTP/2 200 
+cache-control: no-cache
+content-security-policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self'; worker-src 'self'; manifest-src 'self'; object-src 'none'; form-action 'self'; frame-ancestors 'none'; base-uri 'none'
+content-type: text/html; charset=utf-8
+cross-origin-opener-policy: same-origin
+permissions-policy: geolocation=(), camera=(), microphone=(), payment=(), usb=(), interest-cohort=()
+referrer-policy: strict-origin-when-cross-origin
+strict-transport-security: max-age=31536000
+x-content-type-options: nosniff
+x-frame-options: DENY
+x-robots-tag: noindex
+
+--- cabeçalhos /api/publico/estado:
+HTTP/2 200 
+cache-control: no-store
+content-security-policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self'; worker-src 'self'; manifest-src 'self'; object-src 'none'; form-action 'self'; frame-ancestors 'none'; base-uri 'none'
+content-type: application/json; charset=utf-8
+cross-origin-opener-policy: same-origin
+permissions-policy: geolocation=(), camera=(), microphone=(), payment=(), usb=(), interest-cohort=()
+referrer-policy: strict-origin-when-cross-origin
+strict-transport-security: max-age=31536000
+x-content-type-options: nosniff
+x-frame-options: DENY
+x-robots-tag: noindex, nofollow
+
+--- estado da API:
+{"fundadores_restantes":100,"fundadores_total":100,"pagamentos":"desligado","setores":[{"id":"barbearia","nome":"Barbearia ou salão","modulos":["clientes","pontos","adesoes","forum"]},{"id":"restauracao","nome":"Café ou restaurante","modulos":["clientes","pontos","adesoes","forum"]},{"id":"bar","nome":"Bar ou discoteca","modulos":["clientes","pontos","adesoes","forum"]},{"id":"desporto","nome":"Ginásio, clube ou desporto","modulos":["clientes","adesoes","pontos","contratos","forum"]},{"id":"telecom","nome":"Telecomunicações","modulos":["clientes","leads","chamadas","contratos","marketplace","forum"]},{"id":"vendas","nome":"Equipa de vendas","modulos":["clientes","leads","chamadas","contratos","marketplace","forum"]},{"id":"servicos","nome":"Serviços e consultoria","modulos":["clientes","leads","contratos","forum"]},{"id":"loja","nome":"Loja ou comércio","modulos":["clientes","pontos","adesoes","forum"]},{"id":"outro","nome":"Outro","modulos":["clientes","leads","forum"]}],"modulos":[{"id":"clientes","nome":"Fichas de clientes"},{"id":"leads","nome":"Leads e oportunidades"},{"id":"chamadas","nome":"Chamadas"},{"id":"contratos","nome":"Contratos"},{"id":"pontos","nome":"Pontos e recompensas"},{"id":"adesoes","nome":"Subscrições e pacotes"},{"id":"marketplace","nome":"Marketplace"},{"id":"forum","nome":"Fórum"}]}
