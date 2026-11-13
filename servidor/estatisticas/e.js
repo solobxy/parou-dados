@@ -22,6 +22,13 @@
 
   var ua = n.userAgent || '';
   if (n.webdriver || /bot|crawl|spider|headless|lighthouse|pagespeed|preview/i.test(ua)) return;
+  // O renderizador do Google (para indexar) não diz que é um robô: Chrome Android, fuso de Los Angeles e um ecrã
+  // exatamente igual à janela, de 412x732 ou 1024x1024. Em 13/11/2026 eram 97 % das «visitas» do caiu.pt e 94 % das da DupliCasa.
+  try {
+    var sw = screen.width, sh = screen.height;
+    var fz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    if (fz === 'America/Los_Angeles' && ((sw === 412 && sh === 732) || (sw === 1024 && sh === 1024)) && w.innerWidth === sw) return;
+  } catch (e) {}
 
   function uuid() {
     if (w.crypto && crypto.randomUUID) return crypto.randomUUID();
