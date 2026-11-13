@@ -95,7 +95,7 @@ ok('[stcp] pergunta sobre greve liga à página de greves', /href="\/greves\/stc
     if (uParU) {
       const rpu = await pedir(uParU);
       ok('[toques] UNIR: a lista de partidas sabe o endereço da paragem na app', /data-unir="proximas"[^>]*data-app="\/\?local=/.test(rpu.h), uParU);
-      ok('[toques] UNIR: cada partida é uma ligação (sem ligação dentro da ligação)', /<a class="linha" href="'\+esc\(el\.dataset\.app\)/.test(rpu.h) && /function chipT\(/.test(rpu.h));
+      ok('[toques] UNIR: cada partida é uma ligação (sem ligação dentro da ligação)', /<a class="linha" href="'\+esc\(el\.dataset\.app\b/.test(rpu.h) && /function chipT\(/.test(rpu.h));
     }
   }
 }
