@@ -1,0 +1,51 @@
+OK      [Porto (Campanhã)] a app pede os autocarros ao servidor 3 pedidos
+OK      [Porto (Campanhã)] o pedido é pela caixa do ecrã, sem lista de linhas linhas=-
+NOTA    [Porto (Campanhã)] na caixa do ecrã: servidor devolve 3 (stcp 3); lista completa tem 3
+OK      [Porto (Campanhã)] o servidor devolve todos os autocarros que tem na caixa (diferença ≤ 3) 3 contra 3
+NOTA    [Porto (Campanhã)] ecrã do mapa 390×277 px (nível 16); servidor tem 1–2 no ecrã; desenhados à vista: 2
+OK      [Porto (Campanhã)] o mapa mostra todos os autocarros que estão no ecrã (não menos de 0) 2 desenhados, esperados ≥ 1
+OK      [Porto (Campanhã)] e não mostra a mais (não mais de 4) 2 desenhados, esperados ≤ 2
+OK      [Porto (Aliados)] a app pede os autocarros ao servidor 4 pedidos
+OK      [Porto (Aliados)] o pedido é pela caixa do ecrã, sem lista de linhas linhas=-
+NOTA    [Porto (Aliados)] na caixa do ecrã: servidor devolve 11 (stcp 11); lista completa tem 11
+OK      [Porto (Aliados)] o servidor devolve todos os autocarros que tem na caixa (diferença ≤ 3) 11 contra 11
+NOTA    [Porto (Aliados)] ecrã do mapa 390×277 px (nível 16); servidor tem 2–7 no ecrã; desenhados à vista: 5
+OK      [Porto (Aliados)] o mapa mostra todos os autocarros que estão no ecrã (não menos de 0) 5 desenhados, esperados ≥ 2
+OK      [Porto (Aliados)] e não mostra a mais (não mais de 9) 5 desenhados, esperados ≤ 7
+OK      [Matosinhos] a app pede os autocarros ao servidor 4 pedidos
+OK      [Matosinhos] o pedido é pela caixa do ecrã, sem lista de linhas linhas=-
+NOTA    [Matosinhos] na caixa do ecrã: servidor devolve 0 (nenhum); lista completa tem 0
+OK      [Matosinhos] o servidor devolve todos os autocarros que tem na caixa (diferença ≤ 3) 0 contra 0
+NOTA    [Matosinhos] ecrã do mapa 390×277 px (nível 16); servidor tem 0–0 no ecrã; desenhados à vista: 0
+OK      [Matosinhos] o mapa mostra todos os autocarros que estão no ecrã (não menos de 0) 0 desenhados, esperados ≥ 0
+OK      [Matosinhos] e não mostra a mais (não mais de 2) 0 desenhados, esperados ≤ 0
+OK      [Amadora (Carris Metropolitana)] a app pede os autocarros ao servidor 3 pedidos
+OK      [Amadora (Carris Metropolitana)] o pedido é pela caixa do ecrã, sem lista de linhas linhas=-
+NOTA    [Amadora (Carris Metropolitana)] na caixa do ecrã: servidor devolve 11 (cm 11); lista completa tem 11
+OK      [Amadora (Carris Metropolitana)] o servidor devolve todos os autocarros que tem na caixa (diferença ≤ 3) 11 contra 11
+NOTA    [Amadora (Carris Metropolitana)] ecrã do mapa 390×277 px (nível 16); servidor tem 0–2 no ecrã; desenhados à vista: 1
+OK      [Amadora (Carris Metropolitana)] o mapa mostra todos os autocarros que estão no ecrã (não menos de 0) 1 desenhados, esperados ≥ 0
+OK      [Amadora (Carris Metropolitana)] e não mostra a mais (não mais de 4) 1 desenhados, esperados ≤ 2
+OK      [Almada (Carris Metropolitana)] a app pede os autocarros ao servidor 4 pedidos
+OK      [Almada (Carris Metropolitana)] o pedido é pela caixa do ecrã, sem lista de linhas linhas=-
+NOTA    [Almada (Carris Metropolitana)] na caixa do ecrã: servidor devolve 5 (cm 5); lista completa tem 5
+OK      [Almada (Carris Metropolitana)] o servidor devolve todos os autocarros que tem na caixa (diferença ≤ 3) 5 contra 5
+NOTA    [Almada (Carris Metropolitana)] ecrã do mapa 390×277 px (nível 16); servidor tem 0–2 no ecrã; desenhados à vista: 2
+OK      [Almada (Carris Metropolitana)] o mapa mostra todos os autocarros que estão no ecrã (não menos de 0) 2 desenhados, esperados ≥ 0
+OK      [Almada (Carris Metropolitana)] e não mostra a mais (não mais de 4) 2 desenhados, esperados ≤ 2
+OK      [Setúbal (Carris Metropolitana)] a app pede os autocarros ao servidor 3 pedidos
+OK      [Setúbal (Carris Metropolitana)] o pedido é pela caixa do ecrã, sem lista de linhas linhas=-
+NOTA    [Setúbal (Carris Metropolitana)] na caixa do ecrã: servidor devolve 12 (cm 12); lista completa tem 12
+OK      [Setúbal (Carris Metropolitana)] o servidor devolve todos os autocarros que tem na caixa (diferença ≤ 3) 12 contra 12
+NOTA    [Setúbal (Carris Metropolitana)] ecrã do mapa 390×277 px (nível 16); servidor tem 1–3 no ecrã; desenhados à vista: 3
+OK      [Setúbal (Carris Metropolitana)] o mapa mostra todos os autocarros que estão no ecrã (não menos de 0) 3 desenhados, esperados ≥ 1
+OK      [Setúbal (Carris Metropolitana)] e não mostra a mais (não mais de 5) 3 desenhados, esperados ≤ 3
+OK      [Braga (TUB)] a app pede os autocarros ao servidor 4 pedidos
+OK      [Braga (TUB)] o pedido é pela caixa do ecrã, sem lista de linhas linhas=-
+NOTA    [Braga (TUB)] na caixa do ecrã: servidor devolve 16 (tub 16); lista completa tem 16
+OK      [Braga (TUB)] o servidor devolve todos os autocarros que tem na caixa (diferença ≤ 3) 16 contra 16
+NOTA    [Braga (TUB)] ecrã do mapa 390×277 px (nível 16); servidor tem 4–5 no ecrã; desenhados à vista: 4
+OK      [Braga (TUB)] o mapa mostra todos os autocarros que estão no ecrã (não menos de 2) 4 desenhados, esperados ≥ 4
+OK      [Braga (TUB)] e não mostra a mais (não mais de 7) 4 desenhados, esperados ≤ 5
+
+Todas as cidades mostram todos os autocarros do ecrã.
