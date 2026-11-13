@@ -1,0 +1,69 @@
+botões novos no ar
+dados/energia-resumo.json 200 601 no-cache
+   {"dia":"2026-11-12","atualizado":"2026-11-12T23:06+00:00","ofertas":541,"comercializadores":24,"luz":{"nome":"Casal com 2 filhos","desc":"6,9 kVA, 5000 kWh por ano","top":[{"com":"EDP","n":"Eletricidade DD+FE - Digital","mes":84.75},{"com":"Endesa","n":"Tarifa Aniversário","mes":96.1},{"com":"Luzigás","n":"SUPER LIG FIXO","mes":96.56}]},"gas":{"nome":"Gás: casal com 2 filhos","desc":"3407 kWh por 
+dados/resumo.json 200 38827 no-cache
+luz-e-gas/ 200 24177 public, max-age=300
+app.js?v=6 200 74015 no-cache
+estilo.css?v=6 200 49761 no-cache
+{
+ "390": {
+  "cartoes": [
+   "Vinagre Balsâmico Ponti: em promoção a 4,15 € no Continente, mas a 2,26 € no Pingo Doce.",
+   "Fraldas Cueca Pants +15kg T7 Dodot: em promoção a 12,49 € no Pingo Doce, mas a 8,39 € no Continente.",
+   "Espuma Caracóis Perfeitos Pantene: em promoção a 3,99 € no Auchan, mas a 2,69 € no Pingo Doce."
+  ],
+  "imgs": [
+   true,
+   true,
+   true
+  ],
+  "letras": 0,
+  "luz": true,
+  "transbordo": false,
+  "frase": "Hoje, 206 promoções estão mais caras do que noutra loja.",
+  "comprar": [
+   "Comprar no Auchan ↗ https://www.auchan.pt/pt/campanhas/outlet/filtro-de-cafe-reutilizavel-n%C2%BA4-para-cafeteiras-de-filtro-10-12-tacas/3661495.html"
+  ],
+  "erros": []
+ },
+ "320": {
+  "cartoes": [
+   "Vinagre Balsâmico Ponti: em promoção a 4,15 € no Continente, mas a 2,26 € no Pingo Doce.",
+   "Fraldas Cueca Pants +15kg T7 Dodot: em promoção a 12,49 € no Pingo Doce, mas a 8,39 € no Continente.",
+   "Espuma Caracóis Perfeitos Pantene: em promoção a 3,99 € no Auchan, mas a 2,69 € no Pingo Doce."
+  ],
+  "imgs": [
+   true,
+   true,
+   true
+  ],
+  "letras": 0,
+  "luz": true,
+  "transbordo": false,
+  "frase": "Hoje, 206 promoções estão mais caras do que noutra loja.",
+  "comprar": [
+   "Comprar no Auchan ↗ https://www.auchan.pt/pt/campanhas/outlet/filtro-de-cafe-reutilizavel-n%C2%BA4-para-cafeteiras-de-filtro-10-12-tacas/3661495.html"
+  ],
+  "erros": []
+ },
+ "1280": {
+  "cartoes": [
+   "Vinagre Balsâmico Ponti: em promoção a 4,15 € no Continente, mas a 2,26 € no Pingo Doce.",
+   "Fraldas Cueca Pants +15kg T7 Dodot: em promoção a 12,49 € no Pingo Doce, mas a 8,39 € no Continente.",
+   "Espuma Caracóis Perfeitos Pantene: em promoção a 3,99 € no Auchan, mas a 2,69 € no Pingo Doce."
+  ],
+  "imgs": [
+   true,
+   true,
+   true
+  ],
+  "letras": 0,
+  "luz": true,
+  "transbordo": false,
+  "frase": "Hoje, 206 promoções estão mais caras do que noutra loja.",
+  "comprar": [
+   "Comprar no Auchan ↗ https://www.auchan.pt/pt/campanhas/outlet/filtro-de-cafe-reutilizavel-n%C2%BA4-para-cafeteiras-de-filtro-10-12-tacas/3661495.html"
+  ],
+  "erros": []
+ }
+}
