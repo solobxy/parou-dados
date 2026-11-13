@@ -236,6 +236,7 @@ dialog::backdrop{background:rgba(0,0,0,.7)}
     <nav class="tabs" role="tablist" aria-label="Agenda" data-secao="agenda">
       <button role="tab" data-v="pedidos" aria-selected="true">Pedidos <span class="n" id="nPed">0</span></button>
       <button role="tab" data-v="agenda" aria-selected="false">Agenda</button>
+      <button role="tab" data-v="obrigado" aria-selected="false">Cartão de obrigado</button>
       <button role="tab" data-v="nova" aria-selected="false">Nova marcação</button>
       <button role="tab" data-v="bloqueios" aria-selected="false">Bloquear dias</button>
       <button role="tab" data-v="mensagens" aria-selected="false">Mensagens</button>
@@ -335,6 +336,7 @@ function carregar(avisar){
     document.title = (j.pendentes ? '(' + j.pendentes + ') ' : '') + 'Agenda — AdriBodyPiercing';
     $('#nPedS').textContent = j.pendentes; $('#nPedS').hidden = !j.pendentes || secao === 'agenda';
     if (LISTAS.indexOf(vista) >= 0) desenhar();
+    if (vista === 'obrigado') desenharFeitas();
     if (avisar) toast('Atualizado.');
   }).catch(function(){});
 }
@@ -367,6 +369,7 @@ function desenhar(){
   if (vista === 'avaliacoes') return vAvaliacoes(c);
   if (vista === 'numeros') return vNumeros(c);
   if (vista === 'vales') return vVales(c);
+  if (vista === 'obrigado') return vObrigado(c);
   var lista, vazio;
   if (vista === 'pedidos'){ lista = ms.filter(function(m){ return m.estado === 'pendente' && m.data >= h; }); vazio = 'Não há pedidos à espera. Quando alguém marcar no site, aparece aqui.'; }
   else if (vista === 'agenda'){ lista = ms.filter(function(m){ return (m.estado === 'confirmada' || m.estado === 'pendente') && m.data >= h; }); vazio = 'Ainda não há marcações daqui para a frente.'; }
@@ -425,7 +428,7 @@ function acao(m, a, extra, botao){
     if (['aprovar','recusar','reagendar','cancelar'].indexOf(a) >= 0) avisos[m.id] = a;
     var txt = {aprovar:'Aprovada.', recusar:'Recusada.', reagendar:'Reagendada.', cancelar:'Cancelada.', concluir:'Marcada como feita.', faltou:'Marcada como falta.', reabrir:'Voltou a ficar à espera.'}[a];
     $('#dlg').open && $('#dlg').close();
-    return carregar().then(function(){ if (avisos[m.id] === a) dlgAvisar(novo, a, txt); else toast(txt); });
+    return carregar().then(function(){ if (avisos[m.id] === a) dlgAvisar(novo, a, txt); else if (a === 'concluir') dlgAposFeita(novo); else toast(txt); });
   }, function(x){
     if (botao) botao.disabled = false;
     toast(x.j && x.j.erro === 'hora_ocupada' ? 'Essa hora já está ocupada. Escolhe outra.' : x.j && x.j.erro === 'estado' ? 'Este pedido já mudou. Atualizei a lista.' : 'Não deu. Tenta outra vez.');
@@ -863,15 +866,16 @@ function pdfDeImagem(img, url){
     return new Blob(partes, {type: 'application/pdf'});
   });
 }
-function dlgLink(r, m){
+function dlgLink(r, m, o){
+  o = o || {};
   var link = linkAvaliar(r.token), alvo = m ? Object.assign({}, m, {link: link}) : {nome: r.nome || '', link: link, data: hojeISO(), hora: '00:00', servicos: [], total: 0};
   var txt = preencher(alvo, 'avaliacao').replace(/^Olá !/, 'Olá!');
-  var d = {nome: r.nome || (m ? m.nome : ''), piercing: r.piercing || '', data: m && m.data <= hojeISO() ? m.data : hojeISO(), link: link};
+  var d = {nome: r.nome || (m ? m.nome : ''), piercing: r.piercing || '', data: m && m.data <= hojeISO() ? m.data : hojeISO(), link: link}, telP = m ? m.tel : (o.tel || '');
   var base = 'obrigado-adribodypiercing-' + (primeiro(d.nome) || 'cliente').normalize('NFD').replace(/[^\w-]/g, '').toLowerCase() + '-' + d.data, urls = [], fJpg = null;
   abrirDlg('<h2>Cartão de obrigado' + (d.nome ? ': ' + esc(primeiro(d.nome)) : '') + '</h2><p class="ajuda-t" style="margin:0 0 12px">Com o resumo do piercing, os cuidados e um QR para avaliar. O link só serve uma vez e vale 90 dias.</p>' +
     '<div class="vale-img" id="oImgW"><p class="vazio">A preparar o cartão…</p></div>' +
     '<div class="link-box" style="margin-top:12px"><label for="lnk" class="sr">Link para avaliar</label><input id="lnk" readonly value="' + esc(link) + '"></div>' +
-    '<label for="oEmail" class="lbl-b">Email da pessoa (opcional)</label><input id="oEmail" type="email" inputmode="email" autocomplete="off" maxlength="120" value="' + esc(m && m.email ? m.email : '') + '" placeholder="nome@exemplo.pt">' +
+    '<label for="oEmail" class="lbl-b">Email da pessoa (opcional)</label><input id="oEmail" type="email" inputmode="email" autocomplete="off" maxlength="120" value="' + esc(m && m.email ? m.email : (o.email || '')) + '" placeholder="nome@exemplo.pt">' +
     '<label for="msgTxt" class="lbl-b">Mensagem</label><textarea id="msgTxt" class="msg-txt">' + esc(txt) + '</textarea>' +
     '<div class="canais"><button type="button" class="btn larga" id="cPart" hidden>Partilhar com o cartão</button>' +
     '<a class="btn larga" id="cWa" target="_blank" rel="noopener">' + ICON_WA + ' WhatsApp</a>' +
@@ -881,7 +885,7 @@ function dlgLink(r, m){
   function registar(canal){ if (m) api('POST', '/admin/marcacoes/' + m.id + '/acao', {acao: 'mensagem', tipo: 'avaliacao', canal: canal}).then(function(){ carregar(); }).catch(function(){}); }
   function ligar(){
     var t = $('#msgTxt').value, em = $('#oEmail').value.trim();
-    $('#cWa').href = m && m.tel ? wa(m.tel, t) : 'https://wa.me/?text=' + encodeURIComponent(t);
+    $('#cWa').href = telP ? wa(telP, t) : 'https://wa.me/?text=' + encodeURIComponent(t);
     $('#cEmail').href = 'mailto:' + encodeURIComponent(em).replace(/%40/g, '@') + '?subject=' + encodeURIComponent('Obrigado pelo teu piercing') + '&body=' + encodeURIComponent(t);
   }
   ligar(); $('#msgTxt').addEventListener('input', ligar); $('#oEmail').addEventListener('input', ligar);
@@ -912,6 +916,51 @@ function dlgLink(r, m){
     $('#cNota').textContent = (pode ? '«Partilhar com o cartão» manda a imagem e a mensagem juntas. ' : 'Para mandar o cartão, guarda a imagem ou o PDF e junta-o à conversa. ') + 'O link vai sempre na mensagem, para a pessoa poder tocar nele.';
   }, function(){ $('#oImgW').innerHTML = '<p class="vazio">Não deu para preparar o cartão. Fecha e abre outra vez.</p>'; });
 }
+function irSecao(sec, v){
+  secao = sec;
+  $$('.secoes button').forEach(function(x){ x.setAttribute('aria-pressed', x.dataset.s === sec); });
+  $$('.tabs').forEach(function(n){ n.hidden = n.dataset.secao !== sec; });
+  $('#nPedS').hidden = !dados.pendentes || sec === 'agenda';
+  irPara(v);
+}
+function cartaoEnviado(m){ return m.historico.some(function(x){ return x.msg === 'avaliacao'; }); }
+function dlgAposFeita(m){
+  abrirDlg('<h2>Marcação feita</h2><p class="ajuda-t">Manda já o cartão de obrigado a ' + esc(primeiro(m.nome)) + ', com o resumo do piercing, os cuidados e o QR para avaliar.</p>' +
+    '<div class="acoes"><button type="button" class="btn" id="bAposF">Criar cartão de obrigado</button><button type="button" class="btn esc" data-fechar>Agora não</button></div>');
+  $('#bAposF').addEventListener('click', function(){ pedirAvaliacao(m, $('#bAposF')); });
+}
+function desenharFeitas(){
+  var p = $('#pFeitas'); if (!p) return;
+  var lim = maisDias(hojeISO(), -30), limISO = lim.getFullYear() + '-' + String(lim.getMonth() + 1).padStart(2, '0') + '-' + String(lim.getDate()).padStart(2, '0');
+  var feitas = (dados.marcacoes || []).filter(function(m){ return m.estado === 'concluida' && m.data >= limISO; }).reverse();
+  p.innerHTML = '<h2>Marcações feitas nos últimos 30 dias</h2>' + (feitas.length ? feitas.map(function(m){
+      return '<div class="blq"><div style="min-width:0"><b>' + esc(m.nome) + '</b><div class="mini" style="color:var(--sec)">' + esc(m.servicos.join(', ')) + ' · ' + esc(fmtCurto.format(dParse(m.data))) + (cartaoEnviado(m) ? ' · cartão enviado' : '') + '</div></div>' +
+        '<button type="button" class="btn ' + (cartaoEnviado(m) ? 'esc ' : '') + 'peq" data-obr="' + m.id + '">' + (cartaoEnviado(m) ? 'Outra vez' : 'Criar cartão') + '</button></div>'; }).join('') :
+    '<p class="ajuda-t" style="margin:0">As marcações que marcares como «Feita» aparecem aqui, já com o cartão preenchido.</p>');
+}
+function vObrigado(c){
+  c.innerHTML = '<form class="painel" id="fConv"><h2>Cartão de obrigado</h2><p class="ajuda-t">Para qualquer pessoa que furaste, com ou sem marcação no site. Leva o resumo do piercing, os cuidados e um QR único para avaliar. Sai em imagem e em PDF, e o link vai também na mensagem.</p>' +
+    '<div class="duas"><div class="campo"><label for="cNome">Nome (opcional)</label><input id="cNome" maxlength="40" autocomplete="off" placeholder="Ex.: Rita"></div>' +
+    '<div class="campo"><label for="cPierc">Piercing (opcional)</label><input id="cPierc" maxlength="80" autocomplete="off" placeholder="Ex.: Hélix, narina"></div></div>' +
+    '<div class="duas"><div class="campo"><label for="cEmailO">Email (opcional)</label><input id="cEmailO" type="email" inputmode="email" maxlength="120" autocomplete="off" placeholder="nome@exemplo.pt"></div>' +
+    '<div class="campo"><label for="cTelO">Telemóvel (opcional)</label><input id="cTelO" type="tel" inputmode="tel" autocomplete="off" placeholder="912 345 678"></div></div>' +
+    '<button class="btn" id="bConv">Criar cartão</button></form><div class="painel" id="pFeitas"></div>';
+  desenharFeitas();
+  $('#fConv').addEventListener('submit', function(e){
+    e.preventDefault(); var b = $('#bConv'); b.disabled = true;
+    var tel = $('#cTelO').value.replace(/[\s.\-()]/g, '').replace(/^(\+351|00351)/, '');
+    if (tel && !/^[923]\d{8}$/.test(tel)){ toast('Esse telemóvel não parece certo (9 dígitos).'); b.disabled = false; $('#cTelO').focus(); return; }
+    api('POST', '/admin/convites', {nome: $('#cNome').value, piercing: $('#cPierc').value}).then(function(r){
+      var o = {email: $('#cEmailO').value.trim(), tel: tel};
+      ['#cNome', '#cPierc', '#cEmailO', '#cTelO'].forEach(function(s){ $(s).value = ''; });
+      dlgLink(r, null, o);
+    }, function(){ toast('Não deu para criar o cartão. Tenta outra vez.'); }).then(function(){ b.disabled = false; });
+  });
+  $('#pFeitas').addEventListener('click', function(e){
+    var b = e.target.closest('[data-obr]'); if (!b) return;
+    var id = +b.dataset.obr, m = dados.marcacoes.filter(function(x){ return x.id === id; })[0]; if (m) pedirAvaliacao(m, b);
+  });
+}
 function pedirAvaliacao(m, b){
   if (b) b.disabled = true;
   api('POST', '/admin/convites', {marcacao: m.id}).then(function(r){ dlgLink(r, m); }, function(){ toast('Não deu para criar o link. Tenta outra vez.'); }).then(function(){ if (b) b.disabled = false; });
@@ -921,9 +970,7 @@ function vAvaliacoes(c){
   api('GET', '/admin/avaliacoes').then(function(j){
     var av = j.avaliacoes, vis = av.filter(function(a){ return a.visivel; }), med = vis.length ? vis.reduce(function(s, a){ return s + a.estrelas; }, 0) / vis.length : 0;
     var pend = j.convites.filter(function(x){ return !x.usado && x.expira > j.agora; });
-    c.innerHTML = '<form class="painel" id="fConv"><h2>Cartão de obrigado</h2><p class="ajuda-t">Depois de furar, manda um cartão com o resumo do piercing, os cuidados e um QR único para avaliar. Nas marcações feitas, na Agenda, o cartão já vem preenchido.</p>' +
-      '<div class="duas"><div class="campo"><label for="cNome">Nome do cliente (opcional)</label><input id="cNome" maxlength="40" autocomplete="off" placeholder="Ex.: Rita"></div>' +
-      '<div class="campo"><label for="cPierc">Piercing (opcional)</label><input id="cPierc" maxlength="80" autocomplete="off" placeholder="Ex.: Hélix"></div></div><button class="btn" id="bConv">Criar cartão</button></form>' +
+    c.innerHTML = '<div class="painel"><h2>Pedir avaliações</h2><p class="ajuda-t">Cada cartão de obrigado leva um QR e um link únicos para avaliar.</p><button type="button" class="btn" id="bIrObr">Abrir cartão de obrigado</button></div>' +
       '<div class="painel"><h2>No site</h2>' + (vis.length ? '<p style="margin:0 0 4px;font-size:18px"><b>' + med.toFixed(1).replace('.', ',') + '</b> ' + estr(Math.round(med)) + ' <span style="color:var(--sec)">em ' + vis.length + (vis.length === 1 ? ' avaliação' : ' avaliações') + '</span></p>' : '<p class="ajuda-t" style="margin:0">Ainda não há avaliações. A secção «Quem já furou comigo» aparece no site quando chegar a primeira.</p>') +
       (av.length ? av.map(function(a){ return '<div class="aval' + (a.visivel ? '' : ' escondida') + '" data-id="' + a.id + '">' + estr(a.estrelas) + (a.texto ? '<blockquote>' + esc(a.texto) + '</blockquote>' : '') +
         '<div class="meta">' + esc(a.nome) + (a.piercing ? ', ' + esc(a.piercing.toLowerCase()) : '') + ' · ' + fmtData.format(new Date(a.criado * 1000)) + (a.visivel ? '' : ' · escondida do site') + '</div>' +
@@ -932,8 +979,7 @@ function vAvaliacoes(c){
       '<form class="painel" id="fGoogle"><h2>Também no Google</h2><p class="ajuda-t">Depois de avaliar no site, o cliente vê um botão para avaliar no Google. Cola aqui o link do teu perfil (no Google: o teu negócio, «Pedir avaliações», copiar link).</p>' +
       '<div class="campo"><label for="gUrl">Link para avaliar no Google</label><input id="gUrl" type="url" inputmode="url" maxlength="300" value="' + esc(j.google || '') + '" placeholder="https://g.page/r/…/review"></div><p class="erro" id="eG" hidden></p><button class="btn" id="bG">Guardar link</button></form>' +
       (pend.length ? '<div class="painel"><h2>Links por usar</h2>' + pend.map(function(x){ return '<div class="blq"><div><b>' + esc(x.nome || 'Sem nome') + '</b><div class="mini" style="color:var(--sec)">' + (x.piercing ? esc(x.piercing) + ' · ' : '') + 'criado a ' + fmtData.format(new Date(x.criado * 1000)) + ', vale até ' + fmtData.format(new Date(x.expira * 1000)) + '</div></div><button type="button" class="btn esc peq" data-apagar="' + x.id + '">Apagar</button></div>'; }).join('') + '</div>' : '');
-    $('#fConv').addEventListener('submit', function(e){ e.preventDefault(); var b = $('#bConv'); b.disabled = true;
-      api('POST', '/admin/convites', {nome: $('#cNome').value, piercing: $('#cPierc').value}).then(function(r){ $('#cNome').value = ''; $('#cPierc').value = ''; dlgLink(r, null); $('#dlg').addEventListener('close', function f(){ $('#dlg').removeEventListener('close', f); if (vista === 'avaliacoes') vAvaliacoes(c); }); }, function(){ toast('Não deu para criar o cartão.'); }).then(function(){ b.disabled = false; }); });
+    $('#bIrObr').addEventListener('click', function(){ irSecao('agenda', 'obrigado'); });
     $$('[data-vis]', c).forEach(function(b){ b.addEventListener('click', function(){ b.disabled = true;
       api('POST', '/admin/avaliacoes/' + b.closest('.aval').dataset.id + '/visivel', {visivel: b.dataset.vis === '1'}).then(function(){ toast(b.dataset.vis === '1' ? 'Já aparece no site.' : 'Escondida do site.'); vAvaliacoes(c); }, function(){ b.disabled = false; toast('Não deu. Tenta outra vez.'); }); }); });
     $$('[data-apagar]', c).forEach(function(b){ b.addEventListener('click', function(){ b.disabled = true;
