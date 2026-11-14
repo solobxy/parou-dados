@@ -934,6 +934,116 @@ function bjMove(p, op, rng) {
   }
   fail('BAD_BET');
 }
+// ---- Roda da Fortuna ----
+function pickW(rng, list) {
+  let tot = 0; for (const [, w] of list) tot += w;
+  let x = rng.int(0, tot - 1);
+  for (const [v, w] of list) { if (x < w) return v; x -= w; }
+  return list[list.length - 1][0];
+}
+export function wheelSpin(rng) {
+  const W = CFG.casino.wheel;
+  // multiplicador do topo: uma casa (ou nenhuma) com ×2 a ×50 nesta volta
+  let x = rng.int(0, 9999), top = null;
+  for (const s of W.spots) { if (x < W.top[s]) { top = { s, m: pickW(rng, W.topMult) }; break; } x -= W.top[s]; }
+  const idx = rng.int(0, W.segs.length - 1), s = W.segs[idx];
+  let bonus = null, B = W.num[s] ?? 0;
+  if (s === 'moeda') { const sides = [pickW(rng, W.moeda), pickW(rng, W.moeda)], side = rng.int(0, 1); B = sides[side]; bonus = { sides, side }; }
+  else if (s === 'caixas') { const boxes = [pickW(rng, W.caixas), pickW(rng, W.caixas), pickW(rng, W.caixas)], pick = rng.int(0, 2); B = boxes[pick]; bonus = { boxes, pick }; }
+  else if (s === 'bola' || s === 'louca') {
+    const slots = Array.from({ length: s === 'bola' ? W.bolaSlots : W.loucaSlots }, () => pickW(rng, W[s])), at = rng.int(0, slots.length - 1);
+    B = slots[at]; bonus = { slots, at };
+  }
+  const m = top && top.s === s ? top.m : 1;
+  return { idx, s, top, bonus, mult: B * m };   // quem apostou em s recebe aposta × (mult + 1)
+}
+function wheel(p, a, rng) {
+  const W = CFG.casino.wheel, bets = Array.isArray(a.bets) ? a.bets : [];
+  for (const b of bets) if (!b || !W.spots.includes(b.s)) fail('BAD_BET');
+  const bet = stakeOf(p, bets.map((b) => b && b.amt));
+  p.cash -= bet;
+  const sp = wheelSpin(rng);
+  let win = 0;
+  for (const b of bets) if (b.s === sp.s) win += b.amt * (sp.mult + 1);
+  win = Math.min(win, bet * CFG.casino.maxWinMult);
+  p.cash += win;
+  return { ok: true, g: 'wheel', bet, win, ...sp };
+}
+// ---- slot «Chefão» ----
+const SCAT = 10, ORB = 11;
+function slotCell(rng, free) { const w = free ? CFG.casino.slot.wFree : CFG.casino.slot.w; return pickW(rng, w.map((x, i) => [i, x])); }
+function slotRound(rng, free) {
+  // uma jogada: grelha inicial, e depois cada vitória cai e entram símbolos novos por cima
+  const S2 = CFG.casino.slot, C = S2.cols, R = S2.rows, n = C * R;
+  const g = Array.from({ length: n }, () => slotCell(rng, free)), orbs = {};
+  const orbOf = (i) => { orbs[i] = pickW(rng, S2.orb); };
+  g.forEach((s, i) => { if (s === ORB) orbOf(i); });
+  const steps = [{ g: g.slice(), o: { ...orbs } }];
+  let win = 0;
+  for (let t = 0; t < S2.maxTumbles; t++) {
+    const cnt = new Array(10).fill(0);
+    for (const s of g) if (s < 10) cnt[s]++;
+    const wins = [];
+    for (let s = 0; s < 10; s++) if (cnt[s] >= 8) {
+      const tier = cnt[s] >= 12 ? 2 : cnt[s] >= 10 ? 1 : 0;
+      wins.push({ s, n: cnt[s], pay: S2.pay[s][tier] });
+    }
+    if (!wins.length) break;
+    const rm = [];
+    for (let i = 0; i < n; i++) if (wins.some((w) => w.s === g[i])) rm.push(i);
+    const stepWin = wins.reduce((x, w) => x + w.pay, 0);
+    win += stepWin;
+    steps[steps.length - 1].w = wins; steps[steps.length - 1].rm = rm;
+    // cair: por coluna (índice = linha × colunas + coluna; a linha 0 é a de cima)
+    const ng = new Array(n), no = {};
+    for (let c = 0; c < C; c++) {
+      const keep = [];
+      for (let r = R - 1; r >= 0; r--) { const i = r * C + c; if (!rm.includes(i)) keep.push([g[i], orbs[i]]); }
+      for (let r = R - 1, k = 0; r >= 0; r--, k++) {
+        const i = r * C + c;
+        if (k < keep.length) { ng[i] = keep[k][0]; if (keep[k][1] !== undefined) no[i] = keep[k][1]; }
+        else { ng[i] = slotCell(rng, free); if (ng[i] === ORB) no[i] = pickW(rng, S2.orb); }
+      }
+    }
+    for (let i = 0; i < n; i++) g[i] = ng[i];
+    for (const k of Object.keys(orbs)) delete orbs[k];
+    Object.assign(orbs, no);
+    steps.push({ g: g.slice(), o: { ...orbs } });
+  }
+  const orbSum = Object.values(orbs).reduce((x, y) => x + y, 0);
+  const scat = g.filter((s) => s === SCAT).length;
+  return { steps, win, orbSum, scat };   // win em centésimos da aposta, antes das esferas
+}
+export function slotSpin(rng) {
+  const S2 = CFG.casino.slot;
+  const base = slotRound(rng, false);
+  let total = base.win * (base.win > 0 && base.orbSum ? base.orbSum : 1);
+  const out = { base, free: [], scatPay: 0 };
+  if (base.scat >= 4) {
+    out.scatPay = S2.scatterPay[Math.min(6, base.scat)];
+    total += out.scatPay;
+    let left = S2.free, acc = 0, played = 0;
+    while (left > 0 && played < S2.maxFree) {
+      left--; played++;
+      const r = slotRound(rng, true);
+      if (r.win > 0 && r.orbSum) acc += r.orbSum;
+      const w = r.win * (r.win > 0 && acc ? acc : 1);
+      if (r.scat >= 3) left += S2.retrigger;
+      total += w;
+      out.free.push({ ...r, acc, w });
+    }
+  }
+  out.total = total;   // centésimos da aposta
+  return out;
+}
+function slot(p, a, rng) {
+  const bet = stakeOf(p, [a.amt]);
+  p.cash -= bet;
+  const sp = slotSpin(rng);
+  const win = Math.min(Math.floor((bet * sp.total) / 100), bet * CFG.casino.maxWinMult);
+  p.cash += win;
+  return { ok: true, g: 'slot', bet, win, spin: sp };
+}
 export function bjPublic(p) { return p.bj ? bjView(p.bj, false) : null; }
 export function casinoPlay(p, now, world, g, a, rng) {
   if (!a || typeof a !== 'object') fail('BAD_BET');
@@ -942,9 +1052,11 @@ export function casinoPlay(p, now, world, g, a, rng) {
     begin(p, now, world, { allowBusy: true });       // uma mão começada pode acabar-se mesmo no hospital
     return bjMove(p, a.op, rng);
   }
-  if (!['roulette', 'dice', 'bj'].includes(g)) fail('NO_GAME');
+  if (!['roulette', 'dice', 'bj', 'wheel', 'slot'].includes(g)) fail('NO_GAME');
   begin(p, now, world);
   if (g === 'roulette') return roulette(p, a, rng);
+  if (g === 'wheel') return wheel(p, a, rng);
+  if (g === 'slot') return slot(p, a, rng);
   if (g === 'dice') return dice(p, a, rng);
   return bjDeal(p, a, rng);
 }

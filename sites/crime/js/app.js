@@ -226,7 +226,7 @@ function tickHud() {
 const PLACES = {
   city: { ic: 'skyline' }, empire: { ic: 'empire' }, rob: { ic: 'street', img: 'golpes' }, club: { ic: 'bolt', img: 'discoteca' }, gym: { img: 'ginasio' },
   biz: { ic: 'empire', img: 'negocios' }, port: { img: 'porto' }, arms: { img: 'armas' }, bank: { img: 'banco' }, hosp: { img: 'hospital' },
-  jail: { img: 'prisao' }, news: { img: 'jornal' }, casino: { img: 'casino' }, roulette: { img: 'roleta' }, bj: { img: 'blackjack' }, dice: { img: 'dados' }, alley: { img: 'beco' }, lux: { img: 'luxos' }, fights: { ic: 'fights', img: 'lutas' }, rank: { img: 'ranking' }, putas: { img: 'putas' }, casa: {},
+  jail: { img: 'prisao' }, news: { img: 'jornal' }, casino: { img: 'casino' }, roulette: { img: 'roleta' }, bj: { img: 'blackjack' }, dice: { img: 'dados' }, wheel: { img: 'roda' }, slot: { img: 'slot' }, alley: { img: 'beco' }, lux: { img: 'luxos' }, fights: { ic: 'fights', img: 'lutas' }, rank: { img: 'ranking' }, putas: { img: 'putas' }, casa: {},
 };
 // barra de baixo: só o que se usa a toda a hora. O resto vive dentro de cada separador, arrumado por zonas.
 const NAV = ['city', 'rob', 'fights', 'empire'];
@@ -234,7 +234,7 @@ const HUB = {
   city: [['sec_night', ['club', 'putas', 'casino']], ['sec_street', ['gym', 'alley', 'hosp', 'jail']]],
   empire: [['sec_income', ['biz', 'port']], ['sec_assets', ['casa', 'bank']]],
 };
-const PARENT = { news: 'city', casino: 'city', roulette: 'casino', bj: 'casino', dice: 'casino', club: 'city', putas: 'city', gym: 'city', alley: 'city', hosp: 'city', jail: 'city',
+const PARENT = { news: 'city', casino: 'city', roulette: 'casino', bj: 'casino', dice: 'casino', wheel: 'casino', slot: 'casino', club: 'city', putas: 'city', gym: 'city', alley: 'city', hosp: 'city', jail: 'city',
   biz: 'empire', port: 'empire', casa: 'empire', bank: 'empire', lux: 'empire', arms: 'fights', rank: 'fights' };
 const tabOf = (id) => (NAV.includes(id) ? id : PARENT[id] || 'city');
 const IMG = (kind, id, big) => `/img/${kind}/${id}${big ? '-g' : ''}.webp?8`;
@@ -257,7 +257,7 @@ function shell() {
   updateHud();
 }
 
-const SCREENS = { city: screenCity, empire: screenEmpire, news: screenNews, casino: screenCasino, roulette: screenRoulette, bj: screenBJ, dice: screenDice, rob: screenRob, club: screenClub, gym: screenGym, biz: screenBiz, port: screenPort, arms: screenArms, bank: screenBank,
+const SCREENS = { city: screenCity, empire: screenEmpire, news: screenNews, casino: screenCasino, roulette: screenRoulette, bj: screenBJ, dice: screenDice, wheel: screenWheel, slot: screenSlot, rob: screenRob, club: screenClub, gym: screenGym, biz: screenBiz, port: screenPort, arms: screenArms, bank: screenBank,
   hosp: screenHosp, jail: screenJail, putas: screenPutas, casa: screenCasa, alley: screenAlley, lux: screenLux, fights: screenFights, rank: screenRank };
 function render() {
   if (!S.st) return;
@@ -916,7 +916,7 @@ function csResult(r, extra) {
 function screenCasino() {
   const me = S.st.me;
   const out = [pageHead('casino', t('s_casino', { m: moneyShort(me.casinoMax) }))];
-  out.push(h('div', { class: 'games' }, [['roulette', 'roleta'], ['bj', 'blackjack'], ['dice', 'dados']].map(([id, img]) =>
+  out.push(h('div', { class: 'games' }, [['slot', 'slot'], ['wheel', 'roda'], ['roulette', 'roleta'], ['bj', 'blackjack'], ['dice', 'dados']].map(([id, img]) =>
     h('button', { class: 'game', on: { click: () => go(id) } }, art('cenas', img, 'gimg'),
       h('div', { class: 'gtx' }, h('b', null, t('p_' + id)), h('span', { class: 'small muted' }, t('gd_' + id))), icon('chev')))));
   if (me.bj) out.push(h('div', { class: 'tip' }, h('p', null, t('bjOpen')), h('button', { class: 'btn sm', on: { click: () => go('bj') } }, t('bjResume'))));
@@ -1072,6 +1072,177 @@ async function bjPlay(op, amt) {
   S.bjAnim = null;
   if (r && !r.done) { S.bjView = null; S.bjDone = false; }
   render();
+}
+
+// ---- Roda da Fortuna ----
+const WCOL = { 1: '#f5c518', 2: '#2f80ed', 5: '#e04495', 10: '#8b5cf6', moeda: '#e53935', caixas: '#22a559', bola: '#10b5c9', louca: '#ff8a00' };
+const wLabel = (s) => (/^\d+$/.test(s) ? s : t('w_' + s));
+function wheelSvg() {
+  const segs = S.cfg.casino.wheel.segs, N = segs.length, th = 360 / N, R = 150;
+  const s = svg('svg', { class: 'ww', viewBox: '0 0 300 300', role: 'img', 'aria-label': t('p_wheel') });
+  const rad = (a) => ((a - 90) * Math.PI) / 180, pt = (r, a) => [150 + r * Math.cos(rad(a)), 150 + r * Math.sin(rad(a))];
+  s.append(svg('circle', { cx: 150, cy: 150, r: 149, class: 'wrim' }));
+  const g = svg('g', { class: 'wheel', style: `transform: rotate(${S.wAng || 0}deg)` });
+  segs.forEach((k, i) => {
+    const a0 = i * th - th / 2, a1 = a0 + th, [x0, y0] = pt(R - 8, a0), [x1, y1] = pt(R - 8, a1);
+    g.append(svg('path', { d: `M150 150L${x0} ${y0}A${R - 8} ${R - 8} 0 0 1 ${x1} ${y1}Z`, fill: WCOL[k], class: 'wseg' }));
+    const [tx, ty] = pt(R - 40, i * th), el = svg('text', { x: tx, y: ty, class: 'wt' + (/^\d+$/.test(k) ? '' : ' wb'), transform: `rotate(${i * th - 90} ${tx} ${ty})` });
+    el.textContent = /^\d+$/.test(k) ? k : t('w_' + k).toUpperCase(); g.append(el);
+  });
+  g.append(svg('circle', { cx: 150, cy: 150, r: 34, class: 'whub' }));
+  for (let i = 0; i < 27; i++) { const [x, y] = pt(R - 3, i * 360 / 27); s.append(svg('circle', { cx: x, cy: y, r: 2.4, class: 'wbulb' })); }
+  s.append(g, svg('path', { d: 'M150 22l-10-22h20z', class: 'wptr' }));
+  return s;
+}
+async function wheelAnim(r) {
+  const box = document.querySelector('.wbox'); if (!box) return;
+  const sv = box.querySelector('.ww');
+  const top = sv.getBoundingClientRect().top + scrollY - 190;
+  if (sv.getBoundingClientRect().top < 170 || sv.getBoundingClientRect().bottom > innerHeight - 140) { scrollTo({ top: Math.max(0, top), behavior: RM() ? 'auto' : 'smooth' }); await wait(RM() ? 0 : 350); }
+  // 1) o multiplicador do topo
+  const banner = box.querySelector('.wtop');
+  if (r.top) {
+    for (let k = 0; k < (RM() ? 1 : 10); k++) { banner.textContent = '×' + [2, 3, 5, 10, 20, 50][k % 6] + ' · ' + wLabel(S.cfg.casino.wheel.spots[k % 8]); fx.sfx('tick'); await wait(70 + k * 12); }
+    banner.textContent = t('wTop', { m: r.top.m, s: wLabel(r.top.s) }); banner.classList.add('on'); fx.sfx('claim'); await wait(RM() ? 300 : 700);
+  } else { banner.textContent = t('wNoTop'); await wait(RM() ? 100 : 300); }
+  // 2) a roda
+  const g = sv.querySelector('.wheel'), th = 360 / S.cfg.casino.wheel.segs.length, cur = S.wAng || 0;
+  const target = (360 - r.idx * th) % 360, delta = (target - (cur % 360) + 720) % 360, d = RM() ? 700 : fx.dur(5200), next = cur + (RM() ? 0 : 360 * 4) + delta;
+  S.wAng = next;
+  g.style.transition = `transform ${d}ms cubic-bezier(.1,.6,.12,1)`;
+  requestAnimationFrame(() => { g.style.transform = `rotate(${next}deg)`; });
+  if (!RM()) for (let k = 0, t0 = 0; t0 < d * 0.92; k++) { t0 += 40 + k * k * 0.7; setTimeout(() => fx.sfx('tick'), t0); }
+  await wait(d + 200);
+  // 3) o jogo de bónus
+  if (r.bonus) await wheelBonus(r, box);
+  S.wLast = r;
+}
+async function wheelBonus(r, box) {
+  const st = box.querySelector('.wbonus'); st.hidden = false;
+  const show = async (...kids) => { st.replaceChildren(h('b', { class: 'wbt' }, t('w_' + r.s)), ...kids); };
+  if (r.s === 'moeda') {
+    const coin = h('div', { class: 'coin' }, h('span', { class: 'fa' }, '×' + r.bonus.sides[0]), h('span', { class: 'fb' }, '×' + r.bonus.sides[1]));
+    await show(h('div', { class: 'coins' }, h('span', { class: 'cs a' }, '×' + r.bonus.sides[0]), coin, h('span', { class: 'cs b' }, '×' + r.bonus.sides[1])));
+    coin.style.setProperty('--end', r.bonus.side ? '1980deg' : '1800deg'); coin.classList.add('flip');
+    await wait(RM() ? 300 : 1900);
+  } else if (r.s === 'caixas') {
+    const boxes = r.bonus.boxes.map((v, i) => h('div', { class: 'bxx' + (i === r.bonus.pick ? ' pick' : '') }, h('span', null, '?')));
+    await show(h('div', { class: 'bxs' }, boxes));
+    await wait(RM() ? 200 : 700);
+    boxes[r.bonus.pick].classList.add('open'); boxes[r.bonus.pick].firstChild.textContent = '×' + r.bonus.boxes[r.bonus.pick]; fx.sfx('claim');
+    await wait(RM() ? 300 : 900);
+    boxes.forEach((b, i) => { if (i !== r.bonus.pick) { b.classList.add('open', 'dim'); b.firstChild.textContent = '×' + r.bonus.boxes[i]; } });
+    await wait(RM() ? 300 : 900);
+  } else {
+    // bola e louca: uma fita de multiplicadores que passa e pára no que saiu
+    const sl = r.bonus.slots, reps = 4, cells = [];
+    for (let k = 0; k < reps; k++) sl.forEach((v) => cells.push(h('span', { class: 'sc' + (v >= 100 ? ' hi' : '') }, '×' + v)));
+    const strip = h('div', { class: 'strip' }, cells), win = h('div', { class: 'swin' }, strip, h('i', { class: 'smark' }));
+    await show(win);
+    const cw = 64, stop = (reps - 1) * sl.length + r.bonus.at, x = stop * cw - (win.clientWidth / 2 - cw / 2);
+    const d = RM() ? 400 : 3200;
+    strip.style.transition = `transform ${d}ms cubic-bezier(.12,.7,.15,1)`;
+    requestAnimationFrame(() => { strip.style.transform = `translateX(${-x}px)`; });
+    if (!RM()) for (let k = 0, t0 = 0; t0 < d * 0.9; k++) { t0 += 50 + k * k * 1.2; setTimeout(() => fx.sfx('tick'), t0); }
+    await wait(d + 200); cells[stop].classList.add('on'); fx.sfx('claim'); await wait(700);
+  }
+}
+function screenWheel() {
+  const W = S.cfg.casino.wheel, bets = S.wBets || {}, tot = Object.values(bets).reduce((x, y) => x + y, 0), last = S.wLast;
+  const out = csHead('wheel');
+  out.push(h('div', { class: 'wbox' }, h('div', { class: 'wtop' + (last?.top ? ' on' : '') }, last?.top ? t('wTop', { m: last.top.m, s: wLabel(last.top.s) }) : t('wTopIdle')),
+    wheelSvg(), h('div', { class: 'wbonus', hidden: true })));
+  if (last) out.push(csResult(last, t('wOut', { s: wLabel(last.s) }) + (last.bonus ? ' · ×' + (last.top && last.top.s === last.s ? last.mult / last.top.m + ' × ' + last.top.m : last.mult) : '')));
+  out.push(h('div', { class: 'wspots' }, W.spots.map((s) => h('button', { class: 'wsp', style: `--c:${WCOL[s]}`, on: { click: () => {
+    const chip = chipNow(); if (tot + chip > betMax()) return toast(t('csOver', { m: money(betMax()) }), true);
+    S.wBets = { ...bets, [s]: (bets[s] || 0) + chip }; fx.sfx('tap'); render(); } } },
+    h('b', null, wLabel(s)), h('span', { class: 'small' }, /^\d+$/.test(s) ? s + ':1' : t('wBonus')), bets[s] ? h('span', { class: 'chipm' }, moneyShort(bets[s])) : null))));
+  out.push(h('p', { class: 'small muted', style: 'margin:10px 0 0' }, t('wRules')));
+  out.push(h('div', { class: 'stick csbar' }, chipPicker(),
+    h('div', { class: 'row' }, h('button', { class: 'btn ghost', disabled: !tot, on: { click: () => { S.wBets = {}; render(); } } }, t('csClear')),
+      h('button', { class: 'btn buy grow big', disabled: !tot || tot > S.st.me.cash || S.casinoBusy, on: { click: () => play('wheel', { bets: Object.entries(bets).map(([s, amt]) => ({ s, amt })) }, wheelAnim) } },
+        tot ? t('rlSpin', { m: moneyShort(tot) }) : t('rlPlace')))));
+  return out;
+}
+
+// ---- slot «Chefão» ----
+const SYM = (i) => `/img/slot/${i}.webp?1`;
+function slotCellEl(s, orb) {
+  return h('div', { class: 'sc2' + (s === 10 ? ' scat' : s === 11 ? ' orb' : '') }, h('img', { src: SYM(s), alt: '', width: 80, height: 80, decoding: 'async' }), orb ? h('b', { class: 'ov' }, '×' + orb) : null);
+}
+function slotGrid(step) {
+  const g = step ? step.g : (S.slotLastGrid || Array.from({ length: 30 }, (_, i) => (i * 7 + 3) % 10)), o = step ? step.o : (S.slotLastOrbs || {});
+  return h('div', { class: 'sgrid' }, g.map((s, i) => slotCellEl(s, o[i])));
+}
+async function slotStep(grid, step, prev, fast) {
+  // desenha a grelha; as casas novas caem de cima
+  const fresh = new Set();
+  if (prev && prev.rm) { const C = 6; for (let c = 0; c < C; c++) { const k = prev.rm.filter((i) => i % C === c).length; for (let r0 = 0; r0 < k; r0++) fresh.add(r0 * C + c); } }
+  grid.replaceChildren(...step.g.map((s, i) => { const el = slotCellEl(s, step.o[i]); if (!prev || fresh.has(i)) { el.classList.add('drop'); el.style.setProperty('--d', (prev ? 0 : (i % 6) * 55 + Math.floor(i / 6) * 18) + 'ms'); } return el; }));
+  await wait(RM() ? 120 : fast ? 260 : 480);
+  if (step.w) {
+    step.rm.forEach((i) => grid.children[i].classList.add('hit'));
+    fx.sfx('cash'); await wait(RM() ? 250 : fast ? 380 : 650);
+    step.rm.forEach((i) => grid.children[i].classList.add('pop'));
+    await wait(RM() ? 80 : fast ? 160 : 260);
+  }
+}
+async function slotAnim(r) {
+  S.slotSkip = false;
+  const sk = document.querySelector('.csbar .btn.buy');
+  if (sk) { sk.disabled = false; sk.textContent = t('slSkip'); sk.classList.replace('buy', 'ghost'); sk.addEventListener('click', () => { S.slotSkip = true; }); }
+  const grid = document.querySelector('.sgrid'), meter = document.querySelector('.swinm'), info = document.querySelector('.sinfo');
+  if (!grid) return;
+  const bet = r.bet, show = (c) => { meter.textContent = money(Math.floor((bet * c) / 100)); };
+  let acc = 0; show(0);
+  const round = async (rd, fast, mult) => {
+    let w = 0;
+    for (let k = 0; k < rd.steps.length; k++) {
+      if (S.slotSkip) break;
+      await slotStep(grid, rd.steps[k], k ? rd.steps[k - 1] : null, fast);
+      if (rd.steps[k].w) { w += rd.steps[k].w.reduce((x, y) => x + y.pay, 0); show(acc + w); }
+    }
+    if (S.slotSkip) return;
+    if (w > 0 && mult > 1) {
+      grid.querySelectorAll('.orb').forEach((el) => el.classList.add('hit'));
+      info.textContent = '×' + mult; info.classList.add('on'); fx.sfx('crit'); await wait(RM() ? 300 : 900); info.classList.remove('on');
+    }
+    acc += w * (w > 0 && mult > 1 ? mult : 1); show(acc);
+  };
+  await round(r.spin.base, false, r.spin.base.orbSum);
+  if (r.spin.free.length && !S.slotSkip) {
+    acc += r.spin.scatPay; show(acc);
+    grid.querySelectorAll('.scat').forEach((el) => el.classList.add('hit'));
+    info.textContent = t('slFree', { n: CFG_FREE() }); info.classList.add('on', 'big'); fx.sfx('level'); await wait(RM() ? 600 : 1600); info.classList.remove('on', 'big');
+    document.querySelector('.slot')?.classList.add('free');
+    for (let k = 0; k < r.spin.free.length && !S.slotSkip; k++) {
+      const f = r.spin.free[k], left = r.spin.free.length - k - 1;
+      document.querySelector('.sfree').textContent = t('slFreeLeft', { n: left, m: f.acc || 1 });
+      await round(f, true, f.acc);
+    }
+  }
+  S.slotLastGrid = (r.spin.free.at(-1) || r.spin.base).steps.at(-1).g; S.slotLastOrbs = (r.spin.free.at(-1) || r.spin.base).steps.at(-1).o;
+  S.slotLast = r; S.slotSkip = false;
+}
+const CFG_FREE = () => S.cfg.casino.slot.free;
+function screenSlot() {
+  const chip = chipNow(), last = S.slotLast;
+  const out = csHead('slot');
+  out.push(h('div', { class: 'slot' }, h('div', { class: 'stop' }, h('span', { class: 'sfree' }), h('b', { class: 'swinm num' }, last ? money(last.win) : '$0'), h('span', { class: 'sinfo' })), slotGrid()));
+  if (last) out.push(csResult(last));
+  out.push(h('div', { class: 'row', style: 'gap:8px;margin:0 0 4px' }, h('button', { class: 'btn ghost sm', on: { click: slotPaytable } }, t('slTable')), h('span', { class: 'small muted' }, t('slRules'))));
+  out.push(h('div', { class: 'stick csbar' }, chipPicker(),
+    S.casinoBusy ? h('button', { class: 'btn ghost block big', on: { click: () => { S.slotSkip = true; } } }, t('slSkip'))
+      : h('button', { class: 'btn buy block big', disabled: betMax() < S.cfg.casino.minBet, on: { click: () => play('slot', { amt: chip }, slotAnim) } }, t('slSpin', { m: moneyShort(chip) }))));
+  return out;
+}
+function slotPaytable() {
+  const P = S.cfg.casino.slot.pay, x = (v) => (v / 100).toString().replace('.', lang() === 'pt' ? ',' : '.') + '×';
+  sheet(h('div', { class: 'stack' }, h('h2', null, t('slTable')), h('p', { class: 'small muted' }, t('slTableSub')),
+    h('div', { class: 'ptab' }, h('span'), h('b', null, '8–9'), h('b', null, '10–11'), h('b', null, '12+'),
+      ...P.map((row, i) => [i, row]).sort((a, b) => b[1][2] - a[1][2]).flatMap(([i, row]) => [h('img', { src: SYM(i), alt: '', width: 40, height: 40 }), ...row.map((v) => h('span', { class: 'num' }, x(v)))])),
+    h('div', { class: 'row', style: 'gap:10px' }, h('img', { src: SYM(10), alt: '', width: 48, height: 48 }), h('p', { class: 'small' }, t('slScat'))),
+    h('div', { class: 'row', style: 'gap:10px' }, h('img', { src: SYM(11), alt: '', width: 48, height: 48 }), h('p', { class: 'small' }, t('slOrb')))));
 }
 
 // ---------- perfil ----------

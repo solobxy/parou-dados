@@ -80,6 +80,36 @@ export const CFG = {
     dice: { low: 23, seven: 58, high: 23 },            // quanto volta por cada 10 apostados: 2,3× · 5,8× · 2,3×
     bj: { decks: 6, draw: 24 },                        // baralho de 6 baralhos, baralhado a cada mão
     newsMin: 5000,                                      // ganhos a partir daqui vão para o jornal
+    maxWinMult: 2500,                                   // nenhuma jogada paga mais de 2500× o que se apostou
+    // Roda da Fortuna: 54 casas. Número n paga n para 1; as casas de bónus abrem um jogo que dá um multiplicador.
+    // Em cada volta pode aparecer um multiplicador extra numa casa (o «multiplicador do topo»).
+    // Contas: cada aposta devolve, em média, 95,5% (verificado nos testes).
+    wheel: {
+      segs: ['louca', '1', '2', '1', 'bola', '1', '2', 'caixas', '1', '10', '2', '1', '5', '1', '2', '10', '1', '5', '1', '5', '1', 'moeda', '2', '1', '2', '1', '5', '1', '10', '1',
+        'moeda', '1', '2', '1', 'caixas', '5', '2', '1', 'moeda', '2', '1', '2', '10', '5', '2', '1', 'bola', '2', '1', '5', '1', '2', 'moeda', '1'],
+      spots: ['1', '2', '5', '10', 'moeda', 'caixas', 'bola', 'louca'],
+      num: { 1: 1, 2: 2, 5: 5, 10: 10 },
+      top: { 1: 1024, 2: 1086, 5: 614, 10: 425, moeda: 428, caixas: 375, bola: 279, louca: 386 },   // em 10 000 voltas
+      topMult: [[2, 40], [3, 25], [5, 18], [10, 10], [20, 5], [50, 2]],
+      moeda: [[2, 18], [3, 18], [5, 16], [7, 12], [10, 12], [15, 9], [20, 7], [25, 4], [50, 3], [100, 1]],
+      caixas: [[5, 18], [7, 17], [10, 16], [15, 14], [20, 11], [25, 9], [50, 8], [75, 4], [100, 2], [200, 1]],
+      bola: [[5, 22], [10, 22], [15, 15], [20, 15], [25, 12], [50, 9], [100, 4], [200, 1]],
+      louca: [[10, 22], [15, 18], [20, 15], [25, 13], [50, 12], [75, 8], [100, 7], [200, 4], [500, 1]],
+      bolaSlots: 12, loucaSlots: 24,
+    },
+    // Slot «Chefão»: 6 colunas × 5 linhas, paga por quantidade (8 ou mais iguais em qualquer lado), as vitórias caem e entram símbolos novos.
+    // Esferas douradas multiplicam o prémio da jogada. 4 ou mais chefões dão rodadas grátis, onde os multiplicadores se somam.
+    slot: {
+      cols: 6, rows: 5,
+      // peso de cada símbolo: 0 charuto, 1 whisky, 2 ficha, 3 chapéu, 4 relógio, 5 anel, 6 notas, 7 diamante, 8 coroa, 9 barra de ouro, 10 chefão, 11 esfera
+      w: [140, 130, 118, 106, 74, 60, 50, 40, 32, 26, 14, 5],
+      wFree: [140, 130, 118, 106, 74, 60, 50, 40, 32, 26, 14, 18],
+      // prémio em centésimos da aposta para 8–9, 10–11 e 12+ iguais
+      pay: [[27, 81, 215], [43, 97, 431], [54, 107, 538], [86, 129, 861], [107, 161, 1076], [161, 215, 1292], [215, 538, 1614], [269, 1076, 2690], [1076, 2690, 5380], [538, 1292, 3228]],
+      orb: [[2, 300], [3, 200], [4, 120], [5, 100], [6, 60], [8, 50], [10, 40], [12, 25], [15, 20], [20, 15], [25, 10], [50, 5], [100, 2]],
+      scatterPay: { 4: 300, 5: 500, 6: 10000 },       // centésimos da aposta
+      free: 15, retrigger: 5, maxFree: 50, maxTumbles: 30,
+    },
   },
   // casa: cada nível dá respeito e deixa subir as melhorias até esse nível; a melhoria n custa uma parte do preço da casa n
   house: {

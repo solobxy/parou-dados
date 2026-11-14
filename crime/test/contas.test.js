@@ -365,3 +365,43 @@ test('casino: aposta mínima, máxima pelo nível, só dinheiro na mão; aposta 
   rico.peakRespect = CFG.levels[4];
   assert.equal(E.casinoMax(rico), 6553);   // nível 5: 1000 × 1,6⁴
 });
+
+test('roda da fortuna: cada aposta devolve 95,5% (conta exata) e a simulação confirma', () => {
+  const Wh = CFG.casino.wheel, E2 = (l) => l.reduce((x, [v, w]) => x + v * w, 0) / l.reduce((x, [, w]) => x + w, 0), Em = E2(Wh.topMult);
+  assert.equal(Wh.segs.length, 54);
+  const topTot = Object.values(Wh.top).reduce((x, y) => x + y, 0); assert.ok(topTot <= 10000);
+  for (const s of Wh.spots) {
+    const P = Wh.segs.filter((x) => x === s).length / 54, B = Wh.num[s] ?? E2(Wh[s]), q = Wh.top[s] / 10000;
+    const rtp = P * (1 + B * (1 + q * (Em - 1)));
+    assert.ok(rtp > 0.952 && rtp < 0.958, s + ' ' + rtp);
+  }
+  // simulação: a frequência de cada casa e o retorno batem com as contas
+  const rng = seededRng(5150), N = 300000, got = {}, ret = {};
+  for (let i = 0; i < N; i++) { const sp = E.wheelSpin(rng); got[sp.s] = (got[sp.s] || 0) + 1; ret[sp.s] = (ret[sp.s] || 0) + sp.mult + 1; }
+  for (const s of ['1', '2', '5', '10']) perto(got[s] / N, Wh.segs.filter((x) => x === s).length / 54, 0.004, 'casa ' + s);
+  for (const s of ['1', '2', '5']) perto(ret[s] / N, 0.955, 0.03, 'retorno ' + s);
+  // o dinheiro de uma jogada bate certo e nunca passa o teto
+  const p = cas(1e9); p.peakRespect = 1e6;
+  const r = E.casinoPlay(p, NOW, W, 'wheel', { bets: [{ s: '1', amt: 100 }, { s: 'louca', amt: 50 }] }, seededRng(1));
+  assert.equal(p.cash, 1e9 - 150 + r.win); assert.ok(r.win <= 150 * CFG.casino.maxWinMult);
+  assert.throws(() => E.casinoPlay(p, NOW, W, 'wheel', { bets: [{ s: '3', amt: 100 }] }, never), code('BAD_BET'));
+});
+
+test('slot Chefão: devolve ~95% em 400 000 jogadas, rodadas grátis ~1 em 300, teto de 2500×', () => {
+  const rng = seededRng(404), N = 400000; let tot = 0, fs = 0, hits = 0, maxX = 0;
+  for (let i = 0; i < N; i++) { const s = E.slotSpin(rng); const w = Math.min(s.total, CFG.casino.maxWinMult * 100); tot += w; if (s.free.length) fs++; if (s.base.win > 0) hits++; if (w > maxX) maxX = w; }
+  const rtp = tot / N / 100;
+  assert.ok(rtp > 0.92 && rtp < 0.98, 'retorno ' + rtp);
+  assert.ok(N / fs > 220 && N / fs < 450, 'rodadas grátis a cada ' + N / fs);
+  assert.ok(hits / N > 0.3 && hits / N < 0.4, 'jogadas com prémio ' + hits / N);
+  // uma jogada: as contas da grelha batem (8+ iguais pagam, as esferas só multiplicam se houver prémio)
+  const r2 = seededRng(9);
+  for (let i = 0; i < 3000; i++) {
+    const s = E.slotSpin(r2);
+    for (const step of s.base.steps) { assert.equal(step.g.length, 30); if (step.w) for (const w of step.w) assert.equal(step.g.filter((x) => x === w.s).length, w.n); }
+    if (s.base.win === 0) assert.equal(s.total, s.scatPay + s.free.reduce((x, f) => x + f.w, 0));
+  }
+  const p = cas(1e9); p.peakRespect = 1e6;
+  const r = E.casinoPlay(p, NOW, W, 'slot', { amt: 100 }, seededRng(3));
+  assert.equal(p.cash, 1e9 - 100 + r.win); assert.equal(r.win, Math.min(Math.floor(r.spin.total), 100 * CFG.casino.maxWinMult));
+});
