@@ -1,0 +1,56 @@
+[
+ {
+  "f": "flat-4-lobulos.webp",
+  "legenda": "Flat e quatro no lóbulo",
+  "legenda_en": "Flat and four lobe piercings",
+  "alt": "Flat e quatro no lóbulo",
+  "w": 900,
+  "h": 1351,
+  "estatico": "/img/t-flat-4-lobulos.webp"
+ },
+ {
+  "f": "narina.webp",
+  "legenda": "Narina",
+  "legenda_en": "Nostril",
+  "alt": "Narina",
+  "w": 900,
+  "h": 1351,
+  "estatico": "/img/t-narina.webp"
+ },
+ {
+  "f": "umbigo.webp",
+  "legenda": "Umbigo",
+  "legenda_en": "Navel",
+  "alt": "Umbigo",
+  "w": 900,
+  "h": 1350,
+  "estatico": "/img/t-umbigo.webp"
+ },
+ {
+  "f": "flat-lobulos.webp",
+  "legenda": "Flat e dois no lóbulo",
+  "legenda_en": "Flat and two lobe piercings",
+  "alt": "Flat e dois no lóbulo",
+  "w": 900,
+  "h": 1351,
+  "estatico": "/img/t-flat-lobulos.webp"
+ },
+ {
+  "f": "industrial.webp",
+  "legenda": "Industrial",
+  "legenda_en": "Industrial",
+  "alt": "Industrial",
+  "w": 900,
+  "h": 1351,
+  "estatico": "/img/t-industrial.webp"
+ },
+ {
+  "f": "lobulo.webp",
+  "legenda": "Lóbulo",
+  "legenda_en": "Lobe",
+  "alt": "Lóbulo",
+  "w": 900,
+  "h": 1351,
+  "estatico": "/img/t-lobulo.webp"
+ }
+]

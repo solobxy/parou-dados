@@ -1,68 +1,47 @@
 # Dayla Araújo Body Piercing: design
 
-Ler antes de mexer no site (`dayla/modelo.html`, construído por `dayla/construir.py`) ou no painel
-(`sites/dayla/<painel>/index.html`). O desenho é próprio: não copiar o do AdriBodyPiercing.
+Ler antes de mexer no site (`dayla/modelo.html` + `dayla/textos.py`, construído por `python3 dayla/construir.py`)
+ou no painel (`sites/dayla/painel-dayla-r7k3/index.html`). Desenho próprio: não copiar o do AdriBodyPiercing.
 
 ## Tema
-Piercer independente no Porto, sem estúdio fixo: atende por marcação no estúdio onde estiver nesse dia.
-Comunicativa, calma, engraçada, descontraída, estilosa, apaixonada por ténis de skate (Vans). Quer uma sala
-futura a preto e branco com o rosa só nos detalhes. O site é a primeira conversa: o cliente chega ao WhatsApp
-já com os preços, os cuidados e o que quer.
+Piercer independente no Porto, sem estúdio fixo (atende no estúdio onde estiver nesse dia). Comunicativa, calma,
+engraçada, estilosa, apaixonada por ténis de skate (Vans). Pedido do Dinis (14/11/2026): **preto em quase tudo,
+detalhes brancos, rosa só onde dá charme**. Fotografia e vídeo reais dela à frente.
 
-Ideia: **o xadrez dos ténis de skate é o bilhete da marcação**. Cada piercing que o cliente escolhe vira uma
-casa rosa no canhoto do bilhete. O rosa só aparece quando há uma escolha (botão, casa escolhida, seleção).
+Ideia: **o xadrez dos ténis de skate** aparece só como assinatura (faixa que vira casa a casa, tira vertical ao lado
+do vídeo, canhoto do bilhete) e há sempre **uma única casa rosa** em cada xadrez.
 
-## Paleta (60-30-10)
-| Nome | Hex | Função |
+## Paleta
+| Nome | Valor | Função |
 |---|---|---|
-| papel | #F5F5F3 | 60 %: fundo da maior parte das secções |
-| papel-2 | #E8E8E4 | degrau de tom (preços, perguntas, bilhete) |
-| tinta | #101010 | 30 %: texto, herói, secções escuras, casas pretas do xadrez |
-| tinta-2 | #1C1C1C | degrau escuro |
-| rosa | #F7B8D2 | 10 %: botão principal (texto tinta, 11,5:1), casas escolhidas, seleção, foco no escuro |
-| rosa-tinta | #B02A66 | rosa em texto pequeno sobre papel (5,7:1): só em ligações dentro de texto |
-| sec / sec-escuro | #545454 / #B5B5B5 | texto secundário no claro (6,9:1) / no escuro (9,3:1) |
-
-Nada de gradientes decorativos nem sombras paradas. O xadrez é um padrão (conic-gradient), nunca imagem.
+| fundo | #0A0A0A | fundo de quase tudo |
+| sup / sup-2 | #141414 / #1D1D1D | degrau de tom (preços, como funciona, perguntas, campos, cartões) |
+| tx | #F4F3F0 | texto, botão principal (texto fundo), casas brancas do xadrez |
+| tx-2 | #A3A3A0 | texto secundário (8:1 no fundo) |
+| linha / linha-2 | branco a 12 % / 28 % | divisórias de listas e contornos finos de botões secundários |
+| rosa | #F2B5CB | só: argola do logótipo, uma casa de cada xadrez, ponto dos pinos, ponto da barra, foco, erros, último passo |
 
 ## Tipo
-Uma família: **Archivo** variável (peso 100–900, largura 62–125 %), ficheiro próprio em `/fonts/`.
-- Títulos: 820, largura 72 % (condensado), entrelinha 0,92, tracking −0,02 em. Maiúscula só no início.
-- Logótipo e preços grandes: 860, largura 118 % (largo).
-- Texto: 400, largura 100 %, 17–18 px, entrelinha 1,5. Preços e horas com `tabular-nums`.
+Archivo variável (ficheiro próprio). Títulos 800, largura 74 %, entrelinha 0,94; preços 800 a 108 %; texto 400 a 17–18 px.
+O h1 está partido em duas linhas fixas (`.l`), que sobem por máscara ao abrir.
 
 ## Componentes
-- Botão principal: rosa com texto tinta e contorno tinta de 2 px, raio 999 px. Secundário: contorno tinta, fundo transparente.
-- Linha de preço: nome, tempo de cicatrização, preço e botão «+» de 44 px que vira «✓» (casa rosa).
-- Bilhete: corpo papel-2, canhoto em xadrez 2×6 casas; cada escolha vira uma casa rosa (até 6).
-- Campos: fundo branco, contorno tinta 2 px, rótulo sempre visível, erro por baixo do campo.
+- Botão principal: branco cheio, texto preto, pílula. Secundário: contorno de 1 px branco a 28 %, ou ligação com seta.
+- Linha de preço: nome + cicatrização, preço, botão redondo «+» (contorno fino) que fica branco com visto quando escolhido.
+- Visagismo: fotos reais da Dayla com pinos (anel branco, ponto rosa, onda 2 vezes) e etiquetas; «Projeto 1/2» alterna.
+- Bilhete do pedido: cartão sup com canhoto em xadrez; cada escolha pinta uma casa de rosa.
+- Campos: fundo sup, contorno 1 px, foco branco com halo rosa suave.
+- Nada de rolagem lateral escondida: os botões das categorias quebram linha; no painel, «Site» é um menu em lista.
 
 ## Movimento
-- Assinatura: casas do xadrez que viram (rotateY 180°, 420 ms, ease-out) quando se escolhe um piercing e, uma vez,
-  na entrada do herói. Com redução de movimento: troca de cor com fade de 150 ms (continua a haver resposta).
-- Entradas de secção: título, texto, resto (subida 20 px, 70 ms entre eles, uma vez). Só transform e opacity.
-- Nada em ciclo contínuo (poupança de bateria).
+h1 por máscara (0,9 s), resto do herói a aparecer; faixa de xadrez vira casa a casa; pinos com onda; botões com mola curta.
+Vídeo do herói: sem som, em ciclo, pausa fora do ecrã e com botão de pausa; não arranca com redução de movimento
+(fica o cartaz). Com redução de movimento tudo passa a fades curtos.
 
-## Layout
-Base 4 px (8, 12, 16, 24, 32, 48, 64, 96, 128). Margem 20 px no telemóvel, 40 px no computador, largura máx. 1200 px.
-Secções alternam composição: herói a duas colunas, preços em lista larga, projeto com texto + xadrez, como funciona
-em linha de tempo, sobre com foto, cuidados em duas colunas, perguntas em acordeão, bilhete centrado.
+## Fotos
+`dayla/fotos-iniciais/` (com `lista.json`) entram na galeria na primeira vez que a agenda arranca; depois a Dayla gere-as
+no painel. As mesmas estão em `sites/dayla/img/t-*.webp` para a página funcionar sem a API.
+Os pontos do visagismo estão em `PROJETOS` (`dayla/construir.py`), em % da foto.
 
-## Ordem da página (argumento)
-herói (quem, o quê, onde) → trabalhos (só com fotos) → preços (tudo à vista, toca para juntar ao pedido) →
-projeto/visagismo → como funciona (sem estúdio fixo: «tu dizes quando, eu digo onde») → quem te vai furar →
-avaliações (só quando houver) → joias (só quando houver) → cuidados → perguntas → pedido (bilhete) → contacto.
-
-## Línguas
-Português em `/` e inglês em `/en/`, gerados de `dayla/textos.py` por `python3 dayla/construir.py`.
-Os textos que a Dayla muda no painel (nomes dos piercings, preços, nota dos preços) vêm em PT e EN.
-
-## Painel (`/painel-dayla-r7k3/`)
-Telemóvel primeiro, separadores em baixo: Pedidos, Dias, Site, Números. Mesmo papel/tinta/rosa do site,
-mas mais calmo: sem xadrez, só uma casa rosa a marcar o separador ativo.
-
-## Fazer e não fazer
-- Fazer: preços completos, frases curtas na voz dela (primeira pessoa), PT-PT no português.
-- Não fazer: logótipo, faixa lateral ou nome da Vans em imagens; fotos que não sejam dela; preços inventados;
-  avaliações que não venham do link de uso único.
-- Verificar a 320, 390 e 1280 px, com e sem redução de movimento.
+## Verificar
+12 larguras (320 a 1920), com e sem redução de movimento, PT e EN: sem rolagem lateral e títulos em 2 linhas no máximo.

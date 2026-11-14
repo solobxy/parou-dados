@@ -163,11 +163,44 @@ def preparar():
       foto TEXT NOT NULL DEFAULT '', quantidade INTEGER, visivel INTEGER NOT NULL DEFAULT 1, ordem INTEGER NOT NULL DEFAULT 0,
       atualizado INTEGER NOT NULL DEFAULT 0);
     ''')
+    importar_fotos_iniciais(c)
     if not c.execute("SELECT 1 FROM config WHERE chave='estat_chave'").fetchone():
         # chave só deste servidor para pedir as visitas do site; no Supabase fica apenas o hash (estat.config, hash_chave_dayla)
         c.execute("INSERT INTO config(chave, valor) VALUES('estat_chave', ?)", (json.dumps(secrets.token_urlsafe(32)),))
     carregar_cfg(c)
     c.close()
+
+
+SEMENTE = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'fotos-iniciais')
+
+
+def importar_fotos_iniciais(c):
+    """Na primeira vez, põe na galeria as fotos de trabalhos que a Dayla mandou (dayla/fotos-iniciais). Depois é ela que as gere."""
+    if c.execute("SELECT 1 FROM config WHERE chave='fotos_iniciais'").fetchone():
+        return
+    try:
+        with open(os.path.join(SEMENTE, 'lista.json'), encoding='utf-8') as f:
+            lista = json.load(f)
+    except (OSError, ValueError):
+        return
+    fotos = cfg_get(c, 'fotos', {}) or {}
+    if not fotos.get('galeria'):
+        gal = []
+        for x in lista:
+            try:
+                with open(os.path.join(SEMENTE, x['f']), 'rb') as f:
+                    dados = f.read()
+            except OSError:
+                continue
+            nome = 'galeria-%s.webp' % secrets.token_urlsafe(9)
+            with open(os.path.join(FOTOS, nome), 'wb') as f:
+                f.write(dados)
+            gal.append({'f': nome, 'legenda': x.get('legenda', ''), 'legenda_en': x.get('legenda_en', ''), 'alt': x.get('alt', ''),
+                        'w': x.get('w'), 'h': x.get('h')})
+        fotos['galeria'] = gal
+        c.execute('INSERT INTO config(chave, valor) VALUES(?, ?) ON CONFLICT(chave) DO UPDATE SET valor=excluded.valor',
+                  ('fotos', json.dumps(fotos, ensure_ascii=False)))
+    c.execute("INSERT INTO config(chave, valor) VALUES('fotos_iniciais', 'true')")
 
 
 def cfg_get(c, chave, padrao):
@@ -338,7 +371,7 @@ def hora_livre(c, data, hora, admin=False, ignorar=None):
 def fotos_publicas():
     f = CFG['fotos']
     p = f.get('perfil') or {}
-    gal = [{'src': '/api/fotos/' + g['f'], 'legenda': g.get('legenda', ''), 'alt': g.get('alt', ''),
+    gal = [{'src': '/api/fotos/' + g['f'], 'legenda': g.get('legenda', ''), 'legenda_en': g.get('legenda_en', ''), 'alt': g.get('alt', ''),
             'w': g.get('w'), 'h': g.get('h')} for g in (f.get('galeria') or []) if g.get('f')]
     return {'perfil': {'src': '/api/fotos/' + p['f'], 'alt': p.get('alt', ''), 'w': p.get('w'), 'h': p.get('h')} if p.get('f') else None,
             'galeria': gal}
@@ -1023,7 +1056,8 @@ class H(BaseHTTPRequestHandler):
             g = gal.pop(n)
             self.apagar_ficheiro(g.get('f'))
         elif acao == 'texto':
-            gal[n] = dict(gal[n], legenda=limpar_texto(corpo.get('legenda'), 120), alt=limpar_texto(corpo.get('alt'), 160))
+            gal[n] = dict(gal[n], legenda=limpar_texto(corpo.get('legenda'), 120), alt=limpar_texto(corpo.get('alt'), 160),
+                          legenda_en=limpar_texto(corpo.get('legenda_en', gal[n].get('legenda_en', '')), 120))
         else:
             para = corpo.get('para')
             if type(para) is not int or not 0 <= para < len(gal):

@@ -80,35 +80,87 @@ def icone_svg():
 
 
 SVG = {
-    'svg_mais': '<svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 3v14M3 10h14" stroke="currentColor" stroke-width="2.6" fill="none" stroke-linecap="square"/></svg>',
-    'svg_v': '<svg viewBox="0 0 22 22" aria-hidden="true"><path d="M4 11.5l4.5 4.5L18 6.5" stroke="currentColor" stroke-width="2.8" fill="none" stroke-linecap="square"/></svg>',
-    'svg_x': '<svg viewBox="0 0 22 22" aria-hidden="true"><path d="M5 5l12 12M17 5L5 17" stroke="#B02A66" stroke-width="2.8" fill="none" stroke-linecap="square"/></svg>',
-    'svg_x_fino': '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 3l10 10M13 3L3 13" stroke="currentColor" stroke-width="2.2" fill="none" stroke-linecap="square"/></svg>',
-    'svg_alerta': '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l10 18H2z" fill="currentColor"/><path d="M12 10v5M12 17.5v.5" stroke="#101010" stroke-width="2.4" stroke-linecap="square"/></svg>',
-    'svg_estrela': '<svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 1.8l2.5 5.3 5.7.7-4.2 4 1.1 5.7L10 14.8l-5.1 2.7 1.1-5.7-4.2-4 5.7-.7z" fill="#101010"/></svg>',
+    'svg_mais': '<svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 4v12M4 10h12" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/></svg>',
+    'svg_v': '<svg viewBox="0 0 22 22" aria-hidden="true"><path d="M4.5 11.5l4.2 4.2L17.5 7" stroke="currentColor" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+    'svg_x': '<svg viewBox="0 0 22 22" aria-hidden="true" style="color:#F2B5CB"><path d="M5 5l12 12M17 5L5 17" stroke="currentColor" stroke-width="2.4" fill="none" stroke-linecap="round"/></svg>',
+    'seta_esq_svg': '<svg viewBox="0 0 22 22" aria-hidden="true"><path d="M18 11H5M10 5l-6 6 6 6" stroke="currentColor" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+    'svg_x_fino': '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 3.5l9 9M12.5 3.5l-9 9" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round"/></svg>',
+    'svg_alerta': '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l10 18H2z" fill="currentColor"/><path d="M12 10v5M12 17.5v.5" stroke="#0A0A0A" stroke-width="2.2" stroke-linecap="round"/></svg>',
+    'svg_estrela': '<svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 1.8l2.5 5.3 5.7.7-4.2 4 1.1 5.7L10 14.8l-5.1 2.7 1.1-5.7-4.2-4 5.7-.7z" fill="currentColor"/></svg>',
     'wa_svg': '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm0 18.2c-1.5 0-3-.4-4.3-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8-.2-.1-.4-.1-.6.1l-.8 1c-.1.2-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.3-.4.2-.4.7-1.4.1-.2 0-.3 0-.4l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.2 5.2 0 0 0 1.1 2.8 11.9 11.9 0 0 0 4.6 4c1.7.7 2.3.8 3.2.6.5-.1 1.5-.6 1.7-1.2.2-.6.2-1.1.2-1.2-.1-.1-.2-.2-.4-.3z"/></svg>',
     'ig_svg': '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="4" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="17.3" cy="6.7" r="1.3" fill="currentColor"/></svg>',
-    'seta_svg': '<svg viewBox="0 0 22 22" aria-hidden="true"><path d="M4 11h13M12 5l6 6-6 6" stroke="currentColor" stroke-width="2.6" fill="none" stroke-linecap="square"/></svg>',
+    'seta_svg': '<svg viewBox="0 0 22 22" aria-hidden="true"><path d="M4 11h13M12 5l6 6-6 6" stroke="currentColor" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>',
 }
 
 
-def orelha(lang):
-    """Desenho de uma orelha com um projeto de exemplo (5 pontos). Linhas da tinta, pontos rosa."""
-    nomes = {'pt': ('Hélix', 'Flat', 'Conch', 'Lóbulo ×2'), 'en': ('Helix', 'Flat', 'Conch', 'Lobe ×2')}[lang]
-    desc = html.escape(T['proj_svg_desc'][lang])
-    return f'''<svg viewBox="0 0 420 470" role="img" aria-labelledby="orelha-t"><style>text{{paint-order:stroke;stroke:#F5F5F3;stroke-width:6px;stroke-linejoin:round}}</style><title id="orelha-t">{desc}</title>
-<g transform="translate(30 14)"><path d="M188 28c-72 0-122 52-122 124 0 46 18 76 40 104 18 23 26 42 26 70 0 44 26 84 70 84 40 0 62-30 62-62 0-26-14-40-14-62 0-18 12-32 26-52 22-32 38-62 38-104 0-62-52-102-126-102z" fill="none" stroke="#101010" stroke-width="7" stroke-linejoin="round"/>
-<path d="M120 150c0-48 34-82 78-82 46 0 80 30 80 72 0 30-14 50-30 70" fill="none" stroke="#101010" stroke-width="6" stroke-linecap="round"/>
-<path d="M158 168c6-30 26-48 52-48 26 0 42 18 42 40 0 28-24 42-24 72 0 16 6 26 6 40" fill="none" stroke="#101010" stroke-width="6" stroke-linecap="round"/>
-<path d="M168 226c14 20 34 26 50 22" fill="none" stroke="#101010" stroke-width="6" stroke-linecap="round"/>
-<path d="M232 300c-10-10-26-12-38-6" fill="none" stroke="#101010" stroke-width="6" stroke-linecap="round"/>
-<circle class="ponto" cx="96" cy="110" r="11"/><circle class="ponto" cx="182" cy="96" r="11"/><circle class="ponto" cx="206" cy="196" r="11"/>
-<circle class="ponto" cx="196" cy="372" r="11"/><circle class="ponto" cx="232" cy="360" r="11"/>
-<path d="M84 98L52 66" stroke="#101010" stroke-width="2.5"/><text x="12" y="56">{nomes[0]}</text>
-<path d="M190 84l26-58" stroke="#101010" stroke-width="2.5"/><text x="222" y="20">{nomes[1]}</text>
-<path d="M218 200l80 8" stroke="#101010" stroke-width="2.5"/><text x="304" y="214">{nomes[2]}</text>
-<path d="M244 366l36 18" stroke="#101010" stroke-width="2.5"/><text x="246" y="408">{nomes[3]}</text>
-</g></svg>'''
+
+LISTA_FOTOS = os.path.join(AQUI, 'fotos-iniciais', 'lista.json')
+
+
+def fotos_iniciais():
+    with open(LISTA_FOTOS, encoding='utf-8') as f:
+        return json.load(f)
+
+
+def galeria_html(lang):
+    out = []
+    for n, x in enumerate(fotos_iniciais()[:9]):
+        lg = x['legenda_en'] if lang == 'en' and x.get('legenda_en') else x['legenda']
+        out.append('<figure><button type="button" data-n="%d" aria-label="%s"><img src="%s" alt="%s" width="%d" height="%d" loading="lazy" decoding="async"></button>'
+                   '<figcaption>%s</figcaption></figure>' % (n, html.escape(lg), x['estatico'], html.escape(lg), x['w'], x['h'], html.escape(lg)))
+    return ''.join(out)
+
+
+# Projetos reais da Dayla com os pontos de cada piercing (em % da foto, que é mostrada inteira, 2:3)
+PROJETOS = [
+    {'img': '/img/t-flat-4-lobulos.webp', 'nome': 'proj_ex1', 'servicos': ['flat', 'lobulo'],
+     'pinos': [(47.1, 40.5, 'p_flat'), (28.1, 66.9, None), (34.1, 65.6, None), (38.2, 63.9, None), (41.7, 62.3, 'p_lobulo4')]},
+    {'img': '/img/t-flat-lobulos.webp', 'nome': 'proj_ex2', 'servicos': ['flat', 'lobulo'],
+     'pinos': [(59.6, 37.5, 'p_flat'), (32.8, 58.4, None), (42.2, 55.6, 'p_lobulo2')]},
+]
+
+
+def quadro_proj(lang):
+    imgs, pins = [], []
+    for n, p in enumerate(PROJETOS):
+        alt = T[p['nome']][lang]
+        imgs.append('<img src="%s" alt="%s" width="900" height="1351" loading="lazy" decoding="async"%s%s>' % (
+            p['img'], html.escape(alt), ' class="fora"' if n else '', ' aria-hidden="true"' if n else ''))
+        h = '<div class="pinos%s" aria-hidden="true">' % (' fora' if n else '')
+        for k, (x, y, rot) in enumerate(p['pinos']):
+            h += '<span class="pino" style="left:%.1f%%;top:%.1f%%;--k:%d"></span>' % (x, y, k)
+            if rot:
+                h += '<span class="etq-p" style="left:%.1f%%;top:%.1f%%">%s</span>' % (x, y, html.escape(T[rot][lang]))
+        h += '</div>'
+        pins.append(h)
+    return ''.join(imgs) + ''.join(pins)
+
+
+def proj_js(lang):
+    return json.dumps([{'nome': T[p['nome']][lang], 'servicos': p['servicos']} for p in PROJETOS], ensure_ascii=False)
+
+
+def faixa():
+    # 2 linhas de 48 casas; no telemóvel só se veem 24 por linha (as cores vêm do CSS)
+    out = []
+    for k in range(96):
+        out.append('<i style="--d:%d"%s></i>' % (k % 24, ' class="r"' if k == 37 else ''))
+    return ''.join(out)
+
+
+def tira(cols, rows, rosa):
+    out = []
+    for r in range(rows):
+        for c in range(cols):
+            k = r * cols + c
+            cls = 'r' if k == rosa else ('b' if (r + c) % 2 == 0 else '')
+            out.append('<i%s></i>' % (' class="%s"' % cls if cls else ''))
+    return ''.join(out)
+
+
+def h1_linhas(lang):
+    a, b = {'pt': ('Piercing no Porto,', 'sem dúvidas.'), 'en': ('Piercing in Porto,', 'no guesswork.')}[lang]
+    return '<span class="l"><span>%s</span></span><span class="l"><span>%s</span></span>' % (html.escape(a), html.escape(b))
 
 
 def xadrez(cols, rows, rosa=None, par=False):
@@ -132,7 +184,7 @@ def precos_html(lang):
     col = {1: '', 2: ''}
     for cid, nome in cats:
         l = [s for s in servs if s['cat'] == cid]
-        h = '<div class="grupo" id="cat-%s"><h3>%s</h3><ul class="lista">' % (cid, html.escape(nome))
+        h = '<div class="grupo" id="cat-%s"><h3>%s<small>%d</small></h3><ul class="lista">' % (cid, html.escape(nome), len(l))
         for s in l:
             cic = s['cic_' + lang]
             h += ('<li><span class="nome">%s%s</span><span class="preco vazio">%s</span>'
@@ -151,7 +203,8 @@ def cic_html(lang):
 
 def dados_iniciais():
     servs = [{k: s[k] for k in ('id', 'cat', 'pt', 'en', 'preco', 'desde', 'cic_pt', 'cic_en')} for s in agenda.servicos_padrao()]
-    return {'servicos': servs, 'nota': agenda.NOTA_PADRAO, 'dias': [], 'fotos': {'perfil': None, 'galeria': []}, 'joias': [],
+    gal = [{'src': x['estatico'], 'legenda': x['legenda'], 'legenda_en': x['legenda_en'], 'alt': x['alt'], 'w': x['w'], 'h': x['h']} for x in fotos_iniciais()]
+    return {'servicos': servs, 'nota': agenda.NOTA_PADRAO, 'dias': [], 'fotos': {'perfil': None, 'galeria': gal}, 'joias': [],
             'contactos': agenda.CONTACTOS_PADRAO, 'avaliacoes': {'n': 0, 'media': None, 'lista': []}}
 
 
@@ -179,8 +232,11 @@ def construir(lang, logo):
         'url': BASE + ('/' if lang == 'pt' else '/en/'), 'url_pt': BASE + '/', 'url_en': BASE + '/en/', 'base': BASE,
         'url_rel': '/' if lang == 'pt' else '/en/', 'url_outra_rel': '/en/' if lang == 'pt' else '/',
         'outra_hreflang': 'en' if lang == 'pt' else 'pt-PT', 'og_locale': 'pt_PT' if lang == 'pt' else 'en_GB', 'lang': lang,
-        'logo': logo, 'jsonld': jsonld(lang), 'orelha': orelha(lang),
-        'xadrez_heroi': xadrez(7, 7, rosa=5), 'xadrez_bilhete': xadrez(6, 2), 'xadrez_rodape': xadrez(24, 1),
+        'logo': logo, 'jsonld': jsonld(lang), 'h1_linhas': h1_linhas(lang),
+        'facto2': html.escape({'pt': 'por marcação', 'en': 'by appointment'}[lang]), 'facto3': html.escape({'pt': 'PT / EN', 'en': 'EN / PT'}[lang]),
+        'tira_v': tira(2, 14, 9), 'tira_s': tira(2, 6, 7), 'faixa': faixa(), 'xadrez_bilhete': tira(6, 2, -1),
+        'galeria_html': galeria_html(lang), 'quadro_proj': quadro_proj(lang), 'proj_js': proj_js(lang),
+        'proj_b1': {'pt': 'Projeto 1', 'en': 'Project 1'}[lang], 'proj_b2': {'pt': 'Projeto 2', 'en': 'Project 2'}[lang],
         'precos_html': precos_html(lang), 'cic_html': cic_html(lang), 'nota': html.escape(agenda.NOTA_PADRAO[lang]),
         'js': json.dumps(js, ensure_ascii=False).replace('</', '<\\/'),
         'dados': json.dumps(dados_iniciais(), ensure_ascii=False).replace('</', '<\\/'),
@@ -206,7 +262,9 @@ def main():
     logo, _ = logotipo()
     with open(os.path.join(SITE, 'logo.svg'), 'w', encoding='utf-8') as f:
         f.write(logo)
-    logo_inline = logo.replace('<svg xmlns="http://www.w3.org/2000/svg" ', '<svg ').replace('role="img" aria-label="Dayla"', 'aria-hidden="true" focusable="false"')
+    with open(os.path.join(SITE, 'logo-branco.svg'), 'w', encoding='utf-8') as f:
+        f.write(logo.replace('<g transform="scale(1 -1)" fill="#101010">', '<g transform="scale(1 -1)" fill="#F4F3F0">').replace('stroke="#101010" stroke-width="66"', 'stroke="#0A0A0A" stroke-width="66"'))
+    logo_inline = logo.replace('<svg xmlns="http://www.w3.org/2000/svg" ', '<svg ').replace('role="img" aria-label="Dayla"', 'aria-hidden="true" focusable="false"').replace('<g transform="scale(1 -1)" fill="#101010">', '<g transform="scale(1 -1)" fill="currentColor">').replace('stroke="#101010" stroke-width="66"', 'stroke="#0A0A0A" stroke-width="66"')
     with open(os.path.join(SITE, 'icon.svg'), 'w', encoding='utf-8') as f:
         f.write(icone_svg())
     for lang, caminho in (('pt', 'index.html'), ('en', os.path.join('en', 'index.html'))):

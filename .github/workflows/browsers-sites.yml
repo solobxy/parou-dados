@@ -1,0 +1,37 @@
+name: Sites nos browsers (Safari, Firefox, Chrome)
+
+# Abre um site nos três motores (WebKit/Safari, Firefox e Chromium) e em iPhone, iPad, Android e computador,
+# procura erros de JavaScript e rolagem lateral e guarda as capturas no ramo browsers-sites.
+#   urls: endereços separados por espaços
+
+on:
+  workflow_dispatch:
+    inputs:
+      urls:
+        description: "Endereços separados por espaços"
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  browsers:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Playwright com Firefox e WebKit
+        run: |
+          pip install -q playwright
+          python3 -m playwright install --with-deps chromium firefox webkit > /dev/null
+      - name: Testar
+        env:
+          URLS: ${{ inputs.urls }}
+        run: python3 auditoria/browsers_sites.py resultado $URLS
+      - name: Guardar
+        if: always()
+        run: |
+          cd resultado && git init -q -b browsers-sites
+          git config user.name "parou-dados"; git config user.email "actions@users.noreply.github.com"
+          git add -A && git commit -q -m "Browsers $(date -u +%Y-%m-%dT%H:%MZ)"
+          git push -q -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" browsers-sites

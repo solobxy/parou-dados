@@ -13,6 +13,7 @@ T = {
     'saltar': {'pt': 'Saltar para o conteúdo', 'en': 'Skip to content'},
     'outra_lingua': {'pt': 'EN', 'en': 'PT'},
     'outra_lingua_nome': {'pt': 'English version', 'en': 'Versão em português'},
+    'menu_trab': {'pt': 'Trabalhos', 'en': 'Work'},
     'menu_precos': {'pt': 'Preços', 'en': 'Prices'},
     'menu_projeto': {'pt': 'Visagismo', 'en': 'Curation'},
     'menu_como': {'pt': 'Como funciona', 'en': 'How it works'},
@@ -76,8 +77,8 @@ T = {
     'sobre_h2': {'pt': 'Quem te vai furar', 'en': 'Who’ll be piercing you'},
     'sobre_p1': {'pt': 'Sou a Dayla. Gosto de conversar, de explicar tudo com calma e de rir um bocado pelo meio, porque fazer um piercing deve ser uma coisa boa.',
                  'en': 'I’m Dayla. I like to talk, to explain everything calmly and to have a laugh along the way, because getting pierced should feel good.'},
-    'sobre_p2': {'pt': 'Levo a higiene muito a sério e sigo todas as normas: o espaço é preparado para cada pessoa e cada agulha é nova e só se usa uma vez.',
-                 'en': 'I take hygiene very seriously and follow every standard: the space is set up for each person and every needle is new and used only once.'},
+    'sobre_p2': {'pt': 'Levo a higiene muito a sério. Antes de começar, explico-te tudo e só avançamos quando estiveres à vontade.',
+                 'en': 'I take hygiene very seriously. Before we start I explain everything, and we only go ahead when you feel ready.'},
     'sobre_p3': {'pt': 'Fora isso, sou viciada em Vans e passo a vida a criar conteúdo. Se quiseres ver trabalhos e bastidores, está tudo no Instagram.',
                  'en': 'Apart from that, I’m addicted to Vans and I’m always making content. If you want to see work and behind the scenes, it’s all on Instagram.'},
 
@@ -193,6 +194,26 @@ T = {
               '<p><strong>Your rights:</strong> you can ask to see, correct or delete your data at any time on WhatsApp. You can also complain to the Portuguese data authority, CNPD (cnpd.pt).</p>'
               '<p><strong>Statistics:</strong> the site counts visits without cookies and without storing your IP address.</p>'
               '<p><strong>WhatsApp:</strong> WhatsApp conversations follow WhatsApp’s (Meta’s) privacy rules.</p>'},
+    # ---------- novos (desenho escuro) ----------
+    'video_aria': {'pt': 'Vídeo: a Dayla, de luvas pretas, a fazer um piercing', 'en': 'Video: Dayla, in black gloves, doing a piercing'},
+    'video_pausa': {'pt': 'Pausar o vídeo', 'en': 'Pause the video'},
+    'video_ver': {'pt': 'Ver o vídeo', 'en': 'Play the video'},
+    'trab_lead': {'pt': 'Fotos de clientes, tiradas no estúdio depois de furar.', 'en': 'Client photos, taken in the studio right after piercing.'},
+    'anterior': {'pt': 'Foto anterior', 'en': 'Previous photo'},
+    'seguinte': {'pt': 'Foto seguinte', 'en': 'Next photo'},
+    'proj_ex1': {'pt': 'Flat e quatro no lóbulo', 'en': 'Flat and four on the lobe'},
+    'proj_ex2': {'pt': 'Flat e dois no lóbulo', 'en': 'Flat and two on the lobe'},
+    'proj_real': {'pt': 'Projetos feitos pela Dayla', 'en': 'Projects by Dayla'},
+    'proj_juntar': {'pt': 'Juntar ao pedido', 'en': 'Add to request'},
+    'p_flat': {'pt': 'Flat', 'en': 'Flat'},
+    'p_lobulo4': {'pt': 'Lóbulo ×4', 'en': 'Lobe ×4'},
+    'p_lobulo2': {'pt': 'Lóbulo ×2', 'en': 'Lobe ×2'},
+    'sobre_foto_alt': {'pt': 'As mãos da Dayla, de luvas pretas, a preparar um piercing', 'en': 'Dayla’s hands, in black gloves, preparing a piercing'},
+    'higiene_t': {'pt': 'Higiene', 'en': 'Hygiene'},
+    'hig1': {'pt': 'Agulha nova, de uso único', 'en': 'A new, single-use needle'},
+    'hig2': {'pt': 'Espaço preparado para cada pessoa', 'en': 'The space set up for each person'},
+    'hig3': {'pt': 'Todas as normas de higiene, sempre', 'en': 'Every hygiene standard, every time'},
+    'precos_ir': {'pt': 'Ir para', 'en': 'Jump to'},
 }
 
 # Textos usados pelo JavaScript (vão para a página como JSON).

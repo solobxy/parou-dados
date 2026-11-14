@@ -72,6 +72,7 @@ def main():
         s, j = pub.pedido('GET', '/api/site')
         ok(s == 200 and len(j['servicos']) >= 20 and all(x['preco'] is None for x in j['servicos']), 'site com serviços sem preço')
         ok(j['dias'] == [] and j['avaliacoes']['n'] == 0, 'site sem dias nem avaliações')
+        ok(len(j['fotos']['galeria']) == 6 and j['fotos']['galeria'][0]['legenda_en'], 'fotos iniciais na galeria')
 
         # painel fechado
         s, _ = pub.pedido('GET', '/api/admin/pedidos')
@@ -193,14 +194,14 @@ def main():
         ok(s == 415, 'formato estranho recusado')
         s, r = adm.pedido('POST', '/api/admin/fotos/galeria', webp, tipo='image/webp')
         s, r = adm.pedido('POST', '/api/admin/fotos/galeria', webp, tipo='image/webp')
-        ok(s == 200 and len(r['fotos']['galeria']) == 2, 'duas fotos na galeria')
+        ok(s == 200 and len(r['fotos']['galeria']) == 8, 'duas fotos novas na galeria (8 com as iniciais)')
         s, r = adm.pedido('POST', '/api/admin/fotos/galeria/1/mover', {'para': 0})
         ok(s == 200, 'mudar a ordem')
         src = r['fotos']['galeria'][0]['src']
         s, img = pub.pedido('GET', src)
         ok(s == 200 and img[:4] == b'RIFF', 'foto servida')
         s, r = adm.pedido('POST', '/api/admin/fotos/galeria/0/apagar', {})
-        ok(s == 200 and len(r['fotos']['galeria']) == 1, 'tirar foto')
+        ok(s == 200 and len(r['fotos']['galeria']) == 7, 'tirar foto')
 
         # joias, contactos, números, password
         s, jo = adm.pedido('POST', '/api/admin/joias', {'nome': 'Argola lisa', 'material': 'Titânio', 'preco': 20, 'quantidade': 1})
