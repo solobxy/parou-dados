@@ -1,0 +1,1 @@
+{"ok":true,"ronda":0,"fase":"play","jogadores":2}

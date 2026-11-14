@@ -1,0 +1,137 @@
+--- https://crime.2-31-13-85.sslip.io/sw.js -> 200 0.390815s 1208B
+HTTP/2 200 
+cache-control: no-cache
+content-security-policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; worker-src 'self'; manifest-src 'self'; form-action 'self'; frame-ancestors 'none'; base-uri 'none'; object-src 'none'
+content-type: text/javascript; charset=utf-8
+permissions-policy: geolocation=(), camera=(), microphone=(), payment=(), usb=()
+referrer-policy: strict-origin-when-cross-origin
+strict-transport-security: max-age=31536000
+x-content-type-options: nosniff
+x-robots-tag: noindex, nofollow
+// Guarda a casca do jogo para abrir depressa; os dados vêm sempre do servidor.
+const V = 'crime-2';
+const SHELL = ['/', '/css/app.css', '/js/app.js', '/js/i18n.js', '/js/ui.js', '/js/fx.js',
+  '/fonts/big-shoulders-display-latin-900-normal.woff2', '/fonts/big-shoulders-display-latin-800-normal.woff2', '/fonts/inter-latin-wght-normal.woff2'];
+self.addEventListener('install', (e) => { e.waitUntil(caches.open(V).then((c) => c.addAll(SHELL)).then(() => self.skipWaiting())); });
+self.addEventListener('activate', (e) => { e.waitUntil(caches.keys().then((ks) => Promise.all(ks.filter((k) => k !== V).map((k) => caches.delete(k)))).then(() => self.clients.claim())); });
+self.addEventListener('fetch', (e) => {
+  const u = new URL(e.request.url);
+  if (e.request.method !== 'GET' || u.origin !== location.origin || u.pathname.startsWith('/api/') || u.pathname.startsWith('/_e')) return;
+  // rede primeiro (para apanhar versões novas), cópia guardada se não houver rede
+  e.respondWith(fetch(e.request).then((r) => {
+    if (r.ok) { const cp = r.clone(); caches.open(V).then((c) => c.put(e.request, cp)); }
+    return r;
+  }).catch(() => caches.match(e.request).then((m) => m || caches.match('/'))));
+});
+
+--- https://crime.2-31-13-85.sslip.io/api/config -> 200 0.389675s 3078B
+HTTP/2 401 
+cache-control: no-store
+content-security-policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; worker-src 'self'; manifest-src 'self'; form-action 'self'; frame-ancestors 'none'; base-uri 'none'; object-src 'none'
+content-type: application/json; charset=utf-8
+permissions-policy: geolocation=(), camera=(), microphone=(), payment=(), usb=()
+referrer-policy: strict-origin-when-cross-origin
+strict-transport-security: max-age=31536000
+x-content-type-options: nosniff
+x-robots-tag: noindex, nofollow
+{"energy":{"max":100,"regenMs":120000},"addiction":{"base":100,"perT":4,"decayMs":60000},"train":{"energy":5,"costBase":0,"costPerStat":0},"crimes":[{"id":"carteirista","e":5,"D":5,"min":12,"max":28,"r":1,"jailMin":1,"w":{"I":30,"F":0,"C":70}},{"id":"loja","e":6,"D":10,"min":35,"max":65,"r":2,"jailMin":2,"w":{"I":40,"F":60,"C":0}},{"id":"carro","e":7,"D":16,"min":90,"max":150,"r":3,"jailMin":3,"w":{"I":70,"F":30,"C":0}},{"id":"bomba","e":8,"D":25,"min":220,"max":340,"r":4,"jailMin":4,"w":{"I":20,"F":80,"C":0}},{"id":"turistas","e":10,"D":38,"min":500,"max":800,"r":6,"jailMin":5,"w":{"I":30,"F":0,"C":70}},{"id":"vivenda","e":12,"D":58,"min":1200,"max":1800,"r":7,"jailMin":6,"w":{"I":60,"F":40,"C":0}},{"id":"sequestro","e":14,"D":88,"min":2800,"max":4200,"r":9,"jailMin":7,"w":{"I":20,"F":50,"C":30}},{"id":"carrinha","e":17,"D":135,"min":6500,"max":9500,"r":11,"jailMin":8,"w":{"I":40,"F":60,"C":0}},{"id":"casino","e":20,"D":205,"min":15000,"max":21000,"r":13,"jailMin":9,"w":{"I":50,"F":0,"C":50}},{"id":"banco","e":25,"D":310,"min":34000,"max":46000,"r":16,"jailMin":10,"w":{"I":40,"F":30,"C":30}}],"drugs":[{"id":"cerveja","e":5,"a":2,"price":5},{"id":"erva","e":10,"a":3,"price":25},{"id":"pastilha","e":20,"a":5,"price":200},{"id":"coca","e":30,"a":6,"price":1500},{"id":"dourada","e":40,"a":7,"price":8000}],"biz":[{"id":"lavandaria","price":3000,"perH":125,"resp":6,"stat":"C","raid":false,"toBank":true},{"id":"prostitutas","price":8000,"perH":500,"resp":12,"stat":"C","raid":true,"
+--- https://crime.2-31-13-85.sslip.io/js/app.js -> 200 0.570348s 51123B
+HTTP/2 200 
+cache-control: no-cache
+content-security-policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; worker-src 'self'; manifest-src 'self'; form-action 'self'; frame-ancestors 'none'; base-uri 'none'; object-src 'none'
+content-type: text/javascript; charset=utf-8
+permissions-policy: geolocation=(), camera=(), microphone=(), payment=(), usb=()
+referrer-policy: strict-origin-when-cross-origin
+strict-transport-security: max-age=31536000
+x-content-type-options: nosniff
+x-robots-tag: noindex, nofollow
+// Jogo de crime: interface. O servidor decide tudo; aqui só se mostra e se pede.
+
+import { t, list, errText, setLang, lang, guessLang } from './i18n.js';
+import { h, icon, svg, setLocale, num, money, moneyShort, short, dur, hoursText, pct, rid } from './ui.js';
+import * as fx from './fx.js';
+
+const $app = document.getElementById('app');
+const S = {
+  cfg: null, st: null, off: 0, tab: 'street', citySeg: 'club', fightSeg: 'targets',
+  targets: null, ranking: null, events: null, lastEventSeen: 0, hud: {}, queue: Promise.resolve(), pending: 0,
+};
+const store = {
+  get(k, d) { try { const v = localStorage.getItem('cr.' + k); return v === null ? d : JSON.parse(v); } catch { return d; } },
+  set(k, v) { try { localStorage.setItem('cr.' + k, JSON.stringify(v)); } catch {} },
+};
+const now = () => Date.now() + S.off;
+
+// ---------- pedidos ----------
+async function api(method, path, body) {
+  let r;
+  try {
+    r = await fetch(path, { method, credentials: 'same-origin', headers: body ? { 'Content-Type': 'application/json' } : {}, body: body ? JSON.stringify(body) : undefined });
+  } catch {
+    toast(t('offline'), true);
+    throw new Error('OFFLINE');
+  }
+  let data = {};
+  try { data = await r.json(); } catch {}
+  if (data.now) S.off = data.now - Date.now();
+  if (r.status === 401 && path !== '/api/login') { S.st = null; showLanding(); throw Object.assign(new Error('LOGIN'), { code: 'LOGIN_REQUIRED' }); }
+  if (!r.ok) throw Object.assign(new Error(data.error || 'ERR'), { code: data
+--- https://crime.2-31-13-85.sslip.io/api/saude -> 200 0.390760s 49B
+HTTP/2 401 
+cache-control: no-store
+content-security-policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; worker-src 'self'; manifest-src 'self'; form-action 'self'; frame-ancestors 'none'; base-uri 'none'; object-src 'none'
+content-type: application/json; charset=utf-8
+permissions-policy: geolocation=(), camera=(), microphone=(), payment=(), usb=()
+referrer-policy: strict-origin-when-cross-origin
+strict-transport-security: max-age=31536000
+x-content-type-options: nosniff
+x-robots-tag: noindex, nofollow
+{"ok":true,"ronda":0,"fase":"play","jogadores":2}
+--- https://crime.2-31-13-85.sslip.io/css/app.css -> 200 0.369763s 30620B
+HTTP/2 200 
+cache-control: no-cache
+content-security-policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; worker-src 'self'; manifest-src 'self'; form-action 'self'; frame-ancestors 'none'; base-uri 'none'; object-src 'none'
+content-type: text/css; charset=utf-8
+permissions-policy: geolocation=(), camera=(), microphone=(), payment=(), usb=()
+referrer-policy: strict-origin-when-cross-origin
+strict-transport-security: max-age=31536000
+x-content-type-options: nosniff
+x-robots-tag: noindex, nofollow
+@font-face { font-family: 'Shoulders'; src: url('../fonts/big-shoulders-display-latin-800-normal.woff2') format('woff2'); font-weight: 800; font-display: swap; }
+@font-face { font-family: 'Shoulders'; src: url('../fonts/big-shoulders-display-latin-900-normal.woff2') format('woff2'); font-weight: 900; font-display: swap; }
+@font-face { font-family: 'Inter'; src: url('../fonts/inter-latin-wght-normal.woff2') format('woff2'); font-weight: 100 900; font-display: swap; }
+
+:root {
+  --ink: #0a0c11;
+  --s1: #12151d;
+  --s2: #1a1f2a;
+  --s3: #232a38;
+  --tx: #f3efe7;
+  --tx2: #a4acbb;
+  --tx3: #6f7889;
+  --sodium: #ffb020;
+  --cash: #46e08a;
+  --energy: #5cc8ff;
+  --vice: #c08bff;
+  --neon: #ff4fa3;
+  --danger: #ff5a5a;
+  --gold: #ffd36b;
+  --acc: var(--sodium);
+  --r: 6px;
+  --disp: 'Shoulders', 'Arial Narrow', 'Roboto Condensed', sans-serif;
+  --ui: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --ease-out: cubic-bezier(.2, .8, .2, 1);
+  --spring: cubic-bezier(.3, 1.4, .5, 1);
+  color-scheme: dark;
+}
+body[data-tab='street'] { --acc: var(--sodium); }
+body[data-tab='gym'] { --acc: var(--energy); }
+body[data-tab='empire'] { --acc: var(--cash); }
+body[data-tab='city'] { --acc: var(--neon); }
+body[data-tab='fights'] { --acc: var(--danger); }
+
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0; background: var(--ink); color: var(--tx); font-family: var(--ui); font-size: 16px; line-height: 1.45;
+  -webkit-font-smoothing: antiali
