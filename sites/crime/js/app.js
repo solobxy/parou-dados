@@ -1057,13 +1057,14 @@ async function bjPlay(op, amt) {
 }
 
 // ---- Roda da Sorte ----
-const WCOL = { 1: '#2f80ed', 2: '#f2b705', 5: '#ff5fa2', 10: '#8b5cf6', moeda: '#ff7a00', caixas: '#1fa655', bola: '#10b5c9', louca: '#e02b2b' };
-const LCOL = ['#e02b2b', '#f2b705', '#1fa655', '#2f80ed', '#8b5cf6', '#ff5fa2'];
+// cores de casino noir: pedras preciosas escuras com letras douradas
+const WCOL = { 1: '#1c2330', 2: '#0f5c44', 5: '#7a1630', 10: '#3b2a7a', moeda: '#b8860b', caixas: '#0e7a8a', bola: '#a3246e', louca: '#c2161f' };
+const LCOL = ['#c2161f', '#1c2330', '#0f5c44', '#b8860b', '#3b2a7a', '#a3246e'];
 const TOPM = [2, 3, 5, 10, 20, 50];
 const wLabel = (s) => (/^\d+$/.test(s) ? s : t('w_' + s));
 function w3() {
   if (!S.w3 || S.w3lang !== lang()) {
-    S.w3 = C3.bigWheel({ sfx: fx.sfx, hub: t('p_wheel').toUpperCase(), segs: S.cfg.casino.wheel.segs.map((k) => ({ text: /^\d+$/.test(k) ? k : t('w_' + k).toUpperCase(), color: WCOL[k], big: /^\d+$/.test(k) })) });
+    S.w3 = C3.bigWheel({ sfx: fx.sfx, hub: t('p_wheel').toUpperCase(), segs: S.cfg.casino.wheel.segs.map((k) => ({ text: /^\d+$/.test(k) ? k : t('w_' + k).toUpperCase(), color: WCOL[k], ink: '#f6e3a8', big: /^\d+$/.test(k) })) });
     S.w3lang = lang(); if (S.wLast) S.w3.set(S.wLast.idx);
   }
   return S.w3;
@@ -1076,7 +1077,7 @@ async function tableFocus(el) {
   if (b.top < top || b.bottom > innerHeight - 170) { scrollTo({ top: Math.max(0, b.top + scrollY - top - 8), behavior: RM() ? 'auto' : 'smooth' }); await wait(RM() ? 0 : 320); }
 }
 function topSlotEl(last) {
-  const cellS = (s) => h('span', { style: `color:${WCOL[s]}` }, wLabel(s)), cellM = (m) => h('span', null, '×' + m);
+  const cellS = (s) => h('span', { class: 'tsp', style: `background:${WCOL[s]}` }, wLabel(s)), cellM = (m) => h('span', null, '×' + m);
   return h('div', { class: 'tslot' + (last ? (last.top ? ' match' : ' miss') : '') },
     h('div', { class: 'tsr a' }, h('div', { class: 'tss' }, last?.top ? cellS(last.top.s) : h('span', { class: 'muted' }, '?'))),
     h('div', { class: 'tsr b' }, h('div', { class: 'tss' }, last?.top ? cellM(last.top.m) : h('span', { class: 'muted' }, '×?'))));
@@ -1088,7 +1089,7 @@ async function topSpin(r) {
   const A = Array.from({ length: 16 }, () => rnd(spots)), B = Array.from({ length: 22 }, () => rnd(TOPM));
   A.push(r.top ? r.top.s : rnd(spots)); B.push(r.top ? r.top.m : rnd(TOPM)); B.push(rnd(TOPM));
   const sa = el.querySelector('.tsr.a .tss'), sb = el.querySelector('.tsr.b .tss');
-  sa.replaceChildren(...A.map((s) => h('span', { style: `color:${WCOL[s]}` }, wLabel(s)))); sb.replaceChildren(...B.map((m) => h('span', null, '×' + m)));
+  sa.replaceChildren(...A.map((s) => h('span', { class: 'tsp', style: `background:${WCOL[s]}` }, wLabel(s)))); sb.replaceChildren(...B.map((m) => h('span', null, '×' + m)));
   const da = RM() ? 200 : 1500, db = RM() ? 250 : 2200;
   [sa, sb].forEach((s) => { s.style.transition = 'none'; s.style.transform = 'translateY(0)'; }); void sa.offsetHeight;
   sa.style.transition = `transform ${da}ms cubic-bezier(.15,.75,.2,1)`; sb.style.transition = `transform ${db}ms cubic-bezier(.15,.75,.2,1)`;
@@ -1114,7 +1115,7 @@ async function wheelAnim(r) {
     else if (r.s === 'caixas') await C3.cashHunt(stage, { boxes: r.bonus.boxes, pick: r.bonus.pick, sfx: fx.sfx, L: { shuffle: t('wShuffle'), pick: t('wPick') } });
     else if (r.s === 'bola') await C3.pachinko(stage, { slots: r.bonus.slots, at: r.bonus.at, sfx: fx.sfx });
     else {
-      const lw = C3.bigWheel({ sfx: fx.sfx, cls: 'bw3 mini', turns: 4, secs: 7.5, hub: t('w_louca').toUpperCase(), segs: r.bonus.slots.map((v, i) => ({ text: '×' + v, color: LCOL[i % LCOL.length], big: true })) });
+      const lw = C3.bigWheel({ sfx: fx.sfx, cls: 'bw3 mini', turns: 4, secs: 7.5, hub: t('w_louca').toUpperCase(), segs: r.bonus.slots.map((v, i) => ({ text: '×' + v, color: LCOL[i % LCOL.length], ink: '#f6e3a8', big: true })) });
       stage.append(lw.el); lw.wake(); await wait(400); await lw.spin(r.bonus.at);
     }
   }

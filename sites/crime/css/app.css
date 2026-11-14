@@ -956,3 +956,6 @@ h2.sec.small { font-size: 18px; margin: 16px 0 8px; }
 @media (prefers-reduced-motion: reduce) { .sc2.fall, .sc2.out, .sbt, .sban .rays { animation: none; } .sc2.boom img { animation: fadein .15s reverse forwards; } }
 
 .btn.skip { background: var(--s2); color: var(--tx); box-shadow: inset 0 0 0 2px #ffffff22; }
+
+.tss .tsp { color: #f6e3a8; box-shadow: inset 0 0 0 1px #e2c06a66; }
+.wsp { box-shadow: inset 0 0 0 1.5px #e2c06a88; } .wsp b { color: #f6e3a8; }

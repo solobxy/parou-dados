@@ -165,8 +165,8 @@ export function bigWheel({ segs, sfx, hub = '', cls = 'bw3', turns = 5, secs = 8
     segs.forEach((s, i) => {
       const a0 = (i - 0.5) * th - Math.PI / 2, a1 = a0 + th, a = i * th - Math.PI / 2;
       x.fillStyle = s.color; x.beginPath(); x.moveTo(0, 0); x.arc(0, 0, R - 9, a0, a1); x.closePath(); x.fill();
-      x.strokeStyle = '#0005'; x.lineWidth = 1; x.stroke();
-      x.save(); x.fillStyle = '#fff'; x.strokeStyle = '#0009'; x.lineJoin = 'round'; x.textAlign = 'center'; x.textBaseline = 'middle';
+      x.strokeStyle = '#e2c06a'; x.lineWidth = 1.1; x.stroke();
+      x.save(); x.fillStyle = s.ink || '#fff'; x.strokeStyle = '#000b'; x.lineJoin = 'round'; x.textAlign = 'center'; x.textBaseline = 'middle';
       if (s.big) { x.translate((R - 30) * Math.cos(a), (R - 30) * Math.sin(a)); x.rotate(a + Math.PI / 2); x.font = `900 ${N > 30 ? 19 : 22}px ${DISP}`; x.lineWidth = 3; x.strokeText(s.text, 0, 0); x.fillText(s.text, 0, 0); }
       else { x.translate((R - 46) * Math.cos(a), (R - 46) * Math.sin(a)); x.rotate(a); x.font = `900 10.5px ${DISP}`; x.lineWidth = 2.5; x.strokeText(s.text, 0, 0.5); x.fillText(s.text, 0, 0.5); }
       x.restore();
@@ -176,13 +176,16 @@ export function bigWheel({ segs, sfx, hub = '', cls = 'bw3', turns = 5, secs = 8
     x.fillStyle = g; x.beginPath(); x.arc(0, 0, R - 9, 0, TAU); x.fill();
     // anel interior e cubo
     x.strokeStyle = '#f0d58a'; x.lineWidth = 3; x.beginPath(); x.arc(0, 0, 58, 0, TAU); x.stroke();
-    const hg = x.createRadialGradient(-14, -16, 4, 0, 0, 56); hg.addColorStop(0, '#fff1bf'); hg.addColorStop(0.5, '#d9a531'); hg.addColorStop(1, '#6b4208');
+    // medalhão ao centro: laca preta com raios dourados, à maneira art déco
+    const hg = x.createRadialGradient(-14, -16, 4, 0, 0, 56); hg.addColorStop(0, '#2a2f3a'); hg.addColorStop(1, '#07080b');
     x.fillStyle = hg; x.beginPath(); x.arc(0, 0, 56, 0, TAU); x.fill();
-    x.fillStyle = '#3a2204'; for (let i = 0; i < 10; i++) { const a = i * TAU / 10; x.beginPath(); x.arc(44 * Math.cos(a), 44 * Math.sin(a), 2.6, 0, TAU); x.fill(); }
+    x.fillStyle = '#d9b25a33'; for (let i = 0; i < 16; i++) { const a = i * TAU / 16; x.beginPath(); x.moveTo(0, 0); x.arc(0, 0, 54, a, a + TAU / 32); x.closePath(); x.fill(); }
+    x.fillStyle = '#0b0d12'; x.beginPath(); x.arc(0, 0, 40, 0, TAU); x.fill();
+    x.strokeStyle = '#e2c06a'; x.lineWidth = 1.5; x.beginPath(); x.arc(0, 0, 40, 0, TAU); x.stroke(); x.beginPath(); x.arc(0, 0, 51, 0, TAU); x.stroke();
     if (hub) {
-      x.fillStyle = '#2a1803'; x.textAlign = 'center'; x.textBaseline = 'middle'; const ws = hub.split(' ');
-      x.font = `900 ${ws.length > 1 ? 17 : 20}px ${DISP}`;
-      if (ws.length > 1) { const m = Math.ceil(ws.length / 2); x.fillText(ws.slice(0, m).join(' '), 0, -9); x.fillText(ws.slice(m).join(' '), 0, 10); } else x.fillText(hub, 0, 1);
+      x.fillStyle = '#f0d58a'; x.textAlign = 'center'; x.textBaseline = 'middle'; const ws = hub.split(' ');
+      x.font = `900 ${ws.length > 1 ? 15 : 17}px ${DISP}`;
+      if (ws.length > 1) { const m = Math.ceil(ws.length / 2); x.fillText(ws.slice(0, m).join(' '), 0, -8); x.fillText(ws.slice(m).join(' '), 0, 9); } else x.fillText(hub, 0, 1);
     }
     // pinos
     for (let i = 0; i < N; i++) { const a = (i - 0.5) * th - Math.PI / 2, px = (R - 9) * Math.cos(a), py = (R - 9) * Math.sin(a); x.fillStyle = '#fff6d6'; x.beginPath(); x.arc(px, py, N > 30 ? 2.3 : 3.2, 0, TAU); x.fill(); x.fillStyle = '#8a6420'; x.beginPath(); x.arc(px + 0.6, py + 0.8, 1, 0, TAU); x.fill(); }
