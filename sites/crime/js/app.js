@@ -1015,6 +1015,7 @@ function liveResult(g, d) {
   const what = g === 'roulette' ? t('rlOut', { n: r.n, c: t('rlc_' + rlCol(r.n)) }) : t('wOut', { s: wLabel(r.s) }) + (r.bonus || (r.top && r.top.s === r.s) ? ' · ×' + r.mult : '');
   return h('div', { class: 'csres ' + (!mine || !net ? 'push' : net > 0 ? 'win' : 'lose'), role: 'status' }, h('div', { class: 'small' }, what),
     mine ? h('b', null, net > 0 ? t('csWon', { m: money(net) }) : net < 0 ? t('csLost', { m: money(-net) }) : t('csPush')) : null,
+    mine && mine.win > 0 ? h('div', { class: 'small' }, t('lvBreak', { w: money(mine.win), b: money(mine.total) })) : null,   // as contas à vista: o que voltou e o que estava na mesa
     d.wins?.length ? h('div', { class: 'small muted' }, d.wins.map((w) => w.name + ' +' + moneyShort(w.win)).join(' · ')) : null);
 }
 
@@ -1201,6 +1202,7 @@ async function wheelAnim(r) {
     h('span', { class: 'wst-chip', style: `background:${WCOL[r.s]}` }, wLabel(r.s)),
     h('b', { class: 'wst-x' }, r.bonus || topHit ? '×' + r.mult : r.s + ':1'),
     topHit ? h('span', { class: 'wst-sub' }, t('wTopCalc', { a: base, b: r.top.m })) : null,
+    bet && r.win > 0 ? h('span', { class: 'wst-sub' }, t('lvBreak', { w: money(r.win), b: money(r.bet) })) : null,
     h('b', { class: 'wst-win ' + (!bet ? 'muted' : net > 0 ? 'c-cash' : net < 0 ? 'c-red' : '') }, !bet ? t('wNoBet', { s: wLabel(r.s) }) : net > 0 ? t('csWon', { m: money(net) }) : net < 0 ? t('csLost', { m: money(-net) }) : t('csPush')));
   if (net > 0) { fx.sfx(r.mult >= 20 ? 'crit' : 'cash'); fx.vibrate(20); }
   await wait(r.bonus || net > 0 ? 3200 : 2200);
