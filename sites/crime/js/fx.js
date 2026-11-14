@@ -33,6 +33,8 @@ const SFX = {
   claim: (t) => { tone(1175, t, 0.08, 'square', 0.035); tone(1568, t + 0.07, 0.1, 'square', 0.035); tone(2093, t + 0.14, 0.22, 'square', 0.03); },
   buy: (t) => { tone(440, t, 0.08, 'triangle', 0.07); tone(660, t + 0.08, 0.16, 'triangle', 0.07); },
   hit: (t) => tone(120, t, 0.18, 'sawtooth', 0.09, 50),
+  tick: (t) => tone(2200, t, 0.012, 'square', 0.018),
+  deal: (t) => tone(900, t, 0.06, 'triangle', 0.04, 300),
 };
 export function sfx(name) {
   if (!soundOn) return;

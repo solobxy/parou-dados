@@ -226,15 +226,15 @@ function tickHud() {
 const PLACES = {
   city: { ic: 'skyline' }, empire: { ic: 'empire' }, rob: { ic: 'street', img: 'golpes' }, club: { ic: 'bolt', img: 'discoteca' }, gym: { img: 'ginasio' },
   biz: { ic: 'empire', img: 'negocios' }, port: { img: 'porto' }, arms: { img: 'armas' }, bank: { img: 'banco' }, hosp: { img: 'hospital' },
-  jail: { img: 'prisao' }, news: { img: 'jornal' }, alley: { img: 'beco' }, lux: { img: 'luxos' }, fights: { ic: 'fights', img: 'lutas' }, rank: { img: 'ranking' }, putas: { img: 'putas' }, casa: {},
+  jail: { img: 'prisao' }, news: { img: 'jornal' }, casino: { img: 'casino' }, roulette: { img: 'roleta' }, bj: { img: 'blackjack' }, dice: { img: 'dados' }, alley: { img: 'beco' }, lux: { img: 'luxos' }, fights: { ic: 'fights', img: 'lutas' }, rank: { img: 'ranking' }, putas: { img: 'putas' }, casa: {},
 };
 // barra de baixo: só o que se usa a toda a hora. O resto vive dentro de cada separador, arrumado por zonas.
 const NAV = ['city', 'rob', 'fights', 'empire'];
 const HUB = {
-  city: [['sec_night', ['club', 'putas']], ['sec_street', ['gym', 'alley', 'hosp', 'jail']]],
+  city: [['sec_night', ['club', 'putas', 'casino']], ['sec_street', ['gym', 'alley', 'hosp', 'jail']]],
   empire: [['sec_income', ['biz', 'port']], ['sec_assets', ['casa', 'bank']]],
 };
-const PARENT = { news: 'city', club: 'city', putas: 'city', gym: 'city', alley: 'city', hosp: 'city', jail: 'city',
+const PARENT = { news: 'city', casino: 'city', roulette: 'casino', bj: 'casino', dice: 'casino', club: 'city', putas: 'city', gym: 'city', alley: 'city', hosp: 'city', jail: 'city',
   biz: 'empire', port: 'empire', casa: 'empire', bank: 'empire', lux: 'empire', arms: 'fights', rank: 'fights' };
 const tabOf = (id) => (NAV.includes(id) ? id : PARENT[id] || 'city');
 const IMG = (kind, id, big) => `/img/${kind}/${id}${big ? '-g' : ''}.webp?8`;
@@ -257,7 +257,7 @@ function shell() {
   updateHud();
 }
 
-const SCREENS = { city: screenCity, empire: screenEmpire, news: screenNews, rob: screenRob, club: screenClub, gym: screenGym, biz: screenBiz, port: screenPort, arms: screenArms, bank: screenBank,
+const SCREENS = { city: screenCity, empire: screenEmpire, news: screenNews, casino: screenCasino, roulette: screenRoulette, bj: screenBJ, dice: screenDice, rob: screenRob, club: screenClub, gym: screenGym, biz: screenBiz, port: screenPort, arms: screenArms, bank: screenBank,
   hosp: screenHosp, jail: screenJail, putas: screenPutas, casa: screenCasa, alley: screenAlley, lux: screenLux, fights: screenFights, rank: screenRank };
 function render() {
   if (!S.st) return;
@@ -373,11 +373,11 @@ function screenClass() {
 
 // ---------- a cidade ----------
 // ---------- jornal da cidade: o que os outros andam a fazer ----------
-const NW_IC = { job: 'cash', crit: 'gem', spree: 'bolt', jail: 'lock', house: 'empire', lux: 'crown', beat: 'fist', mug: 'cash', fail: 'skull', sick: 'pill', lvl: 'crown', fight: 'fist' };
+const NW_IC = { casino: 'gem', casinoLoss: 'skull', job: 'cash', crit: 'gem', spree: 'bolt', jail: 'lock', house: 'empire', lux: 'crown', beat: 'fist', mug: 'cash', fail: 'skull', sick: 'pill', lvl: 'crown', fight: 'fist' };
 const seedOf = (str) => { let x = 7; for (let i = 0; i < str.length; i++) x = (x * 31 + str.charCodeAt(i)) | 0; return Math.abs(x); };
 function newsText(e) {
   const k = e.k === 'fight' ? (e.mode === 'mug' ? 'mug' : 'beat') : e.k, C = list('crimes');
-  const x = k === 'house' ? list('houses')[e.h] : k === 'lux' ? list('lux')[e.i] : k === 'lvl' ? list('titles')[e.n - 1] : C[e.c];
+  const x = k === 'house' ? list('houses')[e.h] : k === 'lux' ? list('lux')[e.i] : k === 'lvl' ? list('titles')[e.n - 1] : k.startsWith('casino') ? t('csIn_' + e.g) : C[e.c];
   return tv('nw_' + k, seedOf(e.name + k + e.t), { a: e.name, b: e.target, x, m: moneyShort(e.money || 0), n: e.n });
 }
 const newsIdx = (f) => Math.floor(now() / 5000) % f.length;
@@ -864,6 +864,216 @@ async function loadEvents(seen) {
   } catch {}
 }
 
+// ---------- casino ----------
+// O resultado vem sempre do servidor. Aqui só se anima: a roda gira até ao número que já saiu.
+const RM = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
+const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+const CHIPS = [10, 50, 100, 500, 1000, 5000, 10000, 50000, 100000, 500000, 1000000, 5000000, 10000000];
+const betMax = () => Math.min(S.st.me.casinoMax, S.st.me.cash);
+function chipNow() {
+  const min = S.cfg.casino.minBet, v = S.chip ?? store.get('chip', 100);
+  return Math.max(min, Math.min(v, Math.max(min, betMax())));
+}
+function chipPicker() {
+  const max = betMax(), cur = chipNow(), min = S.cfg.casino.minBet;
+  if (max < min) return h('div', { class: 'tip' }, h('p', null, t('csNoCash', { m: money(min) })), h('button', { class: 'btn sm', on: { click: () => go('bank') } }, t('p_bank')));
+  const vals = CHIPS.filter((c) => c <= max).slice(-5);
+  if (!vals.includes(max) && max > (vals.at(-1) || 0)) vals.push(max);
+  return h('div', { class: 'chips2', role: 'group', 'aria-label': t('csBet') }, vals.map((v) => h('button', {
+    class: 'chip2' + (v === cur ? ' on' : '') + (v === max && !CHIPS.includes(v) ? ' max' : ''), 'aria-pressed': v === cur ? 'true' : 'false',
+    on: { click: () => { S.chip = v; store.set('chip', v); render(); } } }, v === max && !CHIPS.includes(v) ? t('csMax') : moneyShort(v))));
+}
+function csHead(id) {
+  const me = S.st.me;
+  return [pageHead(id, null, true), h('div', { class: 'row sp cshead' }, h('span', { class: 'muted small' }, t('csInHand')), h('b', { class: 'num c-cash' }, money(me.cash)),
+    h('span', { class: 'muted small' }, t('csLimit', { m: moneyShort(me.casinoMax) })))];
+}
+async function play(g, args, anim) {
+  if (S.casinoBusy) return null;
+  S.casinoBusy = true; fx.sfx('tap');
+  try {
+    const out = await api('POST', '/api/act', { type: 'casino', g, ...args, rid: rid() });
+    const r = out.result;
+    if (anim) await anim(r);
+    S.st.me = out.me; S.stAt = now(); if (out.feed) S.feed = out.feed;
+    const staked = r.g === 'bj' ? (r.done ? r.hand.bet : 0) : r.bet, net = r.win - staked;
+    if (r.g !== 'bj' || r.done) { if (net > 0) { fx.sfx(net >= staked * 5 ? 'crit' : 'cash'); fx.vibrate(15); } else if (net < 0) fx.sfx('fail'); }
+    return r;
+  } catch (e) {
+    if (e.data?.me) { S.st.me = e.data.me; S.stAt = now(); }
+    if (e.code && e.code !== 'LOGIN_REQUIRED') toast(errText(e.code), true);
+    return null;
+  } finally { S.casinoBusy = false; render(); }
+}
+function csResult(r, extra) {
+  if (!r) return null;
+  const staked = r.g === 'bj' ? r.hand.bet : r.bet, net = r.win - staked;
+  return h('div', { class: 'csres ' + (net > 0 ? 'win' : net < 0 ? 'lose' : 'push'), role: 'status' },
+    extra ? h('div', { class: 'small' }, extra) : null,
+    h('b', null, net > 0 ? t('csWon', { m: money(net) }) : net < 0 ? t('csLost', { m: money(-net) }) : t('csPush')));
+}
+
+function screenCasino() {
+  const me = S.st.me;
+  const out = [pageHead('casino', t('s_casino', { m: moneyShort(me.casinoMax) }))];
+  out.push(h('div', { class: 'games' }, [['roulette', 'roleta'], ['bj', 'blackjack'], ['dice', 'dados']].map(([id, img]) =>
+    h('button', { class: 'game', on: { click: () => go(id) } }, art('cenas', img, 'gimg'),
+      h('div', { class: 'gtx' }, h('b', null, t('p_' + id)), h('span', { class: 'small muted' }, t('gd_' + id))), icon('chev')))));
+  if (me.bj) out.push(h('div', { class: 'tip' }, h('p', null, t('bjOpen')), h('button', { class: 'btn sm', on: { click: () => go('bj') } }, t('bjResume'))));
+  return out;
+}
+
+// ---- roleta (europeia, um zero) ----
+const RL_ORDER = [0, 32, 15, 19, 4, 21, 2, 25, 17, 34, 6, 27, 13, 36, 11, 30, 8, 23, 10, 5, 24, 16, 33, 1, 20, 14, 31, 9, 22, 18, 29, 7, 28, 12, 35, 3, 26];
+const rlCol = (n) => (n === 0 ? 'g' : S.cfg.casino.red.includes(n) ? 'r' : 'b');
+function rlWheel() {
+  const R = 150, th = 360 / 37, s = svg('svg', { class: 'rlw', viewBox: '0 0 300 300', role: 'img', 'aria-label': t('p_roulette') });
+  const rad = (a) => ((a - 90) * Math.PI) / 180, pt = (r, a) => [150 + r * Math.cos(rad(a)), 150 + r * Math.sin(rad(a))];
+  s.append(svg('circle', { cx: 150, cy: 150, r: 148, class: 'rim' }));
+  const wheel = svg('g', { class: 'wheel', style: `transform: rotate(${S.rlAng || 0}deg)` });
+  RL_ORDER.forEach((n, i) => {
+    const a0 = i * th - th / 2, a1 = a0 + th, [x0, y0] = pt(R - 12, a0), [x1, y1] = pt(R - 12, a1), [x2, y2] = pt(R - 52, a1), [x3, y3] = pt(R - 52, a0);
+    wheel.append(svg('path', { d: `M${x0} ${y0}A${R - 12} ${R - 12} 0 0 1 ${x1} ${y1}L${x2} ${y2}A${R - 52} ${R - 52} 0 0 0 ${x3} ${y3}Z`, class: 'pk ' + rlCol(n) }));
+    const [tx, ty] = pt(R - 26, i * th), tx2 = svg('text', { x: tx, y: ty, class: 'pn', transform: `rotate(${i * th} ${tx} ${ty})` });
+    tx2.textContent = String(n); wheel.append(tx2);
+  });
+  wheel.append(svg('circle', { cx: 150, cy: 150, r: R - 52, class: 'hub' }), svg('circle', { cx: 150, cy: 150, r: 26, class: 'hub2' }));
+  const ball = svg('g', { class: 'ballg' }); ball.append(svg('circle', { cx: 150, cy: 150 - (R - 44), r: 7, class: 'ball' }));
+  s.append(wheel, ball, svg('path', { d: 'M150 10l-9-14h18z', class: 'ptr' }));
+  return s;
+}
+async function rlAnim(r) {
+  const s = document.querySelector('.rlw'); if (!s) return;
+  const top = s.getBoundingClientRect().top + scrollY - 190;
+  if (s.getBoundingClientRect().top < 170 || s.getBoundingClientRect().bottom > innerHeight - 140) { scrollTo({ top: Math.max(0, top), behavior: RM() ? 'auto' : 'smooth' }); await wait(RM() ? 0 : 350); }
+  const wheel = s.querySelector('.wheel'), ball = s.querySelector('.ballg'), i = RL_ORDER.indexOf(r.n), th = 360 / 37;
+  const cur = S.rlAng || 0, target = (360 - i * th) % 360, delta = (target - (cur % 360) + 720) % 360;
+  const d = RM() ? 700 : fx.dur(4600), next = cur + (RM() ? 0 : 360 * 5) + delta;
+  S.rlAng = next;
+  wheel.style.transition = `transform ${d}ms cubic-bezier(.12,.62,.14,1)`; ball.style.transition = `transform ${d}ms cubic-bezier(.2,.7,.2,1)`;
+  requestAnimationFrame(() => { wheel.style.transform = `rotate(${next}deg)`; ball.style.transform = `rotate(${RM() ? 0 : -360 * 7}deg)`; });
+  // o tiquetaque abranda com a roda
+  if (!RM()) for (let k = 0, t0 = 0; t0 < d * 0.9; k++) { t0 += 45 + k * k * 0.9; setTimeout(() => fx.sfx('tick'), t0); }
+  await wait(d + 150);
+  ball.style.transition = 'none'; ball.style.transform = 'rotate(0deg)';
+  S.rlHist = [r.n, ...(S.rlHist || [])].slice(0, 12); S.rlLast = r;
+}
+const rlKey = (b) => b.t + (b.n !== undefined && b.n !== null ? ':' + b.n : '');
+function rlAdd(t0, n) {
+  S.rlBets = S.rlBets || {};
+  const b = { t: t0, n }, k = rlKey(b), chip = chipNow(), tot = Object.values(S.rlBets).reduce((x, y) => x + y.amt, 0);
+  if (!S.rlBets[k] && Object.keys(S.rlBets).length >= 12) return toast(t('rlMaxSpots'), true);
+  if (tot + chip > betMax()) return toast(t('csOver', { m: money(betMax()) }), true);
+  S.rlBets[k] = { ...b, amt: (S.rlBets[k]?.amt || 0) + chip };
+  fx.sfx('tap'); render();
+}
+function screenRoulette() {
+  const bets = S.rlBets || {}, tot = Object.values(bets).reduce((x, y) => x + y.amt, 0), last = S.rlLast, won = (b) => last && S.cfg && rlWon(b, last.n);
+  const cell = (t0, n, label, cls) => {
+    const k = rlKey({ t: t0, n }), b = bets[k];
+    return h('button', { class: 'rlc ' + (cls || '') + (won({ t: t0, n }) ? ' hit' : ''), on: { click: () => rlAdd(t0, n) } }, label, b ? h('span', { class: 'chipm' }, moneyShort(b.amt)) : null);
+  };
+  const out = csHead('roulette');
+  out.push(h('div', { class: 'rlbox' }, rlWheel(),
+    h('div', { class: 'rlhist' }, (S.rlHist || []).map((n, i) => h('span', { class: 'hn ' + rlCol(n) + (i === 0 ? ' last' : '') }, String(n))))));
+  if (last) out.push(csResult(last, t('rlOut', { n: last.n, c: t('rlc_' + rlCol(last.n)) })));
+  out.push(h('div', { class: 'rlout' },
+    cell('red', undefined, t('rl_r'), 'r'), cell('black', undefined, t('rl_b'), 'b'), cell('even', undefined, t('rlEven')), cell('odd', undefined, t('rlOdd')),
+    cell('low', undefined, '1–18'), cell('high', undefined, '19–36'),
+    cell('dozen', 0, '1–12', 'dz'), cell('dozen', 1, '13–24', 'dz'), cell('dozen', 2, '25–36', 'dz')));
+  out.push(h('h2', { class: 'sec small' }, t('rlNums')), h('div', { class: 'rlnums' }, cell('num', 0, '0', 'g n0'),
+    Array.from({ length: 36 }, (_, i) => cell('num', i + 1, String(i + 1), rlCol(i + 1)))));
+  out.push(h('div', { class: 'stick csbar' }, chipPicker(),
+    h('div', { class: 'row' }, h('button', { class: 'btn ghost', disabled: !tot, on: { click: () => { S.rlBets = {}; render(); } } }, t('csClear')),
+      h('button', { class: 'btn buy grow big', disabled: !tot || tot > S.st.me.cash || S.casinoBusy, on: { click: () => play('roulette', { bets: Object.values(bets) }, rlAnim) } },
+        tot ? t('rlSpin', { m: moneyShort(tot) }) : t('rlPlace')))));
+  return out;
+}
+function rlWon(b, n) {
+  const red = S.cfg.casino.red.includes(n);
+  switch (b.t) {
+    case 'red': return n > 0 && red; case 'black': return n > 0 && !red; case 'even': return n > 0 && n % 2 === 0; case 'odd': return n % 2 === 1;
+    case 'low': return n >= 1 && n <= 18; case 'high': return n >= 19; case 'dozen': return n > 0 && Math.floor((n - 1) / 12) === b.n; case 'num': return n === b.n;
+  }
+  return false;
+}
+
+// ---- dados ----
+const PIPS = { 1: [4], 2: [0, 8], 3: [0, 4, 8], 4: [0, 2, 6, 8], 5: [0, 2, 4, 6, 8], 6: [0, 2, 3, 5, 6, 8] };
+const die = (v) => h('div', { class: 'die', 'aria-label': String(v) }, Array.from({ length: 9 }, (_, i) => h('i', { class: PIPS[v].includes(i) ? 'on' : '' })));
+async function diceAnim(r) {
+  const box = document.querySelector('.dicebox'); if (!box) return;
+  const d = RM() ? 400 : fx.dur(1100), t0 = performance.now();
+  box.classList.add('rolling');
+  while (performance.now() - t0 < d) {
+    box.replaceChildren(die(1 + Math.floor(Math.random() * 6)), die(1 + Math.floor(Math.random() * 6)));
+    fx.sfx('tick'); await wait(RM() ? 120 : 85);
+  }
+  box.classList.remove('rolling'); box.replaceChildren(die(r.d[0]), die(r.d[1]));
+  S.diceLast = r; await wait(250);
+}
+function screenDice() {
+  const pick = S.dicePick || 'low', D = S.cfg.casino.dice, last = S.diceLast, chip = chipNow();
+  const out = csHead('dice');
+  out.push(h('div', { class: 'dicebox' + (last ? '' : ' idle') }, die(last ? last.d[0] : 3), die(last ? last.d[1] : 4)));
+  if (last) out.push(csResult(last, t('dcOut', { n: last.d[0] + last.d[1] })));
+  out.push(h('div', { class: 'dcpicks', role: 'group' }, [['low', '2–6'], ['seven', '7'], ['high', '8–12']].map(([id, rng0]) =>
+    h('button', { class: 'dcp' + (pick === id ? ' on' : ''), 'aria-pressed': pick === id ? 'true' : 'false', on: { click: () => { S.dicePick = id; render(); } } },
+      h('b', null, t('dc_' + id)), h('span', null, rng0), h('span', { class: 'c-cash' }, t('csPays', { x: (D[id] / 10).toString().replace('.', lang() === 'pt' ? ',' : '.') }))))));
+  out.push(h('div', { class: 'stick csbar' }, chipPicker(),
+    h('button', { class: 'btn buy block big', disabled: betMax() < S.cfg.casino.minBet || S.casinoBusy, on: { click: () => play('dice', { pick, amt: chip }, diceAnim) } }, t('dcRoll', { m: moneyShort(chip) }))));
+  return out;
+}
+
+// ---- blackjack ----
+const SUITS = ['♠', '♥', '♦', '♣'], RANKS = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
+const card = (c, cls = '', delay = 0) => c === null
+  ? h('div', { class: 'pc back ' + cls, style: `--d:${delay}ms`, 'aria-label': t('bjHidden') })
+  : h('div', { class: 'pc ' + (c % 52 >= 13 && c % 52 < 39 ? 'red ' : '') + cls, style: `--d:${delay}ms`, 'aria-label': RANKS[c % 13] + SUITS[Math.floor((c % 52) / 13)] },
+    h('b', null, RANKS[c % 13]), h('span', null, SUITS[Math.floor((c % 52) / 13)]));
+function screenBJ() {
+  const me = S.st.me, view = S.bjView || me.bj, done = S.bjDone, anim = S.bjAnim || {}, chip = chipNow();
+  const out = csHead('bj');
+  const dl = view ? (done ? view.dl : [view.dl[0], null]) : [], pl = view ? view.pl : [];
+  const row = (cards, from, flipAt) => h('div', { class: 'hand' }, cards.map((c, i) => card(c, i >= from ? 'deal' : i === flipAt ? 'flip' : '', Math.max(0, i - from) * 260)));
+  out.push(h('div', { class: 'felt' },
+    h('div', { class: 'hlab' }, t('bjDealer'), view ? h('b', { class: 'num' }, done ? String(view.dtot) : '?') : null),
+    row(dl, anim.dl ?? 99, anim.flip ? 1 : -1),
+    done && S.bjLast ? h('div', { class: 'bjres', style: `--d:${S.bjAnim ? 700 : 0}ms` }, csResult(S.bjLast, t('bj_' + S.bjLast.res))) : null,
+    h('div', { class: 'hlab' }, t('bjYou'), view ? h('b', { class: 'num' }, String(view.tot)) : null),
+    row(pl, anim.pl ?? 99, -1),
+    !view ? h('p', { class: 'muted small', style: 'text-align:center' }, t('bjRules')) : null));
+  const open = me.bj && !done;
+  if (open) {
+    const canDbl = view.pl.length === 2 && !view.dbl && me.cash >= view.bet;
+    out.push(h('div', { class: 'stick csbar' }, h('div', { class: 'small muted', style: 'text-align:center' }, t('bjStake', { m: money(view.bet) })),
+      h('div', { class: 'bjacts' },
+        h('button', { class: 'btn big', disabled: S.casinoBusy, on: { click: () => bjPlay('hit') } }, t('bjHit')),
+        h('button', { class: 'btn buy big', disabled: S.casinoBusy, on: { click: () => bjPlay('stand') } }, t('bjStand')),
+        h('button', { class: 'btn ghost big', disabled: !canDbl || S.casinoBusy, on: { click: () => bjPlay('double') } }, t('bjDouble')))));
+  } else {
+    out.push(h('div', { class: 'stick csbar' }, chipPicker(),
+      h('button', { class: 'btn buy block big', disabled: betMax() < S.cfg.casino.minBet || S.casinoBusy, on: { click: () => bjPlay('deal', chip) } }, t('bjDeal', { m: moneyShort(chip) }))));
+  }
+  return out;
+}
+async function bjPlay(op, amt) {
+  const prev = op === 'deal' ? null : (S.bjView || S.st.me.bj);
+  const r = await play('bj', { op, amt }, async (res) => {
+    const h0 = res.hand;
+    S.bjAnim = { pl: prev ? prev.pl.length : 0, dl: res.done ? (prev ? 1 : 0) : prev ? 99 : 0, flip: res.done && !!prev };
+    if (res.done && !prev) S.bjAnim.dl = 0;
+    S.bjView = h0; S.bjDone = res.done; S.bjLast = res.done ? res : null;
+    render();
+    const n = (h0.pl.length - S.bjAnim.pl) + (res.done ? h0.dl.length - Math.min(S.bjAnim.dl, h0.dl.length) : 0);
+    for (let k = 0; k < Math.max(1, n); k++) setTimeout(() => fx.sfx('deal'), k * 260);
+    await wait(RM() ? 200 : 260 * Math.max(1, n) + 350);
+  });
+  S.bjAnim = null;
+  if (r && !r.done) { S.bjView = null; S.bjDone = false; }
+  render();
+}
+
 // ---------- perfil ----------
 function sheet(content) {
   const bd = h('div', { class: 'backdrop' });
@@ -982,6 +1192,7 @@ function skyline(level) {
 
 // ---------- arranque ----------
 async function refresh() {
+  if (S.casinoBusy) return;   // a meio de uma jogada, o dinheiro só muda quando a animação acaba
   try {
     const st = await api('GET', '/api/state');
     S.st = st; S.stAt = now(); if (st.feed) S.feed = st.feed;

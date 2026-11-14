@@ -46,6 +46,8 @@ CREATE TABLE IF NOT EXISTS diario (ronda INTEGER NOT NULL, dia TEXT NOT NULL, co
   money INTEGER NOT NULL DEFAULT 0, best INTEGER NOT NULL DEFAULT 0, beaten INTEGER NOT NULL DEFAULT 0, mugged INTEGER NOT NULL DEFAULT 0,
   mugloss INTEGER NOT NULL DEFAULT 0, fights INTEGER NOT NULL DEFAULT 0, sick INTEGER NOT NULL DEFAULT 0, PRIMARY KEY (ronda, dia, conta));
 `);
+// colunas novas em bases de dados que já existiam
+for (const col of ['cwin', 'cnet']) { try { db.exec(`ALTER TABLE diario ADD COLUMN ${col} INTEGER NOT NULL DEFAULT 0`); } catch { /* já existe */ } }
 const q = {
   contaPorNome: db.prepare('SELECT * FROM contas WHERE nome_lc = ?'),
   contaPorId: db.prepare('SELECT id, nome, lingua, criada FROM contas WHERE id = ?'),
@@ -62,8 +64,8 @@ const q = {
   limparEventos: db.prepare('DELETE FROM eventos WHERE t < ?'),
   novaNoticia: db.prepare('INSERT INTO noticias (ronda, t, dados) VALUES (?, ?, ?)'),
   noticias: db.prepare('SELECT t, dados FROM noticias WHERE ronda = ? ORDER BY id DESC LIMIT 40'),
-  diario: db.prepare(`INSERT INTO diario (ronda, dia, conta, resp, crimes, wins, busts, money, best, beaten, mugged, mugloss, fights, sick)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ON CONFLICT (ronda, dia, conta) DO UPDATE SET
+  diario: db.prepare(`INSERT INTO diario (ronda, dia, conta, resp, crimes, wins, busts, money, best, beaten, mugged, mugloss, fights, sick, cwin, cnet)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ON CONFLICT (ronda, dia, conta) DO UPDATE SET cwin = max(cwin, excluded.cwin), cnet = cnet + excluded.cnet,
     resp = resp + excluded.resp, crimes = crimes + excluded.crimes, wins = wins + excluded.wins, busts = busts + excluded.busts,
     money = money + excluded.money, best = max(best, excluded.best), beaten = beaten + excluded.beaten, mugged = mugged + excluded.mugged,
     mugloss = mugloss + excluded.mugloss, fights = fights + excluded.fights, sick = sick + excluded.sick`),
@@ -84,8 +86,14 @@ function noticia(now, o) {
   q.novaNoticia.run(ronda, now, JSON.stringify(o));
 }
 const ultimas = () => jornal.slice(-20).reverse();
+const casinoNet = (r) => r.win - (r.g === 'bj' ? r.hand.bet : r.bet);
 function noticiar(now, a, r, p, alvo) {
   const name = nomeDe(p.id), k = int(a.k);
+  if (a.type === 'casino' && (r.g !== 'bj' || r.done)) {
+    const net = casinoNet(r);
+    if (net >= CFG.casino.newsMin) noticia(now, { k: 'casino', name, g: r.g, money: net });
+    else if (-net >= CFG.casino.newsMin) noticia(now, { k: 'casinoLoss', name, g: r.g, money: -net });
+  }
   if (a.type === 'crimeAll' && r.wins >= 10 && r.money >= 1000) noticia(now, { k: 'spree', name, c: k, n: r.n, money: r.money });
   else {
     const job = a.type === 'crimeAll' ? { ok: r.wins > 0, money: r.best, crit: r.bestCrit } : { ok: r.success, money: r.money, crit: r.crit };
@@ -110,13 +118,14 @@ const diaDe = (t) => { const d = localParts(t); return `${d.y}-${String(d.m).pad
 const ontemDe = (t) => { const d = localParts(t); const x = new Date(Date.UTC(d.y, d.m - 1, d.d - 1)); return x.toISOString().slice(0, 10); };
 function contarDia(now, conta, v) {
   q.diario.run(ronda, diaDe(now), conta, v.resp || 0, v.crimes || 0, v.wins || 0, v.busts || 0, v.money || 0, v.best || 0,
-    v.beaten || 0, v.mugged || 0, v.mugloss || 0, v.fights || 0, v.sick || 0);
+    v.beaten || 0, v.mugged || 0, v.mugloss || 0, v.fights || 0, v.sick || 0, v.cwin || 0, v.cnet || 0);
 }
 function contarAcao(now, a, r, p, alvo, resp0, alvoResp0) {
   const v = { resp: p.respect - resp0 };
   if (a.type === 'crime') Object.assign(v, { crimes: 1, wins: r.success ? 1 : 0, busts: r.busted ? 1 : 0, money: r.success ? r.money : 0, best: r.success ? r.money : 0 });
   else if (a.type === 'crimeAll') Object.assign(v, { crimes: r.n, wins: r.wins, busts: r.busted ? 1 : 0, money: r.money, best: r.best });
   else if (a.type === 'hooker' && r.sick) v.sick = 1;
+  else if (a.type === 'casino' && (r.g !== 'bj' || r.done)) { const net = casinoNet(r); v.cnet = net; v.cwin = Math.max(0, net); }
   else if (a.type === 'attack') {
     if (r.win) v.fights = 1; else v.beaten = 1;
     const w = { resp: alvo.respect - alvoResp0 };
@@ -125,21 +134,22 @@ function contarAcao(now, a, r, p, alvo, resp0, alvoResp0) {
   }
   if (Object.values(v).some((x) => x)) contarDia(now, p.id, v);
 }
-// regras das manchetes: [tipo, coluna, mínimo para aparecer]
-const MANCHETES = [['wanted', 'resp', 10], ['bigjob', 'best', 500], ['fighter', 'fights', 2], ['mugged', 'mugged', 1], ['beaten', 'beaten', 2], ['hustler', 'crimes', 30], ['unlucky', 'busts', 2], ['sick', 'sick', 1]];
+// regras das manchetes: [tipo, valor, mínimo para aparecer, dinheiro a mostrar]
+const MANCHETES = [['wanted', (r) => r.resp, 10], ['bigjob', (r) => r.best, 500, (r) => r.best], ['lucky', (r) => r.cwin, 5000, (r) => r.cwin], ['fighter', (r) => r.fights, 2],
+  ['mugged', (r) => r.mugged, 1, (r) => r.mugloss], ['broke', (r) => -r.cnet, 5000, (r) => -r.cnet], ['beaten', (r) => r.beaten, 2], ['hustler', (r) => r.crimes, 30], ['unlucky', (r) => r.busts, 2], ['sick', (r) => r.sick, 1]];
 const cacheManchetes = new Map();
 function manchetes(dia, now) {
   const c = cacheManchetes.get(dia);
   if (c && c.ronda === ronda && now - c.t < 30_000) return c.lista;
   const rows = q.doDia.all(ronda, dia), usados = new Set(), lista = [];
-  for (const [k, col, min] of MANCHETES) {
+  for (const [k, val, min, din] of MANCHETES) {
     let best = null;
-    for (const r of rows) if (r[col] >= min && !usados.has(r.conta) && (!best || r[col] > best[col])) best = r;
+    for (const r of rows) if (val(r) >= min && !usados.has(r.conta) && (!best || val(r) > val(best))) best = r;
     if (!best) continue;
     usados.add(best.conta);                       // cada jogador aparece numa manchete só, para haver mais nomes
     const p = jogadores.get(best.conta);
     lista.push({ k, name: nomeDe(best.conta), av: p?.av || 0, cls: p?.cls || '', level: p ? E.level(p) : 1, respect: p?.respect || 0,
-      n: best[col], m: k === 'mugged' ? best.mugloss : k === 'bigjob' ? best.best : 0 });
+      n: val(best), m: din ? din(best) : 0 });
   }
   cacheManchetes.set(dia, { t: now, ronda, lista });
   return lista;
@@ -210,7 +220,7 @@ function vista(p, now) {
     refill: E.refillPlan(p), detox: p.addiction > 0 ? E.detoxCost(p, now) : 0, detoxUses: E.detoxUses(p, now),
     mission: E.mission(p), wk: p.wk, stars: p.wk.map((_, k) => E.masteryStars(p, k)), counters: p.c,
     xp: p.xp, xpNeed: { F: E.practiceNeed(p, 'F'), I: E.practiceNeed(p, 'I'), C: E.practiceNeed(p, 'C') },
-    cash: p.cash, bank: p.bank, bankFeeBp: E.bankFeeBp(p), respect: p.respect, peakRespect: p.peakRespect,
+    cash: p.cash, bank: p.bank, bankFeeBp: E.bankFeeBp(p), bj: E.bjPublic(p), casinoMax: E.casinoMax(p), respect: p.respect, peakRespect: p.peakRespect,
     level: L, levelFrom: CFG.levels[L - 1], levelTo: CFG.levels[L] ?? null,
     jailUntil: p.jailUntil, jailTier: p.jailTier, bail: E.bailCost(p, now),
     hospUntil: p.hospUntil, medic: E.medicCost(p, now),
@@ -232,7 +242,7 @@ function cfgPublica() {
     biz: CFG.biz.map(({ id, price, perH, resp, stat, raid, toBank }) => ({ id, price, perH, resp, stat, raid, toBank })),
     bizMax: CFG.bizMax, storageMs: CFG.storageMs, port: CFG.port, weapons: CFG.weapons, armors: CFG.armors,
     pvp: CFG.pvp, bank: CFG.bank, luxury: CFG.luxury, levels: CFG.levels, crit: CFG.crit, unlockBp: CFG.unlockBp,
-    bustBp: CFG.bustBp, crimeAllMax: CFG.crimeAllMax, classes: CFG.classes, avatars: CFG.avatars, hookers: CFG.hookers, house: CFG.house, mastery: CFG.mastery, missions: CFG.missions.length, start: CFG.start,
+    bustBp: CFG.bustBp, crimeAllMax: CFG.crimeAllMax, casino: { minBet: CFG.casino.minBet, red: CFG.casino.red, dice: CFG.casino.dice }, classes: CFG.classes, avatars: CFG.avatars, hookers: CFG.hookers, house: CFG.house, mastery: CFG.mastery, missions: CFG.missions.length, start: CFG.start,
     round: { playDays: CFG.round.playDays, noPvpMs: CFG.round.noPvpMs },
   };
 }
@@ -309,6 +319,11 @@ function lerCorpo(req) {
 // O servidor só escuta em 127.0.0.1, por isso estes cabeçalhos só podem vir do Caddy.
 const ip = (req) => String(req.headers['x-real-ip'] || String(req.headers['x-forwarded-for'] || '').split(',').pop() || req.socket.remoteAddress || '').trim();
 const int = (x) => (Number.isSafeInteger(x) ? x : NaN);
+// só os campos que cada jogo usa, com os tipos certos (o resto do pedido não chega ao motor)
+function limpaAposta(a) {
+  const bets = Array.isArray(a.bets) ? a.bets.slice(0, 13).map((b) => ({ t: String(b && b.t), n: b && b.n !== undefined ? int(b.n) : undefined, amt: int(b && b.amt) })) : undefined;
+  return { bets, amt: int(a.amt), pick: String(a.pick), op: String(a.op || 'deal') };
+}
 
 // ---------- ações ----------
 const recentes = new Map(); // conta -> Map(rid -> resposta), para toques repetidos
@@ -326,6 +341,7 @@ function agir(conta, corpo, now) {
   switch (a.type) {
     case 'crime': r = E.doCrime(p, now, world, int(a.k), rng); break;
     case 'crimeAll': r = E.doCrimeAll(p, now, world, int(a.k), rng); break;
+    case 'casino': r = E.casinoPlay(p, now, world, String(a.g), limpaAposta(a), rng); break;
     case 'train': r = E.train(p, now, world, String(a.stat)); break;
     case 'drug': r = E.buyDrug(p, now, world, int(a.d)); break;
     case 'refill': r = E.refill(p, now, world); break;

@@ -52,6 +52,15 @@ function contas(kind, a0, a, d0, d, t, res, arg) {
       if (a.c.crimes - a0.c.crimes !== res.n || a.c.wins - a0.c.wins !== res.wins) bad('contadores');
       break;
     }
+    case 'casino': {
+      if (dm !== res.win - res.bet || dr !== 0) bad('casino: dinheiro não bate com a aposta e o prémio');
+      if (res.bet && res.bet > E.casinoMax(a0)) bad('casino: aposta acima do máximo');
+      const staked = res.g === 'bj' ? (res.done ? res.hand.bet : res.bet) : res.bet;
+      const maxMult = res.g === 'roulette' ? 36 : res.g === 'dice' ? 6 : 3;
+      if (res.win > staked * maxMult) bad('casino: prémio acima do possível');
+      if (a.bank !== a0.bank) bad('casino mexeu no banco');
+      break;
+    }
     case 'deposit': if (dm !== -res.fee || res.fee < 1 || res.fee !== Math.ceil((arg * E.bankFeeBp(a)) / 10000) || dr) bad('taxa do banco'); break;
     case 'withdraw': case 'class': case 'avatar': if (dm !== 0 || dr !== 0) bad('devia ser neutro'); break;
     case 'claim': if (dm !== res.cash || dr !== 0) bad('prémio'); break;
@@ -100,11 +109,18 @@ for (let n = 0; n < ACTIONS; n++) {
   if (r.chance(200)) { p.cash += r.int(0, 5e6); } // dá dinheiro para chegar a tudo
   if (r.chance(2500)) { p.energy = r.int(0, CFG.energy.max); p.energyT = Math.min(p.energyT, p.t); } // gasta stamina para chegar à discoteca, às putas e ao hospital
   const before = touched(p, t), beforeD = touched(d, t), origD = structuredClone(d), origP = structuredClone(p);
-  const kind = pick(['crime', 'crimeAll', 'drug', 'refill', 'detox', 'claim', 'class', 'avatar', 'hooker', 'cure', 'house', 'houseUp', 'train', 'buyBiz', 'collect', 'port', 'collectPort', 'deposit', 'withdraw', 'gear', 'attack', 'bail', 'medic', 'luxury']);
+  const kind = pick(['casino', 'casino', 'crime', 'crimeAll', 'drug', 'refill', 'detox', 'claim', 'class', 'avatar', 'hooker', 'cure', 'house', 'houseUp', 'train', 'buyBiz', 'collect', 'port', 'collectPort', 'deposit', 'withdraw', 'gear', 'attack', 'bail', 'medic', 'luxury']);
   let res, arg;
   try {
     switch (kind) {
       case 'crime': arg = r.chance(9000) ? r.int(0, 9) : anyInt(); res = E.doCrime(p, t, world, arg, game); break;
+      case 'casino': {
+        const amt = () => pick([10, 50, 100, 999, 5000, 1e6, 0, -5, 9, 0.5, NaN]);
+        const g = pick(['roulette', 'dice', 'bj', 'bj', 'x']);
+        arg = g === 'roulette' ? { bets: Array.from({ length: r.int(0, 13) }, () => ({ t: pick(['red', 'black', 'even', 'odd', 'low', 'high', 'dozen', 'num', 'x']), n: pick([0, 1, 2, 3, 17, 36, 37, -1]), amt: amt() })) }
+          : g === 'dice' ? { pick: pick(['low', 'seven', 'high', '__proto__']), amt: amt() } : { op: pick(['deal', 'hit', 'stand', 'double', 'x']), amt: amt() };
+        res = E.casinoPlay(p, t, world, g, arg, game); break;
+      }
       case 'crimeAll': arg = r.chance(9000) ? r.int(0, 9) : anyInt(); res = E.doCrimeAll(p, t, world, arg, game); break;
       case 'drug': res = E.buyDrug(p, t, world, r.chance(9000) ? r.int(0, 8) : anyInt()); break;
       case 'refill': res = E.refill(p, t, world); break;

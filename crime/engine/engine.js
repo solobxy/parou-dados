@@ -38,7 +38,7 @@ export function newPlayer(id, now, world, opts = {}) {
     wk: CFG.crimes.map(() => 0),   // sucessos por golpe (mestria)
     c: { crimes: 0, wins: 0, trains: 0, refills: 0, collects: 0, pvpWins: 0, ports: 0 },
     mi: 0,                         // próximo objetivo por receber
-    cls: '', av: 0, fx: {}, sick: false, hkT: [], house: 0, hu: CFG.house.ups.map(() => 0),        // profissão, avatar e efeitos temporários (kind -> { bp, until })
+    cls: '', av: 0, fx: {}, sick: false, hkT: [], house: 0, hu: CFG.house.ups.map(() => 0), bj: null,        // profissão, avatar e efeitos temporários (kind -> { bp, until })
   };
 }
 
@@ -56,6 +56,7 @@ function migrate(p) {
   if (!Array.isArray(p.hkT)) p.hkT = [];
   if (!Number.isSafeInteger(p.house)) p.house = 0;
   if (!Array.isArray(p.hu)) p.hu = CFG.house.ups.map(() => 0);
+  if (p.bj === undefined) p.bj = null;
 }
 
 // ---------- tempo ----------
@@ -803,6 +804,151 @@ export function attack(a, d, now, world, mode, rng) {
   return { ok: true, chanceBp: bp, win: false, mode, respect: -loss, defenderGain: defGain };
 }
 
+// ---------- casino ----------
+// Tudo decidido aqui, no servidor, com o gerador aleatório do servidor. Aposta-se só o dinheiro que tens na mão.
+export function casinoMax(p) {
+  const C = CFG.casino; let m = C.maxBase;
+  for (let i = 1; i < level(p); i++) m = Math.floor((m * C.maxNum) / C.maxDen);
+  return m;
+}
+function stakeOf(p, amounts) {
+  const C = CFG.casino;
+  if (!Array.isArray(amounts) || !amounts.length || amounts.length > C.maxBets) fail('BAD_BET');
+  let tot = 0;
+  for (const a of amounts) { if (!Number.isSafeInteger(a) || a < C.minBet) fail('BAD_BET'); tot += a; }
+  if (tot > casinoMax(p)) fail('BET_TOO_BIG', { max: casinoMax(p) });
+  if (tot > p.cash) fail('NO_CASH');
+  return tot;
+}
+const RED = new Set(CFG.casino.red);
+const RL_TYPES = ['red', 'black', 'even', 'odd', 'low', 'high', 'dozen', 'num'];
+// quanto volta (contando com a aposta) por cada ficha, se sair o número n
+export function rouletteReturn(b, n) {
+  switch (b.t) {
+    case 'red': return n > 0 && RED.has(n) ? 2 : 0;
+    case 'black': return n > 0 && !RED.has(n) ? 2 : 0;
+    case 'even': return n > 0 && n % 2 === 0 ? 2 : 0;
+    case 'odd': return n % 2 === 1 ? 2 : 0;
+    case 'low': return n >= 1 && n <= 18 ? 2 : 0;
+    case 'high': return n >= 19 ? 2 : 0;
+    case 'dozen': return n > 0 && Math.floor((n - 1) / 12) === b.n ? 3 : 0;
+    case 'num': return n === b.n ? 36 : 0;
+    default: return 0;
+  }
+}
+function roulette(p, a, rng) {
+  const bets = Array.isArray(a.bets) ? a.bets : [];
+  for (const b of bets) {
+    if (!b || !RL_TYPES.includes(b.t)) fail('BAD_BET');
+    if (b.t === 'dozen' && !(Number.isInteger(b.n) && b.n >= 0 && b.n <= 2)) fail('BAD_BET');
+    if (b.t === 'num' && !(Number.isInteger(b.n) && b.n >= 0 && b.n <= 36)) fail('BAD_BET');
+  }
+  const bet = stakeOf(p, bets.map((b) => b && b.amt));
+  p.cash -= bet;
+  const n = rng.int(0, 36);
+  let win = 0;
+  const out = bets.map((b) => { const r = b.amt * rouletteReturn(b, n); win += r; return { t: b.t, n: b.n ?? null, amt: b.amt, ret: r }; });
+  p.cash += win;
+  return { ok: true, g: 'roulette', bet, win, n, bets: out };
+}
+function dice(p, a, rng) {
+  const mult = CFG.casino.dice[a.pick];
+  if (!Object.hasOwn(CFG.casino.dice, a.pick)) fail('BAD_BET');
+  const bet = stakeOf(p, [a.amt]);
+  p.cash -= bet;
+  const d = [rng.int(1, 6), rng.int(1, 6)], s = d[0] + d[1];
+  const hit = a.pick === 'low' ? s < 7 : a.pick === 'seven' ? s === 7 : s > 7;
+  const win = hit ? Math.floor((bet * mult) / 10) : 0;
+  p.cash += win;
+  return { ok: true, g: 'dice', bet, win, d, pick: a.pick };
+}
+// blackjack: cartas 0..51 (valor = c % 13: 0 ás, 1..8 = 2..9, 9..12 = 10, valete, dama, rei).
+// As cartas que ainda vão sair ficam só no servidor; o jogador só vê as suas e a primeira do dealer.
+export function bjValue(cards) {
+  let tot = 0, aces = 0;
+  for (const c of cards) { const r = c % 13; if (r === 0) { aces++; tot += 11; } else tot += r >= 9 ? 10 : r + 1; }
+  while (tot > 21 && aces) { tot -= 10; aces--; }
+  return { tot, soft: aces > 0 };
+}
+const isBJ = (cards) => cards.length === 2 && bjValue(cards).tot === 21;
+function bjShoe(rng) {
+  const { decks, draw } = CFG.casino.bj, left = new Array(52).fill(decks), out = [];
+  let total = 52 * decks;
+  for (let k = 0; k < draw; k++) {
+    let x = rng.int(0, total - 1), c = 0;
+    while (x >= left[c]) { x -= left[c]; c++; }
+    left[c]--; total--; out.push(c);
+  }
+  return out;
+}
+function bjView(h, done) {
+  const v = { bet: h.bet, dbl: h.dbl, pl: h.pl.slice(), tot: bjValue(h.pl).tot };
+  if (done) { v.dl = h.dl.slice(); v.dtot = bjValue(h.dl).tot; } else v.dl = [h.dl[0]];
+  return v;
+}
+function bjFinish(p, h, bet) {
+  const pv = bjValue(h.pl).tot;
+  let res;
+  if (pv > 21) res = 'bust';
+  else {
+    if (!isBJ(h.pl)) while (bjValue(h.dl).tot < 17) h.dl.push(h.next.shift()); // o dealer pára em 17 (também no 17 com ás)
+    const dv = bjValue(h.dl).tot;
+    if (isBJ(h.pl) && !isBJ(h.dl)) res = 'bj';
+    else if (isBJ(h.dl) && !isBJ(h.pl)) res = 'lose';
+    else if (dv > 21 || pv > dv) res = 'win';
+    else if (pv === dv) res = 'push';
+    else res = 'lose';
+  }
+  const win = res === 'bj' ? h.bet + Math.floor((h.bet * 3) / 2) : res === 'win' ? h.bet * 2 : res === 'push' ? h.bet : 0;
+  p.cash += win; p.bj = null;
+  return { ok: true, g: 'bj', bet, win, done: true, res, hand: bjView(h, true) };
+}
+function bjDeal(p, a, rng) {
+  if (p.bj) fail('BJ_OPEN');
+  const bet = stakeOf(p, [a.amt]);
+  p.cash -= bet;
+  const n = bjShoe(rng);
+  const h = { bet, dbl: false, pl: [n[0], n[2]], dl: [n[1], n[3]], next: n.slice(4) };
+  p.bj = h;
+  if (isBJ(h.pl) || isBJ(h.dl)) return bjFinish(p, h, bet);  // o dealer espreita: com blackjack de alguém, a mão acaba já
+  return { ok: true, g: 'bj', bet, win: 0, done: false, hand: bjView(h, false) };
+}
+function bjMove(p, op, rng) {
+  const h = p.bj;
+  if (!h) fail('NO_HAND');
+  while (h.next.length < 12) h.next.push(rng.int(0, 51));   // nunca falta carta (com 6 baralhos isto quase nunca acontece)
+  if (op === 'hit') {
+    h.pl.push(h.next.shift());
+    const v = bjValue(h.pl).tot;
+    if (v >= 21) return bjFinish(p, h, 0);
+    return { ok: true, g: 'bj', bet: 0, win: 0, done: false, hand: bjView(h, false) };
+  }
+  if (op === 'stand') return bjFinish(p, h, 0);
+  if (op === 'double') {
+    if (h.pl.length !== 2 || h.dbl) fail('NO_DOUBLE');
+    if (p.cash < h.bet) fail('NO_CASH');
+    p.cash -= h.bet;
+    const extra = h.bet; h.bet *= 2; h.dbl = true;
+    h.pl.push(h.next.shift());
+    return bjFinish(p, h, extra);
+  }
+  fail('BAD_BET');
+}
+export function bjPublic(p) { return p.bj ? bjView(p.bj, false) : null; }
+export function casinoPlay(p, now, world, g, a, rng) {
+  if (!a || typeof a !== 'object') fail('BAD_BET');
+  if (g === 'bj' && a.op !== 'deal') {
+    if (!['hit', 'stand', 'double'].includes(a.op)) fail('BAD_BET');
+    begin(p, now, world, { allowBusy: true });       // uma mão começada pode acabar-se mesmo no hospital
+    return bjMove(p, a.op, rng);
+  }
+  if (!['roulette', 'dice', 'bj'].includes(g)) fail('NO_GAME');
+  begin(p, now, world);
+  if (g === 'roulette') return roulette(p, a, rng);
+  if (g === 'dice') return dice(p, a, rng);
+  return bjDeal(p, a, rng);
+}
+
 // ---------- objetivos ----------
 
 function missionHave(p, type) {
@@ -870,6 +1016,7 @@ export function checkInvariants(p) {
   if (!Array.isArray(p.hu) || p.hu.length !== CFG.house.ups.length || p.hu.some((n) => !Number.isSafeInteger(n) || n < 0 || n > p.house)) bad.push('house upgrades');
   if (!Array.isArray(p.hkT) || p.hkT.length > CFG.hookers.maxSteps) bad.push('hooker list');
   if (!Number.isSafeInteger(p.av) || p.av < 0 || p.av >= CFG.avatars) bad.push('avatar');
+  if (p.bj !== null && (typeof p.bj !== 'object' || !Number.isSafeInteger(p.bj.bet) || p.bj.bet < CFG.casino.minBet || !Array.isArray(p.bj.pl) || bjValue(p.bj.pl).tot > 21 || !Array.isArray(p.bj.next))) bad.push('blackjack');
   for (const k of Object.keys(p.fx)) { const f = p.fx[k]; if (!CFG.fxKinds.includes(k) || !Number.isSafeInteger(f.bp) || f.bp <= 0 || !Number.isSafeInteger(f.until)) bad.push('fx ' + k); }
   for (const s of p.biz) {
     for (const k of ['n', 'stored', 'rem', 't']) if (!Number.isSafeInteger(s[k]) || s[k] < 0) bad.push(`biz.${k}=${s[k]}`);

@@ -228,8 +228,8 @@ test('jornal da cidade: uma luta ganha aparece para todos, sem dados privados', 
   const st = await (await fetch(BASE + '/api/state', { headers: { 'X-Forwarded-For': '10.0.9.9' } })).json();
   assert.ok(Array.isArray(st.feed));
   for (const e of st.feed) {
-    assert.ok(['job', 'crit', 'spree', 'jail', 'house', 'lux', 'beat', 'mug', 'fail', 'sick', 'lvl'].includes(e.k), e.k);
-    assert.deepEqual(Object.keys(e).filter((k) => !['t', 'k', 'name', 'c', 'money', 'crit', 'h', 'i', 'target', 'mode', 'n'].includes(k)), []);
+    assert.ok(['job', 'crit', 'spree', 'jail', 'house', 'lux', 'beat', 'mug', 'fail', 'sick', 'lvl', 'casino', 'casinoLoss'].includes(e.k), e.k);
+    assert.deepEqual(Object.keys(e).filter((k) => !['t', 'k', 'name', 'c', 'money', 'crit', 'h', 'i', 'target', 'mode', 'n', 'g'].includes(k)), []);
   }
 });
 
