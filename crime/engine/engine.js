@@ -1107,7 +1107,8 @@ export function slotSpin(gid, rng, buy = 0) {
     const base = clusterRound(G, rng, false, new Array(G.cols * G.rows).fill(0), buy > 0);
     out.base = base; total = base.win;
     if (base.scat >= G.trig) {
-      const spots = new Array(G.cols * G.rows).fill(buy === 2 ? 2 : 0);
+      // compra super: cada casa do tabuleiro começa já com um multiplicador, sorteado casa a casa
+      const spots = buy === 2 ? Array.from({ length: G.cols * G.rows }, () => pickW(rng, G.superSpots)) : new Array(G.cols * G.rows).fill(0);
       out.spots0 = spots.slice();
       let left = G.fs[Math.min(7, base.scat)], played = 0;
       while (left > 0 && played < G.maxFree && total < cap) {

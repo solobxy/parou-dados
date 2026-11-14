@@ -418,7 +418,18 @@ test('slots: compra super só no Rebuçado, jogo inventado recusado', () => {
   assert.throws(() => E.casinoPlay(p, NOW, W, 'slot', { game: 'zeus', amt: 100, buy: 2 }, never), code('BAD_BET'));
   assert.throws(() => E.casinoPlay(p, NOW, W, 'slot', { game: 'toString', amt: 100 }, never), code('BAD_BET'));
   const r = E.casinoPlay(p, NOW, W, 'slot', { game: 'rebucado', amt: 10, buy: 2 }, seededRng(8));
-  assert.equal(r.bet, 10 * CFG.casino.slots.rebucado.superBuy); assert.ok(r.spin.spots0.every((x) => x === 2));
+  assert.equal(r.bet, 10 * CFG.casino.slots.rebucado.superBuy);
+  // cada casa começa com um multiplicador sorteado da lista, e não todas com o mesmo
+  const lista = CFG.casino.slots.rebucado.superSpots.map(([v]) => v);
+  assert.equal(r.spin.spots0.length, 49); assert.ok(r.spin.spots0.every((x) => lista.includes(x))); assert.ok(new Set(r.spin.spots0).size > 1);
+});
+
+test('slots: a compra super do Rebuçado sai com os multiplicadores nas proporções anunciadas e devolve cerca de 96,6%', () => {
+  const G = CFG.casino.slots.rebucado, rng = seededRng(77), N = 60000, conta = new Map(); let tot = 0, casas = 0;
+  for (let i = 0; i < N; i++) { const s = E.slotSpin('rebucado', rng, 2); tot += s.total; if (i < 4000) for (const v of s.spots0) { conta.set(v, (conta.get(v) || 0) + 1); casas++; } }
+  const soma = G.superSpots.reduce((x, [, w]) => x + w, 0);
+  for (const [v, w] of G.superSpots) perto(conta.get(v) / casas, w / soma, 0.006, `casas a ×${v}`);
+  perto(tot / N / 100 / G.superBuy, 0.966, 0.03, 'retorno da compra super');
 });
 
 test('mesas ao vivo: pagam exatamente o mesmo que a jogada a solo, e a roleta devolve 36/37 em qualquer aposta', () => {

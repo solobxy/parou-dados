@@ -1246,13 +1246,17 @@ function slotCellEl(g, s, orb) {
   return h('div', { class: cls }, h('img', { src: symImg(g, s, orb), alt: '', width: 80, height: 80, decoding: 'async' }), orb ? h('b', { class: 'ov' }, '×' + orb) : null);
 }
 // as casas com multiplicador são do tabuleiro, não dos símbolos: ficam paradas por baixo enquanto os símbolos caem
-const spotCls = (v) => 'ssp' + (v === 1 ? ' mk' : v >= 2 ? ' mx' : '');
+const spotCls = (v) => 'ssp' + (v === 1 ? ' mk' : v >= 2 ? ' mx' + (v >= 64 ? ' v64' : v >= 16 ? ' v16' : v >= 8 ? ' v8' : v >= 4 ? ' v4' : '') : '');
 function slotSpots(grid, sp) {
   const lay = grid.parentNode?.querySelector('.sspots'); if (!lay || !sp) return;
+  const cols = slotCfg(S.slotGame || 'rebucado').cols, many = [...lay.children].filter((el, i) => (sp[i] || 0) !== (+el.dataset.v || 0)).length > 14;
   [...lay.children].forEach((el, i) => {
     const v = sp[i] || 0, old = +el.dataset.v || 0; if (v === old) return;
-    el.dataset.v = v; el.className = spotCls(v) + (v > old ? ' bump' : ''); el.textContent = v >= 2 ? '×' + v : '';
+    el.dataset.v = v; el.className = spotCls(v) + (many && v >= 2 ? ' deal' : v > old ? ' bump' : ''); el.textContent = v >= 2 ? '×' + v : '';
+    // tabuleiro da compra super: as casas acendem-se uma a uma, em diagonal
+    el.style.animationDelay = many ? ((i % cols) + Math.floor(i / cols)) * 55 + 'ms' : '';
   });
+  if (many && !S.slotSkip) { fx.sfx('refill'); return wait(13 * 55 + 500); }
 }
 function slotGrid(g) {
   const G = slotCfg(g), n = G.cols * G.rows, last = S.slotLast?.[g];
@@ -1274,7 +1278,7 @@ async function slotStep(g, grid, step, prev, sp) {
   }
   const pitch = grid.children[0] ? grid.children[0].offsetHeight + parseFloat(getComputedStyle(grid).rowGap || 4) : 60;
   let end = 0; const lands = new Set();
-  slotSpots(grid, step.sp);
+  await slotSpots(grid, step.sp);
   grid.replaceChildren(...step.g.map((s, i) => {
     const el = slotCellEl(g, s, step.o?.[i]), d = dist[i];
     if (d > 0 && !RM()) {
@@ -1321,7 +1325,7 @@ async function slotBanner(kind, title, sub, ms) {
 }
 async function slotAnim(r) {
   const g = r.game, G = slotCfg(g);
-  S.slotSkip = false; S.slotBase = r.base;
+  S.slotSkip = false; S.slotBase = r.base; S.slotGame = g;
   const sl = document.querySelector('.slot'); if (sl) await tableFocus(sl);
   const sk = document.querySelector('.csbar .btn.buy');
   if (sk) { sk.disabled = false; sk.replaceChildren(h('i', { class: 'stopi' })); sk.setAttribute('aria-label', t('slSkip')); sk.classList.replace('buy', 'skip'); const ml = document.querySelector('.smsgl'); if (ml) ml.textContent = t('slWinL'); sk.addEventListener('click', () => { S.slotSkip = true; }); }

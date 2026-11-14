@@ -1018,3 +1018,8 @@ h1.slogo { margin: 0; }
 .ssp.mx { background: #ffd23a99; box-shadow: inset 0 0 0 2px #fff3b0, 0 0 10px #ffd75e88; }
 .ssp.bump { animation: sspb .45s var(--spring); }
 @keyframes sspb { 40% { transform: scale(1.25); filter: brightness(1.6); } }
+
+.ssp.deal { animation: sspdeal .45s var(--spring) both; }
+@keyframes sspdeal { from { transform: scale(0) rotate(-20deg); opacity: 0; } }
+.ssp.v4 { background: #ff9a3aa8; } .ssp.v8 { background: #ff5fa2b0; } .ssp.v16 { background: #b06cffc0; box-shadow: inset 0 0 0 2px #fff, 0 0 14px #e9a6ff; }
+.ssp.v64 { background: #ff3b3bc8; box-shadow: inset 0 0 0 2px #fff, 0 0 16px #ff8a8a; }
