@@ -241,6 +241,13 @@ function tip(key, text) {
   return el;
 }
 
+// ilustrações que já existem (as outras mostram o ícone num quadrado escuro)
+const ART = { crimes: new Set(['carteirista', 'loja', 'carro', 'bomba', 'turistas']) };
+function art(kind, id, ic) {
+  if (ART[kind]?.has(id)) return h('img', { class: 'art', src: `/img/${kind}/${id}.webp`, alt: '', width: 76, height: 76, loading: 'lazy', decoding: 'async' });
+  return h('div', { class: 'art none', 'aria-hidden': 'true' }, icon(ic));
+}
+
 function statNames(w) {
   const names = { I: t('statI'), F: t('statF'), C: t('statC') };
   return Object.entries(w).filter(([, v]) => v > 0).sort((a, b) => b[1] - a[1]).map(([s]) => names[s]).join(' + ');
@@ -265,6 +272,7 @@ function screenStreet() {
     if (!info.unlocked) {
       if (lockedShown) return; lockedShown = true;
       jobs.append(h('div', { class: 'job lock', 'aria-disabled': 'true' },
+        art('crimes', c.id, 'lock'),
         h('div', { class: 'nm' }, list('crimes')[k]),
         h('div', { class: 'meta' }, icon('lock'), t('needsStats', { s: statNames(c.w) })),
         h('div', { class: 'pct' }, pct(info.chance), h('small', null, t('chance')))));
@@ -274,6 +282,7 @@ function screenStreet() {
     const btn = h('button', { class: 'job ' + cls, disabled: !!b,
       'aria-label': `${list('crimes')[k]}, ${pct(info.chance)} ${t('chance')}, ${c.e} ${t('energy')}`,
       on: { click: (e) => act('crime', { k }, { el: e.currentTarget }) } },
+      art('crimes', c.id, 'street'),
       h('div', { class: 'nm' }, list('crimes')[k]),
       h('div', { class: 'meta' },
         h('span', { class: 'e' }, icon('bolt'), ' ', c.e),

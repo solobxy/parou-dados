@@ -105,18 +105,26 @@ p.secsub { color: var(--tx2); font-size: 14px; margin-bottom: 12px; }
 .card { background: var(--s1); border-radius: var(--r); padding: 14px; position: relative; }
 .job {
   width: 100%; text-align: left; border: 0; background: var(--s1); border-radius: var(--r); padding: 14px 14px 14px 16px;
-  display: grid; grid-template-columns: 1fr auto; gap: 4px 12px; position: relative; overflow: hidden;
-  transition: transform .12s var(--ease-out), background-color .2s; min-height: 76px;
+  display: grid; grid-template-columns: 76px 1fr auto; gap: 4px 12px; position: relative; overflow: hidden;
+  transition: transform .12s var(--ease-out), background-color .2s; min-height: 76px; align-items: center;
 }
+.job .art { grid-row: 1 / span 2; grid-column: 1; width: 76px; height: 76px; border-radius: 10px; object-fit: cover; background: var(--s2); display: block; }
+.job .art.none { display: grid; place-items: center; color: var(--tx3); font-size: 30px; }
+.job .nm, .job .meta { grid-column: 2; min-width: 0; }
+.job .nm { align-self: end; }
+.job .meta { align-self: start; }
+.job.lock .art { filter: grayscale(1) brightness(.55); }
+.job.win .art { animation: artwin .6s var(--ease-out); }
+@keyframes artwin { 40% { filter: brightness(1.5) saturate(1.3); transform: scale(1.04); } }
 .job::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: var(--chc, var(--tx3)); }
 .job:active { transform: scale(.985); background: var(--s2); }
 .job[disabled] { cursor: default; }
-.job .nm { font-family: var(--disp); font-weight: 800; font-size: 22px; line-height: 1.05; text-transform: uppercase; letter-spacing: .01em; }
+.job .nm { font-family: var(--disp); font-weight: 800; font-size: 21px; line-height: 1.05; text-transform: uppercase; letter-spacing: .01em; }
 .job .meta { font-size: 13px; color: var(--tx2); display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
 .job .meta .m { color: var(--cash); font-weight: 650; }
 .job .meta .r { color: var(--sodium); font-weight: 650; }
 .job .meta .e { color: var(--energy); font-weight: 650; }
-.job .pct { grid-row: 1 / span 2; grid-column: 2; align-self: center; text-align: right; font-family: var(--disp); font-weight: 900; font-size: 34px; line-height: .9; color: var(--chc, var(--tx)); }
+.job .pct { grid-row: 1 / span 2; grid-column: 3; align-self: center; text-align: right; font-family: var(--disp); font-weight: 900; font-size: 34px; line-height: .9; color: var(--chc, var(--tx)); }
 .job .pct small { display: block; font-family: var(--ui); font-weight: 500; font-size: 12px; color: var(--tx2); letter-spacing: 0; }
 .gear { display: flex; align-items: center; gap: 12px; }
 .gear .grow { min-width: 0; }
