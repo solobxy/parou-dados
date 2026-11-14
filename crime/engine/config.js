@@ -161,7 +161,7 @@ export const CFG = {
   hookers: {
     windowMs: 24 * HOUR, stepNum: 11, stepDen: 10, maxSteps: 60,
     sickCutBp: 1500, // doente: −15% em todas as stats até se tratar
-    cureMin: 150, cureValueBp: 6000, // tratar custa o que rendem 60 de stamina
+    cureMin: 100, cureValueBp: 2500, // tratar custa o que rendem 25 de stamina
     list: [
       // quanto mais barata, menos stamina por visita e mais risco de doença; as de cima custam mais por ponto
       // mas enchem de uma vez e quase sem risco. Contando a doença, as do meio são as que rendem mais.
@@ -182,9 +182,9 @@ export const CFG = {
   // prática: cada golpe treina as stats que usa (energia × peso; metade se falhar).
   // Um ponto custa base + perStat × stat atual de prática, por isso ajuda muito no início e menos depois (o ginásio continua mais rápido).
   practice: { base: 1000, perStat: 10, failBp: 5000 },
-  // desintoxicação: limpa o vício todo, sem limite de vezes. Preço = metade do que 100 de energia te rendem
+  // desintoxicação: limpa o vício todo, sem limite de vezes. Preço = pouco menos de um terço do que 100 de energia te rendem
   // (por 100 de vício), +25% por cada uso nas últimas 24 h. Nunca bloqueia: só fica cada vez mais cara.
-  detox: { min: 50, windowMs: 24 * HOUR, valueDiv: 200, stepNum: 5, stepDen: 4, maxSteps: 40 },
+  detox: { min: 50, windowMs: 24 * HOUR, valueDiv: 350, stepNum: 5, stepDen: 4, maxSteps: 40 },
 
   // Negócios: rendem por hora para um armazém que enche em 8 h. Cada compra dá respeito uma vez (resp).
   // Cada unidade extra do mesmo tipo custa +50%; máximo 10 de cada tipo.
@@ -237,7 +237,7 @@ export const CFG = {
     maxHospPerWindow: 4, // ninguém é mandado para o hospital mais de 4 vezes em 24 h (regra fixa)
     windowMs: 24 * HOUR,
   },
-  medicPerMin: 30, // sair do hospital: 30 x minutos que faltam x nível do jogador
+  medicPerMin: 12, // sair do hospital: 12 x minutos que faltam x nível do jogador
 
   bank: { feeBp: 300 }, // depositar custa 3%
 
