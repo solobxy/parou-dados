@@ -23,9 +23,13 @@ function sextaRecente() {
   return d.toISOString().slice(0, 10);
 }
 
+// o servidor dos testes vive sempre 3 h 30 depois das 21:00 (UTC) dessa sexta-feira: a ronda já abriu os ataques e ainda não há entradas tardias
+const RONDA = sextaRecente();
+const DESVIO = Date.UTC(...RONDA.split('-').map((x, i) => (i === 1 ? +x - 1 : +x)), 21) + 3.5 * 3600e3 - Date.now();
+
 async function arrancar() {
-  srv = spawn(process.execPath, [join(AQUI, '..', 'server.mjs')], {
-    env: { ...process.env, PORT: String(PORT), DATA: dir, COOKIE_INSEGURO: '1', PRIMEIRA_RONDA: sextaRecente(), ...ENV_EXTRA },
+  srv = spawn(process.execPath, ['--import', join(AQUI, 'relogio.mjs'), join(AQUI, '..', 'server.mjs')], {
+    env: { ...process.env, PORT: String(PORT), DATA: dir, COOKIE_INSEGURO: '1', PRIMEIRA_RONDA: RONDA, TESTE_DESVIO_MS: String(DESVIO), ...ENV_EXTRA },
     stdio: ['ignore', 'pipe', 'pipe'],
   });
   srv.stderr.on('data', (d) => { const s = String(d); if (!s.includes('ExperimentalWarning') && !s.includes('trace-warnings')) process.stderr.write(s); });
@@ -217,7 +221,7 @@ test('batota: segurar o pedido não deixa agir no passado (a hora é a de quando
     const s = net.connect(PORT, '127.0.0.1'); let buf = '';
     s.on('data', (d) => { buf += d; }); s.on('end', () => resolve(buf)); s.on('error', reject);
     s.write(`POST /api/act HTTP/1.1\r\nHost: x\r\nContent-Type: application/json\r\nCookie: ${cookie}\r\nX-Forwarded-For: 10.0.9.6\r\nConnection: close\r\nContent-Length: ${Buffer.byteLength(corpo)}\r\n\r\n`);
-    setTimeout(() => { enviado = Date.now(); s.write(corpo); }, 700);
+    setTimeout(() => { enviado = Date.now() + DESVIO; s.write(corpo); }, 700);
   });
   const out = JSON.parse(resposta.slice(resposta.indexOf('{'), resposta.lastIndexOf('}') + 1));
   assert.equal(out.result.success, true);

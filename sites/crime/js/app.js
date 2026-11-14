@@ -84,10 +84,14 @@ function react(type, out, before, opts) {
   else if (type === 'collect') {
     let total = 0, lost = 0;
     for (const it of r.items) { total += it.money; lost += it.lost; }
-    for (const c of r.port) if (!c.seized) total += c.got;
+    // contentores: diz-se o que chegou (com o lucro) e o que a polícia apreendeu, com os valores
+    let back = 0, sent = 0, gone = 0;
+    for (const c of r.port) { if (c.seized) gone += c.amount; else { back += c.got; sent += c.amount; } }
     if (total > 0) { toast(t('got', { m: money(total) })); fx.sfx('cash'); }
+    if (back > 0) { toast(t('portBack', { m: money(back), g: money(back - sent) })); fx.sfx('cash'); }
     if (lost > 0) toast(t('raided', { m: money(lost) }), true);
-    if (r.port.some((c) => c.seized)) toast(t('seized'), true);
+    if (gone > 0) { toast(t('portGone', { m: money(gone) }), true); fx.sfx('fail'); }
+    if (r.port.length) S.portLast = r.port;
   } else if (type === 'attack') {
     fx.sfx('hit');
     fx.fight(me.name, out.target.name, r.win, r.win ? (r.mode === 'mug' ? '+' + money(r.money) + ' · +' + r.respect : '+' + r.respect + ' ' + t('respect').toLowerCase()) : '−' + Math.abs(r.respect) + ' ' + t('respect').toLowerCase(), { win: t('youWon'), lose: t('youLost') });
@@ -684,6 +688,8 @@ function screenPort() {
   const me = S.st.me;
   const out = [pageHead('port', t('portSub'))];
   out.push(portMap(me));
+  if (S.portLast?.length) out.push(h('div', { class: 'note stack', style: 'margin-bottom:10px' }, S.portLast.map((c) => h('div', { class: 'row sp' }, h('span', null, icon('ship'), ' ' + money(c.amount)),
+    c.seized ? h('b', { class: 'c-red' }, t('portLostRow', { m: money(c.amount) })) : h('b', { class: 'c-cash' }, t('portGotRow', { m: money(c.got), g: money(c.got - c.amount) }))))));
   const pc = h('div', { class: 'card stack' }, h('div', { class: 'small muted' }, t('slots', { a: me.port.length, b: me.portSlots })));
   for (const c of me.port) {
     const left = c.readyAt - now();
