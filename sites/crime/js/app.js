@@ -238,7 +238,7 @@ const PARENT = { news: 'city', casino: 'city', roulette: 'casino', bj: 'casino',
   biz: 'empire', port: 'empire', casa: 'empire', bank: 'empire', lux: 'empire', arms: 'fights', rank: 'fights' };
 const upOf = (id) => (S.backTo && S.backTo[id]) || PARENT[id] || 'city';   // um sítio que está em duas zonas volta para a zona de onde vieste
 const tabOf = (id) => { let x = id; for (let k = 0; k < 4 && !NAV.includes(x); k++) x = upOf(x); return NAV.includes(x) ? x : 'city'; };
-const IMG = (kind, id, big) => `/img/${kind}/${id}${big ? '-g' : ''}.webp?8`;
+const IMG = (kind, id, big) => `/img/${kind}/${id}${big ? '-g' : ''}.webp?9`;
 function go(tab) {
   if (!PLACES[tab]) tab = 'city';
   if (HUB[S.tab]?.some(([, ids]) => ids.includes(tab)) || (S.tab === 'fights' && (tab === 'arms' || tab === 'rank'))) S.backTo = { ...(S.backTo || {}), [tab]: S.tab };

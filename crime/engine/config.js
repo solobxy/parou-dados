@@ -163,12 +163,20 @@ export const CFG = {
     sickCutBp: 1500, // doente: −15% em todas as stats até se tratar
     cureMin: 150, cureValueBp: 6000, // tratar custa o que rendem 60 de stamina
     list: [
+      // quanto mais barata, menos stamina por visita e mais risco de doença; as de cima custam mais por ponto
+      // mas enchem de uma vez e quase sem risco. Contando a doença, as do meio são as que rendem mais.
+      { id: 'rosinha', tier: 0, e: 8, min: 10, valueBp: 1700, sickBp: 900 },
       { id: 'marlene', tier: 0, e: 12, min: 20, valueBp: 2000, sickBp: 600 },
       { id: 'sandra', tier: 0, e: 18, min: 35, valueBp: 2200, sickBp: 500 },
       { id: 'katia', tier: 1, e: 28, min: 120, valueBp: 2600, sickBp: 300 },
       { id: 'jessica', tier: 1, e: 36, min: 180, valueBp: 2800, sickBp: 250 },
+      { id: 'bianca', tier: 1, e: 45, min: 350, valueBp: 3000, sickBp: 180 },
       { id: 'valentina', tier: 2, e: 55, min: 700, valueBp: 3300, sickBp: 120 },
       { id: 'dominique', tier: 2, e: 75, min: 1200, valueBp: 3600, sickBp: 80 },
+      { id: 'scarlett', tier: 2, e: 85, min: 1800, valueBp: 3800, sickBp: 50 },
+      { id: 'anastasia', tier: 3, e: 95, min: 3000, valueBp: 4100, sickBp: 30 },
+      { id: 'isabella', tier: 3, e: 100, min: 4500, valueBp: 4400, sickBp: 10 },
+      { id: 'celeste', tier: 3, e: 100, min: 7000, valueBp: 4700, sickBp: 0 },
     ],
   },
   // prática: cada golpe treina as stats que usa (energia × peso; metade se falhar).

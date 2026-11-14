@@ -214,7 +214,7 @@ test('batota: perder respeito e voltar a ganhá-lo não volta a encher a stamina
 
 test('batota: as putas deixam de compensar ao fim de poucas visitas por dia e o preço volta ao normal 24 h depois', () => {
   const p = mk(); p.stats = { F: 2000, T: 10, I: 2000, C: 2000 };
-  const i = 5, g = CFG.hookers.list[i], base = E.hookerPrice(p, i, NOW);
+  const i = CFG.hookers.list.findIndex((x) => x.id === 'dominique'), g = CFG.hookers.list[i], base = E.hookerPrice(p, i, NOW);
   const valor = E.valuePerEnergy(p) * g.e * 1.76;      // o melhor caso: todos os bónus de saque e os golpes perfeitos
   let visitas = 0, now = NOW, ultimo = base;
   for (; visitas < 100; visitas++) {
