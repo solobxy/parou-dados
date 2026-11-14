@@ -35,7 +35,19 @@ export function newPlayer(id, now, world, opts = {}) {
     luxuries: 0,
     detoxT: [],
     xp: { F: 0, I: 0, C: 0 },
+    wk: CFG.crimes.map(() => 0),   // sucessos por golpe (mestria)
+    c: { crimes: 0, wins: 0, trains: 0, refills: 0, collects: 0, pvpWins: 0, ports: 0 },
+    mi: 0,                         // próximo objetivo por receber
   };
+}
+
+// jogadores gravados antes de uma regra nova ganham os campos que faltam
+function migrate(p) {
+  if (!Array.isArray(p.detoxT)) p.detoxT = [];
+  if (!p.xp) p.xp = { F: 0, I: 0, C: 0 };
+  if (!Array.isArray(p.wk)) p.wk = CFG.crimes.map(() => 0);
+  if (!p.c) p.c = { crimes: 0, wins: 0, trains: 0, refills: 0, collects: 0, pvpWins: 0, ports: 0 };
+  if (!Number.isSafeInteger(p.mi)) p.mi = 0;
 }
 
 // ---------- tempo ----------
@@ -64,8 +76,7 @@ function syncAddiction(p, now) {
 export function touch(p, now) {
   if (!Number.isSafeInteger(now)) fail('BAD_TIME');
   if (now < p.t) fail('TIME_BACKWARDS');
-  if (!Array.isArray(p.detoxT)) p.detoxT = []; // jogadores gravados antes destas regras
-  if (!p.xp) p.xp = { F: 0, I: 0, C: 0 };
+  migrate(p);
   syncEnergy(p, now);
   syncAddiction(p, now);
   if (p.addiction > addictionCap(p)) p.addiction = addictionCap(p); // limite mudou nas regras
@@ -106,6 +117,7 @@ function addRespect(p, delta, now) {
   if (p.respect > p.peakRespect) p.peakRespect = p.respect;
   p.respectAt = now;
   const after = level(p);
+  if (after > before && p.energy < CFG.energy.max) { p.energy = CFG.energy.max; p.energyT = now; } // subir de nível enche a energia
   return after !== before ? { from: before, to: after } : null;
 }
 
@@ -157,6 +169,12 @@ function practice(p, c, success) {
   return gained;
 }
 
+export function masteryStars(p, k) {
+  const n = p.wk[k]; let s = 0;
+  for (const at of CFG.mastery.at) if (n >= at) s++;
+  return s;
+}
+
 export function doCrime(p, now, world, k, rng) {
   const c = Number.isInteger(k) ? CFG.crimes[k] : undefined;
   if (!c) fail('NO_CRIME');
@@ -168,18 +186,23 @@ export function doCrime(p, now, world, k, rng) {
   // o primeiro carteirista de quem ainda não tem respeito nenhum corre sempre bem: a primeira jogada não pode ser a prisão
   const first = k === 0 && p.peakRespect === 0;
   if (first || rng.chance(bp)) {
-    let money = rng.int(c.min, c.max);
+    const starsBefore = masteryStars(p, k);
+    let money = Math.floor((rng.int(c.min, c.max) * (10000 + CFG.mastery.bonusBp * starsBefore)) / 10000);
     const crit = rng.chance(CFG.crit.chanceBp);
     if (crit) money *= CFG.crit.mult;
     p.cash += money;
+    p.c.crimes += 1; p.c.wins += 1; p.wk[k] += 1;
+    const stars = masteryStars(p, k);
     const lvl = addRespect(p, c.r, now);
     const gained = practice(p, c, true);
-    return { ok: true, success: true, money, crit, respect: c.r, levelUp: lvl, chanceBp: bp, gained, newChanceBp: crimeChanceBp(p, k) };
+    return { ok: true, success: true, money, crit, respect: c.r, levelUp: lvl, chanceBp: bp, gained, newChanceBp: crimeChanceBp(p, k), star: stars > starsBefore ? stars : 0 };
   }
-  p.jailUntil = now + c.jailMin * T.MIN;
-  p.jailTier = k + 1;
+  p.c.crimes += 1;
+  // falhar não é sempre prisão: só uma parte das falhas acaba com a polícia
+  const busted = rng.chance(CFG.bustBp);
+  if (busted) { p.jailUntil = now + c.jailMin * T.MIN; p.jailTier = k + 1; }
   const gained = practice(p, c, false);
-  return { ok: true, success: false, jailUntil: p.jailUntil, chanceBp: bp, gained, newChanceBp: crimeChanceBp(p, k) };
+  return { ok: true, success: false, busted, jailUntil: p.jailUntil, chanceBp: bp, gained, newChanceBp: crimeChanceBp(p, k) };
 }
 
 export function bailCost(p, now) {
@@ -231,6 +254,7 @@ export function buyDrug(p, now, world, d) {
   p.energy += g.e;
   if (p.addiction === 0) p.addictionT = now;
   p.addiction += g.a;
+  p.c.refills += 1;
   return { ok: true, energy: g.e, addiction: g.a, price: g.price };
 }
 
@@ -315,6 +339,7 @@ export function refill(p, now, world) {
   p.energy += plan.energy;
   if (p.addiction === 0) p.addictionT = now;
   p.addiction += plan.vice;
+  p.c.refills += 1;
   return { ok: true, energy: plan.energy, addiction: plan.vice, price: plan.cost, counts: plan.counts };
 }
 
@@ -322,22 +347,23 @@ function pruneDetox(p, now) {
   const lim = now - CFG.detox.windowMs;
   while (p.detoxT.length && p.detoxT[0] <= lim) p.detoxT.shift();
 }
+// preço = (valor de 100 de energia para ti) × vício / 200, +50% por cada uso nas últimas 24 h
 export function detoxCost(p, now) {
   if (now !== undefined) pruneDetox(p, now);
-  return Math.max(CFG.detox.min, p.addiction * level(p)) * 2 ** p.detoxT.length;
-}
-export function detoxReadyAt(p, now) {
-  pruneDetox(p, now);
-  return p.detoxT.length < CFG.detox.max ? 0 : p.detoxT[0] + CFG.detox.windowMs;
+  const D = CFG.detox;
+  const v100 = Math.floor(valuePerEnergy(p) * 100);
+  let price = Math.max(D.min, Math.floor((v100 * p.addiction) / D.valueDiv));
+  const n = Math.min(p.detoxT.length, D.maxSteps);
+  for (let i = 0; i < n; i++) price = Math.ceil((price * D.stepNum) / D.stepDen);
+  return price;
 }
 export function detox(p, now, world) {
   begin(p, now, world);
   if (p.addiction === 0) fail('NO_VICE');
-  const ready = detoxReadyAt(p, now);
-  if (ready) fail('DETOX_COOLDOWN', { until: ready });
   const price = detoxCost(p, now);
   pay(p, price);
   p.addiction = 0; p.addictionT = now;
+  if (p.detoxT.length >= CFG.detox.maxSteps) p.detoxT.shift();
   p.detoxT.push(now);
   return { ok: true, price };
 }
@@ -355,6 +381,7 @@ export function train(p, now, world, stat) {
   settleAllBiz(p, now); // o rendimento até agora conta com a stat antiga
   p.energy -= CFG.train.energy;
   p.stats[stat] += 1;
+  p.c.trains += 1;
   return { ok: true, stat, value: p.stats[stat], cost };
 }
 
@@ -428,12 +455,17 @@ export function collectBiz(p, now, world, rng) {
     out.push({ biz: b.id, money, lost });
     s.stored = 0;
   }
+  if (out.length) p.c.collects += 1;
   return { ok: true, items: out };
 }
 
 // ---------- porto ----------
 
-export function portCap(p) { return CFG.port.capBase * 2 ** Math.floor(level(p) / CFG.port.capEveryLevels); }
+export function portCap(p) {
+  let cap = CFG.port.capBase;
+  for (let i = 1; i < level(p); i++) cap = Math.floor((cap * CFG.port.capNum) / CFG.port.capDen);
+  return cap;
+}
 export function portSlots(p) { return 1 + Math.floor(level(p) / CFG.port.slotsEveryLevels); }
 
 export function sendPort(p, now, world, amount) {
@@ -445,6 +477,7 @@ export function sendPort(p, now, world, amount) {
   if (readyAt > world.playEnd) fail('ROUND_ENDING');
   pay(p, amount);
   p.port.push({ amount, readyAt });
+  p.c.ports += 1;
   return { ok: true, readyAt };
 }
 
@@ -614,6 +647,7 @@ export function attack(a, d, now, world, mode, rng) {
       hospitalize(d, now, P.mugHospMs, true);
       res = { win: true, mode, respect: g, targetLoss: 0, money: stolen, levelUp: lvA };
     }
+    a.c.pvpWins += 1;
     if (!a.hits.has(d.id)) a.hits.set(d.id, []);
     a.hits.get(d.id).push(now);
     return { ok: true, chanceBp: bp, ...res };
@@ -625,6 +659,44 @@ export function attack(a, d, now, world, mode, rng) {
   addRespect(d, defGain, now);
   hospitalize(a, now, P.beatHospMs, false);
   return { ok: true, chanceBp: bp, win: false, mode, respect: -loss, defenderGain: defGain };
+}
+
+// ---------- objetivos ----------
+
+function missionHave(p, type) {
+  switch (type) {
+    case 'wins': return p.c.wins;
+    case 'trains': return p.c.trains;
+    case 'refills': return p.c.refills;
+    case 'collects': return p.c.collects;
+    case 'pvpWins': return p.c.pvpWins;
+    case 'ports': return p.c.ports;
+    case 'level': return level(p);
+    case 'tier': { let t = 0; for (let k = 0; k < p.wk.length; k++) if (p.wk[k] > 0) t = k + 1; return t; }
+    case 'stars': { let s = 0; for (let k = 0; k < p.wk.length; k++) s += masteryStars(p, k); return s; }
+    case 'gear': return (p.weapon >= 0 ? 1 : 0) + (p.armor >= 0 ? 1 : 0);
+    case 'biz': return p.biz.reduce((s, b) => s + b.n, 0);
+    case 'lux': return p.luxuries;
+    default: return 0;
+  }
+}
+
+// o objetivo atual, ou null quando a cadeia acabou
+export function mission(p) {
+  const m = CFG.missions[p.mi];
+  if (!m) return null;
+  const have = Math.min(m.need, missionHave(p, m.type));
+  return { i: p.mi, id: m.id, type: m.type, need: m.need, have, cash: m.cash, done: have >= m.need, total: CFG.missions.length };
+}
+
+export function claimMission(p, now, world) {
+  begin(p, now, world, { allowBusy: true });
+  const m = mission(p);
+  if (!m) fail('NO_MISSION');
+  if (!m.done) fail('MISSION_NOT_DONE');
+  p.cash += m.cash;
+  p.mi += 1;
+  return { ok: true, id: m.id, cash: m.cash, next: mission(p) };
 }
 
 // ---------- ranking ----------
@@ -643,7 +715,11 @@ export function checkInvariants(p) {
   if (p.energy > CFG.energy.max) bad.push(`energy>${CFG.energy.max}`);
   if (p.addiction > addictionCap(p)) bad.push('addiction>cap');
   if (p.peakRespect < p.respect) bad.push('peak<respect');
-  if (!Array.isArray(p.detoxT) || p.detoxT.length > CFG.detox.max) bad.push('detox list');
+  if (!Array.isArray(p.detoxT) || p.detoxT.length > CFG.detox.maxSteps) bad.push('detox list');
+  if (!Number.isSafeInteger(p.mi) || p.mi < 0 || p.mi > CFG.missions.length) bad.push('mission index');
+  for (const k of Object.keys(p.c)) if (!Number.isSafeInteger(p.c[k]) || p.c[k] < 0) bad.push(`counter ${k}`);
+  if (p.wk.length !== CFG.crimes.length || p.wk.some((n) => !Number.isSafeInteger(n) || n < 0)) bad.push('mastery');
+  if (p.c.wins !== p.wk.reduce((s, n) => s + n, 0)) bad.push('wins!=mastery');
   for (const s of ['F', 'I', 'C']) if (!Number.isSafeInteger(p.xp?.[s]) || p.xp[s] < 0 || p.xp[s] >= practiceNeed(p, s)) bad.push(`xp ${s}=${p.xp?.[s]}`);
   if (p.energyT > p.t || p.addictionT > p.t) bad.push('timer in future');
   for (const s of p.biz) {

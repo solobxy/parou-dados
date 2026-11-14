@@ -109,7 +109,8 @@ test('ataque entre duas contas: hospital, evento e ranking', async () => {
   assert.ok(t.body.list.some((x) => x.name === 'Duarte'), JSON.stringify(t.body));
   const r = await a('POST', '/api/act', { type: 'attack', target: 'duarte', mode: 'beat' });
   assert.equal(r.status, 200, JSON.stringify(r.body));
-  assert.equal(r.body.me.energy, 80);
+  // quem ganha a luta sobe de nível logo ao início e a energia volta ao máximo
+  assert.equal(r.body.me.energy, r.body.result.levelUp?.to > r.body.result.levelUp?.from ? 100 : 80);
   const perdeu = r.body.result.win ? 'Duarte' : 'Carla';
   const sb = await b('GET', '/api/state');
   if (perdeu === 'Duarte') assert.ok(sb.body.me.hospUntil > sb.body.now);

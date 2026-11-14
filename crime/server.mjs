@@ -115,15 +115,13 @@ function jogadorDe(conta, now, w) {
 // ---------- vista do jogador para o browser ----------
 function vista(p, now) {
   const L = E.level(p);
-  if (!Array.isArray(p.detoxT)) p.detoxT = [];
-  if (!p.xp) p.xp = { F: 0, I: 0, C: 0 };
   const stored = E.bizStored(p, now);
   return {
     name: nomeDe(p.id),
     stats: p.stats, energy: p.energy, energyT: p.energyT,
     addiction: p.addiction, addictionT: p.addictionT, addictionCap: E.addictionCap(p),
-    refill: E.refillPlan(p), detox: p.addiction > 0 ? E.detoxCost(p, now) : 0, detoxReadyAt: E.detoxReadyAt(p, now),
-    detoxLeft: CFG.detox.max - p.detoxT.length,
+    refill: E.refillPlan(p), detox: p.addiction > 0 ? E.detoxCost(p, now) : 0, detoxUses: p.detoxT.length,
+    mission: E.mission(p), wk: p.wk, stars: p.wk.map((_, k) => E.masteryStars(p, k)), counters: p.c,
     xp: p.xp, xpNeed: { F: E.practiceNeed(p, 'F'), I: E.practiceNeed(p, 'I'), C: E.practiceNeed(p, 'C') },
     cash: p.cash, bank: p.bank, respect: p.respect, peakRespect: p.peakRespect,
     level: L, levelFrom: CFG.levels[L - 1], levelTo: CFG.levels[L] ?? null,
@@ -144,6 +142,7 @@ function cfgPublica() {
     biz: CFG.biz.map(({ id, price, perH, resp, stat, raid, toBank }) => ({ id, price, perH, resp, stat, raid, toBank })),
     bizMax: CFG.bizMax, storageMs: CFG.storageMs, port: CFG.port, weapons: CFG.weapons, armors: CFG.armors,
     pvp: CFG.pvp, bank: CFG.bank, luxury: CFG.luxury, levels: CFG.levels, crit: CFG.crit, unlockBp: CFG.unlockBp,
+    bustBp: CFG.bustBp, mastery: CFG.mastery, missions: CFG.missions.length, start: CFG.start,
     round: { playDays: CFG.round.playDays, noPvpMs: CFG.round.noPvpMs },
   };
 }
@@ -193,7 +192,12 @@ function limite(chave, max, janelaMs, now) {
   b.n += 1;
   return b.n <= max;
 }
-setInterval(() => { const now = clock(); for (const [k, b] of baldes) if (b.ate < now) baldes.delete(k); }, 60_000).unref();
+setInterval(() => {
+  const now = clock();
+  for (const [k, b] of baldes) if (b.ate < now) baldes.delete(k);
+  // respostas guardadas para toques repetidos: só de quem jogou na última hora
+  for (const k of recentes.keys()) { const p = jogadores.get(k); if (!p || p.t < now - T.HOUR) recentes.delete(k); }
+}, 60_000).unref();
 
 // ---------- respostas ----------
 function enviar(res, code, obj) {
@@ -234,6 +238,7 @@ function agir(conta, corpo, now) {
     case 'drug': r = E.buyDrug(p, now, world, int(a.d)); break;
     case 'refill': r = E.refill(p, now, world); break;
     case 'detox': r = E.detox(p, now, world); break;
+    case 'claim': r = E.claimMission(p, now, world); break;
     case 'bail': r = E.payBail(p, now, world); break;
     case 'medic': r = E.payMedic(p, now, world); break;
     case 'buyBiz': r = E.buyBiz(p, now, world, int(a.i)); break;

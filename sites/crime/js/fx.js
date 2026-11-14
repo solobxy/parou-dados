@@ -8,6 +8,40 @@ export function setLight(v) { light = !!v; document.body.classList.toggle('light
 const k = (ms) => (light ? Math.round(ms * 0.5) : ms);
 const center = (r) => ({ x: r.left + r.width / 2, y: r.top + r.height / 2 });
 export function vibrate(p) { try { navigator.vibrate && navigator.vibrate(p); } catch {} }
+export const dur = (ms) => k(ms);
+
+// ---------- som (sintetizado, sem ficheiros) ----------
+let actx = null, soundOn = true;
+export function setSound(v) { soundOn = !!v; }
+function tone(freq, t0, len, type = 'sine', vol = 0.08, to = null) {
+  const o = actx.createOscillator(), g = actx.createGain();
+  o.type = type; o.frequency.setValueAtTime(freq, t0);
+  if (to) o.frequency.exponentialRampToValueAtTime(to, t0 + len);
+  g.gain.setValueAtTime(0.0001, t0);
+  g.gain.exponentialRampToValueAtTime(vol, t0 + 0.012);
+  g.gain.exponentialRampToValueAtTime(0.0001, t0 + len);
+  o.connect(g).connect(actx.destination); o.start(t0); o.stop(t0 + len + 0.02);
+}
+const SFX = {
+  tap: (t) => tone(190, t, 0.05, 'triangle', 0.05),
+  cash: (t) => { tone(988, t, 0.09, 'square', 0.035); tone(1319, t + 0.07, 0.16, 'square', 0.035); },
+  crit: (t) => [784, 988, 1319, 1568].forEach((f, i) => tone(f, t + i * 0.07, 0.2, 'square', 0.04)),
+  fail: (t) => tone(170, t, 0.22, 'triangle', 0.09, 80),
+  bust: (t) => [0, 1, 2, 3].forEach((i) => tone(i % 2 ? 620 : 830, t + i * 0.13, 0.13, 'sawtooth', 0.035)),
+  level: (t) => { [523, 659, 784, 1047].forEach((f, i) => tone(f, t + i * 0.09, 0.3, 'triangle', 0.07)); tone(1568, t + 0.36, 0.5, 'sine', 0.05); },
+  refill: (t) => tone(300, t, 0.3, 'sine', 0.06, 900),
+  claim: (t) => { tone(1175, t, 0.08, 'square', 0.035); tone(1568, t + 0.07, 0.1, 'square', 0.035); tone(2093, t + 0.14, 0.22, 'square', 0.03); },
+  buy: (t) => { tone(440, t, 0.08, 'triangle', 0.07); tone(660, t + 0.08, 0.16, 'triangle', 0.07); },
+  hit: (t) => tone(120, t, 0.18, 'sawtooth', 0.09, 50),
+};
+export function sfx(name) {
+  if (!soundOn) return;
+  try {
+    actx = actx || new (window.AudioContext || window.webkitAudioContext)();
+    if (actx.state === 'suspended') actx.resume();
+    SFX[name] && SFX[name](actx.currentTime + 0.005);
+  } catch {}
+}
 
 // texto que sobe de um ponto até um alvo (ex.: +$23 do cartão até ao dinheiro no topo)
 export function fly(text, color, fromRect, toEl, delay = 0) {
@@ -78,21 +112,22 @@ export function stamp(text, color) {
   return an.finished.catch(() => {});
 }
 
-// subida de nível: o título acende-se como um letreiro de néon
-export function levelUp(n, kText, title, titleLabel) {
-  return new Promise((resolve) => {
-    const ov = h('div', { class: 'overlay lvl', role: 'dialog', 'aria-live': 'assertive' },
-      h('div', null,
-        h('div', { class: 'k' }, kText),
-        h('div', { class: 'n neon' }, String(n)),
-        h('div', { class: 'k', style: 'margin-top:14px' }, titleLabel),
-        h('div', { class: 'ttl neon', style: 'animation-delay:.35s' }, title)));
-    document.body.appendChild(ov);
-    vibrate([20, 60, 40]);
-    const close = () => { ov.removeEventListener('click', close); const a = ov.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 200 }); a.onfinish = () => { ov.remove(); resolve(); }; };
-    ov.addEventListener('click', close);
-    setTimeout(close, k(2600));
-  });
+// subida de nível: o título acende-se como um letreiro de néon (fecha sozinha ou ao toque)
+export function levelUp(n, kText, title, titleLabel, note) {
+  document.querySelectorAll('.overlay.lvl').forEach((e) => e.remove());
+  const ov = h('div', { class: 'overlay lvl', role: 'status', 'aria-live': 'polite' },
+    h('div', null,
+      h('div', { class: 'k' }, kText),
+      h('div', { class: 'n neon' }, String(n)),
+      h('div', { class: 'k', style: 'margin-top:14px' }, titleLabel),
+      h('div', { class: 'ttl neon', style: 'animation-delay:.25s' }, title),
+      note ? h('div', { class: 'note2' }, icon('bolt'), ' ' + note) : null));
+  document.body.appendChild(ov);
+  vibrate([20, 60, 40]); sfx('level');
+  let done = false;
+  const close = () => { if (done) return; done = true; const a = ov.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 180 }); a.onfinish = () => ov.remove(); };
+  ov.addEventListener('click', close);
+  setTimeout(close, k(1900));
 }
 
 // luta: os dois frente a frente, choque e resultado

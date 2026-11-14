@@ -10,6 +10,9 @@ const world = { start: START, playEnd: START + 13 * T.DAY };
 const setResp = (p, r) => { p.respect = r; p.peakRespect = Math.max(p.peakRespect, r); };
 const always = { int: (lo) => lo, chance: () => true, float: () => 0 };
 const never = { int: (lo) => lo, chance: () => false, float: () => 0.99 };
+// falha o golpe (1.ª sorte) e é apanhado (2.ª sorte)
+const bust = () => { let i = 0; return { int: (lo) => lo, chance: () => i++ % 2 === 1, float: () => 0.99 }; };
+const G = CFG.pvp.gainBase;
 
 test('energia: recupera 1 a cada 2 min, sem perder progresso com consultas frequentes', () => {
   const p = E.newPlayer('a', START, world);
@@ -76,20 +79,6 @@ test('crime: primeiro crime tem pelo menos 70% de hipótese', () => {
   assert.ok(E.crimeChanceBp(p, 0) >= 7000);
 });
 
-test('crime: falhado vai para a prisão; preso não faz nada; fiança liberta', () => {
-  const p = E.newPlayer('a', START, world);
-  const r0 = E.doCrime(p, START, world, 0, never);
-  assert.equal(r0.success, true, 'o primeiro carteirista corre sempre bem');
-  const r = E.doCrime(p, START + 10, world, 0, never);
-  assert.equal(r.success, false);
-  assert.throws(() => E.doCrime(p, START + 1000, world, 0, always), { code: 'IN_JAIL' });
-  const cost = E.bailCost(p, START + 1000);
-  // 30% do valor médio do carteirista (20), proporcional ao tempo que falta (59 de 60 s)
-  assert.equal(cost, Math.ceil((Math.floor(20 * CFG.bailBp / 10000) * 59000) / 60000));
-  E.payBail(p, START + 1000, world);
-  E.doCrime(p, START + 2000, world, 0, always);
-  assert.equal(p.respect, 2);
-});
 
 test('crime: a garantia do primeiro golpe é só para o carteirista e só sem respeito', () => {
   const p = E.newPlayer('a', START, world);
@@ -179,10 +168,11 @@ test('ataques: nada na primeira hora; regra dos 25%; ganho pela fórmula; prote�
   const t = START + 2 * T.HOUR;
   assert.throws(() => E.attack(a, d, t, world, 'beat', always), { code: 'TARGET_TOO_WEAK' });
   setResp(d, 250);
-  assert.equal(E.level(a), 9);
+  const La = E.level(a);
   const r = E.attack(a, d, t, world, 'beat', always);
-  assert.equal(r.respect, 11);              // (12+9) x raiz(250/900) = 21 x 0,527 = 11
-  assert.equal(d.respect, 250 - 5);         // perde metade (arredondada para baixo)
+  const exp = Math.floor(((G + La) * Math.floor(Math.sqrt(Math.floor((10000 * 250) / 900) * 10000))) / 10000);
+  assert.equal(r.respect, exp);             // (base + nível) x raiz(250/900)
+  assert.equal(d.respect, 250 - Math.floor(exp / 2)); // perde metade (arredondada para baixo)
   assert.equal(d.hospUntil, t + 20 * T.MIN);
   assert.equal(d.protectUntil, t + 50 * T.MIN);
   assert.throws(() => E.attack(a, d, t + 49 * T.MIN, world, 'beat', always), { code: 'TARGET_PROTECTED' });
@@ -195,11 +185,12 @@ test('ataques: nada na primeira hora; regra dos 25%; ganho pela fórmula; prote�
 
 test('ataques: o ganho vai de metade (alvo fraco) ao dobro (alvo 4x mais forte)', () => {
   const a = E.newPlayer('a', START, world), d = E.newPlayer('d', START, world);
-  setResp(a, 1000);                         // nível 10 -> 12+10 = 22 de base
-  setResp(d, 250); assert.equal(E.pvpBaseGain(a, d), 11);
-  setResp(d, 1000); assert.equal(E.pvpBaseGain(a, d), 22);
-  setResp(d, 4000); assert.equal(E.pvpBaseGain(a, d), 44);
-  setResp(d, 99999); assert.equal(E.pvpBaseGain(a, d), 44);
+  setResp(a, 1000);
+  const B = G + E.level(a);                 // base + nível
+  setResp(d, 250); assert.equal(E.pvpBaseGain(a, d), Math.floor(B / 2));
+  setResp(d, 1000); assert.equal(E.pvpBaseGain(a, d), B);
+  setResp(d, 4000); assert.equal(E.pvpBaseGain(a, d), 2 * B);
+  setResp(d, 99999); assert.equal(E.pvpBaseGain(a, d), 2 * B);
 });
 
 test('ataques: ninguém vai ao hospital mais de 4 vezes em 24 h', () => {
@@ -229,18 +220,20 @@ test('ataques: quem perde vai para o hospital e perde metade do ganho', () => {
   const t = START + 2 * T.HOUR;
   const r = E.attack(a, d, t, world, 'beat', never);
   assert.equal(r.win, false);
-  assert.equal(a.respect, 500 - 10);        // base (12+8) x 1 = 20 -> perde 10
+  assert.equal(a.respect, 500 - Math.floor((G + E.level(d)) / 2)); // perde metade da base (mesmo nível)
   assert.equal(d.respect, 500 + CFG.pvp.defendGain);
   assert.ok(a.hospUntil > t);
 });
 
 test('nível: nunca desce quando se perde respeito', () => {
   const p = E.newPlayer('a', START, world);
-  setResp(p, 1005);                              // logo acima do patamar dos 1000
+  const edge = CFG.levels[9];
+  setResp(p, edge + 5);                          // logo acima de um patamar
   const L = E.level(p);
-  const d = E.newPlayer('d', START, world); setResp(d, 1005); d.stats.T = 1000;
+  assert.equal(L, 10);
+  const d = E.newPlayer('d', START, world); setResp(d, edge + 5); d.stats.T = 1000;
   E.attack(p, d, START + 2 * T.HOUR, world, 'beat', never);
-  assert.equal(p.respect, 1005 - 11);            // 994, abaixo dos 1000
+  assert.ok(p.respect < edge);                   // ficou abaixo do patamar
   assert.equal(E.level(p), L);
 });
 
@@ -359,36 +352,7 @@ test('recarga: com pouco vício livre usa consumos mais eficientes se compensare
   assert.ok(plan.energy > (14 / CFG.drugs[0].a) * CFG.drugs[0].e, 'mais energia do que só com cerveja');
 });
 
-test('desintoxicação: limpa o vício, custa vício x nível e dobra a cada uso em 24 h', () => {
-  const p = E.newPlayer('a', START, world);
-  p.cash = 1e9; setResp(p, 1000);                 // nível 10
-  p.addiction = 100; p.addictionT = START;
-  const c1 = E.detoxCost(p, START);
-  assert.equal(c1, 100 * 10);
-  E.detox(p, START, world);
-  assert.equal(p.addiction, 0);
-  p.addiction = 100; p.addictionT = START + 1000;
-  assert.equal(E.detoxCost(p, START + 1000), 2 * 100 * 10);
-  assert.throws(() => { p.addiction = 0; E.detox(p, START + 2000, world); }, { code: 'NO_VICE' });
-  // esgota o máximo por 24 h e depois volta a poder
-  let t = START + 3000;
-  while (p.detoxT.length < CFG.detox.max) { p.addiction = 10; p.addictionT = t; E.detox(p, t, world); t += 1000; }
-  p.addiction = 10; p.addictionT = t;
-  assert.throws(() => E.detox(p, t, world), { code: 'DETOX_COOLDOWN' });
-  assert.equal(E.detoxReadyAt(p, t), START + T.DAY);
-  E.touch(p, START + T.DAY + 5000);
-  p.addiction = 10;
-  E.detox(p, START + T.DAY + 5000, world);
-});
 
-test('fiança: 30% do valor médio do golpe, proporcional ao tempo que falta', () => {
-  const p = E.newPlayer('a', START, world);
-  setResp(p, 1);                                  // já não tem o primeiro golpe garantido
-  E.doCrime(p, START, world, 1, never);            // loja: 2 min de prisão
-  const full = Math.floor(((CFG.crimes[1].min + CFG.crimes[1].max) / 2) * CFG.bailBp / 10000);
-  assert.equal(E.bailCost(p, START), full);
-  assert.equal(E.bailCost(p, START + T.MIN), Math.ceil(full / 2));
-});
 
 test('recarga e desintoxicação: 20 000 casos aleatórios sem quebrar regras', () => {
   const r = seededRng(42);
@@ -412,22 +376,122 @@ test('recarga e desintoxicação: 20 000 casos aleatórios sem quebrar regras', 
   }
 });
 
+
+test('crime: falhar nem sempre é prisão; preso não faz nada; fiança liberta', () => {
+  const p = E.newPlayer('a', START, world);
+  const r0 = E.doCrime(p, START, world, 0, never);
+  assert.equal(r0.success, true, 'o primeiro carteirista corre sempre bem');
+  const r1 = E.doCrime(p, START + 10, world, 0, never);       // falha, mas escapa
+  assert.equal(r1.success, false); assert.equal(r1.busted, false);
+  assert.equal(p.jailUntil, 0);
+  assert.equal(p.energy, CFG.energy.max - 2 * CFG.crimes[0].e, 'perde a energia na mesma');
+  const r2 = E.doCrime(p, START + 20, world, 0, bust());       // falha e é apanhado
+  assert.equal(r2.busted, true);
+  assert.throws(() => E.doCrime(p, START + 1000, world, 0, always), { code: 'IN_JAIL' });
+  const full = Math.floor(((CFG.crimes[0].min + CFG.crimes[0].max) / 2) * CFG.bailBp / 10000);
+  assert.equal(E.bailCost(p, START + 20), full);
+  E.payBail(p, START + 1000, world);
+  E.doCrime(p, START + 2000, world, 0, always);
+  assert.equal(p.respect, 2);
+  assert.equal(p.c.crimes, 4); assert.equal(p.c.wins, 2); assert.equal(p.wk[0], 2);
+});
+
+test('fiança: 30% do valor médio do golpe, proporcional ao tempo que falta', () => {
+  const p = E.newPlayer('a', START, world);
+  setResp(p, 1);
+  p.stats.I = p.stats.F = 12;
+  E.doCrime(p, START, world, 1, bust());            // loja: 2 min de prisão
+  const full = Math.floor(((CFG.crimes[1].min + CFG.crimes[1].max) / 2) * CFG.bailBp / 10000);
+  assert.equal(E.bailCost(p, START), full);
+  assert.equal(E.bailCost(p, START + T.MIN), Math.ceil(full / 2));
+});
+
 test('prática: cada golpe treina as stats que usa; falhar dá metade; a percentagem sobe', () => {
   const p = E.newPlayer('a', START, world);
-  const c = CFG.crimes[0];                         // carteirista: I 30, C 70
+  const c = CFG.crimes[0];
   const before = E.crimeChanceBp(p, 0);
   E.doCrime(p, START, world, 0, always);
   assert.equal(p.xp.C, c.e * c.w.C);
   assert.equal(p.xp.I, c.e * c.w.I);
   assert.equal(p.xp.F, 0);
-  setResp(p, 5);
-  E.doCrime(p, START + 1000, world, 0, never);      // falha: metade
+  E.doCrime(p, START + 1000, world, 0, never);      // falha sem prisão: metade
   assert.equal(p.xp.C, c.e * c.w.C + Math.floor(c.e * c.w.C * CFG.practice.failBp / 10000));
-  E.payBail(p, START + 2000, world);
   let t = START + 3000, gainedC = 0;
   for (let i = 0; i < 10; i++) { p.energy = 100; const r = E.doCrime(p, t, world, 0, always); gainedC += r.gained.C || 0; t += 1000; }
-  assert.ok(gainedC >= 2, 'em 12 golpes sobe pelo menos 2 pontos de carisma');
+  assert.ok(gainedC >= 2);
   assert.equal(p.stats.C, CFG.start.stat + gainedC);
-  assert.ok(E.crimeChanceBp(p, 0) > before, 'a percentagem subiu');
+  assert.ok(E.crimeChanceBp(p, 0) > before);
   assert.deepEqual(E.checkInvariants(p), []);
+});
+
+test('mestria: estrelas aos 10/40/150 sucessos, cada uma +10% de dinheiro nesse golpe', () => {
+  const p = E.newPlayer('a', START, world);
+  let t = START, star = 0;
+  for (let i = 0; i < CFG.mastery.at[0]; i++) { p.energy = 100; const r = E.doCrime(p, t, world, 0, always); star = r.star || star; t += 1000; }
+  assert.equal(star, 1);
+  assert.equal(E.masteryStars(p, 0), 1);
+  p.energy = 100;
+  const r = E.doCrime(p, t, world, 0, always);     // "always" tira o mínimo e dá golpe perfeito
+  assert.equal(r.money, Math.floor(CFG.crimes[0].min * (10000 + CFG.mastery.bonusBp) / 10000) * CFG.crit.mult);
+  assert.equal(E.masteryStars(p, 1), 0, 'a mestria é por golpe');
+});
+
+test('subir de nível enche a energia', () => {
+  const p = E.newPlayer('a', START, world);
+  let t = START;
+  while (E.level(p) < 2) { E.doCrime(p, t, world, 0, always); t += 1000; }
+  assert.equal(p.energy, CFG.energy.max);
+  assert.deepEqual(E.checkInvariants(p), []);
+});
+
+test('desintoxicação: nunca bloqueia; custa pelo que rendes e sobe 25% a cada uso em 24 h', () => {
+  const p = E.newPlayer('a', START, world);
+  p.cash = 1e12;
+  p.addiction = 100; p.addictionT = START;
+  const v100 = Math.floor(E.valuePerEnergy(p) * 100);
+  const c1 = E.detoxCost(p, START);
+  assert.equal(c1, Math.max(CFG.detox.min, Math.floor(v100 * 100 / CFG.detox.valueDiv)));
+  E.detox(p, START, world);
+  assert.equal(p.addiction, 0);
+  assert.throws(() => E.detox(p, START + 500, world), { code: 'NO_VICE' });
+  p.addiction = 100; p.addictionT = START + 1000;
+  assert.equal(E.detoxCost(p, START + 1000), Math.ceil(c1 * CFG.detox.stepNum / CFG.detox.stepDen));
+  // muitas vezes seguidas: sempre possível, lista limitada
+  let t = START + 2000, last = 0;
+  for (let i = 0; i < CFG.detox.maxSteps + 5; i++) { p.addiction = 100; p.addictionT = t; const r = E.detox(p, t, world); assert.ok(r.price >= last); last = r.price; t += 1000; }
+  assert.ok(p.detoxT.length <= CFG.detox.maxSteps);
+  assert.ok(Number.isSafeInteger(last));
+  // 24 h depois volta ao preço base
+  E.touch(p, t + T.DAY);
+  p.addiction = 100;
+  assert.equal(E.detoxCost(p, t + T.DAY), c1);
+});
+
+test('objetivos: um de cada vez, só se recebe quando está feito, e uma só vez', () => {
+  const p = E.newPlayer('a', START, world);
+  assert.equal(E.mission(p).id, CFG.missions[0].id);
+  assert.throws(() => E.claimMission(p, START, world), { code: 'MISSION_NOT_DONE' });
+  E.doCrime(p, START, world, 0, always);
+  assert.equal(E.mission(p).done, true);
+  const cash = p.cash;
+  const r = E.claimMission(p, START + 1, world);
+  assert.equal(p.cash, cash + CFG.missions[0].cash);
+  assert.equal(r.next.id, CFG.missions[1].id);
+  assert.throws(() => E.claimMission(p, START + 2, world), { code: 'MISSION_NOT_DONE' });
+  // todos os tipos de objetivo têm de onde tirar o progresso, e a cadeia acaba
+  const types = new Set(CFG.missions.map((m) => m.type));
+  for (const ty of types) assert.ok(['wins', 'trains', 'refills', 'collects', 'pvpWins', 'ports', 'level', 'tier', 'stars', 'gear', 'biz', 'lux'].includes(ty), ty);
+  p.mi = CFG.missions.length;
+  assert.equal(E.mission(p), null);
+  assert.throws(() => E.claimMission(p, START + 3, world), { code: 'NO_MISSION' });
+  assert.deepEqual(E.checkInvariants(p), []);
+});
+
+test('jogador gravado com regras antigas ganha os campos novos', () => {
+  const p = E.newPlayer('a', START, world);
+  delete p.wk; delete p.c; delete p.mi; delete p.xp; delete p.detoxT;
+  E.touch(p, START + 1000);
+  assert.deepEqual(E.checkInvariants(p), []);
+  E.doCrime(p, START + 2000, world, 0, always);
+  assert.equal(p.c.wins, 1);
 });

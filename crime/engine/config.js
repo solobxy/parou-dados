@@ -30,7 +30,7 @@ export const CFG = {
   unlockBp: 2000,                                    // crime aparece com 20% de hipótese
 
   crimes: [
-    { id: 'carteirista', e: 5,  D: 6,   min: 12,    max: 28,    r: 1,  jailMin: 1,  w: { I: 30, F: 0,  C: 70 } },
+    { id: 'carteirista', e: 5,  D: 5,   min: 12,    max: 28,    r: 1,  jailMin: 1,  w: { I: 30, F: 0,  C: 70 } },
     { id: 'loja',        e: 6,  D: 10,  min: 35,    max: 65,    r: 2,  jailMin: 2,  w: { I: 40, F: 60, C: 0 } },
     { id: 'carro',       e: 7,  D: 16,  min: 90,    max: 150,   r: 3,  jailMin: 3,  w: { I: 70, F: 30, C: 0 } },
     { id: 'bomba',       e: 8,  D: 25,  min: 220,   max: 340,   r: 4,  jailMin: 4,  w: { I: 20, F: 80, C: 0 } },
@@ -41,6 +41,9 @@ export const CFG = {
     { id: 'casino',      e: 20, D: 205, min: 15000, max: 21000, r: 13, jailMin: 9,  w: { I: 50, F: 0,  C: 50 } },
     { id: 'banco',       e: 25, D: 310, min: 34000, max: 46000, r: 16, jailMin: 10, w: { I: 40, F: 30, C: 30 } },
   ],
+  bustBp: 2500,                   // falhar um golpe: 25% das vezes és apanhado (prisão); nas outras só perdes a energia
+  // mestria: cada golpe conta os sucessos; 3 estrelas, cada uma dá +10% de dinheiro nesse golpe
+  mastery: { at: [10, 40, 150], bonusBp: 1000 },
   bailBp: 3000,                   // fiança = 30% do valor médio do golpe que te prendeu, proporcional ao tempo que falta
 
   // Discoteca: só se compra se a energia não passar do máximo e o vício não passar do limite.
@@ -55,8 +58,9 @@ export const CFG = {
   // prática: cada golpe treina as stats que usa (energia × peso; metade se falhar).
   // Um ponto custa base + perStat × stat atual de prática, por isso ajuda muito no início e menos depois (o ginásio continua mais rápido).
   practice: { base: 1000, perStat: 10, failBp: 5000 },
-  // desintoxicação: limpa o vício todo; preço = vício × nível, a dobrar a cada uso nas últimas 24 h
-  detox: { min: 50, windowMs: 24 * HOUR, max: 12 },
+  // desintoxicação: limpa o vício todo, sem limite de vezes. Preço = metade do que 100 de energia te rendem
+  // (por 100 de vício), +25% por cada uso nas últimas 24 h. Nunca bloqueia: só fica cada vez mais cara.
+  detox: { min: 50, windowMs: 24 * HOUR, valueDiv: 200, stepNum: 5, stepDen: 4, maxSteps: 40 },
 
   // Negócios: rendem por hora para um armazém que enche em 8 h. Cada compra dá respeito uma vez (resp).
   // Cada unidade extra do mesmo tipo custa +50%; máximo 10 de cada tipo.
@@ -75,7 +79,7 @@ export const CFG = {
   ],
 
   // Porto: contentor volta ao fim de 4 h com +30%, ou é apreendido (15%).
-  port: { ms: 4 * HOUR, gainBp: 3000, seizeBp: 1500, minAmount: 100, capBase: 1000, capEveryLevels: 3, slotsEveryLevels: 5 },
+  port: { ms: 4 * HOUR, gainBp: 3000, seizeBp: 1500, minAmount: 100, capBase: 1000, capNum: 8, capDen: 5, slotsEveryLevels: 5 }, // limite por contentor: 1000 × 1,6^(nível−1)
 
   weapons: [
     { id: 'soqueira', price: 500,     bp: 1000 },
@@ -117,7 +121,41 @@ export const CFG = {
   luxury: { firstPrice: 250000, respect: 250, max: 20 },
 
   // Níveis pelo maior respeito já alcançado (o nível nunca desce). Índice = nível - 1.
-  levels: [0, 3, 10, 25, 60, 120, 220, 380, 650, 1000, 1500, 2300, 3400, 4800, 6800, 9500, 13000, 18500, 27000, 38000],
+  levels: [0, 3, 10, 30, 80, 180, 350, 600, 950, 1400, 2000, 2800, 3900, 5400, 7500, 10500, 15000, 22000, 32000, 46000],
 };
+
+// Objetivos: uma cadeia, um de cada vez. tipo → de onde vem o progresso (ver missionHave no motor).
+CFG.missions = [
+  { id: 'first',    type: 'wins',     need: 1,   cash: 50 },
+  { id: 'wins5',    type: 'wins',     need: 5,   cash: 100 },
+  { id: 'train3',   type: 'trains',   need: 3,   cash: 100 },
+  { id: 'refill1',  type: 'refills',  need: 1,   cash: 150 },
+  { id: 'lvl3',     type: 'level',    need: 3,   cash: 200 },
+  { id: 'tier2',    type: 'tier',     need: 2,   cash: 250 },
+  { id: 'wins25',   type: 'wins',     need: 25,  cash: 400 },
+  { id: 'weapon',   type: 'gear',     need: 1,   cash: 400 },
+  { id: 'lvl5',     type: 'level',    need: 5,   cash: 600 },
+  { id: 'star1',    type: 'stars',    need: 1,   cash: 800 },
+  { id: 'biz1',     type: 'biz',      need: 1,   cash: 1500 },
+  { id: 'collect1', type: 'collects', need: 1,   cash: 800 },
+  { id: 'tier4',    type: 'tier',     need: 4,   cash: 1500 },
+  { id: 'fight1',   type: 'pvpWins',  need: 1,   cash: 2500 },
+  { id: 'port1',    type: 'ports',    need: 1,   cash: 2000 },
+  { id: 'wins100',  type: 'wins',     need: 100, cash: 5000 },
+  { id: 'lvl8',     type: 'level',    need: 8,   cash: 8000 },
+  { id: 'biz5',     type: 'biz',      need: 5,   cash: 20000 },
+  { id: 'tier6',    type: 'tier',     need: 6,   cash: 25000 },
+  { id: 'fight10',  type: 'pvpWins',  need: 10,  cash: 40000 },
+  { id: 'lvl10',    type: 'level',    need: 10,  cash: 60000 },
+  { id: 'lux1',     type: 'lux',      need: 1,   cash: 120000 },
+  { id: 'wins500',  type: 'wins',     need: 500, cash: 200000 },
+  { id: 'tier8',    type: 'tier',     need: 8,   cash: 300000 },
+  { id: 'lvl13',    type: 'level',    need: 13,  cash: 500000 },
+  { id: 'biz20',    type: 'biz',      need: 20,  cash: 750000 },
+  { id: 'tier10',   type: 'tier',     need: 10,  cash: 1500000 },
+  { id: 'lvl16',    type: 'level',    need: 16,  cash: 2000000 },
+  { id: 'lux5',     type: 'lux',      need: 5,   cash: 5000000 },
+  { id: 'lvl20',    type: 'level',    need: 20,  cash: 10000000 },
+];
 
 export const T = { MIN, HOUR, DAY: 24 * HOUR };

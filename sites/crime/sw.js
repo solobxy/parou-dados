@@ -1,5 +1,5 @@
 // Guarda a casca do jogo para abrir depressa; os dados vêm sempre do servidor.
-const V = 'crime-1';
+const V = 'crime-2';
 const SHELL = ['/', '/css/app.css', '/js/app.js', '/js/i18n.js', '/js/ui.js', '/js/fx.js',
   '/fonts/big-shoulders-display-latin-900-normal.woff2', '/fonts/big-shoulders-display-latin-800-normal.woff2', '/fonts/inter-latin-wght-normal.woff2'];
 self.addEventListener('install', (e) => { e.waitUntil(caches.open(V).then((c) => c.addAll(SHELL)).then(() => self.skipWaiting())); });
