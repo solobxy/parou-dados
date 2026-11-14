@@ -420,3 +420,33 @@ test('slots: compra super só no Rebuçado, jogo inventado recusado', () => {
   const r = E.casinoPlay(p, NOW, W, 'slot', { game: 'rebucado', amt: 10, buy: 2 }, seededRng(8));
   assert.equal(r.bet, 10 * CFG.casino.slots.rebucado.superBuy); assert.ok(r.spin.spots0.every((x) => x === 2));
 });
+
+test('mesas ao vivo: pagam exatamente o mesmo que a jogada a solo, e a roleta devolve 36/37 em qualquer aposta', () => {
+  // roleta: cada tipo de aposta, somado nos 37 números, devolve 36 fichas por cada 37 apostadas
+  for (const b of [{ t: 'red' }, { t: 'black' }, { t: 'even' }, { t: 'odd' }, { t: 'low' }, { t: 'high' }, { t: 'dozen', n: 1 }, { t: 'num', n: 0 }, { t: 'num', n: 17 }]) {
+    let tot = 0; for (let n = 0; n <= 36; n++) tot += E.tablePay('roulette', [{ ...b, amt: 100 }], { n });
+    assert.equal(tot, 3600, `roleta ${b.t}`);
+  }
+  // roda: o prémio da mesa é o da função da roda, para o mesmo resultado
+  const rng = seededRng(909);
+  for (let i = 0; i < 20000; i++) {
+    const res = E.tableDraw('wheel', rng), bets = [{ s: '1', amt: 100 }, { s: res.s, amt: 50 }, { s: 'louca', amt: 10 }].filter((b, k, a) => a.findIndex((x) => x.s === b.s) === k);
+    const esperado = Math.min(bets.filter((b) => b.s === res.s).reduce((x, b) => x + b.amt * (res.mult + 1), 0), E.tableTotal(bets) * CFG.casino.maxWinMult);
+    assert.equal(E.tablePay('wheel', bets, res), esperado);
+  }
+});
+
+test('mesas ao vivo: apostar tira o dinheiro certo, junta apostas iguais, respeita o máximo e devolve tudo ao limpar', () => {
+  const p = mk(); p.cash = 5000; const max = E.casinoMax(p);
+  let r = E.tableBet(p, NOW, W, 'roulette', [{ t: 'red', amt: 100 }, { t: 'num', n: 7, amt: 50 }]);
+  assert.equal(p.cash, 4850); assert.equal(r.total, 150);
+  r = E.tableBet(p, NOW, W, 'roulette', [{ t: 'red', amt: 100 }], r.bets);
+  assert.equal(p.cash, 4750); assert.equal(r.total, 250); assert.equal(r.bets.find((b) => b.t === 'red').amt, 200); assert.equal(r.bets.length, 2);
+  assert.throws(() => E.tableBet(p, NOW, W, 'roulette', [{ t: 'black', amt: max }], r.bets), (e) => e.code === 'BET_TOO_BIG');
+  assert.throws(() => E.tableBet(p, NOW, W, 'roulette', [{ t: 'num', n: 37, amt: 10 }], r.bets), (e) => e.code === 'BAD_BET');
+  assert.throws(() => E.tableBet(p, NOW, W, 'wheel', [{ s: 'x', amt: 10 }]), (e) => e.code === 'BAD_BET');
+  assert.throws(() => E.tableBet(p, NOW, W, 'roulette', [{ t: 'red', amt: 5 }], r.bets), (e) => e.code === 'BAD_BET');
+  assert.equal(p.cash, 4750);
+  const q2 = mk(); q2.cash = 60; assert.throws(() => E.tableBet(q2, NOW, W, 'wheel', [{ s: '1', amt: 100 }]), (e) => e.code === 'NO_CASH');
+  assert.equal(E.tableClear(p, r.bets).back, 250); assert.equal(p.cash, 5000);
+});

@@ -92,7 +92,8 @@ function react(type, out, before, opts) {
     fx.sfx('hit');
     fx.fight(me.name, out.target.name, r.win, r.win ? (r.mode === 'mug' ? '+' + money(r.money) + ' · +' + r.respect : '+' + r.respect + ' ' + t('respect').toLowerCase()) : '−' + Math.abs(r.respect) + ' ' + t('respect').toLowerCase(), { win: t('youWon'), lose: t('youLost') });
     S.targets = null; loadTargets();
-  } else if (type !== 'train') fx.sfx('buy');
+  } else if (type === 'tableBet') fx.sfx('deal');
+  else if (type !== 'train' && type !== 'tableClear') fx.sfx('buy');
   if (type === 'crime' || type === 'crimeAll') requestAnimationFrame(showReport);
   if (lv) { skyline(lv.to); if (type !== 'crime' && type !== 'crimeAll') toast(t('r_lvl', { n: lv.to, x: list('titles')[lv.to - 1] })); }
   render();
@@ -937,45 +938,118 @@ function screenCasino() {
 // ---- roleta (europeia, um zero) ----
 const RL_ORDER = [0, 32, 15, 19, 4, 21, 2, 25, 17, 34, 6, 27, 13, 36, 11, 30, 8, 23, 10, 5, 24, 16, 33, 1, 20, 14, 31, 9, 22, 18, 29, 7, 28, 12, 35, 3, 26];
 const rlCol = (n) => (n === 0 ? 'g' : S.cfg.casino.red.includes(n) ? 'r' : 'b');
-function rl3() { if (!S.rl3) { S.rl3 = C3.roulette({ order: RL_ORDER, colorOf: rlCol, sfx: fx.sfx }); if (S.rlLast) S.rl3.set(S.rlLast.n); } return S.rl3; }
+// ---------- mesas ao vivo: roleta e roda ----------
+// A ronda é a mesma para toda a gente. Cada toque numa casa põe logo a ficha na mesa (o dinheiro sai da mão);
+// quando as apostas fecham, o servidor manda o resultado e todos veem a mesma jogada ao mesmo tempo.
+const liveOf = (g) => ((S.live ||= {})[g] ||= { d: null, anim: 0, shown: 0, busy: false, at: 0, prev: null });
+async function livePoll(g) {
+  const L = liveOf(g); if (L.busy) return;
+  L.busy = true; L.at = performance.now();
+  try {
+    const r = await fetch('/api/table?g=' + g, { credentials: 'same-origin' }); if (!r.ok) return;
+    const d = await r.json(), old = L.d;
+    if (d.now) S.off = d.now - Date.now();
+    L.d = d; if (d.last) L.prev = d.last.bets;
+    if (S.tab !== g) return;
+    if (d.phase === 'spin' && L.anim !== d.id) {
+      L.anim = d.id;
+      if (d.now - d.closesAt < 2500 && !S.casinoBusy) liveAnim(g, d);   // chegou a horas: vê a jogada inteira
+      else { L.shown = d.id; if (g === 'roulette') rl3().set(d.res.n); else w3().set(d.res.idx); render(); }   // entrou a meio: vê só onde parou
+    } else if (!S.casinoBusy && (!old || old.id !== d.id || old.phase !== d.phase)) render();
+    else liveClock(g);
+  } catch { /* sem rede: tenta outra vez daqui a pouco */ } finally { L.busy = false; }
+}
+function liveClock(g) {
+  const el = document.querySelector('.lvstrip'), d = liveOf(g).d; if (!el || !d) return;
+  const n = now(), left = d.phase === 'bets' ? d.closesAt - n : 0, open = left > 0;
+  el.classList.toggle('open', open); el.classList.toggle('hot', open && left < 5000);
+  el.querySelector('.lvt').textContent = open ? t('lvOpen', { s: Math.ceil(left / 1000) })
+    : d.phase === 'spin' && !S.casinoBusy && n < d.nextAt ? t('lvNext', { s: Math.max(1, Math.ceil((d.nextAt - n) / 1000)) }) : d.phase === 'spin' ? t('lvSpin') : t('lvClosed');
+  el.querySelector('.lvp').textContent = d.players ? t('lvPlayers', { n: d.players, m: moneyShort(d.pot) }) : t('lvEmpty');
+  el.querySelector('.lvbar i').style.transform = `scaleX(${open ? Math.min(1, left / (d.closesAt - d.opensAt)) : 0})`;
+  document.querySelector('.lvboard')?.classList.toggle('shut', !open);
+}
+setInterval(() => {
+  const g = S.tab; if (!S.st?.me || (g !== 'roulette' && g !== 'wheel') || document.hidden) return;
+  const L = liveOf(g), d = L.d, n = now(), since = performance.now() - L.at;
+  liveClock(g);
+  if (!d) { if (since > 1500) livePoll(g); return; }
+  if (d.phase === 'bets' ? (n >= d.closesAt + 250 ? since > 600 : since > 2000) : (n >= d.nextAt + 150 ? since > 600 : since > 4000)) livePoll(g);
+}, 250);
+async function liveAnim(g, d) {
+  const L = liveOf(g), mine = d.mine;
+  S.casinoBusy = true;
+  try {
+    const r = g === 'roulette' ? { n: d.res.n } : { ...d.res, bet: mine?.total || 0, win: mine?.win || 0, mineBets: mine?.bets || [] };
+    await Promise.race([(g === 'roulette' ? rlAnim : wheelAnim)(r), wait(50000)]);
+    if (mine) { const net = (mine.win || 0) - mine.total; if (net > 0) { fx.sfx(net >= mine.total * 5 ? 'crit' : 'cash'); fx.vibrate(15); } else if (net < 0) fx.sfx('fail'); }
+  } catch (e) { console.error(e); } finally { S.casinoBusy = false; L.shown = d.id; await refresh(); render(); }
+}
+async function liveBet(g, bets) {
+  const L = liveOf(g), d = L.d;
+  if (!d || d.phase !== 'bets' || now() >= d.closesAt) return toast(errText('BETS_CLOSED'), true);
+  const out = await act('tableBet', { g, bets: Array.isArray(bets) ? bets : [bets] });
+  if (out && L.d && out.result.round === L.d.id) { const had = !!L.d.mine; L.d.mine = { bets: out.result.bets, total: out.result.total }; L.d.pot += out.result.bet; if (!had) L.d.players += 1; }
+  render();
+}
+async function liveClear(g) {
+  const L = liveOf(g), out = await act('tableClear', { g });
+  if (out && L.d && out.result.round === L.d.id && L.d.mine) { L.d.pot -= out.result.back; L.d.players -= 1; L.d.mine = null; }
+  render();
+}
+function liveStrip(g) {
+  const d = liveOf(g).d;
+  queueMicrotask(() => liveClock(g));
+  return h('div', { class: 'lvstrip' }, h('div', { class: 'row sp' }, h('b', { class: 'lvt num' }, d ? '' : t('loading')), h('span', { class: 'lvp small muted' })), h('div', { class: 'lvbar' }, h('i')));
+}
+function liveBar(g) {
+  const L = liveOf(g), mine = L.d?.mine;
+  return h('div', { class: 'lvbar2' }, chipPicker(),
+    h('div', { class: 'row sp' }, h('span', { class: 'small' }, t('lvOnTable') + ' ', h('b', { class: 'num c-cash' }, money(mine?.total || 0))),
+      h('div', { class: 'row', style: 'gap:8px' },
+        !mine && L.prev ? h('button', { class: 'btn ghost sm', on: { click: () => liveBet(g, L.prev) } }, t('lvRepeat')) : null,
+        h('button', { class: 'btn ghost sm', disabled: !mine, on: { click: () => liveClear(g) } }, t('csClear')))));
+}
+function liveResult(g, d) {
+  const mine = d.mine, net = mine ? (mine.win || 0) - mine.total : 0, r = d.res;
+  const what = g === 'roulette' ? t('rlOut', { n: r.n, c: t('rlc_' + rlCol(r.n)) }) : t('wOut', { s: wLabel(r.s) }) + (r.bonus || (r.top && r.top.s === r.s) ? ' · ×' + r.mult : '');
+  return h('div', { class: 'csres ' + (!mine || !net ? 'push' : net > 0 ? 'win' : 'lose'), role: 'status' }, h('div', { class: 'small' }, what),
+    mine ? h('b', null, net > 0 ? t('csWon', { m: money(net) }) : net < 0 ? t('csLost', { m: money(-net) }) : t('csPush')) : null,
+    d.wins?.length ? h('div', { class: 'small muted' }, d.wins.map((w) => w.name + ' +' + moneyShort(w.win)).join(' · ')) : null);
+}
+
+// ---- roleta ----
+function rl3() { if (!S.rl3) S.rl3 = C3.roulette({ order: RL_ORDER, colorOf: rlCol, sfx: fx.sfx }); return S.rl3; }
 async function rlAnim(r) {
   const T = rl3(); await tableFocus(T.el.parentNode || T.el);
   document.querySelector('.rl3num')?.classList.remove('on');
   await T.spin(r.n);
-  const bd = document.querySelector('.rl3num'); if (bd) { bd.textContent = String(r.n); bd.className = 'rl3num on ' + rlCol(r.n); }
-  S.rlHist = [r.n, ...(S.rlHist || [])].slice(0, 12); S.rlLast = r;
-  await wait(RM() ? 300 : 1300);
+  const bd = document.querySelector('.rl3num'); if (bd) { bd.textContent = String(r.n); bd.className = 'rl3num num on ' + rlCol(r.n); }
+  await wait(1300);
 }
 const rlKey = (b) => b.t + (b.n !== undefined && b.n !== null ? ':' + b.n : '');
-function rlAdd(t0, n) {
-  S.rlBets = S.rlBets || {};
-  const b = { t: t0, n }, k = rlKey(b), chip = chipNow(), tot = Object.values(S.rlBets).reduce((x, y) => x + y.amt, 0);
-  if (!S.rlBets[k] && Object.keys(S.rlBets).length >= 12) return toast(t('rlMaxSpots'), true);
-  if (tot + chip > betMax()) return toast(t('csOver', { m: money(betMax()) }), true);
-  S.rlBets[k] = { ...b, amt: (S.rlBets[k]?.amt || 0) + chip };
-  fx.sfx('tap'); render();
-}
 function screenRoulette() {
-  const bets = S.rlBets || {}, tot = Object.values(bets).reduce((x, y) => x + y.amt, 0), last = S.rlLast, won = (b) => last && S.cfg && rlWon(b, last.n);
-  const cell = (t0, n, label, cls) => {
-    const k = rlKey({ t: t0, n }), b = bets[k];
-    return h('button', { class: 'rlc ' + (cls || '') + (won({ t: t0, n }) ? ' hit' : ''), on: { click: () => rlAdd(t0, n) } }, label, b ? h('span', { class: 'chipm' }, moneyShort(b.amt)) : null);
+  const g = 'roulette', L = liveOf(g), d = L.d, T = rl3();
+  const bets = Object.fromEntries((d?.mine?.bets || []).map((b) => [rlKey(b), b]));
+  const n = d && d.phase === 'spin' && L.shown === d.id ? d.res.n : null;
+  const cell = (t0, nn, label, cls) => {
+    const b = bets[rlKey({ t: t0, n: nn })];
+    return h('button', { class: 'rlc ' + (cls || '') + (n !== null && rlWon({ t: t0, n: nn }, n) ? ' hit' : ''), on: { click: () => liveBet(g, nn === undefined ? { t: t0, amt: chipNow() } : { t: t0, n: nn, amt: chipNow() }) } },
+      label, b ? h('span', { class: 'chipm' }, moneyShort(b.amt)) : null);
   };
   const out = csHead('roulette');
-  out.push(h('div', { class: 'rlbox' }, h('div', { class: 'rl3wrap' }, rl3().el, h('b', { class: 'rl3num num' + (last ? ' on ' + rlCol(last.n) : '') }, last ? String(last.n) : '')),
-    h('div', { class: 'rlhist' }, (S.rlHist || []).map((n, i) => h('span', { class: 'hn ' + rlCol(n) + (i === 0 ? ' last' : '') }, String(n))))));
-  if (last) out.push(csResult(last, t('rlOut', { n: last.n, c: t('rlc_' + rlCol(last.n)) })));
-  out.push(h('div', { class: 'rlout' },
-    cell('red', undefined, t('rl_r'), 'r'), cell('black', undefined, t('rl_b'), 'b'), cell('even', undefined, t('rlEven')), cell('odd', undefined, t('rlOdd')),
-    cell('low', undefined, '1–18'), cell('high', undefined, '19–36'),
-    cell('dozen', 0, '1–12', 'dz'), cell('dozen', 1, '13–24', 'dz'), cell('dozen', 2, '25–36', 'dz')));
-  out.push(h('h2', { class: 'sec small' }, t('rlNums')), h('div', { class: 'rlnums' }, cell('num', 0, '0', 'g n0'),
-    Array.from({ length: 36 }, (_, i) => cell('num', i + 1, String(i + 1), rlCol(i + 1)))));
-  out.push(h('div', { class: 'stick csbar' }, chipPicker(),
-    h('div', { class: 'row' }, h('button', { class: 'btn ghost', disabled: !tot, on: { click: () => { S.rlBets = {}; render(); } } }, t('csClear')),
-      h('button', { class: 'btn buy grow big', disabled: !tot || tot > S.st.me.cash || S.casinoBusy, on: { click: () => play('roulette', { bets: Object.values(bets) }, rlAnim) } },
-        tot ? t('rlSpin', { m: moneyShort(tot) }) : t('rlPlace')))));
-  rl3().wake();
+  out.push(h('div', { class: 'rlbox' }, h('div', { class: 'rl3wrap' }, T.el, h('b', { class: 'rl3num num' + (n !== null ? ' on ' + rlCol(n) : '') }, n !== null ? String(n) : ''))));
+  out.push(liveStrip(g));
+  if (n !== null) out.push(liveResult(g, d));
+  out.push(h('div', { class: 'rlhist' }, (d?.hist || []).slice(n === null && d?.phase === 'spin' ? 1 : 0, 13).map((x, i) => h('span', { class: 'hn ' + rlCol(x) + (i === 0 ? ' last' : '') }, String(x)))));
+  out.push(liveBar(g));
+  out.push(h('div', { class: 'lvboard' },
+    h('div', { class: 'rlout' }, cell('red', undefined, t('rl_r'), 'r'), cell('black', undefined, t('rl_b'), 'b'), cell('even', undefined, t('rlEven')), cell('odd', undefined, t('rlOdd')),
+      cell('low', undefined, '1–18'), cell('high', undefined, '19–36'), cell('dozen', 0, '1–12', 'dz'), cell('dozen', 1, '13–24', 'dz'), cell('dozen', 2, '25–36', 'dz')),
+    h('h2', { class: 'sec small' }, t('rlNums')),
+    h('div', { class: 'rlnums' }, cell('num', 0, '0', 'g n0'), Array.from({ length: 36 }, (_, i) => cell('num', i + 1, String(i + 1), rlCol(i + 1))))));
+  out.push(h('p', { class: 'small muted', style: 'margin:12px 0 0' }, t('lvHow')));
+  T.wake();
   return out;
 }
 function rlWon(b, n) {
@@ -1067,7 +1141,7 @@ const wLabel = (s) => (/^\d+$/.test(s) ? s : t('w_' + s));
 function w3() {
   if (!S.w3 || S.w3lang !== lang()) {
     S.w3 = C3.bigWheel({ sfx: fx.sfx, hub: t('p_wheel').toUpperCase(), segs: S.cfg.casino.wheel.segs.map((k) => ({ text: /^\d+$/.test(k) ? k : t('w_' + k).toUpperCase(), color: WCOL[k], ink: '#f6e3a8', big: /^\d+$/.test(k) })) });
-    S.w3lang = lang(); if (S.wLast) S.w3.set(S.wLast.idx);
+    S.w3lang = lang();
   }
   return S.w3;
 }
@@ -1105,7 +1179,7 @@ async function topSpin(r) {
 }
 async function wheelAnim(r) {
   const box = document.querySelector('.wbox'); if (!box) return;
-  const W3 = w3(), stage = box.querySelector('.wstage'), bet = (S.wBets || {})[r.s] || 0;
+  const W3 = w3(), stage = box.querySelector('.wstage'), bet = (r.mineBets || []).find((b) => b.s === r.s)?.amt || 0;
   await tableFocus(box);
   await topSpin(r);
   await W3.spin(r.idx);
@@ -1114,7 +1188,7 @@ async function wheelAnim(r) {
     show('th-' + r.s + ' intro', h('b', { class: 'wst-title' }, t('wb_' + r.s))); fx.sfx('level'); await wait(RM() ? 400 : 1500);
     show('th-' + r.s, h('b', { class: 'wst-name' }, t('wb_' + r.s)));
     if (r.s === 'moeda') await C3.coinFlip(stage, { sides: r.bonus.sides, side: r.bonus.side, sfx: fx.sfx, L: { red: t('rl_r'), blue: t('wBlue') } });
-    else if (r.s === 'caixas') await C3.cashHunt(stage, { boxes: r.bonus.boxes, pick: r.bonus.pick, sfx: fx.sfx, L: { shuffle: t('wShuffle'), pick: t('wPick') } });
+    else if (r.s === 'caixas') await C3.cashHunt(stage, { secs: 5, boxes: r.bonus.boxes, pick: r.bonus.pick, sfx: fx.sfx, L: { shuffle: t('wShuffle'), pick: t('wPick') } });
     else if (r.s === 'bola') await C3.pachinko(stage, { slots: r.bonus.slots, at: r.bonus.at, sfx: fx.sfx });
     else {
       const lw = C3.bigWheel({ sfx: fx.sfx, cls: 'bw3 mini', turns: 4, secs: 7.5, hub: t('w_louca').toUpperCase(), segs: r.bonus.slots.map((v, i) => ({ text: '×' + v, color: LCOL[i % LCOL.length], ink: '#f6e3a8', big: true })) });
@@ -1129,23 +1203,22 @@ async function wheelAnim(r) {
     topHit ? h('span', { class: 'wst-sub' }, t('wTopCalc', { a: base, b: r.top.m })) : null,
     h('b', { class: 'wst-win ' + (!bet ? 'muted' : net > 0 ? 'c-cash' : net < 0 ? 'c-red' : '') }, !bet ? t('wNoBet', { s: wLabel(r.s) }) : net > 0 ? t('csWon', { m: money(net) }) : net < 0 ? t('csLost', { m: money(-net) }) : t('csPush')));
   if (net > 0) { fx.sfx(r.mult >= 20 ? 'crit' : 'cash'); fx.vibrate(20); }
-  await wait(RM() ? 1200 : r.bonus || net > 0 ? 3200 : 1900);
-  S.wLast = r;
+  await wait(r.bonus || net > 0 ? 3200 : 2200);
 }
 function screenWheel() {
-  const W = S.cfg.casino.wheel, bets = S.wBets || {}, tot = Object.values(bets).reduce((x, y) => x + y, 0), last = S.wLast, W3 = w3();
+  const g = 'wheel', L = liveOf(g), d = L.d, W = S.cfg.casino.wheel, W3 = w3();
+  const bets = Object.fromEntries((d?.mine?.bets || []).map((b) => [b.s, b.amt]));
+  const res = d && d.phase === 'spin' && L.shown === d.id ? d.res : null;
   const out = csHead('wheel');
-  out.push(h('div', { class: 'wbox' }, topSlotEl(last), W3.el, h('div', { class: 'wstage', hidden: true })));
-  if (last) out.push(csResult(last, t('wOut', { s: wLabel(last.s) }) + (last.bonus || (last.top && last.top.s === last.s) ? ' · ×' + last.mult : '')));
-  out.push(h('div', { class: 'wspots' }, W.spots.map((s) => h('button', { class: 'wsp', style: `--c:${WCOL[s]}`, on: { click: () => {
-    const chip = chipNow(); if (tot + chip > betMax()) return toast(t('csOver', { m: money(betMax()) }), true);
-    S.wBets = { ...bets, [s]: (bets[s] || 0) + chip }; fx.sfx('tap'); render(); } } },
+  out.push(h('div', { class: 'wbox' }, topSlotEl(res), W3.el, h('div', { class: 'wstage', hidden: true })));
+  out.push(liveStrip(g));
+  if (res) out.push(liveResult(g, d));
+  out.push(h('div', { class: 'whist' }, (d?.hist || []).slice(!res && d?.phase === 'spin' ? 1 : 0, 11).map((x, i) => h('span', { class: 'wh' + (i === 0 ? ' last' : ''), style: `background:${WCOL[x.s]}` },
+    /^\d+$/.test(x.s) ? (x.m > +x.s ? x.s + ' ×' + x.m / +x.s : x.s) : wLabel(x.s) + ' ×' + x.m))));
+  out.push(liveBar(g));
+  out.push(h('div', { class: 'wspots lvboard' }, W.spots.map((s) => h('button', { class: 'wsp' + (res && res.s === s ? ' hit' : ''), style: `--c:${WCOL[s]}`, on: { click: () => liveBet(g, { s, amt: chipNow() }) } },
     h('b', null, wLabel(s)), h('span', { class: 'small' }, /^\d+$/.test(s) ? s + ':1' : t('wBonus')), bets[s] ? h('span', { class: 'chipm' }, moneyShort(bets[s])) : null))));
-  out.push(h('p', { class: 'small muted', style: 'margin:10px 0 0' }, t('wRules')));
-  out.push(h('div', { class: 'stick csbar' }, chipPicker(),
-    h('div', { class: 'row' }, h('button', { class: 'btn ghost', disabled: !tot, on: { click: () => { S.wBets = {}; render(); } } }, t('csClear')),
-      h('button', { class: 'btn buy grow big', disabled: !tot || tot > S.st.me.cash || S.casinoBusy, on: { click: () => play('wheel', { bets: Object.entries(bets).map(([s, amt]) => ({ s, amt })) }, wheelAnim) } },
-        tot ? t('rlSpin', { m: moneyShort(tot) }) : t('rlPlace')))));
+  out.push(h('p', { class: 'small muted', style: 'margin:12px 0 0' }, t('wRules') + ' ' + t('lvHow')));
   W3.wake();
   return out;
 }
@@ -1159,16 +1232,25 @@ function symImg(g, s, orb) {
   const G = slotCfg(g), big = orb >= 100 && (g === 'zeus' || g === 'doce');
   return SYM(g, s === G.nsym + 1 && big ? '10b' : s);
 }
-function slotCellEl(g, s, orb, spot) {
-  const G = slotCfg(g), cls = 'sc2' + (s === G.nsym ? ' scat' : s === G.nsym + 1 ? ' orb' : '') + (spot === 1 ? ' mk' : spot >= 2 ? ' mx' : '');
-  return h('div', { class: cls }, h('img', { src: symImg(g, s, orb), alt: '', width: 80, height: 80, decoding: 'async' }),
-    orb ? h('b', { class: 'ov' }, '×' + orb) : null, spot >= 2 ? h('b', { class: 'spm' }, '×' + spot) : null);
+function slotCellEl(g, s, orb) {
+  const G = slotCfg(g), cls = 'sc2' + (s === G.nsym ? ' scat' : s === G.nsym + 1 ? ' orb' : '');
+  return h('div', { class: cls }, h('img', { src: symImg(g, s, orb), alt: '', width: 80, height: 80, decoding: 'async' }), orb ? h('b', { class: 'ov' }, '×' + orb) : null);
+}
+// as casas com multiplicador são do tabuleiro, não dos símbolos: ficam paradas por baixo enquanto os símbolos caem
+const spotCls = (v) => 'ssp' + (v === 1 ? ' mk' : v >= 2 ? ' mx' : '');
+function slotSpots(grid, sp) {
+  const lay = grid.parentNode?.querySelector('.sspots'); if (!lay || !sp) return;
+  [...lay.children].forEach((el, i) => {
+    const v = sp[i] || 0, old = +el.dataset.v || 0; if (v === old) return;
+    el.dataset.v = v; el.className = spotCls(v) + (v > old ? ' bump' : ''); el.textContent = v >= 2 ? '×' + v : '';
+  });
 }
 function slotGrid(g) {
   const G = slotCfg(g), n = G.cols * G.rows, last = S.slotLast?.[g];
   const step = last ? (last.spin.free.at(-1) || last.spin.base).steps.at(-1) : null;
   const cells = step ? step.g : Array.from({ length: n }, (_, i) => (Math.imul(i + 7, 2654435761) >>> 9) % G.nsym);   // mistura fixa, sem padrão à vista
-  return h('div', { class: 'sgrid', style: `--cols:${G.cols};--rows:${G.rows}` }, cells.map((s, i) => slotCellEl(g, s, step?.o?.[i], step?.sp?.[i])));
+  return [G.kind === 'cluster' ? h('div', { class: 'sspots' }, Array.from({ length: n }, (_, i) => { const v = step?.sp?.[i] || 0; return h('i', { class: spotCls(v), dataset: { v } }, v >= 2 ? '×' + v : ''); })) : null,
+    h('div', { class: 'sgrid' }, cells.map((s, i) => slotCellEl(g, s, step?.o?.[i])))];
 }
 // Uma queda: no início a grelha toda cai de cima, coluna a coluna; depois de um prémio, o que sobra desce para os buracos
 // e os novos entram por cima. Cada célula sabe de quantas casas cai.
@@ -1183,8 +1265,9 @@ async function slotStep(g, grid, step, prev, sp) {
   }
   const pitch = grid.children[0] ? grid.children[0].offsetHeight + parseFloat(getComputedStyle(grid).rowGap || 4) : 60;
   let end = 0; const lands = new Set();
+  slotSpots(grid, step.sp);
   grid.replaceChildren(...step.g.map((s, i) => {
-    const el = slotCellEl(g, s, step.o?.[i], step.sp?.[i]), d = dist[i];
+    const el = slotCellEl(g, s, step.o?.[i]), d = dist[i];
     if (d > 0 && !RM()) {
       const c = i % C, r = Math.floor(i / C), delay = (prev ? c * 28 + (fresh[i] ? 70 : 0) : c * 85 + (R - 1 - r) * 48) * sp, t0 = (300 + 62 * Math.sqrt(d) * 2.2) * sp;
       el.classList.add('fall'); el.style.setProperty('--from', -d * pitch + 'px'); el.style.setProperty('--d', delay + 'ms'); el.style.setProperty('--t', t0 + 'ms');
@@ -1310,7 +1393,7 @@ function screenSlotGame(page) {
   return [
     h('div', { class: 'slot th-' + g },
       h('div', { class: 'shead', style: `background-image:url(${IMG('cenas', PLACES[page].img, 1)})` }, h('button', { class: 'sback', 'aria-label': t('p_casino'), on: { click: () => go(upOf(page)) } }, '←'), h('h1', { class: 'slogo' }, t('p_' + page)), h('span', { class: 'sup2' }, t('slUpTo', { x: num(G.max) }))),
-      h('div', { class: 'sfr' }, h('div', { class: 'stop' }, h('span', { class: 'sfree' }), h('span', { class: 'sinfo num' })), h('div', { class: 'sgw' }, slotGrid(g)), h('div', { class: 'sfxl' })),
+      h('div', { class: 'sfr' }, h('div', { class: 'stop' }, h('span', { class: 'sfree' }), h('span', { class: 'sinfo num' })), h('div', { class: 'sgw', style: `--cols:${G.cols};--rows:${G.rows}` }, slotGrid(g)), h('div', { class: 'sfxl' })),
       h('div', { class: 'smsg' }, h('span', { class: 'smsgl' }, last ? t('slWinL') : t('slGood')), h('b', { class: 'swinm num' }, last ? money(last.win) : '')),
       h('div', { class: 'csbar sctl' },
         h('div', { class: 'brow' }, plq(1, t('slBuyL'), G.buy), G.superBuy ? plq(2, t('slSuperL'), G.superBuy) : null),

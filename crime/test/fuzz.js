@@ -61,6 +61,14 @@ function contas(kind, a0, a, d0, d, t, res, arg) {
       if (a.bank !== a0.bank) bad('casino mexeu no banco');
       break;
     }
+    case 'table': {
+      // apostar na mesa ao vivo e receber o prémio: no fim só pode faltar a aposta e sobrar o prémio
+      if (dm !== res.win - res.total + res.before || dr !== 0) bad('mesa: dinheiro não bate com a aposta e o prémio');
+      if (res.total > E.casinoMax(a0)) bad('mesa: aposta acima do máximo');
+      if (res.win > res.total * (res.g === 'roulette' ? 36 : CFG.casino.maxWinMult)) bad('mesa: prémio acima do possível');
+      if (a.bank !== a0.bank) bad('mesa mexeu no banco');
+      break;
+    }
     case 'deposit': if (dm !== -res.fee || res.fee < 1 || res.fee !== Math.ceil((arg * E.bankFeeBp(a)) / 10000) || dr) bad('taxa do banco'); break;
     case 'withdraw': case 'class': case 'avatar': if (dm !== 0 || dr !== 0) bad('devia ser neutro'); break;
     case 'claim': if (dm !== res.cash || dr !== 0) bad('prémio'); break;
@@ -109,7 +117,7 @@ for (let n = 0; n < ACTIONS; n++) {
   if (r.chance(200)) { p.cash += r.int(0, 5e6); } // dá dinheiro para chegar a tudo
   if (r.chance(2500)) { p.energy = r.int(0, CFG.energy.max); p.energyT = Math.min(p.energyT, p.t); } // gasta stamina para chegar à discoteca, às putas e ao hospital
   const before = touched(p, t), beforeD = touched(d, t), origD = structuredClone(d), origP = structuredClone(p);
-  const kind = pick(['casino', 'casino', 'crime', 'crimeAll', 'drug', 'refill', 'detox', 'claim', 'class', 'avatar', 'hooker', 'cure', 'house', 'houseUp', 'train', 'buyBiz', 'collect', 'port', 'collectPort', 'deposit', 'withdraw', 'gear', 'attack', 'bail', 'medic', 'luxury']);
+  const kind = pick(['casino', 'casino', 'table', 'crime', 'crimeAll', 'drug', 'refill', 'detox', 'claim', 'class', 'avatar', 'hooker', 'cure', 'house', 'houseUp', 'train', 'buyBiz', 'collect', 'port', 'collectPort', 'deposit', 'withdraw', 'gear', 'attack', 'bail', 'medic', 'luxury']);
   let res, arg;
   try {
     switch (kind) {
@@ -122,6 +130,21 @@ for (let n = 0; n < ACTIONS; n++) {
           : g === 'wheel' ? { bets: Array.from({ length: r.int(0, 13) }, () => ({ s: pick(['1', '2', '5', '10', 'moeda', 'caixas', 'bola', 'louca', 'x']), amt: amt() })) }
           : g === 'slot' ? { amt: pick([10, 20, 50, 0, -1, NaN]), game: pick(['chefao', 'zeus', 'doce', 'rebucado', 'x']), buy: pick([0, 0, 0, 1, 2, 3]) } : { op: pick(['deal', 'hit', 'stand', 'double', 'x']), amt: amt() };
         res = E.casinoPlay(p, t, world, g, arg, game); break;
+      }
+      case 'table': {
+        // uma ronda inteira: aposta duas vezes (a segunda junta-se à primeira), às vezes tira tudo, e depois sai o resultado
+        const amt = () => pick([10, 50, 100, 999, 5000, 1e6, 0, -5, 9, 0.5, NaN]);
+        const g = pick(['roulette', 'wheel', 'wheel', 'x']);
+        const bom = r.chance(8000), va = () => (bom ? pick([10, 50, 100, 999, 5000]) : amt());
+        const mk = () => Array.from({ length: bom ? r.int(1, 5) : r.int(0, 13) }, () => (g === 'wheel' ? { s: pick(['1', '2', '5', '10', 'moeda', 'caixas', 'bola', 'louca'].concat(bom ? [] : ['x'])), amt: va() }
+          : { t: pick(['red', 'black', 'even', 'odd', 'low', 'high', 'dozen', 'num'].concat(bom ? [] : ['x'])), n: bom ? r.int(0, 2) : pick([0, 1, 2, 3, 17, 36, 37, -1, undefined]), amt: va() }));
+        let mine = E.tableBet(p, t, world, g, mk()).bets, before = 0;
+        try { mine = E.tableBet(p, t, world, g, mk(), mine).bets; } catch (e) { if (!(e instanceof E.GameError)) throw e; }
+        if (r.chance(1500)) { const back = E.tableClear(p, mine); if (back.back !== E.tableTotal(mine)) throw new Error('devolução errada'); before = back.back; }
+        const out = E.tableDraw(g, game), win = E.tablePay(g, mine, out);
+        if (!before) E.tableCredit(p, win);
+        res = { ok: true, g, total: E.tableTotal(mine), win: before ? 0 : win, before };
+        break;
       }
       case 'crimeAll': arg = r.chance(9000) ? r.int(0, 9) : anyInt(); res = E.doCrimeAll(p, t, world, arg, game); break;
       case 'drug': res = E.buyDrug(p, t, world, r.chance(9000) ? r.int(0, 8) : anyInt()); break;

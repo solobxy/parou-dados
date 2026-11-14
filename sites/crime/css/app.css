@@ -996,3 +996,25 @@ h1.slogo { margin: 0; }
 .sfr { padding-top: 6px; }
 .slot.free .sup2 { visibility: hidden; }
 .smsg { min-height: 34px; } .sspin { width: 76px; height: 76px; } .sspin svg { width: 40px; height: 40px; }
+
+/* ---------- mesas ao vivo ---------- */
+.lvstrip { margin: 4px 0 10px; padding: 9px 12px; border-radius: 12px; background: var(--s1); }
+.lvt { font-weight: 800; } .lvstrip.open .lvt { color: var(--cash); } .lvstrip.hot .lvt { color: var(--danger); }
+.lvbar { height: 5px; margin-top: 7px; border-radius: 9px; background: #ffffff1a; overflow: hidden; }
+.lvbar i { display: block; height: 100%; background: var(--cash); transform-origin: left; transform: scaleX(0); transition: transform .25s linear; } .lvstrip.hot .lvbar i { background: var(--danger); }
+.lvbar2 { display: grid; gap: 8px; margin: 10px 0 12px; }
+.lvboard { transition: opacity .2s; } .lvboard.shut { opacity: .45; pointer-events: none; }
+.whist { display: flex; gap: 5px; flex-wrap: wrap; justify-content: center; min-height: 26px; margin: 0 0 4px; }
+.wh { padding: 3px 9px; border-radius: 99px; font-size: 12px; font-weight: 800; color: #f6e3a8; opacity: .7; text-transform: uppercase; } .wh.last { opacity: 1; box-shadow: 0 0 0 2px var(--sodium); }
+.wsp.hit { box-shadow: inset 0 0 0 3px var(--gold), 0 0 16px #ffd36b88; }
+.rlbox { margin-bottom: 4px; }
+
+/* casas com multiplicador: fixas no tabuleiro, por baixo dos símbolos */
+.slot .sgw { position: relative; max-width: calc((100dvh - 500px) * var(--cols) / var(--rows, 5)); margin-inline: auto; }
+.slot .sgrid { position: relative; max-width: none; }
+.sspots { position: absolute; inset: 0; display: grid; grid-template-columns: repeat(var(--cols), 1fr); grid-template-rows: repeat(var(--rows), 1fr); }
+.ssp { display: block; padding: 0 3px; font: 900 12px/1.25 var(--disp); font-style: normal; color: #fff; text-shadow: 0 0 4px #000, 0 1px 0 #000; border-radius: 6px; transition: background .25s; }
+.ssp.mk { background: #ffffff38; box-shadow: inset 0 0 0 2px #ffffff88; }
+.ssp.mx { background: #ffd23a99; box-shadow: inset 0 0 0 2px #fff3b0, 0 0 10px #ffd75e88; }
+.ssp.bump { animation: sspb .45s var(--spring); }
+@keyframes sspb { 40% { transform: scale(1.25); filter: brightness(1.6); } }

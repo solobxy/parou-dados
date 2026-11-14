@@ -325,6 +325,100 @@ function limpaAposta(a) {
   return { bets, amt: int(a.amt), pick: String(a.pick), op: String(a.op || 'deal'), game: String(a.game || 'chefao'), buy: int(a.buy ?? 0) };
 }
 
+// ---------- mesas ao vivo (roleta e roda) ----------
+// Uma ronda de cada vez por mesa, igual para todos: apostas abertas, fecha, sai um resultado, paga-se a toda a gente
+// e abre a seguinte. As apostas ficam na base de dados no mesmo passo em que o dinheiro sai da mão do jogador.
+db.exec(`CREATE TABLE IF NOT EXISTS mesa_apostas (mesa TEXT NOT NULL, id INTEGER NOT NULL, conta TEXT NOT NULL, ronda INTEGER NOT NULL,
+  bets TEXT NOT NULL, total INTEGER NOT NULL, win INTEGER, PRIMARY KEY (mesa, id, conta))`);
+const qm = {
+  aposta: db.prepare('INSERT OR REPLACE INTO mesa_apostas (mesa, id, conta, ronda, bets, total, win) VALUES (?, ?, ?, ?, ?, ?, NULL)'),
+  tirar: db.prepare('DELETE FROM mesa_apostas WHERE mesa = ? AND id = ? AND conta = ?'),
+  paga: db.prepare('UPDATE mesa_apostas SET win = ? WHERE mesa = ? AND id = ? AND conta = ?'),
+  porPagar: db.prepare('SELECT * FROM mesa_apostas WHERE win IS NULL'),
+  limpar: db.prepare('DELETE FROM mesa_apostas WHERE win IS NOT NULL AND id < ?'),
+};
+const MESA_BET_MS = +(process.env.MESA_BET_MS || 20_000);
+const MESA_SPIN = process.env.MESA_SPIN_MS ? () => +process.env.MESA_SPIN_MS
+  : (g, r) => (g === 'roulette' ? 12_500 : !r.bonus ? 18_000 : { moeda: 26_000, caixas: 29_500, bola: 24_000, louca: 28_500 }[r.s]);
+const mesas = { roulette: { cur: null, hist: [], last: new Map() }, wheel: { cur: null, hist: [], last: new Map() } };
+const resCurto = (g, r) => (g === 'roulette' ? r.n : { s: r.s, m: r.mult });
+
+// ao arrancar: apostas que ficaram por pagar (o servidor parou a meio de uma ronda) voltam para quem as fez
+function devolverMesas(now) {
+  const rows = qm.porPagar.all(); if (!rows.length) return;
+  const w = mundo(now); carregarRonda(w.n);
+  db.exec('BEGIN');
+  try {
+    for (const r of rows) {
+      const p = r.ronda === ronda ? jogadores.get(r.conta) : null;
+      if (p) { E.tableCredit(p, r.total); guardar(p, now); }
+      qm.paga.run(r.total, r.mesa, r.id, r.conta);
+    }
+    db.exec('COMMIT');
+  } catch (e) { db.exec('ROLLBACK'); ronda = -1; carregarRonda(w.n); console.error('mesas', e.message); }
+}
+function pagarMesa(g, c, now) {
+  const w = mundo(now); carregarRonda(w.n);
+  const feitos = [];
+  db.exec('BEGIN');
+  try {
+    for (const [conta, b] of c.bets) {
+      if (b.win !== undefined) continue;
+      const win = E.tablePay(g, b.bets, c.res), p = b.ronda === ronda && w.phase === 'play' ? jogadores.get(conta) : null;
+      if (p) { E.tableCredit(p, win); guardar(p, now); contarDia(now, conta, { cnet: win - b.total, cwin: Math.max(0, win - b.total) }); }
+      qm.paga.run(win, g, c.id, conta);
+      feitos.push([conta, b, win]);
+    }
+    db.exec('COMMIT');
+  } catch (e) { db.exec('ROLLBACK'); ronda = -1; carregarRonda(w.n); console.error('mesa', g, e.message); return; }   // fica por pagar: tenta outra vez no segundo seguinte
+  const m = mesas[g];
+  for (const [conta, b, win] of feitos) {
+    b.win = win; m.last.set(conta, { id: c.id, bets: b.bets, total: b.total, win });
+    const net = win - b.total;
+    if (net >= CFG.casino.newsMin) noticia(now, { k: 'casino', name: nomeDe(conta), g, money: net });
+    else if (-net >= CFG.casino.newsMin) noticia(now, { k: 'casinoLoss', name: nomeDe(conta), g, money: -net });
+  }
+  if (m.last.size > 500) for (const k of m.last.keys()) { m.last.delete(k); if (m.last.size <= 400) break; }
+}
+function fecharMesa(g, now) {
+  const m = mesas[g], c = m.cur;
+  if (c.res === null) { c.res = E.tableDraw(g, rng); c.prox = c.fecha + MESA_SPIN(g, c.res); m.hist.unshift(resCurto(g, c.res)); if (m.hist.length > 14) m.hist.pop(); }
+  pagarMesa(g, c, now);
+}
+// a ronda em curso, avançando o que for preciso (fechar, pagar, abrir a seguinte)
+function mesaDe(g, now) {
+  const m = mesas[g];
+  if (!m) throw new E.GameError('NO_GAME');
+  if (m.cur && now >= m.cur.fecha && (m.cur.res === null || [...m.cur.bets.values()].some((b) => b.win === undefined))) fecharMesa(g, now);
+  if (!m.cur || (m.cur.res !== null && now >= m.cur.prox)) {
+    const abre = m.cur && now - m.cur.prox < 4000 ? m.cur.prox : now;   // com gente à mesa as rondas seguem-se sem intervalo
+    m.cur = { id: Math.max(Math.floor(abre / 100), (m.cur?.id || 0) + 1), abre, fecha: abre + MESA_BET_MS, prox: null, res: null, bets: new Map() };
+  }
+  return m;
+}
+function mesaAberta(g, now) {
+  const m = mesaDe(g, now);
+  if (m.cur.res !== null || now >= m.cur.fecha) throw new E.GameError('BETS_CLOSED');
+  return m;
+}
+function vistaMesa(g, conta, now) {
+  const m = mesaDe(g, now), c = m.cur, mine = c.bets.get(conta);
+  let pot = 0; for (const b of c.bets.values()) pot += b.total;
+  const out = { now, g, id: c.id, phase: c.res === null ? 'bets' : 'spin', opensAt: c.abre, closesAt: c.fecha, nextAt: c.prox, players: c.bets.size, pot,
+    mine: mine ? { bets: mine.bets, total: mine.total, win: mine.win } : null, hist: m.hist, last: m.last.get(conta) || null };
+  if (c.res !== null) {
+    out.res = c.res;
+    out.wins = [...c.bets].filter(([, b]) => b.win > b.total).sort((a, b) => (b[1].win - b[1].total) - (a[1].win - a[1].total)).slice(0, 3).map(([id, b]) => ({ name: nomeDe(id), win: b.win - b.total }));
+  }
+  return out;
+}
+// mesmo sem ninguém a ver, uma ronda com apostas fecha e paga à hora certa
+setInterval(() => {
+  const now = clock();
+  for (const g of Object.keys(mesas)) { const c = mesas[g].cur; if (c && now >= c.fecha && c.bets.size && (c.res === null || [...c.bets.values()].some((b) => b.win === undefined))) { try { fecharMesa(g, now); } catch (e) { console.error('mesa', e.message); } } }
+}, 500).unref();
+devolverMesas(clock());
+
 // ---------- ações ----------
 const recentes = new Map(); // conta -> Map(rid -> resposta), para toques repetidos
 
@@ -336,12 +430,25 @@ function agir(conta, corpo, now) {
   const p = jogadorDe(conta, now, w);
   const world = { start: w.start, playEnd: w.playEnd };
   const a = corpo || {};
-  let r, alvo = null, alvoResp0 = 0;
+  let r, alvo = null, alvoResp0 = 0, mesa = null;
   const resp0 = p.respect;
   switch (a.type) {
     case 'crime': r = E.doCrime(p, now, world, int(a.k), rng); break;
     case 'crimeAll': r = E.doCrimeAll(p, now, world, int(a.k), rng); break;
     case 'casino': r = E.casinoPlay(p, now, world, String(a.g), limpaAposta(a), rng); break;
+    case 'tableBet': {
+      const g = String(a.g), m = mesaAberta(g, now), mine = m.cur.bets.get(conta);
+      r = E.tableBet(p, now, world, g, limpaAposta(a).bets, mine ? mine.bets : []);
+      mesa = { g, c: m.cur, bets: r.bets, total: r.total }; r.round = m.cur.id;
+      break;
+    }
+    case 'tableClear': {
+      const g = String(a.g), m = mesaAberta(g, now), mine = m.cur.bets.get(conta);
+      if (!mine) throw new E.GameError('NO_BET');
+      r = E.tableClear(p, mine.bets); r.g = g;
+      mesa = { g, c: m.cur, bets: null }; r.round = m.cur.id;
+      break;
+    }
     case 'train': r = E.train(p, now, world, String(a.stat)); break;
     case 'drug': r = E.buyDrug(p, now, world, int(a.d)); break;
     case 'refill': r = E.refill(p, now, world); break;
@@ -385,8 +492,10 @@ function agir(conta, corpo, now) {
       guardar(alvo, now);
       evento(alvo.id, now, { k: 'attacked', by: nomeDe(p.id), mode: r.mode, win: r.win, respect: r.win ? -r.targetLoss : (r.defenderGain || 0), money: r.money || 0 });
     }
+    if (mesa) { if (mesa.bets) qm.aposta.run(mesa.g, mesa.c.id, conta, ronda, JSON.stringify(mesa.bets), mesa.total); else qm.tirar.run(mesa.g, mesa.c.id, conta); }
     contarAcao(now, a, r, p, alvo, resp0, alvoResp0);
     db.exec('COMMIT');
+    if (mesa) { if (mesa.bets) mesa.c.bets.set(conta, { bets: mesa.bets, total: mesa.total, ronda }); else mesa.c.bets.delete(conta); }
     noticiar(now, a, r, p, alvo);
   } catch (e) {
     db.exec('ROLLBACK');
@@ -534,6 +643,12 @@ async function tratar(req, res) {
       throw e;
     }
   }
+  if (req.method === 'GET' && path === '/api/table') {
+    const g = url.searchParams.get('g');
+    if (!Object.hasOwn(mesas, g)) return enviar(res, 400, { error: 'NO_GAME' });
+    if (!limite('mesa:' + conta, 40, 10_000, now)) return enviar(res, 429, { error: 'SLOW_DOWN' });
+    return enviar(res, 200, vistaMesa(g, conta, clock()));
+  }
   if (req.method === 'GET' && path === '/api/targets') return enviar(res, 200, { now, list: w.phase === 'play' ? alvos(conta, now, w) : [] });
   if (req.method === 'GET' && path === '/api/ranking') {
     const rk = rankingAtual(now, w);
@@ -565,6 +680,7 @@ setInterval(() => {
     q.limparEventos.run(now - 15 * T.DAY);
     const dir = join(DATA, 'copias'); mkdirSync(dir, { recursive: true });
     q.limparNoticias.run(now - 15 * T.DAY);
+    qm.limpar.run(Math.floor((now - 2 * T.DAY) / 100));
     const nome = join(dir, `jogo-${new Date(now).toISOString().slice(0, 13)}.db`);
     if (!existsSync(nome)) db.exec(`VACUUM INTO '${nome.replace(/'/g, "''")}'`);
     const fs = readdirSync(dir).filter((f) => f.endsWith('.db')).sort();

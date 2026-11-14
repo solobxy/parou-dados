@@ -969,6 +969,55 @@ function wheel(p, a, rng) {
   p.cash += win;
   return { ok: true, g: 'wheel', bet, win, ...sp };
 }
+// ---- mesas ao vivo (roleta e roda) ----
+// A ronda é de todos: cada um aposta enquanto a mesa está aberta (o dinheiro sai logo da mão),
+// o servidor tira um só resultado e paga a toda a gente. As contas são as mesmas da jogada a solo.
+const tableKey = (g, b) => (g === 'roulette' ? b.t + ':' + (b.n ?? '') : b.s);
+function tableClean(g, bets) {
+  if (!Array.isArray(bets) || !bets.length || bets.length > CFG.casino.maxBets) fail('BAD_BET');
+  return bets.map((b) => {
+    if (!b || !Number.isSafeInteger(b.amt) || b.amt < CFG.casino.minBet) fail('BAD_BET');
+    if (g === 'roulette') {
+      if (!RL_TYPES.includes(b.t)) fail('BAD_BET');
+      if (b.t === 'dozen' && !(Number.isInteger(b.n) && b.n >= 0 && b.n <= 2)) fail('BAD_BET');
+      if (b.t === 'num' && !(Number.isInteger(b.n) && b.n >= 0 && b.n <= 36)) fail('BAD_BET');
+      return b.t === 'dozen' || b.t === 'num' ? { t: b.t, n: b.n, amt: b.amt } : { t: b.t, amt: b.amt };
+    }
+    if (!CFG.casino.wheel.spots.includes(b.s)) fail('BAD_BET');
+    return { s: b.s, amt: b.amt };
+  });
+}
+export const tableTotal = (bets) => bets.reduce((x, b) => x + b.amt, 0);
+// junta apostas novas às que o jogador já tem nesta ronda; devolve a lista completa
+export function tableBet(p, now, world, g, add, mine = []) {
+  if (g !== 'roulette' && g !== 'wheel') fail('NO_GAME');
+  begin(p, now, world);
+  const novo = tableClean(g, add), all = new Map(mine.map((b) => [tableKey(g, b), { ...b }]));
+  let bet = 0;
+  for (const b of novo) { const k = tableKey(g, b), cur = all.get(k); if (cur) cur.amt += b.amt; else all.set(k, b); bet += b.amt; }
+  if (all.size > CFG.casino.maxBets) fail('BAD_BET');
+  const bets = [...all.values()], total = tableTotal(bets);
+  if (!Number.isSafeInteger(total) || total > casinoMax(p)) fail('BET_TOO_BIG', { max: casinoMax(p) });
+  if (bet > p.cash) fail('NO_CASH');
+  p.cash -= bet;
+  return { ok: true, g, bet, bets, total };
+}
+// tirar as apostas da mesa enquanto ela está aberta: o dinheiro volta todo
+export function tableClear(p, mine) {
+  const back = tableTotal(mine);
+  p.cash += back;
+  return { ok: true, back, bets: [], total: 0 };
+}
+export function tableDraw(g, rng) { return g === 'roulette' ? { n: rng.int(0, 36) } : wheelSpin(rng); }
+// quanto volta ao jogador (aposta incluída) com este resultado
+export function tablePay(g, bets, res) {
+  let win = 0;
+  if (g === 'roulette') for (const b of bets) win += b.amt * rouletteReturn(b, res.n);
+  else { for (const b of bets) if (b.s === res.s) win += b.amt * (res.mult + 1); win = Math.min(win, tableTotal(bets) * CFG.casino.maxWinMult); }
+  return win;
+}
+export function tableCredit(p, win) { if (!Number.isSafeInteger(win) || win < 0) fail('BAD_BET'); p.cash += win; }
+
 // ---- slots ----
 const cellW = (rng, w) => { let tot = 0; for (const x of w) tot += x; let r = rng.int(0, tot - 1); for (let i = 0; i < w.length; i++) { if (r < w[i]) return i; r -= w[i]; } return w.length - 1; };
 // garante pelo menos «need» scatters na grelha inicial (compra de bónus)

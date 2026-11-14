@@ -273,3 +273,64 @@ test('contas do dia batem com o jogador: golpes, vitórias, dinheiro e respeito'
   assert.equal(sum('resp'), me.respect);
   assert.equal(sum('money'), me.cash - 500);
 });
+
+test('mesa ao vivo: dois jogadores na mesma ronda veem o mesmo resultado e as contas batem certo', async () => {
+  await parar(); ENV_EXTRA = { ATOS_3S: '100000', ATOS_MIN: '1000000', MESA_BET_MS: '900', MESA_SPIN_MS: '500' }; await arrancar();
+  const A = await contaNova('MesaA', '10.0.9.40'), B = await contaNova('MesaB', '10.0.9.41');
+  const mesa = async (c, ip, g) => (await fetch(BASE + '/api/table?g=' + g, { headers: { cookie: c, 'X-Forwarded-For': ip } })).json();
+  const dorme = (ms) => new Promise((r) => setTimeout(r, ms));
+  // espera pelo início de uma ronda para ter o tempo todo de apostas
+  let t = await mesa(A.cookie, '10.0.9.40', 'roulette');
+  while (t.phase !== 'bets' || t.closesAt - t.now < 600) { await dorme(120); t = await mesa(A.cookie, '10.0.9.40', 'roulette'); }
+  const id = t.id;
+  let r = await cru(A.cookie, '10.0.9.40', { type: 'tableBet', g: 'roulette', bets: [{ t: 'red', amt: 100 }] });
+  assert.equal(r.status, 200); assert.equal(r.body.me.cash, 400); assert.equal(r.body.result.round, id);
+  r = await cru(A.cookie, '10.0.9.40', { type: 'tableBet', g: 'roulette', bets: [{ t: 'red', amt: 50 }, { t: 'num', n: 7, amt: 10 }] });
+  assert.equal(r.body.me.cash, 340); assert.equal(r.body.result.total, 160);
+  r = await cru(B.cookie, '10.0.9.41', { type: 'tableBet', g: 'roulette', bets: [{ t: 'black', amt: 200 }] });
+  assert.equal(r.body.me.cash, 300);
+  // apostas inválidas e acima do que se tem não tiram dinheiro
+  r = await cru(B.cookie, '10.0.9.41', { type: 'tableBet', g: 'roulette', bets: [{ t: 'black', amt: 400 }] });
+  assert.equal(r.status, 400); assert.equal(r.body.error, 'NO_CASH'); assert.equal(r.body.me.cash, 300);
+  t = await mesa(B.cookie, '10.0.9.41', 'roulette');
+  assert.equal(t.players, 2); assert.equal(t.pot, 360); assert.equal(t.mine.total, 200); assert.equal(t.res, undefined);
+  // fecha: os dois veem o mesmo número e recebem o que a roleta paga
+  while (t.phase !== 'spin' || t.id !== id) { await dorme(100); t = await mesa(B.cookie, '10.0.9.41', 'roulette'); if (t.id !== id && t.last?.id === id) break; }
+  const ta = await mesa(A.cookie, '10.0.9.40', 'roulette');
+  const n = t.id === id ? t.res.n : null, na = ta.id === id ? ta.res.n : null;
+  if (n !== null && na !== null) assert.equal(n, na);
+  const num = n ?? na ?? t.hist[0];
+  const red = [1, 3, 5, 7, 9, 12, 14, 16, 18, 19, 21, 23, 25, 27, 30, 32, 34, 36].includes(num);
+  const winA = (red ? 300 : 0) + (num === 7 ? 360 : 0), winB = num > 0 && !red ? 400 : 0;
+  assert.equal((await A.estado()).cash, 340 + winA);
+  assert.equal((await B.estado()).cash, 300 + winB);
+  // com a mesa fechada não se aposta nem se limpa
+  let fechada = false;
+  for (let i = 0; i < 30 && !fechada; i++) {
+    const s = await mesa(A.cookie, '10.0.9.40', 'wheel');
+    if (s.phase === 'spin') { const x = await cru(A.cookie, '10.0.9.40', { type: 'tableBet', g: 'wheel', bets: [{ s: '1', amt: 10 }] }); if (x.status === 400) { assert.equal(x.body.error, 'BETS_CLOSED'); fechada = true; } }
+    await dorme(100);
+  }
+  assert.ok(fechada, 'nunca apanhou a mesa fechada');
+});
+
+test('mesa ao vivo: limpar devolve tudo, e se o servidor parar a meio as apostas voltam para o jogador', async () => {
+  const A = await contaNova('MesaC', '10.0.9.42');
+  const mesa = async (g) => (await fetch(BASE + '/api/table?g=' + g, { headers: { cookie: A.cookie, 'X-Forwarded-For': '10.0.9.42' } })).json();
+  const dorme = (ms) => new Promise((r) => setTimeout(r, ms));
+  const abre = async () => { let t = await mesa('wheel'); while (t.phase !== 'bets' || t.closesAt - t.now < 500) { await dorme(100); t = await mesa('wheel'); } return t; };
+  await abre();
+  let r = await cru(A.cookie, '10.0.9.42', { type: 'tableBet', g: 'wheel', bets: [{ s: '2', amt: 120 }, { s: 'louca', amt: 30 }] });
+  assert.equal(r.body.me.cash, 350);
+  r = await cru(A.cookie, '10.0.9.42', { type: 'tableClear', g: 'wheel' });
+  assert.equal(r.status, 200); assert.equal(r.body.me.cash, 500); assert.equal(r.body.result.back, 150);
+  r = await cru(A.cookie, '10.0.9.42', { type: 'tableClear', g: 'wheel' });
+  assert.equal(r.body.error, 'NO_BET');
+  // o servidor pára com uma aposta na mesa: ao voltar, o dinheiro está outra vez na mão
+  await parar(); ENV_EXTRA = { ATOS_3S: '100000', ATOS_MIN: '1000000', MESA_BET_MS: '60000', MESA_SPIN_MS: '500' }; await arrancar();
+  r = await cru(A.cookie, '10.0.9.42', { type: 'tableBet', g: 'wheel', bets: [{ s: '5', amt: 200 }] });
+  assert.equal(r.body.me.cash, 300);
+  await parar(); await arrancar();
+  assert.equal((await A.estado()).cash, 500);
+  const t = await mesa('wheel'); assert.equal(t.mine, null); assert.equal(t.players, 0);
+});

@@ -23,10 +23,10 @@ function layer(size, dpr, draw) {
   return c;
 }
 // corre enquanto o elemento estiver no ecrã; pára sozinho quando sai
-function ticker(el, frame) {
+function ticker(el, frame, gone) {
   let on = false, last = 0;
   const step = (ts) => {
-    if (!el.isConnected) { on = false; return; }
+    if (!el.isConnected) { on = false; gone && gone(); return; }   // saíste do ecrã a meio: a jogada dá-se por acabada
     const dt = Math.min(0.05, (ts - last) / 1000 || 0); last = ts;
     frame(dt, ts / 1000); requestAnimationFrame(step);
   };
@@ -141,10 +141,10 @@ export function roulette({ order, colorOf, sfx }) {
     g.addColorStop(0, '#ffffff'); g.addColorStop(0.55, '#e9ecf2'); g.addColorStop(1, '#8e96a6');
     ctx.fillStyle = g; ctx.beginPath(); ctx.arc(bx, by - 3 - zb, rad, 0, TAU); ctx.fill();
   }
-  const wake = ticker(el, draw);
+  const wake = ticker(el, draw, () => { if (st.sp) { st.idx = st.sp.idx; st.sp = null; st.glow = 1; } if (st.resolve) { const r = st.resolve; st.resolve = null; r(); } });
   return {
     el, wake,
-    set(n) { st.idx = Math.max(0, order.indexOf(n)); },
+    set(n) { st.idx = Math.max(0, order.indexOf(n)); st.sp = null; st.glow = 1; },
     spin(n) {
       const idx = Math.max(0, order.indexOf(n)), sp = { t: 0, wa0: st.wa, idx, phi: idx * th - Math.PI / 2, k: 0, hop: 0 };
       sp.va = -W0 * Math.exp(-TA / BT) - (IDLE + KICK * Math.exp(-TA / WT));
@@ -237,10 +237,10 @@ export function bigWheel({ segs, sfx, hub = '', cls = 'bw3', turns = 5, secs = 8
     ctx.fillStyle = '#f0d58a'; ctx.beginPath(); ctx.arc(0, 2, 5, 0, TAU); ctx.fill();
     ctx.restore();
   }
-  const wake = ticker(el, draw);
+  const wake = ticker(el, draw, () => { if (st.sp) { st.rot = st.sp.r0 + st.sp.d; st.win = st.sp.idx; st.sp = null; } if (st.resolve) { const r = st.resolve; st.resolve = null; r(); } });
   return {
     el, wake,
-    set(idx) { st.rot = -idx * th; st.win = -1; },
+    set(idx) { st.rot = -idx * th; st.win = idx; st.sp = null; },
     spin(idx) {
       const off = (Math.random() - 0.5) * th * 0.56, cur = st.rot;
       const base = -idx * th + off, delta = ((base - cur) % TAU + TAU) % TAU;
@@ -334,7 +334,7 @@ export async function coinFlip(stage, { sides, side, sfx, L }) {
 }
 
 // ------------------------------------------------------------------ bónus: caça ao tesouro (alvos tapados, escolhes um)
-export async function cashHunt(stage, { boxes, pick, sfx, L }) {
+export async function cashHunt(stage, { boxes, pick, sfx, L, secs = 7 }) {
   const n = boxes.length, cols = 4, SH = ['★', '♦', '♣', '♥', '♠', '●', '▲', '■'];
   const tiles = boxes.map((_, i) => h('button', { class: 'ch3t', style: `--hue:${(i * 47) % 360}` }, h('span', { class: 'fr' }, SH[i % SH.length]), h('span', { class: 'bk' }, '')));
   const grid = h('div', { class: 'ch3', style: `--cols:${cols}` }, tiles), bar = h('i'), msg = h('div', { class: 'ch3msg' }, h('span', null, L.shuffle), h('div', { class: 'ch3bar' }, bar));
@@ -352,9 +352,9 @@ export async function cashHunt(stage, { boxes, pick, sfx, L }) {
   }
   // 2) escolhes (ou escolhe-se sozinho ao fim de 7 s). O prémio já vinha decidido: qualquer alvo vale o mesmo sorteio.
   msg.firstChild.textContent = L.pick; grid.classList.add('live');
-  bar.style.transition = 'transform 7s linear'; requestAnimationFrame(() => { bar.style.transform = 'scaleX(0)'; });
+  bar.style.transition = `transform ${secs}s linear`; requestAnimationFrame(() => { bar.style.transform = 'scaleX(0)'; });
   const chosen = await new Promise((res) => {
-    const tm = setTimeout(() => res(Math.floor(Math.random() * n)), 7000);
+    const tm = setTimeout(() => res(Math.floor(Math.random() * n)), secs * 1000);
     tiles.forEach((tl, i) => tl.addEventListener('click', () => { clearTimeout(tm); res(i); }, { once: true }));
   });
   grid.classList.remove('live'); msg.firstChild.textContent = '';
