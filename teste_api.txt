@@ -1,0 +1,23 @@
+— contas
+— CSRF e pedidos
+— clientes
+— campos personalizados, fases, marca
+— módulos desligados
+— equipa e permissões
+— importar e exportar
+— leads e fases
+— chamadas
+— ligar no telemóvel
+— contratos
+— pontos
+— subscrições e pacotes
+— painel
+— marketplace e partilhas
+— fórum
+— sessões e conta
+— sessão renova-se com o uso
+— apoio webase (recuperar a palavra-passe do dono)
+— cópia diária no servidor
+— limites de entrada
+
+185 verificações ok, 0 falharam

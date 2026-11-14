@@ -1,0 +1,68 @@
+tentativa 1: site diferente, API 200
+tentativa 2: site diferente, API 200
+tentativa 3: site igual ao repositório, API 200
+--- estado do servidor:
+Atualizado: 2026-11-14T16:27:43Z
+Versão em uso: 72089390dde5252da68909e7b92339126c440da0
+Última tentativa: sem alterações
+App: active  Caddy: active
+Node: v22.23.3
+Memória (MB): total 3819, usada 1461, disponível 2357
+Disco: 8.6G usados de 38G (24%)
+Base de horários: 775327744 bytes, Nov 14 11:13
+Ligado desde: 2026-11-14 04:30:05
+Reinícios pela vigia: 2026-10-30T02:41:20Z app não respondia; reiniciada;2026-10-30T02:54:14Z app não respondia; reiniciada;2026-11-05T03:47:47Z /health sem resposta (1);
+PAROU pontualidade: active {"atualizado": "2026-11-14T16:27:42+00:00", "dia": "2026-11-14", "registos_hoje": {"tub": 12017, "cm": 309195, "cm_frota": 1228, "stcp": 7578}} último resumo: 2026-11-13.json
+caiu.pt recolha: Result=success ExecMainStatus=0 ActiveState=inactive 
+caiu.pt últimas linhas: {"paginas": 231, "produtos": 5442, "produtos_no_google": 5442, "reencaminhados": 3, "fora_de_hoje": 74, "estudos": [], "estudos_por_fazer": ["novembro de 2026: o mês ainda não acabou"], "dia": "2026;caiu-recolha.service: Deactivated successfully.;Finished caiu-recolha.service - caiu.pt - recolha dos preços do Continente, Pingo Doce e Auchan.;caiu-recolha.service: Consumed 37.036s CPU time, 42.8M memory peak, 0B memory swap peak.;
+caiu.pt API: active {"ok":true,"email":true,"push":true,"dia":"2026-11-14","produtos":16222}
+caiu.pt avisos: {"quando": "2026-11-14T13:32:16+00:00", "site": "https://caiu.pt", "email_ligado": true, "confirmacoes": 0, "avisos_email": 0, "avisos_push": 0, "semanal": 0, "termos_extra": 0, "estudos": 0}
+ganhas.pt API: active {"partilhas":3}
+webase API: active {"fundadores_restantes":100,"fundadores_total":100,"pagamentos":"desli
+crime API: active {"ok":true,"ronda":0,"fase":"play","jogadores":2}
+ganhas.pt páginas: Result=success ExecMainStatus=0  0 empresas publicadas; 0 profissões e 0 profissões num distrito com números da comunidade; 3 partilhas públicas;0 empresas publicadas; 0 profissões e 0 profissões num distrito com números da comunidade; 3 partilhas públicas;0 empresas publicadas; 0 profissões e 0 profissões num distrito com números da comunidade; 3 partilhas públicas;
+Vigia: 2026-11-14T16:27:16Z
+caiu.pt preços: há 175 min · DupliCasa anúncios: há 0 min · Goodman Supabase: última leitura há 547 min
+Últimas ações: 
+
+--- Últimas linhas da app ---
+[GTFS Engine] Carris Metropolitana sincronizada em 154ms: 717 linhas, 12752 paragens, 444 veículos em tempo real.
+[Fogos] 61 ocorrências ativas (1 incêndios)
+[Central Alerts Engine] A sincronizar alertas oficiais de todas as fontes reais...
+[Central Alerts Engine] Sincronização concluída. Total: 60 alertas auditados.
+[GTFS Engine] A sincronizar Carris Metropolitana através de API v2 oficial...
+[GTFS Engine] Carris Metropolitana sincronizada em 40ms: 717 linhas, 12752 paragens, 446 veículos em tempo real.
+[Central Alerts Engine] A sincronizar alertas oficiais de todas as fontes reais...
+[Central Alerts Engine] Sincronização concluída. Total: 60 alertas auditados.
+[GTFS Engine] A sincronizar Carris Metropolitana através de API v2 oficial...
+[GTFS Engine] Carris Metropolitana sincronizada em 45ms: 717 linhas, 12752 paragens, 433 veículos em tempo real.
+[Central Alerts Engine] A sincronizar alertas oficiais de todas as fontes reais...
+[Central Alerts Engine] Sincronização concluída. Total: 60 alertas auditados.
+[Fogos] 62 ocorrências ativas (1 incêndios)
+[GTFS Engine] A sincronizar Carris Metropolitana através de API v2 oficial...
+[GTFS Engine] Carris Metropolitana sincronizada em 90ms: 717 linhas, 12752 paragens, 430 veículos em tempo real.
+[Central Alerts Engine] A sincronizar alertas oficiais de todas as fontes reais...
+[Central Alerts Engine] Sincronização concluída. Total: 60 alertas auditados.
+[Catalog Engine] Revalidação periódica do catálogo nacional de transportes...
+[Polling Engine 5 min] Sincronização periódica geral das fontes...
+[GTFS Engine] A sincronizar Carris Metropolitana através de API v2 oficial...
+[GTFS Engine] Carris Metropolitana sincronizada em 42ms: 717 linhas, 12752 paragens, 424 veículos em tempo real.
+[Central Alerts Engine] A sincronizar alertas oficiais de todas as fontes reais...
+[Central Alerts Engine] Sincronização concluída. Total: 60 alertas auditados.
+[Fontes oficiais] 1 novas, 44 atualizadas, 0 resolvidas, 0 limpas
+[GTFS Engine] A sincronizar Carris Metropolitana através de API v2 oficial...
+[GTFS Engine] Carris Metropolitana sincronizada em 55ms: 717 linhas, 12752 paragens, 422 veículos em tempo real.
+[Central Alerts Engine] A sincronizar alertas oficiais de todas as fontes reais...
+[Fogos] 62 ocorrências ativas (1 incêndios)
+[Central Alerts Engine] Sincronização concluída. Total: 60 alertas auditados.
+[GTFS Engine] A sincronizar Carris Metropolitana através de API v2 oficial...
+[GTFS Engine] Carris Metropolitana sincronizada em 107ms: 717 linhas, 12752 paragens, 421 veículos em tempo real.
+[Central Alerts Engine] A sincronizar alertas oficiais de todas as fontes reais...
+[Central Alerts Engine] Sincronização concluída. Total: 60 alertas auditados.
+[GTFS Engine] A sincronizar Carris Metropolitana através de API v2 oficial...
+[GTFS Engine] Carris Metropolitana sincronizada em 81ms: 717 linhas, 12752 paragens, 418 veículos em tempo real.
+[Central Alerts Engine] A sincronizar alertas oficiais de todas as fontes reais...
+[Central Alerts Engine] Sincronização concluída. Total: 60 alertas auditados.
+[Fogos] 62 ocorrências ativas (1 incêndios)
+[GTFS Engine] A sincronizar Carris Metropolitana através de API v2 oficial...
+[GTFS Engine] Carris Metropolitana sincronizada em 77ms: 717 linhas, 12752 paragens, 411 veículos em tempo real.

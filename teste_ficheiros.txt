@@ -1,0 +1,9 @@
+— Excel feito à mão (título por cima, folha de instruções antes, datas, números)
+— CSV do Excel português (; e Windows-1252)
+— LibreOffice (.xlsx) e Excel antigo (.xls)
+— Google Contactos e Outlook
+— telemóvel (.vcf)
+— listas sem títulos
+— ficheiros estragados ou maliciosos
+
+43 verificações ok, 0 falharam
