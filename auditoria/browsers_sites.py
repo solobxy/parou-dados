@@ -2,8 +2,8 @@
 """Testa um site nos três motores (Chromium, Firefox e WebKit/Safari) e em aparelhos simulados.
 
 Uso: python3 auditoria/browsers_sites.py <pasta_saida> <url> [url...]
-Para cada url e aparelho: erros de JavaScript, rolagem lateral, elementos fora do ecrã e capturas
-(primeiro ecrã e página inteira). Escreve tudo em <pasta_saida>/resultado.txt.
+Para cada url e aparelho: erros de JavaScript, rolagem lateral, elementos fora do ecrã (sem contar os
+cortados por um pai), estado dos vídeos automáticos e capturas (primeiro ecrã e página inteira). Escreve tudo em <pasta_saida>/resultado.txt.
 """
 import os, sys
 from playwright.sync_api import sync_playwright
@@ -14,9 +14,15 @@ JS = '''() => {
   const W = innerWidth;
   const fora = [...document.querySelectorAll('body *')].filter(e => {
     if (e.closest('.isco,.vh,dialog,.barra,.xadrez,[hidden]')) return false;
-    const r = e.getBoundingClientRect(); return r.width > 0 && (r.right > W + 1 || r.left < -1);
+    const r = e.getBoundingClientRect(); if (!(r.width > 0 && (r.right > W + 1 || r.left < -1))) return false;
+    for (let a = e.parentElement; a && a !== document.body; a = a.parentElement) {
+      const o = getComputedStyle(a).overflowX, q = a.getBoundingClientRect();
+      if ((o === 'hidden' || o === 'clip') && q.left >= -1 && q.right <= W + 1) return false;  // cortado por um pai que cabe no ecrã
+    }
+    return true;
   }).slice(0, 5).map(e => e.tagName + '.' + (e.className && e.className.baseVal === undefined ? e.className : '') + ' ' + Math.round(e.getBoundingClientRect().right));
-  return {largura: W, scroll: document.documentElement.scrollWidth, fora};
+  const video = [...document.querySelectorAll('video[autoplay]')].map(v => (v.paused ? 'parado' : 'a tocar') + ' ' + v.currentTime.toFixed(1) + 's' + (v.error ? ' erro ' + v.error.code : ''));
+  return {largura: W, scroll: document.documentElement.scrollWidth, fora, video};
 }'''
 linhas = []
 with sync_playwright() as p:
@@ -44,6 +50,7 @@ with sync_playwright() as p:
             try:
                 pg.goto(url, wait_until='load', timeout=45000)
                 pg.wait_for_timeout(1500)
+                video = pg.evaluate('''() => [...document.querySelectorAll('video[autoplay]')].map(v => (v.paused ? 'parado' : 'a tocar') + ' ' + v.currentTime.toFixed(1) + 's')''')
                 pg.screenshot(path=os.path.join(saida, '%s-%d-topo.png' % (nome, n)))
                 alt = pg.evaluate('document.documentElement.scrollHeight')
                 for y in range(0, alt, 600):
@@ -58,7 +65,7 @@ with sync_playwright() as p:
                 except Exception:
                     pass  # páginas muito altas em ecrãs de densidade 3 passam o limite de 32767 px das capturas
                 ok = r['scroll'] <= r['largura'] and not r['fora'] and not erros
-                linhas.append('%s %s %s: %s %s %s' % ('OK ' if ok else 'MAU', nome, url, r, erros[:3], ''))
+                linhas.append('%s %s %s: %s %s %s' % ('OK ' if ok else 'MAU', nome, url, r, erros[:3], ('vídeo no início: %s' % video) if video else ''))
             except Exception as e:
                 linhas.append('ERRO %s %s: %s' % (nome, url, str(e)[:200]))
             ctx.close()
