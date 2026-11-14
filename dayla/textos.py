@@ -195,9 +195,6 @@ T = {
               '<p><strong>Statistics:</strong> the site counts visits without cookies and without storing your IP address.</p>'
               '<p><strong>WhatsApp:</strong> WhatsApp conversations follow WhatsApp’s (Meta’s) privacy rules.</p>'},
     # ---------- novos (desenho escuro) ----------
-    'video_aria': {'pt': 'Vídeo: a Dayla, de luvas pretas, a fazer um piercing', 'en': 'Video: Dayla, in black gloves, doing a piercing'},
-    'video_pausa': {'pt': 'Pausar o vídeo', 'en': 'Pause the video'},
-    'video_ver': {'pt': 'Ver o vídeo', 'en': 'Play the video'},
     'trab_lead': {'pt': 'Fotos de clientes, tiradas no estúdio depois de furar.', 'en': 'Client photos, taken in the studio right after piercing.'},
     'anterior': {'pt': 'Foto anterior', 'en': 'Previous photo'},
     'seguinte': {'pt': 'Foto seguinte', 'en': 'Next photo'},

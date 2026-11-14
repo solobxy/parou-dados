@@ -35,7 +35,7 @@ O h1 está partido em duas linhas fixas (`.l`), que sobem por máscara ao abrir.
 
 ## Movimento
 h1 por máscara (0,9 s), resto do herói a aparecer; faixa de xadrez vira casa a casa; pinos com onda; botões com mola curta.
-Vídeo do herói: sem som, em ciclo, pausa fora do ecrã e com botão de pausa; não arranca com redução de movimento
+Vídeo do herói: é fundo, não conteúdo. Toca sempre, sem som e sem botões (pedido do Dinis, 14/11/2026), em câmara lenta (2,5×, frames interpolados), estabilizado, com cor fria e dessaturada e um ciclo sem corte (dissolve de 1,2 s). Por cima, uma aproximação lenta (22 s) que desliga com redução de movimento; o vídeo continua. Pausa só quando sai do ecrã. Em poupança de bateria no iPhone arranca ao primeiro toque. Ficheiros com nome novo a cada versão (/vid/ fica 30 dias em cache).
 (fica o cartaz). Com redução de movimento tudo passa a fades curtos.
 
 ## Fotos
