@@ -1103,3 +1103,84 @@ Disallow: /
 	}
 	import crime
 }
+
+# DAYLA - site da Dayla Araújo Body Piercing (estático em /var/www/dayla, vindo de sites/dayla, construído por
+# dayla/construir.py) e agenda/painel em 127.0.0.1:3180 (dayla-agenda.service, código em dayla/agenda.py).
+(dayla) {
+	import estatisticas
+	encode zstd gzip
+	header {
+		Strict-Transport-Security "max-age=31536000"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		Permissions-Policy "geolocation=(), camera=(), microphone=(), payment=(), usb=()"
+		Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; manifest-src 'self'; form-action 'self'; frame-ancestors 'none'; base-uri 'none'; object-src 'none'"
+		-Server
+	}
+	root * /var/www/dayla
+	@escondidos path_regexp /\.
+	handle @escondidos {
+		respond 404
+	}
+	@estaticos path /fonts/* /og.jpg /logo.svg /icon.svg /apple-touch-icon.png /icon-192.png /icon-512.png
+	header @estaticos Cache-Control "public, max-age=2592000"
+	@paginas path / /index.html /en/ /en/index.html
+	header @paginas Cache-Control "no-cache"
+	@manifesto path /manifest.webmanifest /painel-dayla-r7k3/manifest.webmanifest
+	header @manifesto Content-Type "application/manifest+json"
+	# Painel da Dayla: fora dos motores de busca e sem guardar em cache
+	@painel path /painel-dayla-r7k3 /painel-dayla-r7k3/*
+	header @painel {
+		Cache-Control "no-store"
+		X-Robots-Tag "noindex, nofollow"
+	}
+	@avaliar path /avaliar /avaliar/*
+	header @avaliar {
+		Cache-Control "no-cache"
+		X-Robots-Tag "noindex, nofollow"
+	}
+	# Fotos que a Dayla envia pelo painel (até 3 MB; a agenda confirma a sessão, a origem e o formato)
+	handle /api/admin/fotos/* {
+		request_body {
+			max_size 4MB
+		}
+		reverse_proxy 127.0.0.1:3180
+	}
+	handle /api/* {
+		request_body {
+			max_size 16KB
+		}
+		reverse_proxy 127.0.0.1:3180
+	}
+	handle {
+		file_server
+	}
+	handle_errors {
+		root * /var/www/dayla
+		rewrite * /404.html
+		file_server
+	}
+}
+
+# Endereço de testes (funciona antes de o domínio apontar para aqui; fica fora do Google)
+dayla.{HOST_TESTE} {
+	header X-Robots-Tag "noindex, nofollow"
+	handle /robots.txt {
+		respond "User-agent: *
+Disallow: /
+" 200
+	}
+	import dayla
+}
+
+# INICIO daylapiercing.pt
+daylapiercing.pt {
+	import dayla
+}
+# FIM daylapiercing.pt
+
+# INICIO www.daylapiercing.pt
+www.daylapiercing.pt {
+	redir https://daylapiercing.pt{uri} permanent
+}
+# FIM www.daylapiercing.pt

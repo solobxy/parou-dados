@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+Disallow: /painel-dayla-r7k3/
+Disallow: /avaliar/
+Sitemap: https://daylapiercing.pt/sitemap.xml

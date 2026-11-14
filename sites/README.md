@@ -61,3 +61,18 @@ com permissões, marketplace e fórum). Site e app em `sites/webase/` (app em `/
   A API só envia para os serviços de notificações da Google, Mozilla, Apple e Microsoft.
 - Pagamentos desligados (`WB_PAGAMENTOS=desligado`): planos pagos e vendas pagas do marketplace ficam em
   «interesse»/«reservada» até haver um fornecedor de pagamentos.
+
+## dayla/
+Dayla Araújo Body Piercing, piercer independente no Porto (sem estúdio fixo). Desenho em `dayla/DESIGN.md`.
+
+- O site é construído: mudar `dayla/modelo.html` ou `dayla/textos.py` e correr `python3 dayla/construir.py`
+  (gera `sites/dayla/index.html` em português e `sites/dayla/en/index.html` em inglês, o logótipo e o sitemap).
+- Pedidos e painel: `dayla/agenda.py` (`dayla-agenda.service`, 127.0.0.1:3180, dados em `/var/lib/dayla-agenda`).
+  O site lê preços, dias, fotos, avaliações e joias em `/api/site`, por isso o que a Dayla muda aparece logo.
+- Painel: `/painel-dayla-r7k3/`. Password só como hash em `/etc/dayla-agenda/agenda.env` (`DAYLA_SENHA_HASH`);
+  se ela a mudar no painel, o hash novo fica na base de dados.
+- Testes: `python3 dayla/test_agenda.py` (também no guarda-testes).
+- Endereço de testes: `https://dayla.<ip-com-tracos>.sslip.io`, fora do Google. Domínio: blocos prontos para
+  `daylapiercing.pt` e `www.`; ligam-se sozinhos quando o registo A apontar para o servidor. Se o domínio for outro,
+  mudar o Caddyfile, a lista do `atualizar.sh`, `BASE` em `dayla/construir.py` e `ORIGENS`.
+- Estatísticas: site `dayla` no painel comum; o painel dela lê as visitas pela função `dayla_numeros` do Supabase.

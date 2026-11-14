@@ -57,7 +57,7 @@ sed -e "s/{HOST_TESTE}/$HOST_TESTE/g" -e "s/{ESTAT_CHAVE}/${ESTAT_CHAVE:-sem-cha
 # O domínio só entra quando já aponta para este servidor (senão o Caddy falhava o
 # certificado e ficava a tentar com esperas cada vez maiores)
 MEU_IP="$(echo "${HOST_TESTE%%.sslip.io}" | tr '-' '.')"
-for DOM in parou.pt www.parou.pt goodman.pt www.goodman.pt anjinho.pt www.anjinho.pt jinxed.world www.jinxed.world duplicasa.pt www.duplicasa.pt chave.pt www.chave.pt dinissousa.pt www.dinissousa.pt adribodypiercing.pt www.adribodypiercing.pt jaesta.pt www.jaesta.pt apalavrado.pt www.apalavrado.pt tapmoss.com www.tapmoss.com caiu.pt www.caiu.pt ganhas.pt www.ganhas.pt webase.pt www.webase.pt; do
+for DOM in parou.pt www.parou.pt goodman.pt www.goodman.pt anjinho.pt www.anjinho.pt jinxed.world www.jinxed.world duplicasa.pt www.duplicasa.pt chave.pt www.chave.pt dinissousa.pt www.dinissousa.pt adribodypiercing.pt www.adribodypiercing.pt jaesta.pt www.jaesta.pt apalavrado.pt www.apalavrado.pt tapmoss.com www.tapmoss.com caiu.pt www.caiu.pt ganhas.pt www.ganhas.pt webase.pt www.webase.pt daylapiercing.pt www.daylapiercing.pt; do
   # Pergunta a dois DNS: basta um dizer que o domínio aponta para aqui (durante uma mudança
   # de DNS uns ainda dão o endereço antigo e o domínio entrava e saía a cada 2 minutos)
   IPS="$( (dig +short +time=3 +tries=2 A "$DOM" @1.1.1.1; dig +short +time=3 +tries=2 A "$DOM" @8.8.8.8) 2>/dev/null | grep -E '^[0-9.]+$' | sort -u)"
@@ -447,6 +447,33 @@ if [ -f "$SERV/crime-api.service" ] && [ -f "$BASE/servidor/crime/server.mjs" ];
     systemctl restart crime-api.service && echo "$V" > /var/lib/parou-estado/crime-api.versao
   fi
   systemctl is-active --quiet crime-api.service || systemctl start crime-api.service
+fi
+
+# Dayla Araújo Body Piercing: site estático em sites/dayla (trocado de uma vez quando muda) e agenda/painel em
+# dayla/agenda.py (dayla-agenda.service, 127.0.0.1:3180, dados em /var/lib/dayla-agenda). A password do painel fica só
+# como hash em /etc/dayla-agenda/agenda.env (DAYLA_SENHA_HASH); se a Dayla a mudar no painel, o hash novo fica na base de dados.
+DYS=$BASE/servidor/sites/dayla
+if [ -f "$DYS/index.html" ] && ! diff -rq "$DYS" /var/www/dayla >/dev/null 2>&1; then
+  rm -rf /var/www/dayla.novo && mkdir -p /var/www && cp -r "$DYS" /var/www/dayla.novo \
+    && chmod -R a+rX /var/www/dayla.novo \
+    && rm -rf /var/www/dayla.velho && { [ ! -d /var/www/dayla ] || mv /var/www/dayla /var/www/dayla.velho; } \
+    && mv /var/www/dayla.novo /var/www/dayla && rm -rf /var/www/dayla.velho
+fi
+if [ -f "$SERV/dayla-agenda.service" ] && [ -f "$BASE/servidor/dayla/agenda.py" ]; then
+  install -d -m 750 -o root -g parou /etc/dayla-agenda
+  if [ ! -f /etc/dayla-agenda/agenda.env ]; then
+    printf 'ORIGENS=https://daylapiercing.pt https://www.daylapiercing.pt https://dayla.%s\n' "$HOST_TESTE" > /etc/dayla-agenda/agenda.env
+    chown root:parou /etc/dayla-agenda/agenda.env && chmod 640 /etc/dayla-agenda/agenda.env
+  fi
+  if ! cmp -s "$SERV/dayla-agenda.service" /etc/systemd/system/dayla-agenda.service; then
+    cp "$SERV/dayla-agenda.service" /etc/systemd/system/dayla-agenda.service && systemctl daemon-reload
+  fi
+  systemctl is-enabled --quiet dayla-agenda.service 2>/dev/null || systemctl enable --now dayla-agenda.service >/dev/null 2>&1
+  V=$( { sha256sum "$BASE/servidor/dayla/agenda.py" "$SERV/dayla-agenda.service" /etc/dayla-agenda/agenda.env 2>/dev/null; } | sha256sum | cut -c1-16)
+  if [ "$(cat /etc/dayla-agenda/versao 2>/dev/null)" != "$V" ]; then
+    systemctl restart dayla-agenda.service && echo "$V" > /etc/dayla-agenda/versao
+  fi
+  systemctl is-active --quiet dayla-agenda.service || systemctl start dayla-agenda.service
 fi
 
 # Vigia dos projetos (de 10 em 10 minutos): serviços parados, APIs bloqueadas, dados velhos e o Supabase do Goodman acordado
