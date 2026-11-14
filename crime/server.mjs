@@ -20,7 +20,7 @@ const SECURE = process.env.COOKIE_INSEGURO ? '' : '; Secure';
 const [fy, fm, fd] = (process.env.PRIMEIRA_RONDA || '2026-11-13').split('-').map(Number);
 const FIRST = { y: fy, m: fm, d: fd };
 const rng = cryptoRng();
-const VERSAO = 24;   // sobe quando o servidor muda, para se confirmar de fora que a versão nova já está a correr
+const VERSAO = 25;   // sobe quando o servidor muda, para se confirmar de fora que a versão nova já está a correr
 const ATOS_3S = +(process.env.ATOS_3S || 15), ATOS_MIN = +(process.env.ATOS_MIN || 400); // ações por conta: 15 em 3 s, 400 por minuto
 
 // ---------- relógio que nunca anda para trás ----------
@@ -222,7 +222,7 @@ function vista(p, now) {
     refill: E.refillPlan(p), detox: p.addiction > 0 ? E.detoxCost(p, now) : 0, detoxUses: E.detoxUses(p, now),
     mission: E.mission(p), wk: p.wk, stars: p.wk.map((_, k) => E.masteryStars(p, k)), counters: p.c,
     xp: p.xp, xpNeed: { F: E.practiceNeed(p, 'F'), I: E.practiceNeed(p, 'I'), C: E.practiceNeed(p, 'C') },
-    cash: p.cash, bank: p.bank, bankFeeBp: E.bankFeeBp(p), bj: E.bjPublic(p), casinoMax: E.casinoMax(p), gang: p.gang && gangues.get(p.gang) ? { id: p.gang, name: gangues.get(p.gang).nome, tag: gangues.get(p.gang).tag } : null, gb: p.gb || null, gangWait: p.gangLeft ? p.gangLeft + CFG.gang.rejoinMs : 0, respect: p.respect, peakRespect: p.peakRespect,
+    cash: p.cash, bank: p.bank, bankFeeBp: E.bankFeeBp(p), bj: E.bjPublic(p), casinoMax: E.casinoMax(p), gang: p.gang && gangues.get(p.gang) ? { id: p.gang, name: gangues.get(p.gang).nome, tag: gangues.get(p.gang).tag } : null, gb: p.gb || null, gangWait: p.gangLeft ? p.gangLeft + CFG.gang.rejoinMs : 0, heistsToday: p.gh.filter((x) => x > now - T.DAY).length, respect: p.respect, peakRespect: p.peakRespect,
     level: L, levelFrom: CFG.levels[L - 1], levelTo: CFG.levels[L] ?? null,
     jailUntil: p.jailUntil, jailTier: p.jailTier, bail: E.bailCost(p, now),
     hospUntil: p.hospUntil, medic: E.medicCost(p, now),
@@ -356,9 +356,10 @@ const qg = {
 const gangues = new Map();   // id -> { id, nome, tag, lider, cofre, sede, armaria, aberta, criada, membros: Map(conta -> { entrou, dado }), pedidos: Map(conta -> t) }
 function carregarGangues() {
   gangues.clear();
-  for (const g of qg.todas.all(ronda)) gangues.set(g.id, { id: g.id, nome: g.nome, tag: g.tag, lider: g.lider, cofre: g.cofre, sede: g.sede, armaria: g.armaria, aberta: !!g.aberta, criada: g.criada, membros: new Map(), pedidos: new Map() });
+  for (const g of qg.todas.all(ronda)) gangues.set(g.id, { id: g.id, nome: g.nome, tag: g.tag, lider: g.lider, cofre: g.cofre, sede: g.sede, armaria: g.armaria, aberta: !!g.aberta, criada: g.criada, membros: new Map(), pedidos: new Map(), op: null, opCool: 0, last: null });
   for (const m of qg.membros.all(ronda)) gangues.get(m.gangue)?.membros.set(m.conta, { entrou: m.entrou, dado: m.dado });
   for (const r of qg.pedidos.all(ronda)) gangues.get(r.gangue)?.pedidos.set(r.conta, r.t);
+  for (const r of qo.todas.all(ronda)) { const g = gangues.get(r.gangue); if (g) g.op = JSON.parse(r.dados); }
   // manda o registo das gangues: o bónus escrito em cada jogador acerta-se por ele
   const de = new Map(); for (const g of gangues.values()) for (const c of g.membros.keys()) de.set(c, g);
   for (const p of jogadores.values()) { const g = de.get(p.id); if (g) E.gangSet(p, g.id, g.sede, g.armaria); else if (p.gang) { p.gang = null; p.gb = null; } }
@@ -367,6 +368,117 @@ const gangueDe = (conta) => { const p = jogadores.get(conta); return p && p.gang
 const tagDe = (conta) => gangueDe(conta)?.tag || '';
 const NOME_G = /^[\p{L}\p{N}][\p{L}\p{N} .'-]{1,18}[\p{L}\p{N}]$/u, TAG_G = /^[A-Z0-9]{2,4}$/;
 const gravaG = (g) => qg.grava.run(g.lider, g.cofre, g.sede, g.armaria, g.aberta ? 1 : 0, ronda, g.id);
+// ---- golpes e tareias em grupo: uma operação aberta por gangue; quem alinha fica gravado, para um reinício não perder a stamina de ninguém ----
+db.exec('CREATE TABLE IF NOT EXISTS gangue_ops (ronda INTEGER NOT NULL, gangue TEXT NOT NULL, dados TEXT NOT NULL, PRIMARY KEY (ronda, gangue))');
+const qo = {
+  todas: db.prepare('SELECT * FROM gangue_ops WHERE ronda = ?'),
+  grava: db.prepare('INSERT OR REPLACE INTO gangue_ops (ronda, gangue, dados) VALUES (?, ?, ?)'),
+  apaga: db.prepare('DELETE FROM gangue_ops WHERE ronda = ? AND gangue = ?'),
+};
+const OP_MS = (kind) => (process.env.GANG_OP_MS ? +process.env.GANG_OP_MS : kind === 'hit' ? CFG.gang.hitMs : CFG.gang.opMs);
+const gravaOp = (g) => qo.grava.run(ronda, g.id, JSON.stringify(g.op));
+function resolverOp(g, now) {
+  const op = g.op;
+  if (!op || now < op.fecha) return;
+  const w = mundo(now);
+  if (w.n !== ronda || w.phase !== 'play') {   // a ronda fechou com a operação aberta: fica sem efeito
+    g.op = null; qo.apaga.run(ronda, g.id); return;
+  }
+  const todos = op.parts.map((c) => jogadores.get(c)).filter(Boolean), antes = new Map(todos.map((p) => [p.id, p.respect]));
+  const ps = todos.filter((p) => E.opReady(p, now)), fora = todos.filter((p) => !ps.includes(p));
+  const d = op.kind === 'hit' ? jogadores.get(op.alvo) : null, dAntes = d ? d.respect : 0;
+  const devolve = (p) => (op.kind === 'hit' ? E.hitRefund(p, now) : E.heistRefund(p, now, op.k));
+  for (const p of fora) devolve(p);
+  let res;
+  if (op.kind === 'heist') {
+    const H = CFG.gang.heists[op.k];
+    if (ps.length < H.need) { for (const p of ps) devolve(p); res = { kind: 'heist', k: op.k, cancelled: true, n: ps.length, need: H.need }; }
+    else { const r = E.heistResolve(ps, now, op.k, rng); res = { kind: 'heist', k: op.k, success: r.success, chanceBp: r.chanceBp, parts: r.parts.map((x) => ({ name: nomeDe(x.id), money: x.money, respect: x.respect, busted: !!x.busted })) }; }
+  } else if (ps.length < CFG.gang.hitNeed || !d || !E.hitCanResolve(d, now, g.id)) {
+    for (const p of ps) devolve(p);
+    res = { kind: 'hit', target: nomeDe(op.alvo), cancelled: true, n: ps.length, need: CFG.gang.hitNeed, gone: ps.length >= CFG.gang.hitNeed };
+  } else {
+    const r = E.hitResolve(ps, d, now, rng);
+    res = { kind: 'hit', target: nomeDe(op.alvo), win: r.win, chanceBp: r.chanceBp, targetLoss: r.targetLoss || 0, parts: r.parts.map((x) => ({ name: nomeDe(x.id), money: 0, respect: x.respect, busted: false })) };
+  }
+  g.op = null; g.last = { t: now, ...res };
+  if (!res.cancelled) g.opCool = now + CFG.gang.opCoolMs;
+  db.exec('BEGIN');
+  try {
+    for (const p of todos) {
+      guardar(p, now);
+      const dentro = ps.includes(p), eu = dentro ? (res.parts || []).find((x) => x.name === nomeDe(p.id)) : null;
+      if (dentro && !res.cancelled) contarDia(now, p.id, { resp: p.respect - antes.get(p.id), money: eu?.money || 0, best: eu?.money || 0, fights: res.kind === 'hit' && res.win ? 1 : 0, beaten: res.kind === 'hit' && !res.win ? 1 : 0, busts: eu?.busted ? 1 : 0 });
+      evento(p.id, now, { k: 'gop', gang: g.nome, kind: res.kind, c: res.kind === 'heist' ? CFG.gang.heists[res.k].id : null, target: res.target || null, cancelled: !!res.cancelled, gone: !!res.gone, out: !dentro, need: res.need || 0,
+        ok: res.kind === 'heist' ? !!res.success : !!res.win, n: ps.length, money: eu?.money || 0, respect: eu?.respect || 0, busted: !!eu?.busted });
+    }
+    if (d && !res.cancelled) {
+      guardar(d, now); contarDia(now, d.id, { resp: d.respect - dAntes, beaten: res.win ? 1 : 0 });
+      evento(d.id, now, { k: 'attacked', by: `[${g.tag}] ${g.nome}`, mode: 'beat', win: res.win, respect: d.respect - dAntes, money: 0, crew: ps.length });
+    }
+    qo.apaga.run(ronda, g.id);
+    db.exec('COMMIT');
+  } catch (e) { db.exec('ROLLBACK'); const n = ronda; ronda = -1; carregarRonda(n); console.error('op', e.message); return; }   // volta ao que estava gravado; tenta outra vez no segundo seguinte
+  if (!res.cancelled) {
+    if (res.kind === 'heist') noticia(now, { k: res.success ? 'gangHeist' : 'gangHeistFail', gang: g.nome, tag: g.tag, c: CFG.gang.heists[res.k].id, n: ps.length, money: res.parts.reduce((x, y) => x + y.money, 0) });
+    else noticia(now, { k: res.win ? 'gangHit' : 'gangHitFail', gang: g.nome, tag: g.tag, target: res.target, n: ps.length });
+  }
+}
+// as operações que já fecharam resolvem-se antes de qualquer ação ou vista
+function resolverOps(now) { for (const g of [...gangues.values()]) if (g.op && now >= g.op.fecha) resolverOp(g, now); }
+setInterval(() => {
+  const now = clock();
+  if (ronda < 0) return;
+  try { resolverOps(now); } catch (e) { console.error('op', e.message); }
+}, 1000).unref();
+// abrir, alinhar ou cancelar uma operação da gangue
+function agirOp(a, p, conta, now, world, ctx, g) {
+  const err = (c, x) => { throw new E.GameError(c, x); };
+  if (a.type === 'gangOp') {
+    if (g.op) err('OP_OPEN');
+    if (g.opCool > now) err('OP_WAIT', { until: g.opCool });
+    let op, r;
+    if (a.kind === 'hit') {
+      const c = q.contaPorNome.get(String(a.target || '').toLowerCase()), d = c && jogadores.get(c.id);
+      if (!d) err('NO_TARGET');
+      r = E.hitJoin(p, d, now, world);
+      op = { kind: 'hit', alvo: d.id, by: conta, abre: now, fecha: now + OP_MS('hit'), parts: [conta] };
+    } else {
+      const k = int(a.k), H = CFG.gang.heists[k];
+      if (!H) err('NO_CRIME');
+      if (g.sede < H.sede) err('NEED_SEDE', { need: H.sede });
+      r = E.heistJoin(p, now, world, k);
+      op = { kind: 'heist', k, by: conta, abre: now, fecha: now + OP_MS('heist'), parts: [conta] };
+    }
+    g.op = op; ctx.ops.push(() => gravaOp(g));
+    return { ...r, opened: true };
+  }
+  const op = g.op || err('NO_OP');
+  if (a.type === 'gangOpJoin') {
+    if (now >= op.fecha) err('NO_OP');
+    if (op.parts.includes(conta)) err('IN_OP');
+    if (op.parts.length >= CFG.gang.opMax) err('GANG_FULL');
+    const r = op.kind === 'hit' ? E.hitJoin(p, jogadores.get(op.alvo) || err('NO_TARGET'), now, world) : E.heistJoin(p, now, world, op.k);
+    op.parts.push(conta); ctx.ops.push(() => gravaOp(g));
+    return { ...r, joined: true };
+  }
+  if (a.type === 'gangOpCancel') {
+    if (op.by !== conta && g.lider !== conta) err('NOT_LEADER');
+    if (now >= op.fecha) err('NO_OP');
+    for (const c of op.parts) { const o = jogadores.get(c); if (!o) continue; if (op.kind === 'hit') E.hitRefund(o, now); else E.heistRefund(o, now, op.k); if (o !== p) ctx.outros.push(o); }
+    g.op = null; ctx.ops.push(() => qo.apaga.run(ronda, g.id));
+    return { ok: true, cancelled: true };
+  }
+  err('BAD_ACTION');
+}
+function vistaOp(g, conta, now) {
+  const op = g.op; if (!op) return null;
+  const ps = op.parts.map((c) => jogadores.get(c)).filter(Boolean), d = op.kind === 'hit' ? jogadores.get(op.alvo) : null;
+  return { kind: op.kind, k: op.k ?? null, target: d ? nomeDe(d.id) : null, by: nomeDe(op.by), mineToCancel: op.by === conta || g.lider === conta, closesAt: op.fecha, parts: op.parts.map(nomeDe), joined: op.parts.includes(conta),
+    need: op.kind === 'hit' ? CFG.gang.hitNeed : CFG.gang.heists[op.k].need, e: op.kind === 'hit' ? CFG.pvp.energy : CFG.gang.heists[op.k].e,
+    chance: !ps.length ? 0 : op.kind === 'hit' ? (d ? E.hitChanceBp(ps, d, now) : 0) : E.heistChanceBp(ps, op.k, now) };
+}
+
 // todas as ações de gangue. ctx junta o que tem de ser gravado no mesmo passo: outros jogadores, escritas na base de dados e o que se faz depois
 function agirGangue(a, p, conta, now, world, ctx) {
   const err = (c, x) => { throw new E.GameError(c, x); };
@@ -379,11 +491,13 @@ function agirGangue(a, p, conta, now, world, ctx) {
     ctx.ops.push(() => { qg.entra.run(ronda, o.id, g.id, now, 0); qg.despede.run(ronda, o.id); });
   };
   const sair = (g, o) => {
+    if (g.op && g.op.parts.includes(o.id)) err('IN_OP');   // quem alinhou numa operação fica até ela acabar
     E.gangLeave(o, now); g.membros.delete(o.id);
     ctx.ops.push(() => qg.sai.run(ronda, o.id));
-    if (!g.membros.size) { gangues.delete(g.id); ctx.ops.push(() => { qg.apaga.run(ronda, g.id); qg.apagaPedidos.run(ronda, g.id); qg.apagaChat.run(ronda, g.id); }); }
+    if (!g.membros.size) { gangues.delete(g.id); ctx.ops.push(() => { qo.apaga.run(ronda, g.id); qg.apaga.run(ronda, g.id); qg.apagaPedidos.run(ronda, g.id); qg.apagaChat.run(ronda, g.id); }); }
     else if (g.lider === o.id) { g.lider = [...g.membros].sort((x, y) => x[1].entrou - y[1].entrou)[0][0]; ctx.ops.push(() => gravaG(g)); }   // a chefia passa para o membro mais antigo
   };
+  if (a.type === 'gangOp' || a.type === 'gangOpJoin' || a.type === 'gangOpCancel') return agirOp(a, p, conta, now, world, ctx, minha());
   if (a.type !== 'gangCreate' && a.type !== 'gangDonate') E.touch(p, now);
   switch (a.type) {
     case 'gangCreate': {
@@ -393,7 +507,7 @@ function agirGangue(a, p, conta, now, world, ctx) {
       for (const g of gangues.values()) { if (g.nome.toLowerCase() === nome.toLowerCase()) err('GANG_NAME_TAKEN'); if (g.tag === tag) err('GANG_TAG_TAKEN'); }
       const r = E.gangCreate(p, now, world), id = randomBytes(6).toString('base64url');
       E.gangSet(p, id, 1, 0);
-      gangues.set(id, { id, nome, tag, lider: conta, cofre: 0, sede: 1, armaria: 0, aberta: true, criada: now, membros: new Map([[conta, { entrou: now, dado: 0 }]]), pedidos: new Map() });
+      gangues.set(id, { id, nome, tag, lider: conta, cofre: 0, sede: 1, armaria: 0, aberta: true, criada: now, membros: new Map([[conta, { entrou: now, dado: 0 }]]), pedidos: new Map(), op: null, opCool: 0, last: null });
       for (const x of gangues.values()) x.pedidos.delete(conta);
       ctx.ops.push(() => { qg.nova.run(ronda, id, nome, nome.toLowerCase(), tag, conta, now); qg.entra.run(ronda, conta, id, now, 0); qg.despede.run(ronda, conta); });
       ctx.depois.push(() => noticia(now, { k: 'gangNew', name: nomeDe(conta), gang: nome, tag }));
@@ -463,6 +577,7 @@ function agirGangue(a, p, conta, now, world, ctx) {
   err('BAD_ACTION');
 }
 function vistaGangue(conta, now) {
+  resolverOps(now);
   const resumo = (g) => { let resp = 0; for (const c of g.membros.keys()) resp += jogadores.get(c)?.respect || 0;
     return { id: g.id, name: g.nome, tag: g.tag, members: g.membros.size, slots: E.gangSlots(g.sede), sede: g.sede, armaria: g.armaria, open: g.aberta, respect: resp, leader: nomeDe(g.lider) }; };
   const list = [...gangues.values()].map(resumo).sort((a, b) => b.respect - a.respect || a.name.localeCompare(b.name)).slice(0, 50).map((x, i) => ({ ...x, pos: i + 1, asked: gangues.get(x.id).pedidos.has(conta) }));
@@ -472,6 +587,7 @@ function vistaGangue(conta, now) {
     out.mine = { ...resumo(mine), pos: list.find((x) => x.id === mine.id)?.pos || null, fund: mine.cofre, leaderMe: mine.lider === conta,
       roster: [...mine.membros].map(([c, m]) => ({ ...quem(c), given: m.dado, leader: c === mine.lider, me: c === conta })).sort((a, b) => b.respect - a.respect),
       asks: mine.lider === conta ? [...mine.pedidos.keys()].map(quem) : [],
+      op: vistaOp(mine, conta, now), last: mine.last, opCool: mine.opCool,
       chat: qg.chat.all(ronda, mine.id).reverse().map((m) => ({ id: m.id, t: m.t, name: nomeDe(m.conta), me: m.conta === conta, txt: m.txt })) };
   }
   return out;
@@ -579,6 +695,7 @@ function evento(conta, now, dados) { q.novoEvento.run(conta, now, JSON.stringify
 function agir(conta, corpo, now) {
   const w = mundo(now);
   if (w.phase !== 'play') throw new E.GameError('ROUND_CLOSED');
+  carregarRonda(w.n); resolverOps(now);
   const p = jogadorDe(conta, now, w);
   const world = { start: w.start, playEnd: w.playEnd };
   const a = corpo || {};

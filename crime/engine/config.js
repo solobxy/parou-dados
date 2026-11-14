@@ -151,6 +151,17 @@ export const CFG = {
     armaria: [50000, 200000, 800000, 3000000, 12000000],      // preço de cada nível da armaria (começa em 0)
     lootBpPer: 200, fightBpPer: 300,                          // +2% de saque por nível de sede; +3% de ataque e defesa por nível de armaria
     donateMin: 100, rejoinMs: 1 * HOUR, chatMax: 200,
+    // Golpes em grupo: um membro abre, os outros alinham (cada um paga a stamina ao alinhar) e ao fim de 2 minutos resolve-se.
+    // A dificuldade compara-se com a soma das stats de quem foi; o saque é por cabeça. No máximo 3 por jogador em 24 h.
+    heists: [
+      { id: 'carrinha', need: 2, sede: 1, e: 20, D: 150, min: 3000, max: 4500, r: 14, jailMin: 6, bailAs: 5, w: { I: 40, F: 60, C: 0 } },
+      { id: 'casino', need: 3, sede: 2, e: 30, D: 450, min: 16000, max: 24000, r: 22, jailMin: 9, bailAs: 8, w: { I: 50, F: 0, C: 50 } },
+      { id: 'banco', need: 4, sede: 3, e: 40, D: 1000, min: 75000, max: 105000, r: 30, jailMin: 10, bailAs: 9, w: { I: 40, F: 30, C: 30 } },
+    ],
+    heistPerDay: 3, opMs: 2 * MIN, hitMs: 90 * 1000, opCoolMs: 5 * MIN, opMax: 8,
+    // Tareia em grupo: soma-se o ataque de todos (a 85%), o alvo só vai uma vez para o hospital (30 min) e só perde respeito uma vez;
+    // cada atacante ganha 70% do que ganharia sozinho, com o mesmo desconto por repetir o alvo.
+    hitNeed: 2, hitTeamBp: 8500, hitShareBp: 7000, hitHospBp: 15000,
   },
   // casa: cada nível dá respeito e deixa subir as melhorias até esse nível; a melhoria n custa uma parte do preço da casa n
   house: {

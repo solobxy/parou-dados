@@ -461,3 +461,63 @@ test('mesas ao vivo: apostar tira o dinheiro certo, junta apostas iguais, respei
   const q2 = mk(); q2.cash = 60; assert.throws(() => E.tableBet(q2, NOW, W, 'wheel', [{ s: '1', amt: 100 }]), (e) => e.code === 'NO_CASH');
   assert.equal(E.tableClear(p, r.bets).back, 250); assert.equal(p.cash, 5000);
 });
+
+test('golpe em grupo: regras de entrada, devolução exata, parte igual para todos e a percentagem mostrada é a que sai', () => {
+  const G = CFG.gang, H = G.heists[0];
+  const membro = (st = 60) => { const p = mk(); p.cash = 1000; p.stats = { F: st, T: 10, I: st, C: st }; setResp(p, 100); E.gangSet(p, 'g1', 1, 0); return p; };
+  const solto = mk(); assert.throws(() => E.heistJoin(solto, NOW, W, 0), code('NO_GANG'));
+  const a = membro(); assert.throws(() => E.heistJoin(a, NOW, W, 9), code('NO_CRIME'));
+  // entrar gasta stamina e uma das 3 vezes do dia; devolver repõe as duas coisas
+  const e0 = a.energy; E.heistJoin(a, NOW, W, 0); assert.equal(a.energy, e0 - H.e); assert.equal(a.gh.length, 1);
+  E.heistRefund(a, NOW, 0); assert.equal(a.energy, e0); assert.equal(a.gh.length, 0);
+  for (let i = 0; i < G.heistPerDay; i++) { a.energy = 100; E.heistJoin(a, NOW + i, W, 0); }
+  a.energy = 100; const antes = JSON.stringify([a.energy, a.gh, a.cash]);
+  assert.throws(() => E.heistJoin(a, NOW + 10, W, 0), code('HEIST_LIMIT')); assert.equal(JSON.stringify([a.energy, a.gh, a.cash]), antes);
+  E.heistJoin(a, NOW + T.DAY + 5, W, 0);   // no dia seguinte volta a poder
+  const fraco = membro(); fraco.energy = H.e - 1; assert.throws(() => E.heistJoin(fraco, NOW, W, 0), code('NO_ENERGY'));
+  // quando corre bem todos levam o mesmo (mais o bónus de saque da gangue de cada um) e o respeito do golpe
+  const b = membro(), c = membro(); E.gangSet(c, 'g1', 3, 0);
+  let r = E.heistResolve([b, c], NOW, 0, always);
+  assert.equal(r.success, true); assert.equal(r.parts[0].money, Math.floor((H.min * (10000 + G.lootBpPer)) / 10000)); assert.equal(r.parts[1].money, Math.floor((H.min * (10000 + 3 * G.lootBpPer)) / 10000));
+  assert.equal(b.cash, 1000 + r.parts[0].money); assert.equal(b.respect, 100 + H.r); assert.equal(c.respect, 100 + H.r);
+  // quando corre mal ninguém ganha nada
+  const d = membro(), e = membro(); r = E.heistResolve([d, e], NOW, 0, never);
+  assert.equal(r.success, false); assert.equal(d.cash, 1000); assert.equal(d.respect, 100); assert.equal(r.parts.every((x) => x.money === 0 && !x.busted), true);
+  // mais gente = mais hipóteses, sempre dentro dos limites
+  const um = E.heistChanceBp([membro()], 0, NOW), dois = E.heistChanceBp([membro(), membro()], 0, NOW), oito = E.heistChanceBp(Array.from({ length: 8 }, () => membro()), 0, NOW);
+  assert.ok(um < dois && dois < oito && oito <= CFG.chance.maxBp && um >= CFG.chance.minBp);
+  // 60 000 golpes a dois: sai a percentagem mostrada e a média do saque é a do intervalo
+  const rng = seededRng(9917); let ok = 0, soma = 0; const N = 60000;
+  const x = membro(75), y = membro(75), mostrada = E.heistChanceBp([x, y], 0, NOW) / 10000;
+  for (let i = 0; i < N; i++) { x.jailUntil = 0; y.jailUntil = 0; const s = E.heistResolve([x, y], NOW, 0, rng); if (s.success) { ok++; soma += s.parts[0].money; } }
+  perto(ok / N, mostrada, 0.008, 'sucesso do golpe em grupo');
+  perto(soma / ok, ((H.min + H.max) / 2) * (1 + G.lootBpPer / 10000), 25, 'saque médio por cabeça');
+});
+
+test('tareia em grupo: a força junta-se com desconto, o alvo só perde uma vez e ninguém ganha mais do que a solo', () => {
+  const G = CFG.gang, P = CFG.pvp;
+  const lutador = (gang, f = 60) => { const p = mk(); p.stats = { F: f, T: f, I: 10, C: 10 }; setResp(p, 200); p.shieldUntil = 0; if (gang) E.gangSet(p, gang, 1, 0); return p; };
+  const a = lutador('g1'), b = lutador('g1'), d = lutador('g2'), semG = lutador(null);
+  assert.throws(() => E.hitJoin(semG, d, NOW, W), code('NO_GANG'));
+  assert.throws(() => E.hitJoin(a, b, NOW, W), code('SAME_GANG'));
+  const e0 = a.energy; E.hitJoin(a, d, NOW, W); assert.equal(a.energy, e0 - P.energy); E.hitRefund(a, NOW); assert.equal(a.energy, e0);
+  // dois iguais contra um: melhor do que um sozinho, pior do que a soma inteira
+  const solo = E.attackChanceBp(a, d, NOW), dupla = E.hitChanceBp([a, b], d, NOW);
+  assert.ok(dupla > solo); assert.ok(dupla < E.chanceBp(E.attackPower(a, NOW) + E.attackPower(b, NOW), E.defensePower(d, NOW)));
+  // ganhar: cada um leva 70% do que levaria a solo; o alvo perde uma vez só e vai para o hospital mais tempo
+  const base = E.pvpBaseGain(a, d), cada = Math.floor((base * G.hitShareBp) / 10000);
+  let r = E.hitResolve([a, b], d, NOW, always);
+  assert.equal(r.win, true); assert.deepEqual(r.parts.map((x) => x.respect), [cada, cada]); assert.ok(cada < base);
+  assert.equal(r.targetLoss, Math.floor(cada / P.lossDiv)); assert.equal(d.respect, 200 - r.targetLoss);
+  assert.equal(d.hospUntil, NOW + Math.floor((P.beatHospMs * G.hitHospBp) / 10000));
+  assert.equal(E.hitCanResolve(d, NOW + 1000), false);
+  // repetir no mesmo alvo rende metade (mesma regra das lutas a solo)
+  d.hospUntil = 0; d.protectUntil = 0; d.capUntil = 0; const antes = a.respect;
+  r = E.hitResolve([a, b], d, NOW + 5000, always); assert.ok(a.respect - antes <= Math.ceil(cada / 2));
+  // perder: quem atacou perde respeito e vai para o hospital; o alvo fica como estava ou ganha a defesa
+  const x = lutador('g1'), y = lutador('g1'), z = lutador('g2');
+  r = E.hitResolve([x, y], z, NOW, never);
+  assert.equal(r.win, false); assert.ok(x.respect < 200 && y.respect < 200); assert.ok(x.hospUntil > NOW && y.hospUntil > NOW); assert.equal(z.respect, 200 + P.defendGain); assert.equal(z.hospUntil, 0);
+  // o alvo que entretanto entrou na mesma gangue já não leva
+  const w = lutador('g1'); assert.equal(E.hitCanResolve(w, NOW, 'g1'), false); assert.equal(E.hitCanResolve(w, NOW, 'g9'), true);
+});

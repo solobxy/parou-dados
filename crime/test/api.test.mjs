@@ -411,3 +411,84 @@ test('gangues: criar, entrar, cofre sem volta, melhorias que dão bónus a todos
   await parar(); await arrancar();
   g = await gangue(A, '10.0.9.50'); assert.equal(g.list.length, 0); assert.equal((await A.estado()).gb, null);
 });
+
+test('gangues: golpe em grupo e tareia em grupo — alinhar, falta de gente devolve tudo, contas certas, sobrevive a um reinício', async () => {
+  const ips = { A: '10.0.9.60', B: '10.0.9.61', C: '10.0.9.62', V: '10.0.9.63' };
+  const A = await contaNova('GolpeA', ips.A), B = await contaNova('GolpeB', ips.B), C = await contaNova('GolpeC', ips.C), V = await contaNova('GolpeV', ips.V);
+  for (const x of [A, B, C, V]) await x.estado();
+  const forte = (e) => { e.cash = 1_000_000; e.respect = 100; e.peakRespect = 100; for (const s of Object.keys(e.stats)) e.stats[s] = 400; e.energy = 100; };
+  ENV_EXTRA = { ATOS_3S: '100000', ATOS_MIN: '1000000', GANG_OP_MS: '700' };
+  await mexer({ GolpeA: forte, GolpeB: forte, GolpeC: forte, GolpeV: (e) => { e.respect = 100; e.peakRespect = 100; } });
+  const ag = (x, ip, body) => cru(x.cookie, ip, body), gangue = async (x, ip) => (await fetch(BASE + '/api/gang', { headers: { cookie: x.cookie, 'X-Forwarded-For': ip } })).json();
+  const espera = (ms) => new Promise((r) => setTimeout(r, ms));
+  let r = await ag(A, ips.A, { type: 'gangCreate', name: 'Golpistas', tag: 'GLP' }); assert.equal(r.status, 200, JSON.stringify(r.body));
+  const gid = (await gangue(A, ips.A)).mine.id;
+  for (const [x, ip] of [[B, ips.B], [C, ips.C]]) { r = await ag(x, ip, { type: 'gangJoin', id: gid }); assert.equal(r.body.result.joined, true); }
+  // regras para abrir
+  r = await ag(V, ips.V, { type: 'gangOp', kind: 'heist', k: 0 }); assert.equal(r.body.error, 'NO_GANG');
+  r = await ag(A, ips.A, { type: 'gangOp', kind: 'heist', k: 1 }); assert.equal(r.body.error, 'NEED_SEDE');
+  r = await ag(A, ips.A, { type: 'gangOp', kind: 'heist', k: 99 }); assert.equal(r.body.error, 'NO_CRIME');
+  r = await ag(A, ips.A, { type: 'gangOpJoin' }); assert.equal(r.body.error, 'NO_OP');
+  // sozinho não dá: a stamina e a vez voltam
+  r = await ag(A, ips.A, { type: 'gangOp', kind: 'heist', k: 0 }); assert.equal(r.status, 200, JSON.stringify(r.body)); assert.equal(r.body.me.energy, 80);
+  r = await ag(A, ips.A, { type: 'gangOp', kind: 'heist', k: 0 }); assert.equal(r.body.error, 'OP_OPEN');
+  r = await ag(A, ips.A, { type: 'gangOpJoin' }); assert.equal(r.body.error, 'IN_OP');
+  r = await ag(A, ips.A, { type: 'gangLeave' }); assert.equal(r.body.error, 'IN_OP');
+  let g = await gangue(B, ips.B); assert.deepEqual(g.mine.op.parts, ['GolpeA']); assert.equal(g.mine.op.need, 2); assert.equal(g.mine.op.joined, false); assert.ok(g.mine.op.chance > 0);
+  await espera(1000);
+  g = await gangue(A, ips.A); assert.equal(g.mine.op, null); assert.equal(g.mine.last.cancelled, true); assert.equal((await A.estado()).energy, 100);
+  // três a alinhar: paga-se a todos por igual, ou ninguém leva nada
+  r = await ag(A, ips.A, { type: 'gangOp', kind: 'heist', k: 0 }); assert.equal(r.status, 200);
+  r = await ag(B, ips.B, { type: 'gangOpJoin' }); assert.equal(r.body.result.joined, true); assert.equal(r.body.me.energy, 80);
+  r = await ag(C, ips.C, { type: 'gangOpJoin' }); assert.equal(r.status, 200);
+  await espera(1000);
+  g = await gangue(A, ips.A); const L = g.mine.last;
+  assert.equal(L.kind, 'heist'); assert.equal(L.cancelled, undefined); assert.equal(L.parts.length, 3);
+  for (const [x, nome] of [[A, 'GolpeA'], [B, 'GolpeB'], [C, 'GolpeC']]) {
+    const e = await x.estado(), eu = L.parts.find((y) => y.name === nome);
+    assert.equal(e.cash, 1_000_000 - (nome === 'GolpeA' ? 25_000 : 0) + eu.money);
+    if (L.success) { assert.ok(eu.money >= 3000 && eu.money <= Math.floor(4500 * 1.02)); assert.equal(eu.money, L.parts[0].money); assert.equal(e.respect, 114); }
+    else { assert.equal(eu.money, 0); assert.equal(e.respect, 100); assert.equal(eu.busted, e.jailUntil > 0); }
+  }
+  const ev = await (await fetch(BASE + '/api/events', { headers: { cookie: B.cookie, 'X-Forwarded-For': ips.B } })).json();
+  assert.equal(ev.list[0].k, 'gop'); assert.equal(ev.list[0].ok, !!L.success);
+  const feed = (await (await fetch(BASE + '/api/state', { headers: { cookie: V.cookie, 'X-Forwarded-For': ips.V } })).json()).feed;
+  assert.ok(feed.some((n) => n.k === (L.success ? 'gangHeist' : 'gangHeistFail') && n.tag === 'GLP' && n.n === 3));
+  r = await ag(A, ips.A, { type: 'gangOp', kind: 'heist', k: 0 });
+  assert.ok(['OP_WAIT', 'IN_JAIL'].includes(r.body.error), JSON.stringify(r.body));
+  // uma operação aberta sobrevive a um reinício; cancelar devolve a stamina a quem alinhou
+  const livres = (e) => { e.jailUntil = 0; e.hospUntil = 0; e.energy = 100; };
+  ENV_EXTRA = { ATOS_3S: '100000', ATOS_MIN: '1000000', GANG_OP_MS: '60000' };
+  await mexer({ GolpeA: livres, GolpeB: livres, GolpeC: livres });
+  r = await ag(A, ips.A, { type: 'gangOp', kind: 'heist', k: 0 }); assert.equal(r.status, 200, JSON.stringify(r.body));
+  r = await ag(B, ips.B, { type: 'gangOpJoin' }); assert.equal(r.status, 200);
+  await parar(); await arrancar();
+  g = await gangue(C, ips.C); assert.deepEqual(g.mine.op.parts, ['GolpeA', 'GolpeB']);
+  r = await ag(C, ips.C, { type: 'gangOpCancel' }); assert.equal(r.body.error, 'NOT_LEADER');
+  r = await ag(A, ips.A, { type: 'gangOpCancel' }); assert.equal(r.status, 200); assert.equal(r.body.me.energy, 100);
+  assert.equal((await B.estado()).energy, 100);
+  g = await gangue(A, ips.A); assert.equal(g.mine.op, null);
+  // tareia em grupo: precisa de dois; o alvo perde uma vez e vai para o hospital, ou vão os que atacaram
+  ENV_EXTRA = { ATOS_3S: '100000', ATOS_MIN: '1000000', GANG_OP_MS: '700' };
+  await parar(); await arrancar();
+  r = await ag(A, ips.A, { type: 'gangOp', kind: 'hit', target: 'GolpeB' }); assert.equal(r.body.error, 'SAME_GANG');
+  r = await ag(A, ips.A, { type: 'gangOp', kind: 'hit', target: 'ninguem' }); assert.equal(r.body.error, 'NO_TARGET');
+  r = await ag(A, ips.A, { type: 'gangOp', kind: 'hit', target: 'golpev' }); assert.equal(r.status, 200, JSON.stringify(r.body)); assert.equal(r.body.me.energy, 80);
+  await espera(1000);
+  g = await gangue(A, ips.A); assert.equal(g.mine.last.kind, 'hit'); assert.equal(g.mine.last.cancelled, true); assert.equal((await A.estado()).energy, 100);
+  const antes = { A: (await A.estado()).respect, B: (await B.estado()).respect, V: (await V.estado()).respect };
+  r = await ag(A, ips.A, { type: 'gangOp', kind: 'hit', target: 'GolpeV' }); assert.equal(r.status, 200);
+  r = await ag(B, ips.B, { type: 'gangOpJoin' }); assert.equal(r.status, 200);
+  g = await gangue(C, ips.C); assert.equal(g.mine.op.kind, 'hit'); assert.equal(g.mine.op.target, 'GolpeV'); assert.equal(g.mine.op.parts.length, 2);
+  await espera(1000);
+  g = await gangue(A, ips.A); const H = g.mine.last;
+  assert.equal(H.kind, 'hit'); assert.equal(H.target, 'GolpeV'); assert.equal(H.parts.length, 2);
+  const a2 = await A.estado(), b2 = await B.estado(), sv = await (await fetch(BASE + '/api/state', { headers: { cookie: V.cookie, 'X-Forwarded-For': ips.V } })).json(), v2 = sv.me;
+  assert.equal(a2.respect - antes.A, H.parts.find((x) => x.name === 'GolpeA').respect);
+  assert.equal(b2.respect - antes.B, H.parts.find((x) => x.name === 'GolpeB').respect);
+  if (H.win) { assert.ok(v2.hospUntil > sv.now); assert.equal(antes.V - v2.respect, H.targetLoss); assert.ok(a2.respect > antes.A && b2.respect > antes.B); assert.ok(H.targetLoss <= Math.max(a2.respect - antes.A, b2.respect - antes.B)); }
+  else { assert.ok(a2.hospUntil > sv.now && b2.hospUntil > sv.now); assert.ok(v2.respect >= antes.V); assert.ok(a2.respect < antes.A); }
+  const evV = await (await fetch(BASE + '/api/events', { headers: { cookie: V.cookie, 'X-Forwarded-For': ips.V } })).json();
+  assert.equal(evV.list[0].k, 'attacked'); assert.equal(evV.list[0].by, '[GLP] Golpistas'); assert.equal(evV.list[0].crew, 2);
+  assert.equal(a2.cash, (await A.estado()).cash);
+});

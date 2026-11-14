@@ -69,6 +69,21 @@ function contas(kind, a0, a, d0, d, t, res, arg) {
       if (a.bank !== a0.bank) bad('mesa mexeu no banco');
       break;
     }
+    case 'heist': {
+      const H = CFG.gang.heists[arg], eu = (res.parts || []).find((x) => x.id === a.id);
+      if (res.refund || !res.success) { if (dm !== 0 || dr !== 0) bad('golpe em grupo falhado ou devolvido mexeu no dinheiro ou no respeito'); }
+      else if (dm !== eu.money || eu.money < H.min || eu.money > Math.floor((H.max * (10000 + CFG.gang.lootBpPer * CFG.gang.maxLevel)) / 10000) || dr !== H.r) bad('golpe em grupo: saque ou respeito');
+      if (res.refund && a.energy !== Math.min(CFG.energy.max, touched(a0, t).energy)) bad('golpe em grupo: a stamina não voltou');
+      break;
+    }
+    case 'hit': {
+      const eu = (res.parts || []).find((x) => x.id === a.id);
+      if (dm !== 0) bad('tareia em grupo mexeu no dinheiro');
+      if (res.refund) { if (dr !== 0) bad('tareia devolvida mexeu no respeito'); }
+      else if (dr !== Math.max(eu.respect, -a0.respect) || (res.win ? eu.respect < 0 : eu.respect > 0)) bad('tareia em grupo: respeito');
+      if (!res.refund && res.win && d.respect - d0.respect !== -Math.min(res.targetLoss, d0.respect)) bad('tareia em grupo: o alvo perdeu mais de uma vez');
+      break;
+    }
     case 'gangCreate': if (dm !== -CFG.gang.createCost || dr !== 0) bad('criar gangue'); break;
     case 'gangDonate': if (dm !== -arg || dr !== 0 || arg < CFG.gang.donateMin) bad('dar ao cofre'); break;
     case 'gangLeave': if (dm !== 0 || dr !== 0) bad('sair da gangue'); break;
@@ -118,9 +133,10 @@ for (let n = 0; n < ACTIONS; n++) {
   const p = pick(players);
   const d = pick(players);
   if (r.chance(200)) { p.cash += r.int(0, 5e6); } // dá dinheiro para chegar a tudo
+  if (r.chance(400) && !p.gang) E.gangSet(p, 'g' + r.int(1, 3), r.int(1, 5), r.int(0, 5)); // o servidor pôs-te numa gangue (para os golpes e tareias em grupo terem quem os faça)
   if (r.chance(2500)) { p.energy = r.int(0, CFG.energy.max); p.energyT = Math.min(p.energyT, p.t); } // gasta stamina para chegar à discoteca, às putas e ao hospital
   const before = touched(p, t), beforeD = touched(d, t), origD = structuredClone(d), origP = structuredClone(p);
-  const kind = pick(['casino', 'casino', 'table', 'gangCreate', 'gangDonate', 'gangLeave', 'crime', 'crimeAll', 'drug', 'refill', 'detox', 'claim', 'class', 'avatar', 'hooker', 'cure', 'house', 'houseUp', 'train', 'buyBiz', 'collect', 'port', 'collectPort', 'deposit', 'withdraw', 'gear', 'attack', 'bail', 'medic', 'luxury']);
+  const kind = pick(['casino', 'casino', 'table', 'heist', 'hit', 'gangCreate', 'gangDonate', 'gangLeave', 'crime', 'crimeAll', 'drug', 'refill', 'detox', 'claim', 'class', 'avatar', 'hooker', 'cure', 'house', 'houseUp', 'train', 'buyBiz', 'collect', 'port', 'collectPort', 'deposit', 'withdraw', 'gear', 'attack', 'bail', 'medic', 'luxury']);
   let res, arg;
   try {
     switch (kind) {
@@ -147,6 +163,19 @@ for (let n = 0; n < ACTIONS; n++) {
         const out = E.tableDraw(g, game), win = E.tablePay(g, mine, out);
         if (!before) E.tableCredit(p, win);
         res = { ok: true, g, total: E.tableTotal(mine), win: before ? 0 : win, before };
+        break;
+      }
+      case 'heist': {
+        arg = r.chance(9000) ? r.int(0, 2) : anyInt();
+        E.heistJoin(p, t, world, arg);
+        const ps = [p];
+        if (d !== p && r.chance(6000)) { try { E.heistJoin(d, t, world, arg); ps.push(d); } catch (e) { if (!(e instanceof E.GameError)) throw e; } }
+        if (r.chance(1500)) { for (const x of ps) E.heistRefund(x, t, arg); res = { ok: true, refund: true }; } else res = E.heistResolve(ps, t, arg, game);
+        break;
+      }
+      case 'hit': {
+        E.hitJoin(p, d, t, world);
+        if (r.chance(1500) || !E.hitCanResolve(d, t)) { E.hitRefund(p, t); res = { ok: true, refund: true }; } else res = E.hitResolve([p], d, t, game);
         break;
       }
       case 'gangCreate': res = E.gangCreate(p, t, world); E.gangSet(p, 'g' + r.int(1, 5), r.int(1, 5), r.int(0, 5)); break;   // o servidor regista a gangue e escreve o bónus

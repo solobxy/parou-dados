@@ -164,7 +164,7 @@ export function roulette({ order, colorOf, sfx }) {
 // já não tem força para dobrar a lingueta até ao fim, é a lingueta que a empurra para trás: «quase passou, mas voltou».
 // O resultado continua a ser sorteado pelo servidor (cada casa com a mesma probabilidade): aqui escolhe-se, entre os
 // lançamentos possíveis, um que acabe nessa casa, e a jogada que se vê é a simulação desse lançamento, sem atalhos.
-const PH = { a: 0.3, r: 0.3, K: 1.2, mu: 0.8, b: 0.28, fmax: 0.8, wn: 45, z: 0.22, dt: 1 / 300 };
+const PH = { a: 0.3, r: 0.3, K: 1.2, mu: 0.8, b: 0.28, fmax: 0.64, wn: 58, z: 0.34, dt: 1 / 300 };
 const wheelSim = (p, v) => ({ p, v, mode: 0, kq: 0, phi: 0, phiv: 0, t: 0, done: false, ticks: 0, back: 0, maxo: 0 });
 function wheelStep(s) {
   const { a, r, K, mu, b, fmax, wn, z, dt } = PH, L = a + r, q = s.p + 0.5;
@@ -285,9 +285,8 @@ export function bigWheel({ segs, sfx, hub = '', cls = 'bw3', turns = 5, secs = 8
       if (on) { ctx.fillStyle = '#ffd75e55'; ctx.beginPath(); ctx.arc(bx, by, 6.5, 0, TAU); ctx.fill(); }
       ctx.fillStyle = on ? '#fff3b0' : '#9b7a2a'; ctx.beginPath(); ctx.arc(bx, by, 3, 0, TAU); ctx.fill();
     }
-    // lingueta
-    // lingueta de borracha: presa em cima, dobra-se mais na ponta
-    const LF = 35, fa = st.flap, tx = LF * Math.sin(fa), ty = LF * Math.cos(fa), mx = LF * 0.5 * Math.sin(fa * 0.35), my = LF * 0.5;
+    // lingueta de borracha: presa em cima, dobra-se um pouco mais na ponta (rija: quase direita)
+    const LF = 35, fa = st.flap, tx = LF * Math.sin(fa), ty = LF * Math.cos(fa), mx = LF * 0.5 * Math.sin(fa * 0.55), my = LF * 0.5 * Math.cos(fa * 0.55);
     ctx.save(); ctx.translate(cx, cy - R - 14); ctx.lineCap = 'round';
     const mg = ctx.createLinearGradient(-16, -12, 16, 6); mg.addColorStop(0, '#fff1bf'); mg.addColorStop(0.5, '#d9a531'); mg.addColorStop(1, '#7a4e0a');
     ctx.fillStyle = '#0008'; ctx.beginPath(); ctx.roundRect(-15, -9, 32, 17, 5); ctx.fill();

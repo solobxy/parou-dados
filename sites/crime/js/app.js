@@ -385,12 +385,14 @@ function screenClass() {
 
 // ---------- a cidade ----------
 // ---------- jornal da cidade: o que os outros andam a fazer ----------
-const NW_IC = { gangNew: 'fist', gangUp: 'empire', casino: 'gem', casinoLoss: 'skull', job: 'cash', crit: 'gem', spree: 'bolt', jail: 'lock', house: 'empire', lux: 'crown', beat: 'fist', mug: 'cash', fail: 'skull', sick: 'pill', lvl: 'crown', fight: 'fist' };
+const NW_IC = { gangNew: 'fist', gangUp: 'empire', gangHeist: 'cash', gangHeistFail: 'lock', gangHit: 'fist', gangHitFail: 'skull', casino: 'gem', casinoLoss: 'skull', job: 'cash', crit: 'gem', spree: 'bolt', jail: 'lock', house: 'empire', lux: 'crown', beat: 'fist', mug: 'cash', fail: 'skull', sick: 'pill', lvl: 'crown', fight: 'fist' };
 const seedOf = (str) => { let x = 7; for (let i = 0; i < str.length; i++) x = (x * 31 + str.charCodeAt(i)) | 0; return Math.abs(x); };
 function newsText(e) {
   const k = e.k === 'fight' ? (e.mode === 'mug' ? 'mug' : 'beat') : e.k, C = list('crimes');
   if (k === 'gangNew') return t('nw_gangNew', { a: e.name, g: e.gang, t: e.tag });
   if (k === 'gangUp') return t('nw_gangUp_' + e.what, { g: e.gang, n: e.n });
+  if (k === 'gangHeist' || k === 'gangHeistFail') return tv('nw_' + k, seedOf(e.gang + k + e.t), { g: e.gang, x: t('gh_' + e.c), n: e.n, m: moneyShort(e.money || 0) });
+  if (k === 'gangHit' || k === 'gangHitFail') return tv('nw_' + k, seedOf(e.gang + k + e.t), { g: e.gang, b: e.target, n: e.n });
   const x = k === 'house' ? list('houses')[e.h] : k === 'lux' ? list('lux')[e.i] : k === 'lvl' ? list('titles')[e.n - 1] : k.startsWith('casino') ? t('csIn_' + e.g) : C[e.c];
   return tv('nw_' + k, seedOf(e.name + k + e.t), { a: e.name, b: e.target, x, m: moneyShort(e.money || 0), n: e.n });
 }
@@ -863,7 +865,9 @@ function eventRow(e) {
   let txt;
   if (e.k === 'gangIn' || e.k === 'gangOut') return h('div', { class: 'card row' }, h('span', { class: e.k === 'gangIn' ? 'c-cash' : 'c-red' }, icon('fist')),
     h('div', { class: 'grow' }, h('div', null, t(e.k === 'gangIn' ? 'evGangIn' : 'evGangOut', { g: e.gang })), h('div', { class: 'small muted' }, dur(now() - e.t))));
-  if (e.mode === 'mug') txt = e.win ? t('evMug', { who: e.by, m: money(e.money) }) : t('evMugLost', { who: e.by });
+  if (e.k === 'gop') return opResult(e, e.out || e.cancelled ? 0 : e.respect, e.t);
+  if (e.crew) txt = t(e.win ? 'evCrew' : 'evCrewLost', { who: e.by, n: e.crew });
+  else if (e.mode === 'mug') txt = e.win ? t('evMug', { who: e.by, m: money(e.money) }) : t('evMugLost', { who: e.by });
   else txt = e.win ? t('evBeat', { who: e.by }) : t('evBeatLost', { who: e.by });
   const ago = dur(now() - e.t);
   return h('div', { class: 'card row' }, h('span', { class: e.win ? 'c-red' : 'c-cash' }, icon(e.win ? 'skull' : 'shield')),
@@ -951,7 +955,7 @@ const RL_ORDER = [0, 32, 15, 19, 4, 21, 2, 25, 17, 34, 6, 27, 13, 36, 11, 30, 8,
 const rlCol = (n) => (n === 0 ? 'g' : S.cfg.casino.red.includes(n) ? 'r' : 'b');
 // ---------- gangue ----------
 async function loadGang() { try { S.gang = await api('GET', '/api/gang'); if (S.tab === 'gang') render(); } catch {} }
-const gAct = async (type, args) => { const out = await act(type, args); await loadGang(); return out; };
+const gAct = async (type, args, opt) => { const out = await act(type, args, opt); await loadGang(); return out; };
 function gangRow(g, me) {
   const full = g.members >= g.slots, lowLvl = me.level < S.cfg.gang.minLevel;
   return h('div', { class: 'card grow2' },
@@ -987,14 +991,16 @@ function screenGang() {
   out.push(h('div', { class: 'power' },
     h('div', { class: 'card' }, h('b', { class: 'c-cash' }, '+' + (G.lootBpPer * mine.sede) / 100 + '%'), h('span', { class: 'small muted' }, t('gBonusLoot', { n: mine.sede }))),
     h('div', { class: 'card' }, h('b', { class: 'c-red' }, '+' + (G.fightBpPer * mine.armaria) / 100 + '%'), h('span', { class: 'small muted' }, t('gBonusFight', { n: mine.armaria })))));
+  out.push(...gangOps(mine, me));
   // cofre e melhorias
+  out.push(h('h2', { class: 'sec' }, t('gFundT')));
   const give = [0.1, 0.25, 0.5].map((f) => Math.floor(liquid * f)).filter((v, i, a) => v >= G.donateMin && a.indexOf(v) === i);
   const upRow = (what, lvl, cost, txt) => {
     const max = lvl >= G.maxLevel, miss = max ? 0 : Math.max(0, cost - mine.fund);
     return h('div', { class: 'row sp gup' }, h('div', { class: 'grow' }, h('div', { style: 'font-weight:700' }, txt), h('div', { class: 'small ' + (miss ? 'muted' : 'c-cash') }, max ? t('gMax') : miss ? t('gMiss', { m: money(miss) }) : t('gReady'))),
       max ? null : h('button', { class: 'btn buy sm', disabled: !boss || miss > 0, on: { click: () => gAct('gangUp', { what }) } }, boss ? moneyShort(cost) : t('gBossOnly')));
   };
-  out.push(h('div', { class: 'card stack', style: 'margin:12px 0' },
+  out.push(h('div', { class: 'card stack', style: 'margin:0 0 12px' },
     h('div', { class: 'row sp' }, h('span', { class: 'muted' }, t('gFund')), h('b', { class: 'gfund num c-cash' }, money(mine.fund))),
     give.length ? h('div', { class: 'row', style: 'flex-wrap:wrap;gap:8px' }, give.map((v) => h('button', { class: 'btn grow', on: { click: () => gAct('gangDonate', { amount: v }) } }, t('gGive', { m: moneyShort(v) })))) : h('p', { class: 'small muted' }, t('gGiveMin', { m: money(G.donateMin) })),
     h('p', { class: 'small muted' }, t('gFundNote')),
@@ -1025,6 +1031,75 @@ function screenGang() {
   queueMicrotask(() => { const b = document.querySelector('.gmsgs'); if (b) b.scrollTop = b.scrollHeight; });
   return out;
 }
+// ---- operações da gangue: golpes e tareias em grupo ----
+const opName = (o) => (o.kind === 'hit' ? t('goHitT', { a: o.target }) : t('gh_' + (o.c || S.cfg.gang.heists[o.k].id)));
+// o = { kind, c|k, target, cancelled, gone, out, n, need, ok, money, busted, jailed }
+function opText(o) {
+  if (o.out) return t('evGopOut');
+  if (o.cancelled) return o.gone ? t('goGone', { a: o.target }) : t('goFew', { n: o.n, s: o.need });
+  if (o.kind === 'hit') return t(o.ok ? 'goHitOk' : 'goHitBad', { a: o.target });
+  if (o.ok) return t('goHeistOk', { x: opName(o), m: money(o.money) });
+  return t('goHeistBad', { x: opName(o) }) + (o.jailed?.length ? ' ' + t('goJailed', { a: o.jailed.join(', ') }) : o.busted ? ' ' + t('goYouJail') : '');
+}
+const opIcon = (o) => (o.cancelled || o.out ? 'timer' : o.kind === 'hit' ? (o.ok ? 'fist' : 'skull') : o.ok ? 'cash' : 'lock');
+function opResult(o, resp, when) {
+  const bad = o.cancelled || o.out || !o.ok;
+  return h('div', { class: 'card row gres' }, h('span', { class: o.cancelled || o.out ? 'muted' : bad ? 'c-red' : 'c-cash' }, icon(opIcon(o))),
+    h('div', { class: 'grow' }, h('div', null, opText(o)), h('div', { class: 'small muted' }, dur(Math.max(0, now() - when)))),
+    resp ? h('b', { class: 'num ' + (resp < 0 ? 'c-red' : 'c-cash') }, (resp > 0 ? '+' : '') + resp) : null);
+}
+function gangOps(mine, me) {
+  const G = S.cfg.gang, n = now(), op = mine.op, lv = live(me), busy = lv.jail || lv.hosp, en = lv.energy;
+  const out = [h('h2', { class: 'sec' }, t('gOpsT'))];
+  if (op && op.closesAt > n - 4000) {
+    const miss = Math.max(0, op.need - op.parts.length);
+    out.push(h('div', { class: 'card gop' },
+      h('div', { class: 'row sp' }, h('div', { class: 'gt' }, opName(op)), h('b', { class: 'gcd num', dataset: { opend: op.closesAt } }, dur(Math.max(0, op.closesAt - n)))),
+      h('div', { class: 'row sp gline' }, h('span', null, t('goCount', { n: op.parts.length, s: op.need })), h('b', { class: chanceCls(op.chance) }, t('goChance', { p: pct(op.chance) }))),
+      h('div', { class: 'small muted' }, op.parts.join(' · ')),
+      miss ? h('p', { class: 'small muted' }, miss === 1 ? t('goNeed1') : t('goNeed', { n: miss })) : null,
+      op.joined ? h('p', { class: 'gin' }, icon('check'), t('goIn'))
+        : h('button', { class: 'btn buy block', disabled: !!busy || en < op.e || op.parts.length >= G.opMax, on: { click: (e) => gAct('gangOpJoin', {}, { el: e.currentTarget }) } }, t('goJoin', { e: op.e })),
+      op.mineToCancel ? h('button', { class: 'btn ghost block', on: { click: () => gAct('gangOpCancel', {}) } }, t('goCancel')) : null));
+    return out;
+  }
+  const L = mine.last;
+  if (L && n - L.t < 30 * 60000) {
+    const eu = (L.parts || []).find((x) => x.name === me.name);
+    out.push(opResult({ kind: L.kind, k: L.k, target: L.target, cancelled: L.cancelled, gone: L.gone, n: L.n, need: L.need, ok: L.kind === 'hit' ? L.win : L.success,
+      money: eu ? eu.money : L.parts?.[0]?.money || 0, jailed: (L.parts || []).filter((x) => x.busted).map((x) => x.name) }, eu ? eu.respect : 0, L.t));
+  }
+  const cool = mine.opCool > n, left = Math.max(0, G.heistPerDay - (me.heistsToday || 0));
+  if (cool) out.push(h('div', { class: 'tip' }, h('p', null, t('goWait', { t: '' }), h('b', { class: 'num', dataset: { opend: mine.opCool } }, dur(mine.opCool - n)))));
+  out.push(h('div', { class: 'card gopl' },
+    G.heists.map((H, k) => h('div', { class: 'row sp gup' },
+      h('div', { class: 'grow' }, h('div', { style: 'font-weight:700' }, t('gh_' + H.id)), h('div', { class: 'small muted' }, t('ghLine', { n: H.need, a: moneyShort(H.min), b: moneyShort(H.max), r: H.r }))),
+      mine.sede < H.sede ? h('span', { class: 'small muted glock' }, icon('lock'), t('ghLock', { n: H.sede }))
+        : h('button', { class: 'btn buy sm', disabled: cool || !!busy || !left || en < H.e, on: { click: () => gAct('gangOp', { kind: 'heist', k }) } }, t('ghOpen'), ' · ', icon('bolt'), String(H.e)))),
+    h('div', { class: 'row sp gup' },
+      h('div', { class: 'grow' }, h('div', { style: 'font-weight:700' }, t('goHit')), h('div', { class: 'small muted' }, t('goHitLine', { n: G.hitNeed, m: Math.round((S.cfg.pvp.beatHospMs * G.hitHospBp) / 10000 / 60000) }))),
+      h('button', { class: 'btn danger sm', disabled: cool || !!busy || en < S.cfg.pvp.energy, on: { click: () => gangPickTarget() } }, t('goPick'))),
+    h('p', { class: 'small muted', style: 'padding-top:10px' }, t('ghLeft', { n: left, s: G.heistPerDay }))));
+  return out;
+}
+async function gangPickTarget() {
+  const body = h('div', { class: 'stack' }, h('h2', null, t('goPickT')), h('p', { class: 'muted' }, t('loading')));
+  const close = sheet(body);
+  try { const r = await api('GET', '/api/targets'); S.targets = r.list; } catch {}
+  const L = (S.targets || []).filter((x) => !S.st.me.gang || x.tag !== S.st.me.gang.tag);
+  body.replaceChildren(h('h2', null, t('goPickT')), h('p', { class: 'small muted' }, t('goPickSub')),
+    ...(L.length ? L.map((x) => h('div', { class: 'card row sp', style: 'background:var(--s2)' },
+      h('div', { class: 'grow', style: 'min-width:0' }, h('div', { style: 'font-weight:700' }, x.tag ? h('span', { class: 'gtag' }, x.tag) : null, x.tag ? ' ' : '', x.name), h('div', { class: 'small muted' }, t('gMemberLine', { l: x.level, r: short(x.respect) }))),
+      h('button', { class: 'btn danger sm', on: { click: async () => { close(); await gAct('gangOp', { kind: 'hit', target: x.name }); } } }, t('goMark'))))
+      : [h('p', { class: 'muted' }, t('noTargets'))]));
+}
+// contagem das operações: quando chega a zero vai buscar o resultado
+setInterval(() => {
+  const els = document.querySelectorAll('[data-opend]'); if (!els.length) return;
+  let due = false;
+  els.forEach((el) => { const left = +el.dataset.opend - now(); el.textContent = dur(Math.max(0, left)); if (left <= -600 && el.dataset.re !== '1') { el.dataset.re = '1'; due = true; } });
+  if (due) { loadGang(); refresh(); }
+}, 500);
 function gangMember(m) {
   const close = sheet(h('div', { class: 'stack' }, h('h2', null, m.name), h('p', { class: 'muted' }, t('gMemberLine', { l: m.level, r: short(m.respect) })),
     h('button', { class: 'btn block', on: { click: async () => { close(); await gAct('gangLeader', { name: m.name }); } } }, t('gMakeBoss')),

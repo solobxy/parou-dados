@@ -33,7 +33,7 @@ export function newPlayer(id, now, world, opts = {}) {
     port: [],
     weapon: -1, armor: -1,
     luxuries: 0,
-    gang: null, gb: null, gangLeft: 0,
+    gang: null, gb: null, gangLeft: 0, gh: [],
     detoxT: [],
     xp: { F: 0, I: 0, C: 0 },
     wk: CFG.crimes.map(() => 0),   // sucessos por golpe (mestria)
@@ -61,6 +61,7 @@ function migrate(p) {
   if (typeof p.gang !== 'string') p.gang = null;
   if (!p.gang || !p.gb || typeof p.gb !== 'object') p.gb = null;
   if (!Number.isSafeInteger(p.gangLeft)) p.gangLeft = 0;
+  if (!Array.isArray(p.gh)) p.gh = [];
 }
 
 // ---------- tempo ----------
@@ -835,6 +836,96 @@ export function attack(a, d, now, world, mode, rng) {
   return { ok: true, chanceBp: bp, win: false, mode, respect: -loss, defenderGain: defGain };
 }
 
+// ---------- golpes e tareias em grupo (gangues) ----------
+// Quem alinha paga a stamina logo. O servidor junta quem alinhou e chama a resolução quando o tempo acaba;
+// se não houver gente que chegue, a stamina volta.
+const pruneT = (arr, now, ms) => { while (arr.length && arr[0] <= now - ms) arr.shift(); };
+const heistOf = (k) => (Number.isInteger(k) ? CFG.gang.heists[k] : undefined) || fail('NO_CRIME');
+export function heistJoin(p, now, world, k) {
+  const H = heistOf(k);
+  begin(p, now, world);
+  if (!p.gang) fail('NO_GANG');
+  const feitos = p.gh.filter((x) => x > now - T.DAY);   // só conta: um pedido recusado não mexe em nada
+  if (feitos.length >= CFG.gang.heistPerDay) fail('HEIST_LIMIT', { until: feitos[0] + T.DAY });
+  if (p.energy < H.e) fail('NO_ENERGY', { need: H.e });
+  pruneT(p.gh, now, T.DAY);
+  p.energy -= H.e; p.gh.push(now);
+  return { ok: true, e: H.e };
+}
+export function heistRefund(p, now, k) { touch(p, now); p.energy = Math.min(CFG.energy.max, p.energy + heistOf(k).e); p.gh.pop(); }
+export function heistChanceBp(ps, k, now) {
+  const { w, D } = heistOf(k); let s = 0;
+  for (const p of ps) s += Math.floor((w.I * effStat(p, 'I', now) + w.F * effStat(p, 'F', now) + w.C * effStat(p, 'C', now)) / 100);
+  return chanceBp(s, D);
+}
+export function heistResolve(ps, now, k, rng) {
+  const H = heistOf(k);
+  for (const p of ps) touch(p, now);
+  const bp = heistChanceBp(ps, k, now);
+  if (rng.chance(bp)) {
+    const each = rng.int(H.min, H.max);   // o mesmo para todos, antes do bónus de saque da gangue
+    return { ok: true, success: true, chanceBp: bp, parts: ps.map((p) => {
+      const money = Math.floor((each * (10000 + gbp(p, 'loot'))) / 10000);
+      p.cash += money;
+      return { id: p.id, money, respect: H.r, levelUp: addRespect(p, H.r, now) };
+    }) };
+  }
+  return { ok: true, success: false, chanceBp: bp, parts: ps.map((p) => {
+    const busted = !(p.jailUntil > now) && !(p.hospUntil > now) && rng.chance(bustChanceBp(p, now));
+    if (busted) { p.jailUntil = now + H.jailMin * T.MIN; p.jailTier = H.bailAs + 1; }
+    return { id: p.id, money: 0, respect: 0, busted };
+  }) };
+}
+export function hitJoin(a, d, now, world) {
+  begin(a, now, world);
+  touch(d, now);
+  if (!a.gang) fail('NO_GANG');
+  if (a.gang === d.gang) fail('SAME_GANG');
+  const why = canAttack(a, d, now, world);
+  if (why) fail(why);
+  a.energy -= CFG.pvp.energy;
+  return { ok: true, e: CFG.pvp.energy };
+}
+export function hitRefund(a, now) { touch(a, now); a.energy = Math.min(CFG.energy.max, a.energy + CFG.pvp.energy); }
+export function hitChanceBp(as, d, now) {
+  let s = 0; for (const a of as) s += attackPower(a, now);
+  return chanceBp(Math.floor((s * CFG.gang.hitTeamBp) / 10000), defensePower(d, now));
+}
+// o alvo tem de continuar à mão quando o tempo acaba (não pode ter ido entretanto para o hospital ou para a prisão)
+export function hitCanResolve(d, now, gang) { touch(d, now); return !(d.hospUntil > now || d.jailUntil > now || d.protectUntil > now || d.capUntil > now || d.shieldUntil > now || (gang && d.gang === gang)); }
+// quem alinhou e entretanto foi preso ou parar ao hospital fica de fora (e recebe a stamina de volta)
+export function opReady(p, now) { touch(p, now); return !(p.jailUntil > now || p.hospUntil > now); }
+export function hitResolve(as, d, now, rng) {
+  const P = CFG.pvp, G = CFG.gang;
+  for (const a of as) touch(a, now);
+  touch(d, now);
+  const bp = hitChanceBp(as, d, now);
+  if (rng.chance(bp)) {
+    let loss = 0;
+    const parts = as.map((a) => {
+      const gain = Math.floor((Math.floor(pvpBaseGain(a, d) / 2 ** Math.min(priorWins(a, d, now), 10)) * G.hitShareBp) / 10000);
+      loss = Math.max(loss, Math.floor(gain / P.lossDiv));
+      a.protectUntil = 0; a.c.pvpWins += 1;
+      if (!a.hits.has(d.id)) a.hits.set(d.id, []);
+      a.hits.get(d.id).push(now);
+      return { id: a.id, respect: gain, levelUp: addRespect(a, gain, now) };
+    });
+    addRespect(d, -loss, now);
+    hospitalize(d, now, Math.floor((P.beatHospMs * G.hitHospBp) / 10000), true);
+    return { ok: true, win: true, chanceBp: bp, targetLoss: loss, parts };
+  }
+  let defGain = 0;
+  const parts = as.map((a) => {
+    const loss = Math.floor(pvpBaseGain(a, d) / P.lossDiv);
+    if (a.respect * 10000 >= d.respect * P.minTargetBp) defGain = P.defendGain;
+    addRespect(a, -loss, now); a.protectUntil = 0;
+    if (!(a.hospUntil > now)) hospitalize(a, now, P.beatHospMs, false);
+    return { id: a.id, respect: -loss };
+  });
+  addRespect(d, defGain, now);
+  return { ok: true, win: false, chanceBp: bp, defenderGain: defGain, parts };
+}
+
 // ---------- casino ----------
 // Tudo decidido aqui, no servidor, com o gerador aleatório do servidor. Aposta-se só o dinheiro que tens na mão.
 export function casinoMax(p) {
@@ -1257,6 +1348,7 @@ export function checkInvariants(p) {
   if (p.addiction > addictionCap(p)) bad.push('addiction>cap');
   if (p.peakRespect < p.respect) bad.push('peak<respect');
   if ((p.gang === null) !== (p.gb === null)) bad.push('gang/gb');
+  if (!Array.isArray(p.gh) || p.gh.length > CFG.gang.heistPerDay) bad.push('heists');
   if (p.gb) { const G = CFG.gang; for (const k of ['loot', 'atk', 'def']) if (!Number.isSafeInteger(p.gb[k]) || p.gb[k] < 0 || p.gb[k] > (k === 'loot' ? G.lootBpPer : G.fightBpPer) * G.maxLevel) bad.push('gb.' + k); }
   if (!Array.isArray(p.detoxT) || p.detoxT.length > CFG.detox.maxSteps) bad.push('detox list');
   if (!Number.isSafeInteger(p.mi) || p.mi < 0 || p.mi > CFG.missions.length) bad.push('mission index');
