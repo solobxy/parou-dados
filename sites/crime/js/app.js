@@ -183,6 +183,13 @@ function tickHud() {
     L.vice > 0 ? h('span', { class: 'c-vice' }, t('vice') + ' ' + L.vice + '/' + me.addictionCap) : h('span'));
   document.querySelectorAll('[data-left]').forEach((el) => { const left = +el.dataset.left - now(); el.textContent = dur(left); if (left <= 0 && el.dataset.re !== '1') { el.dataset.re = '1'; refresh(); } });
   document.querySelectorAll('[data-stored]').forEach((el) => { const i = +el.dataset.stored; const b = me.biz[i]; el.textContent = money(storedNow(b, i)); });
+  document.querySelectorAll('[data-biz]').forEach((el) => {
+    const i = +el.dataset.biz, b = me.biz[i]; const cap = b.perH * (S.cfg.storageMs / 3600000);
+    const f = cap ? Math.min(1, storedNow(b, i) / cap) : 0;
+    el.style.setProperty('--fill', f.toFixed(3)); el.classList.toggle('full', f >= 1);
+    const bar = document.querySelector(`[data-fill="${i}"]`);
+    if (bar) { bar.firstChild.style.width = f * 100 + '%'; bar.classList.toggle('full', f >= 1); }
+  });
   const tot = document.querySelector('[data-total]');
   if (tot) {
     const v = me.biz.reduce((s, b, i) => s + storedNow(b, i), 0);
@@ -224,13 +231,18 @@ function render() {
   updateHud();
 }
 
-function head(title, sub) { return h('div', { class: 'screen-h' }, h('h1', null, title), h('p', null, sub)); }
+function head(title, sub, scene) {
+  if (!scene) return h('div', { class: 'screen-h' }, h('h1', null, title), h('p', null, sub));
+  return h('div', { class: 'hero' },
+    h('img', { src: `/img/cenas/${scene}.webp`, alt: '', width: 720, height: 720, decoding: 'async' }),
+    h('div', { class: 'txt' }, h('h1', null, title), h('p', null, sub)));
+}
 
 function busyBanner(me) {
   const L = live(me);
-  if (L.jail) return h('div', { class: 'state jail' }, h('h3', null, t('jail')), h('div', { class: 't' }, t('jailSub', { t: '' }), h('b', { class: 'num', dataset: { left: me.jailUntil } }, dur(L.jail))),
+  if (L.jail) return h('div', { class: 'state jail' }, art('cenas', 'prisao', 'bg'), h('h3', null, t('jail')), h('div', { class: 't' }, t('jailSub', { t: '' }), h('b', { class: 'num', dataset: { left: me.jailUntil } }, dur(L.jail))),
     h('button', { class: 'btn danger block', on: { click: (e) => act('bail', {}, { el: e.currentTarget }) } }, t('payBail', { m: money(me.bail) })));
-  if (L.hosp) return h('div', { class: 'state' }, h('h3', null, t('hospital')), h('div', { class: 't' }, t('hospitalSub', { t: '' }), h('b', { class: 'num', dataset: { left: me.hospUntil } }, dur(L.hosp))),
+  if (L.hosp) return h('div', { class: 'state hosp' }, art('cenas', 'hospital', 'bg'), h('h3', null, t('hospital')), h('div', { class: 't' }, t('hospitalSub', { t: '' }), h('b', { class: 'num', dataset: { left: me.hospUntil } }, dur(L.hosp))),
     h('button', { class: 'btn danger block', on: { click: (e) => act('medic', {}, { el: e.currentTarget }) } }, t('payMedic', { m: money(me.medic) })));
   return null;
 }
@@ -242,10 +254,48 @@ function tip(key, text) {
 }
 
 // ilustrações que já existem (as outras mostram o ícone num quadrado escuro)
-const ART = { crimes: new Set(['carteirista', 'loja', 'carro', 'bomba', 'turistas']) };
-function art(kind, id, ic) {
-  if (ART[kind]?.has(id)) return h('img', { class: 'art', src: `/img/${kind}/${id}.webp`, alt: '', width: 76, height: 76, loading: 'lazy', decoding: 'async' });
-  return h('div', { class: 'art none', 'aria-hidden': 'true' }, icon(ic));
+function art(kind, id, cls = 'art') {
+  return h('img', { class: cls, src: `/img/${kind}/${id}.webp`, alt: '', width: 480, height: 480, loading: 'lazy', decoding: 'async' });
+}
+
+// cenas animadas dos negócios: o produto cresce com o armazém (--fill vai de 0 a 1)
+function bizAnim(id) {
+  const NS = 'http://www.w3.org/2000/svg';
+  const s = svg('svg', { class: 'anim', viewBox: '0 0 100 100', preserveAspectRatio: 'xMidYMax meet', 'aria-hidden': 'true' });
+  const add = (parent, tag, attrs) => { const e = svg(tag, attrs); parent.append(e); return e; };
+  if (id === 'erva') {
+    for (let k = 0; k < 5; k++) {
+      const x = 12 + k * 19;
+      const grow = add(s, 'g', { class: 'grow', style: `--k:${k};transform-origin:${x}px 100px` });
+      const sway = add(grow, 'g', { class: 'sway', style: `transform-origin:${x}px 100px;animation-delay:${-k * 0.6}s` });
+      add(sway, 'path', { d: `M${x} 100 V58`, class: 'stem' });
+      // folhas de cinco pontas, alternadas pelo caule
+      for (const [dy, side, sc] of [[84, -1, 1], [76, 1, .9], [68, -1, .8], [61, 1, .65]]) {
+        const leaf = add(sway, 'g', { class: 'leaf', transform: `translate(${x + side * 2} ${dy}) scale(${sc}) rotate(${side * 35})` });
+        for (const a of [-60, -30, 0, 30, 60]) add(leaf, 'ellipse', { cx: 0, cy: -6, rx: 1.6, ry: a === 0 ? 7 : 5.5, transform: `rotate(${a})` });
+      }
+      add(sway, 'ellipse', { class: 'bud', cx: x, cy: 56, rx: 2.6, ry: 4 });
+    }
+  } else if (id === 'coca') {
+    for (let k = 0; k < 10; k++) {
+      const col = k % 5, row = Math.floor(k / 5);
+      add(s, 'rect', { class: 'brick', x: 14 + col * 15, y: 88 - row * 9, width: 13, height: 8, rx: 1.5, style: `--k:${k}` });
+    }
+  } else if (id === 'laboratorio') {
+    for (let k = 0; k < 9; k++) add(s, 'circle', { class: 'pill', cx: 20 + (k % 5) * 14 + (k > 4 ? 7 : 0), cy: k > 4 ? 84 : 92, r: 5, style: `--k:${k}` });
+    for (let k = 0; k < 5; k++) add(s, 'circle', { class: 'bubble', cx: 18 + k * 7, cy: 70, r: 1.6 + (k % 2), style: `animation-delay:${-k * 0.45}s` });
+  } else {
+    // lavandaria e casa: maços de notas a empilhar
+    for (let k = 0; k < 8; k++) {
+      const g = add(s, 'g', { class: 'bill', style: `--k:${k}` });
+      const x = 54 + (k % 2) * 2, y = 92 - k * 5;
+      add(g, 'rect', { x, y, width: 34, height: 6, rx: 1 });
+      add(g, 'ellipse', { class: 'seal', cx: x + 17, cy: y + 3, rx: 3.2, ry: 2 });
+    }
+    if (id === 'lavandaria') for (let k = 0; k < 5; k++) add(s, 'circle', { class: 'bubble soap', cx: 16 + k * 8, cy: 80, r: 2 + (k % 3), style: `animation-delay:${-k * 0.5}s` });
+    if (id === 'prostitutas') add(s, 'path', { class: 'heart', d: 'M20 14c-2-3-7-2-7 2 0 4 7 8 7 8s7-4 7-8c0-4-5-5-7-2z' });
+  }
+  return s;
 }
 
 function statNames(w) {
@@ -272,7 +322,7 @@ function screenStreet() {
     if (!info.unlocked) {
       if (lockedShown) return; lockedShown = true;
       jobs.append(h('div', { class: 'job lock', 'aria-disabled': 'true' },
-        art('crimes', c.id, 'lock'),
+        art('crimes', c.id),
         h('div', { class: 'nm' }, list('crimes')[k]),
         h('div', { class: 'meta' }, icon('lock'), t('needsStats', { s: statNames(c.w) })),
         h('div', { class: 'pct' }, pct(info.chance), h('small', null, t('chance')))));
@@ -282,7 +332,7 @@ function screenStreet() {
     const btn = h('button', { class: 'job ' + cls, disabled: !!b,
       'aria-label': `${list('crimes')[k]}, ${pct(info.chance)} ${t('chance')}, ${c.e} ${t('energy')}`,
       on: { click: (e) => act('crime', { k }, { el: e.currentTarget }) } },
-      art('crimes', c.id, 'street'),
+      art('crimes', c.id),
       h('div', { class: 'nm' }, list('crimes')[k]),
       h('div', { class: 'meta' },
         h('span', { class: 'e' }, icon('bolt'), ' ', c.e),
@@ -298,7 +348,7 @@ function screenStreet() {
 
 function screenGym() {
   const me = S.st.me;
-  const out = [head(t('gymTitle'), t('gymSub'))];
+  const out = [head(t('gymTitle'), t('gymSub'), 'ginasio')];
   const b = busyBanner(me); if (b) out.push(b);
   out.push(h('div', { class: 'power' },
     h('div', { class: 'card' }, h('b', { class: 'c-red' }, short(me.attack)), h('span', { class: 'small muted' }, t('attackPower'))),
@@ -332,11 +382,17 @@ function screenEmpire() {
     const stored = storedNow(b, i);
     const unitPerH = Math.floor(cfg.perH * (1000 + Math.min(me.stats[cfg.stat], 1000)) / 1000);
     const pb = b.price ? b.price / unitPerH : 0;
+    const fill = cap ? Math.min(1, stored / cap) : 0;
+    const scene = h('div', { class: 'bscene ' + cfg.id + (b.n > 0 ? ' on' : '') + (fill >= 1 ? ' full' : ''), dataset: { biz: i }, style: `--fill:${fill.toFixed(3)}` },
+      art('biz', cfg.id, 'pic'), b.n > 0 ? bizAnim(cfg.id) : null);
     list_.append(h('div', { class: 'card biz' },
-      h('div', { class: 'top' }, h('div', { class: 'nm' }, list('biz')[i]), h('div', { class: 'cnt num' }, '×' + b.n)),
-      b.n > 0 ? h('div', null, h('div', { class: 'row sp small' }, h('span', { class: 'c-cash num', dataset: { stored: i } }, money(stored)), h('span', { class: 'muted num' }, money(b.perH) + t('perHour'))),
-        h('div', { class: 'fill' + (stored >= cap ? ' full' : '') }, h('i', { style: `width:${cap ? (stored / cap) * 100 : 0}%` }))) : null,
-      h('div', { class: 'small muted' }, cfg.toBank ? t('legal') : t('raidRisk')),
+      h('div', { class: 'bhead' }, scene,
+        h('div', { class: 'binfo' },
+          h('div', { class: 'top' }, h('div', { class: 'nm' }, list('biz')[i]), h('div', { class: 'cnt num' }, '×' + b.n)),
+          b.n > 0 ? h('div', { class: 'small' }, h('b', { class: 'c-cash num', dataset: { stored: i } }, money(stored)), h('span', { class: 'muted num' }, ' · ' + money(b.perH) + t('perHour')))
+            : h('div', { class: 'small muted' }, t('notOwned')),
+          h('div', { class: 'small muted' }, cfg.toBank ? t('legal') : t('raidRisk')))),
+      b.n > 0 ? h('div', { class: 'fill' + (fill >= 1 ? ' full' : ''), dataset: { fill: i } }, h('i', { style: `width:${fill * 100}%` })) : null,
       b.price ? h('div', { class: 'row sp' }, h('span', { class: 'small muted' }, '+' + money(unitPerH) + t('perHour') + ' · ' + t('paysBack', { t: hoursText(pb) }) + ' · +' + cfg.resp + ' ' + t('respect').toLowerCase()),
         h('button', { class: 'btn sm cash', on: { click: (e) => act('buyBiz', { i }, { el: e.currentTarget }) } }, t('buyFor', { m: moneyShort(b.price) })))
         : h('div', { class: 'small c-resp' }, t('maxed'))));
@@ -344,7 +400,7 @@ function screenEmpire() {
   out.push(list_);
   // porto
   out.push(h('h2', { class: 'sec' }, t('port')), h('p', { class: 'secsub' }, t('portSub')));
-  const pc = h('div', { class: 'card stack' });
+  const pc = h('div', { class: 'card stack port' }, h('div', { class: 'band' }, art('cenas', 'porto', 'pic')));
   pc.append(h('div', { class: 'small muted' }, t('slots', { a: me.port.length, b: me.portSlots })));
   for (const c of me.port) {
     const left = c.readyAt - now();
@@ -364,7 +420,7 @@ function screenEmpire() {
 
 function screenCity() {
   const me = S.st.me;
-  const out = [head(t('cityTitle'), t('citySub'))];
+  const out = [head(t('cityTitle'), t('citySub'), { club: 'discoteca', bank: 'banco', lux: 'luxos' }[S.citySeg])];
   const segs = [['club', t('club')], ['arms', t('weapons')], ['bank', t('bankTitle')], ['lux', t('luxuries')]];
   out.push(h('div', { class: 'seg', role: 'group' }, segs.map(([id, lbl]) => h('button', { 'aria-pressed': S.citySeg === id ? 'true' : 'false', on: { click: () => { S.citySeg = id; render(); } } }, lbl))));
   const L = live(me);
@@ -377,7 +433,7 @@ function screenCity() {
     const st = h('div', { class: 'stack', style: 'margin-top:8px' });
     S.cfg.drugs.forEach((g, d) => {
       const ok = L.energy + g.e <= S.cfg.energy.max && L.vice + g.a <= me.addictionCap && me.cash + me.bank >= g.price && !b;
-      st.append(h('div', { class: 'card row' },
+      st.append(h('div', { class: 'card row item' }, art('drugs', g.id, 'thumb'),
         h('div', { class: 'grow' }, h('div', { style: 'font-weight:700' }, list('drugs')[d]),
           h('div', { class: 'small muted' }, h('span', { class: 'c-en' }, '+' + g.e + ' ' + t('energy').toLowerCase()), ' · ', h('span', { class: 'c-vice' }, '+' + g.a + ' ' + t('vice').toLowerCase()), ' · ' + (g.e / g.a).toFixed(2).replace(/\.?0+$/, '') + '×')),
         h('button', { class: 'btn sm pri', disabled: !ok, on: { click: (e) => act('drug', { d }, { el: e.currentTarget }) } }, money(g.price))));
@@ -389,10 +445,10 @@ function screenCity() {
       const nx = cur + 1;
       out.push(h('div', { class: 'card stack', style: 'margin-bottom:8px' },
         h('div', { class: 'row sp' }, h('span', { class: 'muted small' }, icon(ic), ' ' + lbl), h('b', null, cur >= 0 ? names[cur] + ' · +' + arr[cur].bp / 100 + '%' : t('none'))),
-        nx < arr.length ? h('div', { class: 'gear' },
+        nx < arr.length ? h('div', { class: 'gear' }, art(kind === 'weapon' ? 'weapons' : 'armors', nx, 'thumb'),
           h('div', { class: 'grow' }, h('div', { class: 'small muted' }, t('upgrade')), h('div', { class: 'nx' }, names[nx] + ' · +' + arr[nx].bp / 100 + '%')),
           h('button', { class: 'btn pri sm', disabled: me.cash + me.bank < arr[nx].price, on: { click: (e) => act('gear', { kind, idx: nx }, { el: e.currentTarget }) } }, moneyShort(arr[nx].price)))
-          : h('div', { class: 'small c-resp' }, t('maxed'))));
+          : h('div', { class: 'gear' }, art(kind === 'weapon' ? 'weapons' : 'armors', cur, 'thumb'), h('div', { class: 'small c-resp' }, t('maxed')))));
     }
   } else if (S.citySeg === 'bank') {
     out.push(h('p', { class: 'secsub' }, t('bankSub')));
@@ -414,7 +470,7 @@ function screenCity() {
 
 function screenFights() {
   const me = S.st.me, n = now();
-  const out = [head(t('fightsTitle'), t('fightsSub'))];
+  const out = [head(t('fightsTitle'), t('fightsSub'), 'lutas')];
   out.push(h('div', { class: 'seg', role: 'group' }, [['targets', t('targets')], ['ranking', t('ranking')], ['events', t('events').split(' ')[0] === 'What' ? 'News' : 'Avisos']].map(([id, lbl]) =>
     h('button', { 'aria-pressed': S.fightSeg === id ? 'true' : 'false', on: { click: () => { S.fightSeg = id; if (id === 'targets') loadTargets(); else if (id === 'ranking') loadRanking(); else loadEvents(true); render(); } } }, lbl))));
   if (S.fightSeg === 'targets') {
@@ -530,6 +586,7 @@ async function showLanding(st) {
   if (!info) { try { const r = await fetch('/api/saude'); info = await r.json(); } catch {} }
   const langsw = h('div', { class: 'langsw' }, [['en', 'EN'], ['pt', 'PT']].map(([l, n]) => h('button', { 'aria-pressed': lang() === l ? 'true' : 'false', on: { click: () => { applyLang(l); showLanding(info ? { players: info.jogadores, round: info.round } : null); } } }, n)));
   $app.replaceChildren(langsw, h('div', { class: 'land' },
+    h('div', { class: 'land-art', 'aria-hidden': 'true' }, h('img', { src: '/img/cenas/entrada.webp', alt: '', width: 720, height: 720, fetchpriority: 'high', decoding: 'async' })),
     h('div', { class: 'word neon', 'aria-label': 'Crime' }, 'Crime'),
     h('p', { class: 'tag' }, t('tagline')),
     info ? h('div', { class: 'meta' },

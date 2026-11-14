@@ -102,7 +102,7 @@ export function fight(meName, themName, win, line, labels) {
     const them = h('div', { class: 'f them' }, icon('skull'));
     const res = h('div', { class: 'res', style: `opacity:0;color:${win ? 'var(--cash)' : 'var(--danger)'}` }, win ? labels.win : labels.lose);
     const sub = h('div', { class: 'sub', style: 'opacity:0' }, line);
-    const ov = h('div', { class: 'overlay' }, h('div', { class: 'fight' },
+    const ov = h('div', { class: 'overlay fightbg' }, h('div', { class: 'fight' },
       h('div', { class: 'vs' }, h('div', { style: 'display:grid;gap:8px;justify-items:center' }, me, h('div', { class: 'small muted' }, meName)),
         'vs', h('div', { style: 'display:grid;gap:8px;justify-items:center' }, them, h('div', { class: 'small muted' }, themName))),
       res, sub));

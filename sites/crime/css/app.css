@@ -302,3 +302,60 @@ body.light .neon, body.light .skyline .w.on.f { animation: none; }
   .skyline { opacity: .7; }
   #app { box-shadow: 0 0 0 1px #ffffff08; }
 }
+
+/* ilustrações */
+.hero { position: relative; margin: -20px -16px 18px; height: 210px; overflow: hidden; }
+.hero img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center 40%; }
+.hero::after { content: ''; position: absolute; inset: 0; background: linear-gradient(to top, var(--ink) 4%, #0a0c11b3 38%, #0a0c1100 75%); }
+.hero .txt { position: absolute; left: 16px; right: 16px; bottom: 10px; z-index: 1; }
+.hero h1 { font-family: var(--disp); font-weight: 900; font-size: 44px; line-height: .95; text-transform: uppercase; letter-spacing: .01em; text-shadow: 0 2px 18px #000; }
+.hero h1::after { content: ''; display: block; width: 36px; height: 4px; background: var(--acc); margin-top: 8px; }
+.hero p { color: var(--tx); margin-top: 8px; font-size: 15px; text-shadow: 0 1px 10px #000; }
+.state .bg { position: absolute; right: 0; top: 0; height: 100%; width: 62%; object-fit: cover;
+  -webkit-mask-image: linear-gradient(to left, #000 35%, transparent); mask-image: linear-gradient(to left, #000 35%, transparent); opacity: .75; }
+.state > :not(.bg) { position: relative; z-index: 1; }
+.state .btn { box-shadow: 0 6px 20px #0008; }
+.item .thumb, .gear .thumb { width: 56px; height: 56px; border-radius: 10px; object-fit: cover; flex: none; background: var(--s2); }
+.gear .thumb { width: 64px; height: 64px; }
+.overlay.fightbg { background: linear-gradient(#05060ae0, #05060aeb), url(/img/cenas/lutas.webp) center / cover; }
+.land-art { position: absolute; left: 0; right: 0; top: 0; height: 62dvh; z-index: -1; overflow: hidden; }
+.land-art img { width: 100%; height: 100%; object-fit: cover; object-position: center 30%; }
+.land-art::after { content: ''; position: absolute; inset: 0; background: linear-gradient(to top, var(--ink) 2%, #0a0c11cc 30%, #0a0c1140 70%, #0a0c1199); }
+.land { align-content: end; }
+.port .band { margin: -14px -14px 4px; height: 120px; overflow: hidden; border-radius: var(--r) var(--r) 0 0; position: relative; }
+.port .band .pic { width: 100%; height: 100%; object-fit: cover; object-position: center 45%; display: block; }
+.port .band::after { content: ''; position: absolute; inset: 0; background: linear-gradient(to top, var(--s1), transparent 60%); }
+
+/* negócios animados */
+.bhead { display: grid; grid-template-columns: 104px 1fr; gap: 12px; align-items: center; }
+.binfo { display: grid; gap: 4px; min-width: 0; }
+.bscene { position: relative; width: 104px; height: 104px; border-radius: 12px; overflow: hidden; background: var(--s2); }
+.bscene .pic { width: 100%; height: 100%; object-fit: cover; display: block; filter: saturate(.35) brightness(.5); transition: filter .4s; }
+.bscene.on .pic { filter: none; }
+.bscene::after { content: ''; position: absolute; inset: 0; background: linear-gradient(to top, #000c, transparent 55%); pointer-events: none; }
+.bscene .anim { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 1; overflow: visible; }
+.bscene.full { box-shadow: 0 0 0 2px var(--sodium); }
+.bscene.full::before { content: ''; position: absolute; inset: 0; z-index: 2; border-radius: inherit; box-shadow: inset 0 0 0 2px var(--sodium); animation: fullpulse 1.6s ease-in-out infinite; }
+@keyframes fullpulse { 50% { opacity: .2; } }
+.anim .grow { transform: scaleY(calc(.18 + .82 * var(--fill))); transition: transform 1s var(--ease-out); }
+.anim .sway { animation: sway 3.2s ease-in-out infinite alternate; }
+@keyframes sway { from { transform: rotate(-4deg); } to { transform: rotate(4deg); } }
+.anim .stem { stroke: #3f9a52; stroke-width: 1.8; fill: none; stroke-linecap: round; }
+.anim .leaf ellipse { fill: #3fbf6a; stroke: #0b2614; stroke-width: .5; }
+.anim .bud { fill: #b98af0; stroke: #2a1640; stroke-width: .6; }
+.anim .brick, .anim .pill, .anim .bill { opacity: clamp(0, calc(var(--fill) * 10 - var(--k)), 1); transition: opacity .6s; }
+.anim .bill { opacity: clamp(0, calc(var(--fill) * 8 - var(--k)), 1); }
+.anim .bill rect { fill: #46e08a; stroke: #0c2a16; stroke-width: .9; }
+.anim .bill .seal { fill: none; stroke: #0c2a16; stroke-width: .8; }
+.anim .pill { opacity: clamp(0, calc(var(--fill) * 9 - var(--k)), 1); fill: #ff4fa3; stroke: #3a0b22; stroke-width: 1; }
+.anim .brick { fill: #f3f0e8; stroke: #2a2620; stroke-width: 1; }
+.anim .bubble { fill: none; stroke: #ff9bd0; stroke-width: .9; animation: bubble 2.2s ease-in infinite; }
+.anim .bubble.soap { stroke: #bfe6ff; }
+@keyframes bubble { from { transform: translateY(0); opacity: 0; } 20% { opacity: 1; } to { transform: translateY(-46px); opacity: 0; } }
+.anim .heart { fill: #ff4fa3; transform-origin: 20px 19px; animation: beat 1.4s ease-in-out infinite; filter: drop-shadow(0 0 4px #ff4fa3); }
+@keyframes beat { 0%, 100% { transform: scale(1); } 15% { transform: scale(1.18); } 30% { transform: scale(1); } 45% { transform: scale(1.1); } }
+@media (prefers-reduced-motion: reduce) {
+  .anim .sway, .anim .bubble, .anim .heart, .bscene.full::before { animation: none; }
+  .anim .bubble { opacity: .6; }
+}
+body.light .anim .sway, body.light .anim .bubble, body.light .bscene.full::before { animation: none; }
