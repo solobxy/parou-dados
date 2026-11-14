@@ -71,6 +71,20 @@ export const CFG = {
     { id: 'seguranca',  defBp: 2500, hospCutBp: 5000 },                  // defesa, hospital a metade
   ],
   avatars: 32,
+  // putas: stamina sem vício; o preço segue o que ganhas por stamina e sobe 10% por cada visita nas últimas 24 h
+  hookers: {
+    windowMs: 24 * HOUR, stepNum: 11, stepDen: 10, maxSteps: 60,
+    sickCutBp: 1500,                 // doente: −15% em todas as stats até se tratar
+    cureMin: 150, cureValueBp: 6000, // tratar custa o que rendem 60 de stamina
+    list: [
+      { id: 'marlene',   tier: 0, e: 12, min: 20,   valueBp: 2000, sickBp: 600 },
+      { id: 'sandra',    tier: 0, e: 18, min: 35,   valueBp: 2200, sickBp: 500 },
+      { id: 'katia',     tier: 1, e: 28, min: 120,  valueBp: 2600, sickBp: 300 },
+      { id: 'jessica',   tier: 1, e: 36, min: 180,  valueBp: 2800, sickBp: 250 },
+      { id: 'valentina', tier: 2, e: 55, min: 700,  valueBp: 3300, sickBp: 120 },
+      { id: 'dominique', tier: 2, e: 75, min: 1200, valueBp: 3600, sickBp: 80 },
+    ],
+  },
   // prática: cada golpe treina as stats que usa (energia × peso; metade se falhar).
   // Um ponto custa base + perStat × stat atual de prática, por isso ajuda muito no início e menos depois (o ginásio continua mais rápido).
   practice: { base: 1000, perStat: 10, failBp: 5000 },

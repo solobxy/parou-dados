@@ -581,3 +581,27 @@ button.item { border: 0; color: inherit; font: inherit; cursor: pointer; }
 .item .small svg.i { width: 12px; height: 12px; vertical-align: -2px; margin-right: 2px; }
 @media (prefers-reduced-motion: reduce) { .money .delta { animation: none; } .money .cash.up, .money .cash.down { animation: none; } .bscene .tick { display: none; } }
 body.light .bscene .tick { display: none; }
+
+/* ================= porto com mapa, prisão, putas ================= */
+.pmapbox { background: #071624; border-radius: 14px; overflow: hidden; margin-bottom: 10px; }
+.pmap { display: block; width: 100%; height: auto; }
+.pmap .grid { stroke: #ffffff10; stroke-width: 1; fill: none; }
+.pmap .wave { stroke: #5cc8ff40; stroke-width: 1.2; fill: none; stroke-linecap: round; animation: wv 4s ease-in-out infinite; }
+.pmap .land { fill: #12283a; stroke: #2f5b78; stroke-width: 1.2; }
+.pmap .route { fill: none; stroke: #ffffff38; stroke-width: 1.4; stroke-dasharray: 3 5; }
+.pmap .route.done { stroke: var(--cash); stroke-width: 2; stroke-dasharray: 0 999; }
+.pmap .org { fill: var(--tx2); }
+.pmap .dst { fill: var(--cash); }
+.pmap .ping { fill: none; stroke: var(--cash); stroke-width: 1.5; transform-origin: 282px 36px; animation: ping 2s ease-out infinite; }
+.pmap text { fill: var(--tx2); font: 600 9px var(--ui); }
+.pmap .ship path { fill: var(--sodium); stroke: #071624; stroke-width: .8; }
+.pmap .ship.in path { fill: var(--cash); }
+@keyframes wv { 50% { transform: translateX(6px); opacity: .4; } }
+@keyframes ping { 0% { transform: scale(1); opacity: .9; } 100% { transform: scale(4); opacity: 0; } }
+.state .jbar { background: #0006; margin: 2px 0 4px; }
+.state .jbar > i { background: var(--danger); }
+.chip.fxc.bad { border: 0; background: #4a1518; color: #fff; }
+.chip.fxc.bad svg.i { color: var(--danger); }
+.c-red svg.i, .item .small.muted svg.i { width: 12px; height: 12px; vertical-align: -2px; margin-right: 3px; }
+@media (prefers-reduced-motion: reduce) { .pmap .wave, .pmap .ping { animation: none; } }
+body.light .pmap .wave, body.light .pmap .ping { animation: none; }

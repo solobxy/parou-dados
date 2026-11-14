@@ -131,6 +131,7 @@ function vista(p, now) {
     weapon: p.weapon, armor: p.armor, luxuries: p.luxuries, luxuryPrice: E.luxuryPrice(p),
     attack: E.attackPower(p, now), defense: E.defensePower(p, now),
     crimes: CFG.crimes.map((c, k) => ({ chance: E.crimeChanceBp(p, k, now), unlocked: E.crimeUnlocked(p, k) })),
+    sick: p.sick, cure: E.cureCost(p), hookers: CFG.hookers.list.map((_, i) => E.hookerPrice(p, i, now)), hkUses: p.hkT.length,
     cls: p.cls, av: p.av, fx: E.activeFx(p, now), drugPrices: CFG.drugs.map((_, d) => E.drugPrice(p, d)),
     biz: p.biz.map((s, i) => ({ n: s.n, stored: stored[i].money, perH: E.bizRates(p, i).perH, price: s.n < CFG.bizMax ? E.bizPrice(i, s.n) : null, t: s.t })),
     port: p.port, portCap: E.portCap(p), portSlots: E.portSlots(p),
@@ -143,7 +144,7 @@ function cfgPublica() {
     biz: CFG.biz.map(({ id, price, perH, resp, stat, raid, toBank }) => ({ id, price, perH, resp, stat, raid, toBank })),
     bizMax: CFG.bizMax, storageMs: CFG.storageMs, port: CFG.port, weapons: CFG.weapons, armors: CFG.armors,
     pvp: CFG.pvp, bank: CFG.bank, luxury: CFG.luxury, levels: CFG.levels, crit: CFG.crit, unlockBp: CFG.unlockBp,
-    bustBp: CFG.bustBp, classes: CFG.classes, avatars: CFG.avatars, mastery: CFG.mastery, missions: CFG.missions.length, start: CFG.start,
+    bustBp: CFG.bustBp, classes: CFG.classes, avatars: CFG.avatars, hookers: CFG.hookers, mastery: CFG.mastery, missions: CFG.missions.length, start: CFG.start,
     round: { playDays: CFG.round.playDays, noPvpMs: CFG.round.noPvpMs },
   };
 }
@@ -238,6 +239,8 @@ function agir(conta, corpo, now) {
     case 'train': r = E.train(p, now, world, String(a.stat)); break;
     case 'drug': r = E.buyDrug(p, now, world, int(a.d)); break;
     case 'refill': r = E.refill(p, now, world); break;
+    case 'hooker': r = E.visitHooker(p, now, world, int(a.i), rng); break;
+    case 'cure': r = E.cure(p, now, world); break;
     case 'class': r = E.setClass(p, now, world, String(a.id)); break;
     case 'avatar': r = E.setAvatar(p, now, world, int(a.i)); break;
     case 'detox': r = E.detox(p, now, world); break;

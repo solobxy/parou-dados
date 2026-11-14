@@ -536,3 +536,22 @@ test('profissão: escolhe-se uma vez e muda as contas', () => {
   assert.throws(() => E.setAvatar(v, START, W, 32), (e) => e.code === 'NO_AVATAR');
   for (const p of [a, b, m, v]) assert.deepEqual(E.checkInvariants(p), []);
 });
+
+test('putas: stamina sem vício, preço sobe a cada visita, doença trata-se no hospital', () => {
+  const p = mk(); p.cash = 1e6; p.energy = 0;
+  const p0 = E.hookerPrice(p, 0, START);
+  let r = E.visitHooker(p, START, W, 0, never);
+  assert.equal(r.energy, CFG.hookers.list[0].e); assert.equal(p.addiction, 0); assert.equal(r.sick, false);
+  assert.ok(E.hookerPrice(p, 0, START) > p0, 'a segunda visita custa mais');
+  assert.equal(E.hookerPrice(p, 0, START + CFG.hookers.windowMs + 1), p0, 'passadas 24 h volta ao preço normal');
+  const antes = E.attackPower(p, START);
+  r = E.visitHooker(p, START, W, 5, always);
+  assert.equal(r.sick, true); assert.ok(E.attackPower(p, START) < antes, 'doente fica mais fraco');
+  assert.throws(() => E.visitHooker(p, START, W, 0, never), (e) => e.code === 'SICK');
+  assert.ok(E.cureCost(p) >= CFG.hookers.cureMin);
+  E.cure(p, START, W); assert.equal(p.sick, false);
+  assert.throws(() => E.cure(p, START, W), (e) => e.code === 'NOT_SICK');
+  p.energy = CFG.energy.max;
+  assert.throws(() => E.visitHooker(p, START, W, 0, never), (e) => e.code === 'ENERGY_FULL');
+  assert.deepEqual(E.checkInvariants(p), []);
+});

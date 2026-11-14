@@ -38,7 +38,7 @@ export function newPlayer(id, now, world, opts = {}) {
     wk: CFG.crimes.map(() => 0),   // sucessos por golpe (mestria)
     c: { crimes: 0, wins: 0, trains: 0, refills: 0, collects: 0, pvpWins: 0, ports: 0 },
     mi: 0,                         // próximo objetivo por receber
-    cls: '', av: 0, fx: {},        // profissão, avatar e efeitos temporários (kind -> { bp, until })
+    cls: '', av: 0, fx: {}, sick: false, hkT: [],        // profissão, avatar e efeitos temporários (kind -> { bp, until })
   };
 }
 
@@ -52,6 +52,8 @@ function migrate(p) {
   if (typeof p.cls !== 'string') p.cls = '';
   if (!Number.isSafeInteger(p.av)) p.av = 0;
   if (!p.fx || typeof p.fx !== 'object') p.fx = {};
+  if (typeof p.sick !== 'boolean') p.sick = false;
+  if (!Array.isArray(p.hkT)) p.hkT = [];
 }
 
 // ---------- tempo ----------
@@ -138,7 +140,7 @@ const klass = (p) => CFG.classes.find((c) => c.id === p.cls) || {};
 const up = (x, bp) => Math.floor((x * (10000 + bp)) / 10000);
 const cut = (x, bp) => Math.floor((x * (10000 - bp)) / 10000);
 export function buffBp(p, k, now) { const f = p.fx && p.fx[k]; return f && now !== undefined && f.until > now ? f.bp : 0; }
-export function effStat(p, s, now) { return up(p.stats[s], buffBp(p, s, now)); }
+export function effStat(p, s, now) { const v = up(p.stats[s], buffBp(p, s, now)); return p.sick && now !== undefined ? cut(v, CFG.hookers.sickCutBp) : v; }
 export function activeFx(p, now) { return CFG.fxKinds.filter((k) => buffBp(p, k, now) > 0).map((k) => ({ k, bp: p.fx[k].bp, until: p.fx[k].until })); }
 function applyFx(p, g, now) {
   const out = [];
@@ -271,6 +273,44 @@ export function payMedic(p, now, world) {
   pay(p, cost);
   p.hospUntil = 0;
   return { ok: true, cost };
+}
+
+// ---------- putas ----------
+function pruneHk(p, now) { const lim = now - CFG.hookers.windowMs; while (p.hkT.length && p.hkT[0] <= lim) p.hkT.shift(); }
+export function hookerPrice(p, i, now) {
+  if (now !== undefined) pruneHk(p, now);
+  const H = CFG.hookers, g = H.list[i];
+  let price = Math.max(g.min, Math.floor((Math.floor(valuePerEnergy(p) * 100) * g.e * g.valueBp) / 1000000));
+  const n = Math.min(p.hkT.length, H.maxSteps);
+  for (let k = 0; k < n; k++) price = Math.ceil((price * H.stepNum) / H.stepDen);
+  return price;
+}
+export function visitHooker(p, now, world, i, rng) {
+  const g = Number.isInteger(i) ? CFG.hookers.list[i] : undefined;
+  if (!g) fail('NO_HOOKER');
+  begin(p, now, world);
+  if (p.sick) fail('SICK');
+  if (p.energy >= CFG.energy.max) fail('ENERGY_FULL');
+  const price = hookerPrice(p, i, now);
+  pay(p, price);
+  const got = Math.min(g.e, CFG.energy.max - p.energy);
+  p.energy += got;
+  if (p.hkT.length >= CFG.hookers.maxSteps) p.hkT.shift();
+  p.hkT.push(now);
+  const sick = rng.chance(g.sickBp);
+  if (sick) p.sick = true;
+  return { ok: true, energy: got, price, sick };
+}
+export function cureCost(p) {
+  return p.sick ? Math.max(CFG.hookers.cureMin, Math.floor((Math.floor(valuePerEnergy(p) * 100) * CFG.hookers.cureValueBp) / 10000)) : 0;
+}
+export function cure(p, now, world) {
+  begin(p, now, world, { allowBusy: true });
+  if (!p.sick) fail('NOT_SICK');
+  const price = cureCost(p);
+  pay(p, price);
+  p.sick = false;
+  return { ok: true, price };
 }
 
 // ---------- discoteca ----------
@@ -764,6 +804,8 @@ export function checkInvariants(p) {
   for (const s of ['F', 'I', 'C']) if (!Number.isSafeInteger(p.xp?.[s]) || p.xp[s] < 0 || p.xp[s] >= practiceNeed(p, s)) bad.push(`xp ${s}=${p.xp?.[s]}`);
   if (p.energyT > p.t || p.addictionT > p.t) bad.push('timer in future');
   if (p.cls !== '' && !CFG.classes.some((c) => c.id === p.cls)) bad.push('class');
+  if (typeof p.sick !== 'boolean') bad.push('sick');
+  if (!Array.isArray(p.hkT) || p.hkT.length > CFG.hookers.maxSteps) bad.push('hooker list');
   if (!Number.isSafeInteger(p.av) || p.av < 0 || p.av >= CFG.avatars) bad.push('avatar');
   for (const k of Object.keys(p.fx)) { const f = p.fx[k]; if (!CFG.fxKinds.includes(k) || !Number.isSafeInteger(f.bp) || f.bp <= 0 || !Number.isSafeInteger(f.until)) bad.push('fx ' + k); }
   for (const s of p.biz) {

@@ -75,6 +75,7 @@ function react(type, out, before, opts) {
     if (before) me.crimes.forEach((x, i) => { if (x.unlocked && !before.crimes[i].unlocked) S.report.unlocked.push(i); });
     fx.vibrate(r.success ? 12 : r.busted ? [40, 60, 40] : 30); fx.sfx(r.success ? (r.crit ? 'crit' : 'cash') : r.busted ? 'bust' : 'fail');
   } else if (type === 'drug') fx.sfx('refill');
+  else if (type === 'hooker') { fx.sfx('refill'); if (r.sick) { toast(t('gotSick'), true); fx.vibrate([40, 60, 40]); } }
   else if (type === 'claim') { toast(t('got', { m: money(r.cash) })); fx.sfx('claim'); }
   else if (type === 'collect') {
     let total = 0, lost = 0;
@@ -162,12 +163,12 @@ function updateHud() {
   const L = me.level;
   S.hud.lvl.textContent = L;
   S.hud.title.textContent = list('titles')[L - 1];
-  S.hud.name.textContent = me.name + (S.st.rank ? ' · #' + S.st.rank : '');
+  S.hud.name.textContent = me.name + (me.cls ? ' · ' + t('cl_' + me.cls) : '') + (S.st.rank ? ' · #' + S.st.rank : '');
   const span = me.levelTo ? (me.levelTo - me.levelFrom) : 1;
   const prog = me.levelTo ? Math.min(1, Math.max(0, (me.peakRespect - me.levelFrom) / span)) : 1;
   S.hud.ringFg.setAttribute('stroke-dashoffset', String(S.hud.C * (1 - prog)));
   if (S.hud.av && S.hud.av.dataset.i !== String(me.av)) { S.hud.av.dataset.i = me.av; S.hud.av.src = AV(me.av); }
-  S.hud.fx.replaceChildren(...me.fx.map(fxChip)); S.hud.fx.style.display = me.fx.length ? '' : 'none';
+  S.hud.fx.replaceChildren(me.sick ? h('button', { class: 'chip fxc bad', on: { click: () => go('hosp') } }, icon('skull'), t('sickChip', { p: S.cfg.hookers.sickCutBp / 100 })) : '', ...me.fx.map(fxChip)); S.hud.fx.style.display = me.fx.length || me.sick ? '' : 'none';
   S.hud.stats.replaceChildren(...['F', 'I', 'C', 'T'].map((s) => h('span', { title: t('stat' + s) }, icon(STAT_IC[s]), h('b', { class: 'num' }, short(me.stats[s])))),
     h('span', { class: 'nx' }, me.levelTo ? t('toLevel', { n: num(me.levelTo - me.peakRespect), l: L + 1 }) : t('maxLevel')));
   const sh = S.hud.shown;
@@ -183,6 +184,7 @@ function tickHud() {
   S.hud.etxt.replaceChildren(icon('bolt'), ' ' + L.energy + '/' + S.cfg.energy.max, h('small', null, L.nextE ? ' · ' + t('nextIn', { t: dur(L.nextE) }) : ''));
   S.hud.vbar.style.width = (L.vice / me.addictionCap) * 100 + '%';
   S.hud.vtxt.textContent = t('vice') + ' ' + L.vice + '/' + me.addictionCap;
+  tickShips();
   document.querySelectorAll('[data-left]').forEach((el) => { const left = +el.dataset.left - now(); el.textContent = dur(left); if (left <= 0 && el.dataset.re !== '1') { el.dataset.re = '1'; refresh(); } });
   document.querySelectorAll('[data-stored]').forEach((el) => { const i = +el.dataset.stored; const b = me.biz[i]; el.textContent = money(storedNow(b, i)); });
   document.querySelectorAll('[data-biz]').forEach((el) => {
@@ -212,11 +214,11 @@ function tickHud() {
 const PLACES = {
   city: { ic: 'city' }, rob: { ic: 'street', img: 'golpes' }, club: { ic: 'bolt', img: 'discoteca' }, gym: { img: 'ginasio' },
   biz: { ic: 'empire', img: 'negocios' }, port: { img: 'porto' }, arms: { img: 'armas' }, bank: { img: 'banco' }, hosp: { img: 'hospital' },
-  jail: { img: 'prisao' }, alley: { img: 'beco' }, lux: { img: 'luxos' }, fights: { ic: 'fights', img: 'lutas' }, rank: { img: 'ranking' },
+  jail: { img: 'prisao' }, alley: { img: 'beco' }, lux: { img: 'luxos' }, fights: { ic: 'fights', img: 'lutas' }, rank: { img: 'ranking' }, putas: { img: 'putas' },
 };
 const NAV = ['city', 'rob', 'club', 'biz', 'fights'];
-const GRID = ['rob', 'club', 'gym', 'biz', 'port', 'arms', 'bank', 'hosp', 'alley', 'lux', 'fights', 'rank'];
-const IMG = (kind, id, big) => `/img/${kind}/${id}${big ? '-g' : ''}.webp?5`;
+const GRID = ['rob', 'club', 'putas', 'gym', 'biz', 'port', 'arms', 'bank', 'hosp', 'alley', 'lux', 'fights', 'rank'];
+const IMG = (kind, id, big) => `/img/${kind}/${id}${big ? '-g' : ''}.webp?6`;
 function go(tab) {
   if (!PLACES[tab]) tab = 'city';
   S.tab = tab; document.body.dataset.tab = tab; store.set('tab', tab);
@@ -236,7 +238,7 @@ function shell() {
 }
 
 const SCREENS = { city: screenCity, rob: screenRob, club: screenClub, gym: screenGym, biz: screenBiz, port: screenPort, arms: screenArms, bank: screenBank,
-  hosp: screenHosp, jail: screenJail, alley: screenAlley, lux: screenLux, fights: screenFights, rank: screenRank };
+  hosp: screenHosp, jail: screenJail, putas: screenPutas, alley: screenAlley, lux: screenLux, fights: screenFights, rank: screenRank };
 function render() {
   if (!S.st) return;
   if (!S.st.me || S.st.round.phase !== 'play') return renderPause();
@@ -256,13 +258,14 @@ function pageHead(id, sub, noImg) {
   const P = PLACES[id];
   return h('div', { class: 'phead' },
     h('div', { class: 'pbar' }, h('button', { class: 'back', 'aria-label': t('p_city'), on: { click: () => go('city') } }, h('span', { 'aria-hidden': 'true' }, '←')), h('h1', null, t('p_' + id))),
-    P.img && !noImg ? h('div', { class: 'pimg' }, h('img', { src: IMG('cenas', P.img, 1), alt: '', width: 1100, height: 1100, decoding: 'async' })) : null,
+    P.img && !noImg ? h('div', { class: 'pimg' }, h('img', { src: IMG('cenas', P.img, 1), alt: '', width: 1100, height: 1100, decoding: 'async', on: { error: (e) => e.currentTarget.parentNode.remove() } })) : null,
     sub ? h('p', { class: 'psub' }, sub) : null);
 }
 
 function busyBanner(me) {
   const L = live(me);
   if (L.jail) return h('div', { class: 'state jail' }, h('h3', null, t('jail')), h('div', { class: 't' }, t('jailSub', { t: '' }), h('b', { class: 'num', dataset: { left: me.jailUntil } }, dur(L.jail))),
+    h('div', { class: 'fill big jbar', dataset: { until: me.jailUntil, total: (S.cfg.crimes[me.jailTier - 1]?.jailMin || 1) * 60000 } }, h('i')),
     h('button', { class: 'btn danger block', on: { click: (e) => act('bail', {}, { el: e.currentTarget }) } }, t('payBail', { m: money(me.bail) })));
   if (L.hosp) return h('div', { class: 'state hosp' }, h('h3', null, t('hospital')), h('div', { class: 't' }, t('hospitalSub', { t: '' }), h('b', { class: 'num', dataset: { left: me.hospUntil } }, dur(L.hosp))),
     h('button', { class: 'btn danger block', on: { click: (e) => act('medic', {}, { el: e.currentTarget }) } }, t('payMedic', { m: money(me.medic) })));
@@ -350,7 +353,7 @@ function screenCity() {
   const r = S.st.round;
   return [h('h1', { class: 'sr' }, t('p_city')),
     h('div', { class: 'tiles' }, ids.map((id) => h('button', { class: 'tile', on: { click: () => go(id) } },
-      h('img', { src: IMG('cenas', PLACES[id].img), alt: '', width: 600, height: 600, loading: 'lazy', decoding: 'async' }),
+      h('img', { src: IMG('cenas', PLACES[id].img), alt: '', width: 600, height: 600, loading: 'lazy', decoding: 'async', on: { error: (e) => e.currentTarget.remove() } }),
       h('span', { class: 'lbl' }, t('p_' + id)), badge[id] ? h('span', { class: 'bdg' }, badge[id]) : null))),
     h('p', { class: 'small muted', style: 'text-align:center;margin-top:16px' }, t('roundEnds', { n: r.n + 1, t: dur(r.playEnd - n) }))];
 }
@@ -432,6 +435,26 @@ function screenClub() {
   return out;
 }
 
+// ---------- putas ----------
+function screenPutas() {
+  const me = S.st.me, L = live(me), H = S.cfg.hookers;
+  const out = [pageHead('putas', t('s_putas', { p: Math.round((H.stepNum / H.stepDen - 1) * 100) }))];
+  const b = busyBanner(me); if (b) out.push(b);
+  if (me.sick) out.push(h('div', { class: 'note', style: 'margin-bottom:10px' }, h('h3', { class: 'c-red' }, t('sickTitle')), h('p', null, t('sickSub', { p: H.sickCutBp / 100 })),
+    h('button', { class: 'btn pri', on: { click: () => go('hosp') } }, t('goHosp'))));
+  out.push(h('div', { class: 'shop' }, H.list.map((g, i) => {
+    const price = me.hookers[i];
+    const ok = !b && !me.sick && L.energy < S.cfg.energy.max && me.cash + me.bank >= price;
+    return h('div', { class: 'item' }, art('putas', g.id),
+      h('div', { class: 'nm' }, list('hookers')[i]),
+      h('div', { class: 'small muted' }, t('hk_t' + g.tier)),
+      h('div', { class: 'small' }, h('span', { class: 'c-en' }, icon('bolt'), '+' + g.e + ' ' + t('energy').toLowerCase())),
+      h('div', { class: 'small ' + (g.sickBp >= 500 ? 'c-red' : 'muted') }, icon('skull'), t('hkRisk', { p: (g.sickBp / 100).toString().replace('.', lang() === 'pt' ? ',' : '.') })),
+      h('button', { class: 'btn buy block', disabled: !ok, on: { click: (e) => act('hooker', { i }, { el: e.currentTarget }) } }, t('hkGo', { m: money(price) })));
+  })));
+  return out;
+}
+
 // ---------- ginásio ----------
 function screenGym() {
   const me = S.st.me;
@@ -483,9 +506,41 @@ function screenBiz() {
 }
 
 // ---------- porto ----------
+// mapa: cada contentor é um navio que atravessa o mar ao ritmo do tempo que falta
+function portMap(me) {
+  const s = svg('svg', { class: 'pmap', viewBox: '0 0 320 150', role: 'img', 'aria-label': t('p_port') });
+  for (let x = 40; x < 320; x += 40) s.append(svg('path', { class: 'grid', d: `M${x} 0V150` }));
+  for (let y = 30; y < 150; y += 30) s.append(svg('path', { class: 'grid', d: `M0 ${y}H320` }));
+  for (let k = 0; k < 7; k++) s.append(svg('path', { class: 'wave', d: `M${20 + k * 44} ${30 + (k * 37) % 100}q5-4 10 0t10 0`, style: `animation-delay:${-k * 0.7}s` }));
+  s.append(svg('path', { class: 'land', d: 'M0 150V78c16-8 30-2 38 10 9 13 4 26 17 35 10 7 15 15 13 27z' }));
+  s.append(svg('path', { class: 'land', d: 'M320 0v100c-13 4-22-3-26-14-4-12-17-12-21-25-4-11 3-21-4-31-5-9-2-20 5-30z' }));
+  s.append(svg('path', { class: 'route', d: 'M46 110C96 130 118 38 176 58s80 10 106-22' }), svg('path', { class: 'route done', d: 'M46 110C96 130 118 38 176 58s80 10 106-22' }));
+  s.append(svg('circle', { class: 'org', cx: 46, cy: 110, r: 4 }), svg('circle', { class: 'ping', cx: 282, cy: 36, r: 4 }), svg('circle', { class: 'dst', cx: 282, cy: 36, r: 4 }));
+  const lbl = (x, y, txt, anchor) => { const e = svg('text', { x, y, 'text-anchor': anchor }); e.textContent = txt; return e; };
+  s.append(lbl(54, 128, 'Cartagena', 'start'), lbl(274, 24, t('p_port'), 'end'));
+  me.port.forEach((c, i) => {
+    const g = svg('g', { class: 'ship', 'data-ready': c.readyAt, 'data-i': i });
+    g.append(svg('path', { d: 'M-8 1l2.5 5h11l2.5-5zM-4.5 1v-5h9v5M-1-4v-3.5h2.5v3.5' }));
+    s.append(g);
+  });
+  return h('div', { class: 'pmapbox' }, s);
+}
+function tickShips() {
+  document.querySelectorAll('.pmap').forEach((m) => {
+    const route = m.querySelector('.route'), L = route.getTotalLength(); let far = 0;
+    m.querySelectorAll('.ship').forEach((g) => {
+      const pr = Math.min(1, Math.max(0, 1 - (+g.dataset.ready - now()) / S.cfg.port.ms)), pt = route.getPointAtLength(pr * L);
+      g.setAttribute('transform', `translate(${pt.x.toFixed(1)} ${(pt.y - 4 - (+g.dataset.i % 3) * 3).toFixed(1)})`);
+      g.classList.toggle('in', pr >= 1); far = Math.max(far, pr);
+    });
+    m.querySelector('.done').setAttribute('stroke-dasharray', `${(far * L).toFixed(1)} ${L.toFixed(1)}`);
+  });
+  document.querySelectorAll('.jbar').forEach((el) => { const left = +el.dataset.until - now(); el.firstChild.style.width = Math.min(100, Math.max(0, (1 - left / +el.dataset.total) * 100)) + '%'; });
+}
 function screenPort() {
   const me = S.st.me;
   const out = [pageHead('port', t('portSub'))];
+  out.push(portMap(me));
   const pc = h('div', { class: 'card stack' }, h('div', { class: 'small muted' }, t('slots', { a: me.port.length, b: me.portSlots })));
   for (const c of me.port) {
     const left = c.readyAt - now();
@@ -540,11 +595,14 @@ function screenHosp() {
   const me = S.st.me, L = live(me);
   const out = [pageHead('hosp', t('s_hosp'))];
   const b = busyBanner(me); if (b) out.push(b);
+  if (me.sick) out.push(h('div', { class: 'card detox', style: 'margin-bottom:10px' }, h('b', { class: 'c-red' }, icon('skull'), ' ' + t('sickTitle')),
+    h('p', { class: 'small muted' }, t('sickSub', { p: S.cfg.hookers.sickCutBp / 100 })),
+    h('button', { class: 'btn buy block', disabled: me.cash + me.bank < me.cure, on: { click: (e) => act('cure', {}, { el: e.currentTarget }) } }, t('cureBtn', { m: money(me.cure) }))));
   if (L.vice > 0) out.push(h('div', { class: 'card detox' },
     meter(t('vice'), L.vice, me.addictionCap, 'vi'),
     h('p', { class: 'small muted' }, t('detoxSub')),
     h('button', { class: 'btn buy block', disabled: !!b || me.cash + me.bank < me.detox, on: { click: (e) => act('detox', {}, { el: e.currentTarget }) } }, t('detoxBtn', { m: money(me.detox) }))));
-  else if (!b) out.push(h('div', { class: 'note' }, h('p', { class: 'muted' }, t('healthy'))));
+  else if (!b && !me.sick) out.push(h('div', { class: 'note' }, h('p', { class: 'muted' }, t('healthy'))));
   return out;
 }
 function screenJail() {
@@ -693,7 +751,7 @@ async function showLanding(st) {
   if (!info) { try { const r = await fetch('/api/saude'); info = await r.json(); } catch {} }
   const langsw = h('div', { class: 'langsw' }, [['en', 'EN'], ['pt', 'PT']].map(([l, n]) => h('button', { 'aria-pressed': lang() === l ? 'true' : 'false', on: { click: () => { applyLang(l); showLanding(info ? { players: info.jogadores, round: info.round } : null); } } }, n)));
   $app.replaceChildren(langsw, h('div', { class: 'land' },
-    h('div', { class: 'land-art', 'aria-hidden': 'true' }, h('img', { src: '/img/cenas/entrada-g.webp?5', alt: '', width: 800, height: 800, fetchpriority: 'high', decoding: 'async' })),
+    h('div', { class: 'land-art', 'aria-hidden': 'true' }, h('img', { src: '/img/cenas/entrada-g.webp?6', alt: '', width: 800, height: 800, fetchpriority: 'high', decoding: 'async' })),
     h('div', { class: 'word neon', 'aria-label': 'Crime' }, 'Crime'),
     h('p', { class: 'tag' }, t('tagline')),
     info ? h('div', { class: 'meta' },
