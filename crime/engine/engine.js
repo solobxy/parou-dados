@@ -271,6 +271,34 @@ export function doCrime(p, now, world, k, rng) {
   return { ok: true, success: false, busted, jailUntil: p.jailUntil, chanceBp: bp, gained, newChanceBp: crimeChanceBp(p, k, now) };
 }
 
+// «usar a stamina toda»: repete o mesmo golpe tantas vezes quantas a stamina de agora dá (no máximo 25).
+// Para se fores preso. Se subires de nível a meio, a stamina que isso enche fica para ti.
+// Cada golpe é exatamente igual a um toque no botão; isto só poupa toques.
+export function doCrimeAll(p, now, world, k, rng) {
+  const c = Number.isInteger(k) ? CFG.crimes[k] : undefined;
+  if (!c) fail('NO_CRIME');
+  begin(p, now, world);
+  if (!crimeUnlocked(p, k)) fail('LOCKED');
+  if (p.energy < c.e) fail('NO_ENERGY', { need: c.e });
+  const out = { ok: true, all: true, n: 0, wins: 0, crits: 0, money: 0, best: 0, bestCrit: false, respect: 0,
+    busted: false, jailUntil: 0, levelUp: null, gained: {}, star: 0, chanceBp: crimeChanceBp(p, k, now), newChanceBp: 0 };
+  const budget = Math.min(CFG.crimeAllMax, Math.floor(p.energy / c.e));
+  while (out.n < budget && p.energy >= c.e) {
+    const r = doCrime(p, now, world, k, rng);
+    out.n += 1;
+    for (const [s, g] of Object.entries(r.gained)) out.gained[s] = (out.gained[s] || 0) + g;
+    if (r.success) {
+      out.wins += 1; out.money += r.money; out.respect += r.respect;
+      if (r.crit) out.crits += 1;
+      if (r.money > out.best) { out.best = r.money; out.bestCrit = r.crit; }
+      if (r.star) out.star = r.star;
+      if (r.levelUp) out.levelUp = { from: out.levelUp ? out.levelUp.from : r.levelUp.from, to: r.levelUp.to };
+    } else if (r.busted) { out.busted = true; out.jailUntil = r.jailUntil; break; }
+  }
+  out.newChanceBp = crimeChanceBp(p, k, now);
+  return out;
+}
+
 export function bailCost(p, now) {
   if (!(p.jailUntil > now)) return 0;
   const c = CFG.crimes[p.jailTier - 1];

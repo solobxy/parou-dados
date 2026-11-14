@@ -252,3 +252,30 @@ test('negócios: um golpe que sobe a stat não muda o que já estava produzido',
   assert.equal(p.biz[2].stored, antes);                         // 1 h ao rendimento antigo, exato
   assert.ok(E.bizRates(p, 2).perH > antes);
 });
+
+test('usar a stamina toda: igual a carregar várias vezes, para na prisão, a subida de nível não se perde', () => {
+  // sem subir de nível: gasta a stamina toda
+  const p = mk(); p.peakRespect = 1e6; p.energy = 100; p.stats = { F: 400, T: 10, I: 400, C: 400 };
+  const r = E.doCrimeAll(p, NOW, W, 0, always);
+  assert.equal(r.n, 20); assert.equal(r.wins, 20); assert.equal(p.energy, 0);
+  assert.equal(r.respect, 20 * CFG.crimes[0].r); assert.equal(p.respect, r.respect);
+  // o mesmo jogador, golpe a golpe, com a mesma sorte, acaba igual
+  const a = mk(), b = mk();
+  for (const q of [a, b]) { q.peakRespect = 1e6; q.energy = 100; q.cash = 0; }
+  const ra = E.doCrimeAll(a, NOW, W, 0, seededRng(9)); const rb = seededRng(9);
+  for (let i = 0; i < ra.n; i++) E.doCrime(b, NOW, W, 0, rb);
+  assert.equal(a.cash, b.cash); assert.equal(a.respect, b.respect); assert.deepEqual(a.stats, b.stats); assert.equal(a.energy, b.energy);
+  // apanhado: para logo
+  const c = mk(); c.peakRespect = 1e6; c.energy = 100;
+  const rc = E.doCrimeAll(c, NOW, W, 1, (() => { let i = 0; return { int: (lo) => lo, chance: () => i++ % 2 === 1 }; })());
+  assert.equal(rc.n, 1); assert.equal(rc.busted, true); assert.ok(c.jailUntil > NOW); assert.equal(c.energy, 100 - CFG.crimes[1].e);
+  assert.throws(() => E.doCrimeAll(c, NOW, W, 0, always), code('IN_JAIL'));
+  // sobe de nível a meio (aos 3 e aos 10 de respeito): faz os 20 na mesma e a stamina que encheu fica
+  const d = mk(); d.energy = 100;
+  const rd = E.doCrimeAll(d, NOW, W, 0, always);
+  assert.equal(rd.n, 20); assert.deepEqual(rd.levelUp, { from: 1, to: 3 }); assert.equal(d.energy, 50);
+  // sem stamina para um golpe: recusado e nada muda
+  const e = mk(); e.energy = 4; const antes = structuredClone(e);
+  assert.throws(() => E.doCrimeAll(e, NOW, W, 0, always), code('NO_ENERGY'));
+  assert.deepEqual(e, antes);
+});

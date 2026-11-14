@@ -66,9 +66,11 @@ function noticia(now, o) { jornal.push({ t: now, ...o }); if (jornal.length > 40
 const ultimas = () => jornal.slice(-12).reverse();
 function noticiar(now, a, r, p, alvo) {
   const name = nomeDe(p.id), k = int(a.k);
-  if (a.type === 'crime' && r.success && (k >= 5 || (r.crit && k >= 2))) noticia(now, { k: 'job', name, c: k, money: r.money, crit: r.crit });
-  else if (a.type === 'crime' && r.busted && k >= 3) noticia(now, { k: 'jail', name, c: k });
-  else if (a.type === 'house') noticia(now, { k: 'house', name, h: p.house });
+  const job = a.type === 'crimeAll' ? { ok: r.wins > 0, money: r.best, crit: r.bestCrit } : { ok: r.success, money: r.money, crit: r.crit };
+  const isJob = a.type === 'crime' || a.type === 'crimeAll';
+  if (isJob && job.ok && (k >= 5 || (job.crit && k >= 2))) noticia(now, { k: 'job', name, c: k, money: job.money, crit: job.crit });
+  if (isJob && r.busted && k >= 3) noticia(now, { k: 'jail', name, c: k });
+  if (a.type === 'house') noticia(now, { k: 'house', name, h: p.house });
   else if (a.type === 'luxury') noticia(now, { k: 'lux', name, i: p.luxuries - 1 });
   else if (a.type === 'attack' && r.win) noticia(now, { k: 'fight', name, target: nomeDe(alvo.id), mode: r.mode });
   if (r.levelUp && r.levelUp.to >= 4) noticia(now, { k: 'lvl', name, n: r.levelUp.to });
@@ -160,7 +162,7 @@ function cfgPublica() {
     biz: CFG.biz.map(({ id, price, perH, resp, stat, raid, toBank }) => ({ id, price, perH, resp, stat, raid, toBank })),
     bizMax: CFG.bizMax, storageMs: CFG.storageMs, port: CFG.port, weapons: CFG.weapons, armors: CFG.armors,
     pvp: CFG.pvp, bank: CFG.bank, luxury: CFG.luxury, levels: CFG.levels, crit: CFG.crit, unlockBp: CFG.unlockBp,
-    bustBp: CFG.bustBp, classes: CFG.classes, avatars: CFG.avatars, hookers: CFG.hookers, house: CFG.house, mastery: CFG.mastery, missions: CFG.missions.length, start: CFG.start,
+    bustBp: CFG.bustBp, crimeAllMax: CFG.crimeAllMax, classes: CFG.classes, avatars: CFG.avatars, hookers: CFG.hookers, house: CFG.house, mastery: CFG.mastery, missions: CFG.missions.length, start: CFG.start,
     round: { playDays: CFG.round.playDays, noPvpMs: CFG.round.noPvpMs },
   };
 }
@@ -252,6 +254,7 @@ function agir(conta, corpo, now) {
   let r, alvo = null;
   switch (a.type) {
     case 'crime': r = E.doCrime(p, now, world, int(a.k), rng); break;
+    case 'crimeAll': r = E.doCrimeAll(p, now, world, int(a.k), rng); break;
     case 'train': r = E.train(p, now, world, String(a.stat)); break;
     case 'drug': r = E.buyDrug(p, now, world, int(a.d)); break;
     case 'refill': r = E.refill(p, now, world); break;

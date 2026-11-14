@@ -231,3 +231,14 @@ test('jornal da cidade: uma luta ganha aparece para todos, sem dados privados', 
     assert.deepEqual(Object.keys(e).filter((k) => !['t', 'k', 'name', 'c', 'money', 'crit', 'h', 'i', 'target', 'mode', 'n'].includes(k)), []);
   }
 });
+
+test('usar a stamina toda pela API', async () => {
+  const { cookie, estado } = await contaNova('Toda', '10.0.9.10');
+  const r = await cru(cookie, '10.0.9.10', { type: 'crimeAll', k: 0, rid: 'tudo-1' });
+  assert.equal(r.status, 200);
+  assert.equal(r.body.result.all, true);
+  assert.ok(r.body.result.n >= 1);
+  const me = await estado();
+  assert.equal(me.counters.crimes, r.body.result.n);
+  assert.equal(me.cash, 500 + r.body.result.money);
+});

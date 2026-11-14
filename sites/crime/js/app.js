@@ -41,7 +41,8 @@ function toast(msg, bad) {
 
 // as ações vão em fila, uma de cada vez, pela ordem dos toques
 function act(type, args = {}, opts = {}) {
-  if (type === 'crime') {
+  const job = type === 'crime' || type === 'crimeAll';
+  if (job) {
     if (S.crimeBusy) return Promise.resolve(null);   // um golpe de cada vez: o cartão mostra que está a decorrer
     S.crimeBusy = true;
     opts.el?.classList.add('go'); fx.sfx('tap');
@@ -51,7 +52,7 @@ function act(type, args = {}, opts = {}) {
     const before = S.st?.me, started = performance.now();
     try {
       const out = await api('POST', '/api/act', { type, ...args, rid: rid() });
-      if (type === 'crime') { const wait = fx.dur(380) - (performance.now() - started); if (wait > 0) await new Promise((r) => setTimeout(r, wait)); }
+      if (job) { const wait = fx.dur(type === 'crimeAll' ? 650 : 380) - (performance.now() - started); if (wait > 0) await new Promise((r) => setTimeout(r, wait)); }
       S.st.me = out.me; S.stAt = now(); if (out.feed) S.feed = out.feed;
       react(type, out, before, { ...opts, args });
       return out;
@@ -60,7 +61,7 @@ function act(type, args = {}, opts = {}) {
       if (e.code && e.code !== 'LOGIN_REQUIRED') { toast(errText(e.code), true); fx.vibrate([30, 40, 30]); }
       render();
       return null;
-    } finally { S.pending--; if (type === 'crime') S.crimeBusy = false; }
+    } finally { S.pending--; if (job) S.crimeBusy = false; }
   });
   S.queue = p.catch(() => {});
   return p;
@@ -69,11 +70,12 @@ function act(type, args = {}, opts = {}) {
 // ---------- o que acontece depois de cada ação ----------
 function react(type, out, before, opts) {
   const r = out.result, me = out.me, lv = r.levelUp && r.levelUp.to > r.levelUp.from ? r.levelUp : null;
-  if (type === 'crime') {
+  if (type === 'crime' || type === 'crimeAll') {
     const k = opts.args.k;
     S.report = { k, r, c: S.cfg.crimes[k], lv, at: now(), unlocked: [] };
     if (before) me.crimes.forEach((x, i) => { if (x.unlocked && !before.crimes[i].unlocked) S.report.unlocked.push(i); });
-    fx.vibrate(r.success ? 12 : r.busted ? [40, 60, 40] : 30); fx.sfx(r.success ? (r.crit ? 'crit' : 'cash') : r.busted ? 'bust' : 'fail');
+    const ok = r.all ? r.wins > 0 : r.success, crit = r.all ? r.crits > 0 : r.crit;
+    fx.vibrate(r.busted ? [40, 60, 40] : ok ? 12 : 30); fx.sfx(r.busted ? 'bust' : ok ? (crit ? 'crit' : 'cash') : 'fail');
   } else if (type === 'drug') fx.sfx('refill');
   else if (type === 'house') { toast(t('houseMoved', { x: list('houses')[me.house], n: r.respect })); fx.sfx('claim'); }
   else if (type === 'hooker') { fx.sfx('refill'); if (r.sick) { toast(t('gotSick'), true); fx.vibrate([40, 60, 40]); } }
@@ -90,8 +92,17 @@ function react(type, out, before, opts) {
     fx.fight(me.name, out.target.name, r.win, r.win ? (r.mode === 'mug' ? '+' + money(r.money) + ' · +' + r.respect : '+' + r.respect + ' ' + t('respect').toLowerCase()) : '−' + Math.abs(r.respect) + ' ' + t('respect').toLowerCase(), { win: t('youWon'), lose: t('youLost') });
     S.targets = null; loadTargets();
   } else if (type !== 'train') fx.sfx('buy');
-  if (lv) { skyline(lv.to); if (type !== 'crime') toast(t('r_lvl', { n: lv.to, x: list('titles')[lv.to - 1] })); }
+  if (type === 'crime' || type === 'crimeAll') requestAnimationFrame(showReport);
+  if (lv) { skyline(lv.to); if (type !== 'crime' && type !== 'crimeAll') toast(t('r_lvl', { n: lv.to, x: list('titles')[lv.to - 1] })); }
   render();
+}
+
+// o resultado do golpe tem de se ver sem procurar: se ficou abaixo do ecrã (ex.: prisão por cima), desce até ele
+function showReport() {
+  const el = document.querySelector('.report'); if (!el) return;
+  const bar = document.querySelector('.tabs'), bottom = innerHeight - (bar ? bar.getBoundingClientRect().height : 0) - 12;
+  const r = el.getBoundingClientRect(), need = Math.min(r.bottom - bottom, r.top - 70);
+  if (need > 0) window.scrollBy({ top: need, behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
 }
 
 // ---------- tempo real no cliente (só para mostrar) ----------
@@ -266,7 +277,7 @@ function pageHead(id, sub, noImg) {
 function busyBanner(me) {
   const L = live(me);
   if (L.jail) return h('div', { class: 'state jail' }, h('h3', null, t('jail')), h('div', { class: 't' }, t('jailSub', { t: '' }), h('b', { class: 'num', dataset: { left: me.jailUntil } }, dur(L.jail))),
-    h('div', { class: 'fill big jbar', dataset: { until: me.jailUntil, total: (S.cfg.crimes[me.jailTier - 1]?.jailMin || 1) * 60000 } }, h('i')),
+    h('div', { class: 'fill big jbar', dataset: { until: me.jailUntil, jtotal: (S.cfg.crimes[me.jailTier - 1]?.jailMin || 1) * 60000 } }, h('i')),
     h('button', { class: 'btn danger block', on: { click: (e) => act('bail', {}, { el: e.currentTarget }) } }, t('payBail', { m: money(me.bail) })));
   if (L.hosp) return h('div', { class: 'state hosp' }, h('h3', null, t('hospital')), h('div', { class: 't' }, t('hospitalSub', { t: '' }), h('b', { class: 'num', dataset: { left: me.hospUntil } }, dur(L.hosp))),
     h('button', { class: 'btn danger block', on: { click: (e) => act('medic', {}, { el: e.currentTarget }) } }, t('payMedic', { m: money(me.medic) })));
@@ -398,9 +409,25 @@ function screenCity() {
 }
 
 // ---------- golpes ----------
+function reportAll(rep, li, names) {
+  const { r, c, k, lv, unlocked } = rep, lines = [li('', t(r.n === 1 ? 'ra_jobs1' : 'ra_jobs', { n: r.n }) + ' · ' + t(r.wins === 1 ? 'ra_ok1' : 'ra_ok', { w: r.wins }))];
+  if (r.crits) lines.push(li('c-gold', t(r.crits === 1 ? 'ra_crit1' : 'ra_crit', { n: r.crits })));
+  if (r.money) lines.push(li('c-cash', t('r_stole', { m: money(r.money) })));
+  if (r.respect) lines.push(li('c-resp', t('r_resp', { n: r.respect })));
+  lines.push(li('', t('ra_spent', { e: r.n * c.e })));
+  if (r.busted) lines.push(li('c-red', t('r_jail', { t: dur(Math.max(0, r.jailUntil - rep.at)) })));
+  for (const [s, n] of Object.entries(r.gained || {})) lines.push(li('c-en', '+' + n + ' ' + names[s]));
+  if (r.newChanceBp > r.chanceBp) lines.push(li('', t('r_chance', { p: pct(r.newChanceBp) })));
+  if (r.star) lines.push(li('c-gold', t('r_star', { x: list('crimes')[k] })));
+  if (lv) lines.push(li('c-resp', t('r_lvl', { n: lv.to, x: list('titles')[lv.to - 1] })));
+  for (const i of unlocked) lines.push(li('c-cash', t('newJob', { x: list('crimes')[i] })));
+  const head = r.busted ? t('ra_bust', { i: r.n }) : r.wins === r.n ? t('ra_clean') : r.wins ? t('ra_done') : t('ra_none');
+  return h('div', { class: 'report ' + (r.busted ? 'bust' : r.wins ? 'ok' : 'miss'), role: 'status' }, h('b', null, head), h('ul', null, lines));
+}
 function reportCard(rep) {
   const { r, c, k, lv, unlocked } = rep, names = { F: t('statF'), I: t('statI'), C: t('statC') };
   const li = (cls, txt) => h('li', { class: cls }, txt), lines = [];
+  if (r.all) return reportAll(rep, li, names);
   if (r.success) { lines.push(li('c-cash', t('r_stole', { m: money(r.money) }))); lines.push(li('c-resp', t('r_resp', { n: r.respect }))); }
   else { lines.push(li('', t('r_lost', { e: c.e }))); if (r.busted) lines.push(li('c-red', t('r_jail', { t: dur(Math.max(0, r.jailUntil - rep.at)) }))); }
   for (const [s, n] of Object.entries(r.gained || {})) lines.push(li('c-en', '+' + n + ' ' + names[s]));
@@ -428,6 +455,8 @@ function screenRob() {
       fact(t('chance'), pct(info.chance), chanceCls(info.chance), 'target'), fact(t('energy'), '−' + c.e, 'c-en', 'bolt'),
       fact(t('loot'), moneyShort(Math.floor(c.min * bonus)) + '–' + moneyShort(Math.floor(c.max * bonus)), 'c-cash', 'cash'), fact(t('respect'), '+' + c.r, 'c-resp', 'crown')),
     h('button', { class: 'btn buy block big', disabled: !!b || L.energy < c.e, on: { click: (e) => act('crime', { k }, { el: e.currentTarget }) } }, t('robBtn')),
+    !b && Math.floor(L.energy / c.e) >= 2 ? h('button', { class: 'btn ghost block robAll', on: { click: (e) => act('crimeAll', { k }, { el: e.currentTarget }) } },
+      icon('bolt'), ' ' + t('robAll', { n: Math.min(Math.floor(L.energy / c.e), S.cfg.crimeAllMax || 25) })) : null,
     !b && L.energy < c.e ? h('div', { class: 'row sp' }, h('span', { class: 'small' }, t('noStamina')), h('button', { class: 'btn sm pri', on: { click: () => go('club') } }, t('goClub'))) : null,
     rep ? reportCard(rep) : null,
     me.stars[k] ? h('p', { class: 'small muted' }, t('r_exp', { n: me.wk[k], p: me.stars[k] * 10 })) : null));
@@ -574,7 +603,7 @@ function tickShips() {
     });
     m.querySelector('.done').setAttribute('stroke-dasharray', `${(far * L).toFixed(1)} ${L.toFixed(1)}`);
   });
-  document.querySelectorAll('.jbar').forEach((el) => { const left = +el.dataset.until - now(); el.firstChild.style.width = Math.min(100, Math.max(0, (1 - left / +el.dataset.total) * 100)) + '%'; });
+  document.querySelectorAll('.jbar').forEach((el) => { const left = +el.dataset.until - now(); el.firstChild.style.width = Math.min(100, Math.max(0, (1 - left / +el.dataset.jtotal) * 100)) + '%'; });
 }
 function screenPort() {
   const me = S.st.me;

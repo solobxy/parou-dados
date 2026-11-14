@@ -40,6 +40,18 @@ function contas(kind, a0, a, d0, d, t, res, arg) {
       } else if (dm !== 0 || dr !== 0) bad('falhou mas mexeu');
       break;
     }
+    case 'crimeAll': {
+      const c = CFG.crimes[arg], maxOne = Math.floor((c.max * MAX_LOOT_BP) / 10000) * CFG.crit.mult;
+      if (dm !== res.money || res.money > res.n * maxOne || (res.wins && res.money < res.wins * c.min)) bad('saque de vários golpes');
+      if (dr !== res.wins * c.r || res.respect !== dr) bad('respeito de vários golpes');
+      if (res.n < 1 || res.n > CFG.crimeAllMax || res.wins > res.n || res.crits > res.wins) bad('contagem');
+      if (!res.levelUp && a.energy !== Math.min(CFG.energy.max, touched(a0, t).energy) - res.n * c.e) bad('stamina gasta');
+      const budget = Math.min(CFG.crimeAllMax, Math.floor(Math.min(CFG.energy.max, touched(a0, t).energy) / c.e));
+      if (!res.busted && res.n !== budget) bad('não fez os golpes que a stamina dava');
+      if (res.busted && res.n > budget) bad('fez golpes a mais');
+      if (a.c.crimes - a0.c.crimes !== res.n || a.c.wins - a0.c.wins !== res.wins) bad('contadores');
+      break;
+    }
     case 'deposit': if (dm !== -res.fee || res.fee < 1 || res.fee !== Math.ceil((arg * E.bankFeeBp(a)) / 10000) || dr) bad('taxa do banco'); break;
     case 'withdraw': case 'class': case 'avatar': if (dm !== 0 || dr !== 0) bad('devia ser neutro'); break;
     case 'claim': if (dm !== res.cash || dr !== 0) bad('prémio'); break;
@@ -88,11 +100,12 @@ for (let n = 0; n < ACTIONS; n++) {
   if (r.chance(200)) { p.cash += r.int(0, 5e6); } // dá dinheiro para chegar a tudo
   if (r.chance(2500)) { p.energy = r.int(0, CFG.energy.max); p.energyT = Math.min(p.energyT, p.t); } // gasta stamina para chegar à discoteca, às putas e ao hospital
   const before = touched(p, t), beforeD = touched(d, t), origD = structuredClone(d), origP = structuredClone(p);
-  const kind = pick(['crime', 'drug', 'refill', 'detox', 'claim', 'class', 'avatar', 'hooker', 'cure', 'house', 'houseUp', 'train', 'buyBiz', 'collect', 'port', 'collectPort', 'deposit', 'withdraw', 'gear', 'attack', 'bail', 'medic', 'luxury']);
+  const kind = pick(['crime', 'crimeAll', 'drug', 'refill', 'detox', 'claim', 'class', 'avatar', 'hooker', 'cure', 'house', 'houseUp', 'train', 'buyBiz', 'collect', 'port', 'collectPort', 'deposit', 'withdraw', 'gear', 'attack', 'bail', 'medic', 'luxury']);
   let res, arg;
   try {
     switch (kind) {
       case 'crime': arg = r.chance(9000) ? r.int(0, 9) : anyInt(); res = E.doCrime(p, t, world, arg, game); break;
+      case 'crimeAll': arg = r.chance(9000) ? r.int(0, 9) : anyInt(); res = E.doCrimeAll(p, t, world, arg, game); break;
       case 'drug': res = E.buyDrug(p, t, world, r.chance(9000) ? r.int(0, 8) : anyInt()); break;
       case 'refill': res = E.refill(p, t, world); break;
       case 'detox': res = E.detox(p, t, world); break;

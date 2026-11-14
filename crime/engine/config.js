@@ -41,6 +41,7 @@ export const CFG = {
     { id: 'casino',      e: 20, D: 205, min: 15000, max: 21000, r: 13, jailMin: 9,  w: { I: 50, F: 0,  C: 50 } },
     { id: 'banco',       e: 25, D: 310, min: 34000, max: 46000, r: 16, jailMin: 10, w: { I: 40, F: 30, C: 30 } },
   ],
+  crimeAllMax: 25,                // «usar a stamina toda»: no máximo 25 golpes de uma vez
   bustBp: 2500,                   // falhar um golpe: 25% das vezes és apanhado (prisão); nas outras só perdes a energia
   // mestria: cada golpe conta os sucessos; 3 estrelas, cada uma dá +10% de dinheiro nesse golpe
   mastery: { at: [10, 40, 150], bonusBp: 1000 },

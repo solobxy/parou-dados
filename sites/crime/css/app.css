@@ -636,3 +636,8 @@ body.light .pmap .wave, body.light .pmap .ping { animation: none; }
 @keyframes nwin { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
 @media (prefers-reduced-motion: reduce) { .news.swap .ntx, .news.swap .nic { animation: none; } }
 .nrow { gap: 10px; padding: 8px 0; align-items: center; }
+
+/* usar a stamina toda: botão secundário logo por baixo do Roubar */
+.jobp > .btn.robAll { width: calc(100% - 28px); margin: -4px 14px 0; min-height: 48px; font-weight: 700; color: var(--en, #4ea1ff); }
+.btn.robAll svg.i { width: 16px; height: 16px; vertical-align: -3px; }
+.btn.robAll.go { opacity: .6; }
