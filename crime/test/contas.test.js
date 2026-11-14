@@ -366,42 +366,57 @@ test('casino: aposta mínima, máxima pelo nível, só dinheiro na mão; aposta 
   assert.equal(E.casinoMax(rico), 6553);   // nível 5: 1000 × 1,6⁴
 });
 
-test('roda da fortuna: cada aposta devolve 95,5% (conta exata) e a simulação confirma', () => {
+test('roda da sorte: cada aposta devolve o mesmo que na roda real (conta exata) e a simulação confirma', () => {
   const Wh = CFG.casino.wheel, E2 = (l) => l.reduce((x, [v, w]) => x + v * w, 0) / l.reduce((x, [, w]) => x + w, 0), Em = E2(Wh.topMult);
+  const REAL = { 1: 0.9608, 2: 0.9595, 5: 0.9578, 10: 0.9573, moeda: 0.957, caixas: 0.9527, bola: 0.9433, louca: 0.9441 };
   assert.equal(Wh.segs.length, 54);
-  const topTot = Object.values(Wh.top).reduce((x, y) => x + y, 0); assert.ok(topTot <= 10000);
+  assert.ok(Object.values(Wh.top).reduce((x, y) => x + y, 0) <= 10000);
   for (const s of Wh.spots) {
     const P = Wh.segs.filter((x) => x === s).length / 54, B = Wh.num[s] ?? E2(Wh[s]), q = Wh.top[s] / 10000;
-    const rtp = P * (1 + B * (1 + q * (Em - 1)));
-    assert.ok(rtp > 0.952 && rtp < 0.958, s + ' ' + rtp);
+    perto(P * (1 + B * (1 + q * (Em - 1))), REAL[s], 0.0012, 'roda ' + s);
   }
-  // simulação: a frequência de cada casa e o retorno batem com as contas
   const rng = seededRng(5150), N = 300000, got = {}, ret = {};
   for (let i = 0; i < N; i++) { const sp = E.wheelSpin(rng); got[sp.s] = (got[sp.s] || 0) + 1; ret[sp.s] = (ret[sp.s] || 0) + sp.mult + 1; }
   for (const s of ['1', '2', '5', '10']) perto(got[s] / N, Wh.segs.filter((x) => x === s).length / 54, 0.004, 'casa ' + s);
-  for (const s of ['1', '2', '5']) perto(ret[s] / N, 0.955, 0.03, 'retorno ' + s);
-  // o dinheiro de uma jogada bate certo e nunca passa o teto
+  for (const s of ['1', '2', '5']) perto(ret[s] / N, REAL[s], 0.03, 'retorno ' + s);
   const p = cas(1e9); p.peakRespect = 1e6;
   const r = E.casinoPlay(p, NOW, W, 'wheel', { bets: [{ s: '1', amt: 100 }, { s: 'louca', amt: 50 }] }, seededRng(1));
   assert.equal(p.cash, 1e9 - 150 + r.win); assert.ok(r.win <= 150 * CFG.casino.maxWinMult);
   assert.throws(() => E.casinoPlay(p, NOW, W, 'wheel', { bets: [{ s: '3', amt: 100 }] }, never), code('BAD_BET'));
 });
 
-test('slot Chefão: devolve ~95% em 400 000 jogadas, rodadas grátis ~1 em 300, teto de 2500×', () => {
-  const rng = seededRng(404), N = 400000; let tot = 0, fs = 0, hits = 0, maxX = 0;
-  for (let i = 0; i < N; i++) { const s = E.slotSpin(rng); const w = Math.min(s.total, CFG.casino.maxWinMult * 100); tot += w; if (s.free.length) fs++; if (s.base.win > 0) hits++; if (w > maxX) maxX = w; }
-  const rtp = tot / N / 100;
-  assert.ok(rtp > 0.92 && rtp < 0.98, 'retorno ' + rtp);
-  assert.ok(N / fs > 220 && N / fs < 450, 'rodadas grátis a cada ' + N / fs);
-  assert.ok(hits / N > 0.3 && hits / N < 0.4, 'jogadas com prémio ' + hits / N);
-  // uma jogada: as contas da grelha batem (8+ iguais pagam, as esferas só multiplicam se houver prémio)
-  const r2 = seededRng(9);
-  for (let i = 0; i < 3000; i++) {
-    const s = E.slotSpin(r2);
-    for (const step of s.base.steps) { assert.equal(step.g.length, 30); if (step.w) for (const w of step.w) assert.equal(step.g.filter((x) => x === w.s).length, w.n); }
-    if (s.base.win === 0) assert.equal(s.total, s.scatPay + s.free.reduce((x, f) => x + f.w, 0));
-  }
+// retorno de referência dos jogos reais em que cada slot se inspira (o nosso tem de ficar a ±3%, com 150 000 jogadas e 8000 compras)
+const SLOT_REAL = { chefao: 0.955, zeus: 0.965, doce: 0.965, rebucado: 0.9653 };
+for (const gid of Object.keys(CFG.casino.slots)) {
+  test(`slot ${gid}: retorno perto do real, compra de bónus também, teto respeitado e contas da grelha certas`, () => {
+    const G = CFG.casino.slots[gid], rng = seededRng(404), N = gid === 'rebucado' ? 150000 : 400000, NB = gid === 'rebucado' ? 6000 : 12000;
+    let tot = 0, hits = 0;
+    for (let i = 0; i < N; i++) { const s = E.slotSpin(gid, rng, 0); tot += s.total; if (s.base.win > 0) hits++; assert.ok(s.total <= G.max * 100); }
+    let bt = 0; for (let i = 0; i < NB; i++) { const s = E.slotSpin(gid, rng, 1); bt += s.total; assert.ok(s.free.length > 0, 'compra sem grátis'); }
+    perto(tot / N / 100, SLOT_REAL[gid], 0.06, gid + ' retorno');        // as grátis têm cauda longa: a afinação fina foi feita com milhões de jogadas
+    perto(bt / NB / 100 / G.buy, SLOT_REAL[gid], 0.08, gid + ' compra');
+    assert.ok(hits / N > 0.25 && hits / N < 0.4, 'jogadas com prémio ' + hits / N);
+    // grelha: cada vitória paga o que diz a tabela e só com o mínimo de iguais
+    const r2 = seededRng(9);
+    for (let i = 0; i < 400; i++) {
+      const s = E.slotSpin(gid, r2, 0);
+      for (const step of s.base.steps) {
+        assert.equal(step.g.length, G.cols * G.rows);
+        if (!step.w) continue;
+        for (const w of step.w) { assert.ok(w.n >= G.min); if (G.kind === 'scatter') assert.equal(step.g.filter((x) => x === w.s).length, w.n); }
+      }
+    }
+    // dinheiro: a aposta sai, o prémio entra, a compra custa N vezes a aposta
+    const p = cas(1e9); p.peakRespect = 1e6;
+    const r = E.casinoPlay(p, NOW, W, 'slot', { game: gid, amt: 100, buy: 1 }, seededRng(3));
+    assert.equal(r.bet, 100 * G.buy); assert.equal(p.cash, 1e9 - 100 * G.buy + r.win); assert.ok(r.spin.free.length > 0);
+    assert.throws(() => E.casinoPlay(p, NOW, W, 'slot', { game: gid, amt: 100, buy: 3 }, never), code('BAD_BET'));
+  });
+}
+test('slots: compra super só no Rebuçado, jogo inventado recusado', () => {
   const p = cas(1e9); p.peakRespect = 1e6;
-  const r = E.casinoPlay(p, NOW, W, 'slot', { amt: 100 }, seededRng(3));
-  assert.equal(p.cash, 1e9 - 100 + r.win); assert.equal(r.win, Math.min(Math.floor(r.spin.total), 100 * CFG.casino.maxWinMult));
+  assert.throws(() => E.casinoPlay(p, NOW, W, 'slot', { game: 'zeus', amt: 100, buy: 2 }, never), code('BAD_BET'));
+  assert.throws(() => E.casinoPlay(p, NOW, W, 'slot', { game: 'toString', amt: 100 }, never), code('BAD_BET'));
+  const r = E.casinoPlay(p, NOW, W, 'slot', { game: 'rebucado', amt: 10, buy: 2 }, seededRng(8));
+  assert.equal(r.bet, 10 * CFG.casino.slots.rebucado.superBuy); assert.ok(r.spin.spots0.every((x) => x === 2));
 });

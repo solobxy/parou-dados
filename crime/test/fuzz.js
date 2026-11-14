@@ -57,7 +57,7 @@ function contas(kind, a0, a, d0, d, t, res, arg) {
       if (res.bet && res.bet > E.casinoMax(a0)) bad('casino: aposta acima do máximo');
       const staked = res.g === 'bj' ? (res.done ? res.hand.bet : res.bet) : res.bet;
       const maxMult = res.g === 'roulette' ? 36 : res.g === 'dice' ? 6 : res.g === 'bj' ? 3 : CFG.casino.maxWinMult;
-      if (res.win > staked * maxMult) bad('casino: prémio acima do possível');
+      if (res.g === 'slot' ? res.win > res.base * CFG.casino.slots[res.game].max : res.win > staked * maxMult) bad('casino: prémio acima do possível');
       if (a.bank !== a0.bank) bad('casino mexeu no banco');
       break;
     }
@@ -120,7 +120,7 @@ for (let n = 0; n < ACTIONS; n++) {
         arg = g === 'roulette' ? { bets: Array.from({ length: r.int(0, 13) }, () => ({ t: pick(['red', 'black', 'even', 'odd', 'low', 'high', 'dozen', 'num', 'x']), n: pick([0, 1, 2, 3, 17, 36, 37, -1]), amt: amt() })) }
           : g === 'dice' ? { pick: pick(['low', 'seven', 'high', '__proto__']), amt: amt() }
           : g === 'wheel' ? { bets: Array.from({ length: r.int(0, 13) }, () => ({ s: pick(['1', '2', '5', '10', 'moeda', 'caixas', 'bola', 'louca', 'x']), amt: amt() })) }
-          : g === 'slot' ? { amt: amt() } : { op: pick(['deal', 'hit', 'stand', 'double', 'x']), amt: amt() };
+          : g === 'slot' ? { amt: pick([10, 20, 50, 0, -1, NaN]), game: pick(['chefao', 'zeus', 'doce', 'rebucado', 'x']), buy: pick([0, 0, 0, 1, 2, 3]) } : { op: pick(['deal', 'hit', 'stand', 'double', 'x']), amt: amt() };
         res = E.casinoPlay(p, t, world, g, arg, game); break;
       }
       case 'crimeAll': arg = r.chance(9000) ? r.int(0, 9) : anyInt(); res = E.doCrimeAll(p, t, world, arg, game); break;

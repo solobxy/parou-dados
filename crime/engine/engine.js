@@ -969,80 +969,140 @@ function wheel(p, a, rng) {
   p.cash += win;
   return { ok: true, g: 'wheel', bet, win, ...sp };
 }
-// ---- slot «Chefão» ----
-const SCAT = 10, ORB = 11;
-function slotCell(rng, free) { const w = free ? CFG.casino.slot.wFree : CFG.casino.slot.w; return pickW(rng, w.map((x, i) => [i, x])); }
-function slotRound(rng, free) {
-  // uma jogada: grelha inicial, e depois cada vitória cai e entram símbolos novos por cima
-  const S2 = CFG.casino.slot, C = S2.cols, R = S2.rows, n = C * R;
-  const g = Array.from({ length: n }, () => slotCell(rng, free)), orbs = {};
-  const orbOf = (i) => { orbs[i] = pickW(rng, S2.orb); };
-  g.forEach((s, i) => { if (s === ORB) orbOf(i); });
+// ---- slots ----
+const cellW = (rng, w) => { let tot = 0; for (const x of w) tot += x; let r = rng.int(0, tot - 1); for (let i = 0; i < w.length; i++) { if (r < w[i]) return i; r -= w[i]; } return w.length - 1; };
+// garante pelo menos «need» scatters na grelha inicial (compra de bónus)
+function forceScat(g, need, SC, rng) {
+  let have = g.filter((s) => s === SC).length;
+  while (have < need) { const i = rng.int(0, g.length - 1); if (g[i] !== SC) { g[i] = SC; have++; } }
+}
+// cair: cada coluna desce o que sobra e enche por cima (linha 0 em cima; índice = linha × colunas + coluna)
+function gravity(G, g, extra, rm, fill) {
+  const C = G.cols, R = G.rows, n = C * R, rmS = new Set(rm), ng = new Array(n), ne = {};
+  for (let c = 0; c < C; c++) {
+    const keep = [];
+    for (let r = R - 1; r >= 0; r--) { const i = r * C + c; if (!rmS.has(i)) keep.push([g[i], extra[i]]); }
+    for (let r = R - 1, k = 0; r >= 0; r--, k++) {
+      const i = r * C + c;
+      if (k < keep.length) { ng[i] = keep[k][0]; if (keep[k][1] !== undefined) ne[i] = keep[k][1]; } else { const [s, x] = fill(); ng[i] = s; if (x !== undefined) ne[i] = x; }
+    }
+  }
+  return [ng, ne];
+}
+function scatterRound(G, rng, free, force) {
+  const n = G.cols * G.rows, SC = G.nsym, ORB = G.nsym + 1, w = free ? G.wFree : G.w;
+  const fill = () => { const s = cellW(rng, w); return [s, s === ORB ? pickW(rng, G.orb) : undefined]; };
+  let g = [], orbs = {};
+  for (let i = 0; i < n; i++) { const [s, x] = fill(); g.push(s); if (x !== undefined) orbs[i] = x; }
+  if (force) { forceScat(g, G.trig, SC, rng); for (const k of Object.keys(orbs)) if (g[k] !== ORB) delete orbs[k]; }
   const steps = [{ g: g.slice(), o: { ...orbs } }];
   let win = 0;
-  for (let t = 0; t < S2.maxTumbles; t++) {
-    const cnt = new Array(10).fill(0);
-    for (const s of g) if (s < 10) cnt[s]++;
+  for (let t = 0; t < 40; t++) {
+    const cnt = new Array(G.nsym).fill(0);
+    for (const s of g) if (s < SC) cnt[s]++;
     const wins = [];
-    for (let s = 0; s < 10; s++) if (cnt[s] >= 8) {
-      const tier = cnt[s] >= 12 ? 2 : cnt[s] >= 10 ? 1 : 0;
-      wins.push({ s, n: cnt[s], pay: S2.pay[s][tier] });
-    }
+    for (let s = 0; s < G.nsym; s++) if (cnt[s] >= G.min) wins.push({ s, n: cnt[s], pay: G.pay[s][cnt[s] >= G.min + 4 ? 2 : cnt[s] >= G.min + 2 ? 1 : 0] });
     if (!wins.length) break;
     const rm = [];
-    for (let i = 0; i < n; i++) if (wins.some((w) => w.s === g[i])) rm.push(i);
-    const stepWin = wins.reduce((x, w) => x + w.pay, 0);
-    win += stepWin;
-    steps[steps.length - 1].w = wins; steps[steps.length - 1].rm = rm;
-    // cair: por coluna (índice = linha × colunas + coluna; a linha 0 é a de cima)
-    const ng = new Array(n), no = {};
-    for (let c = 0; c < C; c++) {
-      const keep = [];
-      for (let r = R - 1; r >= 0; r--) { const i = r * C + c; if (!rm.includes(i)) keep.push([g[i], orbs[i]]); }
-      for (let r = R - 1, k = 0; r >= 0; r--, k++) {
-        const i = r * C + c;
-        if (k < keep.length) { ng[i] = keep[k][0]; if (keep[k][1] !== undefined) no[i] = keep[k][1]; }
-        else { ng[i] = slotCell(rng, free); if (ng[i] === ORB) no[i] = pickW(rng, S2.orb); }
-      }
-    }
-    for (let i = 0; i < n; i++) g[i] = ng[i];
-    for (const k of Object.keys(orbs)) delete orbs[k];
-    Object.assign(orbs, no);
+    for (let i = 0; i < n; i++) if (wins.some((x) => x.s === g[i])) rm.push(i);
+    win += wins.reduce((x, y) => x + y.pay, 0);
+    Object.assign(steps[steps.length - 1], { w: wins, rm });
+    [g, orbs] = gravity(G, g, orbs, rm, fill);
     steps.push({ g: g.slice(), o: { ...orbs } });
   }
-  const orbSum = Object.values(orbs).reduce((x, y) => x + y, 0);
-  const scat = g.filter((s) => s === SCAT).length;
-  return { steps, win, orbSum, scat };   // win em centésimos da aposta, antes das esferas
+  return { steps, win, orbSum: Object.values(orbs).reduce((x, y) => x + y, 0), scat: g.filter((s) => s === SC).length };
 }
-export function slotSpin(rng) {
-  const S2 = CFG.casino.slot;
-  const base = slotRound(rng, false);
-  let total = base.win * (base.win > 0 && base.orbSum ? base.orbSum : 1);
-  const out = { base, free: [], scatPay: 0 };
-  if (base.scat >= 4) {
-    out.scatPay = S2.scatterPay[Math.min(6, base.scat)];
-    total += out.scatPay;
-    let left = S2.free, acc = 0, played = 0;
-    while (left > 0 && played < S2.maxFree) {
-      left--; played++;
-      const r = slotRound(rng, true);
-      if (r.win > 0 && r.orbSum) acc += r.orbSum;
-      const w = r.win * (r.win > 0 && acc ? acc : 1);
-      if (r.scat >= 3) left += S2.retrigger;
-      total += w;
-      out.free.push({ ...r, acc, w });
+// grupos 7×7: casas encostadas (cima, baixo, lados) com o mesmo símbolo
+function clusters(G, g) {
+  const C = G.cols, n = g.length, seen = new Uint8Array(n), out = [];
+  for (let i = 0; i < n; i++) {
+    if (seen[i] || g[i] >= G.nsym) continue;
+    const s = g[i], stack = [i], cells = []; seen[i] = 1;
+    while (stack.length) {
+      const j = stack.pop(); cells.push(j);
+      const r = Math.floor(j / C), c = j % C;
+      for (const k of [c > 0 ? j - 1 : -1, c < C - 1 ? j + 1 : -1, r > 0 ? j - C : -1, j + C < n ? j + C : -1]) if (k >= 0 && !seen[k] && g[k] === s) { seen[k] = 1; stack.push(k); }
+    }
+    if (cells.length >= G.min) out.push({ s, cells });
+  }
+  return out;
+}
+function clusterRound(G, rng, free, spots, force) {
+  const n = G.cols * G.rows, SC = G.nsym, w = free ? G.wFree : G.w, fill = () => [cellW(rng, w)];
+  let g = Array.from({ length: n }, () => cellW(rng, w));
+  if (force) forceScat(g, G.trig, SC, rng);
+  const steps = [{ g: g.slice(), sp: spots.slice() }];
+  let win = 0;
+  for (let t = 0; t < 60; t++) {
+    const cl = clusters(G, g);
+    if (!cl.length) break;
+    const wins = [], rm = [];
+    for (const k of cl) {
+      // as casas com multiplicador por baixo do grupo somam-se; depois cada casa fica marcada ou duplica
+      let m = 0; for (const i of k.cells) if (spots[i] >= 2) m += spots[i];
+      const pay = G.pay[k.s][Math.min(k.cells.length, G.min + 10) - G.min] * (m || 1);
+      wins.push({ s: k.s, n: k.cells.length, pay, m, cells: k.cells }); win += pay; rm.push(...k.cells);
+    }
+    for (const i of rm) spots[i] = spots[i] === 0 ? 1 : Math.min(G.spotMax, spots[i] === 1 ? 2 : spots[i] * 2);
+    Object.assign(steps[steps.length - 1], { w: wins, rm });
+    [g] = gravity(G, g, {}, rm, fill);
+    steps.push({ g: g.slice(), sp: spots.slice() });
+  }
+  return { steps, win, scat: g.filter((s) => s === SC).length };
+}
+// uma jogada completa (com as rodadas grátis, se as houver). buy: 0 normal, 1 compra, 2 compra super. total em centésimos da aposta.
+export function slotSpin(gid, rng, buy = 0) {
+  const G = CFG.casino.slots[gid], cap = G.max * 100, out = { game: gid, free: [], scatPay: 0, buy };
+  let total = 0;
+  if (G.kind === 'cluster') {
+    const base = clusterRound(G, rng, false, new Array(G.cols * G.rows).fill(0), buy > 0);
+    out.base = base; total = base.win;
+    if (base.scat >= G.trig) {
+      const spots = new Array(G.cols * G.rows).fill(buy === 2 ? 2 : 0);
+      out.spots0 = spots.slice();
+      let left = G.fs[Math.min(7, base.scat)], played = 0;
+      while (left > 0 && played < G.maxFree && total < cap) {
+        left--; played++;
+        const r = clusterRound(G, rng, true, spots, false);
+        if (r.scat >= G.trig) left += G.fs[Math.min(7, r.scat)];
+        total += r.win; out.free.push({ ...r, w: r.win });
+      }
+    }
+  } else {
+    const base = scatterRound(G, rng, false, buy > 0);
+    out.base = base;
+    total = base.win * (base.win > 0 && base.orbSum ? base.orbSum : 1);
+    if (base.scat >= G.trig) {
+      out.scatPay = G.scatPay[Math.min(6, base.scat)]; total += out.scatPay;
+      let left = G.free, played = 0, acc = 0;
+      while (left > 0 && played < G.maxFree && total < cap) {
+        left--; played++;
+        const r = scatterRound(G, rng, true, false);
+        let m = r.win > 0 && r.orbSum ? r.orbSum : 0;
+        if (G.accFree) { acc += m; m = acc; }
+        const w2 = r.win * (r.win > 0 && m ? m : 1);
+        if (r.scat >= G.retrig[0]) left += G.retrig[1];
+        total += w2; out.free.push({ ...r, acc: m, w: w2 });
+      }
     }
   }
-  out.total = total;   // centésimos da aposta
+  out.total = Math.min(total, cap);
   return out;
 }
 function slot(p, a, rng) {
-  const bet = stakeOf(p, [a.amt]);
+  const gid = Object.hasOwn(CFG.casino.slots, a.game) ? a.game : null;
+  if (!gid) fail('BAD_BET');
+  if (![0, 1, 2].includes(a.buy ?? 0)) fail('BAD_BET');
+  const G = CFG.casino.slots[gid], buy = a.buy ?? 0;
+  const mult = buy === 2 ? G.superBuy : buy === 1 ? G.buy : 1;
+  if (!mult || !Number.isSafeInteger(a.amt)) fail('BAD_BET');
+  const bet = stakeOf(p, [a.amt * mult]);
+  if (a.amt < CFG.casino.minBet) fail('BAD_BET');
   p.cash -= bet;
-  const sp = slotSpin(rng);
-  const win = Math.min(Math.floor((bet * sp.total) / 100), bet * CFG.casino.maxWinMult);
+  const sp = slotSpin(gid, rng, buy);
+  const win = Math.floor((a.amt * sp.total) / 100);
   p.cash += win;
-  return { ok: true, g: 'slot', bet, win, spin: sp };
+  return { ok: true, g: 'slot', game: gid, bet, base: a.amt, buy, win, spin: sp };
 }
 export function bjPublic(p) { return p.bj ? bjView(p.bj, false) : null; }
 export function casinoPlay(p, now, world, g, a, rng) {
