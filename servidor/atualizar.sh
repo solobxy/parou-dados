@@ -34,6 +34,7 @@ escrever_estado() {
     echo "caiu.pt avisos: $(cat /var/lib/caiu-api/alertas.json 2>/dev/null | cut -c1-240)"
     echo "ganhas.pt API: $(systemctl is-active ganhas-api 2>/dev/null) $(curl -s -m 3 http://127.0.0.1:3140/api/estado 2>/dev/null | cut -c1-80)"
     echo "webase API: $(systemctl is-active webase-api 2>/dev/null) $(curl -s -m 3 http://127.0.0.1:3160/api/publico/estado 2>/dev/null | cut -c1-70)"
+    echo "crime API: $(systemctl is-active crime-api 2>/dev/null) $(curl -s -m 3 http://127.0.0.1:3170/api/saude 2>/dev/null | cut -c1-80)"
     echo "ganhas.pt páginas: $(systemctl show ganhas-paginas.service -p Result -p ExecMainStatus 2>/dev/null | tr '\n' ' ') $(journalctl -u ganhas-paginas -n 12 --no-pager -o cat 2>/dev/null | grep -v -E '^(Starting|Started|Finished|Failed to start|ganhas-paginas)' | tail -3 | cut -c1-200 | tr '\n' ';')"
     cat /var/lib/parou-estado/vigia-projetos.txt 2>/dev/null | sed -E 's/([0-9]{1,3}\.){3}[0-9]{1,3}/<ip>/g' | cut -c1-300
     echo
@@ -425,6 +426,27 @@ if [ -f "$SERV/webase-api.service" ] && [ -f "$BASE/servidor/webase/api.py" ]; t
     systemctl restart webase-api.service && echo "$V" > /etc/webase/api.versao
   fi
   systemctl is-active --quiet webase-api.service || systemctl start webase-api.service
+fi
+
+# crime: jogo de rondas de 2 semanas. Site estático em sites/crime (trocado de uma vez quando muda); API em crime/
+# (crime-api.service, Node, 127.0.0.1:3170, dados SQLite em /var/lib/crime-api, fora do repositório).
+CRS=$BASE/servidor/sites/crime
+if [ -f "$CRS/index.html" ] && ! diff -rq "$CRS" /var/www/crime >/dev/null 2>&1; then
+  rm -rf /var/www/crime.novo && mkdir -p /var/www && cp -r "$CRS" /var/www/crime.novo \
+    && chmod -R a+rX /var/www/crime.novo \
+    && rm -rf /var/www/crime.velho && { [ ! -d /var/www/crime ] || mv /var/www/crime /var/www/crime.velho; } \
+    && mv /var/www/crime.novo /var/www/crime && rm -rf /var/www/crime.velho
+fi
+if [ -f "$SERV/crime-api.service" ] && [ -f "$BASE/servidor/crime/server.mjs" ]; then
+  if ! cmp -s "$SERV/crime-api.service" /etc/systemd/system/crime-api.service; then
+    cp "$SERV/crime-api.service" /etc/systemd/system/crime-api.service && systemctl daemon-reload
+  fi
+  systemctl is-enabled --quiet crime-api.service 2>/dev/null || systemctl enable --now crime-api.service >/dev/null 2>&1
+  V=$( { cat "$BASE"/servidor/crime/*.mjs "$BASE"/servidor/crime/engine/*.js "$SERV/crime-api.service" 2>/dev/null; } | sha256sum | cut -c1-16)
+  if [ "$(cat /var/lib/parou-estado/crime-api.versao 2>/dev/null)" != "$V" ]; then
+    systemctl restart crime-api.service && echo "$V" > /var/lib/parou-estado/crime-api.versao
+  fi
+  systemctl is-active --quiet crime-api.service || systemctl start crime-api.service
 fi
 
 # Vigia dos projetos (de 10 em 10 minutos): serviços parados, APIs bloqueadas, dados velhos e o Supabase do Goodman acordado

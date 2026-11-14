@@ -1,0 +1,29 @@
+[Unit]
+Description=Crime (jogo de rondas) - API do jogo: contas, ações, alvos, ranking
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=parou
+Group=parou
+StateDirectory=crime-api
+StateDirectoryMode=0700
+Environment=TZ=Europe/Lisbon NODE_ENV=production PORT=3170 NODE_NO_WARNINGS=1
+ExecStart=/usr/bin/node /opt/parou/servidor/crime/server.mjs
+Restart=always
+RestartSec=3
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+RestrictSUIDSGID=yes
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+LockPersonality=yes
+MemoryMax=500M
+
+[Install]
+WantedBy=multi-user.target
