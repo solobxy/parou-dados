@@ -232,25 +232,26 @@ function tickHud() {
 const PLACES = {
   city: { ic: 'skyline' }, empire: { ic: 'empire' }, rob: { ic: 'street', img: 'golpes' }, club: { ic: 'bolt', img: 'discoteca' }, gym: { img: 'ginasio' },
   biz: { ic: 'empire', img: 'negocios' }, port: { img: 'porto' }, arms: { img: 'armas' }, bank: { img: 'banco' }, hosp: { img: 'hospital' },
-  jail: { img: 'prisao' }, news: { img: 'jornal' }, casino: { img: 'casino' }, roulette: { img: 'roleta' }, bj: { img: 'blackjack' }, dice: { img: 'dados' }, wheel: { img: 'roda' }, slot: { img: 'slot' }, zeus: { img: 'zeus' }, doce: { img: 'doce' }, rebucado: { img: 'rebucado' }, alley: { img: 'beco' }, lux: { img: 'luxos' }, fights: { ic: 'fights', img: 'lutas' }, rank: { img: 'ranking' }, putas: { img: 'putas' }, casa: {},
+  jail: { img: 'prisao' }, gang: { img: 'gangue' }, news: { img: 'jornal' }, casino: { img: 'casino' }, roulette: { img: 'roleta' }, bj: { img: 'blackjack' }, dice: { img: 'dados' }, wheel: { img: 'roda' }, slot: { img: 'slot' }, zeus: { img: 'zeus' }, doce: { img: 'doce' }, rebucado: { img: 'rebucado' }, alley: { img: 'beco' }, lux: { img: 'luxos' }, fights: { ic: 'fights', img: 'lutas' }, rank: { img: 'ranking' }, putas: { img: 'putas' }, casa: {},
 };
 // barra de baixo: só o que se usa a toda a hora. O resto vive dentro de cada separador, arrumado por zonas.
 const NAV = ['city', 'rob', 'fights', 'empire'];
 const HUB = {
-  city: [['sec_night', ['club', 'putas', 'casino']], ['sec_street', ['gym', 'alley', 'hosp', 'jail', 'arms', 'rank']]],
+  city: [['sec_night', ['club', 'putas', 'casino']], ['sec_street', ['gang', 'gym', 'alley', 'hosp', 'jail', 'arms', 'rank']]],
   empire: [['sec_income', ['biz', 'port']], ['sec_assets', ['casa', 'bank']]],
 };
-const PARENT = { news: 'city', casino: 'city', roulette: 'casino', bj: 'casino', dice: 'casino', wheel: 'casino', slot: 'casino', zeus: 'casino', doce: 'casino', rebucado: 'casino', club: 'city', putas: 'city', gym: 'city', alley: 'city', hosp: 'city', jail: 'city',
+const PARENT = { gang: 'city', news: 'city', casino: 'city', roulette: 'casino', bj: 'casino', dice: 'casino', wheel: 'casino', slot: 'casino', zeus: 'casino', doce: 'casino', rebucado: 'casino', club: 'city', putas: 'city', gym: 'city', alley: 'city', hosp: 'city', jail: 'city',
   biz: 'empire', port: 'empire', casa: 'empire', bank: 'empire', lux: 'empire', arms: 'fights', rank: 'fights' };
 const upOf = (id) => (S.backTo && S.backTo[id]) || PARENT[id] || 'city';   // um sítio que está em duas zonas volta para a zona de onde vieste
 const tabOf = (id) => { let x = id; for (let k = 0; k < 4 && !NAV.includes(x); k++) x = upOf(x); return NAV.includes(x) ? x : 'city'; };
 const IMG = (kind, id, big) => `/img/${kind}/${id}${big ? '-g' : ''}.webp?9`;
 function go(tab) {
   if (!PLACES[tab]) tab = 'city';
-  if (HUB[S.tab]?.some(([, ids]) => ids.includes(tab)) || (S.tab === 'fights' && (tab === 'arms' || tab === 'rank'))) S.backTo = { ...(S.backTo || {}), [tab]: S.tab };
+  if (HUB[S.tab]?.some(([, ids]) => ids.includes(tab)) || (S.tab === 'fights' && (tab === 'arms' || tab === 'rank' || tab === 'gang'))) S.backTo = { ...(S.backTo || {}), [tab]: S.tab };
   S.tab = tab; document.body.dataset.tab = tab; store.set('tab', tab);
   if (tab === 'fights') { if (S.fightSeg === 'events') loadEvents(true); else { S.fightSeg = 'targets'; loadTargets(); } }
   if (tab === 'rank') loadRanking();
+  if (tab === 'gang') loadGang();
   if (tab === 'news' || tab === 'city') loadNews();
   render(); window.scrollTo({ top: 0 });
 }
@@ -266,7 +267,7 @@ function shell() {
 }
 
 const SCREENS = { city: screenCity, empire: screenEmpire, news: screenNews, casino: screenCasino, roulette: screenRoulette, bj: screenBJ, dice: screenDice, wheel: screenWheel, slot: () => screenSlotGame('slot'), zeus: () => screenSlotGame('zeus'), doce: () => screenSlotGame('doce'), rebucado: () => screenSlotGame('rebucado'), rob: screenRob, club: screenClub, gym: screenGym, biz: screenBiz, port: screenPort, arms: screenArms, bank: screenBank,
-  hosp: screenHosp, jail: screenJail, putas: screenPutas, casa: screenCasa, alley: screenAlley, lux: screenLux, fights: screenFights, rank: screenRank };
+  hosp: screenHosp, jail: screenJail, gang: screenGang, putas: screenPutas, casa: screenCasa, alley: screenAlley, lux: screenLux, fights: screenFights, rank: screenRank };
 function render(force) {
   if (!S.st) return;
   if (!S.st.me || S.st.round.phase !== 'play') return renderPause();
@@ -384,10 +385,12 @@ function screenClass() {
 
 // ---------- a cidade ----------
 // ---------- jornal da cidade: o que os outros andam a fazer ----------
-const NW_IC = { casino: 'gem', casinoLoss: 'skull', job: 'cash', crit: 'gem', spree: 'bolt', jail: 'lock', house: 'empire', lux: 'crown', beat: 'fist', mug: 'cash', fail: 'skull', sick: 'pill', lvl: 'crown', fight: 'fist' };
+const NW_IC = { gangNew: 'fist', gangUp: 'empire', casino: 'gem', casinoLoss: 'skull', job: 'cash', crit: 'gem', spree: 'bolt', jail: 'lock', house: 'empire', lux: 'crown', beat: 'fist', mug: 'cash', fail: 'skull', sick: 'pill', lvl: 'crown', fight: 'fist' };
 const seedOf = (str) => { let x = 7; for (let i = 0; i < str.length; i++) x = (x * 31 + str.charCodeAt(i)) | 0; return Math.abs(x); };
 function newsText(e) {
   const k = e.k === 'fight' ? (e.mode === 'mug' ? 'mug' : 'beat') : e.k, C = list('crimes');
+  if (k === 'gangNew') return t('nw_gangNew', { a: e.name, g: e.gang, t: e.tag });
+  if (k === 'gangUp') return t('nw_gangUp_' + e.what, { g: e.gang, n: e.n });
   const x = k === 'house' ? list('houses')[e.h] : k === 'lux' ? list('lux')[e.i] : k === 'lvl' ? list('titles')[e.n - 1] : k.startsWith('casino') ? t('csIn_' + e.g) : C[e.c];
   return tv('nw_' + k, seedOf(e.name + k + e.t), { a: e.name, b: e.target, x, m: moneyShort(e.money || 0), n: e.n });
 }
@@ -819,7 +822,7 @@ function screenAlley() {
 function screenFights() {
   const me = S.st.me, n = now();
   const out = [pageHead('fights', t('fightsSub'))];
-  out.push(h('div', { class: 'hlinks' }, ['arms', 'rank'].map((id) => h('button', { class: 'hlink', on: { click: () => go(id) } },
+  out.push(h('div', { class: 'hlinks' }, ['gang', 'arms', 'rank'].map((id) => h('button', { class: 'hlink', on: { click: () => go(id) } },
     art('cenas', PLACES[id].img, 'hthumb'), h('span', null, t('p_' + id)), icon('chev')))));
   out.push(h('div', { class: 'seg', role: 'group' }, [['targets', t('targets')], ['events', t('news')]].map(([id, lbl]) =>
     h('button', { 'aria-pressed': S.fightSeg === id ? 'true' : 'false', on: { click: () => { S.fightSeg = id; if (id === 'targets') loadTargets(); else loadEvents(true); render(); } } }, lbl))));
@@ -833,7 +836,7 @@ function screenFights() {
     if (!S.targets) out.push(h('p', { class: 'muted' }, t('loading')));
     else if (!S.targets.length) out.push(h('div', { class: 'note' }, h('p', { class: 'muted' }, t('noTargets'))));
     else out.push(h('div', { class: 'stack' }, S.targets.map((x) => h('div', { class: 'card tgt' },
-      h('div', { class: 'who2' }, S.avOk ? h('img', { class: 'avs', src: AV(x.av || 0), alt: '', width: 96, height: 96, loading: 'lazy' }) : null, h('div', null, h('div', { class: 'nm' }, x.name), h('div', { class: 'lv' }, t('level') + ' ' + x.level + ' · ' + list('titles')[x.level - 1] + ' · ', h('span', { class: 'c-resp' }, icon('crown'), ' ' + short(x.respect))))),
+      h('div', { class: 'who2' }, S.avOk ? h('img', { class: 'avs', src: AV(x.av || 0), alt: '', width: 96, height: 96, loading: 'lazy' }) : null, h('div', null, h('div', { class: 'nm' }, x.tag ? h('span', { class: 'gtag' }, x.tag) : null, x.tag ? ' ' : '', x.name), h('div', { class: 'lv' }, t('level') + ' ' + x.level + ' · ' + list('titles')[x.level - 1] + ' · ', h('span', { class: 'c-resp' }, icon('crown'), ' ' + short(x.respect))))),
       h('div', { class: 'pct ' + chanceCls(x.chance) }, pct(x.chance)),
       h('div', { class: 'acts' },
         h('button', { class: 'btn danger sm', disabled: !!b, on: { click: (e) => act('attack', { target: x.name, mode: 'beat' }, { el: e.currentTarget }) } }, icon('fist'), t('beat') + ' · +' + x.gain),
@@ -849,7 +852,7 @@ function screenRank() {
   if (!S.ranking) { out.push(h('p', { class: 'muted' }, t('loading'))); return out; }
   const st = h('div', null);
   for (const r of S.ranking.top) st.append(h('div', { class: 'rk' + (r.pos <= 3 ? ' g' + r.pos : '') + (r.me ? ' me' : '') },
-    h('div', { class: 'p' }, r.pos), S.avOk ? h('img', { class: 'avs', src: AV(r.av || 0), alt: '', width: 96, height: 96, loading: 'lazy' }) : null, h('div', null, h('div', { style: 'font-weight:700' }, r.name), h('div', { class: 'small muted' }, t('level') + ' ' + r.level + ' · ' + list('titles')[r.level - 1])),
+    h('div', { class: 'p' }, r.pos), S.avOk ? h('img', { class: 'avs', src: AV(r.av || 0), alt: '', width: 96, height: 96, loading: 'lazy' }) : null, h('div', null, h('div', { style: 'font-weight:700' }, r.tag ? h('span', { class: 'gtag' }, r.tag) : null, r.tag ? ' ' : '', r.name), h('div', { class: 'small muted' }, t('level') + ' ' + r.level + ' · ' + list('titles')[r.level - 1])),
     h('div', { class: 'r num' }, icon('crown'), ' ' + short(r.respect))));
   if (S.ranking.me && S.ranking.me.pos > 100) st.append(h('div', { class: 'rk me' }, h('div', { class: 'p' }, S.ranking.me.pos), h('div', null, S.ranking.me.name), h('div', { class: 'r' }, short(S.ranking.me.respect))));
   out.push(st);
@@ -858,6 +861,8 @@ function screenRank() {
 
 function eventRow(e) {
   let txt;
+  if (e.k === 'gangIn' || e.k === 'gangOut') return h('div', { class: 'card row' }, h('span', { class: e.k === 'gangIn' ? 'c-cash' : 'c-red' }, icon('fist')),
+    h('div', { class: 'grow' }, h('div', null, t(e.k === 'gangIn' ? 'evGangIn' : 'evGangOut', { g: e.gang })), h('div', { class: 'small muted' }, dur(now() - e.t))));
   if (e.mode === 'mug') txt = e.win ? t('evMug', { who: e.by, m: money(e.money) }) : t('evMugLost', { who: e.by });
   else txt = e.win ? t('evBeat', { who: e.by }) : t('evBeatLost', { who: e.by });
   const ago = dur(now() - e.t);
@@ -944,6 +949,90 @@ function screenCasino() {
 // ---- roleta (europeia, um zero) ----
 const RL_ORDER = [0, 32, 15, 19, 4, 21, 2, 25, 17, 34, 6, 27, 13, 36, 11, 30, 8, 23, 10, 5, 24, 16, 33, 1, 20, 14, 31, 9, 22, 18, 29, 7, 28, 12, 35, 3, 26];
 const rlCol = (n) => (n === 0 ? 'g' : S.cfg.casino.red.includes(n) ? 'r' : 'b');
+// ---------- gangue ----------
+async function loadGang() { try { S.gang = await api('GET', '/api/gang'); if (S.tab === 'gang') render(); } catch {} }
+const gAct = async (type, args) => { const out = await act(type, args); await loadGang(); return out; };
+function gangRow(g, me) {
+  const full = g.members >= g.slots, lowLvl = me.level < S.cfg.gang.minLevel;
+  return h('div', { class: 'card grow2' },
+    h('div', { class: 'row sp' }, h('div', null, h('div', { class: 'gname' }, h('span', { class: 'gtag' }, g.tag), ' ' + g.name), h('div', { class: 'small muted' }, t('gLine', { n: g.members, s: g.slots, r: short(g.respect), l: g.leader }))),
+      h('b', { class: 'gpos num' }, '#' + g.pos)),
+    h('div', { class: 'row sp', style: 'margin-top:10px' }, h('span', { class: 'small' }, t('gLv', { a: g.sede, b: g.armaria })),
+      me.gang ? null : h('button', { class: 'btn sm' + (g.open ? ' buy' : ''), disabled: full || lowLvl || g.asked || me.gangWait > now(), on: { click: () => gAct('gangJoin', { id: g.id }) } },
+        full ? t('gFull') : g.asked ? t('gAsked') : g.open ? t('gJoin') : t('gAsk'))));
+}
+function screenGang() {
+  const me = S.st.me, G = S.cfg.gang, d = S.gang;
+  const out = [pageHead('gang', t('gangSub'))];
+  if (!d) { out.push(h('p', { class: 'muted' }, t('loading'))); return out; }
+  const mine = d.mine;
+  if (!mine) {
+    if (me.gangWait > now()) out.push(h('div', { class: 'tip' }, h('p', null, t('gWait', { t: dur(me.gangWait - now()) }))));
+    // criar
+    const nm = h('input', { id: 'gnm', maxlength: 20, autocomplete: 'off', placeholder: t('gNamePh'), value: S.gDraft?.n || '', on: { input: (e) => { S.gDraft = { ...(S.gDraft || {}), n: e.target.value }; } } });
+    const tg = h('input', { id: 'gtg', maxlength: 4, autocomplete: 'off', autocapitalize: 'characters', placeholder: 'ABC', value: S.gDraft?.t || '', on: { input: (e) => { e.target.value = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ''); S.gDraft = { ...(S.gDraft || {}), t: e.target.value }; } } });
+    const low = me.level < G.minLevel;
+    out.push(h('div', { class: 'card stack', style: 'margin-bottom:16px' }, h('h2', { class: 'sec', style: 'margin:0' }, t('gCreateT')),
+      h('div', { class: 'gform' }, h('div', { class: 'field' }, h('label', { for: 'gnm' }, t('gName')), nm), h('div', { class: 'field' }, h('label', { for: 'gtg' }, t('gTag')), tg)),
+      low ? h('p', { class: 'small muted' }, t('gNeedLvl', { n: G.minLevel })) : null,
+      h('button', { class: 'btn buy block', disabled: low || me.cash + me.bank < G.createCost, on: { click: async () => { const o = await gAct('gangCreate', { name: nm.value, tag: tg.value }); if (o) S.gDraft = null; } } }, t('gCreate', { m: moneyShort(G.createCost) }))));
+    out.push(h('h2', { class: 'sec' }, t('gListT')));
+    out.push(d.list.length ? h('div', { class: 'stack' }, d.list.map((g) => gangRow(g, me))) : h('div', { class: 'note' }, h('p', { class: 'muted' }, t('gNone'))));
+    return out;
+  }
+  // a minha gangue
+  const boss = mine.leaderMe, liquid = me.cash + me.bank;
+  out.push(h('div', { class: 'ghead' }, h('div', { class: 'gbig' }, h('span', { class: 'gtag' }, mine.tag), ' ' + mine.name),
+    h('div', { class: 'small muted' }, t('gHead', { p: mine.pos, r: short(mine.respect), n: mine.members, s: mine.slots }))));
+  out.push(h('div', { class: 'power' },
+    h('div', { class: 'card' }, h('b', { class: 'c-cash' }, '+' + (G.lootBpPer * mine.sede) / 100 + '%'), h('span', { class: 'small muted' }, t('gBonusLoot', { n: mine.sede }))),
+    h('div', { class: 'card' }, h('b', { class: 'c-red' }, '+' + (G.fightBpPer * mine.armaria) / 100 + '%'), h('span', { class: 'small muted' }, t('gBonusFight', { n: mine.armaria })))));
+  // cofre e melhorias
+  const give = [0.1, 0.25, 0.5].map((f) => Math.floor(liquid * f)).filter((v, i, a) => v >= G.donateMin && a.indexOf(v) === i);
+  const upRow = (what, lvl, cost, txt) => {
+    const max = lvl >= G.maxLevel, miss = max ? 0 : Math.max(0, cost - mine.fund);
+    return h('div', { class: 'row sp gup' }, h('div', { class: 'grow' }, h('div', { style: 'font-weight:700' }, txt), h('div', { class: 'small ' + (miss ? 'muted' : 'c-cash') }, max ? t('gMax') : miss ? t('gMiss', { m: money(miss) }) : t('gReady'))),
+      max ? null : h('button', { class: 'btn buy sm', disabled: !boss || miss > 0, on: { click: () => gAct('gangUp', { what }) } }, boss ? moneyShort(cost) : t('gBossOnly')));
+  };
+  out.push(h('div', { class: 'card stack', style: 'margin:12px 0' },
+    h('div', { class: 'row sp' }, h('span', { class: 'muted' }, t('gFund')), h('b', { class: 'gfund num c-cash' }, money(mine.fund))),
+    give.length ? h('div', { class: 'row', style: 'flex-wrap:wrap;gap:8px' }, give.map((v) => h('button', { class: 'btn grow', on: { click: () => gAct('gangDonate', { amount: v }) } }, t('gGive', { m: moneyShort(v) })))) : h('p', { class: 'small muted' }, t('gGiveMin', { m: money(G.donateMin) })),
+    h('p', { class: 'small muted' }, t('gFundNote')),
+    upRow('sede', mine.sede, G.sede[mine.sede - 1], t('gUpSede', { n: mine.sede + 1 })),
+    upRow('armaria', mine.armaria, G.armaria[mine.armaria], t('gUpArm', { n: mine.armaria + 1 }))));
+  // pedidos de entrada (só o chefe)
+  if (boss && mine.asks.length) out.push(h('h2', { class: 'sec' }, t('gAsksT')), h('div', { class: 'stack' }, mine.asks.map((a) => h('div', { class: 'card row sp' },
+    h('div', null, h('div', { style: 'font-weight:700' }, a.name), h('div', { class: 'small muted' }, t('gMemberLine', { l: a.level, r: short(a.respect) }))),
+    h('div', { class: 'row', style: 'gap:8px' }, h('button', { class: 'btn ghost sm', on: { click: () => gAct('gangReject', { name: a.name }) } }, t('gNo')), h('button', { class: 'btn buy sm', on: { click: () => gAct('gangAccept', { name: a.name }) } }, t('gYes')))))));
+  // membros
+  out.push(h('h2', { class: 'sec' }, t('gMembersT', { n: mine.members, s: mine.slots })));
+  out.push(h('div', { class: 'stack' }, mine.roster.map((m) => h('div', { class: 'card row gm' + (m.me ? ' me' : '') },
+    S.avOk ? h('img', { class: 'avs', src: AV(m.av || 0), alt: '', width: 96, height: 96, loading: 'lazy' }) : null,
+    h('div', { class: 'grow' }, h('div', { style: 'font-weight:700' }, m.name, m.leader ? h('span', { class: 'c-resp' }, ' ', icon('crown')) : null), h('div', { class: 'small muted' }, t('gMemberLine', { l: m.level, r: short(m.respect) }) + (m.given ? ' · ' + t('gGave', { m: moneyShort(m.given) }) : ''))),
+    boss && !m.me ? h('button', { class: 'btn ghost sm', 'aria-label': t('gManage', { a: m.name }), on: { click: () => gangMember(m) } }, '⋯') : null))));
+  if (boss) out.push(h('div', { class: 'seg', style: 'margin-top:12px' }, [[true, t('gOpenY')], [false, t('gOpenN')]].map(([v, lbl]) => h('button', { 'aria-pressed': mine.open === v ? 'true' : 'false', on: { click: () => gAct('gangOpen', { open: v }) } }, lbl))));
+  // conversa
+  out.push(h('h2', { class: 'sec' }, t('gChatT')));
+  const inp = h('input', { id: 'gmsg', maxlength: G.chatMax, autocomplete: 'off', enterkeyhint: 'send', placeholder: t('gChatPh'), value: S.gMsg || '', on: { input: (e) => { S.gMsg = e.target.value; }, keydown: (e) => { if (e.key === 'Enter') send(); } } });
+  const send = async () => { const txt = inp.value.trim(); if (!txt) return; S.gMsg = ''; inp.value = ''; await gAct('gangChat', { txt }); };
+  out.push(h('div', { class: 'card gchat' },
+    mine.chat.length ? h('div', { class: 'gmsgs' }, mine.chat.map((m) => h('div', { class: 'gmsg' + (m.me ? ' me' : '') }, h('b', null, m.name), h('span', null, m.txt), h('small', { class: 'muted' }, dur(Math.max(0, now() - m.t)))))) : h('p', { class: 'small muted' }, t('gChatNone')),
+    h('div', { class: 'row', style: 'gap:8px' }, h('label', { class: 'sr', for: 'gmsg' }, t('gChatPh')), inp, h('button', { class: 'btn buy', on: { click: send } }, t('gSend')))));
+  out.push(h('button', { class: 'btn ghost block', style: 'margin-top:16px', on: { click: () => {
+    const close = sheet(h('div', { class: 'stack' }, h('h2', null, t('gLeaveT')), h('p', null, t(mine.members === 1 ? 'gLeaveLast' : boss ? 'gLeaveBoss' : 'gLeaveSub')),
+      h('button', { class: 'btn danger block', on: { click: async () => { close(); await gAct('gangLeave', {}); } } }, t('gLeave'))));
+  } } }, t('gLeave')));
+  queueMicrotask(() => { const b = document.querySelector('.gmsgs'); if (b) b.scrollTop = b.scrollHeight; });
+  return out;
+}
+function gangMember(m) {
+  const close = sheet(h('div', { class: 'stack' }, h('h2', null, m.name), h('p', { class: 'muted' }, t('gMemberLine', { l: m.level, r: short(m.respect) })),
+    h('button', { class: 'btn block', on: { click: async () => { close(); await gAct('gangLeader', { name: m.name }); } } }, t('gMakeBoss')),
+    h('button', { class: 'btn danger block', on: { click: async () => { close(); await gAct('gangKick', { name: m.name }); } } }, t('gKick'))));
+}
+// a conversa e os pedidos atualizam-se sozinhos enquanto estás no ecrã (sem mexer no que estás a escrever)
+setInterval(() => { if (S.st?.me && S.tab === 'gang' && !document.hidden && document.activeElement?.id !== 'gmsg' && !document.querySelector('.sheet')) loadGang(); }, 8000);
+
 // ---------- mesas ao vivo: roleta e roda ----------
 // A ronda é a mesma para toda a gente. Cada toque numa casa põe logo a ficha na mesa (o dinheiro sai da mão);
 // quando as apostas fecham, o servidor manda o resultado e todos veem a mesma jogada ao mesmo tempo.

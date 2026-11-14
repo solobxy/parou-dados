@@ -143,6 +143,15 @@ export const CFG = {
       },
     },
   },
+  // Gangues. Criar custa dinheiro e pede nível; o cofre só recebe (nunca devolve), para não servir de ponte entre contas.
+  // A sede dá lugares e mais saque nos golpes a todos os membros; a armaria dá mais ataque e defesa nas lutas.
+  gang: {
+    createCost: 25000, minLevel: 4, baseMembers: 4, perSede: 2, maxLevel: 5,
+    sede: [100000, 400000, 1500000, 6000000],                 // preço para passar a sede do nível 1 ao 2, do 2 ao 3…
+    armaria: [50000, 200000, 800000, 3000000, 12000000],      // preço de cada nível da armaria (começa em 0)
+    lootBpPer: 200, fightBpPer: 300,                          // +2% de saque por nível de sede; +3% de ataque e defesa por nível de armaria
+    donateMin: 100, rejoinMs: 1 * HOUR, chatMax: 200,
+  },
   // casa: cada nível dá respeito e deixa subir as melhorias até esse nível; a melhoria n custa uma parte do preço da casa n
   house: {
     tiers: [

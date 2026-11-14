@@ -338,3 +338,76 @@ test('mesa ao vivo: limpar devolve tudo, e se o servidor parar a meio as apostas
   assert.equal((await A.estado()).cash, 500);
   const t = await mesa('wheel'); assert.equal(t.mine, null); assert.equal(t.players, 0);
 });
+
+// muda o estado guardado de jogadores (com o servidor parado), para os testes chegarem a níveis e quantias altas
+async function mexer(muda) {
+  await parar();
+  const db = new DatabaseSync(join(dir, 'jogo.db'));
+  for (const [nome, fn] of Object.entries(muda)) {
+    const id = db.prepare('SELECT id FROM contas WHERE nome = ?').get(nome).id, row = db.prepare('SELECT ronda, estado FROM jogadores WHERE conta = ?').get(id);
+    const e = JSON.parse(row.estado); fn(e);
+    db.prepare('UPDATE jogadores SET estado = ? WHERE conta = ? AND ronda = ?').run(JSON.stringify(e), id, row.ronda);
+  }
+  db.close(); await arrancar();
+}
+
+test('gangues: criar, entrar, cofre sem volta, melhorias que dão bónus a todos, pedidos, expulsar, sair e passar a chefia', async () => {
+  const A = await contaNova('ChefeG', '10.0.9.50'), B = await contaNova('MembroG', '10.0.9.51'), C = await contaNova('NovatoG', '10.0.9.52'), D = await contaNova('PedeG', '10.0.9.53');
+  for (const x of [A, B, C, D]) await x.estado();
+  const rico = (cash) => (e) => { e.cash = cash; e.respect = 100; e.peakRespect = 100; };
+  await mexer({ ChefeG: rico(5_000_000), MembroG: rico(1_000_000), PedeG: rico(1000) });
+  const ag = (x, ip, body) => cru(x.cookie, ip, body), gangue = async (x, ip) => (await fetch(BASE + '/api/gang', { headers: { cookie: x.cookie, 'X-Forwarded-For': ip } })).json();
+  // criar: paga, pede nível, nome e sigla válidos e únicos
+  let r = await ag(C, '10.0.9.52', { type: 'gangCreate', name: 'Novatos', tag: 'NOV' }); assert.equal(r.body.error, 'LOW_LEVEL');
+  r = await ag(A, '10.0.9.50', { type: 'gangCreate', name: 'Os Cabrões', tag: 'c' }); assert.equal(r.body.error, 'BAD_GANG_TAG');
+  r = await ag(A, '10.0.9.50', { type: 'gangCreate', name: '<script>', tag: 'XSS' }); assert.equal(r.body.error, 'BAD_GANG_NAME');
+  r = await ag(A, '10.0.9.50', { type: 'gangCreate', name: 'Os  Cabrões', tag: 'cbr' });
+  assert.equal(r.status, 200, JSON.stringify(r.body)); assert.equal(r.body.me.cash, 5_000_000 - 25_000); assert.deepEqual(r.body.me.gang.tag, 'CBR'); assert.equal(r.body.me.gb.loot, 200);
+  const gid = r.body.result.id;
+  r = await ag(A, '10.0.9.50', { type: 'gangCreate', name: 'Outra', tag: 'OUT' }); assert.equal(r.body.error, 'IN_GANG');
+  r = await ag(B, '10.0.9.51', { type: 'gangCreate', name: 'os cabrões', tag: 'XYZ' }); assert.equal(r.body.error, 'GANG_NAME_TAKEN');
+  r = await ag(B, '10.0.9.51', { type: 'gangCreate', name: 'Diferente', tag: 'CBR' }); assert.equal(r.body.error, 'GANG_TAG_TAKEN');
+  // entrar numa gangue aberta; quem não tem nível não entra
+  r = await ag(C, '10.0.9.52', { type: 'gangJoin', id: gid }); assert.equal(r.body.error, 'LOW_LEVEL');
+  const forcaAntes = (await B.estado()).attack;
+  r = await ag(B, '10.0.9.51', { type: 'gangJoin', id: gid }); assert.equal(r.body.result.joined, true); assert.equal(r.body.me.gb.loot, 200);
+  // cofre: só entra; só o chefe gasta
+  r = await ag(B, '10.0.9.51', { type: 'gangDonate', amount: 150_000 }); assert.equal(r.body.me.cash, 850_000); assert.equal(r.body.result.fund, 150_000);
+  r = await ag(B, '10.0.9.51', { type: 'gangDonate', amount: 50 }); assert.equal(r.body.error, 'BAD_AMOUNT');
+  r = await ag(B, '10.0.9.51', { type: 'gangDonate', amount: 900_000 }); assert.equal(r.body.error, 'NO_MONEY');
+  r = await ag(B, '10.0.9.51', { type: 'gangUp', what: 'armaria' }); assert.equal(r.body.error, 'NOT_LEADER');
+  r = await ag(A, '10.0.9.50', { type: 'gangUp', what: 'armaria' }); assert.equal(r.body.result.level, 1); assert.equal(r.body.result.fund, 100_000);
+  r = await ag(A, '10.0.9.50', { type: 'gangUp', what: 'sede' }); assert.equal(r.body.result.level, 2); assert.equal(r.body.result.fund, 0);
+  r = await ag(A, '10.0.9.50', { type: 'gangUp', what: 'sede' }); assert.equal(r.body.error, 'NO_GANG_MONEY');
+  // o bónus chega a todos os membros e sobrevive a um reinício
+  await parar(); await arrancar();
+  let b = await B.estado();
+  assert.deepEqual(b.gb, { loot: 400, atk: 300, def: 300 }); assert.equal(b.attack, Math.floor((forcaAntes * 10300) / 10000)); assert.equal(b.cash, 850_000);
+  let g = await gangue(B, '10.0.9.51');
+  assert.equal(g.mine.roster.length, 2); assert.equal(g.mine.members, 2); assert.equal(g.mine.fund, 0); assert.equal(g.mine.slots, 8); assert.equal(g.list[0].respect, 200); assert.equal(g.mine.leaderMe, false);
+  assert.equal(g.mine.roster.find((m) => m.name === 'MembroG').given, 150_000);
+  // conversa: guarda o texto tal como veio (o ecrã é que o mostra como texto), sem caracteres de controlo
+  r = await ag(B, '10.0.9.51', { type: 'gangChat', txt: '  <b>olá</b>\n\u0007 malta  ' }); assert.equal(r.status, 200);
+  r = await ag(C, '10.0.9.52', { type: 'gangChat', txt: 'olá' }); assert.equal(r.body.error, 'NO_GANG');
+  g = await gangue(A, '10.0.9.50'); assert.equal(g.mine.chat.at(-1).txt, '<b>olá</b>   malta'); assert.equal(g.mine.chat.at(-1).name, 'MembroG');
+  // gangue fechada: pede-se, o chefe aceita
+  r = await ag(A, '10.0.9.50', { type: 'gangOpen', open: false }); assert.equal(r.body.result.open, false);
+  r = await ag(D, '10.0.9.53', { type: 'gangJoin', id: gid }); assert.equal(r.body.result.asked, true); assert.equal(r.body.me.gang, null);
+  r = await ag(B, '10.0.9.51', { type: 'gangAccept', name: 'PedeG' }); assert.equal(r.body.error, 'NOT_LEADER');
+  g = await gangue(A, '10.0.9.50'); assert.deepEqual(g.mine.asks.map((x) => x.name), ['PedeG']);
+  r = await ag(A, '10.0.9.50', { type: 'gangAccept', name: 'PedeG' }); assert.equal(r.status, 200);
+  assert.deepEqual((await D.estado()).gb, { loot: 400, atk: 300, def: 300 });
+  // expulsar tira o bónus e obriga a esperar para entrar noutra
+  r = await ag(B, '10.0.9.51', { type: 'gangKick', name: 'ChefeG' }); assert.equal(r.body.error, 'NOT_LEADER');
+  r = await ag(A, '10.0.9.50', { type: 'gangKick', name: 'MembroG' }); assert.equal(r.status, 200);
+  b = await B.estado(); assert.equal(b.gang, null); assert.equal(b.gb, null); assert.equal(b.attack, forcaAntes); assert.equal(b.cash, 850_000);
+  r = await ag(A, '10.0.9.50', { type: 'gangOpen', open: true });
+  r = await ag(B, '10.0.9.51', { type: 'gangJoin', id: gid }); assert.equal(r.body.error, 'GANG_WAIT');
+  // o chefe sai: a chefia passa para quem ficou; o último a sair acaba com a gangue
+  r = await ag(A, '10.0.9.50', { type: 'gangLeave' }); assert.equal(r.status, 200); assert.equal(r.body.me.gang, null); assert.equal(r.body.me.cash, 5_000_000 - 25_000);
+  g = await gangue(D, '10.0.9.53'); assert.equal(g.mine.leaderMe, true); assert.equal(g.mine.roster.length, 1);
+  r = await ag(D, '10.0.9.53', { type: 'gangLeave' }); assert.equal(r.status, 200);
+  g = await gangue(D, '10.0.9.53'); assert.equal(g.mine, null); assert.equal(g.list.length, 0);
+  await parar(); await arrancar();
+  g = await gangue(A, '10.0.9.50'); assert.equal(g.list.length, 0); assert.equal((await A.estado()).gb, null);
+});

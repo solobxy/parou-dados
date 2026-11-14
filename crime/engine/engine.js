@@ -33,6 +33,7 @@ export function newPlayer(id, now, world, opts = {}) {
     port: [],
     weapon: -1, armor: -1,
     luxuries: 0,
+    gang: null, gb: null, gangLeft: 0,
     detoxT: [],
     xp: { F: 0, I: 0, C: 0 },
     wk: CFG.crimes.map(() => 0),   // sucessos por golpe (mestria)
@@ -57,6 +58,9 @@ function migrate(p) {
   if (!Number.isSafeInteger(p.house)) p.house = 0;
   if (!Array.isArray(p.hu)) p.hu = CFG.house.ups.map(() => 0);
   if (p.bj === undefined) p.bj = null;
+  if (typeof p.gang !== 'string') p.gang = null;
+  if (!p.gang || !p.gb || typeof p.gb !== 'object') p.gb = null;
+  if (!Number.isSafeInteger(p.gangLeft)) p.gangLeft = 0;
 }
 
 // ---------- tempo ----------
@@ -136,6 +140,33 @@ function pay(p, amount) {
   const fromCash = Math.min(p.cash, amount);
   p.cash -= fromCash;
   p.bank -= amount - fromCash;
+}
+
+// ---------- gangues ----------
+// O motor só trata do que mexe no jogador: pagar para criar, dar ao cofre e os bónus que a gangue lhe dá.
+// Quem é de que gangue, o cofre e os níveis vivem no servidor, que escreve aqui o bónus de cada membro.
+const gbp = (p, k) => (p.gb && Number.isSafeInteger(p.gb[k]) ? p.gb[k] : 0);
+export function gangBonus(sede, armaria) { const G = CFG.gang; return { loot: G.lootBpPer * sede, atk: G.fightBpPer * armaria, def: G.fightBpPer * armaria }; }
+export function gangSlots(sede) { return CFG.gang.baseMembers + CFG.gang.perSede * sede; }
+export function gangCanJoin(p, now) {
+  if (p.gang) fail('IN_GANG');
+  if (level(p) < CFG.gang.minLevel) fail('LOW_LEVEL', { need: CFG.gang.minLevel });
+  if (p.gangLeft && now - p.gangLeft < CFG.gang.rejoinMs) fail('GANG_WAIT', { until: p.gangLeft + CFG.gang.rejoinMs });
+}
+export function gangCreate(p, now, world) {
+  begin(p, now, world);
+  gangCanJoin(p, now);
+  pay(p, CFG.gang.createCost);
+  return { ok: true, cost: CFG.gang.createCost };
+}
+export function gangSet(p, id, sede, armaria) { p.gang = id; p.gb = gangBonus(sede, armaria); }
+export function gangLeave(p, now) { p.gang = null; p.gb = null; p.gangLeft = now; }
+export function gangDonate(p, now, world, amount) {
+  begin(p, now, world, { allowBusy: true });
+  if (!p.gang) fail('NO_GANG');
+  if (!Number.isSafeInteger(amount) || amount < CFG.gang.donateMin) fail('BAD_AMOUNT');
+  pay(p, amount);
+  return { ok: true, amount };
 }
 
 // ---------- profissão e efeitos temporários ----------
@@ -254,7 +285,7 @@ export function doCrime(p, now, world, k, rng) {
   const first = k === 0 && p.peakRespect === 0;
   if (first || rng.chance(bp)) {
     const starsBefore = masteryStars(p, k);
-    let money = Math.floor((rng.int(c.min, c.max) * (10000 + CFG.mastery.bonusBp * starsBefore + (klass(p).lootBp || 0) + buffBp(p, 'loot', now))) / 10000);
+    let money = Math.floor((rng.int(c.min, c.max) * (10000 + CFG.mastery.bonusBp * starsBefore + (klass(p).lootBp || 0) + buffBp(p, 'loot', now) + gbp(p, 'loot'))) / 10000);
     const crit = rng.chance(CFG.crit.chanceBp);
     if (crit) money *= CFG.crit.mult;
     p.cash += money;
@@ -684,8 +715,8 @@ export function buyGear(p, now, world, kind, idx) {
 }
 
 const gearBp = (list, idx) => (idx >= 0 ? list[idx].bp : 0);
-export function attackPower(p, now) { return up(Math.floor((effStat(p, 'F', now) * (10000 + gearBp(CFG.weapons, p.weapon))) / 10000), klass(p).atkBp || 0); }
-export function defensePower(p, now) { return up(Math.floor((effStat(p, 'T', now) * (10000 + gearBp(CFG.armors, p.armor))) / 10000), (klass(p).defBp || 0) + huBp(p, 1)); }
+export function attackPower(p, now) { return up(Math.floor((effStat(p, 'F', now) * (10000 + gearBp(CFG.weapons, p.weapon))) / 10000), (klass(p).atkBp || 0) + gbp(p, 'atk')); }
+export function defensePower(p, now) { return up(Math.floor((effStat(p, 'T', now) * (10000 + gearBp(CFG.armors, p.armor))) / 10000), (klass(p).defBp || 0) + huBp(p, 1) + gbp(p, 'def')); }
 
 // ---------- ataques ----------
 
@@ -1225,6 +1256,8 @@ export function checkInvariants(p) {
   if (p.energy > CFG.energy.max) bad.push(`energy>${CFG.energy.max}`);
   if (p.addiction > addictionCap(p)) bad.push('addiction>cap');
   if (p.peakRespect < p.respect) bad.push('peak<respect');
+  if ((p.gang === null) !== (p.gb === null)) bad.push('gang/gb');
+  if (p.gb) { const G = CFG.gang; for (const k of ['loot', 'atk', 'def']) if (!Number.isSafeInteger(p.gb[k]) || p.gb[k] < 0 || p.gb[k] > (k === 'loot' ? G.lootBpPer : G.fightBpPer) * G.maxLevel) bad.push('gb.' + k); }
   if (!Array.isArray(p.detoxT) || p.detoxT.length > CFG.detox.maxSteps) bad.push('detox list');
   if (!Number.isSafeInteger(p.mi) || p.mi < 0 || p.mi > CFG.missions.length) bad.push('mission index');
   for (const k of Object.keys(p.c)) if (!Number.isSafeInteger(p.c[k]) || p.c[k] < 0) bad.push(`counter ${k}`);
