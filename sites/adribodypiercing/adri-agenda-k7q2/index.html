@@ -208,6 +208,30 @@ dialog::backdrop{background:rgba(0,0,0,.7)}
 .vale-img img{width:100%;height:100%;object-fit:contain;display:block}
 .vale-img .vazio{color:var(--sec-c);padding:0}
 .canais .larga{grid-column:1/-1}
+.jl{display:grid;grid-template-columns:64px minmax(0,1fr) auto;grid-template-areas:"img txt q";gap:10px 14px;align-items:center;padding:16px 0;border-top:1px solid var(--noite-3)}
+#pJoias h2+.jl{border-top:0}
+.jl-img{grid-area:img;width:64px;height:64px;border-radius:14px;background:var(--noite-3);overflow:hidden;display:grid;place-items:center;align-self:start}
+.jl-img img{width:100%;height:100%;object-fit:contain;display:block}
+.jl-img.foto img{object-fit:cover}
+.jl-txt{grid-area:txt;min-width:0;display:flex;flex-direction:column;align-items:flex-start;gap:4px}
+.jl-txt b{font-size:16px;overflow-wrap:anywhere}
+.jl-txt .mini{color:var(--sec);font-size:14px}
+.jl-q{grid-area:q;display:flex;align-items:center;gap:6px}
+.qb{width:44px;height:44px;border-radius:12px;border:0;background:var(--noite-3);color:var(--osso);font-size:24px;font-weight:600;line-height:1;cursor:pointer;touch-action:manipulation}
+.qb:active{transform:scale(.94)}
+.qb:disabled{opacity:.35;cursor:default}
+.jl-q input{width:60px;height:44px;min-height:44px;text-align:center;font-weight:700;font-size:18px;padding:0 4px;font-variant-numeric:tabular-nums}
+.jl-q .ed{margin-left:8px}
+.pill.sem i{background:var(--sec)}.pill.esg i{background:var(--verm)}.pill.poucas i{background:#f1c87a}.pill.ok i{background:var(--verde)}
+.mods{display:grid;grid-template-columns:repeat(auto-fill,minmax(64px,1fr));gap:8px}
+.mods label{position:relative;aspect-ratio:1;border-radius:14px;background:var(--noite-3);display:grid;place-items:center;cursor:pointer;border:2px solid transparent}
+.mods input{position:absolute;inset:0;opacity:0;margin:0;cursor:pointer}
+.mods img{width:88%;height:88%;object-fit:contain;pointer-events:none}
+.mods label:has(input:checked){border-color:var(--acento);background:#20264d}
+.mods label:has(input:focus-visible){outline:3px solid var(--acento-claro);outline-offset:2px}
+.jfoto{display:flex;align-items:center;gap:12px;margin-top:10px;color:var(--sec);font-size:14px}
+.jfoto img{width:64px;height:64px;border-radius:12px;object-fit:cover;flex:none}
+@media (max-width:640px){.jl{grid-template-columns:56px minmax(0,1fr);grid-template-areas:"img txt" "q q"}.jl-img{width:56px;height:56px}.jl-q .ed{margin-left:auto}}
 .toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom));transform:translate(-50%,20px);opacity:0;background:var(--osso);color:var(--tinta);padding:12px 18px;border-radius:999px;font-weight:600;transition:.3s var(--ease);z-index:50;pointer-events:none;max-width:calc(100vw - 32px);text-align:center}
 .toast.on{opacity:1;transform:translate(-50%,0)}
 </style>
@@ -245,6 +269,7 @@ dialog::backdrop{background:rgba(0,0,0,.7)}
     <nav class="tabs" role="tablist" aria-label="Site" data-secao="site" hidden>
       <button role="tab" data-v="precos" aria-selected="false">Preços</button>
       <button role="tab" data-v="horario" aria-selected="false">Horário</button>
+      <button role="tab" data-v="joias" aria-selected="false">Joias</button>
       <button role="tab" data-v="fotos" aria-selected="false">Fotos</button>
       <button role="tab" data-v="avaliacoes" aria-selected="false">Avaliações</button>
     </nav>
@@ -366,6 +391,7 @@ function desenhar(){
   if (vista === 'precos') return comCfg(c, vPrecos);
   if (vista === 'horario') return comCfg(c, vHorario);
   if (vista === 'fotos') return comCfg(c, vFotos);
+  if (vista === 'joias') return vJoias(c);
   if (vista === 'avaliacoes') return vAvaliacoes(c);
   if (vista === 'numeros') return vNumeros(c);
   if (vista === 'vales') return vVales(c);
@@ -937,9 +963,26 @@ function irSecao(sec, v){
 }
 function cartaoEnviado(m){ return m.historico.some(function(x){ return x.msg === 'avaliacao'; }); }
 function dlgAposFeita(m){
-  abrirDlg('<h2>Marcação feita</h2><p class="ajuda-t">Manda já o cartão de obrigado a ' + esc(primeiro(m.nome)) + ', com o resumo do piercing, os cuidados e o QR para avaliar.</p>' +
+  abrirDlg('<h2>Marcação feita</h2>' +
+    '<div id="aJoia" hidden><label for="jUsada" class="lbl-b" style="margin-top:0">Joia que usaste (opcional)</label><div class="ver-linha"><select id="jUsada"></select><button type="button" class="btn esc" id="bTirarJ" disabled>Tirar 1 do stock</button></div></div>' +
+    '<p class="ajuda-t" style="margin-top:14px">Manda já o cartão de obrigado a ' + esc(primeiro(m.nome)) + ', com o resumo do piercing, os cuidados e o QR para avaliar.</p>' +
     '<div class="acoes"><button type="button" class="btn" id="bAposF">Criar cartão de obrigado</button><button type="button" class="btn esc" data-fechar>Agora não</button></div>');
   $('#bAposF').addEventListener('click', function(){ pedirAvaliacao(m, $('#bAposF')); });
+  carregarJoias().then(function(js){
+    var ok = js.filter(function(j){ return j.quantidade !== 0; });
+    if (!ok.length || !$('#jUsada')) return;
+    $('#jUsada').innerHTML = '<option value="">Escolhe a joia</option>' + ok.map(function(j){ return '<option value="' + j.id + '">' + esc(j.nome) + (typeof j.quantidade === 'number' ? ' (' + j.quantidade + ')' : '') + '</option>'; }).join('');
+    $('#aJoia').hidden = false;
+    $('#jUsada').addEventListener('change', function(){ $('#bTirarJ').disabled = !this.value; });
+    $('#bTirarJ').addEventListener('click', function(){
+      var b = this, id = +$('#jUsada').value, j = js.filter(function(x){ return x.id === id; })[0]; if (!j) return;
+      b.disabled = true;
+      api('POST', '/admin/joias/' + id + '/stock', {delta: -1}).then(function(n){
+        j.quantidade = n.quantidade; b.textContent = 'Tirada do stock'; $('#jUsada').disabled = true;
+        toast(n.quantidade === 0 ? n.nome + ': esgotou. O site já mostra «Esgotado».' : n.nome + ': ficam ' + n.quantidade + '.');
+      }, function(){ b.disabled = false; toast('Não deu para mudar o stock. Tenta outra vez.'); });
+    });
+  }).catch(function(){});
 }
 function desenharFeitas(){
   var p = $('#pFeitas'); if (!p) return;
@@ -1001,6 +1044,124 @@ function vAvaliacoes(c){
   }, function(){ c.innerHTML = '<p class="vazio">Não deu para carregar. Toca em «Atualizar».</p>'; });
 }
 
+/* =================== JOIAS E STOCK =================== */
+var MODELOS_J = {clicker: 'Argola clicker', labret: 'Labret', lisa: 'Argola lisa', cacho: 'Cacho', curva: 'Barra curva', ferradura: 'Ferradura', reta: 'Barra reta', rosa: 'Clicker com pedras', lisaouro: 'Argola grossa'};
+var joiasCache = null;
+function imgJoia(j){ return j.foto_src || ('/img/joias/' + j.modelo + '.webp?v=2'); }
+function estadoJoia(j){
+  var q = j.quantidade;
+  if (q === null || q === undefined) return ['sem', 'Sem contagem'];
+  return q <= 0 ? ['esg', 'Esgotada'] : (q <= 2 ? ['poucas', q === 1 ? 'Última unidade' : 'Últimas ' + q] : ['ok', q + ' em stock']);
+}
+function carregarJoias(){ return api('GET', '/admin/joias').then(function(j){ joiasCache = j.joias; return j.joias; }); }
+function vJoias(c){
+  c.innerHTML = '<div class="painel"><h2>Joias e stock</h2><p class="ajuda-t">Põe quantas tens de cada joia. No site aparece «Últimas 2» quando restam 1 ou 2, e «Esgotado» quando chega a 0. Em branco, a joia aparece sem contagem.</p>' +
+    '<p class="ajuda-t" id="jResumo" style="color:var(--osso)"></p><button type="button" class="btn" id="bNovaJ">Juntar joia</button></div>' +
+    '<div class="painel" id="pJoias"><p class="vazio">A carregar…</p></div>';
+  $('#bNovaJ').addEventListener('click', function(){ dlgJoia(null); });
+  var p = $('#pJoias');
+  p.addEventListener('click', function(e){
+    var b = e.target.closest('[data-j-a]'); if (!b) return;
+    var id = +b.closest('.jl').dataset.id, j = joiasCache.filter(function(x){ return x.id === id; })[0]; if (!j) return;
+    var a = b.dataset.jA;
+    if (a === 'menos' || a === 'mais') return mudarStock(j, a === 'mais' ? 1 : -1);
+    if (a === 'editar') return dlgJoia(j);
+  });
+  p.addEventListener('change', function(e){
+    var i = e.target.closest('[data-q]'); if (!i) return;
+    var id = +i.closest('.jl').dataset.id, j = joiasCache.filter(function(x){ return x.id === id; })[0]; if (!j) return;
+    var t = i.value.trim(), q = t === '' ? null : Number(t);
+    if (q !== null && !(Number.isInteger(q) && q >= 0 && q <= 999)){ toast('A quantidade vai de 0 a 999.'); i.value = j.quantidade === null ? '' : j.quantidade; return; }
+    var antes = j.quantidade; j.quantidade = q; desenharJoias();
+    api('POST', '/admin/joias/' + j.id + '/stock', {quantidade: q}).then(function(n){ Object.assign(j, n); desenharJoias(); }, function(){ j.quantidade = antes; desenharJoias(); toast('Não deu para guardar. Tenta outra vez.'); });
+  });
+  carregarJoias().then(desenharJoias, function(){ p.innerHTML = '<p class="vazio">Não deu para carregar as joias. Toca em «Atualizar».</p>'; });
+}
+function mudarStock(j, d){
+  // mostra logo o número novo e confirma com o servidor; se falhar, volta atrás
+  var antes = j.quantidade;
+  j.quantidade = Math.max(0, Math.min(999, (antes || 0) + d)); desenharJoias();
+  api('POST', '/admin/joias/' + j.id + '/stock', {delta: d}).then(function(n){ j.quantidade = n.quantidade; desenharJoias(); },
+    function(){ j.quantidade = antes; desenharJoias(); toast('Não deu para mudar o stock. Tenta outra vez.'); });
+}
+function moverJoia(j, d){
+  var a = joiasCache, i = a.indexOf(j), k = i + d;
+  if (k < 0 || k >= a.length) return;
+  a.splice(i, 1); a.splice(k, 0, j); desenharJoias();
+  api('POST', '/admin/joias/ordem', {ids: a.map(function(x){ return x.id; })}).catch(function(){ toast('Não deu para mudar a ordem.'); carregarJoias().then(desenharJoias); });
+}
+function desenharJoias(){
+  var p = $('#pJoias'); if (!p || !joiasCache) return;
+  var js = joiasCache, esg = js.filter(function(j){ return j.quantidade === 0; }).length, pou = js.filter(function(j){ return j.quantidade > 0 && j.quantidade <= 2; }).length;
+  var r = $('#jResumo');
+  if (r) r.textContent = js.length + (js.length === 1 ? ' joia' : ' joias') + (esg ? ', ' + esg + (esg === 1 ? ' esgotada' : ' esgotadas') : '') + (pou ? ', ' + pou + ' a acabar' : '') + '.';
+  var foco = document.activeElement && document.activeElement.closest && document.activeElement.closest('.jl') ? [document.activeElement.closest('.jl').dataset.id, document.activeElement.dataset.jA || (document.activeElement.hasAttribute('data-q') ? 'q' : '')] : null;
+  p.innerHTML = '<h2>As tuas joias</h2>' + (js.length ? js.map(function(j, i){
+    var e = estadoJoia(j), preco = typeof j.preco === 'number' ? (j.desde ? 'desde\u00a0' : '') + j.preco + ' €' : '';
+    return '<div class="jl" data-id="' + j.id + '"><div class="jl-img' + (j.foto_src ? ' foto' : '') + '"><img src="' + esc(imgJoia(j)) + '" alt="" loading="lazy"></div>' +
+      '<div class="jl-txt"><b>' + esc(j.nome) + (j.destaque ? ' <span class="etq nova" style="vertical-align:2px">Destaque</span>' : '') + '</b><span class="mini">' + esc([j.material, preco].filter(Boolean).join(' · ')) + (j.visivel ? '' : ' · <b style="font-weight:600;color:#f1c87a">escondida do site</b>') + '</span>' +
+      '<span class="pill ' + e[0] + '"><i></i>' + e[1] + '</span></div>' +
+      '<div class="jl-q"><button type="button" class="qb" data-j-a="menos" aria-label="Tirar uma: ' + esc(j.nome) + '"' + (j.quantidade === 0 ? ' disabled' : '') + '>−</button>' +
+      '<input type="number" inputmode="numeric" min="0" max="999" data-q value="' + (j.quantidade === null ? '' : j.quantidade) + '" aria-label="Quantidade de ' + esc(j.nome) + '">' +
+      '<button type="button" class="qb" data-j-a="mais" aria-label="Juntar uma: ' + esc(j.nome) + '">+</button>' +
+      '<button type="button" class="btn esc peq ed" data-j-a="editar">Editar</button></div></div>';
+  }).join('') : '<p class="vazio" style="padding:12px 0">Ainda não há joias. Toca em «Juntar joia».</p>');
+  if (foco){ var el = p.querySelector('.jl[data-id="' + foco[0] + '"] ' + (foco[1] === 'q' ? '[data-q]' : '[data-j-a="' + foco[1] + '"]')); if (el && !el.disabled) el.focus(); }
+}
+function dlgJoia(j){
+  var novo = !j, ficheiro = null, tirarFoto = false;
+  j = j || {nome: '', material: 'Titânio ASTM F136', preco: null, desde: true, modelo: 'lisa', quantidade: null, visivel: true, destaque: false, foto_src: ''};
+  abrirDlg('<h2>' + (novo ? 'Juntar joia' : 'Editar joia') + '</h2><form id="fJoia" novalidate>' +
+    '<div class="campo"><label for="jNome">Nome</label><input id="jNome" maxlength="50" autocomplete="off" required value="' + esc(j.nome) + '" placeholder="Ex.: Argola lisa 8 mm"></div>' +
+    '<div class="campo"><label for="jMat">Material</label><input id="jMat" maxlength="40" autocomplete="off" value="' + esc(j.material) + '"></div>' +
+    '<div class="duas"><div class="campo"><label for="jPreco">Preço em € (opcional)</label><input id="jPreco" type="number" inputmode="numeric" min="0" max="999" value="' + (typeof j.preco === 'number' ? j.preco : '') + '"></div>' +
+    '<div class="campo"><label for="jQtd">Quantas tens (opcional)</label><input id="jQtd" type="number" inputmode="numeric" min="0" max="999" value="' + (typeof j.quantidade === 'number' ? j.quantidade : '') + '" placeholder="Sem contagem"></div></div>' +
+    '<label class="dia-h" style="padding:6px 0;cursor:pointer"><span class="nome" id="lDesde">Mostrar «desde» antes do preço</span><span class="interruptor"><input type="checkbox" id="jDesde" aria-labelledby="lDesde"' + (j.desde ? ' checked' : '') + '><span></span></span></label>' +
+    '<div class="campo"><span class="lbl" id="lImg">Imagem</span><div class="mods" role="radiogroup" aria-labelledby="lImg">' + Object.keys(MODELOS_J).map(function(m){
+      return '<label title="' + MODELOS_J[m] + '"><input type="radio" name="jMod" value="' + m + '"' + (j.modelo === m ? ' checked' : '') + ' aria-label="' + MODELOS_J[m] + '"><img src="/img/joias/' + m + '.webp?v=2" alt=""></label>'; }).join('') + '</div>' +
+    '<div class="jfoto" id="jFotoW">' + (j.foto_src ? '<img src="' + esc(j.foto_src) + '" alt="Foto atual da joia"><span>Usa a tua foto em vez da imagem 3D.</span>' : '<span>Também podes pôr uma foto tua da joia, quadrada e com boa luz.</span>') + '</div>' +
+    '<div class="acoes" style="margin-top:8px"><label class="btn esc peq" style="cursor:pointer">' + (j.foto_src ? 'Trocar foto' : 'Pôr foto') + '<input type="file" accept="image/*" hidden id="jFoto"></label>' + (j.foto_src ? '<button type="button" class="btn esc peq" id="jSemFoto">Tirar a foto</button>' : '') + '</div></div>' +
+    '<label class="dia-h" style="padding:6px 0;cursor:pointer"><span class="nome" id="lVis">Mostrar no site</span><span class="interruptor"><input type="checkbox" id="jVis" aria-labelledby="lVis"' + (j.visivel ? ' checked' : '') + '><span></span></span></label>' +
+    '<label class="dia-h" style="padding:6px 0;cursor:pointer"><span class="nome" id="lDest">Em destaque (cartão grande no site)</span><span class="interruptor"><input type="checkbox" id="jDest" aria-labelledby="lDest"' + (j.destaque ? ' checked' : '') + '><span></span></span></label>' +
+    (novo ? '' : '<div class="campo"><span class="lbl">Lugar na lista</span><div class="acoes" style="margin-top:6px"><button type="button" class="btn esc peq" data-mov="-1">Subir</button><button type="button" class="btn esc peq" data-mov="1">Descer</button></div></div>') +
+    '<p class="erro" id="eJoia" role="alert" hidden></p>' +
+    '<div class="acoes"><button class="btn" id="bJGuardar">Guardar</button><button type="button" class="btn esc" data-fechar>Cancelar</button>' + (novo ? '' : '<button type="button" class="btn verm" id="bJApagar" style="margin-left:auto">Apagar</button>') + '</div></form>');
+  $('#jFoto').addEventListener('change', function(){
+    var f = this.files && this.files[0]; this.value = ''; if (!f) return;
+    ficheiro = f; tirarFoto = false;
+    var u = URL.createObjectURL(f); $('#jFotoW').innerHTML = '<img src="' + u + '" alt="Foto nova da joia"><span>Foto nova: fica guardada quando carregares em «Guardar».</span>';
+  });
+  if ($('#jSemFoto')) $('#jSemFoto').addEventListener('click', function(){ tirarFoto = true; ficheiro = null; $('#jFotoW').innerHTML = '<span>Sem foto: volta a imagem 3D quando guardares.</span>'; this.hidden = true; });
+  function limitesMov(){ var i = joiasCache.indexOf(j); $$('[data-mov]').forEach(function(b){ b.disabled = (+b.dataset.mov < 0 && i <= 0) || (+b.dataset.mov > 0 && i >= joiasCache.length - 1); }); }
+  if (!novo){ limitesMov(); $$('[data-mov]').forEach(function(b){ b.addEventListener('click', function(){ moverJoia(j, +b.dataset.mov); limitesMov(); toast(+b.dataset.mov < 0 ? 'Subiu na lista.' : 'Desceu na lista.'); }); }); }
+  if ($('#bJApagar')) $('#bJApagar').addEventListener('click', function(){
+    var b = this;
+    if (b.dataset.conf !== '1'){ b.dataset.conf = '1'; b.textContent = 'Apagar mesmo?'; return; }
+    b.disabled = true;
+    api('POST', '/admin/joias/' + j.id + '/apagar', {}).then(function(){ $('#dlg').close(); toast('Joia apagada.'); carregarJoias().then(desenharJoias); }, function(){ b.disabled = false; toast('Não deu. Tenta outra vez.'); });
+  });
+  $('#fJoia').addEventListener('submit', function(e){
+    e.preventDefault();
+    var er = $('#eJoia'), b = $('#bJGuardar'), num = function(id){ var t = $(id).value.trim(); return t === '' ? null : Number(t); };
+    var corpo = {nome: $('#jNome').value.trim(), material: $('#jMat').value.trim(), preco: num('#jPreco'), quantidade: num('#jQtd'), desde: $('#jDesde').checked,
+      modelo: ($('input[name="jMod"]:checked') || {}).value || 'lisa', visivel: $('#jVis').checked, destaque: $('#jDest').checked};
+    er.hidden = true;
+    if (!corpo.nome){ er.textContent = 'Escreve o nome da joia.'; er.hidden = false; $('#jNome').focus(); return; }
+    if (corpo.preco !== null && !(Number.isInteger(corpo.preco) && corpo.preco >= 0 && corpo.preco <= 999)){ er.textContent = 'O preço é um número de 0 a 999, sem cêntimos.'; er.hidden = false; $('#jPreco').focus(); return; }
+    if (corpo.quantidade !== null && !(Number.isInteger(corpo.quantidade) && corpo.quantidade >= 0 && corpo.quantidade <= 999)){ er.textContent = 'A quantidade vai de 0 a 999, ou fica em branco.'; er.hidden = false; $('#jQtd').focus(); return; }
+    b.disabled = true; b.textContent = 'A guardar…';
+    var guardar = novo ? api('POST', '/admin/joias', corpo) : api('POST', '/admin/joias/' + j.id, corpo);
+    guardar.then(function(n){
+      if (ficheiro) return reduzir(ficheiro, 1200, true).then(function(blob){
+        return fetch('/api/admin/fotos/joia' + n.id, {method: 'POST', credentials: 'same-origin', headers: {'Content-Type': blob.type}, body: blob}).then(function(r){ if (!r.ok) throw {s: r.status}; });
+      }).then(function(){ return n; }, function(){ toast('A joia ficou guardada, mas a foto não foi. Tenta pôr a foto outra vez.'); return n; });
+      if (tirarFoto) return api('POST', '/admin/fotos/joia' + n.id + '/repor', {}).then(function(){ return n; });
+      return n;
+    }).then(function(){
+      $('#dlg').close(); toast(novo ? 'Joia juntada. Já aparece no site.' : 'Guardado. O site já mostra a mudança.'); carregarJoias().then(desenharJoias);
+    }, function(x){ b.disabled = false; b.textContent = 'Guardar'; er.textContent = erroCampos(x); er.hidden = false; });
+  });
+}
 /* =================== VALES DE OFERTA =================== */
 var fmtLonga = new Intl.DateTimeFormat('pt-PT', {day: 'numeric', month: 'long', year: 'numeric'});
 var fmtNum = new Intl.DateTimeFormat('pt-PT', {day: '2-digit', month: '2-digit', year: 'numeric'});

@@ -373,6 +373,14 @@ section{position:relative}
 .joia span{color:var(--sec-escuro);font-size:15px}
 .joia .v{margin-top:auto;padding-top:12px;font-family:var(--serif);font-size:22px;color:var(--osso)}
 .joia.grande{grid-column:span 2;grid-row:span 2}
+.joia{position:relative}
+.joia .img.foto{margin:0 0 10px}
+.joia .img.foto img{object-fit:cover;border-radius:14px}
+.joia .st{position:absolute;top:14px;left:14px;z-index:1;font:600 13px/1 var(--sans);padding:8px 12px;border-radius:999px;white-space:nowrap}
+.joia .st.poucas{background:var(--acento);color:#fff}
+.joia .st.esg{background:var(--noite-3);color:var(--sec-escuro)}
+.joia.esgotada .img{opacity:.38;filter:grayscale(1)}
+.joia.esgotada b,.joia.esgotada .v{color:var(--sec-escuro)}
 .joia.grande .img{margin:0}
 .joia.grande b{font-size:20px}
 @media (max-width:900px){.vitrine{grid-template-columns:1fr 1fr}.metais{grid-template-columns:1fr}}
@@ -1365,21 +1373,41 @@ listeners.push(pintarMais);
 $$('[data-consulta]').forEach(function(b){ b.addEventListener('click', function(){ if (sel.indexOf('consulta') < 0) toggle('consulta'); }); });
 
 /* ---------- Vitrine de joias ---------- */
+/* joias: estas são as de origem; o painel do Adri manda a lista atual (com stock) por /api/site */
 var J = [
- ['clicker','Argola clicker com zircónias','Titânio ASTM F136','desde 35 €', true],
- ['labret','Labret com pedra','Titânio ASTM F136','desde 25 €'],
- ['lisa','Argola lisa','Titânio ASTM F136','desde 20 €'],
- ['cacho','Cacho de pedras','Titânio ASTM F136','desde 40 €'],
- ['curva','Barra curva de umbigo','Titânio ASTM F136','desde 25 €'],
- ['ferradura','Ferradura de septo','Titânio preto','desde 25 €'],
- ['reta','Barra industrial','Titânio ASTM F136','desde 25 €'],
- ['rosa','Argola clicker com pedras','Titânio ASTM F136','desde 30 €'],
- ['lisaouro','Argola lisa grossa','Titânio ASTM F136','desde 25 €']
+ {nome:'Argola clicker com zircónias', material:'Titânio ASTM F136', preco:35, desde:true, modelo:'clicker', destaque:true},
+ {nome:'Labret com pedra', material:'Titânio ASTM F136', preco:25, desde:true, modelo:'labret'},
+ {nome:'Argola lisa', material:'Titânio ASTM F136', preco:20, desde:true, modelo:'lisa'},
+ {nome:'Cacho de pedras', material:'Titânio ASTM F136', preco:40, desde:true, modelo:'cacho'},
+ {nome:'Barra curva de umbigo', material:'Titânio ASTM F136', preco:25, desde:true, modelo:'curva'},
+ {nome:'Ferradura de septo', material:'Titânio preto', preco:25, desde:true, modelo:'ferradura'},
+ {nome:'Barra industrial', material:'Titânio ASTM F136', preco:25, desde:true, modelo:'reta'},
+ {nome:'Argola clicker com pedras', material:'Titânio ASTM F136', preco:30, desde:true, modelo:'rosa'},
+ {nome:'Argola lisa grossa', material:'Titânio ASTM F136', preco:25, desde:true, modelo:'lisaouro'}
 ];
-$('#vitrine').innerHTML = J.map(function(j, i){
-  return '<article class="joia rv' + (j[4] ? ' grande' : '') + '" style="--d:' + ((i % 4) * .06) + 's"><div class="img"><img src="' + IMG[j[4] ? 'heroi' : j[0]] + '" alt="' + j[1] + ' em ' + j[2].toLowerCase() + '" width="' + (j[4] ? 900 : 640) + '" height="' + (j[4] ? 900 : 640) + '" loading="lazy" decoding="async"></div><b>' + j[1] + '</b><span>' + j[2] + '</span><span class="v num">' + j[3] + '</span></article>';
-}).join('');
-$$('#vitrine .rv').forEach(function(el){ io.observe(el); });
+var vitrineAtual = '';
+function desenharVitrine(lista){
+  var chave = JSON.stringify(lista);
+  if (chave === vitrineAtual) return;
+  vitrineAtual = chave;
+  // as esgotadas vão para o fim, mantendo a ordem que o Adri escolheu; só a primeira em destaque fica grande
+  var l = lista.map(function(j, i){ return [j, i]; }).sort(function(a, b){ return ((a[0].estado === 'esgotada') - (b[0].estado === 'esgotada')) || a[1] - b[1]; }).map(function(x){ return x[0]; });
+  var grande = false;
+  $('#vitrine').innerHTML = l.map(function(j, i){
+    var g = !!j.destaque && !grande && j.estado !== 'esgotada'; if (g) grande = true;
+    var foto = !!j.foto, src = foto ? j.foto : (g && j.modelo === 'clicker' ? IMG.heroi : (IMG[j.modelo] || IMG.lisa));
+    var st = j.estado === 'esgotada' ? '<span class="st esg">Esgotado</span>' : (j.estado === 'poucas' ? '<span class="st poucas">' + (j.resta === 1 ? 'Última unidade' : 'Últimas ' + j.resta) + '</span>' : '');
+    var preco = typeof j.preco === 'number' ? '<span class="v num">' + (j.desde ? 'desde ' : '') + j.preco + '\u00a0€</span>' : '';
+    var alt = j.nome + (j.material ? ' em ' + j.material.toLowerCase() : '');
+    return '<article class="joia rv' + (g ? ' grande' : '') + (j.estado === 'esgotada' ? ' esgotada' : '') + '" style="--d:' + ((i % 4) * .06) + 's">' + st +
+      '<div class="img' + (foto ? ' foto' : '') + '"><img src="' + esc(src) + '" alt="' + esc(alt) + '" width="' + (g ? 900 : 640) + '" height="' + (g ? 900 : 640) + '" loading="lazy" decoding="async"></div>' +
+      '<b>' + esc(j.nome) + '</b>' + (j.material ? '<span>' + esc(j.material) + '</span>' : '') + preco + '</article>';
+  }).join('');
+  $$('#vitrine .rv').forEach(function(el){ io.observe(el); });
+  joiasImg = $$('#vitrine .img:not(.foto) img');
+  var v = $('#vitrine'); if (v) v.dispatchEvent(new Event('scroll'));
+}
+desenharVitrine(J);
 /* barra das joias (telemóvel): setas e trilho que segue o deslizar e se pode arrastar */
 (function(){
   var v = $('#vitrine'), ant = $('#vnAnt'), seg = $('#vnSeg'), tr = $('#vnTrilho'), pol = $('#vnPolegar');
@@ -1412,7 +1440,7 @@ $$('#vitrine .rv').forEach(function(el){ io.observe(el); });
 })();
 
 /* rotação suave das joias e do trilho ao fazer scroll */
-var joiasImg = $$('#vitrine img'), fotosPh = $$('.ph img'), trilho = $('#passos .trilho i'), passos = $('#passos');
+var joiasImg = $$('#vitrine .img:not(.foto) img'), fotosPh = $$('.ph img'), trilho = $('#passos .trilho i'), passos = $('#passos');
 var ticking = false;
 function scrollFx(){
   ticking = false;
@@ -1784,6 +1812,7 @@ function desenharAvaliacoes(av){
 }
 function aplicarSite(d){
   if (!d) return;
+  if (Array.isArray(d.joias) && d.joias.length) desenharVitrine(d.joias);
   var mudou = false;
   if (d.precos) S.forEach(function(s){ var v = d.precos[s.id]; if (typeof v === 'number' && v !== s.p){ s.p = v; mudou = true; } });
   if (mudou) aplicarPrecos();

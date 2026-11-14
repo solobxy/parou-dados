@@ -3,7 +3,7 @@
 
 Uso: python3 adri/test_agenda.py
 Arranca o servidor numa porta livre e testa: marcações, preços, horário e local dinâmicos, /api/site,
-fotos (envio, recusa de ficheiros falsos, troca e reposição), avaliações com link de uso único, vales de oferta e números.
+fotos (envio, recusa de ficheiros falsos, troca e reposição), avaliações com link de uso único, vales de oferta, joias com stock e números.
 """
 import datetime as dt, json, os, socket, subprocess, sys, tempfile, time, urllib.error, urllib.request
 
@@ -196,6 +196,53 @@ try:
     st, cv3, _ = pedir('POST', '/api/admin/convites', {})
     ok('[avaliações] apagar um link por usar', pedir('POST', '/api/admin/convites/%d/apagar' % cv3['id'], {})[0] == 200 and pedir('POST', '/api/convite', {'token': cv3['token']}, com_cookie=False)[0] == 404)
     ok('[mensagens] modelo «avaliacao» aceite no histórico', pedir('POST', '/api/admin/marcacoes/%d/acao' % mid, {'acao': 'mensagem', 'tipo': 'avaliacao', 'canal': 'whatsapp'})[0] == 200)
+
+    # ---------- joias e stock ----------
+    st, jl, _ = pedir('GET', '/api/admin/joias')
+    ok('[joias] começa com as 9 joias do site, sem contagem', st == 200 and len(jl['joias']) == 9 and all(j['quantidade'] is None for j in jl['joias'])
+       and jl['joias'][0]['nome'] == 'Argola clicker com zircónias' and jl['joias'][0]['destaque'] is True, jl)
+    sj = pedir('GET', '/api/site')[1]['joias']
+    ok('[joias] o site recebe as 9, sem estado de stock', len(sj) == 9 and all(j['estado'] == '' for j in sj) and 'quantidade' not in sj[0], sj[:1])
+    ok('[joias] sem sessão não mexe no stock', pedir('POST', '/api/admin/joias', {'nome': 'X'}, com_cookie=False)[0] == 401
+       and pedir('GET', '/api/admin/joias', com_cookie=False)[0] == 401)
+    ok('[joias] recusa sem nome, preço em texto, modelo inventado e quantidade negativa',
+       pedir('POST', '/api/admin/joias', {'nome': ' '})[0] == 422 and pedir('POST', '/api/admin/joias', {'nome': 'A', 'preco': '20'})[0] == 422
+       and pedir('POST', '/api/admin/joias', {'nome': 'A', 'modelo': '../x'})[0] == 422 and pedir('POST', '/api/admin/joias', {'nome': 'A', 'quantidade': -1})[0] == 422)
+    st, j1, _ = pedir('POST', '/api/admin/joias', {'nome': 'Argola <b>preta</b>', 'material': 'Titânio preto', 'preco': 30, 'desde': False, 'modelo': 'lisa', 'quantidade': 2})
+    ok('[joias] cria joia com stock', st == 201 and j1['quantidade'] == 2 and j1['nome'] == 'Argola <b>preta</b>' and j1['preco'] == 30 and j1['desde'] is False, j1)
+    def no_site(jid):
+        return [x for x in pedir('GET', '/api/site')[1]['joias'] if x['id'] == jid]
+    ok('[joias] com 2 aparece como «últimas», sem a quantidade exata acima de 2', no_site(j1['id'])[0]['estado'] == 'poucas' and no_site(j1['id'])[0]['resta'] == 2)
+    st, j1b, _ = pedir('POST', '/api/admin/joias/%d/stock' % j1['id'], {'delta': -1})
+    ok('[stock] tira 1', st == 200 and j1b['quantidade'] == 1, j1b)
+    pedir('POST', '/api/admin/joias/%d/stock' % j1['id'], {'delta': -1})
+    ok('[stock] a 0 fica esgotada no site', no_site(j1['id'])[0]['estado'] == 'esgotada')
+    ok('[stock] não desce abaixo de 0', pedir('POST', '/api/admin/joias/%d/stock' % j1['id'], {'delta': -1})[1]['quantidade'] == 0)
+    pedir('POST', '/api/admin/joias/%d/stock' % j1['id'], {'delta': 5})
+    ok('[stock] com 5 está disponível e não mostra quantas', no_site(j1['id'])[0]['estado'] == 'ok' and no_site(j1['id'])[0].get('resta') is None)
+    ok('[stock] pôr um número certo', pedir('POST', '/api/admin/joias/%d/stock' % j1['id'], {'quantidade': 12})[1]['quantidade'] == 12)
+    ok('[stock] em branco volta a «sem contagem»', pedir('POST', '/api/admin/joias/%d/stock' % j1['id'], {'quantidade': None})[1]['quantidade'] is None
+       and no_site(j1['id'])[0]['estado'] == '')
+    ok('[stock] recusa variação absurda', pedir('POST', '/api/admin/joias/%d/stock' % j1['id'], {'delta': 5000})[0] == 422
+       and pedir('POST', '/api/admin/joias/%d/stock' % j1['id'], {'delta': '1'})[0] == 422)
+    st, j1c, _ = pedir('POST', '/api/admin/joias/%d' % j1['id'], {'visivel': False, 'nome': 'Argola preta'})
+    ok('[joias] editar e esconder do site', st == 200 and j1c['nome'] == 'Argola preta' and not no_site(j1['id']), j1c)
+    pedir('POST', '/api/admin/joias/%d' % j1['id'], {'visivel': True, 'destaque': True})
+    dest = [x for x in pedir('GET', '/api/admin/joias')[1]['joias'] if x['destaque']]
+    ok('[joias] só uma em destaque', len(dest) == 1 and dest[0]['id'] == j1['id'], dest)
+    ids = [x['id'] for x in pedir('GET', '/api/admin/joias')[1]['joias']]
+    novo = [ids[-1]] + ids[:-1]
+    ok('[joias] mudar a ordem', pedir('POST', '/api/admin/joias/ordem', {'ids': novo})[0] == 200
+       and [x['id'] for x in pedir('GET', '/api/admin/joias')[1]['joias']] == novo)
+    ok('[joias] ordem com ids estranhos é recusada', pedir('POST', '/api/admin/joias/ordem', {'ids': ['x']})[0] == 422)
+    st, fj, _ = pedir('POST', '/api/admin/fotos/joia%d' % j1['id'], raw=webp, tipo='image/webp')
+    src = no_site(j1['id'])[0]['foto']
+    ok('[joias] foto própria da joia', st == 200 and src.startswith('/api/fotos/joia%d-' % j1['id']) and pedir('GET', src)[0] == 200, (st, fj, src))
+    ok('[joias] foto de joia que não existe dá 404', pedir('POST', '/api/admin/fotos/joia999999', raw=webp, tipo='image/webp')[0] == 404)
+    ok('[joias] tirar a foto volta ao 3D', pedir('POST', '/api/admin/fotos/joia%d/repor' % j1['id'], {})[0] == 200 and no_site(j1['id'])[0]['foto'] == ''
+       and pedir('GET', src)[0] == 404)
+    ok('[joias] apagar', pedir('POST', '/api/admin/joias/%d/apagar' % j1['id'], {})[0] == 200 and not no_site(j1['id'])
+       and pedir('POST', '/api/admin/joias/%d/stock' % j1['id'], {'delta': 1})[0] == 404)
 
     # ---------- vales de oferta ----------
     ok('[vales] sem sessão não se criam nem verificam', pedir('POST', '/api/admin/vales', {'valor': 50}, com_cookie=False)[0] == 401

@@ -20,7 +20,8 @@ guardada só como hash, limite de tentativas, pedidos POST só com JSON e da ori
 Dados pessoais apagados 12 meses depois da data da marcação.
 
 Painel do Adriano (além da agenda): preços, horário e local, fotos do site, avaliações com link de uso único,
-vales de oferta (código, verificação, usado) e números (negócio + visitas do site). O site lê tudo em /api/site, por isso o que ele muda aparece logo.
+vales de oferta (código, verificação, usado), joias com stock (o site mostra «Esgotado» e «Últimas») e números
+(negócio + visitas do site). O site lê tudo em /api/site, por isso o que ele muda aparece logo.
 """
 import base64, calendar, datetime as dt, hashlib, hmac, json, os, re, secrets, sqlite3, threading, time, unicodedata, urllib.parse, urllib.request
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -65,6 +66,20 @@ CONVITE_DIAS = 90
 # Vales de oferta: código de 8 caracteres sem os que se confundem (0/O, 1/I/L), mostrado como XXXX-XXXX
 VALE_ALFABETO = '23456789ABCDEFGHJKMNPQRSTUVWXYZ'
 VALE_MESES = (3, 6, 12)
+# Joias: imagens 3D que já existem no site (/img/joias/<modelo>.webp); a contagem é opcional (None = sem contagem)
+MODELOS_JOIA = ('clicker', 'labret', 'lisa', 'cacho', 'curva', 'ferradura', 'reta', 'rosa', 'lisaouro')
+JOIAS_INICIAIS = [
+    ('Argola clicker com zircónias', 'Titânio ASTM F136', 35, 'clicker', True),
+    ('Labret com pedra', 'Titânio ASTM F136', 25, 'labret', False),
+    ('Argola lisa', 'Titânio ASTM F136', 20, 'lisa', False),
+    ('Cacho de pedras', 'Titânio ASTM F136', 40, 'cacho', False),
+    ('Barra curva de umbigo', 'Titânio ASTM F136', 25, 'curva', False),
+    ('Ferradura de septo', 'Titânio preto', 25, 'ferradura', False),
+    ('Barra industrial', 'Titânio ASTM F136', 25, 'reta', False),
+    ('Argola clicker com pedras', 'Titânio ASTM F136', 30, 'rosa', False),
+    ('Argola lisa grossa', 'Titânio ASTM F136', 25, 'lisaouro', False),
+]
+POUCAS = 2  # com 1 ou 2 o site mostra «Últimas»
 SUPABASE = 'https://hvvvswhwcpavucwrvlsf.supabase.co/rest/v1/rpc/adri_numeros'
 SUPABASE_PUB = 'sb_publishable_aGAxV-VSm1YIjgd-sXWDgQ_dJkhYFpa'  # chave pública (a mesma que o Caddy usa); quem abre os números é a chave da agenda
 ATIVOS = ('pendente', 'confirmada')
@@ -145,7 +160,17 @@ def preparar():
       expira TEXT NOT NULL, para TEXT NOT NULL DEFAULT '', de TEXT NOT NULL DEFAULT '', tel TEXT NOT NULL DEFAULT '',
       mensagem TEXT NOT NULL DEFAULT '', estado TEXT NOT NULL DEFAULT 'ativo', usado INTEGER, nota TEXT NOT NULL DEFAULT '',
       historico TEXT NOT NULL DEFAULT '[]');
+    CREATE TABLE IF NOT EXISTS joias(id INTEGER PRIMARY KEY, nome TEXT NOT NULL, material TEXT NOT NULL DEFAULT '', preco INTEGER,
+      desde INTEGER NOT NULL DEFAULT 1, modelo TEXT NOT NULL DEFAULT 'lisa', foto TEXT NOT NULL DEFAULT '', quantidade INTEGER,
+      visivel INTEGER NOT NULL DEFAULT 1, destaque INTEGER NOT NULL DEFAULT 0, ordem INTEGER NOT NULL DEFAULT 0, atualizado INTEGER NOT NULL DEFAULT 0);
     ''')
+    if not c.execute("SELECT 1 FROM config WHERE chave='joias_iniciais'").fetchone():
+        # as 9 joias que o site já mostrava, sem contagem: o site fica igual até o Adri pôr quantidades
+        agora = int(time.time())
+        for i, (nome, mat, preco, modelo, dest) in enumerate(JOIAS_INICIAIS):
+            c.execute('INSERT INTO joias(nome, material, preco, desde, modelo, destaque, ordem, atualizado) VALUES(?,?,?,1,?,?,?,?)',
+                      (nome, mat, preco, modelo, int(dest), i, agora))
+        c.execute("INSERT INTO config(chave, valor) VALUES('joias_iniciais', 'true')")
     if 'email' not in [r[1] for r in c.execute('PRAGMA table_info(marcacoes)')]:
         c.execute("ALTER TABLE marcacoes ADD COLUMN email TEXT NOT NULL DEFAULT ''")
     os.makedirs(FOTOS, exist_ok=True)
@@ -257,7 +282,16 @@ def site_publico(c):
     media = round(sum(r['estrelas'] for r in rs) / n, 1) if n else None
     lista = [{'estrelas': r['estrelas'], 'texto': r['texto'], 'nome': r['nome'], 'piercing': r['piercing'],
               'quando': dt.date.fromtimestamp(r['criado']).isoformat()} for r in rs[:24]]
-    return {'versao': CFG['versao'], 'precos': CFG['precos'],
+    joias = []
+    for r in c.execute('SELECT * FROM joias WHERE visivel=1 ORDER BY ordem, id').fetchall():
+        q = r['quantidade']
+        j = {'id': r['id'], 'nome': r['nome'], 'material': r['material'], 'preco': r['preco'], 'desde': bool(r['desde']),
+             'modelo': r['modelo'], 'foto': '/api/fotos/' + r['foto'] if r['foto'] else '', 'destaque': bool(r['destaque']),
+             'estado': '' if q is None else ('esgotada' if q <= 0 else ('poucas' if q <= POUCAS else 'ok'))}
+        if q is not None and 0 < q <= POUCAS:
+            j['resta'] = q  # só se diz quantas quando são poucas
+        joias.append(j)
+    return {'versao': CFG['versao'], 'precos': CFG['precos'], 'joias': joias,
             'horario': {'dias': hor.get('dias', {}), 'duracao': hor.get('duracao', 60), 'texto': horario_texto(hor), 'dias_txt': dias_texto(hor)},
             'local': dict(loc, mapa=mapa_url(loc)), 'fotos': fotos,
             'avaliacoes': {'n': n, 'media': media, 'lista': lista}, 'google': CFG['google']}
@@ -356,6 +390,14 @@ def publico(r):
     ids = json.loads(r['servicos'])
     return {'codigo': r['codigo'], 'estado': r['estado'], 'data': r['data'], 'hora': r['hora'],
             'servicos': nomes(ids), 'total': r['total'], 'desde': desde(ids), 'sob_consulta': sob_consulta(ids), 'motivo': r['motivo']}
+
+
+def joia_dict(r):
+    d = dict(r)
+    for k in ('desde', 'visivel', 'destaque'):
+        d[k] = bool(d[k])
+    d['foto_src'] = '/api/fotos/' + r['foto'] if r['foto'] else ''
+    return d
 
 
 def vale_codigo():
@@ -459,7 +501,7 @@ class H(BaseHTTPRequestHandler):
                 if not limite('site:' + self.ip(), 300, 600):
                     return self.erro(429, 'limite')
                 return self.responder(200, site_publico(c), cache='no-cache')
-            m = re.fullmatch(r'/api/fotos/((?:%s)-[A-Za-z0-9_\-]{8,24}\.(webp|jpg))' % '|'.join(SLOTS), caminho)
+            m = re.fullmatch(r'/api/fotos/((?:%s|joia\d{1,6})-[A-Za-z0-9_\-]{8,24}\.(webp|jpg))' % '|'.join(SLOTS), caminho)
             if m:
                 return self.ficheiro_foto(m.group(1), m.group(2))
             m = re.fullmatch(r'/api/marcacoes/([A-Za-z0-9_\-]{10,20})', caminho)
@@ -499,6 +541,8 @@ class H(BaseHTTPRequestHandler):
                     cv = c.execute('SELECT id, criado, expira, nome, piercing, usado FROM convites ORDER BY criado DESC LIMIT 60').fetchall()
                     return self.responder(200, {'avaliacoes': [dict(r) for r in av], 'convites': [dict(r) for r in cv], 'agora': int(time.time()),
                                                 'google': CFG['google']})
+                if caminho == '/api/admin/joias':
+                    return self.responder(200, {'joias': [joia_dict(r) for r in c.execute('SELECT * FROM joias ORDER BY ordem, id').fetchall()], 'modelos': list(MODELOS_JOIA)})
                 if caminho == '/api/admin/vales':
                     rs = c.execute('SELECT * FROM vales ORDER BY criado DESC, id DESC LIMIT 1000').fetchall()
                     return self.responder(200, {'vales': [vale_dict(r) for r in rs], 'hoje': dt.date.today().isoformat()})
@@ -550,7 +594,7 @@ class H(BaseHTTPRequestHandler):
         if not self.origem_ok():
             return self.erro(403, 'origem')
         caminho = self.path.split('?')[0]
-        m = re.fullmatch(r'/api/admin/fotos/([a-z]+)', caminho)
+        m = re.fullmatch(r'/api/admin/fotos/([a-z]+|joia\d{1,6})', caminho)
         if m:
             c = ligar()
             try:
@@ -600,6 +644,16 @@ class H(BaseHTTPRequestHandler):
                 m = re.fullmatch(r'/api/admin/config/(precos|horario|local|google)', caminho)
                 if m:
                     return self.guardar_config(c, m.group(1), corpo)
+                m = re.fullmatch(r'/api/admin/fotos/joia(\d{1,6})/repor', caminho)
+                if m:
+                    return self.joia_foto_repor(c, int(m.group(1)))
+                if caminho == '/api/admin/joias':
+                    return self.criar_joia(c, corpo)
+                if caminho == '/api/admin/joias/ordem':
+                    return self.ordenar_joias(c, corpo)
+                m = re.fullmatch(r'/api/admin/joias/(\d+)(?:/(stock|apagar))?', caminho)
+                if m:
+                    return self.mexer_joia(c, int(m.group(1)), m.group(2), corpo)
                 m = re.fullmatch(r'/api/admin/fotos/([a-z]+)/(texto|repor)', caminho)
                 if m:
                     return self.foto_texto(c, m.group(1), corpo) if m.group(2) == 'texto' else self.foto_repor(c, m.group(1))
@@ -838,7 +892,12 @@ class H(BaseHTTPRequestHandler):
     # ---------- painel: fotos ----------
     def enviar_foto(self, c, slot):
         self.close_connection = True  # o corpo pode não ser lido todo quando se recusa
-        if slot not in SLOTS:
+        jm = re.fullmatch(r'joia(\d{1,6})', slot)
+        if jm:
+            jr = c.execute('SELECT * FROM joias WHERE id=?', (int(jm.group(1)),)).fetchone()
+            if not jr:
+                return self.erro(404, 'nao_existe')
+        elif slot not in SLOTS:
             return self.erro(404, 'nao_existe')
         if not limite('foto:' + self.ip(), 40, 3600):
             return self.erro(429, 'limite')
@@ -861,6 +920,10 @@ class H(BaseHTTPRequestHandler):
         with open(tmp, 'wb') as f:
             f.write(dados)
         os.replace(tmp, os.path.join(FOTOS, nome))
+        if jm:
+            c.execute('UPDATE joias SET foto=?, atualizado=? WHERE id=?', (nome, int(time.time()), jr['id']))
+            self.apagar_ficheiro(jr['foto'])
+            return self.responder(200, joia_dict(c.execute('SELECT * FROM joias WHERE id=?', (jr['id'],)).fetchone()))
         fotos = json.loads(json.dumps(CFG['fotos']))
         antigo = (fotos.get(slot) or {}).get('f')
         fotos[slot] = dict(fotos.get(slot) or {}, f=nome)
@@ -869,11 +932,106 @@ class H(BaseHTTPRequestHandler):
         return self.responder(200, {'fotos': site_publico(c)['fotos']})
 
     def apagar_ficheiro(self, nome):
-        if nome and re.fullmatch(r'[a-z]+-[A-Za-z0-9_\-]{8,24}\.(webp|jpg)', nome):
+        if nome and re.fullmatch(r'[a-z]+\d{0,6}-[A-Za-z0-9_\-]{8,24}\.(webp|jpg)', nome):
             try:
                 os.remove(os.path.join(FOTOS, nome))
             except OSError:
                 pass
+
+    # ---------- painel: joias e stock ----------
+    def validar_joia(self, corpo, parcial):
+        erros, v = {}, {}
+        if 'nome' in corpo or not parcial:
+            nome = limpar_texto(corpo.get('nome'), 50)
+            if not nome:
+                erros['nome'] = 'Escreve o nome da joia.'
+            v['nome'] = nome
+        if 'material' in corpo or not parcial:
+            v['material'] = limpar_texto(corpo.get('material', 'Titânio ASTM F136'), 40)
+        if 'preco' in corpo:
+            p = corpo.get('preco')
+            if p is not None and (type(p) is not int or not 0 <= p <= 999):
+                erros['preco'] = 'O preço é um número de 0 a 999 €, ou fica em branco.'
+            v['preco'] = p
+        for k in ('desde', 'visivel', 'destaque'):
+            if k in corpo:
+                if not isinstance(corpo[k], bool):
+                    erros[k] = 'Valor inválido.'
+                v[k] = int(bool(corpo[k]))
+        if 'modelo' in corpo or not parcial:
+            mo = corpo.get('modelo', 'lisa')
+            if mo not in MODELOS_JOIA:
+                erros['modelo'] = 'Escolhe uma das imagens.'
+            v['modelo'] = mo
+        if 'quantidade' in corpo:
+            q = corpo.get('quantidade')
+            if q is not None and (type(q) is not int or not 0 <= q <= 999):
+                erros['quantidade'] = 'A quantidade vai de 0 a 999, ou fica em branco para não contar.'
+            v['quantidade'] = q
+        return v, erros
+
+    def criar_joia(self, c, corpo):
+        if c.execute('SELECT COUNT(*) FROM joias').fetchone()[0] >= 80:
+            return self.erro(409, 'limite')
+        v, erros = self.validar_joia(corpo, False)
+        if erros:
+            return self.erro(422, 'campos', campos=erros)
+        ordem = c.execute('SELECT COALESCE(MAX(ordem), -1) + 1 FROM joias').fetchone()[0]
+        if v.get('destaque'):
+            c.execute('UPDATE joias SET destaque=0')
+        cur = c.execute('INSERT INTO joias(nome, material, preco, desde, modelo, quantidade, visivel, destaque, ordem, atualizado) VALUES(?,?,?,?,?,?,?,?,?,?)',
+                        (v['nome'], v['material'], v.get('preco'), v.get('desde', 1), v['modelo'], v.get('quantidade'), v.get('visivel', 1),
+                         v.get('destaque', 0), ordem, int(time.time())))
+        return self.responder(201, joia_dict(c.execute('SELECT * FROM joias WHERE id=?', (cur.lastrowid,)).fetchone()))
+
+    def mexer_joia(self, c, jid, acao, corpo):
+        r = c.execute('SELECT * FROM joias WHERE id=?', (jid,)).fetchone()
+        if not r:
+            return self.erro(404, 'nao_existe')
+        agora = int(time.time())
+        if acao == 'apagar':
+            c.execute('DELETE FROM joias WHERE id=?', (jid,))
+            self.apagar_ficheiro(r['foto'])
+            return self.responder(200, {'ok': True})
+        if acao == 'stock':
+            if 'delta' in corpo:
+                d = corpo.get('delta')
+                if type(d) is not int or not -99 <= d <= 99:
+                    return self.erro(422, 'campos', campos={'delta': 'Variação inválida.'})
+                c.execute('UPDATE joias SET quantidade=MAX(0, MIN(999, COALESCE(quantidade, 0) + ?)), atualizado=? WHERE id=?', (d, agora, jid))
+            elif 'quantidade' in corpo:
+                q = corpo.get('quantidade')
+                if q is not None and (type(q) is not int or not 0 <= q <= 999):
+                    return self.erro(422, 'campos', campos={'quantidade': 'A quantidade vai de 0 a 999.'})
+                c.execute('UPDATE joias SET quantidade=?, atualizado=? WHERE id=?', (q, agora, jid))
+            else:
+                return self.erro(422, 'campos', campos={'delta': 'Falta a variação.'})
+            return self.responder(200, joia_dict(c.execute('SELECT * FROM joias WHERE id=?', (jid,)).fetchone()))
+        v, erros = self.validar_joia(corpo, True)
+        if erros:
+            return self.erro(422, 'campos', campos=erros)
+        if v.get('destaque'):
+            c.execute('UPDATE joias SET destaque=0')
+        if v:
+            cols = sorted(v)
+            c.execute('UPDATE joias SET ' + ', '.join(k + '=?' for k in cols) + ', atualizado=? WHERE id=?', [v[k] for k in cols] + [agora, jid])
+        return self.responder(200, joia_dict(c.execute('SELECT * FROM joias WHERE id=?', (jid,)).fetchone()))
+
+    def ordenar_joias(self, c, corpo):
+        ids = corpo.get('ids')
+        if not isinstance(ids, list) or not ids or len(ids) > 100 or not all(type(i) is int for i in ids):
+            return self.erro(422, 'campos', campos={'ids': 'Lista inválida.'})
+        for n, i in enumerate(ids):
+            c.execute('UPDATE joias SET ordem=? WHERE id=?', (n, i))
+        return self.responder(200, {'ok': True})
+
+    def joia_foto_repor(self, c, jid):
+        r = c.execute('SELECT * FROM joias WHERE id=?', (jid,)).fetchone()
+        if not r:
+            return self.erro(404, 'nao_existe')
+        c.execute("UPDATE joias SET foto='', atualizado=? WHERE id=?", (int(time.time()), jid))
+        self.apagar_ficheiro(r['foto'])
+        return self.responder(200, joia_dict(c.execute('SELECT * FROM joias WHERE id=?', (jid,)).fetchone()))
 
     def foto_texto(self, c, slot, corpo):
         if slot not in SLOTS:
