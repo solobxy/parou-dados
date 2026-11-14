@@ -109,12 +109,71 @@ async function editarCliente(c, aoGuardar) {
 
 // ---------------------------------------------------------------- importar
 
+// lê o ficheiro escolhido e devolve o que vai para a API: {xlsx} | {vcf} | {csv}
+async function lerFicheiro(f) {
+  const nome = (f.name || '').toLowerCase();
+  const cabeca = new Uint8Array(await f.slice(0, 8).arrayBuffer());
+  const zip = cabeca[0] === 0x50 && cabeca[1] === 0x4b;
+  const xlsAntigo = cabeca[0] === 0xd0 && cabeca[1] === 0xcf;
+  if (zip || xlsAntigo || /\.xlsx?$/.test(nome)) {
+    if (f.size > 3 * 1024 * 1024) throw new Error('O ficheiro tem mais de 3 MB. Divide-o em partes.');
+    const url = await new Promise((ok, mal) => { const r = new FileReader(); r.onload = () => ok(r.result); r.onerror = () => mal(r.error); r.readAsDataURL(f); });
+    return { xlsx: String(url).slice(String(url).indexOf(',') + 1) };
+  }
+  if (f.size > 40 * 1024 * 1024) throw new Error('O ficheiro é grande demais. Divide-o em partes.');
+  const buf = await f.arrayBuffer();
+  let texto;
+  try { texto = new TextDecoder('utf-8', { fatal: true }).decode(buf); } catch { texto = new TextDecoder('windows-1252').decode(buf); }
+  if (/\.vcf$/.test(nome) || /BEGIN:VCARD/i.test(texto.slice(0, 2000))) {
+    // as fotografias dos contactos ocupam quase tudo e não servem aqui
+    const fora = [];
+    let foto = false;
+    for (const l of texto.split(/\r?\n/)) {
+      if (/^(?:[\w-]+\.)?(PHOTO|LOGO)[;:]/i.test(l)) { foto = true; continue; }
+      if (foto && (/^[ \t]/.test(l) || (l && !l.includes(':')))) continue;
+      foto = false;
+      fora.push(l);
+    }
+    texto = fora.join('\n');
+    if (texto.length > 3 * 1024 * 1024) throw new Error('São contactos demais para uma vez. Exporta-os em partes.');
+    return { vcf: texto };
+  }
+  if (f.size > 3 * 1024 * 1024) throw new Error('O ficheiro tem mais de 3 MB. Divide-o em partes.');
+  return { csv: texto };
+}
+
+const podeEscolherContactos = () => 'contacts' in navigator && typeof navigator.contacts?.select === 'function';
+
+async function escolherContactos() {
+  const l = await navigator.contacts.select(['name', 'tel', 'email'], { multiple: true });
+  if (!l.length) return null;
+  const q = (v) => '"' + String(v || '').replace(/"/g, '""') + '"';
+  const linhas = [['Nome', 'Telefone', 'E-mail', 'Notas'].join(';')];
+  for (const c of l) {
+    const tels = [...new Set(c.tel || [])];
+    const outros = tels.length > 1 ? 'Outros telefones: ' + tels.slice(1).join(', ') : '';
+    linhas.push([q(c.name?.[0]), q(tels[0]), q(c.email?.[0]), q(outros)].join(';'));
+  }
+  return { csv: linhas.join('\n') };
+}
+
 function importar(aoAcabar) {
-  let texto = '';
+  let pacote = null;
   let mapa = {};
   let previa = null;
   const zona = h('div', { class: 'grelha' });
-  const inpF = h('input', { type: 'file', accept: '.csv,text/csv,.txt', id: 'fich-imp' });
+  const inpF = h('input', { type: 'file', id: 'fich-imp', class: 'so-leitor',
+    accept: '.xlsx,.xls,.csv,.txt,.vcf,text/csv,text/vcard,text/x-vcard,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+  const estadoF = h('span', { class: 'zf-s' }, 'Excel, CSV ou contactos do telemóvel (.vcf)');
+  const zonaF = h('label', { class: 'zona-ficheiro', for: 'fich-imp' }, icone('enviar'),
+    h('span', { class: 'zf-t' }, 'Escolher ficheiro'), estadoF);
+  zonaF.addEventListener('dragover', (e) => { e.preventDefault(); zonaF.classList.add('por-cima'); });
+  zonaF.addEventListener('dragleave', () => zonaF.classList.remove('por-cima'));
+  zonaF.addEventListener('drop', (e) => {
+    e.preventDefault(); zonaF.classList.remove('por-cima');
+    const f = e.dataTransfer?.files?.[0];
+    if (f) usarFicheiro(f);
+  });
   const bOk = h('button', { class: 'bt bt-p', type: 'button', disabled: true }, 'Importar');
   const bNao = h('button', { class: 'bt', type: 'button' }, 'Cancelar');
   const etq = campo({ nome: 'etiqueta', rotulo: 'Etiqueta para todos (opcional)', placeholder: 'Ex.: lista antiga' });
@@ -123,41 +182,66 @@ function importar(aoAcabar) {
   const desenhar = () => {
     if (!previa) {
       zona.replaceChildren(
-        h('p', null, 'Escolhe um ficheiro CSV (no Excel: Ficheiro → Guardar como → CSV). A primeira linha tem de ter os títulos das colunas.'),
-        h('div', { class: 'campo' }, h('label', { for: 'fich-imp' }, 'Ficheiro'), inpF),
+        h('p', null, 'Escolhe a lista que já tens: um ficheiro do Excel, um CSV ou os contactos exportados do telemóvel (.vcf). A primeira linha do Excel ou do CSV deve ter os títulos das colunas.'),
+        h('div', null, inpF, zonaF),
+        podeEscolherContactos() ? h('div', { class: 'grelha', style: 'gap:8px' },
+          h('p', { class: 'nota-suave' }, 'Ou escolhe diretamente da agenda deste telemóvel:'),
+          h('button', { class: 'bt', type: 'button', onclick: async () => {
+            try { const r = await escolherContactos(); if (r) await preparar(r); } catch (e) { if (e?.name !== 'AbortError' && e?.name !== 'InvalidStateError') falhou(e); }
+          } }, icone('telefone'), 'Escolher contactos do telemóvel')) : null,
+        h('details', { class: 'ajuda-imp' }, h('summary', null, 'Como tiro os contactos do telemóvel?'),
+          h('ul', null,
+            h('li', null, h('strong', null, 'Android: '), 'abre a app Contactos → menu → Gerir contactos → Exportar para ficheiro (.vcf). Depois escolhe esse ficheiro aqui.'),
+            h('li', null, h('strong', null, 'iPhone: '), 'na app Contactos, toca sem largar em «Todos os contactos» (ou numa lista) → Exportar → Guardar em Ficheiros. Depois escolhe esse ficheiro aqui.'),
+            h('li', null, h('strong', null, 'Google Contactos ou Outlook: '), 'exporta em CSV e escolhe o ficheiro aqui; o nome próprio e o apelido juntam-se sozinhos.'))),
         h('p', { class: 'nota-suave' }, 'Contactos com o mesmo e-mail ou telefone de um cliente que já tens não são duplicados.'));
       return;
     }
+    const usadas = new Set(Object.values(mapa));
     zona.replaceChildren(
-      h('p', null, h('strong', null, num(previa.total)), ' contactos no ficheiro. Confirma a que corresponde cada coluna:'),
+      h('p', null, h('strong', null, num(previa.total)), previa.total === 1 ? ' contacto no ficheiro.' : ' contactos no ficheiro.', ' Confirma a que corresponde cada coluna:'),
       h('div', { class: 'grelha', style: 'gap:10px' }, previa.colunas.map((col, i) => h('div', { class: 'duas', style: 'align-items:center;gap:10px' },
         h('span', { style: 'font-weight:600;overflow-wrap:anywhere' }, col || `Coluna ${i + 1}`),
-        h('select', { class: 'entrada', 'aria-label': 'Campo para a coluna ' + col, onchange: (e) => { if (e.target.value) mapa[i] = e.target.value; else delete mapa[i]; } },
+        h('select', { class: 'entrada', 'aria-label': 'Campo para a coluna ' + (col || `Coluna ${i + 1}`), onchange: (e) => {
+          const v = e.target.value;
+          // cada campo só pode vir de uma coluna: a anterior passa a «Não importar»
+          if (v) for (const k of Object.keys(mapa)) if (mapa[k] === v && Number(k) !== i) delete mapa[k];
+          if (v) mapa[i] = v; else delete mapa[i];
+          desenhar();
+        } },
           h('option', { value: '' }, 'Não importar'),
           previa.campos.map((k) => h('option', { value: k, selected: mapa[i] === k }, nomesCampos[k] || k)))))),
+      !['nome', 'empresa', 'email', 'telefone'].some((k) => usadas.has(k))
+        ? h('p', { class: 'erro-geral', role: 'alert' }, 'Liga pelo menos uma coluna ao nome, à empresa, ao e-mail ou ao telefone.') : null,
       etq,
-      previa.exemplo?.length ? h('div', null, h('p', { class: 'rotulo' }, 'Primeiros contactos'),
+      previa.exemplo?.length ? h('div', null, h('p', { style: 'font-weight:600;margin-bottom:6px' }, 'Primeiros contactos'),
         h('div', { class: 'lista' }, previa.exemplo.filter(Boolean).map((c) => h('div', { class: 'linha', style: 'min-height:44px' },
           h('span', { class: 'principal-l' }, h('span', { class: 't' }, c.nome), h('span', { class: 's' }, [telefone(c.telefone), c.email, c.localidade].filter(Boolean).join(' · '))))))) : null);
-    bOk.disabled = false;
+    bOk.disabled = !['nome', 'empresa', 'email', 'telefone'].some((k) => usadas.has(k));
   };
-  inpF.addEventListener('change', async () => {
-    const f = inpF.files[0];
-    if (!f) return;
-    if (f.size > 3 * 1024 * 1024) return aviso('O ficheiro tem mais de 3 MB. Divide-o em partes.', { erro: true });
-    const buf = await f.arrayBuffer();
-    try { texto = new TextDecoder('utf-8', { fatal: true }).decode(buf); } catch { texto = new TextDecoder('windows-1252').decode(buf); }
-    try {
-      previa = await post('/api/clientes/importar', { csv: texto, previa: true });
-      mapa = { ...previa.mapa };
-      desenhar();
-    } catch (e) { falhou(e); }
-  });
+  async function preparar(p) {
+    const r = await post('/api/clientes/importar', { ...p, previa: true });
+    pacote = p;
+    previa = r;
+    mapa = { ...r.mapa };
+    desenhar();
+  }
+  async function usarFicheiro(f) {
+    inpF.disabled = true;
+    zonaF.classList.add('a-ler');
+    estadoF.textContent = 'A ler «' + f.name + '»…';
+    try { await preparar(await lerFicheiro(f)); } catch (e) {
+      falhou(e);
+      estadoF.textContent = 'Excel, CSV ou contactos do telemóvel (.vcf)';
+    } finally { inpF.disabled = false; inpF.value = ''; zonaF.classList.remove('a-ler'); }
+  }
+  inpF.addEventListener('change', () => { if (inpF.files[0]) usarFicheiro(inpF.files[0]); });
   bOk.addEventListener('click', async () => {
     try {
-      const r = await aGuardar(bOk, () => post('/api/clientes/importar', { csv: texto, mapa, etiqueta: etq.querySelector('input').value }), 'A importar…');
+      const r = await aGuardar(bOk, () => post('/api/clientes/importar', { ...pacote, mapa, etiqueta: etq.querySelector('input').value }), 'A importar…');
       d.fechar();
-      aviso(`${num(r.criados)} clientes importados` + (r.repetidos ? ` · ${num(r.repetidos)} já existiam` : ''), { carimbo: true });
+      const extra = [r.repetidos ? `${num(r.repetidos)} já existiam` : '', r.sem_nome ? `${num(r.sem_nome)} sem nome nem contacto` : ''].filter(Boolean).join(' · ');
+      aviso(`${num(r.criados)} ${r.criados === 1 ? 'cliente importado' : 'clientes importados'}` + (extra ? ' · ' + extra : ''), { carimbo: true });
       aoAcabar?.();
     } catch (e) { falhou(e); }
   });

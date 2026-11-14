@@ -69,6 +69,7 @@ const P = {
   olho: 'M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12zM12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z',
   lua: 'M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z',
   admin: 'M3 21h18M5 21V10l7-6 7 6v11M9 21v-6h6v6',
+  apoio: 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM12 16a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM5.6 5.6l3.6 3.6M14.8 14.8l3.6 3.6M18.4 5.6l-3.6 3.6M9.2 14.8l-3.6 3.6',
 };
 
 export function icone(nome, extra = {}) {
@@ -374,7 +375,7 @@ export function escolherCliente({ nome = 'cliente', rotulo = 'Cliente', obrig = 
       const r = await get('/api/clientes?q=' + encodeURIComponent(q));
       lista.replaceChildren(...r.itens.slice(0, 8).map((c) => h('button', { type: 'button', class: 'linha', role: 'option', onclick: () => escolher(c) },
         avatar(c.nome, c.tipo === 'empresa'), h('span', { class: 'principal-l' }, h('span', { class: 't' }, c.nome),
-          h('span', { class: 's' }, [c.telefone, c.email].filter(Boolean).join(' · '))))));
+          h('span', { class: 's' }, [telefone(c.telefone), c.email].filter(Boolean).join(' · '))))));
       if (!r.itens.length) lista.replaceChildren(h('p', { class: 'ajuda', style: 'padding:8px 4px' }, 'Nenhum cliente encontrado.'));
       inp.setAttribute('aria-expanded', 'true');
     } catch { /* ignora */ }

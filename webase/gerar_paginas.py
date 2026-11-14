@@ -126,7 +126,7 @@ SETORES = [
      'Para oficinas, clínicas, contabilistas, lojas e quem presta serviços: a ficha do cliente, as propostas em curso e as avenças mensais.',
      [('Avenças.', 'Contratos mensais com receita por mês somada.'), ('Propostas.', 'Leads com valor e próximo passo.'),
       ('Histórico.', 'Chamadas, notas e trabalhos de cada cliente na cronologia.'), ('NIF validado.', 'A webase confirma o dígito de controlo.')],
-     [('Importa os clientes', 'do programa de faturação (CSV).'), ('Cria as avenças', 'como contratos mensais.'), ('Segue as propostas', 'nas leads.')],
+     [('Importa os clientes', 'do programa de faturação (Excel ou CSV).'), ('Cria as avenças', 'como contratos mensais.'), ('Segue as propostas', 'nas leads.')],
      'contratos', 'Contratos com valor, periodicidade, datas e estado.'),
 ]
 
@@ -164,7 +164,7 @@ LINHAS = [
     ('Subscrições e pacotes', '—', '✓', '✓'),
     ('Chamadas e contratos', '—', '✓', '✓'),
     ('Ligar do computador com o teu telemóvel', '✓', '✓', '✓'),
-    ('Importar e exportar (CSV para Excel)', '✓', '✓', '✓'),
+    ('Importar do Excel, CSV ou telemóvel e exportar para Excel', '✓', '✓', '✓'),
     ('Logótipo e cor da tua marca', '✓', '✓', '✓'),
     ('Permissões por pessoa e «só os seus clientes»', '—', 'papéis prontos', '✓ caixa a caixa'),
     ('Registo de atividade', '—', '—', '✓'),

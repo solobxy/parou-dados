@@ -12,7 +12,7 @@ name: Cópias de segurança
 #
 # Também guarda a lista de espera da anjinho.pt (/var/lib/anjinho/lista.jsonl) num ficheiro cifrado à parte,
 # e os dados dos outros projetos (servidor/copia-projetos.sh: DupliCasa, caiu.pt, ganhas.pt, agenda do Adri
-# e o site da Jinxed) em projetos.tgz.enc.
+# e o site da Jinxed, webase) em projetos.tgz.enc.
 #
 # Para restaurar: descarregar o artefacto "copia-AAAA-MM-DD", e correr
 #   openssl enc -d -aes-256-cbc -pbkdf2 -iter 200000 -pass env:HCLOUD_TOKEN -in copia.tgz.enc | tar xzf -

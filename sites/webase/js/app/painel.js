@@ -21,8 +21,11 @@ export async function mostrar(raiz) {
     h('span', { class: 'n' }, euros(p.leads.ganho_valor)), h('span', { class: 'd' }, plural(p.leads.ganhos_mes, 'negócio', 'negócios'))));
   if (p.chamadas) numeros.push(ligacao('/app/chamadas', { class: 'numero' }, h('span', { class: 'r' }, 'Chamadas hoje'),
     h('span', { class: 'n' }, num(p.chamadas.entrada + p.chamadas.saida)), h('span', { class: 'd' }, `${plural(p.chamadas.entrada, 'recebida', 'recebidas')} · ${plural(p.chamadas.saida, 'feita', 'feitas')}`)));
-  if (p.adesoes) numeros.push(ligacao('/app/subscricoes', { class: 'numero' }, h('span', { class: 'r' }, 'Mensalidades'),
-    h('span', { class: 'n' }, euros(p.adesoes.mensal)), h('span', { class: 'd' }, `${plural(p.adesoes.ativas, 'ativa', 'ativas')}${p.adesoes.em_atraso ? ` · ${p.adesoes.em_atraso} em atraso` : ''}`)));
+  if (p.adesoes && (p.adesoes.subscricoes || !p.adesoes.pacotes)) numeros.push(ligacao('/app/subscricoes', { class: 'numero' }, h('span', { class: 'r' }, 'Mensalidades'),
+    h('span', { class: 'n' }, euros(p.adesoes.mensal)), h('span', { class: 'd' }, [plural(p.adesoes.subscricoes ?? p.adesoes.ativas, 'subscrição', 'subscrições'),
+      p.adesoes.em_atraso ? `${p.adesoes.em_atraso} em atraso` : '', p.adesoes.pacotes ? plural(p.adesoes.pacotes, 'pacote', 'pacotes') : ''].filter(Boolean).join(' · '))));
+  else if (p.adesoes) numeros.push(ligacao('/app/subscricoes', { class: 'numero' }, h('span', { class: 'r' }, 'Pacotes ativos'),
+    h('span', { class: 'n' }, num(p.adesoes.pacotes)), h('span', { class: 'd' }, plural(p.adesoes.usos_por_gastar, 'uso por gastar', 'usos por gastar'))));
   if (p.contratos) numeros.push(ligacao('/app/contratos', { class: 'numero' }, h('span', { class: 'r' }, 'Contratos por mês'),
     h('span', { class: 'n' }, euros(p.contratos.mensal)), h('span', { class: 'd' }, `${plural(p.contratos.ativos, 'ativo', 'ativos')}${p.contratos.a_terminar ? ` · ${p.contratos.a_terminar} a terminar` : ''}`)));
   if (p.pontos) numeros.push(ligacao('/app/pontos', { class: 'numero' }, h('span', { class: 'r' }, 'Pontos (30 dias)'),
@@ -69,7 +72,7 @@ export async function mostrar(raiz) {
       h('div', { class: 'acoes' }, acoes)),
     primeiroUso ? h('section', { class: 'ficha' }, h('div', { class: 'vazio', style: 'padding:8px 0' }, carimbo('clientes', false),
       h('h3', null, 'Começa pelos teus clientes'),
-      h('p', null, podeX('importar') ? 'Cria a primeira ficha ou importa a lista que já tens (Excel ou CSV). Em poucos minutos tens a base pronta.'
+      h('p', null, podeX('importar') ? 'Cria a primeira ficha ou importa a lista que já tens: Excel, CSV ou os contactos do telemóvel. Em poucos minutos tens a base pronta.'
         : 'Ainda não tens clientes teus. As fichas que criares ficam aqui, com o histórico de cada pessoa.'),
       h('div', { class: 'acoes-rapidas' }, pode('clientes', 'c') ? h('button', { class: 'bt bt-p', type: 'button', onclick: () => novoCliente() }, 'Criar ficha') : null,
         podeX('importar') ? ligacao('/app/clientes?importar=1', { class: 'bt' }, icone('enviar'), 'Importar contactos') : null))) : null,

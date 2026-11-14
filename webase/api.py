@@ -539,7 +539,7 @@ def avisos_lidos(h, c, u, m, d):
 
 @rota('GET', '/api/admin/resumo')
 def admin_resumo(h, c, u, m, d):
-    precisa(u['email'].lower() in B.ADMINS, 'Não encontrado.', 404)
+    so_admin(u)
     sem = B.agora() - 7 * DIA
     return 200, {
         'contas': c.execute('SELECT COUNT(*) FROM contas WHERE apagada=0').fetchone()[0],
@@ -552,6 +552,51 @@ def admin_resumo(h, c, u, m, d):
         'denuncias': c.execute("SELECT COUNT(*) FROM forum_denuncias WHERE estado='aberta'").fetchone()[0],
         'mk_reservas': c.execute("SELECT COUNT(*) FROM mk_compras WHERE estado='reservada'").fetchone()[0],
     }
+
+
+def so_admin(u):
+    precisa(u['email'].lower() in B.ADMINS, 'Não encontrado.', 404)
+
+
+@rota('GET', '/api/admin/contas')
+def admin_contas(h, c, u, m, d):
+    """Procurar contas para dar apoio: por e-mail de quem entra, nome do negócio ou NIF."""
+    so_admin(u)
+    q = (h.q.get('q') or '').strip().lower()[:80]
+    args = []
+    filtro = ''
+    if q:
+        filtro = ' AND (lower(k.nome) LIKE ? OR k.nif LIKE ? OR k.id IN (SELECT conta FROM utilizadores WHERE lower(email) LIKE ?))'
+        args = ['%' + q + '%'] * 3
+    l = []
+    for k in c.execute('SELECT k.* FROM contas k WHERE k.apagada=0' + filtro + ' ORDER BY k.id DESC LIMIT 30', args):
+        pessoas = [{'id': r['id'], 'nome': r['nome'], 'email': r['email'], 'dono': bool(r['dono']), 'visto': r['visto'],
+                    'trocar_senha': bool(r['trocar_senha'])}
+                   for r in c.execute('SELECT * FROM utilizadores WHERE conta=? AND ativo=1 ORDER BY dono DESC, id', (k['id'],))]
+        l.append({'id': k['id'], 'nome': k['nome'], 'setor': k['setor'], 'plano': k['plano'], 'criado': k['criado'],
+                  'clientes': c.execute('SELECT COUNT(*) FROM clientes WHERE conta=?', (k['id'],)).fetchone()[0],
+                  'pessoas': pessoas})
+    return 200, {'contas': l}
+
+
+@rota('POST', '/api/admin/senha')
+def admin_senha(h, c, u, m, d):
+    """Quando o dono de uma conta se esquece da palavra-passe e escreve ao suporte a partir do e-mail da conta."""
+    so_admin(u)
+    precisa(B.limite('admin-senha:%d' % u['id'], 20, 3600), 'Muitos pedidos seguidos. Espera um pouco.', 429)
+    email = (d.get('email') or '').strip().lower()
+    precisa(email, 'Escreve o e-mail da pessoa.', campo='email')
+    r = c.execute('SELECT u.* FROM utilizadores u JOIN contas k ON k.id=u.conta WHERE lower(u.email)=? AND u.ativo=1 AND k.apagada=0',
+                  (email,)).fetchone()
+    precisa(r, 'Não há ninguém ativo com este e-mail.', 404, campo='email')
+    precisa(r['email'].lower() not in B.ADMINS, 'Não dá para usar isto em contas de administração.', campo='email')
+    temp = B.senha_temporaria()
+    c.execute('UPDATE utilizadores SET senha=?, trocar_senha=1 WHERE id=?', (B.hash_senha(temp), r['id']))
+    c.execute('DELETE FROM sessoes WHERE uid=?', (r['id'],))
+    # fica no registo da conta da pessoa, para o dono ver quem mexeu
+    c.execute('INSERT INTO auditoria(conta, uid, acao, alvo, detalhe, ip_h, criado) VALUES(?,?,?,?,?,?,?)',
+              (r['conta'], None, 'suporte.senha', str(r['id']), 'Pedido ao apoio webase', getattr(h, 'ip_h', None), B.agora()))
+    return 200, {'senha_temporaria': temp, 'nome': r['nome']}
 
 
 # ======================================================================== servidor HTTP
@@ -655,6 +700,11 @@ class API(BaseHTTPRequestHandler):
             return None
         u = c.execute('SELECT u.* FROM utilizadores u JOIN contas k ON k.id=u.conta WHERE u.id=? AND u.ativo=1 AND k.apagada=0',
                       (s['uid'],)).fetchone()
+        # a sessão renova-se com o uso: quem usa a app todas as semanas nunca é posto fora; quem não volta em 30 dias tem de entrar
+        if u and s['expira'] - B.agora() < (B.SESSAO_DIAS - 1) * DIA and self.path.split('?')[0] != '/api/conta/sair':
+            c.execute('UPDATE sessoes SET expira=? WHERE hash=?', (B.agora() + B.SESSAO_DIAS * DIA, B.sha(self.token)))
+            seg = '' if B.DEV else ' Secure;'
+            self.cookies.append('%s=%s; Path=/; Max-Age=%d; HttpOnly;%s SameSite=Lax' % (B.COOKIE, self.token, B.SESSAO_DIAS * DIA, seg))
         if u and (u['visto'] or 0) < B.agora() - 600:
             c.execute('UPDATE utilizadores SET visto=? WHERE id=?', (B.agora(), u['id']))
         return u
@@ -756,6 +806,10 @@ ROTAS_ORD = N.ROTAS
 def ciclo():
     while True:
         time.sleep(300)
+        try:
+            B.copia_local()
+        except Exception:
+            traceback.print_exc(file=sys.stderr)
         try:
             c = B.ligar()
             crm.trabalho_periodico(c)

@@ -1,7 +1,7 @@
 name: webase - verificar ao vivo
 
 # 1. Espera que o servidor tenha a versão do site e da API que está no repositório.
-# 2. Corre os testes da API (webase/testes/teste_api.py) numa máquina limpa.
+# 2. Corre os testes da API (webase/testes/teste_api.py) e da importação (teste_ficheiros.py) numa máquina limpa.
 # 3. Pede as páginas, os cabeçalhos de segurança e ficheiros que nunca podem aparecer.
 # 4. Corre webase/testes/ao_vivo.py: cria uma conta de teste, usa a app no telemóvel e apaga a conta.
 # Resultado (texto e capturas) no ramo "webase-verificar-resultado".
@@ -51,6 +51,9 @@ jobs:
 
       - name: Testes da API
         run: timeout 300 python webase/testes/teste_api.py 2>&1 | tail -30 | tee res/teste_api.txt || true
+
+      - name: Testes da importação (Excel, CSV, telemóvel)
+        run: timeout 120 python webase/testes/teste_ficheiros.py 2>&1 | tail -30 | tee res/teste_ficheiros.txt || true
 
       - name: Páginas, cabeçalhos e ficheiros proibidos
         run: |

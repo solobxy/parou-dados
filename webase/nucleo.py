@@ -86,7 +86,8 @@ def telefone_ok(v):
         return ''
     so = re.sub(r'[\s().-]', '', v)
     precisa(re.fullmatch(r'\+?[0-9]{6,15}', so), 'O telefone só pode ter números (e o + do indicativo).', campo='telefone')
-    pt = re.fullmatch(r'(?:\+|00)351([0-9]{9})', so)      # +351 912 345 678 e 912 345 678 são o mesmo número
+    # +351 912 345 678, 00351…, 351912345678 (o Excel come o +) e 912 345 678 são o mesmo número
+    pt = re.fullmatch(r'(?:\+|00)351([0-9]{9})', so) or re.fullmatch(r'351([239][0-9]{8})', so)
     return pt.group(1) if pt else so
 
 
@@ -191,6 +192,16 @@ def normalizar(s):
     """Para pesquisa sem acentos nem maiúsculas: «João» encontra-se com «joao»."""
     s = unicodedata.normalize('NFKD', s or '')
     return ''.join(ch for ch in s if not unicodedata.combining(ch)).lower()
+
+
+def termos_busca(q):
+    """«+351 910 001 234» procura o número inteiro (sem indicativo), não três bocados soltos."""
+    q = normalizar(q or '').strip()
+    so = re.sub(r'[\s().-]', '', q)
+    if re.fullmatch(r'\+?[0-9]{6,15}', so):
+        pt = re.fullmatch(r'(?:\+|00)351([0-9]{3,9})', so)
+        return [pt.group(1) if pt else so.lstrip('+')]
+    return q.split()[:5]
 
 
 def like(q):

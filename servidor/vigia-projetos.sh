@@ -18,7 +18,7 @@ idade_min() { local f="$1"; [ -e "$f" ] || { echo 999999; return; }; echo $(( ($
 pode() { local k="$D/vigia/$1.ultima" m="$2"; [ "$(idade_min "$k")" -ge "$m" ] || return 1; touch "$k"; }
 
 # 1. Serviços e temporizadores
-for s in caddy parou anjinho duaschaves-api caiu-api ganhas-api adri-agenda; do
+for s in caddy parou anjinho duaschaves-api caiu-api ganhas-api adri-agenda webase-api; do
   systemctl is-enabled --quiet "$s" 2>/dev/null || continue
   if ! systemctl is-active --quiet "$s"; then systemctl start "$s" && reg "$s estava parado: liguei-o"; fi
 done
@@ -41,6 +41,7 @@ api adri 3120 / adri-agenda
 api anjinho 3100 / anjinho
 api ganhas 3140 /api/estado ganhas-api
 api caiu 3150 /api/saude caiu-api
+api webase 3160 /api/publico/estado webase-api
 
 # 3. Dados frescos
 # caiu.pt: há 3 recolhas por dia (07:20, 12:50, 18:20); mais de 14 h sem preços novos é sinal de falha

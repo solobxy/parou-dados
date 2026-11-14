@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """Teste da webase ao vivo, num browser a sério (corre no GitHub Actions, pelo workflow webase-verificar).
 
-Cria uma conta de teste, usa a app no telemóvel e no computador (ficha, pontos, lead, chamada) e apaga a conta no fim.
+Cria uma conta de teste, usa a app no telemóvel e no computador (ficha, pontos, lead, chamada, importar Excel e
+contactos do telemóvel) e apaga a conta no fim.
 Também visita o site com ?utm_source=teste-estatisticas para confirmar a recolha de estatísticas.
 Uso: python3 ao_vivo.py https://webase.2-31-13-85.sslip.io
 """
@@ -95,6 +96,22 @@ with sync_playwright() as p:
         pg.wait_for_timeout(1500)
         passo('registar chamada', pg.locator('text=Cliente de Teste').count() > 0)
         pg.screenshot(path=OUT + '/app-chamadas-tel.png')
+        # importar uma lista do Excel e os contactos de um telemóvel, pelo ecrã
+        fx = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'ficheiros')
+        for fich, esperado in (('excel-a-mao.xlsx', 6), ('iphone.vcf', 2)):
+            try:
+                pg.goto(URL + '/app/clientes?importar=1')
+                pg.wait_for_selector('#fich-imp', state='attached', timeout=15000)
+                pg.set_input_files('#fich-imp', os.path.join(fx, fich))
+                pg.wait_for_selector('text=contactos no ficheiro', timeout=20000)
+                pg.click('dialog button:has-text("Importar")')
+                pg.wait_for_selector('.toast:has-text("importad")', timeout=20000)
+                t = pg.inner_text('.toast')
+                passo('importar ' + fich, t.startswith('%d ' % esperado), t)
+                pg.wait_for_timeout(1200)
+            except Exception as e:
+                passo('importar ' + fich, False, str(e)[:200])
+        pg.screenshot(path=OUT + '/app-importados-tel.png')
         for url in ['/app', '/app/clientes', '/app/pontos', '/app/subscricoes', '/app/forum', '/app/marketplace', '/app/equipa', '/app/definicoes/marca', '/app/definicoes/telemovel', '/app/ligar']:
             pg.goto(URL + url)
             pg.wait_for_selector('.casca main h1', timeout=15000)

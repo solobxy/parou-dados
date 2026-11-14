@@ -9,6 +9,7 @@ from datetime import date, datetime, timedelta
 import base as B
 import nucleo as N
 import perm as P
+import ficheiros as F
 from nucleo import Erro, precisa, rota, RE_ID
 
 DIA = 86400
@@ -165,10 +166,10 @@ def inserir_cliente(c, u, conta, f, origem_atividade='Ficha criada'):
 
 @rota('GET', '/api/clientes', modulo='clientes')
 def clientes(h, c, u, m, d):
-    q = N.normalizar((h.q.get('q') or '')[:80]).strip()
+    q = (h.q.get('q') or '')[:80]
     where, args = 'conta=?' + N.filtro_ambito(u), [u['conta']]
-    if q:
-        for parte in q.split()[:5]:
+    if q.strip():
+        for parte in N.termos_busca(q):
             where += " AND busca LIKE ? ESCAPE '\\'"
             args.append(N.like(parte))
     if h.q.get('etiqueta'):
@@ -188,9 +189,9 @@ def clientes(h, c, u, m, d):
     pagina = N.inteiro(h.q.get('pagina', '1'), 1, 100000)
     total = c.execute('SELECT COUNT(*) FROM clientes WHERE ' + where, args).fetchone()[0]
     args_ordem = []
-    if q and not h.q.get('ordem'):
+    if q.strip() and not h.q.get('ordem'):
         # primeiro quem tem o nome igual ou a começar pelo que se escreveu
-        qe = q.replace('\\', '\\\\').replace('%', '\\%').replace('_', '\\_')
+        qe = ' '.join(N.termos_busca(q)).replace('\\', '\\\\').replace('%', '\\%').replace('_', '\\_')
         ordem = ("CASE WHEN busca LIKE ? ESCAPE '\\' THEN 0 WHEN busca LIKE ? ESCAPE '\\' THEN 1 ELSE 2 END, " + ordem)
         args_ordem = [qe + ' %', qe + '%']
     rows = c.execute('SELECT * FROM clientes WHERE %s ORDER BY %s LIMIT ? OFFSET ?' % (where, ordem),
@@ -314,20 +315,78 @@ def cliente_dados(h, c, u, m, d):
 # ---------------------------------------------------------------- importar
 
 MAPA_AUTO = {
-    'nome': ['nome', 'name', 'cliente', 'nome completo', 'full name', 'contacto', 'primeiro nome'],
-    'email': ['email', 'e-mail', 'mail', 'correio', 'correio eletronico', 'e mail'],
-    'telefone': ['telefone', 'telemovel', 'telemóvel', 'phone', 'tel', 'tlm', 'numero', 'número', 'mobile', 'contacto telefonico'],
-    'nif': ['nif', 'contribuinte', 'nipc', 'vat', 'numero de contribuinte'],
-    'empresa': ['empresa', 'company', 'organizacao', 'organização', 'entidade', 'firma'],
-    'morada': ['morada', 'endereco', 'endereço', 'address', 'rua'],
-    'localidade': ['localidade', 'cidade', 'city', 'concelho', 'local', 'distrito'],
-    'codpostal': ['codigo postal', 'código postal', 'cp', 'cod postal', 'postal code', 'zip'],
-    'nascimento': ['nascimento', 'data de nascimento', 'aniversario', 'aniversário', 'birthday', 'data nascimento'],
-    'etiquetas': ['etiquetas', 'tags', 'grupo', 'categoria', 'segmento'],
-    'notas': ['notas', 'observacoes', 'observações', 'notes', 'comentarios', 'comentários', 'obs'],
+    'nome': ['nome', 'name', 'cliente', 'nome completo', 'full name', 'contacto', 'display name', 'nome a apresentar',
+             'nome do cliente', 'utente', 'paciente', 'aluno', 'socio', 'sócio'],
+    'email': ['email', 'e-mail', 'mail', 'correio', 'correio eletronico', 'e mail', 'e-mail 1 - value', 'e-mail address',
+              'email address', 'endereco de correio eletronico', 'endereço de e-mail', 'endereco de email', 'email 1'],
+    'telefone': ['telefone', 'telemovel', 'telemóvel', 'phone', 'tel', 'tlm', 'numero', 'número', 'mobile', 'contacto telefonico',
+                 'phone 1 - value', 'mobile phone', 'telefone movel', 'telefone móvel', 'telemovel 1', 'phone number', 'whatsapp',
+                 'n telefone', 'nº telefone', 'n.º telefone', 'numero de telefone', 'número de telefone', 'contacto telefónico',
+                 'primary phone', 'home phone', 'business phone', 'telefone 1'],
+    'nif': ['nif', 'contribuinte', 'nipc', 'vat', 'numero de contribuinte', 'n contribuinte', 'nº contribuinte', 'n.º contribuinte'],
+    'empresa': ['empresa', 'company', 'organizacao', 'organização', 'entidade', 'firma', 'organization name', 'organization 1 - name'],
+    'morada': ['morada', 'endereco', 'endereço', 'address', 'rua', 'address 1 - street', 'home street', 'business street', 'rua de casa'],
+    'localidade': ['localidade', 'cidade', 'city', 'concelho', 'local', 'distrito', 'address 1 - city', 'home city', 'business city', 'freguesia'],
+    'codpostal': ['codigo postal', 'código postal', 'cp', 'cod postal', 'postal code', 'zip', 'address 1 - postal code',
+                  'home postal code', 'business postal code', 'cod. postal', 'cód. postal'],
+    'nascimento': ['nascimento', 'data de nascimento', 'aniversario', 'aniversário', 'birthday', 'data nascimento', 'dt nascimento', 'data de aniversario'],
+    'etiquetas': ['etiquetas', 'tags', 'grupo', 'categoria', 'segmento', 'labels', 'group membership', 'categories', 'categorias', 'grupos'],
+    'notas': ['notas', 'observacoes', 'observações', 'notes', 'comentarios', 'comentários', 'obs', 'nota', 'observacao', 'observação'],
     'tipo': ['tipo'],
 }
 CAMPOS_IMPORT = list(MAPA_AUTO)
+
+
+def achar_cabecalho(linhas):
+    """Muitas listas do Excel têm um título por cima («Clientes 2025») antes da linha com «Nome», «Telefone»…"""
+    conhecidos = {N.normalizar(x) for nomes in MAPA_AUTO.values() for x in nomes} | {N.normalizar(x) for x in F.PROPRIO + F.APELIDO}
+    melhor, pontos = 0, 0
+    for i, l in enumerate(linhas[:10]):
+        p = sum(1 for x in l if N.normalizar(x).strip().replace('_', ' ') in conhecidos)
+        if p > pontos:
+            melhor, pontos = i, p
+    return linhas[melhor:] if pontos else linhas
+
+
+def _parece(campo, v):
+    v = (v or '').strip()
+    if not v:
+        return None
+    if campo == 'email':
+        return bool(re.fullmatch(r'[^@\s]+@[^@\s]+\.[a-z]{2,}', v, re.I))
+    if campo == 'telefone':
+        so = re.sub(r'[\s().+-]', '', v)
+        return bool(re.fullmatch(r'[0-9]{9,15}', so))
+    return bool(re.fullmatch(r"[^\W\d_][^\W\d_ .'-]*(?:[ .'-]+[^\W\d_]+)+", v))   # duas ou mais palavras
+
+
+def sem_cabecalho(linhas):
+    """Uma lista colada sem títulos (só números ou e-mails): a primeira linha também é um contacto."""
+    if not linhas or mapa_automatico(linhas[0]):
+        return linhas
+    if any(_parece('email', x) or _parece('telefone', x) for x in linhas[0]):
+        return [['Coluna %d' % (i + 1) for i in range(max(len(l) for l in linhas[:50]))]] + linhas
+    return linhas
+
+
+def mapa_por_conteudo(linhas, mapa):
+    """Quando os títulos não dizem nada («Contacto 1», «Coluna 2»), olha para o que está lá dentro."""
+    mapa = dict(mapa)
+    amostra = linhas[1:201]
+    if not amostra:
+        return mapa
+    for campo in ('email', 'telefone', 'nome'):
+        if campo in mapa.values() or (campo == 'nome' and 'empresa' in mapa.values()):
+            continue
+        for i in range(len(linhas[0])):
+            if str(i) in mapa:
+                continue
+            vals = [_parece(campo, l[i] if i < len(l) else '') for l in amostra]
+            vals = [x for x in vals if x is not None]
+            if len(vals) >= max(1, len(amostra) // 4) and sum(vals) >= 0.7 * len(vals):
+                mapa[str(i)] = campo
+                break
+    return mapa
 
 
 def mapa_automatico(cabecalho):
@@ -345,33 +404,23 @@ def mapa_automatico(cabecalho):
     return out
 
 
-def ler_csv(texto):
-    texto = texto.lstrip('﻿')
-    amostra = texto[:4096]
-    try:
-        dialeto = csv.Sniffer().sniff(amostra, delimiters=',;\t')
-        sep = dialeto.delimiter
-    except csv.Error:
-        sep = ';' if amostra.count(';') > amostra.count(',') else ','
-    leitor = csv.reader(io.StringIO(texto), delimiter=sep)
-    linhas = []
-    for i, l in enumerate(leitor):
-        if i > 10001:
-            break
-        if any(x.strip() for x in l):
-            linhas.append([x.strip() for x in l][:40])
-    return linhas
-
-
 def data_import(v):
-    v = (v or '').strip()
+    v = (v or '').strip()[:30]
     if not v:
         return ''
-    for fmt in ('%Y-%m-%d', '%d/%m/%Y', '%d-%m-%Y', '%d.%m.%Y'):
+    # número de série do Excel (ex.: 32874 = 1990-01-01) quando a coluna não tinha formato de data
+    if re.fullmatch(r'\d{4,5}(\.0+)?', v) and 3000 < float(v) < 80000:
+        d = date(1899, 12, 30) + timedelta(days=int(float(v)))
+        return d.isoformat() if d <= date.today() else ''
+    v = v.split(' ')[0].split('T')[0]
+    for fmt in ('%Y-%m-%d', '%d/%m/%Y', '%d-%m-%Y', '%d.%m.%Y', '%Y/%m/%d', '%Y%m%d', '%d/%m/%y'):
         try:
-            return datetime.strptime(v, fmt).strftime('%Y-%m-%d')
+            d = datetime.strptime(v, fmt).date()
         except ValueError:
-            pass
+            continue
+        if fmt == '%d/%m/%y' and d > date.today():
+            d = d.replace(year=d.year - 100)
+        return d.isoformat() if date(1900, 1, 1) <= d <= date.today() else ''
     return ''
 
 
@@ -385,12 +434,25 @@ def linha_para_cliente(linha, mapa):
     out = {}
     nome = N.limpo(d.get('nome', ''), 120)
     out['empresa'] = N.limpo(d.get('empresa', ''), 120)
+    extra_notas = []
+    # «912 345 678 / 222 333 444» ou «Tlm: 912…»: fica o primeiro, os outros vão para as notas
+    tel = re.sub(r'^\s*(?:tlm|tlf|tel|telem[oó]vel|telefone|m[oó]vel|casa|trabalho)\.?\s*:?\s*', '', d.get('telefone', '') or '', flags=re.I)
+    tels = [x.strip() for x in re.split(r'\s*(?::::|/|,|;|\||\bou\b|\be\b)\s*', tel) if x.strip()]
+    d['telefone'] = tels[0] if tels else ''
+    if len(tels) > 1:
+        extra_notas.append('Outros telefones: ' + ', '.join(tels[1:]))
+    mails = [x.strip() for x in re.split(r'\s*(?::::|[;,\s])\s*', d.get('email', '') or '') if '@' in x]
+    d['email'] = mails[0] if mails else (d.get('email') or '')
+    if len(mails) > 1:
+        extra_notas.append('Outros e-mails: ' + ', '.join(mails[1:]))
     for campo, fn in (('email', N.email_ok), ('telefone', N.telefone_ok), ('nif', N.nif_ok)):
         try:
             out[campo] = fn(d.get(campo, ''))
         except Erro:
             out[campo] = ''
             avisos.append(campo)
+            if d.get(campo, '').strip():
+                extra_notas.append('%s no ficheiro: %s' % ({'email': 'E-mail', 'telefone': 'Telefone', 'nif': 'NIF'}[campo], d[campo].strip()[:60]))
     if not nome:
         nome = out['empresa'] or out['email'] or out['telefone']
     if not nome:
@@ -400,26 +462,33 @@ def linha_para_cliente(linha, mapa):
     out['localidade'] = N.limpo(d.get('localidade', ''), 60)
     out['codpostal'] = N.limpo(d.get('codpostal', ''), 12)
     out['nascimento'] = data_import(d.get('nascimento'))
-    out['notas'] = N.limpo(d.get('notas', ''), 4000, linhas=True)
+    out['notas'] = N.limpo('\n'.join([x for x in [d.get('notas', '')] + extra_notas if x]), 4000, linhas=True)
     tipo = N.normalizar(d.get('tipo', ''))
-    out['tipo'] = 'empresa' if tipo.startswith('empresa') or tipo in ('b2b', 'company') or (out['empresa'] and not d.get('nome')) else 'particular'
+    out['tipo'] = ('empresa' if tipo.startswith('empresa') or tipo in ('b2b', 'company') or
+                   (out['empresa'] and (not d.get('nome') or N.normalizar(nome) == N.normalizar(out['empresa']))) else 'particular')
+    # Google Contacts: «* myContacts ::: Família»
+    et = [x.strip().lstrip('*').strip() for x in re.split(r':::|,|;', d.get('etiquetas', '') or '')]
+    et = [x for x in et if x and x.lower() not in ('mycontacts', 'starred', 'my contacts')]
     try:
-        out['etiquetas'] = N.etiquetas_ok(d.get('etiquetas', ''))
+        out['etiquetas'] = N.etiquetas_ok(et[:10])
     except Erro:
         out['etiquetas'] = []
     return out, avisos
 
 
-@rota('POST', '/api/clientes/importar', modulo='clientes', acao='c', extra='importar', limite=4 * 1024 * 1024)
+@rota('POST', '/api/clientes/importar', modulo='clientes', acao='c', extra='importar', limite=5 * 1024 * 1024)
 def clientes_importar(h, c, u, m, d):
-    texto = d.get('csv')
-    precisa(isinstance(texto, str) and texto.strip(), 'Escolhe um ficheiro CSV com os teus contactos.')
-    precisa(len(texto) <= 3 * 1024 * 1024, 'O ficheiro é demasiado grande (máximo 3 MB). Divide-o em partes.')
-    linhas = ler_csv(texto)
+    for k in ('csv', 'vcf', 'xlsx'):
+        precisa(not isinstance(d.get(k), str) or len(d[k]) <= 4400000, 'O ficheiro é demasiado grande (máximo 3 MB). Divide-o em partes.')
+    precisa(h.limitar('importar-ler', 120, 3600), 'Já leste muitos ficheiros nesta hora. Tenta daqui a pouco.', 429)
+    try:
+        linhas = F.juntar_nomes(sem_cabecalho(achar_cabecalho(F.ler_pedido(d))), N.normalizar)
+    except F.FicheiroInvalido as e:
+        raise Erro(400, str(e))
     precisa(len(linhas) >= 2, 'O ficheiro precisa de uma linha de títulos e pelo menos um contacto.')
     precisa(len(linhas) <= 10001, 'No máximo 10 000 contactos de cada vez. Divide o ficheiro.')
     cab, corpo = linhas[0], linhas[1:]
-    mapa = d.get('mapa') if isinstance(d.get('mapa'), dict) else mapa_automatico(cab)
+    mapa = d.get('mapa') if isinstance(d.get('mapa'), dict) else mapa_por_conteudo(linhas, mapa_automatico(cab))
     mapa = {str(k): v for k, v in mapa.items() if str(k).isdigit() and v in CAMPOS_IMPORT}
     if d.get('previa'):
         exemplo = []
@@ -1320,6 +1389,10 @@ def painel(h, c, u, m, d):
         itens = [adesao_json(c, r) for r in rows]
         out['adesoes'] = {'ativas': sum(1 for x in itens if x['estado'] == 'ativa'),
                           'em_atraso': sum(1 for x in itens if x['estado'] == 'em_atraso'),
+                          'subscricoes': sum(1 for x in itens if x['tipo'] == 'subscricao' and x['estado'] in ('ativa', 'em_atraso')),
+                          'pacotes': sum(1 for x in itens if x['tipo'] == 'pacote' and x['estado'] == 'ativa'),
+                          'usos_por_gastar': sum(max(0, (x['usos_total'] or 0) - (x['usos'] or 0)) for x in itens
+                                                 if x['tipo'] == 'pacote' and x['estado'] == 'ativa'),
                           'mensal': int(sum(x['preco'] / PERIODOS.get(x['periodo'], 1) for x in itens
                                             if x['tipo'] == 'subscricao' and x['estado'] in ('ativa', 'em_atraso')))}
         for x in sorted(itens, key=lambda x: x['proxima'] or 0):

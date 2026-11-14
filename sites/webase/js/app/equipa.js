@@ -96,7 +96,7 @@ function pessoa(cfg, u, depois) {
 }
 
 const ACOES_AUD = { 'entrar': 'Entrou', 'entrar.falhou': 'Palavra-passe errada', 'conta.criar': 'Criou a conta', 'equipa.criar': 'Adicionou pessoa',
-  'equipa.mudar': 'Mudou permissões', 'equipa.senha': 'Nova palavra-passe', 'equipa.apagar': 'Removeu pessoa', 'exportar': 'Exportou', 'exportar.tudo': 'Exportou tudo',
+  'equipa.mudar': 'Mudou permissões', 'equipa.senha': 'Nova palavra-passe', 'suporte.senha': 'O apoio webase deu uma palavra-passe nova', 'equipa.apagar': 'Removeu pessoa', 'exportar': 'Exportou', 'exportar.tudo': 'Exportou tudo',
   'importar': 'Importou contactos', 'cliente.apagar': 'Apagou cliente', 'cliente.dados': 'Descarregou dados de cliente', 'lead.apagar': 'Apagou lead',
   'contrato.apagar': 'Apagou contrato', 'chamada.apagar': 'Apagou chamada', 'mk.publicar': 'Publicou no marketplace', 'mk.comprar': 'Recebeu base',
   'mk.reservar': 'Reservou base', 'mk.mudar': 'Mudou anúncio', 'partilha.enviar': 'Partilhou contactos', 'partilha.aceitar': 'Aceitou partilha',

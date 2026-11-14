@@ -48,7 +48,12 @@ com permissões, marketplace e fórum). Site e app em `sites/webase/` (app em `/
   `/etc/webase/api.env`).
 - Páginas geradas (soluções, preços, marketplace, privacidade, termos): `python3 webase/gerar_paginas.py`
   depois de mudar `sites/webase/index.html`.
-- Testes: `python3 webase/testes/teste_api.py` (local) e o workflow «webase - verificar ao vivo» (servidor).
+- Testes: `python3 webase/testes/teste_api.py` e `python3 webase/testes/teste_ficheiros.py` (importação com ficheiros
+  reais em `webase/testes/ficheiros/`, gerados por `fazer.py`) e o workflow «webase - verificar ao vivo» (servidor).
+- Cópias: cifradas todas as noites (workflow «Cópias de segurança», com teste de reposição) e uma por dia no próprio
+  servidor, em `/var/lib/webase-api/copias/` (últimos 14 dias), para recuperar algo apagado por engano.
+- Apoio: `/app/admin` (só para os e-mails em `ADMINS`, por omissão diniscash@gmail.com): números gerais, procurar
+  contas e dar uma palavra-passe nova a quem se esqueceu (fica no registo de atividade da conta da pessoa).
 - Endereço de testes: `https://webase.<ip-com-tracos>.sslip.io`, fora do Google. Domínio: blocos prontos para
   `webase.pt` e `www.webase.pt`; ligam-se sozinhos quando o registo A apontar para o servidor.
 - «Ligar no telemóvel» (Web Push sem conteúdo, assinado com VAPID em Python puro): a chave fica em

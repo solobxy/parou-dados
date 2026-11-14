@@ -7,6 +7,7 @@
 #   ganhas.pt: partilhas de salários           /var/lib/ganhas-api
 #   Adri:      marcações da agenda             /var/lib/adri-agenda
 #   Jinxed:    o site                          /var/www/jinxed (também está no repositório, em sites/jinxed)
+#   webase:    contas, clientes e tudo o resto /var/lib/webase-api (base, chave dos avisos e logótipos)
 set -euo pipefail
 T=$(mktemp -d)
 trap 'rm -rf "$T"' EXIT
@@ -20,7 +21,7 @@ b = sqlite3.connect(sys.argv[2])
 a.backup(b); b.close(); a.close()
 PY
 }
-for pasta in /var/lib/duaschaves-api /var/lib/caiu-api /var/lib/ganhas-api /var/lib/adri-agenda; do
+for pasta in /var/lib/duaschaves-api /var/lib/caiu-api /var/lib/ganhas-api /var/lib/adri-agenda /var/lib/webase-api; do
   [ -d "$pasta" ] || continue
   dest="$T/$(basename "$pasta")"; mkdir -p "$dest"
   for f in "$pasta"/*; do
@@ -32,6 +33,8 @@ for pasta in /var/lib/duaschaves-api /var/lib/caiu-api /var/lib/ganhas-api /var/
     esac
   done
 done
+# webase: os logótipos de cada negócio estão numa subpasta (as cópias diárias locais, em copias/, não vão)
+[ -d /var/lib/webase-api/logos ] && cp -rp /var/lib/webase-api/logos "$T/webase-api/logos"
 H=$(find /var/lib/caiu-dados -maxdepth 2 -name 'historico.db' 2>/dev/null | head -1)
 [ -n "$H" ] && copiar_db "$H" "$T/caiu-dados/historico.db"
 [ -d /var/www/jinxed ] && mkdir -p "$T/www" && cp -rp /var/www/jinxed "$T/www/jinxed"

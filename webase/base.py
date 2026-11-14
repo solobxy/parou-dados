@@ -260,6 +260,34 @@ _bloq = threading.Lock()
 _contagens = {}
 
 
+def copia_local(manter=14):
+    """Uma cópia por dia da base, no próprio servidor (DADOS/copias/AAAA-MM-DD.db), para recuperar algo apagado
+    por engano sem esperar pelas cópias noturnas fora do servidor. Fica com as últimas `manter`."""
+    import datetime
+    pasta = os.path.join(DADOS, 'copias')
+    os.makedirs(pasta, mode=0o700, exist_ok=True)
+    hoje = os.path.join(pasta, datetime.date.today().isoformat() + '.db')
+    if os.path.exists(hoje):
+        return False
+    tmp = hoje + '.tmp'
+    a = sqlite3.connect('file:%s?mode=ro' % DB, uri=True)
+    b = sqlite3.connect(tmp)
+    try:
+        a.backup(b)
+        ok = b.execute('PRAGMA quick_check').fetchone()[0] == 'ok'
+    finally:
+        b.close()
+        a.close()
+    if not ok:
+        os.remove(tmp)
+        return False
+    os.chmod(tmp, 0o600)
+    os.replace(tmp, hoje)
+    for velho in sorted(f for f in os.listdir(pasta) if f.endswith('.db'))[:-manter]:
+        os.remove(os.path.join(pasta, velho))
+    return True
+
+
 def limite(chave, n, janela, contar=True):
     """True se ainda cabe (e conta este pedido, a não ser com contar=False); False se passou o limite."""
     t = time.time()

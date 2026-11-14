@@ -370,3 +370,16 @@ dialog.folha[open] { display: flex; flex-direction: column; animation: folha-ent
   .nav-def { flex-wrap: nowrap; margin-inline: -16px; padding-inline: 16px; scroll-padding-inline: 16px;
     mask-image: linear-gradient(90deg, #000 85%, transparent); -webkit-mask-image: linear-gradient(90deg, #000 85%, transparent); }
 }
+
+/* importar: ajuda para tirar os contactos do telemóvel */
+.ajuda-imp { background: var(--folha2); border-radius: 10px; padding: 12px 14px; font-size: 14px; }
+.ajuda-imp summary { cursor: pointer; font-weight: 600; min-height: 24px; }
+.ajuda-imp ul { margin: 10px 0 0; padding-left: 18px; display: grid; gap: 8px; color: var(--tinta2); }
+.zona-ficheiro { display: grid; justify-items: center; gap: 6px; padding: 26px 16px; border: 2px dashed var(--campo-borda); border-radius: 12px;
+  background: var(--folha); text-align: center; cursor: pointer; transition: border-color .15s ease-out, background-color .15s ease-out; }
+.zona-ficheiro svg { width: 28px; height: 28px; color: var(--acento); }
+.zona-ficheiro .zf-t { font-weight: 700; font-size: 16px; color: var(--acento); }
+.zona-ficheiro .zf-s { font-size: 13.5px; color: var(--tinta2); overflow-wrap: anywhere; }
+.zona-ficheiro:hover, .zona-ficheiro.por-cima { border-color: var(--acento); background: var(--acento-suave); }
+#fich-imp:focus-visible + .zona-ficheiro { outline: 2px solid var(--acento); outline-offset: 2px; }
+.zona-ficheiro.a-ler { cursor: progress; opacity: .7; }

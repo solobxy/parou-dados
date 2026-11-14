@@ -13,6 +13,7 @@ import sys
 import tempfile
 import time
 import urllib.error
+import urllib.parse
 import urllib.request
 import zlib
 
@@ -156,6 +157,9 @@ def correr():
     e, r = a.post('/api/clientes', {'nome': 'João Gonçalves', 'telefone': '912 345 678', 'email': 'JOAO@mail.pt', 'etiquetas': 'vip, fade',
                                     'nascimento': '1990-05-20', 'consentimento': True, 'consentimento_como': 'Balcão'})
     ok(e == 201 and r['cliente']['telefone'] == '912345678' and r['cliente']['email'] == 'joao@mail.pt', 'criar cliente normaliza contactos')
+    for q in ('+351 912 345 678', '912345678', '00351912345678', 'joão gonç', 'JOAO'):
+        e, r2 = a.get('/api/clientes?q=' + urllib.parse.quote(q))
+        ok(e == 200 and r2['total'] == 1 and r2['itens'][0]['nome'] == 'João Gonçalves', 'pesquisa encontra por «%s»' % q)
     joao = r['cliente']['id']
     ok(r['cliente']['consentimento_quando'], 'consentimento fica com data')
     e, r = a.post('/api/clientes', {'nome': 'Outro', 'telefone': '912345678'})
@@ -299,6 +303,21 @@ def correr():
        'exportar CSV para Excel sem fórmulas')
     e, txt, hdr = p.pedir('GET', '/api/exportar/clientes.csv', cru=True)
     ok(e == 403, 'comercial não exporta')
+    fx = os.path.join(AQUI, 'ficheiros')
+    xl = base64.b64encode(open(os.path.join(fx, 'excel-a-mao.xlsx'), 'rb').read()).decode()
+    e, r = a.post('/api/clientes/importar', {'xlsx': xl, 'previa': True})
+    ok(e == 200 and r['total'] == 6 and r['colunas'][0] == 'Nome' and r['exemplo'][0]['nascimento'] == '1988-03-15', 'pré-visualização de um Excel')
+    e, r = a.post('/api/clientes/importar', {'xlsx': xl, 'etiqueta': 'excel'})
+    ok(e == 200 and r['criados'] + r['repetidos'] == 6 and r['criados'] >= 4, 'importar Excel (.xlsx) %r' % (r,))
+    vcf = open(os.path.join(fx, 'android.vcf'), encoding='utf-8').read()
+    e, r = a.post('/api/clientes/importar', {'vcf': vcf})
+    ok(e == 200 and r['criados'] == 1 and r['repetidos'] == 1, 'contactos do telemóvel: quem já veio do Excel não se repete')
+    e, r = a.get('/api/clientes?q=canalizador')
+    ok(e == 200 and r['total'] == 1, 'contacto do telemóvel encontra-se na pesquisa')
+    e, r = a.post('/api/clientes/importar', {'xlsx': base64.b64encode(open(os.path.join(fx, 'antigo.xls'), 'rb').read()).decode()})
+    ok(e == 400 and '.xlsx' in r.get('erro', ''), 'Excel antigo: diz como resolver')
+    e, r = a.post('/api/clientes/importar', {'xlsx': 'A' * 4500000})
+    ok(e in (400, 413), 'ficheiro grande demais recusado')
 
     print('— leads e fases')
     e, r = a.post('/api/conta/fases', {'fases': [{'nome': 'Novo'}, {'nome': 'Proposta enviada'}, {'nome': 'Fechado', 'tipo': 'ganho'},
@@ -543,13 +562,77 @@ def correr():
     e, r = Sessao().post('/api/conta/entrar', {'email': 'zé@cafe.test', 'senha': 'cavalo-azul-correto-77'})
     ok(e == 401, 'conta apagada não entra')
 
+    print('— sessão renova-se com o uso')
+    import sqlite3
+    s = Sessao()
+    s.post('/api/conta/entrar', {'email': 'rui@telecom.test', 'senha': 'cavalo-azul-correto-77'})
+    db = sqlite3.connect(os.path.join(DADOS, 'dados.db'), timeout=10)
+    db.execute('UPDATE sessoes SET expira=? WHERE uid=(SELECT id FROM utilizadores WHERE email=?)', (int(time.time()) + 3 * 86400, 'rui@telecom.test'))
+    db.commit()
+    antes = s.cookie
+    e, r, hdr = s.pedir('GET', '/api/eu', cru=True)
+    novo = [ck for ck in (hdr.get_all('Set-Cookie') or []) if ck.startswith('wb=')]
+    exp = db.execute('SELECT MAX(expira) FROM sessoes WHERE uid=(SELECT id FROM utilizadores WHERE email=?)', ('rui@telecom.test',)).fetchone()[0]
+    ok(e == 200 and novo and 'Max-Age=2592000' in novo[0] and s.cookie == antes, 'sessão perto do fim renova o cookie')
+    ok(exp > time.time() + 29 * 86400, 'sessão perto do fim fica com mais 30 dias')
+    e, r, hdr = s.pedir('GET', '/api/eu', cru=True)
+    ok(not hdr.get_all('Set-Cookie'), 'sessão nova não reescreve o cookie a cada pedido')
+    db.execute('UPDATE sessoes SET expira=? WHERE uid=(SELECT id FROM utilizadores WHERE email=?)', (int(time.time()) - 5, 'rui@telecom.test'))
+    db.commit()
+    e, r = s.get('/api/eu')
+    ok(e == 401, 'sessão expirada não renova')
+    db.close()
+
+    print('— apoio webase (recuperar a palavra-passe do dono)')
+    adm, _ = criar_conta('admin@webase.test', 'Webase Apoio', 'outro')
+    e, r = a.get('/api/admin/contas')
+    ok(e == 404, 'quem não é da administração não vê o apoio')
+    e, r = a.post('/api/admin/senha', {'email': 'rui@telecom.test'})
+    ok(e == 404, 'quem não é da administração não dá palavras-passe')
+    e, r = adm.get('/api/admin/contas?q=TELECOM')
+    ok(e == 200 and len(r['contas']) == 1 and r['contas'][0]['pessoas'][0]['email'] == 'rui@telecom.test', 'procura conta pelo nome')
+    e, r = adm.get('/api/admin/contas?q=rui@tele')
+    ok(e == 200 and len(r['contas']) == 1, 'procura conta pelo e-mail')
+    ok(all(set(p) <= {'id', 'nome', 'email', 'dono', 'visto', 'trocar_senha'} for k in r['contas'] for p in k['pessoas']), 'a procura não devolve hashes')
+    e, r = adm.post('/api/admin/senha', {'email': 'admin@webase.test'})
+    ok(e == 400, 'não dá palavra-passe nova a contas de administração')
+    e, r = adm.post('/api/admin/senha', {'email': 'ninguem@nada.test'})
+    ok(e == 404 and r.get('campo') == 'email', 'e-mail desconhecido diz o que falta')
+    rui = Sessao()
+    rui.post('/api/conta/entrar', {'email': 'rui@telecom.test', 'senha': 'cavalo-azul-correto-77'})
+    e, r = adm.post('/api/admin/senha', {'email': ' Rui@Telecom.test '})
+    temp = r.get('senha_temporaria', '')
+    ok(e == 200 and len(temp) >= 10, 'apoio dá palavra-passe temporária')
+    e, r = rui.get('/api/eu')
+    ok(e == 401, 'sessões antigas terminam')
+    e, r = Sessao().post('/api/conta/entrar', {'email': 'rui@telecom.test', 'senha': 'cavalo-azul-correto-77'})
+    ok(e == 401, 'a palavra-passe antiga deixa de funcionar')
+    rui = Sessao()
+    e, r = rui.post('/api/conta/entrar', {'email': 'rui@telecom.test', 'senha': temp})
+    ok(e == 200, 'entra com a temporária')
+    e, r = rui.get('/api/clientes')
+    ok(e == 403 and r.get('trocar_senha'), 'com a temporária tem de escolher uma nova antes de tudo')
+    e, r = rui.post('/api/eu/senha', {'atual': temp, 'nova': 'barco-verde-largo-91'})
+    ok(e == 200, 'escolhe a nova palavra-passe')
+    e, r = rui.get('/api/auditoria')
+    ok(e == 200 and any(x['acao'] == 'suporte.senha' for x in r['registos']), 'o dono vê no registo que o apoio mexeu')
+
+    print('— cópia diária no servidor')
+    cod = ('import sys, os, sqlite3; sys.path.insert(0, sys.argv[1]); import base as B; '
+           'print(B.copia_local(), B.copia_local()); f = sorted(os.listdir(os.path.join(B.DADOS, "copias")))[-1]; '
+           'k = sqlite3.connect(os.path.join(B.DADOS, "copias", f)); '
+           'print(k.execute("SELECT COUNT(*) FROM clientes").fetchone()[0] == sqlite3.connect(B.DB).execute("SELECT COUNT(*) FROM clientes").fetchone()[0])')
+    out = subprocess.run([sys.executable, '-c', cod, os.path.dirname(API)], env=dict(os.environ, WB_DADOS=DADOS, WB_DEV='1'),
+                         capture_output=True, text=True, timeout=60).stdout.split()
+    ok(out[:3] == ['True', 'False', 'True'], 'cópia diária: uma por dia, completa e legível')
+
     print('— limites de entrada')
     for _ in range(10):
-        e, r = Sessao().post('/api/conta/entrar', {'email': 'rui@telecom.test', 'senha': 'cavalo-azul-correto-77'})
+        e, r = Sessao().post('/api/conta/entrar', {'email': 'rui@telecom.test', 'senha': 'barco-verde-largo-91'})
     ok(e == 200, 'entradas certas seguidas não bloqueiam (equipa na mesma rede)')
     for _ in range(8):
         Sessao().post('/api/conta/entrar', {'email': 'rui@telecom.test', 'senha': 'errada-errada-1'})
-    e, r = Sessao().post('/api/conta/entrar', {'email': 'rui@telecom.test', 'senha': 'cavalo-azul-correto-77'})
+    e, r = Sessao().post('/api/conta/entrar', {'email': 'rui@telecom.test', 'senha': 'barco-verde-largo-91'})
     ok(e == 429, 'depois de 8 tentativas erradas, a conta fica 15 minutos fechada')
 
 

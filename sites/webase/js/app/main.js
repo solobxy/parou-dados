@@ -26,6 +26,7 @@ const VISTAS = [
   [/^\/app\/equipa\/?$/, () => import('./equipa.js')],
   [/^\/app\/definicoes(\/.*)?$/, () => import('./definicoes.js')],
   [/^\/app\/avisos\/?$/, () => import('./avisos.js')],
+  [/^\/app\/admin\/?$/, () => import('./admin.js')],
   [/^\/app\/ligar(\/[A-Za-z0-9_-]{12})?\/?$/, () => import('./ligar.js')],
 ];
 
@@ -70,6 +71,7 @@ function casca(conteudo) {
       itemNav('/app/avisos', 'Avisos', 'sino', nAvisos),
       podeX('equipa') ? itemNav('/app/equipa', 'Equipa', 'equipa') : null,
       itemNav('/app/definicoes', 'Definições', 'definicoes'),
+      eu.admin ? itemNav('/app/admin', 'Apoio webase', 'apoio') : null,
       h('button', { class: 'nav-item', type: 'button', style: 'border:0;background:none;width:100%', onclick: sair }, icone('sair'), h('span', null, 'Sair'))));
   // telemóvel: 3 destinos principais + Mais
   const prioridade = ['clientes', 'leads', 'chamadas', 'pontos', 'adesoes', 'contratos', 'marketplace', 'forum'].filter((m) => mods.includes(m)).slice(0, 3);
@@ -99,6 +101,7 @@ function menuMais() {
     podeX('equipa') ? item('/app/equipa', 'Equipa e permissões', 'equipa') : null,
     item('/app/avisos', 'Avisos', 'sino'),
     item('/app/definicoes', 'Definições', 'definicoes'),
+    estado.eu.admin ? item('/app/admin', 'Apoio webase', 'apoio') : null,
     h('div', { class: 'nav-sep', role: 'separator' }),
     h('button', { class: 'nav-item', type: 'button', style: 'border:0;background:none;width:100%', onclick: sair }, icone('sair'), h('span', null, 'Sair'))) });
 }
