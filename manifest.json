@@ -1,7 +1,7 @@
 {
-  "built_at": "2026-11-14T10:55:27.666013+00:00",
+  "built_at": "2026-11-14T20:00:32.085491+00:00",
   "db_bytes": 775327744,
-  "gz_bytes": 208296469,
+  "gz_bytes": 208296447,
   "totals": {
     "lines": 2829,
     "stops": 46387,
@@ -919,12 +919,12 @@
           "total": 398
         },
         "servicos_com_data_hoje": [
-          "AS",
-          "ES",
-          "FS",
           "CS",
+          "FS",
           "BS",
-          "DS"
+          "DS",
+          "ES",
+          "AS"
         ],
         "viagens_por_servico": [
           {
@@ -979,5 +979,5 @@
       }
     }
   },
-  "duration_s": 291
+  "duration_s": 214
 }
