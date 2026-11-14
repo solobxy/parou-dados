@@ -918,3 +918,41 @@ h2.sec.small { font-size: 18px; margin: 16px 0 8px; }
 .ch3msg { width: 100%; display: grid; gap: 6px; justify-items: center; min-height: 36px; font-weight: 800; }
 .ch3bar { width: 70%; height: 5px; border-radius: 9px; background: #ffffff22; overflow: hidden; } .ch3bar i { display: block; height: 100%; background: var(--gold); transform-origin: left; }
 @media (prefers-reduced-motion: reduce) { .wst-title, .wst-x { animation: none; } .ch3.live .ch3t .fr { animation: none; } }
+
+/* ---------- slots: quedas, explosões e faixas ---------- */
+.sgw { overflow: hidden; padding: 4px; margin: -4px; border-radius: 12px; }
+.sfxl { position: absolute; inset: 0; pointer-events: none; border-radius: 18px; overflow: hidden; z-index: 3; }
+.sfxl .swpop { left: 0; top: 0; }
+.sc2 { overflow: visible; }
+.sc2 img { transition: none; }
+.sc2.fall { animation: sfall var(--t) cubic-bezier(.45, 0, .9, .6) both; animation-delay: var(--d); }
+@keyframes sfall { 0% { transform: translateY(var(--from)); } 78% { transform: translateY(0) scaleY(.9); } 89% { transform: translateY(-7%) scaleY(1.03); } 100% { transform: none; } }
+.sc2.out { animation: sout .32s cubic-bezier(.5, 0, 1, .7) both; animation-delay: var(--d); }
+@keyframes sout { to { transform: translateY(620%); opacity: .2; } }
+.sc2.hit { z-index: 2; box-shadow: inset 0 0 0 3px var(--gold), 0 0 18px #ffd36bcc; background: #ffd36b40; animation: shit .36s ease-in-out infinite alternate; }
+@keyframes shit { to { transform: scale(1.13) rotate(2deg); } }
+.sc2.trig { animation-duration: .22s; box-shadow: inset 0 0 0 3px #fff, 0 0 26px #fff; }
+.sc2.boom { z-index: 2; background: none; box-shadow: none; }
+.sc2.boom img, .sc2.boom .ov { animation: sboom .42s ease-out forwards; }
+@keyframes sboom { 25% { transform: scale(1.4); filter: brightness(3) saturate(0); } 100% { transform: scale(.1) rotate(40deg); opacity: 0; filter: brightness(2); } }
+.sc2 .sp { position: absolute; left: 50%; top: 50%; width: 7px; height: 7px; margin: -3.5px; border-radius: 50%; background: var(--gold); box-shadow: 0 0 8px #ffd75e; animation: sspark .42s ease-out forwards; }
+@keyframes sspark { from { transform: rotate(var(--a)) translateX(4px) scale(1.2); } to { transform: rotate(var(--a)) translateX(var(--r)) scale(0); opacity: 0; } }
+.swpop { position: absolute; transform: translate(-50%, -50%); padding: 2px 10px; border-radius: 99px; background: #000c; color: var(--gold); font-family: var(--disp); font-size: 24px; white-space: nowrap; box-shadow: inset 0 0 0 2px #f0d58a; animation: swpop 1.4s ease-out forwards; }
+@keyframes swpop { 0% { transform: translate(-50%, -50%) scale(.4); opacity: 0; } 15% { transform: translate(-50%, -50%) scale(1.15); opacity: 1; } 70% { opacity: 1; } 100% { transform: translate(-50%, -150%) scale(1); opacity: 0; } }
+.sinfo { font-size: 28px; color: var(--gold); text-shadow: 0 0 10px #ffd75e88; }
+.sinfo.bump { animation: sbump .5s var(--spring); }
+@keyframes sbump { 40% { transform: scale(1.7); } }
+.sfly { position: fixed; z-index: 60; transform: translate(-50%, -50%); font-family: var(--disp); font-size: 26px; color: #fff; text-shadow: 0 0 10px #ffd75e, 0 2px 0 #000; pointer-events: none; animation: sfly .42s cubic-bezier(.5, 0, .3, 1) forwards; }
+@keyframes sfly { 20% { transform: translate(-50%, -50%) scale(1.5); } 100% { transform: translate(calc(-50% + var(--x)), calc(-50% + var(--y))) scale(.7); } }
+.sban { position: absolute; inset: 0; display: grid; align-content: center; justify-items: center; gap: 6px; background: #000b; text-align: center; padding: 12px; animation: fadein .2s both; }
+.sban.bye { opacity: 0; transition: opacity .25s; }
+.sban .rays { position: absolute; left: 50%; top: 50%; width: 180%; aspect-ratio: 1; margin: -90% 0 0 -90%; background: repeating-conic-gradient(#ffd75e30 0 9deg, transparent 9deg 18deg); animation: srays 9s linear infinite; mask-image: radial-gradient(circle, #000 20%, transparent 62%); -webkit-mask-image: radial-gradient(circle, #000 20%, transparent 62%); }
+@keyframes srays { to { transform: rotate(360deg); } }
+.sbt { position: relative; font-family: var(--disp); font-weight: 900; font-size: clamp(38px, 12vw, 58px); line-height: .95; text-transform: uppercase; color: var(--gold); text-shadow: 0 4px 0 #000a, 0 0 24px #ffd75e88; animation: wzoom .7s var(--spring) both; }
+.sbs { position: relative; font-family: var(--disp); font-weight: 900; font-size: clamp(30px, 10vw, 46px); color: #fff; text-shadow: 0 3px 0 #000a; }
+.sban.free .sbt { color: #fff; text-shadow: 0 4px 0 #6a1ea8, 0 0 26px #e9a6ff; } .sban.free .sbs { font-size: 20px; color: #e9c6ff; text-transform: uppercase; }
+.sban .cn { position: absolute; top: -8%; width: 16px; height: 16px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #fff3b0, #d9a531 60%, #8a6420); animation: scoin var(--t) linear infinite; animation-delay: var(--d); }
+@keyframes scoin { to { transform: translateY(700%) rotateX(720deg); top: 100%; } }
+@media (prefers-reduced-motion: reduce) { .sc2.fall, .sc2.out, .sbt, .sban .rays { animation: none; } .sc2.boom img { animation: fadein .15s reverse forwards; } }
+
+.btn.skip { background: var(--s2); color: var(--tx); box-shadow: inset 0 0 0 2px #ffffff22; }

@@ -56,6 +56,7 @@ const SFX = {
   hit: (t) => { noise(t, 0.09, 'lowpass', 500, 0.8, 0.14); ping(t, 95, 0.16, 0.12, 0, 48); },
   bust: (t) => [0, 1, 2, 3].forEach((i) => ping(t + i * 0.15, i % 2 ? 620 : 830, 0.14, 0.04, 2)),
   refill: (t) => noise(t, 0.32, 'bandpass', 500, 1.2, 0.06, 2600),
+  pop: (t) => { noise(t, 0.13, 'bandpass', 700, 0.9, 0.1, 2600); ping(t, 220, 0.12, 0.06, 0, 90); coin(t + 0.04, 3700, 0.025); },
 };
 let lastTap = 0;
 export function sfx(name) {

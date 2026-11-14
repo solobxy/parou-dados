@@ -910,6 +910,7 @@ async function play(g, args, anim) {
   } catch (e) {
     if (e.data?.me) { S.st.me = e.data.me; S.stAt = now(); }
     if (e.code && e.code !== 'LOGIN_REQUIRED') toast(errText(e.code), true);
+    else if (!e.code) console.error(e);
     return null;
   } finally { S.casinoBusy = false; render(); }
 }
@@ -1166,74 +1167,126 @@ function slotGrid(g) {
   const cells = step ? step.g : Array.from({ length: n }, (_, i) => (Math.imul(i + 7, 2654435761) >>> 9) % G.nsym);   // mistura fixa, sem padrão à vista
   return h('div', { class: 'sgrid', style: `--cols:${G.cols};--rows:${G.rows}` }, cells.map((s, i) => slotCellEl(g, s, step?.o?.[i], step?.sp?.[i])));
 }
-async function slotStep(g, grid, step, prev, fast) {
-  const G = slotCfg(g), fresh = new Set();
-  if (prev && prev.rm) for (let c = 0; c < G.cols; c++) { const k = prev.rm.filter((i) => i % G.cols === c).length; for (let r0 = 0; r0 < k; r0++) fresh.add(r0 * G.cols + c); }
+// Uma queda: no início a grelha toda cai de cima, coluna a coluna; depois de um prémio, o que sobra desce para os buracos
+// e os novos entram por cima. Cada célula sabe de quantas casas cai.
+async function slotStep(g, grid, step, prev, sp) {
+  const G = slotCfg(g), C = G.cols, R = G.rows, rm = prev && prev.rm ? new Set(prev.rm) : null;
+  const dist = new Array(C * R).fill(0), fresh = new Array(C * R).fill(false);
+  for (let c = 0; c < C; c++) {
+    if (!prev) { for (let r = 0; r < R; r++) { dist[r * C + c] = R + 1; fresh[r * C + c] = true; } continue; }
+    const keep = []; for (let r = 0; r < R; r++) if (!rm.has(r * C + c)) keep.push(r);
+    const k = R - keep.length;
+    for (let r = 0; r < R; r++) { if (r < k) { dist[r * C + c] = k; fresh[r * C + c] = true; } else dist[r * C + c] = r - keep[r - k]; }
+  }
+  const pitch = grid.children[0] ? grid.children[0].offsetHeight + parseFloat(getComputedStyle(grid).rowGap || 4) : 60;
+  let end = 0; const lands = new Set();
   grid.replaceChildren(...step.g.map((s, i) => {
-    const el = slotCellEl(g, s, step.o?.[i], step.sp?.[i]);
-    if (!prev || fresh.has(i)) { el.classList.add('drop'); el.style.setProperty('--d', (prev ? 0 : (i % G.cols) * 50 + Math.floor(i / G.cols) * 16) + 'ms'); }
+    const el = slotCellEl(g, s, step.o?.[i], step.sp?.[i]), d = dist[i];
+    if (d > 0 && !RM()) {
+      const c = i % C, r = Math.floor(i / C), delay = (prev ? c * 28 + (fresh[i] ? 70 : 0) : c * 85 + (R - 1 - r) * 48) * sp, t0 = (300 + 62 * Math.sqrt(d) * 2.2) * sp;
+      el.classList.add('fall'); el.style.setProperty('--from', -d * pitch + 'px'); el.style.setProperty('--d', delay + 'ms'); el.style.setProperty('--t', t0 + 'ms');
+      end = Math.max(end, delay + t0); lands.add(Math.round((delay + t0 * 0.78) / 40) * 40);
+    }
     return el;
   }));
-  await wait(RM() ? 120 : fast ? 240 : 460);
-  if (step.w) {
-    step.rm.forEach((i) => grid.children[i].classList.add('hit'));
+  if (!RM()) [...lands].slice(0, 8).forEach((ms) => setTimeout(() => fx.sfx('deal'), ms));
+  await wait(RM() ? 120 : end + 90 * sp);
+  if (step.w && !S.slotSkip) {
+    const cells = step.rm.map((i) => grid.children[i]), pay = step.w.reduce((x, w) => x + w.pay, 0);
+    cells.forEach((el) => el.classList.add('hit'));
     const m = step.w.reduce((x, w) => x + (w.m || 0), 0);
     if (m) flashInfo('×' + m);
-    fx.sfx('cash'); await wait(RM() ? 250 : fast ? 360 : 620);
-    step.rm.forEach((i) => grid.children[i].classList.add('pop'));
-    await wait(RM() ? 80 : fast ? 150 : 240);
+    // o valor do prémio aparece em cima dos símbolos que pagaram
+    const gb = grid.getBoundingClientRect(), bs = cells.map((el) => el.getBoundingClientRect());
+    const cx = bs.reduce((x, b) => x + b.left + b.width / 2, 0) / bs.length - gb.left, cy = bs.reduce((x, b) => x + b.top + b.height / 2, 0) / bs.length - gb.top;
+    const tag = h('b', { class: 'swpop num', style: `left:${Math.max(40, Math.min(gb.width - 40, cx))}px;top:${cy}px` }, '+' + money(Math.floor((S.slotBase * pay) / 100)));
+    grid.closest('.slot').querySelector('.sfxl').append(tag); setTimeout(() => tag.remove(), 1500);
+    fx.sfx('cash'); await wait(RM() ? 250 : 720 * sp);
+    cells.forEach((el) => {
+      el.classList.remove('hit'); el.classList.add('boom');
+      if (!RM()) for (let k = 0; k < 6; k++) el.append(h('i', { class: 'sp', style: `--a:${k * 60 + Math.random() * 40}deg;--r:${26 + Math.random() * 26}px` }));
+    });
+    fx.sfx('pop'); fx.vibrate(8); await wait(RM() ? 80 : 430 * sp);
   }
 }
-function flashInfo(txt, big) {
+function flashInfo(txt) {
   const info = document.querySelector('.sinfo'); if (!info) return;
-  info.textContent = txt; info.classList.add('on'); info.classList.toggle('big', !!big);
-  clearTimeout(info._t); info._t = setTimeout(() => info.classList.remove('on', 'big'), big ? 1500 : 800);
+  info.textContent = txt; info.classList.add('on');
+  clearTimeout(info._t); info._t = setTimeout(() => info.classList.remove('on'), 1100);
+}
+// faixa grande por cima da grelha: rodadas grátis, ganhos grandes, fim do bónus
+async function slotBanner(kind, title, sub, ms) {
+  const lay = document.querySelector('.slot .sfxl'); if (!lay) return;
+  const el = h('div', { class: 'sban ' + kind }, h('i', { class: 'rays' }), h('b', { class: 'sbt' }, title), sub ? h('span', { class: 'sbs num' }, sub) : null,
+    kind !== 'free' && !RM() ? Array.from({ length: 22 }, () => h('i', { class: 'cn', style: `left:${Math.random() * 100}%;--d:${Math.random() * 900}ms;--t:${900 + Math.random() * 900}ms` })) : null);
+  lay.append(el);
+  for (let t0 = 0; t0 < ms && !S.slotSkip; t0 += 100) await wait(100);
+  el.classList.add('bye'); await wait(S.slotSkip ? 0 : 260); el.remove();
+  return el;
 }
 async function slotAnim(r) {
   const g = r.game, G = slotCfg(g);
-  S.slotSkip = false;
-  document.querySelector('.csres')?.remove();   // o resultado anterior não fica à vista durante a jogada nova
-  document.querySelector('.csbar')?.classList.add('anim');   // a barra encolhe para só o «saltar»: a grelha fica toda à vista
-  const sl = document.querySelector('.slot');
-  if (sl) {
-    const top = document.querySelector('.hud')?.offsetHeight || 0, b0 = sl.getBoundingClientRect();
-    if (b0.top < top || b0.bottom > innerHeight - 170) { scrollTo({ top: Math.max(0, b0.top + scrollY - top - 8), behavior: RM() ? 'auto' : 'smooth' }); await wait(RM() ? 0 : 320); }
-  }
+  S.slotSkip = false; S.slotBase = r.base;
+  const sl = document.querySelector('.slot'); if (sl) await tableFocus(sl);
   const sk = document.querySelector('.csbar .btn.buy');
-  if (sk) { sk.disabled = false; sk.textContent = t('slSkip'); sk.classList.replace('buy', 'ghost'); sk.addEventListener('click', () => { S.slotSkip = true; }); }
-  document.querySelectorAll('.csbar .bbuy').forEach((b) => { b.disabled = true; });
+  if (sk) { sk.disabled = false; sk.textContent = t('slSkip'); sk.classList.replace('buy', 'skip'); sk.addEventListener('click', () => { S.slotSkip = true; }); }
   const grid = document.querySelector('.sgrid'), meter = document.querySelector('.swinm'), freeL = document.querySelector('.sfree');
   if (!grid) return;
-  const show = (c) => { meter.textContent = money(Math.floor((r.base * Math.min(c, G.max * 100)) / 100)); };
-  let acc = 0; show(0);
-  const round = async (rd, fast, mult) => {
+  const cash = (c) => Math.floor((r.base * Math.min(c, G.max * 100)) / 100);
+  let acc = 0, shown = 0; meter.textContent = money(0);
+  const show = (c, ms = 450) => { const to = cash(c); if (RM() || S.slotSkip) meter.textContent = money(to); else fx.roll(meter, shown, to, money, ms); shown = to; };
+  // os símbolos da jogada anterior caem para fora
+  if (!RM()) { [...grid.children].forEach((el, i) => { el.classList.add('out'); el.style.setProperty('--d', (i % G.cols) * 45 + 'ms'); }); fx.sfx('refill'); await wait(330 + G.cols * 45); }
+  const round = async (rd, sp, mult) => {
     let w = 0;
     for (let k = 0; k < rd.steps.length && !S.slotSkip; k++) {
-      await slotStep(g, grid, rd.steps[k], k ? rd.steps[k - 1] : null, fast);
+      await slotStep(g, grid, rd.steps[k], k ? rd.steps[k - 1] : null, sp);
       if (rd.steps[k].w) { w += rd.steps[k].w.reduce((x, y) => x + y.pay, 0); show(acc + w); }
     }
     if (S.slotSkip) return;
     if (G.kind === 'scatter' && w > 0 && mult > 1) {
-      grid.querySelectorAll('.orb').forEach((el) => el.classList.add('hit'));
-      flashInfo('×' + mult); fx.sfx('crit'); await wait(RM() ? 300 : 900);
-    }
-    acc += G.kind === 'scatter' && w > 0 && mult > 1 ? w * mult : w; show(acc);
+      // as esferas voam uma a uma para o multiplicador e só depois o prémio é multiplicado
+      const info = document.querySelector('.sinfo'), orbs = [...grid.querySelectorAll('.orb')];
+      if (!RM() && info) {
+        const ib = info.getBoundingClientRect(); let sum = 0;
+        for (const el of orbs.slice(0, 12)) {
+          const b = el.getBoundingClientRect(), v = parseInt(el.querySelector('.ov')?.textContent.slice(1) || '0', 10);
+          el.classList.add('hit');
+          const fl = h('b', { class: 'sfly num', style: `left:${b.left + b.width / 2}px;top:${b.top + b.height / 2}px;--x:${ib.left + ib.width / 2 - b.left - b.width / 2}px;--y:${ib.top + ib.height / 2 - b.top - b.height / 2}px` }, '×' + v);
+          document.body.append(fl); fx.sfx('tick'); await wait(430 * sp); fl.remove();
+          sum += v; info.textContent = '×' + sum; info.classList.add('on'); clearTimeout(info._t);
+        }
+        info.textContent = '×' + mult; info.classList.add('on', 'bump'); clearTimeout(info._t); info._t = setTimeout(() => info.classList.remove('on', 'bump'), 1600);
+      } else flashInfo('×' + mult);
+      fx.sfx('crit'); acc += w * mult; show(acc, 800); await wait(RM() ? 300 : 1000 * sp);
+    } else { acc += w; show(acc); if (w > 0) await wait(RM() ? 0 : 350 * sp); }
   };
-  await round(r.spin.base, false, r.spin.base.orbSum);
+  await round(r.spin.base, 1, r.spin.base.orbSum);
   if (r.spin.free.length && !S.slotSkip) {
     acc += r.spin.scatPay; show(acc);
-    grid.querySelectorAll('.scat').forEach((el) => el.classList.add('hit'));
-    flashInfo(t('slFree', { n: r.spin.free.length }), true); fx.sfx('level'); await wait(RM() ? 600 : 1600);
-    document.querySelector('.slot')?.classList.add('free');
+    grid.querySelectorAll('.scat').forEach((el) => el.classList.add('hit', 'trig'));
+    fx.sfx('crit'); await wait(RM() ? 200 : 1300);
+    fx.sfx('level'); fx.vibrate([20, 40, 20]);
+    await slotBanner('free', t('slFreeT', { n: r.spin.free.length }), t('slFreeS'), RM() ? 900 : 2600);
+    sl?.classList.add('free');
+    const before = acc;
     for (let k = 0; k < r.spin.free.length && !S.slotSkip; k++) {
       const f = r.spin.free[k];
       freeL.textContent = t(G.kind === 'scatter' && G.accFree ? 'slFreeLeftM' : 'slFreeLeft', { n: r.spin.free.length - k - 1, m: f.acc || 1 });
-      await round(f, true, f.acc);
+      await round(f, 0.82, f.acc);
+      if (!S.slotSkip) await wait(RM() ? 0 : 250);
     }
+    if (!S.slotSkip) { fx.sfx('claim'); await slotBanner('end', t('slFreeEnd'), money(cash(acc) - cash(before) + cash(r.spin.scatPay)), RM() ? 900 : 2400); }
   }
-  S.slotLast = { ...(S.slotLast || {}), [g]: r }; S.slotSkip = false;
-  const tot = Math.floor((r.base * r.spin.total) / 100);
-  if (tot >= r.base * 50 && !RM()) { flashInfo(t('slBig', { x: Math.floor(tot / r.base) }), true); fx.sfx('level'); await wait(1600); }
+  S.slotLast = { ...(S.slotLast || {}), [g]: r }; const skipped = S.slotSkip; S.slotSkip = false;
+  const tot = Math.floor((r.base * r.spin.total) / 100), x = tot / r.base;
+  meter.textContent = money(tot);
+  if (x >= 20 && tot > r.bet && !skipped) {   // numa compra de bónus só se festeja se houve lucro
+    fx.sfx('level'); fx.vibrate([30, 50, 30]);
+    const ban = slotBanner('big', t(x >= 200 ? 'slEpic' : x >= 50 ? 'slMega' : 'slBigT'), money(0), RM() ? 1200 : 3400);
+    const amt = document.querySelector('.sban.big .sbs'); if (amt && !RM()) fx.roll(amt, 0, tot, money, 2400); else if (amt) amt.textContent = money(tot);
+    await ban;
+  }
 }
 function slotBuy(g, kind) {
   const G = slotCfg(g), chip = chipNow(), mult = kind === 2 ? G.superBuy : G.buy, price = chip * mult;
@@ -1248,7 +1301,7 @@ function slotBuy(g, kind) {
 function screenSlotGame(page) {
   const g = SLOT_OF[page], G = slotCfg(g), chip = chipNow(), last = S.slotLast?.[g];
   const out = csHead(page);
-  out.push(h('div', { class: 'slot th-' + g }, h('div', { class: 'stop' }, h('span', { class: 'sfree' }), h('b', { class: 'swinm num' }, last ? money(last.win) : '$0'), h('span', { class: 'sinfo' })), slotGrid(g)));
+  out.push(h('div', { class: 'slot th-' + g }, h('div', { class: 'stop' }, h('span', { class: 'sfree' }), h('b', { class: 'swinm num' }, last ? money(last.win) : '$0'), h('span', { class: 'sinfo num' })), h('div', { class: 'sgw' }, slotGrid(g)), h('div', { class: 'sfxl' })));
   if (last) out.push(csResult({ ...last, bet: last.bet }));
   out.push(h('div', { class: 'row', style: 'gap:8px;margin:0 0 4px;flex-wrap:wrap' }, h('button', { class: 'btn ghost sm', on: { click: () => slotPaytable(g) } }, t('slTable')),
     h('span', { class: 'small muted' }, t('slMaxWin', { x: num(G.max) }))));
