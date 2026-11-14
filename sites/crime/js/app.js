@@ -872,7 +872,9 @@ async function loadEvents(seen) {
 
 // ---------- casino ----------
 // O resultado vem sempre do servidor. Aqui só se anima: a roda gira até ao número que já saiu.
-const RM = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
+// As animações do jogo correm sempre, mesmo com «remover animações» ou poupança de bateria ligados no telemóvel:
+// aqui a animação é o próprio jogo (a bola, a roda, os símbolos a cair).
+const RM = () => false;
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 const CHIPS = [10, 50, 100, 500, 1000, 5000, 10000, 50000, 100000, 500000, 1000000, 5000000, 10000000];
 const betMax = () => Math.min(S.st.me.casinoMax, S.st.me.cash);
@@ -1151,7 +1153,7 @@ function screenWheel() {
 // ---- slots ----
 // Quatro jogos: Chefão (o nosso), Trovão de Zeus 1000, Doce Vingança (6×5, paga em qualquer sítio) e Rebuçado Louco 1000 (7×7 por grupos).
 const SLOT_OF = { slot: 'chefao', zeus: 'zeus', doce: 'doce', rebucado: 'rebucado' };
-const SYM = (g, i) => `/img/slot/${g}/${i}.webp?2`;
+const SYM = (g, i) => `/img/slot/${g}/${i}.webp?4`;
 const slotCfg = (g) => S.cfg.casino.slots[g];
 function symImg(g, s, orb) {
   const G = slotCfg(g), big = orb >= 100 && (g === 'zeus' || g === 'doce');
@@ -1198,7 +1200,7 @@ async function slotStep(g, grid, step, prev, sp) {
     const m = step.w.reduce((x, w) => x + (w.m || 0), 0);
     if (m) flashInfo('×' + m);
     // o valor do prémio aparece em cima dos símbolos que pagaram
-    const gb = grid.getBoundingClientRect(), bs = cells.map((el) => el.getBoundingClientRect());
+    const gb = grid.closest('.slot').querySelector('.sfxl').getBoundingClientRect(), bs = cells.map((el) => el.getBoundingClientRect());
     const cx = bs.reduce((x, b) => x + b.left + b.width / 2, 0) / bs.length - gb.left, cy = bs.reduce((x, b) => x + b.top + b.height / 2, 0) / bs.length - gb.top;
     const tag = h('b', { class: 'swpop num', style: `left:${Math.max(40, Math.min(gb.width - 40, cx))}px;top:${cy}px` }, '+' + money(Math.floor((S.slotBase * pay) / 100)));
     grid.closest('.slot').querySelector('.sfxl').append(tag); setTimeout(() => tag.remove(), 1500);
@@ -1230,7 +1232,7 @@ async function slotAnim(r) {
   S.slotSkip = false; S.slotBase = r.base;
   const sl = document.querySelector('.slot'); if (sl) await tableFocus(sl);
   const sk = document.querySelector('.csbar .btn.buy');
-  if (sk) { sk.disabled = false; sk.textContent = t('slSkip'); sk.classList.replace('buy', 'skip'); sk.addEventListener('click', () => { S.slotSkip = true; }); }
+  if (sk) { sk.disabled = false; sk.replaceChildren(h('i', { class: 'stopi' })); sk.setAttribute('aria-label', t('slSkip')); sk.classList.replace('buy', 'skip'); const ml = document.querySelector('.smsgl'); if (ml) ml.textContent = t('slWinL'); sk.addEventListener('click', () => { S.slotSkip = true; }); }
   const grid = document.querySelector('.sgrid'), meter = document.querySelector('.swinm'), freeL = document.querySelector('.sfree');
   if (!grid) return;
   const cash = (c) => Math.floor((r.base * Math.min(c, G.max * 100)) / 100);
@@ -1300,18 +1302,25 @@ function slotBuy(g, kind) {
     h('button', { class: 'btn buy block big', disabled: !can, on: { click: () => { close(); play('slot', { game: g, amt: chip, buy: kind }, slotAnim); } } }, t('slBuyGo', { m: moneyShort(price) }))));
 }
 function screenSlotGame(page) {
-  const g = SLOT_OF[page], G = slotCfg(g), chip = chipNow(), last = S.slotLast?.[g];
-  const out = csHead(page);
-  out.push(h('div', { class: 'slot th-' + g }, h('div', { class: 'stop' }, h('span', { class: 'sfree' }), h('b', { class: 'swinm num' }, last ? money(last.win) : '$0'), h('span', { class: 'sinfo num' })), h('div', { class: 'sgw' }, slotGrid(g)), h('div', { class: 'sfxl' })));
-  if (last) out.push(csResult({ ...last, bet: last.bet }));
-  out.push(h('div', { class: 'row', style: 'gap:8px;margin:0 0 4px;flex-wrap:wrap' }, h('button', { class: 'btn ghost sm', on: { click: () => slotPaytable(g) } }, t('slTable')),
-    h('span', { class: 'small muted' }, t('slMaxWin', { x: num(G.max) }))));
-  out.push(h('div', { class: 'stick csbar' }, chipPicker(),
-    h('div', { class: 'row' }, h('button', { class: 'btn buy grow big', disabled: betMax() < S.cfg.casino.minBet || S.casinoBusy, on: { click: () => play('slot', { game: g, amt: chip }, slotAnim) } }, t('slSpin', { m: moneyShort(chip) }))),
-    h('div', { class: 'row brow', style: 'gap:8px' },
-      h('button', { class: 'btn ghost grow bbuy', disabled: S.casinoBusy, on: { click: () => slotBuy(g, 1) } }, t(G.superBuy ? 'slBuyS' : 'slBuy', { m: moneyShort(chip * G.buy) })),
-      G.superBuy ? h('button', { class: 'btn ghost grow bbuy', disabled: S.casinoBusy, on: { click: () => slotBuy(g, 2) } }, t('slBuySuperB', { m: moneyShort(chip * G.superBuy) })) : null)));
-  return out;
+  const g = SLOT_OF[page], G = slotCfg(g), last = S.slotLast?.[g], me = S.st.me, max = betMax(), min = S.cfg.casino.minBet;
+  const all = CHIPS.filter((c) => c <= max); if (max >= min && !all.includes(max)) all.push(max);
+  const chip = chipNow(), at = Math.max(0, all.findLastIndex((c) => c <= chip));
+  const setBet = (i) => { S.chip = all[i]; store.set('chip', all[i]); render(); };
+  const plq = (kind, label, mult) => h('button', { class: 'splq bbuy' + (kind === 2 ? ' sup' : ''), disabled: S.casinoBusy, on: { click: () => slotBuy(g, kind) } }, h('span', null, label), h('b', { class: 'num' }, moneyShort(chip * mult)));
+  return [
+    h('div', { class: 'slot th-' + g },
+      h('div', { class: 'shead', style: `background-image:url(${IMG('cenas', PLACES[page].img, 1)})` }, h('button', { class: 'sback', 'aria-label': t('p_casino'), on: { click: () => go(upOf(page)) } }, '←'), h('h1', { class: 'slogo' }, t('p_' + page)), h('span', { class: 'sup2' }, t('slUpTo', { x: num(G.max) }))),
+      h('div', { class: 'sfr' }, h('div', { class: 'stop' }, h('span', { class: 'sfree' }), h('span', { class: 'sinfo num' })), h('div', { class: 'sgw' }, slotGrid(g)), h('div', { class: 'sfxl' })),
+      h('div', { class: 'smsg' }, h('span', { class: 'smsgl' }, last ? t('slWinL') : t('slGood')), h('b', { class: 'swinm num' }, last ? money(last.win) : '')),
+      h('div', { class: 'csbar sctl' },
+        h('div', { class: 'brow' }, plq(1, t('slBuyL'), G.buy), G.superBuy ? plq(2, t('slSuperL'), G.superBuy) : null),
+        h('div', { class: 'srow' },
+          h('div', { class: 'sbet' }, h('button', { class: 'sbb', 'aria-label': '−', disabled: at <= 0, on: { click: () => setBet(at - 1) } }, '−'),
+            h('div', null, h('small', null, t('slBetL')), h('b', { class: 'num' }, moneyShort(chip))),
+            h('button', { class: 'sbb', 'aria-label': '+', disabled: at >= all.length - 1, on: { click: () => setBet(at + 1) } }, '+')),
+          h('button', { class: 'btn buy sspin', 'aria-label': t('slSpin', { m: moneyShort(chip) }), disabled: max < min || S.casinoBusy, on: { click: () => play('slot', { game: g, amt: chip }, slotAnim) } }, icon('refresh')),
+          h('button', { class: 'sib', on: { click: () => slotPaytable(g) } }, h('b', null, 'i'), h('small', null, t('slInfo')))),
+        h('div', { class: 'scred' }, h('span', null, t('csInHand') + ' '), h('b', { class: 'num c-cash' }, money(me.cash)), h('span', null, ' · ' + t('slBetL') + ' '), h('b', { class: 'num' }, money(chip)))))];
 }
 function slotPaytable(g) {
   const G = slotCfg(g), x = (v) => (v / 100).toString().replace('.', lang() === 'pt' ? ',' : '.') + '×';
