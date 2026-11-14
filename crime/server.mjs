@@ -20,6 +20,7 @@ const SECURE = process.env.COOKIE_INSEGURO ? '' : '; Secure';
 const [fy, fm, fd] = (process.env.PRIMEIRA_RONDA || '2026-11-13').split('-').map(Number);
 const FIRST = { y: fy, m: fm, d: fd };
 const rng = cryptoRng();
+const ATOS_3S = +(process.env.ATOS_3S || 15), ATOS_MIN = +(process.env.ATOS_MIN || 400); // ações por conta: 15 em 3 s, 400 por minuto
 
 // ---------- relógio que nunca anda para trás ----------
 let lastNow = 0;
@@ -120,10 +121,10 @@ function vista(p, now) {
     name: nomeDe(p.id),
     stats: p.stats, energy: p.energy, energyT: p.energyT,
     addiction: p.addiction, addictionT: p.addictionT, addictionCap: E.addictionCap(p),
-    refill: E.refillPlan(p), detox: p.addiction > 0 ? E.detoxCost(p, now) : 0, detoxUses: p.detoxT.length,
+    refill: E.refillPlan(p), detox: p.addiction > 0 ? E.detoxCost(p, now) : 0, detoxUses: E.detoxUses(p, now),
     mission: E.mission(p), wk: p.wk, stars: p.wk.map((_, k) => E.masteryStars(p, k)), counters: p.c,
     xp: p.xp, xpNeed: { F: E.practiceNeed(p, 'F'), I: E.practiceNeed(p, 'I'), C: E.practiceNeed(p, 'C') },
-    cash: p.cash, bank: p.bank, respect: p.respect, peakRespect: p.peakRespect,
+    cash: p.cash, bank: p.bank, bankFeeBp: E.bankFeeBp(p), respect: p.respect, peakRespect: p.peakRespect,
     level: L, levelFrom: CFG.levels[L - 1], levelTo: CFG.levels[L] ?? null,
     jailUntil: p.jailUntil, jailTier: p.jailTier, bail: E.bailCost(p, now),
     hospUntil: p.hospUntil, medic: E.medicCost(p, now),
@@ -131,7 +132,8 @@ function vista(p, now) {
     weapon: p.weapon, armor: p.armor, luxuries: p.luxuries, luxuryPrice: E.luxuryPrice(p),
     attack: E.attackPower(p, now), defense: E.defensePower(p, now),
     crimes: CFG.crimes.map((c, k) => ({ chance: E.crimeChanceBp(p, k, now), unlocked: E.crimeUnlocked(p, k) })),
-    sick: p.sick, cure: E.cureCost(p), hookers: CFG.hookers.list.map((_, i) => E.hookerPrice(p, i, now)), hkUses: p.hkT.length,
+    sick: p.sick, cure: E.cureCost(p), hookers: CFG.hookers.list.map((_, i) => E.hookerPrice(p, i, now)), hkUses: E.hookerUses(p, now),
+    house: p.house, hu: p.hu, housePrice: E.housePrice(p), huPrices: CFG.house.ups.map((_, u) => E.upgradePrice(p, u)),
     cls: p.cls, av: p.av, fx: E.activeFx(p, now), drugPrices: CFG.drugs.map((_, d) => E.drugPrice(p, d)),
     biz: p.biz.map((s, i) => ({ n: s.n, stored: stored[i].money, perH: E.bizRates(p, i).perH, price: s.n < CFG.bizMax ? E.bizPrice(i, s.n) : null, t: s.t })),
     port: p.port, portCap: E.portCap(p), portSlots: E.portSlots(p),
@@ -144,7 +146,7 @@ function cfgPublica() {
     biz: CFG.biz.map(({ id, price, perH, resp, stat, raid, toBank }) => ({ id, price, perH, resp, stat, raid, toBank })),
     bizMax: CFG.bizMax, storageMs: CFG.storageMs, port: CFG.port, weapons: CFG.weapons, armors: CFG.armors,
     pvp: CFG.pvp, bank: CFG.bank, luxury: CFG.luxury, levels: CFG.levels, crit: CFG.crit, unlockBp: CFG.unlockBp,
-    bustBp: CFG.bustBp, classes: CFG.classes, avatars: CFG.avatars, hookers: CFG.hookers, mastery: CFG.mastery, missions: CFG.missions.length, start: CFG.start,
+    bustBp: CFG.bustBp, classes: CFG.classes, avatars: CFG.avatars, hookers: CFG.hookers, house: CFG.house, mastery: CFG.mastery, missions: CFG.missions.length, start: CFG.start,
     round: { playDays: CFG.round.playDays, noPvpMs: CFG.round.noPvpMs },
   };
 }
@@ -212,7 +214,7 @@ function lerCorpo(req) {
   return new Promise((resolve, reject) => {
     let n = 0; const partes = [];
     req.on('data', (c) => { n += c.length; if (n > 8192) { reject(new Error('GRANDE')); req.destroy(); } else partes.push(c); });
-    req.on('end', () => { try { resolve(n ? JSON.parse(Buffer.concat(partes).toString('utf8')) : {}); } catch { reject(new Error('JSON')); } });
+    req.on('end', () => { try { const o = n ? JSON.parse(Buffer.concat(partes).toString('utf8')) : {}; resolve(o && typeof o === 'object' && !Array.isArray(o) ? o : {}); } catch { reject(new Error('JSON')); } });
     req.on('error', reject);
   });
 }
@@ -241,6 +243,8 @@ function agir(conta, corpo, now) {
     case 'refill': r = E.refill(p, now, world); break;
     case 'hooker': r = E.visitHooker(p, now, world, int(a.i), rng); break;
     case 'cure': r = E.cure(p, now, world); break;
+    case 'house': r = E.buyHouse(p, now, world); break;
+    case 'houseUp': r = E.buyUpgrade(p, now, world, int(a.u)); break;
     case 'class': r = E.setClass(p, now, world, String(a.id)); break;
     case 'avatar': r = E.setAvatar(p, now, world, int(a.i)); break;
     case 'detox': r = E.detox(p, now, world); break;
@@ -398,21 +402,23 @@ async function tratar(req, res) {
     return enviar(res, 200, { ok: true });
   }
   if (req.method === 'POST' && path === '/api/act') {
-    if (!limite('act:' + conta, 15, 3000, now) || !limite('actm:' + conta, 400, 60_000, now)) return enviar(res, 429, { error: 'SLOW_DOWN' });
+    if (!limite('act:' + conta, ATOS_3S, 3000, now) || !limite('actm:' + conta, ATOS_MIN, 60_000, now)) return enviar(res, 429, { error: 'SLOW_DOWN' });
     let b; try { b = await lerCorpo(req); } catch { return enviar(res, 400, { error: 'BAD_REQUEST' }); }
+    const agora = clock(), wa = mundo(agora);
     const rid = typeof b.rid === 'string' && b.rid.length <= 40 ? b.rid : null;
     let mem = recentes.get(conta);
     if (!mem) { mem = new Map(); recentes.set(conta, mem); }
     if (rid && mem.has(rid)) return enviar(res, 200, mem.get(rid));
     try {
-      const out = { now, ...agir(conta, b, now) };
+      const out = { now: agora, ...agir(conta, b, agora) };
       if (rid) { mem.set(rid, out); if (mem.size > 30) mem.delete(mem.keys().next().value); }
       return enviar(res, 200, out);
     } catch (e) {
       if (e instanceof E.GameError) {
         const { code, ...extra } = e; delete extra.message;
-        const p = w.phase === 'play' ? jogadorDe(conta, now, w) : null;
-        return enviar(res, 400, { error: code, ...extra, now, me: p ? vista(p, now) : null });
+        const p = wa.phase === 'play' ? jogadorDe(conta, agora, wa) : null;
+        if (p) { try { E.touch(p, agora); } catch { /* fica como está */ } }
+        return enviar(res, 400, { error: code, ...extra, now: agora, me: p ? vista(p, agora) : null });
       }
       throw e;
     }

@@ -38,7 +38,7 @@ export function newPlayer(id, now, world, opts = {}) {
     wk: CFG.crimes.map(() => 0),   // sucessos por golpe (mestria)
     c: { crimes: 0, wins: 0, trains: 0, refills: 0, collects: 0, pvpWins: 0, ports: 0 },
     mi: 0,                         // próximo objetivo por receber
-    cls: '', av: 0, fx: {}, sick: false, hkT: [],        // profissão, avatar e efeitos temporários (kind -> { bp, until })
+    cls: '', av: 0, fx: {}, sick: false, hkT: [], house: 0, hu: CFG.house.ups.map(() => 0),        // profissão, avatar e efeitos temporários (kind -> { bp, until })
   };
 }
 
@@ -54,6 +54,8 @@ function migrate(p) {
   if (!p.fx || typeof p.fx !== 'object') p.fx = {};
   if (typeof p.sick !== 'boolean') p.sick = false;
   if (!Array.isArray(p.hkT)) p.hkT = [];
+  if (!Number.isSafeInteger(p.house)) p.house = 0;
+  if (!Array.isArray(p.hu)) p.hu = CFG.house.ups.map(() => 0);
 }
 
 // ---------- tempo ----------
@@ -164,7 +166,32 @@ export function setAvatar(p, now, world, i) {
   p.av = i;
   return { ok: true, av: i };
 }
-export function bustChanceBp(p, now) { return cut(cut(CFG.bustBp, klass(p).bustCutBp || 0), buffBp(p, 'bust', now)); }
+const huBp = (p, i) => (p.hu ? p.hu[i] * CFG.house.ups[i].bp : 0);
+export function bustChanceBp(p, now) { return cut(cut(cut(CFG.bustBp, klass(p).bustCutBp || 0), buffBp(p, 'bust', now)), huBp(p, 2)); }
+// ---------- casa ----------
+export function housePrice(p) { const n = CFG.house.tiers[p.house + 1]; return n ? n.price : null; }
+export function buyHouse(p, now, world) {
+  begin(p, now, world, { allowBusy: true });
+  const n = CFG.house.tiers[p.house + 1];
+  if (!n) fail('HOUSE_MAX');
+  pay(p, n.price);
+  p.house += 1;
+  return { ok: true, price: n.price, respect: n.resp, levelUp: addRespect(p, n.resp, now) };
+}
+export function upgradePrice(p, u) {
+  const g = CFG.house.ups[u], n = CFG.house.tiers[p.hu[u] + 1];
+  return g && n ? Math.floor((n.price * g.costBp) / 10000) : null;
+}
+export function buyUpgrade(p, now, world, u) {
+  if (!Number.isInteger(u) || !CFG.house.ups[u]) fail('NO_UPGRADE');
+  begin(p, now, world, { allowBusy: true });
+  if (p.hu[u] >= p.house) fail('NEED_HOUSE');
+  const price = upgradePrice(p, u);
+  pay(p, price);
+  settleAllBiz(p, now); // o rendimento até aqui conta sem a melhoria nova
+  p.hu[u] += 1;
+  return { ok: true, price, level: p.hu[u] };
+}
 export function drugPrice(p, d) { return Math.max(1, cut(CFG.drugs[d].price, klass(p).drugCutBp || 0)); }
 
 export function chanceBp(S, D) {
@@ -220,6 +247,7 @@ export function doCrime(p, now, world, k, rng) {
   if (!crimeUnlocked(p, k)) fail('LOCKED');
   if (p.energy < c.e) fail('NO_ENERGY', { need: c.e });
   const bp = crimeChanceBp(p, k, now);
+  settleAllBiz(p, now); // a prática pode subir stats: o rendimento até aqui conta com as antigas
   p.energy -= c.e;
   // o primeiro carteirista de quem ainda não tem respeito nenhum corre sempre bem: a primeira jogada não pode ser a prisão
   const first = k === 0 && p.peakRespect === 0;
@@ -276,12 +304,14 @@ export function payMedic(p, now, world) {
 }
 
 // ---------- putas ----------
+const recent = (arr, now, win) => (now === undefined ? arr.length : arr.reduce((c, t) => c + (t > now - win ? 1 : 0), 0));
+export const hookerUses = (p, now) => recent(p.hkT, now, CFG.hookers.windowMs);
+export const detoxUses = (p, now) => recent(p.detoxT, now, CFG.detox.windowMs);
 function pruneHk(p, now) { const lim = now - CFG.hookers.windowMs; while (p.hkT.length && p.hkT[0] <= lim) p.hkT.shift(); }
 export function hookerPrice(p, i, now) {
-  if (now !== undefined) pruneHk(p, now);
   const H = CFG.hookers, g = H.list[i];
   let price = Math.max(g.min, Math.floor((Math.floor(valuePerEnergy(p) * 100) * g.e * g.valueBp) / 1000000));
-  const n = Math.min(p.hkT.length, H.maxSteps);
+  const n = Math.min(recent(p.hkT, now, H.windowMs), H.maxSteps); // só conta, não mexe: uma visita recusada não muda nada
   for (let k = 0; k < n; k++) price = Math.ceil((price * H.stepNum) / H.stepDen);
   return price;
 }
@@ -295,6 +325,7 @@ export function visitHooker(p, now, world, i, rng) {
   pay(p, price);
   const got = Math.min(g.e, CFG.energy.max - p.energy);
   p.energy += got;
+  pruneHk(p, now);
   if (p.hkT.length >= CFG.hookers.maxSteps) p.hkT.shift();
   p.hkT.push(now);
   const sick = rng.chance(g.sickBp);
@@ -371,7 +402,7 @@ export function refillPlan(p) {
       for (let d = 0; d < D.length; d++) {
         const ne = e + D[d].e, nv = v + D[d].a;
         if (ne > room || nv > vroom) continue;
-        const nc = c + D[d].price, k = ne * W + nv;
+        const nc = c + drugPrice(p, d), k = ne * W + nv;
         if (nc < cost[k]) { cost[k] = nc; from[k] = d; }
       }
     }
@@ -427,13 +458,12 @@ function pruneDetox(p, now) {
   const lim = now - CFG.detox.windowMs;
   while (p.detoxT.length && p.detoxT[0] <= lim) p.detoxT.shift();
 }
-// preço = (valor de 100 de energia para ti) × vício / 200, +50% por cada uso nas últimas 24 h
+// preço = (valor de 100 de energia para ti) × vício / 200, +25% por cada uso nas últimas 24 h
 export function detoxCost(p, now) {
-  if (now !== undefined) pruneDetox(p, now);
   const D = CFG.detox;
   const v100 = Math.floor(valuePerEnergy(p) * 100);
   let price = Math.max(D.min, Math.floor((v100 * p.addiction) / D.valueDiv));
-  const n = Math.min(p.detoxT.length, D.maxSteps);
+  const n = Math.min(recent(p.detoxT, now, D.windowMs), D.maxSteps);
   for (let i = 0; i < n; i++) price = Math.ceil((price * D.stepNum) / D.stepDen);
   return price;
 }
@@ -443,6 +473,7 @@ export function detox(p, now, world) {
   const price = detoxCost(p, now);
   pay(p, price);
   p.addiction = 0; p.addictionT = now;
+  pruneDetox(p, now);
   if (p.detoxT.length >= CFG.detox.maxSteps) p.detoxT.shift();
   p.detoxT.push(now);
   return { ok: true, price };
@@ -477,7 +508,7 @@ export function bizRates(p, i) {
   const b = CFG.biz[i];
   const n = p.biz[i].n;
   const st = Math.min(p.stats[b.stat], CFG.statMultCap);
-  const perH = up(Math.floor((b.perH * n * (CFG.statMultDiv + st)) / CFG.statMultDiv), klass(p).bizBp || 0);
+  const perH = up(Math.floor((b.perH * n * (CFG.statMultDiv + st)) / CFG.statMultDiv), (klass(p).bizBp || 0) + huBp(p, 3));
   return { perH };
 }
 
@@ -578,10 +609,11 @@ export function collectPort(p, now, world, rng) {
 
 // ---------- banco ----------
 
+export function bankFeeBp(p) { return cut(CFG.bank.feeBp, klass(p).feeCutBp || 0); }
 export function deposit(p, now, world, amount) {
   begin(p, now, world, { allowBusy: true });
   if (!Number.isSafeInteger(amount) || amount <= 0 || amount > p.cash) fail('BAD_AMOUNT');
-  const fee = Math.ceil((amount * cut(CFG.bank.feeBp, klass(p).feeCutBp || 0)) / 10000);
+  const fee = Math.ceil((amount * bankFeeBp(p)) / 10000);
   p.cash -= amount;
   p.bank += amount - fee;
   return { ok: true, fee };
@@ -612,6 +644,7 @@ export function buyLuxury(p, now, world) {
 // ---------- armas e proteções ----------
 
 export function buyGear(p, now, world, kind, idx) {
+  if (kind !== 'weapon' && kind !== 'armor') fail('NO_GEAR');
   const list = kind === 'weapon' ? CFG.weapons : CFG.armors;
   if (!Number.isInteger(idx) || !list[idx]) fail('NO_GEAR');
   begin(p, now, world);
@@ -623,7 +656,7 @@ export function buyGear(p, now, world, kind, idx) {
 
 const gearBp = (list, idx) => (idx >= 0 ? list[idx].bp : 0);
 export function attackPower(p, now) { return up(Math.floor((effStat(p, 'F', now) * (10000 + gearBp(CFG.weapons, p.weapon))) / 10000), klass(p).atkBp || 0); }
-export function defensePower(p, now) { return up(Math.floor((effStat(p, 'T', now) * (10000 + gearBp(CFG.armors, p.armor))) / 10000), klass(p).defBp || 0); }
+export function defensePower(p, now) { return up(Math.floor((effStat(p, 'T', now) * (10000 + gearBp(CFG.armors, p.armor))) / 10000), (klass(p).defBp || 0) + huBp(p, 1)); }
 
 // ---------- ataques ----------
 
@@ -672,7 +705,7 @@ export function mugValue(a, d, now) {
   const div = 2 ** Math.min(priorWins(a, d, now), 10);
   const st = bizStored(d, now);
   const take = (x) => Math.floor(Math.floor((x * CFG.pvp.mugBp) / 10000) / div);
-  let v = take(d.cash);
+  let v = take(cut(d.cash, huBp(d, 0)));
   for (let i = 0; i < st.length; i++) if (CFG.biz[i].raid) v += take(st[i].money);
   return v;
 }
@@ -715,7 +748,7 @@ export function attack(a, d, now, world, mode, rng) {
     } else {
       settleAllBiz(d, now);
       const take = (x) => Math.floor(Math.floor((x * P.mugBp) / 10000) / div);
-      let stolen = take(d.cash);
+      let stolen = take(cut(d.cash, huBp(d, 0)));   // o cofre de casa guarda uma parte
       d.cash -= stolen;
       for (let i = 0; i < d.biz.length; i++) {
         if (!CFG.biz[i].raid) continue;
@@ -805,6 +838,8 @@ export function checkInvariants(p) {
   if (p.energyT > p.t || p.addictionT > p.t) bad.push('timer in future');
   if (p.cls !== '' && !CFG.classes.some((c) => c.id === p.cls)) bad.push('class');
   if (typeof p.sick !== 'boolean') bad.push('sick');
+  if (!Number.isSafeInteger(p.house) || p.house < 0 || p.house >= CFG.house.tiers.length) bad.push('house');
+  if (!Array.isArray(p.hu) || p.hu.length !== CFG.house.ups.length || p.hu.some((n) => !Number.isSafeInteger(n) || n < 0 || n > p.house)) bad.push('house upgrades');
   if (!Array.isArray(p.hkT) || p.hkT.length > CFG.hookers.maxSteps) bad.push('hooker list');
   if (!Number.isSafeInteger(p.av) || p.av < 0 || p.av >= CFG.avatars) bad.push('avatar');
   for (const k of Object.keys(p.fx)) { const f = p.fx[k]; if (!CFG.fxKinds.includes(k) || !Number.isSafeInteger(f.bp) || f.bp <= 0 || !Number.isSafeInteger(f.until)) bad.push('fx ' + k); }

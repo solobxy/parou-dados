@@ -6,11 +6,13 @@ import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import net from 'node:net';
 
 const AQUI = dirname(fileURLToPath(import.meta.url));
 const PORT = 3900 + Math.floor(Math.random() * 90);
 const BASE = `http://127.0.0.1:${PORT}`;
 let dir, srv;
+let ENV_EXTRA = {};
 
 // sexta-feira mais recente às 21:00 de Lisboa já passada há mais de 1 h (para haver ataques)
 function sextaRecente() {
@@ -22,7 +24,7 @@ function sextaRecente() {
 
 async function arrancar() {
   srv = spawn(process.execPath, [join(AQUI, '..', 'server.mjs')], {
-    env: { ...process.env, PORT: String(PORT), DATA: dir, COOKIE_INSEGURO: '1', PRIMEIRA_RONDA: sextaRecente() },
+    env: { ...process.env, PORT: String(PORT), DATA: dir, COOKIE_INSEGURO: '1', PRIMEIRA_RONDA: sextaRecente(), ...ENV_EXTRA },
     stdio: ['ignore', 'pipe', 'pipe'],
   });
   srv.stderr.on('data', (d) => { const s = String(d); if (!s.includes('ExperimentalWarning') && !s.includes('trace-warnings')) process.stderr.write(s); });
@@ -146,4 +148,77 @@ test('logout acaba a sessão', async () => {
   await a('POST', '/api/logout');
   assert.equal((await a('GET', '/api/state')).body.account, null);
   assert.equal((await a('POST', '/api/act', { type: 'crime', k: 0 })).status, 401);
+});
+
+// ---------- batota ----------
+const cru = async (cookie, ipFalso, body, bruto) => {
+  const r = await fetch(BASE + '/api/act', { method: 'POST', headers: { 'Content-Type': 'application/json', cookie, 'X-Forwarded-For': ipFalso }, body: bruto ?? JSON.stringify(body) });
+  return { status: r.status, body: await r.json() };
+};
+async function contaNova(nome, ipFalso) {
+  const r = await fetch(BASE + '/api/register', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Forwarded-For': ipFalso }, body: JSON.stringify({ name: nome, password: 'segredo123' }) });
+  assert.equal(r.status, 200);
+  const cookie = r.headers.get('set-cookie').split(';')[0];
+  const estado = async () => (await (await fetch(BASE + '/api/state', { headers: { cookie, 'X-Forwarded-For': ipFalso } })).json()).me;
+  return { cookie, estado };
+}
+
+test('batota: valores hostis nunca dão erro do servidor nem criam dinheiro, respeito ou stats', async () => {
+  await parar(); ENV_EXTRA = { ATOS_3S: '100000', ATOS_MIN: '1000000' }; await arrancar();
+  const { cookie, estado } = await contaNova('Batoteiro', '10.0.9.1');
+  const antes = await estado();
+  const hostis = [-1, -100000, 0.5, 1e21, 2 ** 53, '5', '0', null, [], [0], {}, true, '__proto__', 'constructor', 'toString', 'cash', -1e-7];
+  const tipos = ['deposit', 'withdraw', 'port', 'gear', 'buyBiz', 'drug', 'hooker', 'houseUp', 'avatar', 'class', 'train', 'crime', 'attack', 'luxury', 'house', 'claim', 'bail', 'medic', 'cure', 'detox', 'refill', '__proto__', 'constructor', 'toString', null, 7];
+  let n = 0;
+  for (const type of tipos) for (const v of hostis) {
+    const r = await cru(cookie, n % 2 ? '10.0.9.1' : '10.0.9.3', { type, amount: v, k: v, d: v, i: v, u: v, idx: v, kind: v, stat: v, id: v, target: v, mode: v });
+    assert.ok(r.status === 400, `${type} ${JSON.stringify(v)} -> ${r.status} ${JSON.stringify(r.body).slice(0, 120)}`);
+    n++;
+  }
+  // corpos que nem são um objeto
+  for (const bruto of ['null', '5', '"x"', '[]', '[{"type":"crime","k":0}]', '{"type":"crime","k":0,', '']) {
+    const r = await cru(cookie, '10.0.9.1', null, bruto);
+    assert.equal(r.status, 400, bruto);
+  }
+  const depois = await estado();
+  assert.equal(depois.cash + depois.bank, antes.cash + antes.bank);
+  assert.equal(depois.respect, 0);
+  assert.deepEqual(depois.stats, antes.stats);
+  assert.equal(depois.energy, antes.energy);
+  assert.equal(depois.house, 0); assert.equal(depois.luxuries, 0); assert.equal(depois.weapon, -1);
+});
+
+test('batota: 30 depósitos ao mesmo tempo só depositam uma vez', async () => {
+  const { cookie, estado } = await contaNova('Duplicador', '10.0.9.4');
+  const antes = await estado();
+  const rs = await Promise.all(Array.from({ length: 30 }, () => cru(cookie, '10.0.9.4', { type: 'deposit', amount: antes.cash })));
+  assert.equal(rs.filter((r) => r.status === 200).length, 1);
+  const depois = await estado();
+  const taxa = Math.ceil(antes.cash * 0.03);
+  assert.equal(depois.cash, 0);
+  assert.equal(depois.bank, antes.cash - taxa);
+});
+
+test('batota: o mesmo pedido repetido (mesmo rid) só conta uma vez, mesmo em paralelo', async () => {
+  const { cookie, estado } = await contaNova('Repetidor', '10.0.9.5');
+  const rs = await Promise.all(Array.from({ length: 20 }, () => cru(cookie, '10.0.9.5', { type: 'crime', k: 0, rid: 'igual-1' })));
+  assert.ok(rs.every((r) => r.status === 200));
+  const me = await estado();
+  assert.equal(me.counters.crimes, 1);
+  assert.equal(me.energy, 95);
+});
+
+test('batota: segurar o pedido não deixa agir no passado (a hora é a de quando o pedido acaba de chegar)', async () => {
+  const { cookie } = await contaNova('Atrasado', '10.0.9.6');
+  const corpo = JSON.stringify({ type: 'crime', k: 0 });
+  let enviado = 0;
+  const resposta = await new Promise((resolve, reject) => {
+    const s = net.connect(PORT, '127.0.0.1'); let buf = '';
+    s.on('data', (d) => { buf += d; }); s.on('end', () => resolve(buf)); s.on('error', reject);
+    s.write(`POST /api/act HTTP/1.1\r\nHost: x\r\nContent-Type: application/json\r\nCookie: ${cookie}\r\nX-Forwarded-For: 10.0.9.6\r\nConnection: close\r\nContent-Length: ${Buffer.byteLength(corpo)}\r\n\r\n`);
+    setTimeout(() => { enviado = Date.now(); s.write(corpo); }, 700);
+  });
+  const out = JSON.parse(resposta.slice(resposta.indexOf('{'), resposta.lastIndexOf('}') + 1));
+  assert.equal(out.result.success, true);
+  assert.ok(out.now >= enviado - 20, `hora da ação ${out.now} anterior ao envio do corpo ${enviado}`);
 });

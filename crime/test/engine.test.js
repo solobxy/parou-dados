@@ -555,3 +555,22 @@ test('putas: stamina sem vício, preço sobe a cada visita, doença trata-se no 
   assert.throws(() => E.visitHooker(p, START, W, 0, never), (e) => e.code === 'ENERGY_FULL');
   assert.deepEqual(E.checkInvariants(p), []);
 });
+
+test('casa: sobe de nível, dá respeito e as melhorias não passam o nível da casa', () => {
+  const p = mk(); p.cash = 1e9;
+  assert.throws(() => E.buyUpgrade(p, START, W, 0), (e) => e.code === 'NEED_HOUSE');
+  const r = E.buyHouse(p, START, W);
+  assert.equal(p.house, 1); assert.equal(r.respect, CFG.house.tiers[1].resp); assert.equal(p.respect, CFG.house.tiers[1].resp);
+  const b0 = E.bustChanceBp(p, START), d0 = E.defensePower(p, START);
+  E.buyUpgrade(p, START, W, 2); E.buyUpgrade(p, START, W, 1);
+  assert.ok(E.bustChanceBp(p, START) < b0); assert.ok(E.defensePower(p, START) >= d0);
+  assert.throws(() => E.buyUpgrade(p, START, W, 2), (e) => e.code === 'NEED_HOUSE');
+  // o cofre guarda parte do dinheiro num assalto
+  const d = mk(), a = mk(); d.cash = 100000; setResp(d, 500); setResp(a, 500);
+  const semCofre = E.mugValue(a, d, START);
+  d.house = 3; d.hu[0] = 3;
+  assert.ok(E.mugValue(a, d, START) < semCofre);
+  while (E.housePrice(p) !== null) E.buyHouse(p, START, W);
+  assert.throws(() => E.buyHouse(p, START, W), (e) => e.code === 'HOUSE_MAX');
+  assert.deepEqual(E.checkInvariants(p), []); assert.deepEqual(E.checkInvariants(d), []);
+});

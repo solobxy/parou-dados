@@ -605,3 +605,23 @@ body.light .bscene .tick { display: none; }
 .c-red svg.i, .item .small.muted svg.i { width: 12px; height: 12px; vertical-align: -2px; margin-right: 3px; }
 @media (prefers-reduced-motion: reduce) { .pmap .wave, .pmap .ping { animation: none; } }
 body.light .pmap .wave, body.light .pmap .ping { animation: none; }
+
+/* ================= casa ================= */
+.jobp.home .jimg { height: 240px; background: #0d1118; }
+.nexth { display: flex; gap: 12px; align-items: center; }
+.nexth .nximg { width: 72px; height: 72px; border-radius: 10px; object-fit: cover; flex: none; }
+.nexth .nm { font-family: var(--disp); font-weight: 800; font-size: 22px; line-height: 1.05; text-transform: uppercase; }
+.hups { position: absolute; top: 10px; right: 10px; z-index: 1; display: flex; gap: 6px; }
+.hup { display: inline-flex; align-items: center; gap: 4px; height: 28px; padding: 0 8px; border-radius: 14px; background: rgba(8, 10, 14, .78); color: #5d6675; font-size: 13px; }
+.hup.on { color: var(--sodium); }
+.hup svg.i { width: 15px; height: 15px; }
+.hup b { font-weight: 700; color: #fff; font-variant-numeric: tabular-nums; }
+.item.up { text-align: left; gap: 8px; padding: 12px; }
+.uhead { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.uhead .nm { font-size: 18px; min-width: 0; }
+.uic { width: 34px; height: 34px; border-radius: 9px; background: var(--s2); color: var(--sodium); display: grid; place-items: center; flex: none; }
+.uic svg.i { width: 20px; height: 20px; }
+.pips { display: flex; gap: 3px; }
+.pips i { flex: 1; height: 6px; border-radius: 3px; background: var(--s2); }
+.pips i.av { background: #46505f; }
+.pips i.on { background: var(--sodium); }

@@ -71,6 +71,20 @@ export const CFG = {
     { id: 'seguranca',  defBp: 2500, hospCutBp: 5000 },                  // defesa, hospital a metade
   ],
   avatars: 32,
+  // casa: cada nível dá respeito e deixa subir as melhorias até esse nível; a melhoria n custa uma parte do preço da casa n
+  house: {
+    tiers: [
+      { id: 'rua', price: 0, resp: 0 }, { id: 'barraca', price: 2000, resp: 5 }, { id: 'quarto', price: 10000, resp: 15 },
+      { id: 'apartamento', price: 50000, resp: 40 }, { id: 'moradia', price: 250000, resp: 100 }, { id: 'vivenda', price: 1000000, resp: 250 },
+      { id: 'mansao', price: 5000000, resp: 600 }, { id: 'penthouse', price: 20000000, resp: 1500 },
+    ],
+    ups: [
+      { id: 'cofre', costBp: 2500, bp: 1000 },      // dinheiro a salvo dos assaltos, por nível
+      { id: 'alarme', costBp: 2500, bp: 400 },      // defesa quando te atacam
+      { id: 'garagem', costBp: 2500, bp: 400 },     // menos prisão ao falhar
+      { id: 'escritorio', costBp: 2500, bp: 200 },  // rendimento dos negócios
+    ],
+  },
   // putas: stamina sem vício; o preço segue o que ganhas por stamina e sobe 10% por cada visita nas últimas 24 h
   hookers: {
     windowMs: 24 * HOUR, stepNum: 11, stepDen: 10, maxSteps: 60,

@@ -53,6 +53,7 @@ const PATHS = {
   chat: 'M4 5h16v11H10l-5 4v-4H4z',
   target: 'M12 3a9 9 0 1 0 0.01 0M12 8a4 4 0 1 0 0.01 0M12 12h.01',
   box: 'M3 8l9-5 9 5v8l-9 5-9-5zM3 8l9 5 9-5M12 13v8',
+  car: 'M3 14l2-5h14l2 5v4H3zM6 18v2M18 18v2M7 14h.01M17 14h.01',
   skull: 'M12 3a8 8 0 0 0-8 8v3l2 2v4h12v-4l2-2v-3a8 8 0 0 0-8-8zM9 11h.01M15 11h.01M10 20v-3M14 20v-3',
 };
 const FILLED = new Set(['bolt', 'crown']);
