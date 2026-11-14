@@ -44,14 +44,14 @@ def logotipo():
     asc, desc = 760, -230
     # argola: círculo a atravessar o fundo do rabo do y
     xy, (x0, y0, x1, y1) = caixa_y
-    cx, cy, r = xy + x0 + 96, y0 - 62, 138
+    cx, cy, r = xy + x0 + 100, y0 - 70, 150
     largura = x - aperto
     fundo = -(cy - r - 30)
     vb = '0 %d %d %d' % (-asc, largura + 20, asc + fundo)
     corpo = ''.join(partes)
     svg = ('<svg xmlns="http://www.w3.org/2000/svg" viewBox="%s" role="img" aria-label="Dayla">'
-           '<circle class="aro-f" cx="%d" cy="%d" r="%d" fill="none" stroke="#101010" stroke-width="66"/>'
-           '<circle class="aro" cx="%d" cy="%d" r="%d" fill="none" stroke="#F7B8D2" stroke-width="36"/>'
+           '<circle class="aro-f" cx="%d" cy="%d" r="%d" fill="none" stroke="#101010" stroke-width="80"/>'
+           '<circle class="aro" cx="%d" cy="%d" r="%d" fill="none" stroke="#F2B5CB" stroke-width="48"/>'
            '<g transform="scale(1 -1)" fill="#101010">%s</g></svg>') % (vb, cx, -cy, r, cx, -cy, r, corpo)
     return svg, (cx, -cy, r)
 
@@ -112,11 +112,12 @@ def galeria_html(lang):
 
 
 # Projetos reais da Dayla com os pontos de cada piercing (em % da foto, que é mostrada inteira, 2:3)
+# 'anel': círculo oco à volta da joia; 'ponto': ponto rosa ao lado de um grupo (sem tapar as joias) com a etiqueta
 PROJETOS = [
     {'img': '/img/t-flat-4-lobulos.webp', 'nome': 'proj_ex1', 'servicos': ['flat', 'lobulo'],
-     'pinos': [(47.1, 40.5, 'p_flat'), (28.1, 66.9, None), (34.1, 65.6, None), (38.2, 63.9, None), (41.7, 62.3, 'p_lobulo4')]},
+     'pinos': [('anel', 47.1, 40.5, 'p_flat'), ('ponto', 46.0, 61.4, 'p_lobulo4')]},
     {'img': '/img/t-flat-lobulos.webp', 'nome': 'proj_ex2', 'servicos': ['flat', 'lobulo'],
-     'pinos': [(59.6, 37.5, 'p_flat'), (32.8, 58.4, None), (42.2, 55.6, 'p_lobulo2')]},
+     'pinos': [('anel', 59.6, 37.5, 'p_flat'), ('ponto', 48.6, 56.6, 'p_lobulo2')]},
 ]
 
 
@@ -127,10 +128,10 @@ def quadro_proj(lang):
         imgs.append('<img src="%s" alt="%s" width="900" height="1351" loading="lazy" decoding="async"%s%s>' % (
             p['img'], html.escape(alt), ' class="fora"' if n else '', ' aria-hidden="true"' if n else ''))
         h = '<div class="pinos%s" aria-hidden="true">' % (' fora' if n else '')
-        for k, (x, y, rot) in enumerate(p['pinos']):
-            h += '<span class="pino" style="left:%.1f%%;top:%.1f%%;--k:%d"></span>' % (x, y, k)
+        for k, (tipo, x, y, rot) in enumerate(p['pinos']):
+            h += '<span class="%s" style="left:%.1f%%;top:%.1f%%;--k:%d"></span>' % ('pino' if tipo == 'anel' else 'ponto', x, y, k)
             if rot:
-                h += '<span class="etq-p" style="left:%.1f%%;top:%.1f%%">%s</span>' % (x, y, html.escape(T[rot][lang]))
+                h += '<span class="etq-p%s" style="left:%.1f%%;top:%.1f%%">%s</span>' % (' longe' if tipo == 'anel' else '', x, y, html.escape(T[rot][lang]))
         h += '</div>'
         pins.append(h)
     return ''.join(imgs) + ''.join(pins)
@@ -234,7 +235,7 @@ def construir(lang, logo):
         'outra_hreflang': 'en' if lang == 'pt' else 'pt-PT', 'og_locale': 'pt_PT' if lang == 'pt' else 'en_GB', 'lang': lang,
         'logo': logo, 'jsonld': jsonld(lang), 'h1_linhas': h1_linhas(lang),
         'facto2': html.escape({'pt': 'por marcação', 'en': 'by appointment'}[lang]), 'facto3': html.escape({'pt': 'PT / EN', 'en': 'EN / PT'}[lang]),
-        'tira_v': tira(2, 14, 9), 'tira_s': tira(2, 6, 7), 'faixa': faixa(), 'xadrez_bilhete': tira(6, 2, -1),
+        'tira_v': tira(2, 14, 9), 'tira_s': tira(2, 6, 7), 'faixa': faixa(), 'xadrez_m': tira(24, 2, -1), 'xadrez_d': tira(2, 6, -1),
         'galeria_html': galeria_html(lang), 'quadro_proj': quadro_proj(lang), 'proj_js': proj_js(lang),
         'proj_b1': {'pt': 'Projeto 1', 'en': 'Project 1'}[lang], 'proj_b2': {'pt': 'Projeto 2', 'en': 'Project 2'}[lang],
         'precos_html': precos_html(lang), 'cic_html': cic_html(lang), 'nota': html.escape(agenda.NOTA_PADRAO[lang]),
@@ -263,8 +264,8 @@ def main():
     with open(os.path.join(SITE, 'logo.svg'), 'w', encoding='utf-8') as f:
         f.write(logo)
     with open(os.path.join(SITE, 'logo-branco.svg'), 'w', encoding='utf-8') as f:
-        f.write(logo.replace('<g transform="scale(1 -1)" fill="#101010">', '<g transform="scale(1 -1)" fill="#F4F3F0">').replace('stroke="#101010" stroke-width="66"', 'stroke="#0A0A0A" stroke-width="66"'))
-    logo_inline = logo.replace('<svg xmlns="http://www.w3.org/2000/svg" ', '<svg ').replace('role="img" aria-label="Dayla"', 'aria-hidden="true" focusable="false"').replace('<g transform="scale(1 -1)" fill="#101010">', '<g transform="scale(1 -1)" fill="currentColor">').replace('stroke="#101010" stroke-width="66"', 'stroke="#0A0A0A" stroke-width="66"')
+        f.write(logo.replace('<g transform="scale(1 -1)" fill="#101010">', '<g transform="scale(1 -1)" fill="#F4F3F0">').replace('stroke="#101010" stroke-width="80"', 'stroke="#0A0A0A" stroke-width="80"'))
+    logo_inline = logo.replace('<svg xmlns="http://www.w3.org/2000/svg" ', '<svg ').replace('role="img" aria-label="Dayla"', 'aria-hidden="true" focusable="false"').replace('<g transform="scale(1 -1)" fill="#101010">', '<g transform="scale(1 -1)" fill="currentColor">').replace('stroke="#101010" stroke-width="80"', 'stroke="#0A0A0A" stroke-width="80"')
     with open(os.path.join(SITE, 'icon.svg'), 'w', encoding='utf-8') as f:
         f.write(icone_svg())
     for lang, caminho in (('pt', 'index.html'), ('en', os.path.join('en', 'index.html'))):

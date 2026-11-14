@@ -53,7 +53,10 @@ with sync_playwright() as p:
                 r = pg.evaluate(JS)
                 pg.evaluate('scrollTo(0,0)')
                 pg.wait_for_timeout(300)
-                pg.screenshot(path=os.path.join(saida, '%s-%d-inteira.png' % (nome, n)), full_page=True)
+                try:
+                    pg.screenshot(path=os.path.join(saida, '%s-%d-inteira.png' % (nome, n)), full_page=True)
+                except Exception:
+                    pass  # páginas muito altas em ecrãs de densidade 3 passam o limite de 32767 px das capturas
                 ok = r['scroll'] <= r['largura'] and not r['fora'] and not erros
                 linhas.append('%s %s %s: %s %s %s' % ('OK ' if ok else 'MAU', nome, url, r, erros[:3], ''))
             except Exception as e:

@@ -1122,7 +1122,7 @@ Disallow: /
 	handle @escondidos {
 		respond 404
 	}
-	@estaticos path /fonts/* /og.jpg /logo.svg /icon.svg /apple-touch-icon.png /icon-192.png /icon-512.png
+	@estaticos path /fonts/* /img/* /vid/* /og.jpg /logo.svg /logo-branco.svg /icon.svg /apple-touch-icon.png /icon-192.png /icon-512.png
 	header @estaticos Cache-Control "public, max-age=2592000"
 	@paginas path / /index.html /en/ /en/index.html
 	header @paginas Cache-Control "no-cache"
