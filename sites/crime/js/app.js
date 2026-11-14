@@ -52,7 +52,7 @@ function act(type, args = {}, opts = {}) {
     try {
       const out = await api('POST', '/api/act', { type, ...args, rid: rid() });
       if (type === 'crime') { const wait = fx.dur(380) - (performance.now() - started); if (wait > 0) await new Promise((r) => setTimeout(r, wait)); }
-      S.st.me = out.me; S.stAt = now();
+      S.st.me = out.me; S.stAt = now(); if (out.feed) S.feed = out.feed;
       react(type, out, before, { ...opts, args });
       return out;
     } catch (e) {
@@ -185,7 +185,7 @@ function tickHud() {
   S.hud.etxt.replaceChildren(icon('bolt'), ' ' + L.energy + '/' + S.cfg.energy.max, h('small', null, L.nextE ? ' · ' + t('nextIn', { t: dur(L.nextE) }) : ''));
   S.hud.vbar.style.width = (L.vice / me.addictionCap) * 100 + '%';
   S.hud.vtxt.textContent = t('vice') + ' ' + L.vice + '/' + me.addictionCap;
-  tickShips();
+  tickShips(); tickNews();
   document.querySelectorAll('[data-left]').forEach((el) => { const left = +el.dataset.left - now(); el.textContent = dur(left); if (left <= 0 && el.dataset.re !== '1') { el.dataset.re = '1'; refresh(); } });
   document.querySelectorAll('[data-stored]').forEach((el) => { const i = +el.dataset.stored; const b = me.biz[i]; el.textContent = money(storedNow(b, i)); });
   document.querySelectorAll('[data-biz]').forEach((el) => {
@@ -219,7 +219,7 @@ const PLACES = {
 };
 const NAV = ['city', 'rob', 'club', 'biz', 'fights'];
 const GRID = ['rob', 'club', 'putas', 'gym', 'biz', 'port', 'arms', 'bank', 'hosp', 'alley', 'casa', 'fights', 'rank'];
-const IMG = (kind, id, big) => `/img/${kind}/${id}${big ? '-g' : ''}.webp?7`;
+const IMG = (kind, id, big) => `/img/${kind}/${id}${big ? '-g' : ''}.webp?8`;
 function go(tab) {
   if (!PLACES[tab]) tab = 'city';
   S.tab = tab; document.body.dataset.tab = tab; store.set('tab', tab);
@@ -340,6 +340,44 @@ function screenClass() {
 }
 
 // ---------- a cidade ----------
+// ---------- jornal da cidade: o que os outros andam a fazer ----------
+const NW_IC = { job: 'cash', jail: 'lock', house: 'empire', lux: 'crown', fight: 'skull', lvl: 'bolt' };
+function newsText(e) {
+  const C = list('crimes');
+  switch (e.k) {
+    case 'job': return t(e.crit ? 'nwCrit' : 'nwJob', { a: e.name, x: C[e.c], m: moneyShort(e.money) });
+    case 'jail': return t('nwJail', { a: e.name, x: C[e.c] });
+    case 'house': return t('nwHouse', { a: e.name, x: list('houses')[e.h] });
+    case 'lux': return t('nwLux', { a: e.name, x: list('lux')[e.i] });
+    case 'fight': return t(e.mode === 'mug' ? 'nwMug' : 'nwBeat', { a: e.name, b: e.target });
+    case 'lvl': return t('nwLvl', { a: e.name, x: list('titles')[e.n - 1] });
+    default: return '';
+  }
+}
+const newsIdx = (f) => Math.floor(now() / 5000) % f.length;
+function newsBar() {
+  const f = S.feed || [];
+  if (!f.length) return null;
+  const i = newsIdx(f), e = f[i];
+  return h('button', { class: 'news', 'data-news': String(i), 'aria-label': t('newsTitle'), on: { click: openNews } },
+    h('span', { class: 'nic' }, icon(NW_IC[e.k] || 'chat')), h('span', { class: 'ntx' }, newsText(e)), h('span', { class: 'nago muted' }, dur(now() - e.t)));
+}
+function tickNews() {
+  const el = document.querySelector('[data-news]'), f = S.feed || [];
+  if (!el || !f.length) return;
+  const i = newsIdx(f), e = f[i];
+  el.querySelector('.nago').textContent = dur(now() - e.t);
+  if (+el.dataset.news === i) return;
+  el.dataset.news = String(i);
+  el.querySelector('.nic').replaceChildren(icon(NW_IC[e.k] || 'chat'));
+  el.querySelector('.ntx').textContent = newsText(e);
+  el.classList.remove('swap'); void el.offsetWidth; el.classList.add('swap');
+}
+function openNews() {
+  const f = S.feed || [];
+  sheet(h('div', { class: 'stack' }, h('h2', null, t('newsTitle')),
+    ...f.map((e) => h('div', { class: 'row nrow' }, h('span', { class: 'nic' }, icon(NW_IC[e.k] || 'chat')), h('div', { class: 'grow' }, newsText(e)), h('span', { class: 'small muted' }, dur(now() - e.t))))));
+}
 function screenCity() {
   const me = S.st.me, L = live(me), n = now();
   const badge = {
@@ -352,11 +390,11 @@ function screenCity() {
   };
   const ids = L.jail ? ['jail', ...GRID] : GRID;
   const r = S.st.round;
-  return [h('h1', { class: 'sr' }, t('p_city')),
+  return [h('h1', { class: 'sr' }, t('p_city')), newsBar(),
     h('div', { class: 'tiles' }, ids.map((id) => h('button', { class: 'tile', on: { click: () => go(id) } },
       h('img', { src: id === 'casa' ? IMG('casa', S.cfg.house.tiers[me.house].id) : IMG('cenas', PLACES[id].img), alt: '', width: 600, height: 600, loading: 'lazy', decoding: 'async', on: { error: (e) => e.currentTarget.remove() } }),
       h('span', { class: 'lbl' }, t('p_' + id)), badge[id] ? h('span', { class: 'bdg' }, badge[id]) : null))),
-    h('p', { class: 'small muted', style: 'text-align:center;margin-top:16px' }, t('roundEnds', { n: r.n + 1, t: dur(r.playEnd - n) }))];
+    h('p', { class: 'small muted', style: 'text-align:center;margin-top:16px' }, t('roundEnds', { n: r.n + 1, t: dur(r.playEnd - n) }))].filter(Boolean);
 }
 
 // ---------- golpes ----------
@@ -783,7 +821,7 @@ async function showLanding(st) {
   if (!info) { try { const r = await fetch('/api/saude'); info = await r.json(); } catch {} }
   const langsw = h('div', { class: 'langsw' }, [['en', 'EN'], ['pt', 'PT']].map(([l, n]) => h('button', { 'aria-pressed': lang() === l ? 'true' : 'false', on: { click: () => { applyLang(l); showLanding(info ? { players: info.jogadores, round: info.round } : null); } } }, n)));
   $app.replaceChildren(langsw, h('div', { class: 'land' },
-    h('div', { class: 'land-art', 'aria-hidden': 'true' }, h('img', { src: '/img/cenas/entrada-g.webp?7', alt: '', width: 800, height: 800, fetchpriority: 'high', decoding: 'async' })),
+    h('div', { class: 'land-art', 'aria-hidden': 'true' }, h('img', { src: '/img/cenas/entrada-g.webp?8', alt: '', width: 800, height: 800, fetchpriority: 'high', decoding: 'async' })),
     h('div', { class: 'word neon', 'aria-label': 'Crime' }, 'Crime'),
     h('p', { class: 'tag' }, t('tagline')),
     info ? h('div', { class: 'meta' },
@@ -847,7 +885,7 @@ function skyline(level) {
 async function refresh() {
   try {
     const st = await api('GET', '/api/state');
-    S.st = st; S.stAt = now();
+    S.st = st; S.stAt = now(); if (st.feed) S.feed = st.feed;
     if (st.account?.lang && !store.get('lang')) applyLang(st.account.lang);
     render();
   } catch {}
@@ -857,7 +895,7 @@ async function start() {
   [S.cfg] = await Promise.all([S.cfg || api('GET', '/api/config')]);
   const st = await api('GET', '/api/state');
   if (!st.account) { S.st = null; return showLanding(st); }
-  S.st = st; S.stAt = now();
+  S.st = st; S.stAt = now(); if (st.feed) S.feed = st.feed;
   $main = null;
   S.tab = store.get('tab', 'city');
   render();

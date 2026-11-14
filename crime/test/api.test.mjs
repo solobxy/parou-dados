@@ -222,3 +222,12 @@ test('batota: segurar o pedido não deixa agir no passado (a hora é a de quando
   assert.equal(out.result.success, true);
   assert.ok(out.now >= enviado - 20, `hora da ação ${out.now} anterior ao envio do corpo ${enviado}`);
 });
+
+test('jornal da cidade: uma luta ganha aparece para todos, sem dados privados', async () => {
+  const st = await (await fetch(BASE + '/api/state', { headers: { 'X-Forwarded-For': '10.0.9.9' } })).json();
+  assert.ok(Array.isArray(st.feed));
+  for (const e of st.feed) {
+    assert.ok(['job', 'jail', 'house', 'lux', 'fight', 'lvl'].includes(e.k));
+    assert.deepEqual(Object.keys(e).filter((k) => !['t', 'k', 'name', 'c', 'money', 'crit', 'h', 'i', 'target', 'mode', 'n'].includes(k)), []);
+  }
+});

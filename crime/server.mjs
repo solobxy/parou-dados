@@ -60,6 +60,20 @@ const q = {
 const toJson = (p) => JSON.stringify(p, (k, v) => (v instanceof Map ? { __map: [...v] } : v));
 const fromJson = (s) => JSON.parse(s, (k, v) => (v && v.__map ? new Map(v.__map) : v));
 
+// jornal da cidade: o que os outros andam a fazer (só em memória, últimas 40 notícias)
+const jornal = [];
+function noticia(now, o) { jornal.push({ t: now, ...o }); if (jornal.length > 40) jornal.shift(); }
+const ultimas = () => jornal.slice(-12).reverse();
+function noticiar(now, a, r, p, alvo) {
+  const name = nomeDe(p.id), k = int(a.k);
+  if (a.type === 'crime' && r.success && (k >= 5 || (r.crit && k >= 2))) noticia(now, { k: 'job', name, c: k, money: r.money, crit: r.crit });
+  else if (a.type === 'crime' && r.busted && k >= 3) noticia(now, { k: 'jail', name, c: k });
+  else if (a.type === 'house') noticia(now, { k: 'house', name, h: p.house });
+  else if (a.type === 'luxury') noticia(now, { k: 'lux', name, i: p.luxuries - 1 });
+  else if (a.type === 'attack' && r.win) noticia(now, { k: 'fight', name, target: nomeDe(alvo.id), mode: r.mode });
+  if (r.levelUp && r.levelUp.to >= 4) noticia(now, { k: 'lvl', name, n: r.levelUp.to });
+}
+
 // jogadores da ronda em curso, em memória
 let ronda = -1;
 const jogadores = new Map(); // conta -> estado
@@ -73,7 +87,7 @@ function mundo(now) {
 function carregarRonda(n) {
   if (n === ronda) return;
   ronda = n;
-  jogadores.clear();
+  jogadores.clear(); jornal.length = 0;
   for (const r of q.daRonda.all(n)) jogadores.set(r.conta, fromJson(r.estado));
 }
 
@@ -281,13 +295,14 @@ function agir(conta, corpo, now) {
       evento(alvo.id, now, { k: 'attacked', by: nomeDe(p.id), mode: r.mode, win: r.win, respect: r.win ? -r.targetLoss : (r.defenderGain || 0), money: r.money || 0 });
     }
     db.exec('COMMIT');
+    noticiar(now, a, r, p, alvo);
   } catch (e) {
     db.exec('ROLLBACK');
     // o que ficou em memória deixa de ser de confiança: volta a ler da base de dados
     ronda = -1; carregarRonda(w.n);
     throw e;
   }
-  return { result: r, me: vista(p, now), target: alvo ? { name: nomeDe(alvo.id), respect: alvo.respect } : undefined };
+  return { result: r, me: vista(p, now), feed: ultimas(), target: alvo ? { name: nomeDe(alvo.id), respect: alvo.respect } : undefined };
 }
 
 // ---------- listas ----------
@@ -377,7 +392,7 @@ async function tratar(req, res) {
   // sem sessão, o estado responde na mesma (sem jogador) para a página de entrada não dar erro
   if (!conta && req.method === 'GET' && path === '/api/state') {
     const w0 = mundo(now);
-    return enviar(res, 200, { now, round: w0, account: null, me: null, rank: null, players: rankingAtual(now, w0).length });
+    return enviar(res, 200, { now, round: w0, account: null, me: null, rank: null, players: rankingAtual(now, w0).length, feed: ultimas() });
   }
   if (!conta) return enviar(res, 401, { error: 'LOGIN_REQUIRED' });
 
@@ -394,7 +409,7 @@ async function tratar(req, res) {
     if (p) E.touch(p, now);
     const rk = rankingAtual(now, w);
     const pos = rk.find((x) => x.id === conta)?.pos ?? null;
-    return enviar(res, 200, { now, round: w, account: { name: c?.nome, lang: c?.lingua }, me: p ? vista(p, now) : null, rank: pos, players: rk.length });
+    return enviar(res, 200, { now, round: w, account: { name: c?.nome, lang: c?.lingua }, me: p ? vista(p, now) : null, rank: pos, players: rk.length, feed: ultimas() });
   }
   if (req.method === 'POST' && path === '/api/lang') {
     let b; try { b = await lerCorpo(req); } catch { return enviar(res, 400, { error: 'BAD_REQUEST' }); }
