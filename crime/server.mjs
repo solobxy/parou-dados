@@ -20,7 +20,7 @@ const SECURE = process.env.COOKIE_INSEGURO ? '' : '; Secure';
 const [fy, fm, fd] = (process.env.PRIMEIRA_RONDA || '2026-11-13').split('-').map(Number);
 const FIRST = { y: fy, m: fm, d: fd };
 const rng = cryptoRng();
-const VERSAO = 21;   // sobe quando o servidor muda, para se confirmar de fora que a versão nova já está a correr
+const VERSAO = 22;   // sobe quando o servidor muda, para se confirmar de fora que a versão nova já está a correr
 const ATOS_3S = +(process.env.ATOS_3S || 15), ATOS_MIN = +(process.env.ATOS_MIN || 400); // ações por conta: 15 em 3 s, 400 por minuto
 
 // ---------- relógio que nunca anda para trás ----------
@@ -338,9 +338,9 @@ const qm = {
   porPagar: db.prepare('SELECT * FROM mesa_apostas WHERE win IS NULL'),
   limpar: db.prepare('DELETE FROM mesa_apostas WHERE win IS NOT NULL AND id < ?'),
 };
-const MESA_BET_MS = +(process.env.MESA_BET_MS || 20_000);
+const MESA_BET = (g) => (process.env.MESA_BET_MS ? +process.env.MESA_BET_MS : g === 'wheel' ? 8_000 : 20_000);   // tempo para apostar
 const MESA_SPIN = process.env.MESA_SPIN_MS ? () => +process.env.MESA_SPIN_MS
-  : (g, r) => (g === 'roulette' ? 12_500 : !r.bonus ? 18_000 : { moeda: 26_000, caixas: 29_500, bola: 24_000, louca: 28_500 }[r.s]);
+  : (g, r) => (g === 'roulette' ? 12_500 : !r.bonus ? 16_000 : { moeda: 25_500, caixas: 28_500, bola: 23_500, louca: 30_500 }[r.s]);   // tempo da jogada que todos veem
 const mesas = { roulette: { cur: null, hist: [], last: new Map() }, wheel: { cur: null, hist: [], last: new Map() } };
 const resCurto = (g, r) => (g === 'roulette' ? r.n : { s: r.s, m: r.mult });
 
@@ -393,7 +393,7 @@ function mesaDe(g, now) {
   if (m.cur && now >= m.cur.fecha && (m.cur.res === null || [...m.cur.bets.values()].some((b) => b.win === undefined))) fecharMesa(g, now);
   if (!m.cur || (m.cur.res !== null && now >= m.cur.prox)) {
     const abre = m.cur && now - m.cur.prox < 4000 ? m.cur.prox : now;   // com gente à mesa as rondas seguem-se sem intervalo
-    m.cur = { id: Math.max(Math.floor(abre / 100), (m.cur?.id || 0) + 1), abre, fecha: abre + MESA_BET_MS, prox: null, res: null, bets: new Map() };
+    m.cur = { id: Math.max(Math.floor(abre / 100), (m.cur?.id || 0) + 1), abre, fecha: abre + MESA_BET(g), prox: null, res: null, bets: new Map() };
   }
   return m;
 }

@@ -941,7 +941,7 @@ const rlCol = (n) => (n === 0 ? 'g' : S.cfg.casino.red.includes(n) ? 'r' : 'b');
 // ---------- mesas ao vivo: roleta e roda ----------
 // A ronda é a mesma para toda a gente. Cada toque numa casa põe logo a ficha na mesa (o dinheiro sai da mão);
 // quando as apostas fecham, o servidor manda o resultado e todos veem a mesma jogada ao mesmo tempo.
-const liveOf = (g) => ((S.live ||= {})[g] ||= { d: null, anim: 0, shown: 0, busy: false, at: 0, prev: null });
+const liveOf = (g) => ((S.live ||= {})[g] ||= { d: null, anim: 0, shown: 0, busy: false, at: 0, prev: store.get('lvprev_' + g, null) });
 async function livePoll(g) {
   const L = liveOf(g); if (L.busy) return;
   L.busy = true; L.at = performance.now();
@@ -949,7 +949,7 @@ async function livePoll(g) {
     const r = await fetch('/api/table?g=' + g, { credentials: 'same-origin' }); if (!r.ok) return;
     const d = await r.json(), old = L.d;
     if (d.now) S.off = d.now - Date.now();
-    L.d = d; if (d.last) L.prev = d.last.bets;
+    L.d = d; if (d.last && !L.prev) L.prev = d.last.bets;
     if (S.tab !== g) return;
     if (d.phase === 'spin' && L.anim !== d.id) {
       L.anim = d.id;
@@ -989,6 +989,7 @@ async function liveBet(g, bets) {
   const L = liveOf(g), d = L.d;
   if (!d || d.phase !== 'bets' || now() >= d.closesAt) return toast(errText('BETS_CLOSED'), true);
   const out = await act('tableBet', { g, bets: Array.isArray(bets) ? bets : [bets] });
+  if (out) { L.prev = out.result.bets; store.set('lvprev_' + g, L.prev); }   // fica guardada para o botão «Repetir» das rondas seguintes
   if (out && L.d && out.result.round === L.d.id) { const had = !!L.d.mine; L.d.mine = { bets: out.result.bets, total: out.result.total }; L.d.pot += out.result.bet; if (!had) L.d.players += 1; }
   render();
 }
@@ -1007,7 +1008,7 @@ function liveBar(g) {
   return h('div', { class: 'lvbar2' }, chipPicker(),
     h('div', { class: 'row sp' }, h('span', { class: 'small' }, t('lvOnTable') + ' ', h('b', { class: 'num c-cash' }, money(mine?.total || 0))),
       h('div', { class: 'row', style: 'gap:8px' },
-        !mine && L.prev ? h('button', { class: 'btn ghost sm', on: { click: () => liveBet(g, L.prev) } }, t('lvRepeat')) : null,
+        h('button', { class: 'btn ghost sm', disabled: !!mine || !L.prev, on: { click: () => liveBet(g, L.prev) } }, t('lvRepeat')),
         h('button', { class: 'btn ghost sm', disabled: !mine, on: { click: () => liveClear(g) } }, t('csClear')))));
 }
 function liveResult(g, d) {
@@ -1182,8 +1183,8 @@ async function wheelAnim(r) {
   const box = document.querySelector('.wbox'); if (!box) return;
   const W3 = w3(), stage = box.querySelector('.wstage'), bet = (r.mineBets || []).find((b) => b.s === r.s)?.amt || 0;
   await tableFocus(box);
-  await topSpin(r);
-  await W3.spin(r.idx);
+  const ts = topSpin(r);   // o multiplicador do topo sorteia-se enquanto a roda já gira
+  await W3.spin(r.idx); await ts;
   const topHit = r.top && r.top.s === r.s, show = (cls, ...kids) => { stage.className = 'wstage ' + cls; stage.hidden = false; stage.replaceChildren(...kids.filter(Boolean)); };
   if (r.bonus) {
     show('th-' + r.s + ' intro', h('b', { class: 'wst-title' }, t('wb_' + r.s))); fx.sfx('level'); await wait(RM() ? 400 : 1500);
@@ -1205,7 +1206,7 @@ async function wheelAnim(r) {
     bet && r.win > 0 ? h('span', { class: 'wst-sub' }, t('lvBreak', { w: money(r.win), b: money(r.bet) })) : null,
     h('b', { class: 'wst-win ' + (!bet ? 'muted' : net > 0 ? 'c-cash' : net < 0 ? 'c-red' : '') }, !bet ? t('wNoBet', { s: wLabel(r.s) }) : net > 0 ? t('csWon', { m: money(net) }) : net < 0 ? t('csLost', { m: money(-net) }) : t('csPush')));
   if (net > 0) { fx.sfx(r.mult >= 20 ? 'crit' : 'cash'); fx.vibrate(20); }
-  await wait(r.bonus || net > 0 ? 3200 : 2200);
+  await wait(r.bonus ? 3200 : net > 0 ? 2600 : 2000);
 }
 function screenWheel() {
   const g = 'wheel', L = liveOf(g), d = L.d, W = S.cfg.casino.wheel, W3 = w3();

@@ -159,6 +159,52 @@ export function roulette({ order, colorOf, sfx }) {
 }
 
 // ------------------------------------------------------------------ roda grande com lingueta
+// Física da roda, em «casas» (1 = distância entre dois pinos): p = posição, v = casas por segundo.
+// A roda perde velocidade com o atrito e com a lingueta de borracha, que cada pino dobra até a soltar. No fim, se a roda
+// já não tem força para dobrar a lingueta até ao fim, é a lingueta que a empurra para trás: «quase passou, mas voltou».
+// O resultado continua a ser sorteado pelo servidor (cada casa com a mesma probabilidade): aqui escolhe-se, entre os
+// lançamentos possíveis, um que acabe nessa casa, e a jogada que se vê é a simulação desse lançamento, sem atalhos.
+const PH = { a: 0.3, r: 0.3, K: 1.2, mu: 0.8, b: 0.28, fmax: 0.8, wn: 45, z: 0.22, dt: 1 / 300 };
+const wheelSim = (p, v) => ({ p, v, mode: 0, kq: 0, phi: 0, phiv: 0, t: 0, done: false, ticks: 0, back: 0, maxo: 0 });
+function wheelStep(s) {
+  const { a, r, K, mu, b, fmax, wn, z, dt } = PH, L = a + r, q = s.p + 0.5;
+  let F = 0;
+  if (s.mode === 1) {
+    const o = q - s.kq;
+    if (o >= r) { s.mode = 0; s.phiv = 0; }                       // o pino passou: a lingueta solta-se
+    else if (o < -a) { s.mode = 0; s.phi = 0; s.phiv = 0; }        // a roda recuou e largou a lingueta
+    else { const c = o + a; s.phi = fmax * c / L; F = -K * c / (L * L); if (o > s.maxo) s.maxo = o; }
+  } else if (s.mode === -1) {
+    const o = q - s.kq;
+    if (o <= -r) { s.mode = 0; s.phiv = 0; }
+    else if (o > a) { s.mode = 0; s.phi = 0; s.phiv = 0; }
+    else { const c = a - o; s.phi = -fmax * c / L; F = K * c / (L * L); }
+  }
+  if (s.mode === 0) {
+    s.phiv += (-wn * wn * s.phi - 2 * z * wn * s.phiv) * dt; s.phi += s.phiv * dt;
+    const kb = Math.ceil(q), ob = q - kb;                           // pino que vem de trás
+    if (s.v >= 0 && ob >= -a) { const kin = fmax * (ob + a) / L; if (s.phi <= kin) { s.mode = 1; s.kq = kb; s.phi = kin; s.ticks++; s.maxo = ob; } }
+    if (s.mode === 0 && s.v < 0) { const ka = Math.floor(q), oa = q - ka; if (oa <= a) { const kin = fmax * (oa - a) / L; if (s.phi >= kin) { s.mode = -1; s.kq = ka; s.phi = kin; s.ticks++; } } }
+  }
+  // atrito: seco + do ar; perto de parar, o atrito seco segura a roda se a lingueta não empurrar mais do que ele
+  if (Math.abs(s.v) < 1e-3) { if (Math.abs(F) <= mu) { s.v = 0; s.done = true; } else s.v += (F - mu * Math.sign(F)) * dt; }
+  else {
+    const v0 = s.v; s.v += (F - mu * Math.sign(v0) - b * v0) * dt;
+    if (v0 * s.v < 0) { s.back += v0 > 0 ? 1 : 0; if (Math.abs(F) <= mu) s.v = 0; }
+  }
+  s.p += s.v * dt; s.t += dt;
+  if (s.t > 30) s.done = true;
+}
+const pmod = (x, n) => ((x % n) + n) % n;
+function solveSpin(p0, idx, N) {
+  const ok = [];
+  for (let v0 = 36 + Math.random() * 0.04; v0 < 52.6; v0 += 0.04) {
+    const q = wheelSim(p0, v0); while (!q.done) wheelStep(q);
+    if (pmod(Math.round(-q.p), N) === idx) ok.push(v0);
+  }
+  return ok.length ? ok[Math.floor(Math.random() * ok.length)] : null;
+}
+
 // segs: [{ text, color, big }]. A casa 0 começa no topo.
 export function bigWheel({ segs, sfx, hub = '', cls = 'bw3', turns = 5, secs = 8.5 }) {
   const W = 360, H = 404, cx = 180, cy = 190, R = 158, N = segs.length, th = TAU / N;
@@ -190,22 +236,32 @@ export function bigWheel({ segs, sfx, hub = '', cls = 'bw3', turns = 5, secs = 8
       if (ws.length > 1) { const m = Math.ceil(ws.length / 2); x.fillText(ws.slice(0, m).join(' '), 0, -8); x.fillText(ws.slice(m).join(' '), 0, 9); } else x.fillText(hub, 0, 1);
     }
     // pinos
-    for (let i = 0; i < N; i++) { const a = (i - 0.5) * th - Math.PI / 2, px = (R - 9) * Math.cos(a), py = (R - 9) * Math.sin(a); x.fillStyle = '#fff6d6'; x.beginPath(); x.arc(px, py, N > 30 ? 2.3 : 3.2, 0, TAU); x.fill(); x.fillStyle = '#8a6420'; x.beginPath(); x.arc(px + 0.6, py + 0.8, 1, 0, TAU); x.fill(); }
+    for (let i = 0; i < N; i++) {
+      const a = (i - 0.5) * th - Math.PI / 2, px = (R - 9) * Math.cos(a), py = (R - 9) * Math.sin(a), pr = N > 30 ? 3 : 4;
+      x.fillStyle = '#0007'; x.beginPath(); x.arc(px + 0.8, py + 1.2, pr, 0, TAU); x.fill();
+      const pg = x.createRadialGradient(px - pr * 0.4, py - pr * 0.4, 0.3, px, py, pr); pg.addColorStop(0, '#ffffff'); pg.addColorStop(0.5, '#c9ced8'); pg.addColorStop(1, '#5d6472');
+      x.fillStyle = pg; x.beginPath(); x.arc(px, py, pr, 0, TAU); x.fill();
+    }
   });
   const st = { rot: 0, sp: null, flap: 0, win: -1, flash: 0, resolve: null };
   const ease = (u) => 1 - Math.pow(1 - u, 3.4);
   const tick = throttled(sfx, 'tick', 45);
   function draw(dt, now) {
     if (st.sp) {
-      const sp = st.sp; if (sp.t0 === undefined) sp.t0 = now; sp.t = now - sp.t0; const u = clamp(sp.t / sp.T, 0, 1);
-      st.rot = sp.r0 + sp.d * ease(u);
-      const k = Math.floor(st.rot / th + 0.5); if (k !== sp.k) { sp.k = k; tick(); }
-      if (u >= 1 && !sp.done) { sp.done = true; st.win = sp.idx; st.flash = 0; sfx('claim'); }
-      if (sp.done) { st.flash = sp.t - sp.T; if (st.flash > 1.5 && st.resolve) { const r = st.resolve; st.resolve = null; r(); } }
+      const sp = st.sp; if (sp.t0 === undefined) sp.t0 = now; sp.t = now - sp.t0;
+      if (sp.sim) {
+        // passos fixos, contados pelo relógio: a jogada é sempre a mesma que foi calculada, em qualquer telemóvel
+        const want = Math.floor(sp.t / PH.dt); let n = 0;
+        while (sp.n < want && !sp.sim.done && n++ < 500) { const tk = sp.sim.ticks; wheelStep(sp.sim); sp.n++; if (sp.sim.ticks !== tk) tick(); }
+        st.rot = sp.sim.p * th; st.flap = sp.sim.phi;
+        if (sp.sim.done && !sp.done) { sp.done = true; sp.T = sp.t; st.win = sp.idx; sfx('claim'); }
+      } else {
+        const u = clamp(sp.t / sp.T, 0, 1); st.rot = sp.r0 + sp.d * ease(u);
+        const k = Math.floor(st.rot / th + 0.5); if (k !== sp.k) { sp.k = k; tick(); }
+        if (u >= 1 && !sp.done) { sp.done = true; st.win = sp.idx; sfx('claim'); }
+      }
+      if (sp.done && sp.t - sp.T > 1.3 && st.resolve) { const r = st.resolve; st.resolve = null; r(); }
     }
-    // lingueta: o pino empurra-a e ela salta para trás
-    const x = ((st.rot / th + 0.5) % 1 + 1) % 1, want = x > 0.7 ? ((x - 0.7) / 0.3) * 0.5 : 0.5 * Math.max(0, 1 - x / 0.1);
-    st.flap += (want - st.flap) * Math.min(1, dt * 40);
     ctx.clearRect(0, 0, W, H);
     // pé
     const bg = ctx.createLinearGradient(0, cy + R - 20, 0, H); bg.addColorStop(0, '#5b3a0c'); bg.addColorStop(1, '#1d1203');
@@ -230,22 +286,28 @@ export function bigWheel({ segs, sfx, hub = '', cls = 'bw3', turns = 5, secs = 8
       ctx.fillStyle = on ? '#fff3b0' : '#9b7a2a'; ctx.beginPath(); ctx.arc(bx, by, 3, 0, TAU); ctx.fill();
     }
     // lingueta
-    ctx.save(); ctx.translate(cx, cy - R - 13); ctx.rotate(-st.flap);
-    ctx.fillStyle = '#0007'; ctx.beginPath(); ctx.moveTo(-10, 2); ctx.lineTo(12, 2); ctx.lineTo(2, 36); ctx.closePath(); ctx.fill();
-    const fg = ctx.createLinearGradient(-11, 0, 11, 0); fg.addColorStop(0, '#ff5a52'); fg.addColorStop(1, '#a8121b');
-    ctx.fillStyle = fg; ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.lineJoin = 'round'; ctx.beginPath(); ctx.moveTo(-11, 0); ctx.lineTo(11, 0); ctx.lineTo(0, 33); ctx.closePath(); ctx.fill(); ctx.stroke();
-    ctx.fillStyle = '#f0d58a'; ctx.beginPath(); ctx.arc(0, 2, 5, 0, TAU); ctx.fill();
+    // lingueta de borracha: presa em cima, dobra-se mais na ponta
+    const LF = 35, fa = st.flap, tx = LF * Math.sin(fa), ty = LF * Math.cos(fa), mx = LF * 0.5 * Math.sin(fa * 0.35), my = LF * 0.5;
+    ctx.save(); ctx.translate(cx, cy - R - 14); ctx.lineCap = 'round';
+    const mg = ctx.createLinearGradient(-16, -12, 16, 6); mg.addColorStop(0, '#fff1bf'); mg.addColorStop(0.5, '#d9a531'); mg.addColorStop(1, '#7a4e0a');
+    ctx.fillStyle = '#0008'; ctx.beginPath(); ctx.roundRect(-15, -9, 32, 17, 5); ctx.fill();
+    ctx.fillStyle = mg; ctx.beginPath(); ctx.roundRect(-16, -11, 32, 17, 5); ctx.fill();
+    ctx.strokeStyle = '#0007'; ctx.lineWidth = 9; ctx.beginPath(); ctx.moveTo(1.5, 2); ctx.quadraticCurveTo(mx + 1.5, my + 2, tx + 1.5, ty + 2); ctx.stroke();
+    ctx.strokeStyle = '#b3121c'; ctx.lineWidth = 8; ctx.beginPath(); ctx.moveTo(0, 0); ctx.quadraticCurveTo(mx, my, tx, ty); ctx.stroke();
+    ctx.strokeStyle = '#ff6a62'; ctx.lineWidth = 2.5; ctx.beginPath(); ctx.moveTo(-1.5, 1); ctx.quadraticCurveTo(mx - 1.5, my, tx - 1.2, ty - 1); ctx.stroke();
+    ctx.fillStyle = '#5d6472'; ctx.beginPath(); ctx.arc(0, -3, 3.2, 0, TAU); ctx.fill(); ctx.fillStyle = '#e8ebf0'; ctx.beginPath(); ctx.arc(-0.8, -3.8, 1.3, 0, TAU); ctx.fill();
     ctx.restore();
   }
-  const wake = ticker(el, draw, () => { if (st.sp) { st.rot = st.sp.r0 + st.sp.d; st.win = st.sp.idx; st.sp = null; } if (st.resolve) { const r = st.resolve; st.resolve = null; r(); } });
+  const wake = ticker(el, draw, () => { if (st.sp) { st.rot = -st.sp.idx * th; st.flap = 0; st.win = st.sp.idx; st.sp = null; } if (st.resolve) { const r = st.resolve; st.resolve = null; r(); } });
   return {
     el, wake,
-    set(idx) { st.rot = -idx * th; st.win = idx; st.sp = null; },
+    set(idx) { st.rot = -idx * th; st.flap = 0; st.win = idx; st.sp = null; },
     spin(idx) {
       const off = (Math.random() - 0.5) * th * 0.56, cur = st.rot;
       const base = -idx * th + off, delta = ((base - cur) % TAU + TAU) % TAU;
       st.win = -1;
-      st.sp = { t: 0, T: RM() ? 0.5 : secs, r0: cur, d: (RM() ? 0 : turns * TAU) + delta, idx, k: Math.floor(cur / th + 0.5) };
+      const v0 = solveSpin(cur / th, idx, N);   // a velocidade do lançamento muda de jogada para jogada
+      st.sp = { t: 0, T: secs, r0: cur, d: turns * TAU + delta, idx, k: Math.floor(cur / th + 0.5), n: 0, sim: v0 === null ? null : wheelSim(cur / th, v0) };
       wake();
       return new Promise((res) => { st.resolve = res; });
     },
