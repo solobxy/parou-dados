@@ -21,12 +21,33 @@ const D = {
     hookers: ['Marlene', 'Sandra', 'Kátia', 'Jéssica', 'Valentina', 'Dominique'], hk_t0: 'Street corner', hk_t1: 'The house', hk_t2: 'Luxury escort',
     hkRisk: 'Disease risk {p}%', hkGo: 'Go · {m}', sickTitle: 'You caught something', sickSub: '−{p}% on all stats and no more visits until you get treated.',
     cureBtn: 'Get treated · {m}', gotSick: 'Bad luck: you caught something. Go to the hospital.', sickChip: 'Sick: −{p}% stats',
-    newsTitle: 'Around town', nwJob: '{a}: {x} · {m}', nwCrit: '{a}: {x}, perfect hit · {m}', nwJail: '{a} got busted: {x}', nwHouse: '{a} moved up: {x}', nwLux: '{a} bought {x}', nwBeat: '{a} put {b} in hospital', nwMug: '{a} mugged {b}', nwLvl: '{a} is now {x}',
     p_casa: 'Home', s_casa: 'Your place. A better home earns respect and unlocks upgrades.',
     houses: ['The street', 'Shack', 'Rented room', 'Apartment', 'House', 'Villa with pool', 'Mansion', 'Penthouse'],
     houseNow: 'Home level {a} of {b}', houseNext: 'Next', houseBuy: 'Move in · {m}', houseTop: 'Nothing better in this city.', houseMoved: 'You moved: {x}. +{n} respect.',
     upsTitle: 'Upgrades', hu_cofre: 'Safe', hu_alarme: 'Alarm and dogs', hu_garagem: 'Garage', hu_escritorio: 'Office', huLevel: 'Level {a}/{b}', huBuy: 'Upgrade · {m}', huNeed: 'Needs a better home', huNone: 'No effect yet', huNext: 'Next level: {x}',
     hd_cofre: '{p}% of your cash safe from muggings', hd_alarme: '+{p}% defense when attacked', hd_garagem: '−{p}% jail risk on failed jobs', hd_escritorio: '+{p}% business income',
+    p_news: 'The paper', s_news: 'What the city is talking about. It writes itself from what players do.', nwLive: 'Breaking', nwToday: 'Today', nwYesterday: 'Yesterday', dToday: 'today', dYesterday: 'yesterday',
+    nwEmpty: 'Quiet streets. Be the first headline.', hlNoneToday: 'Nothing big yet today. Give them something to write about.', hlNoneYesterday: 'Yesterday was quiet.',
+    nw_job: ['{a} hit "{x}" and walked off with {m}.', '{a} cleaned out "{x}": {m} in the pocket.', 'Another one for {a}: "{x}", {m}.'],
+    nw_crit: ['Perfect job by {a} on "{x}": {m}.', '{a} did "{x}" without leaving a trace and took {m}.'],
+    nw_spree: ['{a} pulled {n} jobs in a row and took {m}. No breaks.', '{a} spent the afternoon robbing: {n} jobs, {m}.'],
+    nw_jail: ['{a} got caught in the middle of "{x}". The police say thanks.', '{a} is behind bars: "{x}". Even the guard laughed.', '{a} tried "{x}" and ended up in cuffs.'],
+    nw_house: ['{a} moved up: {x}. The neighbours are worried.', '{a} has a new place: {x}.'],
+    nw_lux: ['{a} bought {x}. Some people just can\'t hide their money.', '{a} is showing off {x} all over town.'],
+    nw_beat: ['{a} gave {b} a beating.', '{b} took a beating from {a} and left in an ambulance.', '{a} smashed {b}\'s face in. There are teeth on the pavement.'],
+    nw_mug: ['{a} mugged {b}, who went home naked and crying.', '{b} got mugged by {a} and was left in his underwear.', '{a} emptied {b}\'s pockets: {m}.'],
+    nw_fail: ['{a} tried to beat up {b} and woke up in hospital.', '{b} taught {a} a lesson. Nobody saw a thing.'],
+    nw_sick: ['{a} went to the hookers and came back itching.', '{a} caught something at the hookers. The hospital says thanks.'],
+    nw_lvl: ['{a} is now {x}.', '{a} made it to {x}. Show some respect.'],
+    hl_wanted_t: 'Wanted: {a}', hl_wanted: ['{a} gained {n} respect {d}. "Nobody gets that respected selling lemonade," say the police.', '{a} climbed {n} respect {d}. The photo is up in every police station.'],
+    hl_bigjob_t: 'Job of the day: {a}', hl_bigjob: ['{a} walked off with {m} in a single job. The rest of the city is still counting coins.', '{a} took {m} in one go. Somebody is going to be very angry.'],
+    hl_fighter_t: 'King of the streets: {a}', hl_fighter: ['{a} won {n} fights {d}. People cross the street when they see him.', '{a} won {n} fights {d}. The hospital sent flowers.'],
+    hl_mugged_t: 'Robbed and naked: {a}', hl_mugged: ['{a} lost {m} to muggers {d} and went home naked and crying.', '{a} got robbed {d}: {m} gone. Only the socks survived.'],
+    hl_beaten_t: 'Punching bag: {a}', hl_beaten: ['{a} ended up in hospital {n} times {d}. The nurses keep a bed for him.', '{a} was beaten {n} times {d}. The ambulance knows the way by heart.'],
+    hl_hustler_t: 'Never sleeps: {a}', hl_hustler: ['{a} pulled {n} jobs {d}. Nobody knows when he eats.', '{a} did {n} jobs {d}. The police just gave up counting.'],
+    hl_unlucky_t: 'Unlucky of the day: {a}', hl_unlucky: ['{a} got caught {n} times {d}. The prison guard calls him by his first name.', '{a} was arrested {n} times {d}. He has his own cell now.'],
+    hl_sick_t: 'Itchy: {a}', hl_sick: ['{a} went to the hookers {d} and came back with a souvenir. The hospital thanks him for the business.'],
+    p_empire: 'Empire', sec_night: 'Nightlife', sec_street: 'Street', sec_income: 'Income', sec_assets: 'Property', empIncome: 'Your businesses earn', empNone: 'Nothing earns money for you yet. Buy your first business below.', canUpgrade: 'Upgrade',
     p_city: 'City', p_rob: 'Robberies', p_club: 'Nightclub', p_gym: 'Gym', p_biz: 'Businesses', p_port: 'Docks', p_arms: 'Arms dealer', p_bank: 'Bank',
     p_hosp: 'Hospital', p_jail: 'Prison', p_alley: 'The alley', p_lux: 'Luxuries', p_fights: 'Fights', p_rank: 'Ranking',
     s_club: 'Stamina back, plus a temporary edge. Every hit raises your addiction.', s_arms: 'Better gear wins more fights.',
@@ -138,12 +159,33 @@ const D = {
     hookers: ['Marlene', 'Sandra', 'Kátia', 'Jéssica', 'Valentina', 'Dominique'], hk_t0: 'Da rua', hk_t1: 'Da casa', hk_t2: 'Acompanhante de luxo',
     hkRisk: 'Risco de doença {p}%', hkGo: 'Ir · {m}', sickTitle: 'Apanhaste uma doença', sickSub: '−{p}% em todas as stats e nada de visitas até te tratares.',
     cureBtn: 'Tratar · {m}', gotSick: 'Azar: apanhaste uma doença. Vai ao hospital.', sickChip: 'Doente: −{p}% nas stats',
-    newsTitle: 'Na cidade', nwJob: '{a}: {x} · {m}', nwCrit: '{a}: {x}, golpe perfeito · {m}', nwJail: '{a} foi preso: {x}', nwHouse: '{a} mudou de casa: {x}', nwLux: '{a} comprou {x}', nwBeat: '{a} mandou {b} para o hospital', nwMug: '{a} assaltou {b}', nwLvl: '{a} subiu a {x}',
     p_casa: 'Casa', s_casa: 'O teu sítio. Uma casa melhor dá respeito e desbloqueia melhorias.',
     houses: ['Na rua', 'Barraca', 'Quarto alugado', 'Apartamento', 'Moradia', 'Vivenda com piscina', 'Mansão', 'Penthouse'],
     houseNow: 'Casa de nível {a} em {b}', houseNext: 'A seguir', houseBuy: 'Mudar para aqui · {m}', houseTop: 'Não há melhor nesta cidade.', houseMoved: 'Mudaste de casa: {x}. +{n} de respeito.',
     upsTitle: 'Melhorias', hu_cofre: 'Cofre', hu_alarme: 'Alarme e cães', hu_garagem: 'Garagem', hu_escritorio: 'Escritório', huLevel: 'Nível {a}/{b}', huBuy: 'Melhorar · {m}', huNeed: 'Precisa de uma casa melhor', huNone: 'Ainda sem efeito', huNext: 'Próximo nível: {x}',
     hd_cofre: '{p}% do dinheiro a salvo dos assaltos', hd_alarme: '+{p}% de defesa quando te atacam', hd_garagem: '−{p}% de prisão ao falhar', hd_escritorio: '+{p}% de rendimento dos negócios',
+    p_news: 'Jornal', s_news: 'O que se fala na cidade. Escreve-se sozinho com o que os jogadores fazem.', nwLive: 'Última hora', nwToday: 'Hoje', nwYesterday: 'Ontem', dToday: 'hoje', dYesterday: 'ontem',
+    nwEmpty: 'A rua está calma. Faz tu a primeira notícia.', hlNoneToday: 'Ainda não aconteceu nada de jeito hoje. Dá-lhes alguma coisa para escrever.', hlNoneYesterday: 'Ontem esteve tudo calmo.',
+    nw_job: ['{a} fez «{x}» e saiu com {m}.', '{a} limpou «{x}»: {m} no bolso.', 'Mais um para {a}: «{x}», {m}.'],
+    nw_crit: ['Golpe perfeito de {a} em «{x}»: {m}.', '{a} fez «{x}» sem deixar rasto e levou {m}.'],
+    nw_spree: ['{a} fez {n} golpes seguidos e levou {m}. Não para.', '{a} passou a tarde a roubar: {n} golpes, {m}.'],
+    nw_jail: ['{a} foi apanhado a meio de «{x}». A polícia agradece.', '{a} foi preso: «{x}». Até o guarda se riu.', '{a} tentou «{x}» e acabou algemado.'],
+    nw_house: ['{a} mudou de casa: {x}. Os vizinhos estão preocupados.', '{a} tem casa nova: {x}.'],
+    nw_lux: ['{a} comprou {x}. Há quem não saiba esconder o dinheiro.', '{a} anda a exibir {x} pela cidade.'],
+    nw_beat: ['{a} deu uma tareia a {b}.', '{b} levou uma tareia de {a} e saiu de ambulância.', '{a} partiu a cara a {b}. Ainda há dentes no passeio.'],
+    nw_mug: ['{a} assaltou {b}, que foi para casa nu a chorar.', '{b} foi assaltado por {a} e ficou só de cuecas.', '{a} limpou os bolsos a {b}: {m}.'],
+    nw_fail: ['{a} tentou bater em {b} e acordou no hospital.', '{b} deu uma lição a {a}. Ninguém viu nada.'],
+    nw_sick: ['{a} foi às putas e voltou com comichão.', '{a} apanhou uma coisa nas putas. O hospital agradece.'],
+    nw_lvl: ['{a} agora é {x}.', '{a} subiu a {x}. Respeitinho.'],
+    hl_wanted_t: 'Procurado: {a}', hl_wanted: ['{a} ganhou {n} de respeito {d}. «Ninguém fica tão respeitado a vender limonada», diz a polícia.', '{a} subiu {n} de respeito {d}. A fotografia já está em todas as esquadras.'],
+    hl_bigjob_t: 'Golpe do dia: {a}', hl_bigjob: ['{a} saiu com {m} de um só golpe. O resto da cidade ainda está a contar trocos.', '{a} levou {m} de uma vez. Alguém vai ficar muito chateado.'],
+    hl_fighter_t: 'Rei da porrada: {a}', hl_fighter: ['{a} ganhou {n} lutas {d}. Há quem mude de passeio quando o vê.', '{a} ganhou {n} lutas {d}. O hospital mandou-lhe flores.'],
+    hl_mugged_t: 'Roubado e nu: {a}', hl_mugged: ['{a} perdeu {m} em assaltos {d} e foi para casa nu a chorar.', '{a} foi assaltado {d}: lá se foram {m}. Só as meias sobreviveram.'],
+    hl_beaten_t: 'Saco de pancada: {a}', hl_beaten: ['{a} foi parar ao hospital {n} vezes {d}. Os enfermeiros já lhe guardam a cama.', '{a} levou {n} tareias {d}. A ambulância já sabe o caminho de cor.'],
+    hl_hustler_t: 'Não dorme: {a}', hl_hustler: ['{a} fez {n} golpes {d}. Ninguém sabe quando é que come.', '{a} fez {n} golpes {d}. A polícia desistiu de contar.'],
+    hl_unlucky_t: 'Azarado do dia: {a}', hl_unlucky: ['{a} foi apanhado {n} vezes {d}. O guarda da prisão já o trata pelo nome.', '{a} foi preso {n} vezes {d}. Já tem cela com o nome dele.'],
+    hl_sick_t: 'Comichão: {a}', hl_sick: ['{a} foi às putas {d} e voltou com uma lembrança. O hospital agradece o negócio.'],
+    p_empire: 'Império', sec_night: 'Noite', sec_street: 'Rua', sec_income: 'Rendimentos', sec_assets: 'Património', empIncome: 'Os teus negócios rendem', empNone: 'Ainda não tens nada a render. Compra o primeiro negócio aqui em baixo.', canUpgrade: 'Melhorar',
     p_city: 'Cidade', p_rob: 'Golpes', p_club: 'Discoteca', p_gym: 'Ginásio', p_biz: 'Negócios', p_port: 'Porto', p_arms: 'Armas', p_bank: 'Banco',
     p_hosp: 'Hospital', p_jail: 'Prisão', p_alley: 'O beco', p_lux: 'Luxos', p_fights: 'Lutas', p_rank: 'Ranking',
     s_club: 'Recuperas stamina e ganhas um efeito temporário. Cada consumo sobe o vício.', s_arms: 'Melhor equipamento ganha mais lutas.',
@@ -244,6 +286,13 @@ export function setLang(l) { cur = LANGS.includes(l) ? l : 'en'; document.docume
 export function lang() { return cur; }
 export function t(key, vars) {
   let s = D[cur][key] ?? D.en[key] ?? key;
+  if (vars) for (const k in vars) s = s.replaceAll('{' + k + '}', vars[k]);
+  return s;
+}
+// texto com várias versões: escolhe uma pela semente (a mesma notícia diz sempre o mesmo)
+export function tv(key, seed, vars) {
+  const v = D[cur][key] ?? D.en[key];
+  let s = Array.isArray(v) ? v[Math.abs(seed) % v.length] : (v ?? key);
   if (vars) for (const k in vars) s = s.replaceAll('{' + k + '}', vars[k]);
   return s;
 }

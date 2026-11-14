@@ -1,6 +1,6 @@
 // Jogo de crime: interface. O servidor decide tudo; aqui só se mostra e se pede.
 
-import { t, list, errText, setLang, lang, guessLang } from './i18n.js';
+import { t, tv, list, errText, setLang, lang, guessLang } from './i18n.js';
 import { h, icon, svg, setLocale, num, money, moneyShort, short, dur, hoursText, pct, rid } from './ui.js';
 import * as fx from './fx.js';
 
@@ -224,18 +224,26 @@ function tickHud() {
 // ---------- ecrãs ----------
 // ---------- navegação: uma cidade com locais ----------
 const PLACES = {
-  city: { ic: 'city' }, rob: { ic: 'street', img: 'golpes' }, club: { ic: 'bolt', img: 'discoteca' }, gym: { img: 'ginasio' },
+  city: { ic: 'skyline' }, empire: { ic: 'empire' }, rob: { ic: 'street', img: 'golpes' }, club: { ic: 'bolt', img: 'discoteca' }, gym: { img: 'ginasio' },
   biz: { ic: 'empire', img: 'negocios' }, port: { img: 'porto' }, arms: { img: 'armas' }, bank: { img: 'banco' }, hosp: { img: 'hospital' },
-  jail: { img: 'prisao' }, alley: { img: 'beco' }, lux: { img: 'luxos' }, fights: { ic: 'fights', img: 'lutas' }, rank: { img: 'ranking' }, putas: { img: 'putas' }, casa: {},
+  jail: { img: 'prisao' }, news: { img: 'jornal' }, alley: { img: 'beco' }, lux: { img: 'luxos' }, fights: { ic: 'fights', img: 'lutas' }, rank: { img: 'ranking' }, putas: { img: 'putas' }, casa: {},
 };
-const NAV = ['city', 'rob', 'club', 'biz', 'fights'];
-const GRID = ['rob', 'club', 'putas', 'gym', 'biz', 'port', 'arms', 'bank', 'hosp', 'alley', 'casa', 'fights', 'rank'];
+// barra de baixo: só o que se usa a toda a hora. O resto vive dentro de cada separador, arrumado por zonas.
+const NAV = ['city', 'rob', 'fights', 'empire'];
+const HUB = {
+  city: [['sec_night', ['club', 'putas']], ['sec_street', ['gym', 'alley', 'hosp', 'jail']]],
+  empire: [['sec_income', ['biz', 'port']], ['sec_assets', ['casa', 'bank']]],
+};
+const PARENT = { news: 'city', club: 'city', putas: 'city', gym: 'city', alley: 'city', hosp: 'city', jail: 'city',
+  biz: 'empire', port: 'empire', casa: 'empire', bank: 'empire', lux: 'empire', arms: 'fights', rank: 'fights' };
+const tabOf = (id) => (NAV.includes(id) ? id : PARENT[id] || 'city');
 const IMG = (kind, id, big) => `/img/${kind}/${id}${big ? '-g' : ''}.webp?8`;
 function go(tab) {
   if (!PLACES[tab]) tab = 'city';
   S.tab = tab; document.body.dataset.tab = tab; store.set('tab', tab);
   if (tab === 'fights') { if (S.fightSeg === 'events') loadEvents(true); else { S.fightSeg = 'targets'; loadTargets(); } }
   if (tab === 'rank') loadRanking();
+  if (tab === 'news' || tab === 'city') loadNews();
   render(); window.scrollTo({ top: 0 });
 }
 
@@ -243,33 +251,46 @@ let $main, $tabs;
 function shell() {
   const hud = buildHud();
   $main = h('main', { id: 'main' });
-  $tabs = h('nav', null, NAV.map((id) => h('button', { class: 'tab', dataset: { tab: id }, on: { click: () => go(id) } }, icon(PLACES[id].ic), t('p_' + id))));
+  $tabs = h('nav', { style: '--n:' + NAV.length }, NAV.map((id) => h('button', { class: 'tab', dataset: { tab: id }, on: { click: () => go(id) } }, icon(PLACES[id].ic), t('p_' + id))));
   $app.replaceChildren(hud, $main, h('div', { class: 'tabs' }, $tabs));
   document.body.dataset.tab = S.tab;
   updateHud();
 }
 
-const SCREENS = { city: screenCity, rob: screenRob, club: screenClub, gym: screenGym, biz: screenBiz, port: screenPort, arms: screenArms, bank: screenBank,
+const SCREENS = { city: screenCity, empire: screenEmpire, news: screenNews, rob: screenRob, club: screenClub, gym: screenGym, biz: screenBiz, port: screenPort, arms: screenArms, bank: screenBank,
   hosp: screenHosp, jail: screenJail, putas: screenPutas, casa: screenCasa, alley: screenAlley, lux: screenLux, fights: screenFights, rank: screenRank };
 function render() {
   if (!S.st) return;
   if (!S.st.me || S.st.round.phase !== 'play') return renderPause();
   if (!PLACES[S.tab]) S.tab = 'city';
   if (!$main || !document.body.contains($main)) shell();
-  $tabs.querySelectorAll('.tab').forEach((b) => b.setAttribute('aria-current', b.dataset.tab === S.tab ? 'page' : 'false'));
-  const dot = $tabs.querySelector('[data-tab="fights"] .dot');
-  const unseen = (S.events || []).some((e) => e.id > S.lastEventSeen);
-  if (unseen && !dot) $tabs.querySelector('[data-tab="fights"]').appendChild(h('span', { class: 'dot' }));
-  if (!unseen && dot) dot.remove();
+  const cur = tabOf(S.tab);
+  $tabs.querySelectorAll('.tab').forEach((b) => b.setAttribute('aria-current', b.dataset.tab === cur ? 'page' : 'false'));
+  tabDots();
   $main.replaceChildren(...(S.st.me.cls ? SCREENS[S.tab]() : screenClass()).filter(Boolean));
   updateHud();
 }
 
-// cabeçalho de cada local: voltar, nome e a imagem do sítio
+// pontos na barra: há coisa à tua espera nesse separador
+function tabDots() {
+  const me = S.st.me, n = now();
+  const want = {
+    fights: (S.events || []).some((e) => e.id > S.lastEventSeen),
+    empire: me.port.some((c) => c.readyAt <= n) || me.biz.some((b, i) => b.n > 0 && storedNow(b, i) >= (b.perH * S.cfg.storageMs) / 3600000 / 2),
+    city: !!me.mission?.done,
+  };
+  for (const id of NAV) {
+    const tab = $tabs.querySelector(`[data-tab="${id}"]`), dot = tab && tab.querySelector('.dot');
+    if (want[id] && !dot) tab.appendChild(h('span', { class: 'dot' }));
+    if (!want[id] && dot) dot.remove();
+  }
+}
+
+// cabeçalho de cada local: voltar (para a zona de onde veio), nome e a imagem do sítio
 function pageHead(id, sub, noImg) {
-  const P = PLACES[id];
+  const P = PLACES[id], up = NAV.includes(id) ? null : PARENT[id] || 'city';
   return h('div', { class: 'phead' },
-    h('div', { class: 'pbar' }, h('button', { class: 'back', 'aria-label': t('p_city'), on: { click: () => go('city') } }, h('span', { 'aria-hidden': 'true' }, '←')), h('h1', null, t('p_' + id))),
+    h('div', { class: 'pbar' + (up ? '' : ' top') }, up ? h('button', { class: 'back', 'aria-label': t('p_' + up), on: { click: () => go(up) } }, h('span', { 'aria-hidden': 'true' }, '←')) : null, h('h1', null, t('p_' + id))),
     P.img && !noImg ? h('div', { class: 'pimg' }, h('img', { src: IMG('cenas', P.img, 1), alt: '', width: 1100, height: 1100, decoding: 'async', on: { error: (e) => e.currentTarget.parentNode.remove() } })) : null,
     sub ? h('p', { class: 'psub' }, sub) : null);
 }
@@ -352,26 +373,24 @@ function screenClass() {
 
 // ---------- a cidade ----------
 // ---------- jornal da cidade: o que os outros andam a fazer ----------
-const NW_IC = { job: 'cash', jail: 'lock', house: 'empire', lux: 'crown', fight: 'skull', lvl: 'bolt' };
+const NW_IC = { job: 'cash', crit: 'gem', spree: 'bolt', jail: 'lock', house: 'empire', lux: 'crown', beat: 'fist', mug: 'cash', fail: 'skull', sick: 'pill', lvl: 'crown', fight: 'fist' };
+const seedOf = (str) => { let x = 7; for (let i = 0; i < str.length; i++) x = (x * 31 + str.charCodeAt(i)) | 0; return Math.abs(x); };
 function newsText(e) {
-  const C = list('crimes');
-  switch (e.k) {
-    case 'job': return t(e.crit ? 'nwCrit' : 'nwJob', { a: e.name, x: C[e.c], m: moneyShort(e.money) });
-    case 'jail': return t('nwJail', { a: e.name, x: C[e.c] });
-    case 'house': return t('nwHouse', { a: e.name, x: list('houses')[e.h] });
-    case 'lux': return t('nwLux', { a: e.name, x: list('lux')[e.i] });
-    case 'fight': return t(e.mode === 'mug' ? 'nwMug' : 'nwBeat', { a: e.name, b: e.target });
-    case 'lvl': return t('nwLvl', { a: e.name, x: list('titles')[e.n - 1] });
-    default: return '';
-  }
+  const k = e.k === 'fight' ? (e.mode === 'mug' ? 'mug' : 'beat') : e.k, C = list('crimes');
+  const x = k === 'house' ? list('houses')[e.h] : k === 'lux' ? list('lux')[e.i] : k === 'lvl' ? list('titles')[e.n - 1] : C[e.c];
+  return tv('nw_' + k, seedOf(e.name + k + e.t), { a: e.name, b: e.target, x, m: moneyShort(e.money || 0), n: e.n });
 }
 const newsIdx = (f) => Math.floor(now() / 5000) % f.length;
+// o jornal na cidade: a manchete do dia e a última hora a rodar; abre o jornal inteiro
 function newsBar() {
-  const f = S.feed || [];
-  if (!f.length) return null;
-  const i = newsIdx(f), e = f[i];
-  return h('button', { class: 'news', 'data-news': String(i), 'aria-label': t('newsTitle'), on: { click: openNews } },
-    h('span', { class: 'nic' }, icon(NW_IC[e.k] || 'chat')), h('span', { class: 'ntx' }, newsText(e)), h('span', { class: 'nago muted' }, dur(now() - e.t)));
+  const f = S.feed || [], top = S.news?.today?.items?.[0];
+  const e = f.length ? f[newsIdx(f)] : null;
+  return h('button', { class: 'newsc', 'aria-label': t('p_news'), on: { click: () => go('news') } },
+    h('div', { class: 'nhead' }, h('span', { class: 'nlbl' }, t('p_news')), h('span', { class: 'nlive' }, t('nwLive')), icon('chev')),
+    top ? h('div', { class: 'ntop' }, t('hl_' + top.k + '_t', { a: top.name })) : null,
+    e ? h('div', { class: 'news', 'data-news': String(newsIdx(f)) },
+      h('span', { class: 'nic' }, icon(NW_IC[e.k] || 'chat')), h('span', { class: 'ntx' }, newsText(e)), h('span', { class: 'nago muted' }, dur(now() - e.t)))
+      : h('div', { class: 'small muted' }, t('nwEmpty')));
 }
 function tickNews() {
   const el = document.querySelector('[data-news]'), f = S.feed || [];
@@ -384,10 +403,36 @@ function tickNews() {
   el.querySelector('.ntx').textContent = newsText(e);
   el.classList.remove('swap'); void el.offsetWidth; el.classList.add('swap');
 }
-function openNews() {
-  const f = S.feed || [];
-  sheet(h('div', { class: 'stack' }, h('h2', null, t('newsTitle')),
-    ...f.map((e) => h('div', { class: 'row nrow' }, h('span', { class: 'nic' }, icon(NW_IC[e.k] || 'chat')), h('div', { class: 'grow' }, newsText(e)), h('span', { class: 'small muted' }, dur(now() - e.t))))));
+async function loadNews() {
+  try { const r = await api('GET', '/api/news'); S.news = r; if (r.feed) S.feed = r.feed; if (S.tab === 'news' || S.tab === 'city') render(); } catch {}
+}
+// o jornal: manchetes de hoje e de ontem (feitas sozinhas a partir do que os jogadores fazem) e a última hora
+function hlCard(it, when, dia) {
+  const cls = it.cls ? t('cl_' + it.cls) : '';
+  return h('article', { class: 'hl hl-' + it.k },
+    h('h3', null, t('hl_' + it.k + '_t', { a: it.name })),
+    h('p', null, tv('hl_' + it.k, seedOf(it.name + it.k + dia), { a: it.name, n: it.n, m: money(it.m), d: when })),
+    h('div', { class: 'hlwho' }, S.avOk ? h('img', { class: 'avs', src: AV(it.av || 0), alt: '', width: 96, height: 96, loading: 'lazy' }) : null,
+      h('div', null, h('b', null, it.name), h('div', { class: 'small muted' }, (cls ? cls + ' · ' : '') + t('level') + ' ' + it.level),
+        h('div', { class: 'small c-resp' }, icon('crown'), ' ' + num(it.respect)))));
+}
+function screenNews() {
+  const N = S.news, seg = S.newsSeg || 'today';
+  const out = [pageHead('news', t('s_news'))];
+  out.push(h('div', { class: 'seg', role: 'group' }, [['today', t('nwToday')], ['yesterday', t('nwYesterday')], ['live', t('nwLive')]].map(([id, lbl]) =>
+    h('button', { 'aria-pressed': seg === id ? 'true' : 'false', on: { click: () => { S.newsSeg = id; render(); } } }, lbl))));
+  if (!N) { out.push(h('p', { class: 'muted' }, t('loading'))); return out; }
+  if (seg === 'live') {
+    const f = S.feed || [];
+    if (!f.length) out.push(h('div', { class: 'note' }, h('p', { class: 'muted' }, t('nwEmpty'))));
+    else out.push(h('div', { class: 'card nlist' }, f.map((e) => h('div', { class: 'row nrow' }, h('span', { class: 'nic' }, icon(NW_IC[e.k] || 'chat')),
+      h('div', { class: 'grow' }, newsText(e)), h('span', { class: 'small muted' }, dur(now() - e.t))))));
+    return out;
+  }
+  const day = seg === 'today' ? N.today : N.yesterday, when = seg === 'today' ? t('dToday') : t('dYesterday');
+  if (!day.items.length) out.push(h('div', { class: 'note' }, h('p', { class: 'muted' }, seg === 'today' ? t('hlNoneToday') : t('hlNoneYesterday'))));
+  else out.push(h('div', { class: 'hls' }, day.items.map((it) => hlCard(it, when, day.dia))));
+  return out;
 }
 function screenCity() {
   const me = S.st.me, L = live(me), n = now();
@@ -399,13 +444,36 @@ function screenCity() {
     jail: L.jail ? t('inside') : null,
     fights: (S.events || []).some((e) => e.id > S.lastEventSeen) ? t('newEvt') : null,
   };
-  const ids = L.jail ? ['jail', ...GRID] : GRID;
   const r = S.st.round;
-  return [h('h1', { class: 'sr' }, t('p_city')), newsBar(),
-    h('div', { class: 'tiles' }, ids.map((id) => h('button', { class: 'tile', on: { click: () => go(id) } },
-      h('img', { src: id === 'casa' ? IMG('casa', S.cfg.house.tiers[me.house].id) : IMG('cenas', PLACES[id].img), alt: '', width: 600, height: 600, loading: 'lazy', decoding: 'async', on: { error: (e) => e.currentTarget.remove() } }),
-      h('span', { class: 'lbl' }, t('p_' + id)), badge[id] ? h('span', { class: 'bdg' }, badge[id]) : null))),
+  return [h('h1', { class: 'sr' }, t('p_city')), newsBar(), ...hubTiles('city', badge),
     h('p', { class: 'small muted', style: 'text-align:center;margin-top:16px' }, t('roundEnds', { n: r.n + 1, t: dur(r.playEnd - n) }))].filter(Boolean);
+}
+function placeTile(id, badge) {
+  const me = S.st.me;
+  return h('button', { class: 'tile', on: { click: () => go(id) } },
+    h('img', { src: id === 'casa' ? IMG('casa', S.cfg.house.tiers[me.house].id) : IMG('cenas', PLACES[id].img), alt: '', width: 600, height: 600, loading: 'lazy', decoding: 'async', on: { error: (e) => e.currentTarget.remove() } }),
+    h('span', { class: 'lbl' }, t('p_' + id)), badge ? h('span', { class: 'bdg' }, badge) : null);
+}
+function hubTiles(hub, badge) {
+  return HUB[hub].flatMap(([sec, ids]) => [h('h2', { class: 'sec' }, t(sec)), h('div', { class: 'tiles' }, ids.map((id) => placeTile(id, badge[id])))]);
+}
+// o império: o que rende enquanto não estás, num só sítio
+function screenEmpire() {
+  const me = S.st.me, n = now();
+  const total = me.biz.reduce((s, b, i) => s + storedNow(b, i), 0), perH = me.biz.reduce((s, b) => s + b.perH, 0);
+  const portReady = me.port.filter((c) => c.readyAt <= n).length;
+  const badge = {
+    biz: total > 0 ? t('toCollect') : null,
+    port: portReady ? t('ready') : me.port.length ? dur(Math.min(...me.port.map((c) => c.readyAt)) - n) : null,
+    casa: me.housePrice != null && me.cash + me.bank >= me.housePrice ? t('canUpgrade') : null,
+  };
+  const head = me.biz.some((b) => b.n > 0) || me.port.length
+    ? h('div', { class: 'card stack empsum' },
+      h('div', { class: 'row sp' }, h('span', { class: 'muted' }, t('empIncome')), h('b', { class: 'num c-cash' }, money(perH) + t('perHour'))),
+      h('button', { class: 'btn buy block big', dataset: { total: 1 }, disabled: total <= 0 && !portReady, on: { click: (e) => act('collect', {}, { el: e.currentTarget }) } },
+        total > 0 || portReady ? t('collect', { m: money(total) }) : t('nothingToCollect')))
+    : h('div', { class: 'tip' }, h('p', null, t('empNone')));
+  return [h('div', { class: 'phead' }, h('div', { class: 'pbar top' }, h('h1', null, t('p_empire')))), head, ...hubTiles('empire', badge)];
 }
 
 // ---------- golpes ----------
@@ -738,6 +806,8 @@ function screenAlley() {
 function screenFights() {
   const me = S.st.me, n = now();
   const out = [pageHead('fights', t('fightsSub'))];
+  out.push(h('div', { class: 'hlinks' }, ['arms', 'rank'].map((id) => h('button', { class: 'hlink', on: { click: () => go(id) } },
+    art('cenas', PLACES[id].img, 'hthumb'), h('span', null, t('p_' + id)), icon('chev')))));
   out.push(h('div', { class: 'seg', role: 'group' }, [['targets', t('targets')], ['events', t('news')]].map(([id, lbl]) =>
     h('button', { 'aria-pressed': S.fightSeg === id ? 'true' : 'false', on: { click: () => { S.fightSeg = id; if (id === 'targets') loadTargets(); else loadEvents(true); render(); } } }, lbl))));
   if (S.fightSeg !== 'events') {
@@ -938,7 +1008,7 @@ fx.setSound(store.get('sound', false));
 // os avatares só aparecem quando as imagens existirem no servidor
 { const pr = new Image(); pr.onload = () => { S.avOk = true; if (S.st?.me && $main) { shell(); render(); } }; pr.src = '/img/av/0.webp?1'; }
 setInterval(tickHud, 1000);
-setInterval(() => { if (S.st && document.visibilityState === 'visible') { refresh(); loadEvents(false); } }, 30000);
+setInterval(() => { if (S.st && document.visibilityState === 'visible') { refresh(); loadEvents(false); if (S.tab === 'news' || S.tab === 'city') loadNews(); } }, 30000);
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && S.st) refresh(); });
 start().catch((e) => { if (e.code !== 'LOGIN_REQUIRED') { if (!S.st) showLanding(); } });
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(() => {});

@@ -641,3 +641,36 @@ body.light .pmap .wave, body.light .pmap .ping { animation: none; }
 .jobp > .btn.robAll { width: calc(100% - 28px); margin: -4px 14px 0; min-height: 48px; font-weight: 700; color: var(--en, #4ea1ff); }
 .btn.robAll svg.i { width: 16px; height: 16px; vertical-align: -3px; }
 .btn.robAll.go { opacity: .6; }
+
+/* ================= barra de baixo e zonas ================= */
+.tabs nav { grid-template-columns: repeat(var(--n, 4), 1fr); }
+.pbar.top { justify-content: center; }
+.pbar.top h1 { margin: 0 auto; }
+.empsum { margin-bottom: 4px; }
+.hlinks { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 0 0 14px; }
+.hlink { display: flex; align-items: center; gap: 10px; min-height: 56px; padding: 6px 10px 6px 6px; border: 0; border-radius: 12px; background: var(--s1); color: inherit; font: inherit; font-weight: 700; text-align: left; }
+.hlink span { flex: 1; min-width: 0; font-family: var(--disp); font-size: 19px; text-transform: uppercase; line-height: 1; }
+.hlink .hthumb { width: 44px; height: 44px; border-radius: 9px; object-fit: cover; flex: none; }
+.hlink svg.i { width: 18px; height: 18px; color: var(--tx3); flex: none; }
+.hlink:focus-visible { outline: 2px solid var(--sodium); outline-offset: 2px; }
+
+/* ================= jornal ================= */
+.newsc { display: block; width: 100%; margin: 4px 0 6px; padding: 12px 14px; border: 0; border-radius: 14px; background: var(--s1); color: inherit; font: inherit; text-align: left; cursor: pointer; }
+.newsc:focus-visible { outline: 2px solid var(--sodium); outline-offset: 2px; }
+.nhead { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+.nlbl { font-family: var(--disp); font-weight: 900; font-size: 22px; text-transform: uppercase; line-height: 1; }
+.nlive { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: #fff; background: var(--danger); padding: 3px 7px; border-radius: 5px; }
+.nhead svg.i { margin-left: auto; width: 18px; height: 18px; color: var(--tx3); }
+.ntop { font-family: var(--disp); font-weight: 800; font-size: 20px; line-height: 1.05; text-transform: uppercase; color: var(--sodium); margin-bottom: 8px; }
+.newsc .news { margin: 0; padding: 0; min-height: 0; background: none; border-radius: 0; }
+.hls { display: grid; gap: 10px; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); }
+.hl { background: var(--s1); border-radius: 14px; padding: 14px; display: grid; gap: 10px; align-content: start; }
+.hl h3 { font-family: var(--disp); font-weight: 900; font-size: 24px; line-height: 1; text-transform: uppercase; color: var(--sodium); }
+.hl-beaten h3, .hl-mugged h3, .hl-unlucky h3, .hl-sick h3 { color: var(--danger); }
+.hl-bigjob h3, .hl-hustler h3 { color: var(--cash); }
+.hl p { line-height: 1.45; }
+.hlwho { display: flex; align-items: center; gap: 10px; background: var(--s2); border-radius: 10px; padding: 8px 10px; }
+.hlwho .avs { width: 48px; height: 48px; border-radius: 50%; object-fit: cover; flex: none; }
+.hlwho svg.i { width: 12px; height: 12px; vertical-align: -1px; }
+.nlist { padding: 4px 14px; }
+.nlist .nrow + .nrow { border-top: 1px solid var(--s2); }

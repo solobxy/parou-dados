@@ -7,6 +7,7 @@ import { tmpdir } from 'node:os';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import net from 'node:net';
+import { DatabaseSync } from 'node:sqlite';
 
 const AQUI = dirname(fileURLToPath(import.meta.url));
 const PORT = 3900 + Math.floor(Math.random() * 90);
@@ -227,7 +228,7 @@ test('jornal da cidade: uma luta ganha aparece para todos, sem dados privados', 
   const st = await (await fetch(BASE + '/api/state', { headers: { 'X-Forwarded-For': '10.0.9.9' } })).json();
   assert.ok(Array.isArray(st.feed));
   for (const e of st.feed) {
-    assert.ok(['job', 'jail', 'house', 'lux', 'fight', 'lvl'].includes(e.k));
+    assert.ok(['job', 'crit', 'spree', 'jail', 'house', 'lux', 'beat', 'mug', 'fail', 'sick', 'lvl'].includes(e.k), e.k);
     assert.deepEqual(Object.keys(e).filter((k) => !['t', 'k', 'name', 'c', 'money', 'crit', 'h', 'i', 'target', 'mode', 'n'].includes(k)), []);
   }
 });
@@ -241,4 +242,34 @@ test('usar a stamina toda pela API', async () => {
   const me = await estado();
   assert.equal(me.counters.crimes, r.body.result.n);
   assert.equal(me.cash, 500 + r.body.result.money);
+});
+
+test('manchetes do dia: quem bate e quem leva aparecem, com os números certos', async () => {
+  const a = await contaNova('Pancadas', '10.0.9.20'), b = await contaNova('Levador', '10.0.9.21');
+  const r = await (await fetch(BASE + '/api/news', { headers: { 'X-Forwarded-For': '10.0.9.22' } })).json();
+  assert.ok(Array.isArray(r.feed)); assert.ok(Array.isArray(r.today.items)); assert.ok(Array.isArray(r.yesterday.items));
+  assert.match(r.today.dia, /^\d{4}-\d{2}-\d{2}$/);
+  for (const it of r.today.items) {
+    assert.deepEqual(Object.keys(it).sort(), ['av', 'cls', 'k', 'level', 'm', 'n', 'name', 'respect']);
+    assert.ok(Number.isSafeInteger(it.n) && it.n > 0);
+  }
+  // um jogador aparece numa só manchete
+  const nomes = r.today.items.map((x) => x.name);
+  assert.equal(new Set(nomes).size, nomes.length);
+});
+
+test('contas do dia batem com o jogador: golpes, vitórias, dinheiro e respeito', async () => {
+  const { cookie, estado } = await contaNova('Contado', '10.0.9.30');
+  await cru(cookie, '10.0.9.30', { type: 'crimeAll', k: 0 });
+  await cru(cookie, '10.0.9.30', { type: 'crime', k: 0 });
+  const me = await estado();
+  const db = new DatabaseSync(join(dir, 'jogo.db'), { readOnly: true });
+  const conta = db.prepare('SELECT id FROM contas WHERE nome = ?').get('Contado').id;
+  const rows = db.prepare('SELECT * FROM diario WHERE conta = ?').all(conta);
+  db.close();
+  const sum = (k) => rows.reduce((x, r) => x + r[k], 0);
+  assert.equal(sum('crimes'), me.counters.crimes);
+  assert.equal(sum('wins'), me.counters.wins);
+  assert.equal(sum('resp'), me.respect);
+  assert.equal(sum('money'), me.cash - 500);
 });

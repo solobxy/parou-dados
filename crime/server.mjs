@@ -10,7 +10,7 @@ import { join, extname, normalize } from 'node:path';
 import { CFG, T } from './engine/config.js';
 import * as E from './engine/engine.js';
 import { cryptoRng } from './engine/rng.js';
-import { phaseAt } from './engine/time.js';
+import { phaseAt, localParts } from './engine/time.js';
 
 const PORT = +(process.env.PORT || 3170);
 const DATA = process.env.DATA || process.env.STATE_DIRECTORY || './dados';
@@ -39,6 +39,12 @@ CREATE TABLE IF NOT EXISTS jogadores (ronda INTEGER NOT NULL, conta TEXT NOT NUL
   atualizado INTEGER NOT NULL, PRIMARY KEY (ronda, conta));
 CREATE TABLE IF NOT EXISTS eventos (id INTEGER PRIMARY KEY AUTOINCREMENT, conta TEXT NOT NULL, t INTEGER NOT NULL, dados TEXT NOT NULL);
 CREATE INDEX IF NOT EXISTS eventos_conta ON eventos (conta, id);
+CREATE TABLE IF NOT EXISTS noticias (id INTEGER PRIMARY KEY AUTOINCREMENT, ronda INTEGER NOT NULL, t INTEGER NOT NULL, dados TEXT NOT NULL);
+CREATE INDEX IF NOT EXISTS noticias_ronda ON noticias (ronda, id);
+CREATE TABLE IF NOT EXISTS diario (ronda INTEGER NOT NULL, dia TEXT NOT NULL, conta TEXT NOT NULL,
+  resp INTEGER NOT NULL DEFAULT 0, crimes INTEGER NOT NULL DEFAULT 0, wins INTEGER NOT NULL DEFAULT 0, busts INTEGER NOT NULL DEFAULT 0,
+  money INTEGER NOT NULL DEFAULT 0, best INTEGER NOT NULL DEFAULT 0, beaten INTEGER NOT NULL DEFAULT 0, mugged INTEGER NOT NULL DEFAULT 0,
+  mugloss INTEGER NOT NULL DEFAULT 0, fights INTEGER NOT NULL DEFAULT 0, sick INTEGER NOT NULL DEFAULT 0, PRIMARY KEY (ronda, dia, conta));
 `);
 const q = {
   contaPorNome: db.prepare('SELECT * FROM contas WHERE nome_lc = ?'),
@@ -54,26 +60,89 @@ const q = {
   novoEvento: db.prepare('INSERT INTO eventos (conta, t, dados) VALUES (?, ?, ?)'),
   eventos: db.prepare('SELECT id, t, dados FROM eventos WHERE conta = ? ORDER BY id DESC LIMIT 30'),
   limparEventos: db.prepare('DELETE FROM eventos WHERE t < ?'),
+  novaNoticia: db.prepare('INSERT INTO noticias (ronda, t, dados) VALUES (?, ?, ?)'),
+  noticias: db.prepare('SELECT t, dados FROM noticias WHERE ronda = ? ORDER BY id DESC LIMIT 40'),
+  diario: db.prepare(`INSERT INTO diario (ronda, dia, conta, resp, crimes, wins, busts, money, best, beaten, mugged, mugloss, fights, sick)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ON CONFLICT (ronda, dia, conta) DO UPDATE SET
+    resp = resp + excluded.resp, crimes = crimes + excluded.crimes, wins = wins + excluded.wins, busts = busts + excluded.busts,
+    money = money + excluded.money, best = max(best, excluded.best), beaten = beaten + excluded.beaten, mugged = mugged + excluded.mugged,
+    mugloss = mugloss + excluded.mugloss, fights = fights + excluded.fights, sick = sick + excluded.sick`),
+  doDia: db.prepare('SELECT * FROM diario WHERE ronda = ? AND dia = ?'),
+  limparNoticias: db.prepare('DELETE FROM noticias WHERE t < ?'),
 };
 
 // ---------- estado do jogador (Map <-> JSON) ----------
 const toJson = (p) => JSON.stringify(p, (k, v) => (v instanceof Map ? { __map: [...v] } : v));
 const fromJson = (s) => JSON.parse(s, (k, v) => (v && v.__map ? new Map(v.__map) : v));
 
-// jornal da cidade: o que os outros andam a fazer (só em memória, últimas 40 notícias)
+// ---------- jornal da cidade ----------
+// última hora: o que os jogadores fazem, guardado na base de dados (sobrevive a reinícios)
 const jornal = [];
-function noticia(now, o) { jornal.push({ t: now, ...o }); if (jornal.length > 40) jornal.shift(); }
-const ultimas = () => jornal.slice(-12).reverse();
+function noticia(now, o) {
+  const e = { t: now, ...o };
+  jornal.push(e); if (jornal.length > 40) jornal.shift();
+  q.novaNoticia.run(ronda, now, JSON.stringify(o));
+}
+const ultimas = () => jornal.slice(-20).reverse();
 function noticiar(now, a, r, p, alvo) {
   const name = nomeDe(p.id), k = int(a.k);
-  const job = a.type === 'crimeAll' ? { ok: r.wins > 0, money: r.best, crit: r.bestCrit } : { ok: r.success, money: r.money, crit: r.crit };
-  const isJob = a.type === 'crime' || a.type === 'crimeAll';
-  if (isJob && job.ok && (k >= 5 || (job.crit && k >= 2))) noticia(now, { k: 'job', name, c: k, money: job.money, crit: job.crit });
-  if (isJob && r.busted && k >= 3) noticia(now, { k: 'jail', name, c: k });
+  if (a.type === 'crimeAll' && r.wins >= 10 && r.money >= 1000) noticia(now, { k: 'spree', name, c: k, n: r.n, money: r.money });
+  else {
+    const job = a.type === 'crimeAll' ? { ok: r.wins > 0, money: r.best, crit: r.bestCrit } : { ok: r.success, money: r.money, crit: r.crit };
+    const isJob = a.type === 'crime' || a.type === 'crimeAll';
+    if (isJob && job.ok && (k >= 5 || (job.crit && k >= 2))) noticia(now, { k: job.crit ? 'crit' : 'job', name, c: k, money: job.money });
+  }
+  if ((a.type === 'crime' || a.type === 'crimeAll') && r.busted && k >= 2) noticia(now, { k: 'jail', name, c: k });
   if (a.type === 'house') noticia(now, { k: 'house', name, h: p.house });
   else if (a.type === 'luxury') noticia(now, { k: 'lux', name, i: p.luxuries - 1 });
-  else if (a.type === 'attack' && r.win) noticia(now, { k: 'fight', name, target: nomeDe(alvo.id), mode: r.mode });
+  else if (a.type === 'hooker' && r.sick) noticia(now, { k: 'sick', name });
+  else if (a.type === 'attack') {
+    const b = nomeDe(alvo.id);
+    if (r.win && r.mode === 'mug') noticia(now, { k: 'mug', name, target: b, money: r.money });
+    else if (r.win) noticia(now, { k: 'beat', name, target: b });
+    else noticia(now, { k: 'fail', name, target: b });
+  }
   if (r.levelUp && r.levelUp.to >= 4) noticia(now, { k: 'lvl', name, n: r.levelUp.to });
+}
+
+// manchetes: contas do dia de cada jogador (dia de Lisboa), para «o mais procurado», «saco de pancada», etc.
+const diaDe = (t) => { const d = localParts(t); return `${d.y}-${String(d.m).padStart(2, '0')}-${String(d.d).padStart(2, '0')}`; };
+const ontemDe = (t) => { const d = localParts(t); const x = new Date(Date.UTC(d.y, d.m - 1, d.d - 1)); return x.toISOString().slice(0, 10); };
+function contarDia(now, conta, v) {
+  q.diario.run(ronda, diaDe(now), conta, v.resp || 0, v.crimes || 0, v.wins || 0, v.busts || 0, v.money || 0, v.best || 0,
+    v.beaten || 0, v.mugged || 0, v.mugloss || 0, v.fights || 0, v.sick || 0);
+}
+function contarAcao(now, a, r, p, alvo, resp0, alvoResp0) {
+  const v = { resp: p.respect - resp0 };
+  if (a.type === 'crime') Object.assign(v, { crimes: 1, wins: r.success ? 1 : 0, busts: r.busted ? 1 : 0, money: r.success ? r.money : 0, best: r.success ? r.money : 0 });
+  else if (a.type === 'crimeAll') Object.assign(v, { crimes: r.n, wins: r.wins, busts: r.busted ? 1 : 0, money: r.money, best: r.best });
+  else if (a.type === 'hooker' && r.sick) v.sick = 1;
+  else if (a.type === 'attack') {
+    if (r.win) v.fights = 1; else v.beaten = 1;
+    const w = { resp: alvo.respect - alvoResp0 };
+    if (r.win && r.mode === 'mug') Object.assign(w, { mugged: 1, mugloss: r.money }); else if (r.win) w.beaten = 1;
+    contarDia(now, alvo.id, w);
+  }
+  if (Object.values(v).some((x) => x)) contarDia(now, p.id, v);
+}
+// regras das manchetes: [tipo, coluna, mínimo para aparecer]
+const MANCHETES = [['wanted', 'resp', 10], ['bigjob', 'best', 500], ['fighter', 'fights', 2], ['mugged', 'mugged', 1], ['beaten', 'beaten', 2], ['hustler', 'crimes', 30], ['unlucky', 'busts', 2], ['sick', 'sick', 1]];
+const cacheManchetes = new Map();
+function manchetes(dia, now) {
+  const c = cacheManchetes.get(dia);
+  if (c && c.ronda === ronda && now - c.t < 30_000) return c.lista;
+  const rows = q.doDia.all(ronda, dia), usados = new Set(), lista = [];
+  for (const [k, col, min] of MANCHETES) {
+    let best = null;
+    for (const r of rows) if (r[col] >= min && !usados.has(r.conta) && (!best || r[col] > best[col])) best = r;
+    if (!best) continue;
+    usados.add(best.conta);                       // cada jogador aparece numa manchete só, para haver mais nomes
+    const p = jogadores.get(best.conta);
+    lista.push({ k, name: nomeDe(best.conta), av: p?.av || 0, cls: p?.cls || '', level: p ? E.level(p) : 1, respect: p?.respect || 0,
+      n: best[col], m: k === 'mugged' ? best.mugloss : k === 'bigjob' ? best.best : 0 });
+  }
+  cacheManchetes.set(dia, { t: now, ronda, lista });
+  return lista;
 }
 
 // jogadores da ronda em curso, em memória
@@ -91,6 +160,7 @@ function carregarRonda(n) {
   ronda = n;
   jogadores.clear(); jornal.length = 0;
   for (const r of q.daRonda.all(n)) jogadores.set(r.conta, fromJson(r.estado));
+  for (const r of q.noticias.all(n).reverse()) jornal.push({ t: r.t, ...JSON.parse(r.dados) });
 }
 
 function nomeDe(id) {
@@ -251,7 +321,8 @@ function agir(conta, corpo, now) {
   const p = jogadorDe(conta, now, w);
   const world = { start: w.start, playEnd: w.playEnd };
   const a = corpo || {};
-  let r, alvo = null;
+  let r, alvo = null, alvoResp0 = 0;
+  const resp0 = p.respect;
   switch (a.type) {
     case 'crime': r = E.doCrime(p, now, world, int(a.k), rng); break;
     case 'crimeAll': r = E.doCrimeAll(p, now, world, int(a.k), rng); break;
@@ -285,6 +356,7 @@ function agir(conta, corpo, now) {
       const c = q.contaPorNome.get(nome);
       if (!c || !jogadores.has(c.id)) throw new E.GameError('NO_TARGET');
       alvo = jogadores.get(c.id);
+      alvoResp0 = alvo.respect;
       r = E.attack(p, alvo, now, world, a.mode === 'mug' ? 'mug' : 'beat', rng);
       break;
     }
@@ -297,6 +369,7 @@ function agir(conta, corpo, now) {
       guardar(alvo, now);
       evento(alvo.id, now, { k: 'attacked', by: nomeDe(p.id), mode: r.mode, win: r.win, respect: r.win ? -r.targetLoss : (r.defenderGain || 0), money: r.money || 0 });
     }
+    contarAcao(now, a, r, p, alvo, resp0, alvoResp0);
     db.exec('COMMIT');
     noticiar(now, a, r, p, alvo);
   } catch (e) {
@@ -368,6 +441,10 @@ async function tratar(req, res) {
     return enviar(res, 200, { ok: true, ronda: w.n, fase: w.phase, jogadores: jogadores.size });
   }
   if (req.method === 'GET' && path === '/api/config') return enviar(res, 200, cfgPublica());
+  if (req.method === 'GET' && path === '/api/news') {
+    const w = mundo(now); carregarRonda(w.n);
+    return enviar(res, 200, { now, feed: ultimas(), today: { dia: diaDe(now), items: manchetes(diaDe(now), now) }, yesterday: { dia: ontemDe(now), items: manchetes(ontemDe(now), now) } });
+  }
 
   if (req.method === 'POST' && (path === '/api/register' || path === '/api/login')) {
     let b; try { b = await lerCorpo(req); } catch { return enviar(res, 400, { error: 'BAD_REQUEST' }); }
@@ -471,6 +548,7 @@ setInterval(() => {
     q.limparSessoes.run(now);
     q.limparEventos.run(now - 15 * T.DAY);
     const dir = join(DATA, 'copias'); mkdirSync(dir, { recursive: true });
+    q.limparNoticias.run(now - 15 * T.DAY);
     const nome = join(dir, `jogo-${new Date(now).toISOString().slice(0, 13)}.db`);
     if (!existsSync(nome)) db.exec(`VACUUM INTO '${nome.replace(/'/g, "''")}'`);
     const fs = readdirSync(dir).filter((f) => f.endsWith('.db')).sort();
