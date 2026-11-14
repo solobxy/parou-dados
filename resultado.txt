@@ -1,0 +1,2 @@
+dayla https://dayla.2-31-13-85.sslip.io/: m LCP~1704 ms; d LCP~636 ms
+dayla-en https://dayla.2-31-13-85.sslip.io/en/: m LCP~608 ms; d LCP~628 ms
