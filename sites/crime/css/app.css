@@ -1051,3 +1051,20 @@ h1.slogo { margin: 0; }
 .glock { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; } .glock svg.i { width: 13px; height: 13px; }
 .gres { gap: 12px; align-items: center; margin-bottom: 12px; } .gres > span svg.i { width: 22px; height: 22px; }
 .stack > .gres { margin-bottom: 0; }
+
+/* ---- caça da roda: 36 cartas, prémios à vista antes de baralhar ---- */
+.ch3t { transition: transform .38s cubic-bezier(.45, .05, .25, 1); }
+.ch3t.pre span { opacity: 0 !important; transform: scale(.4) !important; }
+.ch3t .bk.hot { color: var(--gold); box-shadow: inset 0 0 0 2px var(--gold); }
+.ch3t.win .bk.hot { color: #1a1100; }
+.ch3.mixing .ch3t .fr { transform: scale(.35) rotate(90deg); opacity: .15; transition: opacity .2s, transform .22s ease-in; }
+.ch3.many { gap: 5px; }
+.ch3.many .ch3t, .ch3.many .ch3t span { border-radius: 8px; }
+.ch3.many .ch3t .fr { font-size: 19px; box-shadow: inset 0 0 0 1.5px #ffffff40; }
+.ch3.many .ch3t .bk { font-size: 16px; letter-spacing: -.01em; }
+.ch3.many .ch3t.dim { opacity: .72; }
+.wstage.th-caixas { padding: 10px; gap: 8px; } .wstage.th-caixas .wst-name { font-size: 20px; line-height: 1; }
+
+/* ---- dados desenhados em canvas (3D a sério em qualquer telemóvel) ---- */
+.dc3 { height: auto; aspect-ratio: 340 / 236; perspective: none; }
+.dc3 .dc3c { display: block; width: 100%; height: 100%; }

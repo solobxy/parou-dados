@@ -10,6 +10,15 @@ const RM = () => false;
 const DISP = '"Shoulders", "Arial Narrow", sans-serif';
 const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+// Nas mesas ao vivo a jogada tem de ser igual em todos os telemóveis: o acaso da animação (velocidade do lançamento,
+// caminho da bola, baralhar das cartas) sai de um gerador com a semente da ronda, que é a mesma para toda a gente.
+let rand = Math.random;
+export function seed(n) {
+  if (n === null || n === undefined) { rand = Math.random; return; }
+  let a = (Number(n) ^ 0x9e3779b9) >>> 0;
+  rand = () => { a = (a + 0x6d2b79f5) >>> 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+}
+const norm = (x) => { const y = ((x % TAU) + TAU) % TAU; return y > Math.PI ? y - TAU : y; };
 
 function mkCanvas(w, hh, cls) {
   const c = document.createElement('canvas'), dpr = Math.min(2.5, window.devicePixelRatio || 1);
@@ -94,7 +103,7 @@ export function roulette({ order, colorOf, sfx }) {
   function draw(dt, now) {
     let b;
     if (st.sp) {
-      const sp = st.sp; if (sp.t0 === undefined) sp.t0 = now - sp.t; sp.t = now - sp.t0; b = ballAt(sp, sp.t); st.wa = b.wa;   // relógio real: num telemóvel lento a jogada não fica em câmara lenta
+      const sp = st.sp; if (sp.t0 === undefined) sp.t0 = now - sp.t; sp.t = now - sp.t0; b = ballAt(sp, sp.t); st.wa = b.wa + sp.err * Math.exp(-sp.t / 0.5);   // relógio real: num telemóvel lento a jogada não fica em câmara lenta
       if (sp.t < TA) { const k = Math.floor(b.a / (TAU / 8)); if (k !== sp.k) { sp.k = k; tickDef(); } }
       else if (!b.rest && b.hop !== sp.hop) { sp.hop = b.hop; sfx('deal'); }
       if (b.rest && !sp.landed) { sp.landed = true; st.idx = sp.idx; sfx('claim'); }
@@ -145,8 +154,9 @@ export function roulette({ order, colorOf, sfx }) {
   return {
     el, wake,
     set(n) { st.idx = Math.max(0, order.indexOf(n)); st.sp = null; st.glow = 1; },
-    spin(n) {
-      const idx = Math.max(0, order.indexOf(n)), sp = { t: 0, wa0: st.wa, idx, phi: idx * th - Math.PI / 2, k: 0, hop: 0 };
+    spin(n, t0) {
+      const wa0 = t0 === undefined ? st.wa : (IDLE * t0) % TAU;
+      const idx = Math.max(0, order.indexOf(n)), sp = { t: 0, wa0, err: norm(st.wa - wa0), idx, phi: idx * th - Math.PI / 2, k: 0, hop: 0 };
       sp.va = -W0 * Math.exp(-TA / BT) - (IDLE + KICK * Math.exp(-TA / WT));
       sp.psiA = sp.phi - sp.va * D * C;
       sp.b0 = waAt(sp, TA) + sp.psiA + W0 * BT * (1 - Math.exp(-TA / BT));
@@ -198,11 +208,11 @@ function wheelStep(s) {
 const pmod = (x, n) => ((x % n) + n) % n;
 function solveSpin(p0, idx, N) {
   const ok = [];
-  for (let v0 = 36 + Math.random() * 0.04; v0 < 52.6; v0 += 0.04) {
+  for (let v0 = 36 + rand() * 0.04; v0 < 52.6; v0 += 0.04) {
     const q = wheelSim(p0, v0); while (!q.done) wheelStep(q);
     if (pmod(Math.round(-q.p), N) === idx) ok.push(v0);
   }
-  return ok.length ? ok[Math.floor(Math.random() * ok.length)] : null;
+  return ok.length ? ok[Math.floor(rand() * ok.length)] : null;
 }
 
 // segs: [{ text, color, big }]. A casa 0 começa no topo.
@@ -210,30 +220,43 @@ export function bigWheel({ segs, sfx, hub = '', cls = 'bw3', turns = 5, secs = 8
   const W = 360, H = 404, cx = 180, cy = 190, R = 158, N = segs.length, th = TAU / N;
   const [el, ctx, dpr] = mkCanvas(W, H, cls);
   const face = layer(R * 2, dpr, (x) => {
+    const full = N > 30, HB = full ? 0.8 : 1, RB = R - 9, BAND = 34;   // roda grande: aro escuro com os números, casas de bónus com o nome ao comprido
     segs.forEach((s, i) => {
       const a0 = (i - 0.5) * th - Math.PI / 2, a1 = a0 + th, a = i * th - Math.PI / 2;
-      x.fillStyle = s.color; x.beginPath(); x.moveTo(0, 0); x.arc(0, 0, R - 9, a0, a1); x.closePath(); x.fill();
-      x.strokeStyle = '#e2c06a'; x.lineWidth = 1.1; x.stroke();
-      x.save(); x.fillStyle = s.ink || '#fff'; x.strokeStyle = '#000b'; x.lineJoin = 'round'; x.textAlign = 'center'; x.textBaseline = 'middle';
-      if (s.big) { x.translate((R - 30) * Math.cos(a), (R - 30) * Math.sin(a)); x.rotate(a + Math.PI / 2); x.font = `900 ${N > 30 ? 19 : 22}px ${DISP}`; x.lineWidth = 3; x.strokeText(s.text, 0, 0); x.fillText(s.text, 0, 0); }
-      else { x.translate((R - 46) * Math.cos(a), (R - 46) * Math.sin(a)); x.rotate(a); x.font = `900 10.5px ${DISP}`; x.lineWidth = 2.5; x.strokeText(s.text, 0, 0.5); x.fillText(s.text, 0, 0.5); }
+      x.fillStyle = s.color; x.beginPath(); x.moveTo(0, 0); x.arc(0, 0, RB, a0, a1); x.closePath(); x.fill();
+      if (full && s.big) { x.fillStyle = '#080a0fb8'; x.beginPath(); x.arc(0, 0, RB, a0, a1); x.arc(0, 0, RB - BAND, a1, a0, true); x.closePath(); x.fill(); }
+      x.strokeStyle = '#e2c06a'; x.lineWidth = full ? 1 : 1.1; x.beginPath(); x.moveTo(0, 0); x.lineTo(RB * Math.cos(a0), RB * Math.sin(a0)); x.stroke();
+      x.save(); x.fillStyle = s.ink || '#fff'; x.strokeStyle = '#000c'; x.lineJoin = 'round'; x.textAlign = 'center'; x.textBaseline = 'middle';
+      if (s.big && full) {
+        x.translate((RB - BAND / 2) * Math.cos(a), (RB - BAND / 2) * Math.sin(a)); x.rotate(a + Math.PI / 2);
+        x.font = `900 ${s.text.length > 1 ? 16 : 23}px ${DISP}`; x.lineWidth = 3.5; x.strokeText(s.text, 0, 1); x.fillText(s.text, 0, 1);
+      } else if (s.big) { x.translate((R - 30) * Math.cos(a), (R - 30) * Math.sin(a)); x.rotate(a + Math.PI / 2); x.font = `900 22px ${DISP}`; x.lineWidth = 3; x.strokeText(s.text, 0, 0); x.fillText(s.text, 0, 0); }
+      else {
+        // casa de bónus: marca dourada no aro e o nome em grande, ao longo do raio
+        x.save(); x.translate((RB - 12) * Math.cos(a), (RB - 12) * Math.sin(a));
+        x.fillStyle = '#f0d58a'; x.beginPath(); x.arc(0, 0, 5.2, 0, TAU); x.fill(); x.fillStyle = s.color; x.beginPath(); x.arc(0, 0, 2.4, 0, TAU); x.fill(); x.restore();
+        x.translate((RB - 62) * Math.cos(a), (RB - 62) * Math.sin(a)); x.rotate(a);
+        x.font = `900 13px ${DISP}`; try { x.letterSpacing = '0.6px'; } catch { /* navegador antigo */ }
+        x.lineWidth = 3; x.strokeText(s.text, 0, 0.5); x.fillStyle = '#fff3c4'; x.fillText(s.text, 0, 0.5);
+      }
       x.restore();
     });
-    // sombreado: mais escuro para dentro
-    const g = x.createRadialGradient(0, 0, 30, 0, 0, R - 9); g.addColorStop(0, '#0009'); g.addColorStop(0.45, '#0002'); g.addColorStop(1, '#ffffff10');
-    x.fillStyle = g; x.beginPath(); x.arc(0, 0, R - 9, 0, TAU); x.fill();
+    if (full) { x.strokeStyle = '#e2c06a'; x.lineWidth = 1.2; x.beginPath(); x.arc(0, 0, RB - BAND, 0, TAU); x.stroke(); }
+    // sombreado: só junto ao centro, para as casas ficarem com cor até ao aro
+    const g = x.createRadialGradient(0, 0, 30, 0, 0, RB); g.addColorStop(0, '#0008'); g.addColorStop(full ? 0.42 : 0.45, full ? '#0000' : '#0002'); g.addColorStop(1, '#ffffff10');
+    x.fillStyle = g; x.beginPath(); x.arc(0, 0, RB, 0, TAU); x.fill();
     // anel interior e cubo
-    x.strokeStyle = '#f0d58a'; x.lineWidth = 3; x.beginPath(); x.arc(0, 0, 58, 0, TAU); x.stroke();
+    x.strokeStyle = '#f0d58a'; x.lineWidth = 3; x.beginPath(); x.arc(0, 0, 58 * HB, 0, TAU); x.stroke();
     // medalhão ao centro: laca preta com raios dourados, à maneira art déco
-    const hg = x.createRadialGradient(-14, -16, 4, 0, 0, 56); hg.addColorStop(0, '#2a2f3a'); hg.addColorStop(1, '#07080b');
-    x.fillStyle = hg; x.beginPath(); x.arc(0, 0, 56, 0, TAU); x.fill();
-    x.fillStyle = '#d9b25a33'; for (let i = 0; i < 16; i++) { const a = i * TAU / 16; x.beginPath(); x.moveTo(0, 0); x.arc(0, 0, 54, a, a + TAU / 32); x.closePath(); x.fill(); }
-    x.fillStyle = '#0b0d12'; x.beginPath(); x.arc(0, 0, 40, 0, TAU); x.fill();
-    x.strokeStyle = '#e2c06a'; x.lineWidth = 1.5; x.beginPath(); x.arc(0, 0, 40, 0, TAU); x.stroke(); x.beginPath(); x.arc(0, 0, 51, 0, TAU); x.stroke();
+    const hg = x.createRadialGradient(-14 * HB, -16 * HB, 4, 0, 0, 56 * HB); hg.addColorStop(0, '#2a2f3a'); hg.addColorStop(1, '#07080b');
+    x.fillStyle = hg; x.beginPath(); x.arc(0, 0, 56 * HB, 0, TAU); x.fill();
+    x.fillStyle = '#d9b25a33'; for (let i = 0; i < 16; i++) { const a = i * TAU / 16; x.beginPath(); x.moveTo(0, 0); x.arc(0, 0, 54 * HB, a, a + TAU / 32); x.closePath(); x.fill(); }
+    x.fillStyle = '#0b0d12'; x.beginPath(); x.arc(0, 0, 40 * HB, 0, TAU); x.fill();
+    x.strokeStyle = '#e2c06a'; x.lineWidth = 1.5; x.beginPath(); x.arc(0, 0, 40 * HB, 0, TAU); x.stroke(); x.beginPath(); x.arc(0, 0, 51 * HB, 0, TAU); x.stroke();
     if (hub) {
       x.fillStyle = '#f0d58a'; x.textAlign = 'center'; x.textBaseline = 'middle'; const ws = hub.split(' ');
-      x.font = `900 ${ws.length > 1 ? 15 : 17}px ${DISP}`;
-      if (ws.length > 1) { const m = Math.ceil(ws.length / 2); x.fillText(ws.slice(0, m).join(' '), 0, -8); x.fillText(ws.slice(m).join(' '), 0, 9); } else x.fillText(hub, 0, 1);
+      x.font = `900 ${(ws.length > 1 ? 15 : 17) * HB}px ${DISP}`;
+      if (ws.length > 1) { const m = Math.ceil(ws.length / 2); x.fillText(ws.slice(0, m).join(' '), 0, -8 * HB); x.fillText(ws.slice(m).join(' '), 0, 9 * HB); } else x.fillText(hub, 0, 1);
     }
     // pinos
     for (let i = 0; i < N; i++) {
@@ -253,7 +276,7 @@ export function bigWheel({ segs, sfx, hub = '', cls = 'bw3', turns = 5, secs = 8
         // passos fixos, contados pelo relógio: a jogada é sempre a mesma que foi calculada, em qualquer telemóvel
         const want = Math.floor(sp.t / PH.dt); let n = 0;
         while (sp.n < want && !sp.sim.done && n++ < 500) { const tk = sp.sim.ticks; wheelStep(sp.sim); sp.n++; if (sp.sim.ticks !== tk) tick(); }
-        st.rot = sp.sim.p * th; st.flap = sp.sim.phi;
+        st.rot = sp.sim.p * th + sp.err * Math.exp(-sp.t / 0.25); st.flap = sp.sim.phi;
         if (sp.sim.done && !sp.done) { sp.done = true; sp.T = sp.t; st.win = sp.idx; sfx('claim'); }
       } else {
         const u = clamp(sp.t / sp.T, 0, 1); st.rot = sp.r0 + sp.d * ease(u);
@@ -301,12 +324,12 @@ export function bigWheel({ segs, sfx, hub = '', cls = 'bw3', turns = 5, secs = 8
   return {
     el, wake,
     set(idx) { st.rot = -idx * th; st.flap = 0; st.win = idx; st.sp = null; },
-    spin(idx) {
-      const off = (Math.random() - 0.5) * th * 0.56, cur = st.rot;
+    spin(idx, from) {
+      const off = (rand() - 0.5) * th * 0.56, cur = from === undefined || from === null ? st.rot : -from * th, err = norm(st.rot - cur);
       const base = -idx * th + off, delta = ((base - cur) % TAU + TAU) % TAU;
       st.win = -1;
       const v0 = solveSpin(cur / th, idx, N);   // a velocidade do lançamento muda de jogada para jogada
-      st.sp = { t: 0, T: secs, r0: cur, d: turns * TAU + delta, idx, k: Math.floor(cur / th + 0.5), n: 0, sim: v0 === null ? null : wheelSim(cur / th, v0) };
+      st.sp = { t: 0, T: secs, r0: cur, d: turns * TAU + delta, idx, err, k: Math.floor(cur / th + 0.5), n: 0, sim: v0 === null ? null : wheelSim(cur / th, v0) };
       wake();
       return new Promise((res) => { st.resolve = res; });
     },
@@ -314,18 +337,77 @@ export function bigWheel({ segs, sfx, hub = '', cls = 'bw3', turns = 5, secs = 8
 }
 
 // ------------------------------------------------------------------ dados em 3D
+// Desenhados em canvas com projeção a sério (sem 3D do CSS, que em alguns telemóveis achata os cubos e abre buracos nos cantos).
 const PIPS = { 1: [4], 2: [0, 8], 3: [0, 4, 8], 4: [0, 2, 6, 8], 5: [0, 2, 4, 6, 8], 6: [0, 2, 3, 5, 6, 8] };
-const FACE_UP = { 1: [0, 0], 6: [0, 180], 3: [0, -90], 4: [0, 90], 2: [-90, 0], 5: [90, 0] };   // [rotateX, rotateY] que põe a face virada para cima
+const rotX = (a) => { const c = Math.cos(a), s = Math.sin(a); return [[1, 0, 0], [0, c, -s], [0, s, c]]; };
+const rotY = (a) => { const c = Math.cos(a), s = Math.sin(a); return [[c, 0, s], [0, 1, 0], [-s, 0, c]]; };
+const rotZ = (a) => { const c = Math.cos(a), s = Math.sin(a); return [[c, -s, 0], [s, c, 0], [0, 0, 1]]; };
+const mmul = (A, B) => A.map((r) => [0, 1, 2].map((j) => r[0] * B[0][j] + r[1] * B[1][j] + r[2] * B[2][j]));
+const mapp = (M, p) => [M[0][0] * p[0] + M[0][1] * p[1] + M[0][2] * p[2], M[1][0] * p[0] + M[1][1] * p[1] + M[1][2] * p[2], M[2][0] * p[0] + M[2][1] * p[1] + M[2][2] * p[2]];
+// rotação que põe cada face virada para cima (faces opostas somam 7)
+const FACE_UP = { 1: rotX(0), 6: rotX(Math.PI), 2: rotX(Math.PI / 2), 5: rotX(-Math.PI / 2), 3: rotY(-Math.PI / 2), 4: rotY(Math.PI / 2) };
+const DFACES = [
+  { v: 1, n: [0, 0, 1], u: [1, 0, 0], w: [0, 1, 0] }, { v: 6, n: [0, 0, -1], u: [1, 0, 0], w: [0, -1, 0] },
+  { v: 2, n: [0, 1, 0], u: [1, 0, 0], w: [0, 0, -1] }, { v: 5, n: [0, -1, 0], u: [1, 0, 0], w: [0, 0, 1] },
+  { v: 3, n: [1, 0, 0], u: [0, 1, 0], w: [0, 0, 1] }, { v: 4, n: [-1, 0, 0], u: [0, -1, 0], w: [0, 0, 1] },
+];
 export function diceTable({ sfx }) {
-  const mk = () => h('div', { class: 'd3' }, [1, 2, 3, 4, 5, 6].map((v) => h('div', { class: 'f f' + v }, Array.from({ length: 9 }, (_, i) => h('i', { class: PIPS[v].includes(i) ? 'on' : '' })))));
-  const dice = [mk(), mk()], shadows = [h('div', { class: 'd3sh' }), h('div', { class: 'd3sh' })];
-  const floor = h('div', { class: 'dc3floor' }, shadows, dice), el = h('div', { class: 'dc3', role: 'img' }, floor);
-  const S0 = 58, rest = [{ x: -44, y: 6, yaw: -14 }, { x: 46, y: -8, yaw: 22 }];
-  const place = (k, x, y, z, yaw, rx, ry) => {
-    dice[k].style.transform = `translate3d(${x}px,${y}px,${z + S0 / 2}px) rotateZ(${yaw}deg) rotateX(${rx}deg) rotateY(${ry}deg)`;
-    shadows[k].style.transform = `translate3d(${x + z * 0.25}px,${y + z * 0.25}px,1px) scale(${1 + z / 160})`; shadows[k].style.opacity = String(clamp(0.55 - z / 260, 0.12, 0.55));
+  const W = 340, H = 236, cx = 170, cy = 138, S0 = 60, hS = S0 / 2, PHI = 0.72, CP = Math.cos(PHI), SP = Math.sin(PHI), F = 760;
+  const [cv, ctx] = mkCanvas(W, H, 'dc3c'), el = h('div', { class: 'dc3', role: 'img' }, cv);
+  const LIGHT = (() => { const v = [-0.42, -0.5, 0.76], l = Math.hypot(...v); return v.map((x) => x / l); })();
+  // mundo: x para a direita, y para longe de quem vê, z para cima. A câmara olha de cima e de frente.
+  const view = (p) => [p[0], p[1] * CP + p[2] * SP, -p[1] * SP + p[2] * CP];
+  const proj = (p) => { const v = view(p), k = F / (F - v[2]); return [cx + v[0] * k, cy - v[1] * k]; };
+  const hull = (pts) => {
+    const P = [...pts].sort((a, b) => a[0] - b[0] || a[1] - b[1]), cr = (o, a, b) => (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0]), lo = [], up = [];
+    for (const p of P) { while (lo.length > 1 && cr(lo[lo.length - 2], lo[lo.length - 1], p) <= 0) lo.pop(); lo.push(p); }
+    for (const p of P.reverse()) { while (up.length > 1 && cr(up[up.length - 2], up[up.length - 1], p) <= 0) up.pop(); up.push(p); }
+    return lo.slice(0, -1).concat(up.slice(0, -1));
   };
-  const set = (a, b) => [a, b].forEach((v, k) => { const [rx, ry] = FACE_UP[v]; place(k, rest[k].x, rest[k].y, 0, rest[k].yaw, rx, ry); });
+  const poly = (pts) => { ctx.beginPath(); pts.forEach((p, i) => (i ? ctx.lineTo(p[0], p[1]) : ctx.moveTo(p[0], p[1]))); ctx.closePath(); };
+  const rquad = (c, r) => {
+    const L = (a, b, t) => [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t];
+    ctx.beginPath(); const s0 = L(c[0], c[1], r); ctx.moveTo(s0[0], s0[1]);
+    for (let i = 1; i <= 4; i++) { const k = c[i % 4], a = L(k, c[(i + 3) % 4], r), b = L(k, c[(i + 1) % 4], r); ctx.lineTo(a[0], a[1]); ctx.quadraticCurveTo(k[0], k[1], b[0], b[1]); }
+    ctx.closePath();
+  };
+  const dice = [{ x: -48, y: 8, z: 0, R: mmul(rotZ(-0.25), FACE_UP[3]) }, { x: 50, y: -8, z: 0, R: mmul(rotZ(0.38), FACE_UP[4]) }];
+  function shadow(d) {
+    const p = proj([d.x + d.z * 0.3, d.y - d.z * 0.2, 0]), r = S0 * 0.74 * (1 + d.z / 150), a = clamp(0.5 - d.z / 240, 0.1, 0.5);
+    ctx.save(); ctx.translate(p[0], p[1]); ctx.scale(1, CP + 0.08);
+    const g = ctx.createRadialGradient(0, 0, r * 0.25, 0, 0, r); g.addColorStop(0, `rgba(0,0,0,${a})`); g.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = g; ctx.beginPath(); ctx.arc(0, 0, r, 0, TAU); ctx.fill(); ctx.restore();
+  }
+  function die(d) {
+    const at = (l) => { const q = mapp(d.R, l); return [q[0] + d.x, q[1] + d.y, q[2] + d.z + hS]; };
+    const V = []; for (const sx of [-1, 1]) for (const sy of [-1, 1]) for (const sz of [-1, 1]) V.push(proj(at([sx * hS, sy * hS, sz * hS])));
+    // corpo: a silhueta toda, cheia e de cantos redondos, para nunca se ver a mesa entre as faces
+    poly(hull(V)); ctx.fillStyle = '#7d0a13'; ctx.strokeStyle = '#7d0a13'; ctx.lineJoin = 'round'; ctx.lineWidth = 6; ctx.fill(); ctx.stroke();
+    const cam = [0, 0, F];
+    for (const f of DFACES) {
+      const n = mapp(d.R, f.n), c = at(f.n.map((x) => x * hS)), cv2 = view(c), nv = view(n);
+      if (nv[0] * (cam[0] - cv2[0]) + nv[1] * (cam[1] - cv2[1]) + nv[2] * (cam[2] - cv2[2]) <= 0) continue;   // face virada para o outro lado
+      const pt = (a, b) => proj(at([f.n[0] * hS + f.u[0] * a + f.w[0] * b, f.n[1] * hS + f.u[1] * a + f.w[1] * b, f.n[2] * hS + f.u[2] * a + f.w[2] * b]));
+      const e = hS * 0.94, lam = Math.max(0, n[0] * LIGHT[0] + n[1] * LIGHT[1] + n[2] * LIGHT[2]), b = 0.5 + 0.5 * lam;
+      const q = [pt(-e, -e), pt(e, -e), pt(e, e), pt(-e, e)];
+      rquad(q, 0.2);
+      const g = ctx.createLinearGradient(q[3][0], q[3][1], q[1][0], q[1][1]);
+      g.addColorStop(0, `rgb(${Math.round(246 * b)},${Math.round(72 * b)},${Math.round(80 * b)})`); g.addColorStop(1, `rgb(${Math.round(196 * b)},${Math.round(22 * b)},${Math.round(34 * b)})`);
+      ctx.fillStyle = g; ctx.fill(); ctx.strokeStyle = `rgba(255,255,255,${0.1 + 0.22 * lam})`; ctx.lineWidth = 1.2; ctx.stroke();
+      for (const i of PIPS[f.v]) {
+        const gx = (i % 3 - 1) * S0 * 0.27, gy = (1 - Math.floor(i / 3)) * S0 * 0.27, r = S0 * 0.098, ring = (rr, dy) => { const o = []; for (let k = 0; k < 14; k++) { const a = k * TAU / 14, p = pt(gx + rr * Math.cos(a), gy + rr * Math.sin(a)); o.push([p[0], p[1] + dy]); } return o; };
+        poly(ring(r * 1.12, 0.9)); ctx.fillStyle = 'rgba(60,0,6,.55)'; ctx.fill();
+        poly(ring(r, 0)); ctx.fillStyle = `rgb(${Math.round(215 + 40 * lam)},${Math.round(215 + 40 * lam)},${Math.round(218 + 37 * lam)})`; ctx.fill();
+      }
+    }
+  }
+  function draw() {
+    ctx.clearRect(0, 0, W, H);
+    const o = [...dice].sort((a, b) => b.y - a.y);   // o que está mais longe desenha-se primeiro
+    o.forEach(shadow); o.forEach(die);
+  }
+  const rest = [{ x: -48, y: 8, yaw: -0.25 }, { x: 50, y: -8, yaw: 0.38 }];
+  const set = (a, b) => { [a, b].forEach((v, k) => { Object.assign(dice[k], { x: rest[k].x, y: rest[k].y, z: 0, R: mmul(rotZ(rest[k].yaw), FACE_UP[v]) }); }); draw(); };
   set(3, 4);
   // altura: três saltos cada vez mais pequenos
   const BN = [[0, 0.44, 96], [0.44, 0.72, 44], [0.72, 0.9, 16], [0.9, 1, 4]];
@@ -334,21 +416,23 @@ export function diceTable({ sfx }) {
     el, set,
     roll(a, b) {
       if (RM()) { set(a, b); return wait(350); }
-      const T = 1750, t0 = performance.now(), vals = [a, b];
+      const T = 1900, t0 = performance.now(), vals = [a, b];
       const P = vals.map((v, k) => {
-        const [rx, ry] = FACE_UP[v], end = { x: rest[k].x + (Math.random() * 24 - 12), y: rest[k].y + (Math.random() * 16 - 8), yaw: Math.random() * 70 - 35 };
+        const end = { x: (k ? 52 : -50) + (rand() * 16 - 8), y: (k ? -8 : 8) + (rand() * 14 - 7), yaw: (rand() * 70 - 35) * Math.PI / 180 };
         rest[k] = end;
-        return { rx, ry, end, sx: -250 - k * 40, sy: 70 - k * 110, nx: (2 + Math.floor(Math.random() * 2)) * (k ? -1 : 1), ny: 2 + Math.floor(Math.random() * 2), lag: k * 0.07 };
+        return { v, end, sx: -250 - k * 40, sy: -70 + k * 110, nx: (2 + Math.floor(rand() * 2)) * (k ? -1 : 1), ny: 2 + Math.floor(rand() * 2), lag: k * 0.07 };
       });
-      let lastB = [0, 0];
+      const lastB = [0, 0];
       return new Promise((res) => {
         const step = (ts) => {
           const u0 = (ts - t0) / T; let done = true;
           P.forEach((p, k) => {
-            const u = clamp(u0 - p.lag, 0, 1), e = 1 - Math.pow(1 - u, 2.6); if (u < 1) done = false;
-            place(k, p.sx + (p.end.x - p.sx) * e, p.sy + (p.end.y - p.sy) * e, zAt(u), p.end.yaw + 260 * (1 - e), p.rx + 360 * p.nx * (1 - e), p.ry + 360 * p.ny * (1 - e));
-            const bi = BN.findIndex(([x0, x1]) => u <= x1); if (bi > lastB[k]) { lastB[k] = bi; sfx(bi < 3 ? 'deal' : 'tick'); }
+            const u = clamp(u0 - p.lag, 0, 1), e = 1 - Math.pow(1 - u, 2.6), back = 1 - e; if (u < 1) done = false;
+            Object.assign(dice[k], { x: p.sx + (p.end.x - p.sx) * e, y: p.sy + (p.end.y - p.sy) * e, z: zAt(u),
+              R: mmul(mmul(mmul(rotZ(p.end.yaw + 4.5 * back), rotX(TAU * p.nx * back)), rotY(TAU * p.ny * back)), FACE_UP[p.v]) });
+            const bi = BN.findIndex(([, x1]) => u <= x1); if (bi > lastB[k]) { lastB[k] = bi; sfx(bi < 3 ? 'deal' : 'tick'); }
           });
+          draw();
           if (!done && el.isConnected) requestAnimationFrame(step); else { set(a, b); res(); }
         };
         requestAnimationFrame(step);
@@ -370,7 +454,7 @@ export async function coinFlip(stage, { sides, side, sfx, L }) {
   const pool = [2, 3, 5, 7, 10, 15, 20, 25, 50, 100];
   for (let k = 0; k < 2; k++) {
     const b = lab[k].querySelector('b');
-    if (!RM()) for (let i = 0; i < 14; i++) { b.textContent = '×' + pool[Math.floor(Math.random() * pool.length)]; sfx('tick'); await wait(45 + i * 9); }
+    if (!RM()) for (let i = 0; i < 14; i++) { b.textContent = '×' + pool[Math.floor(rand() * pool.length)]; sfx('tick'); await wait(45 + i * 9); }
     b.textContent = '×' + sides[k]; (k ? fb : fa).textContent = '×' + sides[k]; lab[k].classList.add('set'); sfx('buy'); await wait(RM() ? 100 : 450);
   }
   if (RM()) { put(0, side ? 180 : 0); }
@@ -394,36 +478,56 @@ export async function coinFlip(stage, { sides, side, sfx, L }) {
   return sides[side];
 }
 
-// ------------------------------------------------------------------ bónus: caça ao tesouro (alvos tapados, escolhes um)
+// ------------------------------------------------------------------ bónus: caça ao tesouro (cartas tapadas, escolhes uma)
+// 1) mostram-se os prémios que há nesta mesa; 2) tapam-se e baralham-se; 3) as cartas trocam todas de símbolo e de sítio,
+// por isso não dá para seguir nenhuma; 4) escolhes uma. O prémio é um sorteio do servidor entre as cartas mostradas,
+// com a mesma probabilidade para cada uma: escolher às cegas uma carta baralhada vale exatamente o mesmo.
 export async function cashHunt(stage, { boxes, pick, sfx, L, secs = 7 }) {
-  const n = boxes.length, cols = 4, SH = ['★', '♦', '♣', '♥', '♠', '●', '▲', '■'];
-  const tiles = boxes.map((_, i) => h('button', { class: 'ch3t', style: `--hue:${(i * 47) % 360}` }, h('span', { class: 'fr' }, SH[i % SH.length]), h('span', { class: 'bk' }, '')));
-  const grid = h('div', { class: 'ch3', style: `--cols:${cols}` }, tiles), bar = h('i'), msg = h('div', { class: 'ch3msg' }, h('span', null, L.shuffle), h('div', { class: 'ch3bar' }, bar));
+  const n = boxes.length, many = n > 20, cols = many ? 6 : 4, SH = ['★', '♦', '♣', '♥', '♠', '●', '▲', '■', '✚', '☾', '♪', '⬟'];
+  const rnd = (k) => Math.floor(rand() * k), mix = (a) => { for (let i = a.length - 1; i > 0; i--) { const j = rnd(i + 1); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+  const top = [...boxes].sort((a, b) => b - a)[Math.min(n - 1, Math.max(2, Math.floor(n / 9)))];   // os maiores da mesa ficam a dourado
+  const face = (tl) => { tl.style.setProperty('--hue', String(rnd(360))); tl.querySelector('.fr').textContent = SH[rnd(SH.length)]; };
+  const tiles = boxes.map((v) => h('button', { class: 'ch3t open pre' }, h('span', { class: 'fr' }, ''), h('span', { class: 'bk' + (v >= top ? ' hot' : '') }, '×' + v)));
+  tiles.forEach(face);
+  const grid = h('div', { class: 'ch3' + (many ? ' many' : ''), style: `--cols:${cols}` }, tiles), bar = h('i'), msg = h('div', { class: 'ch3msg' }, h('span', null, L.prizes), h('div', { class: 'ch3bar' }, bar));
+  const barBox = bar.parentNode; barBox.style.visibility = 'hidden';
   stage.append(grid, msg);
-  // 1) baralha os alvos tapados (não se mostram os prémios antes: seria fingir que dá para os seguir)
-  const order = boxes.map((_, i) => i);
+  // 1) os prémios desta mesa, à vista
+  await wait(60);
+  tiles.forEach((tl, i) => setTimeout(() => tl.classList.remove('pre'), i * 14)); sfx('deal');
+  await wait(RM() ? 600 : 3600);
+  // 2) tapam-se, em onda
+  mix(tiles.map((_, i) => i)).forEach((i, k) => setTimeout(() => tiles[i].classList.remove('open'), k * 16)); sfx('deal');
+  await wait(RM() ? 200 : 900);
+  msg.firstChild.textContent = L.shuffle;
+  // 3) baralha: todas mudam de sítio ao mesmo tempo, várias vezes
   if (!RM()) {
-    await wait(500);
-    const cell = tiles[0].getBoundingClientRect(), gap = 6, pos = (k) => [(k % cols) * (cell.width + gap), Math.floor(k / cols) * (cell.height + gap)];
-    for (let r = 0; r < 7; r++) {
-      for (let i = n - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [order[i], order[j]] = [order[j], order[i]]; }
+    const cell = tiles[0].getBoundingClientRect(), gs = getComputedStyle(grid), gap = parseFloat(gs.columnGap) || 6, pos = (k) => [(k % cols) * (cell.width + gap), Math.floor(k / cols) * (cell.height + gap)];
+    const order = boxes.map((_, i) => i);
+    for (let r = 0; r < 9; r++) {
+      mix(order);
       order.forEach((slot, i) => { const [x0, y0] = pos(i), [x1, y1] = pos(slot); tiles[i].style.transform = `translate(${x1 - x0}px,${y1 - y0}px)`; });
-      sfx('deal'); await wait(300);
+      sfx('deal'); await wait(430);
     }
+    // … e no fim trocam todas de símbolo e de cor: o que estava por trás de cada uma já não se sabe
+    grid.classList.add('mixing'); sfx('tick'); await wait(240);
+    tiles.forEach(face); grid.classList.remove('mixing'); await wait(320);
   }
-  // 2) escolhes (ou escolhe-se sozinho ao fim de 7 s). O prémio já vinha decidido: qualquer alvo vale o mesmo sorteio.
-  msg.firstChild.textContent = L.pick; grid.classList.add('live');
+  // 4) escolhes (ou escolhe-se sozinha quando o tempo acaba)
+  msg.firstChild.textContent = L.pick; grid.classList.add('live'); barBox.style.visibility = '';
   bar.style.transition = `transform ${secs}s linear`; requestAnimationFrame(() => { bar.style.transform = 'scaleX(0)'; });
   const chosen = await new Promise((res) => {
-    const tm = setTimeout(() => res(Math.floor(Math.random() * n)), secs * 1000);
+    const tm = setTimeout(() => res(rnd(n)), secs * 1000);
     tiles.forEach((tl, i) => tl.addEventListener('click', () => { clearTimeout(tm); res(i); }, { once: true }));
   });
-  grid.classList.remove('live'); msg.firstChild.textContent = '';
-  const rest = boxes.filter((_, i) => i !== pick); let k = 0;
-  tiles[chosen].querySelector('.bk').textContent = '×' + boxes[pick]; tiles[chosen].classList.add('shot'); sfx('hit'); await wait(RM() ? 100 : 380);
-  tiles[chosen].classList.add('open', 'win'); sfx('claim'); await wait(RM() ? 300 : 1000);
-  tiles.forEach((tl, i) => { if (i !== chosen) { tl.querySelector('.bk').textContent = '×' + rest[k++]; tl.classList.add('open', 'dim'); } });
-  await wait(RM() ? 300 : 1100);
+  grid.classList.remove('live'); msg.firstChild.textContent = ''; barBox.style.visibility = 'hidden';
+  const rest = mix(boxes.filter((_, i) => i !== pick)); let k = 0;
+  const put = (tl, v) => { const b = tl.querySelector('.bk'); b.textContent = '×' + v; b.classList.toggle('hot', v >= top); };
+  put(tiles[chosen], boxes[pick]); tiles[chosen].classList.add('shot'); sfx('hit'); await wait(RM() ? 100 : 420);
+  tiles[chosen].classList.add('open', 'win'); sfx('claim'); await wait(RM() ? 300 : 1600);
+  // as outras: para se ver o que havia na mesa
+  tiles.forEach((tl, i) => { if (i !== chosen) { put(tl, rest[k++]); setTimeout(() => tl.classList.add('open', 'dim'), (k % 12) * 30); } });
+  await wait(RM() ? 300 : 2400);
   return boxes[pick];
 }
 
@@ -435,7 +539,7 @@ export async function pachinko(stage, { slots, at, sfx }) {
   const xs = [at + 0.5];
   for (let j = ROWS; j >= 1; j--) {
     const x = xs[0], opts = [-0.5, 0.5].filter((s) => x - s >= 0.5 && x - s <= n - 0.5);
-    const pull = x > n / 2 ? 0.5 : -0.5, s = opts.length === 1 ? opts[0] : Math.random() < (j > ROWS - 3 ? 0.5 : 0.62) ? (opts.includes(pull) ? pull : opts[0]) : -pull;
+    const pull = x > n / 2 ? 0.5 : -0.5, s = opts.length === 1 ? opts[0] : rand() < (j > ROWS - 3 ? 0.5 : 0.62) ? (opts.includes(pull) ? pull : opts[0]) : -pull;
     xs.unshift(x - (opts.includes(s) ? s : opts[0]));
   }
   const pegRow = (j) => { const half = Math.abs((xs[j] * 2) % 2) === 1, out = []; for (let x = half ? 0.5 : 1; x < n; x++) out.push(x); return out; };
@@ -476,7 +580,7 @@ export async function pachinko(stage, { slots, at, sfx }) {
   await seg(xs[0] * cw, 8, xs[0] * cw, y0 - 9, 300, 0); hitPeg = [0, xs[0]]; sfx('tick');
   for (let j = 0; j < ROWS; j++) {
     const ty = j < ROWS - 1 ? y0 + (j + 1) * dy - 9 : yS + 2;
-    await seg(xs[j] * cw, y0 + j * dy - 9, xs[j + 1] * cw, ty, 250 + Math.random() * 90, 13);
+    await seg(xs[j] * cw, y0 + j * dy - 9, xs[j + 1] * cw, ty, 250 + rand() * 90, 13);
     if (j < ROWS - 1) { hitPeg = [j + 1, xs[j + 1]]; sfx('tick'); }
   }
   hitPeg = null; lit = at; glow = 14; sfx('claim');

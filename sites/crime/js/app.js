@@ -254,7 +254,24 @@ function go(tab) {
   if (tab === 'gang') loadGang();
   if (tab === 'news' || tab === 'city') loadNews();
   render(); window.scrollTo({ top: 0 });
+  armBack();
 }
+// ---- gesto/botão de voltar atrás do telemóvel ----
+// Enquanto há algo aberto (um sítio dentro da cidade, um jogo, uma folha), fica uma entrada a mais no histórico do browser.
+// Voltar atrás gasta essa entrada e nós fechamos o que está aberto; só na cidade, sem nada aberto, é que o gesto sai do site.
+function armBack() {
+  const need = !!S.sheets?.length || (!!S.st?.me && S.tab !== 'city');
+  if (need && !S.backArmed) { try { history.pushState({ crime: 1 }, ''); S.backArmed = true; } catch { /* sem histórico: fica como estava */ } }
+  else if (!need && S.backArmed) { S.backArmed = false; S.backSkip = true; history.back(); }   // voltaste à cidade pelos botões do jogo: gasta-se a entrada a mais
+}
+addEventListener('popstate', () => {
+  if (S.backSkip) { S.backSkip = false; return; }
+  S.backArmed = false;
+  const sh = S.sheets?.at(-1);
+  if (sh) sh();
+  else if (S.st?.me && S.tab !== 'city') go(upOf(S.tab));
+  armBack();
+});
 
 let $main, $tabs;
 function shell() {
@@ -1123,7 +1140,8 @@ async function livePoll(g) {
     if (S.tab !== g) return;
     if (d.phase === 'spin' && L.anim !== d.id) {
       L.anim = d.id;
-      if (d.now - d.closesAt < 2500 && !S.casinoBusy) liveAnim(g, d);   // chegou a horas: vê a jogada inteira
+      const late = d.now - (d.closesAt + LIVE_START);   // a jogada começa à mesma hora (do servidor) em todos os telemóveis
+      if (late < 2500 && !S.casinoBusy) { S.casinoBusy = true; setTimeout(() => liveAnim(g, d), Math.max(0, -late)); }
       else { L.shown = d.id; if (g === 'roulette') rl3().set(d.res.n); else w3().set(d.res.idx); render(); }   // entrou a meio: vê só onde parou
     } else if (!S.casinoBusy && (!old || old.id !== d.id || old.phase !== d.phase)) render();
     else liveClock(g);
@@ -1144,16 +1162,19 @@ setInterval(() => {
   const L = liveOf(g), d = L.d, n = now(), since = performance.now() - L.at;
   liveClock(g);
   if (!d) { if (since > 1500) livePoll(g); return; }
-  if (d.phase === 'bets' ? (n >= d.closesAt + 250 ? since > 600 : since > 2000) : (n >= d.nextAt + 150 ? since > 600 : since > 4000)) livePoll(g);
+  if (d.phase === 'bets' ? (n >= d.closesAt + 150 ? since > 300 : since > 2000) : (n >= d.nextAt + 150 ? since > 600 : since > 4000)) livePoll(g);   // mal as apostas fecham, vai buscar o resultado: a jogada começa 1 s depois do fecho em todos
 }, 250);
+const LIVE_START = 1000;
 async function liveAnim(g, d) {
   const L = liveOf(g), mine = d.mine;
   S.casinoBusy = true;
+  if (S.tab !== g) { S.casinoBusy = false; L.shown = d.id; return; }   // saíste da mesa antes de a jogada começar
+  C3.seed(d.id);   // o mesmo lançamento, a mesma bola e o mesmo baralhar para toda a gente
   try {
-    const r = g === 'roulette' ? { n: d.res.n } : { ...d.res, bet: mine?.total || 0, win: mine?.win || 0, mineBets: mine?.bets || [] };
+    const r = g === 'roulette' ? { n: d.res.n, t0: (d.closesAt + LIVE_START) / 1000 } : { ...d.res, from: d.prev, bet: mine?.total || 0, win: mine?.win || 0, mineBets: mine?.bets || [] };
     await Promise.race([(g === 'roulette' ? rlAnim : wheelAnim)(r), wait(50000)]);
     if (mine) { const net = (mine.win || 0) - mine.total; if (net > 0) { fx.sfx(net >= mine.total * 5 ? 'crit' : 'cash'); fx.vibrate(15); } else if (net < 0) fx.sfx('fail'); }
-  } catch (e) { console.error(e); } finally { S.casinoBusy = false; L.shown = d.id; await refresh(); render(); }
+  } catch (e) { console.error(e); } finally { C3.seed(null); S.casinoBusy = false; L.shown = d.id; await refresh(); render(); }
 }
 async function liveBet(g, bets) {
   const L = liveOf(g), d = L.d;
@@ -1193,9 +1214,9 @@ function liveResult(g, d) {
 // ---- roleta ----
 function rl3() { if (!S.rl3) S.rl3 = C3.roulette({ order: RL_ORDER, colorOf: rlCol, sfx: fx.sfx }); return S.rl3; }
 async function rlAnim(r) {
-  const T = rl3(); await tableFocus(T.el.parentNode || T.el);
+  const T = rl3(); await tableFocus(T.el.parentNode || T.el, true);
   document.querySelector('.rl3num')?.classList.remove('on');
-  await T.spin(r.n);
+  await T.spin(r.n, r.t0);
   const bd = document.querySelector('.rl3num'); if (bd) { bd.textContent = String(r.n); bd.className = 'rl3num num on ' + rlCol(r.n); }
   await wait(1300);
 }
@@ -1306,7 +1327,7 @@ async function bjPlay(op, amt) {
 
 // ---- Roda da Sorte ----
 // cores de casino noir: pedras preciosas escuras com letras douradas
-const WCOL = { 1: '#1c2330', 2: '#0f5c44', 5: '#7a1630', 10: '#3b2a7a', moeda: '#b8860b', caixas: '#0e7a8a', bola: '#a3246e', louca: '#c2161f' };
+const WCOL = { 1: '#2b5a8c', 2: '#12805a', 5: '#a8243f', 10: '#5b3bb5', moeda: '#b8860b', caixas: '#0e7a8a', bola: '#a3246e', louca: '#c2161f' };
 const LCOL = ['#c2161f', '#1c2330', '#0f5c44', '#b8860b', '#3b2a7a', '#a3246e'];
 const TOPM = [2, 3, 5, 10, 20, 50];
 const wLabel = (s) => (/^\d+$/.test(s) ? s : t('w_' + s));
@@ -1318,11 +1339,12 @@ function w3() {
   return S.w3;
 }
 // põe a mesa à vista e encolhe a barra de baixo enquanto a jogada corre
-async function tableFocus(el) {
+async function tableFocus(el, fixed) {
   document.querySelector('.csres')?.remove();
   document.querySelector('.csbar')?.classList.add('anim');
   const top = document.querySelector('.hud')?.offsetHeight || 0, b = el.getBoundingClientRect();
-  if (b.top < top || b.bottom > innerHeight - 170) { scrollTo({ top: Math.max(0, b.top + scrollY - top - 8), behavior: RM() ? 'auto' : 'smooth' }); await wait(RM() ? 0 : 320); }
+  if (b.top < top || b.bottom > innerHeight - 170) { scrollTo({ top: Math.max(0, b.top + scrollY - top - 8), behavior: RM() ? 'auto' : 'smooth' }); if (!fixed) await wait(RM() ? 0 : 320); }
+  if (fixed) await wait(320);   // nas mesas ao vivo o tempo é o mesmo para todos, tenha ou não sido preciso deslizar o ecrã
 }
 function topSlotEl(last) {
   const cellS = (s) => h('span', { class: 'tsp', style: `background:${WCOL[s]}` }, wLabel(s)), cellM = (m) => h('span', null, '×' + m);
@@ -1352,15 +1374,15 @@ async function topSpin(r) {
 async function wheelAnim(r) {
   const box = document.querySelector('.wbox'); if (!box) return;
   const W3 = w3(), stage = box.querySelector('.wstage'), bet = (r.mineBets || []).find((b) => b.s === r.s)?.amt || 0;
-  await tableFocus(box);
+  await tableFocus(box, true);
   const ts = topSpin(r);   // o multiplicador do topo sorteia-se enquanto a roda já gira
-  await W3.spin(r.idx); await ts;
+  await W3.spin(r.idx, r.from); await ts;
   const topHit = r.top && r.top.s === r.s, show = (cls, ...kids) => { stage.className = 'wstage ' + cls; stage.hidden = false; stage.replaceChildren(...kids.filter(Boolean)); };
   if (r.bonus) {
     show('th-' + r.s + ' intro', h('b', { class: 'wst-title' }, t('wb_' + r.s))); fx.sfx('level'); await wait(RM() ? 400 : 1500);
     show('th-' + r.s, h('b', { class: 'wst-name' }, t('wb_' + r.s)));
     if (r.s === 'moeda') await C3.coinFlip(stage, { sides: r.bonus.sides, side: r.bonus.side, sfx: fx.sfx, L: { red: t('rl_r'), blue: t('wBlue') } });
-    else if (r.s === 'caixas') await C3.cashHunt(stage, { secs: 5, boxes: r.bonus.boxes, pick: r.bonus.pick, sfx: fx.sfx, L: { shuffle: t('wShuffle'), pick: t('wPick') } });
+    else if (r.s === 'caixas') await C3.cashHunt(stage, { secs: 7, boxes: r.bonus.boxes, pick: r.bonus.pick, sfx: fx.sfx, L: { prizes: t('wPrizes'), shuffle: t('wShuffle'), pick: t('wPick') } });
     else if (r.s === 'bola') await C3.pachinko(stage, { slots: r.bonus.slots, at: r.bonus.at, sfx: fx.sfx });
     else {
       const lw = C3.bigWheel({ sfx: fx.sfx, cls: 'bw3 mini', turns: 4, secs: 7.5, hub: t('w_louca').toUpperCase(), segs: r.bonus.slots.map((v, i) => ({ text: '×' + v, color: LCOL[i % LCOL.length], ink: '#f6e3a8', big: true })) });
@@ -1598,10 +1620,11 @@ function slotPaytable(g) {
 function sheet(content) {
   const bd = h('div', { class: 'backdrop' });
   const sh = h('div', { class: 'sheet', role: 'dialog', 'aria-modal': 'true' }, h('div', { class: 'grab' }), content);
-  const close = () => { bd.remove(); sh.remove(); document.removeEventListener('keydown', esc); };
+  const close = () => { bd.remove(); sh.remove(); document.removeEventListener('keydown', esc); S.sheets = (S.sheets || []).filter((x) => x !== close); armBack(); };
   const esc = (e) => { if (e.key === 'Escape') close(); };
   bd.addEventListener('click', close); document.addEventListener('keydown', esc);
   document.body.append(bd, sh);
+  (S.sheets ||= []).push(close); armBack();
   return close;
 }
 
@@ -1730,7 +1753,9 @@ async function start() {
   S.st = st; S.stAt = now(); if (st.feed) S.feed = st.feed;
   $main = null;
   S.tab = store.get('tab', 'city');
+  S.backArmed = false; try { if (history.state?.crime) history.replaceState(null, ''); } catch { /* sem histórico */ }
   render();
+  armBack();
   if (st.me) skyline(st.me.level);
   loadEvents(false);
 }

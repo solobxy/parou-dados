@@ -85,8 +85,9 @@ export const CFG = {
     // Em cada volta pode aparecer um multiplicador extra numa casa (o «multiplicador do topo»).
     // Contas: cada aposta devolve o mesmo que no jogo real (1: 96,08%, 2: 95,95%, 5: 95,78%, 10: 95,73%, moeda 95,70%, caixas 95,27%, bola 94,33%, louca 94,41%).
     wheel: {
-      segs: ['louca', '1', '2', '1', 'bola', '1', '2', 'caixas', '1', '10', '2', '1', '5', '1', '2', '10', '1', '5', '1', '5', '1', 'moeda', '2', '1', '2', '1', '5', '1', '10', '1',
-        'moeda', '1', '2', '1', 'caixas', '5', '2', '1', 'moeda', '2', '1', '2', '10', '5', '2', '1', 'bola', '2', '1', '5', '1', '2', 'moeda', '1'],
+      // mesma ordem e mesmas quantidades de uma roda de casino ao vivo: um bónus de 6 em 6 casas
+      segs: ['louca', '1', '2', '5', '1', '2', 'bola', '1', '5', '1', '2', '1', 'moeda', '1', '2', '1', '10', '2', 'caixas', '1', '2', '1', '5', '1', 'moeda', '1', '5', '2', '10', '1',
+        'bola', '1', '2', '5', '1', '2', 'moeda', '1', '10', '1', '5', '1', 'caixas', '1', '2', '5', '1', '2', 'moeda', '2', '1', '10', '2', '1'],
       spots: ['1', '2', '5', '10', 'moeda', 'caixas', 'bola', 'louca'],
       num: { 1: 1, 2: 2, 5: 5, 10: 10 },
       top: { 1: 1058, 2: 1107, 5: 624, 10: 432, moeda: 434, caixas: 368, bola: 247, louca: 356 }, // em 10 000 voltas; dá o retorno de cada aposta da roda real (96,08% no 1 … 94,33% na bola)
@@ -95,7 +96,7 @@ export const CFG = {
       caixas: [[5, 18], [7, 17], [10, 16], [15, 14], [20, 11], [25, 9], [50, 8], [75, 4], [100, 2], [200, 1]],
       bola: [[5, 22], [10, 22], [15, 15], [20, 15], [25, 12], [50, 9], [100, 4], [200, 1]],
       louca: [[10, 22], [15, 18], [20, 15], [25, 13], [50, 12], [75, 8], [100, 7], [200, 4], [500, 1]],
-      bolaSlots: 12, loucaSlots: 24, caixasN: 12,
+      bolaSlots: 12, loucaSlots: 24, caixasN: 36,
     },
     // Slots. «scatter»: 6×5, 8 ou mais iguais em qualquer sítio pagam; as vitórias caem e entram símbolos novos; as esferas somam-se e
     // multiplicam o prémio da jogada. «cluster»: 7×7, grupos de 5+ iguais encostados; cada casa onde rebenta um símbolo fica marcada e

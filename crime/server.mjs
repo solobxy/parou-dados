@@ -20,7 +20,7 @@ const SECURE = process.env.COOKIE_INSEGURO ? '' : '; Secure';
 const [fy, fm, fd] = (process.env.PRIMEIRA_RONDA || '2026-11-13').split('-').map(Number);
 const FIRST = { y: fy, m: fm, d: fd };
 const rng = cryptoRng();
-const VERSAO = 25;   // sobe quando o servidor muda, para se confirmar de fora que a versão nova já está a correr
+const VERSAO = 26;   // sobe quando o servidor muda, para se confirmar de fora que a versão nova já está a correr
 const ATOS_3S = +(process.env.ATOS_3S || 15), ATOS_MIN = +(process.env.ATOS_MIN || 400); // ações por conta: 15 em 3 s, 400 por minuto
 
 // ---------- relógio que nunca anda para trás ----------
@@ -598,18 +598,24 @@ function vistaGangue(conta, now) {
 // e abre a seguinte. As apostas ficam na base de dados no mesmo passo em que o dinheiro sai da mão do jogador.
 db.exec(`CREATE TABLE IF NOT EXISTS mesa_apostas (mesa TEXT NOT NULL, id INTEGER NOT NULL, conta TEXT NOT NULL, ronda INTEGER NOT NULL,
   bets TEXT NOT NULL, total INTEGER NOT NULL, win INTEGER, PRIMARY KEY (mesa, id, conta))`);
+// os resultados de cada mesa ficam gravados: o histórico é o mesmo para toda a gente e sobrevive a um reinício
+db.exec('CREATE TABLE IF NOT EXISTS mesa_hist (mesa TEXT NOT NULL, id INTEGER NOT NULL, t INTEGER NOT NULL, res TEXT NOT NULL, PRIMARY KEY (mesa, id))');
 const qm = {
   aposta: db.prepare('INSERT OR REPLACE INTO mesa_apostas (mesa, id, conta, ronda, bets, total, win) VALUES (?, ?, ?, ?, ?, ?, NULL)'),
   tirar: db.prepare('DELETE FROM mesa_apostas WHERE mesa = ? AND id = ? AND conta = ?'),
   paga: db.prepare('UPDATE mesa_apostas SET win = ? WHERE mesa = ? AND id = ? AND conta = ?'),
   porPagar: db.prepare('SELECT * FROM mesa_apostas WHERE win IS NULL'),
   limpar: db.prepare('DELETE FROM mesa_apostas WHERE win IS NOT NULL AND id < ?'),
+  hist: db.prepare('INSERT OR REPLACE INTO mesa_hist (mesa, id, t, res) VALUES (?, ?, ?, ?)'),
+  histUlt: db.prepare('SELECT res FROM mesa_hist WHERE mesa = ? ORDER BY id DESC LIMIT 24'),
+  histLimpa: db.prepare('DELETE FROM mesa_hist WHERE mesa = ? AND t < ?'),
 };
 const MESA_BET = (g) => (process.env.MESA_BET_MS ? +process.env.MESA_BET_MS : g === 'wheel' ? 8_000 : 20_000);   // tempo para apostar
 const MESA_SPIN = process.env.MESA_SPIN_MS ? () => +process.env.MESA_SPIN_MS
-  : (g, r) => (g === 'roulette' ? 12_500 : !r.bonus ? 16_000 : { moeda: 25_500, caixas: 28_500, bola: 23_500, louca: 30_500 }[r.s]);   // tempo da jogada que todos veem
+  : (g, r) => (g === 'roulette' ? 13_500 : !r.bonus ? 17_000 : { moeda: 26_500, caixas: 42_000, bola: 24_500, louca: 31_500 }[r.s]);   // tempo da jogada que todos veem
 const mesas = { roulette: { cur: null, hist: [], last: new Map() }, wheel: { cur: null, hist: [], last: new Map() } };
-const resCurto = (g, r) => (g === 'roulette' ? r.n : { s: r.s, m: r.mult });
+const resCurto = (g, r) => (g === 'roulette' ? r.n : { s: r.s, m: r.mult, i: r.idx });
+for (const g of Object.keys(mesas)) mesas[g].hist = qm.histUlt.all(g).map((r) => JSON.parse(r.res));
 
 // ao arrancar: apostas que ficaram por pagar (o servidor parou a meio de uma ronda) voltam para quem as fez
 function devolverMesas(now) {
@@ -650,8 +656,12 @@ function pagarMesa(g, c, now) {
 }
 function fecharMesa(g, now) {
   const m = mesas[g], c = m.cur;
-  if (c.res === null) { c.res = E.tableDraw(g, rng); c.prox = c.fecha + MESA_SPIN(g, c.res); m.hist.unshift(resCurto(g, c.res)); if (m.hist.length > 14) m.hist.pop(); }
-  pagarMesa(g, c, now);
+  if (c.res === null) {
+    c.res = E.tableDraw(g, rng); c.prox = c.fecha + MESA_SPIN(g, c.res);
+    const curto = resCurto(g, c.res); m.hist.unshift(curto); if (m.hist.length > 24) m.hist.pop();
+    try { qm.hist.run(g, c.id, now, JSON.stringify(curto)); m.n = (m.n || 0) + 1; if (m.n % 200 === 0) qm.histLimpa.run(g, now - 2 * T.DAY); } catch (e) { console.error('hist', e.message); }
+  }
+  if ([...c.bets.values()].some((b) => b.win === undefined)) pagarMesa(g, c, now);
 }
 // a ronda em curso, avançando o que for preciso (fechar, pagar, abrir a seguinte)
 function mesaDe(g, now) {
@@ -673,17 +683,18 @@ function vistaMesa(g, conta, now) {
   const m = mesaDe(g, now), c = m.cur, mine = c.bets.get(conta);
   let pot = 0; for (const b of c.bets.values()) pot += b.total;
   const out = { now, g, id: c.id, phase: c.res === null ? 'bets' : 'spin', opensAt: c.abre, closesAt: c.fecha, nextAt: c.prox, players: c.bets.size, pot,
-    mine: mine ? { bets: mine.bets, total: mine.total, win: mine.win } : null, hist: m.hist, last: m.last.get(conta) || null };
+    mine: mine ? { bets: mine.bets, total: mine.total, win: mine.win } : null, hist: m.hist, last: m.last.get(conta) || null,
+    prev: g === 'wheel' ? m.hist[c.res === null ? 0 : 1]?.i ?? null : null };   // onde a roda estava parada: todos partem do mesmo sítio
   if (c.res !== null) {
     out.res = c.res;
     out.wins = [...c.bets].filter(([, b]) => b.win > b.total).sort((a, b) => (b[1].win - b[1].total) - (a[1].win - a[1].total)).slice(0, 3).map(([id, b]) => ({ name: nomeDe(id), win: b.win - b.total }));
   }
   return out;
 }
-// mesmo sem ninguém a ver, uma ronda com apostas fecha e paga à hora certa
+// as mesas nunca param: mesmo sem ninguém a ver, as rondas seguem-se à hora certa, como numa mesa ao vivo
 setInterval(() => {
   const now = clock();
-  for (const g of Object.keys(mesas)) { const c = mesas[g].cur; if (c && now >= c.fecha && c.bets.size && (c.res === null || [...c.bets.values()].some((b) => b.win === undefined))) { try { fecharMesa(g, now); } catch (e) { console.error('mesa', e.message); } } }
+  for (const g of Object.keys(mesas)) { try { mesaDe(g, now); } catch (e) { console.error('mesa', e.message); } }
 }, 500).unref();
 devolverMesas(clock());
 

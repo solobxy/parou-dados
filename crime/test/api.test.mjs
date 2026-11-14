@@ -339,6 +339,29 @@ test('mesa ao vivo: limpar devolve tudo, e se o servidor parar a meio as apostas
   const t = await mesa('wheel'); assert.equal(t.mine, null); assert.equal(t.players, 0);
 });
 
+test('mesas ao vivo: correm sozinhas sem ninguém a ver, o histórico é o mesmo para todos e sobrevive a um reinício', async () => {
+  await parar(); ENV_EXTRA = { ATOS_3S: '100000', ATOS_MIN: '1000000', MESA_BET_MS: '300', MESA_SPIN_MS: '200' }; await arrancar();
+  const A = await contaNova('HistA', '10.0.9.45'), B = await contaNova('HistB', '10.0.9.46');
+  const mesa = async (x, ip, g) => (await fetch(BASE + '/api/table?g=' + g, { headers: { cookie: x.cookie, 'X-Forwarded-For': ip } })).json();
+  const dentro = (peq, grande) => { const a = JSON.stringify(peq).slice(1, -1), b = JSON.stringify(grande); return b.includes(a); };
+  await new Promise((r) => setTimeout(r, 3200));   // ninguém pede a mesa durante este tempo
+  for (const g of ['roulette', 'wheel']) {
+    const a = await mesa(A, '10.0.9.45', g), b = await mesa(B, '10.0.9.46', g);
+    assert.ok(a.hist.length >= 4, `${g}: só ${a.hist.length} rondas em 3 s sem ninguém a ver`);
+    assert.ok(dentro(a.hist.slice(0, 4), b.hist), `${g}: o histórico não é o mesmo para os dois`);
+    if (g === 'wheel') {
+      for (const h of a.hist) { assert.ok(Number.isInteger(h.i) && h.i >= 0 && h.i < 54); assert.ok(typeof h.s === 'string' && h.m >= 1); }
+      assert.equal(a.prev, a.hist[a.phase === 'bets' ? 0 : 1].i);
+    } else for (const n of a.hist) assert.ok(Number.isInteger(n) && n >= 0 && n <= 36);
+  }
+  const antes = { roulette: (await mesa(A, '10.0.9.45', 'roulette')).hist, wheel: (await mesa(A, '10.0.9.45', 'wheel')).hist };
+  await parar(); await arrancar();
+  for (const g of ['roulette', 'wheel']) {
+    const d = await mesa(B, '10.0.9.46', g);
+    assert.ok(dentro(antes[g].slice(0, 6), d.hist), `${g}: o histórico perdeu-se no reinício`);
+  }
+});
+
 // muda o estado guardado de jogadores (com o servidor parado), para os testes chegarem a níveis e quantias altas
 async function mexer(muda) {
   await parar();
