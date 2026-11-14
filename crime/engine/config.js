@@ -50,11 +50,27 @@ export const CFG = {
   // energia por vício melhora nos consumos caros; os baratos servem para o início (1 $ por ponto de energia)
   drugs: [
     { id: 'cerveja',   e: 5,  a: 2, price: 5 },
-    { id: 'erva',      e: 10, a: 3, price: 25 },
-    { id: 'pastilha',  e: 20, a: 5, price: 200 },
-    { id: 'coca',      e: 30, a: 6, price: 1500 },
-    { id: 'dourada',   e: 40, a: 7, price: 8000 },
+    { id: 'erva',      e: 10, a: 3, price: 25,   fx: [{ k: 'bust', bp: 3000, ms: 10 * MIN }] },
+    { id: 'cogumelos', e: 13, a: 4, price: 90,   fx: [{ k: 'I', bp: 1000, ms: 10 * MIN }] },
+    { id: 'ecstasy',   e: 20, a: 5, price: 200,  fx: [{ k: 'C', bp: 1000, ms: 10 * MIN }] },
+    { id: 'speed',     e: 24, a: 6, price: 600,  fx: [{ k: 'loot', bp: 1500, ms: 10 * MIN }] },
+    { id: 'lsd',       e: 18, a: 5, price: 1000, fx: [{ k: 'I', bp: 2000, ms: 15 * MIN }] },
+    { id: 'coca',      e: 30, a: 6, price: 1500, fx: [{ k: 'C', bp: 1500, ms: 15 * MIN }, { k: 'biz', bp: 1000, ms: 15 * MIN }] },
+    { id: 'cristal',   e: 36, a: 7, price: 4000, fx: [{ k: 'F', bp: 2000, ms: 15 * MIN }] },
+    { id: 'heroina',   e: 40, a: 7, price: 8000, fx: [{ k: 'T', bp: 2500, ms: 20 * MIN }] },
   ],
+  // efeitos temporários: F, I, C, T sobem a stat; loot = saque dos golpes; biz = recolhas dos negócios; bust = menos prisão ao falhar
+  fxKinds: ['F', 'I', 'C', 'T', 'loot', 'biz', 'bust'],
+  // profissão: escolhe-se uma vez por ronda
+  classes: [
+    { id: 'ladrao',     lootBp: 1500 },                                  // +15% de saque
+    { id: 'vigarista',  bustCutBp: 2500, bailCutBp: 5000 },              // menos prisão, fiança a metade
+    { id: 'traficante', drugCutBp: 3000, fxMoreBp: 10000, capPlus: 15 }, // drogas mais baratas, efeitos a dobrar, mais limite de vício
+    { id: 'empresario', bizBp: 2000, feeCutBp: 5000 },                   // negócios rendem mais, banco a metade
+    { id: 'matador',    atkBp: 2000, pvpBp: 2500 },                      // ataque e respeito nas lutas
+    { id: 'seguranca',  defBp: 2500, hospCutBp: 5000 },                  // defesa, hospital a metade
+  ],
+  avatars: 32,
   // prática: cada golpe treina as stats que usa (energia × peso; metade se falhar).
   // Um ponto custa base + perStat × stat atual de prática, por isso ajuda muito no início e menos depois (o ginásio continua mais rápido).
   practice: { base: 1000, perStat: 10, failBp: 5000 },

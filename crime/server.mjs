@@ -129,8 +129,9 @@ function vista(p, now) {
     hospUntil: p.hospUntil, medic: E.medicCost(p, now),
     protectUntil: p.protectUntil, capUntil: p.capUntil, shieldUntil: p.shieldUntil,
     weapon: p.weapon, armor: p.armor, luxuries: p.luxuries, luxuryPrice: E.luxuryPrice(p),
-    attack: E.attackPower(p), defense: E.defensePower(p),
-    crimes: CFG.crimes.map((c, k) => ({ chance: E.crimeChanceBp(p, k), unlocked: E.crimeUnlocked(p, k) })),
+    attack: E.attackPower(p, now), defense: E.defensePower(p, now),
+    crimes: CFG.crimes.map((c, k) => ({ chance: E.crimeChanceBp(p, k, now), unlocked: E.crimeUnlocked(p, k) })),
+    cls: p.cls, av: p.av, fx: E.activeFx(p, now), drugPrices: CFG.drugs.map((_, d) => E.drugPrice(p, d)),
     biz: p.biz.map((s, i) => ({ n: s.n, stored: stored[i].money, perH: E.bizRates(p, i).perH, price: s.n < CFG.bizMax ? E.bizPrice(i, s.n) : null, t: s.t })),
     port: p.port, portCap: E.portCap(p), portSlots: E.portSlots(p),
   };
@@ -142,7 +143,7 @@ function cfgPublica() {
     biz: CFG.biz.map(({ id, price, perH, resp, stat, raid, toBank }) => ({ id, price, perH, resp, stat, raid, toBank })),
     bizMax: CFG.bizMax, storageMs: CFG.storageMs, port: CFG.port, weapons: CFG.weapons, armors: CFG.armors,
     pvp: CFG.pvp, bank: CFG.bank, luxury: CFG.luxury, levels: CFG.levels, crit: CFG.crit, unlockBp: CFG.unlockBp,
-    bustBp: CFG.bustBp, mastery: CFG.mastery, missions: CFG.missions.length, start: CFG.start,
+    bustBp: CFG.bustBp, classes: CFG.classes, avatars: CFG.avatars, mastery: CFG.mastery, missions: CFG.missions.length, start: CFG.start,
     round: { playDays: CFG.round.playDays, noPvpMs: CFG.round.noPvpMs },
   };
 }
@@ -237,6 +238,8 @@ function agir(conta, corpo, now) {
     case 'train': r = E.train(p, now, world, String(a.stat)); break;
     case 'drug': r = E.buyDrug(p, now, world, int(a.d)); break;
     case 'refill': r = E.refill(p, now, world); break;
+    case 'class': r = E.setClass(p, now, world, String(a.id)); break;
+    case 'avatar': r = E.setAvatar(p, now, world, int(a.i)); break;
     case 'detox': r = E.detox(p, now, world); break;
     case 'claim': r = E.claimMission(p, now, world); break;
     case 'bail': r = E.payBail(p, now, world); break;
@@ -285,7 +288,7 @@ let cacheRank = { t: 0, n: -1, size: 0, lista: [] };
 function rankingAtual(now, w) {
   carregarRonda(w.n);
   if (cacheRank.n === w.n && cacheRank.size === jogadores.size && now - cacheRank.t < 5000) return cacheRank.lista;
-  const lista = E.ranking([...jogadores.values()]).map((p, i) => ({ pos: i + 1, id: p.id, name: nomeDe(p.id), respect: p.respect, level: E.level(p) }));
+  const lista = E.ranking([...jogadores.values()]).map((p, i) => ({ pos: i + 1, id: p.id, name: nomeDe(p.id), respect: p.respect, level: E.level(p), av: p.av || 0, cls: p.cls || '' }));
   cacheRank = { t: now, n: w.n, size: jogadores.size, lista };
   return lista;
 }
@@ -302,8 +305,8 @@ function alvos(conta, now, w) {
     const motivo = E.canAttack(livre, d, now, { start: w.start, playEnd: w.playEnd });
     if (motivo && motivo !== 'NO_PVP_YET') continue;
     lista.push({
-      name: nomeDe(d.id), level: E.level(d), respect: d.respect,
-      chance: E.attackChanceBp(me, d), gain: E.expectedGain(me, d, now), loot: E.mugValue(me, d, now),
+      name: nomeDe(d.id), level: E.level(d), respect: d.respect, av: d.av || 0, cls: d.cls || '',
+      chance: E.attackChanceBp(me, d, now), gain: E.expectedGain(me, d, now), loot: E.mugValue(me, d, now),
     });
   }
   // os mais interessantes primeiro: mais respeito esperado

@@ -6,7 +6,7 @@ import * as fx from './fx.js';
 
 const $app = document.getElementById('app');
 const S = {
-  cfg: null, st: null, off: 0, tab: 'city', fightSeg: 'targets', robK: null, report: null,
+  cfg: null, st: null, off: 0, tab: 'city', fightSeg: 'targets', robK: null, report: null, avOk: false, clsPick: null,
   targets: null, ranking: null, events: null, lastEventSeen: 0, hud: {}, queue: Promise.resolve(), pending: 0,
 };
 const store = {
@@ -129,17 +129,32 @@ function buildHud() {
   S.hud.ebar = h('i'); S.hud.etxt = h('span');
   S.hud.vbar = h('i'); S.hud.vtxt = h('span');
   S.hud.stats = h('div', { class: 'hstats' });
+  S.hud.fx = h('div', { class: 'hfx' });
+  S.hud.av = S.avOk ? h('img', { class: 'av', alt: '', width: 96, height: 96 }) : null;
   const hud = h('header', { class: 'hud' },
     h('div', { class: 'hud-top' },
-      h('button', { class: 'badge', 'aria-label': t('profile'), on: { click: openProfile } }, ring, S.hud.lvl),
+      h('button', { class: 'badge' + (S.hud.av ? ' hasav' : ''), 'aria-label': t('profile'), on: { click: openProfile } }, ring, S.hud.av, S.hud.lvl),
       h('div', { class: 'who' }, S.hud.title, S.hud.name),
       h('div', { class: 'money' }, S.hud.cash, S.hud.resp)),
     h('div', { class: 'hbars' },
       h('button', { class: 'sbar en', 'aria-label': t('p_club'), on: { click: () => go('club') } }, S.hud.ebar, S.hud.etxt),
       h('button', { class: 'sbar vi', 'aria-label': t('p_hosp'), on: { click: () => go('hosp') } }, S.hud.vbar, S.hud.vtxt)),
-    S.hud.stats);
+    S.hud.stats, S.hud.fx);
   S.hud.shown = { cash: me.cash, respect: me.respect };
   return hud;
+}
+
+const STAT_IC = { F: 'fist', I: 'brain', C: 'chat', T: 'shield' };
+const FX_IC = { F: 'fist', I: 'brain', C: 'chat', T: 'shield', loot: 'cash', biz: 'empire', bust: 'lock' };
+const AV = (i) => `/img/av/${i}.webp?1`;
+const fxText = (f) => t('fx_' + f.k, { p: f.bp / 100 });
+function fxChip(f) { return h('span', { class: 'chip fxc' }, icon(FX_IC[f.k]), fxText(f) + ' · ', h('b', { class: 'num', dataset: { left: f.until } }, dur(f.until - now()))); }
+// mostra ao lado do número quanto subiu ou desceu
+function delta(el, d, fmt) {
+  if (!el || !d) return;
+  el.classList.remove('up', 'down'); void el.offsetWidth; el.classList.add(d > 0 ? 'up' : 'down');
+  const chip = h('span', { class: 'delta ' + (d > 0 ? 'up' : 'down') + (el === S.hud.resp ? ' r2' : '') }, (d > 0 ? '+' : '−') + fmt(Math.abs(d)));
+  el.parentNode.appendChild(chip); setTimeout(() => chip.remove(), 1400);
 }
 
 function updateHud() {
@@ -151,11 +166,13 @@ function updateHud() {
   const span = me.levelTo ? (me.levelTo - me.levelFrom) : 1;
   const prog = me.levelTo ? Math.min(1, Math.max(0, (me.peakRespect - me.levelFrom) / span)) : 1;
   S.hud.ringFg.setAttribute('stroke-dashoffset', String(S.hud.C * (1 - prog)));
-  S.hud.stats.replaceChildren(...['F', 'I', 'C', 'T'].map((s) => h('span', null, t('stat' + s).slice(0, 3) + ' ', h('b', { class: 'num' }, short(me.stats[s])))),
+  if (S.hud.av && S.hud.av.dataset.i !== String(me.av)) { S.hud.av.dataset.i = me.av; S.hud.av.src = AV(me.av); }
+  S.hud.fx.replaceChildren(...me.fx.map(fxChip)); S.hud.fx.style.display = me.fx.length ? '' : 'none';
+  S.hud.stats.replaceChildren(...['F', 'I', 'C', 'T'].map((s) => h('span', { title: t('stat' + s) }, icon(STAT_IC[s]), h('b', { class: 'num' }, short(me.stats[s])))),
     h('span', { class: 'nx' }, me.levelTo ? t('toLevel', { n: num(me.levelTo - me.peakRespect), l: L + 1 }) : t('maxLevel')));
   const sh = S.hud.shown;
-  if (sh.cash !== me.cash) { fx.roll(S.hud.cash, sh.cash, me.cash, moneyShort); sh.cash = me.cash; } else S.hud.cash.textContent = moneyShort(me.cash);
-  if (sh.respect !== me.respect) { fx.roll(S.hud.respN, sh.respect, me.respect, short); sh.respect = me.respect; } else S.hud.respN.textContent = short(me.respect);
+  if (sh.cash !== me.cash) { fx.roll(S.hud.cash, sh.cash, me.cash, moneyShort); delta(S.hud.cash, me.cash - sh.cash, money); sh.cash = me.cash; } else S.hud.cash.textContent = moneyShort(me.cash);
+  if (sh.respect !== me.respect) { fx.roll(S.hud.respN, sh.respect, me.respect, short); delta(S.hud.resp, me.respect - sh.respect, num); sh.respect = me.respect; } else S.hud.respN.textContent = short(me.respect);
   tickHud();
 }
 
@@ -174,6 +191,12 @@ function tickHud() {
     el.style.setProperty('--fill', f.toFixed(3)); el.classList.toggle('full', f >= 1);
     const bar = document.querySelector(`[data-fill="${i}"]`);
     if (bar) { bar.firstChild.style.width = f * 100 + '%'; bar.classList.toggle('full', f >= 1); }
+    const txt = document.querySelector(`[data-fill-txt="${i}"]`);
+    if (txt) txt.textContent = f >= 1 ? t('storageFull') : t('storage', { p: Math.floor(f * 100) });
+    // o dinheiro a pingar: de vez em quando sobe um «+$» da imagem
+    const v = storedNow(b, i), last = el._v ?? v;
+    if (v > last && now() - (el._t || 0) > 2500 && !document.body.classList.contains('light')) { el._t = now(); const tk = h('span', { class: 'tick' }, '+' + money(v - last)); el.appendChild(tk); setTimeout(() => tk.remove(), 1300); el._v = v; }
+    else if (v < last || el._v === undefined) el._v = v;
   });
   const tot = document.querySelector('[data-total]');
   if (tot) {
@@ -193,7 +216,7 @@ const PLACES = {
 };
 const NAV = ['city', 'rob', 'club', 'biz', 'fights'];
 const GRID = ['rob', 'club', 'gym', 'biz', 'port', 'arms', 'bank', 'hosp', 'alley', 'lux', 'fights', 'rank'];
-const IMG = (kind, id, big) => `/img/${kind}/${id}${big ? '-g' : ''}.webp?3`;
+const IMG = (kind, id, big) => `/img/${kind}/${id}${big ? '-g' : ''}.webp?4`;
 function go(tab) {
   if (!PLACES[tab]) tab = 'city';
   S.tab = tab; document.body.dataset.tab = tab; store.set('tab', tab);
@@ -224,7 +247,7 @@ function render() {
   const unseen = (S.events || []).some((e) => e.id > S.lastEventSeen);
   if (unseen && !dot) $tabs.querySelector('[data-tab="fights"]').appendChild(h('span', { class: 'dot' }));
   if (!unseen && dot) dot.remove();
-  $main.replaceChildren(...SCREENS[S.tab]().filter(Boolean));
+  $main.replaceChildren(...(S.st.me.cls ? SCREENS[S.tab]() : screenClass()).filter(Boolean));
   updateHud();
 }
 
@@ -298,6 +321,16 @@ function statNames(w) {
   return Object.entries(w).filter(([, v]) => v > 0).sort((a, b) => b[1] - a[1]).map(([s]) => names[s]).join(' + ');
 }
 
+// ---------- profissão ----------
+function classLines(c) { return Object.keys(c).filter((k) => k !== 'id').map((k) => t('cb_' + k, { p: k === 'capPlus' ? c[k] : c[k] / 100 })); }
+function screenClass() {
+  const pick = S.clsPick;
+  return [h('div', { class: 'phead' }, h('div', { class: 'pbar' }, h('h1', { style: 'margin:0' }, t('clsTitle'))), h('p', { class: 'psub' }, t('clsSub'))),
+    h('div', { class: 'shop' }, S.cfg.classes.map((c) => h('button', { class: 'item cls' + (pick === c.id ? ' sel' : ''), 'aria-pressed': pick === c.id ? 'true' : 'false', on: { click: () => { S.clsPick = c.id; render(); } } },
+      art('classes', c.id), h('div', { class: 'nm' }, t('cl_' + c.id)), h('ul', { class: 'perks' }, classLines(c).map((x) => h('li', null, x)))))),
+    pick ? h('div', { class: 'stick' }, h('button', { class: 'btn buy block big', on: { click: (e) => act('class', { id: pick }, { el: e.currentTarget }) } }, t('clsConfirm', { x: t('cl_' + pick) }))) : null];
+}
+
 // ---------- a cidade ----------
 function screenCity() {
   const me = S.st.me, L = live(me), n = now();
@@ -342,12 +375,12 @@ function screenRob() {
   S.robK = k;
   const c = C[k], info = me.crimes[k], bonus = 1 + (me.stars[k] * S.cfg.mastery.bonusBp) / 10000;
   const rep = S.report && S.report.k === k ? S.report : null;
-  const fact = (lbl, val, cls) => h('div', { class: 'fact' }, h('b', { class: 'num ' + cls }, val), h('span', null, lbl));
+  const fact = (lbl, val, cls, ic) => h('div', { class: 'fact' }, h('b', { class: 'num ' + cls }, val), h('span', null, icon(ic), lbl));
   out.push(h('div', { class: 'jobp' },
     h('div', { class: 'jimg' }, h('img', { src: IMG('crimes', c.id, 1), alt: '', width: 1100, height: 1100, decoding: 'async' }), h('h2', null, names[k])),
     h('div', { class: 'facts' },
-      fact(t('chance'), pct(info.chance), chanceCls(info.chance)), fact(t('energy'), '−' + c.e, 'c-en'),
-      fact(t('loot'), moneyShort(Math.floor(c.min * bonus)) + '–' + moneyShort(Math.floor(c.max * bonus)), 'c-cash'), fact(t('respect'), '+' + c.r, 'c-resp')),
+      fact(t('chance'), pct(info.chance), chanceCls(info.chance), 'target'), fact(t('energy'), '−' + c.e, 'c-en', 'bolt'),
+      fact(t('loot'), moneyShort(Math.floor(c.min * bonus)) + '–' + moneyShort(Math.floor(c.max * bonus)), 'c-cash', 'cash'), fact(t('respect'), '+' + c.r, 'c-resp', 'crown')),
     h('button', { class: 'btn buy block big', disabled: !!b || L.energy < c.e, on: { click: (e) => act('crime', { k }, { el: e.currentTarget }) } }, t('robBtn')),
     !b && L.energy < c.e ? h('div', { class: 'row sp' }, h('span', { class: 'small' }, t('noStamina')), h('button', { class: 'btn sm pri', on: { click: () => go('club') } }, t('goClub'))) : null,
     rep ? reportCard(rep) : null,
@@ -381,12 +414,16 @@ function screenClub() {
   const b = busyBanner(me); if (b) out.push(b);
   out.push(h('div', { class: 'card meters' }, meter(t('energy'), L.energy, max, 'en'), meter(t('vice'), L.vice, me.addictionCap, 'vi'), h('p', { class: 'small muted' }, t('vice') + ': ' + t('viceDown'))));
   if (L.vice >= me.addictionCap - 1) out.push(h('div', { class: 'note', style: 'margin-top:8px' }, h('p', null, t('viceFull')), h('button', { class: 'btn pri', on: { click: () => go('hosp') } }, t('goHosp'))));
+  const more = (S.cfg.classes.find((c) => c.id === me.cls) || {}).fxMoreBp || 0;
   out.push(h('div', { class: 'shop', style: 'margin-top:12px' }, S.cfg.drugs.map((g, d) => {
-    const ok = L.energy + g.e <= max && L.vice + g.a <= me.addictionCap && me.cash + me.bank >= g.price && !b;
+    const price = me.drugPrices[d];
+    const ok = (g.fx || L.energy + g.e <= max) && L.vice + g.a <= me.addictionCap && me.cash + me.bank >= price && !b;
     return h('div', { class: 'item' }, art('drugs', g.id),
       h('div', { class: 'nm' }, list('drugs')[d]),
-      h('div', { class: 'small' }, h('span', { class: 'c-en' }, '+' + g.e + ' ' + t('energy').toLowerCase()), h('br'), h('span', { class: 'c-vice' }, '+' + g.a + ' ' + t('vice').toLowerCase())),
-      h('button', { class: 'btn buy block', disabled: !ok, on: { click: (e) => act('drug', { d }, { el: e.currentTarget }) } }, t('buyFor', { m: money(g.price) })));
+      h('div', { class: 'small' }, h('span', { class: 'c-en' }, icon('bolt'), '+' + g.e), ' · ', h('span', { class: 'c-vice' }, icon('pill'), '+' + g.a)),
+      g.fx ? h('ul', { class: 'perks' }, g.fx.map((f) => h('li', null, icon(FX_IC[f.k]), fxText(f) + ' · ' + t('fxFor', { m: Math.round((f.ms * (10000 + more)) / 10000 / 60000) }))))
+        : h('div', { class: 'small muted' }, t('noFx')),
+      h('button', { class: 'btn buy block', disabled: !ok, on: { click: (e) => act('drug', { d }, { el: e.currentTarget }) } }, t('buyFor', { m: money(price) })));
   })));
   return out;
 }
@@ -397,12 +434,12 @@ function screenGym() {
   const out = [pageHead('gym', t('gymSub'))];
   const b = busyBanner(me); if (b) out.push(b);
   out.push(h('div', { class: 'power' },
-    h('div', { class: 'card' }, h('b', { class: 'c-red' }, short(me.attack)), h('span', { class: 'small muted' }, t('attackPower'))),
-    h('div', { class: 'card' }, h('b', { class: 'c-en' }, short(me.defense)), h('span', { class: 'small muted' }, t('defensePower')))));
+    h('div', { class: 'card' }, h('b', { class: 'c-red' }, icon('fist'), short(me.attack)), h('span', { class: 'small muted' }, t('attackPower'))),
+    h('div', { class: 'card' }, h('b', { class: 'c-en' }, icon('shield'), short(me.defense)), h('span', { class: 'small muted' }, t('defensePower')))));
   out.push(h('div', { class: 'shop' }, ['F', 'I', 'C', 'T'].map((s) => {
     const train = async (e, n) => { const el = e.currentTarget; for (let i = 0; i < n; i++) { const r = await act('train', { stat: s }, { el }); if (!r) break; } };
     return h('div', { class: 'item' }, art('stats', s),
-      h('div', { class: 'nm' }, t('stat' + s), ' ', h('b', { class: 'num c-en' }, num(me.stats[s]))),
+      h('div', { class: 'nm' }, icon(STAT_IC[s]), ' ', t('stat' + s), ' ', h('b', { class: 'num c-en' }, num(me.stats[s]))),
       h('p', { class: 'small muted' }, t('stat' + s + 'd')),
       me.xp && s !== 'T' ? h('div', { class: 'fill', title: t('practiceLbl') }, h('i', { style: `width:${Math.min(100, (me.xp[s] / me.xpNeed[s]) * 100)}%;background:var(--energy)` })) : null,
       h('div', { class: 'row' }, h('button', { class: 'btn buy grow', disabled: !!b, on: { click: (e) => train(e, 1) } }, t('train')),
@@ -432,7 +469,8 @@ function screenBiz() {
       h('div', { class: 'nm' }, list('biz')[i]),
       b.n > 0 ? h('div', { class: 'small' }, h('b', { class: 'c-cash num', dataset: { stored: i } }, money(stored)), h('span', { class: 'muted num' }, ' · ' + moneyShort(b.perH) + t('perHour')))
         : h('div', { class: 'small muted' }, '+' + moneyShort(unitPerH) + t('perHour') + ' · +' + cfg.resp + ' ' + t('respect').toLowerCase()),
-      b.n > 0 ? h('div', { class: 'fill' + (fill >= 1 ? ' full' : ''), dataset: { fill: i } }, h('i', { style: `width:${fill * 100}%` })) : null,
+      b.n > 0 ? h('div', { class: 'fill big' + (fill >= 1 ? ' full' : ''), dataset: { fill: i } }, h('i', { style: `width:${fill * 100}%` })) : null,
+      b.n > 0 ? h('div', { class: 'small muted', dataset: { fillTxt: i } }, fill >= 1 ? t('storageFull') : t('storage', { p: Math.floor(fill * 100) })) : null,
       h('div', { class: 'small muted' }, cfg.toBank ? t('legal') : t('raidRisk')),
       b.price ? h('button', { class: 'btn buy block', disabled: me.cash + me.bank < b.price, on: { click: (e) => act('buyBiz', { i }, { el: e.currentTarget }) } }, t('buyFor', { m: moneyShort(b.price) }))
         : h('div', { class: 'small c-resp' }, t('maxed')));
@@ -551,7 +589,7 @@ function screenFights() {
     if (!S.targets) out.push(h('p', { class: 'muted' }, t('loading')));
     else if (!S.targets.length) out.push(h('div', { class: 'note' }, h('p', { class: 'muted' }, t('noTargets'))));
     else out.push(h('div', { class: 'stack' }, S.targets.map((x) => h('div', { class: 'card tgt' },
-      h('div', null, h('div', { class: 'nm' }, x.name), h('div', { class: 'lv' }, t('level') + ' ' + x.level + ' · ' + list('titles')[x.level - 1] + ' · ', h('span', { class: 'c-resp' }, icon('crown'), ' ' + short(x.respect)))),
+      h('div', { class: 'who2' }, S.avOk ? h('img', { class: 'avs', src: AV(x.av || 0), alt: '', width: 96, height: 96, loading: 'lazy' }) : null, h('div', null, h('div', { class: 'nm' }, x.name), h('div', { class: 'lv' }, t('level') + ' ' + x.level + ' · ' + list('titles')[x.level - 1] + ' · ', h('span', { class: 'c-resp' }, icon('crown'), ' ' + short(x.respect))))),
       h('div', { class: 'pct ' + chanceCls(x.chance) }, pct(x.chance)),
       h('div', { class: 'acts' },
         h('button', { class: 'btn danger sm', disabled: !!b, on: { click: (e) => act('attack', { target: x.name, mode: 'beat' }, { el: e.currentTarget }) } }, icon('fist'), t('beat') + ' · +' + x.gain),
@@ -567,7 +605,7 @@ function screenRank() {
   if (!S.ranking) { out.push(h('p', { class: 'muted' }, t('loading'))); return out; }
   const st = h('div', null);
   for (const r of S.ranking.top) st.append(h('div', { class: 'rk' + (r.pos <= 3 ? ' g' + r.pos : '') + (r.me ? ' me' : '') },
-    h('div', { class: 'p' }, r.pos), h('div', null, h('div', { style: 'font-weight:700' }, r.name), h('div', { class: 'small muted' }, t('level') + ' ' + r.level + ' · ' + list('titles')[r.level - 1])),
+    h('div', { class: 'p' }, r.pos), S.avOk ? h('img', { class: 'avs', src: AV(r.av || 0), alt: '', width: 96, height: 96, loading: 'lazy' }) : null, h('div', null, h('div', { style: 'font-weight:700' }, r.name), h('div', { class: 'small muted' }, t('level') + ' ' + r.level + ' · ' + list('titles')[r.level - 1])),
     h('div', { class: 'r num' }, icon('crown'), ' ' + short(r.respect))));
   if (S.ranking.me && S.ranking.me.pos > 100) st.append(h('div', { class: 'rk me' }, h('div', { class: 'p' }, S.ranking.me.pos), h('div', null, S.ranking.me.name), h('div', { class: 'r' }, short(S.ranking.me.respect))));
   out.push(st);
@@ -616,6 +654,10 @@ function openProfile() {
   close = sheet(h('div', { class: 'stack' },
     h('div', { class: 'row' }, h('div', { class: 'grow' }, h('div', { class: 'small muted' }, t('level') + ' ' + me.level), h('div', { style: 'font-family:var(--disp);font-weight:900;font-size:34px;text-transform:uppercase;line-height:1' }, list('titles')[me.level - 1]), h('div', { class: 'muted' }, me.name + (S.st.rank ? ' · #' + S.st.rank : ''))),
       h('div', { style: 'text-align:right' }, h('div', { class: 'c-resp', style: 'font-weight:800;font-size:20px' }, icon('crown'), ' ' + num(me.respect)), h('div', { class: 'small muted' }, me.levelTo ? t('toNext', { n: num(me.levelTo - me.peakRespect), l: me.level + 1 }) : ''))),
+    me.cls ? h('div', { class: 'chip', style: 'justify-self:start' }, t('cl_' + me.cls) + ' · ' + classLines(S.cfg.classes.find((c) => c.id === me.cls)).join(' · ')) : null,
+    S.avOk ? h('h2', { class: 'sec', style: 'margin-top:10px' }, t('avatar')) : null,
+    S.avOk ? h('div', { class: 'avgrid' }, Array.from({ length: S.cfg.avatars }, (_, i) => h('button', { class: i === me.av ? 'sel' : '', 'aria-label': t('avatar') + ' ' + (i + 1), 'aria-pressed': i === me.av ? 'true' : 'false',
+      on: { click: async () => { await act('avatar', { i }); close(); openProfile(); } } }, h('img', { src: AV(i), alt: '', width: 96, height: 96, loading: 'lazy' })))) : null,
     h('div', { class: 'small muted' }, t('roundInfo', { n: r.n + 1, d: end })),
     h('div', { class: 'small muted' }, t('playersIn', { n: num(S.st.players) })),
     h('h2', { class: 'sec', style: 'margin-top:10px' }, t('language')), langBtns,
@@ -647,7 +689,7 @@ async function showLanding(st) {
   if (!info) { try { const r = await fetch('/api/saude'); info = await r.json(); } catch {} }
   const langsw = h('div', { class: 'langsw' }, [['en', 'EN'], ['pt', 'PT']].map(([l, n]) => h('button', { 'aria-pressed': lang() === l ? 'true' : 'false', on: { click: () => { applyLang(l); showLanding(info ? { players: info.jogadores, round: info.round } : null); } } }, n)));
   $app.replaceChildren(langsw, h('div', { class: 'land' },
-    h('div', { class: 'land-art', 'aria-hidden': 'true' }, h('img', { src: '/img/cenas/entrada-g.webp?3', alt: '', width: 800, height: 800, fetchpriority: 'high', decoding: 'async' })),
+    h('div', { class: 'land-art', 'aria-hidden': 'true' }, h('img', { src: '/img/cenas/entrada-g.webp?4', alt: '', width: 800, height: 800, fetchpriority: 'high', decoding: 'async' })),
     h('div', { class: 'word neon', 'aria-label': 'Crime' }, 'Crime'),
     h('p', { class: 'tag' }, t('tagline')),
     info ? h('div', { class: 'meta' },
@@ -732,6 +774,8 @@ async function start() {
 applyLang(guessLang());
 fx.setLight(store.get('light', false));
 fx.setSound(store.get('sound', false));
+// os avatares só aparecem quando as imagens existirem no servidor
+{ const pr = new Image(); pr.onload = () => { S.avOk = true; if (S.st?.me && $main) { shell(); render(); } }; pr.src = '/img/av/0.webp?1'; }
 setInterval(tickHud, 1000);
 setInterval(() => { if (S.st && document.visibilityState === 'visible') { refresh(); loadEvents(false); } }, 30000);
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && S.st) refresh(); });

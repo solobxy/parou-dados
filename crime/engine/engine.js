@@ -38,6 +38,7 @@ export function newPlayer(id, now, world, opts = {}) {
     wk: CFG.crimes.map(() => 0),   // sucessos por golpe (mestria)
     c: { crimes: 0, wins: 0, trains: 0, refills: 0, collects: 0, pvpWins: 0, ports: 0 },
     mi: 0,                         // próximo objetivo por receber
+    cls: '', av: 0, fx: {},        // profissão, avatar e efeitos temporários (kind -> { bp, until })
   };
 }
 
@@ -48,6 +49,9 @@ function migrate(p) {
   if (!Array.isArray(p.wk)) p.wk = CFG.crimes.map(() => 0);
   if (!p.c) p.c = { crimes: 0, wins: 0, trains: 0, refills: 0, collects: 0, pvpWins: 0, ports: 0 };
   if (!Number.isSafeInteger(p.mi)) p.mi = 0;
+  if (typeof p.cls !== 'string') p.cls = '';
+  if (!Number.isSafeInteger(p.av)) p.av = 0;
+  if (!p.fx || typeof p.fx !== 'object') p.fx = {};
 }
 
 // ---------- tempo ----------
@@ -108,7 +112,7 @@ export function level(p) {
   return lo + 1;
 }
 
-export function addictionCap(p) { return CFG.addiction.base + Math.floor(p.stats.T / CFG.addiction.perT); }
+export function addictionCap(p) { return CFG.addiction.base + (klass(p).capPlus || 0) + Math.floor(p.stats.T / CFG.addiction.perT); }
 
 function addRespect(p, delta, now) {
   if (delta === 0) return null;
@@ -129,6 +133,38 @@ function pay(p, amount) {
   p.bank -= amount - fromCash;
 }
 
+// ---------- profissão e efeitos temporários ----------
+const klass = (p) => CFG.classes.find((c) => c.id === p.cls) || {};
+const up = (x, bp) => Math.floor((x * (10000 + bp)) / 10000);
+const cut = (x, bp) => Math.floor((x * (10000 - bp)) / 10000);
+export function buffBp(p, k, now) { const f = p.fx && p.fx[k]; return f && now !== undefined && f.until > now ? f.bp : 0; }
+export function effStat(p, s, now) { return up(p.stats[s], buffBp(p, s, now)); }
+export function activeFx(p, now) { return CFG.fxKinds.filter((k) => buffBp(p, k, now) > 0).map((k) => ({ k, bp: p.fx[k].bp, until: p.fx[k].until })); }
+function applyFx(p, g, now) {
+  const out = [];
+  for (const f of g.fx || []) {
+    const until = now + up(f.ms, klass(p).fxMoreBp || 0), cur = p.fx[f.k];
+    if (!cur || cur.until <= now || f.bp >= cur.bp) { p.fx[f.k] = { bp: f.bp, until }; out.push({ k: f.k, bp: f.bp, until }); }
+  }
+  return out;
+}
+export function setClass(p, now, world, id) {
+  begin(p, now, world, { allowBusy: true });
+  if (p.cls) fail('CLASS_SET');
+  if (!CFG.classes.some((c) => c.id === id)) fail('NO_CLASS');
+  settleAllBiz(p, now);
+  p.cls = id;
+  return { ok: true, cls: id };
+}
+export function setAvatar(p, now, world, i) {
+  begin(p, now, world, { allowBusy: true });
+  if (!Number.isInteger(i) || i < 0 || i >= CFG.avatars) fail('NO_AVATAR');
+  p.av = i;
+  return { ok: true, av: i };
+}
+export function bustChanceBp(p, now) { return cut(cut(CFG.bustBp, klass(p).bustCutBp || 0), buffBp(p, 'bust', now)); }
+export function drugPrice(p, d) { return Math.max(1, cut(CFG.drugs[d].price, klass(p).drugCutBp || 0)); }
+
 export function chanceBp(S, D) {
   const { minBp, maxBp } = CFG.chance;
   if (S <= 0) return minBp;
@@ -136,13 +172,13 @@ export function chanceBp(S, D) {
   return clamp(Math.floor((10000 * s2) / (s2 + d2)), minBp, maxBp);
 }
 
-export function crimeScore(p, k) {
+export function crimeScore(p, k, now) {
   const { w } = CFG.crimes[k];
-  const s = p.stats;
-  return Math.floor((w.I * s.I + w.F * s.F + w.C * s.C) / 100);
+  return Math.floor((w.I * effStat(p, 'I', now) + w.F * effStat(p, 'F', now) + w.C * effStat(p, 'C', now)) / 100);
 }
 
-export function crimeChanceBp(p, k) { return chanceBp(crimeScore(p, k), CFG.crimes[k].D); }
+// com «now» conta os efeitos temporários; sem ele, só as stats (é o que desbloqueia golpes)
+export function crimeChanceBp(p, k, now) { return chanceBp(crimeScore(p, k, now), CFG.crimes[k].D); }
 
 export function crimeUnlocked(p, k) { return k === 0 || crimeChanceBp(p, k) >= CFG.unlockBp; }
 
@@ -181,13 +217,13 @@ export function doCrime(p, now, world, k, rng) {
   begin(p, now, world);
   if (!crimeUnlocked(p, k)) fail('LOCKED');
   if (p.energy < c.e) fail('NO_ENERGY', { need: c.e });
-  const bp = crimeChanceBp(p, k);
+  const bp = crimeChanceBp(p, k, now);
   p.energy -= c.e;
   // o primeiro carteirista de quem ainda não tem respeito nenhum corre sempre bem: a primeira jogada não pode ser a prisão
   const first = k === 0 && p.peakRespect === 0;
   if (first || rng.chance(bp)) {
     const starsBefore = masteryStars(p, k);
-    let money = Math.floor((rng.int(c.min, c.max) * (10000 + CFG.mastery.bonusBp * starsBefore)) / 10000);
+    let money = Math.floor((rng.int(c.min, c.max) * (10000 + CFG.mastery.bonusBp * starsBefore + (klass(p).lootBp || 0) + buffBp(p, 'loot', now))) / 10000);
     const crit = rng.chance(CFG.crit.chanceBp);
     if (crit) money *= CFG.crit.mult;
     p.cash += money;
@@ -195,21 +231,21 @@ export function doCrime(p, now, world, k, rng) {
     const stars = masteryStars(p, k);
     const lvl = addRespect(p, c.r, now);
     const gained = practice(p, c, true);
-    return { ok: true, success: true, money, crit, respect: c.r, levelUp: lvl, chanceBp: bp, gained, newChanceBp: crimeChanceBp(p, k), star: stars > starsBefore ? stars : 0 };
+    return { ok: true, success: true, money, crit, respect: c.r, levelUp: lvl, chanceBp: bp, gained, newChanceBp: crimeChanceBp(p, k, now), star: stars > starsBefore ? stars : 0 };
   }
   p.c.crimes += 1;
   // falhar não é sempre prisão: só uma parte das falhas acaba com a polícia
-  const busted = rng.chance(CFG.bustBp);
+  const busted = rng.chance(bustChanceBp(p, now));
   if (busted) { p.jailUntil = now + c.jailMin * T.MIN; p.jailTier = k + 1; }
   const gained = practice(p, c, false);
-  return { ok: true, success: false, busted, jailUntil: p.jailUntil, chanceBp: bp, gained, newChanceBp: crimeChanceBp(p, k) };
+  return { ok: true, success: false, busted, jailUntil: p.jailUntil, chanceBp: bp, gained, newChanceBp: crimeChanceBp(p, k, now) };
 }
 
 export function bailCost(p, now) {
   if (!(p.jailUntil > now)) return 0;
   const c = CFG.crimes[p.jailTier - 1];
   const left = p.jailUntil - now, total = c.jailMin * T.MIN;
-  const full = Math.floor(((c.min + c.max) / 2) * CFG.bailBp / 10000);
+  const full = cut(Math.floor(((c.min + c.max) / 2) * CFG.bailBp / 10000), klass(p).bailCutBp || 0);
   return Math.max(1, Math.ceil((full * Math.min(left, total)) / total));
 }
 
@@ -241,21 +277,24 @@ export function payMedic(p, now, world) {
 
 export function canBuyDrug(p, d) {
   const g = CFG.drugs[d];
-  return p.energy + g.e <= CFG.energy.max && p.addiction + g.a <= addictionCap(p) && p.cash + p.bank >= g.price;
+  return (g.fx || p.energy + g.e <= CFG.energy.max) && p.addiction + g.a <= addictionCap(p) && p.cash + p.bank >= drugPrice(p, d);
 }
 
 export function buyDrug(p, now, world, d) {
   const g = Number.isInteger(d) ? CFG.drugs[d] : undefined;
   if (!g) fail('NO_DRUG');
   begin(p, now, world);
-  if (p.energy + g.e > CFG.energy.max) fail('ENERGY_FULL');
+  // quem está cheio só pode tomar o que tem efeito (a stamina a mais perde-se)
+  if (!g.fx && p.energy + g.e > CFG.energy.max) fail('ENERGY_FULL');
   if (p.addiction + g.a > addictionCap(p)) fail('ADDICTION_LIMIT', { cap: addictionCap(p) });
-  pay(p, g.price);
-  p.energy += g.e;
+  const price = drugPrice(p, d);
+  pay(p, price);
+  const got = Math.min(g.e, CFG.energy.max - p.energy);
+  p.energy += got;
   if (p.addiction === 0) p.addictionT = now;
   p.addiction += g.a;
   p.c.refills += 1;
-  return { ok: true, energy: g.e, addiction: g.a, price: g.price };
+  return { ok: true, energy: got, addiction: g.a, price, fx: applyFx(p, g, now) };
 }
 
 // Quanto vale 1 ponto de energia para este jogador: o melhor golpe desbloqueado, em dinheiro esperado.
@@ -337,6 +376,7 @@ export function refill(p, now, world) {
   }
   pay(p, plan.cost);
   p.energy += plan.energy;
+  plan.counts.forEach((n, d) => { if (n) applyFx(p, CFG.drugs[d], now); });
   if (p.addiction === 0) p.addictionT = now;
   p.addiction += plan.vice;
   p.c.refills += 1;
@@ -397,7 +437,7 @@ export function bizRates(p, i) {
   const b = CFG.biz[i];
   const n = p.biz[i].n;
   const st = Math.min(p.stats[b.stat], CFG.statMultCap);
-  const perH = Math.floor((b.perH * n * (CFG.statMultDiv + st)) / CFG.statMultDiv);
+  const perH = up(Math.floor((b.perH * n * (CFG.statMultDiv + st)) / CFG.statMultDiv), klass(p).bizBp || 0);
   return { perH };
 }
 
@@ -451,6 +491,7 @@ export function collectBiz(p, now, world, rng) {
       lost = Math.floor((money * CFG.raid.lossBp) / 10000);
       money -= lost;
     }
+    money = up(money, buffBp(p, 'biz', now));   // sob efeito, a recolha rende mais
     if (b.toBank) p.bank += money; else p.cash += money;
     out.push({ biz: b.id, money, lost });
     s.stored = 0;
@@ -500,7 +541,7 @@ export function collectPort(p, now, world, rng) {
 export function deposit(p, now, world, amount) {
   begin(p, now, world, { allowBusy: true });
   if (!Number.isSafeInteger(amount) || amount <= 0 || amount > p.cash) fail('BAD_AMOUNT');
-  const fee = Math.ceil((amount * CFG.bank.feeBp) / 10000);
+  const fee = Math.ceil((amount * cut(CFG.bank.feeBp, klass(p).feeCutBp || 0)) / 10000);
   p.cash -= amount;
   p.bank += amount - fee;
   return { ok: true, fee };
@@ -541,8 +582,8 @@ export function buyGear(p, now, world, kind, idx) {
 }
 
 const gearBp = (list, idx) => (idx >= 0 ? list[idx].bp : 0);
-export function attackPower(p) { return Math.floor((p.stats.F * (10000 + gearBp(CFG.weapons, p.weapon))) / 10000); }
-export function defensePower(p) { return Math.floor((p.stats.T * (10000 + gearBp(CFG.armors, p.armor))) / 10000); }
+export function attackPower(p, now) { return up(Math.floor((effStat(p, 'F', now) * (10000 + gearBp(CFG.weapons, p.weapon))) / 10000), klass(p).atkBp || 0); }
+export function defensePower(p, now) { return up(Math.floor((effStat(p, 'T', now) * (10000 + gearBp(CFG.armors, p.armor))) / 10000), klass(p).defBp || 0); }
 
 // ---------- ataques ----------
 
@@ -551,7 +592,7 @@ function prune(arr, now) { const lim = now - CFG.pvp.windowMs; while (arr.length
 // asVictim: foi mandado para o hospital por outro (conta para o limite de 4 em 24 h)
 function hospitalize(p, now, ms, asVictim) {
   const P = CFG.pvp;
-  p.hospUntil = now + ms;
+  p.hospUntil = now + cut(ms, klass(p).hospCutBp || 0);
   p.protectUntil = p.hospUntil + P.protectMs;          // proteção normal: cai se ele atacar
   if (!asVictim) return;
   prune(p.hospTimes, now);
@@ -578,7 +619,7 @@ export function canAttack(a, d, now, world) {
   return null;
 }
 
-export function attackChanceBp(a, d) { return chanceBp(attackPower(a), defensePower(d)); }
+export function attackChanceBp(a, d, now) { return chanceBp(attackPower(a, now), defensePower(d, now)); }
 
 function priorWins(a, d, now) {
   const arr = a.hits.get(d.id);
@@ -601,7 +642,7 @@ export function pvpBaseGain(a, d) {
   const P = CFG.pvp;
   const ratioBp = clamp(Math.floor((10000 * d.respect) / Math.max(1, a.respect)), P.ratioMinBp, P.ratioMaxBp);
   const sqrtBp = Math.floor(Math.sqrt(ratioBp * 10000)); // 5000..20000
-  return Math.floor(((P.gainBase + level(a)) * sqrtBp) / 10000);
+  return up(Math.floor(((P.gainBase + level(a)) * sqrtBp) / 10000), klass(a).pvpBp || 0);
 }
 
 export function expectedGain(a, d, now) {
@@ -618,7 +659,7 @@ export function attack(a, d, now, world, mode, rng) {
   const P = CFG.pvp;
   a.energy -= P.energy;
   a.protectUntil = 0; // quem ataca perde a proteção
-  const bp = attackChanceBp(a, d);
+  const bp = attackChanceBp(a, d, now);
   const n = priorWins(a, d, now);
   const div = 2 ** Math.min(n, 10);
   const base = pvpBaseGain(a, d);
@@ -722,6 +763,9 @@ export function checkInvariants(p) {
   if (p.c.wins !== p.wk.reduce((s, n) => s + n, 0)) bad.push('wins!=mastery');
   for (const s of ['F', 'I', 'C']) if (!Number.isSafeInteger(p.xp?.[s]) || p.xp[s] < 0 || p.xp[s] >= practiceNeed(p, s)) bad.push(`xp ${s}=${p.xp?.[s]}`);
   if (p.energyT > p.t || p.addictionT > p.t) bad.push('timer in future');
+  if (p.cls !== '' && !CFG.classes.some((c) => c.id === p.cls)) bad.push('class');
+  if (!Number.isSafeInteger(p.av) || p.av < 0 || p.av >= CFG.avatars) bad.push('avatar');
+  for (const k of Object.keys(p.fx)) { const f = p.fx[k]; if (!CFG.fxKinds.includes(k) || !Number.isSafeInteger(f.bp) || f.bp <= 0 || !Number.isSafeInteger(f.until)) bad.push('fx ' + k); }
   for (const s of p.biz) {
     for (const k of ['n', 'stored', 'rem', 't']) if (!Number.isSafeInteger(s[k]) || s[k] < 0) bad.push(`biz.${k}=${s[k]}`);
     if (s.rem >= T.HOUR) bad.push('biz remainder overflow');

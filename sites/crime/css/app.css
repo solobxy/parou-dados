@@ -539,3 +539,45 @@ body.light .report { animation: none; }
 .phead:has(.pbar:last-child) { margin-bottom: 4px; }
 .facts { grid-template-columns: 1fr 1fr 1.5fr 1fr; }
 @media (max-width: 380px) { .fact b { font-size: 20px; } .tile .lbl { font-size: 24px; } .pbar h1 { font-size: 28px; } }
+
+/* ================= profissões, avatares, efeitos e dinheiro a mexer ================= */
+.badge.hasav .av { position: absolute; inset: 5px; width: 38px; height: 38px; border-radius: 50%; object-fit: cover; }
+.badge.hasav .num { inset: auto -5px -4px auto; min-width: 21px; height: 21px; padding: 0 5px; background: var(--sodium); color: #10131a; border-radius: 99px; font-size: 14px; display: grid; place-items: center; }
+.hstats span { display: inline-flex; align-items: center; gap: 3px; }
+.hstats svg.i { width: 13px; height: 13px; }
+.hfx { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.chip.fxc { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; color: var(--tx); background: #2a1f45; padding: 3px 9px; }
+.chip.fxc svg.i { width: 13px; height: 13px; color: var(--vice); }
+.money { position: relative; }
+.money .delta { position: absolute; right: calc(100% + 8px); top: 1px; font-weight: 800; font-size: 14px; white-space: nowrap; pointer-events: none; animation: dl 1.35s var(--ease-out) forwards; }
+.money .delta.r2 { top: 24px; font-size: 12.5px; }
+.delta.up { color: var(--cash); } .delta.down { color: var(--danger); }
+.delta.r2.up { color: var(--sodium); }
+@keyframes dl { 0% { opacity: 0; transform: translateY(8px); } 15% { opacity: 1; transform: none; } 75% { opacity: 1; } 100% { opacity: 0; transform: translateY(-10px); } }
+.money .cash.up { animation: cup .7s var(--ease-out); }
+.money .cash.down { animation: cdown .7s var(--ease-out); }
+@keyframes cup { 30% { transform: scale(1.12); text-shadow: 0 0 16px #46e08acc; } }
+@keyframes cdown { 30% { color: var(--danger); } }
+.money .cash { transform-origin: right center; }
+button.item { border: 0; color: inherit; font: inherit; cursor: pointer; }
+.item.cls.sel { box-shadow: inset 0 0 0 3px var(--cash); }
+.perks { list-style: none; margin: 0; padding: 0; display: grid; gap: 3px; font-size: 13px; line-height: 1.3; color: var(--tx); }
+.perks li { display: flex; gap: 5px; justify-content: center; align-items: flex-start; }
+.perks svg.i { width: 13px; height: 13px; flex: none; margin-top: 2px; color: var(--sodium); }
+.stick { position: sticky; bottom: calc(86px + env(safe-area-inset-bottom)); margin-top: 12px; z-index: 5; }
+.stick .btn { box-shadow: 0 8px 24px #000a; }
+.fill.big { height: 10px; }
+.bscene .tick { position: absolute; left: 50%; bottom: 28%; z-index: 4; color: var(--cash); font-weight: 800; font-size: 15px; text-shadow: 0 1px 4px #000; pointer-events: none; animation: tk 1.25s var(--ease-out) forwards; }
+@keyframes tk { 0% { opacity: 0; transform: translate(-50%, 8px); } 20% { opacity: 1; } 100% { opacity: 0; transform: translate(-50%, -36px); } }
+.avgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(56px, 1fr)); gap: 8px; }
+.avgrid button { border: 0; padding: 0; background: var(--s2); border-radius: 50%; aspect-ratio: 1; overflow: hidden; }
+.avgrid img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.avgrid .sel { box-shadow: 0 0 0 3px var(--cash); }
+.avs { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; flex: none; background: var(--s2); }
+.who2 { display: flex; gap: 10px; align-items: center; min-width: 0; }
+.rk:has(.avs) { grid-template-columns: 34px 40px 1fr auto; }
+.power b svg.i, .item .nm svg.i { width: .78em; height: .78em; vertical-align: -.06em; margin-right: 4px; }
+.fact span svg.i { width: 11px; height: 11px; margin-right: 3px; vertical-align: -1px; }
+.item .small svg.i { width: 12px; height: 12px; vertical-align: -2px; margin-right: 2px; }
+@media (prefers-reduced-motion: reduce) { .money .delta { animation: none; } .money .cash.up, .money .cash.down { animation: none; } .bscene .tick { display: none; } }
+body.light .bscene .tick { display: none; }

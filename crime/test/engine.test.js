@@ -495,3 +495,44 @@ test('jogador gravado com regras antigas ganha os campos novos', () => {
   E.doCrime(p, START + 2000, world, 0, always);
   assert.equal(p.c.wins, 1);
 });
+
+let _n = 0; const mk = () => E.newPlayer('n' + (_n++), START, world); const W = world;
+
+test('drogas: efeito temporário sobe a hipótese e acaba no fim do tempo', () => {
+  const p = mk(); p.cash = 1e6; p.energy = 50;
+  const lsd = CFG.drugs.findIndex((g) => g.id === 'lsd'), k = 2;   // roubar um carro pesa na inteligência
+  const antes = E.crimeChanceBp(p, k, START);
+  const r = E.buyDrug(p, START, W, lsd);
+  assert.equal(r.fx[0].k, 'I');
+  assert.ok(E.crimeChanceBp(p, k, START) > antes, 'sob efeito a hipótese sobe');
+  assert.equal(E.crimeChanceBp(p, k), antes, 'sem relógio não conta o efeito');
+  assert.equal(E.crimeChanceBp(p, k, r.fx[0].until), antes, 'no fim do tempo volta ao normal');
+  assert.equal(E.activeFx(p, r.fx[0].until).length, 0);
+});
+
+test('drogas: com efeito pode tomar-se de stamina cheia, a cerveja não', () => {
+  const p = mk(); p.cash = 1e6;
+  assert.throws(() => E.buyDrug(p, START, W, 0), (e) => e.code === 'ENERGY_FULL');
+  const r = E.buyDrug(p, START, W, 1);
+  assert.equal(r.energy, 0); assert.equal(p.energy, CFG.energy.max);
+  assert.deepEqual(E.checkInvariants(p), []);
+});
+
+test('profissão: escolhe-se uma vez e muda as contas', () => {
+  const a = mk(), b = mk(); a.cash = b.cash = 1e6;
+  E.setClass(a, START, W, 'traficante');
+  assert.throws(() => E.setClass(a, START, W, 'ladrao'), (e) => e.code === 'CLASS_SET');
+  assert.throws(() => E.setClass(b, START, W, 'nada'), (e) => e.code === 'NO_CLASS');
+  assert.ok(E.drugPrice(a, 6) < E.drugPrice(b, 6));
+  assert.equal(E.addictionCap(a), E.addictionCap(b) + 15);
+  a.energy = b.energy = 0;
+  const fa = E.buyDrug(a, START, W, 6).fx[0], fb = E.buyDrug(b, START, W, 6).fx[0];
+  assert.equal(fa.until - START, 2 * (fb.until - START), 'ao traficante o efeito dura o dobro');
+  const m = mk(); E.setClass(m, START, W, 'matador');
+  assert.ok(E.attackPower(m, START) > E.attackPower(mk(), START));
+  const v = mk(); E.setClass(v, START, W, 'vigarista');
+  assert.ok(E.bustChanceBp(v, START) < CFG.bustBp);
+  E.setAvatar(v, START, W, 31); assert.equal(v.av, 31);
+  assert.throws(() => E.setAvatar(v, START, W, 32), (e) => e.code === 'NO_AVATAR');
+  for (const p of [a, b, m, v]) assert.deepEqual(E.checkInvariants(p), []);
+});
