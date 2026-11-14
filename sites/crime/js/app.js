@@ -48,7 +48,7 @@ function act(type, args = {}, opts = {}) {
     try {
       const out = await api('POST', '/api/act', { type, ...args, rid: rid() });
       S.st.me = out.me; S.stAt = now();
-      await react(type, out, before, opts);
+      await react(type, out, before, { ...opts, args });
       return out;
     } catch (e) {
       if (e.data?.me) { S.st.me = e.data.me; S.stAt = now(); }
@@ -68,6 +68,12 @@ async function react(type, out, before, opts) {
   updateHud(before);
   if (type === 'crime') {
     store.set('tip.first', 1);
+    const g = r.gained || {};
+    const names = { F: t('statF'), I: t('statI'), C: t('statC') };
+    let delay = 260;
+    for (const [s, n] of Object.entries(g)) { if (from) fx.fly('+' + n + ' ' + names[s], 'var(--energy)', from, null, delay); delay += 160; }
+    if (r.newChanceBp > r.chanceBp) S.chanceUp = { k: opts.args?.k, from: r.chanceBp, to: r.newChanceBp, t: Date.now() };
+    if (Object.keys(g).length && !store.get('tip.practice')) { store.set('tip.practice', 1); setTimeout(() => toast(t('practiceTip')), 1400); }
     if (r.success) {
       opts.el?.classList.remove('win'); void opts.el?.offsetWidth; opts.el?.classList.add('win');
       if (from) { fx.bills(from, S.hud.cash, r.crit ? 12 : 5); fx.fly('+' + money(r.money), 'var(--cash)', from, S.hud.cash); fx.fly('+' + r.respect, 'var(--sodium)', from, S.hud.resp, 120); }
@@ -366,7 +372,9 @@ function screenStreet() {
         h('span', { class: 'm' }, money(c.min) + '–' + money(c.max)),
         h('span', { class: 'r' }, icon('crown'), ' +' + c.r),
         h('span', null, icon('timer'), ' ' + c.jailMin + ' min')),
-      h('div', { class: 'pct' }, pct(info.chance), h('small', null, t('chance'))));
+      h('div', { class: 'pct' + (S.chanceUp && S.chanceUp.k === k && Date.now() - S.chanceUp.t < 4000 ? ' up' : '') }, pct(info.chance),
+        S.chanceUp && S.chanceUp.k === k && Date.now() - S.chanceUp.t < 4000 ? h('i', { class: 'delta' }, '▲' + (Math.round((S.chanceUp.to - S.chanceUp.from) / 100) >= 1 ? Math.round((S.chanceUp.to - S.chanceUp.from) / 100) + '%' : '')) : null,
+        h('small', null, t('chance'))));
     jobs.append(btn);
   });
   out.push(jobs);
@@ -387,7 +395,9 @@ function screenGym() {
       h('div', { class: 'head' }, h('span', { class: 'v num' }, num(me.stats[s])), h('span', { class: 'lbl' }, t('stat' + s))),
       h('button', { class: 'btn pri sm', disabled: !!b, on: { click: (e) => train(e, 1) } }, '+1'),
       h('button', { class: 'btn sm', disabled: !!b, on: { click: (e) => train(e, 5) } }, t('trainX5')),
-      h('p', { class: 'd' }, t('stat' + s + 'd'))));
+      h('p', { class: 'd' }, t('stat' + s + 'd')),
+      me.xp && s !== 'T' ? h('div', { class: 'prac' }, h('span', { class: 'small muted' }, t('practiceLbl')),
+        h('div', { class: 'fill' }, h('i', { style: `width:${Math.min(100, (me.xp[s] / me.xpNeed[s]) * 100)}%;background:var(--energy)` }))) : null));
   }
   out.push(st);
   return out;

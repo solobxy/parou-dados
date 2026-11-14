@@ -411,3 +411,23 @@ test('recarga e desintoxicação: 20 000 casos aleatórios sem quebrar regras', 
     assert.deepEqual(E.checkInvariants(p), [], 'invariantes: ' + before);
   }
 });
+
+test('prática: cada golpe treina as stats que usa; falhar dá metade; a percentagem sobe', () => {
+  const p = E.newPlayer('a', START, world);
+  const c = CFG.crimes[0];                         // carteirista: I 30, C 70
+  const before = E.crimeChanceBp(p, 0);
+  E.doCrime(p, START, world, 0, always);
+  assert.equal(p.xp.C, c.e * c.w.C);
+  assert.equal(p.xp.I, c.e * c.w.I);
+  assert.equal(p.xp.F, 0);
+  setResp(p, 5);
+  E.doCrime(p, START + 1000, world, 0, never);      // falha: metade
+  assert.equal(p.xp.C, c.e * c.w.C + Math.floor(c.e * c.w.C * CFG.practice.failBp / 10000));
+  E.payBail(p, START + 2000, world);
+  let t = START + 3000, gainedC = 0;
+  for (let i = 0; i < 10; i++) { p.energy = 100; const r = E.doCrime(p, t, world, 0, always); gainedC += r.gained.C || 0; t += 1000; }
+  assert.ok(gainedC >= 2, 'em 12 golpes sobe pelo menos 2 pontos de carisma');
+  assert.equal(p.stats.C, CFG.start.stat + gainedC);
+  assert.ok(E.crimeChanceBp(p, 0) > before, 'a percentagem subiu');
+  assert.deepEqual(E.checkInvariants(p), []);
+});

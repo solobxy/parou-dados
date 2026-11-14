@@ -116,6 +116,7 @@ function jogadorDe(conta, now, w) {
 function vista(p, now) {
   const L = E.level(p);
   if (!Array.isArray(p.detoxT)) p.detoxT = [];
+  if (!p.xp) p.xp = { F: 0, I: 0, C: 0 };
   const stored = E.bizStored(p, now);
   return {
     name: nomeDe(p.id),
@@ -123,6 +124,7 @@ function vista(p, now) {
     addiction: p.addiction, addictionT: p.addictionT, addictionCap: E.addictionCap(p),
     refill: E.refillPlan(p), detox: p.addiction > 0 ? E.detoxCost(p, now) : 0, detoxReadyAt: E.detoxReadyAt(p, now),
     detoxLeft: CFG.detox.max - p.detoxT.length,
+    xp: p.xp, xpNeed: { F: E.practiceNeed(p, 'F'), I: E.practiceNeed(p, 'I'), C: E.practiceNeed(p, 'C') },
     cash: p.cash, bank: p.bank, respect: p.respect, peakRespect: p.peakRespect,
     level: L, levelFrom: CFG.levels[L - 1], levelTo: CFG.levels[L] ?? null,
     jailUntil: p.jailUntil, jailTier: p.jailTier, bail: E.bailCost(p, now),

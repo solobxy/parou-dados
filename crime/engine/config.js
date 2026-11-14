@@ -52,6 +52,9 @@ export const CFG = {
     { id: 'coca',      e: 30, a: 6, price: 1500 },
     { id: 'dourada',   e: 40, a: 7, price: 8000 },
   ],
+  // prática: cada golpe treina as stats que usa (energia × peso; metade se falhar).
+  // Um ponto custa base + perStat × stat atual de prática, por isso ajuda muito no início e menos depois (o ginásio continua mais rápido).
+  practice: { base: 1000, perStat: 10, failBp: 5000 },
   // desintoxicação: limpa o vício todo; preço = vício × nível, a dobrar a cada uso nas últimas 24 h
   detox: { min: 50, windowMs: 24 * HOUR, max: 12 },
 
@@ -114,7 +117,7 @@ export const CFG = {
   luxury: { firstPrice: 250000, respect: 250, max: 20 },
 
   // Níveis pelo maior respeito já alcançado (o nível nunca desce). Índice = nível - 1.
-  levels: [0, 3, 10, 25, 60, 120, 220, 380, 650, 1000, 1500, 2300, 3400, 4800, 6800, 9500, 13000, 17500, 24000, 32000],
+  levels: [0, 3, 10, 25, 60, 120, 220, 380, 650, 1000, 1500, 2300, 3400, 4800, 6800, 9500, 13000, 18500, 27000, 38000],
 };
 
 export const T = { MIN, HOUR, DAY: 24 * HOUR };

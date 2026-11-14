@@ -34,6 +34,7 @@ export function newPlayer(id, now, world, opts = {}) {
     weapon: -1, armor: -1,
     luxuries: 0,
     detoxT: [],
+    xp: { F: 0, I: 0, C: 0 },
   };
 }
 
@@ -63,7 +64,8 @@ function syncAddiction(p, now) {
 export function touch(p, now) {
   if (!Number.isSafeInteger(now)) fail('BAD_TIME');
   if (now < p.t) fail('TIME_BACKWARDS');
-  if (!Array.isArray(p.detoxT)) p.detoxT = []; // jogadores gravados antes desta regra
+  if (!Array.isArray(p.detoxT)) p.detoxT = []; // jogadores gravados antes destas regras
+  if (!p.xp) p.xp = { F: 0, I: 0, C: 0 };
   syncEnergy(p, now);
   syncAddiction(p, now);
   if (p.addiction > addictionCap(p)) p.addiction = addictionCap(p); // limite mudou nas regras
@@ -134,6 +136,27 @@ export function crimeUnlocked(p, k) { return k === 0 || crimeChanceBp(p, k) >= C
 
 // ---------- crimes ----------
 
+// ---------- prática ----------
+
+export function practiceNeed(p, s) { return CFG.practice.base + CFG.practice.perStat * p.stats[s]; }
+
+// devolve as stats que subiram, ex.: { C: 1 }
+function practice(p, c, success) {
+  const gained = {};
+  for (const s of ['F', 'I', 'C']) {
+    if (!c.w[s]) continue;
+    let xp = c.e * c.w[s];
+    if (!success) xp = Math.floor((xp * CFG.practice.failBp) / 10000);
+    p.xp[s] += xp;
+    let need = practiceNeed(p, s);
+    while (p.xp[s] >= need) {
+      p.xp[s] -= need; p.stats[s] += 1; gained[s] = (gained[s] || 0) + 1;
+      need = practiceNeed(p, s);
+    }
+  }
+  return gained;
+}
+
 export function doCrime(p, now, world, k, rng) {
   const c = Number.isInteger(k) ? CFG.crimes[k] : undefined;
   if (!c) fail('NO_CRIME');
@@ -150,11 +173,13 @@ export function doCrime(p, now, world, k, rng) {
     if (crit) money *= CFG.crit.mult;
     p.cash += money;
     const lvl = addRespect(p, c.r, now);
-    return { ok: true, success: true, money, crit, respect: c.r, levelUp: lvl, chanceBp: bp };
+    const gained = practice(p, c, true);
+    return { ok: true, success: true, money, crit, respect: c.r, levelUp: lvl, chanceBp: bp, gained, newChanceBp: crimeChanceBp(p, k) };
   }
   p.jailUntil = now + c.jailMin * T.MIN;
   p.jailTier = k + 1;
-  return { ok: true, success: false, jailUntil: p.jailUntil, chanceBp: bp };
+  const gained = practice(p, c, false);
+  return { ok: true, success: false, jailUntil: p.jailUntil, chanceBp: bp, gained, newChanceBp: crimeChanceBp(p, k) };
 }
 
 export function bailCost(p, now) {
@@ -619,6 +644,7 @@ export function checkInvariants(p) {
   if (p.addiction > addictionCap(p)) bad.push('addiction>cap');
   if (p.peakRespect < p.respect) bad.push('peak<respect');
   if (!Array.isArray(p.detoxT) || p.detoxT.length > CFG.detox.max) bad.push('detox list');
+  for (const s of ['F', 'I', 'C']) if (!Number.isSafeInteger(p.xp?.[s]) || p.xp[s] < 0 || p.xp[s] >= practiceNeed(p, s)) bad.push(`xp ${s}=${p.xp?.[s]}`);
   if (p.energyT > p.t || p.addictionT > p.t) bad.push('timer in future');
   for (const s of p.biz) {
     for (const k of ['n', 'stored', 'rem', 't']) if (!Number.isSafeInteger(s[k]) || s[k] < 0) bad.push(`biz.${k}=${s[k]}`);
