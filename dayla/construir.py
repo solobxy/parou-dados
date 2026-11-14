@@ -96,7 +96,7 @@ def orelha(lang):
     """Desenho de uma orelha com um projeto de exemplo (5 pontos). Linhas da tinta, pontos rosa."""
     nomes = {'pt': ('Hélix', 'Flat', 'Conch', 'Lóbulo ×2'), 'en': ('Helix', 'Flat', 'Conch', 'Lobe ×2')}[lang]
     desc = html.escape(T['proj_svg_desc'][lang])
-    return f'''<svg viewBox="0 0 420 470" role="img" aria-labelledby="orelha-t"><title id="orelha-t">{desc}</title>
+    return f'''<svg viewBox="0 0 420 470" role="img" aria-labelledby="orelha-t"><style>text{{paint-order:stroke;stroke:#F5F5F3;stroke-width:6px;stroke-linejoin:round}}</style><title id="orelha-t">{desc}</title>
 <g transform="translate(30 14)"><path d="M188 28c-72 0-122 52-122 124 0 46 18 76 40 104 18 23 26 42 26 70 0 44 26 84 70 84 40 0 62-30 62-62 0-26-14-40-14-62 0-18 12-32 26-52 22-32 38-62 38-104 0-62-52-102-126-102z" fill="none" stroke="#101010" stroke-width="7" stroke-linejoin="round"/>
 <path d="M120 150c0-48 34-82 78-82 46 0 80 30 80 72 0 30-14 50-30 70" fill="none" stroke="#101010" stroke-width="6" stroke-linecap="round"/>
 <path d="M158 168c6-30 26-48 52-48 26 0 42 18 42 40 0 28-24 42-24 72 0 16 6 26 6 40" fill="none" stroke="#101010" stroke-width="6" stroke-linecap="round"/>
@@ -105,8 +105,8 @@ def orelha(lang):
 <circle class="ponto" cx="96" cy="110" r="11"/><circle class="ponto" cx="182" cy="96" r="11"/><circle class="ponto" cx="206" cy="196" r="11"/>
 <circle class="ponto" cx="196" cy="372" r="11"/><circle class="ponto" cx="232" cy="360" r="11"/>
 <path d="M84 98L52 66" stroke="#101010" stroke-width="2.5"/><text x="12" y="56">{nomes[0]}</text>
-<path d="M190 84l22-34" stroke="#101010" stroke-width="2.5"/><text x="206" y="40">{nomes[1]}</text>
-<path d="M218 200l64 10" stroke="#101010" stroke-width="2.5"/><text x="288" y="216">{nomes[2]}</text>
+<path d="M190 84l26-58" stroke="#101010" stroke-width="2.5"/><text x="222" y="20">{nomes[1]}</text>
+<path d="M218 200l80 8" stroke="#101010" stroke-width="2.5"/><text x="304" y="214">{nomes[2]}</text>
 <path d="M244 366l36 18" stroke="#101010" stroke-width="2.5"/><text x="246" y="408">{nomes[3]}</text>
 </g></svg>'''
 
@@ -132,7 +132,7 @@ def precos_html(lang):
     col = {1: '', 2: ''}
     for cid, nome in cats:
         l = [s for s in servs if s['cat'] == cid]
-        h = '<div class="grupo"><h3>%s</h3><ul class="lista">' % html.escape(nome)
+        h = '<div class="grupo" id="cat-%s"><h3>%s</h3><ul class="lista">' % (cid, html.escape(nome))
         for s in l:
             cic = s['cic_' + lang]
             h += ('<li><span class="nome">%s%s</span><span class="preco vazio">%s</span>'
@@ -140,7 +140,7 @@ def precos_html(lang):
                 html.escape(s[lang]), ('<small>%s %s</small>' % (T['cicatriza'][lang], html.escape(cic))) if cic else '',
                 html.escape(JS[lang]['a_confirmar']), s['id'], html.escape(JS[lang]['adicionar']), html.escape(s[lang]), SVG['svg_mais'], SVG['svg_v'])
         h += '</ul></div>'
-        col[1 if cid == 'orelha' else 2] += h
+        col[1 if cid in ('orelha', 'servicos') else 2] += h
     return '<div>%s</div><div>%s</div>' % (col[1], col[2])
 
 

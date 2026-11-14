@@ -143,9 +143,16 @@ section{padding:var(--sec-esp) 0}
 
 /* preços */
 #precos{background:var(--papel-2)}
-.precos{display:grid;gap:48px;margin-top:56px}
+.cats{position:sticky;top:68px;z-index:5;display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;margin:32px calc(var(--m)*-1) 0;padding:12px var(--m);background:var(--papel-2)}
+.cats a{flex:none;display:inline-flex;align-items:center;min-height:44px;padding:0 14px;font-size:15px;border:2px solid var(--tinta);border-radius:999px;background:var(--papel);font-weight:700;text-decoration:none}
+.cats a:hover{background:var(--branco)}
+@media (min-width:900px){.cats{display:none}}
+.grupo{scroll-margin-top:140px}
+.precos{display:grid;gap:48px;margin-top:24px}
+@media (min-width:900px){.precos{margin-top:56px}}
 @media (min-width:900px){.precos{grid-template-columns:1fr 1fr;gap:72px;align-items:start}}
-.grupo+.grupo{margin-top:48px}
+@media (max-width:899px){.precos>div{display:contents}#cat-orelha{order:1}#cat-rosto{order:2}#cat-corpo{order:3}#cat-servicos{order:4}}
+@media (min-width:900px){.grupo+.grupo{margin-top:48px}}
 .grupo h3{display:flex;align-items:center;gap:12px;padding-bottom:14px;border-bottom:3px solid var(--tinta)}
 .grupo h3::before{content:"";width:18px;height:18px;flex:none;background:conic-gradient(var(--tinta) 25%,var(--papel) 0 50%,var(--tinta) 0 75%,var(--papel) 0) 0 0/9px 9px}
 .lista{list-style:none;margin:0;padding:0}
@@ -156,7 +163,8 @@ section{padding:var(--sec-esp) 0}
 .lista .preco.vazio{font-weight:500;font-stretch:100%;font-size:15px;color:var(--sec)}
 .lista .preco small{font-weight:500;font-stretch:100%;font-size:13px;color:var(--sec);margin-right:4px}
 .mais{width:48px;height:48px;display:grid;place-items:center;border:2px solid var(--tinta);background:var(--papel);border-radius:4px;cursor:pointer;padding:0;transition:background-color .15s}
-.mais svg{width:20px;height:20px}
+.mais span{display:grid;place-items:center}
+.mais svg{width:20px;height:20px;display:block}
 .mais .v{display:none}
 .mais[aria-pressed="true"]{background:var(--rosa)}
 .mais[aria-pressed="true"] .m{display:none}
@@ -173,7 +181,7 @@ section{padding:var(--sec-esp) 0}
 @media (min-width:900px){.projeto .env{grid-template-columns:1.1fr .9fr;gap:72px}}
 .pontos{list-style:none;padding:0;margin:32px 0 0;display:grid;gap:16px}
 .pontos li{display:grid;grid-template-columns:20px 1fr;gap:14px;align-items:start;font-size:18px}
-.pontos li::before{content:"";width:14px;height:14px;margin-top:6px;background:var(--rosa);outline:2px solid var(--tinta)}
+.pontos li::before{content:"";width:10px;height:10px;margin-top:9px;background:var(--tinta)}
 .projeto .acoes{margin-top:36px}
 .orelha{margin:0;max-width:440px;justify-self:center;width:100%}
 .orelha svg{width:100%;height:auto;display:block}
@@ -190,11 +198,11 @@ section{padding:var(--sec-esp) 0}
 .passos{list-style:none;padding:0;margin:64px 0 0;display:grid;gap:36px}
 @media (min-width:900px){.passos{grid-template-columns:repeat(4,1fr);gap:32px}}
 .passos li{position:relative;padding-top:44px}
-.passos li::before{content:"";position:absolute;left:0;top:0;width:24px;height:24px;background:var(--papel)}
-.passos li:nth-child(even)::before{background:transparent;outline:3px solid var(--papel);outline-offset:-3px}
-.passos li:last-child::before{background:var(--rosa)}
+.passos li::before{content:"";position:absolute;left:0;top:0;width:24px;height:24px;background:conic-gradient(var(--papel) 25%,var(--tinta) 0 50%,var(--papel) 0 75%,var(--tinta) 0) 0 0/12px 12px;outline:2px solid var(--papel);outline-offset:-1px}
+.passos li:last-child::before{background:var(--rosa);outline-color:var(--rosa)}
+@media (max-width:899px){.passos{gap:0}.passos li{padding:0 0 36px 48px}.passos li::after{content:"";position:absolute;left:11px;top:32px;bottom:6px;width:2px;background:rgba(245,245,243,.25)}.passos li:last-child::after{display:none}.passos li:last-child{padding-bottom:0}}
 @media (min-width:900px){.passos li::after{content:"";position:absolute;left:36px;right:-20px;top:11px;height:2px;background:rgba(245,245,243,.25)}.passos li:last-child::after{display:none}}
-.passos h3{font-size:34px}
+.passos h3{font-size:30px}
 .passos p{margin-top:12px;color:var(--sec-e)}
 .dias{margin-top:72px}
 .dias h3{font-size:30px}
@@ -222,6 +230,9 @@ section{padding:var(--sec-esp) 0}
 .sobre .texto{max-width:62ch}
 .sobre .acoes{margin-top:32px}
 
+#sobre{padding-bottom:calc(var(--sec-esp)*.55)}
+#cuidados{padding-top:calc(var(--sec-esp)*.55)}
+#cuidados>.env>h2{padding-top:48px;border-top:3px solid var(--tinta)}
 /* avaliações */
 #avaliacoes{background:var(--papel-2)}
 .media{font-weight:820;font-stretch:112%;font-size:22px}
@@ -332,13 +343,22 @@ legend{font-weight:820;font-stretch:72%;font-size:30px;line-height:1;margin-bott
 .hdia{background:var(--branco);border:2px solid var(--tinta);border-radius:6px;padding:14px 16px}
 .hdia .t{font-weight:700;display:flex;flex-wrap:wrap;gap:4px 12px;align-items:baseline;margin-bottom:10px}
 .hdia .t small{font-weight:400;color:var(--sec);font-size:15px}
-.hdia .opcoes span{min-width:72px;font-variant-numeric:tabular-nums}
+.hdia .opcoes{display:grid;grid-template-columns:repeat(auto-fill,minmax(84px,1fr))}
+.hdia .opcoes span{width:100%;min-width:0;font-variant-numeric:tabular-nums}
+.outro label{width:100%}
+.outro span{width:100%;border-style:dashed;background:transparent}
 .hdia .sem{color:var(--sec);font-size:15px}
 .outro{margin-top:4px}
 .pref{margin-top:20px}
 .pref .campo{margin-bottom:18px}
 .campo label.check,.check{display:grid;grid-template-columns:28px 1fr;gap:12px;align-items:start;cursor:pointer;font-weight:600}
-.check input{width:24px;height:24px;margin:1px 0 0;accent-color:var(--tinta)}
+.check input{appearance:none;-webkit-appearance:none;width:26px;height:26px;margin:0;border:2px solid var(--tinta);border-radius:4px;background:var(--branco);display:grid;place-items:center;cursor:pointer}
+.check input:checked{background:var(--tinta)}
+.check input:checked::after{content:"";width:7px;height:13px;border:solid var(--papel);border-width:0 3px 3px 0;transform:translateY(-2px) rotate(45deg)}
+.check input:focus-visible{outline:3px solid var(--rosa);outline-offset:2px}
+.campo .check input{width:26px;height:26px;min-height:0;padding:0}
+.check span{padding-top:1px}
+@media (max-width:699px){#enviar{width:100%;min-height:56px}}
 .isco{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden}
 .enviar-linha{display:flex;flex-wrap:wrap;align-items:center;gap:16px 24px;margin-top:28px}
 .enviar-linha p{font-size:15px;color:var(--sec);max-width:44ch}
@@ -360,10 +380,16 @@ legend{font-weight:820;font-stretch:72%;font-size:30px;line-height:1;margin-bott
 .contacto h2{max-width:12ch}
 .contactos{display:grid;gap:16px;margin-top:48px}
 @media (min-width:800px){.contactos{grid-template-columns:1fr 1fr;gap:24px}}
-.contactos a{display:flex;flex-direction:column;gap:6px;padding:28px;background:var(--tinta-2);border-radius:6px;text-decoration:none;border:2px solid transparent;transition:border-color .15s}
+.contactos a{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:12px;padding:20px;background:var(--tinta-2);border-radius:6px;text-decoration:none;border:2px solid #333;transition:border-color .15s,transform .12s}
+.contactos a:active{transform:scale(.98)}
+.contactos .ic,.contactos .seta{display:grid;place-items:center}
+.contactos .ic svg{width:28px;height:28px;color:var(--rosa)}
+.contactos .seta svg{width:24px;height:24px;transition:transform .2s var(--sai)}
+.contactos a:hover .seta svg{transform:translateX(4px)}
+.contactos .tx{display:flex;flex-direction:column;gap:4px;min-width:0}
 .contactos a:hover{border-color:var(--rosa)}
-.contactos span{color:var(--sec-e);font-weight:600}
-.contactos strong{font-weight:820;font-stretch:112%;font-size:clamp(21px,5.6vw,34px);line-height:1.1;font-variant-numeric:tabular-nums;word-break:break-word}
+.contactos .tx span{color:var(--sec-e);font-weight:600}
+.contactos strong{font-weight:820;font-stretch:100%;font-size:clamp(19px,5vw,32px);line-height:1.1;font-variant-numeric:tabular-nums;word-break:break-word}
 
 /* rodapé */
 .rodape{background:var(--tinta);color:var(--papel);padding:0 0 calc(40px + env(safe-area-inset-bottom))}
@@ -451,6 +477,7 @@ dialog .dcorpo p+p{margin-top:12px}
   <div class="env">
     <h2 id="t-precos" data-r>{{precos_h2}}</h2>
     <p class="lead" data-r style="--i:1">{{precos_lead}}</p>
+    <nav class="cats" aria-label="{{precos_h2}}"><a href="#cat-orelha">{{cat_orelha}}</a><a href="#cat-rosto">{{cat_rosto}}</a><a href="#cat-corpo">{{cat_corpo}}</a><a href="#cat-servicos">{{cat_servicos}}</a></nav>
     <div class="precos" id="precos-lista">{{@precos_html}}</div>
     <p class="nota-precos" id="nota-precos">{{@nota}}</p>
   </div>
@@ -611,8 +638,8 @@ dialog .dcorpo p+p{margin-top:12px}
     <h2 id="t-cont" data-r>{{cont_h2}}</h2>
     <p class="lead sec" data-r style="--i:1">{{cont_p}}</p>
     <div class="contactos">
-      <a id="c-wa" href="https://wa.me/351930514346" target="_blank" rel="noopener" data-r><span>{{cont_wa}}</span><strong id="c-wa-num">+351 930 514 346</strong></a>
-      <a class="ig-link" href="https://www.instagram.com/sendodaylabpiercing/" target="_blank" rel="noopener" data-r style="--i:1"><span>{{cont_ig}}</span><strong class="ig-nome" style="font-stretch:100%">@sendodaylabpiercing</strong></a>
+      <a id="c-wa" href="https://wa.me/351930514346" target="_blank" rel="noopener" data-r><span class="ic">{{@wa_svg}}</span><span class="tx"><span>{{cont_wa}}</span><strong id="c-wa-num">+351 930 514 346</strong></span><span class="seta">{{@seta_svg}}</span></a>
+      <a class="ig-link" href="https://www.instagram.com/sendodaylabpiercing/" target="_blank" rel="noopener" data-r style="--i:1"><span class="ic">{{@ig_svg}}</span><span class="tx"><span>{{cont_ig}}</span><strong class="ig-nome">@sendodaylabpiercing</strong></span><span class="seta">{{@seta_svg}}</span></a>
     </div>
   </div>
 </section>
@@ -684,7 +711,7 @@ function desenhaPrecos(){
   cats().forEach(function(c){
     var l=D.servicos.filter(function(s){return s.cat===c[0]});
     if(!l.length) return;
-    var h='<div class="grupo"><h3>'+esc(c[1])+'</h3><ul class="lista">';
+    var h='<div class="grupo" id="cat-'+c[0]+'"><h3>'+esc(c[1])+'</h3><ul class="lista">';
     l.forEach(function(s){
       var cic=s['cic_'+LANG]||s.cic_pt;
       var on=sel.indexOf(s.id)>=0;
@@ -693,7 +720,7 @@ function desenhaPrecos(){
         '<span class="m">'+SVG_MAIS+'</span><span class="v">'+SVG_V+'</span></button></li>';
     });
     h+='</ul></div>';
-    if(c[0]==='orelha') col1+=h; else col2+=h;
+    if(c[0]==='orelha'||c[0]==='servicos') col1+=h; else col2+=h;
   });
   $('#precos-lista').innerHTML='<div>'+col1+'</div><div>'+col2+'</div>';
   var cic='';

@@ -27,7 +27,7 @@ p{margin:0}
 .topo strong{font-weight:860;font-stretch:118%;font-size:22px;letter-spacing:-.02em}
 .topo span{color:var(--sec);margin-right:auto}
 .topo a{font-weight:600;font-size:15px}
-main{padding:24px 0 40px}
+main{padding:28px 0 96px}
 .vista>h1{margin-bottom:6px}
 .sub{color:var(--sec)}
 .bloco{margin-top:32px}
@@ -53,7 +53,7 @@ main{padding:24px 0 40px}
 .item:hover{background:rgba(16,16,16,.04)}
 .item .q{min-width:58px;text-align:center;font-weight:820;font-stretch:72%;font-size:26px;line-height:1}
 .item .q small{display:block;font-size:12px;font-weight:700;font-stretch:100%;color:var(--sec);text-transform:lowercase}
-.item .q.sem{font-size:15px;font-stretch:100%;font-weight:700;color:var(--rosa-tinta)}
+.item .q small{white-space:nowrap}
 .item .t{min-width:0}
 .item .t b{display:block;font-size:17px}
 .item .t>span{display:block;color:var(--sec);font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -140,7 +140,9 @@ dialog[open]{animation:sobe .28s var(--sai)}
 .kpi.rosa span{color:var(--tinta)}
 .grafico{display:flex;align-items:flex-end;gap:3px;height:120px;margin-top:12px;border-bottom:2px solid var(--tinta)}
 .grafico i{flex:1;background:var(--tinta);min-height:2px;border-radius:2px 2px 0 0}
-.grafico i.zero{background:var(--papel-2)}
+.grafico i.zero{background:#CCC}
+.grafico.com-n i{position:relative}
+.grafico.com-n b{position:absolute;bottom:100%;left:0;right:0;text-align:center;font-size:12px;font-weight:700;padding-bottom:2px;font-variant-numeric:tabular-nums}
 .eixo{display:flex;justify-content:space-between;color:var(--sec);font-size:13px;margin-top:4px}
 .barras-h div{display:grid;grid-template-columns:1fr auto;gap:4px 12px;padding:8px 0;border-bottom:2px solid rgba(16,16,16,.1)}
 .barras-h b{font-variant-numeric:tabular-nums}
@@ -151,9 +153,9 @@ dialog[open]{animation:sobe .28s var(--sai)}
 .entrar h1{font-size:48px;margin-bottom:8px}
 .aviso{position:fixed;left:50%;bottom:calc(92px + env(safe-area-inset-bottom));transform:translateX(-50%) translateY(20px);opacity:0;background:var(--tinta);color:var(--papel);padding:12px 18px;border-radius:999px;font-weight:700;z-index:50;transition:opacity .2s,transform .2s;pointer-events:none;max-width:calc(100vw - 32px);text-align:center}
 .aviso.ve{opacity:1;transform:translateX(-50%)}
-.mais-btn{position:fixed;right:16px;bottom:calc(84px + env(safe-area-inset-bottom));z-index:25;width:58px;height:58px;border-radius:999px;border:2px solid var(--tinta);background:var(--rosa);display:grid;place-items:center;cursor:pointer;box-shadow:0 6px 0 var(--tinta)}
-.mais-btn svg{width:24px;height:24px}
-.mais-btn:active{transform:translateY(3px);box-shadow:0 3px 0 var(--tinta)}
+.mais-btn{position:fixed;right:16px;bottom:calc(84px + env(safe-area-inset-bottom));z-index:25;height:52px;padding:0 20px;border-radius:999px;border:2px solid var(--tinta);background:var(--rosa);display:inline-flex;align-items:center;gap:8px;cursor:pointer;font-weight:800;color:var(--tinta)}
+.mais-btn svg{width:20px;height:20px}
+.mais-btn:active{transform:scale(.97)}
 [hidden]{display:none!important}
 .vh{position:absolute!important;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
 </style>
@@ -227,7 +229,7 @@ function mostraEntrar(){
 function arranca(){
   $('#app').innerHTML='<header class="topo"><div class="env"><strong>dayla</strong><span>painel</span><a href="/" target="_blank" rel="noopener">Ver site</a></div></header>'+
     '<main class="env" id="vista"></main>'+
-    '<button class="mais-btn" id="bNova" aria-label="Nova marcação" hidden>'+ICONE.mais+'</button>'+
+    '<button class="mais-btn" id="bNova" hidden>'+ICONE.mais+'Marcação</button>'+
     '<nav class="tabs" aria-label="Secções"><div class="in" role="tablist">'+
     [['pedidos','Pedidos'],['dias','Dias'],['site','Site'],['numeros','Números']].map(function(t){
       return '<button role="tab" data-v="'+t[0]+'" aria-selected="'+(estado.vista===t[0])+'">'+ICONE[t[0]]+t[1]+(t[0]==='pedidos'?'<span class="bol" id="bol" hidden></span>':'')+'</button>'}).join('')+
@@ -258,9 +260,11 @@ function quandoTxt(p){
 }
 function totalTxt(p){return p.total==null&&p.desde?'a ver':(p.desde?'desde ':'')+euro.format(p.total||0)}
 function itemPedido(p,comData){
-  var q=p.data?'<span class="q"><small>'+esc(SEMANA[(dParse(p.data).getDay()+6)%7])+'</small>'+dParse(p.data).getDate()+'</span>':'<span class="q sem">novo</span>';
+  var pr=p.preferencias||{}, pd=(pr.dias||[])[0];
+  var q=p.data?'<span class="q"><small>'+esc(SEMANA[(dParse(p.data).getDay()+6)%7])+'</small>'+dParse(p.data).getDate()+'</span>'
+    :'<span class="q"><small>prefere</small>'+(pd!=null?esc(SEMANA[pd].toLowerCase()):'?')+'</span>';
   if(comData===false) q='<span class="q">'+esc(hTxt(p.hora))+'</span>';
-  return '<li><button class="item" data-id="'+p.id+'">'+q+'<span class="t"><b>'+esc(p.nome)+(p.idioma==='en'?'<span class="etq">EN</span>':'')+(p.estado!=='pendente'&&p.estado!=='confirmada'?'<span class="etq rosa">'+esc(ESTADO[p.estado])+'</span>':'')+'</b>'+
+  return '<li><button class="item" data-id="'+p.id+'">'+q+'<span class="t"><b>'+esc(p.nome)+(p.estado==='pendente'?'<span class="etq rosa">novo</span>':'')+(p.idioma==='en'?'<span class="etq">EN</span>':'')+(p.estado!=='pendente'&&p.estado!=='confirmada'?'<span class="etq rosa">'+esc(ESTADO[p.estado])+'</span>':'')+'</b>'+
     '<span>'+esc(p.servicos.join(', ')||p.notas||'—')+'</span><span>'+esc(quandoTxt(p))+'</span></span><span class="d">'+esc(totalTxt(p))+'</span></button></li>';
 }
 function vPedidos(){
@@ -399,15 +403,15 @@ function confirmar(p){
     '<p class="erro" id="cErr" hidden></p><div class="acoes"><button class="btn p" id="cOk">Confirmar</button><button class="btn" id="cVolta">Voltar</button></div>'+
     '<p class="ajuda" style="margin-top:12px">Depois de confirmar, mandas a mensagem com a morada pelo WhatsApp.</p>';
   abreFolha(p.estado==='pendente'?'Confirmar '+p.nome.split(' ')[0]:'Mudar dia ou hora',h,function(f){
-    function horas(){
+    function horas(mudou){
       var d=$('#cData',f).value, dd=dias.filter(function(x){return x.data===d})[0], box=$('#cHoras',f);
       if(!dd){box.innerHTML=d?'<p class="ajuda" style="margin:-6px 0 14px">Não tens este dia nos teus dias de atendimento: escreve a hora à mão.</p>':'';return}
       box.innerHTML='<p class="rot">Horas desse dia</p><div class="chips" style="margin-bottom:16px">'+dd.horas.map(function(x){
         var minha=p.data===d&&p.hora===x.h;return '<button type="button" data-h="'+x.h+'"'+(!x.livre&&!minha?' class="ocupada" disabled':'')+' aria-pressed="'+($('#cHora',f).value===x.h)+'">'+hTxt(x.h)+'</button>'}).join('')+'</div>';
-      if(dd.estudio&&!$('#cEst',f).value) $('#cEst',f).value=dd.estudio.id;
+      if(dd.estudio&&(mudou===true||!$('#cEst',f).value)) $('#cEst',f).value=dd.estudio.id;
       $$('[data-h]',box).forEach(function(b){b.addEventListener('click',function(){$('#cHora',f).value=b.dataset.h;$$('[data-h]',box).forEach(function(x){x.setAttribute('aria-pressed',x===b)})})});
     }
-    $('#cData',f).addEventListener('change',horas);horas();
+    $('#cData',f).addEventListener('change',function(){horas(true)});horas();
     $('#cVolta',f).addEventListener('click',function(){abrePedido(p.id)});
     $('#cOk',f).addEventListener('click',function(){
       var err=$('#cErr',f), est=+$('#cEst',f).value;
@@ -702,14 +706,15 @@ function vNumeros(){
   api('GET','/admin/numeros?dias='+periodo).then(function(j){
     var n=j.negocio, s=j.site&&!j.site.erro?j.site:null, r=s&&s.resumo?s.resumo:{};
     var h='<div class="kpis" style="margin-top:20px">'+
-      '<div class="kpi rosa"><b>'+n.pedidos+'</b><span>pedidos</span></div>'+
+      (n.por_responder?'<div class="kpi rosa"><b>'+n.por_responder+'</b><span>por responder</span></div>':'')+
+      '<div class="kpi"><b>'+n.pedidos+'</b><span>pedidos</span></div>'+
       '<div class="kpi"><b>'+n.feitos+'</b><span>piercings feitos</span></div>'+
       '<div class="kpi"><b>'+euro.format(n.faturacao)+'</b><span>faturado (feitos)</span></div>'+
       '<div class="kpi"><b>'+n.proximos+'</b><span>marcados (30 dias)</span></div>'+
       '<div class="kpi"><b>'+n.em_ingles+'</b><span>pedidos em inglês</span></div>'+
       (s?'<div class="kpi"><b>'+n0(r.visitantes)+'</b><span>pessoas no site</span></div>':'<div class="kpi"><b>'+(n.avaliacoes.media?String(n.avaliacoes.media).replace('.',','):'—')+'</b><span>média das avaliações</span></div>')+'</div>';
     var se=n.semanas, mx=Math.max.apply(null,se.map(function(x){return x.n}).concat(1));
-    h+='<div class="bloco"><h2>Pedidos por semana</h2><div class="grafico" role="img" aria-label="Pedidos nas últimas 8 semanas">'+se.map(function(x){return '<i class="'+(x.n?'':'zero')+'" style="height:'+Math.max(2,x.n/mx*100)+'%" title="'+x.de+': '+x.n+'"></i>'}).join('')+'</div><div class="eixo"><span>há 8 semanas</span><span>esta semana</span></div></div>';
+    h+='<div class="bloco"><h2>Pedidos por semana</h2><div class="grafico com-n" role="img" aria-label="Pedidos nas últimas 8 semanas">'+se.map(function(x){return '<i class="'+(x.n?'':'zero')+'" style="height:'+Math.max(2,x.n/mx*82)+'%" title="'+x.de+': '+x.n+'"><b>'+x.n+'</b></i>'}).join('')+'</div><div class="eixo"><span>há 8 semanas</span><span>esta semana</span></div></div>';
     if(s){
       var serie=s.serie||[], mv=Math.max.apply(null,serie.map(function(x){return x.visitantes}).concat(1));
       h+='<div class="bloco"><h2>Pessoas no site por dia</h2><p class="sub">'+n0(r.visitas)+' visitas'+(r.tempo_medio_s!=null?', '+r.tempo_medio_s+' s em média':'')+'. Cada pessoa conta uma vez por dia, sem cookies.</p><div class="grafico" role="img" aria-label="Pessoas por dia">'+serie.map(function(x){return '<i class="'+(x.visitantes?'':'zero')+'" style="height:'+Math.max(2,x.visitantes/mv*100)+'%" title="'+x.quando+': '+x.visitantes+'"></i>'}).join('')+'</div></div>';
@@ -718,11 +723,11 @@ function vNumeros(){
       var ac=(s.acoes||[]).filter(function(x){return x.n});
       var NA={whatsapp:'WhatsApp',telefone:'Telefone',email:'Email',instagram:'Instagram',formulario:'Formulário',fora:'Links para fora',pedido:'Pedidos enviados'};
       h+='<div class="bloco"><h2>O que tocam</h2>'+(ac.length?'<div class="barras-h">'+ac.map(function(x){return '<div><span>'+esc(NA[x.nome]||x.nome)+'</span><b>'+n0(x.n)+'</b></div>'}).join('')+'</div>':'<p class="vazio">Ainda ninguém tocou no WhatsApp ou no Instagram neste período.</p>')+'</div>';
-    } else h+='<div class="bloco"><h2>Pessoas no site</h2><p class="vazio">As visitas do site não estão disponíveis agora. Os números dos pedidos estão certos.</p></div>';
+    }
     var top=n.top, mt=Math.max.apply(null,top.map(function(x){return x.n}).concat(1));
     h+='<div class="bloco"><h2>Mais pedidos</h2>'+(top.length?'<div class="barras-h">'+top.map(function(x){return '<div><span>'+esc(x.nome)+'</span><b>'+x.n+'</b><i style="--w:'+(x.n/mt*100)+'%"></i></div>'}).join('')+'</div>':'<p class="vazio">Ainda sem pedidos neste período.</p>')+'</div>';
     var e=n.estados;
-    h+='<div class="bloco"><h2>Como acabaram os pedidos</h2><div class="barras-h"><div><span>Feitos</span><b>'+e.concluida+'</b></div><div><span>Confirmados (por fazer)</span><b>'+e.confirmada+'</b></div><div><span>Por responder</span><b>'+e.pendente+'</b></div><div><span>Faltou</span><b>'+e.faltou+'</b></div><div><span>Cancelados</span><b>'+e.cancelada+'</b></div><div><span>Recusados</span><b>'+e.recusada+'</b></div></div></div>';
+    h+='<div class="bloco"><h2>Como acabaram os pedidos</h2><div class="barras-h"><div><span>Feitos</span><b>'+e.concluida+'</b></div><div><span>Confirmados (por fazer)</span><b>'+e.confirmada+'</b></div><div><span>Por responder</span><b>'+e.pendente+'</b></div><div><span>Faltaram</span><b>'+e.faltou+'</b></div><div><span>Cancelados</span><b>'+e.cancelada+'</b></div><div><span>Recusados</span><b>'+e.recusada+'</b></div></div></div>';
     $('#numC').innerHTML=h;
   }).catch(function(e){if(e.erro!=='sem_sessao')$('#numC').innerHTML='<p class="vazio">Não deu para carregar.</p>'});
 }
