@@ -95,7 +95,7 @@ export const CFG = {
       caixas: [[5, 18], [7, 17], [10, 16], [15, 14], [20, 11], [25, 9], [50, 8], [75, 4], [100, 2], [200, 1]],
       bola: [[5, 22], [10, 22], [15, 15], [20, 15], [25, 12], [50, 9], [100, 4], [200, 1]],
       louca: [[10, 22], [15, 18], [20, 15], [25, 13], [50, 12], [75, 8], [100, 7], [200, 4], [500, 1]],
-      bolaSlots: 12, loucaSlots: 24,
+      bolaSlots: 12, loucaSlots: 24, caixasN: 12,
     },
     // Slots. «scatter»: 6×5, 8 ou mais iguais em qualquer sítio pagam; as vitórias caem e entram símbolos novos; as esferas somam-se e
     // multiplicam o prémio da jogada. «cluster»: 7×7, grupos de 5+ iguais encostados; cada casa onde rebenta um símbolo fica marcada e

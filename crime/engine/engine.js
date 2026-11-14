@@ -949,7 +949,7 @@ export function wheelSpin(rng) {
   const idx = rng.int(0, W.segs.length - 1), s = W.segs[idx];
   let bonus = null, B = W.num[s] ?? 0;
   if (s === 'moeda') { const sides = [pickW(rng, W.moeda), pickW(rng, W.moeda)], side = rng.int(0, 1); B = sides[side]; bonus = { sides, side }; }
-  else if (s === 'caixas') { const boxes = [pickW(rng, W.caixas), pickW(rng, W.caixas), pickW(rng, W.caixas)], pick = rng.int(0, 2); B = boxes[pick]; bonus = { boxes, pick }; }
+  else if (s === 'caixas') { const boxes = Array.from({ length: W.caixasN }, () => pickW(rng, W.caixas)), pick = rng.int(0, W.caixasN - 1); B = boxes[pick]; bonus = { boxes, pick }; }
   else if (s === 'bola' || s === 'louca') {
     const slots = Array.from({ length: s === 'bola' ? W.bolaSlots : W.loucaSlots }, () => pickW(rng, W[s])), at = rng.int(0, slots.length - 1);
     B = slots[at]; bonus = { slots, at };

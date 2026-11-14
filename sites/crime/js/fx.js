@@ -10,40 +10,80 @@ const center = (r) => ({ x: r.left + r.width / 2, y: r.top + r.height / 2 });
 export function vibrate(p) { try { navigator.vibrate && navigator.vibrate(p); } catch {} }
 export const dur = (ms) => k(ms);
 
-// ---------- som (sintetizado, sem ficheiros) ----------
-let actx = null, soundOn = true;
+// ---------- som ----------
+// Sons curtos e baixos feitos de ruído filtrado e notas que morrem depressa (madeira, moedas, cartas),
+// em vez de bips. Tudo passa por um volume geral baixo.
+let actx = null, soundOn = true, master = null, noiseBuf = null;
 export function setSound(v) { soundOn = !!v; }
-function tone(freq, t0, len, type = 'sine', vol = 0.08, to = null) {
-  const o = actx.createOscillator(), g = actx.createGain();
-  o.type = type; o.frequency.setValueAtTime(freq, t0);
-  if (to) o.frequency.exponentialRampToValueAtTime(to, t0 + len);
-  g.gain.setValueAtTime(0.0001, t0);
-  g.gain.exponentialRampToValueAtTime(vol, t0 + 0.012);
-  g.gain.exponentialRampToValueAtTime(0.0001, t0 + len);
-  o.connect(g).connect(actx.destination); o.start(t0); o.stop(t0 + len + 0.02);
+function ctxReady() {
+  actx = actx || new (window.AudioContext || window.webkitAudioContext)();
+  if (actx.state === 'suspended') actx.resume();
+  if (!master) {
+    master = actx.createGain(); master.gain.value = 0.5;
+    const cmp = actx.createDynamicsCompressor(); cmp.threshold.value = -18; cmp.ratio.value = 4;
+    master.connect(cmp).connect(actx.destination);
+    noiseBuf = actx.createBuffer(1, actx.sampleRate * 0.5, actx.sampleRate);
+    const d = noiseBuf.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+  }
 }
+const jit = (x, p = 0.04) => x * (1 + (Math.random() * 2 - 1) * p);   // cada toque sai ligeiramente diferente
+function env(g, t0, vol, len, att = 0.004) { g.gain.setValueAtTime(0.0001, t0); g.gain.exponentialRampToValueAtTime(vol, t0 + att); g.gain.exponentialRampToValueAtTime(0.0001, t0 + len); }
+// ruído filtrado: cliques, cartas, sopros
+function noise(t0, len, type, freq, q, vol, toFreq) {
+  const src = actx.createBufferSource(), f = actx.createBiquadFilter(), g = actx.createGain();
+  src.buffer = noiseBuf; f.type = type; f.frequency.setValueAtTime(jit(freq), t0); f.Q.value = q;
+  if (toFreq) f.frequency.exponentialRampToValueAtTime(toFreq, t0 + len);
+  env(g, t0, vol, len, 0.002); src.connect(f).connect(g).connect(master); src.start(t0, Math.random() * 0.3); src.stop(t0 + len + 0.02);
+}
+// nota que morre: seno com um harmónico, como uma tecla de madeira ou uma moeda
+function ping(t0, freq, len, vol, harm = 0, to = null) {
+  const o = actx.createOscillator(), g = actx.createGain(); o.type = 'sine'; o.frequency.setValueAtTime(jit(freq, 0.01), t0);
+  if (to) o.frequency.exponentialRampToValueAtTime(to, t0 + len);
+  env(g, t0, vol, len); o.connect(g).connect(master); o.start(t0); o.stop(t0 + len + 0.02);
+  if (harm) { const o2 = actx.createOscillator(), g2 = actx.createGain(); o2.type = 'sine'; o2.frequency.value = freq * harm; env(g2, t0, vol * 0.35, len * 0.5); o2.connect(g2).connect(master); o2.start(t0); o2.stop(t0 + len); }
+}
+const coin = (t, f = 3300, v = 0.035) => { ping(t, f, 0.11, v, 1.52); ping(t, f * 1.34, 0.08, v * 0.6); noise(t, 0.012, 'highpass', 5000, 0.7, 0.02); };
 const SFX = {
-  tap: (t) => tone(190, t, 0.05, 'triangle', 0.05),
-  cash: (t) => { tone(988, t, 0.09, 'square', 0.035); tone(1319, t + 0.07, 0.16, 'square', 0.035); },
-  crit: (t) => [784, 988, 1319, 1568].forEach((f, i) => tone(f, t + i * 0.07, 0.2, 'square', 0.04)),
-  fail: (t) => tone(170, t, 0.22, 'triangle', 0.09, 80),
-  bust: (t) => [0, 1, 2, 3].forEach((i) => tone(i % 2 ? 620 : 830, t + i * 0.13, 0.13, 'sawtooth', 0.035)),
-  level: (t) => { [523, 659, 784, 1047].forEach((f, i) => tone(f, t + i * 0.09, 0.3, 'triangle', 0.07)); tone(1568, t + 0.36, 0.5, 'sine', 0.05); },
-  refill: (t) => tone(300, t, 0.3, 'sine', 0.06, 900),
-  claim: (t) => { tone(1175, t, 0.08, 'square', 0.035); tone(1568, t + 0.07, 0.1, 'square', 0.035); tone(2093, t + 0.14, 0.22, 'square', 0.03); },
-  buy: (t) => { tone(440, t, 0.08, 'triangle', 0.07); tone(660, t + 0.08, 0.16, 'triangle', 0.07); },
-  hit: (t) => tone(120, t, 0.18, 'sawtooth', 0.09, 50),
-  tick: (t) => tone(2200, t, 0.012, 'square', 0.018),
-  deal: (t) => tone(900, t, 0.06, 'triangle', 0.04, 300),
+  tap: (t) => { noise(t, 0.028, 'bandpass', 1700, 1.4, 0.07); ping(t, 150, 0.04, 0.035, 0, 90); },
+  tick: (t) => noise(t, 0.014, 'bandpass', 3400, 2.2, 0.06),
+  deal: (t) => { noise(t, 0.07, 'bandpass', 2600, 0.8, 0.05, 900); ping(t + 0.05, 180, 0.04, 0.03, 0, 110); },
+  cash: (t) => { coin(t); coin(t + 0.07, 3900, 0.03); },
+  claim: (t) => { coin(t, 2900); coin(t + 0.06, 3500); coin(t + 0.13, 4300, 0.03); },
+  buy: (t) => { noise(t, 0.03, 'bandpass', 1400, 1.2, 0.07); coin(t + 0.05, 3100, 0.03); },
+  crit: (t) => [659, 784, 988, 1319].forEach((f, i) => ping(t + i * 0.075, f, 0.32, 0.06, 2)),
+  level: (t) => { [392, 523, 659, 784].forEach((f, i) => ping(t + i * 0.1, f, 0.5, 0.07, 2)); ping(t + 0.42, 1047, 0.8, 0.05, 2); },
+  fail: (t) => { ping(t, 130, 0.2, 0.09, 0, 70); noise(t, 0.06, 'lowpass', 400, 0.7, 0.05); },
+  hit: (t) => { noise(t, 0.09, 'lowpass', 500, 0.8, 0.14); ping(t, 95, 0.16, 0.12, 0, 48); },
+  bust: (t) => [0, 1, 2, 3].forEach((i) => ping(t + i * 0.15, i % 2 ? 620 : 830, 0.14, 0.04, 2)),
+  refill: (t) => noise(t, 0.32, 'bandpass', 500, 1.2, 0.06, 2600),
 };
+let lastTap = 0;
 export function sfx(name) {
   if (!soundOn) return;
-  try {
-    actx = actx || new (window.AudioContext || window.webkitAudioContext)();
-    if (actx.state === 'suspended') actx.resume();
-    SFX[name] && SFX[name](actx.currentTime + 0.005);
-  } catch {}
+  if (name === 'tap') { const n = performance.now(); if (n - lastTap < 70) return; lastTap = n; }
+  try { ctxReady(); SFX[name] && SFX[name](actx.currentTime + 0.005); } catch {}
 }
+
+// ---------- música ----------
+// Uma lista de faixas tocada baixinho, em sequência. Só arranca depois do primeiro toque (os browsers não deixam antes).
+const TRACKS = [1, 2, 3, 4].map((n) => `/audio/faixa${n}.m4a`);
+let music = null, musicOn = false, trackI = Math.floor(Math.random() * TRACKS.length);
+export function setMusic(v) {
+  musicOn = !!v;
+  if (!musicOn) { music && music.pause(); return; }
+  if (!music) {
+    music = new Audio(); music.preload = 'none'; music.volume = 0.22;
+    music.addEventListener('ended', () => { trackI = (trackI + 1) % TRACKS.length; music.src = TRACKS[trackI]; music.play().catch(() => {}); });
+    document.addEventListener('visibilitychange', () => { if (!music) return; if (document.hidden) music.pause(); else if (musicOn) music.play().catch(() => {}); });
+  }
+  if (!music.src) music.src = TRACKS[trackI];
+  music.play().catch(() => {});
+}
+// o primeiro toque liga a música (se estiver ligada nas definições) e dá som a todos os botões
+document.addEventListener('pointerdown', (e) => {
+  if (musicOn && music && music.paused && !document.hidden) music.play().catch(() => {});
+  if (e.target.closest && e.target.closest('button, a, .tile, .game, [role="button"]')) sfx('tap');
+}, { passive: true });
 
 // texto que sobe de um ponto até um alvo (ex.: +$23 do cartão até ao dinheiro no topo)
 export function fly(text, color, fromRect, toEl, delay = 0) {

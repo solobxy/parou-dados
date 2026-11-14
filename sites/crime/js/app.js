@@ -3,6 +3,7 @@
 import { t, tv, list, errText, setLang, lang, guessLang } from './i18n.js';
 import { h, icon, svg, setLocale, num, money, moneyShort, short, dur, hoursText, pct, rid } from './ui.js';
 import * as fx from './fx.js';
+import * as C3 from './casino3d.js';
 
 const $app = document.getElementById('app');
 const S = {
@@ -933,37 +934,14 @@ function screenCasino() {
 // ---- roleta (europeia, um zero) ----
 const RL_ORDER = [0, 32, 15, 19, 4, 21, 2, 25, 17, 34, 6, 27, 13, 36, 11, 30, 8, 23, 10, 5, 24, 16, 33, 1, 20, 14, 31, 9, 22, 18, 29, 7, 28, 12, 35, 3, 26];
 const rlCol = (n) => (n === 0 ? 'g' : S.cfg.casino.red.includes(n) ? 'r' : 'b');
-function rlWheel() {
-  const R = 150, th = 360 / 37, s = svg('svg', { class: 'rlw', viewBox: '0 0 300 300', role: 'img', 'aria-label': t('p_roulette') });
-  const rad = (a) => ((a - 90) * Math.PI) / 180, pt = (r, a) => [150 + r * Math.cos(rad(a)), 150 + r * Math.sin(rad(a))];
-  s.append(svg('circle', { cx: 150, cy: 150, r: 148, class: 'rim' }));
-  const wheel = svg('g', { class: 'wheel', style: `transform: rotate(${S.rlAng || 0}deg)` });
-  RL_ORDER.forEach((n, i) => {
-    const a0 = i * th - th / 2, a1 = a0 + th, [x0, y0] = pt(R - 12, a0), [x1, y1] = pt(R - 12, a1), [x2, y2] = pt(R - 52, a1), [x3, y3] = pt(R - 52, a0);
-    wheel.append(svg('path', { d: `M${x0} ${y0}A${R - 12} ${R - 12} 0 0 1 ${x1} ${y1}L${x2} ${y2}A${R - 52} ${R - 52} 0 0 0 ${x3} ${y3}Z`, class: 'pk ' + rlCol(n) }));
-    const [tx, ty] = pt(R - 26, i * th), tx2 = svg('text', { x: tx, y: ty, class: 'pn', transform: `rotate(${i * th} ${tx} ${ty})` });
-    tx2.textContent = String(n); wheel.append(tx2);
-  });
-  wheel.append(svg('circle', { cx: 150, cy: 150, r: R - 52, class: 'hub' }), svg('circle', { cx: 150, cy: 150, r: 26, class: 'hub2' }));
-  const ball = svg('g', { class: 'ballg' }); ball.append(svg('circle', { cx: 150, cy: 150 - (R - 44), r: 7, class: 'ball' }));
-  s.append(wheel, ball, svg('path', { d: 'M150 10l-9-14h18z', class: 'ptr' }));
-  return s;
-}
+function rl3() { if (!S.rl3) { S.rl3 = C3.roulette({ order: RL_ORDER, colorOf: rlCol, sfx: fx.sfx }); if (S.rlLast) S.rl3.set(S.rlLast.n); } return S.rl3; }
 async function rlAnim(r) {
-  const s = document.querySelector('.rlw'); if (!s) return;
-  const top = s.getBoundingClientRect().top + scrollY - 190;
-  if (s.getBoundingClientRect().top < 170 || s.getBoundingClientRect().bottom > innerHeight - 140) { scrollTo({ top: Math.max(0, top), behavior: RM() ? 'auto' : 'smooth' }); await wait(RM() ? 0 : 350); }
-  const wheel = s.querySelector('.wheel'), ball = s.querySelector('.ballg'), i = RL_ORDER.indexOf(r.n), th = 360 / 37;
-  const cur = S.rlAng || 0, target = (360 - i * th) % 360, delta = (target - (cur % 360) + 720) % 360;
-  const d = RM() ? 700 : fx.dur(4600), next = cur + (RM() ? 0 : 360 * 5) + delta;
-  S.rlAng = next;
-  wheel.style.transition = `transform ${d}ms cubic-bezier(.12,.62,.14,1)`; ball.style.transition = `transform ${d}ms cubic-bezier(.2,.7,.2,1)`;
-  requestAnimationFrame(() => { wheel.style.transform = `rotate(${next}deg)`; ball.style.transform = `rotate(${RM() ? 0 : -360 * 7}deg)`; });
-  // o tiquetaque abranda com a roda
-  if (!RM()) for (let k = 0, t0 = 0; t0 < d * 0.9; k++) { t0 += 45 + k * k * 0.9; setTimeout(() => fx.sfx('tick'), t0); }
-  await wait(d + 150);
-  ball.style.transition = 'none'; ball.style.transform = 'rotate(0deg)';
+  const T = rl3(); await tableFocus(T.el.parentNode || T.el);
+  document.querySelector('.rl3num')?.classList.remove('on');
+  await T.spin(r.n);
+  const bd = document.querySelector('.rl3num'); if (bd) { bd.textContent = String(r.n); bd.className = 'rl3num on ' + rlCol(r.n); }
   S.rlHist = [r.n, ...(S.rlHist || [])].slice(0, 12); S.rlLast = r;
+  await wait(RM() ? 300 : 1300);
 }
 const rlKey = (b) => b.t + (b.n !== undefined && b.n !== null ? ':' + b.n : '');
 function rlAdd(t0, n) {
@@ -981,7 +959,7 @@ function screenRoulette() {
     return h('button', { class: 'rlc ' + (cls || '') + (won({ t: t0, n }) ? ' hit' : ''), on: { click: () => rlAdd(t0, n) } }, label, b ? h('span', { class: 'chipm' }, moneyShort(b.amt)) : null);
   };
   const out = csHead('roulette');
-  out.push(h('div', { class: 'rlbox' }, rlWheel(),
+  out.push(h('div', { class: 'rlbox' }, h('div', { class: 'rl3wrap' }, rl3().el, h('b', { class: 'rl3num num' + (last ? ' on ' + rlCol(last.n) : '') }, last ? String(last.n) : '')),
     h('div', { class: 'rlhist' }, (S.rlHist || []).map((n, i) => h('span', { class: 'hn ' + rlCol(n) + (i === 0 ? ' last' : '') }, String(n))))));
   if (last) out.push(csResult(last, t('rlOut', { n: last.n, c: t('rlc_' + rlCol(last.n)) })));
   out.push(h('div', { class: 'rlout' },
@@ -994,6 +972,7 @@ function screenRoulette() {
     h('div', { class: 'row' }, h('button', { class: 'btn ghost', disabled: !tot, on: { click: () => { S.rlBets = {}; render(); } } }, t('csClear')),
       h('button', { class: 'btn buy grow big', disabled: !tot || tot > S.st.me.cash || S.casinoBusy, on: { click: () => play('roulette', { bets: Object.values(bets) }, rlAnim) } },
         tot ? t('rlSpin', { m: moneyShort(tot) }) : t('rlPlace')))));
+  rl3().wake();
   return out;
 }
 function rlWon(b, n) {
@@ -1006,23 +985,18 @@ function rlWon(b, n) {
 }
 
 // ---- dados ----
-const PIPS = { 1: [4], 2: [0, 8], 3: [0, 4, 8], 4: [0, 2, 6, 8], 5: [0, 2, 4, 6, 8], 6: [0, 2, 3, 5, 6, 8] };
-const die = (v) => h('div', { class: 'die', 'aria-label': String(v) }, Array.from({ length: 9 }, (_, i) => h('i', { class: PIPS[v].includes(i) ? 'on' : '' })));
+function dc3() { if (!S.dc3) S.dc3 = C3.diceTable({ sfx: fx.sfx }); return S.dc3; }
 async function diceAnim(r) {
-  const box = document.querySelector('.dicebox'); if (!box) return;
-  const d = RM() ? 400 : fx.dur(1100), t0 = performance.now();
-  box.classList.add('rolling');
-  while (performance.now() - t0 < d) {
-    box.replaceChildren(die(1 + Math.floor(Math.random() * 6)), die(1 + Math.floor(Math.random() * 6)));
-    fx.sfx('tick'); await wait(RM() ? 120 : 85);
-  }
-  box.classList.remove('rolling'); box.replaceChildren(die(r.d[0]), die(r.d[1]));
-  S.diceLast = r; await wait(250);
+  const T = dc3(); await tableFocus(T.el);
+  await T.roll(r.d[0], r.d[1]);
+  const sum = document.querySelector('.dcsum'); if (sum) { sum.textContent = String(r.d[0] + r.d[1]); sum.classList.add('on'); }
+  fx.sfx('claim'); S.diceLast = r; await wait(RM() ? 300 : 1100);
 }
 function screenDice() {
-  const pick = S.dicePick || 'low', D = S.cfg.casino.dice, last = S.diceLast, chip = chipNow();
+  const pick = S.dicePick || 'low', D = S.cfg.casino.dice, last = S.diceLast, chip = chipNow(), T = dc3();
+  if (!S.casinoBusy && last) T.set(last.d[0], last.d[1]);
   const out = csHead('dice');
-  out.push(h('div', { class: 'dicebox' + (last ? '' : ' idle') }, die(last ? last.d[0] : 3), die(last ? last.d[1] : 4)));
+  out.push(h('div', { class: 'dcwrap' }, T.el, h('b', { class: 'dcsum num' + (last ? ' on' : '') }, last ? String(last.d[0] + last.d[1]) : '')));
   if (last) out.push(csResult(last, t('dcOut', { n: last.d[0] + last.d[1] })));
   out.push(h('div', { class: 'dcpicks', role: 'group' }, [['low', '2–6'], ['seven', '7'], ['high', '8–12']].map(([id, rng0]) =>
     h('button', { class: 'dcp' + (pick === id ? ' on' : ''), 'aria-pressed': pick === id ? 'true' : 'false', on: { click: () => { S.dicePick = id; render(); } } },
@@ -1081,85 +1055,84 @@ async function bjPlay(op, amt) {
   render();
 }
 
-// ---- Roda da Fortuna ----
-const WCOL = { 1: '#f5c518', 2: '#2f80ed', 5: '#e04495', 10: '#8b5cf6', moeda: '#e53935', caixas: '#22a559', bola: '#10b5c9', louca: '#ff8a00' };
+// ---- Roda da Sorte ----
+const WCOL = { 1: '#2f80ed', 2: '#f2b705', 5: '#ff5fa2', 10: '#8b5cf6', moeda: '#ff7a00', caixas: '#1fa655', bola: '#10b5c9', louca: '#e02b2b' };
+const LCOL = ['#e02b2b', '#f2b705', '#1fa655', '#2f80ed', '#8b5cf6', '#ff5fa2'];
+const TOPM = [2, 3, 5, 10, 20, 50];
 const wLabel = (s) => (/^\d+$/.test(s) ? s : t('w_' + s));
-function wheelSvg() {
-  const segs = S.cfg.casino.wheel.segs, N = segs.length, th = 360 / N, R = 150;
-  const s = svg('svg', { class: 'ww', viewBox: '0 0 300 300', role: 'img', 'aria-label': t('p_wheel') });
-  const rad = (a) => ((a - 90) * Math.PI) / 180, pt = (r, a) => [150 + r * Math.cos(rad(a)), 150 + r * Math.sin(rad(a))];
-  s.append(svg('circle', { cx: 150, cy: 150, r: 149, class: 'wrim' }));
-  const g = svg('g', { class: 'wheel', style: `transform: rotate(${S.wAng || 0}deg)` });
-  segs.forEach((k, i) => {
-    const a0 = i * th - th / 2, a1 = a0 + th, [x0, y0] = pt(R - 8, a0), [x1, y1] = pt(R - 8, a1);
-    g.append(svg('path', { d: `M150 150L${x0} ${y0}A${R - 8} ${R - 8} 0 0 1 ${x1} ${y1}Z`, fill: WCOL[k], class: 'wseg' }));
-    const [tx, ty] = pt(R - 40, i * th), el = svg('text', { x: tx, y: ty, class: 'wt' + (/^\d+$/.test(k) ? '' : ' wb'), transform: `rotate(${i * th - 90} ${tx} ${ty})` });
-    el.textContent = /^\d+$/.test(k) ? k : t('w_' + k).toUpperCase(); g.append(el);
-  });
-  g.append(svg('circle', { cx: 150, cy: 150, r: 34, class: 'whub' }));
-  for (let i = 0; i < 27; i++) { const [x, y] = pt(R - 3, i * 360 / 27); s.append(svg('circle', { cx: x, cy: y, r: 2.4, class: 'wbulb' })); }
-  s.append(g, svg('path', { d: 'M150 22l-10-22h20z', class: 'wptr' }));
-  return s;
+function w3() {
+  if (!S.w3 || S.w3lang !== lang()) {
+    S.w3 = C3.bigWheel({ sfx: fx.sfx, hub: t('p_wheel').toUpperCase(), segs: S.cfg.casino.wheel.segs.map((k) => ({ text: /^\d+$/.test(k) ? k : t('w_' + k).toUpperCase(), color: WCOL[k], big: /^\d+$/.test(k) })) });
+    S.w3lang = lang(); if (S.wLast) S.w3.set(S.wLast.idx);
+  }
+  return S.w3;
+}
+// põe a mesa à vista e encolhe a barra de baixo enquanto a jogada corre
+async function tableFocus(el) {
+  document.querySelector('.csres')?.remove();
+  document.querySelector('.csbar')?.classList.add('anim');
+  const top = document.querySelector('.hud')?.offsetHeight || 0, b = el.getBoundingClientRect();
+  if (b.top < top || b.bottom > innerHeight - 170) { scrollTo({ top: Math.max(0, b.top + scrollY - top - 8), behavior: RM() ? 'auto' : 'smooth' }); await wait(RM() ? 0 : 320); }
+}
+function topSlotEl(last) {
+  const cellS = (s) => h('span', { style: `color:${WCOL[s]}` }, wLabel(s)), cellM = (m) => h('span', null, '×' + m);
+  return h('div', { class: 'tslot' + (last ? (last.top ? ' match' : ' miss') : '') },
+    h('div', { class: 'tsr a' }, h('div', { class: 'tss' }, last?.top ? cellS(last.top.s) : h('span', { class: 'muted' }, '?'))),
+    h('div', { class: 'tsr b' }, h('div', { class: 'tss' }, last?.top ? cellM(last.top.m) : h('span', { class: 'muted' }, '×?'))));
+}
+async function topSpin(r) {
+  const el = document.querySelector('.tslot'); if (!el) return;
+  el.classList.remove('match', 'miss');
+  const spots = S.cfg.casino.wheel.spots, rnd = (a) => a[Math.floor(Math.random() * a.length)], HH = 40;
+  const A = Array.from({ length: 16 }, () => rnd(spots)), B = Array.from({ length: 22 }, () => rnd(TOPM));
+  A.push(r.top ? r.top.s : rnd(spots)); B.push(r.top ? r.top.m : rnd(TOPM)); B.push(rnd(TOPM));
+  const sa = el.querySelector('.tsr.a .tss'), sb = el.querySelector('.tsr.b .tss');
+  sa.replaceChildren(...A.map((s) => h('span', { style: `color:${WCOL[s]}` }, wLabel(s)))); sb.replaceChildren(...B.map((m) => h('span', null, '×' + m)));
+  const da = RM() ? 200 : 1500, db = RM() ? 250 : 2200;
+  [sa, sb].forEach((s) => { s.style.transition = 'none'; s.style.transform = 'translateY(0)'; }); void sa.offsetHeight;
+  sa.style.transition = `transform ${da}ms cubic-bezier(.15,.75,.2,1)`; sb.style.transition = `transform ${db}ms cubic-bezier(.15,.75,.2,1)`;
+  sa.style.transform = `translateY(${-(A.length - 1) * HH}px)`;
+  // sem multiplicador: o segundo rolo pára desalinhado, entre dois valores
+  sb.style.transform = `translateY(${-(B.length - 2) * HH - (r.top ? 0 : HH / 2)}px)`;
+  if (!RM()) for (let k = 0, t0 = 0; t0 < db * 0.85; k++) { t0 += 50 + k * k * 1.6; setTimeout(() => fx.sfx('tick'), t0); }
+  await wait(db + 120);
+  el.classList.add(r.top ? 'match' : 'miss'); fx.sfx(r.top ? 'claim' : 'tap');
+  await wait(RM() ? 150 : r.top ? 900 : 450);
 }
 async function wheelAnim(r) {
   const box = document.querySelector('.wbox'); if (!box) return;
-  const sv = box.querySelector('.ww');
-  const top = sv.getBoundingClientRect().top + scrollY - 190;
-  if (sv.getBoundingClientRect().top < 170 || sv.getBoundingClientRect().bottom > innerHeight - 140) { scrollTo({ top: Math.max(0, top), behavior: RM() ? 'auto' : 'smooth' }); await wait(RM() ? 0 : 350); }
-  // 1) o multiplicador do topo
-  const banner = box.querySelector('.wtop');
-  if (r.top) {
-    for (let k = 0; k < (RM() ? 1 : 10); k++) { banner.textContent = '×' + [2, 3, 5, 10, 20, 50][k % 6] + ' · ' + wLabel(S.cfg.casino.wheel.spots[k % 8]); fx.sfx('tick'); await wait(70 + k * 12); }
-    banner.textContent = t('wTop', { m: r.top.m, s: wLabel(r.top.s) }); banner.classList.add('on'); fx.sfx('claim'); await wait(RM() ? 300 : 700);
-  } else { banner.textContent = t('wNoTop'); await wait(RM() ? 100 : 300); }
-  // 2) a roda
-  const g = sv.querySelector('.wheel'), th = 360 / S.cfg.casino.wheel.segs.length, cur = S.wAng || 0;
-  const target = (360 - r.idx * th) % 360, delta = (target - (cur % 360) + 720) % 360, d = RM() ? 700 : fx.dur(5200), next = cur + (RM() ? 0 : 360 * 4) + delta;
-  S.wAng = next;
-  g.style.transition = `transform ${d}ms cubic-bezier(.1,.6,.12,1)`;
-  requestAnimationFrame(() => { g.style.transform = `rotate(${next}deg)`; });
-  if (!RM()) for (let k = 0, t0 = 0; t0 < d * 0.92; k++) { t0 += 40 + k * k * 0.7; setTimeout(() => fx.sfx('tick'), t0); }
-  await wait(d + 200);
-  // 3) o jogo de bónus
-  if (r.bonus) await wheelBonus(r, box);
+  const W3 = w3(), stage = box.querySelector('.wstage'), bet = (S.wBets || {})[r.s] || 0;
+  await tableFocus(box);
+  await topSpin(r);
+  await W3.spin(r.idx);
+  const topHit = r.top && r.top.s === r.s, show = (cls, ...kids) => { stage.className = 'wstage ' + cls; stage.hidden = false; stage.replaceChildren(...kids.filter(Boolean)); };
+  if (r.bonus) {
+    show('th-' + r.s + ' intro', h('b', { class: 'wst-title' }, t('wb_' + r.s))); fx.sfx('level'); await wait(RM() ? 400 : 1500);
+    show('th-' + r.s, h('b', { class: 'wst-name' }, t('wb_' + r.s)));
+    if (r.s === 'moeda') await C3.coinFlip(stage, { sides: r.bonus.sides, side: r.bonus.side, sfx: fx.sfx, L: { red: t('rl_r'), blue: t('wBlue') } });
+    else if (r.s === 'caixas') await C3.cashHunt(stage, { boxes: r.bonus.boxes, pick: r.bonus.pick, sfx: fx.sfx, L: { shuffle: t('wShuffle'), pick: t('wPick') } });
+    else if (r.s === 'bola') await C3.pachinko(stage, { slots: r.bonus.slots, at: r.bonus.at, sfx: fx.sfx });
+    else {
+      const lw = C3.bigWheel({ sfx: fx.sfx, cls: 'bw3 mini', turns: 4, secs: 7.5, hub: t('w_louca').toUpperCase(), segs: r.bonus.slots.map((v, i) => ({ text: '×' + v, color: LCOL[i % LCOL.length], big: true })) });
+      stage.append(lw.el); lw.wake(); await wait(400); await lw.spin(r.bonus.at);
+    }
+  }
+  // resultado em grande, com tempo para se ler
+  const net = r.win - r.bet, base = topHit ? r.mult / r.top.m : r.mult;
+  show('th-' + r.s + ' res',
+    h('span', { class: 'wst-chip', style: `background:${WCOL[r.s]}` }, wLabel(r.s)),
+    h('b', { class: 'wst-x' }, r.bonus || topHit ? '×' + r.mult : r.s + ':1'),
+    topHit ? h('span', { class: 'wst-sub' }, t('wTopCalc', { a: base, b: r.top.m })) : null,
+    h('b', { class: 'wst-win ' + (!bet ? 'muted' : net > 0 ? 'c-cash' : net < 0 ? 'c-red' : '') }, !bet ? t('wNoBet', { s: wLabel(r.s) }) : net > 0 ? t('csWon', { m: money(net) }) : net < 0 ? t('csLost', { m: money(-net) }) : t('csPush')));
+  if (net > 0) { fx.sfx(r.mult >= 20 ? 'crit' : 'cash'); fx.vibrate(20); }
+  await wait(RM() ? 1200 : r.bonus || net > 0 ? 3200 : 1900);
   S.wLast = r;
 }
-async function wheelBonus(r, box) {
-  const st = box.querySelector('.wbonus'); st.hidden = false;
-  const show = async (...kids) => { st.replaceChildren(h('b', { class: 'wbt' }, t('w_' + r.s)), ...kids); };
-  if (r.s === 'moeda') {
-    const coin = h('div', { class: 'coin' }, h('span', { class: 'fa' }, '×' + r.bonus.sides[0]), h('span', { class: 'fb' }, '×' + r.bonus.sides[1]));
-    await show(h('div', { class: 'coins' }, h('span', { class: 'cs a' }, '×' + r.bonus.sides[0]), coin, h('span', { class: 'cs b' }, '×' + r.bonus.sides[1])));
-    coin.style.setProperty('--end', r.bonus.side ? '1980deg' : '1800deg'); coin.classList.add('flip');
-    await wait(RM() ? 300 : 1900);
-  } else if (r.s === 'caixas') {
-    const boxes = r.bonus.boxes.map((v, i) => h('div', { class: 'bxx' + (i === r.bonus.pick ? ' pick' : '') }, h('span', null, '?')));
-    await show(h('div', { class: 'bxs' }, boxes));
-    await wait(RM() ? 200 : 700);
-    boxes[r.bonus.pick].classList.add('open'); boxes[r.bonus.pick].firstChild.textContent = '×' + r.bonus.boxes[r.bonus.pick]; fx.sfx('claim');
-    await wait(RM() ? 300 : 900);
-    boxes.forEach((b, i) => { if (i !== r.bonus.pick) { b.classList.add('open', 'dim'); b.firstChild.textContent = '×' + r.bonus.boxes[i]; } });
-    await wait(RM() ? 300 : 900);
-  } else {
-    // bola e louca: uma fita de multiplicadores que passa e pára no que saiu
-    const sl = r.bonus.slots, reps = 4, cells = [];
-    for (let k = 0; k < reps; k++) sl.forEach((v) => cells.push(h('span', { class: 'sc' + (v >= 100 ? ' hi' : '') }, '×' + v)));
-    const strip = h('div', { class: 'strip' }, cells), win = h('div', { class: 'swin' }, strip, h('i', { class: 'smark' }));
-    await show(win);
-    const cw = 64, stop = (reps - 1) * sl.length + r.bonus.at, x = stop * cw - (win.clientWidth / 2 - cw / 2);
-    const d = RM() ? 400 : 3200;
-    strip.style.transition = `transform ${d}ms cubic-bezier(.12,.7,.15,1)`;
-    requestAnimationFrame(() => { strip.style.transform = `translateX(${-x}px)`; });
-    if (!RM()) for (let k = 0, t0 = 0; t0 < d * 0.9; k++) { t0 += 50 + k * k * 1.2; setTimeout(() => fx.sfx('tick'), t0); }
-    await wait(d + 200); cells[stop].classList.add('on'); fx.sfx('claim'); await wait(700);
-  }
-}
 function screenWheel() {
-  const W = S.cfg.casino.wheel, bets = S.wBets || {}, tot = Object.values(bets).reduce((x, y) => x + y, 0), last = S.wLast;
+  const W = S.cfg.casino.wheel, bets = S.wBets || {}, tot = Object.values(bets).reduce((x, y) => x + y, 0), last = S.wLast, W3 = w3();
   const out = csHead('wheel');
-  out.push(h('div', { class: 'wbox' }, h('div', { class: 'wtop' + (last?.top ? ' on' : '') }, last?.top ? t('wTop', { m: last.top.m, s: wLabel(last.top.s) }) : t('wTopIdle')),
-    wheelSvg(), h('div', { class: 'wbonus', hidden: true })));
-  if (last) out.push(csResult(last, t('wOut', { s: wLabel(last.s) }) + (last.bonus ? ' · ×' + (last.top && last.top.s === last.s ? last.mult / last.top.m + ' × ' + last.top.m : last.mult) : '')));
+  out.push(h('div', { class: 'wbox' }, topSlotEl(last), W3.el, h('div', { class: 'wstage', hidden: true })));
+  if (last) out.push(csResult(last, t('wOut', { s: wLabel(last.s) }) + (last.bonus || (last.top && last.top.s === last.s) ? ' · ×' + last.mult : '')));
   out.push(h('div', { class: 'wspots' }, W.spots.map((s) => h('button', { class: 'wsp', style: `--c:${WCOL[s]}`, on: { click: () => {
     const chip = chipNow(); if (tot + chip > betMax()) return toast(t('csOver', { m: money(betMax()) }), true);
     S.wBets = { ...bets, [s]: (bets[s] || 0) + chip }; fx.sfx('tap'); render(); } } },
@@ -1169,6 +1142,7 @@ function screenWheel() {
     h('div', { class: 'row' }, h('button', { class: 'btn ghost', disabled: !tot, on: { click: () => { S.wBets = {}; render(); } } }, t('csClear')),
       h('button', { class: 'btn buy grow big', disabled: !tot || tot > S.st.me.cash || S.casinoBusy, on: { click: () => play('wheel', { bets: Object.entries(bets).map(([s, amt]) => ({ s, amt })) }, wheelAnim) } },
         tot ? t('rlSpin', { m: moneyShort(tot) }) : t('rlPlace')))));
+  W3.wake();
   return out;
 }
 
@@ -1189,7 +1163,7 @@ function slotCellEl(g, s, orb, spot) {
 function slotGrid(g) {
   const G = slotCfg(g), n = G.cols * G.rows, last = S.slotLast?.[g];
   const step = last ? (last.spin.free.at(-1) || last.spin.base).steps.at(-1) : null;
-  const cells = step ? step.g : Array.from({ length: n }, (_, i) => (i * 5 + Math.floor(i / G.cols) * 3 + 1) % G.nsym);   // mistura sem vizinhos iguais
+  const cells = step ? step.g : Array.from({ length: n }, (_, i) => (Math.imul(i + 7, 2654435761) >>> 9) % G.nsym);   // mistura fixa, sem padrão à vista
   return h('div', { class: 'sgrid', style: `--cols:${G.cols};--rows:${G.rows}` }, cells.map((s, i) => slotCellEl(g, s, step?.o?.[i], step?.sp?.[i])));
 }
 async function slotStep(g, grid, step, prev, fast) {
@@ -1327,7 +1301,9 @@ function openProfile() {
     h('h2', { class: 'sec', style: 'margin-top:10px' }, t('language')), langBtns,
     h('h2', { class: 'sec', style: 'margin-top:10px' }, t('animations')), animBtns,
     h('h2', { class: 'sec', style: 'margin-top:10px' }, t('sound')),
-    h('div', { class: 'seg' }, [[true, t('on')], [false, t('off')]].map(([v, n]) => h('button', { 'aria-pressed': store.get('sound', false) === v ? 'true' : 'false', on: { click: () => { store.set('sound', v); fx.setSound(v); if (v) fx.sfx('cash'); close(); openProfile(); } } }, n))),
+    h('div', { class: 'seg' }, [[true, t('on')], [false, t('off')]].map(([v, n]) => h('button', { 'aria-pressed': store.get('sound', true) === v ? 'true' : 'false', on: { click: () => { store.set('sound', v); fx.setSound(v); if (v) fx.sfx('cash'); close(); openProfile(); } } }, n))),
+    h('h2', { class: 'sec', style: 'margin-top:10px' }, t('music')),
+    h('div', { class: 'seg' }, [[true, t('on')], [false, t('off')]].map(([v, n]) => h('button', { 'aria-pressed': store.get('music', true) === v ? 'true' : 'false', on: { click: () => { store.set('music', v); fx.setMusic(v); close(); openProfile(); } } }, n))),
     h('button', { class: 'btn ghost block', style: 'margin-top:12px', on: { click: async () => { try { await api('POST', '/api/logout'); } catch {} close(); S.st = null; showLanding(); } } }, t('logout')),
     h('p', { class: 'credit' }, h('a', { href: 'https://dinissousa.pt', target: '_blank', rel: 'noopener' }, t('credit')))));
 }
@@ -1438,7 +1414,8 @@ async function start() {
 
 applyLang(guessLang());
 fx.setLight(store.get('light', false));
-fx.setSound(store.get('sound', false));
+fx.setSound(store.get('sound', true));
+fx.setMusic(store.get('music', true));
 // os avatares só aparecem quando as imagens existirem no servidor
 { const pr = new Image(); pr.onload = () => { S.avOk = true; if (S.st?.me && $main) { shell(); render(); } }; pr.src = '/img/av/0.webp?1'; }
 setInterval(tickHud, 1000);
