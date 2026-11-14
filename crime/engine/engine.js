@@ -33,6 +33,7 @@ export function newPlayer(id, now, world, opts = {}) {
     port: [],
     weapon: -1, armor: -1,
     luxuries: 0,
+    detoxT: [],
   };
 }
 
@@ -62,8 +63,10 @@ function syncAddiction(p, now) {
 export function touch(p, now) {
   if (!Number.isSafeInteger(now)) fail('BAD_TIME');
   if (now < p.t) fail('TIME_BACKWARDS');
+  if (!Array.isArray(p.detoxT)) p.detoxT = []; // jogadores gravados antes desta regra
   syncEnergy(p, now);
   syncAddiction(p, now);
+  if (p.addiction > addictionCap(p)) p.addiction = addictionCap(p); // limite mudou nas regras
   if (p.jailUntil && p.jailUntil <= now) { p.jailUntil = 0; p.jailTier = 0; }
   if (p.hospUntil && p.hospUntil <= now) p.hospUntil = 0;
   p.t = now;
@@ -92,7 +95,7 @@ export function level(p) {
   return lo + 1;
 }
 
-export function addictionCap(p) { return CFG.addiction.base + p.stats.T; }
+export function addictionCap(p) { return CFG.addiction.base + Math.floor(p.stats.T / CFG.addiction.perT); }
 
 function addRespect(p, delta, now) {
   if (delta === 0) return null;
@@ -156,8 +159,10 @@ export function doCrime(p, now, world, k, rng) {
 
 export function bailCost(p, now) {
   if (!(p.jailUntil > now)) return 0;
-  const mins = Math.ceil((p.jailUntil - now) / T.MIN);
-  return mins * CFG.bailPerMinPerTier * p.jailTier;
+  const c = CFG.crimes[p.jailTier - 1];
+  const left = p.jailUntil - now, total = c.jailMin * T.MIN;
+  const full = Math.floor(((c.min + c.max) / 2) * CFG.bailBp / 10000);
+  return Math.max(1, Math.ceil((full * Math.min(left, total)) / total));
 }
 
 export function payBail(p, now, world) {
@@ -202,6 +207,114 @@ export function buyDrug(p, now, world, d) {
   if (p.addiction === 0) p.addictionT = now;
   p.addiction += g.a;
   return { ok: true, energy: g.e, addiction: g.a, price: g.price };
+}
+
+// Quanto vale 1 ponto de energia para este jogador: o melhor golpe desbloqueado, em dinheiro esperado.
+export function valuePerEnergy(p) {
+  let best = 0;
+  for (let k = 0; k < CFG.crimes.length; k++) {
+    if (!crimeUnlocked(p, k)) continue;
+    const c = CFG.crimes[k];
+    const v = (crimeChanceBp(p, k) * ((c.min + c.max) / 2)) / 10000 / c.e;
+    if (v > best) best = v;
+  }
+  return best;
+}
+
+// Recarga num toque: a combinação que mais compensa (energia × valor − preço), sem passar o limite de vício nem o dinheiro.
+// Programação dinâmica pequena: energia em falta (≤ 100) × vício que essa energia pode gastar.
+export function refillPlan(p) {
+  const room = CFG.energy.max - p.energy;
+  const D = CFG.drugs;
+  const minE = Math.min(...D.map((g) => g.e));
+  if (room < minE) return null;
+  const worst = Math.max(...D.map((g) => Math.ceil((g.a * room) / g.e)));
+  const vroom = Math.min(addictionCap(p) - p.addiction, worst + Math.max(...D.map((g) => g.a)));
+  if (vroom <= 0) return null;
+  const money = p.cash + p.bank;
+  const W = vroom + 1;
+  const cost = new Float64Array((room + 1) * W).fill(Infinity);
+  const from = new Int8Array((room + 1) * W).fill(-1);
+  cost[0] = 0;
+  for (let e = 0; e <= room; e++) {
+    for (let v = 0; v <= vroom; v++) {
+      const c = cost[e * W + v];
+      if (c === Infinity) continue;
+      for (let d = 0; d < D.length; d++) {
+        const ne = e + D[d].e, nv = v + D[d].a;
+        if (ne > room || nv > vroom) continue;
+        const nc = c + D[d].price, k = ne * W + nv;
+        if (nc < cost[k]) { cost[k] = nc; from[k] = d; }
+      }
+    }
+  }
+  // o que mais compensa ao preço de hoje; empate: mais energia, depois menos vício
+  const V = valuePerEnergy(p);
+  let best = null, bestGain = -Infinity;
+  for (let e = minE; e <= room; e++) {
+    for (let v = 0; v <= vroom; v++) {
+      const c = cost[e * W + v];
+      if (c > money) continue;
+      const gain = e * V - c;
+      if (gain > bestGain || (gain === bestGain && best && (e > best.energy || (e === best.energy && v < best.vice)))) {
+        bestGain = gain; best = { energy: e, vice: v, cost: c };
+      }
+    }
+  }
+  // se nada compensa (golpes ainda fracos), enche na mesma da forma mais barata possível
+  if (best && bestGain < 0) {
+    best = null;
+    for (let e = room; e >= minE && !best; e--) for (let v = 0; v <= vroom; v++) {
+      const c = cost[e * W + v];
+      if (c <= money && (!best || c < best.cost)) best = { energy: e, vice: v, cost: c };
+    }
+  }
+  if (!best) return null;
+  const counts = D.map(() => 0);
+  for (let e = best.energy, v = best.vice; e > 0;) {
+    const d = from[e * W + v];
+    counts[d]++; e -= D[d].e; v -= D[d].a;
+  }
+  return { energy: best.energy, vice: best.vice, cost: best.cost, counts };
+}
+
+export function refill(p, now, world) {
+  begin(p, now, world);
+  const plan = refillPlan(p);
+  if (!plan) {
+    if (CFG.energy.max - p.energy < Math.min(...CFG.drugs.map((g) => g.e))) fail('ENERGY_FULL');
+    if (addictionCap(p) - p.addiction < Math.min(...CFG.drugs.map((g) => g.a))) fail('ADDICTION_LIMIT', { cap: addictionCap(p) });
+    fail('NO_MONEY');
+  }
+  pay(p, plan.cost);
+  p.energy += plan.energy;
+  if (p.addiction === 0) p.addictionT = now;
+  p.addiction += plan.vice;
+  return { ok: true, energy: plan.energy, addiction: plan.vice, price: plan.cost, counts: plan.counts };
+}
+
+function pruneDetox(p, now) {
+  const lim = now - CFG.detox.windowMs;
+  while (p.detoxT.length && p.detoxT[0] <= lim) p.detoxT.shift();
+}
+export function detoxCost(p, now) {
+  if (now !== undefined) pruneDetox(p, now);
+  return Math.max(CFG.detox.min, p.addiction * level(p)) * 2 ** p.detoxT.length;
+}
+export function detoxReadyAt(p, now) {
+  pruneDetox(p, now);
+  return p.detoxT.length < CFG.detox.max ? 0 : p.detoxT[0] + CFG.detox.windowMs;
+}
+export function detox(p, now, world) {
+  begin(p, now, world);
+  if (p.addiction === 0) fail('NO_VICE');
+  const ready = detoxReadyAt(p, now);
+  if (ready) fail('DETOX_COOLDOWN', { until: ready });
+  const price = detoxCost(p, now);
+  pay(p, price);
+  p.addiction = 0; p.addictionT = now;
+  p.detoxT.push(now);
+  return { ok: true, price };
 }
 
 // ---------- treino ----------
@@ -505,6 +618,7 @@ export function checkInvariants(p) {
   if (p.energy > CFG.energy.max) bad.push(`energy>${CFG.energy.max}`);
   if (p.addiction > addictionCap(p)) bad.push('addiction>cap');
   if (p.peakRespect < p.respect) bad.push('peak<respect');
+  if (!Array.isArray(p.detoxT) || p.detoxT.length > CFG.detox.max) bad.push('detox list');
   if (p.energyT > p.t || p.addictionT > p.t) bad.push('timer in future');
   for (const s of p.biz) {
     for (const k of ['n', 'stored', 'rem', 't']) if (!Number.isSafeInteger(s[k]) || s[k] < 0) bad.push(`biz.${k}=${s[k]}`);

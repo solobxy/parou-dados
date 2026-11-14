@@ -18,7 +18,7 @@ export const CFG = {
   },
 
   energy: { max: 100, regenMs: 2 * MIN },          // cheia em 3h20
-  addiction: { base: 100, decayMs: 2 * MIN },       // limite = 100 + tolerância
+  addiction: { base: 100, perT: 4, decayMs: 1 * MIN }, // limite = 100 + tolerância/4; desce 1 por minuto
 
   start: { stat: 10, cash: 500 },
 
@@ -41,16 +41,19 @@ export const CFG = {
     { id: 'casino',      e: 20, D: 205, min: 15000, max: 21000, r: 13, jailMin: 9,  w: { I: 50, F: 0,  C: 50 } },
     { id: 'banco',       e: 25, D: 310, min: 34000, max: 46000, r: 16, jailMin: 10, w: { I: 40, F: 30, C: 30 } },
   ],
-  bailPerMinPerTier: 20,          // fiança = minutos que faltam x 20 x nível do crime
+  bailBp: 3000,                   // fiança = 30% do valor médio do golpe que te prendeu, proporcional ao tempo que falta
 
   // Discoteca: só se compra se a energia não passar do máximo e o vício não passar do limite.
+  // energia por vício melhora nos consumos caros; os baratos servem para o início (1 $ por ponto de energia)
   drugs: [
-    { id: 'cerveja',   e: 5,  a: 5,  price: 10 },
-    { id: 'erva',      e: 10, a: 8,  price: 60 },
-    { id: 'pastilha',  e: 20, a: 12, price: 400 },
-    { id: 'coca',      e: 30, a: 15, price: 2400 },
-    { id: 'dourada',   e: 40, a: 16, price: 12000 },
+    { id: 'cerveja',   e: 5,  a: 2, price: 5 },
+    { id: 'erva',      e: 10, a: 3, price: 25 },
+    { id: 'pastilha',  e: 20, a: 5, price: 200 },
+    { id: 'coca',      e: 30, a: 6, price: 1500 },
+    { id: 'dourada',   e: 40, a: 7, price: 8000 },
   ],
+  // desintoxicação: limpa o vício todo; preço = vício × nível, a dobrar a cada uso nas últimas 24 h
+  detox: { min: 50, windowMs: 24 * HOUR, max: 12 },
 
   // Negócios: rendem por hora para um armazém que enche em 8 h. Cada compra dá respeito uma vez (resp).
   // Cada unidade extra do mesmo tipo custa +50%; máximo 10 de cada tipo.
@@ -61,11 +64,11 @@ export const CFG = {
   statMultCap: 1000,
   raid: { chanceBp: 500, lossBp: 5000 },
   biz: [
-    { id: 'lavandaria',  price: 3000,   perH: 125,   resp: 2,  stat: 'C', raid: false, toBank: true },
-    { id: 'prostitutas', price: 8000,   perH: 500,   resp: 4,  stat: 'C', raid: true,  toBank: false },
-    { id: 'erva',        price: 25000,  perH: 1800,  resp: 8,  stat: 'I', raid: true,  toBank: false },
-    { id: 'laboratorio', price: 120000, perH: 9600,  resp: 15, stat: 'I', raid: true,  toBank: false },
-    { id: 'coca',        price: 500000, perH: 42000, resp: 30, stat: 'I', raid: true,  toBank: false },
+    { id: 'lavandaria',  price: 3000,   perH: 125,   resp: 6,  stat: 'C', raid: false, toBank: true },
+    { id: 'prostitutas', price: 8000,   perH: 500,   resp: 12, stat: 'C', raid: true,  toBank: false },
+    { id: 'erva',        price: 25000,  perH: 1800,  resp: 24, stat: 'I', raid: true,  toBank: false },
+    { id: 'laboratorio', price: 120000, perH: 9600,  resp: 45, stat: 'I', raid: true,  toBank: false },
+    { id: 'coca',        price: 500000, perH: 42000, resp: 90, stat: 'I', raid: true,  toBank: false },
   ],
 
   // Porto: contentor volta ao fim de 4 h com +30%, ou é apreendido (15%).
@@ -92,7 +95,7 @@ export const CFG = {
     energy: 20,
     minTargetBp: 2500,      // só se ataca quem tem >= 25% do teu respeito
     // ganho = (4 + nível do atacante) x raiz(respeito do alvo / respeito do atacante), com a razão entre 1/4 e 4
-    gainBase: 4,
+    gainBase: 12,
     ratioMinBp: 2500, ratioMaxBp: 40000,
     lossDiv: 2,             // quem perde a luta perde metade do que o outro ganharia
     defendGain: 2,          // quem se defende com sucesso ganha 2
@@ -108,11 +111,10 @@ export const CFG = {
   bank: { feeBp: 300 },     // depositar custa 3%
 
   // Luxos: dão respeito uma vez e ficam no perfil. Cada compra custa o dobro da anterior.
-  luxury: { firstPrice: 250000, respect: 80, max: 20 },
+  luxury: { firstPrice: 250000, respect: 250, max: 20 },
 
   // Níveis pelo maior respeito já alcançado (o nível nunca desce). Índice = nível - 1.
-  levels: [0, 3, 10, 25, 50, 90, 150, 250, 400, 600, 900, 1300, 1800, 2500, 3400, 4600,
-    5600, 6800, 8200, 10000],
+  levels: [0, 3, 10, 25, 60, 120, 220, 380, 650, 1000, 1500, 2300, 3400, 4800, 6800, 9500, 13000, 17500, 24000, 32000],
 };
 
 export const T = { MIN, HOUR, DAY: 24 * HOUR };

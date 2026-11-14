@@ -46,11 +46,13 @@ for (let n = 0; n < ACTIONS; n++) {
   const d = pick(players);
   if (r.chance(200)) { p.cash += r.int(0, 5e6); } // dá dinheiro para chegar a tudo
   const before = touched(p, t), beforeD = touched(d, t), origD = structuredClone(d), origP = structuredClone(p);
-  const kind = pick(['crime', 'drug', 'train', 'buyBiz', 'collect', 'port', 'collectPort', 'deposit', 'withdraw', 'gear', 'attack', 'bail', 'medic', 'luxury']);
+  const kind = pick(['crime', 'drug', 'refill', 'detox', 'train', 'buyBiz', 'collect', 'port', 'collectPort', 'deposit', 'withdraw', 'gear', 'attack', 'bail', 'medic', 'luxury']);
   try {
     switch (kind) {
       case 'crime': E.doCrime(p, t, world, r.chance(9000) ? r.int(0, 9) : anyInt(), game); break;
       case 'drug': E.buyDrug(p, t, world, r.chance(9000) ? r.int(0, 4) : anyInt()); break;
+      case 'refill': E.refill(p, t, world); break;
+      case 'detox': E.detox(p, t, world); break;
       case 'train': E.train(p, t, world, pick(['F', 'T', 'I', 'C', 'X', ''])); break;
       case 'buyBiz': E.buyBiz(p, t, world, r.chance(9000) ? r.int(0, 4) : anyInt()); break;
       case 'collect': E.collectBiz(p, t, world, game); break;

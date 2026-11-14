@@ -82,8 +82,12 @@ async function react(type, out, before, opts) {
     }
   } else if (type === 'train') {
     if (from) fx.fly('+1', 'var(--energy)', from, null);
-  } else if (type === 'drug') {
+  } else if (type === 'drug' || type === 'refill') {
     if (from) fx.fly('+' + r.energy, 'var(--energy)', from, S.hud.ebar);
+    fx.vibrate(12);
+  } else if (type === 'detox') {
+    if (from) fx.fly('0', 'var(--vice)', from, S.hud.vwrap);
+    fx.vibrate([12, 30, 12]);
   } else if (type === 'collect') {
     let total = 0, lost = 0;
     for (const it of r.items) { total += it.money; lost += it.lost; }
@@ -247,6 +251,26 @@ function busyBanner(me) {
   return null;
 }
 
+// recarga num toque e desintoxicação (discoteca e rua)
+function refillBtn(me, busy) {
+  const L = live(me), R = me.refill;
+  if (R) return h('button', { class: 'btn pri block refill', disabled: !!busy, on: { click: (e) => act('refill', {}, { el: e.currentTarget }) } },
+    icon('bolt'), t('refillBtn', { e: R.energy, m: money(R.cost) }));
+  const why = L.energy >= S.cfg.energy.max - 4 ? t('refillFull') : L.vice >= me.addictionCap - 1 ? t('refillVice') : t('refillMoney');
+  return h('button', { class: 'btn block refill', disabled: true }, why);
+}
+function detoxCard(me, busy) {
+  const L = live(me);
+  if (L.vice <= 0) return null;
+  const wait = me.detoxReadyAt > now() ? me.detoxReadyAt : 0;
+  return h('div', { class: 'card detox' },
+    h('div', { class: 'row sp' }, h('b', null, icon('pill'), ' ' + t('detoxTitle')), h('span', { class: 'small c-vice num' }, L.vice + '/' + me.addictionCap)),
+    h('p', { class: 'small muted' }, t('detoxSub')),
+    wait ? h('p', { class: 'small muted' }, t('detoxWait', { t: '' }), h('b', { class: 'num', dataset: { left: wait } }, dur(wait - now())))
+      : h('button', { class: 'btn block', style: 'background:var(--vice);color:#160a24', disabled: !!busy || me.cash + me.bank < me.detox,
+        on: { click: (e) => act('detox', {}, { el: e.currentTarget }) } }, t('detoxBtn', { m: money(me.detox) })));
+}
+
 function tip(key, text) {
   if (store.get('tip.' + key)) return null;
   const el = h('div', { class: 'tip' }, h('p', null, text), h('button', { class: 'btn sm', on: { click: () => { store.set('tip.' + key, 1); el.remove(); } } }, t('ok')));
@@ -312,8 +336,11 @@ function screenStreet() {
   if (!b && L.energy < minE) {
     out.push(h('div', { class: 'note' }, h('h3', null, t('outOfEnergy')),
       h('p', { class: 'muted' }, t('outOfEnergySub', { t: '' }), h('b', { class: 'num', dataset: { left: now() + (minE - L.energy - 1) * S.cfg.energy.regenMs + (L.nextE || 0) } }, '')),
-      h('button', { class: 'btn pri block', on: { click: () => { S.citySeg = 'club'; go('city'); } } }, t('goClub'))));
+      refillBtn(me, b), me.refill ? null : detoxCard(me, b),
+      h('button', { class: 'btn ghost block', on: { click: () => { S.citySeg = 'club'; go('city'); } } }, t('goClub'))));
     if (!store.get('tip.energy')) out.push(tip('energy', t('tipEnergy')));
+  } else if (!b && L.energy < 25 && me.refill) {
+    out.push(h('div', { style: 'margin-bottom:12px' }, refillBtn(me, b)));
   }
   const jobs = h('div', { class: 'stack' });
   let lockedShown = false;
@@ -430,6 +457,8 @@ function screenCity() {
     out.push(h('div', { class: 'card' }, h('div', { class: 'row sp small' }, h('span', { class: 'c-en' }, icon('bolt'), ' ' + t('energy') + ' ' + L.energy + '/' + S.cfg.energy.max), h('span', { class: 'c-vice' }, icon('pill'), ' ' + t('vice') + ' ' + L.vice + '/' + me.addictionCap)),
       h('div', { class: 'fill', style: 'margin-top:8px' }, h('i', { style: `width:${(L.vice / me.addictionCap) * 100}%;background:var(--vice)` })),
       h('p', { class: 'small muted', style: 'margin-top:6px' }, t('viceDown'))));
+    out.push(h('div', { class: 'stack', style: 'margin-top:8px' }, refillBtn(me, b), detoxCard(me, b)));
+    out.push(h('h2', { class: 'sec' }, t('orPick')));
     const st = h('div', { class: 'stack', style: 'margin-top:8px' });
     S.cfg.drugs.forEach((g, d) => {
       const ok = L.energy + g.e <= S.cfg.energy.max && L.vice + g.a <= me.addictionCap && me.cash + me.bank >= g.price && !b;

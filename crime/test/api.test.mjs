@@ -88,6 +88,16 @@ test('crime, toque repetido e erros de regra', async () => {
   assert.equal((await a('POST', '/api/act', { type: 'crime', k: 99 })).body.error, 'NO_CRIME');
   assert.equal((await a('POST', '/api/act', { type: 'deposit', amount: 1e15 })).body.error, 'BAD_AMOUNT');
   assert.equal((await a('POST', '/api/act', { type: 'train', stat: '__proto__' })).body.error, 'NO_STAT');
+  // recarga e desintoxicação chegam ao motor
+  assert.equal((await a('POST', '/api/act', { type: 'detox' })).body.error, 'NO_VICE');
+  const st = (await a('GET', '/api/state')).body.me;
+  assert.equal(st.refill.energy, 5, 'com 95 de energia cabe uma cerveja');
+  const r3 = await a('POST', '/api/act', { type: 'refill', rid: 'rf1' });
+  assert.equal(r3.status, 200, JSON.stringify(r3.body));
+  assert.equal(r3.body.me.energy, 100);
+  assert.ok(r3.body.me.addiction > 0);
+  assert.equal(r3.body.me.refill, null);
+  assert.equal((await a('POST', '/api/act', { type: 'refill', rid: 'rf2' })).body.error, 'ENERGY_FULL');
 });
 
 test('ataque entre duas contas: hospital, evento e ranking', async () => {

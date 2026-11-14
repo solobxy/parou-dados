@@ -115,11 +115,14 @@ function jogadorDe(conta, now, w) {
 // ---------- vista do jogador para o browser ----------
 function vista(p, now) {
   const L = E.level(p);
+  if (!Array.isArray(p.detoxT)) p.detoxT = [];
   const stored = E.bizStored(p, now);
   return {
     name: nomeDe(p.id),
     stats: p.stats, energy: p.energy, energyT: p.energyT,
     addiction: p.addiction, addictionT: p.addictionT, addictionCap: E.addictionCap(p),
+    refill: E.refillPlan(p), detox: p.addiction > 0 ? E.detoxCost(p, now) : 0, detoxReadyAt: E.detoxReadyAt(p, now),
+    detoxLeft: CFG.detox.max - p.detoxT.length,
     cash: p.cash, bank: p.bank, respect: p.respect, peakRespect: p.peakRespect,
     level: L, levelFrom: CFG.levels[L - 1], levelTo: CFG.levels[L] ?? null,
     jailUntil: p.jailUntil, jailTier: p.jailTier, bail: E.bailCost(p, now),
@@ -227,6 +230,8 @@ function agir(conta, corpo, now) {
     case 'crime': r = E.doCrime(p, now, world, int(a.k), rng); break;
     case 'train': r = E.train(p, now, world, String(a.stat)); break;
     case 'drug': r = E.buyDrug(p, now, world, int(a.d)); break;
+    case 'refill': r = E.refill(p, now, world); break;
+    case 'detox': r = E.detox(p, now, world); break;
     case 'bail': r = E.payBail(p, now, world); break;
     case 'medic': r = E.payMedic(p, now, world); break;
     case 'buyBiz': r = E.buyBiz(p, now, world, int(a.i)); break;

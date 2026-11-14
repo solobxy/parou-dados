@@ -31,7 +31,7 @@ const DUR = { crime: 3000, train: 2000, drug: 3000, attack: 8000, buy: 4000, col
 // ---------- métricas ----------
 const M = {
   errors: {}, invariant: [], energyBound: [], hosp: [],
-  flows: { crime: 0, crit: 0, biz: 0, portGain: 0, mug: 0, raidLost: 0, drugs: 0, train: 0, bizBuy: 0, gear: 0, bail: 0, medic: 0, fee: 0, portSeized: 0, portOut: 0 },
+  flows: { crime: 0, crit: 0, biz: 0, portGain: 0, mug: 0, raidLost: 0, drugs: 0, detox: 0, train: 0, bizBuy: 0, gear: 0, bail: 0, medic: 0, fee: 0, portSeized: 0, portOut: 0 },
   respectFrom: {}, attacks: 0, attackWins: 0, crimes: 0, crimeWins: 0, crits: 0,
   levelUps: [], paybacks: [], daily: [],
 };
@@ -74,7 +74,7 @@ for (const ag of agents) {
   ag.sessions = kept;
   ag.si = 0;
   ag.inSession = false;
-  ag.eTrain = 0; ag.eCrime = 0; ag.ePvp = 0;
+  ag.eTrain = 0; ag.eCrime = 0; ag.ePvp = 0; ag.detox = 0;
   ag.playMs = 0;
   ag.respSrc = { crime: 0, pvp: 0, biz: 0, lost: 0 };
   ag.energyDay = new Map();
@@ -132,7 +132,7 @@ function bestCrime(p, t, energyAvail) {
     if (c.e > energyAvail || !E.crimeUnlocked(p, k)) continue;
     const pr = E.crimeChanceBp(p, k) / 10000;
     const avg = (c.min + c.max) / 2 * (1 + (CFG.crit.mult - 1) * CFG.crit.chanceBp / 10000);
-    const jailCost = (1 - pr) * c.jailMin * CFG.bailPerMinPerTier * (k + 1);
+    const jailCost = (1 - pr) * ((c.min + c.max) / 2) * CFG.bailBp / 10000;
     const v = late ? (pr * c.r) / c.e : (pr * avg - jailCost) / c.e + (pr * c.r * 2) / c.e;
     if (v > bestV) { bestV = v; best = k; }
   }
@@ -270,18 +270,20 @@ function tryDrug(ag, t) {
   if (p.energy >= 25) return false;
   const mpe = moneyPerEnergy(p);
   const endGame = world.playEnd - t < 1 * T.DAY;
-  let best = -1, beff = 0;
-  for (let d = 0; d < CFG.drugs.length; d++) {
-    const g = CFG.drugs[d];
-    if (!E.canBuyDrug(p, d)) continue;
-    const maxSpend = endGame ? liquid(p) : liquid(p) * 0.25;
-    if (g.price > maxSpend) continue;
-    if (!endGame && g.price / g.e > mpe * 1.5 && d > 0) continue;
-    const eff = g.e / g.a + d * 0.001;
-    if (eff > beff) { beff = eff; best = d; }
+  let plan = E.refillPlan(p);
+  // sem margem de vício: desintoxicar (1 vez por dia) se compensar
+  if ((!plan || plan.energy < 20) && p.addiction > 0 && !E.detoxReadyAt(p, t)) {
+    const c = E.detoxCost(p, t);
+    if (c <= liquid(p) * 0.2 && c < mpe * 120) {
+      const r = call(ag, t, () => E.detox(p, t, world));
+      if (r) { M.flows.detox += r.price; ag.detox++; plan = E.refillPlan(p); }
+    }
   }
-  if (best < 0) return false;
-  const r = call(ag, t, () => E.buyDrug(p, t, world, best));
+  if (!plan) return false;
+  const maxSpend = endGame ? liquid(p) : liquid(p) * 0.25;
+  if (plan.cost > maxSpend) return false;
+  if (!endGame && plan.cost / plan.energy > mpe * 1.5) return false;
+  const r = call(ag, t, () => E.refill(p, t, world));
   if (!r) return false;
   M.flows.drugs += r.price;
   return true;
@@ -409,7 +411,7 @@ const decayDay = T.DAY / CFG.addiction.decayMs;
 const bestRatio = Math.max(...CFG.drugs.map((g) => g.e / g.a));
 for (const a of live) {
   const cap = E.addictionCap(a.p);
-  const bound = CFG.energy.max + regenDay + (decayDay + cap) * bestRatio;
+  const bound = CFG.energy.max + regenDay + (decayDay + cap * (1 + 2 * CFG.detox.max)) * bestRatio;
   for (const [d, e] of a.energyDay) if (e > bound) M.energyBound.push({ id: a.id, d, e, bound });
   for (const [d, m] of a.hospDay) M.hosp.push(m);
 }
@@ -443,6 +445,7 @@ for (const k of kinds) {
     trainSharePct: Math.round(100 * g.reduce((s, a) => s + a.eTrain, 0) / Math.max(1, g.reduce((s, a) => s + a.eTrain + a.eCrime + a.ePvp, 0))),
     pvpSharePct: Math.round(100 * g.reduce((s, a) => s + a.ePvp, 0) / Math.max(1, g.reduce((s, a) => s + a.eTrain + a.eCrime + a.ePvp, 0))),
     bizUnitsP50: pct(g.map((a) => a.p.biz.reduce((s, b) => s + b.n, 0)), 0.5),
+    detoxPerDay: +(g.reduce((s, a) => s + a.detox, 0) / Math.max(1, g.length) / CFG.round.playDays).toFixed(2),
   };
 }
 
