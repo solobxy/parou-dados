@@ -79,6 +79,7 @@ function react(type, out, before, opts) {
     const ok = r.all ? r.wins > 0 : r.success, crit = r.all ? r.crits > 0 : r.crit;
     fx.vibrate(r.busted ? [40, 60, 40] : ok ? 12 : 30); fx.sfx(r.busted ? 'bust' : ok ? (crit ? 'crit' : 'cash') : 'fail');
   } else if (type === 'drug' || type === 'stockUse' || type === 'clubBuy') fx.sfx('refill');
+  else if (type === 'stockSell') { toast(t('stSold', { m: money(r.got), p: (r.profit >= 0 ? '+' : '−') + money(Math.abs(r.profit)) }), r.profit < 0); fx.sfx(r.profit >= 0 ? 'cash' : 'fail'); }
   else if (type === 'venueCollect') { toast(t('got', { m: money(r.club + r.bro) })); fx.sfx('cash'); }
   else if (type === 'stockDump') { toast(t('got', { m: money(r.got) })); fx.sfx('cash'); }
   else if (type === 'venueBuy') { toast(r.lvl === 1 ? t('vnOpened_' + r.kind) : t('vnUpped', { n: r.lvl })); fx.sfx('claim'); }
@@ -236,16 +237,16 @@ function tickHud() {
 const PLACES = {
   city: { ic: 'skyline' }, empire: { ic: 'empire' }, rob: { ic: 'street', img: 'golpes' }, club: { ic: 'bolt', img: 'discoteca' }, gym: { img: 'ginasio' },
   biz: { ic: 'empire', img: 'negocios' }, port: { img: 'porto' }, air: { img: 'aeroporto' }, arms: { img: 'armas' }, bank: { img: 'banco' }, hosp: { img: 'hospital' },
-  jail: { img: 'prisao' }, gang: { img: 'gangue' }, work: { img: 'profissao' }, news: { img: 'jornal' }, casino: { ic: 'gem', img: 'casino' }, roulette: { img: 'roleta' }, bj: { img: 'blackjack' }, dice: { img: 'dados' }, wheel: { img: 'roda' }, slot: { img: 'slot' }, zeus: { img: 'zeus' }, doce: { img: 'doce' }, rebucado: { img: 'rebucado' }, alley: { img: 'beco' }, lux: { img: 'luxos' }, fights: { ic: 'fights', img: 'lutas' }, rank: { img: 'ranking' }, putas: { img: 'putas' }, casa: {}, myclub: { img: 'discoteca' }, mybro: { img: 'putas' },
+  jail: { img: 'prisao' }, gang: { img: 'gangue' }, work: { img: 'profissao' }, news: { img: 'jornal' }, casino: { ic: 'gem', img: 'casino' }, roulette: { img: 'roleta' }, bj: { img: 'blackjack' }, dice: { img: 'dados' }, wheel: { img: 'roda' }, slot: { img: 'slot' }, zeus: { img: 'zeus' }, doce: { img: 'doce' }, rebucado: { img: 'rebucado' }, alley: { img: 'beco' }, lux: { img: 'luxos' }, fights: { ic: 'fights', img: 'lutas' }, rank: { img: 'ranking' }, putas: { img: 'putas' }, casa: {}, myclub: { img: 'discoteca' }, mybro: { img: 'putas' }, bolsa: { img: 'bolsa' },
 };
 // barra de baixo: só o que se usa a toda a hora. O resto vive dentro de cada separador, arrumado por zonas.
 const NAV = ['city', 'rob', 'fights', 'casino', 'empire'];
 const HUB = {
   city: [['sec_night', ['club', 'putas', 'casino', 'gang', 'alley', 'arms']], ['sec_street', ['bank', 'work', 'gym', 'hosp', 'jail', 'rank']]],
-  empire: [['sec_income', ['biz', 'port', 'air', 'myclub', 'mybro']], ['sec_assets', ['casa', 'bank']]],
+  empire: [['sec_income', ['biz', 'port', 'air', 'myclub', 'mybro']], ['sec_assets', ['casa', 'bank', 'bolsa']]],
 };
 const PARENT = { gang: 'city', work: 'city', news: 'city', casino: 'city', roulette: 'casino', bj: 'casino', dice: 'casino', wheel: 'casino', slot: 'casino', zeus: 'casino', doce: 'casino', rebucado: 'casino', club: 'city', putas: 'city', gym: 'city', alley: 'city', hosp: 'city', jail: 'city',
-  biz: 'empire', port: 'empire', air: 'empire', myclub: 'empire', mybro: 'empire', casa: 'empire', bank: 'empire', lux: 'empire', arms: 'fights', rank: 'fights' };
+  biz: 'empire', port: 'empire', air: 'empire', myclub: 'empire', mybro: 'empire', bolsa: 'empire', casa: 'empire', bank: 'empire', lux: 'empire', arms: 'fights', rank: 'fights' };
 const upOf = (id) => (S.backTo && S.backTo[id]) || PARENT[id] || 'city';   // um sítio que está em duas zonas volta para a zona de onde vieste
 const tabOf = (id) => { let x = id; for (let k = 0; k < 4 && !NAV.includes(x); k++) x = upOf(x); return NAV.includes(x) ? x : 'city'; };
 const IMG = (kind, id, big) => `/img/${kind}/${id}${big ? '-g' : ''}.webp?9`;
@@ -257,6 +258,7 @@ function go(tab) {
   if (tab === 'rank') loadRanking();
   if (tab === 'gang') loadGang();
   if (tab === 'club' || tab === 'putas') loadVenues();
+  if (tab === 'bolsa') { S.stkSel = null; loadStocks(); }
   if (tab === 'news' || tab === 'city') loadNews();
   render(); window.scrollTo({ top: 0 });
   armBack();
@@ -289,7 +291,7 @@ function shell() {
 }
 
 const SCREENS = { city: screenCity, empire: screenEmpire, news: screenNews, casino: screenCasino, roulette: screenRoulette, bj: screenBJ, dice: screenDice, wheel: screenWheel, slot: () => screenSlotGame('slot'), zeus: () => screenSlotGame('zeus'), doce: () => screenSlotGame('doce'), rebucado: () => screenSlotGame('rebucado'), rob: screenRob, club: screenClub, gym: screenGym, biz: screenBiz, port: screenPort, arms: screenArms, bank: screenBank,
-  hosp: screenHosp, jail: screenJail, gang: screenGang, work: screenWork, air: screenAir, putas: screenPutas, myclub: screenMyClub, mybro: screenMyBro, casa: screenCasa, alley: screenAlley, lux: screenLux, fights: screenFights, rank: screenRank };
+  hosp: screenHosp, jail: screenJail, gang: screenGang, work: screenWork, air: screenAir, putas: screenPutas, myclub: screenMyClub, mybro: screenMyBro, bolsa: screenBolsa, casa: screenCasa, alley: screenAlley, lux: screenLux, fights: screenFights, rank: screenRank };
 function render(force) {
   if (!S.st) return;
   if (!S.st.me || S.st.round.phase !== 'play') return renderPause();
@@ -432,13 +434,14 @@ function screenClass() {
 
 // ---------- a cidade ----------
 // ---------- jornal da cidade: o que os outros andam a fazer ----------
-const NW_IC = { air: 'cash', airLost: 'lock', cls: 'user', gangNew: 'fist', gangUp: 'empire', gangHeist: 'cash', gangHeistFail: 'lock', gangHit: 'fist', gangHitFail: 'skull', casino: 'gem', casinoLoss: 'skull', job: 'cash', crit: 'gem', spree: 'bolt', jail: 'lock', house: 'empire', lux: 'crown', beat: 'fist', mug: 'cash', fail: 'skull', sick: 'pill', lvl: 'crown', fight: 'fist' };
+const NW_IC = { stockWin: 'cash', stockLoss: 'skull', stockBust: 'skull', air: 'cash', airLost: 'lock', cls: 'user', gangNew: 'fist', gangUp: 'empire', gangHeist: 'cash', gangHeistFail: 'lock', gangHit: 'fist', gangHitFail: 'skull', casino: 'gem', casinoLoss: 'skull', job: 'cash', crit: 'gem', spree: 'bolt', jail: 'lock', house: 'empire', lux: 'crown', beat: 'fist', mug: 'cash', fail: 'skull', sick: 'pill', lvl: 'crown', fight: 'fist' };
 const seedOf = (str) => { let x = 7; for (let i = 0; i < str.length; i++) x = (x * 31 + str.charCodeAt(i)) | 0; return Math.abs(x); };
 function newsText(e) {
   const k = e.k === 'fight' ? (e.mode === 'mug' ? 'mug' : 'beat') : e.k, C = list('crimes');
   if (k === 'gangNew') return t('nw_gangNew', { a: e.name, g: e.gang, t: e.tag });
   if (k === 'gangUp') return t('nw_gangUp_' + e.what, { g: e.gang, n: e.n });
   if (k === 'air' || k === 'airLost') return tv('nw_' + k, seedOf(e.name + k + e.t), { a: e.name, x: t('ar_' + e.to), m: moneyShort(e.money || 0) });
+  if (k === 'stockWin' || k === 'stockLoss' || k === 'stockBust') return tv('nw_' + k, seedOf((e.name || e.c) + k + e.t), { a: e.name, x: t('st_' + e.c), m: moneyShort(e.money || 0) });
   if (k === 'venue') return tv('nw_venue' + e.v, seedOf(e.name + k + e.t), { a: e.name });
   if (k === 'cls') return tv('nw_cls', seedOf(e.name + k + e.t), { a: e.name, x: t('cl_' + e.from), y: t('cl_' + e.to) });
   if (k === 'gangHeist' || k === 'gangHeistFail') return tv('nw_' + k, seedOf(e.gang + k + e.t), { g: e.gang, x: t('gh_' + e.c), n: e.n, m: moneyShort(e.money || 0) });
@@ -533,6 +536,7 @@ function screenEmpire() {
     biz: total > 0 ? t('toCollect') : null,
     port: portReady ? t('ready') : me.port.length ? dur(Math.min(...me.port.map((c) => c.readyAt)) - n) : null,
     casa: me.housePrice != null && me.cash + me.bank >= me.housePrice ? t('canUpgrade') : null,
+    bolsa: me.stk?.some((h) => h.n > 0) ? moneyShort(me.stk.reduce((x, h) => x + h.value, 0)) : null,
     myclub: me.club?.till > 0 ? t('toCollect') : me.club && !me.stock.some((x) => x > 0) ? t('vnEmpty') : null,
     mybro: me.bro?.till > 0 ? t('toCollect') : null,
   };
@@ -768,6 +772,86 @@ function screenMyBro() {
       h('button', { class: 'btn buy block', disabled: !!b || me.cash + me.bank < cost, on: { click: (e) => act('broHire', { i }, { el: e.currentTarget }) } }, t('buyFor', { m: moneyShort(cost) }))); })));
   } else out.push(h('div', { class: 'card vc' }, h('p', { class: 'muted' }, t('mbFull'))));
   out.push(venueUp('bro', v, v.next == null ? '' : t('mbNext', { n: V.bro.rooms[v.lvl] }), b));
+  return out;
+}
+// ---------- bolsa ----------
+const stMoney = (c) => '$' + (c / 100).toLocaleString(lang() === 'pt' ? 'pt-PT' : 'en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const stQuote = (price, n) => { const g = Math.ceil((n * price) / 100); return g + Math.ceil((g * S.cfg.stocks.feeBp) / 10000); };
+const stPct = (a, b) => { const p = b ? ((a - b) / b) * 100 : 0; return (p >= 0 ? '+' : '−') + Math.abs(p).toFixed(Math.abs(p) >= 100 ? 0 : 1).replace('.', lang() === 'pt' ? ',' : '.') + '%'; };
+function stChart(arr, cls, w, hh) {
+  const min = Math.min(...arr), max = Math.max(...arr), span = max - min || 1, n = Math.max(1, arr.length - 1);
+  const xy = arr.map((v, i) => [(i / n) * w, hh - 3 - ((v - min) / span) * (hh - 6)]);
+  const line = xy.map((p, i) => (i ? 'L' : 'M') + p[0].toFixed(1) + ' ' + p[1].toFixed(1)).join(' ');
+  const el = svg('svg', { class: 'stch ' + cls + (arr.at(-1) >= arr[0] ? ' up' : ' down'), viewBox: `0 0 ${w} ${hh}`, preserveAspectRatio: 'none', 'aria-hidden': 'true' });
+  if (cls === 'big') el.append(svg('path', { class: 'ar', d: line + ` L${w} ${hh} L0 ${hh} Z` }));
+  el.append(svg('path', { class: 'ln', d: line }));
+  return el;
+}
+function screenBolsa() {
+  const me = S.st.me, C = S.cfg.stocks, M = S.stocks, out = [pageHead('bolsa', t('stSub', { p: C.feeBp / 100 }), S.stkSel != null)];
+  if (!M || !M.prices.length) { out.push(h('p', { class: 'muted' }, t('loading'))); return out; }
+  const inv = me.stk.reduce((x, y) => x + y.cost, 0), hold = me.stk.map((y, k) => ({ ...y, value: Math.floor((y.n * M.prices[k]) / 100) })), worth = hold.reduce((x, y) => x + y.value, 0);
+  const risk = (c) => t('stRisk' + (c.vol <= 55 ? 0 : c.vol <= 90 ? 1 : 2));
+  if (S.stkSel == null) {
+    out.push(h('div', { class: 'card stack vc' },
+      h('div', { class: 'row sp' }, h('span', { class: 'muted' }, t('stWorth')), h('b', { class: 'num vbig ' + (worth >= inv ? 'c-cash' : 'c-red') }, money(worth))),
+      h('div', { class: 'row sp small' }, h('span', { class: 'muted' }, t('stInv')), h('span', { class: 'num' }, money(inv) + (inv ? ' · ' + (worth >= inv ? '+' : '−') + money(Math.abs(worth - inv)) : ''))),
+      h('div', { class: 'small muted' }, t('stNext'), h('b', { class: 'num', dataset: { left: M.nextAt } }, dur(Math.max(0, M.nextAt - now()))))));
+    out.push(h('div', { class: 'small muted', style: 'text-align:right;margin:0 4px 6px' }, t('stDay')));
+    out.push(h('div', { class: 'stlist' }, C.list.map((c, k) => {
+      const hist = M.hist[k], pr = M.prices[k], up = pr >= hist[0];
+      return h('button', { class: 'strow', on: { click: () => { S.stkSel = k; S.stkAmt = ''; S.stkMode = 'buy'; render(true); window.scrollTo({ top: 0 }); } } },
+        h('div', { class: 'stnm' }, h('b', null, t('st_' + c.id)), h('span', { class: 'small muted' }, list('stCodes')[k] + ' · ' + risk(c))),
+        stChart(hist, 'mini', 96, 34),
+        h('div', { class: 'stpr' }, h('b', { class: 'num' }, stMoney(pr)), h('span', { class: 'small num ' + (up ? 'c-cash' : 'c-red') }, stPct(pr, hist[0]))),
+        hold[k].n ? h('div', { class: 'styou small' }, h('span', { class: 'muted' }, t('stYours', { n: num(hold[k].n), m: money(hold[k].value) })), h('b', { class: 'num ' + (hold[k].value >= hold[k].cost ? 'c-cash' : 'c-red') }, (hold[k].value >= hold[k].cost ? '+' : '−') + money(Math.abs(hold[k].value - hold[k].cost)))) : null);
+    })));
+    out.push(h('p', { class: 'small muted' }, t('stCap', { m: money(me.stockCap) }) + ' ' + t('stBustNote')));
+    return out;
+  }
+  const k = S.stkSel, c = C.list[k], hist = M.hist[k], pr = M.prices[k], H = hold[k], mode = S.stkMode === 'sell' && H.n ? 'sell' : 'buy', fee = C.feeBp;
+  const cashAll = me.cash + me.bank, room = Math.max(0, me.stockCap - inv), maxBuy$ = Math.min(cashAll, room);
+  const fit = (amt) => { let n = Math.floor((amt * 100 * 10000) / (pr * (10000 + fee))); while (n > 0 && stQuote(pr, n) > amt) n--; return Math.max(0, n); };
+  const maxN = mode === 'buy' ? fit(maxBuy$) : H.n;
+  const inp = h('input', { id: 'bamt', inputmode: 'numeric', autocomplete: 'off', enterkeyhint: 'done', value: S.stkAmt || '', placeholder: mode === 'buy' ? t('stMaxPh', { m: money(maxBuy$) }) : t('stAllPh', { n: num(H.n) }) });
+  const btn = h('button', { class: 'btn block big buy' }), sum = h('div', { class: 'stack', style: 'gap:6px' });
+  const nOf = () => { const v = inp.value === '' ? Infinity : parseInt(inp.value, 10) || 0; return mode === 'buy' ? (v === Infinity ? maxN : Math.min(maxN, fit(Math.min(v, maxBuy$)))) : Math.min(H.n, v === Infinity ? H.n : v); };
+  const row = (a, b, cls = '') => h('div', { class: 'row sp small' }, h('span', { class: 'muted' }, a), h('b', { class: 'num ' + cls }, b));
+  const sync = () => {
+    const n = nOf();
+    if (mode === 'buy') {
+      const g = Math.ceil((n * pr) / 100), tot = stQuote(pr, n);
+      btn.textContent = n > 0 ? t('stBuyGo', { n: num(n), m: money(tot) }) : t('stBuyNone'); btn.disabled = n < 1;
+      sum.replaceChildren(row(t('stGetN'), t('stShares', { n: num(n) })), row(t('stFee', { p: fee / 100 }), money(tot - g)));
+    } else {
+      const g = Math.floor((n * pr) / 100), f = Math.min(g, Math.ceil((g * fee) / 10000)), got = g - f, part = n === H.n ? H.cost : Math.floor((H.cost * n) / (H.n || 1)), pl = got - part;
+      btn.textContent = t('stSellGo', { n: num(n), m: money(got) }); btn.disabled = n < 1;
+      sum.replaceChildren(row(t('stFee', { p: fee / 100 }), money(f)), row(t('stGet'), money(got)), row(t('stPL'), (pl >= 0 ? '+' : '−') + money(Math.abs(pl)), pl >= 0 ? 'c-cash' : 'c-red'));
+    }
+  };
+  const setV = (v) => { inp.value = v; S.stkAmt = v; sync(); };
+  inp.addEventListener('input', () => setV(inp.value.replace(/\D/g, '').replace(/^0+/, '').slice(0, 15)));
+  inp.addEventListener('keydown', (e) => { if (e.key === 'Enter') inp.blur(); });
+  btn.addEventListener('click', async () => {
+    const n = nOf(); if (n < 1) return; inp.blur();
+    await act(mode === 'buy' ? 'stockBuy' : 'stockSell', { k, n, price: pr }, { el: btn });
+    S.stkAmt = ''; loadStocks();
+  });
+  sync();
+  out.push(h('button', { class: 'btn ghost sm', style: 'margin-bottom:10px', on: { click: () => { S.stkSel = null; render(true); } } }, '← ' + t('stBack')));
+  out.push(h('div', { class: 'card stack vc' },
+    h('div', { class: 'row sp' }, h('div', null, h('h2', { style: 'margin:0' }, t('st_' + c.id)), h('span', { class: 'small muted' }, list('stCodes')[k] + ' · ' + risk(c))),
+      h('div', { class: 'stpr' }, h('b', { class: 'num vbig' }, stMoney(pr)), h('span', { class: 'small num ' + (pr >= hist[0] ? 'c-cash' : 'c-red') }, stPct(pr, hist[0]) + ' · ' + t('stDay')))),
+    stChart(hist, 'big', 320, 120),
+    h('div', { class: 'row sp small muted' }, h('span', null, t('stLaunch', { m: stMoney(c.base) })), h('span', null, t('stNext'), h('b', { class: 'num', dataset: { left: M.nextAt } }, dur(Math.max(0, M.nextAt - now())))))));
+  if (H.n) out.push(h('div', { class: 'card stack vc' }, row(t('stYours', { n: num(H.n), m: money(H.value) }), (H.value >= H.cost ? '+' : '−') + money(Math.abs(H.value - H.cost)), H.value >= H.cost ? 'c-cash' : 'c-red'), row(t('stInv'), money(H.cost))));
+  out.push(h('div', { class: 'card stack vc' },
+    h('div', { class: 'seg', role: 'group', style: 'margin-bottom:0' }, [['buy', t('stBuy')], ['sell', t('stSell')]].map(([id, lbl]) => h('button', { 'aria-pressed': mode === id ? 'true' : 'false', disabled: id === 'sell' && !H.n, on: { click: () => { S.stkMode = id; S.stkAmt = ''; render(true); } } }, lbl))),
+    h('div', { class: 'field', style: 'margin:0' }, h('label', { for: 'bamt' }, t(mode === 'buy' ? 'stAmt' : 'stQty')), inp),
+    h('div', { class: 'bquick' }, [25, 50, 75].map((q) => h('button', { class: 'btn ghost sm', disabled: maxN < 1, on: { click: () => setV(String(mode === 'buy' ? Math.floor((maxBuy$ * q) / 100) : Math.max(1, Math.floor((H.n * q) / 100)))) } }, q + '%')),
+      h('button', { class: 'btn ghost sm', disabled: maxN < 1, on: { click: () => setV('') } }, t('stAll'))),
+    sum, btn,
+    mode === 'buy' && room < cashAll ? h('p', { class: 'small muted' }, t('stCap', { m: money(me.stockCap) })) : null));
   return out;
 }
 // casas dos outros jogadores: só aparece o que te sai mais barato do que na cidade
@@ -1187,6 +1271,12 @@ function withShield(run) {
   const close = sheet(h('div', { class: 'stack' }, h('h2', null, icon('shield'), ' ', t('shDropT')), h('p', { class: 'muted' }, t('shDropSub', { t: dur(left) })),
     h('button', { class: 'btn danger block', on: { click: () => { close(); run(true); } } }, t('shDropGo')),
     h('button', { class: 'btn ghost block', on: { click: () => close() } }, t('shKeep'))));
+}
+// bolsa: os preços vêm do servidor; volta-se a pedir logo a seguir a cada mudança (de 10 em 10 minutos) enquanto o ecrã estiver aberto
+async function loadStocks() {
+  clearTimeout(S.stkTimer);
+  try { const r = await api('GET', '/api/stocks'); S.stocks = r; if (S.tab === 'bolsa' && !document.activeElement?.matches?.('#bamt')) render(); } catch {}
+  if (S.tab === 'bolsa') S.stkTimer = setTimeout(loadStocks, S.stocks?.nextAt ? Math.max(4000, Math.min(60000, S.stocks.nextAt - now() + 1500)) : 20000);
 }
 async function loadVenues() { try { const r = await api('GET', '/api/venues'); S.venues = r; if (S.tab === 'club' || S.tab === 'putas') render(); } catch {} }
 async function loadTargets() { try { const r = await api('GET', '/api/targets'); S.targets = r.list; if (S.tab === 'fights') render(); } catch {} }

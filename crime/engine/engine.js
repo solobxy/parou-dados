@@ -30,7 +30,7 @@ export function newPlayer(id, now, world, opts = {}) {
     hospTimes: [],
     hits: new Map(),
     biz: CFG.biz.map(() => ({ n: 0, stored: 0, rem: 0, t: now })),
-    port: [], air: null, stock: CFG.drugs.map(() => 0), club: null, bro: null,
+    port: [], air: null, stock: CFG.drugs.map(() => 0), club: null, bro: null, stk: CFG.stocks.list.map(() => ({ n: 0, cost: 0, gen: 0 })),
     weapon: -1, armor: -1,
     luxuries: 0,
     gang: null, gb: null, gangLeft: 0, gh: [],
@@ -58,6 +58,7 @@ function migrate(p) {
   if (p.air === undefined) p.air = null;
   if (!Array.isArray(p.stock) || p.stock.length !== CFG.drugs.length) p.stock = CFG.drugs.map((_, i) => (Array.isArray(p.stock) && Number.isSafeInteger(p.stock[i]) && p.stock[i] > 0 ? p.stock[i] : 0));
   if (p.club === undefined) p.club = null;
+  if (!Array.isArray(p.stk) || p.stk.length !== CFG.stocks.list.length) p.stk = CFG.stocks.list.map((_, k) => (Array.isArray(p.stk) && p.stk[k] && Number.isSafeInteger(p.stk[k].n) ? p.stk[k] : { n: 0, cost: 0, gen: 0 }));
   if (p.bro === undefined) p.bro = null;
   if (!Number.isSafeInteger(p.av)) p.av = 0;
   if (!p.fx || typeof p.fx !== 'object') p.fx = {};
@@ -899,7 +900,7 @@ export function broHire(p, now, world, i) {
   if (!g) fail('NO_HOOKER');
   begin(p, now, world);
   const b = p.bro; if (!b) fail('NO_VENUE');
-  if (b.girls.length >= CFG.venue.bro.rooms[b.lvl - 1]) fail('NO_SLOT');
+  if (b.girls.length >= CFG.venue.bro.rooms[b.lvl - 1]) fail('NO_ROOM');
   const cost = CFG.venue.bro.hire[g.tier];
   pay(p, cost);
   b.girls.push(i);
@@ -945,6 +946,60 @@ export function broVisitAt(buyer, owner, now, world, slot, rng, seen) {
   const house = Math.max(0, price - Math.floor((base * CFG.venue.girlBp) / 10000));
   b.till += house;
   return { ok: true, i, price, house, ...doVisit(buyer, i, now, rng) };
+}
+
+// ---------- bolsa ----------
+// O mercado (preços em cêntimos e a «geração» de cada empresa, que sobe quando vai à falência) vive no servidor e é igual para todos.
+// Um passo do preço: sobe ou desce o mesmo com a mesma hipótese, por isso a média do preço seguinte é exatamente o preço de agora.
+export function stockStep(price, volBp, rng) {
+  const mag = pickW(rng, CFG.stocks.steps), delta = Math.floor((price * mag * volBp) / 10000 + 0.5);
+  return rng.int(0, 1) ? price + delta : price - delta;
+}
+export function stockBustAt(k) { return Math.floor((CFG.stocks.list[k].base * CFG.stocks.bustBp) / 10000); }
+export function newMarket() { return { tick: 0, prices: CFG.stocks.list.map((x) => x.base), gen: CFG.stocks.list.map(() => 0), busts: [] }; }
+// avança um passo todas as empresas; devolve as que foram à falência neste passo (voltam ao preço de estreia com outra geração)
+export function marketTick(m, rng) {
+  const bust = [];
+  for (let k = 0; k < CFG.stocks.list.length; k++) {
+    const next = stockStep(m.prices[k], CFG.stocks.list[k].vol, rng);
+    if (next < stockBustAt(k)) { m.prices[k] = CFG.stocks.list[k].base; m.gen[k] += 1; bust.push(k); } else m.prices[k] = next;
+  }
+  m.tick += 1;
+  return bust;
+}
+export function stockCap(p) { return casinoMax(p) * CFG.stocks.capMult; }
+// o que o jogador tem de uma empresa: se ela faliu desde a compra, não tem nada
+function holding(p, m, k) { const h = p.stk[k]; return h.gen === m.gen[k] ? h : { n: 0, cost: 0, gen: m.gen[k] }; }
+export function stockView(p, m) { return CFG.stocks.list.map((_, k) => { const h = holding(p, m, k); return { n: h.n, cost: h.cost, value: Math.floor((h.n * m.prices[k]) / 100) }; }); }
+const stockFee = (gross) => Math.ceil((gross * CFG.stocks.feeBp) / 10000);
+export function stockQuote(m, k, n) { const gross = Math.ceil((n * m.prices[k]) / 100); return gross + stockFee(gross); }   // o que custa comprar n ações agora
+function stockArgs(m, k, n, seen) {
+  if (!Number.isInteger(k) || !CFG.stocks.list[k]) fail('NO_STOCK_CO');
+  if (!Number.isSafeInteger(n) || n < 1 || n > 1e9) fail('BAD_AMOUNT');
+  if (!m || !Array.isArray(m.prices) || !Number.isSafeInteger(m.prices[k]) || m.prices[k] < 1) fail('NO_MARKET');
+  if (seen !== undefined && seen !== m.prices[k]) fail('PRICE_CHANGED', { price: m.prices[k] });   // compra-se e vende-se só ao preço que se viu
+}
+export function stockBuy(p, now, world, m, k, n, seen) {
+  stockArgs(m, k, n, seen);
+  begin(p, now, world, { allowBusy: true });
+  const total = stockQuote(m, k, n);
+  const invested = CFG.stocks.list.reduce((s, _, j) => s + holding(p, m, j).cost, 0);
+  if (invested + total > stockCap(p)) fail('STOCK_CAP', { cap: stockCap(p) });
+  pay(p, total);
+  const h = holding(p, m, k);
+  p.stk[k] = { n: h.n + n, cost: h.cost + total, gen: m.gen[k] };
+  return { ok: true, k, n, price: m.prices[k], paid: total, fee: stockFee(Math.ceil((n * m.prices[k]) / 100)) };
+}
+export function stockSell(p, now, world, m, k, n, seen) {
+  stockArgs(m, k, n, seen);
+  begin(p, now, world, { allowBusy: true });
+  const h = holding(p, m, k);
+  if (n > h.n) fail('NO_SHARES');
+  const gross = Math.floor((n * m.prices[k]) / 100), fee = Math.min(gross, stockFee(gross)), got = gross - fee;
+  const part = n === h.n ? h.cost : Math.floor((h.cost * n) / h.n);   // parte do que se pagou que corresponde ao que se vende
+  p.stk[k] = { n: h.n - n, cost: h.cost - part, gen: m.gen[k] };
+  p.cash += got;
+  return { ok: true, k, n, price: m.prices[k], got, fee, profit: got - part };
 }
 
 // ---------- banco ----------
@@ -1665,6 +1720,7 @@ export function checkInvariants(p) {
   if (p.energyT > p.t || p.addictionT > p.t) bad.push('timer in future');
   if (p.cls !== '' && !CFG.classes.some((c) => c.id === p.cls)) bad.push('class');
   if (!Array.isArray(p.stock) || p.stock.length !== CFG.drugs.length || p.stock.some((x) => !Number.isSafeInteger(x) || x < 0)) bad.push('stock');
+  if (!Array.isArray(p.stk) || p.stk.length !== CFG.stocks.list.length || p.stk.some((h) => !h || !Number.isSafeInteger(h.n) || h.n < 0 || !Number.isSafeInteger(h.cost) || h.cost < 0 || !Number.isSafeInteger(h.gen) || (h.n === 0 && h.cost !== 0))) bad.push('shares');
   for (const k of ['club', 'bro']) { const v = p[k]; if (v === null) continue;
     if (!(v && Number.isInteger(v.lvl) && v.lvl >= 1 && v.lvl <= CFG.venue[k].cost.length && Number.isSafeInteger(v.till) && v.till >= 0 && Number.isSafeInteger(v.rem) && v.rem >= 0 && Number.isSafeInteger(v.t) && CFG.venue.prices[v.pi] !== undefined && CFG.venue.gdisc[v.gd] !== undefined)) bad.push(k);
     else if (k === 'bro' && !(Array.isArray(v.girls) && v.girls.length <= CFG.venue.bro.rooms[v.lvl - 1] && v.girls.every((i) => CFG.hookers.list[i]))) bad.push('bro girls'); }

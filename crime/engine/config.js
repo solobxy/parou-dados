@@ -22,6 +22,17 @@ export const CFG = {
 
   start: { stat: 10, cash: 500 },
   missionSwapMs: 1 * HOUR, // trocar o objetivo do beco: uma vez por hora
+  // Bolsa. Os preços (em cêntimos) mexem de 10 em 10 minutos, iguais para todos, e ninguém os consegue mexer nem adivinhar:
+  // cada passo sobe ou desce o mesmo com 50% de hipótese (0, 1, 2 ou 4 vezes o passo da empresa), por isso em média o preço fica onde está.
+  // Quem compra e vende paga 1% de cada vez: no total, a bolsa tira dinheiro do jogo. Abaixo de 5% do preço de estreia a empresa vai à falência
+  // (as ações passam a valer zero) e volta a estrear-se. O máximo investido é 20× a aposta máxima do casino para o teu nível.
+  stocks: {
+    tickMs: 10 * MIN, feeBp: 100, bustBp: 500, capMult: 20, steps: [[0, 2], [1, 5], [2, 2], [4, 1]], histMax: 144,
+    list: [
+      { id: 'docas', base: 5000, vol: 40 }, { id: 'farma', base: 2500, vol: 55 }, { id: 'casino', base: 12000, vol: 70 },
+      { id: 'armas', base: 8000, vol: 90 }, { id: 'noite', base: 1200, vol: 130 }, { id: 'moeda', base: 300, vol: 250 },
+    ],
+  },
 
   train: { energy: 5, costBase: 0, costPerStat: 0 }, // +1 ponto por treino; só gasta energia
 
@@ -143,46 +154,48 @@ export const CFG = {
     // Slots. «scatter»: 6×5, 8 ou mais iguais em qualquer sítio pagam; as vitórias caem e entram símbolos novos; as esferas somam-se e
     // multiplicam o prémio da jogada. «cluster»: 7×7, grupos de 5+ iguais encostados; cada casa onde rebenta um símbolo fica marcada e
     // depois multiplica (×2, ×4 … ×1024). Compra de bónus: paga-se N vezes a aposta e as rodadas grátis começam logo.
-    // Prémios em centésimos da aposta. Os números foram afinados por simulação para ficarem perto dos jogos reais (ver os testes).
+    // Prémios em centésimos da aposta. As quatro slots estão afinadas por simulação (milhões de jogadas cada) para o mesmo perfil:
+    // bónus natural a sair 1 vez em cada 400 jogadas, jogo base a devolver cerca de 72%, retorno total entre 96% e 96,5%,
+    // e a compra de bónus (100× a aposta) a devolver em média 96 a 96,5×. O que muda de umas para as outras é o tema e a forma de pagar, não as odds.
     slots: {
       chefao: {
         kind: 'scatter', cols: 6, rows: 5, min: 8, nsym: 10, trig: 4,
         // 0 charuto, 1 whisky, 2 ficha, 3 chapéu, 4 relógio, 5 anel, 6 notas, 7 diamante, 8 coroa, 9 barra de ouro, 10 chefão (scatter), 11 esfera
-        w: [140, 130, 118, 106, 74, 60, 50, 40, 32, 26, 14, 5],
-        wFree: [140, 130, 118, 106, 74, 60, 50, 40, 32, 26, 14, 24],
-        pay: [[26, 78, 205], [41, 93, 413], [51, 103, 515], [82, 123, 824], [103, 154, 1029], [154, 205, 1237], [205, 515, 1545], [258, 1029, 2574], [1029, 2574, 5149], [515, 1237, 3089]],
+        w: [1400,  1300,  1180,  1060,  740,  600,  500,  400,  320,  260,  131,  50],
+        wFree: [1400,  1300,  1180,  1060,  740,  600,  500,  400,  320,  260,  131,  221],
+        pay: [[28,  85,  224],  [45,  102,  451],  [56,  112,  562],  [90,  134,  899],  [112,  168,  1123],  [168,  224,  1350],  [224,  562,  1686],  [282,  1123,  2810],  [1123,  2810,  5620],  [562,  1350,  3372]],
         orb: [[2, 300], [3, 200], [4, 120], [5, 100], [6, 60], [8, 50], [10, 40], [12, 25], [15, 20], [20, 15], [25, 10], [50, 5], [100, 2]],
         orbBase: true, accFree: true, scatPay: { 4: 300, 5: 500, 6: 10000 }, free: 15, retrig: [3, 5], maxFree: 60, buy: 100, max: 2500,
       },
-      // «Trovão de Zeus 1000»: como os jogos de deuses gregos 6×5 (esferas até ×1000, multiplicador total nas grátis). Real: 96,5%, 15 000×, compra a 100×.
+      // «Trovão de Zeus 1000»: como os jogos de deuses gregos 6×5 (esferas até ×1000, multiplicador total nas grátis). Prémio máximo 15 000×, compra a 100×.
       zeus: {
         kind: 'scatter', cols: 6, rows: 5, min: 8, nsym: 9, trig: 4,
         // 0 gema azul, 1 verde, 2 amarela, 3 roxa, 4 vermelha, 5 cálice, 6 ânfora, 7 lira, 8 elmo, 9 deus (scatter), 10 esfera
-        w: [135, 128, 117, 106, 88, 72, 60, 50, 40, 13, 4],
-        wFree: [135, 128, 117, 106, 88, 72, 60, 50, 40, 13, 18],
-        pay: [[34, 103, 274], [55, 124, 548], [69, 137, 686], [109, 165, 1097], [137, 206, 1371], [206, 274, 1645], [274, 686, 2056], [343, 1371, 3428], [1371, 3428, 6855]],
+        w: [1350,  1280,  1170,  1060,  880,  720,  600,  500,  400,  138,  40],
+        wFree: [1350,  1280,  1170,  1060,  880,  720,  600,  500,  400,  138,  194],
+        pay: [[32,  96,  255],  [51,  115,  510],  [64,  128,  639],  [101,  154,  1021],  [128,  192,  1276],  [192,  255,  1531],  [255,  639,  1914],  [319,  1276,  3191],  [1276,  3191,  6382]],
         orb: [[2, 400], [3, 260], [4, 160], [5, 130], [6, 80], [8, 60], [10, 50], [12, 30], [15, 25], [20, 18], [25, 12], [50, 7], [100, 4], [250, 2], [500, 1], [1000, 1]],
         orbBase: true, accFree: true, scatPay: { 4: 300, 5: 500, 6: 10000 }, free: 15, retrig: [3, 5], maxFree: 60, buy: 100, max: 15000,
       },
-      // «Doce Vingança»: doces e fruta 6×5; bombas de ×2 a ×100 só nas grátis, cada jogada com as suas. Real: ~96,5%, 21 175×, compra a 100×.
+      // «Doce Vingança»: doces e fruta 6×5; bombas de ×2 a ×100 só nas grátis, cada jogada com as suas. Prémio máximo 21 175×, compra a 100×.
       doce: {
         kind: 'scatter', cols: 6, rows: 5, min: 8, nsym: 9, trig: 4,
         // 0 kiwi, 1 laranja, 2 pera, 3 cerejas, 4 morango, 5 doce azul, 6 goma verde, 7 rebuçado roxo, 8 coração, 9 queque (scatter), 10 bomba
-        w: [135, 128, 117, 106, 88, 72, 60, 50, 40, 13, 0],
-        wFree: [235, 223, 204, 106, 88, 72, 60, 50, 40, 13, 14],
-        pay: [[70, 210, 559], [112, 251, 1118], [139, 279, 1396], [224, 335, 2235], [279, 419, 2794], [419, 559, 3353], [559, 1396, 4191], [698, 2794, 6984], [2794, 6984, 13970]],
+        w: [1350,  1280,  1170,  1060,  880,  720,  600,  500,  400,  136,  0],
+        wFree: [2350,  2230,  2040,  1060,  880,  720,  600,  500,  400,  136,  148],
+        pay: [[67,  200,  533],  [107,  239,  1066],  [132,  266,  1331],  [213,  319,  2130],  [266,  399,  2663],  [399,  533,  3196],  [533,  1331,  3994],  [665,  2663,  6656],  [2663,  6656,  13315]],
         orb: [[2, 300], [3, 220], [4, 150], [5, 120], [6, 80], [8, 60], [10, 50], [12, 30], [15, 25], [20, 18], [25, 12], [50, 5], [100, 2]],
         orbBase: false, accFree: false, scatPay: { 4: 300, 5: 500, 6: 10000 }, free: 10, retrig: [3, 5], maxFree: 60, buy: 100, max: 21175,
       },
-      // «Rebuçado Louco 1000»: grupos 7×7 com casas que multiplicam até ×1024 (nas grátis ficam). Real: 96,53%, 25 000×, compra a 100× ou 500× (super: todas as casas a ×2).
+      // «Rebuçado Louco 1000»: grupos 7×7 com casas que multiplicam até ×1024 (nas grátis ficam). Prémio máximo 25 000×, compra a 100× ou 935× (super: todas as casas já com multiplicador).
       rebucado: {
         kind: 'cluster', cols: 7, rows: 7, min: 5, nsym: 7, trig: 3,
         // 0 cristal azul, 1 marshmallow, 2 estrela, 3 cubo roxo, 4 minhoca verde, 5 urso laranja, 6 urso vermelho, 7 máquina de pastilhas (scatter)
-        w: [140, 130, 120, 110, 95, 80, 65, 4],
-        wFree: [265, 246, 227, 110, 95, 80, 65, 4],
+        w: [1400,  1300,  1200,  1100,  950,  800,  650,  39],
+        wFree: [2632,  2444,  2256,  1100,  950,  800,  650,  39],
         // grupos de 5, 6, 7 … 14 e 15 ou mais
-        pay: [[81, 102, 122, 163, 203, 305, 407, 610, 813, 1220, 2034], [102, 122, 163, 203, 244, 407, 610, 813, 1220, 1627, 3050], [122, 163, 203, 244, 325, 488, 813, 1220, 1627, 2034, 4067], [163, 203, 244, 325, 407, 610, 1017, 1627, 2034, 3050, 6100], [203, 244, 325, 407, 610, 813, 1220, 2034, 3050, 4067, 8134], [305, 407, 488, 610, 813, 1220, 2034, 3050, 4067, 6100, 12201], [407, 610, 813, 1017, 1220, 2034, 3050, 4067, 6100, 10168, 20335]],
-        spotMax: 1024, superSpots: [[2, 70], [4, 20], [8, 8], [16, 2]], fs: { 3: 10, 4: 12, 5: 15, 6: 20, 7: 30 }, maxFree: 60, buy: 100, superBuy: 935, max: 25000, // compra super: cada casa começa com ×2 (70%), ×4 (20%), ×8 (8%) ou ×16 (2%). Em 480 000 compras simuladas devolve em média 903× a aposta, por isso custa 935× (retorno de cerca de 96,6%)
+        pay: [[83,  105,  125,  167,  208,  313,  418,  626,  835,  1253,  2089],  [105,  125,  167,  208,  251,  418,  626,  835,  1253,  1671,  3132],  [125,  167,  208,  251,  334,  501,  835,  1253,  1671,  2089,  4177],  [167,  208,  251,  334,  418,  626,  1044,  1671,  2089,  3132,  6265],  [208,  251,  334,  418,  626,  835,  1253,  2089,  3132,  4177,  8354],  [313,  418,  501,  626,  835,  1253,  2089,  3132,  4177,  6265,  12530],  [418,  626,  835,  1044,  1253,  2089,  3132,  4177,  6265,  10443,  20884]],
+        spotMax: 1024, superSpots: [[2, 70], [4, 20], [8, 8], [16, 2]], fs: { 3: 10, 4: 12, 5: 15, 6: 20, 7: 30 }, maxFree: 60, buy: 100, superBuy: 935, max: 25000, // compra super: cada casa começa com ×2 (70%), ×4 (20%), ×8 (8%) ou ×16 (2%). Em 300 000 compras simuladas devolve em média 901× a aposta, por isso custa 935× (retorno de cerca de 96,4%)
       },
     },
   },

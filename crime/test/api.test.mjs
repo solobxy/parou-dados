@@ -453,6 +453,35 @@ test('discoteca e bordel: abrir, pôr preço, cada um vê o seu preço (gangue c
   assert.equal((await get(A, '10.0.9.80', '/api/gang')).list.length, 0);
 });
 
+test('bolsa: preços iguais para todos, compra e venda ao preço que se viu, e o mercado sobrevive a um reinício', async () => {
+  ENV_EXTRA = { ATOS_3S: '100000', ATOS_MIN: '1000000' };
+  const A = await contaNova('BolsaA', '10.0.9.90'), B = await contaNova('BolsaB', '10.0.9.91');
+  for (const x of [A, B]) await x.estado();
+  await mexer({ BolsaA: (e) => { e.cash = 100_000; e.bank = 0; e.respect = 3000; e.peakRespect = 3000; } });
+  const ag = (x, ip, body) => cru(x.cookie, ip, body), get = async (x, ip, path) => (await fetch(BASE + path, { headers: { cookie: x.cookie, 'X-Forwarded-For': ip } })).json();
+  const ma = await get(A, '10.0.9.90', '/api/stocks'), mb = await get(B, '10.0.9.91', '/api/stocks');
+  // a ronda de teste vai com 3 h 30: 21 passos de 10 minutos
+  assert.ok(ma.tick >= 21 && ma.tick <= 22, 'passo ' + ma.tick); assert.equal(ma.prices.length, 6); assert.ok(ma.prices.every((x) => Number.isSafeInteger(x) && x > 0));
+  assert.equal(ma.hist.length, 6); assert.equal(ma.hist[0].length, ma.tick + 1); assert.equal(ma.hist[2].at(-1), ma.prices[2]); assert.ok(ma.nextAt > ma.now && ma.nextAt - ma.now <= 10 * 60000);
+  if (mb.tick === ma.tick) assert.deepEqual(mb.prices, ma.prices);
+  const k = 2, preco = ma.prices[k], a0 = (await A.estado());
+  assert.deepEqual(a0.stk[k], { n: 0, cost: 0, value: 0 }); assert.ok(a0.stockCap > 0);
+  // preço diferente do que está: não compra
+  let r = await ag(A, '10.0.9.90', { type: 'stockBuy', k, n: 10, price: preco + 1 }); assert.equal(r.body.error, 'PRICE_CHANGED'); assert.equal((await A.estado()).cash, 100_000);
+  r = await ag(A, '10.0.9.90', { type: 'stockBuy', k, n: 10, price: preco }); assert.equal(r.status, 200, JSON.stringify(r.body));
+  const bruto = Math.ceil((10 * preco) / 100), pago = bruto + Math.ceil(bruto / 100);
+  assert.equal(r.body.result.paid, pago); assert.equal(r.body.me.cash, 100_000 - pago); assert.deepEqual(r.body.me.stk[k], { n: 10, cost: pago, value: Math.floor((10 * preco) / 100) });
+  r = await ag(A, '10.0.9.90', { type: 'stockSell', k, n: 11 }); assert.equal(r.body.error, 'NO_SHARES');
+  r = await ag(A, '10.0.9.90', { type: 'stockBuy', k: 9, n: 1 }); assert.equal(r.body.error, 'NO_STOCK_CO');
+  r = await ag(A, '10.0.9.90', { type: 'stockBuy', k, n: 0 }); assert.equal(r.body.error, 'BAD_AMOUNT');
+  // reinício: o mercado e as ações ficam como estavam
+  await mexer({});
+  const m2 = await get(A, '10.0.9.90', '/api/stocks'); if (m2.tick === ma.tick) { assert.deepEqual(m2.prices, ma.prices); assert.deepEqual(m2.hist, ma.hist); }
+  assert.equal((await A.estado()).stk[k].n, 10);
+  r = await ag(A, '10.0.9.90', { type: 'stockSell', k, n: 10, price: m2.prices[k] }); assert.equal(r.status, 200, JSON.stringify(r.body));
+  const v = Math.floor((10 * m2.prices[k]) / 100); assert.equal(r.body.result.got, v - Math.min(v, Math.ceil(v / 100))); assert.equal(r.body.me.cash, 100_000 - pago + r.body.result.got); assert.deepEqual(r.body.me.stk[k], { n: 0, cost: 0, value: 0 });
+});
+
 async function mexer(muda) {
   await parar();
   const db = new DatabaseSync(join(dir, 'jogo.db'));

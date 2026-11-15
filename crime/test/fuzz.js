@@ -22,6 +22,7 @@ for (let i = 0; i < 60; i++) players.push(E.newPlayer('f' + i, now, world));
 const pick = (arr) => arr[r.int(0, arr.length - 1)];
 const anyInt = () => pick([0, 1, -1, 100, 1e6, 2 ** 53, 0.5, NaN, r.int(0, 1e7)]);
 const counts = {};
+let market = E.newMarket();
 let refused = 0, done = 0, rounds = 1;
 
 // (4) as contas batem certo: cada ação só mexe no dinheiro e no respeito o que a regra diz, e nada cria dinheiro do nada
@@ -117,6 +118,13 @@ function contas(kind, a0, a, d0, d, t, res, arg) {
     case 'buyBiz': if (dm !== -res.price || dr !== CFG.biz[arg].resp) bad('negócio'); break;
     case 'venueBuy': { const C = CFG.venue[arg], l0 = a0[arg] ? a0[arg].lvl : 0; if (dm !== -C.cost[l0] || dr !== C.resp[l0] || a[arg].lvl !== l0 + 1) bad('comprar casa'); break; }
     case 'venueSet': case 'broFire': case 'missionSwap': if (dm !== 0 || dr !== 0) bad('devia ser neutro'); break;
+    case 'stockBuy': { const h = E.stockView(a, market), bruto = Math.ceil((arg.n * market.prices[arg.k]) / 100);
+      if (dm !== -res.paid || dr !== 0 || res.paid !== bruto + Math.ceil((bruto * CFG.stocks.feeBp) / 10000) || h[arg.k].n !== arg.h0[arg.k].n + arg.n || h[arg.k].cost !== arg.h0[arg.k].cost + res.paid) bad('bolsa: compra');
+      if (h.reduce((x, y) => x + y.cost, 0) > E.stockCap(a0)) bad('bolsa: passou o teto');
+      break; }
+    case 'stockSell': { const h = E.stockView(a, market), bruto = Math.floor((arg.n * market.prices[arg.k]) / 100);
+      if (dm !== res.got || dr !== 0 || res.got > bruto || res.got < bruto - Math.ceil((bruto * CFG.stocks.feeBp) / 10000) || h[arg.k].n !== arg.h0[arg.k].n - arg.n || arg.n > arg.h0[arg.k].n || h[arg.k].cost > arg.h0[arg.k].cost) bad('bolsa: venda');
+      break; }
     case 'venueCollect': { const v = E.venueView(a0, t); const due = (v.club ? v.club.till : 0) + (v.bro ? v.bro.till : 0); if (dm !== due || res.club + res.bro !== due || dr !== 0 || (a.club && a.club.till) || (a.bro && a.bro.till)) bad('recolha das casas'); break; }
     case 'stockUse': { const v = E.venueView(a0, t); if (dm !== 0 || dr !== 0 || a.stock[arg] !== v.stock[arg] - 1) bad('tomar do armazém'); break; }
     case 'stockDump': { const v = E.venueView(a0, t); if (dm !== res.got || res.got > arg.n * E.wholesale(arg.d) || res.got !== E.dumpValue(arg.d, arg.n) || a.stock[arg.d] !== v.stock[arg.d] - arg.n || dr !== 0) bad('despachar'); break; }
@@ -147,7 +155,7 @@ for (let n = 0; n < ACTIONS; n++) {
   now += pick([0, 0, 1000, 3000, 3000, 60_000, 5 * 60_000, 30 * 60_000, T.HOUR]);
   if (now >= world.playEnd) { // nova ronda com jogadores novos
     now = START;
-    players.length = 0;
+    players.length = 0; market = E.newMarket();
     for (let i = 0; i < 60; i++) players.push(E.newPlayer('f' + i, now, world));
     rounds++;
   }
@@ -157,6 +165,7 @@ for (let n = 0; n < ACTIONS; n++) {
   const p = pick(players);
   const d = pick(players);
   if (r.chance(200)) { p.cash += r.int(0, 5e6); } // dá dinheiro para chegar a tudo
+  if (r.chance(1500)) E.marketTick(market, game); // a bolsa mexe (às vezes com falências)
   if (r.chance(300)) p.shieldUntil = now + pick([T.HOUR, 20 * T.HOUR]); // jogador que entrou tarde: escudo
   if (r.chance(300)) { p.stock[r.int(0, 8)] += r.int(1, 60); } // mercadoria no armazém, como a que vem do porto
   // casas já montadas (para as compras entre jogadores, os preços e os despedimentos terem onde acontecer)
@@ -167,7 +176,7 @@ for (let n = 0; n < ACTIONS; n++) {
   if (r.chance(400) && !p.gang) E.gangSet(p, 'g' + r.int(1, 3), r.int(1, 5), r.int(0, 5)); // o servidor pôs-te numa gangue (para os golpes e tareias em grupo terem quem os faça)
   if (r.chance(2500)) { p.energy = r.int(0, CFG.energy.max); p.energyT = Math.min(p.energyT, p.t); } // gasta stamina para chegar à discoteca, às putas e ao hospital
   const before = touched(p, t), beforeD = touched(d, t), origD = structuredClone(d), origP = structuredClone(p);
-  const kind = pick(['missionSwap', 'venueBuy', 'venueBuy', 'venueSet', 'venueCollect', 'stockUse', 'stockUse', 'stockDump', 'broHire', 'broHire', 'broFire', 'clubBuyAt', 'clubBuyAt', 'clubBuyAt', 'broVisitAt', 'broVisitAt', 'broVisitAt', 'casino', 'casino', 'table', 'heist', 'hit', 'gangCreate', 'gangDonate', 'gangLeave', 'crime', 'crimeAll', 'drug', 'refill', 'detox', 'claim', 'class', 'classChange', 'classChange', 'air', 'air', 'airCollect', 'airCollect', 'bailFor', 'bailFor', 'medicFor', 'medicFor', 'avatar', 'hooker', 'cure', 'house', 'houseUp', 'train', 'buyBiz', 'collect', 'port', 'collectPort', 'deposit', 'withdraw', 'gear', 'attack', 'bail', 'medic', 'luxury']);
+  const kind = pick(['stockBuy', 'stockBuy', 'stockBuy', 'stockSell', 'stockSell', 'missionSwap', 'venueBuy', 'venueBuy', 'venueSet', 'venueCollect', 'stockUse', 'stockUse', 'stockDump', 'broHire', 'broHire', 'broFire', 'clubBuyAt', 'clubBuyAt', 'clubBuyAt', 'broVisitAt', 'broVisitAt', 'broVisitAt', 'casino', 'casino', 'table', 'heist', 'hit', 'gangCreate', 'gangDonate', 'gangLeave', 'crime', 'crimeAll', 'drug', 'refill', 'detox', 'claim', 'class', 'classChange', 'classChange', 'air', 'air', 'airCollect', 'airCollect', 'bailFor', 'bailFor', 'medicFor', 'medicFor', 'avatar', 'hooker', 'cure', 'house', 'houseUp', 'train', 'buyBiz', 'collect', 'port', 'collectPort', 'deposit', 'withdraw', 'gear', 'attack', 'bail', 'medic', 'luxury']);
   let res, arg;
   try {
     switch (kind) {
@@ -217,6 +226,8 @@ for (let n = 0; n < ACTIONS; n++) {
       case 'refill': res = E.refill(p, t, world); break;
       case 'detox': res = E.detox(p, t, world); break;
       case 'claim': res = E.claimMission(p, t, world); break;
+      case 'stockBuy': arg = { k: r.chance(9000) ? r.int(0, 5) : anyInt(), n: pick([1, 5, 50, 1000, 0, -1, 0.5, 2e9]), h0: null }; arg.h0 = E.stockView(p, market); res = E.stockBuy(p, t, world, r.chance(9700) ? market : null, arg.k, arg.n, r.chance(1000) ? 1 : undefined); break;
+      case 'stockSell': arg = { k: r.chance(9000) ? r.int(0, 5) : anyInt(), n: 0, h0: E.stockView(p, market) }; arg.n = r.chance(7000) && arg.h0[arg.k] ? pick([arg.h0[arg.k].n, Math.ceil(arg.h0[arg.k].n / 2), 1]) : pick([1, 0, -1, 1e9]); res = E.stockSell(p, t, world, market, arg.k, arg.n, r.chance(1000) ? 1 : undefined); break;
       case 'missionSwap': res = E.swapMission(p, t, world); break;
       case 'hooker': res = E.visitHooker(p, t, world, pick([0, 1, 2, 3, 4, 5, 6]), game); break;
       case 'cure': res = E.cure(p, t, world); break;

@@ -400,8 +400,9 @@ test('roda da sorte: cada aposta devolve o mesmo que na roda real (conta exata) 
   assert.throws(() => E.casinoPlay(p, NOW, W, 'wheel', { bets: [{ s: '3', amt: 100 }] }, never), code('BAD_BET'));
 });
 
-// retorno de referência dos jogos reais em que cada slot se inspira (o nosso tem de ficar a ±3%, com 150 000 jogadas e 8000 compras)
-const SLOT_REAL = { chefao: 0.955, zeus: 0.965, doce: 0.965, rebucado: 0.9653 };
+// as quatro slots estão afinadas para o mesmo perfil: retorno total perto de 96,2%, compra de bónus perto de 96,2×, bónus 1 em 400 jogadas
+// (medido com 6 a 10 milhões de jogadas e mais de 1 milhão de compras por jogo; aqui confirma-se com menos, por isso a folga)
+const SLOT_REAL = { chefao: 0.962, zeus: 0.962, doce: 0.962, rebucado: 0.962 };
 for (const gid of Object.keys(CFG.casino.slots)) {
   test(`slot ${gid}: retorno perto do real, compra de bónus também, teto respeitado e contas da grelha certas`, () => {
     const G = CFG.casino.slots[gid], rng = seededRng(404), N = gid === 'rebucado' ? 150000 : 400000, NB = gid === 'rebucado' ? 6000 : 12000;
@@ -411,6 +412,9 @@ for (const gid of Object.keys(CFG.casino.slots)) {
     perto(tot / N / 100, SLOT_REAL[gid], 0.06, gid + ' retorno');        // as grátis têm cauda longa: a afinação fina foi feita com milhões de jogadas
     perto(bt / NB / 100 / G.buy, SLOT_REAL[gid], 0.08, gid + ' compra');
     assert.ok(hits / N > 0.25 && hits / N < 0.4, 'jogadas com prémio ' + hits / N);
+    // o bónus natural sai perto de 1 vez em 400 jogadas em todas (antes ia de 1 em 318 a 1 em 503)
+    let bon = 0; const r3 = seededRng(808), N3 = gid === 'rebucado' ? 250000 : 500000; for (let i = 0; i < N3; i++) if (E.slotSpin(gid, r3, 0).free.length) bon++;
+    assert.ok(N3 / bon > 330 && N3 / bon < 480, gid + ': bónus 1 em ' + (N3 / bon).toFixed(0));
     // grelha: cada vitória paga o que diz a tabela e só com o mínimo de iguais
     const r2 = seededRng(9);
     for (let i = 0; i < 400; i++) {
@@ -439,12 +443,12 @@ test('slots: compra super só no Rebuçado, jogo inventado recusado', () => {
   assert.equal(r.spin.spots0.length, 49); assert.ok(r.spin.spots0.every((x) => lista.includes(x))); assert.ok(new Set(r.spin.spots0).size > 1);
 });
 
-test('slots: a compra super do Rebuçado sai com os multiplicadores nas proporções anunciadas e devolve cerca de 96,6%', () => {
+test('slots: a compra super do Rebuçado sai com os multiplicadores nas proporções anunciadas e devolve cerca de 96,4%', () => {
   const G = CFG.casino.slots.rebucado, rng = seededRng(77), N = 60000, conta = new Map(); let tot = 0, casas = 0;
   for (let i = 0; i < N; i++) { const s = E.slotSpin('rebucado', rng, 2); tot += s.total; if (i < 4000) for (const v of s.spots0) { conta.set(v, (conta.get(v) || 0) + 1); casas++; } }
   const soma = G.superSpots.reduce((x, [, w]) => x + w, 0);
   for (const [v, w] of G.superSpots) perto(conta.get(v) / casas, w / soma, 0.006, `casas a ×${v}`);
-  perto(tot / N / 100 / G.superBuy, 0.966, 0.03, 'retorno da compra super');
+  perto(tot / N / 100 / G.superBuy, 0.964, 0.03, 'retorno da compra super');
 });
 
 test('mesas ao vivo: pagam exatamente o mesmo que a jogada a solo, e a roleta devolve 36/37 em qualquer aposta', () => {
@@ -784,7 +788,7 @@ test('bordel: quartos, contratar, rendimento por hora, e a parte da puta nunca v
   assert.throws(() => E.broHire(p, NOW + T.HOUR, W, 99), code('NO_HOOKER'));
   r = E.broHire(p, NOW + T.HOUR, W, top); assert.equal(r.cost, V.bro.hire[3]); r = E.broHire(p, NOW + T.HOUR, W, rosa); assert.equal(r.cost, V.bro.hire[0]);
   assert.equal(p.cash, 1e9 - 8000 - 160000 - 3000); assert.deepEqual(p.bro.girls, [top, rosa]);
-  assert.throws(() => E.broHire(p, NOW + T.HOUR, W, rosa), code('NO_SLOT')); assert.equal(p.bro.girls.length, 2);
+  assert.throws(() => E.broHire(p, NOW + T.HOUR, W, rosa), code('NO_ROOM')); assert.equal(p.bro.girls.length, 2);
   // rendimento: soma das categorias ao preço da cidade; 80% não dá nada (vai tudo para elas); o melhor por hora é 100%
   assert.equal(E.broRate(p), 8200);
   const rates = V.prices.map((_, pi) => { p.bro.pi = pi; return E.broRate(p); }); p.bro.pi = 2;
@@ -799,7 +803,7 @@ test('bordel: quartos, contratar, rendimento por hora, e a parte da puta nunca v
   const c0 = p.cash; r = E.broFire(p, NOW + 4 * T.DAY + T.HOUR, W, 0); assert.equal(r.i, top); assert.deepEqual(p.bro.girls, [rosa]); assert.equal(p.cash, c0); assert.equal(p.bro.till, 8200); assert.equal(E.broRate(p), 200);
   assert.throws(() => E.broFire(p, NOW + 4 * T.DAY + T.HOUR, W, 1), code('NO_HOOKER'));
   // quartos e custos por nível
-  const m = dono(); for (let i = 0; i < V.bro.cost.length; i++) { const b = E.venueBuy(m, NOW, W, 'bro'); assert.equal(b.cost, V.bro.cost[i]); for (let k = m.bro.girls.length; k < V.bro.rooms[i]; k++) E.broHire(m, NOW, W, top); assert.throws(() => E.broHire(m, NOW, W, top), code('NO_SLOT')); }
+  const m = dono(); for (let i = 0; i < V.bro.cost.length; i++) { const b = E.venueBuy(m, NOW, W, 'bro'); assert.equal(b.cost, V.bro.cost[i]); for (let k = m.bro.girls.length; k < V.bro.rooms[i]; k++) E.broHire(m, NOW, W, top); assert.throws(() => E.broHire(m, NOW, W, top), code('NO_ROOM')); }
   assert.throws(() => E.venueBuy(m, NOW, W, 'bro'), code('VENUE_MAX')); assert.equal(E.broRate(m), 12 * 8000);
   // visita de outro jogador: paga o preço dele na cidade × o preço do dono; 80% do preço da cidade é dela, o resto vai para o caixa
   const casa = dono(); casa.gang = 'g1'; E.venueBuy(casa, NOW, W, 'bro'); E.broHire(casa, NOW, W, 5); const till0 = casa.bro.till;
@@ -907,4 +911,91 @@ test('lutas: ninguém ataca a própria gangue, nem para assaltar', () => {
   // de outra gangue, ou sem gangue, ataca-se à vontade
   assert.equal(E.canAttack(a, x, t, W), null); const s = mk(); setResp(s, 500); E.touch(s, t); s.energy = 100; s.shieldUntil = 0; const s2 = mk(); setResp(s2, 500); E.touch(s2, t); s2.protectUntil = 0; s2.shieldUntil = 0;
   assert.equal(E.canAttack(s, s2, t, W), null);
+});
+
+test('bolsa: o preço seguinte é em média o de agora (conta exata), a falência zera as ações e a empresa volta a estrear-se', () => {
+  const S = CFG.stocks, tot = S.steps.reduce((s, [, w]) => s + w, 0);
+  // conta exata: todas as combinações de tamanho do passo e de sentido, com o peso de cada uma
+  for (const price of [15, 99, 300, 2500, 12000, 987654]) for (const vol of S.list.map((x) => x.vol)) {
+    let soma = 0, min = Infinity, max = 0;
+    for (let x = 0; x < tot; x++) for (const sinal of [0, 1]) { const fila = [x, sinal]; const nxt = E.stockStep(price, vol, { int: () => fila.shift() }); soma += nxt; min = Math.min(min, nxt); max = Math.max(max, nxt); }
+    assert.equal(soma, price * tot * 2, `média do passo com preço ${price} e passo ${vol}`);
+    assert.ok(min > 0 && max - price === price - min);   // sobe tanto quanto desce
+  }
+  // simulação: 400 000 passos seguidos de cada empresa nunca dão preço negativo e a média de cada passo não foge
+  const rng = seededRng(2026);
+  for (const c of S.list) { let s = 0; const N = 400000; for (let i = 0; i < N; i++) s += E.stockStep(c.base, c.vol, rng) / c.base; perto(s / N, 1, 0.0006 * (c.vol / 40), 'média de ' + c.id); }
+  // mercado: começa no preço de estreia; abaixo de 5% a empresa vai à falência e volta ao preço de estreia com outra geração
+  const m = E.newMarket(); assert.deepEqual(m.prices, S.list.map((x) => x.base)); assert.deepEqual(m.gen, S.list.map(() => 0));
+  const k = S.list.findIndex((x) => x.id === 'moeda'); assert.equal(E.stockBustAt(k), 15);
+  m.prices[k] = 15; const desce = { int: (lo, hi) => (hi === 1 ? 0 : tot - 1) };   // o maior passo, para baixo
+  const faliu = E.marketTick(m, desce); assert.ok(faliu.includes(k)); assert.equal(m.prices[k], S.list[k].base); assert.equal(m.gen[k], 1); assert.equal(m.tick, 1);
+  // numa ronda inteira (1872 passos) os preços ficam sempre acima do limite de falência e há falências na empresa mais louca
+  let falencias = 0; const r2 = seededRng(7);
+  for (let ronda = 0; ronda < 60; ronda++) { const mm = E.newMarket(); for (let t = 0; t < 1872; t++) { const b = E.marketTick(mm, r2); falencias += b.length; for (let j = 0; j < S.list.length; j++) assert.ok(mm.prices[j] >= E.stockBustAt(j) && Number.isSafeInteger(mm.prices[j])); } }
+  assert.ok(falencias > 5 && falencias < 400, 'falências em 60 rondas: ' + falencias);
+});
+
+test('bolsa: comprar e vender paga 1% de cada vez, nunca dá lucro ao mesmo preço, respeita o teto e o preço que se viu', () => {
+  const S = CFG.stocks, m = E.newMarket(), k = S.list.findIndex((x) => x.id === 'casino');   // $120,00
+  const p = mk(); p.cash = 1e6; p.bank = 0; setResp(p, 20000);
+  assert.equal(E.stockCap(p), E.casinoMax(p) * 20);
+  // 10 ações a $120 = $1200 + 1% = $1212
+  assert.equal(E.stockQuote(m, k, 10), 1212);
+  let r = E.stockBuy(p, NOW, W, m, k, 10, 12000);
+  assert.equal(r.paid, 1212); assert.equal(r.fee, 12); assert.equal(p.cash, 1e6 - 1212); assert.deepEqual(p.stk[k], { n: 10, cost: 1212, gen: 0 });
+  assert.deepEqual(E.stockView(p, m)[k], { n: 10, cost: 1212, value: 1200 });
+  // vender 4 ao mesmo preço: $480 − 1% (arredondado contra ti) = $475; o custo desce na mesma proporção
+  r = E.stockSell(p, NOW, W, m, k, 4, 12000);
+  assert.equal(r.got, 475); assert.equal(r.fee, 5); assert.equal(r.profit, 475 - Math.floor((1212 * 4) / 10)); assert.equal(p.cash, 1e6 - 1212 + 475); assert.deepEqual(p.stk[k], { n: 6, cost: 1212 - 484, gen: 0 });
+  // recusas que não mexem em nada
+  const antes = structuredClone(p);
+  assert.throws(() => E.stockSell(p, NOW, W, m, k, 7), code('NO_SHARES')); assert.throws(() => E.stockBuy(p, NOW, W, m, 99, 1), code('NO_STOCK_CO'));
+  for (const n of [0, -1, 1.5, NaN, 2e9]) assert.throws(() => E.stockBuy(p, NOW, W, m, k, n), code('BAD_AMOUNT'));
+  assert.throws(() => E.stockBuy(p, NOW, W, m, k, 1, 11999), code('PRICE_CHANGED')); assert.throws(() => E.stockSell(p, NOW, W, m, k, 1, 12001), code('PRICE_CHANGED'));
+  assert.throws(() => E.stockBuy(p, NOW, W, null, k, 1), code('NO_MARKET'));
+  const pobre = mk(); pobre.cash = 1211; pobre.bank = 0; setResp(pobre, 20000); assert.throws(() => E.stockBuy(pobre, NOW, W, m, k, 10), code('NO_MONEY')); assert.equal(pobre.cash, 1211);
+  assert.deepEqual(p, antes);
+  // teto: o total investido (o que se pagou pelo que ainda se tem) não passa de 20× a aposta máxima do nível
+  const nov = mk(); nov.cash = 1e9; nov.bank = 0; const cap = E.stockCap(nov); assert.equal(cap, 20000);
+  const cabe = Math.floor((cap * 100) / (12000 * 1.01)); E.stockBuy(nov, NOW, W, m, k, cabe); assert.ok(nov.stk[k].cost <= cap);
+  assert.throws(() => E.stockBuy(nov, NOW, W, m, k, 1), code('STOCK_CAP')); assert.throws(() => E.stockBuy(nov, NOW, W, m, 0, 100), code('STOCK_CAP'));
+  E.stockSell(nov, NOW, W, m, k, cabe); assert.deepEqual(nov.stk[k], { n: 0, cost: 0, gen: 0 }); E.stockBuy(nov, NOW, W, m, 0, 1);   // vendeu, o teto fica livre
+  // ida e volta ao mesmo preço perde sempre pelo menos 2%, com qualquer quantidade e preço (os arredondamentos são contra o jogador)
+  const rng = seededRng(55);
+  for (let i = 0; i < 4000; i++) {
+    const x = mk(); x.cash = 1e12; x.bank = 0; setResp(x, 1e9); const mm = E.newMarket(), j = rng.int(0, S.list.length - 1); mm.prices[j] = rng.int(E.stockBustAt(j), 500000); const n = rng.int(1, 5000);
+    const b = E.stockBuy(x, NOW, W, mm, j, n), v = E.stockSell(x, NOW, W, mm, j, n);
+    assert.ok(b.paid - v.got >= Math.floor((n * mm.prices[j]) / 100 / 50), `ida e volta: pagou ${b.paid}, recebeu ${v.got}`); assert.ok(v.got < b.paid); assert.equal(v.profit, v.got - b.paid);
+    assert.equal(x.cash, 1e12 - b.paid + v.got); assert.deepEqual(x.stk[j], { n: 0, cost: 0, gen: 0 });
+  }
+  // falência: as ações deixam de existir (não se vendem, não contam para o teto) e comprar de novo começa do zero
+  const f = mk(); f.cash = 1e6; f.bank = 0; setResp(f, 20000); const mf = E.newMarket(); E.stockBuy(f, NOW, W, mf, k, 10);
+  mf.gen[k] += 1; mf.prices[k] = S.list[k].base;
+  assert.deepEqual(E.stockView(f, mf)[k], { n: 0, cost: 0, value: 0 }); assert.throws(() => E.stockSell(f, NOW, W, mf, k, 1), code('NO_SHARES'));
+  E.stockBuy(f, NOW, W, mf, k, 3); assert.deepEqual(f.stk[k], { n: 3, cost: E.stockQuote(mf, k, 3), gen: 1 }); assert.deepEqual(E.checkInvariants(f), []);
+});
+
+test('bolsa: nenhuma estratégia ganha à casa (comprar na queda, ir atrás da subida, comprar e esperar)', () => {
+  const S = CFG.stocks, rng = seededRng(909);
+  const estrategias = {
+    queda: (h) => (h.at(-1) < h.at(-2) && h.at(-2) < h.at(-3) ? 'compra' : h.at(-1) > h.at(-2) ? 'vende' : ''),
+    subida: (h) => (h.at(-1) > h.at(-2) && h.at(-2) > h.at(-3) ? 'compra' : h.at(-1) < h.at(-2) ? 'vende' : ''),
+    esperar: (h) => (h.length === 3 ? 'compra' : ''),
+  };
+  for (const [nome, f] of Object.entries(estrategias)) {
+    let pago = 0, recebido = 0;
+    for (let c = 0; c < 2500; c++) {
+      const k = c % S.list.length, m = E.newMarket(), p = mk(); p.cash = 1e12; p.bank = 0; setResp(p, 1e9); const h = [m.prices[k]];
+      for (let t = 0; t < 150; t++) {
+        E.marketTick(m, rng); h.push(m.prices[k]); if (h.length < 3) continue;
+        const o = f(h), tem = E.stockView(p, m)[k].n;
+        if (o === 'compra' && tem === 0) pago += E.stockBuy(p, NOW, W, m, k, 1000).paid;
+        else if (o === 'vende' && tem > 0) recebido += E.stockSell(p, NOW, W, m, k, tem).got;
+      }
+      recebido += E.stockView(p, m)[k].value;   // o que sobrou vale o preço do fim (sem contar a comissão de vender)
+    }
+    assert.ok(pago > 0); assert.ok(recebido / pago < 1.0, `${nome}: devolveu ${(recebido / pago * 100).toFixed(2)}%`);
+    assert.ok(recebido / pago > 0.9, `${nome}: devolveu só ${(recebido / pago * 100).toFixed(2)}%`);
+  }
 });

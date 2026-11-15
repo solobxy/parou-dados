@@ -1219,3 +1219,44 @@ h1.slogo { margin: 0; }
 /* sem stamina num golpe: discoteca ou putas */
 .stam { display: grid; gap: 8px; }
 .stam .row { gap: 8px; }
+
+/* bolsa */
+.stlist { display: grid; gap: 8px; margin-bottom: 12px; }
+.strow { display: grid; grid-template-columns: minmax(0, 1fr) 96px auto; gap: 4px 12px; align-items: center; width: 100%; text-align: left; color: inherit; font: inherit; border: 0; background: var(--s1); border-radius: var(--r); padding: 12px 14px; min-height: 64px; }
+.strow:active { background: var(--s2); }
+.stnm { min-width: 0; display: grid; }
+.stnm b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.stpr { display: grid; justify-items: end; text-align: right; }
+.styou { grid-column: 1 / -1; display: flex; justify-content: space-between; gap: 8px; padding-top: 6px; }
+.stch { display: block; width: 100%; overflow: visible; }
+.stch.mini { height: 34px; }
+.stch.big { height: 140px; }
+.stch .ln { fill: none; stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; vector-effect: non-scaling-stroke; }
+.stch.up .ln { stroke: var(--cash, #48e08a); } .stch.down .ln { stroke: var(--danger, #ff5a5a); }
+.stch .ar { stroke: none; opacity: .14; } .stch.up .ar { fill: var(--cash, #48e08a); } .stch.down .ar { fill: var(--danger, #ff5a5a); }
+@media (max-width: 350px) { .strow { grid-template-columns: minmax(0, 1fr) 64px auto; padding: 12px 10px; gap: 4px 8px; } }
+
+/* Rebuçado: o multiplicador de cada casa fica POR BAIXO do símbolo, pequeno e ao canto, do tamanho da casa (não do ecrã) */
+.slot .sgw { container-type: inline-size; }
+.slot .sgrid { z-index: 1; }
+.ssplab { z-index: 0; }
+.spl, .spl.v4, .spl.v8, .spl.v16, .spl.v64 { font-size: 12px; font-size: calc(100cqw / var(--cols) * .3); -webkit-text-stroke: 1.5px #2a0730; margin: 0 6% 4% 0; text-shadow: 0 1px 0 #000; }
+.spl.v16, .spl.v64 { font-size: 13px; font-size: calc(100cqw / var(--cols) * .34); }
+.spl.bump { animation: splb2 .5s var(--spring); } @keyframes splb2 { 35% { transform: scale(1.5); filter: brightness(1.5); } }
+
+/* ecrãs grandes (tablet): a slot ocupa mais. Ao alto, a coluna alarga; deitado, o tabuleiro fica à esquerda e os comandos à direita */
+@media (min-width: 700px) {
+  body[data-tab='slot'] #app, body[data-tab='zeus'] #app, body[data-tab='doce'] #app, body[data-tab='rebucado'] #app { max-width: 780px; }
+}
+@media (min-width: 880px) and (orientation: landscape) {
+  body[data-tab='slot'] #app, body[data-tab='zeus'] #app, body[data-tab='doce'] #app, body[data-tab='rebucado'] #app { max-width: 1080px; }
+  .slot { display: grid; grid-template-columns: minmax(0, 1fr) 380px; grid-template-areas: 'fr head' 'fr msg' 'fr ctl'; grid-template-rows: auto auto 1fr; column-gap: 14px; align-items: start; }
+  .slot .shead { grid-area: head; border-radius: 12px; overflow: hidden; }
+  .slot .sfr { grid-area: fr; margin-top: 34px; }
+  .slot .smsg { grid-area: msg; }
+  .slot .csbar { grid-area: ctl; }
+  .slot > * { min-width: 0; }
+  .slot .csbar { margin-right: 8px; }
+  .slot .sgw, .slot .sgrid { max-width: calc((100dvh - 300px) * var(--cols) / var(--rows, 5)); }
+  .slot .sgrid { max-width: none; }
+}

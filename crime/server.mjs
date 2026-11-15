@@ -20,7 +20,7 @@ const SECURE = process.env.COOKIE_INSEGURO ? '' : '; Secure';
 const [fy, fm, fd] = (process.env.PRIMEIRA_RONDA || '2026-11-13').split('-').map(Number);
 const FIRST = { y: fy, m: fm, d: fd };
 const rng = cryptoRng();
-const VERSAO = 32;   // sobe quando o servidor muda, para se confirmar de fora que a versão nova já está a correr
+const VERSAO = 33;   // sobe quando o servidor muda, para se confirmar de fora que a versão nova já está a correr
 const ATOS_3S = +(process.env.ATOS_3S || 15), ATOS_MIN = +(process.env.ATOS_MIN || 400); // ações por conta: 15 em 3 s, 400 por minuto
 
 // ---------- relógio que nunca anda para trás ----------
@@ -103,6 +103,7 @@ function noticiar(now, a, r, p, alvo) {
   }
   if ((a.type === 'crime' || a.type === 'crimeAll') && r.busted && k >= 2) noticia(now, { k: 'jail', name, c: k });
   if (a.type === 'classChange') noticia(now, { k: 'cls', name, from: r.from, to: r.cls });
+  if (a.type === 'stockSell' && Math.abs(r.profit) >= CFG.casino.newsMin) noticia(now, { k: r.profit > 0 ? 'stockWin' : 'stockLoss', name, c: CFG.stocks.list[r.k].id, money: Math.abs(r.profit) });
   if (a.type === 'airCollect' && r.amount >= CFG.casino.newsMin) noticia(now, r.seized ? { k: 'airLost', name, to: CFG.air.routes[r.r].id, money: r.amount } : { k: 'air', name, to: CFG.air.routes[r.r].id, money: r.got - r.amount });
   if (a.type === 'house') noticia(now, { k: 'house', name, h: p.house });
   else if (a.type === 'luxury') noticia(now, { k: 'lux', name, i: p.luxuries - 1 });
@@ -214,11 +215,40 @@ function jogadorDe(conta, now, w) {
   return p;
 }
 
+// ---------- bolsa: um mercado por ronda, igual para todos ----------
+// Os preços avançam um passo de 10 em 10 minutos, contados desde o início da ronda. Se o servidor esteve parado, faz os passos em falta.
+db.exec('CREATE TABLE IF NOT EXISTS bolsa (ronda INTEGER PRIMARY KEY, dados TEXT NOT NULL)');
+const qb = { ler: db.prepare('SELECT dados FROM bolsa WHERE ronda = ?'), gravar: db.prepare('INSERT INTO bolsa (ronda, dados) VALUES (?, ?) ON CONFLICT(ronda) DO UPDATE SET dados = excluded.dados') };
+let bolsa = null, bolsaRonda = null;
+function bolsaDe(w, now) {
+  if (bolsaRonda !== w.n) {
+    const row = qb.ler.get(w.n);
+    bolsa = row ? JSON.parse(row.dados) : { ...E.newMarket(), hist: [] };
+    if (!Array.isArray(bolsa.hist) || !bolsa.hist.length) bolsa.hist = [bolsa.prices.slice()];
+    bolsaRonda = w.n;
+  }
+  const S = CFG.stocks, alvo = Math.max(0, Math.floor((Math.min(now, w.playEnd) - w.start) / S.tickMs));
+  if (bolsa.tick >= alvo) return bolsa;
+  while (bolsa.tick < alvo) {
+    const faliu = E.marketTick(bolsa, rng), t = w.start + bolsa.tick * S.tickMs;
+    bolsa.hist.push(bolsa.prices.slice()); if (bolsa.hist.length > S.histMax + 1) bolsa.hist.shift();
+    if (w.n === ronda && now - t < T.HOUR) for (const k of faliu) noticia(t, { k: 'stockBust', c: S.list[k].id });   // só as falências recentes vão para o jornal
+  }
+  qb.gravar.run(w.n, JSON.stringify(bolsa));
+  return bolsa;
+}
+function vistaBolsa(w, now) {
+  const m = bolsaDe(w, now), S = CFG.stocks;
+  return { now, tick: m.tick, nextAt: w.start + (m.tick + 1) * S.tickMs, prices: m.prices, gen: m.gen, hist: S.list.map((_, k) => m.hist.map((row) => row[k])) };
+}
+
 // ---------- vista do jogador para o browser ----------
 function vista(p, now) {
   const L = E.level(p);
   const stored = E.bizStored(p, now), vv = E.venueView(p, Math.max(now, p.t));
+  const wm = mundo(now), mk = wm.phase === 'play' ? bolsaDe(wm, now) : null;
   return {
+    stk: mk ? E.stockView(p, mk) : CFG.stocks.list.map(() => ({ n: 0, cost: 0, value: 0 })), stockCap: E.stockCap(p),
     name: nomeDe(p.id),
     stats: p.stats, energy: p.energy, energyT: p.energyT,
     addiction: p.addiction, addictionT: p.addictionT, addictionCap: E.addictionCap(p),
@@ -248,7 +278,7 @@ function cfgPublica() {
   return {
     energy: CFG.energy, addiction: CFG.addiction, train: CFG.train, crimes: CFG.crimes, drugs: CFG.drugs,
     biz: CFG.biz.map(({ id, price, perH, resp, stat, raid, toBank }) => ({ id, price, perH, resp, stat, raid, toBank })),
-    bizMax: CFG.bizMax, storageMs: CFG.storageMs, port: CFG.port, air: CFG.air, goods: CFG.goods, venue: CFG.venue, detox: CFG.detox, weapons: CFG.weapons, armors: CFG.armors,
+    bizMax: CFG.bizMax, storageMs: CFG.storageMs, port: CFG.port, air: CFG.air, goods: CFG.goods, venue: CFG.venue, detox: CFG.detox, stocks: CFG.stocks, weapons: CFG.weapons, armors: CFG.armors,
     pvp: CFG.pvp, bank: CFG.bank, luxury: CFG.luxury, levels: CFG.levels, crit: CFG.crit, unlockBp: CFG.unlockBp,
     bustBp: CFG.bustBp, crimeAllMax: CFG.crimeAllMax, casino: { minBet: CFG.casino.minBet, buyMaxMult: CFG.casino.buyMaxMult, red: CFG.casino.red, dice: CFG.casino.dice, wheel: { segs: CFG.casino.wheel.segs, spots: CFG.casino.wheel.spots }, slots: Object.fromEntries(Object.entries(CFG.casino.slots).map(([k, g]) => [k, { kind: g.kind, cols: g.cols, rows: g.rows, min: g.min, nsym: g.nsym, trig: g.trig, pay: g.pay, scatPay: g.scatPay, free: g.free, fs: g.fs, retrig: g.retrig, buy: g.buy, superBuy: g.superBuy, max: g.max, accFree: g.accFree, orbBase: g.orbBase }])) }, gang: CFG.gang, classes: CFG.classes, classChange: CFG.classChange, avatars: CFG.avatars, hookers: CFG.hookers, house: CFG.house, mastery: CFG.mastery, missions: CFG.missions.length, start: CFG.start,
     round: { playDays: CFG.round.playDays, noPvpMs: CFG.round.noPvpMs },
@@ -758,6 +788,8 @@ function agir(conta, corpo, now) {
     case 'detox': r = E.detox(p, now, world); break;
     case 'claim': r = E.claimMission(p, now, world); break;
     case 'missionSwap': r = E.swapMission(p, now, world); break;
+    case 'stockBuy': r = E.stockBuy(p, now, world, bolsaDe(w, now), int(a.k), int(a.n), Number.isSafeInteger(a.price) ? a.price : undefined); break;
+    case 'stockSell': r = E.stockSell(p, now, world, bolsaDe(w, now), int(a.k), int(a.n), Number.isSafeInteger(a.price) ? a.price : undefined); break;
     case 'bail': r = E.payBail(p, now, world); break;
     case 'medic': r = E.payMedic(p, now, world); break;
     case 'buyBiz': r = E.buyBiz(p, now, world, int(a.i)); break;
@@ -990,6 +1022,7 @@ async function tratar(req, res) {
     if (!limite('mesa:' + conta, 40, 10_000, now)) return enviar(res, 429, { error: 'SLOW_DOWN' });
     return enviar(res, 200, vistaMesa(g, conta, clock()));
   }
+  if (req.method === 'GET' && path === '/api/stocks') return enviar(res, 200, w.phase === 'play' ? vistaBolsa(w, now) : { now, tick: 0, nextAt: 0, prices: [], gen: [], hist: [] });
   if (req.method === 'GET' && path === '/api/venues') return enviar(res, 200, { now, ...(w.phase === 'play' ? casas(conta, now, w) : { clubs: [], bros: [] }) });
   if (req.method === 'GET' && path === '/api/targets') return enviar(res, 200, { now, list: w.phase === 'play' ? alvos(conta, now, w) : [] });
   if (req.method === 'GET' && path === '/api/ranking') {
