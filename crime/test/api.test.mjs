@@ -61,10 +61,10 @@ test('contas: validação, nome único, palavra-passe e cookie seguro', async ()
   const a = cliente('10.0.0.1');
   assert.equal((await a('POST', '/api/register', { name: 'ab', password: '12345678' })).body.error, 'BAD_NAME');
   assert.equal((await a('POST', '/api/register', { name: 'Ana_1', password: '123' })).body.error, 'BAD_PASSWORD');
-  const r = await a('POST', '/api/register', { name: 'Ana_1', password: 'segredo123' });
+  const r = await a('POST', '/api/register', { name: 'Ana_1', password: 'segredo123', email: 'ana_1@teste.pt' });
   assert.equal(r.status, 200);
   assert.match(r.setCookie, /HttpOnly/); assert.match(r.setCookie, /SameSite=Lax/);
-  assert.equal((await a('POST', '/api/register', { name: 'ana_1', password: 'segredo123' })).body.error, 'NAME_TAKEN');
+  assert.equal((await a('POST', '/api/register', { name: 'ana_1', password: 'segredo123', email: 'ana_1@teste.pt' })).body.error, 'NAME_TAKEN');
   const b = cliente('10.0.0.2');
   assert.equal((await b('POST', '/api/login', { name: 'Ana_1', password: 'errada123' })).status, 401);
   assert.equal((await b('POST', '/api/login', { name: 'ana_1', password: 'segredo123' })).status, 200);
@@ -82,7 +82,7 @@ test('sem sessão não se joga', async () => {
 
 test('crime, toque repetido e erros de regra', async () => {
   const a = cliente('10.0.0.4');
-  await a('POST', '/api/register', { name: 'Bruno', password: 'segredo123' });
+  await a('POST', '/api/register', { name: 'Bruno', password: 'segredo123', email: 'bruno@teste.pt' });
   const s = await a('GET', '/api/state');
   assert.equal(s.body.round.phase, 'play');
   assert.equal(s.body.me.energy, 100);
@@ -109,8 +109,8 @@ test('crime, toque repetido e erros de regra', async () => {
 
 test('ataque entre duas contas: hospital, evento e ranking', async () => {
   const a = cliente('10.0.0.5'), b = cliente('10.0.0.6');
-  await a('POST', '/api/register', { name: 'Carla', password: 'segredo123' });
-  await b('POST', '/api/register', { name: 'Duarte', password: 'segredo123' });
+  await a('POST', '/api/register', { name: 'Carla', password: 'segredo123', email: 'carla@teste.pt' });
+  await b('POST', '/api/register', { name: 'Duarte', password: 'segredo123', email: 'duarte@teste.pt' });
   await b('GET', '/api/state');
   const t = await a('GET', '/api/targets');
   assert.ok(t.body.list.some((x) => x.name === 'Duarte'), JSON.stringify(t.body));
@@ -132,13 +132,13 @@ test('ataque entre duas contas: hospital, evento e ranking', async () => {
 test('limite de registos por endereço', async () => {
   const x = cliente('10.0.0.7');
   let ultimo;
-  for (let i = 0; i < 6; i++) ultimo = await x('POST', '/api/register', { name: 'Robo' + i, password: 'segredo123' });
+  for (let i = 0; i < 6; i++) ultimo = await x('POST', '/api/register', { name: 'Robo' + i, password: 'segredo123', email: 'robo' + i + '@teste.pt' });
   assert.equal(ultimo.status, 429);
 });
 
 test('o estado sobrevive a um reinício', async () => {
   const a = cliente('10.0.0.8');
-  await a('POST', '/api/register', { name: 'Eva', password: 'segredo123' });
+  await a('POST', '/api/register', { name: 'Eva', password: 'segredo123', email: 'eva@teste.pt' });
   await a('POST', '/api/act', { type: 'train', stat: 'F' });
   const antes = (await a('GET', '/api/state')).body.me;
   await parar(); await arrancar();
@@ -149,7 +149,7 @@ test('o estado sobrevive a um reinício', async () => {
 
 test('logout acaba a sessão', async () => {
   const a = cliente('10.0.0.9');
-  await a('POST', '/api/register', { name: 'Filipe', password: 'segredo123' });
+  await a('POST', '/api/register', { name: 'Filipe', password: 'segredo123', email: 'filipe@teste.pt' });
   await a('POST', '/api/logout');
   assert.equal((await a('GET', '/api/state')).body.account, null);
   assert.equal((await a('POST', '/api/act', { type: 'crime', k: 0 })).status, 401);
@@ -161,7 +161,7 @@ const cru = async (cookie, ipFalso, body, bruto) => {
   return { status: r.status, body: await r.json() };
 };
 async function contaNova(nome, ipFalso) {
-  const r = await fetch(BASE + '/api/register', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Forwarded-For': ipFalso }, body: JSON.stringify({ name: nome, password: 'segredo123' }) });
+  const r = await fetch(BASE + '/api/register', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Forwarded-For': ipFalso }, body: JSON.stringify({ name: nome, password: 'segredo123', email: nome.toLowerCase() + '@teste.pt' }) });
   assert.equal(r.status, 200);
   const cookie = r.headers.get('set-cookie').split(';')[0];
   const estado = async () => (await (await fetch(BASE + '/api/state', { headers: { cookie, 'X-Forwarded-For': ipFalso } })).json()).me;
@@ -810,4 +810,49 @@ test('fábricas e contabilista: produção em droga para a stash, armazém de 24
   assert.equal(it.fee, taxa); assert.ok(it.lost === 0 || it.lost === Math.floor((guardado - taxa) / 2)); assert.equal(it.money, guardado - taxa - it.lost);
   assert.equal(it.units, Math.floor(it.money / grosso)); assert.equal(it.rest, it.money - it.units * grosso);
   assert.equal(r.body.me.stock[d], it.units); assert.equal(r.body.me.cash, c1 + it.rest, 'em dinheiro só entra o troco');
+});
+
+test('registo: o email é obrigatório, tem de ter forma de email, é um por conta e nunca sai em resposta nenhuma', async () => {
+  const a = cliente('10.0.9.130'), b = cliente('10.0.9.131');
+  const reg = (c, name, email) => c('POST', '/api/register', { name, password: 'segredo123', ...(email === undefined ? {} : { email }) });
+  assert.equal((await reg(a, 'SemMail')).body.error, 'BAD_EMAIL');
+  // (cada tentativa vem de um IP diferente, para não bater no limite de 5 registos por hora)
+  const maus = ['', 'semarroba', 'a@b', '@b.pt', 'a b@c.pt', 'a@b..pt', 'a@.pt', 12345, null, { x: 1 }, 'a@' + 'b'.repeat(260) + '.pt'];
+  for (let i = 0; i < maus.length; i++) assert.equal((await reg(cliente('10.0.11.' + (i + 1)), 'SemMail', maus[i])).body.error, 'BAD_EMAIL', JSON.stringify(maus[i]));
+  const r = await reg(a, 'ComMail', '  Joana.Silva@Exemplo.PT ');
+  assert.equal(r.status, 200, JSON.stringify(r.body)); assert.deepEqual(r.body, { ok: true, name: 'ComMail' });
+  // o mesmo email, com outras maiúsculas e noutra conta: recusado; o nome repetido continua a dar o erro do nome
+  assert.equal((await reg(b, 'OutraConta', 'joana.silva@exemplo.pt')).body.error, 'EMAIL_TAKEN');
+  assert.equal((await reg(b, 'commail', 'outra@exemplo.pt')).body.error, 'NAME_TAKEN');
+  assert.equal((await reg(b, 'OutraConta', 'outra@exemplo.pt')).status, 200);
+  // guardado em minúsculas e sem espaços; nunca aparece no estado, no ranking, nos alvos, nas notícias nem no login
+  await parar();
+  { const db = new DatabaseSync(join(dir, 'jogo.db')); assert.equal(db.prepare('SELECT email FROM contas WHERE nome = ?').get('ComMail').email, 'joana.silva@exemplo.pt'); db.close(); }
+  await arrancar();
+  const l = await a('POST', '/api/login', { name: 'ComMail', password: 'segredo123' }); assert.deepEqual(l.body, { ok: true, name: 'ComMail', lang: 'en' });
+  for (const path of ['/api/state', '/api/rank', '/api/targets', '/api/news', '/api/gang', '/api/events', '/api/config']) {
+    const x = await a('GET', path); assert.ok(!JSON.stringify(x.body).toLowerCase().includes('exemplo.pt'), path + ' mostra o email');
+  }
+});
+
+test('jogadores antigos: um estado guardado antes da bolsa, da stash e do contabilista não trava o jogo de ninguém quando o mercado avança', async () => {
+  ENV_EXTRA = { ATOS_3S: '100000', ATOS_MIN: '1000000' };
+  const velho = await contaNova('Antigo', '10.0.9.132'), novo = await contaNova('Recente', '10.0.9.133'); await velho.estado(); await novo.estado();
+  // com o servidor parado: o Antigo fica como se não entrasse desde antes destas novidades, e o mercado recua 3 passos (como depois de horas sem ninguém)
+  await parar();
+  { const db = new DatabaseSync(join(dir, 'jogo.db'));
+    const id = db.prepare('SELECT id FROM contas WHERE nome = ?').get('Antigo').id, row = db.prepare('SELECT ronda, estado FROM jogadores WHERE conta = ?').get(id);
+    const e = JSON.parse(row.estado); for (const k of ['stk', 'stock', 'acct', 'club', 'bro', 'guard', 'hmT', 'gbotLeft', 'fx', 'hkN', 'hkAt']) delete e[k];
+    db.prepare('UPDATE jogadores SET estado = ? WHERE conta = ? AND ronda = ?').run(JSON.stringify(e), id, row.ronda);
+    const b = JSON.parse(db.prepare('SELECT dados FROM bolsa WHERE ronda = ?').get(row.ronda).dados); assert.ok(b.tick >= 3); b.tick -= 3; b.hist.splice(-3);
+    db.prepare('UPDATE bolsa SET dados = ? WHERE ronda = ?').run(JSON.stringify(b), row.ronda); db.close(); }
+  await arrancar();
+  // o primeiro pedido de outro jogador faz o mercado apanhar os 3 passos: tem de responder à primeira, sem erro
+  const ip = '10.0.9.133', r1 = await fetch(BASE + '/api/state', { headers: { cookie: novo.cookie, 'X-Forwarded-For': ip } });
+  assert.equal(r1.status, 200); const m = await (await fetch(BASE + '/api/stocks', { headers: { cookie: novo.cookie, 'X-Forwarded-For': ip } })).json();
+  assert.ok(m.tick >= 3 && Array.isArray(m.prices), 'mercado em dia');
+  // e o Antigo entra e joga normalmente, já com os campos novos
+  const ra = await fetch(BASE + '/api/state', { headers: { cookie: velho.cookie, 'X-Forwarded-For': '10.0.9.132' } }); assert.equal(ra.status, 200);
+  const me = (await ra.json()).me; assert.equal(me.acct, false); assert.ok(Array.isArray(me.stock) && me.stock.every((x) => x === 0)); assert.ok(me.stk.every((h) => h.n === 0 && h.tp === 0));
+  const login = await cliente('10.0.9.134')('POST', '/api/login', { name: 'Antigo', password: 'segredo123' }); assert.equal(login.status, 200);
 });

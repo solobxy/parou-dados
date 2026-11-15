@@ -20,7 +20,7 @@ const SECURE = process.env.COOKIE_INSEGURO ? '' : '; Secure';
 const [fy, fm, fd] = (process.env.PRIMEIRA_RONDA || '2026-11-13').split('-').map(Number);
 const FIRST = { y: fy, m: fm, d: fd };
 const rng = cryptoRng();
-const VERSAO = 41;   // sobe quando o servidor muda, para se confirmar de fora que a versão nova já está a correr
+const VERSAO = 42;   // sobe quando o servidor muda, para se confirmar de fora que a versão nova já está a correr
 const ATOS_3S = +(process.env.ATOS_3S || 15), ATOS_MIN = +(process.env.ATOS_MIN || 400); // ações por conta: 15 em 3 s, 400 por minuto
 
 // ---------- relógio que nunca anda para trás ----------
@@ -48,11 +48,14 @@ CREATE TABLE IF NOT EXISTS diario (ronda INTEGER NOT NULL, dia TEXT NOT NULL, co
   mugloss INTEGER NOT NULL DEFAULT 0, fights INTEGER NOT NULL DEFAULT 0, sick INTEGER NOT NULL DEFAULT 0, PRIMARY KEY (ronda, dia, conta));
 `);
 // colunas novas em bases de dados que já existiam
+try { db.exec('ALTER TABLE contas ADD COLUMN email TEXT'); } catch { /* já existe */ }
+db.exec('CREATE UNIQUE INDEX IF NOT EXISTS contas_email ON contas(email) WHERE email IS NOT NULL');   // um email, uma conta (guardado em minúsculas)
 for (const col of ['cwin', 'cnet']) { try { db.exec(`ALTER TABLE diario ADD COLUMN ${col} INTEGER NOT NULL DEFAULT 0`); } catch { /* já existe */ } }
 const q = {
-  contaPorNome: db.prepare('SELECT * FROM contas WHERE nome_lc = ?'),
+  contaPorNome: db.prepare('SELECT id, nome, nome_lc, hash, criada, lingua FROM contas WHERE nome_lc = ?'),   // sem o email: esse nunca entra num pedido
   contaPorId: db.prepare('SELECT id, nome, lingua, criada FROM contas WHERE id = ?'),
-  novaConta: db.prepare('INSERT INTO contas (id, nome, nome_lc, hash, criada, lingua) VALUES (?, ?, ?, ?, ?, ?)'),
+  novaConta: db.prepare('INSERT INTO contas (id, nome, nome_lc, hash, criada, lingua, email) VALUES (?, ?, ?, ?, ?, ?, ?)'),
+  contaPorEmail: db.prepare('SELECT id FROM contas WHERE email = ?'),
   lingua: db.prepare('UPDATE contas SET lingua = ? WHERE id = ?'),
   novaSessao: db.prepare('INSERT INTO sessoes (hash, conta, expira) VALUES (?, ?, ?)'),
   sessao: db.prepare('SELECT conta, expira FROM sessoes WHERE hash = ?'),
@@ -174,7 +177,11 @@ function carregarRonda(n) {
   if (n === ronda) return;
   ronda = n;
   jogadores.clear(); jornal.length = 0;
-  for (const r of q.daRonda.all(n)) jogadores.set(r.conta, fromJson(r.estado));
+  for (const r of q.daRonda.all(n)) {
+    const p = fromJson(r.estado);
+    try { E.upgrade(p); } catch (e) { console.error('estado antigo por atualizar', r.conta, e.message); }   // quem não entra há muito fica já com os campos novos
+    jogadores.set(r.conta, p);
+  }
   for (const r of q.noticias.all(n).reverse()) jornal.push({ t: r.t, ...JSON.parse(r.dados) });
   carregarGangues();
 }
@@ -231,7 +238,7 @@ function bolsaDe(w, now) {
   if (bolsa.tick >= alvo) return bolsa;
   while (bolsa.tick < alvo) {
     const faliu = E.marketTick(bolsa, rng), t = w.start + bolsa.tick * S.tickMs;
-    if (w.n === ronda) limitesDaBolsa(t, now);
+    if (w.n === ronda) { try { limitesDaBolsa(t, now); } catch (e) { console.error('limites da bolsa', e.message); } }   // nunca trava o mercado nem o pedido de quem o fez avançar
     bolsa.hist.push(bolsa.prices.slice()); if (bolsa.hist.length > S.histMax + 1) bolsa.hist.shift();
     if (w.n === ronda && now - t < T.HOUR) for (const k of faliu) noticia(t, { k: 'stockBust', c: S.list[k].id });   // só as falências recentes vão para o jornal
   }
@@ -242,12 +249,13 @@ function bolsaDe(w, now) {
 // também de quem está fora do jogo. Grava-se logo e fica um aviso nos eventos do jogador.
 function limitesDaBolsa(t, now) {
   for (const [conta, p] of jogadores) {
-    if (!p.stk.some((h) => h.tp || h.sl)) continue;
-    let vendas = [];
-    try { vendas = E.stockAuto(p, bolsa); } catch (e) { console.error('limites da bolsa', conta, e.message); continue; }
-    if (!vendas.length) continue;
-    for (const v of vendas) evento(conta, t, { k: 'stAuto', c: CFG.stocks.list[v.k].id, why: v.why, n: v.n, money: v.got, profit: v.profit });
-    guardar(p, now);
+    try {
+      if (!Array.isArray(p.stk) || !p.stk.some((h) => h && (h.tp || h.sl))) continue;
+      const vendas = E.stockAuto(p, bolsa);
+      if (!vendas.length) continue;
+      for (const v of vendas) evento(conta, t, { k: 'stAuto', c: CFG.stocks.list[v.k].id, why: v.why, n: v.n, money: v.got, profit: v.profit });
+      guardar(p, now);
+    } catch (e) { console.error('limites da bolsa', conta, e.message); }   // um jogador com o estado estragado não pode travar os outros
   }
 }
 function vistaBolsa(w, now) {
@@ -301,6 +309,9 @@ function cfgPublica() {
 
 // ---------- contas e sessões ----------
 const NOME_RE = /^[A-Za-z0-9_]{3,16}$/;
+// email: só a forma (algo@algo.algo, sem espaços, até 254 letras). Fica guardado em minúsculas e nunca sai em resposta nenhuma.
+const EMAIL_RE = /^[^\s@]{1,64}@[^\s@.]+(\.[^\s@.]+)+$/;
+const emailLimpo = (x) => { const e = typeof x === 'string' ? x.trim().toLowerCase() : ''; return e.length <= 254 && EMAIL_RE.test(e) ? e : null; };
 function hashSenha(senha) {
   const sal = randomBytes(16);
   const h = scryptSync(senha, sal, 32, { N: 16384, r: 8, p: 1, maxmem: 64 * 1024 * 1024 });
@@ -1012,10 +1023,13 @@ async function tratar(req, res) {
       if (!limite('reg:' + quem, 5, T.HOUR, now)) return enviar(res, 429, { error: 'SLOW_DOWN' });
       if (!NOME_RE.test(nome)) return enviar(res, 400, { error: 'BAD_NAME' });
       if (senha.length < 8 || senha.length > 200) return enviar(res, 400, { error: 'BAD_PASSWORD' });
+      const email = emailLimpo(b.email);
+      if (!email) return enviar(res, 400, { error: 'BAD_EMAIL' });
       if (q.contaPorNome.get(nome.toLowerCase())) return enviar(res, 409, { error: 'NAME_TAKEN' });
+      if (q.contaPorEmail.get(email)) return enviar(res, 409, { error: 'EMAIL_TAKEN' });
       const id = randomBytes(9).toString('base64url');
       const lingua = b.lang === 'pt' ? 'pt' : 'en';
-      q.novaConta.run(id, nome, nome.toLowerCase(), hashSenha(senha), now, lingua);
+      q.novaConta.run(id, nome, nome.toLowerCase(), hashSenha(senha), now, lingua, email);
       criarSessao(res, id, now);
       return enviar(res, 200, { ok: true, name: nome });
     }

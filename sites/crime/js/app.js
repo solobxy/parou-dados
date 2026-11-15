@@ -2460,20 +2460,25 @@ function authSheet(mode) {
   let close;
   const nameI = h('input', { id: 'nm', name: 'username', autocomplete: 'username', autocapitalize: 'none', spellcheck: 'false', required: true, maxlength: 16 });
   const passI = h('input', { id: 'pw', name: 'password', type: 'password', autocomplete: mode === 'register' ? 'new-password' : 'current-password', required: true, minlength: 8, maxlength: 200 });
+  const mailI = h('input', { id: 'em', name: 'email', type: 'email', inputmode: 'email', autocomplete: 'email', autocapitalize: 'none', spellcheck: 'false', required: true, maxlength: 254 });
   const hp = h('input', { class: 'hp', name: 'website', tabindex: '-1', autocomplete: 'off', 'aria-hidden': 'true' });
   const err = h('p', { class: 'err', role: 'alert' });
   const submit = h('button', { class: 'btn pri sodium block', type: 'submit' }, mode === 'register' ? t('register') : t('login'));
   const form = h('form', { novalidate: true, on: { submit: async (e) => {
     e.preventDefault(); err.textContent = ''; submit.disabled = true;
     try {
-      const r = await api('POST', mode === 'register' ? '/api/register' : '/api/login', { name: nameI.value.trim(), password: passI.value, website: hp.value, lang: lang() });
+      const r = await api('POST', mode === 'register' ? '/api/register' : '/api/login', mode === 'register'
+        ? { name: nameI.value.trim(), email: mailI.value.trim(), password: passI.value, website: hp.value, lang: lang() }
+        : { name: nameI.value.trim(), password: passI.value, lang: lang() });
       if (r.lang && r.lang !== lang()) applyLang(r.lang);
       try { window.estat && window.estat(mode === 'register' ? 'conta_criada' : 'entrou', ''); } catch {}
-      close(); await start();
-    } catch (ex) { err.textContent = errText(ex.code); submit.disabled = false; (ex.code === 'BAD_PASSWORD' ? passI : nameI).focus(); }
+    } catch (ex) { err.textContent = errText(ex.code); submit.disabled = false; (ex.code === 'BAD_PASSWORD' ? passI : ex.code === 'BAD_EMAIL' || ex.code === 'EMAIL_TAKEN' ? mailI : nameI).focus(); return; }
+    // a conta já entrou: se o jogo não abrir à primeira (falha passageira do servidor), tenta outra vez e, se falhar, diz porquê em vez de ficar calado
+    close(); await startSafe();
   } } },
     h('h2', { class: 'sec', style: 'margin-top:0' }, mode === 'register' ? t('register') : t('login')),
     h('div', { class: 'field' }, h('label', { for: 'nm' }, t('name')), nameI, mode === 'register' ? h('small', null, t('nameHint')) : null),
+    mode === 'register' ? h('div', { class: 'field' }, h('label', { for: 'em' }, t('email')), mailI, h('small', null, t('emailHint'))) : null,
     h('div', { class: 'field' }, h('label', { for: 'pw' }, t('password')), passI, mode === 'register' ? h('small', null, t('passHint')) : null),
     hp, err, submit,
     h('button', { class: 'btn ghost block', type: 'button', style: 'margin-top:8px', on: { click: () => { close(); authSheet(mode === 'register' ? 'login' : 'register'); } } }, mode === 'register' ? t('haveAccount') : t('newHere')));
@@ -2553,5 +2558,15 @@ fx.setMusic(store.get('music', true));
 setInterval(tickHud, 1000);
 setInterval(() => { if (S.st && document.visibilityState === 'visible') { refresh(); loadEvents(false); if (S.tab === 'news' || S.tab === 'city') loadNews(); } }, 30000);
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && S.st) refresh(); });
-start().catch((e) => { if (e.code !== 'LOGIN_REQUIRED') { if (!S.st) showLanding(); } });
+// abre o jogo; uma falha passageira do servidor leva uma segunda tentativa e, se continuar, um aviso (nunca um ecrã calado)
+async function startSafe() {
+  try { await start(); return; } catch (e) { if (e.code === 'LOGIN_REQUIRED') return; }
+  await new Promise((r) => setTimeout(r, 900));
+  try { await start(); } catch (e) {
+    if (e.code === 'LOGIN_REQUIRED') return;
+    if (!S.st) showLanding();
+    if (e.code) toast(errText(e.code === 'default' ? 'SERVER' : e.code), true); else console.error(e);
+  }
+}
+startSafe();
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(() => {});

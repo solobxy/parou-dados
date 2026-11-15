@@ -109,6 +109,9 @@ function syncAddiction(p, now) {
   p.addictionT = p.addiction === 0 ? now : p.addictionT + dec * decayMs;
 }
 
+// Estado guardado por uma versão antiga do jogo: junta-lhe os campos que entretanto nasceram. O servidor chama isto ao carregar cada jogador,
+// para que nada que percorra todos os jogadores (bolsa, alvos, gangues) tropece em quem não entra há muito tempo.
+export function upgrade(p) { migrate(p); return p; }
 // põe o jogador em dia até "now" (nunca anda para trás no tempo)
 export function touch(p, now) {
   if (!Number.isSafeInteger(now)) fail('BAD_TIME');
