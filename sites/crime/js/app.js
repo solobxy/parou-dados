@@ -297,14 +297,24 @@ function go(tab) {
 // ---- gesto/botão de voltar atrás do telemóvel ----
 // Enquanto há algo aberto (um sítio dentro da cidade, um jogo, uma folha), fica uma entrada a mais no histórico do browser.
 // Voltar atrás gasta essa entrada e nós fechamos o que está aberto; só na cidade, sem nada aberto, é que o gesto sai do site.
+// Duas regras para isto nunca sair do jogo sozinho:
+// 1) só se acerta o histórico no fim do gesto (fechar uma folha e abrir outra no mesmo instante não mexe em nada);
+// 2) quem diz se a entrada a mais existe é o próprio histórico (history.state), não uma variável nossa, e nunca há um
+//    history.back() e um pushState ao mesmo tempo: no Chrome chegavam trocados e o gesto seguinte saía do site.
+const backOn = () => { try { return !!history.state?.crime; } catch { return false; } };
 function armBack() {
-  const need = !!S.sheets?.length || (!!S.st?.me && S.tab !== 'city');
-  if (need && !S.backArmed) { try { history.pushState({ crime: 1 }, ''); S.backArmed = true; } catch { /* sem histórico: fica como estava */ } }
-  else if (!need && S.backArmed) { S.backArmed = false; S.backSkip = true; history.back(); }   // voltaste à cidade pelos botões do jogo: gasta-se a entrada a mais
+  if (S.backTick) return;
+  S.backTick = true;
+  queueMicrotask(() => { S.backTick = false; syncBack(); });
+}
+function syncBack() {
+  if (S.backWait) return;   // há um history.back() nosso a caminho: quando chegar, volta-se a acertar
+  const need = !!S.sheets?.length || (!!S.st?.me && S.tab !== 'city'), on = backOn();
+  if (need && !on) { try { history.pushState({ crime: 1 }, ''); } catch { /* sem histórico: fica como estava */ } }
+  else if (!need && on) { S.backWait = setTimeout(() => { S.backWait = 0; }, 1500); history.back(); }   // voltaste à cidade pelos botões do jogo: gasta-se a entrada a mais
 }
 addEventListener('popstate', () => {
-  if (S.backSkip) { S.backSkip = false; return; }
-  S.backArmed = false;
+  if (S.backWait) { clearTimeout(S.backWait); S.backWait = 0; syncBack(); return; }   // foi o nosso próprio history.back()
   const sh = S.sheets?.at(-1);
   if (sh) sh();
   else if (S.st?.me && S.tab !== 'city') go(upOf(S.tab));
@@ -2446,7 +2456,8 @@ function openProfile() {
     me.cls ? h('button', { class: 'btn sm', style: 'justify-self:start', on: { click: () => { close(); go('work'); } } }, t('clsChangeT')) : null,
     S.avOk ? h('h2', { class: 'sec', style: 'margin-top:10px' }, t('avatar')) : null,
     S.avOk ? h('div', { class: 'avgrid' }, Array.from({ length: S.cfg.avatars }, (_, i) => h('button', { class: i === me.av ? 'sel' : '', 'aria-label': t('avatar') + ' ' + (i + 1), 'aria-pressed': i === me.av ? 'true' : 'false',
-      on: { click: async () => { await act('avatar', { i }); close(); openProfile(); } } }, h('img', { src: AV(i), alt: '', width: 96, height: 96, loading: 'lazy', on: { error: (e) => e.currentTarget.parentNode.remove() } })))) : null,
+      on: { click: async (e) => { const b = e.currentTarget; if (!(await act('avatar', { i }))) return;   // troca-se no sítio: a folha não fecha nem volta ao cimo
+        for (const x of b.parentNode.children) { x.classList.toggle('sel', x === b); x.setAttribute('aria-pressed', x === b ? 'true' : 'false'); } } } }, h('img', { src: AV(i), alt: '', width: 96, height: 96, loading: 'lazy', on: { error: (e) => e.currentTarget.parentNode.remove() } })))) : null,
     h('div', { class: 'small muted' }, t('roundInfo', { n: r.n + 1, d: end })),
     h('div', { class: 'small muted' }, t('playersIn', { n: num(S.st.players) })),
     h('h2', { class: 'sec', style: 'margin-top:10px' }, t('appT')), installBox(() => { close(); openProfile(); }),
@@ -2569,7 +2580,6 @@ async function start() {
   S.tab = store.get('tab', 'city');
   if (st.me) loadFor(S.tab);   // abrir o jogo num sítio guardado (lutas, ranking, bolsa…) também vai buscar os dados dele
   if (SLOT_OF[S.tab]) setTimeout(() => slotFit(), 400);
-  S.backArmed = false; try { if (history.state?.crime) history.replaceState(null, ''); } catch { /* sem histórico */ }
   render();
   armBack();
   if (st.me) skyline(st.me.level);
