@@ -55,7 +55,7 @@ test('putas: o risco de doença mostrado é o que sai em 100 000 visitas a cada 
   CFG.hookers.list.forEach((g, i) => {
     const rng = seededRng(77 + i), p = mk(); let doente = 0; const N = 100000;
     for (let v = 0; v < N; v++) {
-      p.energy = 0; p.sick = false; p.hkT = []; p.cash = 1e12;
+      p.energy = 0; p.sick = false; p.hkN = p.hkN.map(() => 0); p.cash = 1e12;
       if (E.visitHooker(p, NOW, W, i, rng).sick) doente++;
     }
     perto(doente / N, g.sickBp / 10000, 0.0035, `doença com ${g.id}`);
@@ -212,32 +212,37 @@ test('batota: perder respeito e voltar a ganhá-lo não volta a encher a stamina
   assert.equal(r.levelUp, null); assert.equal(p.energy, 45);
 });
 
-test('batota: as putas deixam de compensar ao fim de poucas visitas por dia e o preço volta ao normal 24 h depois', () => {
-  const p = mk(); p.stats = { F: 2000, T: 10, I: 2000, C: 2000 };
-  const i = CFG.hookers.list.findIndex((x) => x.id === 'dominique'), g = CFG.hookers.list[i], base = E.hookerPrice(p, i, NOW);
-  const valor = E.valuePerEnergy(p) * g.e * 1.76;      // o melhor caso: todos os bónus de saque e os golpes perfeitos
-  let visitas = 0, now = NOW, ultimo = base;
-  for (; visitas < 100; visitas++) {
-    const preco = E.hookerPrice(p, i, now);
-    assert.ok(preco >= ultimo); ultimo = preco;
-    if (preco >= valor) break;
-    p.energy = 0; E.visitHooker(p, now, W, i, never); now += 1000;
-  }
-  assert.ok(visitas <= 18, `compensou ${visitas} vezes`);
-  // só sobe a que se visitou: as outras continuam ao preço de início, e cada visita a ela vale exatamente +10%
-  const q = mk(); q.stats = { F: 2000, T: 10, I: 2000, C: 2000 };
-  const antes = CFG.hookers.list.map((_, k) => E.hookerPrice(q, k, NOW));
-  q.energy = 0; E.visitHooker(q, NOW, W, i, never); q.energy = 0; E.visitHooker(q, NOW + 1, W, i, never);
-  CFG.hookers.list.forEach((_, k) => assert.equal(E.hookerPrice(q, k, NOW + 2), k === i ? Math.ceil((Math.ceil((antes[k] * 11) / 10) * 11) / 10) : antes[k]));
-  assert.equal(E.hookerVisits(q, i, NOW + 2), 2); assert.equal(E.hookerVisits(q, 0, NOW + 2), 0); assert.equal(E.hookerUses(q, NOW + 2), 2);
-  // rodar por todas não é de borla para sempre: cada uma tem o seu limite, e a lista guarda as visitas todas do dia
-  let total = 0; const r = mk(); r.stats = { F: 2000, T: 10, I: 2000, C: 2000 }; let tt = NOW;
-  for (let k = 0; k < CFG.hookers.list.length; k++) for (let v = 0; v < 40; v++) { if (E.hookerPrice(r, k, tt) >= E.valuePerEnergy(r) * CFG.hookers.list[k].e * 1.76) break; r.energy = 0; E.visitHooker(r, tt, W, k, never); tt += 1000; total++; }
-  assert.ok(total <= CFG.hookers.maxList && total < 260, `compensou ${total} visitas no dia, rodando por todas`);
-  assert.equal(E.hookerPrice(p, i, now + 24 * T.HOUR + 1), base);
-  // doente não entra; tratado volta a entrar
-  p.sick = true; p.energy = 0;
-  assert.throws(() => E.visitHooker(p, now, W, 0, never), code('SICK'));
+test('putas: cada visita sobe 4% só o preço dela, desce um degrau por cada hora sem lá ir, e há um fim para o que compensa', () => {
+  const H = CFG.hookers, p = mk(); p.stats = { F: 2000, T: 10, I: 2000, C: 2000 };
+  const i = H.list.findIndex((x) => x.id === 'dominique'), g = H.list[i], base = E.hookerPrice(p, i, NOW);
+  const sobe = (x) => Math.ceil((x * H.stepNum) / H.stepDen);
+  assert.equal(H.stepNum / H.stepDen, 1.04); assert.equal(H.coolMs, T.HOUR);
+  const antes = H.list.map((_, k) => E.hookerPrice(p, k, NOW));
+  // duas visitas seguidas: só a dela sobe, 4% de cada vez
+  p.energy = 0; E.visitHooker(p, NOW, W, i, never); assert.equal(E.hookerPrice(p, i, NOW + 1), sobe(base));
+  p.energy = 0; E.visitHooker(p, NOW + 1, W, i, never); assert.equal(E.hookerPrice(p, i, NOW + 2), sobe(sobe(base)));
+  H.list.forEach((_, k) => { if (k !== i) assert.equal(E.hookerPrice(p, k, NOW + 2), antes[k]); });
+  assert.equal(E.hookerSteps(p, i, NOW + 2), 2); assert.equal(E.hookerSteps(p, 0, NOW + 2), 0); assert.equal(E.hookerUses(p, NOW + 2), 2);
+  // 59 minutos depois ainda está igual; à hora desce um degrau; às duas horas volta ao preço de início
+  assert.equal(E.hookerPrice(p, i, NOW + 1 + T.HOUR - 1), sobe(sobe(base)));
+  assert.equal(E.hookerPrice(p, i, NOW + 1 + T.HOUR), sobe(base)); assert.equal(E.hookerPrice(p, i, NOW + 1 + 2 * T.HOUR), base); assert.equal(E.hookerPrice(p, i, NOW + 30 * T.HOUR), base);
+  // ir lá de hora a hora não acumula: paga-se sempre o preço de início
+  const h = mk(); h.stats = p.stats; for (let k = 0; k < 10; k++) { h.energy = 0; const r = E.visitHooker(h, NOW + k * T.HOUR, W, i, never); assert.equal(r.price, base); }
+  // uma visita a meio não apaga os degraus que ainda faltavam descer: a hora conta desde a última visita
+  const m = mk(); m.stats = p.stats; for (let k = 0; k < 5; k++) { m.energy = 0; E.visitHooker(m, NOW + k, W, i, never); }
+  assert.equal(E.hookerSteps(m, i, NOW + 3 * T.HOUR + 10), 2); m.energy = 0; E.visitHooker(m, NOW + 3 * T.HOUR + 10, W, i, never); assert.equal(E.hookerSteps(m, i, NOW + 3 * T.HOUR + 11), 3);
+  assert.equal(E.hookerSteps(m, i, NOW + 4 * T.HOUR + 9), 3); assert.equal(E.hookerSteps(m, i, NOW + 4 * T.HOUR + 10), 2);
+  // seguidas, sem esperar: há um ponto em que deixa de compensar (mesmo no melhor caso), e o preço tem teto
+  const q = mk(); q.stats = p.stats; const valor = E.valuePerEnergy(q) * g.e * 1.76;      // todos os bónus de saque e os golpes perfeitos
+  let visitas = 0, ultimo = 0;
+  for (; visitas < 200; visitas++) { const preco = E.hookerPrice(q, i, NOW + visitas); assert.ok(preco >= ultimo); ultimo = preco; if (preco >= valor) break; q.energy = 0; E.visitHooker(q, NOW + visitas, W, i, never); }
+  assert.ok(visitas >= 20 && visitas <= 45, `compensou ${visitas} vezes seguidas`);
+  for (let k = 0; k < 100; k++) { q.energy = 0; q.cash = 1e15; E.visitHooker(q, NOW + 500 + k, W, i, never); } assert.equal(q.hkN[i], H.maxSteps); assert.deepEqual(E.checkInvariants(q), []);
+  // estado antigo (listas de visitas) é convertido sem perder a conta de cada uma
+  const velho = mk(); delete velho.hkN; delete velho.hkAt; velho.hkT = [NOW - 5, NOW - 4, NOW - 3]; velho.hkI = [i, i, 0]; E.touch(velho, NOW);
+  assert.equal(velho.hkN[i], 2); assert.equal(velho.hkN[0], 1); assert.equal(velho.hkAt[i], NOW - 4); assert.equal(velho.hkT, undefined); assert.deepEqual(E.checkInvariants(velho), []);
+  // doente não entra
+  p.sick = true; p.energy = 0; assert.throws(() => E.visitHooker(p, NOW + 9 * T.HOUR, W, 0, never), code('SICK'));
 });
 
 test('batota: o motor recusa tipos de equipamento inventados e a recarga usa o preço da profissão', () => {
@@ -565,7 +570,7 @@ test('profissões: as de elite pedem respeito, mudar custa o anunciado, só de 2
     const cheio = E.hookerPrice(a, i, NOW), desc = E.hookerPrice(b, i, NOW);
     assert.equal(desc, Math.max(1, Math.floor((cheio * 7000) / 10000)));
   }
-  const conta = (cl) => { const rng = seededRng(77), x = mk(cl); let s = 0; for (let k = 0; k < 20000; k++) { x.energy = 0; x.sick = false; x.hkT = []; x.cash = 1e12; if (E.visitHooker(x, NOW, W, 0, rng).sick) s++; } return s / 20000; };
+  const conta = (cl) => { const rng = seededRng(77), x = mk(cl); let s = 0; for (let k = 0; k < 20000; k++) { x.energy = 0; x.sick = false; x.hkN = x.hkN.map(() => 0); x.cash = 1e12; if (E.visitHooker(x, NOW, W, 0, rng).sick) s++; } return s / 20000; };
   const base = CFG.hookers.list[0].sickBp / 10000;
   perto(conta('ladrao'), base, 0.01, 'doença sem bónus'); perto(conta('chulo'), base * 0.4, 0.008, 'doença do chulo');
   // contrabandista e magnata: menos apreensões no porto

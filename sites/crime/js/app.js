@@ -671,6 +671,7 @@ function screenPutas() {
       h('div', { class: 'small muted' }, t('hk_t' + g.tier)),
       h('div', { class: 'small' }, h('span', { class: 'c-en' }, icon('bolt'), '+' + g.e + ' ' + t('energy').toLowerCase())),
       h('div', { class: 'small ' + (sickOf(g) >= 100 ? 'c-red' : 'muted') }, icon('skull'), t('hkRisk', { p: (sickOf(g) / 100).toString().replace('.', lang() === 'pt' ? ',' : '.') })),
+      (me.hkSteps?.[i] || 0) > 0 ? h('div', { class: 'small c-gold' }, t('hkUp', { p: Math.round(((H.stepNum / H.stepDen) ** me.hkSteps[i] - 1) * 100), h: me.hkSteps[i] })) : null,
       h('button', { class: 'btn buy block', disabled: !ok, on: { click: (e) => act('hooker', { i }, { el: e.currentTarget }) } }, t('hkGo', { m: money(price) })));
   })));
   if (!pv.good) out.push(...pv);

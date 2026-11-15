@@ -20,7 +20,7 @@ const SECURE = process.env.COOKIE_INSEGURO ? '' : '; Secure';
 const [fy, fm, fd] = (process.env.PRIMEIRA_RONDA || '2026-11-13').split('-').map(Number);
 const FIRST = { y: fy, m: fm, d: fd };
 const rng = cryptoRng();
-const VERSAO = 31;   // sobe quando o servidor muda, para se confirmar de fora que a versão nova já está a correr
+const VERSAO = 32;   // sobe quando o servidor muda, para se confirmar de fora que a versão nova já está a correr
 const ATOS_3S = +(process.env.ATOS_3S || 15), ATOS_MIN = +(process.env.ATOS_MIN || 400); // ações por conta: 15 em 3 s, 400 por minuto
 
 // ---------- relógio que nunca anda para trás ----------
@@ -233,7 +233,7 @@ function vista(p, now) {
     weapon: p.weapon, armor: p.armor, luxuries: p.luxuries, luxuryPrice: E.luxuryPrice(p),
     attack: E.attackPower(p, now), defense: E.defensePower(p, now),
     crimes: CFG.crimes.map((c, k) => ({ chance: E.crimeChanceBp(p, k, now), unlocked: E.crimeUnlocked(p, k) })),
-    sick: p.sick, cure: E.cureCost(p), hookers: CFG.hookers.list.map((_, i) => E.hookerPrice(p, i, now)), hkUses: E.hookerUses(p, now),
+    sick: p.sick, cure: E.cureCost(p), hookers: CFG.hookers.list.map((_, i) => E.hookerPrice(p, i, now)), hkUses: E.hookerUses(p, now), hkSteps: CFG.hookers.list.map((_, i) => E.hookerSteps(p, i, now)),
     house: p.house, hu: p.hu, housePrice: E.housePrice(p), huPrices: CFG.house.ups.map((_, u) => E.upgradePrice(p, u)),
     cls: p.cls, av: p.av, fx: E.activeFx(p, now), drugPrices: CFG.drugs.map((_, d) => E.drugPrice(p, d)),
     biz: p.biz.map((s, i) => ({ n: s.n, stored: stored[i].money, perH: E.bizRates(p, i).perH, price: s.n < CFG.bizMax ? E.bizPrice(i, s.n) : null, t: s.t })),

@@ -40,7 +40,7 @@ export function newPlayer(id, now, world, opts = {}) {
     c: { crimes: 0, wins: 0, trains: 0, refills: 0, collects: 0, pvpWins: 0, ports: 0 },
     mi: 0,                         // objetivos já recebidos
     mq: CFG.missions.map((_, i) => i), mrT: 0,   // os que faltam, pela ordem em que vão aparecer; e quando se trocou pela última vez
-    cls: '', clsAt: 0, av: 0, fx: {}, sick: false, hkT: [], hkI: [], house: 0, hu: CFG.house.ups.map(() => 0), bj: null,        // profissão, avatar e efeitos temporários (kind -> { bp, until })
+    cls: '', clsAt: 0, av: 0, fx: {}, sick: false, hkN: CFG.hookers.list.map(() => 0), hkAt: CFG.hookers.list.map(() => 0), house: 0, hu: CFG.house.ups.map(() => 0), bj: null,        // profissão, avatar e efeitos temporários (kind -> { bp, until })
   };
 }
 
@@ -62,8 +62,15 @@ function migrate(p) {
   if (!Number.isSafeInteger(p.av)) p.av = 0;
   if (!p.fx || typeof p.fx !== 'object') p.fx = {};
   if (typeof p.sick !== 'boolean') p.sick = false;
-  if (!Array.isArray(p.hkT)) p.hkT = [];
-  if (!Array.isArray(p.hkI) || p.hkI.length !== p.hkT.length) p.hkI = p.hkT.map(() => -1);   // visitas antigas: não se sabe a quem foram, não contam para ninguém
+  // putas: cada uma tem os seus degraus de preço (hkN) e a hora da última visita (hkAt). Estado antigo (listas de visitas) é convertido.
+  if (!Array.isArray(p.hkN) || p.hkN.length !== CFG.hookers.list.length) {
+    const n = CFG.hookers.list.map((_, i) => (Array.isArray(p.hkN) && Number.isSafeInteger(p.hkN[i]) && p.hkN[i] > 0 ? Math.min(p.hkN[i], CFG.hookers.maxSteps) : 0));
+    const at = CFG.hookers.list.map((_, i) => (Array.isArray(p.hkAt) && Number.isSafeInteger(p.hkAt[i]) ? p.hkAt[i] : 0));
+    if (Array.isArray(p.hkT) && Array.isArray(p.hkI)) for (let k = 0; k < p.hkT.length; k++) { const i = p.hkI[k]; if (n[i] !== undefined && Number.isSafeInteger(p.hkT[k])) { n[i] = Math.min(n[i] + 1, CFG.hookers.maxSteps); at[i] = Math.max(at[i], p.hkT[k]); } }
+    p.hkN = n; p.hkAt = at;
+  }
+  if (!Array.isArray(p.hkAt) || p.hkAt.length !== p.hkN.length) p.hkAt = p.hkN.map(() => 0);
+  delete p.hkT; delete p.hkI;
   if (!Number.isSafeInteger(p.house)) p.house = 0;
   if (!Array.isArray(p.hu)) p.hu = CFG.house.ups.map(() => 0);
   if (p.bj === undefined) p.bj = null;
@@ -426,15 +433,17 @@ export function payMedic(p, now, world) {
 
 // ---------- putas ----------
 const recent = (arr, now, win) => (now === undefined ? arr.length : arr.reduce((c, t) => c + (t > now - win ? 1 : 0), 0));
-export const hookerUses = (p, now) => recent(p.hkT, now, CFG.hookers.windowMs);
+// degraus de preço desta puta agora: cada visita sobe um; por cada hora inteira sem lá ir, desce um
+export function hookerSteps(p, i, now) {
+  const n = p.hkN[i] || 0; if (n <= 0) return 0;
+  return Math.max(0, n - Math.max(0, Math.floor((now - p.hkAt[i]) / CFG.hookers.coolMs)));
+}
+export const hookerUses = (p, now) => p.hkN.reduce((s, _, i) => s + hookerSteps(p, i, now), 0);
 export const detoxUses = (p, now) => recent(p.detoxT, now, CFG.detox.windowMs);
-function pruneHk(p, now) { const lim = now - CFG.hookers.windowMs; while (p.hkT.length && p.hkT[0] <= lim) { p.hkT.shift(); p.hkI.shift(); } }
-// visitas a ESTA puta nas últimas 24 h: só o preço dela sobe
-export function hookerVisits(p, i, now) { const lim = now - CFG.hookers.windowMs, I = p.hkI || []; let n = 0; for (let k = 0; k < p.hkT.length; k++) if (p.hkT[k] > lim && I[k] === i) n++; return n; }
 export function hookerPrice(p, i, now) {
   const H = CFG.hookers, g = H.list[i];
   let price = Math.max(g.min, Math.floor((Math.floor(valuePerEnergy(p) * 100) * g.e * g.valueBp) / 1000000));
-  const n = Math.min(hookerVisits(p, i, now), H.maxSteps); // só conta, não mexe: uma visita recusada não muda nada
+  const n = Math.min(hookerSteps(p, i, now), H.maxSteps); // só conta, não mexe: uma visita recusada não muda nada
   for (let k = 0; k < n; k++) price = Math.ceil((price * H.stepNum) / H.stepDen);
   return Math.max(1, cut(price, klass(p).hkCutBp || 0));
 }
@@ -452,9 +461,7 @@ function doVisit(p, i, now, rng) {
   const g = CFG.hookers.list[i];
   const got = Math.min(g.e, CFG.energy.max - p.energy);
   p.energy += got;
-  pruneHk(p, now);
-  if (p.hkT.length >= CFG.hookers.maxList) { p.hkT.shift(); p.hkI.shift(); }
-  p.hkT.push(now); p.hkI.push(i);
+  p.hkN[i] = Math.min(CFG.hookers.maxSteps, hookerSteps(p, i, now) + 1); p.hkAt[i] = now;   // a hora conta a partir da última visita a ela
   const sick = rng.chance(cut(g.sickBp, klass(p).sickCutBp || 0));
   if (sick) p.sick = true;
   return { energy: got, sick };
@@ -1665,7 +1672,7 @@ export function checkInvariants(p) {
   if (typeof p.sick !== 'boolean') bad.push('sick');
   if (!Number.isSafeInteger(p.house) || p.house < 0 || p.house >= CFG.house.tiers.length) bad.push('house');
   if (!Array.isArray(p.hu) || p.hu.length !== CFG.house.ups.length || p.hu.some((n) => !Number.isSafeInteger(n) || n < 0 || n > p.house)) bad.push('house upgrades');
-  if (!Array.isArray(p.hkT) || p.hkT.length > CFG.hookers.maxList || !Array.isArray(p.hkI) || p.hkI.length !== p.hkT.length) bad.push('hooker list');
+  if (!Array.isArray(p.hkN) || p.hkN.length !== CFG.hookers.list.length || p.hkN.some((x) => !Number.isSafeInteger(x) || x < 0 || x > CFG.hookers.maxSteps) || !Array.isArray(p.hkAt) || p.hkAt.length !== p.hkN.length) bad.push('hooker list');
   if (!Number.isSafeInteger(p.av) || p.av < 0 || p.av >= CFG.avatars) bad.push('avatar');
   if (p.bj !== null && (typeof p.bj !== 'object' || !Number.isSafeInteger(p.bj.bet) || p.bj.bet < CFG.casino.minBet || !Array.isArray(p.bj.pl) || bjValue(p.bj.pl).tot > 21 || !Array.isArray(p.bj.next))) bad.push('blackjack');
   for (const k of Object.keys(p.fx)) { const f = p.fx[k]; if (!CFG.fxKinds.includes(k) || !Number.isSafeInteger(f.bp) || f.bp <= 0 || !Number.isSafeInteger(f.until)) bad.push('fx ' + k); }

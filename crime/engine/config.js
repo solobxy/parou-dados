@@ -222,8 +222,8 @@ export const CFG = {
   },
   // putas: stamina sem vício; o preço segue o que ganhas por stamina e sobe 10% por cada visita nas últimas 24 h
   hookers: {
-    // cada visita sobe 10% o preço DESSA puta durante 24 h; as outras não mexem. maxList: quantas visitas se guardam ao todo.
-    windowMs: 24 * HOUR, stepNum: 11, stepDen: 10, maxSteps: 60, maxList: 240,
+    // cada visita sobe 4% o preço DESSA puta (as outras não mexem); por cada hora sem lá ir, o preço dela desce um degrau até voltar ao normal.
+    stepNum: 26, stepDen: 25, maxSteps: 60, coolMs: 1 * HOUR,
     sickCutBp: 1500, // doente: −15% em todas as stats até se tratar
     cureMin: 40, cureValueBp: 1000, // tratar custa o que rendem 10 de stamina
     list: [
