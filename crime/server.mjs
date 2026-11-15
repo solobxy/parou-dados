@@ -20,7 +20,7 @@ const SECURE = process.env.COOKIE_INSEGURO ? '' : '; Secure';
 const [fy, fm, fd] = (process.env.PRIMEIRA_RONDA || '2026-11-13').split('-').map(Number);
 const FIRST = { y: fy, m: fm, d: fd };
 const rng = cryptoRng();
-const VERSAO = 29;   // sobe quando o servidor muda, para se confirmar de fora que a versão nova já está a correr
+const VERSAO = 30;   // sobe quando o servidor muda, para se confirmar de fora que a versão nova já está a correr
 const ATOS_3S = +(process.env.ATOS_3S || 15), ATOS_MIN = +(process.env.ATOS_MIN || 400); // ações por conta: 15 em 3 s, 400 por minuto
 
 // ---------- relógio que nunca anda para trás ----------
@@ -106,7 +106,8 @@ function noticiar(now, a, r, p, alvo) {
   if (a.type === 'airCollect' && r.amount >= CFG.casino.newsMin) noticia(now, r.seized ? { k: 'airLost', name, to: CFG.air.routes[r.r].id, money: r.amount } : { k: 'air', name, to: CFG.air.routes[r.r].id, money: r.got - r.amount });
   if (a.type === 'house') noticia(now, { k: 'house', name, h: p.house });
   else if (a.type === 'luxury') noticia(now, { k: 'lux', name, i: p.luxuries - 1 });
-  else if (a.type === 'hooker' && r.sick) noticia(now, { k: 'sick', name });
+  else if ((a.type === 'hooker' || a.type === 'broVisit') && r.sick) noticia(now, { k: 'sick', name });
+  else if (a.type === 'venueBuy' && r.lvl === 1) noticia(now, { k: 'venue', name, v: r.kind });
   else if (a.type === 'attack') {
     const b = nomeDe(alvo.id);
     if (r.win && r.mode === 'mug') noticia(now, { k: 'mug', name, target: b, money: r.money });
@@ -127,7 +128,7 @@ function contarAcao(now, a, r, p, alvo, resp0, alvoResp0) {
   const v = { resp: p.respect - resp0 };
   if (a.type === 'crime') Object.assign(v, { crimes: 1, wins: r.success ? 1 : 0, busts: r.busted ? 1 : 0, money: r.success ? r.money : 0, best: r.success ? r.money : 0 });
   else if (a.type === 'crimeAll') Object.assign(v, { crimes: r.n, wins: r.wins, busts: r.busted ? 1 : 0, money: r.money, best: r.best });
-  else if (a.type === 'hooker' && r.sick) v.sick = 1;
+  else if ((a.type === 'hooker' || a.type === 'broVisit') && r.sick) v.sick = 1;
   else if (a.type === 'casino' && (r.g !== 'bj' || r.done)) { const net = casinoNet(r); v.cnet = net; v.cwin = Math.max(0, net); }
   else if (a.type === 'attack') {
     if (r.win) v.fights = 1; else v.beaten = 1;
@@ -216,7 +217,7 @@ function jogadorDe(conta, now, w) {
 // ---------- vista do jogador para o browser ----------
 function vista(p, now) {
   const L = E.level(p);
-  const stored = E.bizStored(p, now);
+  const stored = E.bizStored(p, now), vv = E.venueView(p, Math.max(now, p.t));
   return {
     name: nomeDe(p.id),
     stats: p.stats, energy: p.energy, energyT: p.energyT,
@@ -236,6 +237,9 @@ function vista(p, now) {
     house: p.house, hu: p.hu, housePrice: E.housePrice(p), huPrices: CFG.house.ups.map((_, u) => E.upgradePrice(p, u)),
     cls: p.cls, av: p.av, fx: E.activeFx(p, now), drugPrices: CFG.drugs.map((_, d) => E.drugPrice(p, d)),
     biz: p.biz.map((s, i) => ({ n: s.n, stored: stored[i].money, perH: E.bizRates(p, i).perH, price: s.n < CFG.bizMax ? E.bizPrice(i, s.n) : null, t: s.t })),
+    stock: vv.stock, portDrug: E.portDrug(p),
+    club: vv.club ? { lvl: vv.club.lvl, till: vv.club.till, pi: vv.club.pi, gd: vv.club.gd, perH: E.clubRate(p), cap: CFG.venue.club.perH[vv.club.lvl - 1] * (CFG.venue.tillMs / T.HOUR), next: CFG.venue.club.cost[vv.club.lvl] ?? null } : null,
+    bro: vv.bro ? { lvl: vv.bro.lvl, till: vv.bro.till, pi: vv.bro.pi, gd: vv.bro.gd, girls: vv.bro.girls, perH: E.broRate(p), cap: E.broRate(p) * (CFG.venue.tillMs / T.HOUR), rooms: CFG.venue.bro.rooms[vv.bro.lvl - 1], next: CFG.venue.bro.cost[vv.bro.lvl] ?? null } : null,
     port: p.port, portCap: E.portCap(p), portSlots: E.portSlots(p), air: p.air, airCap: E.airCap(p), airSeize: CFG.air.routes.map((_, i) => E.airSeizeBp(p, i, false)),
   };
 }
@@ -244,7 +248,7 @@ function cfgPublica() {
   return {
     energy: CFG.energy, addiction: CFG.addiction, train: CFG.train, crimes: CFG.crimes, drugs: CFG.drugs,
     biz: CFG.biz.map(({ id, price, perH, resp, stat, raid, toBank }) => ({ id, price, perH, resp, stat, raid, toBank })),
-    bizMax: CFG.bizMax, storageMs: CFG.storageMs, port: CFG.port, air: CFG.air, weapons: CFG.weapons, armors: CFG.armors,
+    bizMax: CFG.bizMax, storageMs: CFG.storageMs, port: CFG.port, air: CFG.air, goods: CFG.goods, venue: CFG.venue, detox: CFG.detox, weapons: CFG.weapons, armors: CFG.armors,
     pvp: CFG.pvp, bank: CFG.bank, luxury: CFG.luxury, levels: CFG.levels, crit: CFG.crit, unlockBp: CFG.unlockBp,
     bustBp: CFG.bustBp, crimeAllMax: CFG.crimeAllMax, casino: { minBet: CFG.casino.minBet, red: CFG.casino.red, dice: CFG.casino.dice, wheel: { segs: CFG.casino.wheel.segs, spots: CFG.casino.wheel.spots }, slots: Object.fromEntries(Object.entries(CFG.casino.slots).map(([k, g]) => [k, { kind: g.kind, cols: g.cols, rows: g.rows, min: g.min, nsym: g.nsym, trig: g.trig, pay: g.pay, scatPay: g.scatPay, free: g.free, fs: g.fs, retrig: g.retrig, buy: g.buy, superBuy: g.superBuy, max: g.max, accFree: g.accFree, orbBase: g.orbBase }])) }, gang: CFG.gang, classes: CFG.classes, classChange: CFG.classChange, avatars: CFG.avatars, hookers: CFG.hookers, house: CFG.house, mastery: CFG.mastery, missions: CFG.missions.length, start: CFG.start,
     round: { playDays: CFG.round.playDays, noPvpMs: CFG.round.noPvpMs },
@@ -443,7 +447,7 @@ function agirOp(a, p, conta, now, world, ctx, g) {
     if (a.kind === 'hit') {
       const c = q.contaPorNome.get(String(a.target || '').toLowerCase()), d = c && jogadores.get(c.id);
       if (!d) err('NO_TARGET');
-      r = E.hitJoin(p, d, now, world);
+      r = E.hitJoin(p, d, now, world, a.drop === true);
       op = { kind: 'hit', alvo: d.id, by: conta, abre: now, fecha: now + OP_MS('hit'), parts: [conta] };
     } else {
       const k = int(a.k), H = CFG.gang.heists[k];
@@ -460,7 +464,7 @@ function agirOp(a, p, conta, now, world, ctx, g) {
     if (now >= op.fecha) err('NO_OP');
     if (op.parts.includes(conta)) err('IN_OP');
     if (op.parts.length >= CFG.gang.opMax) err('GANG_FULL');
-    const r = op.kind === 'hit' ? E.hitJoin(p, jogadores.get(op.alvo) || err('NO_TARGET'), now, world) : E.heistJoin(p, now, world, op.k);
+    const r = op.kind === 'hit' ? E.hitJoin(p, jogadores.get(op.alvo) || err('NO_TARGET'), now, world, a.drop === true) : E.heistJoin(p, now, world, op.k);
     op.parts.push(conta); ctx.ops.push(() => gravaOp(g));
     return { ...r, joined: true };
   }
@@ -753,18 +757,37 @@ function agir(conta, corpo, now) {
     case 'avatar': r = E.setAvatar(p, now, world, int(a.i)); break;
     case 'detox': r = E.detox(p, now, world); break;
     case 'claim': r = E.claimMission(p, now, world); break;
+    case 'missionSwap': r = E.swapMission(p, now, world); break;
     case 'bail': r = E.payBail(p, now, world); break;
     case 'medic': r = E.payMedic(p, now, world); break;
     case 'buyBiz': r = E.buyBiz(p, now, world, int(a.i)); break;
     case 'collect': {
       const b = E.collectBiz(p, now, world, rng);
       const c = E.collectPort(p, now, world, rng);
-      r = { ok: true, items: b.items, port: c.items };
+      const v = E.venueCollect(p, now, world);
+      r = { ok: true, items: b.items, port: c.items, club: v.club, bro: v.bro };
       break;
     }
-    case 'port': r = E.sendPort(p, now, world, int(a.amount)); break;
+    case 'venueCollect': r = E.venueCollect(p, now, world); break;
+    case 'venueBuy': r = E.venueBuy(p, now, world, String(a.kind)); break;
+    case 'venueSet': r = E.venueSet(p, now, world, String(a.kind), int(a.pi), int(a.gd)); break;
+    case 'stockUse': r = E.stockUse(p, now, world, int(a.d)); break;
+    case 'stockDump': r = E.stockDump(p, now, world, int(a.d), int(a.n)); break;
+    case 'broHire': r = E.broHire(p, now, world, int(a.i)); break;
+    case 'broFire': r = E.broFire(p, now, world, int(a.slot)); break;
+    case 'clubBuy': case 'broVisit': {
+      // casa de outro jogador: o dinheiro vai para o caixa dele e grava-se no mesmo passo
+      const c = q.contaPorNome.get(String(a.owner || '').toLowerCase());
+      if (!c || !jogadores.has(c.id)) throw new E.GameError('NO_VENUE');
+      const o = jogadores.get(c.id), seen = Number.isSafeInteger(a.price) ? a.price : undefined;
+      r = a.type === 'clubBuy' ? E.clubBuyAt(p, o, now, world, int(a.d), seen) : E.broVisitAt(p, o, now, world, int(a.slot), rng, seen);
+      r.owner = nomeDe(o.id);
+      ctx.outros.push(o);
+      break;
+    }
+    case 'port': r = E.sendPort(p, now, world, int(a.amount), a.goods === true); break;
     case 'air': r = E.airSend(p, now, world, int(a.r), int(a.amount), a.bribe === true); break;
-    case 'airCollect': r = E.airCollect(p, now, world, rng); break;
+    case 'airCollect': r = E.airCollect(p, now, world, rng, a.keep === true); break;
     case 'deposit': r = E.deposit(p, now, world, int(a.amount)); break;
     case 'withdraw': r = E.withdraw(p, now, world, int(a.amount)); break;
     case 'gear': r = E.buyGear(p, now, world, a.kind === 'armor' ? 'armor' : 'weapon', int(a.idx)); break;
@@ -775,7 +798,7 @@ function agir(conta, corpo, now) {
       if (!c || !jogadores.has(c.id)) throw new E.GameError('NO_TARGET');
       alvo = jogadores.get(c.id);
       alvoResp0 = alvo.respect;
-      r = E.attack(p, alvo, now, world, a.mode === 'mug' ? 'mug' : 'beat', rng);
+      r = E.attack(p, alvo, now, world, a.mode === 'mug' ? 'mug' : 'beat', rng, a.drop === true);
       break;
     }
     default:
@@ -816,6 +839,23 @@ function rankingAtual(now, w) {
   return lista;
 }
 
+// discotecas e bordéis dos outros jogadores, com o preço que ESTE jogador lá paga (o desconto da gangue já vem feito)
+function casas(conta, now, w) {
+  const me = jogadorDe(conta, now, w);
+  if (!me) return { clubs: [], bros: [] };
+  E.touch(me, now);
+  const clubs = [], bros = [];
+  for (const o of jogadores.values()) {
+    if (o.id === me.id || (!o.club && !o.bro)) continue;
+    const v = E.venueView(o, Math.max(now, o.t)), mine = !!me.gang && me.gang === o.gang;
+    const base = { name: nomeDe(o.id), tag: tagDe(o.id), av: o.av || 0, gang: mine };
+    if (v.club && v.stock.some((n) => n > 0)) clubs.push({ ...base, lvl: v.club.lvl, bp: E.venuePriceBp(o, 'club', me), pub: CFG.venue.prices[v.club.pi], items: v.stock.map((n, d) => (n > 0 ? { d, n, price: E.clubPriceAt(o, me, d) } : null)).filter(Boolean) });
+    if (v.bro && v.bro.girls.length) bros.push({ ...base, lvl: v.bro.lvl, bp: E.venuePriceBp(o, 'bro', me), pub: CFG.venue.prices[v.bro.pi], girls: v.bro.girls.map((i, slot) => ({ slot, i, price: E.broPriceAt(o, me, i, now) })) });
+  }
+  // primeiro as da tua gangue, depois as mais baratas para ti
+  const ord = (x, y) => (y.gang - x.gang) || (x.bp - y.bp) || (y.lvl - x.lvl) || (x.name < y.name ? -1 : 1);
+  return { clubs: clubs.sort(ord).slice(0, 20), bros: bros.sort(ord).slice(0, 20) };
+}
 function alvos(conta, now, w) {
   const me = jogadorDe(conta, now, w);
   if (!me) return [];
@@ -950,6 +990,7 @@ async function tratar(req, res) {
     if (!limite('mesa:' + conta, 40, 10_000, now)) return enviar(res, 429, { error: 'SLOW_DOWN' });
     return enviar(res, 200, vistaMesa(g, conta, clock()));
   }
+  if (req.method === 'GET' && path === '/api/venues') return enviar(res, 200, { now, ...(w.phase === 'play' ? casas(conta, now, w) : { clubs: [], bros: [] }) });
   if (req.method === 'GET' && path === '/api/targets') return enviar(res, 200, { now, list: w.phase === 'play' ? alvos(conta, now, w) : [] });
   if (req.method === 'GET' && path === '/api/ranking') {
     const rk = rankingAtual(now, w);

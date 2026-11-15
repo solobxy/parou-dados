@@ -1184,3 +1184,34 @@ h1.slogo { margin: 0; }
 .sc2 .ov.v10 { color: #ffc22e; font-size: clamp(20px, 6.3vw, 27px); }
 .spl { font-size: clamp(15px, 4.7vw, 19px); color: #fff9d0; -webkit-text-stroke: 2px #2a0730; text-shadow: 0 1px 0 #000, 0 0 7px #ffd75e; margin: 0 2px 1px 0; }
 .spl.v8 { font-size: clamp(16px, 5vw, 20px); } .spl.v16, .spl.v64 { font-size: clamp(17px, 5.3vw, 22px); }
+
+/* rodadas grátis a mais a meio do bónus */
+.sfree .sleft{display:inline-block}
+.sfree .sleft.bump{animation:sleftb .9s cubic-bezier(.2,1.4,.4,1)}
+@keyframes sleftb{0%{transform:scale(1)}35%{transform:scale(1.35);color:var(--gold,#f5c451)}100%{transform:scale(1)}}
+.sban.more .sbt{font-size:clamp(28px,9vw,48px)}
+
+/* discoteca e bordel do jogador, armazém e casas dos outros jogadores */
+.vbig { font-size: 28px; line-height: 1; }
+.vlist { display: grid; gap: 4px; padding-top: 10px; padding-bottom: 10px; }
+.vlist > .row { margin-bottom: 6px; }
+.vrow { display: flex; align-items: center; gap: 10px; min-height: 52px; width: 100%; text-align: left; color: inherit; background: none; border: 0; padding: 0; font: inherit; }
+.vrow.tap { border-radius: 8px; }
+.vrow.tap:active { background: var(--s2); }
+.vrow .grow { min-width: 0; }
+.vrow b, .cut { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.vrow .btn.sm { flex: none; min-width: 72px; }
+.vth { width: 44px; height: 44px; border-radius: 8px; object-fit: cover; flex: none; background: var(--s2); }
+.seg.five { margin-bottom: 0; }
+.seg.five button { padding: 0 2px; font-size: 14px; min-width: 0; }
+.chip.good { background: #123a24; color: #8be8ad; white-space: nowrap; flex: none; }
+
+/* multiplicador que caiu numa rodada sem prémio: não conta, fica apagado */
+.sgrid .dud { filter: saturate(.35) brightness(.72); }
+.sgrid .dud .ov { opacity: .75; }
+
+.vc { margin-bottom: 10px; }
+.vlead { font-size: 16px; line-height: 1.4; }
+.vperks { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; font-size: 14px; line-height: 1.35; color: var(--tx2); }
+.vperks li { display: flex; gap: 8px; align-items: flex-start; }
+.vperks svg.i { width: 16px; height: 16px; flex: none; margin-top: 2px; color: var(--sodium); }

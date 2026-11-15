@@ -396,6 +396,63 @@ test('gangue: safar um membro da prisão e do hospital paga quem carrega no bot�
 });
 
 // muda o estado guardado de jogadores (com o servidor parado), para os testes chegarem a níveis e quantias altas
+test('discoteca e bordel: abrir, pôr preço, cada um vê o seu preço (gangue com desconto) e o dinheiro vai para o caixa do dono', async () => {
+  ENV_EXTRA = { ATOS_3S: '100000', ATOS_MIN: '1000000' };
+  const A = await contaNova('CasaA', '10.0.9.80'), B = await contaNova('CasaB', '10.0.9.81'), X = await contaNova('CasaX', '10.0.9.82');
+  for (const x of [A, B, X]) await x.estado();
+  const COCA = 6, agora = Date.now() + DESVIO;
+  const base = (e) => { e.cash = 500_000; e.bank = 0; e.respect = 100; e.peakRespect = 100; e.energy = 0; e.energyT = agora; };
+  await mexer({ CasaA: (e) => { base(e); e.stock[COCA] = 5; }, CasaB: base, CasaX: base });
+  const ag = (x, ip, body) => cru(x.cookie, ip, body), get = async (x, ip, path) => (await fetch(BASE + path, { headers: { cookie: x.cookie, 'X-Forwarded-For': ip } })).json();
+  let r = await ag(A, '10.0.9.80', { type: 'gangCreate', name: 'Casas', tag: 'CAS' }); assert.equal(r.status, 200, JSON.stringify(r.body));
+  r = await ag(B, '10.0.9.81', { type: 'gangJoin', id: (await get(A, '10.0.9.80', '/api/gang')).mine.id }); assert.equal(r.status, 200);
+  const a0 = (await A.estado()).cash;
+  // abrir a discoteca e pôr o preço a 110% com 20% de desconto para a gangue
+  r = await ag(A, '10.0.9.80', { type: 'venueSet', kind: 'club', pi: 3, gd: 2 }); assert.equal(r.body.error, 'NO_VENUE');
+  r = await ag(A, '10.0.9.80', { type: 'venueBuy', kind: 'club' }); assert.equal(r.status, 200, JSON.stringify(r.body));
+  assert.equal(r.body.me.club.lvl, 1); assert.equal(r.body.me.cash, a0 - 10000); assert.deepEqual(r.body.me.stock[COCA], 5);
+  r = await ag(A, '10.0.9.80', { type: 'venueSet', kind: 'club', pi: 3, gd: 2 }); assert.equal(r.status, 200); assert.equal(r.body.me.club.pi, 3); assert.equal(r.body.me.club.gd, 2);
+  r = await ag(A, '10.0.9.80', { type: 'venueSet', kind: 'club', pi: 9, gd: 0 }); assert.equal(r.body.error, 'BAD_AMOUNT');
+  // a lista: o membro da gangue vê 88%, quem é de fora vê 110%; o dono não aparece na sua própria lista
+  let vb = await get(B, '10.0.9.81', '/api/venues'), vx = await get(X, '10.0.9.82', '/api/venues'), va = await get(A, '10.0.9.80', '/api/venues');
+  assert.equal(va.clubs.length, 0);
+  assert.deepEqual(vb.clubs.map((c) => [c.name, c.tag, c.gang, c.bp, c.pub]), [['CasaA', 'CAS', true, 8800, 11000]]); assert.deepEqual(vb.clubs[0].items, [{ d: COCA, n: 5, price: 1320 }]);
+  assert.deepEqual(vx.clubs.map((c) => [c.name, c.gang, c.bp]), [['CasaA', false, 11000]]); assert.equal(vx.clubs[0].items[0].price, 1650);
+  // comprar: o dinheiro sai do comprador e entra no caixa do dono; a droga sai do armazém dele
+  r = await ag(B, '10.0.9.81', { type: 'clubBuy', owner: 'CasaA', d: COCA, price: 1320 }); assert.equal(r.status, 200, JSON.stringify(r.body));
+  assert.equal(r.body.result.price, 1320); assert.equal(r.body.me.cash, 500_000 - 1320); assert.equal(r.body.me.energy, 30);
+  r = await ag(X, '10.0.9.82', { type: 'clubBuy', owner: 'CasaA', d: COCA, price: 1000 }); assert.equal(r.body.error, 'PRICE_CHANGED'); assert.equal((await X.estado()).cash, 500_000);
+  r = await ag(X, '10.0.9.82', { type: 'clubBuy', owner: 'CasaA', d: COCA, price: 1650 }); assert.equal(r.status, 200); assert.equal(r.body.me.cash, 500_000 - 1650);
+  r = await ag(X, '10.0.9.82', { type: 'clubBuy', owner: 'CasaA', d: 0 }); assert.equal(r.body.error, 'NO_STOCK');
+  r = await ag(X, '10.0.9.82', { type: 'clubBuy', owner: 'Ninguem', d: COCA }); assert.equal(r.body.error, 'NO_VENUE');
+  r = await ag(A, '10.0.9.80', { type: 'clubBuy', owner: 'CasaA', d: COCA }); assert.equal(r.body.error, 'SELF');
+  let a = await A.estado(); assert.equal(a.club.till, 2970); assert.equal(a.stock[COCA], 3); assert.equal(a.cash, a0 - 10000);
+  r = await ag(A, '10.0.9.80', { type: 'venueCollect' }); assert.equal(r.body.result.club, 2970); assert.equal(r.body.me.cash, a0 - 10000 + 2970); assert.equal(r.body.me.club.till, 0);
+  // armazém: tomar uma e despachar o resto (95% do preço de grosso)
+  r = await ag(A, '10.0.9.80', { type: 'stockUse', d: COCA }); assert.equal(r.status, 200); assert.equal(r.body.me.stock[COCA], 2); assert.equal(r.body.me.cash, a0 - 10000 + 2970);
+  r = await ag(A, '10.0.9.80', { type: 'stockDump', d: COCA, n: 3 }); assert.equal(r.body.error, 'NO_STOCK');
+  r = await ag(A, '10.0.9.80', { type: 'stockDump', d: COCA, n: 2 }); assert.equal(r.body.result.got, 2280); assert.equal(r.body.me.stock[COCA], 0);
+  assert.equal((await get(X, '10.0.9.82', '/api/venues')).clubs.length, 0);   // sem mercadoria, a discoteca sai da lista
+  // bordel: abrir, contratar, preço a 90%; a visita paga ao caixa só a parte da casa
+  r = await ag(A, '10.0.9.80', { type: 'broHire', i: 5 }); assert.equal(r.body.error, 'NO_VENUE');
+  r = await ag(A, '10.0.9.80', { type: 'venueBuy', kind: 'bro' }); assert.equal(r.status, 200); assert.equal(r.body.me.bro.rooms, 2);
+  r = await ag(A, '10.0.9.80', { type: 'broHire', i: 5 }); assert.equal(r.status, 200); assert.deepEqual(r.body.me.bro.girls, [5]); assert.ok(r.body.me.bro.perH > 0);
+  r = await ag(A, '10.0.9.80', { type: 'venueSet', kind: 'bro', pi: 1, gd: 0 }); assert.equal(r.status, 200);
+  vx = await get(X, '10.0.9.82', '/api/venues'); const cidade = (await X.estado()).hookers[5];
+  assert.equal(vx.bros.length, 1); assert.deepEqual(vx.bros[0].girls, [{ slot: 0, i: 5, price: Math.floor((cidade * 9000) / 10000) }]);
+  const x0 = (await X.estado()).cash;
+  r = await ag(X, '10.0.9.82', { type: 'broVisit', owner: 'CasaA', slot: 0, price: vx.bros[0].girls[0].price }); assert.equal(r.status, 200, JSON.stringify(r.body));
+  assert.equal(r.body.result.price, vx.bros[0].girls[0].price); assert.equal(r.body.me.cash, x0 - r.body.result.price); assert.equal(r.body.result.house, r.body.result.price - Math.floor((cidade * 8000) / 10000));
+  a = await A.estado(); assert.ok(a.bro.till >= r.body.result.house && a.bro.till <= r.body.result.house + 3, 'caixa do bordel: ' + a.bro.till);
+  r = await ag(A, '10.0.9.80', { type: 'broFire', slot: 0 }); assert.equal(r.status, 200); assert.deepEqual(r.body.me.bro.girls, []);
+  // porto: o contentor de mercadoria fica marcado com a droga
+  r = await ag(A, '10.0.9.80', { type: 'port', amount: 1000, goods: true }); assert.equal(r.status, 200); assert.equal(r.body.me.port.at(-1).d, r.body.me.portDrug);
+  // o estado sobrevive a um reinício
+  await mexer({}); a = await A.estado(); assert.equal(a.club.pi, 3); assert.equal(a.bro.lvl, 1); assert.equal(a.port.at(-1).d, a.portDrug);
+  await ag(B, '10.0.9.81', { type: 'gangLeave' }); await ag(A, '10.0.9.80', { type: 'gangLeave' });
+  assert.equal((await get(A, '10.0.9.80', '/api/gang')).list.length, 0);
+});
+
 async function mexer(muda) {
   await parar();
   const db = new DatabaseSync(join(dir, 'jogo.db'));

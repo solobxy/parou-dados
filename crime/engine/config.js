@@ -21,6 +21,7 @@ export const CFG = {
   addiction: { base: 100, perT: 4, decayMs: 1 * MIN }, // limite = 100 + tolerância/4; desce 1 por minuto
 
   start: { stat: 10, cash: 500 },
+  missionSwapMs: 1 * HOUR, // trocar o objetivo do beco: uma vez por hora
 
   train: { energy: 5, costBase: 0, costPerStat: 0 }, // +1 ponto por treino; só gasta energia
 
@@ -49,16 +50,17 @@ export const CFG = {
 
   // Discoteca: só se compra se a energia não passar do máximo e o vício não passar do limite.
   // energia por vício melhora nos consumos caros; os baratos servem para o início (1 $ por ponto de energia)
+  // a: quanto vicia. Com 100 de limite, a coca dá 33 doses (990 de stamina) antes de ser preciso desintoxicar ou esperar.
   drugs: [
-    { id: 'cerveja', e: 5, a: 2, price: 5 },
-    { id: 'erva', e: 10, a: 3, price: 25, fx: [{ k: 'bust', bp: 3000, ms: 10 * MIN }] },
-    { id: 'cogumelos', e: 13, a: 4, price: 90, fx: [{ k: 'I', bp: 1000, ms: 10 * MIN }] },
-    { id: 'ecstasy', e: 20, a: 5, price: 200, fx: [{ k: 'C', bp: 1000, ms: 10 * MIN }] },
-    { id: 'speed', e: 24, a: 6, price: 600, fx: [{ k: 'loot', bp: 1500, ms: 10 * MIN }] },
-    { id: 'lsd', e: 18, a: 5, price: 1000, fx: [{ k: 'I', bp: 2000, ms: 15 * MIN }] },
-    { id: 'coca', e: 30, a: 6, price: 1500, fx: [{ k: 'C', bp: 1500, ms: 15 * MIN }, { k: 'biz', bp: 1000, ms: 15 * MIN }] },
-    { id: 'cristal', e: 36, a: 7, price: 4000, fx: [{ k: 'F', bp: 2000, ms: 15 * MIN }] },
-    { id: 'heroina', e: 40, a: 7, price: 8000, fx: [{ k: 'T', bp: 2500, ms: 20 * MIN }] },
+    { id: 'cerveja', e: 5, a: 1, price: 5 },
+    { id: 'erva', e: 10, a: 2, price: 25, fx: [{ k: 'bust', bp: 3000, ms: 10 * MIN }] },
+    { id: 'cogumelos', e: 13, a: 2, price: 90, fx: [{ k: 'I', bp: 1000, ms: 10 * MIN }] },
+    { id: 'ecstasy', e: 20, a: 3, price: 200, fx: [{ k: 'C', bp: 1000, ms: 10 * MIN }] },
+    { id: 'speed', e: 24, a: 3, price: 600, fx: [{ k: 'loot', bp: 1500, ms: 10 * MIN }] },
+    { id: 'lsd', e: 18, a: 2, price: 1000, fx: [{ k: 'I', bp: 2000, ms: 15 * MIN }] },
+    { id: 'coca', e: 30, a: 3, price: 1500, fx: [{ k: 'C', bp: 1500, ms: 15 * MIN }, { k: 'biz', bp: 1000, ms: 15 * MIN }] },
+    { id: 'cristal', e: 36, a: 3, price: 4000, fx: [{ k: 'F', bp: 2000, ms: 15 * MIN }] },
+    { id: 'heroina', e: 40, a: 3, price: 8000, fx: [{ k: 'T', bp: 2500, ms: 20 * MIN }] },
   ],
   // efeitos temporários: F, I, C, T sobem a stat; loot = saque dos golpes; biz = recolhas dos negócios; bust = menos prisão ao falhar
   fxKinds: ['F', 'I', 'C', 'T', 'loot', 'biz', 'bust'],
@@ -94,6 +96,19 @@ export const CFG = {
       { id: 'culiacan', lat: 24.8, lon: -107.4, ms: 6 * HOUR, gainBp: 6500, seizeBp: 2500, level: 11, r: 10, drug: 'cristal' },
       { id: 'kandahar', lat: 31.6, lon: 65.7, ms: 8 * HOUR, gainBp: 10000, seizeBp: 3300, level: 13, r: 14, drug: 'heroina' },
     ],
+  },
+  // Mercadoria: a droga que vem do aeroporto ou do porto entra no armazém ao preço de grosso (80% do preço da discoteca da cidade).
+  // Despachar o que está no armazém paga 95% disso: guardar droga nunca sai mais barato do que o banco (3%).
+  goods: { wholesaleBp: 8000, dumpBp: 9500, portDrug: [[9, 'coca'], [7, 'ecstasy'], [0, 'erva']] },
+  // Discoteca e bordel do jogador. O dono escolhe o preço (80% a 120% do preço da cidade) e o desconto para a gangue.
+  // Ninguém paga menos do que o custo (80%): na discoteca é o que a droga custou, no bordel é a parte da puta. O dono nunca perde numa venda.
+  // Os clientes da casa (não são jogadores) aparecem por hora: mais barato sai mais depressa, mais caro sai menos (volBp).
+  // Discoteca: perH é quanta droga sai por hora, em dinheiro ao preço da cidade; só vende o que houver no armazém.
+  // Bordel: cada puta rende perH por hora ao preço da cidade (pela categoria). O caixa de cada casa enche até 12 h de movimento.
+  venue: {
+    prices: [8000, 9000, 10000, 11000, 12000], volBp: [13000, 11500, 10000, 6000, 3500], gdisc: [0, 1000, 2000, 3000], tillMs: 12 * HOUR, girlBp: 8000,
+    club: { cost: [10000, 30000, 90000, 270000, 800000, 2400000, 7000000, 20000000], perH: [2000, 6000, 18000, 50000, 140000, 400000, 1100000, 3000000], resp: [8, 16, 30, 50, 80, 120, 180, 260] },
+    bro: { cost: [8000, 40000, 200000, 800000, 2500000], rooms: [2, 4, 6, 9, 12], hire: [3000, 12000, 45000, 160000], perH: [200, 700, 2500, 8000], resp: [8, 20, 45, 80, 130] },
   },
   // mudar de profissão: custa o que rendem 100 de stamina no teu melhor golpe e só dá uma vez a cada 24 h, para ninguém trocar antes de cada jogada
   classChange: { energy: 100, min: 500, coolMs: 24 * HOUR },
@@ -206,22 +221,23 @@ export const CFG = {
   },
   // putas: stamina sem vício; o preço segue o que ganhas por stamina e sobe 10% por cada visita nas últimas 24 h
   hookers: {
-    windowMs: 24 * HOUR, stepNum: 11, stepDen: 10, maxSteps: 60,
+    // cada visita sobe 10% o preço DESSA puta durante 24 h; as outras não mexem. maxList: quantas visitas se guardam ao todo.
+    windowMs: 24 * HOUR, stepNum: 11, stepDen: 10, maxSteps: 60, maxList: 240,
     sickCutBp: 1500, // doente: −15% em todas as stats até se tratar
     cureMin: 40, cureValueBp: 1000, // tratar custa o que rendem 10 de stamina
     list: [
-      // quanto mais barata, menos stamina por visita e mais risco de doença; as de cima custam mais por ponto
-      // mas enchem de uma vez e quase sem risco. Contando a doença, as do meio são as que rendem mais.
-      { id: 'rosinha', tier: 0, e: 8, min: 10, valueBp: 1700, sickBp: 900 },
-      { id: 'marlene', tier: 0, e: 12, min: 20, valueBp: 2000, sickBp: 600 },
-      { id: 'sandra', tier: 0, e: 18, min: 35, valueBp: 2200, sickBp: 500 },
-      { id: 'katia', tier: 1, e: 28, min: 120, valueBp: 2600, sickBp: 300 },
-      { id: 'jessica', tier: 1, e: 36, min: 180, valueBp: 2800, sickBp: 250 },
-      { id: 'bianca', tier: 1, e: 45, min: 350, valueBp: 3000, sickBp: 180 },
-      { id: 'valentina', tier: 2, e: 55, min: 700, valueBp: 3300, sickBp: 120 },
-      { id: 'dominique', tier: 2, e: 75, min: 1200, valueBp: 3600, sickBp: 80 },
-      { id: 'scarlett', tier: 2, e: 85, min: 1800, valueBp: 3800, sickBp: 50 },
-      { id: 'anastasia', tier: 3, e: 95, min: 3000, valueBp: 4100, sickBp: 30 },
+      // quanto mais barata, menos stamina por visita e um pouco mais de risco de doença (no máximo 1%);
+      // as de cima custam mais por ponto mas enchem de uma vez e quase sem risco.
+      { id: 'rosinha', tier: 0, e: 8, min: 10, valueBp: 1700, sickBp: 100 },
+      { id: 'marlene', tier: 0, e: 12, min: 20, valueBp: 2000, sickBp: 90 },
+      { id: 'sandra', tier: 0, e: 18, min: 35, valueBp: 2200, sickBp: 80 },
+      { id: 'katia', tier: 1, e: 28, min: 120, valueBp: 2600, sickBp: 60 },
+      { id: 'jessica', tier: 1, e: 36, min: 180, valueBp: 2800, sickBp: 50 },
+      { id: 'bianca', tier: 1, e: 45, min: 350, valueBp: 3000, sickBp: 40 },
+      { id: 'valentina', tier: 2, e: 55, min: 700, valueBp: 3300, sickBp: 30 },
+      { id: 'dominique', tier: 2, e: 75, min: 1200, valueBp: 3600, sickBp: 25 },
+      { id: 'scarlett', tier: 2, e: 85, min: 1800, valueBp: 3800, sickBp: 20 },
+      { id: 'anastasia', tier: 3, e: 95, min: 3000, valueBp: 4100, sickBp: 15 },
       { id: 'isabella', tier: 3, e: 100, min: 4500, valueBp: 4400, sickBp: 10 },
       { id: 'celeste', tier: 3, e: 100, min: 7000, valueBp: 4700, sickBp: 0 },
     ],
@@ -232,7 +248,9 @@ export const CFG = {
   // desintoxicação: limpa o vício todo, sem limite de vezes. Preço = pouco menos de um terço do que 100 de energia te rendem
   // (por 100 de vício), +25% por cada uso nas últimas 24 h. Nunca bloqueia: só fica cada vez mais cara.
   // desintoxicar 100 de vício custa o que rendem ~14 de stamina; cada vez no mesmo dia fica 30% mais cara (trava quem quer stamina sem fim)
-  detox: { min: 30, windowMs: 24 * HOUR, valueDiv: 700, stepNum: 13, stepDen: 10, maxSteps: 40 },
+  // limpar 100 de vício custa o que rendem 10 de stamina; cada uma nas últimas 24 h custa mais 15%.
+  // Por volta da 30.ª do dia já custa mais do que tudo o que esse vício deixava ganhar: há sempre um fim.
+  detox: { min: 30, windowMs: 24 * HOUR, valueDiv: 1000, stepNum: 23, stepDen: 20, maxSteps: 40 },
 
   // Negócios: rendem por hora para um armazém que enche em 8 h. Cada compra dá respeito uma vez (resp).
   // Cada unidade extra do mesmo tipo custa +50%; máximo 10 de cada tipo.
@@ -280,7 +298,7 @@ export const CFG = {
     defendGain: 2, // quem se defende com sucesso ganha 2
     beatHospMs: 20 * MIN,
     mugHospMs: 10 * MIN,
-    mugBp: 1000, // assalto leva 10% do dinheiro na mão e do que está por recolher nos negócios ilegais
+    mugBp: 2500, // assalto leva 25% do dinheiro na mão e do que está por recolher nos negócios ilegais, na discoteca e no bordel (o banco e o cofre de casa ficam a salvo)
     protectMs: 30 * MIN, // proteção depois de sair do hospital
     maxHospPerWindow: 4, // ninguém é mandado para o hospital mais de 4 vezes em 24 h (regra fixa)
     windowMs: 24 * HOUR,

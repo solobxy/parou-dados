@@ -247,7 +247,7 @@ test('negócios: cada compra dá respeito uma vez', () => {
   assert.equal(p.respect, R);                    // recolher não dá respeito
 });
 
-test('ataques: assalto leva 10% do dinheiro na mão e do armazém ilegal, nunca do banco', () => {
+test('ataques: assalto leva 25% do dinheiro na mão e do armazém ilegal, nunca do banco', () => {
   const a = E.newPlayer('a', START, world), d = E.newPlayer('d', START, world);
   d.cash = 1e6;
   E.buyBiz(d, START, world, 1);                      // prostitutas (ilegal)
@@ -257,11 +257,11 @@ test('ataques: assalto leva 10% do dinheiro na mão e do armazém ilegal, nunca 
   const expect = E.mugValue(a, d, t);
   const r = E.attack(a, d, t, world, 'mug', always);
   const stored1 = Math.floor(500 * 1010 / 1000) * 2;  // 2 h de prostitutas
-  assert.equal(r.money, 100 + Math.floor(stored1 / 10));
+  assert.equal(r.money, 250 + Math.floor(stored1 / 4));
   assert.equal(r.money, expect);
-  assert.equal(d.cash, 900);
+  assert.equal(d.cash, 750);
   assert.equal(d.bank, 50000);
-  assert.equal(d.biz[1].stored, stored1 - Math.floor(stored1 / 10));
+  assert.equal(d.biz[1].stored, stored1 - Math.floor(stored1 / 4));
   assert.equal(d.biz[0].stored, Math.floor(125 * 1010 / 1000) * 2); // legal fica intacto
 });
 
@@ -334,7 +334,7 @@ test('recarga: enche ao melhor preço, sem passar o vício, o dinheiro nem a ene
   const sum = (f) => r.counts.reduce((s, n, d) => s + n * CFG.drugs[d][f], 0);
   assert.equal(sum('e'), r.energy); assert.equal(sum('a'), r.addiction); assert.equal(sum('price'), r.price);
   // sem margem de vício recusa sem mexer em nada
-  p.energy = 0; p.addiction = E.addictionCap(p) - 1; p.addictionT = START;
+  p.energy = 0; p.addiction = E.addictionCap(p); p.addictionT = START;
   const snap = JSON.stringify({ ...p, hits: [] });
   assert.throws(() => E.refill(p, START, world), { code: 'ADDICTION_LIMIT' });
   assert.equal(JSON.stringify({ ...p, hits: [] }), snap);
@@ -481,7 +481,24 @@ test('objetivos: um de cada vez, só se recebe quando está feito, e uma só vez
   // todos os tipos de objetivo têm de onde tirar o progresso, e a cadeia acaba
   const types = new Set(CFG.missions.map((m) => m.type));
   for (const ty of types) assert.ok(['wins', 'trains', 'refills', 'collects', 'pvpWins', 'ports', 'level', 'tier', 'stars', 'gear', 'biz', 'lux'].includes(ty), ty);
-  p.mi = CFG.missions.length;
+  // trocar: o que está à vista vai para o fim, aparece o seguinte, uma vez por hora, sem mexer no dinheiro nem no progresso
+  const q = E.newPlayer('q', START, world), c0 = q.cash, a = E.mission(q).id;
+  assert.equal(E.mission(q).swapAt <= START, true);
+  let s1 = E.swapMission(q, START, world);
+  assert.equal(s1.skipped, a); assert.equal(s1.next.id, CFG.missions[1].id); assert.equal(q.cash, c0); assert.equal(q.mq.at(-1), 0); assert.equal(E.mission(q).i, 0);
+  assert.throws(() => E.swapMission(q, START + T.HOUR - 1, world), { code: 'SWAP_WAIT' }); assert.equal(E.mission(q).id, CFG.missions[1].id);
+  assert.equal(E.mission(q).swapAt, START + T.HOUR);
+  s1 = E.swapMission(q, START + T.HOUR, world); assert.equal(s1.next.id, CFG.missions[2].id); assert.deepEqual(q.mq.slice(-2), [0, 1]);
+  // um objetivo já feito recebe-se, não se troca; e o que se saltou volta depois dos outros, uma só vez
+  q.c.trains = 3; assert.throws(() => E.swapMission(q, START + 3 * T.HOUR, world), { code: 'MISSION_READY' });
+  E.claimMission(q, START + 3 * T.HOUR, world); assert.equal(q.mi, 1); assert.equal(q.mq.length, CFG.missions.length - 1); assert.ok(!q.mq.includes(2));
+  const todos = new Set(); let pago = 0; q.c.wins = 1e6; q.c.trains = 1e6; q.c.refills = 1e6; q.c.collects = 1e6; q.c.pvpWins = 1e6; q.c.ports = 1e6; q.respect = 1e12; q.peakRespect = 1e12; q.wk = q.wk.map(() => 1e6); q.weapon = 0; q.armor = 0; q.biz.forEach((b) => { b.n = 10; }); q.luxuries = 9;
+  for (let k = 0; k < 40 && E.mission(q); k++) { const m = E.mission(q); assert.ok(m.done, m.id); assert.ok(!todos.has(m.id)); todos.add(m.id); pago += E.claimMission(q, START + 4 * T.HOUR + k, world).cash; }
+  assert.equal(todos.size, CFG.missions.length - 1); assert.equal(pago, CFG.missions.reduce((x, m) => x + m.cash, 0) - CFG.missions[2].cash);
+  assert.equal(E.mission(q), null); assert.throws(() => E.swapMission(q, START + 9 * T.HOUR, world), { code: 'NO_MISSION' });
+  // com um só por fazer não há por quem trocar
+  const u = E.newPlayer('u', START, world); u.mq = [5]; u.mi = CFG.missions.length - 1; assert.equal(E.mission(u).swapAt, 0); assert.throws(() => E.swapMission(u, START, world), { code: 'NO_OTHER' });
+  p.mq = []; p.mi = CFG.missions.length;
   assert.equal(E.mission(p), null);
   assert.throws(() => E.claimMission(p, START + 3, world), { code: 'NO_MISSION' });
   assert.deepEqual(E.checkInvariants(p), []);

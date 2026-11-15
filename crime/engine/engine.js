@@ -30,7 +30,7 @@ export function newPlayer(id, now, world, opts = {}) {
     hospTimes: [],
     hits: new Map(),
     biz: CFG.biz.map(() => ({ n: 0, stored: 0, rem: 0, t: now })),
-    port: [], air: null,
+    port: [], air: null, stock: CFG.drugs.map(() => 0), club: null, bro: null,
     weapon: -1, armor: -1,
     luxuries: 0,
     gang: null, gb: null, gangLeft: 0, gh: [],
@@ -38,8 +38,9 @@ export function newPlayer(id, now, world, opts = {}) {
     xp: { F: 0, I: 0, C: 0 },
     wk: CFG.crimes.map(() => 0),   // sucessos por golpe (mestria)
     c: { crimes: 0, wins: 0, trains: 0, refills: 0, collects: 0, pvpWins: 0, ports: 0 },
-    mi: 0,                         // próximo objetivo por receber
-    cls: '', clsAt: 0, av: 0, fx: {}, sick: false, hkT: [], house: 0, hu: CFG.house.ups.map(() => 0), bj: null,        // profissão, avatar e efeitos temporários (kind -> { bp, until })
+    mi: 0,                         // objetivos já recebidos
+    mq: CFG.missions.map((_, i) => i), mrT: 0,   // os que faltam, pela ordem em que vão aparecer; e quando se trocou pela última vez
+    cls: '', clsAt: 0, av: 0, fx: {}, sick: false, hkT: [], hkI: [], house: 0, hu: CFG.house.ups.map(() => 0), bj: null,        // profissão, avatar e efeitos temporários (kind -> { bp, until })
   };
 }
 
@@ -50,13 +51,19 @@ function migrate(p) {
   if (!Array.isArray(p.wk)) p.wk = CFG.crimes.map(() => 0);
   if (!p.c) p.c = { crimes: 0, wins: 0, trains: 0, refills: 0, collects: 0, pvpWins: 0, ports: 0 };
   if (!Number.isSafeInteger(p.mi)) p.mi = 0;
+  if (!Array.isArray(p.mq)) p.mq = CFG.missions.map((_, i) => i).slice(Math.min(Math.max(p.mi, 0), CFG.missions.length));
+  if (!Number.isSafeInteger(p.mrT)) p.mrT = 0;
   if (typeof p.cls !== 'string') p.cls = '';
   if (!Number.isSafeInteger(p.clsAt)) p.clsAt = 0;
   if (p.air === undefined) p.air = null;
+  if (!Array.isArray(p.stock) || p.stock.length !== CFG.drugs.length) p.stock = CFG.drugs.map((_, i) => (Array.isArray(p.stock) && Number.isSafeInteger(p.stock[i]) && p.stock[i] > 0 ? p.stock[i] : 0));
+  if (p.club === undefined) p.club = null;
+  if (p.bro === undefined) p.bro = null;
   if (!Number.isSafeInteger(p.av)) p.av = 0;
   if (!p.fx || typeof p.fx !== 'object') p.fx = {};
   if (typeof p.sick !== 'boolean') p.sick = false;
   if (!Array.isArray(p.hkT)) p.hkT = [];
+  if (!Array.isArray(p.hkI) || p.hkI.length !== p.hkT.length) p.hkI = p.hkT.map(() => -1);   // visitas antigas: não se sabe a quem foram, não contam para ninguém
   if (!Number.isSafeInteger(p.house)) p.house = 0;
   if (!Array.isArray(p.hu)) p.hu = CFG.house.ups.map(() => 0);
   if (p.bj === undefined) p.bj = null;
@@ -98,6 +105,7 @@ export function touch(p, now) {
   if (p.addiction > addictionCap(p)) p.addiction = addictionCap(p); // limite mudou nas regras
   if (p.jailUntil && p.jailUntil <= now) { p.jailUntil = 0; p.jailTier = 0; }
   if (p.hospUntil && p.hospUntil <= now) p.hospUntil = 0;
+  settleClub(p, now); settleBro(p, now);   // os clientes da discoteca e do bordel até agora
   p.t = now;
 }
 
@@ -420,11 +428,13 @@ export function payMedic(p, now, world) {
 const recent = (arr, now, win) => (now === undefined ? arr.length : arr.reduce((c, t) => c + (t > now - win ? 1 : 0), 0));
 export const hookerUses = (p, now) => recent(p.hkT, now, CFG.hookers.windowMs);
 export const detoxUses = (p, now) => recent(p.detoxT, now, CFG.detox.windowMs);
-function pruneHk(p, now) { const lim = now - CFG.hookers.windowMs; while (p.hkT.length && p.hkT[0] <= lim) p.hkT.shift(); }
+function pruneHk(p, now) { const lim = now - CFG.hookers.windowMs; while (p.hkT.length && p.hkT[0] <= lim) { p.hkT.shift(); p.hkI.shift(); } }
+// visitas a ESTA puta nas últimas 24 h: só o preço dela sobe
+export function hookerVisits(p, i, now) { const lim = now - CFG.hookers.windowMs, I = p.hkI || []; let n = 0; for (let k = 0; k < p.hkT.length; k++) if (p.hkT[k] > lim && I[k] === i) n++; return n; }
 export function hookerPrice(p, i, now) {
   const H = CFG.hookers, g = H.list[i];
   let price = Math.max(g.min, Math.floor((Math.floor(valuePerEnergy(p) * 100) * g.e * g.valueBp) / 1000000));
-  const n = Math.min(recent(p.hkT, now, H.windowMs), H.maxSteps); // só conta, não mexe: uma visita recusada não muda nada
+  const n = Math.min(hookerVisits(p, i, now), H.maxSteps); // só conta, não mexe: uma visita recusada não muda nada
   for (let k = 0; k < n; k++) price = Math.ceil((price * H.stepNum) / H.stepDen);
   return Math.max(1, cut(price, klass(p).hkCutBp || 0));
 }
@@ -436,14 +446,18 @@ export function visitHooker(p, now, world, i, rng) {
   if (p.energy >= CFG.energy.max) fail('ENERGY_FULL');
   const price = hookerPrice(p, i, now);
   pay(p, price);
+  return { ok: true, price, ...doVisit(p, i, now, rng) };
+}
+function doVisit(p, i, now, rng) {
+  const g = CFG.hookers.list[i];
   const got = Math.min(g.e, CFG.energy.max - p.energy);
   p.energy += got;
   pruneHk(p, now);
-  if (p.hkT.length >= CFG.hookers.maxSteps) p.hkT.shift();
-  p.hkT.push(now);
+  if (p.hkT.length >= CFG.hookers.maxList) { p.hkT.shift(); p.hkI.shift(); }
+  p.hkT.push(now); p.hkI.push(i);
   const sick = rng.chance(cut(g.sickBp, klass(p).sickCutBp || 0));
   if (sick) p.sick = true;
-  return { ok: true, energy: got, price, sick };
+  return { energy: got, sick };
 }
 export function cureCost(p) {
   return p.sick ? Math.max(CFG.hookers.cureMin, Math.floor((Math.floor(valuePerEnergy(p) * 100) * CFG.hookers.cureValueBp) / 10000)) : 0;
@@ -468,17 +482,23 @@ export function buyDrug(p, now, world, d) {
   const g = Number.isInteger(d) ? CFG.drugs[d] : undefined;
   if (!g) fail('NO_DRUG');
   begin(p, now, world);
-  // quem está cheio só pode tomar o que tem efeito (a stamina a mais perde-se)
-  if (!g.fx && p.energy + g.e > CFG.energy.max) fail('ENERGY_FULL');
-  if (p.addiction + g.a > addictionCap(p)) fail('ADDICTION_LIMIT', { cap: addictionCap(p) });
+  canTake(p, g);
   const price = drugPrice(p, d);
   pay(p, price);
+  return { ok: true, price, ...take(p, g, now) };
+}
+// quem está cheio só pode tomar o que tem efeito (a stamina a mais perde-se)
+function canTake(p, g) {
+  if (!g.fx && p.energy + g.e > CFG.energy.max) fail('ENERGY_FULL');
+  if (p.addiction + g.a > addictionCap(p)) fail('ADDICTION_LIMIT', { cap: addictionCap(p) });
+}
+function take(p, g, now) {
   const got = Math.min(g.e, CFG.energy.max - p.energy);
   p.energy += got;
   if (p.addiction === 0) p.addictionT = now;
   p.addiction += g.a;
   p.c.refills += 1;
-  return { ok: true, energy: got, addiction: g.a, price, fx: applyFx(p, g, now) };
+  return { energy: got, addiction: g.a, fx: applyFx(p, g, now) };
 }
 
 // Quanto vale 1 ponto de energia para este jogador: o melhor golpe desbloqueado, em dinheiro esperado.
@@ -693,7 +713,7 @@ export function portCap(p) {
 }
 export function portSlots(p) { return 1 + Math.floor(level(p) / CFG.port.slotsEveryLevels); }
 
-export function sendPort(p, now, world, amount) {
+export function sendPort(p, now, world, amount, goods = false) {
   begin(p, now, world);
   if (!Number.isSafeInteger(amount) || amount < CFG.port.minAmount) fail('BAD_AMOUNT');
   if (amount > portCap(p)) fail('OVER_CAP', { cap: portCap(p) });
@@ -701,7 +721,7 @@ export function sendPort(p, now, world, amount) {
   const readyAt = now + CFG.port.ms;
   if (readyAt > world.playEnd) fail('ROUND_ENDING');
   pay(p, amount);
-  p.port.push({ amount, readyAt });
+  p.port.push(goods ? { amount, readyAt, d: portDrug(p) } : { amount, readyAt });
   p.c.ports += 1;
   return { ok: true, readyAt };
 }
@@ -713,8 +733,8 @@ export function collectPort(p, now, world, rng) {
     if (c.readyAt > now) return true;
     if (rng.chance(portSeizeBp(p))) { out.push({ amount: c.amount, got: 0, seized: true }); return false; }
     const got = c.amount + Math.floor((c.amount * CFG.port.gainBp) / 10000);
-    p.cash += got;
-    out.push({ amount: c.amount, got, seized: false });
+    if (c.d !== undefined) out.push({ amount: c.amount, got, seized: false, ...toGoods(p, c.d, got) });   // veio em droga: entra no armazém
+    else { p.cash += got; out.push({ amount: c.amount, got, seized: false }); }
     return false;
   });
   return { ok: true, items: out };
@@ -743,7 +763,7 @@ export function airSend(p, now, world, r, amount, bribe) {
   p.air = { r, amount, bribe: !!bribe, t0: now, readyAt };
   return { ok: true, r, readyAt, paid: amount + extra, bribe: extra };
 }
-export function airCollect(p, now, world, rng) {
+export function airCollect(p, now, world, rng, keep = false) {
   begin(p, now, world, { allowBusy: true });
   const f = p.air;
   if (!f) fail('NO_FLIGHT');
@@ -752,8 +772,172 @@ export function airCollect(p, now, world, rng) {
   p.air = null;
   if (rng.chance(airSeizeBp(p, f.r, f.bribe))) return { ok: true, r: f.r, amount: f.amount, got: 0, seized: true, respect: 0 };
   const got = f.amount + Math.floor((f.amount * R.gainBp) / 10000);
-  p.cash += got;
-  return { ok: true, r: f.r, amount: f.amount, got, seized: false, respect: R.r, levelUp: addRespect(p, R.r, now) };
+  const goods = keep ? toGoods(p, CFG.drugs.findIndex((x) => x.id === R.drug), got) : null;
+  if (!goods) p.cash += got;
+  return { ok: true, r: f.r, amount: f.amount, got, seized: false, respect: R.r, levelUp: addRespect(p, R.r, now), ...(goods || {}) };
+}
+
+// ---------- mercadoria e casas do jogador (discoteca e bordel) ----------
+export function wholesale(d) { return Math.max(1, Math.floor((CFG.drugs[d].price * CFG.goods.wholesaleBp) / 10000)); }
+export function dumpValue(d, n) { return Math.floor((n * wholesale(d) * CFG.goods.dumpBp) / 10000); }
+export function portDrug(p) { const L = level(p); for (const [lv, id] of CFG.goods.portDrug) if (L >= lv) return CFG.drugs.findIndex((x) => x.id === id); return 0; }
+// troca dinheiro por unidades ao preço de grosso; o troco fica em dinheiro
+function toGoods(p, d, cash) { const w = wholesale(d), units = Math.floor(cash / w), rest = cash - units * w; p.stock[d] += units; p.cash += rest; return { d, units, rest }; }
+const venueFloor = (kind) => (kind === 'club' ? CFG.goods.wholesaleBp : CFG.venue.girlBp);
+// quanto sai por hora na discoteca (em dinheiro ao preço da cidade) e quanto cabe no caixa
+export function clubRate(p) { const c = p.club, V = CFG.venue; return c ? Math.floor((V.club.perH[c.lvl - 1] * V.volBp[c.pi]) / 10000) : 0; }
+const clubCap = (c) => CFG.venue.club.perH[c.lvl - 1] * (CFG.venue.tillMs / T.HOUR);
+// Discoteca: os clientes da casa gastam por hora o que a casa aguenta e levam primeiro o mais barato que houver.
+// A conta dá o mesmo quer se faça de uma vez ou aos bocados: o que não chegou para mais uma unidade fica guardado (rem).
+const DRUGS_BY_PRICE = CFG.drugs.map((_, d) => d).sort((a, b) => CFG.drugs[a].price - CFG.drugs[b].price || a - b);
+function settleClub(p, now) {
+  const c = p.club; if (!c) return;
+  if (now <= c.t) return;
+  const V = CFG.venue, perH = clubRate(p), cap = clubCap(c);
+  const tot = c.rem + perH * Math.min(now - c.t, 14 * T.DAY);   // em dinheiro × ms, ao preço da cidade
+  const budget = Math.floor(tot / T.HOUR);
+  let used = 0, left = false;
+  for (const d of DRUGS_BY_PRICE) {
+    if (!p.stock[d]) continue;
+    const price = CFG.drugs[d].price, unit = Math.max(1, Math.floor((price * V.prices[c.pi]) / 10000));
+    const n = c.till >= cap ? 0 : Math.min(p.stock[d], Math.floor((budget - used) / price), Math.ceil((cap - c.till) / unit));
+    if (n > 0) { p.stock[d] -= n; used += n * price; c.till += n * unit; }
+    if (p.stock[d] > 0) { left = true; break; }   // enquanto houver da mais barata, as outras esperam
+  }
+  // o tempo sem mercadoria (ou com o caixa cheio) não se acumula
+  c.rem = left && c.till < cap ? tot - used * T.HOUR : 0;
+  c.t = now;
+}
+// Bordel: o que as putas rendem por hora ao dono, depois da parte delas. Ao preço da cidade é o perH da tabela.
+export function broRate(p) {
+  const b = p.bro, V = CFG.venue; if (!b) return 0;
+  let base = 0; for (const i of b.girls) base += V.bro.perH[CFG.hookers.list[i].tier];
+  return Math.floor((Math.floor((base * V.volBp[b.pi]) / 10000) * (V.prices[b.pi] - V.girlBp)) / (10000 - V.girlBp));
+}
+function settleBro(p, now) {
+  const b = p.bro; if (!b) return;
+  if (now <= b.t) return;
+  const perH = broRate(p), cap = perH * (CFG.venue.tillMs / T.HOUR);
+  if (perH > 0 && b.till < cap) {
+    const tot = b.rem + perH * Math.min(now - b.t, CFG.venue.tillMs), add = Math.floor(tot / T.HOUR);
+    b.rem = tot - add * T.HOUR; b.till = Math.min(cap, b.till + add);
+    if (b.till >= cap) b.rem = 0;
+  } else b.rem = 0;
+  b.t = now;
+}
+// leitura sem alterar o estado (para os ecrãs e para a lista de casas)
+export function venueView(p, now) {
+  const ghost = { stock: p.stock.slice(), club: p.club ? { ...p.club } : null, bro: p.bro ? { ...p.bro, girls: p.bro.girls.slice() } : null };
+  settleClub(ghost, now); settleBro(ghost, now);
+  return ghost;
+}
+// preço numa casa de outro jogador, em pontos sobre o preço da cidade: o do dono, com o desconto da gangue se forem da mesma.
+// Nunca abaixo do custo.
+export function venuePriceBp(owner, kind, buyer) {
+  const v = owner[kind], V = CFG.venue;
+  const bp = buyer && buyer.gang && buyer.gang === owner.gang ? cut(V.prices[v.pi], V.gdisc[v.gd]) : V.prices[v.pi];
+  return Math.max(venueFloor(kind), bp);
+}
+export function clubPriceAt(owner, buyer, d) { return Math.max(1, Math.floor((CFG.drugs[d].price * venuePriceBp(owner, 'club', buyer)) / 10000)); }
+export function broPriceAt(owner, buyer, i, now) { return Math.max(1, Math.floor((hookerPrice(buyer, i, now) * venuePriceBp(owner, 'bro', buyer)) / 10000)); }
+const isVenue = (kind) => kind === 'club' || kind === 'bro';
+export function venueBuy(p, now, world, kind) {
+  if (!isVenue(kind)) fail('NO_VENUE');
+  begin(p, now, world);
+  const C = CFG.venue[kind], v = p[kind], next = v ? v.lvl : 0;
+  if (next >= C.cost.length) fail('VENUE_MAX');
+  pay(p, C.cost[next]);
+  if (v) v.lvl += 1;
+  else p[kind] = kind === 'club' ? { lvl: 1, till: 0, t: now, rem: 0, pi: 2, gd: 0 } : { lvl: 1, till: 0, t: now, rem: 0, pi: 2, gd: 0, girls: [] };
+  return { ok: true, kind, lvl: p[kind].lvl, cost: C.cost[next], respect: C.resp[next], levelUp: addRespect(p, C.resp[next], now) };
+}
+export function venueSet(p, now, world, kind, pi, gd) {
+  if (!isVenue(kind)) fail('NO_VENUE');
+  begin(p, now, world, { allowBusy: true });
+  const v = p[kind]; if (!v) fail('NO_VENUE');
+  if (!Number.isInteger(pi) || pi < 0 || pi >= CFG.venue.prices.length || !Number.isInteger(gd) || gd < 0 || gd >= CFG.venue.gdisc.length) fail('BAD_AMOUNT');
+  v.pi = pi; v.gd = gd;
+  return { ok: true, kind, pi, gd };
+}
+export function venueCollect(p, now, world) {
+  begin(p, now, world, { allowBusy: true });
+  const club = p.club ? p.club.till : 0, bro = p.bro ? p.bro.till : 0;
+  if (p.club) p.club.till = 0;
+  if (p.bro) p.bro.till = 0;
+  p.cash += club + bro;
+  return { ok: true, club, bro };
+}
+// tomar do próprio armazém: já está paga, o resto é como na discoteca
+export function stockUse(p, now, world, d) {
+  const g = Number.isInteger(d) ? CFG.drugs[d] : undefined;
+  if (!g) fail('NO_DRUG');
+  begin(p, now, world);
+  if (!(p.stock[d] > 0)) fail('NO_STOCK');
+  canTake(p, g);
+  p.stock[d] -= 1;
+  return { ok: true, d, price: 0, ...take(p, g, now) };
+}
+// despachar o que está no armazém: paga um pouco menos do que custou
+export function stockDump(p, now, world, d, n) {
+  const g = Number.isInteger(d) ? CFG.drugs[d] : undefined;
+  if (!g) fail('NO_DRUG');
+  begin(p, now, world, { allowBusy: true });
+  if (!Number.isSafeInteger(n) || n < 1 || n > p.stock[d]) fail('NO_STOCK');
+  const got = dumpValue(d, n);
+  p.stock[d] -= n; p.cash += got;
+  return { ok: true, d, n, got };
+}
+export function broHire(p, now, world, i) {
+  const g = Number.isInteger(i) ? CFG.hookers.list[i] : undefined;
+  if (!g) fail('NO_HOOKER');
+  begin(p, now, world);
+  const b = p.bro; if (!b) fail('NO_VENUE');
+  if (b.girls.length >= CFG.venue.bro.rooms[b.lvl - 1]) fail('NO_SLOT');
+  const cost = CFG.venue.bro.hire[g.tier];
+  pay(p, cost);
+  b.girls.push(i);
+  return { ok: true, i, cost };
+}
+export function broFire(p, now, world, slot) {
+  begin(p, now, world, { allowBusy: true });
+  const b = p.bro; if (!b) fail('NO_VENUE');
+  if (!Number.isInteger(slot) || slot < 0 || slot >= b.girls.length) fail('NO_HOOKER');
+  const [i] = b.girls.splice(slot, 1);
+  return { ok: true, i };
+}
+// comprar na discoteca de outro jogador: paga-se ao dono, a droga sai do armazém dele e toma-se logo.
+// price é o preço que o comprador viu: se o dono mudou entretanto, a compra não se faz.
+export function clubBuyAt(buyer, owner, now, world, d, seen) {
+  const g = Number.isInteger(d) ? CFG.drugs[d] : undefined;
+  if (!g) fail('NO_DRUG');
+  begin(buyer, now, world);
+  if (buyer === owner || buyer.id === owner.id) fail('SELF');
+  touch(owner, now);
+  if (!owner.club) fail('NO_VENUE');
+  if (!(owner.stock[d] > 0)) fail('NO_STOCK');
+  canTake(buyer, g);
+  const price = clubPriceAt(owner, buyer, d);
+  if (seen !== undefined && price > seen) fail('PRICE_CHANGED', { price });
+  pay(buyer, price);
+  owner.stock[d] -= 1; owner.club.till += price;
+  return { ok: true, d, price, ...take(buyer, g, now) };
+}
+// ir ao bordel de outro jogador: o teu preço da cidade para essa puta, vezes o preço do dono. A parte dela (80% do preço da cidade) não vai para o dono.
+export function broVisitAt(buyer, owner, now, world, slot, rng, seen) {
+  begin(buyer, now, world);
+  if (buyer === owner || buyer.id === owner.id) fail('SELF');
+  touch(owner, now);
+  const b = owner.bro; if (!b) fail('NO_VENUE');
+  const i = Number.isInteger(slot) ? b.girls[slot] : undefined;
+  if (i === undefined) fail('NO_HOOKER');
+  if (buyer.sick) fail('SICK');
+  if (buyer.energy >= CFG.energy.max) fail('ENERGY_FULL');
+  const base = hookerPrice(buyer, i, now), price = broPriceAt(owner, buyer, i, now);
+  if (seen !== undefined && price > seen) fail('PRICE_CHANGED', { price });
+  pay(buyer, price);
+  const house = Math.max(0, price - Math.floor((base * CFG.venue.girlBp) / 10000));
+  b.till += house;
+  return { ok: true, i, price, house, ...doVisit(buyer, i, now, rng) };
 }
 
 // ---------- banco ----------
@@ -826,14 +1010,15 @@ function hospitalize(p, now, ms, asVictim) {
   }
 }
 
-export function canAttack(a, d, now, world) {
+// drop: quem ataca aceitou perder o escudo de jogador novo
+export function canAttack(a, d, now, world, drop = false) {
   const P = CFG.pvp;
   if (a === d || a.id === d.id) return 'SELF';
   if (now - world.start < CFG.round.noPvpMs) return 'NO_PVP_YET';
   if (a.jailUntil > now) return 'IN_JAIL';
   if (a.hospUntil > now) return 'IN_HOSPITAL';
   if (a.energy < P.energy) return 'NO_ENERGY';
-  if (a.shieldUntil > now) return 'YOU_ARE_NEW';
+  if (a.shieldUntil > now && !drop) return 'YOU_ARE_NEW';
   if (d.shieldUntil > now) return 'TARGET_NEW';
   if (d.hospUntil > now) return 'TARGET_HOSPITAL';
   if (d.jailUntil > now) return 'TARGET_JAIL';
@@ -857,6 +1042,8 @@ export function mugValue(a, d, now) {
   const take = (x) => Math.floor(Math.floor((x * CFG.pvp.mugBp) / 10000) / div);
   let v = take(cut(d.cash, huBp(d, 0)));
   for (let i = 0; i < st.length; i++) if (CFG.biz[i].raid) v += take(st[i].money);
+  const vv = venueView(d, Math.max(now, d.t));
+  for (const k of ['club', 'bro']) if (vv[k]) v += take(vv[k].till);
   return v;
 }
 
@@ -873,13 +1060,14 @@ export function expectedGain(a, d, now) {
   return Math.floor(pvpBaseGain(a, d) / div);
 }
 
-export function attack(a, d, now, world, mode, rng) {
+export function attack(a, d, now, world, mode, rng, drop = false) {
   begin(a, now, world);
   touch(d, now);
   if (mode !== 'beat' && mode !== 'mug') fail('BAD_MODE');
-  const why = canAttack(a, d, now, world);
+  const why = canAttack(a, d, now, world, drop);
   if (why) fail(why);
   const P = CFG.pvp;
+  const shieldLost = a.shieldUntil > now; if (shieldLost) a.shieldUntil = 0;   // só chega aqui com escudo quem aceitou perdê-lo; não volta
   a.energy -= P.energy;
   a.protectUntil = 0; // quem ataca perde a proteção
   const bp = attackChanceBp(a, d, now);
@@ -905,6 +1093,7 @@ export function attack(a, d, now, world, mode, rng) {
         const s = take(d.biz[i].stored);
         d.biz[i].stored -= s; stolen += s;
       }
+      for (const k of ['club', 'bro']) if (d[k]) { const s = take(d[k].till); d[k].till -= s; stolen += s; }   // e o caixa da discoteca e do bordel
       a.cash += stolen;
       const g = Math.floor(gain / 4);
       const lvA = addRespect(a, g, now);
@@ -965,13 +1154,14 @@ export function heistResolve(ps, now, k, rng) {
     return { id: p.id, money: 0, respect: 0, busted };
   }) };
 }
-export function hitJoin(a, d, now, world) {
+export function hitJoin(a, d, now, world, drop = false) {
   begin(a, now, world);
   touch(d, now);
   if (!a.gang) fail('NO_GANG');
   if (a.gang === d.gang) fail('SAME_GANG');
-  const why = canAttack(a, d, now, world);
+  const why = canAttack(a, d, now, world, drop);
   if (why) fail(why);
+  if (a.shieldUntil > now) a.shieldUntil = 0;
   a.energy -= CFG.pvp.energy;
   return { ok: true, e: CFG.pvp.energy };
 }
@@ -1322,11 +1512,14 @@ export function slotSpin(gid, rng, buy = 0) {
       const spots = buy === 2 ? Array.from({ length: G.cols * G.rows }, () => pickW(rng, G.superSpots)) : new Array(G.cols * G.rows).fill(0);
       out.spots0 = spots.slice();
       let left = G.fs[Math.min(7, base.scat)], played = 0;
+      out.free0 = left;
       while (left > 0 && played < G.maxFree && total < cap) {
         left--; played++;
         const r = clusterRound(G, rng, true, spots, false);
-        if (r.scat >= G.trig) left += G.fs[Math.min(7, r.scat)];
-        total += r.win; out.free.push({ ...r, w: r.win });
+        const add = r.scat >= G.trig ? G.fs[Math.min(7, r.scat)] : 0;
+        left += add; total += r.win;
+        // add: rodadas ganhas nesta rodada; left: as que ficam por jogar (o limite de rodadas e o prémio máximo acabam o bónus)
+        out.free.push({ ...r, w: r.win, add, left: total < cap ? Math.min(left, G.maxFree - played) : 0 });
       }
     }
   } else {
@@ -1336,14 +1529,16 @@ export function slotSpin(gid, rng, buy = 0) {
     if (base.scat >= G.trig) {
       out.scatPay = G.scatPay[Math.min(6, base.scat)]; total += out.scatPay;
       let left = G.free, played = 0, acc = 0;
+      out.free0 = left;
       while (left > 0 && played < G.maxFree && total < cap) {
         left--; played++;
         const r = scatterRound(G, rng, true, false);
         let m = r.win > 0 && r.orbSum ? r.orbSum : 0;
         if (G.accFree) { acc += m; m = acc; }
         const w2 = r.win * (r.win > 0 && m ? m : 1);
-        if (r.scat >= G.retrig[0]) left += G.retrig[1];
-        total += w2; out.free.push({ ...r, acc: m, w: w2 });
+        const add = r.scat >= G.retrig[0] ? G.retrig[1] : 0;
+        left += add; total += w2;
+        out.free.push({ ...r, acc: m, w: w2, add, left: total < cap ? Math.min(left, G.maxFree - played) : 0 });
       }
     }
   }
@@ -1404,10 +1599,11 @@ function missionHave(p, type) {
 
 // o objetivo atual, ou null quando a cadeia acabou
 export function mission(p) {
-  const m = CFG.missions[p.mi];
+  const m = CFG.missions[p.mq[0]];
   if (!m) return null;
   const have = Math.min(m.need, missionHave(p, m.type));
-  return { i: p.mi, id: m.id, type: m.type, need: m.need, have, cash: m.cash, done: have >= m.need, total: CFG.missions.length };
+  // swapAt: a partir de quando se pode trocar por outro (0 = não há outro para pôr no lugar)
+  return { i: CFG.missions.length - p.mq.length, id: m.id, type: m.type, need: m.need, have, cash: m.cash, done: have >= m.need, total: CFG.missions.length, swapAt: p.mq.length > 1 ? p.mrT + CFG.missionSwapMs : 0 };
 }
 
 export function claimMission(p, now, world) {
@@ -1416,8 +1612,19 @@ export function claimMission(p, now, world) {
   if (!m) fail('NO_MISSION');
   if (!m.done) fail('MISSION_NOT_DONE');
   p.cash += m.cash;
-  p.mi += 1;
+  p.mq.shift(); p.mi += 1;
   return { ok: true, id: m.id, cash: m.cash, next: mission(p) };
+}
+// trocar o objetivo: o que está à vista vai para o fim da fila e aparece o seguinte. Uma vez por hora; não dá nem tira dinheiro.
+export function swapMission(p, now, world) {
+  begin(p, now, world, { allowBusy: true });
+  const m = mission(p);
+  if (!m) fail('NO_MISSION');
+  if (m.done) fail('MISSION_READY');
+  if (p.mq.length < 2) fail('NO_OTHER');
+  if (now < p.mrT + CFG.missionSwapMs) fail('SWAP_WAIT', { at: p.mrT + CFG.missionSwapMs });
+  p.mq.push(p.mq.shift()); p.mrT = now;
+  return { ok: true, skipped: m.id, next: mission(p) };
 }
 
 // ---------- ranking ----------
@@ -1441,17 +1648,22 @@ export function checkInvariants(p) {
   if (p.gb) { const G = CFG.gang; for (const k of ['loot', 'atk', 'def']) if (!Number.isSafeInteger(p.gb[k]) || p.gb[k] < 0 || p.gb[k] > (k === 'loot' ? G.lootBpPer : G.fightBpPer) * G.maxLevel) bad.push('gb.' + k); }
   if (!Array.isArray(p.detoxT) || p.detoxT.length > CFG.detox.maxSteps) bad.push('detox list');
   if (!Number.isSafeInteger(p.mi) || p.mi < 0 || p.mi > CFG.missions.length) bad.push('mission index');
+  if (!Array.isArray(p.mq) || p.mq.length + p.mi !== CFG.missions.length || new Set(p.mq).size !== p.mq.length || p.mq.some((i) => !CFG.missions[i])) bad.push('mission queue');
   for (const k of Object.keys(p.c)) if (!Number.isSafeInteger(p.c[k]) || p.c[k] < 0) bad.push(`counter ${k}`);
   if (p.wk.length !== CFG.crimes.length || p.wk.some((n) => !Number.isSafeInteger(n) || n < 0)) bad.push('mastery');
   if (p.c.wins !== p.wk.reduce((s, n) => s + n, 0)) bad.push('wins!=mastery');
   for (const s of ['F', 'I', 'C']) if (!Number.isSafeInteger(p.xp?.[s]) || p.xp[s] < 0 || p.xp[s] >= practiceNeed(p, s)) bad.push(`xp ${s}=${p.xp?.[s]}`);
   if (p.energyT > p.t || p.addictionT > p.t) bad.push('timer in future');
   if (p.cls !== '' && !CFG.classes.some((c) => c.id === p.cls)) bad.push('class');
+  if (!Array.isArray(p.stock) || p.stock.length !== CFG.drugs.length || p.stock.some((x) => !Number.isSafeInteger(x) || x < 0)) bad.push('stock');
+  for (const k of ['club', 'bro']) { const v = p[k]; if (v === null) continue;
+    if (!(v && Number.isInteger(v.lvl) && v.lvl >= 1 && v.lvl <= CFG.venue[k].cost.length && Number.isSafeInteger(v.till) && v.till >= 0 && Number.isSafeInteger(v.rem) && v.rem >= 0 && Number.isSafeInteger(v.t) && CFG.venue.prices[v.pi] !== undefined && CFG.venue.gdisc[v.gd] !== undefined)) bad.push(k);
+    else if (k === 'bro' && !(Array.isArray(v.girls) && v.girls.length <= CFG.venue.bro.rooms[v.lvl - 1] && v.girls.every((i) => CFG.hookers.list[i]))) bad.push('bro girls'); }
   if (p.air !== null && !(p.air && CFG.air.routes[p.air.r] && Number.isSafeInteger(p.air.amount) && p.air.amount >= CFG.air.minAmount && Number.isSafeInteger(p.air.readyAt) && p.air.readyAt === p.air.t0 + CFG.air.routes[p.air.r].ms && typeof p.air.bribe === 'boolean')) bad.push('air');
   if (typeof p.sick !== 'boolean') bad.push('sick');
   if (!Number.isSafeInteger(p.house) || p.house < 0 || p.house >= CFG.house.tiers.length) bad.push('house');
   if (!Array.isArray(p.hu) || p.hu.length !== CFG.house.ups.length || p.hu.some((n) => !Number.isSafeInteger(n) || n < 0 || n > p.house)) bad.push('house upgrades');
-  if (!Array.isArray(p.hkT) || p.hkT.length > CFG.hookers.maxSteps) bad.push('hooker list');
+  if (!Array.isArray(p.hkT) || p.hkT.length > CFG.hookers.maxList || !Array.isArray(p.hkI) || p.hkI.length !== p.hkT.length) bad.push('hooker list');
   if (!Number.isSafeInteger(p.av) || p.av < 0 || p.av >= CFG.avatars) bad.push('avatar');
   if (p.bj !== null && (typeof p.bj !== 'object' || !Number.isSafeInteger(p.bj.bet) || p.bj.bet < CFG.casino.minBet || !Array.isArray(p.bj.pl) || bjValue(p.bj.pl).tot > 21 || !Array.isArray(p.bj.next))) bad.push('blackjack');
   for (const k of Object.keys(p.fx)) { const f = p.fx[k]; if (!CFG.fxKinds.includes(k) || !Number.isSafeInteger(f.bp) || f.bp <= 0 || !Number.isSafeInteger(f.until)) bad.push('fx ' + k); }
