@@ -1641,7 +1641,8 @@ export function slotSpin(gid, rng, buy = 0) {
       while (left > 0 && played < G.maxFree && total < cap) {
         left--; played++;
         const r = scatterRound(G, rng, true, false);
-        let m = r.win > 0 && r.orbSum ? r.orbSum : 0;
+        // accAll: nas rodadas grátis todas as esferas que caem ficam no multiplicador acumulado, mesmo que essa rodada não tenha prémio
+        let m = r.orbSum && (r.win > 0 || G.accAll) ? r.orbSum : 0;
         if (G.accFree) { acc += m; m = acc; }
         const w2 = r.win * (r.win > 0 && m ? m : 1);
         const add = r.scat >= G.retrig[0] ? G.retrig[1] : 0;

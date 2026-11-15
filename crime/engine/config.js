@@ -165,25 +165,28 @@ export const CFG = {
     // Prémios em centésimos da aposta. As quatro slots estão afinadas por simulação (milhões de jogadas cada) para o mesmo perfil:
     // bónus natural a sair 1 vez em cada 400 jogadas, jogo base a devolver cerca de 72%, retorno total entre 96% e 96,5%,
     // e a compra de bónus (100× a aposta) a devolver em média 96 a 96,5×. O que muda de umas para as outras é o tema e a forma de pagar, não as odds.
+    // accFree: nas rodadas grátis as esferas juntam-se num multiplicador que fica até ao fim. accAll: juntam-se todas as que caem, mesmo numa rodada
+    // sem prémio (antes, 2 em cada 3 esferas das grátis caíam em rodadas sem prémio e perdiam-se). Para o retorno ficar igual, nas grátis caem
+    // cerca de um terço das esferas que caíam: o multiplicador final é, em média, o mesmo, mas nenhuma esfera se perde.
     slots: {
       chefao: {
         kind: 'scatter', cols: 6, rows: 5, min: 8, nsym: 10, trig: 4,
         // 0 charuto, 1 whisky, 2 ficha, 3 chapéu, 4 relógio, 5 anel, 6 notas, 7 diamante, 8 coroa, 9 barra de ouro, 10 chefão (scatter), 11 esfera
         w: [1400,  1300,  1180,  1060,  740,  600,  500,  400,  320,  260,  131,  50],
-        wFree: [1400,  1300,  1180,  1060,  740,  600,  500,  400,  320,  260,  131,  221],
+        wFree: [14000,  13000,  11800,  10600,  7400,  6000,  5000,  4000,  3200,  2600,  1310,  803],   // nas grátis caem menos esferas, mas todas contam (accAll)
         pay: [[28,  85,  224],  [45,  102,  451],  [56,  112,  562],  [90,  134,  899],  [112,  168,  1123],  [168,  224,  1350],  [224,  562,  1686],  [282,  1123,  2810],  [1123,  2810,  5620],  [562,  1350,  3372]],
         orb: [[2, 300], [3, 200], [4, 120], [5, 100], [6, 60], [8, 50], [10, 40], [12, 25], [15, 20], [20, 15], [25, 10], [50, 5], [100, 2]],
-        orbBase: true, accFree: true, scatPay: { 4: 300, 5: 500, 6: 10000 }, free: 15, retrig: [3, 5], maxFree: 60, buy: 100, max: 2500,
+        orbBase: true, accFree: true, accAll: true, scatPay: { 4: 300, 5: 500, 6: 10000 }, free: 15, retrig: [3, 5], maxFree: 60, buy: 100, max: 2500,
       },
       // «Trovão de Zeus 1000»: como os jogos de deuses gregos 6×5 (esferas até ×1000, multiplicador total nas grátis). Prémio máximo 15 000×, compra a 100×.
       zeus: {
         kind: 'scatter', cols: 6, rows: 5, min: 8, nsym: 9, trig: 4,
         // 0 gema azul, 1 verde, 2 amarela, 3 roxa, 4 vermelha, 5 cálice, 6 ânfora, 7 lira, 8 elmo, 9 deus (scatter), 10 esfera
         w: [1350,  1280,  1170,  1060,  880,  720,  600,  500,  400,  138,  40],
-        wFree: [1350,  1280,  1170,  1060,  880,  720,  600,  500,  400,  138,  194],
+        wFree: [13500,  12800,  11700,  10600,  8800,  7200,  6000,  5000,  4000,  1380,  653],   // nas grátis caem menos esferas, mas todas contam (accAll)
         pay: [[32,  96,  255],  [51,  115,  510],  [64,  128,  639],  [101,  154,  1021],  [128,  192,  1276],  [192,  255,  1531],  [255,  639,  1914],  [319,  1276,  3191],  [1276,  3191,  6382]],
         orb: [[2, 400], [3, 260], [4, 160], [5, 130], [6, 80], [8, 60], [10, 50], [12, 30], [15, 25], [20, 18], [25, 12], [50, 7], [100, 4], [250, 2], [500, 1], [1000, 1]],
-        orbBase: true, accFree: true, scatPay: { 4: 300, 5: 500, 6: 10000 }, free: 15, retrig: [3, 5], maxFree: 60, buy: 100, max: 15000,
+        orbBase: true, accFree: true, accAll: true, scatPay: { 4: 300, 5: 500, 6: 10000 }, free: 15, retrig: [3, 5], maxFree: 60, buy: 100, max: 15000,
       },
       // «Doce Vingança»: doces e fruta 6×5; bombas de ×2 a ×100 só nas grátis, cada jogada com as suas. Prémio máximo 21 175×, compra a 100×.
       doce: {

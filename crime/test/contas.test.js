@@ -461,16 +461,44 @@ test('roda da sorte: as oito apostas devolvem 96,5% (conta exata, com o teto) e 
   assert.throws(() => E.casinoPlay(p, NOW, W, 'wheel', { bets: [{ s: '3', amt: 100 }] }, never), code('BAD_BET'));
 });
 
+test('slots de esferas: nas grátis do Chefão e do Zeus todas as esferas ficam no multiplicador acumulado (com ou sem prémio); na Doce cada rodada é à parte', () => {
+  for (const gid of ['chefao', 'zeus', 'doce']) {
+    const G = CFG.casino.slots[gid], rng = seededRng(61), cap = G.max * 100; let semPremio = 0, rodadas = 0;
+    assert.equal(!!G.accAll, gid !== 'doce');
+    for (let i = 0; i < 3000; i++) {
+      const s = E.slotSpin(gid, rng, 1); let acc = 0, soma = s.base.win * (s.base.win > 0 && s.base.orbSum ? s.base.orbSum : 1) + s.scatPay;
+      for (const f of s.free) {
+        rodadas++;
+        if (G.accAll) {
+          acc += f.orbSum; assert.equal(f.acc, acc, gid + ': acumulado');            // nunca desce e junta tudo o que caiu
+          assert.equal(f.w, f.win * Math.max(1, acc), gid + ': prémio da rodada');
+          if (f.orbSum > 0 && f.win === 0) semPremio++;
+        } else assert.equal(f.w, f.win * (f.win > 0 && f.orbSum ? f.orbSum : 1), gid + ': prémio da rodada');
+        soma += f.w;
+      }
+      if (soma < cap && s.free.at(-1).left === 0) assert.equal(s.total, soma, gid + ': total');
+    }
+    if (G.accAll) assert.ok(semPremio / rodadas > 0.03, gid + ': esferas em rodadas sem prémio também contam (' + semPremio + ')');
+  }
+});
+
 // as quatro slots estão afinadas para o mesmo perfil: retorno total perto de 96,2%, compra de bónus perto de 96,2×, bónus 1 em 400 jogadas
 // (medido com 6 a 10 milhões de jogadas e mais de 1 milhão de compras por jogo; aqui confirma-se com menos, por isso a folga)
 const SLOT_REAL = { chefao: 0.962, zeus: 0.962, doce: 0.962, rebucado: 0.962 };
 for (const gid of Object.keys(CFG.casino.slots)) {
   test(`slot ${gid}: retorno perto do real, compra de bónus também, teto respeitado e contas da grelha certas`, () => {
-    const G = CFG.casino.slots[gid], rng = seededRng(404), N = gid === 'rebucado' ? 150000 : 400000, NB = gid === 'rebucado' ? 6000 : 12000;
-    let tot = 0, hits = 0;
-    for (let i = 0; i < N; i++) { const s = E.slotSpin(gid, rng, 0); tot += s.total; if (s.base.win > 0) hits++; assert.ok(s.total <= G.max * 100); }
-    let bt = 0; for (let i = 0; i < NB; i++) { const s = E.slotSpin(gid, rng, 1); bt += s.total; assert.ok(s.free.length > 0, 'compra sem grátis'); }
-    perto(tot / N / 100, SLOT_REAL[gid], 0.06, gid + ' retorno');        // as grátis têm cauda longa: a afinação fina foi feita com milhões de jogadas
+    const G = CFG.casino.slots[gid], rng = seededRng(404), sc = G.kind === 'scatter', cap = G.max * 100, N = sc ? 400000 : 150000, NB = sc ? 30000 : 6000;
+    let tot = 0, hits = 0, semGratis = 0, trig = 0;
+    for (let i = 0; i < N; i++) {
+      const s = E.slotSpin(gid, rng, 0), b = s.base; tot += s.total; if (b.win > 0) hits++; assert.ok(s.total <= cap);
+      if (sc) { semGratis += Math.min(cap, b.win * (b.win > 0 && b.orbSum ? b.orbSum : 1) + s.scatPay); if (s.free.length) trig++; }
+    }
+    let bt = 0, gratis = 0;
+    for (let i = 0; i < NB; i++) { const s = E.slotSpin(gid, rng, 1); bt += s.total; gratis += Math.min(cap, s.free.reduce((x, f) => x + f.w, 0)); assert.ok(s.free.length > 0, 'compra sem grátis'); }
+    // as grátis têm cauda longa (uma compra pode dar milhares de vezes a aposta): nas slots de esferas o retorno mede-se por partes, que é muito mais
+    // estável: o que o jogo paga sem as grátis + a frequência do bónus × o que as grátis valem em média (medido nas compras). Afinação fina: milhões de jogadas.
+    if (sc) perto((semGratis / N + (trig / N) * (gratis / NB)) / 100, SLOT_REAL[gid], 0.04, gid + ' retorno');
+    else perto(tot / N / 100, SLOT_REAL[gid], 0.06, gid + ' retorno');
     perto(bt / NB / 100 / G.buy, SLOT_REAL[gid], 0.08, gid + ' compra');
     assert.ok(hits / N > 0.25 && hits / N < 0.4, 'jogadas com prémio ' + hits / N);
     // o bónus natural sai perto de 1 vez em 400 jogadas em todas (antes ia de 1 em 318 a 1 em 503)

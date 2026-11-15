@@ -261,6 +261,7 @@ function go(tab) {
   if (tab === 'bolsa') { S.stkSel = null; loadStocks(); }
   if (tab === 'news' || tab === 'city') loadNews();
   render(); window.scrollTo({ top: 0 });
+  if (SLOT_OF[tab]) requestAnimationFrame(() => slotFit());
   armBack();
 }
 // ---- gesto/botão de voltar atrás do telemóvel ----
@@ -1857,7 +1858,7 @@ function slotSpots(grid, sp) {
 function slotGrid(g) {
   const G = slotCfg(g), n = G.cols * G.rows, last = S.slotLast?.[g];
   const lastRd = last ? last.spin.free.at(-1) || last.spin.base : null, step = lastRd ? lastRd.steps.at(-1) : null;
-  const dud = G.kind === 'scatter' && lastRd && !(lastRd.win > 0);   // a rodada que ficou à vista não teve prémio: os multiplicadores dela ficam apagados
+  const dud = G.kind === 'scatter' && lastRd && !(lastRd.win > 0) && !(G.accAll && last.spin.free.length);   // a rodada que ficou à vista não teve prémio: os multiplicadores dela ficam apagados
   const cells = step ? step.g : Array.from({ length: n }, (_, i) => (Math.imul(i + 7, 2654435761) >>> 9) % G.nsym);   // mistura fixa, sem padrão à vista
   return [G.kind === 'cluster' ? h('div', { class: 'sspots' }, Array.from({ length: n }, (_, i) => { const v = step?.sp?.[i] || 0; return h('i', { class: spotCls(v), dataset: { v } }); })) : null,
     h('div', { class: 'sgrid' }, cells.map((s, i) => { const el = slotCellEl(g, s, step?.o?.[i]); if (dud && s === G.nsym + 1) el.classList.add('dud'); return el; })),
@@ -1983,7 +1984,7 @@ async function slotBanner(kind, title, sub, ms) {
 async function slotAnim(r) {
   const g = r.game, G = slotCfg(g);
   S.slotSkip = false; S.slotBase = r.base; S.slotGame = g;
-  const sl = document.querySelector('.slot'); if (sl) await tableFocus(sl);
+  const sl = document.querySelector('.slot'); if (sl && !slotFit(true)) await tableFocus(sl);
   const sk = document.querySelector('.csbar .btn.buy');
   if (sk) { sk.disabled = false; sk.replaceChildren(h('i', { class: 'stopi' })); sk.setAttribute('aria-label', t('slSkip')); sk.classList.replace('buy', 'skip'); const ml = document.querySelector('.smsgl'); if (ml) ml.textContent = t('slWinL'); sk.addEventListener('click', () => { S.slotSkip = true; }); }
   const grid = document.querySelector('.sgrid'), meter = document.querySelector('.swinm'), freeL = document.querySelector('.sfree');
@@ -1993,13 +1994,37 @@ async function slotAnim(r) {
   const show = (c, ms = 450) => { const to = cash(c); if (RM() || S.slotSkip) meter.textContent = money(to); else fx.roll(meter, shown, to, money, ms); shown = to; };
   // os símbolos da jogada anterior caem para fora
   if (!RM()) { [...grid.children].forEach((el, i) => { el.classList.add('out'); el.style.setProperty('--d', (i % G.cols) * 45 + 'ms'); }); fx.sfx('refill'); await wait(330 + G.cols * 45); }
-  const round = async (rd, sp, mult) => {
+  // fr: só nas rodadas grátis das slots com multiplicador acumulado: { prev: o que estava acumulado antes desta rodada }
+  const round = async (rd, sp, mult, fr) => {
     let w = 0;
+    const counts = rd.win > 0 || (!!fr && !!G.accAll);   // as esferas desta rodada vão contar?
     for (let k = 0; k < rd.steps.length && !S.slotSkip; k++) {
-      await slotStep(g, grid, rd.steps[k], k ? rd.steps[k - 1] : null, sp, rd.win > 0);
+      await slotStep(g, grid, rd.steps[k], k ? rd.steps[k - 1] : null, sp, counts);
       if (rd.steps[k].w) { w += rd.steps[k].w.reduce((x, y) => x + y.pay, 0); show(acc + w); }
     }
     if (S.slotSkip) return;
+    if (fr) {
+      // cada esfera voa para o multiplicador acumulado, que sobe à vista; só depois (se houve prémio) o total multiplica
+      const sa = freeL.querySelector('.sav'), orbs = counts ? [...grid.querySelectorAll('.orb')] : [];
+      if (sa && orbs.length && mult > fr.prev) {
+        if (!RM()) {
+          const ib = sa.getBoundingClientRect(); let sum = fr.prev;
+          for (const el of orbs.slice(0, 12)) {
+            const b = el.getBoundingClientRect(), v = parseInt(el.querySelector('.ov')?.textContent.slice(1) || '0', 10);
+            el.classList.add('hit');
+            const fl = h('b', { class: 'sfly num', style: `left:${b.left + b.width / 2}px;top:${b.top + b.height / 2}px;--x:${ib.left + ib.width / 2 - b.left - b.width / 2}px;--y:${ib.top + ib.height / 2 - b.top - b.height / 2}px` }, '×' + v);
+            document.body.append(fl); fx.sfx('tick'); await wait(430 * sp); fl.remove();
+            sum += v; sa.textContent = '×' + Math.min(sum, mult); sa.classList.remove('bump'); void sa.offsetWidth; sa.classList.add('bump');
+            if (S.slotSkip) break;
+          }
+        }
+        sa.textContent = '×' + mult; sa.classList.remove('bump'); void sa.offsetWidth; sa.classList.add('bump'); freeL._m = mult;
+        fx.sfx('claim'); if (!(w > 0)) await wait(RM() ? 150 : 450 * sp);
+      }
+      if (w > 0 && mult > 1) { flashInfo('×' + mult); fx.sfx('crit'); acc += w * mult; show(acc, 800); await wait(RM() ? 300 : 1000 * sp); }
+      else { acc += w; show(acc); if (w > 0) await wait(RM() ? 0 : 350 * sp); }
+      return;
+    }
     if (G.kind === 'scatter' && w > 0 && mult > 1) {
       // as esferas voam uma a uma para o multiplicador e só depois o prémio é multiplicado
       const info = document.querySelector('.sinfo'), orbs = [...grid.querySelectorAll('.orb')];
@@ -2029,15 +2054,16 @@ async function slotAnim(r) {
     sl?.classList.add('free');
     const before = acc;
     const leftOf = (k) => (k < 0 ? f0 : F[k].left ?? F.length - k - 1);
+    const accFree = G.kind === 'scatter' && G.accFree;
     const counter = (n, bump) => {
-      const f = F[Math.min(F.length - 1, Math.max(0, freeL._k))];
-      freeL.replaceChildren(h('span', { class: 'sleft' + (bump ? ' bump' : '') }, t('slFreeLeft', { n })), G.kind === 'scatter' && G.accFree ? h('b', { class: 'sacc num' + ((f.acc || 1) > (freeL._m || 1) ? ' bump' : '') }, '×' + (f.acc || 1)) : '');
-      freeL._m = f.acc || 1;
+      const m = freeL._m || 1;   // o multiplicador acumulado que está à vista; quem o sobe é a própria rodada, quando as esferas lá chegam
+      freeL.replaceChildren(h('span', { class: 'sleft' + (bump ? ' bump' : '') }, t('slFreeLeft', { n })), accFree ? h('span', { class: 'sacc', title: t('slAcc') }, h('small', null, t('slAccS')), h('b', { class: 'sav num' }, '×' + m)) : '');
     };
+    freeL._m = 1;
     for (let k = 0; k < F.length && !S.slotSkip; k++) {
       const f = F[k];
       freeL._k = k; counter(Math.max(0, leftOf(k - 1) - 1));
-      await round(f, 0.82, f.acc);
+      await round(f, 0.82, f.acc, accFree ? { prev: k ? F[k - 1].acc || 0 : 0 } : null);
       if (f.add > 0 && !S.slotSkip) {
         grid.querySelectorAll('.scat').forEach((el) => el.classList.add('hit', 'trig'));
         fx.sfx('crit'); fx.vibrate([20, 40, 20]); await wait(RM() ? 150 : 700);
@@ -2067,6 +2093,16 @@ function slotBuy(g, kind) {
     h('div', { class: 'row sp' }, h('span', { class: 'muted' }, t('slBuyPrice', { x: mult })), h('b', { class: 'num c-cash' }, money(price))),
     !can ? h('p', { class: 'small c-red' }, price > lim ? t('csOver', { m: money(lim) }) : t('csNoCash', { m: money(price) })) : null,
     h('button', { class: 'btn buy block big', disabled: !can, on: { click: () => { close(); play('slot', { game: g, amt: chip, buy: kind }, slotAnim); } } }, t('slBuyGo', { m: moneyShort(price) }))));
+}
+// Em ecrãs baixos a slot não cabe inteira entre o topo e a barra de baixo. Em vez de encolher a grelha até ficar minúscula, sobe-se a página
+// só o preciso para a fila do botão de rodar ficar à vista, sem nunca esconder a grelha (o cartaz com o nome é o que sai de cena).
+function slotFit(smooth) {
+  const fr = document.querySelector('.slot .sfr'), row = document.querySelector('.slot .srow'), nav = document.querySelector('.tabs'), hud = document.querySelector('.hud');
+  if (!fr || !row || !nav) return false;
+  const over = row.getBoundingClientRect().bottom + 6 - nav.getBoundingClientRect().top, room = fr.getBoundingClientRect().top - (hud ? hud.getBoundingClientRect().bottom : 0) - 4;
+  if (over <= 0) return row.getBoundingClientRect().top > 0 && fr.getBoundingClientRect().top >= (hud ? hud.getBoundingClientRect().bottom : 0) - 1;   // já está tudo à vista: não é preciso mexer
+  if (room <= 0) return true;
+  scrollBy({ top: Math.min(over, room), behavior: smooth ? 'smooth' : 'auto' }); return true;
 }
 function screenSlotGame(page) {
   const g = SLOT_OF[page], G = slotCfg(g), last = S.slotLast?.[g], me = S.st.me, max = betMax(), min = S.cfg.casino.minBet;
@@ -2284,6 +2320,7 @@ async function start() {
   S.st = st; S.stAt = now(); if (st.feed) S.feed = st.feed;
   $main = null;
   S.tab = store.get('tab', 'city');
+  if (SLOT_OF[S.tab]) setTimeout(() => slotFit(), 400);
   S.backArmed = false; try { if (history.state?.crime) history.replaceState(null, ''); } catch { /* sem histórico */ }
   render();
   armBack();

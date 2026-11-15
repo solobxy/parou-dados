@@ -20,7 +20,7 @@ const SECURE = process.env.COOKIE_INSEGURO ? '' : '; Secure';
 const [fy, fm, fd] = (process.env.PRIMEIRA_RONDA || '2026-11-13').split('-').map(Number);
 const FIRST = { y: fy, m: fm, d: fd };
 const rng = cryptoRng();
-const VERSAO = 35;   // sobe quando o servidor muda, para se confirmar de fora que a versão nova já está a correr
+const VERSAO = 36;   // sobe quando o servidor muda, para se confirmar de fora que a versão nova já está a correr
 const ATOS_3S = +(process.env.ATOS_3S || 15), ATOS_MIN = +(process.env.ATOS_MIN || 400); // ações por conta: 15 em 3 s, 400 por minuto
 
 // ---------- relógio que nunca anda para trás ----------
@@ -280,7 +280,7 @@ function cfgPublica() {
     biz: CFG.biz.map(({ id, price, perH, resp, stat, raid, toBank }) => ({ id, price, perH, resp, stat, raid, toBank })),
     bizMax: CFG.bizMax, storageMs: CFG.storageMs, port: CFG.port, air: CFG.air, goods: CFG.goods, venue: CFG.venue, detox: CFG.detox, stocks: CFG.stocks, weapons: CFG.weapons, armors: CFG.armors,
     pvp: CFG.pvp, bank: CFG.bank, luxury: CFG.luxury, levels: CFG.levels, crit: CFG.crit, unlockBp: CFG.unlockBp,
-    bustBp: CFG.bustBp, crimeAllMax: CFG.crimeAllMax, casino: { minBet: CFG.casino.minBet, buyMaxMult: CFG.casino.buyMaxMult, red: CFG.casino.red, dice: CFG.casino.dice, wheel: { segs: CFG.casino.wheel.segs, spots: CFG.casino.wheel.spots }, slots: Object.fromEntries(Object.entries(CFG.casino.slots).map(([k, g]) => [k, { kind: g.kind, cols: g.cols, rows: g.rows, min: g.min, nsym: g.nsym, trig: g.trig, pay: g.pay, scatPay: g.scatPay, free: g.free, fs: g.fs, retrig: g.retrig, buy: g.buy, superBuy: g.superBuy, max: g.max, accFree: g.accFree, orbBase: g.orbBase }])) }, gang: CFG.gang, classes: CFG.classes, classChange: CFG.classChange, avatars: CFG.avatars, hookers: CFG.hookers, house: CFG.house, mastery: CFG.mastery, missions: CFG.missions.length, start: CFG.start,
+    bustBp: CFG.bustBp, crimeAllMax: CFG.crimeAllMax, casino: { minBet: CFG.casino.minBet, buyMaxMult: CFG.casino.buyMaxMult, red: CFG.casino.red, dice: CFG.casino.dice, wheel: { segs: CFG.casino.wheel.segs, spots: CFG.casino.wheel.spots }, slots: Object.fromEntries(Object.entries(CFG.casino.slots).map(([k, g]) => [k, { kind: g.kind, cols: g.cols, rows: g.rows, min: g.min, nsym: g.nsym, trig: g.trig, pay: g.pay, scatPay: g.scatPay, free: g.free, fs: g.fs, retrig: g.retrig, buy: g.buy, superBuy: g.superBuy, max: g.max, accFree: g.accFree, accAll: g.accAll, orbBase: g.orbBase }])) }, gang: CFG.gang, classes: CFG.classes, classChange: CFG.classChange, avatars: CFG.avatars, hookers: CFG.hookers, house: CFG.house, mastery: CFG.mastery, missions: CFG.missions.length, start: CFG.start,
     round: { playDays: CFG.round.playDays, noPvpMs: CFG.round.noPvpMs },
   };
 }
