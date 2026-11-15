@@ -89,6 +89,7 @@ function contas(kind, a0, a, d0, d, t, res, arg) {
     case 'gangLeave': if (dm !== 0 || dr !== 0) bad('sair da gangue'); break;
     case 'deposit': if (dm !== -res.fee || res.fee < 1 || res.fee !== Math.ceil((arg * E.bankFeeBp(a)) / 10000) || dr) bad('taxa do banco'); break;
     case 'withdraw': case 'class': case 'avatar': if (dm !== 0 || dr !== 0) bad('devia ser neutro'); break;
+    case 'classChange': if (dm !== -E.classChangeCost(a0) || dr !== 0 || res.cost !== E.classChangeCost(a0) || a.cls === a0.cls || (CFG.classes.find((c) => c.id === a.cls).need || 0) > a0.peakRespect || (a0.clsAt && t < a0.clsAt + CFG.classChange.coolMs)) bad('mudar de profissão'); break;
     case 'claim': if (dm !== res.cash || dr !== 0) bad('prémio'); break;
     case 'collect': { const st = E.bizStored(a0, t).reduce((x, y) => x + y.money, 0); if (dm < 0 || dm > Math.ceil(st * 1.1) || dr !== 0) bad('recolha maior do que o armazém'); break; }
     case 'collectPort': {
@@ -136,7 +137,7 @@ for (let n = 0; n < ACTIONS; n++) {
   if (r.chance(400) && !p.gang) E.gangSet(p, 'g' + r.int(1, 3), r.int(1, 5), r.int(0, 5)); // o servidor pôs-te numa gangue (para os golpes e tareias em grupo terem quem os faça)
   if (r.chance(2500)) { p.energy = r.int(0, CFG.energy.max); p.energyT = Math.min(p.energyT, p.t); } // gasta stamina para chegar à discoteca, às putas e ao hospital
   const before = touched(p, t), beforeD = touched(d, t), origD = structuredClone(d), origP = structuredClone(p);
-  const kind = pick(['casino', 'casino', 'table', 'heist', 'hit', 'gangCreate', 'gangDonate', 'gangLeave', 'crime', 'crimeAll', 'drug', 'refill', 'detox', 'claim', 'class', 'avatar', 'hooker', 'cure', 'house', 'houseUp', 'train', 'buyBiz', 'collect', 'port', 'collectPort', 'deposit', 'withdraw', 'gear', 'attack', 'bail', 'medic', 'luxury']);
+  const kind = pick(['casino', 'casino', 'table', 'heist', 'hit', 'gangCreate', 'gangDonate', 'gangLeave', 'crime', 'crimeAll', 'drug', 'refill', 'detox', 'claim', 'class', 'classChange', 'classChange', 'avatar', 'hooker', 'cure', 'house', 'houseUp', 'train', 'buyBiz', 'collect', 'port', 'collectPort', 'deposit', 'withdraw', 'gear', 'attack', 'bail', 'medic', 'luxury']);
   let res, arg;
   try {
     switch (kind) {
@@ -191,6 +192,7 @@ for (let n = 0; n < ACTIONS; n++) {
       case 'house': res = E.buyHouse(p, t, world); break;
       case 'houseUp': res = E.buyUpgrade(p, t, world, pick([0, 1, 2, 3, 4])); break;
       case 'class': res = E.setClass(p, t, world, pick([...CFG.classes.map((c) => c.id), 'x'])); break;
+      case 'classChange': res = E.changeClass(p, t, world, pick([...CFG.classes.map((c) => c.id), 'x'])); break;
       case 'avatar': res = E.setAvatar(p, t, world, pick([0, 5, 31, 32, -1])); break;
       case 'train': res = E.train(p, t, world, pick(['F', 'T', 'I', 'C', 'X', ''])); break;
       case 'buyBiz': arg = r.chance(9000) ? r.int(0, 4) : anyInt(); res = E.buyBiz(p, t, world, arg); break;

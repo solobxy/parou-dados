@@ -521,3 +521,55 @@ test('tareia em grupo: a força junta-se com desconto, o alvo só perde uma vez 
   // o alvo que entretanto entrou na mesma gangue já não leva
   const w = lutador('g1'); assert.equal(E.hitCanResolve(w, NOW, 'g1'), false); assert.equal(E.hitCanResolve(w, NOW, 'g9'), true);
 });
+
+test('profissões: as de elite pedem respeito, mudar custa o anunciado, só de 24 em 24 h, e os bónus novos fazem o que dizem', () => {
+  const C = CFG.classChange, cls = (id) => CFG.classes.find((c) => c.id === id);
+  // escolher a primeira: as de elite só com o respeito pedido (conta o máximo que já tiveste)
+  const novo = mk(); novo.cls = '';
+  assert.throws(() => E.setClass(novo, NOW, W, 'padrinho'), code('CLASS_LOCKED'));
+  assert.throws(() => E.setClass(novo, NOW, W, 'nada'), code('NO_CLASS'));
+  E.setClass(novo, NOW, W, 'chulo'); assert.equal(novo.cls, 'chulo'); assert.equal(novo.clsAt, 0);
+  assert.throws(() => E.setClass(novo, NOW, W, 'ladrao'), code('CLASS_SET'));
+  // mudar: custo certo por nível, cobra uma vez, e depois espera 24 h
+  const p = mk('ladrao'); p.cash = 10_000_000; p.bank = 0; setResp(p, 1000);
+  const custo = Math.max(C.min, Math.floor((Math.floor(E.valuePerEnergy(p) * 100) * C.energy) / 100));   // o que rendem 100 de stamina no melhor golpe
+  assert.equal(E.classChangeCost(p), custo); assert.ok(custo >= C.min);
+  { const fraco = mk('ladrao'); assert.equal(E.classChangeCost(fraco), C.min); }
+  assert.throws(() => E.changeClass(p, NOW, W, 'ladrao'), code('CLASS_SET'));
+  assert.throws(() => E.changeClass(p, NOW, W, 'barao'), code('CLASS_LOCKED'));          // pede 2000
+  const antes = JSON.stringify([p.cash, p.cls, p.clsAt]);
+  const pobre = mk('ladrao'); pobre.cash = 10; pobre.bank = 0; assert.throws(() => E.changeClass(pobre, NOW, W, 'vigarista'), code('NO_MONEY')); assert.equal(pobre.cls, 'ladrao'); assert.equal(pobre.cash, 10);
+  assert.equal(JSON.stringify([p.cash, p.cls, p.clsAt]), antes);
+  let r = E.changeClass(p, NOW, W, 'mestre');                                               // pede 1000: já pode
+  assert.equal(r.cost, custo); assert.equal(r.from, 'ladrao'); assert.equal(p.cls, 'mestre'); assert.equal(p.cash, 10_000_000 - custo); assert.equal(p.clsAt, NOW);
+  assert.throws(() => E.changeClass(p, NOW + C.coolMs - 1, W, 'ladrao'), code('CLASS_WAIT'));
+  assert.equal(p.cash, 10_000_000 - custo);
+  E.changeClass(p, NOW + C.coolMs, W, 'ladrao'); assert.equal(p.cls, 'ladrao');
+  // o respeito pode baixar depois: quem já lá chegou continua a poder escolher
+  const q = mk('ladrao'); q.cash = 1e9; setResp(q, 6000); q.respect = 10; E.changeClass(q, NOW, W, 'padrinho'); assert.equal(q.cls, 'padrinho');
+  // sem profissão ainda não se «muda»
+  const sem = mk(); sem.cls = ''; assert.throws(() => E.changeClass(sem, NOW, W, 'ladrao'), code('NO_CLASS'));
+  // chulo: putas 30% mais baratas e 60% menos doenças
+  const a = mk('ladrao'), b = mk('chulo'); setResp(a, 500); setResp(b, 500);
+  for (let i = 0; i < CFG.hookers.list.length; i++) {
+    const cheio = E.hookerPrice(a, i, NOW), desc = E.hookerPrice(b, i, NOW);
+    assert.equal(desc, Math.max(1, Math.floor((cheio * 7000) / 10000)));
+  }
+  const conta = (cl) => { const rng = seededRng(77), x = mk(cl); let s = 0; for (let k = 0; k < 20000; k++) { x.energy = 0; x.sick = false; x.hkT = []; x.cash = 1e12; if (E.visitHooker(x, NOW, W, 0, rng).sick) s++; } return s / 20000; };
+  const base = CFG.hookers.list[0].sickBp / 10000;
+  perto(conta('ladrao'), base, 0.01, 'doença sem bónus'); perto(conta('chulo'), base * 0.4, 0.008, 'doença do chulo');
+  // contrabandista e magnata: menos apreensões no porto
+  assert.equal(E.portSeizeBp(mk('ladrao')), CFG.port.seizeBp); assert.equal(E.portSeizeBp(mk('contrabandista')), CFG.port.seizeBp / 2); assert.equal(E.portSeizeBp(mk('magnata')), Math.floor(CFG.port.seizeBp * 0.7));
+  // padrinho: +15% de respeito nos golpes, arredondado para baixo (só mexe nos golpes de 7 ou mais)
+  for (const k of [0, 5, 9]) {
+    const g = mk('padrinho'), n = mk('ladrao'); for (const x of [g, n]) { x.stats = { F: 9999, T: 10, I: 9999, C: 9999 }; setResp(x, 20000); }
+    const rg = E.doCrime(g, NOW, W, k, always), rn = E.doCrime(n, NOW, W, k, always), r0 = CFG.crimes[k].r;
+    assert.equal(rn.respect, r0); assert.equal(rg.respect, r0 + Math.floor((r0 * 1500) / 10000)); assert.equal(g.respect - 20000, rg.respect);
+  }
+  // as profissões de elite dão mais do que a de rua do mesmo ofício, e nenhuma tem bónus desconhecidos
+  assert.ok(cls('mestre').lootBp > cls('ladrao').lootBp && cls('padrinho').lootBp > cls('mestre').lootBp);
+  assert.ok(cls('blindado').defBp > cls('seguranca').defBp && cls('carniceiro').atkBp > cls('matador').atkBp && cls('barao').drugCutBp > cls('traficante').drugCutBp && cls('magnata').bizBp > cls('empresario').bizBp);
+  const conhecidos = ['id', 'need', 'lootBp', 'bustCutBp', 'bailCutBp', 'drugCutBp', 'fxMoreBp', 'capPlus', 'bizBp', 'feeCutBp', 'atkBp', 'pvpBp', 'defBp', 'hospCutBp', 'hkCutBp', 'sickCutBp', 'seizeCutBp', 'respBp'];
+  for (const c of CFG.classes) for (const k of Object.keys(c)) { assert.ok(conhecidos.includes(k), `bónus desconhecido ${k} em ${c.id}`); if (k !== 'id' && k !== 'need' && k !== 'capPlus' && k !== 'fxMoreBp') assert.ok(c[k] > 0 && c[k] <= 10000); }
+  assert.equal(new Set(CFG.classes.map((c) => c.id)).size, CFG.classes.length);
+});

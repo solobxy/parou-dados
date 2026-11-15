@@ -39,7 +39,7 @@ export function newPlayer(id, now, world, opts = {}) {
     wk: CFG.crimes.map(() => 0),   // sucessos por golpe (mestria)
     c: { crimes: 0, wins: 0, trains: 0, refills: 0, collects: 0, pvpWins: 0, ports: 0 },
     mi: 0,                         // próximo objetivo por receber
-    cls: '', av: 0, fx: {}, sick: false, hkT: [], house: 0, hu: CFG.house.ups.map(() => 0), bj: null,        // profissão, avatar e efeitos temporários (kind -> { bp, until })
+    cls: '', clsAt: 0, av: 0, fx: {}, sick: false, hkT: [], house: 0, hu: CFG.house.ups.map(() => 0), bj: null,        // profissão, avatar e efeitos temporários (kind -> { bp, until })
   };
 }
 
@@ -51,6 +51,7 @@ function migrate(p) {
   if (!p.c) p.c = { crimes: 0, wins: 0, trains: 0, refills: 0, collects: 0, pvpWins: 0, ports: 0 };
   if (!Number.isSafeInteger(p.mi)) p.mi = 0;
   if (typeof p.cls !== 'string') p.cls = '';
+  if (!Number.isSafeInteger(p.clsAt)) p.clsAt = 0;
   if (!Number.isSafeInteger(p.av)) p.av = 0;
   if (!p.fx || typeof p.fx !== 'object') p.fx = {};
   if (typeof p.sick !== 'boolean') p.sick = false;
@@ -188,10 +189,33 @@ function applyFx(p, g, now) {
 export function setClass(p, now, world, id) {
   begin(p, now, world, { allowBusy: true });
   if (p.cls) fail('CLASS_SET');
-  if (!CFG.classes.some((c) => c.id === id)) fail('NO_CLASS');
+  const c = CFG.classes.find((x) => x.id === id);
+  if (!c) fail('NO_CLASS');
+  if ((c.need || 0) > p.peakRespect) fail('CLASS_LOCKED', { need: c.need });
   settleAllBiz(p, now);
   p.cls = id;
   return { ok: true, cls: id };
+}
+export function classChangeCost(p) {
+  const C = CFG.classChange;
+  return Math.max(C.min, Math.floor((Math.floor(valuePerEnergy(p) * 100) * C.energy) / 100));
+}
+// mudar de profissão: paga-se e só de 24 em 24 h. O que os negócios renderam até aqui conta com a profissão antiga.
+export function changeClass(p, now, world, id) {
+  begin(p, now, world, { allowBusy: true });
+  if (!p.cls) fail('NO_CLASS');
+  const c = CFG.classes.find((x) => x.id === id);
+  if (!c) fail('NO_CLASS');
+  if (id === p.cls) fail('CLASS_SET');
+  if ((c.need || 0) > p.peakRespect) fail('CLASS_LOCKED', { need: c.need });
+  if (p.clsAt && now < p.clsAt + CFG.classChange.coolMs) fail('CLASS_WAIT', { until: p.clsAt + CFG.classChange.coolMs });
+  const cost = classChangeCost(p);
+  if (p.cash + p.bank < cost) fail('NO_MONEY', { need: cost, have: p.cash + p.bank });
+  settleAllBiz(p, now);
+  pay(p, cost);
+  const from = p.cls;
+  p.cls = id; p.clsAt = now;
+  return { ok: true, cls: id, from, cost };
 }
 export function setAvatar(p, now, world, i) {
   begin(p, now, world, { allowBusy: true });
@@ -292,9 +316,10 @@ export function doCrime(p, now, world, k, rng) {
     p.cash += money;
     p.c.crimes += 1; p.c.wins += 1; p.wk[k] += 1;
     const stars = masteryStars(p, k);
-    const lvl = addRespect(p, c.r, now);
+    const resp = c.r + Math.floor((c.r * (klass(p).respBp || 0)) / 10000);   // profissões de elite: mais respeito nos golpes grandes (arredonda para baixo)
+    const lvl = addRespect(p, resp, now);
     const gained = practice(p, c, true);
-    return { ok: true, success: true, money, crit, respect: c.r, levelUp: lvl, chanceBp: bp, gained, newChanceBp: crimeChanceBp(p, k, now), star: stars > starsBefore ? stars : 0 };
+    return { ok: true, success: true, money, crit, respect: resp, levelUp: lvl, chanceBp: bp, gained, newChanceBp: crimeChanceBp(p, k, now), star: stars > starsBefore ? stars : 0 };
   }
   p.c.crimes += 1;
   // falhar não é sempre prisão: só uma parte das falhas acaba com a polícia
@@ -352,7 +377,8 @@ export function payBail(p, now, world) {
 export function medicCost(p, now) {
   if (!(p.hospUntil > now)) return 0;
   const mins = Math.ceil((p.hospUntil - now) / T.MIN);
-  return mins * CFG.medicPerMin * level(p);
+  const porNivel = mins * CFG.medicPerMin * level(p), porValor = Math.floor((mins * Math.floor(valuePerEnergy(p) * 100) * CFG.medicValueBp) / 1000000);
+  return Math.max(1, Math.min(porNivel, porValor));
 }
 
 export function payMedic(p, now, world) {
@@ -374,7 +400,7 @@ export function hookerPrice(p, i, now) {
   let price = Math.max(g.min, Math.floor((Math.floor(valuePerEnergy(p) * 100) * g.e * g.valueBp) / 1000000));
   const n = Math.min(recent(p.hkT, now, H.windowMs), H.maxSteps); // só conta, não mexe: uma visita recusada não muda nada
   for (let k = 0; k < n; k++) price = Math.ceil((price * H.stepNum) / H.stepDen);
-  return price;
+  return Math.max(1, cut(price, klass(p).hkCutBp || 0));
 }
 export function visitHooker(p, now, world, i, rng) {
   const g = Number.isInteger(i) ? CFG.hookers.list[i] : undefined;
@@ -389,7 +415,7 @@ export function visitHooker(p, now, world, i, rng) {
   pruneHk(p, now);
   if (p.hkT.length >= CFG.hookers.maxSteps) p.hkT.shift();
   p.hkT.push(now);
-  const sick = rng.chance(g.sickBp);
+  const sick = rng.chance(cut(g.sickBp, klass(p).sickCutBp || 0));
   if (sick) p.sick = true;
   return { ok: true, energy: got, price, sick };
 }
@@ -659,7 +685,7 @@ export function collectPort(p, now, world, rng) {
   const out = [];
   p.port = p.port.filter((c) => {
     if (c.readyAt > now) return true;
-    if (rng.chance(CFG.port.seizeBp)) { out.push({ amount: c.amount, got: 0, seized: true }); return false; }
+    if (rng.chance(portSeizeBp(p))) { out.push({ amount: c.amount, got: 0, seized: true }); return false; }
     const got = c.amount + Math.floor((c.amount * CFG.port.gainBp) / 10000);
     p.cash += got;
     out.push({ amount: c.amount, got, seized: false });
@@ -671,6 +697,7 @@ export function collectPort(p, now, world, rng) {
 // ---------- banco ----------
 
 export function bankFeeBp(p) { return cut(CFG.bank.feeBp, klass(p).feeCutBp || 0); }
+export function portSeizeBp(p) { return cut(CFG.port.seizeBp, klass(p).seizeCutBp || 0); }
 export function deposit(p, now, world, amount) {
   begin(p, now, world, { allowBusy: true });
   if (!Number.isSafeInteger(amount) || amount <= 0 || amount > p.cash) fail('BAD_AMOUNT');

@@ -1068,3 +1068,33 @@ h1.slogo { margin: 0; }
 /* ---- dados desenhados em canvas (3D a sério em qualquer telemóvel) ---- */
 .dc3 { height: auto; aspect-ratio: 340 / 236; perspective: none; }
 .dc3 .dc3c { display: block; width: 100%; height: 100%; }
+
+/* ---- slots: rodar automático ---- */
+.sright { justify-self: end; display: flex; gap: 6px; align-items: start; }
+.sright .sib { justify-self: auto; min-width: 48px; }
+.sauto b { font: 900 17px var(--disp); font-style: normal; }
+.sauto.on b { background: #ff5a52; color: #fff; box-shadow: inset 0 0 0 2px #ffffffaa; }
+.sauto:disabled { opacity: .4; }
+.sctl.anim .sib.sauto.on { opacity: 1; pointer-events: auto; }
+.autogrid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.autogrid .btn { display: grid; justify-items: center; gap: 2px; padding: 12px 4px; min-height: 64px; }
+.autogrid .btn b { font: 900 26px/1 var(--disp); } .autogrid .btn small { font-size: 11px; color: var(--tx2); font-weight: 600; }
+.srow { grid-template-columns: auto auto auto; justify-content: space-between; gap: 6px; }
+.sbet { gap: 5px; } .sbet > div { min-width: 50px; } .sbb { width: 40px; height: 40px; }
+.sright { gap: 4px; } .sright .sib { min-width: 44px; } .sright .sib small { font-size: 10.5px; white-space: nowrap; }
+@media (max-width: 350px) {
+  .sright .sib small, .sbet small { display: none; } .sbet { gap: 3px; } .sbet > div { min-width: 40px; } .sbet b { font-size: 19px; } .sbb { width: 34px; height: 34px; font-size: 20px; }
+  .sspin { width: 60px; height: 60px; } .sspin svg { width: 32px; height: 32px; } .sright { gap: 2px; } .sright .sib { min-width: 38px; } .sright .sib b { width: 36px; height: 36px; }
+  .sctl { padding: 8px 6px 10px; } .srow { gap: 4px; }
+}
+
+/* ---- profissões: de rua e de elite ---- */
+.item.cls:disabled { opacity: 1; }
+.item.cls.lock { filter: saturate(.25); opacity: .62; }
+.item.cls.cur { box-shadow: inset 0 0 0 3px var(--cash); }
+.clsneed, .clsnow { display: flex; gap: 5px; justify-content: center; align-items: center; font-weight: 700; }
+.clsneed svg.i { width: 13px; height: 13px; }
+
+/* ---- banco: escolher a quantia ---- */
+.bquick { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+#bamt { font: 800 22px var(--ui); font-variant-numeric: tabular-nums; min-height: 56px; color: var(--tx); }

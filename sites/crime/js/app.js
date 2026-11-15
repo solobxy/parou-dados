@@ -232,15 +232,15 @@ function tickHud() {
 const PLACES = {
   city: { ic: 'skyline' }, empire: { ic: 'empire' }, rob: { ic: 'street', img: 'golpes' }, club: { ic: 'bolt', img: 'discoteca' }, gym: { img: 'ginasio' },
   biz: { ic: 'empire', img: 'negocios' }, port: { img: 'porto' }, arms: { img: 'armas' }, bank: { img: 'banco' }, hosp: { img: 'hospital' },
-  jail: { img: 'prisao' }, gang: { img: 'gangue' }, news: { img: 'jornal' }, casino: { img: 'casino' }, roulette: { img: 'roleta' }, bj: { img: 'blackjack' }, dice: { img: 'dados' }, wheel: { img: 'roda' }, slot: { img: 'slot' }, zeus: { img: 'zeus' }, doce: { img: 'doce' }, rebucado: { img: 'rebucado' }, alley: { img: 'beco' }, lux: { img: 'luxos' }, fights: { ic: 'fights', img: 'lutas' }, rank: { img: 'ranking' }, putas: { img: 'putas' }, casa: {},
+  jail: { img: 'prisao' }, gang: { img: 'gangue' }, work: { img: 'profissao' }, news: { img: 'jornal' }, casino: { ic: 'gem', img: 'casino' }, roulette: { img: 'roleta' }, bj: { img: 'blackjack' }, dice: { img: 'dados' }, wheel: { img: 'roda' }, slot: { img: 'slot' }, zeus: { img: 'zeus' }, doce: { img: 'doce' }, rebucado: { img: 'rebucado' }, alley: { img: 'beco' }, lux: { img: 'luxos' }, fights: { ic: 'fights', img: 'lutas' }, rank: { img: 'ranking' }, putas: { img: 'putas' }, casa: {},
 };
 // barra de baixo: só o que se usa a toda a hora. O resto vive dentro de cada separador, arrumado por zonas.
-const NAV = ['city', 'rob', 'fights', 'empire'];
+const NAV = ['city', 'rob', 'fights', 'casino', 'empire'];
 const HUB = {
-  city: [['sec_night', ['club', 'putas', 'casino']], ['sec_street', ['gang', 'gym', 'alley', 'hosp', 'jail', 'arms', 'rank']]],
+  city: [['sec_night', ['club', 'putas', 'casino']], ['sec_street', ['gang', 'work', 'gym', 'alley', 'hosp', 'jail', 'arms', 'rank']]],
   empire: [['sec_income', ['biz', 'port']], ['sec_assets', ['casa', 'bank']]],
 };
-const PARENT = { gang: 'city', news: 'city', casino: 'city', roulette: 'casino', bj: 'casino', dice: 'casino', wheel: 'casino', slot: 'casino', zeus: 'casino', doce: 'casino', rebucado: 'casino', club: 'city', putas: 'city', gym: 'city', alley: 'city', hosp: 'city', jail: 'city',
+const PARENT = { gang: 'city', work: 'city', news: 'city', casino: 'city', roulette: 'casino', bj: 'casino', dice: 'casino', wheel: 'casino', slot: 'casino', zeus: 'casino', doce: 'casino', rebucado: 'casino', club: 'city', putas: 'city', gym: 'city', alley: 'city', hosp: 'city', jail: 'city',
   biz: 'empire', port: 'empire', casa: 'empire', bank: 'empire', lux: 'empire', arms: 'fights', rank: 'fights' };
 const upOf = (id) => (S.backTo && S.backTo[id]) || PARENT[id] || 'city';   // um sítio que está em duas zonas volta para a zona de onde vieste
 const tabOf = (id) => { let x = id; for (let k = 0; k < 4 && !NAV.includes(x); k++) x = upOf(x); return NAV.includes(x) ? x : 'city'; };
@@ -284,13 +284,14 @@ function shell() {
 }
 
 const SCREENS = { city: screenCity, empire: screenEmpire, news: screenNews, casino: screenCasino, roulette: screenRoulette, bj: screenBJ, dice: screenDice, wheel: screenWheel, slot: () => screenSlotGame('slot'), zeus: () => screenSlotGame('zeus'), doce: () => screenSlotGame('doce'), rebucado: () => screenSlotGame('rebucado'), rob: screenRob, club: screenClub, gym: screenGym, biz: screenBiz, port: screenPort, arms: screenArms, bank: screenBank,
-  hosp: screenHosp, jail: screenJail, gang: screenGang, putas: screenPutas, casa: screenCasa, alley: screenAlley, lux: screenLux, fights: screenFights, rank: screenRank };
+  hosp: screenHosp, jail: screenJail, gang: screenGang, work: screenWork, putas: screenPutas, casa: screenCasa, alley: screenAlley, lux: screenLux, fights: screenFights, rank: screenRank };
 function render(force) {
   if (!S.st) return;
   if (!S.st.me || S.st.round.phase !== 'play') return renderPause();
   if (!PLACES[S.tab]) S.tab = 'city';
   // a meio de uma jogada no casino, nada redesenha a mesa (eventos, notícias, relógio); só mudar de sítio
   if (!force && S.casinoBusy && S.tab === S.drawn && $main && document.body.contains($main)) { tabDots(); return; }
+  if (!force && S.tab === S.drawn && document.activeElement?.id === 'bamt') { tabDots(); updateHud(); return; }   // a meio de escrever uma quantia no banco
   if (!$main || !document.body.contains($main)) shell();
   const cur = tabOf(S.tab);
   $tabs.querySelectorAll('.tab').forEach((b) => b.setAttribute('aria-current', b.dataset.tab === cur ? 'page' : 'false'));
@@ -307,6 +308,7 @@ function tabDots() {
     fights: (S.events || []).some((e) => e.id > S.lastEventSeen),
     empire: me.port.some((c) => c.readyAt <= n) || me.biz.some((b, i) => b.n > 0 && storedNow(b, i) >= (b.perH * S.cfg.storageMs) / 3600000 / 2),
     city: !!me.mission?.done,
+    casino: !!me.bj,   // tens uma mão de blackjack por acabar
   };
   for (const id of NAV) {
     const tab = $tabs.querySelector(`[data-tab="${id}"]`), dot = tab && tab.querySelector('.dot');
@@ -387,7 +389,31 @@ function statNames(w) {
 }
 
 // ---------- profissão ----------
-function classLines(c) { return Object.keys(c).filter((k) => k !== 'id').map((k) => t('cb_' + k, { p: k === 'capPlus' ? c[k] : c[k] / 100 })); }
+const myClass = () => S.cfg.classes.find((c) => c.id === S.st.me.cls) || {};
+const sickOf = (g) => Math.floor((g.sickBp * (10000 - (myClass().sickCutBp || 0))) / 10000);
+function classLines(c) { return Object.keys(c).filter((k) => k !== 'id' && k !== 'need').map((k) => t('cb_' + k, { p: k === 'capPlus' ? c[k] : c[k] / 100 })); }
+function classCard(c, me, pick) {
+  const locked = (c.need || 0) > me.peakRespect, cur = me.cls === c.id;
+  return h('button', { class: 'item cls' + (pick === c.id ? ' sel' : '') + (locked ? ' lock' : '') + (cur ? ' cur' : ''), disabled: locked || cur, 'aria-pressed': pick === c.id ? 'true' : 'false', on: { click: () => { S.clsPick = c.id; render(); } } },
+    art('classes', c.id), h('div', { class: 'nm' }, t('cl_' + c.id)),
+    cur ? h('div', { class: 'small c-cash clsnow' }, t('clsNow')) : c.need ? h('div', { class: 'small clsneed ' + (locked ? 'c-red' : 'c-resp') }, icon(locked ? 'lock' : 'crown'), t('clsNeed', { n: num(c.need) })) : null,
+    h('ul', { class: 'perks' }, classLines(c).map((x) => h('li', null, x))));
+}
+function classGroups(me, pick, noHead) {
+  const base = S.cfg.classes.filter((c) => !c.need), elite = S.cfg.classes.filter((c) => c.need);
+  return [noHead ? null : h('h2', { class: 'sec' }, t('clsBase')), h('div', { class: 'shop' }, base.map((c) => classCard(c, me, pick))),
+    h('h2', { class: 'sec' }, t('clsElite')), h('p', { class: 'small muted', style: 'margin:-4px 0 10px' }, t('clsEliteSub')), h('div', { class: 'shop' }, elite.map((c) => classCard(c, me, pick)))];
+}
+// mudar de profissão: paga-se e só de 24 em 24 h
+function screenWork() {
+  const me = S.st.me, n = now(), waitT = me.clsWait > n, pick = S.clsPick && S.clsPick !== me.cls ? S.clsPick : null, poor = me.cash + me.bank < me.clsCost;
+  const out = [pageHead('work', t('workSub', { m: money(me.clsCost) }))];
+  if (waitT) out.push(h('div', { class: 'tip' }, h('p', null, t('clsWaitT'), ' ', h('b', { class: 'num', dataset: { left: me.clsWait } }, dur(me.clsWait - n)))));
+  else if (poor) out.push(h('div', { class: 'tip' }, h('p', null, t('clsPoor', { m: money(me.clsCost) }))));
+  out.push(...classGroups(me, pick));
+  if (pick) out.push(h('div', { class: 'stick' }, h('button', { class: 'btn buy block big', disabled: waitT || poor, on: { click: async (e) => { const o = await act('classChange', { id: pick }, { el: e.currentTarget }); if (o) { S.clsPick = null; render(); } } } }, t('clsChangeGo', { x: t('cl_' + pick), m: moneyShort(me.clsCost) }))));
+  return out;
+}
 function screenClass() {
   const pick = S.clsPick;
   return [h('div', { class: 'phead' }, h('div', { class: 'pbar' }, h('h1', { style: 'margin:0' }, t('clsTitle'))), h('p', { class: 'psub' }, t('clsSub'))),
@@ -395,19 +421,19 @@ function screenClass() {
     S.avOk ? h('div', { class: 'avgrid' }, Array.from({ length: S.cfg.avatars }, (_, i) => h('button', { class: i === S.st.me.av ? 'sel' : '', 'aria-label': t('avatar') + ' ' + (i + 1), 'aria-pressed': i === S.st.me.av ? 'true' : 'false',
       on: { click: () => act('avatar', { i }) } }, h('img', { src: AV(i), alt: '', width: 96, height: 96, loading: 'lazy', on: { error: (e) => e.currentTarget.parentNode.remove() } })))) : null,
     S.avOk ? h('h2', { class: 'sec' }, t('clsWork')) : null,
-    h('div', { class: 'shop' }, S.cfg.classes.map((c) => h('button', { class: 'item cls' + (pick === c.id ? ' sel' : ''), 'aria-pressed': pick === c.id ? 'true' : 'false', on: { click: () => { S.clsPick = c.id; render(); } } },
-      art('classes', c.id), h('div', { class: 'nm' }, t('cl_' + c.id)), h('ul', { class: 'perks' }, classLines(c).map((x) => h('li', null, x)))))),
+    ...classGroups(S.st.me, pick, !S.avOk),
     pick ? h('div', { class: 'stick' }, h('button', { class: 'btn buy block big', on: { click: (e) => act('class', { id: pick }, { el: e.currentTarget }) } }, t('clsConfirm', { x: t('cl_' + pick) }))) : null];
 }
 
 // ---------- a cidade ----------
 // ---------- jornal da cidade: o que os outros andam a fazer ----------
-const NW_IC = { gangNew: 'fist', gangUp: 'empire', gangHeist: 'cash', gangHeistFail: 'lock', gangHit: 'fist', gangHitFail: 'skull', casino: 'gem', casinoLoss: 'skull', job: 'cash', crit: 'gem', spree: 'bolt', jail: 'lock', house: 'empire', lux: 'crown', beat: 'fist', mug: 'cash', fail: 'skull', sick: 'pill', lvl: 'crown', fight: 'fist' };
+const NW_IC = { cls: 'user', gangNew: 'fist', gangUp: 'empire', gangHeist: 'cash', gangHeistFail: 'lock', gangHit: 'fist', gangHitFail: 'skull', casino: 'gem', casinoLoss: 'skull', job: 'cash', crit: 'gem', spree: 'bolt', jail: 'lock', house: 'empire', lux: 'crown', beat: 'fist', mug: 'cash', fail: 'skull', sick: 'pill', lvl: 'crown', fight: 'fist' };
 const seedOf = (str) => { let x = 7; for (let i = 0; i < str.length; i++) x = (x * 31 + str.charCodeAt(i)) | 0; return Math.abs(x); };
 function newsText(e) {
   const k = e.k === 'fight' ? (e.mode === 'mug' ? 'mug' : 'beat') : e.k, C = list('crimes');
   if (k === 'gangNew') return t('nw_gangNew', { a: e.name, g: e.gang, t: e.tag });
   if (k === 'gangUp') return t('nw_gangUp_' + e.what, { g: e.gang, n: e.n });
+  if (k === 'cls') return tv('nw_cls', seedOf(e.name + k + e.t), { a: e.name, x: t('cl_' + e.from), y: t('cl_' + e.to) });
   if (k === 'gangHeist' || k === 'gangHeistFail') return tv('nw_' + k, seedOf(e.gang + k + e.t), { g: e.gang, x: t('gh_' + e.c), n: e.n, m: moneyShort(e.money || 0) });
   if (k === 'gangHit' || k === 'gangHitFail') return tv('nw_' + k, seedOf(e.gang + k + e.t), { g: e.gang, b: e.target, n: e.n });
   const x = k === 'house' ? list('houses')[e.h] : k === 'lux' ? list('lux')[e.i] : k === 'lvl' ? list('titles')[e.n - 1] : k.startsWith('casino') ? t('csIn_' + e.g) : C[e.c];
@@ -618,7 +644,7 @@ function screenPutas() {
       h('div', { class: 'nm' }, list('hookers')[i]),
       h('div', { class: 'small muted' }, t('hk_t' + g.tier)),
       h('div', { class: 'small' }, h('span', { class: 'c-en' }, icon('bolt'), '+' + g.e + ' ' + t('energy').toLowerCase())),
-      h('div', { class: 'small ' + (g.sickBp >= 500 ? 'c-red' : 'muted') }, icon('skull'), t('hkRisk', { p: (g.sickBp / 100).toString().replace('.', lang() === 'pt' ? ',' : '.') })),
+      h('div', { class: 'small ' + (sickOf(g) >= 500 ? 'c-red' : 'muted') }, icon('skull'), t('hkRisk', { p: (sickOf(g) / 100).toString().replace('.', lang() === 'pt' ? ',' : '.') })),
       h('button', { class: 'btn buy block', disabled: !ok, on: { click: (e) => act('hooker', { i }, { el: e.currentTarget }) } }, t('hkGo', { m: money(price) })));
   })));
   return out;
@@ -708,7 +734,7 @@ function tickShips() {
 }
 function screenPort() {
   const me = S.st.me;
-  const out = [pageHead('port', t('portSub'))];
+  const out = [pageHead('port', t('portSub', { p: (me.portSeizeBp / 100).toString().replace('.', lang() === 'pt' ? ',' : '.') }))];
   out.push(portMap(me));
   if (S.portLast?.length) out.push(h('div', { class: 'note stack', style: 'margin-bottom:10px' }, S.portLast.map((c) => h('div', { class: 'row sp' }, h('span', null, icon('ship'), ' ' + money(c.amount)),
     c.seized ? h('b', { class: 'c-red' }, t('portLostRow', { m: money(c.amount) })) : h('b', { class: 'c-cash' }, t('portGotRow', { m: money(c.got), g: money(c.got - c.amount) }))))));
@@ -747,12 +773,37 @@ function screenArms() {
 
 // ---------- banco, luxos, hospital, prisão, beco ----------
 function screenBank() {
-  const me = S.st.me, bp = me.bankFeeBp ?? S.cfg.bank.feeBp, fee = Math.ceil(me.cash * bp / 10000);
-  return [pageHead('bank', t('bankSub', { p: (bp / 100).toString().replace('.', lang() === 'pt' ? ',' : '.') })), h('div', { class: 'card stack' },
-    h('div', { class: 'row sp' }, h('span', { class: 'muted' }, icon('cash'), ' ' + t('cash')), h('b', { class: 'c-cash num' }, money(me.cash))),
-    h('div', { class: 'row sp' }, h('span', { class: 'muted' }, icon('bank'), ' ' + t('bank')), h('b', { class: 'num' }, money(me.bank))),
-    h('button', { class: 'btn buy block', disabled: me.cash <= 0, on: { click: (e) => act('deposit', { amount: me.cash }, { el: e.currentTarget }) } }, t('depositAll', { m: money(me.cash) }) + (me.cash > 0 ? ' · ' + t('fee', { m: money(fee) }) : '')),
-    h('button', { class: 'btn ghost block', disabled: me.bank <= 0, on: { click: (e) => act('withdraw', { amount: me.bank }, { el: e.currentTarget }) } }, t('withdrawAll', { m: money(me.bank) })))];
+  const me = S.st.me, bp = me.bankFeeBp ?? S.cfg.bank.feeBp, mode = S.bankMode === 'wd' ? 'wd' : 'dep', max = mode === 'dep' ? me.cash : me.bank;
+  const raw = (S.bankAmt || {})[mode] || '';
+  const amtOf = (v) => Math.min(max, v === '' ? max : parseInt(v, 10) || 0);   // campo vazio = tudo
+  const btn = h('button', { class: 'btn buy block big' }), net = h('p', { class: 'small muted', style: 'text-align:center;min-height:18px' });
+  const inp = h('input', { id: 'bamt', inputmode: 'numeric', autocomplete: 'off', enterkeyhint: 'done', value: raw, placeholder: t('bankAllPh', { m: money(max) }) });
+  const sync = () => {
+    const a = amtOf(inp.value), fee = mode === 'dep' ? Math.ceil((a * bp) / 10000) : 0;
+    btn.textContent = t(mode === 'dep' ? 'depositAll' : 'withdrawAll', { m: money(a) }) + (fee ? ' · ' + t('fee', { m: money(fee) }) : '');
+    btn.disabled = a <= 0;
+    net.textContent = mode === 'dep' && a > 0 ? t('bankNet', { m: money(a - fee) }) : '';
+  };
+  const setV = (v) => { inp.value = v; S.bankAmt = { ...(S.bankAmt || {}), [mode]: v }; sync(); };
+  inp.addEventListener('input', () => { let d = inp.value.replace(/\D/g, '').replace(/^0+/, '').slice(0, 15); if (d && parseInt(d, 10) > max) d = String(max); setV(d); });
+  inp.addEventListener('keydown', (e) => { if (e.key === 'Enter') inp.blur(); });
+  btn.addEventListener('click', async () => {
+    const a = amtOf(inp.value); if (a <= 0) return;
+    inp.blur();
+    const o = await act(mode === 'dep' ? 'deposit' : 'withdraw', { amount: a }, { el: btn });
+    if (o) { S.bankAmt = { ...(S.bankAmt || {}), [mode]: '' }; render(true); }
+  });
+  sync();
+  return [pageHead('bank', t('bankSub', { p: (bp / 100).toString().replace('.', lang() === 'pt' ? ',' : '.') })),
+    h('div', { class: 'card stack' },
+      h('div', { class: 'row sp' }, h('span', { class: 'muted' }, icon('cash'), ' ' + t('cash')), h('b', { class: 'c-cash num' }, money(me.cash))),
+      h('div', { class: 'row sp' }, h('span', { class: 'muted' }, icon('bank'), ' ' + t('bank')), h('b', { class: 'num' }, money(me.bank)))),
+    h('div', { class: 'seg', role: 'group', style: 'margin:12px 0' }, [['dep', t('bankDep')], ['wd', t('bankWd')]].map(([id, lbl]) => h('button', { 'aria-pressed': mode === id ? 'true' : 'false', on: { click: () => { S.bankMode = id; render(true); } } }, lbl))),
+    h('div', { class: 'card stack' },
+      h('div', { class: 'field', style: 'margin:0' }, h('label', { for: 'bamt' }, t('bankAmt')), inp),
+      h('div', { class: 'bquick' }, [25, 50, 75].map((q) => h('button', { class: 'btn ghost sm', disabled: max <= 0, on: { click: () => setV(String(Math.floor((max * q) / 100))) } }, q + '%')),
+        h('button', { class: 'btn ghost sm', disabled: max <= 0, on: { click: () => setV('') } }, t('bankAll'))),
+      btn, net)];
 }
 function screenLux() {
   const me = S.st.me, names = list('lux');
@@ -1588,6 +1639,7 @@ function screenSlotGame(page) {
   const all = CHIPS.filter((c) => c <= max); if (max >= min && !all.includes(max)) all.push(max);
   const chip = chipNow(), at = Math.max(0, all.findLastIndex((c) => c <= chip));
   const setBet = (i) => { S.chip = all[i]; store.set('chip', all[i]); render(); };
+  const auto = S.slotAuto && S.slotAuto.g === g ? S.slotAuto : null;
   const plq = (kind, label, mult) => h('button', { class: 'splq bbuy' + (kind === 2 ? ' sup' : ''), disabled: S.casinoBusy, on: { click: () => slotBuy(g, kind) } }, h('span', null, label), h('b', { class: 'num' }, moneyShort(chip * mult)));
   return [
     h('div', { class: 'slot th-' + g },
@@ -1600,9 +1652,37 @@ function screenSlotGame(page) {
           h('div', { class: 'sbet' }, h('button', { class: 'sbb', 'aria-label': '−', disabled: at <= 0, on: { click: () => setBet(at - 1) } }, '−'),
             h('div', null, h('small', null, t('slBetL')), h('b', { class: 'num' }, moneyShort(chip))),
             h('button', { class: 'sbb', 'aria-label': '+', disabled: at >= all.length - 1, on: { click: () => setBet(at + 1) } }, '+')),
-          h('button', { class: 'btn buy sspin', 'aria-label': t('slSpin', { m: moneyShort(chip) }), disabled: max < min || S.casinoBusy, on: { click: () => play('slot', { game: g, amt: chip }, slotAnim) } }, icon('refresh')),
-          h('button', { class: 'sib', on: { click: () => slotPaytable(g) } }, h('b', null, 'i'), h('small', null, t('slInfo')))),
+          h('button', { class: 'btn buy sspin', 'aria-label': t('slSpin', { m: moneyShort(chip) }), disabled: max < min || S.casinoBusy || !!auto, on: { click: () => play('slot', { game: g, amt: chip }, slotAnim) } }, icon('refresh')),
+          h('div', { class: 'sright' },
+            h('button', { class: 'sib sauto' + (auto ? ' on' : ''), disabled: !auto && (max < min || S.casinoBusy), on: { click: (e) => (S.slotAuto ? slotAutoStop(e.currentTarget) : slotAutoPick(g)) } }, h('b', { class: 'num' }, auto ? String(auto.left) : 'A'), h('small', null, auto ? t('slStop') : t('slAuto'))),
+            h('button', { class: 'sib', on: { click: () => slotPaytable(g) } }, h('b', null, 'i'), h('small', null, t('slInfo'))))),
         h('div', { class: 'scred' }, h('span', null, t('csInHand') + ' '), h('b', { class: 'num c-cash' }, money(me.cash)), h('span', null, ' · ' + t('slBetL') + ' '), h('b', { class: 'num' }, money(chip)))))];
+}
+// ---- rodar automático: n rodadas seguidas com a aposta escolhida ----
+function slotAutoPick(g) {
+  const chip = chipNow();
+  const close = sheet(h('div', { class: 'stack' }, h('h2', null, t('slAutoT')), h('p', null, t('slAutoSub', { m: money(chip) })),
+    h('div', { class: 'autogrid' }, [10, 25, 50, 100].map((n) => h('button', { class: 'btn', on: { click: () => { close(); slotAutoRun(g, n); } } }, h('b', { class: 'num' }, String(n)), h('small', null, t('slAutoUpTo', { m: moneyShort(chip * n) }))))),
+    h('p', { class: 'small muted' }, t('slAutoNote'))));
+}
+function slotAutoStop(btn) {
+  if (!S.slotAuto) return;
+  S.slotAuto.left = 0; S.slotAuto.stop = true;
+  if (btn) { btn.querySelector('b').textContent = '0'; btn.querySelector('small').textContent = t('slStopping'); btn.disabled = true; }
+  if (!S.casinoBusy) { S.slotAuto = null; render(); }
+}
+async function slotAutoRun(g, n) {
+  const page = Object.keys(SLOT_OF).find((k) => SLOT_OF[k] === g);
+  S.slotAuto = { g, left: n, total: n }; render();
+  while (S.slotAuto && S.slotAuto.left > 0 && S.tab === page) {
+    const chip = chipNow(); if (betMax() < S.cfg.casino.minBet) break;
+    S.slotAuto.left -= 1;
+    const r = await play('slot', { game: g, amt: chip }, slotAnim);
+    if (!r || !S.slotAuto || S.slotAuto.stop) break;
+    if (r.spin.free.length) break;                    // saiu um bónus: pára para se ver com calma
+    await wait(500);
+  }
+  S.slotAuto = null; render();
 }
 function slotPaytable(g) {
   const G = slotCfg(g), x = (v) => (v / 100).toString().replace('.', lang() === 'pt' ? ',' : '.') + '×';
@@ -1639,6 +1719,7 @@ function openProfile() {
     h('div', { class: 'row' }, h('div', { class: 'grow' }, h('div', { class: 'small muted' }, t('level') + ' ' + me.level), h('div', { style: 'font-family:var(--disp);font-weight:900;font-size:34px;text-transform:uppercase;line-height:1' }, list('titles')[me.level - 1]), h('div', { class: 'muted' }, me.name + (S.st.rank ? ' · #' + S.st.rank : ''))),
       h('div', { style: 'text-align:right' }, h('div', { class: 'c-resp', style: 'font-weight:800;font-size:20px' }, icon('crown'), ' ' + num(me.respect)), h('div', { class: 'small muted' }, me.levelTo ? t('toNext', { n: num(me.levelTo - me.peakRespect), l: me.level + 1 }) : ''))),
     me.cls ? h('div', { class: 'chip', style: 'justify-self:start' }, t('cl_' + me.cls) + ' · ' + classLines(S.cfg.classes.find((c) => c.id === me.cls)).join(' · ')) : null,
+    me.cls ? h('button', { class: 'btn sm', style: 'justify-self:start', on: { click: () => { close(); go('work'); } } }, t('clsChangeT')) : null,
     S.avOk ? h('h2', { class: 'sec', style: 'margin-top:10px' }, t('avatar')) : null,
     S.avOk ? h('div', { class: 'avgrid' }, Array.from({ length: S.cfg.avatars }, (_, i) => h('button', { class: i === me.av ? 'sel' : '', 'aria-label': t('avatar') + ' ' + (i + 1), 'aria-pressed': i === me.av ? 'true' : 'false',
       on: { click: async () => { await act('avatar', { i }); close(); openProfile(); } } }, h('img', { src: AV(i), alt: '', width: 96, height: 96, loading: 'lazy', on: { error: (e) => e.currentTarget.parentNode.remove() } })))) : null,

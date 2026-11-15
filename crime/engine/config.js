@@ -70,7 +70,18 @@ export const CFG = {
     { id: 'empresario', bizBp: 2000, feeCutBp: 5000 }, // negócios rendem mais, banco a metade
     { id: 'matador', atkBp: 2000, pvpBp: 2500 }, // ataque e respeito nas lutas
     { id: 'seguranca', defBp: 2500, hospCutBp: 5000 }, // defesa, hospital a metade
+    { id: 'chulo', hkCutBp: 3000, sickCutBp: 6000 }, // putas mais baratas e menos doenças
+    { id: 'contrabandista', seizeCutBp: 5000 }, // metade das apreensões no porto
+    // de elite: só com respeito (conta o máximo que já tiveste na ronda). Juntam dois ofícios e dão mais do que os de rua.
+    { id: 'mestre', need: 1000, lootBp: 2000, bustCutBp: 1500 },
+    { id: 'blindado', need: 1500, defBp: 3500, hospCutBp: 6000, atkBp: 1000 },
+    { id: 'barao', need: 2000, drugCutBp: 4500, fxMoreBp: 15000, capPlus: 25 },
+    { id: 'magnata', need: 3000, bizBp: 3000, feeCutBp: 8000, seizeCutBp: 3000 },
+    { id: 'carniceiro', need: 4000, atkBp: 3000, pvpBp: 4000, hospCutBp: 2500 },
+    { id: 'padrinho', need: 6000, lootBp: 2500, respBp: 1500, bizBp: 1500 },
   ],
+  // mudar de profissão: custa o que rendem 100 de stamina no teu melhor golpe e só dá uma vez a cada 24 h, para ninguém trocar antes de cada jogada
+  classChange: { energy: 100, min: 500, coolMs: 24 * HOUR },
   avatars: 32,
   // casino: só com o dinheiro que tens na mão. A casa ganha sempre um pouco (roleta 2,7%, dados 3–4%, blackjack ~1%).
   casino: {
@@ -182,7 +193,7 @@ export const CFG = {
   hookers: {
     windowMs: 24 * HOUR, stepNum: 11, stepDen: 10, maxSteps: 60,
     sickCutBp: 1500, // doente: −15% em todas as stats até se tratar
-    cureMin: 100, cureValueBp: 2500, // tratar custa o que rendem 25 de stamina
+    cureMin: 40, cureValueBp: 1000, // tratar custa o que rendem 10 de stamina
     list: [
       // quanto mais barata, menos stamina por visita e mais risco de doença; as de cima custam mais por ponto
       // mas enchem de uma vez e quase sem risco. Contando a doença, as do meio são as que rendem mais.
@@ -205,7 +216,8 @@ export const CFG = {
   practice: { base: 1000, perStat: 10, failBp: 5000 },
   // desintoxicação: limpa o vício todo, sem limite de vezes. Preço = pouco menos de um terço do que 100 de energia te rendem
   // (por 100 de vício), +25% por cada uso nas últimas 24 h. Nunca bloqueia: só fica cada vez mais cara.
-  detox: { min: 50, windowMs: 24 * HOUR, valueDiv: 350, stepNum: 5, stepDen: 4, maxSteps: 40 },
+  // desintoxicar 100 de vício custa o que rendem ~14 de stamina; cada vez no mesmo dia fica 30% mais cara (trava quem quer stamina sem fim)
+  detox: { min: 30, windowMs: 24 * HOUR, valueDiv: 700, stepNum: 13, stepDen: 10, maxSteps: 40 },
 
   // Negócios: rendem por hora para um armazém que enche em 8 h. Cada compra dá respeito uma vez (resp).
   // Cada unidade extra do mesmo tipo custa +50%; máximo 10 de cada tipo.
@@ -258,7 +270,8 @@ export const CFG = {
     maxHospPerWindow: 4, // ninguém é mandado para o hospital mais de 4 vezes em 24 h (regra fixa)
     windowMs: 24 * HOUR,
   },
-  medicPerMin: 12, // sair do hospital: 12 x minutos que faltam x nível do jogador
+  // sair do hospital: por cada minuto que falta, o mais barato de (5 × nível) e (um quarto do que rende 1 de stamina)
+  medicPerMin: 5, medicValueBp: 2500,
 
   bank: { feeBp: 300 }, // depositar custa 3%
 
