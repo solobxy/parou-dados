@@ -390,6 +390,9 @@ test('gangue: safar um membro da prisão e do hospital paga quem carrega no bot�
   g = await gangue(A, '10.0.9.70'); assert.ok(g.mine.roster.find((m) => m.name === 'SafaB').medic > 0);
   r = await ag(A, '10.0.9.70', { type: 'gangMedic', name: 'SafaB' }); assert.equal(r.status, 200, JSON.stringify(r.body)); assert.equal((await B.estado()).hospUntil, 0);
   r = await ag(A, '10.0.9.70', { type: 'gangMedic', name: 'SafaA' }); assert.equal(r.body.error, 'NO_TARGET');
+  // arruma: a gangue acaba quando sai o último (os testes seguintes contam com a cidade sem gangues)
+  await ag(B, '10.0.9.71', { type: 'gangLeave' }); await ag(A, '10.0.9.70', { type: 'gangLeave' });
+  assert.equal((await gangue(A, '10.0.9.70')).list.length, 0);
 });
 
 // muda o estado guardado de jogadores (com o servidor parado), para os testes chegarem a níveis e quantias altas
