@@ -1295,12 +1295,12 @@ function screenHosp() {
     meter(t('vice'), L.vice, me.addictionCap, 'vi'),
     h('p', { class: 'small muted' }, t('detoxSub', { p: Math.round((S.cfg.detox.stepNum / S.cfg.detox.stepDen - 1) * 100) })),
     h('button', { class: 'btn buy block', disabled: !!b || me.cash + me.bank < me.detox, on: { click: (e) => act('detox', {}, { el: e.currentTarget }) } }, t('detoxBtn', { m: money(me.detox) }))));
-  else if (!b && !me.sick) out.push(h('div', { class: 'note' }, h('p', { class: 'muted' }, t('healthy'))));
+  else if (!b && !me.sick) out.push(h('div', { class: 'note' }, h('p', { class: 'muted' }, t('healthy')), h('button', { class: 'btn ghost', on: { click: () => go('rob') } }, t('backToWork'))));
   return out;
 }
 function screenJail() {
   const out = [pageHead('jail')], b = busyBanner(S.st.me);
-  out.push(b || h('div', { class: 'note' }, h('p', { class: 'muted' }, t('notJailed'))));
+  out.push(b || h('div', { class: 'note' }, h('p', { class: 'muted' }, t('notJailed')), h('button', { class: 'btn ghost', on: { click: () => go('rob') } }, t('backToWork'))));
   return out;
 }
 function missionText(m) {

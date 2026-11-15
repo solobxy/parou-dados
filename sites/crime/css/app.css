@@ -1327,3 +1327,23 @@ h1.slogo { margin: 0; }
   .gop2 > .btn { justify-self: stretch; margin-top: 8px; }
   .gop2 > .glock { justify-self: start; margin-top: 4px; }
 }
+
+/* ---------- fundo art déco escuro ----------
+   Papel de leques dourados quase invisível, um clarão quente no topo e um sol de raios a nascer por trás da cidade.
+   Tudo parado e atrás do conteúdo: não mexe com a leitura nem com a bateria. */
+body::before { content: ''; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background:
+    radial-gradient(120% 50% at 50% 0%, #1c1624 0%, #1c162400 72%),
+    linear-gradient(to bottom, #0a0c1100 0%, #0a0c1100 45%, #0a0c11cc 100%),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='32' viewBox='0 0 64 32'%3E%3Cg fill='%230a0c11' stroke='%23ffd36b' stroke-opacity='.075' stroke-width='1'%3E%3Cpath d='M-32 16a32 32 0 0 1 64 0zM-24 16a24 24 0 0 1 48 0M-16 16a16 16 0 0 1 32 0M-8 16a8 8 0 0 1 16 0M32 16a32 32 0 0 1 64 0zM40 16a24 24 0 0 1 48 0M48 16a16 16 0 0 1 32 0M56 16a8 8 0 0 1 16 0'/%3E%3Cpath d='M0 32a32 32 0 0 1 64 0zM8 32a24 24 0 0 1 48 0M16 32a16 16 0 0 1 32 0M24 32a8 8 0 0 1 16 0'/%3E%3Cpath d='M-32 48a32 32 0 0 1 64 0zM-24 48a24 24 0 0 1 48 0M-16 48a16 16 0 0 1 32 0M-8 48a8 8 0 0 1 16 0M32 48a32 32 0 0 1 64 0zM40 48a24 24 0 0 1 48 0M48 48a16 16 0 0 1 32 0M56 48a8 8 0 0 1 16 0'/%3E%3C/g%3E%3C/svg%3E") 50% 0 / 64px 32px;
+}
+#app::before { content: ''; position: fixed; left: 0; right: 0; bottom: 0; height: 78vh; z-index: 0; pointer-events: none;
+  background: repeating-conic-gradient(from 270deg at 50% 100%, #ffd36b0b 0deg 5deg, #ffd36b00 5deg 10deg);
+  -webkit-mask-image: radial-gradient(ellipse 95% 100% at 50% 100%, #000 0%, #0000 78%); mask-image: radial-gradient(ellipse 95% 100% at 50% 100%, #000 0%, #0000 78%); }
+
+/* lutas: os dois botões de cada alvo dividem a linha a meio e o texto comprido parte-se dentro do botão em vez de sair dele */
+.tgt .acts { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+.tgt .acts .btn.sm { white-space: normal; line-height: 1.15; padding-left: 8px; padding-right: 8px; min-width: 0; text-wrap: balance; }
+.tgt .acts .btn.sm { font-size: 14px; }
+/* ecrãs baixos: a imagem do cabeçalho encolhe para o conteúdo começar mais acima */
+@media (max-height: 640px) { .pimg { height: 112px; } }
