@@ -106,6 +106,15 @@ function contas(kind, a0, a, d0, d, t, res, arg) {
       const due = a0.port.filter((c) => c.readyAt <= t).reduce((x, c) => x + c.amount + Math.floor((c.amount * CFG.port.ships[c.k === undefined ? CFG.port.legacy : c.k].gainBp) / 10000), 0);
       if (dm < 0 || dm > due || dr !== 0) bad('porto pagou a mais'); break;
     }
+    case 'portOpen': {   // abre-se um só, que já tinha chegado: sai da lista, os outros ficam, e paga no máximo o que esse devia
+      const c = a0.port.find((x) => x.readyAt === arg), k = c && (c.k === undefined ? CFG.port.legacy : c.k);
+      if (!c || c.readyAt > t) bad('abriu um contentor que não existia ou ainda não tinha chegado');
+      const due = c.amount + Math.floor((c.amount * CFG.port.ships[k].gainBp) / 10000), it = res.item;
+      if (a.port.length !== a0.port.length - 1 || it.amount !== c.amount || it.k !== k || dr !== 0) bad('contentor: saiu mais do que um ou o errado');
+      if (it.seized ? dm !== 0 || it.got !== 0 : it.got !== due || dm < 0 || dm > due) bad('contentor pagou o que não devia');
+      if (res.left !== a.port.filter((x) => x.readyAt <= t).length) bad('contentor: os que faltam abrir estão mal contados');
+      break;
+    }
     case 'hitman': {
       const H = CFG.hitman, preco = Math.max(H.priceMin, d0.respect * H.pricePerRespect);
       if (dm !== -preco || res.price !== preco || dr !== 0) bad('assassino: quem paga só perde o preço');
@@ -205,7 +214,7 @@ for (let n = 0; n < ACTIONS; n++) {
   if (r.chance(400) && !p.gang) { if (r.chance(3000)) E.gangSet(p, CFG.gang.bot.id, 1, 0); else E.gangSet(p, 'g' + r.int(1, 3), r.int(1, 5), r.int(0, 5)); } // o servidor pôs-te numa gangue (para os golpes e tareias em grupo terem quem os faça)
   if (r.chance(2500)) { p.energy = r.int(0, CFG.energy.max); p.energyT = Math.min(p.energyT, p.t); } // gasta stamina para chegar à discoteca, às putas e ao hospital
   const before = touched(p, t), beforeD = touched(d, t), origD = structuredClone(d), origP = structuredClone(p);
-  const kind = pick(['stockBuy', 'stockBuy', 'stockBuy', 'stockSell', 'stockSell', 'missionSwap', 'venueBuy', 'venueBuy', 'venueSet', 'venueCollect', 'stockUse', 'stockUse', 'stockDump', 'broHire', 'broHire', 'broFire', 'clubBuyAt', 'clubBuyAt', 'clubBuyAt', 'broVisitAt', 'broVisitAt', 'broVisitAt', 'casino', 'casino', 'table', 'heist', 'hit', 'gangCreate', 'gangDonate', 'gangLeave', 'gangBiz', 'gangBiz', 'gangBiz', 'gangBizCollect', 'hitman', 'hitman', 'hitman', 'crime', 'crimeAll', 'drug', 'refill', 'detox', 'claim', 'class', 'classChange', 'classChange', 'air', 'air', 'airCollect', 'airCollect', 'bailFor', 'bailFor', 'medicFor', 'medicFor', 'avatar', 'hooker', 'cure', 'house', 'houseUp', 'train', 'buyBiz', 'buyBiz', 'collect', 'bizGoods', 'bizGoods', 'stockHold', 'stockHold', 'acct', 'stockLimit', 'stockLimit', 'stockLimit', 'port', 'collectPort', 'deposit', 'withdraw', 'gear', 'attack', 'bail', 'medic', 'luxury']);
+  const kind = pick(['stockBuy', 'stockBuy', 'stockBuy', 'stockSell', 'stockSell', 'missionSwap', 'venueBuy', 'venueBuy', 'venueSet', 'venueCollect', 'stockUse', 'stockUse', 'stockDump', 'broHire', 'broHire', 'broFire', 'clubBuyAt', 'clubBuyAt', 'clubBuyAt', 'broVisitAt', 'broVisitAt', 'broVisitAt', 'casino', 'casino', 'table', 'heist', 'hit', 'gangCreate', 'gangDonate', 'gangLeave', 'gangBiz', 'gangBiz', 'gangBiz', 'gangBizCollect', 'hitman', 'hitman', 'hitman', 'crime', 'crimeAll', 'drug', 'refill', 'detox', 'claim', 'class', 'classChange', 'classChange', 'air', 'air', 'airCollect', 'airCollect', 'bailFor', 'bailFor', 'medicFor', 'medicFor', 'avatar', 'hooker', 'cure', 'house', 'houseUp', 'train', 'buyBiz', 'buyBiz', 'collect', 'bizGoods', 'bizGoods', 'stockHold', 'stockHold', 'acct', 'stockLimit', 'stockLimit', 'stockLimit', 'port', 'collectPort', 'portOpen', 'portOpen', 'deposit', 'withdraw', 'gear', 'attack', 'bail', 'medic', 'luxury']);
   let res, arg;
   try {
     switch (kind) {
@@ -295,6 +304,7 @@ for (let n = 0; n < ACTIONS; n++) {
       case 'clubBuyAt': arg = r.chance(9000) ? r.int(0, CFG.drugs.length - 1) : anyInt(); res = E.clubBuyAt(p, d, t, world, arg, r.chance(1000) ? 1 : undefined); break;
       case 'broVisitAt': arg = pick([0, 1, 2, 3, 20, -1]); res = E.broVisitAt(p, d, t, world, arg, game, r.chance(1000) ? 1 : undefined); break;
       case 'collectPort': res = E.collectPort(p, t, world, game); break;
+      case 'portOpen': arg = p.port.length && r.chance(8500) ? pick(p.port).readyAt : anyInt(); /* quase sempre um carregamento que existe (chegado ou não), o resto lixo */ res = E.openPort(p, t, world, game, arg); break;
       case 'deposit': arg = r.chance(8000) ? r.int(0, p.cash + 10) : anyInt(); res = E.deposit(p, t, world, arg); break;
       case 'withdraw': res = E.withdraw(p, t, world, r.chance(8000) ? r.int(0, p.bank + 10) : anyInt()); break;
       case 'gear': res = E.buyGear(p, t, world, ...(() => { const kd = pick(['weapon', 'armor', 'guard', 'guard', 'tool', 'tool', 'gweapon', 'cash', 'stats', 'house']); return [kd, r.chance(7000) && Number.isInteger(p[kd]) ? p[kd] + 1 : r.chance(9000) ? r.int(-1, 8) : anyInt()]; })()); break;

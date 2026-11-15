@@ -61,6 +61,8 @@ const SFX = {
   fuse: (t) => { noise(t, 0.42, 'highpass', 4200, 0.9, 0.03); },
   boom: (t) => { noise(t, 0.42, 'lowpass', 360, 0.7, 0.2); ping(t, 118, 0.34, 0.13, 0, 40); },
   pop: (t) => { noise(t, 0.13, 'bandpass', 700, 0.9, 0.1, 2600); ping(t, 220, 0.12, 0.06, 0, 90); coin(t + 0.04, 3700, 0.025); },
+  clank: (t) => { noise(t, 0.045, 'bandpass', 1100, 3, 0.16); ping(t, 240, 0.16, 0.09, 0, 130); ping(t + 0.02, 1650, 0.08, 0.03); },   // cadeado a saltar
+  door: (t) => { noise(t, 0.55, 'lowpass', 260, 0.8, 0.13, 880); ping(t, 74, 0.45, 0.07, 0, 52); noise(t + 0.5, 0.06, 'lowpass', 420, 0.8, 0.12); },   // portas de aço a abrir e a bater no fim
 };
 let lastTap = 0;
 export function sfx(name) {

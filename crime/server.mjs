@@ -20,7 +20,7 @@ const SECURE = process.env.COOKIE_INSEGURO ? '' : '; Secure';
 const [fy, fm, fd] = (process.env.PRIMEIRA_RONDA || '2026-11-13').split('-').map(Number);
 const FIRST = { y: fy, m: fm, d: fd };
 const rng = cryptoRng();
-const VERSAO = 47;   // sobe quando o servidor muda, para se confirmar de fora que a versão nova já está a correr
+const VERSAO = 48;   // sobe quando o servidor muda, para se confirmar de fora que a versão nova já está a correr
 const ATOS_3S = +(process.env.ATOS_3S || 15), ATOS_MIN = +(process.env.ATOS_MIN || 400); // ações por conta: 15 em 3 s, 400 por minuto
 
 // ---------- relógio que nunca anda para trás ----------
@@ -933,9 +933,10 @@ function agir(conta, corpo, now) {
     case 'bizGoods': r = E.bizGoods(p, now, world, int(a.i), a.on === true); break;
     case 'acct': r = E.hireAccountant(p, now, world); break;
     case 'stockLimit': r = E.stockLimit(p, now, world, bolsaDe(w, now), int(a.k), int(a.tp), int(a.sl)); break;
+    case 'portOpen': r = E.openPort(p, now, world, rng, int(a.at)); break;   // um contentor de cada vez (a animação de o abrir)
     case 'collect': {
       const b = E.collectBiz(p, now, world, rng);
-      const c = E.collectPort(p, now, world, rng);
+      const c = a.port === false ? { items: [] } : E.collectPort(p, now, world, rng);   // port: false = só negócios e casas; os contentores abrem-se no porto, um a um
       const v = E.venueCollect(p, now, world);
       r = { ok: true, items: b.items, port: c.items, club: v.club, bro: v.bro };
       break;

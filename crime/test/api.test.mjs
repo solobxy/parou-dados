@@ -1023,6 +1023,29 @@ test('porto e stash por API: escolhe-se o barco (com nível, droga e risco próp
   await mexer({ Armador: (e) => { e.port[0].readyAt = e.t - 1; } });
   r = await ag(A, '10.0.9.140', { type: 'collect' }); assert.equal(r.status, 200); const it = r.body.result.port[0];
   assert.equal(it.k, 0); assert.equal(it.amount, 500); assert.ok(it.seized ? it.got === 0 && r.body.me.cash === 9500 : it.got === 560 && r.body.me.cash === 9500 + 560, JSON.stringify(it));
+  // abrir um contentor de cada vez (a animação do porto): só o que já chegou, identificado pela hora de chegada; os outros ficam como estavam
+  await mexer({ Armador: (e) => { e.cash = 10_000; e.bank = 0; e.respect = 50_000; e.peakRespect = 50_000; e.port = []; } });
+  r = await ag(A, '10.0.9.140', { type: 'port', k: 0, amount: 500 }); assert.equal(r.status, 200, JSON.stringify(r.body));
+  r = await ag(A, '10.0.9.140', { type: 'port', k: 1, amount: 800, goods: true }); assert.equal(r.status, 200, JSON.stringify(r.body)); assert.equal(r.body.me.port.length, 2); assert.equal(r.body.me.cash, 8700);
+  r = await ag(A, '10.0.9.140', { type: 'portOpen', at: r.body.me.port[0].readyAt }); assert.equal(r.body.error, 'SHIP_AT_SEA');
+  for (const at of [0, 'x', null, 1.5, undefined]) { r = await ag(A, '10.0.9.140', { type: 'portOpen', at }); assert.equal(r.body.error, 'NO_CARGO', JSON.stringify(at)); }
+  await mexer({ Armador: (e) => { e.port[0].readyAt = e.t - 2; e.port[1].readyAt = e.t - 1; } });
+  a = await A.estado(); assert.equal(a.port.length, 2); const [at0, at1] = a.port.map((c) => c.readyAt);
+  // «receber» dos negócios com port:false não toca nos contentores (o jogo novo pede assim, para a abertura ficar para o porto)
+  r = await ag(A, '10.0.9.140', { type: 'collect', port: false }); assert.equal(r.status, 200, JSON.stringify(r.body)); assert.deepEqual(r.body.result.port, []); assert.equal(r.body.me.port.length, 2); assert.equal(r.body.me.cash, 8700);
+  r = await ag(A, '10.0.9.140', { type: 'portOpen', at: at1 }); assert.equal(r.status, 200, JSON.stringify(r.body));
+  let o = r.body.result; assert.equal(o.left, 1); assert.equal(o.item.k, 1); assert.equal(o.item.amount, 800);
+  assert.ok(o.item.seized ? o.item.got === 0 && r.body.me.cash === 8700 : o.item.got === 864 && o.item.units > 0 && r.body.me.cash === 8700 + o.item.rest && r.body.me.stock[o.item.d] === o.item.units, JSON.stringify(o));
+  assert.equal(r.body.me.port.length, 1); assert.equal(r.body.me.port[0].k, 0);
+  r = await ag(A, '10.0.9.140', { type: 'portOpen', at: at1 }); assert.equal(r.body.error, 'NO_CARGO', 'o mesmo contentor não se abre duas vezes');
+  const antesAbrir = (await A.estado()).cash;
+  r = await ag(A, '10.0.9.140', { type: 'portOpen', at: at0 }); assert.equal(r.status, 200, JSON.stringify(r.body)); o = r.body.result;
+  assert.equal(o.left, 0); assert.equal(o.item.k, 0); assert.ok(o.item.seized ? r.body.me.cash === antesAbrir : o.item.got === 560 && r.body.me.cash === antesAbrir + 560, JSON.stringify(o)); assert.equal(r.body.me.port.length, 0);
+  // o «receber» de sempre (sem port:false) continua a descarregar tudo, para quem ainda tem o jogo antigo aberto
+  r = await ag(A, '10.0.9.140', { type: 'port', k: 0, amount: 500 }); assert.equal(r.status, 200);
+  await mexer({ Armador: (e) => { e.port[0].readyAt = e.t - 1; } });
+  r = await ag(A, '10.0.9.140', { type: 'collect' }); assert.equal(r.body.result.port.length, 1); assert.equal(r.body.me.port.length, 0);
+  await mexer({ Armador: (e) => { e.stock = e.stock.map(() => 0); } });   // o haxixe que veio no contentor não entra nas contas da stash, mais abaixo
   // stash: o Armador tem discoteca com erva e coca; a Freguesa vê as duas no menu
   const COCA = cfg.drugs.findIndex((d) => d.id === 'coca'), ERVA = cfg.drugs.findIndex((d) => d.id === 'erva');
   await mexer({ Armador: (e) => { e.club = { lvl: 1, till: 0, t: e.t, rem: 0, pi: 2, gd: 0 }; e.stock[COCA] = 30; e.stock[ERVA] = 5000; }, Freguesa: (e) => { e.cash = 100_000; e.energy = 0; } });

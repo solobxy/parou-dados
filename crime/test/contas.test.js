@@ -1407,6 +1407,28 @@ test('porto: seis carregamentos, cada um com barco, droga, tempo, lucro e risco 
   const r = E.sendPort(p, NOW, W, 0, 1000); assert.deepEqual(r, { ok: true, k: 0, readyAt: NOW + S[0].ms }); assert.deepEqual(p.port, [{ k: 0, amount: 1000, readyAt: NOW + S[0].ms }]);
   assert.throws(() => E.sendPort(p, NOW, W, 0, 1000), code('NO_SLOT')); assert.deepEqual(E.checkInvariants(p), []);
   assert.deepEqual(E.collectPort(p, NOW + S[0].ms - 1, W, never).items, [], 'antes da hora não há nada para descarregar');
+  // abrir um só carregamento (a animação do contentor): identifica-se pela hora de chegada, só depois de chegar, e os outros ficam como estavam
+  { const q = mk(); q.cash = 1e6; q.bank = 0; q.respect = 1e6; q.peakRespect = 1e6;
+    const t1 = NOW + 1000, t2 = NOW + 2000, t3 = NOW + 9e9;
+    q.port = [{ k: 0, amount: 1000, readyAt: t1 }, { k: 3, amount: 2000, readyAt: t2, d: CFG.drugs.findIndex((x) => x.id === 'coca') }, { k: 1, amount: 500, readyAt: t3 }];
+    assert.throws(() => E.openPort(q, t1 - 1, W, never, t1), code('SHIP_AT_SEA'), 'um milissegundo antes de chegar ainda não abre');
+    for (const at of [0, -1, NaN, undefined, null, '1', t1 + 1]) assert.throws(() => E.openPort(q, t2, W, never, at), code('NO_CARGO'), String(at));
+    assert.throws(() => E.openPort(q, t2, W, never, t3), code('SHIP_AT_SEA')); assert.equal(q.port.length, 3); assert.equal(q.cash, 1e6);
+    const o1 = E.openPort(q, t2, W, never, t1);
+    assert.deepEqual(o1, { ok: true, item: { k: 0, amount: 1000, got: 1120, seized: false }, left: 1 }); assert.equal(q.cash, 1e6 + 1120); assert.deepEqual(q.port.map((c) => c.readyAt), [t2, t3]);
+    assert.throws(() => E.openPort(q, t2, W, never, t1), code('NO_CARGO'), 'o mesmo contentor não se abre duas vezes');
+    const st0 = q.stock.slice(), o2 = E.openPort(q, t2, W, never, t2);
+    assert.equal(o2.left, 0); assert.equal(o2.item.got, 2600); assert.equal(o2.item.seized, false); assert.ok(o2.item.units > 0); assert.equal(q.stock[o2.item.d], st0[o2.item.d] + o2.item.units);
+    assert.equal(o2.item.units * E.wholesale(o2.item.d) + o2.item.rest, 2600, 'em droga: unidades ao preço de armazém mais o troco'); assert.equal(q.cash, 1e6 + 1120 + o2.item.rest);
+    // apreendido: perde-se o que se enviou e não entra nada
+    q.port = [{ k: 4, amount: 7000, readyAt: t1 }]; const c1 = q.cash;
+    assert.deepEqual(E.openPort(q, t2, W, always, t1), { ok: true, item: { k: 4, amount: 7000, got: 0, seized: true }, left: 0 }); assert.equal(q.cash, c1); assert.deepEqual(q.port, []);
+    assert.deepEqual(E.checkInvariants(q), []);
+    // abrir um a um dá o mesmo que descarregar tudo de uma vez, com a mesma sorte
+    const mkPort = () => [{ k: 0, amount: 1000, readyAt: t1 }, { k: 2, amount: 3000, readyAt: t1 + 1 }, { k: 5, amount: 9000, readyAt: t1 + 2 }];
+    const a = mk(), b = mk(); for (const x of [a, b]) { x.cash = 5e5; x.bank = 0; x.port = mkPort(); }
+    const ra = seededRng(31), rb = seededRng(31), todos = E.collectPort(a, t2, W, ra).items, um = [t1, t1 + 1, t1 + 2].map((at) => E.openPort(b, t2, W, rb, at).item);
+    assert.deepEqual(um, todos); assert.equal(a.cash, b.cash); }
   const c = E.collectPort(p, NOW + S[0].ms, W, never).items[0]; assert.deepEqual(c, { k: 0, amount: 1000, got: 1120, seized: false }); assert.equal(p.cash, 1e6 - 1000 + 1120);
   // cada barco: tempo, lucro, risco e droga exatos (jogador de nível alto, com vários lugares)
   const rico = mk(); setResp(rico, 300000); rico.cash = 1e9; rico.bank = 0; assert.ok(E.level(rico) >= 13); assert.ok(E.portSlots(rico) >= 3);

@@ -888,19 +888,36 @@ export function sendPort(p, now, world, k, amount, goods = false) {
   return { ok: true, k, readyAt };
 }
 
+// Um carregamento que chegou: ou a polícia o apreendeu, ou volta o que se enviou mais o lucro (em dinheiro ou em droga para o armazém).
+// A sorte só se tira aqui, ao descarregar: até lá ninguém sabe o que vem lá dentro.
+function landShip(p, c, rng) {
+  const k = shipIdx(c);
+  if (rng.chance(portSeizeBp(p, k))) return { k, amount: c.amount, got: 0, seized: true };
+  const got = c.amount + Math.floor((c.amount * CFG.port.ships[k].gainBp) / 10000);
+  if (c.d !== undefined) return { k, amount: c.amount, got, seized: false, ...toGoods(p, c.d, got) };   // veio em droga: entra no armazém
+  p.cash += got;
+  return { k, amount: c.amount, got, seized: false };
+}
+// descarrega tudo o que já chegou, de uma vez
 export function collectPort(p, now, world, rng) {
   begin(p, now, world, { allowBusy: true });
   const out = [];
   p.port = p.port.filter((c) => {
     if (c.readyAt > now) return true;
-    const k = shipIdx(c);
-    if (rng.chance(portSeizeBp(p, k))) { out.push({ k, amount: c.amount, got: 0, seized: true }); return false; }
-    const got = c.amount + Math.floor((c.amount * CFG.port.ships[k].gainBp) / 10000);
-    if (c.d !== undefined) out.push({ k, amount: c.amount, got, seized: false, ...toGoods(p, c.d, got) });   // veio em droga: entra no armazém
-    else { p.cash += got; out.push({ k, amount: c.amount, got, seized: false }); }
+    out.push(landShip(p, c, rng));
     return false;
   });
   return { ok: true, items: out };
+}
+// Abre um só carregamento, o que chegou à hora `at` (é assim que o ecrã do porto o identifica: os carregamentos não têm número).
+// left = quantos outros já chegaram e ficam por abrir.
+export function openPort(p, now, world, rng, at) {
+  begin(p, now, world, { allowBusy: true });
+  const i = p.port.findIndex((c) => c.readyAt === at);
+  if (i < 0) fail('NO_CARGO');
+  if (p.port[i].readyAt > now) fail('SHIP_AT_SEA', { until: p.port[i].readyAt });
+  const [c] = p.port.splice(i, 1);
+  return { ok: true, item: landShip(p, c, rng), left: p.port.filter((x) => x.readyAt <= now).length };
 }
 
 // ---------- aeroporto ----------

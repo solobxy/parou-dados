@@ -1,8 +1,8 @@
 // Guarda a casca do jogo para abrir depressa; os dados vêm sempre do servidor.
-const V = 'crime-56';
+const V = 'crime-57';
 // Imagens: guardadas à parte e de vez (não se apagam quando sai uma versão nova do jogo). Cada endereço leva o número da versão da imagem (?N).
 const IMGS = 'crime-img-1';
-const SHELL = ['/', '/css/app.css', '/js/app.js', '/js/i18n.js', '/js/ui.js', '/js/fx.js', '/js/casino3d.js', '/js/globo.js', '/js/terra.js',
+const SHELL = ['/', '/css/app.css', '/js/app.js', '/js/i18n.js', '/js/ui.js', '/js/fx.js', '/js/reveal.js', '/js/casino3d.js', '/js/globo.js', '/js/terra.js',
   '/fonts/big-shoulders-display-latin-900-normal.woff2', '/fonts/big-shoulders-display-latin-800-normal.woff2', '/fonts/inter-latin-wght-normal.woff2'];
 self.addEventListener('install', (e) => { e.waitUntil(caches.open(V).then((c) => c.addAll(SHELL)).then(() => self.skipWaiting())); });
 self.addEventListener('activate', (e) => { e.waitUntil(caches.keys().then((ks) => Promise.all(ks.filter((k) => k !== V && k !== IMGS).map((k) => caches.delete(k)))).then(() => self.clients.claim())); });

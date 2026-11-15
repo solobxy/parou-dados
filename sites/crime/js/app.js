@@ -3,6 +3,7 @@
 import { t, tv, list, errText, setLang, lang, guessLang } from './i18n.js';
 import { h, icon, svg, setLocale, num, money, moneyShort, short, dur, hoursText, pct, rid } from './ui.js';
 import * as fx from './fx.js';
+import * as RV from './reveal.js';
 import * as C3 from './casino3d.js';
 import * as GL from './globo.js';
 
@@ -103,17 +104,13 @@ function react(type, out, before, opts) {
   else if (type === 'house') { toast(t('houseMoved', { x: list('houses')[me.house], n: r.respect })); fx.sfx('claim'); }
   else if (type === 'hooker' || type === 'broVisit') { fx.sfx('refill'); if (r.sick) { toast(t('gotSick'), true); fx.vibrate([40, 60, 40]); } if (r.rob) { toast(t('hkRob_' + r.rob.kind, { m: money(r.rob.loss) }), true); fx.vibrate([30, 40, 30]); } }
   else if (type === 'claim') { toast(t('got', { m: money(r.cash) })); fx.sfx('claim'); }
+  else if (type === 'portOpen') S.portLast = [...(S.portLast || []), r.item].slice(-3);   // sem avisos: quem mostra o que saiu é a cena do contentor
   else if (type === 'collect') {
     let total = (r.club || 0) + (r.bro || 0), lost = 0;
     for (const it of r.items) { lost += it.lost; if (it.units !== undefined) { total += it.rest; if (it.units > 0) toast(t('portGoodsToast', { n: num(it.units), x: list('drugs')[it.d] })); } else total += it.money; }
-    // contentores: diz-se o que chegou (com o lucro) e o que a polícia apreendeu, com os valores
-    let back = 0, sent = 0, gone = 0;
-    for (const c of r.port) { if (c.seized) gone += c.amount; else if (c.units !== undefined) { toast(t('portGoodsToast', { n: c.units, x: list('drugs')[c.d] })); fx.sfx('cash'); } else { back += c.got; sent += c.amount; } }
+    // (os contentores já não passam por aqui: abrem-se no porto, um a um, com a cena de reveal.js)
     if (total > 0) { toast(t('got', { m: money(total) })); fx.sfx('cash'); }
-    if (back > 0) { toast(t('portBack', { m: money(back), g: money(back - sent) })); fx.sfx('cash'); }
     if (lost > 0) toast(t('raided', { m: money(lost) }), true);
-    if (gone > 0) { toast(t('portGone', { m: money(gone) }), true); fx.sfx('fail'); }
-    if (r.port.length) S.portLast = r.port;
   } else if (type === 'attack') {
     fx.sfx('hit');
     fx.fight(me.name, out.target.name, r.win, r.win ? (r.mode === 'mug' ? '+' + money(r.money) + ' · +' + r.respect : '+' + r.respect + ' ' + t('respect').toLowerCase()) : '−' + Math.abs(r.respect) + ' ' + t('respect').toLowerCase(), { win: t('youWon'), lose: t('youLost') });
@@ -253,9 +250,8 @@ function tickHud() {
   const tot = document.querySelector('[data-total]');
   if (tot) {
     const v = me.biz.reduce((s, b, i) => s + bizNet(b, i), 0) + (me.club?.till || 0) + (me.bro?.till || 0);
-    const ready = me.port.some((c) => c.readyAt <= now());
-    tot.textContent = v > 0 || ready ? t('collect', { m: money(v) }) : t('nothingToCollect');
-    tot.disabled = !(v > 0 || ready);
+    tot.textContent = v > 0 ? t('collect', { m: money(v) }) : t('nothingToCollect');
+    tot.disabled = !(v > 0);
   }
 }
 
@@ -602,8 +598,10 @@ function screenEmpire() {
   const head = me.biz.some((b) => b.n > 0) || me.port.length || me.club || me.bro
     ? h('div', { class: 'card stack empsum' },
       h('div', { class: 'row sp' }, h('span', { class: 'muted' }, t('empIncome')), h('b', { class: 'num c-cash' }, money(perH) + t('perHour'))),
-      h('button', { class: 'btn buy block big', dataset: { total: 1 }, disabled: total <= 0 && !portReady, on: { click: (e) => act('collect', {}, { el: e.currentTarget }) } },
-        total > 0 || portReady ? t('collect', { m: money(total) }) : t('nothingToCollect')))
+      h('button', { class: 'btn buy block big', dataset: { total: 1 }, disabled: total <= 0, on: { click: (e) => act('collect', { port: false }, { el: e.currentTarget }) } },
+        total > 0 ? t('collect', { m: money(total) }) : t('nothingToCollect')),
+      // contentores chegados: abrem-se no porto. Se não há mais nada para receber, é este o botão principal.
+      portReady ? h('button', { class: 'btn block ctgo' + (total > 0 ? '' : ' buy'), on: { click: () => go('port') } }, portReady === 1 ? t('ctGo1') : t('ctGo', { n: portReady })) : null)
     : h('div', { class: 'tip' }, h('p', null, t('empNone')));
   return [h('div', { class: 'phead' }, h('div', { class: 'pbar top' }, h('h1', null, t('p_empire')))), head, ...hubTiles('empire', badge)];
 }
@@ -1061,9 +1059,8 @@ function screenBiz() {
   const me = S.st.me, B = S.cfg.biz;
   const out = [pageHead('biz', t('empireSub'))];
   const total = me.biz.reduce((s, b, i) => s + bizNet(b, i), 0);
-  const readyPort = me.port.filter((c) => c.readyAt <= now()).length;
-  if (me.biz.some((b) => b.n > 0)) out.push(h('div', { class: 'collect' }, h('button', { class: 'btn buy block big', dataset: { total: 1 }, disabled: total <= 0 && !readyPort,
-    on: { click: (e) => act('collect', {}, { el: e.currentTarget }) } }, total > 0 || readyPort ? t('collect', { m: money(total) }) : t('nothingToCollect'))));
+  if (me.biz.some((b) => b.n > 0)) out.push(h('div', { class: 'collect' }, h('button', { class: 'btn buy block big', dataset: { total: 1 }, disabled: total <= 0,
+    on: { click: (e) => act('collect', { port: false }, { el: e.currentTarget }) } }, total > 0 ? t('collect', { m: money(total) }) : t('nothingToCollect'))));
   if (me.biz.some((b, i) => b.g && B[i].drug >= 0)) out.push(h('button', { class: 'card row tap stlink', on: { click: () => go('stash') } }, icon('pill'), h('span', { class: 'grow' }, t('bizToStash')), h('span', { class: 'muted', 'aria-hidden': 'true' }, '›')));
   out.push(h('div', { class: 'shop' }, B.map((cfg, i) => {
     const b = me.biz[i];
@@ -1208,18 +1205,20 @@ function screenPort() {
   const me = S.st.me, P = S.cfg.port, names = list('ships');
   const out = [pageHead('port', t('portSub'))];
   out.push(portMap(me));
-  if (S.portLast?.length) out.push(h('div', { class: 'note stack', style: 'margin-bottom:10px' }, S.portLast.map((c) => h('div', { class: 'row sp' }, h('span', null, icon('ship'), ' ' + (names[c.k] ?? '') + ' · ' + money(c.amount)),
-    c.seized ? h('b', { class: 'c-red' }, t('portLostRow', { m: money(c.amount) })) : c.units !== undefined ? h('b', { class: 'c-cash' }, t('portGoodsRow', { n: c.units, x: list('drugs')[c.d] })) : h('b', { class: 'c-cash' }, t('portGotRow', { m: money(c.got), g: money(c.got - c.amount) }))))));
+  // o que acabaste de abrir (até três): barco, o que tinhas enviado e o que saiu de lá
+  if (S.portLast?.length) out.push(h('div', { class: 'note stack plast' }, S.portLast.map((c) => h('div', { class: 'row sp' },
+    h('div', { class: 'grow' }, h('b', null, names[c.k] ?? ''), h('div', { class: 'small muted num' }, t('ctSent', { m: money(c.amount) }))),
+    c.seized ? h('b', { class: 'c-red num' }, '−' + money(c.amount)) : c.units !== undefined ? h('b', { class: 'c-cash num' }, t('portGoodsRow', { n: num(c.units), x: list('drugs')[c.d] })) : h('b', { class: 'c-cash num' }, '+' + money(c.got - c.amount))))));
   // no mar: o que já enviaste
   const pc = h('div', { class: 'card stack' }, h('div', { class: 'row sp' }, h('b', null, t('portSailing')), h('span', { class: 'small muted' }, t('slots', { a: me.port.length, b: me.portSlots }))));
   if (!me.port.length) pc.append(h('p', { class: 'small muted' }, t('portNone')));
   for (const c of me.port) {
     const left = c.readyAt - now(), k = shipOf(c);
-    pc.append(h('div', { class: 'cont' }, art('port', P.ships[k].id, 'vth'),
-      h('div', { class: 'grow' }, h('b', null, names[k]), h('div', { class: 'small muted num' }, money(c.amount) + (c.d !== undefined ? ' · ' + list('drugs')[c.d] : ''))),
-      left > 0 ? h('span', { class: 'small muted', style: 'text-align:right' }, t('arrivesIn', { t: '' }), h('b', { class: 'num', dataset: { left: c.readyAt } }, dur(left))) : h('b', { class: 'c-cash' }, t('ready'))));
+    const info = [art('port', P.ships[k].id, 'vth'), h('div', { class: 'grow' }, h('b', null, names[k]), h('div', { class: 'small muted num' }, money(c.amount) + (c.d !== undefined ? ' · ' + list('drugs')[c.d] : '')))];
+    // chegou: a linha inteira é o botão que abre o contentor (só aí se sabe se a polícia o apanhou)
+    if (left <= 0) pc.append(h('button', { class: 'cont rdy', on: { click: () => openCargo(c) } }, ...info, h('span', { class: 'open' }, t('ctOpen'))));
+    else pc.append(h('div', { class: 'cont' }, ...info, h('span', { class: 'small muted', style: 'text-align:right' }, t('arrivesIn', { t: '' }), h('b', { class: 'num', dataset: { left: c.readyAt } }, dur(left)))));
   }
-  if (me.port.some((c) => c.readyAt <= now())) pc.append(h('button', { class: 'btn buy block', on: { click: (e) => act('collect', {}, { el: e.currentTarget }) } }, t('unload')));
   out.push(pc);
   // os carregamentos
   out.push(h('h2', { class: 'sec' }, t('portShips')));
@@ -1233,6 +1232,31 @@ function screenPort() {
     return locked ? h('div', { class: 'rowi lock' }, ...body) : h('button', { class: 'rowi', on: { click: () => shipSheet(k) } }, ...body);
   })));
   return out;
+}
+// Abrir um contentor que chegou: a cena de reveal.js com o resultado verdadeiro, pedido ao servidor no toque.
+// Cada barco tem a sua transportadora (nome inventado) e a sua cor de contentor. Nenhuma é verde nem vermelha:
+// essas duas cores ficam para dizer se correu bem ou mal.
+const SHIP_SKIN = [['MARALTO', '#3f7f93'], ['VELOZ', '#2b63b3'], ['NOTURNA', '#c4621d'], ['TRANSMAR', '#a67c12'], ['ATLANTIS', '#7a4630'], ['ABISSAL', '#4b5565']];
+function openCargo(c, seq) {
+  const k = shipOf(c), nome = list('ships')[k], dn = c.d !== undefined ? list('drugs')[c.d] : null, [marca, cor] = SHIP_SKIN[k % SHIP_SKIN.length];
+  const cod = String((c.readyAt + k * 7919) % 1000000).padStart(6, '0'), rato = matchMedia('(hover: hover) and (pointer: fine)').matches;
+  seq ||= { i: 1, n: S.st.me.port.filter((x) => x.readyAt <= now()).length };
+  if (dn) new Image().src = IMG('drugs', S.cfg.drugs[c.d].id);   // a imagem da droga já vem a caminho quando as portas abrirem
+  RV.caixa({
+    pele: RV.contentor({ cor, marca, codigo: [marca.slice(0, 3) + 'U', cod.slice(0, 3) + ' ' + cod.slice(3)] }),
+    fundo: IMG('cenas', 'porto', 1), passo: seq.n > 1 ? t('ctStep', { i: seq.i, n: seq.n }) : '', titulo: nome, sub: t('ctSent', { m: money(c.amount) }) + (dn ? ' · ' + dn : ''),
+    toque: t(rato ? 'ctClick' : 'ctTap'), aCortar: t('ctBusy'), rotulo: t('ctAria'), sair: t('close'),
+    pedir: async () => { const out = await act('portOpen', { at: c.readyAt }); return out ? out.result : null; },
+    mostrar: ({ item: it }) => (it.seized ? { tom: 'lost', de: 0, ate: it.amount, fmt: (v) => '−' + money(v), linha: t('ctLost'), fita: t('ctTape') }
+      : it.units !== undefined ? { tom: 'goods', de: 0, ate: it.units, fmt: (v) => '+' + num(v), linha: t('ctGoodsLine', { x: list('drugs')[it.d] }), sub: it.rest > 0 ? t('ctRest', { m: money(it.rest) }) : '', img: IMG('drugs', S.cfg.drugs[it.d].id) }
+      : { tom: 'cash', de: 0, ate: it.got - it.amount, fmt: (v) => '+' + money(v), linha: t('ctBack', { m: money(it.got) }), notas: Math.max(4, Math.min(14, Math.round(Math.log10(Math.max(10, it.got)) * 2.4))) }),
+    // o botão de seguir só vem a verde quando o resultado foi bom; depois de uma apreensão fica neutro
+    botoes: (r) => { const prox = S.st.me.port.find((x) => x.readyAt <= now()), cls = r.item.seized ? 'btn lite' : 'btn cash';
+      return prox ? [{ texto: t('close'), cls: 'btn ghost' }, { texto: r.left > 1 ? t('ctNext') : t('ctLast'), cls, fazer: () => openCargo(prox, { i: seq.i + 1, n: seq.n }) }] : [{ texto: t('ctDone'), cls }]; },
+  }).then((r) => {   // ao fechar, o dinheiro que voltou voa para o topo (a contagem lá em cima já está certa)
+    if (!r || r.item.seized || r.item.units !== undefined || !S.hud.cash || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    fx.bills({ left: innerWidth / 2 - 10, top: innerHeight * 0.45, width: 20, height: 20 }, S.hud.cash, 8); fx.pop(S.hud.cash); fx.sfx('cash');
+  });
 }
 // a folha de um carregamento: o que é, quanto mandas, se volta em dinheiro ou em droga, e o que acontece nos dois casos
 function shipSheet(k) {

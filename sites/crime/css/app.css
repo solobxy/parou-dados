@@ -1487,3 +1487,120 @@ body::before { content: ''; position: fixed; inset: 0; z-index: 0; pointer-event
 /* membro preso ou no hospital: o botão de o safar passa para uma linha própria (ao lado do «⋯» espremia o nome numa coluna de 3 palavras) */
 .gm { flex-wrap: wrap; } .gm > .grow { flex: 1 1 0; }
 .gm .gsave { order: 5; flex: 1 0 100%; }
+
+/* ===== Porto: o carregamento que chegou é um botão; abrir o contentor (reveal.js) ===== */
+button.cont { width: 100%; border: 0; color: inherit; font: inherit; text-align: left; cursor: pointer; }
+.cont.rdy { min-height: 64px; box-shadow: inset 0 0 0 2px var(--cash); }
+.cont.rdy:active { transform: scale(.985); }
+.cont.rdy .open { flex: none; max-width: none; padding: 9px 16px; border-radius: 8px; background: var(--cash); color: #06220f; font: 800 15px/1 var(--ui); }
+.cont > span b { white-space: nowrap; }
+/* telemóvel: num carregamento ainda no mar, a hora de chegada desce para a linha de baixo e o nome do barco deixa de se partir a meio */
+@media (max-width: 479px) {
+  .cont:not(.rdy) { flex-wrap: wrap; row-gap: 2px; }
+  .cont:not(.rdy) > span { flex-basis: 100%; max-width: none; padding-left: 52px; text-align: left !important; }
+}
+.plast { margin-bottom: 10px; gap: 12px; }
+.plast .grow { min-width: 0; } .plast .grow b { display: block; line-height: 1.25; }
+.plast .row > b { flex: none; text-align: right; white-space: nowrap; }
+.btn.ctgo { min-height: 52px; margin-top: 8px; font-size: 16px; }
+.btn.ctgo:not(.buy) { box-shadow: inset 0 0 0 2px var(--cash); }   /* mesmo sinal das linhas «Abrir» do porto */
+.collect .btn.big:disabled:has(+ .ctgo) { min-height: 0; padding: 4px 0; background: none; font: 500 14px/1.3 var(--ui); text-transform: none; letter-spacing: 0; opacity: .8; }   /* nada para receber mas há contentores: o aviso encolhe e o botão dos contentores manda */
+.btn.lite { background: var(--tx); color: var(--ink); }   /* seguir em frente sem ser boa notícia (depois de uma apreensão) */
+
+/* A cena: fundo do porto quase apagado, o contentor ao centro, o texto e os botões por baixo, sempre nos mesmos sítios (nada salta quando o resultado aparece). */
+.overlay.rv { background: linear-gradient(#05060ae6, #05060afa), var(--bg, none) center / cover #05060a; padding: 16px; overflow-y: auto; overscroll-behavior: contain; }
+.rv-in { --w: min(64vw, 300px, 40vh); display: grid; justify-items: center; gap: 10px; width: min(100%, 400px); }
+@media (min-width: 900px) and (min-height: 720px) { .rv-in { --w: min(380px, 44vh); width: 520px; } }
+.rv-x { position: absolute; top: max(8px, env(safe-area-inset-top)); right: 8px; width: 48px; height: 48px; border: 0; border-radius: 50%; background: #ffffff14; color: var(--tx); font: 400 30px/1 var(--ui); cursor: pointer; }
+.rv-head { display: grid; gap: 4px; }
+.rv-step { font: 700 14px/1 var(--ui); color: var(--tx2); }
+.rv-k { font: 900 30px/1 var(--disp); text-transform: uppercase; letter-spacing: .02em; color: var(--tx); text-wrap: balance; }
+.rv-s { font-size: 15px; color: var(--tx2); }
+.rv-stage { all: unset; box-sizing: border-box; display: grid; justify-items: center; padding: 6px calc(var(--w) * .2) 0; cursor: pointer; -webkit-tap-highlight-color: transparent; border-radius: 12px; }
+.rv-stage:focus-visible { outline: 2px solid var(--sodium); outline-offset: 4px; }
+.rv.is-open .rv-stage, .rv.is-busy .rv-stage { cursor: default; }
+.rv-floor { display: block; width: calc(var(--w) * .9); height: 14px; margin-top: 4px; border-radius: 50%; background: radial-gradient(closest-side, #000d, transparent); }
+.rv-txt { position: relative; width: 100%; min-height: 104px; }
+.rv-prompt { position: absolute; inset: 6px 0 auto; font-size: 16px; font-weight: 650; color: var(--tx); }
+.rv-res { display: grid; gap: 4px; justify-items: center; opacity: 0; transform: translateY(8px); transition: opacity .25s, transform .25s var(--ease-out); }
+.rv-res.on { opacity: 1; transform: none; }
+.rv-num { display: flex; align-items: center; justify-content: center; gap: 12px; }
+.rv-th { width: 56px; height: 56px; border-radius: 10px; object-fit: cover; background: var(--s2); flex: none; }
+.rv-th[hidden] { display: none; }
+.rv-big { font: 900 clamp(44px, 14vw, 60px)/1 var(--disp); letter-spacing: .01em; white-space: nowrap; }
+.rv-line { font-size: 16px; color: var(--tx); text-wrap: balance; }
+.rv-sub { font-size: 14px; color: var(--tx2); }
+.rv-btns { display: flex; gap: 8px; width: 100%; min-height: 58px; opacity: 0; transition: opacity .2s; }
+.rv-btns.on { opacity: 1; }
+.rv-btns .btn { flex: 1; min-height: 58px; font: 800 17px/1.15 var(--ui); text-transform: none; letter-spacing: 0; }
+.rv-btns .btn.ghost { flex: 0 0 auto; padding-inline: 18px; }
+
+/* O contentor, visto de frente: moldura com cantoneiras, o interior em perspetiva, duas portas onduladas com varões e um cadeado. --ct é a cor da transportadora. */
+.ct { position: relative; width: var(--w); aspect-ratio: 1 / 1.02; perspective: 900px; border-radius: 4px;
+  background:
+    radial-gradient(circle, #000b 0 26%, #0000 30%) 0 0 / 5.2% 5.1% no-repeat, radial-gradient(circle, #000b 0 26%, #0000 30%) 100% 0 / 5.2% 5.1% no-repeat,
+    radial-gradient(circle, #000b 0 26%, #0000 30%) 0 100% / 5.2% 5.1% no-repeat, radial-gradient(circle, #000b 0 26%, #0000 30%) 100% 100% / 5.2% 5.1% no-repeat,
+    linear-gradient(#ffffff26, #ffffff26) 0 0 / 5.2% 5.1% no-repeat, linear-gradient(#ffffff26, #ffffff26) 100% 0 / 5.2% 5.1% no-repeat,
+    linear-gradient(#ffffff26, #ffffff26) 0 100% / 5.2% 5.1% no-repeat, linear-gradient(#ffffff26, #ffffff26) 100% 100% / 5.2% 5.1% no-repeat,
+    color-mix(in oklab, var(--ct) 50%, #000);
+  box-shadow: inset 0 0 0 2px #0007, inset 0 3px 0 #ffffff1f, 0 20px 30px -14px #000d; }
+/* por dentro: teto, paredes e chão a fugir para a parede do fundo (isolado, para o chão poder ficar atrás da carga) */
+.ct-in { position: absolute; inset: 4.5%; border-radius: 2px; overflow: hidden; isolation: isolate;
+  background: conic-gradient(from -45deg at 50% 50%, #14161b 0 90deg, #0b0c10 90deg 180deg, #292b32 180deg 270deg, #0b0c10 270deg 360deg); }
+.ct-in::before { content: ''; position: absolute; inset: 21%; background: repeating-linear-gradient(90deg, #ffffff0a 0 2px, #0000 2px 12px), #101217; box-shadow: 0 0 0 1px #ffffff14; }   /* a parede do fundo */
+.ct-in::after { content: ''; position: absolute; left: 12%; right: 12%; bottom: 3%; height: 13%; border-radius: 50%; background: radial-gradient(closest-side, #000c, #0000); opacity: 0; transition: opacity .3s; }   /* a sombra da carga no chão */
+.rv.lit.t-cash .ct-in::after, .rv.lit.t-goods .ct-in::after { opacity: 1; }
+.ct-glow, .ct-cop { position: absolute; inset: 0; opacity: 0; transition: opacity .35s; pointer-events: none; }
+.ct-glow { background: radial-gradient(58% 50% at 50% 70%, #ffd58a4d, #0000 72%); }
+.rv.lit.t-cash .ct-glow, .rv.lit.t-goods .ct-glow { opacity: 1; }
+.ct-cop::before, .ct-cop::after { content: ''; position: absolute; inset: 0; opacity: .5; }
+.ct-cop::before { background: radial-gradient(75% 85% at 6% 24%, #ff2d2dd9, #0000 62%); }
+.ct-cop::after { background: radial-gradient(75% 85% at 94% 24%, #2f6dffd9, #0000 62%); }
+.rv.lit.t-lost .ct-cop { opacity: 1; }
+.rv.lit.t-lost .ct-cop::before { animation: ct-blink .46s steps(1) 6; }          /* seis piscas a pouco mais de 2 por segundo, e param */
+.rv.lit.t-lost .ct-cop::after { animation: ct-blink .46s steps(1) -.23s 6; }
+@keyframes ct-blink { 0% { opacity: .95; } 50% { opacity: .08; } }
+.ct-fill { position: absolute; inset: 0; }
+.ct-fill .bd { position: absolute; width: 17%; aspect-ratio: 2.1; border-radius: 2px; background: linear-gradient(#6fb98e, #3a7f58); box-shadow: inset 0 0 0 1.5px #123522, 0 2px 3px #000a; }   /* maço de notas, verde baço */
+.ct-fill .bd::after { content: ''; position: absolute; inset: 0 37%; background: #e7e0cf; box-shadow: inset 0 0 0 1px #12352266; }   /* a cinta do maço */
+.ct-fill .cx { position: absolute; width: 22%; aspect-ratio: 1.05; border-radius: 2px; background: repeating-linear-gradient(90deg, #7d5326 0 23%, #5e3d1a 23% 25%), #7d5326; box-shadow: inset 0 0 0 3px #4a2f13, inset 0 0 0 4px #ffffff14, 0 3px 5px #000a; }   /* caixote de madeira */
+.ct-fill .cx::after { content: ''; position: absolute; left: 22%; right: 22%; top: 38%; height: 24%; background: #e9dcc0cc; }   /* a etiqueta */
+.ct-fill .tp { position: absolute; left: 50%; width: 180%; padding: 6px 0 5px; background: #ffd21f; color: #111; font: 900 14px/1 var(--disp); letter-spacing: .09em; text-transform: uppercase; white-space: nowrap; overflow: hidden; box-shadow: 0 2px 6px #000b; }
+.ct-fill .tp.a { top: 37%; } .ct-fill .tp.b { top: 63%; }
+.ct-fill .tp span { display: block; text-align: center; }
+.ct-door { position: absolute; z-index: 3; top: 4.5%; bottom: 4.5%; width: 45.5%; will-change: transform;
+  background: repeating-linear-gradient(180deg, #ffffff22 0 2px, #0000 2px 8.6%, #0000003d 8.6% calc(8.6% + 2px), #0000 calc(8.6% + 2px) 17.2%), radial-gradient(70% 22% at 62% 100%, #00000042, #0000), linear-gradient(180deg, #ffffff17, #0000 32%, #00000038), var(--ct);
+  box-shadow: inset 0 0 0 2px #0000005e; }
+.ct-door.l { left: 4.5%; transform-origin: 0 50%; }
+.ct-door.r { right: 4.5%; transform-origin: 100% 50%; }
+.ct-door .rod { position: absolute; top: 2.5%; bottom: 2.5%; width: 5%; border-radius: 3px; background: linear-gradient(90deg, #e6e9ed, #8f949d 60%, #5c616b); box-shadow: 0 0 0 1px #0007; }
+.ct-door .rod::before, .ct-door .rod::after { content: ''; position: absolute; left: -75%; right: -75%; height: 4.5%; border-radius: 2px; background: #70757f; box-shadow: 0 0 0 1px #0007; }   /* as garras de cima e de baixo */
+.ct-door .rod::before { top: 1.5%; } .ct-door .rod::after { bottom: 1.5%; }
+.ct-door .rod.a { left: 10%; } .ct-door .rod.b { left: 84%; }
+.ct-door .hd { position: absolute; top: 54%; height: 3.2%; width: 34%; border-radius: 3px; background: linear-gradient(#e6e9ed, #7b808a); box-shadow: 0 0 0 1px #0007; }   /* o manípulo */
+.ct-door.l .hd { right: 11%; } .ct-door.r .hd { left: 11%; }
+.ct-nm { position: absolute; left: 19%; right: 19%; top: 8%; font: 900 calc(var(--w) * .058)/1 var(--disp); color: #ffffffe0; text-transform: uppercase; letter-spacing: .03em; text-align: left; white-space: nowrap; text-shadow: 0 1px 0 #0007; }
+.ct-code { position: absolute; left: 19%; right: 19%; top: 8%; display: grid; gap: 3px; justify-items: end; }
+.ct-code b { font: 800 calc(var(--w) * .044)/1.1 var(--ui); color: #ffffffe0; letter-spacing: .05em; white-space: nowrap; text-shadow: 0 1px 0 #0007; }
+.ct-nm, .ct-code { transition: opacity .2s .12s; }
+.rv.is-open .ct-nm, .rv.is-open .ct-code { opacity: 0; }   /* por dentro as portas não têm letras: somem-se quando abrem */
+.ct-code span { height: 2px; width: 70%; margin-top: 2px; background: #ffffff8c; } .ct-code span:nth-child(4) { width: 50%; } .ct-code span:nth-child(5) { width: 62%; }
+/* o cadeado: aço, como os varões, com contorno escuro para se ver em qualquer cor de contentor */
+.ct-lock { position: absolute; z-index: 4; left: 50%; top: 55.6%; width: 13%; aspect-ratio: 1 / 1.22; transform: translate(-50%, -50%); filter: drop-shadow(0 2px 3px #000c); }
+.ct-lock::before { content: ''; position: absolute; left: 19%; right: 19%; top: 0; height: 54%; border: calc(var(--w) * .016) solid #d9dde2; border-bottom: 0; border-radius: 99px 99px 0 0; box-shadow: 0 0 0 1px #23262d; }   /* o arco */
+.ct-lock i { position: absolute; left: 0; right: 0; bottom: 0; height: 62%; border-radius: 3px; background: linear-gradient(#f6f7f9, #9299a3); box-shadow: inset 0 0 0 1.5px #23262d, inset 0 -3px 0 #0000002e; }
+.ct-lock i::after { content: ''; position: absolute; left: 50%; top: 42%; width: 17%; aspect-ratio: 1; border-radius: 50%; background: #23262d; transform: translate(-50%, -50%); box-shadow: 0 calc(var(--w) * .012) 0 -1px #23262d; }   /* a fechadura */
+/* À espera do toque, o cadeado respira e larga um anel de luz. É o único sinal de «toca aqui», por isso é o único que mexe sozinho. */
+.rv.is-wait .ct-lock { animation: ct-breathe 1.5s ease-in-out infinite; }
+.rv.is-wait .ct-lock::after { content: ''; position: absolute; left: 50%; top: 50%; width: calc(var(--w) * .36); aspect-ratio: 1; border-radius: 50%; box-shadow: 0 0 0 2px #ffb020d9; transform: translate(-50%, -50%) scale(.5); animation: ct-ring 1.5s ease-out infinite; }
+@keyframes ct-breathe { 50% { transform: translate(-50%, -50%) scale(1.12); } }
+@keyframes ct-ring { from { transform: translate(-50%, -50%) scale(.5); opacity: .95; } to { transform: translate(-50%, -50%) scale(1.12); opacity: 0; } }
+/* Poupança de bateria (animações leves) e redução de movimento: nada mexe sozinho; o anel fica parado à volta do cadeado. */
+body.light .rv.is-wait .ct-lock, body.light .rv.is-wait .ct-lock::after { animation: none; }
+body.light .rv.is-wait .ct-lock::after { opacity: .9; transform: translate(-50%, -50%) scale(.8); }
+@media (prefers-reduced-motion: reduce) {
+  .rv.is-wait .ct-lock, .rv.is-wait .ct-lock::after, .rv.lit.t-lost .ct-cop::before, .rv.lit.t-lost .ct-cop::after { animation: none; }
+  .rv.is-wait .ct-lock::after { opacity: .9; transform: translate(-50%, -50%) scale(.8); }
+  .rv-res, .rv-btns, .ct-glow, .ct-cop, .ct-in::after, .ct-nm, .ct-code { transition: none; }
+  .cont.rdy:active { transform: none; }
+}
