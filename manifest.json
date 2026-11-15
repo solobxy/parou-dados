@@ -1,7 +1,7 @@
 {
-  "built_at": "2026-11-15T11:30:00.335052+00:00",
+  "built_at": "2026-11-15T20:28:36.611658+00:00",
   "db_bytes": 749445120,
-  "gz_bytes": 202841470,
+  "gz_bytes": 202842491,
   "totals": {
     "lines": 2823,
     "stops": 46387,
@@ -584,7 +584,7 @@
     }
   ],
   "desenhos": {
-    "bytes": 7728722,
+    "bytes": 7728859,
     "por_operador": {
       "carris": {
         "viagens": 24961,
@@ -915,12 +915,12 @@
           "total": 397
         },
         "servicos_com_data_hoje": [
+          "FDF",
           "CDF",
+          "ADF",
           "EDF",
           "BDF",
-          "DDF",
-          "ADF",
-          "FDF"
+          "DDF"
         ],
         "viagens_por_servico": [
           {
@@ -975,5 +975,5 @@
       }
     }
   },
-  "duration_s": 266
+  "duration_s": 224
 }
