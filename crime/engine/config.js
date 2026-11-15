@@ -80,6 +80,21 @@ export const CFG = {
     { id: 'carniceiro', need: 4000, atkBp: 3000, pvpBp: 4000, hospCutBp: 2500 },
     { id: 'padrinho', need: 6000, lootBp: 2500, respBp: 1500, bizBp: 1500 },
   ],
+  // Aeroporto: mandas um avião buscar mercadoria lá fora. Quanto mais longe, mais rende e maior o risco de a alfândega ficar com tudo.
+  // Um voo de cada vez; a carga máxima é a de um contentor do porto. O suborno custa 20% da carga (não volta) e corta o risco a metade.
+  // Contas sem suborno (retorno esperado por hora): Tânger +3,6%, Amesterdão +3,7%, Medellín +3,7%, Culiacán +4,0%, Kandahar +4,3%.
+  // Com suborno só compensa nas rotas de maior risco: Culiacán +24,4% por voo (em vez de +23,8%) e Kandahar +47% (em vez de +34%).
+  air: {
+    minAmount: 100, bribeBp: 2000, bribeCutBp: 5000,
+    home: { lat: 38.7, lon: -9.1 },
+    routes: [
+      { id: 'tanger', lat: 35.8, lon: -5.8, ms: 1 * HOUR, gainBp: 900, seizeBp: 500, level: 5, r: 2, drug: 'erva' },
+      { id: 'amesterdao', lat: 52.4, lon: 4.9, ms: 2 * HOUR, gainBp: 1800, seizeBp: 900, level: 7, r: 4, drug: 'ecstasy' },
+      { id: 'medellin', lat: 6.2, lon: -75.6, ms: 4 * HOUR, gainBp: 4000, seizeBp: 1800, level: 9, r: 7, drug: 'coca' },
+      { id: 'culiacan', lat: 24.8, lon: -107.4, ms: 6 * HOUR, gainBp: 6500, seizeBp: 2500, level: 11, r: 10, drug: 'cristal' },
+      { id: 'kandahar', lat: 31.6, lon: 65.7, ms: 8 * HOUR, gainBp: 10000, seizeBp: 3300, level: 13, r: 14, drug: 'heroina' },
+    ],
+  },
   // mudar de profissão: custa o que rendem 100 de stamina no teu melhor golpe e só dá uma vez a cada 24 h, para ninguém trocar antes de cada jogada
   classChange: { energy: 100, min: 500, coolMs: 24 * HOUR },
   avatars: 32,

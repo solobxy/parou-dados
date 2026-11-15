@@ -30,7 +30,7 @@ export function newPlayer(id, now, world, opts = {}) {
     hospTimes: [],
     hits: new Map(),
     biz: CFG.biz.map(() => ({ n: 0, stored: 0, rem: 0, t: now })),
-    port: [],
+    port: [], air: null,
     weapon: -1, armor: -1,
     luxuries: 0,
     gang: null, gb: null, gangLeft: 0, gh: [],
@@ -52,6 +52,7 @@ function migrate(p) {
   if (!Number.isSafeInteger(p.mi)) p.mi = 0;
   if (typeof p.cls !== 'string') p.cls = '';
   if (!Number.isSafeInteger(p.clsAt)) p.clsAt = 0;
+  if (p.air === undefined) p.air = null;
   if (!Number.isSafeInteger(p.av)) p.av = 0;
   if (!p.fx || typeof p.fx !== 'object') p.fx = {};
   if (typeof p.sick !== 'boolean') p.sick = false;
@@ -692,6 +693,42 @@ export function collectPort(p, now, world, rng) {
     return false;
   });
   return { ok: true, items: out };
+}
+
+// ---------- aeroporto ----------
+// Um avião de cada vez. O resultado (chega ou é apreendido) só se sorteia quando o jogador vai buscar a carga, como no porto.
+export function airCap(p) { return portCap(p); }
+export function airBribe(amount) { return Math.ceil((amount * CFG.air.bribeBp) / 10000); }
+export function airSeizeBp(p, r, bribe) {
+  const bp = cut(CFG.air.routes[r].seizeBp, klass(p).seizeCutBp || 0);
+  return bribe ? cut(bp, CFG.air.bribeCutBp) : bp;
+}
+export function airSend(p, now, world, r, amount, bribe) {
+  const R = Number.isInteger(r) ? CFG.air.routes[r] : undefined;
+  if (!R) fail('NO_ROUTE');
+  begin(p, now, world);
+  if (level(p) < R.level) fail('LOW_LEVEL', { need: R.level });
+  if (p.air) fail('AIR_BUSY', { until: p.air.readyAt });
+  if (!Number.isSafeInteger(amount) || amount < CFG.air.minAmount) fail('BAD_AMOUNT');
+  if (amount > airCap(p)) fail('OVER_CAP', { cap: airCap(p) });
+  const readyAt = now + R.ms;
+  if (readyAt > world.playEnd) fail('ROUND_ENDING');
+  const extra = bribe ? airBribe(amount) : 0;
+  pay(p, amount + extra);
+  p.air = { r, amount, bribe: !!bribe, t0: now, readyAt };
+  return { ok: true, r, readyAt, paid: amount + extra, bribe: extra };
+}
+export function airCollect(p, now, world, rng) {
+  begin(p, now, world, { allowBusy: true });
+  const f = p.air;
+  if (!f) fail('NO_FLIGHT');
+  if (f.readyAt > now) fail('AIR_FLYING', { until: f.readyAt });
+  const R = CFG.air.routes[f.r];
+  p.air = null;
+  if (rng.chance(airSeizeBp(p, f.r, f.bribe))) return { ok: true, r: f.r, amount: f.amount, got: 0, seized: true, respect: 0 };
+  const got = f.amount + Math.floor((f.amount * R.gainBp) / 10000);
+  p.cash += got;
+  return { ok: true, r: f.r, amount: f.amount, got, seized: false, respect: R.r, levelUp: addRespect(p, R.r, now) };
 }
 
 // ---------- banco ----------
@@ -1385,6 +1422,7 @@ export function checkInvariants(p) {
   for (const s of ['F', 'I', 'C']) if (!Number.isSafeInteger(p.xp?.[s]) || p.xp[s] < 0 || p.xp[s] >= practiceNeed(p, s)) bad.push(`xp ${s}=${p.xp?.[s]}`);
   if (p.energyT > p.t || p.addictionT > p.t) bad.push('timer in future');
   if (p.cls !== '' && !CFG.classes.some((c) => c.id === p.cls)) bad.push('class');
+  if (p.air !== null && !(p.air && CFG.air.routes[p.air.r] && Number.isSafeInteger(p.air.amount) && p.air.amount >= CFG.air.minAmount && Number.isSafeInteger(p.air.readyAt) && p.air.readyAt === p.air.t0 + CFG.air.routes[p.air.r].ms && typeof p.air.bribe === 'boolean')) bad.push('air');
   if (typeof p.sick !== 'boolean') bad.push('sick');
   if (!Number.isSafeInteger(p.house) || p.house < 0 || p.house >= CFG.house.tiers.length) bad.push('house');
   if (!Array.isArray(p.hu) || p.hu.length !== CFG.house.ups.length || p.hu.some((n) => !Number.isSafeInteger(n) || n < 0 || n > p.house)) bad.push('house upgrades');

@@ -4,6 +4,7 @@ import { t, tv, list, errText, setLang, lang, guessLang } from './i18n.js';
 import { h, icon, svg, setLocale, num, money, moneyShort, short, dur, hoursText, pct, rid } from './ui.js';
 import * as fx from './fx.js';
 import * as C3 from './casino3d.js';
+import * as GL from './globo.js';
 
 const $app = document.getElementById('app');
 const S = {
@@ -231,17 +232,17 @@ function tickHud() {
 // ---------- navegação: uma cidade com locais ----------
 const PLACES = {
   city: { ic: 'skyline' }, empire: { ic: 'empire' }, rob: { ic: 'street', img: 'golpes' }, club: { ic: 'bolt', img: 'discoteca' }, gym: { img: 'ginasio' },
-  biz: { ic: 'empire', img: 'negocios' }, port: { img: 'porto' }, arms: { img: 'armas' }, bank: { img: 'banco' }, hosp: { img: 'hospital' },
+  biz: { ic: 'empire', img: 'negocios' }, port: { img: 'porto' }, air: { img: 'aeroporto' }, arms: { img: 'armas' }, bank: { img: 'banco' }, hosp: { img: 'hospital' },
   jail: { img: 'prisao' }, gang: { img: 'gangue' }, work: { img: 'profissao' }, news: { img: 'jornal' }, casino: { ic: 'gem', img: 'casino' }, roulette: { img: 'roleta' }, bj: { img: 'blackjack' }, dice: { img: 'dados' }, wheel: { img: 'roda' }, slot: { img: 'slot' }, zeus: { img: 'zeus' }, doce: { img: 'doce' }, rebucado: { img: 'rebucado' }, alley: { img: 'beco' }, lux: { img: 'luxos' }, fights: { ic: 'fights', img: 'lutas' }, rank: { img: 'ranking' }, putas: { img: 'putas' }, casa: {},
 };
 // barra de baixo: só o que se usa a toda a hora. O resto vive dentro de cada separador, arrumado por zonas.
 const NAV = ['city', 'rob', 'fights', 'casino', 'empire'];
 const HUB = {
-  city: [['sec_night', ['club', 'putas', 'casino']], ['sec_street', ['gang', 'work', 'gym', 'alley', 'hosp', 'jail', 'arms', 'rank']]],
-  empire: [['sec_income', ['biz', 'port']], ['sec_assets', ['casa', 'bank']]],
+  city: [['sec_night', ['club', 'putas', 'casino', 'gang', 'alley', 'arms']], ['sec_street', ['bank', 'work', 'gym', 'hosp', 'jail', 'rank']]],
+  empire: [['sec_income', ['biz', 'port', 'air']], ['sec_assets', ['casa', 'bank']]],
 };
 const PARENT = { gang: 'city', work: 'city', news: 'city', casino: 'city', roulette: 'casino', bj: 'casino', dice: 'casino', wheel: 'casino', slot: 'casino', zeus: 'casino', doce: 'casino', rebucado: 'casino', club: 'city', putas: 'city', gym: 'city', alley: 'city', hosp: 'city', jail: 'city',
-  biz: 'empire', port: 'empire', casa: 'empire', bank: 'empire', lux: 'empire', arms: 'fights', rank: 'fights' };
+  biz: 'empire', port: 'empire', air: 'empire', casa: 'empire', bank: 'empire', lux: 'empire', arms: 'fights', rank: 'fights' };
 const upOf = (id) => (S.backTo && S.backTo[id]) || PARENT[id] || 'city';   // um sítio que está em duas zonas volta para a zona de onde vieste
 const tabOf = (id) => { let x = id; for (let k = 0; k < 4 && !NAV.includes(x); k++) x = upOf(x); return NAV.includes(x) ? x : 'city'; };
 const IMG = (kind, id, big) => `/img/${kind}/${id}${big ? '-g' : ''}.webp?9`;
@@ -284,7 +285,7 @@ function shell() {
 }
 
 const SCREENS = { city: screenCity, empire: screenEmpire, news: screenNews, casino: screenCasino, roulette: screenRoulette, bj: screenBJ, dice: screenDice, wheel: screenWheel, slot: () => screenSlotGame('slot'), zeus: () => screenSlotGame('zeus'), doce: () => screenSlotGame('doce'), rebucado: () => screenSlotGame('rebucado'), rob: screenRob, club: screenClub, gym: screenGym, biz: screenBiz, port: screenPort, arms: screenArms, bank: screenBank,
-  hosp: screenHosp, jail: screenJail, gang: screenGang, work: screenWork, putas: screenPutas, casa: screenCasa, alley: screenAlley, lux: screenLux, fights: screenFights, rank: screenRank };
+  hosp: screenHosp, jail: screenJail, gang: screenGang, work: screenWork, air: screenAir, putas: screenPutas, casa: screenCasa, alley: screenAlley, lux: screenLux, fights: screenFights, rank: screenRank };
 function render(force) {
   if (!S.st) return;
   if (!S.st.me || S.st.round.phase !== 'play') return renderPause();
@@ -306,7 +307,7 @@ function tabDots() {
   const me = S.st.me, n = now();
   const want = {
     fights: (S.events || []).some((e) => e.id > S.lastEventSeen),
-    empire: me.port.some((c) => c.readyAt <= n) || me.biz.some((b, i) => b.n > 0 && storedNow(b, i) >= (b.perH * S.cfg.storageMs) / 3600000 / 2),
+    empire: (me.air && me.air.readyAt <= n) || me.port.some((c) => c.readyAt <= n) || me.biz.some((b, i) => b.n > 0 && storedNow(b, i) >= (b.perH * S.cfg.storageMs) / 3600000 / 2),
     city: !!me.mission?.done,
     casino: !!me.bj,   // tens uma mão de blackjack por acabar
   };
@@ -427,12 +428,13 @@ function screenClass() {
 
 // ---------- a cidade ----------
 // ---------- jornal da cidade: o que os outros andam a fazer ----------
-const NW_IC = { cls: 'user', gangNew: 'fist', gangUp: 'empire', gangHeist: 'cash', gangHeistFail: 'lock', gangHit: 'fist', gangHitFail: 'skull', casino: 'gem', casinoLoss: 'skull', job: 'cash', crit: 'gem', spree: 'bolt', jail: 'lock', house: 'empire', lux: 'crown', beat: 'fist', mug: 'cash', fail: 'skull', sick: 'pill', lvl: 'crown', fight: 'fist' };
+const NW_IC = { air: 'cash', airLost: 'lock', cls: 'user', gangNew: 'fist', gangUp: 'empire', gangHeist: 'cash', gangHeistFail: 'lock', gangHit: 'fist', gangHitFail: 'skull', casino: 'gem', casinoLoss: 'skull', job: 'cash', crit: 'gem', spree: 'bolt', jail: 'lock', house: 'empire', lux: 'crown', beat: 'fist', mug: 'cash', fail: 'skull', sick: 'pill', lvl: 'crown', fight: 'fist' };
 const seedOf = (str) => { let x = 7; for (let i = 0; i < str.length; i++) x = (x * 31 + str.charCodeAt(i)) | 0; return Math.abs(x); };
 function newsText(e) {
   const k = e.k === 'fight' ? (e.mode === 'mug' ? 'mug' : 'beat') : e.k, C = list('crimes');
   if (k === 'gangNew') return t('nw_gangNew', { a: e.name, g: e.gang, t: e.tag });
   if (k === 'gangUp') return t('nw_gangUp_' + e.what, { g: e.gang, n: e.n });
+  if (k === 'air' || k === 'airLost') return tv('nw_' + k, seedOf(e.name + k + e.t), { a: e.name, x: t('ar_' + e.to), m: moneyShort(e.money || 0) });
   if (k === 'cls') return tv('nw_cls', seedOf(e.name + k + e.t), { a: e.name, x: t('cl_' + e.from), y: t('cl_' + e.to) });
   if (k === 'gangHeist' || k === 'gangHeistFail') return tv('nw_' + k, seedOf(e.gang + k + e.t), { g: e.gang, x: t('gh_' + e.c), n: e.n, m: moneyShort(e.money || 0) });
   if (k === 'gangHit' || k === 'gangHitFail') return tv('nw_' + k, seedOf(e.gang + k + e.t), { g: e.gang, b: e.target, n: e.n });
@@ -731,6 +733,79 @@ function tickShips() {
     m.querySelector('.done').setAttribute('stroke-dasharray', `${(far * L).toFixed(1)} ${L.toFixed(1)}`);
   });
   document.querySelectorAll('.jbar').forEach((el) => { const left = +el.dataset.until - now(); el.firstChild.style.width = Math.min(100, Math.max(0, (1 - left / +el.dataset.jtotal) * 100)) + '%'; });
+}
+// ---------- aeroporto: um avião de cada vez, visto de satélite ----------
+function air3() {
+  if (!S.air3) S.air3 = GL.globe({ home: S.cfg.air.home, homeName: t('airHome'), clock: now, routes: S.cfg.air.routes.map((r) => ({ lat: r.lat, lon: r.lon, name: t('ar_' + r.id).toUpperCase() })) });
+  return S.air3;
+}
+const pctBp = (bp) => (bp / 100).toString().replace('.', lang() === 'pt' ? ',' : '.') + '%';
+function screenAir() {
+  const me = S.st.me, A = S.cfg.air, f = me.air, n = now(), G = air3(), liquid = me.cash + me.bank;
+  const out = [pageHead('air', t('airSub'), true)];
+  const drugName = (R) => list('drugs')[S.cfg.drugs.findIndex((d) => d.id === R.drug)] || '';
+  const minLvl = A.routes[0].level;
+  out.push(G.el); queueMicrotask(() => G.wake());
+  if (S.airLast) {
+    const L = S.airLast, R = A.routes[L.r];
+    out.push(h('div', { class: 'card row gres' }, h('span', { class: L.seized ? 'c-red' : 'c-cash' }, icon(L.seized ? 'lock' : 'cash')),
+      h('div', { class: 'grow' }, h('div', null, t(L.seized ? 'airLost' : 'airGot', { x: t('ar_' + R.id), m: money(L.seized ? L.amount : L.got), g: money(L.got - L.amount) })), L.seized ? null : h('div', { class: 'small muted' }, t('airResp', { n: L.respect })))));
+  }
+  if (f) {
+    const R = A.routes[f.r], left = f.readyAt - n, back = f.amount + Math.floor((f.amount * R.gainBp) / 10000), u = Math.min(1, Math.max(0, (n - f.t0) / (f.readyAt - f.t0)));
+    G.flight({ r: f.r, t0: f.t0, t1: f.readyAt });
+    out.push(h('div', { class: 'card stack airfl' },
+      h('div', { class: 'row sp' }, h('div', null, h('div', { class: 'airto' }, t('ar_' + R.id)), h('div', { class: 'small muted' }, drugName(R) + ' · ' + t(left <= 0 ? 'airLanded' : u < 0.47 ? 'airOut' : u < 0.53 ? 'airLoad' : 'airBack'))),
+        left > 0 ? h('b', { class: 'gcd num', dataset: { left: f.readyAt } }, dur(left)) : h('b', { class: 'c-cash' }, t('ready'))),
+      h('div', { class: 'fill big jbar', dataset: { until: f.readyAt, jtotal: f.readyAt - f.t0 } }, h('i')),
+      h('div', { class: 'row sp small' }, h('span', { class: 'muted' }, t('airCargo')), h('b', { class: 'num' }, money(f.amount) + (f.bribe ? ' · ' + t('airBribed') : ''))),
+      h('div', { class: 'row sp small' }, h('span', { class: 'muted' }, t('airIfOk')), h('b', { class: 'num c-cash' }, money(back))),
+      h('div', { class: 'row sp small' }, h('span', { class: 'muted' }, t('airRisk')), h('b', { class: 'num c-red' }, pctBp(f.bribe ? Math.floor(me.airSeize[f.r] / 2) : me.airSeize[f.r]))),
+      h('button', { class: 'btn buy block big', disabled: left > 0, on: { click: async (e) => { const o = await act('airCollect', {}, { el: e.currentTarget }); if (o) { S.airLast = o.result; fx.sfx(o.result.seized ? 'bust' : 'cash'); G.flight(null); render(true); } } } }, t(left > 0 ? 'airWait' : 'airUnload'))));
+    return out;
+  }
+  G.flight(null);
+  if (me.level < minLvl) { G.select(-1); out.push(h('div', { class: 'note' }, h('p', { class: 'muted' }, t('airLocked', { n: minLvl })))); return out; }
+  const open = A.routes.map((R, i) => i).filter((i) => me.level >= A.routes[i].level);
+  const sel = open.includes(S.airSel) ? S.airSel : open[open.length - 1];
+  G.select(sel);
+  const b = busyBanner(me); if (b) out.push(b);
+  out.push(h('div', { class: 'airlist' }, A.routes.map((R, i) => {
+    const lock = me.level < R.level;
+    return h('button', { class: 'airr' + (i === sel ? ' sel' : '') + (lock ? ' lock' : ''), disabled: lock, 'aria-pressed': i === sel ? 'true' : 'false', on: { click: () => { S.airSel = i; render(true); } } },
+      h('div', { class: 'grow' }, h('b', null, t('ar_' + R.id)), h('span', { class: 'small muted' }, lock ? t('airNeed', { n: R.level }) : drugName(R) + ' · ' + hoursText(R.ms / 3600000))),
+      lock ? icon('lock') : h('div', { class: 'airn' }, h('b', { class: 'c-cash num' }, '+' + pctBp(R.gainBp)), h('span', { class: 'small c-red num' }, t('airRiskS', { p: pctBp(me.airSeize[i]) }))));
+  })));
+  const R = A.routes[sel], bribe = !!S.airBribe, max = Math.min(me.airCap, bribe ? Math.floor((liquid * 10000) / (10000 + A.bribeBp)) : liquid);
+  const raw = S.airAmt || '', amtOf = (v) => Math.max(0, Math.min(max, v === '' ? max : parseInt(v, 10) || 0));
+  const btn = h('button', { class: 'btn buy block big' }), sum = h('div', { class: 'stack', style: 'gap:6px' });
+  const inp = h('input', { id: 'bamt', inputmode: 'numeric', autocomplete: 'off', enterkeyhint: 'done', value: raw, placeholder: t('airMaxPh', { m: money(max) }) });
+  const sync = () => {
+    const a = amtOf(inp.value), extra = bribe ? Math.ceil((a * A.bribeBp) / 10000) : 0, risk = bribe ? Math.floor(me.airSeize[sel] / 2) : me.airSeize[sel], gain = Math.floor((a * R.gainBp) / 10000);
+    btn.textContent = t('airGo', { m: moneyShort(a + extra) }); btn.disabled = !!b || a < A.minAmount || S.st.round.playEnd - now() < R.ms;
+    sum.replaceChildren(
+      h('div', { class: 'row sp small' }, h('span', { class: 'muted' }, t('airIfOk')), h('b', { class: 'num c-cash' }, money(a + gain) + ' (+' + money(gain) + ')')),
+      h('div', { class: 'row sp small' }, h('span', { class: 'muted' }, t('airIfBad')), h('b', { class: 'num c-red' }, '−' + money(a + extra) + ' · ' + pctBp(risk))),
+      extra ? h('div', { class: 'row sp small' }, h('span', { class: 'muted' }, t('airBribeCost')), h('b', { class: 'num' }, money(extra))) : null);
+  };
+  const setV = (v) => { inp.value = v; S.airAmt = v; sync(); };
+  inp.addEventListener('input', () => { let d = inp.value.replace(/\D/g, '').replace(/^0+/, '').slice(0, 15); if (d && parseInt(d, 10) > max) d = String(max); setV(d); });
+  inp.addEventListener('keydown', (e) => { if (e.key === 'Enter') inp.blur(); });
+  btn.addEventListener('click', async () => {
+    const a = amtOf(inp.value); if (a < A.minAmount) return;
+    inp.blur();
+    const o = await act('air', { r: sel, amount: a, bribe }, { el: btn });
+    if (o) { S.airAmt = ''; S.airLast = null; fx.sfx('deal'); render(true); }
+  });
+  sync();
+  out.push(h('div', { class: 'card stack' },
+    h('div', { class: 'field', style: 'margin:0' }, h('label', { for: 'bamt' }, t('airAmt', { m: moneyShort(me.airCap) })), inp),
+    h('div', { class: 'bquick' }, [25, 50, 75].map((q) => h('button', { class: 'btn ghost sm', disabled: max <= 0, on: { click: () => setV(String(Math.floor((max * q) / 100))) } }, q + '%')),
+      h('button', { class: 'btn ghost sm', disabled: max <= 0, on: { click: () => setV('') } }, t('airMax'))),
+    h('div', { class: 'seg', role: 'group' }, [[false, t('airNoBribe')], [true, t('airBribe', { p: A.bribeBp / 100 })]].map(([v, lbl]) => h('button', { 'aria-pressed': bribe === v ? 'true' : 'false', on: { click: () => { S.airBribe = v; render(true); } } }, lbl))),
+    sum, btn,
+    S.st.round.playEnd - n < R.ms ? h('p', { class: 'small muted' }, t('portEnding')) : null));
+  return out;
 }
 function screenPort() {
   const me = S.st.me;
@@ -1708,6 +1783,21 @@ function sheet(content) {
   return close;
 }
 
+// ---- instalar o jogo no telemóvel (aplicação web) ----
+// O Chrome do Android avisa quando o site pode ser instalado; guardamos o aviso para o botão do perfil.
+addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); S.installEvt = e; });
+addEventListener('appinstalled', () => { S.installEvt = null; S.installed = true; });
+const isStandalone = () => matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+function installBox(redraw) {
+  if (isStandalone() || S.installed) return h('p', { class: 'small muted' }, t('appInstalled'));
+  if (S.installEvt) return h('button', { class: 'btn buy block', on: { click: async () => {
+    const ev = S.installEvt; S.installEvt = null;
+    try { ev.prompt(); const c = await ev.userChoice; if (c && c.outcome === 'accepted') { S.installed = true; toast(t('appDone')); } } catch { /* o browser recusou mostrar a pergunta */ }
+    redraw();
+  } } }, t('appInstall'));
+  const ios = /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  return h('p', { class: 'small muted' }, t(ios ? 'appIos' : 'appOther'));
+}
 function openProfile() {
   const me = S.st.me, r = S.st.round;
   const end = new Date(r.playEnd).toLocaleString(lang() === 'pt' ? 'pt-PT' : 'en-GB', { weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' });
@@ -1725,6 +1815,7 @@ function openProfile() {
       on: { click: async () => { await act('avatar', { i }); close(); openProfile(); } } }, h('img', { src: AV(i), alt: '', width: 96, height: 96, loading: 'lazy', on: { error: (e) => e.currentTarget.parentNode.remove() } })))) : null,
     h('div', { class: 'small muted' }, t('roundInfo', { n: r.n + 1, d: end })),
     h('div', { class: 'small muted' }, t('playersIn', { n: num(S.st.players) })),
+    h('h2', { class: 'sec', style: 'margin-top:10px' }, t('appT')), installBox(() => { close(); openProfile(); }),
     h('h2', { class: 'sec', style: 'margin-top:10px' }, t('language')), langBtns,
     h('h2', { class: 'sec', style: 'margin-top:10px' }, t('animations')), animBtns,
     h('h2', { class: 'sec', style: 'margin-top:10px' }, t('sound')),

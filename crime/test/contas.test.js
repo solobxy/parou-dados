@@ -573,3 +573,52 @@ test('profissões: as de elite pedem respeito, mudar custa o anunciado, só de 2
   for (const c of CFG.classes) for (const k of Object.keys(c)) { assert.ok(conhecidos.includes(k), `bónus desconhecido ${k} em ${c.id}`); if (k !== 'id' && k !== 'need' && k !== 'capPlus' && k !== 'fxMoreBp') assert.ok(c[k] > 0 && c[k] <= 10000); }
   assert.equal(new Set(CFG.classes.map((c) => c.id)).size, CFG.classes.length);
 });
+
+test('aeroporto: regras, pagamento certo, suborno e o retorno de cada rota é o anunciado', () => {
+  const A = CFG.air, rota = (id) => A.routes.findIndex((x) => x.id === id);
+  const piloto = (cl = 'ladrao', resp = 20000) => { const p = mk(cl); p.cash = 1e9; p.bank = 0; setResp(p, resp); return p; };
+  // regras de entrada: rota inválida, nível, quantia, máximo, um voo de cada vez
+  const p = piloto();
+  assert.throws(() => E.airSend(p, NOW, W, 9, 1000, false), code('NO_ROUTE'));
+  assert.throws(() => E.airSend(p, NOW, W, 0, 50, false), code('BAD_AMOUNT'));
+  assert.throws(() => E.airSend(p, NOW, W, 0, E.airCap(p) + 1, false), code('OVER_CAP'));
+  const novato = piloto('ladrao', 5); assert.throws(() => E.airSend(novato, NOW, W, 0, 1000, false), code('LOW_LEVEL')); assert.equal(novato.cash, 1e9);
+  assert.throws(() => E.airCollect(p, NOW, W, always), code('NO_FLIGHT'));
+  // sem suborno paga-se só a carga; com suborno, mais 20% que não voltam
+  let r = E.airSend(p, NOW, W, rota('medellin'), 10000, false);
+  assert.equal(r.paid, 10000); assert.equal(p.cash, 1e9 - 10000); assert.equal(r.readyAt, NOW + 4 * T.HOUR); assert.deepEqual(p.air, { r: rota('medellin'), amount: 10000, bribe: false, t0: NOW, readyAt: NOW + 4 * T.HOUR });
+  assert.throws(() => E.airSend(p, NOW, W, 0, 1000, false), code('AIR_BUSY'));
+  assert.throws(() => E.airCollect(p, NOW + 4 * T.HOUR - 1, W, never), code('AIR_FLYING')); assert.ok(p.air);
+  r = E.airCollect(p, NOW + 4 * T.HOUR, W, never);   // «never»: a alfândega não apanha
+  assert.equal(r.seized, false); assert.equal(r.got, 14000); assert.equal(p.cash, 1e9 + 4000); assert.equal(p.air, null); assert.equal(r.respect, 7); assert.equal(p.respect, 20007);
+  const q = piloto(); r = E.airSend(q, NOW, W, rota('kandahar'), 10000, true);
+  assert.equal(r.paid, 12000); assert.equal(r.bribe, 2000); assert.equal(q.cash, 1e9 - 12000);
+  r = E.airCollect(q, NOW + 8 * T.HOUR, W, always);   // «always»: apreendido
+  assert.equal(r.seized, true); assert.equal(r.got, 0); assert.equal(q.cash, 1e9 - 12000); assert.equal(q.respect, 20000); assert.equal(q.air, null);
+  // não se manda um avião que só chegue depois do fim da ronda
+  const tarde = piloto(); assert.throws(() => E.airSend(tarde, W.playEnd - T.HOUR, W, rota('medellin'), 1000, false), code('ROUND_ENDING'));
+  // risco: suborno corta a metade; contrabandista corta a metade; os dois juntos, um quarto
+  for (let i = 0; i < A.routes.length; i++) {
+    const base = A.routes[i].seizeBp;
+    assert.equal(E.airSeizeBp(piloto(), i, false), base); assert.equal(E.airSeizeBp(piloto(), i, true), Math.floor(base / 2));
+    assert.equal(E.airSeizeBp(piloto('contrabandista'), i, false), Math.floor(base / 2)); assert.equal(E.airSeizeBp(piloto('contrabandista'), i, true), Math.floor(Math.floor(base / 2) / 2));
+  }
+  // retorno esperado por voo (conta exata) e simulação de 60 000 voos por rota
+  const esperado = { tanger: 3.55, amesterdao: 7.38, medellin: 14.8, culiacan: 23.75, kandahar: 34 };
+  const rng = seededRng(4411);
+  A.routes.forEach((R, i) => {
+    const ev = ((10000 - R.seizeBp) * (10000 + R.gainBp)) / 1e6 - 100;
+    perto(ev, esperado[R.id], 0.01, 'retorno esperado de ' + R.id);
+    let pago = 0, voltou = 0, presos = 0; const N = 60000;
+    for (let k = 0; k < N; k++) { const x = piloto(); const s = E.airSend(x, NOW, W, i, 10000, false); pago += s.paid; const c = E.airCollect(x, s.readyAt, W, rng); voltou += c.got; if (c.seized) presos++; }
+    perto(presos / N, R.seizeBp / 10000, 0.006, 'apreensões em ' + R.id);
+    perto((voltou / pago - 1) * 100, ev, 1.2, 'retorno simulado de ' + R.id);
+    // por hora, nenhuma rota rende mais do que 4,5% da carga (o porto dá 2,6% por contentor)
+    assert.ok(ev / (R.ms / T.HOUR) < 4.5 && ev / (R.ms / T.HOUR) > 3);
+    // com suborno: carga + 20%; só pode compensar nas rotas de maior risco
+    const evB = ((10000 - Math.floor(R.seizeBp / 2)) * (10000 + R.gainBp)) / 1e6 - 100 - A.bribeBp / 100;
+    if (R.id === 'kandahar' || R.id === 'culiacan') assert.ok(evB > ev); else assert.ok(evB < ev);
+  });
+  // o avião nunca cria dinheiro do nada: o máximo que volta é carga × (1 + ganho)
+  const z = piloto(); const cap = E.airCap(z); E.airSend(z, NOW, W, rota('kandahar'), cap, false); const c2 = E.airCollect(z, NOW + 8 * T.HOUR, W, never); assert.equal(c2.got, cap * 2); assert.equal(z.cash, 1e9 + cap);
+});
