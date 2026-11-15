@@ -92,6 +92,8 @@ function react(type, out, before, opts) {
   else if (type === 'gangBizCollect') { if (r.money > 0) { toast(t('got', { m: money(r.money) })); fx.sfx('cash'); } }
   else if (type === 'gangBiz') { toast(t('gBizDone', { m: money(r.amount), x: t('gb_' + r.biz) })); fx.sfx('claim'); }
   else if (type === 'gangLeave') { if (r.back > 0) { toast(t('gBizBack', { m: money(r.back) })); fx.sfx('cash'); } }
+  else if (type === 'stockHold') { toast(t(r.on ? 'holdOnToast' : 'holdOffToast', { x: list('drugs')[r.d] })); fx.sfx('claim'); }
+  else if (type === 'port') { toast(t('shSent', { x: list('ships')[r.k], t: hrs(S.cfg.port.ships[r.k].ms) })); fx.sfx('claim'); }
   else if (type === 'bizGoods') { toast(r.on ? t('bizGoodsOn', { x: list('drugs')[r.d] }) : t('bizGoodsOff')); fx.sfx('claim'); }
   else if (type === 'acct') { toast(t('acHired')); fx.sfx('claim'); }
   else if (type === 'stockLimit') { toast(r.tp || r.sl ? t('stLimSaved') : t('stLimOff')); fx.sfx('claim'); }
@@ -729,7 +731,8 @@ function stockRows(me, b, quick) {
   const L = live(me), rows = me.stock.map((n, d) => ({ n, d })).filter((x) => x.n > 0);
   if (!rows.length) return null;
   return h('div', { class: 'card vlist vc' }, rows.map(({ n, d }) => {
-    const g = S.cfg.drugs[d], body = [art('drugs', g.id, 'vth'), h('div', { class: 'grow' }, h('b', null, list('drugs')[d]), h('div', { class: 'small muted num' }, '×' + n + ' · ' + moneyShort(n * wholesaleOf(d))))];
+    const keep = me.club && me.hold?.includes(d);
+    const g = S.cfg.drugs[d], body = [art('drugs', g.id, 'vth'), h('div', { class: 'grow' }, h('b', null, list('drugs')[d], keep ? h('span', { class: 'chip', style: 'margin-left:6px' }, t('holdTag')) : null), h('div', { class: 'small muted num' }, '×' + n + ' · ' + moneyShort(n * wholesaleOf(d))))];
     return quick
       ? h('div', { class: 'vrow' }, ...body, h('button', { class: 'btn buy sm', disabled: !!b || !canTake(me, L, g), on: { click: (e) => act('stockUse', { d }, { el: e.currentTarget }) } }, t('vnUse')))
       : h('button', { class: 'vrow tap', on: { click: () => stockSheet(d) } }, ...body, h('span', { class: 'muted', 'aria-hidden': 'true' }, '›'));
@@ -740,6 +743,10 @@ function stockSheet(d) {
   const opts = [...new Set([1, Math.floor(n / 2), n])].filter((x) => x >= 1);
   const close = sheet(h('div', { class: 'stack' }, h('div', { class: 'vrow' }, art('drugs', g.id, 'vth'), h('div', { class: 'grow' }, h('h2', { style: 'margin:0' }, list('drugs')[d]), h('div', { class: 'small muted num' }, '×' + n))),
     h('div', { class: 'small' }, h('span', { class: 'c-en' }, icon('bolt'), '+' + g.e), ' · ', h('span', { class: 'c-vice' }, icon('pill'), '+' + g.a)),
+    // com discoteca: a droga está à venda (clientes da casa e outros jogadores) ou guardada só para ti
+    me.club ? h('div', { class: 'seg', role: 'group', style: 'margin-bottom:0' }, [[false, t('holdSale')], [true, t('holdKeep')]].map(([v, lbl]) => h('button', { 'aria-pressed': !!me.hold?.includes(d) === v ? 'true' : 'false',
+      on: { click: () => { if (!!me.hold?.includes(d) !== v) { close(); act('stockHold', { d, on: v }); } } } }, lbl))) : null,
+    me.club ? h('p', { class: 'small muted' }, t('holdSub')) : null,
     h('button', { class: 'btn buy block big', disabled: !!b || !canTake(me, L, g), on: { click: () => { close(); act('stockUse', { d }); } } }, t('vnUseOne')),
     h('h3', { style: 'margin-top:6px' }, t('vnDump')), h('p', { class: 'small muted' }, t('vnDumpSub', { p: 100 - S.cfg.goods.dumpBp / 100 })),
     h('div', { class: 'row', style: 'flex-wrap:wrap' }, opts.map((k) => h('button', { class: 'btn ghost grow', on: { click: () => { close(); act('stockDump', { d, n: k }); } } }, t('vnDumpGo', { n: k, m: moneyShort(dumpOf(d, k)) }))))));
@@ -839,7 +846,7 @@ function screenAcct() {
   // avisos: dinheiro parado ou em risco
   const warn = [];
   if (me.cash >= Math.max(1000, perH)) warn.push(['bank', t('acW_cash', { m: money(me.cash), p: me.bankFeeBp / 100 })]);
-  if (me.club && !me.stock.some((x) => x > 0)) warn.push(['stash', t('acW_club')]);
+  if (me.club && !me.stock.some((x, d) => x > 0 && !me.hold?.includes(d))) warn.push(['stash', t('acW_club')]);
   if (me.club && me.club.till >= me.club.cap || me.bro && me.bro.cap > 0 && me.bro.till >= me.bro.cap) warn.push(['empire', t('acW_till')]);
   if (me.stk?.some((x) => x.n > 0 && !x.tp && !x.sl)) warn.push(['bolsa', t('acW_stk')]);
   if (B.some((cfg, i) => cfg.drug >= 0 && me.biz[i].n > 0 && !me.biz[i].g) && me.club) warn.push(['biz', t('acW_fab')]);
@@ -1070,7 +1077,7 @@ function portMap(me) {
   const lbl = (x, y, txt, anchor) => { const e = svg('text', { x, y, 'text-anchor': anchor }); e.textContent = txt; return e; };
   s.append(lbl(54, 128, 'Cartagena', 'start'), lbl(274, 24, t('p_port'), 'end'));
   me.port.forEach((c, i) => {
-    const g = svg('g', { class: 'ship', 'data-ready': c.readyAt, 'data-i': i });
+    const g = svg('g', { class: 'ship', 'data-ready': c.readyAt, 'data-i': i, 'data-ms': S.cfg.port.ships[shipOf(c)].ms });
     g.append(svg('path', { d: 'M-8 1l2.5 5h11l2.5-5zM-4.5 1v-5h9v5M-1-4v-3.5h2.5v3.5' }));
     s.append(g);
   });
@@ -1080,7 +1087,7 @@ function tickShips() {
   document.querySelectorAll('.pmap').forEach((m) => {
     const route = m.querySelector('.route'), L = route.getTotalLength(); let far = 0;
     m.querySelectorAll('.ship').forEach((g) => {
-      const pr = Math.min(1, Math.max(0, 1 - (+g.dataset.ready - now()) / S.cfg.port.ms)), pt = route.getPointAtLength(pr * L);
+      const pr = Math.min(1, Math.max(0, 1 - (+g.dataset.ready - now()) / +g.dataset.ms)), pt = route.getPointAtLength(pr * L);
       g.setAttribute('transform', `translate(${pt.x.toFixed(1)} ${(pt.y - 4 - (+g.dataset.i % 3) * 3).toFixed(1)})`);
       g.classList.toggle('in', pr >= 1); far = Math.max(far, pr);
     });
@@ -1164,33 +1171,66 @@ function screenAir() {
     S.st.round.playEnd - n < R.ms ? h('p', { class: 'small muted' }, t('portEnding')) : null));
   return out;
 }
+// ---------- porto: carregamentos ----------
+// Um menu como o dos golpes: cada barco traz a sua droga, com o seu tempo, o seu lucro e o seu risco. Tocar num abre a folha para escolher quanto e como.
+const shipOf = (c) => (Number.isInteger(c.k) && S.cfg.port.ships[c.k] ? c.k : S.cfg.port.legacy);
+const hrs = (ms) => String(ms / 3600000).replace('.', lang() === 'pt' ? ',' : '.') + ' h';
+const riskTxt = (bp) => String(bp / 100).replace('.', lang() === 'pt' ? ',' : '.') + '%';
+const riskCls = (bp) => (bp <= 700 ? 'hi' : bp <= 1300 ? 'mid' : 'lo');
 function screenPort() {
-  const me = S.st.me;
-  const out = [pageHead('port', t('portSub', { p: (me.portSeizeBp / 100).toString().replace('.', lang() === 'pt' ? ',' : '.') }))];
+  const me = S.st.me, P = S.cfg.port, names = list('ships');
+  const out = [pageHead('port', t('portSub'))];
   out.push(portMap(me));
-  if (S.portLast?.length) out.push(h('div', { class: 'note stack', style: 'margin-bottom:10px' }, S.portLast.map((c) => h('div', { class: 'row sp' }, h('span', null, icon('ship'), ' ' + money(c.amount)),
+  if (S.portLast?.length) out.push(h('div', { class: 'note stack', style: 'margin-bottom:10px' }, S.portLast.map((c) => h('div', { class: 'row sp' }, h('span', null, icon('ship'), ' ' + (names[c.k] ?? '') + ' · ' + money(c.amount)),
     c.seized ? h('b', { class: 'c-red' }, t('portLostRow', { m: money(c.amount) })) : c.units !== undefined ? h('b', { class: 'c-cash' }, t('portGoodsRow', { n: c.units, x: list('drugs')[c.d] })) : h('b', { class: 'c-cash' }, t('portGotRow', { m: money(c.got), g: money(c.got - c.amount) }))))));
-  const pc = h('div', { class: 'card stack' }, h('div', { class: 'small muted' }, t('slots', { a: me.port.length, b: me.portSlots })));
+  // no mar: o que já enviaste
+  const pc = h('div', { class: 'card stack' }, h('div', { class: 'row sp' }, h('b', null, t('portSailing')), h('span', { class: 'small muted' }, t('slots', { a: me.port.length, b: me.portSlots }))));
+  if (!me.port.length) pc.append(h('p', { class: 'small muted' }, t('portNone')));
   for (const c of me.port) {
-    const left = c.readyAt - now();
-    pc.append(h('div', { class: 'cont' }, h('span', { class: 'num' }, icon('ship'), ' ' + money(c.amount) + (c.d !== undefined ? ' · ' + list('drugs')[c.d] : '')),
-      left > 0 ? h('span', { class: 'muted' }, t('arrivesIn', { t: '' }), h('b', { class: 'num', dataset: { left: c.readyAt } }, dur(left))) : h('b', { class: 'c-cash' }, t('ready'))));
+    const left = c.readyAt - now(), k = shipOf(c);
+    pc.append(h('div', { class: 'cont' }, art('port', P.ships[k].id, 'vth'),
+      h('div', { class: 'grow' }, h('b', null, names[k]), h('div', { class: 'small muted num' }, money(c.amount) + (c.d !== undefined ? ' · ' + list('drugs')[c.d] : ''))),
+      left > 0 ? h('span', { class: 'small muted', style: 'text-align:right' }, t('arrivesIn', { t: '' }), h('b', { class: 'num', dataset: { left: c.readyAt } }, dur(left))) : h('b', { class: 'c-cash' }, t('ready'))));
   }
   if (me.port.some((c) => c.readyAt <= now())) pc.append(h('button', { class: 'btn buy block', on: { click: (e) => act('collect', {}, { el: e.currentTarget }) } }, t('unload')));
-  const liquid = me.cash + me.bank;
-  if (me.port.length < me.portSlots) {
-    const opts = [0.25, 0.5, 1].map((f) => Math.min(me.portCap, Math.floor(liquid * f))).filter((v, i, a) => v >= S.cfg.port.minAmount && a.indexOf(v) === i);
-    if (S.st.round.playEnd - now() < S.cfg.port.ms) pc.append(h('p', { class: 'small muted' }, t('portEnding')));
-    else if (!opts.length) pc.append(h('p', { class: 'small muted' }, t('portMin', { m: money(S.cfg.port.minAmount) })));
-    else {
-      const goods = !!S.portGoods, dn = list('drugs')[me.portDrug];
-      pc.append(h('div', { class: 'seg', role: 'group', style: 'margin-bottom:0' }, [[false, t('portCash')], [true, t('portGoods', { x: dn })]].map(([v, lbl]) => h('button', { 'aria-pressed': goods === v ? 'true' : 'false', on: { click: () => { S.portGoods = v; render(true); } } }, lbl))));
-      if (goods) pc.append(h('p', { class: 'small muted' }, t('portGoodsSub', { x: dn, p: Math.round((10000 / S.cfg.goods.wholesaleBp - 1) * 100) })));
-      pc.append(h('div', { class: 'row', style: 'flex-wrap:wrap' }, opts.map((v) => h('button', { class: 'btn buy grow', on: { click: (e) => act('port', { amount: v, goods }, { el: e.currentTarget }) } }, t('ship', { m: moneyShort(v) })))));
-    }
-  }
   out.push(pc);
+  // os carregamentos
+  out.push(h('h2', { class: 'sec' }, t('portShips')));
+  out.push(h('div', { class: 'rows' }, P.ships.map((s, k) => {
+    const locked = me.level < s.level, risk = me.portRisk[k];
+    const body = [art('port', s.id),
+      h('div', { class: 'mid' }, h('div', { class: 'nm' }, names[k]),
+        locked ? h('div', { class: 'meta' }, icon('lock'), ' ', t('needLevel', { n: s.level }))
+          : h('div', { class: 'meta' }, h('span', { class: 'c-en' }, icon('timer'), ' ' + hrs(s.ms)), h('span', { class: 'c-cash' }, '+' + s.gainBp / 100 + '%'), h('span', { class: 'c-vice' }, icon('pill'), ' ' + list('drugs')[s.drug]))),
+      h('div', { class: 'pct risk ' + riskCls(risk) }, riskTxt(risk), h('small', null, t('risk')))];
+    return locked ? h('div', { class: 'rowi lock' }, ...body) : h('button', { class: 'rowi', on: { click: () => shipSheet(k) } }, ...body);
+  })));
   return out;
+}
+// a folha de um carregamento: o que é, quanto mandas, se volta em dinheiro ou em droga, e o que acontece nos dois casos
+function shipSheet(k) {
+  const me = S.st.me, P = S.cfg.port, s = P.ships[k], dn = list('drugs')[s.drug], risk = me.portRisk[k], liquid = me.cash + me.bank;
+  // um quarto, metade ou tudo do que podes mandar (o teu limite por carregamento, ou o dinheiro que tens se for menos)
+  const teto = Math.min(me.portCap, liquid), opts = [0.25, 0.5, 1].map((f) => Math.floor(teto * f)).filter((v, i, a) => v >= P.minAmount && a.indexOf(v) === i);
+  let goods = !!S.portGoods, amount = opts[opts.length - 1] || 0;
+  const full = me.port.length >= me.portSlots, late = S.st.round.playEnd - now() < s.ms, why = full ? t('shFull') : late ? t('portEnding') : !opts.length ? t('portMin', { m: money(P.minAmount) }) : '';
+  const body = h('div', { class: 'stack' });
+  const fact = (lbl, val, cls, ic) => h('div', { class: 'fact' }, h('b', { class: 'num ' + cls }, val), h('span', null, icon(ic), lbl));
+  const row = (a, b, cls) => h('div', { class: 'row sp' }, h('span', { class: 'muted' }, a), h('b', { class: 'num ' + cls }, b));
+  const draw = () => {
+    const back = amount + Math.floor((amount * s.gainBp) / 10000), units = Math.floor(back / wholesaleOf(s.drug));
+    body.replaceChildren(...[   // (o replaceChildren escreve «null» se lhe passarem um vazio: filtra-se antes)
+      h('div', { class: 'shiphd' }, art('port', s.id, 'shimg'), h('div', { class: 'grow' }, h('h2', { style: 'margin:0' }, list('ships')[k]), h('p', { class: 'small muted', style: 'margin:4px 0 0' }, t('shd_' + s.id)))),
+      h('div', { class: 'facts' }, fact(t('shTime'), hrs(s.ms), 'c-en', 'timer'), fact(t('shProfit'), '+' + s.gainBp / 100 + '%', 'c-cash', 'cash'), fact(t('risk'), riskTxt(risk), riskCls(risk), 'lock'), fact(t('shCargo'), dn, 'c-vice shdrug', 'pill')),
+      why ? h('p', { class: 'small c-gold' }, why) : null,
+      !why ? h('div', { class: 'seg', role: 'group', style: 'margin-bottom:0' }, [[false, t('portCash')], [true, t('portGoods', { x: dn })]].map(([v, lbl]) => h('button', { 'aria-pressed': goods === v ? 'true' : 'false', on: { click: () => { goods = v; S.portGoods = v; draw(); } } }, lbl))) : null,
+      !why && goods ? h('p', { class: 'small muted' }, t('portGoodsSub', { x: dn, p: Math.round((10000 / S.cfg.goods.wholesaleBp - 1) * 100) })) : null,
+      !why && opts.length > 1 ? h('div', { class: 'seg', role: 'group', style: 'margin-bottom:0', 'aria-label': t('shAmount') }, opts.map((v) => h('button', { 'aria-pressed': amount === v ? 'true' : 'false', on: { click: () => { amount = v; draw(); } } }, moneyShort(v)))) : null,
+      !why ? h('div', { class: 'card stack shsum' }, row(t('shIfOk', { p: riskTxt(10000 - risk) }), goods ? num(units) + ' × ' + dn : '+' + money(back - amount), 'c-cash'), row(t('shIfLost', { p: riskTxt(risk) }), '−' + money(amount), 'c-red')) : null,
+      h('button', { class: 'btn buy block big', disabled: !!why, on: { click: async () => { close(); await act('port', { k, amount, goods }); } } }, why ? t('shSend') : t('ship', { m: money(amount) }))].filter(Boolean));
+  };
+  draw();
+  const close = sheet(body);
 }
 
 // ---------- armas ----------

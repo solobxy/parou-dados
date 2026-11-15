@@ -103,7 +103,7 @@ function contas(kind, a0, a, d0, d, t, res, arg) {
     case 'claim': if (dm !== res.cash || dr !== 0) bad('prémio'); break;
     case 'collect': { const st = E.bizStored(a0, t).reduce((x, y) => x + y.money, 0); if (dm < 0 || dm > Math.ceil(st * 1.1) || dr !== 0) bad('recolha maior do que o armazém'); break; }
     case 'collectPort': {
-      const due = a0.port.filter((c) => c.readyAt <= t).reduce((x, c) => x + c.amount + Math.floor((c.amount * CFG.port.gainBp) / 10000), 0);
+      const due = a0.port.filter((c) => c.readyAt <= t).reduce((x, c) => x + c.amount + Math.floor((c.amount * CFG.port.ships[c.k === undefined ? CFG.port.legacy : c.k].gainBp) / 10000), 0);
       if (dm < 0 || dm > due || dr !== 0) bad('porto pagou a mais'); break;
     }
     case 'hitman': {
@@ -134,6 +134,7 @@ function contas(kind, a0, a, d0, d, t, res, arg) {
     case 'buyBiz': if (dm !== -res.price || dr !== CFG.biz[arg].resp) bad('negócio'); break;
     case 'venueBuy': { const C = CFG.venue[arg], l0 = a0[arg] ? a0[arg].lvl : 0; if (dm !== -C.cost[l0] || dr !== C.resp[l0] || a[arg].lvl !== l0 + 1) bad('comprar casa'); break; }
     case 'venueSet': case 'broFire': case 'missionSwap': case 'bizGoods': case 'stockLimit': if (dm !== 0 || dr !== 0) bad('devia ser neutro'); break;
+    case 'port': if (dm !== -arg || dr !== 0 || a.port.length !== a0.port.length + 1 || a.port.at(-1).readyAt !== t + CFG.port.ships[res.k].ms || E.level(a0) < CFG.port.ships[res.k].level) bad('porto: paga-se o que se envia, no barco certo'); break;
     case 'acct': if (dm !== -CFG.accountant.price || dr !== 0 || !a.acct) bad('contabilista'); break;
     case 'hooker': if (dm !== -res.price - (res.rob ? res.rob.loss : 0) || dr !== 0 || (res.rob && !(res.rob.loss > 0 && res.rob.loss <= 5 * res.price))) bad('visita à puta'); break;
     case 'stockBuy': { const h = E.stockView(a, market), bruto = Math.ceil((arg.n * market.prices[arg.k]) / 100);
@@ -204,7 +205,7 @@ for (let n = 0; n < ACTIONS; n++) {
   if (r.chance(400) && !p.gang) { if (r.chance(3000)) E.gangSet(p, CFG.gang.bot.id, 1, 0); else E.gangSet(p, 'g' + r.int(1, 3), r.int(1, 5), r.int(0, 5)); } // o servidor pôs-te numa gangue (para os golpes e tareias em grupo terem quem os faça)
   if (r.chance(2500)) { p.energy = r.int(0, CFG.energy.max); p.energyT = Math.min(p.energyT, p.t); } // gasta stamina para chegar à discoteca, às putas e ao hospital
   const before = touched(p, t), beforeD = touched(d, t), origD = structuredClone(d), origP = structuredClone(p);
-  const kind = pick(['stockBuy', 'stockBuy', 'stockBuy', 'stockSell', 'stockSell', 'missionSwap', 'venueBuy', 'venueBuy', 'venueSet', 'venueCollect', 'stockUse', 'stockUse', 'stockDump', 'broHire', 'broHire', 'broFire', 'clubBuyAt', 'clubBuyAt', 'clubBuyAt', 'broVisitAt', 'broVisitAt', 'broVisitAt', 'casino', 'casino', 'table', 'heist', 'hit', 'gangCreate', 'gangDonate', 'gangLeave', 'gangBiz', 'gangBiz', 'gangBiz', 'gangBizCollect', 'hitman', 'hitman', 'hitman', 'crime', 'crimeAll', 'drug', 'refill', 'detox', 'claim', 'class', 'classChange', 'classChange', 'air', 'air', 'airCollect', 'airCollect', 'bailFor', 'bailFor', 'medicFor', 'medicFor', 'avatar', 'hooker', 'cure', 'house', 'houseUp', 'train', 'buyBiz', 'buyBiz', 'collect', 'bizGoods', 'bizGoods', 'acct', 'stockLimit', 'stockLimit', 'stockLimit', 'port', 'collectPort', 'deposit', 'withdraw', 'gear', 'attack', 'bail', 'medic', 'luxury']);
+  const kind = pick(['stockBuy', 'stockBuy', 'stockBuy', 'stockSell', 'stockSell', 'missionSwap', 'venueBuy', 'venueBuy', 'venueSet', 'venueCollect', 'stockUse', 'stockUse', 'stockDump', 'broHire', 'broHire', 'broFire', 'clubBuyAt', 'clubBuyAt', 'clubBuyAt', 'broVisitAt', 'broVisitAt', 'broVisitAt', 'casino', 'casino', 'table', 'heist', 'hit', 'gangCreate', 'gangDonate', 'gangLeave', 'gangBiz', 'gangBiz', 'gangBiz', 'gangBizCollect', 'hitman', 'hitman', 'hitman', 'crime', 'crimeAll', 'drug', 'refill', 'detox', 'claim', 'class', 'classChange', 'classChange', 'air', 'air', 'airCollect', 'airCollect', 'bailFor', 'bailFor', 'medicFor', 'medicFor', 'avatar', 'hooker', 'cure', 'house', 'houseUp', 'train', 'buyBiz', 'buyBiz', 'collect', 'bizGoods', 'bizGoods', 'stockHold', 'stockHold', 'acct', 'stockLimit', 'stockLimit', 'stockLimit', 'port', 'collectPort', 'deposit', 'withdraw', 'gear', 'attack', 'bail', 'medic', 'luxury']);
   let res, arg;
   try {
     switch (kind) {
@@ -282,7 +283,8 @@ for (let n = 0; n < ACTIONS; n++) {
       case 'stockLimit': { const k = r.chance(9000) ? r.int(0, 5) : anyInt(), pr = market.prices[k] || 0;
         arg = { k, tp: pick([0, pr + r.int(1, 400), pr + r.int(1, 400), pr * 2, pr, -1, 0.5, anyInt()]), sl: pick([0, Math.max(1, pr - r.int(1, 400)), Math.max(1, pr - r.int(1, 400)), Math.floor(pr / 2), pr, anyInt()]) };
         res = E.stockLimit(p, t, world, r.chance(9700) ? market : null, arg.k, arg.tp, arg.sl); break; }
-      case 'port': res = E.sendPort(p, t, world, r.chance(8000) ? r.int(0, 300000) : anyInt(), r.chance(5000)); break;
+      case 'port': arg = r.chance(5000) ? r.int(100, Math.max(100, E.portCap(p))) : r.chance(8000) ? r.int(0, 300000) : anyInt(); /* metade das vezes um valor que cabe, para os envios acontecerem mesmo */ res = E.sendPort(p, t, world, r.chance(9200) ? r.int(0, CFG.port.ships.length - 1) : anyInt(), arg, r.chance(5000)); break;
+      case 'stockHold': arg = r.chance(9000) ? r.int(0, CFG.drugs.length - 1) : anyInt(); res = E.stockHold(p, t, world, arg, r.chance(6000)); break;
       case 'venueBuy': arg = pick(['club', 'bro', 'bro', 'club', 'x']); res = E.venueBuy(p, t, world, arg); break;
       case 'venueSet': res = E.venueSet(p, t, world, pick(['club', 'bro', 'x']), pick([0, 1, 2, 3, 4, 5, -1, 0.5]), pick([0, 1, 2, 3, 4, NaN])); break;
       case 'venueCollect': res = E.venueCollect(p, t, world); break;

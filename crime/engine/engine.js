@@ -30,7 +30,7 @@ export function newPlayer(id, now, world, opts = {}) {
     hospTimes: [],
     hits: new Map(),
     biz: CFG.biz.map(() => ({ n: 0, stored: 0, rem: 0, t: now })),
-    port: [], air: null, stock: CFG.drugs.map(() => 0), club: null, bro: null, stk: CFG.stocks.list.map(() => ({ n: 0, cost: 0, gen: 0 })), acct: false,
+    port: [], air: null, stock: CFG.drugs.map(() => 0), hold: [], club: null, bro: null, stk: CFG.stocks.list.map(() => ({ n: 0, cost: 0, gen: 0 })), acct: false,
     weapon: -1, armor: -1, guard: -1, hmT: [], hmSafe: 0,
     luxuries: 0,
     gang: null, gb: null, gangLeft: 0, gbotLeft: 0, gh: [], gbz: gbzNew(),
@@ -46,6 +46,7 @@ export function newPlayer(id, now, world, opts = {}) {
 
 // jogadores gravados antes de uma regra nova ganham os campos que faltam
 function migrate(p) {
+  if (!Array.isArray(p.hold)) p.hold = [];
   if (typeof p.acct !== 'boolean') p.acct = false;
   if (!Array.isArray(p.detoxT)) p.detoxT = [];
   if (!p.xp) p.xp = { F: 0, I: 0, C: 0 };
@@ -853,17 +854,25 @@ export function portCap(p) {
 }
 export function portSlots(p) { return 1 + Math.floor(level(p) / CFG.port.slotsEveryLevels); }
 
-export function sendPort(p, now, world, amount, goods = false) {
+// cada carregamento tem a sua droga (para quem a quer receber em vez do dinheiro)
+const SHIP_DRUG = CFG.port.ships.map((s) => CFG.drugs.findIndex((x) => x.id === s.drug));
+// o barco de um contentor já enviado; os de antes de haver carregamentos (sem k) valem como o porta-contentores
+const shipIdx = (c) => (Number.isInteger(c.k) && CFG.port.ships[c.k] ? c.k : CFG.port.legacy);
+export function portSeizeBp(p, k = CFG.port.legacy) { return cut(CFG.port.ships[k].seizeBp, klass(p).seizeCutBp || 0); }
+export function sendPort(p, now, world, k, amount, goods = false) {
+  const S = Number.isInteger(k) ? CFG.port.ships[k] : undefined;
+  if (!S) fail('NO_SHIP');
   begin(p, now, world);
+  if (level(p) < S.level) fail('LOW_LEVEL', { need: S.level });
   if (!Number.isSafeInteger(amount) || amount < CFG.port.minAmount) fail('BAD_AMOUNT');
   if (amount > portCap(p)) fail('OVER_CAP', { cap: portCap(p) });
   if (p.port.length >= portSlots(p)) fail('NO_SLOT');
-  const readyAt = now + CFG.port.ms;
+  const readyAt = now + S.ms;
   if (readyAt > world.playEnd) fail('ROUND_ENDING');
   pay(p, amount);
-  p.port.push(goods ? { amount, readyAt, d: portDrug(p) } : { amount, readyAt });
+  p.port.push(goods === true ? { k, amount, readyAt, d: SHIP_DRUG[k] } : { k, amount, readyAt });
   p.c.ports += 1;
-  return { ok: true, readyAt };
+  return { ok: true, k, readyAt };
 }
 
 export function collectPort(p, now, world, rng) {
@@ -871,10 +880,11 @@ export function collectPort(p, now, world, rng) {
   const out = [];
   p.port = p.port.filter((c) => {
     if (c.readyAt > now) return true;
-    if (rng.chance(portSeizeBp(p))) { out.push({ amount: c.amount, got: 0, seized: true }); return false; }
-    const got = c.amount + Math.floor((c.amount * CFG.port.gainBp) / 10000);
-    if (c.d !== undefined) out.push({ amount: c.amount, got, seized: false, ...toGoods(p, c.d, got) });   // veio em droga: entra no armazém
-    else { p.cash += got; out.push({ amount: c.amount, got, seized: false }); }
+    const k = shipIdx(c);
+    if (rng.chance(portSeizeBp(p, k))) { out.push({ k, amount: c.amount, got: 0, seized: true }); return false; }
+    const got = c.amount + Math.floor((c.amount * CFG.port.ships[k].gainBp) / 10000);
+    if (c.d !== undefined) out.push({ k, amount: c.amount, got, seized: false, ...toGoods(p, c.d, got) });   // veio em droga: entra no armazém
+    else { p.cash += got; out.push({ k, amount: c.amount, got, seized: false }); }
     return false;
   });
   return { ok: true, items: out };
@@ -920,7 +930,6 @@ export function airCollect(p, now, world, rng, keep = false) {
 // ---------- mercadoria e casas do jogador (discoteca e bordel) ----------
 export function wholesale(d) { return Math.max(1, Math.floor((CFG.drugs[d].price * CFG.goods.wholesaleBp) / 10000)); }
 export function dumpValue(d, n) { return Math.floor((n * wholesale(d) * CFG.goods.dumpBp) / 10000); }
-export function portDrug(p) { const L = level(p); for (const [lv, id] of CFG.goods.portDrug) if (L >= lv) return CFG.drugs.findIndex((x) => x.id === id); return 0; }
 // troca dinheiro por unidades ao preço de grosso; o troco fica em dinheiro
 function toGoods(p, d, cash) { const w = wholesale(d), units = Math.floor(cash / w), rest = cash - units * w; p.stock[d] += units; p.cash += rest; return { d, units, rest }; }
 const venueFloor = (kind) => (kind === 'club' ? CFG.goods.wholesaleBp : CFG.venue.girlBp);
@@ -930,6 +939,16 @@ const clubCap = (c) => CFG.venue.club.perH[c.lvl - 1] * (CFG.venue.tillMs / T.HO
 // Discoteca: os clientes da casa gastam por hora o que a casa aguenta e levam primeiro o mais barato que houver.
 // A conta dá o mesmo quer se faça de uma vez ou aos bocados: o que não chegou para mais uma unidade fica guardado (rem).
 const DRUGS_BY_PRICE = CFG.drugs.map((_, d) => d).sort((a, b) => CFG.drugs[a].price - CFG.drugs[b].price || a - b);
+// Drogas que o dono tirou da venda: ficam na stash só para ele (tomar ou despachar). Nem os clientes da casa nem os outros jogadores as compram.
+export const held = (p, d) => Array.isArray(p.hold) && p.hold.includes(d);
+export function stockHold(p, now, world, d, on) {
+  if (!Number.isInteger(d) || !CFG.drugs[d]) fail('NO_DRUG');
+  begin(p, now, world, { allowBusy: true });
+  settleClub(p, now);   // o que a casa já vendeu até agora fica vendido; a mudança só vale daqui para a frente
+  const set = new Set(p.hold); if (on === true) set.add(d); else set.delete(d);
+  p.hold = [...set].sort((a, b) => a - b);
+  return { ok: true, d, on: on === true };
+}
 function settleClub(p, now) {
   const c = p.club; if (!c) return;
   if (now <= c.t) return;
@@ -938,7 +957,7 @@ function settleClub(p, now) {
   const budget = Math.floor(tot / T.HOUR);
   let used = 0, left = false;
   for (const d of DRUGS_BY_PRICE) {
-    if (!p.stock[d]) continue;
+    if (!p.stock[d] || held(p, d)) continue;
     const price = CFG.drugs[d].price, unit = Math.max(1, Math.floor((price * V.prices[c.pi]) / 10000));
     const n = c.till >= cap ? 0 : Math.min(p.stock[d], Math.floor((budget - used) / price), Math.ceil((cap - c.till) / unit));
     if (n > 0) { p.stock[d] -= n; used += n * price; c.till += n * unit; }
@@ -967,7 +986,7 @@ function settleBro(p, now) {
 }
 // leitura sem alterar o estado (para os ecrãs e para a lista de casas)
 export function venueView(p, now) {
-  const ghost = { stock: p.stock.slice(), club: p.club ? { ...p.club } : null, bro: p.bro ? { ...p.bro, girls: p.bro.girls.slice() } : null };
+  const ghost = { stock: p.stock.slice(), hold: Array.isArray(p.hold) ? p.hold.slice() : [], club: p.club ? { ...p.club } : null, bro: p.bro ? { ...p.bro, girls: p.bro.girls.slice() } : null };
   settleClub(ghost, now); settleBro(ghost, now);
   return ghost;
 }
@@ -1054,7 +1073,7 @@ export function clubBuyAt(buyer, owner, now, world, d, seen) {
   if (buyer === owner || buyer.id === owner.id) fail('SELF');
   touch(owner, now);
   if (!owner.club) fail('NO_VENUE');
-  if (!(owner.stock[d] > 0)) fail('NO_STOCK');
+  if (!(owner.stock[d] > 0) || held(owner, d)) fail('NO_STOCK');
   canTake(buyer, g);
   const price = clubPriceAt(owner, buyer, d);
   if (seen !== undefined && price > seen) fail('PRICE_CHANGED', { price });
@@ -1167,7 +1186,6 @@ export function stockAuto(p, m) {
 // ---------- banco ----------
 
 export function bankFeeBp(p) { return cut(CFG.bank.feeBp, klass(p).feeCutBp || 0); }
-export function portSeizeBp(p) { return cut(CFG.port.seizeBp, klass(p).seizeCutBp || 0); }
 export function deposit(p, now, world, amount) {
   begin(p, now, world, { allowBusy: true });
   if (!Number.isSafeInteger(amount) || amount <= 0 || amount > p.cash) fail('BAD_AMOUNT');
@@ -1983,6 +2001,8 @@ export function checkInvariants(p) {
   if (!Array.isArray(p.stk) || p.stk.length !== CFG.stocks.list.length || p.stk.some((h) => !h || !Number.isSafeInteger(h.n) || h.n < 0 || !Number.isSafeInteger(h.cost) || h.cost < 0 || !Number.isSafeInteger(h.gen) || (h.n === 0 && h.cost !== 0)
     || ['tp', 'sl'].some((x) => h[x] !== undefined && !(Number.isSafeInteger(h[x]) && h[x] > 0 && h.n > 0)) || (h.tp && h.sl && h.sl >= h.tp))) bad.push('shares');
   if (typeof p.acct !== 'boolean') bad.push('accountant');
+  if (!Array.isArray(p.hold) || p.hold.some((d, i) => !Number.isInteger(d) || !CFG.drugs[d] || p.hold.indexOf(d) !== i)) bad.push('held drugs');
+  if (p.port.some((c) => c.k !== undefined && !(Number.isInteger(c.k) && CFG.port.ships[c.k]))) bad.push('port ship');
   for (const k of ['club', 'bro']) { const v = p[k]; if (v === null) continue;
     if (!(v && Number.isInteger(v.lvl) && v.lvl >= 1 && v.lvl <= CFG.venue[k].cost.length && Number.isSafeInteger(v.till) && v.till >= 0 && Number.isSafeInteger(v.rem) && v.rem >= 0 && Number.isSafeInteger(v.t) && CFG.venue.prices[v.pi] !== undefined && CFG.venue.gdisc[v.gd] !== undefined)) bad.push(k);
     else if (k === 'bro' && !(Array.isArray(v.girls) && v.girls.length <= CFG.venue.bro.rooms[v.lvl - 1] && v.girls.every((i) => CFG.hookers.list[i]))) bad.push('bro girls'); }

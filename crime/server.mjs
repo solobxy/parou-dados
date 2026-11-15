@@ -20,7 +20,7 @@ const SECURE = process.env.COOKIE_INSEGURO ? '' : '; Secure';
 const [fy, fm, fd] = (process.env.PRIMEIRA_RONDA || '2026-11-13').split('-').map(Number);
 const FIRST = { y: fy, m: fm, d: fd };
 const rng = cryptoRng();
-const VERSAO = 42;   // sobe quando o servidor muda, para se confirmar de fora que a versão nova já está a correr
+const VERSAO = 43;   // sobe quando o servidor muda, para se confirmar de fora que a versão nova já está a correr
 const ATOS_3S = +(process.env.ATOS_3S || 15), ATOS_MIN = +(process.env.ATOS_MIN || 400); // ações por conta: 15 em 3 s, 400 por minuto
 
 // ---------- relógio que nunca anda para trás ----------
@@ -289,7 +289,7 @@ function vista(p, now) {
     cls: p.cls, av: p.av, fx: E.activeFx(p, now), drugPrices: CFG.drugs.map((_, d) => E.drugPrice(p, d)),
     acct: p.acct,
     biz: p.biz.map((s, i) => ({ n: s.n, stored: stored[i].money, fee: stored[i].fee, g: s.g === true, perH: E.bizRates(p, i).perH, price: s.n < CFG.bizMax ? E.bizPrice(i, s.n) : null, t: s.t })),
-    stock: vv.stock, portDrug: E.portDrug(p),
+    stock: vv.stock, hold: Array.isArray(p.hold) ? p.hold : [], portRisk: CFG.port.ships.map((_, k) => E.portSeizeBp(p, k)),
     club: vv.club ? { lvl: vv.club.lvl, till: vv.club.till, pi: vv.club.pi, gd: vv.club.gd, perH: E.clubRate(p), cap: CFG.venue.club.perH[vv.club.lvl - 1] * (CFG.venue.tillMs / T.HOUR), next: CFG.venue.club.cost[vv.club.lvl] ?? null } : null,
     bro: vv.bro ? { lvl: vv.bro.lvl, till: vv.bro.till, pi: vv.bro.pi, gd: vv.bro.gd, girls: vv.bro.girls, perH: E.broRate(p), cap: E.broRate(p) * (CFG.venue.tillMs / T.HOUR), rooms: CFG.venue.bro.rooms[vv.bro.lvl - 1], next: CFG.venue.bro.cost[vv.bro.lvl] ?? null } : null,
     port: p.port, portCap: E.portCap(p), portSlots: E.portSlots(p), air: p.air, airCap: E.airCap(p), airSeize: CFG.air.routes.map((_, i) => E.airSeizeBp(p, i, false)),
@@ -300,7 +300,7 @@ function cfgPublica() {
   return {
     energy: CFG.energy, addiction: CFG.addiction, train: CFG.train, crimes: CFG.crimes, drugs: CFG.drugs,
     biz: CFG.biz.map(({ id, price, perH, resp, stat, raid, toBank, drug }) => ({ id, price, perH, resp, stat, raid, toBank, drug: drug ? CFG.drugs.findIndex((x) => x.id === drug) : -1 })), accountant: CFG.accountant,
-    bizMax: CFG.bizMax, storageMs: CFG.storageMs, port: CFG.port, air: CFG.air, goods: CFG.goods, venue: CFG.venue, detox: CFG.detox, stocks: CFG.stocks, weapons: CFG.weapons, armors: CFG.armors, guards: CFG.guards, hitman: CFG.hitman,
+    bizMax: CFG.bizMax, storageMs: CFG.storageMs, port: { ...CFG.port, ships: CFG.port.ships.map((s) => ({ ...s, drug: CFG.drugs.findIndex((x) => x.id === s.drug) })) }, air: CFG.air, goods: CFG.goods, venue: CFG.venue, detox: CFG.detox, stocks: CFG.stocks, weapons: CFG.weapons, armors: CFG.armors, guards: CFG.guards, hitman: CFG.hitman,
     pvp: CFG.pvp, bank: CFG.bank, luxury: CFG.luxury, levels: CFG.levels, crit: CFG.crit, unlockBp: CFG.unlockBp,
     bustBp: CFG.bustBp, crimeAllMax: CFG.crimeAllMax, casino: { minBet: CFG.casino.minBet, buyMaxMult: CFG.casino.buyMaxMult, red: CFG.casino.red, dice: CFG.casino.dice, wheel: { segs: CFG.casino.wheel.segs, spots: CFG.casino.wheel.spots }, slots: Object.fromEntries(Object.entries(CFG.casino.slots).map(([k, g]) => [k, { kind: g.kind, cols: g.cols, rows: g.rows, min: g.min, nsym: g.nsym, trig: g.trig, pay: g.pay, scatPay: g.scatPay, free: g.free, fs: g.fs, retrig: g.retrig, buy: g.buy, superBuy: g.superBuy, max: g.max, accFree: g.accFree, accAll: g.accAll, orbBase: g.orbBase }])) }, gang: CFG.gang, classes: CFG.classes, classChange: CFG.classChange, avatars: CFG.avatars, hookers: CFG.hookers, house: CFG.house, mastery: CFG.mastery, missions: CFG.missions.length, start: CFG.start,
     round: { playDays: CFG.round.playDays, noPvpMs: CFG.round.noPvpMs },
@@ -860,6 +860,7 @@ function agir(conta, corpo, now) {
     case 'venueSet': r = E.venueSet(p, now, world, String(a.kind), int(a.pi), int(a.gd)); break;
     case 'stockUse': r = E.stockUse(p, now, world, int(a.d)); break;
     case 'stockDump': r = E.stockDump(p, now, world, int(a.d), int(a.n)); break;
+    case 'stockHold': r = E.stockHold(p, now, world, int(a.d), a.on === true); break;
     case 'broHire': r = E.broHire(p, now, world, int(a.i)); break;
     case 'broFire': r = E.broFire(p, now, world, int(a.slot)); break;
     case 'clubBuy': case 'broVisit': {
@@ -873,7 +874,7 @@ function agir(conta, corpo, now) {
       ctx.outros.push(o);
       break;
     }
-    case 'port': r = E.sendPort(p, now, world, int(a.amount), a.goods === true); break;
+    case 'port': r = E.sendPort(p, now, world, int(a.k), int(a.amount), a.goods === true); break;
     case 'air': r = E.airSend(p, now, world, int(a.r), int(a.amount), a.bribe === true); break;
     case 'airCollect': r = E.airCollect(p, now, world, rng, a.keep === true); break;
     case 'deposit': r = E.deposit(p, now, world, int(a.amount)); break;
@@ -952,7 +953,9 @@ function casas(conta, now, w) {
     if (o.id === me.id || (!o.club && !o.bro)) continue;
     const v = E.venueView(o, Math.max(now, o.t)), mine = E.sameCrew(me, o);
     const base = { name: nomeDe(o.id), tag: tagDe(o.id), av: o.av || 0, gang: mine };
-    if (v.club && v.stock.some((n) => n > 0)) clubs.push({ ...base, lvl: v.club.lvl, bp: E.venuePriceBp(o, 'club', me), pub: CFG.venue.prices[v.club.pi], items: v.stock.map((n, d) => (n > 0 ? { d, n, price: E.clubPriceAt(o, me, d) } : null)).filter(Boolean) });
+    // só o que o dono tem à venda: o que guardou para ele não aparece a ninguém
+    const venda = v.stock.map((n, d) => (n > 0 && !E.held(o, d) ? { d, n, price: E.clubPriceAt(o, me, d) } : null)).filter(Boolean);
+    if (v.club && venda.length) clubs.push({ ...base, lvl: v.club.lvl, bp: E.venuePriceBp(o, 'club', me), pub: CFG.venue.prices[v.club.pi], items: venda });
     if (v.bro && v.bro.girls.length) bros.push({ ...base, lvl: v.bro.lvl, bp: E.venuePriceBp(o, 'bro', me), pub: CFG.venue.prices[v.bro.pi], girls: v.bro.girls.map((i, slot) => ({ slot, i, price: E.broPriceAt(o, me, i, now) })) });
   }
   // primeiro as da tua gangue, depois as mais baratas para ti

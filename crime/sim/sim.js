@@ -191,10 +191,12 @@ function tryInvest(ag, t) {
     const r = call(ag, t, () => E.buyLuxury(p, t, world));
     if (r) { M.flows.luxury = (M.flows.luxury || 0) + r.price; ag.respSrc.lux = (ag.respSrc.lux || 0) + r.respect; track(ag, t, r.levelUp); return true; }
   }
-  if (p.port.length < E.portSlots(p) && t + CFG.port.ms <= world.playEnd) {
+  // o melhor barco que o nível deixa usar
+  const barco = CFG.port.ships.reduce((best, s, k) => (E.level(p) >= s.level ? k : best), 0);
+  if (p.port.length < E.portSlots(p) && t + CFG.port.ships[barco].ms <= world.playEnd) {
     const amt = Math.min(E.portCap(p), Math.floor(liquid(p) * 0.2));
     if (amt >= 1000) {
-      const r = call(ag, t, () => E.sendPort(p, t, world, amt));
+      const r = call(ag, t, () => E.sendPort(p, t, world, barco, amt));
       if (r) { M.flows.portOut += amt; return true; }
     }
   }

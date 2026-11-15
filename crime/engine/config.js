@@ -117,7 +117,7 @@ export const CFG = {
   },
   // Mercadoria: a droga que vem do aeroporto ou do porto entra no armazém ao preço de grosso (80% do preço da discoteca da cidade).
   // Despachar o que está no armazém paga 95% disso: guardar droga nunca sai mais barato do que o banco (3%).
-  goods: { wholesaleBp: 8000, dumpBp: 9500, portDrug: [[9, 'coca'], [7, 'ecstasy'], [0, 'erva']] },
+  goods: { wholesaleBp: 8000, dumpBp: 9500 },
   // Discoteca e bordel do jogador. O dono escolhe o preço (80% a 120% do preço da cidade) e o desconto para a gangue.
   // Ninguém paga menos do que o custo (80%): na discoteca é o que a droga custou, no bordel é a parte da puta. O dono nunca perde numa venda.
   // Os clientes da casa (não são jogadores) aparecem por hora: mais barato sai mais depressa, mais caro sai menos (volBp).
@@ -335,7 +335,19 @@ export const CFG = {
   accountant: { price: 25000, minLevel: 3, capMult: 3, feeBp: 1000 },
 
   // Porto: contentor volta ao fim de 4 h com +30%, ou é apreendido (15%).
-  port: { ms: 4 * HOUR, gainBp: 3000, seizeBp: 1500, minAmount: 100, capBase: 1000, capNum: 8, capDen: 5, slotsEveryLevels: 5 }, // limite por contentor: 1000 × 1,6^(nível−1)
+  // Porto: cada carregamento tem o seu barco, a sua droga, o seu tempo, o seu lucro e o seu risco de apreensão.
+  // Valor esperado de cada um = (1 − risco) × (1 + lucro): entre 2,6% e 3,1% por hora, sempre abaixo do aeroporto (3,6% a 4,3%), porque o porto tem vários lugares.
+  // O risco cresce com a duração (menos no submarino, que é lento e discreto): uma viagem curta com muito risco daria de mais a quem corta as apreensões a metade.
+  // legacy: os contentores enviados antes de haver carregamentos valem como o porta-contentores (os mesmos +30% e 15%).
+  port: { minAmount: 100, capBase: 1000, capNum: 8, capDen: 5, slotsEveryLevels: 5, legacy: 3, // limite por carregamento: 1000 × 1,6^(nível−1)
+    ships: [
+      { id: 'pesca', level: 1, ms: 2 * HOUR, gainBp: 1200, seizeBp: 600, drug: 'erva' },
+      { id: 'lancha', level: 3, ms: 1 * HOUR, gainBp: 800, seizeBp: 500, drug: 'haxixe' },
+      { id: 'ferry', level: 5, ms: 3 * HOUR, gainBp: 2100, seizeBp: 1000, drug: 'ecstasy' },
+      { id: 'contentor', level: 7, ms: 4 * HOUR, gainBp: 3000, seizeBp: 1500, drug: 'coca' },
+      { id: 'cargueiro', level: 10, ms: 6 * HOUR, gainBp: 4600, seizeBp: 1900, drug: 'cristal' },
+      { id: 'submarino', level: 13, ms: 8 * HOUR, gainBp: 3700, seizeBp: 900, drug: 'heroina' },
+    ] },
 
   weapons: [
     { id: 'soqueira', price: 500, bp: 1000 },

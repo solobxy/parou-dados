@@ -140,7 +140,7 @@ test('negócios: treinar a stat a meio conta o rendimento anterior com a stat an
 
 test('porto: não aceita contentores que só chegam depois do fim da ronda', () => {
   const p = E.newPlayer('a', START, world);
-  assert.throws(() => E.sendPort(p, world.playEnd - T.HOUR, world, 200), { code: 'ROUND_ENDING' });
+  assert.throws(() => E.sendPort(p, world.playEnd - T.HOUR, world, 0, 200), { code: 'ROUND_ENDING' });   // o barco de pesca demora 2 h
 });
 
 test('banco: taxa de 3% arredondada para cima', () => {
