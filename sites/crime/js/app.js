@@ -390,6 +390,15 @@ function busyBanner(me) {
 function art(kind, id, cls = 'art') {
   return h('img', { class: cls, src: IMG(kind, id), alt: '', width: 600, height: 600, loading: 'lazy', decoding: 'async', on: { error: (e) => e.currentTarget.remove() } });
 }
+// Pinta os valores dentro de uma frase de apoio: dinheiro a verde e respeito a âmbar; o resto fica como está.
+// Serve para as linhas cinzentas com números lá dentro se lerem de relance (o que se ganha salta à vista).
+function tint(s) {
+  const out = [], re = /(\$\d+(?:[.,\u00a0\u202f ]\d+)*[KMB]?(?:[–-]\$\d+(?:[.,\u00a0\u202f ]\d+)*[KMB]?)?)|([+−-]?\d[\d.,]* (?:de )?(?:respeito|respect))/g;
+  let i = 0, m;
+  while ((m = re.exec(s))) { if (m.index > i) out.push(s.slice(i, m.index)); out.push(h('span', { class: m[1] ? 'c-cash' : 'c-resp' }, m[0])); i = m.index + m[0].length; }
+  if (i < s.length) out.push(s.slice(i));
+  return out;
+}
 function meter(label, v, max, cls) {
   return h('div', { class: 'sbar ' + cls }, h('i', { style: `width:${Math.min(100, (v / max) * 100)}%` }), h('span', null, label + ' ', h('b', { class: 'num' }, v + '/' + max)));
 }
@@ -1430,7 +1439,7 @@ function screenHitman() {
   if (low) out.push(h('div', { class: 'tip' }, h('p', null, t('hmLocked', { n: H.minLevel }))));
   else if (glob) out.push(h('div', { class: 'tip' }, h('p', null, errText(glob))));
   out.push(h('div', { class: 'card stack', style: 'margin:0 0 12px' },
-    h('ul', { class: 'vperks' }, li('cash', t('hmFrom', { m: money(H.priceMin) })), li('skull', t('hmOk', { h: Math.round(H.hospMs / 60000) + ' min', r: pc(H.respBp), c: pc(H.cashBp) })), li('user', t('hmAnon')), li('shield', t('hmFail'))),
+    h('ul', { class: 'vperks' }, li('cash', tint(t('hmFrom', { m: money(H.priceMin) }))), li('skull', t('hmOk', { h: Math.round(H.hospMs / 60000) + ' min', r: pc(H.respBp), c: pc(H.cashBp) })), li('user', t('hmAnon')), li('shield', t('hmFail'))),
     h('p', { class: 'small muted', style: 'margin:0' }, (low ? '' : t('hmLeft', { n: me.hitmanLeft ?? H.perDay, x: H.perDay }) + ' ') + t('hmRule', { p: pc(P.minTargetBp), r: num(Math.ceil((me.respect * P.minTargetBp) / 10000)) }))));
   out.push(h('h2', { class: 'sec' }, t('hmListT')));
   if (!all) out.push(h('p', { class: 'muted' }, t('loading')));
@@ -1636,7 +1645,7 @@ function gangBiz(mine, me) {
       const amounts = [0.25, 0.5, 1].map((f) => Math.floor(can * f)).filter((v, i, a) => v >= G.bizMin && a.indexOf(v) === i);
       return h('div', { class: 'gbr' + (b.open ? '' : ' off') },
         h('div', { class: 'row gbh' }, art('gang', b.id, 'gthumb' + (b.open ? '' : ' lock')),
-          h('div', { class: 'grow' }, h('div', { style: 'font-weight:700' }, t('gb_' + b.id)), h('div', { class: 'small muted' }, t('gBizRate', { p: pct(B.rateBp) }) + (b.total > 0 ? ' · ' + t('gBizAll', { m: moneyShort(b.total), n: b.investors }) : ''))),
+          h('div', { class: 'grow' }, h('div', { style: 'font-weight:700' }, t('gb_' + b.id)), h('div', { class: 'small muted' }, tint(t('gBizRate', { p: pct(B.rateBp) }) + (b.total > 0 ? ' · ' + t('gBizAll', { m: moneyShort(b.total), n: b.investors }) : '')))),
           b.inv > 0 ? h('b', { class: 'num c-cash' }, '+' + moneyShort(b.perH) + '/h') : null),
         !b.open ? h('div', { class: 'small muted' }, t('gBizLock', { n: B.sede }))
           : [b.inv > 0 ? h('div', { class: 'small' }, t('gBizMine', { a: money(b.inv), c: moneyShort(b.cap) }), b.coop > 0 ? h('span', { class: 'c-cash' }, ' · ' + t('gBizBonus', { p: pct(b.coop) })) : h('span', { class: 'muted' }, ' · ' + t('gBizAlone'))) : null,
@@ -1787,7 +1796,7 @@ function gangOps(mine, me) {
       h('div', { class: 'gnm' }, t('gh_' + H.id)),
       mine.sede < H.sede ? h('span', { class: 'small muted glock' }, icon('lock'), t('ghLock', { n: H.sede }))
         : h('button', { class: 'btn buy sm', disabled: cool || !!busy || en < H.e, on: { click: () => gAct('gangOp', { kind: 'heist', k }) } }, t('ghOpen'), ' · ', icon('bolt'), String(H.e)),
-      h('div', { class: 'small muted gln' }, t('ghLine', { n: H.need, a: moneyShort(H.min), b: moneyShort(H.max), r: H.r })))),
+      h('div', { class: 'small muted gln' }, tint(t('ghLine', { n: H.need, a: moneyShort(H.min), b: moneyShort(H.max), r: H.r }))))),
     mine.bot ? null : h('div', { class: 'gup gop2' }, art('cenas', 'lutas', 'gthumb'),
       h('div', { class: 'gnm' }, t('goHit')),
       h('button', { class: 'btn danger sm', disabled: cool || !!busy || en < S.cfg.pvp.energy, on: { click: () => gangPickTarget() } }, t('goPick')),

@@ -1386,3 +1386,57 @@ body::before { content: ''; position: fixed; inset: 0; z-index: 0; pointer-event
 @media (max-width: 359px) { .shiphd .shimg { width: 72px; height: 72px; } }
 .fact b.shdrug { font-size: 17px; overflow: hidden; text-overflow: ellipsis; padding: 3px 2px; }
 .shsum { background: var(--s2); gap: 8px; font-size: 14px; }
+
+/* ===== Leitura (revisão de 15/11): contraste medido, fechado sem apagar o texto, zonas de toque =====
+   Regra: todo o texto lê-se a pelo menos 4,5:1 contra o fundo onde está (3:1 nos títulos grandes), medido ecrã a ecrã.
+   O que está fechado ou ainda não dá fica com a imagem a cinzento e o nome em cinzento claro; o motivo e o preço leem-se sempre. */
+:root { --tx3: #8791a2; }   /* era #6f7889: 3,3 a 4,4:1 conforme o fundo. Agora passa os 4,5:1 em todas as superfícies. */
+
+/* barra de baixo: os separadores parados estavam a 4,4:1 e 11 px */
+.tab { color: var(--tx2); font-size: 12px; }
+
+/* fundo decorado: as janelas acesas da cidade deixavam o texto secundário a 2,2:1 quando lhe passavam por trás */
+.skyline { opacity: .26; }
+@media (min-width: 700px) { .skyline { opacity: .3; } }
+
+/* botões desligados: letra escura sobre verde apagado lia-se a 2,0–2,7:1. Passam a contorno com letra clara (7:1): vê-se que não dá e lê-se o preço. */
+.btn:disabled, .btn[disabled] { opacity: 1; filter: none; background: transparent; color: var(--tx2); box-shadow: inset 0 0 0 1.5px var(--s3); cursor: default; }
+.btn.buy.go, .btn.robAll.go { opacity: .7; }
+.seg.five.lim button:disabled { opacity: 1; color: var(--tx3); }
+.sbb:disabled, .sauto:disabled { opacity: .5; }
+
+/* fechado / ainda não dá: sem opacidade no bloco todo */
+.item.dim, .rowi.lock, .job.lock, .airr.lock, .item.cls.lock, .gbz .gbr.off { opacity: 1; filter: none; }
+.rowi.lock > img, .job.lock img, .item.cls.lock > img { filter: grayscale(1) brightness(.55); }
+.item.dim > img, .item.dim > .bscene { filter: saturate(.3) brightness(.9); }   /* na loja ainda se vê bem o que vem a seguir */
+.item.dim .nm, .rowi.lock .nm, .item.cls.lock .nm, .airr.lock b, .gbz .gbr.off .grow > div:first-child { color: var(--tx2); }
+.item.dim .c-resp, .rowi.lock .pct, .item.cls.lock .perks { color: var(--tx2); }
+.rowi.lock .meta, .rowi.lock .pct small { color: var(--tx2); opacity: 1; }
+.rowi .meta { opacity: 1; }
+.rowi .pct.risk small { font-size: 12.5px; }
+
+/* pequenos acertos de contraste */
+.nlive { color: #1a0a0a; font-size: 12px; }                 /* era branco sobre vermelho: 3,1:1 */
+.rlc.g { background: #0f7d38; }                             /* o zero da roleta: 4,4 → 5,2:1 */
+.wsp[style*='b8860b'] b, .wsp[style*='b8860b'] .small { color: #1b1300; text-shadow: none; }   /* casa dourada da roda: 2,6 → 6:1 */
+
+/* letra: o texto de apoio sobe um ponto */
+.small { font-size: 14px; }
+.psub { font-size: 15px; line-height: 1.45; }
+.tgt .lv, .tgt .why { font-size: 14px; }
+
+/* zonas de toque: nada abaixo de 44 px */
+.btn.sm, .seg button, .chip2 { min-height: 44px; }
+.item .seg.bzg button { min-height: 44px; }
+.hbars .sbar { height: 44px; border: solid transparent; border-width: 9px 0; margin: -9px 0; background-clip: padding-box; border-radius: 6px / 15px; line-height: 26px; }   /* a barra continua com 26 px à vista; o toque apanha 44 */
+.credit a { display: inline-block; padding: 14px 10px; }
+
+/* botões: resposta ao toque mais clara */
+.btn:active { filter: brightness(1.12); }
+.btn.ghost:active, .hlink:active, .tile:active { background: var(--s2); }
+/* slot: os botões − e + ficam com o mesmo desenho; o toque apanha 44 px à volta */
+.sbb { position: relative; } .sbb::after { content: ''; position: absolute; inset: -2px; } 
+.sbet .sbb::after { inset: -4px -2px; }
+@media (max-width: 350px) { .sbet .sbb::after { inset: -5px -3px; } }
+/* bolsa em ecrãs estreitos: o nome da empresa passa para duas linhas em vez de ficar cortado («Casinos Fort…») */
+@media (max-width: 379px) { .stnm b { white-space: normal; overflow: visible; text-overflow: clip; line-height: 1.2; text-wrap: balance; } }
