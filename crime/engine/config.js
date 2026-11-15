@@ -241,6 +241,11 @@ export const CFG = {
       { id: 'rota', sede: 3, rateBp: 400, capMult: 12 },
     ],
     bizMin: 100, bizCoopBp: 500, bizCoopMax: 5000, bizRefundBp: 5000,
+    // Gangue da rua: existe sempre, é chefiada por um bot e entra quem quiser (a partir do nível das gangues), para ninguém ficar sem
+    // golpes em grupo, conversa e negócio por não ter gangue. Fica sempre no nível 1 (sem cofre nem melhorias) e não é uma gangue a sério:
+    // os membros podem atacar-se uns aos outros, não há tareias em grupo nem desconto nas casas dos outros membros.
+    // Quem sai só pode voltar a esta gangue ao fim de 24 h.
+    bot: { id: 'rua', name: 'Strays', tag: 'BOT', rejoinMs: 24 * HOUR, roster: 40 },
   },
   // casa: cada nível dá respeito e deixa subir as melhorias até esse nível; a melhoria n custa uma parte do preço da casa n
   house: {

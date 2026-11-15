@@ -633,6 +633,48 @@ test('guardas e assassino a soldo: comprar guardas, encomendar, o alvo não sabe
   assert.equal((await A.estado()).respect, 1000);
 });
 
+test('gangue da rua: existe sempre, entra quem quiser, sem cofre nem chefe, os membros atacam-se, sobrevive vazia e a um reinício', async () => {
+  ENV_EXTRA = { ATOS_3S: '100000', ATOS_MIN: '1000000' };
+  const A = await contaNova('RuaA', '10.0.9.97'), B = await contaNova('RuaB', '10.0.9.98');
+  for (const x of [A, B]) await x.estado();
+  const base = (e) => { e.cash = 500_000; e.bank = 0; e.respect = 1000; e.peakRespect = 1000; e.shieldUntil = 0; e.protectUntil = 0; e.hospUntil = 0; e.jailUntil = 0; e.energy = 100; };
+  await mexer({ RuaA: base, RuaB: base });
+  const ag = (x, ip, body) => cru(x.cookie, ip, body), gangue = async (x, ip) => (await fetch(BASE + '/api/gang', { headers: { cookie: x.cookie, 'X-Forwarded-For': ip } })).json();
+  let g = await gangue(A, '10.0.9.97');
+  assert.equal(g.bot.id, 'rua'); assert.equal(g.bot.members, 0); assert.equal(g.bot.wait, 0); assert.equal(g.list.some((x) => x.id === 'rua'), false);   // não entra no ranking das gangues
+  // o nome e a sigla estão reservados
+  assert.equal((await ag(A, '10.0.9.97', { type: 'gangCreate', name: 'strays', tag: 'XYZ' })).body.error, 'GANG_NAME_TAKEN');
+  assert.equal((await ag(A, '10.0.9.97', { type: 'gangCreate', name: 'Outra Coisa', tag: 'BOT' })).body.error, 'GANG_TAG_TAKEN');
+  let r = await ag(A, '10.0.9.97', { type: 'gangJoin', id: 'rua' }); assert.equal(r.status, 200, JSON.stringify(r.body)); assert.equal(r.body.result.bot, true); assert.equal(r.body.me.gang.bot, true); assert.equal(r.body.me.gang.tag, 'BOT');
+  r = await ag(B, '10.0.9.98', { type: 'gangJoin', id: 'rua' }); assert.equal(r.status, 200);
+  g = await gangue(A, '10.0.9.97');
+  assert.equal(g.mine.bot, true); assert.equal(g.mine.members, 2); assert.equal(g.mine.leader, 'Bot'); assert.equal(g.mine.leaderMe, false); assert.equal(g.mine.sede, 1); assert.equal(g.mine.roster.length, 2);
+  // ninguém manda: sem cofre, sem melhorias, sem expulsar, sem fechar
+  assert.equal((await ag(A, '10.0.9.97', { type: 'gangDonate', amount: 1000 })).body.error, 'BOT_GANG_NO');
+  for (const body of [{ type: 'gangUp', what: 'sede' }, { type: 'gangKick', name: 'RuaB' }, { type: 'gangOpen', open: false }, { type: 'gangLeader', name: 'RuaB' }]) assert.equal((await ag(A, '10.0.9.97', body)).body.error, 'NOT_LEADER');
+  assert.equal((await ag(A, '10.0.9.97', { type: 'gangOp', kind: 'hit', target: 'RuaB' })).body.error, 'BOT_GANG_NO');
+  // dá para o que interessa: conversa, negócio e golpe em grupo
+  assert.equal((await ag(A, '10.0.9.97', { type: 'gangChat', txt: 'boas' })).status, 200);
+  assert.equal((await ag(A, '10.0.9.97', { type: 'gangBiz', k: 0, amount: 1000 })).status, 200);
+  r = await ag(A, '10.0.9.97', { type: 'gangOp', kind: 'heist', k: 0 }); assert.equal(r.status, 200, JSON.stringify(r.body));
+  r = await ag(A, '10.0.9.97', { type: 'gangOpCancel' }); assert.equal(r.status, 200, JSON.stringify(r.body));
+  // os membros continuam a poder atacar-se
+  const alvo = (await (await fetch(BASE + '/api/targets', { headers: { cookie: A.cookie, 'X-Forwarded-For': '10.0.9.97' } })).json()).list.find((x) => x.name === 'RuaB');
+  assert.ok(alvo, 'o outro membro aparece nos alvos'); assert.equal(alvo.tag, 'BOT');
+  r = await ag(A, '10.0.9.97', { type: 'attack', target: 'RuaB', mode: 'beat' }); assert.equal(r.status, 200, JSON.stringify(r.body));
+  // reinício: continua tudo lá
+  await parar(); await arrancar();
+  g = await gangue(B, '10.0.9.98'); assert.equal(g.mine.bot, true); assert.equal(g.mine.members, 2);
+  // saem os dois: a gangue fica, vazia; quem saiu só volta ao fim de 24 h (a outra gangue qualquer é 1 h)
+  r = await ag(A, '10.0.9.97', { type: 'gangLeave' }); assert.equal(r.status, 200); assert.equal(r.body.result.back >= 500, true);
+  r = await ag(B, '10.0.9.98', { type: 'gangLeave' }); assert.equal(r.status, 200);
+  g = await gangue(A, '10.0.9.97'); assert.equal(g.mine, null); assert.equal(g.bot.members, 0); assert.ok(g.bot.wait > g.now + 23 * 3600_000); assert.equal(g.list.length, 0);
+  await mexer({ RuaA: (e) => { e.gangLeft = e.gangLeft - 2 * 3600_000; } });   // passou a hora de espera normal, mas não as 24 h
+  assert.equal((await ag(A, '10.0.9.97', { type: 'gangJoin', id: 'rua' })).body.error, 'BOT_GANG_WAIT');
+  await parar(); await arrancar();
+  assert.equal((await gangue(A, '10.0.9.97')).bot.members, 0);
+});
+
 test('gangues: golpe em grupo e tareia em grupo — alinhar, falta de gente devolve tudo, contas certas, sobrevive a um reinício', async () => {
   const ips = { A: '10.0.9.60', B: '10.0.9.61', C: '10.0.9.62', V: '10.0.9.63' };
   const A = await contaNova('GolpeA', ips.A), B = await contaNova('GolpeB', ips.B), C = await contaNova('GolpeC', ips.C), V = await contaNova('GolpeV', ips.V);

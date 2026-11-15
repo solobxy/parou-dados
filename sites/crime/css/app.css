@@ -1294,3 +1294,11 @@ h1.slogo { margin: 0; }
 
 /* assassino a soldo: terceira ação de cada alvo, mais discreta do que bater e assaltar */
 .tgt .acts .hmb { grid-column: 1 / -1; justify-content: center; color: var(--tx2); }
+
+/* gangue da rua: cartão com a cena à esquerda e o convite à direita; em ecrãs estreitos a cena fica por cima */
+.gbot { display: grid; grid-template-columns: 112px minmax(0, 1fr); gap: 14px; align-items: center; margin-bottom: 16px; }
+.gbot .gbimg { width: 112px; height: 112px; border-radius: 10px; object-fit: cover; }
+.gbot h2 { margin: 0 0 4px; font-size: 20px; line-height: 1.15; text-wrap: balance; }
+.gbot p { margin: 0 0 8px; }
+.gbot .btn { min-height: 44px; }
+@media (max-width: 359px) { .gbot { grid-template-columns: 1fr; } .gbot .gbimg { width: 100%; height: 120px; } }

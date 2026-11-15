@@ -547,6 +547,38 @@ test('assassino a soldo: quem paga só perde o preço; o alvo perde 1,5% do resp
   { const [x, y] = par(); y.hospTimes = [t0 - 3000, t0 - 2000, t0 - 1000]; E.hitman(x, y, t0, W, always); assert.ok(y.capUntil > t0); }
 });
 
+// ---------- gangue da rua (chefiada por um bot) ----------
+test('gangue da rua: entra quem quiser a partir do nível das gangues, quem sai espera 24 h, e os membros não ficam protegidos uns dos outros nem têm desconto', () => {
+  const B = CFG.gang.bot, t0 = START + 3 * T.DAY;
+  const novo = (resp = 2000) => { const p = mk(); E.touch(p, t0); setResp(p, resp); p.shieldUntil = 0; p.cash = 1e7; p.bank = 0; return p; };
+  const a = novo(), b = novo(), fraco = novo(1);
+  assert.throws(() => E.gangBotCanJoin(fraco, t0), code('LOW_LEVEL'));
+  E.gangBotCanJoin(a, t0); E.gangSet(a, B.id, 1, 0); E.gangSet(b, B.id, 1, 0);
+  assert.equal(E.sameCrew(a, b), false);                                    // na gangue da rua continuam a ser rivais
+  assert.equal(E.canAttack(a, b, t0, W), null); assert.equal(E.canHitman(a, b, t0, W), null);
+  assert.throws(() => E.hitJoin(a, novo(), t0, W), code('BOT_GANG_NO'));    // sem tareias em grupo
+  assert.deepEqual(a.gb, E.gangBonus(1, 0));                                 // só o bónus de uma sede de nível 1
+  // numa gangue a sério, os mesmos dois não se podiam atacar
+  const c = novo(), d = novo(); E.gangSet(c, 'gx', 1, 0); E.gangSet(d, 'gx', 1, 0);
+  assert.equal(E.sameCrew(c, d), true); assert.equal(E.canAttack(c, d, t0, W), 'SAME_GANG'); assert.equal(E.canHitman(c, d, t0, W), 'SAME_GANG');
+  // desconto da gangue nas casas: só entre membros de uma gangue a sério
+  for (const o of [a, c]) o.club = { lvl: 1, till: 0, t: t0, rem: 0, pi: 2, gd: 3 };
+  assert.equal(E.venuePriceBp(a, 'club', b), CFG.venue.prices[2]); assert.ok(E.venuePriceBp(c, 'club', d) < CFG.venue.prices[2]);
+  // negócios da gangue funcionam (Oficina) e sair devolve metade, como nas outras
+  E.gangBizInvest(a, t0, W, 0, 2000, 1); assert.throws(() => E.gangBizInvest(a, t0, W, 1, 2000, 1), code('GBIZ_SEDE'));
+  const cash = a.cash, back = E.gangLeave(a, t0 + T.HOUR);
+  assert.equal(back.refund, 1000); assert.equal(a.cash, cash + back.refund + back.stored); assert.equal(a.gbotLeft, t0 + T.HOUR);
+  // voltar: 1 h para qualquer gangue, 24 h para a da rua
+  assert.throws(() => E.gangBotCanJoin(a, t0 + T.HOUR + 30 * T.MIN), code('GANG_WAIT'));
+  E.gangCanJoin(a, t0 + 2 * T.HOUR + 1);
+  assert.throws(() => E.gangBotCanJoin(a, t0 + 2 * T.HOUR + 1), code('BOT_GANG_WAIT'));
+  assert.throws(() => E.gangBotCanJoin(a, t0 + T.HOUR + B.rejoinMs - 1), code('BOT_GANG_WAIT'));
+  E.gangBotCanJoin(a, t0 + T.HOUR + B.rejoinMs);
+  // sair de uma gangue a sério não mexe na espera da gangue da rua
+  E.gangLeave(c, t0); assert.equal(c.gbotLeft, 0);
+  for (const x of [a, b, c, d]) assert.deepEqual(E.checkInvariants(x), []);
+});
+
 test('casino: aposta mínima, máxima pelo nível, só dinheiro na mão; aposta recusada não mexe em nada', () => {
   const p = cas(500); p.bank = 1e6;
   const antes = structuredClone(p);

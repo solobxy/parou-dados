@@ -33,7 +33,7 @@ export function newPlayer(id, now, world, opts = {}) {
     port: [], air: null, stock: CFG.drugs.map(() => 0), club: null, bro: null, stk: CFG.stocks.list.map(() => ({ n: 0, cost: 0, gen: 0 })),
     weapon: -1, armor: -1, guard: -1, hmT: [], hmSafe: 0,
     luxuries: 0,
-    gang: null, gb: null, gangLeft: 0, gh: [], gbz: gbzNew(),
+    gang: null, gb: null, gangLeft: 0, gbotLeft: 0, gh: [], gbz: gbzNew(),
     detoxT: [],
     xp: { F: 0, I: 0, C: 0 },
     wk: CFG.crimes.map(() => 0),   // sucessos por golpe (mestria)
@@ -78,6 +78,7 @@ function migrate(p) {
   if (typeof p.gang !== 'string') p.gang = null;
   if (!p.gang || !p.gb || typeof p.gb !== 'object') p.gb = null;
   if (!Number.isSafeInteger(p.gangLeft)) p.gangLeft = 0;
+  if (!Number.isSafeInteger(p.gbotLeft)) p.gbotLeft = 0;
   if (!Number.isInteger(p.guard)) p.guard = -1;
   if (!Array.isArray(p.hmT)) p.hmT = [];
   if (!Number.isSafeInteger(p.hmSafe)) p.hmSafe = 0;
@@ -170,6 +171,13 @@ function pay(p, amount) {
 // Quem é de que gangue, o cofre e os níveis vivem no servidor, que escreve aqui o bónus de cada membro.
 const gbp = (p, k) => (p.gb && Number.isSafeInteger(p.gb[k]) ? p.gb[k] : 0);
 export function gangBonus(sede, armaria) { const G = CFG.gang; return { loot: G.lootBpPer * sede, atk: G.fightBpPer * armaria, def: G.fightBpPer * armaria }; }
+// da mesma gangue a sério: a gangue da rua (a do bot) não protege os membros uns dos outros nem dá descontos entre eles
+export const sameCrew = (a, d) => !!a && !!d && !!a.gang && a.gang === d.gang && a.gang !== CFG.gang.bot.id;
+// entrar na gangue da rua: as regras de qualquer gangue, e quem saiu dela só volta ao fim de 24 h
+export function gangBotCanJoin(p, now) {
+  gangCanJoin(p, now);
+  if (p.gbotLeft && now - p.gbotLeft < CFG.gang.bot.rejoinMs) fail('BOT_GANG_WAIT', { until: p.gbotLeft + CFG.gang.bot.rejoinMs });
+}
 export function gangSlots(sede) { return CFG.gang.baseMembers + CFG.gang.perSede * sede; }
 export function gangCanJoin(p, now) {
   if (p.gang) fail('IN_GANG');
@@ -190,6 +198,7 @@ export function gangLeave(p, now) {
   for (let k = 0; k < p.gbz.length; k++) { settleGbz(p, k, Math.max(now, p.gbz[k].t)); stored += p.gbz[k].stored; inv += p.gbz[k].inv; }
   const refund = Math.floor((inv * CFG.gang.bizRefundBp) / 10000);
   p.cash += stored + refund; p.gbz = gbzNew();
+  if (p.gang === CFG.gang.bot.id) p.gbotLeft = now;
   p.gang = null; p.gb = null; p.gangLeft = now;
   return { refund, stored, invested: inv };
 }
@@ -921,7 +930,7 @@ export function venueView(p, now) {
 // Nunca abaixo do custo.
 export function venuePriceBp(owner, kind, buyer) {
   const v = owner[kind], V = CFG.venue;
-  const bp = buyer && buyer.gang && buyer.gang === owner.gang ? cut(V.prices[v.pi], V.gdisc[v.gd]) : V.prices[v.pi];
+  const bp = sameCrew(buyer, owner) ? cut(V.prices[v.pi], V.gdisc[v.gd]) : V.prices[v.pi];
   return Math.max(venueFloor(kind), bp);
 }
 export function clubPriceAt(owner, buyer, d) { return Math.max(1, Math.floor((CFG.drugs[d].price * venuePriceBp(owner, 'club', buyer)) / 10000)); }
@@ -1154,7 +1163,7 @@ function hospitalize(p, now, ms, asVictim) {
 export function canAttack(a, d, now, world, drop = false) {
   const P = CFG.pvp;
   if (a === d || a.id === d.id) return 'SELF';
-  if (a.gang && a.gang === d.gang) return 'SAME_GANG';   // ninguém ataca a própria gangue
+  if (sameCrew(a, d)) return 'SAME_GANG';   // ninguém ataca a própria gangue (a gangue da rua não conta)
   if (now - world.start < CFG.round.noPvpMs) return 'NO_PVP_YET';
   if (a.jailUntil > now) return 'IN_JAIL';
   if (a.hospUntil > now) return 'IN_HOSPITAL';
@@ -1178,7 +1187,7 @@ export function hitmanLeft(a, now) { return Math.max(0, CFG.hitman.perDay - a.hm
 export function canHitman(a, d, now, world, drop = false) {
   const P = CFG.pvp, H = CFG.hitman;
   if (a === d || a.id === d.id) return 'SELF';
-  if (a.gang && a.gang === d.gang) return 'SAME_GANG';
+  if (sameCrew(a, d)) return 'SAME_GANG';
   if (now - world.start < CFG.round.noPvpMs) return 'NO_PVP_YET';
   if (level(a) < H.minLevel) return 'LOW_LEVEL';
   if (a.shieldUntil > now && !drop) return 'YOU_ARE_NEW';
@@ -1339,6 +1348,7 @@ export function hitJoin(a, d, now, world, drop = false) {
   begin(a, now, world);
   touch(d, now);
   if (!a.gang) fail('NO_GANG');
+  if (a.gang === CFG.gang.bot.id) fail('BOT_GANG_NO');   // a gangue da rua não faz tareias em grupo
   if (a.gang === d.gang) fail('SAME_GANG');
   const why = canAttack(a, d, now, world, drop);
   if (why) fail(why);
@@ -1873,6 +1883,7 @@ export function checkInvariants(p) {
   if (!Number.isInteger(p.guard) || p.guard < -1 || p.guard >= CFG.guards.length) bad.push('guard');
   if (!Array.isArray(p.hmT) || p.hmT.length > CFG.hitman.perDay || p.hmT.some((t) => !Number.isSafeInteger(t)) || !Number.isSafeInteger(p.hmSafe) || p.hmSafe < 0) bad.push('hitman');
   if ((p.gang === null) !== (p.gb === null)) bad.push('gang/gb');
+  if (!Number.isSafeInteger(p.gbotLeft) || p.gbotLeft < 0) bad.push('gbotLeft');
   if (!Array.isArray(p.gbz) || p.gbz.length !== CFG.gang.biz.length) bad.push('gang biz');
   else p.gbz.forEach((s, k) => {
     for (const f of ['inv', 'coop', 'stored', 'rem', 't']) if (!Number.isSafeInteger(s[f]) || s[f] < 0) bad.push(`gbz.${f}=${s[f]}`);

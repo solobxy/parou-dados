@@ -108,7 +108,7 @@ function contas(kind, a0, a, d0, d, t, res, arg) {
     case 'hitman': {
       const H = CFG.hitman, preco = Math.max(H.priceMin, d0.respect * H.pricePerRespect);
       if (dm !== -preco || res.price !== preco || dr !== 0) bad('assassino: quem paga só perde o preço');
-      if (a0.gang && a0.gang === d0.gang) bad('assassino na própria gangue');
+      if (E.sameCrew(a0, d0)) bad('assassino na própria gangue');
       if (E.level(a0) < H.minLevel || d0.respect * 10000 < a0.respect * CFG.pvp.minTargetBp || d0.shieldUntil > t || d0.hmSafe > t || d0.hospUntil > t) bad('assassino contra quem não podia');
       if (a.hmT.length > H.perDay || a.hmT.filter((x) => x > t - CFG.pvp.windowMs).length > H.perDay) bad('assassino: mais de 3 por dia');
       if (res.chanceBp !== Math.max(H.minBp, H.baseBp - (d0.guard >= 0 ? CFG.guards[d0.guard].block : 0))) bad('assassino: pontaria');
@@ -123,7 +123,7 @@ function contas(kind, a0, a, d0, d, t, res, arg) {
       const max = Math.floor((d0.cash * CFG.pvp.mugBp) / 10000) + E.bizStored(d0, t).reduce((x, y, i) => x + (CFG.biz[i].raid ? Math.floor((y.money * CFG.pvp.mugBp) / 10000) : 0), 0) + ['club', 'bro'].reduce((x, k) => x + (vv[k] ? Math.floor((vv[k].till * CFG.pvp.mugBp) / 10000) : 0), 0);
       if (dm < 0 || dm > max || wealth(d) > wealth(d0) || d.bank !== d0.bank) bad('assalto');
       if (d0.cash - d.cash > dm) bad('o alvo perdeu mais do que o atacante ganhou');
-      if (a0.gang && a0.gang === d0.gang) bad('atacou a própria gangue');
+      if (E.sameCrew(a0, d0)) bad('atacou a própria gangue');
       if (res.win && res.mode === 'mug' && wealth(d0) - wealth(d) + ['club', 'bro'].reduce((x, k) => x + (vv[k] ? vv[k].till - d[k].till : 0), 0) + E.bizStored(d0, t).reduce((x, y, i) => x + y.money - d.biz[i].stored, 0) !== dm) bad('o que saiu do alvo não é o que entrou no atacante');
       if (res.win && res.mode === 'mug' && dm !== res.money) bad('saque diferente do resultado');
       if (Math.abs(dr) > MAX_PVP || Math.abs(d.respect - d0.respect) > MAX_PVP) bad('respeito da luta fora dos limites');
@@ -146,7 +146,7 @@ function contas(kind, a0, a, d0, d, t, res, arg) {
     case 'broHire': { const g = CFG.hookers.list[arg]; if (dm !== -CFG.venue.bro.hire[g.tier] || dr !== 0 || a.bro.girls.length !== a0.bro.girls.length + 1 || a.bro.girls.length > CFG.venue.bro.rooms[a.bro.lvl - 1]) bad('contratar'); break; }
     case 'clubBuyAt': { const v = E.venueView(d0, Math.max(t, d0.t));
       if (dm !== -res.price || dr !== 0 || d.club.till !== v.club.till + res.price || d.stock[arg] !== v.stock[arg] - 1 || wealth(d) !== wealth(d0) || d.respect !== d0.respect) bad('compra na discoteca de outro');
-      if (res.price < E.wholesale(arg) || res.price > Math.floor((CFG.drugs[arg].price * 12000) / 10000) || (a0.gang !== d0.gang || !a0.gang ? res.price !== Math.max(1, Math.floor((CFG.drugs[arg].price * CFG.venue.prices[d0.club.pi]) / 10000)) : false)) bad('preço na discoteca de outro');
+      if (res.price < E.wholesale(arg) || res.price > Math.floor((CFG.drugs[arg].price * 12000) / 10000) || (!E.sameCrew(a0, d0) ? res.price !== Math.max(1, Math.floor((CFG.drugs[arg].price * CFG.venue.prices[d0.club.pi]) / 10000)) : false)) bad('preço na discoteca de outro');
       break; }
     case 'broVisitAt': { const v = E.venueView(d0, Math.max(t, d0.t));
       if (dm !== -res.price || dr !== 0 || d.bro.till !== v.bro.till + res.house || wealth(d) !== wealth(d0) || d.respect !== d0.respect) bad('visita ao bordel de outro');
@@ -188,7 +188,7 @@ for (let n = 0; n < ACTIONS; n++) {
     if (r.chance(700) && !q.club) { q.club = { lvl: r.int(1, 8), till: 0, t: q.t, rem: 0, pi: r.int(0, 4), gd: r.int(0, 3) }; q.stock[r.int(0, CFG.drugs.length - 1)] += r.int(1, 40); q.stock[r.int(0, CFG.drugs.length - 1)] += r.int(1, 40); }
     if (r.chance(700) && !q.bro) { const lvl = r.int(1, 5); q.bro = { lvl, till: 0, t: q.t, rem: 0, pi: r.int(0, 4), gd: r.int(0, 3), girls: Array.from({ length: r.int(1, CFG.venue.bro.rooms[lvl - 1]) }, () => r.int(0, CFG.hookers.list.length - 1)) }; }
   }
-  if (r.chance(400) && !p.gang) E.gangSet(p, 'g' + r.int(1, 3), r.int(1, 5), r.int(0, 5)); // o servidor pôs-te numa gangue (para os golpes e tareias em grupo terem quem os faça)
+  if (r.chance(400) && !p.gang) { if (r.chance(3000)) E.gangSet(p, CFG.gang.bot.id, 1, 0); else E.gangSet(p, 'g' + r.int(1, 3), r.int(1, 5), r.int(0, 5)); } // o servidor pôs-te numa gangue (para os golpes e tareias em grupo terem quem os faça)
   if (r.chance(2500)) { p.energy = r.int(0, CFG.energy.max); p.energyT = Math.min(p.energyT, p.t); } // gasta stamina para chegar à discoteca, às putas e ao hospital
   const before = touched(p, t), beforeD = touched(d, t), origD = structuredClone(d), origP = structuredClone(p);
   const kind = pick(['stockBuy', 'stockBuy', 'stockBuy', 'stockSell', 'stockSell', 'missionSwap', 'venueBuy', 'venueBuy', 'venueSet', 'venueCollect', 'stockUse', 'stockUse', 'stockDump', 'broHire', 'broHire', 'broFire', 'clubBuyAt', 'clubBuyAt', 'clubBuyAt', 'broVisitAt', 'broVisitAt', 'broVisitAt', 'casino', 'casino', 'table', 'heist', 'hit', 'gangCreate', 'gangDonate', 'gangLeave', 'gangBiz', 'gangBiz', 'gangBiz', 'gangBizCollect', 'hitman', 'hitman', 'hitman', 'crime', 'crimeAll', 'drug', 'refill', 'detox', 'claim', 'class', 'classChange', 'classChange', 'air', 'air', 'airCollect', 'airCollect', 'bailFor', 'bailFor', 'medicFor', 'medicFor', 'avatar', 'hooker', 'cure', 'house', 'houseUp', 'train', 'buyBiz', 'collect', 'port', 'collectPort', 'deposit', 'withdraw', 'gear', 'attack', 'bail', 'medic', 'luxury']);
