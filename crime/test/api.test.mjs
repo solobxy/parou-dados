@@ -465,12 +465,12 @@ test('bolsa: preços iguais para todos, compra e venda ao preço que se viu, e o
   assert.equal(ma.hist.length, 6); assert.equal(ma.hist[0].length, ma.tick + 1); assert.equal(ma.hist[2].at(-1), ma.prices[2]); assert.ok(ma.nextAt > ma.now && ma.nextAt - ma.now <= 10 * 60000);
   if (mb.tick === ma.tick) assert.deepEqual(mb.prices, ma.prices);
   const k = 2, preco = ma.prices[k], a0 = (await A.estado());
-  assert.deepEqual(a0.stk[k], { n: 0, cost: 0, value: 0 }); assert.ok(a0.stockCap > 0);
+  assert.deepEqual(a0.stk[k], { n: 0, cost: 0, value: 0, tp: 0, sl: 0 }); assert.ok(a0.stockCap > 0);
   // preço diferente do que está: não compra
   let r = await ag(A, '10.0.9.90', { type: 'stockBuy', k, n: 10, price: preco + 1 }); assert.equal(r.body.error, 'PRICE_CHANGED'); assert.equal((await A.estado()).cash, 100_000);
   r = await ag(A, '10.0.9.90', { type: 'stockBuy', k, n: 10, price: preco }); assert.equal(r.status, 200, JSON.stringify(r.body));
   const bruto = Math.ceil((10 * preco) / 100), pago = bruto + Math.ceil(bruto / 100);
-  assert.equal(r.body.result.paid, pago); assert.equal(r.body.me.cash, 100_000 - pago); assert.deepEqual(r.body.me.stk[k], { n: 10, cost: pago, value: Math.floor((10 * preco) / 100) });
+  assert.equal(r.body.result.paid, pago); assert.equal(r.body.me.cash, 100_000 - pago); assert.deepEqual(r.body.me.stk[k], { n: 10, cost: pago, value: Math.floor((10 * preco) / 100), tp: 0, sl: 0 });
   r = await ag(A, '10.0.9.90', { type: 'stockSell', k, n: 11 }); assert.equal(r.body.error, 'NO_SHARES');
   r = await ag(A, '10.0.9.90', { type: 'stockBuy', k: 9, n: 1 }); assert.equal(r.body.error, 'NO_STOCK_CO');
   r = await ag(A, '10.0.9.90', { type: 'stockBuy', k, n: 0 }); assert.equal(r.body.error, 'BAD_AMOUNT');
@@ -479,7 +479,7 @@ test('bolsa: preços iguais para todos, compra e venda ao preço que se viu, e o
   const m2 = await get(A, '10.0.9.90', '/api/stocks'); if (m2.tick === ma.tick) { assert.deepEqual(m2.prices, ma.prices); assert.deepEqual(m2.hist, ma.hist); }
   assert.equal((await A.estado()).stk[k].n, 10);
   r = await ag(A, '10.0.9.90', { type: 'stockSell', k, n: 10, price: m2.prices[k] }); assert.equal(r.status, 200, JSON.stringify(r.body));
-  const v = Math.floor((10 * m2.prices[k]) / 100); assert.equal(r.body.result.got, v - Math.min(v, Math.ceil(v / 100))); assert.equal(r.body.me.cash, 100_000 - pago + r.body.result.got); assert.deepEqual(r.body.me.stk[k], { n: 0, cost: 0, value: 0 });
+  const v = Math.floor((10 * m2.prices[k]) / 100); assert.equal(r.body.result.got, v - Math.min(v, Math.ceil(v / 100))); assert.equal(r.body.me.cash, 100_000 - pago + r.body.result.got); assert.deepEqual(r.body.me.stk[k], { n: 0, cost: 0, value: 0, tp: 0, sl: 0 });
 });
 
 async function mexer(muda) {
@@ -754,4 +754,60 @@ test('gangues: golpe em grupo e tareia em grupo — alinhar, falta de gente devo
   const evV = await (await fetch(BASE + '/api/events', { headers: { cookie: V.cookie, 'X-Forwarded-For': ips.V } })).json();
   assert.equal(evV.list[0].k, 'attacked'); assert.equal(evV.list[0].by, '[GLP] Golpistas'); assert.equal(evV.list[0].crew, 2);
   assert.equal(a2.cash, (await A.estado()).cash);
+});
+
+test('bolsa: limites de venda — recusa limites do lado errado, guarda-os e vende sozinho no passo seguinte, com aviso', async () => {
+  ENV_EXTRA = { ATOS_3S: '100000', ATOS_MIN: '1000000' };
+  const A = await contaNova('LimiteA', '10.0.9.110'); await A.estado();
+  await mexer({ LimiteA: (e) => { e.cash = 100_000; e.bank = 0; e.respect = 3000; e.peakRespect = 3000; } });
+  const ip = '10.0.9.110', ag = (body) => cru(A.cookie, ip, body), get = async (path) => (await fetch(BASE + path, { headers: { cookie: A.cookie, 'X-Forwarded-For': ip } })).json();
+  const m = await get('/api/stocks'), k = 0, pr = m.prices[k];
+  let r = await ag({ type: 'stockLimit', k, tp: pr + 100, sl: 0 }); assert.equal(r.body.error, 'NO_SHARES');
+  r = await ag({ type: 'stockBuy', k, n: 20, price: pr }); assert.equal(r.status, 200, JSON.stringify(r.body)); const pago = r.body.result.paid;
+  r = await ag({ type: 'stockLimit', k, tp: pr, sl: 0 }); assert.equal(r.body.error, 'BAD_LIMIT');
+  r = await ag({ type: 'stockLimit', k, tp: 0, sl: pr }); assert.equal(r.body.error, 'BAD_LIMIT');
+  for (const x of ['x', -1, 0.5, null, 1e13]) { r = await ag({ type: 'stockLimit', k, tp: x, sl: 0 }); assert.equal(r.body.error, 'BAD_AMOUNT'); }
+  r = await ag({ type: 'stockLimit', k: 9, tp: pr * 2, sl: 0 }); assert.equal(r.body.error, 'NO_STOCK_CO');
+  r = await ag({ type: 'stockLimit', k, tp: pr * 3, sl: Math.floor(pr / 3) }); assert.equal(r.status, 200, JSON.stringify(r.body));
+  assert.equal(r.body.me.stk[k].tp, pr * 3); assert.equal(r.body.me.stk[k].sl, Math.floor(pr / 3)); assert.equal(r.body.me.cash, 100_000 - pago);
+  // com o servidor parado: recua o mercado um passo e deixa o alvo abaixo de qualquer preço. No passo em falta, vende tudo ao preço desse passo.
+  await parar();
+  { const db = new DatabaseSync(join(dir, 'jogo.db'));
+    const id = db.prepare('SELECT id FROM contas WHERE nome = ?').get('LimiteA').id, row = db.prepare('SELECT ronda, estado FROM jogadores WHERE conta = ?').get(id);
+    const e = JSON.parse(row.estado); e.stk[k].tp = 1; delete e.stk[k].sl; db.prepare('UPDATE jogadores SET estado = ? WHERE conta = ? AND ronda = ?').run(JSON.stringify(e), id, row.ronda);
+    const b = JSON.parse(db.prepare('SELECT dados FROM bolsa WHERE ronda = ?').get(row.ronda).dados); b.tick -= 1; b.hist.pop();
+    db.prepare('UPDATE bolsa SET dados = ? WHERE ronda = ?').run(JSON.stringify(b), row.ronda); db.close(); }
+  await arrancar();
+  const depois = await A.estado(), m2 = await get('/api/stocks'), bruto = Math.floor((20 * m2.prices[k]) / 100), recebe = bruto - Math.min(bruto, Math.ceil(bruto / 100));
+  assert.deepEqual(depois.stk[k], { n: 0, cost: 0, value: 0, tp: 0, sl: 0 }); assert.equal(depois.cash, 100_000 - pago + recebe);
+  const ev = (await get('/api/events')).list.find((x) => x.k === 'stAuto');
+  assert.ok(ev, 'ficou o aviso'); assert.equal(ev.why, 'tp'); assert.equal(ev.n, 20); assert.equal(ev.money, recebe); assert.equal(ev.profit, recebe - pago); assert.equal(ev.c, 'docas');
+  // depois de reiniciar não volta a vender nem a pagar
+  await mexer({}); assert.equal((await A.estado()).cash, 100_000 - pago + recebe);
+});
+
+test('fábricas e contabilista: produção em droga para a stash, armazém de 24 h com a parte dele, e nada disto se faz sem ter o negócio ou o nível', async () => {
+  ENV_EXTRA = { ATOS_3S: '100000', ATOS_MIN: '1000000' };
+  const A = await contaNova('Fabrica', '10.0.9.111'); await A.estado();
+  const ip = '10.0.9.111', ag = (body) => cru(A.cookie, ip, body), cfg = await (await fetch(BASE + '/api/config')).json();
+  const iErva = cfg.biz.findIndex((x) => x.id === 'erva'), iLav = cfg.biz.findIndex((x) => x.id === 'lavandaria'), d = cfg.biz[iErva].drug;
+  assert.ok(d >= 0 && cfg.drugs[d].id === 'erva'); assert.equal(cfg.biz[iLav].drug, -1); assert.deepEqual(cfg.accountant, { price: 25000, minLevel: 3, capMult: 3, feeBp: 1000 });
+  let r = await ag({ type: 'acct' }); assert.equal(r.body.error, 'LOW_LEVEL');
+  r = await ag({ type: 'bizGoods', i: iErva, on: true }); assert.equal(r.body.error, 'NO_BIZ');
+  await mexer({ Fabrica: (e) => { e.cash = 1_000_000; e.bank = 0; e.respect = 3000; e.peakRespect = 3000; } });
+  r = await ag({ type: 'buyBiz', i: iErva }); assert.equal(r.status, 200, JSON.stringify(r.body));
+  r = await ag({ type: 'bizGoods', i: iLav, on: true }); assert.equal(r.body.error, 'NO_BIZ');
+  for (const x of [-1, 99, 'a', 0.5]) { r = await ag({ type: 'bizGoods', i: x, on: true }); assert.equal(r.body.error, 'NO_BIZ'); }
+  r = await ag({ type: 'bizGoods', i: iErva, on: true }); assert.equal(r.status, 200, JSON.stringify(r.body)); assert.equal(r.body.me.biz[iErva].g, true); assert.equal(r.body.me.acct, false);
+  r = await ag({ type: 'acct' }); assert.equal(r.status, 200, JSON.stringify(r.body)); assert.equal(r.body.me.acct, true); const c1 = r.body.me.cash;
+  r = await ag({ type: 'acct' }); assert.equal(r.body.error, 'ACCT_HAVE'); assert.equal((await A.estado()).cash, c1);
+  // 20 h depois (recuando o relógio do negócio): há 20 h guardadas, a parte dele é 10% das 12 h a mais e o resto sai em erva ao preço de grosso
+  await mexer({ Fabrica: (e) => { e.biz[iErva].t -= 20 * 3600_000; e.biz[iErva].stored = 0; e.biz[iErva].rem = 0; } });
+  const me = await A.estado(), perH = me.biz[iErva].perH, guardado = me.biz[iErva].stored, taxa = me.biz[iErva].fee;
+  assert.ok(guardado >= perH * 20 && guardado <= perH * 20 + perH, 'guardado ' + guardado); assert.equal(taxa, Math.floor(((guardado - perH * 8) * 1000) / 10000));
+  r = await ag({ type: 'collect' }); assert.equal(r.status, 200, JSON.stringify(r.body));
+  const it = r.body.result.items.find((x) => x.biz === 'erva'), grosso = Math.max(1, Math.floor((cfg.drugs[d].price * cfg.goods.wholesaleBp) / 10000));
+  assert.equal(it.fee, taxa); assert.ok(it.lost === 0 || it.lost === Math.floor((guardado - taxa) / 2)); assert.equal(it.money, guardado - taxa - it.lost);
+  assert.equal(it.units, Math.floor(it.money / grosso)); assert.equal(it.rest, it.money - it.units * grosso);
+  assert.equal(r.body.me.stock[d], it.units); assert.equal(r.body.me.cash, c1 + it.rest, 'em dinheiro só entra o troco');
 });

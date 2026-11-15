@@ -130,7 +130,7 @@ export const CFG = {
   },
   // mudar de profissão: custa o que rendem 100 de stamina no teu melhor golpe e só dá uma vez a cada 24 h, para ninguém trocar antes de cada jogada
   classChange: { energy: 100, min: 500, coolMs: 24 * HOUR },
-  avatars: 32,
+  avatars: 62,
   // casino: só com o dinheiro que tens na mão. A casa ganha sempre um pouco (roleta 2,7%, dados 3–4%, blackjack ~1%).
   casino: {
     minBet: 10, maxBase: 1000, maxNum: 8, maxDen: 5, // aposta máxima por jogada = 1000 × 1,6^(nível−1), como o porto
@@ -219,13 +219,22 @@ export const CFG = {
     lootBpPer: 200, fightBpPer: 300,                          // +2% de saque por nível de sede; +3% de ataque e defesa por nível de armaria
     donateMin: 100, rejoinMs: 1 * HOUR, chatMax: 200,
     // Golpes em grupo: um membro abre, os outros alinham (cada um paga a stamina ao alinhar) e ao fim de 2 minutos resolve-se.
-    // A dificuldade compara-se com a soma das stats de quem foi; o saque é por cabeça. No máximo 3 por jogador em 24 h.
+    // A dificuldade compara-se com a soma das stats de quem foi; o saque é por cabeça. Não há limite por dia: quem trava é a stamina
+    // de cada um e a pausa de 5 minutos da gangue entre operações. Contas: por ponto de stamina, um golpe em grupo dá no máximo
+    // cerca de 1,9× o melhor golpe a solo (3150 contra 1600), e só com 5 pessoas em linha numa gangue com a sede no nível 5.
+    // Os novos entram no fim da lista para os números dos antigos não mudarem; no ecrã aparecem por ordem de dificuldade.
     heists: [
       { id: 'carrinha', need: 2, sede: 1, e: 20, D: 150, min: 3000, max: 4500, r: 14, jailMin: 6, bailAs: 5, w: { I: 40, F: 60, C: 0 } },
       { id: 'casino', need: 3, sede: 2, e: 30, D: 450, min: 16000, max: 24000, r: 22, jailMin: 9, bailAs: 8, w: { I: 50, F: 0, C: 50 } },
       { id: 'banco', need: 4, sede: 3, e: 40, D: 1000, min: 75000, max: 105000, r: 30, jailMin: 10, bailAs: 9, w: { I: 40, F: 30, C: 30 } },
+      { id: 'ourivesaria', need: 2, sede: 1, e: 25, D: 320, min: 8000, max: 12000, r: 18, jailMin: 7, bailAs: 6, w: { I: 60, F: 10, C: 30 } },
+      { id: 'comboio', need: 3, sede: 2, e: 35, D: 750, min: 38000, max: 54000, r: 26, jailMin: 9, bailAs: 8, w: { I: 30, F: 60, C: 10 } },
+      { id: 'leilao', need: 3, sede: 3, e: 35, D: 900, min: 55000, max: 75000, r: 28, jailMin: 9, bailAs: 8, w: { I: 40, F: 0, C: 60 } },
+      { id: 'aeroporto', need: 4, sede: 4, e: 45, D: 1500, min: 100000, max: 135000, r: 34, jailMin: 10, bailAs: 9, w: { I: 50, F: 40, C: 10 } },
+      { id: 'cartel', need: 5, sede: 5, e: 50, D: 2000, min: 120000, max: 160000, r: 38, jailMin: 10, bailAs: 9, w: { I: 20, F: 70, C: 10 } },
+      { id: 'moeda', need: 5, sede: 5, e: 50, D: 2600, min: 135000, max: 180000, r: 42, jailMin: 10, bailAs: 9, w: { I: 50, F: 20, C: 30 } },
     ],
-    heistPerDay: 3, opMs: 2 * MIN, hitMs: 90 * 1000, opCoolMs: 5 * MIN, opMax: 8,
+    opMs: 2 * MIN, hitMs: 90 * 1000, opCoolMs: 5 * MIN, opMax: 8,
     // Tareia em grupo: soma-se o ataque de todos (a 85%), o alvo só vai uma vez para o hospital (30 min) e só perde respeito uma vez;
     // cada atacante ganha 70% do que ganharia sozinho, com o mesmo desconto por repetir o alvo.
     hitNeed: 2, hitTeamBp: 8500, hitShareBp: 7000, hitHospBp: 15000,
@@ -267,6 +276,9 @@ export const CFG = {
     stepNum: 26, stepDen: 25, maxSteps: 60, coolMs: 1 * HOUR,
     sickCutBp: 1500, // doente: −15% em todas as stats até se tratar
     cureMin: 40, cureValueBp: 1000, // tratar custa o que rendem 10 de stamina
+    // rara: ela mete-te a mão (hipótese por categoria, da mais barata à mais cara). A carteira só leva o que tens na mão (o banco está a salvo);
+    // telemóvel, relógio e fio custam-te a reposição (sai da mão e depois do banco). Vale um múltiplo do preço da cidade dessa visita e sai do jogo: ninguém o recebe.
+    rob: { bp: [150, 110, 70, 40], items: [[['wallet', 1], 50], [['phone', 2], 25], [['watch', 3], 18], [['chain', 5], 7]] },
     list: [
       // quanto mais barata, menos stamina por visita e um pouco mais de risco de doença (no máximo 1%);
       // as de cima custam mais por ponto mas enchem de uma vez e quase sem risco.
@@ -312,10 +324,15 @@ export const CFG = {
   biz: [
     { id: 'lavandaria', price: 3000, perH: 125, resp: 6, stat: 'C', raid: false, toBank: true },
     { id: 'prostitutas', price: 8000, perH: 500, resp: 12, stat: 'C', raid: true, toBank: false },
-    { id: 'erva', price: 25000, perH: 1800, resp: 24, stat: 'I', raid: true, toBank: false },
-    { id: 'laboratorio', price: 120000, perH: 9600, resp: 45, stat: 'I', raid: true, toBank: false },
-    { id: 'coca', price: 500000, perH: 42000, resp: 90, stat: 'I', raid: true, toBank: false },
+    // drug: estes três são fábricas. O dono pode pedir a produção em droga (ao preço de grosso, para o armazém) em vez de dinheiro:
+    // vende-a na discoteca dele, toma-a ou despacha-a. É a mesma conta do porto com «receber em droga».
+    { id: 'erva', price: 25000, perH: 1800, resp: 24, stat: 'I', raid: true, toBank: false, drug: 'erva' },
+    { id: 'laboratorio', price: 120000, perH: 9600, resp: 45, stat: 'I', raid: true, toBank: false, drug: 'ecstasy' },
+    { id: 'coca', price: 500000, perH: 42000, resp: 90, stat: 'I', raid: true, toBank: false, drug: 'coca' },
   ],
+  // Contabilista: contrato pago uma vez por ronda. Com ele o armazém dos negócios aguenta 24 h em vez de 8 h;
+  // do que passar das 8 h normais (dinheiro que sem ele se perdia) fica com 10%. Nunca tira nada a quem recolhe a horas.
+  accountant: { price: 25000, minLevel: 3, capMult: 3, feeBp: 1000 },
 
   // Porto: contentor volta ao fim de 4 h com +30%, ou é apreendido (15%).
   port: { ms: 4 * HOUR, gainBp: 3000, seizeBp: 1500, minAmount: 100, capBase: 1000, capNum: 8, capDen: 5, slotsEveryLevels: 5 }, // limite por contentor: 1000 × 1,6^(nível−1)

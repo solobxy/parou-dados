@@ -549,8 +549,8 @@ test('profissão: escolhe-se uma vez e muda as contas', () => {
   assert.ok(E.attackPower(m, START) > E.attackPower(mk(), START));
   const v = mk(); E.setClass(v, START, W, 'vigarista');
   assert.ok(E.bustChanceBp(v, START) < CFG.bustBp);
-  E.setAvatar(v, START, W, 31); assert.equal(v.av, 31);
-  assert.throws(() => E.setAvatar(v, START, W, 32), (e) => e.code === 'NO_AVATAR');
+  E.setAvatar(v, START, W, CFG.avatars - 1); assert.equal(v.av, CFG.avatars - 1);
+  assert.throws(() => E.setAvatar(v, START, W, CFG.avatars), (e) => e.code === 'NO_AVATAR');
   for (const p of [a, b, m, v]) assert.deepEqual(E.checkInvariants(p), []);
 });
 

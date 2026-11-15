@@ -469,8 +469,9 @@ main { padding-top: 12px; }
 .pbar { display: flex; align-items: center; height: 52px; padding: 0 6px; }
 .pbar .back { width: 44px; height: 44px; border: 0; background: transparent; color: var(--tx); font-size: 26px; line-height: 1; border-radius: 8px; }
 .pbar h1 { flex: 1; margin-right: 44px; text-align: center; font-family: var(--disp); font-weight: 900; font-size: 32px; line-height: 1; text-transform: uppercase; letter-spacing: .01em; }
-.pimg { height: 168px; overflow: hidden; }
-.pimg img { width: 100%; height: 100%; object-fit: cover; object-position: center 38%; display: block; }
+.pimg { height: 168px; overflow: hidden; background: var(--s1) center 38% / cover no-repeat; }
+.pimg img { width: 100%; height: 100%; object-fit: cover; object-position: center 38%; display: block; opacity: 0; transition: opacity .2s; }
+.pimg img.in { opacity: 1; }
 .psub { padding: 10px 16px 0; color: var(--tx2); font-size: 14px; }
 
 /* golpe escolhido */
@@ -1304,3 +1305,25 @@ h1.slogo { margin: 0; }
 .gbot p { margin: 0 0 8px; }
 .gbot .btn { min-height: 44px; }
 @media (max-width: 359px) { .gbot { grid-template-columns: 1fr; } .gbot .gbimg { width: 100%; height: 120px; } }
+
+/* fábricas: dinheiro ou droga; atalho para a stash; lista do contabilista; limites da bolsa */
+.item .seg.bzg { margin: 2px 0 0; padding: 3px; gap: 3px; }
+.item .seg.bzg button { min-height: 34px; font-size: 13px; padding: 0 4px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.item .seg.bzg button[aria-pressed='true'] { background: var(--s3); color: var(--tx); }
+.stlink { width: 100%; text-align: left; color: inherit; border: 0; font: inherit; margin-bottom: 10px; gap: 10px; }
+.stlink svg.i { color: var(--vice); }
+.bul { margin: 0; padding-left: 18px; display: grid; gap: 8px; color: var(--tx2); font-size: 15px; line-height: 1.4; }
+.seg.five.lim button { min-height: 44px; }
+.seg.five.lim button:disabled { opacity: .35; }
+
+/* golpes em grupo: imagem + nome + botão numa linha, os números por baixo a toda a largura */
+.gopl .gup.gop2 { display: grid; grid-template-columns: 56px minmax(0, 1fr) auto; grid-template-areas: "th nm bt" "th ln ln"; column-gap: 12px; row-gap: 2px; align-items: center; }
+.gop2 .gthumb { grid-area: th; align-self: start; }
+.gop2 .gnm { grid-area: nm; font-weight: 700; line-height: 1.2; }
+.gop2 > .btn, .gop2 > .glock { grid-area: bt; justify-self: end; }
+.gop2 .gln { grid-area: ln; line-height: 1.35; }
+@media (max-width: 359px) {
+  .gopl .gup.gop2 { grid-template-columns: 56px minmax(0, 1fr); grid-template-areas: "th nm" "th ln" "bt bt"; }
+  .gop2 > .btn { justify-self: stretch; margin-top: 8px; }
+  .gop2 > .glock { justify-self: start; margin-top: 4px; }
+}

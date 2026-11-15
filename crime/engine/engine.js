@@ -30,7 +30,7 @@ export function newPlayer(id, now, world, opts = {}) {
     hospTimes: [],
     hits: new Map(),
     biz: CFG.biz.map(() => ({ n: 0, stored: 0, rem: 0, t: now })),
-    port: [], air: null, stock: CFG.drugs.map(() => 0), club: null, bro: null, stk: CFG.stocks.list.map(() => ({ n: 0, cost: 0, gen: 0 })),
+    port: [], air: null, stock: CFG.drugs.map(() => 0), club: null, bro: null, stk: CFG.stocks.list.map(() => ({ n: 0, cost: 0, gen: 0 })), acct: false,
     weapon: -1, armor: -1, guard: -1, hmT: [], hmSafe: 0,
     luxuries: 0,
     gang: null, gb: null, gangLeft: 0, gbotLeft: 0, gh: [], gbz: gbzNew(),
@@ -46,6 +46,7 @@ export function newPlayer(id, now, world, opts = {}) {
 
 // jogadores gravados antes de uma regra nova ganham os campos que faltam
 function migrate(p) {
+  if (typeof p.acct !== 'boolean') p.acct = false;
   if (!Array.isArray(p.detoxT)) p.detoxT = [];
   if (!p.xp) p.xp = { F: 0, I: 0, C: 0 };
   if (!Array.isArray(p.wk)) p.wk = CFG.crimes.map(() => 0);
@@ -83,7 +84,7 @@ function migrate(p) {
   if (!Array.isArray(p.hmT)) p.hmT = [];
   if (!Number.isSafeInteger(p.hmSafe)) p.hmSafe = 0;
   if (!Array.isArray(p.gbz) || p.gbz.length !== CFG.gang.biz.length) p.gbz = gbzNew();
-  if (!Array.isArray(p.gh)) p.gh = [];
+  p.gh = [];   // (antigo contador de golpes em grupo por dia: já não há limite)
 }
 
 // ---------- tempo ----------
@@ -543,16 +544,26 @@ export function visitHooker(p, now, world, i, rng) {
   if (p.energy >= CFG.energy.max) fail('ENERGY_FULL');
   const price = hookerPrice(p, i, now);
   pay(p, price);
-  return { ok: true, price, ...doVisit(p, i, now, rng) };
+  return { ok: true, price, ...doVisit(p, i, now, rng, price) };
 }
-function doVisit(p, i, now, rng) {
+function doVisit(p, i, now, rng, base) {
   const g = CFG.hookers.list[i];
   const got = Math.min(g.e, CFG.energy.max - p.energy);
   p.energy += got;
   p.hkN[i] = Math.min(CFG.hookers.maxSteps, hookerSteps(p, i, now) + 1); p.hkAt[i] = now;   // a hora conta a partir da última visita a ela
   const sick = rng.chance(cut(g.sickBp, klass(p).sickCutBp || 0));
   if (sick) p.sick = true;
-  return { energy: got, sick };
+  return { energy: got, sick, rob: hookerRob(p, i, base, rng) };
+}
+// rara: ela rouba-te. Só perdes (ninguém recebe) e nunca mais do que tens: a carteira é só o dinheiro na mão, o resto sai da mão e depois do banco.
+function hookerRob(p, i, base, rng) {
+  const R = CFG.hookers.rob;
+  if (!rng.chance(R.bp[CFG.hookers.list[i].tier])) return null;
+  const [kind, mult] = pickW(rng, R.items);
+  const loss = Math.min(kind === 'wallet' ? p.cash : p.cash + p.bank, base * mult);
+  if (!(loss > 0)) return null;
+  const fromCash = Math.min(p.cash, loss); p.cash -= fromCash; p.bank -= loss - fromCash;
+  return { kind, loss };
 }
 export function cureCost(p) {
   return p.sick ? Math.max(CFG.hookers.cureMin, Math.floor((Math.floor(valuePerEnergy(p) * 100) * CFG.hookers.cureValueBp) / 10000)) : 0;
@@ -740,12 +751,21 @@ export function bizRates(p, i) {
   return { perH };
 }
 
+// quanto tempo de rendimento cabe no armazém: 8 h, ou 24 h com contabilista
+export const bizCapMs = (p) => CFG.storageMs * (p.acct ? CFG.accountant.capMult : 1);
+// a parte do contabilista: uma fatia do que está guardado acima do armazém normal (o que sem ele se tinha perdido)
+export function bizFee(p, i, stored) {
+  if (!p.acct) return 0;
+  const capN = bizRates(p, i).perH * (CFG.storageMs / T.HOUR);
+  return stored > capN ? Math.floor(((stored - capN) * CFG.accountant.feeBp) / 10000) : 0;
+}
+const BIZ_DRUG = CFG.biz.map((b) => (b.drug ? CFG.drugs.findIndex((x) => x.id === b.drug) : -1));
 function settleBiz(p, i, now) {
   const s = p.biz[i];
   if (s.n === 0 || now <= s.t) { s.t = Math.max(s.t, now); return; }
   const { perH } = bizRates(p, i);
-  const capM = perH * (CFG.storageMs / T.HOUR);
-  const dt = Math.min(now - s.t, CFG.storageMs);
+  const capM = perH * (bizCapMs(p) / T.HOUR);
+  const dt = Math.min(now - s.t, bizCapMs(p));
   if (s.stored < capM) {
     const tot = s.rem + perH * dt;
     const add = Math.floor(tot / T.HOUR);
@@ -763,7 +783,7 @@ export function bizStored(p, now) {
   const copy = p.biz.map((s) => ({ ...s }));
   const ghost = { ...p, biz: copy };
   for (let i = 0; i < copy.length; i++) settleBiz(ghost, i, Math.max(now, copy[i].t));
-  return copy.map((s) => ({ money: s.stored }));
+  return copy.map((s, i) => ({ money: s.stored, fee: bizFee(ghost, i, s.stored) }));
 }
 
 export function buyBiz(p, now, world, i) {
@@ -785,18 +805,40 @@ export function collectBiz(p, now, world, rng) {
   for (let i = 0; i < p.biz.length; i++) {
     const s = p.biz[i], b = CFG.biz[i];
     if (s.stored === 0) continue;
-    let money = s.stored, lost = 0;
+    const fee = bizFee(p, i, s.stored);
+    let money = s.stored - fee, lost = 0;
     if (b.raid && money > 0 && rng.chance(CFG.raid.chanceBp)) {
       lost = Math.floor((money * CFG.raid.lossBp) / 10000);
       money -= lost;
     }
     money = up(money, buffBp(p, 'biz', now));   // sob efeito, a recolha rende mais
-    if (b.toBank) p.bank += money; else p.cash += money;
-    out.push({ biz: b.id, money, lost });
+    if (s.g && BIZ_DRUG[i] >= 0) out.push({ biz: b.id, money, lost, fee, ...toGoods(p, BIZ_DRUG[i], money) });   // fábrica a entregar em droga: unidades para o armazém, o troco em dinheiro
+    else { if (b.toBank) p.bank += money; else p.cash += money; out.push({ biz: b.id, money, lost, fee }); }
     s.stored = 0;
   }
   if (out.length) p.c.collects += 1;
   return { ok: true, items: out };
+}
+
+// fábricas: escolher se a produção sai em dinheiro ou em droga (só os negócios com «drug» e só de quem os tem)
+export function bizGoods(p, now, world, i, on) {
+  if (!Number.isInteger(i) || !CFG.biz[i] || BIZ_DRUG[i] < 0) fail('NO_BIZ');
+  begin(p, now, world, { allowBusy: true });
+  if (!(p.biz[i].n > 0)) fail('NO_BIZ');
+  if (on === true) p.biz[i].g = true; else delete p.biz[i].g;
+  return { ok: true, i, on: on === true, d: BIZ_DRUG[i] };
+}
+// contratar o contabilista: paga-se uma vez e fica até ao fim da ronda
+export function hireAccountant(p, now, world) {
+  begin(p, now, world, { allowBusy: true });
+  const A = CFG.accountant;
+  if (p.acct) fail('ACCT_HAVE');
+  if (level(p) < A.minLevel) fail('LOW_LEVEL', { need: A.minLevel });
+  if (p.cash + p.bank < A.price) fail('NO_MONEY', { need: A.price, have: p.cash + p.bank });
+  settleAllBiz(p, now);   // o que já se perdeu com o armazém cheio não volta: ele só guarda daqui para a frente
+  pay(p, A.price);
+  p.acct = true;
+  return { ok: true, price: A.price };
 }
 
 // ---------- porto ----------
@@ -1032,7 +1074,7 @@ export function broVisitAt(buyer, owner, now, world, slot, rng, seen) {
   pay(buyer, price);
   const house = Math.max(0, price - Math.floor((base * CFG.venue.girlBp) / 10000));
   b.till += house;
-  return { ok: true, i, price, house, ...doVisit(buyer, i, now, rng) };
+  return { ok: true, i, price, house, ...doVisit(buyer, i, now, rng, base) };
 }
 
 // ---------- bolsa ----------
@@ -1057,7 +1099,8 @@ export function marketTick(m, rng) {
 export function stockCap(p) { return casinoMax(p) * CFG.stocks.capMult; }
 // o que o jogador tem de uma empresa: se ela faliu desde a compra, não tem nada
 function holding(p, m, k) { const h = p.stk[k]; return h.gen === m.gen[k] ? h : { n: 0, cost: 0, gen: m.gen[k] }; }
-export function stockView(p, m) { return CFG.stocks.list.map((_, k) => { const h = holding(p, m, k); return { n: h.n, cost: h.cost, value: Math.floor((h.n * m.prices[k]) / 100) }; }); }
+const stkLim = (h) => ({ ...(h.tp ? { tp: h.tp } : {}), ...(h.sl ? { sl: h.sl } : {}) });
+export function stockView(p, m) { return CFG.stocks.list.map((_, k) => { const h = holding(p, m, k); return { n: h.n, cost: h.cost, value: Math.floor((h.n * m.prices[k]) / 100), tp: h.tp || 0, sl: h.sl || 0 }; }); }
 const stockFee = (gross) => Math.ceil((gross * CFG.stocks.feeBp) / 10000);
 export function stockQuote(m, k, n) { const gross = Math.ceil((n * m.prices[k]) / 100); return gross + stockFee(gross); }   // o que custa comprar n ações agora
 function stockArgs(m, k, n, seen) {
@@ -1074,7 +1117,7 @@ export function stockBuy(p, now, world, m, k, n, seen) {
   if (invested + total > stockCap(p)) fail('STOCK_CAP', { cap: stockCap(p) });
   pay(p, total);
   const h = holding(p, m, k);
-  p.stk[k] = { n: h.n + n, cost: h.cost + total, gen: m.gen[k] };
+  p.stk[k] = { n: h.n + n, cost: h.cost + total, gen: m.gen[k], ...stkLim(h) };
   return { ok: true, k, n, price: m.prices[k], paid: total, fee: stockFee(Math.ceil((n * m.prices[k]) / 100)) };
 }
 export function stockSell(p, now, world, m, k, n, seen) {
@@ -1084,9 +1127,38 @@ export function stockSell(p, now, world, m, k, n, seen) {
   if (n > h.n) fail('NO_SHARES');
   const gross = Math.floor((n * m.prices[k]) / 100), fee = Math.min(gross, stockFee(gross)), got = gross - fee;
   const part = n === h.n ? h.cost : Math.floor((h.cost * n) / h.n);   // parte do que se pagou que corresponde ao que se vende
-  p.stk[k] = { n: h.n - n, cost: h.cost - part, gen: m.gen[k] };
+  p.stk[k] = { n: h.n - n, cost: h.cost - part, gen: m.gen[k], ...(n < h.n ? stkLim(h) : {}) };
   p.cash += got;
   return { ok: true, k, n, price: m.prices[k], got, fee, profit: got - part };
+}
+// Limites de venda de uma posição: alvo de lucro (tp) e travão de perda (sl), em cêntimos por ação; 0 = sem limite.
+// Não dão vantagem nenhuma: a venda faz-se ao preço do passo em que o limite é tocado (nunca ao preço pedido) e paga a comissão normal.
+// Se a empresa falir num só passo antes de o travão ser tocado, perde-se tudo na mesma.
+export function stockLimit(p, now, world, m, k, tp, sl) {
+  if (!Number.isInteger(k) || !CFG.stocks.list[k]) fail('NO_STOCK_CO');
+  if (!m || !Array.isArray(m.prices) || !Number.isSafeInteger(m.prices[k]) || m.prices[k] < 1) fail('NO_MARKET');
+  if (!Number.isSafeInteger(tp) || tp < 0 || tp > 1e12 || !Number.isSafeInteger(sl) || sl < 0 || sl > 1e12) fail('BAD_AMOUNT');
+  begin(p, now, world, { allowBusy: true });
+  const h = holding(p, m, k), price = m.prices[k];
+  if (!(h.n > 0)) fail('NO_SHARES');
+  if ((tp && tp <= price) || (sl && sl >= price)) fail('BAD_LIMIT', { price });   // tem de ficar de fora do preço de agora, senão vendia já
+  p.stk[k] = { n: h.n, cost: h.cost, gen: h.gen, ...stkLim({ tp, sl }) };
+  return { ok: true, k, tp, sl };
+}
+// corre a seguir a cada passo da bolsa, para toda a gente (mesmo fora do jogo): vende por inteiro as posições cujo limite foi tocado
+export function stockAuto(p, m) {
+  const out = [];
+  for (let k = 0; k < CFG.stocks.list.length; k++) {
+    const h = holding(p, m, k), price = m.prices[k];
+    if (!(h.n > 0) || !(h.tp || h.sl)) continue;
+    const why = h.tp && price >= h.tp ? 'tp' : h.sl && price <= h.sl ? 'sl' : null;
+    if (!why) continue;
+    const gross = Math.floor((h.n * price) / 100), fee = Math.min(gross, stockFee(gross)), got = gross - fee;
+    p.stk[k] = { n: 0, cost: 0, gen: m.gen[k] };
+    p.cash += got;
+    out.push({ k, n: h.n, price, got, fee, profit: got - h.cost, why });
+  }
+  return out;
 }
 
 // ---------- banco ----------
@@ -1313,14 +1385,11 @@ export function heistJoin(p, now, world, k) {
   const H = heistOf(k);
   begin(p, now, world);
   if (!p.gang) fail('NO_GANG');
-  const feitos = p.gh.filter((x) => x > now - T.DAY);   // só conta: um pedido recusado não mexe em nada
-  if (feitos.length >= CFG.gang.heistPerDay) fail('HEIST_LIMIT', { until: feitos[0] + T.DAY });
   if (p.energy < H.e) fail('NO_ENERGY', { need: H.e });
-  pruneT(p.gh, now, T.DAY);
-  p.energy -= H.e; p.gh.push(now);
+  p.energy -= H.e;   // sem limite por dia: trava a stamina e a pausa da gangue entre operações
   return { ok: true, e: H.e };
 }
-export function heistRefund(p, now, k) { touch(p, now); p.energy = Math.min(CFG.energy.max, p.energy + heistOf(k).e); p.gh.pop(); }
+export function heistRefund(p, now, k) { touch(p, now); p.energy = Math.min(CFG.energy.max, p.energy + heistOf(k).e); }
 export function heistChanceBp(ps, k, now) {
   const { w, D } = heistOf(k); let s = 0;
   for (const p of ps) s += Math.floor((w.I * effStat(p, 'I', now) + w.F * effStat(p, 'F', now) + w.C * effStat(p, 'C', now)) / 100);
@@ -1889,7 +1958,6 @@ export function checkInvariants(p) {
     for (const f of ['inv', 'coop', 'stored', 'rem', 't']) if (!Number.isSafeInteger(s[f]) || s[f] < 0) bad.push(`gbz.${f}=${s[f]}`);
     if (s.coop > CFG.gang.bizCoopMax || s.inv > gangBizCap(p, k) || (!p.gang && (s.inv || s.stored || s.coop))) bad.push('gang biz ' + k);
   });
-  if (!Array.isArray(p.gh) || p.gh.length > CFG.gang.heistPerDay) bad.push('heists');
   if (p.gb) { const G = CFG.gang; for (const k of ['loot', 'atk', 'def']) if (!Number.isSafeInteger(p.gb[k]) || p.gb[k] < 0 || p.gb[k] > (k === 'loot' ? G.lootBpPer : G.fightBpPer) * G.maxLevel) bad.push('gb.' + k); }
   if (!Array.isArray(p.detoxT) || p.detoxT.length > CFG.detox.maxSteps) bad.push('detox list');
   if (!Number.isSafeInteger(p.mi) || p.mi < 0 || p.mi > CFG.missions.length) bad.push('mission index');
@@ -1901,7 +1969,9 @@ export function checkInvariants(p) {
   if (p.energyT > p.t || p.addictionT > p.t) bad.push('timer in future');
   if (p.cls !== '' && !CFG.classes.some((c) => c.id === p.cls)) bad.push('class');
   if (!Array.isArray(p.stock) || p.stock.length !== CFG.drugs.length || p.stock.some((x) => !Number.isSafeInteger(x) || x < 0)) bad.push('stock');
-  if (!Array.isArray(p.stk) || p.stk.length !== CFG.stocks.list.length || p.stk.some((h) => !h || !Number.isSafeInteger(h.n) || h.n < 0 || !Number.isSafeInteger(h.cost) || h.cost < 0 || !Number.isSafeInteger(h.gen) || (h.n === 0 && h.cost !== 0))) bad.push('shares');
+  if (!Array.isArray(p.stk) || p.stk.length !== CFG.stocks.list.length || p.stk.some((h) => !h || !Number.isSafeInteger(h.n) || h.n < 0 || !Number.isSafeInteger(h.cost) || h.cost < 0 || !Number.isSafeInteger(h.gen) || (h.n === 0 && h.cost !== 0)
+    || ['tp', 'sl'].some((x) => h[x] !== undefined && !(Number.isSafeInteger(h[x]) && h[x] > 0 && h.n > 0)) || (h.tp && h.sl && h.sl >= h.tp))) bad.push('shares');
+  if (typeof p.acct !== 'boolean') bad.push('accountant');
   for (const k of ['club', 'bro']) { const v = p[k]; if (v === null) continue;
     if (!(v && Number.isInteger(v.lvl) && v.lvl >= 1 && v.lvl <= CFG.venue[k].cost.length && Number.isSafeInteger(v.till) && v.till >= 0 && Number.isSafeInteger(v.rem) && v.rem >= 0 && Number.isSafeInteger(v.t) && CFG.venue.prices[v.pi] !== undefined && CFG.venue.gdisc[v.gd] !== undefined)) bad.push(k);
     else if (k === 'bro' && !(Array.isArray(v.girls) && v.girls.length <= CFG.venue.bro.rooms[v.lvl - 1] && v.girls.every((i) => CFG.hookers.list[i]))) bad.push('bro girls'); }
@@ -1918,6 +1988,7 @@ export function checkInvariants(p) {
     for (const k of ['n', 'stored', 'rem', 't']) if (!Number.isSafeInteger(s[k]) || s[k] < 0) bad.push(`biz.${k}=${s[k]}`);
     if (s.rem >= T.HOUR) bad.push('biz remainder overflow');
     if (s.n > CFG.bizMax) bad.push('biz over max');
+    if (s.g !== undefined && s.g !== true) bad.push('biz goods flag');
   }
   return bad;
 }

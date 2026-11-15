@@ -20,7 +20,7 @@ const SECURE = process.env.COOKIE_INSEGURO ? '' : '; Secure';
 const [fy, fm, fd] = (process.env.PRIMEIRA_RONDA || '2026-11-13').split('-').map(Number);
 const FIRST = { y: fy, m: fm, d: fd };
 const rng = cryptoRng();
-const VERSAO = 39;   // sobe quando o servidor muda, para se confirmar de fora que a versão nova já está a correr
+const VERSAO = 40;   // sobe quando o servidor muda, para se confirmar de fora que a versão nova já está a correr
 const ATOS_3S = +(process.env.ATOS_3S || 15), ATOS_MIN = +(process.env.ATOS_MIN || 400); // ações por conta: 15 em 3 s, 400 por minuto
 
 // ---------- relógio que nunca anda para trás ----------
@@ -231,11 +231,24 @@ function bolsaDe(w, now) {
   if (bolsa.tick >= alvo) return bolsa;
   while (bolsa.tick < alvo) {
     const faliu = E.marketTick(bolsa, rng), t = w.start + bolsa.tick * S.tickMs;
+    if (w.n === ronda) limitesDaBolsa(t, now);
     bolsa.hist.push(bolsa.prices.slice()); if (bolsa.hist.length > S.histMax + 1) bolsa.hist.shift();
     if (w.n === ronda && now - t < T.HOUR) for (const k of faliu) noticia(t, { k: 'stockBust', c: S.list[k].id });   // só as falências recentes vão para o jornal
   }
   qb.gravar.run(w.n, JSON.stringify(bolsa));
   return bolsa;
+}
+// limites de venda (alvo de lucro e travão de perda): a seguir a cada passo vendem-se as posições que os tocaram, ao preço desse passo,
+// também de quem está fora do jogo. Grava-se logo e fica um aviso nos eventos do jogador.
+function limitesDaBolsa(t, now) {
+  for (const [conta, p] of jogadores) {
+    if (!p.stk.some((h) => h.tp || h.sl)) continue;
+    let vendas = [];
+    try { vendas = E.stockAuto(p, bolsa); } catch (e) { console.error('limites da bolsa', conta, e.message); continue; }
+    if (!vendas.length) continue;
+    for (const v of vendas) evento(conta, t, { k: 'stAuto', c: CFG.stocks.list[v.k].id, why: v.why, n: v.n, money: v.got, profit: v.profit });
+    guardar(p, now);
+  }
 }
 function vistaBolsa(w, now) {
   const m = bolsaDe(w, now), S = CFG.stocks;
@@ -248,14 +261,14 @@ function vista(p, now) {
   const stored = E.bizStored(p, now), vv = E.venueView(p, Math.max(now, p.t));
   const wm = mundo(now), mk = wm.phase === 'play' ? bolsaDe(wm, now) : null;
   return {
-    stk: mk ? E.stockView(p, mk) : CFG.stocks.list.map(() => ({ n: 0, cost: 0, value: 0 })), stockCap: E.stockCap(p),
+    stk: mk ? E.stockView(p, mk) : CFG.stocks.list.map(() => ({ n: 0, cost: 0, value: 0, tp: 0, sl: 0 })), stockCap: E.stockCap(p),
     name: nomeDe(p.id),
     stats: p.stats, energy: p.energy, energyT: p.energyT,
     addiction: p.addiction, addictionT: p.addictionT, addictionCap: E.addictionCap(p),
     refill: E.refillPlan(p), detox: p.addiction > 0 ? E.detoxCost(p, now) : 0, detoxUses: E.detoxUses(p, now),
     mission: E.mission(p), wk: p.wk, stars: p.wk.map((_, k) => E.masteryStars(p, k)), counters: p.c,
     xp: p.xp, xpNeed: { F: E.practiceNeed(p, 'F'), I: E.practiceNeed(p, 'I'), C: E.practiceNeed(p, 'C') },
-    cash: p.cash, bank: p.bank, bankFeeBp: E.bankFeeBp(p), bj: E.bjPublic(p), casinoMax: E.casinoMax(p), gang: p.gang && gangues.get(p.gang) ? { id: p.gang, name: gangues.get(p.gang).nome, tag: gangues.get(p.gang).tag, bot: p.gang === BOT.id } : null, gb: p.gb || null, gangWait: p.gangLeft ? p.gangLeft + CFG.gang.rejoinMs : 0, clsCost: E.classChangeCost(p), clsWait: p.clsAt ? p.clsAt + CFG.classChange.coolMs : 0, portSeizeBp: E.portSeizeBp(p), heistsToday: p.gh.filter((x) => x > now - T.DAY).length, respect: p.respect, peakRespect: p.peakRespect,
+    cash: p.cash, bank: p.bank, bankFeeBp: E.bankFeeBp(p), bj: E.bjPublic(p), casinoMax: E.casinoMax(p), gang: p.gang && gangues.get(p.gang) ? { id: p.gang, name: gangues.get(p.gang).nome, tag: gangues.get(p.gang).tag, bot: p.gang === BOT.id } : null, gb: p.gb || null, gangWait: p.gangLeft ? p.gangLeft + CFG.gang.rejoinMs : 0, clsCost: E.classChangeCost(p), clsWait: p.clsAt ? p.clsAt + CFG.classChange.coolMs : 0, portSeizeBp: E.portSeizeBp(p), respect: p.respect, peakRespect: p.peakRespect,
     level: L, levelFrom: CFG.levels[L - 1], levelTo: CFG.levels[L] ?? null,
     jailUntil: p.jailUntil, jailTier: p.jailTier, bail: E.bailCost(p, now),
     hospUntil: p.hospUntil, medic: E.medicCost(p, now),
@@ -266,7 +279,8 @@ function vista(p, now) {
     sick: p.sick, cure: E.cureCost(p), hookers: CFG.hookers.list.map((_, i) => E.hookerPrice(p, i, now)), hkUses: E.hookerUses(p, now), hkSteps: CFG.hookers.list.map((_, i) => E.hookerSteps(p, i, now)),
     house: p.house, hu: p.hu, housePrice: E.housePrice(p), huPrices: CFG.house.ups.map((_, u) => E.upgradePrice(p, u)),
     cls: p.cls, av: p.av, fx: E.activeFx(p, now), drugPrices: CFG.drugs.map((_, d) => E.drugPrice(p, d)),
-    biz: p.biz.map((s, i) => ({ n: s.n, stored: stored[i].money, perH: E.bizRates(p, i).perH, price: s.n < CFG.bizMax ? E.bizPrice(i, s.n) : null, t: s.t })),
+    acct: p.acct,
+    biz: p.biz.map((s, i) => ({ n: s.n, stored: stored[i].money, fee: stored[i].fee, g: s.g === true, perH: E.bizRates(p, i).perH, price: s.n < CFG.bizMax ? E.bizPrice(i, s.n) : null, t: s.t })),
     stock: vv.stock, portDrug: E.portDrug(p),
     club: vv.club ? { lvl: vv.club.lvl, till: vv.club.till, pi: vv.club.pi, gd: vv.club.gd, perH: E.clubRate(p), cap: CFG.venue.club.perH[vv.club.lvl - 1] * (CFG.venue.tillMs / T.HOUR), next: CFG.venue.club.cost[vv.club.lvl] ?? null } : null,
     bro: vv.bro ? { lvl: vv.bro.lvl, till: vv.bro.till, pi: vv.bro.pi, gd: vv.bro.gd, girls: vv.bro.girls, perH: E.broRate(p), cap: E.broRate(p) * (CFG.venue.tillMs / T.HOUR), rooms: CFG.venue.bro.rooms[vv.bro.lvl - 1], next: CFG.venue.bro.cost[vv.bro.lvl] ?? null } : null,
@@ -277,7 +291,7 @@ function vista(p, now) {
 function cfgPublica() {
   return {
     energy: CFG.energy, addiction: CFG.addiction, train: CFG.train, crimes: CFG.crimes, drugs: CFG.drugs,
-    biz: CFG.biz.map(({ id, price, perH, resp, stat, raid, toBank }) => ({ id, price, perH, resp, stat, raid, toBank })),
+    biz: CFG.biz.map(({ id, price, perH, resp, stat, raid, toBank, drug }) => ({ id, price, perH, resp, stat, raid, toBank, drug: drug ? CFG.drugs.findIndex((x) => x.id === drug) : -1 })), accountant: CFG.accountant,
     bizMax: CFG.bizMax, storageMs: CFG.storageMs, port: CFG.port, air: CFG.air, goods: CFG.goods, venue: CFG.venue, detox: CFG.detox, stocks: CFG.stocks, weapons: CFG.weapons, armors: CFG.armors, guards: CFG.guards, hitman: CFG.hitman,
     pvp: CFG.pvp, bank: CFG.bank, luxury: CFG.luxury, levels: CFG.levels, crit: CFG.crit, unlockBp: CFG.unlockBp,
     bustBp: CFG.bustBp, crimeAllMax: CFG.crimeAllMax, casino: { minBet: CFG.casino.minBet, buyMaxMult: CFG.casino.buyMaxMult, red: CFG.casino.red, dice: CFG.casino.dice, wheel: { segs: CFG.casino.wheel.segs, spots: CFG.casino.wheel.spots }, slots: Object.fromEntries(Object.entries(CFG.casino.slots).map(([k, g]) => [k, { kind: g.kind, cols: g.cols, rows: g.rows, min: g.min, nsym: g.nsym, trig: g.trig, pay: g.pay, scatPay: g.scatPay, free: g.free, fs: g.fs, retrig: g.retrig, buy: g.buy, superBuy: g.superBuy, max: g.max, accFree: g.accFree, accAll: g.accAll, orbBase: g.orbBase }])) }, gang: CFG.gang, classes: CFG.classes, classChange: CFG.classChange, avatars: CFG.avatars, hookers: CFG.hookers, house: CFG.house, mastery: CFG.mastery, missions: CFG.missions.length, start: CFG.start,
@@ -803,7 +817,7 @@ function agir(conta, corpo, now) {
     case 'train': r = E.train(p, now, world, String(a.stat)); break;
     case 'drug': r = E.buyDrug(p, now, world, int(a.d)); break;
     case 'refill': r = E.refill(p, now, world); break;
-    case 'hooker': r = E.visitHooker(p, now, world, int(a.i), rng); break;
+    case 'hooker': r = E.visitHooker(p, now, world, int(a.i), rng); if (r.rob) evento(p.id, now, { k: 'hkRob', kind: r.rob.kind, money: r.rob.loss }); break;
     case 'cure': r = E.cure(p, now, world); break;
     case 'house': r = E.buyHouse(p, now, world); break;
     case 'houseUp': r = E.buyUpgrade(p, now, world, int(a.u)); break;
@@ -818,6 +832,9 @@ function agir(conta, corpo, now) {
     case 'bail': r = E.payBail(p, now, world); break;
     case 'medic': r = E.payMedic(p, now, world); break;
     case 'buyBiz': r = E.buyBiz(p, now, world, int(a.i)); break;
+    case 'bizGoods': r = E.bizGoods(p, now, world, int(a.i), a.on === true); break;
+    case 'acct': r = E.hireAccountant(p, now, world); break;
+    case 'stockLimit': r = E.stockLimit(p, now, world, bolsaDe(w, now), int(a.k), int(a.tp), int(a.sl)); break;
     case 'collect': {
       const b = E.collectBiz(p, now, world, rng);
       const c = E.collectPort(p, now, world, rng);
@@ -839,6 +856,7 @@ function agir(conta, corpo, now) {
       const o = jogadores.get(c.id), seen = Number.isSafeInteger(a.price) ? a.price : undefined;
       r = a.type === 'clubBuy' ? E.clubBuyAt(p, o, now, world, int(a.d), seen) : E.broVisitAt(p, o, now, world, int(a.slot), rng, seen);
       r.owner = nomeDe(o.id);
+      if (r.rob) evento(p.id, now, { k: 'hkRob', kind: r.rob.kind, money: r.rob.loss });
       ctx.outros.push(o);
       break;
     }
