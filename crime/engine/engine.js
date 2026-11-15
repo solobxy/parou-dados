@@ -1788,6 +1788,30 @@ export function tableCredit(p, win) { if (!Number.isSafeInteger(win) || win < 0)
 
 // ---- slots ----
 const cellW = (rng, w) => { let tot = 0; for (const x of w) tot += x; let r = rng.int(0, tot - 1); for (let i = 0; i < w.length; i++) { if (r < w[i]) return i; r -= w[i]; } return w.length - 1; };
+// Quem enche as casas. Com G.run, os símbolos normais vêm em pilhas dentro de cada coluna (1, 2 ou 3 iguais seguidos, com os pesos de G.run),
+// como nos rolos a sério: é isso que deixa os símbolos raros juntarem os iguais precisos para rebentar. Scatters e esferas vêm sempre sozinhos.
+// Nas rodadas grátis as pilhas podem ser maiores (G.runFree): mais prémios, que é o que se espera de um bónus.
+// mk(s) devolve [símbolo, extra]. fill(c) enche uma casa da coluna c; fill.novo() esquece a pilha a meio (grelha nova ou queda nova).
+function filler(G, rng, w, mk, free) {
+  const run = free && G.runFree ? G.runFree : G.run;
+  let col = -1, sym = 0, left = 0;
+  const fill = (c) => {
+    if (c !== col) { col = c; left = 0; }
+    if (left > 0) { left--; return mk(sym); }
+    const s = cellW(rng, w);
+    if (run && s < G.nsym) { sym = s; left = cellW(rng, run); }
+    return mk(s);
+  };
+  fill.novo = () => { col = -1; left = 0; };
+  return fill;
+}
+// a grelha inicial, coluna a coluna (índice = linha × colunas + coluna)
+function firstGrid(G, fill, extra) {
+  const g = new Array(G.cols * G.rows);
+  fill.novo();
+  for (let c = 0; c < G.cols; c++) for (let r = 0; r < G.rows; r++) { const i = r * G.cols + c, [s, x] = fill(c); g[i] = s; if (x !== undefined) extra[i] = x; }
+  return g;
+}
 // garante pelo menos «need» scatters na grelha inicial (compra de bónus)
 function forceScat(g, need, SC, rng) {
   let have = g.filter((s) => s === SC).length;
@@ -1796,21 +1820,21 @@ function forceScat(g, need, SC, rng) {
 // cair: cada coluna desce o que sobra e enche por cima (linha 0 em cima; índice = linha × colunas + coluna)
 function gravity(G, g, extra, rm, fill) {
   const C = G.cols, R = G.rows, n = C * R, rmS = new Set(rm), ng = new Array(n), ne = {};
+  fill.novo();
   for (let c = 0; c < C; c++) {
     const keep = [];
     for (let r = R - 1; r >= 0; r--) { const i = r * C + c; if (!rmS.has(i)) keep.push([g[i], extra[i]]); }
     for (let r = R - 1, k = 0; r >= 0; r--, k++) {
       const i = r * C + c;
-      if (k < keep.length) { ng[i] = keep[k][0]; if (keep[k][1] !== undefined) ne[i] = keep[k][1]; } else { const [s, x] = fill(); ng[i] = s; if (x !== undefined) ne[i] = x; }
+      if (k < keep.length) { ng[i] = keep[k][0]; if (keep[k][1] !== undefined) ne[i] = keep[k][1]; } else { const [s, x] = fill(c); ng[i] = s; if (x !== undefined) ne[i] = x; }
     }
   }
   return [ng, ne];
 }
 function scatterRound(G, rng, free, force) {
   const n = G.cols * G.rows, SC = G.nsym, ORB = G.nsym + 1, w = free ? G.wFree : G.w;
-  const fill = () => { const s = cellW(rng, w); return [s, s === ORB ? pickW(rng, G.orb) : undefined]; };
-  let g = [], orbs = {};
-  for (let i = 0; i < n; i++) { const [s, x] = fill(); g.push(s); if (x !== undefined) orbs[i] = x; }
+  const fill = filler(G, rng, w, (s) => [s, s === ORB ? pickW(rng, G.orb) : undefined], free);
+  let orbs = {}, g = firstGrid(G, fill, orbs);
   if (force) { forceScat(g, G.trig, SC, rng); for (const k of Object.keys(orbs)) if (g[k] !== ORB) delete orbs[k]; }
   const steps = [{ g: g.slice(), o: { ...orbs } }];
   let win = 0;
@@ -1845,8 +1869,8 @@ function clusters(G, g) {
   return out;
 }
 function clusterRound(G, rng, free, spots, force) {
-  const n = G.cols * G.rows, SC = G.nsym, w = free ? G.wFree : G.w, fill = () => [cellW(rng, w)];
-  let g = Array.from({ length: n }, () => cellW(rng, w));
+  const n = G.cols * G.rows, SC = G.nsym, w = free ? G.wFree : G.w, fill = filler(G, rng, w, (s) => [s], free);
+  let g = firstGrid(G, fill, {});
   if (force) forceScat(g, G.trig, SC, rng);
   const steps = [{ g: g.slice(), sp: spots.slice() }];
   let win = 0;

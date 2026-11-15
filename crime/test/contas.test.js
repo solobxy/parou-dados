@@ -684,6 +684,27 @@ for (const gid of Object.keys(CFG.casino.slots)) {
     assert.throws(() => E.casinoPlay(p, NOW, W, 'slot', { game: gid, amt: 100, buy: 3 }, never), code('BAD_BET'));
   });
 }
+// barreira contra o erro de 15/11/2026: com pesos muito desiguais só os 4 símbolos mais comuns rebentavam (a coroa do Chefão, 1 vez em 15 000 jogadas)
+test('slots: todos os símbolos rebentam com regularidade (o mais raro pelo menos 1 vez em 120 jogadas, e nunca 12 vezes menos do que o mais comum)', () => {
+  for (const gid of Object.keys(CFG.casino.slots)) {
+    const G = CFG.casino.slots[gid], rng = seededRng(2611), N = 40000, hit = new Array(G.nsym).fill(0);
+    for (let i = 0; i < N; i++) {
+      const vistos = new Set();
+      for (const st of E.slotSpin(gid, rng, 0).base.steps) for (const w of st.w || []) vistos.add(w.s);
+      for (const x of vistos) hit[x]++;
+    }
+    const min = Math.min(...hit), max = Math.max(...hit);
+    assert.ok(min > 0 && N / min < 120, `${gid}: o símbolo mais raro rebenta 1 vez em ${min ? Math.round(N / min) : '∞'} jogadas`);
+    assert.ok(max / min < 12, `${gid}: o mais comum rebenta ${(max / min).toFixed(1)} vezes mais do que o mais raro`);
+    // pilhas: na mesma coluna, um símbolo normal aparece muitas vezes repetido logo por baixo (com casas independentes seria perto de 1 em cada 9)
+    if (G.kind === 'scatter') {
+      let pares = 0, iguais = 0;
+      for (let i = 0; i < 2000; i++) { const g = E.slotSpin(gid, rng, 0).base.steps[0].g; for (let c = 0; c < G.cols; c++) for (let r = 0; r + 1 < G.rows; r++) { const a = g[r * G.cols + c]; if (a < G.nsym) { pares++; if (g[(r + 1) * G.cols + c] === a) iguais++; } } }
+      assert.ok(iguais / pares > 0.22 && iguais / pares < 0.5, `${gid}: iguais seguidos na coluna ${(iguais / pares).toFixed(2)}`);
+    }
+  }
+});
+
 test('slots: compra super só no Rebuçado, jogo inventado recusado', () => {
   const p = cas(1e9); p.peakRespect = 1e6;
   assert.throws(() => E.casinoPlay(p, NOW, W, 'slot', { game: 'zeus', amt: 100, buy: 2 }, never), code('BAD_BET'));
