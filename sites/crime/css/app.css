@@ -1683,3 +1683,34 @@ body.light .rv.is-wait .ct-lock::after { opacity: .9; transform: translate(-50%,
 /* Botões (15/11/2026): a ação principal de cada ecrã vai a creme. O verde fica só para o que mete dinheiro na mão
    (receber, abrir contentores) e para o botão de rodar das slots, que é do mundo do casino. Antes eram todos verdes. */
 .btn.buy.get, .btn.buy.sspin, .btn.ctgo.buy { background: var(--cash); color: #06140c; }
+
+/* ===== Topo: dinheiro e respeito por extenso, com ícones desenhados; bónus numa linha (15/11/2026) ===== */
+.money .cash, .money .resp { display: flex; align-items: center; justify-content: flex-end; gap: 6px; font-family: var(--disp); font-weight: 900; line-height: 1; white-space: nowrap; }
+.money .cash { font-size: 21px; }
+.money .cash[data-len='l'] { font-size: 18px; }
+.money .cash[data-len='xl'] { font-size: 16px; }
+.money .resp { margin-top: 5px; font-size: 17px; }
+.money img.hic { flex: none; width: auto; height: 21px; }
+.money .resp img.hic { height: 19px; }
+.money .cash.up, .money .cash.down { animation: none; }
+.money .cash.up .num { display: inline-block; transform-origin: right center; animation: cup .7s var(--ease-out); }
+.money .cash.down .num { animation: cdown .7s var(--ease-out); }
+.money .delta.r2 { top: 28px; }
+.hfx { display: block; }
+.fxw { border-top: 1px solid #ffffff14; margin-top: 2px; }
+.fxsum { position: relative; display: flex; align-items: center; gap: 10px; width: 100%; min-height: 36px; padding: 6px 0 2px; border: 0; background: none; color: var(--tx); font: 600 13.5px/1 var(--ui); text-align: left; }
+.fxsum::after { content: ''; position: absolute; inset: -4px 0; }   /* alvo de toque de 44 px sem engordar o topo */
+.fxts { flex: 1; min-width: 0; display: flex; gap: 12px; overflow: hidden; white-space: nowrap; -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 26px), transparent); mask-image: linear-gradient(90deg, #000 calc(100% - 26px), transparent); }   /* os que não cabem esbatem-se: a lista completa abre ao toque */
+.fxh { flex: 1; color: var(--tx2); font-weight: 500; }
+.fxt { flex: none; display: inline-flex; align-items: center; gap: 3px; }
+.fxt svg.i, .fxlist svg.i { width: 14px; height: 14px; color: var(--vice); }
+.fxn { flex: none; display: inline-flex; align-items: center; gap: 4px; color: var(--tx2); font-weight: 500; }
+.fxn svg.i { width: 13px; height: 13px; }
+.fxn svg.i:last-child { width: 14px; height: 14px; transform: rotate(90deg); transition: transform .18s var(--ease-out); }
+.fxw.open .fxn svg.i:last-child { transform: rotate(-90deg); }
+.fxlist { list-style: none; margin: 0; padding: 2px 0 0; }
+.fxlist li { display: flex; align-items: center; gap: 8px; min-height: 28px; font-size: 14px; }
+.fxlist { padding-bottom: 2px; }
+.fxlist li b { margin-left: auto; font-weight: 600; color: var(--tx2); }
+.jdeal { grid-template-columns: minmax(0, 1fr) auto; }
+.jdeal b { font-size: clamp(22px, 7.2vw, 30px); }

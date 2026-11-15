@@ -172,9 +172,12 @@ function buildHud() {
   S.hud.lvl = h('span', { class: 'num' });
   S.hud.title = h('div', { class: 'title' });
   S.hud.name = h('div', { class: 'name' });
-  S.hud.cash = h('div', { class: 'cash num' });
+  // dinheiro e respeito por extenso (são a pontuação do jogo: «$2M» e «17K» tiravam-lhes o peso), cada um com o seu ícone desenhado
+  const hic = (n, alt, w) => h('img', { class: 'hic', src: `/img/ui/${n}.webp?2`, alt, width: w, height: 96, decoding: 'async' });
+  S.hud.cashN = h('span', { class: 'num' });
+  S.hud.cash = h('div', { class: 'cash' }, hic('notas', '', 131), S.hud.cashN);
   S.hud.respN = h('span', { class: 'num' });
-  S.hud.resp = h('div', { class: 'resp' }, icon('crown'), S.hud.respN);
+  S.hud.resp = h('div', { class: 'resp' }, hic('coroa', t('respect'), 114), S.hud.respN);
   S.hud.ebar = h('i'); S.hud.etxt = h('span');
   S.hud.vbar = h('i'); S.hud.vtxt = h('span');
   S.hud.stats = h('div', { class: 'hstats' });
@@ -197,7 +200,19 @@ const STAT_IC = { F: 'fist', I: 'brain', C: 'chat', T: 'shield' };
 const FX_IC = { F: 'fist', I: 'brain', C: 'chat', T: 'shield', loot: 'cash', biz: 'empire', bust: 'lock' };
 const AV = (i) => `/img/av/${i}.webp?1`;
 const fxText = (f) => t('fx_' + f.k, { p: f.bp / 100 });
-function fxChip(f) { return h('span', { class: 'chip fxc' }, icon(FX_IC[f.k]), fxText(f) + ' · ', h('b', { class: 'num', dataset: { left: f.until } }, dur(f.until - now()))); }
+// Bónus ativos: uma linha com o essencial (ícone e valor de cada um, e quanto falta para o primeiro acabar); o nome e o tempo de cada um abrem ao toque.
+// Antes era uma pílula roxa por bónus: com sete ativos ocupavam três linhas do topo em todos os ecrãs.
+function fxRow(list) {
+  if (!list.length) return '';
+  const first = list.reduce((a, f) => (f.until < a.until ? f : a));
+  const open = !!S.fxOpen;
+  return h('div', { class: 'fxw' + (open ? ' open' : '') },
+    h('button', { class: 'fxsum', 'aria-expanded': String(open), 'aria-label': t('fxSum', { n: list.length }), on: { click: () => { S.fxOpen = !open; updateHud(); } } },
+      open ? h('span', { class: 'fxh' }, t('fxOpen', { n: list.length }))
+        : h('span', { class: 'fxts' }, list.map((f) => h('span', { class: 'fxt' }, icon(FX_IC[f.k]), (f.k === 'bust' ? '−' : '+') + f.bp / 100 + '%'))),
+      h('span', { class: 'fxn' }, open ? null : icon('timer'), open ? null : h('b', { class: 'num', dataset: { left: first.until } }, dur(first.until - now())), icon('chev'))),
+    open ? h('ul', { class: 'fxlist' }, list.map((f) => h('li', null, icon(FX_IC[f.k]), h('span', null, fxText(f)), h('b', { class: 'num', dataset: { left: f.until } }, dur(f.until - now()))))) : null);
+}
 // mostra ao lado do número quanto subiu ou desceu
 function delta(el, d, fmt) {
   if (!el || !d) return;
@@ -216,12 +231,13 @@ function updateHud() {
   const prog = me.levelTo ? Math.min(1, Math.max(0, (me.peakRespect - me.levelFrom) / span)) : 1;
   S.hud.ringFg.setAttribute('stroke-dashoffset', String(S.hud.C * (1 - prog)));
   if (S.hud.av && S.hud.av.dataset.i !== String(me.av)) { S.hud.av.dataset.i = me.av; S.hud.av.src = AV(me.av); }
-  S.hud.fx.replaceChildren(me.sick ? h('button', { class: 'chip fxc bad', on: { click: () => go('hosp') } }, icon('skull'), t('sickChip', { p: S.cfg.hookers.sickCutBp / 100 })) : '', ...me.fx.map(fxChip)); S.hud.fx.style.display = me.fx.length || me.sick ? '' : 'none';
+  S.hud.fx.replaceChildren(me.sick ? h('button', { class: 'chip fxc bad', on: { click: () => go('hosp') } }, icon('skull'), t('sickChip', { p: S.cfg.hookers.sickCutBp / 100 })) : '', fxRow(me.fx)); S.hud.fx.style.display = me.fx.length || me.sick ? '' : 'none';
   S.hud.stats.replaceChildren(...['F', 'I', 'C', 'T'].map((s) => h('span', { title: t('stat' + s) }, icon(STAT_IC[s]), h('b', { class: 'num' }, short(me.stats[s])))),
     h('span', { class: 'nx' }, me.levelTo ? t('toLevel', { n: num(me.levelTo - me.peakRespect), l: L + 1 }) : t('maxLevel')));
   const sh = S.hud.shown;
-  if (sh.cash !== me.cash) { fx.roll(S.hud.cash, sh.cash, me.cash, moneyShort); delta(S.hud.cash, me.cash - sh.cash, money); sh.cash = me.cash; } else S.hud.cash.textContent = moneyShort(me.cash);
-  if (sh.respect !== me.respect) { fx.roll(S.hud.respN, sh.respect, me.respect, short); delta(S.hud.resp, me.respect - sh.respect, num); sh.respect = me.respect; } else S.hud.respN.textContent = short(me.respect);
+  S.hud.cash.dataset.len = money(me.cash).length > 13 ? 'xl' : money(me.cash).length > 10 ? 'l' : '';   // 10 ou mais algarismos: a letra encolhe um passo para o nome ao lado não desaparecer
+  if (sh.cash !== me.cash) { fx.roll(S.hud.cashN, sh.cash, me.cash, money); delta(S.hud.cash, me.cash - sh.cash, money); sh.cash = me.cash; } else S.hud.cashN.textContent = money(me.cash);
+  if (sh.respect !== me.respect) { fx.roll(S.hud.respN, sh.respect, me.respect, num); delta(S.hud.resp, me.respect - sh.respect, num); sh.respect = me.respect; } else S.hud.respN.textContent = num(me.respect);
   tickHud();
 }
 
@@ -287,7 +303,7 @@ function loadFor(tab) {
 function go(tab) {
   if (!PLACES[tab]) tab = 'city';
   if (HUB[S.tab]?.some(([, ids]) => ids.includes(tab)) || (S.tab === 'fights' && (tab === 'arms' || tab === 'rank' || tab === 'gang'))) S.backTo = { ...(S.backTo || {}), [tab]: S.tab };
-  S.tab = tab; document.body.dataset.tab = tab; store.set('tab', tab);
+  S.tab = tab; document.body.dataset.tab = tab; store.set('tab', tab); S.fxOpen = false;   // a lista dos bónus fecha ao mudar de ecrã, para não ficar a ocupar o topo
   loadFor(tab);
   render(); window.scrollTo({ top: 0 });
   if (SLOT_OF[tab]) requestAnimationFrame(() => slotFit());
@@ -661,7 +677,7 @@ function screenRob() {
   const rep = S.report && S.report.k === k ? S.report : null;
   // O que decide o golpe fica em grande e só isso: quanto pode render (verde, é dinheiro) e a hipótese (cor do risco).
   // O custo e o respeito vão numa frase, sem cor nem ícones. Os dois botões são da mesma família: cheio para roubar, contorno para roubar de seguida.
-  const gama = (a, z) => moneyShort(a) + '–' + moneyShort(z).slice(1);   // «$19,5K–27,3K»: um só cifrão
+  const gama = (a, z) => (z < 1e6 ? money(a) + '–' + num(z) : moneyShort(a) + '–' + moneyShort(z).slice(1));   // «$19 500–27 300»: por extenso e com um só cifrão; só abrevia a partir do milhão
   out.push(h('div', { class: 'jobp' },
     h('div', { class: 'jimg' }, h('img', { src: IMG('crimes', c.id, 1), alt: '', width: 1100, height: 1100, decoding: 'async' }), h('h2', null, names[k])),
     h('div', { class: 'jdeal' },
