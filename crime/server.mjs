@@ -20,7 +20,7 @@ const SECURE = process.env.COOKIE_INSEGURO ? '' : '; Secure';
 const [fy, fm, fd] = (process.env.PRIMEIRA_RONDA || '2026-11-13').split('-').map(Number);
 const FIRST = { y: fy, m: fm, d: fd };
 const rng = cryptoRng();
-const VERSAO = 43;   // sobe quando o servidor muda, para se confirmar de fora que a versão nova já está a correr
+const VERSAO = 44;   // sobe quando o servidor muda, para se confirmar de fora que a versão nova já está a correr
 const ATOS_3S = +(process.env.ATOS_3S || 15), ATOS_MIN = +(process.env.ATOS_MIN || 400); // ações por conta: 15 em 3 s, 400 por minuto
 
 // ---------- relógio que nunca anda para trás ----------
@@ -983,6 +983,21 @@ function alvos(conta, now, w) {
   lista.sort((x, y) => (y.chance * y.gain) - (x.chance * x.gain));
   return lista.slice(0, 25);
 }
+// Assassino a soldo: todos os outros jogadores, com o preço, a pontaria e, quando não dá para encomendar, o motivo (hw).
+// Primeiro os que dá para encomendar, depois os mais fortes. Só sai o que já é público no ranking, mais o motivo.
+function contratos(conta, now, w) {
+  const me = jogadorDe(conta, now, w);
+  if (!me) return [];
+  E.touch(me, now);
+  const lista = [];
+  for (const d of jogadores.values()) {
+    if (d.id === me.id) continue;
+    lista.push({ name: nomeDe(d.id), level: E.level(d), respect: d.respect, av: d.av || 0, tag: tagDe(d.id),
+      hp: E.hitmanPrice(d), hc: E.hitmanChanceBp(d), hw: E.canHitman({ ...me, shieldUntil: 0 }, d, now, { start: w.start, playEnd: w.playEnd }) });
+  }
+  lista.sort((x, y) => ((x.hw ? 1 : 0) - (y.hw ? 1 : 0)) || (y.respect - x.respect) || (x.name < y.name ? -1 : 1));
+  return lista.slice(0, 30);
+}
 
 // ---------- ficheiros estáticos (só em testes locais) ----------
 const MIME = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8',
@@ -1103,6 +1118,7 @@ async function tratar(req, res) {
   if (req.method === 'GET' && path === '/api/stocks') return enviar(res, 200, w.phase === 'play' ? vistaBolsa(w, now) : { now, tick: 0, nextAt: 0, prices: [], gen: [], hist: [] });
   if (req.method === 'GET' && path === '/api/venues') return enviar(res, 200, { now, ...(w.phase === 'play' ? casas(conta, now, w) : { clubs: [], bros: [] }) });
   if (req.method === 'GET' && path === '/api/targets') return enviar(res, 200, { now, list: w.phase === 'play' ? alvos(conta, now, w) : [] });
+  if (req.method === 'GET' && path === '/api/hitman') return enviar(res, 200, { now, list: w.phase === 'play' ? contratos(conta, now, w) : [] });
   if (req.method === 'GET' && path === '/api/ranking') {
     const rk = rankingAtual(now, w);
     const minha = rk.find((x) => x.id === conta);

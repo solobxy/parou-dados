@@ -1294,6 +1294,12 @@ h1.slogo { margin: 0; }
 .gbz .gbr { display: grid; gap: 8px; padding: 12px; margin: 0 -4px; border-radius: 10px; background: var(--s2); }
 .gbz .gbr.off { opacity: .6; }
 .gbz .gbr .btn { min-height: 44px; padding: 0 10px; white-space: nowrap; }
+/* imagem à esquerda do nome (negócios, cofre e melhorias da gangue), como nos golpes em grupo */
+.gbh { gap: 12px; align-items: center; } .gbh > .grow, .gup > .grow { min-width: 0; }
+.gup > .btn { flex: none; }
+/* assassino: quem não dá para encomendar fica mais apagado, com o motivo por baixo */
+.hmrow.off { background: none; box-shadow: inset 0 0 0 1px var(--s2); } .hmrow.off .avs { filter: grayscale(1) brightness(.7); }
+.hmrow > .btn { flex: none; }
 
 /* assassino a soldo: terceira ação de cada alvo, mais discreta do que bater e assaltar */
 .tgt .acts .hmb { grid-column: 1 / -1; justify-content: center; color: var(--tx2); }

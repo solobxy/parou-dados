@@ -263,7 +263,7 @@ function tickHud() {
 const PLACES = {
   city: { ic: 'skyline' }, empire: { ic: 'empire' }, rob: { ic: 'street', img: 'golpes' }, club: { ic: 'bolt', img: 'discoteca' }, gym: { img: 'ginasio' },
   biz: { ic: 'empire', img: 'negocios' }, stash: { img: 'stash' }, acct: { img: 'contabilista' }, port: { img: 'porto' }, air: { img: 'aeroporto' }, arms: { img: 'armas' }, bank: { img: 'banco' }, hosp: { img: 'hospital' },
-  jail: { img: 'prisao' }, gang: { img: 'gangue' }, work: { img: 'profissao' }, news: { img: 'jornal' }, casino: { ic: 'gem', img: 'casino' }, roulette: { img: 'roleta' }, bj: { img: 'blackjack' }, dice: { img: 'dados' }, wheel: { img: 'roda' }, slot: { img: 'slot' }, zeus: { img: 'zeus' }, doce: { img: 'doce' }, rebucado: { img: 'rebucado' }, alley: { img: 'beco' }, lux: { img: 'luxos' }, fights: { ic: 'fights', img: 'lutas' }, rank: { img: 'ranking' }, putas: { img: 'putas' }, casa: {}, myclub: { img: 'discoteca' }, mybro: { img: 'putas' }, bolsa: { img: 'bolsa' },
+  jail: { img: 'prisao' }, gang: { img: 'gangue' }, work: { img: 'profissao' }, news: { img: 'jornal' }, casino: { ic: 'gem', img: 'casino' }, roulette: { img: 'roleta' }, bj: { img: 'blackjack' }, dice: { img: 'dados' }, wheel: { img: 'roda' }, slot: { img: 'slot' }, zeus: { img: 'zeus' }, doce: { img: 'doce' }, rebucado: { img: 'rebucado' }, alley: { img: 'beco' }, lux: { img: 'luxos' }, fights: { ic: 'fights', img: 'lutas' }, rank: { img: 'ranking' }, hitman: { img: 'assassino' }, putas: { img: 'putas' }, casa: {}, myclub: { img: 'discoteca' }, mybro: { img: 'putas' }, bolsa: { img: 'bolsa' },
 };
 // barra de baixo: só o que se usa a toda a hora. O resto vive dentro de cada separador, arrumado por zonas.
 const NAV = ['city', 'rob', 'fights', 'casino', 'empire'];
@@ -272,7 +272,7 @@ const HUB = {
   empire: [['sec_income', ['biz', 'port', 'air', 'myclub', 'mybro']], ['sec_assets', ['casa', 'bank', 'bolsa', 'stash', 'acct']]],
 };
 const PARENT = { gang: 'city', work: 'city', news: 'city', casino: 'city', roulette: 'casino', bj: 'casino', dice: 'casino', wheel: 'casino', slot: 'casino', zeus: 'casino', doce: 'casino', rebucado: 'casino', club: 'city', putas: 'city', gym: 'city', alley: 'city', hosp: 'city', jail: 'city',
-  biz: 'empire', port: 'empire', air: 'empire', myclub: 'empire', mybro: 'empire', bolsa: 'empire', stash: 'empire', acct: 'empire', casa: 'empire', bank: 'empire', lux: 'empire', arms: 'fights', rank: 'fights' };
+  biz: 'empire', port: 'empire', air: 'empire', myclub: 'empire', mybro: 'empire', bolsa: 'empire', stash: 'empire', acct: 'empire', casa: 'empire', bank: 'empire', lux: 'empire', arms: 'fights', rank: 'fights', hitman: 'fights' };
 const upOf = (id) => (S.backTo && S.backTo[id]) || PARENT[id] || 'city';   // um sítio que está em duas zonas volta para a zona de onde vieste
 const tabOf = (id) => { let x = id; for (let k = 0; k < 4 && !NAV.includes(x); k++) x = upOf(x); return NAV.includes(x) ? x : 'city'; };
 const IMG = (kind, id, big) => `/img/${kind}/${id}${big ? '-g' : ''}.webp?9`;
@@ -280,6 +280,7 @@ const IMG = (kind, id, big) => `/img/${kind}/${id}${big ? '-g' : ''}.webp?9`;
 function loadFor(tab) {
   if (tab === 'fights') { if (S.fightSeg === 'events') loadEvents(true); else { S.fightSeg = 'targets'; loadTargets(); } }
   if (tab === 'rank') loadRanking();
+  if (tab === 'hitman') loadHitman();
   if (tab === 'gang') loadGang();
   if (tab === 'club' || tab === 'putas') loadVenues();
   if (tab === 'bolsa') { S.stkSel = null; loadStocks(); }
@@ -332,7 +333,7 @@ function shell() {
 }
 
 const SCREENS = { city: screenCity, empire: screenEmpire, news: screenNews, casino: screenCasino, roulette: screenRoulette, bj: screenBJ, dice: screenDice, wheel: screenWheel, slot: () => screenSlotGame('slot'), zeus: () => screenSlotGame('zeus'), doce: () => screenSlotGame('doce'), rebucado: () => screenSlotGame('rebucado'), rob: screenRob, club: screenClub, gym: screenGym, biz: screenBiz, port: screenPort, arms: screenArms, bank: screenBank,
-  hosp: screenHosp, jail: screenJail, gang: screenGang, work: screenWork, air: screenAir, putas: screenPutas, myclub: screenMyClub, mybro: screenMyBro, bolsa: screenBolsa, stash: screenStash, acct: screenAcct, casa: screenCasa, alley: screenAlley, lux: screenLux, fights: screenFights, rank: screenRank };
+  hosp: screenHosp, jail: screenJail, gang: screenGang, work: screenWork, air: screenAir, putas: screenPutas, myclub: screenMyClub, mybro: screenMyBro, bolsa: screenBolsa, stash: screenStash, acct: screenAcct, casa: screenCasa, alley: screenAlley, lux: screenLux, fights: screenFights, rank: screenRank, hitman: screenHitman };
 function render(force) {
   if (!S.st) return;
   if (!S.st.me || S.st.round.phase !== 'play') return renderPause();
@@ -1399,12 +1400,43 @@ function hitmanSheet(x) {
     h('ul', { class: 'vperks' }, li('skull', t('hmOk', { h: Math.round(H.hospMs / 60000) + ' min', r: pc(H.respBp), c: pc(H.cashBp) })), li('user', t('hmAnon')), li('shield', t('hmFail'))),
     h('p', { class: 'small muted' }, t('hmLeft', { n: me.hitmanLeft ?? H.perDay, x: H.perDay })),
     why ? h('p', { class: 'small c-red' }, errText(why)) : null,
-    h('button', { class: 'btn danger block big', disabled: !!why, on: { click: (e) => { const el = e.currentTarget; withShield(async (drop) => { const o = await act('hitman', { target: x.name, drop }, { el }); if (o) close(); }); } } }, t('hmGo', { m: moneyShort(x.hp) }))));
+    h('button', { class: 'btn danger block big', disabled: !!why, on: { click: (e) => { const el = e.currentTarget; withShield(async (drop) => { const o = await act('hitman', { target: x.name, drop }, { el }); if (o) { close(); if (S.tab === 'hitman') loadHitman(); else loadTargets(); } }); } } }, t('hmGo', { m: moneyShort(x.hp) }))));
+}
+// O assassino tem um sítio próprio: nas lutas só aparecia em cada alvo, e quem não tem alvos (o primeiro do ranking, por exemplo) nunca o via.
+// Aqui estão todos os outros jogadores, com o preço e a pontaria, e o motivo quando não dá para encomendar.
+async function loadHitman() { try { const r = await api('GET', '/api/hitman'); S.hitList = r.list; if (S.tab === 'hitman') render(); } catch {} }
+function screenHitman() {
+  const me = S.st.me, H = S.cfg.hitman, P = S.cfg.pvp, pc = (bp) => (bp / 100).toString().replace('.', lang() === 'pt' ? ',' : '.');
+  const li = (ic, txt) => h('li', null, icon(ic), h('span', null, txt));
+  const GLOBAL = ['LOW_LEVEL', 'HITMAN_LIMIT', 'NO_PVP_YET'];   // motivos do teu lado: dizem-se uma vez, em cima, e não em cada linha
+  const all = S.hitList, low = me.level < H.minLevel, glob = low ? null : all?.find((x) => GLOBAL.includes(x.hw))?.hw;
+  const out = [pageHead('hitman', t('hitmanSub'))];
+  if (low) out.push(h('div', { class: 'tip' }, h('p', null, t('hmLocked', { n: H.minLevel }))));
+  else if (glob) out.push(h('div', { class: 'tip' }, h('p', null, errText(glob))));
+  out.push(h('div', { class: 'card stack', style: 'margin:0 0 12px' },
+    h('ul', { class: 'vperks' }, li('cash', t('hmFrom', { m: money(H.priceMin) })), li('skull', t('hmOk', { h: Math.round(H.hospMs / 60000) + ' min', r: pc(H.respBp), c: pc(H.cashBp) })), li('user', t('hmAnon')), li('shield', t('hmFail'))),
+    h('p', { class: 'small muted', style: 'margin:0' }, (low ? '' : t('hmLeft', { n: me.hitmanLeft ?? H.perDay, x: H.perDay }) + ' ') + t('hmRule', { p: pc(P.minTargetBp), r: num(Math.ceil((me.respect * P.minTargetBp) / 10000)) }))));
+  out.push(h('h2', { class: 'sec' }, t('hmListT')));
+  if (!all) out.push(h('p', { class: 'muted' }, t('loading')));
+  else if (!all.length) out.push(h('div', { class: 'note' }, h('p', { class: 'muted' }, t('hmNone'))));
+  else {
+    out.push(h('div', { class: 'stack' }, all.map((x) => {
+      const ok = !x.hw;
+      return h('div', { class: 'card row gm hmrow' + (ok ? '' : ' off') },
+        S.avOk ? h('img', { class: 'avs', src: AV(x.av || 0), alt: '', width: 96, height: 96, loading: 'lazy' }) : null,
+        h('div', { class: 'grow' }, h('div', { style: 'font-weight:700' }, x.tag ? h('span', { class: 'gtag' }, x.tag) : null, x.tag ? ' ' : '', x.name),
+          h('div', { class: 'small muted' }, t('level') + ' ' + x.level + ' · ', h('span', { class: 'c-resp' }, icon('crown'), ' ' + short(x.respect)), ok ? ' · ' + t('hmAimShort', { p: pct(x.hc) }) : ''),
+          !ok && !GLOBAL.includes(x.hw) ? h('div', { class: 'small muted' }, errText(x.hw)) : null),
+        ok ? h('button', { class: 'btn danger sm', 'aria-label': t('hmGo', { m: moneyShort(x.hp) }), on: { click: () => hitmanSheet(x) } }, icon('skull'), moneyShort(x.hp)) : null);
+    })));
+  }
+  out.push(h('button', { class: 'btn ghost block', style: 'margin-top:12px', on: { click: () => { S.hitList = null; render(); loadHitman(); } } }, icon('refresh'), t('retry')));
+  return out;
 }
 function screenFights() {
   const me = S.st.me, n = now();
   const out = [pageHead('fights', t('fightsSub'))];
-  out.push(h('div', { class: 'hlinks' }, ['gang', 'arms', 'rank'].map((id) => h('button', { class: 'hlink', on: { click: () => go(id) } },
+  out.push(h('div', { class: 'hlinks' }, ['gang', 'arms', 'rank', 'hitman'].map((id) => h('button', { class: 'hlink', on: { click: () => go(id) } },
     art('cenas', PLACES[id].img, 'hthumb'), h('span', null, t('p_' + id)), icon('chev')))));
   out.push(h('div', { class: 'seg', role: 'group' }, [['targets', t('targets')], ['events', t('news')]].map(([id, lbl]) =>
     h('button', { 'aria-pressed': S.fightSeg === id ? 'true' : 'false', on: { click: () => { S.fightSeg = id; if (id === 'targets') loadTargets(); else loadEvents(true); render(); } } }, lbl))));
@@ -1581,7 +1613,8 @@ function gangBiz(mine, me) {
       const B = G.biz[k], room = Math.max(0, b.cap - b.inv), can = Math.min(room, liquid);
       const amounts = [0.25, 0.5, 1].map((f) => Math.floor(can * f)).filter((v, i, a) => v >= G.bizMin && a.indexOf(v) === i);
       return h('div', { class: 'gbr' + (b.open ? '' : ' off') },
-        h('div', { class: 'row sp' }, h('div', null, h('div', { style: 'font-weight:700' }, t('gb_' + b.id)), h('div', { class: 'small muted' }, t('gBizRate', { p: pct(B.rateBp) }) + (b.total > 0 ? ' · ' + t('gBizAll', { m: moneyShort(b.total), n: b.investors }) : ''))),
+        h('div', { class: 'row gbh' }, art('gang', b.id, 'gthumb' + (b.open ? '' : ' lock')),
+          h('div', { class: 'grow' }, h('div', { style: 'font-weight:700' }, t('gb_' + b.id)), h('div', { class: 'small muted' }, t('gBizRate', { p: pct(B.rateBp) }) + (b.total > 0 ? ' · ' + t('gBizAll', { m: moneyShort(b.total), n: b.investors }) : ''))),
           b.inv > 0 ? h('b', { class: 'num c-cash' }, '+' + moneyShort(b.perH) + '/h') : null),
         !b.open ? h('div', { class: 'small muted' }, t('gBizLock', { n: B.sede }))
           : [b.inv > 0 ? h('div', { class: 'small' }, t('gBizMine', { a: money(b.inv), c: moneyShort(b.cap) }), b.coop > 0 ? h('span', { class: 'c-cash' }, ' · ' + t('gBizBonus', { p: pct(b.coop) })) : h('span', { class: 'muted' }, ' · ' + t('gBizAlone'))) : null,
@@ -1643,11 +1676,11 @@ function screenGang() {
   const give = [0.1, 0.25, 0.5].map((f) => Math.floor(liquid * f)).filter((v, i, a) => v >= G.donateMin && a.indexOf(v) === i);
   const upRow = (what, lvl, cost, txt) => {
     const max = lvl >= G.maxLevel, miss = max ? 0 : Math.max(0, cost - mine.fund);
-    return h('div', { class: 'row sp gup' }, h('div', { class: 'grow' }, h('div', { style: 'font-weight:700' }, txt), h('div', { class: 'small ' + (miss ? 'muted' : 'c-cash') }, max ? t('gMax') : miss ? t('gMiss', { m: money(miss) }) : t('gReady'))),
+    return h('div', { class: 'row sp gup' }, art('gang', what, 'gthumb'), h('div', { class: 'grow' }, h('div', { style: 'font-weight:700' }, txt), h('div', { class: 'small ' + (miss ? 'muted' : 'c-cash') }, max ? t('gMax') : miss ? t('gMiss', { m: money(miss) }) : t('gReady'))),
       max ? null : h('button', { class: 'btn buy sm', disabled: !boss || miss > 0, on: { click: () => gAct('gangUp', { what }) } }, boss ? moneyShort(cost) : t('gBossOnly')));
   };
   if (!mine.bot) out.push(h('div', { class: 'card stack', style: 'margin:0 0 12px' },
-    h('div', { class: 'row sp' }, h('span', { class: 'muted' }, t('gFund')), h('b', { class: 'gfund num c-cash' }, money(mine.fund))),
+    h('div', { class: 'row gbh' }, art('gang', 'cofre', 'gthumb'), h('span', { class: 'muted grow' }, t('gFund')), h('b', { class: 'gfund num c-cash' }, money(mine.fund))),
     give.length ? h('div', { class: 'row', style: 'flex-wrap:wrap;gap:8px' }, give.map((v) => h('button', { class: 'btn grow', on: { click: () => gAct('gangDonate', { amount: v }) } }, t('gGive', { m: moneyShort(v) })))) : h('p', { class: 'small muted' }, t('gGiveMin', { m: money(G.donateMin) })),
     h('p', { class: 'small muted' }, t('gFundNote')),
     upRow('sede', mine.sede, G.sede[mine.sede - 1], t('gUpSede', { n: mine.sede + 1 })),

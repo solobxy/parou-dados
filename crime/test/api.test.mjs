@@ -601,14 +601,20 @@ test('negócios da gangue: investir, bónus de grupo acertado em todos, sede a m
 
 test('guardas e assassino a soldo: comprar guardas, encomendar, o alvo não sabe quem foi quando acerta e sabe quando falha, jornal sem nomes a mais', async () => {
   ENV_EXTRA = { ATOS_3S: '100000', ATOS_MIN: '1000000' };
-  const A = await contaNova('HitA', '10.0.9.95'), B = await contaNova('HitB', '10.0.9.96');
-  for (const x of [A, B]) await x.estado();
+  const A = await contaNova('HitA', '10.0.9.95'), B = await contaNova('HitB', '10.0.9.96'), C = await contaNova('HitC', '10.0.9.94');
+  for (const x of [A, B, C]) await x.estado();
   const base = (e) => { e.cash = 3_000_000; e.bank = 0; e.respect = 1000; e.peakRespect = 1000; e.shieldUntil = 0; e.protectUntil = 0; e.hospUntil = 0; e.jailUntil = 0; };
-  await mexer({ HitA: base, HitB: (e) => { base(e); e.cash = 40_000; } });
+  await mexer({ HitA: base, HitB: (e) => { base(e); e.cash = 40_000; }, HitC: (e) => { base(e); e.respect = 100; e.peakRespect = 100; } });
   const ag = (x, ip, body) => cru(x.cookie, ip, body), get = async (x, ip, url) => (await fetch(BASE + url, { headers: { cookie: x.cookie, 'X-Forwarded-For': ip } })).json();
   // a lista de alvos traz o preço e a pontaria do assassino
   let alvo = (await get(A, '10.0.9.95', '/api/targets')).list.find((x) => x.name === 'HitB');
   assert.equal(alvo.hp, 100000); assert.equal(alvo.hc, 9000); assert.equal(alvo.hw, null);
+  // o sítio do assassino mostra toda a gente, com o motivo quando não dá: um fraco demais não entra nos alvos, mas aparece aqui a dizer porquê
+  assert.equal((await get(A, '10.0.9.95', '/api/targets')).list.some((x) => x.name === 'HitC'), false);
+  const contratos = (await get(A, '10.0.9.95', '/api/hitman')).list.filter((x) => x.name.startsWith('Hit'));
+  assert.deepEqual(contratos.map((x) => [x.name, x.hw, x.hp, x.hc]), [['HitB', null, 100000, 9000], ['HitC', 'TARGET_TOO_WEAK', 10000, 9000]]);
+  assert.deepEqual(Object.keys(contratos[0]).sort(), ['av', 'hc', 'hp', 'hw', 'level', 'name', 'respect', 'tag']);
+  assert.equal((await fetch(BASE + '/api/hitman')).status, 401);
   // B compra um pitbull: a pontaria desce 15 pontos
   let r = await ag(B, '10.0.9.96', { type: 'gear', kind: 'guard', idx: 1 }); assert.equal(r.status, 200, JSON.stringify(r.body)); assert.equal(r.body.me.guard, 1); assert.equal(r.body.me.cash, 36_000);
   alvo = (await get(A, '10.0.9.95', '/api/targets')).list.find((x) => x.name === 'HitB'); assert.equal(alvo.hc, 7500);
@@ -832,7 +838,7 @@ test('registo: o email é obrigatório, tem de ter forma de email, é um por con
   { const db = new DatabaseSync(join(dir, 'jogo.db')); assert.equal(db.prepare('SELECT email FROM contas WHERE nome = ?').get('ComMail').email, 'joana.silva@exemplo.pt'); db.close(); }
   await arrancar();
   const l = await a('POST', '/api/login', { name: 'ComMail', password: 'segredo123' }); assert.deepEqual(l.body, { ok: true, name: 'ComMail', lang: 'en' });
-  for (const path of ['/api/state', '/api/rank', '/api/targets', '/api/news', '/api/gang', '/api/events', '/api/config']) {
+  for (const path of ['/api/state', '/api/rank', '/api/targets', '/api/hitman', '/api/news', '/api/gang', '/api/events', '/api/config']) {
     const x = await a('GET', path); assert.ok(!JSON.stringify(x.body).toLowerCase().includes('exemplo.pt'), path + ' mostra o email');
   }
 });
