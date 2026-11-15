@@ -1709,18 +1709,19 @@ function pickW(rng, list) {
   for (const [v, w] of list) { if (x < w) return v; x -= w; }
   return list[list.length - 1][0];
 }
-// Crazy: onde a roda pára em cada volta (a casa por baixo do flapper do meio) e o que cada flapper ganha. Um flapper que cai em DOUBLE
-// segue para a volta seguinte com tudo a dobrar; os outros já acabaram. À 12.ª volta seguida (1 vez em milhares de milhões) um DOUBLE conta
-// como a casa de valor que vem a seguir, para a roda não rodar para sempre.
+// Crazy: onde a roda pára em cada volta (a casa por baixo do flapper do meio) e o que cada flapper ganha. Um flapper que cai em DOUBLE ou
+// TRIPLE segue para a volta seguinte com tudo a dobrar ou a triplicar; os outros já acabaram. À 12.ª volta seguida (1 vez em milhares de
+// milhões) uma dessas casas conta como a casa de valor que vem a seguir, para a roda não rodar para sempre.
+export const CRAZY_X = { D: 2, T: 3 };
 export function crazySpin(rng) {
-  const L = CFG.casino.wheel.louca, N = L.segs.length, stops = [], mults = L.flaps.map(() => null);
+  const L = CFG.casino.wheel.louca, N = L.segs.length, stops = [], mults = L.flaps.map(() => null), fac = L.flaps.map(() => 1);
   for (let n = 0; n < 12 && mults.includes(null); n++) {
     const idx = rng.int(0, N - 1); stops.push(idx);
     L.flaps.forEach((off, f) => {
       if (mults[f] !== null) return;
       let i = (((idx + off) % N) + N) % N;
-      if (n === 11) while (L.segs[i] === 'D') i = (i + 1) % N;
-      if (L.segs[i] !== 'D') mults[f] = L.segs[i] * 2 ** n;
+      if (n === 11) while (CRAZY_X[L.segs[i]]) i = (i + 1) % N;
+      if (CRAZY_X[L.segs[i]]) fac[f] *= CRAZY_X[L.segs[i]]; else mults[f] = L.segs[i] * fac[f];
     });
   }
   return { stops, mults };

@@ -2191,7 +2191,7 @@ async function wheelAnim(r) {
         pick: (c) => act('tableFlap', { c }),
         reveal: async () => { const d = await abre(); if (!d) return null; r.bonus = d.res.bonus; if (d.mine) { r.win = d.mine.win || 0; r.flap = d.mine.flap; r.auto = d.mine.auto; if (r.mine) Object.assign(r.mine, d.mine); } return { stops: d.res.bonus.stops, mults: d.res.bonus.mults, flap: aposta ? d.mine?.flap : null }; },
         L: { colors: [t('czGreen'), t('wBlue'), t('czYellow')], pick: t('czPick'), note: t('czNote'), picked: (f) => t('czPicked', { c: [t('czGreen'), t('wBlue'), t('czYellow')][f].toLowerCase() }), yours: t('czYours'),
-          watch: t('czWatch'), auto: t('czAuto'), spin: t('czSpin'), dbl: 'DOUBLE!', dblAll: (x) => t('czDblAll', { x }), left: (s) => s + ' s' } });
+          watch: t('czWatch'), auto: t('czAuto'), spin: t('czSpin'), boost: (x) => t('czDblAll', { x }), left: (s) => s + ' s' } });
       r.mult = out ? wMult(r, aposta ? r.flap : null) : wMult(r, r.flap);
     }
   }

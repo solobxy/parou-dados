@@ -153,17 +153,17 @@ export const CFG = {
       num: { 1: 1, 2: 2, 5: 5, 10: 10 },
       // Multiplicador do topo (15/11/2026): sai quase sempre numa casa (98,9% das voltas; antes 47%) e, em troca, é mais baixo em média (×3,04; antes ×5,45).
       // Acerta na casa que sai em 18,9% das voltas (1 em 5,3; antes 8,7%, 1 em 11). O retorno de cada aposta fica igual: 96,5%.
-      top: { 1: 2359, 2: 2471, 5: 1415, 10: 993, moeda: 936, caixas: 780, bola: 519, louca: 418 }, // em 10 000 voltas: quantas vezes o multiplicador do topo cai em cada casa
+      top: { 1: 2359, 2: 2471, 5: 1415, 10: 993, moeda: 936, caixas: 780, bola: 519, louca: 443 }, // em 10 000 voltas: quantas vezes o multiplicador do topo cai em cada casa
       topMult: [[2, 560], [3, 240], [4, 90], [5, 55], [7, 28], [10, 18], [15, 5], [20, 2], [25, 1], [50, 1]],
       moeda: [[3, 250], [5, 240], [7, 150], [10, 140], [15, 90], [20, 50], [25, 30], [50, 30], [100, 10]],
       caixas: [[10, 408], [15, 240], [20, 150], [25, 100], [50, 78], [75, 30], [100, 15], [200, 7]],
       bola: [[10, 363], [15, 240], [20, 150], [25, 90], [50, 73], [100, 37], [200, 10]],
       // Crazy: roda de 64 casas com três flappers (verde, azul, amarelo). O jogador escolhe um antes de ela rodar e cada flapper lê a casa que tem
-      // por baixo (flaps: desvio em casas a partir do do meio). 'D' é DOUBLE: todos os valores da roda dobram e ela roda outra vez, só para quem
-      // lá caiu, as vezes que sair (até ao teto de 2500×). 56 valores (15×10, 20×10, 25×12, 35×9, 50×8, 100×5, 200×2) e 8 DOUBLE, nunca dois
-      // flappers em DOUBLE na mesma volta. Em média dá ×47,2 (a roda antiga dava ×44,7, sem escolha nem DOUBLE).
-      louca: { flaps: [-5, 0, 5], segs: [20, 25, 35, 'D', 50, 15, 100, 25, 20, 35, 15, 'D', 50, 25, 15, 20, 200, 35, 'D', 25, 100, 50, 15, 20, 35, 25, 15, 'D', 50, 20, 25, 35,
-        100, 25, 20, 'D', 50, 15, 25, 35, 20, 15, 'D', 50, 100, 25, 35, 15, 200, 20, 25, 'D', 50, 15, 35, 20, 25, 100, 15, 'D', 50, 35, 20, 25] },
+      // por baixo (flaps: desvio em casas a partir do do meio). 'D' é DOUBLE e 'T' é TRIPLE: todos os valores da roda dobram ou triplicam e ela
+      // roda outra vez, só para quem lá caiu, as vezes que sair (até ao teto de 2500×). 56 valores (15×11, 20×11, 25×12, 35×8, 50×8, 100×4, 200×2),
+      // 6 DOUBLE e 2 TRIPLE, nunca dois flappers numa destas casas na mesma volta. Em média dá ×47,1 (a roda antiga dava ×44,7, sem escolha).
+      louca: { flaps: [-5, 0, 5], segs: [20, 25, 35, 'D', 50, 15, 100, 25, 20, 35, 15, 'D', 50, 25, 15, 20, 200, 35, 'T', 25, 100, 50, 15, 20, 35, 25, 15, 'D', 50, 20, 25, 15,
+        100, 25, 20, 'D', 50, 15, 25, 35, 20, 15, 'D', 50, 20, 25, 35, 15, 200, 20, 25, 'T', 50, 15, 35, 20, 25, 100, 15, 'D', 50, 35, 20, 25] },
       bolaSlots: 12, caixasN: 36,
     },
     // Slots. «scatter»: 6×5, 8 ou mais iguais em qualquer sítio pagam; as vitórias caem e entram símbolos novos; as esferas somam-se e

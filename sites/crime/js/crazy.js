@@ -1,36 +1,37 @@
 // O bónus Crazy: uma roda de 64 casas com três flappers (verde, azul, amarelo). O jogador escolhe o seu antes de a roda rodar;
-// cada flapper lê a casa que tem por baixo. DOUBLE dobra todos os valores da roda e ela roda outra vez, as vezes que sair.
+// cada flapper lê a casa que tem por baixo. DOUBLE dobra e TRIPLE triplica todos os valores da roda, e ela roda outra vez, as vezes que sair.
 // Aqui só se anima: onde a roda pára e o que cada flapper ganha vem decidido pelo servidor, e só depois de a escolha fechar.
 import { h } from './ui.js';
 
 const TAU = Math.PI * 2, DISP = '"Shoulders", "Arial Narrow", sans-serif';
 export const FLAP_COR = ['#2fd35f', '#2aa8ff', '#ffd426'];   // verde, azul, amarelo
 // cada valor com a sua cor (festa, não o noir da roda principal): reconhece-se o valor pela cor mesmo com a roda a girar
-const COR = { 15: '#6d5947', 20: '#d0162b', 25: '#ef8a0b', 35: '#7c2fc0', 50: '#16a05a', 100: '#e0267d', 200: '#1aa3b8', D: '#0d0f14' };
+const COR = { 15: '#6d5947', 20: '#d0162b', 25: '#ef8a0b', 35: '#7c2fc0', 50: '#16a05a', 100: '#e0267d', 200: '#1aa3b8', D: '#0d0f14', T: '#0d0f14' };
+const ESP = { D: { x: 2, nome: 'DOUBLE', cor: '#ffd95e', aro: '#f2c230' }, T: { x: 3, nome: 'TRIPLE', cor: '#ff8ac4', aro: '#ff4fa3' } };   // as casas que multiplicam a roda toda
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 const mod = (a, n) => ((a % n) + n) % n;
 
-// A roda. segs: números ou 'D'. flaps: de quantas casas cada flapper está desviado do do meio (ex.: [-5, 0, 5]).
+// A roda. segs: números, 'D' (DOUBLE) ou 'T' (TRIPLE). flaps: de quantas casas cada flapper está desviado do do meio (ex.: [-5, 0, 5]).
 export function crazyWheel({ segs, flaps, sfx }) {
   const W = 360, H = 392, cx = 180, cy = 214, R = 162, N = segs.length, th = TAU / N;
   const dpr = Math.min(2.5, window.devicePixelRatio || 1), el = document.createElement('canvas');
   el.width = Math.round(W * dpr); el.height = Math.round(H * dpr); el.className = 'crz-wheel'; el.style.aspectRatio = `${W} / ${H}`;
   const ctx = el.getContext('2d'); ctx.scale(dpr, dpr);
-  const st = { rot: 0, k: 0, sp: null, flash: 0, mine: -1, active: [true, true, true], lit: null, raf: 0, t0: 0 };
+  const st = { rot: 0, fac: 1, sp: null, flash: 0, mine: -1, active: [true, true, true], lit: null, raf: 0, t0: 0 };
   // a face da roda, redesenhada só quando os valores dobram
   const face = document.createElement('canvas'); face.width = face.height = Math.round(R * 2 * dpr);
   function paint() {
     const x = face.getContext('2d'); x.setTransform(dpr, 0, 0, dpr, 0, 0); x.clearRect(0, 0, R * 2, R * 2); x.translate(R, R);
     const RB = R - 8, RIN = 50;
     segs.forEach((s, i) => {
-      const a0 = (i - 0.5) * th - Math.PI / 2, a = i * th - Math.PI / 2, dbl = s === 'D';
+      const a0 = (i - 0.5) * th - Math.PI / 2, a = i * th - Math.PI / 2, e = ESP[s], dbl = !!e;
       x.fillStyle = COR[s] || '#444'; x.beginPath(); x.moveTo(0, 0); x.arc(0, 0, RB, a0, a0 + th); x.closePath(); x.fill();
-      if (dbl) { x.fillStyle = '#f2c230'; x.beginPath(); x.arc(0, 0, RB, a0, a0 + th); x.arc(0, 0, RB - 6, a0 + th, a0, true); x.closePath(); x.fill(); }
+      if (dbl) { x.fillStyle = e.aro; x.beginPath(); x.arc(0, 0, RB, a0, a0 + th); x.arc(0, 0, RB - 6, a0 + th, a0, true); x.closePath(); x.fill(); }
       x.strokeStyle = '#f3d27a'; x.lineWidth = 0.9; x.beginPath(); x.moveTo(RIN * Math.cos(a0), RIN * Math.sin(a0)); x.lineTo(RB * Math.cos(a0), RB * Math.sin(a0)); x.stroke();
       // letras empilhadas ao longo do raio, do aro para o centro, como na roda a sério
-      const txt = dbl ? 'DOUBLE' : String(s * 2 ** st.k) + 'X', fs = dbl ? 11.5 : txt.length > 4 ? 11.5 : 13, passo = dbl ? 11.2 : txt.length > 4 ? 11.4 : 12.6;
+      const txt = dbl ? e.nome : String(s * st.fac) + 'X', fs = dbl ? 11.5 : txt.length > 4 ? 11.5 : 13, passo = dbl ? 11.2 : txt.length > 4 ? 11.4 : 12.6;
       x.save(); x.rotate(a + Math.PI / 2); x.textAlign = 'center'; x.textBaseline = 'middle'; x.font = `900 ${fs}px ${DISP}`;
-      x.fillStyle = dbl ? '#ffd95e' : '#fff8dc'; x.strokeStyle = '#0009'; x.lineWidth = 2.4; x.lineJoin = 'round';
+      x.fillStyle = dbl ? e.cor : '#fff8dc'; x.strokeStyle = '#0009'; x.lineWidth = 2.4; x.lineJoin = 'round';
       for (let c = 0; c < txt.length; c++) { const y = -(RB - (dbl ? 16 : 14) - c * passo); x.strokeText(txt[c], 0, y); x.fillText(txt[c], 0, y); }
       x.restore();
     });
@@ -55,7 +56,7 @@ export function crazyWheel({ segs, flaps, sfx }) {
     ctx.save(); ctx.translate(cx, cy);
     const hg = ctx.createRadialGradient(-10, -12, 4, 0, 0, 50); hg.addColorStop(0, '#3a1030'); hg.addColorStop(1, '#0c0612');
     ctx.fillStyle = hg; ctx.beginPath(); ctx.arc(0, 0, 50, 0, TAU); ctx.fill(); ctx.strokeStyle = '#f2c230'; ctx.lineWidth = 3; ctx.stroke();
-    ctx.fillStyle = '#ffd95e'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.font = `900 21px ${DISP}`; ctx.fillText('CRAZY', 0, -9); ctx.font = `900 ${st.k ? 19 : 15}px ${DISP}`; ctx.fillText(st.k ? '×' + 2 ** st.k : 'TIME', 0, 12);
+    ctx.fillStyle = '#ffd95e'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.font = `900 21px ${DISP}`; ctx.fillText('CRAZY', 0, -9); ctx.font = `900 ${st.fac > 1 ? 19 : 15}px ${DISP}`; ctx.fillText(st.fac > 1 ? '×' + st.fac : 'TIME', 0, 12);
     ctx.restore();
     if (st.flash > 0) { ctx.fillStyle = `rgba(255,217,94,${st.flash * 0.55})`; ctx.beginPath(); ctx.arc(cx, cy, R - 8, 0, TAU); ctx.fill(); }
     const NB = 40, ph = Math.floor(now * (st.sp ? 10 : 2.5));
@@ -92,7 +93,7 @@ export function crazyWheel({ segs, flaps, sfx }) {
     mine(f) { st.mine = f; wake(50); },
     active(f, on) { st.active[f] = on; wake(50); },
     light(list) { st.lit = list; wake(50); },                       // list: casa por flapper (null = apagado), ou null para apagar tudo
-    double() { st.k++; st.flash = 1; paint(); wake(700); },          // todos os valores a dobrar, com um clarão
+    boost(x) { st.fac *= x; st.flash = 1; paint(); wake(700); return st.fac; },   // todos os valores a dobrar ou a triplicar, com um clarão
     // roda até a casa idx ficar por baixo do flapper do meio
     spin(idx, secs = 7) {
       const alvo = -idx * th + (Math.random() - 0.5) * th * 0.5, delta = mod(alvo - st.rot, TAU);
@@ -105,7 +106,7 @@ export function crazyWheel({ segs, flaps, sfx }) {
 
 // O bónus inteiro dentro do palco da roda. o = { segs, flaps, pickUntil, now(), canPick, pick(c), reveal(), sfx, vibrate, L }
 //   pick(c)   → manda a escolha ao servidor; reveal() → espera que o servidor abra o resultado: { stops, mults, flap } (ou null)
-//   L         → textos: { colors, pick, note, picked(f), yours, watch, auto, spin, dbl, dblAll(x), left(s) }
+//   L         → textos: { colors, pick, note, picked(f), yours, watch, auto, spin, boost(x), left(s) }
 // Devolve { flap, mult } (o multiplicador do flapper do jogador, sem o do topo), ou null se não deu para saber.
 export async function crazyBonus(stage, o) {
   const wheel = crazyWheel({ segs: o.segs, flaps: o.flaps, sfx: o.sfx });
@@ -132,17 +133,17 @@ export async function crazyBonus(stage, o) {
   for (let n = 0; n < r.stops.length; n++) {
     await wheel.spin(r.stops[n], n ? 5.5 : 7); if (!stage.isConnected) return null;
     const antes = done.slice(); wheel.light(o.flaps.map((_, f) => (antes[f] ? null : wheel.at(r.stops[n], f))));
-    let dobra = false;
+    let dobra = null;   // a casa especial desta volta (só um flapper pode cair numa)
     o.flaps.forEach((_, f) => {
       if (antes[f]) return; const s = wheel.seg(r.stops[n], f), b = chips[f].lastChild;
-      if (s === 'D') { dobra = true; b.textContent = 'DOUBLE'; chips[f].classList.add('dbl'); }
+      if (ESP[s]) { dobra = ESP[s]; b.textContent = dobra.nome; chips[f].classList.add('dbl'); }
       else { done[f] = true; b.textContent = '×' + r.mults[f]; chips[f].classList.remove('dbl'); chips[f].classList.add('fim'); wheel.active(f, false); }
     });
     // o que aconteceu ao teu flapper nesta volta: parou num valor (é o teu prémio) ou em DOUBLE (segue para a próxima, a dobrar)
     if (flap >= 0 && !antes[flap] && done[flap]) { banner.textContent = '×' + r.mults[flap]; banner.className = 'crz-banner on win'; o.sfx(r.mults[flap] >= 100 ? 'crit' : 'cash'); o.vibrate(20); }
-    else if (dobra) { banner.textContent = o.L.dbl; banner.className = 'crz-banner on dbl'; o.sfx('level'); o.vibrate([20, 40, 20]); }
+    else if (dobra) { banner.textContent = dobra.nome + '!'; banner.className = 'crz-banner on dbl'; o.sfx('level'); o.vibrate([20, 40, 20]); }
     await wait(1400);
-    if (dobra && n + 1 < r.stops.length) { wheel.double(); o.sfx('refill'); msg.firstChild.textContent = o.L.dblAll(2 ** (n + 1)); await wait(1100); banner.classList.remove('on'); wheel.light(null); }
+    if (dobra && n + 1 < r.stops.length) { const fac = wheel.boost(dobra.x); o.sfx('refill'); msg.firstChild.textContent = o.L.boost(fac); await wait(1100); banner.classList.remove('on'); wheel.light(null); }
   }
   await wait(600);
   return { flap, mult: flap >= 0 ? r.mults[flap] : null };

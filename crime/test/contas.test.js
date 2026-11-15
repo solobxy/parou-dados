@@ -599,9 +599,9 @@ test('casino: aposta mínima, máxima pelo nível, só dinheiro na mão; aposta 
 
 test('roda da sorte: as oito apostas devolvem 96,5% (conta exata, com o teto) e a simulação confirma', () => {
   const Wh = CFG.casino.wheel, CAP = CFG.casino.maxWinMult, tw = (l) => l.reduce((x, [, w]) => x + w, 0), TT = tw(Wh.topMult), LC = Wh.louca;
-  // Crazy: o que um flapper ganha é um valor da roda × 2 por cada DOUBLE seguido antes dele (cada volta, 8 em 64 de sair DOUBLE)
-  const nums = LC.segs.filter((x) => x !== 'D'), nd = LC.segs.length - nums.length, louca = [];
-  for (let k = 0, pk = 1; k < 14; k++, pk *= nd / LC.segs.length) for (const v of nums) louca.push([v * 2 ** k, pk / LC.segs.length]);
+  // Crazy: o que um flapper ganha é um valor da roda × 2 por cada DOUBLE e × 3 por cada TRIPLE seguidos antes dele
+  const FX = E.CRAZY_X, nums = LC.segs.filter((x) => !FX[x]), louca = [];
+  (function seq(p, fac, d) { for (const v of nums) louca.push([v * fac, p / LC.segs.length]); if (d < 9) for (const k of Object.keys(FX)) seq(p * LC.segs.filter((x) => x === k).length / LC.segs.length, fac * FX[k], d + 1); })(1, 1, 0);
   const dist = (s) => (Wh.num[s] ? [[Wh.num[s], 1]] : s === 'louca' ? louca : Wh[s].map(([v, w]) => [v, w / tw(Wh[s])]));
   // retorno exato de uma aposta sozinha numa casa: sem multiplicador do topo, e com cada um deles; nenhum prémio passa do teto
   const exato = (s, cap) => {
@@ -638,27 +638,28 @@ test('roda da sorte: as oito apostas devolvem 96,5% (conta exata, com o teto) e 
 test('Crazy: 64 casas, três flappers com o seu resultado, DOUBLE dobra e volta a rodar, e os três valem o mesmo em média', () => {
   const LC = CFG.casino.wheel.louca, N = LC.segs.length, conta = {};
   for (const x of LC.segs) conta[x] = (conta[x] || 0) + 1;
-  assert.equal(N, 64); assert.deepEqual(conta, { 15: 10, 20: 10, 25: 12, 35: 9, 50: 8, 100: 5, 200: 2, D: 8 });
+  assert.equal(N, 64); assert.deepEqual(conta, { 15: 11, 20: 11, 25: 12, 35: 8, 50: 8, 100: 4, 200: 2, D: 6, T: 2 });
+  const FX = E.CRAZY_X, esp = (i) => FX[LC.segs[((i % N) + N) % N]];
   assert.deepEqual(LC.flaps, [-5, 0, 5]);
   // nunca dois flappers em DOUBLE na mesma volta, nem duas casas iguais seguidas
   for (let i = 0; i < N; i++) {
-    assert.ok(LC.flaps.filter((o) => LC.segs[(i + o + N) % N] === 'D').length <= 1, 'dois flappers em DOUBLE na casa ' + i);
+    assert.ok(LC.flaps.filter((o) => esp(i + o)).length <= 1, 'dois flappers em DOUBLE ou TRIPLE na casa ' + i);
     assert.notEqual(LC.segs[i], LC.segs[(i + 1) % N], 'casas iguais seguidas em ' + i);
   }
-  const rng = seededRng(64), M = 400000, soma = [0, 0, 0]; let voltas = 0, dobrou = 0, maxVoltas = 0;
+  const rng = seededRng(64), M = 400000, soma = [0, 0, 0]; let voltas = 0, dobrou = 0, triplicou = 0, maxVoltas = 0;
   for (let i = 0; i < M; i++) {
     const { stops, mults } = E.crazySpin(rng); voltas += stops.length; maxVoltas = Math.max(maxVoltas, stops.length);
-    // cada flapper: a casa por baixo dele em cada volta; segue enquanto for DOUBLE e ganha o valor onde parar, a dobrar por cada volta anterior
+    // cada flapper: a casa por baixo dele em cada volta; segue enquanto for DOUBLE ou TRIPLE e ganha o valor onde parar, × 2 ou × 3 por cada uma
     LC.flaps.forEach((o, f) => {
-      let n = 0; while (LC.segs[(stops[n] + o + N) % N] === 'D') { n++; assert.ok(n < stops.length, 'DOUBLE sem volta seguinte'); }
-      assert.equal(mults[f], LC.segs[(stops[n] + o + N) % N] * 2 ** n); soma[f] += mults[f]; if (f === 1 && n > 0) dobrou++;
+      let n = 0, fac = 1; while (esp(stops[n] + o)) { fac *= esp(stops[n] + o); if (f === 1 && n === 0) { if (fac === 2) dobrou++; else triplicou++; } n++; assert.ok(n < stops.length, 'DOUBLE ou TRIPLE sem volta seguinte'); }
+      assert.equal(mults[f], LC.segs[(stops[n] + o + N) % N] * fac); soma[f] += mults[f];
     });
-    // a roda só roda outra vez enquanto houver um flapper em DOUBLE
-    assert.ok(LC.flaps.some((o) => stops.slice(0, -1).every((x) => LC.segs[(x + o + N) % N] === 'D')));
+    // a roda só roda outra vez enquanto houver um flapper numa dessas casas
+    assert.ok(LC.flaps.some((o) => stops.slice(0, -1).every((x) => esp(x + o))));
   }
-  const media = (LC.segs.filter((x) => x !== 'D').reduce((x, y) => x + y, 0) / N) / (1 - (2 * 8) / N);   // 47,19
+  const media = (LC.segs.filter((x) => !FX[x]).reduce((x, y) => x + y, 0) / N) / (1 - (2 * 6 + 3 * 2) / N);   // 47,07
   for (const f of [0, 1, 2]) perto(soma[f] / M / media, 1, 0.03, 'flapper ' + f);
-  perto(dobrou / M, 8 / 64, 0.004, 'DOUBLE no flapper do meio'); assert.ok(maxVoltas >= 3 && maxVoltas <= 12);
+  perto(dobrou / M, 6 / 64, 0.004, 'DOUBLE no flapper do meio'); perto(triplicou / M, 2 / 64, 0.003, 'TRIPLE no flapper do meio'); assert.ok(maxVoltas >= 3 && maxVoltas <= 12);
   // o prémio é o do flapper escolhido, com o multiplicador do topo se calhar na Crazy
   const res = { s: 'louca', tm: 3, bonus: { stops: [0], mults: [20, 50, 200] } };
   assert.deepEqual([0, 1, 2].map((f) => E.tablePay('wheel', [{ s: 'louca', amt: 10 }, { s: '1', amt: 5 }], res, f)), [10 * 61, 10 * 151, 10 * 601]);
