@@ -873,3 +873,33 @@ test('desintoxicação: preço anunciado, sobe 15% de cada vez, e há sempre uma
   // 24 h depois volta ao preço de início
   p.addiction = 100; p.addictionT = t + T.DAY; assert.equal(E.detoxCost(p, t + T.DAY), c1);
 });
+
+test('slots: comprar bónus pode custar até 10× o máximo por jogada, a ficha continua presa ao máximo, e só com dinheiro na mão', () => {
+  const p = cas(1e9); const M = E.casinoMax(p), K = CFG.casino.buyMaxMult, G = CFG.casino.slots.zeus;
+  assert.equal(M, 1000); assert.equal(K, 10);
+  // ficha de 100 → compra de 10 000 (10× o máximo de 1000): passa. Ficha de 110 → 11 000: não passa e não mexe em nada
+  let r = E.casinoPlay(p, NOW, W, 'slot', { game: 'zeus', amt: 100, buy: 1 }, seededRng(5)); assert.equal(r.bet, 100 * G.buy); assert.equal(p.cash, 1e9 - r.bet + r.win);
+  const antes = p.cash; assert.throws(() => E.casinoPlay(p, NOW, W, 'slot', { game: 'zeus', amt: 110, buy: 1 }, never), code('BET_TOO_BIG')); assert.equal(p.cash, antes);
+  // jogada normal: o máximo de sempre
+  assert.throws(() => E.casinoPlay(p, NOW, W, 'slot', { game: 'zeus', amt: M + 1 }, never), code('BET_TOO_BIG'));
+  E.casinoPlay(p, NOW, W, 'slot', { game: 'zeus', amt: M }, seededRng(6));
+  // compra super do Rebuçado: o mesmo teto (10× o máximo), por isso a ficha é mais pequena
+  const S2 = CFG.casino.slots.rebucado.superBuy; assert.throws(() => E.casinoPlay(p, NOW, W, 'slot', { game: 'rebucado', amt: Math.floor((M * K) / S2) + 1, buy: 2 }, never), code('BET_TOO_BIG'));
+  assert.ok(Math.floor((M * K) / S2) >= CFG.casino.minBet); E.casinoPlay(p, NOW, W, 'slot', { game: 'rebucado', amt: Math.floor((M * K) / S2), buy: 2 }, seededRng(7));
+  // sem dinheiro para a compra: recusa
+  const q = cas(9999); assert.throws(() => E.casinoPlay(q, NOW, W, 'slot', { game: 'zeus', amt: 100, buy: 1 }, never), code('NO_CASH')); assert.equal(q.cash, 9999);
+  // o prémio nunca passa do teto do jogo vezes a ficha
+  const rng = seededRng(11); for (let i = 0; i < 3000; i++) { const x = cas(1e9); const o = E.casinoPlay(x, NOW, W, 'slot', { game: 'zeus', amt: 100, buy: 1 }, rng); assert.ok(o.win <= 100 * G.max); }
+});
+
+test('lutas: ninguém ataca a própria gangue, nem para assaltar', () => {
+  const t = W.start + CFG.round.noPvpMs + 3 * T.HOUR, sorte = { int: (lo) => lo, chance: () => true, float: () => 0 };
+  const a = mk(), d = mk(), x = mk(); for (const q of [a, d, x]) { setResp(q, 500); q.cash = 1000; q.bank = 0; E.touch(q, t); q.energy = 100; q.protectUntil = 0; q.shieldUntil = 0; }
+  a.gang = 'g1'; d.gang = 'g1'; x.gang = 'g2';
+  assert.equal(E.canAttack(a, d, t, W), 'SAME_GANG');
+  for (const m of ['beat', 'mug']) assert.throws(() => E.attack(a, d, t, W, m, sorte), code('SAME_GANG'));
+  assert.equal(a.energy, 100); assert.equal(d.cash, 1000); assert.equal(d.hospUntil, 0);
+  // de outra gangue, ou sem gangue, ataca-se à vontade
+  assert.equal(E.canAttack(a, x, t, W), null); const s = mk(); setResp(s, 500); E.touch(s, t); s.energy = 100; s.shieldUntil = 0; const s2 = mk(); setResp(s2, 500); E.touch(s2, t); s2.protectUntil = 0; s2.shieldUntil = 0;
+  assert.equal(E.canAttack(s, s2, t, W), null);
+});

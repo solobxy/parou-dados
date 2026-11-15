@@ -1014,6 +1014,7 @@ function hospitalize(p, now, ms, asVictim) {
 export function canAttack(a, d, now, world, drop = false) {
   const P = CFG.pvp;
   if (a === d || a.id === d.id) return 'SELF';
+  if (a.gang && a.gang === d.gang) return 'SAME_GANG';   // ninguém ataca a própria gangue
   if (now - world.start < CFG.round.noPvpMs) return 'NO_PVP_YET';
   if (a.jailUntil > now) return 'IN_JAIL';
   if (a.hospUntil > now) return 'IN_HOSPITAL';
@@ -1212,12 +1213,13 @@ export function casinoMax(p) {
   for (let i = 1; i < level(p); i++) m = Math.floor((m * C.maxNum) / C.maxDen);
   return m;
 }
-function stakeOf(p, amounts) {
+// k: quantas vezes o máximo por jogada se pode apostar (as compras de bónus das slots têm um teto mais alto)
+function stakeOf(p, amounts, k = 1) {
   const C = CFG.casino;
   if (!Array.isArray(amounts) || !amounts.length || amounts.length > C.maxBets) fail('BAD_BET');
   let tot = 0;
   for (const a of amounts) { if (!Number.isSafeInteger(a) || a < C.minBet) fail('BAD_BET'); tot += a; }
-  if (tot > casinoMax(p)) fail('BET_TOO_BIG', { max: casinoMax(p) });
+  if (tot > casinoMax(p) * k) fail('BET_TOO_BIG', { max: casinoMax(p) * k });
   if (tot > p.cash) fail('NO_CASH');
   return tot;
 }
@@ -1552,8 +1554,8 @@ function slot(p, a, rng) {
   const G = CFG.casino.slots[gid], buy = a.buy ?? 0;
   const mult = buy === 2 ? G.superBuy : buy === 1 ? G.buy : 1;
   if (!mult || !Number.isSafeInteger(a.amt)) fail('BAD_BET');
-  const bet = stakeOf(p, [a.amt * mult]);
   if (a.amt < CFG.casino.minBet) fail('BAD_BET');
+  const bet = stakeOf(p, [a.amt * mult], buy ? CFG.casino.buyMaxMult : 1);
   p.cash -= bet;
   const sp = slotSpin(gid, rng, buy);
   const win = Math.floor((a.amt * sp.total) / 100);

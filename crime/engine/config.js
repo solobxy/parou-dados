@@ -117,6 +117,7 @@ export const CFG = {
   casino: {
     minBet: 10, maxBase: 1000, maxNum: 8, maxDen: 5, // aposta máxima por jogada = 1000 × 1,6^(nível−1), como o porto
     maxBets: 12, // fichas por jogada na roleta e na roda
+    buyMaxMult: 10, // comprar um bónus numa slot pode custar até 10× o máximo por jogada (o prémio máximo continua preso à ficha)
     red: [1, 3, 5, 7, 9, 12, 14, 16, 18, 19, 21, 23, 25, 27, 30, 32, 34, 36],
     dice: { low: 23, seven: 58, high: 23 }, // quanto volta por cada 10 apostados: 2,3× · 5,8× · 2,3×
     bj: { decks: 6, draw: 24 }, // baralho de 6 baralhos, baralhado a cada mão

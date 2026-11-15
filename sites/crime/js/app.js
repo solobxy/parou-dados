@@ -1955,12 +1955,12 @@ async function slotAnim(r) {
 }
 function slotBuy(g, kind) {
   const G = slotCfg(g), chip = chipNow(), mult = kind === 2 ? G.superBuy : G.buy, price = chip * mult;
-  const can = price <= betMax();
+  const lim = S.st.me.casinoMax * (S.cfg.casino.buyMaxMult || 1), can = price <= Math.min(lim, S.st.me.cash);   // a compra de bónus tem um teto mais alto do que uma jogada normal
   const close = sheet(h('div', { class: 'stack' }, art('cenas', 'jackpot', 'buyimg'), h('h2', null, t(kind === 2 ? 'slBuySuper' : 'slBuyT')),
     h('p', null, t(G.kind === 'cluster' ? (kind === 2 ? 'slBuyDescSuper' : 'slBuyDescC') : 'slBuyDesc', { n: G.free || G.fs[3], x: mult })),
     h('div', { class: 'row sp' }, h('span', { class: 'muted' }, t('csBet')), h('b', { class: 'num' }, money(chip))),
     h('div', { class: 'row sp' }, h('span', { class: 'muted' }, t('slBuyPrice', { x: mult })), h('b', { class: 'num c-cash' }, money(price))),
-    !can ? h('p', { class: 'small c-red' }, price > S.st.me.casinoMax ? t('csOver', { m: money(S.st.me.casinoMax) }) : t('csNoCash', { m: money(price) })) : null,
+    !can ? h('p', { class: 'small c-red' }, price > lim ? t('csOver', { m: money(lim) }) : t('csNoCash', { m: money(price) })) : null,
     h('button', { class: 'btn buy block big', disabled: !can, on: { click: () => { close(); play('slot', { game: g, amt: chip, buy: kind }, slotAnim); } } }, t('slBuyGo', { m: moneyShort(price) }))));
 }
 function screenSlotGame(page) {

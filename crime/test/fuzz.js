@@ -54,7 +54,8 @@ function contas(kind, a0, a, d0, d, t, res, arg) {
     }
     case 'casino': {
       if (dm !== res.win - res.bet || dr !== 0) bad('casino: dinheiro não bate com a aposta e o prémio');
-      if (res.bet && res.bet > E.casinoMax(a0)) bad('casino: aposta acima do máximo');
+      if (res.bet && res.bet > E.casinoMax(a0) * (res.buy ? CFG.casino.buyMaxMult : 1)) bad('casino: aposta acima do máximo');
+      if (res.g === 'slot' && res.base > E.casinoMax(a0)) bad('slot: ficha acima do máximo');
       const staked = res.g === 'bj' ? (res.done ? res.hand.bet : res.bet) : res.bet;
       const maxMult = res.g === 'roulette' ? 36 : res.g === 'dice' ? 6 : res.g === 'bj' ? 3 : CFG.casino.maxWinMult;
       if (res.g === 'slot' ? res.win > res.base * CFG.casino.slots[res.game].max : res.win > staked * maxMult) bad('casino: prémio acima do possível');
@@ -106,6 +107,7 @@ function contas(kind, a0, a, d0, d, t, res, arg) {
       const max = Math.floor((d0.cash * CFG.pvp.mugBp) / 10000) + E.bizStored(d0, t).reduce((x, y, i) => x + (CFG.biz[i].raid ? Math.floor((y.money * CFG.pvp.mugBp) / 10000) : 0), 0) + ['club', 'bro'].reduce((x, k) => x + (vv[k] ? Math.floor((vv[k].till * CFG.pvp.mugBp) / 10000) : 0), 0);
       if (dm < 0 || dm > max || wealth(d) > wealth(d0) || d.bank !== d0.bank) bad('assalto');
       if (d0.cash - d.cash > dm) bad('o alvo perdeu mais do que o atacante ganhou');
+      if (a0.gang && a0.gang === d0.gang) bad('atacou a própria gangue');
       if (res.win && res.mode === 'mug' && wealth(d0) - wealth(d) + ['club', 'bro'].reduce((x, k) => x + (vv[k] ? vv[k].till - d[k].till : 0), 0) + E.bizStored(d0, t).reduce((x, y, i) => x + y.money - d.biz[i].stored, 0) !== dm) bad('o que saiu do alvo não é o que entrou no atacante');
       if (res.win && res.mode === 'mug' && dm !== res.money) bad('saque diferente do resultado');
       if (Math.abs(dr) > MAX_PVP || Math.abs(d.respect - d0.respect) > MAX_PVP) bad('respeito da luta fora dos limites');
