@@ -297,7 +297,7 @@ for (let n = 0; n < ACTIONS; n++) {
       case 'collectPort': res = E.collectPort(p, t, world, game); break;
       case 'deposit': arg = r.chance(8000) ? r.int(0, p.cash + 10) : anyInt(); res = E.deposit(p, t, world, arg); break;
       case 'withdraw': res = E.withdraw(p, t, world, r.chance(8000) ? r.int(0, p.bank + 10) : anyInt()); break;
-      case 'gear': res = E.buyGear(p, t, world, pick(['weapon', 'armor', 'guard', 'guard', 'cash', 'stats', 'house']), r.chance(9000) ? r.int(-1, 6) : anyInt()); break;
+      case 'gear': res = E.buyGear(p, t, world, ...(() => { const kd = pick(['weapon', 'armor', 'guard', 'guard', 'tool', 'tool', 'gweapon', 'cash', 'stats', 'house']); return [kd, r.chance(7000) && Number.isInteger(p[kd]) ? p[kd] + 1 : r.chance(9000) ? r.int(-1, 8) : anyInt()]; })()); break;
       case 'attack': res = E.attack(p, d, t, world, pick(['beat', 'mug', 'x']), game, r.chance(5000)); if (p.shieldUntil > t) { console.error('CONTAS ERRADAS', 'atacou e ficou com o escudo'); process.exit(1); } break;
       case 'hitman': res = E.hitman(p, d, t, world, game, r.chance(5000)); if (p.shieldUntil > t) { console.error('CONTAS ERRADAS', 'encomendou e ficou com o escudo'); process.exit(1); } break;
       case 'bail': res = E.payBail(p, t, world); break;

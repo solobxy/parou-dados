@@ -31,7 +31,7 @@ export function newPlayer(id, now, world, opts = {}) {
     hits: new Map(),
     biz: CFG.biz.map(() => ({ n: 0, stored: 0, rem: 0, t: now })),
     port: [], air: null, stock: CFG.drugs.map(() => 0), hold: [], club: null, bro: null, stk: CFG.stocks.list.map(() => ({ n: 0, cost: 0, gen: 0 })), acct: false,
-    weapon: -1, armor: -1, guard: -1, hmT: [], hmSafe: 0,
+    weapon: -1, armor: -1, guard: -1, tool: -1, gweapon: -1, hmT: [], hmSafe: 0,
     luxuries: 0,
     gang: null, gb: null, gangLeft: 0, gbotLeft: 0, gh: [], gbz: gbzNew(),
     detoxT: [],
@@ -82,6 +82,8 @@ function migrate(p) {
   if (!Number.isSafeInteger(p.gangLeft)) p.gangLeft = 0;
   if (!Number.isSafeInteger(p.gbotLeft)) p.gbotLeft = 0;
   if (!Number.isInteger(p.guard)) p.guard = -1;
+  if (!Number.isInteger(p.tool)) p.tool = -1;         // ferramenta de golpe (ver CFG.tools)
+  if (!Number.isInteger(p.gweapon)) p.gweapon = -1;   // arma de gangue (ver CFG.gweapons)
   if (!Array.isArray(p.hmT)) p.hmT = [];
   if (!Number.isSafeInteger(p.hmSafe)) p.hmSafe = 0;
   if (!Array.isArray(p.gbz) || p.gbz.length !== CFG.gang.biz.length) p.gbz = gbzNew();
@@ -369,9 +371,20 @@ export function chanceBp(S, D) {
   return clamp(Math.floor((10000 * s2) / (s2 + d2)), minBp, maxBp);
 }
 
+// força fixa do equipamento que se usa nos golpes (ferramenta a solo, arma de gangue em grupo)
+const gearStr = (list, idx) => (idx >= 0 && list[idx] ? list[idx].str : 0);
 export function crimeScore(p, k, now) {
   const { w } = CFG.crimes[k];
-  return Math.floor((w.I * effStat(p, 'I', now) + w.F * effStat(p, 'F', now) + w.C * effStat(p, 'C', now)) / 100);
+  return Math.floor((w.I * effStat(p, 'I', now) + w.F * effStat(p, 'F', now) + w.C * effStat(p, 'C', now)) / 100) + gearStr(CFG.tools, p.tool);
+}
+// O que a próxima ferramenta muda: o golpe mais difícil que fica aberto com ela, com a hipótese de agora e a de depois.
+export function toolPreview(p, now) {
+  const T = CFG.tools[p.tool + 1];
+  if (!T) return null;
+  const add = T.str - gearStr(CFG.tools, p.tool);
+  let k = 0;
+  for (let j = CFG.crimes.length - 1; j > 0; j--) if (chanceBp(crimeScore(p, j) + add, CFG.crimes[j].D) >= CFG.unlockBp) { k = j; break; }
+  return { k, from: crimeChanceBp(p, k, now), to: chanceBp(crimeScore(p, k, now) + add, CFG.crimes[k].D), opens: !crimeUnlocked(p, k) };
 }
 
 // com «now» conta os efeitos temporários; sem ele, só as stats (é o que desbloqueia golpes)
@@ -1219,12 +1232,15 @@ export function buyLuxury(p, now, world) {
 
 // ---------- armas e proteções ----------
 
+const GEAR = { weapon: 'weapons', armor: 'armors', guard: 'guards', tool: 'tools', gweapon: 'gweapons' };
 export function buyGear(p, now, world, kind, idx) {
-  if (kind !== 'weapon' && kind !== 'armor' && kind !== 'guard') fail('NO_GEAR');
-  const list = kind === 'weapon' ? CFG.weapons : kind === 'armor' ? CFG.armors : CFG.guards;
+  if (typeof kind !== 'string' || !Object.hasOwn(GEAR, kind)) fail('NO_GEAR');
+  const list = CFG[GEAR[kind]];
   if (!Number.isInteger(idx) || !list[idx]) fail('NO_GEAR');
   begin(p, now, world);
   if (idx <= p[kind]) fail('ALREADY_BETTER');
+  if (idx !== p[kind] + 1) fail('GEAR_ORDER');   // por ordem, uma de cada vez: saltar ficava mais barato e só o ecrã é que o impedia
+  if (level(p) < (list[idx].level || 1)) fail('LOW_LEVEL', { need: list[idx].level });
   pay(p, list[idx].price);
   p[kind] = idx;
   return { ok: true, price: list[idx].price };
@@ -1412,7 +1428,7 @@ export function heistJoin(p, now, world, k) {
 }
 export function heistRefund(p, now, k) { touch(p, now); p.energy = Math.min(CFG.energy.max, p.energy + heistOf(k).e); }
 // o que cada um puxa num golpe em grupo: as stats dele, pesadas como o golpe pede
-const heistPull = (p, k, now) => { const { w } = heistOf(k); return Math.floor((w.I * effStat(p, 'I', now) + w.F * effStat(p, 'F', now) + w.C * effStat(p, 'C', now)) / 100); };
+const heistPull = (p, k, now) => { const { w } = heistOf(k); return gearStr(CFG.gweapons, p.gweapon) + Math.floor((w.I * effStat(p, 'I', now) + w.F * effStat(p, 'F', now) + w.C * effStat(p, 'C', now)) / 100); };
 export function heistChanceBp(ps, k, now) {
   const { D } = heistOf(k); let s = 0;
   for (const p of ps) s += heistPull(p, k, now);
@@ -1979,6 +1995,7 @@ export function checkInvariants(p) {
   if (p.addiction > addictionCap(p)) bad.push('addiction>cap');
   if (p.peakRespect < p.respect) bad.push('peak<respect');
   if (!Number.isInteger(p.guard) || p.guard < -1 || p.guard >= CFG.guards.length) bad.push('guard');
+  for (const [k, list] of [['weapon', CFG.weapons], ['armor', CFG.armors], ['tool', CFG.tools], ['gweapon', CFG.gweapons]]) if (!Number.isInteger(p[k]) || p[k] < -1 || p[k] >= list.length) bad.push(k);
   if (!Array.isArray(p.hmT) || p.hmT.length > CFG.hitman.perDay || p.hmT.some((t) => !Number.isSafeInteger(t)) || !Number.isSafeInteger(p.hmSafe) || p.hmSafe < 0) bad.push('hitman');
   if ((p.gang === null) !== (p.gb === null)) bad.push('gang/gb');
   if (!Number.isSafeInteger(p.gbotLeft) || p.gbotLeft < 0) bad.push('gbotLeft');

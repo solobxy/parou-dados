@@ -610,7 +610,7 @@ test('guardas e assassino a soldo: comprar guardas, encomendar, o alvo não sabe
   const A = await contaNova('HitA', '10.0.9.95'), B = await contaNova('HitB', '10.0.9.96'), C = await contaNova('HitC', '10.0.9.94');
   for (const x of [A, B, C]) await x.estado();
   const base = (e) => { e.cash = 3_000_000; e.bank = 0; e.respect = 1000; e.peakRespect = 1000; e.shieldUntil = 0; e.protectUntil = 0; e.hospUntil = 0; e.jailUntil = 0; };
-  await mexer({ HitA: base, HitB: (e) => { base(e); e.cash = 40_000; }, HitC: (e) => { base(e); e.respect = 100; e.peakRespect = 100; } });
+  await mexer({ HitA: base, HitB: (e) => { base(e); e.cash = 40_600; }, HitC: (e) => { base(e); e.respect = 100; e.peakRespect = 100; } });
   const ag = (x, ip, body) => cru(x.cookie, ip, body), get = async (x, ip, url) => (await fetch(BASE + url, { headers: { cookie: x.cookie, 'X-Forwarded-For': ip } })).json();
   // a lista de alvos traz o preço e a pontaria do assassino
   let alvo = (await get(A, '10.0.9.95', '/api/targets')).list.find((x) => x.name === 'HitB');
@@ -624,7 +624,10 @@ test('guardas e assassino a soldo: comprar guardas, encomendar, o alvo não sabe
   assert.deepEqual(Object.keys(contratos[0]).sort(), ['av', 'hc', 'hp', 'hw', 'level', 'name', 'respect', 'tag', 'until']);
   assert.equal((await fetch(BASE + '/api/hitman')).status, 401);
   // B compra um pitbull: a pontaria desce 15 pontos
-  let r = await ag(B, '10.0.9.96', { type: 'gear', kind: 'guard', idx: 1 }); assert.equal(r.status, 200, JSON.stringify(r.body)); assert.equal(r.body.me.guard, 1); assert.equal(r.body.me.cash, 36_000);
+  // (as armas e os guardas compram-se por ordem: saltar o chihuahua não dá)
+  assert.equal((await ag(B, '10.0.9.96', { type: 'gear', kind: 'guard', idx: 1 })).body.error, 'GEAR_ORDER');
+  let r = await ag(B, '10.0.9.96', { type: 'gear', kind: 'guard', idx: 0 }); assert.equal(r.status, 200, JSON.stringify(r.body));
+  r = await ag(B, '10.0.9.96', { type: 'gear', kind: 'guard', idx: 1 }); assert.equal(r.status, 200, JSON.stringify(r.body)); assert.equal(r.body.me.guard, 1); assert.equal(r.body.me.cash, 36_000);
   alvo = (await get(A, '10.0.9.95', '/api/targets')).list.find((x) => x.name === 'HitB'); assert.equal(alvo.hc, 7500);
   assert.equal((await ag(A, '10.0.9.95', { type: 'hitman', target: 'ninguem' })).body.error, 'NO_TARGET');
   assert.equal((await ag(A, '10.0.9.95', { type: 'hitman', target: 'HitA' })).body.error, 'SELF');

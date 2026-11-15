@@ -1444,3 +1444,66 @@ test('stash: guardar uma droga tira-a da venda da discoteca (clientes da casa e 
   assert.ok(vendidas >= 1 && vendidas * CFG.drugs[coca].price <= E.clubRate(dono) + CFG.drugs[coca].price, 'numa hora sai no máximo uma hora de movimento: ' + vendidas); assert.equal(v2.club.till, caixa + vendidas * CFG.drugs[coca].price);
   assert.equal(E.clubBuyAt(cli, dono, t1, W, coca).ok, true);
 });
+
+test('armas: três espaços (lutas, golpes a solo, gangue), por ordem, com nível mínimo, e cada uma só mexe no seu sistema', () => {
+  const p = mk();
+  assert.equal(CFG.weapons.length, 8); assert.equal(CFG.tools.length, 8); assert.equal(CFG.gweapons.length, 8);
+  assert.equal(p.tool, -1); assert.equal(p.gweapon, -1); assert.equal(E.level(p), 1);
+  // escadas sempre a subir: preço, força e nível
+  for (const L of [CFG.tools, CFG.gweapons]) for (let i = 1; i < L.length; i++) assert.ok(L[i].price > L[i - 1].price && L[i].str > L[i - 1].str && L[i].level >= L[i - 1].level, L[i].id);
+  for (let i = 1; i < CFG.weapons.length; i++) assert.ok(CFG.weapons[i].price > CFG.weapons[i - 1].price && CFG.weapons[i].bp > CFG.weapons[i - 1].bp, CFG.weapons[i].id);
+  // por ordem, uma de cada vez: saltar não dá (em nenhum tipo)
+  for (const k of ['tool', 'gweapon', 'weapon', 'armor', 'guard']) assert.throws(() => E.buyGear(p, NOW, W, k, 1), code('GEAR_ORDER'), k);
+  // ferramenta: soma força a todos os golpes a solo e não mexe nas lutas nem nos golpes em grupo
+  p.stats = { F: 20, T: 20, I: 20, C: 20 };
+  const s0 = CFG.crimes.map((_, k) => E.crimeScore(p, k, NOW)), atk0 = E.attackPower(p, NOW), def0 = E.defensePower(p, NOW), g0 = E.heistChanceBp([p, p], 0, NOW), cash = p.cash;
+  const antes = E.toolPreview(p, NOW);
+  assert.equal(E.buyGear(p, NOW, W, 'tool', 0).price, CFG.tools[0].price);
+  assert.equal(p.cash, cash - CFG.tools[0].price); assert.equal(p.tool, 0);
+  CFG.crimes.forEach((_, k) => assert.equal(E.crimeScore(p, k, NOW), s0[k] + CFG.tools[0].str));
+  assert.equal(E.attackPower(p, NOW), atk0); assert.equal(E.defensePower(p, NOW), def0); assert.equal(E.heistChanceBp([p, p], 0, NOW), g0);
+  // a antevisão diz a verdade: o golpe que mostra fica com a hipótese que prometeu, e é melhor do que antes
+  assert.equal(E.crimeChanceBp(p, antes.k, NOW), antes.to); assert.ok(antes.to > antes.from);
+  // nível mínimo: a segunda ferramenta pede nível 3; a arma de gangue, o nível das gangues
+  assert.throws(() => E.buyGear(p, NOW, W, 'tool', 1), code('LOW_LEVEL'));
+  assert.throws(() => E.buyGear(p, NOW, W, 'gweapon', 0), code('LOW_LEVEL'));
+  p.respect = p.peakRespect = CFG.levels[CFG.gang.minLevel - 1]; assert.equal(E.level(p), CFG.gang.minLevel);
+  E.buyGear(p, NOW, W, 'tool', 1); assert.equal(p.tool, 1);
+  assert.throws(() => E.buyGear(p, NOW, W, 'tool', 0), code('ALREADY_BETTER'));
+  // arma de gangue: soma ao que cada um puxa em grupo e não mexe nos golpes a solo nem nas lutas
+  const s1 = CFG.crimes.map((_, k) => E.crimeScore(p, k, NOW)), sem = mk(); sem.stats = { ...p.stats };
+  E.buyGear(p, NOW, W, 'gweapon', 0); assert.equal(p.gweapon, 0);
+  CFG.crimes.forEach((_, k) => assert.equal(E.crimeScore(p, k, NOW), s1[k]));
+  assert.equal(E.attackPower(p, NOW), atk0);
+  assert.ok(E.heistChanceBp([p, sem], 0, NOW) > E.heistChanceBp([sem, sem], 0, NOW));
+  // quem puxa mais leva a parte inteira; o outro, em proporção (a arma conta para a parte)
+  const sh = E.heistShares([p, sem], 0, NOW); assert.equal(sh[0], 10000); assert.ok(sh[1] < 10000);
+  // armas de luta novas: pedem nível; as antigas não
+  const rico = mk(); for (let i = 0; i < 6; i++) E.buyGear(rico, NOW, W, 'weapon', i);
+  assert.throws(() => E.buyGear(rico, NOW, W, 'weapon', 6), code('LOW_LEVEL'));
+  rico.respect = rico.peakRespect = CFG.levels[CFG.weapons[7].level - 1];
+  E.buyGear(rico, NOW, W, 'weapon', 6); E.buyGear(rico, NOW, W, 'weapon', 7); assert.equal(rico.weapon, 7);
+  assert.throws(() => E.buyGear(rico, NOW, W, 'weapon', 8), code('NO_GEAR'));
+  // tudo comprado: já não há antevisão
+  rico.respect = rico.peakRespect = CFG.levels.at(-1);
+  for (let i = 0; i < 8; i++) { if (rico.tool < i) E.buyGear(rico, NOW, W, 'tool', i); if (rico.gweapon < i) E.buyGear(rico, NOW, W, 'gweapon', i); }
+  assert.equal(E.toolPreview(rico, NOW), null);
+  for (const x of [p, sem, rico]) assert.deepEqual(E.checkInvariants(x), []);
+  // estado antigo (sem estes campos) fica sem armas novas, sem erro
+  const velho = mk(); delete velho.tool; delete velho.gweapon; E.upgrade(velho); assert.equal(velho.tool, -1); assert.equal(velho.gweapon, -1); assert.deepEqual(E.checkInvariants(velho), []);
+});
+
+test('ferramentas de golpe: valem no nível em que abrem, quase nada para quem já é forte, e não mexem no teto do fim do jogo', () => {
+  const T2 = CFG.tools, com = (stat, tool) => { const p = mk(); p.stats = { F: stat, T: stat, I: stat, C: stat }; p.tool = tool; return p; };
+  // no teto (95%), a melhor ferramenta não acrescenta nada ao último golpe
+  const ultimo = CFG.crimes.length - 1;
+  assert.equal(E.crimeChanceBp(com(1400, -1), ultimo, NOW), CFG.chance.maxBp); assert.equal(E.crimeChanceBp(com(1400, T2.length - 1), ultimo, NOW), CFG.chance.maxBp);
+  // a primeira ferramenta, a alguém com 300 de pontuação: menos de 1 ponto percentual em qualquer golpe
+  CFG.crimes.forEach((_, k) => assert.ok(E.crimeChanceBp(com(300, 0), k, NOW) - E.crimeChanceBp(com(300, -1), k, NOW) < 100, 'golpe ' + k));
+  // a soma de todas as ferramentas nunca passa a força de um jogador forte: é um empurrão, não substitui treinar
+  assert.ok(T2.at(-1).str < 100);
+  // dinheiro: o que se paga não volta (não há venda) e o preço de cada uma é maior do que o da anterior
+  const p = mk(); p.respect = p.peakRespect = CFG.levels.at(-1); let gasto = 0; const c0 = p.cash;
+  for (let i = 0; i < T2.length; i++) { E.buyGear(p, NOW, W, 'tool', i); gasto += T2[i].price; }
+  assert.equal(p.cash, c0 - gasto); assert.equal(gasto, 555200);
+});

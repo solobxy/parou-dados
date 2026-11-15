@@ -349,6 +349,9 @@ export const CFG = {
       { id: 'submarino', level: 13, ms: 8 * HOUR, gainBp: 3700, seizeBp: 900, drug: 'heroina' },
     ] },
 
+  // Três tipos de armas, cada um no seu espaço. Compram-se por ordem, uma de cada vez, e a anterior não se vende nem volta.
+  // level: nível mínimo para comprar (sem ele, qualquer nível).
+  // weapons (lutas): bp = ataque a mais, em pontos da Força.
   weapons: [
     { id: 'soqueira', price: 500, bp: 1000 },
     { id: 'navalha', price: 3000, bp: 2500 },
@@ -356,6 +359,34 @@ export const CFG = {
     { id: 'cacadeira', price: 120000, bp: 8000 },
     { id: 'metralhadora', price: 700000, bp: 12000 },
     { id: 'sniper', price: 4000000, bp: 17000 },
+    { id: 'lancachamas', price: 12000000, bp: 20000, level: 13 },
+    { id: 'minigun', price: 30000000, bp: 23000, level: 16 },
+  ],
+  // tools (golpes a solo): str = força que se soma à pontuação de todos os golpes a solo (conta também para os desbloquear).
+  // É força fixa e não percentagem: cada ferramenta vale cerca de +28% no nível em que abre e cada vez menos daí para cima.
+  // Assim as baratas não dão quase nada a quem já é forte, e nenhuma mexe no teto do fim do jogo (95% de hipótese).
+  // Preços: o que a ferramenta rende a mais do que a anterior paga-a em 1 a 4 dias de golpes (720 de stamina por dia) no nível em que abre.
+  tools: [
+    { id: 'pedecabra', price: 500, str: 2, level: 1 },
+    { id: 'gazuas', price: 1200, str: 3, level: 3 },
+    { id: 'taser', price: 3500, str: 5, level: 5 },
+    { id: 'revolver', price: 10000, str: 9, level: 7 },
+    { id: 'serrada', price: 30000, str: 16, level: 9 },
+    { id: 'macarico', price: 80000, str: 27, level: 11 },
+    { id: 'explosivos', price: 180000, str: 48, level: 13 },
+    { id: 'broca', price: 250000, str: 84, level: 15 },
+  ],
+  // gweapons (golpes em grupo): str = força que se soma ao que tu puxas num golpe da gangue (e por isso também à tua parte do saque).
+  // Mesma escada das ferramentas; começam no nível das gangues. Preços: 2 a 5 dias de golpes em grupo com metade da stamina do dia.
+  gweapons: [
+    { id: 'taco', price: 1000, str: 3, level: 4 },
+    { id: 'catana', price: 2500, str: 5, level: 5 },
+    { id: 'molotov', price: 7000, str: 9, level: 7 },
+    { id: 'assalto', price: 20000, str: 16, level: 9 },
+    { id: 'lancagranadas', price: 55000, str: 27, level: 11 },
+    { id: 'pesada', price: 120000, str: 48, level: 13 },
+    { id: 'bazuca', price: 160000, str: 84, level: 15 },
+    { id: 'morteiro', price: 200000, str: 147, level: 17 },
   ],
   armors: [
     { id: 'cabedal', price: 400, bp: 1000 },

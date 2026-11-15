@@ -508,7 +508,7 @@ main { padding-top: 12px; }
 .rowi.lock img { filter: grayscale(1) brightness(.6); }
 
 /* cartões de compra: imagem grande, nome, número e botão */
-.shop { display: grid; grid-template-columns: repeat(auto-fill, minmax(148px, 1fr)); gap: 10px; }
+.shop { display: grid; grid-template-columns: repeat(auto-fill, minmax(132px, 1fr)); gap: 10px; }   /* 132: duas colunas também a 320 px (a 148 ficava uma só, com imagens do tamanho do ecrã) */
 .item { display: flex; flex-direction: column; gap: 6px; background: var(--s1); border-radius: 14px; padding: 10px; text-align: center; min-width: 0; }
 .item > img, .item > .bscene { width: 100%; height: auto; aspect-ratio: 1; object-fit: cover; border-radius: 10px; background: #000; display: block; }
 .item .nm { font-family: var(--disp); font-weight: 800; font-size: 20px; line-height: 1.05; text-transform: uppercase; }
@@ -1233,6 +1233,7 @@ h1.slogo { margin: 0; }
 .vth { width: 44px; height: 44px; border-radius: 8px; object-fit: cover; flex: none; background: var(--s2); }
 .seg.five { margin-bottom: 0; }
 .seg.five button { padding: 0 2px; font-size: 14px; min-width: 0; }
+.seg.armseg { margin-bottom: 14px; } .item .tagline svg.i { width: 15px; height: 15px; vertical-align: -2px; }
 .chip.good { background: #123a24; color: #8be8ad; white-space: nowrap; flex: none; }
 
 /* multiplicador que caiu numa rodada sem prémio: não conta, fica apagado */
@@ -1319,6 +1320,8 @@ h1.slogo { margin: 0; }
 .item .seg.bzg { margin: 2px 0 0; padding: 3px; gap: 3px; }
 .item .seg.bzg button { min-height: 34px; font-size: 13px; padding: 0 4px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .item .seg.bzg button[aria-pressed='true'] { background: var(--s3); color: var(--tx); }
+/* em duas colunas estreitas as duas palavras («Dinheiro», «Ecstasy») têm de caber inteiras */
+@media (max-width: 379px) { .item .seg.bzg { padding: 2px; gap: 2px; } .item .seg.bzg button { font-size: 11.5px; padding: 0 1px; letter-spacing: -.01em; } }
 .stlink { width: 100%; text-align: left; color: inherit; border: 0; font: inherit; margin-bottom: 10px; gap: 10px; }
 .stlink svg.i { color: var(--vice); }
 .bul { margin: 0; padding-left: 18px; display: grid; gap: 8px; color: var(--tx2); font-size: 15px; line-height: 1.4; }

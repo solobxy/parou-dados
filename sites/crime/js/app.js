@@ -1246,19 +1246,35 @@ function shipSheet(k) {
 
 // ---------- armas ----------
 function screenArms() {
-  const me = S.st.me;
+  const me = S.st.me, H = S.cfg.hitman, liquid = me.cash + me.bank;
+  // quatro montras: cada tipo de arma serve um sistema do jogo (lutas, golpes a solo, golpes de gangue) e a defesa fica à parte
+  const seg = ['fight', 'rob', 'gang', 'def'].includes(S.armsSeg) ? S.armsSeg : 'fight';
   const out = [pageHead('arms', t('s_arms'))];
-  const H = S.cfg.hitman;
-  for (const [kind, arr, names, lbl, folder] of [['weapon', S.cfg.weapons, list('weaponsL'), t('weapon'), 'weapons'], ['armor', S.cfg.armors, list('armorsL'), t('armor'), 'armors'], ['guard', S.cfg.guards || [], list('guardsL'), t('guards'), 'guards']]) {
+  out.push(h('div', { class: 'seg five armseg', role: 'group' }, [['fight', t('arFight')], ['rob', t('arRob')], ['gang', t('arGang')], ['def', t('arDef')]].map(([id, lbl]) =>
+    h('button', { 'aria-pressed': seg === id ? 'true' : 'false', on: { click: () => { S.armsSeg = id; render(); } } }, lbl))));
+  const groups = {
+    fight: [['weapon', S.cfg.weapons, list('weaponsL'), 'weapons', null, t('arFightSub')]],
+    rob: [['tool', S.cfg.tools || [], list('toolsL'), 'tools', null, t('arRobSub')]],
+    gang: [['gweapon', S.cfg.gweapons || [], list('gweaponsL'), 'gweapons', null, t('arGangSub')]],
+    def: [['armor', S.cfg.armors, list('armorsL'), 'armors', t('armor'), t('arArmorSub')], ['guard', S.cfg.guards || [], list('guardsL'), 'guards', t('guards'), t('guardsSub', { p: H.baseBp / 100 })]],
+  }[seg];
+  for (const [kind, arr, names, folder, title, sub] of groups) {
     const cur = me[kind] ?? -1;
     if (!arr.length) continue;
-    out.push(h('h2', { class: 'sec' }, lbl));
-    if (kind === 'guard') out.push(h('p', { class: 'small muted', style: 'margin:-4px 0 10px' }, t('guardsSub', { p: H.baseBp / 100 })));
-    out.push(h('div', { class: 'shop' }, arr.map((g, i) => h('div', { class: 'item' + (i > cur + 1 ? ' dim' : '') }, art(folder, i),
-      h('div', { class: 'nm' }, names[i]), h('div', { class: 'small c-resp' }, '+' + g.bp / 100 + '%' + (kind === 'guard' ? ' ' + t('guardDef') : '')),
-      kind === 'guard' ? h('div', { class: 'small muted' }, t('guardHit', { p: Math.max(H.minBp, H.baseBp - g.block) / 100 })) : null,
-      i === cur ? h('div', { class: 'tagline c-cash' }, t('inUse')) : i < cur ? h('div', { class: 'tagline muted' }, t('owned'))
-        : h('button', { class: 'btn buy block', disabled: i !== cur + 1 || me.cash + me.bank < g.price, on: { click: (e) => act('gear', { kind, idx: i }, { el: e.currentTarget }) } }, t('buyFor', { m: moneyShort(g.price) }))))));
+    if (title) out.push(h('h2', { class: 'sec' }, title));
+    out.push(h('p', { class: 'small muted', style: 'margin:' + (title ? '-4px' : '0') + ' 0 10px' }, sub));
+    out.push(h('div', { class: 'shop' }, arr.map((g, i) => {
+      const lock = me.level < (g.level || 1), next = i === cur + 1, nx = kind === 'tool' && next ? me.toolNext : null;
+      const fx = kind === 'tool' ? t('arStrRob', { n: g.str }) : kind === 'gweapon' ? t('arStrGang', { n: g.str }) : '+' + g.bp / 100 + '% ' + t(kind === 'weapon' ? 'arAtk' : 'guardDef');
+      return h('div', { class: 'item' + (i > cur + 1 ? ' dim' : '') }, art(folder, i),
+        h('div', { class: 'nm' }, names[i]), h('div', { class: 'small c-resp' }, fx),
+        kind === 'guard' ? h('div', { class: 'small muted' }, t('guardHit', { p: Math.max(H.minBp, H.baseBp - g.block) / 100 })) : null,
+        // a próxima ferramenta diz o que muda no golpe mais difícil que fica aberto com ela
+        nx ? h('div', { class: 'small c-cash' }, t(nx.opens ? 'arOpens' : 'arNext', { x: list('crimes')[nx.k], a: pct(nx.from), b: pct(nx.to) })) : null,
+        i === cur ? h('div', { class: 'tagline c-cash' }, t('inUse')) : i < cur ? h('div', { class: 'tagline muted' }, t('owned'))
+          : lock ? h('div', { class: 'tagline muted' }, h('span', null, icon('lock'), ' ', t('arNeedLvl', { n: g.level })))
+          : h('button', { class: 'btn buy block', disabled: !next || liquid < g.price, on: { click: (e) => act('gear', { kind, idx: i }, { el: e.currentTarget }) } }, t('buyFor', { m: moneyShort(g.price) })));
+    })));
   }
   return out;
 }
