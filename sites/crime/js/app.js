@@ -1202,6 +1202,7 @@ function gangOps(mine, me) {
   if (op && op.closesAt > n - 4000) {
     const miss = Math.max(0, op.need - op.parts.length);
     out.push(h('div', { class: 'card gop' },
+      h('div', { class: 'gimg' }, h('img', { src: op.kind === 'hit' ? IMG('cenas', 'lutas', 1) : IMG('crimes', G.heists[op.k].id, 1), alt: '', width: 1100, height: 1100, decoding: 'async', on: { error: (e) => e.currentTarget.parentNode.remove() } })),
       h('div', { class: 'row sp' }, h('div', { class: 'gt' }, opName(op)), h('b', { class: 'gcd num', dataset: { opend: op.closesAt } }, dur(Math.max(0, op.closesAt - n)))),
       h('div', { class: 'row sp gline' }, h('span', null, t('goCount', { n: op.parts.length, s: op.need })), h('b', { class: chanceCls(op.chance) }, t('goChance', { p: pct(op.chance) }))),
       h('div', { class: 'small muted' }, op.parts.join(' · ')),
@@ -1220,11 +1221,11 @@ function gangOps(mine, me) {
   const cool = mine.opCool > n, left = Math.max(0, G.heistPerDay - (me.heistsToday || 0));
   if (cool) out.push(h('div', { class: 'tip' }, h('p', null, t('goWait', { t: '' }), h('b', { class: 'num', dataset: { opend: mine.opCool } }, dur(mine.opCool - n)))));
   out.push(h('div', { class: 'card gopl' },
-    G.heists.map((H, k) => h('div', { class: 'row sp gup' },
+    G.heists.map((H, k) => h('div', { class: 'row sp gup' }, art('crimes', H.id, 'gthumb' + (mine.sede < H.sede ? ' lock' : '')),
       h('div', { class: 'grow' }, h('div', { style: 'font-weight:700' }, t('gh_' + H.id)), h('div', { class: 'small muted' }, t('ghLine', { n: H.need, a: moneyShort(H.min), b: moneyShort(H.max), r: H.r }))),
       mine.sede < H.sede ? h('span', { class: 'small muted glock' }, icon('lock'), t('ghLock', { n: H.sede }))
         : h('button', { class: 'btn buy sm', disabled: cool || !!busy || !left || en < H.e, on: { click: () => gAct('gangOp', { kind: 'heist', k }) } }, t('ghOpen'), ' · ', icon('bolt'), String(H.e)))),
-    h('div', { class: 'row sp gup' },
+    h('div', { class: 'row sp gup' }, art('cenas', 'lutas', 'gthumb'),
       h('div', { class: 'grow' }, h('div', { style: 'font-weight:700' }, t('goHit')), h('div', { class: 'small muted' }, t('goHitLine', { n: G.hitNeed, m: Math.round((S.cfg.pvp.beatHospMs * G.hitHospBp) / 10000 / 60000) }))),
       h('button', { class: 'btn danger sm', disabled: cool || !!busy || en < S.cfg.pvp.energy, on: { click: () => gangPickTarget() } }, t('goPick'))),
     h('p', { class: 'small muted', style: 'padding-top:10px' }, t('ghLeft', { n: left, s: G.heistPerDay }))));
@@ -1560,27 +1561,33 @@ function symImg(g, s, orb) {
 }
 function slotCellEl(g, s, orb) {
   const G = slotCfg(g), cls = 'sc2' + (s === G.nsym ? ' scat' : s === G.nsym + 1 ? ' orb' : '');
-  return h('div', { class: cls }, h('img', { src: symImg(g, s, orb), alt: '', width: 80, height: 80, decoding: 'async' }), orb ? h('b', { class: 'ov' }, '×' + orb) : null);
+  return h('div', { class: cls }, h('img', { src: symImg(g, s, orb), alt: '', width: 80, height: 80, decoding: 'async' }), orb ? h('b', { class: 'ov' + (orb >= 100 ? ' v100' : orb >= 25 ? ' v25' : orb >= 10 ? ' v10' : '') }, '×' + orb) : null);
 }
 // as casas com multiplicador são do tabuleiro, não dos símbolos: ficam paradas por baixo enquanto os símbolos caem
 const spotCls = (v) => 'ssp' + (v === 1 ? ' mk' : v >= 2 ? ' mx' + (v >= 64 ? ' v64' : v >= 16 ? ' v16' : v >= 8 ? ' v8' : v >= 4 ? ' v4' : '') : '');
 function slotSpots(grid, sp) {
   const lay = grid.parentNode?.querySelector('.sspots'); if (!lay || !sp) return;
   const cols = slotCfg(S.slotGame || 'rebucado').cols, many = [...lay.children].filter((el, i) => (sp[i] || 0) !== (+el.dataset.v || 0)).length > 14;
+  const labs = grid.parentNode?.querySelector('.ssplab'); let best = 0;
   [...lay.children].forEach((el, i) => {
     const v = sp[i] || 0, old = +el.dataset.v || 0; if (v === old) return;
-    el.dataset.v = v; el.className = spotCls(v) + (many && v >= 2 ? ' deal' : v > old ? ' bump' : ''); el.textContent = v >= 2 ? '×' + v : '';
+    el.dataset.v = v; el.className = spotCls(v) + (many && v >= 2 ? ' deal' : v > old ? ' bump' : ''); el.textContent = '';
+    const lb = labs?.children[i]; if (lb) { lb.textContent = v >= 2 ? '×' + v : ''; lb.className = 'spl' + (v >= 64 ? ' v64' : v >= 16 ? ' v16' : v >= 8 ? ' v8' : v >= 4 ? ' v4' : '') + (many && v >= 2 ? ' deal' : v > old && v >= 2 ? ' bump' : ''); lb.style.animationDelay = el.style.animationDelay; }
+    if (!many && v > old && v >= 2) { best = Math.max(best, v); if (!S.slotSkip && !RM()) candyBurst(grid, i, v); }
     // tabuleiro da compra super: as casas acendem-se uma a uma, em diagonal
     el.style.animationDelay = many ? ((i % cols) + Math.floor(i / cols)) * 55 + 'ms' : '';
   });
   if (many && !S.slotSkip) { fx.sfx('refill'); return wait(13 * 55 + 500); }
+  // um multiplicador que subiu fica à vista um bocado (mais tempo quanto maior)
+  if (best && !S.slotSkip && !RM()) { fx.sfx(best >= 8 ? 'crit' : 'claim'); if (best >= 8) { fx.vibrate(18); slotShake(grid, best >= 32); } return wait(best >= 16 ? 900 : best >= 4 ? 620 : 420); }
 }
 function slotGrid(g) {
   const G = slotCfg(g), n = G.cols * G.rows, last = S.slotLast?.[g];
   const step = last ? (last.spin.free.at(-1) || last.spin.base).steps.at(-1) : null;
   const cells = step ? step.g : Array.from({ length: n }, (_, i) => (Math.imul(i + 7, 2654435761) >>> 9) % G.nsym);   // mistura fixa, sem padrão à vista
-  return [G.kind === 'cluster' ? h('div', { class: 'sspots' }, Array.from({ length: n }, (_, i) => { const v = step?.sp?.[i] || 0; return h('i', { class: spotCls(v), dataset: { v } }, v >= 2 ? '×' + v : ''); })) : null,
-    h('div', { class: 'sgrid' }, cells.map((s, i) => slotCellEl(g, s, step?.o?.[i])))];
+  return [G.kind === 'cluster' ? h('div', { class: 'sspots' }, Array.from({ length: n }, (_, i) => { const v = step?.sp?.[i] || 0; return h('i', { class: spotCls(v), dataset: { v } }); })) : null,
+    h('div', { class: 'sgrid' }, cells.map((s, i) => slotCellEl(g, s, step?.o?.[i]))),
+    G.kind === 'cluster' ? h('div', { class: 'ssplab', 'aria-hidden': 'true' }, Array.from({ length: n }, (_, i) => { const v = step?.sp?.[i] || 0; return h('b', { class: 'spl' + (v >= 64 ? ' v64' : v >= 16 ? ' v16' : v >= 8 ? ' v8' : v >= 4 ? ' v4' : '') }, v >= 2 ? '×' + v : ''); })) : null];
 }
 // Uma queda: no início a grelha toda cai de cima, coluna a coluna; depois de um prémio, o que sobra desce para os buracos
 // e os novos entram por cima. Cada célula sabe de quantas casas cai.
@@ -1607,6 +1614,7 @@ async function slotStep(g, grid, step, prev, sp) {
   }));
   if (!RM()) [...lands].slice(0, 8).forEach((ms) => setTimeout(() => fx.sfx('deal'), ms));
   await wait(RM() ? 120 : end + 90 * sp);
+  if (G.kind === 'scatter' && !S.slotSkip && !RM()) { const orbs = step.g.map((s, i) => (s === G.nsym + 1 && fresh[i] ? i : -1)).filter((i) => i >= 0); if (orbs.length) await orbShow(g, grid, orbs, sp); }
   if (step.w && !S.slotSkip) {
     const cells = step.rm.map((i) => grid.children[i]), pay = step.w.reduce((x, w) => x + w.pay, 0);
     cells.forEach((el) => el.classList.add('hit'));
@@ -1624,6 +1632,59 @@ async function slotStep(g, grid, step, prev, sp) {
     });
     fx.sfx('pop'); fx.vibrate(8); await wait(RM() ? 80 : 430 * sp);
   }
+}
+// ---- entradas dos multiplicadores ----
+function slotShake(grid, hard) {
+  const sl = grid.closest('.slot'); if (!sl) return;
+  sl.classList.remove('shake', 'shakeh'); void sl.offsetWidth; sl.classList.add(hard ? 'shakeh' : 'shake'); setTimeout(() => sl.classList.remove('shake', 'shakeh'), 520);
+}
+function fxAt(grid, i) {
+  const sl = grid.closest('.slot'), lay = sl.querySelector('.sfxl'), lb = lay.getBoundingClientRect(), el = grid.children[i], b = el.getBoundingClientRect();
+  return { sl, lay, el, x: b.left + b.width / 2 - lb.left, y: b.top + b.height / 2 - lb.top, w: lb.width, hh: lb.height, size: b.width };
+}
+// Candy Madness: a casa rebenta em estrelas e o número salta
+function candyBurst(grid, i, v) {
+  const { lay, x, y, size } = fxAt(grid, i);
+  const ring = h('i', { class: 'cring' + (v >= 16 ? ' big' : ''), style: `left:${x}px;top:${y}px;--s:${size}px` });
+  const pop = h('b', { class: 'cpop num' + (v >= 16 ? ' big' : ''), style: `left:${x}px;top:${y}px` }, '×' + v);
+  const stars = Array.from({ length: v >= 8 ? 10 : 6 }, (_, k) => h('i', { class: 'cstar', style: `left:${x}px;top:${y}px;--a:${k * (360 / (v >= 8 ? 10 : 6)) + Math.random() * 20}deg;--r:${size * (0.7 + Math.random() * 0.6)}px;--h:${Math.floor(Math.random() * 360)}` }));
+  lay.append(ring, ...stars, pop); setTimeout(() => { ring.remove(); pop.remove(); stars.forEach((s) => s.remove()); }, 950);
+}
+// Zeus: um raio cai do céu em cima do multiplicador e o ecrã treme. Sweet Revenge: o rastilho arde e a bomba rebenta. The Boss: moedas.
+async function orbShow(g, grid, idx, sp) {
+  const many = idx.length > 3;
+  const one = async (i, k) => {
+    if (many) await wait(k * 90);
+    if (S.slotSkip || !grid.children[i]) return;
+    const { sl, lay, el, x, y, w, hh, size } = fxAt(grid, i), v = parseInt(el.querySelector('.ov')?.textContent.slice(1) || '0', 10), strong = v >= 10;
+    if (g === 'zeus') {
+      const pts = [[x + (Math.random() * 70 - 35), -8]], n = 5 + Math.floor(y / 55);
+      for (let j = 1; j < n; j++) pts.push([x + (Math.random() * 46 - 23) * (1 - j / n) + (pts[0][0] - x) * (1 - j / n) * 0.6, (y * j) / n]);
+      pts.push([x, y]);
+      const d = pts.map((p, j) => (j ? 'L' : 'M') + p[0].toFixed(1) + ' ' + p[1].toFixed(1)).join(' ');
+      const bolt = svg('svg', { class: 'zbolt', viewBox: `0 0 ${w} ${hh}`, preserveAspectRatio: 'none' }); bolt.append(svg('path', { d, class: 'zb1' }), svg('path', { d, class: 'zb2' }));
+      const flash = h('i', { class: 'zflash' });
+      lay.append(flash, bolt); fx.sfx('thunder'); fx.vibrate(strong ? [25, 30, 40] : 25); slotShake(grid, strong);
+      el.classList.add('struck', 'zeus'); setTimeout(() => { bolt.remove(); flash.remove(); }, 520);
+      await wait(460 * sp);
+    } else if (g === 'doce') {
+      el.classList.add('fuse'); const fz = h('i', { class: 'fz' }); el.append(fz); fx.sfx('fuse');
+      await wait(470 * sp); fz.remove(); el.classList.remove('fuse');
+      if (S.slotSkip) return;
+      const ring = h('i', { class: 'exr' + (strong ? ' big' : ''), style: `left:${x}px;top:${y}px;--s:${size}px` });
+      const bits = Array.from({ length: 9 }, (_, j) => h('i', { class: 'exb', style: `left:${x}px;top:${y}px;--a:${j * 40 + Math.random() * 25}deg;--r:${size * (0.8 + Math.random() * 0.7)}px` }));
+      lay.append(ring, ...bits); setTimeout(() => { ring.remove(); bits.forEach((b) => b.remove()); }, 700);
+      el.classList.add('struck', 'bomb'); fx.sfx('boom'); fx.vibrate(strong ? 35 : 18); slotShake(grid, strong);
+      await wait(400 * sp);
+    } else {
+      const ring = h('i', { class: 'exr gold', style: `left:${x}px;top:${y}px;--s:${size}px` }); lay.append(ring); setTimeout(() => ring.remove(), 700);
+      el.classList.add('struck', 'gold'); fx.sfx('claim'); if (strong) slotShake(grid, false);
+      await wait(380 * sp);
+    }
+  };
+  if (many) await Promise.all(idx.map((i, k) => one(i, k))); else for (let k = 0; k < idx.length && !S.slotSkip; k++) await one(idx[k], k);
+  // o multiplicador fica à vista mais tempo do que uma queda sem nada
+  if (!S.slotSkip) await wait(650 * sp);
 }
 function flashInfo(txt) {
   const info = document.querySelector('.sinfo'); if (!info) return;
@@ -1688,7 +1749,8 @@ async function slotAnim(r) {
     const before = acc;
     for (let k = 0; k < r.spin.free.length && !S.slotSkip; k++) {
       const f = r.spin.free[k];
-      freeL.textContent = t(G.kind === 'scatter' && G.accFree ? 'slFreeLeftM' : 'slFreeLeft', { n: r.spin.free.length - k - 1, m: f.acc || 1 });
+      freeL.replaceChildren(t('slFreeLeft', { n: r.spin.free.length - k - 1 }), G.kind === 'scatter' && G.accFree ? h('b', { class: 'sacc num' + ((f.acc || 1) > (freeL._m || 1) ? ' bump' : '') }, '×' + (f.acc || 1)) : '');
+      freeL._m = f.acc || 1;
       await round(f, 0.82, f.acc);
       if (!S.slotSkip) await wait(RM() ? 0 : 250);
     }

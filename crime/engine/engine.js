@@ -210,6 +210,8 @@ export function changeClass(p, now, world, id) {
   if (id === p.cls) fail('CLASS_SET');
   if ((c.need || 0) > p.peakRespect) fail('CLASS_LOCKED', { need: c.need });
   if (p.clsAt && now < p.clsAt + CFG.classChange.coolMs) fail('CLASS_WAIT', { until: p.clsAt + CFG.classChange.coolMs });
+  const capNovo = CFG.addiction.base + (c.capPlus || 0) + Math.floor(p.stats.T / CFG.addiction.perT);
+  if (p.addiction > capNovo) fail('ADDICTION_LIMIT', { cap: capNovo });   // com vício acima do limite da profissão nova, primeiro desintoxica (senão mudar apagava vício de graça)
   const cost = classChangeCost(p);
   if (p.cash + p.bank < cost) fail('NO_MONEY', { need: cost, have: p.cash + p.bank });
   settleAllBiz(p, now);

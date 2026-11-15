@@ -56,6 +56,10 @@ const SFX = {
   hit: (t) => { noise(t, 0.09, 'lowpass', 500, 0.8, 0.14); ping(t, 95, 0.16, 0.12, 0, 48); },
   bust: (t) => [0, 1, 2, 3].forEach((i) => ping(t + i * 0.15, i % 2 ? 620 : 830, 0.14, 0.04, 2)),
   refill: (t) => noise(t, 0.32, 'bandpass', 500, 1.2, 0.06, 2600),
+  // trovão: estalo seco e depois o ronco; bomba: rastilho a chiar e o estouro
+  thunder: (t) => { noise(t, 0.05, 'highpass', 2600, 0.7, 0.11); noise(t + 0.03, 0.75, 'lowpass', 210, 0.6, 0.2); ping(t + 0.02, 68, 0.6, 0.12, 0, 34); },
+  fuse: (t) => { noise(t, 0.42, 'highpass', 4200, 0.9, 0.03); },
+  boom: (t) => { noise(t, 0.42, 'lowpass', 360, 0.7, 0.2); ping(t, 118, 0.34, 0.13, 0, 40); },
   pop: (t) => { noise(t, 0.13, 'bandpass', 700, 0.9, 0.1, 2600); ping(t, 220, 0.12, 0.06, 0, 90); coin(t + 0.04, 3700, 0.025); },
 };
 let lastTap = 0;
