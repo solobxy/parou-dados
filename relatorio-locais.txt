@@ -1,0 +1,103 @@
+Lidos 1218801 objetos; 308 concelhos; 312400 locais
+  rua: 212591
+  localidade: 24349
+  igreja: 11099
+  bairro: 6857
+  escola: 6488
+  monumento: 3938
+  alojamento: 3543
+  aldeia: 3520
+  supermercado: 3377
+  pico: 2918
+  hotel: 2867
+  atracao: 2852
+  parque: 2536
+  clinica: 2364
+  servico_publico: 2130
+  praca: 2080
+  camara: 1968
+  pavilhao: 1741
+  miradouro: 1404
+  museu: 1240
+  jardim: 1129
+  praia: 1019
+  policia: 946
+  correios: 854
+  mercado: 660
+  cultura: 630
+  vila: 606
+  castelo: 594
+  bombeiros: 564
+  centro_comercial: 541
+  biblioteca: 523
+  loja: 449
+  estadio: 437
+  teatro: 389
+  campismo: 387
+  reserva: 338
+  hospital: 337
+  tribunal: 268
+  universidade: 260
+  grande_armazem: 188
+  terminal_autocarros: 175
+  cabo: 173
+  cidade: 159
+  cinema: 155
+  marina: 141
+  golfe: 102
+  aeroporto: 100
+  terminal_fluvial: 94
+  faculdade: 91
+  parque_aquatico: 56
+  centro_saude: 53
+  parque_tematico: 45
+  ilha: 33
+  zoo: 31
+  aquario: 9
+  palacio: 2
+Os 40 mais importantes:
+  1.00 cidade             Abrantes ()
+  1.00 aeroporto          Aeroporto Humberto Delgado (Loures)
+  1.00 cidade             Agualva-Cacém (Sintra)
+  1.00 cidade             Albergaria-a-Velha ()
+  1.00 cidade             Albufeira ()
+  1.00 cidade             Alcobaça ()
+  1.00 cidade             Alcácer do Sal ()
+  1.00 cidade             Alfena (Valongo)
+  1.00 cidade             Almada ()
+  1.00 cidade             Almancil (Loulé)
+  1.00 cidade             Almeirim ()
+  1.00 cidade             Alverca do Ribatejo (Vila Franca de Xira)
+  1.00 cidade             Amadora ()
+  1.00 cidade             Amarante ()
+  1.00 cidade             Amora (Seixal)
+  1.00 cidade             Anadia ()
+  1.00 cidade             Angra do Heroísmo ()
+  1.00 cidade             Aveiro ()
+  1.00 cidade             Barcelos ()
+  1.00 cidade             Barreiro ()
+  1.00 cidade             Beja ()
+  1.00 cidade             Borba ()
+  1.00 cidade             Braga ()
+  1.00 cidade             Bragança ()
+  1.00 cidade             Caldas da Rainha ()
+  1.00 cidade             Caniço (Santa Cruz)
+  1.00 cidade             Cantanhede ()
+  1.00 cidade             Cartaxo ()
+  1.00 cidade             Castelo Branco ()
+  1.00 cidade             Chaves ()
+  1.00 cidade             Coimbra ()
+  1.00 cidade             Costa da Caparica (Almada)
+  1.00 cidade             Covilhã ()
+  1.00 cidade             Câmara de Lobos ()
+  1.00 cidade             Elvas ()
+  1.00 cidade             Entroncamento ()
+  1.00 cidade             Ermesinde (Valongo)
+  1.00 cidade             Esmoriz (Ovar)
+  1.00 cidade             Espinho ()
+  1.00 cidade             Esposende ()
+  verificação «Torre de Belém»: [['Torre de Belém', 'atracao', 'Pedrouços, Lisboa', 38.691439, -9.216035, 0.62, 'Torre de São Vicente de Belém|Torre de São Vicente|Tower of Belém|Torre de São Vicente a Par de Belém']]
+  verificação «Centro Comercial Colombo»: [['Centro Comercial Colombo', 'centro_comercial', 'Carnide, Lisboa', 38.75488, -9.188767, 0.933, '']]
+  verificação «Hospital de São João»: [['Hospital de São João', 'clinica', 'Asprela, Porto', 41.183099, -8.601287, 0.32, '']]
+  verificação «NorteShopping»: [['NorteShopping', 'centro_comercial', 'Azenha de Cima, Matosinhos', 41.180382, -8.655629, 0.928, '']]
+  verificação «Aeroporto Humberto Delgado»: [['Aeroporto Humberto Delgado', 'aeroporto', 'Loures', 38.78953, -9.138408, 1.0, 'Aeroporto da Portela|Aeroporto Internacional de Lisboa Humberto Delgado|Aeroporto Internacional de Lisboa|Aeroporto de Lisboa|Lisbon Airport']]
