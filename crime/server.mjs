@@ -20,7 +20,7 @@ const SECURE = process.env.COOKIE_INSEGURO ? '' : '; Secure';
 const [fy, fm, fd] = (process.env.PRIMEIRA_RONDA || '2026-11-13').split('-').map(Number);
 const FIRST = { y: fy, m: fm, d: fd };
 const rng = cryptoRng();
-const VERSAO = 28;   // sobe quando o servidor muda, para se confirmar de fora que a versão nova já está a correr
+const VERSAO = 29;   // sobe quando o servidor muda, para se confirmar de fora que a versão nova já está a correr
 const ATOS_3S = +(process.env.ATOS_3S || 15), ATOS_MIN = +(process.env.ATOS_MIN || 400); // ações por conta: 15 em 3 s, 400 por minuto
 
 // ---------- relógio que nunca anda para trás ----------
@@ -537,6 +537,14 @@ function agirGangue(a, p, conta, now, world, ctx) {
       return { ok: true, joined: true };
     }
     case 'gangLeave': { const g = minha(); sair(g, p); return { ok: true, left: g.nome }; }
+    case 'gangBail': case 'gangMedic': {
+      const g = minha(), o = outro(g, a.name);
+      if (o.id === conta || !g.membros.has(o.id)) err('NO_TARGET');
+      const r = a.type === 'gangBail' ? E.bailFor(p, o, now, world) : E.medicFor(p, o, now, world);
+      ctx.outros.push(o);
+      ctx.depois.push(() => evento(o.id, now, { k: a.type === 'gangBail' ? 'gangBail' : 'gangMedic', by: nomeDe(conta), money: r.cost }));
+      return r;
+    }
     case 'gangKick': {
       const g = chefe(), o = outro(g, a.name);
       if (o.id === conta || !g.membros.has(o.id)) err('NO_TARGET');
@@ -585,7 +593,8 @@ function vistaGangue(conta, now) {
   const list = [...gangues.values()].map(resumo).sort((a, b) => b.respect - a.respect || a.name.localeCompare(b.name)).slice(0, 50).map((x, i) => ({ ...x, pos: i + 1, asked: gangues.get(x.id).pedidos.has(conta) }));
   const mine = gangueDe(conta), out = { now, list, mine: null };
   if (mine) {
-    const quem = (c) => { const o = jogadores.get(c); return { name: nomeDe(c), av: o?.av || 0, level: o ? E.level(o) : 1, respect: o?.respect || 0 }; };
+    const quem = (c) => { const o = jogadores.get(c); if (o) E.touch(o, now); return { name: nomeDe(c), av: o?.av || 0, level: o ? E.level(o) : 1, respect: o?.respect || 0,
+      jail: o && o.jailUntil > now ? o.jailUntil : 0, bail: o ? E.bailCost(o, now) : 0, hosp: o && o.hospUntil > now ? o.hospUntil : 0, medic: o ? E.medicCost(o, now) : 0 }; };
     out.mine = { ...resumo(mine), pos: list.find((x) => x.id === mine.id)?.pos || null, fund: mine.cofre, leaderMe: mine.lider === conta,
       roster: [...mine.membros].map(([c, m]) => ({ ...quem(c), given: m.dado, leader: c === mine.lider, me: c === conta })).sort((a, b) => b.respect - a.respect),
       asks: mine.lider === conta ? [...mine.pedidos.keys()].map(quem) : [],

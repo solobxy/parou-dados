@@ -622,3 +622,20 @@ test('aeroporto: regras, pagamento certo, suborno e o retorno de cada rota é o 
   // o avião nunca cria dinheiro do nada: o máximo que volta é carga × (1 + ganho)
   const z = piloto(); const cap = E.airCap(z); E.airSend(z, NOW, W, rota('kandahar'), cap, false); const c2 = E.airCollect(z, NOW + 8 * T.HOUR, W, never); assert.equal(c2.got, cap * 2); assert.equal(z.cash, 1e9 + cap);
 });
+
+test('gangue: safar um membro custa exatamente a fiança ou o hospital dele, só entre membros da mesma gangue', () => {
+  const m = (g) => { const p = mk('ladrao'); p.cash = 100000; p.bank = 0; setResp(p, 500); if (g) E.gangSet(p, g, 1, 0); return p; };
+  const a = m('g1'), b = m('g1'), fora = m('g2'), sem = m(null);
+  // ninguém preso: recusa sem mexer em nada
+  assert.throws(() => E.bailFor(a, b, NOW, W), code('NOT_IN_JAIL')); assert.throws(() => E.medicFor(a, b, NOW, W), code('NOT_IN_HOSPITAL'));
+  b.jailUntil = NOW + 5 * T.MIN; b.jailTier = 6;
+  assert.throws(() => E.bailFor(fora, b, NOW, W), code('NO_GANG')); assert.throws(() => E.bailFor(sem, b, NOW, W), code('NO_GANG')); assert.throws(() => E.bailFor(b, b, NOW, W), code('SELF'));
+  const custo = E.bailCost(b, NOW); assert.ok(custo > 0);
+  const pobre = m('g1'); pobre.cash = custo - 1; assert.throws(() => E.bailFor(pobre, b, NOW, W), code('NO_MONEY')); assert.ok(b.jailUntil > NOW); assert.equal(pobre.cash, custo - 1);
+  let r = E.bailFor(a, b, NOW, W);
+  assert.equal(r.cost, custo); assert.equal(a.cash, 100000 - custo); assert.equal(b.cash, 100000); assert.equal(b.jailUntil, 0); assert.equal(b.jailTier, 0);
+  // quem paga pode estar ele próprio preso ou no hospital (paga do bolso na mesma)
+  const c = m('g1'); c.hospUntil = NOW + 20 * T.MIN; a.jailUntil = NOW + 3 * T.MIN; a.jailTier = 2;
+  const med = E.medicCost(c, NOW); r = E.medicFor(a, c, NOW, W);
+  assert.equal(r.cost, med); assert.equal(c.hospUntil, 0); assert.equal(a.cash, 100000 - custo - med); assert.ok(a.jailUntil > NOW);
+});

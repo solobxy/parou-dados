@@ -362,6 +362,36 @@ test('mesas ao vivo: correm sozinhas sem ninguém a ver, o histórico é o mesmo
   }
 });
 
+test('gangue: safar um membro da prisão e do hospital paga quem carrega no botão, e o membro fica livre', async () => {
+  ENV_EXTRA = { ATOS_3S: '100000', ATOS_MIN: '1000000' };
+  const A = await contaNova('SafaA', '10.0.9.70'), B = await contaNova('SafaB', '10.0.9.71'), X = await contaNova('SafaX', '10.0.9.72');
+  for (const x of [A, B, X]) await x.estado();
+  const base = (e) => { e.cash = 500_000; e.respect = 100; e.peakRespect = 100; };
+  await mexer({ SafaA: base, SafaB: base, SafaX: base });
+  const ag = (x, ip, body) => cru(x.cookie, ip, body), gangue = async (x, ip) => (await fetch(BASE + '/api/gang', { headers: { cookie: x.cookie, 'X-Forwarded-For': ip } })).json();
+  let r = await ag(A, '10.0.9.70', { type: 'gangCreate', name: 'Safados', tag: 'SAF' }); assert.equal(r.status, 200, JSON.stringify(r.body));
+  const gid = (await gangue(A, '10.0.9.70')).mine.id;
+  r = await ag(B, '10.0.9.71', { type: 'gangJoin', id: gid }); assert.equal(r.status, 200);
+  r = await ag(A, '10.0.9.70', { type: 'gangBail', name: 'SafaB' }); assert.equal(r.body.error, 'NOT_IN_JAIL');
+  r = await ag(A, '10.0.9.70', { type: 'gangBail', name: 'SafaX' }); assert.equal(r.body.error, 'NO_TARGET');
+  // o servidor pára, B fica preso e X (de fora) também
+  const t = Date.now() + DESVIO;
+  await mexer({ SafaB: (e) => { e.jailUntil = t + 8 * 60000; e.jailTier = 6; }, SafaX: (e) => { e.jailUntil = t + 8 * 60000; e.jailTier = 6; } });
+  let g = await gangue(A, '10.0.9.70'); const mb = g.mine.roster.find((m) => m.name === 'SafaB');
+  assert.ok(mb.jail > g.now); assert.ok(mb.bail > 0); assert.equal(g.mine.roster.find((m) => m.name === 'SafaA').jail, 0);
+  const a0 = (await A.estado()).cash;
+  r = await ag(A, '10.0.9.70', { type: 'gangBail', name: 'SafaB' }); assert.equal(r.status, 200, JSON.stringify(r.body));
+  assert.ok(r.body.result.cost > 0 && r.body.result.cost <= mb.bail); assert.equal(r.body.me.cash, a0 - r.body.result.cost);
+  const b = await B.estado(); assert.equal(b.jailUntil, 0); assert.equal(b.cash, 500_000);
+  const ev = await (await fetch(BASE + '/api/events', { headers: { cookie: B.cookie, 'X-Forwarded-For': '10.0.9.71' } })).json();
+  assert.equal(ev.list[0].k, 'gangBail'); assert.equal(ev.list[0].by, 'SafaA'); assert.equal(ev.list[0].money, r.body.result.cost);
+  // hospital: igual
+  await mexer({ SafaB: (e) => { e.hospUntil = Date.now() + DESVIO + 15 * 60000; } });
+  g = await gangue(A, '10.0.9.70'); assert.ok(g.mine.roster.find((m) => m.name === 'SafaB').medic > 0);
+  r = await ag(A, '10.0.9.70', { type: 'gangMedic', name: 'SafaB' }); assert.equal(r.status, 200, JSON.stringify(r.body)); assert.equal((await B.estado()).hospUntil, 0);
+  r = await ag(A, '10.0.9.70', { type: 'gangMedic', name: 'SafaA' }); assert.equal(r.body.error, 'NO_TARGET');
+});
+
 // muda o estado guardado de jogadores (com o servidor parado), para os testes chegarem a níveis e quantias altas
 async function mexer(muda) {
   await parar();

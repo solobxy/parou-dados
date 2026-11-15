@@ -1110,3 +1110,5 @@ h1.slogo { margin: 0; }
 .airn { display: grid; justify-items: end; gap: 0; } .airn b { font: 900 22px/1 var(--disp); }
 .airfl .airto { font: 900 28px/1 var(--disp); text-transform: uppercase; }
 .airfl .gcd { font: 900 34px/1 var(--disp); color: var(--sodium); }
+
+.gsave { white-space: nowrap; flex: none; } .gsave svg.i { width: 13px; height: 13px; margin-right: 4px; vertical-align: -1px; }

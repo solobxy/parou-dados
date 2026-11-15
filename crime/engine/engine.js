@@ -375,6 +375,29 @@ export function payBail(p, now, world) {
   return { ok: true, cost };
 }
 
+// safar um membro da mesma gangue: paga-se a fiança ou o hospital dele (o preço é o dele, quem paga é outro)
+export function bailFor(payer, target, now, world) {
+  begin(payer, now, world, { allowBusy: true });
+  if (payer === target || payer.id === target.id) fail('SELF');
+  if (!payer.gang || payer.gang !== target.gang) fail('NO_GANG');
+  touch(target, now);
+  if (!(target.jailUntil > now)) fail('NOT_IN_JAIL');
+  const cost = bailCost(target, now);
+  pay(payer, cost);
+  target.jailUntil = 0; target.jailTier = 0;
+  return { ok: true, cost };
+}
+export function medicFor(payer, target, now, world) {
+  begin(payer, now, world, { allowBusy: true });
+  if (payer === target || payer.id === target.id) fail('SELF');
+  if (!payer.gang || payer.gang !== target.gang) fail('NO_GANG');
+  touch(target, now);
+  if (!(target.hospUntil > now)) fail('NOT_IN_HOSPITAL');
+  const cost = medicCost(target, now);
+  pay(payer, cost);
+  target.hospUntil = 0;
+  return { ok: true, cost };
+}
 export function medicCost(p, now) {
   if (!(p.hospUntil > now)) return 0;
   const mins = Math.ceil((p.hospUntil - now) / T.MIN);
