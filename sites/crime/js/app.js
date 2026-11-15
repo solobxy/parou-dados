@@ -1426,7 +1426,7 @@ function screenHitman() {
         S.avOk ? h('img', { class: 'avs', src: AV(x.av || 0), alt: '', width: 96, height: 96, loading: 'lazy' }) : null,
         h('div', { class: 'grow' }, h('div', { style: 'font-weight:700' }, x.tag ? h('span', { class: 'gtag' }, x.tag) : null, x.tag ? ' ' : '', x.name),
           h('div', { class: 'small muted' }, t('level') + ' ' + x.level + ' · ', h('span', { class: 'c-resp' }, icon('crown'), ' ' + short(x.respect)), ok ? ' · ' + t('hmAimShort', { p: pct(x.hc) }) : ''),
-          !ok && !GLOBAL.includes(x.hw) ? h('div', { class: 'small muted' }, errText(x.hw)) : null),
+          !ok && !GLOBAL.includes(x.hw) ? h('div', { class: 'small muted' }, errText(x.hw), x.until > now() ? [' · ', h('b', { class: 'num', dataset: { opend: x.until } }, dur(x.until - now()))] : null) : null),
         ok ? h('button', { class: 'btn danger sm', 'aria-label': t('hmGo', { m: moneyShort(x.hp) }), on: { click: () => hitmanSheet(x) } }, icon('skull'), moneyShort(x.hp)) : null);
     })));
   }
@@ -1447,15 +1447,21 @@ function screenFights() {
     else if (Math.max(me.protectUntil, me.capUntil) > n) info.push(t('protectedUntil', { t: dur(Math.max(me.protectUntil, me.capUntil) - n) }));
     if (n - S.st.round.start < S.cfg.round.noPvpMs) info.push(t('noPvpYet'));
     if (info.length) out.push(h('div', { class: 'tip' }, h('p', null, info.join(' '))));
+    // quem dá para atacar em cima; por baixo, os outros jogadores com o motivo (os mais perto de ti no ranking primeiro)
+    const can = (S.targets || []).filter((x) => !x.why), cant = (S.targets || []).filter((x) => x.why);
     if (!S.targets) out.push(h('p', { class: 'muted' }, t('loading')));
-    else if (!S.targets.length) out.push(h('div', { class: 'note' }, h('p', { class: 'muted' }, t('noTargets'))));
-    else out.push(h('div', { class: 'stack' }, S.targets.map((x) => h('div', { class: 'card tgt' },
+    else if (!S.targets.length) out.push(h('div', { class: 'note' }, h('p', { class: 'muted' }, t('hmNone'))));
+    else if (!can.length) out.push(h('div', { class: 'note' }, h('p', { class: 'muted' }, t('noTargets'))));
+    else out.push(h('div', { class: 'stack' }, can.map((x) => h('div', { class: 'card tgt' },
       h('div', { class: 'who2' }, S.avOk ? h('img', { class: 'avs', src: AV(x.av || 0), alt: '', width: 96, height: 96, loading: 'lazy' }) : null, h('div', null, h('div', { class: 'nm' }, x.tag ? h('span', { class: 'gtag' }, x.tag) : null, x.tag ? ' ' : '', x.name), h('div', { class: 'lv' }, t('level') + ' ' + x.level + ' · ' + list('titles')[x.level - 1] + ' · ', h('span', { class: 'c-resp' }, icon('crown'), ' ' + short(x.respect))))),
       h('div', { class: 'pct ' + chanceCls(x.chance) }, pct(x.chance)),
       h('div', { class: 'acts' },
         h('button', { class: 'btn danger sm', disabled: !!b, on: { click: (e) => { const el = e.currentTarget; withShield((drop) => act('attack', { target: x.name, mode: 'beat', drop }, { el })); } } }, icon('fist'), t('beat') + ' · +' + x.gain),
         h('button', { class: 'btn sm', disabled: !!b, on: { click: (e) => { const el = e.currentTarget; withShield((drop) => act('attack', { target: x.name, mode: 'mug', drop }, { el })); } } }, icon('cash'), t('rob') + ' · ~' + moneyShort(x.loot)),
         x.hp && x.hw !== 'LOW_LEVEL' ? h('button', { class: 'btn ghost sm hmb', on: { click: () => hitmanSheet(x) } }, icon('skull'), t('hmBtn', { m: moneyShort(x.hp) })) : null)))));
+    if (cant.length) out.push(h('h2', { class: 'sec' }, t('tgOffT')), h('div', { class: 'stack' }, cant.map((x) => h('div', { class: 'card tgt off' },
+      h('div', { class: 'who2' }, S.avOk ? h('img', { class: 'avs', src: AV(x.av || 0), alt: '', width: 96, height: 96, loading: 'lazy' }) : null, h('div', null, h('div', { class: 'nm' }, x.tag ? h('span', { class: 'gtag' }, x.tag) : null, x.tag ? ' ' : '', x.name), h('div', { class: 'lv' }, t('level') + ' ' + x.level + ' · ' + list('titles')[x.level - 1] + ' · ', h('span', { class: 'c-resp' }, icon('crown'), ' ' + short(x.respect))),
+        h('div', { class: 'why' }, errText(x.why), x.until > n ? [' · ', h('b', { class: 'num', dataset: { opend: x.until } }, dur(x.until - n))] : null)))))));
     out.push(h('button', { class: 'btn ghost block', style: 'margin-top:12px', on: { click: () => { S.targets = null; render(); loadTargets(); } } }, icon('refresh'), t('retry')));
   } else if (!S.events) out.push(h('p', { class: 'muted' }, t('loading')));
   else if (!S.events.length) out.push(h('div', { class: 'note' }, h('p', { class: 'muted' }, t('noEvents'))));
@@ -1777,7 +1783,7 @@ async function gangPickTarget() {
   const body = h('div', { class: 'stack' }, h('h2', null, t('goPickT')), h('p', { class: 'muted' }, t('loading')));
   const close = sheet(body);
   try { const r = await api('GET', '/api/targets'); S.targets = r.list; } catch {}
-  const L = (S.targets || []).filter((x) => !S.st.me.gang || x.tag !== S.st.me.gang.tag);
+  const L = (S.targets || []).filter((x) => !x.why && (!S.st.me.gang || x.tag !== S.st.me.gang.tag));
   body.replaceChildren(h('h2', null, t('goPickT')), h('p', { class: 'small muted' }, t('goPickSub')),
     ...(L.length ? L.map((x) => h('div', { class: 'card row sp', style: 'background:var(--s2)' },
       h('div', { class: 'grow', style: 'min-width:0' }, h('div', { style: 'font-weight:700' }, x.tag ? h('span', { class: 'gtag' }, x.tag) : null, x.tag ? ' ' : '', x.name), h('div', { class: 'small muted' }, t('gMemberLine', { l: x.level, r: short(x.respect) }))),
@@ -1789,7 +1795,7 @@ setInterval(() => {
   const els = document.querySelectorAll('[data-opend]'); if (!els.length) return;
   let due = false;
   els.forEach((el) => { const left = +el.dataset.opend - now(); el.textContent = dur(Math.max(0, left)); if (left <= -600 && el.dataset.re !== '1') { el.dataset.re = '1'; due = true; } });
-  if (due) { loadGang(); refresh(); }
+  if (due) { loadGang(); refresh(); if (S.tab === 'fights' && S.fightSeg !== 'events') loadTargets(); if (S.tab === 'hitman') loadHitman(); }
 }, 500);
 function gangMember(m) {
   const close = sheet(h('div', { class: 'stack' }, h('h2', null, m.name), h('p', { class: 'muted' }, t('gMemberLine', { l: m.level, r: short(m.respect) })),

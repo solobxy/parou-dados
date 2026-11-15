@@ -1,5 +1,5 @@
 // Guarda a casca do jogo para abrir depressa; os dados vêm sempre do servidor.
-const V = 'crime-52';
+const V = 'crime-53';
 // Imagens: guardadas à parte e de vez (não se apagam quando sai uma versão nova do jogo). Cada endereço leva o número da versão da imagem (?N).
 const IMGS = 'crime-img-1';
 const SHELL = ['/', '/css/app.css', '/js/app.js', '/js/i18n.js', '/js/ui.js', '/js/fx.js', '/js/casino3d.js', '/js/globo.js', '/js/terra.js',

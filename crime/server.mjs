@@ -20,7 +20,7 @@ const SECURE = process.env.COOKIE_INSEGURO ? '' : '; Secure';
 const [fy, fm, fd] = (process.env.PRIMEIRA_RONDA || '2026-11-13').split('-').map(Number);
 const FIRST = { y: fy, m: fm, d: fd };
 const rng = cryptoRng();
-const VERSAO = 44;   // sobe quando o servidor muda, para se confirmar de fora que a versão nova já está a correr
+const VERSAO = 45;   // sobe quando o servidor muda, para se confirmar de fora que a versão nova já está a correr
 const ATOS_3S = +(process.env.ATOS_3S || 15), ATOS_MIN = +(process.env.ATOS_MIN || 400); // ações por conta: 15 em 3 s, 400 por minuto
 
 // ---------- relógio que nunca anda para trás ----------
@@ -966,22 +966,31 @@ function alvos(conta, now, w) {
   const me = jogadorDe(conta, now, w);
   if (!me) return [];
   E.touch(me, now);
-  const lista = [];
+  const lista = [], fora = [];
   for (const d of jogadores.values()) {
     if (d.id === me.id) continue;
     // a lista mostra quem dá para atacar quando estiveres livre: as razões do teu lado (prisão, hospital, escudo, energia) não escondem ninguém
     const livre = { ...me, energy: CFG.pvp.energy, jailUntil: 0, hospUntil: 0, shieldUntil: 0 };
     const motivo = E.canAttack(livre, d, now, { start: w.start, playEnd: w.playEnd });
-    if (motivo && motivo !== 'NO_PVP_YET') continue;
+    const base = { name: nomeDe(d.id), level: E.level(d), respect: d.respect, av: d.av || 0, cls: d.cls || '', tag: tagDe(d.id) };
+    if (motivo && motivo !== 'NO_PVP_YET') {
+      // quem não dá para atacar também aparece, com o motivo (why) e, quando é por tempo, a hora a que acaba (until)
+      const until = motivo === 'TARGET_NEW' ? d.shieldUntil : motivo === 'TARGET_HOSPITAL' ? d.hospUntil : motivo === 'TARGET_JAIL' ? d.jailUntil : motivo === 'TARGET_PROTECTED' ? Math.max(d.protectUntil, d.capUntil) : 0;
+      fora.push({ ...base, why: motivo, until });
+      continue;
+    }
     lista.push({
-      name: nomeDe(d.id), level: E.level(d), respect: d.respect, av: d.av || 0, cls: d.cls || '', tag: tagDe(d.id),
+      ...base,
       chance: E.attackChanceBp(me, d, now), gain: E.expectedGain(me, d, now), loot: E.mugValue(me, d, now),
       hp: E.hitmanPrice(d), hc: E.hitmanChanceBp(d), hw: E.canHitman({ ...me, shieldUntil: 0 }, d, now, { start: w.start, playEnd: w.playEnd }),
     });
   }
   // os mais interessantes primeiro: mais respeito esperado
   lista.sort((x, y) => (y.chance * y.gain) - (x.chance * x.gain));
-  return lista.slice(0, 25);
+  // depois, até encher a lista, quem não dá para atacar: primeiro os mais perto de ti no ranking (respeito mais parecido com o teu)
+  fora.sort((x, y) => (Math.abs(x.respect - me.respect) - Math.abs(y.respect - me.respect)) || (x.name < y.name ? -1 : 1));
+  const cima = lista.slice(0, 25);
+  return [...cima, ...fora.slice(0, 25 - cima.length)];
 }
 // Assassino a soldo: todos os outros jogadores, com o preço, a pontaria e, quando não dá para encomendar, o motivo (hw).
 // Primeiro os que dá para encomendar, depois os mais fortes. Só sai o que já é público no ranking, mais o motivo.
@@ -992,8 +1001,9 @@ function contratos(conta, now, w) {
   const lista = [];
   for (const d of jogadores.values()) {
     if (d.id === me.id) continue;
-    lista.push({ name: nomeDe(d.id), level: E.level(d), respect: d.respect, av: d.av || 0, tag: tagDe(d.id),
-      hp: E.hitmanPrice(d), hc: E.hitmanChanceBp(d), hw: E.canHitman({ ...me, shieldUntil: 0 }, d, now, { start: w.start, playEnd: w.playEnd }) });
+    const hw = E.canHitman({ ...me, shieldUntil: 0 }, d, now, { start: w.start, playEnd: w.playEnd });
+    const until = hw === 'TARGET_NEW' ? d.shieldUntil : hw === 'TARGET_HOSPITAL' ? d.hospUntil : hw === 'TARGET_JAIL' ? d.jailUntil : hw === 'TARGET_PROTECTED' ? Math.max(d.protectUntil, d.capUntil) : hw === 'HITMAN_SAFE' ? d.hmSafe : 0;
+    lista.push({ name: nomeDe(d.id), level: E.level(d), respect: d.respect, av: d.av || 0, tag: tagDe(d.id), hp: E.hitmanPrice(d), hc: E.hitmanChanceBp(d), hw, until });
   }
   lista.sort((x, y) => ((x.hw ? 1 : 0) - (y.hw ? 1 : 0)) || (y.respect - x.respect) || (x.name < y.name ? -1 : 1));
   return lista.slice(0, 30);

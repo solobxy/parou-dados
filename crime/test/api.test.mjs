@@ -121,6 +121,12 @@ test('ataque entre duas contas: hospital, evento e ranking', async () => {
   const perdeu = r.body.result.win ? 'Duarte' : 'Carla';
   const sb = await b('GET', '/api/state');
   if (perdeu === 'Duarte') assert.ok(sb.body.me.hospUntil > sb.body.now);
+  // quem está no hospital ou protegido continua na lista de alvos, apagado, com o motivo e a hora a que acaba (sem preço nem hipótese)
+  if (perdeu === 'Duarte') {
+    const d = (await a('GET', '/api/targets')).body.list.find((x) => x.name === 'Duarte');
+    assert.ok(['TARGET_HOSPITAL', 'TARGET_PROTECTED'].includes(d.why), JSON.stringify(d)); assert.ok(d.until > sb.body.now); assert.equal(d.chance, undefined);
+    assert.deepEqual(Object.keys(d).sort(), ['av', 'cls', 'level', 'name', 'respect', 'tag', 'until', 'why']);
+  }
   const ev = await b('GET', '/api/events');
   assert.equal(ev.body.list[0].by, 'Carla');
   const rk = await a('GET', '/api/ranking');
@@ -610,10 +616,12 @@ test('guardas e assassino a soldo: comprar guardas, encomendar, o alvo não sabe
   let alvo = (await get(A, '10.0.9.95', '/api/targets')).list.find((x) => x.name === 'HitB');
   assert.equal(alvo.hp, 100000); assert.equal(alvo.hc, 9000); assert.equal(alvo.hw, null);
   // o sítio do assassino mostra toda a gente, com o motivo quando não dá: um fraco demais não entra nos alvos, mas aparece aqui a dizer porquê
-  assert.equal((await get(A, '10.0.9.95', '/api/targets')).list.some((x) => x.name === 'HitC'), false);
+  { const tl = (await get(A, '10.0.9.95', '/api/targets')).list, c = tl.find((x) => x.name === 'HitC');   // nos alvos aparece no fim, sem números, só com o motivo
+    assert.equal(c.why, 'TARGET_TOO_WEAK'); assert.equal(c.until, 0); assert.equal(c.chance, undefined); assert.equal(c.hp, undefined);
+    assert.ok(tl.findIndex((x) => x.name === 'HitB') < tl.findIndex((x) => x.name === 'HitC')); }
   const contratos = (await get(A, '10.0.9.95', '/api/hitman')).list.filter((x) => x.name.startsWith('Hit'));
   assert.deepEqual(contratos.map((x) => [x.name, x.hw, x.hp, x.hc]), [['HitB', null, 100000, 9000], ['HitC', 'TARGET_TOO_WEAK', 10000, 9000]]);
-  assert.deepEqual(Object.keys(contratos[0]).sort(), ['av', 'hc', 'hp', 'hw', 'level', 'name', 'respect', 'tag']);
+  assert.deepEqual(Object.keys(contratos[0]).sort(), ['av', 'hc', 'hp', 'hw', 'level', 'name', 'respect', 'tag', 'until']);
   assert.equal((await fetch(BASE + '/api/hitman')).status, 401);
   // B compra um pitbull: a pontaria desce 15 pontos
   let r = await ag(B, '10.0.9.96', { type: 'gear', kind: 'guard', idx: 1 }); assert.equal(r.status, 200, JSON.stringify(r.body)); assert.equal(r.body.me.guard, 1); assert.equal(r.body.me.cash, 36_000);
