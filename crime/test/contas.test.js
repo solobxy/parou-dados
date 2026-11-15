@@ -363,6 +363,59 @@ test('blackjack: em 200 000 mãos com estratégia simples a casa ganha pouco (re
   assert.ok(rtp > 0.95 && rtp < 1.0, 'retorno ' + rtp);
 });
 
+test('blackjack: dividir um par (aposta igual, duas mãos, contas de cada uma) e o que não se pode', () => {
+  // 8+8 contra 6: divide; 1.ª mão recebe 3 (11) e dobra com um 10 (21); 2.ª recebe um 10 (18) e fica; dealer 6+10, tira 10 e rebenta
+  const p = cas(); p.bj = { bet: 100, dbl: false, pl: [7, 20], dl: [5, 9], next: [2, 9, 9, 9] };
+  assert.equal(E.bjPublic(p).split, true); assert.deepEqual(E.bjPublic(p).tip, ['split', 'stand']);
+  let r = E.casinoPlay(p, NOW, W, 'bj', { op: 'split' }, never);
+  assert.equal(r.done, false); assert.equal(r.bet, 100); assert.equal(p.cash, 100000 - 100);
+  assert.deepEqual(r.hand.hands.map((x) => x.tot), [11, 18]); assert.equal(r.hand.cur, 0); assert.equal(r.hand.split, undefined); assert.deepEqual(r.hand.tip, ['double', 'hit']);
+  assert.throws(() => E.casinoPlay(p, NOW, W, 'bj', { op: 'split' }, never), code('NO_SPLIT'));   // só se divide uma vez
+  r = E.casinoPlay(p, NOW, W, 'bj', { op: 'double' }, never);
+  assert.equal(r.done, false); assert.equal(r.bet, 100); assert.equal(r.hand.cur, 1); assert.equal(r.hand.bet, 100); assert.deepEqual(r.hand.hands.map((x) => [x.tot, x.bet, x.dbl]), [[21, 200, true], [18, 100, false]]);
+  r = E.casinoPlay(p, NOW, W, 'bj', { op: 'stand' }, never);
+  assert.equal(r.done, true); assert.equal(r.hand.bet, 300); assert.equal(r.win, 600); assert.equal(r.res, 'win'); assert.equal(p.bj, null);
+  assert.deepEqual(r.hand.hands.map((x) => [x.res, x.win]), [['win', 400], ['win', 200]]); assert.equal(p.cash, 100000 - 200 + 600);
+  // dois ases: uma carta para cada um e acaba logo; 21 depois de dividir paga 1 para 1 (não é blackjack)
+  const a = cas(); a.bj = { bet: 100, dbl: false, pl: [0, 13], dl: [9, 8], next: [12, 5] };   // ás+K = 21, ás+6 = 17, dealer 19
+  r = E.casinoPlay(a, NOW, W, 'bj', { op: 'split' }, never);
+  assert.equal(r.done, true); assert.deepEqual(r.hand.hands.map((x) => [x.tot, x.res, x.win]), [[21, 'win', 200], [17, 'lose', 0]]); assert.equal(r.res, 'push'); assert.equal(a.cash, 100000 - 100 + 200);
+  // uma mão rebenta e a outra empata: perde-se só a que rebentou
+  const b = cas(); b.bj = { bet: 100, dbl: false, pl: [9, 22], dl: [9, 7], next: [5, 7, 9] };  // 10+6 = 16, 10+8 = 18; dealer 18
+  r = E.casinoPlay(b, NOW, W, 'bj', { op: 'split' }, never); assert.equal(r.done, false);
+  r = E.casinoPlay(b, NOW, W, 'bj', { op: 'hit' }, never); assert.equal(r.done, false); assert.equal(r.hand.cur, 1); assert.equal(r.hand.hands[0].tot, 26);
+  r = E.casinoPlay(b, NOW, W, 'bj', { op: 'stand' }, never);
+  assert.deepEqual(r.hand.hands.map((x) => x.res), ['bust', 'push']); assert.equal(r.win, 100); assert.equal(r.res, 'lose'); assert.equal(r.hand.bet, 200);
+  // cartas diferentes não se dividem; sem dinheiro na mão também não (e nada muda)
+  const c = cas(); c.bj = { bet: 100, dbl: false, pl: [7, 8], dl: [9, 7], next: [] };
+  assert.equal(E.bjPublic(c).split, undefined); assert.throws(() => E.casinoPlay(c, NOW, W, 'bj', { op: 'split' }, never), code('NO_SPLIT'));
+  const d = cas(); d.cash = 50; d.bj = { bet: 100, dbl: false, pl: [7, 20], dl: [9, 7], next: [1, 2] };
+  const antes = JSON.stringify(d);
+  assert.throws(() => E.casinoPlay(d, NOW, W, 'bj', { op: 'split' }, never), code('NO_CASH')); assert.equal(JSON.stringify(d), antes);
+  assert.throws(() => E.casinoPlay(d, NOW, W, 'bj', { op: 'double' }, never), code('NO_CASH')); assert.equal(JSON.stringify(d), antes);
+});
+
+test('blackjack: a seguir a dica do jogo em 400 000 mãos, devolve 99,5% e a casa continua a ganhar', () => {
+  const rng = seededRng(4242), p = cas(1e13); let bet = 0, win = 0, div = 0, N = 400000;
+  for (let i = 0; i < N; i++) {
+    let r = E.casinoPlay(p, NOW, W, 'bj', { op: 'deal', amt: 100 }, rng); bet += r.bet; win += r.win;
+    while (!r.done) { r = E.casinoPlay(p, NOW, W, 'bj', { op: r.hand.tip[0] }, rng); bet += r.bet; win += r.win; }
+    if (r.hand.hands) { div++; assert.equal(r.win, r.hand.hands.reduce((x, y) => x + y.win, 0)); assert.equal(r.hand.bet, r.hand.hands.reduce((x, y) => x + y.bet, 0)); assert.ok(r.win <= r.hand.bet * 2); }
+  }
+  const porMao = (win - bet) / N / 100;   // o que a casa leva por mão dada, em apostas
+  assert.ok(porMao < -0.002 && porMao > -0.009, 'casa por mão ' + porMao);
+  perto(win / bet, 0.9955, 0.004, 'retorno com a dica');
+  assert.ok(div / N > 0.02 && div / N < 0.03, 'mãos divididas ' + div / N);
+  // a alternativa (sem dinheiro para dobrar nem dividir) é sempre pedir ou ficar
+  const val = (c) => (c % 13 >= 9 ? 10 : (c % 13) + 1);
+  for (let a = 0; a < 52; a++) for (let b = 0; b < 52; b++) for (let u = 0; u < 13; u++) {
+    const par = val(a) === val(b), tip = E.bjTip([a, b], u, par);
+    assert.ok(['hit', 'stand'].includes(tip[1])); assert.ok(['hit', 'stand', 'double'].concat(par ? ['split'] : []).includes(tip[0]));
+    if (val(a) === 8 && par) assert.equal(tip[0], 'split');            // dois 8: divide-se sempre
+    if (val(a) === 10 && par) assert.equal(tip[0], 'stand');           // 20 não se estraga
+  }
+});
+
 test('casino: aposta mínima, máxima pelo nível, só dinheiro na mão; aposta recusada não mexe em nada', () => {
   const p = cas(500); p.bank = 1e6;
   const antes = structuredClone(p);
@@ -381,15 +434,23 @@ test('casino: aposta mínima, máxima pelo nível, só dinheiro na mão; aposta 
   assert.equal(E.casinoMax(rico), 6553);   // nível 5: 1000 × 1,6⁴
 });
 
-test('roda da sorte: cada aposta devolve o mesmo que na roda real (conta exata) e a simulação confirma', () => {
-  const Wh = CFG.casino.wheel, E2 = (l) => l.reduce((x, [v, w]) => x + v * w, 0) / l.reduce((x, [, w]) => x + w, 0), Em = E2(Wh.topMult);
-  const REAL = { 1: 0.9608, 2: 0.9595, 5: 0.9578, 10: 0.9573, moeda: 0.957, caixas: 0.9527, bola: 0.9433, louca: 0.9441 };
+test('roda da sorte: as oito apostas devolvem 96,5% (conta exata, com o teto) e a simulação confirma', () => {
+  const Wh = CFG.casino.wheel, CAP = CFG.casino.maxWinMult, tw = (l) => l.reduce((x, [, w]) => x + w, 0), TT = tw(Wh.topMult);
+  // retorno exato de uma aposta sozinha numa casa: sem multiplicador do topo, e com cada um deles; nenhum prémio passa do teto
+  const exato = (s, cap) => {
+    const l = Wh.num[s] ? [[Wh.num[s], 1]] : Wh[s], T = tw(l), q = Wh.top[s] / 10000; let e = 0;
+    for (const [v, w] of l) { e += (1 - q) * (w / T) * Math.min(v + 1, cap); for (const [m, wm] of Wh.topMult) e += q * (w / T) * (wm / TT) * Math.min(v * m + 1, cap); }
+    return (Wh.segs.filter((x) => x === s).length / 54) * e;
+  };
+  const REAL = Object.fromEntries(Wh.spots.map((s) => [s, 0.965]));
   assert.equal(Wh.segs.length, 54);
   assert.ok(Object.values(Wh.top).reduce((x, y) => x + y, 0) <= 10000);
   for (const s of Wh.spots) {
-    const P = Wh.segs.filter((x) => x === s).length / 54, B = Wh.num[s] ?? E2(Wh[s]), q = Wh.top[s] / 10000;
-    perto(P * (1 + B * (1 + q * (Em - 1))), REAL[s], 0.0012, 'roda ' + s);
+    perto(exato(s, CAP), REAL[s], 0.0006, 'roda ' + s);
+    assert.ok(exato(s, Infinity) < 0.98, 'roda ' + s + ' sem teto');   // mesmo a espalhar apostas para fugir ao teto, a casa fica sempre a ganhar
   }
+  // os minijogos nunca dão menos do que isto
+  assert.deepEqual(['moeda', 'caixas', 'bola', 'louca'].map((s) => Math.min(...Wh[s].map(([v]) => v))), [3, 10, 10, 20]);
   const rng = seededRng(5150), N = 300000, got = {}, ret = {};
   for (let i = 0; i < N; i++) { const sp = E.wheelSpin(rng); got[sp.s] = (got[sp.s] || 0) + 1; ret[sp.s] = (ret[sp.s] || 0) + sp.mult + 1; }
   for (const s of ['1', '2', '5', '10']) perto(got[s] / N, Wh.segs.filter((x) => x === s).length / 54, 0.004, 'casa ' + s);

@@ -1346,27 +1346,63 @@ function bjShoe(rng) {
   }
   return out;
 }
+// Dividir: com duas cartas do mesmo valor, o jogador pode separá-las em duas mãos (uma vez por jogada), pondo outra aposta igual.
+// h.pl/h.bet/h.dbl são sempre da mão que está a ser jogada; h.fin guarda as mãos já jogadas e h.q a que ainda espera.
+// Depois de dividir, 21 com duas cartas vale como 21 normal (paga 1 para 1) e dois ases recebem uma carta cada e ficam por aí.
+const bjRank = (c) => { const r = c % 13; return r >= 9 ? 10 : r + 1; };
+const bjCanSplit = (h) => h.pl.length === 2 && !h.sp && bjRank(h.pl[0]) === bjRank(h.pl[1]);
+const bjHands = (h) => [...(h.fin || []), { pl: h.pl, bet: h.bet, dbl: h.dbl }, ...(h.q || [])];
+// A jogada que perde menos a longo prazo (estratégia básica para estas regras: 6 baralhos, dealer pára em todos os 17, dobra-se com
+// quaisquer 2 cartas, também depois de dividir, e só se divide uma vez). Devolve [melhor, alternativa]: a alternativa é pedir ou ficar,
+// para quando a melhor é dobrar ou dividir e não há dinheiro na mão para isso. Só usa o que o jogador vê: as suas cartas e a 1.ª do dealer.
+export function bjTip(pl, up0, canSplit) {
+  const up = up0 % 13 === 0 ? 11 : bjRank(up0), { tot, soft } = bjValue(pl), two = pl.length === 2, btw = (a, b) => up >= a && up <= b;
+  let alt;
+  if (soft) alt = tot >= 19 || (tot === 18 && up <= 8) ? 'stand' : 'hit';
+  else alt = tot >= 17 || (tot >= 13 && up <= 6) || (tot === 12 && btw(4, 6)) ? 'stand' : 'hit';
+  if (canSplit && two) {
+    const v = pl[0] % 13 === 0 ? 11 : bjRank(pl[0]);
+    if (v === 11 || v === 8 || ((v === 2 || v === 3 || v === 7) && up <= 7) || (v === 4 && btw(5, 6)) || (v === 6 && up <= 6) || (v === 9 && up <= 9 && up !== 7)) return ['split', alt];
+  }
+  if (two) {
+    const d = soft ? (tot >= 17 && tot <= 18 ? btw(3, 6) : tot >= 15 && tot <= 16 ? btw(4, 6) : tot >= 13 && tot <= 14 ? btw(5, 6) : false)
+      : tot === 11 ? up <= 10 : tot === 10 ? up <= 9 : tot === 9 ? btw(3, 6) : false;
+    if (d) return ['double', alt];
+  }
+  return [alt, alt];
+}
 function bjView(h, done) {
   const v = { bet: h.bet, dbl: h.dbl, pl: h.pl.slice(), tot: bjValue(h.pl).tot };
-  if (done) { v.dl = h.dl.slice(); v.dtot = bjValue(h.dl).tot; } else v.dl = [h.dl[0]];
+  if (done) { v.dl = h.dl.slice(); v.dtot = bjValue(h.dl).tot; } else { v.dl = [h.dl[0]]; if (bjCanSplit(h)) v.split = true; v.tip = bjTip(h.pl, h.dl[0], !!v.split); }
+  if (h.sp) { v.cur = (h.fin || []).length; v.hands = bjHands(h).map((x) => ({ pl: x.pl.slice(), tot: bjValue(x.pl).tot, bet: x.bet, dbl: !!x.dbl })); }
   return v;
 }
-function bjFinish(p, h, bet) {
-  const pv = bjValue(h.pl).tot;
-  let res;
-  if (pv > 21) res = 'bust';
-  else {
-    if (!isBJ(h.pl)) while (bjValue(h.dl).tot < 17) h.dl.push(h.next.shift()); // o dealer pára em 17 (também no 17 com ás)
-    const dv = bjValue(h.dl).tot;
-    if (isBJ(h.pl) && !isBJ(h.dl)) res = 'bj';
-    else if (isBJ(h.dl) && !isBJ(h.pl)) res = 'lose';
-    else if (dv > 21 || pv > dv) res = 'win';
-    else if (pv === dv) res = 'push';
-    else res = 'lose';
+// a mão que estava a ser jogada acabou (ficou, dobrou, fez 21 ou rebentou): passa à seguinte, se houver, ou fecha as contas
+function bjNext(p, h, bet) {
+  while (h.q && h.q.length) {
+    (h.fin ||= []).push({ pl: h.pl, bet: h.bet, dbl: h.dbl });
+    const nx = h.q.shift(); h.pl = nx.pl; h.bet = nx.bet; h.dbl = false;
+    if (!h.aces && bjValue(h.pl).tot < 21) return { ok: true, g: 'bj', bet, win: 0, done: false, hand: bjView(h, false) };
   }
-  const win = res === 'bj' ? h.bet + Math.floor((h.bet * 3) / 2) : res === 'win' ? h.bet * 2 : res === 'push' ? h.bet : 0;
+  return bjFinish(p, h, bet);
+}
+function bjFinish(p, h, bet) {
+  const hands = bjHands(h), natural = !h.sp && isBJ(h.pl);
+  if (!natural && hands.some((x) => bjValue(x.pl).tot <= 21)) while (bjValue(h.dl).tot < 17) h.dl.push(h.next.shift()); // o dealer pára em 17 (também no 17 com ás)
+  const dv = bjValue(h.dl).tot, dbj = isBJ(h.dl);
+  let win = 0, staked = 0;
+  const outs = hands.map((x) => {
+    const pv = bjValue(x.pl).tot;
+    const res = pv > 21 ? 'bust' : natural && !dbj ? 'bj' : dbj && !natural ? 'lose' : dv > 21 || pv > dv ? 'win' : pv === dv ? 'push' : 'lose';
+    const w = res === 'bj' ? x.bet + Math.floor((x.bet * 3) / 2) : res === 'win' ? x.bet * 2 : res === 'push' ? x.bet : 0;
+    win += w; staked += x.bet;
+    return { pl: x.pl.slice(), tot: pv, bet: x.bet, dbl: !!x.dbl, res, win: w };
+  });
   p.cash += win; p.bj = null;
-  return { ok: true, g: 'bj', bet, win, done: true, res, hand: bjView(h, true) };
+  const hand = bjView(h, true); hand.bet = staked;   // no fim, «bet» é tudo o que esteve na mesa nesta jogada
+  let res = outs[0].res;
+  if (h.sp) { hand.hands = outs; hand.cur = -1; res = win > staked ? 'win' : win === staked ? 'push' : outs.every((o) => o.res === 'bust') ? 'bust' : 'lose'; }
+  return { ok: true, g: 'bj', bet, win, done: true, res, hand };
 }
 function bjDeal(p, a, rng) {
   if (p.bj) fail('BJ_OPEN');
@@ -1381,21 +1417,29 @@ function bjDeal(p, a, rng) {
 function bjMove(p, op, rng) {
   const h = p.bj;
   if (!h) fail('NO_HAND');
-  while (h.next.length < 12) h.next.push(rng.int(0, 51));   // nunca falta carta (com 6 baralhos isto quase nunca acontece)
+  if (op === 'double' && (h.pl.length !== 2 || h.dbl)) fail('NO_DOUBLE');
+  if (op === 'split' && !bjCanSplit(h)) fail('NO_SPLIT');
+  if ((op === 'double' || op === 'split') && p.cash < h.bet) fail('NO_CASH');
+  while (h.next.length < 16) h.next.push(rng.int(0, 51));   // nunca falta carta (com 6 baralhos isto quase nunca acontece)
   if (op === 'hit') {
     h.pl.push(h.next.shift());
-    const v = bjValue(h.pl).tot;
-    if (v >= 21) return bjFinish(p, h, 0);
+    if (bjValue(h.pl).tot >= 21) return bjNext(p, h, 0);
     return { ok: true, g: 'bj', bet: 0, win: 0, done: false, hand: bjView(h, false) };
   }
-  if (op === 'stand') return bjFinish(p, h, 0);
+  if (op === 'stand') return bjNext(p, h, 0);
   if (op === 'double') {
-    if (h.pl.length !== 2 || h.dbl) fail('NO_DOUBLE');
-    if (p.cash < h.bet) fail('NO_CASH');
     p.cash -= h.bet;
     const extra = h.bet; h.bet *= 2; h.dbl = true;
     h.pl.push(h.next.shift());
-    return bjFinish(p, h, extra);
+    return bjNext(p, h, extra);
+  }
+  if (op === 'split') {
+    p.cash -= h.bet;
+    const [c0, c1] = h.pl;
+    h.sp = true; h.aces = c0 % 13 === 0; h.fin = [];
+    h.pl = [c0, h.next.shift()]; h.q = [{ pl: [c1, h.next.shift()], bet: h.bet }];
+    if (h.aces || bjValue(h.pl).tot === 21) return bjNext(p, h, h.bet);
+    return { ok: true, g: 'bj', bet: h.bet, win: 0, done: false, hand: bjView(h, false) };
   }
   fail('BAD_BET');
 }
@@ -1628,7 +1672,7 @@ export function bjPublic(p) { return p.bj ? bjView(p.bj, false) : null; }
 export function casinoPlay(p, now, world, g, a, rng) {
   if (!a || typeof a !== 'object') fail('BAD_BET');
   if (g === 'bj' && a.op !== 'deal') {
-    if (!['hit', 'stand', 'double'].includes(a.op)) fail('BAD_BET');
+    if (!['hit', 'stand', 'double', 'split'].includes(a.op)) fail('BAD_BET');
     begin(p, now, world, { allowBusy: true });       // uma mão começada pode acabar-se mesmo no hospital
     return bjMove(p, a.op, rng);
   }
@@ -1730,7 +1774,8 @@ export function checkInvariants(p) {
   if (!Array.isArray(p.hu) || p.hu.length !== CFG.house.ups.length || p.hu.some((n) => !Number.isSafeInteger(n) || n < 0 || n > p.house)) bad.push('house upgrades');
   if (!Array.isArray(p.hkN) || p.hkN.length !== CFG.hookers.list.length || p.hkN.some((x) => !Number.isSafeInteger(x) || x < 0 || x > CFG.hookers.maxSteps) || !Array.isArray(p.hkAt) || p.hkAt.length !== p.hkN.length) bad.push('hooker list');
   if (!Number.isSafeInteger(p.av) || p.av < 0 || p.av >= CFG.avatars) bad.push('avatar');
-  if (p.bj !== null && (typeof p.bj !== 'object' || !Number.isSafeInteger(p.bj.bet) || p.bj.bet < CFG.casino.minBet || !Array.isArray(p.bj.pl) || bjValue(p.bj.pl).tot > 21 || !Array.isArray(p.bj.next))) bad.push('blackjack');
+  if (p.bj !== null && (typeof p.bj !== 'object' || !Number.isSafeInteger(p.bj.bet) || p.bj.bet < CFG.casino.minBet || !Array.isArray(p.bj.pl) || bjValue(p.bj.pl).tot > 21 || !Array.isArray(p.bj.next)
+    || [...(p.bj.fin || []), ...(p.bj.q || [])].some((x) => !x || !Array.isArray(x.pl) || x.bet !== (x.dbl ? 2 : 1) * (p.bj.bet / (p.bj.dbl ? 2 : 1))) || (p.bj.fin || []).length + (p.bj.q || []).length > 1)) bad.push('blackjack');
   for (const k of Object.keys(p.fx)) { const f = p.fx[k]; if (!CFG.fxKinds.includes(k) || !Number.isSafeInteger(f.bp) || f.bp <= 0 || !Number.isSafeInteger(f.until)) bad.push('fx ' + k); }
   for (const s of p.biz) {
     for (const k of ['n', 'stored', 'rem', 't']) if (!Number.isSafeInteger(s[k]) || s[k] < 0) bad.push(`biz.${k}=${s[k]}`);

@@ -143,19 +143,20 @@ export const CFG = {
     maxWinMult: 2500, // nenhuma jogada paga mais de 2500× o que se apostou
     // Roda da Fortuna: 54 casas. Número n paga n para 1; as casas de bónus abrem um jogo que dá um multiplicador.
     // Em cada volta pode aparecer um multiplicador extra numa casa (o «multiplicador do topo»).
-    // Contas: cada aposta devolve o mesmo que no jogo real (1: 96,08%, 2: 95,95%, 5: 95,78%, 10: 95,73%, moeda 95,70%, caixas 95,27%, bola 94,33%, louca 94,41%).
+    // Contas (exatas, já com o teto de 2500×): as oito apostas devolvem todas 96,5% (antes iam de 94,3% na bola a 96,1% no 1).
+    // Os minijogos têm mínimo alto para nunca saberem a pouco: moeda ×3, caixas e bola ×10, roda louca ×20 (antes ×2, ×5, ×5 e ×10).
     wheel: {
       // mesma ordem e mesmas quantidades de uma roda de casino ao vivo: um bónus de 6 em 6 casas
       segs: ['louca', '1', '2', '5', '1', '2', 'bola', '1', '5', '1', '2', '1', 'moeda', '1', '2', '1', '10', '2', 'caixas', '1', '2', '1', '5', '1', 'moeda', '1', '5', '2', '10', '1',
         'bola', '1', '2', '5', '1', '2', 'moeda', '1', '10', '1', '5', '1', 'caixas', '1', '2', '5', '1', '2', 'moeda', '2', '1', '10', '2', '1'],
       spots: ['1', '2', '5', '10', 'moeda', 'caixas', 'bola', 'louca'],
       num: { 1: 1, 2: 2, 5: 5, 10: 10 },
-      top: { 1: 1058, 2: 1107, 5: 624, 10: 432, moeda: 434, caixas: 368, bola: 247, louca: 356 }, // em 10 000 voltas; dá o retorno de cada aposta da roda real (96,08% no 1 … 94,33% na bola)
+      top: { 1: 1082, 2: 1134, 5: 649, 10: 456, moeda: 434, caixas: 368, bola: 247, louca: 356 }, // em 10 000 voltas: quantas vezes o multiplicador do topo cai em cada casa
       topMult: [[2, 40], [3, 25], [5, 18], [10, 10], [20, 5], [50, 2]],
-      moeda: [[2, 18], [3, 18], [5, 16], [7, 12], [10, 12], [15, 9], [20, 7], [25, 4], [50, 3], [100, 1]],
-      caixas: [[5, 18], [7, 17], [10, 16], [15, 14], [20, 11], [25, 9], [50, 8], [75, 4], [100, 2], [200, 1]],
-      bola: [[5, 22], [10, 22], [15, 15], [20, 15], [25, 12], [50, 9], [100, 4], [200, 1]],
-      louca: [[10, 22], [15, 18], [20, 15], [25, 13], [50, 12], [75, 8], [100, 7], [200, 4], [500, 1]],
+      moeda: [[3, 250], [5, 240], [7, 150], [10, 140], [15, 90], [20, 50], [25, 30], [50, 30], [100, 10]],
+      caixas: [[10, 408], [15, 240], [20, 150], [25, 100], [50, 78], [75, 30], [100, 15], [200, 7]],
+      bola: [[10, 363], [15, 240], [20, 150], [25, 90], [50, 73], [100, 37], [200, 10]],
+      louca: [[20, 264], [25, 220], [30, 140], [40, 110], [50, 90], [75, 60], [100, 58], [200, 22], [500, 10]],
       bolaSlots: 12, loucaSlots: 24, caixasN: 36,
     },
     // Slots. «scatter»: 6×5, 8 ou mais iguais em qualquer sítio pagam; as vitórias caem e entram símbolos novos; as esferas somam-se e

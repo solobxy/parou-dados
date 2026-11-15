@@ -1609,7 +1609,7 @@ async function rlAnim(r) {
   document.querySelector('.rl3num')?.classList.remove('on');
   await T.spin(r.n, r.t0);
   const bd = document.querySelector('.rl3num'); if (bd) { bd.textContent = String(r.n); bd.className = 'rl3num num on ' + rlCol(r.n); }
-  await wait(1300);
+  await wait(900);
 }
 const rlKey = (b) => b.t + (b.n !== undefined && b.n !== null ? ':' + b.n : '');
 function screenRoulette() {
@@ -1673,26 +1673,39 @@ const card = (c, cls = '', delay = 0) => c === null
   ? h('div', { class: 'pc back ' + cls, style: `--d:${delay}ms`, 'aria-label': t('bjHidden') })
   : h('div', { class: 'pc ' + (c % 52 >= 13 && c % 52 < 39 ? 'red ' : '') + cls, style: `--d:${delay}ms`, 'aria-label': RANKS[c % 13] + SUITS[Math.floor((c % 52) / 13)] },
     h('b', null, RANKS[c % 13]), h('span', null, SUITS[Math.floor((c % 52) / 13)]));
+// a jogada certa vem do servidor (a mesma tabela que usamos nos testes); aqui só se troca pela alternativa quando não há dinheiro para dobrar ou dividir
+const bjTipOf = (view, canDbl, canSplit) => (!view?.tip ? null : (view.tip[0] === 'double' && !canDbl) || (view.tip[0] === 'split' && !canSplit) ? view.tip[1] : view.tip[0]);
 function screenBJ() {
   const me = S.st.me, view = S.bjView || me.bj, done = S.bjDone, anim = S.bjAnim || {}, chip = chipNow();
   const out = csHead('bj');
-  const dl = view ? (done ? view.dl : [view.dl[0], null]) : [], pl = view ? view.pl : [];
-  const row = (cards, from, flipAt) => h('div', { class: 'hand' }, cards.map((c, i) => card(c, i >= from ? 'deal' : i === flipAt ? 'flip' : '', Math.max(0, i - from) * 260)));
+  const dl = view ? (done ? view.dl : [view.dl[0], null]) : [];
+  const hands = view ? (view.hands || [{ pl: view.pl, tot: view.tot, bet: view.bet }]) : [], two = hands.length > 1, cur = two ? view.cur : 0;
+  let k = 0;   // as cartas novas caem uma a seguir à outra, seja qual for a mão
+  const row = (cards, from, flipAt) => h('div', { class: 'hand', style: `--n:${cards.length};--m:${Math.max(1, cards.length - 1)}` }, cards.map((c, i) => card(c, i >= from ? 'deal' : i === flipAt ? 'flip' : '', i >= from ? k++ * 260 : 0)));
+  const plRows = hands.map((x, i) => {
+    const r = row(x.pl, anim.pl ? anim.pl[i] ?? 0 : 99, -1);
+    if (!two) return [h('div', { class: 'hlab' }, t('bjYou'), h('b', { class: 'num' }, String(x.tot))), r];
+    const tag = x.res ? h('span', { class: 'bjtag ' + (x.res === 'win' ? 'win' : x.res === 'push' ? 'push' : 'lose') }, x.res === 'win' ? '+' + moneyShort(x.win - x.bet) : x.res === 'push' ? t('csPush') : x.res === 'bust' ? t('bjBustS') : '−' + moneyShort(x.bet)) : h('span', { class: 'bjtag' }, moneyShort(x.bet));
+    return h('div', { class: 'bjh' + (!done && i === cur ? ' on' : ''), 'aria-current': !done && i === cur ? 'true' : null }, h('div', { class: 'hlab' }, t('bjHandN', { n: i + 1 }), h('b', { class: 'num' }, String(x.tot))), r, tag);
+  });
+  const dlRow = row(dl, anim.dl ?? 99, anim.flip ? 1 : -1);
   out.push(h('div', { class: 'felt' },
     h('div', { class: 'hlab' }, t('bjDealer'), view ? h('b', { class: 'num' }, done ? String(view.dtot) : '?') : null),
-    row(dl, anim.dl ?? 99, anim.flip ? 1 : -1),
-    done && S.bjLast ? h('div', { class: 'bjres', style: `--d:${S.bjAnim ? 700 : 0}ms` }, csResult(S.bjLast, t('bj_' + S.bjLast.res))) : null,
-    h('div', { class: 'hlab' }, t('bjYou'), view ? h('b', { class: 'num' }, String(view.tot)) : null),
-    row(pl, anim.pl ?? 99, -1),
+    dlRow,
+    done && S.bjLast ? h('div', { class: 'bjres', style: `--d:${S.bjAnim ? 700 : 0}ms` }, csResult(S.bjLast, two ? t('bjTwo') : t('bj_' + S.bjLast.res))) : null,
+    two ? h('div', { class: 'hands2' }, plRows) : plRows.flat(),
     !view ? h('p', { class: 'muted small', style: 'text-align:center' }, t('bjRules')) : null));
   const open = me.bj && !done;
   if (open) {
-    const canDbl = view.pl.length === 2 && !view.dbl && me.cash >= view.bet;
-    out.push(h('div', { class: 'stick csbar' }, h('div', { class: 'small muted', style: 'text-align:center' }, t('bjStake', { m: money(view.bet) })),
-      h('div', { class: 'bjacts' },
-        h('button', { class: 'btn big', disabled: S.casinoBusy, on: { click: () => bjPlay('hit') } }, t('bjHit')),
-        h('button', { class: 'btn buy big', disabled: S.casinoBusy, on: { click: () => bjPlay('stand') } }, t('bjStand')),
-        h('button', { class: 'btn ghost big', disabled: !canDbl || S.casinoBusy, on: { click: () => bjPlay('double') } }, t('bjDouble')))));
+    const canDbl = view.pl.length === 2 && !view.dbl && me.cash >= view.bet, canSplit = !!view.split && me.cash >= view.bet;
+    const showTip = store.get('bjTip', true), tip = showTip ? bjTipOf(view, canDbl, canSplit) : null;
+    const btn = (op, cls, label, off) => h('button', { class: 'btn big ' + cls + (tip === op ? ' best' : ''), disabled: off || S.casinoBusy, on: { click: () => bjPlay(op) } }, label);
+    out.push(h('div', { class: 'stick csbar' },
+      h('div', { class: 'bjline' }, h('span', { class: 'muted' }, t(two ? 'bjStakeN' : 'bjStake', { m: money(view.bet), n: cur + 1 })),
+        h('button', { class: 'lnk', 'aria-pressed': showTip ? 'true' : 'false', on: { click: () => { store.set('bjTip', !showTip); render(); } } }, tip ? t('bjTipOn', { a: t('bjOp_' + tip) }) : t('bjTipOff'))),
+      h('div', { class: 'bjacts' + (view.split ? ' four' : '') },
+        btn('hit', '', t('bjHit')), btn('stand', 'buy', t('bjStand')), btn('double', 'ghost', t('bjDouble'), !canDbl),
+        view.split ? btn('split', 'ghost', t('bjSplit'), !canSplit) : null)));
   } else {
     out.push(h('div', { class: 'stick csbar' }, chipPicker(),
       h('button', { class: 'btn buy block big', disabled: betMax() < S.cfg.casino.minBet || S.casinoBusy, on: { click: () => bjPlay('deal', chip) } }, t('bjDeal', { m: moneyShort(chip) }))));
@@ -1702,12 +1715,13 @@ function screenBJ() {
 async function bjPlay(op, amt) {
   const prev = op === 'deal' ? null : (S.bjView || S.st.me.bj);
   const r = await play('bj', { op, amt }, async (res) => {
-    const h0 = res.hand;
-    S.bjAnim = { pl: prev ? prev.pl.length : 0, dl: res.done ? (prev ? 1 : 0) : prev ? 99 : 0, flip: res.done && !!prev };
-    if (res.done && !prev) S.bjAnim.dl = 0;
+    const h0 = res.hand, now0 = h0.hands || [{ pl: h0.pl }];
+    // quantas cartas de cada mão já estavam na mesa: as outras entram a cair
+    const old = !prev ? [] : op === 'split' ? [1, 1] : prev.hands ? prev.hands.map((x) => x.pl.length) : [prev.pl.length];
+    S.bjAnim = { pl: now0.map((_, i) => old[i] ?? 0), dl: res.done ? (prev ? 1 : 0) : prev ? 99 : 0, flip: res.done && !!prev };
     S.bjView = h0; S.bjDone = res.done; S.bjLast = res.done ? res : null;
     render(true);
-    const n = (h0.pl.length - S.bjAnim.pl) + (res.done ? h0.dl.length - Math.min(S.bjAnim.dl, h0.dl.length) : 0);
+    const n = now0.reduce((x, y, i) => x + y.pl.length - S.bjAnim.pl[i], 0) + (res.done ? h0.dl.length - Math.min(S.bjAnim.dl, h0.dl.length) : 0);
     for (let k = 0; k < Math.max(1, n); k++) setTimeout(() => fx.sfx('deal'), k * 260);
     await wait(RM() ? 200 : 260 * Math.max(1, n) + 350);
   });

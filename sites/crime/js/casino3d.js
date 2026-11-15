@@ -82,7 +82,7 @@ export function roulette({ order, colorOf, sfx }) {
   });
 
   const st = { wa: 0, sp: null, idx: 0, glow: 0, resolve: null };
-  const IDLE = 0.32, KICK = 1.7, WT = 3, W0 = 11.5, BT = 2.6, TA = 4.3, D = 1.35, TB = TA + D, C = 0.45;
+  const IDLE = 0.32, KICK = 1.7, WT = 3, W0 = 11.5, BT = 2.6, TA = 3.6, D = 1.35, TB = TA + D, C = 0.45;
   const waAt = (sp, t) => sp.wa0 + IDLE * t + KICK * WT * (1 - Math.exp(-t / WT));
   const tickDef = throttled(sfx, 'tick', 70);
 
@@ -108,7 +108,7 @@ export function roulette({ order, colorOf, sfx }) {
       else if (!b.rest && b.hop !== sp.hop) { sp.hop = b.hop; sfx('deal'); }
       if (b.rest && !sp.landed) { sp.landed = true; st.idx = sp.idx; sfx('claim'); }
       if (b.rest) st.glow = Math.min(1, st.glow + dt * 3);
-      if (sp.t > TB + 1.7 && st.resolve) { const r = st.resolve; st.resolve = null; r(); }
+      if (sp.t > TB + 1 && st.resolve) { const r = st.resolve; st.resolve = null; r(); }
     } else {
       if (!RM()) st.wa += IDLE * dt;
       b = { a: st.wa + st.idx * th - Math.PI / 2, r: R_REST, z: 0 };

@@ -187,7 +187,7 @@ for (let n = 0; n < ACTIONS; n++) {
         arg = g === 'roulette' ? { bets: Array.from({ length: r.int(0, 13) }, () => ({ t: pick(['red', 'black', 'even', 'odd', 'low', 'high', 'dozen', 'num', 'x']), n: pick([0, 1, 2, 3, 17, 36, 37, -1]), amt: amt() })) }
           : g === 'dice' ? { pick: pick(['low', 'seven', 'high', '__proto__']), amt: amt() }
           : g === 'wheel' ? { bets: Array.from({ length: r.int(0, 13) }, () => ({ s: pick(['1', '2', '5', '10', 'moeda', 'caixas', 'bola', 'louca', 'x']), amt: amt() })) }
-          : g === 'slot' ? { amt: pick([10, 20, 50, 0, -1, NaN]), game: pick(['chefao', 'zeus', 'doce', 'rebucado', 'x']), buy: pick([0, 0, 0, 1, 2, 3]) } : { op: pick(['deal', 'hit', 'stand', 'double', 'x']), amt: amt() };
+          : g === 'slot' ? { amt: pick([10, 20, 50, 0, -1, NaN]), game: pick(['chefao', 'zeus', 'doce', 'rebucado', 'x']), buy: pick([0, 0, 0, 1, 2, 3]) } : { op: pick(['deal', 'hit', 'hit', 'stand', 'double', 'split', 'split', 'x']), amt: amt() };
         res = E.casinoPlay(p, t, world, g, arg, game); break;
       }
       case 'table': {

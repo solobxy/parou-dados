@@ -20,7 +20,7 @@ const SECURE = process.env.COOKIE_INSEGURO ? '' : '; Secure';
 const [fy, fm, fd] = (process.env.PRIMEIRA_RONDA || '2026-11-13').split('-').map(Number);
 const FIRST = { y: fy, m: fm, d: fd };
 const rng = cryptoRng();
-const VERSAO = 34;   // sobe quando o servidor muda, para se confirmar de fora que a versão nova já está a correr
+const VERSAO = 35;   // sobe quando o servidor muda, para se confirmar de fora que a versão nova já está a correr
 const ATOS_3S = +(process.env.ATOS_3S || 15), ATOS_MIN = +(process.env.ATOS_MIN || 400); // ações por conta: 15 em 3 s, 400 por minuto
 
 // ---------- relógio que nunca anda para trás ----------
@@ -655,9 +655,9 @@ const qm = {
   histUlt: db.prepare('SELECT res FROM mesa_hist WHERE mesa = ? ORDER BY id DESC LIMIT 24'),
   histLimpa: db.prepare('DELETE FROM mesa_hist WHERE mesa = ? AND t < ?'),
 };
-const MESA_BET = (g) => (process.env.MESA_BET_MS ? +process.env.MESA_BET_MS : g === 'wheel' ? 8_000 : 20_000);   // tempo para apostar
+const MESA_BET = (g) => (process.env.MESA_BET_MS ? +process.env.MESA_BET_MS : g === 'wheel' ? 8_000 : 12_000);   // tempo para apostar (roleta: 12 s; eram 20)
 const MESA_SPIN = process.env.MESA_SPIN_MS ? () => +process.env.MESA_SPIN_MS
-  : (g, r) => (g === 'roulette' ? 13_500 : !r.bonus ? 17_000 : { moeda: 26_500, caixas: 42_000, bola: 24_500, louca: 31_500 }[r.s]);   // tempo da jogada que todos veem
+  : (g, r) => (g === 'roulette' ? 10_500 : !r.bonus ? 17_000 : { moeda: 26_500, caixas: 42_000, bola: 24_500, louca: 31_500 }[r.s]);   // tempo da jogada que todos veem
 const mesas = { roulette: { cur: null, hist: [], last: new Map() }, wheel: { cur: null, hist: [], last: new Map() } };
 const resCurto = (g, r) => (g === 'roulette' ? r.n : { s: r.s, m: r.mult, i: r.idx });
 for (const g of Object.keys(mesas)) mesas[g].hist = qm.histUlt.all(g).map((r) => JSON.parse(r.res));

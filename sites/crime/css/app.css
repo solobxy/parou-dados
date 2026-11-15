@@ -743,7 +743,28 @@ h2.sec.small { font-size: 18px; margin: 16px 0 8px; }
 @keyframes deal { from { opacity: 0; transform: translate(70px, -60px) rotate(18deg); } }
 .pc.flip { animation: flip .45s var(--ease-out) both; }
 @keyframes flip { 0% { transform: rotateY(90deg); } 100% { transform: rotateY(0); } }
-.bjacts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.bjacts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.bjacts.four { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.bjacts .btn { padding: 0 6px; font-size: clamp(19px, 6.4vw, 26px); }
+.bjline { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 0 12px; font-size: 13px; }
+/* a jogada certa: um aro dourado fino e um ponto, sem piscar (funciona igual com as animações desligadas) */
+.bjacts .btn.best { box-shadow: 0 0 0 2px var(--ink), 0 0 0 4px var(--gold), 0 8px 24px #000a; position: relative; }
+.bjacts .btn.best::after { content: ''; position: absolute; top: 7px; right: 8px; width: 7px; height: 7px; border-radius: 50%; background: var(--gold); }
+.bjacts .btn.buy.best::after { background: #06140c; }
+.lnk { background: none; border: 0; padding: 6px 0; min-height: 32px; margin-left: auto; color: var(--gold); font: inherit; font-weight: 600; text-align: right; cursor: pointer; }
+.lnk[aria-pressed="false"] { color: var(--tx2); }
+/* duas mãos lado a lado: cartas mais pequenas, que se encostam mais quando a mão cresce; a mão que não está em jogo fica apagada */
+.hands2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; align-items: start; }
+.bjh { container-type: inline-size; display: grid; justify-items: center; gap: 2px; padding: 4px 4px 8px; border-radius: 12px; opacity: .55; transition: opacity .2s; min-width: 0; }
+.bjh.on, .hands2:not(:has(.bjh.on)) .bjh { opacity: 1; }
+.bjh.on { background: #0003; box-shadow: inset 0 0 0 2px var(--gold); }
+.bjh .hlab { margin: 2px 0; font-size: 13px; }
+.bjh .hand { --cw: clamp(40px, 33cqw, 50px); min-height: calc(var(--cw) * 1.48); margin-bottom: 4px; width: 100%; }
+.bjh .pc { width: var(--cw); height: calc(var(--cw) * 1.48); padding: 5px 5px; flex: none; margin-left: min(-12px, calc((100cqw - 8px - var(--n) * var(--cw)) / var(--m))); }
+.bjh .pc:first-child { margin-left: 0; }
+.bjh .pc b { font-size: 16px; } .bjh .pc span { font-size: 22px; }
+.bjtag { font-size: 13px; font-weight: 700; padding: 2px 10px; border-radius: 99px; background: #0008; color: #e9f5ec; font-variant-numeric: tabular-nums; }
+.bjtag.win { background: var(--cash); color: #06140c; } .bjtag.lose { color: #ffb4b4; }
 
 @keyframes fadein { from { opacity: 0; } }
 
