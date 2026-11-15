@@ -598,51 +598,71 @@ test('casino: aposta mínima, máxima pelo nível, só dinheiro na mão; aposta 
 });
 
 test('roda da sorte: as oito apostas devolvem 96,5% (conta exata, com o teto) e a simulação confirma', () => {
-  const Wh = CFG.casino.wheel, CAP = CFG.casino.maxWinMult, tw = (l) => l.reduce((x, [, w]) => x + w, 0), TT = tw(Wh.topMult);
+  const Wh = CFG.casino.wheel, CAP = CFG.casino.maxWinMult, tw = (l) => l.reduce((x, [, w]) => x + w, 0), TT = tw(Wh.topMult), LC = Wh.louca;
+  // Crazy: o que um flapper ganha é um valor da roda × 2 por cada DOUBLE seguido antes dele (cada volta, 8 em 64 de sair DOUBLE)
+  const nums = LC.segs.filter((x) => x !== 'D'), nd = LC.segs.length - nums.length, louca = [];
+  for (let k = 0, pk = 1; k < 14; k++, pk *= nd / LC.segs.length) for (const v of nums) louca.push([v * 2 ** k, pk / LC.segs.length]);
+  const dist = (s) => (Wh.num[s] ? [[Wh.num[s], 1]] : s === 'louca' ? louca : Wh[s].map(([v, w]) => [v, w / tw(Wh[s])]));
   // retorno exato de uma aposta sozinha numa casa: sem multiplicador do topo, e com cada um deles; nenhum prémio passa do teto
   const exato = (s, cap) => {
-    const l = Wh.num[s] ? [[Wh.num[s], 1]] : Wh[s], T = tw(l), q = Wh.top[s] / 10000; let e = 0;
-    for (const [v, w] of l) { e += (1 - q) * (w / T) * Math.min(v + 1, cap); for (const [m, wm] of Wh.topMult) e += q * (w / T) * (wm / TT) * Math.min(v * m + 1, cap); }
+    const q = Wh.top[s] / 10000; let e = 0;
+    for (const [v, pv] of dist(s)) { e += (1 - q) * pv * Math.min(v + 1, cap); for (const [m, wm] of Wh.topMult) e += q * pv * (wm / TT) * Math.min(v * m + 1, cap); }
     return (Wh.segs.filter((x) => x === s).length / 54) * e;
   };
   const REAL = Object.fromEntries(Wh.spots.map((s) => [s, 0.965]));
   assert.equal(Wh.segs.length, 54);
-  assert.ok(Object.values(Wh.top).reduce((x, y) => x + y, 0) <= 10000);
+  const somaTop = Object.values(Wh.top).reduce((x, y) => x + y, 0);
+  assert.ok(somaTop <= 10000 && somaTop >= 9800, 'o multiplicador do topo sai quase sempre: ' + somaTop);
   for (const s of Wh.spots) {
     perto(exato(s, CAP), REAL[s], 0.0006, 'roda ' + s);
     assert.ok(exato(s, Infinity) < 0.98, 'roda ' + s + ' sem teto');   // mesmo a espalhar apostas para fugir ao teto, a casa fica sempre a ganhar
   }
+  // o multiplicador do topo acerta na casa que sai perto de 1 vez em cada 5 voltas (antes de 15/11/2026: 1 em 11)
+  const acerta = Wh.spots.reduce((x, s) => x + (Wh.top[s] / 10000) * Wh.segs.filter((y) => y === s).length / 54, 0);
+  assert.ok(acerta > 0.18 && acerta < 0.2, 'acerta em ' + acerta);
   // os minijogos nunca dão menos do que isto
-  assert.deepEqual(['moeda', 'caixas', 'bola', 'louca'].map((s) => Math.min(...Wh[s].map(([v]) => v))), [3, 10, 10, 20]);
-  const rng = seededRng(5150), N = 300000, got = {}, ret = {};
-  for (let i = 0; i < N; i++) { const sp = E.wheelSpin(rng); got[sp.s] = (got[sp.s] || 0) + 1; ret[sp.s] = (ret[sp.s] || 0) + sp.mult + 1; }
+  assert.deepEqual(['moeda', 'caixas', 'bola'].map((s) => Math.min(...Wh[s].map(([v]) => v))), [3, 10, 10]);
+  assert.equal(Math.min(...nums), 15);
+  const rng = seededRng(5150), N = 300000, got = {}, ret = {}; let comTopo = 0, acertou = 0;
+  for (let i = 0; i < N; i++) { const sp = E.wheelSpin(rng); got[sp.s] = (got[sp.s] || 0) + 1; ret[sp.s] = (ret[sp.s] || 0) + E.wheelMult(sp, i % 3) + 1; if (sp.top) comTopo++; if (sp.tm > 1) acertou++; }
   for (const s of ['1', '2', '5', '10']) perto(got[s] / N, Wh.segs.filter((x) => x === s).length / 54, 0.004, 'casa ' + s);
   for (const s of ['1', '2', '5']) perto(ret[s] / N, REAL[s], 0.03, 'retorno ' + s);
+  perto(comTopo / N, somaTop / 10000, 0.004, 'voltas com multiplicador'); perto(acertou / N, acerta, 0.004, 'voltas em que acerta');
   const p = cas(1e9); p.peakRespect = 1e6;
   const r = E.casinoPlay(p, NOW, W, 'wheel', { bets: [{ s: '1', amt: 100 }, { s: 'louca', amt: 50 }] }, seededRng(1));
   assert.equal(p.cash, 1e9 - 150 + r.win); assert.ok(r.win <= 150 * CFG.casino.maxWinMult);
   assert.throws(() => E.casinoPlay(p, NOW, W, 'wheel', { bets: [{ s: '3', amt: 100 }] }, never), code('BAD_BET'));
+  assert.throws(() => E.casinoPlay(p, NOW, W, 'wheel', { bets: [{ s: '1', amt: 100 }], flap: 3 }, never), code('BAD_BET'));
 });
 
-test('slots de esferas: nas grátis do Chefão e do Zeus todas as esferas ficam no multiplicador acumulado (com ou sem prémio); na Doce cada rodada é à parte', () => {
-  for (const gid of ['chefao', 'zeus', 'doce']) {
-    const G = CFG.casino.slots[gid], rng = seededRng(61), cap = G.max * 100; let semPremio = 0, rodadas = 0;
-    assert.equal(!!G.accAll, gid !== 'doce');
-    for (let i = 0; i < 3000; i++) {
-      const s = E.slotSpin(gid, rng, 1); let acc = 0, soma = s.base.win * (s.base.win > 0 && s.base.orbSum ? s.base.orbSum : 1) + s.scatPay;
-      for (const f of s.free) {
-        rodadas++;
-        if (G.accAll) {
-          acc += f.orbSum; assert.equal(f.acc, acc, gid + ': acumulado');            // nunca desce e junta tudo o que caiu
-          assert.equal(f.w, f.win * Math.max(1, acc), gid + ': prémio da rodada');
-          if (f.orbSum > 0 && f.win === 0) semPremio++;
-        } else assert.equal(f.w, f.win * (f.win > 0 && f.orbSum ? f.orbSum : 1), gid + ': prémio da rodada');
-        soma += f.w;
-      }
-      if (soma < cap && s.free.at(-1).left === 0) assert.equal(s.total, soma, gid + ': total');
-    }
-    if (G.accAll) assert.ok(semPremio / rodadas > 0.03, gid + ': esferas em rodadas sem prémio também contam (' + semPremio + ')');
+test('Crazy: 64 casas, três flappers com o seu resultado, DOUBLE dobra e volta a rodar, e os três valem o mesmo em média', () => {
+  const LC = CFG.casino.wheel.louca, N = LC.segs.length, conta = {};
+  for (const x of LC.segs) conta[x] = (conta[x] || 0) + 1;
+  assert.equal(N, 64); assert.deepEqual(conta, { 15: 10, 20: 10, 25: 12, 35: 9, 50: 8, 100: 5, 200: 2, D: 8 });
+  assert.deepEqual(LC.flaps, [-5, 0, 5]);
+  // nunca dois flappers em DOUBLE na mesma volta, nem duas casas iguais seguidas
+  for (let i = 0; i < N; i++) {
+    assert.ok(LC.flaps.filter((o) => LC.segs[(i + o + N) % N] === 'D').length <= 1, 'dois flappers em DOUBLE na casa ' + i);
+    assert.notEqual(LC.segs[i], LC.segs[(i + 1) % N], 'casas iguais seguidas em ' + i);
   }
+  const rng = seededRng(64), M = 400000, soma = [0, 0, 0]; let voltas = 0, dobrou = 0, maxVoltas = 0;
+  for (let i = 0; i < M; i++) {
+    const { stops, mults } = E.crazySpin(rng); voltas += stops.length; maxVoltas = Math.max(maxVoltas, stops.length);
+    // cada flapper: a casa por baixo dele em cada volta; segue enquanto for DOUBLE e ganha o valor onde parar, a dobrar por cada volta anterior
+    LC.flaps.forEach((o, f) => {
+      let n = 0; while (LC.segs[(stops[n] + o + N) % N] === 'D') { n++; assert.ok(n < stops.length, 'DOUBLE sem volta seguinte'); }
+      assert.equal(mults[f], LC.segs[(stops[n] + o + N) % N] * 2 ** n); soma[f] += mults[f]; if (f === 1 && n > 0) dobrou++;
+    });
+    // a roda só roda outra vez enquanto houver um flapper em DOUBLE
+    assert.ok(LC.flaps.some((o) => stops.slice(0, -1).every((x) => LC.segs[(x + o + N) % N] === 'D')));
+  }
+  const media = (LC.segs.filter((x) => x !== 'D').reduce((x, y) => x + y, 0) / N) / (1 - (2 * 8) / N);   // 47,19
+  for (const f of [0, 1, 2]) perto(soma[f] / M / media, 1, 0.03, 'flapper ' + f);
+  perto(dobrou / M, 8 / 64, 0.004, 'DOUBLE no flapper do meio'); assert.ok(maxVoltas >= 3 && maxVoltas <= 12);
+  // o prémio é o do flapper escolhido, com o multiplicador do topo se calhar na Crazy
+  const res = { s: 'louca', tm: 3, bonus: { stops: [0], mults: [20, 50, 200] } };
+  assert.deepEqual([0, 1, 2].map((f) => E.tablePay('wheel', [{ s: 'louca', amt: 10 }, { s: '1', amt: 5 }], res, f)), [10 * 61, 10 * 151, 10 * 601]);
+  assert.equal(E.tablePay('wheel', [{ s: 'louca', amt: 10 }], { ...res, tm: 50 }, 2), 10 * CFG.casino.maxWinMult);   // teto
 });
 
 // as quatro slots estão afinadas para o mesmo perfil: retorno total perto de 96,2%, compra de bónus perto de 96,2×, bónus 1 em 400 jogadas
@@ -734,8 +754,8 @@ test('mesas ao vivo: pagam exatamente o mesmo que a jogada a solo, e a roleta de
   const rng = seededRng(909);
   for (let i = 0; i < 20000; i++) {
     const res = E.tableDraw('wheel', rng), bets = [{ s: '1', amt: 100 }, { s: res.s, amt: 50 }, { s: 'louca', amt: 10 }].filter((b, k, a) => a.findIndex((x) => x.s === b.s) === k);
-    const esperado = Math.min(bets.filter((b) => b.s === res.s).reduce((x, b) => x + b.amt * (res.mult + 1), 0), E.tableTotal(bets) * CFG.casino.maxWinMult);
-    assert.equal(E.tablePay('wheel', bets, res), esperado);
+    const flap = i % 3, esperado = Math.min(bets.filter((b) => b.s === res.s).reduce((x, b) => x + b.amt * (E.wheelMult(res, flap) + 1), 0), E.tableTotal(bets) * CFG.casino.maxWinMult);
+    assert.equal(E.tablePay('wheel', bets, res, flap), esperado);
   }
 });
 

@@ -4,6 +4,7 @@ import { t, tv, list, errText, setLang, lang, guessLang } from './i18n.js';
 import { h, icon, svg, setLocale, num, money, moneyShort, short, dur, hoursText, pct, rid } from './ui.js';
 import * as fx from './fx.js';
 import * as RV from './reveal.js';
+import * as CZ from './crazy.js';
 import * as C3 from './casino3d.js';
 import * as GL from './globo.js';
 
@@ -1928,7 +1929,8 @@ function liveClock(g) {
   const n = now(), left = d.phase === 'bets' ? d.closesAt - n : 0, open = left > 0;
   el.classList.toggle('open', open); el.classList.toggle('hot', open && left < 5000);
   el.querySelector('.lvt').textContent = open ? t('lvOpen', { s: Math.ceil(left / 1000) })
-    : d.phase === 'spin' && !S.casinoBusy && n < d.nextAt ? t('lvNext', { s: Math.max(1, Math.ceil((d.nextAt - n) / 1000)) }) : d.phase === 'spin' ? t('lvSpin') : t('lvClosed');
+    : d.phase === 'spin' && !S.casinoBusy && n < d.nextAt ? t('lvNext', { s: Math.max(1, Math.ceil((d.nextAt - n) / 1000)) })
+    : d.phase === 'spin' && document.querySelector('.crz') && !document.querySelector('.crz-go') ? t('czPicking') : d.phase === 'spin' ? t('lvSpin') : t('lvClosed');
   el.querySelector('.lvp').textContent = d.players ? t('lvPlayers', { n: d.players, m: moneyShort(d.pot) }) : t('lvEmpty');
   el.querySelector('.lvbar i').style.transform = `scaleX(${open ? Math.min(1, left / (d.closesAt - d.opensAt)) : 0})`;
   document.querySelector('.lvboard')?.classList.toggle('shut', !open);
@@ -1947,8 +1949,8 @@ async function liveAnim(g, d) {
   if (S.tab !== g) { S.casinoBusy = false; L.shown = d.id; return; }   // saíste da mesa antes de a jogada começar
   C3.seed(d.id);   // o mesmo lançamento, a mesma bola e o mesmo baralhar para toda a gente
   try {
-    const r = g === 'roulette' ? { n: d.res.n, t0: (d.closesAt + LIVE_START) / 1000 } : { ...d.res, from: d.prev, bet: mine?.total || 0, win: mine?.win || 0, mineBets: mine?.bets || [] };
-    await Promise.race([(g === 'roulette' ? rlAnim : wheelAnim)(r), wait(50000)]);
+    const r = g === 'roulette' ? { n: d.res.n, t0: (d.closesAt + LIVE_START) / 1000 } : { ...d.res, round: d.id, mine, from: d.prev, bet: mine?.total || 0, win: mine?.win || 0, mineBets: mine?.bets || [] };
+    await Promise.race([(g === 'roulette' ? rlAnim : wheelAnim)(r), wait(g === 'wheel' && d.res.s === 'louca' ? 150000 : 50000)]);   // a Crazy pode ter várias voltas
     if (mine) { const net = (mine.win || 0) - mine.total; if (net > 0) { fx.sfx(net >= mine.total * 5 ? 'crit' : 'cash'); fx.vibrate(15); } else if (net < 0) fx.sfx('fail'); }
   } catch (e) { console.error(e); } finally { C3.seed(null); S.casinoBusy = false; L.shown = d.id; await refresh(); render(); }
 }
@@ -1980,7 +1982,7 @@ function liveBar(g) {
 }
 function liveResult(g, d) {
   const mine = d.mine, net = mine ? (mine.win || 0) - mine.total : 0, r = d.res;
-  const what = g === 'roulette' ? t('rlOut', { n: r.n, c: t('rlc_' + rlCol(r.n)) }) : t('wOut', { s: wLabel(r.s) }) + (r.bonus || (r.top && r.top.s === r.s) ? ' · ×' + r.mult : '');
+  const what = g === 'roulette' ? t('rlOut', { n: r.n, c: t('rlc_' + rlCol(r.n)) }) : t('wOut', { s: wLabel(r.s) }) + ((r.bonus || (r.top && r.top.s === r.s)) && wMult(r, mine?.flap) !== null ? ' · ×' + wMult(r, mine?.flap) : '');
   return h('div', { class: 'csres ' + (!mine || !net ? 'push' : net > 0 ? 'win' : 'lose'), role: 'status' }, h('div', { class: 'small' }, what),
     mine ? h('b', null, net > 0 ? t('csWon', { m: money(net) }) : net < 0 ? t('csLost', { m: money(-net) }) : t('csPush')) : null,
     mine && mine.win > 0 ? h('div', { class: 'small' }, t('lvBreak', { w: money(mine.win), b: money(mine.total) })) : null,   // as contas à vista: o que voltou e o que estava na mesa
@@ -2118,8 +2120,9 @@ async function bjPlay(op, amt) {
 // ---- Roda da Sorte ----
 // cores de casino noir: pedras preciosas escuras com letras douradas
 const WCOL = { 1: '#2b5a8c', 2: '#12805a', 5: '#a8243f', 10: '#5b3bb5', moeda: '#b8860b', caixas: '#0e7a8a', bola: '#a3246e', louca: '#c2161f' };
-const LCOL = ['#c2161f', '#1c2330', '#0f5c44', '#b8860b', '#3b2a7a', '#a3246e'];
-const TOPM = [2, 3, 5, 10, 20, 50];
+const topm = () => S.cfg.casino.wheel.topMult || [2, 3, 5, 10, 20, 50];   // os multiplicadores que o topo pode dar (vêm do servidor)
+// o multiplicador que conta: na Crazy é o do flapper (sem flapper, o melhor dos três); null enquanto a roda grande não abriu
+const wMult = (r, flap) => (r.s !== 'louca' ? r.mult : !r.bonus?.mults ? null : (flap === undefined || flap === null ? Math.max(...r.bonus.mults) : r.bonus.mults[flap]) * (r.tm || 1));
 const wLabel = (s) => (/^\d+$/.test(s) ? s : t('w_' + s));
 function w3() {
   if (!S.w3 || S.w3lang !== lang()) {
@@ -2145,7 +2148,7 @@ function topSlotEl(last) {
 async function topSpin(r) {
   const el = document.querySelector('.tslot'); if (!el) return;
   el.classList.remove('match', 'miss');
-  const spots = S.cfg.casino.wheel.spots, rnd = (a) => a[Math.floor(Math.random() * a.length)], HH = 40;
+  const spots = S.cfg.casino.wheel.spots, TOPM = topm(), rnd = (a) => a[Math.floor(Math.random() * a.length)], HH = 40;
   const A = Array.from({ length: 16 }, () => rnd(spots)), B = Array.from({ length: 22 }, () => rnd(TOPM));
   A.push(r.top ? r.top.s : rnd(spots)); B.push(r.top ? r.top.m : rnd(TOPM)); B.push(rnd(TOPM));
   const sa = el.querySelector('.tsr.a .tss'), sb = el.querySelector('.tsr.b .tss');
@@ -2170,21 +2173,39 @@ async function wheelAnim(r) {
   const topHit = r.top && r.top.s === r.s, show = (cls, ...kids) => { stage.className = 'wstage ' + cls; stage.hidden = false; stage.replaceChildren(...kids.filter(Boolean)); };
   if (r.bonus) {
     show('th-' + r.s + ' intro', h('b', { class: 'wst-title' }, t('wb_' + r.s))); fx.sfx('level'); await wait(RM() ? 400 : 1500);
-    show('th-' + r.s, h('b', { class: 'wst-name' }, t('wb_' + r.s)));
+    show('th-' + r.s, r.s === 'louca' ? null : h('b', { class: 'wst-name' }, t('wb_' + r.s)));   // a Crazy já traz o nome no centro da roda
     if (r.s === 'moeda') await C3.coinFlip(stage, { sides: r.bonus.sides, side: r.bonus.side, sfx: fx.sfx, L: { red: t('rl_r'), blue: t('wBlue') } });
     else if (r.s === 'caixas') await C3.cashHunt(stage, { secs: 7, boxes: r.bonus.boxes, pick: r.bonus.pick, sfx: fx.sfx, L: { prizes: t('wPrizes'), shuffle: t('wShuffle'), pick: t('wPick') } });
     else if (r.s === 'bola') await C3.pachinko(stage, { slots: r.bonus.slots, at: r.bonus.at, sfx: fx.sfx });
     else {
-      const lw = C3.bigWheel({ sfx: fx.sfx, cls: 'bw3 mini', turns: 4, secs: 7.5, hub: t('w_louca').toUpperCase(), segs: r.bonus.slots.map((v, i) => ({ text: '×' + v, color: LCOL[i % LCOL.length], ink: '#f6e3a8', big: true })) });
-      stage.append(lw.el); lw.wake(); await wait(400); await lw.spin(r.bonus.at);
+      // Crazy: escolhe-se o flapper, e só depois de a escolha fechar é que o servidor diz onde a roda grande pára
+      const LC = S.cfg.casino.wheel.louca, aposta = (r.mineBets || []).some((b) => b.s === 'louca');
+      const abre = async () => {
+        for (let k = 0; k < 12; k++) {
+          try { const d = await (await fetch('/api/table?g=wheel', { credentials: 'same-origin' })).json(); if (d.now) S.off = d.now - Date.now(); if (d.id === r.round && d.res?.bonus?.stops) return d; if (d.id !== r.round) return null; } catch { /* sem rede: tenta outra vez */ }
+          await wait(500);
+        }
+        return null;
+      };
+      const out = await CZ.crazyBonus(stage, { segs: LC.segs, flaps: LC.flaps, pickUntil: r.bonus.pickUntil, now, canPick: aposta, sfx: fx.sfx, vibrate: fx.vibrate,
+        pick: (c) => act('tableFlap', { c }),
+        reveal: async () => { const d = await abre(); if (!d) return null; r.bonus = d.res.bonus; if (d.mine) { r.win = d.mine.win || 0; r.flap = d.mine.flap; r.auto = d.mine.auto; if (r.mine) Object.assign(r.mine, d.mine); } return { stops: d.res.bonus.stops, mults: d.res.bonus.mults, flap: aposta ? d.mine?.flap : null }; },
+        L: { colors: [t('czGreen'), t('wBlue'), t('czYellow')], pick: t('czPick'), note: t('czNote'), picked: (f) => t('czPicked', { c: [t('czGreen'), t('wBlue'), t('czYellow')][f].toLowerCase() }), yours: t('czYours'),
+          watch: t('czWatch'), auto: t('czAuto'), spin: t('czSpin'), dbl: 'DOUBLE!', dblAll: (x) => t('czDblAll', { x }), left: (s) => s + ' s' } });
+      r.mult = out ? wMult(r, aposta ? r.flap : null) : wMult(r, r.flap);
     }
   }
   // resultado em grande, com tempo para se ler
+  if (r.mult === null || r.mult === undefined) { stage.hidden = true; return; }   // a Crazy não chegou a abrir (ligação perdida): o que se ganhou aparece na mesa
   const net = r.win - r.bet, base = topHit ? r.mult / r.top.m : r.mult;
   show('th-' + r.s + ' res',
     h('span', { class: 'wst-chip', style: `background:${WCOL[r.s]}` }, wLabel(r.s)),
     h('b', { class: 'wst-x' }, r.bonus || topHit ? '×' + r.mult : r.s + ':1'),
     topHit ? h('span', { class: 'wst-sub' }, t('wTopCalc', { a: base, b: r.top.m })) : null,
+    // Crazy: o que saiu a cada flapper (o teu em destaque)
+    r.s === 'louca' && r.bonus?.mults ? h('span', { class: 'wst-sub czres' }, r.bonus.mults.map((m, f) => h('b', { class: f === r.flap && bet ? 'me' : '', style: `--fc:${CZ.FLAP_COR[f]}` }, '×' + m * (r.tm || 1)))) : null,
+    // as contas à vista: quanto estava na casa que saiu, vezes o multiplicador
+    bet && (r.bonus || topHit) ? h('span', { class: 'wst-sub' }, t('wCalc', { s: wLabel(r.s), b: money(bet), x: r.mult, w: money(bet * r.mult) })) : null,
     bet && r.win > 0 ? h('span', { class: 'wst-sub' }, t('lvBreak', { w: money(r.win), b: money(r.bet) })) : null,
     h('b', { class: 'wst-win ' + (!bet ? 'muted' : net > 0 ? 'c-cash' : net < 0 ? 'c-red' : '') }, !bet ? t('wNoBet', { s: wLabel(r.s) }) : net > 0 ? t('csWon', { m: money(net) }) : net < 0 ? t('csLost', { m: money(-net) }) : t('csPush')));
   if (net > 0) { fx.sfx(r.mult >= 20 ? 'crit' : 'cash'); fx.vibrate(20); }
@@ -2199,7 +2220,7 @@ function screenWheel() {
   out.push(liveStrip(g));
   if (res) out.push(liveResult(g, d));
   out.push(h('div', { class: 'whist' }, (d?.hist || []).slice(!res && d?.phase === 'spin' ? 1 : 0, 11).map((x, i) => h('span', { class: 'wh' + (i === 0 ? ' last' : ''), style: `background:${WCOL[x.s]}` },
-    /^\d+$/.test(x.s) ? (x.m > +x.s ? x.s + ' ×' + x.m / +x.s : x.s) : wLabel(x.s) + ' ×' + x.m))));
+    /^\d+$/.test(x.s) ? (x.m > +x.s ? x.s + ' ×' + x.m / +x.s : x.s) : wLabel(x.s) + (x.m ? ' ×' + x.m : '')))));
   out.push(liveBar(g));
   out.push(h('div', { class: 'wspots lvboard' }, W.spots.map((s) => h('button', { class: 'wsp' + (res && res.s === s ? ' hit' : ''), style: `--c:${WCOL[s]}`, on: { click: () => liveBet(g, { s, amt: chipNow() }) } },
     h('b', null, wLabel(s)), h('span', { class: 'small' }, /^\d+$/.test(s) ? s + ':1' : t('wBonus')), bets[s] ? h('span', { class: 'chipm' }, moneyShort(bets[s])) : null))));

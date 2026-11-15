@@ -20,7 +20,7 @@ const SECURE = process.env.COOKIE_INSEGURO ? '' : '; Secure';
 const [fy, fm, fd] = (process.env.PRIMEIRA_RONDA || '2026-11-13').split('-').map(Number);
 const FIRST = { y: fy, m: fm, d: fd };
 const rng = cryptoRng();
-const VERSAO = 49;   // sobe quando o servidor muda, para se confirmar de fora que a versão nova já está a correr
+const VERSAO = 50;   // sobe quando o servidor muda, para se confirmar de fora que a versão nova já está a correr
 const ATOS_3S = +(process.env.ATOS_3S || 15), ATOS_MIN = +(process.env.ATOS_MIN || 400); // ações por conta: 15 em 3 s, 400 por minuto
 
 // ---------- relógio que nunca anda para trás ----------
@@ -302,7 +302,7 @@ function cfgPublica() {
     biz: CFG.biz.map(({ id, price, perH, resp, stat, raid, toBank, drug }) => ({ id, price, perH, resp, stat, raid, toBank, drug: drug ? CFG.drugs.findIndex((x) => x.id === drug) : -1 })), accountant: CFG.accountant,
     bizMax: CFG.bizMax, storageMs: CFG.storageMs, port: { ...CFG.port, ships: CFG.port.ships.map((s) => ({ ...s, drug: CFG.drugs.findIndex((x) => x.id === s.drug) })) }, air: CFG.air, goods: CFG.goods, venue: CFG.venue, detox: CFG.detox, stocks: CFG.stocks, weapons: CFG.weapons, tools: CFG.tools, gweapons: CFG.gweapons, armors: CFG.armors, guards: CFG.guards, hitman: CFG.hitman,
     pvp: CFG.pvp, bank: CFG.bank, luxury: CFG.luxury, levels: CFG.levels, crit: CFG.crit, unlockBp: CFG.unlockBp,
-    bustBp: CFG.bustBp, crimeAllMax: CFG.crimeAllMax, casino: { minBet: CFG.casino.minBet, buyMaxMult: CFG.casino.buyMaxMult, red: CFG.casino.red, dice: CFG.casino.dice, wheel: { segs: CFG.casino.wheel.segs, spots: CFG.casino.wheel.spots }, slots: Object.fromEntries(Object.entries(CFG.casino.slots).map(([k, g]) => [k, { kind: g.kind, cols: g.cols, rows: g.rows, min: g.min, nsym: g.nsym, trig: g.trig, pay: g.pay, scatPay: g.scatPay, free: g.free, fs: g.fs, retrig: g.retrig, buy: g.buy, superBuy: g.superBuy, max: g.max, accFree: g.accFree, accAll: g.accAll, orbBase: g.orbBase }])) }, gang: CFG.gang, classes: CFG.classes, classChange: CFG.classChange, avatars: CFG.avatars, hookers: CFG.hookers, house: CFG.house, mastery: CFG.mastery, missions: CFG.missions.length, start: CFG.start,
+    bustBp: CFG.bustBp, crimeAllMax: CFG.crimeAllMax, casino: { minBet: CFG.casino.minBet, buyMaxMult: CFG.casino.buyMaxMult, red: CFG.casino.red, dice: CFG.casino.dice, wheel: { segs: CFG.casino.wheel.segs, spots: CFG.casino.wheel.spots, topMult: CFG.casino.wheel.topMult.map(([m]) => m), louca: CFG.casino.wheel.louca }, slots: Object.fromEntries(Object.entries(CFG.casino.slots).map(([k, g]) => [k, { kind: g.kind, cols: g.cols, rows: g.rows, min: g.min, nsym: g.nsym, trig: g.trig, pay: g.pay, scatPay: g.scatPay, free: g.free, fs: g.fs, retrig: g.retrig, buy: g.buy, superBuy: g.superBuy, max: g.max, accFree: g.accFree, accAll: g.accAll, orbBase: g.orbBase }])) }, gang: CFG.gang, classes: CFG.classes, classChange: CFG.classChange, avatars: CFG.avatars, hookers: CFG.hookers, house: CFG.house, mastery: CFG.mastery, missions: CFG.missions.length, start: CFG.start,
     round: { playDays: CFG.round.playDays, noPvpMs: CFG.round.noPvpMs },
   };
 }
@@ -794,9 +794,14 @@ const qm = {
 };
 const MESA_BET = (g) => (process.env.MESA_BET_MS ? +process.env.MESA_BET_MS : g === 'wheel' ? 8_000 : 12_000);   // tempo para apostar (roleta: 12 s; eram 20)
 const MESA_SPIN = process.env.MESA_SPIN_MS ? () => +process.env.MESA_SPIN_MS
-  : (g, r) => (g === 'roulette' ? 10_500 : !r.bonus ? 17_000 : { moeda: 26_500, caixas: 42_000, bola: 24_500, louca: 31_500 }[r.s]);   // tempo da jogada que todos veem
+  : (g, r) => (g === 'roulette' ? 10_500 : !r.bonus ? 17_000 : { moeda: 26_500, caixas: 42_000, bola: 24_500, louca: CRAZY_PICK + CRAZY_VOLTA + CRAZY_FIM }[r.s]);   // tempo da jogada que todos veem
+// Crazy: a roda grande só roda depois de fechar a escolha do flapper. Até lá o servidor guarda para si onde ela vai parar (c.sec) e ninguém é pago;
+// ao fechar, abre o resultado, paga cada um pelo seu flapper (quem não escolheu fica com um à sorte) e acerta a hora da ronda seguinte ao número de voltas.
+const MESA_TESTE = !!(process.env.CRAZY_PICK_MS || process.env.MESA_SPIN_MS);   // nos testes as mesas correm depressa
+const CRAZY_PICK = process.env.CRAZY_PICK_MS ? +process.env.CRAZY_PICK_MS : MESA_TESTE ? 300 : 23_500;   // do fecho das apostas ao fecho da escolha (a roda principal demora ~13 s a mostrar a Crazy; sobram ~10 s para escolher)
+const CRAZY_VOLTA = MESA_TESTE ? 150 : 10_500, CRAZY_FIM = MESA_TESTE ? 250 : 6_500;   // cada volta da roda grande, e o resultado no fim
 const mesas = { roulette: { cur: null, hist: [], last: new Map() }, wheel: { cur: null, hist: [], last: new Map() } };
-const resCurto = (g, r) => (g === 'roulette' ? r.n : { s: r.s, m: r.mult, i: r.idx });
+const resCurto = (g, r) => (g === 'roulette' ? r.n : { s: r.s, m: r.s === 'louca' ? (r.bonus.mults ? Math.max(...r.bonus.mults) * r.tm : null) : r.mult, i: r.idx });   // Crazy: o melhor dos três flappers (só depois de aberto)
 for (const g of Object.keys(mesas)) mesas[g].hist = qm.histUlt.all(g).map((r) => JSON.parse(r.res));
 
 // ao arrancar: apostas que ficaram por pagar (o servidor parou a meio de uma ronda) voltam para quem as fez
@@ -820,7 +825,8 @@ function pagarMesa(g, c, now) {
   try {
     for (const [conta, b] of c.bets) {
       if (b.win !== undefined) continue;
-      const win = E.tablePay(g, b.bets, c.res), p = b.ronda === ronda && w.phase === 'play' ? jogadores.get(conta) : null;
+      if (g === 'wheel' && c.res.s === 'louca' && b.flap === undefined) { b.flap = rng.int(0, 2); b.auto = true; }   // não escolheu flapper: fica com um à sorte
+      const win = E.tablePay(g, b.bets, c.res, b.flap), p = b.ronda === ronda && w.phase === 'play' ? jogadores.get(conta) : null;
       if (p) { E.tableCredit(p, win); guardar(p, now); contarDia(now, conta, { cnet: win - b.total, cwin: Math.max(0, win - b.total) }); }
       qm.paga.run(win, g, c.id, conta);
       feitos.push([conta, b, win]);
@@ -829,7 +835,7 @@ function pagarMesa(g, c, now) {
   } catch (e) { db.exec('ROLLBACK'); ronda = -1; carregarRonda(w.n); console.error('mesa', g, e.message); return; }   // fica por pagar: tenta outra vez no segundo seguinte
   const m = mesas[g];
   for (const [conta, b, win] of feitos) {
-    b.win = win; m.last.set(conta, { id: c.id, bets: b.bets, total: b.total, win });
+    b.win = win; m.last.set(conta, { id: c.id, bets: b.bets, total: b.total, win, flap: b.flap });
     const net = win - b.total;
     if (net >= CFG.casino.newsMin) noticia(now, { k: 'casino', name: nomeDe(conta), g, money: net });
     else if (-net >= CFG.casino.newsMin) noticia(now, { k: 'casinoLoss', name: nomeDe(conta), g, money: -net });
@@ -839,9 +845,22 @@ function pagarMesa(g, c, now) {
 function fecharMesa(g, now) {
   const m = mesas[g], c = m.cur;
   if (c.res === null) {
-    c.res = E.tableDraw(g, rng); c.prox = c.fecha + MESA_SPIN(g, c.res);
-    const curto = resCurto(g, c.res); m.hist.unshift(curto); if (m.hist.length > 24) m.hist.pop();
-    try { qm.hist.run(g, c.id, now, JSON.stringify(curto)); m.n = (m.n || 0) + 1; if (m.n % 200 === 0) qm.histLimpa.run(g, now - 2 * T.DAY); } catch (e) { console.error('hist', e.message); }
+    c.res = E.tableDraw(g, rng);
+    if (g === 'wheel' && process.env.MESA_FORCA_RODA) for (let k = 0; k < 20000 && c.res.s !== process.env.MESA_FORCA_RODA; k++) c.res = E.tableDraw(g, rng);   // só nos testes: obriga a roda a parar numa casa
+    c.prox = c.fecha + MESA_SPIN(g, c.res);
+    if (g === 'wheel' && c.res.s === 'louca') {   // o resultado da roda grande fica fechado até acabar a escolha
+      c.sec = c.res.bonus; c.res = { ...c.res, bonus: { pickUntil: c.fecha + CRAZY_PICK } };
+      c.prox = Math.max(c.prox, c.fecha + CRAZY_PICK + CRAZY_VOLTA + CRAZY_FIM);
+    }
+    c.curto = resCurto(g, c.res); m.hist.unshift(c.curto); if (m.hist.length > 24) m.hist.pop();
+    try { qm.hist.run(g, c.id, now, JSON.stringify(c.curto)); m.n = (m.n || 0) + 1; if (m.n % 200 === 0) qm.histLimpa.run(g, now - 2 * T.DAY); } catch (e) { console.error('hist', e.message); }
+  }
+  if (c.sec) {
+    if (now < c.res.bonus.pickUntil) return;   // ainda se escolhe o flapper: nada se abre nem se paga
+    c.res = { ...c.res, bonus: { ...c.res.bonus, ...c.sec } }; c.sec = null;
+    c.prox = c.res.bonus.pickUntil + CRAZY_VOLTA * c.res.bonus.stops.length + CRAZY_FIM;
+    c.curto.m = resCurto(g, c.res).m;
+    try { qm.hist.run(g, c.id, now, JSON.stringify(c.curto)); } catch (e) { console.error('hist', e.message); }
   }
   if ([...c.bets.values()].some((b) => b.win === undefined)) pagarMesa(g, c, now);
 }
@@ -849,8 +868,8 @@ function fecharMesa(g, now) {
 function mesaDe(g, now) {
   const m = mesas[g];
   if (!m) throw new E.GameError('NO_GAME');
-  if (m.cur && now >= m.cur.fecha && (m.cur.res === null || [...m.cur.bets.values()].some((b) => b.win === undefined))) fecharMesa(g, now);
-  if (!m.cur || (m.cur.res !== null && now >= m.cur.prox)) {
+  if (m.cur && now >= m.cur.fecha && (m.cur.res === null || m.cur.sec || [...m.cur.bets.values()].some((b) => b.win === undefined))) fecharMesa(g, now);
+  if (!m.cur || (m.cur.res !== null && !m.cur.sec && now >= m.cur.prox)) {
     const abre = m.cur && now - m.cur.prox < 4000 ? m.cur.prox : now;   // com gente à mesa as rondas seguem-se sem intervalo
     m.cur = { id: Math.max(Math.floor(abre / 100), (m.cur?.id || 0) + 1), abre, fecha: abre + MESA_BET(g), prox: null, res: null, bets: new Map() };
   }
@@ -865,7 +884,7 @@ function vistaMesa(g, conta, now) {
   const m = mesaDe(g, now), c = m.cur, mine = c.bets.get(conta);
   let pot = 0; for (const b of c.bets.values()) pot += b.total;
   const out = { now, g, id: c.id, phase: c.res === null ? 'bets' : 'spin', opensAt: c.abre, closesAt: c.fecha, nextAt: c.prox, players: c.bets.size, pot,
-    mine: mine ? { bets: mine.bets, total: mine.total, win: mine.win } : null, hist: m.hist, last: m.last.get(conta) || null,
+    mine: mine ? { bets: mine.bets, total: mine.total, win: mine.win, flap: mine.flap, auto: mine.auto } : null, hist: m.hist, last: m.last.get(conta) || null,
     prev: g === 'wheel' ? m.hist[c.res === null ? 0 : 1]?.i ?? null : null };   // onde a roda estava parada: todos partem do mesmo sítio
   if (c.res !== null) {
     out.res = c.res;
@@ -910,6 +929,14 @@ function agir(conta, corpo, now) {
       if (!mine) throw new E.GameError('NO_BET');
       r = E.tableClear(p, mine.bets); r.g = g;
       mesa = { g, c: m.cur, bets: null }; r.round = m.cur.id;
+      break;
+    }
+    case 'tableFlap': {   // escolher o flapper da Crazy: só quem apostou nela, e só enquanto a escolha está aberta
+      const m = mesaDe('wheel', now), c = m.cur, mine = c.bets.get(conta), f = int(a.c);
+      if (!c.sec || now >= c.res.bonus.pickUntil) throw new E.GameError('PICK_CLOSED');
+      if (!mine || !mine.bets.some((b) => b.s === 'louca')) throw new E.GameError('NO_BET');
+      if (![0, 1, 2].includes(f)) throw new E.GameError('BAD_BET');
+      mine.flap = f; r = { ok: true, flap: f, round: c.id };
       break;
     }
     case 'train': r = E.train(p, now, world, String(a.stat)); break;

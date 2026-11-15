@@ -345,6 +345,44 @@ test('mesa ao vivo: limpar devolve tudo, e se o servidor parar a meio as apostas
   const t = await mesa('wheel'); assert.equal(t.mine, null); assert.equal(t.players, 0);
 });
 
+test('Crazy na mesa: o resultado só abre depois da escolha do flapper, cada um é pago pelo seu, e quem não escolhe fica com um à sorte', async () => {
+  await parar(); ENV_EXTRA = { ATOS_3S: '100000', ATOS_MIN: '1000000', MESA_BET_MS: '900', MESA_SPIN_MS: '300', CRAZY_PICK_MS: '1500', MESA_FORCA_RODA: 'louca' }; await arrancar();
+  const A = await contaNova('CrazyA', '10.0.9.60'), B = await contaNova('CrazyB', '10.0.9.61'), C = await contaNova('CrazyC', '10.0.9.62');
+  const ips = new Map([[A, '10.0.9.60'], [B, '10.0.9.61'], [C, '10.0.9.62']]);
+  const mesa = async (x) => (await fetch(BASE + '/api/table?g=wheel', { headers: { cookie: x.cookie, 'X-Forwarded-For': ips.get(x) } })).json();
+  const dorme = (ms) => new Promise((r) => setTimeout(r, ms));
+  let t = await mesa(A);
+  while (t.phase !== 'bets' || t.closesAt - t.now < 650) { await dorme(100); t = await mesa(A); }
+  const id = t.id;
+  // fora da escolha não se escolhe flapper
+  let r = await cru(A.cookie, ips.get(A), { type: 'tableFlap', c: 1 }); assert.equal(r.body.error, 'PICK_CLOSED');
+  r = await cru(A.cookie, ips.get(A), { type: 'tableBet', g: 'wheel', bets: [{ s: 'louca', amt: 10 }, { s: '1', amt: 20 }] }); assert.equal(r.status, 200);
+  r = await cru(B.cookie, ips.get(B), { type: 'tableBet', g: 'wheel', bets: [{ s: '1', amt: 50 }] }); assert.equal(r.status, 200);
+  r = await cru(C.cookie, ips.get(C), { type: 'tableBet', g: 'wheel', bets: [{ s: 'louca', amt: 30 }] }); assert.equal(r.status, 200);
+  while (t.phase !== 'spin' || t.id !== id) { await dorme(60); t = await mesa(A); assert.ok(t.id === id, 'a ronda mudou antes de abrir a Crazy'); }
+  // escolha aberta: saiu a Crazy, mas onde a roda grande pára ainda não foi dito a ninguém, e ninguém foi pago
+  assert.equal(t.res.s, 'louca'); assert.ok(t.res.bonus.pickUntil > t.now); assert.equal(t.res.bonus.stops, undefined); assert.equal(t.res.bonus.mults, undefined); assert.equal(t.res.mult, null);
+  assert.equal(t.mine.win, undefined); assert.equal(t.hist[0].m, null);
+  assert.ok(!JSON.stringify(t).includes('stops'), 'o resultado fechado não pode ir na resposta');
+  r = await cru(A.cookie, ips.get(A), { type: 'tableFlap', c: 7 }); assert.equal(r.body.error, 'BAD_BET');
+  r = await cru(B.cookie, ips.get(B), { type: 'tableFlap', c: 0 }); assert.equal(r.body.error, 'NO_BET');   // só apostou no 1
+  r = await cru(A.cookie, ips.get(A), { type: 'tableFlap', c: 0 }); assert.equal(r.status, 200);
+  r = await cru(A.cookie, ips.get(A), { type: 'tableFlap', c: 2 }); assert.equal(r.status, 200); assert.equal(r.body.result.flap, 2);   // pode mudar enquanto está aberta
+  assert.equal(r.body.me.cash, 500 - 30);   // ainda sem prémio
+  while (!t.res.bonus.stops) { await dorme(80); t = await mesa(A); assert.equal(t.id, id, 'a ronda seguinte abriu antes de a Crazy pagar'); }
+  // aberto: três resultados, um por flapper; A com o flapper 2, C com um à sorte, B perdeu (o 1 não saiu)
+  const { stops, mults } = t.res.bonus, tm = t.res.tm, teto = (ap, tot) => Math.min(ap, tot * 2500);
+  assert.ok(stops.length >= 1 && mults.length === 3 && mults.every((m) => m >= 15));
+  assert.equal(t.mine.flap, 2); assert.ok(!t.mine.auto); assert.equal(t.mine.win, teto(10 * (mults[2] * tm + 1), 30));
+  const tc = await mesa(C); assert.ok([0, 1, 2].includes(tc.mine.flap) && tc.mine.auto === true); assert.equal(tc.mine.win, teto(30 * (mults[tc.mine.flap] * tm + 1), 30));
+  const tb = await mesa(B); assert.equal(tb.mine.win, 0);
+  assert.equal(t.hist[0].m, Math.max(...mults) * tm);
+  r = await cru(A.cookie, ips.get(A), { type: 'tableFlap', c: 1 }); assert.equal(r.body.error, 'PICK_CLOSED');
+  assert.equal((await A.estado()).cash, 500 - 30 + t.mine.win); assert.equal((await B.estado()).cash, 450);
+  // a ronda seguinte só começa depois das voltas da roda grande
+  assert.ok(t.nextAt >= t.res.bonus.pickUntil);
+});
+
 test('mesas ao vivo: correm sozinhas sem ninguém a ver, o histórico é o mesmo para todos e sobrevive a um reinício', async () => {
   await parar(); ENV_EXTRA = { ATOS_3S: '100000', ATOS_MIN: '1000000', MESA_BET_MS: '300', MESA_SPIN_MS: '200' }; await arrancar();
   const A = await contaNova('HistA', '10.0.9.45'), B = await contaNova('HistB', '10.0.9.46');
@@ -356,7 +394,7 @@ test('mesas ao vivo: correm sozinhas sem ninguém a ver, o histórico é o mesmo
     assert.ok(a.hist.length >= 4, `${g}: só ${a.hist.length} rondas em 3 s sem ninguém a ver`);
     assert.ok(dentro(a.hist.slice(0, 4), b.hist), `${g}: o histórico não é o mesmo para os dois`);
     if (g === 'wheel') {
-      for (const h of a.hist) { assert.ok(Number.isInteger(h.i) && h.i >= 0 && h.i < 54); assert.ok(typeof h.s === 'string' && h.m >= 1); }
+      for (const h of a.hist) { assert.ok(Number.isInteger(h.i) && h.i >= 0 && h.i < 54); assert.ok(typeof h.s === 'string' && (h.m >= 1 || (h.s === 'louca' && h.m === null))); }   // Crazy a meio da escolha: ainda sem multiplicador
       assert.equal(a.prev, a.hist[a.phase === 'bets' ? 0 : 1].i);
     } else for (const n of a.hist) assert.ok(Number.isInteger(n) && n >= 0 && n <= 36);
   }

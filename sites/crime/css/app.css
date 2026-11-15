@@ -1604,3 +1604,53 @@ body.light .rv.is-wait .ct-lock::after { opacity: .9; transform: translate(-50%,
   .rv-res, .rv-btns, .ct-glow, .ct-cop, .ct-in::after, .ct-nm, .ct-code { transition: none; }
   .cont.rdy:active { transform: none; }
 }
+
+/* ===== Bónus Crazy (crazy.js): roda de 64 casas, três flappers à escolha, DOUBLE ===== */
+.wstage.th-louca { background: radial-gradient(120% 90% at 50% 12%, #a3122a, #3a0a1e 55%, #0b0d13 92%); container-type: size; align-content: start; }
+.wstage.th-louca.intro, .wstage.th-louca.res { align-content: center; }
+.crz { display: grid; justify-items: center; gap: 6px; width: 100%; }
+/* a roda cresce até onde couber, deixando lugar por baixo para a frase, a barra do tempo e os três botões */
+.crz-top { position: relative; width: min(100%, 300px); width: min(100%, 340px, calc((100cqh - 138px) * .918)); }
+.crz-wheel { display: block; width: 100%; height: auto; }
+/* o que saiu ao teu flapper nesta volta, por cima da roda (placa escura, para não se misturar com as casas) */
+.crz-banner { position: absolute; left: 50%; top: 54%; transform: translate(-50%, -50%) scale(.6); padding: 8px 20px; border-radius: 12px; font: 900 clamp(38px, 13vw, 56px)/1 var(--disp); letter-spacing: .02em; white-space: nowrap; opacity: 0; pointer-events: none; transition: opacity .18s, transform .35s var(--spring); }
+.crz-banner.on { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+.crz-banner.dbl { background: #0d0f14; color: #ffd95e; box-shadow: 0 0 0 3px #f2c230, 0 10px 30px #000a; }
+.crz-banner.win { background: #06140c; color: var(--cash); box-shadow: 0 0 0 3px var(--cash), 0 10px 30px #000a; }
+.crz-msg { display: grid; grid-template-columns: auto auto; column-gap: 8px; row-gap: 3px; align-items: baseline; justify-content: center; width: min(100%, 340px); text-align: center; color: var(--tx); }
+.crz-msg > span:first-child { font-size: 18px; font-weight: 800; line-height: 1.15; }
+.crz-clock { font-size: 18px; color: var(--sodium); font-weight: 800; }
+.crz-clock:empty { display: none; }
+.crz-clock:empty ~ * , .crz-msg > span:first-child:only-child { grid-column: 1 / -1; }
+.crz-bar { grid-column: 1 / -1; height: 4px; border-radius: 2px; background: #ffffff24; overflow: hidden; }
+.crz-bar[hidden] { display: none; }
+.crz-bar i { display: block; height: 100%; background: var(--sodium); transform-origin: 0 50%; }
+.crz-msg small { grid-column: 1 / -1; min-height: 17px; font-size: 14px; color: var(--tx2); }
+.crz-go .crz-msg small { display: none; }
+/* os três flappers para escolher: botões cheios na cor de cada um; por baixo do triângulo, «O TEU» ou o que lhe saiu */
+.crz-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; width: min(100%, 340px); }
+.crz-flap { display: grid; justify-items: center; align-content: center; gap: 3px; min-height: 60px; padding: 6px 4px; border: 0; border-radius: 12px; background: var(--fc); color: #0b0d13; box-shadow: inset 0 -4px 0 #00000038; cursor: pointer; transition: transform .12s var(--ease-out), box-shadow .15s, background-color .2s, opacity .2s; }
+.crz-flap i { width: 26px; height: 22px; background: #0b0d13; clip-path: polygon(0 0, 100% 0, 50% 100%); }
+.crz-flap b { min-height: 17px; font: 900 17px/1 var(--disp); letter-spacing: .03em; }
+.crz-flap:active { transform: scale(.96); }
+.crz-flap[aria-pressed='true'] { box-shadow: inset 0 0 0 4px #fff, 0 0 0 2px #0b0d13; }
+.crz-flap:disabled { cursor: default; opacity: .45; }   /* não apostaste na Crazy: os botões ficam apagados */
+.crz-go .crz-flap:disabled { opacity: 1; }
+/* fechada a escolha: os botões passam a placas escuras com o resultado; o teu fica com o aro na tua cor */
+.crz-go .crz-flap { background: #0b0d13cc; color: var(--tx); box-shadow: inset 0 0 0 1px #ffffff2e; }
+.crz-go .crz-flap i { background: var(--fc); }
+.crz-go .crz-flap[aria-pressed='true'] { box-shadow: inset 0 0 0 3px var(--fc); background: #0b0d13; }
+.crz-go .crz-flap.fim:not([aria-pressed='true']) i { opacity: .4; }
+.crz-flap.dbl b { color: #ffd95e; }
+/* a entrada: a porta vermelha abre-se para a roda */
+.crz-doors { position: absolute; inset: 0; z-index: 2; display: grid; grid-template-columns: 1fr 1fr; pointer-events: none; }
+.crz-doors i { background: linear-gradient(90deg, #7a0d18, #c2161f 45%, #8f1019); box-shadow: inset 0 0 0 3px #f2c230, inset 0 0 0 10px #5c0a12; transition: transform .9s cubic-bezier(.6, 0, .2, 1); }
+.crz-doors i:last-child { background: linear-gradient(270deg, #7a0d18, #c2161f 45%, #8f1019); }
+.crz-doors.open i:first-child { transform: translateX(-102%); }
+.crz-doors.open i:last-child { transform: translateX(102%); }
+/* painel final: o que saiu a cada flapper, e as contas */
+.wst-sub { text-align: center; text-wrap: balance; }
+.wst-sub.czres { display: flex; gap: 14px; justify-content: center; }
+.wst-sub.czres b { font: 900 20px/1 var(--disp); color: var(--tx2); padding-top: 9px; background: linear-gradient(var(--fc), var(--fc)) top / 100% 4px no-repeat; }
+.wst-sub.czres b.me { color: var(--tx); font-size: 24px; }
+@media (prefers-reduced-motion: reduce) { .crz-doors i, .crz-banner, .crz-flap { transition: none; } }

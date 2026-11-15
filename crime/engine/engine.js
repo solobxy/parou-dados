@@ -1709,33 +1709,50 @@ function pickW(rng, list) {
   for (const [v, w] of list) { if (x < w) return v; x -= w; }
   return list[list.length - 1][0];
 }
+// Crazy: onde a roda pára em cada volta (a casa por baixo do flapper do meio) e o que cada flapper ganha. Um flapper que cai em DOUBLE
+// segue para a volta seguinte com tudo a dobrar; os outros já acabaram. À 12.ª volta seguida (1 vez em milhares de milhões) um DOUBLE conta
+// como a casa de valor que vem a seguir, para a roda não rodar para sempre.
+export function crazySpin(rng) {
+  const L = CFG.casino.wheel.louca, N = L.segs.length, stops = [], mults = L.flaps.map(() => null);
+  for (let n = 0; n < 12 && mults.includes(null); n++) {
+    const idx = rng.int(0, N - 1); stops.push(idx);
+    L.flaps.forEach((off, f) => {
+      if (mults[f] !== null) return;
+      let i = (((idx + off) % N) + N) % N;
+      if (n === 11) while (L.segs[i] === 'D') i = (i + 1) % N;
+      if (L.segs[i] !== 'D') mults[f] = L.segs[i] * 2 ** n;
+    });
+  }
+  return { stops, mults };
+}
 export function wheelSpin(rng) {
   const W = CFG.casino.wheel;
-  // multiplicador do topo: uma casa (ou nenhuma) com ×2 a ×50 nesta volta
+  // multiplicador do topo: uma casa (ou, raramente, nenhuma) com ×2 a ×50 nesta volta
   let x = rng.int(0, 9999), top = null;
   for (const s of W.spots) { if (x < W.top[s]) { top = { s, m: pickW(rng, W.topMult) }; break; } x -= W.top[s]; }
   const idx = rng.int(0, W.segs.length - 1), s = W.segs[idx];
   let bonus = null, B = W.num[s] ?? 0;
   if (s === 'moeda') { const sides = [pickW(rng, W.moeda), pickW(rng, W.moeda)], side = rng.int(0, 1); B = sides[side]; bonus = { sides, side }; }
   else if (s === 'caixas') { const boxes = Array.from({ length: W.caixasN }, () => pickW(rng, W.caixas)), pick = rng.int(0, W.caixasN - 1); B = boxes[pick]; bonus = { boxes, pick }; }
-  else if (s === 'bola' || s === 'louca') {
-    const slots = Array.from({ length: s === 'bola' ? W.bolaSlots : W.loucaSlots }, () => pickW(rng, W[s])), at = rng.int(0, slots.length - 1);
-    B = slots[at]; bonus = { slots, at };
-  }
-  const m = top && top.s === s ? top.m : 1;
-  return { idx, s, top, bonus, mult: B * m };   // quem apostou em s recebe aposta × (mult + 1)
+  else if (s === 'bola') { const slots = Array.from({ length: W.bolaSlots }, () => pickW(rng, W.bola)), at = rng.int(0, slots.length - 1); B = slots[at]; bonus = { slots, at }; }
+  else if (s === 'louca') { bonus = crazySpin(rng); B = null; }
+  const tm = top && top.s === s ? top.m : 1;   // o multiplicador do topo só conta se a roda parar na casa dele
+  return { idx, s, top, bonus, tm, mult: B === null ? null : B * tm };   // quem apostou em s recebe aposta × (mult + 1); na Crazy o mult depende do flapper
 }
+// o multiplicador para quem apostou na casa que saiu; na Crazy é o do flapper escolhido (0 verde, 1 azul, 2 amarelo)
+export const wheelMult = (res, flap = 1) => (res.s === 'louca' ? res.bonus.mults[flap] * res.tm : res.mult);
 function wheel(p, a, rng) {
   const W = CFG.casino.wheel, bets = Array.isArray(a.bets) ? a.bets : [];
   for (const b of bets) if (!b || !W.spots.includes(b.s)) fail('BAD_BET');
+  if (a.flap !== undefined && ![0, 1, 2].includes(a.flap)) fail('BAD_BET');
   const bet = stakeOf(p, bets.map((b) => b && b.amt));
   p.cash -= bet;
-  const sp = wheelSpin(rng);
+  const sp = wheelSpin(rng), flap = a.flap ?? rng.int(0, 2), mult = wheelMult(sp, flap);
   let win = 0;
-  for (const b of bets) if (b.s === sp.s) win += b.amt * (sp.mult + 1);
+  for (const b of bets) if (b.s === sp.s) win += b.amt * (mult + 1);
   win = Math.min(win, bet * CFG.casino.maxWinMult);
   p.cash += win;
-  return { ok: true, g: 'wheel', bet, win, ...sp };
+  return { ok: true, g: 'wheel', bet, win, ...sp, flap, mult };
 }
 // ---- mesas ao vivo (roleta e roda) ----
 // A ronda é de todos: cada um aposta enquanto a mesa está aberta (o dinheiro sai logo da mão),
@@ -1777,11 +1794,11 @@ export function tableClear(p, mine) {
   return { ok: true, back, bets: [], total: 0 };
 }
 export function tableDraw(g, rng) { return g === 'roulette' ? { n: rng.int(0, 36) } : wheelSpin(rng); }
-// quanto volta ao jogador (aposta incluída) com este resultado
-export function tablePay(g, bets, res) {
+// quanto volta ao jogador (aposta incluída) com este resultado; flap: o flapper do jogador, que só conta quando sai a Crazy
+export function tablePay(g, bets, res, flap = 1) {
   let win = 0;
   if (g === 'roulette') for (const b of bets) win += b.amt * rouletteReturn(b, res.n);
-  else { for (const b of bets) if (b.s === res.s) win += b.amt * (res.mult + 1); win = Math.min(win, tableTotal(bets) * CFG.casino.maxWinMult); }
+  else { const mult = wheelMult(res, flap); for (const b of bets) if (b.s === res.s) win += b.amt * (mult + 1); win = Math.min(win, tableTotal(bets) * CFG.casino.maxWinMult); }
   return win;
 }
 export function tableCredit(p, win) { if (!Number.isSafeInteger(win) || win < 0) fail('BAD_BET'); p.cash += win; }
