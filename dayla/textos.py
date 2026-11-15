@@ -8,6 +8,7 @@ T = {
     # ---------- página ----------
     'html_lang': {'pt': 'pt-PT', 'en': 'en'},
     'titulo': {'pt': 'Dayla Araújo Body Piercing · Piercing no Porto', 'en': 'Dayla Araújo Body Piercing · Piercing in Porto'},
+    'og_alt': {'pt': 'Logótipo da Dayla e uma orelha com um piercing flat e quatro no lóbulo.', 'en': 'Dayla logo and an ear with a flat piercing and four lobe piercings.'},
     'descricao': {'pt': 'Piercing e visagismo no Porto com a Dayla: preços, cuidados e pedido de marcação. Atendo em português e em inglês.',
                   'en': 'Piercing and curation in Porto with Dayla: prices, aftercare and booking requests. Appointments in English or Portuguese.'},
     'saltar': {'pt': 'Saltar para o conteúdo', 'en': 'Skip to content'},

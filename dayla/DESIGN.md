@@ -45,3 +45,6 @@ Os pontos do visagismo estão em `PROJETOS` (`dayla/construir.py`), em % da foto
 
 ## Verificar
 12 larguras (320 a 1920), com e sem redução de movimento, PT e EN: sem rolagem lateral e títulos em 2 linhas no máximo.
+
+## Pré-visualizações dos links
+Imagens de 1200×630 em sites/dayla/partilha (site PT e EN, painel, avaliar), geradas por `python3 dayla/partilha.py` com a letra e o logótipo do site: foto real com a margem esquerda a fundir no preto, título em duas linhas, faixa de xadrez em baixo com a casa rosa alinhada ao texto. No site, uma argola rosa marca o flat da foto (a mesma das marcações do visagismo). As etiquetas og: ficam no início do head. O servidor troca daylapiercing.pt pelo endereço que está a funcionar, para a imagem nunca falhar. Ao mudar uma imagem, mudar também o nome do ficheiro: o WhatsApp e o Facebook guardam a pré-visualização em cache.

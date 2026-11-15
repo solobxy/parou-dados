@@ -1122,7 +1122,7 @@ Disallow: /
 	handle @escondidos {
 		respond 404
 	}
-	@estaticos path /fonts/* /img/* /vid/* /og.jpg /logo.svg /logo-branco.svg /icon.svg /apple-touch-icon.png /icon-192.png /icon-512.png
+	@estaticos path /fonts/* /img/* /vid/* /partilha/* /logo.svg /logo-branco.svg /icon.svg /apple-touch-icon.png /icon-192.png /icon-512.png
 	header @estaticos Cache-Control "public, max-age=2592000"
 	@paginas path / /index.html /en/ /en/index.html
 	header @paginas Cache-Control "no-cache"
@@ -1165,8 +1165,21 @@ Disallow: /
 # Endereço de testes (funciona antes de o domínio apontar para aqui; fica fora do Google)
 dayla.{HOST_TESTE} {
 	header X-Robots-Tag "noindex, nofollow"
+	# Fora do Google, mas os robôs que fazem as pré-visualizações dos links (WhatsApp, Facebook, X, Telegram...) entram
 	handle /robots.txt {
-		respond "User-agent: *
+		respond "User-agent: facebookexternalhit
+User-agent: Facebot
+User-agent: meta-externalagent
+User-agent: WhatsApp
+User-agent: Twitterbot
+User-agent: TelegramBot
+User-agent: LinkedInBot
+User-agent: Slackbot
+User-agent: Slackbot-LinkExpanding
+User-agent: Discordbot
+Allow: /
+
+User-agent: *
 Disallow: /
 " 200
 	}

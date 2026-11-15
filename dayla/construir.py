@@ -211,7 +211,7 @@ def dados_iniciais():
 
 def jsonld(lang):
     d = {'@context': 'https://schema.org', '@type': 'HealthAndBeautyBusiness', 'name': 'Dayla Araújo Body Piercing',
-         'description': T['descricao'][lang], 'url': BASE + ('/' if lang == 'pt' else '/en/'), 'image': BASE + '/og.jpg',
+         'description': T['descricao'][lang], 'url': BASE + ('/' if lang == 'pt' else '/en/'), 'image': BASE + '/partilha/site-%s.jpg' % lang,
          'telephone': '+351930514346', 'areaServed': {'@type': 'City', 'name': 'Porto'},
          'address': {'@type': 'PostalAddress', 'addressLocality': 'Porto', 'addressCountry': 'PT'},
          'availableLanguage': ['pt', 'en'], 'sameAs': ['https://www.instagram.com/%s/' % IG],
@@ -232,7 +232,8 @@ def construir(lang, logo):
     especiais = {
         'url': BASE + ('/' if lang == 'pt' else '/en/'), 'url_pt': BASE + '/', 'url_en': BASE + '/en/', 'base': BASE,
         'url_rel': '/' if lang == 'pt' else '/en/', 'url_outra_rel': '/en/' if lang == 'pt' else '/',
-        'outra_hreflang': 'en' if lang == 'pt' else 'pt-PT', 'og_locale': 'pt_PT' if lang == 'pt' else 'en_GB', 'lang': lang,
+        'outra_hreflang': 'en' if lang == 'pt' else 'pt-PT', 'og_locale': 'pt_PT' if lang == 'pt' else 'en_GB', 'og_locale_alt': 'en_GB' if lang == 'pt' else 'pt_PT',
+        'og_img': BASE + '/partilha/site-%s.jpg' % lang, 'lang': lang,
         'logo': logo, 'jsonld': jsonld(lang), 'h1_linhas': h1_linhas(lang),
         'facto2': html.escape({'pt': 'por marcação', 'en': 'by appointment'}[lang]), 'facto3': html.escape({'pt': 'PT / EN', 'en': 'EN / PT'}[lang]),
         'tira_v': tira(2, 14, 9), 'tira_s': tira(2, 6, 7), 'faixa': faixa(), 'xadrez_m': tira(24, 2, -1), 'xadrez_d': tira(2, 6, -1),

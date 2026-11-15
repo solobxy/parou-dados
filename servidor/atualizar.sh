@@ -453,11 +453,18 @@ fi
 # dayla/agenda.py (dayla-agenda.service, 127.0.0.1:3180, dados em /var/lib/dayla-agenda). A password do painel fica só
 # como hash em /etc/dayla-agenda/agenda.env (DAYLA_SENHA_HASH); se a Dayla a mudar no painel, o hash novo fica na base de dados.
 DYS=$BASE/servidor/sites/dayla
-if [ -f "$DYS/index.html" ] && ! diff -rq "$DYS" /var/www/dayla >/dev/null 2>&1; then
+# Os links absolutos (pré-visualizações no WhatsApp, Instagram, etc., canonical, sitemap) usam o endereço que está
+# mesmo a funcionar: daylapiercing.pt quando o domínio já aponta para aqui, senão o endereço de testes. Muda sozinho.
+DY_PUB="https://dayla.$HOST_TESTE"
+grep -qx "# INICIO daylapiercing.pt" /etc/caddy/Caddyfile 2>/dev/null && DY_PUB="https://daylapiercing.pt"
+DY_V="$( (cd "$DYS" 2>/dev/null && find . -type f -print0 | sort -z | xargs -0 sha256sum) | sha256sum | cut -c1-16) $DY_PUB"
+if [ -f "$DYS/index.html" ] && [ "$(cat /var/www/dayla.versao 2>/dev/null)" != "$DY_V" ]; then
   rm -rf /var/www/dayla.novo && mkdir -p /var/www && cp -r "$DYS" /var/www/dayla.novo \
+    && { [ "$DY_PUB" = "https://daylapiercing.pt" ] || find /var/www/dayla.novo -type f \( -name '*.html' -o -name '*.xml' -o -name '*.txt' \) -exec sed -i "s#https://daylapiercing.pt#$DY_PUB#g" {} + ; } \
     && chmod -R a+rX /var/www/dayla.novo \
     && rm -rf /var/www/dayla.velho && { [ ! -d /var/www/dayla ] || mv /var/www/dayla /var/www/dayla.velho; } \
-    && mv /var/www/dayla.novo /var/www/dayla && rm -rf /var/www/dayla.velho
+    && mv /var/www/dayla.novo /var/www/dayla && rm -rf /var/www/dayla.velho \
+    && echo "$DY_V" > /var/www/dayla.versao
 fi
 if [ -f "$SERV/dayla-agenda.service" ] && [ -f "$BASE/servidor/dayla/agenda.py" ]; then
   install -d -m 750 -o root -g parou /etc/dayla-agenda
