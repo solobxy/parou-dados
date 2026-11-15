@@ -545,6 +545,18 @@ function screenEmpire() {
   return [h('div', { class: 'phead' }, h('div', { class: 'pbar top' }, h('h1', null, t('p_empire')))), head, ...hubTiles('empire', badge)];
 }
 
+// sem stamina: discoteca ou putas, com a que sai mais barata por ponto de stamina em destaque
+function staminaHelp(me, L) {
+  const room = S.cfg.energy.max - L.energy, cash = me.cash + me.bank;
+  const d = me.refill && me.refill.energy > 0 && me.refill.cost <= cash ? me.refill.cost / me.refill.energy : Infinity;
+  let hk = Infinity;
+  if (!me.sick) S.cfg.hookers.list.forEach((g, i) => { const e = Math.min(g.e, room); if (e > 0 && me.hookers[i] <= cash) hk = Math.min(hk, me.hookers[i] / e); });
+  const best = d === Infinity && hk === Infinity ? null : hk < d ? 'putas' : 'club';
+  const btn = (id, lbl) => h('button', { class: 'btn sm grow ' + (best === id || (!best && id === 'club') ? 'pri' : 'ghost'), on: { click: () => go(id) } }, lbl);
+  return h('div', { class: 'stam' }, h('span', { class: 'small' }, t('noStamina')),
+    h('div', { class: 'row' }, btn('club', t('goClub')), btn('putas', t('goPutas'))),
+    best ? h('span', { class: 'small muted' }, t('stamBest', { x: t('p_' + best), m: money(Math.max(1, Math.round(Math.min(d, hk)))) })) : null);
+}
 // ---------- golpes ----------
 function reportAll(rep, li, names) {
   const { r, c, k, lv, unlocked } = rep, lines = [li('', t(r.n === 1 ? 'ra_jobs1' : 'ra_jobs', { n: r.n }) + ' · ' + t(r.wins === 1 ? 'ra_ok1' : 'ra_ok', { w: r.wins }))];
@@ -594,7 +606,7 @@ function screenRob() {
     h('button', { class: 'btn buy block big', disabled: !!b || L.energy < c.e, on: { click: (e) => act('crime', { k }, { el: e.currentTarget }) } }, t('robBtn')),
     !b && Math.floor(L.energy / c.e) >= 2 ? h('button', { class: 'btn ghost block robAll', on: { click: (e) => act('crimeAll', { k }, { el: e.currentTarget }) } },
       icon('bolt'), ' ' + t('robAll', { n: Math.min(Math.floor(L.energy / c.e), S.cfg.crimeAllMax || 25) })) : null,
-    !b && L.energy < c.e ? h('div', { class: 'row sp' }, h('span', { class: 'small' }, t('noStamina')), h('button', { class: 'btn sm pri', on: { click: () => go('club') } }, t('goClub'))) : null,
+    !b && L.energy < c.e ? staminaHelp(me, L) : null,
     rep ? reportCard(rep) : null,
     me.stars[k] ? h('p', { class: 'small muted' }, t('r_exp', { n: me.wk[k], p: me.stars[k] * 10 })) : null));
   out.push(h('h2', { class: 'sec' }, t('allJobs')));
