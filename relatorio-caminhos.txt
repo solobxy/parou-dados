@@ -1,0 +1,2 @@
+vias a pé: 1559498, segmentos: 18480660, mosaicos: 95613, 72.8 MB
+-rw-r--r-- 1 runner runner 64030688 Nov 15 09:59 caminhos.sqlite.gz
