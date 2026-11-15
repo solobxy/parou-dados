@@ -597,6 +597,42 @@ test('negócios da gangue: investir, bónus de grupo acertado em todos, sede a m
   assert.equal((await gangue(A, '10.0.9.90')).list.length, 0);
 });
 
+test('guardas e assassino a soldo: comprar guardas, encomendar, o alvo não sabe quem foi quando acerta e sabe quando falha, jornal sem nomes a mais', async () => {
+  ENV_EXTRA = { ATOS_3S: '100000', ATOS_MIN: '1000000' };
+  const A = await contaNova('HitA', '10.0.9.95'), B = await contaNova('HitB', '10.0.9.96');
+  for (const x of [A, B]) await x.estado();
+  const base = (e) => { e.cash = 3_000_000; e.bank = 0; e.respect = 1000; e.peakRespect = 1000; e.shieldUntil = 0; e.protectUntil = 0; e.hospUntil = 0; e.jailUntil = 0; };
+  await mexer({ HitA: base, HitB: (e) => { base(e); e.cash = 40_000; } });
+  const ag = (x, ip, body) => cru(x.cookie, ip, body), get = async (x, ip, url) => (await fetch(BASE + url, { headers: { cookie: x.cookie, 'X-Forwarded-For': ip } })).json();
+  // a lista de alvos traz o preço e a pontaria do assassino
+  let alvo = (await get(A, '10.0.9.95', '/api/targets')).list.find((x) => x.name === 'HitB');
+  assert.equal(alvo.hp, 100000); assert.equal(alvo.hc, 9000); assert.equal(alvo.hw, null);
+  // B compra um pitbull: a pontaria desce 15 pontos
+  let r = await ag(B, '10.0.9.96', { type: 'gear', kind: 'guard', idx: 1 }); assert.equal(r.status, 200, JSON.stringify(r.body)); assert.equal(r.body.me.guard, 1); assert.equal(r.body.me.cash, 36_000);
+  alvo = (await get(A, '10.0.9.95', '/api/targets')).list.find((x) => x.name === 'HitB'); assert.equal(alvo.hc, 7500);
+  assert.equal((await ag(A, '10.0.9.95', { type: 'hitman', target: 'ninguem' })).body.error, 'NO_TARGET');
+  assert.equal((await ag(A, '10.0.9.95', { type: 'hitman', target: 'HitA' })).body.error, 'SELF');
+  // encomenda até acertar (no máximo 3 por dia); cada uma custa o preço, acerte ou não
+  let certo = null, feitas = 0;
+  for (let i = 0; i < 3 && !certo; i++) {
+    const antes = (await A.estado()).cash;
+    r = await ag(A, '10.0.9.95', { type: 'hitman', target: 'hitb' }); assert.equal(r.status, 200, JSON.stringify(r.body)); feitas++;
+    assert.equal(r.body.me.cash, antes - 100000); assert.equal(r.body.result.price, 100000); assert.equal(r.body.result.target, 'HitB'); assert.equal(r.body.me.hitmanLeft, 3 - feitas);
+    const ev = (await get(B, '10.0.9.96', '/api/events')).list[0];
+    assert.equal(ev.k, 'hitman'); assert.equal(ev.win, r.body.result.success);
+    if (r.body.result.success) { certo = r.body.result; assert.equal(ev.by, undefined); assert.equal(JSON.stringify(ev).includes('HitA'), false); assert.equal(ev.respect, -15); assert.equal(ev.money, 3600); }
+    else assert.equal(ev.by, 'HitA');
+  }
+  const b = await B.estado();
+  if (certo) {
+    assert.equal(b.respect, 985); assert.equal(b.cash, 32_400); assert.ok(b.hospUntil > Date.now() + DESVIO);
+    assert.equal((await ag(A, '10.0.9.95', { type: 'hitman', target: 'HitB' })).body.error, feitas >= 3 ? 'HITMAN_LIMIT' : 'TARGET_HOSPITAL');
+    const jornal = (await get(B, '10.0.9.96', '/api/state')).feed || [];
+    const n = jornal.find((x) => x.k === 'hitman'); if (n) { assert.equal(n.target, 'HitB'); assert.equal(JSON.stringify(n).includes('HitA'), false); }
+  } else { assert.equal(b.respect, 1000); assert.equal(b.cash, 36_000); assert.equal((await ag(A, '10.0.9.95', { type: 'hitman', target: 'HitB' })).body.error, 'HITMAN_LIMIT'); }
+  assert.equal((await A.estado()).respect, 1000);
+});
+
 test('gangues: golpe em grupo e tareia em grupo — alinhar, falta de gente devolve tudo, contas certas, sobrevive a um reinício', async () => {
   const ips = { A: '10.0.9.60', B: '10.0.9.61', C: '10.0.9.62', V: '10.0.9.63' };
   const A = await contaNova('GolpeA', ips.A), B = await contaNova('GolpeB', ips.B), C = await contaNova('GolpeC', ips.C), V = await contaNova('GolpeV', ips.V);

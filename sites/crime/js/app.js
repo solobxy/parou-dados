@@ -104,6 +104,9 @@ function react(type, out, before, opts) {
     fx.sfx('hit');
     fx.fight(me.name, out.target.name, r.win, r.win ? (r.mode === 'mug' ? '+' + money(r.money) + ' · +' + r.respect : '+' + r.respect + ' ' + t('respect').toLowerCase()) : '−' + Math.abs(r.respect) + ' ' + t('respect').toLowerCase(), { win: t('youWon'), lose: t('youLost') });
     S.targets = null; loadTargets();
+  } else if (type === 'hitman') {
+    if (r.success) { toast(t('hmDone', { b: r.target, n: r.respLoss })); fx.sfx('crit'); fx.vibrate([20, 40, 20]); } else { toast(t('hmMissed', { b: r.target }), true); fx.sfx('fail'); }
+    S.targets = null; loadTargets();
   } else if (type === 'tableBet') fx.sfx('deal');
   else if (type !== 'train' && type !== 'tableClear') fx.sfx('buy');
   if (type === 'crime' || type === 'crimeAll') requestAnimationFrame(showReport);
@@ -253,16 +256,20 @@ const PARENT = { gang: 'city', work: 'city', news: 'city', casino: 'city', roule
 const upOf = (id) => (S.backTo && S.backTo[id]) || PARENT[id] || 'city';   // um sítio que está em duas zonas volta para a zona de onde vieste
 const tabOf = (id) => { let x = id; for (let k = 0; k < 4 && !NAV.includes(x); k++) x = upOf(x); return NAV.includes(x) ? x : 'city'; };
 const IMG = (kind, id, big) => `/img/${kind}/${id}${big ? '-g' : ''}.webp?9`;
-function go(tab) {
-  if (!PLACES[tab]) tab = 'city';
-  if (HUB[S.tab]?.some(([, ids]) => ids.includes(tab)) || (S.tab === 'fights' && (tab === 'arms' || tab === 'rank' || tab === 'gang'))) S.backTo = { ...(S.backTo || {}), [tab]: S.tab };
-  S.tab = tab; document.body.dataset.tab = tab; store.set('tab', tab);
+// o que cada sítio precisa de ir buscar ao servidor (ao entrar nele, e também quando o jogo abre já nesse sítio)
+function loadFor(tab) {
   if (tab === 'fights') { if (S.fightSeg === 'events') loadEvents(true); else { S.fightSeg = 'targets'; loadTargets(); } }
   if (tab === 'rank') loadRanking();
   if (tab === 'gang') loadGang();
   if (tab === 'club' || tab === 'putas') loadVenues();
   if (tab === 'bolsa') { S.stkSel = null; loadStocks(); }
   if (tab === 'news' || tab === 'city') loadNews();
+}
+function go(tab) {
+  if (!PLACES[tab]) tab = 'city';
+  if (HUB[S.tab]?.some(([, ids]) => ids.includes(tab)) || (S.tab === 'fights' && (tab === 'arms' || tab === 'rank' || tab === 'gang'))) S.backTo = { ...(S.backTo || {}), [tab]: S.tab };
+  S.tab = tab; document.body.dataset.tab = tab; store.set('tab', tab);
+  loadFor(tab);
   render(); window.scrollTo({ top: 0 });
   if (SLOT_OF[tab]) requestAnimationFrame(() => slotFit());
   armBack();
@@ -438,7 +445,7 @@ function screenClass() {
 
 // ---------- a cidade ----------
 // ---------- jornal da cidade: o que os outros andam a fazer ----------
-const NW_IC = { stockWin: 'cash', stockLoss: 'skull', stockBust: 'skull', air: 'cash', airLost: 'lock', cls: 'user', gangNew: 'fist', gangUp: 'empire', gangHeist: 'cash', gangHeistFail: 'lock', gangHit: 'fist', gangHitFail: 'skull', casino: 'gem', casinoLoss: 'skull', job: 'cash', crit: 'gem', spree: 'bolt', jail: 'lock', house: 'empire', lux: 'crown', beat: 'fist', mug: 'cash', fail: 'skull', sick: 'pill', lvl: 'crown', fight: 'fist' };
+const NW_IC = { hitman: 'skull', hitmanFail: 'shield', stockWin: 'cash', stockLoss: 'skull', stockBust: 'skull', air: 'cash', airLost: 'lock', cls: 'user', gangNew: 'fist', gangUp: 'empire', gangHeist: 'cash', gangHeistFail: 'lock', gangHit: 'fist', gangHitFail: 'skull', casino: 'gem', casinoLoss: 'skull', job: 'cash', crit: 'gem', spree: 'bolt', jail: 'lock', house: 'empire', lux: 'crown', beat: 'fist', mug: 'cash', fail: 'skull', sick: 'pill', lvl: 'crown', fight: 'fist' };
 const seedOf = (str) => { let x = 7; for (let i = 0; i < str.length; i++) x = (x * 31 + str.charCodeAt(i)) | 0; return Math.abs(x); };
 function newsText(e) {
   const k = e.k === 'fight' ? (e.mode === 'mug' ? 'mug' : 'beat') : e.k, C = list('crimes');
@@ -1075,11 +1082,15 @@ function screenPort() {
 function screenArms() {
   const me = S.st.me;
   const out = [pageHead('arms', t('s_arms'))];
-  for (const [kind, arr, names, lbl, folder] of [['weapon', S.cfg.weapons, list('weaponsL'), t('weapon'), 'weapons'], ['armor', S.cfg.armors, list('armorsL'), t('armor'), 'armors']]) {
-    const cur = me[kind];
+  const H = S.cfg.hitman;
+  for (const [kind, arr, names, lbl, folder] of [['weapon', S.cfg.weapons, list('weaponsL'), t('weapon'), 'weapons'], ['armor', S.cfg.armors, list('armorsL'), t('armor'), 'armors'], ['guard', S.cfg.guards || [], list('guardsL'), t('guards'), 'guards']]) {
+    const cur = me[kind] ?? -1;
+    if (!arr.length) continue;
     out.push(h('h2', { class: 'sec' }, lbl));
+    if (kind === 'guard') out.push(h('p', { class: 'small muted', style: 'margin:-4px 0 10px' }, t('guardsSub', { p: H.baseBp / 100 })));
     out.push(h('div', { class: 'shop' }, arr.map((g, i) => h('div', { class: 'item' + (i > cur + 1 ? ' dim' : '') }, art(folder, i),
-      h('div', { class: 'nm' }, names[i]), h('div', { class: 'small c-resp' }, '+' + g.bp / 100 + '%'),
+      h('div', { class: 'nm' }, names[i]), h('div', { class: 'small c-resp' }, '+' + g.bp / 100 + '%' + (kind === 'guard' ? ' ' + t('guardDef') : '')),
+      kind === 'guard' ? h('div', { class: 'small muted' }, t('guardHit', { p: Math.max(H.minBp, H.baseBp - g.block) / 100 })) : null,
       i === cur ? h('div', { class: 'tagline c-cash' }, t('inUse')) : i < cur ? h('div', { class: 'tagline muted' }, t('owned'))
         : h('button', { class: 'btn buy block', disabled: i !== cur + 1 || me.cash + me.bank < g.price, on: { click: (e) => act('gear', { kind, idx: i }, { el: e.currentTarget }) } }, t('buyFor', { m: moneyShort(g.price) }))))));
   }
@@ -1212,6 +1223,19 @@ function screenAlley() {
 }
 
 // ---------- lutas e ranking ----------
+// assassino a soldo: mostra-se o preço, a pontaria e o que acontece, antes de se pagar
+function hitmanSheet(x) {
+  const me = S.st.me, H = S.cfg.hitman, liquid = me.cash + me.bank, pc = (bp) => (bp / 100).toString().replace('.', lang() === 'pt' ? ',' : '.');
+  const why = x.hw || (liquid < x.hp ? 'NO_MONEY' : null);
+  const li = (ic, txt) => h('li', null, icon(ic), h('span', null, txt));
+  const close = sheet(h('div', { class: 'stack' }, h('h2', null, icon('skull'), ' ', t('hmT')), h('p', { class: 'muted' }, t('hmSub', { b: x.name })),
+    h('div', { class: 'row sp' }, h('span', { class: 'muted' }, t('hmPrice')), h('b', { class: 'num c-cash' }, money(x.hp))),
+    h('div', { class: 'row sp' }, h('span', { class: 'muted' }, t('hmAim') + (x.hc < H.baseBp ? ' · ' + t('hmGuards') : '')), h('b', { class: 'num ' + chanceCls(x.hc) }, pct(x.hc))),
+    h('ul', { class: 'vperks' }, li('skull', t('hmOk', { h: Math.round(H.hospMs / 60000) + ' min', r: pc(H.respBp), c: pc(H.cashBp) })), li('user', t('hmAnon')), li('shield', t('hmFail'))),
+    h('p', { class: 'small muted' }, t('hmLeft', { n: me.hitmanLeft ?? H.perDay, x: H.perDay })),
+    why ? h('p', { class: 'small c-red' }, errText(why)) : null,
+    h('button', { class: 'btn danger block big', disabled: !!why, on: { click: (e) => { const el = e.currentTarget; withShield(async (drop) => { const o = await act('hitman', { target: x.name, drop }, { el }); if (o) close(); }); } } }, t('hmGo', { m: moneyShort(x.hp) }))));
+}
 function screenFights() {
   const me = S.st.me, n = now();
   const out = [pageHead('fights', t('fightsSub'))];
@@ -1233,7 +1257,8 @@ function screenFights() {
       h('div', { class: 'pct ' + chanceCls(x.chance) }, pct(x.chance)),
       h('div', { class: 'acts' },
         h('button', { class: 'btn danger sm', disabled: !!b, on: { click: (e) => { const el = e.currentTarget; withShield((drop) => act('attack', { target: x.name, mode: 'beat', drop }, { el })); } } }, icon('fist'), t('beat') + ' · +' + x.gain),
-        h('button', { class: 'btn sm', disabled: !!b, on: { click: (e) => { const el = e.currentTarget; withShield((drop) => act('attack', { target: x.name, mode: 'mug', drop }, { el })); } } }, icon('cash'), t('rob') + ' · ~' + moneyShort(x.loot)))))));
+        h('button', { class: 'btn sm', disabled: !!b, on: { click: (e) => { const el = e.currentTarget; withShield((drop) => act('attack', { target: x.name, mode: 'mug', drop }, { el })); } } }, icon('cash'), t('rob') + ' · ~' + moneyShort(x.loot)),
+        x.hp && x.hw !== 'LOW_LEVEL' ? h('button', { class: 'btn ghost sm hmb', on: { click: () => hitmanSheet(x) } }, icon('skull'), t('hmBtn', { m: moneyShort(x.hp) })) : null)))));
     out.push(h('button', { class: 'btn ghost block', style: 'margin-top:12px', on: { click: () => { S.targets = null; render(); loadTargets(); } } }, icon('refresh'), t('retry')));
   } else if (!S.events) out.push(h('p', { class: 'muted' }, t('loading')));
   else if (!S.events.length) out.push(h('div', { class: 'note' }, h('p', { class: 'muted' }, t('noEvents'))));
@@ -1259,6 +1284,9 @@ function eventRow(e) {
   if (e.k === 'gangBail' || e.k === 'gangMedic') return h('div', { class: 'card row' }, h('span', { class: 'c-cash' }, icon(e.k === 'gangBail' ? 'lock' : 'pill')),
     h('div', { class: 'grow' }, h('div', null, t(e.k === 'gangBail' ? 'evBail' : 'evMedic', { who: e.by, m: money(e.money) })), h('div', { class: 'small muted' }, dur(now() - e.t))));
   if (e.k === 'gop') return opResult(e, e.out || e.cancelled ? 0 : e.respect, e.t);
+  if (e.k === 'hitman') return h('div', { class: 'card row' }, h('span', { class: e.win ? 'c-red' : 'c-cash' }, icon(e.win ? 'skull' : 'shield')),
+    h('div', { class: 'grow' }, h('div', null, e.win ? t('evHitman', { m: money(e.money || 0) }) : t('evHitmanFail', { who: e.by })), h('div', { class: 'small muted' }, dur(now() - e.t))),
+    e.respect ? h('b', { class: 'c-red' }, String(e.respect)) : null);
   if (e.crew) txt = t(e.win ? 'evCrew' : 'evCrewLost', { who: e.by, n: e.crew });
   else if (e.mode === 'mug') txt = e.win ? t('evMug', { who: e.by, m: money(e.money) }) : t('evMugLost', { who: e.by });
   else txt = e.win ? t('evBeat', { who: e.by }) : t('evBeatLost', { who: e.by });
@@ -2348,6 +2376,7 @@ async function start() {
   S.st = st; S.stAt = now(); if (st.feed) S.feed = st.feed;
   $main = null;
   S.tab = store.get('tab', 'city');
+  if (st.me) loadFor(S.tab);   // abrir o jogo num sítio guardado (lutas, ranking, bolsa…) também vai buscar os dados dele
   if (SLOT_OF[S.tab]) setTimeout(() => slotFit(), 400);
   S.backArmed = false; try { if (history.state?.crime) history.replaceState(null, ''); } catch { /* sem histórico */ }
   render();

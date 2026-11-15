@@ -480,6 +480,73 @@ test('negócios da gangue: sair devolve metade do investido e o que estava por r
   ms.forEach((m, j) => { const tot = pos[j] + E.gangBizView(m, t).reduce((x, y) => x + y.stored, 0); assert.ok(tot <= teto[j] + 1, `sócio ${j}: recebeu ${tot}, teto ${teto[j]}`); assert.ok(tot >= 0); });
 });
 
+// ---------- guardas e assassino a soldo ----------
+test('guardas: compram-se para cima, dão a defesa que dizem e baixam a pontaria do assassino pelo valor que dizem', () => {
+  const G = CFG.guards, H = CFG.hitman, p = mk(), a = mk();
+  assert.equal(G.length, 6); assert.equal(p.guard, -1);
+  p.stats = { F: 100, T: 1000, I: 10, C: 10 }; a.stats = { F: 1000, T: 10, I: 10, C: 10 };
+  const d0 = E.defensePower(p, NOW), c0 = E.attackChanceBp(a, p, NOW);
+  assert.equal(E.hitmanChanceBp(p), H.baseBp);
+  let gasto = 0;
+  for (let i = 0; i < G.length; i++) {
+    const cash = p.cash, r = E.buyGear(p, NOW, W, 'guard', i); gasto += G[i].price;
+    assert.equal(r.price, G[i].price); assert.equal(p.cash, cash - G[i].price); assert.equal(p.guard, i);
+    assert.equal(E.defensePower(p, NOW), Math.floor((d0 * (10000 + G[i].bp)) / 10000));
+    assert.equal(E.hitmanChanceBp(p), Math.max(H.minBp, H.baseBp - G[i].block));
+    if (i) assert.ok(G[i].bp > G[i - 1].bp && G[i].block > G[i - 1].block && G[i].price > G[i - 1].price);
+  }
+  assert.ok(E.attackChanceBp(a, p, NOW) < c0);
+  assert.equal(E.hitmanChanceBp(p), 2000);                                  // com a melhor escolta, o assassino acerta 1 em 5
+  assert.throws(() => E.buyGear(p, NOW, W, 'guard', 2), code('ALREADY_BETTER'));
+  assert.throws(() => E.buyGear(p, NOW, W, 'guard', 6), code('NO_GEAR'));
+  assert.deepEqual(E.checkInvariants(p), []);
+});
+
+test('assassino a soldo: quem paga só perde o preço; o alvo perde 1,5% do respeito, 10% da mão e fica 1 h no hospital; pontaria como anunciada', () => {
+  const H = CFG.hitman, t0 = START + 3 * T.DAY;
+  const par = (guard = -1) => { const a = mk(), d = mk(); for (const x of [a, d]) { E.touch(x, t0); setResp(x, 2000); x.shieldUntil = 0; } a.cash = 1e9; a.bank = 0; d.cash = 50000; d.bank = 7000; d.guard = guard; return [a, d]; };
+  // preço e resultado, com sorte e com azar
+  let [a, d] = par();
+  assert.equal(E.hitmanPrice(d), 200000); assert.equal(E.canHitman(a, d, t0, W), null); assert.equal(E.hitmanLeft(a, t0), 3);
+  let r = E.hitman(a, d, t0, W, always);
+  assert.deepEqual([r.success, r.price, r.chanceBp, r.respLoss, r.cashLoss], [true, 200000, 9000, 30, 5000]);
+  assert.equal(a.cash, 1e9 - 200000); assert.equal(a.respect, 2000);                        // nem respeito nem dinheiro para quem paga
+  assert.equal(d.respect, 1970); assert.equal(d.cash, 45000); assert.equal(d.bank, 7000); assert.equal(d.hospUntil, t0 + H.hospMs); assert.equal(d.hmSafe, t0 + H.immuneMs);
+  assert.equal(E.canHitman(a, d, t0 + 1, W), 'TARGET_HOSPITAL');
+  assert.equal(E.canHitman(a, d, t0 + 3 * T.HOUR, W), 'HITMAN_SAFE');                        // 12 h a salvo de outro assassino, seja de quem for
+  const outro = mk(); E.touch(outro, t0); setResp(outro, 2000); outro.shieldUntil = 0; assert.equal(E.canHitman(outro, d, t0 + 3 * T.HOUR, W), 'HITMAN_SAFE');
+  assert.equal(E.canHitman(a, d, t0 + H.immuneMs, W), null);
+  [a, d] = par(); r = E.hitman(a, d, t0, W, never);
+  assert.deepEqual([r.success, r.price], [false, 200000]); assert.equal(a.cash, 1e9 - 200000);
+  assert.equal(d.respect, 2000); assert.equal(d.cash, 50000); assert.equal(d.hospUntil, 0); assert.equal(d.hmSafe, 0);   // falhou: o alvo fica igual e sem proteção nova
+  // três por dia, e dá para encomendar da cama do hospital
+  a.hospUntil = t0 + T.HOUR;
+  r = E.hitman(a, d, t0 + 1000, W, never); r = E.hitman(a, d, t0 + 2000, W, never);
+  assert.equal(E.hitmanLeft(a, t0 + 3000), 0); assert.throws(() => E.hitman(a, d, t0 + 3000, W, always), code('HITMAN_LIMIT'));
+  assert.equal(E.hitmanLeft(a, t0 + 24 * T.HOUR + 1), 1);
+  // quem não pode: nível baixo, mesma gangue, jogador novo, alvo fraco de mais, sem dinheiro — e nada muda
+  const recusa = (prep, cod) => { const [x, y] = par(); prep(x, y); const ax = JSON.stringify(x), ay = JSON.stringify(y); assert.throws(() => E.hitman(x, y, t0, W, always), code(cod)); E.touch(y, t0); assert.equal(JSON.stringify(x), ax); assert.equal(JSON.stringify(y), ay); };
+  recusa((x) => { x.respect = 10; x.peakRespect = 10; }, 'LOW_LEVEL');
+  recusa((x, y) => { E.gangSet(x, 'g', 1, 0); E.gangSet(y, 'g', 1, 0); }, 'SAME_GANG');
+  recusa((x, y) => { y.shieldUntil = t0 + T.HOUR; }, 'TARGET_NEW');
+  recusa((x) => { x.shieldUntil = t0 + T.HOUR; }, 'YOU_ARE_NEW');
+  recusa((x, y) => { y.respect = 400; }, 'TARGET_TOO_WEAK');
+  recusa((x, y) => { y.protectUntil = t0 + T.HOUR; }, 'TARGET_PROTECTED');
+  recusa((x, y) => { y.jailUntil = t0 + T.HOUR; }, 'TARGET_JAIL');
+  recusa((x) => { x.cash = 100; x.bank = 0; }, 'NO_MONEY');
+  { const x = mk(); E.touch(x, t0); assert.throws(() => E.hitman(x, x, t0, W, always), code('SELF')); }
+  // quem tem escudo de jogador novo só encomenda se aceitar perdê-lo
+  { const [x, y] = par(); x.shieldUntil = t0 + T.HOUR; r = E.hitman(x, y, t0, W, always, true); assert.equal(r.success, true); assert.equal(x.shieldUntil, 0); }
+  // pontaria: 90% sem guardas, 50% com guarda-costas, 20% com escolta (20 000 encomendas cada)
+  for (const [guard, esperado] of [[-1, 0.9], [3, 0.5], [5, 0.2]]) {
+    const rng = seededRng(700 + guard); let ok = 0; const N = 20000;
+    for (let i = 0; i < N; i++) { const [x, y] = par(guard); if (E.hitman(x, y, t0, W, rng).success) ok++; }
+    perto(ok / N, esperado, 0.012, 'pontaria com guarda ' + guard);
+  }
+  // o hospital do assassino conta para o limite de 4 idas em 24 h, como as tareias
+  { const [x, y] = par(); y.hospTimes = [t0 - 3000, t0 - 2000, t0 - 1000]; E.hitman(x, y, t0, W, always); assert.ok(y.capUntil > t0); }
+});
+
 test('casino: aposta mínima, máxima pelo nível, só dinheiro na mão; aposta recusada não mexe em nada', () => {
   const p = cas(500); p.bank = 1e6;
   const antes = structuredClone(p);

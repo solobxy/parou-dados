@@ -20,7 +20,7 @@ const SECURE = process.env.COOKIE_INSEGURO ? '' : '; Secure';
 const [fy, fm, fd] = (process.env.PRIMEIRA_RONDA || '2026-11-13').split('-').map(Number);
 const FIRST = { y: fy, m: fm, d: fd };
 const rng = cryptoRng();
-const VERSAO = 37;   // sobe quando o servidor muda, para se confirmar de fora que a versão nova já está a correr
+const VERSAO = 38;   // sobe quando o servidor muda, para se confirmar de fora que a versão nova já está a correr
 const ATOS_3S = +(process.env.ATOS_3S || 15), ATOS_MIN = +(process.env.ATOS_MIN || 400); // ações por conta: 15 em 3 s, 400 por minuto
 
 // ---------- relógio que nunca anda para trás ----------
@@ -260,7 +260,7 @@ function vista(p, now) {
     jailUntil: p.jailUntil, jailTier: p.jailTier, bail: E.bailCost(p, now),
     hospUntil: p.hospUntil, medic: E.medicCost(p, now),
     protectUntil: p.protectUntil, capUntil: p.capUntil, shieldUntil: p.shieldUntil,
-    weapon: p.weapon, armor: p.armor, luxuries: p.luxuries, luxuryPrice: E.luxuryPrice(p),
+    weapon: p.weapon, armor: p.armor, guard: p.guard, hitmanLeft: E.hitmanLeft(p, now), hmSafe: p.hmSafe, luxuries: p.luxuries, luxuryPrice: E.luxuryPrice(p),
     attack: E.attackPower(p, now), defense: E.defensePower(p, now),
     crimes: CFG.crimes.map((c, k) => ({ chance: E.crimeChanceBp(p, k, now), unlocked: E.crimeUnlocked(p, k) })),
     sick: p.sick, cure: E.cureCost(p), hookers: CFG.hookers.list.map((_, i) => E.hookerPrice(p, i, now)), hkUses: E.hookerUses(p, now), hkSteps: CFG.hookers.list.map((_, i) => E.hookerSteps(p, i, now)),
@@ -278,7 +278,7 @@ function cfgPublica() {
   return {
     energy: CFG.energy, addiction: CFG.addiction, train: CFG.train, crimes: CFG.crimes, drugs: CFG.drugs,
     biz: CFG.biz.map(({ id, price, perH, resp, stat, raid, toBank }) => ({ id, price, perH, resp, stat, raid, toBank })),
-    bizMax: CFG.bizMax, storageMs: CFG.storageMs, port: CFG.port, air: CFG.air, goods: CFG.goods, venue: CFG.venue, detox: CFG.detox, stocks: CFG.stocks, weapons: CFG.weapons, armors: CFG.armors,
+    bizMax: CFG.bizMax, storageMs: CFG.storageMs, port: CFG.port, air: CFG.air, goods: CFG.goods, venue: CFG.venue, detox: CFG.detox, stocks: CFG.stocks, weapons: CFG.weapons, armors: CFG.armors, guards: CFG.guards, hitman: CFG.hitman,
     pvp: CFG.pvp, bank: CFG.bank, luxury: CFG.luxury, levels: CFG.levels, crit: CFG.crit, unlockBp: CFG.unlockBp,
     bustBp: CFG.bustBp, crimeAllMax: CFG.crimeAllMax, casino: { minBet: CFG.casino.minBet, buyMaxMult: CFG.casino.buyMaxMult, red: CFG.casino.red, dice: CFG.casino.dice, wheel: { segs: CFG.casino.wheel.segs, spots: CFG.casino.wheel.spots }, slots: Object.fromEntries(Object.entries(CFG.casino.slots).map(([k, g]) => [k, { kind: g.kind, cols: g.cols, rows: g.rows, min: g.min, nsym: g.nsym, trig: g.trig, pay: g.pay, scatPay: g.scatPay, free: g.free, fs: g.fs, retrig: g.retrig, buy: g.buy, superBuy: g.superBuy, max: g.max, accFree: g.accFree, accAll: g.accAll, orbBase: g.orbBase }])) }, gang: CFG.gang, classes: CFG.classes, classChange: CFG.classChange, avatars: CFG.avatars, hookers: CFG.hookers, house: CFG.house, mastery: CFG.mastery, missions: CFG.missions.length, start: CFG.start,
     round: { playDays: CFG.round.playDays, noPvpMs: CFG.round.noPvpMs },
@@ -836,7 +836,7 @@ function agir(conta, corpo, now) {
     case 'airCollect': r = E.airCollect(p, now, world, rng, a.keep === true); break;
     case 'deposit': r = E.deposit(p, now, world, int(a.amount)); break;
     case 'withdraw': r = E.withdraw(p, now, world, int(a.amount)); break;
-    case 'gear': r = E.buyGear(p, now, world, a.kind === 'armor' ? 'armor' : 'weapon', int(a.idx)); break;
+    case 'gear': r = E.buyGear(p, now, world, a.kind === 'armor' ? 'armor' : a.kind === 'guard' ? 'guard' : 'weapon', int(a.idx)); break;
     case 'luxury': r = E.buyLuxury(p, now, world); break;
     case 'attack': {
       const nome = String(a.target || '').toLowerCase();
@@ -845,6 +845,21 @@ function agir(conta, corpo, now) {
       alvo = jogadores.get(c.id);
       alvoResp0 = alvo.respect;
       r = E.attack(p, alvo, now, world, a.mode === 'mug' ? 'mug' : 'beat', rng, a.drop === true);
+      break;
+    }
+    case 'hitman': {
+      // assassino a soldo: o alvo fica a saber que foi um assassino; quem pagou só se sabe quando falha
+      const c = q.contaPorNome.get(String(a.target || '').toLowerCase());
+      if (!c || !jogadores.has(c.id)) throw new E.GameError('NO_TARGET');
+      const o = jogadores.get(c.id), r0 = o.respect, quem = nomeDe(p.id), b = nomeDe(o.id);
+      r = E.hitman(p, o, now, world, rng, a.drop === true);
+      ctx.outros.push(o);
+      ctx.ops.push(() => {
+        evento(o.id, now, r.success ? { k: 'hitman', win: true, respect: -r.respLoss, money: r.cashLoss } : { k: 'hitman', win: false, by: quem });
+        if (r.success) contarDia(now, o.id, { resp: o.respect - r0, beaten: 1 });
+      });
+      ctx.depois.push(() => noticia(now, r.success ? { k: 'hitman', name: '', target: b } : { k: 'hitmanFail', name: quem, target: b }));
+      r = { ...r, target: b };
       break;
     }
     default:
@@ -916,6 +931,7 @@ function alvos(conta, now, w) {
     lista.push({
       name: nomeDe(d.id), level: E.level(d), respect: d.respect, av: d.av || 0, cls: d.cls || '', tag: tagDe(d.id),
       chance: E.attackChanceBp(me, d, now), gain: E.expectedGain(me, d, now), loot: E.mugValue(me, d, now),
+      hp: E.hitmanPrice(d), hc: E.hitmanChanceBp(d), hw: E.canHitman({ ...me, shieldUntil: 0 }, d, now, { start: w.start, playEnd: w.playEnd }),
     });
   }
   // os mais interessantes primeiro: mais respeito esperado

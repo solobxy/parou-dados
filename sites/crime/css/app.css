@@ -1291,3 +1291,6 @@ h1.slogo { margin: 0; }
 .gbz .gbr { display: grid; gap: 8px; padding: 12px; margin: 0 -4px; border-radius: 10px; background: var(--s2); }
 .gbz .gbr.off { opacity: .6; }
 .gbz .gbr .btn { min-height: 44px; padding: 0 10px; white-space: nowrap; }
+
+/* assassino a soldo: terceira ação de cada alvo, mais discreta do que bater e assaltar */
+.tgt .acts .hmb { grid-column: 1 / -1; justify-content: center; color: var(--tx2); }

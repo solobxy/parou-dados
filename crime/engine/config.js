@@ -331,6 +331,23 @@ export const CFG = {
     { id: 'blindado', price: 650000, bp: 12000 },
     { id: 'titanio', price: 3800000, bp: 17000 },
   ],
+  // Guardas: compram-se sempre para cima, como as armas. bp: defesa a mais nas lutas (soma-se aos bónus da casa e da gangue).
+  // block: quanto tiram à pontaria de um assassino a soldo (ver hitman).
+  guards: [
+    { id: 'chihuahua', price: 600, bp: 300, block: 500 },
+    { id: 'pitbull', price: 4000, bp: 800, block: 1500 },
+    { id: 'porteiro', price: 25000, bp: 1500, block: 2500 },
+    { id: 'guardacostas', price: 150000, bp: 2500, block: 4000 },
+    { id: 'comando', price: 900000, bp: 3500, block: 5500 },
+    { id: 'escolta', price: 5000000, bp: 5000, block: 7000 },
+  ],
+  // Assassino a soldo: paga-se para mandar alguém para o hospital sem dar a cara e sem gastar stamina (dá para encomendar da cama do hospital).
+  // Ninguém perde a conta. Se acerta: o alvo fica 1 h no hospital, perde 1,5% do respeito e 10% do dinheiro na mão (não vai para ninguém),
+  // e fica 12 h a salvo de outros assassinos. Quem paga não ganha respeito nem dinheiro: é só para atrasar um rival.
+  // Pontaria: 90% menos o «block» dos guardas do alvo (no mínimo 15%). Se falha, o dinheiro perde-se e o alvo fica a saber quem pagou.
+  // Travões: preço = 100 por ponto de respeito do alvo (mínimo 5000), 3 encomendas por dia, só a partir do nível 5, e as regras das lutas
+  // (alvo com pelo menos 25% do teu respeito, nada de jogadores novos, da tua gangue, no hospital, presos ou protegidos).
+  hitman: { minLevel: 5, priceMin: 5000, pricePerRespect: 100, baseBp: 9000, minBp: 1500, hospMs: 60 * MIN, respBp: 150, cashBp: 1000, immuneMs: 12 * HOUR, perDay: 3 },
 
   pvp: {
     energy: 20,

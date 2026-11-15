@@ -31,7 +31,7 @@ export function newPlayer(id, now, world, opts = {}) {
     hits: new Map(),
     biz: CFG.biz.map(() => ({ n: 0, stored: 0, rem: 0, t: now })),
     port: [], air: null, stock: CFG.drugs.map(() => 0), club: null, bro: null, stk: CFG.stocks.list.map(() => ({ n: 0, cost: 0, gen: 0 })),
-    weapon: -1, armor: -1,
+    weapon: -1, armor: -1, guard: -1, hmT: [], hmSafe: 0,
     luxuries: 0,
     gang: null, gb: null, gangLeft: 0, gh: [], gbz: gbzNew(),
     detoxT: [],
@@ -78,6 +78,9 @@ function migrate(p) {
   if (typeof p.gang !== 'string') p.gang = null;
   if (!p.gang || !p.gb || typeof p.gb !== 'object') p.gb = null;
   if (!Number.isSafeInteger(p.gangLeft)) p.gangLeft = 0;
+  if (!Number.isInteger(p.guard)) p.guard = -1;
+  if (!Array.isArray(p.hmT)) p.hmT = [];
+  if (!Number.isSafeInteger(p.hmSafe)) p.hmSafe = 0;
   if (!Array.isArray(p.gbz) || p.gbz.length !== CFG.gang.biz.length) p.gbz = gbzNew();
   if (!Array.isArray(p.gh)) p.gh = [];
 }
@@ -1115,8 +1118,8 @@ export function buyLuxury(p, now, world) {
 // ---------- armas e proteções ----------
 
 export function buyGear(p, now, world, kind, idx) {
-  if (kind !== 'weapon' && kind !== 'armor') fail('NO_GEAR');
-  const list = kind === 'weapon' ? CFG.weapons : CFG.armors;
+  if (kind !== 'weapon' && kind !== 'armor' && kind !== 'guard') fail('NO_GEAR');
+  const list = kind === 'weapon' ? CFG.weapons : kind === 'armor' ? CFG.armors : CFG.guards;
   if (!Number.isInteger(idx) || !list[idx]) fail('NO_GEAR');
   begin(p, now, world);
   if (idx <= p[kind]) fail('ALREADY_BETTER');
@@ -1127,7 +1130,7 @@ export function buyGear(p, now, world, kind, idx) {
 
 const gearBp = (list, idx) => (idx >= 0 ? list[idx].bp : 0);
 export function attackPower(p, now) { return up(Math.floor((effStat(p, 'F', now) * (10000 + gearBp(CFG.weapons, p.weapon))) / 10000), (klass(p).atkBp || 0) + gbp(p, 'atk')); }
-export function defensePower(p, now) { return up(Math.floor((effStat(p, 'T', now) * (10000 + gearBp(CFG.armors, p.armor))) / 10000), (klass(p).defBp || 0) + huBp(p, 1) + gbp(p, 'def')); }
+export function defensePower(p, now) { return up(Math.floor((effStat(p, 'T', now) * (10000 + gearBp(CFG.armors, p.armor))) / 10000), (klass(p).defBp || 0) + huBp(p, 1) + gbp(p, 'def') + gearBp(CFG.guards, p.guard)); }
 
 // ---------- ataques ----------
 
@@ -1166,6 +1169,46 @@ export function canAttack(a, d, now, world, drop = false) {
 }
 
 export function attackChanceBp(a, d, now) { return chanceBp(attackPower(a, now), defensePower(d, now)); }
+
+// ---------- assassino a soldo ----------
+export function hitmanPrice(d) { const H = CFG.hitman; return Math.max(H.priceMin, d.respect * H.pricePerRespect); }
+export function hitmanChanceBp(d) { const H = CFG.hitman; return Math.max(H.minBp, H.baseBp - (d.guard >= 0 ? CFG.guards[d.guard].block : 0)); }
+export function hitmanLeft(a, now) { return Math.max(0, CFG.hitman.perDay - a.hmT.filter((t) => t > now - CFG.pvp.windowMs).length); }
+// porque não se pode encomendar (ou null). Quem encomenda pode estar preso ou no hospital, e não gasta stamina.
+export function canHitman(a, d, now, world, drop = false) {
+  const P = CFG.pvp, H = CFG.hitman;
+  if (a === d || a.id === d.id) return 'SELF';
+  if (a.gang && a.gang === d.gang) return 'SAME_GANG';
+  if (now - world.start < CFG.round.noPvpMs) return 'NO_PVP_YET';
+  if (level(a) < H.minLevel) return 'LOW_LEVEL';
+  if (a.shieldUntil > now && !drop) return 'YOU_ARE_NEW';
+  if (hitmanLeft(a, now) <= 0) return 'HITMAN_LIMIT';
+  if (d.shieldUntil > now) return 'TARGET_NEW';
+  if (d.hospUntil > now) return 'TARGET_HOSPITAL';
+  if (d.jailUntil > now) return 'TARGET_JAIL';
+  if (d.protectUntil > now || d.capUntil > now) return 'TARGET_PROTECTED';
+  if (d.hmSafe > now) return 'HITMAN_SAFE';
+  if (d.respect * 10000 < a.respect * P.minTargetBp) return 'TARGET_TOO_WEAK';
+  return null;
+}
+export function hitman(a, d, now, world, rng, drop = false) {
+  begin(a, now, world, { allowBusy: true });
+  touch(d, now);
+  const why = canHitman(a, d, now, world, drop);
+  if (why) fail(why, why === 'LOW_LEVEL' ? { need: CFG.hitman.minLevel } : undefined);
+  const H = CFG.hitman, price = hitmanPrice(d), bp = hitmanChanceBp(d);
+  pay(a, price);                                   // paga-se adiantado: se falhar, o dinheiro não volta
+  if (a.shieldUntil > now) a.shieldUntil = 0;      // só chega aqui com escudo quem aceitou perdê-lo
+  a.protectUntil = 0;                              // quem manda bater perde a proteção, como quem ataca
+  pruneT(a.hmT, now, CFG.pvp.windowMs); a.hmT.push(now);
+  if (!rng.chance(bp)) return { ok: true, success: false, price, chanceBp: bp };
+  const respLoss = Math.min(d.respect, Math.floor((d.respect * H.respBp) / 10000)), cashLoss = Math.floor((d.cash * H.cashBp) / 10000);
+  addRespect(d, -respLoss, now);
+  d.cash -= cashLoss;
+  hospitalize(d, now, H.hospMs, true);
+  d.hmSafe = now + H.immuneMs;
+  return { ok: true, success: true, price, chanceBp: bp, respLoss, cashLoss, hospUntil: d.hospUntil };
+}
 
 function priorWins(a, d, now) {
   const arr = a.hits.get(d.id);
@@ -1774,7 +1817,7 @@ function missionHave(p, type) {
     case 'level': return level(p);
     case 'tier': { let t = 0; for (let k = 0; k < p.wk.length; k++) if (p.wk[k] > 0) t = k + 1; return t; }
     case 'stars': { let s = 0; for (let k = 0; k < p.wk.length; k++) s += masteryStars(p, k); return s; }
-    case 'gear': return (p.weapon >= 0 ? 1 : 0) + (p.armor >= 0 ? 1 : 0);
+    case 'gear': return (p.weapon >= 0 ? 1 : 0) + (p.armor >= 0 ? 1 : 0);   // os guardas não contam para este objetivo (pede 2: arma e proteção)
     case 'biz': return p.biz.reduce((s, b) => s + b.n, 0);
     case 'lux': return p.luxuries;
     default: return 0;
@@ -1827,6 +1870,8 @@ export function checkInvariants(p) {
   if (p.energy > CFG.energy.max) bad.push(`energy>${CFG.energy.max}`);
   if (p.addiction > addictionCap(p)) bad.push('addiction>cap');
   if (p.peakRespect < p.respect) bad.push('peak<respect');
+  if (!Number.isInteger(p.guard) || p.guard < -1 || p.guard >= CFG.guards.length) bad.push('guard');
+  if (!Array.isArray(p.hmT) || p.hmT.length > CFG.hitman.perDay || p.hmT.some((t) => !Number.isSafeInteger(t)) || !Number.isSafeInteger(p.hmSafe) || p.hmSafe < 0) bad.push('hitman');
   if ((p.gang === null) !== (p.gb === null)) bad.push('gang/gb');
   if (!Array.isArray(p.gbz) || p.gbz.length !== CFG.gang.biz.length) bad.push('gang biz');
   else p.gbz.forEach((s, k) => {
