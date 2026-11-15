@@ -645,7 +645,7 @@ function screenClub() {
   const more = (S.cfg.classes.find((c) => c.id === me.cls) || {}).fxMoreBp || 0;
   const mine = stockRows(me, b, true); if (mine) out.push(h('h2', { class: 'sec' }, t('clMine')), mine);
   const pv = playerClubs(me, L, b); if (pv.good) out.push(...pv, h('h2', { class: 'sec' }, t('p_club')));
-  out.push(h('div', { class: 'shop', style: 'margin-top:12px' }, S.cfg.drugs.map((g, d) => {
+  out.push(h('div', { class: 'shop', style: 'margin-top:12px' }, S.cfg.drugs.map((g, d) => [g, d]).sort((x, y) => x[0].price - y[0].price).map(([g, d]) => {
     const price = me.drugPrices[d];
     const ok = (g.fx || L.energy + g.e <= max) && L.vice + g.a <= me.addictionCap && me.cash + me.bank >= price && !b;
     return h('div', { class: 'item' }, art('drugs', g.id),
@@ -667,7 +667,7 @@ function screenPutas() {
   if (me.sick) out.push(h('div', { class: 'note', style: 'margin-bottom:10px' }, h('h3', { class: 'c-red' }, t('sickTitle')), h('p', null, t('sickSub', { p: H.sickCutBp / 100 })),
     h('button', { class: 'btn pri', on: { click: () => go('hosp') } }, t('goHosp'))));
   const pv = playerBros(me, L, b); if (pv.good) out.push(...pv, h('h2', { class: 'sec' }, t('brCity')));
-  out.push(h('div', { class: 'shop' }, H.list.map((g, i) => {
+  out.push(h('div', { class: 'shop' }, H.list.map((g, i) => [g, i]).sort((x, y) => x[0].tier - y[0].tier || x[0].min - y[0].min).map(([g, i]) => {
     const price = me.hookers[i];
     const ok = !b && !me.sick && L.energy < S.cfg.energy.max && me.cash + me.bank >= price;
     return h('div', { class: 'item' }, art('putas', g.id),
@@ -766,7 +766,7 @@ function screenMyBro() {
     : h('div', { class: 'card vc' }, h('p', { class: 'muted' }, t('mbNoGirls'))));
   if (v.girls.length < v.rooms) {
     out.push(h('h2', { class: 'sec' }, t('mbHire')));
-    out.push(h('div', { class: 'shop' }, H.map((g, i) => { const cost = V.bro.hire[g.tier]; return h('div', { class: 'item' }, art('putas', g.id),
+    out.push(h('div', { class: 'shop' }, H.map((g, i) => [g, i]).sort((x, y) => x[0].tier - y[0].tier || x[0].min - y[0].min).map(([g, i]) => { const cost = V.bro.hire[g.tier]; return h('div', { class: 'item' }, art('putas', g.id),
       h('div', { class: 'nm' }, list('hookers')[i]), h('div', { class: 'small muted' }, t('hk_t' + g.tier)),
       h('div', { class: 'small c-cash num' }, '+' + moneyShort(rate(g)) + t('perHour')),
       h('button', { class: 'btn buy block', disabled: !!b || me.cash + me.bank < cost, on: { click: (e) => act('broHire', { i }, { el: e.currentTarget }) } }, t('buyFor', { m: moneyShort(cost) }))); })));

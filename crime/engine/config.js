@@ -72,6 +72,13 @@ export const CFG = {
     { id: 'coca', e: 30, a: 3, price: 1500, fx: [{ k: 'C', bp: 1500, ms: 15 * MIN }, { k: 'biz', bp: 1000, ms: 15 * MIN }] },
     { id: 'cristal', e: 36, a: 3, price: 4000, fx: [{ k: 'F', bp: 2000, ms: 15 * MIN }] },
     { id: 'heroina', e: 40, a: 3, price: 8000, fx: [{ k: 'T', bp: 2500, ms: 20 * MIN }] },
+    // juntas mais tarde: ficam no fim da lista para os armazéns já guardados não trocarem de droga (o ecrã mostra-as por preço)
+    { id: 'absinto', e: 7, a: 1, price: 15 },
+    { id: 'poppers', e: 6, a: 1, price: 40, fx: [{ k: 'loot', bp: 800, ms: 5 * MIN }] },
+    { id: 'haxixe', e: 14, a: 2, price: 60, fx: [{ k: 'bust', bp: 3500, ms: 12 * MIN }] },
+    { id: 'ketamina', e: 26, a: 3, price: 800, fx: [{ k: 'bust', bp: 4000, ms: 15 * MIN }] },
+    { id: 'crack', e: 34, a: 4, price: 2500, fx: [{ k: 'F', bp: 2500, ms: 10 * MIN }, { k: 'loot', bp: 1000, ms: 10 * MIN }] },
+    { id: 'oxi', e: 32, a: 3, price: 5000, fx: [{ k: 'T', bp: 2000, ms: 20 * MIN }] },
   ],
   // efeitos temporários: F, I, C, T sobem a stat; loot = saque dos golpes; biz = recolhas dos negócios; bust = menos prisão ao falhar
   fxKinds: ['F', 'I', 'C', 'T', 'loot', 'biz', 'bust'],
@@ -254,6 +261,13 @@ export const CFG = {
       { id: 'anastasia', tier: 3, e: 95, min: 3000, valueBp: 4100, sickBp: 15 },
       { id: 'isabella', tier: 3, e: 100, min: 4500, valueBp: 4400, sickBp: 10 },
       { id: 'celeste', tier: 3, e: 100, min: 7000, valueBp: 4700, sickBp: 0 },
+      // juntas mais tarde: ficam no fim da lista (o ecrã mostra-as por categoria e preço)
+      { id: 'lurdes', tier: 0, e: 15, min: 28, valueBp: 2100, sickBp: 85 },
+      { id: 'tatiana', tier: 1, e: 32, min: 150, valueBp: 2700, sickBp: 55 },
+      { id: 'vanessa', tier: 1, e: 40, min: 260, valueBp: 2900, sickBp: 45 },
+      { id: 'kiara', tier: 2, e: 65, min: 950, valueBp: 3450, sickBp: 28 },
+      { id: 'chanel', tier: 2, e: 80, min: 1500, valueBp: 3700, sickBp: 22 },
+      { id: 'victoria', tier: 3, e: 98, min: 3800, valueBp: 4250, sickBp: 12 },
     ],
   },
   // prática: cada golpe treina as stats que usa (energia × peso; metade se falhar).

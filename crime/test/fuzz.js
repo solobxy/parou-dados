@@ -167,11 +167,11 @@ for (let n = 0; n < ACTIONS; n++) {
   if (r.chance(200)) { p.cash += r.int(0, 5e6); } // dá dinheiro para chegar a tudo
   if (r.chance(1500)) E.marketTick(market, game); // a bolsa mexe (às vezes com falências)
   if (r.chance(300)) p.shieldUntil = now + pick([T.HOUR, 20 * T.HOUR]); // jogador que entrou tarde: escudo
-  if (r.chance(300)) { p.stock[r.int(0, 8)] += r.int(1, 60); } // mercadoria no armazém, como a que vem do porto
+  if (r.chance(300)) { p.stock[r.int(0, CFG.drugs.length - 1)] += r.int(1, 60); } // mercadoria no armazém, como a que vem do porto
   // casas já montadas (para as compras entre jogadores, os preços e os despedimentos terem onde acontecer)
   for (const q of [p, d]) {
-    if (r.chance(700) && !q.club) { q.club = { lvl: r.int(1, 8), till: 0, t: q.t, rem: 0, pi: r.int(0, 4), gd: r.int(0, 3) }; q.stock[r.int(0, 8)] += r.int(1, 40); q.stock[r.int(0, 8)] += r.int(1, 40); }
-    if (r.chance(700) && !q.bro) { const lvl = r.int(1, 5); q.bro = { lvl, till: 0, t: q.t, rem: 0, pi: r.int(0, 4), gd: r.int(0, 3), girls: Array.from({ length: r.int(1, CFG.venue.bro.rooms[lvl - 1]) }, () => r.int(0, 11)) }; }
+    if (r.chance(700) && !q.club) { q.club = { lvl: r.int(1, 8), till: 0, t: q.t, rem: 0, pi: r.int(0, 4), gd: r.int(0, 3) }; q.stock[r.int(0, CFG.drugs.length - 1)] += r.int(1, 40); q.stock[r.int(0, CFG.drugs.length - 1)] += r.int(1, 40); }
+    if (r.chance(700) && !q.bro) { const lvl = r.int(1, 5); q.bro = { lvl, till: 0, t: q.t, rem: 0, pi: r.int(0, 4), gd: r.int(0, 3), girls: Array.from({ length: r.int(1, CFG.venue.bro.rooms[lvl - 1]) }, () => r.int(0, CFG.hookers.list.length - 1)) }; }
   }
   if (r.chance(400) && !p.gang) E.gangSet(p, 'g' + r.int(1, 3), r.int(1, 5), r.int(0, 5)); // o servidor pôs-te numa gangue (para os golpes e tareias em grupo terem quem os faça)
   if (r.chance(2500)) { p.energy = r.int(0, CFG.energy.max); p.energyT = Math.min(p.energyT, p.t); } // gasta stamina para chegar à discoteca, às putas e ao hospital
@@ -222,14 +222,14 @@ for (let n = 0; n < ACTIONS; n++) {
       case 'gangDonate': arg = r.chance(8000) ? r.int(100, 50000) : anyInt(); res = E.gangDonate(p, t, world, arg); break;
       case 'gangLeave': if (!p.gang) throw new E.GameError('NO_GANG'); E.gangLeave(p, t); res = { ok: true }; break;
       case 'crimeAll': arg = r.chance(9000) ? r.int(0, 9) : anyInt(); res = E.doCrimeAll(p, t, world, arg, game); break;
-      case 'drug': res = E.buyDrug(p, t, world, r.chance(9000) ? r.int(0, 8) : anyInt()); break;
+      case 'drug': res = E.buyDrug(p, t, world, r.chance(9000) ? r.int(0, CFG.drugs.length - 1) : anyInt()); break;
       case 'refill': res = E.refill(p, t, world); break;
       case 'detox': res = E.detox(p, t, world); break;
       case 'claim': res = E.claimMission(p, t, world); break;
       case 'stockBuy': arg = { k: r.chance(9000) ? r.int(0, 5) : anyInt(), n: pick([1, 5, 50, 1000, 0, -1, 0.5, 2e9]), h0: null }; arg.h0 = E.stockView(p, market); res = E.stockBuy(p, t, world, r.chance(9700) ? market : null, arg.k, arg.n, r.chance(1000) ? 1 : undefined); break;
       case 'stockSell': arg = { k: r.chance(9000) ? r.int(0, 5) : anyInt(), n: 0, h0: E.stockView(p, market) }; arg.n = r.chance(7000) && arg.h0[arg.k] ? pick([arg.h0[arg.k].n, Math.ceil(arg.h0[arg.k].n / 2), 1]) : pick([1, 0, -1, 1e9]); res = E.stockSell(p, t, world, market, arg.k, arg.n, r.chance(1000) ? 1 : undefined); break;
       case 'missionSwap': res = E.swapMission(p, t, world); break;
-      case 'hooker': res = E.visitHooker(p, t, world, pick([0, 1, 2, 3, 4, 5, 6]), game); break;
+      case 'hooker': res = E.visitHooker(p, t, world, pick([0, 1, 2, 3, 4, 5, 6, 12, 15, 17, 18]), game); break;
       case 'cure': res = E.cure(p, t, world); break;
       case 'house': res = E.buyHouse(p, t, world); break;
       case 'houseUp': res = E.buyUpgrade(p, t, world, pick([0, 1, 2, 3, 4])); break;
@@ -245,11 +245,11 @@ for (let n = 0; n < ACTIONS; n++) {
       case 'venueBuy': arg = pick(['club', 'bro', 'bro', 'club', 'x']); res = E.venueBuy(p, t, world, arg); break;
       case 'venueSet': res = E.venueSet(p, t, world, pick(['club', 'bro', 'x']), pick([0, 1, 2, 3, 4, 5, -1, 0.5]), pick([0, 1, 2, 3, 4, NaN])); break;
       case 'venueCollect': res = E.venueCollect(p, t, world); break;
-      case 'stockUse': arg = r.chance(9000) ? r.int(0, 8) : anyInt(); res = E.stockUse(p, t, world, arg); break;
-      case 'stockDump': arg = { d: r.chance(9000) ? r.int(0, 8) : anyInt(), n: pick([1, 2, 10, 0, -1, 0.5, 1e9]) }; res = E.stockDump(p, t, world, arg.d, arg.n); break;
-      case 'broHire': arg = r.chance(9000) ? r.int(0, 11) : anyInt(); res = E.broHire(p, t, world, arg); break;
+      case 'stockUse': arg = r.chance(9000) ? r.int(0, CFG.drugs.length - 1) : anyInt(); res = E.stockUse(p, t, world, arg); break;
+      case 'stockDump': arg = { d: r.chance(9000) ? r.int(0, CFG.drugs.length - 1) : anyInt(), n: pick([1, 2, 10, 0, -1, 0.5, 1e9]) }; res = E.stockDump(p, t, world, arg.d, arg.n); break;
+      case 'broHire': arg = r.chance(9000) ? r.int(0, CFG.hookers.list.length - 1) : anyInt(); res = E.broHire(p, t, world, arg); break;
       case 'broFire': res = E.broFire(p, t, world, pick([0, 1, 2, 5, -1])); break;
-      case 'clubBuyAt': arg = r.chance(9000) ? r.int(0, 8) : anyInt(); res = E.clubBuyAt(p, d, t, world, arg, r.chance(1000) ? 1 : undefined); break;
+      case 'clubBuyAt': arg = r.chance(9000) ? r.int(0, CFG.drugs.length - 1) : anyInt(); res = E.clubBuyAt(p, d, t, world, arg, r.chance(1000) ? 1 : undefined); break;
       case 'broVisitAt': arg = pick([0, 1, 2, 3, 20, -1]); res = E.broVisitAt(p, d, t, world, arg, game, r.chance(1000) ? 1 : undefined); break;
       case 'collectPort': res = E.collectPort(p, t, world, game); break;
       case 'deposit': arg = r.chance(8000) ? r.int(0, p.cash + 10) : anyInt(); res = E.deposit(p, t, world, arg); break;
