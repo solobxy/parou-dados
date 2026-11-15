@@ -34,11 +34,19 @@ async function api(method, path, body) {
   return data;
 }
 
+// Avisos curtos por cima da barra de baixo. Os que nascem da mesma ação (ex.: recolher dinheiro e mercadoria do porto) ficam
+// empilhados, no máximo 3; os de uma ação nova substituem os antigos.
+let toastAt = 0;
 function toast(msg, bad) {
-  document.querySelectorAll('.toast').forEach((e) => e.remove());
+  const t0 = performance.now();
+  let box = document.querySelector('.toasts');
+  if (!box) { box = h('div', { class: 'toasts' }); document.body.appendChild(box); }
+  if (t0 - toastAt > 400) box.replaceChildren();
+  toastAt = t0;
   const el = h('div', { class: 'toast' + (bad ? ' bad' : ''), role: 'status' }, msg);
-  document.body.appendChild(el);
-  setTimeout(() => { const a = el.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 250 }); a.onfinish = () => el.remove(); }, 2600);
+  box.appendChild(el);
+  while (box.children.length > 3) box.firstChild.remove();
+  setTimeout(() => { if (!el.isConnected) return; const a = el.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 250 }); a.onfinish = () => el.remove(); }, 2600 + (box.children.length - 1) * 900);
 }
 
 // as ações vão em fila, uma de cada vez, pela ordem dos toques
@@ -2311,7 +2319,9 @@ function renderPause() {
 }
 
 // ---------- entrada ----------
-function applyLang(l) { setLang(l); setLocale(l); store.set('lang', l); try { localStorage.setItem('cr.lang', l); } catch {} }
+function applyLang(l) { setLang(l); setLocale(l); try { localStorage.setItem('cr.lang', l); } catch {} }
+// a língua escolhida neste aparelho (texto simples, lido também pelo i18n ao arrancar); sem escolha, vale a da conta
+const langSaved = () => { try { return localStorage.getItem('cr.lang'); } catch { return null; } };
 
 async function showLanding(st) {
   $main = null;
@@ -2385,7 +2395,7 @@ async function refresh() {
   try {
     const st = await api('GET', '/api/state');
     S.st = st; S.stAt = now(); if (st.feed) S.feed = st.feed;
-    if (st.account?.lang && !store.get('lang')) applyLang(st.account.lang);
+    if (st.account?.lang && !langSaved()) applyLang(st.account.lang);
     render();
   } catch {}
 }
@@ -2395,6 +2405,7 @@ async function start() {
   const st = await api('GET', '/api/state');
   if (!st.account) { S.st = null; return showLanding(st); }
   S.st = st; S.stAt = now(); if (st.feed) S.feed = st.feed;
+  if (st.account.lang && !langSaved()) applyLang(st.account.lang);   // aparelho novo: o jogo abre logo na língua da conta, sem piscar na outra
   $main = null;
   S.tab = store.get('tab', 'city');
   if (st.me) loadFor(S.tab);   // abrir o jogo num sítio guardado (lutas, ranking, bolsa…) também vai buscar os dados dele
@@ -2406,7 +2417,7 @@ async function start() {
   loadEvents(false);
 }
 
-applyLang(guessLang());
+{ const l = guessLang(); setLang(l); setLocale(l); }   // palpite pelo browser, sem o guardar: só fica guardada a língua que o jogador escolher (ou a da conta)
 fx.setLight(store.get('light', false));
 fx.setSound(store.get('sound', true));
 fx.setMusic(store.get('music', true));
