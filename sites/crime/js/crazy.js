@@ -3,7 +3,7 @@
 // Aqui só se anima: onde a roda pára e o que cada flapper ganha vem decidido pelo servidor, e só depois de a escolha fechar.
 import { h } from './ui.js';
 
-const TAU = Math.PI * 2, DISP = '"Shoulders", "Arial Narrow", sans-serif';
+const TAU = Math.PI * 2, DISP = '"Archivo Manchete", "Arial Narrow", sans-serif';
 export const FLAP_COR = ['#2fd35f', '#2aa8ff', '#ffd426'];   // verde, azul, amarelo
 // cada valor com a sua cor (festa, não o noir da roda principal): reconhece-se o valor pela cor mesmo com a roda a girar
 const COR = { 15: '#6d5947', 20: '#d0162b', 25: '#ef8a0b', 35: '#7c2fc0', 50: '#16a05a', 100: '#e0267d', 200: '#1aa3b8', D: '#0d0f14', T: '#0d0f14' };

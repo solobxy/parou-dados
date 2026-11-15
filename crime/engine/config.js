@@ -332,7 +332,9 @@ export const CFG = {
   // desintoxicar 100 de vício custa o que rendem ~14 de stamina; cada vez no mesmo dia fica 30% mais cara (trava quem quer stamina sem fim)
   // limpar 100 de vício custa o que rendem 10 de stamina; cada uma nas últimas 24 h custa mais 15%.
   // Por volta da 30.ª do dia já custa mais do que tudo o que esse vício deixava ganhar: há sempre um fim.
-  detox: { min: 30, windowMs: 24 * HOUR, valueDiv: 1000, stepNum: 23, stepDen: 20, maxSteps: 40 },
+  // 15/11/2026: o preço volta a baixar ao fim de 30 minutos (antes 24 h). Cada desintoxicação só encarece as dos 30 minutos seguintes;
+  // deixou de haver um teto por dia, o travão passa a ser só o preço a subir dentro de cada meia hora.
+  detox: { min: 30, windowMs: 30 * MIN, valueDiv: 1000, stepNum: 23, stepDen: 20, maxSteps: 40 },
 
   // Negócios: rendem por hora para um armazém que enche em 8 h. Cada compra dá respeito uma vez (resp).
   // Cada unidade extra do mesmo tipo custa +50%; máximo 10 de cada tipo.

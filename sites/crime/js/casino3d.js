@@ -7,7 +7,7 @@ const TAU = Math.PI * 2;
 // As animações do jogo correm sempre, mesmo com «remover animações» ou poupança de bateria ligados no telemóvel:
 // aqui a animação é o próprio jogo (a bola, a roda, os símbolos a cair).
 const RM = () => false;
-const DISP = '"Shoulders", "Arial Narrow", sans-serif';
+const DISP = '"Archivo Manchete", "Arial Narrow", sans-serif';
 const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 // Nas mesas ao vivo a jogada tem de ser igual em todos os telemóveis: o acaso da animação (velocidade do lançamento,

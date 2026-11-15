@@ -1174,8 +1174,12 @@ test('desintoxicação: preço anunciado, sobe 15% de cada vez, e há sempre uma
   }
   // deixa de compensar algures entre a 25.ª e a 40.ª do dia: nunca é de borla para sempre
   assert.ok(fim >= 25 && fim <= D.maxSteps, 'deixa de compensar à ' + fim + '.ª');
-  // 24 h depois volta ao preço de início
-  p.addiction = 100; p.addictionT = t + T.DAY; assert.equal(E.detoxCost(p, t + T.DAY), c1);
+  // o preço volta a baixar ao fim de 30 minutos (antes de 15/11/2026 eram 24 h): um instante antes de a última fazer 30 minutos ainda
+  // custa mais um degrau; passados os 30 minutos de todas, volta ao preço de início
+  assert.equal(D.windowMs, 30 * 60 * 1000);
+  const ultimaT = t - 1000;
+  p.addiction = 100; p.addictionT = ultimaT + D.windowMs - 1; assert.equal(E.detoxCost(p, ultimaT + D.windowMs - 1), Math.ceil((c1 * D.stepNum) / D.stepDen));
+  p.addictionT = ultimaT + D.windowMs + 1; assert.equal(E.detoxCost(p, ultimaT + D.windowMs + 1), c1);
 });
 
 test('slots: comprar bónus pode custar até 10× o máximo por jogada, a ficha continua presa ao máximo, e só com dinheiro na mão', () => {

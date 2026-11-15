@@ -2223,7 +2223,7 @@ function screenWheel() {
     /^\d+$/.test(x.s) ? (x.m > +x.s ? x.s + ' ×' + x.m / +x.s : x.s) : wLabel(x.s) + (x.m ? ' ×' + x.m : '')))));
   out.push(liveBar(g));
   out.push(h('div', { class: 'wspots lvboard' }, W.spots.map((s) => h('button', { class: 'wsp' + (res && res.s === s ? ' hit' : ''), style: `--c:${WCOL[s]}`, on: { click: () => liveBet(g, { s, amt: chipNow() }) } },
-    h('b', null, wLabel(s)), h('span', { class: 'small' }, /^\d+$/.test(s) ? s + ':1' : t('wBonus')), bets[s] ? h('span', { class: 'chipm' }, moneyShort(bets[s])) : null))));
+    h('b', { class: /^\d+$/.test(s) ? '' : 'wd' }, wLabel(s)), h('span', { class: 'small' }, /^\d+$/.test(s) ? s + ':1' : t('wBonus')), bets[s] ? h('span', { class: 'chipm' }, moneyShort(bets[s])) : null))));
   out.push(h('p', { class: 'small muted', style: 'margin:12px 0 0' }, t('wRules') + ' ' + t('lvHow')));
   W3.wake();
   return out;

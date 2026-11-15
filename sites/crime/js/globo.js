@@ -4,7 +4,7 @@ import { LAND } from './terra.js';
 import { h } from './ui.js';
 
 const TAU = Math.PI * 2, RAD = Math.PI / 180;
-const DISP = '"Shoulders", "Arial Narrow", sans-serif';
+const DISP = '"Archivo Manchete", "Arial Narrow", sans-serif';
 const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
 // lat/lon (graus) -> vetor na esfera
 const vec = (lat, lon) => { const f = lat * RAD, l = lon * RAD; return [Math.cos(f) * Math.cos(l), Math.cos(f) * Math.sin(l), Math.sin(f)]; };
