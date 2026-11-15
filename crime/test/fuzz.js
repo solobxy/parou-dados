@@ -88,7 +88,9 @@ function contas(kind, a0, a, d0, d, t, res, arg) {
     }
     case 'gangCreate': if (dm !== -CFG.gang.createCost || dr !== 0) bad('criar gangue'); break;
     case 'gangDonate': if (dm !== -arg || dr !== 0 || arg < CFG.gang.donateMin) bad('dar ao cofre'); break;
-    case 'gangLeave': if (dm !== 0 || dr !== 0) bad('sair da gangue'); break;
+    case 'gangLeave': if (dm !== res.refund + res.stored || dr !== 0 || res.refund !== Math.floor(a0.gbz.reduce((x, y) => x + y.inv, 0) / 2) || a.gbz.some((x) => x.inv || x.stored || x.coop)) bad('sair da gangue'); break;
+    case 'gangBiz': if (dm !== -arg.amount || dr !== 0 || arg.amount < CFG.gang.bizMin || a.gbz[arg.k].inv !== a0.gbz[arg.k].inv + arg.amount || a.gbz[arg.k].inv > E.gangBizCap(a, arg.k)) bad('negócio da gangue: investir'); break;
+    case 'gangBizCollect': { const max = a0.gbz.reduce((x, y, k) => x + Math.floor((y.inv * CFG.gang.biz[k].rateBp * 15) / 100000) * (CFG.storageMs / T.HOUR), 0); if (dm !== res.money || dr !== 0 || res.money < 0 || res.money > max || a.gbz.some((x) => x.stored)) bad('negócio da gangue: receber'); break; }
     case 'bailFor': case 'medicFor': if (dm !== -res.cost || res.cost < 1 || dr !== 0 || d.cash + d.bank !== d0.cash + d0.bank || d.respect !== d0.respect || a0.gang !== d0.gang || !a0.gang || (kind === 'bailFor' ? d.jailUntil !== 0 || !(d0.jailUntil > t) : d.hospUntil !== 0 || !(d0.hospUntil > t))) bad('safar um membro'); break;
     case 'air': if (dm !== -res.paid || dr !== 0 || res.paid !== arg.amount + (arg.bribe ? Math.ceil(arg.amount * 0.2) : 0) || arg.amount > E.airCap(a0) || a0.air) bad('avião: pagamento'); break;
     case 'airCollect': { const f = a0.air, R = CFG.air.routes[f.r]; const full = f.amount + Math.floor((f.amount * R.gainBp) / 10000);
@@ -176,7 +178,7 @@ for (let n = 0; n < ACTIONS; n++) {
   if (r.chance(400) && !p.gang) E.gangSet(p, 'g' + r.int(1, 3), r.int(1, 5), r.int(0, 5)); // o servidor pôs-te numa gangue (para os golpes e tareias em grupo terem quem os faça)
   if (r.chance(2500)) { p.energy = r.int(0, CFG.energy.max); p.energyT = Math.min(p.energyT, p.t); } // gasta stamina para chegar à discoteca, às putas e ao hospital
   const before = touched(p, t), beforeD = touched(d, t), origD = structuredClone(d), origP = structuredClone(p);
-  const kind = pick(['stockBuy', 'stockBuy', 'stockBuy', 'stockSell', 'stockSell', 'missionSwap', 'venueBuy', 'venueBuy', 'venueSet', 'venueCollect', 'stockUse', 'stockUse', 'stockDump', 'broHire', 'broHire', 'broFire', 'clubBuyAt', 'clubBuyAt', 'clubBuyAt', 'broVisitAt', 'broVisitAt', 'broVisitAt', 'casino', 'casino', 'table', 'heist', 'hit', 'gangCreate', 'gangDonate', 'gangLeave', 'crime', 'crimeAll', 'drug', 'refill', 'detox', 'claim', 'class', 'classChange', 'classChange', 'air', 'air', 'airCollect', 'airCollect', 'bailFor', 'bailFor', 'medicFor', 'medicFor', 'avatar', 'hooker', 'cure', 'house', 'houseUp', 'train', 'buyBiz', 'collect', 'port', 'collectPort', 'deposit', 'withdraw', 'gear', 'attack', 'bail', 'medic', 'luxury']);
+  const kind = pick(['stockBuy', 'stockBuy', 'stockBuy', 'stockSell', 'stockSell', 'missionSwap', 'venueBuy', 'venueBuy', 'venueSet', 'venueCollect', 'stockUse', 'stockUse', 'stockDump', 'broHire', 'broHire', 'broFire', 'clubBuyAt', 'clubBuyAt', 'clubBuyAt', 'broVisitAt', 'broVisitAt', 'broVisitAt', 'casino', 'casino', 'table', 'heist', 'hit', 'gangCreate', 'gangDonate', 'gangLeave', 'gangBiz', 'gangBiz', 'gangBiz', 'gangBizCollect', 'crime', 'crimeAll', 'drug', 'refill', 'detox', 'claim', 'class', 'classChange', 'classChange', 'air', 'air', 'airCollect', 'airCollect', 'bailFor', 'bailFor', 'medicFor', 'medicFor', 'avatar', 'hooker', 'cure', 'house', 'houseUp', 'train', 'buyBiz', 'collect', 'port', 'collectPort', 'deposit', 'withdraw', 'gear', 'attack', 'bail', 'medic', 'luxury']);
   let res, arg;
   try {
     switch (kind) {
@@ -220,7 +222,15 @@ for (let n = 0; n < ACTIONS; n++) {
       }
       case 'gangCreate': res = E.gangCreate(p, t, world); E.gangSet(p, 'g' + r.int(1, 5), r.int(1, 5), r.int(0, 5)); break;   // o servidor regista a gangue e escreve o bónus
       case 'gangDonate': arg = r.chance(8000) ? r.int(100, 50000) : anyInt(); res = E.gangDonate(p, t, world, arg); break;
-      case 'gangLeave': if (!p.gang) throw new E.GameError('NO_GANG'); E.gangLeave(p, t); res = { ok: true }; break;
+      case 'gangLeave': { if (!p.gang) throw new E.GameError('NO_GANG'); const g0 = p.gang; res = { ok: true, ...E.gangLeave(p, t) }; if (t === now) E.gangBizSync(players.filter((x) => x.gang === g0), t); break; }
+      case 'gangBiz': {
+        arg = { k: r.chance(9000) ? r.int(0, CFG.gang.biz.length - 1) : anyInt(), amount: r.chance(8500) ? r.int(100, 30000) : anyInt() };
+        res = E.gangBizInvest(p, t, world, arg.k, arg.amount, p.gb ? p.gb.loot / CFG.gang.lootBpPer : 0);
+        const ms = players.filter((x) => x.gang === p.gang); E.gangBizSync(ms, t);   // o servidor acerta o bónus de grupo de todos os membros
+        for (const m of ms) { const bad2 = E.checkInvariants(m); if (bad2.length) { console.error('INVARIANTE', kind, bad2); process.exit(1); } }
+        break;
+      }
+      case 'gangBizCollect': res = E.gangBizCollect(p, t, world); break;
       case 'crimeAll': arg = r.chance(9000) ? r.int(0, 9) : anyInt(); res = E.doCrimeAll(p, t, world, arg, game); break;
       case 'drug': res = E.buyDrug(p, t, world, r.chance(9000) ? r.int(0, CFG.drugs.length - 1) : anyInt()); break;
       case 'refill': res = E.refill(p, t, world); break;

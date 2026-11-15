@@ -20,7 +20,7 @@ const SECURE = process.env.COOKIE_INSEGURO ? '' : '; Secure';
 const [fy, fm, fd] = (process.env.PRIMEIRA_RONDA || '2026-11-13').split('-').map(Number);
 const FIRST = { y: fy, m: fm, d: fd };
 const rng = cryptoRng();
-const VERSAO = 36;   // sobe quando o servidor muda, para se confirmar de fora que a versão nova já está a correr
+const VERSAO = 37;   // sobe quando o servidor muda, para se confirmar de fora que a versão nova já está a correr
 const ATOS_3S = +(process.env.ATOS_3S || 15), ATOS_MIN = +(process.env.ATOS_MIN || 400); // ações por conta: 15 em 3 s, 400 por minuto
 
 // ---------- relógio que nunca anda para trás ----------
@@ -398,7 +398,7 @@ function carregarGangues() {
   for (const r of qo.todas.all(ronda)) { const g = gangues.get(r.gangue); if (g) g.op = JSON.parse(r.dados); }
   // manda o registo das gangues: o bónus escrito em cada jogador acerta-se por ele
   const de = new Map(); for (const g of gangues.values()) for (const c of g.membros.keys()) de.set(c, g);
-  for (const p of jogadores.values()) { const g = de.get(p.id); if (g) E.gangSet(p, g.id, g.sede, g.armaria); else if (p.gang) { p.gang = null; p.gb = null; } }
+  for (const p of jogadores.values()) { const g = de.get(p.id); if (g) E.gangSet(p, g.id, g.sede, g.armaria); else if (p.gang) E.gangOrphan(p); }
 }
 const gangueDe = (conta) => { const p = jogadores.get(conta); return p && p.gang ? gangues.get(p.gang) || null : null; };
 const tagDe = (conta) => gangueDe(conta)?.tag || '';
@@ -526,12 +526,16 @@ function agirGangue(a, p, conta, now, world, ctx) {
     for (const x of gangues.values()) x.pedidos.delete(o.id);
     ctx.ops.push(() => { qg.entra.run(ronda, o.id, g.id, now, 0); qg.despede.run(ronda, o.id); });
   };
+  // negócios da gangue: o bónus de grupo de cada membro depende do que os outros lá têm; acerta-se sempre que alguém investe ou sai
+  const acertaNegocios = (g) => { const ms = [...g.membros.keys()].map((c) => jogadores.get(c)).filter(Boolean); for (const o of E.gangBizSync(ms, now)) if (o !== p && !ctx.outros.includes(o)) ctx.outros.push(o); };
   const sair = (g, o) => {
     if (g.op && g.op.parts.includes(o.id)) err('IN_OP');   // quem alinhou numa operação fica até ela acabar
-    E.gangLeave(o, now); g.membros.delete(o.id);
+    const back = E.gangLeave(o, now); g.membros.delete(o.id);
+    if (back.invested > 0 && g.membros.size) acertaNegocios(g);
     ctx.ops.push(() => qg.sai.run(ronda, o.id));
     if (!g.membros.size) { gangues.delete(g.id); ctx.ops.push(() => { qo.apaga.run(ronda, g.id); qg.apaga.run(ronda, g.id); qg.apagaPedidos.run(ronda, g.id); qg.apagaChat.run(ronda, g.id); }); }
     else if (g.lider === o.id) { g.lider = [...g.membros].sort((x, y) => x[1].entrou - y[1].entrou)[0][0]; ctx.ops.push(() => gravaG(g)); }   // a chefia passa para o membro mais antigo
+    return back;
   };
   if (a.type === 'gangOp' || a.type === 'gangOpJoin' || a.type === 'gangOpCancel') return agirOp(a, p, conta, now, world, ctx, minha());
   if (a.type !== 'gangCreate' && a.type !== 'gangDonate') E.touch(p, now);
@@ -570,7 +574,7 @@ function agirGangue(a, p, conta, now, world, ctx) {
       ctx.depois.push(() => evento(o.id, now, { k: 'gangIn', gang: g.nome }));
       return { ok: true, joined: true };
     }
-    case 'gangLeave': { const g = minha(); sair(g, p); return { ok: true, left: g.nome }; }
+    case 'gangLeave': { const g = minha(), back = sair(g, p); return { ok: true, left: g.nome, back: back.refund + back.stored }; }
     case 'gangBail': case 'gangMedic': {
       const g = minha(), o = outro(g, a.name);
       if (o.id === conta || !g.membros.has(o.id)) err('NO_TARGET');
@@ -582,8 +586,8 @@ function agirGangue(a, p, conta, now, world, ctx) {
     case 'gangKick': {
       const g = chefe(), o = outro(g, a.name);
       if (o.id === conta || !g.membros.has(o.id)) err('NO_TARGET');
-      sair(g, o); ctx.outros.push(o);
-      ctx.depois.push(() => evento(o.id, now, { k: 'gangOut', gang: g.nome }));
+      const back = sair(g, o); if (!ctx.outros.includes(o)) ctx.outros.push(o);
+      ctx.depois.push(() => evento(o.id, now, { k: 'gangOut', gang: g.nome, money: back.refund + back.stored }));
       return { ok: true };
     }
     case 'gangLeader': {
@@ -610,6 +614,12 @@ function agirGangue(a, p, conta, now, world, ctx) {
       ctx.depois.push(() => noticia(now, { k: 'gangUp', gang: g.nome, tag: g.tag, what, n: g[what] }));
       return { ok: true, what, level: g[what], cost, fund: g.cofre };
     }
+    case 'gangBiz': {
+      const g = minha(), r = E.gangBizInvest(p, now, world, int(a.k), int(a.amount), g.sede);
+      acertaNegocios(g);
+      return { ...r, coop: p.gbz[r.k].coop };
+    }
+    case 'gangBizCollect': { minha(); return E.gangBizCollect(p, now, world); }
     case 'gangChat': {
       const g = minha(), txt = String(a.txt || '').replace(/[\u0000-\u001f\u007f\u2028\u2029]/g, ' ').trim().slice(0, CFG.gang.chatMax);
       if (!txt) err('BAD_ACTION');
@@ -630,7 +640,11 @@ function vistaGangue(conta, now) {
     const quem = (c) => { const o = jogadores.get(c); if (o) E.touch(o, now); return { name: nomeDe(c), av: o?.av || 0, level: o ? E.level(o) : 1, respect: o?.respect || 0,
       jail: o && o.jailUntil > now ? o.jailUntil : 0, bail: o ? E.bailCost(o, now) : 0, hosp: o && o.hospUntil > now ? o.hospUntil : 0, medic: o ? E.medicCost(o, now) : 0 }; };
     out.mine = { ...resumo(mine), pos: list.find((x) => x.id === mine.id)?.pos || null, fund: mine.cofre, leaderMe: mine.lider === conta,
-      roster: [...mine.membros].map(([c, m]) => ({ ...quem(c), given: m.dado, leader: c === mine.lider, me: c === conta })).sort((a, b) => b.respect - a.respect),
+      roster: [...mine.membros].map(([c, m]) => ({ ...quem(c), given: m.dado, stake: (jogadores.get(c)?.gbz || []).reduce((x, y) => x + (y.inv || 0), 0), leader: c === mine.lider, me: c === conta })).sort((a, b) => b.respect - a.respect),
+      biz: (() => { const eu = jogadores.get(conta), meu = E.gangBizView(eu, now);
+        return CFG.gang.biz.map((b, k) => { let total = 0, n = 0, full = 0;
+          for (const c of mine.membros.keys()) { const v = jogadores.get(c)?.gbz?.[k]?.inv || 0; total += v; if (v > 0) n++; if (c !== conta && meu[k].inv > 0 && v >= meu[k].inv) full++; }
+          return { id: b.id, open: mine.sede >= b.sede, total, investors: n, full, ...meu[k] }; }); })(),
       asks: mine.lider === conta ? [...mine.pedidos.keys()].map(quem) : [],
       op: vistaOp(mine, conta, now), last: mine.last, opCool: mine.opCool,
       chat: qg.chat.all(ronda, mine.id).reverse().map((m) => ({ id: m.id, t: m.t, name: nomeDe(m.conta), me: m.conta === conta, txt: m.txt })) };

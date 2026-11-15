@@ -33,7 +33,7 @@ export function newPlayer(id, now, world, opts = {}) {
     port: [], air: null, stock: CFG.drugs.map(() => 0), club: null, bro: null, stk: CFG.stocks.list.map(() => ({ n: 0, cost: 0, gen: 0 })),
     weapon: -1, armor: -1,
     luxuries: 0,
-    gang: null, gb: null, gangLeft: 0, gh: [],
+    gang: null, gb: null, gangLeft: 0, gh: [], gbz: gbzNew(),
     detoxT: [],
     xp: { F: 0, I: 0, C: 0 },
     wk: CFG.crimes.map(() => 0),   // sucessos por golpe (mestria)
@@ -78,6 +78,7 @@ function migrate(p) {
   if (typeof p.gang !== 'string') p.gang = null;
   if (!p.gang || !p.gb || typeof p.gb !== 'object') p.gb = null;
   if (!Number.isSafeInteger(p.gangLeft)) p.gangLeft = 0;
+  if (!Array.isArray(p.gbz) || p.gbz.length !== CFG.gang.biz.length) p.gbz = gbzNew();
   if (!Array.isArray(p.gh)) p.gh = [];
 }
 
@@ -179,7 +180,81 @@ export function gangCreate(p, now, world) {
   return { ok: true, cost: CFG.gang.createCost };
 }
 export function gangSet(p, id, sede, armaria) { p.gang = id; p.gb = gangBonus(sede, armaria); }
-export function gangLeave(p, now) { p.gang = null; p.gb = null; p.gangLeft = now; }
+// sair (ou ser expulso): os negócios da gangue devolvem metade do investido e tudo o que estava por receber
+export function gangLeave(p, now) {
+  let stored = 0, inv = 0;
+  if (!Array.isArray(p.gbz) || p.gbz.length !== CFG.gang.biz.length) p.gbz = gbzNew();
+  for (let k = 0; k < p.gbz.length; k++) { settleGbz(p, k, Math.max(now, p.gbz[k].t)); stored += p.gbz[k].stored; inv += p.gbz[k].inv; }
+  const refund = Math.floor((inv * CFG.gang.bizRefundBp) / 10000);
+  p.cash += stored + refund; p.gbz = gbzNew();
+  p.gang = null; p.gb = null; p.gangLeft = now;
+  return { refund, stored, invested: inv };
+}
+// a gangue deixou de existir no registo (não devia acontecer): o jogador fica sem gangue e recebe de volta tudo o que lá tinha
+export function gangOrphan(p) {
+  let back = 0;
+  if (Array.isArray(p.gbz)) for (const x of p.gbz) back += (x.inv || 0) + (x.stored || 0);
+  p.cash += back; p.gbz = gbzNew(); p.gang = null; p.gb = null;
+  return back;
+}
+// ---- negócios da gangue ----
+// p.gbz[k] = { inv: o que este membro lá pôs, coop: bónus de grupo em pontos (quem o escreve é gangBizSync), stored/rem/t: rendimento por receber }
+function gbzNew() { return CFG.gang.biz.map(() => ({ inv: 0, coop: 0, stored: 0, rem: 0, t: 0 })); }
+export function gangBizCap(p, k) { return casinoMax(p) * CFG.gang.biz[k].capMult; }
+export function gangBizRate(p, k) { const s = p.gbz[k]; return up(Math.floor((s.inv * CFG.gang.biz[k].rateBp) / 10000), s.coop); }   // por hora
+function settleGbz(p, k, now) {
+  const s = p.gbz[k];
+  if (s.inv === 0 || now <= s.t) { s.t = Math.max(s.t, now); return; }
+  const perH = gangBizRate(p, k), capM = perH * (CFG.storageMs / T.HOUR), dt = Math.min(now - s.t, CFG.storageMs);
+  if (s.stored < capM) {
+    const tot = s.rem + perH * dt, add = Math.floor(tot / T.HOUR);
+    s.rem = tot - add * T.HOUR;
+    s.stored = Math.min(capM, s.stored + add);
+    if (s.stored === capM) s.rem = 0;
+  } else s.rem = 0;
+  s.t = now;
+}
+// leitura para o ecrã, sem mexer no jogador
+export function gangBizView(p, now) {
+  const ghost = { ...p, gbz: (Array.isArray(p.gbz) && p.gbz.length === CFG.gang.biz.length ? p.gbz : gbzNew()).map((s) => ({ ...s })) };
+  return ghost.gbz.map((s, k) => { settleGbz(ghost, k, Math.max(now, s.t)); return { inv: s.inv, coop: s.coop, perH: gangBizRate(ghost, k), stored: s.stored, cap: gangBizCap(p, k) }; });
+}
+export function gangBizInvest(p, now, world, k, amount, sede) {
+  const B = Number.isInteger(k) ? CFG.gang.biz[k] : undefined;
+  if (!B) fail('NO_BIZ');
+  begin(p, now, world);
+  if (!p.gang) fail('NO_GANG');
+  if (!Number.isSafeInteger(sede) || sede < B.sede) fail('GBIZ_SEDE', { need: B.sede });
+  if (!Number.isSafeInteger(amount) || amount < CFG.gang.bizMin) fail('BAD_AMOUNT');
+  const cap = gangBizCap(p, k);
+  if (p.gbz[k].inv + amount > cap) fail('GBIZ_CAP', { cap, have: p.gbz[k].inv });
+  pay(p, amount);
+  settleGbz(p, k, now);          // o que rendeu até agora conta com o que lá estava
+  p.gbz[k].inv += amount;
+  return { ok: true, k, biz: B.id, amount, inv: p.gbz[k].inv };
+}
+export function gangBizCollect(p, now, world) {
+  begin(p, now, world, { allowBusy: true });
+  if (!p.gang) fail('NO_GANG');
+  let money = 0;
+  for (let k = 0; k < p.gbz.length; k++) { settleGbz(p, k, now); money += p.gbz[k].stored; p.gbz[k].stored = 0; }
+  p.cash += money;
+  return { ok: true, money };
+}
+// Acerta o bónus de grupo de todos os membros de uma gangue (chamar sempre que alguém investe, entra ou sai). Devolve quem mudou.
+// Antes de mudar o bónus de alguém, fecha-se a conta do que rendeu até agora com o bónus antigo.
+export function gangBizSync(players, now) {
+  const G = CFG.gang, changed = [];
+  for (const p of players) touch(p, now);
+  for (let k = 0; k < G.biz.length; k++) {
+    for (const p of players) {
+      const s = p.gbz[k]; let coop = 0;
+      if (s.inv > 0) { let sum = 0; for (const o of players) if (o !== p) sum += Math.min(o.gbz[k].inv, s.inv); coop = Math.min(G.bizCoopMax, Math.floor((G.bizCoopBp * sum) / s.inv)); }
+      if (coop !== s.coop) { settleGbz(p, k, now); s.coop = coop; if (!changed.includes(p)) changed.push(p); }
+    }
+  }
+  return changed;
+}
 export function gangDonate(p, now, world, amount) {
   begin(p, now, world, { allowBusy: true });
   if (!p.gang) fail('NO_GANG');
@@ -1753,6 +1828,11 @@ export function checkInvariants(p) {
   if (p.addiction > addictionCap(p)) bad.push('addiction>cap');
   if (p.peakRespect < p.respect) bad.push('peak<respect');
   if ((p.gang === null) !== (p.gb === null)) bad.push('gang/gb');
+  if (!Array.isArray(p.gbz) || p.gbz.length !== CFG.gang.biz.length) bad.push('gang biz');
+  else p.gbz.forEach((s, k) => {
+    for (const f of ['inv', 'coop', 'stored', 'rem', 't']) if (!Number.isSafeInteger(s[f]) || s[f] < 0) bad.push(`gbz.${f}=${s[f]}`);
+    if (s.coop > CFG.gang.bizCoopMax || s.inv > gangBizCap(p, k) || (!p.gang && (s.inv || s.stored || s.coop))) bad.push('gang biz ' + k);
+  });
   if (!Array.isArray(p.gh) || p.gh.length > CFG.gang.heistPerDay) bad.push('heists');
   if (p.gb) { const G = CFG.gang; for (const k of ['loot', 'atk', 'def']) if (!Number.isSafeInteger(p.gb[k]) || p.gb[k] < 0 || p.gb[k] > (k === 'loot' ? G.lootBpPer : G.fightBpPer) * G.maxLevel) bad.push('gb.' + k); }
   if (!Array.isArray(p.detoxT) || p.detoxT.length > CFG.detox.maxSteps) bad.push('detox list');

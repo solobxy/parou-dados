@@ -229,6 +229,18 @@ export const CFG = {
     // Tareia em grupo: soma-se o ataque de todos (a 85%), o alvo só vai uma vez para o hospital (30 min) e só perde respeito uma vez;
     // cada atacante ganha 70% do que ganharia sozinho, com o mesmo desconto por repetir o alvo.
     hitNeed: 2, hitTeamBp: 8500, hitShareBp: 7000, hitHospBp: 15000,
+    // Negócios da gangue: cada membro põe o seu dinheiro e ganha só sobre o que ele próprio pôs (ninguém vive à conta dos outros).
+    // rateBp: o que rende por hora, em pontos do que está investido. sede: nível da sede preciso. capMult: teto por pessoa = máximo do casino do nível × capMult.
+    // O que se ganha por ser em grupo: +5% por cada outro membro que tenha lá pelo menos o mesmo que tu; quem tem menos conta só em proporção
+    // (um sócio com metade do teu dá-te +2,5%), até +50%. Assim um rico não puxa por quem pôs pouco, e contas pequenas não dão bónus a ninguém.
+    // O dinheiro investido fica no negócio. Ao sair da gangue ou ser expulso volta metade, mais o que estiver por receber.
+    // O rendimento fica guardado até 8 h (storageMs), como nos negócios próprios.
+    biz: [
+      { id: 'oficina', sede: 1, rateBp: 300, capMult: 3 },
+      { id: 'jogo', sede: 2, rateBp: 350, capMult: 6 },
+      { id: 'rota', sede: 3, rateBp: 400, capMult: 12 },
+    ],
+    bizMin: 100, bizCoopBp: 500, bizCoopMax: 5000, bizRefundBp: 5000,
   },
   // casa: cada nível dá respeito e deixa subir as melhorias até esse nível; a melhoria n custa uma parte do preço da casa n
   house: {

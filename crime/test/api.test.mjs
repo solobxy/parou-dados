@@ -554,6 +554,49 @@ test('gangues: criar, entrar, cofre sem volta, melhorias que dão bónus a todos
   g = await gangue(A, '10.0.9.50'); assert.equal(g.list.length, 0); assert.equal((await A.estado()).gb, null);
 });
 
+test('negócios da gangue: investir, bónus de grupo acertado em todos, sede a mais recusada, expulsar devolve metade, e tudo sobrevive a um reinício', async () => {
+  ENV_EXTRA = { ATOS_3S: '100000', ATOS_MIN: '1000000' };
+  const A = await contaNova('NegA', '10.0.9.90'), B = await contaNova('NegB', '10.0.9.91'), X = await contaNova('NegX', '10.0.9.92');
+  for (const x of [A, B, X]) await x.estado();
+  const base = (e) => { e.cash = 500_000; e.bank = 0; e.respect = 100; e.peakRespect = 100; };
+  await mexer({ NegA: base, NegB: base, NegX: base });
+  const ag = (x, ip, body) => cru(x.cookie, ip, body), gangue = async (x, ip) => (await fetch(BASE + '/api/gang', { headers: { cookie: x.cookie, 'X-Forwarded-For': ip } })).json();
+  let r = await ag(X, '10.0.9.92', { type: 'gangBiz', k: 0, amount: 1000 }); assert.equal(r.body.error, 'NO_GANG');
+  r = await ag(A, '10.0.9.90', { type: 'gangCreate', name: 'Socios', tag: 'SOC' }); assert.equal(r.status, 200, JSON.stringify(r.body));
+  const gid = (await gangue(A, '10.0.9.90')).mine.id;
+  r = await ag(B, '10.0.9.91', { type: 'gangJoin', id: gid }); assert.equal(r.status, 200);
+  const a0 = (await A.estado()).cash;
+  r = await ag(A, '10.0.9.90', { type: 'gangBiz', k: 0, amount: 4000 }); assert.equal(r.status, 200, JSON.stringify(r.body));
+  assert.equal(r.body.result.inv, 4000); assert.equal(r.body.result.coop, 0); assert.equal(r.body.me.cash, a0 - 4000);
+  r = await ag(A, '10.0.9.90', { type: 'gangBiz', k: 1, amount: 1000 }); assert.equal(r.body.error, 'GBIZ_SEDE');           // a sede ainda é de nível 1
+  for (const bad of [{ k: 0, amount: 50 }, { k: 0, amount: -5 }, { k: 0, amount: 1e12 }, { k: 7, amount: 1000 }, { k: '0', amount: '1000' }, { k: 0 }]) {
+    r = await ag(A, '10.0.9.90', { type: 'gangBiz', ...bad }); assert.ok(r.status === 400 || r.status === 409 || r.status === 422, JSON.stringify(r.body)); assert.ok(r.body.error);
+  }
+  assert.equal((await A.estado()).cash, a0 - 4000);
+  // B põe metade: B fica com +5% (A tem pelo menos o mesmo) e A com +2,5%, sem A ter feito nada
+  r = await ag(B, '10.0.9.91', { type: 'gangBiz', k: 0, amount: 2000 }); assert.equal(r.status, 200, JSON.stringify(r.body)); assert.equal(r.body.result.coop, 500);
+  let g = await gangue(A, '10.0.9.90'), z = g.mine.biz[0];
+  assert.equal(z.id, 'oficina'); assert.equal(z.open, true); assert.equal(g.mine.biz[1].open, false);
+  assert.equal(z.total, 6000); assert.equal(z.investors, 2); assert.equal(z.inv, 4000); assert.equal(z.coop, 250); assert.equal(z.full, 0); assert.equal(z.perH, 123);
+  assert.equal(g.mine.roster.find((m) => m.name === 'NegB').stake, 2000);
+  z = (await gangue(B, '10.0.9.91')).mine.biz[0]; assert.equal(z.inv, 2000); assert.equal(z.coop, 500); assert.equal(z.full, 1); assert.equal(z.perH, 63);
+  // reinício: o investimento e o bónus continuam lá
+  await parar(); await arrancar();
+  z = (await gangue(A, '10.0.9.90')).mine.biz[0]; assert.equal(z.inv, 4000); assert.equal(z.coop, 250);
+  r = await ag(A, '10.0.9.90', { type: 'gangBizCollect' }); assert.equal(r.status, 200, JSON.stringify(r.body)); assert.ok(r.body.result.money >= 0);
+  // expulsar: B recebe metade de volta (e o que tinha por receber) e A perde o bónus que vinha dele
+  const b0 = (await B.estado()).cash;
+  r = await ag(A, '10.0.9.90', { type: 'gangKick', name: 'NegB' }); assert.equal(r.status, 200, JSON.stringify(r.body));
+  const b1 = await B.estado(); assert.ok(b1.cash >= b0 + 1000 && b1.cash <= b0 + 1000 + 10); assert.equal(b1.gang, null);
+  const ev = await (await fetch(BASE + '/api/events', { headers: { cookie: B.cookie, 'X-Forwarded-For': '10.0.9.91' } })).json();
+  assert.equal(ev.list[0].k, 'gangOut'); assert.equal(ev.list[0].money, b1.cash - b0);
+  z = (await gangue(A, '10.0.9.90')).mine.biz[0]; assert.equal(z.coop, 0); assert.equal(z.total, 4000); assert.equal(z.investors, 1);
+  // sair: A recebe metade e a gangue acaba
+  const a1 = (await A.estado()).cash;
+  r = await ag(A, '10.0.9.90', { type: 'gangLeave' }); assert.equal(r.status, 200); assert.ok(r.body.result.back >= 2000); assert.equal(r.body.me.cash, a1 + r.body.result.back);
+  assert.equal((await gangue(A, '10.0.9.90')).list.length, 0);
+});
+
 test('gangues: golpe em grupo e tareia em grupo — alinhar, falta de gente devolve tudo, contas certas, sobrevive a um reinício', async () => {
   const ips = { A: '10.0.9.60', B: '10.0.9.61', C: '10.0.9.62', V: '10.0.9.63' };
   const A = await contaNova('GolpeA', ips.A), B = await contaNova('GolpeB', ips.B), C = await contaNova('GolpeC', ips.C), V = await contaNova('GolpeV', ips.V);

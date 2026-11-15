@@ -1286,3 +1286,8 @@ h1.slogo { margin: 0; }
   .slot .sgw, .slot .sgrid { max-width: calc((100dvh - 300px) * var(--cols) / var(--rows, 5)); }
   .slot .sgrid { max-width: none; }
 }
+
+/* negócios da gangue: três linhas dentro do mesmo cartão, separadas por espaço e um degrau de tom (sem caixas dentro de caixas) */
+.gbz .gbr { display: grid; gap: 8px; padding: 12px; margin: 0 -4px; border-radius: 10px; background: var(--s2); }
+.gbz .gbr.off { opacity: .6; }
+.gbz .gbr .btn { min-height: 44px; padding: 0 10px; white-space: nowrap; }

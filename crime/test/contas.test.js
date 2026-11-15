@@ -416,6 +416,70 @@ test('blackjack: a seguir a dica do jogo em 400 000 mãos, devolve 99,5% e a cas
   }
 });
 
+// ---------- negócios da gangue ----------
+const socio = (cash = 1e9, resp = 0) => { const p = mk(); p.cash = cash; p.bank = 0; if (resp) setResp(p, resp); E.gangSet(p, 'g1', 3, 0); return p; };
+test('negócios da gangue: cada um ganha sobre o que pôs; o bónus de grupo é +5% por sócio ao teu nível, em proporção para quem tem menos, até +50%', () => {
+  const B = CFG.gang.biz, A = socio(), P = socio();
+  assert.deepEqual(B.map((b) => b.id), ['oficina', 'jogo', 'rota']);
+  // limites: sem gangue, sede pequena, quantia mínima, teto do nível e sem dinheiro; nada muda
+  const fora = mk(); assert.throws(() => E.gangBizInvest(fora, NOW, W, 0, 1000, 3), code('NO_GANG'));
+  const antes = JSON.stringify(A);
+  assert.throws(() => E.gangBizInvest(A, NOW, W, 1, 1000, 1), code('GBIZ_SEDE'));
+  assert.throws(() => E.gangBizInvest(A, NOW, W, 0, 99, 3), code('BAD_AMOUNT'));
+  assert.throws(() => E.gangBizInvest(A, NOW, W, 0, 1.5, 3), code('BAD_AMOUNT'));
+  assert.throws(() => E.gangBizInvest(A, NOW, W, 9, 1000, 3), code('NO_BIZ'));
+  assert.equal(E.gangBizCap(A, 0), E.casinoMax(A) * B[0].capMult);
+  assert.throws(() => E.gangBizInvest(A, NOW, W, 0, E.gangBizCap(A, 0) + 1, 3), code('GBIZ_CAP'));
+  const teso = socio(50); assert.throws(() => E.gangBizInvest(teso, NOW, W, 0, 1000, 3), code('NO_MONEY'));
+  assert.equal(JSON.stringify(A), antes);
+  // A põe 3000 e fica sozinho 2 h: 3% por hora, sem bónus
+  let r = E.gangBizInvest(A, NOW, W, 0, 3000, 3); assert.equal(r.inv, 3000); assert.equal(A.cash, 1e9 - 3000);
+  assert.deepEqual(E.gangBizSync([A, P], NOW), []);
+  assert.equal(E.gangBizRate(A, 0), 90); assert.equal(E.gangBizView(A, NOW + 2 * T.HOUR)[0].stored, 180);
+  // P põe só 300 (um décimo): P ganha +5% (tem um sócio com pelo menos o mesmo), A só +0,5% (o sócio tem um décimo do dele)
+  E.gangBizInvest(P, NOW + 2 * T.HOUR, W, 0, 300, 3);
+  const mud = E.gangBizSync([A, P], NOW + 2 * T.HOUR); assert.equal(mud.length, 2);
+  assert.equal(A.gbz[0].coop, 50); assert.equal(P.gbz[0].coop, 500);
+  assert.equal(A.gbz[0].stored, 180);                       // antes de mudar o bónus fecha-se a conta com o antigo
+  assert.equal(E.gangBizRate(A, 0), Math.floor(90 * 1.005)); assert.equal(E.gangBizRate(P, 0), Math.floor(9 * 1.05));
+  // o pobre não ganha mais por o sócio ser rico: com um sócio igual a ele teria exatamente o mesmo bónus
+  const P2 = socio(), Q2 = socio(); E.gangBizInvest(P2, NOW, W, 0, 300, 3); E.gangBizInvest(Q2, NOW, W, 0, 300, 3); E.gangBizSync([P2, Q2], NOW);
+  assert.equal(P2.gbz[0].coop, P.gbz[0].coop); assert.equal(E.gangBizRate(P2, 0), E.gangBizRate(P, 0));
+  // 10 ou mais sócios ao mesmo nível: +50% e não passa daí
+  const grupo = Array.from({ length: 14 }, () => socio()); for (const x of grupo) E.gangBizInvest(x, NOW, W, 2, 1000, 3);
+  E.gangBizSync(grupo, NOW); for (const x of grupo) { assert.equal(x.gbz[2].coop, 5000); assert.equal(E.gangBizRate(x, 2), 60); }
+  // receber: cai na mão o que rendeu, guardado no máximo 8 h
+  const g0 = grupo[0], c0 = g0.cash; r = E.gangBizCollect(g0, NOW + 3 * T.HOUR, W); assert.equal(r.money, 180); assert.equal(g0.cash, c0 + 180);
+  assert.equal(E.gangBizView(g0, NOW + 50 * T.HOUR)[2].stored, 60 * 8);
+  for (const x of [A, P, ...grupo]) assert.deepEqual(E.checkInvariants(x), []);
+});
+
+test('negócios da gangue: sair devolve metade do investido e o que estava por receber; quem fica perde o bónus desse sócio; não há forma de criar dinheiro', () => {
+  const A = socio(), Bm = socio();
+  E.gangBizInvest(A, NOW, W, 0, 2000, 3); E.gangBizInvest(Bm, NOW, W, 0, 2000, 3); E.gangBizSync([A, Bm], NOW);
+  assert.equal(A.gbz[0].coop, 500); assert.equal(E.gangBizRate(A, 0), 63);
+  const c0 = Bm.cash, t1 = NOW + 4 * T.HOUR, back = E.gangLeave(Bm, t1);
+  assert.deepEqual(back, { refund: 1000, stored: 252, invested: 2000 }); assert.equal(Bm.cash, c0 + 1252);
+  assert.equal(Bm.gang, null); assert.ok(Bm.gbz.every((x) => x.inv === 0 && x.stored === 0 && x.coop === 0)); assert.deepEqual(E.checkInvariants(Bm), []);
+  assert.deepEqual(E.gangBizSync([A], t1), [A]); assert.equal(A.gbz[0].coop, 0); assert.equal(A.gbz[0].stored, 252); assert.equal(E.gangBizRate(A, 0), 60);
+  // pôr e tirar logo custa sempre metade: entrar e sair não dá lucro a ninguém, nem a quem fica
+  const X = socio(100000); E.gangBizInvest(X, t1, W, 0, 2000, 3); E.gangBizSync([A, X], t1); E.gangLeave(X, t1); E.gangBizSync([A], t1);
+  assert.equal(X.cash, 100000 - 1000); assert.equal(A.gbz[0].stored, 252); assert.equal(A.gbz[0].coop, 0);
+  // muitos sócios ao acaso, a investir a horas diferentes: ninguém recebe mais do que o seu investimento × taxa × 1,5 × horas, e o acerto por partes dá o mesmo
+  const rng = seededRng(88), ms = Array.from({ length: 8 }, () => socio(1e9, CFG.levels[6])), teto = ms.map(() => 0), pos = ms.map(() => 0);
+  let t = NOW;
+  for (let passo = 0; passo < 300; passo++) {
+    const i = rng.int(0, 7), k = rng.int(0, 2), dt = rng.int(1, 40) * T.MIN;
+    ms.forEach((m, j) => { for (let q = 0; q < 3; q++) teto[j] += Math.floor((m.gbz[q].inv * CFG.gang.biz[q].rateBp) / 10000) * 1.5 * (dt / T.HOUR); });
+    t += dt;
+    if (rng.chance(1500)) { const r = E.gangBizCollect(ms[i], t, W); pos[i] += r.money; }
+    else { try { E.gangBizInvest(ms[i], t, W, k, rng.int(100, 20000), 3); } catch (e) { if (!(e instanceof E.GameError)) throw e; } }
+    E.gangBizSync(ms, t);
+    for (const m of ms) assert.deepEqual(E.checkInvariants(m), []);
+  }
+  ms.forEach((m, j) => { const tot = pos[j] + E.gangBizView(m, t).reduce((x, y) => x + y.stored, 0); assert.ok(tot <= teto[j] + 1, `sócio ${j}: recebeu ${tot}, teto ${teto[j]}`); assert.ok(tot >= 0); });
+});
+
 test('casino: aposta mínima, máxima pelo nível, só dinheiro na mão; aposta recusada não mexe em nada', () => {
   const p = cas(500); p.bank = 1e6;
   const antes = structuredClone(p);
