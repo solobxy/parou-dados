@@ -20,7 +20,7 @@ const SECURE = process.env.COOKIE_INSEGURO ? '' : '; Secure';
 const [fy, fm, fd] = (process.env.PRIMEIRA_RONDA || '2026-11-13').split('-').map(Number);
 const FIRST = { y: fy, m: fm, d: fd };
 const rng = cryptoRng();
-const VERSAO = 40;   // sobe quando o servidor muda, para se confirmar de fora que a versão nova já está a correr
+const VERSAO = 41;   // sobe quando o servidor muda, para se confirmar de fora que a versão nova já está a correr
 const ATOS_3S = +(process.env.ATOS_3S || 15), ATOS_MIN = +(process.env.ATOS_MIN || 400); // ações por conta: 15 em 3 s, 400 por minuto
 
 // ---------- relógio que nunca anda para trás ----------
@@ -449,7 +449,7 @@ function resolverOp(g, now) {
   if (op.kind === 'heist') {
     const H = CFG.gang.heists[op.k];
     if (ps.length < H.need) { for (const p of ps) devolve(p); res = { kind: 'heist', k: op.k, cancelled: true, n: ps.length, need: H.need }; }
-    else { const r = E.heistResolve(ps, now, op.k, rng); res = { kind: 'heist', k: op.k, success: r.success, chanceBp: r.chanceBp, parts: r.parts.map((x) => ({ name: nomeDe(x.id), money: x.money, respect: x.respect, busted: !!x.busted })) }; }
+    else { const r = E.heistResolve(ps, now, op.k, rng); res = { kind: 'heist', k: op.k, success: r.success, chanceBp: r.chanceBp, parts: r.parts.map((x) => ({ name: nomeDe(x.id), money: x.money, respect: x.respect, share: x.share, busted: !!x.busted })) }; }
   } else if (ps.length < CFG.gang.hitNeed || !d || !E.hitCanResolve(d, now, g.id)) {
     for (const p of ps) devolve(p);
     res = { kind: 'hit', target: nomeDe(op.alvo), cancelled: true, n: ps.length, need: CFG.gang.hitNeed, gone: ps.length >= CFG.gang.hitNeed };
@@ -532,7 +532,9 @@ function vistaOp(g, conta, now) {
   const ps = op.parts.map((c) => jogadores.get(c)).filter(Boolean), d = op.kind === 'hit' ? jogadores.get(op.alvo) : null;
   return { kind: op.kind, k: op.k ?? null, target: d ? nomeDe(d.id) : null, by: nomeDe(op.by), mineToCancel: op.by === conta || g.lider === conta, closesAt: op.fecha, parts: op.parts.map(nomeDe), joined: op.parts.includes(conta),
     need: op.kind === 'hit' ? CFG.gang.hitNeed : CFG.gang.heists[op.k].need, e: op.kind === 'hit' ? CFG.pvp.energy : CFG.gang.heists[op.k].e,
-    chance: !ps.length ? 0 : op.kind === 'hit' ? (d ? E.hitChanceBp(ps, d, now) : 0) : E.heistChanceBp(ps, op.k, now) };
+    chance: !ps.length ? 0 : op.kind === 'hit' ? (d ? E.hitChanceBp(ps, d, now) : 0) : E.heistChanceBp(ps, op.k, now),
+    // a parte do saque de quem está a ver, com o grupo como está agora (muda quando entra mais gente)
+    share: op.kind === 'heist' && op.parts.includes(conta) && ps.length === op.parts.length ? E.heistShares(ps, op.k, now)[op.parts.indexOf(conta)] : null };
 }
 
 // todas as ações de gangue. ctx junta o que tem de ser gravado no mesmo passo: outros jogadores, escritas na base de dados e o que se faz depois

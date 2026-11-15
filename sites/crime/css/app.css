@@ -1347,3 +1347,14 @@ body::before { content: ''; position: fixed; inset: 0; z-index: 0; pointer-event
 .tgt .acts .btn.sm { font-size: 14px; }
 /* ecrãs baixos: a imagem do cabeçalho encolhe para o conteúdo começar mais acima */
 @media (max-height: 640px) { .pimg { height: 112px; } }
+.limtx { font-variant-numeric: tabular-nums; min-width: 0; overflow-wrap: anywhere; }
+.sheet .stack > * { min-width: 0; }
+
+/* 320 px: nada pode empurrar a página para os lados (campos de texto, atalhos das lutas) */
+.field { min-width: 0; }
+.field input { width: 100%; min-width: 0; box-sizing: border-box; }
+.hlinks { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+.hlink { min-width: 0; }
+.hlink span { overflow-wrap: anywhere; }
+@media (max-width: 359px) { .hlink span { font-size: 17px; } .hlink { gap: 8px; padding-right: 6px; } }
+.hstats .nx { white-space: nowrap; min-width: 0; }

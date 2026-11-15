@@ -74,7 +74,8 @@ function contas(kind, a0, a, d0, d, t, res, arg) {
     case 'heist': {
       const H = CFG.gang.heists[arg], eu = (res.parts || []).find((x) => x.id === a.id);
       if (res.refund || !res.success) { if (dm !== 0 || dr !== 0) bad('golpe em grupo falhado ou devolvido mexeu no dinheiro ou no respeito'); }
-      else if (dm !== eu.money || eu.money < H.min || eu.money > Math.floor((H.max * (10000 + CFG.gang.lootBpPer * CFG.gang.maxLevel)) / 10000) || dr !== H.r) bad('golpe em grupo: saque ou respeito');
+      else if (dm !== eu.money || !(eu.share >= 0 && eu.share <= 10000) || eu.money > Math.floor((Math.floor((H.max * eu.share) / 10000) * (10000 + CFG.gang.lootBpPer * CFG.gang.maxLevel)) / 10000) || (eu.share === 10000 && eu.money < H.min)
+        || dr !== eu.respect || eu.respect < 1 || eu.respect > H.r || res.parts.reduce((s, x) => s + x.share, 0) > res.parts.length * 10000) bad('golpe em grupo: saque ou respeito');
       if (res.refund && a.energy !== Math.min(CFG.energy.max, touched(a0, t).energy)) bad('golpe em grupo: a stamina não voltou');
       break;
     }

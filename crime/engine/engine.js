@@ -1390,21 +1390,29 @@ export function heistJoin(p, now, world, k) {
   return { ok: true, e: H.e };
 }
 export function heistRefund(p, now, k) { touch(p, now); p.energy = Math.min(CFG.energy.max, p.energy + heistOf(k).e); }
+// o que cada um puxa num golpe em grupo: as stats dele, pesadas como o golpe pede
+const heistPull = (p, k, now) => { const { w } = heistOf(k); return Math.floor((w.I * effStat(p, 'I', now) + w.F * effStat(p, 'F', now) + w.C * effStat(p, 'C', now)) / 100); };
 export function heistChanceBp(ps, k, now) {
-  const { w, D } = heistOf(k); let s = 0;
-  for (const p of ps) s += Math.floor((w.I * effStat(p, 'I', now) + w.F * effStat(p, 'F', now) + w.C * effStat(p, 'C', now)) / 100);
+  const { D } = heistOf(k); let s = 0;
+  for (const p of ps) s += heistPull(p, k, now);
   return chanceBp(s, D);
+}
+// A parte de cada um, em pontos-base do saque por cabeça: quem puxa a média do grupo ou mais leva o saque inteiro; quem puxa menos leva em proporção.
+// Sem limite de golpes por dia, é isto que impede ir à boleia dos fortes (ou encher o grupo de contas fracas): a soma nunca passa do que um grupo igual receberia.
+export function heistShares(ps, k, now) {
+  const cs = ps.map((p) => heistPull(p, k, now)), S = cs.reduce((a, b) => a + b, 0), n = ps.length;
+  return cs.map((c) => (S > 0 ? Math.min(10000, Math.floor((c * n * 10000) / S)) : 10000));
 }
 export function heistResolve(ps, now, k, rng) {
   const H = heistOf(k);
   for (const p of ps) touch(p, now);
   const bp = heistChanceBp(ps, k, now);
   if (rng.chance(bp)) {
-    const each = rng.int(H.min, H.max);   // o mesmo para todos, antes do bónus de saque da gangue
-    return { ok: true, success: true, chanceBp: bp, parts: ps.map((p) => {
-      const money = Math.floor((each * (10000 + gbp(p, 'loot'))) / 10000);
+    const each = rng.int(H.min, H.max), sh = heistShares(ps, k, now);   // o saque por cabeça; cada um leva a parte dele (ver heistShares), mais o bónus de saque da gangue
+    return { ok: true, success: true, chanceBp: bp, parts: ps.map((p, i) => {
+      const money = Math.floor((Math.floor((each * sh[i]) / 10000) * (10000 + gbp(p, 'loot'))) / 10000), respect = Math.max(1, Math.floor((H.r * sh[i]) / 10000));
       p.cash += money;
-      return { id: p.id, money, respect: H.r, levelUp: addRespect(p, H.r, now) };
+      return { id: p.id, money, respect, share: sh[i], levelUp: addRespect(p, respect, now) };
     }) };
   }
   return { ok: true, success: false, chanceBp: bp, parts: ps.map((p) => {

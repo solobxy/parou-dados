@@ -1366,3 +1366,24 @@ test('contabilista: armazém de 24 h, fica com 10% só do que passa das 8 h, nun
   const c = mk(); setResp(c, 5000); c.cash = 1e9; E.buyBiz(c, NOW, W, i); const t = NOW + 30 * T.HOUR;
   E.hireAccountant(c, t, W); assert.equal(E.bizStored(c, t)[i].money, E.bizRates(c, i).perH * 8); assert.equal(E.bizStored(c, t + 2 * T.HOUR)[i].money, E.bizRates(c, i).perH * 10);
 });
+
+test('golpes em grupo: cada um leva conforme o que puxa — a média ou mais leva tudo, quem vai à boleia leva em proporção e o total nunca sobe', () => {
+  const G = CFG.gang, k = G.heists.findIndex((x) => x.id === 'moeda'), H = G.heists[k];
+  const membro = (v) => { const p = mk(); p.stats = { F: v, T: v, I: v, C: v }; p.cash = 0; p.bank = 0; setResp(p, 100); E.gangSet(p, 'g1', 0, 0); return p; };
+  // grupo igual: 100% para todos
+  const iguais = [membro(800), membro(800), membro(800), membro(800), membro(800)];
+  assert.deepEqual(E.heistShares(iguais, k, NOW), [10000, 10000, 10000, 10000, 10000]);
+  // quatro fortes e uma conta fraca: os fortes levam tudo, a fraca quase nada; a soma das partes não passa de n
+  const forte = () => membro(1000), fraco = membro(10), misto = [forte(), forte(), forte(), forte(), fraco], sh = E.heistShares(misto, k, NOW);
+  assert.deepEqual(sh.slice(0, 4), [10000, 10000, 10000, 10000]); assert.ok(sh[4] > 0 && sh[4] < 200, 'parte do fraco ' + sh[4]); assert.ok(sh.reduce((a, b) => a + b, 0) <= 50000);
+  const r = E.heistResolve(misto, NOW, k, always); assert.equal(r.success, true);
+  assert.equal(r.parts[0].money, H.min); assert.equal(r.parts[0].respect, H.r); assert.equal(r.parts[4].money, Math.floor((H.min * sh[4]) / 10000)); assert.equal(r.parts[4].respect, Math.max(1, Math.floor((H.r * sh[4]) / 10000)));
+  assert.equal(fraco.cash, r.parts[4].money); assert.ok(fraco.cash < H.min / 50, 'ir à boleia não enriquece');
+  // um forte a carregar sete contas fracas: os fracos levam pouco e o forte não leva mais do que o saque normal
+  const carro = [forte(), ...Array.from({ length: 7 }, () => membro(10))], r2 = E.heistResolve(carro, NOW, k, always);
+  assert.equal(r2.parts[0].money, H.min); const total = r2.parts.reduce((s, x) => s + x.money, 0);
+  assert.ok(total < H.min * 1.6, 'um forte com sete contas a mais tira no total ' + total + ', longe de 8 saques');
+  // dois níveis diferentes mas honestos: quem puxa 60% da média leva 60%
+  const a = membro(1000), b = membro(250), par = E.heistShares([a, b], k, NOW); assert.equal(par[0], 10000); assert.equal(par[1], Math.floor((E.heistShares([b], k, NOW)[0] && 250 * 2 * 10000) / 1250));
+  for (const p of [...iguais, ...misto, ...carro]) assert.deepEqual(E.checkInvariants(p), []);
+});

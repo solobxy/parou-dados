@@ -832,8 +832,9 @@ function screenAcct() {
   out.push(h('h2', { class: 'sec' }, t('acNext')));
   out.push(picks.length ? h('div', { class: 'card vlist vc' }, picks.map((x, k) => h('button', { class: 'vrow tap', on: { click: () => go('biz') } }, art('biz', B[x.i].id, 'vth'),
     h('div', { class: 'grow' }, h('b', null, list('biz')[x.i], k === 0 ? h('span', { class: 'chip good', style: 'margin-left:6px' }, t('acBest')) : null),
-      h('div', { class: 'small muted num' }, moneyShort(x.price) + ' · +' + moneyShort(x.gain) + t('perHour'))),
-    h('div', { class: 'small num ' + (me.cash + me.bank >= x.price ? 'c-cash' : 'muted'), style: 'text-align:right' }, t('acPays', { t: dur(x.h * 3600000) })))))
+      h('div', { class: 'small muted num' }, moneyShort(x.price) + ' · +' + moneyShort(x.gain) + t('perHour')),
+      h('div', { class: 'small num ' + (me.cash + me.bank >= x.price ? 'c-cash' : 'muted') }, t('acPays', { t: dur(x.h * 3600000) }))),
+    h('span', { class: 'muted', 'aria-hidden': 'true' }, '›'))))
     : h('div', { class: 'card vc' }, h('p', { class: 'muted' }, t('acAllMax'))));
   // avisos: dinheiro parado ou em risco
   const warn = [];
@@ -965,9 +966,9 @@ function stLimitSheet(k) {
     body.replaceChildren(h('h2', { style: 'margin:0' }, t('stLimT', { x: t('st_' + S.cfg.stocks.list[k].id) })), h('p', { class: 'small muted' }, t('stLimSub', { p: S.cfg.stocks.feeBp / 100 })),
       h('div', { class: 'row sp small' }, h('span', { class: 'muted' }, t('stLimNow')), h('b', { class: 'num' }, stMoney(pr))), h('div', { class: 'row sp small' }, h('span', { class: 'muted' }, t('stLimAvg')), h('b', { class: 'num' }, stMoney(avg))),
       h('h3', { class: 'c-cash', style: 'margin:8px 0 0' }, t('stTp')), opt(tp, [5, 10, 25, 50], 1, (v) => { tp = v; }),
-      h('div', { class: 'small muted num' }, tp ? t('stLimAt', { m: stMoney(tp), p: pctOf(tp), g: est(tp) }) : t('stLimNone')),
+      h('div', { class: 'small muted limtx' }, tp ? t('stLimAt', { m: stMoney(tp), p: pctOf(tp), g: est(tp) }) : t('stLimNone')),
       h('h3', { class: 'c-red', style: 'margin:8px 0 0' }, t('stSl')), opt(sl, [5, 10, 20, 35], -1, (v) => { sl = v; }),
-      h('div', { class: 'small muted num' }, sl ? t('stLimAt', { m: stMoney(sl), p: pctOf(sl), g: est(sl) }) : t('stLimNone')),
+      h('div', { class: 'small muted limtx' }, sl ? t('stLimAt', { m: stMoney(sl), p: pctOf(sl), g: est(sl) }) : t('stLimNone')),
       h('button', { class: 'btn buy block big', on: { click: async () => { close(); await act('stockLimit', { k, tp, sl }); loadStocks(); } } }, t('stLimSave')),
       h('p', { class: 'small muted' }, t('stLimNote')));
   };
@@ -1659,6 +1660,7 @@ function gangOps(mine, me) {
       h('div', { class: 'row sp gline' }, h('span', null, t('goCount', { n: op.parts.length, s: op.need })), h('b', { class: chanceCls(op.chance) }, t('goChance', { p: pct(op.chance) }))),
       h('div', { class: 'small muted' }, op.parts.join(' · ')),
       miss ? h('p', { class: 'small muted' }, miss === 1 ? t('goNeed1') : t('goNeed', { n: miss })) : null,
+      op.joined && op.share != null ? h('p', { class: 'small ' + (op.share < 10000 ? 'c-gold' : 'muted') }, t(op.share < 10000 ? 'goShareLow' : 'goShare', { p: pct(op.share) })) : null,
       op.joined ? h('p', { class: 'gin' }, icon('check'), t('goIn'))
         : h('button', { class: 'btn buy block', disabled: !!busy || en < op.e || op.parts.length >= G.opMax, on: { click: (e) => { const el = e.currentTarget; if (op.kind === 'hit') withShield((drop) => gAct('gangOpJoin', { drop }, { el })); else gAct('gangOpJoin', {}, { el }); } } }, t('goJoin', { e: op.e })),
       op.mineToCancel ? h('button', { class: 'btn ghost block', on: { click: () => gAct('gangOpCancel', {}) } }, t('goCancel')) : null));
