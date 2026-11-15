@@ -98,6 +98,7 @@ function react(type, out, before, opts) {
   else if (type === 'acct') { toast(t('acHired')); fx.sfx('claim'); }
   else if (type === 'stockLimit') { toast(r.tp || r.sl ? t('stLimSaved') : t('stLimOff')); fx.sfx('claim'); }
   else if (type === 'stockDump') { toast(t('got', { m: money(r.got) })); fx.sfx('cash'); }
+  else if (type === 'venueSet') { toast(t('vnSaved')); fx.sfx('claim'); }
   else if (type === 'venueBuy') { toast(r.lvl === 1 ? t('vnOpened_' + r.kind) : t('vnUpped', { n: r.lvl })); fx.sfx('claim'); }
   else if (type === 'house') { toast(t('houseMoved', { x: list('houses')[me.house], n: r.respect })); fx.sfx('claim'); }
   else if (type === 'hooker' || type === 'broVisit') { fx.sfx('refill'); if (r.sick) { toast(t('gotSick'), true); fx.vibrate([40, 60, 40]); } if (r.rob) { toast(t('hkRob_' + r.rob.kind, { m: money(r.rob.loss) }), true); fx.vibrate([30, 40, 30]); } }
@@ -783,15 +784,21 @@ function venuePrices(kind, v) {
   const V = S.cfg.venue, me = S.st.me, floor = kind === 'club' ? S.cfg.goods.wholesaleBp : V.girlBp;
   const set = (pi, gd) => act('venueSet', { kind, pi, gd });
   const raw = Math.floor((V.prices[v.pi] * (10000 - V.gdisc[v.gd])) / 10000), gbp = Math.max(floor, raw);
-  const vol = V.volBp[v.pi] / 100, bp = V.prices[v.pi];
-  const why = bp <= floor ? t('vnPriceZero') : kind === 'club' ? t('vnPriceClub', { v: vol, m: Math.round(((bp - floor) / floor) * 100) }) : t('vnPriceBro', { v: vol, m: (bp - floor) / 100 });
+  const vol = V.volBp[v.pi] / 100, bp = V.prices[v.pi], gain = kind === 'club' ? Math.round(((bp - floor) / floor) * 100) : (bp - floor) / 100;
+  // o efeito da escolha em números grandes: verde quando é melhor para ti do que o normal, vermelho quando é pior; o resto sem cor
+  const fact = (lbl, val, cls) => h('div', { class: 'fact' }, h('b', { class: 'num ' + cls }, val), h('span', null, lbl));
+  const inGang = me.gang && !me.gang.bot;
   return h('div', { class: 'card stack vc' },
     h('h3', null, t('vnPrice')),
     h('div', { class: 'seg five', role: 'group', 'aria-label': t('vnPrice') }, V.prices.map((x, i) => h('button', { 'aria-pressed': i === v.pi ? 'true' : 'false', on: { click: () => set(i, v.gd) } }, x / 100 + '%'))),
-    h('p', { class: 'small muted' }, why),
-    h('h3', null, t('vnGang')),
+    h('div', { class: 'segends', 'aria-hidden': 'true' }, h('span', null, t('vnPriceLo')), h('span', null, t('vnPriceHi'))),
+    h('div', { class: 'facts two' }, fact(t('vnCust'), vol + '%', vol > 100 ? 'c-cash' : vol < 100 ? 'c-red' : ''), fact(t(kind === 'club' ? 'vnProfit' : 'vnCut'), gain + '%', gain > 0 ? 'c-cash' : 'muted')),
+    bp <= floor ? h('p', { class: 'small muted' }, t('vnPriceZero')) : kind === 'club' ? null : h('p', { class: 'small muted' }, t('vnBroRest')),
+    h('h3', { style: 'margin-top:8px' }, t('vnGang')),
     h('div', { class: 'seg five', role: 'group', 'aria-label': t('vnGang') }, V.gdisc.map((x, i) => h('button', { 'aria-pressed': i === v.gd ? 'true' : 'false', on: { click: () => set(v.pi, i) } }, x ? '−' + x / 100 + '%' : t('vnNoDisc')))),
-    h('p', { class: 'small muted' }, me.gang && !me.gang.bot ? t('vnGangPays', { p: gbp / 100 }) + (raw < floor ? ' ' + t('vnFloor') : '') : t('vnNoGang')));
+    inGang ? h('div', { class: 'facts two' }, fact(t('vnPayGang'), gbp / 100 + '%', ''), fact(t('vnPayAll'), bp / 100 + '%', '')) : null,
+    // o desconto escolhido passava do custo: diz-se logo, para o número de cima não parecer um erro
+    !inGang ? h('p', { class: 'small muted' }, t('vnNoGang')) : raw < floor ? h('p', { class: 'small vfloor' }, t('vnFloor', { p: floor / 100 })) : null);
 }
 function venueUp(kind, v, nextTxt, b) {
   const me = S.st.me;
@@ -1509,6 +1516,8 @@ function eventRow(e) {
   let txt;
   if (e.k === 'gangIn' || e.k === 'gangOut') return h('div', { class: 'card row' }, h('span', { class: e.k === 'gangIn' ? 'c-cash' : 'c-red' }, icon('fist')),
     h('div', { class: 'grow' }, h('div', null, t(e.k === 'gangIn' ? 'evGangIn' : 'evGangOut', { g: e.gang }) + (e.money > 0 ? ' ' + t('gBizBack', { m: money(e.money) }) : '')), h('div', { class: 'small muted' }, dur(now() - e.t))));
+  if (e.k === 'gangRole') return h('div', { class: 'card row' }, h('span', { class: e.role > (e.was || 0) ? 'c-resp' : 'muted' }, icon('crown')),
+    h('div', { class: 'grow' }, h('div', null, t('evRole' + e.role, { g: e.gang })), h('div', { class: 'small muted' }, dur(now() - e.t))));
   if (e.k === 'gangBail' || e.k === 'gangMedic') return h('div', { class: 'card row' }, h('span', { class: 'c-cash' }, icon(e.k === 'gangBail' ? 'lock' : 'pill')),
     h('div', { class: 'grow' }, h('div', null, t(e.k === 'gangBail' ? 'evBail' : 'evMedic', { who: e.by, m: money(e.money) })), h('div', { class: 'small muted' }, dur(now() - e.t))));
   if (e.k === 'gop') return opResult(e, e.out || e.cancelled ? 0 : e.respect, e.t);
@@ -1716,20 +1725,23 @@ function screenGang() {
     h('p', { class: 'small muted' }, t('gFundNote')),
     upRow('sede', mine.sede, G.sede[mine.sede - 1], t('gUpSede', { n: mine.sede + 1 })),
     upRow('armaria', mine.armaria, G.armaria[mine.armaria], t('gUpArm', { n: mine.armaria + 1 }))));
-  // pedidos de entrada (só o chefe)
-  if (boss && mine.asks.length) out.push(h('h2', { class: 'sec' }, t('gAsksT')), h('div', { class: 'stack' }, mine.asks.map((a) => h('div', { class: 'card row sp' },
-    h('div', null, h('div', { style: 'font-weight:700' }, a.name), h('div', { class: 'small muted' }, t('gMemberLine', { l: a.level, r: short(a.respect) }))),
+  // pedidos de entrada (o chefe e quem tem cargo para isso)
+  const can = mine.can || {}, myRole = mine.role || 0;
+  if (can.asks && mine.asks.length) out.push(h('h2', { class: 'sec' }, t('gAsksT')), h('div', { class: 'stack' }, mine.asks.map((a) => h('div', { class: 'card row sp gask' },
+    h('div', { class: 'grow' }, h('div', { style: 'font-weight:700' }, a.name), h('div', { class: 'small muted' }, t('gMemberLine', { l: a.level, r: short(a.respect) }))),
     h('div', { class: 'row', style: 'gap:8px' }, h('button', { class: 'btn ghost sm', on: { click: () => gAct('gangReject', { name: a.name }) } }, t('gNo')), h('button', { class: 'btn buy sm', on: { click: () => gAct('gangAccept', { name: a.name }) } }, t('gYes')))))));
   // membros
   out.push(h('h2', { class: 'sec' }, mine.bot ? t('gBotMembersT', { n: mine.members }) : t('gMembersT', { n: mine.members, s: mine.slots })));
   out.push(h('div', { class: 'stack' }, mine.roster.map((m) => h('div', { class: 'card row gm' + (m.me ? ' me' : '') },
     S.avOk ? h('img', { class: 'avs', src: AV(m.av || 0), alt: '', width: 96, height: 96, loading: 'lazy' }) : null,
-    h('div', { class: 'grow' }, h('div', { style: 'font-weight:700' }, m.name, m.leader ? h('span', { class: 'c-resp' }, ' ', icon('crown')) : null), h('div', { class: 'small muted' }, t('gMemberLine', { l: m.level, r: short(m.respect) }) + (m.given ? ' · ' + t('gGave', { m: moneyShort(m.given) }) : '') + (m.stake ? ' · ' + t('gStake', { m: moneyShort(m.stake) }) : '')),
+    h('div', { class: 'grow' }, h('div', { class: 'gmn' }, h('b', null, m.name), m.role ? h('span', { class: 'grole r' + m.role }, m.role === 3 ? icon('crown') : null, t('gRole' + m.role)) : null), h('div', { class: 'small muted' }, t('gMemberLine', { l: m.level, r: short(m.respect) }) + (m.given ? ' · ' + t('gGave', { m: moneyShort(m.given) }) : '') + (m.stake ? ' · ' + t('gStake', { m: moneyShort(m.stake) }) : '')),
       m.jail > now() ? h('div', { class: 'small c-red' }, t('gInJail'), ' ', h('b', { class: 'num', dataset: { opend: m.jail } }, dur(m.jail - now()))) : m.hosp > now() ? h('div', { class: 'small c-red' }, t('gInHosp'), ' ', h('b', { class: 'num', dataset: { opend: m.hosp } }, dur(m.hosp - now()))) : null),
     !m.me && m.jail > now() ? h('button', { class: 'btn buy sm gsave', disabled: liquid < m.bail, on: { click: () => gAct('gangBail', { name: m.name }) } }, icon('lock'), t('gBail', { m: moneyShort(m.bail) }))
       : !m.me && m.hosp > now() ? h('button', { class: 'btn buy sm gsave', disabled: liquid < m.medic, on: { click: () => gAct('gangMedic', { name: m.name }) } }, icon('pill'), t('gMedic', { m: moneyShort(m.medic) })) : null,
-    boss && !m.me ? h('button', { class: 'btn ghost sm', 'aria-label': t('gManage', { a: m.name }), on: { click: () => gangMember(m) } }, '⋯') : null))));
-  if (boss) out.push(h('div', { class: 'seg', style: 'margin-top:12px' }, [[true, t('gOpenY')], [false, t('gOpenN')]].map(([v, lbl]) => h('button', { 'aria-pressed': mine.open === v ? 'true' : 'false', on: { click: () => gAct('gangOpen', { open: v }) } }, lbl))));
+    // gerir: o chefe gere todos; quem pode expulsar só vê o botão em quem está abaixo dele
+    !m.me && (boss || (can.kick && (m.role || 0) < myRole)) ? h('button', { class: 'btn ghost sm gmore', 'aria-label': t('gManage', { a: m.name }), on: { click: () => gangMember(m, mine) } }, '⋯') : null))));
+  if (!mine.bot) out.push(h('button', { class: 'btn ghost block granks', on: { click: () => gangRanks(mine) } }, t('gRolesBtn')));
+  if (boss) out.push(h('h2', { class: 'sec small' }, t('gOpenT')), h('div', { class: 'seg' }, [[true, t('gOpenY')], [false, t('gOpenN')]].map(([v, lbl]) => h('button', { 'aria-pressed': mine.open === v ? 'true' : 'false', on: { click: () => gAct('gangOpen', { open: v }) } }, lbl))));
   // conversa
   out.push(h('h2', { class: 'sec' }, t('gChatT')));
   const inp = h('input', { id: 'gmsg', maxlength: G.chatMax, autocomplete: 'off', enterkeyhint: 'send', placeholder: t('gChatPh'), value: S.gMsg || '', on: { input: (e) => { S.gMsg = e.target.value; }, keydown: (e) => { if (e.key === 'Enter') send(); } } });
@@ -1748,10 +1760,10 @@ function screenGang() {
 }
 // ---- operações da gangue: golpes e tareias em grupo ----
 const opName = (o) => (o.kind === 'hit' ? t('goHitT', { a: o.target }) : t('gh_' + (o.c || S.cfg.gang.heists[o.k].id)));
-// o = { kind, c|k, target, cancelled, gone, out, n, need, ok, money, busted, jailed }
+// o = { kind, c|k, target, cancelled, gone, stale, by, out, n, need, ok, money, busted, jailed }
 function opText(o) {
   if (o.out) return t('evGopOut');
-  if (o.cancelled) return o.gone ? t('goGone', { a: o.target }) : t('goFew', { n: o.n, s: o.need });
+  if (o.cancelled) return o.by ? t('goCalled', { a: o.by }) : o.stale ? t('goStale') : o.gone ? t('goGone', { a: o.target }) : t('goFew', { n: o.n, s: o.need });
   if (o.kind === 'hit') return t(o.ok ? 'goHitOk' : 'goHitBad', { a: o.target });
   if (o.ok) return t('goHeistOk', { x: opName(o), m: money(o.money) });
   return t('goHeistBad', { x: opName(o) }) + (o.jailed?.length ? ' ' + t('goJailed', { a: o.jailed.join(', ') }) : o.busted ? ' ' + t('goYouJail') : '');
@@ -1766,24 +1778,32 @@ function opResult(o, resp, when) {
 function gangOps(mine, me) {
   const G = S.cfg.gang, n = now(), op = mine.op, lv = live(me), busy = lv.jail || lv.hosp, en = lv.energy;
   const out = [h('h2', { class: 'sec' }, t('gOpsT'))];
-  if (op && op.closesAt > n - 4000) {
-    const miss = Math.max(0, op.need - op.parts.length);
-    out.push(h('div', { class: 'card gop' },
+  if (op) {
+    // O pedido não tem prazo. Enquanto falta gente mostra-se quantos faltam; com a equipa completa conta a última chamada.
+    const going = op.goAt > 0, away = op.away || 0, miss = Math.max(0, op.need - (op.parts.length - away)), full = op.parts.length >= G.opMax;
+    const status = going ? t('goLast') : op.hold ? t('goHold', { a: op.target }) : miss === 1 ? t('goNeed1') : t('goNeed', { n: miss });
+    const join = (e) => { const el = e.currentTarget; if (op.kind === 'hit') withShield((drop) => gAct('gangOpJoin', { drop }, { el })); else gAct('gangOpJoin', {}, { el }); };
+    out.push(h('div', { class: 'card gop' + (going ? ' going' : '') },
       h('div', { class: 'gimg' }, h('img', { src: op.kind === 'hit' ? IMG('cenas', 'lutas', 1) : IMG('crimes', G.heists[op.k].id, 1), alt: '', width: 1100, height: 1100, decoding: 'async', on: { error: (e) => e.currentTarget.parentNode.remove() } })),
-      h('div', { class: 'row sp' }, h('div', { class: 'gt' }, opName(op)), h('b', { class: 'gcd num', dataset: { opend: op.closesAt } }, dur(Math.max(0, op.closesAt - n)))),
+      h('div', { class: 'row sp' }, h('div', { class: 'gt' }, opName(op)), going ? h('b', { class: 'gcd num', dataset: { opend: op.goAt } }, dur(Math.max(0, op.goAt - n))) : null),
       h('div', { class: 'row sp gline' }, h('span', null, t('goCount', { n: op.parts.length, s: op.need })), h('b', { class: chanceCls(op.chance) }, t('goChance', { p: pct(op.chance) }))),
-      h('div', { class: 'small muted' }, op.parts.join(' · ')),
-      miss ? h('p', { class: 'small muted' }, miss === 1 ? t('goNeed1') : t('goNeed', { n: miss })) : null,
+      h('div', { class: 'small muted' }, op.parts.map((a) => (a === op.by ? t('goOpener', { a }) : a)).join(' · ')),
+      h('p', { class: 'small gstat' }, going ? null : h('b', null, t('goOpen') + ' '), status),
+      away ? h('p', { class: 'small c-red' }, away === 1 ? t('goAway1') : t('goAway', { n: away })) : null,
+      op.staleAt ? h('p', { class: 'small muted' }, t('goStaleIn'), h('b', { class: 'num', dataset: { opend: op.staleAt } }, dur(Math.max(0, op.staleAt - n))), '.') : null,
       op.joined && op.share != null ? h('p', { class: 'small ' + (op.share < 10000 ? 'c-gold' : 'muted') }, t(op.share < 10000 ? 'goShareLow' : 'goShare', { p: pct(op.share) })) : null,
-      op.joined ? h('p', { class: 'gin' }, icon('check'), t('goIn'))
-        : h('button', { class: 'btn buy block', disabled: !!busy || en < op.e || op.parts.length >= G.opMax, on: { click: (e) => { const el = e.currentTarget; if (op.kind === 'hit') withShield((drop) => gAct('gangOpJoin', { drop }, { el })); else gAct('gangOpJoin', {}, { el }); } } }, t('goJoin', { e: op.e })),
-      op.mineToCancel ? h('button', { class: 'btn ghost block', on: { click: () => gAct('gangOpCancel', {}) } }, t('goCancel')) : null));
+      // uma ação principal de cada vez: alinhar se ainda não estás; avançar se estás e mandas no pedido
+      op.joined ? null : h('button', { class: 'btn buy block', disabled: !!busy || en < op.e || full || !!op.hold, on: { click: join } }, t('goJoin', { e: op.e })),
+      op.canGo ? h('button', { class: 'btn block ' + (op.joined ? 'buy' : 'pri'), on: { click: async (e) => { await gAct('gangOpGo', {}, { el: e.currentTarget }); refresh(); } } }, t('goGo')) : null,
+      op.joined ? h('div', { class: 'row sp gin' }, h('span', null, icon('check'), t('goIn')),
+        op.mine ? null : h('button', { class: 'btn ghost sm', on: { click: () => gAct('gangOpLeave', {}) } }, t('goOut'))) : null,
+      op.mineToCancel ? h('button', { class: 'btn ghost dng block', on: { click: () => gAct('gangOpCancel', {}) } }, t('goCancel')) : null));   // acaba o pedido para todos: a vermelho, como tudo o que não se desfaz
     return out;
   }
   const L = mine.last;
   if (L && n - L.t < 30 * 60000) {
     const eu = (L.parts || []).find((x) => x.name === me.name);
-    out.push(opResult({ kind: L.kind, k: L.k, target: L.target, cancelled: L.cancelled, gone: L.gone, n: L.n, need: L.need, ok: L.kind === 'hit' ? L.win : L.success,
+    out.push(opResult({ kind: L.kind, k: L.k, target: L.target, cancelled: L.cancelled, gone: L.gone, stale: L.stale, by: L.by, n: L.n, need: L.need, ok: L.kind === 'hit' ? L.win : L.success,
       money: eu ? eu.money : L.parts?.[0]?.money || 0, jailed: (L.parts || []).filter((x) => x.busted).map((x) => x.name) }, eu ? eu.respect : 0, L.t));
   }
   const cool = mine.opCool > n;
@@ -1822,10 +1842,37 @@ setInterval(() => {
   els.forEach((el) => { const left = +el.dataset.opend - now(); el.textContent = dur(Math.max(0, left)); if (left <= -600 && el.dataset.re !== '1') { el.dataset.re = '1'; due = true; } });
   if (due) { loadGang(); refresh(); if (S.tab === 'fights' && S.fightSeg !== 'events') loadTargets(); if (S.tab === 'hitman') loadHitman(); }
 }, 500);
-function gangMember(m) {
-  const close = sheet(h('div', { class: 'stack' }, h('h2', null, m.name), h('p', { class: 'muted' }, t('gMemberLine', { l: m.level, r: short(m.respect) })),
-    h('button', { class: 'btn block', on: { click: async () => { close(); await gAct('gangLeader', { name: m.name }); } } }, t('gMakeBoss')),
-    h('button', { class: 'btn danger block', on: { click: async () => { close(); await gAct('gangKick', { name: m.name }); } } }, t('gKick'))));
+// A folha de um membro: o chefe escolhe o cargo (uma escolha entre três), passa a chefia e expulsa; o subchefe só expulsa quem está abaixo dele.
+function gangMember(m, mine) {
+  const R = S.cfg.gang.roles || { max: [0, 2, 1] }, boss = mine.leaderMe, role = m.role || 0;
+  const com = (r) => mine.roster.filter((x) => (x.role || 0) === r && x.name !== m.name).map((x) => x.name);
+  const cheios = [1, 2].filter((r) => r !== role && com(r).length >= R.max[r]);
+  const close = sheet(h('div', { class: 'stack' }, h('h2', null, m.name),
+    h('p', { class: 'muted' }, t('gMemberLine', { l: m.level, r: short(m.respect) })),
+    boss ? h('h3', { style: 'margin-top:6px' }, t('gRankT')) : null,
+    boss ? h('div', { class: 'seg', role: 'group', 'aria-label': t('gRankT'), style: 'margin-bottom:0' }, [0, 1, 2].map((r) => h('button', { 'aria-pressed': r === role ? 'true' : 'false', disabled: cheios.includes(r),
+      on: { click: async () => { if (r === role) return; close(); await gAct('gangRole', { name: m.name, role: r }); } } }, t('gRole' + r)))) : null,
+    boss ? h('p', { class: 'small muted' }, t('gRoleDo' + role)) : null,
+    ...(boss ? cheios.map((r) => h('p', { class: 'small muted' }, t(com(r).length > 1 ? 'gRoleFullN' : 'gRoleFull1', { x: t('gRole' + r).toLowerCase(), a: com(r).join(' · ') }))) : []),
+    h('div', { class: 'gsp' }),
+    boss ? sureBtn('btn ghost block', t('gMakeBoss'), 'btn pri block', t('gBossSure', { a: m.name }), async () => { close(); await gAct('gangLeader', { name: m.name }); }) : null,
+    sureBtn('btn ghost dng block', t('gKick'), 'btn danger block', t('gKickSure', { a: m.name }), async () => { close(); await gAct('gangKick', { name: m.name }); }),
+    h('button', { class: 'btn ghost block', on: { click: () => close() } }, t('close'))));
+}
+// Um botão para o que não se desfaz: o primeiro toque só pede confirmação (muda de cor e de texto), o segundo faz.
+function sureBtn(cls, label, clsSure, labelSure, run) {
+  const b = h('button', { class: cls, on: { click: () => { if (b.dataset.sure === '1') return run(); b.dataset.sure = '1'; b.className = clsSure; b.textContent = labelSure; } } }, label);
+  return b;
+}
+// Quem pode o quê: os cargos da gangue, do chefe ao membro, com quem os tem agora.
+function gangRanks(mine) {
+  const R = S.cfg.gang.roles || { max: [0, 2, 1] }, quem = (r) => mine.roster.filter((x) => (x.role || 0) === r).map((x) => x.name);
+  const row = (r) => { const q = quem(r);
+    return h('div', { class: 'grk' }, h('div', { class: 'row sp' }, h('b', { class: 'grole r' + r }, r === 3 ? icon('crown') : null, t('gRole' + r)),
+      r === 3 || !r ? null : h('span', { class: 'small muted num' }, t('gRoleSeats', { n: q.length, s: R.max[r] }))),
+      r && q.length ? h('div', { class: 'gwho' }, q.join(' · ')) : null, h('p', { class: 'small muted' }, t('gRoleDo' + r))); };
+  const close = sheet(h('div', { class: 'stack' }, h('h2', null, t('gRolesT')), h('p', { class: 'muted' }, t('gRoleSub')), row(3), row(2), row(1), row(0),
+    h('button', { class: 'btn ghost block', on: { click: () => close() } }, t('close'))));
 }
 // a conversa e os pedidos atualizam-se sozinhos enquanto estás no ecrã (sem mexer no que estás a escrever)
 setInterval(() => { if (S.st?.me && S.tab === 'gang' && !document.hidden && document.activeElement?.id !== 'gmsg' && !document.querySelector('.sheet')) loadGang(); }, 8000);

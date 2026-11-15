@@ -543,12 +543,13 @@ test('gangues: criar, entrar, cofre sem volta, melhorias que dão bónus a todos
   // gangue fechada: pede-se, o chefe aceita
   r = await ag(A, '10.0.9.50', { type: 'gangOpen', open: false }); assert.equal(r.body.result.open, false);
   r = await ag(D, '10.0.9.53', { type: 'gangJoin', id: gid }); assert.equal(r.body.result.asked, true); assert.equal(r.body.me.gang, null);
-  r = await ag(B, '10.0.9.51', { type: 'gangAccept', name: 'PedeG' }); assert.equal(r.body.error, 'NOT_LEADER');
+  r = await ag(B, '10.0.9.51', { type: 'gangAccept', name: 'PedeG' }); assert.equal(r.body.error, 'NO_RANK');
+  assert.deepEqual((await gangue(B, '10.0.9.51')).mine.asks, [], 'quem não tem cargo não vê os pedidos');
   g = await gangue(A, '10.0.9.50'); assert.deepEqual(g.mine.asks.map((x) => x.name), ['PedeG']);
   r = await ag(A, '10.0.9.50', { type: 'gangAccept', name: 'PedeG' }); assert.equal(r.status, 200);
   assert.deepEqual((await D.estado()).gb, { loot: 400, atk: 300, def: 300 });
   // expulsar tira o bónus e obriga a esperar para entrar noutra
-  r = await ag(B, '10.0.9.51', { type: 'gangKick', name: 'ChefeG' }); assert.equal(r.body.error, 'NOT_LEADER');
+  r = await ag(B, '10.0.9.51', { type: 'gangKick', name: 'ChefeG' }); assert.equal(r.body.error, 'NO_RANK');
   r = await ag(A, '10.0.9.50', { type: 'gangKick', name: 'MembroG' }); assert.equal(r.status, 200);
   b = await B.estado(); assert.equal(b.gang, null); assert.equal(b.gb, null); assert.equal(b.attack, forcaAntes); assert.equal(b.cash, 850_000);
   r = await ag(A, '10.0.9.50', { type: 'gangOpen', open: true });
@@ -653,7 +654,7 @@ test('guardas e assassino a soldo: comprar guardas, encomendar, o alvo não sabe
 });
 
 test('gangue da rua: existe sempre, entra quem quiser, sem cofre nem chefe, os membros atacam-se, sobrevive vazia e a um reinício', async () => {
-  ENV_EXTRA = { ATOS_3S: '100000', ATOS_MIN: '1000000' };
+  ENV_EXTRA = { ATOS_3S: '100000', ATOS_MIN: '1000000', GANG_BOT_OP_MS: '900' };
   const A = await contaNova('RuaA', '10.0.9.97'), B = await contaNova('RuaB', '10.0.9.98');
   for (const x of [A, B]) await x.estado();
   const base = (e) => { e.cash = 500_000; e.bank = 0; e.respect = 1000; e.peakRespect = 1000; e.shieldUntil = 0; e.protectUntil = 0; e.hospUntil = 0; e.jailUntil = 0; e.energy = 100; };
@@ -670,13 +671,23 @@ test('gangue da rua: existe sempre, entra quem quiser, sem cofre nem chefe, os m
   assert.equal(g.mine.bot, true); assert.equal(g.mine.members, 2); assert.equal(g.mine.leader, 'Bot'); assert.equal(g.mine.leaderMe, false); assert.equal(g.mine.sede, 1); assert.equal(g.mine.roster.length, 2);
   // ninguém manda: sem cofre, sem melhorias, sem expulsar, sem fechar
   assert.equal((await ag(A, '10.0.9.97', { type: 'gangDonate', amount: 1000 })).body.error, 'BOT_GANG_NO');
-  for (const body of [{ type: 'gangUp', what: 'sede' }, { type: 'gangKick', name: 'RuaB' }, { type: 'gangOpen', open: false }, { type: 'gangLeader', name: 'RuaB' }]) assert.equal((await ag(A, '10.0.9.97', body)).body.error, 'NOT_LEADER');
+  for (const body of [{ type: 'gangUp', what: 'sede' }, { type: 'gangOpen', open: false }, { type: 'gangLeader', name: 'RuaB' }, { type: 'gangRole', name: 'RuaB', role: 2 }]) assert.equal((await ag(A, '10.0.9.97', body)).body.error, 'NOT_LEADER');
+  assert.equal((await ag(A, '10.0.9.97', { type: 'gangKick', name: 'RuaB' })).body.error, 'NO_RANK');
+  assert.equal(g.mine.role, 0); assert.deepEqual(g.mine.can, { asks: false, ops: false, kick: false, roles: false }); assert.ok(g.mine.roster.every((m) => m.role === 0));
   assert.equal((await ag(A, '10.0.9.97', { type: 'gangOp', kind: 'hit', target: 'RuaB' })).body.error, 'BOT_GANG_NO');
   // dá para o que interessa: conversa, negócio e golpe em grupo
   assert.equal((await ag(A, '10.0.9.97', { type: 'gangChat', txt: 'boas' })).status, 200);
   assert.equal((await ag(A, '10.0.9.97', { type: 'gangBiz', k: 0, amount: 1000 })).status, 200);
   r = await ag(A, '10.0.9.97', { type: 'gangOp', kind: 'heist', k: 0 }); assert.equal(r.status, 200, JSON.stringify(r.body));
+  r = await ag(B, '10.0.9.98', { type: 'gangOpCancel' }); assert.equal(r.body.error, 'NO_RANK');   // aqui só cancela quem abriu
   r = await ag(A, '10.0.9.97', { type: 'gangOpCancel' }); assert.equal(r.status, 200, JSON.stringify(r.body));
+  // sem chefe nem cargos, ninguém podia cancelar um pedido esquecido: o bot cancela-o ao fim do tempo dele e a stamina volta
+  r = await ag(A, '10.0.9.97', { type: 'gangOp', kind: 'heist', k: 0 }); assert.equal(r.status, 200, JSON.stringify(r.body)); assert.equal(r.body.me.energy, 80);
+  g = await gangue(B, '10.0.9.98'); assert.ok(g.mine.op.staleAt > g.now); assert.equal(g.mine.op.goAt, 0);
+  await new Promise((ok) => setTimeout(ok, 1300));
+  g = await gangue(A, '10.0.9.97'); assert.equal(g.mine.op, null); assert.equal(g.mine.last.cancelled, true); assert.equal(g.mine.last.stale, true); assert.equal((await A.estado()).energy, 100);
+  const evRua = await (await fetch(BASE + '/api/events', { headers: { cookie: A.cookie, 'X-Forwarded-For': '10.0.9.97' } })).json();
+  assert.equal(evRua.list[0].k, 'gop'); assert.equal(evRua.list[0].stale, true); assert.equal(evRua.list[0].cancelled, true);
   // os membros continuam a poder atacar-se
   const alvo = (await (await fetch(BASE + '/api/targets', { headers: { cookie: A.cookie, 'X-Forwarded-For': '10.0.9.97' } })).json()).list.find((x) => x.name === 'RuaB');
   assert.ok(alvo, 'o outro membro aparece nos alvos'); assert.equal(alvo.tag, 'BOT');
@@ -694,7 +705,7 @@ test('gangue da rua: existe sempre, entra quem quiser, sem cofre nem chefe, os m
   assert.equal((await gangue(A, '10.0.9.97')).bot.members, 0);
 });
 
-test('gangues: golpe em grupo e tareia em grupo — alinhar, falta de gente devolve tudo, contas certas, sobrevive a um reinício', async () => {
+test('gangues: golpe em grupo e tareia em grupo — pedido sem prazo, alinhar e sair, última chamada, avançar já, contas certas, sobrevive a um reinício', async () => {
   const ips = { A: '10.0.9.60', B: '10.0.9.61', C: '10.0.9.62', V: '10.0.9.63' };
   const A = await contaNova('GolpeA', ips.A), B = await contaNova('GolpeB', ips.B), C = await contaNova('GolpeC', ips.C), V = await contaNova('GolpeV', ips.V);
   for (const x of [A, B, C, V]) await x.estado();
@@ -711,14 +722,23 @@ test('gangues: golpe em grupo e tareia em grupo — alinhar, falta de gente devo
   r = await ag(A, ips.A, { type: 'gangOp', kind: 'heist', k: 1 }); assert.equal(r.body.error, 'NEED_SEDE');
   r = await ag(A, ips.A, { type: 'gangOp', kind: 'heist', k: 99 }); assert.equal(r.body.error, 'NO_CRIME');
   r = await ag(A, ips.A, { type: 'gangOpJoin' }); assert.equal(r.body.error, 'NO_OP');
-  // sozinho não dá: a stamina e a vez voltam
+  // sozinho não dá, mas o pedido não tem prazo: fica aberto à espera de gente, o tempo que for preciso
   r = await ag(A, ips.A, { type: 'gangOp', kind: 'heist', k: 0 }); assert.equal(r.status, 200, JSON.stringify(r.body)); assert.equal(r.body.me.energy, 80);
   r = await ag(A, ips.A, { type: 'gangOp', kind: 'heist', k: 0 }); assert.equal(r.body.error, 'OP_OPEN');
   r = await ag(A, ips.A, { type: 'gangOpJoin' }); assert.equal(r.body.error, 'IN_OP');
-  r = await ag(A, ips.A, { type: 'gangLeave' }); assert.equal(r.body.error, 'IN_OP');
   let g = await gangue(B, ips.B); assert.deepEqual(g.mine.op.parts, ['GolpeA']); assert.equal(g.mine.op.need, 2); assert.equal(g.mine.op.joined, false); assert.ok(g.mine.op.chance > 0);
-  await espera(1000);
-  g = await gangue(A, ips.A); assert.equal(g.mine.op, null); assert.equal(g.mine.last.cancelled, true); assert.equal((await A.estado()).energy, 100);
+  assert.equal(g.mine.op.goAt, 0); assert.equal(g.mine.op.staleAt, 0); assert.equal(g.mine.op.mine, false); assert.equal(g.mine.op.mineToCancel, false); assert.equal(g.mine.op.canGo, false);
+  await espera(1600);   // mais do dobro da última chamada destes testes (700 ms)
+  g = await gangue(A, ips.A); assert.deepEqual(g.mine.op.parts, ['GolpeA'], 'o pedido continua aberto'); assert.equal(g.mine.op.goAt, 0); assert.equal(g.mine.op.mine, true); assert.equal(g.mine.op.mineToCancel, true);
+  assert.equal(g.mine.last, null); assert.equal((await A.estado()).energy, 80);
+  // quem não abriu nem tem cargo não cancela nem manda avançar; sem gente que chegue ninguém avança
+  r = await ag(B, ips.B, { type: 'gangOpCancel' }); assert.equal(r.body.error, 'NO_RANK');
+  r = await ag(B, ips.B, { type: 'gangOpGo' }); assert.equal(r.body.error, 'NO_RANK');
+  r = await ag(A, ips.A, { type: 'gangOpGo' }); assert.equal(r.body.error, 'OP_NOT_READY');
+  r = await ag(B, ips.B, { type: 'gangOpLeave' }); assert.equal(r.body.error, 'NOT_IN_OP');
+  // cancelar devolve a stamina e fica escrito quem cancelou
+  r = await ag(A, ips.A, { type: 'gangOpCancel' }); assert.equal(r.status, 200, JSON.stringify(r.body)); assert.equal(r.body.me.energy, 100);
+  g = await gangue(B, ips.B); assert.equal(g.mine.op, null); assert.equal(g.mine.last.cancelled, true); assert.equal(g.mine.last.by, 'GolpeA');
   // três a alinhar: paga-se a todos por igual, ou ninguém leva nada
   r = await ag(A, ips.A, { type: 'gangOp', kind: 'heist', k: 0 }); assert.equal(r.status, 200);
   r = await ag(B, ips.B, { type: 'gangOpJoin' }); assert.equal(r.body.result.joined, true); assert.equal(r.body.me.energy, 80);
@@ -738,30 +758,54 @@ test('gangues: golpe em grupo e tareia em grupo — alinhar, falta de gente devo
   assert.ok(feed.some((n) => n.k === (L.success ? 'gangHeist' : 'gangHeistFail') && n.tag === 'GLP' && n.n === 3));
   r = await ag(A, ips.A, { type: 'gangOp', kind: 'heist', k: 0 });
   assert.ok(['OP_WAIT', 'IN_JAIL'].includes(r.body.error), JSON.stringify(r.body));
-  // uma operação aberta sobrevive a um reinício; cancelar devolve a stamina a quem alinhou
+  // um pedido aberto sobrevive a um reinício (com a última chamada a contar); cancelar devolve a stamina a quem alinhou e avisa-o
   const livres = (e) => { e.jailUntil = 0; e.hospUntil = 0; e.energy = 100; };
   ENV_EXTRA = { ATOS_3S: '100000', ATOS_MIN: '1000000', GANG_OP_MS: '60000' };
   await mexer({ GolpeA: livres, GolpeB: livres, GolpeC: livres });
   r = await ag(A, ips.A, { type: 'gangOp', kind: 'heist', k: 0 }); assert.equal(r.status, 200, JSON.stringify(r.body));
   r = await ag(B, ips.B, { type: 'gangOpJoin' }); assert.equal(r.status, 200);
   await parar(); await arrancar();
-  g = await gangue(C, ips.C); assert.deepEqual(g.mine.op.parts, ['GolpeA', 'GolpeB']);
-  r = await ag(C, ips.C, { type: 'gangOpCancel' }); assert.equal(r.body.error, 'NOT_LEADER');
+  g = await gangue(C, ips.C); assert.deepEqual(g.mine.op.parts, ['GolpeA', 'GolpeB']); assert.ok(g.mine.op.goAt > g.now && g.mine.op.goAt <= g.now + 60_000, 'equipa completa: a última chamada está a contar');
+  r = await ag(C, ips.C, { type: 'gangOpCancel' }); assert.equal(r.body.error, 'NO_RANK');
   r = await ag(A, ips.A, { type: 'gangOpCancel' }); assert.equal(r.status, 200); assert.equal(r.body.me.energy, 100);
   assert.equal((await B.estado()).energy, 100);
   g = await gangue(A, ips.A); assert.equal(g.mine.op, null);
+  let evB = await (await fetch(BASE + '/api/events', { headers: { cookie: B.cookie, 'X-Forwarded-For': ips.B } })).json();
+  assert.equal(evB.list[0].k, 'gop'); assert.equal(evB.list[0].cancelled, true); assert.equal(evB.list[0].by, 'GolpeA');
+  // quem alinhou pode sair do pedido: a stamina volta e a última chamada pára, porque deixou de haver gente que chegue
+  r = await ag(A, ips.A, { type: 'gangOp', kind: 'heist', k: 0 }); assert.equal(r.status, 200, JSON.stringify(r.body));
+  r = await ag(B, ips.B, { type: 'gangOpJoin' }); assert.equal(r.body.me.energy, 80);
+  g = await gangue(B, ips.B); assert.ok(g.mine.op.goAt > g.now); assert.equal(g.mine.op.canGo, false);
+  r = await ag(B, ips.B, { type: 'gangOpLeave' }); assert.equal(r.status, 200, JSON.stringify(r.body)); assert.equal(r.body.me.energy, 100);
+  g = await gangue(A, ips.A); assert.deepEqual(g.mine.op.parts, ['GolpeA']); assert.equal(g.mine.op.goAt, 0); assert.equal(g.mine.op.canGo, false);
+  // equipa completa outra vez: quem abriu (ou quem tem cargo) manda avançar sem esperar pelo fim da última chamada
+  r = await ag(B, ips.B, { type: 'gangOpJoin' }); assert.equal(r.status, 200);
+  r = await ag(C, ips.C, { type: 'gangOpGo' }); assert.equal(r.body.error, 'NO_RANK');
+  g = await gangue(A, ips.A); assert.equal(g.mine.op.canGo, true);
+  r = await ag(A, ips.A, { type: 'gangOpGo' }); assert.equal(r.status, 200, JSON.stringify(r.body));
+  g = await gangue(A, ips.A); assert.equal(g.mine.op, null); assert.equal(g.mine.last.kind, 'heist'); assert.equal(g.mine.last.cancelled, undefined); assert.equal(g.mine.last.parts.length, 2);
+  // sair da gangue com um pedido aberto já não fica preso: sai do pedido, a stamina volta e, sendo o único, o pedido fecha
+  await mexer({ GolpeA: livres, GolpeB: livres, GolpeC: livres });
+  r = await ag(C, ips.C, { type: 'gangOp', kind: 'heist', k: 0 }); assert.equal(r.status, 200, JSON.stringify(r.body));
+  r = await ag(C, ips.C, { type: 'gangLeave' }); assert.equal(r.status, 200, JSON.stringify(r.body)); assert.equal(r.body.me.energy, 100); assert.equal(r.body.me.gang, null);
+  g = await gangue(A, ips.A); assert.equal(g.mine.op, null); assert.equal(g.mine.roster.length, 2);
   // tareia em grupo: precisa de dois; o alvo perde uma vez e vai para o hospital, ou vão os que atacaram
   ENV_EXTRA = { ATOS_3S: '100000', ATOS_MIN: '1000000', GANG_OP_MS: '700' };
   await parar(); await arrancar();
   r = await ag(A, ips.A, { type: 'gangOp', kind: 'hit', target: 'GolpeB' }); assert.equal(r.body.error, 'SAME_GANG');
   r = await ag(A, ips.A, { type: 'gangOp', kind: 'hit', target: 'ninguem' }); assert.equal(r.body.error, 'NO_TARGET');
   r = await ag(A, ips.A, { type: 'gangOp', kind: 'hit', target: 'golpev' }); assert.equal(r.status, 200, JSON.stringify(r.body)); assert.equal(r.body.me.energy, 80);
-  await espera(1000);
-  g = await gangue(A, ips.A); assert.equal(g.mine.last.kind, 'hit'); assert.equal(g.mine.last.cancelled, true); assert.equal((await A.estado()).energy, 100);
+  await espera(1600);
+  g = await gangue(A, ips.A); assert.equal(g.mine.op.kind, 'hit', 'sozinho, a tareia fica à espera'); assert.equal(g.mine.op.goAt, 0); assert.equal(g.mine.op.hold, false); assert.equal((await A.estado()).energy, 80);
+  // o alvo vai parar ao hospital: o pedido não se perde, espera por ele (e entretanto ninguém alinha)
+  await mexer({ GolpeV: (e) => { e.hospUntil = Date.now() + DESVIO + 3600_000; } });
+  g = await gangue(B, ips.B); assert.equal(g.mine.op.hold, true); assert.equal(g.mine.op.target, 'GolpeV');
+  r = await ag(B, ips.B, { type: 'gangOpJoin' }); assert.equal(r.body.error, 'TARGET_HOSPITAL');
+  await mexer({ GolpeV: (e) => { e.hospUntil = 0; } });
   const antes = { A: (await A.estado()).respect, B: (await B.estado()).respect, V: (await V.estado()).respect };
-  r = await ag(A, ips.A, { type: 'gangOp', kind: 'hit', target: 'GolpeV' }); assert.equal(r.status, 200);
+  g = await gangue(B, ips.B); assert.equal(g.mine.op.hold, false); assert.deepEqual(g.mine.op.parts, ['GolpeA']);
   r = await ag(B, ips.B, { type: 'gangOpJoin' }); assert.equal(r.status, 200);
-  g = await gangue(C, ips.C); assert.equal(g.mine.op.kind, 'hit'); assert.equal(g.mine.op.target, 'GolpeV'); assert.equal(g.mine.op.parts.length, 2);
+  g = await gangue(B, ips.B); if (g.mine.op) { assert.equal(g.mine.op.kind, 'hit'); assert.equal(g.mine.op.target, 'GolpeV'); assert.equal(g.mine.op.parts.length, 2); assert.ok(g.mine.op.goAt > 0); }
   await espera(1000);
   g = await gangue(A, ips.A); const H = g.mine.last;
   assert.equal(H.kind, 'hit'); assert.equal(H.target, 'GolpeV'); assert.equal(H.parts.length, 2);
@@ -773,6 +817,91 @@ test('gangues: golpe em grupo e tareia em grupo — alinhar, falta de gente devo
   const evV = await (await fetch(BASE + '/api/events', { headers: { cookie: V.cookie, 'X-Forwarded-For': ips.V } })).json();
   assert.equal(evV.list[0].k, 'attacked'); assert.equal(evV.list[0].by, '[GLP] Golpistas'); assert.equal(evV.list[0].crew, 2);
   assert.equal(a2.cash, (await A.estado()).cash);
+  // o alvo entra para a gangue com a tareia marcada: já não dá, fica sem efeito e a stamina volta
+  const limpo = (e) => { e.jailUntil = 0; e.hospUntil = 0; e.protectUntil = 0; e.capUntil = 0; e.shieldUntil = 0; e.energy = 100; e.respect = 100; e.peakRespect = 100; };
+  await mexer({ GolpeA: limpo, GolpeB: limpo, GolpeV: limpo });
+  r = await ag(A, ips.A, { type: 'gangOp', kind: 'hit', target: 'GolpeV' }); assert.equal(r.status, 200, JSON.stringify(r.body)); assert.equal(r.body.me.energy, 80);
+  r = await ag(V, ips.V, { type: 'gangJoin', id: gid }); assert.equal(r.body.result.joined, true);
+  g = await gangue(A, ips.A); assert.equal(g.mine.op, null); assert.equal(g.mine.last.cancelled, true); assert.equal(g.mine.last.gone, true); assert.equal((await A.estado()).energy, 100);
+});
+
+test('gangues: cargos — subchefe e capitães com as permissões certas, limites, sucessão da chefia e tudo gravado', async () => {
+  const nomes = ['CargoA', 'CargoB', 'CargoC', 'CargoD', 'CargoE', 'CargoF'], ip = (i) => '10.0.9.' + (120 + i);
+  const X = []; for (let i = 0; i < nomes.length; i++) { X.push(await contaNova(nomes[i], ip(i))); await X[i].estado(); }
+  const forte = (e) => { e.cash = 1_000_000; e.respect = 100; e.peakRespect = 100; e.energy = 100; e.jailUntil = 0; e.hospUntil = 0; };
+  ENV_EXTRA = { ATOS_3S: '100000', ATOS_MIN: '1000000', GANG_OP_MS: '60000' };
+  await mexer(Object.fromEntries(nomes.map((n) => [n, forte])));
+  const ag = (i, body) => cru(X[i].cookie, ip(i), body), gangue = async (i) => (await fetch(BASE + '/api/gang', { headers: { cookie: X[i].cookie, 'X-Forwarded-For': ip(i) } })).json();
+  const eventos = async (i) => (await (await fetch(BASE + '/api/events', { headers: { cookie: X[i].cookie, 'X-Forwarded-For': ip(i) } })).json()).list;
+  const [A, B, C, D, E, F] = [0, 1, 2, 3, 4, 5];
+  const cargos = (g) => Object.fromEntries(g.mine.roster.map((m) => [m.name, m.role]));
+  let r = await ag(A, { type: 'gangCreate', name: 'Os Cargos', tag: 'CRG' }); assert.equal(r.status, 200, JSON.stringify(r.body));
+  const gid = (await gangue(A)).mine.id;
+  for (const i of [B, C, D, E]) { r = await ag(i, { type: 'gangJoin', id: gid }); assert.equal(r.body.result.joined, true); }
+  let g = await gangue(A);
+  assert.equal(g.mine.role, 3); assert.deepEqual(g.mine.can, { asks: true, ops: true, kick: true, roles: true }); assert.deepEqual(cargos(g), { CargoA: 3, CargoB: 0, CargoC: 0, CargoD: 0, CargoE: 0 });
+  // só o chefe dá cargos; a ele próprio não; só os cargos que existem; 1 subchefe e 2 capitães
+  r = await ag(B, { type: 'gangRole', name: 'CargoC', role: 1 }); assert.equal(r.body.error, 'NOT_LEADER');
+  r = await ag(A, { type: 'gangRole', name: 'CargoA', role: 1 }); assert.equal(r.body.error, 'NO_TARGET');
+  r = await ag(A, { type: 'gangRole', name: 'ninguem', role: 1 }); assert.equal(r.body.error, 'NO_TARGET');
+  for (const role of [3, -1, 1.5, '2', null]) { r = await ag(A, { type: 'gangRole', name: 'CargoB', role }); assert.equal(r.body.error, 'BAD_ACTION', JSON.stringify(role)); }
+  r = await ag(A, { type: 'gangRole', name: 'CargoD', role: 2 }); assert.equal(r.status, 200, JSON.stringify(r.body)); assert.equal(r.body.result.role, 2);
+  r = await ag(A, { type: 'gangRole', name: 'CargoB', role: 2 }); assert.equal(r.body.error, 'ROLE_FULL');
+  r = await ag(A, { type: 'gangRole', name: 'CargoB', role: 1 }); assert.equal(r.status, 200);
+  r = await ag(A, { type: 'gangRole', name: 'CargoC', role: 1 }); assert.equal(r.status, 200);
+  r = await ag(A, { type: 'gangRole', name: 'CargoE', role: 1 }); assert.equal(r.body.error, 'ROLE_FULL');
+  r = await ag(A, { type: 'gangRole', name: 'CargoC', role: 1 }); assert.equal(r.status, 200, 'repetir o cargo que já tem não conta para o limite');
+  assert.deepEqual((await eventos(D))[0], { ...(await eventos(D))[0], k: 'gangRole', role: 2, gang: 'Os Cargos' });
+  // os cargos ficam gravados
+  await parar(); await arrancar();
+  g = await gangue(D); assert.equal(g.mine.role, 2); assert.deepEqual(g.mine.can, { asks: true, ops: true, kick: true, roles: false }); assert.deepEqual(cargos(g), { CargoA: 3, CargoB: 1, CargoC: 1, CargoD: 2, CargoE: 0 });
+  g = await gangue(B); assert.equal(g.mine.role, 1); assert.deepEqual(g.mine.can, { asks: true, ops: true, kick: false, roles: false });
+  g = await gangue(E); assert.equal(g.mine.role, 0); assert.deepEqual(g.mine.can, { asks: false, ops: false, kick: false, roles: false });
+  // dar ao cofre não mexe no cargo (a linha do membro é gravada outra vez)
+  r = await ag(D, { type: 'gangDonate', amount: 1000 }); assert.equal(r.status, 200);
+  await parar(); await arrancar();
+  assert.equal((await gangue(D)).mine.role, 2);
+  // pedidos de entrada: aceita o capitão; o membro nem os vê; o que continua a ser só do chefe continua
+  r = await ag(A, { type: 'gangOpen', open: false }); assert.equal(r.body.result.open, false);
+  r = await ag(F, { type: 'gangJoin', id: gid }); assert.equal(r.body.result.asked, true);
+  assert.deepEqual((await gangue(E)).mine.asks, []); assert.deepEqual((await gangue(B)).mine.asks.map((x) => x.name), ['CargoF']);
+  r = await ag(E, { type: 'gangAccept', name: 'CargoF' }); assert.equal(r.body.error, 'NO_RANK');
+  r = await ag(B, { type: 'gangAccept', name: 'CargoF' }); assert.equal(r.status, 200, JSON.stringify(r.body)); assert.equal((await X[F].estado()).gang.tag, 'CRG');
+  for (const body of [{ type: 'gangOpen', open: true }, { type: 'gangUp', what: 'sede' }, { type: 'gangLeader', name: 'CargoB' }, { type: 'gangRole', name: 'CargoE', role: 1 }]) assert.equal((await ag(D, body)).body.error, 'NOT_LEADER', body.type);
+  // expulsar: o capitão não pode; o subchefe pode, mas só quem está abaixo dele
+  r = await ag(E, { type: 'gangOp', kind: 'heist', k: 0 }); assert.equal(r.status, 200, JSON.stringify(r.body));
+  r = await ag(F, { type: 'gangOpJoin' }); assert.equal(r.status, 200);
+  g = await gangue(F); assert.equal(g.mine.op.by, 'CargoE'); assert.ok(g.mine.op.goAt > g.now);
+  r = await ag(B, { type: 'gangKick', name: 'CargoE' }); assert.equal(r.body.error, 'NO_RANK');
+  r = await ag(D, { type: 'gangKick', name: 'CargoA' }); assert.equal(r.body.error, 'NO_RANK');
+  r = await ag(D, { type: 'gangKick', name: 'CargoD' }); assert.equal(r.body.error, 'NO_TARGET');
+  // expulso com um pedido aberto por ele: sai do pedido com a stamina, e o pedido passa para quem alinhou a seguir
+  r = await ag(D, { type: 'gangKick', name: 'CargoE' }); assert.equal(r.status, 200, JSON.stringify(r.body));
+  const e = await X[E].estado(); assert.equal(e.gang, null); assert.equal(e.energy, 100); assert.equal((await eventos(E))[0].k, 'gangOut');
+  g = await gangue(F); assert.deepEqual(g.mine.op.parts, ['CargoF']); assert.equal(g.mine.op.by, 'CargoF'); assert.equal(g.mine.op.mine, true); assert.equal(g.mine.op.goAt, 0);
+  // cancelar um pedido que não é dele: o membro não pode, o capitão pode, e quem tinha alinhado fica a saber
+  r = await ag(B, { type: 'gangOpJoin' }); assert.equal(r.status, 200);
+  g = await gangue(C); assert.equal(g.mine.op.mineToCancel, true); assert.equal(g.mine.op.canGo, true); assert.equal(g.mine.op.mine, false);
+  r = await ag(C, { type: 'gangOpCancel' }); assert.equal(r.status, 200, JSON.stringify(r.body));
+  assert.equal((await X[F].estado()).energy, 100); assert.equal((await X[B].estado()).energy, 100);
+  const evF = (await eventos(F))[0]; assert.equal(evF.k, 'gop'); assert.equal(evF.cancelled, true); assert.equal(evF.by, 'CargoC');
+  // o capitão manda avançar um pedido que não abriu
+  r = await ag(F, { type: 'gangOp', kind: 'heist', k: 0 }); assert.equal(r.status, 200, JSON.stringify(r.body));
+  r = await ag(A, { type: 'gangOpJoin' }); assert.equal(r.status, 200);
+  r = await ag(C, { type: 'gangOpGo' }); assert.equal(r.status, 200, JSON.stringify(r.body));
+  g = await gangue(C); assert.equal(g.mine.op, null); assert.equal(g.mine.last.kind, 'heist'); assert.equal(g.mine.last.parts.length, 2);
+  // o chefe sai: a chefia vai para o subchefe (D), não para o membro mais antigo (B); o cargo antigo dele fica livre
+  await mexer({ CargoA: forte, CargoF: forte });
+  r = await ag(A, { type: 'gangLeave' }); assert.equal(r.status, 200, JSON.stringify(r.body));
+  g = await gangue(D); assert.equal(g.mine.leaderMe, true); assert.equal(g.mine.role, 3); assert.deepEqual(cargos(g), { CargoB: 1, CargoC: 1, CargoD: 3, CargoF: 0 });
+  assert.deepEqual((await eventos(D))[0], { ...(await eventos(D))[0], k: 'gangRole', role: 3 });
+  r = await ag(D, { type: 'gangRole', name: 'CargoB', role: 2 }); assert.equal(r.status, 200, JSON.stringify(r.body));
+  // tirar um cargo, e passar a chefia: quem a recebe deixa o cargo que tinha, quem a passa fica como membro
+  r = await ag(D, { type: 'gangRole', name: 'CargoB', role: 0 }); assert.equal(r.status, 200); assert.equal((await gangue(B)).mine.role, 0);
+  r = await ag(D, { type: 'gangLeader', name: 'CargoC' }); assert.equal(r.status, 200, JSON.stringify(r.body));
+  r = await ag(C, { type: 'gangRole', name: 'CargoD', role: 1 }); assert.equal(r.status, 200); r = await ag(C, { type: 'gangRole', name: 'CargoB', role: 1 }); assert.equal(r.status, 200, 'o lugar de capitão do novo chefe ficou livre');
+  await parar(); await arrancar();
+  g = await gangue(C); assert.equal(g.mine.leaderMe, true); assert.deepEqual(cargos(g), { CargoB: 1, CargoC: 3, CargoD: 1, CargoF: 0 });
 });
 
 test('bolsa: limites de venda — recusa limites do lado errado, guarda-os e vende sozinho no passo seguinte, com aviso', async () => {

@@ -61,7 +61,7 @@ svg.i.f { fill: currentColor; stroke: none; }
 /* ---------- topo (HUD) ---------- */
 .hud {
   position: sticky; top: 0; z-index: 20; padding: calc(10px + env(safe-area-inset-top)) 16px 12px;
-  background: color-mix(in oklab, var(--ink) 92%, transparent); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+  background: color-mix(in oklab, var(--ink) 97%, transparent); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);   /* a 92% os títulos que passavam por baixo liam-se como texto fantasma atrás das stats */
   border-bottom: 1px solid #ffffff0d;
 }
 .hud-top { display: flex; align-items: center; gap: 12px; }
@@ -208,9 +208,15 @@ p.secsub { color: var(--tx2); font-size: 14px; margin-bottom: 12px; }
 .cont { display: flex; justify-content: space-between; gap: 8px; padding: 10px 12px; background: var(--s2); border-radius: var(--r); font-size: 14px; }
 .chips { display: flex; flex-wrap: wrap; gap: 6px; }
 .chip { padding: 4px 10px; border-radius: 99px; background: var(--s2); font-size: 13px; color: var(--tx2); }
-.seg { display: flex; background: var(--s1); border-radius: var(--r); padding: 4px; gap: 4px; margin-bottom: 14px; }
-.seg button { flex: 1; min-height: 40px; border: 0; border-radius: 4px; background: transparent; color: var(--tx2); font-weight: 650; }
-.seg button[aria-pressed='true'] { background: var(--s3); color: var(--tx); }
+/* Escolhas: cada opção é uma tecla com corpo próprio dentro de uma calha; a escolhida fica cheia, a creme, com letra escura
+   (mais de 13:1 contra as outras). Não leva cor de ação: o verde, o vermelho e o amarelo ficam para o que significam. */
+.seg { display: flex; background: var(--ink); border-radius: 10px; padding: 4px; gap: 4px; margin-bottom: 14px; box-shadow: inset 0 0 0 1px #ffffff1f; }
+.seg button { flex: 1; min-height: 44px; border: 0; border-radius: 7px; background: var(--s2); color: var(--tx); font-weight: 650; box-shadow: inset 0 0 0 1px #ffffff14;
+  transition: background-color .15s, color .15s, transform .12s var(--ease-out); }
+.seg button:active { transform: scale(.96); }
+.seg button[aria-pressed='true'] { background: var(--tx); color: var(--ink); font-weight: 800; box-shadow: none; }
+.seg button:disabled { background: transparent; color: var(--tx3); box-shadow: none; }   /* sem corpo nem contorno: não se confunde com um botão que dá */
+@media (prefers-reduced-motion: reduce) { .seg button { transition: none; } .seg button:active { transform: none; } }
 
 /* lutas */
 .tgt { display: grid; grid-template-columns: 1fr auto; gap: 8px 12px; align-items: center; }
@@ -228,7 +234,7 @@ p.secsub { color: var(--tx2); font-size: 14px; margin-bottom: 12px; }
 /* barra de baixo */
 .tabs {
   position: fixed; left: 0; right: 0; bottom: 0; z-index: 30; display: flex; justify-content: center;
-  background: color-mix(in oklab, var(--ink) 94%, transparent); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+  background: color-mix(in oklab, var(--ink) 97%, transparent); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
   border-top: 1px solid #ffffff0d; padding-bottom: env(safe-area-inset-bottom);
 }
 .tabs nav { display: grid; grid-template-columns: repeat(5, 1fr); width: 100%; max-width: 560px; }
@@ -1319,7 +1325,7 @@ h1.slogo { margin: 0; }
 /* fábricas: dinheiro ou droga; atalho para a stash; lista do contabilista; limites da bolsa */
 .item .seg.bzg { margin: 2px 0 0; padding: 3px; gap: 3px; }
 .item .seg.bzg button { min-height: 34px; font-size: 13px; padding: 0 4px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.item .seg.bzg button[aria-pressed='true'] { background: var(--s3); color: var(--tx); }
+.item .seg.bzg button[aria-pressed='true'] { background: var(--tx); color: var(--ink); }
 /* em duas colunas estreitas as duas palavras («Dinheiro», «Ecstasy») têm de caber inteiras */
 @media (max-width: 379px) { .item .seg.bzg { padding: 2px; gap: 2px; } .item .seg.bzg button { font-size: 11.5px; padding: 0 1px; letter-spacing: -.01em; } }
 .stlink { width: 100%; text-align: left; color: inherit; border: 0; font: inherit; margin-bottom: 10px; gap: 10px; }
@@ -1371,7 +1377,7 @@ body::before { content: ''; position: fixed; inset: 0; z-index: 0; pointer-event
 /* ecrãs estreitos: sem a seta e com a letra um ponto abaixo, para a palavra caber inteira (antes partia a meio: «RANKIN G») */
 @media (max-width: 399px) { .hlink span { font-size: 18px; overflow-wrap: normal; } .hlink { padding-right: 8px; } .hlink svg.i { display: none; } }
 @media (max-width: 359px) { .hlink span { font-size: 16px; } .hlink { gap: 8px; } }
-.hstats .nx { white-space: nowrap; min-width: 0; }
+.hstats .nx { white-space: nowrap; min-width: 0; display: block; }   /* em bloco para as reticências funcionarem: em 320 px o texto ficava cortado a meio de uma letra */
 
 /* porto: menu de carregamentos (como os golpes) com o risco à direita, e a folha de cada barco */
 .rowi .pct.risk { text-align: right; }
@@ -1440,3 +1446,44 @@ body::before { content: ''; position: fixed; inset: 0; z-index: 0; pointer-event
 @media (max-width: 350px) { .sbet .sbb::after { inset: -5px -3px; } }
 /* bolsa em ecrãs estreitos: o nome da empresa passa para duas linhas em vez de ficar cortado («Casinos Fort…») */
 @media (max-width: 379px) { .stnm b { white-space: normal; overflow: visible; text-overflow: clip; line-height: 1.2; text-wrap: balance; } }
+
+/* ===== Preço da casa: as pontas da escala escritas por baixo das teclas e o efeito da escolha em números grandes =====
+   Os números são uma leitura, não uma segunda fila de opções: sem caixa nem contorno, só um traço a separá-los. */
+.segends { display: flex; justify-content: space-between; gap: 12px; margin-top: -2px; font-size: 14px; color: var(--tx2); }
+@media (max-width: 359px) { .seg.five { gap: 3px; padding: 3px; } .seg.five button { font-size: 13px; } }   /* cinco teclas em 320 px: «100%» não toca nas bordas */
+.facts.two { grid-template-columns: 1fr 1fr; gap: 0; }
+.facts.two .fact { background: none; border-radius: 0; padding: 4px 8px 2px; }
+.facts.two .fact + .fact { box-shadow: inset 1px 0 0 #ffffff1f; }
+.facts.two .fact b { font-size: 32px; }
+.facts.two .fact span { font-size: 14px; margin-top: 4px; line-height: 1.25; text-wrap: balance; text-transform: none; }
+.facts.two .fact span::first-letter { text-transform: none; }
+.vfloor { color: var(--tx); }
+
+/* O que não se desfaz (expulsar, cancelar um pedido para todos): contorno e letra a vermelho; só fica cheio no toque de confirmação. */
+.btn.ghost.dng { color: #ff8f8f; box-shadow: inset 0 0 0 1px #ff5a5a8c; }
+
+/* ===== Gangue: pedido de golpe sem prazo, cargos ===== */
+.gop { box-shadow: none; }
+.gop::after { content: ''; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; box-shadow: inset 0 0 0 2px var(--s3); }   /* a moldura passa por cima da imagem: antes ficava aberta em cima */
+.gop.going::after { box-shadow: inset 0 0 0 2px var(--sodium); }   /* equipa completa, a contar: moldura acesa */
+.gop .gstat { color: var(--tx); font-size: 15px; }
+.gop .gin { justify-content: space-between; gap: 12px; }
+.gop .gin > span { display: inline-flex; align-items: center; gap: 8px; }
+.gop .gin > span, .gop .gline > * { white-space: nowrap; }      /* em 320 px «2 de 2 alinhados» e «91% de hipóteses» partiam-se em duas linhas cada */
+.gop .gline { flex-wrap: wrap; gap: 2px 12px; }
+.granks { margin-top: 12px; }
+.gmn { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 8px; }
+.gmn b { font-weight: 700; overflow-wrap: anywhere; }
+.grole { display: inline-flex; align-items: center; gap: 5px; padding: 2px 8px; border-radius: 5px; font: 800 13px/1.35 var(--ui); letter-spacing: .01em; white-space: nowrap; background: var(--s3); color: var(--tx); }
+.grole svg.i { width: 13px; height: 13px; }
+.grole.r3 { background: var(--sodium); color: #1a1100; }
+.grole.r2 { background: #4a3a10; color: var(--gold); }
+.grole.r0 { background: #ffffff12; color: var(--tx2); }
+.gm .gmore { min-width: 44px; padding: 0; font-size: 20px; line-height: 1; }
+.grk { display: grid; gap: 4px; padding: 12px 0 2px; border-top: 1px solid #ffffff12; }
+.grk .gwho { font-weight: 700; overflow-wrap: anywhere; }
+.gsp { height: 8px; }
+.gask { flex-wrap: wrap; gap: 10px 12px; } .gask > .grow { flex: 1 1 150px; } .gask > .row { flex: 0 0 auto; margin-left: auto; }   /* em ecrãs estreitos os botões passam para baixo do nome */
+/* membro preso ou no hospital: o botão de o safar passa para uma linha própria (ao lado do «⋯» espremia o nome numa coluna de 3 palavras) */
+.gm { flex-wrap: wrap; } .gm > .grow { flex: 1 1 0; }
+.gm .gsave { order: 5; flex: 1 0 100%; }

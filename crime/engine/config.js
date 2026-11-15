@@ -218,7 +218,10 @@ export const CFG = {
     armaria: [50000, 200000, 800000, 3000000, 12000000],      // preço de cada nível da armaria (começa em 0)
     lootBpPer: 200, fightBpPer: 300,                          // +2% de saque por nível de sede; +3% de ataque e defesa por nível de armaria
     donateMin: 100, rejoinMs: 1 * HOUR, chatMax: 200,
-    // Golpes em grupo: um membro abre, os outros alinham (cada um paga a stamina ao alinhar) e ao fim de 2 minutos resolve-se.
+    // Golpes em grupo: um membro abre o pedido e os outros alinham (cada um paga a stamina ao alinhar). O pedido não tem prazo: fica aberto
+    // até haver gente que chegue, ou até ser cancelado por quem o abriu, pelo chefe ou por quem tem cargo (ver roles). Quando a equipa
+    // fica completa começa a última chamada (opMs nos golpes, hitMs nas tareias) para ainda entrar mais gente, e no fim vai-se;
+    // quem abriu ou quem tem cargo pode mandar avançar logo. Quem alinhou pode sair do pedido quando quiser (a stamina volta).
     // A dificuldade compara-se com a soma das stats de quem foi; o saque é por cabeça. Não há limite por dia: quem trava é a stamina
     // de cada um e a pausa de 5 minutos da gangue entre operações. Contas: por ponto de stamina, um golpe em grupo dá no máximo
     // cerca de 1,9× o melhor golpe a solo (3150 contra 1600), e só com 5 pessoas em linha numa gangue com a sede no nível 5.
@@ -238,6 +241,11 @@ export const CFG = {
     // Tareia em grupo: soma-se o ataque de todos (a 85%), o alvo só vai uma vez para o hospital (30 min) e só perde respeito uma vez;
     // cada atacante ganha 70% do que ganharia sozinho, com o mesmo desconto por repetir o alvo.
     hitNeed: 2, hitTeamBp: 8500, hitShareBp: 7000, hitHospBp: 15000,
+    // Cargos: o chefe nomeia até 1 subchefe (cargo 2) e 2 capitães (cargo 1); os outros são membros (0) e o chefe vale 3.
+    // O número ao lado de cada permissão é o cargo mínimo: aceitar ou recusar pedidos de entrada e cancelar ou mandar avançar
+    // um golpe em grupo pedem capitão; expulsar pede subchefe (e só quem está abaixo dele). Cofre, melhorias, cargos,
+    // abrir ou fechar a gangue e passar a chefia continuam a ser só do chefe. Se o chefe sair, a chefia vai para o cargo mais alto.
+    roles: { max: [0, 2, 1], asks: 1, ops: 1, kick: 2 },
     // Negócios da gangue: cada membro põe o seu dinheiro e ganha só sobre o que ele próprio pôs (ninguém vive à conta dos outros).
     // rateBp: o que rende por hora, em pontos do que está investido. sede: nível da sede preciso. capMult: teto por pessoa = máximo do casino do nível × capMult.
     // O que se ganha por ser em grupo: +5% por cada outro membro que tenha lá pelo menos o mesmo que tu; quem tem menos conta só em proporção
@@ -253,8 +261,9 @@ export const CFG = {
     // Gangue da rua: existe sempre, é chefiada por um bot e entra quem quiser (a partir do nível das gangues), para ninguém ficar sem
     // golpes em grupo, conversa e negócio por não ter gangue. Fica sempre no nível 1 (sem cofre nem melhorias) e não é uma gangue a sério:
     // os membros podem atacar-se uns aos outros, não há tareias em grupo nem desconto nas casas dos outros membros.
-    // Quem sai só pode voltar a esta gangue ao fim de 24 h.
-    bot: { id: 'rua', name: 'Strays', tag: 'BOT', rejoinMs: 24 * HOUR, roster: 40 },
+    // Quem sai só pode voltar a esta gangue ao fim de 24 h. Como não tem chefe nem cargos, ninguém podia cancelar um pedido de golpe
+    // esquecido (e só há um pedido aberto por gangue): o bot cancela o que estiver há opMaxMs à espera sem ter gente que chegue.
+    bot: { id: 'rua', name: 'Strays', tag: 'BOT', rejoinMs: 24 * HOUR, roster: 40, opMaxMs: 15 * MIN },
   },
   // casa: cada nível dá respeito e deixa subir as melhorias até esse nível; a melhoria n custa uma parte do preço da casa n
   house: {
