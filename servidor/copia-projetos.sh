@@ -8,6 +8,7 @@
 #   Adri:      marcações da agenda             /var/lib/adri-agenda
 #   Jinxed:    o site                          /var/www/jinxed (também está no repositório, em sites/jinxed)
 #   webase:    contas, clientes e tudo o resto /var/lib/webase-api (base, chave dos avisos e logótipos)
+#   crime:     contas e jogadores do jogo      /var/lib/crime-api (só a base; as cópias de hora a hora e as guardadas ficam no servidor)
 set -euo pipefail
 T=$(mktemp -d)
 trap 'rm -rf "$T"' EXIT
@@ -21,7 +22,7 @@ b = sqlite3.connect(sys.argv[2])
 a.backup(b); b.close(); a.close()
 PY
 }
-for pasta in /var/lib/duaschaves-api /var/lib/caiu-api /var/lib/ganhas-api /var/lib/adri-agenda /var/lib/webase-api; do
+for pasta in /var/lib/duaschaves-api /var/lib/caiu-api /var/lib/ganhas-api /var/lib/adri-agenda /var/lib/webase-api /var/lib/crime-api; do
   [ -d "$pasta" ] || continue
   dest="$T/$(basename "$pasta")"; mkdir -p "$dest"
   for f in "$pasta"/*; do
