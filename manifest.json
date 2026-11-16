@@ -1,15 +1,15 @@
 {
-  "built_at": "2026-11-16T13:04:44.413786+00:00",
-  "db_bytes": 708816896,
-  "gz_bytes": 195081898,
+  "built_at": "2026-11-16T23:53:05.698205+00:00",
+  "db_bytes": 708669440,
+  "gz_bytes": 195062391,
   "totals": {
     "lines": 2661,
-    "stops": 46437,
-    "trips": 125279,
-    "stop_times": 3771887,
+    "stops": 46439,
+    "trips": 125261,
+    "stop_times": 3771557,
     "operators": 31,
     "operators_ok": 28,
-    "operators_desatualizados": 3
+    "operators_desatualizados": 2
   },
   "feeds": [
     {
@@ -188,19 +188,19 @@
       "operator_name": "TUB Braga",
       "status": "OK",
       "lines": 80,
-      "stops": 2014,
-      "trips": 3796,
-      "valid_until": "2027-02-01",
+      "stops": 2016,
+      "trips": 3794,
+      "valid_until": "2027-02-28",
       "validade": "ok",
-      "dias_validade": 77,
+      "dias_validade": 104,
       "horario_prolongado": false,
       "url": "https://www.tub.pt/developer/gtfs/feed/tub.zip",
       "last_error": null,
       "servicos_associados": null,
       "servicos_sem_calendario": null,
-      "viagens_hoje": 2104,
-      "viagens_amanha": 2104,
-      "dias_uteis_sem_servico": 0
+      "viagens_hoje": 0,
+      "viagens_amanha": 2102,
+      "dias_uteis_sem_servico": 1
     },
     {
       "id": "guimabus",
@@ -265,13 +265,13 @@
       "status": "OK",
       "lines": 230,
       "stops": 1529,
-      "trips": 6929,
-      "valid_until": "2026-11-12",
-      "validade": "caducado",
-      "dias_validade": -4,
-      "horario_prolongado": true,
+      "trips": 6913,
+      "valid_until": "2026-12-30",
+      "validade": "ok",
+      "dias_validade": 44,
+      "horario_prolongado": false,
       "url": "https://gtfs-api.smtuc.pt/api/static/",
-      "last_error": "O operador não atualizou as datas do calendário (terminam em 2026-11-12); a usar o horário semanal em vigor.",
+      "last_error": null,
       "servicos_associados": null,
       "servicos_sem_calendario": null,
       "viagens_hoje": 2407,
@@ -676,8 +676,8 @@
         "desenhos": 26
       },
       "smtuc": {
-        "viagens": 6929,
-        "com_desenho": 6929,
+        "viagens": 6913,
+        "com_desenho": 6913,
         "desenhos": 442
       },
       "sobe_desce_tavira": {
@@ -726,8 +726,8 @@
         "desenhos": 18
       },
       "tub_braga": {
-        "viagens": 3796,
-        "com_desenho": 3621,
+        "viagens": 3794,
+        "com_desenho": 3619,
         "desenhos": 383
       },
       "tuba_barcelos": {
@@ -935,13 +935,13 @@
           "total": 398
         },
         "servicos_com_data_hoje": [
-          "AU",
           "BexpU",
-          "EU",
-          "DU",
-          "CU",
+          "AU",
           "BU",
-          "FU"
+          "CU",
+          "DU",
+          "FU",
+          "EU"
         ],
         "viagens_por_servico": [
           {
@@ -996,5 +996,5 @@
       }
     }
   },
-  "duration_s": 246
+  "duration_s": 461
 }
