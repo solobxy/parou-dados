@@ -17,45 +17,41 @@ const never = { int: (lo) => lo, chance: () => false, float: () => 0.99 };
 const code = (c) => (e) => e instanceof E.GameError && e.code === c;
 const setResp = (p, r) => { p.respect = r; p.peakRespect = Math.max(p.peakRespect, r); };
 
-test('golpes: a percentagem mostrada é a que sai em 200 000 tentativas (sucesso, golpe perfeito, prisão e dinheiro)', () => {
-  const casos = [
-    { k: 0, st: 10 },   // carteirista com stats iniciais
-    { k: 3, st: 25 },   // 50%
-    { k: 5, st: 40 },   // abaixo de metade
-  ];
-  for (const { k, st } of casos) {
+test('golpes: a percentagem mostrada é a que sai em 200 000 tentativas (sucesso, prisão, sorteio do que vem e dinheiro)', () => {
+  for (const k of [0, 3, 5]) {
     const rng = seededRng(1234 + k), p = mk(), c = CFG.crimes[k], N = 200000;
-    p.peakRespect = 1;
-    let ok = 0, crit = 0, bust = 0, soma = 0, simples = 0;
-    const mostrada = (() => { p.stats = { F: st, T: 10, I: st, C: st }; return E.crimeChanceBp(p, k, NOW) / 10000; })();
+    setResp(p, CFG.levels[c.level - 1]); p.weapon = CFG.weapons.findIndex((w) => w.id === 'pistola');
+    let ok = 0, bust = 0, soma = 0; const vem = {};
+    const mostrada = E.crimeChanceBp(p, k, NOW) / 10000;
+    assert.equal(mostrada, c.p / 10000);
     for (let i = 0; i < N; i++) {
-      p.stats = { F: st, T: 10, I: st, C: st }; p.xp = { F: 0, I: 0, C: 0 }; p.energy = 100; p.jailUntil = 0; p.wk[k] = 0;
+      p.energy = 100; p.jailUntil = 0; p.wk[k] = 0; p.rua = null; p.cash = 1e12;
       const r = E.doCrime(p, NOW, W, k, rng);
-      if (r.success) { ok++; if (r.crit) crit++; else { soma += r.money; simples++; } } else if (r.busted) bust++;
+      if (r.success) { ok++; soma += r.money; vem[r.item] = (vem[r.item] || 0) + 1; } else if (r.busted) bust++;
     }
     perto(ok / N, mostrada, 0.005, `golpe ${c.id}: sucesso`);
-    perto(crit / ok, CFG.crit.chanceBp / 10000, 0.004, `golpe ${c.id}: golpe perfeito`);
     perto(bust / (N - ok), CFG.bustBp / 10000, 0.008, `golpe ${c.id}: prisão ao falhar`);
-    perto(soma / simples, (c.min + c.max) / 2, (c.min + c.max) / 2 * 0.01, `golpe ${c.id}: dinheiro médio`);
+    perto(soma / ok, E.crimeEv(c), E.crimeEv(c) * 0.02, `golpe ${c.id}: dinheiro médio`);
+    for (const [bp, , , item] of c.prizes) perto((vem[item] || 0) / ok, bp / 10000, 0.004, `golpe ${c.id}: ${item}`);
   }
 });
 
 test('golpes: os bónus de saque somam-se (mestria + ladrão + speed) e nunca passam do teto', () => {
   const p = mk('ladrao'), k = 3, c = CFG.crimes[k];
-  p.peakRespect = 1; p.stats = { F: 500, T: 10, I: 500, C: 500 };
+  setResp(p, CFG.levels[c.level - 1]);
   p.wk[k] = 150; p.c.wins = 150;                       // 3 estrelas: +30%
   p.fx.loot = { bp: 1500, until: NOW + T.MIN };        // speed: +15%
-  const semCrit = { int: (lo, hi) => hi, chance: (() => { let i = 0; return () => i++ % 2 === 0; })() }; // sucesso, sem golpe perfeito
-  const r = E.doCrime(p, NOW, W, k, semCrit);
-  assert.equal(r.money, Math.floor((c.max * (10000 + 3000 + 1500 + 1500)) / 10000));
-  assert.equal(r.crit, false);
+  const topo = { int: (lo, hi) => hi, chance: () => true }; // corre bem, sai a linha mais rara e o valor mais alto
+  const r = E.doCrime(p, NOW, W, k, topo);
+  assert.equal(r.item, c.prizes.at(-1)[3]); assert.equal(r.base, c.prizes.at(-1)[2]);
+  assert.equal(r.money, Math.floor((c.prizes.at(-1)[2] * (10000 + 3000 + 1500 + 1500)) / 10000));
 });
 
 test('putas: o risco de doença mostrado é o que sai em 100 000 visitas a cada uma', () => {
   CFG.hookers.list.forEach((g, i) => {
     const rng = seededRng(77 + i), p = mk(); let doente = 0; const N = 100000;
     for (let v = 0; v < N; v++) {
-      p.energy = 0; p.sick = false; p.hkN = p.hkN.map(() => 0); p.cash = 1e12;
+      p.energy = 0; p.sick = false; p.hkN = p.hkN.map(() => 0); p.cash = 1e12; p.rf = null;
       if (E.visitHooker(p, NOW, W, i, rng).sick) doente++;
     }
     perto(doente / N, g.sickBp / 10000, 0.0035, `doença com ${g.id}`);
@@ -72,7 +68,7 @@ test('porto e rusgas: 15% de apreensões, +30% exatos, 5% de rusgas que levam me
   perto(ap / N, CFG.port.ships[CFG.port.legacy].seizeBp / 10000, 0.005, 'apreensões');
   let rusgas = 0;
   for (let i = 0; i < N; i++) {
-    p.biz[1] = { n: 1, stored: 1000, rem: 0, t: NOW }; const antes = p.cash;
+    p.biz[3] = { n: 1, stored: 1000, rem: 0, t: NOW }; const antes = p.cash;
     const it = E.collectBiz(p, NOW, W, rng).items[0];
     if (it.lost) { rusgas++; assert.equal(it.lost, 500); assert.equal(p.cash - antes, 500); } else assert.equal(p.cash - antes, 1000);
   }
@@ -128,17 +124,19 @@ test('profissões: cada bónus vale exatamente o que o cartão diz', () => {
   const now = NOW;
   // ladrão: +15% de saque
   const l = mk('ladrao'); l.peakRespect = 1;
-  assert.equal(E.doCrime(l, now, W, 0, { int: (lo) => lo, chance: (() => { let i = 0; return () => i++ % 2 === 0; })() }).money, Math.floor(CFG.crimes[0].min * 1.15));
+  assert.equal(E.doCrime(l, now, W, 0, { int: (lo) => lo, chance: (() => { let i = 0; return () => i++ % 2 === 0; })() }).money, Math.floor(CFG.crimes[0].prizes[0][1] * 1.15));
   // vigarista: −25% de prisão ao falhar e fiança a metade
   const v = mk('vigarista'), s = mk();
   assert.equal(E.bustChanceBp(v, now), 1875); assert.equal(E.bustChanceBp(s, now), 2500);
-  for (const q of [v, s]) { q.jailUntil = now + 10 * T.MIN; q.jailTier = 10; }
-  assert.equal(E.bailCost(s, now), 12000); assert.equal(E.bailCost(v, now), 6000);
+  const armado = CFG.crimes.length;   // prisão do assalto armado: 20 min, multa de 6 000 €
+  for (const q of [v, s]) { q.jailUntil = now + CFG.crimes[armado - 1].jailMin * T.MIN; q.jailTier = armado; }
+  assert.equal(E.bailCost(s, now), 6000); assert.equal(E.bailCost(v, now), 3000);
   // traficante: drogas −30%, efeitos a dobrar, +15 de limite
   const t = mk('traficante'); t.energy = 0;
-  assert.equal(E.drugPrice(t, 8), 5600); assert.equal(E.addictionCap(t), E.addictionCap(s) + 15);
+  const menos30 = (d) => Math.floor((CFG.drugs[d].price * 7000) / 10000);
+  assert.equal(E.drugPrice(t, 8), menos30(8)); assert.equal(E.addictionCap(t), E.addictionCap(s) + 15);
   const antes = t.cash; E.buyDrug(t, now, W, 6);
-  assert.equal(antes - t.cash, 1050); assert.equal(t.fx.C.until, now + 30 * T.MIN);
+  assert.equal(antes - t.cash, menos30(6)); assert.equal(t.fx.C.until, now + 30 * T.MIN);
   // empresário: negócios +20%, taxa do banco a metade
   const e = mk('empresario'); e.biz[0].n = 1; s.biz[0].n = 1;
   assert.equal(E.bizRates(e, 0).perH, Math.floor(E.bizRates(s, 0).perH * 1.2));
@@ -155,28 +153,19 @@ test('profissões: cada bónus vale exatamente o que o cartão diz', () => {
   assert.equal(g.hospUntil, now + 10 * T.MIN);
 });
 
-test('casa: preços e respeito somam o que está na tabela e cada melhoria vale o que diz', () => {
-  const p = mk(); let pago = 0, resp = 0;
-  for (let i = 1; i < CFG.house.tiers.length; i++) { const r = E.buyHouse(p, NOW, W); pago += r.price; resp += r.respect; }
-  assert.equal(pago, 26312000); assert.equal(resp, 2510); assert.equal(p.respect, 2510);
+test('casa: comprar todas custa o preço da mansão (cada antiga entra na troca) e o respeito soma o da tabela; já não há melhorias', () => {
+  const H = CFG.house.tiers, p = mk(); let pago = 0, resp = 0;
+  for (let i = 1; i < H.length; i++) { const r = E.buyHouse(p, NOW, W); pago += r.price; resp += r.respect; }
+  assert.equal(pago, 3000000); assert.equal(pago, H.at(-1).price);
+  assert.equal(resp, H.reduce((x, h) => x + h.resp, 0)); assert.equal(p.respect, resp);
   assert.throws(() => E.buyHouse(p, NOW, W), code('HOUSE_MAX'));
-  for (let u = 0; u < 4; u++) {
-    let soma = 0;
-    for (let k = 0; k < 7; k++) soma += E.buyUpgrade(p, NOW, W, u).price;
-    assert.equal(soma, 26312000 / 4);
-    assert.throws(() => E.buyUpgrade(p, NOW, W, u), code('NEED_HOUSE'));
-  }
-  const s = mk();
-  assert.equal(E.bustChanceBp(p, NOW), Math.floor(2500 * 0.72));                      // garagem: −28%
-  p.stats.T = 100; s.stats.T = 100;
-  assert.equal(E.defensePower(p, NOW), 128);                                          // alarme: +28%
-  p.biz[0].n = 1; s.biz[0].n = 1;
-  assert.equal(E.bizRates(p, 0).perH, Math.floor(E.bizRates(s, 0).perH * 1.14));      // escritório: +14%
+  assert.deepEqual(H.map((h) => h.emax), [100, 105, 110, 115, 120, 130]);
+  for (let u = 0; u < 4; u++) assert.throws(() => E.buyUpgrade(p, NOW, W, u), code('NO_UPGRADE'));
+  const s = mk(); p.stats.T = 100; s.stats.T = 100;
+  assert.equal(E.bustChanceBp(p, NOW), CFG.bustBp); assert.equal(E.defensePower(p, NOW), E.defensePower(s, NOW));
+  p.biz[0].n = 1; s.biz[0].n = 1; assert.equal(E.bizRates(p, 0).perH, E.bizRates(s, 0).perH);
   const ladrao = mk(); p.cash = 100000;
-  assert.equal(E.mugValue(ladrao, p, NOW), 7500);                                     // cofre: 70% a salvo, o assalto leva 25% do resto
-  // casa nova sem melhorias: nada muda
-  const q = mk(); E.buyHouse(q, NOW, W);
-  assert.throws(() => { E.buyUpgrade(q, NOW, W, 0); E.buyUpgrade(q, NOW, W, 0); }, code('NEED_HOUSE'));
+  assert.equal(E.mugValue(ladrao, p, NOW), 25000, 'sem cofre: o assalto leva 25% da mão');
 });
 
 test('batota: dois amigos a baterem-se um ao outro ganham no máximo 4 lutas cada por dia e quase nada de respeito', () => {
@@ -209,34 +198,43 @@ test('batota: uma conta fraca não serve para dar respeito à principal, nem a p
 test('batota: perder respeito e voltar a ganhá-lo não volta a encher a stamina', () => {
   const p = mk(); p.peakRespect = CFG.levels[1]; p.respect = CFG.levels[1] - 1; p.energy = 50;
   const r = E.doCrime(p, NOW, W, 0, always);
-  assert.equal(r.levelUp, null); assert.equal(p.energy, 45);
+  assert.equal(r.levelUp, null); assert.equal(p.energy, 50 - CFG.crimes[0].e);
 });
 
-test('putas: cada visita sobe 4% só o preço dela, desce um degrau por cada hora sem lá ir, e há um fim para o que compensa', () => {
-  const H = CFG.hookers, p = mk(); p.stats = { F: 2000, T: 10, I: 2000, C: 2000 };
-  const i = H.list.findIndex((x) => x.id === 'dominique'), g = H.list[i], base = E.hookerPrice(p, i, NOW);
-  const sobe = (x) => Math.ceil((x * H.stepNum) / H.stepDen);
+// o preço de uma puta: a escada de stamina do dia (35 € × barra + 15 € × barra², ponto a ponto) pelo que ela dá, vezes o dela, mais 4% por degrau
+const escada = (from, n) => { let c = 0; for (let u = from; u < from + n; u++) { const k = Math.floor(u / 100) + 1; c += 35 * k + 15 * k * k; } return Math.ceil(c / 100); };
+const precoPuta = (p, i, now, degraus) => {
+  const g = CFG.hookers.list[i], from = p.rf && p.rf.d === E.dayOf(now) ? p.rf.e : 0;
+  let x = Math.max(1, Math.ceil((escada(from, g.e) * g.valueBp) / 10000));
+  for (let k = 0; k < degraus; k++) x = Math.ceil((x * 26) / 25);
+  return x;
+};
+test('putas: o preço segue a escada de stamina do dia; cada visita sobe 4% só o dela, desce um degrau por hora, e há um fim para o que compensa', () => {
+  const H = CFG.hookers, p = mk();
+  const i = H.list.findIndex((x) => x.id === 'dominique'), g = H.list[i];
   assert.equal(H.stepNum / H.stepDen, 1.04); assert.equal(H.coolMs, T.HOUR);
-  const antes = H.list.map((_, k) => E.hookerPrice(p, k, NOW));
-  // duas visitas seguidas: só a dela sobe, 4% de cada vez
-  p.energy = 0; E.visitHooker(p, NOW, W, i, never); assert.equal(E.hookerPrice(p, i, NOW + 1), sobe(base));
-  p.energy = 0; E.visitHooker(p, NOW + 1, W, i, never); assert.equal(E.hookerPrice(p, i, NOW + 2), sobe(sobe(base)));
-  H.list.forEach((_, k) => { if (k !== i) assert.equal(E.hookerPrice(p, k, NOW + 2), antes[k]); });
+  H.list.forEach((_, k) => assert.equal(E.hookerPrice(p, k, NOW), precoPuta(p, k, NOW, 0)));
+  // duas visitas seguidas: a dela sobe 4% de cada vez em cima da escada; as outras só sobem a escada
+  p.energy = 0; E.visitHooker(p, NOW, W, i, never); assert.equal(E.hookerPrice(p, i, NOW + 1), precoPuta(p, i, NOW + 1, 1));
+  p.energy = 0; E.visitHooker(p, NOW + 1, W, i, never); assert.equal(E.hookerPrice(p, i, NOW + 2), precoPuta(p, i, NOW + 2, 2));
+  assert.equal(p.rf.e, 2 * g.e, 'a stamina dela conta na escada do dia');
+  H.list.forEach((_, k) => { if (k !== i) assert.equal(E.hookerPrice(p, k, NOW + 2), precoPuta(p, k, NOW + 2, 0)); });
   assert.equal(E.hookerSteps(p, i, NOW + 2), 2); assert.equal(E.hookerSteps(p, 0, NOW + 2), 0); assert.equal(E.hookerUses(p, NOW + 2), 2);
-  // 59 minutos depois ainda está igual; à hora desce um degrau; às duas horas volta ao preço de início
-  assert.equal(E.hookerPrice(p, i, NOW + 1 + T.HOUR - 1), sobe(sobe(base)));
-  assert.equal(E.hookerPrice(p, i, NOW + 1 + T.HOUR), sobe(base)); assert.equal(E.hookerPrice(p, i, NOW + 1 + 2 * T.HOUR), base); assert.equal(E.hookerPrice(p, i, NOW + 30 * T.HOUR), base);
-  // ir lá de hora a hora não acumula: paga-se sempre o preço de início
-  const h = mk(); h.stats = p.stats; for (let k = 0; k < 10; k++) { h.energy = 0; const r = E.visitHooker(h, NOW + k * T.HOUR, W, i, never); assert.equal(r.price, base); }
+  // 59 minutos depois ainda está igual; à hora desce um degrau; às duas horas só fica a escada
+  assert.equal(E.hookerSteps(p, i, NOW + 1 + T.HOUR - 1), 2);
+  assert.equal(E.hookerSteps(p, i, NOW + 1 + T.HOUR), 1); assert.equal(E.hookerSteps(p, i, NOW + 1 + 2 * T.HOUR), 0);
+  assert.equal(E.hookerPrice(p, i, NOW + 30 * T.HOUR), precoPuta(p, i, NOW + 30 * T.HOUR, 0), 'noutro dia a escada recomeça');
+  // ir lá de hora a hora: os degraus dela não acumulam, só a escada do dia
+  const h = mk(); for (let k = 0; k < 6; k++) { h.energy = 0; const t = NOW + k * T.HOUR, antes = precoPuta(h, i, t, 0); const r = E.visitHooker(h, t, W, i, never); assert.equal(r.price, antes); }
   // uma visita a meio não apaga os degraus que ainda faltavam descer: a hora conta desde a última visita
-  const m = mk(); m.stats = p.stats; for (let k = 0; k < 5; k++) { m.energy = 0; E.visitHooker(m, NOW + k, W, i, never); }
+  const m = mk(); for (let k = 0; k < 5; k++) { m.energy = 0; E.visitHooker(m, NOW + k, W, i, never); }
   assert.equal(E.hookerSteps(m, i, NOW + 3 * T.HOUR + 10), 2); m.energy = 0; E.visitHooker(m, NOW + 3 * T.HOUR + 10, W, i, never); assert.equal(E.hookerSteps(m, i, NOW + 3 * T.HOUR + 11), 3);
   assert.equal(E.hookerSteps(m, i, NOW + 4 * T.HOUR + 9), 3); assert.equal(E.hookerSteps(m, i, NOW + 4 * T.HOUR + 10), 2);
-  // seguidas, sem esperar: há um ponto em que deixa de compensar (mesmo no melhor caso), e o preço tem teto
-  const q = mk(); q.stats = p.stats; const valor = E.valuePerEnergy(q) * g.e * 1.76;      // todos os bónus de saque e os golpes perfeitos
+  // seguidas, sem esperar: a escada e os degraus dela fazem com que, ao fim de poucas visitas, custe mais do que rende no melhor caso
+  const q = mk(); const valor = E.valuePerEnergy(q) * g.e * 1.6;      // todos os bónus de saque, sem a rua aquecer
   let visitas = 0, ultimo = 0;
   for (; visitas < 200; visitas++) { const preco = E.hookerPrice(q, i, NOW + visitas); assert.ok(preco >= ultimo); ultimo = preco; if (preco >= valor) break; q.energy = 0; E.visitHooker(q, NOW + visitas, W, i, never); }
-  assert.ok(visitas >= 20 && visitas <= 45, `compensou ${visitas} vezes seguidas`);
+  assert.ok(visitas >= 5 && visitas <= 15, `compensou ${visitas} vezes seguidas`);
   for (let k = 0; k < 100; k++) { q.energy = 0; q.cash = 1e15; E.visitHooker(q, NOW + 500 + k, W, i, never); } assert.equal(q.hkN[i], H.maxSteps); assert.deepEqual(E.checkInvariants(q), []);
   // estado antigo (listas de visitas) é convertido sem perder a conta de cada uma
   const velho = mk(); delete velho.hkN; delete velho.hkAt; velho.hkT = [NOW - 5, NOW - 4, NOW - 3]; velho.hkI = [i, i, 0]; E.touch(velho, NOW);
@@ -245,20 +243,19 @@ test('putas: cada visita sobe 4% só o preço dela, desce um degrau por cada hor
   p.sick = true; p.energy = 0; assert.throws(() => E.visitHooker(p, NOW + 9 * T.HOUR, W, 0, never), code('SICK'));
 });
 
-test('batota: o motor recusa tipos de equipamento inventados e a recarga usa o preço da profissão', () => {
+test('batota: o motor recusa tipos de equipamento inventados e a barra a droga custa o mesmo a todos', () => {
   const p = mk(), antes = structuredClone(p);
   for (const k of ['cash', 'stats', 'house', 'respect', '__proto__', '']) assert.throws(() => E.buyGear(p, NOW, W, k, 1), code('NO_GEAR'));
   assert.deepEqual(p, antes);
   const t = mk('traficante'), s = mk(); t.energy = 0; s.energy = 0;
-  const pt = E.refillPlan(t), ps = E.refillPlan(s);
-  assert.equal(pt.cost, pt.counts.reduce((x, c, d) => x + c * E.drugPrice(t, d), 0));
-  assert.ok(pt.cost < ps.cost);
+  const pt = E.refillPlan(t, NOW), ps = E.refillPlan(s, NOW);
+  assert.equal(pt.cost, ps.cost, 'a barra a droga custa o mesmo a todos');
   const c0 = t.cash; const r = E.refill(t, NOW, W);
   assert.equal(c0 - t.cash, r.price); assert.equal(r.price, pt.cost);
 });
 
 test('negócios: um golpe que sobe a stat não muda o que já estava produzido', () => {
-  const p = mk(); p.peakRespect = 1; p.biz[2] = { n: 1, stored: 0, rem: 0, t: NOW };
+  const p = mk(); p.peakRespect = 1; p.biz[2] = { n: 10, stored: 0, rem: 0, t: NOW };   // dez oficinas: rendem pela inteligência
   const antes = E.bizRates(p, 2).perH;
   p.xp.I = E.practiceNeed(p, 'I') - 1;                          // o próximo golpe sobe a inteligência
   const t1 = NOW + T.HOUR;
@@ -269,35 +266,38 @@ test('negócios: um golpe que sobe a stat não muda o que já estava produzido',
 });
 
 test('usar a stamina toda: igual a carregar várias vezes, para na prisão, a subida de nível não se perde', () => {
-  // sem subir de nível: gasta a stamina toda
-  const p = mk(); p.peakRespect = 1e6; p.energy = 100; p.stats = { F: 400, T: 10, I: 400, C: 400 };
+  const e0 = CFG.crimes[0].e, n0 = Math.min(CFG.crimeAllMax, Math.floor(100 / e0));
+  // sem subir de nível: gasta a stamina toda (até ao máximo de golpes de uma vez)
+  const p = mk(); p.peakRespect = p.respect = 1e6; p.energy = 100;
   const r = E.doCrimeAll(p, NOW, W, 0, always);
-  assert.equal(r.n, 20); assert.equal(r.wins, 20); assert.equal(p.energy, 0);
-  assert.equal(r.respect, 20 * CFG.crimes[0].r); assert.equal(p.respect, r.respect);
+  assert.equal(r.n, n0); assert.equal(r.wins, n0); assert.equal(p.energy, 100 - n0 * e0);
+  assert.equal(p.respect, 1e6 + r.respect); assert.ok(r.respect > 0);
   // o mesmo jogador, golpe a golpe, com a mesma sorte, acaba igual
   const a = mk(), b = mk();
-  for (const q of [a, b]) { q.peakRespect = 1e6; q.energy = 100; q.cash = 0; }
+  for (const q of [a, b]) { q.peakRespect = q.respect = 1e6; q.energy = 100; q.cash = 0; }
   const ra = E.doCrimeAll(a, NOW, W, 0, seededRng(9)); const rb = seededRng(9);
   for (let i = 0; i < ra.n; i++) E.doCrime(b, NOW, W, 0, rb);
-  assert.equal(a.cash, b.cash); assert.equal(a.respect, b.respect); assert.deepEqual(a.stats, b.stats); assert.equal(a.energy, b.energy);
+  assert.equal(a.cash, b.cash); assert.equal(a.respect, b.respect); assert.deepEqual(a.stats, b.stats); assert.equal(a.energy, b.energy); assert.deepEqual(a.rua, b.rua);
   // apanhado: para logo
   const c = mk(); c.peakRespect = 1e6; c.energy = 100;
   const rc = E.doCrimeAll(c, NOW, W, 1, (() => { let i = 0; return { int: (lo) => lo, chance: () => i++ % 2 === 1 }; })());
   assert.equal(rc.n, 1); assert.equal(rc.busted, true); assert.ok(c.jailUntil > NOW); assert.equal(c.energy, 100 - CFG.crimes[1].e);
   assert.throws(() => E.doCrimeAll(c, NOW, W, 0, always), code('IN_JAIL'));
-  // sobe a meio: o nível novo do 1 ao 2 (aos 8 de respeito) e a escala antiga aos 3 e aos 10 (é ela que enche a stamina, até ao passo 2):
-  // faz os 20 na mesma e a stamina que encheu fica
+  // com arma: para quando acaba o dinheiro das balas
+  const g = mk(); g.weapon = CFG.weapons.findIndex((w) => w.id === 'pistola'); setResp(g, CFG.levels[CFG.crimes[4].level - 1]); g.energy = 100; g.cash = CFG.street.ammo; g.bank = 0;
+  const rg = E.doCrimeAll(g, NOW, W, 4, { int: (lo) => lo, chance: () => false }); assert.equal(rg.n, 1); assert.equal(rg.ammo, CFG.street.ammo); assert.equal(g.cash, 0);
+  // sobe a meio: a subida de nível fica registada e a stamina que encheu fica
   const d = mk(); d.energy = 100;
   const rd = E.doCrimeAll(d, NOW, W, 0, always);
-  assert.equal(rd.n, 20); assert.deepEqual(rd.levelUp, { from: 1, to: 2 }); assert.equal(d.energy, 50);
+  assert.equal(rd.n, n0); assert.deepEqual(rd.levelUp, { from: 1, to: E.level(d) }); assert.ok(E.level(d) >= 2);
   // sem stamina para um golpe: recusado e nada muda
-  const e = mk(); e.energy = 4; const antes = structuredClone(e);
+  const e = mk(); e.energy = e0 - 1; const antes = structuredClone(e);
   assert.throws(() => E.doCrimeAll(e, NOW, W, 0, always), code('NO_ENERGY'));
   assert.deepEqual(e, antes);
 });
 
 // ---------- casino ----------
-const cas = (cash = 100000) => { const p = mk(); p.cash = cash; p.bank = 0; return p; };
+const cas = (cash = 100000) => { const p = mk(); p.cash = cash; p.bank = 0; setResp(p, CFG.levels[59]); return p; };   // nível 60: sala reservada, até 1 000 € por jogada
 test('roleta: cada aposta paga o que diz a mesa e a casa fica com 2,7% (36/37) em todas', () => {
   const tipos = [{ t: 'red' }, { t: 'black' }, { t: 'even' }, { t: 'odd' }, { t: 'low' }, { t: 'high' }, { t: 'dozen', n: 0 }, { t: 'dozen', n: 2 }, { t: 'num', n: 0 }, { t: 'num', n: 17 }];
   for (const b of tipos) {
@@ -420,52 +420,56 @@ test('blackjack: a seguir a dica do jogo em 400 000 mãos, devolve 99,5% e a cas
 // ---------- negócios da gangue ----------
 const socio = (cash = 1e9, resp = 0) => { const p = mk(); p.cash = cash; p.bank = 0; if (resp) setResp(p, resp); E.gangSet(p, 'g1', 3, 0); return p; };
 test('negócios da gangue: cada um ganha sobre o que pôs; o bónus de grupo é +5% por sócio ao teu nível, em proporção para quem tem menos, até +50%', () => {
-  const B = CFG.gang.biz, A = socio(), P = socio();
-  assert.deepEqual(B.map((b) => b.id), ['oficina', 'jogo', 'rota']);
+  const B = CFG.gang.biz, topo = CFG.levels[99], A = socio(1e9, topo), P = socio(1e9, topo);
+  const up = (x, bp) => Math.floor((x * (10000 + bp)) / 10000);
+  assert.deepEqual(B.map((b) => b.id), ['oficina', 'jogo', 'rota']); assert.deepEqual(B.map((b) => b.rateBp), [10, 11, 12]);
   // limites: sem gangue, sede pequena, quantia mínima, teto do nível e sem dinheiro; nada muda
   const fora = mk(); assert.throws(() => E.gangBizInvest(fora, NOW, W, 0, 1000, 3), code('NO_GANG'));
   const antes = JSON.stringify(A);
   assert.throws(() => E.gangBizInvest(A, NOW, W, 1, 1000, 1), code('GBIZ_SEDE'));
-  assert.throws(() => E.gangBizInvest(A, NOW, W, 0, 99, 3), code('BAD_AMOUNT'));
-  assert.throws(() => E.gangBizInvest(A, NOW, W, 0, 1.5, 3), code('BAD_AMOUNT'));
+  assert.throws(() => E.gangBizInvest(A, NOW, W, 0, CFG.gang.bizMin - 1, 3), code('BAD_AMOUNT'));
+  assert.throws(() => E.gangBizInvest(A, NOW, W, 0, 1500.5, 3), code('BAD_AMOUNT'));
   assert.throws(() => E.gangBizInvest(A, NOW, W, 9, 1000, 3), code('NO_BIZ'));
-  assert.equal(E.gangBizCap(A, 0), E.casinoMax(A) * B[0].capMult);
+  assert.equal(E.gangBizCap(A, 0), 100 * CFG.gang.bizCapPerLevel * B[0].capMult);
+  assert.equal(E.gangBizCap(mk(), 2), CFG.gang.bizCapPerLevel * B[2].capMult, 'no nível 1');
   assert.throws(() => E.gangBizInvest(A, NOW, W, 0, E.gangBizCap(A, 0) + 1, 3), code('GBIZ_CAP'));
-  const teso = socio(50); assert.throws(() => E.gangBizInvest(teso, NOW, W, 0, 1000, 3), code('NO_MONEY'));
+  const teso = socio(50, topo); assert.throws(() => E.gangBizInvest(teso, NOW, W, 0, 1000, 3), code('NO_MONEY'));
   assert.equal(JSON.stringify(A), antes);
-  // A põe 3000 e fica sozinho 2 h: 3% por hora, sem bónus
-  let r = E.gangBizInvest(A, NOW, W, 0, 3000, 3); assert.equal(r.inv, 3000); assert.equal(A.cash, 1e9 - 3000);
+  // A põe 300 000 e fica sozinho 2 h: 0,10% por hora, sem bónus
+  let r = E.gangBizInvest(A, NOW, W, 0, 300000, 3); assert.equal(r.inv, 300000); assert.equal(A.cash, 1e9 - 300000);
   assert.deepEqual(E.gangBizSync([A, P], NOW), []);
-  assert.equal(E.gangBizRate(A, 0), 90); assert.equal(E.gangBizView(A, NOW + 2 * T.HOUR)[0].stored, 180);
-  // P põe só 300 (um décimo): P ganha +5% (tem um sócio com pelo menos o mesmo), A só +0,5% (o sócio tem um décimo do dele)
-  E.gangBizInvest(P, NOW + 2 * T.HOUR, W, 0, 300, 3);
+  assert.equal(E.gangBizRate(A, 0), 300); assert.equal(E.gangBizView(A, NOW + 2 * T.HOUR)[0].stored, 600);
+  // P põe só 30 000 (um décimo): P ganha +5% (tem um sócio com pelo menos o mesmo), A só +0,5% (o sócio tem um décimo do dele)
+  E.gangBizInvest(P, NOW + 2 * T.HOUR, W, 0, 30000, 3);
   const mud = E.gangBizSync([A, P], NOW + 2 * T.HOUR); assert.equal(mud.length, 2);
   assert.equal(A.gbz[0].coop, 50); assert.equal(P.gbz[0].coop, 500);
-  assert.equal(A.gbz[0].stored, 180);                       // antes de mudar o bónus fecha-se a conta com o antigo
-  assert.equal(E.gangBizRate(A, 0), Math.floor(90 * 1.005)); assert.equal(E.gangBizRate(P, 0), Math.floor(9 * 1.05));
+  assert.equal(A.gbz[0].stored, 600);                       // antes de mudar o bónus fecha-se a conta com o antigo
+  assert.equal(E.gangBizRate(A, 0), up(300, 50)); assert.equal(E.gangBizRate(P, 0), up(30, 500));
   // o pobre não ganha mais por o sócio ser rico: com um sócio igual a ele teria exatamente o mesmo bónus
-  const P2 = socio(), Q2 = socio(); E.gangBizInvest(P2, NOW, W, 0, 300, 3); E.gangBizInvest(Q2, NOW, W, 0, 300, 3); E.gangBizSync([P2, Q2], NOW);
+  const P2 = socio(1e9, topo), Q2 = socio(1e9, topo); E.gangBizInvest(P2, NOW, W, 0, 30000, 3); E.gangBizInvest(Q2, NOW, W, 0, 30000, 3); E.gangBizSync([P2, Q2], NOW);
   assert.equal(P2.gbz[0].coop, P.gbz[0].coop); assert.equal(E.gangBizRate(P2, 0), E.gangBizRate(P, 0));
   // 10 ou mais sócios ao mesmo nível: +50% e não passa daí
-  const grupo = Array.from({ length: 14 }, () => socio()); for (const x of grupo) E.gangBizInvest(x, NOW, W, 2, 1000, 3);
-  E.gangBizSync(grupo, NOW); for (const x of grupo) { assert.equal(x.gbz[2].coop, 5000); assert.equal(E.gangBizRate(x, 2), 60); }
+  const grupo = Array.from({ length: 14 }, () => socio(1e9, topo)); for (const x of grupo) E.gangBizInvest(x, NOW, W, 2, 100000, 3);
+  E.gangBizSync(grupo, NOW); for (const x of grupo) { assert.equal(x.gbz[2].coop, 5000); assert.equal(E.gangBizRate(x, 2), up(120, 5000)); }
   // receber: cai na mão o que rendeu, guardado no máximo 8 h
-  const g0 = grupo[0], c0 = g0.cash; r = E.gangBizCollect(g0, NOW + 3 * T.HOUR, W); assert.equal(r.money, 180); assert.equal(g0.cash, c0 + 180);
-  assert.equal(E.gangBizView(g0, NOW + 50 * T.HOUR)[2].stored, 60 * 8);
+  const g0 = grupo[0], c0 = g0.cash; r = E.gangBizCollect(g0, NOW + 3 * T.HOUR, W); assert.equal(r.money, 3 * up(120, 5000)); assert.equal(g0.cash, c0 + r.money);
+  assert.equal(E.gangBizView(g0, NOW + 50 * T.HOUR)[2].stored, up(120, 5000) * 8);
+  // paga-se em 20 a 30 dias com dez sócios, mais devagar sozinho
+  for (const b of B) { const dias = (cheio) => 10000 / (b.rateBp * 24 * (cheio ? 1.5 : 1)); assert.ok(dias(true) >= 20 && dias(true) <= 30, b.id + ' ' + dias(true)); assert.ok(dias(false) > 30); }
   for (const x of [A, P, ...grupo]) assert.deepEqual(E.checkInvariants(x), []);
 });
 
 test('negócios da gangue: sair devolve metade do investido e o que estava por receber; quem fica perde o bónus desse sócio; não há forma de criar dinheiro', () => {
-  const A = socio(), Bm = socio();
-  E.gangBizInvest(A, NOW, W, 0, 2000, 3); E.gangBizInvest(Bm, NOW, W, 0, 2000, 3); E.gangBizSync([A, Bm], NOW);
-  assert.equal(A.gbz[0].coop, 500); assert.equal(E.gangBizRate(A, 0), 63);
+  const topo = CFG.levels[99], A = socio(1e9, topo), Bm = socio(1e9, topo);
+  E.gangBizInvest(A, NOW, W, 0, 200000, 3); E.gangBizInvest(Bm, NOW, W, 0, 200000, 3); E.gangBizSync([A, Bm], NOW);
+  assert.equal(A.gbz[0].coop, 500); assert.equal(E.gangBizRate(A, 0), 210);
   const c0 = Bm.cash, t1 = NOW + 4 * T.HOUR, back = E.gangLeave(Bm, t1);
-  assert.deepEqual(back, { refund: 1000, stored: 252, invested: 2000 }); assert.equal(Bm.cash, c0 + 1252);
+  assert.deepEqual(back, { refund: 100000, stored: 840, invested: 200000 }); assert.equal(Bm.cash, c0 + 100840);
   assert.equal(Bm.gang, null); assert.ok(Bm.gbz.every((x) => x.inv === 0 && x.stored === 0 && x.coop === 0)); assert.deepEqual(E.checkInvariants(Bm), []);
-  assert.deepEqual(E.gangBizSync([A], t1), [A]); assert.equal(A.gbz[0].coop, 0); assert.equal(A.gbz[0].stored, 252); assert.equal(E.gangBizRate(A, 0), 60);
+  assert.deepEqual(E.gangBizSync([A], t1), [A]); assert.equal(A.gbz[0].coop, 0); assert.equal(A.gbz[0].stored, 840); assert.equal(E.gangBizRate(A, 0), 200);
   // pôr e tirar logo custa sempre metade: entrar e sair não dá lucro a ninguém, nem a quem fica
-  const X = socio(100000); E.gangBizInvest(X, t1, W, 0, 2000, 3); E.gangBizSync([A, X], t1); E.gangLeave(X, t1); E.gangBizSync([A], t1);
-  assert.equal(X.cash, 100000 - 1000); assert.equal(A.gbz[0].stored, 252); assert.equal(A.gbz[0].coop, 0);
+  const X = socio(100000, topo); E.gangBizInvest(X, t1, W, 0, 20000, 3); E.gangBizSync([A, X], t1); E.gangLeave(X, t1); E.gangBizSync([A], t1);
+  assert.equal(X.cash, 100000 - 10000); assert.equal(A.gbz[0].stored, 840); assert.equal(A.gbz[0].coop, 0);
   // muitos sócios ao acaso, a investir a horas diferentes: ninguém recebe mais do que o seu investimento × taxa × 1,5 × horas, e o acerto por partes dá o mesmo
   const rng = seededRng(88), ms = Array.from({ length: 8 }, () => socio(1e9, CFG.levels[6])), teto = ms.map(() => 0), pos = ms.map(() => 0);
   let t = NOW;
@@ -474,7 +478,7 @@ test('negócios da gangue: sair devolve metade do investido e o que estava por r
     ms.forEach((m, j) => { for (let q = 0; q < 3; q++) teto[j] += Math.floor((m.gbz[q].inv * CFG.gang.biz[q].rateBp) / 10000) * 1.5 * (dt / T.HOUR); });
     t += dt;
     if (rng.chance(1500)) { const r = E.gangBizCollect(ms[i], t, W); pos[i] += r.money; }
-    else { try { E.gangBizInvest(ms[i], t, W, k, rng.int(100, 20000), 3); } catch (e) { if (!(e instanceof E.GameError)) throw e; } }
+    else { try { E.gangBizInvest(ms[i], t, W, k, rng.int(1000, 20000), 3); } catch (e) { if (!(e instanceof E.GameError)) throw e; } }
     E.gangBizSync(ms, t);
     for (const m of ms) assert.deepEqual(E.checkInvariants(m), []);
   }
@@ -508,17 +512,17 @@ test('assassino a soldo: quem paga só perde o preço; o alvo perde 1,5% do resp
   const par = (guard = -1) => { const a = mk(), d = mk(); for (const x of [a, d]) { E.touch(x, t0); setResp(x, 2000); x.shieldUntil = 0; } a.cash = 1e9; a.bank = 0; d.cash = 50000; d.bank = 7000; d.guard = guard; return [a, d]; };
   // preço e resultado, com sorte e com azar
   let [a, d] = par();
-  assert.equal(E.hitmanPrice(d), 200000); assert.equal(E.canHitman(a, d, t0, W), null); assert.equal(E.hitmanLeft(a, t0), 3);
+  assert.equal(E.hitmanPrice(d), 20000); assert.equal(E.canHitman(a, d, t0, W), null); assert.equal(E.hitmanLeft(a, t0), 3);
   let r = E.hitman(a, d, t0, W, always);
-  assert.deepEqual([r.success, r.price, r.chanceBp, r.respLoss, r.cashLoss], [true, 200000, 9000, 30, 5000]);
-  assert.equal(a.cash, 1e9 - 200000); assert.equal(a.respect, 2000);                        // nem respeito nem dinheiro para quem paga
+  assert.deepEqual([r.success, r.price, r.chanceBp, r.respLoss, r.cashLoss], [true, 20000, 9000, 30, 5000]);
+  assert.equal(a.cash, 1e9 - 20000); assert.equal(a.respect, 2000);                        // nem respeito nem dinheiro para quem paga
   assert.equal(d.respect, 1970); assert.equal(d.cash, 45000); assert.equal(d.bank, 7000); assert.equal(d.hospUntil, t0 + H.hospMs); assert.equal(d.hmSafe, t0 + H.immuneMs);
   assert.equal(E.canHitman(a, d, t0 + 1, W), 'TARGET_HOSPITAL');
   assert.equal(E.canHitman(a, d, t0 + 3 * T.HOUR, W), 'HITMAN_SAFE');                        // 12 h a salvo de outro assassino, seja de quem for
   const outro = mk(); E.touch(outro, t0); setResp(outro, 2000); outro.shieldUntil = 0; assert.equal(E.canHitman(outro, d, t0 + 3 * T.HOUR, W), 'HITMAN_SAFE');
   assert.equal(E.canHitman(a, d, t0 + H.immuneMs, W), null);
   [a, d] = par(); r = E.hitman(a, d, t0, W, never);
-  assert.deepEqual([r.success, r.price], [false, 200000]); assert.equal(a.cash, 1e9 - 200000);
+  assert.deepEqual([r.success, r.price], [false, 20000]); assert.equal(a.cash, 1e9 - 20000);
   assert.equal(d.respect, 2000); assert.equal(d.cash, 50000); assert.equal(d.hospUntil, 0); assert.equal(d.hmSafe, 0);   // falhou: o alvo fica igual e sem proteção nova
   // três por dia, e dá para encomendar da cama do hospital
   a.hospUntil = t0 + T.HOUR;
@@ -580,10 +584,11 @@ test('gangue da rua: entra quem quiser a partir do nível das gangues, quem sai 
   for (const x of [a, b, c, d]) assert.deepEqual(E.checkInvariants(x), []);
 });
 
-test('casino: aposta mínima, máxima pelo nível, só dinheiro na mão; aposta recusada não mexe em nada', () => {
+test('casino: aposta mínima de 1 €, máxima pelo nível (5 €, 20 €, 50 €, 1 000 €), só dinheiro na mão; aposta recusada não mexe em nada', () => {
   const p = cas(500); p.bank = 1e6;
   const antes = structuredClone(p);
-  assert.throws(() => E.casinoPlay(p, NOW, W, 'dice', { pick: 'low', amt: 9 }, never), code('BAD_BET'));
+  assert.equal(CFG.casino.minBet, 1);
+  assert.throws(() => E.casinoPlay(p, NOW, W, 'dice', { pick: 'low', amt: 0 }, never), code('BAD_BET'));
   assert.throws(() => E.casinoPlay(p, NOW, W, 'dice', { pick: 'low', amt: 501 }, never), code('NO_CASH'));
   assert.throws(() => E.casinoPlay(p, NOW, W, 'dice', { pick: 'low', amt: 10.5 }, never), code('BAD_BET'));
   assert.throws(() => E.casinoPlay(p, NOW, W, 'dice', { pick: 'toString', amt: 10 }, never), code('BAD_BET'));
@@ -591,11 +596,11 @@ test('casino: aposta mínima, máxima pelo nível, só dinheiro na mão; aposta 
   assert.throws(() => E.casinoPlay(p, NOW, W, 'roulette', { bets: Array.from({ length: 13 }, () => ({ t: 'red', amt: 10 })) }, never), code('BAD_BET'));
   assert.throws(() => E.casinoPlay(p, NOW, W, 'slots', { amt: 10 }, never), code('NO_GAME'));
   assert.deepEqual(p, antes);
-  const rico = cas(1e9);
-  assert.equal(E.casinoMax(rico), 1000);
-  assert.throws(() => E.casinoPlay(rico, NOW, W, 'dice', { pick: 'low', amt: 1001 }, never), code('BET_TOO_BIG'));
-  rico.peakRespect = CFG.tiers[4];
-  assert.equal(E.casinoMax(rico), 6553);   // 5.º degrau da escala antiga: 1000 × 1,6⁴ (até ao passo 2)
+  const rico = mk(); rico.cash = 1e9; rico.bank = 0;
+  assert.equal(E.casinoMax(rico), 5);
+  assert.throws(() => E.casinoPlay(rico, NOW, W, 'dice', { pick: 'low', amt: 6 }, never), code('BET_TOO_BIG'));
+  E.casinoPlay(rico, NOW, W, 'dice', { pick: 'low', amt: 1 }, never);
+  for (const [L, max] of [[19, 5], [20, 20], [39, 20], [40, 50], [59, 50], [60, 1000], [100, 1000]]) { setResp(rico, CFG.levels[L - 1]); assert.equal(E.casinoMax(rico), max, 'nível ' + L); }
 });
 
 test('roda da sorte: as oito apostas devolvem 96,5% (conta exata, com o teto) e a simulação confirma', () => {
@@ -762,7 +767,7 @@ test('mesas ao vivo: pagam exatamente o mesmo que a jogada a solo, e a roleta de
 });
 
 test('mesas ao vivo: apostar tira o dinheiro certo, junta apostas iguais, respeita o máximo e devolve tudo ao limpar', () => {
-  const p = mk(); p.cash = 5000; const max = E.casinoMax(p);
+  const p = cas(5000); const max = E.casinoMax(p);
   let r = E.tableBet(p, NOW, W, 'roulette', [{ t: 'red', amt: 100 }, { t: 'num', n: 7, amt: 50 }]);
   assert.equal(p.cash, 4850); assert.equal(r.total, 150);
   r = E.tableBet(p, NOW, W, 'roulette', [{ t: 'red', amt: 100 }], r.bets);
@@ -770,9 +775,9 @@ test('mesas ao vivo: apostar tira o dinheiro certo, junta apostas iguais, respei
   assert.throws(() => E.tableBet(p, NOW, W, 'roulette', [{ t: 'black', amt: max }], r.bets), (e) => e.code === 'BET_TOO_BIG');
   assert.throws(() => E.tableBet(p, NOW, W, 'roulette', [{ t: 'num', n: 37, amt: 10 }], r.bets), (e) => e.code === 'BAD_BET');
   assert.throws(() => E.tableBet(p, NOW, W, 'wheel', [{ s: 'x', amt: 10 }]), (e) => e.code === 'BAD_BET');
-  assert.throws(() => E.tableBet(p, NOW, W, 'roulette', [{ t: 'red', amt: 5 }], r.bets), (e) => e.code === 'BAD_BET');
+  assert.throws(() => E.tableBet(p, NOW, W, 'roulette', [{ t: 'red', amt: 0 }], r.bets), (e) => e.code === 'BAD_BET');
   assert.equal(p.cash, 4750);
-  const q2 = mk(); q2.cash = 60; assert.throws(() => E.tableBet(q2, NOW, W, 'wheel', [{ s: '1', amt: 100 }]), (e) => e.code === 'NO_CASH');
+  const q2 = cas(60); assert.throws(() => E.tableBet(q2, NOW, W, 'wheel', [{ s: '1', amt: 100 }]), (e) => e.code === 'NO_CASH');
   assert.equal(E.tableClear(p, r.bets).back, 250); assert.equal(p.cash, 5000);
 });
 
@@ -787,7 +792,7 @@ test('golpe em grupo: regras de entrada, devolução exata, parte igual para tod
   for (let i = 0; i < 12; i++) { a.energy = 100; E.heistJoin(a, NOW + i, W, 0); assert.equal(a.energy, 100 - H.e); }
   // a lista: 9 golpes, os antigos nos mesmos números, e por ponto de stamina nenhum passa de 2× o melhor golpe a solo
   assert.deepEqual(G.heists.map((x) => x.id), ['carrinha', 'casino', 'banco', 'ourivesaria', 'comboio', 'leilao', 'aeroporto', 'cartel', 'moeda']);
-  const solo = Math.max(...CFG.crimes.map((c) => (c.min + c.max) / 2 / c.e));
+  const solo = Math.max(...CFG.crimes.map((c) => E.crimeEv(c) / c.e));
   for (const x of G.heists) { assert.ok((x.min + x.max) / 2 / x.e <= 2 * solo, x.id + ' paga de mais por stamina'); assert.ok(x.sede >= 1 && x.sede <= G.maxLevel && x.need >= 2 && x.need <= G.opMax && x.bailAs <= 9 && x.e <= CFG.energy.max && x.w.I + x.w.F + x.w.C === 100, x.id); }
   const fraco = membro(); fraco.energy = H.e - 1; assert.throws(() => E.heistJoin(fraco, NOW, W, 0), code('NO_ENERGY'));
   // quando corre bem todos levam o mesmo (mais o bónus de saque da gangue de cada um) e o respeito do golpe
@@ -815,7 +820,7 @@ test('tareia em grupo: a força junta-se com desconto, o alvo só perde uma vez 
   const a = lutador('g1'), b = lutador('g1'), d = lutador('g2'), semG = lutador(null);
   assert.throws(() => E.hitJoin(semG, d, NOW, W), code('NO_GANG'));
   assert.throws(() => E.hitJoin(a, b, NOW, W), code('SAME_GANG'));
-  const e0 = a.energy; E.hitJoin(a, d, NOW, W); assert.equal(a.energy, e0 - P.energy); E.hitRefund(a, NOW); assert.equal(a.energy, e0);
+  const e0 = a.vigor, s0 = a.energy; E.hitJoin(a, d, NOW, W); assert.equal(a.vigor, e0 - P.energy); assert.equal(a.energy, s0, 'a stamina fica'); E.hitRefund(a, NOW); assert.equal(a.vigor, e0);
   // dois iguais contra um: melhor do que um sozinho, pior do que a soma inteira
   const solo = E.attackChanceBp(a, d, NOW), dupla = E.hitChanceBp([a, b], d, NOW);
   assert.ok(dupla > solo); assert.ok(dupla < E.chanceBp(E.attackPower(a, NOW) + E.attackPower(b, NOW), E.defensePower(d, NOW)));
@@ -849,7 +854,7 @@ test('profissões: as de elite pedem respeito, mudar custa o anunciado, só de 2
   const p = mk('ladrao'); p.cash = 10_000_000; p.bank = 0; setResp(p, 1000);
   const custo = Math.max(C.min, Math.floor((Math.floor(E.valuePerEnergy(p) * 100) * C.energy) / 100));   // o que rendem 100 de stamina no melhor golpe
   assert.equal(E.classChangeCost(p), custo); assert.ok(custo >= C.min);
-  { const fraco = mk('ladrao'); assert.equal(E.classChangeCost(fraco), C.min); }
+  { const fraco = mk('ladrao'); assert.equal(E.classChangeCost(fraco), Math.max(C.min, Math.floor((Math.floor(E.valuePerEnergy(fraco) * 100) * C.energy) / 100))); }
   assert.throws(() => E.changeClass(p, NOW, W, 'ladrao'), code('CLASS_SET'));
   assert.throws(() => E.changeClass(p, NOW, W, 'barao'), code('CLASS_LOCKED'));          // pede 2000
   const antes = JSON.stringify([p.cash, p.cls, p.clsAt]);
@@ -870,16 +875,17 @@ test('profissões: as de elite pedem respeito, mudar custa o anunciado, só de 2
     const cheio = E.hookerPrice(a, i, NOW), desc = E.hookerPrice(b, i, NOW);
     assert.equal(desc, Math.max(1, Math.floor((cheio * 7000) / 10000)));
   }
-  const conta = (cl) => { const rng = seededRng(77), x = mk(cl); let s = 0; for (let k = 0; k < 20000; k++) { x.energy = 0; x.sick = false; x.hkN = x.hkN.map(() => 0); x.cash = 1e12; if (E.visitHooker(x, NOW, W, 0, rng).sick) s++; } return s / 20000; };
+  const conta = (cl) => { const rng = seededRng(77), x = mk(cl); let s = 0; for (let k = 0; k < 20000; k++) { x.energy = 0; x.sick = false; x.hkN = x.hkN.map(() => 0); x.cash = 1e12; x.rf = null; if (E.visitHooker(x, NOW, W, 0, rng).sick) s++; } return s / 20000; };
   const base = CFG.hookers.list[0].sickBp / 10000;
   perto(conta('ladrao'), base, 0.01, 'doença sem bónus'); perto(conta('chulo'), base * 0.4, 0.008, 'doença do chulo');
   // contrabandista e magnata: menos apreensões no porto
   CFG.port.ships.forEach((S, k) => { assert.equal(E.portSeizeBp(mk('ladrao'), k), S.seizeBp); assert.equal(E.portSeizeBp(mk('contrabandista'), k), S.seizeBp / 2); assert.equal(E.portSeizeBp(mk('magnata'), k), Math.floor(S.seizeBp * 0.7)); });
-  // padrinho: +15% de respeito nos golpes, arredondado para baixo (só mexe nos golpes de 7 ou mais)
-  for (const k of [0, 5, 9]) {
-    const g = mk('padrinho'), n = mk('ladrao'); for (const x of [g, n]) { x.stats = { F: 9999, T: 10, I: 9999, C: 9999 }; setResp(x, 20000); }
-    const rg = E.doCrime(g, NOW, W, k, always), rn = E.doCrime(n, NOW, W, k, always), r0 = CFG.crimes[k].r;
-    assert.equal(rn.respect, r0); assert.equal(rg.respect, r0 + Math.floor((r0 * 1500) / 10000)); assert.equal(g.respect - 20000, rg.respect);
+  // padrinho: +15% de respeito nos golpes (o resto em milésimos fica para o golpe seguinte, por isso conta-se ao fim de muitos)
+  for (const k of [0, 5]) {
+    const g = mk('padrinho'), n = mk('ladrao'); let rg = 0, rn = 0;
+    for (const x of [g, n]) { setResp(x, CFG.levels[59]); x.weapon = CFG.weapons.findIndex((w) => w.id === 'pistola'); }
+    for (let i = 0; i < 300; i++) for (const x of [g, n]) { x.energy = 100; x.rua = null; x.peakRespect = x.respect = CFG.levels[59]; const r = E.doCrime(x, NOW, W, k, always); if (x === g) rg += r.respect; else rn += r.respect; }
+    assert.ok(Math.abs(rg - rn * 1.15) <= 3, `padrinho ${rg}, sem bónus ${rn}`);
   }
   // as profissões de elite dão mais do que a de rua do mesmo ofício, e nenhuma tem bónus desconhecidos
   assert.ok(cls('mestre').lootBp > cls('ladrao').lootBp && cls('padrinho').lootBp > cls('mestre').lootBp);
@@ -957,14 +963,14 @@ test('gangue: safar um membro custa exatamente a fiança ou o hospital dele, só
 
 test('mercadoria: entra ao preço de grosso, o troco fica em dinheiro, despachar nunca devolve mais do que custou', () => {
   const coca = CFG.drugs.findIndex((x) => x.id === 'coca'), erva = CFG.drugs.findIndex((x) => x.id === 'erva');
-  assert.equal(E.wholesale(coca), 1200); assert.equal(E.wholesale(erva), 20);
+  assert.equal(E.wholesale(coca), 28); assert.equal(E.wholesale(erva), 4);   // 80% do preço de rua
   for (let d = 0; d < CFG.drugs.length; d++) { assert.ok(E.wholesale(d) >= 1 && E.wholesale(d) <= CFG.drugs[d].price); assert.ok(E.dumpValue(d, 7) <= 7 * E.wholesale(d)); }
-  // avião: 10 000 para Medellín voltam 14 000; em coca são 11 unidades (13 200) e 800 de troco
+  // avião: 10 000 para Medellín voltam 14 000; em coca são 500 gramas a 28 €, sem troco
   const p = mk('ladrao'); p.cash = 1e9; p.bank = 0; setResp(p, 20000);
   const s = E.airSend(p, NOW, W, CFG.air.routes.findIndex((x) => x.id === 'medellin'), 10000, false);
   let r = E.airCollect(p, s.readyAt, W, never, true);
-  assert.equal(r.got, 14000); assert.equal(r.d, coca); assert.equal(r.units, 11); assert.equal(r.rest, 800);
-  assert.equal(p.stock[coca], 11); assert.equal(p.cash, 1e9 - 10000 + 800); assert.equal(r.units * E.wholesale(coca) + r.rest, r.got);
+  assert.equal(r.got, 14000); assert.equal(r.d, coca); assert.equal(r.units, 500); assert.equal(r.rest, 0);
+  assert.equal(p.stock[coca], 500); assert.equal(p.cash, 1e9 - 10000); assert.equal(r.units * E.wholesale(coca) + r.rest, r.got);
   // apreendido: não entra nada
   const q = mk('ladrao'); q.cash = 1e9; setResp(q, 20000); const s2 = E.airSend(q, NOW, W, 0, 10000, false); r = E.airCollect(q, s2.readyAt, W, always, true);
   assert.equal(r.seized, true); assert.ok(q.stock.every((x) => x === 0)); assert.equal(q.cash, 1e9 - 10000);
@@ -973,10 +979,10 @@ test('mercadoria: entra ao preço de grosso, o troco fica em dinheiro, despachar
   assert.equal(CFG.port.ships[0].drug, 'erva');
   E.sendPort(c, NOW, W, 0, 1000, true); assert.equal(c.port[0].d, erva); assert.equal(c.port[0].k, 0); assert.equal(c.cash, 1e6 - 1000);
   const col = E.collectPort(c, NOW + PMS, W, never);
-  assert.equal(col.items[0].got, 1120); assert.equal(col.items[0].units, 56); assert.equal(col.items[0].rest, 0); assert.equal(c.stock[erva], 56); assert.equal(c.cash, 1e6 - 1000);
+  assert.equal(col.items[0].got, 1120); assert.equal(col.items[0].units, 280); assert.equal(col.items[0].rest, 0); assert.equal(c.stock[erva], 280); assert.equal(c.cash, 1e6 - 1000);
   // despachar: 95% do preço de grosso; ida e volta perde sempre, e perde mais do que a taxa do banco
-  assert.throws(() => E.stockDump(c, NOW + PMS, W, erva, 57), code('NO_STOCK')); assert.throws(() => E.stockDump(c, NOW + PMS, W, erva, 0), code('NO_STOCK')); assert.throws(() => E.stockDump(c, NOW + PMS, W, 99, 1), code('NO_DRUG'));
-  const d1 = E.stockDump(c, NOW + PMS, W, erva, 56);
+  assert.throws(() => E.stockDump(c, NOW + PMS, W, erva, 281), code('NO_STOCK')); assert.throws(() => E.stockDump(c, NOW + PMS, W, erva, 0), code('NO_STOCK')); assert.throws(() => E.stockDump(c, NOW + PMS, W, 99, 1), code('NO_DRUG'));
+  const d1 = E.stockDump(c, NOW + PMS, W, erva, 280);
   assert.equal(d1.got, Math.floor(1120 * 0.95)); assert.equal(c.stock[erva], 0); assert.equal(c.cash, 1e6 - 1000 + 1064);
   assert.ok(10000 - CFG.goods.dumpBp > CFG.bank.feeBp);
   // tomar do armazém: não se paga, gasta uma unidade e faz o mesmo que a da discoteca; recusada não gasta nada
@@ -984,36 +990,37 @@ test('mercadoria: entra ao preço de grosso, o troco fica em dinheiro, despachar
   const v = mk(); v.cash = 1e6; v.energy = 10; const rb = E.buyDrug(v, NOW, W, coca);
   const ru = E.stockUse(u, NOW, W, coca);
   assert.equal(ru.price, 0); assert.equal(u.cash, 500); assert.equal(u.stock[coca], 1); assert.equal(ru.energy, rb.energy); assert.equal(u.energy, v.energy); assert.equal(u.addiction, v.addiction); assert.deepEqual(u.fx, v.fx);
-  u.energy = 100; assert.throws(() => E.stockUse(u, NOW, W, 0), code('NO_STOCK')); u.stock[0] = 3; assert.throws(() => E.stockUse(u, NOW, W, 0), code('ENERGY_FULL')); assert.equal(u.stock[0], 3);
+  u.energy = 100; assert.throws(() => E.stockUse(u, NOW, W, 0), code('NO_STOCK')); u.stock[0] = 3; assert.equal(E.stockUse(u, NOW, W, 0).ok, true, 'de stamina cheia: dá o efeito'); assert.equal(u.stock[0], 2);
   u.energy = 0; u.addiction = E.addictionCap(u); assert.throws(() => E.stockUse(u, NOW, W, coca), code('ADDICTION_LIMIT')); assert.equal(u.stock[coca], 1);
 });
 
 test('discoteca: vende só o que tem, ao ritmo da casa, e dá o mesmo feita de uma vez ou aos bocados', () => {
-  const V = CFG.venue, coca = CFG.drugs.findIndex((x) => x.id === 'coca');
+  const V = CFG.venue, coca = CFG.drugs.findIndex((x) => x.id === 'coca'), P = CFG.drugs[coca].price, R = V.club.perH[0];
   const dono = () => { const p = mk(); p.cash = 1e9; p.bank = 0; return p; };
   const p = dono();
   assert.throws(() => E.venueBuy(p, NOW, W, 'casino'), code('NO_VENUE')); assert.throws(() => E.venueSet(p, NOW, W, 'club', 2, 0), code('NO_VENUE'));
   const pobre = dono(); pobre.cash = V.club.cost[0] - 1; assert.throws(() => E.venueBuy(pobre, NOW, W, 'club'), code('NO_MONEY')); assert.equal(pobre.club, null);
   let r = E.venueBuy(p, NOW, W, 'club');
-  assert.equal(r.cost, 10000); assert.equal(r.lvl, 1); assert.equal(r.respect, V.club.resp[0]); assert.equal(p.cash, 1e9 - 10000); assert.deepEqual(p.club, { lvl: 1, till: 0, t: NOW, rem: 0, pi: 2, gd: 0 });
+  assert.equal(r.cost, V.club.cost[0]); assert.equal(r.lvl, 1); assert.equal(r.respect, V.club.resp[0]); assert.equal(p.cash, 1e9 - V.club.cost[0]); assert.deepEqual(p.club, { lvl: 1, till: 0, t: NOW, rem: 0, pi: 2, gd: 0 });
+  // cada nível paga-se em cerca de 25 dias: o lucro ao preço da cidade (20% do movimento) vezes 24 h vezes 25 dá o custo
+  V.club.cost.forEach((c, k) => perto((V.club.perH[k] * 0.2 * 24 * 25) / c, 1, 0.02, 'nível ' + (k + 1) + ' da discoteca'));
   // sem mercadoria não entra dinheiro, por muito tempo que passe
   E.touch(p, NOW + 5 * T.HOUR); assert.equal(p.club.till, 0); assert.equal(p.club.rem, 0);
-  // 100 de coca (1500 cada): nível 1 vende 2000 por hora ao preço da cidade → 3 h dão 6000 = 4 unidades
-  const t0 = NOW + 5 * T.HOUR; p.stock[coca] = 100;
-  E.touch(p, t0 + 3 * T.HOUR); assert.equal(p.stock[coca], 96); assert.equal(p.club.till, 6000); assert.equal(p.club.rem, 0);
-  // 20 minutos: 666 de movimento não chegam para uma unidade; ficam guardados e vendem-se quando chegar
-  E.touch(p, t0 + 3 * T.HOUR + 20 * T.MIN); assert.equal(p.stock[coca], 96); assert.equal(p.club.till, 6000);
-  E.touch(p, t0 + 3 * T.HOUR + 45 * T.MIN); assert.equal(p.stock[coca], 95); assert.equal(p.club.till, 7500);
+  // 100 g de coca: em 7 h passam 7 × R de movimento ao preço da cidade e vendem-se as unidades que isso paga
+  const t0 = NOW + 5 * T.HOUR; p.stock[coca] = 100; const n7 = Math.floor((7 * R) / P);
+  E.touch(p, t0 + 7 * T.HOUR); assert.equal(p.stock[coca], 100 - n7); assert.equal(p.club.till, n7 * P);
+  // o que não chega para mais uma unidade fica guardado e vende-se quando chegar
+  const falta = (n7 + 1) * P - 7 * R, ms = Math.ceil((falta * T.HOUR) / R);
+  E.touch(p, t0 + 7 * T.HOUR + ms - T.MIN); assert.equal(p.stock[coca], 100 - n7); assert.equal(p.club.till, n7 * P);
+  E.touch(p, t0 + 7 * T.HOUR + ms); assert.equal(p.stock[coca], 99 - n7); assert.equal(p.club.till, (n7 + 1) * P);
   // o mesmo tempo aos bocados (de 7 em 7 minutos) dá exatamente o mesmo que de uma vez, com várias drogas e a qualquer preço
   for (const pi of [0, 1, 2, 3, 4]) {
     const a = dono(), b = dono();
-    for (const x of [a, b]) { E.venueBuy(x, NOW, W, 'club'); E.venueBuy(x, NOW, W, 'club'); E.venueSet(x, NOW, W, 'club', pi, 0); x.stock = [40, 30, 20, 10, 5, 5, 5, 2, 1]; }
+    for (const x of [a, b]) { E.venueBuy(x, NOW, W, 'club'); E.venueBuy(x, NOW, W, 'club'); E.venueSet(x, NOW, W, 'club', pi, 0); x.stock = [40, 30, 20, 10, 5, 5, 5, 2, 1, 0, 0, 0, 0, 0, 0]; }
     E.touch(a, NOW + 9 * T.HOUR); for (let t = NOW; t <= NOW + 9 * T.HOUR; t += 7 * T.MIN) E.touch(b, t); E.touch(b, NOW + 9 * T.HOUR);
     assert.deepEqual(b.stock, a.stock, 'armazém, preço ' + pi); assert.equal(b.club.till, a.club.till, 'caixa, preço ' + pi);
-    // o que saiu do armazém, ao preço da cidade, nunca passa do que a casa aguenta nesse tempo
     const fora = [40, 30, 20, 10, 5, 5, 5, 2, 1].reduce((s, n0, d) => s + (n0 - a.stock[d]) * CFG.drugs[d].price, 0);
     assert.ok(fora <= E.clubRate(a) * 9, 'vendeu a mais, preço ' + pi); assert.equal(E.clubRate(a), Math.floor((V.club.perH[1] * V.volBp[pi]) / 10000));
-    // e o caixa recebeu o preço escolhido por cada unidade
     const caixa = [40, 30, 20, 10, 5, 5, 5, 2, 1].reduce((s, n0, d) => s + (n0 - a.stock[d]) * Math.max(1, Math.floor((CFG.drugs[d].price * V.prices[pi]) / 10000)), 0);
     assert.equal(a.club.till, caixa);
   }
@@ -1022,16 +1029,18 @@ test('discoteca: vende só o que tem, ao ritmo da casa, e dá o mesmo feita de u
   assert.equal(lucroH[0], 0); assert.equal(Math.max(...lucroH), lucroH[2]); assert.ok(lucroH[4] > 0 && lucroH[3] < lucroH[2]);
   // o caixa enche até 12 h de movimento e para: a mercadoria que sobra fica no armazém
   const c = dono(); E.venueBuy(c, NOW, W, 'club'); c.stock[coca] = 1000; E.touch(c, NOW + 5 * T.DAY);
-  assert.equal(c.club.till, 24000); assert.equal(c.stock[coca], 1000 - 16); E.touch(c, NOW + 6 * T.DAY); assert.equal(c.club.till, 24000); assert.equal(c.stock[coca], 984);
+  const nCheio = Math.ceil((R * 12) / P);
+  assert.equal(c.club.till, nCheio * P); assert.equal(c.stock[coca], 1000 - nCheio); E.touch(c, NOW + 6 * T.DAY); assert.equal(c.club.till, nCheio * P); assert.equal(c.stock[coca], 1000 - nCheio);
   // recolher passa o caixa para o bolso, nem mais nem menos; depois volta a vender
-  r = E.venueCollect(c, NOW + 6 * T.DAY, W); assert.equal(r.club, 24000); assert.equal(r.bro, 0); assert.equal(c.cash, 1e9 - 10000 + 24000); assert.equal(c.club.till, 0);
-  E.touch(c, NOW + 6 * T.DAY + 3 * T.HOUR); assert.equal(c.club.till, 6000);
+  r = E.venueCollect(c, NOW + 6 * T.DAY, W); assert.equal(r.club, nCheio * P); assert.equal(r.bro, 0); assert.equal(c.cash, 1e9 - V.club.cost[0] + nCheio * P); assert.equal(c.club.till, 0);
+  E.touch(c, NOW + 6 * T.DAY + 3 * T.HOUR); assert.equal(c.club.till, Math.floor((3 * R) / P) * P);
   // subir de nível: custos da tabela, respeito da tabela, teto no último
   const m = dono(); let gasto = 0; for (let i = 0; i < V.club.cost.length; i++) { const b = E.venueBuy(m, NOW, W, 'club'); gasto += b.cost; assert.equal(b.cost, V.club.cost[i]); assert.equal(b.lvl, i + 1); }
   assert.equal(m.cash, 1e9 - gasto); assert.equal(m.respect, V.club.resp.reduce((x, y) => x + y, 0)); assert.throws(() => E.venueBuy(m, NOW, W, 'club'), code('VENUE_MAX'));
   // mudar o preço não mexe no que já se vendeu: fecha primeiro as contas ao preço antigo
   const e = dono(); E.venueBuy(e, NOW, W, 'club'); e.stock[coca] = 50; E.venueSet(e, NOW + 3 * T.HOUR, W, 'club', 4, 3);
-  assert.equal(e.club.till, 6000); assert.equal(e.stock[coca], 46); assert.equal(e.club.pi, 4); assert.equal(e.club.gd, 3);
+  const n3 = Math.floor((3 * R) / P);
+  assert.equal(e.club.till, n3 * P); assert.equal(e.stock[coca], 50 - n3); assert.equal(e.club.pi, 4); assert.equal(e.club.gd, 3);
   for (const bad of [[5, 0], [-1, 0], [2, 4], [1.5, 0], [NaN, 0]]) assert.throws(() => E.venueSet(e, NOW + 3 * T.HOUR, W, 'club', bad[0], bad[1]), code('BAD_AMOUNT'));
 });
 
@@ -1047,19 +1056,20 @@ test('discoteca de outro jogador: quem compra paga ao dono o preço dele, a gang
     assert.equal(g, Math.max(8000, Math.floor((V.prices[pi] * (10000 - V.gdisc[gd])) / 10000))); assert.ok(g >= CFG.goods.wholesaleBp && g <= V.prices[pi]);
     for (let d = 0; d < CFG.drugs.length; d++) assert.ok(E.clubPriceAt(dono, mano, d) >= E.wholesale(d), 'o dono perdia dinheiro');
   }
-  // compra: 110% para quem é de fora (1650), 88% para a gangue com 20% de desconto (1320)
+  // compra: 110% para quem é de fora, 88% para a gangue com 20% de desconto (a coca está a 35 €)
   dono.club.pi = 3; dono.club.gd = 2;
+  const P = CFG.drugs[coca].price, pf = Math.floor((P * 11000) / 10000), pm = Math.floor((P * 8800) / 10000);
   const antes = fora.cash + dono.club.till;
-  let r = E.clubBuyAt(fora, dono, NOW, W, coca, 1650);
-  assert.equal(r.price, 1650); assert.equal(fora.cash, 1e6 - 1650); assert.equal(dono.club.till, 1650); assert.equal(dono.stock[coca], 4); assert.equal(dono.cash, 1e6 - 10000);
-  assert.equal(fora.cash + dono.club.till, antes); assert.equal(r.energy, 30); assert.ok(fora.addiction > 0);
-  r = E.clubBuyAt(mano, dono, NOW, W, coca); assert.equal(r.price, 1320); assert.equal(dono.club.till, 1650 + 1320); assert.equal(dono.stock[coca], 3);
+  let r = E.clubBuyAt(fora, dono, NOW, W, coca, pf);
+  assert.equal(r.price, pf); assert.equal(fora.cash, 1e6 - pf); assert.equal(dono.club.till, pf); assert.equal(dono.stock[coca], 4); assert.equal(dono.cash, 1e6 - V.club.cost[0]);
+  assert.equal(fora.cash + dono.club.till, antes); assert.equal(r.energy, 0, 'a droga dá o efeito, não stamina'); assert.ok(fora.addiction > 0);
+  r = E.clubBuyAt(mano, dono, NOW, W, coca); assert.equal(r.price, pm); assert.equal(dono.club.till, pf + pm); assert.equal(dono.stock[coca], 3);
   // recusas que não mexem em nada: o próprio, sem casa, sem mercadoria, preço que subiu entretanto, sem dinheiro, cheio
   assert.throws(() => E.clubBuyAt(dono, dono, NOW, W, coca), code('SELF'));
   assert.throws(() => E.clubBuyAt(fora, outro, NOW, W, coca), code('NO_VENUE')); assert.throws(() => E.clubBuyAt(fora, dono, NOW, W, 0), code('NO_STOCK')); assert.throws(() => E.clubBuyAt(fora, dono, NOW, W, 99), code('NO_DRUG'));
   const f0 = structuredClone(fora), d0 = structuredClone(dono);
-  assert.throws(() => E.clubBuyAt(fora, dono, NOW, W, coca, 1649), code('PRICE_CHANGED'));
-  fora.cash = 100; const f1 = structuredClone(fora); assert.throws(() => E.clubBuyAt(fora, dono, NOW, W, coca), code('NO_MONEY')); assert.deepEqual(fora, f1); fora.cash = f0.cash;
+  assert.throws(() => E.clubBuyAt(fora, dono, NOW, W, coca, pf - 1), code('PRICE_CHANGED'));
+  fora.cash = 10; const f1 = structuredClone(fora); assert.throws(() => E.clubBuyAt(fora, dono, NOW, W, coca), code('NO_MONEY')); assert.deepEqual(fora, f1); fora.cash = f0.cash;
   fora.energy = 100; fora.fx = []; assert.throws(() => E.clubBuyAt(fora, dono, NOW, W, 0), code('NO_STOCK'));
   assert.deepEqual(dono, d0);
   // dois amigos a comprarem um ao outro: o par nunca gasta menos do que o preço de grosso (o mesmo que tomar do próprio armazém)
@@ -1078,29 +1088,32 @@ test('bordel: quartos, contratar, rendimento por hora, e a parte da puta nunca v
   const dono = () => { const p = mk(); p.cash = 1e9; p.bank = 0; return p; };
   const p = dono();
   assert.throws(() => E.broHire(p, NOW, W, top), code('NO_VENUE')); assert.throws(() => E.broFire(p, NOW, W, 0), code('NO_VENUE'));
-  let r = E.venueBuy(p, NOW, W, 'bro'); assert.equal(r.cost, 8000); assert.deepEqual(p.bro, { lvl: 1, till: 0, t: NOW, rem: 0, pi: 2, gd: 0, girls: [] });
+  let r = E.venueBuy(p, NOW, W, 'bro'); assert.equal(r.cost, V.bro.cost[0]); assert.deepEqual(p.bro, { lvl: 1, till: 0, t: NOW, rem: 0, pi: 2, gd: 0, girls: [] });
   assert.equal(E.broRate(p), 0); E.touch(p, NOW + T.HOUR); assert.equal(p.bro.till, 0);
+  // cada puta contratada paga-se em 25 dias ao preço da cidade
+  V.bro.hire.forEach((c, k) => assert.equal(V.bro.perH[k] * 24 * 25, c, 'categoria ' + k));
   // contratar custa pela categoria; os quartos são o limite
   assert.throws(() => E.broHire(p, NOW + T.HOUR, W, 99), code('NO_HOOKER'));
-  r = E.broHire(p, NOW + T.HOUR, W, top); assert.equal(r.cost, V.bro.hire[3]); r = E.broHire(p, NOW + T.HOUR, W, rosa); assert.equal(r.cost, V.bro.hire[0]);
-  assert.equal(p.cash, 1e9 - 8000 - 160000 - 3000); assert.deepEqual(p.bro.girls, [top, rosa]);
+  r = E.broHire(p, NOW + T.HOUR, W, top); assert.equal(r.cost, V.bro.hire[H[top].tier]); r = E.broHire(p, NOW + T.HOUR, W, rosa); assert.equal(r.cost, V.bro.hire[0]);
+  assert.equal(p.cash, 1e9 - V.bro.cost[0] - V.bro.hire[H[top].tier] - V.bro.hire[0]); assert.deepEqual(p.bro.girls, [top, rosa]);
   assert.throws(() => E.broHire(p, NOW + T.HOUR, W, rosa), code('NO_ROOM')); assert.equal(p.bro.girls.length, 2);
   // rendimento: soma das categorias ao preço da cidade; 80% não dá nada (vai tudo para elas); o melhor por hora é 100%
-  assert.equal(E.broRate(p), 8200);
+  const base = V.bro.perH[H[top].tier] + V.bro.perH[0];
+  assert.equal(E.broRate(p), base);
   const rates = V.prices.map((_, pi) => { p.bro.pi = pi; return E.broRate(p); }); p.bro.pi = 2;
-  assert.deepEqual(rates, [0, Math.floor((Math.floor(8200 * 1.15) * 1000) / 2000), 8200, Math.floor((Math.floor(8200 * 0.6) * 3000) / 2000), Math.floor((Math.floor(8200 * 0.35) * 4000) / 2000)]);
+  assert.deepEqual(rates, [0, Math.floor((Math.floor((base * 11500) / 10000) * 1000) / 2000), base, Math.floor((Math.floor((base * 6000) / 10000) * 3000) / 2000), Math.floor((Math.floor((base * 3500) / 10000) * 4000) / 2000)]);
   assert.equal(Math.max(...rates), rates[2]);
-  // 2 h 30 → 20 500; aos bocados dá o mesmo; enche até 12 h e para
-  const q = structuredClone(p); E.touch(p, NOW + 3 * T.HOUR + 30 * T.MIN); assert.equal(p.bro.till, 20500);
-  for (let t = NOW + T.HOUR; t <= NOW + 3 * T.HOUR + 30 * T.MIN; t += 7 * T.MIN) E.touch(q, t); E.touch(q, NOW + 3 * T.HOUR + 30 * T.MIN); assert.equal(q.bro.till, 20500);
-  E.touch(p, NOW + 3 * T.DAY); assert.equal(p.bro.till, 8200 * 12); E.touch(p, NOW + 4 * T.DAY); assert.equal(p.bro.till, 8200 * 12);
-  r = E.venueCollect(p, NOW + 4 * T.DAY, W); assert.equal(r.bro, 98400); assert.equal(p.bro.till, 0);
+  // 2 h 30; aos bocados dá o mesmo; enche até 12 h e para
+  const q = structuredClone(p); E.touch(p, NOW + 3 * T.HOUR + 30 * T.MIN); assert.equal(p.bro.till, Math.floor((base * 5) / 2));
+  for (let t = NOW + T.HOUR; t <= NOW + 3 * T.HOUR + 30 * T.MIN; t += 7 * T.MIN) E.touch(q, t); E.touch(q, NOW + 3 * T.HOUR + 30 * T.MIN); assert.equal(q.bro.till, p.bro.till);
+  E.touch(p, NOW + 3 * T.DAY); assert.equal(p.bro.till, base * 12); E.touch(p, NOW + 4 * T.DAY); assert.equal(p.bro.till, base * 12);
+  r = E.venueCollect(p, NOW + 4 * T.DAY, W); assert.equal(r.bro, base * 12); assert.equal(p.bro.till, 0);
   // despedir não devolve nada e fecha primeiro as contas
-  const c0 = p.cash; r = E.broFire(p, NOW + 4 * T.DAY + T.HOUR, W, 0); assert.equal(r.i, top); assert.deepEqual(p.bro.girls, [rosa]); assert.equal(p.cash, c0); assert.equal(p.bro.till, 8200); assert.equal(E.broRate(p), 200);
+  const c0 = p.cash; r = E.broFire(p, NOW + 4 * T.DAY + T.HOUR, W, 0); assert.equal(r.i, top); assert.deepEqual(p.bro.girls, [rosa]); assert.equal(p.cash, c0); assert.equal(p.bro.till, base); assert.equal(E.broRate(p), V.bro.perH[0]);
   assert.throws(() => E.broFire(p, NOW + 4 * T.DAY + T.HOUR, W, 1), code('NO_HOOKER'));
   // quartos e custos por nível
   const m = dono(); for (let i = 0; i < V.bro.cost.length; i++) { const b = E.venueBuy(m, NOW, W, 'bro'); assert.equal(b.cost, V.bro.cost[i]); for (let k = m.bro.girls.length; k < V.bro.rooms[i]; k++) E.broHire(m, NOW, W, top); assert.throws(() => E.broHire(m, NOW, W, top), code('NO_ROOM')); }
-  assert.throws(() => E.venueBuy(m, NOW, W, 'bro'), code('VENUE_MAX')); assert.equal(E.broRate(m), 12 * 8000);
+  assert.throws(() => E.venueBuy(m, NOW, W, 'bro'), code('VENUE_MAX')); assert.equal(E.broRate(m), V.bro.rooms.at(-1) * V.bro.perH[H[top].tier]);
   // visita de outro jogador: paga o preço dele na cidade × o preço do dono; 80% do preço da cidade é dela, o resto vai para o caixa
   const casa = dono(); casa.gang = 'g1'; E.venueBuy(casa, NOW, W, 'bro'); E.broHire(casa, NOW, W, 5); const till0 = casa.bro.till;
   for (let pi = 0; pi < V.prices.length; pi++) for (let gd = 0; gd < V.gdisc.length; gd++) for (const gang of ['g1', 'g2']) {
@@ -1109,10 +1122,10 @@ test('bordel: quartos, contratar, rendimento por hora, e a parte da puta nunca v
     const base = E.hookerPrice(cli, 5, NOW), bp = E.venuePriceBp(casa, 'bro', cli);
     assert.equal(bp, gang === 'g1' ? Math.max(8000, Math.floor((V.prices[pi] * (10000 - V.gdisc[gd])) / 10000)) : V.prices[pi]);
     const v = E.broVisitAt(cli, casa, NOW, W, 0, never, E.broPriceAt(casa, cli, 5, NOW));
-    assert.equal(v.price, Math.floor((base * bp) / 10000)); assert.equal(cli.cash, 1e6 - v.price); assert.equal(v.energy, H[5].e); assert.equal(v.sick, false);
-    assert.equal(v.house, v.price - Math.floor((base * 8000) / 10000)); assert.ok(v.house >= 0); assert.equal(casa.bro.till, v.house);
+    assert.equal(v.price, Math.max(1, Math.floor((base * bp) / 10000))); assert.equal(cli.cash, 1e6 - v.price); assert.equal(v.energy, H[5].e); assert.equal(v.sick, false);
+    assert.equal(v.house, Math.max(0, v.price - Math.floor((base * 8000) / 10000))); assert.ok(v.house >= 0); assert.equal(casa.bro.till, v.house);
     // dois amigos a visitarem-se um ao outro: o par gasta sempre 80% do preço da cidade, nem menos
-    assert.equal(v.price - v.house, Math.floor((base * 8000) / 10000));
+    assert.ok(v.price - v.house >= Math.floor((base * 8000) / 10000));
   }
   assert.equal(till0, 0);
   // conta como visita para o preço subir (igual às da cidade) e a doença também se apanha
@@ -1147,7 +1160,7 @@ test('escudo de novato: só se ataca com ele se aceitares perdê-lo; ataque recu
   d.protectUntil = 0; d.shieldUntil = t + T.HOUR; assert.throws(() => E.attack(a, d, t, W, 'beat', sorte, true), code('TARGET_NEW')); assert.equal(a.shieldUntil, t + 10 * T.HOUR);
   d.shieldUntil = 0; assert.throws(() => E.attack(a, d, t, W, 'x', sorte, true), code('BAD_MODE')); assert.equal(a.shieldUntil, t + 10 * T.HOUR);
   // aceitou e atacou: o escudo acaba ali e passa a poder ser atacado
-  const r = E.attack(a, d, t, W, 'beat', sorte, true); assert.equal(r.ok, true); assert.equal(a.shieldUntil, 0); assert.equal(a.energy, 100 - CFG.pvp.energy);
+  const r = E.attack(a, d, t, W, 'beat', sorte, true); assert.equal(r.ok, true); assert.equal(a.shieldUntil, 0); assert.equal(a.vigor, CFG.vigor.max - CFG.pvp.energy); assert.equal(a.energy, 100, "a stamina fica");
   const [c] = par(); c.shieldUntil = 0; assert.notEqual(E.canAttack(c, a, t + 1, W), 'TARGET_NEW');
   // tareia em grupo: a mesma regra
   [a, d] = par(); a.gang = 'g1'; d.gang = 'g2';
@@ -1157,38 +1170,37 @@ test('escudo de novato: só se ataca com ele se aceitares perdê-lo; ataque recu
   [a, d] = par(); a.shieldUntil = 0; E.attack(a, d, t, W, 'beat', sorte, true); assert.equal(a.shieldUntil, 0);
 });
 
-test('desintoxicação: preço anunciado, sobe 15% de cada vez, e há sempre uma altura do dia em que deixa de compensar', () => {
+test('desintoxicação: preço anunciado, sobe 15% de cada vez, tem um teto de degraus e volta ao início passados 30 minutos', () => {
   const D = CFG.detox, p = mk('ladrao'); setResp(p, 3000); p.cash = 1e12;
-  const v100 = Math.floor(E.valuePerEnergy(p) * 100), melhor = Math.max(...CFG.drugs.map((g) => g.e / g.a));   // stamina por ponto de vício, na melhor droga
+  const v100 = Math.floor(E.valuePerEnergy(p) * 100);
   p.addiction = 100; p.addictionT = NOW;
   const c1 = E.detoxCost(p, NOW); assert.equal(c1, Math.max(D.min, Math.floor((v100 * 100) / D.valueDiv)));
-  // a primeira custa o que rendem 10 de stamina (antes eram 14)
+  // a primeira custa o que rendem 10 de stamina no melhor golpe que já se faz
   assert.equal(D.valueDiv, 1000); perto(c1 / (v100 / 100), 10, 0.05, 'primeira do dia, em stamina');
-  const ganho = (melhor * 100 * v100) / 100;   // tudo o que 100 de vício deixam ganhar, sem contar o preço da droga
-  let t = NOW, ultima = 0, fim = 0;
-  for (let i = 0; i < D.maxSteps; i++) {
+  let t = NOW, ultima = 0;
+  for (let i = 0; i < D.maxSteps + 3; i++) {
     p.addiction = 100; p.addictionT = t; const r = E.detox(p, t, W);
-    if (i) assert.equal(r.price, Math.ceil((ultima * D.stepNum) / D.stepDen));
-    ultima = r.price; t += 1000;
-    if (!fim && r.price > ganho) fim = i + 1;
-    if (i === 9) assert.ok(r.price < ganho / 10, 'a 10.ª do dia ainda compensa bem');
+    if (i && i < D.maxSteps) assert.equal(r.price, Math.ceil((ultima * D.stepNum) / D.stepDen));
+    assert.ok(r.price >= ultima && Number.isSafeInteger(r.price)); ultima = r.price; t += 1000;
   }
-  // deixa de compensar algures entre a 25.ª e a 40.ª do dia: nunca é de borla para sempre
-  assert.ok(fim >= 25 && fim <= D.maxSteps, 'deixa de compensar à ' + fim + '.ª');
-  // o preço volta a baixar ao fim de 30 minutos (antes de 15/11/2026 eram 24 h): um instante antes de a última fazer 30 minutos ainda
-  // custa mais um degrau; passados os 30 minutos de todas, volta ao preço de início
+  assert.ok(p.detoxT.length <= D.maxSteps);
+  // o preço volta a baixar ao fim de 30 minutos: um instante antes de a última fazer 30 minutos ainda custa mais um degrau;
+  // passados os 30 minutos de todas, volta ao preço de início
   assert.equal(D.windowMs, 30 * 60 * 1000);
   const ultimaT = t - 1000;
-  p.addiction = 100; p.addictionT = ultimaT + D.windowMs - 1; assert.equal(E.detoxCost(p, ultimaT + D.windowMs - 1), Math.ceil((c1 * D.stepNum) / D.stepDen));
+  p.addiction = 100; p.addictionT = ultimaT + D.windowMs - 1; assert.ok(E.detoxCost(p, ultimaT + D.windowMs - 1) > c1);
   p.addictionT = ultimaT + D.windowMs + 1; assert.equal(E.detoxCost(p, ultimaT + D.windowMs + 1), c1);
 });
 
-test('slots: comprar bónus pode custar até 10× o máximo por jogada, a ficha continua presa ao máximo, e só com dinheiro na mão', () => {
+test('slots: comprar bónus pode custar até 20× o máximo por jogada, a ficha continua presa ao máximo, e só com dinheiro na mão', () => {
   const p = cas(1e9); const M = E.casinoMax(p), K = CFG.casino.buyMaxMult, G = CFG.casino.slots.zeus;
-  assert.equal(M, 1000); assert.equal(K, 10);
-  // ficha de 100 → compra de 10 000 (10× o máximo de 1000): passa. Ficha de 110 → 11 000: não passa e não mexe em nada
-  let r = E.casinoPlay(p, NOW, W, 'slot', { game: 'zeus', amt: 100, buy: 1 }, seededRng(5)); assert.equal(r.bet, 100 * G.buy); assert.equal(p.cash, 1e9 - r.bet + r.win);
-  const antes = p.cash; assert.throws(() => E.casinoPlay(p, NOW, W, 'slot', { game: 'zeus', amt: 110, buy: 1 }, never), code('BET_TOO_BIG')); assert.equal(p.cash, antes);
+  assert.equal(M, 1000); assert.equal(K, 20);
+  // a maior ficha que cabe no teto (20× o máximo) passa; uma a mais já não, e não mexe em nada
+  const cabe = Math.floor((M * K) / G.buy);
+  let r = E.casinoPlay(p, NOW, W, 'slot', { game: 'zeus', amt: cabe, buy: 1 }, seededRng(5)); assert.equal(r.bet, cabe * G.buy); assert.equal(p.cash, 1e9 - r.bet + r.win);
+  const antes = p.cash; assert.throws(() => E.casinoPlay(p, NOW, W, 'slot', { game: 'zeus', amt: cabe + 1, buy: 1 }, never), code('BET_TOO_BIG')); assert.equal(p.cash, antes);
+  // no nível 1 (máximo de 5 €) dá para comprar com fichas de 1 €
+  const novo = mk(); novo.cash = 1e6; assert.equal(E.casinoMax(novo), 5); assert.ok(G.buy <= 5 * K); E.casinoPlay(novo, NOW, W, 'slot', { game: 'zeus', amt: 1, buy: 1 }, seededRng(8));
   // jogada normal: o máximo de sempre
   assert.throws(() => E.casinoPlay(p, NOW, W, 'slot', { game: 'zeus', amt: M + 1 }, never), code('BET_TOO_BIG'));
   E.casinoPlay(p, NOW, W, 'slot', { game: 'zeus', amt: M }, seededRng(6));
@@ -1196,7 +1208,7 @@ test('slots: comprar bónus pode custar até 10× o máximo por jogada, a ficha 
   const S2 = CFG.casino.slots.rebucado.superBuy; assert.throws(() => E.casinoPlay(p, NOW, W, 'slot', { game: 'rebucado', amt: Math.floor((M * K) / S2) + 1, buy: 2 }, never), code('BET_TOO_BIG'));
   assert.ok(Math.floor((M * K) / S2) >= CFG.casino.minBet); E.casinoPlay(p, NOW, W, 'slot', { game: 'rebucado', amt: Math.floor((M * K) / S2), buy: 2 }, seededRng(7));
   // sem dinheiro para a compra: recusa
-  const q = cas(9999); assert.throws(() => E.casinoPlay(q, NOW, W, 'slot', { game: 'zeus', amt: 100, buy: 1 }, never), code('NO_CASH')); assert.equal(q.cash, 9999);
+  const q = cas(100 * G.buy - 1); assert.throws(() => E.casinoPlay(q, NOW, W, 'slot', { game: 'zeus', amt: 100, buy: 1 }, never), code('NO_CASH')); assert.equal(q.cash, 100 * G.buy - 1);
   // o prémio nunca passa do teto do jogo vezes a ficha
   const rng = seededRng(11); for (let i = 0; i < 3000; i++) { const x = cas(1e9); const o = E.casinoPlay(x, NOW, W, 'slot', { game: 'zeus', amt: 100, buy: 1 }, rng); assert.ok(o.win <= 100 * G.max); }
 });
@@ -1238,8 +1250,8 @@ test('bolsa: o preço seguinte é em média o de agora (conta exata), a falênci
 
 test('bolsa: comprar e vender paga 1% de cada vez, nunca dá lucro ao mesmo preço, respeita o teto e o preço que se viu', () => {
   const S = CFG.stocks, m = E.newMarket(), k = S.list.findIndex((x) => x.id === 'casino');   // $120,00
-  const p = mk(); p.cash = 1e6; p.bank = 0; setResp(p, 20000);
-  assert.equal(E.stockCap(p), E.casinoMax(p) * 20);
+  const p = mk(); p.cash = 1e6; p.bank = 0; setResp(p, CFG.levels[59]);
+  assert.equal(E.stockCap(p), E.casinoMax(p) * CFG.stocks.capMult); assert.equal(E.stockCap(p), 100000);
   // 10 ações a $120 = $1200 + 1% = $1212
   assert.equal(E.stockQuote(m, k, 10), 1212);
   let r = E.stockBuy(p, NOW, W, m, k, 10, 12000);
@@ -1254,23 +1266,24 @@ test('bolsa: comprar e vender paga 1% de cada vez, nunca dá lucro ao mesmo pre�
   for (const n of [0, -1, 1.5, NaN, 2e9]) assert.throws(() => E.stockBuy(p, NOW, W, m, k, n), code('BAD_AMOUNT'));
   assert.throws(() => E.stockBuy(p, NOW, W, m, k, 1, 11999), code('PRICE_CHANGED')); assert.throws(() => E.stockSell(p, NOW, W, m, k, 1, 12001), code('PRICE_CHANGED'));
   assert.throws(() => E.stockBuy(p, NOW, W, null, k, 1), code('NO_MARKET'));
-  const pobre = mk(); pobre.cash = 1211; pobre.bank = 0; setResp(pobre, 20000); assert.throws(() => E.stockBuy(pobre, NOW, W, m, k, 10), code('NO_MONEY')); assert.equal(pobre.cash, 1211);
+  const pobre = mk(); pobre.cash = 1211; pobre.bank = 0; setResp(pobre, CFG.levels[59]); assert.throws(() => E.stockBuy(pobre, NOW, W, m, k, 10), code('NO_MONEY')); assert.equal(pobre.cash, 1211);
   assert.deepEqual(p, antes);
-  // teto: o total investido (o que se pagou pelo que ainda se tem) não passa de 20× a aposta máxima do nível
-  const nov = mk(); nov.cash = 1e9; nov.bank = 0; const cap = E.stockCap(nov); assert.equal(cap, 20000);
+  // teto: o total investido (o que se pagou pelo que ainda se tem) não passa de 100× a aposta máxima do nível (500 € no nível 1)
+  const nov = mk(); nov.cash = 1e9; nov.bank = 0; const cap = E.stockCap(nov); assert.equal(cap, 500);
   const cabe = Math.floor((cap * 100) / (12000 * 1.01)); E.stockBuy(nov, NOW, W, m, k, cabe); assert.ok(nov.stk[k].cost <= cap);
   assert.throws(() => E.stockBuy(nov, NOW, W, m, k, 1), code('STOCK_CAP')); assert.throws(() => E.stockBuy(nov, NOW, W, m, 0, 100), code('STOCK_CAP'));
   E.stockSell(nov, NOW, W, m, k, cabe); assert.deepEqual(nov.stk[k], { n: 0, cost: 0, gen: 0 }); E.stockBuy(nov, NOW, W, m, 0, 1);   // vendeu, o teto fica livre
   // ida e volta ao mesmo preço perde sempre pelo menos 2%, com qualquer quantidade e preço (os arredondamentos são contra o jogador)
   const rng = seededRng(55);
   for (let i = 0; i < 4000; i++) {
-    const x = mk(); x.cash = 1e12; x.bank = 0; setResp(x, 1e9); const mm = E.newMarket(), j = rng.int(0, S.list.length - 1); mm.prices[j] = rng.int(E.stockBustAt(j), 500000); const n = rng.int(1, 5000);
+    const x = mk(); x.cash = 1e12; x.bank = 0; setResp(x, 1e9); const mm = E.newMarket(), j = rng.int(0, S.list.length - 1); mm.prices[j] = rng.int(E.stockBustAt(j), 500000);
+    const n = Math.max(1, Math.min(rng.int(1, 5000), Math.floor((E.stockCap(x) * 100) / (mm.prices[j] * 1.02))));
     const b = E.stockBuy(x, NOW, W, mm, j, n), v = E.stockSell(x, NOW, W, mm, j, n);
     assert.ok(b.paid - v.got >= Math.floor((n * mm.prices[j]) / 100 / 50), `ida e volta: pagou ${b.paid}, recebeu ${v.got}`); assert.ok(v.got < b.paid); assert.equal(v.profit, v.got - b.paid);
     assert.equal(x.cash, 1e12 - b.paid + v.got); assert.deepEqual(x.stk[j], { n: 0, cost: 0, gen: 0 });
   }
   // falência: as ações deixam de existir (não se vendem, não contam para o teto) e comprar de novo começa do zero
-  const f = mk(); f.cash = 1e6; f.bank = 0; setResp(f, 20000); const mf = E.newMarket(); E.stockBuy(f, NOW, W, mf, k, 10);
+  const f = mk(); f.cash = 1e6; f.bank = 0; setResp(f, CFG.levels[59]); const mf = E.newMarket(); E.stockBuy(f, NOW, W, mf, k, 10);
   mf.gen[k] += 1; mf.prices[k] = S.list[k].base;
   assert.deepEqual(E.stockView(f, mf)[k], { n: 0, cost: 0, value: 0, tp: 0, sl: 0 }); assert.throws(() => E.stockSell(f, NOW, W, mf, k, 1), code('NO_SHARES'));
   E.stockBuy(f, NOW, W, mf, k, 3); assert.deepEqual(f.stk[k], { n: 3, cost: E.stockQuote(mf, k, 3), gen: 1 }); assert.deepEqual(E.checkInvariants(f), []);
@@ -1290,7 +1303,7 @@ test('bolsa: nenhuma estratégia ganha à casa (comprar na queda, ir atrás da s
       for (let t = 0; t < 150; t++) {
         E.marketTick(m, rng); h.push(m.prices[k]); if (h.length < 3) continue;
         const o = f(h), tem = E.stockView(p, m)[k].n;
-        if (o === 'compra' && tem === 0) pago += E.stockBuy(p, NOW, W, m, k, 1000).paid;
+        if (o === 'compra' && tem === 0) pago += E.stockBuy(p, NOW, W, m, k, Math.max(1, Math.floor((E.stockCap(p) * 100) / (m.prices[k] * 1.02)))).paid;
         else if (o === 'vende' && tem > 0) recebido += E.stockSell(p, NOW, W, m, k, tem).got;
       }
       recebido += E.stockView(p, m)[k].value;   // o que sobrou vale o preço do fim (sem contar a comissão de vender)
@@ -1320,7 +1333,7 @@ test('putas: roubo raro — só tira, nunca mais do que há, a carteira não che
   const rz = E.visitHooker(z, NOW, W, 3, ladra(3)); assert.deepEqual(rz.rob, { kind: 'chain', loss: 7 }); assert.equal(z.cash, 0); assert.equal(z.bank, 0);
   // frequência real e no bordel de outro: o dono não recebe nada do roubo
   const rng = seededRng(4242); let n = 0, N = 40000; const f = mk(); f.bank = 0;
-  for (let k = 0; k < N; k++) { f.energy = 0; f.sick = false; f.hkN = f.hkN.map(() => 0); f.cash = 1e9; if (E.visitHooker(f, NOW, W, 0, rng).rob) n++; }
+  for (let k = 0; k < N; k++) { f.energy = 0; f.sick = false; f.hkN = f.hkN.map(() => 0); f.cash = 1e9; f.rf = null; if (E.visitHooker(f, NOW, W, 0, rng).rob) n++; }
   assert.ok(Math.abs(n / N - R.bp[H[0].tier] / 10000) < 0.004, 'frequência ' + n / N);
   const casa = mk(); casa.id = 'casa'; casa.bro = { lvl: 1, till: 0, t: NOW, rem: 0, pi: 2, gd: 0, girls: [3] };
   const cli = mk(); cli.id = 'cli'; cli.cash = 1e6; cli.energy = 0; const base = E.hookerPrice(cli, 3, NOW);
@@ -1329,7 +1342,7 @@ test('putas: roubo raro — só tira, nunca mais do que há, a carteira não che
 
 test('bolsa: limites de venda — só vendem ao preço do passo, com comissão; não criam dinheiro nem salvam de uma falência num só passo', () => {
   const S = CFG.stocks, m = E.newMarket(), k = S.list.findIndex((x) => x.id === 'casino');   // $120,00
-  const p = mk(); p.cash = 1e6; p.bank = 0; setResp(p, 20000);
+  const p = mk(); p.cash = 1e6; p.bank = 0; setResp(p, CFG.levels[59]);
   assert.throws(() => E.stockLimit(p, NOW, W, m, k, 13000, 11000), code('NO_SHARES'));
   const b = E.stockBuy(p, NOW, W, m, k, 100);
   // o alvo tem de estar acima e o travão abaixo do preço de agora; números tortos são recusados
@@ -1357,8 +1370,8 @@ test('bolsa: limites de venda — só vendem ao preço do passo, com comissão; 
   // qualquer estratégia de limites perde em média a comissão: simulação com o mercado real
   const rng = seededRng(909); let pago = 0, recebido = 0;
   for (let j = 0; j < 4000; j++) {
-    const mm = E.newMarket(), q = mk(); q.cash = 1e9; q.bank = 0; setResp(q, 30000); const kk = j % S.list.length;
-    const bb = E.stockBuy(q, NOW, W, mm, kk, 1000); pago += bb.paid;
+    const mm = E.newMarket(), q = mk(); q.cash = 1e9; q.bank = 0; setResp(q, CFG.levels[59]); const kk = j % S.list.length;
+    const bb = E.stockBuy(q, NOW, W, mm, kk, Math.max(1, Math.floor((E.stockCap(q) * 100) / (mm.prices[kk] * 1.02)))); pago += bb.paid;
     E.stockLimit(q, NOW, W, mm, kk, Math.floor(mm.prices[kk] * 1.05) + 1, Math.max(1, Math.floor(mm.prices[kk] * 0.9)));
     for (let t = 0; t < 400 && E.stockView(q, mm)[kk].n > 0; t++) { E.marketTick(mm, rng); for (const x of E.stockAuto(q, mm)) recebido += x.got; }
     if (E.stockView(q, mm)[kk].n > 0) recebido += E.stockSell(q, NOW, W, mm, kk, E.stockView(q, mm)[kk].n).got;
@@ -1366,26 +1379,17 @@ test('bolsa: limites de venda — só vendem ao preço do passo, com comissão; 
   assert.ok(recebido < pago, `limites não dão lucro: ${recebido} < ${pago}`); assert.ok(recebido > pago * 0.93, 'e só custam a comissão e os saltos');
 });
 
-test('fábricas: a produção pode sair em droga ao preço de grosso; vale o mesmo que o dinheiro e só existe nos negócios de droga', () => {
-  const B = CFG.biz, iErva = B.findIndex((x) => x.id === 'erva'), iLav = B.findIndex((x) => x.id === 'lavandaria');
-  assert.deepEqual(B.filter((x) => x.drug).map((x) => x.id), ['erva', 'laboratorio', 'coca']); for (const x of B) if (x.drug) assert.ok(CFG.drugs.some((d) => d.id === x.drug) && !x.toBank);
+test('fábricas: já não há negócios de droga (a produção volta à mão no passo 6); pedir a produção em droga é sempre recusado', () => {
+  const B = CFG.biz;
+  assert.deepEqual(B.map((x) => x.id), ['lavandaria', 'cafe', 'oficina', 'clube']); assert.ok(B.every((x) => !x.drug));
   const p = mk(); p.cash = 1e9; p.bank = 0;
-  assert.throws(() => E.bizGoods(p, NOW, W, iErva, true), code('NO_BIZ'), 'sem a fábrica não há o que mudar');
-  assert.throws(() => E.bizGoods(p, NOW, W, iLav, true), code('NO_BIZ')); for (const x of [-1, 0.5, 99, NaN]) assert.throws(() => E.bizGoods(p, NOW, W, x, true), code('NO_BIZ'));
-  E.buyBiz(p, NOW, W, iErva); E.buyBiz(p, NOW, W, iLav);
-  assert.deepEqual(E.bizGoods(p, NOW, W, iErva, true), { ok: true, i: iErva, on: true, d: CFG.drugs.findIndex((d) => d.id === 'erva') }); assert.equal(p.biz[iErva].g, true); assert.deepEqual(E.checkInvariants(p), []);
-  const t1 = NOW + 5 * T.HOUR, guardado = E.bizStored(p, t1)[iErva].money, c0 = p.cash, b0 = p.bank, d = CFG.drugs.findIndex((x) => x.id === 'erva'), w = E.wholesale(d);
-  assert.ok(guardado > 0);
-  const r = E.collectBiz(p, t1, W, never), it = r.items.find((x) => x.biz === 'erva'), lav = r.items.find((x) => x.biz === 'lavandaria');
-  assert.equal(it.money, guardado); assert.equal(it.units, Math.floor(guardado / w)); assert.equal(it.rest, guardado - it.units * w); assert.equal(it.d, d);
-  assert.equal(p.stock[d], it.units); assert.equal(p.cash, c0 + it.rest, 'só o troco entra em dinheiro'); assert.equal(p.bank, b0 + lav.money, 'a lavandaria continua a pagar para o banco');
-  assert.ok(E.dumpValue(d, it.units) + it.rest <= guardado, 'despachar logo a seguir nunca rende mais do que ter recebido em dinheiro');
-  // voltar a dinheiro
-  E.bizGoods(p, t1, W, iErva, false); assert.equal(p.biz[iErva].g, undefined); const c1 = p.cash;
-  const r2 = E.collectBiz(p, t1 + 2 * T.HOUR, W, never).items.find((x) => x.biz === 'erva'); assert.equal(r2.units, undefined); assert.equal(p.cash, c1 + r2.money); assert.deepEqual(E.checkInvariants(p), []);
-  // a rusga tira antes de converter
-  E.bizGoods(p, t1 + 2 * T.HOUR, W, iErva, true); const st = E.bizStored(p, t1 + 6 * T.HOUR)[iErva].money, n0 = p.stock[d];
-  const r3 = E.collectBiz(p, t1 + 6 * T.HOUR, W, always).items.find((x) => x.biz === 'erva'); assert.equal(r3.lost, Math.floor(st / 2)); assert.equal(p.stock[d] - n0, Math.floor((st - r3.lost) / w));
+  for (let i = 0; i < B.length; i++) { E.buyBiz(p, NOW, W, i); assert.throws(() => E.bizGoods(p, NOW, W, i, true), code('NO_BIZ')); }
+  for (const x of [-1, 0.5, 99, NaN]) assert.throws(() => E.bizGoods(p, NOW, W, x, true), code('NO_BIZ'));
+  // o que os negócios rendem por dia (ao nível de stat de partida) e em quantos dias se pagam
+  for (const [id, preco, dia] of [['lavandaria', 40000, 1500], ['cafe', 60000, 2000], ['oficina', 90000, 3000], ['clube', 800000, 25000]]) {
+    const b = B.find((x) => x.id === id); assert.equal(b.price, preco); perto(b.perH * 24, dia, dia * 0.01, id + ' por dia'); perto(preco / (b.perH * 24), 30, 4, id + ': dias para se pagar');
+  }
+  assert.deepEqual(E.checkInvariants(p), []);
 });
 
 test('contabilista: armazém de 24 h, fica com 10% só do que passa das 8 h, nunca tira a quem recolhe a horas e não se contrata duas vezes', () => {
@@ -1509,70 +1513,54 @@ test('stash: guardar uma droga tira-a da venda da discoteca (clientes da casa e 
   dono.energy = 0; assert.equal(E.stockUse(dono, NOW, W, coca).ok, true); assert.equal(dono.stock[coca], 49); assert.ok(E.stockDump(dono, NOW, W, coca, 9).got > 0); assert.equal(dono.stock[coca], 40);
   // voltar a pôr à venda ao fim de 20 h: essas 20 h não contam; só se vende a partir de agora
   const t1 = NOW + 20 * T.HOUR; E.stockHold(dono, t1, W, coca, false); assert.deepEqual(dono.hold, []); assert.equal(dono.stock[coca], 40);
-  const caixa = dono.club.till, v2 = E.venueView(dono, t1 + T.HOUR), vendidas = 40 - v2.stock[coca];
-  assert.ok(vendidas >= 1 && vendidas * CFG.drugs[coca].price <= E.clubRate(dono) + CFG.drugs[coca].price, 'numa hora sai no máximo uma hora de movimento: ' + vendidas); assert.equal(v2.club.till, caixa + vendidas * CFG.drugs[coca].price);
+  const caixa = dono.club.till, v2 = E.venueView(dono, t1 + 3 * T.HOUR), vendidas = 40 - v2.stock[coca];
+  assert.ok(vendidas >= 1 && vendidas * CFG.drugs[coca].price <= 3 * E.clubRate(dono), 'em 3 h sai no máximo 3 h de movimento: ' + vendidas); assert.equal(v2.club.till, caixa + vendidas * CFG.drugs[coca].price);
   assert.equal(E.clubBuyAt(cli, dono, t1, W, coca).ok, true);
 });
 
-test('armas: três espaços (lutas, golpes a solo, gangue), por ordem, com nível mínimo, e cada uma só mexe no seu sistema', () => {
+test('armas: a preços reais (sem lança-chamas nem minigun), por ordem, e cada uma só mexe no seu sistema; as ferramentas não mexem nos golpes de rua', () => {
   const p = mk();
-  assert.equal(CFG.weapons.length, 8); assert.equal(CFG.tools.length, 8); assert.equal(CFG.gweapons.length, 8);
+  assert.deepEqual(CFG.weapons.map((w) => [w.id, w.price]), [['soqueira', 20], ['navalha', 25], ['pistola', 1750], ['cacadeira', 2500], ['metralhadora', 6000], ['sniper', 9000]]);
+  assert.equal(CFG.tools.length, 8); assert.equal(CFG.gweapons.length, 8);
   assert.equal(p.tool, -1); assert.equal(p.gweapon, -1); assert.equal(E.level(p), 1);
-  // escadas sempre a subir: preço, força e nível
-  for (const L of [CFG.tools, CFG.gweapons]) for (let i = 1; i < L.length; i++) assert.ok(L[i].price > L[i - 1].price && L[i].str > L[i - 1].str && L[i].level >= L[i - 1].level, L[i].id);
+  // escadas sempre a subir: força e nível (ferramentas e armas de gangue) e força nas armas de luta
+  for (const L of [CFG.tools, CFG.gweapons]) for (let i = 1; i < L.length; i++) assert.ok(L[i].str > L[i - 1].str && L[i].level >= L[i - 1].level, L[i].id);
   for (let i = 1; i < CFG.weapons.length; i++) assert.ok(CFG.weapons[i].price > CFG.weapons[i - 1].price && CFG.weapons[i].bp > CFG.weapons[i - 1].bp, CFG.weapons[i].id);
   // por ordem, uma de cada vez: saltar não dá (em nenhum tipo)
   for (const k of ['tool', 'gweapon', 'weapon', 'armor', 'guard']) assert.throws(() => E.buyGear(p, NOW, W, k, 1), code('GEAR_ORDER'), k);
-  // ferramenta: soma força a todos os golpes a solo e não mexe nas lutas nem nos golpes em grupo
+  // ferramenta: os golpes de rua ficam com a hipótese da tabela (as ferramentas voltam com as operações)
   p.stats = { F: 20, T: 20, I: 20, C: 20 };
-  const s0 = CFG.crimes.map((_, k) => E.crimeScore(p, k, NOW)), atk0 = E.attackPower(p, NOW), def0 = E.defensePower(p, NOW), g0 = E.heistChanceBp([p, p], 0, NOW), cash = p.cash;
-  const antes = E.toolPreview(p, NOW);
+  const atk0 = E.attackPower(p, NOW), def0 = E.defensePower(p, NOW), g0 = E.heistChanceBp([p, p], 0, NOW), cash = p.cash;
   assert.equal(E.buyGear(p, NOW, W, 'tool', 0).price, CFG.tools[0].price);
   assert.equal(p.cash, cash - CFG.tools[0].price); assert.equal(p.tool, 0);
-  CFG.crimes.forEach((_, k) => assert.equal(E.crimeScore(p, k, NOW), s0[k] + CFG.tools[0].str));
+  CFG.crimes.forEach((c, k) => assert.equal(E.crimeChanceBp(p, k, NOW), c.p));
   assert.equal(E.attackPower(p, NOW), atk0); assert.equal(E.defensePower(p, NOW), def0); assert.equal(E.heistChanceBp([p, p], 0, NOW), g0);
-  // a antevisão diz a verdade: o golpe que mostra fica com a hipótese que prometeu, e é melhor do que antes
-  assert.equal(E.crimeChanceBp(p, antes.k, NOW), antes.to); assert.ok(antes.to > antes.from);
-  // nível mínimo: a segunda ferramenta pede nível 3; a arma de gangue, o nível das gangues
+  assert.equal(E.toolPreview(p, NOW), null);
+  // nível mínimo: a segunda ferramenta pede nível; a arma de gangue, o nível das gangues
   assert.throws(() => E.buyGear(p, NOW, W, 'tool', 1), code('LOW_LEVEL'));
   assert.throws(() => E.buyGear(p, NOW, W, 'gweapon', 0), code('LOW_LEVEL'));
   p.respect = p.peakRespect = CFG.levels[CFG.gang.minLevel - 1]; assert.equal(E.level(p), CFG.gang.minLevel);
   E.buyGear(p, NOW, W, 'tool', 1); assert.equal(p.tool, 1);
   assert.throws(() => E.buyGear(p, NOW, W, 'tool', 0), code('ALREADY_BETTER'));
   // arma de gangue: soma ao que cada um puxa em grupo e não mexe nos golpes a solo nem nas lutas
-  const s1 = CFG.crimes.map((_, k) => E.crimeScore(p, k, NOW)), sem = mk(); sem.stats = { ...p.stats };
+  const sem = mk(); sem.stats = { ...p.stats };
   E.buyGear(p, NOW, W, 'gweapon', 0); assert.equal(p.gweapon, 0);
-  CFG.crimes.forEach((_, k) => assert.equal(E.crimeScore(p, k, NOW), s1[k]));
+  CFG.crimes.forEach((c, k) => assert.equal(E.crimeChanceBp(p, k, NOW), c.p));
   assert.equal(E.attackPower(p, NOW), atk0);
   assert.ok(E.heistChanceBp([p, sem], 0, NOW) > E.heistChanceBp([sem, sem], 0, NOW));
-  // quem puxa mais leva a parte inteira; o outro, em proporção (a arma conta para a parte)
   const sh = E.heistShares([p, sem], 0, NOW); assert.equal(sh[0], 10000); assert.ok(sh[1] < 10000);
-  // armas de luta novas: pedem nível; as antigas não
-  const rico = mk(); for (let i = 0; i < 6; i++) E.buyGear(rico, NOW, W, 'weapon', i);
-  assert.throws(() => E.buyGear(rico, NOW, W, 'weapon', 6), code('LOW_LEVEL'));
-  rico.respect = rico.peakRespect = CFG.levels[CFG.weapons[7].level - 1];
-  E.buyGear(rico, NOW, W, 'weapon', 6); E.buyGear(rico, NOW, W, 'weapon', 7); assert.equal(rico.weapon, 7);
-  assert.throws(() => E.buyGear(rico, NOW, W, 'weapon', 8), code('NO_GEAR'));
-  // tudo comprado: já não há antevisão
-  rico.respect = rico.peakRespect = CFG.levels.at(-1);
-  for (let i = 0; i < 8; i++) { if (rico.tool < i) E.buyGear(rico, NOW, W, 'tool', i); if (rico.gweapon < i) E.buyGear(rico, NOW, W, 'gweapon', i); }
-  assert.equal(E.toolPreview(rico, NOW), null);
+  // armas de luta: todas compráveis por ordem, e não há sétima
+  const rico = mk(); for (let i = 0; i < CFG.weapons.length; i++) E.buyGear(rico, NOW, W, 'weapon', i);
+  assert.equal(rico.weapon, CFG.weapons.length - 1); assert.throws(() => E.buyGear(rico, NOW, W, 'weapon', CFG.weapons.length), code('NO_GEAR'));
   for (const x of [p, sem, rico]) assert.deepEqual(E.checkInvariants(x), []);
   // estado antigo (sem estes campos) fica sem armas novas, sem erro
   const velho = mk(); delete velho.tool; delete velho.gweapon; E.upgrade(velho); assert.equal(velho.tool, -1); assert.equal(velho.gweapon, -1); assert.deepEqual(E.checkInvariants(velho), []);
 });
 
-test('ferramentas de golpe: valem no nível em que abrem, quase nada para quem já é forte, e não mexem no teto do fim do jogo', () => {
-  const T2 = CFG.tools, com = (stat, tool) => { const p = mk(); p.stats = { F: stat, T: stat, I: stat, C: stat }; p.tool = tool; return p; };
-  // no teto (95%), a melhor ferramenta não acrescenta nada ao último golpe
-  const ultimo = CFG.crimes.length - 1;
-  assert.equal(E.crimeChanceBp(com(1400, -1), ultimo, NOW), CFG.chance.maxBp); assert.equal(E.crimeChanceBp(com(1400, T2.length - 1), ultimo, NOW), CFG.chance.maxBp);
-  // a primeira ferramenta, a alguém com 300 de pontuação: menos de 1 ponto percentual em qualquer golpe
-  CFG.crimes.forEach((_, k) => assert.ok(E.crimeChanceBp(com(300, 0), k, NOW) - E.crimeChanceBp(com(300, -1), k, NOW) < 100, 'golpe ' + k));
-  // a soma de todas as ferramentas nunca passa a força de um jogador forte: é um empurrão, não substitui treinar
-  assert.ok(T2.at(-1).str < 100);
-  // dinheiro: o que se paga não volta (não há venda) e o preço de cada uma é maior do que o da anterior
+test('ferramentas de golpe: até às operações (passo 5) não mexem em nada, e o que se paga não volta', () => {
+  const T2 = CFG.tools, com = (tool) => { const p = mk(); p.tool = tool; return p; };
+  CFG.crimes.forEach((c, k) => { assert.equal(E.crimeChanceBp(com(-1), k, NOW), c.p); assert.equal(E.crimeChanceBp(com(T2.length - 1), k, NOW), c.p); });
   const p = mk(); p.respect = p.peakRespect = CFG.levels.at(-1); let gasto = 0; const c0 = p.cash;
   for (let i = 0; i < T2.length; i++) { E.buyGear(p, NOW, W, 'tool', i); gasto += T2[i].price; }
-  assert.equal(p.cash, c0 - gasto); assert.equal(gasto, 555200);
+  assert.equal(p.cash, c0 - gasto); assert.equal(gasto, T2.reduce((x, t) => x + t.price, 0)); assert.equal(gasto, 10920);
 });

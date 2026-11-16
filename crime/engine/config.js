@@ -29,7 +29,8 @@ export const CFG = {
     lateStatsBp: 5000, // quem entra tarde: 50% da mediana das stats
   },
 
-  energy: { max: 100, regenMs: 2 * MIN }, // cheia em 3h20
+  energy: { max: 100, regenMs: 2 * MIN }, // stamina dos crimes: cheia em 3h20 (a casa sobe o máximo)
+  vigor: { max: 100, regenMs: 2 * MIN },  // energia: ginásio e lutas (barra à parte da stamina)
   addiction: { base: 100, perT: 4, decayMs: 1 * MIN }, // limite = 100 + tolerância/4; desce 1 por minuto
 
   start: { stat: 10, cash: 50 },   // todos recomeçam com 50 € (base nova)
@@ -43,58 +44,76 @@ export const CFG = {
   // Quem compra e vende paga 1% de cada vez: no total, a bolsa tira dinheiro do jogo. Abaixo de 5% do preço de estreia a empresa vai à falência
   // (as ações passam a valer zero) e volta a estrear-se. O máximo investido é 20× a aposta máxima do casino para o teu nível.
   stocks: {
-    tickMs: 10 * MIN, feeBp: 100, bustBp: 500, capMult: 20, steps: [[0, 2], [1, 5], [2, 2], [4, 1]], histMax: 144,
+    tickMs: 10 * MIN, feeBp: 100, bustBp: 500, capMult: 100, steps: [[0, 2], [1, 5], [2, 2], [4, 1]], histMax: 144,
     list: [
       { id: 'docas', base: 5000, vol: 40 }, { id: 'farma', base: 2500, vol: 55 }, { id: 'casino', base: 12000, vol: 70 },
       { id: 'armas', base: 8000, vol: 90 }, { id: 'noite', base: 1200, vol: 130 }, { id: 'moeda', base: 300, vol: 250 },
     ],
   },
 
-  train: { energy: 5, costBase: 0, costPerStat: 0 }, // +1 ponto por treino; só gasta energia
+  train: { energy: 5, costBase: 0, costPerStat: 0 }, // +1 ponto por treino; gasta energia (vigor), não stamina
 
   // Probabilidade de sucesso = S²/(S²+D²), entre 5% e 95%.
   chance: { minBp: 500, maxBp: 9500 },
   crit: { chanceBp: 500, mult: 3 }, // golpe perfeito: 5%, dinheiro x3
   unlockBp: 2000, // crime aparece com 20% de hipótese
 
+  // Golpes de rua (base nova, 16/11/2026). Valores reais de Portugal, risco à escala de jogo. Cada golpe gasta stamina (e),
+  // abre num nível (level), corre bem com uma hipótese fixa (p, em bp) e, se correr bem, o que se leva é à sorte (prizes:
+  // [hipótese em bp, mínimo, máximo, o que é]): quase sempre pouco, às vezes muito. A média por barra (100 de stamina):
+  // furto e carteirista 1 150 €, carros 1 500 €, esticão 2 000 €, assalto a loja 2 800 €, assalto armado 3 600 €.
+  // Uma falha em quatro é apanhada (bustBp): prisão de jailMin minutos ou multa/fiança (fine) para sair já.
+  // gun: precisa de pistola e gasta 100 € de balas e desgaste por golpe (street.ammo). w: as stats que o golpe treina.
   crimes: [
-    { id: 'carteirista', e: 5, D: 5, min: 12, max: 28, r: 1, jailMin: 1, w: { I: 30, F: 0, C: 70 } },
-    { id: 'loja', e: 6, D: 10, min: 35, max: 65, r: 2, jailMin: 2, w: { I: 40, F: 60, C: 0 } },
-    { id: 'carro', e: 7, D: 16, min: 90, max: 150, r: 3, jailMin: 3, w: { I: 70, F: 30, C: 0 } },
-    { id: 'bomba', e: 8, D: 25, min: 220, max: 340, r: 4, jailMin: 4, w: { I: 20, F: 80, C: 0 } },
-    { id: 'turistas', e: 10, D: 38, min: 500, max: 800, r: 6, jailMin: 5, w: { I: 30, F: 0, C: 70 } },
-    { id: 'vivenda', e: 12, D: 58, min: 1200, max: 1800, r: 7, jailMin: 6, w: { I: 60, F: 40, C: 0 } },
-    { id: 'sequestro', e: 14, D: 88, min: 2800, max: 4200, r: 9, jailMin: 7, w: { I: 20, F: 50, C: 30 } },
-    { id: 'carrinha', e: 17, D: 135, min: 6500, max: 9500, r: 11, jailMin: 8, w: { I: 40, F: 60, C: 0 } },
-    { id: 'casino', e: 20, D: 205, min: 15000, max: 21000, r: 13, jailMin: 9, w: { I: 50, F: 0, C: 50 } },
-    { id: 'banco', e: 25, D: 310, min: 34000, max: 46000, r: 16, jailMin: 10, w: { I: 40, F: 30, C: 30 } },
+    { id: 'carteirista', e: 10, level: 1, p: 8500, fine: 150, jailMin: 2, w: { I: 30, F: 0, C: 70 },
+      prizes: [[6200, 15, 80, 'carteira'], [2800, 120, 320, 'telemovel'], [900, 250, 450, 'relogio'], [100, 1000, 1500, 'turista']] },
+    { id: 'loja', e: 10, level: 1, p: 9000, fine: 150, jailMin: 2, w: { I: 40, F: 60, C: 0 },
+      prizes: [[6000, 30, 90, 'miudezas'], [3000, 150, 250, 'perfumes'], [900, 250, 350, 'eletronica'], [100, 400, 600, 'caixa']] },
+    { id: 'carro', e: 20, level: 8, p: 8000, fine: 400, jailMin: 5, w: { I: 70, F: 30, C: 0 },
+      prizes: [[5000, 80, 220, 'radio'], [3500, 300, 600, 'gps'], [1300, 700, 1100, 'pecas'], [200, 1000, 1500, 'mala']] },
+    { id: 'esticao', e: 50, level: 12, p: 6700, fine: 1500, jailMin: 8, w: { I: 0, F: 70, C: 30 },
+      prizes: [[5500, 300, 900, 'mala'], [3000, 1200, 2400, 'fio'], [1300, 3000, 5000, 'joias'], [200, 4000, 7000, 'envelope']] },
+    { id: 'bomba', e: 50, level: 18, p: 6500, fine: 2500, jailMin: 12, gun: true, w: { I: 20, F: 80, C: 0 },
+      prizes: [[5000, 700, 1500, 'caixa'], [3500, 1800, 3000, 'cofre'], [1300, 4000, 6000, 'tabaco'], [200, 4000, 7000, 'malote']] },
+    { id: 'armado', e: 100, level: 30, p: 7000, fine: 6000, jailMin: 20, gun: true, w: { I: 40, F: 60, C: 0 },
+      prizes: [[5000, 2000, 4000, 'caixa'], [3500, 4500, 7500, 'cofre'], [1300, 8000, 12000, 'joalharia'], [200, 10000, 15000, 'cofreforte']] },
   ],
-  crimeAllMax: 25, // «usar a stamina toda»: no máximo 25 golpes de uma vez
+  // A rua aquece: no mesmo dia (de Lisboa), a 1.ª e a 2.ª barra de golpes de rua rendem 100%, a 3.ª e a 4.ª 70%, a 5.ª e a 6.ª 45%,
+  // da 7.ª em diante 25% (dinheiro e respeito). Respeito de uma barra de golpes: 20 + 2 por nível, até 120 (dá-se nos golpes que correm bem).
+  street: { heat: [10000, 10000, 7000, 7000, 4500, 4500, 2500], respBase: 20, respPerLevel: 2, respCap: 120, ammo: 100, gun: 'pistola' },
+  // Stamina a mais, a droga: cada barra (100) no mesmo dia custa 35 € × k + 15 € × k² (50, 130, 240, 380 €…); uma barra a meio paga-se à parte.
+  refillBar: { a: 35, b: 15 },
+  // Venda de droga na rua: compra-se ao quilo e vende-se ao grama com stamina (10 por venda). Uma barra vende perBar gramas.
+  // A clientela compra 1 barra por dia, mais 1 por cada 25 níveis. Respeito de uma barra: 15 + 1 por nível.
+  deal: { step: 10, base: 1, perLevels: 25, respBase: 15, respPerLevel: 1,
+    list: [{ drug: 'haxixe', level: 10, kg: 2000, perBar: 600 }, { drug: 'coca', level: 25, kg: 15000, perBar: 200 }] },
+  crimeAllMax: 10, // «usar a stamina toda»: no máximo 10 golpes de uma vez (uma barra de carteirista)
   bustBp: 2500, // falhar um golpe: 25% das vezes és apanhado (prisão); nas outras só perdes a energia
   // mestria: cada golpe conta os sucessos; 3 estrelas, cada uma dá +10% de dinheiro nesse golpe
   mastery: { at: [10, 40, 150], bonusBp: 1000 },
-  bailBp: 3000, // fiança = 30% do valor médio do golpe que te prendeu, proporcional ao tempo que falta
+  // a multa/fiança de cada golpe (fine) paga-se proporcional ao tempo que falta
 
   // Discoteca: só se compra se a energia não passar do máximo e o vício não passar do limite.
   // energia por vício melhora nos consumos caros; os baratos servem para o início (1 $ por ponto de energia)
   // a: quanto vicia. Com 100 de limite, a coca dá 33 doses (990 de stamina) antes de ser preciso desintoxicar ou esperar.
+  // Droga a preços reais de rua (o grama, o comprimido, a dose). Toma-se pelo efeito; já não dá stamina (essa é refillBar).
   drugs: [
-    { id: 'cerveja', e: 5, a: 1, price: 5 },
-    { id: 'erva', e: 10, a: 2, price: 25, fx: [{ k: 'bust', bp: 3000, ms: 10 * MIN }] },
-    { id: 'cogumelos', e: 13, a: 2, price: 90, fx: [{ k: 'I', bp: 1000, ms: 10 * MIN }] },
-    { id: 'ecstasy', e: 20, a: 3, price: 200, fx: [{ k: 'C', bp: 1000, ms: 10 * MIN }] },
-    { id: 'speed', e: 24, a: 3, price: 600, fx: [{ k: 'loot', bp: 1500, ms: 10 * MIN }] },
-    { id: 'lsd', e: 18, a: 2, price: 1000, fx: [{ k: 'I', bp: 2000, ms: 15 * MIN }] },
-    { id: 'coca', e: 30, a: 3, price: 1500, fx: [{ k: 'C', bp: 1500, ms: 15 * MIN }, { k: 'biz', bp: 1000, ms: 15 * MIN }] },
-    { id: 'cristal', e: 36, a: 3, price: 4000, fx: [{ k: 'F', bp: 2000, ms: 15 * MIN }] },
-    { id: 'heroina', e: 40, a: 3, price: 8000, fx: [{ k: 'T', bp: 2500, ms: 20 * MIN }] },
+    { id: 'cerveja', e: 0, a: 1, price: 3, fx: [{ k: 'bust', bp: 1000, ms: 10 * MIN }] },
+    { id: 'erva', e: 0, a: 2, price: 6, fx: [{ k: 'bust', bp: 3000, ms: 10 * MIN }] },
+    { id: 'cogumelos', e: 0, a: 2, price: 8, fx: [{ k: 'I', bp: 1000, ms: 10 * MIN }] },
+    { id: 'ecstasy', e: 0, a: 3, price: 7, fx: [{ k: 'C', bp: 1000, ms: 10 * MIN }] },
+    { id: 'speed', e: 0, a: 3, price: 10, fx: [{ k: 'loot', bp: 1500, ms: 10 * MIN }] },
+    { id: 'lsd', e: 0, a: 2, price: 8, fx: [{ k: 'I', bp: 2000, ms: 15 * MIN }] },
+    { id: 'coca', e: 0, a: 3, price: 35, fx: [{ k: 'C', bp: 1500, ms: 15 * MIN }, { k: 'biz', bp: 1000, ms: 15 * MIN }] },
+    { id: 'cristal', e: 0, a: 3, price: 60, fx: [{ k: 'F', bp: 2000, ms: 15 * MIN }] },
+    { id: 'heroina', e: 0, a: 3, price: 17, fx: [{ k: 'T', bp: 2500, ms: 20 * MIN }] },
     // juntas mais tarde: ficam no fim da lista para os armazéns já guardados não trocarem de droga (o ecrã mostra-as por preço)
-    { id: 'absinto', e: 7, a: 1, price: 15 },
-    { id: 'poppers', e: 6, a: 1, price: 40, fx: [{ k: 'loot', bp: 800, ms: 5 * MIN }] },
-    { id: 'haxixe', e: 14, a: 2, price: 60, fx: [{ k: 'bust', bp: 3500, ms: 12 * MIN }] },
-    { id: 'ketamina', e: 26, a: 3, price: 800, fx: [{ k: 'bust', bp: 4000, ms: 15 * MIN }] },
-    { id: 'crack', e: 34, a: 4, price: 2500, fx: [{ k: 'F', bp: 2500, ms: 10 * MIN }, { k: 'loot', bp: 1000, ms: 10 * MIN }] },
-    { id: 'oxi', e: 32, a: 3, price: 5000, fx: [{ k: 'T', bp: 2000, ms: 20 * MIN }] },
+    { id: 'absinto', e: 0, a: 1, price: 15, fx: [{ k: 'C', bp: 500, ms: 10 * MIN }] },
+    { id: 'poppers', e: 0, a: 1, price: 10, fx: [{ k: 'loot', bp: 800, ms: 5 * MIN }] },
+    { id: 'haxixe', e: 0, a: 2, price: 5, fx: [{ k: 'bust', bp: 3500, ms: 12 * MIN }] },
+    { id: 'ketamina', e: 0, a: 3, price: 30, fx: [{ k: 'bust', bp: 4000, ms: 15 * MIN }] },
+    { id: 'crack', e: 0, a: 4, price: 5, fx: [{ k: 'F', bp: 2500, ms: 10 * MIN }, { k: 'loot', bp: 1000, ms: 10 * MIN }] },
+    { id: 'oxi', e: 0, a: 3, price: 9, fx: [{ k: 'T', bp: 2000, ms: 20 * MIN }] },
   ],
   // efeitos temporários: F, I, C, T sobem a stat; loot = saque dos golpes; biz = recolhas dos negócios; bust = menos prisão ao falhar
   fxKinds: ['F', 'I', 'C', 'T', 'loot', 'biz', 'bust'],
@@ -141,21 +160,24 @@ export const CFG = {
   // Bordel: cada puta rende perH por hora ao preço da cidade (pela categoria). O caixa de cada casa enche até 12 h de movimento.
   venue: {
     prices: [8000, 9000, 10000, 11000, 12000], volBp: [13000, 11500, 10000, 6000, 3500], gdisc: [0, 1000, 2000, 3000], tillMs: 12 * HOUR, girlBp: 8000,
-    club: { cost: [10000, 30000, 90000, 270000, 800000, 2400000, 7000000, 20000000], perH: [2000, 6000, 18000, 50000, 140000, 400000, 1100000, 3000000], resp: [8, 16, 30, 50, 80, 120, 180, 260] },
-    bro: { cost: [8000, 40000, 200000, 800000, 2500000], rooms: [2, 4, 6, 9, 12], hire: [3000, 12000, 45000, 160000], perH: [200, 700, 2500, 8000], resp: [8, 20, 45, 80, 130] },
+    // economia nova: cada nível paga-se em cerca de 25 dias. Na discoteca o movimento por hora é o custo a dividir por 120 (o lucro ao
+    // preço da cidade é 20% disso); no bordel cada puta contratada rende por hora o que custou a dividir por 600.
+    club: { cost: [3000, 9000, 27000, 81000, 240000, 720000, 2100000, 6000000], perH: [25, 75, 225, 675, 2000, 6000, 17500, 50000], resp: [8, 16, 30, 50, 80, 120, 180, 260] },
+    bro: { cost: [2400, 12000, 60000, 240000, 750000], rooms: [2, 4, 6, 9, 12], hire: [3000, 12000, 45000, 150000], perH: [5, 20, 75, 250], resp: [8, 20, 45, 80, 130] },
   },
   // mudar de profissão: custa o que rendem 100 de stamina no teu melhor golpe e só dá uma vez a cada 24 h, para ninguém trocar antes de cada jogada
   classChange: { energy: 100, min: 500, coolMs: 24 * HOUR },
   avatars: 62,
   // casino: só com o dinheiro que tens na mão. A casa ganha sempre um pouco (roleta 2,7%, dados 3–4%, blackjack ~1%).
   casino: {
-    minBet: 10, maxBase: 1000, maxNum: 8, maxDen: 5, // aposta máxima por jogada = 1000 × 1,6^(nível−1), como o porto
+    // em euros: 1 € a 5 € até ao nível 20, até 20 € do 20 ao 39, até 50 € do 40 ao 59, sala reservada até 1 000 € a partir do 60
+    minBet: 1, limits: [[1, 5], [20, 20], [40, 50], [60, 1000]], // aposta máxima por jogada = 1000 × 1,6^(nível−1), como o porto
     maxBets: 12, // fichas por jogada na roleta e na roda
-    buyMaxMult: 10, // comprar um bónus numa slot pode custar até 10× o máximo por jogada (o prémio máximo continua preso à ficha)
+    buyMaxMult: 20, // comprar um bónus numa slot pode custar até 20× o máximo por jogada (o prémio máximo continua preso à ficha); com 5 € de máximo, dá para comprar com fichas de 1 €
     red: [1, 3, 5, 7, 9, 12, 14, 16, 18, 19, 21, 23, 25, 27, 30, 32, 34, 36],
     dice: { low: 23, seven: 58, high: 23 }, // quanto volta por cada 10 apostados: 2,3× · 5,8× · 2,3×
     bj: { decks: 6, draw: 24 }, // baralho de 6 baralhos, baralhado a cada mão
-    newsMin: 5000, // ganhos a partir daqui vão para o jornal
+    newsMin: 1000, // ganhos a partir daqui vão para o jornal
     maxWinMult: 2500, // nenhuma jogada paga mais de 2500× o que se apostou
     // Roda da Fortuna: 54 casas. Número n paga n para 1; as casas de bónus abrem um jogo que dá um multiplicador.
     // Em cada volta pode aparecer um multiplicador extra numa casa (o «multiplicador do topo»).
@@ -242,8 +264,8 @@ export const CFG = {
   // A sede dá lugares e mais saque nos golpes a todos os membros; a armaria dá mais ataque e defesa nas lutas.
   gang: {
     createCost: 25000, minLevel: nv(4), baseMembers: 4, perSede: 2, maxLevel: 5,
-    sede: [100000, 400000, 1500000, 6000000],                 // preço para passar a sede do nível 1 ao 2, do 2 ao 3…
-    armaria: [50000, 200000, 800000, 3000000, 12000000],      // preço de cada nível da armaria (começa em 0)
+    sede: [15000, 50000, 150000, 450000],                 // preço para passar a sede do nível 1 ao 2, do 2 ao 3…
+    armaria: [8000, 25000, 80000, 250000, 750000],      // preço de cada nível da armaria (começa em 0)
     lootBpPer: 200, fightBpPer: 300,                          // +2% de saque por nível de sede; +3% de ataque e defesa por nível de armaria
     donateMin: 100, rejoinMs: 1 * HOUR, chatMax: 200,
     // Golpes em grupo: um membro abre o pedido e os outros alinham (cada um paga a stamina ao alinhar). O pedido não tem prazo: fica aberto
@@ -255,15 +277,15 @@ export const CFG = {
     // cerca de 1,9× o melhor golpe a solo (3150 contra 1600), e só com 5 pessoas em linha numa gangue com a sede no nível 5.
     // Os novos entram no fim da lista para os números dos antigos não mudarem; no ecrã aparecem por ordem de dificuldade.
     heists: [
-      { id: 'carrinha', need: 2, sede: 1, e: 20, D: 150, min: 3000, max: 4500, r: 14, jailMin: 6, bailAs: 5, w: { I: 40, F: 60, C: 0 } },
-      { id: 'casino', need: 3, sede: 2, e: 30, D: 450, min: 16000, max: 24000, r: 22, jailMin: 9, bailAs: 8, w: { I: 50, F: 0, C: 50 } },
-      { id: 'banco', need: 4, sede: 3, e: 40, D: 1000, min: 75000, max: 105000, r: 30, jailMin: 10, bailAs: 9, w: { I: 40, F: 30, C: 30 } },
-      { id: 'ourivesaria', need: 2, sede: 1, e: 25, D: 320, min: 8000, max: 12000, r: 18, jailMin: 7, bailAs: 6, w: { I: 60, F: 10, C: 30 } },
-      { id: 'comboio', need: 3, sede: 2, e: 35, D: 750, min: 38000, max: 54000, r: 26, jailMin: 9, bailAs: 8, w: { I: 30, F: 60, C: 10 } },
-      { id: 'leilao', need: 3, sede: 3, e: 35, D: 900, min: 55000, max: 75000, r: 28, jailMin: 9, bailAs: 8, w: { I: 40, F: 0, C: 60 } },
-      { id: 'aeroporto', need: 4, sede: 4, e: 45, D: 1500, min: 100000, max: 135000, r: 34, jailMin: 10, bailAs: 9, w: { I: 50, F: 40, C: 10 } },
-      { id: 'cartel', need: 5, sede: 5, e: 50, D: 2000, min: 120000, max: 160000, r: 38, jailMin: 10, bailAs: 9, w: { I: 20, F: 70, C: 10 } },
-      { id: 'moeda', need: 5, sede: 5, e: 50, D: 2600, min: 135000, max: 180000, r: 42, jailMin: 10, bailAs: 9, w: { I: 50, F: 20, C: 30 } },
+      { id: 'carrinha', need: 2, sede: 1, e: 20, D: 150, min: 224, max: 336, r: 14, jailMin: 6, bailAs: 4, w: { I: 40, F: 60, C: 0 } },
+      { id: 'casino', need: 3, sede: 2, e: 30, D: 450, min: 492, max: 738, r: 22, jailMin: 9, bailAs: 5, w: { I: 50, F: 0, C: 50 } },
+      { id: 'banco', need: 4, sede: 3, e: 40, D: 1000, min: 1395, max: 1953, r: 30, jailMin: 10, bailAs: 5, w: { I: 40, F: 30, C: 30 } },
+      { id: 'ourivesaria', need: 2, sede: 1, e: 25, D: 320, min: 338, max: 507, r: 18, jailMin: 7, bailAs: 4, w: { I: 60, F: 10, C: 30 } },
+      { id: 'comboio', need: 3, sede: 2, e: 35, D: 750, min: 845, max: 1199, r: 26, jailMin: 9, bailAs: 5, w: { I: 30, F: 60, C: 10 } },
+      { id: 'leilao', need: 3, sede: 3, e: 35, D: 900, min: 1080, max: 1474, r: 28, jailMin: 9, bailAs: 5, w: { I: 40, F: 0, C: 60 } },
+      { id: 'aeroporto', need: 4, sede: 4, e: 45, D: 1500, min: 1789, max: 2415, r: 34, jailMin: 10, bailAs: 5, w: { I: 50, F: 40, C: 10 } },
+      { id: 'cartel', need: 5, sede: 5, e: 50, D: 2000, min: 2112, max: 2816, r: 38, jailMin: 10, bailAs: 5, w: { I: 20, F: 70, C: 10 } },
+      { id: 'moeda', need: 5, sede: 5, e: 50, D: 2600, min: 2314, max: 3086, r: 42, jailMin: 10, bailAs: 5, w: { I: 50, F: 20, C: 30 } },
     ],
     opMs: 2 * MIN, hitMs: 90 * 1000, opCoolMs: 5 * MIN, opMax: 8,
     // Tareia em grupo: soma-se o ataque de todos (a 85%), o alvo só vai uma vez para o hospital (30 min) e só perde respeito uma vez;
@@ -281,11 +303,14 @@ export const CFG = {
     // O dinheiro investido fica no negócio. Ao sair da gangue ou ser expulso volta metade, mais o que estiver por receber.
     // O rendimento fica guardado até 8 h (storageMs), como nos negócios próprios.
     biz: [
-      { id: 'oficina', sede: 1, rateBp: 300, capMult: 3 },
-      { id: 'jogo', sede: 2, rateBp: 350, capMult: 6 },
-      { id: 'rota', sede: 3, rateBp: 400, capMult: 12 },
+      // economia nova: rendem por hora 0,10% a 0,12% do que lá está (2,4% a 2,9% por dia sozinho, até 4,3% com dez sócios ao
+      // mesmo nível), para se pagarem em 20 a 30 dias como os negócios; o teto é o nível × 1 000 € × capMult
+      { id: 'oficina', sede: 1, rateBp: 10, capMult: 3 },
+      { id: 'jogo', sede: 2, rateBp: 11, capMult: 6 },
+      { id: 'rota', sede: 3, rateBp: 12, capMult: 12 },
     ],
-    bizMin: 100, bizCoopBp: 500, bizCoopMax: 5000, bizRefundBp: 5000,
+    bizCapPerLevel: 1000,
+    bizMin: 1000, bizCoopBp: 500, bizCoopMax: 5000, bizRefundBp: 5000,
     // Gangue da rua: existe sempre, é chefiada por um bot e entra quem quiser (a partir do nível das gangues), para ninguém ficar sem
     // golpes em grupo, conversa e negócio por não ter gangue. Fica sempre no nível 1 (sem cofre nem melhorias) e não é uma gangue a sério:
     // os membros podem atacar-se uns aos outros, não há tareias em grupo nem desconto nas casas dos outros membros.
@@ -294,18 +319,15 @@ export const CFG = {
     bot: { id: 'rua', name: 'Strays', tag: 'BOT', rejoinMs: 24 * HOUR, roster: 40, opMaxMs: 15 * MIN },
   },
   // casa: cada nível dá respeito e deixa subir as melhorias até esse nível; a melhoria n custa uma parte do preço da casa n
+  // Casas (base nova): começa-se numa barraca de 0 € e as outras só se compram; a antiga entra na troca pelo que custou.
+  // Sem renda nem despesa. Cada casa dá respeito uma vez, espaços de inventário (slots) e stamina máxima (emax).
   house: {
     tiers: [
-      { id: 'rua', price: 0, resp: 0 }, { id: 'barraca', price: 2000, resp: 5 }, { id: 'quarto', price: 10000, resp: 15 },
-      { id: 'apartamento', price: 50000, resp: 40 }, { id: 'moradia', price: 250000, resp: 100 }, { id: 'vivenda', price: 1000000, resp: 250 },
-      { id: 'mansao', price: 5000000, resp: 600 }, { id: 'penthouse', price: 20000000, resp: 1500 },
+      { id: 'barraca', price: 0, resp: 0, slots: 6, emax: 100 }, { id: 'roulotte', price: 6000, resp: 30, slots: 12, emax: 105 },
+      { id: 't1interior', price: 54000, resp: 120, slots: 20, emax: 110 }, { id: 't1cidade', price: 183000, resp: 400, slots: 30, emax: 115 },
+      { id: 'moradia', price: 600000, resp: 1200, slots: 45, emax: 120 }, { id: 'mansao', price: 3000000, resp: 4000, slots: 80, emax: 130 },
     ],
-    ups: [
-      { id: 'cofre', costBp: 2500, bp: 1000 }, // dinheiro a salvo dos assaltos, por nível
-      { id: 'alarme', costBp: 2500, bp: 400 }, // defesa quando te atacam
-      { id: 'garagem', costBp: 2500, bp: 400 }, // menos prisão ao falhar
-      { id: 'escritorio', costBp: 2500, bp: 200 }, // rendimento dos negócios
-    ],
+    ups: [],
   },
   // putas: stamina sem vício; o preço segue o que ganhas por stamina e sobe 10% por cada visita nas últimas 24 h
   hookers: {
@@ -319,25 +341,27 @@ export const CFG = {
     list: [
       // quanto mais barata, menos stamina por visita e um pouco mais de risco de doença (no máximo 1%);
       // as de cima custam mais por ponto mas enchem de uma vez e quase sem risco.
-      { id: 'rosinha', tier: 0, e: 8, min: 10, valueBp: 1700, sickBp: 100 },
-      { id: 'marlene', tier: 0, e: 12, min: 20, valueBp: 2000, sickBp: 90 },
-      { id: 'sandra', tier: 0, e: 18, min: 35, valueBp: 2200, sickBp: 80 },
-      { id: 'katia', tier: 1, e: 28, min: 120, valueBp: 2600, sickBp: 60 },
-      { id: 'jessica', tier: 1, e: 36, min: 180, valueBp: 2800, sickBp: 50 },
-      { id: 'bianca', tier: 1, e: 45, min: 350, valueBp: 3000, sickBp: 40 },
-      { id: 'valentina', tier: 2, e: 55, min: 700, valueBp: 3300, sickBp: 30 },
-      { id: 'dominique', tier: 2, e: 75, min: 1200, valueBp: 3600, sickBp: 25 },
-      { id: 'scarlett', tier: 2, e: 85, min: 1800, valueBp: 3800, sickBp: 20 },
-      { id: 'anastasia', tier: 3, e: 95, min: 3000, valueBp: 4100, sickBp: 15 },
-      { id: 'isabella', tier: 3, e: 100, min: 4500, valueBp: 4400, sickBp: 10 },
-      { id: 'celeste', tier: 3, e: 100, min: 7000, valueBp: 4700, sickBp: 0 },
+      // valueBp: o preço é o da escada de stamina do dia (a mesma das barras a droga) por aquilo que ela dá, vezes isto
+      // (80% nas mais baratas, 115% na melhor). A stamina que elas dão sobe essa escada como as barras.
+      { id: 'rosinha', tier: 0, e: 8, valueBp: 8000, sickBp: 100 },
+      { id: 'marlene', tier: 0, e: 12, valueBp: 8400, sickBp: 90 },
+      { id: 'sandra', tier: 0, e: 18, valueBp: 8600, sickBp: 80 },
+      { id: 'katia', tier: 1, e: 28, valueBp: 9000, sickBp: 60 },
+      { id: 'jessica', tier: 1, e: 36, valueBp: 9300, sickBp: 50 },
+      { id: 'bianca', tier: 1, e: 45, valueBp: 9500, sickBp: 40 },
+      { id: 'valentina', tier: 2, e: 55, valueBp: 9900, sickBp: 30 },
+      { id: 'dominique', tier: 2, e: 75, valueBp: 10200, sickBp: 25 },
+      { id: 'scarlett', tier: 2, e: 85, valueBp: 10400, sickBp: 20 },
+      { id: 'anastasia', tier: 3, e: 95, valueBp: 10800, sickBp: 15 },
+      { id: 'isabella', tier: 3, e: 100, valueBp: 11200, sickBp: 10 },
+      { id: 'celeste', tier: 3, e: 100, valueBp: 11500, sickBp: 0 },
       // juntas mais tarde: ficam no fim da lista (o ecrã mostra-as por categoria e preço)
-      { id: 'lurdes', tier: 0, e: 15, min: 28, valueBp: 2100, sickBp: 85 },
-      { id: 'tatiana', tier: 1, e: 32, min: 150, valueBp: 2700, sickBp: 55 },
-      { id: 'vanessa', tier: 1, e: 40, min: 260, valueBp: 2900, sickBp: 45 },
-      { id: 'kiara', tier: 2, e: 65, min: 950, valueBp: 3450, sickBp: 28 },
-      { id: 'chanel', tier: 2, e: 80, min: 1500, valueBp: 3700, sickBp: 22 },
-      { id: 'victoria', tier: 3, e: 98, min: 3800, valueBp: 4250, sickBp: 12 },
+      { id: 'lurdes', tier: 0, e: 15, valueBp: 8500, sickBp: 85 },
+      { id: 'tatiana', tier: 1, e: 32, valueBp: 9200, sickBp: 55 },
+      { id: 'vanessa', tier: 1, e: 40, valueBp: 9400, sickBp: 45 },
+      { id: 'kiara', tier: 2, e: 65, valueBp: 10000, sickBp: 28 },
+      { id: 'chanel', tier: 2, e: 80, valueBp: 10300, sickBp: 22 },
+      { id: 'victoria', tier: 3, e: 98, valueBp: 11000, sickBp: 12 },
     ],
   },
   // prática: cada golpe treina as stats que usa (energia × peso; metade se falhar).
@@ -360,14 +384,13 @@ export const CFG = {
   statMultDiv: 1000, // rendimento x (1000 + stat) / 1000, com a stat contada até 1000 (máx. x2)
   statMultCap: 1000,
   raid: { chanceBp: 500, lossBp: 5000 },
+  // Negócios (base nova): pagam-se em cerca de 30 dias. perH = o que rende por hora (o dia real todo: lavandaria 1 500 €,
+  // café 2 000 €, oficina 3 000 €, clube 25 000 €). Valores de jogo (grau D). Plantação e laboratório voltam com os armazéns (passo 6).
   biz: [
-    { id: 'lavandaria', price: 3000, perH: 125, resp: 6, stat: 'C', raid: false, toBank: true },
-    { id: 'prostitutas', price: 8000, perH: 500, resp: 12, stat: 'C', raid: true, toBank: false },
-    // drug: estes três são fábricas. O dono pode pedir a produção em droga (ao preço de grosso, para o armazém) em vez de dinheiro:
-    // vende-a na discoteca dele, toma-a ou despacha-a. É a mesma conta do porto com «receber em droga».
-    { id: 'erva', price: 25000, perH: 1800, resp: 24, stat: 'I', raid: true, toBank: false, drug: 'erva' },
-    { id: 'laboratorio', price: 120000, perH: 9600, resp: 45, stat: 'I', raid: true, toBank: false, drug: 'ecstasy' },
-    { id: 'coca', price: 500000, perH: 42000, resp: 90, stat: 'I', raid: true, toBank: false, drug: 'coca' },
+    { id: 'lavandaria', price: 40000, perH: 63, resp: 40, stat: 'C', raid: false, toBank: true },
+    { id: 'cafe', price: 60000, perH: 83, resp: 60, stat: 'C', raid: false, toBank: true },
+    { id: 'oficina', price: 90000, perH: 125, resp: 90, stat: 'I', raid: false, toBank: true },
+    { id: 'clube', price: 800000, perH: 1042, resp: 600, stat: 'C', raid: true, toBank: false },
   ],
   // Contabilista: contrato pago uma vez por ronda. Com ele o armazém dos negócios aguenta 24 h em vez de 8 h;
   // do que passar das 8 h normais (dinheiro que sem ele se perdia) fica com 10%. Nunca tira nada a quem recolhe a horas.
@@ -392,58 +415,56 @@ export const CFG = {
   // level: nível mínimo para comprar (sem ele, qualquer nível).
   // weapons (lutas): bp = ataque a mais, em pontos da Força.
   weapons: [
-    { id: 'soqueira', price: 500, bp: 1000 },
-    { id: 'navalha', price: 3000, bp: 2500 },
-    { id: 'pistola', price: 20000, bp: 5000 },
-    { id: 'cacadeira', price: 120000, bp: 8000 },
-    { id: 'metralhadora', price: 700000, bp: 12000 },
-    { id: 'sniper', price: 4000000, bp: 17000 },
-    { id: 'lancachamas', price: 12000000, bp: 20000, level: nv(13) },
-    { id: 'minigun', price: 30000000, bp: 23000, level: nv(16) },
+    { id: 'soqueira', price: 20, bp: 1000 },
+    { id: 'navalha', price: 25, bp: 2500 },
+    { id: 'pistola', price: 1750, bp: 5000 },
+    { id: 'cacadeira', price: 2500, bp: 8000 },
+    { id: 'metralhadora', price: 6000, bp: 12000 },
+    { id: 'sniper', price: 9000, bp: 17000 },
   ],
   // tools (golpes a solo): str = força que se soma à pontuação de todos os golpes a solo (conta também para os desbloquear).
   // É força fixa e não percentagem: cada ferramenta vale cerca de +28% no nível em que abre e cada vez menos daí para cima.
   // Assim as baratas não dão quase nada a quem já é forte, e nenhuma mexe no teto do fim do jogo (95% de hipótese).
   // Preços: o que a ferramenta rende a mais do que a anterior paga-a em 1 a 4 dias de golpes (720 de stamina por dia) no nível em que abre.
   tools: [
-    { id: 'pedecabra', price: 500, str: 2, level: nv(1) },
-    { id: 'gazuas', price: 1200, str: 3, level: nv(3) },
-    { id: 'taser', price: 3500, str: 5, level: nv(5) },
-    { id: 'revolver', price: 10000, str: 9, level: nv(7) },
-    { id: 'serrada', price: 30000, str: 16, level: nv(9) },
-    { id: 'macarico', price: 80000, str: 27, level: nv(11) },
-    { id: 'explosivos', price: 180000, str: 48, level: nv(13) },
-    { id: 'broca', price: 250000, str: 84, level: nv(15) },
+    { id: 'pedecabra', price: 20, str: 2, level: nv(1) },
+    { id: 'gazuas', price: 40, str: 3, level: nv(3) },
+    { id: 'taser', price: 60, str: 5, level: nv(5) },
+    { id: 'revolver', price: 900, str: 9, level: nv(7) },
+    { id: 'serrada', price: 1500, str: 16, level: nv(9) },
+    { id: 'macarico', price: 400, str: 27, level: nv(11) },
+    { id: 'explosivos', price: 3000, str: 48, level: nv(13) },
+    { id: 'broca', price: 5000, str: 84, level: nv(15) },
   ],
   // gweapons (golpes em grupo): str = força que se soma ao que tu puxas num golpe da gangue (e por isso também à tua parte do saque).
   // Mesma escada das ferramentas; começam no nível das gangues. Preços: 2 a 5 dias de golpes em grupo com metade da stamina do dia.
   gweapons: [
-    { id: 'taco', price: 1000, str: 3, level: nv(4) },
-    { id: 'catana', price: 2500, str: 5, level: nv(5) },
-    { id: 'molotov', price: 7000, str: 9, level: nv(7) },
-    { id: 'assalto', price: 20000, str: 16, level: nv(9) },
-    { id: 'lancagranadas', price: 55000, str: 27, level: nv(11) },
-    { id: 'pesada', price: 120000, str: 48, level: nv(13) },
-    { id: 'bazuca', price: 160000, str: 84, level: nv(15) },
-    { id: 'morteiro', price: 200000, str: 147, level: nv(17) },
+    { id: 'taco', price: 40, str: 3, level: nv(4) },
+    { id: 'catana', price: 60, str: 5, level: nv(5) },
+    { id: 'molotov', price: 80, str: 9, level: nv(7) },
+    { id: 'assalto', price: 3000, str: 16, level: nv(9) },
+    { id: 'lancagranadas', price: 8000, str: 27, level: nv(11) },
+    { id: 'pesada', price: 12000, str: 48, level: nv(13) },
+    { id: 'bazuca', price: 20000, str: 84, level: nv(15) },
+    { id: 'morteiro', price: 30000, str: 147, level: nv(17) },
   ],
   armors: [
-    { id: 'cabedal', price: 400, bp: 1000 },
-    { id: 'colete', price: 2500, bp: 2500 },
-    { id: 'balistico', price: 18000, bp: 5000 },
-    { id: 'kevlar', price: 110000, bp: 8000 },
-    { id: 'blindado', price: 650000, bp: 12000 },
-    { id: 'titanio', price: 3800000, bp: 17000 },
+    { id: 'cabedal', price: 150, bp: 1000 },
+    { id: 'colete', price: 600, bp: 2500 },
+    { id: 'balistico', price: 1200, bp: 5000 },
+    { id: 'kevlar', price: 2500, bp: 8000 },
+    { id: 'blindado', price: 6000, bp: 12000 },
+    { id: 'titanio', price: 15000, bp: 17000 },
   ],
   // Guardas: compram-se sempre para cima, como as armas. bp: defesa a mais nas lutas (soma-se aos bónus da casa e da gangue).
   // block: quanto tiram à pontaria de um assassino a soldo (ver hitman).
   guards: [
-    { id: 'chihuahua', price: 600, bp: 300, block: 500 },
-    { id: 'pitbull', price: 4000, bp: 800, block: 1500 },
-    { id: 'porteiro', price: 25000, bp: 1500, block: 2500 },
-    { id: 'guardacostas', price: 150000, bp: 2500, block: 4000 },
-    { id: 'comando', price: 900000, bp: 3500, block: 5500 },
-    { id: 'escolta', price: 5000000, bp: 5000, block: 7000 },
+    { id: 'chihuahua', price: 300, bp: 300, block: 500 },
+    { id: 'pitbull', price: 1200, bp: 800, block: 1500 },
+    { id: 'porteiro', price: 5000, bp: 1500, block: 2500 },
+    { id: 'guardacostas', price: 20000, bp: 2500, block: 4000 },
+    { id: 'comando', price: 60000, bp: 3500, block: 5500 },
+    { id: 'escolta', price: 150000, bp: 5000, block: 7000 },
   ],
   // Assassino a soldo: paga-se para mandar alguém para o hospital sem dar a cara e sem gastar stamina (dá para encomendar da cama do hospital).
   // Ninguém perde a conta. Se acerta: o alvo fica 1 h no hospital, perde 1,5% do respeito e 10% do dinheiro na mão (não vai para ninguém),
@@ -451,7 +472,7 @@ export const CFG = {
   // Pontaria: 90% menos o «block» dos guardas do alvo (no mínimo 15%). Se falha, o dinheiro perde-se e o alvo fica a saber quem pagou.
   // Travões: preço = 100 por ponto de respeito do alvo (mínimo 5000), 3 encomendas por dia, só a partir do nível 5, e as regras das lutas
   // (alvo com pelo menos 25% do teu respeito, nada de jogadores novos, da tua gangue, no hospital, presos ou protegidos).
-  hitman: { minLevel: nv(5), priceMin: 5000, pricePerRespect: 100, baseBp: 9000, minBp: 1500, hospMs: 60 * MIN, respBp: 150, cashBp: 1000, immuneMs: 12 * HOUR, perDay: 3 },
+  hitman: { minLevel: nv(5), priceMin: 2000, pricePerRespect: 10, baseBp: 9000, minBp: 1500, hospMs: 60 * MIN, respBp: 150, cashBp: 1000, immuneMs: 12 * HOUR, perDay: 3 },
 
   pvp: {
     energy: 20,
@@ -474,7 +495,10 @@ export const CFG = {
   bank: { feeBp: 300 }, // depositar custa 3%
 
   // Luxos: dão respeito uma vez e ficam no perfil. Cada compra custa o dobro da anterior.
-  luxury: { firstPrice: 250000, respect: 250, max: 20 },
+  // Luxo acima da mansão: compra-se pela ordem, sem despesa, e fica à vista no perfil. Dá respeito uma vez: a raiz quadrada do preço.
+  luxury: { list: [{ id: 'relogio', price: 12000 }, { id: 'carrobom', price: 25700 }, { id: 'lancha', price: 80000 }, { id: 'porsche', price: 200263 },
+    { id: 'helicoptero', price: 550000 }, { id: 'iate', price: 2500000 }, { id: 'jato', price: 4500000 }, { id: 'quinta', price: 6000000 },
+    { id: 'palacete', price: 15000000 }, { id: 'ilha', price: 40000000 }] },
 
   // Níveis pelo maior respeito já alcançado (o nível nunca desce). Índice = nível - 1. Ver LEVELS e TIERS lá em cima.
   levels: LEVELS,
@@ -488,31 +512,31 @@ CFG.missions = [
   { id: 'train3', type: 'trains', need: 3, cash: 100 },
   { id: 'refill1', type: 'refills', need: 1, cash: 150 },
   { id: 'lvl3', type: 'level', need: nv(3), cash: 200 },
-  { id: 'tier2', type: 'tier', need: 2, cash: 250 },
-  { id: 'wins25', type: 'wins', need: 25, cash: 400 },
-  { id: 'weapon', type: 'gear', need: 1, cash: 400 },
+  { id: 'tier2', type: 'tier', need: 2, cash: 300 },
+  { id: 'wins25', type: 'wins', need: 25, cash: 500 },
+  { id: 'weapon', type: 'gear', need: 1, cash: 300 },
   { id: 'lvl5', type: 'level', need: nv(5), cash: 600 },
   { id: 'star1', type: 'stars', need: 1, cash: 800 },
-  { id: 'biz1', type: 'biz', need: 1, cash: 1500 },
+  { id: 'biz1', type: 'biz', need: 1, cash: 2000 },
   { id: 'collect1', type: 'collects', need: 1, cash: 800 },
-  { id: 'tier4', type: 'tier', need: 4, cash: 1500 },
-  { id: 'fight1', type: 'pvpWins', need: 1, cash: 2500 },
-  { id: 'port1', type: 'ports', need: 1, cash: 2000 },
-  { id: 'wins100', type: 'wins', need: 100, cash: 5000 },
-  { id: 'lvl8', type: 'level', need: nv(8), cash: 8000 },
-  { id: 'biz5', type: 'biz', need: 5, cash: 20000 },
-  { id: 'tier6', type: 'tier', need: 6, cash: 25000 },
-  { id: 'fight10', type: 'pvpWins', need: 10, cash: 40000 },
-  { id: 'lvl10', type: 'level', need: nv(10), cash: 60000 },
-  { id: 'lux1', type: 'lux', need: 1, cash: 120000 },
-  { id: 'wins500', type: 'wins', need: 500, cash: 200000 },
-  { id: 'tier8', type: 'tier', need: 8, cash: 300000 },
-  { id: 'lvl13', type: 'level', need: nv(13), cash: 500000 },
-  { id: 'biz20', type: 'biz', need: 20, cash: 750000 },
-  { id: 'tier10', type: 'tier', need: 10, cash: 1500000 },
-  { id: 'lvl16', type: 'level', need: nv(16), cash: 2000000 },
-  { id: 'lux5', type: 'lux', need: 5, cash: 5000000 },
-  { id: 'lvl20', type: 'level', need: nv(20), cash: 10000000 },
+  { id: 'tier4', type: 'tier', need: 4, cash: 2000 },
+  { id: 'fight1', type: 'pvpWins', need: 1, cash: 1000 },
+  { id: 'port1', type: 'ports', need: 1, cash: 1000 },
+  { id: 'wins100', type: 'wins', need: 100, cash: 2500 },
+  { id: 'lvl8', type: 'level', need: nv(8), cash: 3000 },
+  { id: 'biz5', type: 'biz', need: 5, cash: 5000 },
+  { id: 'tier6', type: 'tier', need: 6, cash: 6000 },
+  { id: 'fight10', type: 'pvpWins', need: 10, cash: 5000 },
+  { id: 'lvl10', type: 'level', need: nv(10), cash: 6000 },
+  { id: 'lux1', type: 'lux', need: 1, cash: 8000 },
+  { id: 'wins500', type: 'wins', need: 500, cash: 12000 },
+  { id: 'stars6', type: 'stars', need: 6, cash: 12000 },
+  { id: 'lvl13', type: 'level', need: nv(13), cash: 15000 },
+  { id: 'biz10', type: 'biz', need: 10, cash: 25000 },
+  { id: 'stars12', type: 'stars', need: 12, cash: 25000 },
+  { id: 'lvl16', type: 'level', need: nv(16), cash: 40000 },
+  { id: 'lux3', type: 'lux', need: 3, cash: 60000 },
+  { id: 'lvl20', type: 'level', need: nv(20), cash: 120000 },
 ];
 
 export const T = { MIN, HOUR, DAY: 24 * HOUR };

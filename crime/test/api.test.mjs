@@ -8,6 +8,7 @@ import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import net from 'node:net';
 import { DatabaseSync } from 'node:sqlite';
+import { CFG } from '../engine/config.js';
 
 const AQUI = dirname(fileURLToPath(import.meta.url));
 const PORT = 3900 + Math.floor(Math.random() * 90);
@@ -15,6 +16,8 @@ const BASE = `http://127.0.0.1:${PORT}`;
 let dir, srv;
 let ENV_EXTRA = {};
 const INICIAL = 50;   // base nova (16/11/2026): todos começam com 50 €
+const NIVEL60 = CFG.levels[59];   // sala reservada do casino (até 1 000 € por jogada)
+const E0 = CFG.crimes[0].e;       // stamina do carteirista
 
 // sexta-feira mais recente às 21:00 de Lisboa já passada há mais de 1 h (para haver ataques)
 function sextaRecente() {
@@ -89,9 +92,9 @@ test('crime, toque repetido e erros de regra', async () => {
   assert.equal(s.body.me.energy, 100);
   const r1 = await a('POST', '/api/act', { type: 'crime', k: 0, rid: 'x1' });
   assert.equal(r1.status, 200);
-  assert.equal(r1.body.me.energy, 95);
+  assert.equal(r1.body.me.energy, 100 - E0);
   const r2 = await a('POST', '/api/act', { type: 'crime', k: 0, rid: 'x1' }); // mesmo pedido outra vez
-  assert.equal(r2.body.me.energy, 95);
+  assert.equal(r2.body.me.energy, 100 - E0);
   assert.equal((await a('POST', '/api/act', { type: 'voar' })).body.error, 'BAD_ACTION');
   assert.equal((await a('POST', '/api/act', { type: 'crime', k: 99 })).body.error, 'NO_CRIME');
   assert.equal((await a('POST', '/api/act', { type: 'deposit', amount: 1e15 })).body.error, 'BAD_AMOUNT');
@@ -99,11 +102,12 @@ test('crime, toque repetido e erros de regra', async () => {
   // recarga e desintoxicação chegam ao motor
   assert.equal((await a('POST', '/api/act', { type: 'detox' })).body.error, 'NO_VICE');
   const st = (await a('GET', '/api/state')).body.me;
-  assert.equal(st.refill.energy, 5, 'com 95 de energia cabe uma cerveja');
+  assert.equal(st.refill.energy, E0, 'a barra a droga enche o que falta');
+  assert.equal(st.refill.cost, Math.ceil((E0 * 50) / 100), 'ao preço da primeira barra do dia (50 €)');
   const r3 = await a('POST', '/api/act', { type: 'refill', rid: 'rf1' });
   assert.equal(r3.status, 200, JSON.stringify(r3.body));
   assert.equal(r3.body.me.energy, 100);
-  assert.ok(r3.body.me.addiction > 0);
+  assert.equal(r3.body.me.addiction, 0, 'a barra não mexe no vício'); assert.equal(r3.body.me.refillBars, E0);
   assert.equal(r3.body.me.refill, null);
   assert.equal((await a('POST', '/api/act', { type: 'refill', rid: 'rf2' })).body.error, 'ENERGY_FULL');
 });
@@ -117,8 +121,8 @@ test('ataque entre duas contas: hospital, evento e ranking', async () => {
   assert.ok(t.body.list.some((x) => x.name === 'Duarte'), JSON.stringify(t.body));
   const r = await a('POST', '/api/act', { type: 'attack', target: 'duarte', mode: 'beat' });
   assert.equal(r.status, 200, JSON.stringify(r.body));
-  // quem ganha a luta sobe logo na escala antiga (pelo menos 6 de respeito) e a energia volta ao máximo
-  assert.equal(r.body.me.energy, r.body.result.win ? 100 : 80);
+  // as lutas gastam energia, não a stamina dos crimes (e subir de nível já não enche nada)
+  assert.equal(r.body.me.energy, 100); assert.equal(r.body.me.vigor, CFG.vigor.max - CFG.pvp.energy);
   const perdeu = r.body.result.win ? 'Duarte' : 'Carla';
   const sb = await b('GET', '/api/state');
   if (perdeu === 'Duarte') assert.ok(sb.body.me.hospUntil > sb.body.now);
@@ -217,7 +221,7 @@ test('batota: o mesmo pedido repetido (mesmo rid) só conta uma vez, mesmo em pa
   assert.ok(rs.every((r) => r.status === 200));
   const me = await estado();
   assert.equal(me.counters.crimes, 1);
-  assert.equal(me.energy, 95);
+  assert.equal(me.energy, 100 - E0);
 });
 
 test('batota: segurar o pedido não deixa agir no passado (a hora é a de quando o pedido acaba de chegar)', async () => {
@@ -288,7 +292,7 @@ test('contas do dia batem com o jogador: golpes, vitórias, dinheiro e respeito'
 test('mesa ao vivo: dois jogadores na mesma ronda veem o mesmo resultado e as contas batem certo', async () => {
   await parar(); ENV_EXTRA = { ATOS_3S: '100000', ATOS_MIN: '1000000', MESA_BET_MS: '900', MESA_SPIN_MS: '500' }; await arrancar();
   const A = await contaNova('MesaA', '10.0.9.40'), B = await contaNova('MesaB', '10.0.9.41');
-  await A.estado(); await B.estado(); await mexer({ MesaA: (e) => { e.cash = 500; }, MesaB: (e) => { e.cash = 500; } });   // começa-se com 50 €: o teste aposta mais
+  await A.estado(); await B.estado(); await mexer({ MesaA: (e) => { e.cash = 500; e.respect = e.peakRespect = NIVEL60; }, MesaB: (e) => { e.cash = 500; e.respect = e.peakRespect = NIVEL60; } });   // começa-se com 50 €: o teste aposta mais
   const mesa = async (c, ip, g) => (await fetch(BASE + '/api/table?g=' + g, { headers: { cookie: c, 'X-Forwarded-For': ip } })).json();
   const dorme = (ms) => new Promise((r) => setTimeout(r, ms));
   // espera pelo início de uma ronda para ter o tempo todo de apostas
@@ -328,7 +332,7 @@ test('mesa ao vivo: dois jogadores na mesma ronda veem o mesmo resultado e as co
 
 test('mesa ao vivo: limpar devolve tudo, e se o servidor parar a meio as apostas voltam para o jogador', async () => {
   const A = await contaNova('MesaC', '10.0.9.42');
-  await A.estado(); await mexer({ MesaC: (e) => { e.cash = 500; } });
+  await A.estado(); await mexer({ MesaC: (e) => { e.cash = 500; e.respect = e.peakRespect = NIVEL60; } });
   const mesa = async (g) => (await fetch(BASE + '/api/table?g=' + g, { headers: { cookie: A.cookie, 'X-Forwarded-For': '10.0.9.42' } })).json();
   const dorme = (ms) => new Promise((r) => setTimeout(r, ms));
   const abre = async () => { let t = await mesa('wheel'); while (t.phase !== 'bets' || t.closesAt - t.now < 500) { await dorme(100); t = await mesa('wheel'); } return t; };
@@ -352,7 +356,8 @@ test('Crazy na mesa: o resultado só abre depois da escolha do flapper, cada um 
   await parar(); ENV_EXTRA = { ATOS_3S: '100000', ATOS_MIN: '1000000', MESA_BET_MS: '900', MESA_SPIN_MS: '300', CRAZY_PICK_MS: '1500', MESA_FORCA_RODA: 'louca' }; await arrancar();
   const A = await contaNova('CrazyA', '10.0.9.60'), B = await contaNova('CrazyB', '10.0.9.61'), C = await contaNova('CrazyC', '10.0.9.62');
   for (const x of [A, B, C]) await x.estado();
-  await mexer({ CrazyA: (e) => { e.cash = 500; }, CrazyB: (e) => { e.cash = 500; }, CrazyC: (e) => { e.cash = 500; } });
+  const sala = (e) => { e.cash = 500; e.respect = e.peakRespect = NIVEL60; };
+  await mexer({ CrazyA: sala, CrazyB: sala, CrazyC: sala });
   const ips = new Map([[A, '10.0.9.60'], [B, '10.0.9.61'], [C, '10.0.9.62']]);
   const mesa = async (x) => (await fetch(BASE + '/api/table?g=wheel', { headers: { cookie: x.cookie, 'X-Forwarded-For': ips.get(x) } })).json();
   const dorme = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -459,28 +464,29 @@ test('discoteca e bordel: abrir, pôr preço, cada um vê o seu preço (gangue c
   // abrir a discoteca e pôr o preço a 110% com 20% de desconto para a gangue
   r = await ag(A, '10.0.9.80', { type: 'venueSet', kind: 'club', pi: 3, gd: 2 }); assert.equal(r.body.error, 'NO_VENUE');
   r = await ag(A, '10.0.9.80', { type: 'venueBuy', kind: 'club' }); assert.equal(r.status, 200, JSON.stringify(r.body));
-  assert.equal(r.body.me.club.lvl, 1); assert.equal(r.body.me.cash, a0 - 10000); assert.deepEqual(r.body.me.stock[COCA], 5);
+  const CLUB0 = CFG.venue.club.cost[0], P = CFG.drugs[COCA].price, PG = Math.floor((P * 8800) / 10000), PF = Math.floor((P * 11000) / 10000);
+  assert.equal(r.body.me.club.lvl, 1); assert.equal(r.body.me.cash, a0 - CLUB0); assert.deepEqual(r.body.me.stock[COCA], 5);
   r = await ag(A, '10.0.9.80', { type: 'venueSet', kind: 'club', pi: 3, gd: 2 }); assert.equal(r.status, 200); assert.equal(r.body.me.club.pi, 3); assert.equal(r.body.me.club.gd, 2);
   r = await ag(A, '10.0.9.80', { type: 'venueSet', kind: 'club', pi: 9, gd: 0 }); assert.equal(r.body.error, 'BAD_AMOUNT');
   // a lista: o membro da gangue vê 88%, quem é de fora vê 110%; o dono não aparece na sua própria lista
   let vb = await get(B, '10.0.9.81', '/api/venues'), vx = await get(X, '10.0.9.82', '/api/venues'), va = await get(A, '10.0.9.80', '/api/venues');
   assert.equal(va.clubs.length, 0);
-  assert.deepEqual(vb.clubs.map((c) => [c.name, c.tag, c.gang, c.bp, c.pub]), [['CasaA', 'CAS', true, 8800, 11000]]); assert.deepEqual(vb.clubs[0].items, [{ d: COCA, n: 5, price: 1320 }]);
-  assert.deepEqual(vx.clubs.map((c) => [c.name, c.gang, c.bp]), [['CasaA', false, 11000]]); assert.equal(vx.clubs[0].items[0].price, 1650);
-  // comprar: o dinheiro sai do comprador e entra no caixa do dono; a droga sai do armazém dele
-  r = await ag(B, '10.0.9.81', { type: 'clubBuy', owner: 'CasaA', d: COCA, price: 1320 }); assert.equal(r.status, 200, JSON.stringify(r.body));
-  assert.equal(r.body.result.price, 1320); assert.equal(r.body.me.cash, 500_000 - 1320); assert.equal(r.body.me.energy, 30);
-  r = await ag(X, '10.0.9.82', { type: 'clubBuy', owner: 'CasaA', d: COCA, price: 1000 }); assert.equal(r.body.error, 'PRICE_CHANGED'); assert.equal((await X.estado()).cash, 500_000);
-  r = await ag(X, '10.0.9.82', { type: 'clubBuy', owner: 'CasaA', d: COCA, price: 1650 }); assert.equal(r.status, 200); assert.equal(r.body.me.cash, 500_000 - 1650);
+  assert.deepEqual(vb.clubs.map((c) => [c.name, c.tag, c.gang, c.bp, c.pub]), [['CasaA', 'CAS', true, 8800, 11000]]); assert.deepEqual(vb.clubs[0].items, [{ d: COCA, n: 5, price: PG }]);
+  assert.deepEqual(vx.clubs.map((c) => [c.name, c.gang, c.bp]), [['CasaA', false, 11000]]); assert.equal(vx.clubs[0].items[0].price, PF);
+  // comprar: o dinheiro sai do comprador e entra no caixa do dono; a droga sai do armazém dele (dá o efeito, não stamina)
+  r = await ag(B, '10.0.9.81', { type: 'clubBuy', owner: 'CasaA', d: COCA, price: PG }); assert.equal(r.status, 200, JSON.stringify(r.body));
+  assert.equal(r.body.result.price, PG); assert.equal(r.body.me.cash, 500_000 - PG); assert.equal(r.body.me.energy, 0);
+  r = await ag(X, '10.0.9.82', { type: 'clubBuy', owner: 'CasaA', d: COCA, price: PF - 1 }); assert.equal(r.body.error, 'PRICE_CHANGED'); assert.equal((await X.estado()).cash, 500_000);
+  r = await ag(X, '10.0.9.82', { type: 'clubBuy', owner: 'CasaA', d: COCA, price: PF }); assert.equal(r.status, 200); assert.equal(r.body.me.cash, 500_000 - PF);
   r = await ag(X, '10.0.9.82', { type: 'clubBuy', owner: 'CasaA', d: 0 }); assert.equal(r.body.error, 'NO_STOCK');
   r = await ag(X, '10.0.9.82', { type: 'clubBuy', owner: 'Ninguem', d: COCA }); assert.equal(r.body.error, 'NO_VENUE');
   r = await ag(A, '10.0.9.80', { type: 'clubBuy', owner: 'CasaA', d: COCA }); assert.equal(r.body.error, 'SELF');
-  let a = await A.estado(); assert.equal(a.club.till, 2970); assert.equal(a.stock[COCA], 3); assert.equal(a.cash, a0 - 10000);
-  r = await ag(A, '10.0.9.80', { type: 'venueCollect' }); assert.equal(r.body.result.club, 2970); assert.equal(r.body.me.cash, a0 - 10000 + 2970); assert.equal(r.body.me.club.till, 0);
+  let a = await A.estado(); assert.equal(a.club.till, PG + PF); assert.equal(a.stock[COCA], 3); assert.equal(a.cash, a0 - CLUB0);
+  r = await ag(A, '10.0.9.80', { type: 'venueCollect' }); assert.equal(r.body.result.club, PG + PF); assert.equal(r.body.me.cash, a0 - CLUB0 + PG + PF); assert.equal(r.body.me.club.till, 0);
   // armazém: tomar uma e despachar o resto (95% do preço de grosso)
-  r = await ag(A, '10.0.9.80', { type: 'stockUse', d: COCA }); assert.equal(r.status, 200); assert.equal(r.body.me.stock[COCA], 2); assert.equal(r.body.me.cash, a0 - 10000 + 2970);
+  r = await ag(A, '10.0.9.80', { type: 'stockUse', d: COCA }); assert.equal(r.status, 200); assert.equal(r.body.me.stock[COCA], 2); assert.equal(r.body.me.cash, a0 - CLUB0 + PG + PF);
   r = await ag(A, '10.0.9.80', { type: 'stockDump', d: COCA, n: 3 }); assert.equal(r.body.error, 'NO_STOCK');
-  r = await ag(A, '10.0.9.80', { type: 'stockDump', d: COCA, n: 2 }); assert.equal(r.body.result.got, 2280); assert.equal(r.body.me.stock[COCA], 0);
+  r = await ag(A, '10.0.9.80', { type: 'stockDump', d: COCA, n: 2 }); assert.equal(r.body.result.got, Math.floor((2 * Math.floor((P * 8000) / 10000) * 9500) / 10000)); assert.equal(r.body.me.stock[COCA], 0);
   assert.equal((await get(X, '10.0.9.82', '/api/venues')).clubs.length, 0);   // sem mercadoria, a discoteca sai da lista
   // bordel: abrir, contratar, preço a 90%; a visita paga ao caixa só a parte da casa
   r = await ag(A, '10.0.9.80', { type: 'broHire', i: 5 }); assert.equal(r.body.error, 'NO_VENUE');
@@ -565,20 +571,21 @@ test('gangues: criar, entrar, cofre sem volta, melhorias que dão bónus a todos
   const forcaAntes = (await B.estado()).attack;
   r = await ag(B, '10.0.9.51', { type: 'gangJoin', id: gid }); assert.equal(r.body.result.joined, true); assert.equal(r.body.me.gb.loot, 200);
   // cofre: só entra; só o chefe gasta
-  r = await ag(B, '10.0.9.51', { type: 'gangDonate', amount: 150_000 }); assert.equal(r.body.me.cash, 850_000); assert.equal(r.body.result.fund, 150_000);
+  const DOA = CFG.gang.armaria[0] + CFG.gang.sede[0], RESTO = 1_000_000 - DOA;
+  r = await ag(B, '10.0.9.51', { type: 'gangDonate', amount: DOA }); assert.equal(r.body.me.cash, RESTO); assert.equal(r.body.result.fund, DOA);
   r = await ag(B, '10.0.9.51', { type: 'gangDonate', amount: 50 }); assert.equal(r.body.error, 'BAD_AMOUNT');
-  r = await ag(B, '10.0.9.51', { type: 'gangDonate', amount: 900_000 }); assert.equal(r.body.error, 'NO_MONEY');
+  r = await ag(B, '10.0.9.51', { type: 'gangDonate', amount: 2_000_000 }); assert.equal(r.body.error, 'NO_MONEY');
   r = await ag(B, '10.0.9.51', { type: 'gangUp', what: 'armaria' }); assert.equal(r.body.error, 'NOT_LEADER');
-  r = await ag(A, '10.0.9.50', { type: 'gangUp', what: 'armaria' }); assert.equal(r.body.result.level, 1); assert.equal(r.body.result.fund, 100_000);
+  r = await ag(A, '10.0.9.50', { type: 'gangUp', what: 'armaria' }); assert.equal(r.body.result.level, 1); assert.equal(r.body.result.fund, CFG.gang.sede[0]);
   r = await ag(A, '10.0.9.50', { type: 'gangUp', what: 'sede' }); assert.equal(r.body.result.level, 2); assert.equal(r.body.result.fund, 0);
   r = await ag(A, '10.0.9.50', { type: 'gangUp', what: 'sede' }); assert.equal(r.body.error, 'NO_GANG_MONEY');
   // o bónus chega a todos os membros e sobrevive a um reinício
   await parar(); await arrancar();
   let b = await B.estado();
-  assert.deepEqual(b.gb, { loot: 400, atk: 300, def: 300 }); assert.equal(b.attack, Math.floor((forcaAntes * 10300) / 10000)); assert.equal(b.cash, 850_000);
+  assert.deepEqual(b.gb, { loot: 400, atk: 300, def: 300 }); assert.equal(b.attack, Math.floor((forcaAntes * 10300) / 10000)); assert.equal(b.cash, RESTO);
   let g = await gangue(B, '10.0.9.51');
   assert.equal(g.mine.roster.length, 2); assert.equal(g.mine.members, 2); assert.equal(g.mine.fund, 0); assert.equal(g.mine.slots, 8); assert.equal(g.list[0].respect, 200); assert.equal(g.mine.leaderMe, false);
-  assert.equal(g.mine.roster.find((m) => m.name === 'MembroG').given, 150_000);
+  assert.equal(g.mine.roster.find((m) => m.name === 'MembroG').given, DOA);
   // conversa: guarda o texto tal como veio (o ecrã é que o mostra como texto), sem caracteres de controlo
   r = await ag(B, '10.0.9.51', { type: 'gangChat', txt: '  <b>olá</b>\n\u0007 malta  ' }); assert.equal(r.status, 200);
   r = await ag(C, '10.0.9.52', { type: 'gangChat', txt: 'olá' }); assert.equal(r.body.error, 'NO_GANG');
@@ -594,7 +601,7 @@ test('gangues: criar, entrar, cofre sem volta, melhorias que dão bónus a todos
   // expulsar tira o bónus e obriga a esperar para entrar noutra
   r = await ag(B, '10.0.9.51', { type: 'gangKick', name: 'ChefeG' }); assert.equal(r.body.error, 'NO_RANK');
   r = await ag(A, '10.0.9.50', { type: 'gangKick', name: 'MembroG' }); assert.equal(r.status, 200);
-  b = await B.estado(); assert.equal(b.gang, null); assert.equal(b.gb, null); assert.equal(b.attack, forcaAntes); assert.equal(b.cash, 850_000);
+  b = await B.estado(); assert.equal(b.gang, null); assert.equal(b.gb, null); assert.equal(b.attack, forcaAntes); assert.equal(b.cash, RESTO);
   r = await ag(A, '10.0.9.50', { type: 'gangOpen', open: true });
   r = await ag(B, '10.0.9.51', { type: 'gangJoin', id: gid }); assert.equal(r.body.error, 'GANG_WAIT');
   // o chefe sai: a chefia passa para quem ficou; o último a sair acaba com a gangue
@@ -618,34 +625,35 @@ test('negócios da gangue: investir, bónus de grupo acertado em todos, sede a m
   const gid = (await gangue(A, '10.0.9.90')).mine.id;
   r = await ag(B, '10.0.9.91', { type: 'gangJoin', id: gid }); assert.equal(r.status, 200);
   const a0 = (await A.estado()).cash;
-  r = await ag(A, '10.0.9.90', { type: 'gangBiz', k: 0, amount: 4000 }); assert.equal(r.status, 200, JSON.stringify(r.body));
-  assert.equal(r.body.result.inv, 4000); assert.equal(r.body.result.coop, 0); assert.equal(r.body.me.cash, a0 - 4000);
+  r = await ag(A, '10.0.9.90', { type: 'gangBiz', k: 0, amount: 12000 }); assert.equal(r.status, 200, JSON.stringify(r.body));
+  assert.equal(r.body.result.inv, 12000); assert.equal(r.body.result.coop, 0); assert.equal(r.body.me.cash, a0 - 12000);
   r = await ag(A, '10.0.9.90', { type: 'gangBiz', k: 1, amount: 1000 }); assert.equal(r.body.error, 'GBIZ_SEDE');           // a sede ainda é de nível 1
   for (const bad of [{ k: 0, amount: 50 }, { k: 0, amount: -5 }, { k: 0, amount: 1e12 }, { k: 7, amount: 1000 }, { k: '0', amount: '1000' }, { k: 0 }]) {
     r = await ag(A, '10.0.9.90', { type: 'gangBiz', ...bad }); assert.ok(r.status === 400 || r.status === 409 || r.status === 422, JSON.stringify(r.body)); assert.ok(r.body.error);
   }
-  assert.equal((await A.estado()).cash, a0 - 4000);
+  assert.equal((await A.estado()).cash, a0 - 12000);
   // B põe metade: B fica com +5% (A tem pelo menos o mesmo) e A com +2,5%, sem A ter feito nada
-  r = await ag(B, '10.0.9.91', { type: 'gangBiz', k: 0, amount: 2000 }); assert.equal(r.status, 200, JSON.stringify(r.body)); assert.equal(r.body.result.coop, 500);
+  r = await ag(B, '10.0.9.91', { type: 'gangBiz', k: 0, amount: 6000 }); assert.equal(r.status, 200, JSON.stringify(r.body)); assert.equal(r.body.result.coop, 500);
   let g = await gangue(A, '10.0.9.90'), z = g.mine.biz[0];
   assert.equal(z.id, 'oficina'); assert.equal(z.open, true); assert.equal(g.mine.biz[1].open, false);
-  assert.equal(z.total, 6000); assert.equal(z.investors, 2); assert.equal(z.inv, 4000); assert.equal(z.coop, 250); assert.equal(z.full, 0); assert.equal(z.perH, 123);
-  assert.equal(g.mine.roster.find((m) => m.name === 'NegB').stake, 2000);
-  z = (await gangue(B, '10.0.9.91')).mine.biz[0]; assert.equal(z.inv, 2000); assert.equal(z.coop, 500); assert.equal(z.full, 1); assert.equal(z.perH, 63);
+  const rate = CFG.gang.biz[0].rateBp, porH = (inv, coop) => Math.floor((Math.floor((inv * rate) / 10000) * (10000 + coop)) / 10000);
+  assert.equal(z.total, 18000); assert.equal(z.investors, 2); assert.equal(z.inv, 12000); assert.equal(z.coop, 250); assert.equal(z.full, 0); assert.equal(z.perH, porH(12000, 250));
+  assert.equal(g.mine.roster.find((m) => m.name === 'NegB').stake, 6000);
+  z = (await gangue(B, '10.0.9.91')).mine.biz[0]; assert.equal(z.inv, 6000); assert.equal(z.coop, 500); assert.equal(z.full, 1); assert.equal(z.perH, porH(6000, 500));
   // reinício: o investimento e o bónus continuam lá
   await parar(); await arrancar();
-  z = (await gangue(A, '10.0.9.90')).mine.biz[0]; assert.equal(z.inv, 4000); assert.equal(z.coop, 250);
+  z = (await gangue(A, '10.0.9.90')).mine.biz[0]; assert.equal(z.inv, 12000); assert.equal(z.coop, 250);
   r = await ag(A, '10.0.9.90', { type: 'gangBizCollect' }); assert.equal(r.status, 200, JSON.stringify(r.body)); assert.ok(r.body.result.money >= 0);
   // expulsar: B recebe metade de volta (e o que tinha por receber) e A perde o bónus que vinha dele
   const b0 = (await B.estado()).cash;
   r = await ag(A, '10.0.9.90', { type: 'gangKick', name: 'NegB' }); assert.equal(r.status, 200, JSON.stringify(r.body));
-  const b1 = await B.estado(); assert.ok(b1.cash >= b0 + 1000 && b1.cash <= b0 + 1000 + 10); assert.equal(b1.gang, null);
+  const b1 = await B.estado(); assert.ok(b1.cash >= b0 + 3000 && b1.cash <= b0 + 3000 + 10); assert.equal(b1.gang, null);
   const ev = await (await fetch(BASE + '/api/events', { headers: { cookie: B.cookie, 'X-Forwarded-For': '10.0.9.91' } })).json();
   assert.equal(ev.list[0].k, 'gangOut'); assert.equal(ev.list[0].money, b1.cash - b0);
-  z = (await gangue(A, '10.0.9.90')).mine.biz[0]; assert.equal(z.coop, 0); assert.equal(z.total, 4000); assert.equal(z.investors, 1);
+  z = (await gangue(A, '10.0.9.90')).mine.biz[0]; assert.equal(z.coop, 0); assert.equal(z.total, 12000); assert.equal(z.investors, 1);
   // sair: A recebe metade e a gangue acaba
   const a1 = (await A.estado()).cash;
-  r = await ag(A, '10.0.9.90', { type: 'gangLeave' }); assert.equal(r.status, 200); assert.ok(r.body.result.back >= 2000); assert.equal(r.body.me.cash, a1 + r.body.result.back);
+  r = await ag(A, '10.0.9.90', { type: 'gangLeave' }); assert.equal(r.status, 200); assert.ok(r.body.result.back >= 6000); assert.equal(r.body.me.cash, a1 + r.body.result.back);
   assert.equal((await gangue(A, '10.0.9.90')).list.length, 0);
 });
 
@@ -658,20 +666,21 @@ test('guardas e assassino a soldo: comprar guardas, encomendar, o alvo não sabe
   const ag = (x, ip, body) => cru(x.cookie, ip, body), get = async (x, ip, url) => (await fetch(BASE + url, { headers: { cookie: x.cookie, 'X-Forwarded-For': ip } })).json();
   // a lista de alvos traz o preço e a pontaria do assassino
   let alvo = (await get(A, '10.0.9.95', '/api/targets')).list.find((x) => x.name === 'HitB');
-  assert.equal(alvo.hp, 100000); assert.equal(alvo.hc, 9000); assert.equal(alvo.hw, null);
+  const HP = 1000 * CFG.hitman.pricePerRespect, G01 = CFG.guards[0].price + CFG.guards[1].price;
+  assert.equal(alvo.hp, HP); assert.equal(alvo.hc, 9000); assert.equal(alvo.hw, null);
   // o sítio do assassino mostra toda a gente, com o motivo quando não dá: um fraco demais não entra nos alvos, mas aparece aqui a dizer porquê
   { const tl = (await get(A, '10.0.9.95', '/api/targets')).list, c = tl.find((x) => x.name === 'HitC');   // nos alvos aparece no fim, sem números, só com o motivo
     assert.equal(c.why, 'TARGET_TOO_WEAK'); assert.equal(c.until, 0); assert.equal(c.chance, undefined); assert.equal(c.hp, undefined);
     assert.ok(tl.findIndex((x) => x.name === 'HitB') < tl.findIndex((x) => x.name === 'HitC')); }
   const contratos = (await get(A, '10.0.9.95', '/api/hitman')).list.filter((x) => x.name.startsWith('Hit'));
-  assert.deepEqual(contratos.map((x) => [x.name, x.hw, x.hp, x.hc]), [['HitB', null, 100000, 9000], ['HitC', 'TARGET_TOO_WEAK', 10000, 9000]]);
+  assert.deepEqual(contratos.map((x) => [x.name, x.hw, x.hp, x.hc]), [['HitB', null, HP, 9000], ['HitC', 'TARGET_TOO_WEAK', CFG.hitman.priceMin, 9000]]);
   assert.deepEqual(Object.keys(contratos[0]).sort(), ['av', 'hc', 'hp', 'hw', 'level', 'name', 'respect', 'tag', 'until']);
   assert.equal((await fetch(BASE + '/api/hitman')).status, 401);
   // B compra um pitbull: a pontaria desce 15 pontos
   // (as armas e os guardas compram-se por ordem: saltar o chihuahua não dá)
   assert.equal((await ag(B, '10.0.9.96', { type: 'gear', kind: 'guard', idx: 1 })).body.error, 'GEAR_ORDER');
   let r = await ag(B, '10.0.9.96', { type: 'gear', kind: 'guard', idx: 0 }); assert.equal(r.status, 200, JSON.stringify(r.body));
-  r = await ag(B, '10.0.9.96', { type: 'gear', kind: 'guard', idx: 1 }); assert.equal(r.status, 200, JSON.stringify(r.body)); assert.equal(r.body.me.guard, 1); assert.equal(r.body.me.cash, 36_000);
+  r = await ag(B, '10.0.9.96', { type: 'gear', kind: 'guard', idx: 1 }); assert.equal(r.status, 200, JSON.stringify(r.body)); assert.equal(r.body.me.guard, 1); assert.equal(r.body.me.cash, 40_600 - G01);
   alvo = (await get(A, '10.0.9.95', '/api/targets')).list.find((x) => x.name === 'HitB'); assert.equal(alvo.hc, 7500);
   assert.equal((await ag(A, '10.0.9.95', { type: 'hitman', target: 'ninguem' })).body.error, 'NO_TARGET');
   assert.equal((await ag(A, '10.0.9.95', { type: 'hitman', target: 'HitA' })).body.error, 'SELF');
@@ -680,19 +689,19 @@ test('guardas e assassino a soldo: comprar guardas, encomendar, o alvo não sabe
   for (let i = 0; i < 3 && !certo; i++) {
     const antes = (await A.estado()).cash;
     r = await ag(A, '10.0.9.95', { type: 'hitman', target: 'hitb' }); assert.equal(r.status, 200, JSON.stringify(r.body)); feitas++;
-    assert.equal(r.body.me.cash, antes - 100000); assert.equal(r.body.result.price, 100000); assert.equal(r.body.result.target, 'HitB'); assert.equal(r.body.me.hitmanLeft, 3 - feitas);
+    assert.equal(r.body.me.cash, antes - HP); assert.equal(r.body.result.price, HP); assert.equal(r.body.result.target, 'HitB'); assert.equal(r.body.me.hitmanLeft, 3 - feitas);
     const ev = (await get(B, '10.0.9.96', '/api/events')).list[0];
     assert.equal(ev.k, 'hitman'); assert.equal(ev.win, r.body.result.success);
-    if (r.body.result.success) { certo = r.body.result; assert.equal(ev.by, undefined); assert.equal(JSON.stringify(ev).includes('HitA'), false); assert.equal(ev.respect, -15); assert.equal(ev.money, 3600); }
+    if (r.body.result.success) { certo = r.body.result; assert.equal(ev.by, undefined); assert.equal(JSON.stringify(ev).includes('HitA'), false); assert.equal(ev.respect, -15); assert.equal(ev.money, Math.floor((40_600 - G01) / 10)); }
     else assert.equal(ev.by, 'HitA');
   }
   const b = await B.estado();
   if (certo) {
-    assert.equal(b.respect, 985); assert.equal(b.cash, 32_400); assert.ok(b.hospUntil > Date.now() + DESVIO);
+    assert.equal(b.respect, 985); assert.equal(b.cash, 40_600 - G01 - Math.floor((40_600 - G01) / 10)); assert.ok(b.hospUntil > Date.now() + DESVIO);
     assert.equal((await ag(A, '10.0.9.95', { type: 'hitman', target: 'HitB' })).body.error, feitas >= 3 ? 'HITMAN_LIMIT' : 'TARGET_HOSPITAL');
     const jornal = (await get(B, '10.0.9.96', '/api/state')).feed || [];
     const n = jornal.find((x) => x.k === 'hitman'); if (n) { assert.equal(n.target, 'HitB'); assert.equal(JSON.stringify(n).includes('HitA'), false); }
-  } else { assert.equal(b.respect, 1000); assert.equal(b.cash, 36_000); assert.equal((await ag(A, '10.0.9.95', { type: 'hitman', target: 'HitB' })).body.error, 'HITMAN_LIMIT'); }
+  } else { assert.equal(b.respect, 1000); assert.equal(b.cash, 40_600 - G01); assert.equal((await ag(A, '10.0.9.95', { type: 'hitman', target: 'HitB' })).body.error, 'HITMAN_LIMIT'); }
   assert.equal((await A.estado()).respect, 1000);
 });
 
@@ -792,7 +801,8 @@ test('gangues: golpe em grupo e tareia em grupo — pedido sem prazo, alinhar e 
   for (const [x, nome] of [[A, 'GolpeA'], [B, 'GolpeB'], [C, 'GolpeC']]) {
     const e = await x.estado(), eu = L.parts.find((y) => y.name === nome);
     assert.equal(e.cash, 1_000_000 - (nome === 'GolpeA' ? 25_000 : 0) + eu.money);
-    if (L.success) { assert.ok(eu.money >= 3000 && eu.money <= Math.floor(4500 * 1.02)); assert.equal(eu.money, L.parts[0].money); assert.equal(e.respect, 114); }
+    const H0 = CFG.gang.heists[0];
+    if (L.success) { assert.ok(eu.money >= H0.min && eu.money <= Math.floor((H0.max * (10000 + CFG.gang.lootBpPer)) / 10000)); assert.equal(eu.money, L.parts[0].money); assert.equal(e.respect, 100 + H0.r); }
     else { assert.equal(eu.money, 0); assert.equal(e.respect, 100); assert.equal(eu.busted, e.jailUntil > 0); }
   }
   const ev = await (await fetch(BASE + '/api/events', { headers: { cookie: B.cookie, 'X-Forwarded-For': ips.B } })).json();
@@ -837,9 +847,9 @@ test('gangues: golpe em grupo e tareia em grupo — pedido sem prazo, alinhar e 
   await parar(); await arrancar();
   r = await ag(A, ips.A, { type: 'gangOp', kind: 'hit', target: 'GolpeB' }); assert.equal(r.body.error, 'SAME_GANG');
   r = await ag(A, ips.A, { type: 'gangOp', kind: 'hit', target: 'ninguem' }); assert.equal(r.body.error, 'NO_TARGET');
-  r = await ag(A, ips.A, { type: 'gangOp', kind: 'hit', target: 'golpev' }); assert.equal(r.status, 200, JSON.stringify(r.body)); assert.equal(r.body.me.energy, 80);
+  r = await ag(A, ips.A, { type: 'gangOp', kind: 'hit', target: 'golpev' }); assert.equal(r.status, 200, JSON.stringify(r.body)); assert.equal(r.body.me.vigor, CFG.vigor.max - CFG.pvp.energy, 'a tareia gasta energia');
   await espera(1600);
-  g = await gangue(A, ips.A); assert.equal(g.mine.op.kind, 'hit', 'sozinho, a tareia fica à espera'); assert.equal(g.mine.op.goAt, 0); assert.equal(g.mine.op.hold, false); assert.equal((await A.estado()).energy, 80);
+  g = await gangue(A, ips.A); assert.equal(g.mine.op.kind, 'hit', 'sozinho, a tareia fica à espera'); assert.equal(g.mine.op.goAt, 0); assert.equal(g.mine.op.hold, false); assert.equal((await A.estado()).vigor, CFG.vigor.max - CFG.pvp.energy);
   // o alvo vai parar ao hospital: o pedido não se perde, espera por ele (e entretanto ninguém alinha)
   await mexer({ GolpeV: (e) => { e.hospUntil = Date.now() + DESVIO + 3600_000; } });
   g = await gangue(B, ips.B); assert.equal(g.mine.op.hold, true); assert.equal(g.mine.op.target, 'GolpeV');
@@ -861,11 +871,11 @@ test('gangues: golpe em grupo e tareia em grupo — pedido sem prazo, alinhar e 
   assert.equal(evV.list[0].k, 'attacked'); assert.equal(evV.list[0].by, '[GLP] Golpistas'); assert.equal(evV.list[0].crew, 2);
   assert.equal(a2.cash, (await A.estado()).cash);
   // o alvo entra para a gangue com a tareia marcada: já não dá, fica sem efeito e a stamina volta
-  const limpo = (e) => { e.jailUntil = 0; e.hospUntil = 0; e.protectUntil = 0; e.capUntil = 0; e.shieldUntil = 0; e.energy = 100; e.respect = 100; e.peakRespect = 100; };
+  const limpo = (e) => { e.jailUntil = 0; e.hospUntil = 0; e.protectUntil = 0; e.capUntil = 0; e.shieldUntil = 0; e.energy = 100; e.vigor = CFG.vigor.max; e.respect = 100; e.peakRespect = 100; };
   await mexer({ GolpeA: limpo, GolpeB: limpo, GolpeV: limpo });
-  r = await ag(A, ips.A, { type: 'gangOp', kind: 'hit', target: 'GolpeV' }); assert.equal(r.status, 200, JSON.stringify(r.body)); assert.equal(r.body.me.energy, 80);
+  r = await ag(A, ips.A, { type: 'gangOp', kind: 'hit', target: 'GolpeV' }); assert.equal(r.status, 200, JSON.stringify(r.body)); assert.equal(r.body.me.vigor, CFG.vigor.max - CFG.pvp.energy);
   r = await ag(V, ips.V, { type: 'gangJoin', id: gid }); assert.equal(r.body.result.joined, true);
-  g = await gangue(A, ips.A); assert.equal(g.mine.op, null); assert.equal(g.mine.last.cancelled, true); assert.equal(g.mine.last.gone, true); assert.equal((await A.estado()).energy, 100);
+  g = await gangue(A, ips.A); assert.equal(g.mine.op, null); assert.equal(g.mine.last.cancelled, true); assert.equal(g.mine.last.gone, true); assert.equal((await A.estado()).vigor, CFG.vigor.max, 'a energia volta');
 });
 
 test('gangues: cargos — subchefe e capitães com as permissões certas, limites, sucessão da chefia e tudo gravado', async () => {
@@ -977,30 +987,26 @@ test('bolsa: limites de venda — recusa limites do lado errado, guarda-os e ven
   await mexer({}); assert.equal((await A.estado()).cash, 100_000 - pago + recebe);
 });
 
-test('fábricas e contabilista: produção em droga para a stash, armazém de 24 h com a parte dele, e nada disto se faz sem ter o negócio ou o nível', async () => {
+test('contabilista: armazém de 24 h com a parte dele, só com o nível; já não há fábricas de droga', async () => {
   ENV_EXTRA = { ATOS_3S: '100000', ATOS_MIN: '1000000' };
   const A = await contaNova('Fabrica', '10.0.9.111'); await A.estado();
   const ip = '10.0.9.111', ag = (body) => cru(A.cookie, ip, body), cfg = await (await fetch(BASE + '/api/config')).json();
-  const iErva = cfg.biz.findIndex((x) => x.id === 'erva'), iLav = cfg.biz.findIndex((x) => x.id === 'lavandaria'), d = cfg.biz[iErva].drug;
-  assert.ok(d >= 0 && cfg.drugs[d].id === 'erva'); assert.equal(cfg.biz[iLav].drug, -1); assert.deepEqual(cfg.accountant, { price: 25000, minLevel: 2, capMult: 3, feeBp: 1000 });   // o nível 3 das rondas (10 de respeito) é o 2 dos 100
+  const iLav = cfg.biz.findIndex((x) => x.id === 'lavandaria');
+  assert.ok(cfg.biz.every((x) => x.drug === -1)); assert.deepEqual(cfg.accountant, { price: 25000, minLevel: 2, capMult: 3, feeBp: 1000 });   // o nível 3 das rondas (10 de respeito) é o 2 dos 100
   let r = await ag({ type: 'acct' }); assert.equal(r.body.error, 'LOW_LEVEL');
-  r = await ag({ type: 'bizGoods', i: iErva, on: true }); assert.equal(r.body.error, 'NO_BIZ');
-  await mexer({ Fabrica: (e) => { e.cash = 1_000_000; e.bank = 0; e.respect = 3000; e.peakRespect = 3000; } });
-  r = await ag({ type: 'buyBiz', i: iErva }); assert.equal(r.status, 200, JSON.stringify(r.body));
   r = await ag({ type: 'bizGoods', i: iLav, on: true }); assert.equal(r.body.error, 'NO_BIZ');
-  for (const x of [-1, 99, 'a', 0.5]) { r = await ag({ type: 'bizGoods', i: x, on: true }); assert.equal(r.body.error, 'NO_BIZ'); }
-  r = await ag({ type: 'bizGoods', i: iErva, on: true }); assert.equal(r.status, 200, JSON.stringify(r.body)); assert.equal(r.body.me.biz[iErva].g, true); assert.equal(r.body.me.acct, false);
-  r = await ag({ type: 'acct' }); assert.equal(r.status, 200, JSON.stringify(r.body)); assert.equal(r.body.me.acct, true); const c1 = r.body.me.cash;
+  await mexer({ Fabrica: (e) => { e.cash = 1_000_000; e.bank = 0; e.respect = 3000; e.peakRespect = 3000; } });
+  r = await ag({ type: 'buyBiz', i: iLav }); assert.equal(r.status, 200, JSON.stringify(r.body)); assert.equal(r.body.me.cash, 1_000_000 - cfg.biz[iLav].price);
+  r = await ag({ type: 'bizGoods', i: iLav, on: true }); assert.equal(r.body.error, 'NO_BIZ');
+  r = await ag({ type: 'acct' }); assert.equal(r.status, 200, JSON.stringify(r.body)); assert.equal(r.body.me.acct, true); const c1 = r.body.me.cash, b1 = r.body.me.bank;
   r = await ag({ type: 'acct' }); assert.equal(r.body.error, 'ACCT_HAVE'); assert.equal((await A.estado()).cash, c1);
-  // 20 h depois (recuando o relógio do negócio): há 20 h guardadas, a parte dele é 10% das 12 h a mais e o resto sai em erva ao preço de grosso
-  await mexer({ Fabrica: (e) => { e.biz[iErva].t -= 20 * 3600_000; e.biz[iErva].stored = 0; e.biz[iErva].rem = 0; } });
-  const me = await A.estado(), perH = me.biz[iErva].perH, guardado = me.biz[iErva].stored, taxa = me.biz[iErva].fee;
+  // 20 h depois (recuando o relógio do negócio): há 20 h guardadas e a parte dele é 10% das 12 h a mais; a lavandaria paga para o banco
+  await mexer({ Fabrica: (e) => { e.biz[iLav].t -= 20 * 3600_000; e.biz[iLav].stored = 0; e.biz[iLav].rem = 0; } });
+  const me = await A.estado(), perH = me.biz[iLav].perH, guardado = me.biz[iLav].stored, taxa = me.biz[iLav].fee;
   assert.ok(guardado >= perH * 20 && guardado <= perH * 20 + perH, 'guardado ' + guardado); assert.equal(taxa, Math.floor(((guardado - perH * 8) * 1000) / 10000));
   r = await ag({ type: 'collect' }); assert.equal(r.status, 200, JSON.stringify(r.body));
-  const it = r.body.result.items.find((x) => x.biz === 'erva'), grosso = Math.max(1, Math.floor((cfg.drugs[d].price * cfg.goods.wholesaleBp) / 10000));
-  assert.equal(it.fee, taxa); assert.ok(it.lost === 0 || it.lost === Math.floor((guardado - taxa) / 2)); assert.equal(it.money, guardado - taxa - it.lost);
-  assert.equal(it.units, Math.floor(it.money / grosso)); assert.equal(it.rest, it.money - it.units * grosso);
-  assert.equal(r.body.me.stock[d], it.units); assert.equal(r.body.me.cash, c1 + it.rest, 'em dinheiro só entra o troco');
+  const it = r.body.result.items.find((x) => x.biz === 'lavandaria');
+  assert.equal(it.fee, taxa); assert.equal(it.money, guardado - taxa); assert.equal(r.body.me.bank, b1 + it.money); assert.equal(r.body.me.cash, c1);
 });
 
 test('registo: o email é obrigatório, tem de ter forma de email, é um por conta e nunca sai em resposta nenhuma', async () => {

@@ -10,6 +10,8 @@
 //   5. jogar o dobro rende menos do que o dobro (a rua aquece), para valer a pena variar em vez de repetir.
 
 const SEED = +(process.argv[2] ?? 1), N = +(process.argv[3] ?? 300), DIAS = +(process.argv[4] ?? 365);
+// para comparar com o motor (dev/sim-motor.mjs) enquanto ele ainda não tem estes sistemas: SEM_EMPREGO=1, SEM_OPS=1, SEM_GASTOS=1
+const SEM = { emprego: process.env.SEM_EMPREGO === '1', ops: process.env.SEM_OPS === '1', gastos: process.env.SEM_GASTOS === '1' };
 function rngDe(s) { let a = s >>> 0; return () => { a |= 0; a = (a + 0x6d2b79f5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
 
 // ---------- números do modelo (os que vão para a wiki) ----------
@@ -109,10 +111,10 @@ function simula(perfil, rng) {
     let barras = A.barras, entra = 0, sai = 0;
     // cursos: começa o próximo se tiver dinheiro; acaba ao fim dos dias
     const prox = P.empregos[s.emprego + 1];
-    if (!s.curso && prox && (!prox.nivel || nv >= prox.nivel) && s.cash > prox.curso.preco * 2) { s.curso = { fim: d + prox.curso.dias }; sai += prox.curso.preco; }
+    if (!SEM.emprego && !s.curso && prox && (!prox.nivel || nv >= prox.nivel) && s.cash > prox.curso.preco * 2) { s.curso = { fim: d + prox.curso.dias }; sai += prox.curso.preco; }
     if (s.curso && d >= s.curso.fim) { s.emprego++; s.curso = null; }
     // emprego: 6 turnos por dia, pagos com energia. Todos os fazem
-    const turnos = P.turnos;
+    const turnos = SEM.emprego ? 0 : P.turnos;
     entra += (P.empregos[s.emprego].dia * P.mesesPorDia * turnos) / P.turnos; s.resp += turnos * P.resp.turno;   // os turnos gastam energia (a barra do ginásio e das lutas), não a stamina dos crimes
     let crime = 0;
     // venda de droga: primeiro, até ao limite da clientela
@@ -135,20 +137,20 @@ function simula(perfil, rng) {
       if (rng() < o.p) { crime += o.ganho; s.resp += P.resp.op(o.ganho); }
       else { const adv = P.falhaOp.advogado[0] + rng() * (P.falhaOp.advogado[1] - P.falhaOp.advogado[0]) * (o.custo > 2000 ? 1 : 0.1); if (!s.avenca) sai += adv; }
     }
-    if (!s.op && d >= s.pausaAte && perfil !== 'casual') {
+    if (!SEM.ops && !s.op && d >= s.pausaAte && perfil !== 'casual') {
       const vale = (x) => (x.p * x.ganho - x.custo) / (Math.max(1, Math.ceil(x.dias)) + x.pausa);   // o que rende por dia, contando a pausa
       const o = P.ops.filter((x) => nv >= x.nivel && s.cash > x.custo * 3).sort((x, y) => vale(y) - vale(x))[0];
       if (o) { s.op = { o, fim: d + Math.max(1, Math.ceil(o.dias)) }; sai += o.custo + (o.custo > 2000 ? P.suborno * o.ganho : 0); }
     }
     // lavagem e equipa
     s.ilegal += crime;
-    if (s.ilegal > P.lavagem.acimaDe) crime *= 1 - P.lavagem.parte;
+    if (!SEM.gastos && s.ilegal > P.lavagem.acimaDe) crime *= 1 - P.lavagem.parte;
     entra += crime;
     // vida: sobe de degrau quando pode
     s.media = s.media == null ? entra : s.media * 0.8 + entra * 0.2;   // o que se ganha por dia, alisado
-    s.avenca = nv >= P.avenca.nivel && P.avenca.dia <= s.media * P.avenca.parte;
+    s.avenca = !SEM.gastos && nv >= P.avenca.nivel && P.avenca.dia <= s.media * P.avenca.parte;
     if (s.avenca) sai += P.avenca.dia;
-    if (nv >= P.segurancas.nivel) sai += P.segurancas.dia * Math.min(P.segurancas.max, Math.floor((s.media * P.segurancas.parte) / P.segurancas.dia));
+    if (!SEM.gastos && nv >= P.segurancas.nivel) sai += P.segurancas.dia * Math.min(P.segurancas.max, Math.floor((s.media * P.segurancas.parte) / P.segurancas.dia));
     const cabe = (i) => { const t = P.vida[i]; return t && t.dia * P.mesesPorDia <= s.media * P.parteDaVida && (!t.compra || s.casa >= t.compra || s.cash + entra - sai > t.compra * 1.3); };
     let alvo = 0; for (let j = 1; j < P.vida.length; j++) if (cabe(j)) alvo = j;
     if (alvo !== s.vida) { s.vida = alvo; const t = P.vida[alvo]; if (t.compra && s.casa < t.compra) { sai += t.compra - s.casa; s.casa = t.compra; if (!s.tetoDia) s.tetoDia = d; if (!s.casaDia && t.compra >= P.casaASerio) s.casaDia = d; } }

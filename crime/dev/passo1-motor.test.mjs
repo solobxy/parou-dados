@@ -33,13 +33,13 @@ test('o nível nunca desce: conta o maior respeito que já se teve', () => {
   p.respect = 10; assert.equal(E.level(p), L);
 });
 
-test('economia antiga igual até ao passo 2: os números usam a escala antiga (tier)', () => {
+test('o porto continua na escala antiga até às operações (passo 5); o casino já está em euros (passo 2)', () => {
   for (const r of [0, 3, 79, 80, 600, 2800, 2801, 15000, 46000, 300000]) {
     const p = mk(); setResp(p, r);
     const L = oldLevel(r);
     assert.equal(E.tier(p), L, `tier com ${r}`);
-    let cas = 1000, cap = 1000; for (let i = 1; i < L; i++) { cas = Math.floor((cas * 8) / 5); cap = Math.floor((cap * 8) / 5); }
-    assert.equal(E.casinoMax(p), cas, `aposta máxima com ${r}`);
+    let cap = 1000; for (let i = 1; i < L; i++) cap = Math.floor((cap * 8) / 5);
+    assert.ok([5, 20, 50, 1000].includes(E.casinoMax(p)), `aposta máxima com ${r}`);
     assert.equal(E.portCap(p), cap, `carregamento máximo com ${r}`);
     assert.equal(E.portSlots(p), 1 + Math.floor(L / 5), `lugares no porto com ${r}`);
   }
@@ -59,21 +59,21 @@ test('o que se desbloqueia por nível passa para a escala nova com o mesmo respe
     assert.ok(g.level >= 1 && g.level <= 100, `${kind} ${g.id}`);
   }
   assert.equal(CFG.tools.find((g) => g.id === 'broca').level, lvAt(15));
-  assert.equal(CFG.weapons.find((g) => g.id === 'minigun').level, lvAt(16));
+  assert.equal(CFG.weapons.find((g) => g.id === 'minigun'), undefined, 'a minigun saiu no passo 2');
 });
 
-test('subir de nível só enche a stamina quando sobe a escala antiga (como antes)', () => {
+test('subir de nível já não enche a stamina (passo 2), nem na escala antiga', () => {
   // de 124 para 125 sobe o nível novo (5 → 6) mas não a escala antiga (fica em 5, de 80 a 179)
   const a = E.newPlayer('y', START, world); a.energy = 10;
   assert.equal(newLevel(124), 5); assert.equal(newLevel(125), 6); assert.equal(oldLevel(124), oldLevel(125));
-  // um golpe que dá respeito: o carteirista dá 1
+  // um golpe que dá respeito (o carteirista dá uns 2 a 3 no nível 5)
   a.respect = a.peakRespect = 124; const t = START + T.MIN;
   const r = E.doCrime(a, t, world, 0, always);
   assert.ok(r.levelUp && r.levelUp.to === 6, 'o nível novo subiu e vem no resultado');
   assert.equal(a.energy, 10 - CFG.crimes[0].e, 'a stamina não encheu');
   const b = E.newPlayer('z', START, world); b.respect = b.peakRespect = 179; b.energy = 10;   // 180 = escala antiga 6
   E.doCrime(b, t, world, 0, always);
-  assert.equal(b.energy, CFG.energy.max, 'subir a escala antiga enche a stamina, como nas rondas');
+  assert.equal(b.energy, 10 - CFG.crimes[0].e, 'subir a escala antiga também já não enche');
 });
 
 test('começa-se com 50 €', () => {

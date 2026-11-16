@@ -3,6 +3,7 @@
 // e, quando há sorte envolvida, um gerador aleatório. Tudo em inteiros.
 
 import { CFG, T } from './config.js';
+import { localParts } from './time.js';
 
 export class GameError extends Error {
   constructor(code, extra = {}) { super(code); this.code = code; Object.assign(this, extra); }
@@ -21,6 +22,9 @@ export function newPlayer(id, now, world, opts = {}) {
     id, joinedAt: now, t: now,
     stats,
     energy: CFG.energy.max, energyT: now,
+    vigor: CFG.vigor.max, vigorT: now,      // energia: ginásio e lutas (a stamina, «energy», é dos crimes)
+    rua: null, rf: null, dl: null, rc: 0, dst: CFG.deal.list.map(() => 0),   // calor da rua, barras de stamina compradas e vendas de droga, de hoje
+    eco: 2,                                 // economia nova (16/11/2026)
     addiction: 0, addictionT: now,
     cash: CFG.start.cash, bank: 0,
     respect: 0, respectAt: now, peakRespect: 0,
@@ -90,12 +94,68 @@ function migrate(p) {
   if (!Array.isArray(p.gbz) || p.gbz.length !== CFG.gang.biz.length) p.gbz = gbzNew();
   p.gh = [];   // (antigo contador de golpes em grupo por dia: já não há limite)
   if (!Array.isArray(p.titles)) p.titles = [];
+  if (!Number.isSafeInteger(p.vigor)) { p.vigor = CFG.vigor.max; p.vigorT = p.t || 0; }
+  if (!Array.isArray(p.dst) || p.dst.length !== CFG.deal.list.length) p.dst = CFG.deal.list.map((_, j) => (Array.isArray(p.dst) && Number.isSafeInteger(p.dst[j]) ? p.dst[j] : 0));
+  if (p.eco !== 2) ecoNova(p);
+}
+
+// Economia nova (passo 2): quem jogou com os preços antigos recebe de volta o que pagou pelo que deixou de existir ou mudou de
+// preço (casa e melhorias, armas, proteções, guardas, ferramentas, armas de gangue, negócios, luxos e droga guardada) e fica com
+// essas coisas a zero. O dinheiro, o respeito, as stats e o resto ficam.
+const OLD = {
+  house: [0, 2000, 10000, 50000, 250000, 1000000, 5000000, 20000000],
+  weapons: [500, 3000, 20000, 120000, 700000, 4000000, 12000000, 30000000], armors: [400, 2500, 18000, 110000, 650000, 3800000],
+  guards: [600, 4000, 25000, 150000, 900000, 5000000], tools: [500, 1200, 3500, 10000, 30000, 80000, 180000, 250000],
+  gweapons: [1000, 2500, 7000, 20000, 55000, 120000, 160000, 200000], biz: [3000, 8000, 25000, 120000, 500000],
+  drugs: [5, 25, 90, 200, 600, 1000, 1500, 4000, 8000, 15, 40, 60, 800, 2500, 5000],
+  club: [10000, 30000, 90000, 270000, 800000, 2400000, 7000000, 20000000], bro: [8000, 40000, 200000, 800000, 2500000], hire: [3000, 12000, 45000, 160000],
+};
+function ecoNova(p) {
+  let back = 0;
+  const h = Number.isSafeInteger(p.house) ? Math.min(p.house, OLD.house.length - 1) : 0;
+  for (let i = 1; i <= h; i++) back += OLD.house[i];
+  if (Array.isArray(p.hu)) for (const n of p.hu) for (let l = 1; l <= Math.min(n || 0, h); l++) back += Math.floor(OLD.house[l] / 4);
+  for (const [k, list] of [['weapon', OLD.weapons], ['armor', OLD.armors], ['guard', OLD.guards], ['tool', OLD.tools], ['gweapon', OLD.gweapons]]) {
+    const idx = Number.isInteger(p[k]) ? Math.min(p[k], list.length - 1) : -1;
+    for (let i = 0; i <= idx; i++) back += list[i];
+    p[k] = -1;
+  }
+  if (Array.isArray(p.biz)) p.biz.forEach((b, i) => { if (!b) return; let pr = OLD.biz[i] || 0; for (let n = 0; n < (b.n || 0); n++) { back += pr; pr += Math.floor(pr / 2); } back += Number.isSafeInteger(b.stored) && b.stored > 0 ? b.stored : 0; });
+  for (let i = 0; i < (p.luxuries || 0); i++) back += 250000 * 2 ** i;
+  // discoteca e bordel: o que custaram (níveis e putas contratadas) e o que estava no caixa
+  for (const [k, list] of [['club', OLD.club], ['bro', OLD.bro]]) {
+    const v = p[k]; if (!v || typeof v !== 'object') continue;
+    for (let l = 0; l < Math.min(v.lvl || 0, list.length); l++) back += list[l];
+    if (k === 'bro' && Array.isArray(v.girls)) for (const i of v.girls) { const g = CFG.hookers.list[i]; if (g) back += OLD.hire[g.tier] || 0; }
+    back += Number.isSafeInteger(v.till) && v.till > 0 ? v.till : 0;
+    p[k] = null;
+  }
+  if (Array.isArray(p.gbz)) for (const g of p.gbz) if (g) { back += (g.inv || 0) + (g.stored || 0); g.inv = 0; g.stored = 0; g.rem = 0; g.coop = 0; }   // negócios da gangue: o que lá estava volta
+  if (Array.isArray(p.stock)) p.stock.forEach((n, d) => { if (n > 0) back += Math.floor((n * (OLD.drugs[d] || 0) * 8) / 10); });
+  p.cash = (p.cash || 0) + back;
+  p.house = 0; p.hu = []; p.luxuries = 0;
+  p.biz = CFG.biz.map(() => ({ n: 0, stored: 0, rem: 0, t: p.t || 0 }));
+  p.stock = CFG.drugs.map(() => 0); p.hold = [];
+  p.rua = null; p.rf = null; p.dl = null;
+  if (p.energy > CFG.energy.max) p.energy = CFG.energy.max;
+  p.eco = 2;
 }
 
 // ---------- tempo ----------
 
+// stamina máxima: a da casa
+export const energyMax = (p) => (CFG.house.tiers[p.house] || CFG.house.tiers[0]).emax || CFG.energy.max;
+function syncVigor(p, now) {
+  const { max, regenMs } = CFG.vigor;
+  if (p.vigor >= max) { p.vigorT = now; return; }
+  const ticks = Math.floor((now - p.vigorT) / regenMs);
+  if (ticks <= 0) return;
+  const gain = Math.min(ticks, max - p.vigor);
+  p.vigor += gain;
+  p.vigorT = p.vigor >= max ? now : p.vigorT + gain * regenMs;
+}
 function syncEnergy(p, now) {
-  const { max, regenMs } = CFG.energy;
+  const { regenMs } = CFG.energy, max = energyMax(p);
   if (p.energy >= max) { p.energyT = now; return; }
   const ticks = Math.floor((now - p.energyT) / regenMs);
   if (ticks <= 0) return;
@@ -123,6 +183,7 @@ export function touch(p, now) {
   if (now < p.t) fail('TIME_BACKWARDS');
   migrate(p);
   syncEnergy(p, now);
+  syncVigor(p, now);
   syncAddiction(p, now);
   if (p.addiction > addictionCap(p)) p.addiction = addictionCap(p); // limite mudou nas regras
   if (p.jailUntil && p.jailUntil <= now) { p.jailUntil = 0; p.jailTier = 0; }
@@ -160,15 +221,17 @@ export function addictionCap(p) { return CFG.addiction.base + (klass(p).capPlus 
 
 function addRespect(p, delta, now) {
   if (delta === 0) return null;
-  const before = level(p), tb = tier(p);
+  const before = level(p);
   p.respect = Math.max(0, p.respect + delta);
   if (p.respect > p.peakRespect) p.peakRespect = p.respect;
   p.respectAt = now;
   const after = level(p);
-  // subir na escala antiga enche a stamina, como nas rondas (até à economia nova; com 100 níveis encheria vezes de mais)
-  if (tier(p) > tb && p.energy < CFG.energy.max) { p.energy = CFG.energy.max; p.energyT = now; }
+  // economia nova: subir de nível já não enche a stamina (com 100 níveis seria uma barra de borla a cada passo; o modelo não a tem)
   return after !== before ? { from: before, to: after } : null;
 }
+
+// o dia de Lisboa de um instante, como 'AAAA-MM-DD'
+export function dayOf(now) { const d = localParts(now); return d.y + '-' + String(d.m).padStart(2, '0') + '-' + String(d.d).padStart(2, '0'); }
 
 // ---------- épocas ----------
 // O mundo não acaba; de 28 em 28 dias recomeça só a classificação. Cada jogador entra na época com a divisão do nível
@@ -249,7 +312,7 @@ export function gangOrphan(p) {
 // ---- negócios da gangue ----
 // p.gbz[k] = { inv: o que este membro lá pôs, coop: bónus de grupo em pontos (quem o escreve é gangBizSync), stored/rem/t: rendimento por receber }
 function gbzNew() { return CFG.gang.biz.map(() => ({ inv: 0, coop: 0, stored: 0, rem: 0, t: 0 })); }
-export function gangBizCap(p, k) { return casinoMax(p) * CFG.gang.biz[k].capMult; }
+export function gangBizCap(p, k) { return level(p) * CFG.gang.bizCapPerLevel * CFG.gang.biz[k].capMult; }
 export function gangBizRate(p, k) { const s = p.gbz[k]; return up(Math.floor((s.inv * CFG.gang.biz[k].rateBp) / 10000), s.coop); }   // por hora
 function settleGbz(p, k, now) {
   const s = p.gbz[k];
@@ -366,17 +429,19 @@ export function setAvatar(p, now, world, i) {
   p.av = i;
   return { ok: true, av: i };
 }
-const huBp = (p, i) => (p.hu ? p.hu[i] * CFG.house.ups[i].bp : 0);
+const huBp = (p, i) => (p.hu && CFG.house.ups[i] ? (p.hu[i] || 0) * CFG.house.ups[i].bp : 0);   // (já não há melhorias da casa)
 export function bustChanceBp(p, now) { return cut(cut(cut(CFG.bustBp, klass(p).bustCutBp || 0), buffBp(p, 'bust', now)), huBp(p, 2)); }
 // ---------- casa ----------
-export function housePrice(p) { const n = CFG.house.tiers[p.house + 1]; return n ? n.price : null; }
+// a casa seguinte paga-se com a antiga na troca, pelo que ela custou
+export function housePrice(p) { const n = CFG.house.tiers[p.house + 1]; return n ? n.price - CFG.house.tiers[p.house].price : null; }
 export function buyHouse(p, now, world) {
   begin(p, now, world, { allowBusy: true });
   const n = CFG.house.tiers[p.house + 1];
   if (!n) fail('HOUSE_MAX');
-  pay(p, n.price);
+  const price = housePrice(p);
+  pay(p, price);
   p.house += 1;
-  return { ok: true, price: n.price, respect: n.resp, levelUp: addRespect(p, n.resp, now) };
+  return { ok: true, price, respect: n.resp, levelUp: addRespect(p, n.resp, now) };
 }
 export function upgradePrice(p, u) {
   const g = CFG.house.ups[u], n = CFG.house.tiers[p.hu[u] + 1];
@@ -401,26 +466,22 @@ export function chanceBp(S, D) {
   return clamp(Math.floor((10000 * s2) / (s2 + d2)), minBp, maxBp);
 }
 
-// força fixa do equipamento que se usa nos golpes (ferramenta a solo, arma de gangue em grupo)
+// força fixa do equipamento que se usa nos golpes em grupo (arma de gangue)
 const gearStr = (list, idx) => (idx >= 0 && list[idx] ? list[idx].str : 0);
-export function crimeScore(p, k, now) {
-  const { w } = CFG.crimes[k];
-  return Math.floor((w.I * effStat(p, 'I', now) + w.F * effStat(p, 'F', now) + w.C * effStat(p, 'C', now)) / 100) + gearStr(CFG.tools, p.tool);
+// Golpes de rua (base nova): a hipótese é a do golpe e abrem pelo nível. As ferramentas voltam com as operações (passo 5).
+export function crimeScore(p, k) { return CFG.crimes[k].p; }
+export function toolPreview() { return null; }
+export function crimeChanceBp(p, k) { return CFG.crimes[k].p; }
+export function crimeUnlocked(p, k) { return level(p) >= CFG.crimes[k].level; }
+// média do que se leva quando corre bem (sem bónus)
+export const crimeEv = (c) => c.prizes.reduce((s, [bp, a, z]) => s + (bp * (a + z)) / 2, 0) / 10000;
+// calor da rua: a barra de golpes em que se vai hoje (cada 100 de stamina gasta em golpes de rua no mesmo dia)
+function heatOf(p, now) {
+  const H = CFG.street.heat, used = p.rua && p.rua.d === dayOf(now) ? p.rua.e : 0;
+  return H[Math.min(H.length - 1, Math.floor(used / 100))];
 }
-// O que a próxima ferramenta muda: o golpe mais difícil que fica aberto com ela, com a hipótese de agora e a de depois.
-export function toolPreview(p, now) {
-  const T = CFG.tools[p.tool + 1];
-  if (!T) return null;
-  const add = T.str - gearStr(CFG.tools, p.tool);
-  let k = 0;
-  for (let j = CFG.crimes.length - 1; j > 0; j--) if (chanceBp(crimeScore(p, j) + add, CFG.crimes[j].D) >= CFG.unlockBp) { k = j; break; }
-  return { k, from: crimeChanceBp(p, k, now), to: chanceBp(crimeScore(p, k, now) + add, CFG.crimes[k].D), opens: !crimeUnlocked(p, k) };
-}
-
-// com «now» conta os efeitos temporários; sem ele, só as stats (é o que desbloqueia golpes)
-export function crimeChanceBp(p, k, now) { return chanceBp(crimeScore(p, k, now), CFG.crimes[k].D); }
-
-export function crimeUnlocked(p, k) { return k === 0 || crimeChanceBp(p, k) >= CFG.unlockBp; }
+export function streetView(p, now) { const d = dayOf(now), used = p.rua && p.rua.d === d ? p.rua.e : 0; return { used, heatBp: heatOf(p, now) }; }
+const gunIdx = () => CFG.weapons.findIndex((w) => w.id === CFG.street.gun);
 
 // ---------- crimes ----------
 
@@ -455,67 +516,82 @@ export function doCrime(p, now, world, k, rng) {
   const c = Number.isInteger(k) ? CFG.crimes[k] : undefined;
   if (!c) fail('NO_CRIME');
   begin(p, now, world);
-  if (!crimeUnlocked(p, k)) fail('LOCKED');
+  if (!crimeUnlocked(p, k)) fail('LOCKED', { need: c.level });
   if (p.energy < c.e) fail('NO_ENERGY', { need: c.e });
-  const bp = crimeChanceBp(p, k, now);
+  if (c.gun && p.weapon < gunIdx()) fail('NEED_GUN');
+  const ammo = c.gun ? CFG.street.ammo : 0;
+  if (ammo) pay(p, ammo);   // balas e desgaste da arma: paga-se antes, corra bem ou mal
+  const bp = c.p, heatBp = heatOf(p, now), d = dayOf(now);
   settleAllBiz(p, now); // a prática pode subir stats: o rendimento até aqui conta com as antigas
   p.energy -= c.e;
+  p.rua = { d, e: (p.rua && p.rua.d === d ? p.rua.e : 0) + c.e };
   // o primeiro carteirista de quem ainda não tem respeito nenhum corre sempre bem: a primeira jogada não pode ser a prisão
   const first = k === 0 && p.peakRespect === 0;
   if (first || rng.chance(bp)) {
     const starsBefore = masteryStars(p, k);
-    let money = Math.floor((rng.int(c.min, c.max) * (10000 + CFG.mastery.bonusBp * starsBefore + (klass(p).lootBp || 0) + buffBp(p, 'loot', now) + gbp(p, 'loot'))) / 10000);
-    const crit = rng.chance(CFG.crit.chanceBp);
-    if (crit) money *= CFG.crit.mult;
+    // o que vem é à sorte: escolhe-se a linha da tabela e depois o valor dentro dela
+    let roll = rng.int(0, 9999), row = c.prizes[c.prizes.length - 1];
+    for (const pr of c.prizes) { if (roll < pr[0]) { row = pr; break; } roll -= pr[0]; }
+    const base = rng.int(row[1], row[2]);
+    const bonus = 10000 + CFG.mastery.bonusBp * starsBefore + (klass(p).lootBp || 0) + buffBp(p, 'loot', now) + gbp(p, 'loot');
+    const money = Math.floor((Math.floor((base * bonus) / 10000) * heatBp) / 10000);
     p.cash += money;
     p.c.crimes += 1; p.c.wins += 1; p.wk[k] += 1;
     const stars = masteryStars(p, k);
-    const resp = c.r + Math.floor((c.r * (klass(p).respBp || 0)) / 10000);   // profissões de elite: mais respeito nos golpes grandes (arredonda para baixo)
+    // respeito: uma barra de golpes vale 20 + 2 por nível (até 120), vezes o calor; dá-se nos golpes que correm bem
+    const S = CFG.street, perBar = Math.min(S.respCap, S.respBase + S.respPerLevel * level(p));
+    // por golpe que corre bem: perBar × e/100 a dividir pela hipótese, para a barra dar em média perBar; o resto (em milésimos)
+    // fica guardado para o golpe seguinte, para não se perder nos arredondamentos
+    const milli = Math.floor((perBar * c.e * heatBp * 10) / bp) * (10000 + (klass(p).respBp || 0)) / 10000 + (p.rc || 0);
+    const resp = Math.floor(milli / 1000);
+    p.rc = Math.floor(milli - resp * 1000);
     const lvl = addRespect(p, resp, now);
     const gained = practice(p, c, true);
-    return { ok: true, success: true, money, crit, respect: resp, levelUp: lvl, chanceBp: bp, gained, newChanceBp: crimeChanceBp(p, k, now), star: stars > starsBefore ? stars : 0 };
+    return { ok: true, success: true, money, base, item: row[3], crit: false, respect: resp, levelUp: lvl, chanceBp: bp, heatBp, ammo, gained, newChanceBp: bp, star: stars > starsBefore ? stars : 0 };
   }
   p.c.crimes += 1;
-  // falhar não é sempre prisão: só uma parte das falhas acaba com a polícia
+  // falhar não é sempre prisão: uma falha em quatro é apanhada
   const busted = rng.chance(bustChanceBp(p, now));
   if (busted) { p.jailUntil = now + c.jailMin * T.MIN; p.jailTier = k + 1; }
   const gained = practice(p, c, false);
-  return { ok: true, success: false, busted, jailUntil: p.jailUntil, chanceBp: bp, gained, newChanceBp: crimeChanceBp(p, k, now) };
+  return { ok: true, success: false, busted, jailUntil: p.jailUntil, chanceBp: bp, heatBp, ammo, gained, newChanceBp: bp };
 }
 
-// «usar a stamina toda»: repete o mesmo golpe tantas vezes quantas a stamina de agora dá (no máximo 25).
-// Para se fores preso. Se subires de nível a meio, a stamina que isso enche fica para ti.
-// Cada golpe é exatamente igual a um toque no botão; isto só poupa toques.
+// «usar a stamina toda»: repete o mesmo golpe tantas vezes quantas a stamina de agora dá (no máximo crimeAllMax).
+// Para se fores preso ou se acabar o dinheiro das balas. Cada golpe é exatamente igual a um toque no botão; isto só poupa toques.
 export function doCrimeAll(p, now, world, k, rng) {
   const c = Number.isInteger(k) ? CFG.crimes[k] : undefined;
   if (!c) fail('NO_CRIME');
   begin(p, now, world);
-  if (!crimeUnlocked(p, k)) fail('LOCKED');
+  if (!crimeUnlocked(p, k)) fail('LOCKED', { need: c.level });
   if (p.energy < c.e) fail('NO_ENERGY', { need: c.e });
-  const out = { ok: true, all: true, n: 0, wins: 0, crits: 0, money: 0, best: 0, bestCrit: false, respect: 0,
-    busted: false, jailUntil: 0, levelUp: null, gained: {}, star: 0, chanceBp: crimeChanceBp(p, k, now), newChanceBp: 0 };
+  if (c.gun && p.weapon < gunIdx()) fail('NEED_GUN');
+  if (c.gun && p.cash + p.bank < CFG.street.ammo) fail('NO_MONEY', { need: CFG.street.ammo, have: p.cash + p.bank });
+  const out = { ok: true, all: true, n: 0, wins: 0, crits: 0, money: 0, best: 0, bestCrit: false, bestItem: null, respect: 0, ammo: 0,
+    busted: false, jailUntil: 0, levelUp: null, gained: {}, star: 0, chanceBp: c.p, heatBp: heatOf(p, now), newChanceBp: c.p, items: {} };
   const budget = Math.min(CFG.crimeAllMax, Math.floor(p.energy / c.e));
-  while (out.n < budget && p.energy >= c.e) {
+  while (out.n < budget && p.energy >= c.e && (!c.gun || p.cash + p.bank >= CFG.street.ammo)) {
     const r = doCrime(p, now, world, k, rng);
-    out.n += 1;
+    out.n += 1; out.ammo += r.ammo;
     for (const [s, g] of Object.entries(r.gained)) out.gained[s] = (out.gained[s] || 0) + g;
     if (r.success) {
       out.wins += 1; out.money += r.money; out.respect += r.respect;
-      if (r.crit) out.crits += 1;
-      if (r.money > out.best) { out.best = r.money; out.bestCrit = r.crit; }
+      out.items[r.item] = (out.items[r.item] || 0) + 1;
+      if (r.money > out.best) { out.best = r.money; out.bestItem = r.item; }
       if (r.star) out.star = r.star;
       if (r.levelUp) out.levelUp = { from: out.levelUp ? out.levelUp.from : r.levelUp.from, to: r.levelUp.to };
     } else if (r.busted) { out.busted = true; out.jailUntil = r.jailUntil; break; }
   }
-  out.newChanceBp = crimeChanceBp(p, k, now);
+  out.heatEnd = heatOf(p, now);
   return out;
 }
 
+// multa/fiança: a do golpe que te prendeu, proporcional ao tempo que falta
 export function bailCost(p, now) {
   if (!(p.jailUntil > now)) return 0;
-  const c = CFG.crimes[p.jailTier - 1];
+  const c = CFG.crimes[p.jailTier - 1] || CFG.crimes[CFG.crimes.length - 1];
   const left = p.jailUntil - now, total = c.jailMin * T.MIN;
-  const full = cut(Math.floor(((c.min + c.max) / 2) * CFG.bailBp / 10000), klass(p).bailCutBp || 0);
+  const full = cut(c.fine, klass(p).bailCutBp || 0);
   return Math.max(1, Math.ceil((full * Math.min(left, total)) / total));
 }
 
@@ -576,9 +652,11 @@ export function hookerSteps(p, i, now) {
 }
 export const hookerUses = (p, now) => p.hkN.reduce((s, _, i) => s + hookerSteps(p, i, now), 0);
 export const detoxUses = (p, now) => recent(p.detoxT, now, CFG.detox.windowMs);
+// o preço é o da escada de stamina do dia (a das barras a droga) pelo que ela dá, vezes o dela; mais 4% por cada degrau dela
 export function hookerPrice(p, i, now) {
   const H = CFG.hookers, g = H.list[i];
-  let price = Math.max(g.min, Math.floor((Math.floor(valuePerEnergy(p) * 100) * g.e * g.valueBp) / 1000000));
+  const from = now !== undefined && p.rf && p.rf.d === dayOf(now) ? p.rf.e : 0;
+  let price = Math.max(1, Math.ceil((refillCost(from, g.e) * g.valueBp) / 10000));
   const n = Math.min(hookerSteps(p, i, now), H.maxSteps); // só conta, não mexe: uma visita recusada não muda nada
   for (let k = 0; k < n; k++) price = Math.ceil((price * H.stepNum) / H.stepDen);
   return Math.max(1, cut(price, klass(p).hkCutBp || 0));
@@ -588,15 +666,16 @@ export function visitHooker(p, now, world, i, rng) {
   if (!g) fail('NO_HOOKER');
   begin(p, now, world);
   if (p.sick) fail('SICK');
-  if (p.energy >= CFG.energy.max) fail('ENERGY_FULL');
+  if (p.energy >= energyMax(p)) fail('ENERGY_FULL');
   const price = hookerPrice(p, i, now);
   pay(p, price);
   return { ok: true, price, ...doVisit(p, i, now, rng, price) };
 }
 function doVisit(p, i, now, rng, base) {
   const g = CFG.hookers.list[i];
-  const got = Math.min(g.e, CFG.energy.max - p.energy);
+  const got = Math.min(g.e, energyMax(p) - p.energy), d = dayOf(now);
   p.energy += got;
+  p.rf = { d, e: (p.rf && p.rf.d === d ? p.rf.e : 0) + got };   // sobe a escada do dia como uma barra
   p.hkN[i] = Math.min(CFG.hookers.maxSteps, hookerSteps(p, i, now) + 1); p.hkAt[i] = now;   // a hora conta a partir da última visita a ela
   const sick = rng.chance(cut(g.sickBp, klass(p).sickCutBp || 0));
   if (sick) p.sick = true;
@@ -628,7 +707,7 @@ export function cure(p, now, world) {
 
 export function canBuyDrug(p, d) {
   const g = CFG.drugs[d];
-  return (g.fx || p.energy + g.e <= CFG.energy.max) && p.addiction + g.a <= addictionCap(p) && p.cash + p.bank >= drugPrice(p, d);
+  return (g.fx || p.energy + g.e <= energyMax(p)) && p.addiction + g.a <= addictionCap(p) && p.cash + p.bank >= drugPrice(p, d);
 }
 
 export function buyDrug(p, now, world, d) {
@@ -642,11 +721,11 @@ export function buyDrug(p, now, world, d) {
 }
 // quem está cheio só pode tomar o que tem efeito (a stamina a mais perde-se)
 function canTake(p, g) {
-  if (!g.fx && p.energy + g.e > CFG.energy.max) fail('ENERGY_FULL');
+  if (!g.fx && p.energy + g.e > energyMax(p)) fail('ENERGY_FULL');
   if (p.addiction + g.a > addictionCap(p)) fail('ADDICTION_LIMIT', { cap: addictionCap(p) });
 }
 function take(p, g, now) {
-  const got = Math.min(g.e, CFG.energy.max - p.energy);
+  const got = Math.min(g.e, energyMax(p) - p.energy);
   p.energy += got;
   if (p.addiction === 0) p.addictionT = now;
   p.addiction += g.a;
@@ -659,85 +738,71 @@ export function valuePerEnergy(p) {
   let best = 0;
   for (let k = 0; k < CFG.crimes.length; k++) {
     if (!crimeUnlocked(p, k)) continue;
-    const c = CFG.crimes[k];
-    const v = (crimeChanceBp(p, k) * ((c.min + c.max) / 2)) / 10000 / c.e;
+    const c = CFG.crimes[k], v = (c.p * crimeEv(c)) / 10000 / c.e;
     if (v > best) best = v;
   }
   return best;
 }
 
-// Recarga num toque: a combinação que mais compensa (energia × valor − preço), sem passar o limite de vício nem o dinheiro.
-// Programação dinâmica pequena: energia em falta (≤ 100) × vício que essa energia pode gastar.
-export function refillPlan(p) {
-  const room = CFG.energy.max - p.energy;
-  const D = CFG.drugs;
-  const minE = Math.min(...D.map((g) => g.e));
-  if (room < minE) return null;
-  const worst = Math.max(...D.map((g) => Math.ceil((g.a * room) / g.e)));
-  const vroom = Math.min(addictionCap(p) - p.addiction, worst + Math.max(...D.map((g) => g.a)));
-  if (vroom <= 0) return null;
-  const money = p.cash + p.bank;
-  const W = vroom + 1;
-  const cost = new Float64Array((room + 1) * W).fill(Infinity);
-  const from = new Int8Array((room + 1) * W).fill(-1);
-  cost[0] = 0;
-  for (let e = 0; e <= room; e++) {
-    for (let v = 0; v <= vroom; v++) {
-      const c = cost[e * W + v];
-      if (c === Infinity) continue;
-      for (let d = 0; d < D.length; d++) {
-        const ne = e + D[d].e, nv = v + D[d].a;
-        if (ne > room || nv > vroom) continue;
-        const nc = c + drugPrice(p, d), k = ne * W + nv;
-        if (nc < cost[k]) { cost[k] = nc; from[k] = d; }
-      }
-    }
-  }
-  // o que mais compensa ao preço de hoje; empate: mais energia, depois menos vício
-  const V = valuePerEnergy(p);
-  let best = null, bestGain = -Infinity;
-  for (let e = minE; e <= room; e++) {
-    for (let v = 0; v <= vroom; v++) {
-      const c = cost[e * W + v];
-      if (c > money) continue;
-      const gain = e * V - c;
-      if (gain > bestGain || (gain === bestGain && best && (e > best.energy || (e === best.energy && v < best.vice)))) {
-        bestGain = gain; best = { energy: e, vice: v, cost: c };
-      }
-    }
-  }
-  // se nada compensa (golpes ainda fracos), enche na mesma da forma mais barata possível
-  if (best && bestGain < 0) {
-    best = null;
-    for (let e = room; e >= minE && !best; e--) for (let v = 0; v <= vroom; v++) {
-      const c = cost[e * W + v];
-      if (c <= money && (!best || c < best.cost)) best = { energy: e, vice: v, cost: c };
-    }
-  }
-  if (!best) return null;
-  const counts = D.map(() => 0);
-  for (let e = best.energy, v = best.vice; e > 0;) {
-    const d = from[e * W + v];
-    counts[d]++; e -= D[d].e; v -= D[d].a;
-  }
-  return { energy: best.energy, vice: best.vice, cost: best.cost, counts };
+// Stamina a mais, a droga (base nova): cada barra de 100 no mesmo dia custa 35 € × k + 15 € × k² (50, 130, 240, 380 €…).
+// Paga-se ponto a ponto, por isso meia barra custa metade. Não mexe no vício (os efeitos tomam-se à parte, na discoteca).
+const barPrice = (k) => CFG.refillBar.a * k + CFG.refillBar.b * k * k;
+function refillCost(from, n) {
+  let cents = 0;   // em centésimos de euro, para somar ponto a ponto sem arredondar a meio
+  for (let u = from; u < from + n; u++) cents += barPrice(Math.floor(u / 100) + 1);
+  return Math.ceil(cents / 100);
 }
-
+export function refillPlan(p, now) {
+  const room = energyMax(p) - p.energy;
+  if (room <= 0) return null;
+  const today = now === undefined ? null : dayOf(now), from = p.rf && p.rf.d === today ? p.rf.e : 0;
+  return { energy: room, cost: refillCost(from, room), next: barPrice(Math.floor(from / 100) + 1), counts: CFG.drugs.map(() => 0) };
+}
 export function refill(p, now, world) {
   begin(p, now, world);
-  const plan = refillPlan(p);
-  if (!plan) {
-    if (CFG.energy.max - p.energy < Math.min(...CFG.drugs.map((g) => g.e))) fail('ENERGY_FULL');
-    if (addictionCap(p) - p.addiction < Math.min(...CFG.drugs.map((g) => g.a))) fail('ADDICTION_LIMIT', { cap: addictionCap(p) });
-    fail('NO_MONEY');
-  }
+  const plan = refillPlan(p, now);
+  if (!plan) fail('ENERGY_FULL');
   pay(p, plan.cost);
+  const d = dayOf(now);
+  p.rf = { d, e: (p.rf && p.rf.d === d ? p.rf.e : 0) + plan.energy };
   p.energy += plan.energy;
-  plan.counts.forEach((n, d) => { if (n) applyFx(p, CFG.drugs[d], now); });
-  if (p.addiction === 0) p.addictionT = now;
-  p.addiction += plan.vice;
   p.c.refills += 1;
-  return { ok: true, energy: plan.energy, addiction: plan.vice, price: plan.cost, counts: plan.counts };
+  return { ok: true, energy: plan.energy, addiction: 0, price: plan.cost, counts: plan.counts };
+}
+
+// ---------- venda de droga na rua ----------
+// Compra-se ao quilo (fica guardada à parte, em gramas: não vai para a discoteca) e vende-se ao grama com stamina: cada venda gasta deal.step e vende um décimo
+// de barra. A clientela compra deal.base barras por dia, mais uma por cada deal.perLevels níveis. Sem calor e sem risco.
+const dealOf = (j) => (Number.isInteger(j) ? CFG.deal.list[j] : undefined);
+const dealDrug = (x) => CFG.drugs.findIndex((g) => g.id === x.drug);
+export const dealCap = (p) => (CFG.deal.base + Math.floor(level(p) / CFG.deal.perLevels)) * (100 / CFG.deal.step);
+export const dealUsed = (p, now) => (p.dl && p.dl.d === dayOf(now) ? p.dl.n : 0);
+export function dealBuy(p, now, world, j, kg) {
+  const x = dealOf(j);
+  if (!x) fail('NO_DRUG');
+  if (!Number.isSafeInteger(kg) || kg < 1 || kg > 20) fail('BAD_AMOUNT');
+  begin(p, now, world, { allowBusy: true });
+  if (level(p) < x.level) fail('LOW_LEVEL', { need: x.level });
+  const price = kg * x.kg;
+  pay(p, price);
+  p.dst[j] += kg * 1000;
+  return { ok: true, price, grams: kg * 1000, d: dealDrug(x), have: p.dst[j] };
+}
+export function deal(p, now, world, j) {
+  const x = dealOf(j);
+  if (!x) fail('NO_DRUG');
+  begin(p, now, world);
+  if (level(p) < x.level) fail('LOW_LEVEL', { need: x.level });
+  const D = CFG.deal, d = dealDrug(x), g = Math.floor((x.perBar * D.step) / 100);
+  if (p.energy < D.step) fail('NO_ENERGY', { need: D.step });
+  if (p.dst[j] < g) fail('NO_STOCK', { need: g });
+  if (dealUsed(p, now) >= dealCap(p)) fail('NO_CLIENTS');
+  const money = g * CFG.drugs[d].price, day = dayOf(now);
+  p.energy -= D.step; p.dst[j] -= g; p.cash += money;
+  p.dl = { d: day, n: dealUsed(p, now) + 1 };
+  const resp = Math.max(1, Math.round(((D.respBase + D.respPerLevel * level(p)) * D.step) / 100));
+  const lvl = addRespect(p, resp, now);
+  return { ok: true, grams: g, money, d, respect: resp, levelUp: lvl, left: dealCap(p) - p.dl.n };
 }
 
 function pruneDetox(p, now) {
@@ -772,11 +837,11 @@ export function trainCost(p, stat) { return CFG.train.costBase + p.stats[stat] *
 export function train(p, now, world, stat) {
   if (!STATS.includes(stat)) fail('NO_STAT');
   begin(p, now, world);
-  if (p.energy < CFG.train.energy) fail('NO_ENERGY', { need: CFG.train.energy });
+  if (p.vigor < CFG.train.energy) fail('NO_VIGOR', { need: CFG.train.energy });
   const cost = trainCost(p, stat);
   pay(p, cost);
   settleAllBiz(p, now); // o rendimento até agora conta com a stat antiga
-  p.energy -= CFG.train.energy;
+  p.vigor -= CFG.train.energy;
   p.stats[stat] += 1;
   p.c.trains += 1;
   return { ok: true, stat, value: p.stats[stat], cost };
@@ -1150,7 +1215,7 @@ export function broVisitAt(buyer, owner, now, world, slot, rng, seen) {
   const i = Number.isInteger(slot) ? b.girls[slot] : undefined;
   if (i === undefined) fail('NO_HOOKER');
   if (buyer.sick) fail('SICK');
-  if (buyer.energy >= CFG.energy.max) fail('ENERGY_FULL');
+  if (buyer.energy >= energyMax(buyer)) fail('ENERGY_FULL');
   const base = hookerPrice(buyer, i, now), price = broPriceAt(owner, buyer, i, now);
   if (seen !== undefined && price > seen) fail('PRICE_CHANGED', { price });
   pay(buyer, price);
@@ -1265,16 +1330,18 @@ export function withdraw(p, now, world, amount) {
 
 // ---------- luxos ----------
 
-export function luxuryPrice(p) { return CFG.luxury.firstPrice * 2 ** p.luxuries; }
-
+// pela ordem da lista; cada um dá uma vez a raiz quadrada do preço em respeito
+export function luxuryPrice(p) { const x = CFG.luxury.list[p.luxuries]; return x ? x.price : null; }
+export const luxuryRespect = (price) => Math.floor(Math.sqrt(price));
 export function buyLuxury(p, now, world) {
   begin(p, now, world);
-  if (p.luxuries >= CFG.luxury.max) fail('LUXURY_MAX');
   const price = luxuryPrice(p);
+  if (price === null) fail('LUXURY_MAX');
   pay(p, price);
   p.luxuries += 1;
-  const lvl = addRespect(p, CFG.luxury.respect, now);
-  return { ok: true, price, respect: CFG.luxury.respect, levelUp: lvl };
+  const resp = luxuryRespect(price);
+  const lvl = addRespect(p, resp, now);
+  return { ok: true, price, respect: resp, levelUp: lvl };
 }
 
 // ---------- armas e proteções ----------
@@ -1323,7 +1390,7 @@ export function canAttack(a, d, now, world, drop = false) {
   if (now - world.start < CFG.round.noPvpMs) return 'NO_PVP_YET';
   if (a.jailUntil > now) return 'IN_JAIL';
   if (a.hospUntil > now) return 'IN_HOSPITAL';
-  if (a.energy < P.energy) return 'NO_ENERGY';
+  if (a.vigor < P.energy) return 'NO_VIGOR';
   if (a.shieldUntil > now && !drop) return 'YOU_ARE_NEW';
   if (d.shieldUntil > now) return 'TARGET_NEW';
   if (d.hospUntil > now) return 'TARGET_HOSPITAL';
@@ -1414,7 +1481,7 @@ export function attack(a, d, now, world, mode, rng, drop = false) {
   if (why) fail(why);
   const P = CFG.pvp;
   const shieldLost = a.shieldUntil > now; if (shieldLost) a.shieldUntil = 0;   // só chega aqui com escudo quem aceitou perdê-lo; não volta
-  a.energy -= P.energy;
+  a.vigor -= P.energy;   // as lutas gastam energia (a barra do ginásio), não a stamina dos crimes
   a.protectUntil = 0; // quem ataca perde a proteção
   const bp = attackChanceBp(a, d, now);
   const n = priorWins(a, d, now);
@@ -1473,7 +1540,7 @@ export function heistJoin(p, now, world, k) {
   p.energy -= H.e;   // sem limite por dia: trava a stamina e a pausa da gangue entre operações
   return { ok: true, e: H.e };
 }
-export function heistRefund(p, now, k) { touch(p, now); p.energy = Math.min(CFG.energy.max, p.energy + heistOf(k).e); }
+export function heistRefund(p, now, k) { touch(p, now); p.energy = Math.min(energyMax(p), p.energy + heistOf(k).e); }
 // o que cada um puxa num golpe em grupo: as stats dele, pesadas como o golpe pede
 const heistPull = (p, k, now) => { const { w } = heistOf(k); return gearStr(CFG.gweapons, p.gweapon) + Math.floor((w.I * effStat(p, 'I', now) + w.F * effStat(p, 'F', now) + w.C * effStat(p, 'C', now)) / 100); };
 export function heistChanceBp(ps, k, now) {
@@ -1514,10 +1581,10 @@ export function hitJoin(a, d, now, world, drop = false) {
   const why = canAttack(a, d, now, world, drop);
   if (why) fail(why);
   if (a.shieldUntil > now) a.shieldUntil = 0;
-  a.energy -= CFG.pvp.energy;
+  a.vigor -= CFG.pvp.energy;
   return { ok: true, e: CFG.pvp.energy };
 }
-export function hitRefund(a, now) { touch(a, now); a.energy = Math.min(CFG.energy.max, a.energy + CFG.pvp.energy); }
+export function hitRefund(a, now) { touch(a, now); a.vigor = Math.min(CFG.vigor.max, a.vigor + CFG.pvp.energy); }
 export function hitChanceBp(as, d, now) {
   let s = 0; for (const a of as) s += attackPower(a, now);
   return chanceBp(Math.floor((s * CFG.gang.hitTeamBp) / 10000), defensePower(d, now));
@@ -1560,8 +1627,8 @@ export function hitResolve(as, d, now, rng) {
 // ---------- casino ----------
 // Tudo decidido aqui, no servidor, com o gerador aleatório do servidor. Aposta-se só o dinheiro que tens na mão.
 export function casinoMax(p) {
-  const C = CFG.casino; let m = C.maxBase;
-  for (let i = 1; i < tier(p); i++) m = Math.floor((m * C.maxNum) / C.maxDen);
+  const L = level(p); let m = CFG.casino.limits[0][1];
+  for (const [n, max] of CFG.casino.limits) if (L >= n) m = max;
   return m;
 }
 // k: quantas vezes o máximo por jogada se pode apostar (as compras de bónus das slots têm um teto mais alto)
@@ -2080,7 +2147,8 @@ export function checkInvariants(p) {
   const ints = ['energy', 'energyT', 'addiction', 'addictionT', 'cash', 'bank', 'respect', 'respectAt', 'peakRespect', 'jailUntil', 'hospUntil', 'protectUntil', 'capUntil', 'luxuries', 't'];
   for (const k of ints) if (!Number.isSafeInteger(p[k]) || p[k] < 0) bad.push(`${k}=${p[k]}`);
   for (const s of STATS) if (!Number.isSafeInteger(p.stats[s]) || p.stats[s] < CFG.start.stat) bad.push(`stat ${s}=${p.stats[s]}`);
-  if (p.energy > CFG.energy.max) bad.push(`energy>${CFG.energy.max}`);
+  if (p.energy > energyMax(p)) bad.push(`energy>${energyMax(p)}`);
+  if (!Number.isSafeInteger(p.vigor) || p.vigor < 0 || p.vigor > CFG.vigor.max) bad.push('vigor');
   if (p.addiction > addictionCap(p)) bad.push('addiction>cap');
   if (p.peakRespect < p.respect) bad.push('peak<respect');
   if (!Number.isInteger(p.guard) || p.guard < -1 || p.guard >= CFG.guards.length) bad.push('guard');
@@ -2104,6 +2172,7 @@ export function checkInvariants(p) {
   if (p.energyT > p.t || p.addictionT > p.t) bad.push('timer in future');
   if (p.cls !== '' && !CFG.classes.some((c) => c.id === p.cls)) bad.push('class');
   if (!Array.isArray(p.stock) || p.stock.length !== CFG.drugs.length || p.stock.some((x) => !Number.isSafeInteger(x) || x < 0)) bad.push('stock');
+  if (!Array.isArray(p.dst) || p.dst.length !== CFG.deal.list.length || p.dst.some((x) => !Number.isSafeInteger(x) || x < 0)) bad.push('dst');
   if (!Array.isArray(p.stk) || p.stk.length !== CFG.stocks.list.length || p.stk.some((h) => !h || !Number.isSafeInteger(h.n) || h.n < 0 || !Number.isSafeInteger(h.cost) || h.cost < 0 || !Number.isSafeInteger(h.gen) || (h.n === 0 && h.cost !== 0)
     || ['tp', 'sl'].some((x) => h[x] !== undefined && !(Number.isSafeInteger(h[x]) && h[x] > 0 && h.n > 0)) || (h.tp && h.sl && h.sl >= h.tp))) bad.push('shares');
   if (typeof p.acct !== 'boolean') bad.push('accountant');

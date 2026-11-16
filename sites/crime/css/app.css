@@ -1834,3 +1834,54 @@ body.light .rv.is-wait .ct-lock::after { opacity: .9; transform: translate(-50%,
 .mline { font-size: 14px; letter-spacing: .03em; }
 .tile .lbl.up { bottom: 38px; }
 .tile .tsub { position: absolute; left: 6px; right: 6px; bottom: 12px; z-index: 1; text-align: center; font-size: 15px; font-weight: 700; color: var(--tx); text-shadow: 0 1px 6px #000, 0 0 2px #000; }
+
+/* ---------- economia nova (passo 2) ---------- */
+/* topo: stamina (golpes), energia (ginásio e lutas) e vício, numa linha */
+.hbars { grid-template-columns: 1.55fr 1fr .72fr; gap: 6px; }
+.sbar.vg > i { background: #267c76; }   /* energia: azul-petróleo, longe do verde do dinheiro */
+.sbar.vi > span { gap: 3px; }
+.meters .sbar.vg > i { background: #267c76; }
+/* golpes de rua: o sorteio do que pode vir, em tabela limpa */
+.jobp > .lootH { margin: 2px 14px -6px; font-size: 14px; font-weight: 700; color: var(--tx2); }
+.loot { border-collapse: collapse; width: calc(100% - 28px); font-size: 14px; }
+.loot th { text-align: left; font-weight: 500; padding: 7px 0; color: var(--tx); }
+.loot td { text-align: right; padding: 7px 0 7px 10px; white-space: nowrap; color: var(--tx2); }
+.loot td:last-child { color: var(--tx); }
+.loot tr + tr > * { box-shadow: inset 0 1px 0 #ffffff14; }
+.jobp > .jcost + .jcost { margin-top: -8px; }
+.jheat { font-size: 14px; line-height: 1.45; color: #e0a23a; }   /* calor: intermédio, a âmbar */
+/* venda de droga na rua */
+.vrow.deal { flex-wrap: wrap; row-gap: 8px; }
+.vrow.deal .grow { flex: 1 1 140px; }
+.dealb { display: flex; gap: 6px; flex: 1 1 100%; }
+.dealb .btn { flex: 1 1 0; min-height: 44px; }
+.vrow.dim { opacity: 1; }   /* o que ainda não abriu: imagem apagada, texto legível (contraste acima de 4,5:1) */
+.vrow.dim .vth { opacity: .5; filter: grayscale(1); }
+.vrow.dim b, .vrow.dim .small, .vrow.dim .muted { color: #828996; }
+/* stamina à barra */
+.refillc .facts.two { grid-template-columns: 1fr 1fr; }
+.refillc .fact b { font-size: 21px; }
+/* luxos e casas em lista */
+.vrow.lux { min-height: 56px; }
+.gymr .btn { min-width: 44px; padding-left: 8px; padding-right: 8px; font-size: 15px; }
+.shop .item > .btn.block { font-size: 15px; line-height: 1.2; padding-left: 8px; padding-right: 8px; }
+.dealb .btn { font-size: 13.5px; padding: 0 8px; line-height: 1.15; white-space: normal; text-transform: none; letter-spacing: 0; }   /* «60 g», não «60 G» */
+/* risco do golpe: a vermelho, logo acima do botão */
+.jrisk { margin-top: -4px !important; font-size: 15px; line-height: 1.45; color: var(--danger); }
+.jobp > .jheat + .jrisk { margin-top: -8px !important; }
+/* luxos: se o botão («Faltam 11 245 €») não couber ao lado, desce para baixo do nome em vez de alargar a página */
+.vrow.lux { flex-wrap: wrap; row-gap: 8px; }
+.vrow.lux .grow { flex: 1 1 150px; min-width: 0; }
+.vrow.lux > .btn { flex: 0 0 auto; margin-left: auto; }
+/* roubar sem stamina: o botão fica com o aspeto de desligado (antes ficava creme e parecia que dava) */
+.btn.rob:disabled { background: transparent; color: var(--tx2); box-shadow: inset 0 0 0 1.5px var(--s3); }
+/* discoteca (pelo efeito) e putas: listas compactas em vez de grelhas de cartões iguais */
+.vrow.fxr, .vrow.hkr { align-items: flex-start; padding: 6px 0; }
+.vrow.fxr .vth, .vrow.hkr .vth { width: 56px; height: 56px; }
+.vrow.fxr .grow > .small, .vrow.hkr .grow > .small { font-size: 14px; line-height: 1.4; }
+.vrow.fxr > .btn, .vrow.hkr > .btn { align-self: center; min-height: 44px; min-width: 84px; }
+.vlist.fxl > .vrow + .vrow, .vlist.hkl > .vrow + .vrow { box-shadow: inset 0 1px 0 #ffffff12; padding-top: 10px; }
+.vlist.hkl > .hkt { margin: 6px 0 0; font-size: 14px; font-weight: 700; color: var(--tx2); text-transform: none; letter-spacing: 0; }
+.vlist.hkl > .hkt:first-child { margin-top: 0; }
+.vlist.hkl > .hkt + .vrow { box-shadow: none; padding-top: 6px; }
+@media (max-width: 359px) { .vrow.fxr > .btn, .vrow.hkr > .btn { min-width: 68px; padding-left: 8px; padding-right: 8px; } .vrow.fxr .vth, .vrow.hkr .vth { width: 48px; height: 48px; } }

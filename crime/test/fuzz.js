@@ -28,32 +28,51 @@ let refused = 0, done = 0, rounds = 1;
 // (4) as contas batem certo: cada ação só mexe no dinheiro e no respeito o que a regra diz, e nada cria dinheiro do nada
 const wealth = (q) => q.cash + q.bank;
 const MAX_LOOT_BP = 10000 + CFG.gang.lootBpPer * CFG.gang.maxLevel + CFG.mastery.bonusBp * CFG.mastery.at.length + Math.max(...CFG.classes.map((c) => c.lootBp || 0)) + Math.max(...CFG.drugs.flatMap((g) => (g.fx || []).filter((f) => f.k === 'loot').map((f) => f.bp)));
+// respeito máximo de um golpe de rua que correu bem: a barra mais rica (120) a dividir pela hipótese, mais o bónus de profissão e o resto guardado
+const MAX_STREET_RESP = Math.max(...CFG.crimes.map((c) => Math.ceil((CFG.street.respCap * c.e * (10000 + Math.max(...CFG.classes.map((k) => k.respBp || 0)))) / c.p / 100))) + 1;
+const GUN = CFG.weapons.findIndex((w) => w.id === CFG.street.gun);
 const MAX_PVP = Math.floor(((CFG.pvp.gainBase + CFG.tiers.length) * 2 * (10000 + Math.max(...CFG.classes.map((c) => c.pvpBp || 0)))) / 10000);
 function contas(kind, a0, a, d0, d, t, res, arg) {
   const dm = wealth(a) - wealth(a0), dr = a.respect - a0.respect;
   const bad = (m) => { console.error('CONTAS ERRADAS', kind, m, JSON.stringify(res), { dm, dr }); process.exit(1); };
   switch (kind) {
     case 'crime': {
-      const c = CFG.crimes[arg];
+      const c = CFG.crimes[arg], ammo = c.gun ? CFG.street.ammo : 0, maxOne = Math.floor((c.prizes.at(-1)[2] * MAX_LOOT_BP) / 10000);
+      if (res.ammo !== ammo || (c.gun && a0.weapon < GUN) || E.level(a0) < c.level) bad('golpe: arma, balas ou nível');
       if (res.success) {
-        if (dm !== res.money || res.money < c.min || res.money > Math.floor((c.max * MAX_LOOT_BP) / 10000) * CFG.crit.mult) bad('saque fora dos limites');
-        if (dr !== c.r) bad('respeito do golpe');
-      } else if (dm !== 0 || dr !== 0) bad('falhou mas mexeu');
+        if (dm !== res.money - ammo || res.money < 0 || res.money > maxOne || !c.prizes.some((x) => x[3] === res.item)) bad('saque fora dos limites');
+        if (dr !== res.respect || res.respect < 0 || res.respect > MAX_STREET_RESP) bad('respeito do golpe');
+        if (![10000, ...CFG.street.heat].includes(res.heatBp)) bad('calor');
+      } else if (dm !== -ammo || dr !== 0) bad('falhou mas mexeu');
+      if (a.energy !== Math.min(E.energyMax(a0), touched(a0, t).energy) - c.e) bad('golpe: stamina gasta');
       break;
     }
     case 'crimeAll': {
-      const c = CFG.crimes[arg], maxOne = Math.floor((c.max * MAX_LOOT_BP) / 10000) * CFG.crit.mult;
-      if (dm !== res.money || res.money > res.n * maxOne || (res.wins && res.money < res.wins * c.min)) bad('saque de vários golpes');
-      if (dr !== res.wins * c.r || res.respect !== dr) bad('respeito de vários golpes');
-      if (res.n < 1 || res.n > CFG.crimeAllMax || res.wins > res.n || res.crits > res.wins) bad('contagem');
-      // a stamina enche quando se sobe na escala antiga (até ao passo 2), não a cada um dos 100 níveis
-      if (E.tier(a) === E.tier(a0) && a.energy !== Math.min(CFG.energy.max, touched(a0, t).energy) - res.n * c.e) bad('stamina gasta');
-      const budget = Math.min(CFG.crimeAllMax, Math.floor(Math.min(CFG.energy.max, touched(a0, t).energy) / c.e));
-      if (!res.busted && res.n !== budget) bad('não fez os golpes que a stamina dava');
+      const c = CFG.crimes[arg], maxOne = Math.floor((c.prizes.at(-1)[2] * MAX_LOOT_BP) / 10000);
+      if (dm !== res.money - res.ammo || res.money > res.wins * maxOne || res.ammo !== (c.gun ? res.n * CFG.street.ammo : 0)) bad('saque de vários golpes');
+      if (res.respect !== dr || dr < 0 || dr > res.wins * MAX_STREET_RESP) bad('respeito de vários golpes');
+      if (res.n < 1 || res.n > CFG.crimeAllMax || res.wins > res.n) bad('contagem');
+      const e0 = Math.min(E.energyMax(a0), touched(a0, t).energy);
+      if (a.energy !== e0 - res.n * c.e) bad('stamina gasta');
+      const budget = Math.min(CFG.crimeAllMax, Math.floor(e0 / c.e));
+      if (!res.busted && res.n !== budget && !(c.gun && wealth(a) < CFG.street.ammo)) bad('não fez os golpes que a stamina dava');
       if (res.busted && res.n > budget) bad('fez golpes a mais');
       if (a.c.crimes - a0.c.crimes !== res.n || a.c.wins - a0.c.wins !== res.wins) bad('contadores');
       break;
     }
+    case 'deal': {
+      const x = CFG.deal.list[arg], d = CFG.drugs.findIndex((g) => g.id === x.drug), g = Math.floor((x.perBar * CFG.deal.step) / 100);
+      if (res.grams !== g || dm !== g * CFG.drugs[d].price || res.money !== dm || dr !== res.respect || res.respect < 1 || a.dst[arg] !== a0.dst[arg] - g || E.level(a0) < x.level) bad('venda de droga');
+      if (a.energy !== Math.min(E.energyMax(a0), touched(a0, t).energy) - CFG.deal.step) bad('venda: stamina');
+      if (E.dealUsed(a, t) > E.dealCap(a)) bad('venda acima da clientela');
+      break;
+    }
+    case 'dealBuy': {
+      const x = CFG.deal.list[arg.j];
+      if (dm !== -res.price || res.price !== arg.kg * x.kg || a.dst[arg.j] !== a0.dst[arg.j] + arg.kg * 1000 || dr !== 0 || E.level(a0) < x.level) bad('compra para vender');
+      break;
+    }
+    case 'refill': if (dm !== -res.price || res.price < 1 || a.energy !== E.energyMax(a) || dr !== 0 || a.addiction !== touched(a0, t).addiction) bad('barra a droga'); break;
     case 'casino': {
       if (dm !== res.win - res.bet || dr !== 0) bad('casino: dinheiro não bate com a aposta e o prémio');
       if (res.bet && res.bet > E.casinoMax(a0) * (res.buy ? CFG.casino.buyMaxMult : 1)) bad('casino: aposta acima do máximo');
@@ -77,7 +96,7 @@ function contas(kind, a0, a, d0, d, t, res, arg) {
       if (res.refund || !res.success) { if (dm !== 0 || dr !== 0) bad('golpe em grupo falhado ou devolvido mexeu no dinheiro ou no respeito'); }
       else if (dm !== eu.money || !(eu.share >= 0 && eu.share <= 10000) || eu.money > Math.floor((Math.floor((H.max * eu.share) / 10000) * (10000 + CFG.gang.lootBpPer * CFG.gang.maxLevel)) / 10000) || (eu.share === 10000 && eu.money < H.min)
         || dr !== eu.respect || eu.respect < 1 || eu.respect > H.r || res.parts.reduce((s, x) => s + x.share, 0) > res.parts.length * 10000) bad('golpe em grupo: saque ou respeito');
-      if (res.refund && a.energy !== Math.min(CFG.energy.max, touched(a0, t).energy)) bad('golpe em grupo: a stamina não voltou');
+      if (res.refund && a.energy !== Math.min(E.energyMax(a), touched(a0, t).energy)) bad('golpe em grupo: a stamina não voltou');
       break;
     }
     case 'hit': {
@@ -126,7 +145,7 @@ function contas(kind, a0, a, d0, d, t, res, arg) {
       if (res.success) {
         if (d0.respect - d.respect !== res.respLoss || res.respLoss !== Math.floor((d0.respect * H.respBp) / 10000) || d0.cash - d.cash !== res.cashLoss || res.cashLoss !== Math.floor((d0.cash * H.cashBp) / 10000) || d.bank !== d0.bank) bad('assassino: o que o alvo perdeu');
         if (!(d.hospUntil > t) || d.hospUntil > t + H.hospMs || d.hmSafe !== t + H.immuneMs) bad('assassino: hospital e proteção do alvo');
-      } else if (d.respect !== d0.respect || wealth(d) !== wealth(d0) || d.hospUntil !== d0.hospUntil || d.hmSafe !== d0.hmSafe) bad('assassino falhou mas o alvo mudou');
+      } else if (d.respect !== d0.respect || wealth(d) !== wealth(d0) || d.hospUntil !== touched(d0, t).hospUntil || d.hmSafe !== d0.hmSafe) bad('assassino falhou mas o alvo mudou');
       break;
     }
     case 'attack': {
@@ -166,11 +185,12 @@ function contas(kind, a0, a, d0, d, t, res, arg) {
       if (dm !== -res.price - (res.rob ? res.rob.loss : 0) || (res.rob && !(res.rob.loss > 0 && res.rob.loss <= 5 * E.hookerPrice(a0, res.i, t))) || dr !== 0 || d.bro.till !== v.bro.till + res.house || wealth(d) !== wealth(d0) || d.respect !== d0.respect) bad('visita ao bordel de outro');
       if (res.house < 0 || res.house * 3 > res.price + 3 || d0.bro.girls[arg] !== res.i) bad('parte da casa no bordel');
       break; }
-    case 'luxury': if (dm !== -res.price || dr !== CFG.luxury.respect) bad('luxo'); break;
+    case 'luxury': if (dm !== -res.price || dr !== Math.floor(Math.sqrt(res.price)) || res.price !== CFG.luxury.list[a0.luxuries].price) bad('luxo'); break;
     case 'house': if (dm !== -res.price || dr !== res.respect) bad('casa'); break;
     default: if (dm > 0 || dr !== 0) bad('esta ação só devia gastar'); // discoteca, putas, hospital, treino, porto (envio), equipamento, melhorias
   }
-  if (a.energy > CFG.energy.max || a.energy < 0) bad('energia');
+  if (a.energy > E.energyMax(a) || a.energy < 0) bad('stamina');
+  if (a.vigor > CFG.vigor.max || a.vigor < 0) bad('energia');
 }
 
 function touched(p, t) {
@@ -214,26 +234,30 @@ for (let n = 0; n < ACTIONS; n++) {
   }
   if (r.chance(400) && !p.gang) { if (r.chance(3000)) E.gangSet(p, CFG.gang.bot.id, 1, 0); else E.gangSet(p, 'g' + r.int(1, 3), r.int(1, 5), r.int(0, 5)); } // o servidor pôs-te numa gangue (para os golpes e tareias em grupo terem quem os faça)
   if (r.chance(2500)) { p.energy = r.int(0, CFG.energy.max); p.energyT = Math.min(p.energyT, p.t); } // gasta stamina para chegar à discoteca, às putas e ao hospital
+  if (r.chance(2500)) { p.vigor = r.int(0, CFG.vigor.max); p.vigorT = Math.min(p.vigorT, p.t); } // e energia, para o ginásio e as lutas
+  if (r.chance(300)) { const x = r.int(0, CFG.levels[r.int(0, CFG.levels.length - 1)]); p.respect = x; p.peakRespect = Math.max(p.peakRespect, x); } // jogadores de todos os níveis
   const before = touched(p, t), beforeD = touched(d, t), origD = structuredClone(d), origP = structuredClone(p);
-  const kind = pick(['stockBuy', 'stockBuy', 'stockBuy', 'stockSell', 'stockSell', 'missionSwap', 'venueBuy', 'venueBuy', 'venueSet', 'venueCollect', 'stockUse', 'stockUse', 'stockDump', 'broHire', 'broHire', 'broFire', 'clubBuyAt', 'clubBuyAt', 'clubBuyAt', 'broVisitAt', 'broVisitAt', 'broVisitAt', 'casino', 'casino', 'table', 'heist', 'hit', 'gangCreate', 'gangDonate', 'gangLeave', 'gangBiz', 'gangBiz', 'gangBiz', 'gangBizCollect', 'hitman', 'hitman', 'hitman', 'crime', 'crimeAll', 'drug', 'refill', 'detox', 'claim', 'class', 'classChange', 'classChange', 'air', 'air', 'airCollect', 'airCollect', 'bailFor', 'bailFor', 'medicFor', 'medicFor', 'avatar', 'hooker', 'cure', 'house', 'houseUp', 'train', 'buyBiz', 'buyBiz', 'collect', 'bizGoods', 'bizGoods', 'stockHold', 'stockHold', 'acct', 'stockLimit', 'stockLimit', 'stockLimit', 'port', 'collectPort', 'portOpen', 'portOpen', 'deposit', 'withdraw', 'gear', 'attack', 'bail', 'medic', 'luxury']);
+  const kind = pick(['stockBuy', 'stockBuy', 'stockBuy', 'stockSell', 'stockSell', 'missionSwap', 'venueBuy', 'venueBuy', 'venueSet', 'venueCollect', 'stockUse', 'stockUse', 'stockDump', 'broHire', 'broHire', 'broFire', 'clubBuyAt', 'clubBuyAt', 'clubBuyAt', 'broVisitAt', 'broVisitAt', 'broVisitAt', 'casino', 'casino', 'table', 'heist', 'hit', 'gangCreate', 'gangDonate', 'gangLeave', 'gangBiz', 'gangBiz', 'gangBiz', 'gangBizCollect', 'hitman', 'hitman', 'hitman', 'crime', 'crime', 'crimeAll', 'deal', 'deal', 'dealBuy', 'drug', 'refill', 'detox', 'claim', 'class', 'classChange', 'classChange', 'air', 'air', 'airCollect', 'airCollect', 'bailFor', 'bailFor', 'medicFor', 'medicFor', 'avatar', 'hooker', 'cure', 'house', 'houseUp', 'train', 'buyBiz', 'buyBiz', 'collect', 'bizGoods', 'bizGoods', 'stockHold', 'stockHold', 'acct', 'stockLimit', 'stockLimit', 'stockLimit', 'port', 'collectPort', 'portOpen', 'portOpen', 'deposit', 'withdraw', 'gear', 'attack', 'bail', 'medic', 'luxury']);
   let res, arg;
   try {
     switch (kind) {
-      case 'crime': arg = r.chance(9000) ? r.int(0, 9) : anyInt(); res = E.doCrime(p, t, world, arg, game); break;
+      case 'crime': arg = r.chance(9000) ? r.int(0, CFG.crimes.length) : anyInt(); res = E.doCrime(p, t, world, arg, game); break;
+      case 'deal': arg = r.chance(9000) ? r.int(0, CFG.deal.list.length) : anyInt(); res = E.deal(p, t, world, arg); break;
+      case 'dealBuy': arg = { j: r.chance(9000) ? r.int(0, CFG.deal.list.length) : anyInt(), kg: pick([1, 1, 2, 5, 20, 21, 0, -1, 0.5]) }; res = E.dealBuy(p, t, world, arg.j, arg.kg); break;
       case 'casino': {
-        const amt = () => pick([10, 50, 100, 999, 5000, 1e6, 0, -5, 9, 0.5, NaN]);
+        const amt = () => pick([1, 5, 10, 50, 100, 999, 5000, 1e6, 0, -5, 0.5, NaN]);
         const g = pick(['roulette', 'dice', 'bj', 'bj', 'wheel', 'slot', 'x']);
         arg = g === 'roulette' ? { bets: Array.from({ length: r.int(0, 13) }, () => ({ t: pick(['red', 'black', 'even', 'odd', 'low', 'high', 'dozen', 'num', 'x']), n: pick([0, 1, 2, 3, 17, 36, 37, -1]), amt: amt() })) }
           : g === 'dice' ? { pick: pick(['low', 'seven', 'high', '__proto__']), amt: amt() }
           : g === 'wheel' ? { bets: Array.from({ length: r.int(0, 13) }, () => ({ s: pick(['1', '2', '5', '10', 'moeda', 'caixas', 'bola', 'louca', 'x']), amt: amt() })) }
-          : g === 'slot' ? { amt: pick([10, 20, 50, 0, -1, NaN]), game: pick(['chefao', 'zeus', 'doce', 'rebucado', 'x']), buy: pick([0, 0, 0, 1, 2, 3]) } : { op: pick(['deal', 'hit', 'hit', 'stand', 'double', 'split', 'split', 'x']), amt: amt() };
+          : g === 'slot' ? { amt: pick([1, 2, 5, 10, 20, 50, 0, -1, NaN]), game: pick(['chefao', 'zeus', 'doce', 'rebucado', 'x']), buy: pick([0, 0, 0, 1, 2, 3]) } : { op: pick(['deal', 'hit', 'hit', 'stand', 'double', 'split', 'split', 'x']), amt: amt() };
         res = E.casinoPlay(p, t, world, g, arg, game); break;
       }
       case 'table': {
         // uma ronda inteira: aposta duas vezes (a segunda junta-se à primeira), às vezes tira tudo, e depois sai o resultado
-        const amt = () => pick([10, 50, 100, 999, 5000, 1e6, 0, -5, 9, 0.5, NaN]);
+        const amt = () => pick([1, 5, 10, 50, 100, 999, 5000, 1e6, 0, -5, 0.5, NaN]);
         const g = pick(['roulette', 'wheel', 'wheel', 'x']);
-        const bom = r.chance(8000), va = () => (bom ? pick([10, 50, 100, 999, 5000]) : amt());
+        const bom = r.chance(8000), va = () => (bom ? pick([1, 2, 5, 10, 50, 100, 999]) : amt());
         const mk = () => Array.from({ length: bom ? r.int(1, 5) : r.int(0, 13) }, () => (g === 'wheel' ? { s: pick(['1', '2', '5', '10', 'moeda', 'caixas', 'bola', 'louca'].concat(bom ? [] : ['x'])), amt: va() }
           : { t: pick(['red', 'black', 'even', 'odd', 'low', 'high', 'dozen', 'num'].concat(bom ? [] : ['x'])), n: bom ? r.int(0, 2) : pick([0, 1, 2, 3, 17, 36, 37, -1, undefined]), amt: va() }));
         let mine = E.tableBet(p, t, world, g, mk()).bets, before = 0;
@@ -261,14 +285,14 @@ for (let n = 0; n < ACTIONS; n++) {
       case 'gangDonate': arg = r.chance(8000) ? r.int(100, 50000) : anyInt(); res = E.gangDonate(p, t, world, arg); break;
       case 'gangLeave': { if (!p.gang) throw new E.GameError('NO_GANG'); const g0 = p.gang; res = { ok: true, ...E.gangLeave(p, t) }; if (t === now) E.gangBizSync(players.filter((x) => x.gang === g0), t); break; }
       case 'gangBiz': {
-        arg = { k: r.chance(9000) ? r.int(0, CFG.gang.biz.length - 1) : anyInt(), amount: r.chance(8500) ? r.int(100, 30000) : anyInt() };
+        arg = { k: r.chance(9000) ? r.int(0, CFG.gang.biz.length - 1) : anyInt(), amount: r.chance(8500) ? r.int(500, 60000) : anyInt() };
         res = E.gangBizInvest(p, t, world, arg.k, arg.amount, p.gb ? p.gb.loot / CFG.gang.lootBpPer : 0);
         const ms = players.filter((x) => x.gang === p.gang); E.gangBizSync(ms, t);   // o servidor acerta o bónus de grupo de todos os membros
         for (const m of ms) { const bad2 = E.checkInvariants(m); if (bad2.length) { console.error('INVARIANTE', kind, bad2); process.exit(1); } }
         break;
       }
       case 'gangBizCollect': res = E.gangBizCollect(p, t, world); break;
-      case 'crimeAll': arg = r.chance(9000) ? r.int(0, 9) : anyInt(); res = E.doCrimeAll(p, t, world, arg, game); break;
+      case 'crimeAll': arg = r.chance(9000) ? r.int(0, CFG.crimes.length) : anyInt(); res = E.doCrimeAll(p, t, world, arg, game); break;
       case 'drug': res = E.buyDrug(p, t, world, r.chance(9000) ? r.int(0, CFG.drugs.length - 1) : anyInt()); break;
       case 'refill': res = E.refill(p, t, world); break;
       case 'detox': res = E.detox(p, t, world); break;

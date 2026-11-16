@@ -117,6 +117,10 @@ function react(type, out, before, opts) {
   else if (type === 'venueSet') { toast(t('vnSaved')); fx.sfx('claim'); }
   else if (type === 'venueBuy') { toast(r.lvl === 1 ? t('vnOpened_' + r.kind) : t('vnUpped', { n: r.lvl })); fx.sfx('claim'); }
   else if (type === 'house') { toast(t('houseMoved', { x: list('houses')[me.house], n: r.respect })); fx.sfx('claim'); }
+  else if (type === 'refill') { toast(t('rfDone', { e: r.energy, m: money(r.price) })); fx.sfx('refill'); }
+  else if (type === 'dealBuy') { toast(t('dealBought', { g: num(r.grams), x: list('drugs')[r.d], m: money(r.price) })); fx.sfx('buy'); }
+  else if (type === 'deal') { toast(t('dealSold', { g: r.grams, m: money(r.money), n: r.respect })); fx.sfx('cash'); }
+  else if (type === 'luxury') { toast(t('luxBought', { x: list('lux')[me.luxuries - 1], n: r.respect })); fx.sfx('claim'); }
   else if (type === 'hooker' || type === 'broVisit') { fx.sfx('refill'); if (r.sick) { toast(t('gotSick'), true); fx.vibrate([40, 60, 40]); } if (r.rob) { toast(t('hkRob_' + r.rob.kind, { m: money(r.rob.loss) }), true); fx.vibrate([30, 40, 30]); } }
   else if (type === 'claim') { toast(t('got', { m: money(r.cash) })); fx.sfx('claim'); }
   else if (type === 'portOpen') S.portLast = [...(S.portLast || []), r.item].slice(-3);   // sem avisos: quem mostra o que saiu é a cena do contentor
@@ -149,18 +153,25 @@ function showReport() {
 }
 
 // ---------- tempo real no cliente (só para mostrar) ----------
-function live(me) {
-  const n = now();
-  const E = S.cfg.energy, A = S.cfg.addiction;
-  let energy = me.energy, nextE = null;
-  if (energy < E.max) {
-    const ticks = Math.floor((n - me.energyT) / E.regenMs);
-    energy = Math.min(E.max, energy + Math.max(0, ticks));
-    if (energy < E.max) nextE = me.energyT + (Math.max(0, ticks) + 1) * E.regenMs - n;
+// as duas barras sobem 1 a cada 2 minutos: a stamina (golpes) até ao máximo da casa, a energia (ginásio, lutas) até 100
+function bar(v, t0, max, regenMs, n) {
+  let x = v, next = null;
+  if (x < max) {
+    const ticks = Math.max(0, Math.floor((n - t0) / regenMs));
+    x = Math.min(max, x + ticks);
+    if (x < max) next = t0 + (ticks + 1) * regenMs - n;
   }
+  return [x, next];
+}
+const stamMax = (me) => me.energyMax || S.cfg.energy.max;
+const vigMax = () => S.cfg.vigor?.max || 100;
+function live(me) {
+  const n = now(), A = S.cfg.addiction;
+  const [energy, nextE] = bar(me.energy, me.energyT, stamMax(me), S.cfg.energy.regenMs, n);
+  const [vigor, nextV] = bar(me.vigor ?? vigMax(), me.vigorT ?? n, vigMax(), (S.cfg.vigor || S.cfg.energy).regenMs, n);
   let vice = me.addiction;
   if (vice > 0) vice = Math.max(0, vice - Math.max(0, Math.floor((n - me.addictionT) / A.decayMs)));
-  return { energy, nextE, vice, jail: me.jailUntil > n ? me.jailUntil - n : 0, hosp: me.hospUntil > n ? me.hospUntil - n : 0 };
+  return { energy, nextE, vigor, nextV, vice, jail: me.jailUntil > n ? me.jailUntil - n : 0, hosp: me.hospUntil > n ? me.hospUntil - n : 0 };
 }
 // armazém de um negócio: 8 h de rendimento, ou 24 h com contabilista
 const bizCapN = (b) => b.perH * (S.cfg.storageMs / 3600000);
@@ -193,6 +204,7 @@ function buildHud() {
   S.hud.respN = h('span', { class: 'num' });
   S.hud.resp = h('div', { class: 'resp' }, hic('coroa', t('respect'), 114), S.hud.respN);
   S.hud.ebar = h('i'); S.hud.etxt = h('span');
+  S.hud.gbar = h('i'); S.hud.gtxt = h('span');
   S.hud.vbar = h('i'); S.hud.vtxt = h('span');
   S.hud.stats = h('div', { class: 'hstats' });
   S.hud.fx = h('div', { class: 'hfx' });
@@ -203,8 +215,9 @@ function buildHud() {
       h('div', { class: 'who' }, S.hud.title, S.hud.name),
       h('div', { class: 'money' }, S.hud.cash, S.hud.resp)),
     h('div', { class: 'hbars' },
-      h('button', { class: 'sbar en', 'aria-label': t('p_club'), on: { click: () => go('club') } }, S.hud.ebar, S.hud.etxt),
-      h('button', { class: 'sbar vi', 'aria-label': t('p_hosp'), on: { click: () => go('hosp') } }, S.hud.vbar, S.hud.vtxt)),
+      h('button', { class: 'sbar en', 'aria-label': t('energy') + ' · ' + t('p_club'), on: { click: () => go('club') } }, S.hud.ebar, S.hud.etxt),
+      h('button', { class: 'sbar vg', 'aria-label': t('vigor') + ' · ' + t('p_gym'), on: { click: () => go('gym') } }, S.hud.gbar, S.hud.gtxt),
+      h('button', { class: 'sbar vi', 'aria-label': t('vice') + ' · ' + t('p_hosp'), on: { click: () => go('hosp') } }, S.hud.vbar, S.hud.vtxt)),
     S.hud.stats, S.hud.fx);
   S.hud.shown = { cash: me.cash, respect: me.respect };
   return hud;
@@ -258,10 +271,13 @@ function updateHud() {
 function tickHud() {
   const me = S.st?.me; if (!me || !S.hud.ebar) return;
   const L = live(me);
-  S.hud.ebar.style.width = (L.energy / S.cfg.energy.max) * 100 + '%';
-  S.hud.etxt.replaceChildren(icon('bolt'), ' ' + L.energy + '/' + S.cfg.energy.max, h('small', null, L.nextE ? ' · ' + t('nextIn', { t: dur(L.nextE) }) : ''));
+  const M = stamMax(me), G = vigMax();
+  S.hud.ebar.style.width = (L.energy / M) * 100 + '%';
+  S.hud.etxt.replaceChildren(icon('bolt'), ' ' + L.energy + '/' + M, h('small', null, L.nextE ? ' · ' + dur(L.nextE) : ''));
+  S.hud.gbar.style.width = (L.vigor / G) * 100 + '%';
+  S.hud.gtxt.replaceChildren(icon('fist'), ' ' + L.vigor + '/' + G);
   S.hud.vbar.style.width = (L.vice / me.addictionCap) * 100 + '%';
-  S.hud.vtxt.textContent = t('vice') + ' ' + L.vice + '/' + me.addictionCap;
+  S.hud.vtxt.replaceChildren(icon('pill'), ' ' + L.vice);
   tickShips(); tickNews();
   document.querySelectorAll('[data-left]').forEach((el) => { const left = +el.dataset.left - now(); el.textContent = dur(left); if (left <= 0 && el.dataset.re !== '1') { el.dataset.re = '1'; refresh(); } });
   document.querySelectorAll('[data-stored]').forEach((el) => { const i = +el.dataset.stored; const b = me.biz[i]; el.textContent = money(bizNet(b, i)); });
@@ -303,7 +319,7 @@ const PARENT = { gang: 'city', work: 'city', news: 'city', casino: 'city', roule
   biz: 'empire', port: 'empire', air: 'empire', myclub: 'empire', mybro: 'empire', bolsa: 'empire', stash: 'empire', acct: 'empire', casa: 'empire', bank: 'empire', lux: 'empire', arms: 'fights', rank: 'fights', hitman: 'fights' };
 const upOf = (id) => (S.backTo && S.backTo[id]) || PARENT[id] || 'city';   // um sítio que está em duas zonas volta para a zona de onde vieste
 const tabOf = (id) => { let x = id; for (let k = 0; k < 4 && !NAV.includes(x); k++) x = upOf(x); return NAV.includes(x) ? x : 'city'; };
-const IMG = (kind, id, big) => `/img/${kind}/${id}${big ? '-g' : ''}.webp?9`;
+const IMG = (kind, id, big) => `/img/${kind}/${id}${big ? '-g' : ''}.webp?10`;
 // o que cada sítio precisa de ir buscar ao servidor (ao entrar nele, e também quando o jogo abre já nesse sítio)
 function loadFor(tab) {
   if (tab === 'fights') { if (S.fightSeg === 'events') loadEvents(true); else { S.fightSeg = 'targets'; loadTargets(); } }
@@ -417,12 +433,12 @@ function busyBanner(me) {
 }
 
 function art(kind, id, cls = 'art') {
-  return h('img', { class: cls, src: IMG(kind, id), alt: '', width: 600, height: 600, loading: 'lazy', decoding: 'async', on: { error: (e) => e.currentTarget.remove() } });
+  return h('img', { class: cls, src: IMG(kind, id), alt: '', width: 600, height: 600, loading: 'lazy', decoding: 'async', on: { error: (e) => { e.currentTarget.style.visibility = 'hidden'; } } });
 }
 // Pinta os valores dentro de uma frase de apoio: dinheiro a verde e respeito a âmbar; o resto fica como está.
 // Serve para as linhas cinzentas com números lá dentro se lerem de relance (o que se ganha salta à vista).
 function tint(s) {
-  const out = [], re = /(\$\d+(?:[.,\u00a0\u202f ]\d+)*[KMB]?(?:[–-]\$\d+(?:[.,\u00a0\u202f ]\d+)*[KMB]?)?)|([+−-]?\d[\d.,]* (?:de )?(?:respeito|respect))/g;
+  const out = [], re = /(€\d+(?:[.,\u00a0\u202f ]\d{3})*(?:[–-]€?\d+(?:[.,\u00a0\u202f ]\d{3})*)?|\d+(?:[.,\u00a0\u202f ]\d{3})*(?:[–-]\d+(?:[.,\u00a0\u202f ]\d{3})*)?\u00a0€)|([+−-]?\d[\d.,]* (?:de )?(?:respeito|respect))/g;
   let i = 0, m;
   while ((m = re.exec(s))) { if (m.index > i) out.push(s.slice(i, m.index)); out.push(h('span', { class: m[1] ? 'c-cash' : 'c-resp' }, m[0])); i = m.index + m[0].length; }
   if (i < s.length) out.push(s.slice(i));
@@ -696,7 +712,7 @@ function screenEmpire() {
 
 // sem stamina: discoteca ou putas, com a que sai mais barata por ponto de stamina em destaque
 function staminaHelp(me, L) {
-  const room = S.cfg.energy.max - L.energy, cash = me.cash + me.bank;
+  const room = stamMax(me) - L.energy, cash = me.cash + me.bank;
   const d = me.refill && me.refill.energy > 0 && me.refill.cost <= cash ? me.refill.cost / me.refill.energy : Infinity;
   let hk = Infinity;
   if (!me.sick) S.cfg.hookers.list.forEach((g, i) => { const e = Math.min(g.e, room); if (e > 0 && me.hookers[i] <= cash) hk = Math.min(hk, me.hookers[i] / e); });
@@ -704,104 +720,151 @@ function staminaHelp(me, L) {
   const btn = (id, lbl) => h('button', { class: 'btn sm grow ' + (best === id || (!best && id === 'club') ? 'pri' : 'ghost'), on: { click: () => go(id) } }, lbl);
   return h('div', { class: 'stam' }, h('span', { class: 'small' }, t('noStamina')),
     h('div', { class: 'row' }, btn('club', t('goClub')), btn('putas', t('goPutas'))),
-    best ? h('span', { class: 'small muted' }, t('stamBest', { x: t('p_' + best), m: money(Math.max(1, Math.round(Math.min(d, hk)))) })) : null);
+    best ? h('span', { class: 'small muted' }, t('stamBest', { x: t(best === 'putas' ? 'goPutas' : 'goClub').toLowerCase(), m: stMoney(Math.ceil(Math.min(d, hk) * 100)) })) : null);
 }
 // ---------- golpes ----------
-function reportAll(rep, li, names) {
-  const { r, c, k, lv, unlocked } = rep, lines = [li('', t(r.n === 1 ? 'ra_jobs1' : 'ra_jobs', { n: r.n }) + ' · ' + t(r.wins === 1 ? 'ra_ok1' : 'ra_ok', { w: r.wins }))];
-  if (r.crits) lines.push(li('c-gold', t(r.crits === 1 ? 'ra_crit1' : 'ra_crit', { n: r.crits })));
+// o que se leva em média num golpe que corre bem (a tabela do sorteio), com o bónus da mestria e o calor da rua de agora
+const moneyRange = (a, z) => (lang() === 'pt' ? num(a) + '–' + num(z) + '\u00a0€' : '€' + num(a) + '–' + num(z));
+const crimeEv = (c) => c.prizes.reduce((x, [bp, a, z]) => x + (bp * (a + z)) / 2, 0) / 10000;
+const heatPct = (bp) => Math.round(bp / 100);
+const gunOk = (me) => me.weapon >= S.cfg.weapons.findIndex((w) => w.id === S.cfg.street.gun);
+// respeito de um golpe que corre bem: uma barra vale 20 + 2 por nível (até 120), vezes o calor, a dividir pela hipótese
+function crimeResp(me, c, heatBp) {
+  const St = S.cfg.street, perBar = Math.min(St.respCap, St.respBase + St.respPerLevel * me.level);
+  return Math.max(1, Math.round(((perBar * c.e) / 100) * (heatBp / 10000) / (c.p / 10000)));
+}
+function reportAll(rep, li) {
+  const { r, c, k, lv } = rep, lines = [li('', t(r.n === 1 ? 'ra_jobs1' : 'ra_jobs', { n: r.n }) + ' · ' + t(r.wins === 1 ? 'ra_ok1' : 'ra_ok', { w: r.wins }))];
   if (r.money) lines.push(li('c-cash', t('r_stole', { m: money(r.money) })));
+  if (r.bestItem && r.wins > 1) lines.push(li('', t('ra_best', { x: t('lt_' + r.bestItem), m: money(r.best) })));
   if (r.respect) lines.push(li('c-resp', t('r_resp', { n: r.respect })));
-  lines.push(li('', t('ra_spent', { e: r.n * c.e })));
+  lines.push(li('', t('ra_spent', { e: r.n * c.e }) + (r.ammo ? ' · ' + t('r_ammo', { m: money(r.ammo) }) : '')));
+  if (r.heatEnd < 10000) lines.push(li('', t('r_heat', { p: heatPct(r.heatEnd) })));
   if (r.busted) lines.push(li('c-red', t('r_jail', { t: dur(Math.max(0, r.jailUntil - rep.at)) })));
-  for (const [s, n] of Object.entries(r.gained || {})) lines.push(li('c-en', '+' + n + ' ' + names[s]));
-  if (r.newChanceBp > r.chanceBp) lines.push(li('', t('r_chance', { p: pct(r.newChanceBp) })));
   if (r.star) lines.push(li('c-gold', t('r_star', { x: list('crimes')[k] })));
   if (lv) lines.push(li('c-resp', t('r_lvl', { n: lv.to, x: titleOf(lv.to) })));
-  for (const i of unlocked) lines.push(li('c-cash', t('newJob', { x: list('crimes')[i] })));
   const head = r.busted ? t('ra_bust', { i: r.n }) : r.wins === r.n ? t('ra_clean') : r.wins ? t('ra_done') : t('ra_none');
   return h('div', { class: 'report ' + (r.busted ? 'bust' : r.wins ? 'ok' : 'miss'), role: 'status' }, h('b', null, head), h('ul', null, lines));
 }
 function reportCard(rep) {
-  const { r, c, k, lv, unlocked } = rep, names = { F: t('statF'), I: t('statI'), C: t('statC') };
+  const { r, c, k, lv } = rep;
   const li = (cls, txt) => h('li', { class: cls }, txt), lines = [];
-  if (r.all) return reportAll(rep, li, names);
-  if (r.success) { lines.push(li('c-cash', t('r_stole', { m: money(r.money) }))); lines.push(li('c-resp', t('r_resp', { n: r.respect }))); }
-  else { lines.push(li('', t('r_lost', { e: c.e }))); if (r.busted) lines.push(li('c-red', t('r_jail', { t: dur(Math.max(0, r.jailUntil - rep.at)) }))); }
-  for (const [s, n] of Object.entries(r.gained || {})) lines.push(li('c-en', '+' + n + ' ' + names[s]));
-  if (r.newChanceBp > r.chanceBp) lines.push(li('', t('r_chance', { p: pct(r.newChanceBp) })));
+  if (r.all) return reportAll(rep, li);
+  if (r.success) {
+    lines.push(li('c-cash', t('r_item', { x: t('lt_' + r.item), m: money(r.money) })));
+    lines.push(li('c-resp', t('r_resp', { n: r.respect })));
+    if (r.heatBp < 10000) lines.push(li('', t('r_heat', { p: heatPct(r.heatBp) })));
+  } else { lines.push(li('', t('r_lost', { e: c.e }))); if (r.busted) lines.push(li('c-red', t('r_jail', { t: dur(Math.max(0, r.jailUntil - rep.at)) }))); }
+  if (r.ammo) lines.push(li('', t('r_ammo', { m: money(r.ammo) })));
   if (r.star) lines.push(li('c-gold', t('r_star', { x: list('crimes')[k] })));
   if (lv) lines.push(li('c-resp', t('r_lvl', { n: lv.to, x: titleOf(lv.to) })));
-  for (const i of unlocked) lines.push(li('c-cash', t('newJob', { x: list('crimes')[i] })));
   return h('div', { class: 'report ' + (r.success ? 'ok' : r.busted ? 'bust' : 'miss'), role: 'status' },
-    h('b', null, r.success ? (r.crit ? t('r_crit') : t('r_ok')) : r.busted ? t('r_bust') : t('r_miss')), h('ul', null, lines));
+    h('b', null, r.success ? t('r_ok') : r.busted ? t('r_bust') : t('r_miss')), h('ul', null, lines));
 }
 function screenRob() {
-  const me = S.st.me, C = S.cfg.crimes, L = live(me), names = list('crimes');
+  const me = S.st.me, C = S.cfg.crimes, L = live(me), names = list('crimes'), st = me.street || { used: 0, heatBp: 10000 };
   const out = [pageHead('rob', null, true)];
   const b = busyBanner(me); if (b) out.push(b);
   const open = C.map((c, i) => i).filter((i) => me.crimes[i].unlocked);
   let k = S.robK ?? store.get('robK', -1);
-  if (!open.includes(k)) { k = open[0]; for (const i of open) if (me.crimes[i].chance >= 6500) k = i; }
+  if (!open.includes(k)) { k = open[0]; for (const i of open) if (!C[i].gun || gunOk(me)) k = i; }   // o melhor que já dá para fazer
   S.robK = k;
-  const c = C[k], info = me.crimes[k], bonus = 1 + (me.stars[k] * S.cfg.mastery.bonusBp) / 10000;
+  const c = C[k], bonus = 1 + (me.stars[k] * S.cfg.mastery.bonusBp) / 10000, heat = st.heatBp;
+  const media = Math.round(crimeEv(c) * bonus * (heat / 10000)), noGun = c.gun && !gunOk(me);
   const rep = S.report && S.report.k === k ? S.report : null;
-  // O que decide o golpe fica em grande e só isso: quanto pode render (verde, é dinheiro) e a hipótese (cor do risco).
-  // O custo e o respeito vão numa frase, sem cor nem ícones. Os dois botões são da mesma família: cheio para roubar, contorno para roubar de seguida.
-  const gama = (a, z) => (z < 1e6 ? money(a) + '–' + num(z) : moneyShort(a) + '–' + moneyShort(z).slice(1));   // «$19 500–27 300»: por extenso e com um só cifrão; só abrevia a partir do milhão
+  // O que decide o golpe fica em grande e só isso: quanto rende em média se correr bem (verde) e a hipótese (cor do risco).
+  // Por baixo, o sorteio do que pode vir; o custo, o risco e o respeito vão em frases curtas, sem cor nem ícones.
+  const sorteio = h('table', { class: 'loot' }, h('tbody', null, c.prizes.map(([bp, a, z, item]) => h('tr', null,
+    h('th', { scope: 'row' }, t('lt_' + item)), h('td', { class: 'num' }, pct(bp)), h('td', { class: 'num' }, moneyRange(Math.round(a * bonus), Math.round(z * bonus)))))));
   out.push(h('div', { class: 'jobp' },
-    h('div', { class: 'jimg' }, h('img', { src: IMG('crimes', c.id, 1), alt: '', width: 1100, height: 1100, decoding: 'async' }), h('h2', null, names[k])),
+    h('div', { class: 'jimg' }, h('img', { src: IMG('crimes', c.id, 1), alt: '', width: 1100, height: 1100, decoding: 'async', on: { error: (e) => e.currentTarget.remove() } }), h('h2', null, names[k])),
     h('div', { class: 'jdeal' },
-      h('div', null, h('span', null, t('loot')), h('b', { class: 'num c-cash' }, gama(Math.floor(c.min * bonus), Math.floor(c.max * bonus)))),
-      h('div', null, h('span', null, t('chance')), h('b', { class: 'num ' + chanceCls(info.chance) }, pct(info.chance)))),
-    h('p', { class: 'jcost' }, t('jobCost', { e: c.e, r: c.r })),
-    h('button', { class: 'btn rob block big', disabled: !!b || L.energy < c.e, on: { click: (e) => act('crime', { k }, { el: e.currentTarget }) } }, t('robBtn')),
-    !b && Math.floor(L.energy / c.e) >= 2 ? h('button', { class: 'btn block robAll', on: { click: (e) => act('crimeAll', { k }, { el: e.currentTarget }) } },
-      t('robAll', { n: Math.min(Math.floor(L.energy / c.e), S.cfg.crimeAllMax || 25) })) : null,
-    !b && L.energy < c.e ? staminaHelp(me, L) : null,
+      h('div', null, h('span', null, t('lootAvg')), h('b', { class: 'num c-cash' }, money(media))),
+      h('div', null, h('span', null, t('chance')), h('b', { class: 'num ' + chanceCls(c.p) }, pct(c.p)))),
+    heat < 10000 ? h('p', { class: 'jheat' }, t('jobHeat', { p: heatPct(heat), u: st.used })) : null,
+    h('p', { class: 'jrisk' }, t('jobRisk', { m: money(c.fine), t: c.jailMin })),
+    noGun ? h('button', { class: 'btn pri block big', on: { click: () => { S.armsSeg = 'fight'; go('arms'); } } }, t('goArms'))
+      : h('button', { class: 'btn rob block big', disabled: !!b || L.energy < c.e, on: { click: (e) => act('crime', { k }, { el: e.currentTarget }) } }, t('robBtn')),
+    !b && !noGun && Math.floor(L.energy / c.e) >= 2 ? h('button', { class: 'btn block robAll', on: { click: (e) => act('crimeAll', { k }, { el: e.currentTarget }) } },
+      t('robAll', { n: Math.min(Math.floor(L.energy / c.e), S.cfg.crimeAllMax || 10) })) : null,
+    !b && !noGun && L.energy < c.e ? staminaHelp(me, L) : null,
     rep ? reportCard(rep) : null,
+    h('h3', { class: 'lootH' }, t('lootWhat')), sorteio,
+    h('p', { class: 'jcost' }, t('jobCost', { e: c.e, r: crimeResp(me, c, heat) })),
+    c.gun ? h('p', { class: 'jcost' }, t(noGun ? 'jobNeedGun' : 'jobAmmo', { m: money(S.cfg.street.ammo) })) : null,
     me.stars[k] ? h('p', { class: 'small muted' }, t('r_exp', { n: me.wk[k], p: me.stars[k] * 10 })) : null));
   out.push(h('h2', { class: 'sec' }, t('allJobs')));
   const rows = h('div', { class: 'rows' });
   let lockedShown = false;
   C.forEach((x, i) => {
-    const inf = me.crimes[i];
-    if (!inf.unlocked) {
+    if (!me.crimes[i].unlocked) {
       if (lockedShown) return; lockedShown = true;
-      rows.append(h('div', { class: 'rowi lock' }, art('crimes', x.id), h('div', { class: 'mid' }, h('div', { class: 'nm' }, names[i]), h('div', { class: 'meta' }, icon('lock'), ' ', t('needsStats', { s: statNames(x.w) }))),
-        h('div', { class: 'pct' }, pct(inf.chance))));
+      rows.append(h('div', { class: 'rowi lock' }, art('crimes', x.id), h('div', { class: 'mid' }, h('div', { class: 'nm' }, names[i]), h('div', { class: 'meta' }, icon('lock'), ' ', t('opensAt', { n: x.level }))),
+        h('div', { class: 'pct' }, pct(x.p))));
       return;
     }
     rows.append(h('button', { class: 'rowi' + (i === k ? ' sel' : ''), 'aria-pressed': i === k ? 'true' : 'false',
       on: { click: () => { S.robK = i; store.set('robK', i); S.report = null; render(); window.scrollTo({ top: 0, behavior: 'smooth' }); } } },
       art('crimes', x.id),
       h('div', { class: 'mid' }, h('div', { class: 'nm' }, names[i]),
-        h('div', { class: 'meta' }, h('span', { class: 'c-cash' }, gama(x.min, x.max)), h('span', null, icon('bolt'), ' ' + x.e), h('span', null, icon('crown'), ' +' + x.r))),
-      h('div', { class: 'pct ' + chanceCls(inf.chance) }, pct(inf.chance))));
+        h('div', { class: 'meta' }, h('span', { class: 'c-cash' }, t('avgShort', { m: money(Math.round(crimeEv(x) * (1 + (me.stars[i] * S.cfg.mastery.bonusBp) / 10000) * (heat / 10000))) })), h('span', null, icon('bolt'), ' ' + x.e), x.gun ? h('span', null, t('withGun')) : null)),
+      h('div', { class: 'pct ' + chanceCls(x.p) }, pct(x.p))));
   });
   out.push(rows);
+  out.push(...dealBlock(me, L, b));
+  return out;
+}
+// venda de droga na rua: compra-se ao quilo, vende-se ao grama com stamina, até onde a clientela compra hoje
+function dealBlock(me, L, b) {
+  const D = S.cfg.deal, dl = me.deal || { dst: D.list.map(() => 0), used: 0, cap: 0 }, left = Math.max(0, dl.cap - dl.used);
+  const out = [h('h2', { class: 'sec' }, t('dealTitle')), h('p', { class: 'small muted', style: 'margin:-4px 2px 10px' }, t('dealSub', { c: dl.cap, l: left }))];
+  out.push(h('div', { class: 'card vlist vc' }, D.list.map((x, j) => {
+    const d = S.cfg.drugs.findIndex((g) => g.id === x.drug), g = S.cfg.drugs[d], grams = Math.floor((x.perBar * D.step) / 100), have = dl.dst[j] || 0;
+    const lock = me.level < x.level, sale = grams * g.price;
+    return h('div', { class: 'vrow deal' + (lock ? ' dim' : '') }, art('drugs', g.id, 'vth'),
+      h('div', { class: 'grow' }, h('b', null, list('drugs')[d]),
+        h('div', { class: 'small muted num' }, lock ? t('opensAt', { n: x.level }) : t('dealHave', { g: num(have), m: money(g.price) }))),
+      lock ? null : h('div', { class: 'dealb' },
+        h('button', { class: 'btn ghost sm num', disabled: !!b || me.cash + me.bank < x.kg, on: { click: (e) => act('dealBuy', { j, kg: 1 }, { el: e.currentTarget }) } }, t('dealBuy', { m: money(x.kg) })),
+        h('button', { class: 'btn buy sm num', disabled: !!b || have < grams || L.energy < D.step || !left, on: { click: (e) => act('deal', { j }, { el: e.currentTarget }) } }, t('dealSell', { g: grams, m: money(sale) }))));
+  })));
+  out.push(h('p', { class: 'small muted', style: 'margin:8px 2px 0' }, t('dealNote', { e: D.step })));
   return out;
 }
 
 // ---------- discoteca ----------
 function screenClub() {
-  const me = S.st.me, L = live(me), max = S.cfg.energy.max;
+  const me = S.st.me, L = live(me), max = stamMax(me), R = S.cfg.refillBar;
   const out = [pageHead('club', t('s_club'))];
   const b = busyBanner(me); if (b) out.push(b);
-  out.push(h('div', { class: 'card meters' }, meter(t('energy'), L.energy, max, 'en'), meter(t('vice'), L.vice, me.addictionCap, 'vi'), h('p', { class: 'small muted' }, t('vice') + ': ' + t('viceDown'))));
+  // stamina a mais: a barra a droga, cada uma mais cara no mesmo dia
+  // Os dois números são o que se paga: quanto custa encher agora e quanto custa cada ponto neste degrau da escada.
+  // A escada sobe a cada 100 pontos comprados no mesmo dia; a frase diz quando sobe e para quanto.
+  const feitas = me.refillBars || 0, k = Math.floor(feitas / 100) + 1, ponto = (n) => R.a * n + R.b * n * n, rf = me.refill;   // cêntimos por ponto
+  out.push(h('div', { class: 'card stack vc refillc' },
+    h('div', { class: 'row sp' }, h('h3', { style: 'margin:0' }, t('rfTitle')), feitas ? h('span', { class: 'small muted num' }, t('rfBought', { n: num(feitas) })) : null),
+    meter(t('energy'), L.energy, max, 'en'),
+    h('div', { class: 'facts two' },
+      h('div', { class: 'fact' }, h('b', { class: 'num c-cash' }, rf ? money(rf.cost) : '—'), h('span', null, rf ? t('rfNowFor', { e: rf.energy }) : t('rfFull'))),
+      h('div', { class: 'fact' }, h('b', { class: 'num' }, stMoney(ponto(k))), h('span', null, t('rfPerPoint')))),
+    h('p', { class: 'small muted' }, t('rfLadder', { n: 100 - (feitas % 100), p: stMoney(ponto(k + 1)), z: stMoney(ponto(1)) })),
+    h('button', { class: 'btn buy block big', disabled: !!b || !rf || me.cash + me.bank < rf.cost, on: { click: (e) => act('refill', {}, { el: e.currentTarget }) } },
+      rf ? t('rfGo', { e: rf.energy, m: money(rf.cost) }) : t('rfFull'))));
+  out.push(h('h2', { class: 'sec' }, t('clFx')), h('p', { class: 'small muted', style: 'margin:-4px 2px 10px' }, t('clFxSub')));
+  out.push(h('div', { class: 'card meters' }, meter(t('vice'), L.vice, me.addictionCap, 'vi'), h('p', { class: 'small muted' }, t('vice') + ': ' + t('viceDown'))));
   if (L.vice >= me.addictionCap - 1) out.push(h('div', { class: 'note', style: 'margin-top:8px' }, h('p', null, t('viceFull')), h('button', { class: 'btn pri', on: { click: () => go('hosp') } }, t('goHosp'))));
   const more = (S.cfg.classes.find((c) => c.id === me.cls) || {}).fxMoreBp || 0;
   const mine = stockRows(me, b, true); if (mine) out.push(h('h2', { class: 'sec' }, t('clMine')), mine);
   const pv = playerClubs(me, L, b); if (pv.good) out.push(...pv, h('h2', { class: 'sec' }, t('p_club')));
-  out.push(h('div', { class: 'shop', style: 'margin-top:12px' }, S.cfg.drugs.map((g, d) => [g, d]).sort((x, y) => x[0].price - y[0].price).map(([g, d]) => {
+  out.push(h('div', { class: 'card vlist vc fxl', style: 'margin-top:12px' }, S.cfg.drugs.map((g, d) => [g, d]).sort((x, y) => x[0].price - y[0].price).map(([g, d]) => {
     const price = me.drugPrices[d];
-    const ok = (g.fx || L.energy + g.e <= max) && L.vice + g.a <= me.addictionCap && me.cash + me.bank >= price && !b;
-    return h('div', { class: 'item' }, art('drugs', g.id),
-      h('div', { class: 'nm' }, list('drugs')[d]),
-      h('div', { class: 'small' }, h('span', { class: 'c-en' }, icon('bolt'), '+' + g.e), ' · ', h('span', { class: 'c-vice' }, icon('pill'), '+' + g.a)),
-      g.fx ? h('ul', { class: 'perks' }, g.fx.map((f) => h('li', null, icon(FX_IC[f.k]), fxText(f) + ' · ' + t('fxFor', { m: Math.round((f.ms * (10000 + more)) / 10000 / 60000) }))))
-        : h('div', { class: 'small muted' }, t('noFx')),
-      h('button', { class: 'btn buy block', disabled: !ok, on: { click: (e) => act('drug', { d }, { el: e.currentTarget }) } }, t('buyFor', { m: money(price) })));
+    const ok = L.vice + g.a <= me.addictionCap && me.cash + me.bank >= price && !b;
+    return h('div', { class: 'vrow fxr' }, art('drugs', g.id, 'vth'),
+      h('div', { class: 'grow' }, h('b', null, list('drugs')[d]),
+        h('div', { class: 'small c-vice' }, '+' + g.a + ' ' + t('vice').toLowerCase()),
+        g.fx ? g.fx.map((f) => h('div', { class: 'small' }, fxText(f) + ' · ' + t('fxFor', { m: Math.round((f.ms * (10000 + more)) / 10000 / 60000) })))
+          : h('div', { class: 'small muted' }, t('noFx'))),
+      h('button', { class: 'btn ghost sm num', 'aria-label': t('buyFor', { m: money(price) }), disabled: !ok, on: { click: (e) => act('drug', { d }, { el: e.currentTarget }) } }, money(price)));
   })));
   if (!pv.good) out.push(...pv);
   return out;
@@ -815,17 +878,25 @@ function screenPutas() {
   if (me.sick) out.push(h('div', { class: 'note', style: 'margin-bottom:10px' }, h('h3', { class: 'c-red' }, t('sickTitle')), h('p', null, t('sickSub', { p: H.sickCutBp / 100 })),
     h('button', { class: 'btn pri', on: { click: () => go('hosp') } }, t('goHosp'))));
   const pv = playerBros(me, L, b); if (pv.good) out.push(...pv, h('h2', { class: 'sec' }, t('brCity')));
-  out.push(h('div', { class: 'shop' }, H.list.map((g, i) => [g, i]).sort((x, y) => x[0].tier - y[0].tier || x[0].min - y[0].min).map(([g, i]) => {
+  // uma lista, não uma grelha: a que dá stamina mais barata por ponto (das que se podem pagar) leva o botão cheio
+  const full = L.energy >= stamMax(me), room = stamMax(me) - L.energy;
+  const perPt = (i, g) => me.hookers[i] / Math.max(1, Math.min(g.e, room));
+  let best = -1; H.list.forEach((g, i) => { if (!full && me.cash + me.bank >= me.hookers[i] && (best < 0 || perPt(i, g) < perPt(best, H.list[best]))) best = i; });
+  if (full) out.push(h('p', { class: 'small muted', style: 'margin:0 2px 10px' }, t('hkFull')));
+  // agrupadas pelo sítio (debaixo da ponte, da rua…): o sítio é o título do grupo, cada linha diz só a stamina, o risco e o preço
+  const rows = [];
+  H.list.map((g, i) => [g, i]).sort((x, y) => x[0].tier - y[0].tier || x[0].e - y[0].e).forEach(([g, i], n, all) => {
+    if (!n || all[n - 1][0].tier !== g.tier) rows.push(h('h3', { class: 'hkt' }, t('hk_t' + g.tier)));
     const price = me.hookers[i];
-    const ok = !b && !me.sick && L.energy < S.cfg.energy.max && me.cash + me.bank >= price;
-    return h('div', { class: 'item' }, art('putas', g.id),
-      h('div', { class: 'nm' }, list('hookers')[i]),
-      h('div', { class: 'small muted' }, t('hk_t' + g.tier)),
-      h('div', { class: 'small' }, h('span', { class: 'c-en' }, icon('bolt'), '+' + g.e + ' ' + t('energy').toLowerCase())),
-      h('div', { class: 'small ' + (sickOf(g) >= 100 ? 'c-red' : 'muted') }, icon('skull'), t('hkRisk', { p: (sickOf(g) / 100).toString().replace('.', lang() === 'pt' ? ',' : '.') })),
-      (me.hkSteps?.[i] || 0) > 0 ? h('div', { class: 'small c-gold' }, t('hkUp', { p: Math.round(((H.stepNum / H.stepDen) ** me.hkSteps[i] - 1) * 100), h: me.hkSteps[i] })) : null,
-      h('button', { class: 'btn buy block', disabled: !ok, on: { click: (e) => act('hooker', { i }, { el: e.currentTarget }) } }, t('hkGo', { m: money(price) })));
-  })));
+    const ok = !b && !me.sick && !full && me.cash + me.bank >= price;
+    rows.push(h('div', { class: 'vrow hkr' }, art('putas', g.id, 'vth'),
+      h('div', { class: 'grow' }, h('b', null, list('hookers')[i]),
+        h('div', { class: 'small c-en' }, '+' + g.e + ' ' + t('energy').toLowerCase()),
+        h('div', { class: 'small c-red' }, t('hkSick', { p: (sickOf(g) / 100).toString().replace('.', lang() === 'pt' ? ',' : '.') })),
+        (me.hkSteps?.[i] || 0) > 0 ? h('div', { class: 'small c-gold' }, t('hkUp', { p: Math.round(((H.stepNum / H.stepDen) ** me.hkSteps[i] - 1) * 100), h: me.hkSteps[i] })) : null),
+      h('button', { class: 'btn sm num ' + (i === best ? 'buy' : 'ghost'), 'aria-label': t('hkGo', { m: money(price) }), disabled: !ok, on: { click: (e) => act('hooker', { i }, { el: e.currentTarget }) } }, money(price))));
+  });
+  out.push(h('div', { class: 'card vlist vc hkl' }, rows));
   out.push(h('p', { class: 'small muted', style: 'margin:10px 2px 0' }, t('hkRobNote')));
   if (!pv.good) out.push(...pv);
   return out;
@@ -834,7 +905,7 @@ function screenPutas() {
 // ---------- discoteca e bordel do jogador ----------
 const wholesaleOf = (d) => Math.max(1, Math.floor((S.cfg.drugs[d].price * S.cfg.goods.wholesaleBp) / 10000));
 const dumpOf = (d, n) => Math.floor((n * wholesaleOf(d) * S.cfg.goods.dumpBp) / 10000);
-const canTake = (me, L, g) => (g.fx || L.energy + g.e <= S.cfg.energy.max) && L.vice + g.a <= me.addictionCap;
+const canTake = (me, L, g) => (g.fx || L.energy + g.e <= stamMax(me)) && L.vice + g.a <= me.addictionCap;
 const ownerTag = (v) => (v.tag ? '[' + v.tag + '] ' : '') + v.name;
 // o armazém: cada linha abre as opções (tomar, despachar). Na discoteca da cidade há só o botão de tomar.
 function stockRows(me, b, quick) {
@@ -995,7 +1066,7 @@ function screenMyBro() {
   return out;
 }
 // ---------- bolsa ----------
-const stMoney = (c) => '$' + (c / 100).toLocaleString(lang() === 'pt' ? 'pt-PT' : 'en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const stMoney = (c) => { const v = (c / 100).toLocaleString(lang() === 'pt' ? 'pt-PT' : 'en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2, useGrouping: 'always' }); return lang() === 'pt' ? v + '\u00a0€' : '€' + v; };
 const stQuote = (price, n) => { const g = Math.ceil((n * price) / 100); return g + Math.ceil((g * S.cfg.stocks.feeBp) / 10000); };
 const stPct = (a, b) => { const p = b ? ((a - b) / b) * 100 : 0; if (Math.abs(p) < 0.05) return (0).toFixed(1).replace('.', lang() === 'pt' ? ',' : '.') + '%'; return (p >= 0 ? '+' : '−') + Math.abs(p).toFixed(Math.abs(p) >= 100 ? 0 : 1).replace('.', lang() === 'pt' ? ',' : '.') + '%'; };
 function stChart(arr, cls, w, hh) {
@@ -1117,31 +1188,31 @@ function playerBros(me, L, b) {
   const H = S.cfg.hookers.list, out = [h('h2', { class: 'sec' }, t('brPlayers'))];
   const good = all.map((v) => ({ ...v, girls: v.girls.filter((x) => x.price < me.hookers[x.i]) })).filter((v) => v.girls.length).slice(0, 6);
   out.good = good.length;
-  if (!good.length) out.push(h('div', { class: 'card stack vc' }, h('p', { class: 'muted' }, t('brNone')), me.bro ? null : h('button', { class: 'btn ghost', on: { click: () => go('mybro') } }, t('clOpen'))));
+  if (!good.length) out.push(h('div', { class: 'card stack vc' }, h('p', { class: 'muted' }, t('brNone')), me.bro ? null : h('button', { class: 'btn ghost', on: { click: () => go('mybro') } }, t('brOpen'))));
   for (const v of good) out.push(h('div', { class: 'card vlist vc' }, venueHead(v), v.girls.map((x) => { const g = H[x.i];
     return h('div', { class: 'vrow' }, art('putas', g.id, 'vth'), h('div', { class: 'grow' }, h('b', null, list('hookers')[x.i]), h('div', { class: 'small num' }, h('span', { class: 'c-en' }, icon('bolt'), '+' + g.e), ' · ', h('span', { class: 'c-cash' }, t('vnSave', { m: money(me.hookers[x.i] - x.price) })))),
-      h('button', { class: 'btn buy sm num', disabled: !!b || me.sick || L.energy >= S.cfg.energy.max || me.cash + me.bank < x.price, on: { click: async (e) => { await act('broVisit', { owner: v.name, slot: x.slot, price: x.price }, { el: e.currentTarget }); loadVenues(); } } }, money(x.price))); })));
+      h('button', { class: 'btn buy sm num', disabled: !!b || me.sick || L.energy >= stamMax(me) || me.cash + me.bank < x.price, on: { click: async (e) => { await act('broVisit', { owner: v.name, slot: x.slot, price: x.price }, { el: e.currentTarget }); loadVenues(); } } }, money(x.price))); })));
   return out;
 }
 
 // ---------- ginásio ----------
 function screenGym() {
-  const me = S.st.me;
-  const out = [pageHead('gym', t('gymSub'))];
+  const me = S.st.me, L = live(me), E = S.cfg.train.energy;
+  const out = [pageHead('gym', t('gymSub', { e: E }))];
   const b = busyBanner(me); if (b) out.push(b);
+  out.push(h('div', { class: 'card meters' }, meter(t('vigor'), L.vigor, vigMax(), 'vg'), h('p', { class: 'small muted' }, t('vigorSub'))));
   out.push(h('div', { class: 'power' },
-    h('div', { class: 'card' }, h('b', { class: 'c-red' }, icon('fist'), short(me.attack)), h('span', { class: 'small muted' }, t('attackPower'))),
-    h('div', { class: 'card' }, h('b', { class: 'c-en' }, icon('shield'), short(me.defense)), h('span', { class: 'small muted' }, t('defensePower')))));
+    h('div', { class: 'card' }, h('b', null, icon('fist'), short(me.attack)), h('span', { class: 'small muted' }, t('attackPower'))),
+    h('div', { class: 'card' }, h('b', null, icon('shield'), short(me.defense)), h('span', { class: 'small muted' }, t('defensePower')))));
   out.push(h('div', { class: 'shop' }, ['F', 'I', 'C', 'T'].map((s) => {
     const train = async (e, n) => { const el = e.currentTarget; for (let i = 0; i < n; i++) { const r = await act('train', { stat: s }, { el }); if (!r) break; } };
     return h('div', { class: 'item' }, art('stats', s),
-      h('div', { class: 'nm' }, icon(STAT_IC[s]), ' ', t('stat' + s), ' ', h('b', { class: 'num c-en' }, num(me.stats[s]))),
+      h('div', { class: 'nm' }, icon(STAT_IC[s]), ' ', t('stat' + s), ' ', h('b', { class: 'num' }, num(me.stats[s]))),
       h('p', { class: 'small muted' }, t('stat' + s + 'd')),
       me.xp && s !== 'T' ? h('div', { class: 'fill', title: t('practiceLbl') }, h('i', { style: `width:${Math.min(100, (me.xp[s] / me.xpNeed[s]) * 100)}%;background:var(--energy)` })) : null,
-      h('div', { class: 'row' }, h('button', { class: 'btn buy grow', disabled: !!b, on: { click: (e) => train(e, 1) } }, t('train')),
-        h('button', { class: 'btn', disabled: !!b, on: { click: (e) => train(e, 5) } }, t('trainX5'))));
+      h('div', { class: 'row gymr' }, h('button', { class: 'btn buy grow', disabled: !!b || L.vigor < E, on: { click: (e) => train(e, 1) } }, t('train')),
+        h('button', { class: 'btn', disabled: !!b || L.vigor < 5 * E, on: { click: (e) => train(e, 5) } }, t('trainX5'))));
   })));
-  out.push(h('p', { class: 'small muted', style: 'margin-top:12px' }, t('trainCost', { e: S.cfg.train.energy })));
   return out;
 }
 
@@ -1167,7 +1238,7 @@ function screenBiz() {
         : h('div', { class: 'small muted' }, '+' + moneyShort(unitPerH) + t('perHour') + ' · +' + cfg.resp + ' ' + t('respect').toLowerCase()),
       b.n > 0 ? h('div', { class: 'fill big' + (fill >= 1 ? ' full' : ''), dataset: { fill: i } }, h('i', { style: `width:${fill * 100}%` })) : null,
       b.n > 0 ? h('div', { class: 'small muted', dataset: { fillTxt: i } }, fill >= 1 ? t('storageFull') : t('storage', { p: Math.floor(fill * 100) })) : null,
-      h('div', { class: 'small muted' }, cfg.toBank ? t('legal') : t('raidRisk')),
+      h('div', { class: 'small ' + (cfg.toBank ? 'muted' : 'c-red') }, cfg.toBank ? t('legal') : t('raidRisk')),
       cfg.drug >= 0 && b.n > 0 ? h('div', { class: 'seg bzg', role: 'group', 'aria-label': t('bizOut') },
         h('button', { 'aria-pressed': b.g ? 'false' : 'true', on: { click: () => { if (b.g) act('bizGoods', { i, on: false }); } } }, t('bizOutCash')),
         h('button', { 'aria-pressed': b.g ? 'true' : 'false', on: { click: () => { if (!b.g) act('bizGoods', { i, on: true }); } } }, list('drugs')[cfg.drug])) : null,
@@ -1379,9 +1450,10 @@ function shipSheet(k) {
 function screenArms() {
   const me = S.st.me, H = S.cfg.hitman, liquid = me.cash + me.bank;
   // quatro montras: cada tipo de arma serve um sistema do jogo (lutas, golpes a solo, golpes de gangue) e a defesa fica à parte
-  const seg = ['fight', 'rob', 'gang', 'def'].includes(S.armsSeg) ? S.armsSeg : 'fight';
+  // (as ferramentas dos golpes a solo saem até às operações com preparação: os golpes de rua não as usam)
+  const seg = ['fight', 'gang', 'def'].includes(S.armsSeg) ? S.armsSeg : 'fight';
   const out = [pageHead('arms', t('s_arms'))];
-  out.push(h('div', { class: 'seg five armseg', role: 'group' }, [['fight', t('arFight')], ['rob', t('arRob')], ['gang', t('arGang')], ['def', t('arDef')]].map(([id, lbl]) =>
+  out.push(h('div', { class: 'seg armseg', role: 'group' }, [['fight', t('arFight')], ['gang', t('arGang')], ['def', t('arDef')]].map(([id, lbl]) =>
     h('button', { 'aria-pressed': seg === id ? 'true' : 'false', on: { click: () => { S.armsSeg = id; render(); } } }, lbl))));
   const groups = {
     fight: [['weapon', S.cfg.weapons, list('weaponsL'), 'weapons', null, t('arFightSub')]],
@@ -1445,42 +1517,40 @@ function screenBank() {
       btn, net)];
 }
 function screenLux() {
-  const me = S.st.me, names = list('lux');
-  const out = [pageHead('lux', t('luxSub', { n: S.cfg.luxury.respect }))];
-  if (me.luxuries < S.cfg.luxury.max) out.push(h('button', { class: 'btn buy block big', style: 'margin-bottom:12px', disabled: me.cash + me.bank < me.luxuryPrice, on: { click: (e) => act('luxury', {}, { el: e.currentTarget }) } },
-    t('buyLux', { x: names[me.luxuries], m: moneyShort(me.luxuryPrice) })));
-  if (me.luxuries) out.push(h('div', { class: 'chips' }, names.slice(0, me.luxuries).map((n) => h('span', { class: 'chip' }, n))));
+  const me = S.st.me, names = list('lux'), Lx = S.cfg.luxury.list;
+  const out = [pageHead('lux', t('luxSub'))];
+  out.push(...luxRows(me, names, Lx));
   return out;
 }
-// a casa: vê-se a melhorar, dá respeito e deixa subir as melhorias
-const UP_IC = { cofre: 'lock', alarme: 'shield', garagem: 'car', escritorio: 'empire' };
+function luxRows(me, names, Lx) {
+  const nx = me.luxuries, liquid = me.cash + me.bank;
+  return [h('div', { class: 'card vlist vc' }, Lx.map((x, i) => h('div', { class: 'vrow lux' + (i > nx ? ' dim' : '') },
+    h('div', { class: 'grow' }, h('b', null, names[i]), h('div', { class: 'small muted num' }, money(x.price) + ' · ', h('span', { class: 'c-resp' }, t('luxResp', { n: num(Math.floor(Math.sqrt(x.price))) })))),
+    i < nx ? h('span', { class: 'small c-cash' }, t('owned'))
+      : i === nx ? h('button', { class: 'btn buy sm', disabled: liquid < x.price, on: { click: (e) => act('luxury', {}, { el: e.currentTarget }) } }, liquid < x.price ? t('needMoney', { m: money(x.price - liquid) }) : t('luxBuy'))
+      : null)))];
+}
+// a casa: compra-se a seguinte (a antiga entra na troca pelo que custou), sem renda nem despesa. Mais espaços e mais stamina máxima.
 function screenCasa() {
   const me = S.st.me, H = S.cfg.house, cur = H.tiers[me.house], nx = H.tiers[me.house + 1], names = list('houses');
   const pic = (id, cls) => h('img', { class: cls, src: IMG('casa', id), alt: '', width: 600, height: 600, decoding: 'async', on: { error: (e) => e.currentTarget.remove() } });
   const out = [pageHead('casa', t('s_casa'), true)];
-  const pct = (v) => (v / 100).toString().replace('.', lang() === 'pt' ? ',' : '.');
+  const fact = (lbl, val) => h('div', { class: 'fact' }, h('b', { class: 'num' }, val), h('span', null, lbl));
   out.push(h('div', { class: 'jobp home' },
-    h('div', { class: 'jimg' }, pic(cur.id),
-      // o que a casa já tem instalado vê-se logo na imagem
-      h('div', { class: 'hups' }, H.ups.map((g, u) => h('span', { class: 'hup' + (me.hu[u] ? ' on' : ''), title: t('hu_' + g.id) }, icon(UP_IC[g.id]), me.hu[u] ? h('b', null, String(me.hu[u])) : null))),
-      h('h2', null, names[me.house])),
-    h('div', { class: 'small muted' }, t('houseNow', { a: me.house + 1, b: H.tiers.length })),
+    h('div', { class: 'jimg' }, pic(cur.id), h('h2', null, names[me.house])),
+    h('div', { class: 'facts two' }, fact(t('hSlots'), String(cur.slots)), fact(t('hStam'), String(cur.emax))),
     nx ? h('div', { class: 'nexth' }, pic(nx.id, 'nximg'), h('div', { class: 'grow' }, h('div', { class: 'small muted' }, t('houseNext')), h('div', { class: 'nm' }, names[me.house + 1]),
-      h('div', { class: 'small c-resp' }, icon('crown'), ' +' + nx.resp + ' ' + t('respect').toLowerCase()))) : h('p', { class: 'c-gold' }, t('houseTop')),
-    nx ? h('button', { class: 'btn buy block big', disabled: me.cash + me.bank < nx.price, on: { click: (e) => act('house', {}, { el: e.currentTarget }) } }, t('houseBuy', { m: moneyShort(nx.price) })) : null));
-  out.push(h('h2', { class: 'sec' }, t('upsTitle')));
-  out.push(h('div', { class: 'shop' }, H.ups.map((g, u) => {
-    const lv = me.hu[u], price = me.huPrices[u], max = H.tiers.length - 1;
-    return h('div', { class: 'item up' },
-      h('div', { class: 'uhead' }, h('span', { class: 'uic' }, icon(UP_IC[g.id])), h('div', { class: 'nm' }, t('hu_' + g.id))),
-      // barra de níveis: laranja = já tens, cinzento claro = a tua casa deixa, escuro = precisa de casa melhor
-      h('div', { class: 'pips', role: 'img', 'aria-label': t('huLevel', { a: lv, b: me.house }) }, Array.from({ length: max }, (_, k) => h('i', { class: k < lv ? 'on' : k < me.house ? 'av' : '' }))),
-      h('div', { class: 'small' }, lv ? t('hd_' + g.id, { p: pct(lv * g.bp) }) : h('span', { class: 'muted' }, t('huNone'))),
-      lv < me.house ? h('div', { class: 'small c-cash' }, t('huNext', { x: t('hd_' + g.id, { p: pct((lv + 1) * g.bp) }) })) : null,
-      lv < me.house ? h('button', { class: 'btn buy block', disabled: me.cash + me.bank < price, on: { click: (e) => act('houseUp', { u }, { el: e.currentTarget }) } }, t('huBuy', { m: moneyShort(price) }))
-        : h('div', { class: 'tagline muted small' }, lv >= max ? t('maxed') : t('huNeed')));
-  })));
-  out.push(h('h2', { class: 'sec' }, t('p_lux')), h('p', { class: 'small muted', style: 'margin-bottom:10px' }, t('luxSub', { n: S.cfg.luxury.respect })), ...screenLux().slice(1));
+      h('div', { class: 'small muted' }, t('hNextGives', { s: nx.slots, e: nx.emax })),
+      h('div', { class: 'small c-resp' }, t('r_resp', { n: num(nx.resp) })))) : h('p', { class: 'c-gold' }, t('houseTop')),
+    nx && cur.price ? h('p', { class: 'small muted' }, t('hTrade', { m: money(cur.price) })) : null,
+    nx ? h('button', { class: 'btn buy block big', disabled: me.cash + me.bank < me.housePrice, on: { click: (e) => act('house', {}, { el: e.currentTarget }) } },
+      me.cash + me.bank < me.housePrice ? t('needMoney', { m: money(me.housePrice - me.cash - me.bank) }) : t('houseBuy', { m: money(me.housePrice) })) : null));
+  out.push(h('h2', { class: 'sec' }, t('hAll')));
+  out.push(h('div', { class: 'card vlist vc' }, H.tiers.map((x, i) => h('div', { class: 'vrow' + (i > me.house + 1 ? ' dim' : '') },
+    h('img', { class: 'vth', src: IMG('casa', x.id), alt: '', width: 600, height: 600, loading: 'lazy', decoding: 'async', on: { error: (e) => { e.currentTarget.style.visibility = 'hidden'; } } }),
+    h('div', { class: 'grow' }, h('b', null, names[i]), h('div', { class: 'small muted num' }, (x.price ? money(x.price) : t('hFree')) + ' · ' + t('hRow', { s: x.slots, e: x.emax }))),
+    i === me.house ? h('span', { class: 'small c-cash' }, t('hHere')) : null))));
+  out.push(h('h2', { class: 'sec' }, t('p_lux')), h('p', { class: 'small muted', style: 'margin:-4px 2px 10px' }, t('luxSub')), ...luxRows(me, list('lux'), S.cfg.luxury.list));
   return out;
 }
 function screenHosp() {
@@ -1924,7 +1994,7 @@ function opResult(o, resp, when) {
     resp ? h('b', { class: 'num ' + (resp < 0 ? 'c-red' : 'c-cash') }, (resp > 0 ? '+' : '') + resp) : null);
 }
 function gangOps(mine, me) {
-  const G = S.cfg.gang, n = now(), op = mine.op, lv = live(me), busy = lv.jail || lv.hosp, en = lv.energy;
+  const G = S.cfg.gang, n = now(), op = mine.op, lv = live(me), busy = lv.jail || lv.hosp, en = lv.energy, vg = lv.vigor;
   const out = [h('h2', { class: 'sec' }, t('gOpsT'))];
   if (op) {
     // O pedido não tem prazo. Enquanto falta gente mostra-se quantos faltam; com a equipa completa conta a última chamada.
@@ -1941,7 +2011,7 @@ function gangOps(mine, me) {
       op.staleAt ? h('p', { class: 'small muted' }, t('goStaleIn'), h('b', { class: 'num', dataset: { opend: op.staleAt } }, dur(Math.max(0, op.staleAt - n))), '.') : null,
       op.joined && op.share != null ? h('p', { class: 'small ' + (op.share < 10000 ? 'c-gold' : 'muted') }, t(op.share < 10000 ? 'goShareLow' : 'goShare', { p: pct(op.share) })) : null,
       // uma ação principal de cada vez: alinhar se ainda não estás; avançar se estás e mandas no pedido
-      op.joined ? null : h('button', { class: 'btn buy block', disabled: !!busy || en < op.e || full || !!op.hold, on: { click: join } }, t('goJoin', { e: op.e })),
+      op.joined ? null : h('button', { class: 'btn buy block', disabled: !!busy || (op.kind === 'hit' ? vg : en) < op.e || full || !!op.hold, on: { click: join } }, t(op.kind === 'hit' ? 'goJoinV' : 'goJoin', { e: op.e })),
       op.canGo ? h('button', { class: 'btn block ' + (op.joined ? 'buy' : 'pri'), on: { click: async (e) => { await gAct('gangOpGo', {}, { el: e.currentTarget }); refresh(); } } }, t('goGo')) : null,
       op.joined ? h('div', { class: 'row sp gin' }, h('span', null, icon('check'), t('goIn')),
         op.mine ? null : h('button', { class: 'btn ghost sm', on: { click: () => gAct('gangOpLeave', {}) } }, t('goOut'))) : null,
@@ -1967,7 +2037,7 @@ function gangOps(mine, me) {
       h('div', { class: 'small muted gln' }, tint(t('ghLine', { n: H.need, a: moneyShort(H.min), b: moneyShort(H.max), r: H.r }))))),
     mine.bot ? null : h('div', { class: 'gup gop2' }, art('cenas', 'lutas', 'gthumb'),
       h('div', { class: 'gnm' }, t('goHit')),
-      h('button', { class: 'btn danger sm', disabled: cool || !!busy || en < S.cfg.pvp.energy, on: { click: () => gangPickTarget() } }, t('goPick')),
+      h('button', { class: 'btn danger sm', disabled: cool || !!busy || vg < S.cfg.pvp.energy, on: { click: () => gangPickTarget() } }, t('goPick')),
       h('div', { class: 'small muted gln' }, t('goHitLine', { n: G.hitNeed, m: Math.round((S.cfg.pvp.beatHospMs * G.hitHospBp) / 10000 / 60000) }))),
     h('p', { class: 'small muted', style: 'padding-top:10px' }, t('ghNote', { m: Math.round(G.opCoolMs / 60000) }))));
   return out;

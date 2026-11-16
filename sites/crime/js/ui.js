@@ -82,10 +82,15 @@ export function svg(tag, attrs) {
 }
 
 // ---------- formatos ----------
-let LOC = 'en-US';
-export function setLocale(l) { LOC = l === 'pt' ? 'pt-PT' : 'en-US'; }
-export function num(n) { return Math.floor(n).toLocaleString(LOC); }
-export function money(n) { return '$' + num(n); }
+let LOC = 'en-US', NF = null;
+export function setLocale(l) { LOC = l === 'pt' ? 'pt-PT' : 'en-US'; NF = null; }
+// em português o browser só separa os milhares a partir de 5 algarismos («6200» mas «12 345»); «always» separa sempre («6 200»)
+export function num(n) {
+  if (!NF) { try { NF = new Intl.NumberFormat(LOC, { useGrouping: 'always', maximumFractionDigits: 0 }); } catch { NF = new Intl.NumberFormat(LOC, { maximumFractionDigits: 0 }); } }
+  return NF.format(Math.floor(n));
+}
+// euros a valores reais (base nova): «1 500 €» em português, «€1,500» em inglês; sempre por extenso
+export function money(n) { return LOC === 'pt-PT' ? num(n) + '\u00a0€' : (n < 0 ? '−€' + num(-n) : '€' + num(n)); }
 export function short(n) {
   const a = Math.abs(n);
   if (a < 10000) return num(n);
@@ -96,7 +101,7 @@ export function short(n) {
   }
   return num(n);
 }
-export function moneyShort(n) { return '$' + short(n); }
+export function moneyShort(n) { return money(n); }   // os valores em dinheiro escrevem-se sempre por extenso (sem K nem M)
 export function dur(ms) {
   const s = Math.max(0, Math.ceil(ms / 1000));
   if (s < 60) return s + 's';
