@@ -14,6 +14,7 @@ function rngDe(s) { let a = s >>> 0; return () => { a |= 0; a = (a + 0x6d2b79f5)
 
 // ---------- números do modelo (os que vão para a wiki) ----------
 export const P = {
+  mesesPorDia: +(process.env.MESES ?? 2),   // um dia real vale dois meses de jogo: ordenado e custo de vida de dois meses por dia
   estaminaBarra: 100,
   // Empregos: o ordenado líquido de um mês real paga-se por dia real, em 6 turnos de 10 de stamina.
   turnos: 6, turnoStamina: 10,
@@ -96,9 +97,9 @@ function simula(perfil, rng) {
     const prox = P.empregos[s.emprego + 1];
     if (!s.curso && prox && (!prox.nivel || nv >= prox.nivel) && s.cash > prox.curso.preco * 2) { s.curso = { fim: d + prox.curso.dias }; sai += prox.curso.preco; }
     if (s.curso && d >= s.curso.fim) { s.emprego++; s.curso = null; }
-    // emprego: 6 turnos (0,6 de uma barra); o casual só faz metade
-    const turnos = perfil === 'casual' ? 3 : P.turnos;
-    entra += (P.empregos[s.emprego].dia * turnos) / P.turnos; s.resp += turnos * P.resp.turno; barras -= (turnos * P.turnoStamina) / P.estaminaBarra;
+    // emprego: 6 turnos (0,6 de uma barra). Todos os fazem: com dois meses por dia é o que mais rende por stamina no início
+    const turnos = P.turnos;
+    entra += (P.empregos[s.emprego].dia * P.mesesPorDia * turnos) / P.turnos; s.resp += turnos * P.resp.turno; barras -= (turnos * P.turnoStamina) / P.estaminaBarra;
     let crime = 0;
     // venda de droga: primeiro, até ao limite da clientela
     const v = [...P.venda].reverse().find((x) => nv >= x.nivel && (s.capital >= x.capital || s.cash > x.capital * 1.5));
@@ -131,10 +132,10 @@ function simula(perfil, rng) {
     entra += crime;
     // vida: sobe de degrau quando pode
     s.media = s.media == null ? entra : s.media * 0.8 + entra * 0.2;   // o que se ganha por dia, alisado
-    const cabe = (i) => { const t = P.vida[i]; return t && t.dia <= s.media * P.parteDaVida && (!t.compra || s.casa >= t.compra || s.cash + entra - sai > t.compra * 1.3); };
+    const cabe = (i) => { const t = P.vida[i]; return t && t.dia * P.mesesPorDia <= s.media * P.parteDaVida && (!t.compra || s.casa >= t.compra || s.cash + entra - sai > t.compra * 1.3); };
     let alvo = 0; for (let j = 1; j < P.vida.length; j++) if (cabe(j)) alvo = j;
     if (alvo !== s.vida) { s.vida = alvo; const t = P.vida[alvo]; if (t.compra && s.casa < t.compra) { sai += t.compra - s.casa; s.casa = t.compra; if (!s.casaDia) s.casaDia = d; } }
-    sai += P.vida[s.vida].dia; s.sumidouro = (s.sumidouro || 0) + sai; s.torneira = (s.torneira || 0) + entra;
+    sai += P.vida[s.vida].dia * P.mesesPorDia; s.sumidouro = (s.sumidouro || 0) + sai; s.torneira = (s.torneira || 0) + entra;
     s.cash += entra - sai;
     if (s.cash < 0) s.cash = 0;   // sem dinheiro: come na cantina social, não acumula dívida (rede para não castigar o novato)
     if (!s.carro && s.cash > P.carro + 1000) { s.cash -= P.carro; s.carro = d; }
@@ -158,7 +159,7 @@ for (const perfil of Object.keys(PERFIS)) {
     carro: med(runs.map((r) => r.carro)), casa: med(runs.map((r) => r.casa)), n100: med(runs.map((r) => r.n100)), semCasa: runs.filter((r) => r.casa == null).length / N, sem100: runs.filter((r) => r.n100 == null).length / N,
   };
 }
-console.log(`Economia nova · semente ${SEED} · ${N} contas por perfil · ${DIAS} dias (um dia real = um mês de jogo)\n`);
+console.log(`Economia nova · semente ${SEED} · ${N} contas por perfil · ${DIAS} dias (um dia real = ${P.mesesPorDia} meses de jogo)\n`);
 for (const [perfil, r] of Object.entries(res)) {
   console.log(perfil.toUpperCase() + `  (${PERFIS[perfil].barras} barras de stamina por dia)`);
   for (const d of DIAS_FOTO) console.log(`  dia ${String(d).padStart(3)}: fortuna mediana ${eur(r.fotos[d].fortuna).padStart(14)}   10% mais ricos ${eur(r.fotos[d].p90).padStart(14)}   nível ${String(r.fotos[d].nivel).padStart(3)}   ganha por dia ${eur(r.fotos[d].dia)}`);
