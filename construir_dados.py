@@ -36,6 +36,8 @@ import urllib.request
 import zipfile
 from zoneinfo import ZoneInfo
 
+from netex_gtfs import netex_para_gtfs
+
 OUT_DB = "gtfs.db"
 OUT_GZ = "gtfs.db.gz"
 OUT_MANIFEST = "manifest.json"
@@ -118,6 +120,13 @@ SEED_FEEDS = [
      "url": "https://gtfs-api.smtuc.pt/api/static/",  # oficial, indicado pelos SMTUC (23/10/2026)
      "mirror": "https://files.mobilitydatabase.org/mdb-2992/latest.zip",
      "mdb": ["smtuc", "transportes urbanos de coimbra"]},
+    # Metro Mondego (metrobus de Coimbra, Miranda do Corvo e Lousã): a AGIT (agência de transportes da região de
+    # Coimbra) só publica os horários em NeTEx; o construtor converte-os para GTFS (netex_gtfs.py). Os desenhos das
+    # linhas seguem os eixos da rede publicados pela AGIT em dados.gov.pt (CC BY 4.0).
+    {"id": "metro_mondego", "operator_name": "Metro Mondego (Coimbra)", "mode": "Autocarro", "formato": "netex",
+     "url": "https://api.planner.agit.pt/v1/datasets/metro-mondego/distributions/netex/download",
+     "desenhos_kml": "https://dados.gov.pt/s/resources/metro-mondego/20260817-153951-91f456a7/rede-metrobus.kmz",
+     "mdb": ["metro mondego"]},
     {"id": "vamus", "operator_name": "Vamus Algarve", "mode": "Autocarro",
      "url": "https://drive.google.com/uc?export=download&id=1CM8O4ndsfSJhka42SxFUZ9eB-wE10NqX",
      "mdb": ["vamus"]},
@@ -143,7 +152,7 @@ DISCOVERY_SKIP = [
     "transportes colectivos do porto", "stcp", "metro do porto", "transportes urbanos de braga",
     "guimabus", "tuba", "mobiave", "smtuc", "transportes urbanos de coimbra", "vamus",
     "proximo", "giro", "sobe e desce", "horarios do funchal", "flixbus",
-    "metropolitanos de lisboa",
+    "metropolitanos de lisboa", "metro mondego",
 ]
 
 # Só se guardam viagens que funcionam entre ontem e daqui a WINDOW_DAYS dias
@@ -1109,6 +1118,20 @@ def discovered_feeds(catalog, seed_urls):
 # ---------------------------------------------------------------------------
 # Processamento
 # ---------------------------------------------------------------------------
+def converter_netex(feed, body):
+    """NeTEx -> GTFS (netex_gtfs.py). Os eixos da rede (KML) servem para os desenhos das linhas; se não chegarem,
+    as linhas ficam desenhadas de paragem a paragem e os horários entram na mesma."""
+    kml = None
+    if feed.get("desenhos_kml"):
+        try:
+            _, kml = http_get(feed["desenhos_kml"], timeout=120)
+        except Exception as err:  # noqa: BLE001
+            log(f"  {feed['id']}: sem a rede para os desenhos ({str(err)[:100]}): linhas de paragem a paragem")
+    gtfs = netex_para_gtfs(body, kml)
+    log(f"  {feed['id']}: NeTEx convertido para GTFS ({len(gtfs) // 1024} KB)")
+    return gtfs
+
+
 def process_feed(conn, feed, today_dt, have_prev):
     fid = feed["id"]
     origin = feed.get("source_origin", "seed")
@@ -1174,6 +1197,8 @@ def process_feed(conn, feed, today_dt, have_prev):
     for url, body, status, ms, end in attempts():
         try:
             log_fetch(conn, fid, url, status, len(body), ms, f"Download concluído ({len(body) // 1024} KB)")
+            if feed.get("formato") == "netex":
+                body = converter_netex(feed, body)
             delete_feed(conn, fid)
             # Prolonga o horário semanal se as datas do operador passaram há no máximo `limit` dias.
             extend = False

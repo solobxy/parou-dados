@@ -65,6 +65,7 @@ jobs:
           python auditoria/test_stcp_copia.py
           python auditoria/test_nomes_linhas.py
           python auditoria/test_caminhos_a_pe.py
+          python auditoria/test_metro_mondego.py
 
       # Cópia do último ficheiro oficial da STCP (cache privada do Actions; não é publicada). Usada quando a API
       # responde 429 (quota diária gasta pelo tempo real do servidor), em vez do ficheiro antigo do portal aberto.
