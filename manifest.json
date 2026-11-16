@@ -1,14 +1,14 @@
 {
-  "built_at": "2026-11-16T12:02:23.917977+00:00",
-  "db_bytes": 706560000,
-  "gz_bytes": 194635802,
+  "built_at": "2026-11-16T13:04:44.413786+00:00",
+  "db_bytes": 708816896,
+  "gz_bytes": 195081898,
   "totals": {
-    "lines": 2656,
-    "stops": 46397,
-    "trips": 124300,
-    "stop_times": 3756211,
-    "operators": 30,
-    "operators_ok": 27,
+    "lines": 2661,
+    "stops": 46437,
+    "trips": 125279,
+    "stop_times": 3771887,
+    "operators": 31,
+    "operators_ok": 28,
     "operators_desatualizados": 3
   },
   "feeds": [
@@ -276,6 +276,25 @@
       "servicos_sem_calendario": null,
       "viagens_hoje": 2407,
       "viagens_amanha": 2407,
+      "dias_uteis_sem_servico": 0
+    },
+    {
+      "id": "metro_mondego",
+      "operator_name": "Metro Mondego (Coimbra)",
+      "status": "OK",
+      "lines": 5,
+      "stops": 40,
+      "trips": 979,
+      "valid_until": "2026-12-31",
+      "validade": "ok",
+      "dias_validade": 45,
+      "horario_prolongado": false,
+      "url": "https://api.planner.agit.pt/v1/datasets/metro-mondego/distributions/netex/download",
+      "last_error": null,
+      "servicos_associados": null,
+      "servicos_sem_calendario": null,
+      "viagens_hoje": 452,
+      "viagens_amanha": 452,
       "dias_uteis_sem_servico": 0
     },
     {
@@ -584,7 +603,7 @@
     }
   ],
   "desenhos": {
-    "bytes": 7732951,
+    "bytes": 7754680,
     "por_operador": {
       "carris": {
         "viagens": 24961,
@@ -629,6 +648,11 @@
       "metro_lisboa": {
         "viagens": 2553,
         "com_desenho": 2553,
+        "desenhos": 18
+      },
+      "metro_mondego": {
+        "viagens": 979,
+        "com_desenho": 979,
         "desenhos": 18
       },
       "metro_porto": {
@@ -911,12 +935,12 @@
           "total": 398
         },
         "servicos_com_data_hoje": [
-          "DU",
-          "BU",
-          "CU",
-          "EU",
           "AU",
           "BexpU",
+          "EU",
+          "DU",
+          "CU",
+          "BU",
           "FU"
         ],
         "viagens_por_servico": [
@@ -972,5 +996,5 @@
       }
     }
   },
-  "duration_s": 287
+  "duration_s": 246
 }
