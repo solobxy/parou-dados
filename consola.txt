@@ -1,0 +1,2 @@
+pedidos do caminho a pé: [{"url":"/api/transit/caminho-a-pe?de=40.20750,-8.43070&para=40.20753,-8.43065","status":200,"metros":null}]
+troços a pé no mapa: 2 [{"pontos":2,"w":0,"h":0},{"pontos":4,"w":6,"h":12}]
