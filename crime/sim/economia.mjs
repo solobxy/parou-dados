@@ -1,11 +1,11 @@
-// Simulação da economia nova (vida infinita, valores reais de Portugal, um dia real = um mês de jogo).
+// Simulação da economia nova (vida infinita, valores reais de Portugal, um dia real = dois meses de jogo).
 // Não usa o motor do jogo: é o modelo que serve de especificação, para acertar os números antes de construir.
 // Uso: node sim/economia.mjs [semente] [contas por perfil] [dias]
 //
 // O que tem de provar (falha com código de saída 1 se alguma não se verificar):
 //   1. ninguém fica rico numa semana (nem quem joga sem parar passa de 100 000 € ao dia 7);
 //   2. o primeiro carro chega na primeira ou segunda semana a quem joga todos os dias;
-//   3. a primeira casa comprada demora meses, não dias;
+//   3. sai-se da barraca em dias, mas o primeiro apartamento na cidade demora meses;
 //   4. o nível 100 demora cerca de um ano a quem joga todos os dias e não menos de cinco meses a quem joga sem parar;
 //   5. jogar o dobro rende menos do que o dobro (a rua aquece), para valer a pena variar em vez de repetir.
 
@@ -55,16 +55,18 @@ export const P = {
     { id: 'casino', nivel: 80, dias: 7, custo: 150000, ganho: 700000, p: 0.4, pausa: 5 },
   ],
   falhaOp: { advogado: [3000, 7000], perdeCusto: true },
-  // Custo de vida por dia jogado (renda de um mês + comida + contas), por degrau de vida.
-  // Sobe-se de degrau quando o degrau seguinte cabe em metade do que se ganha por dia; as casas compram-se quando há 1,3 vezes o preço.
+  // Casas: começa-se numa barraca de 0 €, sem renda nem despesa. As casas só se compram; cada uma tem despesa por mês de jogo
+  // (contas, condomínio, pessoal) e mais espaços de inventário. Compra-se quando a despesa cabe em metade do que se ganha e há 1,3 vezes o preço.
   vida: [
-    { id: 'quarto', dia: 750 },                              // quarto no Porto 450 + cabaz 256 + passe 40
-    { id: 'T1 arrendado', dia: 1400 },                       // T1 no Porto 1 003 + contas e comida
-    { id: 'T1 comprado', compra: 183000, dia: 900 },         // 50 m² a 3 665 €/m²; fica o condomínio, contas e vida
-    { id: 'moradia', compra: 600000, dia: 3500 },
-    { id: 'mansão', compra: 3000000, dia: 18000 },           // pessoal, segurança, carros
+    { id: 'barraca', dia: 0, espacos: 6 },
+    { id: 'roulotte', compra: +(process.env.ROUL ?? 6000), dia: 150, espacos: 12 },   // usada; preço sem fonte (grau D)
+    { id: 'T1 no interior', compra: 54000, dia: 400, espacos: 20 },                    // 50 m² em Castelo Branco
+    { id: 'T1 na cidade', compra: 183000, dia: 900, espacos: 30 },                     // 50 m² no Porto, a 3 665 €/m²
+    { id: 'moradia', compra: 600000, dia: 3500, espacos: 45 },
+    { id: 'mansão', compra: 3000000, dia: 18000, espacos: 80 },                        // pessoal, segurança, carros
   ],
-  parteDaVida: 0.5,
+  casaASerio: 183000,   // a prova da «primeira casa» mede o primeiro T1 na cidade, não a roulotte
+  parteDaVida: +(process.env.PARTE ?? 0.5),
   carro: 5000,   // usado barato; compra-se quando sobram 1 000 € depois de o pagar
   // Stamina a mais do que a natural: cada barra extra custa droga e desintoxicação, cada vez mais cara no mesmo dia.
   extra: (k) => 35 * k + 15 * k * k,   // 1.ª barra extra 50 €, 3.ª 240 €, 7.ª 980 €
@@ -86,7 +88,7 @@ const PERFIS = {
 
 function simula(perfil, rng) {
   const A = PERFIS[perfil];
-  const s = { cash: 50, resp: 0, emprego: 1, curso: null, pratica: 0, capital: 0, vida: 0, casa: 0, carro: null, op: null, pausaAte: 0, n100: null, casaDia: null, ilegal: 0, diasJogados: 0 };
+  const s = { cash: 50, resp: 0, emprego: 1, curso: null, pratica: 0, capital: 0, vida: 0, casa: 0, carro: null, op: null, pausaAte: 0, n100: null, casaDia: null, tetoDia: null, ilegal: 0, diasJogados: 0 };
   const marcos = {};
   for (let d = 1; d <= DIAS; d++) {
     if (rng() < A.falha) { marcos[d] = foto(s); continue; }
@@ -134,7 +136,7 @@ function simula(perfil, rng) {
     s.media = s.media == null ? entra : s.media * 0.8 + entra * 0.2;   // o que se ganha por dia, alisado
     const cabe = (i) => { const t = P.vida[i]; return t && t.dia * P.mesesPorDia <= s.media * P.parteDaVida && (!t.compra || s.casa >= t.compra || s.cash + entra - sai > t.compra * 1.3); };
     let alvo = 0; for (let j = 1; j < P.vida.length; j++) if (cabe(j)) alvo = j;
-    if (alvo !== s.vida) { s.vida = alvo; const t = P.vida[alvo]; if (t.compra && s.casa < t.compra) { sai += t.compra - s.casa; s.casa = t.compra; if (!s.casaDia) s.casaDia = d; } }
+    if (alvo !== s.vida) { s.vida = alvo; const t = P.vida[alvo]; if (t.compra && s.casa < t.compra) { sai += t.compra - s.casa; s.casa = t.compra; if (!s.tetoDia) s.tetoDia = d; if (!s.casaDia && t.compra >= P.casaASerio) s.casaDia = d; } }
     sai += P.vida[s.vida].dia * P.mesesPorDia; s.sumidouro = (s.sumidouro || 0) + sai; s.torneira = (s.torneira || 0) + entra;
     s.cash += entra - sai;
     if (s.cash < 0) s.cash = 0;   // sem dinheiro: come na cantina social, não acumula dívida (rede para não castigar o novato)
@@ -142,7 +144,7 @@ function simula(perfil, rng) {
     if (!s.n100 && nivelDe(s.resp) >= 100) s.n100 = d;
     marcos[d] = foto(s);
   }
-  return { marcos, carro: s.carro, casa: s.casaDia, n100: s.n100, dias: s.diasJogados, ralo: s.sumidouro / s.torneira };
+  return { marcos, carro: s.carro, teto: s.tetoDia, casa: s.casaDia, n100: s.n100, dias: s.diasJogados, ralo: s.sumidouro / s.torneira };
 }
 const foto = (s) => ({ cash: Math.round(s.cash), fortuna: Math.round(s.cash + s.casa + s.capital), nivel: nivelDe(s.resp), dia: Math.round(s.media || 0) });
 
@@ -156,19 +158,19 @@ for (const perfil of Object.keys(PERFIS)) {
   res[perfil] = {
     fotos: Object.fromEntries(DIAS_FOTO.map((d) => [d, { fortuna: med(runs.map((r) => r.marcos[d].fortuna)), p90: med(runs.map((r) => r.marcos[d].fortuna), 0.9), nivel: med(runs.map((r) => r.marcos[d].nivel)), dia: med(runs.map((r) => r.marcos[d].dia)) }])),
     ralo: med(runs.map((r) => r.ralo)),
-    carro: med(runs.map((r) => r.carro)), casa: med(runs.map((r) => r.casa)), n100: med(runs.map((r) => r.n100)), semCasa: runs.filter((r) => r.casa == null).length / N, sem100: runs.filter((r) => r.n100 == null).length / N,
+    carro: med(runs.map((r) => r.carro)), teto: med(runs.map((r) => r.teto)), casa: med(runs.map((r) => r.casa)), n100: med(runs.map((r) => r.n100)), semCasa: runs.filter((r) => r.casa == null).length / N, sem100: runs.filter((r) => r.n100 == null).length / N,
   };
 }
 console.log(`Economia nova · semente ${SEED} · ${N} contas por perfil · ${DIAS} dias (um dia real = ${P.mesesPorDia} meses de jogo)\n`);
 for (const [perfil, r] of Object.entries(res)) {
   console.log(perfil.toUpperCase() + `  (${PERFIS[perfil].barras} barras de stamina por dia)`);
   for (const d of DIAS_FOTO) console.log(`  dia ${String(d).padStart(3)}: fortuna mediana ${eur(r.fotos[d].fortuna).padStart(14)}   10% mais ricos ${eur(r.fotos[d].p90).padStart(14)}   nível ${String(r.fotos[d].nivel).padStart(3)}   ganha por dia ${eur(r.fotos[d].dia)}`);
-  console.log(`  primeiro carro: dia ${r.carro ?? '—'}   primeira casa comprada: dia ${r.casa ?? '—'}${r.semCasa ? ` (${Math.round(r.semCasa * 100)}% sem casa)` : ''}   nível 100: dia ${r.n100 ?? '—'}${r.sem100 ? ` (${Math.round(r.sem100 * 100)}% não chegam)` : ''}   sai em custos ${Math.round(r.ralo * 100)}% do que entra\n`);
+  console.log(`  primeiro carro: dia ${r.carro ?? '—'}   sai da barraca: dia ${r.teto ?? '—'}   T1 na cidade: dia ${r.casa ?? '—'}${r.semCasa ? ` (${Math.round(r.semCasa * 100)}% sem casa)` : ''}   nível 100: dia ${r.n100 ?? '—'}${r.sem100 ? ` (${Math.round(r.sem100 * 100)}% não chegam)` : ''}   sai em custos ${Math.round(r.ralo * 100)}% do que entra\n`);
 }
 const provas = [
   ['Ninguém fica rico numa semana (bot abaixo de 100 000 € ao dia 7)', res.bot.fotos[7].p90 < 100000],
   ['Primeiro carro até ao dia 14 para quem joga todos os dias', res.regular.carro != null && res.regular.carro <= 14],
-  ['Primeira casa comprada entre o dia 45 e o dia 150 (regular)', res.regular.casa != null && res.regular.casa >= 45 && res.regular.casa <= 150],
+  ['Primeiro T1 na cidade entre o dia 45 e o dia 150 (regular)', res.regular.casa != null && res.regular.casa >= 45 && res.regular.casa <= 150],
   ['Nível 100 entre o dia 270 e o dia 400 (regular)', DIAS < 400 ? (res.regular.n100 == null || res.regular.n100 >= 270) : res.regular.n100 >= 270 && res.regular.n100 <= 400],
   ['Nível 100 nunca antes do dia 150, nem para o bot', res.bot.n100 == null || res.bot.n100 >= 150],
   ['Quem joga 24 h por dia ganha por dia menos do triplo de quem joga normalmente (dia 30 e dia 180)', res.bot.fotos[30].dia < 3 * res.regular.fotos[30].dia && (DIAS < 180 || res.bot.fotos[180].dia < 3 * res.regular.fotos[180].dia)],
