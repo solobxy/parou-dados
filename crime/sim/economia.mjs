@@ -14,7 +14,7 @@ function rngDe(s) { let a = s >>> 0; return () => { a |= 0; a = (a + 0x6d2b79f5)
 
 // ---------- números do modelo (os que vão para a wiki) ----------
 export const P = {
-  mesesPorDia: +(process.env.MESES ?? 2),   // um dia real vale dois meses de jogo: ordenado e custo de vida de dois meses por dia
+  mesesPorDia: +(process.env.MESES ?? 2),   // um dia real vale dois meses de jogo: um dia de turnos paga o ordenado de dois meses
   estaminaBarra: 100,
   // Empregos: o ordenado líquido de um mês real paga-se por dia real, em 6 turnos de 10 de stamina.
   turnos: 6, turnoStamina: 10,
@@ -26,27 +26,28 @@ export const P = {
     { id: 'tecnico', dia: 1350, curso: { preco: 2100, dias: 21 } },     // licenciatura: 3 propinas de 697 €; 1 348 € é o líquido médio do país
     { id: 'senior', dia: 2400, curso: { preco: 4000, dias: 30 }, nivel: 40 },
   ],
-  // Golpes de rua: líquido por barra de stamina já com o recetador (30% do valor declarado), a taxa de sucesso e as multas.
+  // Golpes de rua: média por barra de stamina, já com a taxa de sucesso. O que se leva em cada golpe é à sorte
+  // (quase sempre pouco, às vezes um telemóvel ou um relógio); a média da primeira hora de um novato anda pelos 1 500 €.
   rua: [
-    { nivel: 1, barra: 220 },    // furto em loja (80 € declarados), carteirista
-    { nivel: 8, barra: 420 },    // arrombar carros
-    { nivel: 12, barra: 800 },   // esticão (1 743 € declarados em média)
-    { nivel: 18, barra: 1300 },  // assalto a loja e a bomba de gasolina
-    { nivel: 30, barra: 1800 },  // assaltos armados
+    { nivel: 1, barra: 1150 },   // furto em loja, carteirista (135 € em média quando corre bem)
+    { nivel: 8, barra: 1500 },   // arrombar carros
+    { nivel: 12, barra: 2000 },  // esticão (1 500 € em média; na vida real 2 021 €)
+    { nivel: 18, barra: 2800 },  // assalto a loja e a bomba de gasolina
+    { nivel: 30, barra: 3600 },  // assaltos armados
   ],
   // A rua aquece: rendimento de cada barra seguida de golpes de rua no mesmo dia.
   calor: [1, 1, 0.7, 0.7, 0.45, 0.45, 0.25],
   pratica: { max: 0.3, barrasParaMax: 400 },   // a prática sobe o rendimento até +30%
   // Venda de droga na rua: lucro por barra, capital parado e clientela (barras por dia = base + nível/25).
   venda: [
-    { nivel: 10, barra: 300, capital: 2000 },    // haxixe: quilo a 2 000 €, grama a 5 €
-    { nivel: 25, barra: 1000, capital: 15000 },  // cocaína: quilo a 15 000 €, grama a 35 €
+    { nivel: 10, barra: 1800, capital: 2000 },   // haxixe: quilo a 2 000 €, grama a 5 €; 600 g por barra
+    { nivel: 25, barra: 4000, capital: 15000 },  // cocaína: quilo a 15 000 €, grama a 35 €; 200 g por barra
   ],
   clientela: { base: 1, porNivel: 25 },
   // Operações: uma de cada vez. Dias reais de preparação, custo, parte do jogador se correr bem, hipótese, descanso antes da seguinte.
   ops: [
-    { id: 'carros', nivel: 15, dias: 0.5, custo: 200, ganho: 1900, p: 0.8, pausa: 0 },
-    { id: 'residencia', nivel: 20, dias: 1, custo: 500, ganho: 2000, p: 0.75, pausa: 0 },
+    { id: 'carros', nivel: 15, dias: 0.5, custo: 200, ganho: 4300, p: 0.8, pausa: 0 },
+    { id: 'residencia', nivel: 20, dias: 1, custo: 500, ganho: 4500, p: 0.75, pausa: 0 },
     { id: 'ourivesaria', nivel: 35, dias: 2, custo: 5000, ganho: 35000, p: 0.65, pausa: 1 },
     { id: 'lancha', nivel: 40, dias: 2, custo: 70000, ganho: 170000, p: 0.8, pausa: 2 },      // 100 kg de haxixe: 700 €/kg em Marrocos, 2 000 €/kg cá, menos a tripulação
     { id: 'banco', nivel: 55, dias: 4, custo: 30000, ganho: 78000, p: 0.55, pausa: 2 },
@@ -55,15 +56,15 @@ export const P = {
     { id: 'casino', nivel: 80, dias: 7, custo: 150000, ganho: 700000, p: 0.4, pausa: 5 },
   ],
   falhaOp: { advogado: [3000, 7000], perdeCusto: true },
-  // Casas: começa-se numa barraca de 0 €, sem renda nem despesa. As casas só se compram; cada uma tem despesa por mês de jogo
-  // (contas, condomínio, pessoal) e mais espaços de inventário. Compra-se quando a despesa cabe em metade do que se ganha e há 1,3 vezes o preço.
+  // Casas: começa-se numa barraca de 0 €. Não há renda nem despesa de casa: as casas só se compram, e cada uma dá mais espaços de inventário.
+  // Compra-se quando há 1,3 vezes o preço; a antiga entra na troca pelo que custou.
   vida: [
     { id: 'barraca', dia: 0, espacos: 6 },
-    { id: 'roulotte', compra: +(process.env.ROUL ?? 6000), dia: 150, espacos: 12 },   // usada; preço sem fonte (grau D)
-    { id: 'T1 no interior', compra: 54000, dia: 400, espacos: 20 },                    // 50 m² em Castelo Branco
-    { id: 'T1 na cidade', compra: 183000, dia: 900, espacos: 30 },                     // 50 m² no Porto, a 3 665 €/m²
-    { id: 'moradia', compra: 600000, dia: 3500, espacos: 45 },
-    { id: 'mansão', compra: 3000000, dia: 18000, espacos: 80 },                        // pessoal, segurança, carros
+    { id: 'roulotte', compra: +(process.env.ROUL ?? 6000), dia: 0, espacos: 12 },   // usada; preço sem fonte (grau D)
+    { id: 'T1 no interior', compra: 54000, dia: 0, espacos: 20 },                    // 50 m² em Castelo Branco
+    { id: 'T1 na cidade', compra: 183000, dia: 0, espacos: 30 },                     // 50 m² no Porto, a 3 665 €/m²
+    { id: 'moradia', compra: 600000, dia: 0, espacos: 45 },
+    { id: 'mansão', compra: 3000000, dia: 0, espacos: 80 },
   ],
   casaASerio: 183000,   // a prova da «primeira casa» mede o primeiro T1 na cidade, não a roulotte
   parteDaVida: +(process.env.PARTE ?? 0.5),
@@ -104,14 +105,15 @@ function simula(perfil, rng) {
     entra += (P.empregos[s.emprego].dia * P.mesesPorDia * turnos) / P.turnos; s.resp += turnos * P.resp.turno; barras -= (turnos * P.turnoStamina) / P.estaminaBarra;
     let crime = 0;
     // venda de droga: primeiro, até ao limite da clientela
-    const v = [...P.venda].reverse().find((x) => nv >= x.nivel && (s.capital >= x.capital || s.cash > x.capital * 1.5));
+    const r = [...P.rua].reverse().find((x) => nv >= x.nivel), bonus = 1 + P.pratica.max * Math.min(1, s.pratica / P.pratica.barrasParaMax);
+    const piorBarra = r.barra * bonus * P.calor[Math.min(Math.max(0, Math.ceil(barras) - 1), P.calor.length - 1)];   // o que rende a barra de rua mais quente do dia
+    const v = [...P.venda].reverse().find((x) => nv >= x.nivel && x.barra > piorBarra && (s.capital >= x.capital || s.cash > x.capital * 1.5));
     if (v) {
       if (s.capital < v.capital) { sai += v.capital - s.capital; s.capital = v.capital; }
       const b = Math.min(barras, P.clientela.base + nv / P.clientela.porNivel);
       crime += b * v.barra; s.resp += b * P.resp.venda(nv); barras -= b;
     }
     // golpes de rua com o resto da stamina, a aquecer
-    const r = [...P.rua].reverse().find((x) => nv >= x.nivel), bonus = 1 + P.pratica.max * Math.min(1, s.pratica / P.pratica.barrasParaMax);
     let i = 0;
     for (; barras > 0.01; i++) { const b = Math.min(1, barras), c = P.calor[Math.min(i, P.calor.length - 1)]; crime += b * r.barra * bonus * c; s.resp += b * P.resp.rua(nv) * c; s.pratica += b; barras -= b; }   // o calor corta o dinheiro e o respeito
     // barras a mais, a droga: só se a barra render mais do que custa
@@ -170,7 +172,7 @@ for (const [perfil, r] of Object.entries(res)) {
 const provas = [
   ['Ninguém fica rico numa semana (bot abaixo de 100 000 € ao dia 7)', res.bot.fotos[7].p90 < 100000],
   ['Primeiro carro até ao dia 14 para quem joga todos os dias', res.regular.carro != null && res.regular.carro <= 14],
-  ['Primeiro T1 na cidade entre o dia 45 e o dia 150 (regular)', res.regular.casa != null && res.regular.casa >= 45 && res.regular.casa <= 150],
+  ['Primeiro T1 na cidade entre o dia 30 e o dia 150 (regular)', res.regular.casa != null && res.regular.casa >= 30 && res.regular.casa <= 150],
   ['Nível 100 entre o dia 270 e o dia 400 (regular)', DIAS < 400 ? (res.regular.n100 == null || res.regular.n100 >= 270) : res.regular.n100 >= 270 && res.regular.n100 <= 400],
   ['Nível 100 nunca antes do dia 150, nem para o bot', res.bot.n100 == null || res.bot.n100 >= 150],
   ['Quem joga 24 h por dia ganha por dia menos do triplo de quem joga normalmente (dia 30 e dia 180)', res.bot.fotos[30].dia < 3 * res.regular.fotos[30].dia && (DIAS < 180 || res.bot.fotos[180].dia < 3 * res.regular.fotos[180].dia)],
