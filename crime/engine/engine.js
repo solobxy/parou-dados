@@ -40,8 +40,10 @@ export function newPlayer(id, now, world, opts = {}) {
     gang: null, gb: null, gangLeft: 0, gbotLeft: 0, gh: [], gbz: gbzNew(),
     detoxT: [],
     xp: { F: 0, I: 0, C: 0 },
-    wk: CFG.crimes.map(() => 0),   // sucessos por golpe (mestria)
-    c: { crimes: 0, wins: 0, trains: 0, refills: 0, collects: 0, pvpWins: 0, ports: 0 },
+    wk: CFG.crimes.map(() => 0),   // sucessos por golpe (para os objetivos)
+    sk: skNew(),                   // skills: stamina gasta em cada família de golpe
+    job: -1, sh: null, course: null, done: [],   // emprego (índice em CFG.jobs.list), turnos de hoje { d, n }, curso a decorrer { id, end } e cursos feitos
+    c: { crimes: 0, wins: 0, trains: 0, refills: 0, collects: 0, pvpWins: 0, ports: 0, shifts: 0 },
     mi: 0,                         // objetivos já recebidos
     mq: CFG.missions.map((_, i) => i), mrT: 0,   // os que faltam, pela ordem em que vão aparecer; e quando se trocou pela última vez
     titles: [],                    // títulos que ficam para sempre: { k: 'vet' } (veterano das rondas), { k: 'ep', n, d, pos } (pódio de uma época)
@@ -97,7 +99,16 @@ function migrate(p) {
   if (!Number.isSafeInteger(p.vigor)) { p.vigor = CFG.vigor.max; p.vigorT = p.t || 0; }
   if (!Array.isArray(p.dst) || p.dst.length !== CFG.deal.list.length) p.dst = CFG.deal.list.map((_, j) => (Array.isArray(p.dst) && Number.isSafeInteger(p.dst[j]) ? p.dst[j] : 0));
   if (p.eco !== 2) ecoNova(p);
+  // passo 3: as vitórias de cada golpe passam a skill da família (a stamina dos golpes que correram bem)
+  if (!p.sk || typeof p.sk !== 'object') { p.sk = skNew(); CFG.crimes.forEach((c, k) => { p.sk[c.fam] += (p.wk[k] || 0) * c.e; }); }
+  for (const f of CFG.skills.fams) if (!Number.isSafeInteger(p.sk[f]) || p.sk[f] < 0) p.sk[f] = 0;
+  if (!Number.isInteger(p.job)) p.job = -1;
+  if (p.sh === undefined) p.sh = null;
+  if (p.course === undefined) p.course = null;
+  if (!Array.isArray(p.done)) p.done = [];
+  if (!Number.isSafeInteger(p.c.shifts)) p.c.shifts = 0;
 }
+const skNew = () => Object.fromEntries(CFG.skills.fams.map((f) => [f, 0]));
 
 // Economia nova (passo 2): quem jogou com os preços antigos recebe de volta o que pagou pelo que deixou de existir ou mudou de
 // preço (casa e melhorias, armas, proteções, guardas, ferramentas, armas de gangue, negócios, luxos e droga guardada) e fica com
@@ -189,6 +200,7 @@ export function touch(p, now) {
   if (p.jailUntil && p.jailUntil <= now) { p.jailUntil = 0; p.jailTier = 0; }
   if (p.hospUntil && p.hospUntil <= now) p.hospUntil = 0;
   settleClub(p, now); settleBro(p, now);   // os clientes da discoteca e do bordel até agora
+  if (p.course && p.course.end <= now) { if (!p.done.includes(p.course.id)) p.done.push(p.course.id); p.course = null; }   // o curso acabou
   p.t = now;
 }
 
@@ -506,6 +518,12 @@ function practice(p, c, success) {
   return gained;
 }
 
+// skill de uma família de golpe, em bp a mais no que se leva: até maxBp ao fim de fullPts de stamina gasta, em proporção
+export function skillBp(p, fam) {
+  const S = CFG.skills, pts = (p.sk && p.sk[fam]) || 0;
+  return Math.floor((S.maxBp * Math.min(pts, S.fullPts)) / S.fullPts);
+}
+
 export function masteryStars(p, k) {
   const n = p.wk[k]; let s = 0;
   for (const at of CFG.mastery.at) if (n >= at) s++;
@@ -525,19 +543,18 @@ export function doCrime(p, now, world, k, rng) {
   settleAllBiz(p, now); // a prática pode subir stats: o rendimento até aqui conta com as antigas
   p.energy -= c.e;
   p.rua = { d, e: (p.rua && p.rua.d === d ? p.rua.e : 0) + c.e };
+  p.sk[c.fam] += c.e;   // a skill sobe com a prática, corra bem ou mal
   // o primeiro carteirista de quem ainda não tem respeito nenhum corre sempre bem: a primeira jogada não pode ser a prisão
   const first = k === 0 && p.peakRespect === 0;
   if (first || rng.chance(bp)) {
-    const starsBefore = masteryStars(p, k);
     // o que vem é à sorte: escolhe-se a linha da tabela e depois o valor dentro dela
     let roll = rng.int(0, 9999), row = c.prizes[c.prizes.length - 1];
     for (const pr of c.prizes) { if (roll < pr[0]) { row = pr; break; } roll -= pr[0]; }
     const base = rng.int(row[1], row[2]);
-    const bonus = 10000 + CFG.mastery.bonusBp * starsBefore + (klass(p).lootBp || 0) + buffBp(p, 'loot', now) + gbp(p, 'loot');
+    const bonus = 10000 + skillBp(p, c.fam) + (klass(p).lootBp || 0) + buffBp(p, 'loot', now) + gbp(p, 'loot');
     const money = Math.floor((Math.floor((base * bonus) / 10000) * heatBp) / 10000);
     p.cash += money;
     p.c.crimes += 1; p.c.wins += 1; p.wk[k] += 1;
-    const stars = masteryStars(p, k);
     // respeito: uma barra de golpes vale 20 + 2 por nível (até 120), vezes o calor; dá-se nos golpes que correm bem
     const S = CFG.street, perBar = Math.min(S.respCap, S.respBase + S.respPerLevel * level(p));
     // por golpe que corre bem: perBar × e/100 a dividir pela hipótese, para a barra dar em média perBar; o resto (em milésimos)
@@ -547,7 +564,7 @@ export function doCrime(p, now, world, k, rng) {
     p.rc = Math.floor(milli - resp * 1000);
     const lvl = addRespect(p, resp, now);
     const gained = practice(p, c, true);
-    return { ok: true, success: true, money, base, item: row[3], crit: false, respect: resp, levelUp: lvl, chanceBp: bp, heatBp, ammo, gained, newChanceBp: bp, star: stars > starsBefore ? stars : 0 };
+    return { ok: true, success: true, money, base, item: row[3], crit: false, respect: resp, levelUp: lvl, chanceBp: bp, heatBp, ammo, gained, newChanceBp: bp, star: 0 };
   }
   p.c.crimes += 1;
   // falhar não é sempre prisão: uma falha em quatro é apanhada
@@ -788,6 +805,51 @@ export function dealBuy(p, now, world, j, kg) {
   p.dst[j] += kg * 1000;
   return { ok: true, price, grams: kg * 1000, d: dealDrug(x), have: p.dst[j] };
 }
+// ---------- empregos e cursos (passo 3) ----------
+const jobOf = (i) => (Number.isInteger(i) ? CFG.jobs.list[i] : undefined);
+const courseOf = (id) => CFG.courses.find((c) => c.id === id);
+export const jobOpen = (p, i) => { const x = jobOf(i); return !!x && (!x.course || p.done.includes(x.course)); };
+export function shiftsToday(p, now) { return p.sh && p.sh.d === dayOf(now) ? p.sh.n : 0; }
+// o que paga o turno n (1 a 6) de um emprego: os seis somam exatamente o dia
+export function shiftPay(x, n) { const P = CFG.jobs.perDay; return Math.floor((x.day * n) / P) - Math.floor((x.day * (n - 1)) / P); }
+
+export function chooseJob(p, now, world, i) {
+  const x = jobOf(i);
+  if (!x) fail('NO_JOB');
+  begin(p, now, world, { allowBusy: true });
+  if (!jobOpen(p, i)) fail('NEED_COURSE', { course: x.course });
+  p.job = i;
+  return { ok: true, job: x.id };
+}
+
+// turno: 10 de energia, um sexto do ordenado do dia para o banco (é dinheiro declarado), +2 de respeito. Até 6 por dia de Lisboa.
+export function doShift(p, now, world) {
+  const x = jobOf(p.job);
+  if (!x) fail('NO_JOB');
+  begin(p, now, world);
+  const J = CFG.jobs, n = shiftsToday(p, now) + 1;
+  if (n > J.perDay) fail('SHIFTS_DONE');
+  if (p.vigor < J.shiftE) fail('NO_VIGOR', { need: J.shiftE });
+  const money = shiftPay(x, n);
+  p.vigor -= J.shiftE; p.bank += money;
+  p.sh = { d: dayOf(now), n }; p.c.shifts += 1;
+  const lvl = addRespect(p, J.resp, now);
+  return { ok: true, job: x.id, n, left: J.perDay - n, money, respect: J.resp, levelUp: lvl };
+}
+
+export function startCourse(p, now, world, id) {
+  const c = courseOf(id);
+  if (!c) fail('NO_COURSE');
+  begin(p, now, world, { allowBusy: true });
+  if (p.done.includes(id)) fail('COURSE_DONE');
+  if (p.course) fail('COURSE_BUSY', { until: p.course.end });
+  if (c.needs && !p.done.includes(c.needs)) fail('NEED_COURSE', { course: c.needs });
+  if (c.level && level(p) < c.level) fail('LOW_LEVEL', { need: c.level });
+  pay(p, c.price);
+  p.course = { id, end: now + c.days * T.DAY };
+  return { ok: true, id, price: c.price, end: p.course.end };
+}
+
 export function deal(p, now, world, j) {
   const x = dealOf(j);
   if (!x) fail('NO_DRUG');
@@ -797,8 +859,8 @@ export function deal(p, now, world, j) {
   if (p.energy < D.step) fail('NO_ENERGY', { need: D.step });
   if (p.dst[j] < g) fail('NO_STOCK', { need: g });
   if (dealUsed(p, now) >= dealCap(p)) fail('NO_CLIENTS');
-  const money = g * CFG.drugs[d].price, day = dayOf(now);
-  p.energy -= D.step; p.dst[j] -= g; p.cash += money;
+  const money = Math.floor((g * CFG.drugs[d].price * (10000 + skillBp(p, 'trafico'))) / 10000), day = dayOf(now);   // a skill de tráfico sobe o que se ganha
+  p.energy -= D.step; p.dst[j] -= g; p.cash += money; p.sk.trafico += D.step;
   p.dl = { d: day, n: dealUsed(p, now) + 1 };
   const resp = Math.max(1, Math.round(((D.respBase + D.respPerLevel * level(p)) * D.step) / 100));
   const lvl = addRespect(p, resp, now);
@@ -2096,7 +2158,9 @@ function missionHave(p, type) {
     case 'ports': return p.c.ports;
     case 'level': return level(p);
     case 'tier': { let t = 0; for (let k = 0; k < p.wk.length; k++) if (p.wk[k] > 0) t = k + 1; return t; }
-    case 'stars': { let s = 0; for (let k = 0; k < p.wk.length; k++) s += masteryStars(p, k); return s; }
+    case 'shifts': return p.c.shifts;
+    case 'courses': return p.done.length;
+    case 'skill': return Math.floor(Math.max(...CFG.skills.fams.map((f) => p.sk[f])) / 100);   // barras na melhor família
     case 'gear': return (p.weapon >= 0 ? 1 : 0) + (p.armor >= 0 ? 1 : 0);   // os guardas não contam para este objetivo (pede 2: arma e proteção)
     case 'biz': return p.biz.reduce((s, b) => s + b.n, 0);
     case 'lux': return p.luxuries;
@@ -2173,6 +2237,11 @@ export function checkInvariants(p) {
   if (p.cls !== '' && !CFG.classes.some((c) => c.id === p.cls)) bad.push('class');
   if (!Array.isArray(p.stock) || p.stock.length !== CFG.drugs.length || p.stock.some((x) => !Number.isSafeInteger(x) || x < 0)) bad.push('stock');
   if (!Array.isArray(p.dst) || p.dst.length !== CFG.deal.list.length || p.dst.some((x) => !Number.isSafeInteger(x) || x < 0)) bad.push('dst');
+  if (!p.sk || CFG.skills.fams.some((f) => !Number.isSafeInteger(p.sk[f]) || p.sk[f] < 0)) bad.push('skills');
+  if (!Number.isInteger(p.job) || p.job < -1 || p.job >= CFG.jobs.list.length || (p.job >= 0 && !jobOpen(p, p.job))) bad.push('job');
+  if (p.sh !== null && !(p.sh && Number.isSafeInteger(p.sh.n) && p.sh.n >= 1 && p.sh.n <= CFG.jobs.perDay && typeof p.sh.d === 'string')) bad.push('shifts');
+  if (p.course !== null && !(p.course && courseOf(p.course.id) && Number.isSafeInteger(p.course.end) && !p.done.includes(p.course.id))) bad.push('course');
+  if (!Array.isArray(p.done) || p.done.some((id) => !courseOf(id)) || new Set(p.done).size !== p.done.length) bad.push('courses done');
   if (!Array.isArray(p.stk) || p.stk.length !== CFG.stocks.list.length || p.stk.some((h) => !h || !Number.isSafeInteger(h.n) || h.n < 0 || !Number.isSafeInteger(h.cost) || h.cost < 0 || !Number.isSafeInteger(h.gen) || (h.n === 0 && h.cost !== 0)
     || ['tp', 'sl'].some((x) => h[x] !== undefined && !(Number.isSafeInteger(h[x]) && h[x] > 0 && h.n > 0)) || (h.tp && h.sl && h.sl >= h.tp))) bad.push('shares');
   if (typeof p.acct !== 'boolean') bad.push('accountant');

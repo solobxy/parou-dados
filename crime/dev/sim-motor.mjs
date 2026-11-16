@@ -1,8 +1,9 @@
 // Simulação da economia com o MOTOR VERDADEIRO (passo 2), para comparar com o modelo (sim/economia.mjs).
 // Joga contas com os quatro perfis do modelo (uma sessão por dia, todos os dias, a stamina toda, bot) durante N dias,
 // sempre pelas funções do motor: golpes de rua, venda de droga, barras a droga, multas, pistola, casas e luxos.
-// O que o motor ainda não tem (empregos, operações, lavagem, seguranças, avença) fica de fora; para comparar, o modelo
-// corre com os mesmos sistemas desligados (SEM_EMPREGO=1 SEM_OPS=1 SEM_GASTOS=1).
+// Passo 3: também os empregos (6 turnos por dia, com a energia) e os cursos (o seguinte quando há o dobro do preço), como no modelo.
+// O que o motor ainda não tem (operações, lavagem, seguranças, avença) fica de fora; para comparar, o modelo corre com os mesmos
+// sistemas desligados (SEM_OPS=1 SEM_GASTOS=1). Com SEM_EMPREGO=1 o motor também não trabalha (comparação do passo 2).
 // Uso: node dev/sim-motor.mjs [semente] [contas por perfil] [dias]   (dentro de crime/)
 import { CFG, T } from '../engine/config.js';
 import * as E from '../engine/engine.js';
@@ -14,6 +15,16 @@ const T0 = lisbonToUtc(2026, 11, 20, 0, 30);      // cada dia de jogo vai das 0:
 const world = { start: T0 - T.DAY, playEnd: Number.MAX_SAFE_INTEGER };
 const CARRO = 5000, CASA_A_SERIO = 3;             // como no modelo: carro usado de 5 000 € e o T1 na cidade
 const GUN = CFG.weapons.findIndex((w) => w.id === CFG.street.gun);
+const SEM_EMPREGO = process.env.SEM_EMPREGO === '1';
+// emprego: o melhor que já está aberto; curso: o seguinte da lista quando há o dobro do preço (a regra do modelo); depois os turnos
+function trabalho(p, t) {
+  if (SEM_EMPREGO) return;
+  const J = CFG.jobs.list;
+  if (!p.course) { const c = CFG.courses.find((x) => !p.done.includes(x.id) && (!x.needs || p.done.includes(x.needs)) && (!x.level || E.level(p) >= x.level)); if (c && liquido(p) > c.price * 2) tenta(() => E.startCourse(p, t, world, c.id)); }
+  let best = -1; J.forEach((x, i) => { if (E.jobOpen(p, i) && (best < 0 || x.day > J[best].day)) best = i; });
+  if (best !== p.job) tenta(() => E.chooseJob(p, t, world, best));
+  while (E.shiftsToday(p, t) < CFG.jobs.perDay && p.vigor >= CFG.jobs.shiftE) if (!tenta(() => E.doShift(p, t, world))) break;
+}
 const PERFIS = {
   casual: { sessoes: 2, extra: 0, falha: 0.25 },
   regular: { sessoes: 4, extra: 0, falha: 0.05 },
@@ -88,6 +99,7 @@ function simula(perfil, rng) {
       const t = t0 + i * passo + 60_000;
       tenta(() => E.touch(p, t));
       if (i === 0) p.energy = Math.min(p.energy, E.energyMax(p));
+      trabalho(p, t);
       sessao(p, t, rng, s);
     }
     // barras a droga no fim do dia: só se a próxima render mais do que custa
@@ -130,7 +142,7 @@ for (const perfil of Object.keys(PERFIS)) {
     semT1: runs.filter((r) => r.t1 == null).length / N, sem100: runs.filter((r) => r.n100 == null).length / N,
   };
 }
-console.log(`Motor verdadeiro · semente ${SEED} · ${N} contas por perfil · ${DIAS} dias (sem empregos nem operações, que ainda não existem)\n`);
+console.log(`Motor verdadeiro · semente ${SEED} · ${N} contas por perfil · ${DIAS} dias (${SEM_EMPREGO ? "sem empregos nem operações" : "com empregos e cursos, sem operações"})\n`);
 for (const [perfil, r] of Object.entries(res)) {
   console.log(perfil.toUpperCase() + `  (${PERFIS[perfil].sessoes} barras de stamina por dia${PERFIS[perfil].extra ? ' e até ' + PERFIS[perfil].extra + ' a droga' : ''})`);
   for (const d of DIAS_FOTO) console.log(`  dia ${String(d).padStart(3)}: fortuna mediana ${eur(r.fotos[d].fortuna).padStart(14)}   10% mais ricos ${eur(r.fotos[d].p90).padStart(14)}   nível ${String(r.fotos[d].nivel).padStart(3)}   ganha por dia ${eur(r.fotos[d].dia)}`);

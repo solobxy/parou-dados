@@ -1885,3 +1885,33 @@ body.light .rv.is-wait .ct-lock::after { opacity: .9; transform: translate(-50%,
 .vlist.hkl > .hkt:first-child { margin-top: 0; }
 .vlist.hkl > .hkt + .vrow { box-shadow: none; padding-top: 6px; }
 @media (max-width: 359px) { .vrow.fxr > .btn, .vrow.hkr > .btn { min-width: 68px; padding-left: 8px; padding-right: 8px; } .vrow.fxr .vth, .vrow.hkr .vth { width: 48px; height: 48px; } }
+/* emprego (passo 3) */
+.jobp > .jinfo { margin: -2px 14px 0; font-size: 15px; line-height: 1.45; color: var(--tx); }
+.vlist.tipl .tipr { align-items: flex-start; gap: 12px; padding: 6px 0; }
+.vlist.tipl .tipr p { margin: 0; font-size: 15px; line-height: 1.45; }
+.vlist.tipl .tipt { flex: none; min-width: 42px; padding-top: 2px; }
+.vlist.tipl > .vrow + .vrow, .vlist.jbl > .vrow + .vrow, .vlist.crl > .vrow + .vrow, .vlist.skl > .vrow + .vrow { box-shadow: inset 0 1px 0 #ffffff12; padding-top: 10px; }
+.vrow.jbr, .vrow.crr { align-items: center; padding: 6px 0; }
+.vrow.jbr .vth { width: 56px; height: 56px; }
+.vrow.jbr .grow > .small, .vrow.crr .grow > .small { font-size: 14px; line-height: 1.4; }
+.vrow.jbr > .btn, .vrow.crr > .btn { min-height: 44px; min-width: 84px; }
+.vrow.skr { padding: 4px 0; }
+.vrow.skr .fill { margin: 6px 0 4px; }
+.vrow.skr .fill > i { background: var(--cash); }
+@media (max-width: 359px) { .vrow.jbr > .btn, .vrow.crr > .btn { min-width: 68px; padding-left: 8px; padding-right: 8px; } .vrow.jbr .vth { width: 48px; height: 48px; } }
+.vrow.jbr .grow, .vrow.crr .grow { flex: 1 1 0; min-width: 0; }
+.vrow.jbr .grow b, .vrow.crr .grow b { white-space: normal; }
+/* venda na rua: os dois botões repartem a linha e usam a mesma letra (o creme do «Vender» não muda de tipo de letra) */
+.vrow.deal .dealb > .btn { flex: 1 1 0; min-width: 0; font-family: inherit; font-weight: 700; }
+/* avisos: a coluna não cresce para lá do ecrã (a 320 px um aviso comprido saía pela direita) */
+.toasts { grid-template-columns: minmax(0, 1fr); }
+.toast { max-width: 100%; overflow-wrap: anywhere; }
+/* emprego: o que o turno custa e dá, logo acima do botão; a informação do último turno logo abaixo */
+.jobp > .jgive { margin: -2px 14px 0; font-size: 15px; font-weight: 600; display: flex; flex-wrap: wrap; gap: 4px 12px; }
+.jobp > .jgive .c-vg { color: #4fc4b9; }
+.jobp > .jlast { margin: -4px 14px 0; padding: 10px 12px; border-radius: var(--r); background: var(--s2); font-size: 15px; line-height: 1.45; text-align: left; color: var(--tx); width: calc(100% - 28px); }
+.jobp > .jlast small { display: block; font-size: 14px; color: var(--tx2); margin-bottom: 2px; }
+.vrow.jbr > .btn, .vrow.crr > .btn { font-family: inherit; font-weight: 700; font-size: 15px; text-transform: none; letter-spacing: 0; }
+.vrow.crr .grow .crl2 { display: inline; font-weight: 700; }
+.vrow.tipr { width: 100%; text-align: left; background: none; border: 0; color: inherit; font: inherit; }
+.jneed { background: none; border: 0; padding: 0; color: var(--tx2); font: inherit; font-size: 14px; text-decoration: underline; text-underline-offset: 3px; min-height: 32px; text-align: left; }

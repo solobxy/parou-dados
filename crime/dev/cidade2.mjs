@@ -50,7 +50,12 @@ muda('Assaltante', (e) => {
 muda('Rico', (e) => {
   e.respect = e.peakRespect = L(60) + 1000; e.cash = 4_120_000; e.bank = 900_000; e.weapon = 4; e.house = 5; e.luxuries = 4; e.av = 40;
   e.biz[0].n = 2; e.biz[3].n = 1; e.energy = 130; e.vigor = 100;
+  e.done = ['vigilante', 'pesados', 'licenciatura']; e.job = 3; e.course = null; e.sk = { furto: 9200, assalto: 15000, burla: 0, trafico: 4000, conducao: 0, armas: 26000 };
 });
+// passo 3: o Assaltante trabalha de vigilante, já fez 2 turnos hoje e está a tirar a carta de pesados; o Novato ainda não tem emprego
+muda('Assaltante', (e) => { e.done = ['vigilante']; e.job = 2; e.sh = { d: hoje, n: 2 }; e.course = { id: 'pesados', end: Date.now() + 3 * 86400e3 };
+  e.jt = [{ k: 'guard', t: Date.now() - 600e3, a: 'Rico', lvl: 60, m: 4_120_000 }, { k: 'guard', t: Date.now() - 4000e3, a: 'Novato', lvl: 1, m: 50 }];
+  e.sk = { furto: 6400, assalto: 2300, burla: 0, trafico: 900, conducao: 0, armas: 0 }; });
 db.close();
 s = await arrancar();
 writeFileSync(join(DIR, 'contas.json'), JSON.stringify({ base: BASE, cookies, pid: s.pid }, null, 1));

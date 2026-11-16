@@ -65,17 +65,17 @@ export const CFG = {
   // Uma falha em quatro é apanhada (bustBp): prisão de jailMin minutos ou multa/fiança (fine) para sair já.
   // gun: precisa de pistola e gasta 100 € de balas e desgaste por golpe (street.ammo). w: as stats que o golpe treina.
   crimes: [
-    { id: 'carteirista', e: 10, level: 1, p: 8500, fine: 150, jailMin: 2, w: { I: 30, F: 0, C: 70 },
+    { id: 'carteirista', fam: 'furto', e: 10, level: 1, p: 8500, fine: 150, jailMin: 2, w: { I: 30, F: 0, C: 70 },
       prizes: [[6200, 15, 80, 'carteira'], [2800, 120, 320, 'telemovel'], [900, 250, 450, 'relogio'], [100, 1000, 1500, 'turista']] },
-    { id: 'loja', e: 10, level: 1, p: 9000, fine: 150, jailMin: 2, w: { I: 40, F: 60, C: 0 },
+    { id: 'loja', fam: 'furto', e: 10, level: 1, p: 9000, fine: 150, jailMin: 2, w: { I: 40, F: 60, C: 0 },
       prizes: [[6000, 30, 90, 'miudezas'], [3000, 150, 250, 'perfumes'], [900, 250, 350, 'eletronica'], [100, 400, 600, 'caixa']] },
-    { id: 'carro', e: 20, level: 8, p: 8000, fine: 400, jailMin: 5, w: { I: 70, F: 30, C: 0 },
+    { id: 'carro', fam: 'furto', e: 20, level: 8, p: 8000, fine: 400, jailMin: 5, w: { I: 70, F: 30, C: 0 },
       prizes: [[5000, 80, 220, 'radio'], [3500, 300, 600, 'gps'], [1300, 700, 1100, 'pecas'], [200, 1000, 1500, 'mala']] },
-    { id: 'esticao', e: 50, level: 12, p: 6700, fine: 1500, jailMin: 8, w: { I: 0, F: 70, C: 30 },
+    { id: 'esticao', fam: 'assalto', e: 50, level: 12, p: 6700, fine: 1500, jailMin: 8, w: { I: 0, F: 70, C: 30 },
       prizes: [[5500, 300, 900, 'mala'], [3000, 1200, 2400, 'fio'], [1300, 3000, 5000, 'joias'], [200, 4000, 7000, 'envelope']] },
-    { id: 'bomba', e: 50, level: 18, p: 6500, fine: 2500, jailMin: 12, gun: true, w: { I: 20, F: 80, C: 0 },
+    { id: 'bomba', fam: 'assalto', e: 50, level: 18, p: 6500, fine: 2500, jailMin: 12, gun: true, w: { I: 20, F: 80, C: 0 },
       prizes: [[5000, 700, 1500, 'caixa'], [3500, 1800, 3000, 'cofre'], [1300, 4000, 6000, 'tabaco'], [200, 4000, 7000, 'malote']] },
-    { id: 'armado', e: 100, level: 30, p: 7000, fine: 6000, jailMin: 20, gun: true, w: { I: 40, F: 60, C: 0 },
+    { id: 'armado', fam: 'armas', e: 100, level: 30, p: 7000, fine: 6000, jailMin: 20, gun: true, w: { I: 40, F: 60, C: 0 },
       prizes: [[5000, 2000, 4000, 'caixa'], [3500, 4500, 7500, 'cofre'], [1300, 8000, 12000, 'joalharia'], [200, 10000, 15000, 'cofreforte']] },
   ],
   // A rua aquece: no mesmo dia (de Lisboa), a 1.ª e a 2.ª barra de golpes de rua rendem 100%, a 3.ª e a 4.ª 70%, a 5.ª e a 6.ª 45%,
@@ -89,8 +89,33 @@ export const CFG = {
     list: [{ drug: 'haxixe', level: 10, kg: 2000, perBar: 600 }, { drug: 'coca', level: 25, kg: 15000, perBar: 200 }] },
   crimeAllMax: 10, // «usar a stamina toda»: no máximo 10 golpes de uma vez (uma barra de carteirista)
   bustBp: 2500, // falhar um golpe: 25% das vezes és apanhado (prisão); nas outras só perdes a energia
-  // mestria: cada golpe conta os sucessos; 3 estrelas, cada uma dá +10% de dinheiro nesse golpe
-  mastery: { at: [10, 40, 150], bonusBp: 1000 },
+  // mestria (antiga): ficou só a contagem de vitórias por golpe (wk), para os objetivos; o bónus passou para as skills
+  mastery: { at: [10, 40, 150], bonusBp: 0 },
+  // Skills por família de golpe (passo 3): sobem com a stamina gasta nessa família (corra bem ou mal) e dão até +30% do que se
+  // leva ao fim de 400 barras (40 000 de stamina), em proporção até lá. Burla e condução ficam para as operações (passo 5).
+  skills: { fams: ['furto', 'assalto', 'burla', 'trafico', 'conducao', 'armas'], maxBp: 3000, fullPts: 400 * 100 },
+  // Empregos por turnos (passo 3). day = o líquido de um dia completo (6 turnos) em euros, que é o de dois meses de ordenado
+  // real (um dia real vale dois meses de jogo). Cada turno gasta 10 de energia (a barra do ginásio, não a stamina), paga um
+  // sexto do dia para o banco e dá +2 de respeito. Um emprego de cada vez; no máximo 6 turnos por dia de Lisboa.
+  // course: o curso que o emprego pede (null = não pede nada). tip: a informação que cada turno dá.
+  jobs: {
+    shiftE: 10, perDay: 6, resp: 2,
+    list: [
+      { id: 'estafeta', day: 1400, course: null, tip: 'cash' },        // entrega em casa das pessoas: vê quem tem dinheiro na mão
+      { id: 'minimo', day: 1638, course: null, tip: 'stock' },         // caixa e armazém: ouve os clientes falar da bolsa
+      { id: 'vigilante', day: 1800, course: 'vigilante', tip: 'guard' }, // conhece os alarmes: sabe quem não tem guardas
+      { id: 'motorista', day: 2500, course: 'pesados', tip: 'club' },     // pesados: sabe onde a droga está mais barata
+      { id: 'quadro', day: 2700, course: 'licenciatura', tip: 'hosp' },   // enfermeiro: sabe quem sai do hospital e quando
+      { id: 'senior', day: 4800, course: 'especializacao', tip: 'jail' },  // advogado: sabe quem sai da prisão e quando
+    ],
+  },
+  // Cursos: pagam-se à cabeça, correm em tempo real (dias reais), um de cada vez. Ficam para sempre (a conta é permanente).
+  courses: [
+    { id: 'vigilante', price: 570, days: 2 },
+    { id: 'pesados', price: 1500, days: 4 },            // carta de pesados e curso
+    { id: 'licenciatura', price: 3 * 697, days: 21 },   // três propinas de 697 €
+    { id: 'especializacao', price: 4000, days: 30, level: 40, needs: 'licenciatura' },
+  ],
   // a multa/fiança de cada golpe (fine) paga-se proporcional ao tempo que falta
 
   // Discoteca: só se compra se a energia não passar do máximo e o vício não passar do limite.
@@ -516,7 +541,7 @@ CFG.missions = [
   { id: 'wins25', type: 'wins', need: 25, cash: 500 },
   { id: 'weapon', type: 'gear', need: 1, cash: 300 },
   { id: 'lvl5', type: 'level', need: nv(5), cash: 600 },
-  { id: 'star1', type: 'stars', need: 1, cash: 800 },
+  { id: 'shift1', type: 'shifts', need: 1, cash: 800 },
   { id: 'biz1', type: 'biz', need: 1, cash: 2000 },
   { id: 'collect1', type: 'collects', need: 1, cash: 800 },
   { id: 'tier4', type: 'tier', need: 4, cash: 2000 },
@@ -530,10 +555,10 @@ CFG.missions = [
   { id: 'lvl10', type: 'level', need: nv(10), cash: 6000 },
   { id: 'lux1', type: 'lux', need: 1, cash: 8000 },
   { id: 'wins500', type: 'wins', need: 500, cash: 12000 },
-  { id: 'stars6', type: 'stars', need: 6, cash: 12000 },
+  { id: 'course1', type: 'courses', need: 1, cash: 12000 },
   { id: 'lvl13', type: 'level', need: nv(13), cash: 15000 },
   { id: 'biz10', type: 'biz', need: 10, cash: 25000 },
-  { id: 'stars12', type: 'stars', need: 12, cash: 25000 },
+  { id: 'skill100', type: 'skill', need: 100, cash: 25000 },
   { id: 'lvl16', type: 'level', need: nv(16), cash: 40000 },
   { id: 'lux3', type: 'lux', need: 3, cash: 60000 },
   { id: 'lvl20', type: 'level', need: nv(20), cash: 120000 },

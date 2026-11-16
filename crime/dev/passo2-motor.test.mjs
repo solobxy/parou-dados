@@ -66,7 +66,7 @@ test('a rua aquece: 100%, 100%, 70%, 70%, 45%, 45%, 25% por barra no mesmo dia; 
   // o dinheiro corta pelo calor (com a mesma sorte, a 7.ª barra rende um quarto da 1.ª)
   const a = mk(lv(30)); a.weapon = 2; a.cash = 1e9; a.energy = 100; const r1 = E.doCrime(a, t, world, k('armado'), ok);
   assert.equal(r1.heatBp, 10000, 'cada jogador tem a sua rua');
-  p.energy = 100; const r7 = E.doCrime(p, t, world, k('armado'), ok);
+  p.energy = 100; p.sk.armas = 0; const r7 = E.doCrime(p, t, world, k('armado'), ok);   // sem a skill do passo 3, para comparar só o calor
   assert.equal(r7.money, Math.floor(r1.money / 4), 'a mesma sorte rende um quarto com a rua quente');
   const amanha = lisbonToUtc(2026, 11, 21, 0, 1);
   p.energy = 100; assert.equal(E.doCrime(p, amanha, world, k('armado'), ok).heatBp, 10000);

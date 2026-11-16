@@ -27,7 +27,7 @@ let refused = 0, done = 0, rounds = 1;
 
 // (4) as contas batem certo: cada ação só mexe no dinheiro e no respeito o que a regra diz, e nada cria dinheiro do nada
 const wealth = (q) => q.cash + q.bank;
-const MAX_LOOT_BP = 10000 + CFG.gang.lootBpPer * CFG.gang.maxLevel + CFG.mastery.bonusBp * CFG.mastery.at.length + Math.max(...CFG.classes.map((c) => c.lootBp || 0)) + Math.max(...CFG.drugs.flatMap((g) => (g.fx || []).filter((f) => f.k === 'loot').map((f) => f.bp)));
+const MAX_LOOT_BP = 10000 + CFG.gang.lootBpPer * CFG.gang.maxLevel + CFG.skills.maxBp + Math.max(...CFG.classes.map((c) => c.lootBp || 0)) + Math.max(...CFG.drugs.flatMap((g) => (g.fx || []).filter((f) => f.k === 'loot').map((f) => f.bp)));
 // respeito máximo de um golpe de rua que correu bem: a barra mais rica (120) a dividir pela hipótese, mais o bónus de profissão e o resto guardado
 const MAX_STREET_RESP = Math.max(...CFG.crimes.map((c) => Math.ceil((CFG.street.respCap * c.e * (10000 + Math.max(...CFG.classes.map((k) => k.respBp || 0)))) / c.p / 100))) + 1;
 const GUN = CFG.weapons.findIndex((w) => w.id === CFG.street.gun);
@@ -62,7 +62,7 @@ function contas(kind, a0, a, d0, d, t, res, arg) {
     }
     case 'deal': {
       const x = CFG.deal.list[arg], d = CFG.drugs.findIndex((g) => g.id === x.drug), g = Math.floor((x.perBar * CFG.deal.step) / 100);
-      if (res.grams !== g || dm !== g * CFG.drugs[d].price || res.money !== dm || dr !== res.respect || res.respect < 1 || a.dst[arg] !== a0.dst[arg] - g || E.level(a0) < x.level) bad('venda de droga');
+      if (res.grams !== g || dm !== Math.floor((g * CFG.drugs[d].price * (10000 + E.skillBp(a0, 'trafico'))) / 10000) || res.money !== dm || dr !== res.respect || res.respect < 1 || a.dst[arg] !== a0.dst[arg] - g || E.level(a0) < x.level) bad('venda de droga');
       if (a.energy !== Math.min(E.energyMax(a0), touched(a0, t).energy) - CFG.deal.step) bad('venda: stamina');
       if (E.dealUsed(a, t) > E.dealCap(a)) bad('venda acima da clientela');
       break;
@@ -72,6 +72,14 @@ function contas(kind, a0, a, d0, d, t, res, arg) {
       if (dm !== -res.price || res.price !== arg.kg * x.kg || a.dst[arg.j] !== a0.dst[arg.j] + arg.kg * 1000 || dr !== 0 || E.level(a0) < x.level) bad('compra para vender');
       break;
     }
+    case 'shift': {
+      const x = CFG.jobs.list[a0.job];
+      if (!x || dm !== res.money || res.money !== E.shiftPay(x, res.n) || res.n !== E.shiftsToday(a0, t) + 1 || res.n > CFG.jobs.perDay || dr !== CFG.jobs.resp) bad('turno: dinheiro ou contagem');
+      if (a.vigor !== touched(a0, t).vigor - CFG.jobs.shiftE || a.energy !== touched(a0, t).energy) bad('turno: energia');
+      break;
+    }
+    case 'job': if (dm !== 0 || dr !== 0 || !E.jobOpen(a, a.job)) bad('emprego'); break;
+    case 'course': { const c = CFG.courses.find((x) => x.id === arg); const b0 = touched(a0, t); if (dm !== -c.price || dr !== 0 || a.course.id !== arg || b0.done.includes(arg) || b0.course) bad('curso'); break; }
     case 'refill': if (dm !== -res.price || res.price < 1 || a.energy !== E.energyMax(a) || dr !== 0 || a.addiction !== touched(a0, t).addiction) bad('barra a droga'); break;
     case 'casino': {
       if (dm !== res.win - res.bet || dr !== 0) bad('casino: dinheiro não bate com a aposta e o prémio');
@@ -237,12 +245,15 @@ for (let n = 0; n < ACTIONS; n++) {
   if (r.chance(2500)) { p.vigor = r.int(0, CFG.vigor.max); p.vigorT = Math.min(p.vigorT, p.t); } // e energia, para o ginásio e as lutas
   if (r.chance(300)) { const x = r.int(0, CFG.levels[r.int(0, CFG.levels.length - 1)]); p.respect = x; p.peakRespect = Math.max(p.peakRespect, x); } // jogadores de todos os níveis
   const before = touched(p, t), beforeD = touched(d, t), origD = structuredClone(d), origP = structuredClone(p);
-  const kind = pick(['stockBuy', 'stockBuy', 'stockBuy', 'stockSell', 'stockSell', 'missionSwap', 'venueBuy', 'venueBuy', 'venueSet', 'venueCollect', 'stockUse', 'stockUse', 'stockDump', 'broHire', 'broHire', 'broFire', 'clubBuyAt', 'clubBuyAt', 'clubBuyAt', 'broVisitAt', 'broVisitAt', 'broVisitAt', 'casino', 'casino', 'table', 'heist', 'hit', 'gangCreate', 'gangDonate', 'gangLeave', 'gangBiz', 'gangBiz', 'gangBiz', 'gangBizCollect', 'hitman', 'hitman', 'hitman', 'crime', 'crime', 'crimeAll', 'deal', 'deal', 'dealBuy', 'drug', 'refill', 'detox', 'claim', 'class', 'classChange', 'classChange', 'air', 'air', 'airCollect', 'airCollect', 'bailFor', 'bailFor', 'medicFor', 'medicFor', 'avatar', 'hooker', 'cure', 'house', 'houseUp', 'train', 'buyBiz', 'buyBiz', 'collect', 'bizGoods', 'bizGoods', 'stockHold', 'stockHold', 'acct', 'stockLimit', 'stockLimit', 'stockLimit', 'port', 'collectPort', 'portOpen', 'portOpen', 'deposit', 'withdraw', 'gear', 'attack', 'bail', 'medic', 'luxury']);
+  const kind = pick(['stockBuy', 'stockBuy', 'stockBuy', 'stockSell', 'stockSell', 'missionSwap', 'venueBuy', 'venueBuy', 'venueSet', 'venueCollect', 'stockUse', 'stockUse', 'stockDump', 'broHire', 'broHire', 'broFire', 'clubBuyAt', 'clubBuyAt', 'clubBuyAt', 'broVisitAt', 'broVisitAt', 'broVisitAt', 'casino', 'casino', 'table', 'heist', 'hit', 'gangCreate', 'gangDonate', 'gangLeave', 'gangBiz', 'gangBiz', 'gangBiz', 'gangBizCollect', 'hitman', 'hitman', 'hitman', 'crime', 'crime', 'crimeAll', 'deal', 'deal', 'dealBuy', 'drug', 'refill', 'detox', 'claim', 'class', 'classChange', 'classChange', 'air', 'air', 'airCollect', 'airCollect', 'bailFor', 'bailFor', 'medicFor', 'medicFor', 'avatar', 'hooker', 'cure', 'house', 'houseUp', 'train', 'buyBiz', 'buyBiz', 'collect', 'bizGoods', 'bizGoods', 'stockHold', 'stockHold', 'acct', 'stockLimit', 'stockLimit', 'stockLimit', 'port', 'collectPort', 'portOpen', 'portOpen', 'deposit', 'withdraw', 'gear', 'attack', 'bail', 'medic', 'luxury', 'shift', 'shift', 'shift', 'job', 'course']);
   let res, arg;
   try {
     switch (kind) {
       case 'crime': arg = r.chance(9000) ? r.int(0, CFG.crimes.length) : anyInt(); res = E.doCrime(p, t, world, arg, game); break;
       case 'deal': arg = r.chance(9000) ? r.int(0, CFG.deal.list.length) : anyInt(); res = E.deal(p, t, world, arg); break;
+      case 'shift': res = E.doShift(p, t, world); break;
+      case 'job': arg = r.chance(9000) ? r.int(0, CFG.jobs.list.length) : anyInt(); res = E.chooseJob(p, t, world, arg); break;
+      case 'course': arg = r.chance(9000) ? pick(CFG.courses.map((c) => c.id)) : 'x' + r.int(0, 9); res = E.startCourse(p, t, world, arg); break;
       case 'dealBuy': arg = { j: r.chance(9000) ? r.int(0, CFG.deal.list.length) : anyInt(), kg: pick([1, 1, 2, 5, 20, 21, 0, -1, 0.5]) }; res = E.dealBuy(p, t, world, arg.j, arg.kg); break;
       case 'casino': {
         const amt = () => pick([1, 5, 10, 50, 100, 999, 5000, 1e6, 0, -5, 0.5, NaN]);

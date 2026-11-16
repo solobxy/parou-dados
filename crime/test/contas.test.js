@@ -25,7 +25,7 @@ test('golpes: a percentagem mostrada é a que sai em 200 000 tentativas (sucesso
     const mostrada = E.crimeChanceBp(p, k, NOW) / 10000;
     assert.equal(mostrada, c.p / 10000);
     for (let i = 0; i < N; i++) {
-      p.energy = 100; p.jailUntil = 0; p.wk[k] = 0; p.rua = null; p.cash = 1e12;
+      p.energy = 100; p.jailUntil = 0; p.wk[k] = 0; p.sk[c.fam] = 0; p.rua = null; p.cash = 1e12;
       const r = E.doCrime(p, NOW, W, k, rng);
       if (r.success) { ok++; soma += r.money; vem[r.item] = (vem[r.item] || 0) + 1; } else if (r.busted) bust++;
     }
@@ -36,10 +36,10 @@ test('golpes: a percentagem mostrada é a que sai em 200 000 tentativas (sucesso
   }
 });
 
-test('golpes: os bónus de saque somam-se (mestria + ladrão + speed) e nunca passam do teto', () => {
+test('golpes: os bónus de saque somam-se (skill da família + ladrão + speed)', () => {
   const p = mk('ladrao'), k = 3, c = CFG.crimes[k];
   setResp(p, CFG.levels[c.level - 1]);
-  p.wk[k] = 150; p.c.wins = 150;                       // 3 estrelas: +30%
+  p.sk[c.fam] = CFG.skills.fullPts;                    // skill cheia: +30%
   p.fx.loot = { bp: 1500, until: NOW + T.MIN };        // speed: +15%
   const topo = { int: (lo, hi) => hi, chance: () => true }; // corre bem, sai a linha mais rara e o valor mais alto
   const r = E.doCrime(p, NOW, W, k, topo);

@@ -420,17 +420,15 @@ test('prática: cada golpe treina as stats que usa; falhar dá metade; a percent
   assert.deepEqual(E.checkInvariants(p), []);
 });
 
-test('mestria: estrelas aos 10/40/150 sucessos, cada uma +10% de dinheiro nesse golpe', () => {
+test('skills (passo 3): a prática conta a stamina por família, a mestria por golpe já não dá dinheiro', () => {
   const p = E.newPlayer('a', START, world);
-  let t = START, star = 0;
-  for (let i = 0; i < CFG.mastery.at[0]; i++) { p.energy = 100; const r = E.doCrime(p, t, world, 0, always); star = r.star || star; t += 1000; }
-  assert.equal(star, 1);
-  assert.equal(E.masteryStars(p, 0), 1);
+  let t = START;
+  for (let i = 0; i < 10; i++) { p.energy = 100; const r = E.doCrime(p, t, world, 0, always); assert.equal(r.star, 0); t += 1000; }
+  assert.equal(p.wk[0], 10); assert.equal(p.sk[CFG.crimes[0].fam], 10 * CFG.crimes[0].e);
   p.energy = 100;
   const r = E.doCrime(p, t, world, 0, always);     // "always" tira a linha mais comum e o valor mais baixo
   assert.equal(r.base, CFG.crimes[0].prizes[0][1]);
-  assert.equal(r.money, Math.floor(r.base * (10000 + CFG.mastery.bonusBp) / 10000));
-  assert.equal(E.masteryStars(p, 1), 0, 'a mestria é por golpe');
+  assert.equal(r.money, Math.floor((r.base * (10000 + E.skillBp(p, CFG.crimes[0].fam) - Math.floor((CFG.skills.maxBp * CFG.crimes[0].e) / CFG.skills.fullPts))) / 10000));
 });
 
 test('subir de nível já não enche a stamina (economia nova)', () => {
@@ -477,7 +475,7 @@ test('objetivos: um de cada vez, só se recebe quando está feito, e uma só vez
   assert.throws(() => E.claimMission(p, START + 2, world), { code: 'MISSION_NOT_DONE' });
   // todos os tipos de objetivo têm de onde tirar o progresso, e a cadeia acaba
   const types = new Set(CFG.missions.map((m) => m.type));
-  for (const ty of types) assert.ok(['wins', 'trains', 'refills', 'collects', 'pvpWins', 'ports', 'level', 'tier', 'stars', 'gear', 'biz', 'lux'].includes(ty), ty);
+  for (const ty of types) assert.ok(['wins', 'trains', 'refills', 'collects', 'pvpWins', 'ports', 'level', 'tier', 'shifts', 'courses', 'skill', 'gear', 'biz', 'lux'].includes(ty), ty);
   // trocar: o que está à vista vai para o fim, aparece o seguinte, uma vez por hora, sem mexer no dinheiro nem no progresso
   const q = E.newPlayer('q', START, world), c0 = q.cash, a = E.mission(q).id;
   assert.equal(E.mission(q).swapAt <= START, true);
@@ -489,7 +487,7 @@ test('objetivos: um de cada vez, só se recebe quando está feito, e uma só vez
   // um objetivo já feito recebe-se, não se troca; e o que se saltou volta depois dos outros, uma só vez
   q.c.trains = 3; assert.throws(() => E.swapMission(q, START + 3 * T.HOUR, world), { code: 'MISSION_READY' });
   E.claimMission(q, START + 3 * T.HOUR, world); assert.equal(q.mi, 1); assert.equal(q.mq.length, CFG.missions.length - 1); assert.ok(!q.mq.includes(2));
-  const todos = new Set(); let pago = 0; q.c.wins = 1e6; q.c.trains = 1e6; q.c.refills = 1e6; q.c.collects = 1e6; q.c.pvpWins = 1e6; q.c.ports = 1e6; q.respect = 1e12; q.peakRespect = 1e12; q.wk = q.wk.map(() => 1e6); q.weapon = 0; q.armor = 0; q.biz.forEach((b) => { b.n = 10; }); q.luxuries = 9;
+  const todos = new Set(); let pago = 0; q.c.wins = 1e6; q.c.trains = 1e6; q.c.refills = 1e6; q.c.collects = 1e6; q.c.pvpWins = 1e6; q.c.ports = 1e6; q.respect = 1e12; q.peakRespect = 1e12; q.wk = q.wk.map(() => 1e6); q.c.shifts = 1e6; q.done = ['vigilante']; q.sk.furto = 1e6; q.weapon = 0; q.armor = 0; q.biz.forEach((b) => { b.n = 10; }); q.luxuries = 9;
   for (let k = 0; k < 40 && E.mission(q); k++) { const m = E.mission(q); assert.ok(m.done, m.id); assert.ok(!todos.has(m.id)); todos.add(m.id); pago += E.claimMission(q, START + 4 * T.HOUR + k, world).cash; }
   assert.equal(todos.size, CFG.missions.length - 1); assert.equal(pago, CFG.missions.reduce((x, m) => x + m.cash, 0) - CFG.missions[2].cash);
   assert.equal(E.mission(q), null); assert.throws(() => E.swapMission(q, START + 9 * T.HOUR, world), { code: 'NO_MISSION' });

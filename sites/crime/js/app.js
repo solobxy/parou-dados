@@ -120,6 +120,9 @@ function react(type, out, before, opts) {
   else if (type === 'refill') { toast(t('rfDone', { e: r.energy, m: money(r.price) })); fx.sfx('refill'); }
   else if (type === 'dealBuy') { toast(t('dealBought', { g: num(r.grams), x: list('drugs')[r.d], m: money(r.price) })); fx.sfx('buy'); }
   else if (type === 'deal') { toast(t('dealSold', { g: r.grams, m: money(r.money), n: r.respect })); fx.sfx('cash'); }
+  else if (type === 'shift') { toast(t('jbDone', { m: money(r.money), n: r.left })); fx.sfx('cash'); }
+  else if (type === 'course') { toast(t('crStarted', { x: t('cr_' + r.id), m: money(r.price) })); fx.sfx('buy'); }
+  else if (type === 'job') { toast(t('jbChosen', { x: t('jb_' + r.job) })); fx.sfx('claim'); }
   else if (type === 'luxury') { toast(t('luxBought', { x: list('lux')[me.luxuries - 1], n: r.respect })); fx.sfx('claim'); }
   else if (type === 'hooker' || type === 'broVisit') { fx.sfx('refill'); if (r.sick) { toast(t('gotSick'), true); fx.vibrate([40, 60, 40]); } if (r.rob) { toast(t('hkRob_' + r.rob.kind, { m: money(r.rob.loss) }), true); fx.vibrate([30, 40, 30]); } }
   else if (type === 'claim') { toast(t('got', { m: money(r.cash) })); fx.sfx('claim'); }
@@ -307,19 +310,19 @@ function tickHud() {
 const PLACES = {
   city: { ic: 'skyline' }, empire: { ic: 'empire' }, rob: { ic: 'street', img: 'golpes' }, club: { ic: 'bolt', img: 'discoteca' }, gym: { img: 'ginasio' },
   biz: { ic: 'empire', img: 'negocios' }, stash: { img: 'stash' }, acct: { img: 'contabilista' }, port: { img: 'porto' }, air: { img: 'aeroporto' }, arms: { img: 'armas' }, bank: { img: 'banco' }, hosp: { img: 'hospital' },
-  jail: { img: 'prisao' }, gang: { img: 'gangue' }, work: { img: 'profissao' }, news: { img: 'jornal' }, casino: { ic: 'gem', img: 'casino' }, roulette: { img: 'roleta' }, bj: { img: 'blackjack' }, dice: { img: 'dados' }, wheel: { img: 'roda' }, slot: { img: 'slot' }, zeus: { img: 'zeus' }, doce: { img: 'doce' }, rebucado: { img: 'rebucado' }, alley: { img: 'beco' }, lux: { img: 'luxos' }, fights: { ic: 'fights', img: 'lutas' }, rank: { img: 'procurados' }, hitman: { img: 'assassino' }, putas: { img: 'putas' }, casa: {}, myclub: { img: 'discoteca' }, mybro: { img: 'putas' }, bolsa: { img: 'bolsa' },
+  jail: { img: 'prisao' }, gang: { img: 'gangue' }, work: { img: 'profissao' }, news: { img: 'jornal' }, casino: { ic: 'gem', img: 'casino' }, roulette: { img: 'roleta' }, bj: { img: 'blackjack' }, dice: { img: 'dados' }, wheel: { img: 'roda' }, slot: { img: 'slot' }, zeus: { img: 'zeus' }, doce: { img: 'doce' }, rebucado: { img: 'rebucado' }, alley: { img: 'beco' }, lux: { img: 'luxos' }, fights: { ic: 'fights', img: 'lutas' }, rank: { img: 'procurados' }, hitman: { img: 'assassino' }, putas: { img: 'putas' }, casa: {}, myclub: { img: 'discoteca' }, mybro: { img: 'putas' }, bolsa: { img: 'bolsa' }, job: { img: 'emprego' },
 };
 // barra de baixo: só o que se usa a toda a hora. O resto vive dentro de cada separador, arrumado por zonas.
 const NAV = ['city', 'rob', 'fights', 'casino', 'empire'];
 const HUB = {
-  city: [['sec_night', ['club', 'putas', 'casino', 'gang', 'alley', 'arms']], ['sec_street', ['bank', 'work', 'gym', 'hosp', 'jail', 'rank']]],
+  city: [['sec_night', ['club', 'putas', 'casino', 'gang', 'alley', 'arms']], ['sec_street', ['job', 'gym', 'bank', 'hosp', 'jail', 'rank']]],
   empire: [['sec_income', ['biz', 'port', 'air', 'myclub', 'mybro']], ['sec_assets', ['casa', 'bank', 'bolsa', 'stash', 'acct']]],
 };
-const PARENT = { gang: 'city', work: 'city', news: 'city', casino: 'city', roulette: 'casino', bj: 'casino', dice: 'casino', wheel: 'casino', slot: 'casino', zeus: 'casino', doce: 'casino', rebucado: 'casino', club: 'city', putas: 'city', gym: 'city', alley: 'city', hosp: 'city', jail: 'city',
+const PARENT = { gang: 'city', work: 'job', job: 'city', news: 'city', casino: 'city', roulette: 'casino', bj: 'casino', dice: 'casino', wheel: 'casino', slot: 'casino', zeus: 'casino', doce: 'casino', rebucado: 'casino', club: 'city', putas: 'city', gym: 'city', alley: 'city', hosp: 'city', jail: 'city',
   biz: 'empire', port: 'empire', air: 'empire', myclub: 'empire', mybro: 'empire', bolsa: 'empire', stash: 'empire', acct: 'empire', casa: 'empire', bank: 'empire', lux: 'empire', arms: 'fights', rank: 'fights', hitman: 'fights' };
 const upOf = (id) => (S.backTo && S.backTo[id]) || PARENT[id] || 'city';   // um sítio que está em duas zonas volta para a zona de onde vieste
 const tabOf = (id) => { let x = id; for (let k = 0; k < 4 && !NAV.includes(x); k++) x = upOf(x); return NAV.includes(x) ? x : 'city'; };
-const IMG = (kind, id, big) => `/img/${kind}/${id}${big ? '-g' : ''}.webp?10`;
+const IMG = (kind, id, big) => `/img/${kind}/${id}${big ? '-g' : ''}.webp?11`;
 // o que cada sítio precisa de ir buscar ao servidor (ao entrar nele, e também quando o jogo abre já nesse sítio)
 function loadFor(tab) {
   if (tab === 'fights') { if (S.fightSeg === 'events') loadEvents(true); else { S.fightSeg = 'targets'; loadTargets(); } }
@@ -377,7 +380,7 @@ function shell() {
   updateHud();
 }
 
-const SCREENS = { city: screenCity, empire: screenEmpire, news: screenNews, casino: screenCasino, roulette: screenRoulette, bj: screenBJ, dice: screenDice, wheel: screenWheel, slot: () => screenSlotGame('slot'), zeus: () => screenSlotGame('zeus'), doce: () => screenSlotGame('doce'), rebucado: () => screenSlotGame('rebucado'), rob: screenRob, club: screenClub, gym: screenGym, biz: screenBiz, port: screenPort, arms: screenArms, bank: screenBank,
+const SCREENS = { job: screenJob, city: screenCity, empire: screenEmpire, news: screenNews, casino: screenCasino, roulette: screenRoulette, bj: screenBJ, dice: screenDice, wheel: screenWheel, slot: () => screenSlotGame('slot'), zeus: () => screenSlotGame('zeus'), doce: () => screenSlotGame('doce'), rebucado: () => screenSlotGame('rebucado'), rob: screenRob, club: screenClub, gym: screenGym, biz: screenBiz, port: screenPort, arms: screenArms, bank: screenBank,
   hosp: screenHosp, jail: screenJail, gang: screenGang, work: screenWork, air: screenAir, putas: screenPutas, myclub: screenMyClub, mybro: screenMyBro, bolsa: screenBolsa, stash: screenStash, acct: screenAcct, casa: screenCasa, alley: screenAlley, lux: screenLux, fights: screenFights, rank: screenRank, hitman: screenHitman };
 function render(force) {
   if (!S.st) return;
@@ -724,6 +727,9 @@ function staminaHelp(me, L) {
 }
 // ---------- golpes ----------
 // o que se leva em média num golpe que corre bem (a tabela do sorteio), com o bónus da mestria e o calor da rua de agora
+// skill de uma família (bp a mais no que se leva), igual à do motor
+const skBp = (me, fam) => { const K = S.cfg.skills, n = (me.sk && me.sk[fam]) || 0; return Math.floor((K.maxBp * Math.min(n, K.fullPts)) / K.fullPts); };
+const pctOf = (bp) => (bp % 100 ? (bp / 100).toFixed(1).replace('.', lang() === 'pt' ? ',' : '.') : String(bp / 100));
 const moneyRange = (a, z) => (lang() === 'pt' ? num(a) + '–' + num(z) + '\u00a0€' : '€' + num(a) + '–' + num(z));
 const crimeEv = (c) => c.prizes.reduce((x, [bp, a, z]) => x + (bp * (a + z)) / 2, 0) / 10000;
 const heatPct = (bp) => Math.round(bp / 100);
@@ -741,7 +747,6 @@ function reportAll(rep, li) {
   lines.push(li('', t('ra_spent', { e: r.n * c.e }) + (r.ammo ? ' · ' + t('r_ammo', { m: money(r.ammo) }) : '')));
   if (r.heatEnd < 10000) lines.push(li('', t('r_heat', { p: heatPct(r.heatEnd) })));
   if (r.busted) lines.push(li('c-red', t('r_jail', { t: dur(Math.max(0, r.jailUntil - rep.at)) })));
-  if (r.star) lines.push(li('c-gold', t('r_star', { x: list('crimes')[k] })));
   if (lv) lines.push(li('c-resp', t('r_lvl', { n: lv.to, x: titleOf(lv.to) })));
   const head = r.busted ? t('ra_bust', { i: r.n }) : r.wins === r.n ? t('ra_clean') : r.wins ? t('ra_done') : t('ra_none');
   return h('div', { class: 'report ' + (r.busted ? 'bust' : r.wins ? 'ok' : 'miss'), role: 'status' }, h('b', null, head), h('ul', null, lines));
@@ -756,7 +761,6 @@ function reportCard(rep) {
     if (r.heatBp < 10000) lines.push(li('', t('r_heat', { p: heatPct(r.heatBp) })));
   } else { lines.push(li('', t('r_lost', { e: c.e }))); if (r.busted) lines.push(li('c-red', t('r_jail', { t: dur(Math.max(0, r.jailUntil - rep.at)) }))); }
   if (r.ammo) lines.push(li('', t('r_ammo', { m: money(r.ammo) })));
-  if (r.star) lines.push(li('c-gold', t('r_star', { x: list('crimes')[k] })));
   if (lv) lines.push(li('c-resp', t('r_lvl', { n: lv.to, x: titleOf(lv.to) })));
   return h('div', { class: 'report ' + (r.success ? 'ok' : r.busted ? 'bust' : 'miss'), role: 'status' },
     h('b', null, r.success ? t('r_ok') : r.busted ? t('r_bust') : t('r_miss')), h('ul', null, lines));
@@ -769,7 +773,7 @@ function screenRob() {
   let k = S.robK ?? store.get('robK', -1);
   if (!open.includes(k)) { k = open[0]; for (const i of open) if (!C[i].gun || gunOk(me)) k = i; }   // o melhor que já dá para fazer
   S.robK = k;
-  const c = C[k], bonus = 1 + (me.stars[k] * S.cfg.mastery.bonusBp) / 10000, heat = st.heatBp;
+  const c = C[k], bonus = 1 + skBp(me, c.fam) / 10000, heat = st.heatBp;
   const media = Math.round(crimeEv(c) * bonus * (heat / 10000)), noGun = c.gun && !gunOk(me);
   const rep = S.report && S.report.k === k ? S.report : null;
   // O que decide o golpe fica em grande e só isso: quanto rende em média se correr bem (verde) e a hipótese (cor do risco).
@@ -792,7 +796,7 @@ function screenRob() {
     h('h3', { class: 'lootH' }, t('lootWhat')), sorteio,
     h('p', { class: 'jcost' }, t('jobCost', { e: c.e, r: crimeResp(me, c, heat) })),
     c.gun ? h('p', { class: 'jcost' }, t(noGun ? 'jobNeedGun' : 'jobAmmo', { m: money(S.cfg.street.ammo) })) : null,
-    me.stars[k] ? h('p', { class: 'small muted' }, t('r_exp', { n: me.wk[k], p: me.stars[k] * 10 })) : null));
+    h('p', { class: 'jcost' }, t('skLine', { x: t('sk_' + c.fam), p: pctOf(skBp(me, c.fam)), n: Math.floor((me.sk[c.fam] || 0) / 100) }))));
   out.push(h('h2', { class: 'sec' }, t('allJobs')));
   const rows = h('div', { class: 'rows' });
   let lockedShown = false;
@@ -807,12 +811,25 @@ function screenRob() {
       on: { click: () => { S.robK = i; store.set('robK', i); S.report = null; render(); window.scrollTo({ top: 0, behavior: 'smooth' }); } } },
       art('crimes', x.id),
       h('div', { class: 'mid' }, h('div', { class: 'nm' }, names[i]),
-        h('div', { class: 'meta' }, h('span', { class: 'c-cash' }, t('avgShort', { m: money(Math.round(crimeEv(x) * (1 + (me.stars[i] * S.cfg.mastery.bonusBp) / 10000) * (heat / 10000))) })), h('span', null, icon('bolt'), ' ' + x.e), x.gun ? h('span', null, t('withGun')) : null)),
+        h('div', { class: 'meta' }, h('span', { class: 'c-cash' }, t('avgShort', { m: money(Math.round(crimeEv(x) * (1 + skBp(me, x.fam) / 10000) * (heat / 10000))) })), h('span', null, icon('bolt'), ' ' + x.e), x.gun ? h('span', null, t('withGun')) : null)),
       h('div', { class: 'pct ' + chanceCls(x.p) }, pct(x.p))));
   });
   out.push(rows);
-  out.push(...dealBlock(me, L, b));
+  out.push(...dealBlock(me, L, b), ...skillsBlock(me));
   return out;
+}
+const capFirst = (x) => x.charAt(0).toUpperCase() + x.slice(1);
+// skills por família: só as que já têm golpes (burla e condução chegam com as operações)
+function skillsBlock(me) {
+  const K = S.cfg.skills, fams = K.fams.filter((f) => f === 'trafico' || S.cfg.crimes.some((c) => c.fam === f));
+  return [h('h2', { class: 'sec' }, t('skTitle')), h('p', { class: 'small muted', style: 'margin:-4px 2px 10px' }, t('skSub')),
+    h('div', { class: 'card vlist vc skl' }, fams.map((f) => {
+      const n = (me.sk && me.sk[f]) || 0, bars = Math.floor(n / 100), bp = skBp(me, f);
+      return h('div', { class: 'vrow skr' }, h('div', { class: 'grow' },
+        h('div', { class: 'row sp' }, h('b', null, capFirst(t('sk_' + f))), h('span', { class: 'num ' + (bp ? 'c-cash' : 'muted') }, '+' + pctOf(bp) + '%')),
+        h('div', { class: 'fill' }, h('i', { style: `width:${Math.min(100, (n / K.fullPts) * 100)}%` })),
+        h('div', { class: 'small muted num' }, t('skBars', { n: bars }) + ' · ' + (f === 'trafico' ? t('dealTitle') : S.cfg.crimes.map((c, k) => (c.fam === f ? list('crimes')[k] : null)).filter(Boolean).join(', ')))));
+    }))];
 }
 // venda de droga na rua: compra-se ao quilo, vende-se ao grama com stamina, até onde a clientela compra hoje
 function dealBlock(me, L, b) {
@@ -820,7 +837,7 @@ function dealBlock(me, L, b) {
   const out = [h('h2', { class: 'sec' }, t('dealTitle')), h('p', { class: 'small muted', style: 'margin:-4px 2px 10px' }, t('dealSub', { c: dl.cap, l: left }))];
   out.push(h('div', { class: 'card vlist vc' }, D.list.map((x, j) => {
     const d = S.cfg.drugs.findIndex((g) => g.id === x.drug), g = S.cfg.drugs[d], grams = Math.floor((x.perBar * D.step) / 100), have = dl.dst[j] || 0;
-    const lock = me.level < x.level, sale = grams * g.price;
+    const lock = me.level < x.level, sale = Math.floor((grams * g.price * (10000 + skBp(me, 'trafico'))) / 10000);
     return h('div', { class: 'vrow deal' + (lock ? ' dim' : '') }, art('drugs', g.id, 'vth'),
       h('div', { class: 'grow' }, h('b', null, list('drugs')[d]),
         h('div', { class: 'small muted num' }, lock ? t('opensAt', { n: x.level }) : t('dealHave', { g: num(have), m: money(g.price) }))),
@@ -1196,6 +1213,85 @@ function playerBros(me, L, b) {
 }
 
 // ---------- ginásio ----------
+// ---------- emprego (passo 3) ----------
+// o que paga o turno n (1 a 6): os seis somam exatamente o dia (igual ao motor)
+const shiftPay = (x, n) => { const P = S.cfg.jobs.perDay; return Math.floor((x.day * n) / P) - Math.floor((x.day * (n - 1)) / P); };
+const hhmm = (ts) => new Date(ts).toLocaleTimeString(lang() === 'pt' ? 'pt-PT' : 'en-GB', { timeZone: 'Europe/Lisbon', hour: '2-digit', minute: '2-digit' });
+// a informação que um turno deu, numa frase; o nome do jogador e o dinheiro saltam à vista
+function tipText(x) {
+  switch (x.k) {
+    case 'cash': return t('tip_cash', { a: x.a, m: money(x.m) });
+    case 'guard': return t('tip_guard', { a: x.a, m: money(x.m) });
+    case 'hosp': return t('tip_hosp', { a: x.a, h: hhmm(x.until), m: money(x.m) });
+    case 'jail': return t('tip_jail', { a: x.a, h: hhmm(x.until), m: money(x.m) });
+    case 'stock': return t(x.p > 0 ? 'tip_stockUp' : 'tip_stockDown', { x: t('st_' + S.cfg.stocks.list[x.s].id), p: Math.abs(x.p) });
+    case 'club': return t('tip_club', { a: x.a, x: list('drugs')[x.d], p: Math.round(x.bp / 100) });
+    default: return t('tip_none');
+  }
+}
+const TIP_GO = { cash: 'fights', guard: 'fights', hosp: 'fights', jail: 'fights', stock: 'bolsa', club: 'club' };
+const tipRow = (x) => TIP_GO[x.k]
+  ? h('button', { class: 'vrow tap tipr', on: { click: () => go(TIP_GO[x.k]) } }, h('span', { class: 'small muted num tipt' }, hhmm(x.t)), h('p', { class: 'grow' }, tint(tipText(x))), h('span', { class: 'muted', 'aria-hidden': 'true' }, '›'))
+  : h('div', { class: 'vrow tipr' }, h('span', { class: 'small muted num tipt' }, hhmm(x.t)), h('p', { class: 'grow' }, tint(tipText(x))));
+function screenJob() {
+  const me = S.st.me, L = live(me), J = S.cfg.jobs, cur = J.list[me.job], feitos = me.shifts || 0, cash = me.cash + me.bank;
+  const out = [pageHead('job', null, !!cur)];   // com emprego, a imagem do emprego faz de capa
+  const b = busyBanner(me); if (b) out.push(b);
+  if (cur) {
+    const fim = feitos >= J.perDay, semE = L.vigor < J.shiftE;
+    out.push(h('div', { class: 'jobp jbc' },
+      h('div', { class: 'jimg' }, h('img', { src: IMG('jobs', cur.id, 1), alt: '', width: 1100, height: 1100, decoding: 'async', on: { error: (e) => e.currentTarget.remove() } }), h('h2', null, t('jb_' + cur.id))),
+      h('div', { class: 'jdeal' },
+        fim ? h('div', null, h('span', null, t('jbPaidToday')), h('b', { class: 'num c-cash' }, money(cur.day)))
+          : h('div', null, h('span', null, t('jbNext')), h('b', { class: 'num c-cash' }, money(shiftPay(cur, feitos + 1)))),
+        h('div', null, h('span', null, t('jbToday')), h('b', { class: 'num' }, feitos + '/' + J.perDay))),
+      h('p', { class: 'jinfo' }, t('jbTipIs_' + cur.tip)),
+      fim ? null : h('div', { class: 'jgive num' }, h('span', { class: 'c-vg' }, t('jbCostE', { e: J.shiftE })), h('span', { class: 'c-cash' }, t('jbGetM', { m: money(shiftPay(cur, feitos + 1)) })), h('span', { class: 'c-resp' }, t('r_resp', { n: J.resp }))),
+      h('button', { class: 'btn rob block big', disabled: !!b || fim || semE, on: { click: (e) => act('shift', {}, { el: e.currentTarget }) } },
+        fim ? t('jbDoneToday') : semE ? t('jbNoVigor') : t('jbGo')),
+      // a informação do último turno, logo por baixo do botão (é a recompensa que interessa)
+      me.jt && me.jt[0] ? h(TIP_GO[me.jt[0].k] ? 'button' : 'div', { class: 'jlast', on: TIP_GO[me.jt[0].k] ? { click: () => go(TIP_GO[me.jt[0].k]) } : undefined },
+        h('small', null, t('jbLast', { h: hhmm(me.jt[0].t) })), tint(tipText(me.jt[0]))) : null,
+      h('p', { class: 'jcost' }, t('jbPay', { m: money(cur.day), n: J.perDay }))));
+    if (me.jt && me.jt.length > 1) out.push(h('h2', { class: 'sec' }, t('jbTips')), h('div', { class: 'card vlist vc tipl' }, me.jt.slice(1).map(tipRow)));
+  } else out.push(h('div', { class: 'note' }, h('p', null, t('jbSub')), h('p', null, t('jbNone'))));
+  let bestOpen = -1; J.list.forEach((x, i) => { if ((!x.course || me.done.includes(x.course)) && (bestOpen < 0 || x.day > J.list[bestOpen].day)) bestOpen = i; });
+  // os empregos: os que já dá para ter e os que pedem um curso
+  out.push(h('h2', { class: 'sec' }, t('jbAll')));
+  out.push(h('div', { class: 'card vlist vc jbl' }, J.list.map((x, i) => {
+    const open = !x.course || me.done.includes(x.course);
+    return h('div', { class: 'vrow jbr' + (open ? '' : ' dim') }, art('jobs', x.id, 'vth'),
+      h('div', { class: 'grow' }, h('b', null, t('jb_' + x.id)),
+        h('div', { class: 'small num' }, h('span', { class: 'c-cash' }, t('jbDay', { m: money(x.day) }))),
+        open ? h('div', { class: 'small muted' }, t('jbTipShort_' + x.tip))
+          : h('button', { class: 'jneed', on: { click: () => document.getElementById('cursos')?.scrollIntoView({ behavior: 'smooth', block: 'start' }) } }, t('jbNeeds', { x: t('cr_' + x.course) }) + ' ›')),
+      i === me.job ? h('span', { class: 'small c-cash' }, t('jbHere'))
+        : open ? h('button', { class: 'btn sm ' + (!cur && i === bestOpen ? 'buy' : 'ghost'), on: { click: (e) => act('job', { i }, { el: e.currentTarget }) } }, t('jbPick')) : null);
+  })));
+  // cursos: um de cada vez, pagos à cabeça, em tempo real
+  out.push(h('h2', { class: 'sec', id: 'cursos' }, t('crTitle')), h('p', { class: 'small muted', style: 'margin:-4px 2px 10px' }, t('crSub')));
+  out.push(h('div', { class: 'card vlist vc crl' }, S.cfg.courses.map((c) => {
+    const feito = me.done.includes(c.id), aDecorrer = me.course && me.course.id === c.id;
+    const falta = c.needs && !me.done.includes(c.needs) ? t('crNeeds', { x: t('cr_' + c.needs) }) : c.level && me.level < c.level ? t('opensAt', { n: c.level }) : null;
+    const pode = !feito && !me.course && !falta && cash >= c.price;
+    return h('div', { class: 'vrow crr' + (falta && !feito ? ' dim' : '') },
+      h('div', { class: 'grow' }, h('b', null, t('cr_' + c.id)),
+        h('div', { class: 'small muted num' }, money(c.price) + ' · ' + t('crDays', { n: c.days }) + ' · ' + t('crOpens', { x: t('jb_' + J.list.find((x) => x.course === c.id).id) })),
+        aDecorrer ? h('div', { class: 'small' }, t('crLeft'), ' ', h('span', { class: 'num crl2', dataset: { left: me.course.end } }, dur(me.course.end - now()))) : null,
+        aDecorrer ? h('div', { class: 'fill' }, h('i', { style: `width:${Math.max(2, Math.min(100, 100 - ((me.course.end - now()) / (c.days * 864e5)) * 100))}%;background:var(--cash)` })) : null,
+        falta && !feito ? h('div', { class: 'small muted' }, falta) : null),
+      feito ? h('span', { class: 'small c-cash' }, t('crDone'))
+        : aDecorrer || falta ? null
+        : me.course ? h('span', { class: 'small muted' }, t('crOneAtATime'))
+        : cash < c.price ? h('span', { class: 'small muted num' }, t('needMoney', { m: money(c.price - cash) }))
+        : h('button', { class: 'btn ghost sm num', disabled: !pode, on: { click: (e) => act('course', { id: c.id }, { el: e.currentTarget }) } }, t('crGo')));
+  })));
+  // a profissão (ladrão, vigarista…) muda-se aqui ao lado
+  out.push(h('button', { class: 'card row tap stlink', style: 'margin-top:14px', on: { click: () => go('work') } },
+    h('span', { class: 'grow' }, t('jbClass', { x: me.cls ? t('cl_' + me.cls) : '—' })), h('span', { class: 'muted', 'aria-hidden': 'true' }, '›')));
+  return out;
+}
+
 function screenGym() {
   const me = S.st.me, L = live(me), E = S.cfg.train.energy;
   const out = [pageHead('gym', t('gymSub', { e: E }))];
@@ -1583,7 +1679,7 @@ function missionText(m) {
     default: return t('m_' + m.type, { n });
   }
 }
-const GOAL_GO = { wins: 'rob', tier: 'rob', stars: 'rob', level: 'rob', trains: 'gym', refills: 'club', gear: 'arms', biz: 'biz', collects: 'biz', ports: 'port', pvpWins: 'fights', lux: 'casa' };
+const GOAL_GO = { wins: 'rob', tier: 'rob', shifts: 'job', courses: 'job', skill: 'rob', level: 'rob', trains: 'gym', refills: 'club', gear: 'arms', biz: 'biz', collects: 'biz', ports: 'port', pvpWins: 'fights', lux: 'casa' };
 function screenAlley() {
   const m = S.st.me.mission;
   const out = [pageHead('alley', t('s_alley'))];

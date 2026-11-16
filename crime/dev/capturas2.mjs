@@ -53,13 +53,17 @@ for (const lang of ['pt', 'en']) for (const w of [320, 390]) {
   await foto(p, `golpes-assaltante-${sx}`); await semChaves(p, 'golpes assaltante ' + sx);
   if (await toca(p, p.locator('.vrow.deal .btn.buy'), `vender ${sx}`)) await foto(p, `golpes-vendeu-${sx}`, false);
   await ctx.close();
+  // emprego: o assaltante faz um turno e lê a informação
+  ({ p, ctx } = await pagina('Assaltante', w, lang, 'job'));
+  if (await toca(p, p.locator('.jbc .btn.rob'), `turno ${sx}`)) { await foto(p, `emprego-turno-${sx}`, false); if (!(await p.locator('.jlast').count())) erros.push(`emprego ${sx}: o turno não mostrou a informação`); }
+  await ctx.close();
   // discoteca: stamina à barra
   ({ p, ctx } = await pagina('Assaltante', w, lang, 'club'));
   await foto(p, `discoteca-${sx}`); await semChaves(p, 'discoteca ' + sx);
   if (await toca(p, p.locator('.refillc .btn.buy'), `encher ${sx}`)) await foto(p, `discoteca-encheu-${sx}`, false);
   await ctx.close();
   // ginásio (energia), casa, armas e a cidade com as duas barras
-  for (const [quem, tab] of [['Assaltante', 'gym'], ['Novato', 'casa'], ['Rico', 'casa'], ['Assaltante', 'arms'], ['Assaltante', 'city'], ['Rico', 'lux'], ['Rico', 'empire'], ['Rico', 'biz'], ['Assaltante', 'putas']]) {
+  for (const [quem, tab] of [['Assaltante', 'gym'], ['Novato', 'casa'], ['Rico', 'casa'], ['Assaltante', 'arms'], ['Assaltante', 'city'], ['Rico', 'lux'], ['Rico', 'empire'], ['Rico', 'biz'], ['Assaltante', 'putas'], ['Assaltante', 'job'], ['Novato', 'job'], ['Rico', 'job']]) {
     ({ p, ctx } = await pagina(quem, w, lang, tab));
     await foto(p, `${tab}-${quem.toLowerCase()}-${sx}`, tab !== 'city'); await semChaves(p, `${tab} ${quem} ${sx}`);
     await ctx.close();

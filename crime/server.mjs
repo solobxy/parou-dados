@@ -25,7 +25,7 @@ const RONDA_TESTE = process.env.PRIMEIRA_RONDA ? dataDe(process.env.PRIMEIRA_RON
 // Épocas de 28 dias a contar da sexta 13/11/2026 às 21:00 de Lisboa (PRIMEIRA_EPOCA=AAAA-MM-DD muda-a, para testes)
 const ANCORA = dataDe(process.env.PRIMEIRA_EPOCA || process.env.PRIMEIRA_RONDA || '2026-11-13');
 const rng = cryptoRng();
-const VERSAO = 57;   // sobe quando o servidor muda, para se confirmar de fora que a versão nova já está a correr
+const VERSAO = 58;   // sobe quando o servidor muda, para se confirmar de fora que a versão nova já está a correr
 const ATOS_3S = +(process.env.ATOS_3S || 15), ATOS_MIN = +(process.env.ATOS_MIN || 400); // ações por conta: 15 em 3 s, 400 por minuto
 
 // ---------- relógio que nunca anda para trás ----------
@@ -303,8 +303,9 @@ function vista(p, now) {
     stats: p.stats, energy: p.energy, energyT: p.energyT, energyMax: E.energyMax(p), vigor: p.vigor, vigorT: p.vigorT,
     addiction: p.addiction, addictionT: p.addictionT, addictionCap: E.addictionCap(p),
     refill: E.refillPlan(p, now), refillBars: p.rf && p.rf.d === E.dayOf(now) ? p.rf.e : 0, street: E.streetView(p, now),
-    deal: { dst: p.dst, used: E.dealUsed(p, now), cap: E.dealCap(p) }, detox: p.addiction > 0 ? E.detoxCost(p, now) : 0, detoxUses: E.detoxUses(p, now),
-    mission: E.mission(p), wk: p.wk, stars: p.wk.map((_, k) => E.masteryStars(p, k)), counters: p.c,
+    deal: { dst: p.dst, used: E.dealUsed(p, now), cap: E.dealCap(p) },
+    job: p.job, shifts: E.shiftsToday(p, now), course: p.course, done: p.done, sk: p.sk, jt: Array.isArray(p.jt) ? p.jt : [], detox: p.addiction > 0 ? E.detoxCost(p, now) : 0, detoxUses: E.detoxUses(p, now),
+    mission: E.mission(p), wk: p.wk, counters: p.c,
     xp: p.xp, xpNeed: { F: E.practiceNeed(p, 'F'), I: E.practiceNeed(p, 'I'), C: E.practiceNeed(p, 'C') },
     cash: p.cash, bank: p.bank, bankFeeBp: E.bankFeeBp(p), bj: E.bjPublic(p), casinoMax: E.casinoMax(p), gang: p.gang && gangues.get(p.gang) ? { id: p.gang, name: gangues.get(p.gang).nome, tag: gangues.get(p.gang).tag, bot: p.gang === BOT.id } : null, gb: p.gb || null, gangWait: p.gangLeft ? p.gangLeft + CFG.gang.rejoinMs : 0, clsCost: E.classChangeCost(p), clsWait: p.clsAt ? p.clsAt + CFG.classChange.coolMs : 0, portSeizeBp: E.portSeizeBp(p), respect: p.respect, peakRespect: p.peakRespect,
     level: L, levelFrom: CFG.levels[L - 1], levelTo: CFG.levels[L] ?? null,
@@ -330,7 +331,7 @@ function vista(p, now) {
 
 function cfgPublica() {
   return {
-    energy: CFG.energy, vigor: CFG.vigor, street: CFG.street, refillBar: CFG.refillBar, deal: CFG.deal, addiction: CFG.addiction, train: CFG.train, crimes: CFG.crimes, drugs: CFG.drugs,
+    energy: CFG.energy, vigor: CFG.vigor, street: CFG.street, refillBar: CFG.refillBar, deal: CFG.deal, jobs: CFG.jobs, courses: CFG.courses, skills: CFG.skills, addiction: CFG.addiction, train: CFG.train, crimes: CFG.crimes, drugs: CFG.drugs,
     biz: CFG.biz.map(({ id, price, perH, resp, stat, raid, toBank, drug }) => ({ id, price, perH, resp, stat, raid, toBank, drug: drug ? CFG.drugs.findIndex((x) => x.id === drug) : -1 })), accountant: CFG.accountant,
     bizMax: CFG.bizMax, storageMs: CFG.storageMs, port: { ...CFG.port, ships: CFG.port.ships.map((s) => ({ ...s, drug: CFG.drugs.findIndex((x) => x.id === s.drug) })) }, air: CFG.air, goods: CFG.goods, venue: CFG.venue, detox: CFG.detox, stocks: CFG.stocks, weapons: CFG.weapons, tools: CFG.tools, gweapons: CFG.gweapons, armors: CFG.armors, guards: CFG.guards, hitman: CFG.hitman,
     pvp: CFG.pvp, bank: CFG.bank, luxury: CFG.luxury, levels: CFG.levels, crit: CFG.crit, unlockBp: CFG.unlockBp,
@@ -1098,6 +1099,9 @@ function agir(conta, corpo, now) {
     case 'drug': r = E.buyDrug(p, now, world, int(a.d)); break;
     case 'refill': r = E.refill(p, now, world); break;
     case 'deal': r = E.deal(p, now, world, int(a.j)); break;
+    case 'job': r = E.chooseJob(p, now, world, int(a.i)); break;
+    case 'course': r = E.startCourse(p, now, world, String(a.id || '').slice(0, 24)); break;
+    case 'shift': r = E.doShift(p, now, world); r.tip = dica(p, now, w); p.jt = [r.tip, ...(Array.isArray(p.jt) ? p.jt : [])].slice(0, 5); break;
     case 'dealBuy': r = E.dealBuy(p, now, world, int(a.j), int(a.kg)); break;
     case 'hooker': r = E.visitHooker(p, now, world, int(a.i), rng); if (r.rob) evento(p.id, now, { k: 'hkRob', kind: r.rob.kind, money: r.rob.loss }); break;
     case 'cure': r = E.cure(p, now, world); break;
@@ -1244,6 +1248,44 @@ function casas(conta, now, w) {
   // primeiro as da tua gangue, depois as mais baratas para ti
   const ord = (x, y) => (y.gang - x.gang) || (x.bp - y.bp) || (y.lvl - x.lvl) || (x.name < y.name ? -1 : 1);
   return { clubs: clubs.sort(ord).slice(0, 20), bros: bros.sort(ord).slice(0, 20) };
+}
+// O emprego não é um clicker: cada turno dá uma informação verdadeira do sítio onde se trabalha, tirada do estado do mundo
+// nesse momento (CFG.jobs.list[].tip). Só sai o que o jogador podia descobrir indo ver; nunca o banco nem o que está guardado.
+function dica(p, now, w) {
+  const kind = (CFG.jobs.list[p.job] || {}).tip, t = now, outros = [];
+  // quem já apareceu nas últimas informações vai para o fim da fila: cada turno conta coisa nova, se houver
+  const vistos = new Set((Array.isArray(p.jt) ? p.jt : []).slice(0, 3).map((x) => x.a).filter(Boolean));
+  for (const o of jogadores.values()) if (o.id !== p.id && !E.sameCrew(p, o)) outros.push(o);
+  const quem = (o) => ({ a: nomeDe(o.id), lvl: E.level(o) });
+  const novo = (lista) => lista.find((o) => !vistos.has(nomeDe(o.id))) || lista[0];
+  const maisRico = (lista) => novo(lista.sort((x, y) => y.cash - x.cash));
+  if (kind === 'cash' || kind === 'guard') {
+    const livre = outros.filter((o) => o.cash > 0 && !(o.hospUntil > now) && !(o.jailUntil > now) && !(o.shieldUntil > now) && (kind === 'cash' || o.guard < 0));
+    const o = maisRico(livre);
+    if (o) return { k: kind, t, ...quem(o), m: o.cash };
+  }
+  if (kind === 'hosp' || kind === 'jail') {
+    const campo = kind === 'hosp' ? 'hospUntil' : 'jailUntil';
+    const dentro = outros.filter((o) => o[campo] > now).sort((x, y) => x[campo] - y[campo] || y.cash - x.cash);
+    const o = novo(dentro);
+    if (o) return { k: kind, t, ...quem(o), until: o[campo], m: o.cash };
+  }
+  if (kind === 'stock') {
+    const mk = bolsaDe(w, now), h = mk.hist, antes = h[Math.max(0, h.length - 1 - 6)], agora = mk.prices;   // a última hora (6 edições de 10 min)
+    let best = null;
+    agora.forEach((v, i) => { const d = Math.round(((v - antes[i]) * 100) / Math.max(1, antes[i])); if (d && (!best || Math.abs(d) > Math.abs(best.p))) best = { s: i, p: d }; });
+    if (best) return { k: 'stock', t, ...best };
+  }
+  if (kind === 'club') {
+    let best = null;
+    for (const o of outros) {
+      if (!o.club) continue;
+      const v = E.venueView(o, Math.max(now, o.t));
+      v.stock.forEach((n, d) => { if (n > 0 && !E.held(o, d)) { const bp = Math.round((E.clubPriceAt(o, p, d) * 10000) / CFG.drugs[d].price); if (!best || bp < best.bp) best = { ...quem(o), d, bp }; } });
+    }
+    if (best && best.bp < 10000) return { k: 'club', t, ...best };
+  }
+  return { k: 'none', t };
 }
 function alvos(conta, now, w) {
   const me = jogadorDe(conta, now, w);
