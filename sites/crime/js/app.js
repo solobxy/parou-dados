@@ -116,6 +116,11 @@ function react(type, out, before, opts) {
   else if (type === 'acct') { toast(t('acHired')); fx.sfx('claim'); }
   else if (type === 'stockLimit') { toast(r.tp || r.sl ? t('stLimSaved') : t('stLimOff')); fx.sfx('claim'); }
   else if (type === 'stockDump') { toast(t('got', { m: money(r.got) })); fx.sfx('cash'); }
+  else if (type === 'mktBuy') { toast(t('tMkBought', { q: qty(r.d, r.n), x: list('drugs')[r.d].toLowerCase(), m: money(r.cost) })); fx.sfx('buy'); }
+  else if (type === 'mktSell') { toast(t('tMkSold', { q: qty(r.d, r.n), x: list('drugs')[r.d].toLowerCase(), m: money(r.got) })); fx.sfx('cash'); }
+  else if (type === 'mvSend') { toast(t('tSent', { q: qty(r.d, r.n), x: list('drugs')[r.d].toLowerCase(), h: hhmm(r.at), ...rgF(r.b) })); fx.sfx('claim'); }
+  else if (type === 'whBuy') { toast(t('tWh', rgF(r.r))); fx.sfx('claim'); }
+  else if (type === 'whUp') { toast(t('tWhUp', { x: t('whUp_' + r.k), n: r.lvl })); fx.sfx('claim'); }
   else if (type === 'venueSet') { toast(t('vnSaved')); fx.sfx('claim'); }
   else if (type === 'venueBuy') { toast(r.lvl === 1 ? t('vnOpened_' + r.kind) : t('vnUpped', { n: r.lvl })); fx.sfx('claim'); }
   else if (type === 'house') { toast(t('houseMoved', { x: list('houses')[me.house], n: r.respect })); fx.sfx('claim'); }
@@ -154,7 +159,7 @@ function react(type, out, before, opts) {
   else if (type === 'portOpen') S.portLast = [...(S.portLast || []), r.item].slice(-3);   // sem avisos: quem mostra o que saiu é a cena do contentor
   else if (type === 'collect') {
     let total = (r.club || 0) + (r.bro || 0), lost = 0;
-    for (const it of r.items) { lost += it.lost; if (it.units !== undefined) { total += it.rest; if (it.units > 0) toast(t('portGoodsToast', { n: num(it.units), x: list('drugs')[it.d] })); } else total += it.money; }
+    for (const it of r.items) { lost += it.lost; if (it.units !== undefined) { total += it.rest; if (it.units > 0) toast(t('portGoodsToast', { n: num(it.units), x: list('drugs')[it.d], ...rgF(it.rg || 'lx') })); } else total += it.money; }
     // (os contentores já não passam por aqui: abrem-se no porto, um a um, com a cena de reveal.js)
     if (total > 0) { toast(t('got', { m: money(total) })); fx.sfx('cash'); }
     if (lost > 0) toast(t('raided', { m: money(lost) }), true);
@@ -356,6 +361,7 @@ function loadFor(tab) {
   if (tab === 'gang') loadGang();
   if (tab === 'club' || tab === 'putas') loadVenues();
   if (tab === 'bolsa') { S.stkSel = null; loadStocks(); }
+  if (tab === 'stash') S.reg = null;
   if (tab === 'news' || tab === 'city') loadNews();
   if (tab === 'news') loadStocks();   // a página de Economia e a tira da bolsa na primeira página
 }
@@ -575,6 +581,7 @@ function newsText(e) {
   if (k === 'air' || k === 'airLost') return tv('nw_' + k, seedOf(e.name + k + e.t), { a: e.name, x: t('ar_' + e.to), m: money(e.money || 0) });
   if (k === 'stockWin' || k === 'stockLoss' || k === 'stockBust') return tv('nw_' + k, seedOf((e.name || e.c) + k + e.t), { a: e.name, x: t('st_' + e.c), m: money(e.money || 0) });
   if (k === 'venue') return tv('nw_venue' + e.v, seedOf(e.name + k + e.t), { a: e.name });
+  if (k === 'raidRecord') return t('nw_raidRecord', { x: e.d >= 0 ? list('drugs')[e.d].toLowerCase() : '', m: money(e.money || 0), ...rgF(e.r) });
   if (k === 'cls') return tv('nw_cls', seedOf(e.name + k + e.t), { a: e.name, x: t('cl_' + e.from), y: t('cl_' + e.to) });
   if (k === 'gangHeist' || k === 'gangHeistFail') return tv('nw_' + k, seedOf(e.gang + k + e.t), { g: e.gang, x: t('gh_' + e.c), n: e.n, m: money(e.money || 0) });
   if (k === 'gangHit' || k === 'gangHitFail') return tv('nw_' + k, seedOf(e.gang + k + e.t), { g: e.gang, b: e.target, n: e.n });
@@ -633,7 +640,7 @@ function deskList(Wm, max) {
 }
 // hora da edição: só a hora se foi hoje, senão o dia e a hora («15/11 21:00»)
 const edTime = (t0) => { const o = { timeZone: 'Europe/Lisbon' }, d = new Date(t0), loc = lang() === 'pt' ? 'pt-PT' : 'en-GB', hm = d.toLocaleTimeString(loc, { ...o, hour: '2-digit', minute: '2-digit' });
-  return d.toLocaleDateString(loc, o) === new Date(now()).toLocaleDateString(loc, o) ? hm : d.toLocaleDateString(loc, { ...o, day: '2-digit', month: '2-digit' }) + '\u00a0' + hm; };
+  return d.toLocaleDateString(loc, o) === new Date(now()).toLocaleDateString(loc, o) ? hm : d.toLocaleDateString(loc, { ...o, day: '2-digit', month: '2-digit' }) + '\n' + hm; };   // o dia por cima da hora: cabe na coluna
 const deskRow = ([at, a]) => h('li', null, h('span', { class: 'ptime' }, edTime(at)), h('span', null, h('b', null, t('ar_' + a.k) + '. '), artLine(a)));
 const lxLine = (a) => t(a.d >= 2 ? 'lxUp' : a.d <= -2 ? 'lxDown' : 'lxSame', { n: a.crime });
 const lxBustNow = (Wm) => Math.min(9500, Math.floor((Wm.bustBp * (S.cfg.world.lx.bustLo + S.cfg.world.lx.bustPer * Wm.lx.press)) / 10000));
@@ -648,7 +655,26 @@ function paperCountry() {
     crimes.length > 1 ? h('div', { class: 'lxchw' }, h('span', { class: 'small' }, t('lxChartT', { n: crimes.length })), stChart(crimes, 'mini lxch', 320, 44)) : null,
     h('p', null, t('lxBust', { p: L.press, b: pctOf(lxBustNow(Wm)) + '%' })),
     h('p', { class: 'small pnote' }, t('lxHow'))),
+    Wm.rg ? rgPaper(Wm) : null, rgEvPaper(Wm, 8),
     lxArts.length ? h('section', { class: 'psec' }, h('h4', null, t('lxEdsT')), h('ul', { class: 'plive' }, lxArts.map(([at, a]) => h('li', null, h('span', { class: 'ptime' }, edTime(at)), h('span', null, lxLine(a)))))) : null];
+}
+// as outras regiões, como um boletim: criminalidade e pressão de cada uma, e o que mexeu nos mercados
+function rgPaper(Wm) {
+  const row = (r, g) => { const prev = g.hist && g.hist.length > 1 ? g.hist[g.hist.length - 2] : null;
+    return h('tr', null, h('th', { scope: 'row' }, rgName(r)), h('td', { class: 'num' }, String(g.crime), prev && prev[1] !== g.crime ? h('small', { class: g.crime > prev[1] ? 'pdn' : 'pup' }, (g.crime > prev[1] ? ' ▲' : ' ▼') + Math.abs(g.crime - prev[1])) : null),
+      h('td', { class: 'num ' + (g.press >= S.cfg.wh.raidMin ? 'pdn' : '') }, String(g.press))); };
+  return h('section', { class: 'psec' }, h('h4', null, t('rgT')),
+    h('table', { class: 'pmkt prg' }, h('thead', null, h('tr', null, h('th'), h('th', { scope: 'col' }, t('lxCrime')), h('th', { scope: 'col' }, t('lxPress')))),
+      h('tbody', null, row('lx', Wm.lx), ...Object.entries(Wm.rg).map(([r, g]) => row(r, g)))),
+    h('p', { class: 'small pnote' }, t('rgHow')));
+}
+// até quando: «às 15:00» se for hoje, senão «terça-feira às 15:00»
+const untilTxt = (ts) => { const o = { timeZone: 'Europe/Lisbon' }, loc = lang() === 'pt' ? 'pt-PT' : 'en-GB', d = new Date(ts), hm = hhmm(ts);
+  return d.toLocaleDateString(loc, o) === new Date(now()).toLocaleDateString(loc, o) ? t('untilToday', { h: hm }) : t('untilDay', { d: d.toLocaleDateString(loc, { ...o, weekday: lang() === 'pt' ? 'long' : 'short' }), h: hm }); };
+const rgEvLine = (a, toAt) => t('rgEvLine', { e: t('ev_' + a.e), x: list('drugs')[a.d].toLowerCase(), p: sPct(a.bp), h: untilTxt(toAt) });
+function rgEvPaper(Wm, max) {
+  const rows = [...(Wm.arts || [])].reverse().flatMap((e) => e.a.filter((x) => x.k === 'rgEv').map((a) => [e.at, a])).slice(0, max);
+  return rows.length ? h('section', { class: 'psec' }, h('h4', null, t('rgEvT')), h('ul', { class: 'plive' }, rows.map(([at, a]) => h('li', null, h('span', { class: 'ptime' }, edTime(at)), h('span', null, rgEvLine(a, a.toAt) + (a.toAt <= now() ? ' ' + t('evOver') : '')))))) : null;
 }
 const kick = (k) => t('hl_' + k + '_t', { a: '' }).replace(/[:\s]+$/, '');   // «Procurado: {a}» sem o nome: é o antetítulo
 const paperDate = () => new Date(now()).toLocaleDateString(lang() === 'pt' ? 'pt-PT' : 'en-GB', { weekday: 'short', day: 'numeric', month: 'long', timeZone: 'Europe/Lisbon' });
@@ -675,7 +701,7 @@ function story(it, dia, kind) {
 function paperFront(N) {
   const hoje = N.today.items.length > 0, day = hoje ? N.today : N.yesterday, its = day.items, out = [];
   // sem notícia não há «última hora»
-  const calmEd = N.mundo && N.mundo.arts.length && deskList({ arts: N.mundo.arts.slice(-1) }, 1).length;
+  const calmEd = N.mundo && N.mundo.arts.length && (deskList({ arts: N.mundo.arts.slice(-1) }, 1).length || N.mundo.arts[N.mundo.arts.length - 1].a.some((x) => x.k === 'rgEv'));
   if (!its.length && !calmEd) out.push(h('article', { class: 'st st-lead' }, h('h2', null, t('paperCalmH')), h('div', { class: 'stb' }, h('p', null, t('paperCalm')))));
   else if (its.length) {
     if (!hoje) out.push(h('p', { class: 'pnote' }, t('paperYest')));
@@ -687,7 +713,9 @@ function paperFront(N) {
   if (last) {
     const lx = last.a.find((x) => x.k === 'lx'), top = deskList({ arts: [last] }, 2);
     out.push(h('section', { class: 'psec' }, h('h4', null, t('edAtH', { h: new Date(last.at).toLocaleTimeString(lang() === 'pt' ? 'pt-PT' : 'en-GB', { timeZone: 'Europe/Lisbon', hour: '2-digit', minute: '2-digit' }) })),
-      h('ul', { class: 'plive' }, ...top.map(deskRow), lx ? h('li', null, h('span', { class: 'ptime' }, t('lxShort')), h('span', null, lxLine(lx) + '. ' + t('lxBust', { p: lx.press, b: pctOf(lxBustNow(Wm)) + '%' }))) : null),
+      h('ul', { class: 'plive' }, ...top.map(deskRow), ...last.a.filter((x) => x.k === 'rgEv').map((a) => h('li', null, h('span', { class: 'ptime' }, edTime(last.at)), h('span', null, h('b', null, t('rgEvT') + '. '), rgEvLine(a, a.toAt)))),
+        lx ? h('li', null, h('span', { class: 'ptime' }, edTime(last.at)), h('span', null, h('b', null, t('lxShort') + '. '), lxLine(lx) + '. ' + t('lxBust', { p: lx.press, b: pctOf(lxBustNow(Wm)) + '%' }))) : null),
+      Wm.rg ? h('div', { class: 'pquo prgq', 'aria-label': t('lxPress') }, [['lx', Wm.lx], ...Object.entries(Wm.rg)].map(([r, g]) => h('span', { class: g.press >= S.cfg.wh.raidMin ? 'pdn' : '' }, h('b', null, rgName(r)), t('rgPress').toLowerCase() + ' ' + g.press))) : null,
       more('country', t('pgCountry'))));
   }
   const M = S.stocks;
@@ -775,7 +803,7 @@ function screenEmpire() {
     bolsa: me.stk?.some((h) => h.n > 0) ? moneyShort(me.stk.reduce((x, h) => x + h.value, 0)) : null,
     myclub: me.club?.till > 0 ? t('toCollect') : me.club && !me.stock.some((x) => x > 0) ? t('vnEmpty') : null,
     mybro: me.bro?.till > 0 ? t('toCollect') : null,
-    stash: me.stock.some((x) => x > 0) ? moneyShort(me.stock.reduce((s, n, d) => s + n * wholesaleOf(d), 0)) : null,
+    stash: me.mv?.length ? t('rgTransit') : whTotal(me) > 0 ? money(whTotal(me)) : null,
     inv: invFull(me) ? t('invFullB') : me.inv.some((x) => isGood(x.id)) ? moneyShort(me.inv.reduce((s, x) => s + (isGood(x.id) ? x.v : 0), 0)) : null,
     acct: me.acct ? null : me.level >= S.cfg.accountant.minLevel && me.cash + me.bank >= S.cfg.accountant.price ? t('acHire') : null,
   };
@@ -1246,7 +1274,6 @@ function screenPutas() {
 
 // ---------- discoteca e bordel do jogador ----------
 const wholesaleOf = (d) => Math.max(1, Math.floor((S.cfg.drugs[d].price * S.cfg.goods.wholesaleBp) / 10000));
-const dumpOf = (d, n) => Math.floor((n * wholesaleOf(d) * S.cfg.goods.dumpBp) / 10000);
 const canTake = (me, L, g) => (g.fx || L.energy + g.e <= stamMax(me)) && L.vice + g.a <= me.addictionCap;
 const ownerTag = (v) => (v.tag ? '[' + v.tag + '] ' : '') + v.name;
 // o armazém: cada linha abre as opções (tomar, despachar). Na discoteca da cidade há só o botão de tomar.
@@ -1261,19 +1288,8 @@ function stockRows(me, b, quick) {
       : h('button', { class: 'vrow tap', on: { click: () => stockSheet(d) } }, ...body, h('span', { class: 'muted', 'aria-hidden': 'true' }, '›'));
   }));
 }
-function stockSheet(d) {
-  const me = S.st.me, L = live(me), g = S.cfg.drugs[d], n = me.stock[d], b = L.jail || L.hosp;
-  const opts = [...new Set([1, Math.floor(n / 2), n])].filter((x) => x >= 1);
-  const close = sheet(h('div', { class: 'stack' }, h('div', { class: 'vrow' }, art('drugs', g.id, 'vth'), h('div', { class: 'grow' }, h('h2', { style: 'margin:0' }, list('drugs')[d]), h('div', { class: 'small muted num' }, '×' + n))),
-    h('div', { class: 'small' }, h('span', { class: 'c-en' }, icon('bolt'), '+' + g.e), ' · ', h('span', { class: 'c-vice' }, icon('pill'), '+' + g.a)),
-    // com discoteca: a droga está à venda (clientes da casa e outros jogadores) ou guardada só para ti
-    me.club ? h('div', { class: 'seg', role: 'group', style: 'margin-bottom:0' }, [[false, t('holdSale')], [true, t('holdKeep')]].map(([v, lbl]) => h('button', { 'aria-pressed': !!me.hold?.includes(d) === v ? 'true' : 'false',
-      on: { click: () => { if (!!me.hold?.includes(d) !== v) { close(); act('stockHold', { d, on: v }); } } } }, lbl))) : null,
-    me.club ? h('p', { class: 'small muted' }, t('holdSub')) : null,
-    h('button', { class: 'btn buy block big', disabled: !!b || !canTake(me, L, g), on: { click: () => { close(); act('stockUse', { d }); } } }, t('vnUseOne')),
-    h('h3', { style: 'margin-top:6px' }, t('vnDump')), h('p', { class: 'small muted' }, t('vnDumpSub', { p: 100 - S.cfg.goods.dumpBp / 100 })),
-    h('div', { class: 'row', style: 'flex-wrap:wrap' }, opts.map((k) => h('button', { class: 'btn ghost grow', on: { click: () => { close(); act('stockDump', { d, n: k }); } } }, t('vnDumpGo', { n: k, m: moneyShort(dumpOf(d, k)) }))))));
-}
+// a droga do armazém de Lisboa: vender, mudar, tomar ou tirar da venda da discoteca (a folha das regiões)
+function stockSheet(d) { tradeSheet('lx', d, tradableD(d) ? 'sell' : 'use'); }
 function venueTill(v, rateTxt) {
   const full = v.cap > 0 && v.till >= v.cap;
   return h('div', { class: 'card stack vc' },
@@ -1324,21 +1340,256 @@ function screenMyClub() {
   if (c) out.push(venueUp('club', c, c.next == null ? '' : t('mcNext', { m: moneyShort(V.club.perH[c.lvl]) }), b));
   return out;
 }
-// a stash: tudo o que tens em droga, venha das fábricas, do porto ou do aeroporto. Tomar, despachar, ou deixar a discoteca vender.
+// ---------- regiões e armazéns (passo 6, parte 2) ----------
+// Portugal numa linha de norte a sul. Em cada região: a polícia, o armazém do jogador e o mercado. O jogador não viaja:
+// muda a mercadoria (1 hora por salto, com o risco da pressão das duas regiões).
+const RGS = () => S.cfg.regions.list.map((r) => r.id);
+const rgName = (r) => t('rg_' + r);
+// o nome da região com a preposição que cada frase pede («no Alentejo», «do Algarve», «para Lisboa», «ao Algarve»)
+const rgF = (r) => ({ em: t('rgEm_' + r), de: t('rgDe_' + r), para: t('rgPara_' + r), a: t('rgA_' + r) });
+const famOfD = (d) => S.cfg.drugs[d].fam;
+const tradableD = (d) => famOfD(d) !== 'bar';
+const refCOf = (d) => Math.floor((S.cfg.drugs[d].price * 100 * S.cfg.goods.wholesaleBp) / 10000);
+const depthUOf = (r, d) => Math.max(1, Math.floor((S.cfg.market.depth[r] * 100) / refCOf(d)));
+const uOf = (d, n) => list(n === 1 ? 'drugU1' : 'drugU')[d];
+const qty = (d, n) => num(n) + ' ' + uOf(d, n);
+const whStockC = (me, r) => (r === 'lx' ? me.stock : me.wh[r] ? me.wh[r].s : null);
+// preço de uma unidade agora (sem o empurrão da ordem), em cêntimos: grosso × procura × saturação, mais ou menos a margem
+const unitC = (me, r, d, side) => { const g = me.mk[r]; return (refCOf(d) * g.dem[d] * g.sat[d] * (10000 + side * S.cfg.market.spreadBp)) / 1e12; };
+const perU = (c, d) => stMoney(Math.round(c)) + '/' + uOf(d, 1);
+// n unidades de uma vez, em cêntimos, como o motor: o preço anda à medida que se compra ou vende, e pára nos limites
+function mkQuote(me, r, d, n, side) {
+  const M = S.cfg.market, g = me.mk[r], D = depthUOf(r, d), s0 = g.sat[d], lim = side > 0 ? M.satMax : M.satMin;
+  const n1 = Math.min(n, (Math.max(0, side > 0 ? lim - s0 : s0 - lim) * D) / 10000);
+  const sum = (n1 * (s0 + (side > 0 ? s0 + (n1 * 10000) / D : s0 - (n1 * 10000) / D))) / 2 + (n - n1) * lim;
+  const c = (refCOf(d) * g.dem[d] * sum * (10000 + side * M.spreadBp)) / 1e12;
+  return side > 0 ? Math.ceil(c) : Math.floor(c);
+}
+const rgPos = (r) => S.cfg.regions.list.find((x) => x.id === r).pos;
+const mvHopsC = (a, b) => Math.abs(rgPos(a) - rgPos(b));
+// risco no caminho (bp): em cada salto, a média da pressão das duas regiões a dividir por 10
+function mvRiskC(me, a, b) {
+  const pa = rgPos(a), pb = rgPos(b), ids = S.cfg.regions.list.filter((g) => g.pos >= Math.min(pa, pb) && g.pos <= Math.max(pa, pb)).sort((x, y) => (pa < pb ? x.pos - y.pos : y.pos - x.pos)).map((g) => g.id);
+  let bp = 0; for (let i = 1; i < ids.length; i++) bp += Math.round(((me.mk[ids[i - 1]].press + me.mk[ids[i]].press) * 10) / 2);
+  return Math.min(9500, bp);
+}
+const raidBpC = (me, r) => { const w = me.wh[r], p = me.mk[r].press; return !w || p < S.cfg.wh.raidMin ? 0 : Math.floor((S.cfg.wh.raidBp * p * w.heat * 100) / (100 * 10000)); };
+const pressCls = (p) => (p >= S.cfg.wh.raidMin ? 'c-red' : '');
+// o que vale o que está guardado numa região, ao preço a que se vende lá agora
+const whTotal = (me) => (me.mk && me.wh ? RGS().reduce((x, r) => x + whWorth(me, r), 0) : 0);
+const whWorth = (me, r) => { const s = whStockC(me, r); return s ? s.reduce((x, n, d) => x + (n > 0 && tradableD(d) ? Math.floor((n * unitC(me, r, d, -1)) / 100) : 0), 0) : 0; };
+// o que vale a pena numa região: a droga que se compra aqui e se vende noutra com mais margem (barato), e a que se compra
+// noutra e se vende aqui com mais margem (caro). Só aparece quando a conta dá lucro antes do risco do caminho.
+function rgTips(me, r) {
+  let cheap = null, dear = null;
+  S.cfg.drugs.forEach((_, d) => {
+    if (!tradableD(d)) return;
+    const others = RGS().filter((x) => x !== r);
+    const out = Math.max(...others.map((x) => unitC(me, x, d, -1))) / unitC(me, r, d, 1), inn = unitC(me, r, d, -1) / Math.min(...others.map((x) => unitC(me, x, d, 1)));
+    if (out > 1 && (!cheap || out > cheap.v)) cheap = { d, v: out };
+    if (inn > 1 && (!dear || inn > dear.v)) dear = { d, v: inn };
+  });
+  return { cheap: cheap && cheap.d, dear: dear && dear.d };
+}
+function regionRow(me, r) {
+  const g = me.mk[r], w = me.wh[r], tip = rgTips(me, r);
+  const whLine = w ? t('whUsed', { a: num(w.used), b: num(w.cap) })
+    : me.level < S.cfg.wh.level ? t('rgWhLock', { n: S.cfg.wh.level }) : t('rgWhNone', { m: money(S.cfg.wh[r].price) });   // («Sem armazém (30 000 €)»)
+  const lockT = me.level < S.cfg.regions.famLevel.leve ? t('rgTradeLock', { n: S.cfg.regions.famLevel.leve }) : null;
+  const tips = lockT ? [h('div', { class: 'small muted' }, lockT)] : [tip.cheap != null ? h('div', { class: 'small' }, t('rgCheap', { x: list('drugs')[tip.cheap].toLowerCase() })) : null,
+    tip.dear != null ? h('div', { class: 'small' }, t('rgDear', { x: list('drugs')[tip.dear].toLowerCase() })) : null].filter(Boolean);
+  return h('button', { class: 'rgrow', on: { click: () => { S.reg = r; render(true); window.scrollTo({ top: 0 }); } } },
+    art('cenas', 'regiao-' + r, 'rgth'),
+    h('div', { class: 'grow' }, h('b', { class: 'rgnm' }, rgName(r)), h('div', { class: 'small muted' }, whLine), ...tips),
+    h('div', { class: 'rgp' }, h('b', { class: 'num ' + pressCls(g.press) }, String(g.press)), h('span', null, t('rgPress'))));
+}
+// a mercadoria a caminho e o que aconteceu às últimas cargas e aos armazéns (chegadas, apreensões, rusgas)
+function rgTransit(me) {
+  if (!me.mv.length) return null;
+  return [h('h2', { class: 'sec' }, t('rgTransit')), h('div', { class: 'card vlist vc' }, me.mv.map((v) => h('div', { class: 'vrow' }, art('drugs', S.cfg.drugs[v.d].id, 'vth'),
+    h('div', { class: 'grow' }, h('b', null, t('rgMvRow', { q: qty(v.d, v.n), x: list('drugs')[v.d].toLowerCase() })), h('div', { class: 'small muted' }, t('rgMvWay', { from: rgName(v.a), to: rgName(v.b) }) + ' · ' + t('rgArrAt', { h: hhmm(v.at) })),
+      h('div', { class: 'small muted' }, t('rgRiskOut', { p: pctOf(v.risk) + '%' }))),
+    h('b', { class: 'num mvt', dataset: { left: v.at } }, dur(Math.max(0, v.at - now()))))))];
+}
+const tookTxt = (took) => (took.length ? took.map(([d, n]) => qty(d, n) + ' ' + t('rgOf') + list('drugs')[d].toLowerCase()).join(', ') : t('raidNothing'));
+function rgLog(me) {
+  const rows = [
+    ...(me.mvLog || []).map((x) => ({ at: x.at, bad: x.x !== 0, txt: x.x === 0 ? t('rgLogOk', { q: qty(x.d, x.n), x: list('drugs')[x.d].toLowerCase(), ...rgF(x.b) })
+      : x.x === 1 ? t('rgLogFine', { x: list('drugs')[x.d].toLowerCase(), m: money(x.fine), ...rgF(x.b) }) : t('rgLogSeized', { q: qty(x.d, x.n), x: list('drugs')[x.d].toLowerCase(), ...rgF(x.b) }) + (x.jail ? t('rgLogJail') : '') })),
+    ...(me.rz || []).map((x) => ({ at: x.at, bad: true, txt: t('rgLogRaid', { t: tookTxt(x.took), m: money(x.fine), ...rgF(x.r) }) + (x.jail ? t('rgLogJail') : '') })),
+  ].sort((a, b) => b.at - a.at).slice(0, 5);
+  if (!rows.length) return null;
+  return h('section', { class: 'rglog' }, h('h2', { class: 'sec' }, t('rgLog')), h('ul', { class: 'plive' }, rows.map((x) => h('li', null, h('span', { class: 'ptime' }, paperTime(x.at)), h('span', { class: x.bad ? 'c-red' : '' }, x.txt)))));
+}
 function screenStash() {
-  const me = S.st.me, out = [pageHead('stash', t('shSub'))];
+  const me = S.st.me;
+  if (!me.mk || !me.wh) return [pageHead('stash', null, true), h('p', { class: 'muted' }, t('loading'))];
+  if (S.reg && RGS().includes(S.reg)) return regionDetail(me, S.reg);
+  const out = [pageHead('stash', t('rgSub'), true)];
   const b = busyBanner(me); if (b) out.push(b);
-  const units = me.stock.reduce((s, n) => s + n, 0), worth = me.stock.reduce((s, n, d) => s + n * wholesaleOf(d), 0), retail = me.stock.reduce((s, n, d) => s + n * S.cfg.drugs[d].price, 0);
-  if (units > 0) out.push(h('div', { class: 'card stack vc' },
-    h('div', { class: 'row sp' }, h('span', { class: 'muted' }, t('shWorth')), h('b', { class: 'num vbig c-cash' }, money(worth))),
-    h('div', { class: 'row sp small' }, h('span', { class: 'muted' }, t('shUnits')), h('span', { class: 'num' }, num(units))),
-    h('div', { class: 'row sp small' }, h('span', { class: 'muted' }, t('shRetail')), h('span', { class: 'num' }, money(retail)))));
-  out.push(stockRows(me, b) || h('div', { class: 'card stack vc' }, h('p', { class: 'muted' }, t('shNone'))));
-  out.push(h('h2', { class: 'sec' }, t('shFrom')));
-  out.push(h('div', { class: 'card vlist vc' },
-    [['biz', 'shFromBiz'], ['port', 'shFromPort'], ['air', 'shFromAir'], ['myclub', me.club ? 'shToClub' : 'shNoClub']].map(([id, k]) => h('button', { class: 'vrow tap', on: { click: () => go(id) } },
-      art('cenas', PLACES[id].img, 'vth'), h('div', { class: 'grow' }, h('b', null, t('p_' + id)), h('div', { class: 'small muted' }, t(k))), h('span', { class: 'muted', 'aria-hidden': 'true' }, '›')))));
+  const ids = RGS(), line = h('div', { class: 'rgline' });
+  ids.forEach((r, i) => {
+    if (i) line.append(h('div', { class: 'rghop' }, h('span', null, t('rgHop', { h: mvHopsC(ids[i - 1], r), p: pctOf(mvRiskC(me, ids[i - 1], r)) + '%' }))));
+    line.append(regionRow(me, r));
+  });
+  out.push(line);
+  const tr = rgTransit(me); if (tr) out.push(...tr);
+  const lg = rgLog(me); if (lg) out.push(lg);
   return out;
+}
+// uma região: a polícia, os acontecimentos, o armazém (com as melhorias) e o mercado, por família
+function regionDetail(me, r) {
+  const g = me.mk[r], w = me.wh[r], W = S.cfg.wh, cash = me.cash + me.bank, out = [];
+  out.push(h('div', { class: 'phead' }, h('div', { class: 'pbar' }, h('button', { class: 'back', 'aria-label': t('rgBack'), on: { click: () => { S.reg = null; render(true); window.scrollTo({ top: 0 }); } } }, h('span', { 'aria-hidden': 'true' }, '←')), h('h1', null, rgName(r)))));
+  const b = busyBanner(me); if (b) out.push(b);
+  const prev = g.hist.length > 1 ? g.hist[g.hist.length - 2] : null, rb = raidBpC(me, r);
+  const evs = g.ev.map((e) => h('p', { class: 'rgev' }, rgEvLine({ e: e.k, d: e.d, bp: e.bp }, e.to)));
+  out.push(h('div', { class: 'jobp rghero' },
+    h('div', { class: 'jimg' }, h('img', { src: IMG('cenas', 'regiao-' + r, 1), alt: '', width: 1100, height: 1100, decoding: 'async', on: { error: (e) => e.currentTarget.remove() } })),
+    h('p', { class: 'small' }, t('rgd_' + r)),
+    h('div', { class: 'jdeal' },
+      h('div', null, h('span', null, t('lxPress')), h('b', { class: 'num ' + pressCls(g.press) }, String(g.press), h('small', { class: 'muted' }, ' ' + t('lxOf')))),
+      h('div', null, h('span', null, t('lxCrime')), h('b', { class: 'num' }, String(g.crime), prev && prev[1] !== g.crime ? h('small', { class: g.crime > prev[1] ? 'c-red' : 'c-cash' }, (g.crime > prev[1] ? ' ▲' : ' ▼') + Math.abs(g.crime - prev[1])) : null))),
+    g.press < W.raidMin ? h('p', { class: 'small muted' }, t('rgRaidNone', { p: g.press, n: W.raidMin })) : h('p', { class: 'jrisk' }, w ? t('rgRaidNow', { p: pctOf(rb) + '%' }) : t('rgRaidNo', { n: W.raidMin })),
+    ...evs));
+  // o armazém
+  if (!w) {
+    const lock = me.level < W.level;
+    out.push(h('div', { class: 'card stack vc' }, h('h3', { style: 'margin:0' }, t('whBuyT', rgF(r))), h('p', { class: 'small muted' }, t('whBuySub', { n: num(W[r].sp[0]) })),
+      lock ? h('p', { class: 'small' }, icon('lock'), ' ', t('needLevel', { n: W.level }))
+        : h('button', { class: 'btn buy block big', disabled: cash < W[r].price, on: { click: (e) => act('whBuy', { r }, { el: e.currentTarget }) } }, t('whBuyGo', { m: money(W[r].price) }))));
+  } else {
+    const inTr = me.mv.filter((v) => v.b === r).reduce((x, v) => x + v.n, 0), full = w.used >= w.cap;
+    out.push(h('div', { class: 'card stack vc' },
+      h('div', { class: 'row sp' }, h('span', { class: 'muted' }, t('whUp_sp')), h('b', { class: 'num' }, t('whUsed', { a: num(w.used), b: num(w.cap) }))),
+      h('div', { class: 'fill' + (full ? ' full' : '') }, h('i', { style: `width:${w.cap ? Math.min(100, (w.used / w.cap) * 100) : 0}%` })),
+      inTr ? h('div', { class: 'small muted' }, t('whTransit', { n: num(inTr) })) : null,
+      h('div', { class: 'jdeal three' },
+        h('div', null, h('span', null, t('whHeat')), h('b', { class: 'num ' + (w.heat >= 50 ? 'c-red' : '') }, String(w.heat), h('small', { class: 'muted' }, ' ' + t('whOf')))),
+        h('div', null, h('span', null, t('whHide')), h('b', { class: 'num' }, pctOf(w.hide) + '%')),
+        h('div', null, h('span', null, t('whFront')), h('b', { class: 'num' }, '−' + pctOf(w.front) + '%'))),
+      h('p', { class: 'small muted' }, t('whHeatSub'))));
+    const up = (k, line) => h('div', { class: 'vrow' }, h('div', { class: 'grow' }, h('b', null, t('whUp_' + k)), h('div', { class: 'small muted' }, line)),
+      w.up[k] == null ? h('span', { class: 'small muted whupb' }, t('whMax')) : h('button', { class: 'btn ghost sm num whupb', disabled: cash < w.up[k], on: { click: (e) => act('whUp', { r, k }, { el: e.currentTarget }) } }, money(w.up[k])));
+    out.push(h('h2', { class: 'sec' }, t('whUpT')));
+    out.push(h('div', { class: 'card vlist vc' },
+      up('sp', w.sp >= 5 ? num(w.cap) : t('whUpSp', { a: w.sp, b: w.sp + 1, n: num(W[r].sp[w.sp]) })),
+      up('hd', w.hd >= 5 ? pctOf(w.hide) + '%' : t('whUpHd', { a: pctOf(w.hide) + '%', b: pctOf(W.hideBp[w.hd]) + '%' })),
+      up('fr', w.fr >= 5 ? '−' + pctOf(w.front) + '%' : t('whUpFr', { a: '−' + pctOf(w.front) + '%', b: '−' + pctOf(W.frontBp[w.fr]) + '%' }))));
+    // o que está guardado aqui
+    const st = whStockC(me, r), held = st.map((n, d) => ({ n, d })).filter((x) => x.n > 0);
+    out.push(h('h2', { class: 'sec' }, t('whStockT')));
+    out.push(held.length ? h('div', { class: 'card vlist vc' }, held.map(({ n, d }) => h('button', { class: 'vrow tap', on: { click: () => tradeSheet(r, d, tradableD(d) ? 'sell' : 'use') } }, art('drugs', S.cfg.drugs[d].id, 'vth'),
+      h('div', { class: 'grow' }, h('b', null, list('drugs')[d]), h('div', { class: 'small muted num' }, qty(d, n) + (tradableD(d) ? ' · ' + t('rgWorth', { m: money(Math.floor((n * unitC(me, r, d, -1)) / 100)) }) : ''))),
+      h('span', { class: 'muted', 'aria-hidden': 'true' }, '›'))))
+      : h('p', { class: 'small muted' }, t('whEmpty')));
+  }
+  // o mercado, por família (a de bar não se trafica)
+  out.push(h('h2', { class: 'sec' }, t('mkT', rgF(r))), h('p', { class: 'small muted', style: 'margin:-4px 2px 10px' }, t('mkSub')));
+  for (const fam of ['leve', 'festa', 'pesada']) {
+    const ds = S.cfg.drugs.map((_, d) => d).filter((d) => famOfD(d) === fam).sort((a, b) => S.cfg.drugs[a].price - S.cfg.drugs[b].price);
+    const need = S.cfg.regions.famLevel[fam];
+    out.push(h('div', { class: 'card vlist vc mkfam' }, h('div', { class: 'small mkfh' }, t('fam_' + fam), me.level < need ? h('span', { class: 'muted' }, ' · ' + t('mkLock', { n: need })) : null),
+      ds.map((d) => {
+        const sell = unitC(me, r, d, -1), best = RGS().filter((x) => x !== r).map((x) => ({ x, c: unitC(me, x, d, -1) })).sort((a, b) => b.c - a.c)[0], have = (whStockC(me, r) || [])[d] || 0;
+        // «vende-se melhor noutra»: só quando comprar aqui e vender lá dá lucro antes do risco do caminho
+        const buy = unitC(me, r, d, 1), gain = best && best.c > buy, ev = g.ev.find((e) => e.d === d);
+        const sub = [t('mkBuyAt', { m: perU(buy, d) }), have ? t('mkHave', { q: qty(d, have) }) : null].filter(Boolean).join(' · ');
+        return h('button', { class: 'vrow tap mkrow', on: { click: () => tradeSheet(r, d, have ? 'sell' : 'buy') } }, art('drugs', S.cfg.drugs[d].id, 'vth'),
+          h('div', { class: 'grow' }, h('b', null, list('drugs')[d]), h('div', { class: 'small muted' }, sub),
+            ev ? h('div', { class: 'small c-cash' }, t('ev_' + ev.k) + ' ' + sPct(ev.bp)) : null, gain ? h('div', { class: 'small c-cash' }, t('mkBest', { m: perU(best.c, d), ...rgF(best.x) })) : null),
+          h('div', { class: 'mkp' }, h('span', null, t('mkSellAt')), h('b', { class: 'num' }, perU(sell, d))));
+      })));
+  }
+  return out;
+}
+// Comprar, vender, mudar (e em Lisboa, tomar): uma droga numa região. Em cima, os preços nas três regiões lado a lado.
+function tradeSheet(r, d, mode0) {
+  const body = h('div', { class: 'stack' });
+  let mode = mode0, dest = null, amt = '';
+  const close = sheet(body);
+  const draw = () => {
+    const me = S.st.me, W = S.cfg.wh, w = me.wh[r], st = whStockC(me, r) || [], have = st[d] || 0, cash = me.cash + me.bank, fam = famOfD(d), need = S.cfg.regions.famLevel[fam];
+    const others = RGS().filter((x) => x !== r && me.wh[x]);
+    if (!tradableD(d)) mode = 'use';
+    if (mode === 'sell' && !have) mode = 'buy';
+    if (mode === 'move' && (!have || !others.length)) mode = have ? 'sell' : 'buy';
+    if (!dest || !others.includes(dest)) dest = others.includes('lx') ? 'lx' : others[0] || null;
+    const L = live(me), g = S.cfg.drugs[d];
+    const head = h('div', { class: 'vrow' }, art('drugs', g.id, 'vth'), h('div', { class: 'grow' }, h('h2', { style: 'margin:0' }, list('drugs')[d]),
+      h('div', { class: 'small muted' }, tradableD(d) ? t('fam_' + fam) : t('vnStock'))));
+    if (mode === 'use') {
+      body.replaceChildren(head, h('div', { class: 'small muted num' }, qty(d, have)),
+        h('button', { class: 'btn buy block big', disabled: !!(L.jail || L.hosp) || !canTake(me, L, g) || !have, on: { click: () => { close(); act('stockUse', { d }); } } }, t('vnUseOne')));
+      return;
+    }
+    // os preços nas três regiões: vende-se a este, compra-se 10% acima
+    const bh = unitC(me, r, d, 1);
+    const prices = h('div', { class: 'jdeal three tsp' }, RGS().map((x) => { const sx = unitC(me, x, d, -1), gp = sx / bh - 1;
+      return h('div', { class: x === r ? 'on' : '' }, h('span', null, rgName(x)),
+        mode === 'buy' && x === r ? h('b', { class: 'num' }, perU(bh, d)) : h('b', { class: 'num' }, perU(sx, d)),
+        mode === 'buy' ? h('small', { class: 'num ' + (x === r ? 'muted' : gp > 0 ? 'c-cash' : 'c-red') }, x === r ? t('tsBuyHere') : t('tsThere', { p: sPct(Math.round(gp * 10000)) }))
+          : h('small', { class: 'muted num' }, t('mkBuyAt', { m: stMoney(Math.round(unitC(me, x, d, 1))) }))); }));
+    const segs = [['buy', t('tsBuy')], ['sell', t('tsSell')], ['move', t('tsMove')]];
+    const seg = h('div', { class: 'seg', role: 'group', style: 'margin-bottom:0' }, segs.map(([id, lbl]) => h('button', { 'aria-pressed': mode === id ? 'true' : 'false',
+      disabled: (id === 'sell' && !have) || (id === 'move' && (!have || !others.length)) || (id === 'buy' && !w), on: { click: () => { mode = id; amt = ''; draw(); } } }, lbl)));
+    // quanto: na compra, o que cabe e o que o dinheiro paga; na venda e na mudança, o que lá está
+    const free = w ? Math.max(0, w.cap - w.used) : 0;
+    let maxN = 0;
+    if (mode === 'buy') { let n = Math.min(free, Math.floor((cash * 100) / Math.max(1, unitC(me, r, d, 1)))); while (n > 0 && mkQuote(me, r, d, n, 1) > cash * 100) n = n > 2000 ? Math.floor(n * 0.995) : n - 1; maxN = Math.max(0, n); }
+    else if (mode === 'sell') maxN = have;
+    else maxN = dest ? Math.min(have, Math.max(0, me.wh[dest].cap - me.wh[dest].used)) : 0;
+    // o campo vazio não quer dizer «tudo»: vender tudo de uma vez pode empurrar o preço a pique, por isso escreve-se ou toca-se num atalho
+    const inp = h('input', { id: 'tsamt', inputmode: 'numeric', autocomplete: 'off', enterkeyhint: 'done', value: amt, placeholder: t('tsMaxPh', { q: qty(d, maxN) }) });
+    const nOf = () => Math.max(0, Math.min(maxN, parseInt(inp.value, 10) || 0));
+    const sum = h('div', { class: 'stack', style: 'gap:6px' }), btn = h('button', { class: 'btn block big buy stgo tsgo' });
+    const row = (a, b2, cls = '') => h('div', { class: 'row sp small' }, h('span', { class: 'muted' }, a), h('b', { class: 'num ' + cls }, b2));
+    let why = '';
+    if (mode === 'buy' && !w) why = t('tsNoWh', rgF(r));
+    else if (mode === 'buy' && me.level < need) why = t('tsLvl', { x: list('drugs')[d].toLowerCase(), n: need });
+    else if (mode === 'buy' && !free) why = t('tsFull');
+    else if (mode === 'buy' && maxN < 1) why = t('tsNoCash');
+    else if (mode === 'move' && me.mv.length >= S.cfg.mv.max) why = t('tsMvMax', { n: me.mv.length });
+    else if (mode === 'move' && dest && maxN < 1) why = t('tsFull');
+    const sync = () => {
+      const n = nOf();
+      if (why) { btn.textContent = why; btn.disabled = true; sum.replaceChildren(); return; }
+      if (mode === 'buy' || mode === 'sell') {
+        const side = mode === 'buy' ? 1 : -1, c = n > 0 ? mkQuote(me, r, d, n, side) : 0, base = n * unitC(me, r, d, side), push = Math.abs(c - base);
+        sum.replaceChildren(...[n > 0 ? row(t('tsAvg'), perU(c / n, d)) : null, n > 0 && push >= 100 ? row(t('tsPush'), money(Math.round(push / 100)), 'c-red') : null,
+          n > 0 ? row(t(mode === 'buy' ? 'tsPay' : 'tsGet'), money(mode === 'buy' ? Math.ceil(c / 100) : Math.floor(c / 100)), mode === 'sell' ? 'c-cash' : '') : null].filter(Boolean));
+        btn.textContent = n > 0 ? t(mode === 'buy' ? 'tsBuyGo' : 'tsSellGo', { q: qty(d, n), m: money(mode === 'buy' ? Math.ceil(c / 100) : Math.floor(c / 100)) }) : t('tsNone');
+        btn.disabled = n < 1; btn.dataset.c = String(c);
+      } else {
+        const risk = mvRiskC(me, r, dest), hops = mvHopsC(r, dest), val = Math.floor((n * refCOf(d)) / 100);
+        const ifc = fam === 'leve' ? t('tsIf_leve', { m: money(Math.floor((val * W.fineBp) / 10000)) }) : fam === 'festa' ? t('tsIf_festa') : t('tsIf_pesada', { t: W.jailMin });
+        sum.replaceChildren(h('div', { class: 'jdeal three' },
+          h('div', null, h('span', null, t('tsTime')), h('b', { class: 'num' }, hops + ' h')),
+          h('div', null, h('span', null, t('tsRisk')), h('b', { class: 'num ' + (risk >= 500 ? 'c-red' : '') }, pctOf(risk) + '%')),
+          h('div', null, h('span', null, t('tsArr')), h('b', { class: 'num' }, hhmm(now() + hops * S.cfg.mv.hopMs)))), h('p', { class: 'small muted' }, ifc));
+        btn.textContent = n > 0 ? t('tsMoveGo', { q: qty(d, n), ...rgF(dest) }) : t('tsNone'); btn.disabled = n < 1;
+      }
+    };
+    inp.addEventListener('input', () => { inp.value = inp.value.replace(/\D/g, '').replace(/^0+/, '').slice(0, 9); amt = inp.value; sync(); });
+    inp.addEventListener('keydown', (e) => { if (e.key === 'Enter') inp.blur(); });
+    btn.addEventListener('click', async () => {
+      const n = nOf(); if (n < 1) return; inp.blur(); close();
+      if (mode === 'move') await act('mvSend', { a: r, b: dest, d, n });
+      else await act(mode === 'buy' ? 'mktBuy' : 'mktSell', { r, d, n, c: +btn.dataset.c });
+    });
+    const quick = h('div', { class: 'bquick' }, [25, 50, 75].map((q) => h('button', { class: 'btn ghost sm', disabled: maxN < 1 || !!why, on: { click: () => { inp.value = String(Math.max(1, Math.floor((maxN * q) / 100))); amt = inp.value; sync(); } } }, q + '%')),
+      h('button', { class: 'btn ghost sm', disabled: maxN < 1 || !!why, on: { click: () => { inp.value = String(maxN); amt = inp.value; sync(); } } }, t('stAll')));
+    const dests = mode === 'move' && others.length > 1 ? h('div', { class: 'stack', style: 'gap:6px' }, h('span', { class: 'small muted' }, t('tsTo')),
+      h('div', { class: 'seg', role: 'group', style: 'margin-bottom:0' }, others.map((x) => h('button', { 'aria-pressed': dest === x ? 'true' : 'false', on: { click: () => { dest = x; amt = ''; draw(); } } }, rgName(x))))) : null;
+    const lxExtra = r === 'lx' && have ? h('div', { class: 'row', style: 'gap:8px' },
+      h('button', { class: 'btn ghost grow', disabled: !!(L.jail || L.hosp) || !canTake(me, L, g), on: { click: () => { close(); act('stockUse', { d }); } } }, t('vnUseOne')),
+      me.club ? h('button', { class: 'btn ghost grow', on: { click: () => { close(); act('stockHold', { d, on: !me.hold?.includes(d) }); } } }, t(me.hold?.includes(d) ? 'holdSale' : 'holdKeep')) : null) : null;
+    body.replaceChildren(...[head, h('div', { class: 'small muted' }, t(mode === 'buy' ? 'tsWhereBuy' : 'tsWhere')), prices, seg,
+      mode === 'move' && !others.length ? h('p', { class: 'small muted' }, t('tsNoOther')) : null,
+      dests, h('div', { class: 'field', style: 'margin:0' }, h('label', { for: 'tsamt' }, t('tsQty', { u: uOf(d, 2) })), inp), quick, sum, btn, lxExtra].filter(Boolean));
+    sync();
+  };
+  draw();
 }
 // o contabilista: guarda o que passava do armazém e diz onde o dinheiro rende mais
 function screenAcct() {
@@ -1737,7 +1988,7 @@ function screenAir() {
   if (S.airLast) {
     const L = S.airLast, R = A.routes[L.r];
     out.push(h('div', { class: 'card row gres' }, h('span', { class: L.seized ? 'c-red' : 'c-cash' }, icon(L.seized ? 'lock' : 'cash')),
-      h('div', { class: 'grow' }, h('div', null, !L.seized && L.units !== undefined ? t('airKept', { n: L.units, x: list('drugs')[L.d] }) + (L.rest ? t('airKeptRest', { m: money(L.rest) }) : '') : t(L.seized ? 'airLost' : 'airGot', { x: t('ar_' + R.id), m: money(L.seized ? L.amount : L.got), g: money(L.got - L.amount) })), L.seized ? null : h('div', { class: 'small muted' }, t('airResp', { n: L.respect })))));
+      h('div', { class: 'grow' }, h('div', null, !L.seized && L.units !== undefined ? t('airKept', { n: L.units, x: list('drugs')[L.d] }) + (L.rest ? t('airKeptRest', { m: money(L.rest) }) : '') + (L.over ? ' ' + t('ctOver', { q: qty(L.d, L.over), m: money(L.overGot) }) : '') : t(L.seized ? 'airLost' : 'airGot', { x: t('ar_' + R.id), m: money(L.seized ? L.amount : L.got), g: money(L.got - L.amount) })), L.seized ? null : h('div', { class: 'small muted' }, t('airResp', { n: L.respect })))));
   }
   if (f) {
     const R = A.routes[f.r], left = f.readyAt - n, back = f.amount + Math.floor((f.amount * R.gainBp) / 10000), u = Math.min(1, Math.max(0, (n - f.t0) / (f.readyAt - f.t0)));
@@ -1851,7 +2102,8 @@ function openCargo(c, seq) {
     toque: t(rato ? 'ctClick' : 'ctTap'), aCortar: t('ctBusy'), rotulo: t('ctAria'), sair: t('close'),
     pedir: async () => { const out = await act('portOpen', { at: c.readyAt }); return out ? out.result : null; },
     mostrar: ({ item: it }) => (it.seized ? { tom: 'lost', de: 0, ate: it.amount, fmt: (v) => '−' + money(v), linha: t('ctLost'), fita: t('ctTape') }
-      : it.units !== undefined ? { tom: 'goods', de: 0, ate: it.units, fmt: (v) => '+' + num(v), linha: t('ctGoodsLine', { x: list('drugs')[it.d] }), sub: it.rest > 0 ? t('ctRest', { m: money(it.rest) }) : '', img: IMG('drugs', S.cfg.drugs[it.d].id) }
+      : it.units !== undefined ? { tom: 'goods', de: 0, ate: it.units, fmt: (v) => '+' + num(v), linha: t('ctGoodsLine', { x: list('drugs')[it.d], ...rgF(it.rg || 'lx') }),
+        sub: [it.over > 0 ? t('ctOver', { q: qty(it.d, it.over), m: money(it.overGot) }) : '', it.rest > 0 ? t('ctRest', { m: money(it.rest) }) : ''].filter(Boolean).join(' '), img: IMG('drugs', S.cfg.drugs[it.d].id) }
       : { tom: 'cash', de: 0, ate: it.got - it.amount, fmt: (v) => '+' + money(v), linha: t('ctBack', { m: money(it.got) }), notas: Math.max(4, Math.min(14, Math.round(Math.log10(Math.max(10, it.got)) * 2.4))) }),
     // o botão de seguir só vem a verde quando o resultado foi bom; depois de uma apreensão fica neutro
     botoes: (r) => { const prox = S.st.me.port.find((x) => x.readyAt <= now()), cls = r.item.seized ? 'btn lite' : 'btn cash';
@@ -1868,20 +2120,29 @@ function shipSheet(k) {
   const teto = Math.min(me.portCap, liquid), opts = [0.25, 0.5, 1].map((f) => Math.floor(teto * f)).filter((v, i, a) => v >= P.minAmount && a.indexOf(v) === i);
   let goods = !!S.portGoods, amount = opts[opts.length - 1] || 0;
   const full = me.port.length >= me.portSlots, late = S.st.round.playEnd - now() < s.ms, why = full ? t('shFull') : late ? t('portEnding') : !opts.length ? t('portMin', { m: money(P.minAmount) }) : '';
+  const rg = s.rg || 'lx', noWh = !me.wh?.[rg];   // em droga, o barco descarrega no armazém da região onde chega
+  if (noWh) goods = false;   // sem armazém lá, começa em dinheiro
   const body = h('div', { class: 'stack' });
-  const fact = (lbl, val, cls, ic) => h('div', { class: 'fact' }, h('b', { class: 'num ' + cls }, val), h('span', null, icon(ic), lbl));
   const row = (a, b, cls) => h('div', { class: 'row sp' }, h('span', { class: 'muted' }, a), h('b', { class: 'num ' + cls }, b));
   const draw = () => {
     const back = amount + Math.floor((amount * s.gainBp) / 10000), units = Math.floor(back / wholesaleOf(s.drug));
     body.replaceChildren(...[   // (o replaceChildren escreve «null» se lhe passarem um vazio: filtra-se antes)
-      h('div', { class: 'shiphd' }, art('port', s.id, 'shimg'), h('div', { class: 'grow' }, h('h2', { style: 'margin:0' }, list('ships')[k]), h('p', { class: 'small muted', style: 'margin:4px 0 0' }, t('shd_' + s.id)))),
-      h('div', { class: 'facts' }, fact(t('shTime'), hrs(s.ms), 'c-en', 'timer'), fact(t('shProfit'), '+' + s.gainBp / 100 + '%', 'c-cash', 'cash'), fact(t('risk'), riskTxt(risk), riskCls(risk), 'lock'), fact(t('shCargo'), dn, 'c-vice shdrug', 'pill')),
+      h('div', { class: 'shiphd' }, art('port', s.id, 'shimg'), h('div', { class: 'grow' }, h('h2', { style: 'margin:0' }, list('ships')[k]), h('p', { class: 'small muted', style: 'margin:4px 0 0' }, t('shd_' + s.id)),
+        h('p', { class: 'small', style: 'margin:4px 0 0' }, t('portLands', rgF(rg))))),
+      // os quatro números lado a lado, como no cartão do golpe: o nome em cima, o número grande por baixo
+      h('div', { class: 'jdeal four' },
+        h('div', null, h('span', null, t('shTime')), h('b', { class: 'num' }, hrs(s.ms))),
+        h('div', null, h('span', null, t('shProfit')), h('b', { class: 'num c-cash' }, '+' + s.gainBp / 100 + '%')),
+        h('div', null, h('span', null, t('risk')), h('b', { class: 'num ' + riskCls(risk) }, riskTxt(risk))),
+        h('div', null, h('span', null, t('shCargo')), h('b', { class: 'shdrug' }, dn))),
       why ? h('p', { class: 'small c-gold' }, why) : null,
-      !why ? h('div', { class: 'seg', role: 'group', style: 'margin-bottom:0' }, [[false, t('portCash')], [true, t('portGoods', { x: dn })]].map(([v, lbl]) => h('button', { 'aria-pressed': goods === v ? 'true' : 'false', on: { click: () => { goods = v; S.portGoods = v; draw(); } } }, lbl))) : null,
-      !why && goods ? h('p', { class: 'small muted' }, t('portGoodsSub', { x: dn, p: Math.round((10000 / S.cfg.goods.wholesaleBp - 1) * 100) })) : null,
+      !why ? h('div', { class: 'seg', role: 'group', style: 'margin-bottom:0' }, [[false, t('portCash')], [true, t('portGoods', { x: dn.toLowerCase() })]].map(([v, lbl]) => h('button', { 'aria-pressed': goods === v ? 'true' : 'false', on: { click: () => { goods = v; S.portGoods = v; draw(); } } }, lbl))) : null,
+      !why && goods ? (noWh ? h('div', { class: 'stack', style: 'gap:8px' }, h('p', { class: 'small c-red', style: 'margin:0' }, t('portNoWh', { x: dn.toLowerCase(), ...rgF(rg) })),
+        h('button', { class: 'btn ghost', on: { click: () => { close(); S.reg = rg; go('stash'); S.reg = rg; render(); } } }, t('portToWh') + ' ›'))
+        : h('p', { class: 'small muted' }, t('portGoodsSub', { x: dn, ...rgF(rg) }))) : null,
       !why && opts.length > 1 ? h('div', { class: 'seg', role: 'group', style: 'margin-bottom:0', 'aria-label': t('shAmount') }, opts.map((v) => h('button', { 'aria-pressed': amount === v ? 'true' : 'false', on: { click: () => { amount = v; draw(); } } }, moneyShort(v)))) : null,
-      !why ? h('div', { class: 'card stack shsum' }, row(t('shIfOk', { p: riskTxt(10000 - risk) }), goods ? num(units) + ' × ' + dn : '+' + money(back - amount), 'c-cash'), row(t('shIfLost', { p: riskTxt(risk) }), '−' + money(amount), 'c-red')) : null,
-      h('button', { class: 'btn buy block big', disabled: !!why, on: { click: async () => { close(); await act('port', { k, amount, goods }); } } }, why ? t('shSend') : t('ship', { m: money(amount) }))].filter(Boolean));
+      !why ? h('div', { class: 'card stack shsum' }, row(t('shIfOk', { p: riskTxt(10000 - risk) }), goods ? t('rgMvRow', { q: qty(s.drug, units), x: dn.toLowerCase() }) : '+' + money(back - amount), 'c-cash'), row(t('shIfLost', { p: riskTxt(risk) }), '−' + money(amount), 'c-red')) : null,
+      h('button', { class: 'btn buy block big', disabled: !!why || (goods && noWh), on: { click: async () => { close(); await act('port', { k, amount, goods }); } } }, why ? t('shSend') : t('ship', { m: money(amount) }))].filter(Boolean));
   };
   draw();
   const close = sheet(body);
@@ -2270,6 +2531,8 @@ function eventRow(e) {
     h('div', { class: 'grow' }, h('div', null, t(e.why === 'tp' ? 'evStTp' : 'evStSl', { x: t('st_' + e.c), n: num(e.n), m: money(e.money || 0), g: (e.profit >= 0 ? '+' : '−') + money(Math.abs(e.profit || 0)) })), h('div', { class: 'small muted' }, dur(now() - e.t))));
   if (e.k === 'stDiv') return h('div', { class: 'card row' }, h('span', { class: 'c-cash' }, icon('cash')),
     h('div', { class: 'grow' }, h('div', null, t('evStDiv', { m: money(e.money || 0), x: (e.cs || []).map((c) => t('st_' + c)).join(', ') })), h('div', { class: 'small muted' }, dur(now() - e.t))));
+  if (e.k === 'raid') return h('div', { class: 'card row' }, h('span', { class: 'c-red' }, icon('lock')),
+    h('div', { class: 'grow' }, h('div', null, t('evRaid', { t: tookTxt(e.took || []), m: money(e.fine || 0), ...rgF(e.r) }) + (e.jail ? t('evRaidJ') : '')), h('div', { class: 'small muted' }, dur(now() - e.t))));
   if (e.k === 'hkRob') return h('div', { class: 'card row' }, h('span', { class: 'c-red' }, icon('skull')),
     h('div', { class: 'grow' }, h('div', null, t('hkRob_' + e.kind, { m: money(e.money || 0) })), h('div', { class: 'small muted' }, dur(now() - e.t))));
   if (e.k === 'hitman') return h('div', { class: 'card row' }, h('span', { class: e.win ? 'c-red' : 'c-cash' }, icon(e.win ? 'skull' : 'shield')),

@@ -13,7 +13,7 @@ const SEED = +(process.argv[2] ?? 1), N = +(process.argv[3] ?? 300), DIAS = +(pr
 // para comparar com o motor (dev/sim-motor.mjs) enquanto ele ainda não tem estes sistemas: SEM_EMPREGO=1, SEM_OPS=1, SEM_GASTOS=1
 // (SEM_GASTOS desliga os três gastos; cada um também se desliga sozinho: SEM_LAVAGEM=1, SEM_AVENCA=1, SEM_SEGURANCAS=1)
 const SEM_G = process.env.SEM_GASTOS === '1', semG = (k) => (process.env[k] === undefined ? SEM_G : process.env[k] === '1');
-const SEM = { emprego: process.env.SEM_EMPREGO === '1', ops: process.env.SEM_OPS === '1', lavagem: semG('SEM_LAVAGEM'), avenca: semG('SEM_AVENCA'), segurancas: semG('SEM_SEGURANCAS') };
+const SEM = { emprego: process.env.SEM_EMPREGO === '1', ops: process.env.SEM_OPS === '1', lavagem: semG('SEM_LAVAGEM'), avenca: semG('SEM_AVENCA'), segurancas: semG('SEM_SEGURANCAS'), trafico: process.env.SEM_TRAFICO === '1' };
 function rngDe(s) { let a = s >>> 0; return () => { a |= 0; a = (a + 0x6d2b79f5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
 
 // ---------- números do modelo (os que vão para a wiki) ----------
@@ -61,6 +61,14 @@ export const P = {
     { id: 'casino', nivel: 80, dias: 7, custo: 150000, ganho: 700000, p: 0.4, pausa: 5 },
   ],
   falhaOp: { advogado: [3000, 7000], perdeCusto: true },
+  // Tráfico entre regiões (passo 6, parte 2): o lucro por dia de quem leva droga de onde é barata para onde é cara, medido com o motor
+  // em sim/regioes.mjs (um comerciante sozinho, 1 000 épocas, semente 7), por edições jogadas por dia. Do nível 10 só as leves (o haxixe do
+  // Algarve, com o armazém de lá); do nível 25 também a coca do Alentejo e a droga de festa. Compra-se o armazém quando há 1,3 vezes o
+  // preço mais o capital; o capital fica parado na mercadoria. Não paga lavagem (como o porto).
+  trafico: [
+    { nivel: 10, armazem: 50000, capital: 20000, dia: { 1: 600, 2: 1172, 4: 1513 } },
+    { nivel: 25, armazem: 30000, capital: 40000, dia: { 1: 1095, 2: 1875, 4: 2735 } },
+  ],
   // Casas: começa-se numa barraca de 0 €. Não há renda nem despesa de casa: as casas só se compram, e cada uma dá mais espaços de inventário.
   // Compra-se quando há 1,3 vezes o preço; a antiga entra na troca pelo que custou.
   vida: [
@@ -96,11 +104,13 @@ const nivelDe = (resp) => Math.min(100, Math.max(1, Math.floor(Math.cbrt(resp / 
 
 // ---------- perfis ----------
 const PERFIS = {
-  casual:   { barras: 2, extra: 0, falha: 0.25 },    // uma sessão por dia; falha um dia em quatro
-  regular:  { barras: 4, extra: 0, falha: 0.05 },    // duas ou três sessões por dia
-  hardcore: { barras: 7, extra: 3, falha: 0 },       // gasta a stamina natural toda (7 barras) e até três a droga, se compensar
-  bot:      { barras: 7.2, extra: 7, falha: 0 },     // 24 h por dia: o caso que a economia tem de aguentar
+  casual:   { barras: 2, extra: 0, falha: 0.25, edicoes: 1 },    // uma sessão por dia; falha um dia em quatro
+  regular:  { barras: 4, extra: 0, falha: 0.05, edicoes: 2 },    // duas ou três sessões por dia
+  hardcore: { barras: 7, extra: 3, falha: 0, edicoes: 3 },       // gasta a stamina natural toda (7 barras) e até três a droga, se compensar
+  bot:      { barras: 7.2, extra: 7, falha: 0, edicoes: 4 },     // 24 h por dia: o caso que a economia tem de aguentar
 };
+// lucro do tráfico por dia para quem joga e edições por dia (3 edições: a meio entre 2 e 4)
+const traficoDia = (t, e) => t.dia[e] ?? (t.dia[e - 1] + t.dia[e + 1]) / 2;
 
 function simula(perfil, rng) {
   const A = PERFIS[perfil];
@@ -144,6 +154,15 @@ function simula(perfil, rng) {
       const o = P.ops.filter((x) => nv >= x.nivel && s.cash > x.custo * 3).sort((x, y) => vale(y) - vale(x))[0];
       if (o) { s.op = { o, fim: d + Math.max(1, Math.ceil(o.dias)) }; sai += o.custo + (o.custo > 2000 ? P.suborno * o.ganho : 0); }
     }
+    // tráfico entre regiões: compra o armazém (e põe o capital na mercadoria) quando pode; depois rende por dia
+    let trafico = 0;
+    if (!SEM.trafico) {
+      s.armz = s.armz || 0;
+      const t = P.trafico[s.armz];
+      if (t && nv >= t.nivel && s.cash > (t.armazem + t.capital) * 1.3) { sai += t.armazem + t.capital; s.capital += t.capital; s.armz++; }
+      if (s.armz > 0) trafico = traficoDia(P.trafico[s.armz - 1], A.edicoes);
+    }
+    entra += trafico;
     // lavagem e equipa
     s.ilegal += crime;
     if (!SEM.lavagem && s.ilegal > P.lavagem.acimaDe) crime *= 1 - P.lavagem.parte;

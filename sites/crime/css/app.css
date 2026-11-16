@@ -1762,7 +1762,7 @@ body.light .rv.is-wait .ct-lock::after { opacity: .9; transform: translate(-50%,
 .plive li { display: grid; grid-template-columns: 44px minmax(0, 1fr); gap: 8px; font: 400 14.5px/1.35 var(--serif); }
 .plive.first li:first-child { grid-template-columns: 1fr; gap: 4px; padding-bottom: 10px; border-bottom: 1px solid var(--pr); font-size: 19px; line-height: 1.25; }
 .plive.first li:first-child .ptime { color: var(--pk); letter-spacing: .06em; }
-.ptime { font: 700 12px/1.65 var(--ui); color: var(--pi2); font-variant-numeric: tabular-nums; }
+.ptime { font: 700 12px/1.65 var(--ui); color: var(--pi2); font-variant-numeric: tabular-nums; white-space: pre-line; }
 .pmore { display: block; min-height: 44px; margin-top: 2px; padding: 0; border: 0; background: none; color: var(--pi); font: 700 13.5px/1 var(--ui); text-align: left; text-decoration: underline; text-underline-offset: 3px; }
 .pbtn { display: block; width: 100%; min-height: 48px; margin-top: 16px; border: 0; border-radius: 2px; background: var(--pi); color: var(--pp); font: 900 18px/1 var(--disp); text-transform: uppercase; letter-spacing: .03em; }
 .pseg { display: flex; gap: 18px; margin: -6px 0 8px; }
@@ -2003,3 +2003,63 @@ body.light .rv.is-wait .ct-lock::after { opacity: .9; transform: translate(-50%,
 .lxchw { margin: 4px 0 6px; }
 .lxchw > span { display: block; font: 600 13px/1.3 var(--ui); color: var(--pi2); }
 .ppg button { padding: 0 1px; font-size: clamp(11.5px, 3.3vw, 12.5px); }
+
+/* ---------- regiões e armazéns (passo 6, parte 2) ---------- */
+/* a linha de norte a sul: uma região por linha, ligadas pelo caminho (tempo e risco) */
+.rgline { display: grid; margin-bottom: 14px; }
+.rgrow { display: grid; grid-template-columns: 64px minmax(0, 1fr) auto; gap: 12px; align-items: center; width: 100%; text-align: left; color: inherit; font: inherit; border: 0; background: var(--s1); border-radius: var(--r); padding: 12px 14px; min-height: 88px; }
+.rgrow:active { background: var(--s2); }
+.rgrow .grow { min-width: 0; display: grid; gap: 3px; }
+.rgth { width: 64px; height: 64px; border-radius: 10px; object-fit: cover; background: var(--s2); }
+.rgnm { font: 900 24px/1 var(--disp); text-transform: uppercase; }
+.rgp { display: grid; justify-items: end; text-align: right; }
+.rgp b { font: 900 30px/1 var(--disp); }
+.rgp span { font-size: 14px; color: var(--tx2); margin-top: 2px; }
+.rghop { position: relative; height: 40px; display: flex; align-items: center; padding-left: 46px; font-size: 14px; color: var(--tx2); font-variant-numeric: tabular-nums; }
+.rghop::before { content: ''; position: absolute; left: 45px; top: 0; bottom: 0; border-left: 2px dashed #ffffff33; }
+.rghop span { padding-left: 14px; }
+.rglog .plive li { font: 400 14.5px/1.4 var(--ui); grid-template-columns: 52px minmax(0, 1fr); }
+.rglog .ptime { color: var(--tx2); }
+.rghero { margin-bottom: 12px; }
+.rghero .jimg img { object-position: center 55%; }
+.rghero .jdeal span::first-letter { text-transform: uppercase; }
+.rgev { margin-top: -4px; font-size: 14px; color: var(--cash); }
+/* três ou quatro números lado a lado, como no cartão do golpe */
+.jdeal.three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.jdeal.four { grid-template-columns: repeat(4, minmax(0, auto)); justify-content: space-between; gap: 10px; }
+.jdeal.three > div:nth-child(2) { text-align: center; }
+.jdeal.three > div:last-child, .jdeal.four > div:last-child { text-align: right; }
+.jdeal.four > div + div:not(:last-child) { text-align: left; }
+.jdeal.three b, .jdeal.four b { font-size: clamp(20px, 6.2vw, 26px); }
+.jdeal.four b.shdrug { overflow: hidden; text-overflow: ellipsis; color: var(--vice, var(--tx)); }
+.jdeal small { font: 600 13px/1 var(--ui); }
+.jdeal b small { font: 700 14px var(--ui); }
+.card > .jdeal.three { padding-top: 6px; }
+/* preços da droga nas três regiões: a de onde se está fica à frente, as outras atrás */
+.tsp > div { color: var(--tx2); }
+.tsp > div b { color: var(--tx2); font-size: clamp(17px, 5.2vw, 22px); }
+.tsp > div.on b { color: var(--tx); }
+.tsp > div.on span { color: var(--tx); font-weight: 700; }
+.tsp small { display: block; margin-top: 4px; }
+/* mercado: uma família por cartão, com o que a polícia faz em cima */
+.mkfam { gap: 2px; }
+.mkfh { color: var(--tx2); padding: 0 2px 6px; }
+.mkrow { min-height: 60px; }
+.mkrow .grow { min-width: 0; }
+.mkrow .grow .small { line-height: 1.35; }
+.mkp { display: grid; justify-items: end; text-align: right; white-space: nowrap; }
+.mkp b { font-size: 16px; }
+.mkp span { font-size: 14px; color: var(--tx2); line-height: 1.2; }
+/* jornal: as regiões numa tabela e o boletim da pressão na primeira página */
+.prg thead th { padding: 2px 0 6px 8px; text-align: right; font: 700 11px/1 var(--ui); letter-spacing: .06em; text-transform: uppercase; color: var(--pi2); }
+.prg tbody th { padding-right: 8px; }
+.prg td small { font: 700 12px var(--ui); }
+.prgq { margin-top: 12px; }
+@media (max-width: 359px) { .rgrow { grid-template-columns: 52px minmax(0, 1fr) auto; gap: 10px; padding: 10px 12px; } .rgth { width: 52px; height: 52px; } .rghop { padding-left: 38px; } .rghop::before { left: 37px; } .rgnm { font-size: 21px; } }
+
+.mvt { font-size: 17px; white-space: nowrap; }
+.tsp { align-items: start; }
+.whupb { min-width: 116px; text-align: center; }
+.btn.tsgo { text-transform: none; font-size: 22px; }
+.mkp span { order: -1; }
+.rglog .ptime { font-size: 14px; }

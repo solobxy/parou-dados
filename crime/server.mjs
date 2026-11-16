@@ -9,7 +9,7 @@ import { readFileSync, existsSync, mkdirSync, statSync, readdirSync, unlinkSync 
 import { join, extname, normalize } from 'node:path';
 import { CFG, T } from './engine/config.js';
 import * as E from './engine/engine.js';
-import { cryptoRng } from './engine/rng.js';
+import { cryptoRng, seededRng } from './engine/rng.js';
 import { localParts, lisbonToUtc, seasonAt, seasonBounds } from './engine/time.js';
 import * as MW from './engine/mundo.js';
 
@@ -25,8 +25,8 @@ const dataDe = (x) => { const [y, m, d] = x.split('-').map(Number); return { y, 
 const RONDA_TESTE = process.env.PRIMEIRA_RONDA ? dataDe(process.env.PRIMEIRA_RONDA) : null;
 // Épocas de 28 dias a contar da sexta 13/11/2026 às 21:00 de Lisboa (PRIMEIRA_EPOCA=AAAA-MM-DD muda-a, para testes)
 const ANCORA = dataDe(process.env.PRIMEIRA_EPOCA || process.env.PRIMEIRA_RONDA || '2026-11-13');
-const rng = cryptoRng();
-const VERSAO = 61;   // sobe quando o servidor muda, para se confirmar de fora que a versão nova já está a correr
+const rng = process.env.TESTE_SEMENTE ? seededRng(+process.env.TESTE_SEMENTE) : cryptoRng();   // nos testes, a sorte pode ser sempre a mesma
+const VERSAO = 62;   // sobe quando o servidor muda, para se confirmar de fora que a versão nova já está a correr
 const ATOS_3S = +(process.env.ATOS_3S || 15), ATOS_MIN = +(process.env.ATOS_MIN || 400); // ações por conta: 15 em 3 s, 400 por minuto
 
 // ---------- relógio que nunca anda para trás ----------
@@ -172,7 +172,16 @@ function contarAcao(now, a, r, p, alvo, resp0, alvoResp0) {
 // mundo ligado: a stamina gasta na rua conta para a criminalidade de Lisboa; o dinheiro gasto conta para a receita da empresa do ramo
 const GASTO = { detox: 'farma', cure: 'farma', medic: 'farma', medicFor: 'farma', buy: 'armas', gear: 'armas', repair: 'armas',
   refill: 'noite', drug: 'noite', hooker: 'noite', broVisit: 'noite', clubBuy: 'noite', broVisitAt: 'noite', clubBuyAt: 'noite' };
+// a droga comprada, vendida, desembarcada ou mudada de região conta para a criminalidade dessa região (1 ponto por cada 20 €)
+const MEXE_MUNDO = new Set(['stockBuy', 'stockSell', 'mktBuy', 'mktSell', 'stockDump', 'mvSend', 'portOpen', 'collect', 'airCollect']);
+const pontos = (r, v) => { if (r && v > 0) mundoAcc(r, v / CFG.regions.ptsEur); };
 function contarMundo(a, r, delta) {
+  if (a.type === 'mktBuy' || a.type === 'mktSell') pontos(r.r, r.v);
+  else if (a.type === 'stockDump') pontos('lx', r.v);
+  else if (a.type === 'mvSend') { pontos(r.a, r.v); pontos(r.b, r.v); }
+  else if (a.type === 'portOpen' && r.item) pontos(r.item.rg, r.item.v);
+  else if (a.type === 'collect') for (const x of r.port || []) pontos(x.rg, x.v);
+  else if (a.type === 'airCollect') pontos(r.rg, r.v);
   if (a.type === 'crime' || a.type === 'crimeAll') { const c = CFG.crimes[int(a.k)]; if (c) mundoAcc('lx', c.e * (a.type === 'crimeAll' ? r.n || 0 : 1)); }
   else if (a.type === 'attack') mundoAcc('lx', CFG.world.lx.fight);
   else if (a.type === 'deal') mundoAcc('lx', CFG.deal.step);
@@ -287,6 +296,7 @@ function bolsaDe(w, now) {
     if (!Array.isArray(bolsa.hist) || !bolsa.hist.length) bolsa.hist = [bolsa.prices.slice()];
     // o mercado antigo (preços ao acaso) passa a ter empresas: cada uma começa no preço a que estava, e quem tinha ações fica com elas
     if (!bolsa.w) { bolsa.w = MW.newWorld(bolsa.prices, Math.max(now, w.start)); bolsaSuja = true; }
+    if (bolsa.w.v !== 2) { MW.worldUp(bolsa.w); bolsaSuja = true; }   // o mundo da parte 1 ganha as regiões e o mercado
     bolsaRonda = w.n;
   }
   const S = CFG.stocks, alvo = Math.max(0, Math.floor((Math.min(now, w.playEnd) - w.start) / S.tickMs));
@@ -294,8 +304,11 @@ function bolsaDe(w, now) {
   for (;;) {
     const tt = bolsa.tick < alvo ? w.start + (bolsa.tick + 1) * S.tickMs : Infinity, te = MW.edStart(bolsa.w.ed + 1);
     if (te <= now && te <= tt) {
-      const ed = bolsa.w.ed + 1, r = MW.runEdition(bolsa, ed, rng);
+      const ed = bolsa.w.ed + 1;
+      if (w.n === ronda) { try { guardadoNasRegioes(); } catch (e) { console.error('regiões', e.message); } }
+      const r = MW.runEdition(bolsa, ed, rng);
       if (w.n === ronda) { try { dividendos(r.div, te, now); } catch (e) { console.error('dividendos', e.message); } }
+      if (w.n === ronda) { try { rusgas(te, now); } catch (e) { console.error('rusgas', e.message); } }
       if (w.n === ronda && now - te < T.HOUR) for (const k of r.bust) noticia(te, { k: 'stockBust', c: S.list[k].id });
       mexeu = true; continue;
     }
@@ -331,6 +344,28 @@ function dividendos(div, t, now) {
   }
 }
 const S_ID = (k) => CFG.stocks.list[k].id;
+// antes de cada edição: a droga guardada à vista em cada região conta para a criminalidade de lá (1 ponto por cada 500 €)
+function guardadoNasRegioes() {
+  const tot = {};
+  for (const [, p] of jogadores) { if (!p.wh) continue; const st = E.whStoredEur(p); for (const r in st) tot[r] = (tot[r] || 0) + st[r]; }
+  for (const r in tot) if (tot[r] > 0) mundoAcc(r, tot[r] / CFG.regions.storeEur);
+}
+// depois de cada edição: rusgas e calor em todos os armazéns (também de quem está fora do jogo). Cada rusga fica nos eventos do
+// jogador e no caixa; uma apreensão recorde é notícia, baixa a criminalidade da região e encarece a droga apreendida.
+function rusgas(t, now) {
+  for (const [conta, p] of jogadores) {
+    try {
+      if (!p.wh || !E.REG_IDS.some((r) => p.wh[r] && (p.wh[r].h > 0 || p.wh[r].f > 0 || E.whVisEur(p, r) > 0))) continue;
+      const rz = E.whEdition(p, bolsa, t, rng);
+      for (const x of rz) {
+        evento(conta, t, { k: 'raid', r: x.r, took: x.took, money: x.v, fine: x.fine, jail: x.jail });
+        if (x.fine) caixa(t, 'rusga', 0, x.fine);
+        if (x.v >= CFG.market.record.min) { MW.recordSeizure(bolsa.w, x.r, x.took.map(([d]) => d)); if (now - t < T.HOUR) noticia(t, { k: 'raidRecord', r: x.r, money: x.v, d: x.took.length ? x.took.reduce((a, b) => (b[1] * CFG.drugs[b[0]].price > a[1] * CFG.drugs[a[0]].price ? b : a))[0] : -1 }); }
+      }
+      guardar(p, now);
+    } catch (e) { console.error('rusgas', conta, e.message); }
+  }
+}
 // limites de venda (alvo de lucro e travão de perda): a seguir a cada passo vendem-se as posições que os tocaram, ao preço desse passo,
 // também de quem está fora do jogo. Grava-se logo e fica um aviso nos eventos do jogador.
 function limitesDaBolsa(t, now) {
@@ -353,8 +388,10 @@ function vistaBolsa(w, now) {
 function vistaMundo(w, now) {
   if (w.phase !== 'play') return null;
   const m = bolsaDe(w, now);
-  const arts = m.w.arts.slice(-8).map((e) => ({ ed: e.ed, at: MW.edStart(e.ed), a: e.a.map((x) => (x.due ? { ...x, dueAt: MW.edStart(x.due) } : x)) }));
-  return { ed: m.w.ed, edNext: MW.edStart(m.w.ed + 1), edAt: MW.edStart(m.w.ed), lx: { crime: m.w.lx.crime, press: m.w.lx.press, hist: m.w.lx.hist }, bustBp: CFG.bustBp, arts };
+  const arts = m.w.arts.slice(-8).map((e) => ({ ed: e.ed, at: MW.edStart(e.ed), a: e.a.map((x) => (x.due ? { ...x, dueAt: MW.edStart(x.due) } : x.to ? { ...x, toAt: MW.edStart(x.to + 1) } : x)) }));
+  MW.worldUp(m.w);
+  const rg = Object.fromEntries(Object.entries(m.w.rg).map(([r, g]) => [r, { crime: g.crime, press: g.press, hist: g.hist }]));
+  return { ed: m.w.ed, edNext: MW.edStart(m.w.ed + 1), edAt: MW.edStart(m.w.ed), lx: { crime: m.w.lx.crime, press: m.w.lx.press, hist: m.w.lx.hist }, rg, bustBp: CFG.bustBp, arts };
 }
 
 // ---------- vista do jogador para o browser ----------
@@ -364,6 +401,7 @@ function vista(p, now) {
   const wm = mundo(now), mk = wm.phase === 'play' ? bolsaDe(wm, now) : null;
   return {
     stk: mk ? E.stockView(p, mk) : CFG.stocks.list.map(() => ({ n: 0, cost: 0, value: 0, tp: 0, sl: 0 })), stockCap: E.stockCap(p),
+    wh: E.whView(p), mv: E.mvView(p), mvLog: p.mvLog, rz: p.rz, mk: mk ? MW.marketView(mk.w, now) : null,   // regiões e armazéns (passo 6, parte 2)
     bustBp: E.bustChanceBp(p, now, mk ? mk.w.lx.press : 50), lx: mk ? { crime: mk.w.lx.crime, press: mk.w.lx.press, ed: mk.w.ed, edNext: MW.edStart(mk.w.ed + 1) } : null,
     name: nomeDe(p.id),
     stats: p.stats, energy: p.energy, energyT: p.energyT, energyMax: E.energyMax(p), vigor: p.vigor, vigorT: p.vigorT,
@@ -403,7 +441,7 @@ function cfgPublica() {
   return {
     energy: CFG.energy, vigor: CFG.vigor, street: CFG.street, refillBar: CFG.refillBar, deal: CFG.deal, jobs: CFG.jobs, courses: CFG.courses, skills: CFG.skills, addiction: CFG.addiction, train: CFG.train, crimes: CFG.crimes, drugs: CFG.drugs,
     biz: CFG.biz.map(({ id, price, perH, resp, stat, raid, toBank, drug }) => ({ id, price, perH, resp, stat, raid, toBank, drug: drug ? CFG.drugs.findIndex((x) => x.id === drug) : -1 })), accountant: CFG.accountant,
-    bizMax: CFG.bizMax, storageMs: CFG.storageMs, port: { ...CFG.port, ships: CFG.port.ships.map((s) => ({ ...s, drug: CFG.drugs.findIndex((x) => x.id === s.drug) })) }, air: CFG.air, goods: CFG.goods, venue: CFG.venue, detox: CFG.detox, stocks: CFG.stocks, slots: CFG.slots, gear: CFG.gear, bullets: CFG.bullets, loot: CFG.loot, ops: CFG.ops, opSteps: CFG.opSteps, retainer: CFG.retainer, jail: CFG.jail, launder: CFG.launder, world: CFG.world, tools: CFG.tools, gweapons: CFG.gweapons, guards: CFG.guards, hitman: CFG.hitman,
+    bizMax: CFG.bizMax, storageMs: CFG.storageMs, port: { ...CFG.port, ships: CFG.port.ships.map((s) => ({ ...s, drug: CFG.drugs.findIndex((x) => x.id === s.drug) })) }, air: CFG.air, goods: CFG.goods, venue: CFG.venue, detox: CFG.detox, stocks: CFG.stocks, slots: CFG.slots, gear: CFG.gear, bullets: CFG.bullets, loot: CFG.loot, ops: CFG.ops, opSteps: CFG.opSteps, retainer: CFG.retainer, jail: CFG.jail, launder: CFG.launder, world: CFG.world, regions: CFG.regions, market: CFG.market, wh: CFG.wh, mv: CFG.mv, tools: CFG.tools, gweapons: CFG.gweapons, guards: CFG.guards, hitman: CFG.hitman,
     pvp: CFG.pvp, bank: CFG.bank, luxury: CFG.luxury, levels: CFG.levels, crit: CFG.crit, unlockBp: CFG.unlockBp,
     bustBp: CFG.bustBp, crimeAllMax: CFG.crimeAllMax, casino: { minBet: CFG.casino.minBet, buyMaxMult: CFG.casino.buyMaxMult, red: CFG.casino.red, dice: CFG.casino.dice, wheel: { segs: CFG.casino.wheel.segs, spots: CFG.casino.wheel.spots, topMult: CFG.casino.wheel.topMult.map(([m]) => m), louca: CFG.casino.wheel.louca }, slots: Object.fromEntries(Object.entries(CFG.casino.slots).map(([k, g]) => [k, { kind: g.kind, cols: g.cols, rows: g.rows, min: g.min, nsym: g.nsym, trig: g.trig, pay: g.pay, scatPay: g.scatPay, free: g.free, fs: g.fs, retrig: g.retrig, buy: g.buy, superBuy: g.superBuy, max: g.max, accFree: g.accFree, accAll: g.accAll, orbBase: g.orbBase }])) }, gang: CFG.gang, classes: CFG.classes, classChange: CFG.classChange, avatars: CFG.avatars, hookers: CFG.hookers, house: CFG.house, mastery: CFG.mastery, missions: CFG.missions.length, start: CFG.start,
     round: { playDays: CFG.round.playDays, noPvpMs: CFG.round.noPvpMs }, season: CFG.season,
@@ -1192,10 +1230,10 @@ function agir(conta, corpo, now) {
     case 'bizGoods': r = E.bizGoods(p, now, world, int(a.i), a.on === true); break;
     case 'acct': r = E.hireAccountant(p, now, world); break;
     case 'stockLimit': r = E.stockLimit(p, now, world, bolsaDe(w, now), int(a.k), int(a.tp), int(a.sl)); break;
-    case 'portOpen': r = E.openPort(p, now, world, rng, int(a.at)); break;   // um contentor de cada vez (a animação de o abrir)
+    case 'portOpen': r = E.openPort(p, now, world, rng, int(a.at), bolsaDe(w, now)); break;   // um contentor de cada vez (a animação de o abrir)
     case 'collect': {
       const b = E.collectBiz(p, now, world, rng);
-      const c = a.port === false ? { items: [] } : E.collectPort(p, now, world, rng);   // port: false = só negócios e casas; os contentores abrem-se no porto, um a um
+      const c = a.port === false ? { items: [] } : E.collectPort(p, now, world, rng, bolsaDe(w, now));   // port: false = só negócios e casas; os contentores abrem-se no porto, um a um
       const v = E.venueCollect(p, now, world);
       r = { ok: true, items: b.items, port: c.items, club: v.club, bro: v.bro };
       break;
@@ -1204,7 +1242,13 @@ function agir(conta, corpo, now) {
     case 'venueBuy': r = E.venueBuy(p, now, world, String(a.kind)); break;
     case 'venueSet': r = E.venueSet(p, now, world, String(a.kind), int(a.pi), int(a.gd)); break;
     case 'stockUse': r = E.stockUse(p, now, world, int(a.d)); break;
-    case 'stockDump': r = E.stockDump(p, now, world, int(a.d), int(a.n)); break;
+    case 'stockDump': r = E.stockDump(p, now, world, int(a.d), int(a.n), bolsaDe(w, now)); break;
+    // regiões, armazéns e transporte (passo 6, parte 2): o mercado de cada região está no mundo, com a bolsa
+    case 'whBuy': r = E.whBuy(p, now, world, String(a.r || '')); break;
+    case 'whUp': r = E.whUp(p, now, world, String(a.r || ''), String(a.k || '')); break;
+    case 'mktBuy': r = E.mktBuy(p, now, world, bolsaDe(w, now), String(a.r || ''), int(a.d), int(a.n), Number.isSafeInteger(a.c) ? a.c : undefined); break;
+    case 'mktSell': r = E.mktSell(p, now, world, bolsaDe(w, now), String(a.r || ''), int(a.d), int(a.n), Number.isSafeInteger(a.c) ? a.c : undefined); break;
+    case 'mvSend': r = E.mvSend(p, now, world, bolsaDe(w, now), rng, String(a.a || ''), String(a.b || ''), int(a.d), int(a.n)); break;
     case 'stockHold': r = E.stockHold(p, now, world, int(a.d), a.on === true); break;
     case 'broHire': r = E.broHire(p, now, world, int(a.i)); break;
     case 'broFire': r = E.broFire(p, now, world, int(a.slot)); break;
@@ -1221,7 +1265,7 @@ function agir(conta, corpo, now) {
     }
     case 'port': r = E.sendPort(p, now, world, int(a.k), int(a.amount), a.goods === true); break;
     case 'air': r = E.airSend(p, now, world, int(a.r), int(a.amount), a.bribe === true); break;
-    case 'airCollect': r = E.airCollect(p, now, world, rng, a.keep === true); break;
+    case 'airCollect': r = E.airCollect(p, now, world, rng, a.keep === true, bolsaDe(w, now)); break;
     case 'deposit': r = E.deposit(p, now, world, int(a.amount)); break;
     case 'withdraw': r = E.withdraw(p, now, world, int(a.amount)); break;
     case 'gear': r = E.buyGear(p, now, world, ['armor', 'guard', 'tool', 'gweapon'].includes(a.kind) ? a.kind : 'weapon', int(a.idx)); break;
@@ -1283,7 +1327,7 @@ function agir(conta, corpo, now) {
     if (mesa) { if (mesa.bets) qm.aposta.run(mesa.g, mesa.c.id, conta, ronda, JSON.stringify(mesa.bets), mesa.total); else qm.tirar.run(mesa.g, mesa.c.id, conta); }
     contarAcao(now, a, r, p, alvo, resp0, alvoResp0);
     try { contarMundo(a, r, dinheiro(p) - din0); } catch (e) { console.error('mundo', e.message); }
-    if (a.type === 'stockBuy' || a.type === 'stockSell') bolsaSuja = true;   // a ordem empurrou o preço: grava-se com o resto
+    if (MEXE_MUNDO.has(a.type)) bolsaSuja = true;   // a ordem empurrou o preço (na bolsa ou no mercado de uma região): grava-se com o resto
     const avPago = ((p.avN || 0) - av0) * CFG.retainer.day;
     if (avPago > 0) caixa(now, 'avenca', 0, avPago);
     contarCaixa(now, a, r, dinheiro(p) - din0 + avPago);

@@ -79,6 +79,56 @@ export const CFG = {
     stories: { docas: ['terminal', 'greve'], farma: ['ensaio'], casino: ['licenca'], armas: ['contrato'], noite: ['cadeia'], moeda: ['proibir', 'banca'] },
   },
 
+  // ---------- passo 6, parte 2: regiões, armazéns, preços por região e transporte ----------
+  // Portugal em cinco regiões numa linha de norte a sul (pos: o lugar na linha); abrem primeiro três. O jogador vive em Lisboa e não
+  // viaja: mexe-se a mercadoria. De uma região para a vizinha é 1 hora; de Lisboa ao Algarve são 2 saltos (passa pelo Alentejo).
+  regions: {
+    list: [{ id: 'lx', pos: 2 }, { id: 'al', pos: 3 }, { id: 'ag', pos: 4 }],
+    // criminalidade das outras regiões (a de Lisboa está em world.lx), pela mesma fórmula: base e atividade que faz metade do caminho
+    crime: { al: { start: 15, floor: 15, half: 2000 }, ag: { start: 20, floor: 20, half: 2500 } },
+    ptsEur: 20,      // 1 ponto de atividade por cada 20 € de droga (ao preço de grosso) comprada, vendida, desembarcada ou mudada de região
+    storeEur: 500,   // e, em cada edição, 1 ponto por cada 500 € de droga guardada à vista
+    famLevel: { leve: 10, festa: 18, pesada: 25 },   // o nível que cada família pede para comprar, vender e mudar (a de bar não se trafica)
+  },
+  // Mercado de cada região, em cêntimos: preço de grosso (80% do de rua) × procura de lá × saturação. Compra-se 10% acima e vende-se
+  // 10% abaixo. Vender baixa a saturação e comprar sobe-a: cada 1% de depth (em euros, ao preço de grosso) mexe 1% no preço.
+  // Em cada edição a saturação volta 5 pontos ao normal (100%); nunca fica abaixo de 20% nem acima de 200%.
+  market: {
+    spreadBp: 1000, recBp: 500, satMin: 2000, satMax: 20000,
+    depth: { lx: 300000, al: 75000, ag: 150000 },
+    dem: {
+      lx: { leve: 10000, festa: 10000, pesada: 10500, ecstasy: 8500 },   // onde mais se vende; o ferry traz ecstasy
+      al: { leve: 8500, festa: 9000, pesada: 9000, coca: 7700 },         // pouca gente para comprar; os contentores de coca chegam a Sines
+      ag: { leve: 9500, festa: 11000, pesada: 10000, haxixe: 7200 },     // turistas; o haxixe vem de lancha de Marrocos
+    },
+    weekendBp: 1000,                                                    // a droga de festa vende 10% melhor à sexta e ao sábado
+    summer: { rg: 'ag', fam: 'festa', bp: 2000, months: [6, 7, 8, 9] },  // e mais 20% no Algarve no verão
+    // acontecimentos que mexem na procura: em cada edição, 3% de nascer um em cada região que não tenha nenhum; dura 3 edições
+    ev: { spawnBp: 300, eds: 3,
+      list: { lx: [{ k: 'cimeira', drug: 'coca', bp: 2500 }], al: [{ k: 'carga', drug: 'coca', bp: -2000 }], ag: [{ k: 'festival', drug: 'ecstasy', bp: 3000 }] } },
+    // apreensão recorde (uma rusga que leva 50 000 € ou mais): a polícia mostrou serviço, a criminalidade cai 10 e a droga apreendida
+    // fica 20% mais cara nessa região (a saturação sobe 20 pontos e volta 5 por edição)
+    record: { min: 50000, crime: 10, satBp: 2000 },
+  },
+  // Armazéns: um por região. O de Lisboa é o que já havia e é de todos. Três melhorias de 1 a 5: espaço (unidades: gramas ou comprimidos),
+  // esconderijo (a parte do stock que uma rusga não vê) e fachada (corta o calor que o armazém gera).
+  wh: {
+    level: 10,
+    lx: { price: 0, sp: [10000, 20000, 40000, 80000, 160000], spCost: [0, 60000, 180000, 500000, 1500000] },      // caro e pequeno
+    al: { price: 30000, sp: [50000, 100000, 200000, 400000, 800000], spCost: [0, 20000, 60000, 180000, 500000] },  // enorme e barato
+    ag: { price: 50000, sp: [20000, 40000, 80000, 160000, 320000], spCost: [0, 40000, 120000, 350000, 1000000] },
+    hideBp: [1000, 2000, 3000, 4000, 5000], frontBp: [1000, 2000, 3000, 4000, 5000], upCost: [0, 20000, 60000, 180000, 500000],
+    // calor (0 a 100): +1 por cada 1 000 € que entram ou saem (menos o que a fachada corta). Parado, desce 10 por edição, mas nunca
+    // abaixo de 1 por cada 10 000 € à vista (também menos a fachada).
+    heatEur: 1000, coolPerEd: 10, floorEur: 10000,
+    // rusga, em cada edição: até 20% × pressão/100 × calor/100, e só com a pressão a 50 ou mais. Multa de 10% do que está à vista;
+    // leva metade do que está à vista da droga de festa e das pesadas (as leves só dão multa); com pesadas apreendidas, 60 min de prisão.
+    raidBp: 2000, raidMin: 50, fineBp: 1000, takeBp: 5000, jailMin: 60, lawyer: 5000, log: 6,
+  },
+  // Transporte entre regiões: 1 hora por salto; risco de apreensão em cada salto = média da pressão das duas regiões a dividir por 10, em %.
+  // Se a polícia apanha: as leves pagam multa de 10% e seguem; as de festa ficam apreendidas; as pesadas ficam apreendidas e dão prisão.
+  mv: { hopMs: HOUR, max: 5, log: 6 },
+
   train: { energy: 5, costBase: 0, costPerStat: 0 }, // +1 ponto por treino; gasta energia (vigor), não stamina
 
   // Probabilidade de sucesso = S²/(S²+D²), entre 5% e 95%.
@@ -223,22 +273,22 @@ export const CFG = {
   // a: quanto vicia. Com 100 de limite, a coca dá 33 doses (990 de stamina) antes de ser preciso desintoxicar ou esperar.
   // Droga a preços reais de rua (o grama, o comprimido, a dose). Toma-se pelo efeito; já não dá stamina (essa é refillBar).
   drugs: [
-    { id: 'cerveja', e: 0, a: 1, price: 3, fx: [{ k: 'bust', bp: 1000, ms: 10 * MIN }] },
-    { id: 'erva', e: 0, a: 2, price: 6, fx: [{ k: 'bust', bp: 3000, ms: 10 * MIN }] },
-    { id: 'cogumelos', e: 0, a: 2, price: 8, fx: [{ k: 'I', bp: 1000, ms: 10 * MIN }] },
-    { id: 'ecstasy', e: 0, a: 3, price: 7, fx: [{ k: 'C', bp: 1000, ms: 10 * MIN }] },
-    { id: 'speed', e: 0, a: 3, price: 10, fx: [{ k: 'loot', bp: 1500, ms: 10 * MIN }] },
-    { id: 'lsd', e: 0, a: 2, price: 8, fx: [{ k: 'I', bp: 2000, ms: 15 * MIN }] },
-    { id: 'coca', e: 0, a: 3, price: 35, fx: [{ k: 'C', bp: 1500, ms: 15 * MIN }, { k: 'biz', bp: 1000, ms: 15 * MIN }] },
-    { id: 'cristal', e: 0, a: 3, price: 60, fx: [{ k: 'F', bp: 2000, ms: 15 * MIN }] },
-    { id: 'heroina', e: 0, a: 3, price: 17, fx: [{ k: 'T', bp: 2500, ms: 20 * MIN }] },
+    { id: 'cerveja', fam: 'bar', e: 0, a: 1, price: 3, fx: [{ k: 'bust', bp: 1000, ms: 10 * MIN }] },
+    { id: 'erva', fam: 'leve', e: 0, a: 2, price: 6, fx: [{ k: 'bust', bp: 3000, ms: 10 * MIN }] },
+    { id: 'cogumelos', fam: 'leve', e: 0, a: 2, price: 8, fx: [{ k: 'I', bp: 1000, ms: 10 * MIN }] },
+    { id: 'ecstasy', fam: 'festa', e: 0, a: 3, price: 7, fx: [{ k: 'C', bp: 1000, ms: 10 * MIN }] },
+    { id: 'speed', fam: 'festa', e: 0, a: 3, price: 10, fx: [{ k: 'loot', bp: 1500, ms: 10 * MIN }] },
+    { id: 'lsd', fam: 'festa', e: 0, a: 2, price: 8, fx: [{ k: 'I', bp: 2000, ms: 15 * MIN }] },
+    { id: 'coca', fam: 'pesada', e: 0, a: 3, price: 35, fx: [{ k: 'C', bp: 1500, ms: 15 * MIN }, { k: 'biz', bp: 1000, ms: 15 * MIN }] },
+    { id: 'cristal', fam: 'pesada', e: 0, a: 3, price: 60, fx: [{ k: 'F', bp: 2000, ms: 15 * MIN }] },
+    { id: 'heroina', fam: 'pesada', e: 0, a: 3, price: 17, fx: [{ k: 'T', bp: 2500, ms: 20 * MIN }] },
     // juntas mais tarde: ficam no fim da lista para os armazéns já guardados não trocarem de droga (o ecrã mostra-as por preço)
-    { id: 'absinto', e: 0, a: 1, price: 15, fx: [{ k: 'C', bp: 500, ms: 10 * MIN }] },
-    { id: 'poppers', e: 0, a: 1, price: 10, fx: [{ k: 'loot', bp: 800, ms: 5 * MIN }] },
-    { id: 'haxixe', e: 0, a: 2, price: 5, fx: [{ k: 'bust', bp: 3500, ms: 12 * MIN }] },
-    { id: 'ketamina', e: 0, a: 3, price: 30, fx: [{ k: 'bust', bp: 4000, ms: 15 * MIN }] },
-    { id: 'crack', e: 0, a: 4, price: 5, fx: [{ k: 'F', bp: 2500, ms: 10 * MIN }, { k: 'loot', bp: 1000, ms: 10 * MIN }] },
-    { id: 'oxi', e: 0, a: 3, price: 9, fx: [{ k: 'T', bp: 2000, ms: 20 * MIN }] },
+    { id: 'absinto', fam: 'bar', e: 0, a: 1, price: 15, fx: [{ k: 'C', bp: 500, ms: 10 * MIN }] },
+    { id: 'poppers', fam: 'festa', e: 0, a: 1, price: 10, fx: [{ k: 'loot', bp: 800, ms: 5 * MIN }] },
+    { id: 'haxixe', fam: 'leve', e: 0, a: 2, price: 5, fx: [{ k: 'bust', bp: 3500, ms: 12 * MIN }] },
+    { id: 'ketamina', fam: 'festa', e: 0, a: 3, price: 30, fx: [{ k: 'bust', bp: 4000, ms: 15 * MIN }] },
+    { id: 'crack', fam: 'pesada', e: 0, a: 4, price: 5, fx: [{ k: 'F', bp: 2500, ms: 10 * MIN }, { k: 'loot', bp: 1000, ms: 10 * MIN }] },
+    { id: 'oxi', fam: 'pesada', e: 0, a: 3, price: 9, fx: [{ k: 'T', bp: 2000, ms: 20 * MIN }] },
   ],
   // efeitos temporários: F, I, C, T sobem a stat; loot = saque dos golpes; biz = recolhas dos negócios; bust = menos prisão ao falhar
   fxKinds: ['F', 'I', 'C', 'T', 'loot', 'biz', 'bust'],
@@ -528,12 +578,12 @@ export const CFG = {
   // legacy: os contentores enviados antes de haver carregamentos valem como o porta-contentores (os mesmos +30% e 15%).
   port: { minAmount: 100, capBase: 1000, capNum: 8, capDen: 5, slotsEveryLevels: 5, legacy: 3, // limite por carregamento: 1000 × 1,6^(nível−1)
     ships: [
-      { id: 'pesca', level: nv(1), ms: 2 * HOUR, gainBp: 1200, seizeBp: 600, drug: 'erva' },
-      { id: 'lancha', level: nv(3), ms: 1 * HOUR, gainBp: 800, seizeBp: 500, drug: 'haxixe' },
-      { id: 'ferry', level: nv(5), ms: 3 * HOUR, gainBp: 2100, seizeBp: 1000, drug: 'ecstasy' },
-      { id: 'contentor', level: nv(7), ms: 4 * HOUR, gainBp: 3000, seizeBp: 1500, drug: 'coca' },
-      { id: 'cargueiro', level: nv(10), ms: 6 * HOUR, gainBp: 4600, seizeBp: 1900, drug: 'cristal' },
-      { id: 'submarino', level: nv(13), ms: 8 * HOUR, gainBp: 3700, seizeBp: 900, drug: 'heroina' },
+      { id: 'pesca', rg: 'lx', level: nv(1), ms: 2 * HOUR, gainBp: 1200, seizeBp: 600, drug: 'erva' },
+      { id: 'lancha', rg: 'ag', level: nv(3), ms: 1 * HOUR, gainBp: 800, seizeBp: 500, drug: 'haxixe' },
+      { id: 'ferry', rg: 'lx', level: nv(5), ms: 3 * HOUR, gainBp: 2100, seizeBp: 1000, drug: 'ecstasy' },
+      { id: 'contentor', rg: 'al', level: nv(7), ms: 4 * HOUR, gainBp: 3000, seizeBp: 1500, drug: 'coca' },
+      { id: 'cargueiro', rg: 'lx', level: nv(10), ms: 6 * HOUR, gainBp: 4600, seizeBp: 1900, drug: 'cristal' },
+      { id: 'submarino', rg: 'lx', level: nv(13), ms: 8 * HOUR, gainBp: 3700, seizeBp: 900, drug: 'heroina' },
     ] },
 
   // Três tipos de armas, cada um no seu espaço. Compram-se por ordem, uma de cada vez, e a anterior não se vende nem volta.

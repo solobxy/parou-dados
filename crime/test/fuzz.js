@@ -8,6 +8,7 @@ import { isDeepStrictEqual } from 'node:util';
 import { CFG, T } from '../engine/config.js';
 import * as E from '../engine/engine.js';
 import { seededRng } from '../engine/rng.js';
+import * as MW from '../engine/mundo.js';
 
 const ACTIONS = +(process.argv[2] ?? 1_000_000);
 const r = seededRng(+(process.argv[3] ?? 7));
@@ -17,12 +18,18 @@ const world = { start: START, playEnd: START + 13 * T.DAY };
 
 const players = [];
 let now = START;
-for (let i = 0; i < 60; i++) players.push(E.newPlayer('f' + i, now, world));
+// um em cada três já tem armazéns no Alentejo e no Algarve (como se os tivesse comprado), para as cargas entre regiões acontecerem
+const novo = (i) => { const q = E.newPlayer('f' + i, now, world); if (i % 3 === 0) for (const rr of ['al', 'ag']) q.wh[rr] = { sp: 1, hd: 1, fr: 1, h: 0, f: 0, s: CFG.drugs.map(() => 0) }; return q; };
+for (let i = 0; i < 60; i++) players.push(novo(i));
 
 const pick = (arr) => arr[r.int(0, arr.length - 1)];
 const anyInt = () => pick([0, 1, -1, 100, 1e6, 2 ** 53, 0.5, NaN, r.int(0, 1e7)]);
 const counts = {};
 let market = E.newMarket();
+// o mercado das regiões (passo 6, parte 2) vive no mundo; fica à parte da bolsa daqui, que é a das regras antigas
+const mundoNovo = () => { const m = E.newMarket(); m.w = MW.newWorld(m.prices, START); return m; };
+let mk = mundoNovo();
+const REG = ['lx', 'al', 'ag'];
 let refused = 0, done = 0, rounds = 1;
 
 // (4) as contas batem certo: cada ação só mexe no dinheiro e no respeito o que a regra diz, e nada cria dinheiro do nada
@@ -34,7 +41,10 @@ const balas = (q) => (q.inv.find((x) => x.id === 'balas') || { n: 0 }).n;
 const MAX_PVP = Math.floor(((CFG.pvp.gainBase + CFG.tiers.length) * 2 * (10000 + Math.max(...CFG.classes.map((c) => c.pvpBp || 0)))) / 10000);
 function contas(kind, a0, a, d0, d, t, res, arg) {
   const av = ((a.avN || 0) - (a0.avN || 0)) * CFG.retainer.day;   // o dia da avença, pago no primeiro ato do dia, não é da ação
-  const dm = wealth(a) - wealth(a0) + av, dr = a.respect - a0.respect;
+  // a multa de uma carga parada pela polícia paga-se quando a carga chega, com a ação que vier a seguir: também não é da ação
+  const mvNovas = (a.mvLog || []).filter((x) => !(a0.mvLog || []).some((y) => y.at === x.at && y.d === x.d && y.n === x.n && y.b === x.b && y.a === x.a)), mf = mvNovas.reduce((s, x) => s + x.fine, 0);
+  const dm = wealth(a) - wealth(a0) + av + mf, dr = a.respect - a0.respect;
+  const chegou = (rr, dd) => mvNovas.filter((x) => x.x !== 2 && x.b === rr && x.d === dd).reduce((s2, x) => s2 + x.n, 0);   // o que chegou a essa região com a ação
   if (av < 0 || av > CFG.retainer.day) { console.error('CONTAS ERRADAS avença paga mais de uma vez', kind, av); process.exit(1); }
   if ((a.ilegal || 0) < (a0.ilegal || 0)) { console.error('CONTAS ERRADAS total de crime desceu', kind); process.exit(1); }
   const bad = (m) => { console.error('CONTAS ERRADAS', kind, m, JSON.stringify(res), { dm, dr }); process.exit(1); };
@@ -158,8 +168,8 @@ function contas(kind, a0, a, d0, d, t, res, arg) {
     case 'bailFor': case 'medicFor': if (dm !== -res.cost || res.cost < 1 || dr !== 0 || d.cash + d.bank !== d0.cash + d0.bank || d.respect !== d0.respect || a0.gang !== d0.gang || !a0.gang || (kind === 'bailFor' ? d.jailUntil !== 0 || !(d0.jailUntil > t) : d.hospUntil !== 0 || !(d0.hospUntil > t))) bad('safar um membro'); break;
     case 'air': if (dm !== -res.paid || dr !== 0 || res.paid !== arg.amount + (arg.bribe ? Math.ceil(arg.amount * 0.2) : 0) || arg.amount > E.airCap(a0) || a0.air) bad('avião: pagamento'); break;
     case 'airCollect': { const f = a0.air, R = CFG.air.routes[f.r]; const full = f.amount + Math.floor((f.amount * R.gainBp) / 10000);
-      if (!res.seized && res.units !== undefined && (res.units * E.wholesale(res.d) + res.rest !== full || a.stock[res.d] !== E.venueView(a0, t).stock[res.d] + res.units || CFG.drugs[res.d].id !== R.drug)) bad('avião: mercadoria');
-      if (res.seized ? (dm !== 0 || dr !== 0) : (dm !== (res.units !== undefined ? res.rest : full) || dr !== R.r) || f.readyAt > t || a.air !== null) bad('avião: chegada'); break; }
+      if (!res.seized && res.units !== undefined && ((res.units + res.over) * E.wholesale(res.d) + res.rest !== full || a.stock[res.d] !== E.venueView(a0, t).stock[res.d] + res.units || CFG.drugs[res.d].id !== R.drug || res.overGot > res.over * E.wholesale(res.d))) bad('avião: mercadoria');
+      if (res.seized ? (dm !== 0 || dr !== 0) : (dm !== (res.units !== undefined ? res.rest + res.overGot : full) || dr !== R.r) || f.readyAt > t || a.air !== null) bad('avião: chegada'); break; }
     case 'deposit': if (dm !== -res.fee || res.fee < 1 || res.fee !== Math.ceil((arg * E.bankFeeBp(a)) / 10000) || dr) bad('taxa do banco'); break;
     case 'withdraw': case 'class': case 'avatar': if (dm !== 0 || dr !== 0) bad('devia ser neutro'); break;
     case 'classChange': if (dm !== -E.classChangeCost(a0) || dr !== 0 || res.cost !== E.classChangeCost(a0) || a.cls === a0.cls || (CFG.classes.find((c) => c.id === a.cls).need || 0) > a0.peakRespect || (a0.clsAt && t < a0.clsAt + CFG.classChange.coolMs)) bad('mudar de profissão'); break;
@@ -218,6 +228,16 @@ function contas(kind, a0, a, d0, d, t, res, arg) {
       break; }
     case 'venueCollect': { const v = E.venueView(a0, t); const due = (v.club ? v.club.till : 0) + (v.bro ? v.bro.till : 0); if (dm !== due || res.club + res.bro !== due || dr !== 0 || (a.club && a.club.till) || (a.bro && a.bro.till)) bad('recolha das casas'); break; }
     case 'stockUse': { const v = E.venueView(a0, t); if (dm !== 0 || dr !== 0 || a.stock[arg] !== v.stock[arg] - 1) bad('tomar do armazém'); break; }
+    // regiões e armazéns: cada um mexe no dinheiro e no stock exatamente o que diz
+    case 'whBuy': if (dm !== -res.cost || dr !== 0 || a0.wh[res.r] || !a.wh[res.r] || res.cost !== CFG.wh[res.r].price) bad('comprar armazém'); break;
+    case 'whUp': if (dm !== -res.cost || dr !== 0 || a.wh[res.r][res.k] !== a0.wh[res.r][res.k] + 1 || res.cost <= 0) bad('melhorar armazém'); break;
+    case 'mktBuy': { const s0 = res.r === 'lx' ? E.venueView(a0, t).stock : a0.wh[res.r].s, s1 = E.whStock(a, res.r);
+      if (dm !== -res.cost || dr !== 0 || s1[res.d] !== s0[res.d] + chegou(res.r, res.d) + res.n || res.cost < Math.floor((res.n * MW.refC(res.d) * 0.2) / 100)) bad('comprar no mercado'); break; }
+    case 'mktSell': { const s0 = res.r === 'lx' ? E.venueView(a0, t).stock : a0.wh[res.r].s, s1 = E.whStock(a, res.r);
+      if (dm !== res.got || dr !== 0 || s1[res.d] !== s0[res.d] + chegou(res.r, res.d) - res.n || res.got > (res.n * MW.refC(res.d) * 4) / 100) bad('vender no mercado'); break; }
+    case 'mvSend': { const s0 = res.a === 'lx' ? E.venueView(a0, t).stock : a0.wh[res.a].s, s1 = E.whStock(a, res.a);
+      if (dm !== 0 || dr !== 0 || s1[res.d] !== s0[res.d] + chegou(res.a, res.d) - res.n || a.mv.length !== a0.mv.length - mvNovas.length + 1 || res.at !== t + E.mvHops(res.a, res.b) * CFG.mv.hopMs) bad('mudar de região'); break; }
+    case 'whEdition': if (dm > 0 || dr !== 0 || REG.some((x) => a0.wh[x] && E.whStock(a, x).some((n, k) => n > E.whStock(a0, x)[k]))) bad('rusga deu dinheiro ou stock'); break;
     case 'stockDump': { const v = E.venueView(a0, t); if (dm !== res.got || res.got > arg.n * E.wholesale(arg.d) || res.got !== E.dumpValue(arg.d, arg.n) || a.stock[arg.d] !== v.stock[arg.d] - arg.n || dr !== 0) bad('despachar'); break; }
     case 'broHire': { const g = CFG.hookers.list[arg]; if (dm !== -CFG.venue.bro.hire[g.tier] || dr !== 0 || a.bro.girls.length !== a0.bro.girls.length + 1 || a.bro.girls.length > CFG.venue.bro.rooms[a.bro.lvl - 1]) bad('contratar'); break; }
     case 'clubBuyAt': { const v = E.venueView(d0, Math.max(t, d0.t));
@@ -247,8 +267,8 @@ for (let n = 0; n < ACTIONS; n++) {
   now += pick([0, 0, 1000, 3000, 3000, 60_000, 5 * 60_000, 30 * 60_000, T.HOUR]);
   if (now >= world.playEnd) { // nova ronda com jogadores novos
     now = START;
-    players.length = 0; market = E.newMarket();
-    for (let i = 0; i < 60; i++) players.push(E.newPlayer('f' + i, now, world));
+    players.length = 0; market = E.newMarket(); mk = mundoNovo();
+    for (let i = 0; i < 60; i++) players.push(novo(i));
     rounds++;
   }
   let t = now;
@@ -257,6 +277,8 @@ for (let n = 0; n < ACTIONS; n++) {
   const p = pick(players);
   const d = pick(players);
   if (r.chance(200)) { p.cash += r.int(0, 5e6); } // dá dinheiro para chegar a tudo
+  if (r.chance(60) && E.level(p) < 30) { p.respect = p.peakRespect = CFG.levels[29]; } // e nível para o mercado das regiões (comprar coca pede o 25)
+  if (r.chance(3000) && p.wh) { const rr = pick(REG); if (p.wh[rr]) E.whStock(p, rr)[pick([1, 3, 6, 11, 13])] += r.int(1, 400); } // droga num armazém de uma região, como a que vem de lá
   if (r.chance(1500)) { // a bolsa mexe (às vezes com falências) e, a seguir a cada passo, os limites de venda de toda a gente
     E.marketTick(market, game);
     for (const q of players) {
@@ -289,7 +311,7 @@ for (let n = 0; n < ACTIONS; n++) {
     if (o.gun) { if (!p.eq.mao) p.eq.mao = { id: 'pistola', u: 20 }; const b = p.inv.find((x) => x.id === 'balas'); if (b) b.n += 50; else p.inv.push({ id: 'balas', n: 50 }); }
   }
   const before = touched(p, t), beforeD = touched(d, t), origD = structuredClone(d), origP = structuredClone(p);
-  const kind = pick(['stockBuy', 'stockBuy', 'stockBuy', 'stockSell', 'stockSell', 'missionSwap', 'venueBuy', 'venueBuy', 'venueSet', 'venueCollect', 'stockUse', 'stockUse', 'stockDump', 'broHire', 'broHire', 'broFire', 'clubBuyAt', 'clubBuyAt', 'clubBuyAt', 'broVisitAt', 'broVisitAt', 'broVisitAt', 'casino', 'casino', 'table', 'heist', 'hit', 'gangCreate', 'gangDonate', 'gangLeave', 'gangBiz', 'gangBiz', 'gangBiz', 'gangBizCollect', 'hitman', 'hitman', 'hitman', 'crime', 'crime', 'crimeAll', 'deal', 'deal', 'dealBuy', 'drug', 'refill', 'detox', 'claim', 'class', 'classChange', 'classChange', 'air', 'air', 'airCollect', 'airCollect', 'bailFor', 'bailFor', 'medicFor', 'medicFor', 'avatar', 'hooker', 'cure', 'house', 'houseUp', 'train', 'buyBiz', 'buyBiz', 'collect', 'bizGoods', 'bizGoods', 'stockHold', 'stockHold', 'acct', 'stockLimit', 'stockLimit', 'stockLimit', 'port', 'collectPort', 'portOpen', 'portOpen', 'deposit', 'withdraw', 'gear', 'attack', 'bail', 'medic', 'luxury', 'shift', 'shift', 'shift', 'job', 'course', 'buy', 'buy', 'buy', 'buy', 'equip', 'sell', 'sellGoods', 'sellGoods', 'repair', 'repair', 'opStart', 'opStart', 'opStep', 'opStep', 'opGo', 'opGo', 'opGo', 'opDrop', 'retainer', 'jailSmuggle', 'jailWork', 'jailYard', 'jailCards', 'jailFavor', 'jailEscape']);
+  const kind = pick(['stockBuy', 'stockBuy', 'stockBuy', 'stockSell', 'stockSell', 'missionSwap', 'venueBuy', 'venueBuy', 'venueSet', 'venueCollect', 'stockUse', 'stockUse', 'stockDump', 'broHire', 'broHire', 'broFire', 'clubBuyAt', 'clubBuyAt', 'clubBuyAt', 'broVisitAt', 'broVisitAt', 'broVisitAt', 'casino', 'casino', 'table', 'heist', 'hit', 'gangCreate', 'gangDonate', 'gangLeave', 'gangBiz', 'gangBiz', 'gangBiz', 'gangBizCollect', 'hitman', 'hitman', 'hitman', 'crime', 'crime', 'crimeAll', 'deal', 'deal', 'dealBuy', 'drug', 'refill', 'detox', 'claim', 'class', 'classChange', 'classChange', 'air', 'air', 'airCollect', 'airCollect', 'bailFor', 'bailFor', 'medicFor', 'medicFor', 'avatar', 'hooker', 'cure', 'house', 'houseUp', 'train', 'buyBiz', 'buyBiz', 'collect', 'bizGoods', 'bizGoods', 'stockHold', 'stockHold', 'acct', 'stockLimit', 'stockLimit', 'stockLimit', 'port', 'collectPort', 'portOpen', 'portOpen', 'deposit', 'withdraw', 'gear', 'attack', 'bail', 'medic', 'luxury', 'shift', 'shift', 'shift', 'job', 'course', 'buy', 'buy', 'buy', 'buy', 'equip', 'sell', 'sellGoods', 'sellGoods', 'repair', 'repair', 'opStart', 'opStart', 'opStep', 'opStep', 'opGo', 'opGo', 'opGo', 'opDrop', 'retainer', 'jailSmuggle', 'jailWork', 'jailYard', 'jailCards', 'jailFavor', 'jailEscape', 'whBuy', 'whBuy', 'whUp', 'whUp', 'mktBuy', 'mktBuy', 'mktBuy', 'mktSell', 'mktSell', 'mvSend', 'mvSend', 'mvSend', 'whEdition']);
   let res, arg;
   try {
     switch (kind) {
@@ -395,6 +417,15 @@ for (let n = 0; n < ACTIONS; n++) {
       case 'venueCollect': res = E.venueCollect(p, t, world); break;
       case 'stockUse': arg = r.chance(9000) ? r.int(0, CFG.drugs.length - 1) : anyInt(); res = E.stockUse(p, t, world, arg); break;
       case 'stockDump': arg = { d: r.chance(9000) ? r.int(0, CFG.drugs.length - 1) : anyInt(), n: pick([1, 2, 10, 0, -1, 0.5, 1e9]) }; res = E.stockDump(p, t, world, arg.d, arg.n); break;
+      case 'whBuy': res = E.whBuy(p, t, world, pick(['al', 'ag', 'al', 'ag', 'lx', 'x', 3])); break;
+      case 'whUp': res = E.whUp(p, t, world, pick([...REG, 'x']), pick(['sp', 'hd', 'fr', 'x'])); break;
+      case 'mktBuy': arg = { r: pick([...REG, REG[0], 'x']), d: r.chance(9000) ? r.int(0, CFG.drugs.length - 1) : anyInt(), n: pick([1, 10, 500, 5000, 0, -1, 0.5, 1e8]) };
+        res = E.mktBuy(p, t, world, r.chance(9800) ? mk : null, arg.r, arg.d, arg.n, r.chance(1000) ? 1 : undefined); break;
+      case 'mktSell': { const rr = pick([...REG, 'x']), st = p.wh && p.wh[rr] ? E.whStock(p, rr) : null, dd = st && r.chance(7000) ? st.findIndex((x, k) => x > 0 && MW.tradable(k)) : r.int(0, CFG.drugs.length - 1);
+        res = E.mktSell(p, t, world, mk, rr, dd, st && dd >= 0 && r.chance(6000) ? pick([st[dd], Math.ceil(st[dd] / 2), 1]) : pick([1, 0, -1, 1e9]), r.chance(1000) ? 1 : undefined); break; }
+      case 'mvSend': { const a1 = pick(REG), b1 = pick([...REG, 'x']), st = p.wh && p.wh[a1] ? E.whStock(p, a1) : null, dd = st && r.chance(7000) ? st.findIndex((x, k) => x > 0 && MW.tradable(k)) : r.int(0, CFG.drugs.length - 1);
+        res = E.mvSend(p, t, world, mk, game, a1, b1, dd, st && dd >= 0 && r.chance(6000) ? pick([st[dd], 1]) : pick([1, 0, -1, 1e9])); break; }
+      case 'whEdition': for (const g of [mk.w.lx, mk.w.rg.al, mk.w.rg.ag]) g.press = r.int(0, 100); res = { raids: E.whEdition(p, mk, t, game) }; break;
       case 'broHire': arg = r.chance(9000) ? r.int(0, CFG.hookers.list.length - 1) : anyInt(); res = E.broHire(p, t, world, arg); break;
       case 'broFire': res = E.broFire(p, t, world, pick([0, 1, 2, 5, -1])); break;
       case 'clubBuyAt': arg = r.chance(9000) ? r.int(0, CFG.drugs.length - 1) : anyInt(); res = E.clubBuyAt(p, d, t, world, arg, r.chance(1000) ? 1 : undefined); break;

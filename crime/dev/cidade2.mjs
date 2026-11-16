@@ -85,10 +85,26 @@ muda('Preso', (e) => { e.respect = e.peakRespect = L(36) + 100; e.cash = 3_200; 
   const rng = seededRng(42), e0 = m.w.ed;
   for (let i = 1; i <= 12; i++) {
     MW.accAdd(m.w, 'lx', i < 8 ? 4000 + i * 900 : 1500); MW.accAdd(m.w, 'farma', 30000 + i * 5000); MW.accAdd(m.w, 'casino', i === 9 ? -150000 : 20000);
+    MW.accAdd(m.w, 'al', i < 10 ? 2600 : 900); MW.accAdd(m.w, 'ag', 500);   // parte 2: o Alentejo a aquecer com tanta coca a passar
     if (i === 6) m.w.co[1].st = { s: 'ensaio', ed0: e0 + 6, due: e0 + 15, p: 6200, ok: true, up: 3300, dn: 3800, rum: [], inv: false };
     MW.runEdition(m, e0 + i, rng);
   }
   const f = m.w.co[1]; if (f.st) { f.st.rum.push([e0 + 10, true, 7000], [e0 + 11, false, 5800]); f.st.inv = true; }
+  // parte 2: um festival no Algarve a decorrer e os mercados mexidos por quem comprou e vendeu
+  const D = (id) => CFG.drugs.findIndex((g) => g.id === id), COCA = D('coca'), HAX = D('haxixe'), ECS = D('ecstasy');
+  m.w.ev = m.w.ev.filter((e) => e.r !== 'ag'); m.w.ev.push({ r: 'ag', k: 'festival', d: ECS, bp: 3000, ed0: e0 + 12, ed1: e0 + 14 });
+  m.w.arts[m.w.arts.length - 1].a.push({ k: 'rgEv', r: 'ag', e: 'festival', d: ECS, bp: 3000, to: e0 + 14 });
+  m.w.mk.lx[COCA] = 9420; m.w.mk.al[COCA] = 11250; m.w.mk.ag[HAX] = 10800;
+  // o Rico trafica: armazéns no Alentejo e no Algarve, coca a caminho de Lisboa, uma carga apreendida e uma rusga
+  muda('Rico', (e) => {
+    const s0 = () => CFG.drugs.map(() => 0), al = s0(), ag = s0(); al[COCA] = 3500; ag[HAX] = 9000; ag[ECS] = 1200;
+    e.wh = { lx: { sp: 2, hd: 2, fr: 1, h: 1800, f: 0 }, al: { sp: 1, hd: 1, fr: 2, h: 6200, f: 0, s: al }, ag: { sp: 1, hd: 3, fr: 1, h: 2400, f: 0, s: ag } };
+    e.stock[ECS] = 2400; e.stock[COCA] = 300;
+    e.mv = [{ d: COCA, n: 600, a: 'al', b: 'lx', t0: T - 20 * 60e3, at: T + 40 * 60e3, risk: 410, x: 0 }];
+    e.mvLog = [{ d: HAX, n: 6000, a: 'ag', b: 'lx', at: T - 5 * 3600e3, x: 0, fine: 0, jail: false, v: 24000 }, { d: ECS, n: 800, a: 'lx', b: 'ag', at: T - 9 * 3600e3, x: 2, fine: 0, jail: false, v: 4480 }];
+    e.rz = [{ r: 'al', at: T - 15 * 3600e3, bp: 900, took: [[COCA, 450]], v: 12600, fine: 2900, jail: true }];
+  });
+  muda('Planeador', (e) => { e.cash += 60_000; });
   db.prepare('CREATE TABLE IF NOT EXISTS bolsa (ronda INTEGER PRIMARY KEY, dados TEXT NOT NULL)').run();
   db.prepare('INSERT OR REPLACE INTO bolsa (ronda, dados) VALUES (1000, ?)').run(JSON.stringify(m));
   muda('Rico', (e) => { e.stk[1] = { n: 2000, cost: 52_000, gen: 0 }; e.stk[2] = { n: 300, cost: 37_000, gen: 0 }; });

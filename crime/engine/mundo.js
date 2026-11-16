@@ -27,20 +27,40 @@ export function edStart(ed) {
 }
 
 // ---------- estado ----------
-const accNew = () => ({ lx: 0, rev: CFG.stocks.list.map(() => 0) });
+const accNew = () => ({ lx: 0, rev: CFG.stocks.list.map(() => 0), rg: rgMap(() => 0) });
+// as outras regiões (Lisboa tem o seu sítio próprio, w.lx, desde a parte 1)
+const OTHER = () => CFG.regions.list.map((r) => r.id).filter((r) => r !== 'lx');
+const rgMap = (f) => Object.fromEntries(OTHER().map((r) => [r, f(r)]));
+const satNew = () => CFG.drugs.map(() => 10000);
 // prices: os preços de agora (quem já tinha ações fica com elas ao mesmo preço)
 export function newWorld(prices, now) {
   const L = W().lx;
   return {
-    v: 1, ed: edAt(now), lx: { crime: L.start, press: L.start, hist: [] }, acc: accNew(), arts: [],
+    v: 2, ed: edAt(now), lx: { crime: L.start, press: L.start, hist: [] }, acc: accNew(), arts: [],
+    rg: rgMap((r) => ({ crime: CFG.regions.crime[r].start, press: CFG.regions.crime[r].start, hist: [] })),
+    mk: Object.fromEntries(CFG.regions.list.map((r) => [r.id, satNew()])), ev: [],
     co: CFG.stocks.list.map((s, k) => { const p = prices && prices[k] > 0 ? prices[k] : s.base; return { v: p, anc: p, open: p, rev: [], div: 0, pan: 0, bad: 0, st: null, last: 0 }; }),
   };
 }
-// o que os jogadores fizeram desde a última edição: 'lx' em stamina gasta em Lisboa (golpes, lutas, vendas na rua),
-// ou o id de uma empresa e o dinheiro que lá deixaram (no casino pode ser negativo: o que os jogadores ganharam à casa)
+// o mundo gravado antes das regiões (parte 1) ganha o Alentejo, o Algarve e o mercado de cada região
+export function worldUp(w) {
+  if (!w) return w;
+  if (!w.rg) w.rg = rgMap((r) => ({ crime: CFG.regions.crime[r].start, press: CFG.regions.crime[r].start, hist: [] }));
+  for (const r of OTHER()) if (!w.rg[r]) w.rg[r] = { crime: CFG.regions.crime[r].start, press: CFG.regions.crime[r].start, hist: [] };
+  if (!w.mk) w.mk = {};
+  for (const r of CFG.regions.list) if (!Array.isArray(w.mk[r.id]) || w.mk[r.id].length !== CFG.drugs.length) w.mk[r.id] = satNew();
+  if (!Array.isArray(w.ev)) w.ev = [];
+  if (!w.acc.rg) w.acc.rg = rgMap(() => 0);
+  w.v = 2;
+  return w;
+}
+// o que os jogadores fizeram desde a última edição: 'lx' em pontos de Lisboa (a stamina gasta na rua, as lutas, as vendas, e a droga
+// comprada, vendida ou mudada lá), 'al' e 'ag' em pontos dessas regiões, ou o id de uma empresa e o dinheiro que lá deixaram
+// (no casino pode ser negativo: o que os jogadores ganharam à casa)
 export function accAdd(w, kind, x) {
   if (!w || !Number.isFinite(x) || !x) return;
   if (kind === 'lx') { if (x > 0) w.acc.lx += Math.round(x); return; }
+  if (w.rg && w.rg[kind]) { worldUp(w); if (x > 0) w.acc.rg[kind] += Math.round(x); return; }
   const k = CFG.stocks.list.findIndex((s) => s.id === kind);
   if (k >= 0) w.acc.rev[k] += Math.round(x);
 }
@@ -56,6 +76,93 @@ function lisboa(w, A, ed) {
   if (w.lx.hist.length > L.histMax) w.lx.hist.shift();
   return { k: 'lx', crime: w.lx.crime, press: w.lx.press, d: w.lx.crime - old };
 }
+// as outras regiões: a mesma fórmula, com a base e a atividade de cada uma
+function regiao(w, r, A, ed) {
+  const R = CFG.regions.crime[r], L = W().lx, g = w.rg[r], old = g.crime;
+  const target = R.floor + ((100 - R.floor) * A) / (A + R.half);
+  g.press = old;
+  g.crime = clamp(Math.round((old * L.keepBp + target * (10000 - L.keepBp)) / 10000), 0, 100);
+  g.hist.push([ed, g.crime, g.press]);
+  if (g.hist.length > L.histMax) g.hist.shift();
+  return { k: 'rg', r, crime: g.crime, press: g.press, d: g.crime - old };
+}
+export const regionOf = (w, r) => (r === 'lx' ? w.lx : w.rg && w.rg[r]);
+export const pressOf = (w, r) => { const g = w && regionOf(w, r); return g ? g.press : 50; };
+
+// ---------- mercado de cada região ----------
+export const REG = () => CFG.regions.list.map((r) => r.id);
+export const regPos = (r) => { const x = CFG.regions.list.find((g) => g.id === r); return x ? x.pos : null; };
+export const tradable = (d) => !!CFG.drugs[d] && CFG.drugs[d].fam !== 'bar';
+// preço de grosso de uma droga, em cêntimos (80% do preço de rua)
+export const refC = (d) => Math.floor((CFG.drugs[d].price * 100 * CFG.goods.wholesaleBp) / 10000);
+// quantas unidades fazem o preço andar 100% (cada 1% da profundidade da região, em euros, mexe 1%)
+export const depthU = (r, d) => Math.max(1, Math.floor((CFG.market.depth[r] * 100) / refC(d)));
+// procura de uma droga numa região agora, em bp: a da região (pela droga, se tiver número próprio, senão pela família),
+// vezes os acontecimentos a decorrer, o fim de semana (festa) e o verão no Algarve (festa)
+// dia da semana e mês em Lisboa (guarda-se o último: as ordens e os ecrãs pedem o mesmo instante muitas vezes seguidas)
+const dayC = new Map();
+function dayOf(now) {
+  const k = Math.floor(now / 60000);
+  let x = dayC.get(k);
+  if (!x) { const p = localParts(now); x = { wd: new Date(Date.UTC(p.y, p.m - 1, p.d)).getUTCDay(), m: p.m }; if (dayC.size > 64) dayC.clear(); dayC.set(k, x); }
+  return x;
+}
+export function demBp(w, r, d, now) {
+  const M = CFG.market, g = CFG.drugs[d], t = M.dem[r];
+  let bp = t[g.id] ?? t[g.fam] ?? 10000;
+  for (const e of (w && w.ev) || []) if (e.r === r && e.d === d && e.ed0 <= w.ed && w.ed <= e.ed1) bp = Math.round((bp * (10000 + e.bp)) / 10000);
+  if (g.fam === 'festa' && Number.isFinite(now)) {
+    const { wd, m } = dayOf(now);
+    if (wd === 5 || wd === 6) bp = Math.round((bp * (10000 + M.weekendBp)) / 10000);
+    if (r === M.summer.rg && M.summer.months.includes(m)) bp = Math.round((bp * (10000 + M.summer.bp)) / 10000);
+  }
+  return bp;
+}
+export const satOf = (w, r, d) => (w && w.mk && w.mk[r] ? w.mk[r][d] : 10000);
+// preço do meio agora, em cêntimos por unidade (sem a margem de 10%)
+export const midC = (w, r, d, now) => (refC(d) * demBp(w, r, d, now) * satOf(w, r, d)) / 1e8;
+// Quanto custam (side 1) ou rendem (side −1) n unidades, em cêntimos, e a saturação com que o mercado fica. O preço anda à medida
+// que se compra ou vende (a média entre o princípio e o fim), e pára nos limites.
+export function quoteC(w, r, d, n, side, now) {
+  const M = CFG.market, D = depthU(r, d), s0 = satOf(w, r, d), lim = side > 0 ? M.satMax : M.satMin;
+  const ds = (n * 10000) / D, room = Math.max(0, side > 0 ? lim - s0 : s0 - lim), n1 = Math.min(n, (room * D) / 10000);
+  const s1 = side > 0 ? Math.min(lim, s0 + ds) : Math.max(lim, s0 - ds);
+  const sum = n1 * (s0 + (side > 0 ? s0 + (n1 * 10000) / D : s0 - (n1 * 10000) / D)) / 2 + (n - n1) * lim;   // unidades × saturação
+  const c = (refC(d) * demBp(w, r, d, now) * sum * (10000 + side * M.spreadBp)) / 1e12;
+  return { c: side > 0 ? Math.ceil(c) : Math.floor(c), s1 };
+}
+export function trade(w, r, d, s1) { worldUp(w); w.mk[r][d] = s1; }
+// a saturação volta ao normal e os acontecimentos da procura nascem e acabam
+function mercado(w, ed, rng) {
+  const M = CFG.market, arts = [];
+  for (const r of REG()) w.mk[r] = w.mk[r].map((s) => (s > 10000 ? Math.max(10000, s - M.recBp) : Math.min(10000, s + M.recBp)));
+  w.ev = w.ev.filter((e) => e.ed1 >= ed);
+  for (const r of REG()) {
+    const list = M.ev.list[r];
+    if (!list || !list.length || w.ev.some((e) => e.r === r)) continue;
+    if (!rng.chance(M.ev.spawnBp)) continue;
+    const x = list[rng.int(0, list.length - 1)], d = CFG.drugs.findIndex((g) => g.id === x.drug);
+    const e = { r, k: x.k, d, bp: x.bp, ed0: ed, ed1: ed + M.ev.eds - 1 };
+    w.ev.push(e); arts.push({ k: 'rgEv', r, e: x.k, d, bp: x.bp, to: e.ed1 });
+  }
+  return arts;
+}
+// uma rusga levou muito: a polícia mostrou serviço (a criminalidade cai) e a droga apreendida encarece nessa região
+export function recordSeizure(w, r, ds) {
+  const R = CFG.market.record, g = regionOf(w, r);
+  worldUp(w);
+  if (g) g.crime = Math.max(r === 'lx' ? W().lx.floor : CFG.regions.crime[r].floor, g.crime - R.crime);
+  for (const d of ds) w.mk[r][d] = Math.min(CFG.market.satMax, w.mk[r][d] + R.satBp);
+}
+// o que os ecrãs mostram de cada região: criminalidade, pressão, o histórico e, por droga, a procura e a saturação de agora
+export function marketView(w, now) {
+  if (!w) return null;
+  worldUp(w);
+  return Object.fromEntries(REG().map((r) => { const g = regionOf(w, r);
+    return [r, { crime: g.crime, press: g.press, hist: g.hist, dem: CFG.drugs.map((_, d) => (tradable(d) ? demBp(w, r, d, now) : 0)), sat: w.mk[r].map((s) => Math.round(s * 100) / 100),
+      ev: w.ev.filter((e) => e.r === r && e.ed0 <= w.ed && w.ed <= e.ed1).map((e) => ({ k: e.k, d: e.d, bp: e.bp, ed1: e.ed1, to: edStart(e.ed1 + 1) })) }]; }));
+}
+
 // multiplicador da hipótese de ser apanhado ao falhar um golpe em Lisboa (10000 = como antes, com a pressão a 50)
 export const pressMultBp = (press) => W().lx.bustLo + W().lx.bustPer * clamp(press ?? 50, 0, 100);
 
@@ -69,8 +176,11 @@ const rint = (rng, a, b) => rng.int(a, b);
 export function runEdition(m, ed, rng) {
   const w = m.w, C = W(), S = C.story, arts = [], bustK = [];
   // 1-2. contas da edição anterior e Lisboa
+  worldUp(w);
   const acc = w.acc;
   arts.push(lisboa(w, acc.lx, ed));
+  for (const r of OTHER()) arts.push(regiao(w, r, acc.rg[r] || 0, ed));
+  arts.push(...mercado(w, ed, rng));
   CFG.stocks.list.forEach((s, k) => {
     const c = w.co[k], cc = coCfg(k), before = c.v;
     // 3. histórias que venciam

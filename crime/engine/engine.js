@@ -4,7 +4,7 @@
 
 import { CFG, T } from './config.js';
 import { localParts } from './time.js';
-import { pressMultBp, impactBp } from './mundo.js';
+import { pressMultBp, impactBp, quoteC, trade, refC, tradable, regPos, pressOf, REG, worldUp } from './mundo.js';
 
 export class GameError extends Error {
   constructor(code, extra = {}) { super(code); this.code = code; Object.assign(this, extra); }
@@ -36,6 +36,7 @@ export function newPlayer(id, now, world, opts = {}) {
     hits: new Map(),
     biz: CFG.biz.map(() => ({ n: 0, stored: 0, rem: 0, t: now })),
     port: [], air: null, stock: CFG.drugs.map(() => 0), hold: [], club: null, bro: null, stk: CFG.stocks.list.map(() => ({ n: 0, cost: 0, gen: 0 })), acct: false,
+    wh: whsNew(), mv: [], mvLog: [], rz: [],   // armazéns por região e mercadoria a caminho (passo 6, parte 2)
     eq: eqNew(), inv: [], guard: -1, tool: -1, gweapon: -1, hmT: [], hmSafe: 0,   // equipamento no corpo (passo 4) e inventário
     op: null, opPause: 0, contacts: 0, avenca: false, avD: null, avN: 0, jailT0: 0, jf: 0, ilegal: 0,   // golpe grande a preparar, pausa, contactos da prisão, avença do advogado (passo 5)
     luxuries: 0,
@@ -122,6 +123,12 @@ function migrate(p) {
   delete p.weapon; delete p.armor;
   // passo 5: golpes grandes, avença e prisão com coisas para fazer. As ferramentas antigas (compradas por ordem) viram material
   // no inventário; o que não couber, e as que não são material (taser, revólver, caçadeira serrada), voltam em dinheiro, pelo preço.
+  // passo 6, parte 2: armazéns por região (o de Lisboa é o que já havia: o stock fica em p.stock) e mercadoria a caminho
+  if (!p.wh || typeof p.wh !== 'object') p.wh = whsNew();
+  for (const r of REG()) if (p.wh[r] === undefined) p.wh[r] = r === 'lx' ? whNew('lx') : null;
+  if (!Array.isArray(p.mv)) p.mv = [];
+  if (!Array.isArray(p.mvLog)) p.mvLog = [];
+  if (!Array.isArray(p.rz)) p.rz = [];
   if (p.op === undefined) {
     p.op = null; p.opPause = 0; p.contacts = 0; p.avenca = false; p.avD = null; p.avN = 0; p.jailT0 = 0; p.jf = 0; p.ilegal = 0;
     for (let i = 0; i <= p.tool && i < CFG.tools.length; i++) {
@@ -227,6 +234,7 @@ export function touch(p, now) {
   syncVigor(p, now);
   syncAddiction(p, now);
   if (p.addiction > addictionCap(p)) p.addiction = addictionCap(p); // limite mudou nas regras
+  settleMoves(p, now);   // a mercadoria que já chegou (ou que a polícia apanhou no caminho)
   if (p.jailUntil && p.jailUntil <= now) { p.jailUntil = 0; p.jailTier = 0; }
   if (p.hospUntil && p.hospUntil <= now) p.hospUntil = 0;
   settleClub(p, now); settleBro(p, now);   // os clientes da discoteca e do bordel até agora
@@ -660,7 +668,8 @@ export function doCrimeAll(p, now, world, k, rng) {
 // multa/fiança: a do golpe que te prendeu, proporcional ao tempo que falta
 export function bailCost(p, now) {
   if (!(p.jailUntil > now)) return 0;
-  const o = p.jailTier >= 100 ? CFG.ops[p.jailTier - 100] : null;
+  if (p.jailTier === DRUG_JAIL) { const left = p.jailUntil - now, total = CFG.wh.jailMin * T.MIN; return Math.max(1, Math.ceil((CFG.wh.lawyer * Math.min(left, total)) / total)); }
+  const o = p.jailTier >= 100 && p.jailTier < DRUG_JAIL ? CFG.ops[p.jailTier - 100] : null;
   if (o) { const left = p.jailUntil - now, total = o.jailMin * T.MIN; return Math.max(1, Math.ceil((o.lawyer * Math.min(left, total)) / total)); }
   const c = CFG.crimes[p.jailTier - 1] || CFG.crimes[CFG.crimes.length - 1];
   const left = p.jailUntil - now, total = c.jailMin * T.MIN;
@@ -1095,6 +1104,7 @@ export function sendPort(p, now, world, k, amount, goods = false) {
   if (!Number.isSafeInteger(amount) || amount < CFG.port.minAmount) fail('BAD_AMOUNT');
   if (amount > portCap(p)) fail('OVER_CAP', { cap: portCap(p) });
   if (p.port.length >= portSlots(p)) fail('NO_SLOT');
+  if (goods === true && !p.wh[S.rg]) fail('NO_WH', { r: S.rg });   // em droga, o barco descarrega no armazém da região onde chega
   const readyAt = now + S.ms;
   if (readyAt > world.playEnd) fail('ROUND_ENDING');
   pay(p, amount);
@@ -1105,34 +1115,34 @@ export function sendPort(p, now, world, k, amount, goods = false) {
 
 // Um carregamento que chegou: ou a polícia o apreendeu, ou volta o que se enviou mais o lucro (em dinheiro ou em droga para o armazém).
 // A sorte só se tira aqui, ao descarregar: até lá ninguém sabe o que vem lá dentro.
-function landShip(p, c, rng) {
+function landShip(p, c, rng, m) {
   const k = shipIdx(c);
   if (rng.chance(portSeizeBp(p, k))) return { k, amount: c.amount, got: 0, seized: true };
   const got = c.amount + Math.floor((c.amount * CFG.port.ships[k].gainBp) / 10000);
-  if (c.d !== undefined) return { k, amount: c.amount, got, seized: false, ...toGoods(p, c.d, got) };   // veio em droga: entra no armazém
+  if (c.d !== undefined) return { k, amount: c.amount, got, seized: false, ...toGoods(p, c.d, got, CFG.port.ships[k].rg, m) };   // veio em droga: entra no armazém da região
   p.cash += got;
   return { k, amount: c.amount, got, seized: false };
 }
 // descarrega tudo o que já chegou, de uma vez
-export function collectPort(p, now, world, rng) {
+export function collectPort(p, now, world, rng, m) {
   begin(p, now, world, { allowBusy: true });
   const out = [];
   p.port = p.port.filter((c) => {
     if (c.readyAt > now) return true;
-    out.push(landShip(p, c, rng));
+    out.push(landShip(p, c, rng, m));
     return false;
   });
   return { ok: true, items: out };
 }
 // Abre um só carregamento, o que chegou à hora `at` (é assim que o ecrã do porto o identifica: os carregamentos não têm número).
 // left = quantos outros já chegaram e ficam por abrir.
-export function openPort(p, now, world, rng, at) {
+export function openPort(p, now, world, rng, at, m) {
   begin(p, now, world, { allowBusy: true });
   const i = p.port.findIndex((c) => c.readyAt === at);
   if (i < 0) fail('NO_CARGO');
   if (p.port[i].readyAt > now) fail('SHIP_AT_SEA', { until: p.port[i].readyAt });
   const [c] = p.port.splice(i, 1);
-  return { ok: true, item: landShip(p, c, rng), left: p.port.filter((x) => x.readyAt <= now).length };
+  return { ok: true, item: landShip(p, c, rng, m), left: p.port.filter((x) => x.readyAt <= now).length };
 }
 
 // ---------- aeroporto ----------
@@ -1158,7 +1168,7 @@ export function airSend(p, now, world, r, amount, bribe) {
   p.air = { r, amount, bribe: !!bribe, t0: now, readyAt };
   return { ok: true, r, readyAt, paid: amount + extra, bribe: extra };
 }
-export function airCollect(p, now, world, rng, keep = false) {
+export function airCollect(p, now, world, rng, keep = false, m) {
   begin(p, now, world, { allowBusy: true });
   const f = p.air;
   if (!f) fail('NO_FLIGHT');
@@ -1167,7 +1177,7 @@ export function airCollect(p, now, world, rng, keep = false) {
   p.air = null;
   if (rng.chance(airSeizeBp(p, f.r, f.bribe))) return { ok: true, r: f.r, amount: f.amount, got: 0, seized: true, respect: 0 };
   const got = f.amount + Math.floor((f.amount * R.gainBp) / 10000);
-  const goods = keep ? toGoods(p, CFG.drugs.findIndex((x) => x.id === R.drug), got) : null;
+  const goods = keep ? toGoods(p, CFG.drugs.findIndex((x) => x.id === R.drug), got, 'lx', m) : null;   // o avião aterra em Lisboa
   if (!goods) p.cash += got;
   return { ok: true, r: f.r, amount: f.amount, got, seized: false, respect: R.r, levelUp: addRespect(p, R.r, now), ...(goods || {}) };
 }
@@ -1175,8 +1185,20 @@ export function airCollect(p, now, world, rng, keep = false) {
 // ---------- mercadoria e casas do jogador (discoteca e bordel) ----------
 export function wholesale(d) { return Math.max(1, Math.floor((CFG.drugs[d].price * CFG.goods.wholesaleBp) / 10000)); }
 export function dumpValue(d, n) { return Math.floor((n * wholesale(d) * CFG.goods.dumpBp) / 10000); }
-// troca dinheiro por unidades ao preço de grosso; o troco fica em dinheiro
-function toGoods(p, d, cash) { const w = wholesale(d), units = Math.floor(cash / w), rest = cash - units * w; p.stock[d] += units; p.cash += rest; return { d, units, rest }; }
+// troca dinheiro por unidades ao preço de grosso, no armazém da região onde a mercadoria chega (sem ele, no de Lisboa); o troco fica
+// em dinheiro. O que não couber vende-se logo ao mercado da região (ao preço de lá, a empurrar o preço como qualquer venda).
+function toGoods(p, d, cash, rg = 'lx', m) {
+  const r = p.wh && p.wh[rg] ? rg : 'lx', w = wholesale(d), units = Math.floor(cash / w), rest = cash - units * w;
+  const fit = Math.min(units, whFree(p, r)), over = units - fit;
+  whStock(p, r)[d] += fit; heatAdd(p, r, Math.floor((fit * refC(d)) / 100));
+  let overGot = 0;
+  if (over > 0) {
+    if (m && m.w) { const q = quoteC(m.w, r, d, over, -1, p.t); overGot = Math.floor(q.c / 100); trade(m.w, r, d, q.s1); }
+    else overGot = dumpValue(d, over);
+  }
+  p.cash += rest + overGot;
+  return { d, units: fit, rest, rg: r, over, overGot, v: Math.floor((units * refC(d)) / 100) };
+}
 const venueFloor = (kind) => (kind === 'club' ? CFG.goods.wholesaleBp : CFG.venue.girlBp);
 // quanto sai por hora na discoteca (em dinheiro ao preço da cidade) e quanto cabe no caixa
 export function clubRate(p) { const c = p.club, V = CFG.venue; return c ? Math.floor((V.club.perH[c.lvl - 1] * V.volBp[c.pi]) / 10000) : 0; }
@@ -1232,6 +1254,7 @@ function settleBro(p, now) {
 // leitura sem alterar o estado (para os ecrãs e para a lista de casas)
 export function venueView(p, now) {
   const ghost = { stock: p.stock.slice(), hold: Array.isArray(p.hold) ? p.hold.slice() : [], club: p.club ? { ...p.club } : null, bro: p.bro ? { ...p.bro, girls: p.bro.girls.slice() } : null };
+  for (const v of p.mv || []) if (v.at <= now && v.x !== 2 && v.b === 'lx') ghost.stock[v.d] += v.n;   // a mercadoria que já chegou a Lisboa entra antes (como no touch)
   settleClub(ghost, now); settleBro(ghost, now);
   return ghost;
 }
@@ -1281,16 +1304,204 @@ export function stockUse(p, now, world, d) {
   p.stock[d] -= 1;
   return { ok: true, d, price: 0, ...take(p, g, now) };
 }
-// despachar o que está no armazém: paga um pouco menos do que custou
-export function stockDump(p, now, world, d, n) {
+// despachar o que está no armazém de Lisboa: vende-se ao mercado de Lisboa (com o mercado; sem ele, como antes, a 95% do grosso)
+export function stockDump(p, now, world, d, n, m) {
   const g = Number.isInteger(d) ? CFG.drugs[d] : undefined;
   if (!g) fail('NO_DRUG');
+  if (m && m.w && tradable(d)) return mktSell(p, now, world, m, 'lx', d, n);
   begin(p, now, world, { allowBusy: true });
   if (!Number.isSafeInteger(n) || n < 1 || n > p.stock[d]) fail('NO_STOCK');
   const got = dumpValue(d, n);
   p.stock[d] -= n; p.cash += got;
   return { ok: true, d, n, got };
 }
+// ---------- regiões, armazéns, mercado e transporte (passo 6, parte 2) ----------
+// O armazém de Lisboa é o que já havia (o stock fica em p.stock); os outros compram-se, um por região, e guardam o stock em wh[r].s.
+// O calor (h) está em centésimos de ponto (0 a 10 000 = 0 a 100); f é o que entrou ou saiu desde a última edição, em euros.
+export const REG_IDS = CFG.regions.list.map((r) => r.id);
+export const DRUG_JAIL = 200;   // jailTier de quem foi preso por droga pesada apreendida (a fiança é o advogado de CFG.wh)
+const famOf = (d) => CFG.drugs[d].fam;
+function whNew(r) { const w = { sp: 1, hd: 1, fr: 1, h: 0, f: 0 }; if (r !== 'lx') w.s = CFG.drugs.map(() => 0); return w; }
+function whsNew() { return Object.fromEntries(REG().map((r) => [r, r === 'lx' ? whNew('lx') : null])); }
+export const whStock = (p, r) => (r === 'lx' ? p.stock : p.wh[r] ? p.wh[r].s : null);
+export const whCap = (p, r) => (p.wh[r] ? CFG.wh[r].sp[p.wh[r].sp - 1] : 0);
+const sumOf = (a) => a.reduce((x, y) => x + y, 0);
+// o espaço conta também com o que vem a caminho (e não foi apreendido): ao chegar, cabe sempre
+export const whUsed = (p, r) => (p.wh[r] ? sumOf(whStock(p, r)) + p.mv.reduce((x, v) => x + (v.b === r && v.x !== 2 ? v.n : 0), 0) : 0);
+export const whFree = (p, r) => Math.max(0, whCap(p, r) - whUsed(p, r));
+const hideBp = (w) => CFG.wh.hideBp[w.hd - 1], frontBp = (w) => CFG.wh.frontBp[w.fr - 1];
+export const whHidden = (p, r, d) => Math.floor((whStock(p, r)[d] * hideBp(p.wh[r])) / 10000);
+// o que a polícia vê num armazém, em euros ao preço de grosso (a droga de bar não conta: não se trafica)
+export function whVisEur(p, r) { const s = whStock(p, r); let c = 0; s.forEach((n, d) => { if (n > 0 && tradable(d)) c += (n - whHidden(p, r, d)) * refC(d); }); return Math.floor(c / 100); }
+export const whStoredEur = (p) => Object.fromEntries(REG().map((r) => [r, p.wh && p.wh[r] ? whVisEur(p, r) : 0]));
+function heatAdd(p, r, eur) {
+  const w = p.wh && p.wh[r]; if (!w || !(eur > 0)) return;
+  w.h = Math.min(10000, w.h + Math.floor((eur * 100 * (10000 - frontBp(w))) / (CFG.wh.heatEur * 10000))); w.f += eur;
+}
+function takeMoney(p, x) { const c = Math.min(p.cash, x); p.cash -= c; p.bank -= Math.min(p.bank, x - c); }
+function jailAt(p, at) { const until = at + CFG.wh.jailMin * T.MIN; if (until > p.jailUntil) { p.jailUntil = until; p.jailTier = DRUG_JAIL; p.jailT0 = at; p.jf = 0; } }
+
+export function whBuy(p, now, world, r) {
+  if (!REG().includes(r) || r === 'lx') fail('NO_REGION');
+  begin(p, now, world, { allowBusy: true });
+  if (p.wh[r]) fail('WH_OWNED');
+  if (level(p) < CFG.wh.level) fail('LOW_LEVEL', { need: CFG.wh.level });
+  pay(p, CFG.wh[r].price);
+  p.wh[r] = whNew(r);
+  return { ok: true, r, cost: CFG.wh[r].price };
+}
+const WH_UPS = ['sp', 'hd', 'fr'];
+export function whUpCost(p, r, k) { const w = p.wh[r]; if (!w || w[k] >= 5) return null; return k === 'sp' ? CFG.wh[r].spCost[w[k]] : CFG.wh.upCost[w[k]]; }
+export function whUp(p, now, world, r, k) {
+  if (!REG().includes(r)) fail('NO_REGION');
+  if (!WH_UPS.includes(k)) fail('NO_UPGRADE');
+  begin(p, now, world, { allowBusy: true });
+  if (!p.wh[r]) fail('NO_WH', { r });
+  const cost = whUpCost(p, r, k);
+  if (cost == null) fail('WH_MAX');
+  pay(p, cost);
+  p.wh[r][k] += 1;
+  return { ok: true, r, k, lvl: p.wh[r][k], cost };
+}
+
+// Mercado: compra-se e vende-se ao preço da região, que anda com cada ordem. Comprar pede o nível da família; vender o que já se
+// tem, não. As vendas ao mercado não pagam lavagem, como o porto e o aeroporto. seen: o que o ecrã mostrou, em cêntimos (com
+// 1% de folga, ou 1 €): se o preço mudou mais do que isso entretanto, não se faz.
+function mktArgs(p, m, r, d, n) {
+  if (!REG().includes(r)) fail('NO_REGION');
+  if (!Number.isInteger(d) || !tradable(d)) fail('NO_DRUG');
+  if (!Number.isSafeInteger(n) || n < 1 || n > 1e7) fail('BAD_AMOUNT');
+  if (!m || !m.w) fail('NO_MARKET');
+  worldUp(m.w);
+}
+const seenOk = (c, seen) => seen === undefined || Math.abs(c - seen) <= Math.max(100, Math.floor(seen / 100));
+export function mktBuy(p, now, world, m, r, d, n, seen) {
+  mktArgs(p, m, r, d, n);
+  begin(p, now, world, { allowBusy: true });
+  if (!p.wh[r]) fail('NO_WH', { r });
+  const need = CFG.regions.famLevel[famOf(d)];
+  if (level(p) < need) fail('LOW_LEVEL', { need });
+  if (n > whFree(p, r)) fail('WH_FULL', { free: whFree(p, r) });
+  const q = quoteC(m.w, r, d, n, 1, now), cost = Math.ceil(q.c / 100);
+  if (!seenOk(q.c, seen)) fail('PRICE_CHANGED', { c: q.c });
+  pay(p, cost);
+  whStock(p, r)[d] += n; trade(m.w, r, d, q.s1);
+  const v = Math.floor((n * refC(d)) / 100); heatAdd(p, r, v);
+  return { ok: true, r, d, n, cost, v };
+}
+export function mktSell(p, now, world, m, r, d, n, seen) {
+  mktArgs(p, m, r, d, n);
+  begin(p, now, world, { allowBusy: true });
+  if (!p.wh[r]) fail('NO_WH', { r });
+  if (n > whStock(p, r)[d]) fail('NO_STOCK');
+  const q = quoteC(m.w, r, d, n, -1, now), got = Math.floor(q.c / 100);
+  if (!seenOk(q.c, seen)) fail('PRICE_CHANGED', { c: q.c });
+  whStock(p, r)[d] -= n; trade(m.w, r, d, q.s1);
+  p.cash += got;
+  const v = Math.floor((n * refC(d)) / 100); heatAdd(p, r, v);
+  return { ok: true, r, d, n, got, v };
+}
+
+// Transporte: 1 hora por salto. O caminho passa pelas regiões do meio (de Lisboa ao Algarve passa pelo Alentejo).
+function mvPath(a, b) {
+  const pa = regPos(a), pb = regPos(b);
+  return CFG.regions.list.filter((g) => g.pos >= Math.min(pa, pb) && g.pos <= Math.max(pa, pb)).sort((x, y) => (pa < pb ? x.pos - y.pos : y.pos - x.pos)).map((g) => g.id);
+}
+export const mvHops = (a, b) => Math.abs(regPos(a) - regPos(b));
+// risco de apreensão no caminho, em bp: em cada salto, a média da pressão das duas regiões a dividir por 10 (em %)
+export function mvRiskBp(w, a, b) {
+  const ids = mvPath(a, b); let bp = 0;
+  for (let i = 1; i < ids.length; i++) bp += Math.round(((pressOf(w, ids[i - 1]) + pressOf(w, ids[i])) * 10) / 2);
+  return Math.min(9500, bp);
+}
+export function mvSend(p, now, world, m, rng, a, b, d, n) {
+  if (!REG().includes(a) || !REG().includes(b) || a === b) fail('NO_REGION');
+  if (!Number.isInteger(d) || !tradable(d)) fail('NO_DRUG');
+  if (!Number.isSafeInteger(n) || n < 1 || n > 1e7) fail('BAD_AMOUNT');
+  if (!m || !m.w) fail('NO_MARKET');
+  worldUp(m.w);
+  begin(p, now, world, { allowBusy: true });
+  if (!p.wh[a]) fail('NO_WH', { r: a });
+  if (!p.wh[b]) fail('NO_WH', { r: b });
+  if (n > whStock(p, a)[d]) fail('NO_STOCK');
+  if (n > whFree(p, b)) fail('WH_FULL', { free: whFree(p, b) });
+  if (p.mv.length >= CFG.mv.max) fail('MV_MAX');
+  const risk = mvRiskBp(m.w, a, b), at = now + mvHops(a, b) * CFG.mv.hopMs;
+  // a sorte tira-se já, mas só se sabe à chegada (o ecrã não a recebe)
+  const x = rng.chance(risk) ? (famOf(d) === 'leve' ? 1 : 2) : 0;
+  whStock(p, a)[d] -= n;
+  const v = Math.floor((n * refC(d)) / 100); heatAdd(p, a, v);
+  p.mv.push({ d, n, a, b, t0: now, at, risk, x });
+  return { ok: true, a, b, d, n, at, risk, v };
+}
+// a mercadoria que já chegou entra no armazém. Se a polícia a apanhou: as leves pagam multa e seguem, as de festa ficam
+// apreendidas, as pesadas ficam apreendidas e dão prisão (contada a partir da hora da chegada; quem chega tarde já a cumpriu).
+function settleMoves(p, now) {
+  if (!Array.isArray(p.mv) || !p.mv.length) return;
+  const W = CFG.wh;
+  p.mv = p.mv.filter((v) => {
+    if (v.at > now) return true;
+    const val = Math.floor((v.n * refC(v.d)) / 100); let fine = 0, jail = false;
+    if (v.x === 2) {
+      if (famOf(v.d) === 'pesada' && !(p.hospUntil > v.at)) { jailAt(p, v.at); jail = true; }
+    } else {
+      if (v.x === 1) { fine = Math.min(p.cash + p.bank, Math.floor((val * W.fineBp) / 10000)); takeMoney(p, fine); }
+      if (p.wh[v.b]) { whStock(p, v.b)[v.d] += v.n; heatAdd(p, v.b, val); }
+    }
+    p.mvLog.push({ d: v.d, n: v.n, a: v.a, b: v.b, at: v.at, x: v.x, fine, jail, v: val });
+    while (p.mvLog.length > CFG.mv.log) p.mvLog.shift();
+    return false;
+  });
+}
+// Numa edição, em cada armazém: a rusga (com a pressão de agora e o calor que o armazém juntou) e depois o calor desce ou fica.
+// Corre para todos, também para quem está fora do jogo. Devolve as rusgas que houve.
+export function whEdition(p, m, at, rng) {
+  if (!p.wh || !m || !m.w) return [];
+  const W = CFG.wh, out = [];
+  for (const r of REG()) {
+    const w = p.wh[r]; if (!w) continue;
+    const press = pressOf(m.w, r);
+    if (press >= W.raidMin && w.h > 0 && whVisEur(p, r) > 0) {
+      const bp = Math.floor((W.raidBp * press * w.h) / (100 * 10000));
+      if (rng.chance(bp)) out.push(raid(p, r, at, bp));
+    }
+    const floor = Math.min(10000, Math.floor((whVisEur(p, r) * 100 * (10000 - frontBp(w))) / (W.floorEur * 10000)));
+    w.h = w.f > 0 ? Math.max(w.h, floor) : Math.max(floor, w.h - W.coolPerEd * 100);
+    w.f = 0;
+  }
+  return out;
+}
+export const raidBp = (p, w, r) => { const x = p.wh[r], press = pressOf(w, r); return !x || press < CFG.wh.raidMin ? 0 : Math.floor((CFG.wh.raidBp * press * x.h) / (100 * 10000)); };
+// a rusga: multa de 10% do que está à vista; leva metade do que está à vista da droga de festa e das pesadas (as leves só dão multa)
+function raid(p, r, at, bp) {
+  const W = CFG.wh, w = p.wh[r], s = whStock(p, r), took = [];
+  let vis = 0, seized = 0, heavy = false;
+  s.forEach((n, d) => {
+    if (!(n > 0) || !tradable(d)) return;
+    const v = n - whHidden(p, r, d); vis += v * refC(d);
+    if (famOf(d) === 'leve' || v <= 0) return;
+    const k = Math.floor((v * W.takeBp) / 10000); if (k <= 0) return;
+    s[d] -= k; seized += k * refC(d); took.push([d, k]); if (famOf(d) === 'pesada') heavy = true;
+  });
+  const fine = Math.min(p.cash + p.bank, Math.floor((Math.floor(vis / 100) * W.fineBp) / 10000));
+  takeMoney(p, fine);
+  const jail = heavy && !(p.hospUntil > at);
+  if (jail) jailAt(p, at);
+  w.h = 0; w.f = 0;
+  const x = { r, at, bp, took, v: Math.floor(seized / 100), fine, jail };
+  p.rz.push(x); while (p.rz.length > W.log) p.rz.shift();
+  return x;
+}
+// o que o ecrã mostra dos armazéns e da mercadoria a caminho (sem o desfecho, que só se sabe à chegada)
+export function whView(p) {
+  return Object.fromEntries(REG().map((r) => {
+    const w = p.wh[r]; if (!w) return [r, null];
+    return [r, { sp: w.sp, hd: w.hd, fr: w.fr, heat: Math.round(w.h / 100), cap: whCap(p, r), used: whUsed(p, r), s: r === 'lx' ? null : w.s.slice(), vis: whVisEur(p, r),
+      hide: hideBp(w), front: frontBp(w), up: Object.fromEntries(WH_UPS.map((k) => [k, whUpCost(p, r, k)])) }];
+  }));
+}
+export const mvView = (p) => p.mv.map(({ d, n, a, b, t0, at, risk }) => ({ d, n, a, b, t0, at, risk }));
+
 export function broHire(p, now, world, i) {
   const g = Number.isInteger(i) ? CFG.hookers.list[i] : undefined;
   if (!g) fail('NO_HOOKER');
@@ -2635,6 +2846,13 @@ export function checkInvariants(p) {
   if (typeof p.acct !== 'boolean') bad.push('accountant');
   if (!Array.isArray(p.hold) || p.hold.some((d, i) => !Number.isInteger(d) || !CFG.drugs[d] || p.hold.indexOf(d) !== i)) bad.push('held drugs');
   if (p.port.some((c) => c.k !== undefined && !(Number.isInteger(c.k) && CFG.port.ships[c.k]))) bad.push('port ship');
+  // armazéns: o de Lisboa sempre; os outros nulos ou com as melhorias de 1 a 5, o stock e o calor dentro dos limites
+  if (!p.wh || REG().some((r) => { const w = p.wh[r]; if (w === null) return r === 'lx';
+    return !(w && WH_UPS.every((k) => Number.isInteger(w[k]) && w[k] >= 1 && w[k] <= 5) && Number.isSafeInteger(w.h) && w.h >= 0 && w.h <= 10000 && Number.isSafeInteger(w.f) && w.f >= 0
+      && (r === 'lx' ? w.s === undefined : Array.isArray(w.s) && w.s.length === CFG.drugs.length && w.s.every((x) => Number.isSafeInteger(x) && x >= 0))); })) bad.push('warehouses');
+  if (!Array.isArray(p.mv) || p.mv.length > CFG.mv.max || p.mv.some((v) => !v || !tradable(v.d) || !REG().includes(v.a) || !REG().includes(v.b) || v.a === v.b || !p.wh[v.b] || !Number.isSafeInteger(v.n) || v.n < 1
+    || !Number.isSafeInteger(v.at) || v.at !== v.t0 + mvHops(v.a, v.b) * CFG.mv.hopMs || ![0, 1, 2].includes(v.x))) bad.push('moves');
+  if (!Array.isArray(p.mvLog) || p.mvLog.length > CFG.mv.log || !Array.isArray(p.rz) || p.rz.length > CFG.wh.log) bad.push('move/raid logs');
   for (const k of ['club', 'bro']) { const v = p[k]; if (v === null) continue;
     if (!(v && Number.isInteger(v.lvl) && v.lvl >= 1 && v.lvl <= CFG.venue[k].cost.length && Number.isSafeInteger(v.till) && v.till >= 0 && Number.isSafeInteger(v.rem) && v.rem >= 0 && Number.isSafeInteger(v.t) && CFG.venue.prices[v.pi] !== undefined && CFG.venue.gdisc[v.gd] !== undefined)) bad.push(k);
     else if (k === 'bro' && !(Array.isArray(v.girls) && v.girls.length <= CFG.venue.bro.rooms[v.lvl - 1] && v.girls.every((i) => CFG.hookers.list[i]))) bad.push('bro girls'); }
