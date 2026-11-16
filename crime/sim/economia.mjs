@@ -16,8 +16,8 @@ function rngDe(s) { let a = s >>> 0; return () => { a |= 0; a = (a + 0x6d2b79f5)
 export const P = {
   mesesPorDia: +(process.env.MESES ?? 2),   // um dia real vale dois meses de jogo: um dia de turnos paga o ordenado de dois meses
   estaminaBarra: 100,
-  // Empregos: o ordenado líquido de um mês real paga-se por dia real, em 6 turnos de 10 de stamina.
-  turnos: 6, turnoStamina: 10,
+  // Empregos: 6 turnos por dia real, cada um com 10 de energia (barra à parte da stamina). Um dia completo paga dois meses de ordenado líquido.
+  turnos: 6, turnoEnergia: 10,
   empregos: [   // líquido por dia completo, curso que pede, preço e dias reais do curso
     { id: 'estafeta', dia: 700, curso: null },
     { id: 'minimo', dia: 819, curso: null },
@@ -29,11 +29,12 @@ export const P = {
   // Golpes de rua: média por barra de stamina, já com a taxa de sucesso. O que se leva em cada golpe é à sorte
   // (quase sempre pouco, às vezes um telemóvel ou um relógio); a média da primeira hora de um novato anda pelos 1 500 €.
   rua: [
-    { nivel: 1, barra: 1150 },   // furto em loja, carteirista (135 € em média quando corre bem)
-    { nivel: 8, barra: 1500 },   // arrombar carros
-    { nivel: 12, barra: 2000 },  // esticão (1 500 € em média; na vida real 2 021 €)
-    { nivel: 18, barra: 2800 },  // assalto a loja e a bomba de gasolina
-    { nivel: 30, barra: 3600 },  // assaltos armados
+    // gasto = o que sai por barra em multas e fianças (uma falha em quatro é apanhada) e, nos golpes com arma, em arma e balas
+    { nivel: 1, barra: 1150, gasto: 50 },         // furto em loja, carteirista (135 € em média quando corre bem); multa de 150 €
+    { nivel: 8, barra: 1500, gasto: 100 },        // arrombar carros; fiança de 400 €
+    { nivel: 12, barra: 2000, gasto: 250 },       // esticão (1 500 € em média; na vida real 2 021 €); fiança de 1 500 €
+    { nivel: 18, barra: 2800, gasto: 440 + 200 }, // assalto a loja e a bomba de gasolina; fiança de 2 500 €, 100 € de arma e balas por golpe
+    { nivel: 30, barra: 3600, gasto: 450 + 100 }, // assaltos armados; fiança de 6 000 €, 100 € de arma e balas por golpe
   ],
   // A rua aquece: rendimento de cada barra seguida de golpes de rua no mesmo dia.
   calor: [1, 1, 0.7, 0.7, 0.45, 0.45, 0.25],
@@ -72,7 +73,17 @@ export const P = {
   // Stamina a mais do que a natural: cada barra extra custa droga e desintoxicação, cada vez mais cara no mesmo dia.
   extra: (k) => 35 * k + 15 * k * k,   // 1.ª barra extra 50 €, 3.ª 240 €, 7.ª 980 €
   lavagem: { acimaDe: 100000, parte: 0.2 },   // dinheiro do crime que passa pelas fachadas: custa 20%
-  equipa: 0.05,                               // seguranças, subornos e gente a soldo: 5% do que entra, a partir do nível 30
+  // Gastos que crescem com a fortuna (as casas não têm despesa).
+  segurancas: { nivel: 60, dia: 3600, max: 6, parte: 0.2 },   // quem pode ser morto paga guarda-costas: 1 800 € por mês cada, até 6, até 20% do que ganha
+  avenca: { nivel: 30, dia: 3000, parte: 0.05 },              // advogado em avença (1 500 € por mês): cobre o advogado das operações falhadas
+  suborno: 0.06,                                              // 6% do valor de uma operação grande, pago antes: se falhar, não há prisão nem investigação
+  // Luxo acima da mansão: compra-se pela ordem, quando há 1,5 vezes o preço. Não tem despesa.
+  luxo: [
+    { id: 'relógio de marca', preco: 12000 }, { id: 'carro bom usado', preco: 25700 }, { id: 'lancha de recreio', preco: 80000 },
+    { id: 'Porsche 911', preco: 200263 }, { id: 'helicóptero', preco: 550000 }, { id: 'iate', preco: 2500000 },
+    { id: 'jato privado', preco: 4500000 }, { id: 'quinta no Douro', preco: 6000000 }, { id: 'palacete em Lisboa', preco: 15000000 },
+    { id: 'ilha privada', preco: 40000000 },
+  ],
   // Respeito: o que dá cada coisa, e quanto pede cada nível (acumulado = a × nível^b).
   resp: { rua: (n) => Math.min(120, 20 + 2 * n), venda: (n) => 15 + n, turno: 2, op: (g) => Math.round(3 * Math.sqrt(g)) },
   nivel: { a: +(process.env.NA ?? 1.3), b: +(process.env.NB ?? 2.55) },
@@ -89,7 +100,7 @@ const PERFIS = {
 
 function simula(perfil, rng) {
   const A = PERFIS[perfil];
-  const s = { cash: 50, resp: 0, emprego: 1, curso: null, pratica: 0, capital: 0, vida: 0, casa: 0, carro: null, op: null, pausaAte: 0, n100: null, casaDia: null, tetoDia: null, ilegal: 0, diasJogados: 0 };
+  const s = { cash: 50, resp: 0, emprego: 1, curso: null, pratica: 0, capital: 0, vida: 0, casa: 0, carro: null, op: null, pausaAte: 0, luxo: 0, gastoLuxo: 0, n100: null, casaDia: null, tetoDia: null, ilegal: 0, diasJogados: 0 };
   const marcos = {};
   for (let d = 1; d <= DIAS; d++) {
     if (rng() < A.falha) { marcos[d] = foto(s); continue; }
@@ -100,9 +111,9 @@ function simula(perfil, rng) {
     const prox = P.empregos[s.emprego + 1];
     if (!s.curso && prox && (!prox.nivel || nv >= prox.nivel) && s.cash > prox.curso.preco * 2) { s.curso = { fim: d + prox.curso.dias }; sai += prox.curso.preco; }
     if (s.curso && d >= s.curso.fim) { s.emprego++; s.curso = null; }
-    // emprego: 6 turnos (0,6 de uma barra). Todos os fazem: com dois meses por dia é o que mais rende por stamina no início
+    // emprego: 6 turnos por dia, pagos com energia. Todos os fazem
     const turnos = P.turnos;
-    entra += (P.empregos[s.emprego].dia * P.mesesPorDia * turnos) / P.turnos; s.resp += turnos * P.resp.turno; barras -= (turnos * P.turnoStamina) / P.estaminaBarra;
+    entra += (P.empregos[s.emprego].dia * P.mesesPorDia * turnos) / P.turnos; s.resp += turnos * P.resp.turno;   // os turnos gastam energia (a barra do ginásio e das lutas), não a stamina dos crimes
     let crime = 0;
     // venda de droga: primeiro, até ao limite da clientela
     const r = [...P.rua].reverse().find((x) => nv >= x.nivel), bonus = 1 + P.pratica.max * Math.min(1, s.pratica / P.pratica.barrasParaMax);
@@ -115,27 +126,29 @@ function simula(perfil, rng) {
     }
     // golpes de rua com o resto da stamina, a aquecer
     let i = 0;
-    for (; barras > 0.01; i++) { const b = Math.min(1, barras), c = P.calor[Math.min(i, P.calor.length - 1)]; crime += b * r.barra * bonus * c; s.resp += b * P.resp.rua(nv) * c; s.pratica += b; barras -= b; }   // o calor corta o dinheiro e o respeito
+    for (; barras > 0.01; i++) { const b = Math.min(1, barras), c = P.calor[Math.min(i, P.calor.length - 1)]; barras -= b; if (r.barra * bonus * c <= r.gasto) continue; crime += b * r.barra * bonus * c; sai += b * r.gasto; s.resp += b * P.resp.rua(nv) * c; s.pratica += b; }   // o calor corta o dinheiro e o respeito; as multas não baixam
     // barras a mais, a droga: só se a barra render mais do que custa
-    for (let k = 1; k <= A.extra; k++, i++) { const g = r.barra * bonus * P.calor[Math.min(i, P.calor.length - 1)]; if (g <= P.extra(k)) break; crime += g; sai += P.extra(k); s.resp += P.resp.rua(nv) * P.calor[Math.min(i, P.calor.length - 1)]; s.pratica += 1; s.extras = (s.extras || 0) + 1; }
+    for (let k = 1; k <= A.extra; k++, i++) { const g = r.barra * bonus * P.calor[Math.min(i, P.calor.length - 1)]; if (g <= P.extra(k) + r.gasto) break; crime += g; sai += P.extra(k) + r.gasto; s.resp += P.resp.rua(nv) * P.calor[Math.min(i, P.calor.length - 1)]; s.pratica += 1; s.extras = (s.extras || 0) + 1; }
     // operações: prepara a melhor que consegue pagar; resolve quando chega o dia
     if (s.op && d >= s.op.fim) {
       const o = s.op.o; s.op = null; s.pausaAte = d + o.pausa;
       if (rng() < o.p) { crime += o.ganho; s.resp += P.resp.op(o.ganho); }
-      else sai += P.falhaOp.advogado[0] + rng() * (P.falhaOp.advogado[1] - P.falhaOp.advogado[0]) * (o.custo > 2000 ? 1 : 0.1);
+      else { const adv = P.falhaOp.advogado[0] + rng() * (P.falhaOp.advogado[1] - P.falhaOp.advogado[0]) * (o.custo > 2000 ? 1 : 0.1); if (!s.avenca) sai += adv; }
     }
     if (!s.op && d >= s.pausaAte && perfil !== 'casual') {
       const vale = (x) => (x.p * x.ganho - x.custo) / (Math.max(1, Math.ceil(x.dias)) + x.pausa);   // o que rende por dia, contando a pausa
       const o = P.ops.filter((x) => nv >= x.nivel && s.cash > x.custo * 3).sort((x, y) => vale(y) - vale(x))[0];
-      if (o) { s.op = { o, fim: d + Math.max(1, Math.ceil(o.dias)) }; sai += o.custo; }
+      if (o) { s.op = { o, fim: d + Math.max(1, Math.ceil(o.dias)) }; sai += o.custo + (o.custo > 2000 ? P.suborno * o.ganho : 0); }
     }
     // lavagem e equipa
     s.ilegal += crime;
     if (s.ilegal > P.lavagem.acimaDe) crime *= 1 - P.lavagem.parte;
-    if (nv >= 30) crime *= 1 - P.equipa;
     entra += crime;
     // vida: sobe de degrau quando pode
     s.media = s.media == null ? entra : s.media * 0.8 + entra * 0.2;   // o que se ganha por dia, alisado
+    s.avenca = nv >= P.avenca.nivel && P.avenca.dia <= s.media * P.avenca.parte;
+    if (s.avenca) sai += P.avenca.dia;
+    if (nv >= P.segurancas.nivel) sai += P.segurancas.dia * Math.min(P.segurancas.max, Math.floor((s.media * P.segurancas.parte) / P.segurancas.dia));
     const cabe = (i) => { const t = P.vida[i]; return t && t.dia * P.mesesPorDia <= s.media * P.parteDaVida && (!t.compra || s.casa >= t.compra || s.cash + entra - sai > t.compra * 1.3); };
     let alvo = 0; for (let j = 1; j < P.vida.length; j++) if (cabe(j)) alvo = j;
     if (alvo !== s.vida) { s.vida = alvo; const t = P.vida[alvo]; if (t.compra && s.casa < t.compra) { sai += t.compra - s.casa; s.casa = t.compra; if (!s.tetoDia) s.tetoDia = d; if (!s.casaDia && t.compra >= P.casaASerio) s.casaDia = d; } }
@@ -143,10 +156,11 @@ function simula(perfil, rng) {
     s.cash += entra - sai;
     if (s.cash < 0) s.cash = 0;   // sem dinheiro: come na cantina social, não acumula dívida (rede para não castigar o novato)
     if (!s.carro && s.cash > P.carro + 1000) { s.cash -= P.carro; s.carro = d; }
+    while (s.casa >= P.casaASerio && P.luxo[s.luxo] && s.cash > P.luxo[s.luxo].preco * 1.5) { const x = P.luxo[s.luxo++]; s.cash -= x.preco; s.gastoLuxo += x.preco; s.sumidouro += x.preco; }
     if (!s.n100 && nivelDe(s.resp) >= 100) s.n100 = d;
     marcos[d] = foto(s);
   }
-  return { marcos, carro: s.carro, teto: s.tetoDia, casa: s.casaDia, n100: s.n100, dias: s.diasJogados, ralo: s.sumidouro / s.torneira };
+  return { marcos, luxo: s.luxo, carro: s.carro, teto: s.tetoDia, casa: s.casaDia, n100: s.n100, dias: s.diasJogados, ralo: s.sumidouro / s.torneira };
 }
 const foto = (s) => ({ cash: Math.round(s.cash), fortuna: Math.round(s.cash + s.casa + s.capital), nivel: nivelDe(s.resp), dia: Math.round(s.media || 0) });
 
@@ -160,14 +174,14 @@ for (const perfil of Object.keys(PERFIS)) {
   res[perfil] = {
     fotos: Object.fromEntries(DIAS_FOTO.map((d) => [d, { fortuna: med(runs.map((r) => r.marcos[d].fortuna)), p90: med(runs.map((r) => r.marcos[d].fortuna), 0.9), nivel: med(runs.map((r) => r.marcos[d].nivel)), dia: med(runs.map((r) => r.marcos[d].dia)) }])),
     ralo: med(runs.map((r) => r.ralo)),
-    carro: med(runs.map((r) => r.carro)), teto: med(runs.map((r) => r.teto)), casa: med(runs.map((r) => r.casa)), n100: med(runs.map((r) => r.n100)), semCasa: runs.filter((r) => r.casa == null).length / N, sem100: runs.filter((r) => r.n100 == null).length / N,
+    luxo: med(runs.map((r) => r.luxo)), carro: med(runs.map((r) => r.carro)), teto: med(runs.map((r) => r.teto)), casa: med(runs.map((r) => r.casa)), n100: med(runs.map((r) => r.n100)), semCasa: runs.filter((r) => r.casa == null).length / N, sem100: runs.filter((r) => r.n100 == null).length / N,
   };
 }
 console.log(`Economia nova · semente ${SEED} · ${N} contas por perfil · ${DIAS} dias (um dia real = ${P.mesesPorDia} meses de jogo)\n`);
 for (const [perfil, r] of Object.entries(res)) {
   console.log(perfil.toUpperCase() + `  (${PERFIS[perfil].barras} barras de stamina por dia)`);
   for (const d of DIAS_FOTO) console.log(`  dia ${String(d).padStart(3)}: fortuna mediana ${eur(r.fotos[d].fortuna).padStart(14)}   10% mais ricos ${eur(r.fotos[d].p90).padStart(14)}   nível ${String(r.fotos[d].nivel).padStart(3)}   ganha por dia ${eur(r.fotos[d].dia)}`);
-  console.log(`  primeiro carro: dia ${r.carro ?? '—'}   sai da barraca: dia ${r.teto ?? '—'}   T1 na cidade: dia ${r.casa ?? '—'}${r.semCasa ? ` (${Math.round(r.semCasa * 100)}% sem casa)` : ''}   nível 100: dia ${r.n100 ?? '—'}${r.sem100 ? ` (${Math.round(r.sem100 * 100)}% não chegam)` : ''}   sai em custos ${Math.round(r.ralo * 100)}% do que entra\n`);
+  console.log(`  primeiro carro: dia ${r.carro ?? '—'}   sai da barraca: dia ${r.teto ?? '—'}   T1 na cidade: dia ${r.casa ?? '—'}${r.semCasa ? ` (${Math.round(r.semCasa * 100)}% sem casa)` : ''}   nível 100: dia ${r.n100 ?? '—'}${r.sem100 ? ` (${Math.round(r.sem100 * 100)}% não chegam)` : ''}   sai em custos ${Math.round(r.ralo * 100)}% do que entra   luxo: ${r.luxo} de ${P.luxo.length}\n`);
 }
 const provas = [
   ['Ninguém fica rico numa semana (bot abaixo de 100 000 € ao dia 7)', res.bot.fotos[7].p90 < 100000],
