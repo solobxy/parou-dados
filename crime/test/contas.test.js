@@ -1096,7 +1096,7 @@ test('bordel: quartos, contratar, rendimento por hora, e a parte da puta nunca v
   assert.throws(() => E.broHire(p, NOW + T.HOUR, W, 99), code('NO_HOOKER'));
   r = E.broHire(p, NOW + T.HOUR, W, top); assert.equal(r.cost, V.bro.hire[H[top].tier]); r = E.broHire(p, NOW + T.HOUR, W, rosa); assert.equal(r.cost, V.bro.hire[0]);
   assert.equal(p.cash, 1e9 - V.bro.cost[0] - V.bro.hire[H[top].tier] - V.bro.hire[0]); assert.deepEqual(p.bro.girls, [top, rosa]);
-  assert.throws(() => E.broHire(p, NOW + T.HOUR, W, rosa), code('NO_ROOM')); assert.equal(p.bro.girls.length, 2);
+  assert.throws(() => E.broHire(p, NOW + T.HOUR, W, rosa), code('NO_ROOMS')); assert.equal(p.bro.girls.length, 2);
   // rendimento: soma das categorias ao preço da cidade; 80% não dá nada (vai tudo para elas); o melhor por hora é 100%
   const base = V.bro.perH[H[top].tier] + V.bro.perH[0];
   assert.equal(E.broRate(p), base);
@@ -1112,7 +1112,7 @@ test('bordel: quartos, contratar, rendimento por hora, e a parte da puta nunca v
   const c0 = p.cash; r = E.broFire(p, NOW + 4 * T.DAY + T.HOUR, W, 0); assert.equal(r.i, top); assert.deepEqual(p.bro.girls, [rosa]); assert.equal(p.cash, c0); assert.equal(p.bro.till, base); assert.equal(E.broRate(p), V.bro.perH[0]);
   assert.throws(() => E.broFire(p, NOW + 4 * T.DAY + T.HOUR, W, 1), code('NO_HOOKER'));
   // quartos e custos por nível
-  const m = dono(); for (let i = 0; i < V.bro.cost.length; i++) { const b = E.venueBuy(m, NOW, W, 'bro'); assert.equal(b.cost, V.bro.cost[i]); for (let k = m.bro.girls.length; k < V.bro.rooms[i]; k++) E.broHire(m, NOW, W, top); assert.throws(() => E.broHire(m, NOW, W, top), code('NO_ROOM')); }
+  const m = dono(); for (let i = 0; i < V.bro.cost.length; i++) { const b = E.venueBuy(m, NOW, W, 'bro'); assert.equal(b.cost, V.bro.cost[i]); for (let k = m.bro.girls.length; k < V.bro.rooms[i]; k++) E.broHire(m, NOW, W, top); assert.throws(() => E.broHire(m, NOW, W, top), code('NO_ROOMS')); }
   assert.throws(() => E.venueBuy(m, NOW, W, 'bro'), code('VENUE_MAX')); assert.equal(E.broRate(m), V.bro.rooms.at(-1) * V.bro.perH[H[top].tier]);
   // visita de outro jogador: paga o preço dele na cidade × o preço do dono; 80% do preço da cidade é dela, o resto vai para o caixa
   const casa = dono(); casa.gang = 'g1'; E.venueBuy(casa, NOW, W, 'bro'); E.broHire(casa, NOW, W, 5); const till0 = casa.bro.till;

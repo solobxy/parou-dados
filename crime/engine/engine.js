@@ -4,6 +4,7 @@
 
 import { CFG, T } from './config.js';
 import { localParts } from './time.js';
+import { pressMultBp, impactBp } from './mundo.js';
 
 export class GameError extends Error {
   constructor(code, extra = {}) { super(code); this.code = code; Object.assign(this, extra); }
@@ -472,10 +473,12 @@ export function setAvatar(p, now, world, i) {
   return { ok: true, av: i };
 }
 const huBp = (p, i) => (p.hu && CFG.house.ups[i] ? (p.hu[i] || 0) * CFG.house.ups[i].bp : 0);   // (já não há melhorias da casa)
-export function bustChanceBp(p, now) {
+// press: a pressão policial de Lisboa (passo 6); sem ela conta como 50, o valor com que o modelo foi feito
+export function bustChanceBp(p, now, press) {
   const acc = p.eq && p.eq.acess ? gearOf(p.eq.acess.id) : null;   // o rádio-scanner ouve a polícia a chegar
   const base = acc && acc.bustBp ? acc.bustBp : CFG.bustBp;
-  return cut(cut(cut(base, klass(p).bustCutBp || 0), buffBp(p, 'bust', now)), huBp(p, 2));
+  const b = cut(cut(cut(base, klass(p).bustCutBp || 0), buffBp(p, 'bust', now)), huBp(p, 2));
+  return Math.min(9500, Math.floor((b * pressMultBp(press)) / 10000));
 }
 // ---------- casa ----------
 // a casa seguinte paga-se com a antiga na troca, pelo que ela custou
@@ -617,7 +620,7 @@ export function doCrime(p, now, world, k, rng) {
   }
   p.c.crimes += 1;
   // falhar não é sempre prisão: uma falha em quatro é apanhada
-  const busted = rng.chance(bustChanceBp(p, now));
+  const busted = rng.chance(bustChanceBp(p, now, world && world.press));
   if (busted) jailFor(p, now, c.jailMin * T.MIN, k + 1);
   const gained = practice(p, c, false);
   return { ok: true, success: false, busted, jailUntil: p.jailUntil, chanceBp: bp, heatBp, ammo, gained, newChanceBp: bp };
@@ -1293,7 +1296,7 @@ export function broHire(p, now, world, i) {
   if (!g) fail('NO_HOOKER');
   begin(p, now, world);
   const b = p.bro; if (!b) fail('NO_VENUE');
-  if (b.girls.length >= CFG.venue.bro.rooms[b.lvl - 1]) fail('NO_ROOM');
+  if (b.girls.length >= CFG.venue.bro.rooms[b.lvl - 1]) fail('NO_ROOMS');   // (era NO_ROOM, o mesmo código do inventário cheio: o aviso saía trocado)
   const cost = CFG.venue.bro.hire[g.tier];
   pay(p, cost);
   b.girls.push(i);
@@ -1366,7 +1369,12 @@ function holding(p, m, k) { const h = p.stk[k]; return h.gen === m.gen[k] ? h : 
 const stkLim = (h) => ({ ...(h.tp ? { tp: h.tp } : {}), ...(h.sl ? { sl: h.sl } : {}) });
 export function stockView(p, m) { return CFG.stocks.list.map((_, k) => { const h = holding(p, m, k); return { n: h.n, cost: h.cost, value: Math.floor((h.n * m.prices[k]) / 100), tp: h.tp || 0, sl: h.sl || 0 }; }); }
 const stockFee = (gross) => Math.ceil((gross * CFG.stocks.feeBp) / 10000);
-export function stockQuote(m, k, n) { const gross = Math.ceil((n * m.prices[k]) / 100); return gross + stockFee(gross); }   // o que custa comprar n ações agora
+// o preço a que uma ordem de n ações se faz: o de agora, empurrado pelo tamanho da ordem (side 1 compra, −1 vende)
+export function execPrice(m, k, n, side) {
+  const p = m.prices[k], imp = impactBp(m, k, Math.floor((n * p) / 100));
+  return side > 0 ? Math.ceil((p * (10000 + imp)) / 10000) : Math.max(1, Math.floor((p * (10000 - imp)) / 10000));
+}
+export function stockQuote(m, k, n) { const gross = Math.ceil((n * execPrice(m, k, n, 1)) / 100); return gross + stockFee(gross); }   // o que custa comprar n ações agora
 function stockArgs(m, k, n, seen) {
   if (!Number.isInteger(k) || !CFG.stocks.list[k]) fail('NO_STOCK_CO');
   if (!Number.isSafeInteger(n) || n < 1 || n > 1e9) fail('BAD_AMOUNT');
@@ -1376,24 +1384,26 @@ function stockArgs(m, k, n, seen) {
 export function stockBuy(p, now, world, m, k, n, seen) {
   stockArgs(m, k, n, seen);
   begin(p, now, world, { allowBusy: true });
-  const total = stockQuote(m, k, n);
+  const ex = execPrice(m, k, n, 1), total = Math.ceil((n * ex) / 100) + stockFee(Math.ceil((n * ex) / 100));
   const invested = CFG.stocks.list.reduce((s, _, j) => s + holding(p, m, j).cost, 0);
   if (invested + total > stockCap(p)) fail('STOCK_CAP', { cap: stockCap(p) });
   pay(p, total);
   const h = holding(p, m, k);
   p.stk[k] = { n: h.n + n, cost: h.cost + total, gen: m.gen[k], ...stkLim(h) };
-  return { ok: true, k, n, price: m.prices[k], paid: total, fee: stockFee(Math.ceil((n * m.prices[k]) / 100)) };
+  m.prices[k] = ex;   // a compra empurra o preço (no mercado novo); compra-se já ao preço empurrado
+  return { ok: true, k, n, price: ex, paid: total, fee: stockFee(Math.ceil((n * ex) / 100)) };
 }
 export function stockSell(p, now, world, m, k, n, seen) {
   stockArgs(m, k, n, seen);
   begin(p, now, world, { allowBusy: true });
   const h = holding(p, m, k);
   if (n > h.n) fail('NO_SHARES');
-  const gross = Math.floor((n * m.prices[k]) / 100), fee = Math.min(gross, stockFee(gross)), got = gross - fee;
+  const ex = execPrice(m, k, n, -1), gross = Math.floor((n * ex) / 100), fee = Math.min(gross, stockFee(gross)), got = gross - fee;
   const part = n === h.n ? h.cost : Math.floor((h.cost * n) / h.n);   // parte do que se pagou que corresponde ao que se vende
   p.stk[k] = { n: h.n - n, cost: h.cost - part, gen: m.gen[k], ...(n < h.n ? stkLim(h) : {}) };
   p.cash += got;
-  return { ok: true, k, n, price: m.prices[k], got, fee, profit: got - part };
+  m.prices[k] = ex;
+  return { ok: true, k, n, price: ex, got, fee, profit: got - part };
 }
 // Limites de venda de uma posição: alvo de lucro (tp) e travão de perda (sl), em cêntimos por ação; 0 = sem limite.
 // Não dão vantagem nenhuma: a venda faz-se ao preço do passo em que o limite é tocado (nunca ao preço pedido) e paga a comissão normal.
@@ -1417,10 +1427,11 @@ export function stockAuto(p, m) {
     if (!(h.n > 0) || !(h.tp || h.sl)) continue;
     const why = h.tp && price >= h.tp ? 'tp' : h.sl && price <= h.sl ? 'sl' : null;
     if (!why) continue;
-    const gross = Math.floor((h.n * price) / 100), fee = Math.min(gross, stockFee(gross)), got = gross - fee;
+    const ex = execPrice(m, k, h.n, -1), gross = Math.floor((h.n * ex) / 100), fee = Math.min(gross, stockFee(gross)), got = gross - fee;
     p.stk[k] = { n: 0, cost: 0, gen: m.gen[k] };
     p.cash += got;
-    out.push({ k, n: h.n, price, got, fee, profit: got - h.cost, why });
+    m.prices[k] = ex;
+    out.push({ k, n: h.n, price: ex, got, fee, profit: got - h.cost, why });
   }
   return out;
 }

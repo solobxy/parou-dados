@@ -51,6 +51,34 @@ export const CFG = {
     ],
   },
 
+  // Mundo ligado (passo 6): edições do jornal às 03h, 09h, 15h e 21h de Lisboa (engine/mundo.js).
+  // Lisboa: a criminalidade vai de floor (rua calma) a 100; sobe com a stamina que os jogadores gastam lá (golpes, lutas, vendas)
+  // por uma curva A/(A+half), com metade do caminho aos 3 000 de stamina numa edição, e guarda keepBp do valor anterior. A pressão
+  // é a criminalidade da edição anterior. Ao falhar um golpe, a hipótese de prisão multiplica por (bustLo + bustPer × pressão)/10000:
+  // 0,75 com a polícia parada, 1 com a pressão a 50 (o que o modelo usa), 1,25 com a pressão no máximo.
+  // Empresas: r0 é a receita por edição dos outros clientes (com ±noiseBp), a que se soma o que os jogadores lá deixam. O valor mexe
+  // até maxMoveBp por edição conforme essa receita fica acima ou abaixo da média das últimas avgN, e volta revertBp por edição ao
+  // valor de estreia. Dividendo: divBp do que os jogadores lá gastaram de verdade, a dividir por float ações (com os jogadores a
+  // gastarem o mesmo que os outros clientes, rende 0,1% por edição). liq: euros que empurram o preço 100% (o empurrão para em impMaxBp).
+  // Entre edições, de 10 em 10 minutos, o preço anda pullBp do caminho até à abertura, com um tremor de ±tickNoiseBp.
+  // Histórias em três atos: nascem com spawnBp por edição, vencem 4 a 8 edições depois (1 a 2 dias), com hipótese escondida de
+  // 35% a 75%; correm bem +25% a +40%, mal −30% a −45%. Rumores com fiabilidade escrita (55% a 80%), investigação que revela a
+  // hipótese. Três desfechos maus seguidos e a empresa vai à falência. Pânico: caiu mais de 12% numa edição, cai mais 4% a 8% na seguinte.
+  world: {
+    edHours: [3, 9, 15, 21], keepEds: 12,
+    lx: { start: 30, floor: 25, half: 3000, keepBp: 6000, histMax: 28, bustLo: 7500, bustPer: 50, fight: 10 },   // uma luta conta como 10 de stamina na rua
+    portBp: 500,   // a Docas do Sul fica com 5% do que os jogadores mandam pelo porto
+    co: {
+      docas: { r0: 120000, liq: 20000000, float: 480000 }, farma: { r0: 25000, liq: 5000000, float: 200000 }, casino: { r0: 60000, liq: 10000000, float: 100000 },
+      armas: { r0: 40000, liq: 8000000, float: 100000 }, noite: { r0: 30000, liq: 3000000, float: 500000 }, moeda: { r0: 0, liq: 1000000, float: 0 },
+    },
+    noiseBp: 1500, maxMoveBp: 600, avgN: 8, revertBp: 100, divBp: 2000, moedaBp: 500,
+    pullBp: 3000, tickNoiseBp: 30, impMaxBp: 500,
+    panic: { trigBp: 1200, min: 400, max: 800 },
+    story: { spawnBp: 300, moedaSpawnBp: 600, durMin: 4, durMax: 8, pMin: 3500, pMax: 7500, upMin: 2500, upMax: 4000, dnMin: 3000, dnMax: 4500, rumorBp: 3500, relMin: 5500, relMax: 8000, invBp: 1200, bustAfter: 3 },
+    stories: { docas: ['terminal', 'greve'], farma: ['ensaio'], casino: ['licenca'], armas: ['contrato'], noite: ['cadeia'], moeda: ['proibir', 'banca'] },
+  },
+
   train: { energy: 5, costBase: 0, costPerStat: 0 }, // +1 ponto por treino; gasta energia (vigor), não stamina
 
   // Probabilidade de sucesso = S²/(S²+D²), entre 5% e 95%.

@@ -11,6 +11,7 @@ import { CFG, T } from './engine/config.js';
 import * as E from './engine/engine.js';
 import { cryptoRng } from './engine/rng.js';
 import { localParts, lisbonToUtc, seasonAt, seasonBounds } from './engine/time.js';
+import * as MW from './engine/mundo.js';
 
 const PORT = +(process.env.PORT || 3170);
 const DATA = process.env.DATA || process.env.STATE_DIRECTORY || './dados';
@@ -25,7 +26,7 @@ const RONDA_TESTE = process.env.PRIMEIRA_RONDA ? dataDe(process.env.PRIMEIRA_RON
 // Épocas de 28 dias a contar da sexta 13/11/2026 às 21:00 de Lisboa (PRIMEIRA_EPOCA=AAAA-MM-DD muda-a, para testes)
 const ANCORA = dataDe(process.env.PRIMEIRA_EPOCA || process.env.PRIMEIRA_RONDA || '2026-11-13');
 const rng = cryptoRng();
-const VERSAO = 60;   // sobe quando o servidor muda, para se confirmar de fora que a versão nova já está a correr
+const VERSAO = 61;   // sobe quando o servidor muda, para se confirmar de fora que a versão nova já está a correr
 const ATOS_3S = +(process.env.ATOS_3S || 15), ATOS_MIN = +(process.env.ATOS_MIN || 400); // ações por conta: 15 em 3 s, 400 por minuto
 
 // ---------- relógio que nunca anda para trás ----------
@@ -168,6 +169,17 @@ function contarAcao(now, a, r, p, alvo, resp0, alvoResp0) {
   }
   if (Object.values(v).some((x) => x)) contarDia(now, p.id, v);
 }
+// mundo ligado: a stamina gasta na rua conta para a criminalidade de Lisboa; o dinheiro gasto conta para a receita da empresa do ramo
+const GASTO = { detox: 'farma', cure: 'farma', medic: 'farma', medicFor: 'farma', buy: 'armas', gear: 'armas', repair: 'armas',
+  refill: 'noite', drug: 'noite', hooker: 'noite', broVisit: 'noite', clubBuy: 'noite', broVisitAt: 'noite', clubBuyAt: 'noite' };
+function contarMundo(a, r, delta) {
+  if (a.type === 'crime' || a.type === 'crimeAll') { const c = CFG.crimes[int(a.k)]; if (c) mundoAcc('lx', c.e * (a.type === 'crimeAll' ? r.n || 0 : 1)); }
+  else if (a.type === 'attack') mundoAcc('lx', CFG.world.lx.fight);
+  else if (a.type === 'deal') mundoAcc('lx', CFG.deal.step);
+  else if (a.type === 'casino' && (r.g !== 'bj' || r.done)) mundoAcc('casino', -casinoNet(r));
+  else if (a.type === 'port' && delta < 0) mundoAcc('docas', Math.round((-delta * CFG.world.portBp) / 10000));
+  else if (GASTO[a.type] && delta < 0) mundoAcc(GASTO[a.type], -delta);
+}
 // caixa: o golpe separa o que se levou das balas; o resto conta pela diferença no dinheiro de quem agiu
 // A lavagem fica numa linha própria (saída): a fonte conta o que entrou antes dela.
 function contarCaixa(now, a, r, delta) {
@@ -261,29 +273,64 @@ function jogadorDe(conta, now, w) {
   return p;
 }
 
-// ---------- bolsa: um mercado por ronda, igual para todos ----------
-// Os preços avançam um passo de 10 em 10 minutos, contados desde o início da ronda. Se o servidor esteve parado, faz os passos em falta.
+// ---------- bolsa e mundo ligado (passo 6) ----------
+// Um mercado igual para todos, com o mundo dentro (bolsa.w): Lisboa, empresas, histórias e o que os jogadores fizeram desde a
+// última edição. Duas coisas fazem o tempo andar, pela ordem em que acontecem: os passos de 10 em 10 minutos (o preço anda para
+// a abertura) e as edições do jornal (03h, 09h, 15h e 21h). Se o servidor esteve parado, faz o que faltou, pela mesma ordem.
 db.exec('CREATE TABLE IF NOT EXISTS bolsa (ronda INTEGER PRIMARY KEY, dados TEXT NOT NULL)');
 const qb = { ler: db.prepare('SELECT dados FROM bolsa WHERE ronda = ?'), gravar: db.prepare('INSERT INTO bolsa (ronda, dados) VALUES (?, ?) ON CONFLICT(ronda) DO UPDATE SET dados = excluded.dados') };
-let bolsa = null, bolsaRonda = null;
+let bolsa = null, bolsaRonda = null, bolsaSuja = false;
 function bolsaDe(w, now) {
   if (bolsaRonda !== w.n) {
     const row = qb.ler.get(w.n);
     bolsa = row ? JSON.parse(row.dados) : { ...E.newMarket(), hist: [] };
     if (!Array.isArray(bolsa.hist) || !bolsa.hist.length) bolsa.hist = [bolsa.prices.slice()];
+    // o mercado antigo (preços ao acaso) passa a ter empresas: cada uma começa no preço a que estava, e quem tinha ações fica com elas
+    if (!bolsa.w) { bolsa.w = MW.newWorld(bolsa.prices, Math.max(now, w.start)); bolsaSuja = true; }
     bolsaRonda = w.n;
   }
   const S = CFG.stocks, alvo = Math.max(0, Math.floor((Math.min(now, w.playEnd) - w.start) / S.tickMs));
-  if (bolsa.tick >= alvo) return bolsa;
-  while (bolsa.tick < alvo) {
-    const faliu = E.marketTick(bolsa, rng), t = w.start + bolsa.tick * S.tickMs;
-    if (w.n === ronda) { try { limitesDaBolsa(t, now); } catch (e) { console.error('limites da bolsa', e.message); } }   // nunca trava o mercado nem o pedido de quem o fez avançar
+  let mexeu = false;
+  for (;;) {
+    const tt = bolsa.tick < alvo ? w.start + (bolsa.tick + 1) * S.tickMs : Infinity, te = MW.edStart(bolsa.w.ed + 1);
+    if (te <= now && te <= tt) {
+      const ed = bolsa.w.ed + 1, r = MW.runEdition(bolsa, ed, rng);
+      if (w.n === ronda) { try { dividendos(r.div, te, now); } catch (e) { console.error('dividendos', e.message); } }
+      if (w.n === ronda && now - te < T.HOUR) for (const k of r.bust) noticia(te, { k: 'stockBust', c: S.list[k].id });
+      mexeu = true; continue;
+    }
+    if (tt === Infinity || tt > now) break;
+    MW.priceTick(bolsa, rng);
+    if (w.n === ronda) { try { limitesDaBolsa(tt, now); } catch (e) { console.error('limites da bolsa', e.message); } }   // nunca trava o mercado nem o pedido de quem o fez avançar
     bolsa.hist.push(bolsa.prices.slice()); if (bolsa.hist.length > S.histMax + 1) bolsa.hist.shift();
-    if (w.n === ronda && now - t < T.HOUR) for (const k of faliu) noticia(t, { k: 'stockBust', c: S.list[k].id });   // só as falências recentes vão para o jornal
+    mexeu = true;
   }
-  qb.gravar.run(w.n, JSON.stringify(bolsa));
+  if (mexeu || bolsaSuja) { qb.gravar.run(w.n, JSON.stringify(bolsa)); bolsaSuja = false; }
   return bolsa;
 }
+// o que os jogadores fazem entra nas contas da edição (fica em memória e grava-se de 30 em 30 segundos e em cada edição)
+function mundoAcc(kind, x) { if (!bolsa || !bolsa.w || !x) return; MW.accAdd(bolsa.w, kind, x); bolsaSuja = true; }
+const gravarBolsa = () => { try { if (bolsa && bolsaSuja && bolsaRonda !== null) { qb.gravar.run(bolsaRonda, JSON.stringify(bolsa)); bolsaSuja = false; } } catch (e) { console.error('gravar bolsa', e.message); } };
+setInterval(gravarBolsa, 30_000).unref();
+// ao desligar (atualização do servidor), as contas da edição a meio não se perdem
+for (const sinal of ['SIGTERM', 'SIGINT']) process.once(sinal, () => { gravarBolsa(); process.exit(0); });
+// dividendos: em cada edição, a quem tem ações das empresas que pagaram (também a quem está fora do jogo)
+function dividendos(div, t, now) {
+  if (!div.some((x) => x > 0)) return;
+  for (const [conta, p] of jogadores) {
+    try {
+      if (!Array.isArray(p.stk)) continue;
+      let cents = 0; const list = [];
+      p.stk.forEach((h, k) => { if (h && h.n > 0 && h.gen === bolsa.gen[k] && div[k] > 0) { cents += h.n * div[k]; list.push(S_ID(k)); } });
+      const money = Math.floor(cents / 100);
+      if (money <= 0) continue;
+      p.cash += money;
+      guardar(p, now); caixa(t, 'dividendos', money, 0);
+      evento(conta, t, { k: 'stDiv', money, cs: list });
+    } catch (e) { console.error('dividendos', conta, e.message); }
+  }
+}
+const S_ID = (k) => CFG.stocks.list[k].id;
 // limites de venda (alvo de lucro e travão de perda): a seguir a cada passo vendem-se as posições que os tocaram, ao preço desse passo,
 // também de quem está fora do jogo. Grava-se logo e fica um aviso nos eventos do jogador.
 function limitesDaBolsa(t, now) {
@@ -299,7 +346,15 @@ function limitesDaBolsa(t, now) {
 }
 function vistaBolsa(w, now) {
   const m = bolsaDe(w, now), S = CFG.stocks;
-  return { now, tick: m.tick, nextAt: w.start + (m.tick + 1) * S.tickMs, prices: m.prices, gen: m.gen, hist: S.list.map((_, k) => m.hist.map((row) => row[k])) };
+  return { now, tick: m.tick, nextAt: w.start + (m.tick + 1) * S.tickMs, prices: m.prices, gen: m.gen, hist: S.list.map((_, k) => m.hist.map((row) => row[k])),
+    ed: m.w.ed, edNext: MW.edStart(m.w.ed + 1), co: MW.companyView(m).map((c) => (c.st ? { ...c, st: { ...c.st, dueAt: MW.edStart(c.st.due), rum: c.st.rum.map(([ed, said, rel]) => [MW.edStart(ed), said, rel]) } } : c)) };
+}
+// o mundo para o jornal: as notícias das últimas edições e Lisboa
+function vistaMundo(w, now) {
+  if (w.phase !== 'play') return null;
+  const m = bolsaDe(w, now);
+  const arts = m.w.arts.slice(-8).map((e) => ({ ed: e.ed, at: MW.edStart(e.ed), a: e.a.map((x) => (x.due ? { ...x, dueAt: MW.edStart(x.due) } : x)) }));
+  return { ed: m.w.ed, edNext: MW.edStart(m.w.ed + 1), edAt: MW.edStart(m.w.ed), lx: { crime: m.w.lx.crime, press: m.w.lx.press, hist: m.w.lx.hist }, bustBp: CFG.bustBp, arts };
 }
 
 // ---------- vista do jogador para o browser ----------
@@ -309,6 +364,7 @@ function vista(p, now) {
   const wm = mundo(now), mk = wm.phase === 'play' ? bolsaDe(wm, now) : null;
   return {
     stk: mk ? E.stockView(p, mk) : CFG.stocks.list.map(() => ({ n: 0, cost: 0, value: 0, tp: 0, sl: 0 })), stockCap: E.stockCap(p),
+    bustBp: E.bustChanceBp(p, now, mk ? mk.w.lx.press : 50), lx: mk ? { crime: mk.w.lx.crime, press: mk.w.lx.press, ed: mk.w.ed, edNext: MW.edStart(mk.w.ed + 1) } : null,
     name: nomeDe(p.id),
     stats: p.stats, energy: p.energy, energyT: p.energyT, energyMax: E.energyMax(p), vigor: p.vigor, vigorT: p.vigorT,
     addiction: p.addiction, addictionT: p.addictionT, addictionCap: E.addictionCap(p),
@@ -347,7 +403,7 @@ function cfgPublica() {
   return {
     energy: CFG.energy, vigor: CFG.vigor, street: CFG.street, refillBar: CFG.refillBar, deal: CFG.deal, jobs: CFG.jobs, courses: CFG.courses, skills: CFG.skills, addiction: CFG.addiction, train: CFG.train, crimes: CFG.crimes, drugs: CFG.drugs,
     biz: CFG.biz.map(({ id, price, perH, resp, stat, raid, toBank, drug }) => ({ id, price, perH, resp, stat, raid, toBank, drug: drug ? CFG.drugs.findIndex((x) => x.id === drug) : -1 })), accountant: CFG.accountant,
-    bizMax: CFG.bizMax, storageMs: CFG.storageMs, port: { ...CFG.port, ships: CFG.port.ships.map((s) => ({ ...s, drug: CFG.drugs.findIndex((x) => x.id === s.drug) })) }, air: CFG.air, goods: CFG.goods, venue: CFG.venue, detox: CFG.detox, stocks: CFG.stocks, slots: CFG.slots, gear: CFG.gear, bullets: CFG.bullets, loot: CFG.loot, ops: CFG.ops, opSteps: CFG.opSteps, retainer: CFG.retainer, jail: CFG.jail, launder: CFG.launder, tools: CFG.tools, gweapons: CFG.gweapons, guards: CFG.guards, hitman: CFG.hitman,
+    bizMax: CFG.bizMax, storageMs: CFG.storageMs, port: { ...CFG.port, ships: CFG.port.ships.map((s) => ({ ...s, drug: CFG.drugs.findIndex((x) => x.id === s.drug) })) }, air: CFG.air, goods: CFG.goods, venue: CFG.venue, detox: CFG.detox, stocks: CFG.stocks, slots: CFG.slots, gear: CFG.gear, bullets: CFG.bullets, loot: CFG.loot, ops: CFG.ops, opSteps: CFG.opSteps, retainer: CFG.retainer, jail: CFG.jail, launder: CFG.launder, world: CFG.world, tools: CFG.tools, gweapons: CFG.gweapons, guards: CFG.guards, hitman: CFG.hitman,
     pvp: CFG.pvp, bank: CFG.bank, luxury: CFG.luxury, levels: CFG.levels, crit: CFG.crit, unlockBp: CFG.unlockBp,
     bustBp: CFG.bustBp, crimeAllMax: CFG.crimeAllMax, casino: { minBet: CFG.casino.minBet, buyMaxMult: CFG.casino.buyMaxMult, red: CFG.casino.red, dice: CFG.casino.dice, wheel: { segs: CFG.casino.wheel.segs, spots: CFG.casino.wheel.spots, topMult: CFG.casino.wheel.topMult.map(([m]) => m), louca: CFG.casino.wheel.louca }, slots: Object.fromEntries(Object.entries(CFG.casino.slots).map(([k, g]) => [k, { kind: g.kind, cols: g.cols, rows: g.rows, min: g.min, nsym: g.nsym, trig: g.trig, pay: g.pay, scatPay: g.scatPay, free: g.free, fs: g.fs, retrig: g.retrig, buy: g.buy, superBuy: g.superBuy, max: g.max, accFree: g.accFree, accAll: g.accAll, orbBase: g.orbBase }])) }, gang: CFG.gang, classes: CFG.classes, classChange: CFG.classChange, avatars: CFG.avatars, hookers: CFG.hookers, house: CFG.house, mastery: CFG.mastery, missions: CFG.missions.length, start: CFG.start,
     round: { playDays: CFG.round.playDays, noPvpMs: CFG.round.noPvpMs }, season: CFG.season,
@@ -884,6 +940,7 @@ function pagarMesa(g, c, now) {
   for (const [conta, b, win] of feitos) {
     b.win = win; m.last.set(conta, { id: c.id, bets: b.bets, total: b.total, win, flap: b.flap });
     const net = win - b.total;
+    mundoAcc('casino', -net);
     if (net >= CFG.casino.newsMin) noticia(now, { k: 'casino', name: nomeDe(conta), g, money: net });
     else if (-net >= CFG.casino.newsMin) noticia(now, { k: 'casinoLoss', name: nomeDe(conta), g, money: -net });
   }
@@ -1079,7 +1136,7 @@ function agir(conta, corpo, now) {
   if (w.phase !== 'play') throw new E.GameError('ROUND_CLOSED');
   carregarRonda(w.n); epocaEmDia(now); resolverOps(now);
   const p = jogadorDe(conta, now, w);
-  const world = { start: w.start, playEnd: w.playEnd };
+  const world = { start: w.start, playEnd: w.playEnd, press: w.phase === 'play' ? bolsaDe(w, now).w.lx.press : 50 };
   const a = corpo || {};
   let r, alvo = null, alvoResp0 = 0, mesa = null;
   const ctx = { outros: [], ops: [], depois: [] };   // o que as gangues têm de gravar no mesmo passo
@@ -1225,6 +1282,8 @@ function agir(conta, corpo, now) {
     for (const f of ctx.ops) f();
     if (mesa) { if (mesa.bets) qm.aposta.run(mesa.g, mesa.c.id, conta, ronda, JSON.stringify(mesa.bets), mesa.total); else qm.tirar.run(mesa.g, mesa.c.id, conta); }
     contarAcao(now, a, r, p, alvo, resp0, alvoResp0);
+    try { contarMundo(a, r, dinheiro(p) - din0); } catch (e) { console.error('mundo', e.message); }
+    if (a.type === 'stockBuy' || a.type === 'stockSell') bolsaSuja = true;   // a ordem empurrou o preço: grava-se com o resto
     const avPago = ((p.avN || 0) - av0) * CFG.retainer.day;
     if (avPago > 0) caixa(now, 'avenca', 0, avPago);
     contarCaixa(now, a, r, dinheiro(p) - din0 + avPago);
@@ -1398,7 +1457,7 @@ async function tratar(req, res) {
   if (req.method === 'GET' && path === '/api/config') return enviar(res, 200, cfgPublica());
   if (req.method === 'GET' && path === '/api/news') {
     const w = mundo(now); carregarRonda(w.n);
-    return enviar(res, 200, { now, feed: ultimas(), today: { dia: diaDe(now), items: manchetes(diaDe(now), now) }, yesterday: { dia: ontemDe(now), items: manchetes(ontemDe(now), now) } });
+    return enviar(res, 200, { now, feed: ultimas(), today: { dia: diaDe(now), items: manchetes(diaDe(now), now) }, yesterday: { dia: ontemDe(now), items: manchetes(ontemDe(now), now) }, mundo: vistaMundo(w, now) });
   }
 
   if (req.method === 'POST' && (path === '/api/register' || path === '/api/login')) {

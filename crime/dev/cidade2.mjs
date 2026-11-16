@@ -76,6 +76,23 @@ muda('Planeador', (e) => { e.respect = e.peakRespect = L(40) + 200; e.cash = 61_
   e.op = { i: 2, t0: T - 50 * 3600e3, ready: T - 2 * 3600e3, recon: true, crew: false, bribe: false, contact: true, paid: 5_000 + 350 }; e.ilegal = 40_000; e.sk = { furto: 3000, assalto: 4200, burla: 0, trafico: 0, conducao: 0, armas: 0 }; });
 muda('Preso', (e) => { e.respect = e.peakRespect = L(36) + 100; e.cash = 3_200; e.bank = 1_000; e.energy = 70; e.vigor = 40;
   e.jailUntil = T + 50 * 60e3; e.jailTier = 102; e.jailT0 = T - 10 * 60e3; e.jf = 1; e.contacts = 1; e.opPause = T + 23 * 3600e3; e.ilegal = 160_000; });
+// passo 6: um mundo com 12 edições já corridas (Lisboa agitada, notícias das empresas) e o Rico com ações da Farma e do Casino
+{
+  const MW = await import('../engine/mundo.js'), { seededRng } = await import('../engine/rng.js'), { CFG } = await import('../engine/config.js');
+  const m = { prices: CFG.stocks.list.map((x) => x.base), gen: CFG.stocks.list.map(() => 0), tick: 0, hist: [] };
+  m.hist = [m.prices.slice()];
+  m.w = MW.newWorld(m.prices, T - 12 * 6 * 3600e3);
+  const rng = seededRng(42), e0 = m.w.ed;
+  for (let i = 1; i <= 12; i++) {
+    MW.accAdd(m.w, 'lx', i < 8 ? 4000 + i * 900 : 1500); MW.accAdd(m.w, 'farma', 30000 + i * 5000); MW.accAdd(m.w, 'casino', i === 9 ? -150000 : 20000);
+    if (i === 6) m.w.co[1].st = { s: 'ensaio', ed0: e0 + 6, due: e0 + 15, p: 6200, ok: true, up: 3300, dn: 3800, rum: [], inv: false };
+    MW.runEdition(m, e0 + i, rng);
+  }
+  const f = m.w.co[1]; if (f.st) { f.st.rum.push([e0 + 10, true, 7000], [e0 + 11, false, 5800]); f.st.inv = true; }
+  db.prepare('CREATE TABLE IF NOT EXISTS bolsa (ronda INTEGER PRIMARY KEY, dados TEXT NOT NULL)').run();
+  db.prepare('INSERT OR REPLACE INTO bolsa (ronda, dados) VALUES (1000, ?)').run(JSON.stringify(m));
+  muda('Rico', (e) => { e.stk[1] = { n: 2000, cost: 52_000, gen: 0 }; e.stk[2] = { n: 300, cost: 37_000, gen: 0 }; });
+}
 db.close();
 s = await arrancar();
 writeFileSync(join(DIR, 'contas.json'), JSON.stringify({ base: BASE, cookies, pid: s.pid }, null, 1));

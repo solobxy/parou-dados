@@ -104,6 +104,7 @@ function react(type, out, before, opts) {
     const ok = r.all ? r.wins > 0 : r.success, crit = r.all ? r.crits > 0 : r.crit;
     fx.vibrate(r.busted ? [40, 60, 40] : ok ? 12 : 30); fx.sfx(r.busted ? 'bust' : ok ? (crit ? 'crit' : 'cash') : 'fail');
   } else if (type === 'drug' || type === 'stockUse' || type === 'clubBuy') fx.sfx('refill');
+  else if (type === 'stockBuy') { toast(t('stBought', { n: num(r.n), x: t('st_' + S.cfg.stocks.list[r.k].id), m: money(r.paid) })); fx.sfx('buy'); }
   else if (type === 'stockSell') { toast(t('stSold', { m: money(r.got), p: (r.profit >= 0 ? '+' : '−') + money(Math.abs(r.profit)) }), r.profit < 0); fx.sfx(r.profit >= 0 ? 'cash' : 'fail'); }
   else if (type === 'venueCollect') { toast(t('got', { m: money(r.club + r.bro) })); fx.sfx('cash'); }
   else if (type === 'gangBizCollect') { if (r.money > 0) { toast(t('got', { m: money(r.money) })); fx.sfx('cash'); } }
@@ -608,7 +609,47 @@ async function loadNews() {
 // ===== O jornal «A Sirene» =====
 // Uma folha de papel dentro do jogo: cabeçalho, manchete em letras grandes e quatro páginas. Escreve-se com o que já existe
 // (o título do dia de cada jogador, a última hora e a bolsa). As notícias do governo e das empresas entram com o motor de acontecimentos.
-const PG = ['front', 'street', 'econ', 'live'], PGL = { front: 'pgFront', street: 'pgStreet', econ: 'pgEcon', live: 'nwLive' };
+const PG = ['front', 'country', 'street', 'econ', 'live'], PGL = { front: 'pgFront', country: 'pgCountry', street: 'pgStreet', econ: 'pgEcon', live: 'pgLive' };
+// ---- as edições do mundo (passo 6): o que cada uma trouxe, por ordem de peso ----
+const coName = (id) => t('st_' + id);
+const sPct = (bp) => (bp >= 0 ? '+' : '−') + pctOf(Math.abs(bp)) + '%';
+function artLine(a) {
+  switch (a.k) {
+    case 'stAnn': return coName(a.c) + ': ' + t('sto_' + a.s) + '. ' + t('stDue', { d: edHour(a.dueAt) }) + '.';
+    case 'stRum': return t('arRum', { x: coName(a.c), y: t('sto_' + a.s), r: pctOf(a.rel) + '%', z: t(a.said ? 'stRumOk' : 'stRumBad') });
+    case 'stInv': return t('arInv', { x: coName(a.c), y: t('sto_' + a.s), p: pctOf(a.p) + '%' });
+    case 'stOut': return t('arOut', { x: coName(a.c), y: t((a.ok ? 'stoOk_' : 'stoBad_') + a.s), p: sPct(a.pct) });
+    case 'stPanic': return t('arPanic', { x: coName(a.c), p: sPct(a.pct) });
+    case 'stEuph': return t('arEuph', { x: coName(a.c), p: sPct(a.pct) });
+    case 'stBust': return t('arBust', { x: coName(a.c) });
+    default: return null;
+  }
+}
+const DESK = ['stBust', 'stOut', 'stPanic', 'stEuph', 'stAnn', 'stInv', 'stRum'];
+function deskList(Wm, max) {
+  const out = [];
+  for (const e of [...(Wm?.arts || [])].reverse()) for (const a of e.a.filter((x) => DESK.includes(x.k)).sort((x, y) => DESK.indexOf(x.k) - DESK.indexOf(y.k))) { out.push([e.at, a]); if (out.length >= max) return out; }
+  return out;
+}
+// hora da edição: só a hora se foi hoje, senão o dia e a hora («15/11 21:00»)
+const edTime = (t0) => { const o = { timeZone: 'Europe/Lisbon' }, d = new Date(t0), loc = lang() === 'pt' ? 'pt-PT' : 'en-GB', hm = d.toLocaleTimeString(loc, { ...o, hour: '2-digit', minute: '2-digit' });
+  return d.toLocaleDateString(loc, o) === new Date(now()).toLocaleDateString(loc, o) ? hm : d.toLocaleDateString(loc, { ...o, day: '2-digit', month: '2-digit' }) + '\u00a0' + hm; };
+const deskRow = ([at, a]) => h('li', null, h('span', { class: 'ptime' }, edTime(at)), h('span', null, h('b', null, t('ar_' + a.k) + '. '), artLine(a)));
+const lxLine = (a) => t(a.d >= 2 ? 'lxUp' : a.d <= -2 ? 'lxDown' : 'lxSame', { n: a.crime });
+const lxBustNow = (Wm) => Math.min(9500, Math.floor((Wm.bustBp * (S.cfg.world.lx.bustLo + S.cfg.world.lx.bustPer * Wm.lx.press)) / 10000));
+function paperCountry() {
+  const Wm = S.news?.mundo;
+  if (!Wm || !S.cfg.world) return [h('p', { class: 'pempty' }, t('loading'))];
+  const L = Wm.lx, prev = L.hist.length > 1 ? L.hist[L.hist.length - 2] : null, crimes = L.hist.map((x) => x[1]);
+  const fact = (lbl, v, was) => h('div', { class: 'lxf' }, h('span', null, lbl), h('b', { class: 'num' }, String(v), h('i', null, ' ' + t('lxOf'))), was != null && was !== v ? h('small', { class: 'num ' + (v > was ? 'c-red' : 'c-cash') }, (v > was ? '▲ ' : '▼ ') + Math.abs(v - was)) : null);
+  const lxArts = [...Wm.arts].reverse().map((e) => [e.at, e.a.find((x) => x.k === 'lx')]).filter(([, a]) => a).slice(0, 6);
+  return [h('section', { class: 'psec lxs' }, h('h4', null, t('lxT')),
+    h('div', { class: 'lxfs' }, fact(t('lxCrime'), L.crime, prev ? prev[1] : null), fact(t('lxPress'), L.press, prev ? prev[2] : null)),
+    crimes.length > 1 ? h('div', { class: 'lxchw' }, h('span', { class: 'small' }, t('lxChartT', { n: crimes.length })), stChart(crimes, 'mini lxch', 320, 44)) : null,
+    h('p', null, t('lxBust', { p: L.press, b: pctOf(lxBustNow(Wm)) + '%' })),
+    h('p', { class: 'small pnote' }, t('lxHow'))),
+    lxArts.length ? h('section', { class: 'psec' }, h('h4', null, t('lxEdsT')), h('ul', { class: 'plive' }, lxArts.map(([at, a]) => h('li', null, h('span', { class: 'ptime' }, edTime(at)), h('span', null, lxLine(a)))))) : null];
+}
 const kick = (k) => t('hl_' + k + '_t', { a: '' }).replace(/[:\s]+$/, '');   // «Procurado: {a}» sem o nome: é o antetítulo
 const paperDate = () => new Date(now()).toLocaleDateString(lang() === 'pt' ? 'pt-PT' : 'en-GB', { weekday: 'short', day: 'numeric', month: 'long', timeZone: 'Europe/Lisbon' });
 const toPage = (pg, alvo) => { S.newsPg = pg; render(); const e = alvo && document.querySelector(alvo); if (e) e.scrollIntoView(); else window.scrollTo({ top: 0 }); };
@@ -634,16 +675,24 @@ function story(it, dia, kind) {
 function paperFront(N) {
   const hoje = N.today.items.length > 0, day = hoje ? N.today : N.yesterday, its = day.items, out = [];
   // sem notícia não há «última hora»
-  if (!its.length) out.push(h('article', { class: 'st st-lead' }, h('h2', null, t('paperCalmH')), h('div', { class: 'stb' }, h('p', null, t('paperCalm')))));
-  else {
+  const calmEd = N.mundo && N.mundo.arts.length && deskList({ arts: N.mundo.arts.slice(-1) }, 1).length;
+  if (!its.length && !calmEd) out.push(h('article', { class: 'st st-lead' }, h('h2', null, t('paperCalmH')), h('div', { class: 'stb' }, h('p', null, t('paperCalm')))));
+  else if (its.length) {
     if (!hoje) out.push(h('p', { class: 'pnote' }, t('paperYest')));
     out.push(story(its[0], day.dia, 'lead'));
     if (its.length > 1) out.push(h('div', { class: 'st2' + (its.length === 2 ? ' one' : '') }, its.slice(1, 3).map((it) => story(it, day.dia, 'side'))));
     if (its.length > 3) out.push(h('button', { class: 'pmore', on: { click: () => { S.newsSeg = hoje ? 'today' : 'yesterday'; toPage('street', '.pbriefs'); } } }, t('paperMore', { n: its.length - 3 }) + ' →'));
   }
+  const Wm = N.mundo, last = Wm && Wm.arts.length ? Wm.arts[Wm.arts.length - 1] : null;
+  if (last) {
+    const lx = last.a.find((x) => x.k === 'lx'), top = deskList({ arts: [last] }, 2);
+    out.push(h('section', { class: 'psec' }, h('h4', null, t('edAtH', { h: new Date(last.at).toLocaleTimeString(lang() === 'pt' ? 'pt-PT' : 'en-GB', { timeZone: 'Europe/Lisbon', hour: '2-digit', minute: '2-digit' }) })),
+      h('ul', { class: 'plive' }, ...top.map(deskRow), lx ? h('li', null, h('span', { class: 'ptime' }, t('lxShort')), h('span', null, lxLine(lx) + '. ' + t('lxBust', { p: lx.press, b: pctOf(lxBustNow(Wm)) + '%' }))) : null),
+      more('country', t('pgCountry'))));
+  }
   const M = S.stocks;
   if (M && M.prices.length) out.push(h('section', { class: 'psec' }, h('h4', null, t('ecTitle')),
-    h('div', { class: 'pquo' }, S.cfg.stocks.list.map((c, k) => h('span', { class: M.prices[k] > M.hist[k][0] ? 'pup' : M.prices[k] < M.hist[k][0] ? 'pdn' : '' }, h('b', null, c.id.toUpperCase()), stPct(M.prices[k], M.hist[k][0])))),
+    h('div', { class: 'pquo' }, S.cfg.stocks.list.map((c, k) => h('span', { class: M.prices[k] > M.hist[k][0] ? 'pup' : M.prices[k] < M.hist[k][0] ? 'pdn' : '' }, h('b', null, list('stCodes')[k]), stPct(M.prices[k], M.hist[k][0])))),
     more('econ', t('pgEcon'))));
   const f = (S.feed || []).slice(0, 3);
   if (f.length) out.push(h('section', { class: 'psec' }, h('h4', null, t('nwLive')), h('ul', { class: 'plive' }, f.map(liveRow)), more('live', t('paperAll'))));
@@ -667,16 +716,17 @@ function paperEcon() {
       h('div', { class: 'stb' }, h('p', null, t('ecLede', { p: stMoney(top.pr), q: stMoney(top.h0) })))) : null,
     h('section', { class: 'psec' }, h('h4', null, t('ecTitle')),
       h('table', { class: 'pmkt' }, h('tbody', null, rows.map((r) => h('tr', { class: r.pct >= 0 ? 'pup' : 'pdn' },
-        h('th', { scope: 'row' }, t('st_' + r.c.id), h('small', null, r.c.id.toUpperCase())), h('td', { class: 'pch' }, stChart(M.hist[r.k], 'mini', 96, 34)),
+        h('th', { scope: 'row' }, t('st_' + r.c.id), h('small', null, list('stCodes')[r.k])), h('td', { class: 'pch' }, stChart(M.hist[r.k], 'mini', 96, 34)),
         h('td', { class: 'num pv' }, stMoney(r.pr)), h('td', { class: 'num pp' }, stPct(r.pr, r.h0))))))),
-    h('section', { class: 'psec' }, h('h4', null, t('ecDesk')), desk.length ? h('ul', { class: 'plive' }, desk.map(liveRow)) : h('p', { class: 'pempty' }, t('ecNone'))),
+    h('section', { class: 'psec' }, h('h4', null, t('edDesk')), deskList(S.news?.mundo, 12).length ? h('ul', { class: 'plive' }, deskList(S.news.mundo, 12).map(deskRow)) : h('p', { class: 'pempty' }, t('edNone'))),
+    desk.length ? h('section', { class: 'psec' }, h('h4', null, t('ecDesk')), h('ul', { class: 'plive' }, desk.map(liveRow))) : null,
     h('button', { class: 'pbtn', on: { click: () => go('bolsa') } }, t('ecGo'))];
 }
 function screenNews() {
   const N = S.news, pg = PG.includes(S.newsPg) ? S.newsPg : 'front', ep = season(), D = S.cfg.season?.days || 28;
   const dia = ep ? Math.min(D, Math.max(1, Math.floor((now() - ep.start) / 864e5) + 1)) : 1;
   const f = S.feed || [];
-  const body = !N ? [h('p', { class: 'pempty' }, t('loading'))] : pg === 'front' ? paperFront(N) : pg === 'street' ? paperStreet(N) : pg === 'econ' ? paperEcon()
+  const body = !N ? [h('p', { class: 'pempty' }, t('loading'))] : pg === 'front' ? paperFront(N) : pg === 'country' ? paperCountry() : pg === 'street' ? paperStreet(N) : pg === 'econ' ? paperEcon()
     : [f.length ? h('ul', { class: 'plive first' }, f.map(liveRow)) : h('p', { class: 'pempty' }, t('nwEmpty'))];
   return [h('div', { class: 'phead' }, h('div', { class: 'pbar pj' }, h('button', { class: 'back', 'aria-label': t('p_' + upOf('news')), on: { click: () => go(upOf('news')) } }, h('span', { 'aria-hidden': 'true' }, '←')), h('h1', { class: 'sr' }, t('paper')))),
     h('div', { class: 'paper' },
@@ -855,7 +905,7 @@ function screenRob() {
       h('div', null, h('span', null, t('lootAvg')), h('b', { class: 'num c-cash' }, money(media))),
       h('div', null, h('span', null, t('chance')), h('b', { class: 'num ' + chanceCls(c.p) }, pct(c.p)))),
     heat < 10000 ? h('p', { class: 'jheat' }, t('jobHeat', { p: heatPct(heat), u: st.used })) : null,
-    h('p', { class: 'jrisk' }, t('jobRisk', { m: money(c.fine), t: c.jailMin })),
+    h('p', { class: 'jrisk' }, me.bustBp ? t('jobRiskP', { b: pctOf(me.bustBp) + '%', p: me.lx ? me.lx.press : 50, m: money(c.fine), t: c.jailMin }) : t('jobRisk', { m: money(c.fine), t: c.jailMin })),
     noGun ? gunFix(me, L, c, gs)
       : h('button', { class: 'btn rob block big', disabled: !!b || L.energy < c.e, on: { click: (e) => act('crime', { k }, { el: e.currentTarget }) } }, t('robBtn')),
     !b && !noGun && Math.floor(L.energy / c.e) >= 2 ? h('button', { class: 'btn block robAll', on: { click: (e) => act('crimeAll', { k }, { el: e.currentTarget }) } },
@@ -1359,7 +1409,25 @@ function screenMyBro() {
 }
 // ---------- bolsa ----------
 const stMoney = (c) => { const v = (c / 100).toLocaleString(lang() === 'pt' ? 'pt-PT' : 'en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2, useGrouping: 'always' }); return lang() === 'pt' ? v + '\u00a0€' : '€' + v; };
-const stQuote = (price, n) => { const g = Math.ceil((n * price) / 100); return g + Math.ceil((g * S.cfg.stocks.feeBp) / 10000); };
+// o empurrão de uma ordem no preço (igual ao do servidor): proporcional ao tamanho, até ao teto; compra-se e vende-se já ao preço empurrado
+const stImp = (k, gross) => { const W = S.cfg.world; return W ? Math.min(W.impMaxBp, Math.floor((gross * 10000) / W.co[S.cfg.stocks.list[k].id].liq)) : 0; };
+const stExec = (price, k, n, side) => { const imp = stImp(k, Math.floor((n * price) / 100)); return side > 0 ? Math.ceil((price * (10000 + imp)) / 10000) : Math.max(1, Math.floor((price * (10000 - imp)) / 10000)); };
+const stQuote = (price, n, k) => { const ex = k == null ? price : stExec(price, k, n, 1), g = Math.ceil((n * ex) / 100); return g + Math.ceil((g * S.cfg.stocks.feeBp) / 10000); };
+// o que se sabe de uma empresa: a notícia pendente (comunicado, rumores, investigação) e o dividendo
+const edHour = (t0) => new Date(t0).toLocaleString(lang() === 'pt' ? 'pt-PT' : 'en-GB', { timeZone: 'Europe/Lisbon', weekday: 'short', hour: '2-digit', minute: '2-digit' });
+function stStory(c, co) {
+  if (!co) return null;
+  const st = co.st, rows = [];
+  if (st) {
+    rows.push(h('p', { class: 'stsN' }, h('b', null, t('ar_stAnn') + '. '), t('sto_' + st.s) + '. ' + t('stDue', { d: edHour(st.dueAt) }) + '.'));
+    if (st.p != null) rows.push(h('p', { class: 'small' }, t('stInvg', { p: pctOf(st.p) + '%' })));
+    for (const [at, said, rel] of [...(st.rum || [])].reverse()) rows.push(h('p', { class: 'small' }, h('span', { class: 'muted num' }, edHour(at) + ' · '), t('stRum', { r: pctOf(rel) + '%', x: t(said ? 'stRumOk' : 'stRumBad') })));
+  } else rows.push(h('p', { class: 'small muted' }, t('stNoStory')));
+  const W = S.cfg.world, cc = W && W.co[c.id];
+  const mine = S.st.me.stk[S.cfg.stocks.list.indexOf(c)], got = co.div && mine && mine.n ? Math.floor((mine.n * co.div) / 100) : 0;
+  if (cc && cc.r0 > 0) rows.push(h('p', { class: 'small muted' }, (co.div ? t('stDivLast', { m: stMoney(co.div) }) + (got ? ' (' + t('stDivGot', { m: money(got) }) + ')' : '') : t('stDivNone')) + ' · ' + t('stRevLast', { m: money(co.rev) })));
+  return h('div', { class: 'card stack vc sts' }, ...rows);
+}
 const stPct = (a, b) => { const p = b ? ((a - b) / b) * 100 : 0; if (Math.abs(p) < 0.05) return (0).toFixed(1).replace('.', lang() === 'pt' ? ',' : '.') + '%'; return (p >= 0 ? '+' : '−') + Math.abs(p).toFixed(Math.abs(p) >= 100 ? 0 : 1).replace('.', lang() === 'pt' ? ',' : '.') + '%'; };
 function stChart(arr, cls, w, hh) {
   const min = Math.min(...arr), max = Math.max(...arr), span = max - min || 1, n = Math.max(1, arr.length - 1);
@@ -1371,7 +1439,7 @@ function stChart(arr, cls, w, hh) {
   return el;
 }
 function screenBolsa() {
-  const me = S.st.me, C = S.cfg.stocks, M = S.stocks, out = [pageHead('bolsa', t('stSub', { p: C.feeBp / 100 }), S.stkSel != null)];
+  const me = S.st.me, C = S.cfg.stocks, M = S.stocks, out = [pageHead('bolsa', S.stkSel == null ? t('stSub', { p: C.feeBp / 100 }) : null, S.stkSel != null)];
   if (!M || !M.prices.length) { out.push(h('p', { class: 'muted' }, t('loading'))); return out; }
   const inv = me.stk.reduce((x, y) => x + y.cost, 0), hold = me.stk.map((y, k) => ({ ...y, value: Math.floor((y.n * M.prices[k]) / 100) })), worth = hold.reduce((x, y) => x + y.value, 0);
   const risk = (c) => t('stRisk' + (c.vol <= 55 ? 0 : c.vol <= 90 ? 1 : 2));
@@ -1379,12 +1447,12 @@ function screenBolsa() {
     out.push(h('div', { class: 'card stack vc' },
       h('div', { class: 'row sp' }, h('span', { class: 'muted' }, t('stWorth')), h('b', { class: 'num vbig ' + (worth >= inv ? 'c-cash' : 'c-red') }, money(worth))),
       h('div', { class: 'row sp small' }, h('span', { class: 'muted' }, t('stInv')), h('span', { class: 'num' }, money(inv) + (inv ? ' · ' + (worth >= inv ? '+' : '−') + money(Math.abs(worth - inv)) : ''))),
-      h('div', { class: 'small muted' }, t('stNext'), h('b', { class: 'num', dataset: { left: M.nextAt } }, dur(Math.max(0, M.nextAt - now()))))));
+      h('div', { class: 'small muted' }, M.edNext ? t('stEd') : t('stNext'), M.edNext ? h('b', { class: 'num', dataset: { left: M.edNext, long: 1 } }, leftTxt(M.edNext - now())) : h('b', { class: 'num', dataset: { left: M.nextAt } }, dur(Math.max(0, M.nextAt - now()))))));
     out.push(h('div', { class: 'small muted', style: 'text-align:right;margin:0 4px 6px' }, t('stDay')));
     out.push(h('div', { class: 'stlist' }, C.list.map((c, k) => {
       const hist = M.hist[k], pr = M.prices[k], up = pr >= hist[0];
       return h('button', { class: 'strow', on: { click: () => { S.stkSel = k; S.stkAmt = ''; S.stkMode = 'buy'; render(true); window.scrollTo({ top: 0 }); } } },
-        h('div', { class: 'stnm' }, h('b', null, t('st_' + c.id)), h('span', { class: 'small muted' }, list('stCodes')[k] + ' · ' + risk(c))),
+        h('div', { class: 'stnm' }, h('b', null, t('st_' + c.id)), h('span', { class: 'small muted' }, list('stCodes')[k] + (M.co && M.co[k] && M.co[k].st ? ' · ' + t('stNews') : ''))),
         stChart(hist, 'mini', 96, 34),
         h('div', { class: 'stpr' }, h('b', { class: 'num' }, stMoney(pr)), h('span', { class: 'small num ' + (up ? 'c-cash' : 'c-red') }, stPct(pr, hist[0]))),
         hold[k].n ? h('div', { class: 'styou small' }, h('span', { class: 'muted' }, t('stYours', { n: num(hold[k].n), m: money(hold[k].value) })), h('b', { class: 'num ' + (hold[k].value >= hold[k].cost ? 'c-cash' : 'c-red') }, (hold[k].value >= hold[k].cost ? '+' : '−') + money(Math.abs(hold[k].value - hold[k].cost)))) : null);
@@ -1394,22 +1462,23 @@ function screenBolsa() {
   }
   const k = S.stkSel, c = C.list[k], hist = M.hist[k], pr = M.prices[k], H = hold[k], mode = S.stkMode === 'sell' && H.n ? 'sell' : 'buy', fee = C.feeBp;
   const cashAll = me.cash + me.bank, room = Math.max(0, me.stockCap - inv), maxBuy$ = Math.min(cashAll, room);
-  const fit = (amt) => { let n = Math.floor((amt * 100 * 10000) / (pr * (10000 + fee))); while (n > 0 && stQuote(pr, n) > amt) n--; return Math.max(0, n); };
+  const fit = (amt) => { let n = Math.floor((amt * 100 * 10000) / (pr * (10000 + fee))); while (n > 0 && stQuote(pr, n, k) > amt) n = n > 2000 ? Math.floor(n * 0.995) : n - 1; return Math.max(0, n); };
   const maxN = mode === 'buy' ? fit(maxBuy$) : H.n;
   const inp = h('input', { id: 'bamt', inputmode: 'numeric', autocomplete: 'off', enterkeyhint: 'done', value: S.stkAmt || '', placeholder: mode === 'buy' ? t('stMaxPh', { m: money(maxBuy$) }) : t('stAllPh', { n: num(H.n) }) });
-  const btn = h('button', { class: 'btn block big buy' }), sum = h('div', { class: 'stack', style: 'gap:6px' });
+  const btn = h('button', { class: 'btn block big buy stgo' }), sum = h('div', { class: 'stack', style: 'gap:6px' });
   const nOf = () => { const v = inp.value === '' ? Infinity : parseInt(inp.value, 10) || 0; return mode === 'buy' ? (v === Infinity ? maxN : Math.min(maxN, fit(Math.min(v, maxBuy$)))) : Math.min(H.n, v === Infinity ? H.n : v); };
   const row = (a, b, cls = '') => h('div', { class: 'row sp small' }, h('span', { class: 'muted' }, a), h('b', { class: 'num ' + cls }, b));
   const sync = () => {
     const n = nOf();
     if (mode === 'buy') {
-      const g = Math.ceil((n * pr) / 100), tot = stQuote(pr, n);
+      const ex = stExec(pr, k, n, 1), g = Math.ceil((n * ex) / 100), tot = stQuote(pr, n, k);
       btn.textContent = n > 0 ? t('stBuyGo', { n: num(n), m: money(tot) }) : t('stBuyNone'); btn.disabled = n < 1;
-      sum.replaceChildren(row(t('stGetN'), t('stShares', { n: num(n) })), row(t('stFee', { p: fee / 100 }), money(tot - g)));
+      sum.replaceChildren(...[row(t('stGetN'), t('stShares', { n: num(n) })), row(t('stFee', { p: fee / 100 }), money(tot - g)), ex > pr ? row(t('stImpact'), money(Math.ceil((n * (ex - pr)) / 100))) : null].filter(Boolean));
+      if (n < 1) { sum.replaceChildren(); if (room < Math.ceil(pr / 100) + 1) btn.textContent = t('stCapHit'); }
     } else {
-      const g = Math.floor((n * pr) / 100), f = Math.min(g, Math.ceil((g * fee) / 10000)), got = g - f, part = n === H.n ? H.cost : Math.floor((H.cost * n) / (H.n || 1)), pl = got - part;
+      const ex = stExec(pr, k, n, -1), g = Math.floor((n * ex) / 100), f = Math.min(g, Math.ceil((g * fee) / 10000)), got = g - f, part = n === H.n ? H.cost : Math.floor((H.cost * n) / (H.n || 1)), pl = got - part;
       btn.textContent = t('stSellGo', { n: num(n), m: money(got) }); btn.disabled = n < 1;
-      sum.replaceChildren(row(t('stFee', { p: fee / 100 }), money(f)), row(t('stGet'), money(got)), row(t('stPL'), (pl >= 0 ? '+' : '−') + money(Math.abs(pl)), pl >= 0 ? 'c-cash' : 'c-red'));
+      sum.replaceChildren(...[row(t('stFee', { p: fee / 100 }), money(f)), ex < pr ? row(t('stImpact'), money(Math.ceil((n * (pr - ex)) / 100))) : null, row(t('stGet'), money(got)), row(t('stPL'), (pl >= 0 ? '+' : '−') + money(Math.abs(pl)), pl >= 0 ? 'c-cash' : 'c-red')].filter(Boolean));
     }
   };
   const setV = (v) => { inp.value = v; S.stkAmt = v; sync(); };
@@ -1423,13 +1492,10 @@ function screenBolsa() {
   sync();
   out.push(h('button', { class: 'btn ghost sm', style: 'margin-bottom:10px', on: { click: () => { S.stkSel = null; render(true); } } }, '← ' + t('stBack')));
   out.push(h('div', { class: 'card stack vc' },
-    h('div', { class: 'row sp' }, h('div', null, h('h2', { style: 'margin:0' }, t('st_' + c.id)), h('span', { class: 'small muted' }, list('stCodes')[k] + ' · ' + risk(c))),
+    h('div', { class: 'row sp' }, h('div', null, h('h2', { style: 'margin:0' }, t('st_' + c.id)), h('span', { class: 'small muted' }, list('stCodes')[k])),
       h('div', { class: 'stpr' }, h('b', { class: 'num vbig' }, stMoney(pr)), h('span', { class: 'small num ' + (pr >= hist[0] ? 'c-cash' : 'c-red') }, stPct(pr, hist[0]) + ' · ' + t('stDay')))),
-    stChart(hist, 'big', 320, 120),
-    h('div', { class: 'row sp small muted' }, h('span', null, t('stLaunch', { m: stMoney(c.base) })), h('span', null, t('stNext'), h('b', { class: 'num', dataset: { left: M.nextAt } }, dur(Math.max(0, M.nextAt - now())))))));
-  if (H.n) out.push(h('div', { class: 'card stack vc' }, row(t('stYours', { n: num(H.n), m: money(H.value) }), (H.value >= H.cost ? '+' : '−') + money(Math.abs(H.value - H.cost)), H.value >= H.cost ? 'c-cash' : 'c-red'), row(t('stInv'), money(H.cost)),
-    H.tp ? row(t('stTp'), stMoney(H.tp), 'c-cash') : null, H.sl ? row(t('stSl'), stMoney(H.sl), 'c-red') : null,
-    h('button', { class: 'btn ghost block', on: { click: () => stLimitSheet(k) } }, H.tp || H.sl ? t('stLimEdit') : t('stLimSet'))));
+    stChart([...hist, pr], 'big', 320, 120),
+    h('div', { class: 'row sp small muted' }, h('span', null, t('stLaunch', { m: stMoney(c.base) })), M.edNext ? h('span', null, t('stEd'), h('b', { class: 'num', dataset: { left: M.edNext, long: 1 } }, leftTxt(M.edNext - now()))) : null)));
   out.push(h('div', { class: 'card stack vc' },
     h('div', { class: 'seg', role: 'group', style: 'margin-bottom:0' }, [['buy', t('stBuy')], ['sell', t('stSell')]].map(([id, lbl]) => h('button', { 'aria-pressed': mode === id ? 'true' : 'false', disabled: id === 'sell' && !H.n, on: { click: () => { S.stkMode = id; S.stkAmt = ''; render(true); } } }, lbl))),
     h('div', { class: 'field', style: 'margin:0' }, h('label', { for: 'bamt' }, t(mode === 'buy' ? 'stAmt' : 'stQty')), inp),
@@ -1437,6 +1503,10 @@ function screenBolsa() {
       h('button', { class: 'btn ghost sm', disabled: maxN < 1, on: { click: () => setV('') } }, t('stAll'))),
     sum, btn,
     mode === 'buy' && room < cashAll ? h('p', { class: 'small muted' }, t('stCap', { m: money(me.stockCap) })) : null));
+  out.push(stStory(c, M.co && M.co[k]));
+  if (H.n) out.push(h('div', { class: 'card stack vc' }, row(t('stYours', { n: num(H.n), m: money(H.value) }), (H.value >= H.cost ? '+' : '−') + money(Math.abs(H.value - H.cost)), H.value >= H.cost ? 'c-cash' : 'c-red'), row(t('stInv'), money(H.cost)),
+    H.tp ? row(t('stTp'), stMoney(H.tp), 'c-cash') : null, H.sl ? row(t('stSl'), stMoney(H.sl), 'c-red') : null,
+    h('button', { class: 'btn ghost block', on: { click: () => stLimitSheet(k) } }, H.tp || H.sl ? t('stLimEdit') : t('stLimSet'))));
   return out;
 }
 // limites de venda de uma posição: alvo de lucro e travão de perda, em percentagem sobre o preço de agora
@@ -2198,6 +2268,8 @@ function eventRow(e) {
   if (e.k === 'gop') return opResult(e, e.out || e.cancelled ? 0 : e.respect, e.t);
   if (e.k === 'stAuto') return h('div', { class: 'card row' }, h('span', { class: e.profit >= 0 ? 'c-cash' : 'c-red' }, icon('gem')),
     h('div', { class: 'grow' }, h('div', null, t(e.why === 'tp' ? 'evStTp' : 'evStSl', { x: t('st_' + e.c), n: num(e.n), m: money(e.money || 0), g: (e.profit >= 0 ? '+' : '−') + money(Math.abs(e.profit || 0)) })), h('div', { class: 'small muted' }, dur(now() - e.t))));
+  if (e.k === 'stDiv') return h('div', { class: 'card row' }, h('span', { class: 'c-cash' }, icon('cash')),
+    h('div', { class: 'grow' }, h('div', null, t('evStDiv', { m: money(e.money || 0), x: (e.cs || []).map((c) => t('st_' + c)).join(', ') })), h('div', { class: 'small muted' }, dur(now() - e.t))));
   if (e.k === 'hkRob') return h('div', { class: 'card row' }, h('span', { class: 'c-red' }, icon('skull')),
     h('div', { class: 'grow' }, h('div', null, t('hkRob_' + e.kind, { m: money(e.money || 0) })), h('div', { class: 'small muted' }, dur(now() - e.t))));
   if (e.k === 'hitman') return h('div', { class: 'card row' }, h('span', { class: e.win ? 'c-red' : 'c-cash' }, icon(e.win ? 'skull' : 'shield')),
