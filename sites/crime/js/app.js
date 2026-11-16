@@ -588,7 +588,8 @@ function story(it, dia, kind) {
 }
 function paperFront(N) {
   const hoje = N.today.items.length > 0, day = hoje ? N.today : N.yesterday, its = day.items, out = [];
-  if (!its.length) out.push(h('article', { class: 'st st-lead' }, h('h2', null, t('paperCalmH')),   // sem notícia não há «última hora» h('div', { class: 'stb' }, h('p', null, t('paperCalm')))));
+  // sem notícia não há «última hora»
+  if (!its.length) out.push(h('article', { class: 'st st-lead' }, h('h2', null, t('paperCalmH')), h('div', { class: 'stb' }, h('p', null, t('paperCalm')))));
   else {
     if (!hoje) out.push(h('p', { class: 'pnote' }, t('paperYest')));
     out.push(story(its[0], day.dia, 'lead'));
