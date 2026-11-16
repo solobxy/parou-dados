@@ -1,0 +1,21 @@
+== 2026-11-16T13:45:50Z acao=comando
+IP: 2.31.13.85
+== Saída no servidor
+total 476
+drwxrwxr-x  2 parou parou   4096 13:45 .
+drwxrwxrwt 31 root  root   28672 13:45 ..
+-rw-r--r--  1 parou parou   4096 13:45 comunidade.db
+-rw-r--r--  1 parou parou  32768 13:45 comunidade.db-shm
+-rw-r--r--  1 parou parou 412032 13:45 comunidade.db-wal
+/tmp/parou-dados/comunidade.db-wal
+/tmp/parou-dados/comunidade.db
+/tmp/parou-dados/comunidade.db-shm
+dados=/var/lib/parou
+-rw-r--r-- 1 parou parou 12705792 Nov 16 12:25 /var/lib/parou/comunidade.db
+posts [{"id":"pub-mwia7j7w-3f5153d96e","titulo":"Coimbra - Metromondego","respostas":0,"estado":"visivel"}]
+conta Dinis Sousa
+resposta criada res-mwjbglr6-7d6b52732d
+conversa [{"autor":"Dinis Sousa","texto":"Obrigado pelo aviso, Carlos, tinhas toda a razão. O Metro Mondego já está na PAROU: as 5 linhas (U1, U2, U3, S1 e S2) com os horários oficiais, as próximas partidas no Perto, o planeador e o percurso no mapa. Se vires alguma coisa que não bata certo, diz-me aqui."}]
+== Teste de fora
+https://2-31-13-85.sslip.io/health 200 0.402784s
+https://2-31-13-85.sslip.io/api/transit/loading-status 200 0.345110s
