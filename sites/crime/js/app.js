@@ -1,7 +1,7 @@
 // Jogo de crime: interface. O servidor decide tudo; aqui só se mostra e se pede.
 
 import { t, tv, list, errText, setLang, lang, guessLang } from './i18n.js';
-import { h, icon, svg, setLocale, num, money, moneyShort, short, dur, hoursText, pct, rid } from './ui.js';
+import { h, icon, svg, setBtn, setLocale, num, money, moneyShort, short, dur, hoursText, pct, rid } from './ui.js';
 import * as fx from './fx.js';
 import * as RV from './reveal.js';
 import * as CZ from './crazy.js';
@@ -231,11 +231,11 @@ function buildHud() {
   S.hud.title = h('div', { class: 'title' });
   S.hud.name = h('div', { class: 'name' });
   // dinheiro e respeito por extenso (são a pontuação do jogo: «$2M» e «17K» tiravam-lhes o peso), cada um com o seu ícone desenhado
-  const hic = (n, alt, w) => h('img', { class: 'hic', src: `/img/ui/${n}.webp?2`, alt, width: w, height: 96, decoding: 'async' });
+  // (16/11: os ícones desenhados em 3D, notas e coroa, deram lugar a ícones de traço: o euro já diz que é dinheiro)
   S.hud.cashN = h('span', { class: 'num' });
-  S.hud.cash = h('div', { class: 'cash' }, hic('notas', '', 131), S.hud.cashN);
+  S.hud.cash = h('div', { class: 'cash' }, S.hud.cashN);
   S.hud.respN = h('span', { class: 'num' });
-  S.hud.resp = h('div', { class: 'resp' }, hic('coroa', t('respect'), 114), S.hud.respN);
+  S.hud.resp = h('div', { class: 'resp', title: t('respect') }, icon('crown'), h('span', { class: 'sr' }, t('respect')), S.hud.respN);
   S.hud.ebar = h('i'); S.hud.etxt = h('span');
   S.hud.gbar = h('i'); S.hud.gtxt = h('span');
   S.hud.vbar = h('i'); S.hud.vtxt = h('span');
@@ -310,7 +310,7 @@ function tickHud() {
   S.hud.gbar.style.width = (L.vigor / G) * 100 + '%';
   S.hud.gtxt.replaceChildren(icon('fist'), ' ' + L.vigor + '/' + G);
   S.hud.vbar.style.width = (L.vice / me.addictionCap) * 100 + '%';
-  S.hud.vtxt.replaceChildren(icon('pill'), ' ' + L.vice);
+  S.hud.vtxt.replaceChildren(icon('pill'), ' ' + L.vice + '/' + me.addictionCap);
   tickShips(); tickNews();
   document.querySelectorAll('[data-left]').forEach((el) => { const left = +el.dataset.left - now(); el.textContent = el.dataset.long ? leftTxt(left) : dur(left); if (left <= 0 && el.dataset.re !== '1') { el.dataset.re = '1'; refresh(); } });
   document.querySelectorAll('[data-stored]').forEach((el) => { const i = +el.dataset.stored; const b = me.biz[i]; el.textContent = money(bizNet(b, i)); });
@@ -352,7 +352,7 @@ const PARENT = { gang: 'city', work: 'job', job: 'city', news: 'city', casino: '
   biz: 'empire', port: 'empire', air: 'empire', myclub: 'empire', mybro: 'empire', bolsa: 'empire', inv: 'empire', stash: 'empire', acct: 'empire', casa: 'empire', bank: 'empire', lux: 'empire', arms: 'fights', rank: 'fights', hitman: 'fights', ops: 'rob' };
 const upOf = (id) => (S.backTo && S.backTo[id]) || PARENT[id] || 'city';   // um sítio que está em duas zonas volta para a zona de onde vieste
 const tabOf = (id) => { let x = id; for (let k = 0; k < 4 && !NAV.includes(x); k++) x = upOf(x); return NAV.includes(x) ? x : 'city'; };
-const IMG = (kind, id, big) => `/img/${kind}/${id}${big ? '-g' : ''}.webp?13`;
+const IMG = (kind, id, big) => `/img/${kind}/${id}${big ? '-g' : ''}.webp?14`;
 // o que cada sítio precisa de ir buscar ao servidor (ao entrar nele, e também quando o jogo abre já nesse sítio)
 function loadFor(tab) {
   if (tab === 'fights') { if (S.fightSeg === 'events') loadEvents(true); else { S.fightSeg = 'targets'; loadTargets(); } }
@@ -1094,7 +1094,7 @@ function opActive(me, b) {
   const step = (kind, fx) => {
     const price = st.cost[kind]; if (!price) return null;
     return h('div', { class: 'vrow jbr' }, h('div', { class: 'grow' }, h('b', null, t('st_' + kind)), h('div', { class: 'small' + (st[kind] ? ' muted' : '') }, fx)),
-      st[kind] ? done.cloneNode(true) : h('button', { class: 'btn sm ghost num', 'aria-label': t('st_' + kind) + ' · ' + money(price), disabled: cash < price, on: { click: (e) => act('opStep', { kind }, { el: e.currentTarget }) } }, money(price)));
+      st[kind] ? done.cloneNode(true) : h('button', { class: 'btn sm ghost num', 'aria-label': t('st_' + kind) + ' · ' + money(price), disabled: cash < price, on: { click: (e) => act('opStep', { kind }, { el: e.currentTarget }) } }, t('payBtn') + ' · ' + money(price)));
   };
   const steps = [step('recon', t('stfx_recon', { n: St.recon })), step('crew', t('stfx_crew', { p: pctOf(St.crew) })), step('bribe', t('stfx_bribe')),
     st.contact ? h('div', { class: 'vrow jbr' }, h('div', { class: 'grow' }, h('b', null, t('st_contact')), h('div', { class: 'small muted' }, t('stfx_recon', { n: St.contact }))), done.cloneNode(true)) : null].filter(Boolean);
@@ -1103,14 +1103,14 @@ function opActive(me, b) {
     const g = gearOf(id), have = me.inv.some((x) => x.id === id);
     return h('div', { class: 'vrow jbr' }, art('gear', id, 'vth'), h('div', { class: 'grow' }, h('b', null, t('g_' + id)), g.once ? h('div', { class: 'small muted' }, t('matOnce')) : null),
       have ? h('span', { class: 'small c-cash' }, t('matHave'))
-        : h('button', { class: 'btn sm ghost num', 'aria-label': t('buyAria', { x: t('g_' + id), m: money(g.price) }), disabled: cash < g.price || invFull(me), on: { click: (e) => act('buy', { id }, { el: e.currentTarget }) } }, money(g.price)));
+        : h('button', { class: 'btn sm ghost num', 'aria-label': t('buyAria', { x: t('g_' + id), m: money(g.price) }), disabled: cash < g.price || invFull(me), on: { click: (e) => act('buy', { id }, { el: e.currentTarget }) } }, t('buy') + ' · ' + money(g.price)));
   });
   if (o.gun) {
     const s = gunSlot(me), it = s ? me.eq[s] : null, nb = invN(me, 'balas'), boxes = Math.max(1, Math.ceil((St.bullets - nb) / B.box)), room = nb > 0 || !invFull(me);
     gear.push(h('div', { class: 'vrow jbr' }, art('gear', it ? it.id : 'pistola', 'vth'),
       h('div', { class: 'grow' }, h('b', null, t('opGun')), h('div', { class: 'small' + (it && it.u > 0 ? ' muted' : ' c-red') }, !it ? t('opGunNone') : it.u > 0 ? t('g_' + it.id) + ' · ' + t('usesLeft', { u: it.u, l: gearOf(it.id).life }) : t('opGunWorn', { x: t('g_' + it.id).toLowerCase() }))),
       !it ? h('button', { class: 'btn sm ghost', on: { click: () => { S.armsSeg = 'fight'; go('arms'); } } }, t('p_arms'))
-        : !(it.u > 0) ? h('button', { class: 'btn sm ghost num', disabled: cash < me.repair[s], on: { click: (e) => act('repair', { slot: s }, { el: e.currentTarget }) } }, money(me.repair[s]))
+        : !(it.u > 0) ? h('button', { class: 'btn sm ghost num', disabled: cash < me.repair[s], on: { click: (e) => act('repair', { slot: s }, { el: e.currentTarget }) } }, t('repairBtn') + ' · ' + money(me.repair[s]))
           : h('span', { class: 'small c-cash' }, t('matHave'))));
     gear.push(h('div', { class: 'vrow jbr' }, art('gear', 'balas', 'vth'),
       h('div', { class: 'grow' }, h('b', null, t('opBul')), h('div', { class: 'small num' + (nb < St.bullets ? ' c-red' : ' muted') }, t('opBulLine', { b: St.bullets, n: num(nb) }))),
@@ -1215,7 +1215,7 @@ function screenClub() {
     h('div', { class: 'row sp' }, h('h3', { style: 'margin:0' }, t('rfTitle')), feitas ? h('span', { class: 'small muted num' }, t('rfBought', { n: num(feitas) })) : null),
     meter(t('energy'), L.energy, max, 'en'),
     h('div', { class: 'facts two' },
-      h('div', { class: 'fact' }, h('b', { class: 'num c-cash' }, rf ? money(rf.cost) : '—'), h('span', null, rf ? t('rfNowFor', { e: rf.energy }) : t('rfFull'))),
+      h('div', { class: 'fact' }, h('b', { class: 'num' + (rf ? ' c-cash' : '') }, rf ? money(rf.cost) : t('rfFullShort')), h('span', null, rf ? t('rfNowFor', { e: rf.energy }) : t('energy'))),
       h('div', { class: 'fact' }, h('b', { class: 'num' }, stMoney(ponto(k))), h('span', null, t('rfPerPoint')))),
     h('p', { class: 'small muted' }, t('rfLadder', { n: 100 - (feitas % 100), p: stMoney(ponto(k + 1)), z: stMoney(ponto(1)) })),
     h('button', { class: 'btn buy block big', disabled: !!b || !rf || me.cash + me.bank < rf.cost, on: { click: (e) => act('refill', {}, { el: e.currentTarget }) } },
@@ -1234,7 +1234,7 @@ function screenClub() {
         h('div', { class: 'small c-vice' }, '+' + g.a + ' ' + t('vice').toLowerCase()),
         g.fx ? g.fx.map((f) => h('div', { class: 'small' }, fxText(f) + ' · ' + t('fxFor', { m: Math.round((f.ms * (10000 + more)) / 10000 / 60000) })))
           : h('div', { class: 'small muted' }, t('noFx'))),
-      h('button', { class: 'btn ghost sm num', 'aria-label': t('buyFor', { m: money(price) }), disabled: !ok, on: { click: (e) => act('drug', { d }, { el: e.currentTarget }) } }, money(price)));
+      h('button', { class: 'btn ghost sm num', 'aria-label': t('buyFor', { m: money(price) }), disabled: !ok, on: { click: (e) => act('drug', { d }, { el: e.currentTarget }) } }, t('vnUse') + ' · ' + money(price)));
   })));
   if (!pv.good) out.push(...pv);
   return out;
@@ -1264,7 +1264,7 @@ function screenPutas() {
         h('div', { class: 'small c-en' }, '+' + g.e + ' ' + t('energy').toLowerCase()),
         h('div', { class: 'small c-red' }, t('hkSick', { p: (sickOf(g) / 100).toString().replace('.', lang() === 'pt' ? ',' : '.') })),
         (me.hkSteps?.[i] || 0) > 0 ? h('div', { class: 'small c-gold' }, t('hkUp', { p: Math.round(((H.stepNum / H.stepDen) ** me.hkSteps[i] - 1) * 100), h: me.hkSteps[i] })) : null),
-      h('button', { class: 'btn sm num ' + (i === best ? 'buy' : 'ghost'), 'aria-label': t('hkGo', { m: money(price) }), disabled: !ok, on: { click: (e) => act('hooker', { i }, { el: e.currentTarget }) } }, money(price))));
+      h('button', { class: 'btn sm num ' + (i === best ? 'buy' : 'ghost'), 'aria-label': t('hkGo', { m: money(price) }), disabled: !ok, on: { click: (e) => act('hooker', { i }, { el: e.currentTarget }) } }, t('hkBtn') + ' · ' + money(price))));
   });
   out.push(h('div', { class: 'card vlist vc hkl' }, rows));
   out.push(h('p', { class: 'small muted', style: 'margin:10px 2px 0' }, t('hkRobNote')));
@@ -1282,7 +1282,7 @@ function stockRows(me, b, quick) {
   if (!rows.length) return null;
   return h('div', { class: 'card vlist vc' }, rows.map(({ n, d }) => {
     const keep = me.club && me.hold?.includes(d);
-    const g = S.cfg.drugs[d], body = [art('drugs', g.id, 'vth'), h('div', { class: 'grow' }, h('b', null, list('drugs')[d], keep ? h('span', { class: 'chip', style: 'margin-left:6px' }, t('holdTag')) : null), h('div', { class: 'small muted num' }, '×' + n + ' · ' + moneyShort(n * wholesaleOf(d))))];
+    const g = S.cfg.drugs[d], body = [art('drugs', g.id, 'vth'), h('div', { class: 'grow' }, h('b', null, list('drugs')[d], keep ? h('span', { class: 'chip', style: 'margin-left:6px' }, t('holdTag')) : null), h('div', { class: 'small muted num' }, qty(d, n) + ' · ' + money(n * wholesaleOf(d))))];
     return quick
       ? h('div', { class: 'vrow' }, ...body, h('button', { class: 'btn buy sm', disabled: !!b || !canTake(me, L, g), on: { click: (e) => act('stockUse', { d }, { el: e.currentTarget }) } }, t('vnUse')))
       : h('button', { class: 'vrow tap', on: { click: () => stockSheet(d) } }, ...body, h('span', { class: 'muted', 'aria-hidden': 'true' }, '›'));
@@ -1401,7 +1401,7 @@ function regionRow(me, r) {
   return h('button', { class: 'rgrow', on: { click: () => { S.reg = r; render(true); window.scrollTo({ top: 0 }); } } },
     art('cenas', 'regiao-' + r, 'rgth'),
     h('div', { class: 'grow' }, h('b', { class: 'rgnm' }, rgName(r)), h('div', { class: 'small muted' }, whLine), ...tips),
-    h('div', { class: 'rgp' }, h('b', { class: 'num ' + pressCls(g.press) }, String(g.press)), h('span', null, t('rgPress'))));
+    h('div', { class: 'rgp' }, h('b', { class: 'num ' + pressCls(g.press) }, String(g.press)), h('span', null, t('rgPress'))), icon('chev'));
 }
 // a mercadoria a caminho e o que aconteceu às últimas cargas e aos armazéns (chegadas, apreensões, rusgas)
 function rgTransit(me) {
@@ -1470,7 +1470,7 @@ function regionDetail(me, r) {
         h('div', null, h('span', null, t('whFront')), h('b', { class: 'num' }, '−' + pctOf(w.front) + '%'))),
       h('p', { class: 'small muted' }, t('whHeatSub'))));
     const up = (k, line) => h('div', { class: 'vrow' }, h('div', { class: 'grow' }, h('b', null, t('whUp_' + k)), h('div', { class: 'small muted' }, line)),
-      w.up[k] == null ? h('span', { class: 'small muted whupb' }, t('whMax')) : h('button', { class: 'btn ghost sm num whupb', disabled: cash < w.up[k], on: { click: (e) => act('whUp', { r, k }, { el: e.currentTarget }) } }, money(w.up[k])));
+      w.up[k] == null ? h('span', { class: 'small muted whupb' }, t('whMax')) : h('button', { class: 'btn ghost sm num whupb', disabled: cash < w.up[k], on: { click: (e) => act('whUp', { r, k }, { el: e.currentTarget }) } }, t('upgrade') + ' · ' + money(w.up[k])));
     out.push(h('h2', { class: 'sec' }, t('whUpT')));
     out.push(h('div', { class: 'card vlist vc' },
       up('sp', w.sp >= 5 ? num(w.cap) : t('whUpSp', { a: w.sp, b: w.sp + 1, n: num(W[r].sp[w.sp]) })),
@@ -1553,12 +1553,12 @@ function tradeSheet(r, d, mode0) {
     else if (mode === 'move' && dest && maxN < 1) why = t('tsFull');
     const sync = () => {
       const n = nOf();
-      if (why) { btn.textContent = why; btn.disabled = true; sum.replaceChildren(); return; }
+      if (why) { setBtn(btn, why); btn.disabled = true; sum.replaceChildren(); return; }
       if (mode === 'buy' || mode === 'sell') {
         const side = mode === 'buy' ? 1 : -1, c = n > 0 ? mkQuote(me, r, d, n, side) : 0, base = n * unitC(me, r, d, side), push = Math.abs(c - base);
         sum.replaceChildren(...[n > 0 ? row(t('tsAvg'), perU(c / n, d)) : null, n > 0 && push >= 100 ? row(t('tsPush'), money(Math.round(push / 100)), 'c-red') : null,
           n > 0 ? row(t(mode === 'buy' ? 'tsPay' : 'tsGet'), money(mode === 'buy' ? Math.ceil(c / 100) : Math.floor(c / 100)), mode === 'sell' ? 'c-cash' : '') : null].filter(Boolean));
-        btn.textContent = n > 0 ? t(mode === 'buy' ? 'tsBuyGo' : 'tsSellGo', { q: qty(d, n), m: money(mode === 'buy' ? Math.ceil(c / 100) : Math.floor(c / 100)) }) : t('tsNone');
+        setBtn(btn, n > 0 ? t(mode === 'buy' ? 'tsBuyGo' : 'tsSellGo', { q: qty(d, n), m: money(mode === 'buy' ? Math.ceil(c / 100) : Math.floor(c / 100)) }) : t('tsNone'));
         btn.disabled = n < 1; btn.dataset.c = String(c);
       } else {
         const risk = mvRiskC(me, r, dest), hops = mvHopsC(r, dest), val = Math.floor((n * refCOf(d)) / 100);
@@ -1567,7 +1567,7 @@ function tradeSheet(r, d, mode0) {
           h('div', null, h('span', null, t('tsTime')), h('b', { class: 'num' }, hops + ' h')),
           h('div', null, h('span', null, t('tsRisk')), h('b', { class: 'num ' + (risk >= 500 ? 'c-red' : '') }, pctOf(risk) + '%')),
           h('div', null, h('span', null, t('tsArr')), h('b', { class: 'num' }, hhmm(now() + hops * S.cfg.mv.hopMs)))), h('p', { class: 'small muted' }, ifc));
-        btn.textContent = n > 0 ? t('tsMoveGo', { q: qty(d, n), ...rgF(dest) }) : t('tsNone'); btn.disabled = n < 1;
+        setBtn(btn, n > 0 ? t('tsMoveGo', { q: qty(d, n), ...rgF(dest) }) : t('tsNone')); btn.disabled = n < 1;
       }
     };
     inp.addEventListener('input', () => { inp.value = inp.value.replace(/\D/g, '').replace(/^0+/, '').slice(0, 9); amt = inp.value; sync(); });
@@ -1723,12 +1723,12 @@ function screenBolsa() {
     const n = nOf();
     if (mode === 'buy') {
       const ex = stExec(pr, k, n, 1), g = Math.ceil((n * ex) / 100), tot = stQuote(pr, n, k);
-      btn.textContent = n > 0 ? t('stBuyGo', { n: num(n), m: money(tot) }) : t('stBuyNone'); btn.disabled = n < 1;
+      setBtn(btn, n > 0 ? t('stBuyGo', { n: num(n), m: money(tot) }) : t('stBuyNone')); btn.disabled = n < 1;
       sum.replaceChildren(...[row(t('stGetN'), t('stShares', { n: num(n) })), row(t('stFee', { p: fee / 100 }), money(tot - g)), ex > pr ? row(t('stImpact'), money(Math.ceil((n * (ex - pr)) / 100))) : null].filter(Boolean));
-      if (n < 1) { sum.replaceChildren(); if (room < Math.ceil(pr / 100) + 1) btn.textContent = t('stCapHit'); }
+      if (n < 1) { sum.replaceChildren(); if (room < Math.ceil(pr / 100) + 1) setBtn(btn, t('stCapHit')); }
     } else {
       const ex = stExec(pr, k, n, -1), g = Math.floor((n * ex) / 100), f = Math.min(g, Math.ceil((g * fee) / 10000)), got = g - f, part = n === H.n ? H.cost : Math.floor((H.cost * n) / (H.n || 1)), pl = got - part;
-      btn.textContent = t('stSellGo', { n: num(n), m: money(got) }); btn.disabled = n < 1;
+      setBtn(btn, t('stSellGo', { n: num(n), m: money(got) })); btn.disabled = n < 1;
       sum.replaceChildren(...[row(t('stFee', { p: fee / 100 }), money(f)), ex < pr ? row(t('stImpact'), money(Math.ceil((n * (pr - ex)) / 100))) : null, row(t('stGet'), money(got)), row(t('stPL'), (pl >= 0 ? '+' : '−') + money(Math.abs(pl)), pl >= 0 ? 'c-cash' : 'c-red')].filter(Boolean));
     }
   };
@@ -1793,7 +1793,7 @@ function playerClubs(me, L, b) {
   if (!good.length) out.push(h('div', { class: 'card stack vc' }, h('p', { class: 'muted' }, t('clNone')), me.club ? null : h('button', { class: 'btn ghost', on: { click: () => go('myclub') } }, t('clOpen'))));
   for (const c of good) out.push(h('div', { class: 'card vlist vc' }, venueHead(c), c.items.map((it) => { const g = S.cfg.drugs[it.d];
     return h('div', { class: 'vrow' }, art('drugs', g.id, 'vth'), h('div', { class: 'grow' }, h('b', null, list('drugs')[it.d]), h('div', { class: 'small c-cash num' }, t('vnSave', { m: money(me.drugPrices[it.d] - it.price) }))),
-      h('button', { class: 'btn buy sm num', disabled: !!b || !canTake(me, L, g) || me.cash + me.bank < it.price, on: { click: async (e) => { await act('clubBuy', { owner: c.name, d: it.d, price: it.price }, { el: e.currentTarget }); loadVenues(); } } }, money(it.price))); })));
+      h('button', { class: 'btn buy sm num', disabled: !!b || !canTake(me, L, g) || me.cash + me.bank < it.price, on: { click: async (e) => { await act('clubBuy', { owner: c.name, d: it.d, price: it.price }, { el: e.currentTarget }); loadVenues(); } } }, t('vnUse') + ' · ' + money(it.price))); })));
   return out;
 }
 function playerBros(me, L, b) {
@@ -1804,7 +1804,7 @@ function playerBros(me, L, b) {
   if (!good.length) out.push(h('div', { class: 'card stack vc' }, h('p', { class: 'muted' }, t('brNone')), me.bro ? null : h('button', { class: 'btn ghost', on: { click: () => go('mybro') } }, t('brOpen'))));
   for (const v of good) out.push(h('div', { class: 'card vlist vc' }, venueHead(v), v.girls.map((x) => { const g = H[x.i];
     return h('div', { class: 'vrow' }, art('putas', g.id, 'vth'), h('div', { class: 'grow' }, h('b', null, list('hookers')[x.i]), h('div', { class: 'small num' }, h('span', { class: 'c-en' }, icon('bolt'), '+' + g.e), ' · ', h('span', { class: 'c-cash' }, t('vnSave', { m: money(me.hookers[x.i] - x.price) })))),
-      h('button', { class: 'btn buy sm num', disabled: !!b || me.sick || L.energy >= stamMax(me) || me.cash + me.bank < x.price, on: { click: async (e) => { await act('broVisit', { owner: v.name, slot: x.slot, price: x.price }, { el: e.currentTarget }); loadVenues(); } } }, money(x.price))); })));
+      h('button', { class: 'btn buy sm num', disabled: !!b || me.sick || L.energy >= stamMax(me) || me.cash + me.bank < x.price, on: { click: async (e) => { await act('broVisit', { owner: v.name, slot: x.slot, price: x.price }, { el: e.currentTarget }); loadVenues(); } } }, t('hkBtn') + ' · ' + money(x.price))); })));
   return out;
 }
 
@@ -2024,7 +2024,7 @@ function screenAir() {
   const inp = h('input', { id: 'bamt', inputmode: 'numeric', autocomplete: 'off', enterkeyhint: 'done', value: raw, placeholder: t('airMaxPh', { m: money(max) }) });
   const sync = () => {
     const a = amtOf(inp.value), extra = bribe ? Math.ceil((a * A.bribeBp) / 10000) : 0, risk = bribe ? Math.floor(me.airSeize[sel] / 2) : me.airSeize[sel], gain = Math.floor((a * R.gainBp) / 10000);
-    btn.textContent = t('airGo', { m: moneyShort(a + extra) }); btn.disabled = !!b || a < A.minAmount || S.st.round.playEnd - now() < R.ms;
+    setBtn(btn, t('airGo', { m: moneyShort(a + extra) })); btn.disabled = !!b || a < A.minAmount || S.st.round.playEnd - now() < R.ms;
     sum.replaceChildren(
       h('div', { class: 'row sp small' }, h('span', { class: 'muted' }, t('airIfOk')), h('b', { class: 'num c-cash' }, money(a + gain) + ' (+' + money(gain) + ')')),
       h('div', { class: 'row sp small' }, h('span', { class: 'muted' }, t('airIfBad')), h('b', { class: 'num c-red' }, '−' + money(a + extra) + ' · ' + pctBp(risk))),
@@ -2176,7 +2176,7 @@ function gearRow(me, g) {
   else {
     if (swap) extra = h('div', { class: 'small c-red' }, t('noRoomSwap'));
     // o botão tem o preço: é a etiqueta de uma loja
-    right = h('button', { class: 'btn sm ghost num', 'aria-label': t('buyAria', { x: t('g_' + g.id), m: money(g.price) }), disabled: cash < g.price || swap, on: { click: (e) => act('buy', { id: g.id }, { el: e.currentTarget }) } }, money(g.price));
+    right = h('button', { class: 'btn sm ghost num', 'aria-label': t('buyAria', { x: t('g_' + g.id), m: money(g.price) }), disabled: cash < g.price || swap, on: { click: (e) => act('buy', { id: g.id }, { el: e.currentTarget }) } }, t('buy') + ' · ' + money(g.price));
   }
   return h('div', { class: 'vrow jbr' + (lock && !worn ? ' dim' : '') }, art('gear', g.id, 'vth'),
     h('div', { class: 'grow' }, h('b', null, t('g_' + g.id)), h('div', { class: 'small' }, info), extra), right);
@@ -2186,7 +2186,7 @@ function stepRow(me, kind, g, i, name, fx, folder, names) {
   const cur = me[kind] ?? -1, lock = me.level < (g.level || 1), next = i === cur + 1, cash = me.cash + me.bank;
   const right = i === cur ? h('span', { class: 'small c-cash' }, t('inUse')) : i < cur ? h('span', { class: 'small muted' }, t('owned'))
     : lock ? h('span', { class: 'small muted' }, t('arNeedLvl', { n: g.level }))
-    : next ? h('button', { class: 'btn sm ghost num', 'aria-label': t('buyAria', { x: name, m: money(g.price) }), disabled: cash < g.price, on: { click: (e) => act('gear', { kind, idx: i }, { el: e.currentTarget }) } }, money(g.price)) : null;
+    : next ? h('button', { class: 'btn sm ghost num', 'aria-label': t('buyAria', { x: name, m: money(g.price) }), disabled: cash < g.price, on: { click: (e) => act('gear', { kind, idx: i }, { el: e.currentTarget }) } }, t('buy') + ' · ' + money(g.price)) : null;
   return h('div', { class: 'vrow jbr' + (i > cur + 1 ? ' dim' : '') }, art(folder, i, 'vth'),
     h('div', { class: 'grow' }, h('b', null, name), h('div', { class: 'small' }, fx),
       i > cur + 1 && !lock ? h('div', { class: 'small muted num' }, money(g.price) + ' · ' + t('stepFirst', { x: names[cur + 1] })) : null), right);
@@ -2254,7 +2254,7 @@ function screenInv() {
     const opNow = me.op ? S.cfg.ops[me.op.i] : null, needed = opNow && ((it.id === 'balas' && opNow.gun) || opNow.mat.includes(it.id)) ? h('div', { class: 'small c-red' }, t('opNeeds', { x: t('op_' + opNow.id) })) : null;
     return h('div', { class: 'vrow jbr' }, itArt(it.id, 'vth'),
       h('div', { class: 'grow' }, h('b', null, itName(it.id)), h('div', { class: 'small num' }, good ? tint(detail) : detail), pior, needed,
-        good ? null : sureBtn('jneed', t('sellFor', { m: money(sell) }), 'jneed sure', t('sellSure', { m: money(sell) }), () => act('sell', { i }))),
+        good ? null : sureBtn('btn ghost sm', t('sellBtn') + ' · ' + money(sell), 'btn ghost dng sm sure', t('sellSure', { m: money(sell) }), () => act('sell', { i }))),
       good ? h('button', { class: 'btn sm ghost', on: { click: sellIt } }, t('sellBtn'))
         : g && g.slot !== 'mat' ? h('button', { class: 'btn sm ghost', on: { click: (e) => act('equip', { i }, { el: e.currentTarget }) } }, t('useBtn')) : null);
   });
@@ -2287,7 +2287,7 @@ function screenBank() {
   const inp = h('input', { id: 'bamt', inputmode: 'numeric', autocomplete: 'off', enterkeyhint: 'done', value: raw, placeholder: t('bankAllPh', { m: money(max) }) });
   const sync = () => {
     const a = amtOf(inp.value), fee = mode === 'dep' ? Math.ceil((a * bp) / 10000) : 0;
-    btn.textContent = t(mode === 'dep' ? 'depositAll' : 'withdrawAll', { m: money(a) }) + (fee ? ' · ' + t('fee', { m: money(fee) }) : '');
+    setBtn(btn, t(mode === 'dep' ? 'depositAll' : 'withdrawAll', { m: money(a) }) + (fee ? ' · ' + t('fee', { m: money(fee) }) : ''));
     btn.disabled = a <= 0;
     net.textContent = mode === 'dep' && a > 0 ? t('bankNet', { m: money(a - fee) }) : '';
   };
@@ -2462,11 +2462,11 @@ function screenFights() {
     else if (!can.length) out.push(h('div', { class: 'note' }, h('p', { class: 'muted' }, t('noTargets'))));
     else out.push(h('div', { class: 'stack' }, can.map((x) => h('div', { class: 'card tgt' },
       h('div', { class: 'who2' }, S.avOk ? h('img', { class: 'avs', src: AV(x.av || 0), alt: '', width: 96, height: 96, loading: 'lazy' }) : null, h('div', null, h('div', { class: 'nm' }, x.tag ? h('span', { class: 'gtag' }, x.tag) : null, x.tag ? ' ' : '', x.name), h('div', { class: 'lv' }, t('level') + ' ' + x.level + ' · ' + titleOf(x.level) + ' · ', h('span', { class: 'c-resp' }, icon('crown'), ' ' + short(x.respect))))),
-      h('div', { class: 'pct ' + chanceCls(x.chance) }, pct(x.chance)),
+      h('div', { class: 'pct' }, pct(x.chance), h('small', null, t('chanceLbl'))),
       h('div', { class: 'acts' },
-        h('button', { class: 'btn danger sm', disabled: !!b, on: { click: (e) => { const el = e.currentTarget; withShield((drop) => act('attack', { target: x.name, mode: 'beat', drop }, { el })); } } }, icon('fist'), t('beat') + ' · +' + x.gain),
-        h('button', { class: 'btn sm', disabled: !!b, on: { click: (e) => { const el = e.currentTarget; withShield((drop) => act('attack', { target: x.name, mode: 'mug', drop }, { el })); } } }, icon('cash'), t('rob') + ' · ~' + moneyShort(x.loot)),
-        x.hp && x.hw !== 'LOW_LEVEL' ? h('button', { class: 'btn ghost sm hmb', on: { click: () => hitmanSheet(x) } }, icon('skull'), t('hmBtn', { m: moneyShort(x.hp) })) : null)))));
+        h('button', { class: 'btn buy sm', disabled: !!b, on: { click: (e) => { const el = e.currentTarget; withShield((drop) => act('attack', { target: x.name, mode: 'beat', drop }, { el })); } } }, t('beat') + ' · ' + t('luxResp', { n: x.gain })),
+        h('button', { class: 'btn ghost sm', disabled: !!b, on: { click: (e) => { const el = e.currentTarget; withShield((drop) => act('attack', { target: x.name, mode: 'mug', drop }, { el })); } } }, t('rob') + ' · ~' + money(x.loot)),
+        x.hp && x.hw !== 'LOW_LEVEL' ? h('button', { class: 'btn ghost dng sm hmb', on: { click: () => hitmanSheet(x) } }, t('hmBtn', { m: moneyShort(x.hp) })) : null)))));
     if (cant.length) out.push(h('h2', { class: 'sec' }, t('tgOffT')), h('div', { class: 'stack' }, cant.map((x) => h('div', { class: 'card tgt off' },
       h('div', { class: 'who2' }, S.avOk ? h('img', { class: 'avs', src: AV(x.av || 0), alt: '', width: 96, height: 96, loading: 'lazy' }) : null, h('div', null, h('div', { class: 'nm' }, x.tag ? h('span', { class: 'gtag' }, x.tag) : null, x.tag ? ' ' : '', x.name), h('div', { class: 'lv' }, t('level') + ' ' + x.level + ' · ' + titleOf(x.level) + ' · ', h('span', { class: 'c-resp' }, icon('crown'), ' ' + short(x.respect))),
         h('div', { class: 'why' }, errText(x.why), x.until > n ? [' · ', h('b', { class: 'num', dataset: { opend: x.until } }, dur(x.until - n))] : null)))))));
@@ -2874,7 +2874,7 @@ function gangMember(m, mine) {
 }
 // Um botão para o que não se desfaz: o primeiro toque só pede confirmação (muda de cor e de texto), o segundo faz.
 function sureBtn(cls, label, clsSure, labelSure, run) {
-  const b = h('button', { class: cls, on: { click: () => { if (b.dataset.sure === '1') return run(); b.dataset.sure = '1'; b.className = clsSure; b.textContent = labelSure; } } }, label);
+  const b = h('button', { class: cls, on: { click: () => { if (b.dataset.sure === '1') return run(); b.dataset.sure = '1'; b.className = clsSure; setBtn(b, labelSure); } } }, label);
   return b;
 }
 // Quem pode o quê: os cargos da gangue, do chefe ao membro, com quem os tem agora.
@@ -3642,7 +3642,7 @@ async function showLanding(st) {
   if (!info) { try { const r = await fetch('/api/saude'); info = await r.json(); } catch {} }
   const langsw = h('div', { class: 'langsw' }, [['en', 'EN'], ['pt', 'PT']].map(([l, n]) => h('button', { 'aria-pressed': lang() === l ? 'true' : 'false', on: { click: () => { applyLang(l); showLanding(info ? { players: info.jogadores, season: info.epoca } : null); } } }, n)));
   $app.replaceChildren(langsw, h('div', { class: 'land' },
-    h('div', { class: 'land-art', 'aria-hidden': 'true' }, h('img', { src: '/img/cenas/entrada-g.webp?8', alt: '', width: 800, height: 800, fetchpriority: 'high', decoding: 'async' })),
+    h('div', { class: 'land-art', 'aria-hidden': 'true' }, h('img', { src: '/img/cenas/entrada-g.webp?9', alt: '', width: 800, height: 800, fetchpriority: 'high', decoding: 'async' })),
     h('div', { class: 'word neon', 'aria-label': 'Crime' }, 'Crime'),
     h('p', { class: 'tag' }, t('tagline')),
     info ? h('div', { class: 'meta' },

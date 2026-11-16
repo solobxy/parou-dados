@@ -16,8 +16,20 @@ export function h(tag, attrs, ...kids) {
       else el.setAttribute(k, v === true ? '' : v);
     }
   }
+  // botões «ação · preço»: a ação em cima e o preço por baixo, mais pequeno (antes partiam a linha onde calhava: «Depositar 4 112 988 € / · taxa 123 390 €»)
+  if (tag === 'button' && /(^| )btn( |$)/.test(el.className)) kids = kids.map((k) => (typeof k === 'string' && k.includes(' · ') ? btnTwo(k) : k));
   add(el, kids);
   return el;
+}
+// mudar o texto de um botão depois de criado, com a mesma divisão em duas linhas
+export function setBtn(el, txt) { txt = String(txt); el.replaceChildren(...(txt.includes(' · ') ? btnTwo(txt) : [txt])); }
+function btnTwo(txt) {
+  const i = txt.indexOf(' · ');
+  const s = document.createElement('span'); s.className = 'bs';
+  const dot = document.createElement('span'); dot.className = 'sr'; dot.textContent = ' · ';
+  s.append(dot, txt.slice(i + 3));
+  const m = document.createElement('span'); m.className = 'bm'; m.textContent = txt.slice(0, i);
+  return [m, s];
 }
 function add(el, kids) {
   for (const k of kids) {
@@ -91,16 +103,7 @@ export function num(n) {
 }
 // euros a valores reais (base nova): «1 500 €» em português, «€1,500» em inglês; sempre por extenso
 export function money(n) { return LOC === 'pt-PT' ? num(n) + '\u00a0€' : (n < 0 ? '−€' + num(-n) : '€' + num(n)); }
-export function short(n) {
-  const a = Math.abs(n);
-  if (a < 10000) return num(n);
-  const units = [[1e12, 'T'], [1e9, 'B'], [1e6, 'M'], [1e3, 'K']];
-  for (const [v, u] of units) if (a >= v) {
-    const x = n / v;
-    return (x >= 100 ? Math.floor(x) : Math.floor(x * 10) / 10).toLocaleString(LOC, { maximumFractionDigits: 1 }) + u;
-  }
-  return num(n);
-}
+export function short(n) { return num(n); }   // (16/11) também o respeito e as stats por extenso: «16K» escondia o valor
 export function moneyShort(n) { return money(n); }   // os valores em dinheiro escrevem-se sempre por extenso (sem K nem M)
 export function dur(ms) {
   const s = Math.max(0, Math.ceil(ms / 1000));
