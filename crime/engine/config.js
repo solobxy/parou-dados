@@ -82,30 +82,68 @@ export const CFG = {
   // ---------- passo 6, parte 2: regiões, armazéns, preços por região e transporte ----------
   // Portugal em cinco regiões numa linha de norte a sul (pos: o lugar na linha); abrem primeiro três. O jogador vive em Lisboa e não
   // viaja: mexe-se a mercadoria. De uma região para a vizinha é 1 hora; de Lisboa ao Algarve são 2 saltos (passa pelo Alentejo).
+  // Países (16/11/2026): o mapa passa a ser o mundo. Cada jogador vive num país (p.home); o id 'lx' é Portugal (era Lisboa: o
+  // estado da cidade em world.lx passa a ser o do país). Continentes: eu (Europa e Marrocos), am (Américas), as (Ásia).
   regions: {
-    list: [{ id: 'lx', pos: 2 }, { id: 'al', pos: 3 }, { id: 'ag', pos: 4 }],
-    // criminalidade das outras regiões (a de Lisboa está em world.lx), pela mesma fórmula: base e atividade que faz metade do caminho
-    crime: { al: { start: 15, floor: 15, half: 2000 }, ag: { start: 20, floor: 20, half: 2500 } },
-    ptsEur: 20,      // 1 ponto de atividade por cada 20 € de droga (ao preço de grosso) comprada, vendida, desembarcada ou mudada de região
+    list: [{ id: 'lx', ct: 'eu' }, { id: 'nl', ct: 'eu' }, { id: 'de', ct: 'eu' }, { id: 'ma', ct: 'eu' }, { id: 'us', ct: 'am' }, { id: 'co', ct: 'am' }, { id: 'jp', ct: 'as' }, { id: 'cn', ct: 'as' }],
+    // criminalidade dos outros países (a de Portugal está em world.lx), pela fórmula de Lisboa: base e atividade que faz metade do caminho
+    crime: {
+      nl: { start: 25, floor: 25, half: 3000 }, de: { start: 30, floor: 30, half: 4000 }, ma: { start: 25, floor: 25, half: 1500 },
+      us: { start: 35, floor: 35, half: 6000 }, co: { start: 30, floor: 30, half: 2000 }, jp: { start: 15, floor: 15, half: 2500 }, cn: { start: 20, floor: 20, half: 5000 },
+    },
+    // horas de viagem entre países (a mercadoria e quem emigra); conta-se um controlo por cada 6 h, até 3
+    hours: {
+      'lx-nl': 4, 'lx-de': 5, 'lx-ma': 2, 'nl-de': 1, 'nl-ma': 6, 'de-ma': 6, 'us-co': 6, 'jp-cn': 4,
+      'lx-us': 10, 'lx-co': 12, 'nl-us': 10, 'nl-co': 12, 'de-us': 10, 'de-co': 13, 'ma-us': 11, 'ma-co': 12,
+      'lx-cn': 16, 'lx-jp': 18, 'nl-cn': 14, 'nl-jp': 16, 'de-cn': 14, 'de-jp': 16, 'ma-cn': 16, 'ma-jp': 18,
+      'us-jp': 10, 'us-cn': 12, 'co-jp': 18, 'co-cn': 18,
+    },
+    legHours: 6, maxLegs: 3,
+    ptsEur: 20,      // 1 ponto de atividade por cada 20 € de droga (ao preço de grosso) comprada, vendida, desembarcada ou mudada de país
     storeEur: 500,   // e, em cada edição, 1 ponto por cada 500 € de droga guardada à vista
-    famLevel: { leve: 10, festa: 18, pesada: 25 },   // o nível que cada família pede para comprar, vender e mudar (a de bar não se trafica)
+    famLevel: { leve: 10, festa: 18, pesada: 25 },   // o nível que cada família pede para comprar (a de bar não se trafica)
   },
+  // O que cada país muda, em bp de 10 000 (= 100%): saque da rua, polícia (hipótese de ser apanhado na rua e de rusga e de apreensão
+  // na chegada de uma carga), rendimento dos negócios legais, comissão da bolsa, dividendos, preço das armas, risco dos barcos e preço
+  // dos armazéns. Equilibrado em sim/paises.mjs: cada país é dos melhores num estilo de jogo e dos piores noutro.
+  countries: {
+    lx: { loot: 10000, police: 10000, biz: 10000, fee: 10000, div: 10000, arms: 10000, port: 10000, wh: 10000 },
+    nl: { loot: 10500, police: 10000, biz: 11000, fee: 10000, div: 10000, arms: 12000, port: 11000, wh: 12000 },
+    de: { loot: 12000, police: 13000, biz: 11500, fee: 10000, div: 11000, arms: 13000, port: 13000, wh: 15000 },
+    ma: { loot: 6000, police: 7500, biz: 7500, fee: 15000, div: 8000, arms: 9000, port: 8000, wh: 6000 },
+    us: { loot: 12500, police: 15000, biz: 11000, fee: 10000, div: 10000, arms: 6000, port: 15000, wh: 13000 },
+    co: { loot: 6000, police: 7000, biz: 7000, fee: 15000, div: 8000, arms: 8000, port: 8000, wh: 6000 },
+    jp: { loot: 11000, police: 20000, biz: 13500, fee: 5000, div: 14000, arms: 25000, port: 20000, wh: 16000 },
+    cn: { loot: 8500, police: 12000, biz: 12000, fee: 10000, div: 10000, arms: 15000, port: 14000, wh: 9000 },
+  },
+  // emigrar: 5 000 € ou 3% do dinheiro e do banco (o que for maior), as horas da viagem (sem rua, lutas nem golpes), 5% do respeito;
+  // uma vez por semana real
+  emigrate: { min: 5000, bp: 300, respBp: 500, everyMs: 7 * 24 * HOUR },
   // Mercado de cada região, em cêntimos: preço de grosso (80% do de rua) × procura de lá × saturação. Compra-se 10% acima e vende-se
   // 10% abaixo. Vender baixa a saturação e comprar sobe-a: cada 1% de depth (em euros, ao preço de grosso) mexe 1% no preço.
   // Em cada edição a saturação volta 5 pontos ao normal (100%); nunca fica abaixo de 20% nem acima de 200%.
   market: {
     spreadBp: 1000, recBp: 500, satMin: 2000, satMax: 20000,
-    depth: { lx: 300000, al: 75000, ag: 150000 },
+    depth: { lx: 300000, nl: 300000, de: 450000, ma: 150000, us: 900000, co: 150000, jp: 75000, cn: 600000 },
     dem: {
-      lx: { leve: 10000, festa: 10000, pesada: 10500, ecstasy: 8500 },   // onde mais se vende; o ferry traz ecstasy
-      al: { leve: 8500, festa: 9000, pesada: 9000, coca: 7700 },         // pouca gente para comprar; os contentores de coca chegam a Sines
-      ag: { leve: 9500, festa: 11000, pesada: 10000, haxixe: 7200 },     // turistas; o haxixe vem de lancha de Marrocos
+      lx: { leve: 10000, festa: 10000, pesada: 10500 },
+      nl: { leve: 7000, festa: 8500, pesada: 10000, ecstasy: 5000, erva: 6000 },     // Roterdão: ecstasy e erva saem baratos
+      de: { leve: 11000, festa: 12000, pesada: 11500 },                              // quem compra paga bem
+      ma: { leve: 8500, festa: 9000, pesada: 9500, haxixe: 3500, erva: 7000 },        // o haxixe nasce aqui
+      us: { leve: 10500, festa: 11000, pesada: 12500 },                              // o maior mercado
+      co: { leve: 8000, festa: 8500, pesada: 8500, coca: 3500, heroina: 7000 },       // a coca nasce aqui
+      jp: { leve: 17000, festa: 17000, pesada: 17000 },                              // quase não circula: o pouco que há é caríssimo
+      cn: { leve: 9000, festa: 9000, pesada: 10000, cristal: 4500, speed: 4500, ketamina: 4500 },   // as fábricas
     },
     weekendBp: 1000,                                                    // a droga de festa vende 10% melhor à sexta e ao sábado
-    summer: { rg: 'ag', fam: 'festa', bp: 2000, months: [6, 7, 8, 9] },  // e mais 20% no Algarve no verão
+    summer: { rg: 'lx', fam: 'festa', bp: 2000, months: [6, 7, 8, 9] },  // e mais 20% em Portugal no verão (o Algarve)
     // acontecimentos que mexem na procura: em cada edição, 3% de nascer um em cada região que não tenha nenhum; dura 3 edições
     ev: { spawnBp: 300, eds: 3,
-      list: { lx: [{ k: 'cimeira', drug: 'coca', bp: 2500 }], al: [{ k: 'carga', drug: 'coca', bp: -2000 }], ag: [{ k: 'festival', drug: 'ecstasy', bp: 3000 }] } },
+      list: {
+        lx: [{ k: 'carga', drug: 'coca', bp: -2000 }], nl: [{ k: 'festival', drug: 'ecstasy', bp: 3000 }], de: [{ k: 'cimeira', drug: 'coca', bp: 2500 }],
+        ma: [{ k: 'colheita', drug: 'haxixe', bp: -2500 }], us: [{ k: 'crise', drug: 'heroina', bp: 3000 }], co: [{ k: 'colheita', drug: 'coca', bp: -2500 }],
+        jp: [{ k: 'cerco', drug: 'cristal', bp: 3000 }], cn: [{ k: 'fabrica', drug: 'cristal', bp: -2500 }],
+      } },
     // apreensão recorde (uma rusga que leva 50 000 € ou mais): a polícia mostrou serviço, a criminalidade cai 10 e a droga apreendida
     // fica 20% mais cara nessa região (a saturação sobe 20 pontos e volta 5 por edição)
     record: { min: 50000, crime: 10, satBp: 2000 },
@@ -114,9 +152,9 @@ export const CFG = {
   // esconderijo (a parte do stock que uma rusga não vê) e fachada (corta o calor que o armazém gera).
   wh: {
     level: 10,
-    lx: { price: 0, sp: [10000, 20000, 40000, 80000, 160000], spCost: [0, 60000, 180000, 500000, 1500000] },      // caro e pequeno
-    al: { price: 30000, sp: [50000, 100000, 200000, 400000, 800000], spCost: [0, 20000, 60000, 180000, 500000] },  // enorme e barato
-    ag: { price: 50000, sp: [20000, 40000, 80000, 160000, 320000], spCost: [0, 40000, 120000, 350000, 1000000] },
+    // o de casa (no país onde se vive) é o que já havia, de graça; os de fora custam o preço de base vezes o 'wh' do país
+    home: { price: 0, sp: [10000, 20000, 40000, 80000, 160000], spCost: [0, 60000, 180000, 500000, 1500000] },
+    abroad: { price: 40000, sp: [20000, 40000, 80000, 160000, 320000], spCost: [0, 40000, 120000, 350000, 1000000] },
     hideBp: [1000, 2000, 3000, 4000, 5000], frontBp: [1000, 2000, 3000, 4000, 5000], upCost: [0, 20000, 60000, 180000, 500000],
     // calor (0 a 100): +1 por cada 1 000 € que entram ou saem (menos o que a fachada corta). Parado, desce 10 por edição, mas nunca
     // abaixo de 1 por cada 10 000 € à vista (também menos a fachada).
@@ -127,7 +165,7 @@ export const CFG = {
   },
   // Transporte entre regiões: 1 hora por salto; risco de apreensão em cada salto = média da pressão das duas regiões a dividir por 10, em %.
   // Se a polícia apanha: as leves pagam multa de 10% e seguem; as de festa ficam apreendidas; as pesadas ficam apreendidas e dão prisão.
-  mv: { hopMs: HOUR, max: 5, log: 6 },
+  mv: { hourMs: HOUR, max: 5, log: 6 },
 
   train: { energy: 5, costBase: 0, costPerStat: 0 }, // +1 ponto por treino; gasta energia (vigor), não stamina
 
@@ -578,12 +616,12 @@ export const CFG = {
   // legacy: os contentores enviados antes de haver carregamentos valem como o porta-contentores (os mesmos +30% e 15%).
   port: { minAmount: 100, capBase: 1000, capNum: 8, capDen: 5, slotsEveryLevels: 5, legacy: 3, // limite por carregamento: 1000 × 1,6^(nível−1)
     ships: [
-      { id: 'pesca', rg: 'lx', level: nv(1), ms: 2 * HOUR, gainBp: 1200, seizeBp: 600, drug: 'erva' },
-      { id: 'lancha', rg: 'ag', level: nv(3), ms: 1 * HOUR, gainBp: 800, seizeBp: 500, drug: 'haxixe' },
-      { id: 'ferry', rg: 'lx', level: nv(5), ms: 3 * HOUR, gainBp: 2100, seizeBp: 1000, drug: 'ecstasy' },
-      { id: 'contentor', rg: 'al', level: nv(7), ms: 4 * HOUR, gainBp: 3000, seizeBp: 1500, drug: 'coca' },
-      { id: 'cargueiro', rg: 'lx', level: nv(10), ms: 6 * HOUR, gainBp: 4600, seizeBp: 1900, drug: 'cristal' },
-      { id: 'submarino', rg: 'lx', level: nv(13), ms: 8 * HOUR, gainBp: 3700, seizeBp: 900, drug: 'heroina' },
+      { id: 'pesca', level: nv(1), ms: 2 * HOUR, gainBp: 1200, seizeBp: 600, drug: 'erva' },
+      { id: 'lancha', level: nv(3), ms: 1 * HOUR, gainBp: 800, seizeBp: 500, drug: 'haxixe' },
+      { id: 'ferry', level: nv(5), ms: 3 * HOUR, gainBp: 2100, seizeBp: 1000, drug: 'ecstasy' },
+      { id: 'contentor', level: nv(7), ms: 4 * HOUR, gainBp: 3000, seizeBp: 1500, drug: 'coca' },
+      { id: 'cargueiro', level: nv(10), ms: 6 * HOUR, gainBp: 4600, seizeBp: 1900, drug: 'cristal' },
+      { id: 'submarino', level: nv(13), ms: 8 * HOUR, gainBp: 3700, seizeBp: 900, drug: 'heroina' },
     ] },
 
   // Três tipos de armas, cada um no seu espaço. Compram-se por ordem, uma de cada vez, e a anterior não se vende nem volta.

@@ -175,16 +175,16 @@ const GASTO = { detox: 'farma', cure: 'farma', medic: 'farma', medicFor: 'farma'
 // a droga comprada, vendida, desembarcada ou mudada de região conta para a criminalidade dessa região (1 ponto por cada 20 €)
 const MEXE_MUNDO = new Set(['stockBuy', 'stockSell', 'mktBuy', 'mktSell', 'stockDump', 'mvSend', 'portOpen', 'collect', 'airCollect']);
 const pontos = (r, v) => { if (r && v > 0) mundoAcc(r, v / CFG.regions.ptsEur); };
-function contarMundo(a, r, delta) {
+function contarMundo(a, r, delta, home = 'lx') {
   if (a.type === 'mktBuy' || a.type === 'mktSell') pontos(r.r, r.v);
-  else if (a.type === 'stockDump') pontos('lx', r.v);
+  else if (a.type === 'stockDump') pontos(home, r.v);
   else if (a.type === 'mvSend') { pontos(r.a, r.v); pontos(r.b, r.v); }
   else if (a.type === 'portOpen' && r.item) pontos(r.item.rg, r.item.v);
   else if (a.type === 'collect') for (const x of r.port || []) pontos(x.rg, x.v);
   else if (a.type === 'airCollect') pontos(r.rg, r.v);
-  if (a.type === 'crime' || a.type === 'crimeAll') { const c = CFG.crimes[int(a.k)]; if (c) mundoAcc('lx', c.e * (a.type === 'crimeAll' ? r.n || 0 : 1)); }
-  else if (a.type === 'attack') mundoAcc('lx', CFG.world.lx.fight);
-  else if (a.type === 'deal') mundoAcc('lx', CFG.deal.step);
+  if (a.type === 'crime' || a.type === 'crimeAll') { const c = CFG.crimes[int(a.k)]; if (c) mundoAcc(home, c.e * (a.type === 'crimeAll' ? r.n || 0 : 1)); }
+  else if (a.type === 'attack') mundoAcc(home, CFG.world.lx.fight);
+  else if (a.type === 'deal') mundoAcc(home, CFG.deal.step);
   else if (a.type === 'casino' && (r.g !== 'bj' || r.done)) mundoAcc('casino', -casinoNet(r));
   else if (a.type === 'port' && delta < 0) mundoAcc('docas', Math.round((-delta * CFG.world.portBp) / 10000));
   else if (GASTO[a.type] && delta < 0) mundoAcc(GASTO[a.type], -delta);
@@ -296,7 +296,7 @@ function bolsaDe(w, now) {
     if (!Array.isArray(bolsa.hist) || !bolsa.hist.length) bolsa.hist = [bolsa.prices.slice()];
     // o mercado antigo (preços ao acaso) passa a ter empresas: cada uma começa no preço a que estava, e quem tinha ações fica com elas
     if (!bolsa.w) { bolsa.w = MW.newWorld(bolsa.prices, Math.max(now, w.start)); bolsaSuja = true; }
-    if (bolsa.w.v !== 2) { MW.worldUp(bolsa.w); bolsaSuja = true; }   // o mundo da parte 1 ganha as regiões e o mercado
+    if (bolsa.w.v !== MW.WORLD_V) { MW.worldUp(bolsa.w); bolsaSuja = true; }   // o mundo gravado antes ganha os países
     bolsaRonda = w.n;
   }
   const S = CFG.stocks, alvo = Math.max(0, Math.floor((Math.min(now, w.playEnd) - w.start) / S.tickMs));
@@ -335,7 +335,7 @@ function dividendos(div, t, now) {
       if (!Array.isArray(p.stk)) continue;
       let cents = 0; const list = [];
       p.stk.forEach((h, k) => { if (h && h.n > 0 && h.gen === bolsa.gen[k] && div[k] > 0) { cents += h.n * div[k]; list.push(S_ID(k)); } });
-      const money = Math.floor(cents / 100);
+      const money = Math.floor((Math.floor(cents / 100) * E.ctryOf(p).div) / 10000);   // os dividendos pela regra do país onde se vive
       if (money <= 0) continue;
       p.cash += money;
       guardar(p, now); caixa(t, 'dividendos', money, 0);
@@ -402,7 +402,8 @@ function vista(p, now) {
   return {
     stk: mk ? E.stockView(p, mk) : CFG.stocks.list.map(() => ({ n: 0, cost: 0, value: 0, tp: 0, sl: 0 })), stockCap: E.stockCap(p),
     wh: E.whView(p), mv: E.mvView(p), mvLog: p.mvLog, rz: p.rz, mk: mk ? MW.marketView(mk.w, now) : null,   // regiões e armazéns (passo 6, parte 2)
-    bustBp: E.bustChanceBp(p, now, mk ? mk.w.lx.press : 50), lx: mk ? { crime: mk.w.lx.crime, press: mk.w.lx.press, ed: mk.w.ed, edNext: MW.edStart(mk.w.ed + 1) } : null,
+    bustBp: E.bustChanceBp(p, now, mk ? MW.pressOf(mk.w, E.homeOf(p)) : 50), lx: mk ? { crime: MW.regionOf(mk.w, E.homeOf(p)).crime, press: MW.pressOf(mk.w, E.homeOf(p)), ed: mk.w.ed, edNext: MW.edStart(mk.w.ed + 1) } : null,
+    home: E.homeOf(p), homeSet: !!p.homeSet, emAt: p.emAt || 0, travelUntil: p.travelUntil || 0, emCost: E.emigrateCost(p),   // o país onde se vive (lx = Portugal)
     name: nomeDe(p.id),
     stats: p.stats, energy: p.energy, energyT: p.energyT, energyMax: E.energyMax(p), vigor: p.vigor, vigorT: p.vigorT,
     addiction: p.addiction, addictionT: p.addictionT, addictionCap: E.addictionCap(p),
@@ -441,7 +442,7 @@ function cfgPublica() {
   return {
     energy: CFG.energy, vigor: CFG.vigor, street: CFG.street, refillBar: CFG.refillBar, deal: CFG.deal, jobs: CFG.jobs, courses: CFG.courses, skills: CFG.skills, addiction: CFG.addiction, train: CFG.train, crimes: CFG.crimes, drugs: CFG.drugs,
     biz: CFG.biz.map(({ id, price, perH, resp, stat, raid, toBank, drug }) => ({ id, price, perH, resp, stat, raid, toBank, drug: drug ? CFG.drugs.findIndex((x) => x.id === drug) : -1 })), accountant: CFG.accountant,
-    bizMax: CFG.bizMax, storageMs: CFG.storageMs, port: { ...CFG.port, ships: CFG.port.ships.map((s) => ({ ...s, drug: CFG.drugs.findIndex((x) => x.id === s.drug) })) }, air: CFG.air, goods: CFG.goods, venue: CFG.venue, detox: CFG.detox, stocks: CFG.stocks, slots: CFG.slots, gear: CFG.gear, bullets: CFG.bullets, loot: CFG.loot, ops: CFG.ops, opSteps: CFG.opSteps, retainer: CFG.retainer, jail: CFG.jail, launder: CFG.launder, world: CFG.world, regions: CFG.regions, market: CFG.market, wh: CFG.wh, mv: CFG.mv, tools: CFG.tools, gweapons: CFG.gweapons, guards: CFG.guards, hitman: CFG.hitman,
+    bizMax: CFG.bizMax, storageMs: CFG.storageMs, port: { ...CFG.port, ships: CFG.port.ships.map((s) => ({ ...s, drug: CFG.drugs.findIndex((x) => x.id === s.drug) })) }, air: CFG.air, goods: CFG.goods, venue: CFG.venue, detox: CFG.detox, stocks: CFG.stocks, slots: CFG.slots, gear: CFG.gear, bullets: CFG.bullets, loot: CFG.loot, ops: CFG.ops, opSteps: CFG.opSteps, retainer: CFG.retainer, jail: CFG.jail, launder: CFG.launder, world: CFG.world, regions: CFG.regions, countries: CFG.countries, emigrate: CFG.emigrate, market: CFG.market, wh: CFG.wh, mv: CFG.mv, tools: CFG.tools, gweapons: CFG.gweapons, guards: CFG.guards, hitman: CFG.hitman,
     pvp: CFG.pvp, bank: CFG.bank, luxury: CFG.luxury, levels: CFG.levels, crit: CFG.crit, unlockBp: CFG.unlockBp,
     bustBp: CFG.bustBp, crimeAllMax: CFG.crimeAllMax, casino: { minBet: CFG.casino.minBet, buyMaxMult: CFG.casino.buyMaxMult, red: CFG.casino.red, dice: CFG.casino.dice, wheel: { segs: CFG.casino.wheel.segs, spots: CFG.casino.wheel.spots, topMult: CFG.casino.wheel.topMult.map(([m]) => m), louca: CFG.casino.wheel.louca }, slots: Object.fromEntries(Object.entries(CFG.casino.slots).map(([k, g]) => [k, { kind: g.kind, cols: g.cols, rows: g.rows, min: g.min, nsym: g.nsym, trig: g.trig, pay: g.pay, scatPay: g.scatPay, free: g.free, fs: g.fs, retrig: g.retrig, buy: g.buy, superBuy: g.superBuy, max: g.max, accFree: g.accFree, accAll: g.accAll, orbBase: g.orbBase }])) }, gang: CFG.gang, classes: CFG.classes, classChange: CFG.classChange, avatars: CFG.avatars, hookers: CFG.hookers, house: CFG.house, mastery: CFG.mastery, missions: CFG.missions.length, start: CFG.start,
     round: { playDays: CFG.round.playDays, noPvpMs: CFG.round.noPvpMs }, season: CFG.season,
@@ -1174,7 +1175,8 @@ function agir(conta, corpo, now) {
   if (w.phase !== 'play') throw new E.GameError('ROUND_CLOSED');
   carregarRonda(w.n); epocaEmDia(now); resolverOps(now);
   const p = jogadorDe(conta, now, w);
-  const world = { start: w.start, playEnd: w.playEnd, press: w.phase === 'play' ? bolsaDe(w, now).w.lx.press : 50 };
+  const mw0 = w.phase === 'play' ? bolsaDe(w, now).w : null;
+  const world = { start: w.start, playEnd: w.playEnd, press: mw0 ? mw0.lx.press : 50, presses: mw0 ? Object.fromEntries(MW.REG().map((g) => [g, MW.pressOf(mw0, g)])) : null };   // a pressão de cada país (a rua de cada um é a do país onde vive)
   const a = corpo || {};
   let r, alvo = null, alvoResp0 = 0, mesa = null;
   const ctx = { outros: [], ops: [], depois: [] };   // o que as gangues têm de gravar no mesmo passo
@@ -1245,6 +1247,8 @@ function agir(conta, corpo, now) {
     case 'stockDump': r = E.stockDump(p, now, world, int(a.d), int(a.n), bolsaDe(w, now)); break;
     // regiões, armazéns e transporte (passo 6, parte 2): o mercado de cada região está no mundo, com a bolsa
     case 'whBuy': r = E.whBuy(p, now, world, String(a.r || '')); break;
+    case 'home': r = E.chooseHome(p, now, world, String(a.r || '')); break;
+    case 'emigrate': r = E.emigrate(p, now, world, String(a.r || '')); break;
     case 'whUp': r = E.whUp(p, now, world, String(a.r || ''), String(a.k || '')); break;
     case 'mktBuy': r = E.mktBuy(p, now, world, bolsaDe(w, now), String(a.r || ''), int(a.d), int(a.n), Number.isSafeInteger(a.c) ? a.c : undefined); break;
     case 'mktSell': r = E.mktSell(p, now, world, bolsaDe(w, now), String(a.r || ''), int(a.d), int(a.n), Number.isSafeInteger(a.c) ? a.c : undefined); break;
@@ -1326,7 +1330,7 @@ function agir(conta, corpo, now) {
     for (const f of ctx.ops) f();
     if (mesa) { if (mesa.bets) qm.aposta.run(mesa.g, mesa.c.id, conta, ronda, JSON.stringify(mesa.bets), mesa.total); else qm.tirar.run(mesa.g, mesa.c.id, conta); }
     contarAcao(now, a, r, p, alvo, resp0, alvoResp0);
-    try { contarMundo(a, r, dinheiro(p) - din0); } catch (e) { console.error('mundo', e.message); }
+    try { contarMundo(a, r, dinheiro(p) - din0, E.homeOf(p)); } catch (e) { console.error('mundo', e.message); }
     if (MEXE_MUNDO.has(a.type)) bolsaSuja = true;   // a ordem empurrou o preço (na bolsa ou no mercado de uma região): grava-se com o resto
     const avPago = ((p.avN || 0) - av0) * CFG.retainer.day;
     if (avPago > 0) caixa(now, 'avenca', 0, avPago);
@@ -1436,7 +1440,7 @@ function alvos(conta, now, w) {
     const base = { name: nomeDe(d.id), level: E.level(d), respect: d.respect, av: d.av || 0, cls: d.cls || '', tag: tagDe(d.id) };
     if (motivo && motivo !== 'NO_PVP_YET') {
       // quem não dá para atacar também aparece, com o motivo (why) e, quando é por tempo, a hora a que acaba (until)
-      const until = motivo === 'TARGET_NEW' ? d.shieldUntil : motivo === 'TARGET_HOSPITAL' ? d.hospUntil : motivo === 'TARGET_JAIL' ? d.jailUntil : motivo === 'TARGET_PROTECTED' ? Math.max(d.protectUntil, d.capUntil) : 0;
+      const until = motivo === 'TARGET_NEW' ? d.shieldUntil : motivo === 'TARGET_HOSPITAL' ? d.hospUntil : motivo === 'TARGET_JAIL' ? d.jailUntil : motivo === 'TARGET_TRAVELING' ? d.travelUntil : motivo === 'TARGET_PROTECTED' ? Math.max(d.protectUntil, d.capUntil) : 0;
       fora.push({ ...base, why: motivo, until });
       continue;
     }

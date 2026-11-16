@@ -36,22 +36,30 @@ const satNew = () => CFG.drugs.map(() => 10000);
 export function newWorld(prices, now) {
   const L = W().lx;
   return {
-    v: 2, ed: edAt(now), lx: { crime: L.start, press: L.start, hist: [] }, acc: accNew(), arts: [],
+    v: WORLD_V, ed: edAt(now), lx: { crime: L.start, press: L.start, hist: [] }, acc: accNew(), arts: [],
     rg: rgMap((r) => ({ crime: CFG.regions.crime[r].start, press: CFG.regions.crime[r].start, hist: [] })),
     mk: Object.fromEntries(CFG.regions.list.map((r) => [r.id, satNew()])), ev: [],
     co: CFG.stocks.list.map((s, k) => { const p = prices && prices[k] > 0 ? prices[k] : s.base; return { v: p, anc: p, open: p, rev: [], div: 0, pan: 0, bad: 0, st: null, last: 0 }; }),
   };
 }
-// o mundo gravado antes das regiões (parte 1) ganha o Alentejo, o Algarve e o mercado de cada região
+// o mundo gravado antes ganha o que lhe falta: as regiões (parte 1) e, desde 16/11, os países em vez do Alentejo e do Algarve
+// (o que era só dessas regiões sai: criminalidade, mercado, acontecimentos e pontos por contar)
+export const WORLD_V = 3;
 export function worldUp(w) {
   if (!w) return w;
-  if (!w.rg) w.rg = rgMap((r) => ({ crime: CFG.regions.crime[r].start, press: CFG.regions.crime[r].start, hist: [] }));
+  if (w.v === WORLD_V && w.rg && w.mk && Array.isArray(w.ev) && w.acc && w.acc.rg) return w;
+  if (!w.rg) w.rg = {};
+  for (const r of Object.keys(w.rg)) if (!OTHER().includes(r)) delete w.rg[r];
   for (const r of OTHER()) if (!w.rg[r]) w.rg[r] = { crime: CFG.regions.crime[r].start, press: CFG.regions.crime[r].start, hist: [] };
   if (!w.mk) w.mk = {};
+  for (const r of Object.keys(w.mk)) if (!REG().includes(r)) delete w.mk[r];
   for (const r of CFG.regions.list) if (!Array.isArray(w.mk[r.id]) || w.mk[r.id].length !== CFG.drugs.length) w.mk[r.id] = satNew();
   if (!Array.isArray(w.ev)) w.ev = [];
-  if (!w.acc.rg) w.acc.rg = rgMap(() => 0);
-  w.v = 2;
+  w.ev = w.ev.filter((e) => REG().includes(e.r));
+  if (!w.acc.rg) w.acc.rg = {};
+  for (const r of Object.keys(w.acc.rg)) if (!OTHER().includes(r)) delete w.acc.rg[r];
+  for (const r of OTHER()) if (!(r in w.acc.rg)) w.acc.rg[r] = 0;
+  w.v = WORLD_V;
   return w;
 }
 // o que os jogadores fizeram desde a última edição: 'lx' em pontos de Lisboa (a stamina gasta na rua, as lutas, as vendas, e a droga
@@ -91,7 +99,7 @@ export const pressOf = (w, r) => { const g = w && regionOf(w, r); return g ? g.p
 
 // ---------- mercado de cada região ----------
 export const REG = () => CFG.regions.list.map((r) => r.id);
-export const regPos = (r) => { const x = CFG.regions.list.find((g) => g.id === r); return x ? x.pos : null; };
+export const contOf = (r) => { const x = CFG.regions.list.find((g) => g.id === r); return x ? x.ct : null; };
 export const tradable = (d) => !!CFG.drugs[d] && CFG.drugs[d].fam !== 'bar';
 // preço de grosso de uma droga, em cêntimos (80% do preço de rua)
 export const refC = (d) => Math.floor((CFG.drugs[d].price * 100 * CFG.goods.wholesaleBp) / 10000);

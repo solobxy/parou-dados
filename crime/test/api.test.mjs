@@ -1080,9 +1080,8 @@ test('porto e stash por API: escolhe-se o barco (com nível, droga e risco próp
   r = await ag(A, '10.0.9.140', { type: 'collect' }); assert.equal(r.status, 200); const it = r.body.result.port[0];
   assert.equal(it.k, 0); assert.equal(it.amount, 500); assert.ok(it.seized ? it.got === 0 && r.body.me.cash === 9500 : it.got === 560 && r.body.me.cash === 9500 + 560, JSON.stringify(it));
   // abrir um contentor de cada vez (a animação do porto): só o que já chegou, identificado pela hora de chegada; os outros ficam como estavam
-  // a lancha (haxixe) descarrega no Algarve: em droga, precisa do armazém de lá (passo 6, parte 2)
-  await mexer({ Armador: (e) => { e.cash = 10_000; e.bank = 0; e.respect = 50_000; e.peakRespect = 50_000; e.port = [];
-    e.wh = { lx: { sp: 1, hd: 1, fr: 1, h: 0, f: 0 }, al: null, ag: { sp: 1, hd: 1, fr: 1, h: 0, f: 0, s: CFG.drugs.map(() => 0) } }; } });
+  // os barcos descarregam no país onde se vive (países, 16/11/2026): em droga, entra no armazém de casa
+  await mexer({ Armador: (e) => { e.cash = 10_000; e.bank = 0; e.respect = 50_000; e.peakRespect = 50_000; e.port = []; e.stock = CFG.drugs.map(() => 0); } });
   r = await ag(A, '10.0.9.140', { type: 'port', k: 0, amount: 500 }); assert.equal(r.status, 200, JSON.stringify(r.body));
   r = await ag(A, '10.0.9.140', { type: 'port', k: 1, amount: 800, goods: true }); assert.equal(r.status, 200, JSON.stringify(r.body)); assert.equal(r.body.me.port.length, 2); assert.equal(r.body.me.cash, 8700);
   r = await ag(A, '10.0.9.140', { type: 'portOpen', at: r.body.me.port[0].readyAt }); assert.equal(r.body.error, 'SHIP_AT_SEA');
@@ -1093,7 +1092,7 @@ test('porto e stash por API: escolhe-se o barco (com nível, droga e risco próp
   r = await ag(A, '10.0.9.140', { type: 'collect', port: false }); assert.equal(r.status, 200, JSON.stringify(r.body)); assert.deepEqual(r.body.result.port, []); assert.equal(r.body.me.port.length, 2); assert.equal(r.body.me.cash, 8700);
   r = await ag(A, '10.0.9.140', { type: 'portOpen', at: at1 }); assert.equal(r.status, 200, JSON.stringify(r.body));
   let o = r.body.result; assert.equal(o.left, 1); assert.equal(o.item.k, 1); assert.equal(o.item.amount, 800);
-  assert.ok(o.item.seized ? o.item.got === 0 && r.body.me.cash === 8700 : o.item.got === 864 && o.item.units > 0 && r.body.me.cash === 8700 + o.item.rest && r.body.me.wh.ag.s[o.item.d] === o.item.units && o.item.rg === 'ag', JSON.stringify(o));
+  assert.ok(o.item.seized ? o.item.got === 0 && r.body.me.cash === 8700 : o.item.got === 864 && o.item.units > 0 && r.body.me.cash === 8700 + o.item.rest && r.body.me.stock[o.item.d] === o.item.units && o.item.rg === 'lx', JSON.stringify(o));
   assert.equal(r.body.me.port.length, 1); assert.equal(r.body.me.port[0].k, 0);
   r = await ag(A, '10.0.9.140', { type: 'portOpen', at: at1 }); assert.equal(r.body.error, 'NO_CARGO', 'o mesmo contentor não se abre duas vezes');
   const antesAbrir = (await A.estado()).cash;
