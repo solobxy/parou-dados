@@ -112,7 +112,47 @@ export const CFG = {
     { id: 'luvas', slot: 'maos', price: 25, def: 500 },
     { id: 'mochila', slot: 'acess', price: 45, room: 4 },
     { id: 'scanner', slot: 'acess', price: 400, bustBp: 2000 },
+    // material dos golpes grandes (passo 5): não se veste, guarda-se no inventário. As ferramentas ficam; os explosivos gastam-se.
+    { id: 'pedecabra', slot: 'mat', price: 20 },
+    { id: 'gazuas', slot: 'mat', price: 40 },
+    { id: 'macarico', slot: 'mat', price: 400 },
+    { id: 'explosivos', slot: 'mat', price: 3000, once: true },
+    { id: 'broca', slot: 'mat', price: 5000 },
   ],
+  // Golpes grandes (passo 5, «Operações» da especificação): um de cada vez, preparação em tempo real, custo pago à cabeça,
+  // parte do jogador se correr bem, hipótese (bp), pausa antes do seguinte. Valores da wiki; o resto é meu (grau D):
+  // fam = skill que sobe e ajuda; jailMin = prisão se fores apanhado; lawyer = advogado se falhar; mat = material que tem de estar no
+  // inventário; gun = pede arma de fogo e balas; rasto = o que fica para trás antes de preparar; alarm/drive = onde os cursos ajudam.
+  ops: [
+    { id: 'carros', level: 15, prepH: 12, cost: 200, gain: 4300, p: 8000, pauseH: 0, fam: 'conducao', jailMin: 30, lawyer: 300, mat: ['gazuas'], rasto: 40, drive: true },
+    { id: 'residencia', level: 20, prepH: 24, cost: 500, gain: 4500, p: 7500, pauseH: 0, fam: 'furto', jailMin: 40, lawyer: 500, mat: ['pedecabra', 'gazuas'], rasto: 50, alarm: true },
+    { id: 'ourivesaria', level: 35, prepH: 48, cost: 5000, gain: 35000, p: 6500, pauseH: 24, fam: 'assalto', jailMin: 60, lawyer: 3000, mat: ['pedecabra'], gun: true, rasto: 60, alarm: true },
+    { id: 'lancha', level: 40, prepH: 48, cost: 70000, gain: 170000, p: 8000, pauseH: 48, fam: 'trafico', jailMin: 75, lawyer: 4000, mat: [], rasto: 40, drive: true },
+    { id: 'banco', level: 55, prepH: 96, cost: 30000, gain: 78000, p: 5500, pauseH: 48, fam: 'armas', jailMin: 90, lawyer: 5000, mat: ['macarico'], gun: true, rasto: 60, alarm: true },
+    { id: 'carrinha', level: 65, prepH: 120, cost: 40000, gain: 100000, p: 5000, pauseH: 72, fam: 'armas', jailMin: 100, lawyer: 5500, mat: ['explosivos'], gun: true, rasto: 60, drive: true },
+    { id: 'contentor', level: 75, prepH: 120, cost: 400000, gain: 1500000, p: 7000, pauseH: 120, fam: 'trafico', jailMin: 110, lawyer: 7000, mat: [], rasto: 40 },
+    { id: 'casino', level: 80, prepH: 168, cost: 150000, gain: 700000, p: 4000, pauseH: 120, fam: 'burla', jailMin: 120, lawyer: 7000, mat: ['broca'], rasto: 50, alarm: true },
+  ],
+  // Passos da preparação (nenhum gasta barra): reconhecimento (1% da parte, baixa o rasto), equipa (5%, sobe a hipótese) e suborno
+  // (6%, só nos golpes que custam mais de 2 000 €: se falhar, não há advogado, prisão nem investigação). Respeito de um golpe que corre
+  // bem: 2 × √parte (a wiki diz 3 ×; com 3 o motor chegava ao nível 100 antes das metas: regular no dia 245, bot no 147). Rasto: apanhado ao falhar
+  // rasto/2 % das vezes; ligado ao golpe depois de correr bem rasto/5 % das vezes. Hipótese no máximo 95%.
+  // A skill da família, os cursos (vigilante onde há alarmes, motorista onde há fuga de carro), as luvas e os contactos baixam o rasto;
+  // só a equipa sobe a hipótese (a skill e os cursos a subir a hipótese punham o motor 45% acima do modelo no fim do ano).
+  opSteps: { reconBp: 100, reconMin: 20, recon: 20, crewBp: 500, crew: 800, bribeBp: 600, bribeFrom: 2000, gloves: 10, alarmCourse: 'vigilante', alarm: 10,
+    driveCourse: 'pesados', drive: 10, contact: 15, skillDiv: 300, maxBp: 9500, minRasto: 5, caughtPer: 50, linkedPer: 20, practice: 1000, bullets: 30, respK: 2 },
+  // Lavagem (dos gastos da especificação): passados os primeiros 100 000 € de crime, 20% do que o crime rende perde-se nas fachadas.
+  // Conta o dinheiro dos golpes de rua, da venda de droga, dos golpes grandes e do que se vende ao recetador. A licenciatura
+  // (o contabilista) lava mais barato: 15% (grau D).
+  launder: { freeUpTo: 100000, bp: 2000, course: 'licenciatura', courseBp: 1500 },
+  // Advogado em avença: a partir do nível 30, 3 000 € por cada dia em que se joga. Paga o advogado dos golpes grandes falhados e corta a prisão a metade.
+  retainer: { level: 30, day: 3000, jailCutBp: 5000 },
+  // Prisão com coisas para fazer (passo 5). Contrabando: 20 de stamina rende metade do que a rua dá no teu nível, mas 15% das vezes
+  // perde-se a mercadoria. Oficina: 10 de energia, 50 €. Pátio: 10 de energia, aposta de 20 € a 200 € conforme o nível, treina a força.
+  // Cartas: 1 € a 50 €, sem barra. Favores: 2 por estadia (tirar 15% ao tempo, ou um contacto para os golpes grandes, até 3).
+  // Fuga: 30 de stamina, 35%; se falhar, a pena cresce metade do que falta.
+  jail: { smuggleE: 20, smuggleLoseBp: 1500, workE: 10, work: 50, yardE: 10, yardMin: 20, yardMax: 200, cardsMax: 50, favors: 2, favorCutBp: 1500,
+    contactsMax: 3, escapeE: 30, escapeBp: 3500, escapeAddBp: 5000 },
   // Stamina a mais, a droga: cada barra (100) no mesmo dia custa 35 € × k + 15 € × k² (50, 130, 240, 380 €…); uma barra a meio paga-se à parte.
   refillBar: { a: 35, b: 15 },
   // Venda de droga na rua: compra-se ao quilo e vende-se ao grama com stamina (10 por venda). Uma barra vende perBar gramas.

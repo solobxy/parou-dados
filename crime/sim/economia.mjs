@@ -11,7 +11,9 @@
 
 const SEED = +(process.argv[2] ?? 1), N = +(process.argv[3] ?? 300), DIAS = +(process.argv[4] ?? 365);
 // para comparar com o motor (dev/sim-motor.mjs) enquanto ele ainda não tem estes sistemas: SEM_EMPREGO=1, SEM_OPS=1, SEM_GASTOS=1
-const SEM = { emprego: process.env.SEM_EMPREGO === '1', ops: process.env.SEM_OPS === '1', gastos: process.env.SEM_GASTOS === '1' };
+// (SEM_GASTOS desliga os três gastos; cada um também se desliga sozinho: SEM_LAVAGEM=1, SEM_AVENCA=1, SEM_SEGURANCAS=1)
+const SEM_G = process.env.SEM_GASTOS === '1', semG = (k) => (process.env[k] === undefined ? SEM_G : process.env[k] === '1');
+const SEM = { emprego: process.env.SEM_EMPREGO === '1', ops: process.env.SEM_OPS === '1', lavagem: semG('SEM_LAVAGEM'), avenca: semG('SEM_AVENCA'), segurancas: semG('SEM_SEGURANCAS') };
 function rngDe(s) { let a = s >>> 0; return () => { a |= 0; a = (a + 0x6d2b79f5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
 
 // ---------- números do modelo (os que vão para a wiki) ----------
@@ -144,13 +146,13 @@ function simula(perfil, rng) {
     }
     // lavagem e equipa
     s.ilegal += crime;
-    if (!SEM.gastos && s.ilegal > P.lavagem.acimaDe) crime *= 1 - P.lavagem.parte;
+    if (!SEM.lavagem && s.ilegal > P.lavagem.acimaDe) crime *= 1 - P.lavagem.parte;
     entra += crime;
     // vida: sobe de degrau quando pode
     s.media = s.media == null ? entra : s.media * 0.8 + entra * 0.2;   // o que se ganha por dia, alisado
-    s.avenca = !SEM.gastos && nv >= P.avenca.nivel && P.avenca.dia <= s.media * P.avenca.parte;
+    s.avenca = !SEM.avenca && nv >= P.avenca.nivel && P.avenca.dia <= s.media * P.avenca.parte;
     if (s.avenca) sai += P.avenca.dia;
-    if (!SEM.gastos && nv >= P.segurancas.nivel) sai += P.segurancas.dia * Math.min(P.segurancas.max, Math.floor((s.media * P.segurancas.parte) / P.segurancas.dia));
+    if (!SEM.segurancas && nv >= P.segurancas.nivel) sai += P.segurancas.dia * Math.min(P.segurancas.max, Math.floor((s.media * P.segurancas.parte) / P.segurancas.dia));
     const cabe = (i) => { const t = P.vida[i]; return t && t.dia * P.mesesPorDia <= s.media * P.parteDaVida && (!t.compra || s.casa >= t.compra || s.cash + entra - sai > t.compra * 1.3); };
     let alvo = 0; for (let j = 1; j < P.vida.length; j++) if (cabe(j)) alvo = j;
     if (alvo !== s.vida) { s.vida = alvo; const t = P.vida[alvo]; if (t.compra && s.casa < t.compra) { sai += t.compra - s.casa; s.casa = t.compra; if (!s.tetoDia) s.tetoDia = d; if (!s.casaDia && t.compra >= P.casaASerio) s.casaDia = d; } }

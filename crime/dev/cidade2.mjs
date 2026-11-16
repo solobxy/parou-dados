@@ -2,6 +2,8 @@
 // Uso: node dev/cidade2.mjs <pasta> [porto]   (dentro de crime/). Deixa o servidor a correr e escreve <pasta>/contas.json com os cookies.
 // Contas: Novato (nível 1, barraca, 50 €), Assaltante (nível 30, pistola, rua quente, haxixe e coca, já comprou barras hoje),
 // Rico (nível 60, mansão, luxos, negócios), Gasto (pistola gasta) e Seco (sem balas, barraca cheia).
+// Passo 5: Planeador (ourivesaria pronta, falta material e balas) e Preso (dentro por um golpe grande, com um favor gasto).
+// O Rico prepara o banco (pronto daqui a 30 h) e tem advogado em avença.
 import { spawn } from 'node:child_process';
 import { mkdirSync, writeFileSync, existsSync, rmSync } from 'node:fs';
 import { join, dirname } from 'node:path';
@@ -31,7 +33,7 @@ async function conta(nome, ip) {
 
 let s = await arrancar();
 let ip = 1;
-for (const n of ['Novato', 'Assaltante', 'Rico', 'Gasto', 'Seco']) await conta(n, '10.8.0.' + ip++);
+for (const n of ['Novato', 'Assaltante', 'Rico', 'Gasto', 'Seco', 'Planeador', 'Preso']) await conta(n, '10.8.0.' + ip++);
 // o novato faz três carteiras de verdade, para o relatório ter um golpe
 for (let i = 0; i < 3; i++) await act('Novato', { type: 'crime', k: 0 });
 await parar(s);
@@ -66,6 +68,14 @@ muda('Gasto', (e) => { e.respect = e.peakRespect = L(30) + 50; e.cash = 2_400; e
 muda('Seco', (e) => { e.respect = e.peakRespect = L(30) + 50; e.cash = 900; e.energy = 130; e.jailUntil = 0;
   e.eq = { ...e.eq, mao: { id: 'pistola', u: 14 } };
   e.inv = [{ id: 'telemovel', n: 2, v: 410 }, { id: 'relogio', n: 1, v: 300 }, { id: 'perfumes', n: 1, v: 190 }, { id: 'fio', n: 1, v: 1_650 }, { id: 'miudezas', n: 4, v: 230 }, { id: 'soqueira' }]; });
+// passo 5: golpes grandes, avença, lavagem e prisão
+const T = Date.now();
+muda('Rico', (e) => { e.op = { i: 4, t0: T - 66 * 3600e3, ready: T + 30 * 3600e3, recon: false, crew: true, bribe: false, contact: false, paid: 30_000 + 3_900 }; e.avenca = true; e.avD = hoje; e.avN = 3; e.ilegal = 2_400_000; });
+muda('Planeador', (e) => { e.respect = e.peakRespect = L(40) + 200; e.cash = 61_000; e.bank = 9_000; e.house = 2; e.energy = 90; e.vigor = 70;
+  e.eq = { ...e.eq, mao: { id: 'pistola', u: 8 }, maos: { id: 'luvas' } }; e.inv = [{ id: 'balas', n: 12 }, { id: 'gazuas' }];
+  e.op = { i: 2, t0: T - 50 * 3600e3, ready: T - 2 * 3600e3, recon: true, crew: false, bribe: false, contact: true, paid: 5_000 + 350 }; e.ilegal = 40_000; e.sk = { furto: 3000, assalto: 4200, burla: 0, trafico: 0, conducao: 0, armas: 0 }; });
+muda('Preso', (e) => { e.respect = e.peakRespect = L(36) + 100; e.cash = 3_200; e.bank = 1_000; e.energy = 70; e.vigor = 40;
+  e.jailUntil = T + 50 * 60e3; e.jailTier = 102; e.jailT0 = T - 10 * 60e3; e.jf = 1; e.contacts = 1; e.opPause = T + 23 * 3600e3; e.ilegal = 160_000; });
 db.close();
 s = await arrancar();
 writeFileSync(join(DIR, 'contas.json'), JSON.stringify({ base: BASE, cookies, pid: s.pid }, null, 1));

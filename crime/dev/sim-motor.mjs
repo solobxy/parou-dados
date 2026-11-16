@@ -2,8 +2,10 @@
 // Joga contas com os quatro perfis do modelo (uma sessão por dia, todos os dias, a stamina toda, bot) durante N dias,
 // sempre pelas funções do motor: golpes de rua, venda de droga, barras a droga, multas, pistola, casas e luxos.
 // Passo 3: também os empregos (6 turnos por dia, com a energia) e os cursos (o seguinte quando há o dobro do preço), como no modelo.
-// O que o motor ainda não tem (operações, lavagem, seguranças, avença) fica de fora; para comparar, o modelo corre com os mesmos
-// sistemas desligados (SEM_OPS=1 SEM_GASTOS=1). Com SEM_EMPREGO=1 o motor também não trabalha (comparação do passo 2).
+// Passo 5: os golpes grandes (o melhor que se pode pagar, como no modelo: com 3 vezes o custo, suborno nos grandes) e a avença.
+// Passo 5 também: a lavagem (20% do crime acima dos primeiros 100 000 €). Os seguranças (passo 7) ficam de fora; para comparar, o modelo corre com SEM_SEGURANCAS=1.
+// Com SEM_EMPREGO=1 o motor não trabalha; com SEM_OPS=1 não faz golpes grandes nem tem avença (comparações dos passos 2 a 4).
+// PASSOS=1: além do suborno, faz o reconhecimento e contrata a equipa quando compensa (para medir quanto isso pesa).
 // Uso: node dev/sim-motor.mjs [semente] [contas por perfil] [dias]   (dentro de crime/)
 import { CFG, T } from '../engine/config.js';
 import * as E from '../engine/engine.js';
@@ -17,7 +19,36 @@ const CARRO = 5000, CASA_A_SERIO = 3;             // como no modelo: carro usado
 const PIST = CFG.gear.find((x) => x.id === 'pistola');
 const CUSTO_ARMA = (CFG.bullets.price * CFG.bullets.perJob) / CFG.bullets.box + PIST.price / PIST.life;   // balas e desgaste por golpe (passo 4)
 const balas = (p) => (p.inv.find((x) => x.id === 'balas') || { n: 0 }).n;
-const SEM_EMPREGO = process.env.SEM_EMPREGO === '1';
+const SEM_EMPREGO = process.env.SEM_EMPREGO === '1', SEM_OPS = process.env.SEM_OPS === '1', PASSOS = process.env.PASSOS === '1';
+// golpes grandes: avança o que estiver pronto (compra o material e as balas que faltam); começa o que render mais por dia, contando a pausa
+function golpesGrandes(p, t, perfil, st) {
+  if (SEM_OPS) return;
+  // avença: como no modelo, a partir do nível 30 quando custa até 5% do que se ganha por dia
+  const quer = E.level(p) >= CFG.retainer.level && st.media != null && CFG.retainer.day <= st.media * 0.05;
+  if (quer !== p.avenca) tenta(() => E.setRetainer(p, t, world, quer));
+  if (p.jailUntil > t) tenta(() => E.payBail(p, t, world));   // apanhado: paga-se o advogado para sair, como nos golpes de rua
+  if (p.op && t >= p.op.ready) {
+    const o = CFG.ops[p.op.i];
+    for (const id of o.mat) if (!p.inv.some((x) => x.id === id)) { if (E.invUsed(p) >= E.invCap(p)) tenta(() => E.sellGoods(p, t, world)); tenta(() => E.buyItem(p, t, world, id)); }
+    if (o.gun) { if (!p.eq.mao) tenta(() => E.buyItem(p, t, world, 'pistola')); if (p.eq.mao && p.eq.mao.u === 0) tenta(() => E.repair(p, t, world, 'mao')); if (balas(p) < CFG.opSteps.bullets) tenta(() => E.buyItem(p, t, world, 'balas', 1)); }
+    const pago = p.op.paid, r = tenta(() => E.opGo(p, t, world, simRng));
+    if (r && st.dia <= 90) { st.og90 = (st.og90 || 0) + (r.success ? r.money : 0); st.oc90 = (st.oc90 || 0) + pago + (r.lawyer || 0); }
+    if (r) { st.ops = (st.ops || 0) + 1; if (r.success) st.opsWon = (st.opsWon || 0) + 1; st.byop = st.byop || {}; st.byop[o.id] = (st.byop[o.id] || 0) + 1; if (st.dia <= 90) st.ops90 = (st.ops90 || 0) + 1; }
+    else if (!E.opMissing(p, o).length && p.jailUntil <= t && p.hospUntil <= t) tenta(() => E.opDrop(p, t, world));
+  }
+  if (!p.op && perfil !== 'casual' && p.opPause <= t) {
+    const vale = (o) => (o.p / 10000 * o.gain - o.cost) / (Math.max(1, Math.ceil(o.prepH / 24)) + o.pauseH / 24);
+    const o = CFG.ops.filter((x) => E.level(p) >= x.level && liquido(p) > x.cost * 3).sort((x, y) => vale(y) - vale(x))[0];
+    if (o && tenta(() => E.opStart(p, t, world, CFG.ops.indexOf(o)))) {
+      if (E.opStepCost(o, 'bribe')) tenta(() => E.opStep(p, t, world, 'bribe'));
+      if (PASSOS) {
+        tenta(() => E.opStep(p, t, world, 'crew'));   // a equipa dá +8% por 5% da parte: compensa sempre
+        tenta(() => E.opStep(p, t, world, 'recon'));
+      }
+    }
+  }
+}
+let simRng = null;
 // emprego: o melhor que já está aberto; curso: o seguinte da lista quando há o dobro do preço (a regra do modelo); depois os turnos
 function trabalho(p, t) {
   if (SEM_EMPREGO) return;
@@ -96,7 +127,7 @@ function simula(perfil, rng) {
   const st = { carro: null, saiu: null, t1: null, n100: null, media: null, luxo: 0, dias: 0, entrou: 0, saiu$: 0 };
   const fotos = {};
   for (let dia = 1; dia <= DIAS; dia++) {
-    const t0 = T0 + (dia - 1) * T.DAY;
+    const t0 = T0 + (dia - 1) * T.DAY; st.dia = dia;
     const w0 = liquido(p);
     if (rng.float() < A.falha) { fotos[dia] = foto(p, st); continue; }
     st.dias++;
@@ -108,6 +139,7 @@ function simula(perfil, rng) {
       tenta(() => E.touch(p, t));
       if (i === 0) p.energy = Math.min(p.energy, E.energyMax(p));
       trabalho(p, t);
+      simRng = rng; golpesGrandes(p, t, perfil, st);
       sessao(p, t, rng, s);
     }
     // barras a droga no fim do dia: só se a próxima render mais do que custa
@@ -146,14 +178,17 @@ for (const perfil of Object.keys(PERFIS)) {
   for (let i = 0; i < N; i++) runs.push(simula(perfil, rng));
   res[perfil] = {
     fotos: Object.fromEntries(DIAS_FOTO.map((d) => [d, { fortuna: med(runs.map((r) => r.fotos[d].fortuna)), p90: med(runs.map((r) => r.fotos[d].fortuna), 0.9), nivel: med(runs.map((r) => r.fotos[d].nivel)), dia: med(runs.map((r) => r.fotos[d].dia)) }])),
+    ops90: med(runs.map((r) => r.ops90 || 0)), og90: med(runs.map((r) => r.og90 || 0)), oc90: med(runs.map((r) => r.oc90 || 0)), lux: med(runs.map((r) => r.luxo)), ops: med(runs.map((r) => r.ops || 0)), byop: runs[0].byop || {},
     carro: med(runs.map((r) => r.carro)), saiu: med(runs.map((r) => r.saiu)), t1: med(runs.map((r) => r.t1)), n100: med(runs.map((r) => r.n100)), luxo: med(runs.map((r) => r.luxo)),
     semT1: runs.filter((r) => r.t1 == null).length / N, sem100: runs.filter((r) => r.n100 == null).length / N,
   };
 }
-console.log(`Motor verdadeiro · semente ${SEED} · ${N} contas por perfil · ${DIAS} dias (${SEM_EMPREGO ? "sem empregos nem operações" : "com empregos e cursos, sem operações"})\n`);
+console.log(`Motor verdadeiro · semente ${SEED} · ${N} contas por perfil · ${DIAS} dias (${SEM_EMPREGO ? 'sem empregos' : 'com empregos e cursos'}, ${SEM_OPS ? 'sem golpes grandes' : 'com golpes grandes, avença e lavagem'})\n`);
 for (const [perfil, r] of Object.entries(res)) {
   console.log(perfil.toUpperCase() + `  (${PERFIS[perfil].sessoes} barras de stamina por dia${PERFIS[perfil].extra ? ' e até ' + PERFIS[perfil].extra + ' a droga' : ''})`);
   for (const d of DIAS_FOTO) console.log(`  dia ${String(d).padStart(3)}: fortuna mediana ${eur(r.fotos[d].fortuna).padStart(14)}   10% mais ricos ${eur(r.fotos[d].p90).padStart(14)}   nível ${String(r.fotos[d].nivel).padStart(3)}   ganha por dia ${eur(r.fotos[d].dia)}`);
-  console.log(`  primeiro carro: dia ${r.carro ?? '—'}   sai da barraca: dia ${r.saiu ?? '—'}   T1 na cidade: dia ${r.t1 ?? '—'}${r.semT1 ? ` (${Math.round(r.semT1 * 100)}% sem T1)` : ''}   nível 100: dia ${r.n100 ?? '—'}${r.sem100 ? ` (${Math.round(r.sem100 * 100)}% não chegam)` : ''}   luxo: ${r.luxo} de ${CFG.luxury.list.length}\n`);
+  console.log(`  primeiro carro: dia ${r.carro ?? '—'}   sai da barraca: dia ${r.saiu ?? '—'}   T1 na cidade: dia ${r.t1 ?? '—'}${r.semT1 ? ` (${Math.round(r.semT1 * 100)}% sem T1)` : ''}   nível 100: dia ${r.n100 ?? '—'}${r.sem100 ? ` (${Math.round(r.sem100 * 100)}% não chegam)` : ''}   luxo: ${r.luxo} de ${CFG.luxury.list.length}`);
+  if (!SEM_OPS) console.log(`  golpes grandes: ${r.ops90} até ao dia 90 (renderam ${Math.round(r.og90)} €, custaram ${Math.round(r.oc90)} €), ${r.ops} no ano (uma conta: ${Object.entries(r.byop).map(([k, n]) => k + ' ' + n).join(', ') || 'nenhum'})`);
+  console.log('');
 }
 console.log(JSON.stringify(res));

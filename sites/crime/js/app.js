@@ -120,14 +120,32 @@ function react(type, out, before, opts) {
   else if (type === 'house') { toast(t('houseMoved', { x: list('houses')[me.house], n: r.respect })); fx.sfx('claim'); }
   else if (type === 'refill') { toast(t('rfDone', { e: r.energy, m: money(r.price) })); fx.sfx('refill'); }
   else if (type === 'dealBuy') { toast(t('dealBought', { g: num(r.grams), x: list('drugs')[r.d], m: money(r.price) })); fx.sfx('buy'); }
-  else if (type === 'deal') { toast(t('dealSold', { g: r.grams, m: money(r.money), n: r.respect })); fx.sfx('cash'); }
+  else if (type === 'deal') { toast(t('dealSold', { g: r.grams, m: money(r.money), n: r.respect }) + (r.lav ? ' · ' + t('ro_lav', { m: money(r.lav) }) : '')); fx.sfx('cash'); }
   else if (type === 'shift') { toast(t('jbDone', { m: money(r.money), n: r.left })); fx.sfx('cash'); }
   else if (type === 'course') { toast(t('crStarted', { x: t('cr_' + r.id), m: money(r.price) })); fx.sfx('buy'); }
   else if (type === 'job') { toast(t('jbChosen', { x: t('jb_' + r.job) })); fx.sfx('claim'); }
-  else if (type === 'buy') { toast(r.id === 'balas' ? t('tBullets', { n: num(r.n), m: money(r.price) }) : t('tUsing', { x: t('g_' + r.id) }) + (r.swapped ? ' ' + t('tSwapped', { x: t('g_' + r.swapped) }) : '')); fx.sfx('buy'); }
+  else if (type === 'buy') { toast(r.id === 'balas' ? t('tBullets', { n: num(r.n), m: money(r.price) }) : r.slot === 'mat' ? t('to_matBuy', { x: t('g_' + r.id).toLowerCase(), m: money(r.price) }) : t('tUsing', { x: t('g_' + r.id) }) + (r.swapped ? ' ' + t('tSwapped', { x: t('g_' + r.swapped) }) : '')); fx.sfx('buy'); }
   else if (type === 'equip') { toast(t('tUsing', { x: t('g_' + r.id) }) + (r.swapped ? ' ' + t('tSwapped', { x: t('g_' + r.swapped) }) : '')); fx.sfx('claim'); }
-  else if (type === 'sell') { toast(t('tSold', { x: itName(r.id), m: money(r.money) })); fx.sfx('cash'); }
-  else if (type === 'sellGoods') { toast(t('tSoldAll', { n: r.n, m: money(r.money) })); fx.sfx('cash'); }
+  else if (type === 'sell') { toast(t('tSold', { x: itName(r.id), m: money(r.money) }) + (r.lav ? ' · ' + t('ro_lav', { m: money(r.lav) }) : '')); fx.sfx('cash'); }
+  else if (type === 'sellGoods') { toast(t('tSoldAll', { n: r.n, m: money(r.money) }) + (r.lav ? ' · ' + t('ro_lav', { m: money(r.lav) }) : '')); fx.sfx('cash'); }
+  // golpes grandes e avença
+  else if (type === 'opStart') { toast(t('to_opStart', { x: t('op_' + S.cfg.ops[r.i].id), t: dayTxt(S.cfg.ops[r.i].prepH) })); fx.sfx('buy'); }
+  else if (type === 'opStep') { toast(t('to_' + r.kind, { r: r.rasto, p: pct(r.chanceBp) })); fx.sfx('buy'); }
+  else if (type === 'opDrop') { toast(t('to_drop', { m: money(r.lost) }), true); fx.sfx('fail'); }
+  else if (type === 'opGo') {
+    S.opK = r.i;
+    const bad = r.busted || r.linked;
+    fx.vibrate(bad ? [40, 60, 40] : r.success ? 12 : 30); fx.sfx(bad ? 'bust' : r.success ? 'crit' : 'fail');
+    bigResult({ r, at: now(), lv, av: !!before && retained(before), bribe: !!S.opBribe });
+  }
+  else if (type === 'retainer') { toast(r.on ? t('to_av', { m: money(S.cfg.retainer.day) }) : t('to_avOff')); fx.sfx('claim'); }
+  // prisão
+  else if (type === 'jailSmuggle') { if (r.lost) { toast(t('tj_smugLost'), true); fx.sfx('fail'); } else { toast(t('tj_smug', { m: money(r.money) })); fx.sfx('cash'); } }
+  else if (type === 'jailWork') { toast(t('tj_work', { m: money(r.money) })); fx.sfx('cash'); }
+  else if (type === 'jailYard') { toast(t(r.win ? 'tj_yardW' : 'tj_yardL', { m: money(Math.abs(r.money)), n: r.value }), !r.win); fx.sfx(r.win ? 'cash' : 'fail'); }
+  else if (type === 'jailCards') { toast(t(r.win ? 'tj_cardsW' : 'tj_cardsL', { m: money(Math.abs(r.money)) }), !r.win); fx.sfx(r.win ? 'cash' : 'fail'); }
+  else if (type === 'jailFavor') { toast(r.kind === 'time' ? t('tj_favTime', { t: minTxt(r.cut) }) : t('tj_favContact', { n: r.contacts, c: S.cfg.jail.contactsMax })); fx.sfx('claim'); }
+  else if (type === 'jailEscape') { if (r.free) { toast(t('tj_free')); fx.sfx('crit'); } else { toast(t('tj_caught', { t: minTxt(r.add) }), true); fx.sfx('bust'); fx.vibrate([40, 60, 40]); } }
   else if (type === 'repair') { toast(t('tRepaired', { x: t('g_' + me.eq[r.slot].id), m: money(r.price) })); fx.sfx('claim'); }
   else if (type === 'luxury') { toast(t('luxBought', { x: list('lux')[me.luxuries - 1], n: r.respect })); fx.sfx('claim'); }
   else if (type === 'hooker' || type === 'broVisit') { fx.sfx('refill'); if (r.sick) { toast(t('gotSick'), true); fx.vibrate([40, 60, 40]); } if (r.rob) { toast(t('hkRob_' + r.rob.kind, { m: money(r.rob.loss) }), true); fx.vibrate([30, 40, 30]); } }
@@ -149,7 +167,7 @@ function react(type, out, before, opts) {
   } else if (type === 'tableBet') fx.sfx('deal');
   else if (type !== 'train' && type !== 'tableClear') fx.sfx('buy');
   if (type === 'crime' || type === 'crimeAll') requestAnimationFrame(showReport);
-  if (lv) { skyline(lv.to); if (type !== 'crime' && type !== 'crimeAll') toast(t('r_lvl', { n: lv.to, x: titleOf(lv.to) })); }
+  if (lv) { skyline(lv.to); if (type !== 'crime' && type !== 'crimeAll' && type !== 'opGo') toast(t('r_lvl', { n: lv.to, x: titleOf(lv.to) })); }
   render();
 }
 
@@ -288,7 +306,7 @@ function tickHud() {
   S.hud.vbar.style.width = (L.vice / me.addictionCap) * 100 + '%';
   S.hud.vtxt.replaceChildren(icon('pill'), ' ' + L.vice);
   tickShips(); tickNews();
-  document.querySelectorAll('[data-left]').forEach((el) => { const left = +el.dataset.left - now(); el.textContent = dur(left); if (left <= 0 && el.dataset.re !== '1') { el.dataset.re = '1'; refresh(); } });
+  document.querySelectorAll('[data-left]').forEach((el) => { const left = +el.dataset.left - now(); el.textContent = el.dataset.long ? leftTxt(left) : dur(left); if (left <= 0 && el.dataset.re !== '1') { el.dataset.re = '1'; refresh(); } });
   document.querySelectorAll('[data-stored]').forEach((el) => { const i = +el.dataset.stored; const b = me.biz[i]; el.textContent = money(bizNet(b, i)); });
   document.querySelectorAll('[data-biz]').forEach((el) => {
     const i = +el.dataset.biz, b = me.biz[i]; const cap = bizCap(b);
@@ -316,7 +334,7 @@ function tickHud() {
 const PLACES = {
   city: { ic: 'skyline' }, empire: { ic: 'empire' }, rob: { ic: 'street', img: 'golpes' }, club: { ic: 'bolt', img: 'discoteca' }, gym: { img: 'ginasio' },
   biz: { ic: 'empire', img: 'negocios' }, stash: { img: 'stash' }, acct: { img: 'contabilista' }, port: { img: 'porto' }, air: { img: 'aeroporto' }, arms: { img: 'armas' }, bank: { img: 'banco' }, hosp: { img: 'hospital' },
-  jail: { img: 'prisao' }, gang: { img: 'gangue' }, work: { img: 'profissao' }, news: { img: 'jornal' }, casino: { ic: 'gem', img: 'casino' }, roulette: { img: 'roleta' }, bj: { img: 'blackjack' }, dice: { img: 'dados' }, wheel: { img: 'roda' }, slot: { img: 'slot' }, zeus: { img: 'zeus' }, doce: { img: 'doce' }, rebucado: { img: 'rebucado' }, alley: { img: 'beco' }, lux: { img: 'luxos' }, fights: { ic: 'fights', img: 'lutas' }, rank: { img: 'procurados' }, hitman: { img: 'assassino' }, putas: { img: 'putas' }, casa: {}, myclub: { img: 'discoteca' }, mybro: { img: 'putas' }, bolsa: { img: 'bolsa' }, job: { img: 'emprego' }, inv: { img: 'inventario' },
+  jail: { img: 'prisao' }, gang: { img: 'gangue' }, work: { img: 'profissao' }, news: { img: 'jornal' }, casino: { ic: 'gem', img: 'casino' }, roulette: { img: 'roleta' }, bj: { img: 'blackjack' }, dice: { img: 'dados' }, wheel: { img: 'roda' }, slot: { img: 'slot' }, zeus: { img: 'zeus' }, doce: { img: 'doce' }, rebucado: { img: 'rebucado' }, alley: { img: 'beco' }, lux: { img: 'luxos' }, fights: { ic: 'fights', img: 'lutas' }, rank: { img: 'procurados' }, hitman: { img: 'assassino' }, putas: { img: 'putas' }, casa: {}, myclub: { img: 'discoteca' }, mybro: { img: 'putas' }, bolsa: { img: 'bolsa' }, job: { img: 'emprego' }, inv: { img: 'inventario' }, ops: { img: 'operacoes' },
 };
 // barra de baixo: só o que se usa a toda a hora. O resto vive dentro de cada separador, arrumado por zonas.
 const NAV = ['city', 'rob', 'fights', 'casino', 'empire'];
@@ -325,10 +343,10 @@ const HUB = {
   empire: [['sec_income', ['biz', 'port', 'air', 'myclub', 'mybro']], ['sec_assets', ['casa', 'inv', 'bank', 'bolsa', 'stash', 'acct']]],
 };
 const PARENT = { gang: 'city', work: 'job', job: 'city', news: 'city', casino: 'city', roulette: 'casino', bj: 'casino', dice: 'casino', wheel: 'casino', slot: 'casino', zeus: 'casino', doce: 'casino', rebucado: 'casino', club: 'city', putas: 'city', gym: 'city', alley: 'city', hosp: 'city', jail: 'city',
-  biz: 'empire', port: 'empire', air: 'empire', myclub: 'empire', mybro: 'empire', bolsa: 'empire', inv: 'empire', stash: 'empire', acct: 'empire', casa: 'empire', bank: 'empire', lux: 'empire', arms: 'fights', rank: 'fights', hitman: 'fights' };
+  biz: 'empire', port: 'empire', air: 'empire', myclub: 'empire', mybro: 'empire', bolsa: 'empire', inv: 'empire', stash: 'empire', acct: 'empire', casa: 'empire', bank: 'empire', lux: 'empire', arms: 'fights', rank: 'fights', hitman: 'fights', ops: 'rob' };
 const upOf = (id) => (S.backTo && S.backTo[id]) || PARENT[id] || 'city';   // um sítio que está em duas zonas volta para a zona de onde vieste
 const tabOf = (id) => { let x = id; for (let k = 0; k < 4 && !NAV.includes(x); k++) x = upOf(x); return NAV.includes(x) ? x : 'city'; };
-const IMG = (kind, id, big) => `/img/${kind}/${id}${big ? '-g' : ''}.webp?12`;
+const IMG = (kind, id, big) => `/img/${kind}/${id}${big ? '-g' : ''}.webp?13`;
 // o que cada sítio precisa de ir buscar ao servidor (ao entrar nele, e também quando o jogo abre já nesse sítio)
 function loadFor(tab) {
   if (tab === 'fights') { if (S.fightSeg === 'events') loadEvents(true); else { S.fightSeg = 'targets'; loadTargets(); } }
@@ -387,7 +405,7 @@ function shell() {
 }
 
 const SCREENS = { job: screenJob, city: screenCity, empire: screenEmpire, news: screenNews, casino: screenCasino, roulette: screenRoulette, bj: screenBJ, dice: screenDice, wheel: screenWheel, slot: () => screenSlotGame('slot'), zeus: () => screenSlotGame('zeus'), doce: () => screenSlotGame('doce'), rebucado: () => screenSlotGame('rebucado'), rob: screenRob, club: screenClub, gym: screenGym, biz: screenBiz, port: screenPort, arms: screenArms, bank: screenBank,
-  hosp: screenHosp, jail: screenJail, gang: screenGang, work: screenWork, air: screenAir, putas: screenPutas, myclub: screenMyClub, mybro: screenMyBro, bolsa: screenBolsa, inv: screenInv, stash: screenStash, acct: screenAcct, casa: screenCasa, alley: screenAlley, lux: screenLux, fights: screenFights, rank: screenRank, hitman: screenHitman };
+  hosp: screenHosp, jail: screenJail, gang: screenGang, work: screenWork, air: screenAir, putas: screenPutas, myclub: screenMyClub, mybro: screenMyBro, bolsa: screenBolsa, inv: screenInv, stash: screenStash, acct: screenAcct, casa: screenCasa, alley: screenAlley, lux: screenLux, fights: screenFights, rank: screenRank, hitman: screenHitman, ops: screenOps };
 function render(force) {
   if (!S.st) return;
   if (!S.st.me || S.st.round.phase !== 'play') return renderPause();
@@ -412,6 +430,7 @@ function tabDots() {
     empire: (me.air && me.air.readyAt <= n) || me.port.some((c) => c.readyAt <= n) || me.biz.some((b, i) => b.n > 0 && storedNow(b, i) >= (b.perH * S.cfg.storageMs) / 3600000 / 2),
     city: !!me.mission?.done,
     casino: !!me.bj,   // tens uma mão de blackjack por acabar
+    rob: !!(me.op && me.op.ready <= n && !(me.op.miss || []).length),   // um golpe grande pronto para avançar
   };
   for (const id of NAV) {
     const tab = $tabs.querySelector(`[data-tab="${id}"]`), dot = tab && tab.querySelector('.dot');
@@ -434,10 +453,11 @@ function pageHead(id, sub, noImg) {
 function busyBanner(me) {
   const L = live(me);
   if (L.jail) return h('div', { class: 'state jail' }, h('h3', null, t('jail')), h('div', { class: 't' }, t('jailSub', { t: '' }), h('b', { class: 'num', dataset: { left: me.jailUntil } }, dur(L.jail))),
-    h('div', { class: 'fill big jbar', dataset: { until: me.jailUntil, jtotal: (S.cfg.crimes[me.jailTier - 1]?.jailMin || 1) * 60000 } }, h('i')),
-    h('button', { class: 'btn danger block', on: { click: (e) => act('bail', {}, { el: e.currentTarget }) } }, t('payBail', { m: money(me.bail) })));
+    h('div', { class: 'fill big jbar', dataset: { until: me.jailUntil, jtotal: me.jailT0 && me.jailUntil > me.jailT0 ? me.jailUntil - me.jailT0 : (S.cfg.crimes[me.jailTier - 1]?.jailMin || 1) * 60000 } }, h('i')),
+    h('button', { class: 'btn buy block', on: { click: (e) => act('bail', {}, { el: e.currentTarget }) } }, t('payBail', { m: money(me.bail) })),
+    S.tab !== 'jail' ? h('button', { class: 'jneed jdo', on: { click: () => go('jail') } }, t('jailDo') + ' ›') : null);
   if (L.hosp) return h('div', { class: 'state hosp' }, h('h3', null, t('hospital')), h('div', { class: 't' }, t('hospitalSub', { t: '' }), h('b', { class: 'num', dataset: { left: me.hospUntil } }, dur(L.hosp))),
-    h('button', { class: 'btn danger block', on: { click: (e) => act('medic', {}, { el: e.currentTarget }) } }, t('payMedic', { m: money(me.medic) })));
+    h('button', { class: 'btn buy block', on: { click: (e) => act('medic', {}, { el: e.currentTarget }) } }, t('payMedic', { m: money(me.medic) })));
   return null;
 }
 
@@ -541,7 +561,7 @@ function screenClass() {
 
 // ---------- a cidade ----------
 // ---------- jornal da cidade: o que os outros andam a fazer ----------
-const NW_IC = { season: 'crown', hitman: 'skull', hitmanFail: 'shield', stockWin: 'cash', stockLoss: 'skull', stockBust: 'skull', air: 'cash', airLost: 'lock', cls: 'user', gangNew: 'fist', gangUp: 'empire', gangHeist: 'cash', gangHeistFail: 'lock', gangHit: 'fist', gangHitFail: 'skull', casino: 'gem', casinoLoss: 'skull', job: 'cash', crit: 'gem', spree: 'bolt', jail: 'lock', house: 'empire', lux: 'crown', beat: 'fist', mug: 'cash', fail: 'skull', sick: 'pill', lvl: 'crown', fight: 'fist' };
+const NW_IC = { season: 'crown', hitman: 'skull', hitmanFail: 'shield', stockWin: 'cash', stockLoss: 'skull', stockBust: 'skull', air: 'cash', airLost: 'lock', cls: 'user', gangNew: 'fist', gangUp: 'empire', gangHeist: 'cash', gangHeistFail: 'lock', gangHit: 'fist', gangHitFail: 'skull', casino: 'gem', casinoLoss: 'skull', job: 'cash', crit: 'gem', spree: 'bolt', jail: 'lock', house: 'empire', lux: 'crown', beat: 'fist', mug: 'cash', fail: 'skull', sick: 'pill', lvl: 'crown', fight: 'fist', op: 'cash', opJail: 'lock', escape: 'bolt' };
 const seedOf = (str) => { let x = 7; for (let i = 0; i < str.length; i++) x = (x * 31 + str.charCodeAt(i)) | 0; return Math.abs(x); };
 // a gangue da rua (a do bot) tem nome próprio em cada língua; as dos jogadores ficam como eles as escreveram
 const gName = (name) => (name === S.cfg?.gang?.bot?.name ? t('gBotName') : name);
@@ -557,7 +577,7 @@ function newsText(e) {
   if (k === 'cls') return tv('nw_cls', seedOf(e.name + k + e.t), { a: e.name, x: t('cl_' + e.from), y: t('cl_' + e.to) });
   if (k === 'gangHeist' || k === 'gangHeistFail') return tv('nw_' + k, seedOf(e.gang + k + e.t), { g: e.gang, x: t('gh_' + e.c), n: e.n, m: money(e.money || 0) });
   if (k === 'gangHit' || k === 'gangHitFail') return tv('nw_' + k, seedOf(e.gang + k + e.t), { g: e.gang, b: e.target, n: e.n });
-  const x = k === 'house' ? list('houses')[e.h] : k === 'lux' ? list('lux')[e.i] : k === 'lvl' ? titleOf(e.n) : k.startsWith('casino') ? t('csIn_' + e.g) : C[e.c];
+  const x = k === 'op' || k === 'opJail' ? t('op_' + e.o) : k === 'house' ? list('houses')[e.h] : k === 'lux' ? list('lux')[e.i] : k === 'lvl' ? titleOf(e.n) : k.startsWith('casino') ? t('csIn_' + e.g) : C[e.c];
   return tv('nw_' + k, seedOf(e.name + k + e.t), { a: e.name, b: e.target, x, m: money(e.money || 0), n: e.n });
 }
 const newsIdx = (f) => Math.floor(now() / 5000) % f.length;
@@ -784,6 +804,7 @@ const invLink = (on) => (on ? h('button', { class: 'jneed rinv', on: { click: ()
 function reportAll(rep, li) {
   const { r, c, k, lv } = rep, lines = [li('', t(r.n === 1 ? 'ra_jobs1' : 'ra_jobs', { n: r.n }) + ' · ' + t(r.wins === 1 ? 'ra_ok1' : 'ra_ok', { w: r.wins }))];
   if (r.money) lines.push(li('c-cash', t('r_stole', { m: money(r.money) })));
+  if (r.lav) lines.push(li('', t('ro_lav', { m: money(r.lav) })));
   // o que é objeto foi para o inventário (vale ao recetador); sem espaço, vendeu-se logo por metade
   const gn = r.goodsN || 0, gv = Object.values(r.goods || {}).reduce((x, v) => x + v, 0);
   if (gn > 0) lines.push(li('c-cash', t(gn === 1 ? 'ra_goods1' : 'ra_goods', { n: gn, m: money(gv) })));
@@ -804,6 +825,7 @@ function reportCard(rep) {
   if (r.success) {
     lines.push(li('c-cash', t(r.good ? 'r_good' : 'r_item', { x: r.good ? itName(r.good) : t('lt_' + r.item), m: money(r.good ? r.value : r.money) })));
     if (r.rushed) lines.push(li('', t('r_rushed', { m: money(r.value) })));
+    if (r.lav) lines.push(li('', t('ro_lav', { m: money(r.lav) })));
     lines.push(li('c-resp', t('r_resp', { n: r.respect })));
     if (r.heatBp < 10000) lines.push(li('', t('r_heat', { p: heatPct(r.heatBp) })));
   } else { lines.push(li('', t('r_lost', { e: c.e }))); if (r.busted) lines.push(li('c-red', t('r_jail', { t: dur(Math.max(0, r.jailUntil - rep.at)) }))); }
@@ -862,20 +884,21 @@ function screenRob() {
       h('div', { class: 'pct ' + chanceCls(x.p) }, pct(x.p))));
   });
   out.push(rows);
+  out.push(h('h2', { class: 'sec' }, t('p_ops')), opsRow(me));
   out.push(...dealBlock(me, L, b), ...skillsBlock(me));
   return out;
 }
 const capFirst = (x) => x.charAt(0).toUpperCase() + x.slice(1);
-// skills por família: só as que já têm golpes (burla e condução chegam com as operações)
+// skills por família: as que têm golpes de rua ou golpes grandes (a burla e a condução só têm golpes grandes)
 function skillsBlock(me) {
-  const K = S.cfg.skills, fams = K.fams.filter((f) => f === 'trafico' || S.cfg.crimes.some((c) => c.fam === f));
+  const K = S.cfg.skills, O = S.cfg.ops || [], fams = K.fams.filter((f) => f === 'trafico' || S.cfg.crimes.some((c) => c.fam === f) || O.some((o) => o.fam === f));
   return [h('h2', { class: 'sec' }, t('skTitle')), h('p', { class: 'small muted', style: 'margin:-4px 2px 10px' }, t('skSub')),
     h('div', { class: 'card vlist vc skl' }, fams.map((f) => {
       const n = (me.sk && me.sk[f]) || 0, bars = Math.floor(n / 100), bp = skBp(me, f);
       return h('div', { class: 'vrow skr' }, h('div', { class: 'grow' },
         h('div', { class: 'row sp' }, h('b', null, capFirst(t('sk_' + f))), h('span', { class: 'num ' + (bp ? 'c-cash' : 'muted') }, '+' + pctOf(bp) + '%')),
         h('div', { class: 'fill' }, h('i', { style: `width:${Math.min(100, (n / K.fullPts) * 100)}%` })),
-        h('div', { class: 'small muted num' }, t('skBars', { n: bars }) + ' · ' + (f === 'trafico' ? t('dealTitle') : S.cfg.crimes.map((c, k) => (c.fam === f ? list('crimes')[k] : null)).filter(Boolean).join(', ')))));
+        h('div', { class: 'small muted num' }, t('skBars', { n: bars }) + ' · ' + (f === 'trafico' ? [t('dealTitle')] : []).concat(S.cfg.crimes.map((c, k) => (c.fam === f ? list('crimes')[k] : null)), O.map((o) => (o.fam === f ? t('op_' + o.id) : null))).filter(Boolean).join(', '))));
     }))];
 }
 // venda de droga na rua: compra-se ao quilo, vende-se ao grama com stamina, até onde a clientela compra hoje
@@ -893,6 +916,211 @@ function dealBlock(me, L, b) {
         h('button', { class: 'btn buy sm num', disabled: !!b || have < grams || L.energy < D.step || !left, on: { click: (e) => act('deal', { j }, { el: e.currentTarget }) } }, t('dealSell', { g: grams, m: money(sale) }))));
   })));
   out.push(h('p', { class: 'small muted', style: 'margin:8px 2px 0' }, t('dealNote', { e: D.step })));
+  return out;
+}
+
+// ---------- golpes grandes ----------
+// Preparam-se durante horas ou dias: cada passo custa dinheiro e mexe na hipótese ou no rasto, e o material compra-se pelo caminho.
+// Quando a preparação acaba, avança-se. O ecrã mostra o que decide (a parte e a hipótese) e, em frases, o que acontece se correr mal.
+const dayTxt = (hh) => (hh % 24 ? hh + ' h' : hh === 24 ? t('nDay') : t('nDays', { n: hh / 24 }));
+const minTxt = (ms) => { const m = Math.round(ms / 60000), hh = Math.floor(m / 60), mm = m % 60; return nb(hh ? (mm ? t('hoursMins', { h: hh, m: mm }) : hh + ' h') : t('nMins', { n: mm })); };
+const andList = (xs) => (xs.length < 2 ? xs.join('') : xs.slice(0, -1).join(', ') + (lang() === 'pt' ? ' e ' : ' and ') + xs[xs.length - 1]);
+const retained = (me) => !!me.avenca && me.level >= S.cfg.retainer.level;
+const opJailMs = (me, o) => (o.jailMin * 60000 * (retained(me) ? 10000 - S.cfg.retainer.jailCutBp : 10000)) / 10000;
+function opRisk(me, o, rasto, bribed) {
+  const St = S.cfg.opSteps;
+  if (bribed) return [h('p', { class: 'jcost' }, t('opBribed'))];
+  return [h('p', { class: 'jrisk' }, t(retained(me) ? 'opFailAv' : 'opFail', { b: pctOf(rasto * St.caughtPer), t: minTxt(opJailMs(me, o)), m: money(o.lawyer) })),
+    h('p', { class: 'jcost' }, t('opTrail', { r: rasto }) + ' ' + t('opOk', { l: pctOf(rasto * St.linkedPer) }))];
+}
+const opHead = (o, i) => h('div', { class: 'jimg' }, h('img', { src: IMG('ops', o.id, 1), alt: '', width: 1100, height: 1100, decoding: 'async', on: { error: (e) => e.currentTarget.remove() } }), h('h2', null, t('op_' + o.id)));
+const opDeal = (o, bp) => h('div', { class: 'jdeal' },
+  h('div', null, h('span', null, t('opPart')), h('b', { class: 'num c-cash' }, money(o.gain))),
+  h('div', null, h('span', null, t('chance')), h('b', { class: 'num ' + chanceCls(bp) }, pct(bp))));
+// a entrada no ecrã dos golpes: em que pé está o golpe grande (o nome é o do golpe; o título da secção já diz «Golpes grandes»)
+function opsRow(me) {
+  const O = S.cfg.ops, n = now();
+  if (me.level < O[0].level) return h('div', { class: 'rowi lock' }, art('cenas', 'operacoes'), h('div', { class: 'mid' }, h('div', { class: 'nm' }, t('op_' + O[0].id)), h('div', { class: 'meta' }, icon('lock'), ' ', t('opensAt', { n: O[0].level }))), null);
+  const st = me.op;
+  let nm, meta;
+  if (st) {
+    nm = t('op_' + O[st.i].id);
+    const miss = st.miss || [];
+    meta = st.ready <= n ? h('span', { class: miss.length ? 'c-red' : 'c-cash' }, miss.length ? t('opsRowMiss', { x: andList(missNames(me, miss)) }) : t('opsRowReady'))
+      : h('span', null, t('opsRowPrep', { t: '' }), h('b', { class: 'num', dataset: { left: st.ready, long: 1 } }, leftTxt(st.ready - n)));
+  } else if (me.opPause > n) { nm = t('opsRowPauseT'); meta = h('span', null, t('opsRowPause', { t: '' }), h('b', { class: 'num', dataset: { left: me.opPause, long: 1 } }, leftTxt(me.opPause - n))); }
+  else { nm = t('opsRowNoneT'); meta = h('span', null, t('opsRowNone')); }
+  return h('button', { class: 'rowi opsr', on: { click: () => go('ops') } }, st ? art('ops', O[st.i].id) : art('cenas', 'operacoes'),
+    h('div', { class: 'mid' }, h('div', { class: 'nm' }, nm), h('div', { class: 'meta' }, meta)), h('span', { class: 'chev', 'aria-hidden': 'true' }, '›'));
+}
+// o que falta para avançar, por nome, e como se resolve de uma vez (material, balas e reparar a arma). Sem arma nenhuma não há
+// atalho: escolhe-se no armeiro.
+const missNames = (me, miss) => miss.map((m) => nb(m === 'gun' ? t('opGun').toLowerCase() : m === 'gunWorn' ? t('opGunFix') : t('g_' + m).toLowerCase()));
+function missFix(me, miss) {
+  const St = S.cfg.opSteps, B = S.cfg.bullets, steps = [];
+  let cost = 0, slots = 0;
+  for (const m of miss) {
+    if (m === 'gun') return null;
+    if (m === 'gunWorn') { const sl = gunSlot(me); cost += me.repair[sl]; steps.push(['repair', { slot: sl }]); }
+    else if (m === 'balas') { const have = invN(me, 'balas'), n = Math.max(1, Math.ceil((St.bullets - have) / B.box)); cost += n * B.price; steps.push(['buy', { id: 'balas', n }]); if (!have) slots += 1; }
+    else { cost += gearOf(m).price; steps.push(['buy', { id: m }]); slots += 1; }
+  }
+  return { cost, steps, room: me.invCap - me.invUsed >= slots };
+}
+// o resultado de um golpe grande abre por cima do ecrã: é o fim de dias de preparação
+function bigResult(rep) {
+  const close = sheet(h('div', { class: 'stack opres' }, opReport(rep), h('button', { class: 'btn ghost block', on: { click: () => close() } }, t('close'))));
+}
+function opReport(rep) {
+  const { r } = rep, o = S.cfg.ops[r.i], li = (cls, txt) => h('li', { class: cls }, txt), lines = [];
+  const jailed = r.linked || r.busted, left = jailed ? dur(Math.max(0, r.jailUntil - rep.at)) : '';
+  if (r.success) {
+    lines.push(li('c-cash', t('ro_money', { m: money(r.money) })));
+    if (r.lav) lines.push(li('', t('ro_lav', { m: money(r.lav) })));
+    lines.push(li('c-resp', t('r_resp', { n: num(r.respect) })));
+    if (r.linked) lines.push(li('c-red', t('ro_linked', { t: left })));
+  } else {
+    lines.push(li('', t('ro_lost', { m: money(r.lost) })));
+    if (r.lawyer) lines.push(li('c-red', t('ro_lawyer', { m: money(r.lawyer) })));
+    else if (!r.busted && rep.av) lines.push(li('', t('ro_lawyerAv')));
+    else if (rep.bribe) lines.push(li('', t('ro_bribe')));
+    if (r.busted) lines.push(li('c-red', t('ro_jail', { t: left })));
+  }
+  if (o.pauseH) lines.push(li('', t('ro_pause', { t: dayTxt(o.pauseH) })));
+  if (rep.lv) lines.push(li('c-resp', t('r_lvl', { n: rep.lv.to, x: titleOf(rep.lv.to) })));
+  const cls = jailed ? 'bust' : r.success ? 'ok' : 'miss';
+  return h('div', { class: 'report ' + cls, role: 'status' }, h('b', null, t(jailed ? 'ro_bust' : r.success ? 'ro_ok' : 'ro_miss')), h('ul', null, lines));
+}
+// sem golpe em preparação: o escolhido em cima, com o botão de preparar
+function opPick(me, b) {
+  const O = S.cfg.ops, St = S.cfg.opSteps, n = now(), cash = me.cash + me.bank, open = O.map((o, i) => i).filter((i) => me.level >= O[i].level);
+  let k = S.opK ?? store.get('opK', -1);
+  if (!open.includes(k)) k = open.length ? open[open.length - 1] : 0;
+  S.opK = k;
+  const o = O[k], pv = me.opsPrev[k], lock = me.level < o.level, pause = me.opPause > n;
+  const mats = o.mat.map((id) => nb(t('g_' + id).toLowerCase()));
+  const need = [t('opCostLine', { m: money(o.cost), t: dayTxt(o.prepH) }), mats.length ? t('opMatLine', { x: andList(mats) }) : '', o.gun ? t('opGunLine', { b: St.bullets }) : '', !mats.length && !o.gun ? t('opNoMat') : ''].filter(Boolean).join(' ');
+  let btn;
+  if (lock) btn = h('button', { class: 'btn rob block big', disabled: true }, t('opLockBtn', { n: o.level }));
+  else if (pause) btn = h('button', { class: 'btn rob block big', disabled: true }, t('opPauseBtn', { t: '' }), h('span', { class: 'num', dataset: { left: me.opPause, long: 1 } }, leftTxt(me.opPause - n)));
+  else if (cash < o.cost) btn = h('button', { class: 'btn rob block big', disabled: true }, t('needMoney', { m: money(o.cost - cash) }));
+  else btn = h('button', { class: 'btn rob block big', on: { click: (e) => act('opStart', { i: k }, { el: e.currentTarget }) } }, t('opStartBtn', { m: money(o.cost) }));
+  return h('div', { class: 'jobp opp' }, opHead(o, k), opDeal(o, pv.chanceBp), ...opRisk(me, o, pv.rasto, false),
+    me.contacts && !lock ? h('p', { class: 'jcost' }, t('opContacts', { n: me.contacts, r: St.contact })) : null,
+    btn, h('p', { class: 'jcost' }, need));
+}
+// o golpe em preparação: os passos, o material e, quando está pronto, avançar
+function opActive(me, b) {
+  const st = me.op, o = S.cfg.ops[st.i], St = S.cfg.opSteps, B = S.cfg.bullets, n = now(), cash = me.cash + me.bank, ready = st.ready <= n, miss = st.miss || [];
+  const done = h('span', { class: 'small c-cash' }, t('stDone'));
+  const step = (kind, fx) => {
+    const price = st.cost[kind]; if (!price) return null;
+    return h('div', { class: 'vrow jbr' }, h('div', { class: 'grow' }, h('b', null, t('st_' + kind)), h('div', { class: 'small' + (st[kind] ? ' muted' : '') }, fx)),
+      st[kind] ? done.cloneNode(true) : h('button', { class: 'btn sm ghost num', 'aria-label': t('st_' + kind) + ' · ' + money(price), disabled: cash < price, on: { click: (e) => act('opStep', { kind }, { el: e.currentTarget }) } }, money(price)));
+  };
+  const steps = [step('recon', t('stfx_recon', { n: St.recon })), step('crew', t('stfx_crew', { p: pctOf(St.crew) })), step('bribe', t('stfx_bribe')),
+    st.contact ? h('div', { class: 'vrow jbr' }, h('div', { class: 'grow' }, h('b', null, t('st_contact')), h('div', { class: 'small muted' }, t('stfx_recon', { n: St.contact }))), done.cloneNode(true)) : null].filter(Boolean);
+  // material: o que já tens fica marcado; o que falta compra-se aqui
+  const gear = o.mat.map((id) => {
+    const g = gearOf(id), have = me.inv.some((x) => x.id === id);
+    return h('div', { class: 'vrow jbr' }, art('gear', id, 'vth'), h('div', { class: 'grow' }, h('b', null, t('g_' + id)), g.once ? h('div', { class: 'small muted' }, t('matOnce')) : null),
+      have ? h('span', { class: 'small c-cash' }, t('matHave'))
+        : h('button', { class: 'btn sm ghost num', 'aria-label': t('buyAria', { x: t('g_' + id), m: money(g.price) }), disabled: cash < g.price || invFull(me), on: { click: (e) => act('buy', { id }, { el: e.currentTarget }) } }, money(g.price)));
+  });
+  if (o.gun) {
+    const s = gunSlot(me), it = s ? me.eq[s] : null, nb = invN(me, 'balas'), boxes = Math.max(1, Math.ceil((St.bullets - nb) / B.box)), room = nb > 0 || !invFull(me);
+    gear.push(h('div', { class: 'vrow jbr' }, art('gear', it ? it.id : 'pistola', 'vth'),
+      h('div', { class: 'grow' }, h('b', null, t('opGun')), h('div', { class: 'small' + (it && it.u > 0 ? ' muted' : ' c-red') }, !it ? t('opGunNone') : it.u > 0 ? t('g_' + it.id) + ' · ' + t('usesLeft', { u: it.u, l: gearOf(it.id).life }) : t('opGunWorn', { x: t('g_' + it.id).toLowerCase() }))),
+      !it ? h('button', { class: 'btn sm ghost', on: { click: () => { S.armsSeg = 'fight'; go('arms'); } } }, t('p_arms'))
+        : !(it.u > 0) ? h('button', { class: 'btn sm ghost num', disabled: cash < me.repair[s], on: { click: (e) => act('repair', { slot: s }, { el: e.currentTarget }) } }, money(me.repair[s]))
+          : h('span', { class: 'small c-cash' }, t('matHave'))));
+    gear.push(h('div', { class: 'vrow jbr' }, art('gear', 'balas', 'vth'),
+      h('div', { class: 'grow' }, h('b', null, t('opBul')), h('div', { class: 'small num' + (nb < St.bullets ? ' c-red' : ' muted') }, t('opBulLine', { b: St.bullets, n: num(nb) }))),
+      nb >= St.bullets ? h('span', { class: 'small c-cash' }, t('matHave'))
+        : h('button', { class: 'btn sm ghost num', disabled: !room || cash < boxes * B.price, on: { click: (e) => act('buy', { id: 'balas', n: boxes }, { el: e.currentTarget }) } }, t('boxBtn', { n: num(boxes * B.box), m: money(boxes * B.price) }))));
+  }
+  // o que mais baixa o rasto neste golpe, e o que já tens
+  const lw = [], hv = (x, n, on) => x + ' (−' + n + (on ? ', ' + t('lw_have') : '') + ')';
+  lw.push(hv(t('lw_gloves'), St.gloves, me.eq.maos && me.eq.maos.id === 'luvas'));
+  const skN = Math.floor(skBp(me, o.fam) / St.skillDiv), skMax = Math.floor(S.cfg.skills.maxBp / St.skillDiv);
+  lw.push(t('lw_skill', { x: t('sk_' + o.fam) }) + ' (' + t('lw_of', { n: '−' + skN, m: '−' + skMax }) + ')');
+  if (o.alarm) lw.push(hv(t('lw_alarm'), St.alarm, (me.done || []).includes(St.alarmCourse)));
+  if (o.drive) lw.push(hv(t('lw_drive'), St.drive, (me.done || []).includes(St.driveCourse)));
+  const fix = miss.length ? missFix(me, miss) : null, left = h('span', { class: 'num', dataset: { left: st.ready, long: 1 } }, leftTxt(st.ready - n));
+  let goBtn;
+  if (miss.includes('gun')) goBtn = h('button', { class: 'btn rob block big', on: { click: () => { S.armsSeg = 'fight'; go('arms'); } } }, t('goArms'));
+  else if (fix && !fix.room) goBtn = h('button', { class: 'btn rob block big', on: { click: () => go('inv') } }, t('toInvFull'));
+  else if (fix) goBtn = h('button', { class: 'btn rob block big fixb', disabled: cash < fix.cost, on: { click: async (e) => { const el = e.currentTarget; for (const [type, args] of fix.steps) if (!(await act(type, args, { el }))) break; } } }, t('opFixBtn', { m: money(fix.cost) }));
+  else if (!ready) goBtn = h('button', { class: 'btn rob block big', disabled: true }, t('opWaitBtn', { t: '' }), left);
+  else goBtn = h('button', { class: 'btn rob block big', disabled: !!b, on: { click: (e) => { S.opBribe = st.bribe; act('opGo', {}, { el: e.currentTarget }); } } }, t('opGoBtn'));
+  // por cima do botão: o que falta (a vermelho quando já só falta isso) e, se o botão é o de comprar, quanto falta para estar pronto
+  const above = [miss.length ? h('p', { class: 'jgun ' + (ready ? 'c-red' : 'muted') }, t('opMissing', { x: andList(missNames(me, miss)) }) + (fix && !fix.room ? ' ' + t('noRoom') : '')) : null,
+    miss.length && !ready ? h('p', { class: 'jcost' }, t('opPrepIn') + ' ', left.cloneNode(true)) : null];
+  return h('div', { class: 'jobp opp' }, opHead(o, st.i), opDeal(o, st.chanceBp), ...opRisk(me, o, st.rasto, st.bribe),
+    ...above, goBtn,
+    h('h3', { class: 'lootH' }, t('opPrepH')), h('div', { class: 'vlist jbl opl' }, steps),
+    gear.length ? h('h3', { class: 'lootH' }, t('opMatH')) : null, gear.length ? h('div', { class: 'vlist jbl opl' }, gear) : null,
+    h('p', { class: 'jcost' }, t('opLowers', { x: lw.join('; ') })),
+    sureBtn('btn ghost dng block opdrop', t('opDrop'), 'btn ghost dng block opdrop sure', t('opDropSure', { m: money(st.paid) }), () => act('opDrop')));
+}
+function screenOps() {
+  const me = S.st.me, O = S.cfg.ops, n = now();
+  const out = [pageHead('ops', t('s_ops'), true)];
+  const b = busyBanner(me); if (b) out.push(b);
+  out.push(me.op ? opActive(me, b) : opPick(me, b));
+  out.push(h('h2', { class: 'sec' }, t('allOps')));
+  const rows = h('div', { class: 'rows' });
+  let lockedShown = false;
+  O.forEach((o, i) => {
+    const pv = me.opsPrev[i];
+    if (me.level < o.level) {
+      if (lockedShown) return; lockedShown = true;
+      rows.append(h('div', { class: 'rowi lock' }, art('ops', o.id), h('div', { class: 'mid' }, h('div', { class: 'nm' }, t('op_' + o.id)), h('div', { class: 'meta' }, icon('lock'), ' ', t('opensAt', { n: o.level }))), h('div', { class: 'pct' }, pct(o.p))));
+      return;
+    }
+    const sel = me.op ? me.op.i === i : i === S.opK, bp = me.op && me.op.i === i ? me.op.chanceBp : pv.chanceBp;   // o que está a preparar mostra a hipótese com os passos pagos
+    const inner = [art('ops', o.id), h('div', { class: 'mid' }, h('div', { class: 'nm' }, t('op_' + o.id)),
+      h('div', { class: 'meta' }, h('span', { class: 'c-cash' }, t('opsMeta', { m: money(o.gain) })), h('span', null, icon('timer'), ' ' + dayTxt(o.prepH)))),
+      h('div', { class: 'pct ' + chanceCls(bp) }, pct(bp))];
+    rows.append(me.op ? h('div', { class: 'rowi' + (sel ? ' sel' : '') }, ...inner)
+      : h('button', { class: 'rowi' + (sel ? ' sel' : ''), 'aria-pressed': sel ? 'true' : 'false', on: { click: () => { S.opK = i; store.set('opK', i); render(); window.scrollTo({ top: 0, behavior: 'smooth' }); } } }, ...inner));
+  });
+  out.push(rows);
+  // advogado em avença
+  const R = S.cfg.retainer, cash = me.cash + me.bank;
+  out.push(h('h2', { class: 'sec' }, t('avT')), h('div', { class: 'card vlist vc jbl' }, h('div', { class: 'vrow jbr' },
+    h('div', { class: 'grow' }, h('div', { class: 'small' }, t('avSub', { m: money(R.day) })), me.avenca ? h('div', { class: 'small c-cash' }, t('avOn')) : null),
+    me.level < R.level ? h('span', { class: 'small muted' }, t('avLock', { n: R.level }))
+      : me.avenca ? sureBtn('btn sm ghost', t('avOff'), 'btn sm ghost dng', t('avOffSure'), () => act('retainer', { on: false }))
+        : h('button', { class: 'btn sm ghost', disabled: cash < R.day, on: { click: (e) => act('retainer', { on: true }, { el: e.currentTarget }) } }, t('avBtn')))));
+  // lavagem
+  const Lv = S.cfg.launder;
+  if (Lv) {
+    const over = (me.ilegal || 0) >= Lv.freeUpTo;
+    out.push(h('h2', { class: 'sec' }, t('lavT')), h('p', { class: 'small muted lavp' }, t('lavSub', { f: money(Lv.freeUpTo), p: pctOf(Lv.bp), q: pctOf(Lv.courseBp) }) + ' ' +
+      (over ? t('lavOver', { f: money(Lv.freeUpTo), p: pctOf((me.done || []).includes(Lv.course) ? Lv.courseBp : Lv.bp) }) : t('lavNow', { m: money(me.ilegal || 0) }))));
+  }
+  return out;
+}
+// ---------- prisão ----------
+// A pena troca o que se pode fazer, não pára o jogo: a stamina e a energia continuam a encher, e lá dentro ganha-se cerca de metade do que cá fora.
+function screenJail() {
+  const me = S.st.me, L = live(me), out = [pageHead('jail')], b = busyBanner(me);
+  if (!L.jail) { out.push(b || h('div', { class: 'note' }, h('p', { class: 'muted' }, t('notJailed')), h('button', { class: 'btn ghost', on: { click: () => go('rob') } }, t('backToWork')))); return out; }
+  out.push(b);
+  const J = S.cfg.jail, cash = me.cash, smug = Math.floor((me.streetBar * J.smuggleE) / 200), bet = me.yardBet, favLeft = Math.max(0, J.favors - (me.jf || 0));
+  const btn = (lbl, off, type, args) => h('button', { class: 'btn sm ghost', disabled: off, on: { click: (e) => act(type, args || {}, { el: e.currentTarget }) } }, lbl);
+  const row = (id, desc, right, wide) => h('div', { class: 'vrow jbr' + (wide ? ' blr' : '') }, art('jail', id, 'vth'), h('div', { class: 'grow' }, h('b', null, t('j_' + id)), h('div', { class: 'small' }, desc)), right);
+  out.push(h('h2', { class: 'sec' }, t('jailInT')), h('div', { class: 'card vlist vc jbl jaill' },
+    row('contrabando', tint(t('jd_contrabando', { e: J.smuggleE, m: money(smug), p: pctOf(J.smuggleLoseBp) })), btn(t('jbSmuggle'), L.energy < J.smuggleE, 'jailSmuggle')),
+    row('oficina', tint(t('jd_oficina', { e: J.workE, m: money(J.work) })), btn(t('jbWork'), L.vigor < J.workE, 'jailWork')),
+    row('patio', t('jd_patio', { e: J.yardE, m: money(bet) }), btn(t('jbYard'), L.vigor < J.yardE || cash < bet, 'jailYard')),
+    row('cartas', t('jd_cartas', { m: money(J.cardsMax) }), h('div', { class: 'boxb' }, [10, 25, J.cardsMax].map((v) => h('button', { class: 'btn sm ghost num', disabled: cash < v, on: { click: (e) => act('jailCards', { bet: v }, { el: e.currentTarget }) } }, money(v)))), true),
+    row('favores', t(favLeft === 1 ? 'jd_favores1' : 'jd_favores', { n: favLeft, t: J.favors, r: S.cfg.opSteps.contact }), h('div', { class: 'boxb' },
+      btn(t('jbFavTime', { p: pctOf(J.favorCutBp) }), !favLeft, 'jailFavor', { kind: 'time' }),
+      btn(t('jbFavContact', { n: me.contacts || 0, c: J.contactsMax }), !favLeft || (me.contacts || 0) >= J.contactsMax, 'jailFavor', { kind: 'contact' })), true),
+    row('fuga', t('jd_fuga', { e: J.escapeE, p: pctOf(J.escapeBp) }), L.energy < J.escapeE ? h('button', { class: 'btn sm ghost dng', disabled: true }, t('jbEscape'))
+      : sureBtn('btn sm ghost dng', t('jbEscape'), 'btn sm ghost dng sure', t('jbEscapeSure'), () => act('jailEscape')))));
   return out;
 }
 
@@ -1686,16 +1914,18 @@ function screenInv() {
     let detail, sell;
     if (good) { detail = t('itGoods', { n: it.n, m: money(it.v) }); sell = it.v; }
     else if (it.id === 'balas') { detail = t('itBullets', { n: num(it.n) }); sell = Math.floor((it.n * B.price) / (B.box * 2)); }
+    else if (g.slot === 'mat') { detail = t('sl_mat') + ' · ' + t('matFor', { x: andList(S.cfg.ops.filter((o) => o.mat.includes(g.id)).map((o) => t('op_' + o.id))) }); sell = Math.floor(g.price / 2); }
     else { detail = t('sl_' + g.slot) + (g.gun ? ' · ' + (it.u > 0 ? t('usesLeft', { u: it.u, l: g.life }) : t('gunWorn')) : ''); sell = Math.floor((g.price * (g.gun ? it.u / g.life : 1)) / 2); }
     // trocar por pior: diz-se antes de tocar em «Usar»
     const on = g && me.eq[g.slot] ? gearOf(me.eq[g.slot].id) : null, k2 = g && (g.atk ? 'atk' : g.def ? 'def' : null);
     const pior = on && k2 && on[k2] > g[k2] ? h('div', { class: 'small c-red num' }, t('worseThan', { p: pctOf(g[k2]), q: pctOf(on[k2]) })) : null;
     const sellIt = (e) => act('sell', { i }, { el: e.currentTarget });
+    const opNow = me.op ? S.cfg.ops[me.op.i] : null, needed = opNow && ((it.id === 'balas' && opNow.gun) || opNow.mat.includes(it.id)) ? h('div', { class: 'small c-red' }, t('opNeeds', { x: t('op_' + opNow.id) })) : null;
     return h('div', { class: 'vrow jbr' }, itArt(it.id, 'vth'),
-      h('div', { class: 'grow' }, h('b', null, itName(it.id)), h('div', { class: 'small num' }, good ? tint(detail) : detail), pior,
+      h('div', { class: 'grow' }, h('b', null, itName(it.id)), h('div', { class: 'small num' }, good ? tint(detail) : detail), pior, needed,
         good ? null : sureBtn('jneed', t('sellFor', { m: money(sell) }), 'jneed sure', t('sellSure', { m: money(sell) }), () => act('sell', { i }))),
       good ? h('button', { class: 'btn sm ghost', on: { click: sellIt } }, t('sellBtn'))
-        : g ? h('button', { class: 'btn sm ghost', on: { click: (e) => act('equip', { i }, { el: e.currentTarget }) } }, t('useBtn')) : null);
+        : g && g.slot !== 'mat' ? h('button', { class: 'btn sm ghost', on: { click: (e) => act('equip', { i }, { el: e.currentTarget }) } }, t('useBtn')) : null);
   });
   // a droga para vender na rua também ocupa (um espaço por tipo)
   const D = S.cfg.deal, drugs = ((me.deal && me.deal.dst) || []).map((g, j) => [g, S.cfg.drugs.findIndex((x) => x.id === D.list[j].drug)]).filter(([g]) => g > 0);
@@ -1800,11 +2030,6 @@ function screenHosp() {
     h('p', { class: 'small muted' }, t('detoxSub', { p: Math.round((S.cfg.detox.stepNum / S.cfg.detox.stepDen - 1) * 100) })),
     h('button', { class: 'btn buy block', disabled: !!b || me.cash + me.bank < me.detox, on: { click: (e) => act('detox', {}, { el: e.currentTarget }) } }, t('detoxBtn', { m: money(me.detox) }))));
   else if (!b && !me.sick) out.push(h('div', { class: 'note' }, h('p', { class: 'muted' }, t('healthy')), h('button', { class: 'btn ghost', on: { click: () => go('rob') } }, t('backToWork'))));
-  return out;
-}
-function screenJail() {
-  const out = [pageHead('jail')], b = busyBanner(S.st.me);
-  out.push(b || h('div', { class: 'note' }, h('p', { class: 'muted' }, t('notJailed')), h('button', { class: 'btn ghost', on: { click: () => go('rob') } }, t('backToWork'))));
   return out;
 }
 function missionText(m) {

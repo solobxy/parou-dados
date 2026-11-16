@@ -36,6 +36,7 @@ export function newPlayer(id, now, world, opts = {}) {
     biz: CFG.biz.map(() => ({ n: 0, stored: 0, rem: 0, t: now })),
     port: [], air: null, stock: CFG.drugs.map(() => 0), hold: [], club: null, bro: null, stk: CFG.stocks.list.map(() => ({ n: 0, cost: 0, gen: 0 })), acct: false,
     eq: eqNew(), inv: [], guard: -1, tool: -1, gweapon: -1, hmT: [], hmSafe: 0,   // equipamento no corpo (passo 4) e inventário
+    op: null, opPause: 0, contacts: 0, avenca: false, avD: null, avN: 0, jailT0: 0, jf: 0, ilegal: 0,   // golpe grande a preparar, pausa, contactos da prisão, avença do advogado (passo 5)
     luxuries: 0,
     gang: null, gb: null, gangLeft: 0, gbotLeft: 0, gh: [], gbz: gbzNew(),
     detoxT: [],
@@ -118,9 +119,21 @@ function migrate(p) {
   }
   if (!Array.isArray(p.inv)) p.inv = [];
   delete p.weapon; delete p.armor;
+  // passo 5: golpes grandes, avença e prisão com coisas para fazer. As ferramentas antigas (compradas por ordem) viram material
+  // no inventário; o que não couber, e as que não são material (taser, revólver, caçadeira serrada), voltam em dinheiro, pelo preço.
+  if (p.op === undefined) {
+    p.op = null; p.opPause = 0; p.contacts = 0; p.avenca = false; p.avD = null; p.avN = 0; p.jailT0 = 0; p.jf = 0; p.ilegal = 0;
+    for (let i = 0; i <= p.tool && i < CFG.tools.length; i++) {
+      const id = T58[i];
+      if (id && invUsed(p) < invCap(p)) p.inv.push({ id }); else p.cash += CFG.tools[i].price;
+    }
+    p.tool = -1;
+  }
 }
 // as listas de armas e proteções da versão 57 (índice → objeto), para passar o que cada um tinha
 const W57 = ['soqueira', 'navalha', 'pistola', 'cacadeira', 'metralhadora', 'sniper'], A57 = ['cabedal', 'colete', 'balistico', 'kevlar', 'blindado', 'titanio'];
+// as ferramentas da versão 59 (índice em CFG.tools) que passaram a material dos golpes grandes
+const T58 = { 0: 'pedecabra', 1: 'gazuas', 5: 'macarico', 6: 'explosivos', 7: 'broca' };
 const eqNew = () => Object.fromEntries(CFG.slots.map((s) => [s, null]));
 const gearOf = (id) => CFG.gear.find((x) => x.id === id);
 const itemNew = (id) => { const g = gearOf(id); return g.gun ? { id, u: g.life } : { id }; };
@@ -227,6 +240,7 @@ function inRound(world, now) {
 function begin(p, now, world, { allowBusy = false } = {}) {
   inRound(world, now);
   touch(p, now);
+  retainerDay(p, now);
   if (!allowBusy) {
     if (p.jailUntil > now) fail('IN_JAIL', { until: p.jailUntil });
     if (p.hospUntil > now) fail('IN_HOSPITAL', { until: p.hospUntil });
@@ -587,6 +601,7 @@ export function doCrime(p, now, world, k, rng) {
     if (CFG.loot.goods.includes(row[3])) {
       if (addGood(p, row[3], value)) { money = 0; good = row[3]; } else { money = Math.floor((value * CFG.loot.rushBp) / 10000); rushed = true; }
     }
+    const L = launder(p, money); money = L.net;
     p.cash += money;
     p.c.crimes += 1; p.c.wins += 1; p.wk[k] += 1;
     // respeito: uma barra de golpes vale 20 + 2 por nível (até 120), vezes o calor; dá-se nos golpes que correm bem
@@ -598,12 +613,12 @@ export function doCrime(p, now, world, k, rng) {
     p.rc = Math.floor(milli - resp * 1000);
     const lvl = addRespect(p, resp, now);
     const gained = practice(p, c, true);
-    return { ok: true, success: true, money, value, good, rushed, base, item: row[3], crit: false, respect: resp, levelUp: lvl, chanceBp: bp, heatBp, ammo, gained, newChanceBp: bp, star: 0 };
+    return { ok: true, success: true, money, value, good, rushed, lav: L.lav, base, item: row[3], crit: false, respect: resp, levelUp: lvl, chanceBp: bp, heatBp, ammo, gained, newChanceBp: bp, star: 0 };
   }
   p.c.crimes += 1;
   // falhar não é sempre prisão: uma falha em quatro é apanhada
   const busted = rng.chance(bustChanceBp(p, now));
-  if (busted) { p.jailUntil = now + c.jailMin * T.MIN; p.jailTier = k + 1; }
+  if (busted) jailFor(p, now, c.jailMin * T.MIN, k + 1);
   const gained = practice(p, c, false);
   return { ok: true, success: false, busted, jailUntil: p.jailUntil, chanceBp: bp, heatBp, ammo, gained, newChanceBp: bp };
 }
@@ -626,7 +641,7 @@ export function doCrimeAll(p, now, world, k, rng) {
     out.n += 1; out.ammo += r.ammo;
     for (const [s, g] of Object.entries(r.gained)) out.gained[s] = (out.gained[s] || 0) + g;
     if (r.success) {
-      out.wins += 1; out.money += r.money; out.value = (out.value || 0) + r.value; out.respect += r.respect;
+      out.wins += 1; out.money += r.money; out.value = (out.value || 0) + r.value; out.respect += r.respect; out.lav = (out.lav || 0) + r.lav;
       if (r.good) { out.goods = out.goods || {}; out.goods[r.good] = (out.goods[r.good] || 0) + r.value; out.goodsN = (out.goodsN || 0) + 1; }
       if (r.rushed) out.rushed = (out.rushed || 0) + 1;
       out.items[r.item] = (out.items[r.item] || 0) + 1;
@@ -642,6 +657,8 @@ export function doCrimeAll(p, now, world, k, rng) {
 // multa/fiança: a do golpe que te prendeu, proporcional ao tempo que falta
 export function bailCost(p, now) {
   if (!(p.jailUntil > now)) return 0;
+  const o = p.jailTier >= 100 ? CFG.ops[p.jailTier - 100] : null;
+  if (o) { const left = p.jailUntil - now, total = o.jailMin * T.MIN; return Math.max(1, Math.ceil((o.lawyer * Math.min(left, total)) / total)); }
   const c = CFG.crimes[p.jailTier - 1] || CFG.crimes[CFG.crimes.length - 1];
   const left = p.jailUntil - now, total = c.jailMin * T.MIN;
   const full = cut(c.fine, klass(p).bailCutBp || 0);
@@ -896,12 +913,13 @@ export function deal(p, now, world, j) {
   if (p.energy < D.step) fail('NO_ENERGY', { need: D.step });
   if (p.dst[j] < g) fail('NO_STOCK', { need: g });
   if (dealUsed(p, now) >= dealCap(p)) fail('NO_CLIENTS');
-  const money = Math.floor((g * CFG.drugs[d].price * (10000 + skillBp(p, 'trafico'))) / 10000), day = dayOf(now);   // a skill de tráfico sobe o que se ganha
+  const gross = Math.floor((g * CFG.drugs[d].price * (10000 + skillBp(p, 'trafico'))) / 10000), day = dayOf(now);   // a skill de tráfico sobe o que se ganha
+  const { net: money, lav } = launder(p, gross);
   p.energy -= D.step; p.dst[j] -= g; p.cash += money; p.sk.trafico += D.step;
   p.dl = { d: day, n: dealUsed(p, now) + 1 };
   const resp = Math.max(1, Math.round(((D.respBase + D.respPerLevel * level(p)) * D.step) / 100));
   const lvl = addRespect(p, resp, now);
-  return { ok: true, grams: g, money, d, respect: resp, levelUp: lvl, left: dealCap(p) - p.dl.n };
+  return { ok: true, grams: g, money, lav, d, respect: resp, levelUp: lvl, left: dealCap(p) - p.dl.n };
 }
 
 function pruneDetox(p, now) {
@@ -1450,6 +1468,7 @@ export function buyGear(p, now, world, kind, idx) {
   // quem tem o jogo aberto na versão antiga ainda pede «weapon»/«armor» por índice: passa para a compra nova
   if (kind === 'weapon' && W57[idx]) return buyItem(p, now, world, W57[idx]);
   if (kind === 'armor' && A57[idx]) return buyItem(p, now, world, A57[idx]);
+  if (kind === 'tool') { const id = T58[idx]; if (!id) fail('NO_GEAR'); return buyItem(p, now, world, id); }   // as ferramentas viraram material (passo 5)
   if (typeof kind !== 'string' || !Object.hasOwn(GEAR, kind)) fail('NO_GEAR');
   const list = CFG[GEAR[kind]];
   if (!Number.isInteger(idx) || !list[idx]) fail('NO_GEAR');
@@ -1506,6 +1525,13 @@ export function buyItem(p, now, world, id, n = 1) {
   if (!g) fail('NO_GEAR');
   begin(p, now, world, { allowBusy: true });
   if (level(p) < (g.level || 1)) fail('LOW_LEVEL', { need: g.level });
+  if (g.slot === 'mat') {   // material dos golpes grandes: um de cada (as ferramentas não se gastam), guardado no inventário
+    if (p.inv.some((x) => x.id === id)) fail('HAVE_IT');
+    if (!roomFor(p)) fail('NO_ROOM');
+    pay(p, g.price);
+    p.inv.push({ id });
+    return { ok: true, id, price: g.price, slot: 'mat', swapped: null };
+  }
   const old = p.eq[g.slot];
   if (old && !roomFor(p)) fail('NO_ROOM');   // a que estava no corpo tem de caber no inventário
   pay(p, g.price);
@@ -1518,6 +1544,7 @@ export function equip(p, now, world, i) {
   const it = Number.isInteger(i) ? p.inv[i] : undefined;
   const g = it ? gearOf(it.id) : undefined;
   if (!g) fail('NO_GEAR');
+  if (g.slot === 'mat') fail('NOT_WEARABLE');
   begin(p, now, world, { allowBusy: true });
   const old = p.eq[g.slot];
   p.eq[g.slot] = it;
@@ -1529,21 +1556,22 @@ export function sellItem(p, now, world, i) {
   const it = Number.isInteger(i) ? p.inv[i] : undefined;
   if (!it) fail('NO_ITEM');
   begin(p, now, world, { allowBusy: true });
-  let money;
-  if (CFG.loot.goods.includes(it.id)) money = it.v;
+  let money, lav = 0;
+  if (CFG.loot.goods.includes(it.id)) ({ net: money, lav } = launder(p, it.v));
   else if (it.id === 'balas') money = Math.floor((it.n * CFG.bullets.price * CFG.loot.gearSellBp) / (CFG.bullets.box * 10000));
   else { const g = gearOf(it.id); money = Math.floor((g.price * CFG.loot.gearSellBp * (g.gun ? it.u / g.life : 1)) / 10000); }
   p.inv.splice(i, 1);
   p.cash += money;
-  return { ok: true, id: it.id, n: it.n || 1, money };
+  return { ok: true, id: it.id, n: it.n || 1, money, lav };
 }
 export function sellGoods(p, now, world) {
   begin(p, now, world, { allowBusy: true });
   let money = 0, n = 0;
   p.inv = p.inv.filter((x) => { if (!CFG.loot.goods.includes(x.id)) return true; money += x.v; n += x.n; return false; });
   if (!n) fail('NOTHING_TO_SELL');
-  p.cash += money;
-  return { ok: true, money, n };
+  const L = launder(p, money);
+  p.cash += L.net;
+  return { ok: true, money: L.net, n, lav: L.lav };
 }
 // reparar uma arma de fogo no corpo: paga-se a parte gasta do preço
 export function repairCost(p, slot) { const it = p.eq[slot]; if (!it || !it.id) return 0; const g = gearOf(it.id); return g.gun ? Math.ceil((g.price * (g.life - it.u)) / g.life) : 0; }
@@ -1555,6 +1583,212 @@ export function repair(p, now, world, slot) {
   pay(p, price);
   p.eq[slot].u = gearOf(p.eq[slot].id).life;
   return { ok: true, slot, price };
+}
+
+// ---------- golpes grandes (passo 5) ----------
+// Um de cada vez. Paga-se à cabeça e prepara-se em tempo real; durante a preparação faz-se o reconhecimento, a equipa, o suborno
+// e compra-se o material. Quando está pronto, avança-se: corre bem (a parte, respeito) ou mal (perde-se o custo, advogado, e às
+// vezes prisão). O rasto decide quantas vezes se é apanhado.
+const opOf = (i) => (Number.isInteger(i) ? CFG.ops[i] : undefined);
+// lavagem: do dinheiro do crime, o que passa dos primeiros 100 000 € perde 20% nas fachadas (15% com a licenciatura).
+// Devolve o que fica e quanto se perdeu; conta para o total de crime de cada um.
+export function launder(p, gross) {
+  const L = CFG.launder;
+  if (!(gross > 0)) return { net: gross, lav: 0 };
+  const free = Math.max(0, L.freeUpTo - p.ilegal), taxed = Math.max(0, gross - free);
+  p.ilegal += gross;
+  const lav = Math.floor((taxed * (p.done.includes(L.course) ? L.courseBp : L.bp)) / 10000);
+  return { net: gross - lav, lav };
+}
+const opCut = (o, bp, min = 0) => Math.max(min, Math.ceil((o.gain * bp) / 10000));
+export function opStepCost(o, kind) {
+  const S = CFG.opSteps;
+  if (kind === 'recon') return opCut(o, S.reconBp, S.reconMin);
+  if (kind === 'crew') return opCut(o, S.crewBp);
+  if (kind === 'bribe') return o.cost > S.bribeFrom ? opCut(o, S.bribeBp) : 0;
+  return 0;
+}
+// hipótese de correr bem, em bp: a da tabela, mais a equipa
+export function opChanceBp(p, o, st = p.op) {
+  const S = CFG.opSteps;
+  return Math.min(S.maxBp, o.p + (st && st.crew ? S.crew : 0));
+}
+// rasto (0 a 100): o que fica para trás. Baixa com o reconhecimento, a skill da família (até −10), luvas calçadas, o curso de vigilante
+// (onde há alarmes), o de motorista (onde há fuga de carro) e um contacto da prisão.
+export function opRasto(p, o, st = p.op) {
+  const S = CFG.opSteps;
+  let r = o.rasto - (st && st.recon ? S.recon : 0) - Math.floor(skillBp(p, o.fam) / S.skillDiv) - (p.eq.maos && p.eq.maos.id === 'luvas' ? S.gloves : 0) - (st && st.contact ? S.contact : 0);
+  if (o.alarm && p.done.includes(S.alarmCourse)) r -= S.alarm;
+  if (o.drive && p.done.includes(S.driveCourse)) r -= S.drive;
+  return Math.max(S.minRasto, r);
+}
+// o que falta para avançar: material no inventário e, nos golpes com arma, arma de fogo que dispare e as balas
+export function opMissing(p, o) {
+  const miss = o.mat.filter((id) => !p.inv.some((x) => x.id === id));
+  if (o.gun) {
+    const s = gunOf(p);
+    if (!s) miss.push('gun'); else if (!(p.eq[s].u > 0)) miss.push('gunWorn');
+    if (bulletsOf(p) < CFG.opSteps.bullets) miss.push('balas');
+  }
+  return miss;
+}
+export function opStart(p, now, world, i) {
+  const o = opOf(i);
+  if (!o) fail('NO_OP');
+  begin(p, now, world, { allowBusy: true });
+  if (level(p) < o.level) fail('LOW_LEVEL', { need: o.level });
+  if (p.op) fail('OP_BUSY');
+  if (p.opPause > now) fail('OP_PAUSE', { until: p.opPause });
+  pay(p, o.cost);
+  p.op = { i, t0: now, ready: now + o.prepH * T.HOUR, recon: false, crew: false, bribe: false, contact: false, paid: o.cost };
+  if (p.contacts > 0) { p.contacts -= 1; p.op.contact = true; }   // um contacto da prisão vai logo para este golpe
+  return { ok: true, i, price: o.cost, ready: p.op.ready };
+}
+export function opStep(p, now, world, kind) {
+  if (!['recon', 'crew', 'bribe'].includes(kind)) fail('NO_STEP');
+  begin(p, now, world, { allowBusy: true });
+  if (!p.op) fail('NO_OP');
+  const o = CFG.ops[p.op.i];
+  if (p.op[kind]) fail('STEP_DONE');
+  const price = opStepCost(o, kind);
+  if (!price) fail('NO_STEP');   // suborno só nos golpes grandes a sério
+  pay(p, price);
+  p.op[kind] = true; p.op.paid += price;
+  return { ok: true, kind, price, chanceBp: opChanceBp(p, o), rasto: opRasto(p, o) };
+}
+export function opDrop(p, now, world) {
+  begin(p, now, world, { allowBusy: true });
+  if (!p.op) fail('NO_OP');
+  const lost = p.op.paid; p.op = null;
+  return { ok: true, lost };
+}
+function jailFor(p, now, ms, tier) {
+  const cut = p.avenca && level(p) >= CFG.retainer.level ? CFG.retainer.jailCutBp : 0;
+  p.jailUntil = now + Math.max(T.MIN, Math.floor((ms * (10000 - cut)) / 10000)); p.jailTier = tier; p.jailT0 = now; p.jf = 0;
+}
+export function opGo(p, now, world, rng) {
+  begin(p, now, world);
+  if (!p.op) fail('NO_OP');
+  const st = p.op, o = CFG.ops[st.i], S = CFG.opSteps;
+  if (now < st.ready) fail('PREP_LEFT', { until: st.ready });
+  const miss = opMissing(p, o);
+  if (miss.length) fail('OP_MISSING', { miss });
+  // material: as ferramentas ficam, os explosivos gastam-se; com arma, gastam-se balas e um uso
+  for (const id of o.mat) if (gearOf(id).once) p.inv.splice(p.inv.findIndex((x) => x.id === id), 1);
+  if (o.gun) { const s = gunOf(p); takeInv(p, 'balas', S.bullets); p.eq[s].u -= 1; }
+  const bp = opChanceBp(p, o, st), rasto = opRasto(p, o, st);
+  p.op = null; p.opPause = now + o.pauseH * T.HOUR;
+  p.sk[o.fam] += S.practice;
+  p.c.ops = (p.c.ops || 0) + 1;
+  const covered = p.avenca && level(p) >= CFG.retainer.level;
+  if (rng.chance(bp)) {
+    const L = launder(p, o.gain);
+    p.cash += L.net;
+    p.c.opsWon = (p.c.opsWon || 0) + 1;
+    const resp = Math.round(S.respK * Math.sqrt(o.gain)), lvl = addRespect(p, resp, now);
+    // a Judiciária pode ligar o golpe a ti mais tarde (o suborno impede): ficas com o dinheiro, mas vais preso
+    const linked = !st.bribe && rng.chance(rasto * S.linkedPer);
+    if (linked) jailFor(p, now, o.jailMin * T.MIN, 100 + st.i);
+    return { ok: true, success: true, i: st.i, money: L.net, value: o.gain, lav: L.lav, respect: resp, levelUp: lvl, chanceBp: bp, rasto, linked, jailUntil: linked ? p.jailUntil : 0 };
+  }
+  // correu mal: perde-se o que se pagou; sem suborno paga-se advogado (a avença cobre) e às vezes há prisão
+  let lawyer = 0, busted = false;
+  if (!st.bribe) {
+    if (!covered) { lawyer = Math.min(o.lawyer, p.cash + p.bank); payAll(p, lawyer); }
+    busted = rng.chance(rasto * S.caughtPer);
+    if (busted) jailFor(p, now, o.jailMin * T.MIN, 100 + st.i);
+  }
+  return { ok: true, success: false, i: st.i, lost: st.paid, lawyer, busted, chanceBp: bp, rasto, jailUntil: busted ? p.jailUntil : 0 };
+}
+// tira até onde houver (o advogado cobra o que puder)
+function payAll(p, amount) { const c = Math.min(p.cash, amount); p.cash -= c; p.bank -= amount - c; }
+
+// ---------- advogado em avença ----------
+export function setRetainer(p, now, world, on) {
+  begin(p, now, world, { allowBusy: true });
+  if (on && level(p) < CFG.retainer.level) fail('LOW_LEVEL', { need: CFG.retainer.level });
+  if (!!on === p.avenca) fail(on ? 'HAVE_IT' : 'NO_RETAINER');
+  p.avenca = !!on;
+  if (on) retainerDay(p, now);   // o primeiro dia paga-se ao contratar
+  return { ok: true, on: p.avenca, price: on ? CFG.retainer.day : 0 };
+}
+// paga o dia de hoje (Lisboa) se ainda não pagou; sem dinheiro, o advogado vai-se embora
+export function retainerDay(p, now) {
+  if (!p.avenca) return;
+  const d = dayOf(now);
+  if (p.avD === d) return;
+  if (p.cash + p.bank < CFG.retainer.day) { p.avenca = false; return; }
+  payAll(p, CFG.retainer.day); p.avD = d; p.avN += 1;
+}
+
+// ---------- prisão com coisas para fazer ----------
+// o que a rua rende por barra (100 de stamina) no teu nível: o melhor golpe aberto, pela média da tabela e a hipótese
+export function streetPerBar(p) {
+  let best = 0;
+  CFG.crimes.forEach((c, k) => { if (crimeUnlocked(p, k)) best = Math.max(best, (crimeAvg(c) * c.p * 100) / (10000 * c.e)); });
+  return Math.floor(best);
+}
+const crimeAvg = (c) => c.prizes.reduce((x, [bp, a, z]) => x + (bp * (a + z)) / 2, 0) / 10000;
+function inJail(p, now) { if (!(p.jailUntil > now)) fail('NOT_IN_JAIL'); }
+export function jailSmuggle(p, now, world, rng) {
+  begin(p, now, world, { allowBusy: true }); inJail(p, now);
+  const J = CFG.jail;
+  if (p.energy < J.smuggleE) fail('NO_ENERGY', { need: J.smuggleE });
+  p.energy -= J.smuggleE;
+  const money = Math.floor((streetPerBar(p) * J.smuggleE) / 200);   // metade do que a rua dá por esta stamina
+  const lost = rng.chance(J.smuggleLoseBp);
+  if (!lost) p.cash += money;
+  return { ok: true, money: lost ? 0 : money, lost };
+}
+export function jailWork(p, now, world) {
+  begin(p, now, world, { allowBusy: true }); inJail(p, now);
+  const J = CFG.jail;
+  if (p.vigor < J.workE) fail('NO_VIGOR', { need: J.workE });
+  p.vigor -= J.workE; p.cash += J.work;
+  return { ok: true, money: J.work };
+}
+export const yardBet = (p) => { const J = CFG.jail; return J.yardMin + Math.floor(((J.yardMax - J.yardMin) * (level(p) - 1)) / 99); };
+export function jailYard(p, now, world, rng) {
+  begin(p, now, world, { allowBusy: true }); inJail(p, now);
+  const J = CFG.jail, bet = yardBet(p);
+  if (p.vigor < J.yardE) fail('NO_VIGOR', { need: J.yardE });
+  if (p.cash < bet) fail('NO_MONEY', { need: bet, have: p.cash });
+  p.vigor -= J.yardE;
+  settleAllBiz(p, now);   // treina a força como o ginásio (o rendimento até agora conta com a antiga)
+  p.stats.F += 1; p.c.trains += 1;
+  const win = rng.chance(5000);
+  p.cash += win ? bet : -bet;
+  return { ok: true, win, money: win ? bet : -bet, stat: 'F', value: p.stats.F };
+}
+export function jailCards(p, now, world, bet, rng) {
+  begin(p, now, world, { allowBusy: true }); inJail(p, now);
+  if (!Number.isSafeInteger(bet) || bet < 1 || bet > CFG.jail.cardsMax) fail('BAD_AMOUNT');
+  if (p.cash < bet) fail('NO_MONEY', { need: bet, have: p.cash });
+  const win = rng.chance(5000);
+  p.cash += win ? bet : -bet;
+  return { ok: true, win, money: win ? bet : -bet };
+}
+export function jailFavor(p, now, world, kind) {
+  if (!['time', 'contact'].includes(kind)) fail('NO_STEP');
+  begin(p, now, world, { allowBusy: true }); inJail(p, now);
+  const J = CFG.jail;
+  if (p.jf >= J.favors) fail('NO_FAVORS');
+  if (kind === 'contact' && p.contacts >= J.contactsMax) fail('CONTACTS_FULL');
+  p.jf += 1;
+  if (kind === 'contact') { p.contacts += 1; return { ok: true, kind, contacts: p.contacts }; }
+  const cut = Math.floor(((p.jailUntil - now) * J.favorCutBp) / 10000);
+  p.jailUntil -= cut;
+  return { ok: true, kind, cut, jailUntil: p.jailUntil };
+}
+export function jailEscape(p, now, world, rng) {
+  begin(p, now, world, { allowBusy: true }); inJail(p, now);
+  const J = CFG.jail;
+  if (p.energy < J.escapeE) fail('NO_ENERGY', { need: J.escapeE });
+  p.energy -= J.escapeE;
+  if (rng.chance(J.escapeBp)) { p.jailUntil = 0; p.jailTier = 0; return { ok: true, free: true }; }
+  const add = Math.floor(((p.jailUntil - now) * J.escapeAddBp) / 10000);
+  p.jailUntil += add;
+  return { ok: true, free: false, add, jailUntil: p.jailUntil };
 }
 
 // ---------- ataques ----------
@@ -1761,7 +1995,7 @@ export function heistResolve(ps, now, k, rng) {
   }
   return { ok: true, success: false, chanceBp: bp, parts: ps.map((p) => {
     const busted = !(p.jailUntil > now) && !(p.hospUntil > now) && rng.chance(bustChanceBp(p, now));
-    if (busted) { p.jailUntil = now + H.jailMin * T.MIN; p.jailTier = H.bailAs + 1; }
+    if (busted) jailFor(p, now, H.jailMin * T.MIN, H.bailAs + 1);
     return { id: p.id, money: 0, respect: 0, busted };
   }) };
 }
@@ -2353,7 +2587,13 @@ export function checkInvariants(p) {
   if (!p.eq || CFG.slots.some((k) => p.eq[k] !== null && !(p.eq[k] && goodItem(p.eq[k]) && gearOf(p.eq[k].id).slot === k))) bad.push('eq');
   // inventário: pilhas com quantidade positiva; objetos roubados com valor; um só monte de cada coisa que empilha
   if (!Array.isArray(p.inv) || p.inv.some((x) => !x || !(stackable(x.id) ? Number.isSafeInteger(x.n) && x.n > 0 && (x.id === 'balas' || (Number.isSafeInteger(x.v) && x.v >= 0)) : goodItem(x)))) bad.push('inv');
-  else { const ids = p.inv.filter((x) => stackable(x.id)).map((x) => x.id); if (new Set(ids).size !== ids.length) bad.push('inv dup'); }
+  else { const ids = p.inv.filter((x) => stackable(x.id) || gearOf(x.id)?.slot === 'mat').map((x) => x.id); if (new Set(ids).size !== ids.length) bad.push('inv dup'); }
+  // golpe grande: um de cada vez, com o que se pagou; contactos e avença
+  if (p.op !== null && !(p.op && CFG.ops[p.op.i] && Number.isSafeInteger(p.op.t0) && Number.isSafeInteger(p.op.ready) && p.op.ready >= p.op.t0 && Number.isSafeInteger(p.op.paid) && p.op.paid >= CFG.ops[p.op.i].cost)) bad.push('op');
+  if (!Number.isSafeInteger(p.opPause) || p.opPause < 0) bad.push('opPause');
+  if (!Number.isSafeInteger(p.ilegal) || p.ilegal < 0) bad.push('ilegal');
+  if (!Number.isSafeInteger(p.contacts) || p.contacts < 0 || p.contacts > CFG.jail.contactsMax) bad.push('contacts');
+  if (typeof p.avenca !== 'boolean' || !Number.isSafeInteger(p.avN) || p.avN < 0 || !Number.isSafeInteger(p.jf) || p.jf < 0 || p.jf > CFG.jail.favors) bad.push('avença/favores');
   if (!Array.isArray(p.hmT) || p.hmT.length > CFG.hitman.perDay || p.hmT.some((t) => !Number.isSafeInteger(t)) || !Number.isSafeInteger(p.hmSafe) || p.hmSafe < 0) bad.push('hitman');
   if ((p.gang === null) !== (p.gb === null)) bad.push('gang/gb');
   if (!Number.isSafeInteger(p.gbotLeft) || p.gbotLeft < 0) bad.push('gbotLeft');

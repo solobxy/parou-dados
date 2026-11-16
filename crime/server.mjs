@@ -25,7 +25,7 @@ const RONDA_TESTE = process.env.PRIMEIRA_RONDA ? dataDe(process.env.PRIMEIRA_RON
 // Épocas de 28 dias a contar da sexta 13/11/2026 às 21:00 de Lisboa (PRIMEIRA_EPOCA=AAAA-MM-DD muda-a, para testes)
 const ANCORA = dataDe(process.env.PRIMEIRA_EPOCA || process.env.PRIMEIRA_RONDA || '2026-11-13');
 const rng = cryptoRng();
-const VERSAO = 59;   // sobe quando o servidor muda, para se confirmar de fora que a versão nova já está a correr
+const VERSAO = 60;   // sobe quando o servidor muda, para se confirmar de fora que a versão nova já está a correr
 const ATOS_3S = +(process.env.ATOS_3S || 15), ATOS_MIN = +(process.env.ATOS_MIN || 400); // ações por conta: 15 em 3 s, 400 por minuto
 
 // ---------- relógio que nunca anda para trás ----------
@@ -117,6 +117,12 @@ function noticiar(now, a, r, p, alvo) {
     if ((a.type === 'crime' || a.type === 'crimeAll') && job.ok && job.money >= 2000) noticia(now, { k: 'job', name, c: k, money: job.money });
   }
   if ((a.type === 'crime' || a.type === 'crimeAll') && r.busted && k >= 3) noticia(now, { k: 'jail', name, c: k });
+  if (a.type === 'opGo') {
+    const o = CFG.ops[r.i].id;
+    if (r.success) noticia(now, { k: 'op', name, o, money: r.money });
+    if (r.busted || r.linked) noticia(now, { k: 'opJail', name, o });
+  }
+  if (a.type === 'jailEscape' && r.free) noticia(now, { k: 'escape', name });
   if (a.type === 'classChange') noticia(now, { k: 'cls', name, from: r.from, to: r.cls });
   if (a.type === 'stockSell' && Math.abs(r.profit) >= CFG.casino.newsMin) noticia(now, { k: r.profit > 0 ? 'stockWin' : 'stockLoss', name, c: CFG.stocks.list[r.k].id, money: Math.abs(r.profit) });
   if (a.type === 'airCollect' && r.amount >= CFG.casino.newsMin) noticia(now, r.seized ? { k: 'airLost', name, to: CFG.air.routes[r.r].id, money: r.amount } : { k: 'air', name, to: CFG.air.routes[r.r].id, money: r.got - r.amount });
@@ -151,6 +157,7 @@ function contarAcao(now, a, r, p, alvo, resp0, alvoResp0) {
   const v = { resp: p.respect - resp0 };
   if (a.type === 'crime') Object.assign(v, { crimes: 1, wins: r.success ? 1 : 0, busts: r.busted ? 1 : 0, money: r.success ? r.value : 0, best: r.success ? r.value : 0 });
   else if (a.type === 'crimeAll') Object.assign(v, { crimes: r.n, wins: r.wins, busts: r.busted ? 1 : 0, money: r.value || 0, best: r.best });
+  else if (a.type === 'opGo') Object.assign(v, { crimes: 1, wins: r.success ? 1 : 0, busts: r.busted || r.linked ? 1 : 0, money: r.success ? r.money : 0, best: r.success ? r.money : 0 });
   else if ((a.type === 'hooker' || a.type === 'broVisit') && r.sick) v.sick = 1;
   else if (a.type === 'casino' && (r.g !== 'bj' || r.done)) { const net = casinoNet(r); v.cnet = net; v.cwin = Math.max(0, net); }
   else if (a.type === 'attack') {
@@ -162,13 +169,16 @@ function contarAcao(now, a, r, p, alvo, resp0, alvoResp0) {
   if (Object.values(v).some((x) => x)) contarDia(now, p.id, v);
 }
 // caixa: o golpe separa o que se levou das balas; o resto conta pela diferença no dinheiro de quem agiu
+// A lavagem fica numa linha própria (saída): a fonte conta o que entrou antes dela.
 function contarCaixa(now, a, r, delta) {
-  const tipo = typeof a.type === 'string' ? a.type.slice(0, 24) : '?';
+  const tipo = typeof a.type === 'string' ? a.type.slice(0, 24) : '?', lav = r && r.lav > 0 ? r.lav : 0;
+  if (lav) caixa(now, 'lavagem', 0, lav);
   if (tipo === 'crime' || tipo === 'crimeAll') {
     const c = CFG.crimes[int(a.k)], fonte = 'golpe:' + (c ? c.id : '?');
-    caixa(now, fonte, r.success || r.wins ? r.money : 0, 0);
+    caixa(now, fonte, r.success || r.wins ? r.money + lav : 0, 0);
     return;
   }
+  delta += lav;
   if (tipo === 'attack' && r.win && r.mode === 'mug') { caixa(now, 'assalto', r.money, 0); caixa(now, 'assaltado', 0, r.money); return; }
   if (tipo === 'hitman' && r.success) caixa(now, 'assassino:alvo', 0, r.cashLoss);
   caixa(now, tipo, delta > 0 ? delta : 0, delta < 0 ? -delta : 0);
@@ -313,7 +323,11 @@ function vista(p, now) {
     jailUntil: p.jailUntil, jailTier: p.jailTier, bail: E.bailCost(p, now),
     hospUntil: p.hospUntil, medic: E.medicCost(p, now),
     protectUntil: p.protectUntil, capUntil: p.capUntil, shieldUntil: p.shieldUntil,
-    eq: p.eq, inv: p.inv, invCap: E.invCap(p), invUsed: E.invUsed(p), atkBp: E.atkBp(p), defBp: E.defBp(p), repair: { mao: E.repairCost(p, 'mao'), principal: E.repairCost(p, 'principal') }, guard: p.guard, tool: p.tool, gweapon: p.gweapon, toolNext: E.toolPreview(p, now), hitmanLeft: E.hitmanLeft(p, now), hmSafe: p.hmSafe, luxuries: p.luxuries, luxuryPrice: E.luxuryPrice(p),
+    eq: p.eq, inv: p.inv, invCap: E.invCap(p), invUsed: E.invUsed(p), atkBp: E.atkBp(p), defBp: E.defBp(p),
+    op: p.op ? { ...p.op, chanceBp: E.opChanceBp(p, CFG.ops[p.op.i]), rasto: E.opRasto(p, CFG.ops[p.op.i]), miss: E.opMissing(p, CFG.ops[p.op.i]),
+      cost: { recon: E.opStepCost(CFG.ops[p.op.i], 'recon'), crew: E.opStepCost(CFG.ops[p.op.i], 'crew'), bribe: E.opStepCost(CFG.ops[p.op.i], 'bribe') } } : null,
+    opsPrev: CFG.ops.map((o) => ({ chanceBp: E.opChanceBp(p, o, null), rasto: E.opRasto(p, o, null) })), opPause: p.opPause, contacts: p.contacts,
+    avenca: p.avenca, avD: p.avD, ilegal: p.ilegal, jf: p.jf, jailT0: p.jailT0, streetBar: E.streetPerBar(p), yardBet: E.yardBet(p), repair: { mao: E.repairCost(p, 'mao'), principal: E.repairCost(p, 'principal') }, guard: p.guard, tool: p.tool, gweapon: p.gweapon, toolNext: E.toolPreview(p, now), hitmanLeft: E.hitmanLeft(p, now), hmSafe: p.hmSafe, luxuries: p.luxuries, luxuryPrice: E.luxuryPrice(p),
     attack: E.attackPower(p, now), defense: E.defensePower(p, now),
     crimes: CFG.crimes.map((c, k) => ({ chance: E.crimeChanceBp(p, k, now), unlocked: E.crimeUnlocked(p, k) })),
     sick: p.sick, cure: E.cureCost(p), hookers: CFG.hookers.list.map((_, i) => E.hookerPrice(p, i, now)), hkUses: E.hookerUses(p, now), hkSteps: CFG.hookers.list.map((_, i) => E.hookerSteps(p, i, now)),
@@ -333,7 +347,7 @@ function cfgPublica() {
   return {
     energy: CFG.energy, vigor: CFG.vigor, street: CFG.street, refillBar: CFG.refillBar, deal: CFG.deal, jobs: CFG.jobs, courses: CFG.courses, skills: CFG.skills, addiction: CFG.addiction, train: CFG.train, crimes: CFG.crimes, drugs: CFG.drugs,
     biz: CFG.biz.map(({ id, price, perH, resp, stat, raid, toBank, drug }) => ({ id, price, perH, resp, stat, raid, toBank, drug: drug ? CFG.drugs.findIndex((x) => x.id === drug) : -1 })), accountant: CFG.accountant,
-    bizMax: CFG.bizMax, storageMs: CFG.storageMs, port: { ...CFG.port, ships: CFG.port.ships.map((s) => ({ ...s, drug: CFG.drugs.findIndex((x) => x.id === s.drug) })) }, air: CFG.air, goods: CFG.goods, venue: CFG.venue, detox: CFG.detox, stocks: CFG.stocks, slots: CFG.slots, gear: CFG.gear, bullets: CFG.bullets, loot: CFG.loot, tools: CFG.tools, gweapons: CFG.gweapons, guards: CFG.guards, hitman: CFG.hitman,
+    bizMax: CFG.bizMax, storageMs: CFG.storageMs, port: { ...CFG.port, ships: CFG.port.ships.map((s) => ({ ...s, drug: CFG.drugs.findIndex((x) => x.id === s.drug) })) }, air: CFG.air, goods: CFG.goods, venue: CFG.venue, detox: CFG.detox, stocks: CFG.stocks, slots: CFG.slots, gear: CFG.gear, bullets: CFG.bullets, loot: CFG.loot, ops: CFG.ops, opSteps: CFG.opSteps, retainer: CFG.retainer, jail: CFG.jail, launder: CFG.launder, tools: CFG.tools, gweapons: CFG.gweapons, guards: CFG.guards, hitman: CFG.hitman,
     pvp: CFG.pvp, bank: CFG.bank, luxury: CFG.luxury, levels: CFG.levels, crit: CFG.crit, unlockBp: CFG.unlockBp,
     bustBp: CFG.bustBp, crimeAllMax: CFG.crimeAllMax, casino: { minBet: CFG.casino.minBet, buyMaxMult: CFG.casino.buyMaxMult, red: CFG.casino.red, dice: CFG.casino.dice, wheel: { segs: CFG.casino.wheel.segs, spots: CFG.casino.wheel.spots, topMult: CFG.casino.wheel.topMult.map(([m]) => m), louca: CFG.casino.wheel.louca }, slots: Object.fromEntries(Object.entries(CFG.casino.slots).map(([k, g]) => [k, { kind: g.kind, cols: g.cols, rows: g.rows, min: g.min, nsym: g.nsym, trig: g.trig, pay: g.pay, scatPay: g.scatPay, free: g.free, fs: g.fs, retrig: g.retrig, buy: g.buy, superBuy: g.superBuy, max: g.max, accFree: g.accFree, accAll: g.accAll, orbBase: g.orbBase }])) }, gang: CFG.gang, classes: CFG.classes, classChange: CFG.classChange, avatars: CFG.avatars, hookers: CFG.hookers, house: CFG.house, mastery: CFG.mastery, missions: CFG.missions.length, start: CFG.start,
     round: { playDays: CFG.round.playDays, noPvpMs: CFG.round.noPvpMs }, season: CFG.season,
@@ -1069,7 +1083,7 @@ function agir(conta, corpo, now) {
   const a = corpo || {};
   let r, alvo = null, alvoResp0 = 0, mesa = null;
   const ctx = { outros: [], ops: [], depois: [] };   // o que as gangues têm de gravar no mesmo passo
-  const resp0 = p.respect, din0 = dinheiro(p);
+  const resp0 = p.respect, din0 = dinheiro(p), av0 = p.avN || 0;
   switch (a.type) {
     case 'crime': r = E.doCrime(p, now, world, int(a.k), rng); break;
     case 'crimeAll': r = E.doCrimeAll(p, now, world, int(a.k), rng); break;
@@ -1159,6 +1173,18 @@ function agir(conta, corpo, now) {
     case 'sell': r = E.sellItem(p, now, world, int(a.i)); break;
     case 'sellGoods': r = E.sellGoods(p, now, world); break;
     case 'repair': r = E.repair(p, now, world, String(a.slot || '')); break;
+    // golpes grandes, avença e prisão (passo 5)
+    case 'opStart': r = E.opStart(p, now, world, int(a.i)); break;
+    case 'opStep': r = E.opStep(p, now, world, String(a.kind || '')); break;
+    case 'opGo': r = E.opGo(p, now, world, rng); break;
+    case 'opDrop': r = E.opDrop(p, now, world); break;
+    case 'retainer': r = E.setRetainer(p, now, world, a.on === true); break;
+    case 'jailSmuggle': r = E.jailSmuggle(p, now, world, rng); break;
+    case 'jailWork': r = E.jailWork(p, now, world); break;
+    case 'jailYard': r = E.jailYard(p, now, world, rng); break;
+    case 'jailCards': r = E.jailCards(p, now, world, int(a.bet), rng); break;
+    case 'jailFavor': r = E.jailFavor(p, now, world, String(a.kind || '')); break;
+    case 'jailEscape': r = E.jailEscape(p, now, world, rng); break;
     case 'luxury': r = E.buyLuxury(p, now, world); break;
     case 'attack': {
       const nome = String(a.target || '').toLowerCase();
@@ -1199,7 +1225,9 @@ function agir(conta, corpo, now) {
     for (const f of ctx.ops) f();
     if (mesa) { if (mesa.bets) qm.aposta.run(mesa.g, mesa.c.id, conta, ronda, JSON.stringify(mesa.bets), mesa.total); else qm.tirar.run(mesa.g, mesa.c.id, conta); }
     contarAcao(now, a, r, p, alvo, resp0, alvoResp0);
-    contarCaixa(now, a, r, dinheiro(p) - din0);
+    const avPago = ((p.avN || 0) - av0) * CFG.retainer.day;
+    if (avPago > 0) caixa(now, 'avenca', 0, avPago);
+    contarCaixa(now, a, r, dinheiro(p) - din0 + avPago);
     db.exec('COMMIT');
     if (mesa) { if (mesa.bets) mesa.c.bets.set(conta, { bets: mesa.bets, total: mesa.total, ronda }); else mesa.c.bets.delete(conta); }
     noticiar(now, a, r, p, alvo);

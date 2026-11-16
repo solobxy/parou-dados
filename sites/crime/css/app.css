@@ -1949,3 +1949,34 @@ body.light .rv.is-wait .ct-lock::after { opacity: .9; transform: translate(-50%,
 .jneed.sure { color: var(--danger); text-decoration-color: var(--danger); }
 /* sem stamina: as duas saídas com a mesma letra (a recomendada só muda de cor) */
 .stam .btn { font-family: inherit; font-weight: 700; font-size: 15px; text-transform: none; letter-spacing: 0; }
+/* ===== Passo 5: golpes grandes e prisão (16/11/2026) =====
+   O golpe grande usa o mesmo cartão do roubo (a parte e a hipótese em grande, o resto em frases).
+   Os passos e o material são linhas com divisória dentro do cartão, sem fundo próprio (nada de cartões dentro de cartões). */
+.jobp > .vlist.opl { padding: 0; gap: 0; }
+.jobp > .vlist.opl > .vrow.jbr { min-height: 56px; }
+.jobp > .vlist.opl > .vrow + .vrow { box-shadow: inset 0 1px 0 #ffffff14; }
+.jobp > .vlist.opl .grow > b { font-size: 15px; }
+.jobp > .lootH { margin-top: 6px; }
+.jobp > .jcost + .jcost { margin-top: -8px !important; }
+.jobp > .jrisk + .jcost { margin-top: -8px !important; }
+.jobp > .btn.opdrop { min-height: 44px; font-family: inherit; font-size: 15px; font-weight: 700; text-transform: none; letter-spacing: 0; }
+.jobp > .btn.opdrop.sure { color: var(--danger); box-shadow: inset 0 0 0 1.5px var(--danger); }
+.btn.rob .num { margin-left: .25em; }
+/* a entrada dos golpes grandes no ecrã dos golpes: a mesma linha da lista, com a seta de quem abre outro ecrã */
+.rowi.opsr .chev { font-size: 30px; line-height: 1; color: var(--tx2); padding: 0 4px; }
+.rowi.opsr .meta b.num { font-weight: 600; color: var(--tx); }
+/* prisão: a fiança e, logo abaixo, o caminho para o que se pode fazer lá dentro */
+.state .jdo { color: var(--tx); min-height: 44px; }
+.jaill .boxb { flex-wrap: wrap; }
+.jaill .boxb > .btn { flex: 1 1 0; }
+.jaill .vrow.jbr .grow > .small { font-size: 14px; }
+.btn.sm.ghost.dng.sure { color: var(--danger); box-shadow: inset 0 0 0 1.5px var(--danger); }
+.lavp { margin: -4px 2px 10px; line-height: 1.5; }
+/* revisão do passo 5: a linha de apoio das listas de golpes com 14 px; o resultado de um golpe grande abre numa folha */
+.rowi .meta { font-size: 14px; }
+.opres .report { animation: none; }
+.opres .report > b { font-size: 28px; }
+.jobp > .jgun.muted { color: var(--tx2); }
+.btn.rob.fixb { white-space: nowrap; font-size: clamp(17px, 5.4vw, 22px); }
+.jaill .boxb > .btn { padding: 0 8px; }
+.rowi.opsr .meta > span { display: block; }

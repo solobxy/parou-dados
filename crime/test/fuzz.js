@@ -33,7 +33,10 @@ const MAX_STREET_RESP = Math.max(...CFG.crimes.map((c) => Math.ceil((CFG.street.
 const balas = (q) => (q.inv.find((x) => x.id === 'balas') || { n: 0 }).n;
 const MAX_PVP = Math.floor(((CFG.pvp.gainBase + CFG.tiers.length) * 2 * (10000 + Math.max(...CFG.classes.map((c) => c.pvpBp || 0)))) / 10000);
 function contas(kind, a0, a, d0, d, t, res, arg) {
-  const dm = wealth(a) - wealth(a0), dr = a.respect - a0.respect;
+  const av = ((a.avN || 0) - (a0.avN || 0)) * CFG.retainer.day;   // o dia da avença, pago no primeiro ato do dia, não é da ação
+  const dm = wealth(a) - wealth(a0) + av, dr = a.respect - a0.respect;
+  if (av < 0 || av > CFG.retainer.day) { console.error('CONTAS ERRADAS avença paga mais de uma vez', kind, av); process.exit(1); }
+  if ((a.ilegal || 0) < (a0.ilegal || 0)) { console.error('CONTAS ERRADAS total de crime desceu', kind); process.exit(1); }
   const bad = (m) => { console.error('CONTAS ERRADAS', kind, m, JSON.stringify(res), { dm, dr }); process.exit(1); };
   switch (kind) {
     case 'crime': {
@@ -62,6 +65,7 @@ function contas(kind, a0, a, d0, d, t, res, arg) {
     }
     case 'buy': {
       if (arg.id === 'balas') { if (dm !== -arg.n * CFG.bullets.price || balas(a) - balas(a0) !== arg.n * CFG.bullets.box) bad('balas'); }
+      else if (CFG.gear.find((x) => x.id === arg.id).slot === 'mat') { if (dm !== -CFG.gear.find((x) => x.id === arg.id).price || a.inv.length - a0.inv.length !== 1 || a.inv.filter((x) => x.id === arg.id).length !== 1) bad('compra de material'); }
       else { const g = CFG.gear.find((x) => x.id === arg.id); if (dm !== -g.price || a.eq[g.slot].id !== arg.id || a.inv.length - a0.inv.length !== (a0.eq[g.slot] ? 1 : 0)) bad('compra de equipamento'); }
       if (E.invUsed(a) > E.invCap(a) && E.invUsed(a) > E.invUsed(a0)) bad('inventário acima dos espaços');
       if (dr !== 0) bad('compra mexeu no respeito');
@@ -70,9 +74,30 @@ function contas(kind, a0, a, d0, d, t, res, arg) {
     case 'equip': if (dm !== 0 || dr !== 0 || a.inv.length > a0.inv.length) bad('equipar'); break;
     case 'sell': case 'sellGoods': if (dm !== res.money || res.money < 0 || dr !== 0 || a.inv.length >= a0.inv.length) bad('recetador'); break;
     case 'repair': { const g = CFG.gear.find((x) => x.id === a.eq[arg].id); if (dm !== -res.price || a.eq[arg].u !== g.life || dr !== 0) bad('reparar'); break; }
+    // golpes grandes (passo 5)
+    case 'opStart': { const o = CFG.ops[arg]; if (dm !== -o.cost || !a.op || a.op.i !== arg || a.op.ready !== t + o.prepH * T.HOUR || E.level(a0) < o.level || a0.op || dr !== 0) bad('preparar golpe grande'); break; }
+    case 'opStep': if (dm !== -res.price || res.price <= 0 || !a.op[arg] || a0.op[arg] || a.op.paid !== a0.op.paid + res.price) bad('passo da preparação'); break;
+    case 'opDrop': if (dm !== 0 || a.op !== null || res.lost !== a0.op.paid) bad('desistir do golpe grande'); break;
+    case 'opGo': {
+      const o = CFG.ops[res.i];
+      if (a.op !== null || a.opPause !== t + o.pauseH * T.HOUR || t < a0.op.ready || res.i !== a0.op.i) bad('avançar: estado');
+      if (res.chanceBp > CFG.opSteps.maxBp || res.chanceBp < o.p || res.rasto < CFG.opSteps.minRasto || res.rasto > o.rasto) bad('avançar: hipótese ou rasto');
+      if (res.success) { if (dm !== res.money || res.money + res.lav !== o.gain || res.lav < 0 || res.lav > Math.ceil((o.gain * CFG.launder.bp) / 10000) || dr !== res.respect || res.respect !== Math.round(CFG.opSteps.respK * Math.sqrt(o.gain))) bad('avançar: correu bem'); }
+      else if (dr !== 0 || dm !== -res.lawyer || res.lawyer > o.lawyer || (a0.op.bribe && (res.lawyer || res.busted))) bad('avançar: correu mal');
+      if (!!(res.busted || res.linked) !== (a.jailUntil > t)) bad('avançar: prisão');
+      if (o.gun && (balas(a0) - balas(a) !== CFG.opSteps.bullets)) bad('avançar: balas');
+      break;
+    }
+    case 'retainer': if (dm !== 0 || a.avenca !== res.on || (res.on && a.avD === null)) bad('avença'); break;
+    case 'jailSmuggle': if (dm !== res.money || res.money > Math.floor((E.streetPerBar(a0) * CFG.jail.smuggleE) / 200) || dr !== 0 || !(a0.jailUntil > t)) bad('contrabando'); break;
+    case 'jailWork': if (dm !== CFG.jail.work || dr !== 0) bad('oficina'); break;
+    case 'jailYard': if (Math.abs(dm) !== E.yardBet(a0) || a.stats.F !== a0.stats.F + 1 || dr !== 0) bad('pátio'); break;
+    case 'jailCards': if (Math.abs(dm) !== arg || arg > CFG.jail.cardsMax || dr !== 0) bad('cartas'); break;
+    case 'jailFavor': if (dm !== 0 || a.jf !== touched(a0, t).jf + 1 || (arg === 'time' ? a.jailUntil > a0.jailUntil : a.contacts !== a0.contacts + 1)) bad('favor'); break;
+    case 'jailEscape': if (dm !== 0 || (res.free ? a.jailUntil !== 0 : a.jailUntil < a0.jailUntil)) bad('fuga'); break;
     case 'deal': {
       const x = CFG.deal.list[arg], d = CFG.drugs.findIndex((g) => g.id === x.drug), g = Math.floor((x.perBar * CFG.deal.step) / 100);
-      if (res.grams !== g || dm !== Math.floor((g * CFG.drugs[d].price * (10000 + E.skillBp(a0, 'trafico'))) / 10000) || res.money !== dm || dr !== res.respect || res.respect < 1 || a.dst[arg] !== a0.dst[arg] - g || E.level(a0) < x.level) bad('venda de droga');
+      if (res.grams !== g || dm + res.lav !== Math.floor((g * CFG.drugs[d].price * (10000 + E.skillBp(a0, 'trafico'))) / 10000) || res.money !== dm || res.lav < 0 || res.lav > Math.ceil((dm + res.lav) * CFG.launder.bp / 10000) || dr !== res.respect || res.respect < 1 || a.dst[arg] !== a0.dst[arg] - g || E.level(a0) < x.level) bad('venda de droga');
       if (a.energy !== Math.min(E.energyMax(a0), touched(a0, t).energy) - CFG.deal.step) bad('venda: stamina');
       if (E.dealUsed(a, t) > E.dealCap(a)) bad('venda acima da clientela');
       break;
@@ -256,8 +281,15 @@ for (let n = 0; n < ACTIONS; n++) {
   if (r.chance(300)) { const x = r.int(0, CFG.levels[r.int(0, CFG.levels.length - 1)]); p.respect = x; p.peakRespect = Math.max(p.peakRespect, x); } // jogadores de todos os níveis
   // armas gastas de vez em quando (nos golpes gastam-se devagar), para a reparação ser posta à prova
   if (r.chance(2000)) for (const sl of ['mao', 'principal']) if (p.eq[sl] && p.eq[sl].u !== undefined) p.eq[sl].u = r.int(0, CFG.gear.find((g) => g.id === p.eq[sl].id).life);
+  if (r.chance(800) && !(p.jailUntil > t)) { p.jailUntil = t + r.int(1, 90) * T.MIN; p.jailTier = r.chance(5000) ? 100 + r.int(0, CFG.ops.length - 1) : r.int(1, CFG.crimes.length); p.jailT0 = t; p.jf = 0; } // preso, para a prisão ter que fazer
+  if (r.chance(4000) && p.op) p.op.ready = Math.min(p.op.ready, Math.max(p.op.t0, t)); // a preparação acabou
+  if (r.chance(4000) && p.op) { // e às vezes já tem o material, a arma e as balas
+    const o = CFG.ops[p.op.i]; p.house = Math.max(p.house, 5);
+    for (const id of o.mat) if (!p.inv.some((x) => x.id === id)) p.inv.push({ id });
+    if (o.gun) { if (!p.eq.mao) p.eq.mao = { id: 'pistola', u: 20 }; const b = p.inv.find((x) => x.id === 'balas'); if (b) b.n += 50; else p.inv.push({ id: 'balas', n: 50 }); }
+  }
   const before = touched(p, t), beforeD = touched(d, t), origD = structuredClone(d), origP = structuredClone(p);
-  const kind = pick(['stockBuy', 'stockBuy', 'stockBuy', 'stockSell', 'stockSell', 'missionSwap', 'venueBuy', 'venueBuy', 'venueSet', 'venueCollect', 'stockUse', 'stockUse', 'stockDump', 'broHire', 'broHire', 'broFire', 'clubBuyAt', 'clubBuyAt', 'clubBuyAt', 'broVisitAt', 'broVisitAt', 'broVisitAt', 'casino', 'casino', 'table', 'heist', 'hit', 'gangCreate', 'gangDonate', 'gangLeave', 'gangBiz', 'gangBiz', 'gangBiz', 'gangBizCollect', 'hitman', 'hitman', 'hitman', 'crime', 'crime', 'crimeAll', 'deal', 'deal', 'dealBuy', 'drug', 'refill', 'detox', 'claim', 'class', 'classChange', 'classChange', 'air', 'air', 'airCollect', 'airCollect', 'bailFor', 'bailFor', 'medicFor', 'medicFor', 'avatar', 'hooker', 'cure', 'house', 'houseUp', 'train', 'buyBiz', 'buyBiz', 'collect', 'bizGoods', 'bizGoods', 'stockHold', 'stockHold', 'acct', 'stockLimit', 'stockLimit', 'stockLimit', 'port', 'collectPort', 'portOpen', 'portOpen', 'deposit', 'withdraw', 'gear', 'attack', 'bail', 'medic', 'luxury', 'shift', 'shift', 'shift', 'job', 'course', 'buy', 'buy', 'buy', 'buy', 'equip', 'sell', 'sellGoods', 'sellGoods', 'repair', 'repair']);
+  const kind = pick(['stockBuy', 'stockBuy', 'stockBuy', 'stockSell', 'stockSell', 'missionSwap', 'venueBuy', 'venueBuy', 'venueSet', 'venueCollect', 'stockUse', 'stockUse', 'stockDump', 'broHire', 'broHire', 'broFire', 'clubBuyAt', 'clubBuyAt', 'clubBuyAt', 'broVisitAt', 'broVisitAt', 'broVisitAt', 'casino', 'casino', 'table', 'heist', 'hit', 'gangCreate', 'gangDonate', 'gangLeave', 'gangBiz', 'gangBiz', 'gangBiz', 'gangBizCollect', 'hitman', 'hitman', 'hitman', 'crime', 'crime', 'crimeAll', 'deal', 'deal', 'dealBuy', 'drug', 'refill', 'detox', 'claim', 'class', 'classChange', 'classChange', 'air', 'air', 'airCollect', 'airCollect', 'bailFor', 'bailFor', 'medicFor', 'medicFor', 'avatar', 'hooker', 'cure', 'house', 'houseUp', 'train', 'buyBiz', 'buyBiz', 'collect', 'bizGoods', 'bizGoods', 'stockHold', 'stockHold', 'acct', 'stockLimit', 'stockLimit', 'stockLimit', 'port', 'collectPort', 'portOpen', 'portOpen', 'deposit', 'withdraw', 'gear', 'attack', 'bail', 'medic', 'luxury', 'shift', 'shift', 'shift', 'job', 'course', 'buy', 'buy', 'buy', 'buy', 'equip', 'sell', 'sellGoods', 'sellGoods', 'repair', 'repair', 'opStart', 'opStart', 'opStep', 'opStep', 'opGo', 'opGo', 'opGo', 'opDrop', 'retainer', 'jailSmuggle', 'jailWork', 'jailYard', 'jailCards', 'jailFavor', 'jailEscape']);
   let res, arg;
   try {
     switch (kind) {
@@ -269,6 +301,17 @@ for (let n = 0; n < ACTIONS; n++) {
       case 'sell': arg = r.chance(9000) ? r.int(0, Math.max(0, p.inv.length - 1)) : anyInt(); res = E.sellItem(p, t, world, arg); break;
       case 'sellGoods': res = E.sellGoods(p, t, world); break;
       case 'repair': arg = pick(['mao', 'principal', 'mao', 'cabeca', 'x']); res = E.repair(p, t, world, arg); break;
+      case 'opStart': arg = r.chance(9500) ? r.int(0, CFG.ops.length - 1) : anyInt(); res = E.opStart(p, t, world, arg); break;
+      case 'opStep': arg = pick(['recon', 'crew', 'bribe', 'x']); res = E.opStep(p, t, world, arg); break;
+      case 'opGo': res = E.opGo(p, t, world, game); break;
+      case 'opDrop': res = E.opDrop(p, t, world); break;
+      case 'retainer': res = E.setRetainer(p, t, world, r.chance(6000)); break;
+      case 'jailSmuggle': res = E.jailSmuggle(p, t, world, game); break;
+      case 'jailWork': res = E.jailWork(p, t, world); break;
+      case 'jailYard': res = E.jailYard(p, t, world, game); break;
+      case 'jailCards': arg = pick([1, 10, 50, 51, 0, -5]); res = E.jailCards(p, t, world, arg, game); break;
+      case 'jailFavor': arg = pick(['time', 'contact', 'x']); res = E.jailFavor(p, t, world, arg); break;
+      case 'jailEscape': res = E.jailEscape(p, t, world, game); break;
       case 'job': arg = r.chance(9000) ? r.int(0, CFG.jobs.list.length) : anyInt(); res = E.chooseJob(p, t, world, arg); break;
       case 'course': arg = r.chance(9000) ? pick(CFG.courses.map((c) => c.id)) : 'x' + r.int(0, 9); res = E.startCourse(p, t, world, arg); break;
       case 'dealBuy': arg = { j: r.chance(9000) ? r.int(0, CFG.deal.list.length) : anyInt(), kg: pick([1, 1, 2, 5, 20, 21, 0, -1, 0.5]) }; res = E.dealBuy(p, t, world, arg.j, arg.kg); break;
@@ -378,7 +421,9 @@ for (let n = 0; n < ACTIONS; n++) {
     counts['x_' + e.code] = (counts['x_' + e.code] || 0) + 1;
     // ação recusada: o estado só pode ter mudado pela atualização normal do tempo
     // (ou nem isso, quando o pedido é recusado logo à entrada por argumentos inválidos)
-    if (!isDeepStrictEqual(p, before) && !isDeepStrictEqual(p, origP)) { console.error('RECUSADA MAS MUDOU', kind, e.code); process.exit(1); }
+    // (o primeiro ato do dia paga a avença antes de validar o resto: isso fica, mesmo que a ação seja recusada)
+    const beforeAv = structuredClone(before); E.retainerDay(beforeAv, t);
+    if (!isDeepStrictEqual(p, before) && !isDeepStrictEqual(p, beforeAv) && !isDeepStrictEqual(p, origP)) { console.error('RECUSADA MAS MUDOU', kind, e.code); process.exit(1); }
     if (d !== p && !isDeepStrictEqual(d, beforeD) && !isDeepStrictEqual(d, origD)) { console.error('ALVO MUDOU', kind, e.code); process.exit(1); }
   }
   for (const q of [p, d]) {
