@@ -299,6 +299,7 @@ function loadFor(tab) {
   if (tab === 'club' || tab === 'putas') loadVenues();
   if (tab === 'bolsa') { S.stkSel = null; loadStocks(); }
   if (tab === 'news' || tab === 'city') loadNews();
+  if (tab === 'news') loadStocks();   // a página de Economia e a tira da bolsa na primeira página
 }
 function go(tab) {
   if (!PLACES[tab]) tab = 'city';
@@ -510,68 +511,120 @@ function newsText(e) {
   const k = e.k === 'fight' ? (e.mode === 'mug' ? 'mug' : 'beat') : e.k, C = list('crimes');
   if (k === 'gangNew') return t('nw_gangNew', { a: e.name, g: e.gang, t: e.tag });
   if (k === 'gangUp') return t('nw_gangUp_' + e.what, { g: e.gang, n: e.n });
-  if (k === 'air' || k === 'airLost') return tv('nw_' + k, seedOf(e.name + k + e.t), { a: e.name, x: t('ar_' + e.to), m: moneyShort(e.money || 0) });
-  if (k === 'stockWin' || k === 'stockLoss' || k === 'stockBust') return tv('nw_' + k, seedOf((e.name || e.c) + k + e.t), { a: e.name, x: t('st_' + e.c), m: moneyShort(e.money || 0) });
+  if (k === 'air' || k === 'airLost') return tv('nw_' + k, seedOf(e.name + k + e.t), { a: e.name, x: t('ar_' + e.to), m: money(e.money || 0) });
+  if (k === 'stockWin' || k === 'stockLoss' || k === 'stockBust') return tv('nw_' + k, seedOf((e.name || e.c) + k + e.t), { a: e.name, x: t('st_' + e.c), m: money(e.money || 0) });
   if (k === 'venue') return tv('nw_venue' + e.v, seedOf(e.name + k + e.t), { a: e.name });
   if (k === 'cls') return tv('nw_cls', seedOf(e.name + k + e.t), { a: e.name, x: t('cl_' + e.from), y: t('cl_' + e.to) });
-  if (k === 'gangHeist' || k === 'gangHeistFail') return tv('nw_' + k, seedOf(e.gang + k + e.t), { g: e.gang, x: t('gh_' + e.c), n: e.n, m: moneyShort(e.money || 0) });
+  if (k === 'gangHeist' || k === 'gangHeistFail') return tv('nw_' + k, seedOf(e.gang + k + e.t), { g: e.gang, x: t('gh_' + e.c), n: e.n, m: money(e.money || 0) });
   if (k === 'gangHit' || k === 'gangHitFail') return tv('nw_' + k, seedOf(e.gang + k + e.t), { g: e.gang, b: e.target, n: e.n });
   const x = k === 'house' ? list('houses')[e.h] : k === 'lux' ? list('lux')[e.i] : k === 'lvl' ? list('titles')[e.n - 1] : k.startsWith('casino') ? t('csIn_' + e.g) : C[e.c];
-  return tv('nw_' + k, seedOf(e.name + k + e.t), { a: e.name, b: e.target, x, m: moneyShort(e.money || 0), n: e.n });
+  return tv('nw_' + k, seedOf(e.name + k + e.t), { a: e.name, b: e.target, x, m: money(e.money || 0), n: e.n });
 }
 const newsIdx = (f) => Math.floor(now() / 5000) % f.length;
 // o jornal na cidade: a manchete do dia e a última hora a rodar; abre o jornal inteiro
 function newsBar() {
   const f = S.feed || [], top = S.news?.today?.items?.[0];
   const e = f.length ? f[newsIdx(f)] : null;
-  return h('button', { class: 'newsc', 'aria-label': t('p_news'), on: { click: () => go('news') } },
-    h('div', { class: 'nhead' }, h('span', { class: 'nlbl' }, t('p_news')), h('span', { class: 'nlive' }, t('nwLive')), icon('chev')),
-    top ? h('div', { class: 'ntop' }, t('hl_' + top.k + '_t', { a: top.name })) : null,
-    e ? h('div', { class: 'news', 'data-news': String(newsIdx(f)) },
-      h('span', { class: 'nic' }, icon(NW_IC[e.k] || 'chat')), h('span', { class: 'ntx' }, newsText(e)), h('span', { class: 'nago muted' }, dur(now() - e.t)))
-      : h('div', { class: 'small muted' }, t('nwEmpty')));
+  // uma tira do próprio jornal: o nome, a manchete do dia e a última hora a rodar. Abre o jornal inteiro.
+  return h('button', { class: 'newsc paper', 'aria-label': t('paper'), on: { click: () => go('news') } },
+    h('div', { class: 'nhead' }, h('span', { class: 'nlbl' }, t('paper')), h('span', { class: 'nday' }, paperDate()), icon('chev')),
+    top ? h('div', { class: 'ntop' }, h('span', { class: 'kick' }, kick(top.k)), h('b', null, hnodes(headline(top, S.news.today.dia)))) : null,
+    e ? h('div', { class: 'news', 'data-news': String(newsIdx(f)) }, h('span', { class: 'nago ptime' }, paperTime(e.t)), h('span', { class: 'ntx' }, newsText(e)))
+      : h('div', { class: 'pempty' }, t('nwEmpty')));
 }
 function tickNews() {
   const el = document.querySelector('[data-news]'), f = S.feed || [];
   if (!el || !f.length) return;
   const i = newsIdx(f), e = f[i];
-  el.querySelector('.nago').textContent = dur(now() - e.t);
   if (+el.dataset.news === i) return;
   el.dataset.news = String(i);
-  el.querySelector('.nic').replaceChildren(icon(NW_IC[e.k] || 'chat'));
+  el.querySelector('.nago').textContent = paperTime(e.t);
   el.querySelector('.ntx').textContent = newsText(e);
   el.classList.remove('swap'); void el.offsetWidth; el.classList.add('swap');
 }
 async function loadNews() {
   try { const r = await api('GET', '/api/news'); S.news = r; if (r.feed) S.feed = r.feed; if (S.tab === 'news' || S.tab === 'city') render(); } catch {}
 }
-// o jornal: manchetes de hoje e de ontem (feitas sozinhas a partir do que os jogadores fazem) e a última hora
-function hlCard(it, when, dia) {
-  const cls = it.cls ? t('cl_' + it.cls) : '';
-  return h('article', { class: 'hl hl-' + it.k },
-    h('h3', null, t('hl_' + it.k + '_t', { a: it.name })),
-    h('p', null, tv('hl_' + it.k, seedOf(it.name + it.k + dia), { a: it.name, n: it.n, m: money(it.m), d: when })),
-    h('div', { class: 'hlwho' }, S.avOk ? h('img', { class: 'avs', src: AV(it.av || 0), alt: '', width: 96, height: 96, loading: 'lazy' }) : null,
-      h('div', null, h('b', null, it.name), h('div', { class: 'small muted' }, (cls ? cls + ' · ' : '') + t('level') + ' ' + it.level),
-        h('div', { class: 'small c-resp' }, icon('crown'), ' ' + num(it.respect)))));
+// ===== O jornal «A Sirene» =====
+// Uma folha de papel dentro do jogo: cabeçalho, manchete em letras grandes e quatro páginas. Escreve-se com o que já existe
+// (o título do dia de cada jogador, a última hora e a bolsa). As notícias do governo e das empresas entram com o motor de acontecimentos.
+const PG = ['front', 'street', 'econ', 'live'], PGL = { front: 'pgFront', street: 'pgStreet', econ: 'pgEcon', live: 'nwLive' };
+const kick = (k) => t('hl_' + k + '_t', { a: '' }).replace(/[:\s]+$/, '');   // «Procurado: {a}» sem o nome: é o antetítulo
+const paperDate = () => new Date(now()).toLocaleDateString(lang() === 'pt' ? 'pt-PT' : 'en-GB', { weekday: 'short', day: 'numeric', month: 'long', timeZone: 'Europe/Lisbon' });
+const toPage = (pg, alvo) => { S.newsPg = pg; render(); const e = alvo && document.querySelector(alvo); if (e) e.scrollIntoView(); else window.scrollTo({ top: 0 }); };
+const more = (pg, lbl) => h('button', { class: 'pmore', on: { click: () => toPage(pg) } }, lbl + ' →');
+// a hora a que aconteceu (hora de Lisboa); se não foi hoje, o dia. «2:03» de tempo decorrido lia-se como duas da manhã.
+const paperTime = (t0) => { const o = { timeZone: 'Europe/Lisbon' }, d = new Date(t0), loc = lang() === 'pt' ? 'pt-PT' : 'en-GB';
+  return d.toLocaleDateString(loc, o) === new Date(now()).toLocaleDateString(loc, o) ? d.toLocaleTimeString(loc, { ...o, hour: '2-digit', minute: '2-digit' }) : d.toLocaleDateString(loc, { ...o, day: '2-digit', month: '2-digit' }); };
+const liveRow = (e) => h('li', null, h('span', { class: 'ptime' }, paperTime(e.t)), h('span', null, newsText(e)));
+// uma notícia: antetítulo a vermelho, título em letras grandes, a fotografia de quem a fez e o texto. kind: lead (manchete), side (chamada) ou row (lista)
+// o título diz o facto (três moldes por tipo de notícia), o texto só traz a piada: assim não se repetem um ao outro
+const headline = (it, dia) => tv('hl_' + it.k + '_h', seedOf(it.name + it.k + dia + 'h'), { a: it.name, n: num(it.n), m: money(it.m) });
+// num título, os milhares separam-se por um espaço estreito feito à mão (a letra dos títulos não tem esse carácter): «$1 250 000» não se pode ler como quatro palavras
+const hnodes = (x) => x.split(/(\d+(?:\u00a0\d{3})+)/).map((p, i) => (i % 2 ? h('span', { class: 'pnum' }, p.split('\u00a0').flatMap((g, j) => (j ? [h('span', { class: 'pgap' }), g] : [g]))) : p));
+function story(it, dia, kind) {
+  const foto = S.avOk && (kind === 'lead' || kind === 'row');
+  return h('article', { class: 'st st-' + kind },
+    h('div', { class: 'kick' }, kick(it.k)),
+    h(kind === 'lead' ? 'h2' : 'h3', null, hnodes(headline(it, dia))),
+    h('div', { class: 'stb' }, foto ? h('img', { class: 'pphoto', src: AV(it.av || 0), alt: '', width: 192, height: 192, loading: 'lazy' }) : null,
+      h('div', null, h('p', null, tv('hl_' + it.k, seedOf(it.name + it.k + dia), { a: it.name, n: num(it.n), m: money(it.m) })),
+        foto ? h('div', { class: 'by' }, t('paperBy', { c: it.cls ? t('cl_' + it.cls) : '', l: it.level, r: num(it.respect) }).replace(/^, /, '')) : null)));
+}
+function paperFront(N) {
+  const hoje = N.today.items.length > 0, day = hoje ? N.today : N.yesterday, its = day.items, out = [];
+  if (!its.length) out.push(h('article', { class: 'st st-lead' }, h('div', { class: 'kick' }, t('nwLive')), h('h2', null, t('paperCalmH')), h('div', { class: 'stb' }, h('p', null, t('paperCalm')))));
+  else {
+    if (!hoje) out.push(h('p', { class: 'pnote' }, t('paperYest')));
+    out.push(story(its[0], day.dia, 'lead'));
+    if (its.length > 1) out.push(h('div', { class: 'st2' + (its.length === 2 ? ' one' : '') }, its.slice(1, 3).map((it) => story(it, day.dia, 'side'))));
+    if (its.length > 3) out.push(h('button', { class: 'pmore', on: { click: () => { S.newsSeg = hoje ? 'today' : 'yesterday'; toPage('street', '.pbriefs'); } } }, t('paperMore', { n: its.length - 3 }) + ' →'));
+  }
+  const M = S.stocks;
+  if (M && M.prices.length) out.push(h('section', { class: 'psec' }, h('h4', null, t('ecTitle')),
+    h('div', { class: 'pquo' }, S.cfg.stocks.list.map((c, k) => h('span', { class: M.prices[k] >= M.hist[k][0] ? 'pup' : 'pdn' }, h('b', null, c.id.toUpperCase()), stPct(M.prices[k], M.hist[k][0])))),
+    more('econ', t('pgEcon'))));
+  const f = (S.feed || []).slice(0, 3);
+  if (f.length) out.push(h('section', { class: 'psec' }, h('h4', null, t('nwLive')), h('ul', { class: 'plive' }, f.map(liveRow)), more('live', t('paperAll'))));
+  return out;
+}
+function paperStreet(N) {
+  const seg = S.newsSeg === 'yesterday' ? 'yesterday' : 'today', day = N[seg];
+  return [h('div', { class: 'pseg', role: 'group' }, [['today', t('nwToday')], ['yesterday', t('nwYesterday')]].map(([id, lbl]) =>
+    h('button', { 'aria-pressed': seg === id ? 'true' : 'false', on: { click: () => { S.newsSeg = id; render(); } } }, lbl))),
+    day.items.length ? h('div', { class: 'stl' }, day.items.slice(0, 3).map((it) => story(it, day.dia, 'row'))) : h('p', { class: 'pempty' }, seg === 'today' ? t('hlNoneToday') : t('hlNoneYesterday')),
+    day.items.length > 3 ? h('div', { class: 'pbriefs' }, day.items.slice(3).map((it) => story(it, day.dia, 'brief'))) : null];
+}
+function paperEcon() {
+  const M = S.stocks, C = S.cfg.stocks;
+  if (!M || !M.prices.length) return [h('p', { class: 'pempty' }, t('loading'))];
+  const rows = C.list.map((c, k) => ({ c, k, pr: M.prices[k], h0: M.hist[k][0], pct: M.hist[k][0] ? (M.prices[k] - M.hist[k][0]) / M.hist[k][0] : 0 }));
+  const top = rows.reduce((a, b) => (Math.abs(b.pct) > Math.abs(a.pct) ? b : a));
+  const desk = (S.feed || []).filter((e) => e.k === 'stockWin' || e.k === 'stockLoss' || e.k === 'stockBust');
+  return [
+    Math.abs(top.pct) >= 0.03 ? h('article', { class: 'st st-lead' }, h('div', { class: 'kick' }, t(top.pct > 0 ? 'ecKup' : 'ecKdn')), h('h2', null, t(top.pct > 0 ? 'ecUp' : 'ecDown', { x: t('st_' + top.c.id), p: stPct(top.pr, top.h0).slice(1) })),
+      h('div', { class: 'stb' }, h('p', null, t('ecLede', { p: stMoney(top.pr), q: stMoney(top.h0) })))) : null,
+    h('section', { class: 'psec' }, h('h4', null, t('ecTitle')),
+      h('table', { class: 'pmkt' }, h('tbody', null, rows.map((r) => h('tr', { class: r.pct >= 0 ? 'pup' : 'pdn' },
+        h('th', { scope: 'row' }, t('st_' + r.c.id), h('small', null, r.c.id.toUpperCase())), h('td', { class: 'pch' }, stChart(M.hist[r.k], 'mini', 96, 34)),
+        h('td', { class: 'num pv' }, stMoney(r.pr)), h('td', { class: 'num pp' }, stPct(r.pr, r.h0))))))),
+    h('section', { class: 'psec' }, h('h4', null, t('ecDesk')), desk.length ? h('ul', { class: 'plive' }, desk.map(liveRow)) : h('p', { class: 'pempty' }, t('ecNone'))),
+    h('button', { class: 'pbtn', on: { click: () => go('bolsa') } }, t('ecGo'))];
 }
 function screenNews() {
-  const N = S.news, seg = S.newsSeg || 'today';
-  const out = [pageHead('news', t('s_news'))];
-  out.push(h('div', { class: 'seg', role: 'group' }, [['today', t('nwToday')], ['yesterday', t('nwYesterday')], ['live', t('nwLive')]].map(([id, lbl]) =>
-    h('button', { 'aria-pressed': seg === id ? 'true' : 'false', on: { click: () => { S.newsSeg = id; render(); } } }, lbl))));
-  if (!N) { out.push(h('p', { class: 'muted' }, t('loading'))); return out; }
-  if (seg === 'live') {
-    const f = S.feed || [];
-    if (!f.length) out.push(h('div', { class: 'note' }, h('p', { class: 'muted' }, t('nwEmpty'))));
-    else out.push(h('div', { class: 'card nlist' }, f.map((e) => h('div', { class: 'row nrow' }, h('span', { class: 'nic' }, icon(NW_IC[e.k] || 'chat')),
-      h('div', { class: 'grow' }, newsText(e)), h('span', { class: 'small muted' }, dur(now() - e.t))))));
-    return out;
-  }
-  const day = seg === 'today' ? N.today : N.yesterday, when = seg === 'today' ? t('dToday') : t('dYesterday');
-  if (!day.items.length) out.push(h('div', { class: 'note' }, h('p', { class: 'muted' }, seg === 'today' ? t('hlNoneToday') : t('hlNoneYesterday'))));
-  else out.push(h('div', { class: 'hls' }, day.items.map((it) => hlCard(it, when, day.dia))));
-  return out;
+  const N = S.news, pg = PG.includes(S.newsPg) ? S.newsPg : 'front', r = S.st.round, D = S.cfg.round.playDays;
+  const dia = Math.min(D, Math.max(1, Math.floor((now() - (r.playEnd - D * 864e5)) / 864e5) + 1));
+  const f = S.feed || [];
+  const body = !N ? [h('p', { class: 'pempty' }, t('loading'))] : pg === 'front' ? paperFront(N) : pg === 'street' ? paperStreet(N) : pg === 'econ' ? paperEcon()
+    : [f.length ? h('ul', { class: 'plive first' }, f.map(liveRow)) : h('p', { class: 'pempty' }, t('nwEmpty'))];
+  return [h('div', { class: 'phead' }, h('div', { class: 'pbar pj' }, h('button', { class: 'back', 'aria-label': t('p_' + upOf('news')), on: { click: () => go(upOf('news')) } }, h('span', { 'aria-hidden': 'true' }, '←')), h('h1', { class: 'sr' }, t('paper')))),
+    h('div', { class: 'paper' },
+      h('header', { class: 'pmast' },
+        h('div', { class: 'mline' }, h('span', null, paperDate()), h('span', null, t('paperDay', { n: r.n + 1, d: dia, t: D }))),
+        h('div', { class: 'mname' }, t('paper')),
+        h('div', { class: 'mtag' }, t('paperTag'))),
+      h('nav', { class: 'ppg', 'aria-label': t('paper') }, PG.map((id) => h('button', { 'aria-pressed': pg === id ? 'true' : 'false', on: { click: () => toPage(id) } }, t(PGL[id])))),
+      h('div', { class: 'pbody' }, body))];
 }
 function screenCity() {
   const me = S.st.me, L = live(me), n = now();
@@ -1592,7 +1645,7 @@ function withShield(run) {
 // bolsa: os preços vêm do servidor; volta-se a pedir logo a seguir a cada mudança (de 10 em 10 minutos) enquanto o ecrã estiver aberto
 async function loadStocks() {
   clearTimeout(S.stkTimer);
-  try { const r = await api('GET', '/api/stocks'); S.stocks = r; if (S.tab === 'bolsa' && !document.activeElement?.matches?.('#bamt')) render(); } catch {}
+  try { const r = await api('GET', '/api/stocks'); S.stocks = r; if ((S.tab === 'bolsa' && !document.activeElement?.matches?.('#bamt')) || S.tab === 'news') render(); } catch {}
   if (S.tab === 'bolsa') S.stkTimer = setTimeout(loadStocks, S.stocks?.nextAt ? Math.max(4000, Math.min(60000, S.stocks.nextAt - now() + 1500)) : 20000);
 }
 async function loadVenues() { try { const r = await api('GET', '/api/venues'); S.venues = r; if (S.tab === 'club' || S.tab === 'putas') render(); } catch {} }
