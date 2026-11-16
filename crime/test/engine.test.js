@@ -144,7 +144,7 @@ test('porto: não aceita contentores que só chegam depois do fim da ronda', () 
 });
 
 test('banco: taxa de 3% arredondada para cima', () => {
-  const p = E.newPlayer('a', START, world);
+  const p = E.newPlayer('a', START, world); p.cash = 500;   // começa-se com 50 €
   E.deposit(p, START, world, 101);
   assert.equal(p.bank, 101 - 4);
 });
@@ -168,7 +168,7 @@ test('ataques: nada na primeira hora; regra dos 25%; ganho pela fórmula; prote�
   const t = START + 2 * T.HOUR;
   assert.throws(() => E.attack(a, d, t, world, 'beat', always), { code: 'TARGET_TOO_WEAK' });
   setResp(d, 250);
-  const La = E.level(a);
+  const La = E.tier(a);   // o ganho das lutas ainda cresce pela escala antiga (até ao passo 2)
   const r = E.attack(a, d, t, world, 'beat', always);
   const exp = Math.floor(((G + La) * Math.floor(Math.sqrt(Math.floor((10000 * 250) / 900) * 10000))) / 10000);
   assert.equal(r.respect, exp);             // (base + nível) x raiz(250/900)
@@ -186,7 +186,7 @@ test('ataques: nada na primeira hora; regra dos 25%; ganho pela fórmula; prote�
 test('ataques: o ganho vai de metade (alvo fraco) ao dobro (alvo 4x mais forte)', () => {
   const a = E.newPlayer('a', START, world), d = E.newPlayer('d', START, world);
   setResp(a, 1000);
-  const B = G + E.level(a);                 // base + nível
+  const B = G + E.tier(a);                  // base + nível (escala antiga, até ao passo 2)
   setResp(d, 250); assert.equal(E.pvpBaseGain(a, d), Math.floor(B / 2));
   setResp(d, 1000); assert.equal(E.pvpBaseGain(a, d), B);
   setResp(d, 4000); assert.equal(E.pvpBaseGain(a, d), 2 * B);
@@ -220,7 +220,7 @@ test('ataques: quem perde vai para o hospital e perde metade do ganho', () => {
   const t = START + 2 * T.HOUR;
   const r = E.attack(a, d, t, world, 'beat', never);
   assert.equal(r.win, false);
-  assert.equal(a.respect, 500 - Math.floor((G + E.level(d)) / 2)); // perde metade da base (mesmo nível)
+  assert.equal(a.respect, 500 - Math.floor((G + E.tier(d)) / 2)); // perde metade da base (mesmo nível)
   assert.equal(d.respect, 500 + CFG.pvp.defendGain);
   assert.ok(a.hospUntil > t);
 });
@@ -321,7 +321,7 @@ test('negócios: o bónus da stat para nos x2', () => {
 });
 
 test('recarga: enche ao melhor preço, sem passar o vício, o dinheiro nem a energia máxima', () => {
-  const p = E.newPlayer('a', START, world);
+  const p = E.newPlayer('a', START, world); p.cash = 500;   // começa-se com 50 €
   p.energy = 3;
   const plan = E.refillPlan(p);
   assert.ok(plan.energy <= CFG.energy.max - 3 && plan.energy > CFG.energy.max - 3 - 5);
@@ -436,10 +436,10 @@ test('mestria: estrelas aos 10/40/150 sucessos, cada uma +10% de dinheiro nesse 
   assert.equal(E.masteryStars(p, 1), 0, 'a mestria é por golpe');
 });
 
-test('subir de nível enche a energia', () => {
+test('subir de nível (na escala antiga, até ao passo 2) enche a energia', () => {
   const p = E.newPlayer('a', START, world);
   let t = START;
-  while (E.level(p) < 2) { E.doCrime(p, t, world, 0, always); t += 1000; }
+  while (E.tier(p) < 2) { E.doCrime(p, t, world, 0, always); t += 1000; }
   assert.equal(p.energy, CFG.energy.max);
   assert.deepEqual(E.checkInvariants(p), []);
 });

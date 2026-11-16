@@ -28,7 +28,7 @@ let refused = 0, done = 0, rounds = 1;
 // (4) as contas batem certo: cada ação só mexe no dinheiro e no respeito o que a regra diz, e nada cria dinheiro do nada
 const wealth = (q) => q.cash + q.bank;
 const MAX_LOOT_BP = 10000 + CFG.gang.lootBpPer * CFG.gang.maxLevel + CFG.mastery.bonusBp * CFG.mastery.at.length + Math.max(...CFG.classes.map((c) => c.lootBp || 0)) + Math.max(...CFG.drugs.flatMap((g) => (g.fx || []).filter((f) => f.k === 'loot').map((f) => f.bp)));
-const MAX_PVP = Math.floor(((CFG.pvp.gainBase + CFG.levels.length) * 2 * (10000 + Math.max(...CFG.classes.map((c) => c.pvpBp || 0)))) / 10000);
+const MAX_PVP = Math.floor(((CFG.pvp.gainBase + CFG.tiers.length) * 2 * (10000 + Math.max(...CFG.classes.map((c) => c.pvpBp || 0)))) / 10000);
 function contas(kind, a0, a, d0, d, t, res, arg) {
   const dm = wealth(a) - wealth(a0), dr = a.respect - a0.respect;
   const bad = (m) => { console.error('CONTAS ERRADAS', kind, m, JSON.stringify(res), { dm, dr }); process.exit(1); };
@@ -46,7 +46,8 @@ function contas(kind, a0, a, d0, d, t, res, arg) {
       if (dm !== res.money || res.money > res.n * maxOne || (res.wins && res.money < res.wins * c.min)) bad('saque de vários golpes');
       if (dr !== res.wins * c.r || res.respect !== dr) bad('respeito de vários golpes');
       if (res.n < 1 || res.n > CFG.crimeAllMax || res.wins > res.n || res.crits > res.wins) bad('contagem');
-      if (!res.levelUp && a.energy !== Math.min(CFG.energy.max, touched(a0, t).energy) - res.n * c.e) bad('stamina gasta');
+      // a stamina enche quando se sobe na escala antiga (até ao passo 2), não a cada um dos 100 níveis
+      if (E.tier(a) === E.tier(a0) && a.energy !== Math.min(CFG.energy.max, touched(a0, t).energy) - res.n * c.e) bad('stamina gasta');
       const budget = Math.min(CFG.crimeAllMax, Math.floor(Math.min(CFG.energy.max, touched(a0, t).energy) / c.e));
       if (!res.busted && res.n !== budget) bad('não fez os golpes que a stamina dava');
       if (res.busted && res.n > budget) bad('fez golpes a mais');

@@ -1,4 +1,4 @@
-// Servidor do jogo de crime (ronda de teste).
+// Servidor do jogo de crime (vida sem rondas: um mundo só, com épocas de 28 dias).
 // API JSON em 127.0.0.1:PORT; o Caddy serve o site e envia /api/* para aqui.
 // Estado em SQLite (node:sqlite). O Node trata um pedido de cada vez, por isso cada ação é atómica.
 
@@ -10,17 +10,22 @@ import { join, extname, normalize } from 'node:path';
 import { CFG, T } from './engine/config.js';
 import * as E from './engine/engine.js';
 import { cryptoRng } from './engine/rng.js';
-import { phaseAt, localParts } from './engine/time.js';
+import { localParts, lisbonToUtc, seasonAt, seasonBounds } from './engine/time.js';
 
 const PORT = +(process.env.PORT || 3170);
 const DATA = process.env.DATA || process.env.STATE_DIRECTORY || './dados';
 const STATIC = process.env.STATIC || '';           // só para testes locais
 const SECURE = process.env.COOKIE_INSEGURO ? '' : '; Secure';
-// 1.ª ronda: sexta 13/11/2026, 21:00 de Lisboa (PRIMEIRA_RONDA=AAAA-MM-DD muda-a, para testes)
-const [fy, fm, fd] = (process.env.PRIMEIRA_RONDA || '2026-11-13').split('-').map(Number);
-const FIRST = { y: fy, m: fm, d: fd };
+// O mundo é um só e não acaba (base nova, 16/11/2026). As tabelas continuam com a coluna «ronda»: as rondas antigas
+// (0, 1, …) ficam lá guardadas e o mundo permanente é a «ronda» MUNDO. O mundo começa no dia em que esta versão arranca
+// pela primeira vez (PRIMEIRA_RONDA=AAAA-MM-DD põe-no às 21:00 desse dia, para testes).
+const MUNDO = 1000, FIM = Number.MAX_SAFE_INTEGER;
+const dataDe = (x) => { const [y, m, d] = x.split('-').map(Number); return { y, m, d }; };
+const RONDA_TESTE = process.env.PRIMEIRA_RONDA ? dataDe(process.env.PRIMEIRA_RONDA) : null;
+// Épocas de 28 dias a contar da sexta 13/11/2026 às 21:00 de Lisboa (PRIMEIRA_EPOCA=AAAA-MM-DD muda-a, para testes)
+const ANCORA = dataDe(process.env.PRIMEIRA_EPOCA || process.env.PRIMEIRA_RONDA || '2026-11-13');
 const rng = cryptoRng();
-const VERSAO = 55;   // sobe quando o servidor muda, para se confirmar de fora que a versão nova já está a correr
+const VERSAO = 56;   // sobe quando o servidor muda, para se confirmar de fora que a versão nova já está a correr
 const ATOS_3S = +(process.env.ATOS_3S || 15), ATOS_MIN = +(process.env.ATOS_MIN || 400); // ações por conta: 15 em 3 s, 400 por minuto
 
 // ---------- relógio que nunca anda para trás ----------
@@ -118,7 +123,8 @@ function noticiar(now, a, r, p, alvo) {
     else if (r.win) noticia(now, { k: 'beat', name, target: b });
     else noticia(now, { k: 'fail', name, target: b });
   }
-  if (r.levelUp && r.levelUp.to >= 4) noticia(now, { k: 'lvl', name, n: r.levelUp.to });
+  // com 100 níveis, o jornal só fala de quem muda de título (de 5 em 5 níveis)
+  if (r.levelUp && r.levelUp.to >= 6 && Math.floor((r.levelUp.to - 1) / 5) > Math.floor((r.levelUp.from - 1) / 5)) noticia(now, { k: 'lvl', name, n: r.levelUp.to });
 }
 
 // manchetes: contas do dia de cada jogador (dia de Lisboa), para «o mais procurado», «saco de pancada», etc.
@@ -163,14 +169,17 @@ function manchetes(dia, now) {
   return lista;
 }
 
-// jogadores da ronda em curso, em memória
+// jogadores do mundo, em memória
 let ronda = -1;
 const jogadores = new Map(); // conta -> estado
 const nomes = new Map();     // conta -> nome
 
+let INICIO = null;   // quando o mundo permanente abriu (ver abrirMundo)
+let EPOCA = null;    // a época aberta: { n, start, end }
+const cacheEpoca = new Map();   // classificação da época por divisão -> { t, n, size, lista }
+// playEnd e nextStart ficam no fim dos tempos: o motor e as versões antigas do site ainda os leem
 function mundo(now) {
-  const ph = phaseAt(FIRST, now);
-  return { phase: ph.phase, n: ph.round.n, start: ph.round.start, playEnd: ph.round.playEnd, nextStart: ph.round.nextStart };
+  return { phase: now >= INICIO ? 'play' : 'before', n: MUNDO, start: INICIO, playEnd: FIM, nextStart: FIM };
 }
 
 function carregarRonda(n) {
@@ -180,6 +189,7 @@ function carregarRonda(n) {
   for (const r of q.daRonda.all(n)) {
     const p = fromJson(r.estado);
     try { E.upgrade(p); } catch (e) { console.error('estado antigo por atualizar', r.conta, e.message); }   // quem não entra há muito fica já com os campos novos
+    if (EPOCA) E.seasonJoin(p, EPOCA.n);   // (ao voltar a ler depois de um erro: quem ainda não estava gravado na época entra outra vez, igual)
     jogadores.set(r.conta, p);
   }
   for (const r of q.noticias.all(n).reverse()) jornal.push({ t: r.t, ...JSON.parse(r.dados) });
@@ -193,29 +203,14 @@ function nomeDe(id) {
 
 function guardar(p, now) { q.guardar.run(ronda, p.id, toJson(p), now); }
 
-function medianStats(now) {
-  const act = [...jogadores.values()].filter((p) => p.t >= now - T.DAY);
-  if (act.length < 3) return null;
-  const res = {};
-  for (const s of E.STATS) {
-    const v = act.map((p) => p.stats[s]).sort((a, b) => a - b);
-    res[s] = v[v.length >> 1];
-  }
-  return res;
-}
-
 function jogadorDe(conta, now, w) {
   carregarRonda(w.n);
   let p = jogadores.get(conta);
   if (!p) {
     if (w.phase !== 'play') return null;
-    const world = { start: w.start, playEnd: w.playEnd };
-    let stats = {};
-    if (now - w.start >= CFG.round.lateJoinAfterMs) {
-      const med = medianStats(now);
-      if (med) for (const s of E.STATS) stats[s] = Math.max(CFG.start.stat, Math.floor((med[s] * CFG.round.lateStatsBp) / 10000));
-    }
-    p = E.newPlayer(conta, now, world, { stats });
+    // sem rondas, quem chega começa como toda a gente (já não há stats de compensação para quem entra tarde)
+    p = E.newPlayer(conta, now, { start: w.start, playEnd: w.playEnd });
+    E.seasonJoin(p, epocaEmDia(now).n);
     jogadores.set(conta, p);
     guardar(p, now);
   }
@@ -278,6 +273,7 @@ function vista(p, now) {
     xp: p.xp, xpNeed: { F: E.practiceNeed(p, 'F'), I: E.practiceNeed(p, 'I'), C: E.practiceNeed(p, 'C') },
     cash: p.cash, bank: p.bank, bankFeeBp: E.bankFeeBp(p), bj: E.bjPublic(p), casinoMax: E.casinoMax(p), gang: p.gang && gangues.get(p.gang) ? { id: p.gang, name: gangues.get(p.gang).nome, tag: gangues.get(p.gang).tag, bot: p.gang === BOT.id } : null, gb: p.gb || null, gangWait: p.gangLeft ? p.gangLeft + CFG.gang.rejoinMs : 0, clsCost: E.classChangeCost(p), clsWait: p.clsAt ? p.clsAt + CFG.classChange.coolMs : 0, portSeizeBp: E.portSeizeBp(p), respect: p.respect, peakRespect: p.peakRespect,
     level: L, levelFrom: CFG.levels[L - 1], levelTo: CFG.levels[L] ?? null,
+    titles: p.titles, ep: p.ep ? { n: p.ep.n, div: p.ep.div, score: E.seasonScore(p, p.ep.n) } : null,
     jailUntil: p.jailUntil, jailTier: p.jailTier, bail: E.bailCost(p, now),
     hospUntil: p.hospUntil, medic: E.medicCost(p, now),
     protectUntil: p.protectUntil, capUntil: p.capUntil, shieldUntil: p.shieldUntil,
@@ -303,7 +299,7 @@ function cfgPublica() {
     bizMax: CFG.bizMax, storageMs: CFG.storageMs, port: { ...CFG.port, ships: CFG.port.ships.map((s) => ({ ...s, drug: CFG.drugs.findIndex((x) => x.id === s.drug) })) }, air: CFG.air, goods: CFG.goods, venue: CFG.venue, detox: CFG.detox, stocks: CFG.stocks, weapons: CFG.weapons, tools: CFG.tools, gweapons: CFG.gweapons, armors: CFG.armors, guards: CFG.guards, hitman: CFG.hitman,
     pvp: CFG.pvp, bank: CFG.bank, luxury: CFG.luxury, levels: CFG.levels, crit: CFG.crit, unlockBp: CFG.unlockBp,
     bustBp: CFG.bustBp, crimeAllMax: CFG.crimeAllMax, casino: { minBet: CFG.casino.minBet, buyMaxMult: CFG.casino.buyMaxMult, red: CFG.casino.red, dice: CFG.casino.dice, wheel: { segs: CFG.casino.wheel.segs, spots: CFG.casino.wheel.spots, topMult: CFG.casino.wheel.topMult.map(([m]) => m), louca: CFG.casino.wheel.louca }, slots: Object.fromEntries(Object.entries(CFG.casino.slots).map(([k, g]) => [k, { kind: g.kind, cols: g.cols, rows: g.rows, min: g.min, nsym: g.nsym, trig: g.trig, pay: g.pay, scatPay: g.scatPay, free: g.free, fs: g.fs, retrig: g.retrig, buy: g.buy, superBuy: g.superBuy, max: g.max, accFree: g.accFree, accAll: g.accAll, orbBase: g.orbBase }])) }, gang: CFG.gang, classes: CFG.classes, classChange: CFG.classChange, avatars: CFG.avatars, hookers: CFG.hookers, house: CFG.house, mastery: CFG.mastery, missions: CFG.missions.length, start: CFG.start,
-    round: { playDays: CFG.round.playDays, noPvpMs: CFG.round.noPvpMs },
+    round: { playDays: CFG.round.playDays, noPvpMs: CFG.round.noPvpMs }, season: CFG.season,
   };
 }
 
@@ -897,6 +893,128 @@ setInterval(() => {
   const now = clock();
   for (const g of Object.keys(mesas)) { try { mesaDe(g, now); } catch (e) { console.error('mesa', e.message); } }
 }, 500).unref();
+// ---------- o mundo permanente e as épocas ----------
+db.exec(`CREATE TABLE IF NOT EXISTS meta (k TEXT PRIMARY KEY, v TEXT NOT NULL);
+CREATE TABLE IF NOT EXISTS epocas (n INTEGER NOT NULL, div INTEGER NOT NULL, pos INTEGER NOT NULL, conta TEXT NOT NULL, pontos INTEGER NOT NULL,
+  premio INTEGER NOT NULL, t INTEGER NOT NULL, PRIMARY KEY (n, div, pos));`);
+const qmeta = { ler: db.prepare('SELECT v FROM meta WHERE k = ?'), gravar: db.prepare('INSERT INTO meta (k, v) VALUES (?, ?) ON CONFLICT(k) DO UPDATE SET v = excluded.v') };
+const qe = {
+  ganhos: db.prepare('SELECT conta, SUM(money) m, COUNT(*) d FROM diario WHERE ronda = ? AND dia >= ? AND dia <= ? AND money > 0 GROUP BY conta'),
+  grava: db.prepare('INSERT INTO epocas (n, div, pos, conta, pontos, premio, t) VALUES (?, ?, ?, ?, ?, ?, ?)'),
+  podio: db.prepare('SELECT pos, conta, pontos, premio FROM epocas WHERE n = ? AND div = ? ORDER BY pos'),
+};
+
+// Cópia da base de dados de antes da passagem para o mundo permanente. Fica numa pasta à parte (as cópias de hora a hora
+// rodam e esta não pode rodar) e é verificada: se não der para a fazer, a passagem não se faz.
+function copiaGuardada(now) {
+  const dir = join(DATA, 'guardadas'); mkdirSync(dir, { recursive: true });
+  const nome = join(dir, `antes-da-vida-sem-rondas-${new Date(now).toISOString().slice(0, 19).replace(/[:T]/g, '-')}.db`);
+  db.exec(`VACUUM INTO '${nome.replace(/'/g, "''")}'`);
+  const c = new DatabaseSync(nome, { readOnly: true });
+  const ok = Object.values(c.prepare('PRAGMA integrity_check').get())[0], n = c.prepare('SELECT COUNT(*) n FROM jogadores').get().n;
+  c.close();
+  if (ok !== 'ok' || n !== db.prepare('SELECT COUNT(*) n FROM jogadores').get().n) throw new Error('COPIA_FALHOU ' + nome);
+  console.log('cópia guardada antes da passagem:', nome, n, 'estados');
+}
+
+// Abre o mundo permanente, uma vez. Quem jogou as rondas passa com a conta, o avatar, a gangue e o título de veterano;
+// tudo o resto recomeça (50 €, nível 1, profissão por escolher). As gangues ficam com o nome, a sigla, o chefe, os cargos,
+// a sede, a armaria, os pedidos de entrada e a conversa; o cofre e o que cada um lá meteu voltam a zero, e os pedidos de
+// golpe em grupo que estavam abertos não passam. Nada se apaga: as rondas ficam na base de dados.
+function abrirMundo(now) {
+  const ja = qmeta.ler.get('mundo_inicio');
+  if (ja) { INICIO = +ja.v; return; }
+  const inicio = RONDA_TESTE ? lisbonToUtc(RONDA_TESTE.y, RONDA_TESTE.m, RONDA_TESTE.d, CFG.round.startHour) : now;
+  const velhas = db.prepare('SELECT ronda, conta, estado FROM jogadores WHERE ronda < ? ORDER BY ronda').all(MUNDO);
+  if (velhas.length) copiaGuardada(now);
+  const ultimo = new Map(); for (const r of velhas) ultimo.set(r.conta, r.estado);   // o estado da ronda mais recente de cada conta
+  const rg = db.prepare('SELECT MAX(ronda) r FROM gangues WHERE ronda < ?').get(MUNDO).r;
+  const epoca = seasonAt(ANCORA, now).n, passou = new Set();
+  db.exec('BEGIN');
+  try {
+    for (const [conta, estado] of ultimo) {
+      if (!q.contaPorId.get(conta)) continue;
+      let av = 0;
+      try { const e = JSON.parse(estado); if (Number.isSafeInteger(e.av) && e.av >= 0 && e.av < CFG.avatars) av = e.av; } catch { /* estado ilegível: fica o avatar 0 */ }
+      const p = E.newPlayer(conta, inicio, { start: inicio, playEnd: FIM });
+      p.av = av; p.titles = [{ k: 'vet' }]; E.seasonJoin(p, epoca);
+      q.guardar.run(MUNDO, conta, toJson(p), now);
+      passou.add(conta);
+    }
+    if (rg !== null && rg !== undefined) {
+      for (const g of qg.todas.all(rg)) {
+        qg.nova.run(MUNDO, g.id, g.nome, g.nome_lc, g.tag, g.lider, g.criada);
+        qg.grava.run(g.lider, 0, g.sede, g.armaria, g.aberta, MUNDO, g.id);
+      }
+      for (const m of qg.membros.all(rg)) if (passou.has(m.conta)) qg.entra.run(MUNDO, m.conta, m.gangue, m.entrou, 0, m.cargo || 0);
+      for (const r of qg.pedidos.all(rg)) if (passou.has(r.conta)) qg.pede.run(MUNDO, r.gangue, r.conta, r.t);
+      db.prepare('INSERT INTO gangue_chat (ronda, gangue, conta, t, txt) SELECT ?, gangue, conta, t, txt FROM gangue_chat WHERE ronda = ? ORDER BY id').run(MUNDO, rg);
+    }
+    qmeta.gravar.run('mundo_inicio', String(inicio));
+    qmeta.gravar.run('epoca', String(epoca));
+    db.exec('COMMIT');
+  } catch (e) { db.exec('ROLLBACK'); throw e; }
+  INICIO = inicio;
+  console.log(`mundo aberto: ${passou.size} contas das rondas passaram`);
+}
+
+// por divisão: a mediana do que cada jogador da divisão ganhou por dia (nos dias em que ganhou) desde o início da época
+function basesDaEpoca(ep, ate) {
+  const porDia = new Map();
+  for (const r of qe.ganhos.all(MUNDO, diaDe(ep.start), diaDe(Math.min(ate, ep.end) - 1))) porDia.set(r.conta, Math.floor(r.m / Math.max(1, r.d)));
+  const vals = Array.from({ length: CFG.season.divs }, () => []);
+  for (const p of jogadores.values()) if (p.ep && p.ep.n === ep.n) { const v = porDia.get(p.id); if (v > 0) vals[p.ep.div].push(v); }
+  return vals.map((v) => { if (!v.length) return 0; v.sort((a, b) => a - b); return v[v.length >> 1]; });
+}
+// Fecha a época n: os 3 primeiros de cada divisão levam o título (que é também o troféu) e o dinheiro, e toda a gente
+// entra na época seguinte com a divisão do nível que tem. Tudo no mesmo passo; a tabela «epocas» não deixa pagar duas vezes.
+function fecharEpoca(n, now) {
+  const ep = seasonBounds(ANCORA, n), ps = [...jogadores.values()], pod = E.seasonPodium(ps, n), bases = basesDaEpoca(ep, ep.end), premiados = [];
+  db.exec('BEGIN');
+  try {
+    pod.forEach((lista, d) => lista.forEach((x, i) => {
+      const pos = i + 1, cash = E.seasonPrize(bases[d], pos);
+      E.seasonAward(x.p, n, d, pos, cash);
+      qe.grava.run(n, d, pos, x.p.id, x.score, cash, now);
+      evento(x.p.id, now, { k: 'season', n, d, pos, score: x.score, money: cash });
+      premiados.push({ d, pos, id: x.p.id });
+    }));
+    for (const p of ps) { E.seasonJoin(p, n + 1); guardar(p, now); }
+    qmeta.gravar.run('epoca', String(n + 1));
+    db.exec('COMMIT');
+  } catch (e) { db.exec('ROLLBACK'); ronda = -1; carregarRonda(MUNDO); throw e; }
+  console.log(`época ${n} fechada: ${premiados.length} prémios`);
+  for (const x of premiados) if (x.pos === 1) noticia(now, { k: 'season', name: nomeDe(x.id), n, d: x.d });
+}
+// a época aberta; se o relógio passou o fim (também com o servidor parado), fecha as que ficaram para trás, por ordem
+function epocaEmDia(now) {
+  if (EPOCA && now < EPOCA.end) return EPOCA;
+  const s = seasonAt(ANCORA, now);
+  if (EPOCA && EPOCA.n === s.n) return EPOCA;
+  carregarRonda(MUNDO);
+  let aberta = +(qmeta.ler.get('epoca')?.v ?? s.n);
+  while (aberta < s.n) { fecharEpoca(aberta, now); aberta++; }
+  EPOCA = s;
+  for (const p of jogadores.values()) E.seasonJoin(p, s.n);
+  cacheEpoca.clear();
+  return EPOCA;
+}
+let cachePremios = { t: 0, n: -1, bases: null };
+function premiosAgora(now, d) {
+  const ep = epocaEmDia(now);
+  if (cachePremios.n !== ep.n || now - cachePremios.t > 60_000) cachePremios = { t: now, n: ep.n, bases: basesDaEpoca(ep, now) };
+  return CFG.season.prizeDays.map((_, i) => E.seasonPrize(cachePremios.bases[d], i + 1));
+}
+function podioDe(n, d) {
+  if (n < 0) return null;
+  const rows = qe.podio.all(n, d);
+  return rows.length ? { n, top: rows.map((r) => ({ pos: r.pos, name: nomeDe(r.conta), score: r.pontos, money: r.premio, av: jogadores.get(r.conta)?.av || 0 })) } : null;
+}
+
+abrirMundo(clock());
+carregarRonda(MUNDO);
+epocaEmDia(clock());
+setInterval(() => { try { epocaEmDia(clock()); } catch (e) { console.error('época', e.message); } }, 30_000).unref();
 devolverMesas(clock());
 
 // ---------- ações ----------
@@ -907,7 +1025,7 @@ function evento(conta, now, dados) { q.novoEvento.run(conta, now, JSON.stringify
 function agir(conta, corpo, now) {
   const w = mundo(now);
   if (w.phase !== 'play') throw new E.GameError('ROUND_CLOSED');
-  carregarRonda(w.n); resolverOps(now);
+  carregarRonda(w.n); epocaEmDia(now); resolverOps(now);
   const p = jogadorDe(conta, now, w);
   const world = { start: w.start, playEnd: w.playEnd };
   const a = corpo || {};
@@ -1047,14 +1165,26 @@ function agir(conta, corpo, now) {
 }
 
 // ---------- listas ----------
+// Duas classificações: a da época (o respeito ganho nela, dentro de cada divisão) e a geral (o respeito todo, para sempre).
+const vet = (p) => p.titles?.some((x) => x.k === 'vet') || false;
+const linhaRank = (p, i, score) => ({ pos: i + 1, id: p.id, name: nomeDe(p.id), respect: p.respect, level: E.level(p), av: p.av || 0, cls: p.cls || '', tag: tagDe(p.id), score, vet: vet(p) });
 let cacheRank = { t: 0, n: -1, size: 0, lista: [] };
 function rankingAtual(now, w) {
   carregarRonda(w.n);
   if (cacheRank.n === w.n && cacheRank.size === jogadores.size && now - cacheRank.t < 5000) return cacheRank.lista;
-  const lista = E.ranking([...jogadores.values()]).map((p, i) => ({ pos: i + 1, id: p.id, name: nomeDe(p.id), respect: p.respect, level: E.level(p), av: p.av || 0, cls: p.cls || '', tag: tagDe(p.id) }));
+  const lista = E.ranking([...jogadores.values()]).map((p, i) => linhaRank(p, i, 0));
   cacheRank = { t: now, n: w.n, size: jogadores.size, lista };
   return lista;
 }
+function rankingEpoca(now, d) {
+  const ep = epocaEmDia(now), c = cacheEpoca.get(d);
+  if (c && c.n === ep.n && c.size === jogadores.size && now - c.t < 5000) return c.lista;
+  const lista = E.seasonStandings([...jogadores.values()], ep.n, d).map((x, i) => linhaRank(x.p, i, x.score));
+  cacheEpoca.set(d, { t: now, n: ep.n, size: jogadores.size, lista });
+  return lista;
+}
+const posNaEpoca = (now, p) => (p && p.ep ? (rankingEpoca(now, p.ep.div).find((x) => x.id === p.id)?.pos ?? null) : null);
+const vistaEpoca = (ep) => ({ n: ep.n, start: ep.start, end: ep.end });
 
 // discotecas e bordéis dos outros jogadores, com o preço que ESTE jogador lá paga (o desconto da gangue já vem feito)
 function casas(conta, now, w) {
@@ -1148,7 +1278,7 @@ async function tratar(req, res) {
 
   if (req.method === 'GET' && path === '/api/saude') {
     const w = mundo(now); carregarRonda(w.n);
-    return enviar(res, 200, { ok: true, ronda: w.n, fase: w.phase, jogadores: jogadores.size, v: VERSAO });
+    return enviar(res, 200, { ok: true, ronda: w.n, fase: w.phase, jogadores: jogadores.size, v: VERSAO, epoca: vistaEpoca(epocaEmDia(now)) });
   }
   if (req.method === 'GET' && path === '/api/config') return enviar(res, 200, cfgPublica());
   if (req.method === 'GET' && path === '/api/news') {
@@ -1185,7 +1315,7 @@ async function tratar(req, res) {
   // sem sessão, o estado responde na mesma (sem jogador) para a página de entrada não dar erro
   if (!conta && req.method === 'GET' && path === '/api/state') {
     const w0 = mundo(now);
-    return enviar(res, 200, { now, round: w0, account: null, me: null, rank: null, players: rankingAtual(now, w0).length, feed: ultimas() });
+    return enviar(res, 200, { now, round: w0, season: vistaEpoca(epocaEmDia(now)), account: null, me: null, rank: null, players: rankingAtual(now, w0).length, feed: ultimas() });
   }
   if (!conta) return enviar(res, 401, { error: 'LOGIN_REQUIRED' });
 
@@ -1201,8 +1331,8 @@ async function tratar(req, res) {
     const p = jogadorDe(conta, now, w);
     if (p) E.touch(p, now);
     const rk = rankingAtual(now, w);
-    const pos = rk.find((x) => x.id === conta)?.pos ?? null;
-    return enviar(res, 200, { now, round: w, account: { name: c?.nome, lang: c?.lingua }, me: p ? vista(p, now) : null, rank: pos, players: rk.length, feed: ultimas() });
+    // a posição que aparece no topo é a da época, na tua divisão (é aí que se compete)
+    return enviar(res, 200, { now, round: w, season: vistaEpoca(epocaEmDia(now)), account: { name: c?.nome, lang: c?.lingua }, me: p ? vista(p, now) : null, rank: posNaEpoca(now, p), players: rk.length, feed: ultimas() });
   }
   if (req.method === 'POST' && path === '/api/lang') {
     let b; try { b = await lerCorpo(req); } catch { return enviar(res, 400, { error: 'BAD_REQUEST' }); }
@@ -1243,10 +1373,15 @@ async function tratar(req, res) {
   if (req.method === 'GET' && path === '/api/targets') return enviar(res, 200, { now, list: w.phase === 'play' ? alvos(conta, now, w) : [] });
   if (req.method === 'GET' && path === '/api/hitman') return enviar(res, 200, { now, list: w.phase === 'play' ? contratos(conta, now, w) : [] });
   if (req.method === 'GET' && path === '/api/ranking') {
-    const rk = rankingAtual(now, w);
+    // v=geral: o respeito todo; v=epoca (o normal): o respeito ganho nesta época, na divisão d (sem d, a tua)
+    const ep = epocaEmDia(now), eu = jogadores.get(conta), geral = url.searchParams.get('v') === 'geral';
+    const dq = Number(url.searchParams.get('d')), d = Number.isInteger(dq) && dq >= 0 && dq < CFG.season.divs && url.searchParams.has('d') ? dq : (eu?.ep?.div ?? 0);
+    const rk = geral ? rankingAtual(now, w) : rankingEpoca(now, d);
     const minha = rk.find((x) => x.id === conta);
     const top = rk.slice(0, 100).map(({ id, ...r }) => ({ ...r, me: id === conta }));
-    return enviar(res, 200, { now, top, me: minha ? { pos: minha.pos, respect: minha.respect, level: minha.level, name: minha.name } : null, total: rk.length });
+    const out = { now, view: geral ? 'geral' : 'epoca', d, season: vistaEpoca(ep), top, me: minha ? { pos: minha.pos, respect: minha.respect, level: minha.level, name: minha.name, score: minha.score } : null, total: rk.length };
+    if (!geral) { out.prizes = premiosAgora(now, d); out.last = podioDe(ep.n - 1, d); }
+    return enviar(res, 200, out);
   }
   if (req.method === 'GET' && path === '/api/events') {
     return enviar(res, 200, { now, list: q.eventos.all(conta).map((r) => ({ id: r.id, t: r.t, ...JSON.parse(r.dados) })) });

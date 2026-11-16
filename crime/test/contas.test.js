@@ -285,10 +285,11 @@ test('usar a stamina toda: igual a carregar várias vezes, para na prisão, a su
   const rc = E.doCrimeAll(c, NOW, W, 1, (() => { let i = 0; return { int: (lo) => lo, chance: () => i++ % 2 === 1 }; })());
   assert.equal(rc.n, 1); assert.equal(rc.busted, true); assert.ok(c.jailUntil > NOW); assert.equal(c.energy, 100 - CFG.crimes[1].e);
   assert.throws(() => E.doCrimeAll(c, NOW, W, 0, always), code('IN_JAIL'));
-  // sobe de nível a meio (aos 3 e aos 10 de respeito): faz os 20 na mesma e a stamina que encheu fica
+  // sobe a meio: o nível novo do 1 ao 2 (aos 8 de respeito) e a escala antiga aos 3 e aos 10 (é ela que enche a stamina, até ao passo 2):
+  // faz os 20 na mesma e a stamina que encheu fica
   const d = mk(); d.energy = 100;
   const rd = E.doCrimeAll(d, NOW, W, 0, always);
-  assert.equal(rd.n, 20); assert.deepEqual(rd.levelUp, { from: 1, to: 3 }); assert.equal(d.energy, 50);
+  assert.equal(rd.n, 20); assert.deepEqual(rd.levelUp, { from: 1, to: 2 }); assert.equal(d.energy, 50);
   // sem stamina para um golpe: recusado e nada muda
   const e = mk(); e.energy = 4; const antes = structuredClone(e);
   assert.throws(() => E.doCrimeAll(e, NOW, W, 0, always), code('NO_ENERGY'));
@@ -593,8 +594,8 @@ test('casino: aposta mínima, máxima pelo nível, só dinheiro na mão; aposta 
   const rico = cas(1e9);
   assert.equal(E.casinoMax(rico), 1000);
   assert.throws(() => E.casinoPlay(rico, NOW, W, 'dice', { pick: 'low', amt: 1001 }, never), code('BET_TOO_BIG'));
-  rico.peakRespect = CFG.levels[4];
-  assert.equal(E.casinoMax(rico), 6553);   // nível 5: 1000 × 1,6⁴
+  rico.peakRespect = CFG.tiers[4];
+  assert.equal(E.casinoMax(rico), 6553);   // 5.º degrau da escala antiga: 1000 × 1,6⁴ (até ao passo 2)
 });
 
 test('roda da sorte: as oito apostas devolvem 96,5% (conta exata, com o teto) e a simulação confirma', () => {

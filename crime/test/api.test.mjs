@@ -14,6 +14,7 @@ const PORT = 3900 + Math.floor(Math.random() * 90);
 const BASE = `http://127.0.0.1:${PORT}`;
 let dir, srv;
 let ENV_EXTRA = {};
+const INICIAL = 50;   // base nova (16/11/2026): todos começam com 50 €
 
 // sexta-feira mais recente às 21:00 de Lisboa já passada há mais de 1 h (para haver ataques)
 function sextaRecente() {
@@ -116,8 +117,8 @@ test('ataque entre duas contas: hospital, evento e ranking', async () => {
   assert.ok(t.body.list.some((x) => x.name === 'Duarte'), JSON.stringify(t.body));
   const r = await a('POST', '/api/act', { type: 'attack', target: 'duarte', mode: 'beat' });
   assert.equal(r.status, 200, JSON.stringify(r.body));
-  // quem ganha a luta sobe de nível logo ao início e a energia volta ao máximo
-  assert.equal(r.body.me.energy, r.body.result.levelUp?.to > r.body.result.levelUp?.from ? 100 : 80);
+  // quem ganha a luta sobe logo na escala antiga (pelo menos 6 de respeito) e a energia volta ao máximo
+  assert.equal(r.body.me.energy, r.body.result.win ? 100 : 80);
   const perdeu = r.body.result.win ? 'Duarte' : 'Carla';
   const sb = await b('GET', '/api/state');
   if (perdeu === 'Duarte') assert.ok(sb.body.me.hospUntil > sb.body.now);
@@ -251,7 +252,7 @@ test('usar a stamina toda pela API', async () => {
   assert.ok(r.body.result.n >= 1);
   const me = await estado();
   assert.equal(me.counters.crimes, r.body.result.n);
-  assert.equal(me.cash, 500 + r.body.result.money);
+  assert.equal(me.cash, INICIAL + r.body.result.money);
 });
 
 test('manchetes do dia: quem bate e quem leva aparecem, com os números certos', async () => {
@@ -281,12 +282,13 @@ test('contas do dia batem com o jogador: golpes, vitórias, dinheiro e respeito'
   assert.equal(sum('crimes'), me.counters.crimes);
   assert.equal(sum('wins'), me.counters.wins);
   assert.equal(sum('resp'), me.respect);
-  assert.equal(sum('money'), me.cash - 500);
+  assert.equal(sum('money'), me.cash - INICIAL);
 });
 
 test('mesa ao vivo: dois jogadores na mesma ronda veem o mesmo resultado e as contas batem certo', async () => {
   await parar(); ENV_EXTRA = { ATOS_3S: '100000', ATOS_MIN: '1000000', MESA_BET_MS: '900', MESA_SPIN_MS: '500' }; await arrancar();
   const A = await contaNova('MesaA', '10.0.9.40'), B = await contaNova('MesaB', '10.0.9.41');
+  await A.estado(); await B.estado(); await mexer({ MesaA: (e) => { e.cash = 500; }, MesaB: (e) => { e.cash = 500; } });   // começa-se com 50 €: o teste aposta mais
   const mesa = async (c, ip, g) => (await fetch(BASE + '/api/table?g=' + g, { headers: { cookie: c, 'X-Forwarded-For': ip } })).json();
   const dorme = (ms) => new Promise((r) => setTimeout(r, ms));
   // espera pelo início de uma ronda para ter o tempo todo de apostas
@@ -326,6 +328,7 @@ test('mesa ao vivo: dois jogadores na mesma ronda veem o mesmo resultado e as co
 
 test('mesa ao vivo: limpar devolve tudo, e se o servidor parar a meio as apostas voltam para o jogador', async () => {
   const A = await contaNova('MesaC', '10.0.9.42');
+  await A.estado(); await mexer({ MesaC: (e) => { e.cash = 500; } });
   const mesa = async (g) => (await fetch(BASE + '/api/table?g=' + g, { headers: { cookie: A.cookie, 'X-Forwarded-For': '10.0.9.42' } })).json();
   const dorme = (ms) => new Promise((r) => setTimeout(r, ms));
   const abre = async () => { let t = await mesa('wheel'); while (t.phase !== 'bets' || t.closesAt - t.now < 500) { await dorme(100); t = await mesa('wheel'); } return t; };
@@ -348,6 +351,8 @@ test('mesa ao vivo: limpar devolve tudo, e se o servidor parar a meio as apostas
 test('Crazy na mesa: o resultado só abre depois da escolha do flapper, cada um é pago pelo seu, e quem não escolhe fica com um à sorte', async () => {
   await parar(); ENV_EXTRA = { ATOS_3S: '100000', ATOS_MIN: '1000000', MESA_BET_MS: '900', MESA_SPIN_MS: '300', CRAZY_PICK_MS: '1500', MESA_FORCA_RODA: 'louca' }; await arrancar();
   const A = await contaNova('CrazyA', '10.0.9.60'), B = await contaNova('CrazyB', '10.0.9.61'), C = await contaNova('CrazyC', '10.0.9.62');
+  for (const x of [A, B, C]) await x.estado();
+  await mexer({ CrazyA: (e) => { e.cash = 500; }, CrazyB: (e) => { e.cash = 500; }, CrazyC: (e) => { e.cash = 500; } });
   const ips = new Map([[A, '10.0.9.60'], [B, '10.0.9.61'], [C, '10.0.9.62']]);
   const mesa = async (x) => (await fetch(BASE + '/api/table?g=wheel', { headers: { cookie: x.cookie, 'X-Forwarded-For': ips.get(x) } })).json();
   const dorme = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -977,7 +982,7 @@ test('fábricas e contabilista: produção em droga para a stash, armazém de 24
   const A = await contaNova('Fabrica', '10.0.9.111'); await A.estado();
   const ip = '10.0.9.111', ag = (body) => cru(A.cookie, ip, body), cfg = await (await fetch(BASE + '/api/config')).json();
   const iErva = cfg.biz.findIndex((x) => x.id === 'erva'), iLav = cfg.biz.findIndex((x) => x.id === 'lavandaria'), d = cfg.biz[iErva].drug;
-  assert.ok(d >= 0 && cfg.drugs[d].id === 'erva'); assert.equal(cfg.biz[iLav].drug, -1); assert.deepEqual(cfg.accountant, { price: 25000, minLevel: 3, capMult: 3, feeBp: 1000 });
+  assert.ok(d >= 0 && cfg.drugs[d].id === 'erva'); assert.equal(cfg.biz[iLav].drug, -1); assert.deepEqual(cfg.accountant, { price: 25000, minLevel: 2, capMult: 3, feeBp: 1000 });   // o nível 3 das rondas (10 de respeito) é o 2 dos 100
   let r = await ag({ type: 'acct' }); assert.equal(r.body.error, 'LOW_LEVEL');
   r = await ag({ type: 'bizGoods', i: iErva, on: true }); assert.equal(r.body.error, 'NO_BIZ');
   await mexer({ Fabrica: (e) => { e.cash = 1_000_000; e.bank = 0; e.respect = 3000; e.peakRespect = 3000; } });
@@ -1050,7 +1055,7 @@ test('porto e stash por API: escolhe-se o barco (com nível, droga e risco próp
   const cfg = await (await fetch(BASE + '/api/config')).json(), S = cfg.port.ships;
   assert.deepEqual(S.map((s) => s.id), ['pesca', 'lancha', 'ferry', 'contentor', 'cargueiro', 'submarino']); assert.ok(S.every((s) => s.drug >= 0 && cfg.drugs[s.drug]));
   let a = await A.estado(); assert.deepEqual(a.portRisk, S.map((s) => s.seizeBp)); assert.equal(a.level, 1); assert.deepEqual(a.hold, []);
-  let r = await ag(A, '10.0.9.140', { type: 'port', k: 3, amount: 500 }); assert.equal(r.body.error, 'LOW_LEVEL'); assert.equal(r.body.need, 7);
+  let r = await ag(A, '10.0.9.140', { type: 'port', k: 3, amount: 500 }); assert.equal(r.body.error, 'LOW_LEVEL'); assert.equal(r.body.need, 8);   // o nível 7 das rondas (350 de respeito) é o 8 dos 100
   for (const k of [-1, 6, 'a', 0.5, null]) { r = await ag(A, '10.0.9.140', { type: 'port', k, amount: 500 }); assert.equal(r.body.error, 'NO_SHIP', JSON.stringify(k)); }
   const c0 = (await A.estado()).cash + (await A.estado()).bank;
   await mexer({ Armador: (e) => { e.cash = 10_000; e.bank = 0; } });

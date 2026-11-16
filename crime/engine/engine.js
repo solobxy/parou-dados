@@ -40,6 +40,7 @@ export function newPlayer(id, now, world, opts = {}) {
     c: { crimes: 0, wins: 0, trains: 0, refills: 0, collects: 0, pvpWins: 0, ports: 0 },
     mi: 0,                         // objetivos já recebidos
     mq: CFG.missions.map((_, i) => i), mrT: 0,   // os que faltam, pela ordem em que vão aparecer; e quando se trocou pela última vez
+    titles: [],                    // títulos que ficam para sempre: { k: 'vet' } (veterano das rondas), { k: 'ep', n, d, pos } (pódio de uma época)
     cls: '', clsAt: 0, av: 0, fx: {}, sick: false, hkN: CFG.hookers.list.map(() => 0), hkAt: CFG.hookers.list.map(() => 0), house: 0, hu: CFG.house.ups.map(() => 0), bj: null,        // profissão, avatar e efeitos temporários (kind -> { bp, until })
   };
 }
@@ -88,6 +89,7 @@ function migrate(p) {
   if (!Number.isSafeInteger(p.hmSafe)) p.hmSafe = 0;
   if (!Array.isArray(p.gbz) || p.gbz.length !== CFG.gang.biz.length) p.gbz = gbzNew();
   p.gh = [];   // (antigo contador de golpes em grupo por dia: já não há limite)
+  if (!Array.isArray(p.titles)) p.titles = [];
 }
 
 // ---------- tempo ----------
@@ -144,25 +146,53 @@ function begin(p, now, world, { allowBusy = false } = {}) {
 
 // ---------- utilidades ----------
 
-export function level(p) {
-  const L = CFG.levels;
+const stepOf = (L, r) => {
   let lo = 0, hi = L.length - 1;
-  const r = p.peakRespect ?? p.respect;
   while (lo < hi) { const mid = (lo + hi + 1) >> 1; if (L[mid] <= r) lo = mid; else hi = mid - 1; }
   return lo + 1;
-}
+};
+// nível de 1 a 100 pelo maior respeito que já se teve (nunca desce)
+export function level(p) { return stepOf(CFG.levels, p.peakRespect ?? p.respect); }
+// escala antiga das rondas (1 a 20), pelo mesmo respeito: é o que ainda mede a economia antiga até ao passo 2
+export function tier(p) { return stepOf(CFG.tiers, p.peakRespect ?? p.respect); }
 
 export function addictionCap(p) { return CFG.addiction.base + (klass(p).capPlus || 0) + Math.floor(p.stats.T / CFG.addiction.perT); }
 
 function addRespect(p, delta, now) {
   if (delta === 0) return null;
-  const before = level(p);
+  const before = level(p), tb = tier(p);
   p.respect = Math.max(0, p.respect + delta);
   if (p.respect > p.peakRespect) p.peakRespect = p.respect;
   p.respectAt = now;
   const after = level(p);
-  if (after > before && p.energy < CFG.energy.max) { p.energy = CFG.energy.max; p.energyT = now; } // subir de nível enche a energia
+  // subir na escala antiga enche a stamina, como nas rondas (até à economia nova; com 100 níveis encheria vezes de mais)
+  if (tier(p) > tb && p.energy < CFG.energy.max) { p.energy = CFG.energy.max; p.energyT = now; }
   return after !== before ? { from: before, to: after } : null;
+}
+
+// ---------- épocas ----------
+// O mundo não acaba; de 28 em 28 dias recomeça só a classificação. Cada jogador entra na época com a divisão do nível
+// que tem nesse momento e conta o respeito que ganha a partir daí (p.ep = { n, div, r0 }).
+export const divisionOf = (L) => Math.min(CFG.season.divs - 1, Math.max(0, Math.floor((L - 1) / CFG.season.divSize)));
+export function seasonJoin(p, n) {
+  if (!p.ep || p.ep.n !== n) p.ep = { n, div: divisionOf(level(p)), r0: p.respect };
+  return p.ep;
+}
+export const seasonScore = (p, n) => (p.ep && p.ep.n === n ? Math.max(0, p.respect - p.ep.r0) : 0);
+// os 3 primeiros de cada divisão, só quem ganhou respeito na época; empate: mais respeito total, depois o id (para dar sempre o mesmo)
+export function seasonStandings(players, n, div) {
+  return players.filter((p) => p.ep && p.ep.n === n && p.ep.div === div).map((p) => ({ p, score: seasonScore(p, n) }))
+    .sort((a, b) => (b.score - a.score) || (b.p.respect - a.p.respect) || (a.p.id < b.p.id ? -1 : a.p.id > b.p.id ? 1 : 0));
+}
+export function seasonPodium(players, n) {
+  return Array.from({ length: CFG.season.divs }, (_, d) => seasonStandings(players, n, d).filter((x) => x.score > 0).slice(0, 3));
+}
+// prémio em dinheiro: 3, 2 e 1 dias do que um jogador da divisão ganha por dia (base)
+export const seasonPrize = (base, pos) => Math.max(0, Math.floor(base * (CFG.season.prizeDays[pos - 1] || 0)));
+export function seasonAward(p, n, div, pos, cash) {
+  migrate(p);
+  if (!p.titles.some((x) => x.k === 'ep' && x.n === n)) p.titles.push({ k: 'ep', n, d: div, pos });
+  if (Number.isSafeInteger(cash) && cash > 0) p.cash += cash;
 }
 
 function pay(p, amount) {
@@ -524,7 +554,7 @@ export function medicFor(payer, target, now, world) {
 export function medicCost(p, now) {
   if (!(p.hospUntil > now)) return 0;
   const mins = Math.ceil((p.hospUntil - now) / T.MIN);
-  const porNivel = mins * CFG.medicPerMin * level(p), porValor = Math.floor((mins * Math.floor(valuePerEnergy(p) * 100) * CFG.medicValueBp) / 1000000);
+  const porNivel = mins * CFG.medicPerMin * tier(p), porValor = Math.floor((mins * Math.floor(valuePerEnergy(p) * 100) * CFG.medicValueBp) / 1000000);
   return Math.max(1, Math.min(porNivel, porValor));
 }
 
@@ -862,10 +892,10 @@ export function hireAccountant(p, now, world) {
 
 export function portCap(p) {
   let cap = CFG.port.capBase;
-  for (let i = 1; i < level(p); i++) cap = Math.floor((cap * CFG.port.capNum) / CFG.port.capDen);
+  for (let i = 1; i < tier(p); i++) cap = Math.floor((cap * CFG.port.capNum) / CFG.port.capDen);
   return cap;
 }
-export function portSlots(p) { return 1 + Math.floor(level(p) / CFG.port.slotsEveryLevels); }
+export function portSlots(p) { return 1 + Math.floor(tier(p) / CFG.port.slotsEveryLevels); }
 
 // cada carregamento tem a sua droga (para quem a quer receber em vez do dinheiro)
 const SHIP_DRUG = CFG.port.ships.map((s) => CFG.drugs.findIndex((x) => x.id === s.drug));
@@ -1368,7 +1398,7 @@ export function pvpBaseGain(a, d) {
   const P = CFG.pvp;
   const ratioBp = clamp(Math.floor((10000 * d.respect) / Math.max(1, a.respect)), P.ratioMinBp, P.ratioMaxBp);
   const sqrtBp = Math.floor(Math.sqrt(ratioBp * 10000)); // 5000..20000
-  return up(Math.floor(((P.gainBase + level(a)) * sqrtBp) / 10000), klass(a).pvpBp || 0);
+  return up(Math.floor(((P.gainBase + tier(a)) * sqrtBp) / 10000), klass(a).pvpBp || 0);
 }
 
 export function expectedGain(a, d, now) {
@@ -1531,7 +1561,7 @@ export function hitResolve(as, d, now, rng) {
 // Tudo decidido aqui, no servidor, com o gerador aleatório do servidor. Aposta-se só o dinheiro que tens na mão.
 export function casinoMax(p) {
   const C = CFG.casino; let m = C.maxBase;
-  for (let i = 1; i < level(p); i++) m = Math.floor((m * C.maxNum) / C.maxDen);
+  for (let i = 1; i < tier(p); i++) m = Math.floor((m * C.maxNum) / C.maxDen);
   return m;
 }
 // k: quantas vezes o máximo por jogada se pode apostar (as compras de bónus das slots têm um teto mais alto)

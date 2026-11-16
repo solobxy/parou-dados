@@ -67,3 +67,22 @@ export function phaseAt(first, utcMs) {
   }
   throw new Error('PHASE_NOT_FOUND');
 }
+
+// Épocas (vida sem rondas): de 28 em 28 dias a partir da primeira sexta-feira dada {y,m,d}, às 21:00 de Lisboa.
+// Contam-se dias de calendário, por isso a mudança de hora não desacerta a hora de começo.
+export function seasonBounds(first, n) {
+  const { days, startHour } = CFG.season;
+  const s = addDays(first.y, first.m, first.d, n * days), e = addDays(s.y, s.m, s.d, days);
+  return { n, start: lisbonToUtc(s.y, s.m, s.d, startHour), end: lisbonToUtc(e.y, e.m, e.d, startHour) };
+}
+// a época de um instante (antes da primeira conta como a primeira)
+export function seasonAt(first, utcMs) {
+  const s0 = seasonBounds(first, 0);
+  if (utcMs < s0.end) return s0;
+  const n = Math.floor((utcMs - s0.start) / (CFG.season.days * 86_400_000));
+  for (let k = Math.max(0, n - 1); k <= n + 1; k++) {
+    const s = seasonBounds(first, k);
+    if (utcMs >= s.start && utcMs < s.end) return s;
+  }
+  throw new Error('SEASON_NOT_FOUND');
+}

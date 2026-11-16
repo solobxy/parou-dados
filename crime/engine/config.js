@@ -4,7 +4,19 @@
 const MIN = 60_000;
 const HOUR = 60 * MIN;
 
+// Níveis da base nova (16/11/2026): 100 níveis, o respeito acumulado para chegar ao nível N é 1,3 × N^2,55
+// (nível 10 com 461, 20 com 2 701, 40 com 15 820, 60 com 44 487, 80 com 92 645 e 100 com 163 660). O nível nunca desce.
+export const LEVELS = Array.from({ length: 100 }, (_, i) => (i ? Math.round(1.3 * (i + 1) ** 2.55) : 0));
+// Escala antiga das rondas (20 degraus). Até à economia nova (passo 2) é ela que mede o que cresce com o nível:
+// aposta máxima, carregamento máximo e lugares no porto, preço do médico, ganho das lutas e encher a stamina ao subir.
+// Assim a economia fica igual enquanto os níveis passam a ir até 100.
+export const TIERS = [0, 3, 10, 30, 80, 180, 350, 600, 950, 1400, 2000, 2800, 3900, 5400, 7500, 10500, 15000, 22000, 32000, 46000];
+// Uma porta da escala antiga na escala nova: o nível que se tem com o respeito que essa porta pedia (quem passava, continua a passar).
+const nv = (old) => { const r = TIERS[old - 1]; let n = 1; while (n < LEVELS.length && LEVELS[n] <= r) n++; return n; };
+
 export const CFG = {
+  // Vida sem rondas (16/11/2026): o mundo é um só e não acaba. Do que era a ronda fica a hora sem lutas no recomeço
+  // e o escudo de 24 h de quem chega depois do primeiro dia. As épocas (season) só recomeçam a classificação.
   round: {
     playDays: 13,
     totalDays: 14, // 13 de jogo + 1 de pausa
@@ -20,7 +32,11 @@ export const CFG = {
   energy: { max: 100, regenMs: 2 * MIN }, // cheia em 3h20
   addiction: { base: 100, perT: 4, decayMs: 1 * MIN }, // limite = 100 + tolerância/4; desce 1 por minuto
 
-  start: { stat: 10, cash: 500 },
+  start: { stat: 10, cash: 50 },   // todos recomeçam com 50 € (base nova)
+  // Épocas: 28 dias a começar à sexta às 21:00 de Lisboa. Conta o respeito ganho na época, em divisões de 20 níveis
+  // (pelo nível com que se entra na época). Os 3 primeiros de cada divisão levam título, troféu e dinheiro: 3, 2 e 1 dias
+  // do que um jogador da divisão ganha por dia (a mediana, contada no registo diário dessa época).
+  season: { days: 28, startHour: 21, divSize: 20, divs: 5, prizeDays: [3, 2, 1] },
   missionSwapMs: 1 * HOUR, // trocar o objetivo do beco: uma vez por hora
   // Bolsa. Os preços (em cêntimos) mexem de 10 em 10 minutos, iguais para todos, e ninguém os consegue mexer nem adivinhar:
   // cada passo sobe ou desce o mesmo com 50% de hipótese (0, 1, 2 ou 4 vezes o passo da empresa), por isso em média o preço fica onde está.
@@ -108,11 +124,11 @@ export const CFG = {
     minAmount: 100, bribeBp: 2000, bribeCutBp: 5000,
     home: { lat: 38.7, lon: -9.1 },
     routes: [
-      { id: 'tanger', lat: 35.8, lon: -5.8, ms: 1 * HOUR, gainBp: 900, seizeBp: 500, level: 5, r: 2, drug: 'erva' },
-      { id: 'amesterdao', lat: 52.4, lon: 4.9, ms: 2 * HOUR, gainBp: 1800, seizeBp: 900, level: 7, r: 4, drug: 'ecstasy' },
-      { id: 'medellin', lat: 6.2, lon: -75.6, ms: 4 * HOUR, gainBp: 4000, seizeBp: 1800, level: 9, r: 7, drug: 'coca' },
-      { id: 'culiacan', lat: 24.8, lon: -107.4, ms: 6 * HOUR, gainBp: 6500, seizeBp: 2500, level: 11, r: 10, drug: 'cristal' },
-      { id: 'kandahar', lat: 31.6, lon: 65.7, ms: 8 * HOUR, gainBp: 10000, seizeBp: 3300, level: 13, r: 14, drug: 'heroina' },
+      { id: 'tanger', lat: 35.8, lon: -5.8, ms: 1 * HOUR, gainBp: 900, seizeBp: 500, level: nv(5), r: 2, drug: 'erva' },
+      { id: 'amesterdao', lat: 52.4, lon: 4.9, ms: 2 * HOUR, gainBp: 1800, seizeBp: 900, level: nv(7), r: 4, drug: 'ecstasy' },
+      { id: 'medellin', lat: 6.2, lon: -75.6, ms: 4 * HOUR, gainBp: 4000, seizeBp: 1800, level: nv(9), r: 7, drug: 'coca' },
+      { id: 'culiacan', lat: 24.8, lon: -107.4, ms: 6 * HOUR, gainBp: 6500, seizeBp: 2500, level: nv(11), r: 10, drug: 'cristal' },
+      { id: 'kandahar', lat: 31.6, lon: 65.7, ms: 8 * HOUR, gainBp: 10000, seizeBp: 3300, level: nv(13), r: 14, drug: 'heroina' },
     ],
   },
   // Mercadoria: a droga que vem do aeroporto ou do porto entra no armazém ao preço de grosso (80% do preço da discoteca da cidade).
@@ -225,7 +241,7 @@ export const CFG = {
   // Gangues. Criar custa dinheiro e pede nível; o cofre só recebe (nunca devolve), para não servir de ponte entre contas.
   // A sede dá lugares e mais saque nos golpes a todos os membros; a armaria dá mais ataque e defesa nas lutas.
   gang: {
-    createCost: 25000, minLevel: 4, baseMembers: 4, perSede: 2, maxLevel: 5,
+    createCost: 25000, minLevel: nv(4), baseMembers: 4, perSede: 2, maxLevel: 5,
     sede: [100000, 400000, 1500000, 6000000],                 // preço para passar a sede do nível 1 ao 2, do 2 ao 3…
     armaria: [50000, 200000, 800000, 3000000, 12000000],      // preço de cada nível da armaria (começa em 0)
     lootBpPer: 200, fightBpPer: 300,                          // +2% de saque por nível de sede; +3% de ataque e defesa por nível de armaria
@@ -355,7 +371,7 @@ export const CFG = {
   ],
   // Contabilista: contrato pago uma vez por ronda. Com ele o armazém dos negócios aguenta 24 h em vez de 8 h;
   // do que passar das 8 h normais (dinheiro que sem ele se perdia) fica com 10%. Nunca tira nada a quem recolhe a horas.
-  accountant: { price: 25000, minLevel: 3, capMult: 3, feeBp: 1000 },
+  accountant: { price: 25000, minLevel: nv(3), capMult: 3, feeBp: 1000 },
 
   // Porto: contentor volta ao fim de 4 h com +30%, ou é apreendido (15%).
   // Porto: cada carregamento tem o seu barco, a sua droga, o seu tempo, o seu lucro e o seu risco de apreensão.
@@ -364,12 +380,12 @@ export const CFG = {
   // legacy: os contentores enviados antes de haver carregamentos valem como o porta-contentores (os mesmos +30% e 15%).
   port: { minAmount: 100, capBase: 1000, capNum: 8, capDen: 5, slotsEveryLevels: 5, legacy: 3, // limite por carregamento: 1000 × 1,6^(nível−1)
     ships: [
-      { id: 'pesca', level: 1, ms: 2 * HOUR, gainBp: 1200, seizeBp: 600, drug: 'erva' },
-      { id: 'lancha', level: 3, ms: 1 * HOUR, gainBp: 800, seizeBp: 500, drug: 'haxixe' },
-      { id: 'ferry', level: 5, ms: 3 * HOUR, gainBp: 2100, seizeBp: 1000, drug: 'ecstasy' },
-      { id: 'contentor', level: 7, ms: 4 * HOUR, gainBp: 3000, seizeBp: 1500, drug: 'coca' },
-      { id: 'cargueiro', level: 10, ms: 6 * HOUR, gainBp: 4600, seizeBp: 1900, drug: 'cristal' },
-      { id: 'submarino', level: 13, ms: 8 * HOUR, gainBp: 3700, seizeBp: 900, drug: 'heroina' },
+      { id: 'pesca', level: nv(1), ms: 2 * HOUR, gainBp: 1200, seizeBp: 600, drug: 'erva' },
+      { id: 'lancha', level: nv(3), ms: 1 * HOUR, gainBp: 800, seizeBp: 500, drug: 'haxixe' },
+      { id: 'ferry', level: nv(5), ms: 3 * HOUR, gainBp: 2100, seizeBp: 1000, drug: 'ecstasy' },
+      { id: 'contentor', level: nv(7), ms: 4 * HOUR, gainBp: 3000, seizeBp: 1500, drug: 'coca' },
+      { id: 'cargueiro', level: nv(10), ms: 6 * HOUR, gainBp: 4600, seizeBp: 1900, drug: 'cristal' },
+      { id: 'submarino', level: nv(13), ms: 8 * HOUR, gainBp: 3700, seizeBp: 900, drug: 'heroina' },
     ] },
 
   // Três tipos de armas, cada um no seu espaço. Compram-se por ordem, uma de cada vez, e a anterior não se vende nem volta.
@@ -382,34 +398,34 @@ export const CFG = {
     { id: 'cacadeira', price: 120000, bp: 8000 },
     { id: 'metralhadora', price: 700000, bp: 12000 },
     { id: 'sniper', price: 4000000, bp: 17000 },
-    { id: 'lancachamas', price: 12000000, bp: 20000, level: 13 },
-    { id: 'minigun', price: 30000000, bp: 23000, level: 16 },
+    { id: 'lancachamas', price: 12000000, bp: 20000, level: nv(13) },
+    { id: 'minigun', price: 30000000, bp: 23000, level: nv(16) },
   ],
   // tools (golpes a solo): str = força que se soma à pontuação de todos os golpes a solo (conta também para os desbloquear).
   // É força fixa e não percentagem: cada ferramenta vale cerca de +28% no nível em que abre e cada vez menos daí para cima.
   // Assim as baratas não dão quase nada a quem já é forte, e nenhuma mexe no teto do fim do jogo (95% de hipótese).
   // Preços: o que a ferramenta rende a mais do que a anterior paga-a em 1 a 4 dias de golpes (720 de stamina por dia) no nível em que abre.
   tools: [
-    { id: 'pedecabra', price: 500, str: 2, level: 1 },
-    { id: 'gazuas', price: 1200, str: 3, level: 3 },
-    { id: 'taser', price: 3500, str: 5, level: 5 },
-    { id: 'revolver', price: 10000, str: 9, level: 7 },
-    { id: 'serrada', price: 30000, str: 16, level: 9 },
-    { id: 'macarico', price: 80000, str: 27, level: 11 },
-    { id: 'explosivos', price: 180000, str: 48, level: 13 },
-    { id: 'broca', price: 250000, str: 84, level: 15 },
+    { id: 'pedecabra', price: 500, str: 2, level: nv(1) },
+    { id: 'gazuas', price: 1200, str: 3, level: nv(3) },
+    { id: 'taser', price: 3500, str: 5, level: nv(5) },
+    { id: 'revolver', price: 10000, str: 9, level: nv(7) },
+    { id: 'serrada', price: 30000, str: 16, level: nv(9) },
+    { id: 'macarico', price: 80000, str: 27, level: nv(11) },
+    { id: 'explosivos', price: 180000, str: 48, level: nv(13) },
+    { id: 'broca', price: 250000, str: 84, level: nv(15) },
   ],
   // gweapons (golpes em grupo): str = força que se soma ao que tu puxas num golpe da gangue (e por isso também à tua parte do saque).
   // Mesma escada das ferramentas; começam no nível das gangues. Preços: 2 a 5 dias de golpes em grupo com metade da stamina do dia.
   gweapons: [
-    { id: 'taco', price: 1000, str: 3, level: 4 },
-    { id: 'catana', price: 2500, str: 5, level: 5 },
-    { id: 'molotov', price: 7000, str: 9, level: 7 },
-    { id: 'assalto', price: 20000, str: 16, level: 9 },
-    { id: 'lancagranadas', price: 55000, str: 27, level: 11 },
-    { id: 'pesada', price: 120000, str: 48, level: 13 },
-    { id: 'bazuca', price: 160000, str: 84, level: 15 },
-    { id: 'morteiro', price: 200000, str: 147, level: 17 },
+    { id: 'taco', price: 1000, str: 3, level: nv(4) },
+    { id: 'catana', price: 2500, str: 5, level: nv(5) },
+    { id: 'molotov', price: 7000, str: 9, level: nv(7) },
+    { id: 'assalto', price: 20000, str: 16, level: nv(9) },
+    { id: 'lancagranadas', price: 55000, str: 27, level: nv(11) },
+    { id: 'pesada', price: 120000, str: 48, level: nv(13) },
+    { id: 'bazuca', price: 160000, str: 84, level: nv(15) },
+    { id: 'morteiro', price: 200000, str: 147, level: nv(17) },
   ],
   armors: [
     { id: 'cabedal', price: 400, bp: 1000 },
@@ -435,7 +451,7 @@ export const CFG = {
   // Pontaria: 90% menos o «block» dos guardas do alvo (no mínimo 15%). Se falha, o dinheiro perde-se e o alvo fica a saber quem pagou.
   // Travões: preço = 100 por ponto de respeito do alvo (mínimo 5000), 3 encomendas por dia, só a partir do nível 5, e as regras das lutas
   // (alvo com pelo menos 25% do teu respeito, nada de jogadores novos, da tua gangue, no hospital, presos ou protegidos).
-  hitman: { minLevel: 5, priceMin: 5000, pricePerRespect: 100, baseBp: 9000, minBp: 1500, hospMs: 60 * MIN, respBp: 150, cashBp: 1000, immuneMs: 12 * HOUR, perDay: 3 },
+  hitman: { minLevel: nv(5), priceMin: 5000, pricePerRespect: 100, baseBp: 9000, minBp: 1500, hospMs: 60 * MIN, respBp: 150, cashBp: 1000, immuneMs: 12 * HOUR, perDay: 3 },
 
   pvp: {
     energy: 20,
@@ -460,8 +476,9 @@ export const CFG = {
   // Luxos: dão respeito uma vez e ficam no perfil. Cada compra custa o dobro da anterior.
   luxury: { firstPrice: 250000, respect: 250, max: 20 },
 
-  // Níveis pelo maior respeito já alcançado (o nível nunca desce). Índice = nível - 1.
-  levels: [0, 3, 10, 30, 80, 180, 350, 600, 950, 1400, 2000, 2800, 3900, 5400, 7500, 10500, 15000, 22000, 32000, 46000],
+  // Níveis pelo maior respeito já alcançado (o nível nunca desce). Índice = nível - 1. Ver LEVELS e TIERS lá em cima.
+  levels: LEVELS,
+  tiers: TIERS,
 };
 
 // Objetivos: uma cadeia, um de cada vez. tipo → de onde vem o progresso (ver missionHave no motor).
@@ -470,11 +487,11 @@ CFG.missions = [
   { id: 'wins5', type: 'wins', need: 5, cash: 100 },
   { id: 'train3', type: 'trains', need: 3, cash: 100 },
   { id: 'refill1', type: 'refills', need: 1, cash: 150 },
-  { id: 'lvl3', type: 'level', need: 3, cash: 200 },
+  { id: 'lvl3', type: 'level', need: nv(3), cash: 200 },
   { id: 'tier2', type: 'tier', need: 2, cash: 250 },
   { id: 'wins25', type: 'wins', need: 25, cash: 400 },
   { id: 'weapon', type: 'gear', need: 1, cash: 400 },
-  { id: 'lvl5', type: 'level', need: 5, cash: 600 },
+  { id: 'lvl5', type: 'level', need: nv(5), cash: 600 },
   { id: 'star1', type: 'stars', need: 1, cash: 800 },
   { id: 'biz1', type: 'biz', need: 1, cash: 1500 },
   { id: 'collect1', type: 'collects', need: 1, cash: 800 },
@@ -482,20 +499,20 @@ CFG.missions = [
   { id: 'fight1', type: 'pvpWins', need: 1, cash: 2500 },
   { id: 'port1', type: 'ports', need: 1, cash: 2000 },
   { id: 'wins100', type: 'wins', need: 100, cash: 5000 },
-  { id: 'lvl8', type: 'level', need: 8, cash: 8000 },
+  { id: 'lvl8', type: 'level', need: nv(8), cash: 8000 },
   { id: 'biz5', type: 'biz', need: 5, cash: 20000 },
   { id: 'tier6', type: 'tier', need: 6, cash: 25000 },
   { id: 'fight10', type: 'pvpWins', need: 10, cash: 40000 },
-  { id: 'lvl10', type: 'level', need: 10, cash: 60000 },
+  { id: 'lvl10', type: 'level', need: nv(10), cash: 60000 },
   { id: 'lux1', type: 'lux', need: 1, cash: 120000 },
   { id: 'wins500', type: 'wins', need: 500, cash: 200000 },
   { id: 'tier8', type: 'tier', need: 8, cash: 300000 },
-  { id: 'lvl13', type: 'level', need: 13, cash: 500000 },
+  { id: 'lvl13', type: 'level', need: nv(13), cash: 500000 },
   { id: 'biz20', type: 'biz', need: 20, cash: 750000 },
   { id: 'tier10', type: 'tier', need: 10, cash: 1500000 },
-  { id: 'lvl16', type: 'level', need: 16, cash: 2000000 },
+  { id: 'lvl16', type: 'level', need: nv(16), cash: 2000000 },
   { id: 'lux5', type: 'lux', need: 5, cash: 5000000 },
-  { id: 'lvl20', type: 'level', need: 20, cash: 10000000 },
+  { id: 'lvl20', type: 'level', need: nv(20), cash: 10000000 },
 ];
 
 export const T = { MIN, HOUR, DAY: 24 * HOUR };

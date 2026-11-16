@@ -18,6 +18,20 @@ const store = {
   set(k, v) { try { localStorage.setItem('cr.' + k, JSON.stringify(v)); } catch {} },
 };
 const now = () => Date.now() + S.off;
+// 100 níveis e 20 títulos: o título muda de 5 em 5 níveis
+const titleOf = (L) => { const T = list('titles'); return T[Math.min(T.length - 1, Math.floor((Math.max(1, L) - 1) / 5))]; };
+// a época aberta (vem com o estado; versões antigas do servidor não a mandam)
+const season = () => S.st?.season || null;
+const divName = (d) => { const z = S.cfg?.season?.divSize || 20; return (d * z + 1) + '–' + (d + 1) * z; };
+// o que falta para a época acabar, por extenso: «25 dias», «1 dia e 8 horas», «7 horas e 12 minutos»
+function leftTxt(ms) {
+  const m = Math.max(0, Math.ceil(ms / 60000)), d = Math.floor(m / 1440), hh = Math.floor((m % 1440) / 60), mm = m % 60;
+  if (d >= 2) return t('nDays', { n: d });
+  if (d === 1) return hh ? t('dayHours', { h: hh }) : t('nDay');
+  return hh ? t('hoursMins', { h: hh, m: mm }) : t('nMins', { n: mm });
+}
+const nb = (x) => String(x).replace(/ /g, '\u00a0').replace(/-/g, '\u2011');   // não parte a linha a meio («Nível 12», «às 21:00»)
+const fimEpoca = (ep) => nb(new Date(ep.end).toLocaleString(lang() === 'pt' ? 'pt-PT' : 'en-GB', { weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' }));
 
 // ---------- pedidos ----------
 async function api(method, path, body) {
@@ -122,7 +136,7 @@ function react(type, out, before, opts) {
   } else if (type === 'tableBet') fx.sfx('deal');
   else if (type !== 'train' && type !== 'tableClear') fx.sfx('buy');
   if (type === 'crime' || type === 'crimeAll') requestAnimationFrame(showReport);
-  if (lv) { skyline(lv.to); if (type !== 'crime' && type !== 'crimeAll') toast(t('r_lvl', { n: lv.to, x: list('titles')[lv.to - 1] })); }
+  if (lv) { skyline(lv.to); if (type !== 'crime' && type !== 'crimeAll') toast(t('r_lvl', { n: lv.to, x: titleOf(lv.to) })); }
   render();
 }
 
@@ -225,8 +239,8 @@ function updateHud() {
   const me = S.st.me; if (!me || !S.hud.cash) return;
   const L = me.level;
   S.hud.lvl.textContent = L;
-  S.hud.title.textContent = list('titles')[L - 1];
-  S.hud.name.textContent = me.name + (me.cls ? ' · ' + t('cl_' + me.cls) : '') + (S.st.rank ? ' · #' + S.st.rank : '');
+  S.hud.title.textContent = titleOf(L);
+  S.hud.name.textContent = me.name + (me.cls ? ' · ' + t('cl_' + me.cls) : '');
   const span = me.levelTo ? (me.levelTo - me.levelFrom) : 1;
   const prog = me.levelTo ? Math.min(1, Math.max(0, (me.peakRespect - me.levelFrom) / span)) : 1;
   S.hud.ringFg.setAttribute('stroke-dashoffset', String(S.hud.C * (1 - prog)));
@@ -277,7 +291,7 @@ function tickHud() {
 const PLACES = {
   city: { ic: 'skyline' }, empire: { ic: 'empire' }, rob: { ic: 'street', img: 'golpes' }, club: { ic: 'bolt', img: 'discoteca' }, gym: { img: 'ginasio' },
   biz: { ic: 'empire', img: 'negocios' }, stash: { img: 'stash' }, acct: { img: 'contabilista' }, port: { img: 'porto' }, air: { img: 'aeroporto' }, arms: { img: 'armas' }, bank: { img: 'banco' }, hosp: { img: 'hospital' },
-  jail: { img: 'prisao' }, gang: { img: 'gangue' }, work: { img: 'profissao' }, news: { img: 'jornal' }, casino: { ic: 'gem', img: 'casino' }, roulette: { img: 'roleta' }, bj: { img: 'blackjack' }, dice: { img: 'dados' }, wheel: { img: 'roda' }, slot: { img: 'slot' }, zeus: { img: 'zeus' }, doce: { img: 'doce' }, rebucado: { img: 'rebucado' }, alley: { img: 'beco' }, lux: { img: 'luxos' }, fights: { ic: 'fights', img: 'lutas' }, rank: { img: 'ranking' }, hitman: { img: 'assassino' }, putas: { img: 'putas' }, casa: {}, myclub: { img: 'discoteca' }, mybro: { img: 'putas' }, bolsa: { img: 'bolsa' },
+  jail: { img: 'prisao' }, gang: { img: 'gangue' }, work: { img: 'profissao' }, news: { img: 'jornal' }, casino: { ic: 'gem', img: 'casino' }, roulette: { img: 'roleta' }, bj: { img: 'blackjack' }, dice: { img: 'dados' }, wheel: { img: 'roda' }, slot: { img: 'slot' }, zeus: { img: 'zeus' }, doce: { img: 'doce' }, rebucado: { img: 'rebucado' }, alley: { img: 'beco' }, lux: { img: 'luxos' }, fights: { ic: 'fights', img: 'lutas' }, rank: { img: 'procurados' }, hitman: { img: 'assassino' }, putas: { img: 'putas' }, casa: {}, myclub: { img: 'discoteca' }, mybro: { img: 'putas' }, bolsa: { img: 'bolsa' },
 };
 // barra de baixo: só o que se usa a toda a hora. O resto vive dentro de cada separador, arrumado por zonas.
 const NAV = ['city', 'rob', 'fights', 'casino', 'empire'];
@@ -502,7 +516,7 @@ function screenClass() {
 
 // ---------- a cidade ----------
 // ---------- jornal da cidade: o que os outros andam a fazer ----------
-const NW_IC = { hitman: 'skull', hitmanFail: 'shield', stockWin: 'cash', stockLoss: 'skull', stockBust: 'skull', air: 'cash', airLost: 'lock', cls: 'user', gangNew: 'fist', gangUp: 'empire', gangHeist: 'cash', gangHeistFail: 'lock', gangHit: 'fist', gangHitFail: 'skull', casino: 'gem', casinoLoss: 'skull', job: 'cash', crit: 'gem', spree: 'bolt', jail: 'lock', house: 'empire', lux: 'crown', beat: 'fist', mug: 'cash', fail: 'skull', sick: 'pill', lvl: 'crown', fight: 'fist' };
+const NW_IC = { season: 'crown', hitman: 'skull', hitmanFail: 'shield', stockWin: 'cash', stockLoss: 'skull', stockBust: 'skull', air: 'cash', airLost: 'lock', cls: 'user', gangNew: 'fist', gangUp: 'empire', gangHeist: 'cash', gangHeistFail: 'lock', gangHit: 'fist', gangHitFail: 'skull', casino: 'gem', casinoLoss: 'skull', job: 'cash', crit: 'gem', spree: 'bolt', jail: 'lock', house: 'empire', lux: 'crown', beat: 'fist', mug: 'cash', fail: 'skull', sick: 'pill', lvl: 'crown', fight: 'fist' };
 const seedOf = (str) => { let x = 7; for (let i = 0; i < str.length; i++) x = (x * 31 + str.charCodeAt(i)) | 0; return Math.abs(x); };
 // a gangue da rua (a do bot) tem nome próprio em cada língua; as dos jogadores ficam como eles as escreveram
 const gName = (name) => (name === S.cfg?.gang?.bot?.name ? t('gBotName') : name);
@@ -510,6 +524,7 @@ function newsText(e) {
   if (e.gang) e = { ...e, gang: gName(e.gang) };
   const k = e.k === 'fight' ? (e.mode === 'mug' ? 'mug' : 'beat') : e.k, C = list('crimes');
   if (k === 'gangNew') return t('nw_gangNew', { a: e.name, g: e.gang, t: e.tag });
+  if (k === 'season') return tv('nw_season', seedOf(e.name + k + e.t), { a: e.name, n: e.n + 1, x: divName(e.d) });
   if (k === 'gangUp') return t('nw_gangUp_' + e.what, { g: e.gang, n: e.n });
   if (k === 'air' || k === 'airLost') return tv('nw_' + k, seedOf(e.name + k + e.t), { a: e.name, x: t('ar_' + e.to), m: money(e.money || 0) });
   if (k === 'stockWin' || k === 'stockLoss' || k === 'stockBust') return tv('nw_' + k, seedOf((e.name || e.c) + k + e.t), { a: e.name, x: t('st_' + e.c), m: money(e.money || 0) });
@@ -517,7 +532,7 @@ function newsText(e) {
   if (k === 'cls') return tv('nw_cls', seedOf(e.name + k + e.t), { a: e.name, x: t('cl_' + e.from), y: t('cl_' + e.to) });
   if (k === 'gangHeist' || k === 'gangHeistFail') return tv('nw_' + k, seedOf(e.gang + k + e.t), { g: e.gang, x: t('gh_' + e.c), n: e.n, m: money(e.money || 0) });
   if (k === 'gangHit' || k === 'gangHitFail') return tv('nw_' + k, seedOf(e.gang + k + e.t), { g: e.gang, b: e.target, n: e.n });
-  const x = k === 'house' ? list('houses')[e.h] : k === 'lux' ? list('lux')[e.i] : k === 'lvl' ? list('titles')[e.n - 1] : k.startsWith('casino') ? t('csIn_' + e.g) : C[e.c];
+  const x = k === 'house' ? list('houses')[e.h] : k === 'lux' ? list('lux')[e.i] : k === 'lvl' ? titleOf(e.n) : k.startsWith('casino') ? t('csIn_' + e.g) : C[e.c];
   return tv('nw_' + k, seedOf(e.name + k + e.t), { a: e.name, b: e.target, x, m: money(e.money || 0), n: e.n });
 }
 const newsIdx = (f) => Math.floor(now() / 5000) % f.length;
@@ -573,7 +588,7 @@ function story(it, dia, kind) {
 }
 function paperFront(N) {
   const hoje = N.today.items.length > 0, day = hoje ? N.today : N.yesterday, its = day.items, out = [];
-  if (!its.length) out.push(h('article', { class: 'st st-lead' }, h('div', { class: 'kick' }, t('nwLive')), h('h2', null, t('paperCalmH')), h('div', { class: 'stb' }, h('p', null, t('paperCalm')))));
+  if (!its.length) out.push(h('article', { class: 'st st-lead' }, h('h2', null, t('paperCalmH')),   // sem notícia não há «última hora» h('div', { class: 'stb' }, h('p', null, t('paperCalm')))));
   else {
     if (!hoje) out.push(h('p', { class: 'pnote' }, t('paperYest')));
     out.push(story(its[0], day.dia, 'lead'));
@@ -582,7 +597,7 @@ function paperFront(N) {
   }
   const M = S.stocks;
   if (M && M.prices.length) out.push(h('section', { class: 'psec' }, h('h4', null, t('ecTitle')),
-    h('div', { class: 'pquo' }, S.cfg.stocks.list.map((c, k) => h('span', { class: M.prices[k] >= M.hist[k][0] ? 'pup' : 'pdn' }, h('b', null, c.id.toUpperCase()), stPct(M.prices[k], M.hist[k][0])))),
+    h('div', { class: 'pquo' }, S.cfg.stocks.list.map((c, k) => h('span', { class: M.prices[k] > M.hist[k][0] ? 'pup' : M.prices[k] < M.hist[k][0] ? 'pdn' : '' }, h('b', null, c.id.toUpperCase()), stPct(M.prices[k], M.hist[k][0])))),
     more('econ', t('pgEcon'))));
   const f = (S.feed || []).slice(0, 3);
   if (f.length) out.push(h('section', { class: 'psec' }, h('h4', null, t('nwLive')), h('ul', { class: 'plive' }, f.map(liveRow)), more('live', t('paperAll'))));
@@ -612,15 +627,15 @@ function paperEcon() {
     h('button', { class: 'pbtn', on: { click: () => go('bolsa') } }, t('ecGo'))];
 }
 function screenNews() {
-  const N = S.news, pg = PG.includes(S.newsPg) ? S.newsPg : 'front', r = S.st.round, D = S.cfg.round.playDays;
-  const dia = Math.min(D, Math.max(1, Math.floor((now() - (r.playEnd - D * 864e5)) / 864e5) + 1));
+  const N = S.news, pg = PG.includes(S.newsPg) ? S.newsPg : 'front', ep = season(), D = S.cfg.season?.days || 28;
+  const dia = ep ? Math.min(D, Math.max(1, Math.floor((now() - ep.start) / 864e5) + 1)) : 1;
   const f = S.feed || [];
   const body = !N ? [h('p', { class: 'pempty' }, t('loading'))] : pg === 'front' ? paperFront(N) : pg === 'street' ? paperStreet(N) : pg === 'econ' ? paperEcon()
     : [f.length ? h('ul', { class: 'plive first' }, f.map(liveRow)) : h('p', { class: 'pempty' }, t('nwEmpty'))];
   return [h('div', { class: 'phead' }, h('div', { class: 'pbar pj' }, h('button', { class: 'back', 'aria-label': t('p_' + upOf('news')), on: { click: () => go(upOf('news')) } }, h('span', { 'aria-hidden': 'true' }, '←')), h('h1', { class: 'sr' }, t('paper')))),
     h('div', { class: 'paper' },
       h('header', { class: 'pmast' },
-        h('div', { class: 'mline' }, h('span', null, paperDate()), h('span', null, t('paperDay', { n: r.n + 1, d: dia, t: D }))),
+        h('div', { class: 'mline' }, h('span', null, paperDate()), h('span', null, ep ? t('paperDay', { n: ep.n + 1, d: dia, t: D }) : '')),
         h('div', { class: 'mname' }, t('paper')),
         h('div', { class: 'mtag' }, t('paperTag'))),
       h('nav', { class: 'ppg', 'aria-label': t('paper') }, PG.map((id) => h('button', { 'aria-pressed': pg === id ? 'true' : 'false', on: { click: () => toPage(id) } }, t(PGL[id])))),
@@ -636,15 +651,17 @@ function screenCity() {
     jail: L.jail ? t('inside') : null,
     fights: (S.events || []).some((e) => e.id > S.lastEventSeen) ? t('newEvt') : null,
   };
-  const r = S.st.round;
+  const ep = season();
   return [h('h1', { class: 'sr' }, t('p_city')), newsBar(), ...hubTiles('city', badge),
-    h('p', { class: 'small muted', style: 'text-align:center;margin-top:16px' }, t('roundEnds', { n: r.n + 1, t: dur(r.playEnd - n) }))].filter(Boolean);
+    ep ? h('p', { class: 'small muted', style: 'text-align:center;margin-top:16px' }, t('seasonEnds', { n: ep.n + 1, t: nb(leftTxt(ep.end - n)) })) : null].filter(Boolean);
 }
 function placeTile(id, badge) {
   const me = S.st.me;
   return h('button', { class: 'tile', on: { click: () => go(id) } },
     h('img', { src: id === 'casa' ? IMG('casa', S.cfg.house.tiers[me.house].id) : IMG('cenas', PLACES[id].img), alt: '', width: 600, height: 600, loading: 'lazy', decoding: 'async', on: { error: (e) => e.currentTarget.remove() } }),
-    h('span', { class: 'lbl' }, t('p_' + id)), badge ? h('span', { class: 'bdg' }, badge) : null);
+    h('span', { class: 'lbl' + (id === 'rank' && S.st.rank ? ' up' : '') }, t('p_' + id)), badge ? h('span', { class: 'bdg' }, badge) : null,
+    // no ranking, a tua posição na época vai por baixo do nome, em texto (não é coisa para recolher)
+    id === 'rank' && S.st.rank ? h('span', { class: 'tsub' }, t('rankBadge', { p: ordOf(S.st.rank) })) : null);
 }
 function hubTiles(hub, badge) {
   return HUB[hub].flatMap(([sec, ids]) => [h('h2', { class: 'sec' }, t(sec)), h('div', { class: 'tiles' }, ids.map((id) => placeTile(id, badge[id])))]);
@@ -699,7 +716,7 @@ function reportAll(rep, li, names) {
   for (const [s, n] of Object.entries(r.gained || {})) lines.push(li('c-en', '+' + n + ' ' + names[s]));
   if (r.newChanceBp > r.chanceBp) lines.push(li('', t('r_chance', { p: pct(r.newChanceBp) })));
   if (r.star) lines.push(li('c-gold', t('r_star', { x: list('crimes')[k] })));
-  if (lv) lines.push(li('c-resp', t('r_lvl', { n: lv.to, x: list('titles')[lv.to - 1] })));
+  if (lv) lines.push(li('c-resp', t('r_lvl', { n: lv.to, x: titleOf(lv.to) })));
   for (const i of unlocked) lines.push(li('c-cash', t('newJob', { x: list('crimes')[i] })));
   const head = r.busted ? t('ra_bust', { i: r.n }) : r.wins === r.n ? t('ra_clean') : r.wins ? t('ra_done') : t('ra_none');
   return h('div', { class: 'report ' + (r.busted ? 'bust' : r.wins ? 'ok' : 'miss'), role: 'status' }, h('b', null, head), h('ul', null, lines));
@@ -713,7 +730,7 @@ function reportCard(rep) {
   for (const [s, n] of Object.entries(r.gained || {})) lines.push(li('c-en', '+' + n + ' ' + names[s]));
   if (r.newChanceBp > r.chanceBp) lines.push(li('', t('r_chance', { p: pct(r.newChanceBp) })));
   if (r.star) lines.push(li('c-gold', t('r_star', { x: list('crimes')[k] })));
-  if (lv) lines.push(li('c-resp', t('r_lvl', { n: lv.to, x: list('titles')[lv.to - 1] })));
+  if (lv) lines.push(li('c-resp', t('r_lvl', { n: lv.to, x: titleOf(lv.to) })));
   for (const i of unlocked) lines.push(li('c-cash', t('newJob', { x: list('crimes')[i] })));
   return h('div', { class: 'report ' + (r.success ? 'ok' : r.busted ? 'bust' : 'miss'), role: 'status' },
     h('b', null, r.success ? (r.crit ? t('r_crit') : t('r_ok')) : r.busted ? t('r_bust') : t('r_miss')), h('ul', null, lines));
@@ -979,7 +996,7 @@ function screenMyBro() {
 // ---------- bolsa ----------
 const stMoney = (c) => '$' + (c / 100).toLocaleString(lang() === 'pt' ? 'pt-PT' : 'en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const stQuote = (price, n) => { const g = Math.ceil((n * price) / 100); return g + Math.ceil((g * S.cfg.stocks.feeBp) / 10000); };
-const stPct = (a, b) => { const p = b ? ((a - b) / b) * 100 : 0; return (p >= 0 ? '+' : '−') + Math.abs(p).toFixed(Math.abs(p) >= 100 ? 0 : 1).replace('.', lang() === 'pt' ? ',' : '.') + '%'; };
+const stPct = (a, b) => { const p = b ? ((a - b) / b) * 100 : 0; if (Math.abs(p) < 0.05) return (0).toFixed(1).replace('.', lang() === 'pt' ? ',' : '.') + '%'; return (p >= 0 ? '+' : '−') + Math.abs(p).toFixed(Math.abs(p) >= 100 ? 0 : 1).replace('.', lang() === 'pt' ? ',' : '.') + '%'; };
 function stChart(arr, cls, w, hh) {
   const min = Math.min(...arr), max = Math.max(...arr), span = max - min || 1, n = Math.max(1, arr.length - 1);
   const xy = arr.map((v, i) => [(i / n) * w, hh - 3 - ((v - min) / span) * (hh - 6)]);
@@ -1582,14 +1599,14 @@ function screenFights() {
     else if (!S.targets.length) out.push(h('div', { class: 'note' }, h('p', { class: 'muted' }, t('hmNone'))));
     else if (!can.length) out.push(h('div', { class: 'note' }, h('p', { class: 'muted' }, t('noTargets'))));
     else out.push(h('div', { class: 'stack' }, can.map((x) => h('div', { class: 'card tgt' },
-      h('div', { class: 'who2' }, S.avOk ? h('img', { class: 'avs', src: AV(x.av || 0), alt: '', width: 96, height: 96, loading: 'lazy' }) : null, h('div', null, h('div', { class: 'nm' }, x.tag ? h('span', { class: 'gtag' }, x.tag) : null, x.tag ? ' ' : '', x.name), h('div', { class: 'lv' }, t('level') + ' ' + x.level + ' · ' + list('titles')[x.level - 1] + ' · ', h('span', { class: 'c-resp' }, icon('crown'), ' ' + short(x.respect))))),
+      h('div', { class: 'who2' }, S.avOk ? h('img', { class: 'avs', src: AV(x.av || 0), alt: '', width: 96, height: 96, loading: 'lazy' }) : null, h('div', null, h('div', { class: 'nm' }, x.tag ? h('span', { class: 'gtag' }, x.tag) : null, x.tag ? ' ' : '', x.name), h('div', { class: 'lv' }, t('level') + ' ' + x.level + ' · ' + titleOf(x.level) + ' · ', h('span', { class: 'c-resp' }, icon('crown'), ' ' + short(x.respect))))),
       h('div', { class: 'pct ' + chanceCls(x.chance) }, pct(x.chance)),
       h('div', { class: 'acts' },
         h('button', { class: 'btn danger sm', disabled: !!b, on: { click: (e) => { const el = e.currentTarget; withShield((drop) => act('attack', { target: x.name, mode: 'beat', drop }, { el })); } } }, icon('fist'), t('beat') + ' · +' + x.gain),
         h('button', { class: 'btn sm', disabled: !!b, on: { click: (e) => { const el = e.currentTarget; withShield((drop) => act('attack', { target: x.name, mode: 'mug', drop }, { el })); } } }, icon('cash'), t('rob') + ' · ~' + moneyShort(x.loot)),
         x.hp && x.hw !== 'LOW_LEVEL' ? h('button', { class: 'btn ghost sm hmb', on: { click: () => hitmanSheet(x) } }, icon('skull'), t('hmBtn', { m: moneyShort(x.hp) })) : null)))));
     if (cant.length) out.push(h('h2', { class: 'sec' }, t('tgOffT')), h('div', { class: 'stack' }, cant.map((x) => h('div', { class: 'card tgt off' },
-      h('div', { class: 'who2' }, S.avOk ? h('img', { class: 'avs', src: AV(x.av || 0), alt: '', width: 96, height: 96, loading: 'lazy' }) : null, h('div', null, h('div', { class: 'nm' }, x.tag ? h('span', { class: 'gtag' }, x.tag) : null, x.tag ? ' ' : '', x.name), h('div', { class: 'lv' }, t('level') + ' ' + x.level + ' · ' + list('titles')[x.level - 1] + ' · ', h('span', { class: 'c-resp' }, icon('crown'), ' ' + short(x.respect))),
+      h('div', { class: 'who2' }, S.avOk ? h('img', { class: 'avs', src: AV(x.av || 0), alt: '', width: 96, height: 96, loading: 'lazy' }) : null, h('div', null, h('div', { class: 'nm' }, x.tag ? h('span', { class: 'gtag' }, x.tag) : null, x.tag ? ' ' : '', x.name), h('div', { class: 'lv' }, t('level') + ' ' + x.level + ' · ' + titleOf(x.level) + ' · ', h('span', { class: 'c-resp' }, icon('crown'), ' ' + short(x.respect))),
         h('div', { class: 'why' }, errText(x.why), x.until > n ? [' · ', h('b', { class: 'num', dataset: { opend: x.until } }, dur(x.until - n))] : null)))))));
     out.push(h('button', { class: 'btn ghost block', style: 'margin-top:12px', on: { click: () => { S.targets = null; render(); loadTargets(); } } }, icon('refresh'), t('retry')));
   } else if (!S.events) out.push(h('p', { class: 'muted' }, t('loading')));
@@ -1597,20 +1614,50 @@ function screenFights() {
   else out.push(h('div', { class: 'stack' }, S.events.map(eventRow)));
   return out;
 }
+const ordOf = (n) => list('ord')[n - 1] || (lang() === 'pt' ? n + '.º' : n + 'th');
 function screenRank() {
-  const out = [pageHead('rank', t('s_rank'))];
-  if (!S.ranking) { out.push(h('p', { class: 'muted' }, t('loading'))); return out; }
-  const st = h('div', null);
-  for (const r of S.ranking.top) st.append(h('div', { class: 'rk' + (r.pos <= 3 ? ' g' + r.pos : '') + (r.me ? ' me' : '') },
-    h('div', { class: 'p' }, r.pos), S.avOk ? h('img', { class: 'avs', src: AV(r.av || 0), alt: '', width: 96, height: 96, loading: 'lazy' }) : null, h('div', null, h('div', { style: 'font-weight:700' }, r.tag ? h('span', { class: 'gtag' }, r.tag) : null, r.tag ? ' ' : '', r.name), h('div', { class: 'small muted' }, t('level') + ' ' + r.level + ' · ' + list('titles')[r.level - 1])),
-    h('div', { class: 'r num' }, icon('crown'), ' ' + short(r.respect))));
-  if (S.ranking.me && S.ranking.me.pos > 100) st.append(h('div', { class: 'rk me' }, h('div', { class: 'p' }, S.ranking.me.pos), h('div', null, S.ranking.me.name), h('div', { class: 'r' }, short(S.ranking.me.respect))));
+  const R = S.ranking, ep = season(), me = S.st.me, geral = R?.view === 'geral';
+  const out = [pageHead('rank', null)];
+  if (!R) { out.push(h('p', { class: 'muted' }, t('loading'))); return out; }
+  const mineDiv = me?.ep?.div ?? 0;
+  out.push(h('div', { class: 'seg' }, [['epoca', t('rkSeason')], ['geral', t('rkAll')]].map(([v, n]) => h('button', { 'aria-pressed': R.view === v ? 'true' : 'false', on: { click: () => { S.rankView = v; loadRanking(); } } }, n))));
+  if (geral) out.push(h('p', { class: 'rkline muted' }, t('rkAllSub')));
+  else {
+    if (ep) out.push(h('div', { class: 'eph' }, h('div', { class: 'ept' }, t('seasonN', { n: ep.n + 1 })),
+      h('div', { class: 'small muted' }, t('seasonLeft', { d: fimEpoca(ep), t: nb(leftTxt(ep.end - now())) }))));
+    // onde estás e quanto falta para o pódio (só na tua divisão)
+    if (R.me && R.d === mineDiv) {
+      const third = R.top.find((x) => x.pos === 3), gap = third && R.me.pos > 3 ? third.score - R.me.score + 1 : 0;
+      out.push(h('p', { class: 'rkyou' }, t('rkYou', { p: ordOf(R.me.pos), r: num(R.me.score) }) + (gap > 0 ? ' ' + t('rkGap', { n: num(gap) }) : '')));
+    }
+    out.push(h('div', { class: 'seg rkdiv', role: 'group', 'aria-label': t('rkDivs') }, Array.from({ length: S.cfg.season?.divs || 5 }, (_, d) => h('button', { 'aria-pressed': R.d === d ? 'true' : 'false', 'aria-label': t('rkDivA', { x: divName(d) }),
+      on: { click: () => { S.rankDiv = d; loadRanking(); } } }, divName(d)))));
+    out.push(h('p', { class: 'small muted rkline' }, R.d === mineDiv ? t('rkYour', { x: divName(R.d) }) : t('rkOther', { x: divName(R.d), y: divName(mineDiv) })));
+    if (R.prizes) out.push(h('div', { class: 'facts three' }, R.prizes.map((m, i) => h('div', { class: 'fact' }, h('b', { class: 'num ' + (m > 0 ? 'c-cash' : 'muted') }, m > 0 ? money(m) : '—'), h('span', null, t('rkPlace', { p: ordOf(i + 1) }))))));
+    out.push(h('p', { class: 'small muted rkline' }, t('rkPrize')));
+  }
+  const st = h('div', { class: 'rklist' });
+  const row = (r) => h('div', { class: 'rk' + (r.me ? ' me' : '') },
+    h('div', { class: 'p' }, r.pos), S.avOk ? h('img', { class: 'avs', src: AV(r.av || 0), alt: '', width: 96, height: 96, loading: 'lazy' }) : null,
+    h('div', { style: 'min-width:0' }, h('div', { class: 'rkn' }, r.tag ? h('span', { class: 'gtag' }, r.tag) : null, r.tag ? ' ' : '', r.name),
+      h('div', { class: 'rkl' }, nb(t('level') + ' ' + r.level) + ' · ' + (r.vet ? t('vetShort') : titleOf(r.level)))),   // o veterano mostra-se no lugar do título (o título vê-se no perfil)
+    h('div', { class: 'r num' }, num(geral ? r.respect : r.score)));
+  R.top.forEach((r, i) => { st.append(row(r)); if (!geral && r.pos === 3 && R.top.length > 3) st.append(h('div', { class: 'rkcut' }, t('rkCut'))); });
+  if (!R.top.length) st.append(h('p', { class: 'rkempty' }, geral ? t('rkNone') : t('rkNoneDiv', { x: divName(R.d) })));
+  if (R.me && R.me.pos > 100) st.append(row({ ...R.me, me: true, av: me?.av || 0, tag: '', vet: false }));
   out.push(st);
+  if (!geral && R.last && R.last.top.length) {
+    out.push(h('h2', { class: 'sec', style: 'margin-bottom:2px' }, t('rkLast', { n: R.last.n + 1 })), h('p', { class: 'small muted rkline', style: 'margin-top:0' }, t('rkLastSub', { x: divName(R.d) })));
+    out.push(h('div', { class: 'rklist' }, R.last.top.map((x) => h('div', { class: 'rk' }, h('div', { class: 'p' }, x.pos), S.avOk ? h('img', { class: 'avs', src: AV(x.av || 0), alt: '', width: 96, height: 96, loading: 'lazy' }) : null,
+      h('div', { style: 'min-width:0' }, h('div', { class: 'rkn' }, x.name), h('div', { class: 'rkl' }, x.money > 0 ? h('span', null, t('rkWon') + ' ', h('span', { class: 'c-cash' }, money(x.money))) : t('rkWonT'))), h('div', { class: 'r num' }, num(x.score))))));
+  }
   return out;
 }
 
 function eventRow(e) {
   let txt;
+  if (e.k === 'season') return h('div', { class: 'card row' }, h('b', { class: 'evpos' }, ordOf(e.pos)),
+    h('div', { class: 'grow' }, h('div', null, t('evSeason', { n: e.n + 1, x: divName(e.d) }) + (e.money > 0 ? ' ' + t('evSeasonM', { m: money(e.money) }) : '')), h('div', { class: 'small muted' }, dur(now() - e.t))));
   if (e.k === 'gangIn' || e.k === 'gangOut') return h('div', { class: 'card row' }, h('span', { class: e.k === 'gangIn' ? 'c-cash' : 'c-red' }, icon('fist')),
     h('div', { class: 'grow' }, h('div', null, t(e.k === 'gangIn' ? 'evGangIn' : 'evGangOut', { g: e.gang }) + (e.money > 0 ? ' ' + t('gBizBack', { m: money(e.money) }) : '')), h('div', { class: 'small muted' }, dur(now() - e.t))));
   if (e.k === 'gangRole') return h('div', { class: 'card row' }, h('span', { class: e.role > (e.was || 0) ? 'c-resp' : 'muted' }, icon('crown')),
@@ -1650,7 +1697,10 @@ async function loadStocks() {
 }
 async function loadVenues() { try { const r = await api('GET', '/api/venues'); S.venues = r; if (S.tab === 'club' || S.tab === 'putas') render(); } catch {} }
 async function loadTargets() { try { const r = await api('GET', '/api/targets'); S.targets = r.list; if (S.tab === 'fights') render(); } catch {} }
-async function loadRanking() { try { S.ranking = await api('GET', '/api/ranking'); if (S.tab === 'rank') render(); } catch {} }
+async function loadRanking() {
+  const q = S.rankView === 'geral' ? '?v=geral' : Number.isInteger(S.rankDiv) ? '?d=' + S.rankDiv : '';
+  try { S.ranking = await api('GET', '/api/ranking' + q); if (S.tab === 'rank') render(); } catch {}
+}
 async function loadEvents(seen) {
   try {
     const r = await api('GET', '/api/events'); S.events = r.list;
@@ -2671,23 +2721,28 @@ function installBox(redraw) {
   return h('p', { class: 'small muted' }, t(ios ? 'appIos' : 'appOther'));
 }
 function openProfile() {
-  const me = S.st.me, r = S.st.round;
-  const end = new Date(r.playEnd).toLocaleString(lang() === 'pt' ? 'pt-PT' : 'en-GB', { weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' });
+  const me = S.st.me, ep = season();
+  const tts = (me.titles || []).slice().sort((a, b) => (a.k === 'vet' ? -1 : b.k === 'vet' ? 1 : b.n - a.n || a.pos - b.pos));
   let close;
   const langBtns = h('div', { class: 'seg' }, [['en', 'English'], ['pt', 'Português']].map(([l, n]) => h('button', { 'aria-pressed': lang() === l ? 'true' : 'false', on: { click: async () => { applyLang(l); close(); shell(); render(); openProfile(); try { await api('POST', '/api/lang', { lang: l }); } catch {} } } }, n)));
   const anim = store.get('light', false);
   const animBtns = h('div', { class: 'seg' }, [[false, t('animFull')], [true, t('animLight')]].map(([v, n]) => h('button', { 'aria-pressed': anim === v ? 'true' : 'false', on: { click: () => { store.set('light', v); fx.setLight(v); close(); openProfile(); } } }, n)));
   close = sheet(h('div', { class: 'stack' },
-    h('div', { class: 'row' }, h('div', { class: 'grow' }, h('div', { class: 'small muted' }, t('level') + ' ' + me.level), h('div', { style: 'font-family:var(--disp);font-weight:900;font-size:34px;text-transform:uppercase;line-height:1' }, list('titles')[me.level - 1]), h('div', { class: 'muted' }, me.name + (S.st.rank ? ' · #' + S.st.rank : ''))),
-      h('div', { style: 'text-align:right' }, h('div', { class: 'c-resp', style: 'font-weight:800;font-size:20px' }, icon('crown'), ' ' + num(me.respect)), h('div', { class: 'small muted' }, me.levelTo ? t('toNext', { n: num(me.levelTo - me.peakRespect), l: me.level + 1 }) : ''))),
-    me.cls ? h('div', { class: 'chip', style: 'justify-self:start' }, t('cl_' + me.cls) + ' · ' + classLines(S.cfg.classes.find((c) => c.id === me.cls)).join(' · ')) : null,
+    h('div', { class: 'row' }, h('div', { class: 'grow' }, h('div', { class: 'small muted' }, t('level') + ' ' + me.level), h('div', { style: 'font-family:var(--disp);font-weight:900;font-size:34px;text-transform:uppercase;line-height:1' }, titleOf(me.level)), h('div', { class: 'muted' }, me.name), me.levelTo ? h('div', { class: 'small muted' }, t('toNext', { n: num(me.levelTo - me.peakRespect), l: me.level + 1 })) : null),
+      h('div', { style: 'text-align:right;align-self:start' }, h('div', { class: 'c-resp', style: 'font-weight:800;font-size:20px;white-space:nowrap' }, icon('crown'), ' ' + num(me.respect)))),
+    me.ep && ep ? h('button', { class: 'pep', on: { click: () => { close(); S.rankView = 'epoca'; S.rankDiv = null; go('rank'); } } },
+      h('b', null, t('seasonN', { n: ep.n + 1 })), h('span', null, (S.st.rank ? t('pepPos', { p: ordOf(S.st.rank), x: divName(me.ep.div) }) : t('pepDiv', { x: divName(me.ep.div) })) + ' · ' + t('pepResp', { r: num(me.ep.score) })),
+      h('span', { class: 'small muted' }, t('pepLeft', { t: nb(leftTxt(ep.end - now())) })), h('span', { class: 'chev', 'aria-hidden': 'true' }, '›')) : null,
+    me.cls ? h('p', { class: 'small muted', style: 'margin:0' }, t('cl_' + me.cls) + ' · ' + classLines(S.cfg.classes.find((c) => c.id === me.cls)).join(' · ')) : null,
     me.cls ? h('button', { class: 'btn sm', style: 'justify-self:start', on: { click: () => { close(); go('work'); } } }, t('clsChangeT')) : null,
     S.avOk ? h('h2', { class: 'sec', style: 'margin-top:10px' }, t('avatar')) : null,
     S.avOk ? h('div', { class: 'avgrid' }, Array.from({ length: S.cfg.avatars }, (_, i) => h('button', { class: i === me.av ? 'sel' : '', 'aria-label': t('avatar') + ' ' + (i + 1), 'aria-pressed': i === me.av ? 'true' : 'false',
       on: { click: async (e) => { const b = e.currentTarget; if (!(await act('avatar', { i }))) return;   // troca-se no sítio: a folha não fecha nem volta ao cimo
         for (const x of b.parentNode.children) { x.classList.toggle('sel', x === b); x.setAttribute('aria-pressed', x === b ? 'true' : 'false'); } } } }, h('img', { src: AV(i), alt: '', width: 96, height: 96, loading: 'lazy', on: { error: (e) => e.currentTarget.parentNode.remove() } })))) : null,
-    h('div', { class: 'small muted' }, t('roundInfo', { n: r.n + 1, d: end })),
-    h('div', { class: 'small muted' }, t('playersIn', { n: num(S.st.players) })),
+    tts.length ? h('h2', { class: 'sec', style: 'margin-top:10px' }, t('titlesT')) : null,
+    tts.length ? h('div', { class: 'ptits' }, tts.map((x) => x.k === 'vet'
+      ? h('div', { class: 'ptit' }, h('span', { class: 'tpos' }, h('img', { src: '/img/ui/coroa.webp?2', alt: '', width: 114, height: 96, decoding: 'async' })), h('div', null, h('div', { class: 'tn' }, t('ttVet')), h('div', { class: 'small muted' }, t('ttVetSub'))))
+      : h('div', { class: 'ptit' }, h('b', { class: 'tpos' }, ordOf(x.pos)), h('div', null, h('div', { class: 'tn' }, t('ttEp', { n: x.n + 1 })), h('div', { class: 'small muted' }, t('ttEpSub', { x: divName(x.d) })))))) : null,
     h('h2', { class: 'sec', style: 'margin-top:10px' }, t('appT')), installBox(() => { close(); openProfile(); }),
     h('h2', { class: 'sec', style: 'margin-top:10px' }, t('language')), langBtns,
     h('h2', { class: 'sec', style: 'margin-top:10px' }, t('animations')), animBtns,
@@ -2706,8 +2761,7 @@ function renderPause() {
   $app.replaceChildren(h('div', { class: 'land' },
     h('div', { class: 'word neon' }, 'Crime'),
     h('h1', { style: 'font-family:var(--disp);font-weight:900;font-size:40px;text-transform:uppercase' }, t('pauseTitle')),
-    S.st.me && S.st.rank ? h('p', { style: 'font-weight:700' }, t('finalRank', { n: S.st.rank, r: num(S.st.me.respect) })) : null,
-    h('p', { class: 'muted' }, t('pauseSub', { t: dur(r.nextStart - now()) })),
+    h('p', { class: 'muted' }, t('pauseSub', { t: dur(Math.max(0, r.start - now())) })),
     h('p', { class: 'credit' }, h('a', { href: 'https://dinissousa.pt', target: '_blank', rel: 'noopener' }, t('credit')))));
 }
 
@@ -2718,16 +2772,16 @@ const langSaved = () => { try { return localStorage.getItem('cr.lang'); } catch 
 
 async function showLanding(st) {
   $main = null;
-  let info = st ? { jogadores: st.players, round: st.round } : null;
+  let info = st ? { jogadores: st.players, epoca: st.season } : null;
   if (!info) { try { const r = await fetch('/api/saude'); info = await r.json(); } catch {} }
-  const langsw = h('div', { class: 'langsw' }, [['en', 'EN'], ['pt', 'PT']].map(([l, n]) => h('button', { 'aria-pressed': lang() === l ? 'true' : 'false', on: { click: () => { applyLang(l); showLanding(info ? { players: info.jogadores, round: info.round } : null); } } }, n)));
+  const langsw = h('div', { class: 'langsw' }, [['en', 'EN'], ['pt', 'PT']].map(([l, n]) => h('button', { 'aria-pressed': lang() === l ? 'true' : 'false', on: { click: () => { applyLang(l); showLanding(info ? { players: info.jogadores, season: info.epoca } : null); } } }, n)));
   $app.replaceChildren(langsw, h('div', { class: 'land' },
     h('div', { class: 'land-art', 'aria-hidden': 'true' }, h('img', { src: '/img/cenas/entrada-g.webp?8', alt: '', width: 800, height: 800, fetchpriority: 'high', decoding: 'async' })),
     h('div', { class: 'word neon', 'aria-label': 'Crime' }, 'Crime'),
     h('p', { class: 'tag' }, t('tagline')),
     info ? h('div', { class: 'meta' },
       h('span', null, t('playersIn', { n: num(info.jogadores) })),
-      info.round ? h('span', null, info.round.phase === 'play' ? t('roundEnds', { n: info.round.n + 1, t: dur(info.round.playEnd - now()) }) : t('roundStarts', { t: dur(info.round.nextStart - now()) })) : null) : null,
+      info.epoca ? h('span', null, t('seasonEnds', { n: info.epoca.n + 1, t: nb(leftTxt(info.epoca.end - now())) })) : null) : null,
     h('div', { class: 'cta' },
       h('button', { class: 'btn pri sodium block', on: { click: () => authSheet('register') } }, t('play')),
       h('button', { class: 'btn ghost block', on: { click: () => authSheet('login') } }, t('haveAccount'))),
