@@ -111,8 +111,8 @@ test('skills: o dinheiro do golpe sobe com a skill da família (e já não com a
   b.wk[k('loja')] = 500; a.wk[k('loja')] = 500;   // as vitórias antigas já não dão bónus
   const ra = E.doCrime(a, START, world, k('loja'), ok), rb = E.doCrime(b, START, world, k('loja'), ok);
   assert.equal(ra.base, rb.base);
-  assert.equal(rb.money, Math.floor((ra.base * 13000) / 10000));
-  assert.equal(ra.money, ra.base);
+  assert.equal(rb.value, Math.floor((ra.base * 13000) / 10000));
+  assert.equal(ra.value, ra.base);
 });
 
 test('skills: vender droga na rua treina o tráfico e rende mais com ele', () => {

@@ -487,7 +487,7 @@ test('objetivos: um de cada vez, só se recebe quando está feito, e uma só vez
   // um objetivo já feito recebe-se, não se troca; e o que se saltou volta depois dos outros, uma só vez
   q.c.trains = 3; assert.throws(() => E.swapMission(q, START + 3 * T.HOUR, world), { code: 'MISSION_READY' });
   E.claimMission(q, START + 3 * T.HOUR, world); assert.equal(q.mi, 1); assert.equal(q.mq.length, CFG.missions.length - 1); assert.ok(!q.mq.includes(2));
-  const todos = new Set(); let pago = 0; q.c.wins = 1e6; q.c.trains = 1e6; q.c.refills = 1e6; q.c.collects = 1e6; q.c.pvpWins = 1e6; q.c.ports = 1e6; q.respect = 1e12; q.peakRespect = 1e12; q.wk = q.wk.map(() => 1e6); q.c.shifts = 1e6; q.done = ['vigilante']; q.sk.furto = 1e6; q.weapon = 0; q.armor = 0; q.biz.forEach((b) => { b.n = 10; }); q.luxuries = 9;
+  const todos = new Set(); let pago = 0; q.c.wins = 1e6; q.c.trains = 1e6; q.c.refills = 1e6; q.c.collects = 1e6; q.c.pvpWins = 1e6; q.c.ports = 1e6; q.respect = 1e12; q.peakRespect = 1e12; q.wk = q.wk.map(() => 1e6); q.c.shifts = 1e6; q.done = ['vigilante']; q.sk.furto = 1e6; q.eq.branca = { id: 'soqueira' }; q.eq.tronco = { id: 'cabedal' }; q.biz.forEach((b) => { b.n = 10; }); q.luxuries = 9;
   for (let k = 0; k < 40 && E.mission(q); k++) { const m = E.mission(q); assert.ok(m.done, m.id); assert.ok(!todos.has(m.id)); todos.add(m.id); pago += E.claimMission(q, START + 4 * T.HOUR + k, world).cash; }
   assert.equal(todos.size, CFG.missions.length - 1); assert.equal(pago, CFG.missions.reduce((x, m) => x + m.cash, 0) - CFG.missions[2].cash);
   assert.equal(E.mission(q), null); assert.throws(() => E.swapMission(q, START + 9 * T.HOUR, world), { code: 'NO_MISSION' });

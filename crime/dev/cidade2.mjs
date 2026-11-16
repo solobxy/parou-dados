@@ -1,7 +1,7 @@
 // Cidade de teste local para ver os ecrãs do passo 2 (economia nova) num browser simulado.
 // Uso: node dev/cidade2.mjs <pasta> [porto]   (dentro de crime/). Deixa o servidor a correr e escreve <pasta>/contas.json com os cookies.
 // Contas: Novato (nível 1, barraca, 50 €), Assaltante (nível 30, pistola, rua quente, haxixe e coca, já comprou barras hoje),
-// Rico (nível 60, mansão, luxos, negócios).
+// Rico (nível 60, mansão, luxos, negócios), Gasto (pistola gasta) e Seco (sem balas, barraca cheia).
 import { spawn } from 'node:child_process';
 import { mkdirSync, writeFileSync, existsSync, rmSync } from 'node:fs';
 import { join, dirname } from 'node:path';
@@ -31,7 +31,7 @@ async function conta(nome, ip) {
 
 let s = await arrancar();
 let ip = 1;
-for (const n of ['Novato', 'Assaltante', 'Rico']) await conta(n, '10.8.0.' + ip++);
+for (const n of ['Novato', 'Assaltante', 'Rico', 'Gasto', 'Seco']) await conta(n, '10.8.0.' + ip++);
 // o novato faz três carteiras de verdade, para o relatório ter um golpe
 for (let i = 0; i < 3; i++) await act('Novato', { type: 'crime', k: 0 });
 await parar(s);
@@ -43,12 +43,16 @@ const idDe = (n) => db.prepare('SELECT id FROM contas WHERE nome = ?').get(n).id
 const muda = (n, f) => { const id = idDe(n), row = db.prepare('SELECT estado FROM jogadores WHERE conta = ? AND ronda = 1000').get(id), e = JSON.parse(row.estado); f(e); db.prepare('UPDATE jogadores SET estado = ? WHERE conta = ? AND ronda = 1000').run(JSON.stringify(e), id); };
 muda('Novato', (e) => { e.jailUntil = 0; e.hospUntil = 0; });
 muda('Assaltante', (e) => {
-  e.respect = e.peakRespect = L(30) + 400; e.cash = 18_400; e.bank = 6_250; e.weapon = 2; e.house = 1; e.av = 21;
+  e.respect = e.peakRespect = L(30) + 400; e.cash = 18_400; e.bank = 6_250; e.house = 1; e.av = 21;
+  e.eq = { ...e.eq, branca: { id: 'navalha' }, mao: { id: 'pistola', u: 6 }, tronco: { id: 'colete' }, maos: { id: 'luvas' } };
+  e.inv = [{ id: 'balas', n: 120 }, { id: 'telemovel', n: 3, v: 690 }, { id: 'relogio', n: 1, v: 380 }, { id: 'perfumes', n: 2, v: 410 }, { id: 'soqueira' }];
   e.energy = 64; e.vigor = 45; e.rua = { d: hoje, e: 230 }; e.rf = { d: hoje, e: 140 }; e.dst = [1_400, 600]; e.dl = { d: hoje, n: 4 };
   e.ep = { n: 0, div: 1, r0: L(30) - 600 };
 });
 muda('Rico', (e) => {
-  e.respect = e.peakRespect = L(60) + 1000; e.cash = 4_120_000; e.bank = 900_000; e.weapon = 4; e.house = 5; e.luxuries = 4; e.av = 40;
+  e.respect = e.peakRespect = L(60) + 1000; e.cash = 4_120_000; e.bank = 900_000; e.house = 5;
+  e.eq = { branca: { id: 'navalha' }, mao: { id: 'pistola', u: 20 }, principal: { id: 'metralhadora', u: 41 }, cabeca: { id: 'capacete' }, tronco: { id: 'kevlar' }, pernas: { id: 'calcas' }, pes: { id: 'botas' }, maos: { id: 'luvas' }, acess: { id: 'mochila' } };
+  e.inv = [{ id: 'balas', n: 850 }, { id: 'joalharia', n: 2, v: 19_400 }, { id: 'cacadeira', u: 12 }, { id: 'balistico' }]; e.luxuries = 4; e.av = 40;
   e.biz[0].n = 2; e.biz[3].n = 1; e.energy = 130; e.vigor = 100;
   e.done = ['vigilante', 'pesados', 'licenciatura']; e.job = 3; e.course = null; e.sk = { furto: 9200, assalto: 15000, burla: 0, trafico: 4000, conducao: 0, armas: 26000 };
 });
@@ -56,6 +60,12 @@ muda('Rico', (e) => {
 muda('Assaltante', (e) => { e.done = ['vigilante']; e.job = 2; e.sh = { d: hoje, n: 2 }; e.course = { id: 'pesados', end: Date.now() + 3 * 86400e3 };
   e.jt = [{ k: 'guard', t: Date.now() - 600e3, a: 'Rico', lvl: 60, m: 4_120_000 }, { k: 'guard', t: Date.now() - 4000e3, a: 'Novato', lvl: 1, m: 50 }];
   e.sk = { furto: 6400, assalto: 2300, burla: 0, trafico: 900, conducao: 0, armas: 0 }; });
+// passo 4: o Gasto tem a pistola gasta (golpe com arma pede reparação); o Seco está sem balas e com a barraca cheia
+muda('Gasto', (e) => { e.respect = e.peakRespect = L(30) + 50; e.cash = 2_400; e.energy = 130; e.jailUntil = 0;
+  e.eq = { ...e.eq, mao: { id: 'pistola', u: 0 } }; e.inv = [{ id: 'balas', n: 60 }]; });
+muda('Seco', (e) => { e.respect = e.peakRespect = L(30) + 50; e.cash = 900; e.energy = 130; e.jailUntil = 0;
+  e.eq = { ...e.eq, mao: { id: 'pistola', u: 14 } };
+  e.inv = [{ id: 'telemovel', n: 2, v: 410 }, { id: 'relogio', n: 1, v: 300 }, { id: 'perfumes', n: 1, v: 190 }, { id: 'fio', n: 1, v: 1_650 }, { id: 'miudezas', n: 4, v: 230 }, { id: 'soqueira' }]; });
 db.close();
 s = await arrancar();
 writeFileSync(join(DIR, 'contas.json'), JSON.stringify({ base: BASE, cookies, pid: s.pid }, null, 1));

@@ -36,9 +36,9 @@ async function toca(p, loc, nome) {
   if (!(await loc.first().isEnabled())) { notas.push(nome + ': botão desligado (conta presa, ocupada ou sem stamina)'); return false; }
   await loc.first().click({ timeout: 5000 }); await p.waitForTimeout(1000); return true;
 }
-const semChaves = async (p, nome) => { const txt = await p.evaluate(() => document.body.innerText); const m = txt.match(/\b(?:lt|rf|deal|job|loot|lux|h)[A-Z_][A-Za-z_]*\b|\b(?:lt_|ra_|r_)[a-z]+\b|\{[a-z]\}/g); if (m) erros.push(nome + ': texto por traduzir ' + [...new Set(m)].join(', ')); };
+const semChaves = async (p, nome) => { const txt = await p.evaluate(() => document.body.innerText); const m = txt.match(/\b(?:lt|rf|deal|job|loot|lux|h)[A-Z_][A-Za-z_]*\b|\b(?:lt_|ra_|r_|g_|it_|sl_|fx)[a-z]+\b|\{[a-z]\}/g); if (m) erros.push(nome + ': texto por traduzir ' + [...new Set(m)].join(', ')); };
 
-for (const lang of ['pt', 'en']) for (const w of [320, 390]) {
+for (const lang of ['pt', 'en']) for (const w of [320, 390]) {   // a última volta é en-390
   const sx = `${lang}-${w}`;
   // golpes: o novato
   let { p, ctx } = await pagina('Novato', w, lang, 'rob');
@@ -62,8 +62,32 @@ for (const lang of ['pt', 'en']) for (const w of [320, 390]) {
   await foto(p, `discoteca-${sx}`); await semChaves(p, 'discoteca ' + sx);
   if (await toca(p, p.locator('.refillc .btn.buy'), `encher ${sx}`)) await foto(p, `discoteca-encheu-${sx}`, false);
   await ctx.close();
+  // passo 4: golpe com arma gasta (reparar) e sem balas com a barraca cheia; recetador, balas e trocar de arma
+  for (const quem of ['Gasto', 'Seco']) {
+    ({ p, ctx } = await pagina(quem, w, lang, 'rob'));
+    await p.evaluate(() => { const b = [...document.querySelectorAll('.rowi')].find((x) => /armad|Armed/i.test(x.textContent)); if (b) b.click(); }); await p.waitForTimeout(400);
+    await foto(p, `golpe-arma-${quem.toLowerCase()}-${sx}`, false); await semChaves(p, `golpe arma ${quem} ${sx}`);
+    // os toques que mudam a conta (reparar, vender tudo) só na última volta, para as outras capturas verem o estado de partida
+    if (quem === 'Gasto' && sx === 'en-390' && (await toca(p, p.locator('.jobp .btn.buy'), `reparar ${sx}`))) {
+      if (!(await p.locator('.jobp .btn.rob').count())) erros.push(`reparar ${sx}: depois de reparar não apareceu o botão de roubar`);
+      if (await toca(p, p.locator('.jobp .btn.rob'), `golpe com arma ${sx}`)) { await foto(p, `golpe-arma-feito-${sx}`, false); if (!(await p.locator('.report').count())) erros.push(`golpe com arma ${sx}: sem relatório`); }
+    }
+    await ctx.close();
+  }
+  ({ p, ctx } = await pagina('Seco', w, lang, 'inv'));
+  await foto(p, `inv-seco-${sx}`); await semChaves(p, 'inventário seco ' + sx);
+  if (sx === 'en-390' && (await toca(p, p.locator('.invsp .btn.buy'), `recetador ${sx}`))) { await foto(p, `inv-vendeu-${sx}`, false); if (await p.locator('.invsp .btn.buy').count()) erros.push(`recetador ${sx}: o botão continua lá depois de vender tudo`); }
+  await ctx.close();
+  ({ p, ctx } = await pagina('Rico', w, lang, 'inv'));
+  await foto(p, `inv-rico-${sx}`); await semChaves(p, 'inventário rico ' + sx);
+  if (sx === 'en-390' && (await toca(p, p.locator('.jbl .vrow .btn.ghost', { hasText: /Usar|Use/ }), `trocar arma ${sx}`))) await foto(p, `inv-trocou-${sx}`, false);
+  await ctx.close();
+  ({ p, ctx } = await pagina('Assaltante', w, lang, 'arms'));
+  if (await toca(p, p.locator('.boxb .btn').first(), `balas ${sx}`)) await foto(p, `armas-balas-${sx}`, false);
+  await toca(p, p.locator('.armseg button').nth(1), `proteção ${sx}`); await foto(p, `armas-protecao-${sx}`); await semChaves(p, 'proteção ' + sx);
+  await ctx.close();
   // ginásio (energia), casa, armas e a cidade com as duas barras
-  for (const [quem, tab] of [['Assaltante', 'gym'], ['Novato', 'casa'], ['Rico', 'casa'], ['Assaltante', 'arms'], ['Assaltante', 'city'], ['Rico', 'lux'], ['Rico', 'empire'], ['Rico', 'biz'], ['Assaltante', 'putas'], ['Assaltante', 'job'], ['Novato', 'job'], ['Rico', 'job']]) {
+  for (const [quem, tab] of [['Assaltante', 'gym'], ['Novato', 'casa'], ['Rico', 'casa'], ['Assaltante', 'arms'], ['Rico', 'arms'], ['Novato', 'inv'], ['Assaltante', 'inv'], ['Assaltante', 'city'], ['Rico', 'lux'], ['Rico', 'empire'], ['Rico', 'biz'], ['Assaltante', 'putas'], ['Assaltante', 'job'], ['Novato', 'job'], ['Rico', 'job']]) {
     ({ p, ctx } = await pagina(quem, w, lang, tab));
     await foto(p, `${tab}-${quem.toLowerCase()}-${sx}`, tab !== 'city'); await semChaves(p, `${tab} ${quem} ${sx}`);
     await ctx.close();

@@ -1915,3 +1915,37 @@ body.light .rv.is-wait .ct-lock::after { opacity: .9; transform: translate(-50%,
 .vrow.crr .grow .crl2 { display: inline; font-weight: 700; }
 .vrow.tipr { width: 100%; text-align: left; background: none; border: 0; color: inherit; font: inherit; }
 .jneed { background: none; border: 0; padding: 0; color: var(--tx2); font: inherit; font-size: 14px; text-decoration: underline; text-underline-offset: 3px; min-height: 32px; text-align: left; }
+/* inventário e equipamento (passo 4) */
+.armsum { margin: 0 2px 6px; padding: 12px 14px; border-radius: var(--r); background: var(--s1); font-size: 15px; }
+.armsum > b { font-size: 20px; }
+.boxb { display: flex; gap: 6px; flex: none; }
+.boxb > .btn { min-height: 44px; min-width: 64px; font-family: inherit; font-weight: 700; font-size: 15px; text-transform: none; letter-spacing: 0; }
+.vrow.jbr > .btn + .btn { margin-left: -4px; }
+.vrow.jbr > .btn.ghost { min-width: 72px; }
+.invsp > .row b:last-child { font-size: 20px; }
+.invsp > p { margin: 0; line-height: 1.45; }
+.fill.bad > i { background: var(--danger); }
+.wornl { gap: 0; }
+.wornl .wrow { min-height: 48px; gap: 12px; padding: 0 2px; }
+.wornl .wrow + .wrow { box-shadow: inset 0 1px 0 #ffffff12; }
+.wornl .wsl { flex: none; width: 108px; font-size: 14px; }
+.wornl .wrow .grow { flex: 1 1 0; font-size: 15px; font-weight: 600; overflow-wrap: anywhere; }
+.wornl .wrow .grow.muted { font-weight: 400; }
+.report > .rinv { display: block; margin-top: 6px; color: var(--tx); }
+@media (max-width: 359px) { .boxb > .btn { min-width: 56px; padding: 0 10px; } .wornl .wsl { width: 92px; } .vrow.jbr > .btn.ghost { min-width: 64px; } }
+/* balas: os dois botões descem para baixo do texto e repartem a largura */
+.vrow.blr { flex-wrap: wrap; row-gap: 8px; }
+.vrow.blr > .grow { flex: 1 1 0; }
+.vrow.blr > .boxb { flex: 1 0 100%; }
+.vrow.blr > .boxb > .btn { flex: 1 1 0; }
+.vrow.jbr .grow > .jneed { display: block; min-height: 36px; margin-top: 2px; }
+.jobp > .jgun { margin: -2px 14px 0; font-size: 15px; line-height: 1.45; }
+.invsp.fence { margin-top: 10px; }
+/* revisão do passo 4 */
+.vlist.jbl > .hkt { margin: 6px 0 0; font-size: 14px; font-weight: 700; color: var(--tx2); text-transform: none; letter-spacing: 0; }
+.vlist.jbl > .hkt:first-child { margin-top: 0; }
+.wornl .wrow { border-radius: 0; }
+.vrow.jbr .grow > .jneed { min-height: 44px; }
+.jneed.sure { color: var(--danger); text-decoration-color: var(--danger); }
+/* sem stamina: as duas saídas com a mesma letra (a recomendada só muda de cor) */
+.stam .btn { font-family: inherit; font-weight: 700; font-size: 15px; text-transform: none; letter-spacing: 0; }

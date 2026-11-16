@@ -14,7 +14,9 @@ const SEED = +(process.argv[2] ?? 1), N = +(process.argv[3] ?? 100), DIAS = +(pr
 const T0 = lisbonToUtc(2026, 11, 20, 0, 30);      // cada dia de jogo vai das 0:30 à meia-noite de Lisboa (a rua arrefece à meia-noite)
 const world = { start: T0 - T.DAY, playEnd: Number.MAX_SAFE_INTEGER };
 const CARRO = 5000, CASA_A_SERIO = 3;             // como no modelo: carro usado de 5 000 € e o T1 na cidade
-const GUN = CFG.weapons.findIndex((w) => w.id === CFG.street.gun);
+const PIST = CFG.gear.find((x) => x.id === 'pistola');
+const CUSTO_ARMA = (CFG.bullets.price * CFG.bullets.perJob) / CFG.bullets.box + PIST.price / PIST.life;   // balas e desgaste por golpe (passo 4)
+const balas = (p) => (p.inv.find((x) => x.id === 'balas') || { n: 0 }).n;
 const SEM_EMPREGO = process.env.SEM_EMPREGO === '1';
 // emprego: o melhor que já está aberto; curso: o seguinte da lista quando há o dobro do preço (a regra do modelo); depois os turnos
 function trabalho(p, t) {
@@ -35,16 +37,16 @@ const ev = (c) => E.crimeEv(c);
 const liquido = (p) => p.cash + p.bank;
 // o que uma barra de golpes de rua rende em média, já com hipótese, calor, mestria, balas e multas (o que interessa para decidir)
 function barra(p, k, heatBp) {
-  const c = CFG.crimes[k], n = 100 / c.e, bonus = 1 + (E.masteryStars(p, k) * CFG.mastery.bonusBp) / 10000;
+  const c = CFG.crimes[k], n = 100 / c.e, bonus = 1 + E.skillBp(p, c.fam) / 10000;
   const ganho = n * (c.p / 10000) * ev(c) * bonus * (heatBp / 10000);
-  const custo = n * ((c.gun ? CFG.street.ammo : 0) + (1 - c.p / 10000) * (CFG.bustBp / 10000) * c.fine);
+  const custo = n * ((c.gun ? CUSTO_ARMA : 0) + (1 - c.p / 10000) * (CFG.bustBp / 10000) * c.fine);
   return ganho - custo;
 }
 function melhorGolpe(p) {
   let best = 0, v = -Infinity;
   for (let k = 0; k < CFG.crimes.length; k++) {
     const c = CFG.crimes[k];
-    if (!E.crimeUnlocked(p, k) || (c.gun && p.weapon < GUN)) continue;
+    if (!E.crimeUnlocked(p, k) || (c.gun && !p.eq.mao)) continue;
     const x = barra(p, k, 10000); if (x > v) { v = x; best = k; }
   }
   return best;
@@ -55,8 +57,11 @@ const tenta = (f) => { try { return f(); } catch (e) { if (!(e instanceof E.Game
 function sessao(p, t, rng, s) {
   // multas: paga-se para sair (o modelo assume que se paga)
   if (p.jailUntil > t) { tenta(() => E.payBail(p, t, world)); if (p.jailUntil > t) return; }
-  // pistola: compra-se por ordem quando o nível a pede e há dinheiro
-  if (E.level(p) >= CFG.crimes.find((c) => c.gun).level) while (p.weapon < GUN && liquido(p) > CFG.weapons[p.weapon + 1].price * 2) tenta(() => E.buyGear(p, t, world, 'weapon', p.weapon + 1));
+  // pistola: compra-se quando o nível a pede e há o dobro do preço; balas às caixas; repara-se quando se estraga
+  if (E.level(p) >= CFG.crimes.find((c) => c.gun).level) {
+    if (!p.eq.mao && liquido(p) > PIST.price * 2) tenta(() => E.buyItem(p, t, world, 'pistola'));
+    if (p.eq.mao) { if (balas(p) < 100 && liquido(p) > 500) tenta(() => E.buyItem(p, t, world, 'balas', 4)); if (p.eq.mao.u === 0) tenta(() => E.repair(p, t, world, 'mao')); }
+  }
   // venda de droga primeiro, se render mais do que a barra de rua mais quente do dia
   const L = E.level(p), hoje = s.hoje;
   const d = [...CFG.deal.list.entries()].reverse().find(([, x]) => L >= x.level);
@@ -77,9 +82,12 @@ function sessao(p, t, rng, s) {
     const k = melhorGolpe(p), c = CFG.crimes[k];
     if (p.energy < c.e) break;
     if (barra(p, k, heatAgora(p, t)) <= 0) break;
-    if (c.gun && liquido(p) < CFG.street.ammo) break;
+    if (c.gun && p.eq.mao && p.eq.mao.u === 0) tenta(() => E.repair(p, t, world, 'mao'));
+    if (c.gun && balas(p) < CFG.bullets.perJob) tenta(() => E.buyItem(p, t, world, 'balas', 4));
     const r = tenta(() => E.doCrimeAll(p, t, world, k, rng)); if (!r) break;
   }
+  // o que se roubou e é objeto vende-se ao recetador no fim de cada sessão
+  tenta(() => E.sellGoods(p, t, world));
 }
 
 function simula(perfil, rng) {

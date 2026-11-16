@@ -89,7 +89,7 @@ test('versão 56 → economia nova: o que se comprou aos preços antigos volta e
   srv = await novo(3 * 3600e3 + 120e3);
   const s = (await A('GET', '/api/state')).body;
   const me = s.me, guardado = antes.biz[0].stored || 0;
-  assert.equal(me.house, 0); assert.equal(me.weapon, -1); assert.equal(me.luxuries, 0); assert.equal(me.biz[0].n, 0); assert.equal(me.energyMax, 100);
+  assert.equal(me.house, 0); assert.ok(Object.values(me.eq).every((x) => !x)); assert.equal(me.luxuries, 0); assert.equal(me.biz[0].n, 0); assert.equal(me.energyMax, 100);
   assert.ok(me.cash + me.bank >= 2_000_000 && me.cash + me.bank <= 2_000_000 + guardado + 1000, 'devolveu ' + (me.cash + me.bank - (antes.cash + antes.bank)));
   let cx = caixa();
   assert.equal(cx.devolucao.n, 1); assert.equal(cx.devolucao.e, me.cash + me.bank - (antes.cash + antes.bank));

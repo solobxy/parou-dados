@@ -35,7 +35,7 @@ export function newPlayer(id, now, world, opts = {}) {
     hits: new Map(),
     biz: CFG.biz.map(() => ({ n: 0, stored: 0, rem: 0, t: now })),
     port: [], air: null, stock: CFG.drugs.map(() => 0), hold: [], club: null, bro: null, stk: CFG.stocks.list.map(() => ({ n: 0, cost: 0, gen: 0 })), acct: false,
-    weapon: -1, armor: -1, guard: -1, tool: -1, gweapon: -1, hmT: [], hmSafe: 0,
+    eq: eqNew(), inv: [], guard: -1, tool: -1, gweapon: -1, hmT: [], hmSafe: 0,   // equipamento no corpo (passo 4) e inventário
     luxuries: 0,
     gang: null, gb: null, gangLeft: 0, gbotLeft: 0, gh: [], gbz: gbzNew(),
     detoxT: [],
@@ -107,7 +107,23 @@ function migrate(p) {
   if (p.course === undefined) p.course = null;
   if (!Array.isArray(p.done)) p.done = [];
   if (!Number.isSafeInteger(p.c.shifts)) p.c.shifts = 0;
+  // passo 4: a arma e a proteção (índices nas listas antigas) passam para o corpo; quem tinha arma de fogo recebe uma caixa de balas
+  if (!p.eq || typeof p.eq !== 'object') {
+    p.eq = eqNew();
+    const w = W57[p.weapon], a = A57[p.armor];
+    if (w) { p.eq[gearOf(w).slot] = itemNew(w); }
+    if (a) p.eq.tronco = itemNew(a);
+    if (!Array.isArray(p.inv)) p.inv = [];
+    if (w && gearOf(w).gun) p.inv.push({ id: 'balas', n: CFG.bullets.box });
+  }
+  if (!Array.isArray(p.inv)) p.inv = [];
+  delete p.weapon; delete p.armor;
 }
+// as listas de armas e proteções da versão 57 (índice → objeto), para passar o que cada um tinha
+const W57 = ['soqueira', 'navalha', 'pistola', 'cacadeira', 'metralhadora', 'sniper'], A57 = ['cabedal', 'colete', 'balistico', 'kevlar', 'blindado', 'titanio'];
+const eqNew = () => Object.fromEntries(CFG.slots.map((s) => [s, null]));
+const gearOf = (id) => CFG.gear.find((x) => x.id === id);
+const itemNew = (id) => { const g = gearOf(id); return g.gun ? { id, u: g.life } : { id }; };
 const skNew = () => Object.fromEntries(CFG.skills.fams.map((f) => [f, 0]));
 
 // Economia nova (passo 2): quem jogou com os preços antigos recebe de volta o que pagou pelo que deixou de existir ou mudou de
@@ -442,7 +458,11 @@ export function setAvatar(p, now, world, i) {
   return { ok: true, av: i };
 }
 const huBp = (p, i) => (p.hu && CFG.house.ups[i] ? (p.hu[i] || 0) * CFG.house.ups[i].bp : 0);   // (já não há melhorias da casa)
-export function bustChanceBp(p, now) { return cut(cut(cut(CFG.bustBp, klass(p).bustCutBp || 0), buffBp(p, 'bust', now)), huBp(p, 2)); }
+export function bustChanceBp(p, now) {
+  const acc = p.eq && p.eq.acess ? gearOf(p.eq.acess.id) : null;   // o rádio-scanner ouve a polícia a chegar
+  const base = acc && acc.bustBp ? acc.bustBp : CFG.bustBp;
+  return cut(cut(cut(base, klass(p).bustCutBp || 0), buffBp(p, 'bust', now)), huBp(p, 2));
+}
 // ---------- casa ----------
 // a casa seguinte paga-se com a antiga na troca, pelo que ela custou
 export function housePrice(p) { const n = CFG.house.tiers[p.house + 1]; return n ? n.price - CFG.house.tiers[p.house].price : null; }
@@ -493,7 +513,16 @@ function heatOf(p, now) {
   return H[Math.min(H.length - 1, Math.floor(used / 100))];
 }
 export function streetView(p, now) { const d = dayOf(now), used = p.rua && p.rua.d === d ? p.rua.e : 0; return { used, heatBp: heatOf(p, now) }; }
-const gunIdx = () => CFG.weapons.findIndex((w) => w.id === CFG.street.gun);
+// a arma de fogo que se usa nos golpes: a de mão, se ainda disparar; senão a principal. Se nenhuma dispara, a que houver (para dizer que está gasta).
+export const gunOf = (p) => { const m = p.eq.mao, q = p.eq.principal; return m && m.u > 0 ? 'mao' : q && q.u > 0 ? 'principal' : m ? 'mao' : q ? 'principal' : null; };
+const bulletsOf = (p) => { const b = p.inv.find((x) => x.id === 'balas'); return b ? b.n : 0; };
+function gunCheck(p) {
+  const s = gunOf(p);
+  if (!s) fail('NEED_GUN');
+  if (!(p.eq[s].u > 0)) fail('GUN_BROKEN');
+  if (bulletsOf(p) < CFG.bullets.perJob) fail('NO_AMMO', { need: CFG.bullets.perJob });
+  return s;
+}
 
 // ---------- crimes ----------
 
@@ -536,9 +565,9 @@ export function doCrime(p, now, world, k, rng) {
   begin(p, now, world);
   if (!crimeUnlocked(p, k)) fail('LOCKED', { need: c.level });
   if (p.energy < c.e) fail('NO_ENERGY', { need: c.e });
-  if (c.gun && p.weapon < gunIdx()) fail('NEED_GUN');
-  const ammo = c.gun ? CFG.street.ammo : 0;
-  if (ammo) pay(p, ammo);   // balas e desgaste da arma: paga-se antes, corra bem ou mal
+  const gun = c.gun ? gunCheck(p) : null;
+  const ammo = gun ? CFG.bullets.perJob : 0;
+  if (gun) { takeInv(p, 'balas', ammo); p.eq[gun].u -= 1; }   // balas e um uso da arma: gastam-se antes, corra bem ou mal
   const bp = c.p, heatBp = heatOf(p, now), d = dayOf(now);
   settleAllBiz(p, now); // a prática pode subir stats: o rendimento até aqui conta com as antigas
   p.energy -= c.e;
@@ -552,7 +581,12 @@ export function doCrime(p, now, world, k, rng) {
     for (const pr of c.prizes) { if (roll < pr[0]) { row = pr; break; } roll -= pr[0]; }
     const base = rng.int(row[1], row[2]);
     const bonus = 10000 + skillBp(p, c.fam) + (klass(p).lootBp || 0) + buffBp(p, 'loot', now) + gbp(p, 'loot');
-    const money = Math.floor((Math.floor((base * bonus) / 10000) * heatBp) / 10000);
+    const value = Math.floor((Math.floor((base * bonus) / 10000) * heatBp) / 10000);
+    // o que é objeto vai para o inventário (com o valor que saiu); sem espaço, vende-se logo à pressa por metade
+    let money = value, good = null, rushed = false;
+    if (CFG.loot.goods.includes(row[3])) {
+      if (addGood(p, row[3], value)) { money = 0; good = row[3]; } else { money = Math.floor((value * CFG.loot.rushBp) / 10000); rushed = true; }
+    }
     p.cash += money;
     p.c.crimes += 1; p.c.wins += 1; p.wk[k] += 1;
     // respeito: uma barra de golpes vale 20 + 2 por nível (até 120), vezes o calor; dá-se nos golpes que correm bem
@@ -564,7 +598,7 @@ export function doCrime(p, now, world, k, rng) {
     p.rc = Math.floor(milli - resp * 1000);
     const lvl = addRespect(p, resp, now);
     const gained = practice(p, c, true);
-    return { ok: true, success: true, money, base, item: row[3], crit: false, respect: resp, levelUp: lvl, chanceBp: bp, heatBp, ammo, gained, newChanceBp: bp, star: 0 };
+    return { ok: true, success: true, money, value, good, rushed, base, item: row[3], crit: false, respect: resp, levelUp: lvl, chanceBp: bp, heatBp, ammo, gained, newChanceBp: bp, star: 0 };
   }
   p.c.crimes += 1;
   // falhar não é sempre prisão: uma falha em quatro é apanhada
@@ -575,26 +609,28 @@ export function doCrime(p, now, world, k, rng) {
 }
 
 // «usar a stamina toda»: repete o mesmo golpe tantas vezes quantas a stamina de agora dá (no máximo crimeAllMax).
-// Para se fores preso ou se acabar o dinheiro das balas. Cada golpe é exatamente igual a um toque no botão; isto só poupa toques.
+// Para se fores preso, se acabarem as balas ou se a arma ficar gasta. Cada golpe é exatamente igual a um toque no botão; isto só poupa toques.
 export function doCrimeAll(p, now, world, k, rng) {
   const c = Number.isInteger(k) ? CFG.crimes[k] : undefined;
   if (!c) fail('NO_CRIME');
   begin(p, now, world);
   if (!crimeUnlocked(p, k)) fail('LOCKED', { need: c.level });
   if (p.energy < c.e) fail('NO_ENERGY', { need: c.e });
-  if (c.gun && p.weapon < gunIdx()) fail('NEED_GUN');
-  if (c.gun && p.cash + p.bank < CFG.street.ammo) fail('NO_MONEY', { need: CFG.street.ammo, have: p.cash + p.bank });
+  if (c.gun) gunCheck(p);
   const out = { ok: true, all: true, n: 0, wins: 0, crits: 0, money: 0, best: 0, bestCrit: false, bestItem: null, respect: 0, ammo: 0,
     busted: false, jailUntil: 0, levelUp: null, gained: {}, star: 0, chanceBp: c.p, heatBp: heatOf(p, now), newChanceBp: c.p, items: {} };
   const budget = Math.min(CFG.crimeAllMax, Math.floor(p.energy / c.e));
-  while (out.n < budget && p.energy >= c.e && (!c.gun || p.cash + p.bank >= CFG.street.ammo)) {
+  const gunOk = () => { if (!c.gun) return true; try { gunCheck(p); return true; } catch { return false; } };
+  while (out.n < budget && p.energy >= c.e && gunOk()) {
     const r = doCrime(p, now, world, k, rng);
     out.n += 1; out.ammo += r.ammo;
     for (const [s, g] of Object.entries(r.gained)) out.gained[s] = (out.gained[s] || 0) + g;
     if (r.success) {
-      out.wins += 1; out.money += r.money; out.respect += r.respect;
+      out.wins += 1; out.money += r.money; out.value = (out.value || 0) + r.value; out.respect += r.respect;
+      if (r.good) { out.goods = out.goods || {}; out.goods[r.good] = (out.goods[r.good] || 0) + r.value; out.goodsN = (out.goodsN || 0) + 1; }
+      if (r.rushed) out.rushed = (out.rushed || 0) + 1;
       out.items[r.item] = (out.items[r.item] || 0) + 1;
-      if (r.money > out.best) { out.best = r.money; out.bestItem = r.item; }
+      if (r.value > out.best) { out.best = r.value; out.bestItem = r.item; }
       if (r.star) out.star = r.star;
       if (r.levelUp) out.levelUp = { from: out.levelUp ? out.levelUp.from : r.levelUp.from, to: r.levelUp.to };
     } else if (r.busted) { out.busted = true; out.jailUntil = r.jailUntil; break; }
@@ -801,6 +837,7 @@ export function dealBuy(p, now, world, j, kg) {
   begin(p, now, world, { allowBusy: true });
   if (level(p) < x.level) fail('LOW_LEVEL', { need: x.level });
   const price = kg * x.kg;
+  if (p.dst[j] <= 0 && invUsed(p) >= invCap(p)) fail('NO_ROOM');   // um tipo de droga novo ocupa um espaço
   pay(p, price);
   p.dst[j] += kg * 1000;
   return { ok: true, price, grams: kg * 1000, d: dealDrug(x), have: p.dst[j] };
@@ -1408,8 +1445,11 @@ export function buyLuxury(p, now, world) {
 
 // ---------- armas e proteções ----------
 
-const GEAR = { weapon: 'weapons', armor: 'armors', guard: 'guards', tool: 'tools', gweapon: 'gweapons' };
+const GEAR = { guard: 'guards', tool: 'tools', gweapon: 'gweapons' };
 export function buyGear(p, now, world, kind, idx) {
+  // quem tem o jogo aberto na versão antiga ainda pede «weapon»/«armor» por índice: passa para a compra nova
+  if (kind === 'weapon' && W57[idx]) return buyItem(p, now, world, W57[idx]);
+  if (kind === 'armor' && A57[idx]) return buyItem(p, now, world, A57[idx]);
   if (typeof kind !== 'string' || !Object.hasOwn(GEAR, kind)) fail('NO_GEAR');
   const list = CFG[GEAR[kind]];
   if (!Number.isInteger(idx) || !list[idx]) fail('NO_GEAR');
@@ -1423,8 +1463,99 @@ export function buyGear(p, now, world, kind, idx) {
 }
 
 const gearBp = (list, idx) => (idx >= 0 ? list[idx].bp : 0);
-export function attackPower(p, now) { return up(Math.floor((effStat(p, 'F', now) * (10000 + gearBp(CFG.weapons, p.weapon))) / 10000), (klass(p).atkBp || 0) + gbp(p, 'atk')); }
-export function defensePower(p, now) { return up(Math.floor((effStat(p, 'T', now) * (10000 + gearBp(CFG.armors, p.armor))) / 10000), (klass(p).defBp || 0) + huBp(p, 1) + gbp(p, 'def') + gearBp(CFG.guards, p.guard)); }
+// ataque: a melhor arma de fogo que não esteja estragada (mão ou principal) mais a arma branca; defesa: as peças do corpo todas
+export function atkBp(p) {
+  const fire = ['mao', 'principal'].map((s) => p.eq[s]).filter((x) => x && x.u > 0).map((x) => gearOf(x.id).atk);
+  return Math.max(0, ...fire) + (p.eq.branca ? gearOf(p.eq.branca.id).atk : 0);
+}
+export function defBp(p) { return ['cabeca', 'tronco', 'pernas', 'pes', 'maos'].reduce((s, k) => s + (p.eq[k] ? gearOf(p.eq[k].id).def : 0), 0); }
+export function attackPower(p, now) { return up(Math.floor((effStat(p, 'F', now) * (10000 + atkBp(p))) / 10000), (klass(p).atkBp || 0) + gbp(p, 'atk')); }
+export function defensePower(p, now) { return up(Math.floor((effStat(p, 'T', now) * (10000 + defBp(p))) / 10000), (klass(p).defBp || 0) + huBp(p, 1) + gbp(p, 'def') + gearBp(CFG.guards, p.guard)); }
+
+// ---------- inventário (passo 4) ----------
+// espaços: os da casa, mais os da mochila. Ocupam espaço as pilhas do inventário (um tipo de objeto cada; as armas e peças
+// guardadas uma cada) e a droga para vender na rua (um espaço por tipo). O que está no corpo não ocupa.
+export function invCap(p) { const a = p.eq && p.eq.acess ? gearOf(p.eq.acess.id) : null; return CFG.house.tiers[p.house].slots + (a && a.room ? a.room : 0); }
+export function invUsed(p) { return p.inv.length + p.dst.filter((g) => g > 0).length; }
+const roomFor = (p) => invUsed(p) < invCap(p);
+const stackable = (id) => id === 'balas' || CFG.loot.goods.includes(id);
+function addGood(p, id, v) {
+  const s = p.inv.find((x) => x.id === id);
+  if (s) { s.n += 1; s.v += v; return true; }
+  if (!roomFor(p)) return false;
+  p.inv.push({ id, n: 1, v }); return true;
+}
+function takeInv(p, id, n) {
+  const i = p.inv.findIndex((x) => x.id === id);
+  p.inv[i].n -= n;
+  if (p.inv[i].n <= 0) p.inv.splice(i, 1);
+}
+// comprar: balas (às caixas) ou uma peça de equipamento. A peça vai logo para o corpo; a que lá estava passa para o inventário.
+export function buyItem(p, now, world, id, n = 1) {
+  if (id === 'balas') {
+    if (!Number.isSafeInteger(n) || n < 1 || n > 100) fail('BAD_AMOUNT');
+    begin(p, now, world, { allowBusy: true });
+    const s = p.inv.find((x) => x.id === 'balas');
+    if (!s && !roomFor(p)) fail('NO_ROOM');
+    const price = n * CFG.bullets.price;
+    pay(p, price);
+    if (s) s.n += n * CFG.bullets.box; else p.inv.push({ id: 'balas', n: n * CFG.bullets.box });
+    return { ok: true, id, price, n: n * CFG.bullets.box };
+  }
+  const g = typeof id === 'string' ? gearOf(id) : undefined;
+  if (!g) fail('NO_GEAR');
+  begin(p, now, world, { allowBusy: true });
+  if (level(p) < (g.level || 1)) fail('LOW_LEVEL', { need: g.level });
+  const old = p.eq[g.slot];
+  if (old && !roomFor(p)) fail('NO_ROOM');   // a que estava no corpo tem de caber no inventário
+  pay(p, g.price);
+  if (old) p.inv.push(old);
+  p.eq[g.slot] = itemNew(id);
+  return { ok: true, id, price: g.price, slot: g.slot, swapped: old ? old.id : null };
+}
+// vestir/usar uma peça do inventário: troca com a que está no corpo (que fica no lugar dela)
+export function equip(p, now, world, i) {
+  const it = Number.isInteger(i) ? p.inv[i] : undefined;
+  const g = it ? gearOf(it.id) : undefined;
+  if (!g) fail('NO_GEAR');
+  begin(p, now, world, { allowBusy: true });
+  const old = p.eq[g.slot];
+  p.eq[g.slot] = it;
+  if (old) p.inv[i] = old; else p.inv.splice(i, 1);
+  return { ok: true, id: it.id, slot: g.slot, swapped: old ? old.id : null };
+}
+// recetador: um objeto roubado pelo valor que tem, uma peça de equipamento por metade (e pelo estado em que está), balas por metade
+export function sellItem(p, now, world, i) {
+  const it = Number.isInteger(i) ? p.inv[i] : undefined;
+  if (!it) fail('NO_ITEM');
+  begin(p, now, world, { allowBusy: true });
+  let money;
+  if (CFG.loot.goods.includes(it.id)) money = it.v;
+  else if (it.id === 'balas') money = Math.floor((it.n * CFG.bullets.price * CFG.loot.gearSellBp) / (CFG.bullets.box * 10000));
+  else { const g = gearOf(it.id); money = Math.floor((g.price * CFG.loot.gearSellBp * (g.gun ? it.u / g.life : 1)) / 10000); }
+  p.inv.splice(i, 1);
+  p.cash += money;
+  return { ok: true, id: it.id, n: it.n || 1, money };
+}
+export function sellGoods(p, now, world) {
+  begin(p, now, world, { allowBusy: true });
+  let money = 0, n = 0;
+  p.inv = p.inv.filter((x) => { if (!CFG.loot.goods.includes(x.id)) return true; money += x.v; n += x.n; return false; });
+  if (!n) fail('NOTHING_TO_SELL');
+  p.cash += money;
+  return { ok: true, money, n };
+}
+// reparar uma arma de fogo no corpo: paga-se a parte gasta do preço
+export function repairCost(p, slot) { const it = p.eq[slot]; if (!it || !it.id) return 0; const g = gearOf(it.id); return g.gun ? Math.ceil((g.price * (g.life - it.u)) / g.life) : 0; }
+export function repair(p, now, world, slot) {
+  if (!['mao', 'principal'].includes(slot) || !p.eq[slot]) fail('NO_GEAR');
+  begin(p, now, world, { allowBusy: true });
+  const price = repairCost(p, slot);
+  if (!price) fail('NOT_WORN');
+  pay(p, price);
+  p.eq[slot].u = gearOf(p.eq[slot].id).life;
+  return { ok: true, slot, price };
+}
 
 // ---------- ataques ----------
 
@@ -2161,7 +2292,7 @@ function missionHave(p, type) {
     case 'shifts': return p.c.shifts;
     case 'courses': return p.done.length;
     case 'skill': return Math.floor(Math.max(...CFG.skills.fams.map((f) => p.sk[f])) / 100);   // barras na melhor família
-    case 'gear': return (p.weapon >= 0 ? 1 : 0) + (p.armor >= 0 ? 1 : 0);   // os guardas não contam para este objetivo (pede 2: arma e proteção)
+    case 'gear': return (p.eq.branca || p.eq.mao || p.eq.principal ? 1 : 0) + (['cabeca', 'tronco', 'pernas', 'pes', 'maos'].some((k) => p.eq[k]) ? 1 : 0);   // uma arma e uma peça de proteção
     case 'biz': return p.biz.reduce((s, b) => s + b.n, 0);
     case 'lux': return p.luxuries;
     default: return 0;
@@ -2216,7 +2347,13 @@ export function checkInvariants(p) {
   if (p.addiction > addictionCap(p)) bad.push('addiction>cap');
   if (p.peakRespect < p.respect) bad.push('peak<respect');
   if (!Number.isInteger(p.guard) || p.guard < -1 || p.guard >= CFG.guards.length) bad.push('guard');
-  for (const [k, list] of [['weapon', CFG.weapons], ['armor', CFG.armors], ['tool', CFG.tools], ['gweapon', CFG.gweapons]]) if (!Number.isInteger(p[k]) || p[k] < -1 || p[k] >= list.length) bad.push(k);
+  for (const [k, list] of [['tool', CFG.tools], ['gweapon', CFG.gweapons]]) if (!Number.isInteger(p[k]) || p[k] < -1 || p[k] >= list.length) bad.push(k);
+  // corpo: cada espaço vazio ou com uma peça desse espaço; armas de fogo com os usos entre 0 e o máximo
+  const goodItem = (it) => { const g = gearOf(it.id); return !!g && (g.gun ? Number.isSafeInteger(it.u) && it.u >= 0 && it.u <= g.life : it.u === undefined); };
+  if (!p.eq || CFG.slots.some((k) => p.eq[k] !== null && !(p.eq[k] && goodItem(p.eq[k]) && gearOf(p.eq[k].id).slot === k))) bad.push('eq');
+  // inventário: pilhas com quantidade positiva; objetos roubados com valor; um só monte de cada coisa que empilha
+  if (!Array.isArray(p.inv) || p.inv.some((x) => !x || !(stackable(x.id) ? Number.isSafeInteger(x.n) && x.n > 0 && (x.id === 'balas' || (Number.isSafeInteger(x.v) && x.v >= 0)) : goodItem(x)))) bad.push('inv');
+  else { const ids = p.inv.filter((x) => stackable(x.id)).map((x) => x.id); if (new Set(ids).size !== ids.length) bad.push('inv dup'); }
   if (!Array.isArray(p.hmT) || p.hmT.length > CFG.hitman.perDay || p.hmT.some((t) => !Number.isSafeInteger(t)) || !Number.isSafeInteger(p.hmSafe) || p.hmSafe < 0) bad.push('hitman');
   if ((p.gang === null) !== (p.gb === null)) bad.push('gang/gb');
   if (!Number.isSafeInteger(p.gbotLeft) || p.gbotLeft < 0) bad.push('gbotLeft');

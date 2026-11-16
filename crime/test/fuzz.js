@@ -30,36 +30,46 @@ const wealth = (q) => q.cash + q.bank;
 const MAX_LOOT_BP = 10000 + CFG.gang.lootBpPer * CFG.gang.maxLevel + CFG.skills.maxBp + Math.max(...CFG.classes.map((c) => c.lootBp || 0)) + Math.max(...CFG.drugs.flatMap((g) => (g.fx || []).filter((f) => f.k === 'loot').map((f) => f.bp)));
 // respeito máximo de um golpe de rua que correu bem: a barra mais rica (120) a dividir pela hipótese, mais o bónus de profissão e o resto guardado
 const MAX_STREET_RESP = Math.max(...CFG.crimes.map((c) => Math.ceil((CFG.street.respCap * c.e * (10000 + Math.max(...CFG.classes.map((k) => k.respBp || 0)))) / c.p / 100))) + 1;
-const GUN = CFG.weapons.findIndex((w) => w.id === CFG.street.gun);
+const balas = (q) => (q.inv.find((x) => x.id === 'balas') || { n: 0 }).n;
 const MAX_PVP = Math.floor(((CFG.pvp.gainBase + CFG.tiers.length) * 2 * (10000 + Math.max(...CFG.classes.map((c) => c.pvpBp || 0)))) / 10000);
 function contas(kind, a0, a, d0, d, t, res, arg) {
   const dm = wealth(a) - wealth(a0), dr = a.respect - a0.respect;
   const bad = (m) => { console.error('CONTAS ERRADAS', kind, m, JSON.stringify(res), { dm, dr }); process.exit(1); };
   switch (kind) {
     case 'crime': {
-      const c = CFG.crimes[arg], ammo = c.gun ? CFG.street.ammo : 0, maxOne = Math.floor((c.prizes.at(-1)[2] * MAX_LOOT_BP) / 10000);
-      if (res.ammo !== ammo || (c.gun && a0.weapon < GUN) || E.level(a0) < c.level) bad('golpe: arma, balas ou nível');
+      const c = CFG.crimes[arg], ammo = c.gun ? CFG.bullets.perJob : 0, maxOne = Math.floor((c.prizes.at(-1)[2] * MAX_LOOT_BP) / 10000);
+      if (res.ammo !== ammo || balas(a0) - balas(a) !== ammo || (c.gun && !E.gunOf(a0)) || E.level(a0) < c.level) bad('golpe: arma, balas ou nível');
       if (res.success) {
-        if (dm !== res.money - ammo || res.money < 0 || res.money > maxOne || !c.prizes.some((x) => x[3] === res.item)) bad('saque fora dos limites');
+        if (dm !== res.money || res.money < 0 || res.value > maxOne || res.money > res.value || (res.good && res.money) || !c.prizes.some((x) => x[3] === res.item)) bad('saque fora dos limites');
         if (dr !== res.respect || res.respect < 0 || res.respect > MAX_STREET_RESP) bad('respeito do golpe');
         if (![10000, ...CFG.street.heat].includes(res.heatBp)) bad('calor');
-      } else if (dm !== -ammo || dr !== 0) bad('falhou mas mexeu');
+      } else if (dm !== 0 || dr !== 0) bad('falhou mas mexeu');
       if (a.energy !== Math.min(E.energyMax(a0), touched(a0, t).energy) - c.e) bad('golpe: stamina gasta');
       break;
     }
     case 'crimeAll': {
       const c = CFG.crimes[arg], maxOne = Math.floor((c.prizes.at(-1)[2] * MAX_LOOT_BP) / 10000);
-      if (dm !== res.money - res.ammo || res.money > res.wins * maxOne || res.ammo !== (c.gun ? res.n * CFG.street.ammo : 0)) bad('saque de vários golpes');
+      if (dm !== res.money || (res.value || 0) > res.wins * maxOne || res.ammo !== (c.gun ? res.n * CFG.bullets.perJob : 0)) bad('saque de vários golpes');
       if (res.respect !== dr || dr < 0 || dr > res.wins * MAX_STREET_RESP) bad('respeito de vários golpes');
       if (res.n < 1 || res.n > CFG.crimeAllMax || res.wins > res.n) bad('contagem');
       const e0 = Math.min(E.energyMax(a0), touched(a0, t).energy);
       if (a.energy !== e0 - res.n * c.e) bad('stamina gasta');
       const budget = Math.min(CFG.crimeAllMax, Math.floor(e0 / c.e));
-      if (!res.busted && res.n !== budget && !(c.gun && wealth(a) < CFG.street.ammo)) bad('não fez os golpes que a stamina dava');
+      if (!res.busted && res.n !== budget && !(c.gun && (balas(a) < CFG.bullets.perJob || !(a.eq[E.gunOf(a)].u > 0)))) bad('não fez os golpes que a stamina dava');
       if (res.busted && res.n > budget) bad('fez golpes a mais');
       if (a.c.crimes - a0.c.crimes !== res.n || a.c.wins - a0.c.wins !== res.wins) bad('contadores');
       break;
     }
+    case 'buy': {
+      if (arg.id === 'balas') { if (dm !== -arg.n * CFG.bullets.price || balas(a) - balas(a0) !== arg.n * CFG.bullets.box) bad('balas'); }
+      else { const g = CFG.gear.find((x) => x.id === arg.id); if (dm !== -g.price || a.eq[g.slot].id !== arg.id || a.inv.length - a0.inv.length !== (a0.eq[g.slot] ? 1 : 0)) bad('compra de equipamento'); }
+      if (E.invUsed(a) > E.invCap(a) && E.invUsed(a) > E.invUsed(a0)) bad('inventário acima dos espaços');
+      if (dr !== 0) bad('compra mexeu no respeito');
+      break;
+    }
+    case 'equip': if (dm !== 0 || dr !== 0 || a.inv.length > a0.inv.length) bad('equipar'); break;
+    case 'sell': case 'sellGoods': if (dm !== res.money || res.money < 0 || dr !== 0 || a.inv.length >= a0.inv.length) bad('recetador'); break;
+    case 'repair': { const g = CFG.gear.find((x) => x.id === a.eq[arg].id); if (dm !== -res.price || a.eq[arg].u !== g.life || dr !== 0) bad('reparar'); break; }
     case 'deal': {
       const x = CFG.deal.list[arg], d = CFG.drugs.findIndex((g) => g.id === x.drug), g = Math.floor((x.perBar * CFG.deal.step) / 100);
       if (res.grams !== g || dm !== Math.floor((g * CFG.drugs[d].price * (10000 + E.skillBp(a0, 'trafico'))) / 10000) || res.money !== dm || dr !== res.respect || res.respect < 1 || a.dst[arg] !== a0.dst[arg] - g || E.level(a0) < x.level) bad('venda de droga');
@@ -244,14 +254,21 @@ for (let n = 0; n < ACTIONS; n++) {
   if (r.chance(2500)) { p.energy = r.int(0, CFG.energy.max); p.energyT = Math.min(p.energyT, p.t); } // gasta stamina para chegar à discoteca, às putas e ao hospital
   if (r.chance(2500)) { p.vigor = r.int(0, CFG.vigor.max); p.vigorT = Math.min(p.vigorT, p.t); } // e energia, para o ginásio e as lutas
   if (r.chance(300)) { const x = r.int(0, CFG.levels[r.int(0, CFG.levels.length - 1)]); p.respect = x; p.peakRespect = Math.max(p.peakRespect, x); } // jogadores de todos os níveis
+  // armas gastas de vez em quando (nos golpes gastam-se devagar), para a reparação ser posta à prova
+  if (r.chance(2000)) for (const sl of ['mao', 'principal']) if (p.eq[sl] && p.eq[sl].u !== undefined) p.eq[sl].u = r.int(0, CFG.gear.find((g) => g.id === p.eq[sl].id).life);
   const before = touched(p, t), beforeD = touched(d, t), origD = structuredClone(d), origP = structuredClone(p);
-  const kind = pick(['stockBuy', 'stockBuy', 'stockBuy', 'stockSell', 'stockSell', 'missionSwap', 'venueBuy', 'venueBuy', 'venueSet', 'venueCollect', 'stockUse', 'stockUse', 'stockDump', 'broHire', 'broHire', 'broFire', 'clubBuyAt', 'clubBuyAt', 'clubBuyAt', 'broVisitAt', 'broVisitAt', 'broVisitAt', 'casino', 'casino', 'table', 'heist', 'hit', 'gangCreate', 'gangDonate', 'gangLeave', 'gangBiz', 'gangBiz', 'gangBiz', 'gangBizCollect', 'hitman', 'hitman', 'hitman', 'crime', 'crime', 'crimeAll', 'deal', 'deal', 'dealBuy', 'drug', 'refill', 'detox', 'claim', 'class', 'classChange', 'classChange', 'air', 'air', 'airCollect', 'airCollect', 'bailFor', 'bailFor', 'medicFor', 'medicFor', 'avatar', 'hooker', 'cure', 'house', 'houseUp', 'train', 'buyBiz', 'buyBiz', 'collect', 'bizGoods', 'bizGoods', 'stockHold', 'stockHold', 'acct', 'stockLimit', 'stockLimit', 'stockLimit', 'port', 'collectPort', 'portOpen', 'portOpen', 'deposit', 'withdraw', 'gear', 'attack', 'bail', 'medic', 'luxury', 'shift', 'shift', 'shift', 'job', 'course']);
+  const kind = pick(['stockBuy', 'stockBuy', 'stockBuy', 'stockSell', 'stockSell', 'missionSwap', 'venueBuy', 'venueBuy', 'venueSet', 'venueCollect', 'stockUse', 'stockUse', 'stockDump', 'broHire', 'broHire', 'broFire', 'clubBuyAt', 'clubBuyAt', 'clubBuyAt', 'broVisitAt', 'broVisitAt', 'broVisitAt', 'casino', 'casino', 'table', 'heist', 'hit', 'gangCreate', 'gangDonate', 'gangLeave', 'gangBiz', 'gangBiz', 'gangBiz', 'gangBizCollect', 'hitman', 'hitman', 'hitman', 'crime', 'crime', 'crimeAll', 'deal', 'deal', 'dealBuy', 'drug', 'refill', 'detox', 'claim', 'class', 'classChange', 'classChange', 'air', 'air', 'airCollect', 'airCollect', 'bailFor', 'bailFor', 'medicFor', 'medicFor', 'avatar', 'hooker', 'cure', 'house', 'houseUp', 'train', 'buyBiz', 'buyBiz', 'collect', 'bizGoods', 'bizGoods', 'stockHold', 'stockHold', 'acct', 'stockLimit', 'stockLimit', 'stockLimit', 'port', 'collectPort', 'portOpen', 'portOpen', 'deposit', 'withdraw', 'gear', 'attack', 'bail', 'medic', 'luxury', 'shift', 'shift', 'shift', 'job', 'course', 'buy', 'buy', 'buy', 'buy', 'equip', 'sell', 'sellGoods', 'sellGoods', 'repair', 'repair']);
   let res, arg;
   try {
     switch (kind) {
       case 'crime': arg = r.chance(9000) ? r.int(0, CFG.crimes.length) : anyInt(); res = E.doCrime(p, t, world, arg, game); break;
       case 'deal': arg = r.chance(9000) ? r.int(0, CFG.deal.list.length) : anyInt(); res = E.deal(p, t, world, arg); break;
       case 'shift': res = E.doShift(p, t, world); break;
+      case 'buy': arg = r.chance(3000) ? { id: 'balas', n: pick([1, 1, 2, 5, 0, -1, 101, 0.5]) } : { id: r.chance(9500) ? pick(CFG.gear).id : 'x' + r.int(0, 9) }; res = E.buyItem(p, t, world, arg.id, arg.n); break;
+      case 'equip': arg = r.chance(9000) ? r.int(0, Math.max(0, p.inv.length - 1)) : anyInt(); res = E.equip(p, t, world, arg); break;
+      case 'sell': arg = r.chance(9000) ? r.int(0, Math.max(0, p.inv.length - 1)) : anyInt(); res = E.sellItem(p, t, world, arg); break;
+      case 'sellGoods': res = E.sellGoods(p, t, world); break;
+      case 'repair': arg = pick(['mao', 'principal', 'mao', 'cabeca', 'x']); res = E.repair(p, t, world, arg); break;
       case 'job': arg = r.chance(9000) ? r.int(0, CFG.jobs.list.length) : anyInt(); res = E.chooseJob(p, t, world, arg); break;
       case 'course': arg = r.chance(9000) ? pick(CFG.courses.map((c) => c.id)) : 'x' + r.int(0, 9); res = E.startCourse(p, t, world, arg); break;
       case 'dealBuy': arg = { j: r.chance(9000) ? r.int(0, CFG.deal.list.length) : anyInt(), kg: pick([1, 1, 2, 5, 20, 21, 0, -1, 0.5]) }; res = E.dealBuy(p, t, world, arg.j, arg.kg); break;

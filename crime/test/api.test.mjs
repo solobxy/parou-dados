@@ -201,7 +201,7 @@ test('batota: valores hostis nunca dão erro do servidor nem criam dinheiro, res
   assert.equal(depois.respect, 0);
   assert.deepEqual(depois.stats, antes.stats);
   assert.equal(depois.energy, antes.energy);
-  assert.equal(depois.house, 0); assert.equal(depois.luxuries, 0); assert.equal(depois.weapon, -1);
+  assert.equal(depois.house, 0); assert.equal(depois.luxuries, 0); assert.ok(Object.values(depois.eq).every((x) => !x));
 });
 
 test('batota: 30 depósitos ao mesmo tempo só depositam uma vez', async () => {
@@ -286,7 +286,9 @@ test('contas do dia batem com o jogador: golpes, vitórias, dinheiro e respeito'
   assert.equal(sum('crimes'), me.counters.crimes);
   assert.equal(sum('wins'), me.counters.wins);
   assert.equal(sum('resp'), me.respect);
-  assert.equal(sum('money'), me.cash - INICIAL);
+  // o que se levou conta pelo valor: o dinheiro na mão mais o que foi para o inventário (vale isso no recetador)
+  const objetos = me.inv.reduce((x, it) => x + (it.v || 0), 0);
+  assert.equal(sum('money'), me.cash - INICIAL + objetos);
 });
 
 test('mesa ao vivo: dois jogadores na mesma ronda veem o mesmo resultado e as contas batem certo', async () => {

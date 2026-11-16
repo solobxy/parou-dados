@@ -25,7 +25,7 @@ const RONDA_TESTE = process.env.PRIMEIRA_RONDA ? dataDe(process.env.PRIMEIRA_RON
 // Épocas de 28 dias a contar da sexta 13/11/2026 às 21:00 de Lisboa (PRIMEIRA_EPOCA=AAAA-MM-DD muda-a, para testes)
 const ANCORA = dataDe(process.env.PRIMEIRA_EPOCA || process.env.PRIMEIRA_RONDA || '2026-11-13');
 const rng = cryptoRng();
-const VERSAO = 58;   // sobe quando o servidor muda, para se confirmar de fora que a versão nova já está a correr
+const VERSAO = 59;   // sobe quando o servidor muda, para se confirmar de fora que a versão nova já está a correr
 const ATOS_3S = +(process.env.ATOS_3S || 15), ATOS_MIN = +(process.env.ATOS_MIN || 400); // ações por conta: 15 em 3 s, 400 por minuto
 
 // ---------- relógio que nunca anda para trás ----------
@@ -110,9 +110,10 @@ function noticiar(now, a, r, p, alvo) {
     else if (-net >= CFG.casino.newsMin) noticia(now, { k: 'casinoLoss', name, g: r.g, money: -net });
   }
   // golpes de rua: o jornal fala das sortes grandes (2 000 € ou mais num só golpe), das séries cheias e de quem é apanhado nos assaltos
-  if (a.type === 'crimeAll' && r.wins >= 10 && r.money >= 3000) noticia(now, { k: 'spree', name, c: k, n: r.n, money: r.money });
+  // (desde o passo 4 conta o valor todo do que se levou, dinheiro e objetos)
+  if (a.type === 'crimeAll' && r.wins >= 10 && (r.value || 0) >= 3000) noticia(now, { k: 'spree', name, c: k, n: r.n, money: r.value });
   else {
-    const job = a.type === 'crimeAll' ? { ok: r.wins > 0, money: r.best } : { ok: r.success, money: r.money };
+    const job = a.type === 'crimeAll' ? { ok: r.wins > 0, money: r.best } : { ok: r.success, money: r.value };
     if ((a.type === 'crime' || a.type === 'crimeAll') && job.ok && job.money >= 2000) noticia(now, { k: 'job', name, c: k, money: job.money });
   }
   if ((a.type === 'crime' || a.type === 'crimeAll') && r.busted && k >= 3) noticia(now, { k: 'jail', name, c: k });
@@ -148,8 +149,8 @@ function contarDia(now, conta, v) {
 }
 function contarAcao(now, a, r, p, alvo, resp0, alvoResp0) {
   const v = { resp: p.respect - resp0 };
-  if (a.type === 'crime') Object.assign(v, { crimes: 1, wins: r.success ? 1 : 0, busts: r.busted ? 1 : 0, money: r.success ? r.money : 0, best: r.success ? r.money : 0 });
-  else if (a.type === 'crimeAll') Object.assign(v, { crimes: r.n, wins: r.wins, busts: r.busted ? 1 : 0, money: r.money, best: r.best });
+  if (a.type === 'crime') Object.assign(v, { crimes: 1, wins: r.success ? 1 : 0, busts: r.busted ? 1 : 0, money: r.success ? r.value : 0, best: r.success ? r.value : 0 });
+  else if (a.type === 'crimeAll') Object.assign(v, { crimes: r.n, wins: r.wins, busts: r.busted ? 1 : 0, money: r.value || 0, best: r.best });
   else if ((a.type === 'hooker' || a.type === 'broVisit') && r.sick) v.sick = 1;
   else if (a.type === 'casino' && (r.g !== 'bj' || r.done)) { const net = casinoNet(r); v.cnet = net; v.cwin = Math.max(0, net); }
   else if (a.type === 'attack') {
@@ -166,7 +167,6 @@ function contarCaixa(now, a, r, delta) {
   if (tipo === 'crime' || tipo === 'crimeAll') {
     const c = CFG.crimes[int(a.k)], fonte = 'golpe:' + (c ? c.id : '?');
     caixa(now, fonte, r.success || r.wins ? r.money : 0, 0);
-    caixa(now, 'balas', 0, r.ammo || 0);
     return;
   }
   if (tipo === 'attack' && r.win && r.mode === 'mug') { caixa(now, 'assalto', r.money, 0); caixa(now, 'assaltado', 0, r.money); return; }
@@ -313,7 +313,7 @@ function vista(p, now) {
     jailUntil: p.jailUntil, jailTier: p.jailTier, bail: E.bailCost(p, now),
     hospUntil: p.hospUntil, medic: E.medicCost(p, now),
     protectUntil: p.protectUntil, capUntil: p.capUntil, shieldUntil: p.shieldUntil,
-    weapon: p.weapon, armor: p.armor, guard: p.guard, tool: p.tool, gweapon: p.gweapon, toolNext: E.toolPreview(p, now), hitmanLeft: E.hitmanLeft(p, now), hmSafe: p.hmSafe, luxuries: p.luxuries, luxuryPrice: E.luxuryPrice(p),
+    eq: p.eq, inv: p.inv, invCap: E.invCap(p), invUsed: E.invUsed(p), atkBp: E.atkBp(p), defBp: E.defBp(p), repair: { mao: E.repairCost(p, 'mao'), principal: E.repairCost(p, 'principal') }, guard: p.guard, tool: p.tool, gweapon: p.gweapon, toolNext: E.toolPreview(p, now), hitmanLeft: E.hitmanLeft(p, now), hmSafe: p.hmSafe, luxuries: p.luxuries, luxuryPrice: E.luxuryPrice(p),
     attack: E.attackPower(p, now), defense: E.defensePower(p, now),
     crimes: CFG.crimes.map((c, k) => ({ chance: E.crimeChanceBp(p, k, now), unlocked: E.crimeUnlocked(p, k) })),
     sick: p.sick, cure: E.cureCost(p), hookers: CFG.hookers.list.map((_, i) => E.hookerPrice(p, i, now)), hkUses: E.hookerUses(p, now), hkSteps: CFG.hookers.list.map((_, i) => E.hookerSteps(p, i, now)),
@@ -333,7 +333,7 @@ function cfgPublica() {
   return {
     energy: CFG.energy, vigor: CFG.vigor, street: CFG.street, refillBar: CFG.refillBar, deal: CFG.deal, jobs: CFG.jobs, courses: CFG.courses, skills: CFG.skills, addiction: CFG.addiction, train: CFG.train, crimes: CFG.crimes, drugs: CFG.drugs,
     biz: CFG.biz.map(({ id, price, perH, resp, stat, raid, toBank, drug }) => ({ id, price, perH, resp, stat, raid, toBank, drug: drug ? CFG.drugs.findIndex((x) => x.id === drug) : -1 })), accountant: CFG.accountant,
-    bizMax: CFG.bizMax, storageMs: CFG.storageMs, port: { ...CFG.port, ships: CFG.port.ships.map((s) => ({ ...s, drug: CFG.drugs.findIndex((x) => x.id === s.drug) })) }, air: CFG.air, goods: CFG.goods, venue: CFG.venue, detox: CFG.detox, stocks: CFG.stocks, weapons: CFG.weapons, tools: CFG.tools, gweapons: CFG.gweapons, armors: CFG.armors, guards: CFG.guards, hitman: CFG.hitman,
+    bizMax: CFG.bizMax, storageMs: CFG.storageMs, port: { ...CFG.port, ships: CFG.port.ships.map((s) => ({ ...s, drug: CFG.drugs.findIndex((x) => x.id === s.drug) })) }, air: CFG.air, goods: CFG.goods, venue: CFG.venue, detox: CFG.detox, stocks: CFG.stocks, slots: CFG.slots, gear: CFG.gear, bullets: CFG.bullets, loot: CFG.loot, tools: CFG.tools, gweapons: CFG.gweapons, guards: CFG.guards, hitman: CFG.hitman,
     pvp: CFG.pvp, bank: CFG.bank, luxury: CFG.luxury, levels: CFG.levels, crit: CFG.crit, unlockBp: CFG.unlockBp,
     bustBp: CFG.bustBp, crimeAllMax: CFG.crimeAllMax, casino: { minBet: CFG.casino.minBet, buyMaxMult: CFG.casino.buyMaxMult, red: CFG.casino.red, dice: CFG.casino.dice, wheel: { segs: CFG.casino.wheel.segs, spots: CFG.casino.wheel.spots, topMult: CFG.casino.wheel.topMult.map(([m]) => m), louca: CFG.casino.wheel.louca }, slots: Object.fromEntries(Object.entries(CFG.casino.slots).map(([k, g]) => [k, { kind: g.kind, cols: g.cols, rows: g.rows, min: g.min, nsym: g.nsym, trig: g.trig, pay: g.pay, scatPay: g.scatPay, free: g.free, fs: g.fs, retrig: g.retrig, buy: g.buy, superBuy: g.superBuy, max: g.max, accFree: g.accFree, accAll: g.accAll, orbBase: g.orbBase }])) }, gang: CFG.gang, classes: CFG.classes, classChange: CFG.classChange, avatars: CFG.avatars, hookers: CFG.hookers, house: CFG.house, mastery: CFG.mastery, missions: CFG.missions.length, start: CFG.start,
     round: { playDays: CFG.round.playDays, noPvpMs: CFG.round.noPvpMs }, season: CFG.season,
@@ -1154,6 +1154,11 @@ function agir(conta, corpo, now) {
     case 'deposit': r = E.deposit(p, now, world, int(a.amount)); break;
     case 'withdraw': r = E.withdraw(p, now, world, int(a.amount)); break;
     case 'gear': r = E.buyGear(p, now, world, ['armor', 'guard', 'tool', 'gweapon'].includes(a.kind) ? a.kind : 'weapon', int(a.idx)); break;
+    case 'buy': r = E.buyItem(p, now, world, String(a.id || '').slice(0, 24), a.n === undefined ? 1 : int(a.n)); break;
+    case 'equip': r = E.equip(p, now, world, int(a.i)); break;
+    case 'sell': r = E.sellItem(p, now, world, int(a.i)); break;
+    case 'sellGoods': r = E.sellGoods(p, now, world); break;
+    case 'repair': r = E.repair(p, now, world, String(a.slot || '')); break;
     case 'luxury': r = E.buyLuxury(p, now, world); break;
     case 'attack': {
       const nome = String(a.target || '').toLowerCase();

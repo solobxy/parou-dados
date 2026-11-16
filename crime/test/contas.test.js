@@ -20,14 +20,14 @@ const setResp = (p, r) => { p.respect = r; p.peakRespect = Math.max(p.peakRespec
 test('golpes: a percentagem mostrada é a que sai em 200 000 tentativas (sucesso, prisão, sorteio do que vem e dinheiro)', () => {
   for (const k of [0, 3, 5]) {
     const rng = seededRng(1234 + k), p = mk(), c = CFG.crimes[k], N = 200000;
-    setResp(p, CFG.levels[c.level - 1]); p.weapon = CFG.weapons.findIndex((w) => w.id === 'pistola');
+    setResp(p, CFG.levels[c.level - 1]); p.eq.mao = { id: 'pistola', u: 1e6 }; p.inv = [{ id: 'balas', n: 1e9 }];
     let ok = 0, bust = 0, soma = 0; const vem = {};
     const mostrada = E.crimeChanceBp(p, k, NOW) / 10000;
     assert.equal(mostrada, c.p / 10000);
     for (let i = 0; i < N; i++) {
       p.energy = 100; p.jailUntil = 0; p.wk[k] = 0; p.sk[c.fam] = 0; p.rua = null; p.cash = 1e12;
       const r = E.doCrime(p, NOW, W, k, rng);
-      if (r.success) { ok++; soma += r.money; vem[r.item] = (vem[r.item] || 0) + 1; } else if (r.busted) bust++;
+      if (r.success) { ok++; soma += r.value; vem[r.item] = (vem[r.item] || 0) + 1; p.inv = p.inv.filter((x) => x.id === 'balas'); } else if (r.busted) bust++;
     }
     perto(ok / N, mostrada, 0.005, `golpe ${c.id}: sucesso`);
     perto(bust / (N - ok), CFG.bustBp / 10000, 0.008, `golpe ${c.id}: prisão ao falhar`);
@@ -44,7 +44,7 @@ test('golpes: os bónus de saque somam-se (skill da família + ladrão + speed)'
   const topo = { int: (lo, hi) => hi, chance: () => true }; // corre bem, sai a linha mais rara e o valor mais alto
   const r = E.doCrime(p, NOW, W, k, topo);
   assert.equal(r.item, c.prizes.at(-1)[3]); assert.equal(r.base, c.prizes.at(-1)[2]);
-  assert.equal(r.money, Math.floor((c.prizes.at(-1)[2] * (10000 + 3000 + 1500 + 1500)) / 10000));
+  assert.equal(r.value, Math.floor((c.prizes.at(-1)[2] * (10000 + 3000 + 1500 + 1500)) / 10000));
 });
 
 test('putas: o risco de doença mostrado é o que sai em 100 000 visitas a cada uma', () => {
@@ -283,9 +283,9 @@ test('usar a stamina toda: igual a carregar várias vezes, para na prisão, a su
   const rc = E.doCrimeAll(c, NOW, W, 1, (() => { let i = 0; return { int: (lo) => lo, chance: () => i++ % 2 === 1 }; })());
   assert.equal(rc.n, 1); assert.equal(rc.busted, true); assert.ok(c.jailUntil > NOW); assert.equal(c.energy, 100 - CFG.crimes[1].e);
   assert.throws(() => E.doCrimeAll(c, NOW, W, 0, always), code('IN_JAIL'));
-  // com arma: para quando acaba o dinheiro das balas
-  const g = mk(); g.weapon = CFG.weapons.findIndex((w) => w.id === 'pistola'); setResp(g, CFG.levels[CFG.crimes[4].level - 1]); g.energy = 100; g.cash = CFG.street.ammo; g.bank = 0;
-  const rg = E.doCrimeAll(g, NOW, W, 4, { int: (lo) => lo, chance: () => false }); assert.equal(rg.n, 1); assert.equal(rg.ammo, CFG.street.ammo); assert.equal(g.cash, 0);
+  // com arma: para quando acabam as balas
+  const g = mk(); g.eq.mao = { id: 'pistola', u: 20 }; g.inv = [{ id: 'balas', n: CFG.bullets.perJob }]; setResp(g, CFG.levels[CFG.crimes[4].level - 1]); g.energy = 100;
+  const rg = E.doCrimeAll(g, NOW, W, 4, { int: (lo) => lo, chance: () => false }); assert.equal(rg.n, 1); assert.equal(rg.ammo, CFG.bullets.perJob); assert.deepEqual(g.inv, []);
   // sobe a meio: a subida de nível fica registada e a stamina que encheu fica
   const d = mk(); d.energy = 100;
   const rd = E.doCrimeAll(d, NOW, W, 0, always);
@@ -883,7 +883,7 @@ test('profissões: as de elite pedem respeito, mudar custa o anunciado, só de 2
   // padrinho: +15% de respeito nos golpes (o resto em milésimos fica para o golpe seguinte, por isso conta-se ao fim de muitos)
   for (const k of [0, 5]) {
     const g = mk('padrinho'), n = mk('ladrao'); let rg = 0, rn = 0;
-    for (const x of [g, n]) { setResp(x, CFG.levels[59]); x.weapon = CFG.weapons.findIndex((w) => w.id === 'pistola'); }
+    for (const x of [g, n]) { setResp(x, CFG.levels[59]); x.eq.mao = { id: 'pistola', u: 1e6 }; x.inv = [{ id: 'balas', n: 1e9 }]; x.house = 5; }
     for (let i = 0; i < 300; i++) for (const x of [g, n]) { x.energy = 100; x.rua = null; x.peakRespect = x.respect = CFG.levels[59]; const r = E.doCrime(x, NOW, W, k, always); if (x === g) rg += r.respect; else rn += r.respect; }
     assert.ok(Math.abs(rg - rn * 1.15) <= 3, `padrinho ${rg}, sem bónus ${rn}`);
   }
@@ -1518,16 +1518,16 @@ test('stash: guardar uma droga tira-a da venda da discoteca (clientes da casa e 
   assert.equal(E.clubBuyAt(cli, dono, t1, W, coca).ok, true);
 });
 
-test('armas: a preços reais (sem lança-chamas nem minigun), por ordem, e cada uma só mexe no seu sistema; as ferramentas não mexem nos golpes de rua', () => {
+test('armas: a preços reais (sem lança-chamas nem minigun), e cada uma só mexe no seu sistema; as ferramentas não mexem nos golpes de rua', () => {
   const p = mk();
-  assert.deepEqual(CFG.weapons.map((w) => [w.id, w.price]), [['soqueira', 20], ['navalha', 25], ['pistola', 1750], ['cacadeira', 2500], ['metralhadora', 6000], ['sniper', 9000]]);
+  assert.deepEqual(CFG.gear.filter((w) => w.atk).map((w) => [w.id, w.price]), [['soqueira', 20], ['navalha', 25], ['pistola', 1750], ['cacadeira', 2500], ['metralhadora', 6000], ['sniper', 9000]]);
   assert.equal(CFG.tools.length, 8); assert.equal(CFG.gweapons.length, 8);
   assert.equal(p.tool, -1); assert.equal(p.gweapon, -1); assert.equal(E.level(p), 1);
   // escadas sempre a subir: força e nível (ferramentas e armas de gangue) e força nas armas de luta
   for (const L of [CFG.tools, CFG.gweapons]) for (let i = 1; i < L.length; i++) assert.ok(L[i].str > L[i - 1].str && L[i].level >= L[i - 1].level, L[i].id);
-  for (let i = 1; i < CFG.weapons.length; i++) assert.ok(CFG.weapons[i].price > CFG.weapons[i - 1].price && CFG.weapons[i].bp > CFG.weapons[i - 1].bp, CFG.weapons[i].id);
-  // por ordem, uma de cada vez: saltar não dá (em nenhum tipo)
-  for (const k of ['tool', 'gweapon', 'weapon', 'armor', 'guard']) assert.throws(() => E.buyGear(p, NOW, W, k, 1), code('GEAR_ORDER'), k);
+  const W4 = CFG.gear.filter((w) => w.atk); for (let i = 1; i < W4.length; i++) assert.ok(W4[i].price > W4[i - 1].price && W4[i].atk > W4[i - 1].atk, W4[i].id);
+  // por ordem, uma de cada vez: saltar não dá (ferramentas, armas de gangue e guardas; as armas do corpo compram-se à escolha desde o passo 4)
+  for (const k of ['tool', 'gweapon', 'guard']) assert.throws(() => E.buyGear(p, NOW, W, k, 1), code('GEAR_ORDER'), k);
   // ferramenta: os golpes de rua ficam com a hipótese da tabela (as ferramentas voltam com as operações)
   p.stats = { F: 20, T: 20, I: 20, C: 20 };
   const atk0 = E.attackPower(p, NOW), def0 = E.defensePower(p, NOW), g0 = E.heistChanceBp([p, p], 0, NOW), cash = p.cash;
@@ -1549,9 +1549,9 @@ test('armas: a preços reais (sem lança-chamas nem minigun), por ordem, e cada 
   assert.equal(E.attackPower(p, NOW), atk0);
   assert.ok(E.heistChanceBp([p, sem], 0, NOW) > E.heistChanceBp([sem, sem], 0, NOW));
   const sh = E.heistShares([p, sem], 0, NOW); assert.equal(sh[0], 10000); assert.ok(sh[1] < 10000);
-  // armas de luta: todas compráveis por ordem, e não há sétima
-  const rico = mk(); for (let i = 0; i < CFG.weapons.length; i++) E.buyGear(rico, NOW, W, 'weapon', i);
-  assert.equal(rico.weapon, CFG.weapons.length - 1); assert.throws(() => E.buyGear(rico, NOW, W, 'weapon', CFG.weapons.length), code('NO_GEAR'));
+  // armas de luta: todas compráveis (o pedido antigo por índice ainda funciona), e não há sétima
+  const rico = mk(); rico.house = 5; for (let i = 0; i < 6; i++) E.buyGear(rico, NOW, W, 'weapon', i);
+  assert.equal(rico.eq.principal.id, 'sniper'); assert.equal(rico.eq.mao.id, 'pistola'); assert.equal(rico.eq.branca.id, 'navalha'); assert.throws(() => E.buyGear(rico, NOW, W, 'weapon', 6), code('NO_GEAR'));
   for (const x of [p, sem, rico]) assert.deepEqual(E.checkInvariants(x), []);
   // estado antigo (sem estes campos) fica sem armas novas, sem erro
   const velho = mk(); delete velho.tool; delete velho.gweapon; E.upgrade(velho); assert.equal(velho.tool, -1); assert.equal(velho.gweapon, -1); assert.deepEqual(E.checkInvariants(velho), []);

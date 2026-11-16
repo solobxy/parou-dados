@@ -54,12 +54,12 @@ test('o que se desbloqueia por nível passa para a escala nova com o mesmo respe
   assert.deepEqual(CFG.air.routes.map((s) => s.level), [5, 7, 9, 11, 13].map(lvAt));
   assert.deepEqual(CFG.missions.filter((m) => m.type === 'level').map((m) => m.need), [3, 5, 8, 10, 13, 16, 20].map(lvAt));
   // quem tinha o respeito para passar a porta antiga passa a nova
-  for (const kind of ['weapons', 'tools', 'gweapons', 'armors', 'guards']) for (const g of CFG[kind]) {
+  for (const kind of ['gear', 'tools', 'gweapons', 'guards']) for (const g of CFG[kind]) {
     if (!g.level) continue;
     assert.ok(g.level >= 1 && g.level <= 100, `${kind} ${g.id}`);
   }
   assert.equal(CFG.tools.find((g) => g.id === 'broca').level, lvAt(15));
-  assert.equal(CFG.weapons.find((g) => g.id === 'minigun'), undefined, 'a minigun saiu no passo 2');
+  assert.equal(CFG.gear.find((g) => g.id === 'minigun'), undefined, 'a minigun saiu no passo 2');
 });
 
 test('subir de nível já não enche a stamina (passo 2), nem na escala antiga', () => {

@@ -80,7 +80,39 @@ export const CFG = {
   ],
   // A rua aquece: no mesmo dia (de Lisboa), a 1.ª e a 2.ª barra de golpes de rua rendem 100%, a 3.ª e a 4.ª 70%, a 5.ª e a 6.ª 45%,
   // da 7.ª em diante 25% (dinheiro e respeito). Respeito de uma barra de golpes: 20 + 2 por nível, até 120 (dá-se nos golpes que correm bem).
-  street: { heat: [10000, 10000, 7000, 7000, 4500, 4500, 2500], respBase: 20, respPerLevel: 2, respCap: 120, ammo: 100, gun: 'pistola' },
+  street: { heat: [10000, 10000, 7000, 7000, 4500, 4500, 2500], respBase: 20, respPerLevel: 2, respCap: 120 },
+  // Passo 4: os golpes com arma gastam 10 balas e um uso da arma de fogo (a de mão, se houver; senão a principal).
+  // Balas: caixas de 50 a 25 € (0,50 € cada; grau C). Com o desgaste da pistola (1 750 € em 20 usos), um golpe com arma custa
+  // cerca de 92 €, perto dos 100 € de balas e desgaste do modelo.
+  bullets: { box: 50, price: 25, perJob: 10 },
+  // O que se rouba e é objeto vai para o inventário com o valor que saiu (vende-se ao recetador por esse valor). Sem espaço,
+  // vende-se logo à pressa por metade (rushBp). O resto do sorteio é dinheiro na mão.
+  loot: { goods: ['telemovel', 'relogio', 'miudezas', 'perfumes', 'eletronica', 'radio', 'gps', 'pecas', 'fio', 'joias', 'tabaco', 'joalharia'], rushBp: 5000, gearSellBp: 5000 },
+  // Equipamento (passo 4): 9 espaços no corpo. atk/def em bp a somar à Força/Tolerância. Ataque = a melhor arma de fogo (mão ou
+  // principal, se não estiver estragada) + a arma branca. Defesa = a soma das peças do corpo. Armas de fogo: life = usos até
+  // ser preciso reparar (reparar custa a parte gasta do preço). Acessórios: mochila (+4 espaços) ou rádio-scanner (prisão ao
+  // falhar 20% em vez de 25%). Preços reais: pistola 1 750 €, colete 600 €, navalha 25 €; os outros sem fonte (grau D).
+  slots: ['branca', 'mao', 'principal', 'cabeca', 'tronco', 'pernas', 'pes', 'maos', 'acess'],
+  gear: [
+    { id: 'soqueira', slot: 'branca', price: 20, atk: 1000 },
+    { id: 'navalha', slot: 'branca', price: 25, atk: 2500 },
+    { id: 'pistola', slot: 'mao', price: 1750, atk: 5000, gun: true, life: 20 },
+    { id: 'cacadeira', slot: 'principal', price: 2500, atk: 8000, gun: true, life: 30 },
+    { id: 'metralhadora', slot: 'principal', price: 6000, atk: 12000, gun: true, life: 70 },
+    { id: 'sniper', slot: 'principal', price: 9000, atk: 17000, gun: true, life: 100 },
+    { id: 'capacete', slot: 'cabeca', price: 120, def: 1500 },
+    { id: 'cabedal', slot: 'tronco', price: 150, def: 1000 },
+    { id: 'colete', slot: 'tronco', price: 600, def: 2500 },
+    { id: 'balistico', slot: 'tronco', price: 1200, def: 5000 },
+    { id: 'kevlar', slot: 'tronco', price: 2500, def: 8000 },
+    { id: 'blindado', slot: 'tronco', price: 6000, def: 12000 },
+    { id: 'titanio', slot: 'tronco', price: 15000, def: 17000 },
+    { id: 'calcas', slot: 'pernas', price: 80, def: 800 },
+    { id: 'botas', slot: 'pes', price: 60, def: 700 },
+    { id: 'luvas', slot: 'maos', price: 25, def: 500 },
+    { id: 'mochila', slot: 'acess', price: 45, room: 4 },
+    { id: 'scanner', slot: 'acess', price: 400, bustBp: 2000 },
+  ],
   // Stamina a mais, a droga: cada barra (100) no mesmo dia custa 35 € × k + 15 € × k² (50, 130, 240, 380 €…); uma barra a meio paga-se à parte.
   refillBar: { a: 35, b: 15 },
   // Venda de droga na rua: compra-se ao quilo e vende-se ao grama com stamina (10 por venda). Uma barra vende perBar gramas.

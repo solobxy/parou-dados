@@ -13,6 +13,8 @@ const mk = (resp = 0) => { const p = E.newPlayer('p' + Math.random(), START, wor
 const lv = (n) => CFG.levels[n - 1];
 const ok = { int: (lo) => lo, chance: () => true, float: () => 0 };
 const k = (id) => CFG.crimes.findIndex((c) => c.id === id);
+// passo 4: a pistola vai para o corpo e as balas para o inventário
+const armar = (p) => { p.eq.mao = { id: 'pistola', u: 1000 }; p.inv = p.inv.filter((x) => x.id !== 'balas'); p.inv.push({ id: 'balas', n: 100000 }); return p; };
 const ev = (c) => c.prizes.reduce((s, [bp, a, z]) => s + (bp * (a + z)) / 2, 0) / 10000;
 
 test('golpes de rua: os seis da especificação (nível, stamina, média se correr bem, sucesso, média por barra)', () => {
@@ -35,7 +37,7 @@ test('carteirista: a primeira hora de um novato (13 carteiras) dá cerca de 1 50
   for (let i = 0; i < 3000; i++) {
     const p = mk(); p.energy = 100; p.cash = 0; let t = START;
     for (let j = 0; j < 13; j++) { if (p.jailUntil > t) t = p.jailUntil; if (p.energy < 10) p.energy = 10; E.doCrime(p, t, world, k('carteirista'), rng); t += 1000; }
-    horas.push(p.cash);
+    horas.push(p.cash + p.inv.reduce((x, it) => x + (it.v || 0), 0));   // dinheiro na mão mais o que ficou no inventário
   }
   horas.sort((a, b) => a - b);
   const med = horas.reduce((a, b) => a + b, 0) / horas.length, q = (x) => horas[Math.floor(x * horas.length)];
@@ -44,37 +46,37 @@ test('carteirista: a primeira hora de um novato (13 carteiras) dá cerca de 1 50
   assert.ok(q(0.9) > 2200, 'hora boa ' + q(0.9));
 });
 
-test('golpes: abrem pelo nível; o armado e o assalto a loja pedem pistola e gastam 100 € de balas', () => {
+test('golpes: abrem pelo nível; o armado e o assalto a loja pedem pistola e gastam balas e um uso da arma (passo 4)', () => {
   const p = mk(); p.energy = 100;
   assert.throws(() => E.doCrime(p, START, world, k('carro'), ok), { code: 'LOCKED' });
   p.respect = p.peakRespect = lv(18); p.cash = 1000;
   assert.throws(() => E.doCrime(p, START, world, k('bomba'), ok), { code: 'NEED_GUN' });
-  p.weapon = CFG.weapons.findIndex((w) => w.id === 'pistola');
+  armar(p);
   const c0 = p.cash, r = E.doCrime(p, START, world, k('bomba'), ok);
-  assert.equal(r.ammo, 100); assert.equal(p.cash, c0 - 100 + r.money);
-  const pobre = mk(lv(30)); pobre.weapon = p.weapon; pobre.cash = 50; pobre.bank = 0;
-  assert.throws(() => E.doCrime(pobre, START, world, k('armado'), ok), { code: 'NO_MONEY' });
+  assert.equal(r.ammo, CFG.bullets.perJob); assert.equal(p.cash, c0 + r.money);
+  const pobre = mk(lv(30)); pobre.eq.mao = { id: 'pistola', u: 5 };
+  assert.throws(() => E.doCrime(pobre, START, world, k('armado'), ok), { code: 'NO_AMMO' });
   assert.equal(pobre.energy, CFG.energy.max, 'recusado não gasta stamina');
 });
 
 test('a rua aquece: 100%, 100%, 70%, 70%, 45%, 45%, 25% por barra no mesmo dia; no dia seguinte volta a 100%', () => {
-  const p = mk(lv(30)); p.weapon = 2; p.cash = 1e9;
+  const p = armar(mk(lv(30))); p.cash = 1e9;
   const vistos = [];
   let t = START;
   for (let b = 0; b < 8; b++) { p.energy = 100; const r = E.doCrime(p, t, world, k('armado'), ok); vistos.push(r.heatBp); t += 1000; }
   assert.deepEqual(vistos, [10000, 10000, 7000, 7000, 4500, 4500, 2500, 2500]);
   // o dinheiro corta pelo calor (com a mesma sorte, a 7.ª barra rende um quarto da 1.ª)
-  const a = mk(lv(30)); a.weapon = 2; a.cash = 1e9; a.energy = 100; const r1 = E.doCrime(a, t, world, k('armado'), ok);
+  const a = armar(mk(lv(30))); a.cash = 1e9; a.energy = 100; const r1 = E.doCrime(a, t, world, k('armado'), ok);
   assert.equal(r1.heatBp, 10000, 'cada jogador tem a sua rua');
   p.energy = 100; p.sk.armas = 0; const r7 = E.doCrime(p, t, world, k('armado'), ok);   // sem a skill do passo 3, para comparar só o calor
-  assert.equal(r7.money, Math.floor(r1.money / 4), 'a mesma sorte rende um quarto com a rua quente');
+  assert.equal(r7.value, Math.floor(r1.value / 4), 'a mesma sorte rende um quarto com a rua quente');
   const amanha = lisbonToUtc(2026, 11, 21, 0, 1);
   p.energy = 100; assert.equal(E.doCrime(p, amanha, world, k('armado'), ok).heatBp, 10000);
 });
 
 test('respeito de uma barra de golpes: 20 + 2 por nível, até 120, vezes o calor', () => {
   for (const [nivel, esperado] of [[1, 22], [10, 40], [30, 80], [60, 120], [90, 120]]) {
-    const p = mk(lv(nivel)); p.weapon = 2; p.cash = 1e9; const rng = seededRng(nivel);
+    const p = armar(mk(lv(nivel))); p.cash = 1e9; const rng = seededRng(nivel);
     let resp = 0, gasto = 0; const N = 400;
     for (let i = 0; i < N; i++) {
       p.energy = 100; p.rua = null; p.jailUntil = 0; p.respect = p.peakRespect = lv(nivel);   // sem subir de nível a meio
@@ -88,7 +90,7 @@ test('respeito de uma barra de golpes: 20 + 2 por nível, até 120, vezes o calo
 test('falhar: uma em quatro é apanhada; prisão do golpe ou multa/fiança para sair já', () => {
   const tab = { carteirista: [2, 150], loja: [2, 150], carro: [5, 400], esticao: [8, 1500], bomba: [12, 2500], armado: [20, 6000] };
   for (const [id, [min, multa]] of Object.entries(tab)) {
-    const p = mk(lv(30)); p.weapon = 2; p.cash = 1e6; p.peakRespect = lv(30);
+    const p = armar(mk(lv(30))); p.cash = 1e6; p.peakRespect = lv(30);
     let i = 0; const apanhado = { int: (lo) => lo, chance: () => i++ % 2 === 1, float: () => 0.99 };
     const r = E.doCrime(p, START, world, k(id), apanhado);
     assert.equal(r.success, false); assert.equal(r.busted, true);
@@ -168,10 +170,10 @@ test('duas barras: o ginásio e as lutas gastam energia, os crimes gastam stamin
 });
 
 test('armas a preços reais, sem lança-chamas nem minigun; luxo acima da mansão com os dez da wiki', () => {
-  assert.equal(CFG.weapons.find((w) => w.id === 'pistola').price, 1750);
-  assert.ok(!CFG.weapons.some((w) => w.id === 'lancachamas' || w.id === 'minigun'));
-  assert.equal(CFG.armors.find((w) => w.id === 'colete').price, 600);
-  assert.equal(CFG.weapons.find((w) => w.id === 'navalha').price, 25);
+  assert.equal(CFG.gear.find((w) => w.id === 'pistola').price, 1750);
+  assert.ok(!CFG.gear.some((w) => w.id === 'lancachamas' || w.id === 'minigun'));
+  assert.equal(CFG.gear.find((w) => w.id === 'colete').price, 600);
+  assert.equal(CFG.gear.find((w) => w.id === 'navalha').price, 25);
   assert.deepEqual(CFG.luxury.list.map((x) => x.price), [12000, 25700, 80000, 200263, 550000, 2500000, 4500000, 6000000, 15000000, 40000000]);
   const p = mk(); p.cash = 13000; const r = E.buyLuxury(p, START, world);
   assert.equal(r.price, 12000); assert.equal(p.luxuries, 1); assert.equal(E.luxuryPrice(p), 25700);
@@ -192,7 +194,7 @@ test('quem vinha da economia antiga recebe de volta o que comprou e fica com as 
   // casa: barraca 2 000 + quarto 10 000; 1.º nível do cofre: 25% da barraca; armas 500 + 3 000 + 20 000; colete 400 + 2 500;
   // pé de cabra 500; luxo 250 000; lavandaria 3 000 + 4 500
   assert.equal(p.cash, 1000 + 12000 + 500 + 23500 + 2900 + 500 + 250000 + 7500);
-  assert.equal(p.house, 0); assert.deepEqual(p.hu, []); assert.equal(p.weapon, -1); assert.equal(p.armor, -1); assert.equal(p.tool, -1); assert.equal(p.luxuries, 0);
+  assert.equal(p.house, 0); assert.deepEqual(p.hu, []); assert.deepEqual(Object.values(p.eq).filter(Boolean), []); assert.equal(p.tool, -1); assert.equal(p.luxuries, 0);
   assert.equal(p.biz.length, CFG.biz.length); assert.ok(p.biz.every((b) => b.n === 0));
   E.upgrade(p); assert.equal(p.cash, 1000 + 12000 + 500 + 23500 + 2900 + 500 + 250000 + 7500, 'só uma vez');
   assert.deepEqual(E.checkInvariants(p), []);
