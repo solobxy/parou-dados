@@ -147,6 +147,14 @@ jobs:
           APP=$PWD BASE=http://127.0.0.1:3000 DB=$PWD/dados/gtfs.db node --import tsx ../auditoria/percurso-estrada.mjs 2>&1 | grep -v "Experimental\|trace-warnings" | tee ../res/percurso-estrada.txt | tail -90
           exit ${PIPESTATUS[0]}
 
+      - name: "Teste do Metro Mondego (Coimbra): páginas, perto, planeador e desenhos"
+        continue-on-error: true
+        working-directory: app
+        run: |
+          mkdir -p ../res
+          APP=$PWD BASE=http://127.0.0.1:3000 DB=$PWD/dados/gtfs.db node --import tsx ../auditoria/metro-mondego.mjs 2>&1 | grep -v "Experimental\|trace-warnings" | tee ../res/metro-mondego.txt | tail -40
+          exit ${PIPESTATUS[0]}
+
       - name: "Teste da rapidez das páginas das paragens (e o /health com carga)"
         continue-on-error: true
         working-directory: app
