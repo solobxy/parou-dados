@@ -69,7 +69,7 @@ function camiao(task, ctx) {
   const { t, sfx, vibrate } = ctx, L = task.layout, slots = new Array(6).fill(-1);
   let drops = 0, placed = 0, done;
   const finished = new Promise((r) => { done = r; });
-  const boxes = L.boxes.map((b, i) => h('div', { class: 'tk-box l' + b.look, dataset: { i }, role: 'button', 'aria-label': `${b.kg} kg`, style: `--s:${(0.78 + (0.22 * (b.kg - 4)) / 36).toFixed(3)}` },
+  const boxes = L.boxes.map((b, i) => h('div', { class: 'tk-box l' + b.look, dataset: { i }, role: 'button', 'aria-label': `${b.kg} kg`, style: `--s:${(0.8 + (0.2 * (b.kg - 4)) / 36).toFixed(3)}` },
     pic('caixa'), h('span', { class: 'kg num' }, b.kg + ' kg')));
   // a traseira do camião aberta (fotografia); as caixas ficam no chão da caixa de carga
   const truck = h('div', { class: 'tk-truck' }, pic('camiao-fundo', 'bg'), h('div', { class: 'hold' }, ...boxes.map((b) => h('div', { class: 'cell' }, b))));
@@ -472,6 +472,7 @@ function mudancas(task, ctx) {
       const q = L.pcs[drag.i];
       drag.ghost = h('div', { class: 'tk-piece ghost ' + look(q), style: `width:${drag.w}px;height:${drag.h}px` }, pic('m-' + q.kind), h('b', null, t('mv_' + q.kind)));
       document.body.appendChild(drag.ghost);
+      const vr = van.getBoundingClientRect(); if (vr.bottom > innerHeight - 90 || vr.top < 0) van.scrollIntoView({ block: 'center', behavior: reduced() ? 'auto' : 'smooth' });   // a carrinha inteira à vista enquanto se arrasta
       if (place[drag.i][0] >= 0) { drag.was = place[drag.i].slice(); place[drag.i] = [-1, -1, place[drag.i][2]]; }
       draw();
     }
@@ -526,7 +527,7 @@ function desmanche(task, ctx) {
   const vmax = Math.max(...L.parts.map((x) => x.v));
   const spots = L.parts.map((x) => h('i', { class: 'spot s' + x.k }));
   // o carro (fotografia): acende-se o sítio da peça que se está a tirar; cada linha tem a fotografia da peça
-  const car = h('div', { class: 'tk-car' }, pic('carro'), ...spots);
+  const car = h('div', { class: 'tk-car' }, pic('carro'), h('i', { class: 'hole h2' }), h('i', { class: 'hole h5' }), ...spots);
   const PARTS = ['radio', 'gps', 'roda', 'catalisador', 'bateria', 'farol', 'airbag', 'banco'];
   const rows = L.parts.map((x, i) => h('button', { class: 'tk-part', type: 'button', dataset: { i } },
     h('i', { class: 'prog' }), pic(PARTS[x.k], 'pp'), h('b', null, t('dp_' + x.k)),
@@ -558,7 +559,7 @@ function desmanche(task, ctx) {
       const x = L.parts[cur], spent = holds[cur] + (performance.now() - h0);
       rows[cur].style.setProperty('--p', Math.min(1, spent / x.need));
       if (spent >= x.need && !got[cur]) {   // a peça saiu
-        got[cur] = true; rows[cur].classList.add('got'); spots[cur].classList.add('gone'); sfx('clank'); vibrate(16);
+        got[cur] = true; rows[cur].classList.add('got'); spots[cur].classList.add('gone'); car.classList.add('no' + L.parts[cur].k);   // a jante e o farol deixam o buraco à vista sfx('clank'); vibrate(16);
         holds[cur] += Math.round(performance.now() - h0); h0 = performance.now(); rows[cur].classList.remove('on'); cur = -1;
       }
     }

@@ -2657,18 +2657,18 @@ img { -webkit-user-drag: none; }
 .tk-part.got img.pp { opacity: .35; }
 @media (prefers-reduced-motion: reduce) { .tk-grinder.shake, .tk-bag.shut, .tk-bag.shut .in, .tk-car .spot.work { animation: none; } .tk-grinder .powder { transition: none; } }
 /* contentor do porto: fotografia, com o tom da transportadora; as portas são as duas metades da mesma fotografia */
-.ct { aspect-ratio: 640 / 740; background: none; box-shadow: 0 20px 30px -14px #000d; overflow: visible; }
+.ct { aspect-ratio: 640 / 732; background: none; box-shadow: 0 20px 30px -14px #000d; overflow: visible; }
 .ct-frame { position: absolute; inset: 0; width: 100%; height: 100%; border-radius: 4px; filter: var(--ctf); }
-.ct-in { position: absolute; left: 3.1%; right: 3.1%; top: 2.7%; bottom: 1.6%; overflow: hidden; isolation: isolate; background: #0b0c10; }
+.ct-in { position: absolute; left: 3.1%; right: 3.1%; top: 1.64%; bottom: 1.64%; overflow: hidden; isolation: isolate; background: #0b0c10; }
 .ct-in .ct-room { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; filter: brightness(.55) saturate(.8); }
 .ct-in::after { content: ''; position: absolute; left: 12%; right: 12%; bottom: 3%; height: 13%; border-radius: 50%; background: radial-gradient(closest-side, #000c, #0000); opacity: 0; transition: opacity .3s; z-index: 1; }
 .ct-fill { z-index: 2; }
 .ct-fill .bd { position: absolute; width: 18%; height: auto; filter: drop-shadow(0 2px 3px #000a); }
 .ct-fill .cx { position: absolute; width: 24%; height: auto; filter: drop-shadow(0 3px 5px #000a); }
-.ct-door { position: absolute; z-index: 3; top: 2.7%; bottom: 1.6%; width: 46.6%; overflow: hidden; will-change: transform; box-shadow: inset 0 0 0 1px #0006; }
+.ct-door { position: absolute; z-index: 3; top: 1.64%; bottom: 1.64%; width: 46.6%; overflow: hidden; will-change: transform; box-shadow: inset 0 0 0 1px #0006; }
 .ct-door.l { left: 3.1%; transform-origin: 0 50%; }
 .ct-door.r { right: 3.1%; transform-origin: 100% 50%; }
-.ct-door .ph { position: absolute; top: -2.82%; width: 214.6%; height: auto; max-width: none; filter: var(--ctf); }
+.ct-door .ph { position: absolute; top: -1.7%; width: 214.6%; height: auto; max-width: none; filter: var(--ctf); }
 .ct-door.l .ph { left: -6.65%; } .ct-door.r .ph { left: -107.94%; }
 .ct-nm { top: 7%; left: 22%; right: 12%; } .ct-code { top: 7%; left: 12%; right: 22%; }
 .ct-lock { position: absolute; z-index: 4; left: 50%; top: 52%; width: 10%; transform: translate(-50%, -50%); filter: drop-shadow(0 3px 4px #000c); }
@@ -2679,3 +2679,48 @@ img { -webkit-user-drag: none; }
 .tk-piece.a1 b { display: none; }
 .tk-piece.a1 img.ph { inset: 6% 6% 20%; height: 74%; }
 .tk-piece.a1:not(.heavy):not(.fragile) img.ph { inset: 8%; height: 84%; }
+/* revisão v71 */
+@media (max-width: 360px) { .tk-labrow { grid-template-columns: 1fr; } .tk-labrow .tk-grinder { order: -1; width: 44%; margin: 0 auto 10px; } }
+.tk-stage { overflow-x: clip; }
+.tk-tray { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.tk-tray .cell { min-width: 0; }
+/* camião: a fila de trás fica mais funda (mais pequena e mais acima, atrás da da frente) e tudo assenta no chão */
+.tk-truck .hold { row-gap: 0; }
+.tk-truck .hold .cell { position: relative; z-index: 1; }
+.tk-truck .hold .cell:nth-child(-n+3) { z-index: 0; top: 22%; --d: .84; }
+.tk-box { width: calc(var(--s, 1) * var(--d, 1) * 100%); }
+.tk-truck .cell, .tk-slot { aspect-ratio: 1.27; }
+.tk-pallet .row { gap: 6px; } .tk-pallet .rows { gap: 0; }
+.tk-box .kg { top: 60%; font-size: 13px; padding: 3px 5px; }
+/* entregas: encomendas mais pequenas do que a abertura da mochila, cada uma do seu tamanho */
+.tk-counter .cell { align-items: flex-end; }
+.tk-parcel { width: 74%; } .tk-parcel.z1 { width: 62%; } .tk-parcel.z2 { width: 86%; }
+.tk-parcel.z1 img.ph { filter: brightness(1.06) saturate(.85); } .tk-parcel.z2 img.ph { filter: brightness(.94) hue-rotate(-5deg); }
+.tk-parcel .lbl { left: 14%; right: 30%; top: 44%; font-size: 10px; padding: 2px 4px; }
+.tk-parcel .lbl b { overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+/* laboratório: o saco mais pequeno (1 g não enche meio saco) e os comprimidos no fundo do copo, junto às lâminas */
+.tk-zip { left: 20%; width: 22%; top: -14%; }
+.tk-zip .fill { height: calc(min(var(--f, 0), 1.5) * 34%); }
+.tk-zip .mark { bottom: calc(4% + 34%); }
+.tk-grinder .jar .in { inset: 12% 8% 12%; }
+/* oficina: a porca do tamanho do furo e no tom da jante */
+.tk-nut img.hex { width: 50%; }
+.tk-wheelwrap:has(.tk-wheel.l1) .tk-nut img.hex { filter: brightness(.6) contrast(1.15) drop-shadow(0 2px 2px #000a); }
+.tk-wheelwrap:has(.tk-wheel.l2) .tk-nut img.hex { filter: sepia(.45) saturate(1.3) brightness(.92) drop-shadow(0 2px 2px #000a); }
+.tk-oficina .tk-head > span { min-height: 3.9em; }
+/* mudanças: os móveis numa fila que corre para o lado, para a carrinha caber no ecrã; o nome numa etiqueta escura por baixo da fotografia */
+.tk-trayv { flex-wrap: nowrap; overflow-x: auto; scroll-snap-type: x proximity; padding-bottom: 4px; margin: 0 -14px; padding-inline: 14px; scrollbar-width: none; }
+.tk-trayv::-webkit-scrollbar { display: none; }
+.tk-tile { flex: none; scroll-snap-align: start; }
+.tk-piece b, .tk-piece small { background: #000a; padding: 1px 4px; border-radius: 3px; text-shadow: none; }
+.tk-piece img.ph { inset: 5% 5% 30%; height: 65%; }
+/* desmanche: sai a jante, fica o cubo; sai o farol, fica o buraco */
+.tk-car .hole { position: absolute; opacity: 0; transition: opacity .3s; pointer-events: none; }
+.tk-car .hole.h2 { left: 78.9%; top: 76.9%; width: 11.6%; aspect-ratio: 1; transform: translate(-50%, -50%); border-radius: 50%; background: radial-gradient(circle, #8d9296 0 12%, #2a2b2d 14% 40%, #121314 42% 100%); }
+.tk-car .hole.h5 { left: 93.3%; top: 52.5%; width: 9%; height: 11%; transform: translate(-50%, -50%) rotate(8deg); border-radius: 40% 50% 50% 40%; background: radial-gradient(#050505, #1a1a1a 70%, #0000); }
+.tk-car.no2 .hole.h2, .tk-car.no5 .hole.h5 { opacity: 1; }
+/* slots: alvos de toque de 44 px mesmo quando o botão se desenha mais pequeno; a aposta não muda de largura */
+.sbb::after { inset: -5px; }
+.sib { position: relative; } .sib::after { content: ''; position: absolute; inset: -5px; }
+.sbet b { font-variant-numeric: tabular-nums; }
+@media (max-width: 360px) { .sbet > div { min-width: 52px; } }

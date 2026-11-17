@@ -3540,6 +3540,7 @@ async function slotAnim(r) {
   const g = r.game, G = slotCfg(g);
   S.slotSkip = false; S.slotBaseC = r.baseC ?? r.base * 100; S.slotGame = g;   // as slots contam ao cêntimo
   const sl = document.querySelector('.slot'); if (sl && !slotFit(true)) await tableFocus(sl);
+  document.querySelectorAll('.slot .splq, .slot .sbb').forEach((b) => { b.disabled = true; });   // a meio de uma jogada (e do bónus) não se compra nem se muda a aposta
   const sk = document.querySelector('.csbar .btn.buy');
   if (sk) { sk.disabled = false; sk.replaceChildren(h('i', { class: 'stopi' })); sk.setAttribute('aria-label', t('slSkip')); sk.classList.replace('buy', 'skip'); const ml = document.querySelector('.smsgl'); if (ml) ml.textContent = t('slWinL'); sk.addEventListener('click', () => { S.slotSkip = true; }); }
   const grid = document.querySelector('.sgrid'), meter = document.querySelector('.swinm'), freeL = document.querySelector('.sfree');
