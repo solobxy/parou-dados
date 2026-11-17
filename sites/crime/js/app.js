@@ -7,6 +7,7 @@ import * as RV from './reveal.js';
 import * as CZ from './crazy.js';
 import * as C3 from './casino3d.js';
 import * as GL from './globo.js';
+import * as TK from './tarefas.js';
 
 const $app = document.getElementById('app');
 const S = {
@@ -78,7 +79,12 @@ function act(type, args = {}, opts = {}) {
   const p = S.queue.then(async () => {
     const before = S.st?.me, started = performance.now();
     try {
-      const out = await api('POST', '/api/act', { type, ...args, rid: rid() });
+      let out;
+      // o biscate entregue um nadinha antes do tempo (o relógio daqui não bate ao milissegundo com o do servidor): espera e volta a entregar
+      for (let k = 0; ; k++) {
+        try { out = await api('POST', '/api/act', { type, ...args, rid: rid() }); break; }
+        catch (e) { if (type === 'workDone' && e.code === 'TOO_FAST' && k < 3) { await new Promise((r) => setTimeout(r, Math.min(5000, (e.data?.wait || 500) + 250))); continue; } throw e; }
+      }
       if (job) { const wait = fx.dur(type === 'crimeAll' ? 650 : 380) - (performance.now() - started); if (wait > 0) await new Promise((r) => setTimeout(r, wait)); }
       S.st.me = out.me; S.stAt = now(); if (out.feed) S.feed = out.feed;
       react(type, out, before, { ...opts, args });
@@ -127,6 +133,7 @@ function react(type, out, before, opts) {
   else if (type === 'refill') { toast(t('rfDone', { e: r.energy, m: money(r.price) })); fx.sfx('refill'); }
   else if (type === 'dealBuy') { toast(t('dealBought', { g: num(r.grams), x: list('drugs')[r.d], m: money(r.price) })); fx.sfx('buy'); }
   else if (type === 'deal') { toast(t('dealSold', { g: r.grams, m: money(r.money), n: r.respect }) + (r.lav ? ' · ' + t('ro_lav', { m: money(r.lav) }) : '')); fx.sfx('cash'); }
+  else if (type === 'workDone') { fx.vibrate(r.busted ? [40, 60, 40] : 14); fx.sfx(r.busted ? 'bust' : 'cash'); }
   else if (type === 'shift') { toast(t('jbDone', { m: money(r.money), n: r.left })); fx.sfx('cash'); }
   else if (type === 'course') { toast(t('crStarted', { x: t('cr_' + r.id), m: money(r.price) })); fx.sfx('buy'); }
   else if (type === 'job') { toast(t('jbChosen', { x: t('jb_' + r.job) })); fx.sfx('claim'); }
@@ -340,19 +347,19 @@ function tickHud() {
 const PLACES = {
   city: { ic: 'skyline' }, empire: { ic: 'empire' }, rob: { ic: 'street', img: 'golpes' }, club: { ic: 'bolt', img: 'discoteca' }, gym: { img: 'ginasio' },
   biz: { ic: 'empire', img: 'negocios' }, stash: { img: 'stash' }, acct: { img: 'contabilista' }, port: { img: 'porto' }, air: { img: 'aeroporto' }, arms: { img: 'armas' }, bank: { img: 'banco' }, hosp: { img: 'hospital' },
-  jail: { img: 'prisao' }, gang: { img: 'gangue' }, work: { img: 'profissao' }, news: { img: 'jornal' }, casino: { ic: 'gem', img: 'casino' }, roulette: { img: 'roleta' }, bj: { img: 'blackjack' }, dice: { img: 'dados' }, wheel: { img: 'roda' }, slot: { img: 'slot' }, zeus: { img: 'zeus' }, doce: { img: 'doce' }, rebucado: { img: 'rebucado' }, alley: { img: 'beco' }, lux: { img: 'luxos' }, fights: { ic: 'fights', img: 'lutas' }, rank: { img: 'procurados' }, hitman: { img: 'assassino' }, putas: { img: 'putas' }, casa: {}, myclub: { img: 'discoteca' }, mybro: { img: 'putas' }, bolsa: { img: 'bolsa' }, job: { img: 'emprego' }, inv: { img: 'inventario' }, ops: { img: 'operacoes' },
+  jail: { img: 'prisao' }, gang: { img: 'gangue' }, work: { img: 'profissao' }, news: { img: 'jornal' }, casino: { ic: 'gem', img: 'casino' }, roulette: { img: 'roleta' }, bj: { img: 'blackjack' }, dice: { img: 'dados' }, wheel: { img: 'roda' }, slot: { img: 'slot' }, zeus: { img: 'zeus' }, doce: { img: 'doce' }, rebucado: { img: 'rebucado' }, alley: { img: 'beco' }, lux: { img: 'luxos' }, fights: { ic: 'fights', img: 'lutas' }, rank: { img: 'procurados' }, hitman: { img: 'assassino' }, putas: { img: 'putas' }, gigs: { img: 'biscates' }, casa: {}, myclub: { img: 'discoteca' }, mybro: { img: 'putas' }, bolsa: { img: 'bolsa' }, job: { img: 'emprego' }, inv: { img: 'inventario' }, ops: { img: 'operacoes' },
 };
 // barra de baixo: só o que se usa a toda a hora. O resto vive dentro de cada separador, arrumado por zonas.
 const NAV = ['city', 'rob', 'fights', 'casino', 'empire'];
 const HUB = {
-  city: [['sec_night', ['club', 'putas', 'casino', 'gang', 'alley', 'arms']], ['sec_street', ['job', 'gym', 'bank', 'hosp', 'jail', 'rank']]],
+  city: [['sec_night', ['club', 'putas', 'casino', 'gang', 'alley', 'arms']], ['sec_street', ['gigs', 'job', 'gym', 'bank', 'hosp', 'jail', 'rank']]],
   empire: [['sec_income', ['biz', 'port', 'air', 'myclub', 'mybro']], ['sec_assets', ['casa', 'inv', 'bank', 'bolsa', 'stash', 'acct']]],
 };
-const PARENT = { gang: 'city', work: 'job', job: 'city', news: 'city', casino: 'city', roulette: 'casino', bj: 'casino', dice: 'casino', wheel: 'casino', slot: 'casino', zeus: 'casino', doce: 'casino', rebucado: 'casino', club: 'city', putas: 'city', gym: 'city', alley: 'city', hosp: 'city', jail: 'city',
+const PARENT = { gigs: 'city', gang: 'city', work: 'job', job: 'city', news: 'city', casino: 'city', roulette: 'casino', bj: 'casino', dice: 'casino', wheel: 'casino', slot: 'casino', zeus: 'casino', doce: 'casino', rebucado: 'casino', club: 'city', putas: 'city', gym: 'city', alley: 'city', hosp: 'city', jail: 'city',
   biz: 'empire', port: 'empire', air: 'empire', myclub: 'empire', mybro: 'empire', bolsa: 'empire', inv: 'empire', stash: 'empire', acct: 'empire', casa: 'empire', bank: 'empire', lux: 'empire', arms: 'fights', rank: 'fights', hitman: 'fights', ops: 'rob' };
 const upOf = (id) => (S.backTo && S.backTo[id]) || PARENT[id] || 'city';   // um sítio que está em duas zonas volta para a zona de onde vieste
 const tabOf = (id) => { let x = id; for (let k = 0; k < 4 && !NAV.includes(x); k++) x = upOf(x); return NAV.includes(x) ? x : 'city'; };
-const IMG = (kind, id, big) => `/img/${kind}/${id}${big ? '-g' : ''}.webp?14`;
+const IMG = (kind, id, big) => `/img/${kind}/${id}${big ? '-g' : ''}.webp?15`;
 // o que cada sítio precisa de ir buscar ao servidor (ao entrar nele, e também quando o jogo abre já nesse sítio)
 function loadFor(tab) {
   if (tab === 'fights') { if (S.fightSeg === 'events') loadEvents(true); else { S.fightSeg = 'targets'; loadTargets(); } }
@@ -412,7 +419,7 @@ function shell() {
 }
 
 const SCREENS = { job: screenJob, city: screenCity, empire: screenEmpire, news: screenNews, casino: screenCasino, roulette: screenRoulette, bj: screenBJ, dice: screenDice, wheel: screenWheel, slot: () => screenSlotGame('slot'), zeus: () => screenSlotGame('zeus'), doce: () => screenSlotGame('doce'), rebucado: () => screenSlotGame('rebucado'), rob: screenRob, club: screenClub, gym: screenGym, biz: screenBiz, port: screenPort, arms: screenArms, bank: screenBank,
-  hosp: screenHosp, jail: screenJail, gang: screenGang, work: screenWork, air: screenAir, putas: screenPutas, myclub: screenMyClub, mybro: screenMyBro, bolsa: screenBolsa, inv: screenInv, stash: screenStash, acct: screenAcct, casa: screenCasa, alley: screenAlley, lux: screenLux, fights: screenFights, rank: screenRank, hitman: screenHitman, ops: screenOps };
+  hosp: screenHosp, jail: screenJail, gang: screenGang, work: screenWork, air: screenAir, putas: screenPutas, myclub: screenMyClub, mybro: screenMyBro, bolsa: screenBolsa, inv: screenInv, stash: screenStash, acct: screenAcct, casa: screenCasa, alley: screenAlley, lux: screenLux, fights: screenFights, rank: screenRank, hitman: screenHitman, ops: screenOps, gigs: screenGigs };
 function render(force) {
   if (!S.st) return;
   if (!S.st.me || S.st.round.phase !== 'play') return renderPause();
@@ -818,6 +825,87 @@ function screenEmpire() {
   return [h('div', { class: 'phead' }, h('div', { class: 'pbar top' }, h('h1', null, t('p_empire')))), head, ...hubTiles('empire', badge)];
 }
 
+// ---------- biscates: trabalho à mão (16/11) ----------
+// Uma tarefa de cada vez. Enquanto decorre, nada redesenha o ecrã (como numa jogada do casino), para não partir o arrastar.
+const gramsTxt = (mg) => (lang() === 'pt' ? (mg / 1000).toFixed(2).replace('.', ',') : (mg / 1000).toFixed(2)) + ' g';
+const gigCtx = () => ({ t, sfx: fx.sfx, vibrate: fx.vibrate, streets: list('streets'), grams: gramsTxt, risk: pct((S.cfg.work.list.find((x) => x.bustBp) || {}).bustBp || 0) });
+async function gigStart(id, el) {
+  if (S.gig && !S.gig.res) return;
+  const out = await act('workStart', { id }, { el });
+  if (out) openGig(out.result.task);
+}
+function openGig(task) {
+  const g = TK.mount(task, gigCtx());
+  if (!g) return;
+  const G = S.gig = { task, g, res: null, ans: null, closing: false };
+  S.casinoBusy = true; render(true); window.scrollTo({ top: 0 });
+  g.finished.then(async (ans) => {
+    G.ans = ans;
+    // o servidor só paga depois do tempo mínimo da tarefa: o fecho cobre essa espera
+    const left = task.t0 + task.minMs + 300 - now();
+    if (left > 0) { G.closing = true; render(true); await TK.wait(left); }
+    const out = await act('workDone', { ans });
+    S.casinoBusy = false;
+    if (S.gig !== G) return;
+    if (out) G.res = out.result; else S.gig = null;
+    render(true);
+    if (out && !out.result.busted) { const b = document.querySelector('.tk-res > b.big'), c = document.querySelector('.hud .money .cash'); if (b && c) fx.bills(b.getBoundingClientRect(), c, 5); }
+  });
+}
+function gigLine(G) {
+  const L = G.task.layout, a = G.ans || {};
+  if (G.task.id === 'camiao') {
+    const heavy = L.boxes.map((b, i) => [b.kg, i]).sort((x, y) => y[0] - x[0] || x[1] - y[1]).slice(0, 3).map((x) => x[1]);
+    const ok = (a.slots || []).filter((sl, i) => (sl < 3) === heavy.includes(i)).length;
+    return t('tkQ_camiao', { n: ok }) + (a.drops ? ' · ' + t(a.drops === 1 ? 'tkQ_drop1' : 'tkQ_drops', { n: a.drops }) : '');
+  }
+  if (G.task.id === 'entregas') {
+    let x = 0, y = 0, n = 0; for (const i of a.order || []) { const st = L.stops[i]; n += Math.abs(st.x - x) + Math.abs(st.y - y); x = st.x; y = st.y; }
+    return t('tkQ_route', { a: n, b: TK.bestLen(L) });
+  }
+  const G2 = L.gauge, hits = (a.taps || []).filter((ms) => { const ph = (ms % G2.periodMs) / G2.periodMs, x = ph < 0.5 ? 2 * ph : 2 - 2 * ph; return Math.abs(x * 10000 - G2.c) <= G2.w; }).length;
+  const good = (a.holds || []).filter((ms) => Math.abs((L.rate * ms) / 1000 - L.target) / L.target <= 0.05).length;
+  return t('tkQ_lab', { h: hits, b: good, n: (a.holds || []).length });
+}
+function gigResult(G) {
+  const r = G.res, me = S.st.me, again = h('button', { class: 'btn buy block big', on: { click: (e) => { const id = G.task.id; S.gig = null; gigStart(id, e.currentTarget); } } }, t('tkAgain'));
+  const other = h('button', { class: 'btn ghost block', on: { click: () => { S.gig = null; render(true); } } }, t('tkOther'));
+  if (r.busted) return h('div', { class: 'card tk-res bust' }, h('h3', null, t('tkBust')), h('p', null, t('tkBustSub')), other);
+  const nxt = me.work ? me.work.multBp : 10000;
+  return h('div', { class: 'card tk-res' },
+    h('span', { class: 'small muted' }, t('tkPaid')), h('b', { class: 'num c-cash big' }, '+' + money(r.money)),
+    h('p', { class: 'tk-q' }, t('tkQual', { p: pct(r.q) })), h('p', { class: 'small' }, gigLine(G)),
+    G.task.id === 'laboratorio' ? h('p', { class: 'small muted' }, t('tkSafe')) : null,
+    r.lav ? h('p', { class: 'small muted' }, t('ro_lav', { m: money(r.lav) })) : null,
+    nxt < 10000 ? h('p', { class: 'small muted' }, t('tkNext', { p: Math.round(nxt / 100) })) : null,
+    again, other);
+}
+function screenGigs() {
+  const me = S.st.me, W = S.cfg.work, wv = me.work || { multBp: 10000 }, G = S.gig;
+  const out = [pageHead('gigs', G ? null : t('gigsSub'), !!G)];
+  if (G && !G.res) {
+    out.push(h('div', { class: 'tk-wrap' + (G.closing ? ' closing' : '') }, G.g.el, G.closing ? h('p', { class: 'tk-closing' }, t('tkClosing')) : null));
+    return out;
+  }
+  const b = busyBanner(me); if (b) out.push(b);
+  if (G && G.res) out.push(gigResult(G));
+  // uma tarefa a meio (o jogo foi fechado ou recarregado): continua de onde estava
+  if (!G && wv.tk && W.list.some((x) => x.id === wv.tk.id)) {
+    const x = W.list.find((y) => y.id === wv.tk.id);
+    out.push(h('div', { class: 'tip' }, h('p', null, t('tkHalf', { x: t('gk_' + x.id) })), h('button', { class: 'btn buy sm', on: { click: () => openGig({ id: x.id, t0: wv.tk.t0, minMs: x.minMs, layout: wv.tk.layout }) } }, t('tkResume'))));
+  }
+  if (wv.multBp < 10000 && !(G && G.res)) out.push(h('p', { class: 'small muted tk-tired' }, t('gTired', { p: Math.round(wv.multBp / 100) })));
+  out.push(h('div', { class: 'card vlist vc tk-list' }, W.list.map((x) => {
+    const lo = Math.floor((x.base * W.qMin * wv.multBp) / 1e8), hi = Math.floor((x.base * W.qMax * wv.multBp) / 1e8), locked = me.level < x.level;
+    return h('button', { class: 'vrow tk-gig', disabled: !!b || locked, on: { click: (e) => gigStart(x.id, e.currentTarget) } },
+      art('gigs', x.id, 'vth'),
+      h('div', { class: 'grow' }, h('b', null, t('gk_' + x.id)), h('div', { class: 'small muted' }, t('gd_' + x.id)),
+        h('div', { class: 'small' }, h('span', { class: 'num c-cash' }, t('gPay', { a: money(lo), b: money(hi) })), h('span', { class: 'muted' }, ' · ' + t('gDur', { s: Math.round(x.minMs / 1000) + 8 })), x.bustBp ? h('span', { class: 'c-red' }, ' · ' + t('tkIllegal', { p: pct(x.bustBp) })) : null)),
+      icon('chev'));
+  })));
+  return out;
+}
+
 // sem stamina: discoteca ou putas, com a que sai mais barata por ponto de stamina em destaque
 function staminaHelp(me, L) {
   const room = stamMax(me) - L.energy, cash = me.cash + me.bank;
@@ -828,6 +916,7 @@ function staminaHelp(me, L) {
   const btn = (id, lbl) => h('button', { class: 'btn sm grow ' + (best === id || (!best && id === 'club') ? 'buy' : 'ghost'), on: { click: () => go(id) } }, lbl);
   return h('div', { class: 'stam' }, h('span', { class: 'small' }, t('noStamina')),
     h('div', { class: 'row' }, btn('club', t('goClub')), btn('putas', t('goPutas'))),
+    h('button', { class: 'btn ghost sm block', on: { click: () => go('gigs') } }, t('goGigs')),
     best ? h('span', { class: 'small muted' }, t('stamBest', { x: t(best === 'putas' ? 'goPutas' : 'goClub').toLowerCase(), m: stMoney(Math.ceil(Math.min(d, hk) * 100)) })) : null);
 }
 // ---------- golpes ----------
@@ -3643,7 +3732,7 @@ async function showLanding(st) {
   if (!info) { try { const r = await fetch('/api/saude'); info = await r.json(); } catch {} }
   const langsw = h('div', { class: 'langsw' }, [['en', 'EN'], ['pt', 'PT']].map(([l, n]) => h('button', { 'aria-pressed': lang() === l ? 'true' : 'false', on: { click: () => { applyLang(l); showLanding(info ? { players: info.jogadores, season: info.epoca } : null); } } }, n)));
   $app.replaceChildren(langsw, h('div', { class: 'land' },
-    h('div', { class: 'land-art', 'aria-hidden': 'true' }, h('img', { src: '/img/cenas/entrada-g.webp?9', alt: '', width: 800, height: 800, fetchpriority: 'high', decoding: 'async' })),
+    h('div', { class: 'land-art', 'aria-hidden': 'true' }, h('img', { src: '/img/cenas/entrada-g.webp?10', alt: '', width: 800, height: 800, fetchpriority: 'high', decoding: 'async' })),
     h('div', { class: 'word neon', 'aria-label': 'Crime' }, 'Crime'),
     h('p', { class: 'tag' }, t('tagline')),
     info ? h('div', { class: 'meta' },

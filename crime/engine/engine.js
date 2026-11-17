@@ -4,6 +4,7 @@
 
 import { CFG, T } from './config.js';
 import { localParts } from './time.js';
+import { seededRng } from './rng.js';
 import { pressMultBp, impactBp, quoteC, trade, refC, tradable, regPos, pressOf, REG, worldUp } from './mundo.js';
 
 export class GameError extends Error {
@@ -46,7 +47,8 @@ export function newPlayer(id, now, world, opts = {}) {
     wk: CFG.crimes.map(() => 0),   // sucessos por golpe (para os objetivos)
     sk: skNew(),                   // skills: stamina gasta em cada família de golpe
     job: -1, sh: null, course: null, done: [],   // emprego (índice em CFG.jobs.list), turnos de hoje { d, n }, curso a decorrer { id, end } e cursos feitos
-    c: { crimes: 0, wins: 0, trains: 0, refills: 0, collects: 0, pvpWins: 0, ports: 0, shifts: 0 },
+    c: { crimes: 0, wins: 0, trains: 0, refills: 0, collects: 0, pvpWins: 0, ports: 0, shifts: 0, work: 0 },
+    tk: null, cz: null,   // trabalho à mão: a tarefa a decorrer e o cansaço
     mi: 0,                         // objetivos já recebidos
     mq: CFG.missions.map((_, i) => i), mrT: 0,   // os que faltam, pela ordem em que vão aparecer; e quando se trocou pela última vez
     titles: [],                    // títulos que ficam para sempre: { k: 'vet' } (veterano das rondas), { k: 'ep', n, d, pos } (pódio de uma época)
@@ -912,6 +914,97 @@ export function doShift(p, now, world) {
   p.sh = { d: dayOf(now), n }; p.c.shifts += 1;
   const lvl = addRespect(p, J.resp, now);
   return { ok: true, job: x.id, n, left: J.perDay - n, money, respect: J.resp, levelUp: lvl };
+}
+
+// ---------- trabalho à mão (16/11) ----------
+// A tarefa começa no servidor (com a disposição sorteada aqui, a partir de uma semente) e entrega-se com a resposta.
+// O servidor confere a ordem e o tempo: depressa demais não paga; respostas impossíveis são recusadas sem mexer em nada.
+const workOf = (id) => CFG.work.list.find((x) => x.id === id);
+function tiredAt(p, now) {
+  const z = p.cz;
+  if (!z || !(z.v > 0)) return 0;
+  return (z.v / 1000) * 0.5 ** (Math.max(0, now - z.t) / CFG.work.halfLifeMs);
+}
+const tiredMultBp = (tired) => Math.floor(10000 * 0.5 ** (tired / CFG.work.half));
+export function workView(p, now) {
+  const tired = tiredAt(p, now);
+  return { tired, multBp: tiredMultBp(tired), tk: p.tk ? { id: p.tk.id, t0: p.tk.t0, layout: workLayout(p.tk.id, p.tk.s) } : null };
+}
+// a disposição de cada tarefa: tudo o que o ecrã desenha e o servidor confere
+export function workLayout(id, seed) {
+  const r = seededRng(seed);
+  if (id === 'camiao') {
+    const kg = []; while (kg.length < 6) { const x = r.int(4, 40); if (!kg.includes(x)) kg.push(x); }
+    return { boxes: kg.map((x) => ({ kg: x, look: r.int(0, 3) })) };
+  }
+  if (id === 'entregas') {
+    const stops = [], names = [];
+    while (stops.length < 4) { const x = r.int(0, 4), y = r.int(0, 4); if ((x || y) && !stops.some((s) => s.x === x && s.y === y)) stops.push({ x, y }); }
+    while (names.length < 4) { const n = r.int(0, 11); if (!names.includes(n)) names.push(n); }
+    return { stops: stops.map((s, i) => ({ ...s, name: names[i], door: r.int(1, 240) })) };
+  }
+  if (id === 'laboratorio') {
+    return { pills: r.int(6, 9), gauge: { periodMs: r.int(900, 1400), c: r.int(5500, 8000), w: 900 }, bags: [0, 1, 2].map(() => r.int(0, 2)), target: 1000, rate: r.int(600, 900) };
+  }
+  return null;
+}
+const isInts = (a, n, lo, hi) => Array.isArray(a) && a.length === n && a.every((x) => Number.isSafeInteger(x) && x >= lo && x <= hi);
+const routeLen = (L, o) => { let x = 0, y = 0, s = 0; for (const i of o) { const st = L.stops[i]; s += Math.abs(st.x - x) + Math.abs(st.y - y); x = st.x; y = st.y; } return s; };
+const perms = (a) => (a.length <= 1 ? [a] : a.flatMap((x, i) => perms([...a.slice(0, i), ...a.slice(i + 1)]).map((q) => [x, ...q])));
+// qualidade de 0 a 10000; null se a resposta não pode ter vindo de quem jogou a tarefa
+function workQuality(id, L, ans) {
+  if (!ans || typeof ans !== 'object') return null;
+  if (id === 'camiao') {
+    const { slots, drops } = ans;
+    if (!isInts(slots, 6, 0, 5) || new Set(slots).size !== 6 || !Number.isSafeInteger(drops) || drops < 0 || drops > 50) return null;
+    const heavy = L.boxes.map((b, i) => [b.kg, i]).sort((a, b) => b[0] - a[0] || a[1] - b[1]).slice(0, 3).map((x) => x[1]);
+    const ok = slots.filter((sl, i) => (sl < 3) === heavy.includes(i)).length;
+    return Math.max(0, Math.round((10000 * ok) / 6) - 800 * Math.min(drops, 5));
+  }
+  if (id === 'entregas') {
+    const o = ans.order;
+    if (!isInts(o, L.stops.length, 0, L.stops.length - 1) || new Set(o).size !== o.length) return null;
+    const best = Math.min(...perms(L.stops.map((_, i) => i)).map((x) => routeLen(L, x)));
+    return Math.round((10000 * best) / routeLen(L, o));
+  }
+  if (id === 'laboratorio') {
+    const { taps, holds } = ans, G = L.gauge;
+    if (!isInts(taps, 3, 0, 120000) || !(taps[0] < taps[1] && taps[1] < taps[2]) || !isInts(holds, L.bags.length, 0, 20000)) return null;
+    const hits = taps.filter((ms) => { const ph = (ms % G.periodMs) / G.periodMs, x = ph < 0.5 ? 2 * ph : 2 - 2 * ph; return Math.abs(x * 10000 - G.c) <= G.w; }).length;
+    // cada saco: até 3% de diferença do peso certo vale tudo; daí para fora desce, e a 43% já não vale nada
+    const bag = holds.map((ms) => { const err = Math.abs((L.rate * ms) / 1000 - L.target) / L.target; return err <= 0.03 ? 10000 : Math.max(0, Math.floor(10000 - (err - 0.03) * 25000)); });
+    return Math.round((5000 * hits) / 3 + bag.reduce((a, b) => a + b, 0) / (2 * bag.length));
+  }
+  return null;
+}
+export function workStart(p, now, world, rng, id) {
+  const x = workOf(id);
+  if (!x) fail('NO_WORK');
+  begin(p, now, world);
+  if (level(p) < x.level) fail('LOW_LEVEL', { need: x.level });
+  p.tk = { id, t0: now, s: rng.int(1, 2147483646) };
+  return { ok: true, task: { id, t0: now, minMs: x.minMs, layout: workLayout(id, p.tk.s) } };
+}
+export function workDone(p, now, world, rng, ans) {
+  if (!p.tk) fail('NO_TASK');
+  const x = workOf(p.tk.id);
+  if (!x) fail('NO_TASK');
+  // confere-se antes de mexer no jogador: uma entrega recusada não muda nada
+  if (now - p.tk.t0 < x.minMs) fail('TOO_FAST', { wait: x.minMs - (now - p.tk.t0) });
+  const L = workLayout(p.tk.id, p.tk.s), q = workQuality(p.tk.id, L, ans);
+  if (q === null) fail('BAD_ANSWER');
+  begin(p, now, world);
+  const W = CFG.work, tired = tiredAt(p, now), multBp = tiredMultBp(tired);
+  p.cz = { v: Math.round((tired + 1) * 1000), t: now };
+  p.tk = null;
+  p.c.work = (p.c.work || 0) + 1;
+  const busted = !!x.bustBp && rng.chance(Math.floor((x.bustBp * pressMultBp(world && world.press)) / 10000));
+  if (busted) { jailFor(p, now, x.jailMin * T.MIN, 1); return { ok: true, id: x.id, q, busted: true, money: 0, multBp, jailUntil: p.jailUntil }; }
+  let money = Math.max(1, Math.floor((Math.floor((x.base * (W.qMin + Math.floor(((W.qMax - W.qMin) * q) / 10000))) / 10000) * multBp) / 10000));
+  let lav = 0;
+  if (x.bustBp) { const Lv = launder(p, money); money = Lv.net; lav = Lv.lav; }
+  p.cash += money;
+  return { ok: true, id: x.id, q, busted: false, money, lav, multBp, tired: tired + 1 };
 }
 
 export function startCourse(p, now, world, id) {

@@ -26,7 +26,7 @@ const RONDA_TESTE = process.env.PRIMEIRA_RONDA ? dataDe(process.env.PRIMEIRA_RON
 // Épocas de 28 dias a contar da sexta 13/11/2026 às 21:00 de Lisboa (PRIMEIRA_EPOCA=AAAA-MM-DD muda-a, para testes)
 const ANCORA = dataDe(process.env.PRIMEIRA_EPOCA || process.env.PRIMEIRA_RONDA || '2026-11-13');
 const rng = process.env.TESTE_SEMENTE ? seededRng(+process.env.TESTE_SEMENTE) : cryptoRng();   // nos testes, a sorte pode ser sempre a mesma
-const VERSAO = 64;   // sobe quando o servidor muda, para se confirmar de fora que a versão nova já está a correr
+const VERSAO = 65;   // sobe quando o servidor muda, para se confirmar de fora que a versão nova já está a correr
 const ATOS_3S = +(process.env.ATOS_3S || 15), ATOS_MIN = +(process.env.ATOS_MIN || 400); // ações por conta: 15 em 3 s, 400 por minuto
 
 // ---------- relógio que nunca anda para trás ----------
@@ -202,6 +202,7 @@ function contarCaixa(now, a, r, delta) {
   delta += lav;
   if (tipo === 'attack' && r.win && r.mode === 'mug') { caixa(now, 'assalto', r.money, 0); caixa(now, 'assaltado', 0, r.money); return; }
   if (tipo === 'hitman' && r.success) caixa(now, 'assassino:alvo', 0, r.cashLoss);
+  if (tipo === 'workDone' && r && r.id) { caixa(now, 'trabalho:' + r.id, delta > 0 ? delta : 0, delta < 0 ? -delta : 0); return; }
   caixa(now, tipo, delta > 0 ? delta : 0, delta < 0 ? -delta : 0);
 }
 // regras das manchetes: [tipo, valor, mínimo para aparecer, dinheiro a mostrar]
@@ -406,7 +407,7 @@ function vista(p, now) {
     name: nomeDe(p.id),
     stats: p.stats, energy: p.energy, energyT: p.energyT, energyMax: E.energyMax(p), vigor: p.vigor, vigorT: p.vigorT,
     addiction: p.addiction, addictionT: p.addictionT, addictionCap: E.addictionCap(p),
-    refill: E.refillPlan(p, now), refillBars: E.refillUsed(p, now), street: E.streetView(p, now),
+    refill: E.refillPlan(p, now), refillBars: E.refillUsed(p, now), street: E.streetView(p, now), work: E.workView(p, now),
     deal: { dst: p.dst, used: E.dealUsed(p, now), cap: E.dealCap(p) },
     job: p.job, shifts: E.shiftsToday(p, now), course: p.course, done: p.done, sk: p.sk, jt: Array.isArray(p.jt) ? p.jt : [], detox: p.addiction > 0 ? E.detoxCost(p, now) : 0, detoxUses: E.detoxUses(p, now),
     mission: E.mission(p), wk: p.wk, counters: p.c,
@@ -439,7 +440,7 @@ function vista(p, now) {
 
 function cfgPublica() {
   return {
-    energy: CFG.energy, vigor: CFG.vigor, street: CFG.street, refillBar: CFG.refillBar, deal: CFG.deal, jobs: CFG.jobs, courses: CFG.courses, skills: CFG.skills, addiction: CFG.addiction, train: CFG.train, crimes: CFG.crimes, drugs: CFG.drugs,
+    energy: CFG.energy, vigor: CFG.vigor, street: CFG.street, refillBar: CFG.refillBar, deal: CFG.deal, work: CFG.work, jobs: CFG.jobs, courses: CFG.courses, skills: CFG.skills, addiction: CFG.addiction, train: CFG.train, crimes: CFG.crimes, drugs: CFG.drugs,
     biz: CFG.biz.map(({ id, price, perH, resp, stat, raid, toBank, drug }) => ({ id, price, perH, resp, stat, raid, toBank, drug: drug ? CFG.drugs.findIndex((x) => x.id === drug) : -1 })), accountant: CFG.accountant,
     bizMax: CFG.bizMax, storageMs: CFG.storageMs, port: { ...CFG.port, ships: CFG.port.ships.map((s) => ({ ...s, drug: CFG.drugs.findIndex((x) => x.id === s.drug) })) }, air: CFG.air, goods: CFG.goods, venue: CFG.venue, detox: CFG.detox, stocks: CFG.stocks, slots: CFG.slots, gear: CFG.gear, bullets: CFG.bullets, loot: CFG.loot, ops: CFG.ops, opSteps: CFG.opSteps, retainer: CFG.retainer, jail: CFG.jail, launder: CFG.launder, world: CFG.world, regions: CFG.regions, market: CFG.market, wh: CFG.wh, mv: CFG.mv, tools: CFG.tools, gweapons: CFG.gweapons, guards: CFG.guards, hitman: CFG.hitman,
     pvp: CFG.pvp, bank: CFG.bank, luxury: CFG.luxury, levels: CFG.levels, crit: CFG.crit, unlockBp: CFG.unlockBp,
@@ -1210,6 +1211,8 @@ function agir(conta, corpo, now) {
     case 'deal': r = E.deal(p, now, world, int(a.j)); break;
     case 'job': r = E.chooseJob(p, now, world, int(a.i)); break;
     case 'course': r = E.startCourse(p, now, world, String(a.id || '').slice(0, 24)); break;
+    case 'workStart': r = E.workStart(p, now, world, rng, String(a.id || '').slice(0, 24)); break;
+    case 'workDone': { const x = a.ans && typeof a.ans === 'object' ? a.ans : null; r = E.workDone(p, now, world, rng, x && { slots: x.slots, drops: x.drops, order: x.order, taps: x.taps, holds: x.holds }); break; }
     case 'shift': r = E.doShift(p, now, world); r.tip = dica(p, now, w); p.jt = [r.tip, ...(Array.isArray(p.jt) ? p.jt : [])].slice(0, 5); break;
     case 'dealBuy': r = E.dealBuy(p, now, world, int(a.j), int(a.kg)); break;
     case 'hooker': r = E.visitHooker(p, now, world, int(a.i), rng); if (r.rob) evento(p.id, now, { k: 'hkRob', kind: r.rob.kind, money: r.rob.loss }); break;

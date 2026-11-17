@@ -261,6 +261,18 @@ export const CFG = {
       { id: 'senior', day: 4800, course: 'especializacao', tip: 'jail' },  // advogado: sabe quem sai da prisão e quando
     ],
   },
+  // Trabalho à mão (16/11): biscates sem barra, cada um uma tarefa curta com objetos. Paga a base vezes a qualidade
+  // (qMin a qMax: 60 a 120%) vezes 0,5^(cansaço/half); o cansaço sobe 1 por tarefa e desce para metade a cada halfLifeMs.
+  // minMs: menos do que isto entre começar e entregar não paga. O laboratório é ilegal: dinheiro sujo e bustBp de rusga
+  // (vezes a pressão policial), com jailMin de prisão e a multa do carteirista.
+  work: {
+    half: 30, halfLifeMs: 6 * HOUR, qMin: 6000, qMax: 12000,
+    list: [
+      { id: 'camiao', level: 1, base: 25, minMs: 9000 },          // descarregar o camião: as caixas pesadas em baixo
+      { id: 'entregas', level: 1, base: 25, minMs: 9000 },        // encomendas na mochila e as portas pela ordem mais curta
+      { id: 'laboratorio', level: 1, base: 45, minMs: 12000, bustBp: 200, jailMin: 10 },   // comprimidos, trituradora, sacos
+    ],
+  },
   // Cursos: pagam-se à cabeça, correm em tempo real (dias reais), um de cada vez. Ficam para sempre (a conta é permanente).
   courses: [
     { id: 'vigilante', price: 570, days: 2 },

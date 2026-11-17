@@ -47,7 +47,7 @@ function contas(kind, a0, a, d0, d, t, res, arg) {
   const chegou = (rr, dd) => mvNovas.filter((x) => x.x !== 2 && x.b === rr && x.d === dd).reduce((s2, x) => s2 + x.n, 0);   // o que chegou a essa região com a ação
   if (av < 0 || av > CFG.retainer.day) { console.error('CONTAS ERRADAS avença paga mais de uma vez', kind, av); process.exit(1); }
   if ((a.ilegal || 0) < (a0.ilegal || 0)) { console.error('CONTAS ERRADAS total de crime desceu', kind); process.exit(1); }
-  const bad = (m) => { console.error('CONTAS ERRADAS', kind, m, JSON.stringify(res), { dm, dr }); process.exit(1); };
+  const bad = (m) => { console.error('CONTAS ERRADAS', kind, m, JSON.stringify(res), { dm, dr }); if (process.env.DBG && res && res.r) { const s0 = res.r === 'lx' ? E.venueView(a0, t).stock : a0.wh[res.r].s; console.error('s0', s0[res.d], 's1', E.whStock(a, res.r)[res.d], 'chegou', chegou(res.r, res.d), 'mvNovas', JSON.stringify(mvNovas), 'cost min', Math.floor((res.n * MW.refC(res.d) * 0.2) / 100)); } process.exit(1); };
   switch (kind) {
     case 'crime': {
       const c = CFG.crimes[arg], ammo = c.gun ? CFG.bullets.perJob : 0, maxOne = Math.floor((c.prizes.at(-1)[2] * MAX_LOOT_BP) / 10000);
@@ -232,11 +232,11 @@ function contas(kind, a0, a, d0, d, t, res, arg) {
     case 'whBuy': if (dm !== -res.cost || dr !== 0 || a0.wh[res.r] || !a.wh[res.r] || res.cost !== CFG.wh[res.r].price) bad('comprar armazém'); break;
     case 'whUp': if (dm !== -res.cost || dr !== 0 || a.wh[res.r][res.k] !== a0.wh[res.r][res.k] + 1 || res.cost <= 0) bad('melhorar armazém'); break;
     case 'mktBuy': { const s0 = res.r === 'lx' ? E.venueView(a0, t).stock : a0.wh[res.r].s, s1 = E.whStock(a, res.r);
-      if (dm !== -res.cost || dr !== 0 || s1[res.d] !== s0[res.d] + chegou(res.r, res.d) + res.n || res.cost < Math.floor((res.n * MW.refC(res.d) * 0.2) / 100)) bad('comprar no mercado'); break; }
+      if (dm !== -res.cost || dr !== 0 || s1[res.d] !== s0[res.d] + (res.r === 'lx' ? 0 : chegou(res.r, res.d)) + res.n || res.cost < Math.floor((res.n * MW.refC(res.d) * 0.2) / 100)) bad('comprar no mercado'); break; }
     case 'mktSell': { const s0 = res.r === 'lx' ? E.venueView(a0, t).stock : a0.wh[res.r].s, s1 = E.whStock(a, res.r);
-      if (dm !== res.got || dr !== 0 || s1[res.d] !== s0[res.d] + chegou(res.r, res.d) - res.n || res.got > (res.n * MW.refC(res.d) * 4) / 100) bad('vender no mercado'); break; }
+      if (dm !== res.got || dr !== 0 || s1[res.d] !== s0[res.d] + (res.r === 'lx' ? 0 : chegou(res.r, res.d)) - res.n || res.got > (res.n * MW.refC(res.d) * 4) / 100) bad('vender no mercado'); break; }
     case 'mvSend': { const s0 = res.a === 'lx' ? E.venueView(a0, t).stock : a0.wh[res.a].s, s1 = E.whStock(a, res.a);
-      if (dm !== 0 || dr !== 0 || s1[res.d] !== s0[res.d] + chegou(res.a, res.d) - res.n || a.mv.length !== a0.mv.length - mvNovas.length + 1 || res.at !== t + E.mvHops(res.a, res.b) * CFG.mv.hopMs) bad('mudar de região'); break; }
+      if (dm !== 0 || dr !== 0 || s1[res.d] !== s0[res.d] + (res.a === 'lx' ? 0 : chegou(res.a, res.d)) - res.n || a.mv.length !== a0.mv.length - mvNovas.length + 1 || res.at !== t + E.mvHops(res.a, res.b) * CFG.mv.hopMs) bad('mudar de região'); break; }
     case 'whEdition': if (dm > 0 || dr !== 0 || REG.some((x) => a0.wh[x] && E.whStock(a, x).some((n, k) => n > E.whStock(a0, x)[k]))) bad('rusga deu dinheiro ou stock'); break;
     case 'stockDump': { const v = E.venueView(a0, t); if (dm !== res.got || res.got > arg.n * E.wholesale(arg.d) || res.got !== E.dumpValue(arg.d, arg.n) || a.stock[arg.d] !== v.stock[arg.d] - arg.n || dr !== 0) bad('despachar'); break; }
     case 'broHire': { const g = CFG.hookers.list[arg]; if (dm !== -CFG.venue.bro.hire[g.tier] || dr !== 0 || a.bro.girls.length !== a0.bro.girls.length + 1 || a.bro.girls.length > CFG.venue.bro.rooms[a.bro.lvl - 1]) bad('contratar'); break; }
@@ -250,6 +250,8 @@ function contas(kind, a0, a, d0, d, t, res, arg) {
       break; }
     case 'luxury': if (dm !== -res.price || dr !== Math.floor(Math.sqrt(res.price)) || res.price !== CFG.luxury.list[a0.luxuries].price) bad('luxo'); break;
     case 'house': if (dm !== -res.price || dr !== res.respect) bad('casa'); break;
+    case 'workStart': if (dm !== 0 || dr !== 0 || !a.tk || a.tk.id !== res.task.id) bad('biscate: começar'); break;
+    case 'workDone': if (dm !== res.money || dr !== 0 || a.tk || res.money < 0 || (res.busted && (res.money !== 0 || !(a.jailUntil > t))) || (!res.busted && res.money > Math.ceil((CFG.work.list.find((x) => x.id === res.id).base * CFG.work.qMax) / 10000))) bad('biscate: entregar'); break;
     default: if (dm > 0 || dr !== 0) bad('esta ação só devia gastar'); // discoteca, putas, hospital, treino, porto (envio), equipamento, melhorias
   }
   if (a.energy > E.energyMax(a) || a.energy < 0) bad('stamina');
@@ -310,8 +312,9 @@ for (let n = 0; n < ACTIONS; n++) {
     for (const id of o.mat) if (!p.inv.some((x) => x.id === id)) p.inv.push({ id });
     if (o.gun) { if (!p.eq.mao) p.eq.mao = { id: 'pistola', u: 20 }; const b = p.inv.find((x) => x.id === 'balas'); if (b) b.n += 50; else p.inv.push({ id: 'balas', n: 50 }); }
   }
+  if (p.tk && r.chance(7000)) p.tk.t0 = Math.min(p.tk.t0, t - r.int(0, 30000));   // o biscate a meio: às vezes já passou o tempo mínimo
   const before = touched(p, t), beforeD = touched(d, t), origD = structuredClone(d), origP = structuredClone(p);
-  const kind = pick(['stockBuy', 'stockBuy', 'stockBuy', 'stockSell', 'stockSell', 'missionSwap', 'venueBuy', 'venueBuy', 'venueSet', 'venueCollect', 'stockUse', 'stockUse', 'stockDump', 'broHire', 'broHire', 'broFire', 'clubBuyAt', 'clubBuyAt', 'clubBuyAt', 'broVisitAt', 'broVisitAt', 'broVisitAt', 'casino', 'casino', 'table', 'heist', 'hit', 'gangCreate', 'gangDonate', 'gangLeave', 'gangBiz', 'gangBiz', 'gangBiz', 'gangBizCollect', 'hitman', 'hitman', 'hitman', 'crime', 'crime', 'crimeAll', 'deal', 'deal', 'dealBuy', 'drug', 'refill', 'detox', 'claim', 'class', 'classChange', 'classChange', 'air', 'air', 'airCollect', 'airCollect', 'bailFor', 'bailFor', 'medicFor', 'medicFor', 'avatar', 'hooker', 'cure', 'house', 'houseUp', 'train', 'buyBiz', 'buyBiz', 'collect', 'bizGoods', 'bizGoods', 'stockHold', 'stockHold', 'acct', 'stockLimit', 'stockLimit', 'stockLimit', 'port', 'collectPort', 'portOpen', 'portOpen', 'deposit', 'withdraw', 'gear', 'attack', 'bail', 'medic', 'luxury', 'shift', 'shift', 'shift', 'job', 'course', 'buy', 'buy', 'buy', 'buy', 'equip', 'sell', 'sellGoods', 'sellGoods', 'repair', 'repair', 'opStart', 'opStart', 'opStep', 'opStep', 'opGo', 'opGo', 'opGo', 'opDrop', 'retainer', 'jailSmuggle', 'jailWork', 'jailYard', 'jailCards', 'jailFavor', 'jailEscape', 'whBuy', 'whBuy', 'whUp', 'whUp', 'mktBuy', 'mktBuy', 'mktBuy', 'mktSell', 'mktSell', 'mvSend', 'mvSend', 'mvSend', 'whEdition']);
+  const kind = pick(['stockBuy', 'stockBuy', 'stockBuy', 'stockSell', 'stockSell', 'missionSwap', 'venueBuy', 'venueBuy', 'venueSet', 'venueCollect', 'stockUse', 'stockUse', 'stockDump', 'broHire', 'broHire', 'broFire', 'clubBuyAt', 'clubBuyAt', 'clubBuyAt', 'broVisitAt', 'broVisitAt', 'broVisitAt', 'casino', 'casino', 'table', 'heist', 'hit', 'gangCreate', 'gangDonate', 'gangLeave', 'gangBiz', 'gangBiz', 'gangBiz', 'gangBizCollect', 'hitman', 'hitman', 'hitman', 'crime', 'crime', 'crimeAll', 'deal', 'deal', 'dealBuy', 'drug', 'refill', 'detox', 'claim', 'class', 'classChange', 'classChange', 'air', 'air', 'airCollect', 'airCollect', 'bailFor', 'bailFor', 'medicFor', 'medicFor', 'avatar', 'hooker', 'cure', 'house', 'houseUp', 'train', 'buyBiz', 'buyBiz', 'collect', 'bizGoods', 'bizGoods', 'stockHold', 'stockHold', 'acct', 'stockLimit', 'stockLimit', 'stockLimit', 'port', 'collectPort', 'portOpen', 'portOpen', 'deposit', 'withdraw', 'gear', 'attack', 'bail', 'medic', 'luxury', 'shift', 'shift', 'shift', 'job', 'course', 'buy', 'buy', 'buy', 'buy', 'equip', 'sell', 'sellGoods', 'sellGoods', 'repair', 'repair', 'opStart', 'opStart', 'opStep', 'opStep', 'opGo', 'opGo', 'opGo', 'opDrop', 'retainer', 'jailSmuggle', 'jailWork', 'jailYard', 'jailCards', 'jailFavor', 'jailEscape', 'whBuy', 'whBuy', 'whUp', 'whUp', 'mktBuy', 'mktBuy', 'mktBuy', 'mktSell', 'mktSell', 'mvSend', 'mvSend', 'mvSend', 'whEdition', 'workStart', 'workStart', 'workDone', 'workDone', 'workDone']);
   let res, arg;
   try {
     switch (kind) {
@@ -426,6 +429,13 @@ for (let n = 0; n < ACTIONS; n++) {
       case 'mvSend': { const a1 = pick(REG), b1 = pick([...REG, 'x']), st = p.wh && p.wh[a1] ? E.whStock(p, a1) : null, dd = st && r.chance(7000) ? st.findIndex((x, k) => x > 0 && MW.tradable(k)) : r.int(0, CFG.drugs.length - 1);
         res = E.mvSend(p, t, world, mk, game, a1, b1, dd, st && dd >= 0 && r.chance(6000) ? pick([st[dd], 1]) : pick([1, 0, -1, 1e9])); break; }
       case 'whEdition': for (const g of [mk.w.lx, mk.w.rg.al, mk.w.rg.ag]) g.press = r.int(0, 100); res = { raids: E.whEdition(p, mk, t, game) }; break;
+      case 'workStart': res = E.workStart(p, t, world, r, pick(['camiao', 'entregas', 'laboratorio', 'x'])); break;
+      case 'workDone': {
+        const L = p.tk ? E.workLayout(p.tk.id, p.tk.s) : null;
+        const ans = !L ? {} : p.tk.id === 'camiao' ? { slots: r.chance(8000) ? [0, 1, 2, 3, 4, 5].sort(() => r.int(0, 2) - 1) : [0, 0, 1, 2, 3, 4], drops: r.int(0, 3) }
+          : p.tk.id === 'entregas' ? { order: [0, 1, 2, 3].sort(() => r.int(0, 2) - 1) } : { taps: [r.int(0, 900), r.int(1000, 1900), r.int(2000, 2900)], holds: [r.int(0, 3000), r.int(0, 3000), r.chance(9000) ? r.int(0, 3000) : -1] };
+        res = E.workDone(p, t, world, r, ans); break;
+      }
       case 'broHire': arg = r.chance(9000) ? r.int(0, CFG.hookers.list.length - 1) : anyInt(); res = E.broHire(p, t, world, arg); break;
       case 'broFire': res = E.broFire(p, t, world, pick([0, 1, 2, 5, -1])); break;
       case 'clubBuyAt': arg = r.chance(9000) ? r.int(0, CFG.drugs.length - 1) : anyInt(); res = E.clubBuyAt(p, d, t, world, arg, r.chance(1000) ? 1 : undefined); break;

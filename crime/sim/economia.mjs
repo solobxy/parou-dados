@@ -13,7 +13,7 @@ const SEED = +(process.argv[2] ?? 1), N = +(process.argv[3] ?? 300), DIAS = +(pr
 // para comparar com o motor (dev/sim-motor.mjs) enquanto ele ainda não tem estes sistemas: SEM_EMPREGO=1, SEM_OPS=1, SEM_GASTOS=1
 // (SEM_GASTOS desliga os três gastos; cada um também se desliga sozinho: SEM_LAVAGEM=1, SEM_AVENCA=1, SEM_SEGURANCAS=1)
 const SEM_G = process.env.SEM_GASTOS === '1', semG = (k) => (process.env[k] === undefined ? SEM_G : process.env[k] === '1');
-const SEM = { emprego: process.env.SEM_EMPREGO === '1', ops: process.env.SEM_OPS === '1', lavagem: semG('SEM_LAVAGEM'), avenca: semG('SEM_AVENCA'), segurancas: semG('SEM_SEGURANCAS'), trafico: process.env.SEM_TRAFICO === '1' };
+const SEM = { emprego: process.env.SEM_EMPREGO === '1', ops: process.env.SEM_OPS === '1', lavagem: semG('SEM_LAVAGEM'), avenca: semG('SEM_AVENCA'), segurancas: semG('SEM_SEGURANCAS'), trafico: process.env.SEM_TRAFICO === '1', trabalho: process.env.SEM_TRABALHO === '1' };
 function rngDe(s) { let a = s >>> 0; return () => { a |= 0; a = (a + 0x6d2b79f5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
 
 // ---------- números do modelo (os que vão para a wiki) ----------
@@ -85,6 +85,9 @@ export const P = {
   casaASerio: 183000,   // a prova da «primeira casa» mede o primeiro T1 na cidade, não a roulotte
   parteDaVida: +(process.env.PARTE ?? 0.5),
   carro: 5000,   // usado barato; compra-se quando sobram 1 000 € depois de o pagar
+  // Trabalho à mão (16/11): biscates sem barra. Cada tarefa paga a base vezes a qualidade (60 a 120%, em média 95%) e vezes
+  // 0,5^(cansaço/meia): o cansaço sobe 1 por tarefa e desce para metade a cada meiaVida horas. Laboratório ilegal: mais base, rusga.
+  trabalho: { base: +(process.env.TB_BASE ?? 25), lab: +(process.env.TB_LAB ?? 45), labNivel: 1, rusga: 0.02, multa: 150, qual: 0.95, meia: +(process.env.TB_MEIA ?? 30), meiaVida: +(process.env.TB_HL ?? 6) },
   // Stamina a mais do que a natural: cada barra seguida custa mais; a escada desce com o tempo (escadaArrefece).
   extra: (k) => 25 * k + 5 * k * k,   // 1.ª barra extra 30 €, 3.ª 120 €, 7.ª 420 €
   lavagem: { acimaDe: 100000, parte: 0.2 },   // dinheiro do crime que passa pelas fachadas: custa 20%
@@ -108,10 +111,10 @@ const nivelDe = (resp) => Math.min(100, Math.max(1, Math.floor(Math.cbrt(resp / 
 // ---------- perfis ----------
 const PERFIS = {
   // sessoes por dia, espalhadas por horas (o resto é a noite); extra: barras a droga por dia, no máximo (e só se compensar)
-  casual:   { barras: 2, extra: 0, falha: 0.25, edicoes: 1, sessoes: 1, horas: 1, paraEm: 1 },     // uma sessão por dia; falha um dia em quatro
-  regular:  { barras: 4, extra: +(process.env.REG_EXTRA ?? 0), falha: 0.05, edicoes: 2, sessoes: 2, horas: 12, paraEm: 0.8 },    // duas ou três sessões por dia
-  hardcore: { barras: 7, extra: 12, falha: 0, edicoes: 3, sessoes: 3, horas: 15, paraEm: +(process.env.PARA ?? 0.6) },      // gasta a stamina natural toda e compra enquanto compensar
-  bot:      { barras: 7.2, extra: 100, falha: 0, edicoes: 4, sessoes: 6, horas: 24, paraEm: +(process.env.PARA ?? 0.6) },   // 24 h por dia: o caso que a economia tem de aguentar
+  casual:   { barras: 2, extra: 0, falha: 0.25, edicoes: 1, sessoes: 1, horas: 1, paraEm: 1, tarefas: 15 },     // uma sessão por dia; falha um dia em quatro
+  regular:  { barras: 4, extra: +(process.env.REG_EXTRA ?? 0), falha: 0.05, edicoes: 2, sessoes: 2, horas: 12, paraEm: 0.8, tarefas: 30 },    // duas ou três sessões por dia
+  hardcore: { barras: 7, extra: 12, falha: 0, edicoes: 3, sessoes: 3, horas: 15, paraEm: +(process.env.PARA ?? 0.6), tarefas: 45 },      // gasta a stamina natural toda e compra enquanto compensar
+  bot:      { barras: 7.2, extra: 100, falha: 0, edicoes: 4, sessoes: 6, horas: 24, paraEm: +(process.env.PARA ?? 0.6), tarefas: 'otimo' },   // 24 h por dia: o caso que a economia tem de aguentar
 };
 // lucro do tráfico por dia para quem joga e edições por dia (3 edições: a meio entre 2 e 4)
 const traficoDia = (t, e) => t.dia[e] ?? (t.dia[e - 1] + t.dia[e + 1]) / 2;
@@ -160,6 +163,22 @@ function simula(perfil, rng) {
       quente = Math.max(0, quente - P.arrefece * h); escada = Math.max(0, escada - P.escadaArrefece * h);
     }
     s.quente = quente; s.escada = escada;
+    // trabalho à mão: o bot trabalha ao ritmo que mais rende (cansaço estável); as pessoas fazem tarefas seguidas em cada sessão
+    if (!SEM.trabalho) {
+      const W = P.trabalho, k = Math.LN2 / W.meiaVida, porTarefa = (nv >= W.labNivel ? W.lab * (1 - W.rusga) - W.rusga * W.multa : W.base) * W.qual;
+      let cans = s.cansaco || 0, ganho = 0;
+      if (A.tarefas === 'otimo') {
+        const r = W.meia / (Math.LN2 / k);   // tarefas por hora que maximizam r·0,5^(r/(k·meia))
+        for (let h = 0; h < 24; h++) { for (let j = 0; j < r; j++) { ganho += porTarefa * 0.5 ** (cans / W.meia); cans += 1; } cans *= Math.exp(-k); }
+      } else {
+        for (let j = 0; j < A.sessoes; j++) {
+          for (let n = 0; n < A.tarefas / A.sessoes; n++) { ganho += porTarefa * 0.5 ** (cans / W.meia); cans += 1; }
+          cans *= Math.exp(-k * (j === A.sessoes - 1 ? gap + noite : gap));
+        }
+      }
+      s.cansaco = cans; s.ganhoTrabalho = (s.ganhoTrabalho || 0) + ganho;
+      if (nv >= W.labNivel) crime += ganho; else entra += ganho;   // o laboratório é dinheiro sujo (conta para a lavagem)
+    }
     // operações: prepara a melhor que consegue pagar; resolve quando chega o dia
     if (s.op && d >= s.op.fim) {
       const o = s.op.o; s.op = null; s.pausaAte = d + o.pausa;
