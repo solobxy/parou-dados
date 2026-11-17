@@ -133,11 +133,16 @@ test('negócios: cada unidade extra custa +50% (arredondado para baixo); máximo
 test('negócios: treinar a stat a meio conta o rendimento anterior com a stat antiga', () => {
   const p = E.newPlayer('a', START, world); p.cash = 1e7;
   E.buyBiz(p, START, world, 0);
-  for (let i = 0; i < 20; i++) { p.vigor = CFG.vigor.max; E.train(p, START + T.HOUR, world, 'C'); } // C 10 -> 30
+  // uma série de 10 repetições perfeitas (+12) que acaba às START + 1 h: C 10 -> 22
+  const S = CFG.train.set, fim = S.lead + 9 * S.beat, jit = [-40, 30, -20, 50, 0, -60, 10, 40, -30, 20];
+  p.vigor = CFG.vigor.max;
+  E.gymStart(p, START + T.HOUR - fim, world, 'C', 10);
+  E.gymDone(p, START + T.HOUR, world, jit.map((j, k) => S.lead + k * S.beat + j));
+  assert.equal(p.stats.C, 22);
   const b0 = p.bank;
   E.collectBiz(p, START + 2 * T.HOUR, world, never);
   const first = Math.floor(CFG.biz[0].perH * 1010 / 1000);        // 1.ª hora com C=10
-  const second = Math.floor(CFG.biz[0].perH * 1030 / 1000);       // 2.ª hora com C=30
+  const second = Math.floor(CFG.biz[0].perH * 1022 / 1000);       // 2.ª hora com C=22
   assert.equal(p.bank - b0, first + second);
 });
 

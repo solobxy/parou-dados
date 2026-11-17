@@ -28,7 +28,7 @@ const RONDA_TESTE = process.env.PRIMEIRA_RONDA ? dataDe(process.env.PRIMEIRA_RON
 // Épocas de 28 dias a contar da sexta 13/11/2026 às 21:00 de Lisboa (PRIMEIRA_EPOCA=AAAA-MM-DD muda-a, para testes)
 const ANCORA = dataDe(process.env.PRIMEIRA_EPOCA || process.env.PRIMEIRA_RONDA || '2026-11-13');
 const rng = process.env.TESTE_SEMENTE ? seededRng(+process.env.TESTE_SEMENTE) : cryptoRng();   // nos testes, a sorte pode ser sempre a mesma
-const VERSAO = 81;   // sobe quando o servidor muda, para se confirmar de fora que a versão nova já está a correr
+const VERSAO = 82;   // sobe quando o servidor muda, para se confirmar de fora que a versão nova já está a correr
 const ATOS_3S = +(process.env.ATOS_3S || 15), ATOS_MIN = +(process.env.ATOS_MIN || 400); // ações por conta: 15 em 3 s, 400 por minuto
 
 // ---------- relógio que nunca anda para trás ----------
@@ -1299,7 +1299,9 @@ function agir(conta, corpo, now) {
       mine.flap = f; r = { ok: true, flap: f, round: c.id };
       break;
     }
-    case 'train': r = E.train(p, now, world, String(a.stat)); break;
+    case 'train': throw new E.GameError('GONE');   // v82: o treino de um toque acabou; treina-se em séries (gymStart/gymDone)
+    case 'gymStart': r = E.gymStart(p, now, world, String(a.stat || ''), int(a.reps)); break;   // v82: série no ritmo
+    case 'gymDone': r = E.gymDone(p, now, world, Array.isArray(a.taps) ? a.taps.slice(0, 64) : null); break;
     case 'drug': r = E.buyDrug(p, now, world, int(a.d)); break;
     case 'refill': r = E.refill(p, now, world); break;
     case 'consume': r = E.consume(p, now, world, String(a.id)); break;   // v78: café e farmácia

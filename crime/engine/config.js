@@ -174,7 +174,13 @@ export const CFG = {
   // Se a polícia apanha: as leves pagam multa de 10% e seguem; as de festa ficam apreendidas; as pesadas ficam apreendidas e dão prisão.
   mv: { hopMs: HOUR, max: 5, log: 6 },
 
-  train: { energy: 5, costBase: 0, costPerStat: 0 }, // +1 ponto por treino; gasta energia (vigor), não stamina
+  train: { energy: 5, costBase: 0, costPerStat: 0, // +1 ponto por treino; gasta energia (vigor), não stamina
+    // v82: ginásio novo. Treinar é uma série de repetições no ritmo certo: a barra sobe e desce e toca-se quando chega ao topo.
+    // Cada repetição gasta a energia de um treino e vale de 50% a 120% de um ponto, conforme o erro do toque (em ms) ao topo.
+    // O primeiro topo vem ao fim de lead ms (a contagem) e os outros a cada beat ms. Mais de reps + extra toques: tudo falhado.
+    // Os pontos partidos guardam-se (em milésimos) para a série seguinte.
+    set: { reps: [5, 10], beat: 1000, lead: 3000, ttl: 2 * MIN, win: [80, 160, 260], q: [12000, 10000, 8000, 5000], botSd: 8, slack: 300 },
+  },
 
   // Probabilidade de sucesso = S²/(S²+D²), entre 5% e 95%.
   chance: { minBp: 500, maxBp: 9500 },

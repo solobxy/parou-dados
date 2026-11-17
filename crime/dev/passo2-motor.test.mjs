@@ -164,12 +164,13 @@ test('casino em euros: 5 € até ao nível 20, 20 € até ao 40, 50 € até a
 
 test('duas barras: o ginásio e as lutas gastam energia, os crimes gastam stamina', () => {
   const p = mk(); p.cash = 1000;
-  E.train(p, START, world, 'F');
-  assert.equal(p.energy, CFG.energy.max); assert.equal(p.vigor, CFG.vigor.max - CFG.train.energy);
-  E.doCrime(p, START + 1, world, k('loja'), ok);
-  assert.equal(p.vigor, CFG.vigor.max - CFG.train.energy); assert.equal(p.energy, CFG.energy.max - 10);
-  p.vigor = 0; assert.throws(() => E.train(p, START + 2, world, 'F'), { code: 'NO_VIGOR' });
-  E.touch(p, START + 2 + 10 * T.MIN); assert.equal(p.vigor, 5, 'sobe 1 a cada 2 minutos');
+  const S = CFG.train.set, fim = S.lead + 4 * S.beat, gasto = 5 * CFG.train.energy;
+  E.gymStart(p, START, world, 'F', 5); E.gymDone(p, START + fim, world, []);
+  assert.equal(p.energy, CFG.energy.max); assert.equal(p.vigor, CFG.vigor.max - gasto);
+  E.doCrime(p, START + fim + 1, world, k('loja'), ok);
+  assert.equal(p.vigor, CFG.vigor.max - gasto); assert.equal(p.energy, CFG.energy.max - 10);
+  p.vigor = 0; assert.throws(() => E.gymStart(p, START + fim + 2, world, 'F', 5), { code: 'NO_VIGOR' });
+  E.touch(p, START + fim + 2 + 10 * T.MIN); assert.equal(p.vigor, 5, 'sobe 1 a cada 2 minutos');
 });
 
 test('armas a preços reais, sem lança-chamas nem minigun; luxo acima da mansão com os dez da wiki', () => {

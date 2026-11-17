@@ -98,7 +98,8 @@ test('crime, toque repetido e erros de regra', async () => {
   assert.equal((await a('POST', '/api/act', { type: 'voar' })).body.error, 'BAD_ACTION');
   assert.equal((await a('POST', '/api/act', { type: 'crime', k: 99 })).body.error, 'NO_CRIME');
   assert.equal((await a('POST', '/api/act', { type: 'deposit', amount: 1e15 })).body.error, 'BAD_AMOUNT');
-  assert.equal((await a('POST', '/api/act', { type: 'train', stat: '__proto__' })).body.error, 'NO_STAT');
+  assert.equal((await a('POST', '/api/act', { type: 'gymStart', stat: '__proto__', reps: 5 })).body.error, 'NO_STAT');
+  assert.equal((await a('POST', '/api/act', { type: 'train', stat: 'F' })).body.error, 'GONE');
   // recarga e desintoxicação chegam ao motor
   assert.equal((await a('POST', '/api/act', { type: 'detox' })).body.error, 'NO_VICE');
   const st = (await a('GET', '/api/state')).body.me;
@@ -150,11 +151,12 @@ test('limite de registos por endereço', async () => {
 test('o estado sobrevive a um reinício', async () => {
   const a = cliente('10.0.0.8');
   await a('POST', '/api/register', { name: 'Eva', password: 'segredo123', email: 'eva@teste.pt' });
-  await a('POST', '/api/act', { type: 'train', stat: 'F' });
+  await a('POST', '/api/act', { type: 'deposit', amount: 10 });
   const antes = (await a('GET', '/api/state')).body.me;
   await parar(); await arrancar();
   const depois = (await a('GET', '/api/state')).body.me;
   assert.equal(depois.stats.F, antes.stats.F);
+  assert.equal(depois.bank, antes.bank); assert.ok(antes.bank > 0, 'o depósito ficou guardado');
   assert.equal(depois.energy >= antes.energy, true);
 });
 

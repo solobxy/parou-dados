@@ -70,7 +70,7 @@ test('preso: só a prisão, a fiança, o advogado e a cara; o resto é recusado 
   await parar(srv);
   mexer('Preso', (e) => { e.cash = 5000; e.bank = 0; e.jailUntil = T0 + 3600e3; e.energy = 100; e.vigor = 100; });
   srv = await novo(1000);
-  for (const a of [{ type: 'deposit', amount: 100 }, { type: 'workStart', id: 'camiao' }, { type: 'casino', g: 'roulette', amt: 10, bet: 'red' }, { type: 'refill' }, { type: 'hooker', i: 0 }, { type: 'train', stat: 'F' }]) {
+  for (const a of [{ type: 'deposit', amount: 100 }, { type: 'workStart', id: 'camiao' }, { type: 'casino', g: 'roulette', amt: 10, bet: 'red' }, { type: 'refill' }, { type: 'hooker', i: 0 }, { type: 'gymStart', stat: 'F', reps: 5 }]) {
     r = await A('POST', '/api/act', a);
     assert.equal(r.body.error, 'IN_JAIL', JSON.stringify(a) + ' → ' + JSON.stringify(r.body));
   }

@@ -57,7 +57,7 @@ export function newPlayer(id, now, world, opts = {}) {
     mi: 0,                         // objetivos já recebidos
     mq: CFG.missions.map((_, i) => i), mrT: 0,   // os que faltam, pela ordem em que vão aparecer; e quando se trocou pela última vez
     titles: [],                    // títulos que ficam para sempre: { k: 'vet' } (veterano das rondas), { k: 'ep', n, d, pos } (pódio de uma época)
-    cls: '', clsAt: 0, av: 0, fx: {}, sick: false, hkN: CFG.hookers.list.map(() => 0), hkAt: CFG.hookers.list.map(() => 0), house: 0, hu: CFG.house.ups.map(() => 0), bj: null, wm: {}, cd: { est: 0, med: 0 }, col: {}, mus: {},        // profissão, avatar e efeitos temporários (kind -> { bp, until })
+    cls: '', clsAt: 0, av: 0, fx: {}, sick: false, hkN: CFG.hookers.list.map(() => 0), hkAt: CFG.hookers.list.map(() => 0), house: 0, hu: CFG.house.ups.map(() => 0), bj: null, wm: {}, cd: { est: 0, med: 0 }, col: {}, mus: {}, sx: { F: 0, T: 0, I: 0, C: 0 }, gs: null,        // profissão, avatar e efeitos temporários (kind -> { bp, until })
   };
 }
 
@@ -73,6 +73,8 @@ function migrate(p) {
   if (!p.cd || typeof p.cd !== 'object') p.cd = { est: 0, med: 0 };   // v78: até quando dura a espera do estômago e a médica
   if (!p.col || typeof p.col !== 'object') p.col = {};   // v79: vitrine dos colecionáveis (id -> quantos)
   if (!p.mus || typeof p.mus !== 'object') p.mus = {};   // v79: quantas vezes entregou cada conjunto ao museu
+  if (!p.sx || typeof p.sx !== 'object') p.sx = { F: 0, T: 0, I: 0, C: 0 };   // v82: pontos partidos do ginásio (milésimos)
+  if (p.gs === undefined) p.gs = null;   // v82: a série do ginásio a meio
   if (!p.c) p.c = { crimes: 0, wins: 0, trains: 0, refills: 0, collects: 0, pvpWins: 0, ports: 0 };
   if (!Number.isSafeInteger(p.mi)) p.mi = 0;
   if (!Array.isArray(p.mq)) p.mq = CFG.missions.map((_, i) => i).slice(Math.min(Math.max(p.mi, 0), CFG.missions.length));
@@ -251,6 +253,7 @@ export function touch(p, now) {
   if (p.hospUntil && p.hospUntil <= now) p.hospUntil = 0;
   settleClub(p, now); settleBro(p, now);   // os clientes da discoteca e do bordel até agora
   if (p.course && !p.course.ex && p.course.end <= now) { if (!p.done.includes(p.course.id)) p.done.push(p.course.id); p.course = null; }   // curso de antes do exame: acaba sozinho
+  if (p.gs && p.gs.t0 + CFG.train.set.ttl <= now) p.gs = null;   // v82: série esquecida
   if (p.course && p.course.q && p.course.q.t + CFG.exam.ttl <= now) { p.course.next = Math.max(p.course.next || 0, p.course.q.t + CFG.exam.ttl + examRetry(p.course.id)); p.course.q = null; p.course.why = 'ttl'; p.course.last = null; }   // v80: exame deixado aberto conta como chumbo
   p.t = now;
 }
@@ -1323,21 +1326,58 @@ export function detox(p, now, world) {
   return { ok: true, price };
 }
 
-// ---------- treino ----------
-
-export function trainCost(p, stat) { return CFG.train.costBase + p.stats[stat] * CFG.train.costPerStat; }
-
-export function train(p, now, world, stat) {
+// ---------- ginásio (v82): séries no ritmo ----------
+// O cliente mostra a barra a subir e a descer e manda os toques (ms desde o início da série). Cada topo tem a sua janela
+// (meio tempo para cada lado): um toque lá dentro dá a nota pelo erro (perfeito, bom, fraco); nenhum, ou dois na mesma
+// janela, é falhado só dessa repetição. Um ritmo certo demais (desvio-padrão dos erros abaixo de 8 ms, com 3 ou mais
+// toques) não é de pessoa: os «perfeitos» contam como «bons».
+export function gymMarks(n, taps) {
+  const S = CFG.train.set, half = S.beat / 2, miss = S.win.length, marks = [], errs = [];
+  for (let k = 0; k < n; k++) {
+    const T0 = S.lead + k * S.beat, inW = taps.filter((x) => x >= T0 - half && x < T0 + half);
+    if (inW.length !== 1) { marks.push(miss); continue; }
+    const e = inW[0] - T0, err = Math.round(Math.abs(e));
+    let m = S.win.findIndex((w) => err <= w); if (m < 0) m = miss;
+    marks.push(m); errs.push(e);
+  }
+  if (errs.length >= 3) {
+    const avg = errs.reduce((a, b) => a + b, 0) / errs.length, sd = Math.sqrt(errs.reduce((a, b) => a + (b - avg) ** 2, 0) / errs.length);
+    if (sd < S.botSd) return marks.map((m) => (m === 0 ? 1 : m));
+  }
+  return marks;
+}
+// quantas repetições já passaram pelo relógio do servidor (com folga para a rede: não se cobra um topo que o jogador
+// ainda não viu). Desistir ou sair da app entrega a série até aí; antes do primeiro topo não custa nada.
+export function gymReps(g, el) {
+  const S = CFG.train.set;
+  if (el >= S.lead + (g.reps - 1) * S.beat) return g.reps;
+  return Math.max(0, Math.min(g.reps, Math.floor((el - S.slack - S.lead) / S.beat) + 1));
+}
+export function gymStart(p, now, world, stat, reps) {
   if (!STATS.includes(stat)) fail('NO_STAT');
+  if (!CFG.train.set.reps.includes(reps)) fail('BAD_REPS');
   begin(p, now, world);
-  if (p.vigor < CFG.train.energy) fail('NO_VIGOR', { need: CFG.train.energy });
-  const cost = trainCost(p, stat);
-  pay(p, cost);
-  settleAllBiz(p, now); // o rendimento até agora conta com a stat antiga
-  p.vigor -= CFG.train.energy;
-  p.stats[stat] += 1;
-  p.c.trains += 1;
-  return { ok: true, stat, value: p.stats[stat], cost };
+  if (p.vigor < reps * CFG.train.energy) fail('NO_VIGOR', { need: reps * CFG.train.energy });
+  const S = CFG.train.set;
+  p.gs = { stat, reps, t0: now };
+  return { ok: true, stat, reps, beat: S.beat, lead: S.lead, t0: now, until: now + S.ttl };
+}
+export function gymDone(p, now, world, taps) {
+  if (!p.gs) fail('NO_SERIES');
+  const S = CFG.train.set, g = p.gs, el = now - g.t0;
+  // os toques vêm do cliente: números, poucos, e nenhum marcado depois do tempo que já passou aqui
+  if (!Array.isArray(taps) || taps.length > 64 || !taps.every((x) => Number.isFinite(x) && x >= 0 && x <= el + S.slack)) fail('BAD_TAPS');
+  begin(p, now, world);
+  if (!p.gs) fail('NO_SERIES');   // caducou
+  const n = gymReps(g, el);
+  if (p.vigor < n * CFG.train.energy) fail('NO_VIGOR', { need: n * CFG.train.energy });
+  const marks = gymMarks(n, taps), milli = marks.reduce((a, m) => a + S.q[m] / 10, 0) + (p.sx[g.stat] || 0);
+  const gain = Math.floor(milli / 1000);
+  if (gain) settleAllBiz(p, now);   // o rendimento até aqui conta com a stat antiga
+  p.vigor -= n * CFG.train.energy;
+  p.stats[g.stat] += gain; p.sx[g.stat] = Math.round(milli - gain * 1000);
+  p.c.trains += n; p.gs = null;
+  return { ok: true, stat: g.stat, reps: n, of: g.reps, marks, gain, value: p.stats[g.stat], part: p.sx[g.stat] };
 }
 
 // ---------- negócios ----------
@@ -3250,6 +3290,8 @@ export function checkInvariants(p) {
   if (p.course && p.course.q) { const q = p.course.q, B = (CFG.exam.ans[examBank(p.course.id)] || []).length;   // v80: o exame aberto
     if (!p.course.ex || !Array.isArray(q.ids) || q.ids.length !== CFG.exam.n || new Set(q.ids).size !== q.ids.length || q.ids.some((i) => !Number.isInteger(i) || i < 0 || i >= B) || !Number.isSafeInteger(q.t)
       || !Array.isArray(q.p) || q.p.length !== q.ids.length || q.p.some((x) => !Array.isArray(x) || [...x].sort().join() !== '0,1,2,3')) bad.push('exam'); }
+  if (!p.sx || STATS.some((k) => !Number.isInteger(p.sx[k]) || p.sx[k] < 0 || p.sx[k] > 999)) bad.push('sx');   // v82
+  if (p.gs && !(STATS.includes(p.gs.stat) && CFG.train.set.reps.includes(p.gs.reps) && Number.isSafeInteger(p.gs.t0))) bad.push('gs');
   if (p.course && p.course.ex && !(Number.isInteger(p.course.cuts) && p.course.cuts >= 0 && p.course.cuts <= CFG.exam.cuts)) bad.push('exam cuts');
   if (!Array.isArray(p.done) || p.done.some((id) => !courseOf(id)) || new Set(p.done).size !== p.done.length) bad.push('courses done');
   if (!Array.isArray(p.stk) || p.stk.length !== CFG.stocks.list.length || p.stk.some((h) => !h || !Number.isSafeInteger(h.n) || h.n < 0 || !Number.isSafeInteger(h.cost) || h.cost < 0 || !Number.isSafeInteger(h.gen) || (h.n === 0 && h.cost !== 0)

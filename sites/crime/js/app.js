@@ -144,6 +144,7 @@ function react(type, out, before, opts) {
   else if (type === 'deal') { toast(t('dealSold', { g: r.grams, m: money(r.money), n: r.respect }) + (r.lav ? ' · ' + t('ro_lav', { m: money(r.lav) }) : '')); fx.sfx('cash'); }
   else if (type === 'workDone') { fx.vibrate(r.busted ? [40, 60, 40] : 14); fx.sfx(r.busted ? 'bust' : 'cash'); }
   else if (type === 'shift') { toast(t('jbDone', { m: money(r.money), n: r.left })); fx.sfx('cash'); }
+  else if (type === 'gymDone') { if (!opts.quiet && r.reps) toast(t('tGym', { p: gymPts(r.marks), x: t('stat' + r.stat).toLowerCase(), k: r.marks.filter((m) => m < 2).length, n: r.marks.length })); if (r.reps) fx.sfx(r.gain ? 'claim' : 'tap'); }
   else if (type === 'examAnswer') {
     if (r.pass && r.done) { toast(t('tExDone')); fx.sfx('claim'); }
     else if (r.pass) { toast(t('tExCut', { t: exDur(r.cut) })); fx.sfx('claim'); }
@@ -193,7 +194,7 @@ function react(type, out, before, opts) {
     if (r.success) { toast(t('hmDone', { b: r.target, n: r.respLoss })); fx.sfx('crit'); fx.vibrate([20, 40, 20]); } else { toast(t('hmMissed', { b: r.target }), true); fx.sfx('fail'); }
     S.targets = null; loadTargets();
   } else if (type === 'tableBet') fx.sfx('deal');
-  else if (type !== 'train' && type !== 'tableClear') fx.sfx('buy');
+  else if (type !== 'gymStart' && type !== 'tableClear') fx.sfx('buy');
   if (type === 'crime' || type === 'crimeAll') requestAnimationFrame(showReport);
   if (lv) { skyline(lv.to); if (type !== 'crime' && type !== 'crimeAll' && type !== 'opGo') toast(t('r_lvl', { n: lv.to, x: titleOf(lv.to) })); }
   render();
@@ -2536,22 +2537,126 @@ function examPanel(me, embed) {
   return h('section', { class: 'exam' }, head, body);
 }
 
+// ===== Ginásio novo (v82): a série no ritmo =====
+// A barra desce depressa e sobe a velocidade constante até bater na linha dourada: é aí que se toca. Antes do primeiro
+// topo há uma contagem de 3 no mesmo compasso, com tique em cada tempo. Cada repetição tem a sua janela (meio tempo para
+// cada lado); um toque lá dentro dá a nota, dois toques ou nenhum falham só essa repetição (a mesma conta do servidor).
+// Com movimento reduzido não há barra: a faixa da linha acende a meio do tempo e fica cheia no momento certo.
+const gymPts = (marks) => (marks.reduce((a, m) => a + S.cfg.train.set.q[m], 0) / 10000).toLocaleString(lang() === 'pt' ? 'pt-PT' : 'en-GB', { maximumFractionDigits: 1 });
+const gymVal = (v, part) => (v + part / 1000).toLocaleString(lang() === 'pt' ? 'pt-PT' : 'en-GB', { maximumFractionDigits: 1 });
+function gymNote(X, tt) {   // a nota de um toque, com o erro arredondado como no servidor
+  const k = Math.round((tt - X.lead) / X.beat), err = Math.round(Math.abs(tt - (X.lead + k * X.beat)));
+  let m = X.win.findIndex((w) => err <= w); if (m < 0) m = X.win.length;
+  return { k, m };
+}
+async function gymSeries(stat, reps, opener) {
+  if (S.gymOn) return;
+  const out = await act('gymStart', { stat, reps }, { el: opener }); if (!out) return;
+  const X = S.cfg.train.set, rm = matchMedia('(prefers-reduced-motion: reduce)').matches, half = X.beat / 2, taps = [], per = Array(reps).fill(null);
+  S.gymOn = true;
+  const plate = () => h('i', { class: 'gy-plate' });
+  const bar = h('div', { class: 'gy-bar' }, plate(), h('i', { class: 'gy-rod' }), plate());
+  const line = h('i', { class: 'gy-line' });
+  const rail = h('div', { class: 'gy-rail' + (rm ? ' rm' : '') }, h('i', { class: 'gy-hook l' }), h('i', { class: 'gy-hook r' }), line, bar);
+  const dots = h('ol', { class: 'gy-dots', 'aria-hidden': 'true' }, per.map(() => h('li')));
+  const say = h('p', { class: 'gy-say', 'aria-hidden': 'true' }, t('gyGet'));
+  const live = h('p', { class: 'sr', 'aria-live': 'polite' });
+  const cnt = h('span', { class: 'gy-cnt num' }, t('gyRep', { k: 0, n: reps }));
+  const pad = h('button', { class: 'gy-pad', type: 'button' }, t('gyTap'));
+  const quit = h('button', { class: 'gy-x', type: 'button', 'aria-label': t('gyQuit') }, icon('x'));
+  const box = h('div', { class: 'gym-on', role: 'dialog', 'aria-modal': 'true', 'aria-label': t('stat' + stat) },
+    h('div', { class: 'gy-head' }, h('div', null, h('b', null, t('stat' + stat)), cnt), quit), rail, dots, say, pad, live);
+  document.body.append(box); document.body.classList.add('gym-lock'); $app.inert = true;
+  const t0 = performance.now(), lastT = X.lead + (reps - 1) * X.beat, railH = rail.getBoundingClientRect().height, barH = 48;
+  let raf = 0, done = false, lastDown = -1e9, beat = -1;
+  const paint = (k, m, txt) => { const d = dots.children[k]; d.className = 'm' + m; say.textContent = txt; say.className = 'gy-say m' + m; };
+  const frame = () => {
+    const tt = performance.now() - t0;
+    // compasso: tempo b (0, 1, 2 = contagem; 3.. = topos); tique e vibração ao passar cada um
+    const b = Math.floor(tt / X.beat);
+    if (b !== beat && tt < lastT + 1) {
+      beat = b; fx.sfx('tick');
+      const k = Math.round((tt - X.lead) / X.beat);
+      if (tt < X.lead - 10) { say.textContent = String(Math.round((X.lead - tt) / X.beat)); say.className = 'gy-say cnt'; }
+      else { fx.vibrate(6); line.classList.remove('hit'); void line.offsetWidth; line.classList.add('hit'); cnt.textContent = t('gyRep', { k: Math.min(reps, k + 1), n: reps }); }
+    }
+    // janela fechada sem toque: falhou
+    for (let k = 0; k < reps; k++) if (per[k] === null && tt >= X.lead + k * X.beat + half) { per[k] = 3; paint(k, 3, t('gyM3')); }
+    // a barra: em cada tempo desce no primeiro quarto e sobe a direito até bater na linha no topo seguinte
+    const u = (((tt - X.lead) % X.beat) + X.beat) % X.beat / X.beat;
+    let y = u < 0.25 ? 1 - (1 - (1 - u / 0.25) ** 2) : (u - 0.25) / 0.75;
+    if (tt < X.lead - X.beat * 0.75) y = 0; else if (tt > lastT + X.beat * 0.25) y = 0;
+    if (rm) { const d = Math.abs(tt - (X.lead + Math.round((tt - X.lead) / X.beat) * X.beat)); rail.dataset.l = tt < X.lead - half - 10 || tt > lastT + half ? '0' : d <= X.win[0] ? '2' : d <= half ? '1' : '0'; }
+    else bar.style.transform = `translateY(${Math.round((1 - y) * (railH - barH))}px)`;
+    if (tt > lastT + half + 60) { finish(); return; }
+    raf = requestAnimationFrame(frame);
+  };
+  const tap = (ts) => {
+    if (done) return;
+    const tt = Math.max(0, ts - t0);
+    if (tt < X.lead - half || tt >= lastT + half) return;   // fora das janelas: não conta nem estraga
+    taps.push(Math.round(tt));
+    const { k, m } = gymNote(X, tt);
+    if (k < 0 || k >= reps) return;
+    if (per[k] !== null) { per[k] = 3; paint(k, 3, t('gyTwice')); return; }
+    per[k] = m; paint(k, m, t('gyM' + m));
+  };
+  const keep = () => { cancelAnimationFrame(raf); document.removeEventListener('visibilitychange', away); };
+  const close = () => {
+    keep(); box.remove(); document.body.classList.remove('gym-lock'); $app.inert = false; S.gymOn = false;
+    render(); requestAnimationFrame(() => { const b = document.querySelector('[data-gym="' + stat + reps + '"]'); (b || opener)?.focus?.(); });
+  };
+  // entregar: no fim, ao desistir ou ao sair da app (o servidor conta só as repetições cujo topo já passou)
+  const send = async (why) => {
+    if (done) return; done = true; keep();
+    pad.disabled = true; quit.disabled = true;
+    const r = await act('gymDone', { taps }, { quiet: why !== 'away' });
+    const res = r && r.result;
+    if (res) S.gymLast = { stat, ...res };
+    if (!res || why === 'away') { close(); return; }
+    if (!res.reps) { live.textContent = t('gyQuitNone'); say.textContent = t('gyQuitNone'); say.className = 'gy-say'; setTimeout(close, 1200); return; }
+    [...dots.children].forEach((d, i) => { d.className = i < res.marks.length ? 'm' + res.marks[i] : ''; });   // as notas do servidor
+    const k = res.marks.filter((m) => m < 2).length, sum = h('div', { class: 'gy-sum' },
+      h('b', { class: 'num' }, '+' + gymPts(res.marks)),
+      h('span', null, t('stat' + stat) + ' ' + gymVal(res.value, res.part) + ' · ' + t('gyOn', { k, n: res.reps })));
+    say.replaceWith(sum); live.textContent = t('tGym', { p: gymPts(res.marks), x: t('stat' + stat).toLowerCase(), k, n: res.reps });
+    pad.disabled = false; pad.textContent = t('gyClose'); pad.onclick = close; pad.focus();
+    setTimeout(() => { if (box.isConnected) close(); }, 2400);
+  };
+  const finish = () => send('end');
+  const away = () => { if (document.visibilityState === 'hidden') send('away'); };
+  pad.addEventListener('pointerdown', (e) => { if (done) return; e.preventDefault(); lastDown = e.timeStamp; tap(e.timeStamp); });
+  pad.addEventListener('click', (e) => { if (done) return; if (e.timeStamp - lastDown > 300) tap(e.timeStamp); });   // toque duplo do leitor de ecrã
+  pad.addEventListener('keydown', (e) => { if ((e.key === ' ' || e.key === 'Enter') && !done) { e.preventDefault(); if (!e.repeat) tap(e.timeStamp); } });
+  box.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') { e.preventDefault(); done ? close() : send('quit'); }
+    if (e.key === 'Tab') { e.preventDefault(); (document.activeElement === pad ? quit : pad).focus(); }   // o foco fica no ecrã da série
+  });
+  quit.addEventListener('click', () => (done ? close() : send('quit')));
+  document.addEventListener('visibilitychange', away);
+  raf = requestAnimationFrame(frame);
+  pad.focus();
+}
+
 function screenGym() {
   const me = S.st.me, L = live(me), E = S.cfg.train.energy;
-  const out = [pageHead('gym', t('gymSub', { e: E }))];
+  const out = [pageHead('gym', t('gySub', { e: E }))];
   const b = busyBanner(me); if (b) out.push(b);
   out.push(h('div', { class: 'card meters' }, meter(t('vigor'), L.vigor, vigMax(), 'vg'), h('p', { class: 'small muted' }, t('vigorSub'))));
   out.push(h('div', { class: 'power' },
     h('div', { class: 'card' }, h('b', null, icon('fist'), short(me.attack)), h('span', { class: 'small muted' }, t('attackPower'))),
     h('div', { class: 'card' }, h('b', null, icon('shield'), short(me.defense)), h('span', { class: 'small muted' }, t('defensePower')))));
+  const X = S.cfg.train.set, [r1, r2] = X ? X.reps : [5, 10];
   out.push(h('div', { class: 'shop' }, ['F', 'I', 'C', 'T'].map((s) => {
-    const train = async (e, n) => { const el = e.currentTarget; for (let i = 0; i < n; i++) { const r = await act('train', { stat: s }, { el }); if (!r) break; } };
+    const last = S.gymLast && S.gymLast.stat === s ? S.gymLast : null;
     return h('div', { class: 'item' }, art('stats', s),
       h('div', { class: 'nm' }, icon(STAT_IC[s]), ' ', t('stat' + s), ' ', h('b', { class: 'num' }, num(me.stats[s]))),
       h('p', { class: 'small muted' }, t('stat' + s + 'd')),
       me.xp && s !== 'T' ? h('div', { class: 'fill', title: t('practiceLbl') }, h('i', { style: `width:${Math.min(100, (me.xp[s] / me.xpNeed[s]) * 100)}%;background:var(--energy)` })) : null,
-      h('div', { class: 'row gymr' }, h('button', { class: 'btn buy grow', disabled: !!b || L.vigor < E, on: { click: (e) => train(e, 1) } }, t('train')),
-        h('button', { class: 'btn', disabled: !!b || L.vigor < 5 * E, on: { click: (e) => train(e, 5) } }, t('trainX5'))));
+      last ? h('p', { class: 'small glast' }, t('gyLast', { k: last.marks.filter((m) => m < 2).length, n: last.marks.length, p: gymPts(last.marks) })) : null,
+      // v82: treinar é uma série no ritmo; a curta e a longa
+      h('div', { class: 'gymr' }, [r1, r2].map((n, i) => h('button', { class: 'btn' + (i ? '' : ' buy'), 'data-gym': s + n, disabled: !!b || L.vigor < n * E, on: { click: (e) => gymSeries(s, n, e.currentTarget) } },
+        h('span', null, t('gyGo', { n })), h('span', { class: 'gy-e' }, t('gyGoE', { e: n * E }))))));
   })));
   return out;
 }

@@ -122,8 +122,8 @@ test('economia nova pela API: golpe, barra a droga, venda de droga e ginásio, e
   r = await A('POST', '/api/act', { type: 'deal', j: 1 }); assert.equal(r.body.error, 'LOW_LEVEL');
   r = await A('POST', '/api/act', { type: 'dealBuy', j: 0, kg: 0 }); assert.equal(r.body.error, 'BAD_AMOUNT');
   // ginásio: gasta energia, não stamina
-  r = await A('POST', '/api/act', { type: 'train', stat: 'F' }); assert.equal(r.status, 200, JSON.stringify(r.body));
-  assert.equal(r.body.me.vigor, CFG.vigor.max - CFG.train.energy); assert.equal(r.body.me.energy, 100 - CFG.deal.step);
+  r = await A('POST', '/api/act', { type: 'gymStart', stat: 'F', reps: 5 }); assert.equal(r.status, 200, JSON.stringify(r.body));
+  assert.equal(r.body.me.energy, 100 - CFG.deal.step);   // a série cobra a energia no fim, pelas repetições feitas
   const cx = caixa();
   assert.equal((cx['golpe:carteirista'] || { e: 0 }).e, levou); assert.equal(cx.refill.s, barra); assert.equal(cx.dealBuy.s, 2000); assert.equal(cx.deal.e, 300);
 });
