@@ -2510,7 +2510,6 @@ export function casinoMax(p) {
   for (const [n, max] of CFG.casino.limits) if (L >= n) m = max;
   return m;
 }
-// k: quantas vezes o máximo por jogada se pode apostar (as compras de bónus das slots têm um teto mais alto)
 function stakeOf(p, amounts, k = 1) {
   const C = CFG.casino;
   if (!Array.isArray(amounts) || !amounts.length || amounts.length > C.maxBets) fail('BAD_BET');
@@ -2937,14 +2936,18 @@ function slot(p, a, rng) {
   if (![0, 1, 2].includes(a.buy ?? 0)) fail('BAD_BET');
   const G = CFG.casino.slots[gid], buy = a.buy ?? 0;
   const mult = buy === 2 ? G.superBuy : buy === 1 ? G.buy : 1;
-  if (!mult || !Number.isSafeInteger(a.amt)) fail('BAD_BET');
-  if (a.amt < CFG.casino.minBet) fail('BAD_BET');
-  const bet = stakeOf(p, [a.amt * mult], buy ? CFG.casino.buyMaxMult : 1);
-  p.cash -= bet;
+  // como nas slots a sério: aposta ao cêntimo (bc, a partir de 0,20 €) e o bónus custa sempre mult× a aposta, com qualquer aposta permitida.
+  // O prémio também se paga ao cêntimo (antes 0,40 € numa ficha de 1 € dava 0 €); os cêntimos ficam em p.cent, ao lado do dinheiro na mão.
+  // Quem ainda manda «amt» (euros inteiros, versão antiga do site) continua a poder jogar.
+  const betC = a.bc !== undefined ? a.bc : Number.isSafeInteger(a.amt) ? a.amt * 100 : NaN;
+  if (!mult || !Number.isSafeInteger(betC) || betC < CFG.casino.slotMinC) fail('BAD_BET');
+  if (betC > casinoMax(p) * 100) fail('BET_TOO_BIG', { max: casinoMax(p) });
+  const costC = betC * mult, wallet = p.cash * 100 + (p.cent || 0);
+  if (costC > wallet) fail('NO_CASH');
   const sp = slotSpin(gid, rng, buy);
-  const win = Math.floor((a.amt * sp.total) / 100);
-  p.cash += win;
-  return { ok: true, g: 'slot', game: gid, bet, base: a.amt, buy, win, spin: sp };
+  const winC = Math.floor((betC * sp.total) / 100), after = wallet - costC + winC;
+  p.cash = Math.floor(after / 100); p.cent = after % 100;
+  return { ok: true, g: 'slot', game: gid, bet: costC / 100, base: betC / 100, win: winC / 100, betC: costC, baseC: betC, winC, buy, spin: sp };
 }
 export function bjPublic(p) { return p.bj ? bjView(p.bj, false) : null; }
 export function casinoPlay(p, now, world, g, a, rng) {
@@ -3025,6 +3028,7 @@ export function ranking(players) {
 
 export function checkInvariants(p) {
   const bad = [];
+  if (p.cent !== undefined && (!Number.isInteger(p.cent) || p.cent < 0 || p.cent > 99)) bad.push(`cent=${p.cent}`);
   const ints = ['energy', 'energyT', 'addiction', 'addictionT', 'cash', 'bank', 'respect', 'respectAt', 'peakRespect', 'jailUntil', 'hospUntil', 'protectUntil', 'capUntil', 'luxuries', 't'];
   for (const k of ints) if (!Number.isSafeInteger(p[k]) || p[k] < 0) bad.push(`${k}=${p[k]}`);
   for (const s of STATS) if (!Number.isSafeInteger(p.stats[s]) || p.stats[s] < CFG.start.stat) bad.push(`stat ${s}=${p.stats[s]}`);

@@ -373,7 +373,7 @@ export const CFG = {
     // em euros: 1 € a 5 € até ao nível 20, até 20 € do 20 ao 39, até 50 € do 40 ao 59, sala reservada até 1 000 € a partir do 60
     minBet: 1, limits: [[1, 5], [20, 20], [40, 50], [60, 1000]], // aposta máxima por jogada = 1000 × 1,6^(nível−1), como o porto
     maxBets: 12, // fichas por jogada na roleta e na roda
-    buyMaxMult: 20, // comprar um bónus numa slot pode custar até 20× o máximo por jogada (o prémio máximo continua preso à ficha); com 5 € de máximo, dá para comprar com fichas de 1 €
+    slotMinC: 20, // slots (17/11/2026): aposta mínima de 0,20 €, em cêntimos; o bónus custa sempre buy× a aposta (0,20 € → 20 €), com qualquer aposta até ao máximo do nível
     red: [1, 3, 5, 7, 9, 12, 14, 16, 18, 19, 21, 23, 25, 27, 30, 32, 34, 36],
     dice: { low: 23, seven: 58, high: 23 }, // quanto volta por cada 10 apostados: 2,3× · 5,8× · 2,3×
     bj: { decks: 6, draw: 24 }, // baralho de 6 baralhos, baralhado a cada mão

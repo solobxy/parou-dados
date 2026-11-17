@@ -37,6 +37,9 @@ function linha() {
 // Cada peça diz onde fica (b) e de onde entra (a). As transformações vão por extenso, sem variáveis de CSS,
 // para a entrada funcionar também nos browsers que não as aceitam dentro de uma animação.
 const peca = (el, a, b) => { el.style.transform = b; return { el, a, b }; };
+// fotografias (17/11): o contentor, o interior, o cadeado, as notas e os caixotes deixaram de ser desenhos
+const OBJ = (n) => `/img/obj/${n}.webp?1`;
+const foto = (n, cls) => h('img', { class: cls, src: OBJ(n), alt: '', draggable: 'false', decoding: 'async' });
 // maços de notas empilhados em pirâmide, de baixo para cima
 function notas(n) {
   const out = [];
@@ -44,27 +47,40 @@ function notas(n) {
   for (let i = 0; i < n; i++) {
     if (naFila >= cabem) { fila++; naFila = 0; cabem = Math.max(2, cabem - 1); }
     const x = 50 + (naFila - (cabem - 1) / 2) * 17 + (fila % 2 ? 1.5 : 0), r = ((i * 37) % 7) - 3;
-    out.push(peca(h('i', { class: 'bd', style: `left:${x}%;bottom:${8 + fila * 9.5}%` }), `translate(-50%,26px) rotate(${r}deg) scale(.7)`, `translate(-50%,0) rotate(${r}deg)`));
+    out.push(peca(foto('notas', 'bd'), `translate(-50%,26px) rotate(${r}deg) scale(.7)`, `translate(-50%,0) rotate(${r}deg)`));
+    Object.assign(out.at(-1).el.style, { left: x + '%', bottom: 8 + fila * 9.5 + '%' });
     naFila++;
   }
   return out;
 }
 // a droga vem em caixotes de madeira: três em baixo e dois por cima (o que é e quanto é diz-se no resultado, com a imagem dela)
-const caixotes = () => [[27, 9, -2], [50, 8, 1], [73, 9, 2], [38.5, 31, 1], [61.5, 31, -2]].map(([x, y, r]) =>
-  peca(h('i', { class: 'cx', style: `left:${x}%;bottom:${y}%` }), `translate(-50%,26px) rotate(${r}deg) scale(.7)`, `translate(-50%,0) rotate(${r}deg)`));
+const caixotes = () => [[27, 9, -2], [50, 8, 1], [73, 9, 2], [38.5, 31, 1], [61.5, 31, -2]].map(([x, y, r]) => {
+  const p = peca(foto('caixote', 'cx'), `translate(-50%,26px) rotate(${r}deg) scale(.7)`, `translate(-50%,0) rotate(${r}deg)`);
+  Object.assign(p.el.style, { left: x + '%', bottom: y + '%' });
+  return p;
+});
 // a fita da polícia: duas tiras cruzadas, cada uma a entrar do seu lado
 const fita = (txt) => [['a', -11, -1], ['b', 9, 1]].map(([c, r, lado]) =>
   peca(h('div', { class: 'tp ' + c }, h('span', null, Array(6).fill(txt).join('  ·  '))), `translate(${-50 + lado * 130}%,-50%) rotate(${r}deg)`, `translate(-50%,-50%) rotate(${r}deg)`));
 
-// ---------- pele: contentor visto de frente, com as duas portas, os varões e o cadeado ----------
+// a fotografia do contentor é vermelha; para a cor de cada transportadora roda-se o tom e acerta-se a saturação e a luz
+function tom(hex) {
+  const n = parseInt(hex.slice(1), 16), r = (n >> 16) / 255, g = ((n >> 8) & 255) / 255, b = (n & 255) / 255;
+  const mx = Math.max(r, g, b), mn = Math.min(r, g, b), l = (mx + mn) / 2, d = mx - mn;
+  const s = d ? d / (1 - Math.abs(2 * l - 1)) : 0;
+  let hh = 0; if (d) hh = mx === r ? ((g - b) / d) % 6 : mx === g ? (b - r) / d + 2 : (r - g) / d + 4;
+  const cl = (v, a, z) => Math.min(z, Math.max(a, v));
+  return `hue-rotate(${Math.round(hh * 60 - 4)}deg) saturate(${cl(s / 0.55, 0.15, 1.6).toFixed(2)}) brightness(${cl(l / 0.3, 0.8, 1.45).toFixed(2)})`;
+}
+// ---------- pele: contentor visto de frente (fotografia), com as duas portas e um cadeado ----------
 // marca: o nome (inventado) da transportadora, pintado na porta; codigo: [prefixo, número] do contentor
 export function contentor({ cor, marca, codigo }) {
-  const lock = h('div', { class: 'ct-lock' }, h('i'));
-  const porta = (lado, ...dentro) => h('div', { class: 'ct-door ' + lado }, h('i', { class: 'rod a' }), h('i', { class: 'rod b' }), h('i', { class: 'hd' }), ...dentro);
+  const lock = h('div', { class: 'ct-lock' }, foto('cadeado'));
+  const porta = (lado, ...dentro) => h('div', { class: 'ct-door ' + lado }, foto('contentor', 'ph'), ...dentro);
   const L = porta('l', h('div', { class: 'ct-nm' }, marca));
   const R = porta('r', h('div', { class: 'ct-code' }, ...codigo.map((x) => h('b', null, x)), h('span'), h('span'), h('span')));
   const fill = h('div', { class: 'ct-fill' });
-  const el = h('div', { class: 'ct', style: `--ct:${cor}` }, h('div', { class: 'ct-in' }, h('div', { class: 'ct-glow' }), h('div', { class: 'ct-cop' }), fill), L, R, lock);
+  const el = h('div', { class: 'ct', style: `--ct:${cor};--ctf:${tom(cor)}` }, foto('contentor', 'ct-frame'), h('div', { class: 'ct-in' }, foto('contentor-dentro', 'ct-room'), h('div', { class: 'ct-glow' }), h('div', { class: 'ct-cop' }), fill), L, R, lock);
   const C = 'translate(-50%,-50%)', ABERTA = (lado) => ({ transform: `rotateY(${lado * 108}deg)`, filter: 'brightness(.45)' });
   return {
     el, fill,

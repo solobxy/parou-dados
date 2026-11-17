@@ -4,6 +4,9 @@
 import { h, svg } from './ui.js';
 
 const reduced = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
+// fotografias dos objetos (17/11): caixas, paletes, comprimidos, a roda, os móveis… em vez de desenhos feitos em CSS
+const OBJ = (n) => `/img/obj/${n}.webp?1`;
+const pic = (n, cls = 'ph') => h('img', { class: cls, src: OBJ(n), alt: '', draggable: 'false', decoding: 'async' });
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 
 // ---------- arrastar (com a alternativa de dois toques) ----------
@@ -67,11 +70,12 @@ function camiao(task, ctx) {
   let drops = 0, placed = 0, done;
   const finished = new Promise((r) => { done = r; });
   const boxes = L.boxes.map((b, i) => h('div', { class: 'tk-box l' + b.look, dataset: { i }, role: 'button', 'aria-label': `${b.kg} kg`, style: `--s:${(0.78 + (0.22 * (b.kg - 4)) / 36).toFixed(3)}` },
-    h('i', { class: 'tape' }), h('span', { class: 'kg num' }, b.kg + ' kg')));
-  const truck = h('div', { class: 'tk-truck' }, h('div', { class: 'roll' }), h('div', { class: 'door l' }), h('div', { class: 'hold' }, ...boxes.map((b) => h('div', { class: 'cell' }, b))), h('div', { class: 'door r' }), h('div', { class: 'bumper' }, h('i'), h('i')));
+    pic('caixa'), h('span', { class: 'kg num' }, b.kg + ' kg')));
+  // a traseira do camião aberta (fotografia); as caixas ficam no chão da caixa de carga
+  const truck = h('div', { class: 'tk-truck' }, pic('camiao-fundo', 'bg'), h('div', { class: 'hold' }, ...boxes.map((b) => h('div', { class: 'cell' }, b))));
   const spotEls = [0, 1, 2, 3, 4, 5].map((k) => h('div', { class: 'tk-slot' + (k < 3 ? ' low' : ' high'), dataset: { k } }));
   const pallet = h('div', { class: 'tk-pallet' }, h('div', { class: 'rows' }, h('div', { class: 'row top' }, ...spotEls.slice(3)), h('div', { class: 'row bot' }, ...spotEls.slice(0, 3))),
-    h('div', { class: 'wood' }, h('i'), h('i'), h('i')), h('span', { class: 'base' }, t('tkBase')));
+    pic('palete', 'wood'), h('span', { class: 'base' }, t('tkBase')));
   const note = h('p', { class: 'tk-note', 'aria-live': 'polite' }, t('tkTapHint'));
   const left = h('span', { class: 'tk-count num' }, '0 / 6');
   const stage = h('div', { class: 'tk-stage tk-camiao' }, head(t('tkCamiaoH'), t('tkCamiaoRule'), left), truck, pallet, note);
@@ -95,9 +99,9 @@ function entregas(task, ctx) {
   let done; const finished = new Promise((r) => { done = r; });
   const name = (s) => `${streets[s.name % streets.length]}, ${s.door}`;
   // 1) as encomendas para a mochila
-  const parcels = L.stops.map((s, i) => h('div', { class: 'tk-parcel z' + ((s.door + i) % 3), dataset: { i }, role: 'button', 'aria-label': name(s) }, h('i', { class: 'tape' }), h('span', { class: 'lbl' }, h('b', null, name(s)), h('i', { class: 'bars' }))));
+  const parcels = L.stops.map((s, i) => h('div', { class: 'tk-parcel z' + ((s.door + i) % 3), dataset: { i }, role: 'button', 'aria-label': name(s) }, pic('caixa'), h('span', { class: 'lbl' }, h('b', null, name(s)), h('i', { class: 'bars' }))));
   const bagIn = h('div', { class: 'in' });
-  const bag = h('div', { class: 'tk-bag' }, h('i', { class: 'side l' }), h('i', { class: 'side r' }), h('div', { class: 'flap' }), bagIn, h('i', { class: 'reflect' }));
+  const bag = h('div', { class: 'tk-bag' }, pic('mochila'), bagIn);
   const counter = h('div', { class: 'tk-counter' }, ...parcels.map((p) => h('div', { class: 'cell' }, p)));
   const bagCount = h('span', { class: 'tk-count num' }, `0 / ${L.stops.length}`);
   const step1 = h('div', { class: 'tk-step' }, head(t('tkBagH'), t('tkBagSub'), bagCount), counter, bag);
@@ -164,11 +168,12 @@ function laboratorio(task, ctx) {
   const { t, sfx, vibrate, grams } = ctx, L = task.layout, G = L.gauge;
   let done; const finished = new Promise((r) => { done = r; });
   // 1) comprimidos para a trituradora
-  const pills = Array.from({ length: L.pills }, (_, i) => h('div', { class: 'tk-pill c' + (i % 3), role: 'button', 'aria-label': t('tkPill') }, h('i')));
+  const pills = Array.from({ length: L.pills }, (_, i) => h('div', { class: 'tk-pill c' + (i % 3), role: 'button', 'aria-label': t('tkPill') }, pic('pilula' + (i % 3))));
   const tray = h('div', { class: 'tk-tray' }, ...pills.map((p, i) => h('div', { class: 'cell', style: `--r:${(i * 47) % 30 - 15}deg` }, p)));
   const hopperIn = h('div', { class: 'in' });
-  const powder = h('div', { class: 'powder' });
-  const machine = h('div', { class: 'tk-grinder' }, h('div', { class: 'hopper' }, hopperIn), h('div', { class: 'body' }, h('i', { class: 'bolt a' }), h('i', { class: 'bolt b' }), h('div', { class: 'vent' })), h('div', { class: 'chute' }), h('div', { class: 'bowl' }, powder));
+  const powder = h('div', { class: 'powder' }, pic('po'));
+  // a trituradora (fotografia): os comprimidos caem no copo de cima e o pó junta-se no fundo dele
+  const machine = h('div', { class: 'tk-grinder' }, pic('trituradora'), h('div', { class: 'jar' }, powder, hopperIn));
   const count = h('span', { class: 'num' }, `0 / ${L.pills}`);
   const risk = h('p', { class: 'tk-risk' }, t('tkIllegal', { p: ctx.risk }));
   const step1 = h('div', { class: 'tk-step' }, head(t('tkPillsH'), t('tkPillsSub'), count), risk, h('div', { class: 'tk-labrow' }, tray, machine));
@@ -181,11 +186,13 @@ function laboratorio(task, ctx) {
   const step2 = h('div', { class: 'tk-step', hidden: true }, head(t('tkCrushT'), t('tkCrushH')), machineSlot, gauge, marks, crushBtn);
   // 3) encher os sacos
   const lcd = h('b', { class: 'num' }, grams(0)), bagFill = h('i', { class: 'fill' });
-  const bagEl = h('div', { class: 'tk-zip' }, h('i', { class: 'seal' }), h('i', { class: 'mark' }), bagFill);
-  const scale = h('div', { class: 'tk-scale' }, bagEl, h('div', { class: 'plate' }), h('div', { class: 'lcd' }, lcd, h('small', null, t('tkTarget', { g: grams(L.target) }))));
+  const bagEl = h('div', { class: 'tk-zip' }, pic('saco'), bagFill, h('i', { class: 'mark' }), h('i', { class: 'seal' }));
+  // a balança (fotografia): o saco em cima do prato e o peso no visor dela
+  const scale = h('div', { class: 'tk-scale' }, pic('balanca', 'bal'), bagEl, h('div', { class: 'lcd' }, lcd));
+  const target = h('p', { class: 'tk-target' }, t('tkTarget', { g: grams(L.target) }));
   const bagsRow = h('div', { class: 'tk-marks bags' }, ...L.bags.map(() => h('i')));
   const holdBtn = h('button', { class: 'btn buy block big tk-hold', type: 'button' }, t('tkFill'));
-  const step3 = h('div', { class: 'tk-step', hidden: true }, head(t('tkBagsT'), t('tkBagsH', { g: grams(L.target) })), scale, bagsRow, holdBtn);
+  const step3 = h('div', { class: 'tk-step', hidden: true }, head(t('tkBagsT'), t('tkBagsH', { g: grams(L.target) })), scale, target, bagsRow, holdBtn);
   const stage = h('div', { class: 'tk-stage tk-lab' }, step1, step2, step3);
   let inHopper = 0;
   const kit = dragKit(stage, {
@@ -206,7 +213,8 @@ function laboratorio(task, ctx) {
     if (!hit) { gauge.classList.remove('miss'); void gauge.offsetWidth; gauge.classList.add('miss'); }
     machine.classList.remove('shake'); void machine.offsetWidth; machine.classList.add('shake');
     powder.style.setProperty('--h', taps.length / 3);
-    if (!reduced()) for (let k = 0; k < 7; k++) { const d = h('i', { class: 'dust' }); machine.querySelector('.bowl').appendChild(d); d.animate([{ transform: 'translate(0,0)', opacity: 1 }, { transform: `translate(${(Math.random() - 0.5) * 70}px, ${-20 - Math.random() * 30}px)`, opacity: 0 }], { duration: 500 + Math.random() * 300, easing: 'cubic-bezier(.2,.7,.4,1)' }).finished.then(() => d.remove()); }
+    hopperIn.style.setProperty('--k', 1 - taps.length / 3);   // os comprimidos desfazem-se a cada pancada
+    if (!reduced()) for (let k = 0; k < 7; k++) { const d = h('i', { class: 'dust' }); machine.querySelector('.jar').appendChild(d); d.animate([{ transform: 'translate(0,0)', opacity: 1 }, { transform: `translate(${(Math.random() - 0.5) * 70}px, ${-20 - Math.random() * 30}px)`, opacity: 0 }], { duration: 500 + Math.random() * 300, easing: 'cubic-bezier(.2,.7,.4,1)' }).finished.then(() => d.remove()); }
     sfx('crunch'); vibrate(hit ? 18 : [10, 20, 10]);
     if (taps.length === 3) { crushBtn.disabled = true; setTimeout(() => { cancelAnimationFrame(raf); step2.hidden = true; step3.hidden = false; }, 450); }
   });
@@ -279,8 +287,9 @@ function contrato(task, ctx) {
 function doses(task, ctx) {
   const { t, sfx, vibrate, ml } = ctx, L = task.layout;
   let done; const finished = new Promise((r) => { done = r; });
-  const fill = h('i', { class: 'liq' }), mark = h('i', { class: 'mark' }), plunger = h('i', { class: 'plg' }), rod = h('i', { class: 'rod' });
-  const barrel = h('div', { class: 'tk-syr' }, h('div', { class: 'brl' }, fill, mark, h('i', { class: 'ticks' })), rod, plunger, h('i', { class: 'ndl' }));
+  const fill = h('i', { class: 'liq' }), mark = h('i', { class: 'mark' });
+  // a seringa (fotografia): o líquido entra pelo lado da agulha e vai até ao êmbolo
+  const barrel = h('div', { class: 'tk-syr' }, pic('seringa'), h('div', { class: 'brl' }, fill, mark));
   const read = h('b', { class: 'num' }, ml(0)), want = h('small', null, '');
   const marks = h('div', { class: 'tk-marks' }, ...L.doses.map(() => h('i')));
   const btn = h('button', { class: 'btn buy block big tk-hold', type: 'button' }, t('tkFill'));
@@ -288,7 +297,7 @@ function doses(task, ctx) {
   const holds = []; let h0 = 0, raf = 0;
   const MAX = 5;   // a seringa leva 5 ml
   const setDose = () => { const k = holds.length; if (k < L.doses.length) { want.textContent = t('tkDose', { v: ml(L.doses[k] / 10) }); mark.style.left = (100 - (L.doses[k] / 10 / MAX) * 100) + '%'; } };
-  const show = (v) => { const tg = L.doses[holds.length] / 10, e = (v - tg) / tg; read.textContent = ml(v); read.className = 'num' + (Math.abs(e) <= 0.05 ? ' on' : e > 0.05 ? ' over' : ''); const pc = Math.min(100, (v / MAX) * 100); fill.style.width = pc + '%'; plunger.style.left = (100 - pc) + '%'; rod.style.width = (100 - pc) + '%'; };
+  const show = (v) => { const tg = L.doses[holds.length] / 10, e = (v - tg) / tg; read.textContent = ml(v); read.className = 'num' + (Math.abs(e) <= 0.05 ? ' on' : e > 0.05 ? ' over' : ''); const pc = Math.min(100, (v / MAX) * 100); fill.style.width = pc + '%'; };
   const press = (e) => { e.preventDefault(); if (h0 || holds.length >= L.doses.length) return; if (e.pointerId !== undefined) try { btn.setPointerCapture(e.pointerId); } catch {} h0 = performance.now(); sfx('pour');
     const tick = () => { show((L.rate * (performance.now() - h0)) / 100000); raf = requestAnimationFrame(tick); }; tick(); };
   const release = () => {
@@ -313,10 +322,11 @@ function doses(task, ctx) {
 function oficina(task, ctx) {
   const { t, sfx, vibrate } = ctx, L = task.layout;
   let done; const finished = new Promise((r) => { done = r; });
-  const pos = [0, 1, 2, 3, 4].map((i) => { const a = (-90 + i * 72) * (Math.PI / 180); return [50 + 27 * Math.cos(a), 50 + 27 * Math.sin(a)]; });
-  const nuts = pos.map(([x, y], i) => h('button', { class: 'tk-nut', type: 'button', style: `left:${x}%;top:${y}%`, 'aria-label': t('tkNut', { n: i + 1 }), dataset: { i } }, h('i', { class: 'hex' }), h('i', { class: 'ring' })));
-  const wheel = h('div', { class: 'tk-wheel l' + L.look }, h('div', { class: 'tyre' }, h('div', { class: 'rim' }, h('i', { class: 'hub' }))));
-  const wrap = h('div', { class: 'tk-wheelwrap' }, h('div', { class: 'arch' }), wheel, ...nuts);
+  // a roda (fotografia, de perto): as porcas são fotografias por cima dos pernos, no sítio exato de cada furo da jante
+  const pos = [0, 1, 2, 3, 4].map((i) => { const a = (-90 + i * 72) * (Math.PI / 180); return [49.7 + 15.55 * Math.cos(a), 49 + 15.55 * Math.sin(a)]; });
+  const nuts = pos.map(([x, y], i) => h('button', { class: 'tk-nut', type: 'button', style: `left:${x}%;top:${y}%`, 'aria-label': t('tkNut', { n: i + 1 }), dataset: { i } }, pic('porca', 'hex'), h('i', { class: 'ring' })));
+  const wheel = h('div', { class: 'tk-wheel l' + L.look }, pic('roda'));
+  const wrap = h('div', { class: 'tk-wheelwrap' }, wheel, ...nuts);
   const read = h('b', { class: 'num' }, '0 N·m'), want = h('small', null, t('tkNm', { n: L.nm }));
   const lcd = h('div', { class: 'tk-read' }, read, want);
   const marks = h('div', { class: 'tk-marks' }, ...nuts.map(() => h('i')));
@@ -392,10 +402,11 @@ function mudancas(task, ctx) {
   const grid = h('div', { class: 'grid', style: `--w:${L.W};--h:${L.H}` }, ...cells);
   const van = h('div', { class: 'tk-van' }, h('div', { class: 'cab' }, h('i', { class: 'glass' })), grid, h('div', { class: 'doors' }, h('i'), h('i')));
   const tag = (q) => (q.heavy ? t('tkHeavy') : q.fragile ? t('tkFragile') : '');
-  const look = (q) => 'k-' + q.kind + (q.heavy ? ' heavy' : '') + (q.fragile ? ' fragile' : '');
-  const pieces = L.pcs.map((q, i) => h('div', { class: 'tk-piece ' + look(q), role: 'button', tabindex: 0, dataset: { i } }, h('b', null, t('mv_' + q.kind)), tag(q) ? h('small', null, tag(q)) : null));
+  const look = (q) => 'k-' + q.kind + ' a' + q.w * q.h + (q.heavy ? ' heavy' : '') + (q.fragile ? ' fragile' : '');
+  // cada móvel é a fotografia dele; na carrinha ocupa as casas que lhe tocam e o nome fica por baixo
+  const pieces = L.pcs.map((q, i) => h('div', { class: 'tk-piece ' + look(q), role: 'button', tabindex: 0, 'aria-label': t('mv_' + q.kind) + (tag(q) ? ' · ' + tag(q) : ''), dataset: { i } }, pic('m-' + q.kind), h('b', null, t('mv_' + q.kind)), tag(q) ? h('small', null, tag(q)) : null));
   const tiles = L.pcs.map((q, i) => h('button', { class: 'tk-tile ' + look(q), type: 'button', dataset: { i } },
-    h('i', { class: 'shape', style: `--w:${q.w};--h:${q.h}` }), h('span', null, h('b', null, t('mv_' + q.kind)), tag(q) ? h('small', null, tag(q)) : null)));
+    pic('m-' + q.kind, 'tph'), h('span', null, h('b', null, t('mv_' + q.kind)), tag(q) ? h('small', null, tag(q)) : null), h('i', { class: 'shape', style: `--w:${q.w};--h:${q.h}` })));
   const tray = h('div', { class: 'tk-trayv' }, ...tiles);
   const area = h('span', { class: 'tk-count num' }, `0 / ${L.W * L.H}`);
   const rot = h('button', { class: 'btn ghost sm', type: 'button', disabled: true }, t('tkRotate'));
@@ -459,7 +470,7 @@ function mudancas(task, ctx) {
     if (!drag.moved) {
       drag.moved = true; sel = -1;
       const q = L.pcs[drag.i];
-      drag.ghost = h('div', { class: 'tk-piece ghost ' + look(q), style: `width:${drag.w}px;height:${drag.h}px` }, h('b', null, t('mv_' + q.kind)));
+      drag.ghost = h('div', { class: 'tk-piece ghost ' + look(q), style: `width:${drag.w}px;height:${drag.h}px` }, pic('m-' + q.kind), h('b', null, t('mv_' + q.kind)));
       document.body.appendChild(drag.ghost);
       if (place[drag.i][0] >= 0) { drag.was = place[drag.i].slice(); place[drag.i] = [-1, -1, place[drag.i][2]]; }
       draw();
@@ -514,9 +525,11 @@ function desmanche(task, ctx) {
   const sec = (ms) => (ms / 1000).toLocaleString(ctx.lang === 'en' ? 'en-GB' : 'pt-PT', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + ' s';
   const vmax = Math.max(...L.parts.map((x) => x.v));
   const spots = L.parts.map((x) => h('i', { class: 'spot s' + x.k }));
-  const car = h('div', { class: 'tk-car' }, h('div', { class: 'body' }, h('i', { class: 'win a' }), h('i', { class: 'win b' })), h('i', { class: 'whl f' }), h('i', { class: 'whl r' }), ...spots);
+  // o carro (fotografia): acende-se o sítio da peça que se está a tirar; cada linha tem a fotografia da peça
+  const car = h('div', { class: 'tk-car' }, pic('carro'), ...spots);
+  const PARTS = ['radio', 'gps', 'roda', 'catalisador', 'bateria', 'farol', 'airbag', 'banco'];
   const rows = L.parts.map((x, i) => h('button', { class: 'tk-part', type: 'button', dataset: { i } },
-    h('i', { class: 'prog' }), h('b', null, t('dp_' + x.k)),
+    h('i', { class: 'prog' }), pic(PARTS[x.k], 'pp'), h('b', null, t('dp_' + x.k)),
     h('span', { class: 'val', 'aria-label': t('tkWorth', { n: x.v, m: vmax }) }, ...Array.from({ length: vmax }, (_, k) => h('i', { class: k < x.v ? 'on' : '' }))),
     h('span', { class: 'num tm' }, sec(x.need))));
   const clock = h('b', { class: 'num' }, sec(L.win)), bar = h('i', { class: 'left' });

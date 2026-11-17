@@ -1192,25 +1192,35 @@ test('desintoxicação: preço anunciado, sobe 15% de cada vez, tem um teto de d
   p.addictionT = ultimaT + D.windowMs + 1; assert.equal(E.detoxCost(p, ultimaT + D.windowMs + 1), c1);
 });
 
-test('slots: comprar bónus pode custar até 20× o máximo por jogada, a ficha continua presa ao máximo, e só com dinheiro na mão', () => {
-  const p = cas(1e9); const M = E.casinoMax(p), K = CFG.casino.buyMaxMult, G = CFG.casino.slots.zeus;
-  assert.equal(M, 1000); assert.equal(K, 20);
-  // a maior ficha que cabe no teto (20× o máximo) passa; uma a mais já não, e não mexe em nada
-  const cabe = Math.floor((M * K) / G.buy);
-  let r = E.casinoPlay(p, NOW, W, 'slot', { game: 'zeus', amt: cabe, buy: 1 }, seededRng(5)); assert.equal(r.bet, cabe * G.buy); assert.equal(p.cash, 1e9 - r.bet + r.win);
-  const antes = p.cash; assert.throws(() => E.casinoPlay(p, NOW, W, 'slot', { game: 'zeus', amt: cabe + 1, buy: 1 }, never), code('BET_TOO_BIG')); assert.equal(p.cash, antes);
-  // no nível 1 (máximo de 5 €) dá para comprar com fichas de 1 €
-  const novo = mk(); novo.cash = 1e6; assert.equal(E.casinoMax(novo), 5); assert.ok(G.buy <= 5 * K); E.casinoPlay(novo, NOW, W, 'slot', { game: 'zeus', amt: 1, buy: 1 }, seededRng(8));
-  // jogada normal: o máximo de sempre
-  assert.throws(() => E.casinoPlay(p, NOW, W, 'slot', { game: 'zeus', amt: M + 1 }, never), code('BET_TOO_BIG'));
-  E.casinoPlay(p, NOW, W, 'slot', { game: 'zeus', amt: M }, seededRng(6));
-  // compra super do Rebuçado: o mesmo teto (10× o máximo), por isso a ficha é mais pequena
-  const S2 = CFG.casino.slots.rebucado.superBuy; assert.throws(() => E.casinoPlay(p, NOW, W, 'slot', { game: 'rebucado', amt: Math.floor((M * K) / S2) + 1, buy: 2 }, never), code('BET_TOO_BIG'));
-  assert.ok(Math.floor((M * K) / S2) >= CFG.casino.minBet); E.casinoPlay(p, NOW, W, 'slot', { game: 'rebucado', amt: Math.floor((M * K) / S2), buy: 2 }, seededRng(7));
-  // sem dinheiro para a compra: recusa
-  const q = cas(100 * G.buy - 1); assert.throws(() => E.casinoPlay(q, NOW, W, 'slot', { game: 'zeus', amt: 100, buy: 1 }, never), code('NO_CASH')); assert.equal(q.cash, 100 * G.buy - 1);
-  // o prémio nunca passa do teto do jogo vezes a ficha
-  const rng = seededRng(11); for (let i = 0; i < 3000; i++) { const x = cas(1e9); const o = E.casinoPlay(x, NOW, W, 'slot', { game: 'zeus', amt: 100, buy: 1 }, rng); assert.ok(o.win <= 100 * G.max); }
+test('slots (17/11): aposta ao cêntimo desde 0,20 €, bónus a 100× com qualquer aposta permitida, e prémios pagos ao cêntimo', () => {
+  const p = cas(1e9); const M = E.casinoMax(p), G = CFG.casino.slots.zeus;
+  assert.equal(M, 1000); assert.equal(CFG.casino.slotMinC, 20); assert.equal(G.buy, 100);
+  // comprar com a aposta máxima do nível: 100× (1 000 € → 100 000 €), como numa slot a sério
+  let r = E.casinoPlay(p, NOW, W, 'slot', { game: 'zeus', bc: M * 100, buy: 1 }, seededRng(5)); assert.equal(r.betC, M * 100 * G.buy); assert.equal(r.bet, M * G.buy);
+  assert.equal(p.cash * 100 + p.cent, 1e9 * 100 - r.betC + r.winC);
+  // uma aposta acima do máximo não passa, nem a comprar, e não mexe em nada
+  const antes = [p.cash, p.cent]; assert.throws(() => E.casinoPlay(p, NOW, W, 'slot', { game: 'zeus', bc: M * 100 + 10, buy: 1 }, never), code('BET_TOO_BIG')); assert.deepEqual([p.cash, p.cent], antes);
+  assert.throws(() => E.casinoPlay(p, NOW, W, 'slot', { game: 'zeus', bc: M * 100 + 10 }, never), code('BET_TOO_BIG'));
+  // nível 1: a 0,20 € o bónus custa 20 €; a 5 € (o máximo) custa 500 €
+  const novo = mk(); novo.cash = 600; novo.cent = 0; assert.equal(E.casinoMax(novo), 5);
+  r = E.casinoPlay(novo, NOW, W, 'slot', { game: 'zeus', bc: 20, buy: 1 }, seededRng(8)); assert.equal(r.betC, 2000);
+  const n2 = mk(); n2.cash = 500; r = E.casinoPlay(n2, NOW, W, 'slot', { game: 'zeus', bc: 500, buy: 1 }, seededRng(9)); assert.equal(r.betC, 50000);
+  // abaixo de 0,20 €, não inteiro, ou sem dinheiro (os cêntimos contam): recusa
+  assert.throws(() => E.casinoPlay(mk(), NOW, W, 'slot', { game: 'zeus', bc: 10 }, never), code('BAD_BET'));
+  assert.throws(() => E.casinoPlay(mk(), NOW, W, 'slot', { game: 'zeus', bc: 20.5 }, never), code('BAD_BET'));
+  const q = mk(); q.cash = 19; q.cent = 99; assert.throws(() => E.casinoPlay(q, NOW, W, 'slot', { game: 'zeus', bc: 20, buy: 1 }, never), code('NO_CASH')); assert.deepEqual([q.cash, q.cent], [19, 99]);
+  q.cent = 0; q.cash = 20; E.casinoPlay(q, NOW, W, 'slot', { game: 'zeus', bc: 20, buy: 1 }, seededRng(3));
+  // a versão antiga do site (amt em euros) continua a jogar
+  r = E.casinoPlay(p, NOW, W, 'slot', { game: 'zeus', amt: 2 }, seededRng(6)); assert.equal(r.baseC, 200);
+  // o prémio paga-se ao cêntimo: em 4 000 jogadas a 0,20 € os cêntimos acumulam (antes perdiam-se) e o total bate com o que o motor diz
+  const x = mk(); x.cash = 1e6; x.cent = 0; let bet = 0, win = 0, frac = 0; const rng = seededRng(21);
+  for (let i = 0; i < 4000; i++) { const o = E.casinoPlay(x, NOW, W, 'slot', { game: 'doce', bc: 20 }, rng); bet += o.betC; win += o.winC; if (o.winC % 100) frac++; assert.ok(o.winC <= 20 * CFG.casino.slots.doce.max); }
+  assert.equal(x.cash * 100 + x.cent, 1e8 - bet + win); assert.ok(frac > 100, 'prémios com cêntimos: ' + frac);
+  assert.deepEqual(E.checkInvariants(x), []);
+  // compra super do Rebuçado: 895× a aposta, também até ao máximo do nível
+  r = E.casinoPlay(p, NOW, W, 'slot', { game: 'rebucado', bc: M * 100, buy: 2 }, seededRng(7)); assert.equal(r.betC, M * 100 * CFG.casino.slots.rebucado.superBuy);
+  // o prémio nunca passa do teto do jogo vezes a aposta
+  const rng2 = seededRng(11); for (let i = 0; i < 3000; i++) { const y = cas(1e9); const o = E.casinoPlay(y, NOW, W, 'slot', { game: 'zeus', bc: 10000, buy: 1 }, rng2); assert.ok(o.winC <= 10000 * G.max); }
 });
 
 test('lutas: ninguém ataca a própria gangue, nem para assaltar', () => {

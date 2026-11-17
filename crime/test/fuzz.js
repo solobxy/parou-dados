@@ -127,12 +127,15 @@ function contas(kind, a0, a, d0, d, t, res, arg) {
     case 'course': { const c = CFG.courses.find((x) => x.id === arg); const b0 = touched(a0, t); if (dm !== -c.price || dr !== 0 || a.course.id !== arg || b0.done.includes(arg) || b0.course) bad('curso'); break; }
     case 'refill': if (dm !== -res.price || res.price < 1 || a.energy !== E.energyMax(a) || dr !== 0 || a.addiction !== touched(a0, t).addiction) bad('barra a droga'); break;
     case 'casino': {
-      if (dm !== res.win - res.bet || dr !== 0) bad('casino: dinheiro não bate com a aposta e o prémio');
-      if (res.bet && res.bet > E.casinoMax(a0) * (res.buy ? CFG.casino.buyMaxMult : 1)) bad('casino: aposta acima do máximo');
-      if (res.g === 'slot' && res.base > E.casinoMax(a0)) bad('slot: ficha acima do máximo');
+      // slots ao cêntimo (17/11): o que entra e sai conta-se em cêntimos, com os cêntimos da mão (p.cent)
+      const dC = (wealth(a) - wealth(a0) + av + mf) * 100 + (a.cent || 0) - (a0.cent || 0);
+      if (res.g === 'slot' ? dC !== res.winC - res.betC || res.betC !== res.baseC * (res.buy === 2 ? CFG.casino.slots[res.game].superBuy : res.buy === 1 ? CFG.casino.slots[res.game].buy : 1) : dm !== res.win - res.bet || dr !== 0) bad('casino: dinheiro não bate com a aposta e o prémio');
+      if (dr !== 0) bad('casino: respeito');
+      if (res.g !== 'slot' && res.bet && res.bet > E.casinoMax(a0)) bad('casino: aposta acima do máximo');
+      if (res.g === 'slot' && (res.baseC > E.casinoMax(a0) * 100 || res.baseC < CFG.casino.slotMinC)) bad('slot: aposta fora dos limites');
       const staked = res.g === 'bj' ? (res.done ? res.hand.bet : res.bet) : res.bet;
       const maxMult = res.g === 'roulette' ? 36 : res.g === 'dice' ? 6 : res.g === 'bj' ? 3 : CFG.casino.maxWinMult;
-      if (res.g === 'slot' ? res.win > res.base * CFG.casino.slots[res.game].max : res.win > staked * maxMult) bad('casino: prémio acima do possível');
+      if (res.g === 'slot' ? res.winC > res.baseC * CFG.casino.slots[res.game].max : res.win > staked * maxMult) bad('casino: prémio acima do possível');
       if (a.bank !== a0.bank) bad('casino mexeu no banco');
       break;
     }
@@ -347,7 +350,7 @@ for (let n = 0; n < ACTIONS; n++) {
         arg = g === 'roulette' ? { bets: Array.from({ length: r.int(0, 13) }, () => ({ t: pick(['red', 'black', 'even', 'odd', 'low', 'high', 'dozen', 'num', 'x']), n: pick([0, 1, 2, 3, 17, 36, 37, -1]), amt: amt() })) }
           : g === 'dice' ? { pick: pick(['low', 'seven', 'high', '__proto__']), amt: amt() }
           : g === 'wheel' ? { bets: Array.from({ length: r.int(0, 13) }, () => ({ s: pick(['1', '2', '5', '10', 'moeda', 'caixas', 'bola', 'louca', 'x']), amt: amt() })) }
-          : g === 'slot' ? { amt: pick([1, 2, 5, 10, 20, 50, 0, -1, NaN]), game: pick(['chefao', 'zeus', 'doce', 'rebucado', 'x']), buy: pick([0, 0, 0, 1, 2, 3]) } : { op: pick(['deal', 'hit', 'hit', 'stand', 'double', 'split', 'split', 'x']), amt: amt() };
+          : g === 'slot' ? { ...(r.chance(7000) ? { bc: pick([20, 40, 100, 120, 500, 2000, 19, 0, -20, 20.5, NaN]) } : { amt: pick([1, 2, 5, 10, 20, 50, 0, -1, NaN]) }), game: pick(['chefao', 'zeus', 'doce', 'rebucado', 'x']), buy: pick([0, 0, 0, 1, 2, 3]) } : { op: pick(['deal', 'hit', 'hit', 'stand', 'double', 'split', 'split', 'x']), amt: amt() };
         res = E.casinoPlay(p, t, world, g, arg, game); break;
       }
       case 'table': {

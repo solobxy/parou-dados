@@ -94,6 +94,7 @@ for (let m = 1; m < 1 << parts.length; m++) { let tt = 0, vv = 0; parts.forEach(
 let first = true;
 for (let i = 0; i < parts.length; i++) {
   if (!(bm & (1 << i))) continue;
+  await p.locator('.tk-part').nth(i).evaluate((el) => el.scrollIntoView({ block: 'center' }));   // a barra presa em baixo pode tapar as últimas
   const [x, y] = await centro(p.locator('.tk-part').nth(i));
   await p.mouse.move(x, y); await p.mouse.down();
   await p.waitForFunction((k) => document.querySelectorAll('.tk-part')[k].classList.contains('got'), i, { polling: 'raf', timeout: 10000 });

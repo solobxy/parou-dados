@@ -1,7 +1,7 @@
 // Jogo de crime: interface. O servidor decide tudo; aqui só se mostra e se pede.
 
 import { t, tv, list, errText, setLang, lang, guessLang } from './i18n.js';
-import { h, icon, svg, setBtn, setLocale, num, money, moneyShort, short, dur, hoursText, pct, rid } from './ui.js';
+import { h, icon, svg, setBtn, setLocale, num, money, moneyC, moneyShort, short, dur, hoursText, pct, rid } from './ui.js';
 import * as fx from './fx.js';
 import * as RV from './reveal.js';
 import * as CZ from './crazy.js';
@@ -2732,6 +2732,15 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 // fichas em euros: começam em 1 € (até ao nível 20 o máximo por jogada é 5 €, e sem fichas pequenas a aposta ficava presa nos 5 €)
 const CHIPS = [1, 2, 5, 10, 20, 50, 100, 200, 500, 1000, 5000, 10000, 50000, 100000, 500000, 1000000, 5000000, 10000000];
 const betMax = () => Math.min(S.st.me.casinoMax, S.st.me.cash);
+// slots (17/11): apostas ao cêntimo, como nas reais (0,20 € → bónus de 20 €); os cêntimos da mão vêm em me.cent
+const SLOT_BETS = [20, 40, 60, 80, 100, 120, 160, 200, 240, 300, 400, 500, 600, 800, 1000, 1200, 1500, 2000, 2500, 3000, 4000, 5000, 6000, 8000, 10000, 12000, 15000, 20000, 25000, 30000, 40000, 50000, 60000, 80000, 100000];
+const walletC = () => S.st.me.cash * 100 + (S.st.me.cent || 0);
+const slotMinC = () => S.cfg.casino.slotMinC || 20;
+const slotMaxC = () => Math.min(S.st.me.casinoMax * 100, walletC());
+function slotBetNow() {
+  const min = slotMinC(), v = S.slotBet ?? store.get('slotBetC', 100);
+  return Math.max(min, Math.min(v, Math.max(min, slotMaxC())));
+}
 function chipNow() {
   const min = S.cfg.casino.minBet, v = S.chip ?? store.get('chip', 100);
   return Math.max(min, Math.min(v, Math.max(min, betMax())));
@@ -3449,7 +3458,7 @@ async function slotStep(g, grid, step, prev, sp, live = true) {
     // o valor do prémio aparece em cima dos símbolos que pagaram
     const gb = grid.closest('.slot').querySelector('.sfxl').getBoundingClientRect(), bs = cells.map((el) => el.getBoundingClientRect());
     const cx = bs.reduce((x, b) => x + b.left + b.width / 2, 0) / bs.length - gb.left, cy = bs.reduce((x, b) => x + b.top + b.height / 2, 0) / bs.length - gb.top;
-    const tag = h('b', { class: 'swpop num', style: `left:${Math.max(40, Math.min(gb.width - 40, cx))}px;top:${cy}px` }, '+' + money(Math.floor((S.slotBase * pay) / 100)));
+    const tag = h('b', { class: 'swpop num', style: `left:${Math.max(40, Math.min(gb.width - 40, cx))}px;top:${cy}px` }, '+' + moneyC(Math.floor((S.slotBaseC * pay) / 100)));
     grid.closest('.slot').querySelector('.sfxl').append(tag); setTimeout(() => tag.remove(), 1500);
     fx.sfx('cash'); await wait(RM() ? 250 : 720 * sp);
     cells.forEach((el) => {
@@ -3529,15 +3538,15 @@ async function slotBanner(kind, title, sub, ms) {
 }
 async function slotAnim(r) {
   const g = r.game, G = slotCfg(g);
-  S.slotSkip = false; S.slotBase = r.base; S.slotGame = g;
+  S.slotSkip = false; S.slotBaseC = r.baseC ?? r.base * 100; S.slotGame = g;   // as slots contam ao cêntimo
   const sl = document.querySelector('.slot'); if (sl && !slotFit(true)) await tableFocus(sl);
   const sk = document.querySelector('.csbar .btn.buy');
   if (sk) { sk.disabled = false; sk.replaceChildren(h('i', { class: 'stopi' })); sk.setAttribute('aria-label', t('slSkip')); sk.classList.replace('buy', 'skip'); const ml = document.querySelector('.smsgl'); if (ml) ml.textContent = t('slWinL'); sk.addEventListener('click', () => { S.slotSkip = true; }); }
   const grid = document.querySelector('.sgrid'), meter = document.querySelector('.swinm'), freeL = document.querySelector('.sfree');
   if (!grid) return;
-  const cash = (c) => Math.floor((r.base * Math.min(c, G.max * 100)) / 100);
-  let acc = 0, shown = 0; meter.textContent = money(0);
-  const show = (c, ms = 450) => { const to = cash(c); if (RM() || S.slotSkip) meter.textContent = money(to); else fx.roll(meter, shown, to, money, ms); shown = to; };
+  const cash = (c) => Math.floor((S.slotBaseC * Math.min(c, G.max * 100)) / 100);   // em cêntimos
+  let acc = 0, shown = 0; meter.textContent = moneyC(0);
+  const show = (c, ms = 450) => { const to = cash(c); if (RM() || S.slotSkip) meter.textContent = moneyC(to); else fx.roll(meter, shown, to, moneyC, ms); shown = to; };
   // os símbolos da jogada anterior caem para fora
   if (!RM()) { [...grid.children].forEach((el, i) => { el.classList.add('out'); el.style.setProperty('--d', (i % G.cols) * 45 + 'ms'); }); fx.sfx('refill'); await wait(330 + G.cols * 45); }
   // fr: só nas rodadas grátis das slots com multiplicador acumulado: { prev: o que estava acumulado antes desta rodada }
@@ -3618,31 +3627,31 @@ async function slotAnim(r) {
       }
       if (!S.slotSkip) await wait(RM() ? 0 : 250);
     }
-    if (!S.slotSkip) { fx.sfx('claim'); await slotBanner('end', t('slFreeEnd'), money(cash(acc) - cash(before) + cash(r.spin.scatPay)), RM() ? 900 : 2400); }
+    if (!S.slotSkip) { fx.sfx('claim'); await slotBanner('end', t('slFreeEnd'), moneyC(cash(acc) - cash(before) + cash(r.spin.scatPay)), RM() ? 900 : 2400); }
   }
   S.slotLast = { ...(S.slotLast || {}), [g]: r }; const skipped = S.slotSkip; S.slotSkip = false;
-  const tot = Math.floor((r.base * r.spin.total) / 100), x = tot / r.base;
-  meter.textContent = money(tot);
-  if (x >= 20 && tot > r.bet && !skipped) {   // numa compra de bónus só se festeja se houve lucro
+  const tot = Math.floor((S.slotBaseC * r.spin.total) / 100), x = tot / S.slotBaseC;   // cêntimos
+  meter.textContent = moneyC(tot);
+  if (x >= 20 && tot > (r.betC ?? r.bet * 100) && !skipped) {   // numa compra de bónus só se festeja se houve lucro
     fx.sfx('level'); fx.vibrate([30, 50, 30]);
-    const ban = slotBanner('big', t(x >= 200 ? 'slEpic' : x >= 50 ? 'slMega' : 'slBigT'), money(0), RM() ? 1200 : 3400);
-    const amt = document.querySelector('.sban.big .sbs'); if (amt && !RM()) fx.roll(amt, 0, tot, money, 2400); else if (amt) amt.textContent = money(tot);
+    const ban = slotBanner('big', t(x >= 200 ? 'slEpic' : x >= 50 ? 'slMega' : 'slBigT'), moneyC(0), RM() ? 1200 : 3400);
+    const amt = document.querySelector('.sban.big .sbs'); if (amt && !RM()) fx.roll(amt, 0, tot, moneyC, 2400); else if (amt) amt.textContent = moneyC(tot);
     await ban;
   }
 }
 function slotBuy(g, kind) {
-  const G = slotCfg(g), chip = chipNow(), mult = kind === 2 ? G.superBuy : G.buy, price = chip * mult;
-  const lim = S.st.me.casinoMax * (S.cfg.casino.buyMaxMult || 1), can = price <= Math.min(lim, S.st.me.cash);   // a compra de bónus tem um teto mais alto do que uma jogada normal
+  const G = slotCfg(g), chip = slotBetNow(), mult = kind === 2 ? G.superBuy : G.buy, price = chip * mult;   // cêntimos
+  const can = price <= walletC();   // como nas slots reais: o bónus custa sempre mult× a aposta, com qualquer aposta permitida
   const close = sheet(h('div', { class: 'stack' }, art('cenas', 'jackpot', 'buyimg'), h('h2', null, t(kind === 2 ? 'slBuySuper' : 'slBuyT')),
     h('p', null, t(G.kind === 'cluster' ? (kind === 2 ? 'slBuyDescSuper' : 'slBuyDescC') : 'slBuyDesc', { n: G.free || G.fs[3], x: mult })),
-    h('div', { class: 'row sp' }, h('span', { class: 'muted' }, t('csBet')), h('b', { class: 'num' }, money(chip))),
-    h('div', { class: 'row sp' }, h('span', { class: 'muted' }, t('slBuyPrice', { x: mult })), h('b', { class: 'num c-cash' }, money(price))),
-    !can ? h('p', { class: 'small c-red' }, price > lim ? t('csOver', { m: money(lim) }) : t('csNoCash', { m: money(price) })) : null,
-    can ? h('button', { class: 'btn buy block big', on: { click: () => { close(); play('slot', { game: g, amt: chip, buy: kind }, slotAnim); } } }, t('slBuyGo', { m: moneyShort(price) }))
-      : (() => {   // não dá com esta aposta: oferece a maior aposta com que dá para comprar
-        const c = CHIPS.filter((x) => x >= S.cfg.casino.minBet && x * mult <= Math.min(lim, S.st.me.cash)).pop();
-        return c ? h('button', { class: 'btn buy block big', on: { click: () => { close(); S.chip = c; store.set('chip', c); play('slot', { game: g, amt: c, buy: kind }, slotAnim); } } }, t('slBuyAt', { c: moneyShort(c), m: moneyShort(c * mult) }))
-          : h('button', { class: 'btn buy block big', disabled: true }, t('slBuyGo', { m: moneyShort(price) }));
+    h('div', { class: 'row sp' }, h('span', { class: 'muted' }, t('csBet')), h('b', { class: 'num' }, moneyC(chip))),
+    h('div', { class: 'row sp' }, h('span', { class: 'muted' }, t('slBuyPrice', { x: mult })), h('b', { class: 'num c-cash' }, moneyC(price))),
+    !can ? h('p', { class: 'small c-red' }, t('csNoCash', { m: moneyC(price) })) : null,
+    can ? h('button', { class: 'btn buy block big', on: { click: () => { close(); play('slot', { game: g, bc: chip, buy: kind }, slotAnim); } } }, t('slBuyGo', { m: moneyC(price) }))
+      : (() => {   // não dá com esta aposta: oferece a maior aposta com que o dinheiro chega
+        const c = SLOT_BETS.filter((x) => x >= slotMinC() && x <= S.st.me.casinoMax * 100 && x * mult <= walletC()).pop();
+        return c ? h('button', { class: 'btn buy block big', on: { click: () => { close(); S.slotBet = c; store.set('slotBetC', c); play('slot', { game: g, bc: c, buy: kind }, slotAnim); } } }, t('slBuyAt', { c: moneyC(c), m: moneyC(c * mult) }))
+          : h('button', { class: 'btn buy block big', disabled: true }, t('slBuyGo', { m: moneyC(price) }));
       })()));
 }
 // Em ecrãs baixos a slot não cabe inteira entre o topo e a barra de baixo. Em vez de encolher a grelha até ficar minúscula, sobe-se a página
@@ -3656,36 +3665,36 @@ function slotFit(smooth) {
   scrollBy({ top: Math.min(over, room), behavior: smooth ? 'smooth' : 'auto' }); return true;
 }
 function screenSlotGame(page) {
-  const g = SLOT_OF[page], G = slotCfg(g), last = S.slotLast?.[g], me = S.st.me, max = betMax(), min = S.cfg.casino.minBet;
-  const all = CHIPS.filter((c) => c <= max); if (max >= min && !all.includes(max)) all.push(max);
-  const chip = chipNow(), at = Math.max(0, all.findLastIndex((c) => c <= chip));
-  const setBet = (i) => { S.chip = all[i]; store.set('chip', all[i]); render(); };
+  const g = SLOT_OF[page], G = slotCfg(g), last = S.slotLast?.[g], me = S.st.me, max = slotMaxC(), min = slotMinC();   // tudo em cêntimos
+  const all = SLOT_BETS.filter((c) => c <= max); if (max >= min && !all.includes(max)) all.push(max);
+  const chip = slotBetNow(), at = Math.max(0, all.findLastIndex((c) => c <= chip));
+  const setBet = (i) => { S.slotBet = all[i]; store.set('slotBetC', all[i]); render(); };
   const auto = S.slotAuto && S.slotAuto.g === g ? S.slotAuto : null;
-  const plq = (kind, label, mult) => h('button', { class: 'splq bbuy' + (kind === 2 ? ' sup' : ''), disabled: S.casinoBusy, on: { click: () => slotBuy(g, kind) } }, h('span', null, label), h('b', { class: 'num' }, moneyShort(chip * mult)));
+  const plq = (kind, label, mult) => h('button', { class: 'splq bbuy' + (kind === 2 ? ' sup' : ''), disabled: S.casinoBusy, on: { click: () => slotBuy(g, kind) } }, h('span', null, label), h('b', { class: 'num' }, moneyC(chip * mult)));
   return [
     h('div', { class: 'slot th-' + g },
       h('div', { class: 'shead', style: `background-image:url(${IMG('cenas', PLACES[page].img, 1)})` }, h('button', { class: 'sback', 'aria-label': t('p_casino'), on: { click: () => go(upOf(page)) } }, '←'), h('h1', { class: 'slogo' }, t('p_' + page)), h('span', { class: 'sup2' }, t('slUpTo', { x: num(G.max) }))),
       h('div', { class: 'sfr' }, h('div', { class: 'stop' }, h('span', { class: 'sfree' }), h('span', { class: 'sinfo num' })), h('div', { class: 'sgw', style: `--cols:${G.cols};--rows:${G.rows}` }, slotGrid(g)), h('div', { class: 'sfxl' })),
-      h('div', { class: 'smsg' }, h('span', { class: 'smsgl' }, last ? t('slWinL') : t('slGood')), h('b', { class: 'swinm num' }, last ? money(last.win) : '')),
+      h('div', { class: 'smsg' }, h('span', { class: 'smsgl' }, last ? t('slWinL') : t('slGood')), h('b', { class: 'swinm num' }, last ? moneyC(last.winC ?? last.win * 100) : '')),
       h('div', { class: 'csbar sctl' },
         h('div', { class: 'brow' }, plq(1, t('slBuyL'), G.buy), G.superBuy ? plq(2, t('slSuperL'), G.superBuy) : null),
         h('div', { class: 'srow' },
           h('div', { class: 'sbet' }, h('button', { class: 'sbb', 'aria-label': '−', disabled: at <= 0, on: { click: () => setBet(at - 1) } }, '−'),
-            h('div', null, h('small', null, t('slBetL')), h('b', { class: 'num' }, moneyShort(chip))),
+            h('div', null, h('small', null, t('slBetL')), h('b', { class: 'num' }, moneyC(chip))),
             h('button', { class: 'sbb', 'aria-label': '+', disabled: at >= all.length - 1, on: { click: () => setBet(at + 1) } }, '+')),
-          h('button', { class: 'btn buy sspin', 'aria-label': t('slSpin', { m: moneyShort(chip) }), disabled: max < min || S.casinoBusy || !!auto, on: { click: () => play('slot', { game: g, amt: chip }, slotAnim) } }, icon('refresh')),
+          h('button', { class: 'btn buy sspin', 'aria-label': t('slSpin', { m: moneyC(chip) }), disabled: max < min || S.casinoBusy || !!auto, on: { click: () => play('slot', { game: g, bc: chip }, slotAnim) } }, icon('refresh')),
           h('div', { class: 'sright' },
             h('button', { class: 'sib sauto' + (auto ? ' on' : ''), disabled: !auto && (max < min || S.casinoBusy), on: { click: (e) => (S.slotAuto ? slotAutoStop(e.currentTarget) : slotAutoPick(g)) } }, h('b', { class: 'num' }, auto ? String(auto.left) : 'A'), h('small', null, auto ? t('slStop') : t('slAuto'))),
             h('button', { class: 'sib', on: { click: () => slotPaytable(g) } }, h('b', null, 'i'), h('small', null, t('slInfo'))))),
-        h('div', { class: 'scred' }, h('span', null, t('csInHand') + ' '), h('b', { class: 'num c-cash' }, money(me.cash)), h('span', null, ' · ' + t('slBetL') + ' '), h('b', { class: 'num' }, money(chip))),
-        at >= all.length - 1 && me.casinoMax <= me.cash ? (() => { const nx = (S.cfg.casino.limits || []).find(([lv]) => lv > me.level);
+        h('div', { class: 'scred' }, h('span', null, t('csInHand') + ' '), h('b', { class: 'num c-cash' }, moneyC(walletC())), h('span', null, ' · ' + t('slBetL') + ' '), h('b', { class: 'num' }, moneyC(chip))),
+        at >= all.length - 1 && me.casinoMax * 100 <= walletC() ? (() => { const nx = (S.cfg.casino.limits || []).find(([lv]) => lv > me.level);
           return h('div', { class: 'scred smax' }, t(nx ? 'slMaxLvl' : 'slMaxTop', { m: money(me.casinoMax), n: nx ? nx[0] : 0, x: nx ? money(nx[1]) : '' })); })() : null))];
 }
 // ---- rodar automático: n rodadas seguidas com a aposta escolhida ----
 function slotAutoPick(g) {
-  const chip = chipNow();
-  const close = sheet(h('div', { class: 'stack' }, h('h2', null, t('slAutoT')), h('p', null, t('slAutoSub', { m: money(chip) })),
-    h('div', { class: 'autogrid' }, [10, 25, 50, 100].map((n) => h('button', { class: 'btn', on: { click: () => { close(); slotAutoRun(g, n); } } }, h('b', { class: 'num' }, String(n)), h('small', null, t('slAutoUpTo', { m: moneyShort(chip * n) }))))),
+  const chip = slotBetNow();
+  const close = sheet(h('div', { class: 'stack' }, h('h2', null, t('slAutoT')), h('p', null, t('slAutoSub', { m: moneyC(chip) })),
+    h('div', { class: 'autogrid' }, [10, 25, 50, 100].map((n) => h('button', { class: 'btn', on: { click: () => { close(); slotAutoRun(g, n); } } }, h('b', { class: 'num' }, String(n)), h('small', null, t('slAutoUpTo', { m: moneyC(chip * n) }))))),
     h('p', { class: 'small muted' }, t('slAutoNote'))));
 }
 function slotAutoStop(btn) {
@@ -3698,9 +3707,9 @@ async function slotAutoRun(g, n) {
   const page = Object.keys(SLOT_OF).find((k) => SLOT_OF[k] === g);
   S.slotAuto = { g, left: n, total: n }; render();
   while (S.slotAuto && S.slotAuto.left > 0 && S.tab === page) {
-    const chip = chipNow(); if (betMax() < S.cfg.casino.minBet) break;
+    const chip = slotBetNow(); if (slotMaxC() < slotMinC()) break;
     S.slotAuto.left -= 1;
-    const r = await play('slot', { game: g, amt: chip }, slotAnim);
+    const r = await play('slot', { game: g, bc: chip }, slotAnim);
     if (!r || !S.slotAuto || S.slotAuto.stop) break;
     if (r.spin.free.length) break;                    // saiu um bónus: pára para se ver com calma
     await wait(500);
