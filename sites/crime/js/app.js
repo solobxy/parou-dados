@@ -2729,7 +2729,8 @@ async function loadEvents(seen) {
 // aqui a animação é o próprio jogo (a bola, a roda, os símbolos a cair).
 const RM = () => false;
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
-const CHIPS = [10, 50, 100, 500, 1000, 5000, 10000, 50000, 100000, 500000, 1000000, 5000000, 10000000];
+// fichas em euros: começam em 1 € (até ao nível 20 o máximo por jogada é 5 €, e sem fichas pequenas a aposta ficava presa nos 5 €)
+const CHIPS = [1, 2, 5, 10, 20, 50, 100, 200, 500, 1000, 5000, 10000, 50000, 100000, 500000, 1000000, 5000000, 10000000];
 const betMax = () => Math.min(S.st.me.casinoMax, S.st.me.cash);
 function chipNow() {
   const min = S.cfg.casino.minBet, v = S.chip ?? store.get('chip', 100);
@@ -3637,7 +3638,12 @@ function slotBuy(g, kind) {
     h('div', { class: 'row sp' }, h('span', { class: 'muted' }, t('csBet')), h('b', { class: 'num' }, money(chip))),
     h('div', { class: 'row sp' }, h('span', { class: 'muted' }, t('slBuyPrice', { x: mult })), h('b', { class: 'num c-cash' }, money(price))),
     !can ? h('p', { class: 'small c-red' }, price > lim ? t('csOver', { m: money(lim) }) : t('csNoCash', { m: money(price) })) : null,
-    h('button', { class: 'btn buy block big', disabled: !can, on: { click: () => { close(); play('slot', { game: g, amt: chip, buy: kind }, slotAnim); } } }, t('slBuyGo', { m: moneyShort(price) }))));
+    can ? h('button', { class: 'btn buy block big', on: { click: () => { close(); play('slot', { game: g, amt: chip, buy: kind }, slotAnim); } } }, t('slBuyGo', { m: moneyShort(price) }))
+      : (() => {   // não dá com esta aposta: oferece a maior aposta com que dá para comprar
+        const c = CHIPS.filter((x) => x >= S.cfg.casino.minBet && x * mult <= Math.min(lim, S.st.me.cash)).pop();
+        return c ? h('button', { class: 'btn buy block big', on: { click: () => { close(); S.chip = c; store.set('chip', c); play('slot', { game: g, amt: c, buy: kind }, slotAnim); } } }, t('slBuyAt', { c: moneyShort(c), m: moneyShort(c * mult) }))
+          : h('button', { class: 'btn buy block big', disabled: true }, t('slBuyGo', { m: moneyShort(price) }));
+      })()));
 }
 // Em ecrãs baixos a slot não cabe inteira entre o topo e a barra de baixo. Em vez de encolher a grelha até ficar minúscula, sobe-se a página
 // só o preciso para a fila do botão de rodar ficar à vista, sem nunca esconder a grelha (o cartaz com o nome é o que sai de cena).
@@ -3671,7 +3677,9 @@ function screenSlotGame(page) {
           h('div', { class: 'sright' },
             h('button', { class: 'sib sauto' + (auto ? ' on' : ''), disabled: !auto && (max < min || S.casinoBusy), on: { click: (e) => (S.slotAuto ? slotAutoStop(e.currentTarget) : slotAutoPick(g)) } }, h('b', { class: 'num' }, auto ? String(auto.left) : 'A'), h('small', null, auto ? t('slStop') : t('slAuto'))),
             h('button', { class: 'sib', on: { click: () => slotPaytable(g) } }, h('b', null, 'i'), h('small', null, t('slInfo'))))),
-        h('div', { class: 'scred' }, h('span', null, t('csInHand') + ' '), h('b', { class: 'num c-cash' }, money(me.cash)), h('span', null, ' · ' + t('slBetL') + ' '), h('b', { class: 'num' }, money(chip)))))];
+        h('div', { class: 'scred' }, h('span', null, t('csInHand') + ' '), h('b', { class: 'num c-cash' }, money(me.cash)), h('span', null, ' · ' + t('slBetL') + ' '), h('b', { class: 'num' }, money(chip))),
+        at >= all.length - 1 && me.casinoMax <= me.cash ? (() => { const nx = (S.cfg.casino.limits || []).find(([lv]) => lv > me.level);
+          return h('div', { class: 'scred smax' }, t(nx ? 'slMaxLvl' : 'slMaxTop', { m: money(me.casinoMax), n: nx ? nx[0] : 0, x: nx ? money(nx[1]) : '' })); })() : null))];
 }
 // ---- rodar automático: n rodadas seguidas com a aposta escolhida ----
 function slotAutoPick(g) {
