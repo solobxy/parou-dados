@@ -14,7 +14,7 @@ const browser = await chromium.launch({ executablePath: '/usr/bin/google-chrome'
 const erros = [];
 // [conta, separador, nome]
 const ECRAS = [
-  ['Rico', 'city', 'cidade'], ['Rico', 'empire', 'imperio'], ['Assaltante', 'rob', 'golpes'], ['Rico', 'putas', 'putas'], ['Rico', 'club', 'discoteca'],
+  ['Rico', 'city', 'cidade'], ['Rico', 'empire', 'imperio'], ['Assaltante', 'rob', 'golpes'], ['Rico', 'putas', 'putas'], ['Rico', 'club', 'discoteca'], ['Assaltante', 'club', 'discoteca-a'],
   ['Rico', 'casino', 'casino'], ['Rico', 'inv', 'inventario'], ['Rico', 'bank', 'banco'], ['Rico', 'job', 'emprego'], ['Rico', 'arms', 'armas'],
   ['Rico', 'fights', 'lutas'], ['Rico', 'gang', 'gangue'], ['Rico', 'stash', 'armazens'], ['Rico', 'bolsa', 'bolsa'], ['Rico', 'news', 'jornal'],
   ['Planeador', 'ops', 'operacoes'], ['Preso', 'jail', 'prisao'], ['Rico', 'port', 'porto'], ['Rico', 'casa', 'casa'], ['Novato', 'city', 'novato'],

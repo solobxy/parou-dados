@@ -59,19 +59,20 @@ test('golpes: abrem pelo nível; o armado e o assalto a loja pedem pistola e gas
   assert.equal(pobre.energy, CFG.energy.max, 'recusado não gasta stamina');
 });
 
-test('a rua aquece: 100%, 100%, 70%, 70%, 45%, 45%, 25% por barra no mesmo dia; no dia seguinte volta a 100%', () => {
+test('a rua aquece: 100%, 100%, 90%, 80%, 70%, 60%, 50%, 40% por barra seguida; arrefece com o tempo (16/11)', () => {
   const p = armar(mk(lv(30))); p.cash = 1e9;
   const vistos = [];
   let t = START;
   for (let b = 0; b < 8; b++) { p.energy = 100; const r = E.doCrime(p, t, world, k('armado'), ok); vistos.push(r.heatBp); t += 1000; }
-  assert.deepEqual(vistos, [10000, 10000, 7000, 7000, 4500, 4500, 2500, 2500]);
-  // o dinheiro corta pelo calor (com a mesma sorte, a 7.ª barra rende um quarto da 1.ª)
+  assert.deepEqual(vistos, [10000, 10000, 9000, 8000, 7000, 6000, 5000, 4000]);
+  // o dinheiro corta pelo calor (com a mesma sorte, a 9.ª barra rende 40% da 1.ª)
   const a = armar(mk(lv(30))); a.cash = 1e9; a.energy = 100; const r1 = E.doCrime(a, t, world, k('armado'), ok);
   assert.equal(r1.heatBp, 10000, 'cada jogador tem a sua rua');
   p.energy = 100; p.sk.armas = 0; const r7 = E.doCrime(p, t, world, k('armado'), ok);   // sem a skill do passo 3, para comparar só o calor
-  assert.equal(r7.value, Math.floor(r1.value / 4), 'a mesma sorte rende um quarto com a rua quente');
-  const amanha = lisbonToUtc(2026, 11, 21, 0, 1);
-  p.energy = 100; assert.equal(E.doCrime(p, amanha, world, k('armado'), ok).heatBp, 10000);
+  assert.equal(r7.value, Math.floor((r1.value * 4) / 10), 'a mesma sorte rende 40% com a rua quente');
+  const meiaNoite = lisbonToUtc(2026, 11, 21, 0, 1);   // já não volta à meia-noite: 900 de stamina arrefecem em 18 h
+  assert.equal(E.streetView(p, meiaNoite).heatBp, 9000);
+  p.energy = 100; assert.equal(E.doCrime(p, t + 18 * T.HOUR, world, k('armado'), ok).heatBp, 10000);
 });
 
 test('respeito de uma barra de golpes: 20 + 2 por nível, até 120, vezes o calor', () => {
@@ -101,17 +102,17 @@ test('falhar: uma em quatro é apanhada; prisão do golpe ou multa/fiança para 
   assert.equal(CFG.bustBp, 2500);
 });
 
-test('stamina a mais, a droga: 50, 130, 240, 380 € por barra no mesmo dia; barra a meio paga a parte; no dia seguinte recomeça', () => {
+test('stamina a mais, a droga: 30, 70, 120, 180 € por barra seguida; barra a meio paga a parte; a escada desce com o tempo (16/11)', () => {
   const p = mk(); p.cash = 1e6;
   const precos = [];
   for (let b = 0; b < 4; b++) { p.energy = 0; const r = E.refill(p, START + b, world); assert.equal(r.energy, 100); precos.push(r.price); }
-  assert.deepEqual(precos, [50, 130, 240, 380]);
+  assert.deepEqual(precos, [30, 70, 120, 180]);
   assert.equal(p.addiction, 0, 'a barra não mexe no vício');
   const q = mk(); q.cash = 1e6; q.energy = 50;
-  assert.equal(E.refill(q, START, world).price, 25, 'meia barra = metade de 50');
-  q.energy = 0; assert.equal(E.refill(q, START + 1, world).price, 25 + 65, 'a outra metade da 1.ª e metade da 2.ª');
+  assert.equal(E.refill(q, START, world).price, 15, 'meia barra = metade de 30');
+  q.energy = 0; assert.equal(E.refill(q, START + 1, world).price, 15 + 35, 'a outra metade da 1.ª e metade da 2.ª');
   const amanha = lisbonToUtc(2026, 11, 21, 9); p.energy = 0; p.energyT = amanha;
-  assert.equal(E.refill(p, amanha, world).price, 50);
+  assert.equal(E.refill(p, amanha, world).price, 30);
   const cheio = mk(); assert.throws(() => E.refill(cheio, START, world), { code: 'ENERGY_FULL' });
 });
 
@@ -200,16 +201,16 @@ test('quem vinha da economia antiga recebe de volta o que comprou e fica com as 
   assert.deepEqual(E.checkInvariants(p), []);
 });
 
-test('putas: o preço é o da escada de stamina do dia vezes o dela, e o que elas dão sobe a mesma escada', () => {
+test('putas: o preço é o da escada de stamina vezes o dela, e o que elas dão sobe a mesma escada', () => {
   const nunca = { int: (lo) => lo, chance: () => false, float: () => 0.99 };
   const i = CFG.hookers.list.findIndex((g) => g.id === 'rosinha'), g = CFG.hookers.list[i];
   const p = mk(); p.cash = 1e6; p.energy = 0;
-  assert.equal(E.hookerPrice(p, i, START), Math.ceil((Math.ceil((g.e * 50) / 100) * g.valueBp) / 10000), 'primeira barra a 50 €, vezes o dela');
+  assert.equal(E.hookerPrice(p, i, START), Math.ceil((Math.ceil((g.e * 30) / 100) * g.valueBp) / 10000), 'primeira barra a 30 €, vezes o dela');
   E.visitHooker(p, START, world, i, nunca);
   assert.equal(p.rf.e, g.e, 'a stamina dela conta na escada do dia');
   const j = CFG.hookers.list.findIndex((x) => x.id === 'celeste'), c = CFG.hookers.list[j];
   const q = mk(); q.cash = 1e6; q.energy = 0; q.rf = { d: E.dayOf(START), e: 300 };
-  assert.equal(E.hookerPrice(q, j, START), Math.ceil((380 * c.valueBp) / 10000), 'depois de três barras custa como a quarta');
-  assert.equal(E.hookerPrice(q, j, lisbonToUtc(2026, 11, 21, 10)), Math.ceil((50 * c.valueBp) / 10000), 'no dia seguinte recomeça');
+  assert.equal(E.hookerPrice(q, j, START), Math.ceil((180 * c.valueBp) / 10000), 'depois de três barras custa como a quarta');
+  assert.equal(E.hookerPrice(q, j, lisbonToUtc(2026, 11, 21, 10)), Math.ceil((30 * c.valueBp) / 10000), 'no dia seguinte recomeça');
   assert.ok(CFG.hookers.list.every((x) => x.valueBp >= 8000 && x.valueBp <= 11500));
 });

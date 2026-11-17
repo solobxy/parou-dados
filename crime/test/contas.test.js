@@ -201,10 +201,10 @@ test('batota: perder respeito e voltar a ganhá-lo não volta a encher a stamina
   assert.equal(r.levelUp, null); assert.equal(p.energy, 50 - CFG.crimes[0].e);
 });
 
-// o preço de uma puta: a escada de stamina do dia (35 € × barra + 15 € × barra², ponto a ponto) pelo que ela dá, vezes o dela, mais 4% por degrau
-const escada = (from, n) => { let c = 0; for (let u = from; u < from + n; u++) { const k = Math.floor(u / 100) + 1; c += 35 * k + 15 * k * k; } return Math.ceil(c / 100); };
+// o preço de uma puta: a escada de stamina (25 € × barra + 5 € × barra², ponto a ponto; desce 25 pontos por hora) pelo que ela dá, vezes o dela, mais 4% por degrau
+const escada = (from, n) => { let c = 0; for (let u = from; u < from + n; u++) { const k = Math.floor(u / 100) + 1; c += 25 * k + 5 * k * k; } return Math.ceil(c / 100); };
 const precoPuta = (p, i, now, degraus) => {
-  const g = CFG.hookers.list[i], from = p.rf && p.rf.d === E.dayOf(now) ? p.rf.e : 0;
+  const g = CFG.hookers.list[i], from = E.refillUsed(p, now);
   let x = Math.max(1, Math.ceil((escada(from, g.e) * g.valueBp) / 10000));
   for (let k = 0; k < degraus; k++) x = Math.ceil((x * 26) / 25);
   return x;

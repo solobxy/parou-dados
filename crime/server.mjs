@@ -26,7 +26,7 @@ const RONDA_TESTE = process.env.PRIMEIRA_RONDA ? dataDe(process.env.PRIMEIRA_RON
 // Épocas de 28 dias a contar da sexta 13/11/2026 às 21:00 de Lisboa (PRIMEIRA_EPOCA=AAAA-MM-DD muda-a, para testes)
 const ANCORA = dataDe(process.env.PRIMEIRA_EPOCA || process.env.PRIMEIRA_RONDA || '2026-11-13');
 const rng = process.env.TESTE_SEMENTE ? seededRng(+process.env.TESTE_SEMENTE) : cryptoRng();   // nos testes, a sorte pode ser sempre a mesma
-const VERSAO = 63;   // sobe quando o servidor muda, para se confirmar de fora que a versão nova já está a correr
+const VERSAO = 64;   // sobe quando o servidor muda, para se confirmar de fora que a versão nova já está a correr
 const ATOS_3S = +(process.env.ATOS_3S || 15), ATOS_MIN = +(process.env.ATOS_MIN || 400); // ações por conta: 15 em 3 s, 400 por minuto
 
 // ---------- relógio que nunca anda para trás ----------
@@ -406,7 +406,7 @@ function vista(p, now) {
     name: nomeDe(p.id),
     stats: p.stats, energy: p.energy, energyT: p.energyT, energyMax: E.energyMax(p), vigor: p.vigor, vigorT: p.vigorT,
     addiction: p.addiction, addictionT: p.addictionT, addictionCap: E.addictionCap(p),
-    refill: E.refillPlan(p, now), refillBars: p.rf && p.rf.d === E.dayOf(now) ? p.rf.e : 0, street: E.streetView(p, now),
+    refill: E.refillPlan(p, now), refillBars: E.refillUsed(p, now), street: E.streetView(p, now),
     deal: { dst: p.dst, used: E.dealUsed(p, now), cap: E.dealCap(p) },
     job: p.job, shifts: E.shiftsToday(p, now), course: p.course, done: p.done, sk: p.sk, jt: Array.isArray(p.jt) ? p.jt : [], detox: p.addiction > 0 ? E.detoxCost(p, now) : 0, detoxUses: E.detoxUses(p, now),
     mission: E.mission(p), wk: p.wk, counters: p.c,

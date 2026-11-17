@@ -326,12 +326,12 @@ test('negócios: o bónus da stat para nos x2', () => {
   assert.equal(E.bizRates(p, 1).perH, 2 * CFG.biz[1].perH);
 });
 
-test('recarga: enche até à stamina máxima da casa, ao preço da escada do dia, sem mexer no vício', () => {
+test('recarga: enche até à stamina máxima da casa, ao preço da escada, sem mexer no vício', () => {
   const p = E.newPlayer('a', START, world); p.cash = 500;   // começa-se com 50 €
   p.energy = 3;
   const plan = E.refillPlan(p, START);
   assert.equal(plan.energy, CFG.energy.max - 3);
-  assert.equal(plan.cost, Math.ceil((97 * 50) / 100));
+  assert.equal(plan.cost, Math.ceil((97 * 30) / 100));
   const before = p.cash;
   const r = E.refill(p, START, world);
   assert.equal(p.energy, CFG.energy.max);
@@ -345,11 +345,11 @@ test('recarga: enche até à stamina máxima da casa, ao preço da escada do dia
   assert.equal(JSON.stringify(q), snap);
 });
 
-test('recarga: na mansão enche até 130 (a barra a seguir já é a segunda do dia)', () => {
+test('recarga: na mansão enche até 130 (os últimos 30 já são da segunda barra)', () => {
   const p = E.newPlayer('a', START, world); p.cash = 1e6; p.house = CFG.house.tiers.length - 1; p.energy = 0;
   assert.equal(E.energyMax(p), 130);
   const r = E.refill(p, START, world);
-  assert.equal(r.energy, 130); assert.equal(r.price, 50 + Math.ceil((30 * 130) / 100));
+  assert.equal(r.energy, 130); assert.equal(r.price, 30 + Math.ceil((30 * 70) / 100));
 });
 
 test('recarga e desintoxicação: 20 000 casos aleatórios sem quebrar regras', () => {

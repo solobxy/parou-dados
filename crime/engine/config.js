@@ -158,7 +158,9 @@ export const CFG = {
   ],
   // A rua aquece: no mesmo dia (de Lisboa), a 1.ª e a 2.ª barra de golpes de rua rendem 100%, a 3.ª e a 4.ª 70%, a 5.ª e a 6.ª 45%,
   // da 7.ª em diante 25% (dinheiro e respeito). Respeito de uma barra de golpes: 20 + 2 por nível, até 120 (dá-se nos golpes que correm bem).
-  street: { heat: [10000, 10000, 7000, 7000, 4500, 4500, 2500], respBase: 20, respPerLevel: 2, respCap: 120 },
+  // a rua aquece com a stamina gasta em golpes e arrefece sozinha, coolPerH por hora (uma barra em 2 h; antes era por dia)
+  // o respeito continua a contar por dia (respHeat, as barras de golpes do dia), para a corrida ao nível 100 não acelerar
+  street: { heat: [10000, 10000, 9000, 8000, 7000, 6000, 5000, 4000], coolPerH: 50, respHeat: [10000, 10000, 7000, 7000, 4500, 4500, 2500], respBase: 20, respPerLevel: 2, respCap: 120 },
   // Passo 4: os golpes com arma gastam 10 balas e um uso da arma de fogo (a de mão, se houver; senão a principal).
   // Balas: caixas de 50 a 25 € (0,50 € cada; grau C). Com o desgaste da pistola (1 750 € em 20 usos), um golpe com arma custa
   // cerca de 92 €, perto dos 100 € de balas e desgaste do modelo.
@@ -231,8 +233,8 @@ export const CFG = {
   // Fuga: 30 de stamina, 35%; se falhar, a pena cresce metade do que falta.
   jail: { smuggleE: 20, smuggleLoseBp: 1500, workE: 10, work: 50, yardE: 10, yardMin: 20, yardMax: 200, cardsMax: 50, favors: 2, favorCutBp: 1500,
     contactsMax: 3, escapeE: 30, escapeBp: 3500, escapeAddBp: 5000 },
-  // Stamina a mais, a droga: cada barra (100) no mesmo dia custa 35 € × k + 15 € × k² (50, 130, 240, 380 €…); uma barra a meio paga-se à parte.
-  refillBar: { a: 35, b: 15 },
+  // Stamina a mais, a droga: cada barra (100) seguida custa 25 € × k + 5 € × k² (30, 70, 120, 180 €…); a escada desce 25 pontos por hora (uma barra em 4 h).
+  refillBar: { a: 25, b: 5, coolPerH: 25 },
   // Venda de droga na rua: compra-se ao quilo e vende-se ao grama com stamina (10 por venda). Uma barra vende perBar gramas.
   // A clientela compra 1 barra por dia, mais 1 por cada 25 níveis. Respeito de uma barra: 15 + 1 por nível.
   deal: { step: 10, base: 1, perLevels: 25, respBase: 15, respPerLevel: 1,

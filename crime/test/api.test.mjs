@@ -103,7 +103,7 @@ test('crime, toque repetido e erros de regra', async () => {
   assert.equal((await a('POST', '/api/act', { type: 'detox' })).body.error, 'NO_VICE');
   const st = (await a('GET', '/api/state')).body.me;
   assert.equal(st.refill.energy, E0, 'a barra a droga enche o que falta');
-  assert.equal(st.refill.cost, Math.ceil((E0 * 50) / 100), 'ao preço da primeira barra do dia (50 €)');
+  assert.equal(st.refill.cost, Math.ceil((E0 * 30) / 100), 'ao preço da primeira barra da escada (30 €)');
   const r3 = await a('POST', '/api/act', { type: 'refill', rid: 'rf1' });
   assert.equal(r3.status, 200, JSON.stringify(r3.body));
   assert.equal(r3.body.me.energy, 100);

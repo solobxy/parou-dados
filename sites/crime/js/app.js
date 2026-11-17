@@ -932,7 +932,8 @@ function screenRob() {
     h('div', { class: 'jdeal' },
       h('div', null, h('span', null, t('lootAvg')), h('b', { class: 'num c-cash' }, money(media))),
       h('div', null, h('span', null, t('chance')), h('b', { class: 'num ' + chanceCls(c.p) }, pct(c.p)))),
-    heat < 10000 ? h('p', { class: 'jheat' }, t('jobHeat', { p: heatPct(heat), u: st.used })) : null,
+    heat < 10000 ? h('p', { class: 'jheat' }, t('jobHeat', { p: heatPct(heat), h: dur(Math.ceil(((st.used - 199) * 60) / (st.coolPerH || 50)) * 60000) })) : null,
+    (st.respBp ?? 10000) < 10000 ? h('p', { class: 'jheat' }, t('jobRespDay', { p: heatPct(st.respBp) })) : null,
     h('p', { class: 'jrisk' }, me.bustBp ? t('jobRiskP', { b: pctOf(me.bustBp) + '%', p: me.lx ? me.lx.press : 50, m: money(c.fine), t: c.jailMin }) : t('jobRisk', { m: money(c.fine), t: c.jailMin })),
     noGun ? gunFix(me, L, c, gs)
       : h('button', { class: 'btn rob block big', disabled: !!b || L.energy < c.e, on: { click: (e) => act('crime', { k }, { el: e.currentTarget }) } }, t('robBtn')),
@@ -941,7 +942,7 @@ function screenRob() {
     rep ? reportCard(rep) : null,
     !b && !noGun && L.energy < c.e ? staminaHelp(me, L) : null,
     h('h3', { class: 'lootH' }, t('lootWhat')), sorteio,
-    h('p', { class: 'jcost' }, t('jobCost', { e: c.e, r: crimeResp(me, c, heat) })),
+    h('p', { class: 'jcost' }, t('jobCost', { e: c.e, r: crimeResp(me, c, st.respBp ?? heat) })),
     c.gun ? h('p', { class: 'jcost' }, gunLine(me)) : null,
     h('p', { class: 'jcost' }, t('skLine', { x: t('sk_' + c.fam), p: pctOf(skBp(me, c.fam)), n: Math.floor((me.sk[c.fam] || 0) / 100) }))));
   out.push(h('h2', { class: 'sec' }, t('allJobs')));

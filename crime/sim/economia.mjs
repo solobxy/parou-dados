@@ -41,7 +41,10 @@ export const P = {
     { nivel: 30, barra: 3600, gasto: 450 + 100 }, // assaltos armados; fiança de 6 000 €, 100 € de arma e balas por golpe
   ],
   // A rua aquece: rendimento de cada barra seguida de golpes de rua no mesmo dia.
-  calor: [1, 1, 0.7, 0.7, 0.45, 0.45, 0.25],
+  calor: [1, 1, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4],
+  calorResp: [1, 1, 0.7, 0.7, 0.45, 0.45, 0.25],   // o respeito da rua continua a contar por dia (a corrida ao nível 100 não acelera)
+  arrefece: +(process.env.ARREFECE ?? 0.5),        // a rua arrefece meia barra por hora (16/11: antes era à meia-noite)
+  escadaArrefece: +(process.env.ESCADA ?? 0.25),   // a escada da recarga desce um quarto de barra por hora
   pratica: { max: 0.3, barrasParaMax: 400 },   // a prática sobe o rendimento até +30%
   // Venda de droga na rua: lucro por barra, capital parado e clientela (barras por dia = base + nível/25).
   venda: [
@@ -82,8 +85,8 @@ export const P = {
   casaASerio: 183000,   // a prova da «primeira casa» mede o primeiro T1 na cidade, não a roulotte
   parteDaVida: +(process.env.PARTE ?? 0.5),
   carro: 5000,   // usado barato; compra-se quando sobram 1 000 € depois de o pagar
-  // Stamina a mais do que a natural: cada barra extra custa droga e desintoxicação, cada vez mais cara no mesmo dia.
-  extra: (k) => 35 * k + 15 * k * k,   // 1.ª barra extra 50 €, 3.ª 240 €, 7.ª 980 €
+  // Stamina a mais do que a natural: cada barra seguida custa mais; a escada desce com o tempo (escadaArrefece).
+  extra: (k) => 25 * k + 5 * k * k,   // 1.ª barra extra 30 €, 3.ª 120 €, 7.ª 420 €
   lavagem: { acimaDe: 100000, parte: 0.2 },   // dinheiro do crime que passa pelas fachadas: custa 20%
   // Gastos que crescem com a fortuna (as casas não têm despesa).
   segurancas: { nivel: 60, dia: 3600, max: 6, parte: 0.2 },   // quem pode ser morto paga guarda-costas: 1 800 € por mês cada, até 6, até 20% do que ganha
@@ -104,10 +107,11 @@ const nivelDe = (resp) => Math.min(100, Math.max(1, Math.floor(Math.cbrt(resp / 
 
 // ---------- perfis ----------
 const PERFIS = {
-  casual:   { barras: 2, extra: 0, falha: 0.25, edicoes: 1 },    // uma sessão por dia; falha um dia em quatro
-  regular:  { barras: 4, extra: 0, falha: 0.05, edicoes: 2 },    // duas ou três sessões por dia
-  hardcore: { barras: 7, extra: 3, falha: 0, edicoes: 3 },       // gasta a stamina natural toda (7 barras) e até três a droga, se compensar
-  bot:      { barras: 7.2, extra: 7, falha: 0, edicoes: 4 },     // 24 h por dia: o caso que a economia tem de aguentar
+  // sessoes por dia, espalhadas por horas (o resto é a noite); extra: barras a droga por dia, no máximo (e só se compensar)
+  casual:   { barras: 2, extra: 0, falha: 0.25, edicoes: 1, sessoes: 1, horas: 1, paraEm: 1 },     // uma sessão por dia; falha um dia em quatro
+  regular:  { barras: 4, extra: +(process.env.REG_EXTRA ?? 0), falha: 0.05, edicoes: 2, sessoes: 2, horas: 12, paraEm: 0.8 },    // duas ou três sessões por dia
+  hardcore: { barras: 7, extra: 12, falha: 0, edicoes: 3, sessoes: 3, horas: 15, paraEm: +(process.env.PARA ?? 0.6) },      // gasta a stamina natural toda e compra enquanto compensar
+  bot:      { barras: 7.2, extra: 100, falha: 0, edicoes: 4, sessoes: 6, horas: 24, paraEm: +(process.env.PARA ?? 0.6) },   // 24 h por dia: o caso que a economia tem de aguentar
 };
 // lucro do tráfico por dia para quem joga e edições por dia (3 edições: a meio entre 2 e 4)
 const traficoDia = (t, e) => t.dia[e] ?? (t.dia[e - 1] + t.dia[e + 1]) / 2;
@@ -131,18 +135,31 @@ function simula(perfil, rng) {
     let crime = 0;
     // venda de droga: primeiro, até ao limite da clientela
     const r = [...P.rua].reverse().find((x) => nv >= x.nivel), bonus = 1 + P.pratica.max * Math.min(1, s.pratica / P.pratica.barrasParaMax);
-    const piorBarra = r.barra * bonus * P.calor[Math.min(Math.max(0, Math.ceil(barras) - 1), P.calor.length - 1)];   // o que rende a barra de rua mais quente do dia
+    const porSes = barras / A.sessoes;
+    const piorBarra = r.barra * bonus * P.calor[Math.min(Math.max(0, Math.ceil(porSes) - 1), P.calor.length - 1)];   // o que rende a barra de rua mais quente de uma sessão
     const v = [...P.venda].reverse().find((x) => nv >= x.nivel && x.barra > piorBarra && (s.capital >= x.capital || s.cash > x.capital * 1.5));
     if (v) {
       if (s.capital < v.capital) { sai += v.capital - s.capital; s.capital = v.capital; }
       const b = Math.min(barras, P.clientela.base + nv / P.clientela.porNivel);
       crime += b * v.barra; s.resp += b * P.resp.venda(nv); barras -= b;
     }
-    // golpes de rua com o resto da stamina, a aquecer
-    let i = 0;
-    for (; barras > 0.01; i++) { const b = Math.min(1, barras), c = P.calor[Math.min(i, P.calor.length - 1)]; barras -= b; if (r.barra * bonus * c <= r.gasto) continue; crime += b * r.barra * bonus * c; sai += b * r.gasto; s.resp += b * P.resp.rua(nv) * c; s.pratica += b; }   // o calor corta o dinheiro e o respeito; as multas não baixam
-    // barras a mais, a droga: só se a barra render mais do que custa
-    for (let k = 1; k <= A.extra; k++, i++) { const g = r.barra * bonus * P.calor[Math.min(i, P.calor.length - 1)]; if (g <= P.extra(k) + r.gasto) break; crime += g; sai += P.extra(k) + r.gasto; s.resp += P.resp.rua(nv) * P.calor[Math.min(i, P.calor.length - 1)]; s.pratica += 1; s.extras = (s.extras || 0) + 1; }
+    // golpes de rua por sessões: a rua aquece com cada barra e arrefece entre sessões; a escada da recarga também
+    const gap = A.horas / A.sessoes, noite = 24 - A.horas;
+    let quente = s.quente || 0, escada = s.escada || 0, compradas = 0;
+    let hoje = 0;
+    const golpe = (b) => { const c = P.calor[Math.min(Math.floor(quente + 1e-9), P.calor.length - 1)], cr = P.calorResp[Math.min(Math.floor(hoje + 1e-9), P.calorResp.length - 1)]; quente += b; hoje += b; if (r.barra * bonus * c <= r.gasto) return; crime += b * r.barra * bonus * c; sai += b * r.gasto; s.resp += b * P.resp.rua(nv) * cr; s.pratica += b; };
+    for (let j = 0; j < A.sessoes; j++) {
+      for (let resto = barras / A.sessoes; resto > 0.01; resto -= 1) golpe(Math.min(1, resto));
+      // barras a mais, a droga: só se a barra render mais do que custa
+      while (compradas < A.extra) {
+        const c = P.calor[Math.min(Math.floor(quente + 1e-9), P.calor.length - 1)], preco = P.extra(Math.floor(escada + 1e-9) + 1);
+        if (c < A.paraEm || r.barra * bonus * c <= preco + r.gasto) break;   // pára quando a rua já rende pouco (quem joga vê o calor)
+        sai += preco; escada += 1; compradas++; s.extras = (s.extras || 0) + 1; golpe(1);
+      }
+      const h = j === A.sessoes - 1 ? gap + noite : gap;
+      quente = Math.max(0, quente - P.arrefece * h); escada = Math.max(0, escada - P.escadaArrefece * h);
+    }
+    s.quente = quente; s.escada = escada;
     // operações: prepara a melhor que consegue pagar; resolve quando chega o dia
     if (s.op && d >= s.op.fim) {
       const o = s.op.o; s.op = null; s.pausaAte = d + o.pausa;

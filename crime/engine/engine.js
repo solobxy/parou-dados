@@ -532,12 +532,24 @@ export function crimeChanceBp(p, k) { return CFG.crimes[k].p; }
 export function crimeUnlocked(p, k) { return level(p) >= CFG.crimes[k].level; }
 // média do que se leva quando corre bem (sem bónus)
 export const crimeEv = (c) => c.prizes.reduce((s, [bp, a, z]) => s + (bp * (a + z)) / 2, 0) / 10000;
-// calor da rua: a barra de golpes em que se vai hoje (cada 100 de stamina gasta em golpes de rua no mesmo dia)
-function heatOf(p, now) {
-  const H = CFG.street.heat, used = p.rua && p.rua.d === dayOf(now) ? p.rua.e : 0;
-  return H[Math.min(H.length - 1, Math.floor(used / 100))];
+// o que ainda está quente: o que se gastou, menos perH por hora desde a última vez (16/11: antes era por dia, à meia-noite)
+function cooled(x, now, perH) {
+  if (!x) return 0;
+  if (x.t === undefined) return now !== undefined && x.d === dayOf(now) ? x.e : 0;   // formato antigo, por dia
+  if (now === undefined) return x.e;
+  return Math.max(0, x.e - Math.floor((Math.max(0, now - x.t) * perH) / T.HOUR));
 }
-export function streetView(p, now) { const d = dayOf(now), used = p.rua && p.rua.d === d ? p.rua.e : 0; return { used, heatBp: heatOf(p, now) }; }
+const ruaHot = (p, now) => cooled(p.rua, now, CFG.street.coolPerH);
+// o que se gastou hoje em golpes (para o respeito, que conta por dia)
+const ruaToday = (p, now) => (p.rua && now !== undefined && p.rua.d === dayOf(now) ? (p.rua.t === undefined ? p.rua.e : p.rua.de || 0) : 0);
+const respHeatOf = (p, now) => { const H = CFG.street.respHeat; return H[Math.min(H.length - 1, Math.floor(ruaToday(p, now) / 100))]; };
+export const refillUsed = (p, now) => cooled(p.rf, now, CFG.refillBar.coolPerH);
+// calor da rua: a barra de golpes em que se vai (cada 100 de stamina gasta em golpes de rua e ainda quente)
+function heatOf(p, now) {
+  const H = CFG.street.heat;
+  return H[Math.min(H.length - 1, Math.floor(ruaHot(p, now) / 100))];
+}
+export function streetView(p, now) { return { used: ruaHot(p, now), heatBp: heatOf(p, now), coolPerH: CFG.street.coolPerH, today: ruaToday(p, now), respBp: respHeatOf(p, now) }; }
 // a arma de fogo que se usa nos golpes: a de mão, se ainda disparar; senão a principal. Se nenhuma dispara, a que houver (para dizer que está gasta).
 export const gunOf = (p) => { const m = p.eq.mao, q = p.eq.principal; return m && m.u > 0 ? 'mao' : q && q.u > 0 ? 'principal' : m ? 'mao' : q ? 'principal' : null; };
 const bulletsOf = (p) => { const b = p.inv.find((x) => x.id === 'balas'); return b ? b.n : 0; };
@@ -593,10 +605,10 @@ export function doCrime(p, now, world, k, rng) {
   const gun = c.gun ? gunCheck(p) : null;
   const ammo = gun ? CFG.bullets.perJob : 0;
   if (gun) { takeInv(p, 'balas', ammo); p.eq[gun].u -= 1; }   // balas e um uso da arma: gastam-se antes, corra bem ou mal
-  const bp = c.p, heatBp = heatOf(p, now), d = dayOf(now);
+  const bp = c.p, heatBp = heatOf(p, now), respBp = respHeatOf(p, now);
   settleAllBiz(p, now); // a prática pode subir stats: o rendimento até aqui conta com as antigas
   p.energy -= c.e;
-  p.rua = { d, e: (p.rua && p.rua.d === d ? p.rua.e : 0) + c.e };
+  p.rua = { e: ruaHot(p, now) + c.e, t: now, d: dayOf(now), de: ruaToday(p, now) + c.e };
   p.sk[c.fam] += c.e;   // a skill sobe com a prática, corra bem ou mal
   // o primeiro carteirista de quem ainda não tem respeito nenhum corre sempre bem: a primeira jogada não pode ser a prisão
   const first = k === 0 && p.peakRespect === 0;
@@ -615,23 +627,23 @@ export function doCrime(p, now, world, k, rng) {
     const L = launder(p, money); money = L.net;
     p.cash += money;
     p.c.crimes += 1; p.c.wins += 1; p.wk[k] += 1;
-    // respeito: uma barra de golpes vale 20 + 2 por nível (até 120), vezes o calor; dá-se nos golpes que correm bem
+    // respeito: uma barra de golpes vale 20 + 2 por nível (até 120), vezes o calor do dia (respHeat); dá-se nos golpes que correm bem
     const S = CFG.street, perBar = Math.min(S.respCap, S.respBase + S.respPerLevel * level(p));
     // por golpe que corre bem: perBar × e/100 a dividir pela hipótese, para a barra dar em média perBar; o resto (em milésimos)
     // fica guardado para o golpe seguinte, para não se perder nos arredondamentos
-    const milli = Math.floor((perBar * c.e * heatBp * 10) / bp) * (10000 + (klass(p).respBp || 0)) / 10000 + (p.rc || 0);
+    const milli = Math.floor((perBar * c.e * respBp * 10) / bp) * (10000 + (klass(p).respBp || 0)) / 10000 + (p.rc || 0);
     const resp = Math.floor(milli / 1000);
     p.rc = Math.floor(milli - resp * 1000);
     const lvl = addRespect(p, resp, now);
     const gained = practice(p, c, true);
-    return { ok: true, success: true, money, value, good, rushed, lav: L.lav, base, item: row[3], crit: false, respect: resp, levelUp: lvl, chanceBp: bp, heatBp, ammo, gained, newChanceBp: bp, star: 0 };
+    return { ok: true, success: true, money, value, good, rushed, lav: L.lav, base, item: row[3], crit: false, respect: resp, levelUp: lvl, chanceBp: bp, heatBp, respBp, ammo, gained, newChanceBp: bp, star: 0 };
   }
   p.c.crimes += 1;
   // falhar não é sempre prisão: uma falha em quatro é apanhada
   const busted = rng.chance(bustChanceBp(p, now, world && world.press));
   if (busted) jailFor(p, now, c.jailMin * T.MIN, k + 1);
   const gained = practice(p, c, false);
-  return { ok: true, success: false, busted, jailUntil: p.jailUntil, chanceBp: bp, heatBp, ammo, gained, newChanceBp: bp };
+  return { ok: true, success: false, busted, jailUntil: p.jailUntil, chanceBp: bp, heatBp, respBp, ammo, gained, newChanceBp: bp };
 }
 
 // «usar a stamina toda»: repete o mesmo golpe tantas vezes quantas a stamina de agora dá (no máximo crimeAllMax).
@@ -644,7 +656,7 @@ export function doCrimeAll(p, now, world, k, rng) {
   if (p.energy < c.e) fail('NO_ENERGY', { need: c.e });
   if (c.gun) gunCheck(p);
   const out = { ok: true, all: true, n: 0, wins: 0, crits: 0, money: 0, best: 0, bestCrit: false, bestItem: null, respect: 0, ammo: 0,
-    busted: false, jailUntil: 0, levelUp: null, gained: {}, star: 0, chanceBp: c.p, heatBp: heatOf(p, now), newChanceBp: c.p, items: {} };
+    busted: false, jailUntil: 0, levelUp: null, gained: {}, star: 0, chanceBp: c.p, heatBp: heatOf(p, now), respBp: respHeatOf(p, now), newChanceBp: c.p, items: {} };
   const budget = Math.min(CFG.crimeAllMax, Math.floor(p.energy / c.e));
   const gunOk = () => { if (!c.gun) return true; try { gunCheck(p); return true; } catch { return false; } };
   while (out.n < budget && p.energy >= c.e && gunOk()) {
@@ -737,7 +749,7 @@ export const detoxUses = (p, now) => recent(p.detoxT, now, CFG.detox.windowMs);
 // o preço é o da escada de stamina do dia (a das barras a droga) pelo que ela dá, vezes o dela; mais 4% por cada degrau dela
 export function hookerPrice(p, i, now) {
   const H = CFG.hookers, g = H.list[i];
-  const from = now !== undefined && p.rf && p.rf.d === dayOf(now) ? p.rf.e : 0;
+  const from = now !== undefined ? refillUsed(p, now) : 0;
   let price = Math.max(1, Math.ceil((refillCost(from, g.e) * g.valueBp) / 10000));
   const n = Math.min(hookerSteps(p, i, now), H.maxSteps); // só conta, não mexe: uma visita recusada não muda nada
   for (let k = 0; k < n; k++) price = Math.ceil((price * H.stepNum) / H.stepDen);
@@ -755,9 +767,9 @@ export function visitHooker(p, now, world, i, rng) {
 }
 function doVisit(p, i, now, rng, base) {
   const g = CFG.hookers.list[i];
-  const got = Math.min(g.e, energyMax(p) - p.energy), d = dayOf(now);
+  const got = Math.min(g.e, energyMax(p) - p.energy);
   p.energy += got;
-  p.rf = { d, e: (p.rf && p.rf.d === d ? p.rf.e : 0) + got };   // sobe a escada do dia como uma barra
+  p.rf = { e: refillUsed(p, now) + got, t: now };   // sobe a escada como uma barra
   p.hkN[i] = Math.min(CFG.hookers.maxSteps, hookerSteps(p, i, now) + 1); p.hkAt[i] = now;   // a hora conta a partir da última visita a ela
   const sick = rng.chance(cut(g.sickBp, klass(p).sickCutBp || 0));
   if (sick) p.sick = true;
@@ -826,7 +838,7 @@ export function valuePerEnergy(p) {
   return best;
 }
 
-// Stamina a mais, a droga (base nova): cada barra de 100 no mesmo dia custa 35 € × k + 15 € × k² (50, 130, 240, 380 €…).
+// Stamina a mais, a droga (base nova): cada barra de 100 seguida custa 25 € × k + 5 € × k² (30, 70, 120, 180 €…); a escada desce 25 por hora.
 // Paga-se ponto a ponto, por isso meia barra custa metade. Não mexe no vício (os efeitos tomam-se à parte, na discoteca).
 const barPrice = (k) => CFG.refillBar.a * k + CFG.refillBar.b * k * k;
 function refillCost(from, n) {
@@ -837,7 +849,7 @@ function refillCost(from, n) {
 export function refillPlan(p, now) {
   const room = energyMax(p) - p.energy;
   if (room <= 0) return null;
-  const today = now === undefined ? null : dayOf(now), from = p.rf && p.rf.d === today ? p.rf.e : 0;
+  const from = now === undefined ? 0 : refillUsed(p, now);
   return { energy: room, cost: refillCost(from, room), next: barPrice(Math.floor(from / 100) + 1), counts: CFG.drugs.map(() => 0) };
 }
 export function refill(p, now, world) {
@@ -845,8 +857,7 @@ export function refill(p, now, world) {
   const plan = refillPlan(p, now);
   if (!plan) fail('ENERGY_FULL');
   pay(p, plan.cost);
-  const d = dayOf(now);
-  p.rf = { d, e: (p.rf && p.rf.d === d ? p.rf.e : 0) + plan.energy };
+  p.rf = { e: refillUsed(p, now) + plan.energy, t: now };
   p.energy += plan.energy;
   p.c.refills += 1;
   return { ok: true, energy: plan.energy, addiction: 0, price: plan.cost, counts: plan.counts };
