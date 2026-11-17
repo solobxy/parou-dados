@@ -13,6 +13,7 @@ import { cryptoRng, seededRng } from './engine/rng.js';
 import { localParts, lisbonToUtc, seasonAt, seasonBounds } from './engine/time.js';
 import * as MW from './engine/mundo.js';
 import * as GV from './engine/governo.js';
+import * as NW from './engine/noticias.js';
 
 const PORT = +(process.env.PORT || 3170);
 const DATA = process.env.DATA || process.env.STATE_DIRECTORY || './dados';
@@ -27,7 +28,7 @@ const RONDA_TESTE = process.env.PRIMEIRA_RONDA ? dataDe(process.env.PRIMEIRA_RON
 // Épocas de 28 dias a contar da sexta 13/11/2026 às 21:00 de Lisboa (PRIMEIRA_EPOCA=AAAA-MM-DD muda-a, para testes)
 const ANCORA = dataDe(process.env.PRIMEIRA_EPOCA || process.env.PRIMEIRA_RONDA || '2026-11-13');
 const rng = process.env.TESTE_SEMENTE ? seededRng(+process.env.TESTE_SEMENTE) : cryptoRng();   // nos testes, a sorte pode ser sempre a mesma
-const VERSAO = 76;   // sobe quando o servidor muda, para se confirmar de fora que a versão nova já está a correr
+const VERSAO = 77;   // sobe quando o servidor muda, para se confirmar de fora que a versão nova já está a correr
 const ATOS_3S = +(process.env.ATOS_3S || 15), ATOS_MIN = +(process.env.ATOS_MIN || 400); // ações por conta: 15 em 3 s, 400 por minuto
 
 // ---------- relógio que nunca anda para trás ----------
@@ -83,8 +84,9 @@ const q = {
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ON CONFLICT (ronda, dia, conta) DO UPDATE SET cwin = max(cwin, excluded.cwin), cnet = cnet + excluded.cnet,
     resp = resp + excluded.resp, crimes = crimes + excluded.crimes, wins = wins + excluded.wins, busts = busts + excluded.busts,
     money = money + excluded.money, best = max(best, excluded.best), beaten = beaten + excluded.beaten, mugged = mugged + excluded.mugged,
-    mugloss = mugloss + excluded.mugloss, fights = fights + excluded.fights, sick = sick + excluded.sick`),
+    mugloss = mugloss + excluded.mugloss, fights = fights + excluded.fights, sick = sick + excluded.sick RETURNING *`),   // v77: devolve o dia todo, para as manchetes
   doDia: db.prepare('SELECT * FROM diario WHERE ronda = ? AND dia = ?'),
+  meuDia: db.prepare('SELECT * FROM diario WHERE ronda = ? AND dia = ? AND conta = ?'),
   caixa: db.prepare(`INSERT INTO caixa (dia, fonte, entra, sai, n) VALUES (?, ?, ?, ?, 1)
     ON CONFLICT (dia, fonte) DO UPDATE SET entra = entra + excluded.entra, sai = sai + excluded.sai, n = n + 1`),
   limparNoticias: db.prepare('DELETE FROM noticias WHERE t < ?'),
@@ -97,44 +99,57 @@ const fromJson = (s) => JSON.parse(s, (k, v) => (v && v.__map ? new Map(v.__map)
 // ---------- jornal da cidade ----------
 // última hora: o que os jogadores fazem, guardado na base de dados (sobrevive a reinícios)
 const jornal = [];
+// v77: a última hora tem um travão por categoria (engine/noticias.js): com muita gente passam só as maiores, ao mesmo ritmo
+const SEM_TRAVAO = new Set(['season', 'stockBust']);
+const nw = () => (bolsa && bolsa.w ? NW.newsUp(bolsa.w) : null);
 function noticia(now, o) {
+  const s = nw();
+  if (s && !SEM_TRAVAO.has(o.k)) { const ok = NW.livePass(s, o.k, o.money || 0, now); bolsaSuja = true; if (!ok) { if (process.env.DBG_NEWS) console.error('travão', o.k, o.money); return; } }
   const e = { t: now, ...o };
   jornal.push(e); if (jornal.length > 40) jornal.shift();
   q.novaNoticia.run(ronda, now, JSON.stringify(o));
 }
 const ultimas = () => jornal.slice(-20).reverse();
+// tudo o que tem valor entra nas contas do jornal (o que é normal, e as 3 maiores da edição); a última hora só a partir do mínimo
+function amostra(now, cat, v, item, o) {
+  if (!(v > 0)) return;
+  if (o && v >= CFG.news.cats[cat].min) noticia(now, o);   // primeiro a última hora (medida contra o que já se sabia), depois as contas
+  const s = nw(); if (s) { NW.sample(s, cat, v, item); bolsaSuja = true; }   // sem o mundo carregado (raro), fica só a última hora
+}
 const casinoNet = (r) => (r.g === 'slot' ? Math.trunc((r.winC - r.betC) / 100) : r.win - (r.g === 'bj' ? r.hand.bet : r.bet));   // slots: ao cêntimo; contas e jornal em euros inteiros
 function noticiar(now, a, r, p, alvo) {
   const name = nomeDe(p.id), k = int(a.k);
   if (a.type === 'casino' && (r.g !== 'bj' || r.done)) {
     const net = casinoNet(r);
-    if (net >= CFG.casino.newsMin) noticia(now, { k: 'casino', name, g: r.g, money: net });
-    else if (-net >= CFG.casino.newsMin) noticia(now, { k: 'casinoLoss', name, g: r.g, money: -net });
+    if (net > 0) amostra(now, 'casino', net, { name, g: r.g }, { k: 'casino', name, g: r.g, money: net });
+    else if (net < 0) amostra(now, 'casinoLoss', -net, { name, g: r.g }, { k: 'casinoLoss', name, g: r.g, money: -net });
   }
   // golpes de rua: o jornal fala das sortes grandes (2 000 € ou mais num só golpe), das séries cheias e de quem é apanhado nos assaltos
   // (desde o passo 4 conta o valor todo do que se levou, dinheiro e objetos)
-  if (a.type === 'crimeAll' && r.wins >= 10 && (r.value || 0) >= 3000) noticia(now, { k: 'spree', name, c: k, n: r.n, money: r.value });
-  else {
+  // v77: todos os golpes contam para o que é normal; o jornal fala dos que passam o mínimo e o triplo da mediana
+  const spree = a.type === 'crimeAll' && r.wins >= 10 && (r.value || 0) > 0;
+  if (spree) amostra(now, 'spree', r.value, { name, c: k, n: r.n }, { k: 'spree', name, c: k, n: r.n, money: r.value });
+  if (a.type === 'crime' || a.type === 'crimeAll') {
     const job = a.type === 'crimeAll' ? { ok: r.wins > 0, money: r.best } : { ok: r.success, money: r.value };
-    if ((a.type === 'crime' || a.type === 'crimeAll') && job.ok && job.money >= 2000) noticia(now, { k: 'job', name, c: k, money: job.money });
+    if (job.ok) amostra(now, 'job', job.money, { name, c: k }, spree ? null : { k: 'job', name, c: k, money: job.money });
   }
   if ((a.type === 'crime' || a.type === 'crimeAll') && r.busted && k >= 3) noticia(now, { k: 'jail', name, c: k });
   if (a.type === 'opGo') {
     const o = CFG.ops[r.i].id;
-    if (r.success) noticia(now, { k: 'op', name, o, money: r.money });
+    if (r.success) amostra(now, 'op', r.money, { name, o }, { k: 'op', name, o, money: r.money });
     if (r.busted || r.linked) noticia(now, { k: 'opJail', name, o });
   }
   if (a.type === 'jailEscape' && r.free) noticia(now, { k: 'escape', name });
   if (a.type === 'classChange') noticia(now, { k: 'cls', name, from: r.from, to: r.cls });
-  if (a.type === 'stockSell' && Math.abs(r.profit) >= CFG.casino.newsMin) noticia(now, { k: r.profit > 0 ? 'stockWin' : 'stockLoss', name, c: CFG.stocks.list[r.k].id, money: Math.abs(r.profit) });
-  if (a.type === 'airCollect' && r.amount >= CFG.casino.newsMin) noticia(now, r.seized ? { k: 'airLost', name, to: CFG.air.routes[r.r].id, money: r.amount } : { k: 'air', name, to: CFG.air.routes[r.r].id, money: r.got - r.amount });
+  if (a.type === 'stockSell' && r.profit) { const kk = r.profit > 0 ? 'stockWin' : 'stockLoss', co = CFG.stocks.list[r.k].id; amostra(now, kk, Math.abs(r.profit), { name, co }, { k: kk, name, c: co, money: Math.abs(r.profit) }); }
+  if (a.type === 'airCollect') { const to = CFG.air.routes[r.r].id; if (r.seized) amostra(now, 'airLost', r.amount, { name, to }, { k: 'airLost', name, to, money: r.amount }); else amostra(now, 'air', r.got - r.amount, { name, to }, { k: 'air', name, to, money: r.got - r.amount }); }
   if (a.type === 'house') noticia(now, { k: 'house', name, h: p.house });
   else if (a.type === 'luxury') noticia(now, { k: 'lux', name, i: p.luxuries - 1 });
   else if ((a.type === 'hooker' || a.type === 'broVisit') && r.sick) noticia(now, { k: 'sick', name });
   else if (a.type === 'venueBuy' && r.lvl === 1) noticia(now, { k: 'venue', name, v: r.kind });
   else if (a.type === 'attack') {
     const b = nomeDe(alvo.id);
-    if (r.win && r.mode === 'mug') noticia(now, { k: 'mug', name, target: b, money: r.money });
+    if (r.win && r.mode === 'mug') { if (r.money > 0) amostra(now, 'mug', r.money, { name, target: b }, { k: 'mug', name, target: b, money: r.money }); }
     else if (r.win) noticia(now, { k: 'beat', name, target: b });
     else noticia(now, { k: 'fail', name, target: b });
   }
@@ -152,8 +167,11 @@ function caixa(now, fonte, entra, sai) {
 }
 const dinheiro = (x) => x.cash + x.bank;
 function contarDia(now, conta, v) {
-  q.diario.run(ronda, diaDe(now), conta, v.resp || 0, v.crimes || 0, v.wins || 0, v.busts || 0, v.money || 0, v.best || 0,
+  const dia = diaDe(now);
+  const row = q.diario.get(ronda, dia, conta, v.resp || 0, v.crimes || 0, v.wins || 0, v.busts || 0, v.money || 0, v.best || 0,
     v.beaten || 0, v.mugged || 0, v.mugloss || 0, v.fights || 0, v.sick || 0, v.cwin || 0, v.cnet || 0);
+  const T = topDia.get(dia); if (T && row) noTopo(T, row);   // v77: os melhores do dia vão-se sabendo sem ler a tabela toda
+  if (row) { meusDias.set(conta, row); if (meusDias.size > 5000) meusDias.delete(meusDias.keys().next().value); }
 }
 function contarAcao(now, a, r, p, alvo, resp0, alvoResp0) {
   const v = { resp: p.respect - resp0 };
@@ -216,18 +234,44 @@ function contarCaixa(now, a, r, delta) {
 const MANCHETES = [['wanted', (r) => r.resp, 10], ['bigjob', (r) => r.best, 1500, (r) => r.best], ['lucky', (r) => r.cwin, 5000, (r) => r.cwin], ['fighter', (r) => r.fights, 2],
   ['mugged', (r) => r.mugged, 1, (r) => r.mugloss], ['broke', (r) => -r.cnet, 5000, (r) => -r.cnet], ['beaten', (r) => r.beaten, 2], ['hustler', (r) => r.crimes, 30], ['unlucky', (r) => r.busts, 2], ['sick', (r) => r.sick, 1]];
 const cacheManchetes = new Map();
+// v77: os 12 melhores de cada manchete, por dia, em memória (chegam: cada jogador só aparece numa, e há 10 manchetes).
+// Lê-se a tabela do dia uma vez (ao arrancar ou na primeira vez que se pede esse dia); depois cada ação acerta só a sua linha.
+const topDia = new Map();
+const meusDias = new Map();   // o dia de cada jogador (para «a tua página»), o último que se contou
+function meuDia(conta, now) {
+  const dia = diaDe(now), c = meusDias.get(conta);
+  if (c && c.dia === dia && c.ronda === ronda) return c;
+  const r = q.meuDia.get(ronda, dia, conta) || null; if (r) meusDias.set(conta, r);
+  return r;
+}
+function noTopo(T, r) {
+  for (const [k, val, min, din] of MANCHETES) {
+    const v = val(r), L = T[k] || (T[k] = []), i = L.findIndex((x) => x.conta === r.conta);
+    if (i >= 0) L.splice(i, 1);
+    if (!(v >= min)) continue;
+    L.push({ conta: r.conta, n: v, m: din ? din(r) : 0 }); L.sort((a, b) => b.n - a.n); if (L.length > 12) L.length = 12;
+  }
+}
+function topoDoDia(dia) {
+  let T = topDia.get(dia);
+  if (!T || T.ronda !== ronda) {
+    T = { ronda }; for (const r of q.doDia.all(ronda, dia)) noTopo(T, r);
+    topDia.set(dia, T);
+    while (topDia.size > 3) topDia.delete(topDia.keys().next().value);   // hoje, ontem e pouco mais
+  }
+  return T;
+}
 function manchetes(dia, now) {
   const c = cacheManchetes.get(dia);
   if (c && c.ronda === ronda && now - c.t < 30_000) return c.lista;
-  const rows = q.doDia.all(ronda, dia), usados = new Set(), lista = [];
-  for (const [k, val, min, din] of MANCHETES) {
-    let best = null;
-    for (const r of rows) if (val(r) >= min && !usados.has(r.conta) && (!best || val(r) > val(best))) best = r;
+  const T = topoDoDia(dia), usados = new Set(), lista = [];
+  for (const [k] of MANCHETES) {
+    const best = (T[k] || []).find((x) => !usados.has(x.conta));
     if (!best) continue;
     usados.add(best.conta);                       // cada jogador aparece numa manchete só, para haver mais nomes
     const p = jogadores.get(best.conta);
     lista.push({ k, name: nomeDe(best.conta), av: p?.av || 0, cls: p?.cls || '', level: p ? E.level(p) : 1, respect: p?.respect || 0,
-      n: val(best), m: din ? din(best) : 0 });
+      n: best.n, m: best.m });
   }
   cacheManchetes.set(dia, { t: now, ronda, lista });
   return lista;
@@ -315,6 +359,7 @@ function bolsaDe(w, now) {
       const ed = bolsa.w.ed + 1;
       if (w.n === ronda) { try { guardadoNasRegioes(); } catch (e) { console.error('regiões', e.message); } }
       const r = MW.runEdition(bolsa, ed, rng);
+      { const feats = NW.closeEdition(NW.newsUp(bolsa.w), ed), L = bolsa.w.arts[bolsa.w.arts.length - 1]; if (feats.length && L) L.a.push(...feats); }   // v77
       if (w.n === ronda) { try { dividendos(r.div, te, now); } catch (e) { console.error('dividendos', e.message); } }
       E.setGov(GV.govSnapshot(bolsa.w.gov));   // as leis que a edição acabou de pôr em vigor contam já nas rusgas
       if (w.n === ronda) { try { rusgas(te, now); } catch (e) { console.error('rusgas', e.message); } }
@@ -397,7 +442,9 @@ function vistaBolsa(w, now) {
 function vistaMundo(w, now) {
   if (w.phase !== 'play') return null;
   const m = bolsaDe(w, now);
-  const arts = m.w.arts.slice(-8).map((e) => ({ ed: e.ed, at: MW.edStart(e.ed), a: e.a.map((x) => (x.due ? { ...x, dueAt: MW.edStart(x.due) } : x.to ? { ...x, toAt: MW.edStart(x.to + 1) } : x)) }));
+  // v77: cada notícia leva o peso (a manchete é a mais pesada) e as horas das votações e das leis
+  const hora = (x) => (x.due ? { ...x, dueAt: MW.edStart(x.due) } : x.to ? { ...x, toAt: MW.edStart(x.to + 1) } : x.k === 'govBill' ? { ...x, voteAt: MW.edStart(x.vote) } : x.k === 'govVote' && x.at ? { ...x, atAt: MW.edStart(x.at) } : x);
+  const arts = m.w.arts.slice(-8).map((e) => ({ ed: e.ed, at: MW.edStart(e.ed), a: e.a.map((x) => ({ ...hora(x), w: Math.round(NW.weight(x) * 10) / 10 })) }));
   MW.worldUp(m.w);
   const rg = Object.fromEntries(Object.entries(m.w.rg).map(([r, g]) => [r, { crime: g.crime, press: g.press, hist: g.hist }]));
   const crimes = [m.w.lx.crime, ...Object.values(m.w.rg).map((g) => g.crime)];
@@ -416,6 +463,7 @@ function vista(p, now) {
     stk: mk ? E.stockView(p, mk) : CFG.stocks.list.map(() => ({ n: 0, cost: 0, value: 0, tp: 0, sl: 0 })), stockCap: E.stockCap(p),
     wh: E.whView(p), mv: E.mvView(p), mvLog: p.mvLog, rz: p.rz, mk: mk ? MW.marketView(mk.w, now) : null,   // regiões e armazéns (passo 6, parte 2)
     bustBp: E.bustChanceBp(p, now, mk ? MW.pressOf(mk.w, 'lx') : 50), lx: mk ? { crime: mk.w.lx.crime, press: MW.pressOf(mk.w, 'lx'), ed: mk.w.ed, edNext: MW.edStart(mk.w.ed + 1) } : null,
+    dia: (() => { const d = meuDia(p.id, now); if (!d) return null; const { ronda: _r, conta: _c, dia: _d, ...x } = d; return x; })(),   // v77: «a tua página»
     gv: mk && mk.w.gov ? { laws: Object.keys(mk.w.gov.laws), voted: !!(mk.w.gov.bill && p.gv === mk.w.gov.bill.ed0), yes: !!p.gvY, corr: mk.w.gov.corr, novo: now - (p.joinedAt || now) < CFG.gov.vote.minAgeMs } : null,
     name: nomeDe(p.id),
     stats: p.stats, energy: p.energy, energyT: p.energyT, energyMax: E.energyMax(p), vigor: p.vigor, vigorT: p.vigorT,
@@ -660,7 +708,10 @@ function resolverOp(g, now, s, cancela = null) {
     db.exec('COMMIT');
   } catch (e) { db.exec('ROLLBACK'); const n = ronda; ronda = -1; carregarRonda(n); console.error('op', e.message); return; }   // volta ao que estava gravado; tenta outra vez no segundo seguinte
   if (!res.cancelled) {
-    if (res.kind === 'heist') noticia(now, { k: res.success ? 'gangHeist' : 'gangHeistFail', gang: g.nome, tag: g.tag, c: CFG.gang.heists[res.k].id, n: ps.length, money: res.parts.reduce((x, y) => x + y.money, 0) });
+    if (res.kind === 'heist') {
+      const o = { k: res.success ? 'gangHeist' : 'gangHeistFail', gang: g.nome, tag: g.tag, c: CFG.gang.heists[res.k].id, n: ps.length, money: res.parts.reduce((x, y) => x + y.money, 0) };
+      if (res.success) amostra(now, 'gangHeist', o.money, { name: g.nome, tag: g.tag, c: o.c, n: o.n }, o); else noticia(now, o);
+    }
     else noticia(now, { k: res.win ? 'gangHit' : 'gangHitFail', gang: g.nome, tag: g.tag, target: res.target, n: ps.length });
   }
 }
@@ -996,8 +1047,9 @@ function pagarMesa(g, c, now) {
     b.win = win; m.last.set(conta, { id: c.id, bets: b.bets, total: b.total, win, flap: b.flap });
     const net = win - b.total;
     mundoAcc('casino', -net);
-    if (net >= CFG.casino.newsMin) noticia(now, { k: 'casino', name: nomeDe(conta), g, money: net });
-    else if (-net >= CFG.casino.newsMin) noticia(now, { k: 'casinoLoss', name: nomeDe(conta), g, money: -net });
+    const nm = nomeDe(conta);
+    if (net > 0) amostra(now, 'casino', net, { name: nm, g }, { k: 'casino', name: nm, g, money: net });
+    else if (net < 0) amostra(now, 'casinoLoss', -net, { name: nm, g }, { k: 'casinoLoss', name: nm, g, money: -net });
   }
   if (m.last.size > 500) for (const k of m.last.keys()) { m.last.delete(k); if (m.last.size <= 400) break; }
 }

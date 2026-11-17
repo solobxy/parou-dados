@@ -88,6 +88,16 @@ export const CFG = {
   // o resto vem do que os jogadores pagam ao Estado (fianças, comissões da bolsa, multas das rusgas, impostos das leis). 100% = reserveEds
   // edições de despesa. Corrupção: anda para base + perEmpty × (o que falta aos cofres); acima de scandalAt pode rebentar um escândalo.
   // Votos: os dos jogadores juntam-se a bg votos de fundo; o dinheiro posto numa votação pesa contra lobbyK × incomePc × gente.
+  // v77: o jornal que escala (engine/noticias.js). min = o que tem significado na economia (em euros); o resto mede-se contra o
+  // normal: o triplo da mediana das últimas 8 edições. Na última hora há uma reserva de 6 por hora e categoria; quando acaba, só passa
+  // a que for maior do que o dobro da última aceite, com essa fasquia a descer para metade a cada 15 minutos.
+  news: {
+    relMed: 3, minN: 8, live: { halfMs: 15 * MIN, step: 2, tokens: 6, tokMs: 60 * MIN }, ed: { k: 3, eds: 8 },
+    cats: { job: { min: 2000 }, spree: { min: 3000 }, casino: { min: 1000 }, casinoLoss: { min: 1000 }, op: { min: 5000 }, mug: { min: 200 },
+      stockWin: { min: 1000 }, stockLoss: { min: 1000 }, air: { min: 1000 }, airLost: { min: 1000 }, gangHeist: { min: 1 } },   // golpes de gangue: todos os que correm bem são notícia (são raros)
+    // o peso de cada notícia na primeira página (a manchete é a que pesa mais)
+    w: { feat: 4, govScandal: 9, govPass: 8, govFail: 6, govLaw: 5, govBill: 4, govPoll: 3, stBust: 9, stOut: 6, stPanic: 6, stEuph: 6, rgEv: 5, stAnn: 3, stInv: 3, stRum: 2, coRes: 1, lx: 1 },
+  },
   gov: {
     cof: { spendPc: 2000, bgTaxBp: 9000, reserveEds: 8, startPct: 50, lowPct: 30, highPct: 80, pressStep: 5 },
     corr: { start: 30, base: 15, perEmpty: 60, moveBp: 2000, scandalAt: 60, scandalBp: 800, scandalCut: 30, scandalPopu: 10, bailCutMax: 3000 },

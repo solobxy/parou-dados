@@ -2942,3 +2942,28 @@ body.preso .phead .pbar .back { visibility: hidden; }
 
 .tile .bdg.neu { color: var(--tx); }   /* «Vota»: não é ganho, não vai a verde */
 .pmore { font-size: 14px; }
+
+/* v77: o jornal que escala. A hora da edição ao lado do antetítulo; «a tua página» com as fichas do dia mais pequenas */
+.kick .kt { color: var(--pi2); font-weight: 600; letter-spacing: .02em; text-transform: none; }
+.pinl { display: inline; padding: 12px 0; margin: -12px 0; border: 0; background: none; color: var(--pi); font: inherit; font-weight: 700; text-decoration: underline; text-underline-offset: 3px; }
+.mefs { row-gap: 14px; }
+.mefs .lxf > b { font-size: 26px; }
+/* v77, revisão: chamadas empilhadas até 480 px e sem cortar o texto; separadores a 14 px com espaço entre eles e a máscara só à direita;
+   os textos das caixas com a letra do jornal; antetítulos a ocre (o vermelho no jogo quer dizer mau) */
+@media (max-width: 479px) {
+  .st2 { grid-template-columns: 1fr; }
+  .st2 .st { padding: 0; border-left: 0; }
+  .st2 .st + .st { margin-top: 12px; padding: 12px 0 0; border-left: 0; border-top: 1px solid var(--pr); }
+}
+.st-side p { display: block; -webkit-line-clamp: unset; overflow: visible; }
+.ppg { justify-content: flex-start; gap: 18px; padding-right: 24px; -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 24px), transparent); mask-image: linear-gradient(90deg, #000 calc(100% - 24px), transparent); }
+.ppg button, .ppg button:first-child, .ppg button:last-child { font-size: 14px; padding: 0; }
+.paper .psec > p:not(.pnote):not(.small):not(.pempty), .paper .mebits { font: 400 15px/1.45 var(--serif); }
+.paper .kick { color: #6b4a12; }
+.pinl { font: 700 14px/1.2 var(--ui); }
+.pmed { color: var(--pi2); }
+.meday { margin-bottom: 6px; }
+.meday > b { font-size: 34px; }
+.mebits { margin: 0; }
+.plx th[scope='row'] { font-weight: 600; color: var(--pi2); }
+.plx thead th:first-child { text-align: left; }

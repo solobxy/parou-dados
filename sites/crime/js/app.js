@@ -375,7 +375,7 @@ function loadFor(tab) {
   if (tab === 'bolsa') { S.stkSel = null; loadStocks(); }
   if (tab === 'stash') S.reg = null;
   if (tab === 'news' || tab === 'city' || tab === 'parl') loadNews();
-  if (tab === 'news') loadStocks();   // a página de Economia e a tira da bolsa na primeira página
+  if (tab === 'news') { loadStocks(); loadEvents(false); }   // a página de Economia, a tira da bolsa e «a tua página» (quem te atacou)
 }
 function go(tab) {
   if (!PLACES[tab]) tab = 'city';
@@ -635,7 +635,7 @@ async function loadNews() {
 // ===== O jornal «A Sirene» =====
 // Uma folha de papel dentro do jogo: cabeçalho, manchete em letras grandes e quatro páginas. Escreve-se com o que já existe
 // (o título do dia de cada jogador, a última hora e a bolsa). As notícias do governo e das empresas entram com o motor de acontecimentos.
-const PG = ['front', 'country', 'street', 'econ', 'live'], PGL = { front: 'pgFront', country: 'pgCountry', street: 'pgStreet', econ: 'pgEcon', live: 'pgLive' };
+const PG = ['front', 'me', 'country', 'street', 'econ', 'live'], PGL = { front: 'pgFront', me: 'pgMe', country: 'pgCountry', street: 'pgStreet', econ: 'pgEcon', live: 'pgLive' };
 // ---- as edições do mundo (passo 6): o que cada uma trouxe, por ordem de peso ----
 const coName = (id) => t('st_' + id);
 const sPct = (bp) => (bp >= 0 ? '+' : '−') + pctOf(Math.abs(bp)) + '%';
@@ -648,7 +648,7 @@ function artLine(a) {
     case 'stPanic': return t('arPanic', { x: coName(a.c), p: sPct(a.pct) });
     case 'stEuph': return t('arEuph', { x: coName(a.c), p: sPct(a.pct) });
     case 'stBust': return t('arBust', { x: coName(a.c) });
-    default: return null;
+    default: return null;   // as do governo e as proezas escrevem-se em artParts
   }
 }
 const DESK = ['stBust', 'stOut', 'stPanic', 'stEuph', 'stAnn', 'stInv', 'stRum'];
@@ -674,8 +674,11 @@ function paperCountry() {
     crimes.length > 1 ? h('div', { class: 'lxchw' }, h('span', { class: 'small' }, t('lxChartT', { n: crimes.length })), stChart(crimes, 'mini lxch', 320, 44)) : null,
     h('p', null, t('lxBust', { p: L.press, b: pctOf(lxBustNow(Wm)) + '%' })),
     h('p', { class: 'small pnote' }, t('lxHow'))),
-    govPaper(Wm), Wm.rg ? rgPaper(Wm) : null, rgEvPaper(Wm, 8),
-    lxArts.length ? h('section', { class: 'psec' }, h('h4', null, t('lxEdsT')), h('ul', { class: 'plive' }, lxArts.map(([at, a]) => h('li', null, h('span', { class: 'ptime' }, edTime(at)), h('span', null, lxLine(a)))))) : null];
+    govPaper(Wm), govArts(Wm), Wm.rg ? rgPaper(Wm) : null, rgEvPaper(Wm, 8),
+    lxArts.length ? h('section', { class: 'psec' }, h('h4', null, t('lxEdsT')),
+      h('table', { class: 'pmkt prg plx' }, h('thead', null, h('tr', null, h('th', { scope: 'col' }, t('lxWhen')), h('th', { scope: 'col' }, t('lxCrime')), h('th', { scope: 'col' }, t('lxPress')))),
+        h('tbody', null, lxArts.map(([at, a]) => h('tr', null, h('th', { scope: 'row', class: 'num' }, edTime(at).replace('\n', ' ')),
+          h('td', { class: 'num' }, String(a.crime), a.d ? h('small', { class: a.d > 0 ? 'pdn' : 'pup' }, (a.d > 0 ? ' ▲' : ' ▼') + Math.abs(a.d)) : null), h('td', { class: 'num' }, String(a.press))))))) : null];
 }
 // o parlamento numa caixa do jornal: o que se vota, a última votação e a porta para o ecrã
 function govPaper(Wm) {
@@ -703,7 +706,7 @@ const untilTxt = (ts) => { const o = { timeZone: 'Europe/Lisbon' }, loc = lang()
 const rgEvLine = (a, toAt) => t('rgEvLine', { e: t('ev_' + a.e), x: list('drugs')[a.d].toLowerCase(), p: sPct(a.bp), h: untilTxt(toAt) });
 function rgEvPaper(Wm, max) {
   const rows = [...(Wm.arts || [])].reverse().flatMap((e) => e.a.filter((x) => x.k === 'rgEv').map((a) => [e.at, a])).slice(0, max);
-  return rows.length ? h('section', { class: 'psec' }, h('h4', null, t('rgEvT')), h('ul', { class: 'plive' }, rows.map(([at, a]) => h('li', null, h('span', { class: 'ptime' }, edTime(at)), h('span', null, rgEvLine(a, a.toAt) + (a.toAt <= now() ? ' ' + t('evOver') : '')))))) : null;
+  return rows.length ? h('section', { class: 'psec' }, h('h4', null, t('rgEvT')), h('ul', { class: 'plive' }, rows.map(([at, a]) => h('li', null, h('span', { class: 'ptime' }, edTime(at)), h('span', null, a.toAt <= now() ? rgEvLine(a, a.toAt).replace(/\.$/, '') + ' ' + t('evOver') + '.' : rgEvLine(a, a.toAt)))))) : null;
 }
 const kick = (k) => t('hl_' + k + '_t', { a: '' }).replace(/[:\s]+$/, '');   // «Procurado: {a}» sem o nome: é o antetítulo
 const paperDate = () => new Date(now()).toLocaleDateString(lang() === 'pt' ? 'pt-PT' : 'en-GB', { weekday: 'short', day: 'numeric', month: 'long', timeZone: 'Europe/Lisbon' });
@@ -727,23 +730,67 @@ function story(it, dia, kind) {
       h('div', null, h('p', null, tv('hl_' + it.k, seedOf(it.name + it.k + dia), { a: it.name, n: num(it.n), m: money(it.m) })),
         foto ? h('div', { class: 'by' }, t('paperBy', { c: it.cls ? t('cl_' + it.cls) : '', l: it.level, r: num(it.respect) }).replace(/^, /, '')) : null)));
 }
+// ===== v77: o jornal que escala =====
+// Cada edição traz as notícias do mundo (governo, bolsa, regiões) e as 3 maiores proezas de cada categoria, medidas contra o
+// que é normal (o servidor decide; aqui só se escreve). A primeira página abre com a notícia que pesa mais.
+const tk = (key, fb) => { const v = t(key); return v === key ? t(fb) : v; };
+const lcf = (x) => (x ? x[0].toLowerCase() + x.slice(1) : x);   // a meio de um título, «aumento dos salários»
+const FEAT_X = (a) => (a.cat === 'job' || a.cat === 'spree' ? list('crimes')[a.c] || '' : a.cat === 'casino' || a.cat === 'casinoLoss' ? tk('csIn_' + a.g, 'csIn_slot')
+  : a.cat === 'op' ? t('op_' + a.o) : a.cat === 'stockWin' || a.cat === 'stockLoss' ? t('st_' + a.co) : a.cat === 'air' || a.cat === 'airLost' ? t('ar_' + a.to) : a.cat === 'gangHeist' ? t('gh_' + a.c) : '');
+const blocTxt = (by) => { const P = (y) => PARTY.filter((k) => by && by[k] && by[k].bloc === y).map((k) => t('party_' + k)).join(', ');
+  return [P(true) && t('pBlocFor', { x: P(true) }), P(false) && t('pBlocAgainst', { x: P(false) })].filter(Boolean).join(' '); };
+// uma notícia de edição em três partes: antetítulo, título (com variantes) e texto
+function artParts(a, at) {
+  const sd = seedOf((a.name || '') + (a.id || '') + (a.cat || '') + a.k + at);
+  if (a.k === 'feat') {
+    const V = { a: a.cat === 'gangHeist' ? gName(a.name) : a.name, b: a.target || '', m: money(a.v), x: FEAT_X(a), n: a.n || 0, t: a.tag || '' };
+    return { kick: t('fk_' + a.cat), title: tv('ft_' + a.cat + '_h', sd, V), lede: (tv('ft_' + a.cat, sd, V) + (a.med > 0 ? ' ' + t('ftMed_' + a.cat, { m: money(a.med) }) : '')).trim(), who: a.name };
+  }
+  if (a.k.startsWith('gov') && !S.cfg.gov) return null;
+  const xl = a.id ? lcf(t('law_' + a.id)) : '', X = a.id ? t('law_' + a.id) : '', on = a.on !== false;
+  if (a.k === 'govBill') return { kick: t('ak_govBill'), title: tv(on ? 'at_govBill' : 'at_govBillOff', sd, { x: X, xl }), lede: (a.on ? lawFx(a.id) : t('pRepealFx', { x: lawFx(a.id) })) + (a.voteAt ? ' ' + t('pVoteAt', { h: untilTxt(a.voteAt) }) + '.' : '') };
+  if (a.k === 'govPoll') return { kick: t('ak_govPoll'), title: tv(on ? 'at_govPoll' : 'at_govPollOff', sd, { x: X, xl, lo: a.lo, hi: Math.min(230, a.hi) }), lede: t('al_govPoll', { m: S.cfg.gov.vote.majority, p: a.op }) };
+  if (a.k === 'govVote') return { kick: t('ak_govVote'), title: tv((a.passed ? 'at_govPass' : 'at_govFail') + (on ? '' : 'Off'), sd, { x: X, xl, y: a.yes, n: a.no }),
+    lede: t(a.passed ? 'al_govPass' : 'al_govFail', { y: a.yes, n: a.no, h: a.atAt ? untilTxt(a.atAt) : '' }) + ' ' + blocTxt(a.by) };
+  if (a.k === 'govLaw') return { kick: t(a.on ? 'ak_govLawOn' : 'ak_govLawOff'), title: tv(a.on ? 'at_govLawOn' : 'at_govLawOff', sd, { x: X, xl }), lede: a.on ? lawFx(a.id) : t('pRepealFx', { x: lawFx(a.id) }) };
+  if (a.k === 'govScandal') return { kick: t('ak_govScandal'), title: tv('at_govScandal', a.n ?? sd, {}), lede: t('al_govScandal', { c: a.corr }) };
+  if (a.k === 'rgEv') return { kick: t('rgEvT'), title: rgEvLine(a, a.toAt), lede: '' };
+  const line = artLine(a); if (!line) return null;
+  return { kick: t('ar_' + a.k), title: line, lede: '' };
+}
+// as notícias das últimas n edições, cada uma com a hora e o peso
+const edArts = (Wm, n, f = () => true) => [...(Wm?.arts || [])].slice(-n).reverse().flatMap((e) => e.a.filter(f).map((a) => ({ at: e.at, a, w: a.w || 0 })));
+function artStory(x, kind) {
+  const P = artParts(x.a, x.at); if (!P) return null;
+  return h('article', { class: 'st st-' + kind + (x.a.k === 'feat' ? '' : ' st-world') },
+    h('div', { class: 'kick' }, P.kick, h('span', { class: 'kt' }, ' · ' + edTime(x.at).replace('\n', ' '))),
+    h(kind === 'lead' ? 'h2' : 'h3', null, hnodes(P.title)),
+    P.lede ? h('div', { class: 'stb' }, h('p', null, P.lede)) : null);
+}
+const artRow = (x) => { const P = artParts(x.a, x.at); return P ? h('li', null, h('span', { class: 'ptime' }, edTime(x.at)), h('span', null, h('b', null, P.kick + '. '), P.title.replace(/\.$/, '') + '.',
+  x.a.k === 'feat' && x.a.med > 0 ? h('span', { class: 'pmed' }, ' ' + t('ftNormal', { m: money(x.a.med) })) : null)) : null; };
 function paperFront(N) {
   const hoje = N.today.items.length > 0, day = hoje ? N.today : N.yesterday, its = day.items, out = [];
-  // sem notícia não há «última hora»
-  const calmEd = N.mundo && N.mundo.arts.length && (deskList({ arts: N.mundo.arts.slice(-1) }, 1).length || N.mundo.arts[N.mundo.arts.length - 1].a.some((x) => x.k === 'rgEv'));
-  if (!its.length && !calmEd) out.push(h('article', { class: 'st st-lead' }, h('h2', null, t('paperCalmH')), h('div', { class: 'stb' }, h('p', null, t('paperCalm')))));
-  else if (its.length) {
-    if (!hoje) out.push(h('p', { class: 'pnote' }, t('paperYest')));
-    out.push(story(its[0], day.dia, 'lead'));
-    if (its.length > 1) out.push(h('div', { class: 'st2' + (its.length === 2 ? ' one' : '') }, its.slice(1, 3).map((it) => story(it, day.dia, 'side'))));
-    if (its.length > 3) out.push(h('button', { class: 'pmore', on: { click: () => { S.newsSeg = hoje ? 'today' : 'yesterday'; toPage('street', '.pbriefs'); } } }, t('paperMore', { n: its.length - 3 }) + ' →'));
+  // a primeira página: junta as notícias das 2 últimas edições (com peso) e os títulos do dia (peso 4,5, a descer) e abre com a mais pesada
+  const pool = [...edArts(N.mundo, 2, (a) => (a.w || 0) >= 3).map((x) => ({ ...x, kind: 'art' })), ...its.map((it, i) => ({ kind: 'day', it, w: 4.5 - i * 0.2 }))]
+    .sort((x, y) => y.w - x.w || (y.at || 0) - (x.at || 0));
+  if (!pool.length) out.push(h('article', { class: 'st st-lead' }, h('h2', null, t('paperCalmH')), h('div', { class: 'stb' }, h('p', null, t('paperCalm')))));
+  else {
+    if (!hoje && pool[0].kind === 'day') out.push(h('p', { class: 'pnote' }, t('paperYest')));
+    const show = (x, kind) => (x.kind === 'day' ? story(x.it, day.dia, kind) : artStory(x, kind));
+    out.push(show(pool[0], 'lead'));
+    const side = pool.slice(1, 3).map((x) => show(x, 'side')).filter(Boolean);
+    if (side.length) out.push(h('div', { class: 'st2' + (side.length === 1 ? ' one' : '') }, side));
+    const dayRow = (it) => h('li', null, h('span', { class: 'ptime' }, hoje ? t('nwToday') : t('nwYesterday')), h('span', null, h('b', null, kick(it.k) + '. '), headline(it, day.dia) + '.'));
+    const rest = pool.slice(3, 10).map((x) => (x.kind === 'art' ? artRow(x) : dayRow(x.it))).filter(Boolean);
+    if (rest.length) out.push(h('section', { class: 'psec' }, h('h4', null, t('pBriefs')), h('ul', { class: 'plive' }, rest),
+      h('button', { class: 'pmore', on: { click: () => { S.newsSeg = hoje ? 'today' : 'yesterday'; toPage('street'); } } }, t('pgStreet') + ' →')));
   }
   const Wm = N.mundo, last = Wm && Wm.arts.length ? Wm.arts[Wm.arts.length - 1] : null;
   if (last) {
-    const lx = last.a.find((x) => x.k === 'lx'), top = deskList({ arts: [last] }, 2);
+    const lx = last.a.find((x) => x.k === 'lx');
     out.push(h('section', { class: 'psec' }, h('h4', null, t('edAtH', { h: new Date(last.at).toLocaleTimeString(lang() === 'pt' ? 'pt-PT' : 'en-GB', { timeZone: 'Europe/Lisbon', hour: '2-digit', minute: '2-digit' }) })),
-      h('ul', { class: 'plive' }, ...top.map(deskRow), ...last.a.filter((x) => x.k === 'rgEv').map((a) => h('li', null, h('span', { class: 'ptime' }, edTime(last.at)), h('span', null, h('b', null, t('rgEvT') + '. '), rgEvLine(a, a.toAt)))),
-        lx ? h('li', null, h('span', { class: 'ptime' }, edTime(last.at)), h('span', null, h('b', null, t('lxShort') + '. '), lxLine(lx) + '. ' + t('lxBust', { p: lx.press, b: pctOf(lxBustNow(Wm)) + '%' }))) : null),
+      lx ? h('p', null, lxLine(lx) + '. ' + t('lxBust', { p: Wm.lx.press, b: pctOf(lxBustNow(Wm)) + '%' })) : null,   // a pressão e a percentagem de agora, como na tira de baixo
       Wm.rg ? h('div', { class: 'pquo prgq', 'aria-label': t('lxPress') }, [['lx', Wm.lx], ...Object.entries(Wm.rg)].map(([r, g]) => h('span', { class: g.press >= S.cfg.wh.raidMin ? 'pdn' : '' }, h('b', null, rgName(r)), t('rgPress').toLowerCase() + ' ' + g.press))) : null,
       more('country', t('pgCountry'))));
   }
@@ -755,12 +802,55 @@ function paperFront(N) {
   if (f.length) out.push(h('section', { class: 'psec' }, h('h4', null, t('nwLive')), h('ul', { class: 'plive' }, f.map(liveRow)), more('live', t('paperAll'))));
   return out;
 }
+// a Rua: os títulos do dia (o melhor de cada coisa) e, edição a edição, as 3 maiores de cada categoria
 function paperStreet(N) {
   const seg = S.newsSeg === 'yesterday' ? 'yesterday' : 'today', day = N[seg];
+  const feats = edArts(N.mundo, 8, (a) => a.k === 'feat');
   return [h('div', { class: 'pseg', role: 'group' }, [['today', t('nwToday')], ['yesterday', t('nwYesterday')]].map(([id, lbl]) =>
     h('button', { 'aria-pressed': seg === id ? 'true' : 'false', on: { click: () => { S.newsSeg = id; render(); } } }, lbl))),
     day.items.length ? h('div', { class: 'stl' }, day.items.slice(0, 3).map((it) => story(it, day.dia, 'row'))) : h('p', { class: 'pempty' }, seg === 'today' ? t('hlNoneToday') : t('hlNoneYesterday')),
-    day.items.length > 3 ? h('div', { class: 'pbriefs' }, day.items.slice(3).map((it) => story(it, day.dia, 'brief'))) : null];
+    day.items.length > 3 ? h('div', { class: 'pbriefs' }, day.items.slice(3).map((it) => story(it, day.dia, 'brief'))) : null,
+    h('section', { class: 'psec' }, h('h4', null, t('ftEdT')), h('p', { class: 'small pnote' }, t('ftHow')),
+      feats.length ? h('ul', { class: 'plive' }, feats.slice(0, 24).map(artRow)) : h('p', { class: 'pempty' }, t('ftNone')))];
+}
+// o governo no País: as notícias do parlamento das últimas edições
+function govArts(Wm) {
+  const rows = edArts(Wm, 8, (a) => a.k.startsWith('gov')).slice(0, 10).map(artRow).filter(Boolean);
+  return rows.length ? h('section', { class: 'psec' }, h('h4', null, t('govArtsT')), h('ul', { class: 'plive' }, rows)) : null;
+}
+// «a tua página»: o teu dia, o que saiu sobre ti e o que te toca (leis, cargas, quem te atacou)
+function paperMe(N) {
+  const me = S.st.me, D = me.dia, out = [], nm = me.name, n = now();
+  // o teu dia: o dinheiro em grande e o resto numa frase, só com o que aconteceu (sem zeros); ganhos a verde, perdas a vermelho
+  const bits = D ? [D.crimes ? t('meJobsL', { w: num(D.wins), n: num(D.crimes) }) + (D.best ? ' ' + t('meBestL', { m: money(D.best) }) : '') : null,
+    D.resp ? h('span', { class: D.resp > 0 ? 'pup' : 'pdn' }, t('meRespL', { r: (D.resp > 0 ? '+' : '−') + num(Math.abs(D.resp)) })) : null,
+    D.busts ? h('span', { class: 'pdn' }, t(D.busts === 1 ? 'meBust1' : 'meBustN', { n: D.busts })) : null,
+    D.fights ? t(D.fights === 1 ? 'meFight1' : 'meFightN', { n: D.fights }) : null,
+    D.cnet ? h('span', { class: D.cnet > 0 ? 'pup' : 'pdn' }, t(D.cnet > 0 ? 'meCasinoUp' : 'meCasinoDn', { m: money(Math.abs(D.cnet)) })) : null,
+    D.mugged ? h('span', { class: 'pdn' }, t('meMuggedL', { m: money(D.mugloss) })) : null].filter(Boolean) : [];
+  out.push(h('section', { class: 'psec lxs' }, h('h4', null, t('meDayT')),
+    D ? [h('div', { class: 'lxf meday' }, h('span', null, t('meMoney')), h('b', { class: 'num' + (D.money > 0 ? ' pup' : '') }, money(D.money))),
+      bits.length ? h('p', { class: 'mebits' }, bits.flatMap((b, i) => (i ? ['. ', b] : [b])), '.') : null] : h('p', { class: 'pempty' }, t('meDayNone'))));
+  // o que saiu no jornal com o teu nome
+  const mine = [...edArts(N.mundo, 8, (a) => a.k === 'feat' && (a.name === nm || a.target === nm)).map(artRow),
+    ...(S.feed || []).filter((e) => e.name === nm || e.target === nm).slice(0, 6).map(liveRow),
+    ...[N.today, N.yesterday].flatMap((d) => d.items.filter((it) => it.name === nm).map((it) => h('li', null, h('span', { class: 'ptime' }, d === N.today ? t('nwToday') : t('nwYesterday')), h('span', null, h('b', null, kick(it.k) + '. '), headline(it, d.dia) + '.')))),
+  ].filter(Boolean);
+  out.push(h('section', { class: 'psec' }, h('h4', null, t('meNewsT')), mine.length ? h('ul', { class: 'plive' }, mine) : h('p', { class: 'pempty' }, t('meNewsNone'))));
+  // o que te toca: leis em vigor, a proposta por votar, as cargas paradas pela polícia e quem te atacou (últimas 24 h)
+  const toca = [];
+  const G = N.mundo?.gov;
+  if (G?.bill && me.gv && !me.gv.voted && !me.gv.novo && me.level >= S.cfg.gov.vote.minLevel) toca.push(h('li', null, h('span', { class: 'ptime' }, t('meVoteL')), h('span', null, h('b', null, lawName(G.bill.id, G.bill.on) + '. '), t('pVoteAt', { h: untilTxt(G.bill.voteAt) }) + '. ', h('button', { class: 'pinl', on: { click: () => { S.backTo = { ...(S.backTo || {}), parl: 'news' }; go('parl'); } } }, t('pPaperGo') + ' →'))));
+  for (const id of me.gv?.laws || []) toca.push(h('li', null, h('span', { class: 'ptime' }, t('meLawL')), h('span', null, h('b', null, t('law_' + id) + '. '), lawFx(id))));
+  for (const v of (me.mvLog || []).filter((x) => x.x && n - x.at < 864e5).slice(-4).reverse()) toca.push(h('li', null, h('span', { class: 'ptime' }, paperTime(v.at)),
+    h('span', null, t(v.x === 2 ? 'meCargoTaken' : v.fine ? 'meCargoFine' : 'meCargoStop', { q: qty(v.d, v.n), x: list('drugs')[v.d].toLowerCase(), m: money(v.fine || 0), ...rgF(v.b) }))));
+  for (const e of (S.events || []).filter((x) => n - x.t < 864e5 && (x.k === 'attacked' || x.k === 'fight' || x.k === 'raid' || x.k === 'hitman')).slice(0, 5)) {
+    const txt = e.k === 'raid' ? t('evRaid', { t: tookTxt(e.took || []), m: money(e.fine || 0), ...rgF(e.r) }) : e.k === 'hitman' ? (e.win ? t('evHitman', { m: money(e.money || 0) }) : t('evHitmanFail', { who: e.by }))
+      : e.crew ? t(e.win ? 'evCrew' : 'evCrewLost', { who: e.by, n: e.crew }) : e.mode === 'mug' ? (e.win ? t('evMug', { who: e.by, m: money(e.money) }) : t('evMugLost', { who: e.by })) : e.win ? t('evBeat', { who: e.by }) : t('evBeatLost', { who: e.by });
+    toca.push(h('li', null, h('span', { class: 'ptime' }, paperTime(e.t)), h('span', null, txt)));
+  }
+  out.push(h('section', { class: 'psec' }, h('h4', null, t('meToucheT')), toca.length ? h('ul', { class: 'plive' }, toca) : h('p', { class: 'pempty' }, t('meToucheNone'))));
+  return out;
 }
 function paperEcon() {
   const M = S.stocks, C = S.cfg.stocks;
@@ -783,7 +873,7 @@ function screenNews() {
   const N = S.news, pg = PG.includes(S.newsPg) ? S.newsPg : 'front', ep = season(), D = S.cfg.season?.days || 28;
   const dia = ep ? Math.min(D, Math.max(1, Math.floor((now() - ep.start) / 864e5) + 1)) : 1;
   const f = S.feed || [];
-  const body = !N ? [h('p', { class: 'pempty' }, t('loading'))] : pg === 'front' ? paperFront(N) : pg === 'country' ? paperCountry() : pg === 'street' ? paperStreet(N) : pg === 'econ' ? paperEcon()
+  const body = !N ? [h('p', { class: 'pempty' }, t('loading'))] : pg === 'front' ? paperFront(N) : pg === 'me' ? paperMe(N) : pg === 'country' ? paperCountry() : pg === 'street' ? paperStreet(N) : pg === 'econ' ? paperEcon()
     : [f.length ? h('ul', { class: 'plive first' }, f.map(liveRow)) : h('p', { class: 'pempty' }, t('nwEmpty'))];
   return [h('div', { class: 'phead' }, h('div', { class: 'pbar pj' }, h('button', { class: 'back', 'aria-label': t('p_' + upOf('news')), on: { click: () => go(upOf('news')) } }, h('span', { 'aria-hidden': 'true' }, '←')), h('h1', { class: 'sr' }, t('paper')))),
     h('div', { class: 'paper' },
