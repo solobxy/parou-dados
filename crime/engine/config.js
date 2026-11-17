@@ -251,14 +251,15 @@ export const CFG = {
   // sexto do dia para o banco e dá +2 de respeito. Um emprego de cada vez; no máximo 6 turnos por dia de Lisboa.
   // course: o curso que o emprego pede (null = não pede nada). tip: a informação que cada turno dá.
   jobs: {
-    shiftE: 10, perDay: 6, resp: 2,
+    // cada turno é a tarefa do emprego (trabalho à mão): paga o turno vezes 80% a 120% conforme a qualidade
+    shiftE: 10, perDay: 6, resp: 2, qMin: 8000, qMax: 12000,
     list: [
-      { id: 'estafeta', day: 1400, course: null, tip: 'cash' },        // entrega em casa das pessoas: vê quem tem dinheiro na mão
-      { id: 'minimo', day: 1638, course: null, tip: 'stock' },         // caixa e armazém: ouve os clientes falar da bolsa
-      { id: 'vigilante', day: 1800, course: 'vigilante', tip: 'guard' }, // conhece os alarmes: sabe quem não tem guardas
-      { id: 'motorista', day: 2500, course: 'pesados', tip: 'club' },     // pesados: sabe onde a droga está mais barata
-      { id: 'quadro', day: 2700, course: 'licenciatura', tip: 'hosp' },   // enfermeiro: sabe quem sai do hospital e quando
-      { id: 'senior', day: 4800, course: 'especializacao', tip: 'jail' },  // advogado: sabe quem sai da prisão e quando
+      { id: 'estafeta', day: 1400, course: null, tip: 'cash', task: 'entregas' },        // entrega em casa das pessoas: vê quem tem dinheiro na mão
+      { id: 'minimo', day: 1638, course: null, tip: 'stock', task: 'camiao' },         // caixa e armazém: ouve os clientes falar da bolsa
+      { id: 'vigilante', day: 1800, course: 'vigilante', tip: 'guard', task: 'entradas' }, // conhece os alarmes: sabe quem não tem guardas
+      { id: 'motorista', day: 2500, course: 'pesados', tip: 'club', task: 'entregas' },     // pesados: sabe onde a droga está mais barata
+      { id: 'quadro', day: 2700, course: 'licenciatura', tip: 'hosp', task: 'doses' },   // enfermeiro: sabe quem sai do hospital e quando
+      { id: 'senior', day: 4800, course: 'especializacao', tip: 'jail', task: 'contrato' },  // advogado: sabe quem sai da prisão e quando
     ],
   },
   // Trabalho à mão (16/11): biscates sem barra, cada um uma tarefa curta com objetos. Paga a base vezes a qualidade
@@ -271,6 +272,10 @@ export const CFG = {
       { id: 'camiao', level: 1, base: 25, minMs: 9000 },          // descarregar o camião: as caixas pesadas em baixo
       { id: 'entregas', level: 1, base: 25, minMs: 9000 },        // encomendas na mochila e as portas pela ordem mais curta
       { id: 'laboratorio', level: 1, base: 45, minMs: 12000, bustBp: 200, jailMin: 10 },   // comprimidos, trituradora, sacos
+      // só nos turnos dos empregos (não são biscates)
+      { id: 'entradas', shift: true, minMs: 8000 },   // vigilante: quem entrou sem estar na lista
+      { id: 'doses', shift: true, minMs: 8000 },      // enfermeiro: três seringas na dose certa
+      { id: 'contrato', shift: true, minMs: 8000 },   // advogado: as linhas do contrato que não batem com a ficha
     ],
   },
   // Cursos: pagam-se à cabeça, correm em tempo real (dias reais), um de cada vez. Ficam para sempre (a conta é permanente).

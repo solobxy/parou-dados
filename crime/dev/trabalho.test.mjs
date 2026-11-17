@@ -14,6 +14,7 @@ const mk = () => { const p = E.newPlayer('p' + Math.random(), START, world); p.c
 const nunca = { int: (lo) => lo, chance: () => false, float: () => 0 };
 const sempre = { int: (lo) => lo, chance: () => true, float: () => 0 };
 const W = () => CFG.work;
+const BISC = () => CFG.work.list.filter((x) => !x.shift);
 const job = (id) => W().list.find((x) => x.id === id);
 const code = (c) => (e) => e.code === c;
 
@@ -30,19 +31,23 @@ function perfeita(task) {
     const len = (o) => { let x = 0, y = 0, s = 0; for (const i of o) { s += Math.abs(L.stops[i].x - x) + Math.abs(L.stops[i].y - y); x = L.stops[i].x; y = L.stops[i].y; } return s; };
     return { order: perms(L.stops.map((_, i) => i)).sort((a, b) => len(a) - len(b))[0] };
   }
+  if (task.id === 'entradas') return { picks: L.rows.map((r, i) => (L.guests.includes(r.n) ? -1 : i)).filter((i) => i >= 0) };
+  if (task.id === 'contrato') return { picks: L.rows.map((r, i) => (r.v !== L.ficha[r.f] ? i : -1)).filter((i) => i >= 0) };
+  if (task.id === 'doses') return { holds: L.doses.map((d) => Math.round((d * 10000) / L.rate)) };
   // laboratório: tocar quando o ponteiro está no meio da zona verde; encher cada saco até ao peso certo
   const P = L.gauge.periodMs, c = L.gauge.c / 10000, tap = (k) => k * P + Math.round((c / 2) * P);   // na subida, x = 2·fase
   return { taps: [tap(1), tap(2), tap(3)], holds: L.bags.map(() => Math.round((L.target * 1000) / L.rate)), pills: L.pills };
 }
 
 test('três biscates desde o nível 1: camião e entregas pagam 25 €, o laboratório 45 € com risco de rusga', () => {
-  assert.deepEqual(W().list.map((x) => [x.id, x.level, x.base, !!x.bustBp]), [['camiao', 1, 25, false], ['entregas', 1, 25, false], ['laboratorio', 1, 45, true]]);
+  assert.deepEqual(BISC().map((x) => [x.id, x.level, x.base, !!x.bustBp]), [['camiao', 1, 25, false], ['entregas', 1, 25, false], ['laboratorio', 1, 45, true]]);
   assert.equal(W().half, 30); assert.equal(W().halfLifeMs, 6 * T.HOUR);
   for (const x of W().list) assert.ok(x.minMs >= 8000 && x.minMs <= 15000, x.id);
+  for (const x of W().list.filter((y) => y.shift)) assert.throws(() => E.workStart(mk(), START, world, seededRng(1), x.id), code('NO_WORK'), 'só nos turnos');
 });
 
 test('a disposição sai da semente: a mesma semente dá a mesma tarefa', () => {
-  for (const x of W().list) {
+  for (const x of BISC()) {
     const a = mk(), b = mk();
     const ra = E.workStart(a, START, world, seededRng(5), x.id), rb = E.workStart(b, START, world, seededRng(5), x.id);
     assert.deepEqual(ra.task.layout, rb.task.layout, x.id);
@@ -74,7 +79,7 @@ test('respostas inventadas são recusadas sem mexer em nada', () => {
 });
 
 test('bem feito paga 120% da base; mal feito paga menos, nunca menos de 60%', () => {
-  for (const x of W().list) {
+  for (const x of BISC()) {
     const p = mk(); const r = E.workStart(p, START, world, seededRng(3), x.id);
     const d = E.workDone(p, START + 60000, world, nunca, perfeita(r.task));
     assert.equal(d.q, 10000, x.id); assert.equal(d.money, Math.floor((x.base * 12000) / 10000), x.id);
@@ -135,5 +140,52 @@ test('invariantes: 2 000 tarefas ao acaso não partem o jogador', () => {
     const ans = rng.chance(5000) ? perfeita(r.task) : (id === 'camiao' ? { slots: [5, 4, 3, 2, 1, 0], drops: rng.int(0, 6) } : id === 'entregas' ? { order: [3, 1, 0, 2] } : { taps: [10, 20, 30], holds: [rng.int(0, 5000), 1, 2] });
     try { E.workDone(p, t, world, rng, ans); } catch (e) { assert.ok(['TOO_FAST'].includes(e.code), e.code); }
     assert.deepEqual(E.checkInvariants(p), []);
+  }
+});
+
+test('turnos: cada emprego tem a sua tarefa; bem feita paga 120% do turno para o banco, gasta 10 de energia e dá 2 de respeito', () => {
+  for (let i = 0; i < CFG.jobs.list.length; i++) {
+    const j = CFG.jobs.list[i], p = mk(); p.job = i; p.vigor = 100; p.bank = 0;
+    assert.ok(W().list.some((x) => x.id === j.task), j.id + ' tem tarefa');
+    const r = E.workStart(p, START, world, seededRng(20 + i), j.task, true);
+    assert.equal(r.task.shift, true);
+    const resp0 = p.respect, d = E.workDone(p, START + 60000, world, nunca, perfeita(r.task));
+    assert.equal(d.shift, true); assert.equal(d.q, 10000, j.id);
+    assert.equal(d.money, Math.floor((E.shiftPay(j, 1) * 12000) / 10000), j.id);
+    assert.equal(p.bank, d.money); assert.equal(p.vigor, 90); assert.equal(p.respect - resp0, CFG.jobs.resp); assert.equal(E.shiftsToday(p, START + 60000), 1);
+  }
+});
+
+test('turnos: mal feitos pagam 80%; a tarefa tem de ser a do emprego; 6 por dia; sem energia não', () => {
+  const i = CFG.jobs.list.findIndex((x) => x.task === 'contrato'), j = CFG.jobs.list[i];
+  const p = mk(); p.job = i; p.vigor = 100;
+  assert.throws(() => E.workStart(p, START, world, seededRng(1), 'camiao', true), code('NO_WORK'));
+  const r = E.workStart(p, START, world, seededRng(2), 'contrato', true);
+  const d = E.workDone(p, START + 60000, world, nunca, { picks: r.task.layout.rows.map((_, k) => k) });   // marcou tudo: as erradas não chegam para as certas
+  assert.equal(d.q, 0); assert.equal(d.money, Math.floor((E.shiftPay(j, 1) * 8000) / 10000));
+  const q = mk(); q.job = 0; q.vigor = 1000;
+  let t = START;
+  for (let k = 0; k < 6; k++) { const a = E.workStart(q, t, world, seededRng(k + 3), CFG.jobs.list[0].task, true); t += 20000; E.workDone(q, t, world, nunca, perfeita(a.task)); }
+  assert.throws(() => E.workStart(q, t, world, seededRng(9), CFG.jobs.list[0].task, true), code('SHIFTS_DONE'));
+  const z = mk(); z.job = 0; z.vigor = 5;
+  assert.throws(() => E.workStart(z, START, world, seededRng(1), CFG.jobs.list[0].task, true), code('NO_VIGOR'));
+  const semEmprego = mk(); semEmprego.job = null;
+  assert.throws(() => E.workStart(semEmprego, START, world, seededRng(1), 'entregas', true), code('NO_JOB'));
+});
+
+test('turnos: o cansaço dos biscates não mexe nos turnos, e os turnos não cansam', () => {
+  const p = mk(); p.job = 0; p.vigor = 100;
+  const r = E.workStart(p, START, world, seededRng(5), CFG.jobs.list[0].task, true);
+  E.workDone(p, START + 60000, world, nunca, perfeita(r.task));
+  assert.equal(E.workView(p, START + 60000).tired, 0);
+});
+
+test('entradas e contrato: respostas com linhas repetidas ou fora da lista são recusadas', () => {
+  for (const id of ['entradas', 'contrato']) {
+    const i = CFG.jobs.list.findIndex((x) => x.task === id), p = mk(); p.job = i; p.vigor = 100;
+    E.workStart(p, START, world, seededRng(7), id, true);
+    const antes = structuredClone(p);
+    for (const ans of [{ picks: [0, 0] }, { picks: [99] }, { picks: ['a'] }, { picks: null }]) assert.throws(() => E.workDone(p, START + 60000, world, nunca, ans), code('BAD_ANSWER'));
+    assert.deepEqual(p, antes);
   }
 });

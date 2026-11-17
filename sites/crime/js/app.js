@@ -347,7 +347,7 @@ function tickHud() {
 const PLACES = {
   city: { ic: 'skyline' }, empire: { ic: 'empire' }, rob: { ic: 'street', img: 'golpes' }, club: { ic: 'bolt', img: 'discoteca' }, gym: { img: 'ginasio' },
   biz: { ic: 'empire', img: 'negocios' }, stash: { img: 'stash' }, acct: { img: 'contabilista' }, port: { img: 'porto' }, air: { img: 'aeroporto' }, arms: { img: 'armas' }, bank: { img: 'banco' }, hosp: { img: 'hospital' },
-  jail: { img: 'prisao' }, gang: { img: 'gangue' }, work: { img: 'profissao' }, news: { img: 'jornal' }, casino: { ic: 'gem', img: 'casino' }, roulette: { img: 'roleta' }, bj: { img: 'blackjack' }, dice: { img: 'dados' }, wheel: { img: 'roda' }, slot: { img: 'slot' }, zeus: { img: 'zeus' }, doce: { img: 'doce' }, rebucado: { img: 'rebucado' }, alley: { img: 'beco' }, lux: { img: 'luxos' }, fights: { ic: 'fights', img: 'lutas' }, rank: { img: 'procurados' }, hitman: { img: 'assassino' }, putas: { img: 'putas' }, gigs: { img: 'biscates' }, casa: {}, myclub: { img: 'discoteca' }, mybro: { img: 'putas' }, bolsa: { img: 'bolsa' }, job: { img: 'emprego' }, inv: { img: 'inventario' }, ops: { img: 'operacoes' },
+  jail: { img: 'prisao' }, gang: { img: 'gangue' }, work: { img: 'profissao' }, news: { img: 'jornal' }, casino: { ic: 'gem', img: 'casino' }, roulette: { img: 'roleta' }, bj: { img: 'blackjack' }, dice: { img: 'dados' }, wheel: { img: 'roda' }, slot: { img: 'slot' }, zeus: { img: 'zeus' }, doce: { img: 'doce' }, rebucado: { img: 'rebucado' }, alley: { img: 'beco' }, lux: { img: 'luxos' }, fights: { ic: 'fights', img: 'lutas' }, rank: { img: 'procurados' }, hitman: { img: 'assassino' }, putas: { img: 'putas' }, gigs: { img: 'biscates' }, casa: {}, myclub: { img: 'discoteca' }, mybro: { img: 'bordel' }, bolsa: { img: 'bolsa' }, job: { img: 'emprego' }, inv: { img: 'inventario' }, ops: { img: 'operacoes' },
 };
 // barra de baixo: só o que se usa a toda a hora. O resto vive dentro de cada separador, arrumado por zonas.
 const NAV = ['city', 'rob', 'fights', 'casino', 'empire'];
@@ -359,7 +359,7 @@ const PARENT = { gigs: 'city', gang: 'city', work: 'job', job: 'city', news: 'ci
   biz: 'empire', port: 'empire', air: 'empire', myclub: 'empire', mybro: 'empire', bolsa: 'empire', inv: 'empire', stash: 'empire', acct: 'empire', casa: 'empire', bank: 'empire', lux: 'empire', arms: 'fights', rank: 'fights', hitman: 'fights', ops: 'rob' };
 const upOf = (id) => (S.backTo && S.backTo[id]) || PARENT[id] || 'city';   // um sítio que está em duas zonas volta para a zona de onde vieste
 const tabOf = (id) => { let x = id; for (let k = 0; k < 4 && !NAV.includes(x); k++) x = upOf(x); return NAV.includes(x) ? x : 'city'; };
-const IMG = (kind, id, big) => `/img/${kind}/${id}${big ? '-g' : ''}.webp?15`;
+const IMG = (kind, id, big) => `/img/${kind}/${id}${big ? '-g' : ''}.webp?16`;
 // o que cada sítio precisa de ir buscar ao servidor (ao entrar nele, e também quando o jogo abre já nesse sítio)
 function loadFor(tab) {
   if (tab === 'fights') { if (S.fightSeg === 'events') loadEvents(true); else { S.fightSeg = 'targets'; loadTargets(); } }
@@ -459,7 +459,7 @@ function pageHead(id, sub, noImg) {
   return h('div', { class: 'phead' },
     h('div', { class: 'pbar' + (up ? '' : ' top') }, up ? h('button', { class: 'back', 'aria-label': t('p_' + up), on: { click: () => go(up) } }, h('span', { 'aria-hidden': 'true' }, '←')) : null, h('h1', null, t('p_' + id))),
     // a imagem pequena (quase sempre já guardada, por ter aparecido no azulejo) fica de fundo enquanto a grande não chega
-    P.img && !noImg ? h('div', { class: 'pimg', style: `background-image:url(${IMG('cenas', P.img)})` }, h('img', { src: IMG('cenas', P.img, 1), alt: '', width: 1100, height: 1100, decoding: 'async', fetchpriority: 'high',
+    P.img && !noImg ? h('div', { class: 'pimg im-' + P.img, style: `background-image:url(${IMG('cenas', P.img)})` }, h('img', { src: IMG('cenas', P.img, 1), alt: '', width: 1100, height: 1100, decoding: 'async', fetchpriority: 'high',
       on: { load: (e) => e.currentTarget.classList.add('in'), error: (e) => e.currentTarget.remove() } })) : null,
     sub ? h('p', { class: 'psub' }, sub) : null);
 }
@@ -828,10 +828,12 @@ function screenEmpire() {
 // ---------- biscates: trabalho à mão (16/11) ----------
 // Uma tarefa de cada vez. Enquanto decorre, nada redesenha o ecrã (como numa jogada do casino), para não partir o arrastar.
 const gramsTxt = (mg) => (lang() === 'pt' ? (mg / 1000).toFixed(2).replace('.', ',') : (mg / 1000).toFixed(2)) + ' g';
-const gigCtx = () => ({ t, sfx: fx.sfx, vibrate: fx.vibrate, streets: list('streets'), grams: gramsTxt, risk: pct((S.cfg.work.list.find((x) => x.bustBp) || {}).bustBp || 0) });
-async function gigStart(id, el) {
+const mlTxt = (v) => (lang() === 'pt' ? v.toFixed(1).replace('.', ',') : v.toFixed(1)) + ' ml';
+const gigCtx = () => ({ t, sfx: fx.sfx, vibrate: fx.vibrate, streets: list('streets'), people: list('people'), grams: gramsTxt, ml: mlTxt, money,
+  date: (v) => `${String(Math.floor(v / 100)).padStart(2, '0')}/${String(v % 100).padStart(2, '0')}`, risk: pct((S.cfg.work.list.find((x) => x.bustBp) || {}).bustBp || 0) });
+async function gigStart(id, el, shift) {
   if (S.gig && !S.gig.res) return;
-  const out = await act('workStart', { id }, { el });
+  const out = await act('workStart', shift ? { id, shift: true } : { id }, { el });
   if (out) openGig(out.result.task);
 }
 function openGig(task) {
@@ -849,7 +851,9 @@ function openGig(task) {
     if (S.gig !== G) return;
     if (out) G.res = out.result; else S.gig = null;
     render(true);
-    if (out && !out.result.busted) { const b = document.querySelector('.tk-res > b.big'), c = document.querySelector('.hud .money .cash'); if (b && c) fx.bills(b.getBoundingClientRect(), c, 5); }
+    const res = document.querySelector('.tk-res'), hud = document.querySelector('.hud');
+    if (res) window.scrollTo({ top: Math.max(0, res.getBoundingClientRect().top + window.scrollY - (hud ? hud.getBoundingClientRect().height : 0) - 12) });
+    if (out && !out.result.busted && !out.result.shift) { const b = document.querySelector('.tk-res > b.big'), c = document.querySelector('.hud .money .cash'); if (b && c) fx.bills(b.getBoundingClientRect(), c, 5); }
   });
 }
 function gigLine(G) {
@@ -863,12 +867,33 @@ function gigLine(G) {
     let x = 0, y = 0, n = 0; for (const i of a.order || []) { const st = L.stops[i]; n += Math.abs(st.x - x) + Math.abs(st.y - y); x = st.x; y = st.y; }
     return t('tkQ_route', { a: n, b: TK.bestLen(L) });
   }
+  if (G.task.id === 'entradas' || G.task.id === 'contrato') {
+    const bad = (i) => (G.task.id === 'entradas' ? !L.guests.includes(L.rows[i].n) : L.rows[i].v !== L.ficha[L.rows[i].f]);
+    const nBad = L.rows.filter((_, i) => bad(i)).length, pk = a.picks || [], hit = pk.filter(bad).length;
+    return t('tkQ_marks', { h: hit, n: nBad }) + (pk.length > hit ? ' · ' + t('tkQ_wrong', { n: pk.length - hit }) : '');
+  }
+  if (G.task.id === 'doses') {
+    const got = (a.holds || []).map((ms) => (L.rate * ms) / 100000), ok = (k) => Math.abs(got[k] - L.doses[k] / 10) / (L.doses[k] / 10) <= 0.05;
+    const miss = got.findIndex((_, k) => !ok(k));
+    return t('tkQ_doses', { n: got.filter((_, k) => ok(k)).length, m: L.doses.length }) + (miss >= 0 ? ' · ' + t('tkQ_doseMiss', { k: miss + 1, a: mlTxt(got[miss]), b: mlTxt(L.doses[miss] / 10) }) : '');
+  }
   const G2 = L.gauge, hits = (a.taps || []).filter((ms) => { const ph = (ms % G2.periodMs) / G2.periodMs, x = ph < 0.5 ? 2 * ph : 2 - 2 * ph; return Math.abs(x * 10000 - G2.c) <= G2.w; }).length;
   const good = (a.holds || []).filter((ms) => Math.abs((L.rate * ms) / 1000 - L.target) / L.target <= 0.05).length;
   return t('tkQ_lab', { h: hits, b: good, n: (a.holds || []).length });
 }
 function gigResult(G) {
-  const r = G.res, me = S.st.me, again = h('button', { class: 'btn buy block big', on: { click: (e) => { const id = G.task.id; S.gig = null; gigStart(id, e.currentTarget); } } }, t('tkAgain'));
+  const r = G.res, me = S.st.me;
+  if (r.shift) {   // turno do emprego: o ordenado vai para o banco, e há a dica do turno
+    const J = S.cfg.jobs, more = r.left > 0 && live(me).vigor >= J.shiftE;
+    return h('div', { class: 'card tk-res' },
+      h('span', { class: 'small muted' }, t('tkPaidBank')), h('b', { class: 'num c-cash big' }, '+' + money(r.money)),
+      h('p', { class: 'tk-q' }, t('tkQual', { p: pct(r.q) })), h('p', { class: 'small' }, gigLine(G)),
+      h('p', { class: 'small muted' }, t('jbShiftsLeft', { n: r.left })),
+      r.tip ? h('p', { class: 'small tk-tip' }, tint(tipText(r.tip))) : null,
+      more ? h('button', { class: 'btn buy block big', on: { click: (e) => { S.gig = null; gigStart(G.task.id, e.currentTarget, true); } } }, t('jbNextShift')) : null,
+      h('button', { class: 'btn ghost block', on: { click: () => { S.gig = null; render(true); } } }, t('tkBack')));
+  }
+  const again = h('button', { class: 'btn buy block big', on: { click: (e) => { const id = G.task.id; S.gig = null; gigStart(id, e.currentTarget); } } }, t('tkAgain'));
   const other = h('button', { class: 'btn ghost block', on: { click: () => { S.gig = null; render(true); } } }, t('tkOther'));
   if (r.busted) return h('div', { class: 'card tk-res bust' }, h('h3', null, t('tkBust')), h('p', null, t('tkBustSub')), other);
   const nxt = me.work ? me.work.multBp : 10000;
@@ -881,7 +906,7 @@ function gigResult(G) {
     again, other);
 }
 function screenGigs() {
-  const me = S.st.me, W = S.cfg.work, wv = me.work || { multBp: 10000 }, G = S.gig;
+  const me = S.st.me, W = S.cfg.work, wv = me.work || { multBp: 10000 }, G = S.gig && !S.gig.task.shift ? S.gig : null;
   const out = [pageHead('gigs', G ? null : t('gigsSub'), !!G)];
   if (G && !G.res) {
     out.push(h('div', { class: 'tk-wrap' + (G.closing ? ' closing' : '') }, G.g.el, G.closing ? h('p', { class: 'tk-closing' }, t('tkClosing')) : null));
@@ -890,12 +915,12 @@ function screenGigs() {
   const b = busyBanner(me); if (b) out.push(b);
   if (G && G.res) out.push(gigResult(G));
   // uma tarefa a meio (o jogo foi fechado ou recarregado): continua de onde estava
-  if (!G && wv.tk && W.list.some((x) => x.id === wv.tk.id)) {
+  if (!G && wv.tk && !wv.tk.sh && W.list.some((x) => x.id === wv.tk.id && !x.shift)) {
     const x = W.list.find((y) => y.id === wv.tk.id);
     out.push(h('div', { class: 'tip' }, h('p', null, t('tkHalf', { x: t('gk_' + x.id) })), h('button', { class: 'btn buy sm', on: { click: () => openGig({ id: x.id, t0: wv.tk.t0, minMs: x.minMs, layout: wv.tk.layout }) } }, t('tkResume'))));
   }
   if (wv.multBp < 10000 && !(G && G.res)) out.push(h('p', { class: 'small muted tk-tired' }, t('gTired', { p: Math.round(wv.multBp / 100) })));
-  out.push(h('div', { class: 'card vlist vc tk-list' }, W.list.map((x) => {
+  out.push(h('div', { class: 'card vlist vc tk-list' }, W.list.filter((x) => !x.shift).map((x) => {
     const lo = Math.floor((x.base * W.qMin * wv.multBp) / 1e8), hi = Math.floor((x.base * W.qMax * wv.multBp) / 1e8), locked = me.level < x.level;
     return h('button', { class: 'vrow tk-gig', disabled: !!b || locked, on: { click: (e) => gigStart(x.id, e.currentTarget) } },
       art('gigs', x.id, 'vth'),
@@ -935,6 +960,8 @@ const itArt = (id, cls) => art(isGood(id) ? 'items' : 'gear', id, cls);
 const invN = (me, id) => { const s = me.inv.find((x) => x.id === id); return s ? s.n : 0; };
 const invFull = (me) => me.invUsed >= me.invCap;
 // a arma dos golpes: a de mão se ainda dispara, senão a principal (igual ao motor)
+// a arma de fogo que conta nas lutas: a de mais ataque das que ainda disparam (a de mão ou a principal)
+const fightGunSlot = (me) => ['mao', 'principal'].filter((sl) => me.eq[sl] && me.eq[sl].u > 0).sort((a, b) => (gearOf(me.eq[b].id).atk || 0) - (gearOf(me.eq[a].id).atk || 0))[0] || null;
 const gunSlot = (me) => { const m = me.eq.mao, q = me.eq.principal; return m && m.u > 0 ? 'mao' : q && q.u > 0 ? 'principal' : m ? 'mao' : q ? 'principal' : null; };
 function gunState(me) { const s = gunSlot(me); return !s ? 'none' : !(me.eq[s].u > 0) ? 'broken' : invN(me, 'balas') < S.cfg.bullets.perJob ? 'ammo' : 'ok'; }
 const gunOk = (me) => gunState(me) === 'ok';
@@ -1921,8 +1948,16 @@ const tipRow = (x) => TIP_GO[x.k]
   : h('div', { class: 'vrow tipr' }, h('span', { class: 'small muted num tipt' }, hhmm(x.t)), h('p', { class: 'grow' }, tint(tipText(x))));
 function screenJob() {
   const me = S.st.me, L = live(me), J = S.cfg.jobs, cur = J.list[me.job], feitos = me.shifts || 0, cash = me.cash + me.bank;
+  const G = S.gig && S.gig.task.shift ? S.gig : null;
   const out = [pageHead('job', null, !!cur)];   // com emprego, a imagem do emprego faz de capa
+  if (G && !G.res) { out.push(h('div', { class: 'tk-wrap' + (G.closing ? ' closing' : '') }, G.g.el, G.closing ? h('p', { class: 'tk-closing' }, t('tkClosing')) : null)); return out; }
+  if (G && G.res) out.push(gigResult(G));
   const b = busyBanner(me); if (b) out.push(b);
+  const wv = me.work || {};
+  if (cur && !G && wv.tk && wv.tk.sh && wv.tk.id === cur.task && S.cfg.work.list.some((x) => x.id === wv.tk.id)) {
+    const x = S.cfg.work.list.find((y) => y.id === wv.tk.id);
+    out.push(h('div', { class: 'tip' }, h('p', null, t('tkHalfShift')), h('button', { class: 'btn buy sm', on: { click: () => openGig({ id: x.id, t0: wv.tk.t0, minMs: x.minMs, shift: true, layout: wv.tk.layout }) } }, t('tkResume'))));
+  }
   if (cur) {
     const fim = feitos >= J.perDay, semE = L.vigor < J.shiftE;
     out.push(h('div', { class: 'jobp jbc' },
@@ -1933,13 +1968,15 @@ function screenJob() {
         h('div', null, h('span', null, t('jbToday')), h('b', { class: 'num' }, feitos + '/' + J.perDay))),
       h('p', { class: 'jinfo' }, t('jbTipIs_' + cur.tip)),
       fim ? null : h('div', { class: 'jgive num' }, h('span', { class: 'c-vg' }, t('jbCostE', { e: J.shiftE })), h('span', { class: 'c-cash' }, t('jbGetM', { m: money(shiftPay(cur, feitos + 1)) })), h('span', { class: 'c-resp' }, t('r_resp', { n: J.resp }))),
-      h('button', { class: 'btn rob block big', disabled: !!b || fim || semE, on: { click: (e) => act('shift', {}, { el: e.currentTarget }) } },
+      h('p', { class: 'small muted' }, t('jbTask_' + cur.task)),
+      h('button', { class: 'btn rob block big', disabled: !!b || fim || semE, on: { click: (e) => gigStart(cur.task, e.currentTarget, true) } },
         fim ? t('jbDoneToday') : semE ? t('jbNoVigor') : t('jbGo')),
       // a informação do último turno, logo por baixo do botão (é a recompensa que interessa)
-      me.jt && me.jt[0] ? h(TIP_GO[me.jt[0].k] ? 'button' : 'div', { class: 'jlast', on: TIP_GO[me.jt[0].k] ? { click: () => go(TIP_GO[me.jt[0].k]) } : undefined },
+      me.jt && me.jt[0] ? h(TIP_GO[me.jt[0].k] ? 'button' : 'div', { class: 'jlast' + (TIP_GO[me.jt[0].k] ? ' go' : ''), type: TIP_GO[me.jt[0].k] ? 'button' : undefined, on: TIP_GO[me.jt[0].k] ? { click: () => go(TIP_GO[me.jt[0].k]) } : undefined },
         h('small', null, t('jbLast', { h: hhmm(me.jt[0].t) })), tint(tipText(me.jt[0]))) : null,
       h('p', { class: 'jcost' }, t('jbPay', { m: money(cur.day), n: J.perDay }))));
-    if (me.jt && me.jt.length > 1) out.push(h('h2', { class: 'sec' }, t('jbTips')), h('div', { class: 'card vlist vc tipl' }, me.jt.slice(1).map(tipRow)));
+    const tips = (me.jt || []).slice(1).filter((x) => x.k !== 'none');
+    if (tips.length) out.push(h('h2', { class: 'sec' }, t('jbTips')), h('div', { class: 'card vlist vc tipl' }, tips.map(tipRow)));
   } else out.push(h('div', { class: 'note' }, h('p', null, t('jbSub')), h('p', null, t('jbNone'))));
   let bestOpen = -1; J.list.forEach((x, i) => { if ((!x.course || me.done.includes(x.course)) && (bestOpen < 0 || x.day > J.list[bestOpen].day)) bestOpen = i; });
   // os empregos: os que já dá para ter e os que pedem um curso
@@ -1948,7 +1985,7 @@ function screenJob() {
     const open = !x.course || me.done.includes(x.course);
     return h('div', { class: 'vrow jbr' + (open ? '' : ' dim') }, art('jobs', x.id, 'vth'),
       h('div', { class: 'grow' }, h('b', null, t('jb_' + x.id)),
-        h('div', { class: 'small num' }, h('span', { class: 'c-cash' }, t('jbDay', { m: money(x.day) }))),
+        h('div', { class: 'small num' }, h('span', { class: 'c-cash nowrap' }, t('jbDay', { m: money(x.day) }))),
         open ? h('div', { class: 'small muted' }, t('jbTipShort_' + x.tip))
           : h('button', { class: 'jneed', on: { click: () => document.getElementById('cursos')?.scrollIntoView({ behavior: 'smooth', block: 'start' }) } }, t('jbNeeds', { x: t('cr_' + x.course) }) + ' ›')),
       i === me.job ? h('span', { class: 'small c-cash' }, t('jbHere'))
@@ -2256,9 +2293,12 @@ function gearRow(me, g) {
   let right = null, extra = null;
   if (worn) {
     const gasta = g.gun && !(worn.u > 0);
-    extra = h('div', { class: 'small num' }, h('span', { class: gasta ? 'c-red' : 'c-cash' }, gasta ? t('gunWorn') : t('inUse')),
-      g.gun && !gasta ? ' · ' + t('usesLeft', { u: worn.u, l: g.life }) : null, g.gun && worn.u < g.life ? h('span', { class: 'muted' }, ' · ' + t('repairCost', { m: money(me.repair[g.slot]) })) : null);
-    if (g.gun && worn.u < g.life) right = h('button', { class: 'btn sm ' + (gasta ? 'buy' : 'ghost'), disabled: cash < me.repair[g.slot], on: { click: (e) => act('repair', { slot: g.slot }, { el: e.currentTarget }) } }, t('repairBtn'));
+    let uso = 'inUse';
+    if (g.gun && !gasta) { const rob = gunSlot(me) === g.slot, fight = fightGunSlot(me) === g.slot; uso = rob && fight ? 'inUse' : rob ? 'inUseRob' : fight ? 'inUseFight' : 'inReserve'; }
+    extra = h('div', { class: 'small num' }, h('span', { class: gasta ? 'c-red' : uso === 'inReserve' ? 'muted' : 'c-cash' }, gasta ? t('gunWorn') : t(uso)),
+      g.gun && !gasta ? ' · ' + t('usesLeft', { u: worn.u, l: g.life }) : null);
+    // o preço da reparação vai no botão, como o preço de comprar
+    if (g.gun && worn.u < g.life) right = h('button', { class: 'btn sm num ' + (gasta ? 'buy' : 'ghost'), disabled: cash < me.repair[g.slot], on: { click: (e) => act('repair', { slot: g.slot }, { el: e.currentTarget }) } }, t('repairBtn') + ' · ' + money(me.repair[g.slot]));
   } else if (held >= 0) {
     extra = h('div', { class: 'small muted' }, t('inInv'));
     right = h('button', { class: 'btn sm ghost', on: { click: (e) => act('equip', { i: held }, { el: e.currentTarget }) } }, t('useBtn'));

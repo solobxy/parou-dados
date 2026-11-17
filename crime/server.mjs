@@ -26,7 +26,7 @@ const RONDA_TESTE = process.env.PRIMEIRA_RONDA ? dataDe(process.env.PRIMEIRA_RON
 // Épocas de 28 dias a contar da sexta 13/11/2026 às 21:00 de Lisboa (PRIMEIRA_EPOCA=AAAA-MM-DD muda-a, para testes)
 const ANCORA = dataDe(process.env.PRIMEIRA_EPOCA || process.env.PRIMEIRA_RONDA || '2026-11-13');
 const rng = process.env.TESTE_SEMENTE ? seededRng(+process.env.TESTE_SEMENTE) : cryptoRng();   // nos testes, a sorte pode ser sempre a mesma
-const VERSAO = 65;   // sobe quando o servidor muda, para se confirmar de fora que a versão nova já está a correr
+const VERSAO = 66;   // sobe quando o servidor muda, para se confirmar de fora que a versão nova já está a correr
 const ATOS_3S = +(process.env.ATOS_3S || 15), ATOS_MIN = +(process.env.ATOS_MIN || 400); // ações por conta: 15 em 3 s, 400 por minuto
 
 // ---------- relógio que nunca anda para trás ----------
@@ -202,6 +202,7 @@ function contarCaixa(now, a, r, delta) {
   delta += lav;
   if (tipo === 'attack' && r.win && r.mode === 'mug') { caixa(now, 'assalto', r.money, 0); caixa(now, 'assaltado', 0, r.money); return; }
   if (tipo === 'hitman' && r.success) caixa(now, 'assassino:alvo', 0, r.cashLoss);
+  if (tipo === 'workDone' && r && r.shift) { caixa(now, 'shift', delta > 0 ? delta : 0, 0); return; }   // o turno vai para o banco: conta como os turnos de antes
   if (tipo === 'workDone' && r && r.id) { caixa(now, 'trabalho:' + r.id, delta > 0 ? delta : 0, delta < 0 ? -delta : 0); return; }
   caixa(now, tipo, delta > 0 ? delta : 0, delta < 0 ? -delta : 0);
 }
@@ -1211,8 +1212,10 @@ function agir(conta, corpo, now) {
     case 'deal': r = E.deal(p, now, world, int(a.j)); break;
     case 'job': r = E.chooseJob(p, now, world, int(a.i)); break;
     case 'course': r = E.startCourse(p, now, world, String(a.id || '').slice(0, 24)); break;
-    case 'workStart': r = E.workStart(p, now, world, rng, String(a.id || '').slice(0, 24)); break;
-    case 'workDone': { const x = a.ans && typeof a.ans === 'object' ? a.ans : null; r = E.workDone(p, now, world, rng, x && { slots: x.slots, drops: x.drops, order: x.order, taps: x.taps, holds: x.holds }); break; }
+    case 'workStart': r = E.workStart(p, now, world, rng, String(a.id || '').slice(0, 24), a.shift === true); break;
+    case 'workDone': { const x = a.ans && typeof a.ans === 'object' ? a.ans : null; r = E.workDone(p, now, world, rng, x && { slots: x.slots, drops: x.drops, order: x.order, taps: x.taps, holds: x.holds, picks: x.picks });
+      if (r.shift) { r.tip = dica(p, now, w); p.jt = [r.tip, ...(Array.isArray(p.jt) ? p.jt : [])].slice(0, 5); }
+      break; }
     case 'shift': r = E.doShift(p, now, world); r.tip = dica(p, now, w); p.jt = [r.tip, ...(Array.isArray(p.jt) ? p.jt : [])].slice(0, 5); break;
     case 'dealBuy': r = E.dealBuy(p, now, world, int(a.j), int(a.kg)); break;
     case 'hooker': r = E.visitHooker(p, now, world, int(a.i), rng); if (r.rob) evento(p.id, now, { k: 'hkRob', kind: r.rob.kind, money: r.rob.loss }); break;

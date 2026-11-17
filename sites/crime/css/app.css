@@ -2485,3 +2485,66 @@ h1, h2, h3, .nm, .lbl { hyphens: manual; }
 .tk-res.bust { border-color: #e8786c66; }
 .tk-res.bust h3 { margin: 0; color: var(--danger); font: 600 22px/1.2 var(--disp); }
 @media (prefers-reduced-motion: reduce) { .tk-grinder.shake, .tk-pallet.wrap .rows::after { animation: none; } .tk-bag .flap, .tk-grinder .powder { transition: none; } }
+
+/* ---- turnos: a porta e o contrato (marcar o que está errado) ---- */
+.tk-paper { display: grid; gap: 4px; padding: 12px 14px; margin-bottom: 14px; border-radius: 4px; background: #efe8da; color: #24211c; box-shadow: 0 2px 0 #0005, 0 8px 18px #0006; transform: rotate(-.6deg); font-size: 15px; }
+.tk-paper > b { font: 600 16px/1.2 var(--disp); margin-bottom: 4px; }
+.tk-paper small { color: #6b655b; font-size: 13px; }
+.tk-rows { display: grid; gap: 6px; margin-bottom: 14px; }
+.tk-mark { display: flex; align-items: center; gap: 10px; min-height: 48px; padding: 8px 12px; border-radius: 8px; border: 1px solid var(--line2); background: var(--s2); color: var(--tx); font-size: 15px; text-align: left; transition: background-color .15s, border-color .15s; }
+.tk-mark .tm { color: var(--tx2); font-size: 14px; min-width: 42px; }
+.tk-mark .x { flex: none; width: 22px; height: 22px; border-radius: 50%; border: 2px solid var(--line2); position: relative; transition: background-color .15s, border-color .15s; }
+.tk-mark.on { border-color: #e8786c99; background: #e8786c1a; }
+.tk-mark.on .x { border-color: var(--danger); background: var(--danger); }
+.tk-mark.on .x::after { content: ''; position: absolute; inset: 4px; background: linear-gradient(45deg, transparent 42%, #100f0d 42% 58%, transparent 58%), linear-gradient(-45deg, transparent 42%, #100f0d 42% 58%, transparent 58%); }
+.tk-mark.bad:not(.on) { border-color: var(--orange); }
+.tk-mark.good.on { border-color: var(--orange); background: #e09a581a; }
+.tk-mark:disabled { opacity: 1; cursor: default; }
+
+/* ---- turnos: as doses (seringa) ---- */
+.tk-syr { position: relative; height: 70px; margin: 10px 26px 18px 18px; }
+.tk-syr .brl { position: absolute; left: 0; right: 0; top: 14px; height: 42px; border-radius: 6px; border: 2px solid #ffffff4d; background: linear-gradient(#ffffff14, #ffffff05 50%, #ffffff12); overflow: hidden; }
+.tk-syr .liq { position: absolute; left: 0; top: 0; bottom: 0; width: 0; background: linear-gradient(#a9cfe0cc, #7fb1c8cc); }
+.tk-syr .ticks { position: absolute; inset: 0; background: repeating-linear-gradient(90deg, transparent 0 calc(10% - 1px), #ffffff59 calc(10% - 1px) 10%); mask: linear-gradient(transparent 60%, #000 60%); }
+.tk-syr .mark { position: absolute; top: -2px; bottom: -2px; width: 2px; margin-left: -1px; background: var(--sodium); box-shadow: 0 0 0 1px #100f0d; }
+.tk-syr .plg { position: absolute; top: 22px; height: 26px; width: 10px; margin-left: -5px; left: 0; border-radius: 2px; background: #3a3833; }
+.tk-syr .ndl { position: absolute; right: -26px; top: 33px; width: 26px; height: 4px; border-radius: 2px; background: linear-gradient(90deg, #8f9497, #d6d9db); }
+.tk-read { text-align: center; margin-bottom: 12px; }
+.tk-read b { display: block; font: 700 28px/1.1 var(--num); color: var(--tx); transition: color .1s; }
+.tk-read b.on { color: var(--sodium); } .tk-read b.over { color: var(--danger); }
+.tk-read small { color: var(--tx2); font-size: 14px; }
+.tk-tip { color: var(--tx); }
+
+/* moldura das fotos dos sítios: um filete à volta e outro por dentro, como uma prova de fotografia num jornal.
+   discreta em repouso; ao toque, o filete de dentro acende em dourado */
+.tile { box-shadow: 0 0 0 1px #ece6da24, 0 8px 20px -12px #000; }
+.tile::before { content: ''; position: absolute; inset: 5px; z-index: 2; pointer-events: none; border: 1px solid #ece6da21; border-radius: calc(var(--rc) - 4px); transition: border-color .2s var(--ease-out); }
+.tile:active::before { border-color: #d6ad6273; }
+@media (hover: hover) { .tile:hover::before { border-color: #ece6da3d; } }
+.tile .tsub, .tile .bdg { font-size: 14px; }
+
+/* revisão dos turnos (17/11) */
+.nowrap { white-space: nowrap; }
+/* a ficha de referência em duas colunas e presa por baixo do cabeçalho enquanto se marca */
+.tk-marcar .tk-paper { position: sticky; z-index: 5; grid-template-columns: 1fr 1fr; column-gap: 14px; row-gap: 4px; }
+.tk-marcar .tk-paper > b { grid-column: 1 / -1; }
+.tk-paper small { font-size: 14px; }
+/* marcar é escolher, não errar: estado neutro; o vermelho e o laranja ficam para o resultado */
+.tk-mark.on { border-color: #ece6da8c; background: #ece6da14; }
+.tk-mark.on .x { border-color: var(--tx); background: var(--tx); }
+.tk-pallet .base { font-size: 14px; }
+/* a seringa enche do lado da agulha; o êmbolo recua */
+.tk-syr .liq { left: auto; right: 0; }
+.tk-syr .rod { position: absolute; left: 0; top: 32px; height: 6px; width: 100%; border-radius: 3px 0 0 3px; background: #3a3833; }
+.tk-syr .plg { left: 100%; }
+.tk-syr .mark { background: var(--tx); }
+.tk-read b.on { color: var(--cash); }
+/* o custo em energia não é um ganho */
+.jobp > .jgive .c-vg { color: var(--tx2); }
+/* o cartão do último turno, quando leva a algum lado */
+.jobp > .jlast { border: 0; font: inherit; }
+.jobp > .jlast.go { position: relative; padding-right: 34px; cursor: pointer; }
+.jobp > .jlast.go::after { content: '›'; position: absolute; right: 14px; top: 50%; transform: translateY(-50%); font-size: 22px; color: var(--tx2); }
+.jobp > .jlast.go:active { background: var(--s3); }
+/* fotos em que a cara está no alto: o recorte largo do topo da página não a corta */
+.pimg.im-armas img, .pimg.im-gangue img { object-position: center 22%; }

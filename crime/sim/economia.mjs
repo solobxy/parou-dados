@@ -21,7 +21,7 @@ export const P = {
   mesesPorDia: +(process.env.MESES ?? 2),   // um dia real vale dois meses de jogo: um dia de turnos paga o ordenado de dois meses
   estaminaBarra: 100,
   // Empregos: 6 turnos por dia real, cada um com 10 de energia (barra à parte da stamina). Um dia completo paga dois meses de ordenado líquido.
-  turnos: 6, turnoEnergia: 10,
+  turnos: 6, turnoEnergia: 10, turnoQual: +(process.env.TURNO_Q ?? 1.16),   // o turno é uma tarefa à mão: paga 80% a 120% conforme a qualidade (em média ~116%)
   empregos: [   // líquido por dia completo, curso que pede, preço e dias reais do curso
     { id: 'estafeta', dia: 700, curso: null },
     { id: 'minimo', dia: 819, curso: null },
@@ -134,7 +134,7 @@ function simula(perfil, rng) {
     if (s.curso && d >= s.curso.fim) { s.emprego++; s.curso = null; }
     // emprego: 6 turnos por dia, pagos com energia. Todos os fazem
     const turnos = SEM.emprego ? 0 : P.turnos;
-    entra += (P.empregos[s.emprego].dia * P.mesesPorDia * turnos) / P.turnos; s.resp += turnos * P.resp.turno;   // os turnos gastam energia (a barra do ginásio e das lutas), não a stamina dos crimes
+    entra += (P.empregos[s.emprego].dia * P.mesesPorDia * turnos * P.turnoQual) / P.turnos; s.resp += turnos * P.resp.turno;   // os turnos gastam energia (a barra do ginásio e das lutas), não a stamina dos crimes
     let crime = 0;
     // venda de droga: primeiro, até ao limite da clientela
     const r = [...P.rua].reverse().find((x) => nv >= x.nivel), bonus = 1 + P.pratica.max * Math.min(1, s.pratica / P.pratica.barrasParaMax);

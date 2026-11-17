@@ -230,7 +230,84 @@ function laboratorio(task, ctx) {
   return { el: stage, finished, stop: () => { cancelAnimationFrame(raf); cancelAnimationFrame(hraf); } };
 }
 
-const GAMES = { camiao, entregas, laboratorio };
+// ---------- marcar as linhas erradas (vigilante: a porta; advogado: o contrato) ----------
+function marcar(task, ctx, { title, sub, refTitle, ref, rows, isBad }) {
+  const { t, sfx, vibrate } = ctx;
+  let done; const finished = new Promise((r) => { done = r; });
+  const picks = new Set();
+  const rowEls = rows.map((txt, i) => {
+    const b = h('button', { class: 'tk-mark', type: 'button', 'aria-pressed': 'false' }, h('span', { class: 'x', 'aria-hidden': 'true' }), ...txt);
+    b.addEventListener('click', () => {
+      const on = !picks.has(i); if (on) picks.add(i); else picks.delete(i);
+      b.classList.toggle('on', on); b.setAttribute('aria-pressed', String(on)); sfx(on ? 'tick' : 'tap'); vibrate(on ? 10 : 4);
+    });
+    return b;
+  });
+  const go = h('button', { class: 'btn buy block big', type: 'button' }, t('tkClose'));
+  go.addEventListener('click', () => {
+    go.disabled = true; rowEls.forEach((b) => (b.disabled = true));
+    rowEls.forEach((b, i) => b.classList.add(isBad(i) ? 'bad' : 'good'));   // mostra o que estava errado antes de fechar
+    sfx('claim'); setTimeout(() => done({ picks: [...picks] }), reduced() ? 200 : 900);
+  });
+  const paper = h('div', { class: 'tk-paper' }, h('b', null, refTitle), ...ref);
+  const stage = h('div', { class: 'tk-stage tk-marcar' }, head(title, sub), paper, h('div', { class: 'tk-rows' }, ...rowEls), go);
+  // a ficha fica presa logo abaixo do cabeçalho do jogo: compara-se sem subir e descer
+  requestAnimationFrame(() => { const hud = document.querySelector('.hud'); paper.style.top = ((hud ? hud.getBoundingClientRect().height : 0) + 8) + 'px'; });
+  return { el: stage, finished };
+}
+const hora = (m) => `${21 + Math.floor(m / 60)}:${String(m % 60).padStart(2, '0')}`;
+function entradas(task, ctx) {
+  const { t, people } = ctx, L = task.layout;
+  return marcar(task, ctx, {
+    title: t('tkDoorH'), sub: t('tkDoorSub'), refTitle: t('tkGuests'),
+    ref: L.guests.map((n) => h('span', null, people[n % people.length])),
+    rows: L.rows.map((r) => [h('span', { class: 'num tm' }, hora(r.m)), h('span', null, people[r.n % people.length])]),
+    isBad: (i) => !L.guests.includes(L.rows[i].n),
+  });
+}
+function contrato(task, ctx) {
+  const { t, people, money, date } = ctx, L = task.layout;
+  const val = (f, v) => (f === 0 ? people[v % people.length] : f === 1 ? money(v) : f === 2 ? date(v) : t('tkMonths', { n: v }));
+  return marcar(task, ctx, {
+    title: t('tkContractH'), sub: t('tkContractSub'), refTitle: t('tkFile'),
+    ref: L.ficha.map((v, f) => h('span', null, h('small', null, t('tkF' + f)), ' ', val(f, v))),
+    rows: L.rows.map((r) => [h('span', null, t('tkC' + r.f + (r.k ? 'b' : ''), { v: val(r.f, r.v) }))]),
+    isBad: (i) => L.rows[i].v !== L.ficha[L.rows[i].f],
+  });
+}
+// ---------- doses (enfermeiro): segurar para encher cada seringa até à dose receitada ----------
+function doses(task, ctx) {
+  const { t, sfx, vibrate, ml } = ctx, L = task.layout;
+  let done; const finished = new Promise((r) => { done = r; });
+  const fill = h('i', { class: 'liq' }), mark = h('i', { class: 'mark' }), plunger = h('i', { class: 'plg' }), rod = h('i', { class: 'rod' });
+  const barrel = h('div', { class: 'tk-syr' }, h('div', { class: 'brl' }, fill, mark, h('i', { class: 'ticks' })), rod, plunger, h('i', { class: 'ndl' }));
+  const read = h('b', { class: 'num' }, ml(0)), want = h('small', null, '');
+  const marks = h('div', { class: 'tk-marks' }, ...L.doses.map(() => h('i')));
+  const btn = h('button', { class: 'btn buy block big tk-hold', type: 'button' }, t('tkFill'));
+  const stage = h('div', { class: 'tk-stage tk-doses' }, head(t('tkDosesH'), t('tkDosesSub')), barrel, h('div', { class: 'tk-read' }, read, want), marks, btn);
+  const holds = []; let h0 = 0, raf = 0;
+  const MAX = 5;   // a seringa leva 5 ml
+  const setDose = () => { const k = holds.length; if (k < L.doses.length) { want.textContent = t('tkDose', { v: ml(L.doses[k] / 10) }); mark.style.left = (100 - (L.doses[k] / 10 / MAX) * 100) + '%'; } };
+  const show = (v) => { const tg = L.doses[holds.length] / 10, e = (v - tg) / tg; read.textContent = ml(v); read.className = 'num' + (Math.abs(e) <= 0.05 ? ' on' : e > 0.05 ? ' over' : ''); const pc = Math.min(100, (v / MAX) * 100); fill.style.width = pc + '%'; plunger.style.left = (100 - pc) + '%'; rod.style.width = (100 - pc) + '%'; };
+  const press = (e) => { e.preventDefault(); if (h0 || holds.length >= L.doses.length) return; if (e.pointerId !== undefined) try { btn.setPointerCapture(e.pointerId); } catch {} h0 = performance.now(); sfx('pour');
+    const tick = () => { show((L.rate * (performance.now() - h0)) / 100000); raf = requestAnimationFrame(tick); }; tick(); };
+  const release = () => {
+    if (!h0) return;
+    const ms = Math.min(20000, Math.round(performance.now() - h0)); h0 = 0; cancelAnimationFrame(raf);
+    const v = (L.rate * ms) / 100000, tg = L.doses[holds.length] / 10, err = Math.abs(v - tg) / tg; show(v);
+    holds.push(ms); marks.children[holds.length - 1].className = err <= 0.05 ? 'ok' : err <= 0.15 ? 'mid' : 'bad';
+    sfx('zip'); vibrate(err <= 0.05 ? 18 : 10);
+    if (holds.length === L.doses.length) { btn.disabled = true; setTimeout(() => done({ holds: holds.slice() }), 500); }
+    else setTimeout(() => { show(0); setDose(); }, 550);
+  };
+  btn.addEventListener('pointerdown', press); btn.addEventListener('pointerup', release); btn.addEventListener('pointercancel', release);
+  btn.addEventListener('keydown', (e) => { if ((e.key === ' ' || e.key === 'Enter') && !e.repeat) press(e); });
+  btn.addEventListener('keyup', (e) => { if (e.key === ' ' || e.key === 'Enter') release(); });
+  setDose(); show(0);
+  return { el: stage, finished };
+}
+
+const GAMES = { camiao, entregas, laboratorio, entradas, contrato, doses };
 // monta a tarefa e devolve { el, finished } (finished resolve com a resposta para o servidor)
 export function mount(task, ctx) { const g = GAMES[task.id]; return g ? g(task, ctx) : null; }
 export { wait, bestLen };

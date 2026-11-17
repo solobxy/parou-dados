@@ -928,7 +928,7 @@ function tiredAt(p, now) {
 const tiredMultBp = (tired) => Math.floor(10000 * 0.5 ** (tired / CFG.work.half));
 export function workView(p, now) {
   const tired = tiredAt(p, now);
-  return { tired, multBp: tiredMultBp(tired), tk: p.tk ? { id: p.tk.id, t0: p.tk.t0, layout: workLayout(p.tk.id, p.tk.s) } : null };
+  return { tired, multBp: tiredMultBp(tired), tk: p.tk ? { id: p.tk.id, t0: p.tk.t0, sh: !!p.tk.sh, layout: workLayout(p.tk.id, p.tk.s) } : null };
 }
 // a disposição de cada tarefa: tudo o que o ecrã desenha e o servidor confere
 export function workLayout(id, seed) {
@@ -945,6 +945,23 @@ export function workLayout(id, seed) {
   }
   if (id === 'laboratorio') {
     return { pills: r.int(6, 9), gauge: { periodMs: r.int(900, 1400), c: r.int(5500, 8000), w: 900 }, bags: [0, 1, 2].map(() => r.int(0, 2)), target: 1000, rate: r.int(600, 900) };
+  }
+  if (id === 'entradas') {   // 5 convidados na lista; 7 a 8 entradas à porta, 2 ou 3 de gente que não está na lista
+    const pick = (n, not) => { const out = []; while (out.length < n) { const x = r.int(0, 23); if (!out.includes(x) && !not.includes(x)) out.push(x); } return out; };
+    const guests = pick(5, []), bad = pick(r.int(2, 3), guests), rows = [...guests, ...bad].map((n) => ({ n, m: r.int(0, 179) }));
+    for (let i = rows.length - 1; i > 0; i--) { const j = r.int(0, i); [rows[i], rows[j]] = [rows[j], rows[i]]; }
+    return { guests, rows: rows.sort((a, b) => a.m - b.m) };
+  }
+  if (id === 'contrato') {   // ficha com 4 campos; 8 linhas do contrato, 2 ou 3 com um valor trocado
+    const ficha = [r.int(0, 23), r.int(24, 196) * 50, r.int(1, 28) * 100 + r.int(1, 12), r.int(1, 6) * 6];
+    const rows = Array.from({ length: 8 }, (_, i) => ({ f: i % 4, v: ficha[i % 4], k: i >> 2 }));   // k: a 2.ª vez que o campo aparece diz-se de outra maneira
+    const nb = r.int(2, 3), idx = []; while (idx.length < nb) { const x = r.int(0, 7); if (!idx.includes(x)) idx.push(x); }
+    for (const i of idx) { const f = rows[i].f; let v = ficha[f]; while (v === ficha[f]) v = f === 0 ? r.int(0, 23) : f === 1 ? ficha[1] + r.int(-20, 20) * 50 : f === 2 ? r.int(1, 28) * 100 + r.int(1, 12) : r.int(1, 6) * 6; rows[i].v = Math.max(f === 1 ? 50 : 0, v); if (rows[i].v === ficha[f]) rows[i].v = ficha[f] + (f === 1 ? 500 : f === 3 ? 6 : 1); }
+    for (let i = rows.length - 1; i > 0; i--) { const j = r.int(0, i); [rows[i], rows[j]] = [rows[j], rows[i]]; }
+    return { ficha, rows };
+  }
+  if (id === 'doses') {   // três seringas: a dose receitada (em décimas de ml) e a velocidade a que enche (centésimas de ml por segundo)
+    return { doses: [0, 1, 2].map(() => r.int(10, 45)), rate: r.int(180, 260) };
   }
   return null;
 }
@@ -975,15 +992,38 @@ function workQuality(id, L, ans) {
     const bag = holds.map((ms) => { const err = Math.abs((L.rate * ms) / 1000 - L.target) / L.target; return err <= 0.03 ? 10000 : Math.max(0, Math.floor(10000 - (err - 0.03) * 25000)); });
     return Math.round((5000 * hits) / 3 + bag.reduce((a, b) => a + b, 0) / (2 * bag.length));
   }
+  if (id === 'entradas' || id === 'contrato') {   // marcar as linhas erradas: certas menos as marcadas a mais, a dividir pelas erradas
+    const pk = ans.picks;
+    if (!Array.isArray(pk) || pk.length > L.rows.length || !pk.every((x) => Number.isSafeInteger(x) && x >= 0 && x < L.rows.length) || new Set(pk).size !== pk.length) return null;
+    const isBad = (i) => (id === 'entradas' ? !L.guests.includes(L.rows[i].n) : L.rows[i].v !== L.ficha[L.rows[i].f]);
+    const nBad = L.rows.filter((_, i) => isBad(i)).length, hit = pk.filter(isBad).length, wrong = pk.length - hit;
+    return Math.max(0, Math.round((10000 * (hit - wrong)) / nBad));
+  }
+  if (id === 'doses') {
+    const { holds } = ans;
+    if (!isInts(holds, L.doses.length, 0, 20000)) return null;
+    const sc = holds.map((ms, k) => { const ml = (L.rate * ms) / 100000, tg = L.doses[k] / 10, err = Math.abs(ml - tg) / tg; return err <= 0.05 ? 10000 : Math.max(0, Math.floor(10000 - (err - 0.05) * 25000)); });
+    return Math.round(sc.reduce((a, b) => a + b, 0) / sc.length);
+  }
   return null;
 }
-export function workStart(p, now, world, rng, id) {
+export function workStart(p, now, world, rng, id, shift) {
   const x = workOf(id);
   if (!x) fail('NO_WORK');
-  begin(p, now, world);
-  if (level(p) < x.level) fail('LOW_LEVEL', { need: x.level });
-  p.tk = { id, t0: now, s: rng.int(1, 2147483646) };
-  return { ok: true, task: { id, t0: now, minMs: x.minMs, layout: workLayout(id, p.tk.s) } };
+  if (shift) {   // o turno do emprego: a tarefa é a do emprego, até 6 por dia, com 10 de energia
+    const j = jobOf(p.job);
+    if (!j) fail('NO_JOB');
+    if (j.task !== id) fail('NO_WORK');
+    begin(p, now, world);
+    if (shiftsToday(p, now) >= CFG.jobs.perDay) fail('SHIFTS_DONE');
+    if (p.vigor < CFG.jobs.shiftE) fail('NO_VIGOR', { need: CFG.jobs.shiftE });
+  } else {
+    if (x.shift) fail('NO_WORK');
+    begin(p, now, world);
+    if (level(p) < x.level) fail('LOW_LEVEL', { need: x.level });
+  }
+  p.tk = { id, t0: now, s: rng.int(1, 2147483646), ...(shift ? { sh: 1 } : {}) };
+  return { ok: true, task: { id, t0: now, minMs: x.minMs, shift: !!shift, layout: workLayout(id, p.tk.s) } };
 }
 export function workDone(p, now, world, rng, ans) {
   if (!p.tk) fail('NO_TASK');
@@ -994,6 +1034,17 @@ export function workDone(p, now, world, rng, ans) {
   const L = workLayout(p.tk.id, p.tk.s), q = workQuality(p.tk.id, L, ans);
   if (q === null) fail('BAD_ANSWER');
   begin(p, now, world);
+  if (p.tk.sh) {   // turno do emprego: confere outra vez (o dia pode ter mudado, a energia pode ter ido para o ginásio)
+    const j = jobOf(p.job), J = CFG.jobs, n = shiftsToday(p, now) + 1;
+    if (!j || j.task !== p.tk.id) fail('NO_JOB');
+    if (n > J.perDay) fail('SHIFTS_DONE');
+    if (p.vigor < J.shiftE) fail('NO_VIGOR', { need: J.shiftE });
+    const money = Math.floor((shiftPay(j, n) * (J.qMin + Math.floor(((J.qMax - J.qMin) * q) / 10000))) / 10000);
+    p.tk = null; p.vigor -= J.shiftE; p.bank += money;
+    p.sh = { d: dayOf(now), n }; p.c.shifts += 1;
+    const lvl = addRespect(p, J.resp, now);
+    return { ok: true, id: x.id, q, shift: true, job: j.id, n, left: J.perDay - n, money, respect: J.resp, levelUp: lvl, busted: false };
+  }
   const W = CFG.work, tired = tiredAt(p, now), multBp = tiredMultBp(tired);
   p.cz = { v: Math.round((tired + 1) * 1000), t: now };
   p.tk = null;
