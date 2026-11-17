@@ -97,6 +97,8 @@ test('inventário por API: golpe com arma gasta balas e um uso, comprar balas, t
   assert.equal(r.status, 200, JSON.stringify(r.body));
   assert.equal(r.body.result.ammo, CFG.bullets.perJob); assert.equal(r.body.me.eq.mao.u, G('pistola').life - 1);
   assert.equal(r.body.me.inv.find((x) => x.id === 'balas')?.n || 0, CFG.bullets.box - CFG.bullets.perJob);
+  // v75: preso só se faz o que se faz na prisão; se o golpe correu mal e deu prisão, paga-se a fiança antes de ir às compras
+  if (r.body.result.busted) { const f = await A('POST', '/api/act', { type: 'bail' }); assert.equal(f.status, 200, JSON.stringify(f.body)); }
   // balas às caixas
   r = await A('POST', '/api/act', { type: 'buy', id: 'balas', n: 2 }); assert.equal(r.status, 200, JSON.stringify(r.body));
   assert.equal(r.body.result.price, 2 * CFG.bullets.price);

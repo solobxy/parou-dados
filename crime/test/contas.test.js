@@ -954,9 +954,11 @@ test('gangue: safar um membro custa exatamente a fiança ou o hospital dele, só
   const pobre = m('g1'); pobre.cash = custo - 1; assert.throws(() => E.bailFor(pobre, b, NOW, W), code('NO_MONEY')); assert.ok(b.jailUntil > NOW); assert.equal(pobre.cash, custo - 1);
   let r = E.bailFor(a, b, NOW, W);
   assert.equal(r.cost, custo); assert.equal(a.cash, 100000 - custo); assert.equal(b.cash, 100000); assert.equal(b.jailUntil, 0); assert.equal(b.jailTier, 0);
-  // quem paga pode estar ele próprio preso ou no hospital (paga do bolso na mesma)
+  // quem paga pode estar no hospital (paga do bolso na mesma); preso não: v75, preso só se faz o que se faz na prisão
   const c = m('g1'); c.hospUntil = NOW + 20 * T.MIN; a.jailUntil = NOW + 3 * T.MIN; a.jailTier = 2;
-  const med = E.medicCost(c, NOW); r = E.medicFor(a, c, NOW, W);
+  const med = E.medicCost(c, NOW);
+  assert.throws(() => E.medicFor(a, c, NOW, W), code('IN_JAIL')); assert.ok(c.hospUntil > NOW);
+  a.jailUntil = 0; a.hospUntil = NOW + 2 * T.MIN; r = E.medicFor(a, c, NOW, W); a.jailUntil = NOW + 3 * T.MIN;
   assert.equal(r.cost, med); assert.equal(c.hospUntil, 0); assert.equal(a.cash, 100000 - custo - med); assert.ok(a.jailUntil > NOW);
 });
 

@@ -17,7 +17,7 @@ test('mudanças: há fotografia para cada móvel que o motor pode sortear', () =
 });
 
 test('os nomes fixos de fotografias no código existem todos', () => {
-  for (const f of ['js/tarefas.js', 'js/reveal.js']) {
+  for (const f of ['js/tarefas.js', 'js/reveal.js', 'js/prisao.js']) {
     const src = readFileSync(join(SITE, f), 'utf8');
     const fixos = [...src.matchAll(/(?:pic|foto)\('([a-z0-9-]+)'(?!\s*\+)/g)].map((m) => m[1]);
     const listas = [...src.matchAll(/PARTS = \[([^\]]*)\]/g)].flatMap((m) => [...m[1].matchAll(/'([a-z]+)'/g)].map((x) => x[1]));

@@ -979,9 +979,9 @@ h2.sec.small { font-size: 18px; margin: 16px 0 8px; }
 
 /* ---------- slots: ecrã de máquina ---------- */
 .slot { padding: 0; overflow: hidden; --frame: #e2c06a; --panel: #0008; --logo1: #fff3b0; --logo2: #d9a531; }
-.slot.th-zeus { --frame: #f0d58a; --panel: #2a104aaa; background: linear-gradient(#5b2a8a, #b0507a 55%, #e0a050); }
-.slot.th-doce { --frame: #fff; --panel: #7a1f6a88; --logo1: #fff; --logo2: #ffb3e0; background: linear-gradient(#58b8f0, #ff9ccf 60%, #c05aa8); }
-.slot.th-rebucado { --frame: #fff; --panel: #4a2a9a77; --logo1: #fff; --logo2: #ffd0f0; background: linear-gradient(#7ac8ff, #c9a0ff 55%, #ff9ad0); }
+.slot.th-zeus { --frame: #f0d58a; --panel: #2a104aaa; background: linear-gradient(#5b2a8a, #b0507a 55%, #e0a050); background: linear-gradient(in oklch, #5b2a8a, #b0507a 55%, #e0a050); }
+.slot.th-doce { --frame: #fff; --panel: #7a1f6a88; --logo1: #fff; --logo2: #ffb3e0; background: linear-gradient(#58b8f0, #ff9ccf 60%, #c05aa8); background: linear-gradient(in oklch, #58b8f0, #ff9ccf 60%, #c05aa8); }
+.slot.th-rebucado { --frame: #fff; --panel: #4a2a9a77; --logo1: #fff; --logo2: #ffd0f0; background: linear-gradient(#7ac8ff, #c9a0ff 55%, #ff9ad0); background: linear-gradient(in oklch, #7ac8ff, #c9a0ff 55%, #ff9ad0); }
 .slot.th-chefao { --panel: #000a; background: linear-gradient(#3b2a10, #160f06); }
 .slot.free { filter: none; } .slot.free .sfr { --panel: #1a0530cc; box-shadow: 0 0 0 3px #e9a6ff, 0 0 26px #c060ffaa; }
 .shead { height: 104px; background-size: cover; background-position: 50% 28%; display: grid; align-content: end; justify-items: center; padding: 0 10px 6px; position: relative; text-align: center; }
@@ -2743,3 +2743,129 @@ img { -webkit-user-drag: none; }
 .vrow.hkr > .btn, .vrow.fxr > .btn { font-size: 15px; }
 .tk-list { grid-template-columns: minmax(0, 1fr); } .vrow.tk-gig { width: 100%; min-width: 0; }
 .vrow.hkr > .btn > .bs, .vrow.fxr > .btn > .bs { font-size: 15px; font-weight: 600; opacity: 1; }
+
+/* =====================================================================================================
+   v75 (17/11, pedido do Dinis: «os botões de cantos redondos cheiram a IA»): corte de jornal.
+   O jogo tem um jornal (A Sirene) de cantos vivos; os botões e os cartões passam a ser do mesmo papel.
+   - Cantos quase vivos: 2 px nos botões e nas escolhas, 4 px nos cartões e nos mosaicos.
+   - Raio concêntrico: o que está dentro de um cartão tem o raio do cartão menos a margem (aqui dá 0 a 2 px).
+   - Botões cheios com um filete por dentro, como um cupão impresso; contornos em transparência (servem em qualquer fundo).
+   - Profundidade no escuro: os cartões ganham um fio de luz no topo, em vez de sombra.
+   ===================================================================================================== */
+:root { --r: 2px; --rc: 4px; }
+.btn { position: relative; }
+.btn.pri::before, .btn.buy::before, .btn.rob::before, .btn.lite::before, .btn.cash::before {
+  content: ''; position: absolute; inset: 3px; border: 1px solid currentColor; opacity: .2; pointer-events: none; border-radius: 1px;
+}
+.btn:disabled::before, .btn[disabled]::before { display: none; }
+.btn.ghost { box-shadow: inset 0 0 0 1px #ece6da33; }
+.btn.ghost.dng { box-shadow: inset 0 0 0 1px #e8786c8c; }
+.card, .note, .goal, .jobp, .item, .rowi, .job, .tip { box-shadow: inset 0 1px 0 #ece6da0d; }
+.seg { border-radius: 3px; }
+.seg button { border-radius: 1px; }
+.tile { border-radius: var(--rc); }
+.tile::before { border-radius: 0; inset: 6px; }
+.tile .bdg { border-radius: 2px; }
+.vth, .cont .vth, .item .thumb, .gear .thumb, .gthumb, .hlink .hthumb { border-radius: 2px; }
+.langsw button, .chip, .wtop { border-radius: 2px; }
+.tip { border-radius: var(--rc); }
+/* listas que andam para o lado: as pontas desvanecem em vez de cortar a seco */
+.chips2, .ppg, .tk-trayv { -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 14px, #000 calc(100% - 14px), transparent); mask-image: linear-gradient(90deg, transparent 0, #000 14px, #000 calc(100% - 14px), transparent); }
+/* fotografias pequenas: um contorno interior em transparência separa a foto do fundo, seja qual for */
+.vth, .item .thumb, .gear .thumb, .gthumb, .hlink .hthumb { outline: 1px solid #ece6da17; outline-offset: -1px; }
+/* preso: só a prisão. A barra de baixo sai e não há «voltar» */
+body.preso .tabs { transform: translateY(110%); transition: transform .2s var(--ease-out); }
+body.preso .phead .pbar .back { visibility: hidden; }
+
+/* =====================================================================================================
+   v75: cenas da prisão. Uma folha por cima da cela, com objetos fotografados; o resultado vem do servidor.
+   ===================================================================================================== */
+.jsc { position: fixed; inset: 0; z-index: 60; display: grid; align-items: end; justify-items: center; background: #0a0908cc; opacity: 0; transition: opacity .18s var(--ease-out); padding: 0 0 env(safe-area-inset-bottom); }
+.jsc.in { opacity: 1; }
+.jsc-card { width: min(100%, 480px); background: var(--s1); border-radius: var(--rc) var(--rc) 0 0; box-shadow: inset 0 1px 0 #ece6da14; transform: translateY(24px); transition: transform .22s var(--ease-out); max-height: 100dvh; overflow: auto; }
+.jsc.in .jsc-card { transform: none; }
+.jsc-stage { position: relative; aspect-ratio: 4 / 3.4; overflow: hidden; background: #15130f; }
+.jsc-bg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.jsc-obj { position: absolute; display: block; pointer-events: none; filter: drop-shadow(0 10px 14px #000b); }
+.jsc-foot { padding: 14px 16px 16px; display: grid; gap: 8px; opacity: 0; transform: translateY(6px); transition: opacity .2s, transform .2s var(--ease-out); }
+.jsc-foot.on { opacity: 1; transform: none; }
+.jsc-res { margin: 0; font: 650 22px/1.2 var(--ui); text-align: center; }
+.jsc-sub { margin: 0; text-align: center; text-wrap: pretty; }
+.jsc-btns { display: grid; gap: 8px; margin-top: 4px; }
+.jsc-lbl { position: absolute; left: 50%; transform: translateX(-50%); z-index: 3; font: 600 13px/1 var(--ui); color: #ece6dacc; text-shadow: 0 1px 3px #000; letter-spacing: .04em; }
+.jsc-lbl { left: 66%; transform: none; }
+.jsc-lbl.his { top: 22%; } .jsc-lbl.mine { bottom: 22%; }
+
+/* cartas: o baralho em cima à esquerda, a dele em cima, a tua em baixo; viram-se uma de cada vez */
+.cartas .pc2-deck { position: absolute; left: 7%; top: 50%; width: 19%; aspect-ratio: 2 / 3; transform: translateY(-50%) rotate(-8deg); }
+.pc2-ph { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; border-radius: 4px; }
+.pc2-deck .pc2-ph { filter: drop-shadow(0 6px 8px #000a); }
+.pc2 { position: absolute; left: 50%; width: 21%; aspect-ratio: 2 / 3; perspective: 700px; z-index: 2;
+  transform: translate(calc(-50% - 120%), 0) rotate(-8deg) scale(.73); opacity: 0; transition: transform .38s cubic-bezier(.2,.8,.2,1), opacity .2s; }
+.pc2.his { top: 5%; } .pc2.mine { bottom: 5%; }
+.pc2.his { --to: translate(-50%, 0) rotate(2deg); } .pc2.mine { --to: translate(-50%, 0) rotate(-2deg); }
+.pc2.dealt { opacity: 1; transform: var(--to); }
+.pc2.wins { transform: var(--to) scale(1.08); z-index: 3; }
+.pc2-in { position: relative; width: 100%; height: 100%; transform-style: preserve-3d; transition: transform .42s cubic-bezier(.2,.8,.2,1); }
+.pc2-back .pc2-ph, .pc2-front .pc2-ph { filter: drop-shadow(0 8px 10px #000b); }   /* a sombra nas faces: um filtro no que vira achata o 3D e a carta não mostra a frente */
+.pc2.up .pc2-in { transform: rotateY(180deg); }
+.pc2-back, .pc2-front { position: absolute; inset: 0; backface-visibility: hidden; -webkit-backface-visibility: hidden; }
+.pc2-front { transform: rotateY(180deg); color: #1b1a17; }
+.pc2-front.red { color: #a3262a; }
+.pc2-c { position: absolute; display: grid; justify-items: center; font: 700 clamp(15px, 4.4vw, 22px)/1 var(--disp); }
+.pc2-c i { font-style: normal; font-size: .8em; }
+.pc2-c.tl { top: 8%; left: 10%; } .pc2-c.br { bottom: 8%; right: 10%; transform: rotate(180deg); }
+.pc2-mid { position: absolute; inset: 0; display: grid; place-items: center; font: 400 clamp(30px, 10vw, 48px)/1 var(--disp); }
+.pc2.wins .pc2-front { box-shadow: 0 0 0 2px #d6ad62, 0 0 22px #d6ad6255; border-radius: 4px; }
+.cartas.done .pc2:not(.wins) .pc2-front { filter: brightness(.55) saturate(.6); }
+
+/* pátio: as luvas tremem a cada golpe; ganhar levanta-as, perder deita-as */
+.patio { background: radial-gradient(ellipse at 50% 30%, #3a352d, #15130f 70%); }
+.jsc-floor { position: absolute; inset: auto 0 0 0; height: 38%; background: linear-gradient(#24211c, #15130f); }
+.luvas { left: 50%; top: 50%; width: 62%; transform: translate(-50%, -50%); transition: transform .3s var(--ease-out), filter .3s; }
+.patio.hit .luvas { animation: jHit .26s cubic-bezier(.3,1.4,.5,1); }
+.patio.hit::after { content: ''; position: absolute; inset: 0; background: #ece6da; animation: jFlash .22s ease-out forwards; pointer-events: none; }
+.patio.won .luvas { transform: translate(-50%, -58%) scale(1.06); }
+.patio.lost .luvas { transform: translate(-50%, -40%) rotate(-14deg) scale(.94); filter: drop-shadow(0 10px 14px #000b) saturate(.4) brightness(.8); }
+@keyframes jHit { 0% { transform: translate(-50%, -50%); } 30% { transform: translate(-46%, -52%) rotate(4deg) scale(1.04); } 60% { transform: translate(-53%, -49%) rotate(-3deg); } 100% { transform: translate(-50%, -50%); } }
+@keyframes jFlash { from { opacity: .22; } to { opacity: 0; } }
+
+/* contrabando: o telemóvel entra no pão; a lanterna do guarda passa */
+.contra { background: radial-gradient(ellipse at 50% 60%, #2c2822, #100f0d 75%); }
+.pao { left: 50%; top: 58%; width: 66%; transform: translate(-50%, -50%); z-index: 2; }
+.tlm { left: 38%; top: 10%; width: 13%; transform: translate(-50%, 0) rotate(-12deg); z-index: 1; transition: transform .6s cubic-bezier(.2,.8,.2,1), top .6s cubic-bezier(.2,.8,.2,1), opacity .4s; }
+.contra.hide .tlm { top: 34%; transform: translate(-50%, 0) rotate(68deg) scale(.7); }
+.contra.safe .tlm { opacity: 0; }
+.jsc-torch { position: absolute; inset: 0; z-index: 3; pointer-events: none; opacity: 0; background: radial-gradient(circle at var(--torch, 0%) 55%, #fff6d633 0, #fff6d61a 14%, transparent 30%); }
+.contra.caught .jsc-torch { opacity: 1; animation: jTorch .65s ease-in-out forwards; }
+.contra.caught .tlm { top: 12%; transform: translate(-50%, 0) rotate(-6deg); filter: drop-shadow(0 0 18px #e8786caa); z-index: 3; }
+@keyframes jTorch { from { --torch: 0%; } to { --torch: 52%; } }
+@property --torch { syntax: '<percentage>'; inherits: false; initial-value: 0%; }
+
+/* oficina: a matrícula na bancada e a prensa a bater */
+.ofi { background: linear-gradient(#2a2620, #15130f); }
+.jsc-plate { position: absolute; left: 50%; top: 62%; width: 82%; transform: translate(-50%, -50%); }
+.jsc-plate .plate { position: relative; width: 100%; filter: drop-shadow(0 8px 12px #000b); }
+.jsc-plate-txt { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; gap: .08em; font: 700 clamp(22px, 8vw, 40px)/1 var(--num); color: #1b1a17; letter-spacing: .04em; }
+.jsc-plate-txt span { opacity: 0; transform: scale(1.3); transition: opacity .12s, transform .16s var(--ease-out); text-shadow: 0 1px 0 #ffffff80; }
+.jsc-plate-txt span.on { opacity: .9; transform: none; }
+.jsc-press { position: absolute; left: 50%; top: 0; width: 70%; height: 30%; transform: translate(-50%, -70%); background: linear-gradient(#55504a, #2e2b27); border-radius: 0 0 2px 2px; box-shadow: inset 0 -2px 0 #0008, 0 8px 18px #000c; }
+.ofi.slam .jsc-press { animation: jSlam .3s cubic-bezier(.5,0,.2,1); }
+@keyframes jSlam { 0% { transform: translate(-50%, -70%); } 45% { transform: translate(-50%, 78%); } 100% { transform: translate(-50%, -70%); } }
+
+/* fuga: a colher raspa; a parede abre-se para a luz ou a sirene pinta tudo de vermelho */
+.colher { left: 52%; top: 46%; width: 40%; transform: translate(-50%, -50%) rotate(-28deg); z-index: 2; }
+.fuga.dig .colher { animation: jDig .24s ease-in-out infinite alternate; }
+@keyframes jDig { from { transform: translate(-50%, -50%) rotate(-34deg); } to { transform: translate(-44%, -46%) rotate(-18deg); } }
+.jsc-hole { position: absolute; left: 50%; top: 50%; width: 10%; aspect-ratio: 1; transform: translate(-50%, -50%); border-radius: 46% 54% 50% 50%; background: radial-gradient(#0d0c0a, #0d0c0a 60%, transparent 72%); transition: width 1.4s ease-out; }
+.fuga.dig .jsc-hole { width: 38%; }
+.fuga.free .jsc-hole, .fuga.caught .jsc-hole { width: 44%; }
+.fuga.free .jsc-hole { background: radial-gradient(#fff3cf, #e9c27a 40%, #0d0c0a 66%, transparent 74%); box-shadow: 0 0 60px #e9c27a66; }
+.jsc-siren { position: absolute; inset: 0; z-index: 3; pointer-events: none; opacity: 0; background: #e8786c; mix-blend-mode: multiply; }
+.fuga.caught .jsc-siren { animation: jSiren .5s steps(2) 3; }
+@keyframes jSiren { 0% { opacity: .55; } 100% { opacity: 0; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .jsc, .jsc-card, .pc2, .pc2-in, .tlm, .luvas, .jsc-hole, .jsc-foot { transition: none !important; }
+  .patio.hit .luvas, .patio.hit::after, .ofi.slam .jsc-press, .fuga.dig .colher, .fuga.caught .jsc-siren, .contra.caught .jsc-torch { animation: none !important; }
+}

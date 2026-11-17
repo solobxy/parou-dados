@@ -8,6 +8,7 @@ import * as CZ from './crazy.js';
 import * as C3 from './casino3d.js';
 import * as GL from './globo.js';
 import * as TK from './tarefas.js';
+import * as PR from './prisao.js';
 
 const $app = document.getElementById('app');
 const S = {
@@ -153,12 +154,13 @@ function react(type, out, before, opts) {
   }
   else if (type === 'retainer') { toast(r.on ? t('to_av', { m: money(S.cfg.retainer.day) }) : t('to_avOff')); fx.sfx('claim'); }
   // prisão
-  else if (type === 'jailSmuggle') { if (r.lost) { toast(t('tj_smugLost'), true); fx.sfx('fail'); } else { toast(t('tj_smug', { m: money(r.money) })); fx.sfx('cash'); } }
-  else if (type === 'jailWork') { toast(t('tj_work', { m: money(r.money) })); fx.sfx('cash'); }
-  else if (type === 'jailYard') { toast(t(r.win ? 'tj_yardW' : 'tj_yardL', { m: money(Math.abs(r.money)), n: r.value }), !r.win); fx.sfx(r.win ? 'cash' : 'fail'); }
-  else if (type === 'jailCards') { toast(t(r.win ? 'tj_cardsW' : 'tj_cardsL', { m: money(Math.abs(r.money)) }), !r.win); fx.sfx(r.win ? 'cash' : 'fail'); }
+  // v75: cada coisa da prisão tem a sua cena (cartas na mesa, luvas, telemóvel no pão, matrícula na prensa, colher na parede)
+  else if (type === 'jailSmuggle') { PR.contrabando({ r, t, money, again: () => act('jailSmuggle') }).then(() => fx.sfx(r.lost ? 'fail' : 'cash')); }
+  else if (type === 'jailWork') { PR.oficina({ r, t, money, again: () => act('jailWork') }).then(() => fx.sfx('cash')); }
+  else if (type === 'jailYard') { PR.patio({ r, t, money, again: () => act('jailYard') }).then(() => fx.sfx(r.win ? 'cash' : 'fail')); }
+  else if (type === 'jailCards') { PR.cartas({ r, t, money, lang: lang(), bet: opts.args.bet, again: (b) => act('jailCards', { bet: b }) }).then(() => fx.sfx(r.win ? 'cash' : 'fail')); }
   else if (type === 'jailFavor') { toast(r.kind === 'time' ? t('tj_favTime', { t: minTxt(r.cut) }) : t('tj_favContact', { n: r.contacts, c: S.cfg.jail.contactsMax })); fx.sfx('claim'); }
-  else if (type === 'jailEscape') { if (r.free) { toast(t('tj_free')); fx.sfx('crit'); } else { toast(t('tj_caught', { t: minTxt(r.add) }), true); fx.sfx('bust'); fx.vibrate([40, 60, 40]); } }
+  else if (type === 'jailEscape') { PR.fuga({ r, t, minTxt }).then(() => { if (r.free) fx.sfx('crit'); else { fx.sfx('bust'); fx.vibrate([40, 60, 40]); } }); }
   else if (type === 'repair') { toast(t('tRepaired', { x: t('g_' + me.eq[r.slot].id), m: money(r.price) })); fx.sfx('claim'); }
   else if (type === 'luxury') { toast(t('luxBought', { x: list('lux')[me.luxuries - 1], n: r.respect })); fx.sfx('claim'); }
   else if (type === 'hooker' || type === 'broVisit') { fx.sfx('refill'); if (r.sick) { toast(t('gotSick'), true); fx.vibrate([40, 60, 40]); } if (r.rob) { toast(t('hkRob_' + r.rob.kind, { m: money(r.rob.loss) }), true); fx.vibrate([30, 40, 30]); } }
@@ -319,6 +321,7 @@ function tickHud() {
   S.hud.vbar.style.width = (L.vice / me.addictionCap) * 100 + '%';
   S.hud.vtxt.replaceChildren(icon('pill'), ' ' + L.vice + '/' + me.addictionCap);
   tickShips(); tickNews();
+  if (document.body.classList.contains('preso') !== (L.jail > 0)) render(true);   // entrou ou saiu da prisão: o ecrã muda sozinho
   document.querySelectorAll('[data-left]').forEach((el) => { const left = +el.dataset.left - now(); el.textContent = el.dataset.long ? leftTxt(left) : dur(left); if (left <= 0 && el.dataset.re !== '1') { el.dataset.re = '1'; refresh(); } });
   document.querySelectorAll('[data-stored]').forEach((el) => { const i = +el.dataset.stored; const b = me.biz[i]; el.textContent = money(bizNet(b, i)); });
   document.querySelectorAll('[data-biz]').forEach((el) => {
@@ -424,6 +427,11 @@ function render(force) {
   if (!S.st) return;
   if (!S.st.me || S.st.round.phase !== 'play') return renderPause();
   if (!PLACES[S.tab]) S.tab = 'city';
+  // preso, só se vê a prisão (pedido de 17/11, 04:10): sem a barra de baixo nem o «voltar»; ao sair volta-se para onde se estava
+  const preso = live(S.st.me).jail > 0;
+  if (preso && S.tab !== 'jail') { S.preJail = S.preJail || S.tab; S.tab = 'jail'; }
+  else if (!preso && S.preJail) { S.tab = S.preJail === 'jail' ? 'rob' : S.preJail; S.preJail = null; }
+  document.body.classList.toggle('preso', preso);
   // a barra de baixo só sai enquanto há um biscate ou turno a decorrer no ecrã
   document.body.classList.toggle('gig-on', !!(S.gig && !S.gig.res && (S.tab === 'gigs' || S.tab === 'job')));
   // a meio de uma jogada no casino, nada redesenha a mesa (eventos, notícias, relógio); só mudar de sítio

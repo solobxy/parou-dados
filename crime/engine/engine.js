@@ -250,14 +250,14 @@ function inRound(world, now) {
   if (now < world.start || now >= world.playEnd) fail('ROUND_CLOSED');
 }
 
-function begin(p, now, world, { allowBusy = false } = {}) {
+// allowBusy: deixa fazer no hospital. Preso só se faz o que se faz na prisão (v75, pedido de 17/11): as tarefas de lá, a fiança,
+// o advogado e a cara (jailOk). O resto responde IN_JAIL, depois de conferir os argumentos.
+function begin(p, now, world, { allowBusy = false, jailOk = false } = {}) {
   inRound(world, now);
   touch(p, now);
   retainerDay(p, now);
-  if (!allowBusy) {
-    if (p.jailUntil > now) fail('IN_JAIL', { until: p.jailUntil });
-    if (p.hospUntil > now) fail('IN_HOSPITAL', { until: p.hospUntil });
-  }
+  if (p.jailUntil > now && !jailOk) fail('IN_JAIL', { until: p.jailUntil });
+  if (!allowBusy && p.hospUntil > now) fail('IN_HOSPITAL', { until: p.hospUntil });
 }
 
 // ---------- utilidades ----------
@@ -481,7 +481,7 @@ export function changeClass(p, now, world, id) {
   return { ok: true, cls: id, from, cost };
 }
 export function setAvatar(p, now, world, i) {
-  begin(p, now, world, { allowBusy: true });
+  begin(p, now, world, { allowBusy: true, jailOk: true });
   if (!Number.isInteger(i) || i < 0 || i >= CFG.avatars) fail('NO_AVATAR');
   p.av = i;
   return { ok: true, av: i };
@@ -696,7 +696,7 @@ export function bailCost(p, now) {
 }
 
 export function payBail(p, now, world) {
-  begin(p, now, world, { allowBusy: true });
+  begin(p, now, world, { allowBusy: true, jailOk: true });
   if (!(p.jailUntil > now)) fail('NOT_IN_JAIL');
   const cost = bailCost(p, now);
   pay(p, cost);
@@ -706,9 +706,9 @@ export function payBail(p, now, world) {
 
 // safar um membro da mesma gangue: paga-se a fiança ou o hospital dele (o preço é o dele, quem paga é outro)
 export function bailFor(payer, target, now, world) {
-  begin(payer, now, world, { allowBusy: true });
-  if (payer === target || payer.id === target.id) fail('SELF');
+  if (payer === target || payer.id === target.id) fail('SELF');   // os argumentos primeiro, depois se quem paga pode (preso não pode)
   if (!payer.gang || payer.gang !== target.gang) fail('NO_GANG');
+  begin(payer, now, world, { allowBusy: true });
   touch(target, now);
   if (!(target.jailUntil > now)) fail('NOT_IN_JAIL');
   const cost = bailCost(target, now);
@@ -717,9 +717,9 @@ export function bailFor(payer, target, now, world) {
   return { ok: true, cost };
 }
 export function medicFor(payer, target, now, world) {
-  begin(payer, now, world, { allowBusy: true });
-  if (payer === target || payer.id === target.id) fail('SELF');
+  if (payer === target || payer.id === target.id) fail('SELF');   // os argumentos primeiro, depois se quem paga pode (preso não pode)
   if (!payer.gang || payer.gang !== target.gang) fail('NO_GANG');
+  begin(payer, now, world, { allowBusy: true });
   touch(target, now);
   if (!(target.hospUntil > now)) fail('NOT_IN_HOSPITAL');
   const cost = medicCost(target, now);
@@ -2163,7 +2163,7 @@ function payAll(p, amount) { const c = Math.min(p.cash, amount); p.cash -= c; p.
 
 // ---------- advogado em avença ----------
 export function setRetainer(p, now, world, on) {
-  begin(p, now, world, { allowBusy: true });
+  begin(p, now, world, { allowBusy: true, jailOk: true });
   if (on && level(p) < CFG.retainer.level) fail('LOW_LEVEL', { need: CFG.retainer.level });
   if (!!on === p.avenca) fail(on ? 'HAVE_IT' : 'NO_RETAINER');
   p.avenca = !!on;
@@ -2189,7 +2189,7 @@ export function streetPerBar(p) {
 const crimeAvg = (c) => c.prizes.reduce((x, [bp, a, z]) => x + (bp * (a + z)) / 2, 0) / 10000;
 function inJail(p, now) { if (!(p.jailUntil > now)) fail('NOT_IN_JAIL'); }
 export function jailSmuggle(p, now, world, rng) {
-  begin(p, now, world, { allowBusy: true }); inJail(p, now);
+  begin(p, now, world, { allowBusy: true, jailOk: true }); inJail(p, now);
   const J = CFG.jail;
   if (p.energy < J.smuggleE) fail('NO_ENERGY', { need: J.smuggleE });
   p.energy -= J.smuggleE;
@@ -2199,7 +2199,7 @@ export function jailSmuggle(p, now, world, rng) {
   return { ok: true, money: lost ? 0 : money, lost };
 }
 export function jailWork(p, now, world) {
-  begin(p, now, world, { allowBusy: true }); inJail(p, now);
+  begin(p, now, world, { allowBusy: true, jailOk: true }); inJail(p, now);
   const J = CFG.jail;
   if (p.vigor < J.workE) fail('NO_VIGOR', { need: J.workE });
   p.vigor -= J.workE; p.cash += J.work;
@@ -2207,7 +2207,7 @@ export function jailWork(p, now, world) {
 }
 export const yardBet = (p) => { const J = CFG.jail; return J.yardMin + Math.floor(((J.yardMax - J.yardMin) * (level(p) - 1)) / 99); };
 export function jailYard(p, now, world, rng) {
-  begin(p, now, world, { allowBusy: true }); inJail(p, now);
+  begin(p, now, world, { allowBusy: true, jailOk: true }); inJail(p, now);
   const J = CFG.jail, bet = yardBet(p);
   if (p.vigor < J.yardE) fail('NO_VIGOR', { need: J.yardE });
   if (p.cash < bet) fail('NO_MONEY', { need: bet, have: p.cash });
@@ -2219,16 +2219,27 @@ export function jailYard(p, now, world, rng) {
   return { ok: true, win, money: win ? bet : -bet, stat: 'F', value: p.stats.F };
 }
 export function jailCards(p, now, world, bet, rng) {
-  begin(p, now, world, { allowBusy: true }); inJail(p, now);
+  begin(p, now, world, { allowBusy: true, jailOk: true }); inJail(p, now);
   if (!Number.isSafeInteger(bet) || bet < 1 || bet > CFG.jail.cardsMax) fail('BAD_AMOUNT');
   if (p.cash < bet) fail('NO_MONEY', { need: bet, have: p.cash });
-  const win = rng.chance(5000);
+  // v75: as cartas são a sério. Tiram-se duas cartas de um baralho (a tua e a do outro preso); ganha a mais alta.
+  // Valores iguais não contam e tira-se outra vez, por isso ganha-se exatamente metade das vezes (é simétrico).
+  // (sem repetir à sorte: o valor dele sai dos 12 que sobram, por isso a conta fecha sempre e é exatamente 50%)
+  const mine = rng.int(0, 51), mr = mine >> 2, r2 = rng.int(0, 11), tr = r2 >= mr ? r2 + 1 : r2, theirs = tr * 4 + rng.int(0, 3);
+  const win = mr > tr;
   p.cash += win ? bet : -bet;
-  return { ok: true, win, money: win ? bet : -bet };
+  const today = jailCardsDay(p, now); today.n += 1; if (win) today.w += 1;
+  return { ok: true, win, money: win ? bet : -bet, cards: [mine, theirs], today: { n: today.n, w: today.w } };
+}
+// as mãos de cartas de hoje (dia de Lisboa): o ecrã mostra quantas ganhaste, para a sorte se ver
+function jailCardsDay(p, now) {
+  const d = dayOf(now);
+  if (!p.jc || p.jc.d !== d) p.jc = { d, n: 0, w: 0 };
+  return p.jc;
 }
 export function jailFavor(p, now, world, kind) {
   if (!['time', 'contact'].includes(kind)) fail('NO_STEP');
-  begin(p, now, world, { allowBusy: true }); inJail(p, now);
+  begin(p, now, world, { allowBusy: true, jailOk: true }); inJail(p, now);
   const J = CFG.jail;
   if (p.jf >= J.favors) fail('NO_FAVORS');
   if (kind === 'contact' && p.contacts >= J.contactsMax) fail('CONTACTS_FULL');
@@ -2239,7 +2250,7 @@ export function jailFavor(p, now, world, kind) {
   return { ok: true, kind, cut, jailUntil: p.jailUntil };
 }
 export function jailEscape(p, now, world, rng) {
-  begin(p, now, world, { allowBusy: true }); inJail(p, now);
+  begin(p, now, world, { allowBusy: true, jailOk: true }); inJail(p, now);
   const J = CFG.jail;
   if (p.energy < J.escapeE) fail('NO_ENERGY', { need: J.escapeE });
   p.energy -= J.escapeE;
