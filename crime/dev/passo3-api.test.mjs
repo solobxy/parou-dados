@@ -106,7 +106,12 @@ test('emprego por API: turnos com informação do sítio, curso pago à cabeça,
   assert.equal(cx.shift.e, Math.floor(1400 / 6)); assert.equal(cx.course.s, 570);
   // dois dias depois o curso acabou e o emprego de vigilante abre; o vigilante sabe quem não tem guardas
   await parar(srv); srv = await novo(3 * 3600e3 + 2 * 86400e3 + 120e3);
-  const me = (await A('GET', '/api/state')).body.me;
+  // v80: o tempo acabou, mas o diploma só vem com o exame (três perguntas certas)
+  let me = (await A('GET', '/api/state')).body.me;
+  assert.equal(me.course.id, 'vigilante'); assert.deepEqual(me.done, []);
+  r = await A('POST', '/api/act', { type: 'examStart' }); assert.equal(r.status, 200, JSON.stringify(r.body));
+  r = await A('POST', '/api/act', { type: 'examAnswer', ans: r.body.result.ids.map((i, k) => r.body.result.p[k].indexOf(CFG.exam.ans.vigilante[i])) }); assert.equal(r.body.result.done, true, JSON.stringify(r.body));
+  me = r.body.me;
   assert.equal(me.course, null); assert.deepEqual(me.done, ['vigilante']);
   r = await A('POST', '/api/act', { type: 'job', i: j('vigilante') }); assert.equal(r.status, 200, JSON.stringify(r.body));
   r = await A('POST', '/api/act', { type: 'shift' }); assert.equal(r.status, 200, JSON.stringify(r.body));

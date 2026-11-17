@@ -250,7 +250,8 @@ export function touch(p, now) {
   if (p.jailUntil && p.jailUntil <= now) { p.jailUntil = 0; p.jailTier = 0; }
   if (p.hospUntil && p.hospUntil <= now) p.hospUntil = 0;
   settleClub(p, now); settleBro(p, now);   // os clientes da discoteca e do bordel até agora
-  if (p.course && p.course.end <= now) { if (!p.done.includes(p.course.id)) p.done.push(p.course.id); p.course = null; }   // o curso acabou
+  if (p.course && !p.course.ex && p.course.end <= now) { if (!p.done.includes(p.course.id)) p.done.push(p.course.id); p.course = null; }   // curso de antes do exame: acaba sozinho
+  if (p.course && p.course.q && p.course.q.t + CFG.exam.ttl <= now) { p.course.next = Math.max(p.course.next || 0, p.course.q.t + CFG.exam.ttl + examRetry(p.course.id)); p.course.q = null; p.course.why = 'ttl'; p.course.last = null; }   // v80: exame deixado aberto conta como chumbo
   p.t = now;
 }
 
@@ -1224,8 +1225,47 @@ export function startCourse(p, now, world, id) {
   if (c.needs && !p.done.includes(c.needs)) fail('NEED_COURSE', { course: c.needs });
   if (c.level && level(p) < c.level) fail('LOW_LEVEL', { need: c.level });
   pay(p, c.price);
-  p.course = { id, end: now + c.days * T.DAY };
+  p.course = { id, end: now + c.days * T.DAY, t0: now, ex: 1, cuts: 0, next: 0, q: null };
   return { ok: true, id, price: c.price, end: p.course.end };
+}
+
+// ---------- exame dos cursos (v80) ----------
+const courseMs = (id) => courseOf(id).days * T.DAY;
+export function examRetry(id) { const X = CFG.exam; return Math.min(X.retryMax, Math.max(X.retryMin, Math.floor((courseMs(id) * X.retryBp) / 10000))); }
+// quando abre o próximo exame a meio do curso (1/4 do tempo para o 1.º corte, metade para o 2.º); no fim do tempo, sempre
+export function examOpensAt(c) { return c.cuts >= CFG.exam.cuts ? c.end : Math.min(c.end, c.t0 + Math.floor((courseMs(c.id) * (c.cuts + 1)) / 4)); }
+export function examStart(p, now, world, rng) {
+  const c = p.course;
+  if (!c || !c.ex) fail('NO_EXAM');
+  begin(p, now, world, { allowBusy: true });
+  if (!p.course) fail('NO_EXAM');
+  if (c.q) return { ok: true, ids: c.q.ids, p: c.q.p, until: c.q.t + CFG.exam.ttl, early: c.end > now };   // o mesmo exame: não se trocam perguntas
+  if (c.next > now) fail('EXAM_WAIT', { until: c.next });
+  const at = examOpensAt(c);
+  if (at > now) fail('EXAM_NOT_YET', { until: at });
+  // as perguntas: as primeiras n de uma baralhada do banco (Fisher-Yates parcial, todas com a mesma hipótese);
+  // as opções de cada uma também se baralham, para a letra da certa não se decorar (p[k][d] = opção do banco mostrada em d)
+  const shuffle = (arr, k) => { for (let i = 0; i < k; i++) { const j = rng.int(i, arr.length - 1); [arr[i], arr[j]] = [arr[j], arr[i]]; } return arr; };
+  const ids = shuffle([...Array(CFG.exam.ans[c.id].length).keys()], CFG.exam.n).slice(0, CFG.exam.n);
+  const pm = ids.map(() => shuffle([0, 1, 2, 3], 3));
+  c.q = { ids, p: pm, t: now }; c.why = null; c.last = null;
+  return { ok: true, ids, p: pm, until: now + CFG.exam.ttl, early: c.end > now };
+}
+export function examAnswer(p, now, world, ans) {
+  if (!p.course || !p.course.q) fail('NO_EXAM');
+  begin(p, now, world, { allowBusy: true });
+  const c = p.course;
+  if (!c || !c.q) fail('NO_EXAM');   // passou do tempo: o toque acabou de o dar como chumbado
+  if (!Array.isArray(ans) || ans.length !== c.q.ids.length || !ans.every((x) => Number.isInteger(x) && x >= 0 && x <= 3)) fail('EXAM_BAD');
+  const key = CFG.exam.ans[c.id], wrong = [], q = c.q;
+  q.ids.forEach((qi, k) => { if (q.p[k][ans[k]] !== key[qi]) wrong.push(k); });
+  c.q = null;
+  if (wrong.length) { c.next = now + examRetry(c.id); c.why = 'wrong'; c.last = { ids: q.ids, p: q.p, sel: ans.slice(), wrong }; return { ok: true, pass: false, wrong, next: c.next }; }
+  c.why = null; c.last = null;
+  let cut = 0;
+  if (c.end > now && c.cuts < CFG.exam.cuts) { cut = Math.floor((courseMs(c.id) * CFG.exam.cutBp) / 10000); c.end -= cut; c.cuts += 1; }
+  if (c.end <= now) { if (!p.done.includes(c.id)) p.done.push(c.id); p.course = null; return { ok: true, pass: true, done: true, id: c.id, cut }; }
+  return { ok: true, pass: true, done: false, id: c.id, cut, end: c.end, opens: examOpensAt(c) };
 }
 
 export function deal(p, now, world, j) {
@@ -3195,6 +3235,10 @@ export function checkInvariants(p) {
   if (!Number.isInteger(p.job) || p.job < -1 || p.job >= CFG.jobs.list.length || (p.job >= 0 && !jobOpen(p, p.job))) bad.push('job');
   if (p.sh !== null && !(p.sh && Number.isSafeInteger(p.sh.n) && p.sh.n >= 1 && p.sh.n <= CFG.jobs.perDay && typeof p.sh.d === 'string')) bad.push('shifts');
   if (p.course !== null && !(p.course && courseOf(p.course.id) && Number.isSafeInteger(p.course.end) && !p.done.includes(p.course.id))) bad.push('course');
+  if (p.course && p.course.q) { const q = p.course.q, B = (CFG.exam.ans[p.course.id] || []).length;   // v80: o exame aberto
+    if (!p.course.ex || !Array.isArray(q.ids) || q.ids.length !== CFG.exam.n || new Set(q.ids).size !== q.ids.length || q.ids.some((i) => !Number.isInteger(i) || i < 0 || i >= B) || !Number.isSafeInteger(q.t)
+      || !Array.isArray(q.p) || q.p.length !== q.ids.length || q.p.some((x) => !Array.isArray(x) || [...x].sort().join() !== '0,1,2,3')) bad.push('exam'); }
+  if (p.course && p.course.ex && !(Number.isInteger(p.course.cuts) && p.course.cuts >= 0 && p.course.cuts <= CFG.exam.cuts)) bad.push('exam cuts');
   if (!Array.isArray(p.done) || p.done.some((id) => !courseOf(id)) || new Set(p.done).size !== p.done.length) bad.push('courses done');
   if (!Array.isArray(p.stk) || p.stk.length !== CFG.stocks.list.length || p.stk.some((h) => !h || !Number.isSafeInteger(h.n) || h.n < 0 || !Number.isSafeInteger(h.cost) || h.cost < 0 || !Number.isSafeInteger(h.gen) || (h.n === 0 && h.cost !== 0)
     || ['tp', 'sl'].some((x) => h[x] !== undefined && !(Number.isSafeInteger(h[x]) && h[x] > 0 && h.n > 0)) || (h.tp && h.sl && h.sl >= h.tp))) bad.push('shares');

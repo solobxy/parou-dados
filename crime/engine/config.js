@@ -385,6 +385,19 @@ export const CFG = {
     ],
   },
   // Cursos: pagam-se à cabeça, correm em tempo real (dias reais), um de cada vez. Ficam para sempre (a conta é permanente).
+  // v80: o exame dos cursos, à maneira das entrevistas do Torn. São n perguntas do banco do curso (os textos estão no i18n
+  // pela mesma ordem; aqui só a posição da resposta certa, que nunca vai para o cliente). Tudo certo a meio do curso tira
+  // cutBp da duração (o 1.º corte a partir de 1/4 do tempo, o 2.º a partir de metade); no fim do tempo, passar dá o diploma.
+  // Errar obriga a esperar retryBp da duração (entre retryMin e retryMax). Um exame aberto mais de ttl conta como chumbo.
+  exam: {
+    n: 3, cutBp: 2500, cuts: 2, retryBp: 1250, retryMin: HOUR, retryMax: 12 * HOUR, ttl: 15 * MIN,
+    ans: {
+      vigilante: [0, 0, 2, 1, 2, 3],
+      pesados: [2, 1, 0, 3, 3, 0],
+      licenciatura: [1, 1, 0, 1, 2, 0],
+      especializacao: [3, 2, 3, 3, 1, 3],
+    },
+  },
   courses: [
     { id: 'vigilante', price: 570, days: 2 },
     { id: 'pesados', price: 1500, days: 4 },            // carta de pesados e curso

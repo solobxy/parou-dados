@@ -144,6 +144,11 @@ function react(type, out, before, opts) {
   else if (type === 'deal') { toast(t('dealSold', { g: r.grams, m: money(r.money), n: r.respect }) + (r.lav ? ' · ' + t('ro_lav', { m: money(r.lav) }) : '')); fx.sfx('cash'); }
   else if (type === 'workDone') { fx.vibrate(r.busted ? [40, 60, 40] : 14); fx.sfx(r.busted ? 'bust' : 'cash'); }
   else if (type === 'shift') { toast(t('jbDone', { m: money(r.money), n: r.left })); fx.sfx('cash'); }
+  else if (type === 'examAnswer') {
+    if (r.pass && r.done) { toast(t('tExDone')); fx.sfx('claim'); }
+    else if (r.pass) { toast(t('tExCut', { t: exDur(r.cut) })); fx.sfx('claim'); }
+    else { toast(t(r.wrong.length === 1 ? 'tExFail1' : 'tExFailN', { n: r.wrong.length, h: untilTxt(r.next) }), true); fx.sfx('fail'); }
+  }
   else if (type === 'course') { toast(t('crStarted', { x: t('cr_' + r.id), m: money(r.price) })); fx.sfx('buy'); }
   else if (type === 'job') { toast(t('jbChosen', { x: t('jb_' + r.job) })); fx.sfx('claim'); }
   else if (type === 'buy') { toast(r.id === 'balas' ? t('tBullets', { n: num(r.n), m: money(r.price) }) : r.slot === 'mat' ? t('to_matBuy', { x: t('g_' + r.id).toLowerCase(), m: money(r.price) }) : t('tUsing', { x: t('g_' + r.id) }) + (r.swapped ? ' ' + t('tSwapped', { x: t('g_' + r.swapped) }) : '')); fx.sfx('buy'); }
@@ -460,7 +465,7 @@ function tabDots() {
   const want = {
     fights: (S.events || []).some((e) => e.id > S.lastEventSeen),
     empire: (me.air && me.air.readyAt <= n) || me.port.some((c) => c.readyAt <= n) || me.biz.some((b, i) => b.n > 0 && storedNow(b, i) >= (b.perH * S.cfg.storageMs) / 3600000 / 2),
-    city: !!me.mission?.done,
+    city: !!me.mission?.done || exReady(me),   // v80: um exame à espera
     casino: !!me.bj,   // tens uma mão de blackjack por acabar
     rob: !!(me.op && me.op.ready <= n && !(me.op.miss || []).length),   // um golpe grande pronto para avançar
   };
@@ -708,8 +713,11 @@ function rgPaper(Wm) {
     h('p', { class: 'small pnote' }, t('rgHow')));
 }
 // até quando: «às 15:00» se for hoje, senão «terça-feira às 15:00»
-const untilTxt = (ts) => { const o = { timeZone: 'Europe/Lisbon' }, loc = lang() === 'pt' ? 'pt-PT' : 'en-GB', d = new Date(ts), hm = hhmm(ts);
-  return d.toLocaleDateString(loc, o) === new Date(now()).toLocaleDateString(loc, o) ? t('untilToday', { h: hm }) : t('untilDay', { d: d.toLocaleDateString(loc, { ...o, weekday: lang() === 'pt' ? 'long' : 'short' }), h: hm }); };
+// «às 14:30», «amanhã às 00:36», «quarta-feira às 09:00» (v80: o dia seguinte por extenso, e o hífen do dia não parte a linha)
+const untilTxt = (ts) => { const o = { timeZone: 'Europe/Lisbon' }, loc = lang() === 'pt' ? 'pt-PT' : 'en-GB', d = new Date(ts), hm = hhmm(ts), day = (x) => x.toLocaleDateString(loc, o);
+  if (day(d) === day(new Date(now()))) return t('untilToday', { h: hm });
+  if (day(d) === day(new Date(now() + 864e5))) return t('untilTomorrow', { h: hm });
+  return t('untilDay', { d: d.toLocaleDateString(loc, { ...o, weekday: lang() === 'pt' ? 'long' : 'short' }).replace('-', '\u2011'), h: hm }); };
 const rgEvLine = (a, toAt) => t('rgEvLine', { e: t('ev_' + a.e), x: list('drugs')[a.d].toLowerCase(), p: sPct(a.bp), h: untilTxt(toAt) });
 function rgEvPaper(Wm, max) {
   const rows = [...(Wm.arts || [])].reverse().flatMap((e) => e.a.filter((x) => x.k === 'rgEv').map((a) => [e.at, a])).slice(0, max);
@@ -901,6 +909,7 @@ function screenCity() {
     jail: L.jail ? t('inside') : null,
     parl: S.news?.mundo?.gov?.bill && me.gv && !me.gv.voted && !me.gv.novo && me.level >= (S.cfg.gov?.vote.minLevel || 5) ? t('pBadge') : null,
     fights: (S.events || []).some((e) => e.id > S.lastEventSeen) ? t('newEvt') : null,
+    job: exReady(me) ? t('exBadge') : null,
     museum: S.cfg.col && Object.keys(S.cfg.col.sets).some((k) => setHave(me, k) === S.cfg.col.sets[k].items.length) ? t('muBadge') : null,
   };
   const ep = season();
@@ -911,7 +920,7 @@ function placeTile(id, badge) {
   const me = S.st.me;
   return h('button', { class: 'tile', on: { click: () => go(id) } },
     h('img', { src: id === 'casa' ? IMG('casa', S.cfg.house.tiers[me.house].id) : IMG('cenas', PLACES[id].img), alt: '', width: 600, height: 600, loading: 'lazy', decoding: 'async', on: { error: (e) => e.currentTarget.remove() } }),
-    h('span', { class: 'lbl' + (id === 'rank' && S.st.rank ? ' up' : '') }, t('p_' + id)), badge ? h('span', { class: 'bdg' + (id === 'parl' ? ' neu' : id === 'hosp' || id === 'jail' ? ' bad' : '') }, badge) : null,   // votar não é ganho: o aviso vai em creme
+    h('span', { class: 'lbl' + (id === 'rank' && S.st.rank ? ' up' : '') }, t('p_' + id)), badge ? h('span', { class: 'bdg' + (id === 'parl' || id === 'job' ? ' neu' : id === 'hosp' || id === 'jail' ? ' bad' : '') }, badge) : null,   // votar não é ganho: o aviso vai em creme
     // no ranking, a tua posição na época vai por baixo do nome, em texto (não é coisa para recolher)
     id === 'rank' && S.st.rank ? h('span', { class: 'tsub' }, t('rankBadge', { p: ordOf(S.st.rank) })) : null);
 }
@@ -2410,8 +2419,10 @@ function screenJob() {
     return h('div', { class: 'vrow crr' + (falta && !feito ? ' dim' : '') },
       h('div', { class: 'grow' }, h('b', null, t('cr_' + c.id)),
         h('div', { class: 'small muted num' }, money(c.price) + ' · ' + t('crDays', { n: c.days }) + ' · ' + t('crOpens', { x: t('jb_' + J.list.find((x) => x.course === c.id).id) })),
-        aDecorrer ? h('div', { class: 'small' }, t('crLeft'), ' ', h('span', { class: 'num crl2', dataset: { left: me.course.end } }, dur(me.course.end - now()))) : null,
+        aDecorrer ? (me.course.ex && me.course.end <= now() ? h('div', { class: 'small c-cash' }, t('exFinalShort'))
+          : h('div', { class: 'small' }, t('crLeft'), ' ', h('span', { class: 'num crl2', dataset: { left: me.course.end } }, dur(me.course.end - now())))) : null,
         aDecorrer ? h('div', { class: 'fill' }, h('i', { style: `width:${Math.max(2, Math.min(100, 100 - ((me.course.end - now()) / (c.days * 864e5)) * 100))}%;background:var(--cash)` })) : null,
+        aDecorrer && exReady(me) ? h('button', { class: 'jneed', on: { click: () => document.getElementById('exame')?.scrollIntoView({ behavior: 'smooth', block: 'start' }) } }, t('exOpenLink') + ' ›') : null,
         falta && !feito ? h('div', { class: 'small muted' }, falta) : null),
       feito ? h('span', { class: 'small c-cash' }, t('crDone'))
         : aDecorrer || falta ? null
@@ -2419,10 +2430,66 @@ function screenJob() {
         : cash < c.price ? h('span', { class: 'small muted num' }, t('needMoney', { m: money(c.price - cash) }))
         : h('button', { class: 'btn ghost sm num', disabled: !pode, on: { click: (e) => act('course', { id: c.id }, { el: e.currentTarget }) } }, t('crGo')));
   })));
+  const ex = examPanel(me); if (ex) out.push(ex);
   // a profissão (ladrão, vigarista…) muda-se aqui ao lado
   out.push(h('button', { class: 'card row tap stlink', style: 'margin-top:14px', on: { click: () => go('work') } },
     h('span', { class: 'grow' }, t('jbClass', { x: me.cls ? t('cl_' + me.cls) : '—' })), h('span', { class: 'muted', 'aria-hidden': 'true' }, '›')));
   return out;
+}
+
+// ===== O exame dos cursos (v80) =====
+// Três perguntas sobre o ofício, a escolher uma opção em cada. O servidor guarda as respostas certas; aqui só se diz quais falharam.
+// A meio do curso, passar tira um quarto ao tempo (até duas vezes); no fim do tempo, passar dá o diploma.
+const EXQ = (id, i) => (list('exq_' + id) || [])[i] || { q: '', o: ['', '', '', ''] };
+const exOpens = (c) => (c.cuts >= S.cfg.exam.cuts ? c.end : Math.min(c.end, c.t0 + Math.floor((S.cfg.courses.find((x) => x.id === c.id).days * 864e5 * (c.cuts + 1)) / 4)));   // a mesma conta do servidor
+// durações de curso por extenso: «12 horas», «1 dia», «5 dias e 6 horas»
+const exDur = (ms) => { const d = Math.floor(ms / 864e5), hh = Math.round((ms - d * 864e5) / 36e5);
+  return d && hh ? t('exDurDH', { d, h: hh }) : d ? t(d === 1 ? 'exDur1' : 'exDurD', { n: d }) : t('exDurH', { n: hh }); };
+const cutOf = (id) => Math.floor((S.cfg.courses.find((x) => x.id === id).days * 864e5 * S.cfg.exam.cutBp) / 10000);
+// p: a ordem em que o servidor baralhou as opções desta pergunta (p[d] = opção do banco mostrada na posição d)
+function examQ(id, qi, k, p, sel, mark, onPick) {
+  const Q = EXQ(id, qi), ord = p || [0, 1, 2, 3];
+  return h('fieldset', { class: 'exq' }, h('legend', { id: 'exl' + k }, h('span', { class: 'exn num' }, (k + 1) + '.'), ' ', Q.q),
+    h('div', { class: 'exos', role: 'radiogroup', 'aria-labelledby': 'exl' + k }, ord.map((oi, d) => {
+      const on = sel === d, m = on && mark ? mark : '';
+      return h('button', { class: 'exo' + (on ? ' on' : '') + (m ? ' ' + m : ''), type: 'button', role: 'radio', 'aria-checked': on ? 'true' : 'false', id: 'exo' + k + '-' + d,
+        disabled: !onPick, on: onPick ? { click: () => onPick(d) } : undefined },
+        h('span', { class: 'exk', 'aria-hidden': 'true' }, 'ABCD'[d]), h('span', null, Q.o[oi]), m ? h('span', { class: 'exm' }, t(m === 'ok' ? 'exMarkOk' : 'exMarkBad')) : null);
+    })));
+}
+const exRetry = (id) => { const X = S.cfg.exam; return Math.min(X.retryMax, Math.max(X.retryMin, Math.floor((S.cfg.courses.find((x) => x.id === id).days * 864e5 * X.retryBp) / 10000))); };
+// há um exame à espera (aberto e por fazer): serve para o aviso no separador, no azulejo do emprego e na linha do curso
+const exReady = (me) => { const c = me.course, n = now(); return !!(S.cfg.exam && c && c.ex && !c.q && !(c.next > n) && exOpens(c) <= n) || !!(c && c.q); };
+function examPanel(me) {
+  const c = me.course; if (!c || !c.ex || !S.cfg.exam) return null;
+  const X = S.cfg.exam, n = now(), early = c.end > n, cut = cutOf(c.id);
+  const head = h('h2', { class: 'sec', id: 'exame' }, t('exName_' + c.id));
+  // exame aberto: as perguntas, com o relógio no botão de entregar
+  if (c.q) {
+    if (!S.exam || S.exam.t !== c.q.t) S.exam = { t: c.q.t, sel: c.q.ids.map(() => -1) };
+    const E2 = S.exam, falta = E2.sel.filter((x) => x < 0).length, until = c.q.t + X.ttl;
+    return h('section', { class: 'exam' }, head, h('p', { class: 'small muted exsub' }, t('exSub', { n: X.n })),
+      c.q.ids.map((qi, k) => examQ(c.id, qi, k, c.q.p && c.q.p[k], E2.sel[k], null, (d) => { E2.sel[k] = d; render(); requestAnimationFrame(() => document.getElementById('exo' + k + '-' + d)?.focus()); })),
+      h('button', { class: 'btn buy block big exsend', disabled: falta > 0, on: { click: async (e) => { const o = await act('examAnswer', { ans: E2.sel.slice() }, { el: e.currentTarget }); if (o) { S.exam = null; render(); } } } },
+        falta ? t(falta === 1 ? 'exPick1' : 'exPick', { n: falta }) : t('exSend'), h('small', { class: 'num' }, t('exClose'), ' ', h('span', { dataset: { left: until } }, dur(until - n)))));
+  }
+  const body = [];
+  if (c.next > n) body.push(h('p', { class: 'note exwait' }, t(c.why === 'ttl' ? 'exTtl' : 'exWait', { h: untilTxt(c.next) })));
+  else {
+    const at = exOpens(c);
+    if (at > n) body.push(h('p', { class: 'small muted' }, t('exOpens', { h: untilTxt(at), t: exDur(cut) })));
+    else {
+      const ends = early && c.end - cut <= n;   // o 2.º corte acaba o curso logo
+      body.push(h('p', { class: 'small' }, !early ? t('exFinal') : ends ? t('exEnds') : t('exEarly', { t: exDur(cut) })),
+        h('p', { class: 'small muted exrules' }, t('exRules', { n: X.n, m: Math.round(X.ttl / 60000), r: exDur(exRetry(c.id)) })),
+        h('button', { class: 'btn buy block big', on: { click: async (e) => { const o = await act('examStart', {}, { el: e.currentTarget }); if (o) { render(); requestAnimationFrame(() => document.getElementById('exame')?.scrollIntoView({ block: 'start' })); } } } }, t('exGo')));
+    }
+  }
+  if (early && c.cuts < X.cuts) body.push(h('p', { class: 'small muted' }, t('exHalf', { n: X.cuts })));
+  // o último exame chumbado (guardado no servidor): as escolhas com certa e errada, sem mostrar qual era a certa
+  const last = c.last;
+  if (last && c.why === 'wrong') body.push(h('div', { class: 'exlast' }, h('h3', null, t('exLast')), last.ids.map((qi, k) => examQ(c.id, qi, k, last.p && last.p[k], last.sel[k], last.wrong.includes(k) ? 'bad' : 'ok', null))));
+  return h('section', { class: 'exam' }, head, body);
 }
 
 function screenGym() {

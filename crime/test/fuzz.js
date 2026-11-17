@@ -34,6 +34,7 @@ let refused = 0, done = 0, rounds = 1;
 
 // (4) as contas batem certo: cada ação só mexe no dinheiro e no respeito o que a regra diz, e nada cria dinheiro do nada
 const wealth = (q) => q.cash + q.bank;
+const LAV_MAX_BP = CFG.launder.bp + CFG.gov.laws.branq.addBp;   // a lei do branqueamento (v76) pode somar à taxa
 const MAX_LOOT_BP = 10000 + CFG.gang.lootBpPer * CFG.gang.maxLevel + CFG.skills.maxBp + Math.max(...CFG.classes.map((c) => c.lootBp || 0)) + Math.max(...CFG.drugs.flatMap((g) => (g.fx || []).filter((f) => f.k === 'loot').map((f) => f.bp)));
 // respeito máximo de um golpe de rua que correu bem: a barra mais rica (120) a dividir pela hipótese, mais o bónus de profissão e o resto guardado
 const MAX_STREET_RESP = Math.max(...CFG.crimes.map((c) => Math.ceil((CFG.street.respCap * c.e * (10000 + Math.max(...CFG.classes.map((k) => k.respBp || 0)))) / c.p / 100))) + 1;
@@ -59,6 +60,17 @@ function contas(kind, a0, a, d0, d, t, res, arg) {
   if (!['crime', 'crimeAll', 'airCollect', 'museum', 'colSell'].includes(kind) && Object.keys(colD).length) bad('vitrine mexeu sem razão');
   if (Object.values(a.col || {}).some((v) => !Number.isInteger(v) || v < 0)) bad('vitrine negativa');
   switch (kind) {
+    case 'examStart': { const c0 = touched(a0, t).course; if (dm !== 0 || dr !== 0 || !a.course || !a.course.q || (c0 && c0.q && JSON.stringify(c0.q) !== JSON.stringify(a.course.q))) bad('exame: começar'); break; }
+    case 'examAnswer': { const c0 = touched(a0, t).course;
+      if (dm !== 0 || dr !== 0 || !c0 || !c0.q) bad('exame: responder');
+      const ok = c0.q.ids.every((qi, k) => c0.q.p[k][arg[k]] === CFG.exam.ans[c0.id][qi]);
+      if (ok !== res.pass) bad('exame: nota errada');
+      if (!res.pass && (!a.course || a.course.end !== c0.end || a.course.next !== t + E.examRetry(c0.id) || a.course.why !== 'wrong' || JSON.stringify(a.course.last.sel) !== JSON.stringify(arg))) bad('exame: chumbo');
+      if (res.pass && res.done !== !a.course) bad('exame: diploma');
+      if (res.pass && !res.done && !res.cut && (c0.cuts < CFG.exam.cuts || a.course.end !== c0.end)) bad('exame: sem corte');
+      if (res.pass && !res.done && res.cut && (a.course.end !== c0.end - res.cut || res.cut !== Math.floor((CFG.courses.find((x) => x.id === c0.id).days * T.DAY * CFG.exam.cutBp) / 10000) || a.course.cuts !== c0.cuts + 1 || a.course.cuts > CFG.exam.cuts)) bad('exame: corte');
+      if (res.done && !a.done.includes(c0.id)) bad('exame: sem diploma');
+      break; }
     case 'museum': { const S = CFG.col.sets[arg], k = (a0.mus || {})[arg] > 0 ? 1 : 2;
       if (!colEq(Object.fromEntries(S.items.map((i) => [i, -1]))) || dm !== S.cash * k || dr !== S.resp * k || res.first !== (k === 2) || a.mus[arg] !== ((a0.mus || {})[arg] || 0) + 1) bad('museu'); break; }
     case 'colSell': if (!colEq({ [arg.id]: -res.n }) || res.n < 1 || dm !== res.n * CFG.col.pawn || dr !== 0 || a.col[arg.id] < 1) bad('penhorista'); break;
@@ -105,7 +117,7 @@ function contas(kind, a0, a, d0, d, t, res, arg) {
       const o = CFG.ops[res.i];
       if (a.op !== null || a.opPause !== t + o.pauseH * T.HOUR || t < a0.op.ready || res.i !== a0.op.i) bad('avançar: estado');
       if (res.chanceBp > CFG.opSteps.maxBp || res.chanceBp < o.p || res.rasto < CFG.opSteps.minRasto || res.rasto > o.rasto) bad('avançar: hipótese ou rasto');
-      if (res.success) { if (dm !== res.money || res.money + res.lav !== o.gain || res.lav < 0 || res.lav > Math.ceil((o.gain * CFG.launder.bp) / 10000) || dr !== res.respect || res.respect !== Math.round(CFG.opSteps.respK * Math.sqrt(o.gain))) bad('avançar: correu bem'); }
+      if (res.success) { if (dm !== res.money || res.money + res.lav !== o.gain || res.lav < 0 || res.lav > Math.ceil((o.gain * LAV_MAX_BP) / 10000) || dr !== res.respect || res.respect !== Math.round(CFG.opSteps.respK * Math.sqrt(o.gain))) bad('avançar: correu bem'); }
       else if (dr !== 0 || dm !== -res.lawyer || res.lawyer > o.lawyer || (a0.op.bribe && (res.lawyer || res.busted))) bad('avançar: correu mal');
       if (!!(res.busted || res.linked) !== (a.jailUntil > t)) bad('avançar: prisão');
       if (o.gun && (balas(a0) - balas(a) !== CFG.opSteps.bullets)) bad('avançar: balas');
@@ -120,7 +132,7 @@ function contas(kind, a0, a, d0, d, t, res, arg) {
     case 'jailEscape': if (dm !== 0 || (res.free ? a.jailUntil !== 0 : a.jailUntil < a0.jailUntil)) bad('fuga'); break;
     case 'deal': {
       const x = CFG.deal.list[arg], d = CFG.drugs.findIndex((g) => g.id === x.drug), g = Math.floor((x.perBar * CFG.deal.step) / 100);
-      if (res.grams !== g || dm + res.lav !== Math.floor((g * CFG.drugs[d].price * (10000 + E.skillBp(a0, 'trafico'))) / 10000) || res.money !== dm || res.lav < 0 || res.lav > Math.ceil((dm + res.lav) * CFG.launder.bp / 10000) || dr !== res.respect || res.respect < 1 || a.dst[arg] !== a0.dst[arg] - g || E.level(a0) < x.level) bad('venda de droga');
+      if (res.grams !== g || dm + res.lav !== Math.floor((g * CFG.drugs[d].price * (10000 + E.skillBp(a0, 'trafico'))) / 10000) || res.money !== dm || res.lav < 0 || res.lav > Math.ceil((dm + res.lav) * LAV_MAX_BP / 10000) || dr !== res.respect || res.respect < 1 || a.dst[arg] !== a0.dst[arg] - g || E.level(a0) < x.level) bad('venda de droga');
       if (a.energy !== Math.min(E.energyMax(a0), touched(a0, t).energy) - CFG.deal.step) bad('venda: stamina');
       if (E.dealUsed(a, t) > E.dealCap(a)) bad('venda acima da clientela');
       break;
@@ -338,9 +350,12 @@ for (let n = 0; n < ACTIONS; n++) {
   // v76: as leis do Estado mudam de vez em quando (qualquer combinação, qualquer corrupção), antes das fotografias de antes; as contas têm de bater na mesma
   if (r.chance(200)) E.setGov(r.chance(3000) ? null : { laws: Object.fromEntries(Object.keys(CFG.gov.laws).filter(() => r.chance(4000)).map((id) => [id, 1])), corr: r.int(0, 100) });
   if (r.chance(150) && !(p.jailUntil > t)) p.hospUntil = Math.max(p.hospUntil || 0, t + r.int(1, 300) * 60000);   // v78: às vezes internado, para a farmácia
+  // v80: às vezes a meio de um curso com exame (para o exame ter que fazer), e às vezes com o exame aberto
+  if (r.chance(300) && !p.course) { const c = pick(CFG.courses.filter((x) => !p.done.includes(x.id))); if (c) { const D = c.days * T.DAY, t0 = t - r.int(0, D + T.DAY); p.course = { id: c.id, end: t0 + D, t0, ex: 1, cuts: r.int(0, CFG.exam.cuts), next: r.chance(3000) ? t + r.int(1, 600) * 60000 : 0, q: null }; } }
+  if (r.chance(3000) && p.course && p.course.ex && !p.course.q) { const B = CFG.exam.ans[p.course.id].length, ids = []; while (ids.length < CFG.exam.n) { const i = r.int(0, B - 1); if (!ids.includes(i)) ids.push(i); } p.course.q = { ids, p: ids.map(() => { const x = [0, 1, 2, 3]; for (let i = 3; i > 0; i--) { const j = r.int(0, i); [x[i], x[j]] = [x[j], x[i]]; } return x; }), t: t - r.int(0, 20) * 60000 }; }
   if (r.chance(500)) for (const i of E.colItems()) if (r.chance(7000)) p.col[i] = (p.col[i] || 0) + r.int(1, 3);   // v79: peças na vitrine, para o museu e o penhorista terem que fazer
   const before = touched(p, t), beforeD = touched(d, t), origD = structuredClone(d), origP = structuredClone(p);
-  const kind = pick(['stockBuy', 'stockBuy', 'stockBuy', 'govVote', 'govLobby', 'govLobby', 'consume', 'consume', 'consume', 'museum', 'museum', 'colSell', 'colSell', 'stockSell', 'stockSell', 'missionSwap', 'venueBuy', 'venueBuy', 'venueSet', 'venueCollect', 'stockUse', 'stockUse', 'stockDump', 'broHire', 'broHire', 'broFire', 'clubBuyAt', 'clubBuyAt', 'clubBuyAt', 'broVisitAt', 'broVisitAt', 'broVisitAt', 'casino', 'casino', 'table', 'heist', 'hit', 'gangCreate', 'gangDonate', 'gangLeave', 'gangBiz', 'gangBiz', 'gangBiz', 'gangBizCollect', 'hitman', 'hitman', 'hitman', 'crime', 'crime', 'crimeAll', 'deal', 'deal', 'dealBuy', 'drug', 'refill', 'detox', 'claim', 'class', 'classChange', 'classChange', 'air', 'air', 'airCollect', 'airCollect', 'bailFor', 'bailFor', 'medicFor', 'medicFor', 'avatar', 'hooker', 'cure', 'house', 'houseUp', 'train', 'buyBiz', 'buyBiz', 'collect', 'bizGoods', 'bizGoods', 'stockHold', 'stockHold', 'acct', 'stockLimit', 'stockLimit', 'stockLimit', 'port', 'collectPort', 'portOpen', 'portOpen', 'deposit', 'withdraw', 'gear', 'attack', 'bail', 'medic', 'luxury', 'shift', 'shift', 'shift', 'job', 'course', 'buy', 'buy', 'buy', 'buy', 'equip', 'sell', 'sellGoods', 'sellGoods', 'repair', 'repair', 'opStart', 'opStart', 'opStep', 'opStep', 'opGo', 'opGo', 'opGo', 'opDrop', 'retainer', 'jailSmuggle', 'jailWork', 'jailYard', 'jailCards', 'jailFavor', 'jailEscape', 'whBuy', 'whBuy', 'whUp', 'whUp', 'mktBuy', 'mktBuy', 'mktBuy', 'mktSell', 'mktSell', 'mvSend', 'mvSend', 'mvSend', 'whEdition', 'workStart', 'workStart', 'workDone', 'workDone', 'workDone']);
+  const kind = pick(['stockBuy', 'stockBuy', 'stockBuy', 'govVote', 'govLobby', 'govLobby', 'consume', 'consume', 'consume', 'museum', 'museum', 'colSell', 'colSell', 'examStart', 'examStart', 'examAnswer', 'examAnswer', 'examAnswer', 'stockSell', 'stockSell', 'missionSwap', 'venueBuy', 'venueBuy', 'venueSet', 'venueCollect', 'stockUse', 'stockUse', 'stockDump', 'broHire', 'broHire', 'broFire', 'clubBuyAt', 'clubBuyAt', 'clubBuyAt', 'broVisitAt', 'broVisitAt', 'broVisitAt', 'casino', 'casino', 'table', 'heist', 'hit', 'gangCreate', 'gangDonate', 'gangLeave', 'gangBiz', 'gangBiz', 'gangBiz', 'gangBizCollect', 'hitman', 'hitman', 'hitman', 'crime', 'crime', 'crimeAll', 'deal', 'deal', 'dealBuy', 'drug', 'refill', 'detox', 'claim', 'class', 'classChange', 'classChange', 'air', 'air', 'airCollect', 'airCollect', 'bailFor', 'bailFor', 'medicFor', 'medicFor', 'avatar', 'hooker', 'cure', 'house', 'houseUp', 'train', 'buyBiz', 'buyBiz', 'collect', 'bizGoods', 'bizGoods', 'stockHold', 'stockHold', 'acct', 'stockLimit', 'stockLimit', 'stockLimit', 'port', 'collectPort', 'portOpen', 'portOpen', 'deposit', 'withdraw', 'gear', 'attack', 'bail', 'medic', 'luxury', 'shift', 'shift', 'shift', 'job', 'course', 'buy', 'buy', 'buy', 'buy', 'equip', 'sell', 'sellGoods', 'sellGoods', 'repair', 'repair', 'opStart', 'opStart', 'opStep', 'opStep', 'opGo', 'opGo', 'opGo', 'opDrop', 'retainer', 'jailSmuggle', 'jailWork', 'jailYard', 'jailCards', 'jailFavor', 'jailEscape', 'whBuy', 'whBuy', 'whUp', 'whUp', 'mktBuy', 'mktBuy', 'mktBuy', 'mktSell', 'mktSell', 'mvSend', 'mvSend', 'mvSend', 'whEdition', 'workStart', 'workStart', 'workDone', 'workDone', 'workDone']);
   let res, arg;
   try {
     switch (kind) {
@@ -349,6 +364,8 @@ for (let n = 0; n < ACTIONS; n++) {
       case 'shift': res = E.doShift(p, t, world); break;
       case 'govVote': res = E.govVoteCheck(p, t, world); break;
       case 'consume': arg = r.chance(9000) ? pick(CFG.consum.list).id : 'x'; res = E.consume(p, t, world, arg); break;
+      case 'examStart': res = E.examStart(p, t, world, game); break;
+      case 'examAnswer': { const c = p.course; arg = r.chance(5000) && c && c.q ? c.q.ids.map((qi, k) => c.q.p[k].indexOf(CFG.exam.ans[c.id][qi])) : r.chance(8000) ? [r.int(0, 3), r.int(0, 3), r.int(0, 3)] : pick([null, [0, 0], [0, 0, 4], [0.5, 0, 0], 'x']); res = E.examAnswer(p, t, world, arg); break; }
       case 'museum': arg = pick(['mundo', 'raras', 'mundo', 'raras', 'x', 'constructor', '__proto__']); res = E.museumGive(p, t, world, arg); break;
       case 'colSell': arg = { id: r.chance(9000) ? pick(E.colItems()) : pick(['toString', 'x']), n: pick([1, 1, 2, 5, 0, -1, 0.5, anyInt()]) }; res = E.colSell(p, t, world, arg.id, arg.n); break;
       case 'govLobby': arg = pick([100, 1000, 50000, 99, 0, -5, 0.5, 2e12, anyInt()]); res = E.govLobby(p, t, world, arg); break;

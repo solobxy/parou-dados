@@ -14,6 +14,8 @@ const ok = { int: (lo) => lo, chance: () => true, float: () => 0 };
 const falha = { int: (lo) => lo, chance: () => false, float: () => 0 };
 const j = (id) => CFG.jobs.list.findIndex((x) => x.id === id);
 const k = (id) => CFG.crimes.findIndex((c) => c.id === id);
+// v80: o curso só acaba com o exame passado (três perguntas certas)
+const exame = (p, t) => { E.examStart(p, t, world, ok); return E.examAnswer(p, t, world, p.course.q.ids.map((i) => CFG.exam.ans[p.course.id][i])); };
 const erro = (fn, code) => assert.throws(fn, (e) => e.code === code, code);
 
 test('empregos: os seis da especificação, com o ordenado de um dia completo (6 turnos) e o curso que pedem', () => {
@@ -70,6 +72,7 @@ test('cursos: pagam-se à cabeça, um de cada vez, correm em tempo real e abrem 
   erro(() => E.startCourse(p, START + 1, world, 'pesados'), 'COURSE_BUSY');
   erro(() => E.chooseJob(p, START + T.DAY, world, j('vigilante')), 'NEED_COURSE');
   E.touch(p, START + 2 * T.DAY);
+  assert.ok(p.course, 'v80: no fim do tempo falta o exame'); exame(p, START + 2 * T.DAY);
   assert.equal(p.course, null); assert.deepEqual(p.done, ['vigilante']);
   E.chooseJob(p, START + 2 * T.DAY, world, j('vigilante'));
   erro(() => E.startCourse(p, START + 2 * T.DAY, world, 'vigilante'), 'COURSE_DONE');
@@ -85,7 +88,7 @@ test('especialização: pede nível 40 e a licenciatura', () => {
   const q = mk(lv(39)); q.cash = 100000; q.done = ['licenciatura'];
   erro(() => E.startCourse(q, START, world, 'especializacao'), 'LOW_LEVEL');
   E.startCourse(p, START, world, 'especializacao');
-  E.touch(p, START + 30 * T.DAY);
+  E.touch(p, START + 30 * T.DAY); exame(p, START + 30 * T.DAY);
   E.chooseJob(p, START + 30 * T.DAY, world, j('senior'));
   p.vigor = 100; let pago = 0; for (let n = 0; n < 6; n++) pago += E.doShift(p, START + 30 * T.DAY + n, world).money;
   assert.equal(pago, 4800);

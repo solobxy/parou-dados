@@ -3025,3 +3025,35 @@ body.preso .phead .pbar .back { visibility: hidden; }
 .plaque ol li { overflow-wrap: anywhere; }
 .plaque .pcol p { margin: 0; font-family: inherit; }
 @media (max-width: 379px) { .plaque .pcols { grid-template-columns: 1fr; gap: 12px; } }
+
+/* ===== v80: o exame dos cursos ===== */
+/* uma prova em papel de exame não; aqui são perguntas claras com quatro opções. A escolhida fica em creme (como as teclas .seg);
+   depois de um chumbo, cada escolha diz «certa» ou «errada» por escrito e com a cor, sem mostrar a resposta certa */
+.exam { margin-top: 22px; }
+.exam .exsub { margin: -2px 2px 14px; }
+.exq { margin: 0 0 18px; padding: 0; border: 0; min-width: 0; }
+.exq legend { padding: 0 2px 8px; font: 500 17px/1.35 'Newsreader', Georgia, serif; color: var(--tx); text-wrap: pretty; }
+.exq .exn { color: var(--tx2); font-family: var(--ui); font-size: 15px; }
+.exos { display: grid; gap: 6px; }
+.exo { display: flex; align-items: center; gap: 12px; min-height: 48px; width: 100%; padding: 10px 12px; text-align: left; font: inherit; font-size: 15px; line-height: 1.3;
+  color: var(--tx); background: var(--s1); border: 1px solid var(--s3); cursor: pointer; }
+.exo:disabled { cursor: default; opacity: 1; }
+.exo .exk { flex: none; width: 26px; height: 26px; display: grid; place-items: center; font: 600 14px/1 var(--ui); color: var(--tx2); border: 1px solid var(--s3); }
+.exo.on { background: var(--tx); color: var(--ink); border-color: var(--tx); }
+.exo.on .exk { background: var(--ink); color: var(--tx); border-color: var(--ink); }
+.exo.ok { background: var(--s1); color: var(--tx); border-color: var(--cash); }
+.exo.bad { background: var(--s1); color: var(--tx); border-color: var(--danger); }
+.exo .exm { margin-left: auto; padding-left: 8px; font-size: 14px; font-weight: 600; }
+.exo.ok .exm, .exo.ok .exk { color: var(--cash); border-color: var(--cash); }
+.exo.bad .exm, .exo.bad .exk { color: var(--danger); border-color: var(--danger); }
+.exo:focus-visible { outline: 2px solid var(--tx); outline-offset: 2px; }
+.exlast { margin-top: 16px; }
+.exlast h3 { margin: 0 2px 12px; font: 500 20px/1.25 'Newsreader', Georgia, serif; }
+.exlast .exo:not(.ok):not(.bad), .exlast .exo:not(.ok):not(.bad) .exk { color: var(--tx3); }
+.exwait { margin: 0 0 10px; }
+/* revisão (v80): o botão tem ar à volta e leva o relógio por baixo do texto, para se ver sem voltar ao topo */
+.exam > .btn.big { margin: 12px 0 14px; }
+.exam fieldset + .btn { margin-top: 22px; }
+.exsend { display: grid; gap: 2px; justify-items: center; }
+.exsend small { font-size: 14px; font-weight: 500; opacity: .8; }
+.exrules { margin: 4px 2px 0; }
