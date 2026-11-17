@@ -28,7 +28,7 @@ const RONDA_TESTE = process.env.PRIMEIRA_RONDA ? dataDe(process.env.PRIMEIRA_RON
 // Épocas de 28 dias a contar da sexta 13/11/2026 às 21:00 de Lisboa (PRIMEIRA_EPOCA=AAAA-MM-DD muda-a, para testes)
 const ANCORA = dataDe(process.env.PRIMEIRA_EPOCA || process.env.PRIMEIRA_RONDA || '2026-11-13');
 const rng = process.env.TESTE_SEMENTE ? seededRng(+process.env.TESTE_SEMENTE) : cryptoRng();   // nos testes, a sorte pode ser sempre a mesma
-const VERSAO = 77;   // sobe quando o servidor muda, para se confirmar de fora que a versão nova já está a correr
+const VERSAO = 78;   // sobe quando o servidor muda, para se confirmar de fora que a versão nova já está a correr
 const ATOS_3S = +(process.env.ATOS_3S || 15), ATOS_MIN = +(process.env.ATOS_MIN || 400); // ações por conta: 15 em 3 s, 400 por minuto
 
 // ---------- relógio que nunca anda para trás ----------
@@ -463,6 +463,7 @@ function vista(p, now) {
     stk: mk ? E.stockView(p, mk) : CFG.stocks.list.map(() => ({ n: 0, cost: 0, value: 0, tp: 0, sl: 0 })), stockCap: E.stockCap(p),
     wh: E.whView(p), mv: E.mvView(p), mvLog: p.mvLog, rz: p.rz, mk: mk ? MW.marketView(mk.w, now) : null,   // regiões e armazéns (passo 6, parte 2)
     bustBp: E.bustChanceBp(p, now, mk ? MW.pressOf(mk.w, 'lx') : 50), lx: mk ? { crime: mk.w.lx.crime, press: MW.pressOf(mk.w, 'lx'), ed: mk.w.ed, edNext: MW.edStart(mk.w.ed + 1) } : null,
+    cd: { est: E.consumWait(p, 'est', now), med: E.consumWait(p, 'med', now) },   // v78: quanto falta na espera de cada família
     dia: (() => { const d = meuDia(p.id, now); if (!d) return null; const { ronda: _r, conta: _c, dia: _d, ...x } = d; return x; })(),   // v77: «a tua página»
     gv: mk && mk.w.gov ? { laws: Object.keys(mk.w.gov.laws), voted: !!(mk.w.gov.bill && p.gv === mk.w.gov.bill.ed0), yes: !!p.gvY, corr: mk.w.gov.corr, novo: now - (p.joinedAt || now) < CFG.gov.vote.minAgeMs } : null,
     name: nomeDe(p.id),
@@ -507,6 +508,7 @@ function cfgPublica() {
     pvp: CFG.pvp, bank: CFG.bank, luxury: CFG.luxury, levels: CFG.levels, crit: CFG.crit, unlockBp: CFG.unlockBp,
     bustBp: CFG.bustBp, crimeAllMax: CFG.crimeAllMax, casino: { minBet: CFG.casino.minBet, limits: CFG.casino.limits, slotMinC: CFG.casino.slotMinC, red: CFG.casino.red, dice: CFG.casino.dice, wheel: { segs: CFG.casino.wheel.segs, spots: CFG.casino.wheel.spots, topMult: CFG.casino.wheel.topMult.map(([m]) => m), louca: CFG.casino.wheel.louca }, slots: Object.fromEntries(Object.entries(CFG.casino.slots).map(([k, g]) => [k, { kind: g.kind, cols: g.cols, rows: g.rows, min: g.min, nsym: g.nsym, trig: g.trig, pay: g.pay, scatPay: g.scatPay, free: g.free, fs: g.fs, retrig: g.retrig, buy: g.buy, superBuy: g.superBuy, max: g.max, accFree: g.accFree, accAll: g.accAll, orbBase: g.orbBase }])) }, gang: CFG.gang, classes: CFG.classes, classChange: CFG.classChange, avatars: CFG.avatars, hookers: CFG.hookers, house: CFG.house, mastery: CFG.mastery, missions: CFG.missions.length, start: CFG.start,
     round: { playDays: CFG.round.playDays, noPvpMs: CFG.round.noPvpMs }, season: CFG.season,
+    consum: CFG.consum,
     gov: { vote: CFG.gov.vote, laws: CFG.gov.laws, cof: CFG.gov.cof, parties: Object.fromEntries(Object.entries(CFG.gov.parties).map(([k, x]) => [k, { pos: x.pos, wOp: x.wOp, wLob: x.wLob }])) },   // v76: o parlamento
   };
 }
@@ -1296,6 +1298,7 @@ function agir(conta, corpo, now) {
     case 'train': r = E.train(p, now, world, String(a.stat)); break;
     case 'drug': r = E.buyDrug(p, now, world, int(a.d)); break;
     case 'refill': r = E.refill(p, now, world); break;
+    case 'consume': r = E.consume(p, now, world, String(a.id)); break;   // v78: café e farmácia
     case 'deal': r = E.deal(p, now, world, int(a.j)); break;
     case 'job': r = E.chooseJob(p, now, world, int(a.i)); break;
     case 'course': r = E.startCourse(p, now, world, String(a.id || '').slice(0, 24)); break;

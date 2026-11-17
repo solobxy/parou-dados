@@ -57,7 +57,7 @@ export function newPlayer(id, now, world, opts = {}) {
     mi: 0,                         // objetivos já recebidos
     mq: CFG.missions.map((_, i) => i), mrT: 0,   // os que faltam, pela ordem em que vão aparecer; e quando se trocou pela última vez
     titles: [],                    // títulos que ficam para sempre: { k: 'vet' } (veterano das rondas), { k: 'ep', n, d, pos } (pódio de uma época)
-    cls: '', clsAt: 0, av: 0, fx: {}, sick: false, hkN: CFG.hookers.list.map(() => 0), hkAt: CFG.hookers.list.map(() => 0), house: 0, hu: CFG.house.ups.map(() => 0), bj: null, wm: {},        // profissão, avatar e efeitos temporários (kind -> { bp, until })
+    cls: '', clsAt: 0, av: 0, fx: {}, sick: false, hkN: CFG.hookers.list.map(() => 0), hkAt: CFG.hookers.list.map(() => 0), house: 0, hu: CFG.house.ups.map(() => 0), bj: null, wm: {}, cd: { est: 0, med: 0 },        // profissão, avatar e efeitos temporários (kind -> { bp, until })
   };
 }
 
@@ -70,6 +70,7 @@ function migrate(p) {
   if (!Array.isArray(p.wk)) p.wk = CFG.crimes.map(() => 0);
   while (p.wk.length < CFG.crimes.length) p.wk.push(0);   // golpes novos no fim da lista (v72)
   if (!p.wm || typeof p.wm !== 'object' || Array.isArray(p.wm)) p.wm = {};   // v74: o ritmo de cada biscate
+  if (!p.cd || typeof p.cd !== 'object') p.cd = { est: 0, med: 0 };   // v78: até quando dura a espera do estômago e a médica
   if (!p.c) p.c = { crimes: 0, wins: 0, trains: 0, refills: 0, collects: 0, pvpWins: 0, ports: 0 };
   if (!Number.isSafeInteger(p.mi)) p.mi = 0;
   if (!Array.isArray(p.mq)) p.mq = CFG.missions.map((_, i) => i).slice(Math.min(Math.max(p.mi, 0), CFG.missions.length));
@@ -744,6 +745,30 @@ export function medicCost(p, now) {
   const mins = Math.ceil((p.hospUntil - now) / T.MIN);
   const porNivel = mins * CFG.medicPerMin * tier(p), porValor = Math.floor((mins * Math.floor(valuePerEnergy(p) * 100) * CFG.medicValueBp) / 1000000);
   return Math.max(1, Math.min(porNivel, porValor));
+}
+
+// ---------- consumíveis (v78) ----------
+// cerveja, whisky e absinto dão stamina; o energético dá vigor; a ligadura, o kit e a morfina encurtam o internamento.
+// Cada um soma à conta da sua família (estômago ou médica) e não se consome se a conta passasse do teto.
+export const consumOf = (id) => CFG.consum.list.find((x) => x.id === id);
+export function consumWait(p, fam, now) { return Math.max(0, ((p.cd && p.cd[fam]) || 0) - now); }
+export function consume(p, now, world, id) {
+  const it = consumOf(id);
+  if (!it) fail('NO_ITEM');
+  begin(p, now, world, { allowBusy: it.fam === 'med' });
+  if (it.level && level(p) < it.level) fail('LOW_LEVEL', { need: it.level });
+  if (it.fam === 'med' && !(p.hospUntil > now)) fail('NOT_IN_HOSPITAL');
+  if (it.energy && p.energy >= energyMax(p)) fail('ENERGY_FULL');
+  if (it.vigor && p.vigor >= CFG.vigor.max) fail('VIGOR_FULL');
+  const wait = consumWait(p, it.fam, now);
+  if (wait + it.cd > CFG.consum.cap[it.fam]) fail('TOO_SOON', { wait: wait + it.cd - CFG.consum.cap[it.fam] });
+  pay(p, it.price);
+  p.cd[it.fam] = now + wait + it.cd;
+  let gain = 0;
+  if (it.energy) { const e0 = p.energy; p.energy = Math.min(energyMax(p), p.energy + it.energy); gain = p.energy - e0; }
+  if (it.vigor) { const v0 = p.vigor; p.vigor = Math.min(CFG.vigor.max, p.vigor + it.vigor); if (p.vigor >= CFG.vigor.max) p.vigorT = now; gain = p.vigor - v0; }
+  if (it.cut) { const h0 = p.hospUntil; p.hospUntil = p.hospUntil - it.cut > now ? p.hospUntil - it.cut : 0; gain = Math.round(((p.hospUntil || now) - h0) / -T.MIN); }
+  return { ok: true, id, price: it.price, gain, until: p.cd[it.fam] };
 }
 
 export function payMedic(p, now, world) {

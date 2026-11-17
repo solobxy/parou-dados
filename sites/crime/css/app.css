@@ -2967,3 +2967,10 @@ body.preso .phead .pbar .back { visibility: hidden; }
 .mebits { margin: 0; }
 .plx th[scope='row'] { font-weight: 600; color: var(--pi2); }
 .plx thead th:first-child { text-align: left; }
+
+/* v78: café e farmácia. A conta de espera é uma barra fina por cima da lista, como as outras barras do jogo */
+.cngauge { display: grid; gap: 6px; padding: 4px 0 10px; }
+.cngauge .fill i { background: var(--tx2); }
+.card.vlist > .cngauge { padding: 12px 0; border-bottom: 1px solid #ece6da14; }
+
+.tile .bdg.bad { color: var(--danger); }   /* internado ou preso: não é bom, não vai a verde */

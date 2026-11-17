@@ -130,6 +130,7 @@ function react(type, out, before, opts) {
   else if (type === 'whUp') { toast(t('tWhUp', { x: t('whUp_' + r.k), n: r.lvl })); fx.sfx('claim'); }
   else if (type === 'venueSet') { toast(t('vnSaved')); fx.sfx('claim'); }
   else if (type === 'venueBuy') { toast(r.lvl === 1 ? t('vnOpened_' + r.kind) : t('vnUpped', { n: r.lvl })); fx.sfx('claim'); }
+  else if (type === 'consume') { const it = S.cfg.consum.list.find((x) => x.id === r.id) || {}; toast(t(it.cut ? (me.hospUntil > now() ? 'tCured' : 'tCuredOut') : it.vigor ? 'tDrankV' : 'tDrankE', { x: t('cn_' + r.id), n: r.gain })); fx.sfx('buy'); }
   else if (type === 'govVote') { toast(t('tVoted', { x: t(r.yes ? 'pYes' : 'pNo') })); fx.sfx('claim'); loadNews(); }
   else if (type === 'govLobby') { toast(t('tLobby', { m: money(r.amount), x: t(r.side === 'y' ? 'pYes' : 'pNo') })); fx.sfx('buy'); loadNews(); }
   else if (type === 'house') { toast(t('houseMoved', { x: list('houses')[me.house], n: r.respect })); fx.sfx('claim'); }
@@ -352,15 +353,15 @@ function tickHud() {
 const PLACES = {
   city: { ic: 'skyline' }, empire: { ic: 'empire' }, rob: { ic: 'street', img: 'golpes' }, club: { ic: 'bolt', img: 'discoteca' }, gym: { img: 'ginasio' },
   biz: { ic: 'empire', img: 'negocios' }, stash: { img: 'stash' }, acct: { img: 'contabilista' }, port: { img: 'porto' }, air: { img: 'aeroporto' }, arms: { img: 'armas' }, bank: { img: 'banco' }, hosp: { img: 'hospital' },
-  jail: { img: 'prisao' }, gang: { img: 'gangue' }, work: { img: 'profissao' }, news: { img: 'jornal' }, casino: { ic: 'gem', img: 'casino' }, roulette: { img: 'roleta' }, bj: { img: 'blackjack' }, dice: { img: 'dados' }, wheel: { img: 'roda' }, slot: { img: 'slot' }, zeus: { img: 'zeus' }, doce: { img: 'doce' }, rebucado: { img: 'rebucado' }, alley: { img: 'beco' }, lux: { img: 'luxos' }, fights: { ic: 'fights', img: 'lutas' }, rank: { img: 'procurados' }, hitman: { img: 'assassino' }, putas: { img: 'putas' }, gigs: { img: 'biscates' }, casa: {}, myclub: { img: 'discoteca' }, mybro: { img: 'bordel' }, bolsa: { img: 'bolsa' }, job: { img: 'emprego' }, inv: { img: 'inventario' }, ops: { img: 'operacoes' }, parl: { img: 'parlamento' },
+  jail: { img: 'prisao' }, gang: { img: 'gangue' }, work: { img: 'profissao' }, news: { img: 'jornal' }, casino: { ic: 'gem', img: 'casino' }, roulette: { img: 'roleta' }, bj: { img: 'blackjack' }, dice: { img: 'dados' }, wheel: { img: 'roda' }, slot: { img: 'slot' }, zeus: { img: 'zeus' }, doce: { img: 'doce' }, rebucado: { img: 'rebucado' }, alley: { img: 'beco' }, lux: { img: 'luxos' }, fights: { ic: 'fights', img: 'lutas' }, rank: { img: 'procurados' }, hitman: { img: 'assassino' }, putas: { img: 'putas' }, gigs: { img: 'biscates' }, casa: {}, myclub: { img: 'discoteca' }, mybro: { img: 'bordel' }, bolsa: { img: 'bolsa' }, job: { img: 'emprego' }, inv: { img: 'inventario' }, ops: { img: 'operacoes' }, parl: { img: 'parlamento' }, cafe: { img: 'cafe' },
 };
 // barra de baixo: só o que se usa a toda a hora. O resto vive dentro de cada separador, arrumado por zonas.
 const NAV = ['city', 'rob', 'fights', 'casino', 'empire'];
 const HUB = {
-  city: [['sec_night', ['club', 'putas', 'casino', 'gang', 'alley', 'arms']], ['sec_street', ['gigs', 'job', 'gym', 'bank', 'parl', 'hosp', 'jail', 'rank']]],
+  city: [['sec_night', ['club', 'putas', 'casino', 'gang', 'alley', 'arms']], ['sec_street', ['gigs', 'cafe', 'job', 'gym', 'bank', 'parl', 'hosp', 'jail', 'rank']]],
   empire: [['sec_income', ['biz', 'port', 'air', 'myclub', 'mybro']], ['sec_assets', ['casa', 'inv', 'bank', 'bolsa', 'stash', 'acct']]],
 };
-const PARENT = { parl: 'city', gigs: 'city', gang: 'city', work: 'job', job: 'city', news: 'city', casino: 'city', roulette: 'casino', bj: 'casino', dice: 'casino', wheel: 'casino', slot: 'casino', zeus: 'casino', doce: 'casino', rebucado: 'casino', club: 'city', putas: 'city', gym: 'city', alley: 'city', hosp: 'city', jail: 'city',
+const PARENT = { cafe: 'city', parl: 'city', gigs: 'city', gang: 'city', work: 'job', job: 'city', news: 'city', casino: 'city', roulette: 'casino', bj: 'casino', dice: 'casino', wheel: 'casino', slot: 'casino', zeus: 'casino', doce: 'casino', rebucado: 'casino', club: 'city', putas: 'city', gym: 'city', alley: 'city', hosp: 'city', jail: 'city',
   biz: 'empire', port: 'empire', air: 'empire', myclub: 'empire', mybro: 'empire', bolsa: 'empire', inv: 'empire', stash: 'empire', acct: 'empire', casa: 'empire', bank: 'empire', lux: 'empire', arms: 'fights', rank: 'fights', hitman: 'fights', ops: 'rob' };
 const upOf = (id) => (S.backTo && S.backTo[id]) || PARENT[id] || 'city';   // um sítio que está em duas zonas volta para a zona de onde vieste
 const tabOf = (id) => { let x = id; for (let k = 0; k < 4 && !NAV.includes(x); k++) x = upOf(x); return NAV.includes(x) ? x : 'city'; };
@@ -424,7 +425,7 @@ function shell() {
 }
 
 const SCREENS = { job: screenJob, city: screenCity, empire: screenEmpire, news: screenNews, casino: screenCasino, roulette: screenRoulette, bj: screenBJ, dice: screenDice, wheel: screenWheel, slot: () => screenSlotGame('slot'), zeus: () => screenSlotGame('zeus'), doce: () => screenSlotGame('doce'), rebucado: () => screenSlotGame('rebucado'), rob: screenRob, club: screenClub, gym: screenGym, biz: screenBiz, port: screenPort, arms: screenArms, bank: screenBank,
-  hosp: screenHosp, jail: screenJail, gang: screenGang, work: screenWork, air: screenAir, putas: screenPutas, myclub: screenMyClub, mybro: screenMyBro, bolsa: screenBolsa, inv: screenInv, stash: screenStash, acct: screenAcct, casa: screenCasa, alley: screenAlley, lux: screenLux, fights: screenFights, rank: screenRank, hitman: screenHitman, ops: screenOps, gigs: screenGigs, parl: screenParl };
+  hosp: screenHosp, jail: screenJail, gang: screenGang, work: screenWork, air: screenAir, putas: screenPutas, myclub: screenMyClub, mybro: screenMyBro, bolsa: screenBolsa, inv: screenInv, stash: screenStash, acct: screenAcct, casa: screenCasa, alley: screenAlley, lux: screenLux, fights: screenFights, rank: screenRank, hitman: screenHitman, ops: screenOps, gigs: screenGigs, parl: screenParl, cafe: screenCafe };
 function render(force) {
   if (!S.st) return;
   if (!S.st.me || S.st.round.phase !== 'play') return renderPause();
@@ -903,12 +904,49 @@ function placeTile(id, badge) {
   const me = S.st.me;
   return h('button', { class: 'tile', on: { click: () => go(id) } },
     h('img', { src: id === 'casa' ? IMG('casa', S.cfg.house.tiers[me.house].id) : IMG('cenas', PLACES[id].img), alt: '', width: 600, height: 600, loading: 'lazy', decoding: 'async', on: { error: (e) => e.currentTarget.remove() } }),
-    h('span', { class: 'lbl' + (id === 'rank' && S.st.rank ? ' up' : '') }, t('p_' + id)), badge ? h('span', { class: 'bdg' + (id === 'parl' ? ' neu' : '') }, badge) : null,   // votar não é ganho: o aviso vai em creme
+    h('span', { class: 'lbl' + (id === 'rank' && S.st.rank ? ' up' : '') }, t('p_' + id)), badge ? h('span', { class: 'bdg' + (id === 'parl' ? ' neu' : id === 'hosp' || id === 'jail' ? ' bad' : '') }, badge) : null,   // votar não é ganho: o aviso vai em creme
     // no ranking, a tua posição na época vai por baixo do nome, em texto (não é coisa para recolher)
     id === 'rank' && S.st.rank ? h('span', { class: 'tsub' }, t('rankBadge', { p: ordOf(S.st.rank) })) : null);
 }
 function hubTiles(hub, badge) {
   return HUB[hub].flatMap(([sec, ids]) => [h('h2', { class: 'sec' }, t(sec)), h('div', { class: 'tiles' }, ids.map((id) => placeTile(id, badge[id])))]);
+}
+// ===== Café e farmácia (v78): consumíveis à maneira do Torn =====
+// Compra-se e usa-se logo. Cada um soma à conta de espera da sua família (estômago ou médica), que desce sozinha em tempo real.
+const cdLeft = (me, fam) => Math.max(0, (me.cd?.[fam] || 0) - Math.max(0, now() - (S.stAt || now())));
+const waitTxt = (ms) => (ms >= 3600000 ? (Math.round(ms / 360000) / 10 + '\u00a0h').replace('.', lang() === 'pt' ? ',' : '.') : Math.ceil(ms / 60000) + '\u00a0min');   // «1 h» nunca se parte
+function consumRow(me, it, L) {
+  const C = S.cfg.consum, lock = it.level && me.level < it.level, left = cdLeft(me, it.fam), over = left + it.cd > C.cap[it.fam];
+  const full = it.energy ? L.energy >= stamMax(me) : it.vigor ? L.vigor >= vigMax() : false, med = it.fam === 'med', cash = me.cash + me.bank;
+  // duas linhas: o que faz, e quanto ocupa na conta da família
+  const fx = it.energy ? t('cnStam', { n: it.energy }) : it.vigor ? t('cnVig', { n: it.vigor }) : L.hosp && it.cut >= L.hosp ? t('cnOutNow') : t('cnCut', { t: waitTxt(it.cut) });
+  const busy = !med && (L.hosp || L.jail);
+  const why = lock ? null : busy ? t(L.jail ? 'cnNoJail' : 'cnNoHosp') : over ? t(med ? 'cnOverMed' : 'cnOverEst', { h: hhmm(now() + left + it.cd - C.cap[it.fam]) }) : full ? t(it.energy ? 'cnFullE' : 'cnFullV') : null;
+  const right = lock ? h('span', { class: 'small muted num' }, t('arNeedLvl', { n: it.level }) + ' · ' + money(it.price))
+    : h('button', { class: 'btn sm ghost num', 'aria-label': t('cn_' + it.id) + ' · ' + money(it.price), disabled: cash < it.price || over || full || (med ? !L.hosp : !!(L.hosp || L.jail)),
+      on: { click: (e) => act('consume', { id: it.id }, { el: e.currentTarget }) } }, t(med ? 'cnUse' : 'cnDrink') + ' · ' + money(it.price));
+  return h('div', { class: 'vrow jbr' + (lock ? ' dim' : '') }, art('consum', it.id, 'vth'),
+    h('div', { class: 'grow' }, h('b', null, t('cn_' + it.id)), h('div', { class: 'small' }, fx), h('div', { class: 'small muted' }, why || t(med ? 'cnWaitMed' : 'cnWaitEst', { t: waitTxt(it.cd) }))), right);
+}
+// a conta de espera: quanto está cheia e quando volta a haver lugar
+function consumGauge(me, fam) {
+  const cap = S.cfg.consum.cap[fam], left = cdLeft(me, fam), pc = Math.min(100, (left / cap) * 100);
+  return h('div', { class: 'cngauge' }, h('div', { class: 'row sp small' }, h('span', null, t(fam === 'est' ? 'cnStomach' : 'cnMedCd')),
+    h('b', { class: 'num' }, left ? t('cnLeft', { t: waitTxt(left), c: waitTxt(cap) }) : t(fam === 'est' ? 'cnFreeEst' : 'cnFreeMed'))),
+    h('div', { class: 'fill' }, h('i', { style: `width:${pc}%` })));
+}
+function screenCafe() {
+  const me = S.st.me, L = live(me), out = [pageHead('cafe', t('s_cafe', { h: S.cfg.consum.cap.est / 3600000 }))];
+  const b = busyBanner(me); if (b) out.push(b);
+  // internado não se bebe: em vez da lista, a porta para a farmácia do hospital
+  if (L.hosp) out.push(h('div', { class: 'note', style: 'margin-bottom:10px' }, h('p', null, t('cnHospNote')), h('button', { class: 'btn ghost', on: { click: () => go('hosp') } }, t('cnToPharma'))));
+  out.push(h('div', { class: 'card vlist vc' }, consumGauge(me, 'est'), S.cfg.consum.list.filter((x) => x.fam === 'est').map((it) => consumRow(me, it, L))));
+  return out;
+}
+// a farmácia, dentro do hospital: só para quem está internado
+function pharmacy(me, L) {
+  return h('section', null, h('h2', { class: 'sec' }, t('cnPharma')), h('p', { class: 'small muted', style: 'margin:-4px 2px 10px' }, t('cnPharmaSub', { h: S.cfg.consum.cap.med / 3600000 })),
+    h('div', { class: 'card vlist vc' }, consumGauge(me, 'med'), S.cfg.consum.list.filter((x) => x.fam === 'med').map((it) => consumRow(me, it, L))));
 }
 // ===== O Parlamento (v76) =====
 // O Estado vive na edição do mundo (servidor): aqui só se mostra e se vota. A proposta vem primeiro, com o voto logo a seguir
@@ -2797,6 +2835,11 @@ function screenCasa() {
   return out;
 }
 function screenHosp() {
+  const out = screenHosp0();
+  if (live(S.st.me).hosp && S.cfg.consum) out.splice(2, 0, pharmacy(S.st.me, live(S.st.me)));   // v78: a farmácia logo a seguir ao «sais daqui a…»
+  return out;
+}
+function screenHosp0() {
   const me = S.st.me, L = live(me);
   const out = [pageHead('hosp', t('s_hosp'))];
   const b = busyBanner(me); if (b) out.push(b);

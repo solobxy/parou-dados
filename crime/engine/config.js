@@ -305,6 +305,20 @@ export const CFG = {
     contactsMax: 3, escapeE: 30, escapeBp: 3500, escapeAddBp: 5000 },
   // Stamina a mais, a droga: cada barra (100) seguida custa 25 € × k + 5 € × k² (30, 70, 120, 180 €…); a escada desce 25 pontos por hora (uma barra em 4 h).
   refillBar: { a: 25, b: 5, coolPerH: 25 },
+  // v78: consumíveis à maneira do Torn. Compram-se e usam-se logo; cada um enche uma conta de espera (estômago ou médica) que passa
+  // em tempo real. Acima do teto não se consome mais dessa família. Preços em euros de Portugal (2026).
+  consum: {
+    cap: { est: 12 * HOUR, med: 6 * HOUR },
+    list: [
+      { id: 'cerveja', fam: 'est', price: 1, cd: HOUR, energy: 2 },
+      { id: 'whisky', fam: 'est', price: 4, cd: HOUR, energy: 4 },
+      { id: 'absinto', fam: 'est', price: 6, cd: HOUR, energy: 6, level: 10 },
+      { id: 'energetico', fam: 'est', price: 2, cd: 2 * HOUR, vigor: 10 },
+      { id: 'ligadura', fam: 'med', price: 3, cd: 15 * MIN, cut: 15 * MIN },
+      { id: 'kit', fam: 'med', price: 18, cd: HOUR, cut: HOUR },
+      { id: 'morfina', fam: 'med', price: 150, cd: 3 * HOUR, cut: 3 * HOUR, level: 20 },
+    ],
+  },
   // Venda de droga na rua: compra-se ao quilo e vende-se ao grama com stamina (10 por venda). Uma barra vende perBar gramas.
   // A clientela compra 1 barra por dia, mais 1 por cada 25 níveis. Respeito de uma barra: 15 + 1 por nível.
   deal: { step: 10, base: 1, perLevels: 25, respBase: 15, respPerLevel: 1,
