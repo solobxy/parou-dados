@@ -85,7 +85,8 @@ test('avançar: só quando está pronto e com o material; corre bem → a parte,
 
 test('os explosivos gastam-se; o material não se veste e conta como um espaço', () => {
   const p = mk(lv(70)); p.cash = 1e6;
-  E.buyItem(p, START, world, 'explosivos');
+  erro(() => E.buyItem(p, START, world, 'explosivos'), 'CRAFT_ONLY');   // v83: já não se vendem; fazem-se na cave
+  p.inv.push({ id: 'explosivos' });
   erro(() => E.equip(p, START, world, 0), 'NOT_WEARABLE');
   assert.equal(E.invUsed(p), 1);
   E.buyItem(p, START, world, 'pistola'); E.buyItem(p, START, world, 'balas', 1);

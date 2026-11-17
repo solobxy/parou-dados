@@ -25,7 +25,7 @@ const p = await ctx.newPage(); const erros = [];
 p.on('pageerror', (e) => erros.push(e.message));
 await p.goto(base + '/'); await p.waitForTimeout(1500);
 const sfx = (RM ? '-rm' : '') + (KB ? '-kb' : '');
-const largo = await p.evaluate(() => document.documentElement.scrollWidth - innerWidth);   // > 0 = a página sai para o lado
+const largo = await p.evaluate((w) => Math.max(document.documentElement.scrollWidth, innerWidth) - w, +W);   // > 0 = a página sai para o lado
 await p.screenshot({ path: join(OUT, `gym-antes-${LANG}-${W}${sfx}.png`) });
 const cfg = await p.evaluate(() => fetch('/api/config').then((r) => r.json()).then((c) => c.train.set));
 // diferença entre o relógio daqui e o da página

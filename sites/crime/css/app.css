@@ -3129,3 +3129,47 @@ body.gym-lock { overflow: hidden; }
 .gymr .btn { min-width: 0; min-height: 48px; padding: 6px; font-size: 15px; flex-wrap: wrap; column-gap: 6px; row-gap: 0; line-height: 1.2; white-space: normal; }
 .gymr .gy-e { font-size: 14px; font-weight: 500; opacity: .85; }
 .glast { margin: 4px 0 0; color: var(--tx2); }
+
+/* ===== v83: a cave ===== */
+/* o depósito como uma folha de inventário: duas colunas de linhas (imagem pequena, nome, de onde vem, quantos), sem cartões
+   à volta de cada um; os materiais dos biscates em cima, os componentes por baixo de um traço */
+.cvdep { display: grid; grid-template-columns: 1fr 1fr; column-gap: 14px; padding: 6px 14px; }
+.cvm { display: flex; align-items: center; gap: 10px; min-height: 52px; padding: 6px 0; border-bottom: 1px solid var(--line); min-width: 0; }
+.cvm .grow { min-width: 0; display: grid; }
+.cvm b { font-size: 15px; line-height: 1.2; overflow-wrap: anywhere; }
+.cvm .small { font-size: 14px; line-height: 1.25; }
+.cvm.dim .cvth { opacity: .45; }
+.cvm.dim b, .cvm.dim .cvn { color: var(--tx3); }
+.cvth { width: 40px; height: 40px; flex: none; border-radius: 6px; object-fit: cover; background: var(--s2); }
+.cvn { font: 600 18px/1 var(--num); }
+.cvsep { grid-column: 1 / -1; margin: 14px 0 0; font: 600 14px/1.3 var(--ui); color: var(--tx2); }
+@media (max-width: 359px) { .cvdep { grid-template-columns: 1fr; } }
+.cvqty { align-items: center; gap: 12px; margin: 0 2px 12px; }
+.cvqty .seg { margin: 0; }
+.cvqty .seg button { min-width: 48px; min-height: 44px; }
+.cvl { grid-template-columns: minmax(0, 1fr); }
+.vrow.cvr { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; column-gap: 12px; row-gap: 4px; align-items: start; padding: 8px 0; }
+.cvr .vth { grid-column: 1; grid-row: 1 / span 2; width: 56px; height: 56px; }
+.cvr .cvh { grid-column: 2; grid-row: 1; min-width: 0; align-self: center; }
+.cvr .cva { grid-column: 3; grid-row: 1; align-self: center; }
+.cvr .cvd { grid-column: 2 / -1; grid-row: 2; min-width: 0; display: grid; gap: 2px; }
+.vlist .cvr b { white-space: normal; overflow: visible; text-overflow: clip; }
+.vlist.cvl > .cvr + .cvr { box-shadow: inset 0 1px 0 var(--line); }
+@media (max-width: 359px) { .cvr .vth { width: 44px; height: 44px; } .vrow.cvr { column-gap: 8px; } .cvr .cva .btn { padding: 0 12px; } }
+@media (max-width: 419px) { .cvseg { display: grid; grid-template-columns: 1fr 1fr; } }
+.cvseg { flex-wrap: wrap; }
+.cvseg button { flex: 1 1 auto; }
+.cvnow .btn { margin-top: 10px; }
+.tk-mat { margin: 6px 0 0; display: flex; flex-wrap: wrap; align-items: center; column-gap: 4px; }
+.tk-mat .tk-cv { min-height: 44px; margin-left: auto; }
+
+.bzmaq { display: block; min-height: 44px; text-align: left; }
+.tip.cvtip { flex-direction: column; align-items: stretch; gap: 10px; }
+.tip.cvtip p { margin: 0; }
+.cvn.full, .c-orange { color: var(--orange); }
+/* o componente em falta leva à receita dele (a vermelho, como o resto do que falta) */
+.cvgo { background: none; border: 0; padding: 0; font: inherit; color: var(--danger); text-align: left; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+.cvgo:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+.vrow.cvr.hi { animation: cv-hi 1.6s ease-out; }
+@keyframes cv-hi { from { background: #d6ad6226; } to { background: transparent; } }
+@media (prefers-reduced-motion: reduce) { .vrow.cvr.hi { animation: none; background: #d6ad621a; } }

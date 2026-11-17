@@ -57,7 +57,7 @@ export function newPlayer(id, now, world, opts = {}) {
     mi: 0,                         // objetivos já recebidos
     mq: CFG.missions.map((_, i) => i), mrT: 0,   // os que faltam, pela ordem em que vão aparecer; e quando se trocou pela última vez
     titles: [],                    // títulos que ficam para sempre: { k: 'vet' } (veterano das rondas), { k: 'ep', n, d, pos } (pódio de uma época)
-    cls: '', clsAt: 0, av: 0, fx: {}, sick: false, hkN: CFG.hookers.list.map(() => 0), hkAt: CFG.hookers.list.map(() => 0), house: 0, hu: CFG.house.ups.map(() => 0), bj: null, wm: {}, cd: { est: 0, med: 0 }, col: {}, mus: {}, sx: { F: 0, T: 0, I: 0, C: 0 }, gs: null,        // profissão, avatar e efeitos temporários (kind -> { bp, until })
+    cls: '', clsAt: 0, av: 0, fx: {}, sick: false, hkN: CFG.hookers.list.map(() => 0), hkAt: CFG.hookers.list.map(() => 0), house: 0, hu: CFG.house.ups.map(() => 0), bj: null, wm: {}, cd: { est: 0, med: 0 }, col: {}, mus: {}, sx: { F: 0, T: 0, I: 0, C: 0 }, gs: null, mt: {}, cf: null, maq: {},        // profissão, avatar e efeitos temporários (kind -> { bp, until })
   };
 }
 
@@ -75,6 +75,9 @@ function migrate(p) {
   if (!p.mus || typeof p.mus !== 'object') p.mus = {};   // v79: quantas vezes entregou cada conjunto ao museu
   if (!p.sx || typeof p.sx !== 'object') p.sx = { F: 0, T: 0, I: 0, C: 0 };   // v82: pontos partidos do ginásio (milésimos)
   if (p.gs === undefined) p.gs = null;   // v82: a série do ginásio a meio
+  if (!p.mt || typeof p.mt !== 'object' || Array.isArray(p.mt)) p.mt = {};   // v83: materiais e componentes no depósito
+  if (p.cf === undefined) p.cf = null;   // v83: o que está na bancada da cave
+  if (!p.maq || typeof p.maq !== 'object' || Array.isArray(p.maq)) p.maq = {};   // v83: máquinas instaladas nos negócios
   if (!p.c) p.c = { crimes: 0, wins: 0, trains: 0, refills: 0, collects: 0, pvpWins: 0, ports: 0 };
   if (!Number.isSafeInteger(p.mi)) p.mi = 0;
   if (!Array.isArray(p.mq)) p.mq = CFG.missions.map((_, i) => i).slice(Math.min(Math.max(p.mi, 0), CFG.missions.length));
@@ -1228,7 +1231,8 @@ export function workDone(p, now, world, rng, ans) {
   let lav = 0;
   if (x.bustBp) { const Lv = launder(p, money); money = Lv.net; lav = Lv.lav; }
   p.cash += money;
-  return { ok: true, id: x.id, q, busted: false, spotted, money, lav, multBp, tired: tired + 1, ritmo: r1, ritmoAntes: r0 };
+  const mat = matGain(p, x.id, q);   // v83: o material do ofício
+  return { ok: true, id: x.id, q, busted: false, spotted, money, lav, multBp, tired: tired + 1, ritmo: r1, ritmoAntes: r0, mat };
 }
 
 export function startCourse(p, now, world, id) {
@@ -1380,6 +1384,78 @@ export function gymDone(p, now, world, taps) {
   return { ok: true, stat: g.stat, reps: n, of: g.reps, marks, gain, value: p.stats[g.stat], part: p.sx[g.stat] };
 }
 
+// ---------- materiais e cave (v83) ----------
+// Cada biscate deixa o material do seu ofício. Na cave juntam-se materiais (e uns euros) para fazer componentes, na hora;
+// com os componentes fazem-se as ferramentas dos golpes grandes, armas e máquinas para os negócios, que ficam na bancada
+// o tempo da receita (uma coisa de cada vez) e depois se recolhem.
+export const recipeOf = (id) => (typeof id === 'string' ? CFG.craft.list.find((r) => r.id === id) : undefined);
+const MAT_IDS = [...CFG.mat.base, ...CFG.craft.list.filter((r) => r.kind === 'comp').map((r) => r.id)];
+export const matIds = () => MAT_IDS.slice();
+const bizIdx = (id) => CFG.biz.findIndex((b) => b.id === id);
+export function matGain(p, workId, q) {
+  const id = CFG.mat.drop[workId];
+  if (!id) return null;
+  const want = q >= CFG.mat.good ? 2 : 1, have = p.mt[id] || 0, n = Math.max(0, Math.min(want, CFG.mat.cap - have));
+  if (n) p.mt[id] = have + n;
+  return { id, n, lost: want - n };
+}
+export function craftStart(p, now, world, id, n = 1) {
+  const r = recipeOf(id), comp = r && r.kind === 'comp';
+  if (!r) fail('NO_RECIPE');
+  if (!Number.isSafeInteger(n) || n < 1 || n > (comp ? CFG.craft.batch : 1)) fail('BAD_AMOUNT');
+  begin(p, now, world);
+  if (!comp && p.cf) fail('BENCH_BUSY', { until: p.cf.end });   // os componentes não ocupam a bancada
+  if (comp && (p.mt[id] || 0) + n > CFG.mat.cap) fail('MAT_FULL', { cap: CFG.mat.cap });
+  if (r.kind === 'tool' && p.inv.some((x) => x.id === id)) fail('HAVE_IT');
+  if (r.kind === 'maq') { if (!p.biz[bizIdx(r.biz)].n) fail('NO_BIZ'); if (p.maq[r.biz]) fail('HAVE_IT'); }
+  const miss = Object.entries(r.needs).filter(([k, v]) => (p.mt[k] || 0) < v * n);
+  if (miss.length) fail('NO_MAT', { need: Object.fromEntries(miss.map(([k, v]) => [k, v * n])) });
+  pay(p, r.price * n);
+  for (const [k, v] of Object.entries(r.needs)) { p.mt[k] -= v * n; if (!p.mt[k]) delete p.mt[k]; }
+  if (comp) { p.mt[id] = (p.mt[id] || 0) + n; return { ok: true, id, n, price: r.price * n, kind: r.kind }; }
+  p.cf = { id, t0: now, end: now + r.ms };
+  return { ok: true, id, n, price: r.price, kind: r.kind, end: p.cf.end };
+}
+// recolher da bancada: ferramentas e armas para o inventário, a máquina para o negócio. Se não couber (inventário cheio,
+// ferramenta que entretanto se comprou), fica na bancada: nada se perde.
+export function craftTake(p, now, world) {
+  const c = p.cf;
+  if (!c) fail('NO_CRAFT');
+  begin(p, now, world);
+  if (c.end > now) fail('CRAFT_WAIT', { until: c.end });
+  const r = recipeOf(c.id);
+  if (r.kind === 'maq') {
+    if (!p.biz[bizIdx(r.biz)].n) fail('NO_BIZ');
+    if (p.maq[r.biz]) fail('HAVE_IT');   // uma por negócio
+    settleAllBiz(p, now);   // o rendimento até aqui conta sem a máquina
+    p.maq[r.biz] = now + CFG.craft.rev.ms;   // trabalha uma semana; depois pede revisão
+  } else {
+    if (r.kind === 'tool' && p.inv.some((x) => x.id === c.id)) fail('HAVE_IT');
+    if (!roomFor(p)) fail('NO_ROOM');
+    p.inv.push(itemNew(c.id));
+  }
+  p.cf = null;
+  return { ok: true, id: c.id, kind: r.kind };
+}
+// revisão de uma máquina: mais 7 dias a trabalhar (contados de quando acabava, ou de agora se já tinha parado). Faz-se quando
+// faltar uma semana ou menos; uma máquina parada volta logo a render.
+export function maqService(p, now, world, id) {
+  const i = typeof id === 'string' ? bizIdx(id) : -1, R = CFG.craft.rev;
+  if (i < 0) fail('NO_BIZ');
+  begin(p, now, world);
+  if (!p.maq[id]) fail('NO_MACHINE');
+  if (!p.biz[i].n) fail('NO_BIZ');
+  const u0 = p.maq[id];
+  if (u0 - now > R.maxMs - R.ms) fail('SERVICE_EARLY', { at: u0 - (R.maxMs - R.ms) });
+  const miss = Object.entries(R.needs).filter(([k, v]) => (p.mt[k] || 0) < v);
+  if (miss.length) fail('NO_MAT', { need: Object.fromEntries(miss) });
+  pay(p, R.price);
+  for (const [k, v] of Object.entries(R.needs)) { p.mt[k] -= v; if (!p.mt[k]) delete p.mt[k]; }
+  settleAllBiz(p, now);   // o que rendeu até aqui conta como estava
+  p.maq[id] = Math.max(u0, now) + R.ms;
+  return { ok: true, id, until: p.maq[id], price: R.price, stopped: u0 <= now };
+}
+
 // ---------- negócios ----------
 
 export function bizPrice(i, n) {
@@ -1388,27 +1464,29 @@ export function bizPrice(i, n) {
   return price;
 }
 
-export function bizRates(p, i) {
+// at: o momento a que se refere (a máquina só conta se estiver a trabalhar nesse momento); por omissão, o último toque
+export function bizRates(p, i, at = p.t) {
   const b = CFG.biz[i];
   const n = p.biz[i].n;
   const st = Math.min(p.stats[b.stat], CFG.statMultCap);
-  const perH = up(Math.floor((b.perH * n * (CFG.statMultDiv + st)) / CFG.statMultDiv), (klass(p).bizBp || 0) + huBp(p, 3) + studyBp(p, 'biz'));   // v81: gestão
+  const perH = up(Math.floor((b.perH * n * (CFG.statMultDiv + st)) / CFG.statMultDiv), (klass(p).bizBp || 0) + huBp(p, 3) + studyBp(p, 'biz') + (p.maq && p.maq[b.id] > at ? CFG.craft.maqBp : 0));   // v81: gestão; v83: máquina a trabalhar
   return { perH };
 }
 
 // quanto tempo de rendimento cabe no armazém: 8 h, ou 24 h com contabilista
 export const bizCapMs = (p) => CFG.storageMs * (p.acct ? CFG.accountant.capMult : 1);
 // a parte do contabilista: uma fatia do que está guardado acima do armazém normal (o que sem ele se tinha perdido)
-export function bizFee(p, i, stored) {
+export function bizFee(p, i, stored, at = p.t) {
   if (!p.acct) return 0;
-  const capN = bizRates(p, i).perH * (CFG.storageMs / T.HOUR);
+  const capN = bizRates(p, i, at).perH * (CFG.storageMs / T.HOUR);
   return stored > capN ? Math.floor(((stored - capN) * CFG.accountant.feeBp) / 10000) : 0;
 }
 const BIZ_DRUG = CFG.biz.map((b) => (b.drug ? CFG.drugs.findIndex((x) => x.id === b.drug) : -1));
 function settleBiz(p, i, now) {
-  const s = p.biz[i];
+  const s = p.biz[i], u = p.maq && p.maq[CFG.biz[i].id];
+  if (u && s.n > 0 && u > s.t && u < now) settleBiz(p, i, u);   // v83: a máquina parou a meio (falta a revisão): até aí rende com ela
   if (s.n === 0 || now <= s.t) { s.t = Math.max(s.t, now); return; }
-  const { perH } = bizRates(p, i);
+  const { perH } = bizRates(p, i, s.t);
   const capM = perH * (bizCapMs(p) / T.HOUR);
   const dt = Math.min(now - s.t, bizCapMs(p));
   if (s.stored < capM) {
@@ -1428,7 +1506,7 @@ export function bizStored(p, now) {
   const copy = p.biz.map((s) => ({ ...s }));
   const ghost = { ...p, biz: copy };
   for (let i = 0; i < copy.length; i++) settleBiz(ghost, i, Math.max(now, copy[i].t));
-  return copy.map((s, i) => ({ money: s.stored, fee: bizFee(ghost, i, s.stored) }));
+  return copy.map((s, i) => ({ money: s.stored, fee: bizFee(ghost, i, s.stored, now) }));
 }
 
 export function buyBiz(p, now, world, i) {
@@ -2155,10 +2233,12 @@ export function buyItem(p, now, world, id, n = 1) {
   }
   const g = typeof id === 'string' ? gearOf(id) : undefined;
   if (!g) fail('NO_GEAR');
+  if (g.craft) fail('CRAFT_ONLY');   // v83: a broca e os explosivos fazem-se na cave
   begin(p, now, world, { allowBusy: true });
   if (level(p) < (g.level || 1)) fail('LOW_LEVEL', { need: g.level });
   if (g.slot === 'mat') {   // material dos golpes grandes: um de cada (as ferramentas não se gastam), guardado no inventário
     if (p.inv.some((x) => x.id === id)) fail('HAVE_IT');
+    if (p.cf && p.cf.id === id) fail('ON_BENCH');   // v83: já está a ser feito na cave
     if (!roomFor(p)) fail('NO_ROOM');
     pay(p, g.price);
     p.inv.push({ id });
@@ -2208,14 +2288,16 @@ export function sellGoods(p, now, world) {
 }
 // reparar uma arma de fogo no corpo: paga-se a parte gasta do preço
 export function repairCost(p, slot) { const it = p.eq[slot]; if (!it || !it.id) return 0; const g = gearOf(it.id); return g.gun ? Math.ceil((g.price * (g.life - it.u)) / g.life) : 0; }
-export function repair(p, now, world, slot) {
+// v83: com um kit de armeiro (feito na cave) a reparação não custa dinheiro
+export function repair(p, now, world, slot, kit = false) {
   if (!['mao', 'principal'].includes(slot) || !p.eq[slot]) fail('NO_GEAR');
   begin(p, now, world, { allowBusy: true });
   const price = repairCost(p, slot);
   if (!price) fail('NOT_WORN');
-  pay(p, price);
+  if (kit) { if (!((p.mt.kit || 0) >= 1)) fail('NO_MAT', { need: { kit: 1 } }); p.mt.kit -= 1; if (!p.mt.kit) delete p.mt.kit; }
+  else pay(p, price);
   p.eq[slot].u = gearOf(p.eq[slot].id).life;
-  return { ok: true, slot, price };
+  return { ok: true, slot, price: kit ? 0 : price, kit: !!kit };
 }
 
 // ---------- golpes grandes (passo 5) ----------
@@ -3291,6 +3373,9 @@ export function checkInvariants(p) {
     if (!p.course.ex || !Array.isArray(q.ids) || q.ids.length !== CFG.exam.n || new Set(q.ids).size !== q.ids.length || q.ids.some((i) => !Number.isInteger(i) || i < 0 || i >= B) || !Number.isSafeInteger(q.t)
       || !Array.isArray(q.p) || q.p.length !== q.ids.length || q.p.some((x) => !Array.isArray(x) || [...x].sort().join() !== '0,1,2,3')) bad.push('exam'); }
   if (!p.sx || STATS.some((k) => !Number.isInteger(p.sx[k]) || p.sx[k] < 0 || p.sx[k] > 999)) bad.push('sx');   // v82
+  if (!p.mt || Object.entries(p.mt).some(([k, v]) => !MAT_IDS.includes(k) || !Number.isInteger(v) || v < 1 || v > CFG.mat.cap)) bad.push('mt');   // v83
+  if (p.cf !== null && !(p.cf && recipeOf(p.cf.id) && recipeOf(p.cf.id).kind !== 'comp' && Number.isSafeInteger(p.cf.t0) && Number.isSafeInteger(p.cf.end) && p.cf.end >= p.cf.t0)) bad.push('cf');
+  if (!p.maq || Object.entries(p.maq).some(([k, v]) => !Number.isSafeInteger(v) || v <= 0 || bizIdx(k) < 0)) bad.push('maq');
   if (p.gs && !(STATS.includes(p.gs.stat) && CFG.train.set.reps.includes(p.gs.reps) && Number.isSafeInteger(p.gs.t0))) bad.push('gs');
   if (p.course && p.course.ex && !(Number.isInteger(p.course.cuts) && p.course.cuts >= 0 && p.course.cuts <= CFG.exam.cuts)) bad.push('exam cuts');
   if (!Array.isArray(p.done) || p.done.some((id) => !courseOf(id)) || new Set(p.done).size !== p.done.length) bad.push('courses done');

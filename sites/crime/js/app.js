@@ -143,6 +143,9 @@ function react(type, out, before, opts) {
   else if (type === 'dealBuy') { toast(t('dealBought', { g: num(r.grams), x: list('drugs')[r.d], m: money(r.price) })); fx.sfx('buy'); }
   else if (type === 'deal') { toast(t('dealSold', { g: r.grams, m: money(r.money), n: r.respect }) + (r.lav ? ' · ' + t('ro_lav', { m: money(r.lav) }) : '')); fx.sfx('cash'); }
   else if (type === 'workDone') { fx.vibrate(r.busted ? [40, 60, 40] : 14); fx.sfx(r.busted ? 'bust' : 'cash'); }
+  else if (type === 'craftStart') { toast(r.kind === 'comp' ? t('tMade', { n: r.n, x: crIt(r.id).toLowerCase() }) : t('tCraft', { x: crIt(r.id), t: hhmm(r.end) })); fx.sfx(r.kind === 'comp' ? 'claim' : 'buy'); }   // v83
+  else if (type === 'maqService') { toast(t(r.stopped ? 'tRevBack' : 'tRev', { x: list('biz')[S.cfg.biz.findIndex((b) => b.id === r.id)], d: cvDay(r.until) })); fx.sfx('claim'); }
+  else if (type === 'craftTake') { toast(t('tCrafted_' + r.kind, { x: crIt(r.id), b: r.kind === 'maq' ? list('biz')[S.cfg.biz.findIndex((b) => b.id === recipe(r.id).biz)] : '' })); fx.sfx('claim'); }
   else if (type === 'shift') { toast(t('jbDone', { m: money(r.money), n: r.left })); fx.sfx('cash'); }
   else if (type === 'gymDone') { if (!opts.quiet && r.reps) toast(t('tGym', { p: gymPts(r.marks), x: t('stat' + r.stat).toLowerCase(), k: r.marks.filter((m) => m < 2).length, n: r.marks.length })); if (r.reps) fx.sfx(r.gain ? 'claim' : 'tap'); }
   else if (type === 'examAnswer') {
@@ -175,7 +178,7 @@ function react(type, out, before, opts) {
   else if (type === 'jailCards') { PR.cartas({ r, t, money, lang: lang(), bet: opts.args.bet, again: (b) => act('jailCards', { bet: b }) }).then(() => fx.sfx(r.win ? 'cash' : 'fail')); }
   else if (type === 'jailFavor') { toast(r.kind === 'time' ? t('tj_favTime', { t: minTxt(r.cut) }) : t('tj_favContact', { n: r.contacts, c: S.cfg.jail.contactsMax })); fx.sfx('claim'); }
   else if (type === 'jailEscape') { PR.fuga({ r, t, minTxt }).then(() => { if (r.free) fx.sfx('crit'); else { fx.sfx('bust'); fx.vibrate([40, 60, 40]); } }); }
-  else if (type === 'repair') { toast(t('tRepaired', { x: t('g_' + me.eq[r.slot].id), m: money(r.price) })); fx.sfx('claim'); }
+  else if (type === 'repair') { toast(r.kit ? t('tRepairedKit', { x: t('g_' + me.eq[r.slot].id), n: mtN(me, 'kit') }) : t('tRepaired', { x: t('g_' + me.eq[r.slot].id), m: money(r.price) })); fx.sfx('claim'); }
   else if (type === 'luxury') { toast(t('luxBought', { x: list('lux')[me.luxuries - 1], n: r.respect })); fx.sfx('claim'); }
   else if (type === 'hooker' || type === 'broVisit') { fx.sfx('refill'); if (r.sick) { toast(t('gotSick'), true); fx.vibrate([40, 60, 40]); } if (r.rob) { toast(t('hkRob_' + r.rob.kind, { m: money(r.rob.loss) }), true); fx.vibrate([30, 40, 30]); } }
   else if (type === 'claim') { toast(t('got', { m: money(r.cash) })); fx.sfx('claim'); }
@@ -194,7 +197,7 @@ function react(type, out, before, opts) {
     if (r.success) { toast(t('hmDone', { b: r.target, n: r.respLoss })); fx.sfx('crit'); fx.vibrate([20, 40, 20]); } else { toast(t('hmMissed', { b: r.target }), true); fx.sfx('fail'); }
     S.targets = null; loadTargets();
   } else if (type === 'tableBet') fx.sfx('deal');
-  else if (type !== 'gymStart' && type !== 'tableClear') fx.sfx('buy');
+  else if (!['gymStart', 'tableClear', 'craftStart', 'craftTake'].includes(type)) fx.sfx('buy');
   if (type === 'crime' || type === 'crimeAll') requestAnimationFrame(showReport);
   if (lv) { skyline(lv.to); if (type !== 'crime' && type !== 'crimeAll' && type !== 'opGo') toast(t('r_lvl', { n: lv.to, x: titleOf(lv.to) })); }
   render();
@@ -364,15 +367,15 @@ function tickHud() {
 const PLACES = {
   city: { ic: 'skyline' }, empire: { ic: 'empire' }, rob: { ic: 'street', img: 'golpes' }, club: { ic: 'bolt', img: 'discoteca' }, gym: { img: 'ginasio' },
   biz: { ic: 'empire', img: 'negocios' }, stash: { img: 'stash' }, acct: { img: 'contabilista' }, port: { img: 'porto' }, air: { img: 'aeroporto' }, arms: { img: 'armas' }, bank: { img: 'banco' }, hosp: { img: 'hospital' },
-  jail: { img: 'prisao' }, gang: { img: 'gangue' }, work: { img: 'profissao' }, news: { img: 'jornal' }, casino: { ic: 'gem', img: 'casino' }, roulette: { img: 'roleta' }, bj: { img: 'blackjack' }, dice: { img: 'dados' }, wheel: { img: 'roda' }, slot: { img: 'slot' }, zeus: { img: 'zeus' }, doce: { img: 'doce' }, rebucado: { img: 'rebucado' }, alley: { img: 'beco' }, lux: { img: 'luxos' }, fights: { ic: 'fights', img: 'lutas' }, rank: { img: 'procurados' }, hitman: { img: 'assassino' }, putas: { img: 'putas' }, gigs: { img: 'biscates' }, casa: {}, myclub: { img: 'discoteca' }, mybro: { img: 'bordel' }, bolsa: { img: 'bolsa' }, job: { img: 'emprego' }, inv: { img: 'inventario' }, ops: { img: 'operacoes' }, parl: { img: 'parlamento' }, cafe: { img: 'cafe' }, museum: { img: 'museu' }, uni: { img: 'universidade' },
+  jail: { img: 'prisao' }, gang: { img: 'gangue' }, work: { img: 'profissao' }, news: { img: 'jornal' }, casino: { ic: 'gem', img: 'casino' }, roulette: { img: 'roleta' }, bj: { img: 'blackjack' }, dice: { img: 'dados' }, wheel: { img: 'roda' }, slot: { img: 'slot' }, zeus: { img: 'zeus' }, doce: { img: 'doce' }, rebucado: { img: 'rebucado' }, alley: { img: 'beco' }, lux: { img: 'luxos' }, fights: { ic: 'fights', img: 'lutas' }, rank: { img: 'procurados' }, hitman: { img: 'assassino' }, putas: { img: 'putas' }, gigs: { img: 'biscates' }, casa: {}, myclub: { img: 'discoteca' }, mybro: { img: 'bordel' }, bolsa: { img: 'bolsa' }, job: { img: 'emprego' }, inv: { img: 'inventario' }, ops: { img: 'operacoes' }, parl: { img: 'parlamento' }, cafe: { img: 'cafe' }, museum: { img: 'museu' }, uni: { img: 'universidade' }, cave: { img: 'cave' },
 };
 // barra de baixo: só o que se usa a toda a hora. O resto vive dentro de cada separador, arrumado por zonas.
 const NAV = ['city', 'rob', 'fights', 'casino', 'empire'];
 const HUB = {
   city: [['sec_night', ['club', 'putas', 'casino', 'gang', 'alley', 'arms']], ['sec_street', ['gigs', 'cafe', 'job', 'uni', 'gym', 'bank', 'museum', 'parl', 'hosp', 'jail', 'rank']]],
-  empire: [['sec_income', ['biz', 'port', 'air', 'myclub', 'mybro']], ['sec_assets', ['casa', 'inv', 'bank', 'bolsa', 'stash', 'acct']]],
+  empire: [['sec_income', ['biz', 'port', 'air', 'myclub', 'mybro']], ['sec_assets', ['casa', 'cave', 'inv', 'bank', 'bolsa', 'stash', 'acct']]],
 };
-const PARENT = { uni: 'city', museum: 'city', cafe: 'city', parl: 'city', gigs: 'city', gang: 'city', work: 'job', job: 'city', news: 'city', casino: 'city', roulette: 'casino', bj: 'casino', dice: 'casino', wheel: 'casino', slot: 'casino', zeus: 'casino', doce: 'casino', rebucado: 'casino', club: 'city', putas: 'city', gym: 'city', alley: 'city', hosp: 'city', jail: 'city',
+const PARENT = { cave: 'empire', uni: 'city', museum: 'city', cafe: 'city', parl: 'city', gigs: 'city', gang: 'city', work: 'job', job: 'city', news: 'city', casino: 'city', roulette: 'casino', bj: 'casino', dice: 'casino', wheel: 'casino', slot: 'casino', zeus: 'casino', doce: 'casino', rebucado: 'casino', club: 'city', putas: 'city', gym: 'city', alley: 'city', hosp: 'city', jail: 'city',
   biz: 'empire', port: 'empire', air: 'empire', myclub: 'empire', mybro: 'empire', bolsa: 'empire', inv: 'empire', stash: 'empire', acct: 'empire', casa: 'empire', bank: 'empire', lux: 'empire', arms: 'fights', rank: 'fights', hitman: 'fights', ops: 'rob' };
 const upOf = (id) => (S.backTo && S.backTo[id]) || PARENT[id] || 'city';   // um sítio que está em duas zonas volta para a zona de onde vieste
 const tabOf = (id) => { let x = id; for (let k = 0; k < 4 && !NAV.includes(x); k++) x = upOf(x); return NAV.includes(x) ? x : 'city'; };
@@ -436,7 +439,7 @@ function shell() {
 }
 
 const SCREENS = { job: screenJob, city: screenCity, empire: screenEmpire, news: screenNews, casino: screenCasino, roulette: screenRoulette, bj: screenBJ, dice: screenDice, wheel: screenWheel, slot: () => screenSlotGame('slot'), zeus: () => screenSlotGame('zeus'), doce: () => screenSlotGame('doce'), rebucado: () => screenSlotGame('rebucado'), rob: screenRob, club: screenClub, gym: screenGym, biz: screenBiz, port: screenPort, arms: screenArms, bank: screenBank,
-  hosp: screenHosp, jail: screenJail, gang: screenGang, work: screenWork, air: screenAir, putas: screenPutas, myclub: screenMyClub, mybro: screenMyBro, bolsa: screenBolsa, inv: screenInv, stash: screenStash, acct: screenAcct, casa: screenCasa, alley: screenAlley, lux: screenLux, fights: screenFights, rank: screenRank, hitman: screenHitman, ops: screenOps, gigs: screenGigs, parl: screenParl, cafe: screenCafe, museum: screenMuseum, uni: screenUni };
+  hosp: screenHosp, jail: screenJail, gang: screenGang, work: screenWork, air: screenAir, putas: screenPutas, myclub: screenMyClub, mybro: screenMyBro, bolsa: screenBolsa, inv: screenInv, stash: screenStash, acct: screenAcct, casa: screenCasa, alley: screenAlley, lux: screenLux, fights: screenFights, rank: screenRank, hitman: screenHitman, ops: screenOps, gigs: screenGigs, parl: screenParl, cafe: screenCafe, museum: screenMuseum, uni: screenUni, cave: screenCave };
 function render(force) {
   if (!S.st) return;
   if (!S.st.me || S.st.round.phase !== 'play') return renderPause();
@@ -465,7 +468,7 @@ function tabDots() {
   const me = S.st.me, n = now();
   const want = {
     fights: (S.events || []).some((e) => e.id > S.lastEventSeen),
-    empire: (me.air && me.air.readyAt <= n) || me.port.some((c) => c.readyAt <= n) || me.biz.some((b, i) => b.n > 0 && storedNow(b, i) >= (b.perH * S.cfg.storageMs) / 3600000 / 2),
+    empire: (me.cf && me.cf.end <= n) || S.cfg.biz.some((b) => me.biz[S.cfg.biz.indexOf(b)]?.n > 0 && maqState(me, b.id) === 3) || (me.air && me.air.readyAt <= n) || me.port.some((c) => c.readyAt <= n) || me.biz.some((b, i) => b.n > 0 && storedNow(b, i) >= (b.perH * S.cfg.storageMs) / 3600000 / 2),
     city: !!me.mission?.done || exReady(me),   // v80: um exame à espera
     casino: !!me.bj,   // tens uma mão de blackjack por acabar
     rob: !!(me.op && me.op.ready <= n && !(me.op.miss || []).length),   // um golpe grande pronto para avançar
@@ -921,7 +924,7 @@ function placeTile(id, badge) {
   const me = S.st.me;
   return h('button', { class: 'tile', on: { click: () => go(id) } },
     h('img', { src: id === 'casa' ? IMG('casa', S.cfg.house.tiers[me.house].id) : IMG('cenas', PLACES[id].img), alt: '', width: 600, height: 600, loading: 'lazy', decoding: 'async', on: { error: (e) => e.currentTarget.remove() } }),
-    h('span', { class: 'lbl' + (id === 'rank' && S.st.rank ? ' up' : '') }, t('p_' + id)), badge ? h('span', { class: 'bdg' + (id === 'parl' || id === 'uni' ? ' neu' : id === 'hosp' || id === 'jail' ? ' bad' : '') }, badge) : null,   // votar não é ganho: o aviso vai em creme
+    h('span', { class: 'lbl' + (id === 'rank' && S.st.rank ? ' up' : '') }, t('p_' + id)), badge ? h('span', { class: 'bdg' + (id === 'parl' || id === 'uni' || (id === 'cave' && /\d/.test(badge)) ? ' neu' : id === 'hosp' || id === 'jail' || (id === 'cave' && badge === t('cvRevB')) ? ' bad' : '') }, badge) : null,   // votar não é ganho: o aviso vai em creme
     // no ranking, a tua posição na época vai por baixo do nome, em texto (não é coisa para recolher)
     id === 'rank' && S.st.rank ? h('span', { class: 'tsub' }, t('rankBadge', { p: ordOf(S.st.rank) })) : null);
 }
@@ -1189,6 +1192,7 @@ function screenEmpire() {
     stash: me.mv?.length ? t('rgTransit') : whTotal(me) > 0 ? money(whTotal(me)) : null,
     inv: invFull(me) ? t('invFullB') : me.inv.some((x) => isGood(x.id)) ? moneyShort(me.inv.reduce((s, x) => s + (isGood(x.id) ? x.v : 0), 0)) : null,
     acct: me.acct ? null : me.level >= S.cfg.accountant.minLevel && me.cash + me.bank >= S.cfg.accountant.price ? t('acHire') : null,
+    cave: me.cf && me.cf.end <= n ? t('toCollect') : S.cfg.biz.some((b) => maqState(me, b.id) === 3) ? t('cvRevB') : me.cf ? dur(me.cf.end - n) : null,   // v83
   };
   const head = me.biz.some((b) => b.n > 0) || me.port.length || me.club || me.bro
     ? h('div', { class: 'card stack empsum' },
@@ -1292,6 +1296,7 @@ function gigResult(G) {
     h('p', { class: 'tk-q' }, t('tkQual', { p: pct(r.q) })), h('p', { class: 'small' }, gigLine(G)),
     G.task.id === 'laboratorio' ? h('p', { class: 'small muted' }, t('tkSafe')) : null,
     r.lav ? h('p', { class: 'small muted' }, t('ro_lav', { m: money(r.lav) })) : null,
+    matLine(r.mat),
     ritmoLine(r),
     nextLine(G.task.id, r.ritmo, nxt),
     again, other);
@@ -1335,6 +1340,7 @@ function screenGigs() {
       art('gigs', x.id, 'vth'),
       h('div', { class: 'grow' }, h('div', { class: 'tk-tl' }, h('b', null, t('gk_' + x.id)), rb ? h('span', { class: 'small c-cash tk-rb' }, t('gRitmo', { p: Math.round(rb / 100) })) : null),
         h('div', { class: 'small muted tk-desc' }, t('gd_' + x.id)),
+        S.cfg.mat && S.cfg.mat.drop[x.id] ? h('div', { class: 'small ' + (mtN(me, S.cfg.mat.drop[x.id]) >= S.cfg.mat.cap ? 'c-red' : 'muted') }, t(mtN(me, S.cfg.mat.drop[x.id]) >= S.cfg.mat.cap ? 'gGivesFull' : 'gGives', { x: t('mt_' + S.cfg.mat.drop[x.id]).toLowerCase() })) : null,
         locked ? h('div', { class: 'small muted' }, h('span', { class: 'nw' }, t('gOpens', { n: x.level })), ' ', h('span', { class: 'nw' }, '· ' + t('gOpensPay', { a: money(Math.floor((x.base * W.qMin) / 10000)), b: money(Math.floor((x.base * W.qMax) / 10000)) })))
           : h('div', { class: 'small' }, h('span', { class: 'num c-cash' }, t(x.bustBp ? 'gPayDirty' : 'gPay', { a: money(lo), b: money(hi) })), ' ', h('span', { class: 'muted nw' }, '· ' + t('gDur', { s: Math.round(x.minMs / 1000) + 8 })),
             x.bustBp ? h('span', { class: 'c-red' }, ' ', h('span', { class: 'nw' }, '· ' + t('gIllegal')), ' ', h('span', { class: 'nw' }, '· ' + t('gRisk', { p: pct(x.bustBp) }))) : null)),
@@ -1386,7 +1392,8 @@ function gunFix(me, L, c, gs) {
   if (gs === 'broken') {
     const s = gunSlot(me), m = me.repair[s];
     return [h('p', { class: 'jgun c-red' }, t('gunWornLine', { x: t('g_' + me.eq[s].id) })),
-      h('button', { class: 'btn buy block big', disabled: cash < m, on: { click: (e) => act('repair', { slot: s }, { el: e.currentTarget }) } }, t('fixGun', { m: money(m) }))];
+      mtN(me, 'kit') ? h('button', { class: 'btn buy block big', on: { click: (e) => act('repair', { slot: s, kit: true }, { el: e.currentTarget }) } }, t('fixGunKit', { n: mtN(me, 'kit') }))
+        : h('button', { class: 'btn buy block big', disabled: cash < m, on: { click: (e) => act('repair', { slot: s }, { el: e.currentTarget }) } }, t('fixGun', { m: money(m) }))];
   }
   const n = boxesFor(me, L, c), m = n * S.cfg.bullets.price, room = invN(me, 'balas') > 0 || !invFull(me);
   if (!room) return [h('p', { class: 'jgun c-red' }, t('noAmmoFull')), h('button', { class: 'btn buy block big', on: { click: () => go('inv') } }, t('toInv'))];
@@ -1566,15 +1573,16 @@ function opsRow(me) {
 // atalho: escolhe-se no armeiro.
 const missNames = (me, miss) => miss.map((m) => nb(m === 'gun' ? t('opGun').toLowerCase() : m === 'gunWorn' ? t('opGunFix') : t('g_' + m).toLowerCase()));
 function missFix(me, miss) {
-  const St = S.cfg.opSteps, B = S.cfg.bullets, steps = [];
+  const St = S.cfg.opSteps, B = S.cfg.bullets, steps = [], craft = [];
   let cost = 0, slots = 0;
   for (const m of miss) {
     if (m === 'gun') return null;
-    if (m === 'gunWorn') { const sl = gunSlot(me); cost += me.repair[sl]; steps.push(['repair', { slot: sl }]); }
+    if (m === 'gunWorn') { const sl = gunSlot(me), kit = mtN(me, 'kit') > 0; cost += kit ? 0 : me.repair[sl]; steps.push(['repair', { slot: sl, kit }]); }
     else if (m === 'balas') { const have = invN(me, 'balas'), n = Math.max(1, Math.ceil((St.bullets - have) / B.box)); cost += n * B.price; steps.push(['buy', { id: 'balas', n }]); if (!have) slots += 1; }
+    else if (gearOf(m).craft) craft.push(m);   // v83: não se compra; faz-se na cave
     else { cost += gearOf(m).price; steps.push(['buy', { id: m }]); slots += 1; }
   }
-  return { cost, steps, room: me.invCap - me.invUsed >= slots };
+  return { cost, steps, craft, room: me.invCap - me.invUsed >= slots };
 }
 // o resultado de um golpe grande abre por cima do ecrã: é o fim de dias de preparação
 function bigResult(rep) {
@@ -1634,6 +1642,7 @@ function opActive(me, b) {
     const g = gearOf(id), have = me.inv.some((x) => x.id === id);
     return h('div', { class: 'vrow jbr' }, art('gear', id, 'vth'), h('div', { class: 'grow' }, h('b', null, t('g_' + id)), g.once ? h('div', { class: 'small muted' }, t('matOnce')) : null),
       have ? h('span', { class: 'small c-cash' }, t('matHave'))
+        : g.craft ? h('button', { class: 'btn sm ghost', on: { click: () => { S.cvTab = 'tool'; go('cave'); } } }, t('opToCave'))   // v83: só se faz na cave
         : h('button', { class: 'btn sm ghost num', 'aria-label': t('buyAria', { x: t('g_' + id), m: money(g.price) }), disabled: cash < g.price || invFull(me), on: { click: (e) => act('buy', { id }, { el: e.currentTarget }) } }, t('buy') + ' · ' + money(g.price)));
   });
   if (o.gun) {
@@ -1641,7 +1650,8 @@ function opActive(me, b) {
     gear.push(h('div', { class: 'vrow jbr' }, art('gear', it ? it.id : 'pistola', 'vth'),
       h('div', { class: 'grow' }, h('b', null, t('opGun')), h('div', { class: 'small' + (it && it.u > 0 ? ' muted' : ' c-red') }, !it ? t('opGunNone') : it.u > 0 ? t('g_' + it.id) + ' · ' + t('usesLeft', { u: it.u, l: gearOf(it.id).life }) : t('opGunWorn', { x: t('g_' + it.id).toLowerCase() }))),
       !it ? h('button', { class: 'btn sm ghost', on: { click: () => { S.armsSeg = 'fight'; go('arms'); } } }, t('p_arms'))
-        : !(it.u > 0) ? h('button', { class: 'btn sm ghost num', disabled: cash < me.repair[s], on: { click: (e) => act('repair', { slot: s }, { el: e.currentTarget }) } }, t('repairBtn') + ' · ' + money(me.repair[s]))
+        : !(it.u > 0) ? (mtN(me, 'kit') ? h('button', { class: 'btn sm ghost', on: { click: (e) => act('repair', { slot: s, kit: true }, { el: e.currentTarget }) } }, t('repairKit'))
+          : h('button', { class: 'btn sm ghost num', disabled: cash < me.repair[s], on: { click: (e) => act('repair', { slot: s }, { el: e.currentTarget }) } }, t('repairBtn') + ' · ' + money(me.repair[s])))
           : h('span', { class: 'small c-cash' }, t('matHave'))));
     gear.push(h('div', { class: 'vrow jbr' }, art('gear', 'balas', 'vth'),
       h('div', { class: 'grow' }, h('b', null, t('opBul')), h('div', { class: 'small num' + (nb < St.bullets ? ' c-red' : ' muted') }, t('opBulLine', { b: St.bullets, n: num(nb) }))),
@@ -1658,6 +1668,7 @@ function opActive(me, b) {
   const fix = miss.length ? missFix(me, miss) : null, left = h('span', { class: 'num', dataset: { left: st.ready, long: 1 } }, leftTxt(st.ready - n));
   let goBtn;
   if (miss.includes('gun')) goBtn = h('button', { class: 'btn rob block big', on: { click: () => { S.armsSeg = 'fight'; go('arms'); } } }, t('goArms'));
+  else if (fix && fix.craft.length) goBtn = h('button', { class: 'btn rob block big', on: { click: () => { S.cvTab = 'tool'; go('cave'); } } }, t('opCraftBtn', { x: andList(fix.craft.map((id) => t('g_' + id).toLowerCase())) }));   // v83
   else if (fix && !fix.room) goBtn = h('button', { class: 'btn rob block big', on: { click: () => go('inv') } }, t('toInvFull'));
   else if (fix) goBtn = h('button', { class: 'btn rob block big fixb', disabled: cash < fix.cost, on: { click: async (e) => { const el = e.currentTarget; for (const [type, args] of fix.steps) if (!(await act(type, args, { el }))) break; } } }, t('opFixBtn', { m: money(fix.cost) }));
   else if (!ready) goBtn = h('button', { class: 'btn rob block big', disabled: true }, t('opWaitBtn', { t: '' }), left);
@@ -2420,6 +2431,102 @@ function screenJob() {
   return out;
 }
 
+// ===== A cave (v83) =====
+// Os biscates dão o material do ofício; aqui juntam-se materiais, dinheiro e tempo para fazer componentes, e com eles as
+// ferramentas dos golpes grandes, armas e máquinas para os negócios. Uma coisa de cada vez na bancada.
+const recipe = (id) => S.cfg.craft.list.find((r) => r.id === id);
+const mtN = (me, id) => (me.mt && me.mt[id]) || 0;
+const crIt = (id) => { const r = recipe(id); return !r || r.kind === 'comp' ? t('mt_' + id) : r.kind === 'maq' ? t('mq_' + r.biz) : t('g_' + id); };
+const crArt = (r, cls) => (r.kind === 'comp' ? art('mat', r.id, cls) : r.kind === 'maq' ? art('maq', r.biz, cls) : art('gear', r.id, cls));
+const matFrom = (id) => Object.keys(S.cfg.mat.drop).find((w) => S.cfg.mat.drop[w] === id);
+const cvDay = (ts) => new Date(ts).toLocaleDateString(lang() === 'pt' ? 'pt-PT' : 'en-GB', { day: 'numeric', month: 'short', timeZone: 'Europe/Lisbon' });
+// a máquina de um negócio: 0 = não há, 1 = a trabalhar, 2 = a trabalhar e já dá para rever, 3 = parada (falta a revisão)
+const maqState = (me, id) => { const u = me.maq && me.maq[id], V = S.cfg.craft.rev, n = now(); return !u ? 0 : u <= n ? 3 : u - n <= V.maxMs - V.ms ? 2 : 1; };
+const cvDur = (ms) => { const m = Math.round(ms / 60000), hh = Math.floor(m / 60); return hh ? hh + ' h' + (m % 60 ? ' ' + (m % 60) + ' min' : '') : m + ' min'; };
+function matLine(m) {   // o que o biscate deixou no depósito
+  if (!m) return null;
+  return h('p', { class: 'small tk-mat' }, m.n ? h('span', { class: 'c-cash' }, t('tkMat', { n: m.n, x: t('mt_' + m.id).toLowerCase() })) : null,
+    m.lost ? h('span', { class: 'c-red' }, (m.n ? ' · ' : '') + t('tkMatLost' + (m.lost > 1 ? 2 : 1))) : null, ' ',
+    h('button', { class: 'lnk tk-cv', on: { click: () => { S.gig = null; go('cave'); } } }, t('tkToCave')));
+}
+// o que a receita pede, com o que falta a vermelho: o material diz de que biscate vem; o componente em falta leva à receita dele
+function needsLine(me, needs, n) {
+  return Object.entries(needs).map(([k, v], i) => {
+    const want = v * n, have = mtN(me, k), ok = have >= want, comp = !S.cfg.mat.base.includes(k);
+    const tail = ok ? null : comp ? t('cvHave', { n: have }) : t('cvHaveFrom', { n: have, x: t('gks_' + matFrom(k)) });
+    const item = [h('span', { class: 'nw' }, want + '×\u00a0' + t('mt_' + k).toLowerCase()), tail ? [' ', h('span', { class: 'nw' }, tail)] : null];
+    return [i ? '\u00a0· ' : null, ok ? h('span', null, item)
+      : comp ? h('button', { class: 'cvgo c-red', on: { click: () => { S.cvTab = 'comp'; S.cvHi = k; render(); } } }, item, '\u00a0›') : h('span', { class: 'c-red' }, item)];
+  });
+}
+function caveBench(me, preso) {
+  const c = me.cf;
+  if (!c) return null;
+  const r = recipe(c.id), ready = c.end <= now();
+  return h('section', { class: 'cnow cvnow' }, h('h2', { class: 'sec' }, crIt(c.id)),
+    ready ? h('p', { class: 'small c-cash' }, t('cvReady')) : h('p', { class: 'small' }, t('cvLeft'), ' ', h('b', { class: 'num', dataset: { left: c.end } }, dur(c.end - now()))),
+    ready ? h('button', { class: 'btn buy block', disabled: preso, on: { click: (e) => act('craftTake', {}, { el: e.currentTarget }) } }, t('cvTake_' + r.kind))
+      : h('div', { class: 'fill' }, h('i', { style: `width:${Math.max(2, Math.min(100, ((now() - c.t0) / Math.max(1, c.end - c.t0)) * 100))}%;background:var(--cash)` })));
+}
+// uma receita: imagem, nome e para que serve, botão; por baixo o que pede (o que falta a vermelho), o tempo e o preço.
+// Os componentes fazem-se na hora, n de cada vez; o resto vai para a bancada (uma coisa de cada vez).
+function recipeRow(me, r, n, preso) {
+  const comp = r.kind === 'comp', cash = me.cash + me.bank, bi = r.biz ? S.cfg.biz.findIndex((b) => b.id === r.biz) : -1;
+  const V = S.cfg.craft.rev, ms = r.kind === 'maq' ? maqState(me, r.biz) : 0, mq = ms > 0;   // máquina já instalada: a linha passa a ser a da revisão
+  const price = mq ? V.price : r.price * n, needs = mq ? V.needs : r.needs;
+  const short = Object.entries(needs).some(([k, v]) => mtN(me, k) < v * (mq ? 1 : n)), busy = preso || (!comp && !mq && !!me.cf);
+  let state = null, falta = null;
+  const btn = (label, on, aria) => h('button', { class: 'btn sm ghost', disabled: short || busy, 'aria-label': aria, on: { click: on } }, label);
+  if (r.kind === 'tool' && me.inv.some((x) => x.id === r.id)) state = h('span', { class: 'small c-cash' }, t('matHave'));
+  else if (mq && ms === 1) state = h('span', { class: 'small c-cash' }, t('cvOn'));
+  else if (r.kind === 'maq' && !me.biz[bi].n) falta = t('cvNeed_' + r.biz);
+  else if (comp && mtN(me, r.id) + n > S.cfg.mat.cap) falta = t('cvFull', { c: S.cfg.mat.cap });
+  else if (!short && !busy && cash < price) state = h('span', { class: 'small muted num' }, t('needMoney', { m: money(price - cash) }));
+  else if (mq) state = btn(t('cvRev'), (e) => act('maqService', { id: r.biz }, { el: e.currentTarget }), t('cvRevAria', { x: crIt(r.id) }));
+  else state = btn(t('cvMake'), (e) => act('craftStart', { id: r.id, n }, { el: e.currentTarget }), t('cvMakeAria', { x: crIt(r.id) + (n > 1 ? ' ×' + n : '') }));
+  const g = r.kind === 'tool' || r.kind === 'gun' ? gearOf(r.id) : null;
+  const what = r.kind === 'maq' ? (ms === 3 ? h('span', { class: 'c-red' }, t('cvStopped')) : mq ? h('span', { class: 'c-cash' }, t('cvMaqUntil', { x: list('biz')[bi], p: S.cfg.craft.maqBp / 100, d: cvDay(me.maq[r.biz]) })) : t('cvMaqFx', { p: S.cfg.craft.maqBp / 100, x: list('biz')[bi] }))
+    : r.kind === 'tool' ? t('matFor', { x: andList(S.cfg.ops.filter((o) => o.mat.includes(r.id)).map((o) => t('op_' + o.id))) }) + (g && g.craft ? ' · ' + t('cvOnly') : '')
+    : r.kind === 'gun' ? t('cvGun', { p: pctOf(g.atk) }) : r.id === 'kit' ? t('cvKit') : null;
+  const when = mq ? t('cvRevLine', { d: V.ms / 864e5, m: money(price) }) : (comp ? '' : cvDur(r.ms) + ' · ') + money(price);
+  // grelha: imagem | nome e para que serve | botão; por baixo, a toda a largura do texto, o que pede, o tempo e o preço
+  return h('div', { class: 'vrow cvr' + (falta ? ' dim' : '') + (S.cvHi === r.id ? ' hi' : ''), id: 'cv-' + r.id }, crArt(r, 'vth'),
+    h('div', { class: 'cvh' }, h('b', null, crIt(r.id) + (n > 1 ? ' ×' + n : '')), what ? h('div', { class: 'small muted' }, what) : null),
+    state ? h('div', { class: 'cva' }, state) : null,
+    h('div', { class: 'cvd' }, mq && ms === 1 ? null : h('div', { class: 'small num' }, needsLine(me, needs, mq ? 1 : n)),
+      h('div', { class: 'small muted num' }, (mq && ms === 1 ? t('cvRevWhen', { d: cvDay(me.maq[r.biz] - (V.maxMs - V.ms)) }) : when) + (falta ? ' · ' + falta : ''))));
+}
+function screenCave() {
+  const me = S.st.me, M = S.cfg.mat, C = S.cfg.craft;
+  const comps = C.list.filter((r) => r.kind === 'comp').map((r) => r.id), vazio = !me.cf && ![...M.base, ...comps].some((id) => mtN(me, id));
+  const out = [pageHead('cave', me.cf ? null : t('s_cave'))];
+  const b = busyBanner(me); if (b) out.push(b);
+  const bench = caveBench(me, !!b); if (bench) out.push(bench);
+  // sem nada no depósito: o primeiro passo é um biscate
+  if (vazio) out.push(h('div', { class: 'tip cvtip' }, h('p', null, t('cvEmpty')), h('button', { class: 'btn buy sm', on: { click: () => go('gigs') } }, t('cvToGigs'))));
+  // as receitas, por grupo; os componentes fazem-se 1, 3 ou 5 de cada vez
+  const grp = ['comp', 'tool', 'gun', 'maq'].includes(S.cvTab) ? S.cvTab : 'comp', n = grp === 'comp' ? (S.cvN || 1) : 1;
+  out.push(h('h2', { class: 'sec' }, t('cvRecipes')),
+    h('div', { class: 'seg cvseg', role: 'group', 'aria-label': t('cvRecipes') }, ['comp', 'tool', 'gun', 'maq'].map((k) =>
+      h('button', { 'aria-pressed': grp === k ? 'true' : 'false', on: { click: () => { S.cvTab = k; render(); } } }, t('cvG_' + k)))));
+  out.push(h('p', { class: 'small muted usub' }, t('cvSub_' + grp, { p: C.maqBp / 100 })));
+  if (grp === 'comp') out.push(h('div', { class: 'row cvqty' }, h('span', { class: 'small', id: 'cvq' }, t('cvEach')),
+    h('div', { class: 'seg sm', role: 'group', 'aria-labelledby': 'cvq' }, [1, 3, 5].map((k) => h('button', { 'aria-pressed': n === k ? 'true' : 'false', on: { click: () => { S.cvN = k; render(); } } }, String(k))))));
+  out.push(h('div', { class: 'card vlist vc cvl' }, C.list.filter((r) => r.kind === grp).map((r) => recipeRow(me, r, n, !!b))));
+  if (S.cvHi) { const id = S.cvHi; S.cvHi = null; requestAnimationFrame(() => document.getElementById('cv-' + id)?.scrollIntoView({ block: 'center', behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' })); }
+  // o depósito: os materiais dos biscates (com o biscate de onde vêm) e os componentes já feitos
+  const cell = (id, sub) => { const n = mtN(me, id), full = n >= M.cap;
+    return h('div', { class: 'cvm' + (n ? '' : ' dim') }, art('mat', id, 'cvth'),
+      h('div', { class: 'grow' }, h('b', null, t('mt_' + id)), sub || full ? h('span', { class: 'small ' + (full ? 'c-orange' : 'muted') }, [sub, full ? t('cvFull1') : null].filter(Boolean).join(' · ')) : null),
+      h('b', { class: 'num cvn' + (full ? ' full' : '') }, String(n))); };
+  const lv = (w) => S.cfg.work.list.find((x) => x.id === w)?.level || 1;
+  out.push(h('h2', { class: 'sec' }, t('cvDepot')), h('p', { class: 'small muted usub' }, t('cvDepotSub', { c: M.cap })),
+    h('div', { class: 'card cvdep' }, M.base.map((id) => { const w = matFrom(id); return cell(id, me.level < lv(w) ? t('cvOpensAt', { x: t('gks_' + w), n: lv(w) }) : t('gks_' + w)); }),
+      h('h3', { class: 'cvsep' }, t('cvG_comp')), comps.map((id) => cell(id, null))));
+  if (!vazio) out.push(h('button', { class: 'card row tap stlink', on: { click: () => go('gigs') } }, h('span', { class: 'grow' }, t('cvToGigs')), h('span', { class: 'muted', 'aria-hidden': 'true' }, '›')));
+  return out;
+}
+
 // ===== A Universidade (v81) =====
 // Cursos de profissão, estudos e artes marciais num só sítio. Um curso de cada vez, de qualquer tipo; todos acabam com exame.
 const courseCfg = (id) => S.cfg.courses.find((c) => c.id === id);
@@ -2684,6 +2791,10 @@ function screenBiz() {
       b.n > 0 ? h('div', { class: 'fill big' + (fill >= 1 ? ' full' : ''), dataset: { fill: i } }, h('i', { style: `width:${fill * 100}%` })) : null,
       b.n > 0 ? h('div', { class: 'small muted', dataset: { fillTxt: i } }, fill >= 1 ? t('storageFull') : t('storage', { p: Math.floor(fill * 100) })) : null,
       h('div', { class: 'small ' + (cfg.toBank ? 'muted' : 'c-red') }, cfg.toBank ? t('legal') : t('raidRisk')),
+      // v83: a máquina feita na cave (uma por negócio)
+      b.n > 0 && S.cfg.craft ? (maqState(me, cfg.id) === 3 ? h('button', { class: 'jneed bzmaq c-red', on: { click: () => { S.cvTab = 'maq'; go('cave'); } } }, t('bzMaqStop') + '\u00a0›')
+        : maqState(me, cfg.id) ? h('div', { class: 'small c-cash' }, t('bzMaqOn', { p: S.cfg.craft.maqBp / 100, d: cvDay(me.maq[cfg.id]) }))
+        : h('button', { class: 'jneed bzmaq', on: { click: () => { S.cvTab = 'maq'; go('cave'); } } }, t('bzMaqGo', { p: S.cfg.craft.maqBp / 100 }) + '\u00a0›')) : null,
       cfg.drug >= 0 && b.n > 0 ? h('div', { class: 'seg bzg', role: 'group', 'aria-label': t('bizOut') },
         h('button', { 'aria-pressed': b.g ? 'false' : 'true', on: { click: () => { if (b.g) act('bizGoods', { i, on: false }); } } }, t('bizOutCash')),
         h('button', { 'aria-pressed': b.g ? 'true' : 'false', on: { click: () => { if (!b.g) act('bizGoods', { i, on: true }); } } }, list('drugs')[cfg.drug])) : null,
@@ -2924,7 +3035,8 @@ function gearRow(me, g) {
     extra = h('div', { class: 'small num' }, h('span', { class: gasta ? 'c-red' : uso === 'inReserve' ? 'muted' : 'c-cash' }, gasta ? t('gunWorn') : t(uso)),
       g.gun && !gasta ? ' · ' + t('usesLeft', { u: worn.u, l: g.life }) : null);
     // o preço da reparação vai no botão, como o preço de comprar
-    if (g.gun && worn.u < g.life) right = h('button', { class: 'btn sm num ' + (gasta ? 'buy' : 'ghost'), disabled: cash < me.repair[g.slot], on: { click: (e) => act('repair', { slot: g.slot }, { el: e.currentTarget }) } }, t('repairBtn') + ' · ' + money(me.repair[g.slot]));
+    if (g.gun && worn.u < g.life) right = mtN(me, 'kit') ? h('button', { class: 'btn sm ' + (gasta ? 'buy' : 'ghost'), on: { click: (e) => act('repair', { slot: g.slot, kit: true }, { el: e.currentTarget }) } }, t('repairKit'))
+      : h('button', { class: 'btn sm num ' + (gasta ? 'buy' : 'ghost'), disabled: cash < me.repair[g.slot], on: { click: (e) => act('repair', { slot: g.slot }, { el: e.currentTarget }) } }, t('repairBtn') + ' · ' + money(me.repair[g.slot]));
   } else if (held >= 0) {
     extra = h('div', { class: 'small muted' }, t('inInv'));
     right = h('button', { class: 'btn sm ghost', on: { click: (e) => act('equip', { i: held }, { el: e.currentTarget }) } }, t('useBtn'));

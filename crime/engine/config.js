@@ -3,6 +3,7 @@
 
 const MIN = 60_000;
 const HOUR = 60 * MIN;
+const DAY = 24 * HOUR;
 
 // Níveis da base nova (16/11/2026): 100 níveis, o respeito acumulado para chegar ao nível N é 1,3 × N^2,55
 // (nível 10 com 461, 20 com 2 701, 40 com 15 820, 60 com 44 487, 80 com 92 645 e 100 com 163 660). O nível nunca desce.
@@ -272,8 +273,8 @@ export const CFG = {
     { id: 'pedecabra', slot: 'mat', price: 20 },
     { id: 'gazuas', slot: 'mat', price: 40 },
     { id: 'macarico', slot: 'mat', price: 400 },
-    { id: 'explosivos', slot: 'mat', price: 3000, once: true },
-    { id: 'broca', slot: 'mat', price: 5000 },
+    { id: 'explosivos', slot: 'mat', price: 3000, once: true, craft: true },   // v83: já não se vendem; fazem-se na cave
+    { id: 'broca', slot: 'mat', price: 5000, craft: true },
   ],
   // Golpes grandes (passo 5, «Operações» da especificação): um de cada vez, preparação em tempo real, custo pago à cabeça,
   // parte do jogador se correr bem, hipótese (bp), pausa antes do seguinte. Valores da wiki; o resto é meu (grau D):
@@ -395,6 +396,41 @@ export const CFG = {
   // pela mesma ordem; aqui só a posição da resposta certa, que nunca vai para o cliente). Tudo certo a meio do curso tira
   // cutBp da duração (o 1.º corte a partir de 1/4 do tempo, o 2.º a partir de metade); no fim do tempo, passar dá o diploma.
   // Errar obriga a esperar retryBp da duração (entre retryMin e retryMax). Um exame aberto mais de ttl conta como chumbo.
+  // v83: materiais dos biscates e a cave (onde se juntam para fazer componentes, ferramentas, armas e máquinas)
+  mat: {
+    cap: 40,   // teto por material ou componente no depósito; o que passa perde-se
+    good: 7000,   // biscate bem feito (qualidade) dá 2 em vez de 1
+    base: ['madeira', 'eletronica', 'quimicos', 'sucata', 'cobre', 'pecas'],
+    drop: { camiao: 'madeira', entregas: 'eletronica', laboratorio: 'quimicos', oficina: 'sucata', mudancas: 'cobre', desmanche: 'pecas' },
+  },
+  craft: {
+    batch: 5,   // componentes: até 5 de cada vez
+    maqBp: 1500,   // máquina a trabalhar: +15% ao que o negócio rende
+    // a máquina trabalha 7 dias depois de instalada ou revista; sem revisão pára (fica instalada, sem os +15%) até se fazer.
+    // A revisão faz-se quando faltar uma semana ou menos (no máximo 14 dias à frente) e gasta componentes: procura que se repete.
+    rev: { ms: 7 * DAY, maxMs: 14 * DAY, price: 500, needs: { chapa: 1, circuito: 1, reagente: 1 } },
+    // Componentes fazem-se na hora (materiais e uns euros). O que sai deles (ferramentas, armas, máquinas) fica na bancada o
+    // tempo da receita, uma coisa de cada vez. Ferramentas e armas custam em dinheiro metade do preço da loja (o que o
+    // recetador dá por elas: fazer poupa, mas não imprime dinheiro); as máquinas, 5% do preço do negócio.
+    list: [
+      { id: 'chapa', kind: 'comp', needs: { sucata: 3 }, price: 10 },
+      { id: 'caixote', kind: 'comp', needs: { madeira: 2 }, price: 10 },
+      { id: 'cano', kind: 'comp', needs: { sucata: 2, pecas: 1 }, price: 20 },
+      { id: 'circuito', kind: 'comp', needs: { eletronica: 2, cobre: 1 }, price: 30 },
+      { id: 'reagente', kind: 'comp', needs: { quimicos: 3 }, price: 30 },
+      { id: 'motor', kind: 'comp', needs: { pecas: 2, cobre: 2, sucata: 1 }, price: 50 },
+      { id: 'kit', kind: 'comp', needs: { chapa: 1, reagente: 1, caixote: 1 }, price: 50 },   // kit de armeiro: repara uma arma de fogo de graça
+      { id: 'macarico', kind: 'tool', needs: { cano: 1, chapa: 1, reagente: 1 }, price: 200, ms: HOUR },
+      { id: 'explosivos', kind: 'tool', needs: { reagente: 2, circuito: 1, caixote: 1 }, price: 1500, ms: 2 * HOUR },
+      { id: 'broca', kind: 'tool', needs: { motor: 1, circuito: 1, chapa: 2 }, price: 2500, ms: 4 * HOUR },
+      { id: 'pistola', kind: 'gun', needs: { cano: 1, chapa: 1, pecas: 1 }, price: 875, ms: 2 * HOUR },
+      { id: 'cacadeira', kind: 'gun', needs: { cano: 2, chapa: 1, madeira: 2 }, price: 1250, ms: 3 * HOUR },   // a coronha talha-se da madeira
+      { id: 'maq-lavandaria', kind: 'maq', biz: 'lavandaria', needs: { motor: 2, chapa: 2, circuito: 1 }, price: 2000, ms: 4 * HOUR },
+      { id: 'maq-cafe', kind: 'maq', biz: 'cafe', needs: { motor: 1, circuito: 1, chapa: 1, cano: 1 }, price: 3000, ms: 3 * HOUR },
+      { id: 'maq-oficina', kind: 'maq', biz: 'oficina', needs: { motor: 2, chapa: 3, cano: 2 }, price: 4500, ms: 5 * HOUR },
+      { id: 'maq-clube', kind: 'maq', biz: 'clube', needs: { circuito: 3, motor: 1, caixote: 2 }, price: 40000, ms: 6 * HOUR },   // as caixas das colunas
+    ],
+  },
   exam: {
     n: 3, cutBp: 2500, cuts: 2, retryBp: 1250, retryMin: HOUR, retryMax: 12 * HOUR, ttl: 15 * MIN,
     ans: {
@@ -888,4 +924,4 @@ CFG.missions = [
   { id: 'lvl20', type: 'level', need: nv(20), cash: 120000 },
 ];
 
-export const T = { MIN, HOUR, DAY: 24 * HOUR };
+export const T = { MIN, HOUR, DAY };

@@ -186,7 +186,7 @@ test('batota: valores hostis nunca dão erro do servidor nem criam dinheiro, res
   const { cookie, estado } = await contaNova('Batoteiro', '10.0.9.1');
   const antes = await estado();
   const hostis = [-1, -100000, 0.5, 1e21, 2 ** 53, '5', '0', null, [], [0], {}, true, '__proto__', 'constructor', 'toString', 'cash', -1e-7];
-  const tipos = ['deposit', 'withdraw', 'port', 'gear', 'buyBiz', 'drug', 'hooker', 'houseUp', 'avatar', 'class', 'train', 'crime', 'attack', 'luxury', 'house', 'claim', 'bail', 'medic', 'cure', 'detox', 'refill', '__proto__', 'constructor', 'toString', null, 7];
+  const tipos = ['deposit', 'withdraw', 'port', 'gear', 'buyBiz', 'drug', 'hooker', 'houseUp', 'avatar', 'class', 'train', 'crime', 'attack', 'luxury', 'house', 'claim', 'bail', 'medic', 'cure', 'detox', 'refill', 'gymStart', 'gymDone', 'craftStart', 'craftTake', '__proto__', 'constructor', 'toString', null, 7];
   let n = 0;
   for (const type of tipos) for (const v of hostis) {
     const r = await cru(cookie, n % 2 ? '10.0.9.1' : '10.0.9.3', { type, amount: v, k: v, d: v, i: v, u: v, idx: v, kind: v, stat: v, id: v, target: v, mode: v });

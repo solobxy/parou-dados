@@ -1571,8 +1571,10 @@ test('material dos golpes grandes (passo 5): pé de cabra, gazuas, maçarico, ex
   const p = mk(); p.respect = p.peakRespect = CFG.levels.at(-1); p.house = 5; const c0 = p.cash; p.cash = 1e6;
   const mat = CFG.gear.filter((g) => g.slot === 'mat');
   assert.deepEqual(mat.map((g) => [g.id, g.price]), [['pedecabra', 20], ['gazuas', 40], ['macarico', 400], ['explosivos', 3000], ['broca', 5000]]);
-  for (const g of mat) E.buyItem(p, NOW, W, g.id);
-  assert.equal(p.cash, 1e6 - 8460); assert.equal(c0 >= 0, true);
+  // v83: os explosivos e a broca já não se vendem (fazem-se na cave); os outros três compram-se como antes
+  assert.deepEqual(mat.filter((g) => g.craft).map((g) => g.id), ['explosivos', 'broca']);
+  for (const g of mat) { if (g.craft) assert.throws(() => E.buyItem(p, NOW, W, g.id), { code: 'CRAFT_ONLY' }); else E.buyItem(p, NOW, W, g.id); }
+  assert.equal(p.cash, 1e6 - 460); assert.equal(c0 >= 0, true);
   CFG.crimes.forEach((c, k) => assert.equal(E.crimeChanceBp(p, k, NOW), c.p));
   assert.deepEqual(E.checkInvariants(p), []);
 });
