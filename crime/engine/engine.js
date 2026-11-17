@@ -52,7 +52,7 @@ export function newPlayer(id, now, world, opts = {}) {
     mi: 0,                         // objetivos já recebidos
     mq: CFG.missions.map((_, i) => i), mrT: 0,   // os que faltam, pela ordem em que vão aparecer; e quando se trocou pela última vez
     titles: [],                    // títulos que ficam para sempre: { k: 'vet' } (veterano das rondas), { k: 'ep', n, d, pos } (pódio de uma época)
-    cls: '', clsAt: 0, av: 0, fx: {}, sick: false, hkN: CFG.hookers.list.map(() => 0), hkAt: CFG.hookers.list.map(() => 0), house: 0, hu: CFG.house.ups.map(() => 0), bj: null,        // profissão, avatar e efeitos temporários (kind -> { bp, until })
+    cls: '', clsAt: 0, av: 0, fx: {}, sick: false, hkN: CFG.hookers.list.map(() => 0), hkAt: CFG.hookers.list.map(() => 0), house: 0, hu: CFG.house.ups.map(() => 0), bj: null, wm: {},        // profissão, avatar e efeitos temporários (kind -> { bp, until })
   };
 }
 
@@ -64,6 +64,7 @@ function migrate(p) {
   if (!p.xp) p.xp = { F: 0, I: 0, C: 0 };
   if (!Array.isArray(p.wk)) p.wk = CFG.crimes.map(() => 0);
   while (p.wk.length < CFG.crimes.length) p.wk.push(0);   // golpes novos no fim da lista (v72)
+  if (!p.wm || typeof p.wm !== 'object' || Array.isArray(p.wm)) p.wm = {};   // v74: o ritmo de cada biscate
   if (!p.c) p.c = { crimes: 0, wins: 0, trains: 0, refills: 0, collects: 0, pvpWins: 0, ports: 0 };
   if (!Number.isSafeInteger(p.mi)) p.mi = 0;
   if (!Array.isArray(p.mq)) p.mq = CFG.missions.map((_, i) => i).slice(Math.min(Math.max(p.mi, 0), CFG.missions.length));
@@ -751,13 +752,11 @@ export function hookerSteps(p, i, now) {
 }
 export const hookerUses = (p, now) => p.hkN.reduce((s, _, i) => s + hookerSteps(p, i, now), 0);
 export const detoxUses = (p, now) => recent(p.detoxT, now, CFG.detox.windowMs);
-// o preço é o da escada de stamina do dia (a das barras a droga) pelo que ela dá, vezes o dela; mais 4% por cada degrau dela
+// o preço é o da escada de stamina do dia (a das barras a droga) pelo que ela dá, vezes o dela (v74: sem subir por visita)
 export function hookerPrice(p, i, now) {
-  const H = CFG.hookers, g = H.list[i];
+  const g = CFG.hookers.list[i];
   const from = now !== undefined ? refillUsed(p, now) : 0;
-  let price = Math.max(1, Math.ceil((refillCost(from, g.e) * g.valueBp) / 10000));
-  const n = Math.min(hookerSteps(p, i, now), H.maxSteps); // só conta, não mexe: uma visita recusada não muda nada
-  for (let k = 0; k < n; k++) price = Math.ceil((price * H.stepNum) / H.stepDen);
+  const price = Math.max(1, Math.ceil((refillCost(from, g.e) * g.valueBp) / 10000));
   return Math.max(1, cut(price, klass(p).hkCutBp || 0));
 }
 export function visitHooker(p, now, world, i, rng) {
@@ -931,7 +930,7 @@ function tiredAt(p, now) {
 const tiredMultBp = (tired) => Math.floor(10000 * 0.5 ** (tired / CFG.work.half));
 export function workView(p, now) {
   const tired = tiredAt(p, now);
-  return { tired, multBp: tiredMultBp(tired), tk: p.tk ? { id: p.tk.id, t0: p.tk.t0, sh: !!p.tk.sh, layout: workLayout(p.tk.id, p.tk.s) } : null };
+  return { tired, multBp: tiredMultBp(tired), ritmo: { ...(p.wm || {}) }, tk: p.tk ? { id: p.tk.id, t0: p.tk.t0, sh: !!p.tk.sh, layout: workLayout(p.tk.id, p.tk.s) } : null };
 }
 // a disposição de cada tarefa: tudo o que o ecrã desenha e o servidor confere
 export function workLayout(id, seed) {
@@ -1126,12 +1125,18 @@ export function workDone(p, now, world, rng, ans) {
   // desmanche: quem ainda estava agarrado a uma peça quando a patrulha passou foi visto (metade das vezes acaba preso)
   const spotted = x.id === 'desmanche' && stripSpotted(L, ans), bustBp = spotted ? CFG.work.spottedBp : x.bustBp;
   const busted = !!bustBp && rng.chance(Math.floor((bustBp * (spotted ? 10000 : pressMultBp(world && world.press))) / 10000));
-  if (busted) { jailFor(p, now, x.jailMin * T.MIN, 1); return { ok: true, id: x.id, q, busted: true, spotted, money: 0, multBp, jailUntil: p.jailUntil }; }
-  let money = Math.max(1, Math.floor((Math.floor((x.base * (W.qMin + Math.floor(((W.qMax - W.qMin) * q) / 10000))) / 10000) * multBp) / 10000));
+  // o ritmo deste biscate: sobe com o trabalho bem feito, desce com o mal feito (ou com ser visto pela patrulha)
+  const Rt = W.ritmo, r0 = (p.wm && p.wm[x.id]) || 0;
+  const r1 = spotted || q < Rt.bad ? Math.max(0, r0 - Rt.drop) : q >= Rt.good ? Math.min(Rt.cap, r0 + Rt.step) : r0;
+  if (!p.wm || typeof p.wm !== 'object') p.wm = {};
+  p.wm[x.id] = r1;
+  if (busted) { jailFor(p, now, x.jailMin * T.MIN, 1); return { ok: true, id: x.id, q, busted: true, spotted, money: 0, multBp, ritmo: r1, ritmoAntes: r0, jailUntil: p.jailUntil }; }
+  const pago = Math.floor((x.base * (W.qMin + Math.floor(((W.qMax - W.qMin) * q) / 10000))) / 10000);
+  let money = Math.max(1, Math.floor((Math.floor((pago * (10000 + r1)) / 10000) * multBp) / 10000));
   let lav = 0;
   if (x.bustBp) { const Lv = launder(p, money); money = Lv.net; lav = Lv.lav; }
   p.cash += money;
-  return { ok: true, id: x.id, q, busted: false, spotted, money, lav, multBp, tired: tired + 1 };
+  return { ok: true, id: x.id, q, busted: false, spotted, money, lav, multBp, tired: tired + 1, ritmo: r1, ritmoAntes: r0 };
 }
 
 export function startCourse(p, now, world, id) {
@@ -3030,6 +3035,7 @@ export function ranking(players) {
 export function checkInvariants(p) {
   const bad = [];
   if (p.cent !== undefined && (!Number.isInteger(p.cent) || p.cent < 0 || p.cent > 99)) bad.push(`cent=${p.cent}`);
+  if (p.wm !== undefined && (typeof p.wm !== 'object' || Object.values(p.wm).some((v) => !Number.isInteger(v) || v < 0 || v > CFG.work.ritmo.cap))) bad.push('ritmo');
   const ints = ['energy', 'energyT', 'addiction', 'addictionT', 'cash', 'bank', 'respect', 'respectAt', 'peakRespect', 'jailUntil', 'hospUntil', 'protectUntil', 'capUntil', 'luxuries', 't'];
   for (const k of ints) if (!Number.isSafeInteger(p[k]) || p[k] < 0) bad.push(`${k}=${p[k]}`);
   for (const s of STATS) if (!Number.isSafeInteger(p.stats[s]) || p.stats[s] < CFG.start.stat) bad.push(`stat ${s}=${p.stats[s]}`);

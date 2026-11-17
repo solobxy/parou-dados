@@ -548,12 +548,14 @@ test('profissão: escolhe-se uma vez e muda as contas', () => {
   for (const p of [a, b, m, v]) assert.deepEqual(E.checkInvariants(p), []);
 });
 
-test('putas: stamina sem vício, preço sobe a cada visita, doença trata-se no hospital', () => {
+test('putas: stamina sem vício, o preço só sobe com a escada do dia (v74), doença trata-se no hospital', () => {
   const p = mk(); p.cash = 1e6; p.energy = 0;
   const p0 = E.hookerPrice(p, 0, START);
   let r = E.visitHooker(p, START, W, 0, never);
   assert.equal(r.energy, CFG.hookers.list[0].e); assert.equal(p.addiction, 0); assert.equal(r.sick, false);
-  assert.ok(E.hookerPrice(p, 0, START) > p0, 'a segunda visita custa mais');
+  assert.equal(E.hookerPrice(p, 0, START), p0, 'voltar à mesma, dentro da mesma barra, custa o mesmo');
+  const rf = p.rf; p.rf = { e: 100, t: START };
+  assert.ok(E.hookerPrice(p, 0, START) > p0, 'depois de uma barra de stamina comprada hoje, custa mais'); p.rf = rf;
   assert.equal(E.hookerPrice(p, 0, START + T.DAY), p0, 'no dia seguinte volta ao preço normal');
   const antes = E.attackPower(p, START);
   r = E.visitHooker(p, START, W, 5, always);

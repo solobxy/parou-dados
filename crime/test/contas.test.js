@@ -203,38 +203,37 @@ test('batota: perder respeito e voltar a ganhá-lo não volta a encher a stamina
 
 // o preço de uma puta: a escada de stamina (25 € × barra + 5 € × barra², ponto a ponto; desce 25 pontos por hora) pelo que ela dá, vezes o dela, mais 4% por degrau
 const escada = (from, n) => { let c = 0; for (let u = from; u < from + n; u++) { const k = Math.floor(u / 100) + 1; c += 25 * k + 5 * k * k; } return Math.ceil(c / 100); };
-const precoPuta = (p, i, now, degraus) => {
+const precoPuta = (p, i, now) => {
   const g = CFG.hookers.list[i], from = E.refillUsed(p, now);
-  let x = Math.max(1, Math.ceil((escada(from, g.e) * g.valueBp) / 10000));
-  for (let k = 0; k < degraus; k++) x = Math.ceil((x * 26) / 25);
-  return x;
+  return Math.max(1, Math.ceil((escada(from, g.e) * g.valueBp) / 10000));
 };
-test('putas: o preço segue a escada de stamina do dia; cada visita sobe 4% só o dela, desce um degrau por hora, e há um fim para o que compensa', () => {
+// v74 (17/11, «elas aumentam o preço muito facilmente»): voltar à mesma já não sobe 4%; só a escada do dia, a mesma das barras
+test('putas: o preço segue só a escada de stamina do dia; as visitas a cada uma contam (uma por hora), e há um fim para o que compensa', () => {
   const H = CFG.hookers, p = mk();
   const i = H.list.findIndex((x) => x.id === 'dominique'), g = H.list[i];
-  assert.equal(H.stepNum / H.stepDen, 1.04); assert.equal(H.coolMs, T.HOUR);
-  H.list.forEach((_, k) => assert.equal(E.hookerPrice(p, k, NOW), precoPuta(p, k, NOW, 0)));
-  // duas visitas seguidas: a dela sobe 4% de cada vez em cima da escada; as outras só sobem a escada
-  p.energy = 0; E.visitHooker(p, NOW, W, i, never); assert.equal(E.hookerPrice(p, i, NOW + 1), precoPuta(p, i, NOW + 1, 1));
-  p.energy = 0; E.visitHooker(p, NOW + 1, W, i, never); assert.equal(E.hookerPrice(p, i, NOW + 2), precoPuta(p, i, NOW + 2, 2));
+  assert.equal(H.stepNum / H.stepDen, 1, 'sem subida por visita'); assert.equal(H.coolMs, T.HOUR);
+  H.list.forEach((_, k) => assert.equal(E.hookerPrice(p, k, NOW), precoPuta(p, k, NOW)));
+  // duas visitas seguidas à mesma: o preço dela é o da escada, igual ao de quem nunca lá foi com a mesma stamina comprada
+  p.energy = 0; E.visitHooker(p, NOW, W, i, never); assert.equal(E.hookerPrice(p, i, NOW + 1), precoPuta(p, i, NOW + 1));
+  p.energy = 0; E.visitHooker(p, NOW + 1, W, i, never); assert.equal(E.hookerPrice(p, i, NOW + 2), precoPuta(p, i, NOW + 2));
+  const o = mk(); o.rf = { ...p.rf }; assert.equal(E.hookerPrice(o, i, NOW + 2), E.hookerPrice(p, i, NOW + 2), 'quem lá foi paga o mesmo');
   assert.equal(p.rf.e, 2 * g.e, 'a stamina dela conta na escada do dia');
-  H.list.forEach((_, k) => { if (k !== i) assert.equal(E.hookerPrice(p, k, NOW + 2), precoPuta(p, k, NOW + 2, 0)); });
+  H.list.forEach((_, k) => assert.equal(E.hookerPrice(p, k, NOW + 2), precoPuta(p, k, NOW + 2)));
   assert.equal(E.hookerSteps(p, i, NOW + 2), 2); assert.equal(E.hookerSteps(p, 0, NOW + 2), 0); assert.equal(E.hookerUses(p, NOW + 2), 2);
   // 59 minutos depois ainda está igual; à hora desce um degrau; às duas horas só fica a escada
   assert.equal(E.hookerSteps(p, i, NOW + 1 + T.HOUR - 1), 2);
   assert.equal(E.hookerSteps(p, i, NOW + 1 + T.HOUR), 1); assert.equal(E.hookerSteps(p, i, NOW + 1 + 2 * T.HOUR), 0);
-  assert.equal(E.hookerPrice(p, i, NOW + 30 * T.HOUR), precoPuta(p, i, NOW + 30 * T.HOUR, 0), 'noutro dia a escada recomeça');
-  // ir lá de hora a hora: os degraus dela não acumulam, só a escada do dia
-  const h = mk(); for (let k = 0; k < 6; k++) { h.energy = 0; const t = NOW + k * T.HOUR, antes = precoPuta(h, i, t, 0); const r = E.visitHooker(h, t, W, i, never); assert.equal(r.price, antes); }
+  assert.equal(E.hookerPrice(p, i, NOW + 30 * T.HOUR), precoPuta(p, i, NOW + 30 * T.HOUR), 'noutro dia a escada recomeça');
+  const h = mk(); for (let k = 0; k < 6; k++) { h.energy = 0; const t = NOW + k * T.HOUR, antes = precoPuta(h, i, t); const r = E.visitHooker(h, t, W, i, never); assert.equal(r.price, antes); }
   // uma visita a meio não apaga os degraus que ainda faltavam descer: a hora conta desde a última visita
   const m = mk(); for (let k = 0; k < 5; k++) { m.energy = 0; E.visitHooker(m, NOW + k, W, i, never); }
   assert.equal(E.hookerSteps(m, i, NOW + 3 * T.HOUR + 10), 2); m.energy = 0; E.visitHooker(m, NOW + 3 * T.HOUR + 10, W, i, never); assert.equal(E.hookerSteps(m, i, NOW + 3 * T.HOUR + 11), 3);
   assert.equal(E.hookerSteps(m, i, NOW + 4 * T.HOUR + 9), 3); assert.equal(E.hookerSteps(m, i, NOW + 4 * T.HOUR + 10), 2);
-  // seguidas, sem esperar: a escada e os degraus dela fazem com que, ao fim de poucas visitas, custe mais do que rende no melhor caso
+  // seguidas, sem esperar: a escada do dia faz com que, ao fim de algumas visitas, custe mais do que rende no melhor caso
   const q = mk(); const valor = E.valuePerEnergy(q) * g.e * 1.6;      // todos os bónus de saque, sem a rua aquecer
   let visitas = 0, ultimo = 0;
   for (; visitas < 200; visitas++) { const preco = E.hookerPrice(q, i, NOW + visitas); assert.ok(preco >= ultimo); ultimo = preco; if (preco >= valor) break; q.energy = 0; E.visitHooker(q, NOW + visitas, W, i, never); }
-  assert.ok(visitas >= 5 && visitas <= 15, `compensou ${visitas} vezes seguidas`);
+  assert.ok(visitas >= 10 && visitas <= 30, `compensou ${visitas} vezes seguidas`);
   for (let k = 0; k < 100; k++) { q.energy = 0; q.cash = 1e15; E.visitHooker(q, NOW + 500 + k, W, i, never); } assert.equal(q.hkN[i], H.maxSteps); assert.deepEqual(E.checkInvariants(q), []);
   // estado antigo (listas de visitas) é convertido sem perder a conta de cada uma
   const velho = mk(); delete velho.hkN; delete velho.hkAt; velho.hkT = [NOW - 5, NOW - 4, NOW - 3]; velho.hkI = [i, i, 0]; E.touch(velho, NOW);
@@ -1128,8 +1127,9 @@ test('bordel: quartos, contratar, rendimento por hora, e a parte da puta nunca v
     assert.ok(v.price - v.house >= Math.floor((base * 8000) / 10000));
   }
   assert.equal(till0, 0);
-  // conta como visita para o preço subir (igual às da cidade) e a doença também se apanha
-  const cli = mk(); cli.cash = 1e6; cli.energy = 0; const b0 = E.hookerPrice(cli, 5, NOW); E.broVisitAt(cli, casa, NOW, W, 0, always); assert.equal(cli.sick, H[5].sickBp > 0); assert.ok(E.hookerPrice(cli, 5, NOW) > b0);
+  // conta na escada de stamina do dia (igual às da cidade) e a doença também se apanha
+  const cli = mk(); cli.cash = 1e6; cli.energy = 0; const b0 = E.hookerPrice(cli, 5, NOW); E.broVisitAt(cli, casa, NOW, W, 0, always); assert.equal(cli.sick, H[5].sickBp > 0);
+  assert.equal(cli.rf.e, H[5].e); assert.ok(E.hookerPrice(cli, 5, NOW) >= b0);
   assert.throws(() => E.broVisitAt(cli, casa, NOW, W, 0, never), code('SICK'));
   const ok = mk(); ok.cash = 1e6; ok.energy = 100; assert.throws(() => E.broVisitAt(ok, casa, NOW, W, 0, never), code('ENERGY_FULL')); ok.energy = 0;
   assert.throws(() => E.broVisitAt(ok, casa, NOW, W, 3, never), code('NO_HOOKER')); assert.throws(() => E.broVisitAt(casa, casa, NOW, W, 0, never), code('SELF')); assert.throws(() => E.broVisitAt(ok, ok, NOW, W, 0, never), code('SELF'));

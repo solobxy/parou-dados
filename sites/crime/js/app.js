@@ -911,15 +911,32 @@ function gigResult(G) {
   }
   const again = h('button', { class: 'btn buy block big', on: { click: (e) => { const id = G.task.id; S.gig = null; gigStart(id, e.currentTarget); } } }, t('tkAgain'));
   const other = h('button', { class: 'btn ghost block', on: { click: () => { S.gig = null; render(true); } } }, t('tkOther'));
-  if (r.busted) return h('div', { class: 'card tk-res bust' }, h('h3', null, t(r.id === 'desmanche' ? (r.spotted ? 'tkBustSeen' : 'tkBustStrip') : 'tkBust')), h('p', null, t(r.id === 'desmanche' ? 'tkBustStripSub' : 'tkBustSub')), other);
+  if (r.busted) return h('div', { class: 'card tk-res bust' }, h('h3', null, t(r.id === 'desmanche' ? (r.spotted ? 'tkBustSeen' : 'tkBustStrip') : 'tkBust')), h('p', null, t(r.id === 'desmanche' ? 'tkBustStripSub' : 'tkBustSub')), ritmoLine(r), other);
   const nxt = me.work ? me.work.multBp : 10000;
   return h('div', { class: 'card tk-res' },
     h('span', { class: 'small muted' }, t('tkPaid')), h('b', { class: 'num c-cash big' }, '+' + money(r.money)),
     h('p', { class: 'tk-q' }, t('tkQual', { p: pct(r.q) })), h('p', { class: 'small' }, gigLine(G)),
     G.task.id === 'laboratorio' ? h('p', { class: 'small muted' }, t('tkSafe')) : null,
     r.lav ? h('p', { class: 'small muted' }, t('ro_lav', { m: money(r.lav) })) : null,
-    nxt < 10000 ? h('p', { class: 'small muted' }, t('tkNext', { d: '−' + (100 - Math.round(nxt / 100)) })) : null,
+    ritmoLine(r),
+    nextLine(G.task.id, r.ritmo, nxt),
     again, other);
+}
+// v74: o ritmo de cada biscate sobe com o trabalho bem feito (até ao teto) e desce com o mal feito; mostra-se o que mudou
+const pctS = (bp) => (bp > 0 ? '+' : '') + Math.round(bp / 100) + '%';
+function ritmoLine(r) {
+  if (r.ritmo === undefined || (r.ritmo === r.ritmoAntes && !r.ritmo)) return null;
+  const Rt = S.cfg.work.ritmo, down = r.ritmo < r.ritmoAntes, same = r.ritmo === r.ritmoAntes;
+  const txt = same ? t(r.ritmo >= Rt.cap ? 'tkRitmoTop' : 'tkRitmoSame', { p: pctS(r.ritmo) }) : t('tkRitmo', { a: pctS(r.ritmoAntes), b: pctS(r.ritmo) });
+  return h('div', { class: 'tk-ritmo' }, h('p', { class: 'small ' + (down ? 'c-red' : 'c-cash') + (same ? '' : ' tk-pop') }, txt),
+    r.ritmoAntes === 0 || down ? h('p', { class: 'small muted' }, t('tkRitmoHow', { g: Math.round(Rt.good / 100), s: Math.round(Rt.step / 100), m: Math.round(Rt.cap / 100), b: Math.round(Rt.bad / 100), d: Math.round(Rt.drop / 100) })) : null);
+}
+// o próximo deste biscate, já com o ritmo e o cansaço: em euros, com o cansaço a vermelho
+function nextLine(id, ritmo, multBp) {
+  const W = S.cfg.work, x = W.list.find((y) => y.id === id); if (!x) return null;
+  const f = (v) => Math.floor((Math.floor((x.base * v) / 10000) * (10000 + (ritmo || 0)) * multBp) / 1e8);
+  return h('p', { class: 'small tk-next' }, h('span', { class: 'nw' }, t('tkNextPay', { a: money(f(W.qMin)), b: money(f(W.qMax)) })),
+    multBp < 10000 ? [' ', h('span', { class: 'nw c-red' }, '· ' + t('tkNextTired', { d: '−' + (100 - Math.round(multBp / 100)) + '%' }))] : null);
 }
 function screenGigs() {
   const me = S.st.me, W = S.cfg.work, wv = me.work || { multBp: 10000 }, G = S.gig && !S.gig.task.shift ? S.gig : null;
@@ -935,14 +952,18 @@ function screenGigs() {
     const x = W.list.find((y) => y.id === wv.tk.id);
     out.push(h('div', { class: 'tip' }, h('p', null, t('tkHalf', { x: t('gk_' + x.id) })), h('button', { class: 'btn buy sm', on: { click: () => openGig({ id: x.id, t0: wv.tk.t0, minMs: x.minMs, layout: wv.tk.layout }) } }, t('tkResume'))));
   }
-  if (wv.multBp < 10000 && !(G && G.res)) out.push(h('p', { class: 'small muted tk-tired' }, t('gTired', { p: Math.round(wv.multBp / 100), h: Math.round(S.cfg.work.halfLifeMs / 3600000) })));
+  if (wv.multBp < 10000 && !(G && G.res)) out.push(h('p', { class: 'small muted tk-tired' }, t('gTired', { p: 100 - Math.round(wv.multBp / 100), h: Math.round(S.cfg.work.halfLifeMs / 3600000) })));
   out.push(h('div', { class: 'card vlist vc tk-list' }, W.list.filter((x) => !x.shift).map((x) => {
-    const lo = Math.floor((x.base * W.qMin * wv.multBp) / 1e8), hi = Math.floor((x.base * W.qMax * wv.multBp) / 1e8), locked = me.level < x.level;
+    // o que paga já com o ritmo deste biscate (o próximo bem feito sobe mais um passo, o mal feito desce)
+    const rb = (wv.ritmo && wv.ritmo[x.id]) || 0, f = (v) => Math.floor((Math.floor((x.base * v) / 10000) * (10000 + rb) * wv.multBp) / 1e8);
+    const lo = f(W.qMin), hi = f(W.qMax), locked = me.level < x.level;
     return h('button', { class: 'vrow tk-gig', disabled: !!b || locked, on: { click: (e) => gigStart(x.id, e.currentTarget) } },
       art('gigs', x.id, 'vth'),
-      h('div', { class: 'grow' }, h('b', null, t('gk_' + x.id)), h('div', { class: 'small muted' }, t('gd_' + x.id)),
-        locked ? h('div', { class: 'small muted' }, t('gOpensAt', { n: x.level, a: money(Math.floor((x.base * W.qMin) / 10000)), b: money(Math.floor((x.base * W.qMax) / 10000)) }))
-          : h('div', { class: 'small' }, h('span', { class: 'num c-cash' }, t(x.bustBp ? 'gPayDirty' : 'gPay', { a: money(lo), b: money(hi) })), h('span', { class: 'muted' }, ' · ' + t('gDur', { s: Math.round(x.minMs / 1000) + 8 })), x.bustBp ? h('span', { class: 'c-red' }, ' · ' + t('tkIllegal', { p: pct(x.bustBp) })) : null)),
+      h('div', { class: 'grow' }, h('div', { class: 'tk-tl' }, h('b', null, t('gk_' + x.id)), rb ? h('span', { class: 'small c-cash tk-rb' }, t('gRitmo', { p: Math.round(rb / 100) })) : null),
+        h('div', { class: 'small muted tk-desc' }, t('gd_' + x.id)),
+        locked ? h('div', { class: 'small muted' }, h('span', { class: 'nw' }, t('gOpens', { n: x.level })), ' ', h('span', { class: 'nw' }, '· ' + t('gOpensPay', { a: money(Math.floor((x.base * W.qMin) / 10000)), b: money(Math.floor((x.base * W.qMax) / 10000)) })))
+          : h('div', { class: 'small' }, h('span', { class: 'num c-cash' }, t(x.bustBp ? 'gPayDirty' : 'gPay', { a: money(lo), b: money(hi) })), ' ', h('span', { class: 'muted nw' }, '· ' + t('gDur', { s: Math.round(x.minMs / 1000) + 8 })),
+            x.bustBp ? h('span', { class: 'c-red' }, ' ', h('span', { class: 'nw' }, '· ' + t('gIllegal')), ' ', h('span', { class: 'nw' }, '· ' + t('gRisk', { p: pct(x.bustBp) }))) : null)),
       locked ? null : icon('chev'));
   })));
   return out;
@@ -1379,8 +1400,15 @@ function screenClub() {
 // ---------- putas ----------
 function screenPutas() {
   const me = S.st.me, L = live(me), H = S.cfg.hookers;
-  const out = [pageHead('putas', t('s_putas', { p: Math.round((H.stepNum / H.stepDen - 1) * 100) }))];
+  const R = S.cfg.refillBar, out = [pageHead('putas', t('s_putas', { h: Math.round(100 / R.coolPerH) }))];
   const b = busyBanner(me); if (b) out.push(b);
+  // o estado da escada de hoje: quanto acima do normal estão os preços e a que horas descem um degrau
+  const used = me.refillBars || 0, kk = Math.floor(used / 100) + 1;
+  if (kk > 1) {
+    const step = (n) => R.a * n + R.b * n * n, up = Math.round((step(kk) / step(1) - 1) * 100);
+    const at = now() + Math.ceil(((used - (kk - 1) * 100 + 1) / R.coolPerH) * 3600000);
+    out.push(h('p', { class: 'small hk-now' }, h('span', { class: 'nw c-red' }, t('hkNowUp', { p: up })), ' ', h('span', { class: 'nw muted' }, '· ' + t('hkNowDown', { h: hhmm(at) }))));
+  }
   if (me.sick) out.push(h('div', { class: 'note', style: 'margin-bottom:10px' }, h('h3', { class: 'c-red' }, t('sickTitle')), h('p', null, t('sickSub', { p: H.sickCutBp / 100 })),
     h('button', { class: 'btn pri', on: { click: () => go('hosp') } }, t('goHosp'))));
   const pv = playerBros(me, L, b); if (pv.good) out.push(...pv, h('h2', { class: 'sec' }, t('brCity')));
@@ -1398,8 +1426,7 @@ function screenPutas() {
     rows.push(h('div', { class: 'vrow hkr' }, art('putas', g.id, 'vth'),
       h('div', { class: 'grow' }, h('b', null, list('hookers')[i]),
         h('div', { class: 'small c-en' }, '+' + g.e + ' ' + t('energy').toLowerCase()),
-        h('div', { class: 'small c-red' }, t('hkSick', { p: (sickOf(g) / 100).toString().replace('.', lang() === 'pt' ? ',' : '.') })),
-        (me.hkSteps?.[i] || 0) > 0 ? h('div', { class: 'small c-gold' }, t('hkUp', { p: Math.round(((H.stepNum / H.stepDen) ** me.hkSteps[i] - 1) * 100), h: me.hkSteps[i] })) : null),
+        sickOf(g) > 0 ? h('div', { class: 'small c-red' }, t('hkSick', { p: (sickOf(g) / 100).toString().replace('.', lang() === 'pt' ? ',' : '.') })) : h('div', { class: 'small muted' }, t('hkNoSick'))),
       h('button', { class: 'btn sm num ' + (i === best ? 'buy' : 'ghost'), 'aria-label': t('hkGo', { m: money(price) }), disabled: !ok, on: { click: (e) => act('hooker', { i }, { el: e.currentTarget }) } }, t('hkBtn') + ' · ' + money(price))));
   });
   out.push(h('div', { class: 'card vlist vc hkl' }, rows));

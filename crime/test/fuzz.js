@@ -255,7 +255,7 @@ function contas(kind, a0, a, d0, d, t, res, arg) {
     case 'house': if (dm !== -res.price || dr !== res.respect) bad('casa'); break;
     case 'workStart': if (dm !== 0 || dr !== 0 || !a.tk || a.tk.id !== res.task.id) bad('biscate: começar'); break;
     case 'workDone': if (res.shift) { if (dm !== res.money || dr !== CFG.jobs.resp || a.tk || res.money > Math.ceil((E.shiftPay(CFG.jobs.list[a.job], res.n) * CFG.jobs.qMax) / 10000)) bad('turno à mão'); break; }
-      if (dm !== res.money || dr !== 0 || a.tk || res.money < 0 || (res.busted && (res.money !== 0 || !(a.jailUntil > t))) || (!res.busted && res.money > Math.ceil((CFG.work.list.find((x) => x.id === res.id).base * CFG.work.qMax) / 10000))) bad('biscate: entregar'); break;
+      if (dm !== res.money || dr !== 0 || a.tk || res.money < 0 || (res.busted && (res.money !== 0 || !(a.jailUntil > t))) || (!res.busted && res.money > Math.ceil((CFG.work.list.find((x) => x.id === res.id).base * CFG.work.qMax * (10000 + CFG.work.ritmo.cap)) / 1e8)) || (a.wm && a.wm[res.id]) !== res.ritmo || Math.abs(res.ritmo - res.ritmoAntes) > CFG.work.ritmo.drop) bad('biscate: entregar'); break;
     default: if (dm > 0 || dr !== 0) bad('esta ação só devia gastar'); // discoteca, putas, hospital, treino, porto (envio), equipamento, melhorias
   }
   if (a.energy > E.energyMax(a) || a.energy < 0) bad('stamina');

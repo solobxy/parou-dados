@@ -2724,3 +2724,22 @@ img { -webkit-user-drag: none; }
 .sib { position: relative; } .sib::after { content: ''; position: absolute; inset: -5px; }
 .sbet b { font-variant-numeric: tabular-nums; }
 @media (max-width: 360px) { .sbet > div { min-width: 52px; } }
+/* v74: o ritmo de cada biscate, no resultado */
+.tk-ritmo { display: grid; gap: 4px; }
+.tk-res .tk-ritmo p.c-cash { color: var(--cash); font-weight: 600; }
+.tk-res .tk-ritmo p.c-red { color: var(--danger); font-weight: 600; }
+/* v74, revisão: o ritmo ao lado do título, pedaços que não partem, a previsão do próximo */
+.nw { white-space: nowrap; }
+.tk-tl { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; column-gap: 8px; }
+.tk-tl > b { white-space: normal; overflow: visible; text-overflow: clip; min-width: 0; }
+.tk-tl .tk-rb { font-weight: 600; white-space: nowrap; }
+.tk-desc { text-wrap: pretty; }
+.tk-res .tk-next { color: var(--tx); }
+.tk-res .tk-next .c-red { color: var(--danger); }
+@keyframes tkPop { 0% { transform: scale(.92); opacity: .4; } 60% { transform: scale(1.06); opacity: 1; } 100% { transform: scale(1); } }
+.tk-pop { animation: tkPop .45s cubic-bezier(.2,.8,.2,1) both; }
+@media (prefers-reduced-motion: reduce) { .tk-pop { animation: none; } }
+.hk-now { margin: 0 2px 10px; }
+.vrow.hkr > .btn, .vrow.fxr > .btn { font-size: 15px; }
+.tk-list { grid-template-columns: minmax(0, 1fr); } .vrow.tk-gig { width: 100%; min-width: 0; }
+.vrow.hkr > .btn > .bs, .vrow.fxr > .btn > .bs { font-size: 15px; font-weight: 600; opacity: 1; }

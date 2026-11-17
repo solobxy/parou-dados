@@ -295,14 +295,17 @@ export const CFG = {
   // sem respeito; o laboratório paga mais com 3% de rusga. O cansaço passa para metade a cada 12 h (era 6 h).
   work: {
     half: 30, halfLifeMs: 12 * HOUR, qMin: 6000, qMax: 12000, spottedBp: 5000,   // spottedBp: visto pela patrulha no desmanche
+    // v74 (17/11): o ritmo de cada biscate. Bem feito (70% ou mais) sobe +5%, até +30%; mal feito (menos de 50%) ou visto pela patrulha
+    // desce 10%. É de cada biscate e fica na conta: recompensa quem se esforça, sem tirar o cansaço (que continua a travar quem repete).
+    ritmo: { good: 7000, bad: 5000, step: 500, drop: 1000, cap: 3000 },
     list: [
       { id: 'camiao', level: 1, base: 95, minMs: 9000 },          // descarregar o camião: as caixas pesadas em baixo
-      { id: 'entregas', level: 1, base: 95, minMs: 9000 },        // encomendas na mochila e as portas pela ordem mais curta
-      { id: 'laboratorio', level: 1, base: 115, minMs: 12000, bustBp: 300, jailMin: 10 },   // comprimidos, trituradora, sacos
+      { id: 'entregas', level: 1, base: 105, minMs: 9000 },       // v74: dois passos (mochila e mapa), paga mais do que o camião        // encomendas na mochila e as portas pela ordem mais curta
+      { id: 'laboratorio', level: 1, base: 135, minMs: 12000, bustBp: 300, jailMin: 10 },   // v74: três passos e ilegal (115 → 135)   // comprimidos, trituradora, sacos
       // 17/11 (v68): um degrau por cada crime novo. Pagam mais, mas sobem mais devagar do que o crime do mesmo nível
-      { id: 'oficina', level: 8, base: 110, minMs: 12000 },       // trocar um pneu: porcas em estrela e o aperto certo
-      { id: 'mudancas', level: 12, base: 125, minMs: 12000 },     // encaixar os móveis na carrinha: pesados à cabine, frágeis à porta
-      { id: 'desmanche', level: 12, base: 150, minMs: 8000, bustBp: 400, jailMin: 15 },   // peças de um carro roubado antes da patrulha
+      { id: 'oficina', level: 8, base: 145, minMs: 12000 },       // v74: 110 → 145       // trocar um pneu: porcas em estrela e o aperto certo
+      { id: 'mudancas', level: 12, base: 165, minMs: 12000 },     // v74: 125 → 165     // encaixar os móveis na carrinha: pesados à cabine, frágeis à porta
+      { id: 'desmanche', level: 12, base: 185, minMs: 8000, bustBp: 400, jailMin: 15 },   // v74: 150 → 185   // peças de um carro roubado antes da patrulha
       // só nos turnos dos empregos (não são biscates)
       { id: 'entradas', shift: true, minMs: 8000 },   // vigilante: quem entrou sem estar na lista
       { id: 'doses', shift: true, minMs: 8000 },      // enfermeiro: três seringas na dose certa
@@ -554,10 +557,12 @@ export const CFG = {
     ],
     ups: [],
   },
-  // putas: stamina sem vício; o preço segue o que ganhas por stamina e sobe 10% por cada visita nas últimas 24 h
+  // putas: stamina sem vício; o preço é o da escada de stamina do dia (a mesma das barras), vezes o dela
   hookers: {
-    // cada visita sobe 4% o preço DESSA puta (as outras não mexem); por cada hora sem lá ir, o preço dela desce um degrau até voltar ao normal.
-    stepNum: 26, stepDen: 25, maxSteps: 60, coolMs: 1 * HOUR,
+    // v74 (17/11): voltar à mesma já não fica mais caro (antes subia 4% por visita). Só a escada do dia mexe no preço, e essa é a das barras:
+    // sobe com a stamina comprada hoje e desce uma barra a cada 4 horas. stepNum/stepDen ficam 1/1 para os ecrãs abertos na versão antiga.
+    // hkN/hkAt continuam a contar as visitas a cada uma (descem uma por hora), sem mexer no preço.
+    stepNum: 1, stepDen: 1, maxSteps: 60, coolMs: 1 * HOUR,
     sickCutBp: 1500, // doente: −15% em todas as stats até se tratar
     cureMin: 40, cureValueBp: 1000, // tratar custa o que rendem 10 de stamina
     // rara: ela mete-te a mão (hipótese por categoria, da mais barata à mais cara). A carteira só leva o que tens na mão (o banco está a salvo);

@@ -70,8 +70,8 @@ function perfeita(task) {
   return { taps: [tap(1), tap(2), tap(3)], holds: L.bags.map(() => Math.round((L.target * 1000) / L.rate)), pills: L.pills };
 }
 
-test('três biscates desde o nível 1: camião e entregas pagam 95 € (um toque de carteirista), o laboratório 115 € com risco de rusga', () => {
-  assert.deepEqual(BISC().filter((x) => x.level === 1).map((x) => [x.id, x.level, x.base, !!x.bustBp]), [['camiao', 1, 95, false], ['entregas', 1, 95, false], ['laboratorio', 1, 115, true]]);
+test('três biscates desde o nível 1: camião 95 €, entregas 105 € (dois passos), o laboratório 135 € com risco de rusga (v74)', () => {
+  assert.deepEqual(BISC().filter((x) => x.level === 1).map((x) => [x.id, x.level, x.base, !!x.bustBp]), [['camiao', 1, 95, false], ['entregas', 1, 105, false], ['laboratorio', 1, 135, true]]);
   assert.equal(W().half, 30); assert.equal(W().halfLifeMs, 12 * T.HOUR);
   for (const x of W().list) assert.ok(x.minMs >= 8000 && x.minMs <= 15000, x.id);
   for (const x of W().list.filter((y) => y.shift)) assert.throws(() => E.workStart(mk(), START, world, seededRng(1), x.id), code('NO_WORK'), 'só nos turnos');
@@ -113,7 +113,7 @@ test('bem feito paga 120% da base; mal feito paga menos, nunca menos de 60%', ()
   for (const x of BISC()) {
     const p = mkAlto(); const r = E.workStart(p, START, world, seededRng(3), x.id);
     const d = E.workDone(p, START + 60000, world, nunca, perfeita(r.task));
-    assert.equal(d.q, 10000, x.id); assert.equal(d.money, Math.floor((x.base * 12000) / 10000), x.id);
+    assert.equal(d.q, 10000, x.id); assert.equal(d.money, Math.floor((Math.floor((x.base * 12000) / 10000) * (10000 + W().ritmo.step)) / 10000), x.id + ' (com o 1.º passo do ritmo, v74)');
     assert.equal(p.tk, null, 'a tarefa acaba');
   }
   // camião com as caixas todas trocadas (as leves em baixo) e duas caídas
@@ -136,8 +136,11 @@ test('cansaço: a 31.ª tarefa seguida paga metade; doze horas depois o cansaço
   const p = mk(); let t = START;
   const pagos = [];
   for (let i = 0; i < 31; i++) { const r = E.workStart(p, t, world, seededRng(9), 'camiao'); t += 20000; pagos.push(E.workDone(p, t, world, nunca, perfeita(r.task)).money); }
-  assert.equal(pagos[0], 114); assert.equal(pagos[30], 57, 'trinta seguidas: metade');
-  assert.ok(pagos.every((x, i) => i === 0 || x <= pagos[i - 1]), 'nunca sobe a meio');
+  // v74: o ritmo sobe 5% por tarefa bem feita até ao 6.º (+30%); daí para a frente só o cansaço mexe, e trinta seguidas pagam metade
+  const top = Math.floor((114 * (10000 + W().ritmo.cap)) / 10000);
+  assert.equal(pagos[0], Math.floor((114 * 10500) / 10000)); assert.equal(pagos[30], Math.floor((top * 5000) / 10000), 'trinta seguidas: metade');
+  const cap = W().ritmo.cap / W().ritmo.step;
+  assert.ok(pagos.every((x, i) => i < cap || x <= pagos[i - 1]), 'depois do teto do ritmo nunca sobe a meio');
   const agora = E.workView(p, t).tired, depois = E.workView(p, t + 12 * T.HOUR).tired;
   assert.ok(agora > 30 && agora <= 31, String(agora));
   assert.ok(Math.abs(depois - agora / 2) < 0.01, `${agora} → ${depois}`);
@@ -147,7 +150,7 @@ test('cansaço: a 31.ª tarefa seguida paga metade; doze horas depois o cansaço
 test('laboratório: o dinheiro é sujo (conta para a lavagem) e uma rusga leva à prisão, sem pagar', () => {
   const p = mk(); const r = E.workStart(p, START, world, seededRng(6), 'laboratorio');
   const ilegal0 = p.ilegal, d = E.workDone(p, START + 60000, world, nunca, perfeita(r.task));
-  assert.equal(d.busted, false); assert.equal(p.ilegal - ilegal0, Math.floor((115 * 12000) / 10000));
+  assert.equal(d.busted, false); assert.equal(p.ilegal - ilegal0, d.money); assert.equal(d.money, Math.floor((Math.floor((135 * 12000) / 10000) * 10500) / 10000));
   const q = mk(); const r2 = E.workStart(q, START, world, seededRng(6), 'laboratorio'), c0 = q.cash;
   const b = E.workDone(q, START + 60000, world, sempre, perfeita(r2.task));
   assert.equal(b.busted, true); assert.equal(b.money, 0); assert.equal(q.cash, c0);
@@ -223,12 +226,13 @@ test('entradas e contrato: respostas com linhas repetidas ou fora da lista são 
 
 // ---------- v68: um degrau de biscates por cada crime (17/11) ----------
 test('oficina no nível 8, mudanças e desmanche no 12: pagam mais, mas menos do que o crime do mesmo nível', () => {
-  assert.deepEqual(BISC().filter((x) => x.level > 1).map((x) => [x.id, x.level, x.base, !!x.bustBp]), [['oficina', 8, 110, false], ['mudancas', 12, 125, false], ['desmanche', 12, 150, true]]);
+  assert.deepEqual(BISC().filter((x) => x.level > 1).map((x) => [x.id, x.level, x.base, !!x.bustBp]), [['oficina', 8, 145, false], ['mudancas', 12, 165, false], ['desmanche', 12, 185, true]]);
   const p = mk(); p.respect = p.peakRespect = CFG.levels[6];   // nível 7
   assert.throws(() => E.workStart(p, START, world, seededRng(1), 'oficina'), code('LOW_LEVEL'));
   // o crime do nível 8 (carros) rende mais por toque do que a oficina com tudo perfeito
   const carro = CFG.crimes.find((c) => c.id === 'carro'), ev = carro.prizes.reduce((a, [bp, lo, hi]) => a + (bp * (lo + hi)) / 2, 0) / 10000;
-  assert.ok((ev * carro.p) / 10000 / (carro.e / 10) > 110 * 1.2, 'o crime paga mais à medida que se sobe');
+  // v74: uma tarefa leva 12 s ou mais e um toque 1 s; a oficina perfeita, com o ritmo no teto, paga menos do que dois toques no carro
+  assert.ok((2 * (ev * carro.p)) / 10000 / (carro.e / 10) > (145 * 12000 * (10000 + W().ritmo.cap)) / 1e8, 'o crime paga mais por minuto à medida que se sobe');
 });
 
 test('a mesma semente dá a mesma oficina, carrinha e desmanche; a carrinha tem sempre arrumação', () => {
