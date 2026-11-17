@@ -36,9 +36,12 @@ export const P = {
   rua: [
     // gasto = o que sai por barra em multas e fianças (uma falha em quatro é apanhada) e, nos golpes com arma, em arma e balas
     { nivel: 1, barra: 1150, gasto: 50 },         // furto em loja, carteirista (135 € em média quando corre bem); multa de 150 €
+    { nivel: 3, barra: 1290, gasto: 75 },         // v72: roubar bicicletas (152 € em média quando corre bem); multa de 200 €
+    { nivel: 5, barra: 1300, gasto: 150 },        // v72: multibanco (burla, 325 € em média); multa de 600 €
     { nivel: 8, barra: 1500, gasto: 100 },        // arrombar carros; fiança de 400 €
     { nivel: 12, barra: 2000, gasto: 250 },       // esticão (1 500 € em média; na vida real 2 021 €); fiança de 1 500 €
     { nivel: 18, barra: 2800, gasto: 440 + 200 }, // assalto a loja e a bomba de gasolina; fiança de 2 500 €, 100 € de arma e balas por golpe
+    { nivel: 24, barra: 3170, gasto: 595 + 200 }, // v72: assalto a farmácia (2 400 € em média); fiança de 3 500 €, 100 € de arma e balas por golpe
     { nivel: 30, barra: 3600, gasto: 450 + 100 }, // assaltos armados; fiança de 6 000 €, 100 € de arma e balas por golpe
   ],
   // A rua aquece: rendimento de cada barra seguida de golpes de rua no mesmo dia.

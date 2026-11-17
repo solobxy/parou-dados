@@ -19,8 +19,10 @@ const ev = (c) => c.prizes.reduce((s, [bp, a, z]) => s + (bp * (a + z)) / 2, 0) 
 
 test('golpes de rua: os seis da especificação (nível, stamina, média se correr bem, sucesso, média por barra)', () => {
   const tab = [['loja', 1, 10, 128, 9000, 1150], ['carteirista', 1, 10, 135, 8500, 1150], ['carro', 8, 20, 375, 8000, 1500],
-    ['esticao', 12, 50, 1500, 6700, 2000], ['bomba', 18, 50, 2150, 6500, 2800], ['armado', 30, 100, 5150, 7000, 3600]];
-  assert.equal(CFG.crimes.length, 6);
+    ['esticao', 12, 50, 1500, 6700, 2000], ['bomba', 18, 50, 2150, 6500, 2800], ['armado', 30, 100, 5150, 7000, 3600],
+    // v72: três golpes novos, no fim da lista
+    ['bicicleta', 3, 10, 152, 8500, 1292], ['multibanco', 5, 20, 325, 8000, 1300], ['farmacia', 24, 50, 2402, 6600, 3171]];
+  assert.equal(CFG.crimes.length, 9);
   for (const [id, nivel, e, media, p, barra] of tab) {
     const c = CFG.crimes[k(id)];
     assert.ok(c, id); assert.equal(c.level, nivel, id); assert.equal(c.e, e, id); assert.equal(c.p, p, id);

@@ -63,6 +63,7 @@ function migrate(p) {
   if (!Array.isArray(p.detoxT)) p.detoxT = [];
   if (!p.xp) p.xp = { F: 0, I: 0, C: 0 };
   if (!Array.isArray(p.wk)) p.wk = CFG.crimes.map(() => 0);
+  while (p.wk.length < CFG.crimes.length) p.wk.push(0);   // golpes novos no fim da lista (v72)
   if (!p.c) p.c = { crimes: 0, wins: 0, trains: 0, refills: 0, collects: 0, pvpWins: 0, ports: 0 };
   if (!Number.isSafeInteger(p.mi)) p.mi = 0;
   if (!Array.isArray(p.mq)) p.mq = CFG.missions.map((_, i) => i).slice(Math.min(Math.max(p.mi, 0), CFG.missions.length));
@@ -2977,7 +2978,7 @@ function missionHave(p, type) {
     case 'pvpWins': return p.c.pvpWins;
     case 'ports': return p.c.ports;
     case 'level': return level(p);
-    case 'tier': { let t = 0; for (let k = 0; k < p.wk.length; k++) if (p.wk[k] > 0) t = k + 1; return t; }
+    case 'tier': { let t = 0; for (let k = 0; k < p.wk.length; k++) if (p.wk[k] > 0) t = Math.max(t, CFG.crimes[k].tier ?? k + 1); return t; }   // o degrau do golpe, não a posição na lista
     case 'shifts': return p.c.shifts;
     case 'courses': return p.done.length;
     case 'skill': return Math.floor(Math.max(...CFG.skills.fams.map((f) => p.sk[f])) / 100);   // barras na melhor família

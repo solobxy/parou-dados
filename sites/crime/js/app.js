@@ -1049,7 +1049,8 @@ function screenRob() {
   const me = S.st.me, C = S.cfg.crimes, L = live(me), names = list('crimes'), st = me.street || { used: 0, heatBp: 10000 };
   const out = [pageHead('rob', null, true)];
   const b = busyBanner(me); if (b) out.push(b);
-  const open = C.map((c, i) => i).filter((i) => me.crimes[i].unlocked);
+  const ord = C.map((c, i) => i).sort((a2, b2) => C[a2].level - C[b2].level || a2 - b2);   // por nível (os golpes novos vão no fim da lista do servidor)
+  const open = ord.filter((i) => me.crimes[i].unlocked);
   let k = S.robK ?? store.get('robK', -1);
   if (!open.includes(k)) { k = open[0]; for (const i of open) if (!C[i].gun || gunOk(me)) k = i; }   // o melhor que já dá para fazer
   S.robK = k;
@@ -1081,7 +1082,8 @@ function screenRob() {
   out.push(h('h2', { class: 'sec' }, t('allJobs')));
   const rows = h('div', { class: 'rows' });
   let lockedShown = false;
-  C.forEach((x, i) => {
+  ord.forEach((i) => {
+    const x = C[i];
     if (!me.crimes[i].unlocked) {
       if (lockedShown) return; lockedShown = true;
       rows.append(h('div', { class: 'rowi lock' }, art('crimes', x.id), h('div', { class: 'mid' }, h('div', { class: 'nm' }, names[i]), h('div', { class: 'meta' }, icon('lock'), ' ', t('opensAt', { n: x.level }))),

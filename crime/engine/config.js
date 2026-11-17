@@ -155,6 +155,14 @@ export const CFG = {
       prizes: [[5000, 700, 1500, 'caixa'], [3500, 1800, 3000, 'cofre'], [1300, 4000, 6000, 'tabaco'], [200, 4000, 7000, 'malote']] },
     { id: 'armado', fam: 'armas', e: 100, level: 30, p: 7000, fine: 6000, jailMin: 20, gun: true, w: { I: 40, F: 60, C: 0 },
       prizes: [[5000, 2000, 4000, 'caixa'], [3500, 4500, 7500, 'cofre'], [1300, 8000, 12000, 'joalharia'], [200, 10000, 15000, 'cofreforte']] },
+    // v72 (17/11/2026): três golpes novos, acrescentados no fim para não mexer nos índices dos jogadores (o ecrã ordena por nível).
+    // tier: o degrau para os objetivos «golpe de nível N» (os seis de cima são 1 a 6 pela ordem); estes entram no degrau do nível.
+    { id: 'bicicleta', fam: 'furto', e: 10, level: 3, p: 8500, fine: 200, jailMin: 3, tier: 2, w: { I: 30, F: 50, C: 20 },
+      prizes: [[6000, 30, 100, 'pecasbike'], [3000, 140, 320, 'bicicleta'], [900, 300, 500, 'btt'], [100, 600, 1000, 'bikeeletrica']] },
+    { id: 'multibanco', fam: 'burla', e: 20, level: 5, p: 8000, fine: 600, jailMin: 6, tier: 2, w: { I: 80, F: 0, C: 20 },
+      prizes: [[5500, 80, 240, 'talao'], [3200, 250, 550, 'cartao'], [1100, 500, 900, 'clonados'], [200, 1200, 2000, 'carregamento']] },
+    { id: 'farmacia', fam: 'assalto', e: 50, level: 24, p: 6600, fine: 3500, jailMin: 15, gun: true, tier: 5, w: { I: 20, F: 70, C: 10 },
+      prizes: [[5000, 900, 2000, 'caixa'], [3500, 2000, 3500, 'medicamentos'], [1300, 3500, 5500, 'cofre'], [200, 5000, 8000, 'controlados']] },
   ],
   // A rua aquece: no mesmo dia (de Lisboa), a 1.ª e a 2.ª barra de golpes de rua rendem 100%, a 3.ª e a 4.ª 70%, a 5.ª e a 6.ª 45%,
   // da 7.ª em diante 25% (dinheiro e respeito). Respeito de uma barra de golpes: 20 + 2 por nível, até 120 (dá-se nos golpes que correm bem).

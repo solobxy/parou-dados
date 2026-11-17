@@ -103,7 +103,7 @@ test('economia nova pela API: golpe, barra a droga, venda de droga e ginásio, e
   const me0 = (await A('GET', '/api/state')).body.me;
   assert.equal(me0.vigor, CFG.vigor.max); assert.equal(me0.street.heatBp, 10000); assert.deepEqual(me0.deal, { dst: [0, 0], used: 0, cap: (1 + Math.floor(me0.level / 25)) * 10 });
   const cfg = await (await fetch(BASE + '/api/config')).json();
-  assert.equal(cfg.crimes.length, 6); assert.deepEqual(cfg.refillBar, { a: 25, b: 5, coolPerH: 25 }); assert.equal(cfg.deal.list.length, 2); assert.equal(cfg.vigor.max, 100);
+  assert.equal(cfg.crimes.length, 9); assert.deepEqual(cfg.refillBar, { a: 25, b: 5, coolPerH: 25 }); assert.equal(cfg.deal.list.length, 2); assert.equal(cfg.vigor.max, 100);
   // assalto a loja sem pistola: recusado; o armado ainda não abriu (nível 30). Antes do golpe, que pode acabar na prisão.
   let r = await A('POST', '/api/act', { type: 'crime', k: 4 }); assert.equal(r.body.error, 'NEED_GUN');
   r = await A('POST', '/api/act', { type: 'crime', k: 5 }); assert.equal(r.body.error, 'LOCKED');

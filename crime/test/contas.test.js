@@ -128,7 +128,7 @@ test('profissões: cada bónus vale exatamente o que o cartão diz', () => {
   // vigarista: −25% de prisão ao falhar e fiança a metade
   const v = mk('vigarista'), s = mk();
   assert.equal(E.bustChanceBp(v, now), 1875); assert.equal(E.bustChanceBp(s, now), 2500);
-  const armado = CFG.crimes.length;   // prisão do assalto armado: 20 min, multa de 6 000 €
+  const armado = CFG.crimes.findIndex((c) => c.id === 'armado') + 1;   // prisão do assalto armado: 20 min, multa de 6 000 €
   for (const q of [v, s]) { q.jailUntil = now + CFG.crimes[armado - 1].jailMin * T.MIN; q.jailTier = armado; }
   assert.equal(E.bailCost(s, now), 6000); assert.equal(E.bailCost(v, now), 3000);
   // traficante: drogas −30%, efeitos a dobrar, +15 de limite
