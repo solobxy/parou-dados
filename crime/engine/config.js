@@ -305,6 +305,19 @@ export const CFG = {
     contactsMax: 3, escapeE: 30, escapeBp: 3500, escapeAddBp: 5000 },
   // Stamina a mais, a droga: cada barra (100) seguida custa 25 € × k + 5 € × k² (30, 70, 120, 180 €…); a escada desce 25 pontos por hora (uma barra em 4 h).
   refillBar: { a: 25, b: 5, coolPerH: 25 },
+  // v79: colecionáveis e museu, à maneira dos peluches e das flores do Torn. Ficam numa vitrine (fora do inventário).
+  // Lembranças: uma por rota do aeroporto, 25% em cada voo que chega inteiro. Peças raras: em cada golpe que corre bem,
+  // 0,15% por ponto de stamina do golpe (carteirista 1,5%, assalto à mão armada 15%), para a stamina gasta valer o mesmo em qualquer golpe.
+  // O museu fica com o conjunto inteiro e paga dinheiro limpo (vai para o banco) e respeito; a primeira entrega de cada conjunto
+  // paga o dobro e põe o nome na placa. As repetidas vendem-se ao penhorista.
+  col: {
+    airBp: 2500, crimeBpPerE: 15, pawn: 300, plaque: 20,
+    sets: {
+      mundo: { items: ['bule', 'tulipa', 'orquidea', 'caveira', 'tapete'], cash: 25000, resp: 300 },
+      raras: { items: ['moeda', 'bolso', 'broche', 'selo', 'caneta', 'estatueta'], cash: 15000, resp: 200 },
+    },
+    route: { tanger: 'bule', amesterdao: 'tulipa', medellin: 'orquidea', culiacan: 'caveira', kandahar: 'tapete' },
+  },
   // v78: consumíveis à maneira do Torn. Compram-se e usam-se logo; cada um enche uma conta de espera (estômago ou médica) que passa
   // em tempo real. Acima do teto não se consome mais dessa família. Preços em euros de Portugal (2026).
   consum: {

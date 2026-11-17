@@ -48,7 +48,20 @@ function contas(kind, a0, a, d0, d, t, res, arg) {
   if (av < 0 || av > CFG.retainer.day) { console.error('CONTAS ERRADAS avença paga mais de uma vez', kind, av); process.exit(1); }
   if ((a.ilegal || 0) < (a0.ilegal || 0)) { console.error('CONTAS ERRADAS total de crime desceu', kind); process.exit(1); }
   const bad = (m) => { console.error('CONTAS ERRADAS', kind, m, JSON.stringify(res), { dm, dr }); if (process.env.DBG && res && res.r) { const s0 = res.r === 'lx' ? E.venueView(a0, t).stock : a0.wh[res.r].s; console.error('s0', s0[res.d], 's1', E.whStock(a, res.r)[res.d], 'chegou', chegou(res.r, res.d), 'mvNovas', JSON.stringify(mvNovas), 'cost min', Math.floor((res.n * MW.refC(res.d) * 0.2) / 100)); } process.exit(1); };
+  // v79: a vitrine só cresce com golpes que correm bem e aviões que chegam inteiros, e só desce no museu e no penhorista
+  const colD = {}; for (const id of new Set([...Object.keys(a0.col || {}), ...Object.keys(a.col || {})])) { const x = ((a.col || {})[id] || 0) - ((a0.col || {})[id] || 0); if (x) colD[id] = x; }
+  const colEq = (m) => JSON.stringify(Object.entries(colD).sort()) === JSON.stringify(Object.entries(m).filter(([, v]) => v).sort());
+  const RARAS = CFG.col.sets.raras.items;
+  if (kind === 'crime' && !colEq(res.col ? { [res.col]: 1 } : {})) bad('vitrine: golpe');
+  if (kind === 'crime' && res.col && (!res.success || !RARAS.includes(res.col))) bad('vitrine: peça de golpe');
+  if (kind === 'crimeAll' && (!colEq(res.col || {}) || Object.keys(res.col || {}).some((id) => !RARAS.includes(id)) || Object.values(res.col || {}).reduce((x, y) => x + y, 0) > res.wins)) bad('vitrine: vários golpes');
+  if (kind === 'airCollect' && (!colEq(res.col ? { [res.col]: 1 } : {}) || (res.col && (res.seized || res.col !== CFG.col.route[CFG.air.routes[a0.air.r].id])))) bad('vitrine: avião');
+  if (!['crime', 'crimeAll', 'airCollect', 'museum', 'colSell'].includes(kind) && Object.keys(colD).length) bad('vitrine mexeu sem razão');
+  if (Object.values(a.col || {}).some((v) => !Number.isInteger(v) || v < 0)) bad('vitrine negativa');
   switch (kind) {
+    case 'museum': { const S = CFG.col.sets[arg], k = (a0.mus || {})[arg] > 0 ? 1 : 2;
+      if (!colEq(Object.fromEntries(S.items.map((i) => [i, -1]))) || dm !== S.cash * k || dr !== S.resp * k || res.first !== (k === 2) || a.mus[arg] !== ((a0.mus || {})[arg] || 0) + 1) bad('museu'); break; }
+    case 'colSell': if (!colEq({ [arg.id]: -res.n }) || res.n < 1 || dm !== res.n * CFG.col.pawn || dr !== 0 || a.col[arg.id] < 1) bad('penhorista'); break;
     case 'crime': {
       const c = CFG.crimes[arg], ammo = c.gun ? CFG.bullets.perJob : 0, maxOne = Math.floor((c.prizes.at(-1)[2] * MAX_LOOT_BP) / 10000);
       if (res.ammo !== ammo || balas(a0) - balas(a) !== ammo || (c.gun && !E.gunOf(a0)) || E.level(a0) < c.level) bad('golpe: arma, balas ou nível');
@@ -325,8 +338,9 @@ for (let n = 0; n < ACTIONS; n++) {
   // v76: as leis do Estado mudam de vez em quando (qualquer combinação, qualquer corrupção), antes das fotografias de antes; as contas têm de bater na mesma
   if (r.chance(200)) E.setGov(r.chance(3000) ? null : { laws: Object.fromEntries(Object.keys(CFG.gov.laws).filter(() => r.chance(4000)).map((id) => [id, 1])), corr: r.int(0, 100) });
   if (r.chance(150) && !(p.jailUntil > t)) p.hospUntil = Math.max(p.hospUntil || 0, t + r.int(1, 300) * 60000);   // v78: às vezes internado, para a farmácia
+  if (r.chance(500)) for (const i of E.colItems()) if (r.chance(7000)) p.col[i] = (p.col[i] || 0) + r.int(1, 3);   // v79: peças na vitrine, para o museu e o penhorista terem que fazer
   const before = touched(p, t), beforeD = touched(d, t), origD = structuredClone(d), origP = structuredClone(p);
-  const kind = pick(['stockBuy', 'stockBuy', 'stockBuy', 'govVote', 'govLobby', 'govLobby', 'consume', 'consume', 'consume', 'stockSell', 'stockSell', 'missionSwap', 'venueBuy', 'venueBuy', 'venueSet', 'venueCollect', 'stockUse', 'stockUse', 'stockDump', 'broHire', 'broHire', 'broFire', 'clubBuyAt', 'clubBuyAt', 'clubBuyAt', 'broVisitAt', 'broVisitAt', 'broVisitAt', 'casino', 'casino', 'table', 'heist', 'hit', 'gangCreate', 'gangDonate', 'gangLeave', 'gangBiz', 'gangBiz', 'gangBiz', 'gangBizCollect', 'hitman', 'hitman', 'hitman', 'crime', 'crime', 'crimeAll', 'deal', 'deal', 'dealBuy', 'drug', 'refill', 'detox', 'claim', 'class', 'classChange', 'classChange', 'air', 'air', 'airCollect', 'airCollect', 'bailFor', 'bailFor', 'medicFor', 'medicFor', 'avatar', 'hooker', 'cure', 'house', 'houseUp', 'train', 'buyBiz', 'buyBiz', 'collect', 'bizGoods', 'bizGoods', 'stockHold', 'stockHold', 'acct', 'stockLimit', 'stockLimit', 'stockLimit', 'port', 'collectPort', 'portOpen', 'portOpen', 'deposit', 'withdraw', 'gear', 'attack', 'bail', 'medic', 'luxury', 'shift', 'shift', 'shift', 'job', 'course', 'buy', 'buy', 'buy', 'buy', 'equip', 'sell', 'sellGoods', 'sellGoods', 'repair', 'repair', 'opStart', 'opStart', 'opStep', 'opStep', 'opGo', 'opGo', 'opGo', 'opDrop', 'retainer', 'jailSmuggle', 'jailWork', 'jailYard', 'jailCards', 'jailFavor', 'jailEscape', 'whBuy', 'whBuy', 'whUp', 'whUp', 'mktBuy', 'mktBuy', 'mktBuy', 'mktSell', 'mktSell', 'mvSend', 'mvSend', 'mvSend', 'whEdition', 'workStart', 'workStart', 'workDone', 'workDone', 'workDone']);
+  const kind = pick(['stockBuy', 'stockBuy', 'stockBuy', 'govVote', 'govLobby', 'govLobby', 'consume', 'consume', 'consume', 'museum', 'museum', 'colSell', 'colSell', 'stockSell', 'stockSell', 'missionSwap', 'venueBuy', 'venueBuy', 'venueSet', 'venueCollect', 'stockUse', 'stockUse', 'stockDump', 'broHire', 'broHire', 'broFire', 'clubBuyAt', 'clubBuyAt', 'clubBuyAt', 'broVisitAt', 'broVisitAt', 'broVisitAt', 'casino', 'casino', 'table', 'heist', 'hit', 'gangCreate', 'gangDonate', 'gangLeave', 'gangBiz', 'gangBiz', 'gangBiz', 'gangBizCollect', 'hitman', 'hitman', 'hitman', 'crime', 'crime', 'crimeAll', 'deal', 'deal', 'dealBuy', 'drug', 'refill', 'detox', 'claim', 'class', 'classChange', 'classChange', 'air', 'air', 'airCollect', 'airCollect', 'bailFor', 'bailFor', 'medicFor', 'medicFor', 'avatar', 'hooker', 'cure', 'house', 'houseUp', 'train', 'buyBiz', 'buyBiz', 'collect', 'bizGoods', 'bizGoods', 'stockHold', 'stockHold', 'acct', 'stockLimit', 'stockLimit', 'stockLimit', 'port', 'collectPort', 'portOpen', 'portOpen', 'deposit', 'withdraw', 'gear', 'attack', 'bail', 'medic', 'luxury', 'shift', 'shift', 'shift', 'job', 'course', 'buy', 'buy', 'buy', 'buy', 'equip', 'sell', 'sellGoods', 'sellGoods', 'repair', 'repair', 'opStart', 'opStart', 'opStep', 'opStep', 'opGo', 'opGo', 'opGo', 'opDrop', 'retainer', 'jailSmuggle', 'jailWork', 'jailYard', 'jailCards', 'jailFavor', 'jailEscape', 'whBuy', 'whBuy', 'whUp', 'whUp', 'mktBuy', 'mktBuy', 'mktBuy', 'mktSell', 'mktSell', 'mvSend', 'mvSend', 'mvSend', 'whEdition', 'workStart', 'workStart', 'workDone', 'workDone', 'workDone']);
   let res, arg;
   try {
     switch (kind) {
@@ -335,6 +349,8 @@ for (let n = 0; n < ACTIONS; n++) {
       case 'shift': res = E.doShift(p, t, world); break;
       case 'govVote': res = E.govVoteCheck(p, t, world); break;
       case 'consume': arg = r.chance(9000) ? pick(CFG.consum.list).id : 'x'; res = E.consume(p, t, world, arg); break;
+      case 'museum': arg = pick(['mundo', 'raras', 'mundo', 'raras', 'x', 'constructor', '__proto__']); res = E.museumGive(p, t, world, arg); break;
+      case 'colSell': arg = { id: r.chance(9000) ? pick(E.colItems()) : pick(['toString', 'x']), n: pick([1, 1, 2, 5, 0, -1, 0.5, anyInt()]) }; res = E.colSell(p, t, world, arg.id, arg.n); break;
       case 'govLobby': arg = pick([100, 1000, 50000, 99, 0, -5, 0.5, 2e12, anyInt()]); res = E.govLobby(p, t, world, arg); break;
       case 'buy': arg = r.chance(3000) ? { id: 'balas', n: pick([1, 1, 2, 5, 0, -1, 101, 0.5]) } : { id: r.chance(9500) ? pick(CFG.gear).id : 'x' + r.int(0, 9) }; res = E.buyItem(p, t, world, arg.id, arg.n); break;
       case 'equip': arg = r.chance(9000) ? r.int(0, Math.max(0, p.inv.length - 1)) : anyInt(); res = E.equip(p, t, world, arg); break;

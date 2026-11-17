@@ -104,6 +104,9 @@ function act(type, args = {}, opts = {}) {
 // ---------- o que acontece depois de cada ação ----------
 function react(type, out, before, opts) {
   const r = out.result, me = out.me, lv = r.levelUp && r.levelUp.to > r.levelUp.from ? r.levelUp : null;
+  // v79: uma peça para a vitrine (golpe que correu bem ou avião inteiro); o aviso fica por cima do relatório
+  const found = type === 'crime' || type === 'airCollect' ? (r.col ? [r.col] : []) : type === 'crimeAll' && r.col ? Object.keys(r.col) : [];
+  if (found.length) setTimeout(() => { toast(t('tColFound', { x: found.map((i) => t('co_' + i)).join(', ') })); fx.vibrate([10, 40, 10]); }, 350);
   if (type === 'crime' || type === 'crimeAll') {
     const k = opts.args.k;
     S.report = { k, r, c: S.cfg.crimes[k], lv, at: now(), unlocked: [] };
@@ -131,6 +134,8 @@ function react(type, out, before, opts) {
   else if (type === 'venueSet') { toast(t('vnSaved')); fx.sfx('claim'); }
   else if (type === 'venueBuy') { toast(r.lvl === 1 ? t('vnOpened_' + r.kind) : t('vnUpped', { n: r.lvl })); fx.sfx('claim'); }
   else if (type === 'consume') { const it = S.cfg.consum.list.find((x) => x.id === r.id) || {}; toast(t(it.cut ? (me.hospUntil > now() ? 'tCured' : 'tCuredOut') : it.vigor ? 'tDrankV' : 'tDrankE', { x: t('cn_' + r.id), n: r.gain })); fx.sfx('buy'); }
+  else if (type === 'museum') { toast(t('tMus', { x: t('muSet_' + r.set), m: money(r.cash), n: r.respect }) + (r.place ? ' ' + t('tMusPlace', { p: r.place }) : '')); fx.sfx('claim'); loadNews(); }
+  else if (type === 'colSell') { toast(t('tColSold', { n: r.n, x: t('co_' + r.id), m: money(r.cash) })); fx.sfx('cash'); }
   else if (type === 'govVote') { toast(t('tVoted', { x: t(r.yes ? 'pYes' : 'pNo') })); fx.sfx('claim'); loadNews(); }
   else if (type === 'govLobby') { toast(t('tLobby', { m: money(r.amount), x: t(r.side === 'y' ? 'pYes' : 'pNo') })); fx.sfx('buy'); loadNews(); }
   else if (type === 'house') { toast(t('houseMoved', { x: list('houses')[me.house], n: r.respect })); fx.sfx('claim'); }
@@ -353,15 +358,15 @@ function tickHud() {
 const PLACES = {
   city: { ic: 'skyline' }, empire: { ic: 'empire' }, rob: { ic: 'street', img: 'golpes' }, club: { ic: 'bolt', img: 'discoteca' }, gym: { img: 'ginasio' },
   biz: { ic: 'empire', img: 'negocios' }, stash: { img: 'stash' }, acct: { img: 'contabilista' }, port: { img: 'porto' }, air: { img: 'aeroporto' }, arms: { img: 'armas' }, bank: { img: 'banco' }, hosp: { img: 'hospital' },
-  jail: { img: 'prisao' }, gang: { img: 'gangue' }, work: { img: 'profissao' }, news: { img: 'jornal' }, casino: { ic: 'gem', img: 'casino' }, roulette: { img: 'roleta' }, bj: { img: 'blackjack' }, dice: { img: 'dados' }, wheel: { img: 'roda' }, slot: { img: 'slot' }, zeus: { img: 'zeus' }, doce: { img: 'doce' }, rebucado: { img: 'rebucado' }, alley: { img: 'beco' }, lux: { img: 'luxos' }, fights: { ic: 'fights', img: 'lutas' }, rank: { img: 'procurados' }, hitman: { img: 'assassino' }, putas: { img: 'putas' }, gigs: { img: 'biscates' }, casa: {}, myclub: { img: 'discoteca' }, mybro: { img: 'bordel' }, bolsa: { img: 'bolsa' }, job: { img: 'emprego' }, inv: { img: 'inventario' }, ops: { img: 'operacoes' }, parl: { img: 'parlamento' }, cafe: { img: 'cafe' },
+  jail: { img: 'prisao' }, gang: { img: 'gangue' }, work: { img: 'profissao' }, news: { img: 'jornal' }, casino: { ic: 'gem', img: 'casino' }, roulette: { img: 'roleta' }, bj: { img: 'blackjack' }, dice: { img: 'dados' }, wheel: { img: 'roda' }, slot: { img: 'slot' }, zeus: { img: 'zeus' }, doce: { img: 'doce' }, rebucado: { img: 'rebucado' }, alley: { img: 'beco' }, lux: { img: 'luxos' }, fights: { ic: 'fights', img: 'lutas' }, rank: { img: 'procurados' }, hitman: { img: 'assassino' }, putas: { img: 'putas' }, gigs: { img: 'biscates' }, casa: {}, myclub: { img: 'discoteca' }, mybro: { img: 'bordel' }, bolsa: { img: 'bolsa' }, job: { img: 'emprego' }, inv: { img: 'inventario' }, ops: { img: 'operacoes' }, parl: { img: 'parlamento' }, cafe: { img: 'cafe' }, museum: { img: 'museu' },
 };
 // barra de baixo: só o que se usa a toda a hora. O resto vive dentro de cada separador, arrumado por zonas.
 const NAV = ['city', 'rob', 'fights', 'casino', 'empire'];
 const HUB = {
-  city: [['sec_night', ['club', 'putas', 'casino', 'gang', 'alley', 'arms']], ['sec_street', ['gigs', 'cafe', 'job', 'gym', 'bank', 'parl', 'hosp', 'jail', 'rank']]],
+  city: [['sec_night', ['club', 'putas', 'casino', 'gang', 'alley', 'arms']], ['sec_street', ['gigs', 'cafe', 'job', 'gym', 'bank', 'museum', 'parl', 'hosp', 'jail', 'rank']]],
   empire: [['sec_income', ['biz', 'port', 'air', 'myclub', 'mybro']], ['sec_assets', ['casa', 'inv', 'bank', 'bolsa', 'stash', 'acct']]],
 };
-const PARENT = { cafe: 'city', parl: 'city', gigs: 'city', gang: 'city', work: 'job', job: 'city', news: 'city', casino: 'city', roulette: 'casino', bj: 'casino', dice: 'casino', wheel: 'casino', slot: 'casino', zeus: 'casino', doce: 'casino', rebucado: 'casino', club: 'city', putas: 'city', gym: 'city', alley: 'city', hosp: 'city', jail: 'city',
+const PARENT = { museum: 'city', cafe: 'city', parl: 'city', gigs: 'city', gang: 'city', work: 'job', job: 'city', news: 'city', casino: 'city', roulette: 'casino', bj: 'casino', dice: 'casino', wheel: 'casino', slot: 'casino', zeus: 'casino', doce: 'casino', rebucado: 'casino', club: 'city', putas: 'city', gym: 'city', alley: 'city', hosp: 'city', jail: 'city',
   biz: 'empire', port: 'empire', air: 'empire', myclub: 'empire', mybro: 'empire', bolsa: 'empire', inv: 'empire', stash: 'empire', acct: 'empire', casa: 'empire', bank: 'empire', lux: 'empire', arms: 'fights', rank: 'fights', hitman: 'fights', ops: 'rob' };
 const upOf = (id) => (S.backTo && S.backTo[id]) || PARENT[id] || 'city';   // um sítio que está em duas zonas volta para a zona de onde vieste
 const tabOf = (id) => { let x = id; for (let k = 0; k < 4 && !NAV.includes(x); k++) x = upOf(x); return NAV.includes(x) ? x : 'city'; };
@@ -375,7 +380,7 @@ function loadFor(tab) {
   if (tab === 'club' || tab === 'putas') loadVenues();
   if (tab === 'bolsa') { S.stkSel = null; loadStocks(); }
   if (tab === 'stash') S.reg = null;
-  if (tab === 'news' || tab === 'city' || tab === 'parl') loadNews();
+  if (NEWS_TABS.includes(tab)) loadNews();
   if (tab === 'news') { loadStocks(); loadEvents(false); }   // a página de Economia, a tira da bolsa e «a tua página» (quem te atacou)
 }
 function go(tab) {
@@ -425,7 +430,7 @@ function shell() {
 }
 
 const SCREENS = { job: screenJob, city: screenCity, empire: screenEmpire, news: screenNews, casino: screenCasino, roulette: screenRoulette, bj: screenBJ, dice: screenDice, wheel: screenWheel, slot: () => screenSlotGame('slot'), zeus: () => screenSlotGame('zeus'), doce: () => screenSlotGame('doce'), rebucado: () => screenSlotGame('rebucado'), rob: screenRob, club: screenClub, gym: screenGym, biz: screenBiz, port: screenPort, arms: screenArms, bank: screenBank,
-  hosp: screenHosp, jail: screenJail, gang: screenGang, work: screenWork, air: screenAir, putas: screenPutas, myclub: screenMyClub, mybro: screenMyBro, bolsa: screenBolsa, inv: screenInv, stash: screenStash, acct: screenAcct, casa: screenCasa, alley: screenAlley, lux: screenLux, fights: screenFights, rank: screenRank, hitman: screenHitman, ops: screenOps, gigs: screenGigs, parl: screenParl, cafe: screenCafe };
+  hosp: screenHosp, jail: screenJail, gang: screenGang, work: screenWork, air: screenAir, putas: screenPutas, myclub: screenMyClub, mybro: screenMyBro, bolsa: screenBolsa, inv: screenInv, stash: screenStash, acct: screenAcct, casa: screenCasa, alley: screenAlley, lux: screenLux, fights: screenFights, rank: screenRank, hitman: screenHitman, ops: screenOps, gigs: screenGigs, parl: screenParl, cafe: screenCafe, museum: screenMuseum };
 function render(force) {
   if (!S.st) return;
   if (!S.st.me || S.st.round.phase !== 'play') return renderPause();
@@ -588,7 +593,7 @@ function screenClass() {
 
 // ---------- a cidade ----------
 // ---------- jornal da cidade: o que os outros andam a fazer ----------
-const NW_IC = { season: 'crown', hitman: 'skull', hitmanFail: 'shield', stockWin: 'cash', stockLoss: 'skull', stockBust: 'skull', air: 'cash', airLost: 'lock', cls: 'user', gangNew: 'fist', gangUp: 'empire', gangHeist: 'cash', gangHeistFail: 'lock', gangHit: 'fist', gangHitFail: 'skull', casino: 'gem', casinoLoss: 'skull', job: 'cash', crit: 'gem', spree: 'bolt', jail: 'lock', house: 'empire', lux: 'crown', beat: 'fist', mug: 'cash', fail: 'skull', sick: 'pill', lvl: 'crown', fight: 'fist', op: 'cash', opJail: 'lock', escape: 'bolt' };
+const NW_IC = { season: 'crown', hitman: 'skull', hitmanFail: 'shield', stockWin: 'cash', stockLoss: 'skull', stockBust: 'skull', air: 'cash', airLost: 'lock', cls: 'user', gangNew: 'fist', gangUp: 'empire', gangHeist: 'cash', gangHeistFail: 'lock', gangHit: 'fist', gangHitFail: 'skull', casino: 'gem', casinoLoss: 'skull', job: 'cash', crit: 'gem', spree: 'bolt', jail: 'lock', house: 'empire', lux: 'crown', beat: 'fist', mug: 'cash', fail: 'skull', sick: 'pill', lvl: 'crown', fight: 'fist', op: 'cash', opJail: 'lock', escape: 'bolt', mus: 'crown' };
 const seedOf = (str) => { let x = 7; for (let i = 0; i < str.length; i++) x = (x * 31 + str.charCodeAt(i)) | 0; return Math.abs(x); };
 // a gangue da rua (a do bot) tem nome próprio em cada língua; as dos jogadores ficam como eles as escreveram
 const gName = (name) => (name === S.cfg?.gang?.bot?.name ? t('gBotName') : name);
@@ -605,7 +610,7 @@ function newsText(e) {
   if (k === 'cls') return tv('nw_cls', seedOf(e.name + k + e.t), { a: e.name, x: t('cl_' + e.from), y: t('cl_' + e.to) });
   if (k === 'gangHeist' || k === 'gangHeistFail') return tv('nw_' + k, seedOf(e.gang + k + e.t), { g: e.gang, x: t('gh_' + e.c), n: e.n, m: money(e.money || 0) });
   if (k === 'gangHit' || k === 'gangHitFail') return tv('nw_' + k, seedOf(e.gang + k + e.t), { g: e.gang, b: e.target, n: e.n });
-  const x = k === 'op' || k === 'opJail' ? t('op_' + e.o) : k === 'house' ? list('houses')[e.h] : k === 'lux' ? list('lux')[e.i] : k === 'lvl' ? titleOf(e.n) : k.startsWith('casino') ? t('csIn_' + e.g) : C[e.c];
+  const x = k === 'op' || k === 'opJail' ? t('op_' + e.o) : k === 'house' ? list('houses')[e.h] : k === 'lux' ? list('lux')[e.i] : k === 'lvl' ? titleOf(e.n) : k === 'mus' ? t('muSet_' + e.set) : k.startsWith('casino') ? t('csIn_' + e.g) : C[e.c];
   return tv('nw_' + k, seedOf(e.name + k + e.t), { a: e.name, b: e.target, x, m: money(e.money || 0), n: e.n });
 }
 const newsIdx = (f) => Math.floor(now() / 5000) % f.length;
@@ -630,8 +635,9 @@ function tickNews() {
   el.querySelector('.ntx').textContent = newsText(e);
   el.classList.remove('swap'); void el.offsetWidth; el.classList.add('swap');
 }
+const NEWS_TABS = ['news', 'city', 'parl', 'museum'];   // ecrãs que mostram o que vem com o jornal (o mundo, o Parlamento, a placa do museu)
 async function loadNews() {
-  try { const r = await api('GET', '/api/news'); S.news = r; if (r.feed) S.feed = r.feed; if (S.tab === 'news' || S.tab === 'city' || S.tab === 'parl') render(); } catch {}
+  try { const r = await api('GET', '/api/news'); S.news = r; if (r.feed) S.feed = r.feed; if (NEWS_TABS.includes(S.tab)) render(); } catch {}
 }
 // ===== O jornal «A Sirene» =====
 // Uma folha de papel dentro do jogo: cabeçalho, manchete em letras grandes e quatro páginas. Escreve-se com o que já existe
@@ -895,6 +901,7 @@ function screenCity() {
     jail: L.jail ? t('inside') : null,
     parl: S.news?.mundo?.gov?.bill && me.gv && !me.gv.voted && !me.gv.novo && me.level >= (S.cfg.gov?.vote.minLevel || 5) ? t('pBadge') : null,
     fights: (S.events || []).some((e) => e.id > S.lastEventSeen) ? t('newEvt') : null,
+    museum: S.cfg.col && Object.keys(S.cfg.col.sets).some((k) => setHave(me, k) === S.cfg.col.sets[k].items.length) ? t('muBadge') : null,
   };
   const ep = season();
   return [h('h1', { class: 'sr' }, t('p_city')), newsBar(), ...hubTiles('city', badge),
@@ -947,6 +954,56 @@ function screenCafe() {
 function pharmacy(me, L) {
   return h('section', null, h('h2', { class: 'sec' }, t('cnPharma')), h('p', { class: 'small muted', style: 'margin:-4px 2px 10px' }, t('cnPharmaSub', { h: S.cfg.consum.cap.med / 3600000 })),
     h('div', { class: 'card vlist vc' }, consumGauge(me, 'med'), S.cfg.consum.list.filter((x) => x.fam === 'med').map((it) => consumRow(me, it, L))));
+}
+// ===== O museu (v79) =====
+// Uma vitrine por conjunto: as peças que tens acesas, as que faltam apagadas (com onde se encontram). O museu fica com um
+// conjunto inteiro e paga no banco; a primeira entrega paga o dobro e põe o nome na placa. As repetidas vão ao penhorista.
+const setHave = (me, k) => S.cfg.col.sets[k].items.filter((i) => (me.col?.[i] || 0) > 0).length;
+const colFrom = (k, i) => (k === 'mundo' ? t('ar_' + Object.keys(S.cfg.col.route).find((r) => S.cfg.col.route[r] === i)) : '');
+function vitrine(me, k) {
+  const S2 = S.cfg.col.sets[k];
+  // etiqueta de museu: o nome e, por baixo, de onde vem (as lembranças) ou que ainda falta
+  return h('div', { class: 'vitr vitr-' + S2.items.length, role: 'list' }, S2.items.map((i) => {
+    const n = me.col?.[i] || 0, from = colFrom(k, i);
+    return h('figure', { class: 'vobj' + (n ? '' : ' gone'), role: 'listitem', 'aria-label': t('co_' + i) + ' · ' + (n ? t('muHave') : t('muMiss')) },
+      h('div', { class: 'vph' }, art('col', i, 'vimg')),
+      h('figcaption', null, h('b', null, t('co_' + i)), h('span', null, from || (n ? '' : t('muMiss')))));
+  }));
+}
+const onPlaque = (me, k) => me.musEp?.[k] === me.ep?.n;
+function museumSet(me, k, L) {
+  const S2 = S.cfg.col.sets[k], have = setHave(me, k), all = S2.items.length, done = have === all, first = !(me.mus?.[k] > 0), mult = first ? 2 : 1;
+  const extras = S2.items.filter((i) => (me.col?.[i] || 0) > 1), busy = !!(L.jail || L.hosp);
+  const miss = S2.items.filter((i) => !((me.col?.[i] || 0) > 0)), P = S.news?.mundo?.mus?.[k], left = P ? Math.max(0, S.cfg.col.plaque - P.top.length) : 0;
+  const pay = t(first ? 'muPayFirst' : 'muPay', { m: money(S2.cash * mult), n: S2.resp * mult }) + (left && !onPlaque(me, k) ? ' ' + t(left === 1 ? 'muSpots1' : 'muSpots', { l: left }) : '');
+  return h('section', { class: 'mset' },
+    h('div', { class: 'row sp mhd' }, h('h2', { class: 'sec' }, t('muSet_' + k)), h('span', { class: 'num small' + (done ? ' c-cash' : ' muted') }, t('muCount', { a: have, b: all }))),
+    h('p', { class: 'small muted msub' }, t('muHow_' + k, { p: k === 'mundo' ? S.cfg.col.airBp / 100 : '' })),
+    vitrine(me, k),
+    h('p', { class: 'small mpay' }, tint(pay)),
+    done ? h('button', { class: 'btn block cash big', disabled: busy, on: { click: (e) => act('museum', { set: k }, { el: e.currentTarget }) } }, t('muGive', { m: money(S2.cash * mult) }))
+      : h('p', { class: 'small mmiss' }, miss.length <= 2 ? t(miss.length === 1 ? 'muMissOne' : 'muMissList', { x: miss.map((i) => t('co_' + i).toLowerCase()).join(t('muAnd')) }) : t('muLeft', { n: miss.length })),
+    extras.length ? h('div', { class: 'mextra' }, h('h3', null, t('muExtras')), h('p', { class: 'small muted' }, t('muExtrasSub', { m: money(S.cfg.col.pawn) })), extras.map((i) => { const x = me.col[i] - 1, m = money(x * S.cfg.col.pawn);
+      const lbl = t(x > 1 ? 'muSellN' : 'muSell', { n: x, m });
+      const b = sureBtn('btn sm ghost num', lbl, 'btn sm ghost num dng', t('muSellSure', { m }), () => act('colSell', { id: i, n: x }, { el: b }));
+      if (busy) b.disabled = true;
+      return h('div', { class: 'vrow' }, art('col', i, 'vth'), h('div', { class: 'grow' }, h('b', null, t('co_' + i)), h('div', { class: 'small muted' }, t('muExtraN', { n: x }))), b); })) : null);
+}
+// a placa de latão: os primeiros da época em cada conjunto
+function museumPlaque() {
+  const M = S.news?.mundo?.mus; if (!M) return null;
+  const cols = Object.keys(S.cfg.col.sets).map((k) => { const P = M[k] || { n: 0, top: [] };
+    return h('div', { class: 'pcol' }, h('h3', null, t('muSet_' + k)),
+      P.top.length ? h('ol', null, P.top.map((x) => h('li', null, x.name))) : h('p', { class: 'small' }, t('muPlaqueNone')),
+      P.n > P.top.length ? h('p', { class: 'small' }, t('muPlaqueMore', { n: P.n - P.top.length })) : null); });
+  return h('section', { class: 'plaque', 'aria-label': t('muPlaque') }, h('h2', null, t('muPlaque')), h('p', { class: 'small psb' }, t('muPlaqueSub', { n: S.cfg.col.plaque })), h('div', { class: 'pcols' }, cols));
+}
+function screenMuseum() {
+  const me = S.st.me, L = live(me), out = [pageHead('museum', t('s_museum'))];
+  const b = busyBanner(me); if (b) out.push(b);
+  if (!S.cfg.col) return out;
+  out.push(...Object.keys(S.cfg.col.sets).map((k) => museumSet(me, k, L)), museumPlaque());
+  return out.filter(Boolean);
 }
 // ===== O Parlamento (v76) =====
 // O Estado vive na edição do mundo (servidor): aqui só se mostra e se vota. A proposta vem primeiro, com o voto logo a seguir
@@ -4270,7 +4327,7 @@ fx.setMusic(store.get('music', true));
 // os avatares só aparecem quando as imagens existirem no servidor
 { const pr = new Image(); pr.onload = () => { S.avOk = true; if (S.st?.me && $main) { shell(); render(); } }; pr.src = '/img/av/0.webp?1'; }
 setInterval(tickHud, 1000);
-setInterval(() => { if (S.st && document.visibilityState === 'visible') { refresh(); loadEvents(false); if (S.tab === 'news' || S.tab === 'city' || S.tab === 'parl') loadNews(); } }, 30000);
+setInterval(() => { if (S.st && document.visibilityState === 'visible') { refresh(); loadEvents(false); if (NEWS_TABS.includes(S.tab)) loadNews(); } }, 30000);
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && S.st) refresh(); });
 // abre o jogo; uma falha passageira do servidor leva uma segunda tentativa e, se continuar, um aviso (nunca um ecrã calado)
 async function startSafe() {

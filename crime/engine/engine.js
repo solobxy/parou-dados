@@ -57,7 +57,7 @@ export function newPlayer(id, now, world, opts = {}) {
     mi: 0,                         // objetivos já recebidos
     mq: CFG.missions.map((_, i) => i), mrT: 0,   // os que faltam, pela ordem em que vão aparecer; e quando se trocou pela última vez
     titles: [],                    // títulos que ficam para sempre: { k: 'vet' } (veterano das rondas), { k: 'ep', n, d, pos } (pódio de uma época)
-    cls: '', clsAt: 0, av: 0, fx: {}, sick: false, hkN: CFG.hookers.list.map(() => 0), hkAt: CFG.hookers.list.map(() => 0), house: 0, hu: CFG.house.ups.map(() => 0), bj: null, wm: {}, cd: { est: 0, med: 0 },        // profissão, avatar e efeitos temporários (kind -> { bp, until })
+    cls: '', clsAt: 0, av: 0, fx: {}, sick: false, hkN: CFG.hookers.list.map(() => 0), hkAt: CFG.hookers.list.map(() => 0), house: 0, hu: CFG.house.ups.map(() => 0), bj: null, wm: {}, cd: { est: 0, med: 0 }, col: {}, mus: {},        // profissão, avatar e efeitos temporários (kind -> { bp, until })
   };
 }
 
@@ -71,6 +71,8 @@ function migrate(p) {
   while (p.wk.length < CFG.crimes.length) p.wk.push(0);   // golpes novos no fim da lista (v72)
   if (!p.wm || typeof p.wm !== 'object' || Array.isArray(p.wm)) p.wm = {};   // v74: o ritmo de cada biscate
   if (!p.cd || typeof p.cd !== 'object') p.cd = { est: 0, med: 0 };   // v78: até quando dura a espera do estômago e a médica
+  if (!p.col || typeof p.col !== 'object') p.col = {};   // v79: vitrine dos colecionáveis (id -> quantos)
+  if (!p.mus || typeof p.mus !== 'object') p.mus = {};   // v79: quantas vezes entregou cada conjunto ao museu
   if (!p.c) p.c = { crimes: 0, wins: 0, trains: 0, refills: 0, collects: 0, pvpWins: 0, ports: 0 };
   if (!Number.isSafeInteger(p.mi)) p.mi = 0;
   if (!Array.isArray(p.mq)) p.mq = CFG.missions.map((_, i) => i).slice(Math.min(Math.max(p.mi, 0), CFG.missions.length));
@@ -649,7 +651,8 @@ export function doCrime(p, now, world, k, rng) {
     p.rc = Math.floor(milli - resp * 1000);
     const lvl = addRespect(p, resp, now);
     const gained = practice(p, c, true);
-    return { ok: true, success: true, money, value, good, rushed, lav: L.lav, base, item: row[3], crit: false, respect: resp, levelUp: lvl, chanceBp: bp, heatBp, respBp, ammo, gained, newChanceBp: bp, star: 0 };
+    const R = CFG.col.sets.raras.items, col = colFind(p, rng, c.e * CFG.col.crimeBpPerE, () => R[rng.int(0, R.length - 1)]);
+    return { ok: true, success: true, money, value, good, rushed, lav: L.lav, base, item: row[3], crit: false, respect: resp, levelUp: lvl, chanceBp: bp, heatBp, respBp, ammo, gained, newChanceBp: bp, star: 0, ...(col ? { col } : {}) };
   }
   p.c.crimes += 1;
   // falhar não é sempre prisão: uma falha em quatro é apanhada
@@ -684,6 +687,7 @@ export function doCrimeAll(p, now, world, k, rng) {
       if (r.value > out.best) { out.best = r.value; out.bestItem = r.item; }
       if (r.star) out.star = r.star;
       if (r.levelUp) out.levelUp = { from: out.levelUp ? out.levelUp.from : r.levelUp.from, to: r.levelUp.to };
+      if (r.col) { out.col = out.col || {}; out.col[r.col] = (out.col[r.col] || 0) + 1; }
     } else if (r.busted) { out.busted = true; out.jailUntil = r.jailUntil; break; }
   }
   out.heatEnd = heatOf(p, now);
@@ -769,6 +773,41 @@ export function consume(p, now, world, id) {
   if (it.vigor) { const v0 = p.vigor; p.vigor = Math.min(CFG.vigor.max, p.vigor + it.vigor); if (p.vigor >= CFG.vigor.max) p.vigorT = now; gain = p.vigor - v0; }
   if (it.cut) { const h0 = p.hospUntil; p.hospUntil = p.hospUntil - it.cut > now ? p.hospUntil - it.cut : 0; gain = Math.round(((p.hospUntil || now) - h0) / -T.MIN); }
   return { ok: true, id, price: it.price, gain, until: p.cd[it.fam] };
+}
+
+// ---------- colecionáveis e museu (v79) ----------
+// Ficam na vitrine (p.col), fora do inventário e das apreensões. O museu fica com um de cada peça do conjunto.
+const own = (o, k) => Object.prototype.hasOwnProperty.call(o, k);
+export const colItems = () => Object.values(CFG.col.sets).flatMap((x) => x.items);
+function colFind(p, rng, bp, pick) {
+  if (!rng.chance(bp)) return null;
+  const id = pick();
+  if (!id) return null;
+  p.col[id] = (p.col[id] || 0) + 1;
+  return id;
+}
+export function museumGive(p, now, world, set) {
+  const S = typeof set === 'string' && own(CFG.col.sets, set) ? CFG.col.sets[set] : null;
+  if (!S) fail('NO_SET');
+  begin(p, now, world);
+  const miss = S.items.filter((i) => !(p.col[i] > 0));
+  if (miss.length) fail('SET_INCOMPLETE', { miss });
+  for (const i of S.items) p.col[i] -= 1;
+  const first = !(p.mus[set] > 0), k = first ? 2 : 1;   // a primeira entrega paga o dobro e põe o nome na placa
+  const cash = S.cash * k, resp = S.resp * k;
+  p.bank += cash;
+  p.mus[set] = (p.mus[set] || 0) + 1;
+  return { ok: true, set, cash, respect: resp, first, n: p.mus[set], levelUp: addRespect(p, resp, now) };
+}
+export function colSell(p, now, world, id, n) {
+  if (typeof id !== 'string' || !colItems().includes(id)) fail('NO_ITEM');
+  begin(p, now, world);
+  const extra = Math.max(0, (p.col[id] || 0) - 1), k = Math.min(extra, Number.isInteger(n) ? n : 0);
+  if (k <= 0) fail('NO_EXTRA');
+  p.col[id] -= k;
+  const cash = k * CFG.col.pawn;
+  p.cash += cash;
+  return { ok: true, id, n: k, cash };
 }
 
 export function payMedic(p, now, world) {
@@ -1452,7 +1491,8 @@ export function airCollect(p, now, world, rng, keep = false, m) {
   const got = f.amount + Math.floor((f.amount * R.gainBp) / 10000);
   const goods = keep ? toGoods(p, CFG.drugs.findIndex((x) => x.id === R.drug), got, 'lx', m) : null;   // o avião aterra em Lisboa
   if (!goods) p.cash += got;
-  return { ok: true, r: f.r, amount: f.amount, got, seized: false, respect: R.r, levelUp: addRespect(p, R.r, now), ...(goods || {}) };
+  const col = colFind(p, rng, CFG.col.airBp, () => CFG.col.route[R.id]);   // v79: a lembrança da rota
+  return { ok: true, r: f.r, amount: f.amount, got, seized: false, respect: R.r, levelUp: addRespect(p, R.r, now), ...(goods || {}), ...(col ? { col } : {}) };
 }
 
 // ---------- mercadoria e casas do jogador (discoteca e bordel) ----------
