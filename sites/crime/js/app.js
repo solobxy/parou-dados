@@ -2625,10 +2625,18 @@ function fUses(L) {
   const g = L.kind === 'inv' && L.u !== undefined ? gearOf(L.id) : null;
   return g ? h('div', { class: 'small ' + (L.u > 0 ? 'muted' : 'c-red') }, L.u > 0 ? t('usesLeft', { u: L.u, l: g.life }) : t('gunWorn')) : null;
 }
-// um campo de euros (só algarismos) com o texto de apoio por baixo
+// um campo de euros (só algarismos) com o texto de apoio por baixo. Os milhares separam-se enquanto se escreve, como no
+// resto do jogo («15 000»); o cursor fica depois do mesmo algarismo
 function euroInput(id, v, on) {
-  const inp = h('input', { id, inputmode: 'numeric', autocomplete: 'off', enterkeyhint: 'done', value: v ? String(v) : '' });
-  inp.addEventListener('input', () => { inp.value = inp.value.replace(/\D/g, '').replace(/^0+/, '').slice(0, 10); on(parseInt(inp.value, 10) || 0); });
+  const inp = h('input', { id, inputmode: 'numeric', autocomplete: 'off', enterkeyhint: 'done', value: v ? num(v) : '' });
+  inp.addEventListener('input', () => {
+    const pos = inp.selectionStart ?? inp.value.length, antes = inp.value.slice(0, pos).replace(/\D/g, '').replace(/^0+/, '').length;
+    const d = inp.value.replace(/\D/g, '').replace(/^0+/, '').slice(0, 10);
+    inp.value = d ? num(parseInt(d, 10)) : '';
+    let k = 0, c = 0; while (k < inp.value.length && c < antes) { if (/\d/.test(inp.value[k])) c++; k++; }
+    try { inp.setSelectionRange(k, k); } catch {}
+    on(parseInt(d, 10) || 0);
+  });
   inp.addEventListener('keydown', (e) => { if (e.key === 'Enter') inp.blur(); });
   return inp;
 }
