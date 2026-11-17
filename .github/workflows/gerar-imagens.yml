@@ -30,7 +30,7 @@ jobs:
           PEDIDOS: ${{ inputs.pedidos }}
           MODELO: ${{ inputs.modelo }}
           CF_TOKEN: ${{ secrets.CF_TOKEN }}
-          CF_ACCOUNT: ${{ secrets.CF_ACCOUNT }}
+          CF_ACCOUNT: ${{ secrets.CF_ACCOUNT || '65f7d5c6f29d58a36929ac331e1a2e92' }}   # o Account ID não é secreto
         run: |
           set -euo pipefail
           [ -n "$CF_TOKEN" ] || { echo "Falta o segredo CF_TOKEN"; exit 1; }
