@@ -28,7 +28,7 @@ const RONDA_TESTE = process.env.PRIMEIRA_RONDA ? dataDe(process.env.PRIMEIRA_RON
 // Épocas de 28 dias a contar da sexta 13/11/2026 às 21:00 de Lisboa (PRIMEIRA_EPOCA=AAAA-MM-DD muda-a, para testes)
 const ANCORA = dataDe(process.env.PRIMEIRA_EPOCA || process.env.PRIMEIRA_RONDA || '2026-11-13');
 const rng = process.env.TESTE_SEMENTE ? seededRng(+process.env.TESTE_SEMENTE) : cryptoRng();   // nos testes, a sorte pode ser sempre a mesma
-const VERSAO = 83;   // sobe quando o servidor muda, para se confirmar de fora que a versão nova já está a correr
+const VERSAO = 84;   // sobe quando o servidor muda, para se confirmar de fora que a versão nova já está a correr
 const ATOS_3S = +(process.env.ATOS_3S || 15), ATOS_MIN = +(process.env.ATOS_MIN || 400); // ações por conta: 15 em 3 s, 400 por minuto
 
 // ---------- relógio que nunca anda para trás ----------
@@ -467,6 +467,7 @@ function vista(p, now) {
     bustBp: E.bustChanceBp(p, now, mk ? MW.pressOf(mk.w, 'lx') : 50), lx: mk ? { crime: mk.w.lx.crime, press: MW.pressOf(mk.w, 'lx'), ed: mk.w.ed, edNext: MW.edStart(mk.w.ed + 1) } : null,
     cd: { est: E.consumWait(p, 'est', now), med: E.consumWait(p, 'med', now) },   // v78: quanto falta na espera de cada família
     mt: p.mt, cf: p.cf, maq: p.maq,   // v83: depósito, bancada e máquinas
+    feira: { levantar: qf.nParaMim.get(ronda, p.id).n },   // v84: o que está à espera de ser levantado na feira
     col: p.col, mus: p.mus, musEp: p.musEp || {},   // v79: a vitrine, as entregas ao museu e em que época entrou na placa
     dia: (() => { const d = meuDia(p.id, now); if (!d) return null; const { ronda: _r, conta: _c, dia: _d, ...x } = d; return x; })(),   // v77: «a tua página»
     gv: mk && mk.w.gov ? { laws: Object.keys(mk.w.gov.laws), voted: !!(mk.w.gov.bill && p.gv === mk.w.gov.bill.ed0), yes: !!p.gvY, corr: mk.w.gov.corr, novo: now - (p.joinedAt || now) < CFG.gov.vote.minAgeMs } : null,
@@ -504,6 +505,7 @@ function vista(p, now) {
   };
 }
 
+const FEIRA_REFS = E.feiraRefs();   // v84: preço de referência de cada coisa que se vende na feira (banda: 0,3× a 3×)
 function cfgPublica() {
   return {
     energy: CFG.energy, vigor: CFG.vigor, street: CFG.street, refillBar: CFG.refillBar, deal: CFG.deal, work: CFG.work, jobs: CFG.jobs, courses: CFG.courses, skills: CFG.skills, addiction: CFG.addiction, train: CFG.train, crimes: CFG.crimes, drugs: CFG.drugs,
@@ -513,7 +515,7 @@ function cfgPublica() {
     bustBp: CFG.bustBp, crimeAllMax: CFG.crimeAllMax, casino: { minBet: CFG.casino.minBet, limits: CFG.casino.limits, slotMinC: CFG.casino.slotMinC, red: CFG.casino.red, dice: CFG.casino.dice, wheel: { segs: CFG.casino.wheel.segs, spots: CFG.casino.wheel.spots, topMult: CFG.casino.wheel.topMult.map(([m]) => m), louca: CFG.casino.wheel.louca }, slots: Object.fromEntries(Object.entries(CFG.casino.slots).map(([k, g]) => [k, { kind: g.kind, cols: g.cols, rows: g.rows, min: g.min, nsym: g.nsym, trig: g.trig, pay: g.pay, scatPay: g.scatPay, free: g.free, fs: g.fs, retrig: g.retrig, buy: g.buy, superBuy: g.superBuy, max: g.max, accFree: g.accFree, accAll: g.accAll, orbBase: g.orbBase }])) }, gang: CFG.gang, classes: CFG.classes, classChange: CFG.classChange, avatars: CFG.avatars, hookers: CFG.hookers, house: CFG.house, mastery: CFG.mastery, missions: CFG.missions.length, start: CFG.start,
     round: { playDays: CFG.round.playDays, noPvpMs: CFG.round.noPvpMs }, season: CFG.season,
     consum: CFG.consum, col: CFG.col,
-    mat: CFG.mat, craft: CFG.craft,   // v83
+    mat: CFG.mat, craft: CFG.craft, feira: { ...CFG.feira, refs: FEIRA_REFS },   // v83, v84
     exam: (({ ans: _a, ...x }) => x)(CFG.exam), studies: CFG.studies,   // v81: a Universidade   // v80: as regras do exame, sem as respostas certas
     gov: { vote: CFG.gov.vote, laws: CFG.gov.laws, cof: CFG.gov.cof, parties: Object.fromEntries(Object.entries(CFG.gov.parties).map(([k, x]) => [k, { pos: x.pos, wOp: x.wOp, wLob: x.wLob }])) },   // v76: o parlamento
   };
@@ -598,6 +600,238 @@ const int = (x) => (Number.isSafeInteger(x) ? x : NaN);
 function limpaAposta(a) {
   const bets = Array.isArray(a.bets) ? a.bets.slice(0, 13).map((b) => ({ t: String(b && b.t), s: String(b && b.s), n: b && b.n !== undefined ? int(b.n) : undefined, amt: int(b && b.amt) })) : undefined;
   return { bets, amt: int(a.amt), bc: a.bc !== undefined ? int(a.bc) : undefined, pick: String(a.pick), op: String(a.op || 'deal'), game: String(a.game || 'chefao'), buy: int(a.buy ?? 0) };
+}
+
+// ---------- Feira da Ladra (v84) ----------
+// Os anúncios vivem aqui (o que está à venda já saiu de quem vende; o dinheiro de quem vai à frente num leilão já saiu de
+// quem licitou). Estados: 'aberto' (à venda ou em leilão) e 'levantar' (à espera de quem o vai buscar: quem vendeu, se
+// não se vendeu ou cancelou; quem ganhou, num leilão). Tudo por índice: nada percorre todos os jogadores.
+db.exec(`CREATE TABLE IF NOT EXISTS feira (id INTEGER PRIMARY KEY AUTOINCREMENT, ronda INTEGER NOT NULL, vendedor TEXT NOT NULL, tipo TEXT NOT NULL,
+  kind TEXT NOT NULL, item TEXT NOT NULL, obj TEXT, n INTEGER NOT NULL, preco INTEGER NOT NULL, lance INTEGER NOT NULL DEFAULT 0, licitante TEXT,
+  criado INTEGER NOT NULL, fim INTEGER NOT NULL, estado TEXT NOT NULL, dono TEXT);
+CREATE INDEX IF NOT EXISTS feira_fim ON feira (ronda, estado, fim);
+CREATE INDEX IF NOT EXISTS feira_item ON feira (ronda, estado, tipo, item, preco);
+CREATE INDEX IF NOT EXISTS feira_vend ON feira (ronda, vendedor, estado);
+CREATE INDEX IF NOT EXISTS feira_dono ON feira (ronda, dono, estado);
+CREATE INDEX IF NOT EXISTS feira_lic ON feira (ronda, licitante, estado);
+CREATE TABLE IF NOT EXISTS feira_vendas (ronda INTEGER NOT NULL, item TEXT NOT NULL, t INTEGER NOT NULL, unit INTEGER NOT NULL, n INTEGER NOT NULL);
+CREATE INDEX IF NOT EXISTS feira_vendas_item ON feira_vendas (ronda, item, t);
+CREATE TABLE IF NOT EXISTS feira_lances (lid INTEGER NOT NULL, conta TEXT NOT NULL, PRIMARY KEY (lid, conta));`);
+// (colunas que vieram depois: quem comprou, quem vendeu e a diferença para a referência; quanto do lance saiu do banco)
+for (const sql of ['ALTER TABLE feira_vendas ADD COLUMN a TEXT', 'ALTER TABLE feira_vendas ADD COLUMN b TEXT', 'ALTER TABLE feira_vendas ADD COLUMN dif INTEGER NOT NULL DEFAULT 0',
+  'ALTER TABLE feira ADD COLUMN lbanco INTEGER NOT NULL DEFAULT 0']) { try { db.exec(sql); } catch {} }
+db.exec('CREATE INDEX IF NOT EXISTS feira_vendas_par ON feira_vendas (ronda, a, b, t); CREATE INDEX IF NOT EXISTS feira_vendas_b ON feira_vendas (ronda, b, t)');
+const qf = {
+  nova: db.prepare("INSERT INTO feira (ronda, vendedor, tipo, kind, item, obj, n, preco, criado, fim, estado) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'aberto')"),
+  um: db.prepare('SELECT * FROM feira WHERE id = ? AND ronda = ?'),
+  // os 10 contam o que está à venda e o que ainda está à espera de ser levantado (a feira não é um armazém sem teto)
+  abertosDe: db.prepare("SELECT COUNT(*) n FROM feira WHERE ronda = ? AND ((vendedor = ? AND estado = 'aberto') OR (dono = ? AND estado = 'levantar'))"),
+  denovo: db.prepare("UPDATE feira SET vendedor = ?, tipo = ?, preco = ?, lance = 0, licitante = NULL, lbanco = 0, criado = ?, fim = ?, estado = 'aberto', dono = NULL WHERE id = ?"),
+  vencidos: db.prepare("SELECT * FROM feira WHERE ronda = ? AND estado = 'aberto' AND fim <= ? ORDER BY fim LIMIT 200"),
+  apaga: db.prepare('DELETE FROM feira WHERE id = ?'),
+  menos: db.prepare('UPDATE feira SET n = n - ? WHERE id = ?'),
+  lance: db.prepare('UPDATE feira SET lance = ?, licitante = ?, fim = ?, lbanco = ? WHERE id = ?'),
+  levantar: db.prepare("UPDATE feira SET estado = 'levantar', dono = ? WHERE id = ?"),
+  venda: db.prepare('INSERT INTO feira_vendas (ronda, item, t, unit, n, a, b, dif) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'),
+  // o que já passou entre duas contas (nos dois sentidos) e os leilões em que uma vai à frente no da outra
+  par: db.prepare('SELECT COALESCE(SUM(dif), 0) s FROM feira_vendas WHERE ronda = ? AND t > ? AND ((a = ? AND b = ?) OR (a = ? AND b = ?))'),
+  parLeil: db.prepare("SELECT kind, item, obj, n, lance, id FROM feira WHERE ronda = ? AND estado = 'aberto' AND tipo = 'leilao' AND ((licitante = ? AND vendedor = ?) OR (licitante = ? AND vendedor = ?))"),
+  conta: db.prepare('SELECT COALESCE(SUM(dif), 0) s FROM feira_vendas WHERE ronda = ? AND t > ? AND (a = ? OR b = ?)'),
+  contaLeil: db.prepare("SELECT kind, item, obj, n, lance, id FROM feira WHERE ronda = ? AND estado = 'aberto' AND tipo = 'leilao' AND licitante IS NOT NULL AND (licitante = ? OR vendedor = ?)"),
+  guardados: db.prepare("SELECT COUNT(*) n FROM feira WHERE ronda = ? AND ((dono = ? AND estado = 'levantar') OR (licitante = ? AND estado = 'aberto'))"),
+  licNovo: db.prepare('INSERT OR IGNORE INTO feira_lances (lid, conta) VALUES (?, ?)'),
+  licFora: db.prepare('DELETE FROM feira_lances WHERE lid = ?'),
+  passados: db.prepare("SELECT f.* FROM feira_lances l JOIN feira f ON f.id = l.lid WHERE l.conta = ? AND f.ronda = ? AND f.estado = 'aberto' AND f.tipo = 'leilao' AND f.licitante != ? AND f.fim > ? ORDER BY f.fim LIMIT 40"),
+  catalogo: db.prepare("SELECT kind, item, MIN(preco) preco, SUM(n) n, COUNT(*) c FROM feira WHERE ronda = ? AND estado = 'aberto' AND tipo = 'fixo' AND fim > ? GROUP BY kind, item"),
+  doItem: db.prepare("SELECT * FROM feira WHERE ronda = ? AND estado = 'aberto' AND tipo = 'fixo' AND item = ? AND fim > ? ORDER BY preco, id LIMIT 30"),
+  leiloes: db.prepare("SELECT * FROM feira WHERE ronda = ? AND estado = 'aberto' AND tipo = 'leilao' AND fim > ? ORDER BY fim, id LIMIT ? OFFSET ?"),
+  meus: db.prepare("SELECT * FROM feira WHERE ronda = ? AND vendedor = ? AND estado = 'aberto' ORDER BY fim"),
+  paraMim: db.prepare("SELECT * FROM feira WHERE ronda = ? AND dono = ? AND estado = 'levantar' ORDER BY id"),
+  nParaMim: db.prepare("SELECT COUNT(*) n FROM feira WHERE ronda = ? AND dono = ? AND estado = 'levantar'"),
+  lancesMeus: db.prepare("SELECT * FROM feira WHERE ronda = ? AND licitante = ? AND estado = 'aberto' ORDER BY fim"),
+  precos: db.prepare('SELECT unit FROM feira_vendas WHERE ronda = ? AND item = ? ORDER BY t DESC LIMIT 20'),
+};
+const objDe = (L) => (L.obj ? JSON.parse(L.obj) : null);
+const descDe = (L, n = L.n) => ({ kind: L.kind, id: L.item, n, o: objDe(L) });
+const bandaDe = (L) => E.feiraBand(L.kind, L.item, objDe(L));   // (uma arma: pelos usos que tem)
+// a diferença de um negócio para o preço de referência (para cima ou para baixo)
+const feiraDif = (kind, id, n, total, o) => Math.abs(total - E.feiraRef(kind, id, o) * n);
+const difLeil = (Ls, semLid) => Ls.filter((L) => L.id !== semLid).reduce((t, L) => t + feiraDif(L.kind, L.item, L.n, L.lance, objDe(L)), 0);
+// quanto já passou entre duas contas nas últimas 24 h, mais os leilões em que uma vai à frente no da outra (menos o que se vai mudar)
+const feiraPar = (x, y, now, semLid) => qf.par.get(ronda, now - CFG.feira.pairMs, x, y, y, x).s + difLeil(qf.parLeil.all(ronda, x, y, y, x), semLid);
+// e o que passou por uma conta com toda a gente (várias contas alternativas, triângulos)
+const feiraConta = (x, now, semLid) => qf.conta.get(ronda, now - CFG.feira.pairMs, x, x).s + difLeil(qf.contaLeil.all(ronda, x, x), semLid);
+// quanto ainda pode passar (acima ou abaixo da referência) num negócio entre «eu» e «outro», e qual dos tetos aperta
+function feiraFolga(eu, outro, now, semLid, cache) {
+  const F = CFG.feira, c = (x) => { if (cache && cache.has(x)) return cache.get(x); const v = feiraConta(x, now, semLid); if (cache) cache.set(x, v); return v; };
+  const t = [['PAIR_CAP', F.pairMax - feiraPar(eu, outro, now, semLid), F.pairMax], ['MY_CAP', F.acctMax - c(eu), F.acctMax], ['THEIR_CAP', F.acctMax - c(outro), F.acctMax]];
+  return t.reduce((m, x) => (x[1] < m[1] ? x : m));
+}
+// os anúncios que acabaram: leilão com lance -> paga-se a quem vendeu e o objeto fica à espera de quem ganhou;
+// o resto volta para quem vendeu (fica à espera de ser levantado)
+function resolverFeira(now) {
+  const L = qf.vencidos.all(ronda, now);
+  if (!L.length) return;
+  db.exec('BEGIN');
+  try {
+    for (const x of L) {
+      if (x.tipo === 'leilao' && x.licitante) {
+        const fee = E.feiraFee(x.lance), net = x.lance - fee, s = jogadores.get(x.vendedor);
+        if (s) { s.bank += net; guardar(s, now); caixa(now, 'feira:venda', net, 0); }
+        qf.levantar.run(x.licitante, x.id);
+        qf.venda.run(ronda, x.item, x.fim, Math.floor(x.lance / x.n), x.n, x.licitante, x.vendedor, feiraDif(x.kind, x.item, x.n, x.lance, objDe(x)));
+        evento(x.vendedor, now, { k: 'fSold', kind: x.kind, item: x.item, n: x.n, money: net, auc: true });
+        evento(x.licitante, now, { k: 'fWon', kind: x.kind, item: x.item, n: x.n, money: x.lance });
+        if (!s) console.error('feira: quem vendeu não está carregado', x.vendedor, x.id);
+      } else {
+        qf.levantar.run(x.vendedor, x.id);
+        evento(x.vendedor, now, { k: 'fBack', kind: x.kind, item: x.item, n: x.n });
+      }
+      qf.licFora.run(x.id);
+    }
+    db.exec('COMMIT');
+  } catch (e) { db.exec('ROLLBACK'); ronda = -1; throw e; }
+}
+function agirFeira(a, p, conta, now, world, ctx) {
+  const F = CFG.feira, err = (c, x) => { throw new E.GameError(c, x); };
+  const anuncio = () => { const L = Number.isSafeInteger(a.lid) ? qf.um.get(a.lid, ronda) : null; return L && L.estado === 'aberto' && L.fim > now ? L : err('NO_LISTING'); };
+  const nivel = () => { if (E.level(p) < F.minLvl) err('LOW_LEVEL', { need: F.minLvl }); };
+  // preço dentro da banda: a preço fixo, por unidade; em leilão, o lance inicial pelo lote todo
+  const preco = (tipo, kind, id, n, o) => {
+    const v = int(a.preco), B = E.feiraBand(kind, id, o), k = tipo === 'fixo' ? 1 : n, min = B.lo * k, max = B.hi * k;
+    if (!Number.isSafeInteger(v) || v < min || v > max || (tipo === 'fixo' && v * n > F.maxPrice)) err('BAD_PRICE', { min, max });
+    return v;
+  };
+  const tipoDe = () => (a.tipo === 'leilao' ? 'leilao' : 'fixo');
+  // um objeto que pede nível (o capacete balístico, as perneiras...): na feira também
+  const nivelDe = (L) => { const g = L.kind === 'inv' ? CFG.gear.find((x) => x.id === L.item) : null; if (g && g.level && E.level(p) < g.level) err('LOW_LEVEL', { need: g.level }); };
+  // a diferença para a referência tem teto por dia: entre as mesmas duas contas e por conta
+  const par = (outro, dif, semLid) => { const [code, left, max] = feiraFolga(conta, outro, now, semLid); if (dif > left) err(code, { max, left: Math.max(0, left) }); };
+  if (a.type === 'feiraList') {
+    nivel();
+    const tipo = tipoDe(), kind = String(a.kind || ''), i = int(a.i);
+    // o que vai à venda (sem mexer no jogador): no inventário, o objeto daquele lugar; no resto, o id e quantos
+    const id = kind === 'inv' ? (Number.isInteger(i) && p.inv[i] ? p.inv[i].id : '') : String(a.id || '').slice(0, 24);
+    const n = kind === 'inv' ? 1 : a.n === undefined ? 1 : int(a.n);
+    if (!E.feiraDesc(kind, id)) err('NO_ITEM');
+    if (!Number.isSafeInteger(n) || n < 1 || n > F.maxN) err('BAD_AMOUNT');
+    if (kind !== 'inv' && !(((kind === 'mt' ? p.mt : p.col)[id] || 0) >= n)) err('NO_ITEM', { have: (kind === 'mt' ? p.mt : p.col)[id] || 0 });   // primeiro: tens isso?
+    const v = preco(tipo, kind, id, n, kind === 'inv' ? p.inv[i] : null);
+    if (qf.abertosDe.get(ronda, conta, conta).n >= F.maxOpen) err('FEIRA_FULL', { max: F.maxOpen });
+    const d = E.feiraTake(p, now, world, kind, kind === 'inv' ? (typeof a.id === 'string' ? a.id : id) : id, n, i);
+    const fim = now + (tipo === 'leilao' ? F.auctionMs : F.listMs);
+    ctx.ops.push(() => qf.nova.run(ronda, conta, tipo, d.kind, d.id, d.o ? JSON.stringify(d.o) : null, d.n, v, now, fim));
+    return { ok: true, tipo, kind: d.kind, id: d.id, n: d.n, preco: v, fim };
+  }
+  if (a.type === 'feiraRelist') {   // voltar a pôr à venda o que está à espera de ser levantado (não se vendeu, ou ganhou-se)
+    nivel();
+    const L = Number.isSafeInteger(a.lid) ? qf.um.get(a.lid, ronda) : null;
+    if (!L || L.estado !== 'levantar' || L.dono !== conta) err('NO_LISTING');
+    const tipo = tipoDe(), v = preco(tipo, L.kind, L.item, L.n, objDe(L));
+    E.feiraBegin(p, now, world);   // só confere que pode agir (preso, no hospital, ocupado)
+    const fim = now + (tipo === 'leilao' ? F.auctionMs : F.listMs);
+    ctx.ops.push(() => { qf.denovo.run(conta, tipo, v, now, fim, L.id); qf.licFora.run(L.id); });
+    return { ok: true, tipo, kind: L.kind, id: L.item, n: L.n, preco: v, fim, lid: L.id };
+  }
+  if (a.type === 'feiraBuy') {
+    nivel();
+    const L = anuncio();
+    if (L.tipo !== 'fixo') err('NO_LISTING');
+    if (L.vendedor === conta) err('OWN_LISTING');
+    const s = jogadores.get(L.vendedor);
+    if (!s) err('NO_LISTING');   // (quem vendeu tem sempre estado nesta ronda; sem ele, o dinheiro não tinha para onde ir)
+    nivelDe(L);
+    const k = a.n === undefined ? L.n : int(a.n);
+    if (!Number.isSafeInteger(k) || k < 1 || k > L.n) err('BAD_AMOUNT', { max: L.n });
+    const total = L.preco * k, dif = feiraDif(L.kind, L.item, k, total, objDe(L));
+    par(L.vendedor, dif);
+    const r = E.feiraBuy(p, now, world, descDe(L, k), total);
+    const fee = E.feiraFee(total), net = total - fee;
+    s.bank += net; ctx.outros.push(s);
+    ctx.ops.push(() => {
+      if (k === L.n) qf.apaga.run(L.id); else qf.menos.run(k, L.id);
+      qf.venda.run(ronda, L.item, now, L.preco, k, conta, L.vendedor, dif);
+      evento(L.vendedor, now, { k: 'fSold', kind: L.kind, item: L.item, n: k, money: net });
+      caixa(now, 'feira:venda', net, 0);
+    });
+    return { ...r, lid: L.id };
+  }
+  if (a.type === 'feiraBid') {
+    nivel();
+    const L = anuncio();
+    if (L.tipo !== 'leilao') err('NO_LISTING');
+    if (L.vendedor === conta) err('OWN_LISTING');
+    if (L.licitante === conta) err('LEADING');
+    const cap = bandaDe(L).hi * L.n, min = E.feiraNext(L.lance, L.preco, cap), v = int(a.valor);
+    if (!min) err('BID_TOP', { max: cap });
+    if (!Number.isSafeInteger(v) || v < min) err('BID_LOW', { min });
+    if (v > cap) err('BID_HIGH', { max: cap });
+    nivelDe(L);
+    // a feira não é um armazém: o que está por levantar mais os leilões em que vais à frente não passam de maxOpen
+    if (qf.guardados.get(ronda, conta, conta).n >= F.maxOpen) err('FEIRA_FULL', { max: F.maxOpen });
+    par(L.vendedor, feiraDif(L.kind, L.item, L.n, v, objDe(L)), L.id);   // (o lance de quem ia à frente sai das contas)
+    E.feiraBegin(p, now, world);   // primeiro o que corre sozinho (a avença, os juros...): depois mede-se quanto sai do banco
+    const banco = v - Math.min(Math.max(0, p.cash), v);   // pay() tira primeiro da mão: o resto sai do banco
+    E.feiraLock(p, now, world, v);
+    const prev = L.licitante ? jogadores.get(L.licitante) : null;
+    // quem ia à frente recebe o dinheiro de onde saiu (a parte do banco volta ao banco, sem taxa; a da mão, à mão)
+    if (prev) { const b = Math.min(L.lbanco || 0, L.lance); prev.bank += b; prev.cash += L.lance - b; ctx.outros.push(prev); }
+    const fim = Math.max(L.fim, now + F.bidEndMs);
+    ctx.ops.push(() => {
+      qf.lance.run(v, conta, fim, banco, L.id);
+      qf.licNovo.run(L.id, conta);
+      if (L.licitante) { evento(L.licitante, now, { k: 'fOutbid', kind: L.kind, item: L.item, n: L.n, money: L.lance }); if (prev) caixa(now, 'feira:devolve', L.lance, 0); }
+    });
+    return { ok: true, lid: L.id, kind: L.kind, id: L.item, n: L.n, valor: v, fim, next: E.feiraNext(v, L.preco, cap) };
+  }
+  if (a.type === 'feiraCancel') {   // tirar da feira: volta logo, ou fica à espera de ser levantado se não couber; leilão só sem lances
+    const L = anuncio();
+    if (L.vendedor !== conta) err('NO_LISTING');
+    if (L.licitante) err('HAS_BIDS');
+    const d = descDe(L);
+    E.feiraBegin(p, now, world);
+    if (E.feiraFits(p, d)) { ctx.ops.push(() => qf.levantar.run(conta, L.id)); return { ok: true, kind: L.kind, id: L.item, n: L.n, lid: L.id, parked: true }; }
+    const r = E.feiraGive(p, now, world, d);
+    ctx.ops.push(() => qf.apaga.run(L.id));
+    return { ...r, lid: L.id, back: true };
+  }
+  if (a.type === 'feiraTake') {   // levantar o que não se vendeu ou o que se ganhou
+    const L = Number.isSafeInteger(a.lid) ? qf.um.get(a.lid, ronda) : null;
+    if (!L || L.estado !== 'levantar' || L.dono !== conta) err('NO_LISTING');
+    const r = E.feiraGive(p, now, world, descDe(L));
+    ctx.ops.push(() => qf.apaga.run(L.id));
+    return { ...r, lid: L.id, won: L.dono !== L.vendedor };
+  }
+  err('BAD_ACTION');
+}
+// lim: quanto ainda pode passar (acima ou abaixo da referência) num negócio com este anúncio, para o site o dizer antes do toque
+const linhaFeira = (L, conta, now, cache) => {
+  const cap = L.tipo === 'leilao' ? bandaDe(L).hi * L.n : undefined, o = objDe(L);
+  const lim = cache && L.vendedor !== conta && L.estado === 'aberto' ? Math.max(0, feiraFolga(conta, L.vendedor, now, L.tipo === 'leilao' ? L.id : undefined, L.tipo === 'leilao' ? null : cache)[1]) : undefined;
+  return { lid: L.id, tipo: L.tipo, kind: L.kind, id: L.item, n: L.n, u: o ? o.u : undefined, preco: L.preco, lance: L.lance, ref: E.feiraRef(L.kind, L.item, o), lim,
+    next: L.tipo === 'leilao' ? E.feiraNext(L.lance, L.preco, cap) : undefined, max: cap,
+    fim: L.fim, quem: nomeDe(L.vendedor), meu: L.vendedor === conta, frente: L.licitante === conta, lances: !!L.licitante, won: L.estado === 'levantar' && L.dono !== L.vendedor };
+};
+let cacheCat = { t: 0, r: -1, lista: [] };
+// aoff: a partir de que leilão (página seguinte); an: quantos (para recarregar sem perder as páginas já abertas)
+function vistaFeira(conta, now, item, aoff = 0, an = 40) {
+  resolverFeira(now);
+  if (cacheCat.r !== ronda || now - cacheCat.t > 5000) cacheCat = { t: now, r: ronda, lista: qf.catalogo.all(ronda, now) };
+  const off = Number.isSafeInteger(aoff) && aoff > 0 ? Math.min(aoff, 10_000) : 0, k = Number.isSafeInteger(an) ? Math.max(40, Math.min(200, an)) : 40;
+  const leil = qf.leiloes.all(ronda, now, k + 1, off), cache = new Map();
+  const out = {
+    now, cat: cacheCat.lista.map((x) => ({ kind: x.kind, id: x.item, preco: x.preco, n: x.n, c: x.c })),
+    leiloes: leil.slice(0, k).map((L) => linhaFeira(L, conta, now, cache)), aoff: off, maisLeiloes: leil.length > k,
+    passados: qf.passados.all(conta, ronda, conta, now).map((L) => linhaFeira(L, conta, now, cache)),   // leilões em que licitaste e te passaram à frente
+    meus: qf.meus.all(ronda, conta).map((L) => linhaFeira(L, conta, now)),
+    levantar: qf.paraMim.all(ronda, conta).map((L) => linhaFeira(L, conta, now)),
+    lances: qf.lancesMeus.all(ronda, conta).map((L) => linhaFeira(L, conta, now)),
+  };
+  if (typeof item === 'string' && item.length <= 24) {
+    const u = qf.precos.all(ronda, item).map((x) => x.unit).sort((x, y) => x - y);
+    out.item = { id: item, lista: qf.doItem.all(ronda, item, now).map((L) => linhaFeira(L, conta, now, cache)), med: u.length ? u[Math.floor(u.length / 2)] : 0, vendas: u.length };
+  }
+  return out;
 }
 
 // ---------- gangues ----------
@@ -1249,7 +1483,7 @@ function evento(conta, now, dados) { q.novoEvento.run(conta, now, JSON.stringify
 function agir(conta, corpo, now) {
   const w = mundo(now);
   if (w.phase !== 'play') throw new E.GameError('ROUND_CLOSED');
-  carregarRonda(w.n); epocaEmDia(now); resolverOps(now);
+  carregarRonda(w.n); epocaEmDia(now); resolverOps(now); resolverFeira(now);
   const p = jogadorDe(conta, now, w);
   const mk0 = w.phase === 'play' ? bolsaDe(w, now) : null;
   const world = { start: w.start, playEnd: w.playEnd, press: mk0 ? MW.pressOf(mk0.w, 'lx') : 50 };
@@ -1437,6 +1671,7 @@ function agir(conta, corpo, now) {
     }
     default:
       if (typeof a.type === 'string' && a.type.startsWith('gang')) { r = agirGangue(a, p, conta, now, world, ctx); break; }
+      if (typeof a.type === 'string' && a.type.startsWith('feira')) { r = agirFeira(a, p, conta, now, world, ctx); break; }   // v84
       throw new E.GameError('BAD_ACTION');
   }
   // v76: com a taxa sobre o jogo, 15% do que se ganha acima de 1 000 € numa jogada vai para os cofres
@@ -1707,6 +1942,12 @@ async function tratar(req, res) {
       }
       throw e;
     }
+  }
+  if (req.method === 'GET' && path === '/api/feira') {   // v84: a Feira da Ladra
+    if (w.phase !== 'play') return enviar(res, 200, { now, cat: [], leiloes: [], meus: [], levantar: [], lances: [] });
+    if (!limite('feira:' + conta, 40, 10_000, now)) return enviar(res, 429, { error: 'SLOW_DOWN' });
+    carregarRonda(w.n);
+    return enviar(res, 200, vistaFeira(conta, clock(), url.searchParams.get('item') || undefined, parseInt(url.searchParams.get('aoff') || '0', 10), parseInt(url.searchParams.get('an') || '40', 10)));
   }
   if (req.method === 'GET' && path === '/api/gang') { carregarRonda(w.n); return enviar(res, 200, vistaGangue(conta, now)); }
   if (req.method === 'GET' && path === '/api/table') {

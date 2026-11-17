@@ -1456,6 +1456,116 @@ export function maqService(p, now, world, id) {
   return { ok: true, id, until: p.maq[id], price: R.price, stopped: u0 <= now };
 }
 
+// ---------- Feira da Ladra (v84) ----------
+// O motor só mexe no jogador: tira o que se põe à venda (fica guardado no anúncio), dá o que se compra ou se levanta e
+// cobra. O anúncio, o dinheiro preso nos lances e quem recebe o quê ficam no servidor.
+// kind: 'mt' (depósito da cave), 'col' (vitrine), 'inv' (um objeto do inventário: ferramenta, arma ou proteção).
+export function feiraDesc(kind, id) {
+  if (kind === 'mt') return MAT_IDS.includes(id);
+  if (kind === 'col') return colItems().includes(id);
+  if (kind === 'inv') { const g = typeof id === 'string' ? gearOf(id) : undefined; return !!g; }
+  return false;
+}
+// pôr à venda: o que vai no anúncio sai do jogador
+export function feiraTake(p, now, world, kind, id, n, i) {
+  const F = CFG.feira;
+  if (!['mt', 'col', 'inv'].includes(kind)) fail('NO_ITEM');
+  if (kind === 'inv') {
+    const it = Number.isInteger(i) ? p.inv[i] : undefined;
+    if (!it || !gearOf(it.id) || (typeof id === 'string' && id !== it.id)) fail('NO_ITEM');
+    begin(p, now, world);
+    p.inv.splice(i, 1);
+    return { kind, id: it.id, n: 1, o: it };
+  }
+  if (!feiraDesc(kind, id)) fail('NO_ITEM');
+  if (!Number.isSafeInteger(n) || n < 1 || n > F.maxN) fail('BAD_AMOUNT');
+  begin(p, now, world);
+  const box = kind === 'mt' ? p.mt : p.col;
+  if (!((box[id] || 0) >= n)) fail('NO_ITEM', { have: box[id] || 0 });
+  box[id] -= n; if (!box[id]) delete box[id];
+  return { kind, id, n, o: null };
+}
+// pode receber? (o depósito tem teto; a ferramenta é uma de cada; um objeto ocupa um espaço). Devolve o código do erro ou null.
+export function feiraFits(p, d) {
+  if (d.kind === 'mt' && (p.mt[d.id] || 0) + d.n > CFG.mat.cap) return 'MAT_FULL';
+  if (d.kind === 'inv') {
+    if (gearOf(d.id).slot === 'mat' && p.inv.some((x) => x.id === d.id)) return 'HAVE_IT';
+    if (!roomFor(p)) return 'NO_ROOM';
+  }
+  return null;
+}
+function feiraRoom(p, d) {
+  const e = feiraFits(p, d);
+  if (e) fail(e, e === 'MAT_FULL' ? { cap: CFG.mat.cap } : undefined);
+}
+// preço de referência de uma unidade (a banda de preços sai daqui)
+const matRef = (id, depth = 0) => {
+  const F = CFG.feira;
+  if (F.ref[id]) return F.ref[id];
+  const r = depth < 4 ? CFG.craft.list.find((x) => x.id === id && x.kind === 'comp') : null;
+  return r ? Object.entries(r.needs).reduce((s, [k, q]) => s + q * matRef(k, depth + 1), r.price) : 0;
+};
+// uma arma vale pelos usos que lhe restam (uma sniper gasta não vale o preço da loja)
+export function feiraRef(kind, id, o) {
+  if (kind === 'inv') {
+    const g = typeof id === 'string' ? gearOf(id) : undefined;
+    if (!g) return 0;
+    return g.gun && o && Number.isInteger(o.u) ? Math.max(1, Math.round((g.price * Math.max(0, Math.min(o.u, g.life))) / g.life)) : g.price;
+  }
+  if (kind === 'col') { const s = Object.values(CFG.col.sets).find((x) => x.items.includes(id)); return s ? Math.round(s.cash / s.items.length) : 0; }
+  if (kind === 'mt') return MAT_IDS.includes(id) ? matRef(id) : 0;
+  return 0;
+}
+// entre quanto e quanto se pode pôr uma unidade à venda (e até onde vão os lances, vezes as unidades do lote)
+export function feiraBand(kind, id, o) {
+  const F = CFG.feira, r = feiraRef(kind, id, o);
+  return { ref: r, lo: Math.max(1, Math.ceil((r * F.loBp) / 10000)), hi: Math.max(1, Math.floor((r * F.hiBp) / 10000)) };
+}
+// a tabela toda, para o site mostrar a banda antes de se escrever o preço
+export function feiraRefs() {
+  const out = {};
+  for (const id of MAT_IDS) out['mt:' + id] = feiraRef('mt', id);
+  for (const id of colItems()) out['col:' + id] = feiraRef('col', id);
+  for (const g of CFG.gear) out['inv:' + g.id] = g.price;
+  return out;
+}
+function feiraPut(p, d) {
+  if (d.kind === 'mt') p.mt[d.id] = (p.mt[d.id] || 0) + d.n;
+  else if (d.kind === 'col') p.col[d.id] = (p.col[d.id] || 0) + d.n;
+  else p.inv.push(d.o && d.o.id === d.id ? { ...d.o } : itemNew(d.id));
+}
+// levantar (o que não se vendeu, ou o que se ganhou num leilão já pago)
+export function feiraGive(p, now, world, d) {
+  begin(p, now, world);
+  feiraRoom(p, d);
+  feiraPut(p, d);
+  return { ok: true, kind: d.kind, id: d.id, n: d.n };
+}
+// comprar a preço fixo: paga e recebe na mesma ação (confere tudo antes)
+export function feiraBuy(p, now, world, d, total) {
+  if (!Number.isSafeInteger(total) || total < 1) fail('BAD_AMOUNT');
+  begin(p, now, world);
+  feiraRoom(p, d);
+  pay(p, total);
+  feiraPut(p, d);
+  return { ok: true, kind: d.kind, id: d.id, n: d.n, price: total };
+}
+// só confere que o jogador pode agir agora (preso, internado, ocupado): voltar a pôr à venda, tirar para «levantar»
+export function feiraBegin(p, now, world) { begin(p, now, world); return true; }
+// licitar: o dinheiro sai já (fica preso no leilão enquanto se vai à frente)
+export function feiraLock(p, now, world, amount) {
+  if (!Number.isSafeInteger(amount) || amount < 1) fail('BAD_AMOUNT');
+  begin(p, now, world);
+  pay(p, amount);
+  return { ok: true, amount };
+}
+export const feiraFee = (v) => Math.ceil((v * CFG.feira.feeBp) / 10000);
+// o lance seguinte (pelo menos 5% acima do anterior, nunca acima do teto do lote). 0 = o leilão já chegou ao teto.
+export const feiraNext = (lance, preco, cap = Infinity) => {
+  if (lance && lance >= cap) return 0;
+  return Math.min(cap, lance ? Math.max(lance + 1, Math.ceil((lance * (10000 + CFG.feira.stepBp)) / 10000)) : preco);
+};
+
 // ---------- negócios ----------
 
 export function bizPrice(i, n) {

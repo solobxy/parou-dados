@@ -431,6 +431,18 @@ export const CFG = {
       { id: 'maq-clube', kind: 'maq', biz: 'clube', needs: { circuito: 3, motor: 1, caixote: 2 }, price: 40000, ms: 6 * HOUR },   // as caixas das colunas
     ],
   },
+  // v84: a Feira da Ladra. Os jogadores vendem uns aos outros materiais, componentes, colecionáveis e objetos.
+  // A preço fixo (por unidade, compra-se uma parte ou tudo; anúncio de 48 h) ou em leilão (24 h, lance mínimo, cada lance
+  // 5% acima do anterior; um lance nos últimos 10 minutos empurra o fim para 10 minutos depois dele). O vendedor paga 5% do que vende.
+  // Contra passar dinheiro entre contas: o preço fica entre 0,3× e 3× o de referência (objetos: o da loja; colecionáveis: a parte
+  // de cada peça no que o museu paga pelo conjunto; materiais: ref; componentes: os euros da receita mais os materiais), os
+  // lances também param nos 3×, e só se negoceia a partir do nível minLvl. Quem ainda tem coisas por levantar conta-as nos 10.
+  feira: { feeBp: 500, listMs: 48 * HOUR, auctionMs: 24 * HOUR, stepBp: 500, bidEndMs: 10 * MIN, maxOpen: 10, maxPrice: 1_000_000_000, maxN: 999,
+    minLvl: 5, loBp: 3000, hiBp: 30000, ref: { madeira: 40, sucata: 40, eletronica: 50, quimicos: 50, cobre: 60, pecas: 60 },
+    // e entre as mesmas duas contas (num sentido ou no outro), em 24 h, a diferença para o preço de referência não passa de pairMax
+    // (vender caro a uma conta e voltar a comprar barato fazia passar dinheiro sem limite, um ciclo de cada vez). Os lances à frente
+    // contam já. Quem licita também não guarda mais de maxOpen coisas na feira (por levantar mais leilões em que vai à frente).
+    pairMax: 10_000, acctMax: 30_000, pairMs: 24 * HOUR },   // e cada conta, com toda a gente, até acctMax (várias contas, triângulos)
   exam: {
     n: 3, cutBp: 2500, cuts: 2, retryBp: 1250, retryMin: HOUR, retryMax: 12 * HOUR, ttl: 15 * MIN,
     ans: {

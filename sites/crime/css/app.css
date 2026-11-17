@@ -3173,3 +3173,28 @@ body.gym-lock { overflow: hidden; }
 .vrow.cvr.hi { animation: cv-hi 1.6s ease-out; }
 @keyframes cv-hi { from { background: #d6ad6226; } to { background: transparent; } }
 @media (prefers-reduced-motion: reduce) { .vrow.cvr.hi { animation: none; background: #d6ad621a; } }
+
+/* ===== v84: a Feira da Ladra ===== */
+.vrow.fr { align-items: center; padding: 6px 0; }
+.vrow.fr .grow { min-width: 0; }
+.vlist .fr b { white-space: normal; overflow: visible; text-overflow: clip; }
+.vlist.vc > .fr + .fr { box-shadow: inset 0 1px 0 var(--line); }
+.fsh { gap: 12px; align-items: center; }
+.fsh h2 { margin: 0; font-size: 20px; }
+.fsh p { margin: 2px 0 0; }
+.fqty { gap: 8px; align-items: center; }
+.fqty .btn { min-width: 48px; min-height: 44px; font-size: 20px; }
+.fqty .btn:last-child:not(:nth-child(3)) { font-size: 15px; }
+.fq { min-width: 40px; text-align: center; font: 600 22px/1 var(--num); }
+.fsum { margin: 0; font: 600 18px/1.3 var(--num); }
+.fback { display: block; margin: 0 0 6px; text-align: left; min-height: 44px; }
+.sheet input#fpr, .sheet input#fbid { width: 100%; min-height: 48px; font: 600 20px var(--num); }
+.seg.fseg button { white-space: nowrap; padding: 0 6px; min-width: 0; }   /* «Os meus» não parte em duas linhas a 320 px */
+@media (max-width: 359px) { .seg.fseg button { font-size: 14px; padding: 0 2px; } }   /* a 320 px, «Comprar» e «Auctions» cabem na tecla */
+.fbtns { display: flex; flex-direction: column; gap: 6px; align-items: stretch; }   /* levantar e voltar a vender, um por cima do outro */
+.fbtns .btn { min-width: 96px; }
+.fgrp > .vrow > svg.i:last-child { transition: transform .2s ease-out; }
+.fgrp > .vrow[aria-expanded='true'] > svg.i:last-child { transform: rotate(90deg); }   /* aberto: a seta aponta para baixo */
+.fgrp .fsub { margin: 0 0 6px 12px; padding-left: 10px; box-shadow: inset 2px 0 0 var(--line); }
+.vlist.vc .fgrp + .fgrp, .vlist.vc .fgrp + .fr, .vlist.vc .fr + .fgrp { box-shadow: inset 0 1px 0 var(--line); }
+@media (prefers-reduced-motion: reduce) { .fgrp > .vrow > svg.i:last-child { transition: none; } }

@@ -30,8 +30,10 @@ function leftTxt(ms) {
   const m = Math.max(0, Math.ceil(ms / 60000)), d = Math.floor(m / 1440), hh = Math.floor((m % 1440) / 60), mm = m % 60;
   if (d >= 2) return t('nDays', { n: d });
   if (d === 1) return hh ? t('dayHours', { h: hh }) : t('nDay');
-  return hh ? t('hoursMins', { h: hh, m: mm }) : t('nMins', { n: mm });
+  return hh ? (mm ? t('hoursMins', { h: hh, m: mm }) : t('nHrs', { h: hh })) : t('nMins', { n: mm });
 }
+// os números dos erros que se mostram em euros (o lance mínimo, a banda de preços)
+const errData = (d) => d && { ...d, ...Object.fromEntries(['min', 'max', 'left'].filter((k) => typeof d[k] === 'number').map((k) => [k, money(d[k])])) };
 const nb = (x) => String(x).replace(/ /g, '\u00a0').replace(/-/g, '\u2011');   // não parte a linha a meio («Nível 12», «às 21:00»)
 const fimEpoca = (ep) => nb(new Date(ep.end).toLocaleString(lang() === 'pt' ? 'pt-PT' : 'en-GB', { weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' }));
 
@@ -92,7 +94,7 @@ function act(type, args = {}, opts = {}) {
       return out;
     } catch (e) {
       if (e.data?.me) { S.st.me = e.data.me; S.stAt = now(); }
-      if (e.code && e.code !== 'LOGIN_REQUIRED') { toast(errText(e.code), true); fx.vibrate([30, 40, 30]); }
+      if (e.code && e.code !== 'LOGIN_REQUIRED') { toast(errText(e.code, errData(e.data)), true); fx.vibrate([30, 40, 30]); }
       render();
       return null;
     } finally { S.pending--; if (job) S.crimeBusy = false; }
@@ -144,6 +146,13 @@ function react(type, out, before, opts) {
   else if (type === 'deal') { toast(t('dealSold', { g: r.grams, m: money(r.money), n: r.respect }) + (r.lav ? ' · ' + t('ro_lav', { m: money(r.lav) }) : '')); fx.sfx('cash'); }
   else if (type === 'workDone') { fx.vibrate(r.busted ? [40, 60, 40] : 14); fx.sfx(r.busted ? 'bust' : 'cash'); }
   else if (type === 'craftStart') { toast(r.kind === 'comp' ? t('tMade', { n: r.n, x: crIt(r.id).toLowerCase() }) : t('tCraft', { x: crIt(r.id), t: hhmm(r.end) })); fx.sfx(r.kind === 'comp' ? 'claim' : 'buy'); }   // v83
+  else if (type.startsWith('feira')) {   // v84
+    const x = fName(r.kind, r.id).toLowerCase() + (r.n > 1 ? ' ×' + r.n : '');
+    toast(type === 'feiraList' ? t(r.tipo === 'leilao' ? 'tfAuc' : 'tfList', { x, m: money(r.preco) }) : type === 'feiraBuy' ? t('tfBought', { x, m: money(r.price) })
+      : type === 'feiraBid' ? t('tfBid', { x, m: money(r.valor) }) : type === 'feiraCancel' ? t(r.parked ? 'tfParked' : 'tfBack', { x })
+      : type === 'feiraRelist' ? t(r.tipo === 'leilao' ? 'tfAuc' : 'tfList', { x, m: money(r.preco) }) : t(r.won ? 'tfWonTake' : 'tfBack', { x }));
+    fx.sfx(['feiraBid', 'feiraList', 'feiraRelist'].includes(type) ? 'buy' : 'claim'); loadFeira();
+  }
   else if (type === 'maqService') { toast(t(r.stopped ? 'tRevBack' : 'tRev', { x: list('biz')[S.cfg.biz.findIndex((b) => b.id === r.id)], d: cvDay(r.until) })); fx.sfx('claim'); }
   else if (type === 'craftTake') { toast(t('tCrafted_' + r.kind, { x: crIt(r.id), b: r.kind === 'maq' ? list('biz')[S.cfg.biz.findIndex((b) => b.id === recipe(r.id).biz)] : '' })); fx.sfx('claim'); }
   else if (type === 'shift') { toast(t('jbDone', { m: money(r.money), n: r.left })); fx.sfx('cash'); }
@@ -197,7 +206,7 @@ function react(type, out, before, opts) {
     if (r.success) { toast(t('hmDone', { b: r.target, n: r.respLoss })); fx.sfx('crit'); fx.vibrate([20, 40, 20]); } else { toast(t('hmMissed', { b: r.target }), true); fx.sfx('fail'); }
     S.targets = null; loadTargets();
   } else if (type === 'tableBet') fx.sfx('deal');
-  else if (!['gymStart', 'tableClear', 'craftStart', 'craftTake'].includes(type)) fx.sfx('buy');
+  else if (!['gymStart', 'tableClear', 'craftStart', 'craftTake'].includes(type) && !type.startsWith('feira')) fx.sfx('buy');
   if (type === 'crime' || type === 'crimeAll') requestAnimationFrame(showReport);
   if (lv) { skyline(lv.to); if (type !== 'crime' && type !== 'crimeAll' && type !== 'opGo') toast(t('r_lvl', { n: lv.to, x: titleOf(lv.to) })); }
   render();
@@ -367,15 +376,15 @@ function tickHud() {
 const PLACES = {
   city: { ic: 'skyline' }, empire: { ic: 'empire' }, rob: { ic: 'street', img: 'golpes' }, club: { ic: 'bolt', img: 'discoteca' }, gym: { img: 'ginasio' },
   biz: { ic: 'empire', img: 'negocios' }, stash: { img: 'stash' }, acct: { img: 'contabilista' }, port: { img: 'porto' }, air: { img: 'aeroporto' }, arms: { img: 'armas' }, bank: { img: 'banco' }, hosp: { img: 'hospital' },
-  jail: { img: 'prisao' }, gang: { img: 'gangue' }, work: { img: 'profissao' }, news: { img: 'jornal' }, casino: { ic: 'gem', img: 'casino' }, roulette: { img: 'roleta' }, bj: { img: 'blackjack' }, dice: { img: 'dados' }, wheel: { img: 'roda' }, slot: { img: 'slot' }, zeus: { img: 'zeus' }, doce: { img: 'doce' }, rebucado: { img: 'rebucado' }, alley: { img: 'beco' }, lux: { img: 'luxos' }, fights: { ic: 'fights', img: 'lutas' }, rank: { img: 'procurados' }, hitman: { img: 'assassino' }, putas: { img: 'putas' }, gigs: { img: 'biscates' }, casa: {}, myclub: { img: 'discoteca' }, mybro: { img: 'bordel' }, bolsa: { img: 'bolsa' }, job: { img: 'emprego' }, inv: { img: 'inventario' }, ops: { img: 'operacoes' }, parl: { img: 'parlamento' }, cafe: { img: 'cafe' }, museum: { img: 'museu' }, uni: { img: 'universidade' }, cave: { img: 'cave' },
+  jail: { img: 'prisao' }, gang: { img: 'gangue' }, work: { img: 'profissao' }, news: { img: 'jornal' }, casino: { ic: 'gem', img: 'casino' }, roulette: { img: 'roleta' }, bj: { img: 'blackjack' }, dice: { img: 'dados' }, wheel: { img: 'roda' }, slot: { img: 'slot' }, zeus: { img: 'zeus' }, doce: { img: 'doce' }, rebucado: { img: 'rebucado' }, alley: { img: 'beco' }, lux: { img: 'luxos' }, fights: { ic: 'fights', img: 'lutas' }, rank: { img: 'procurados' }, hitman: { img: 'assassino' }, putas: { img: 'putas' }, gigs: { img: 'biscates' }, casa: {}, myclub: { img: 'discoteca' }, mybro: { img: 'bordel' }, bolsa: { img: 'bolsa' }, job: { img: 'emprego' }, inv: { img: 'inventario' }, ops: { img: 'operacoes' }, parl: { img: 'parlamento' }, cafe: { img: 'cafe' }, museum: { img: 'museu' }, uni: { img: 'universidade' }, cave: { img: 'cave' }, feira: { img: 'feira' },
 };
 // barra de baixo: só o que se usa a toda a hora. O resto vive dentro de cada separador, arrumado por zonas.
 const NAV = ['city', 'rob', 'fights', 'casino', 'empire'];
 const HUB = {
-  city: [['sec_night', ['club', 'putas', 'casino', 'gang', 'alley', 'arms']], ['sec_street', ['gigs', 'cafe', 'job', 'uni', 'gym', 'bank', 'museum', 'parl', 'hosp', 'jail', 'rank']]],
+  city: [['sec_night', ['club', 'putas', 'casino', 'gang', 'alley', 'arms']], ['sec_street', ['gigs', 'cafe', 'job', 'uni', 'gym', 'feira', 'bank', 'museum', 'parl', 'hosp', 'jail', 'rank']]],
   empire: [['sec_income', ['biz', 'port', 'air', 'myclub', 'mybro']], ['sec_assets', ['casa', 'cave', 'inv', 'bank', 'bolsa', 'stash', 'acct']]],
 };
-const PARENT = { cave: 'empire', uni: 'city', museum: 'city', cafe: 'city', parl: 'city', gigs: 'city', gang: 'city', work: 'job', job: 'city', news: 'city', casino: 'city', roulette: 'casino', bj: 'casino', dice: 'casino', wheel: 'casino', slot: 'casino', zeus: 'casino', doce: 'casino', rebucado: 'casino', club: 'city', putas: 'city', gym: 'city', alley: 'city', hosp: 'city', jail: 'city',
+const PARENT = { feira: 'city', cave: 'empire', uni: 'city', museum: 'city', cafe: 'city', parl: 'city', gigs: 'city', gang: 'city', work: 'job', job: 'city', news: 'city', casino: 'city', roulette: 'casino', bj: 'casino', dice: 'casino', wheel: 'casino', slot: 'casino', zeus: 'casino', doce: 'casino', rebucado: 'casino', club: 'city', putas: 'city', gym: 'city', alley: 'city', hosp: 'city', jail: 'city',
   biz: 'empire', port: 'empire', air: 'empire', myclub: 'empire', mybro: 'empire', bolsa: 'empire', inv: 'empire', stash: 'empire', acct: 'empire', casa: 'empire', bank: 'empire', lux: 'empire', arms: 'fights', rank: 'fights', hitman: 'fights', ops: 'rob' };
 const upOf = (id) => (S.backTo && S.backTo[id]) || PARENT[id] || 'city';   // um sítio que está em duas zonas volta para a zona de onde vieste
 const tabOf = (id) => { let x = id; for (let k = 0; k < 4 && !NAV.includes(x); k++) x = upOf(x); return NAV.includes(x) ? x : 'city'; };
@@ -386,6 +395,7 @@ function loadFor(tab) {
   if (tab === 'rank') loadRanking();
   if (tab === 'hitman') loadHitman();
   if (tab === 'gang') loadGang();
+  if (tab === 'feira') { S.feiraItem = null; loadFeira(); }   // v84
   if (tab === 'club' || tab === 'putas') loadVenues();
   if (tab === 'bolsa') { S.stkSel = null; loadStocks(); }
   if (tab === 'stash') S.reg = null;
@@ -439,7 +449,7 @@ function shell() {
 }
 
 const SCREENS = { job: screenJob, city: screenCity, empire: screenEmpire, news: screenNews, casino: screenCasino, roulette: screenRoulette, bj: screenBJ, dice: screenDice, wheel: screenWheel, slot: () => screenSlotGame('slot'), zeus: () => screenSlotGame('zeus'), doce: () => screenSlotGame('doce'), rebucado: () => screenSlotGame('rebucado'), rob: screenRob, club: screenClub, gym: screenGym, biz: screenBiz, port: screenPort, arms: screenArms, bank: screenBank,
-  hosp: screenHosp, jail: screenJail, gang: screenGang, work: screenWork, air: screenAir, putas: screenPutas, myclub: screenMyClub, mybro: screenMyBro, bolsa: screenBolsa, inv: screenInv, stash: screenStash, acct: screenAcct, casa: screenCasa, alley: screenAlley, lux: screenLux, fights: screenFights, rank: screenRank, hitman: screenHitman, ops: screenOps, gigs: screenGigs, parl: screenParl, cafe: screenCafe, museum: screenMuseum, uni: screenUni, cave: screenCave };
+  hosp: screenHosp, jail: screenJail, gang: screenGang, work: screenWork, air: screenAir, putas: screenPutas, myclub: screenMyClub, mybro: screenMyBro, bolsa: screenBolsa, inv: screenInv, stash: screenStash, acct: screenAcct, casa: screenCasa, alley: screenAlley, lux: screenLux, fights: screenFights, rank: screenRank, hitman: screenHitman, ops: screenOps, gigs: screenGigs, parl: screenParl, cafe: screenCafe, museum: screenMuseum, uni: screenUni, cave: screenCave, feira: screenFeira };
 function render(force) {
   if (!S.st) return;
   if (!S.st.me || S.st.round.phase !== 'play') return renderPause();
@@ -469,7 +479,7 @@ function tabDots() {
   const want = {
     fights: (S.events || []).some((e) => e.id > S.lastEventSeen),
     empire: (me.cf && me.cf.end <= n) || S.cfg.biz.some((b) => me.biz[S.cfg.biz.indexOf(b)]?.n > 0 && maqState(me, b.id) === 3) || (me.air && me.air.readyAt <= n) || me.port.some((c) => c.readyAt <= n) || me.biz.some((b, i) => b.n > 0 && storedNow(b, i) >= (b.perH * S.cfg.storageMs) / 3600000 / 2),
-    city: !!me.mission?.done || exReady(me),   // v80: um exame à espera
+    city: !!me.mission?.done || exReady(me) || me.feira?.levantar > 0,   // v80: um exame à espera; v84: o que levantar na feira
     casino: !!me.bj,   // tens uma mão de blackjack por acabar
     rob: !!(me.op && me.op.ready <= n && !(me.op.miss || []).length),   // um golpe grande pronto para avançar
   };
@@ -914,6 +924,7 @@ function screenCity() {
     parl: S.news?.mundo?.gov?.bill && me.gv && !me.gv.voted && !me.gv.novo && me.level >= (S.cfg.gov?.vote.minLevel || 5) ? t('pBadge') : null,
     fights: (S.events || []).some((e) => e.id > S.lastEventSeen) ? t('newEvt') : null,
     uni: exReady(me) ? t('exBadge') : me.course ? dur(Math.max(0, me.course.end - n)) : null,
+    feira: me.feira?.levantar ? t('fToTakeB', { n: me.feira.levantar }) : null,   // v84: há o que levantar
     museum: S.cfg.col && Object.keys(S.cfg.col.sets).some((k) => setHave(me, k) === S.cfg.col.sets[k].items.length) ? t('muBadge') : null,
   };
   const ep = season();
@@ -2527,6 +2538,236 @@ function screenCave() {
   return out;
 }
 
+// ===== A Feira da Ladra (v84) =====
+// Os jogadores vendem uns aos outros o que tiram dos biscates, da cave, da vitrine e do inventário. A preço fixo (por unidade)
+// ou em leilão. Em cima o que está à espera de ser levantado; depois quatro separadores: comprar, leilões, vender e os meus.
+// O preço fica entre 0,3× e 3× o de referência (contra passar dinheiro entre contas); os lances param nos 3× pelo lote.
+const fName = (k, id) => (k === 'mt' ? t('mt_' + id) : k === 'col' ? t('co_' + id) : t('g_' + id));
+const fArt = (k, id, cls) => art(k === 'mt' ? 'mat' : k === 'col' ? 'col' : 'gear', id, cls);
+async function loadFeira(item, more) {
+  try {
+    const q = new URLSearchParams();
+    if (item || S.feiraItem) q.set('item', item || S.feiraItem);
+    // «Mais leilões»: a página seguinte; depois de uma ação, os mesmos que já estavam abertos (não volta ao princípio)
+    const tem = S.feira?.leiloes?.length || 0, off = more ? tem : 0;
+    if (off) q.set('aoff', String(off)); else if (tem > 40) q.set('an', String(Math.min(200, tem)));
+    const f = await api('GET', '/api/feira' + (q.size ? '?' + q : ''));
+    if (more && S.feira) f.leiloes = [...S.feira.leiloes, ...f.leiloes.filter((L) => !S.feira.leiloes.some((x) => x.lid === L.lid))];
+    S.feira = f; if (S.tab === 'feira') render();
+  } catch {}
+}
+const fLeft = (ts) => h('span', { class: 'num', dataset: { left: ts, long: 1 } }, leftTxt(ts - now()));
+// o preço de referência de uma unidade (uma arma: pelos usos que lhe restam) e entre quanto e quanto se vende (o servidor confere o mesmo)
+function fRef(kind, id, u) {
+  const r = S.cfg.feira.refs?.[kind + ':' + id] || 0, g = kind === 'inv' ? gearOf(id) : null;
+  return g && g.gun && Number.isInteger(u) ? Math.max(1, Math.round((g.price * Math.max(0, Math.min(u, g.life))) / g.life)) : r;
+}
+function fBand(kind, id, u) {
+  const F = S.cfg.feira, r = fRef(kind, id, u);
+  return { lo: Math.max(1, Math.ceil((r * F.loBp) / 10000)), hi: Math.max(1, Math.floor((r * F.hiBp) / 10000)) };
+}
+// cabe? (o depósito leva 40 de cada; a ferramenta é uma de cada; um objeto ocupa um lugar no inventário)
+function fFits(kind, id, n) {
+  const me = S.st.me;
+  if (kind === 'mt') return (me.mt?.[id] || 0) + n > S.cfg.mat.cap ? 'MAT_FULL' : null;
+  if (kind === 'inv') { if (gearOf(id)?.slot === 'mat' && me.inv.some((x) => x.id === id)) return 'HAVE_IT'; if (me.invUsed >= me.invCap) return 'NO_ROOM'; }
+  return null;
+}
+const fRoomMt = (id) => Math.max(0, S.cfg.mat.cap - (S.st.me.mt?.[id] || 0));
+const fLow = () => S.st.me.level < S.cfg.feira.minLvl;
+// a linha de apoio de uma arma (quantos usos ainda tem)
+function fUses(L) {
+  const g = L.kind === 'inv' && L.u !== undefined ? gearOf(L.id) : null;
+  return g ? h('div', { class: 'small ' + (L.u > 0 ? 'muted' : 'c-red') }, L.u > 0 ? t('usesLeft', { u: L.u, l: g.life }) : t('gunWorn')) : null;
+}
+// um campo de euros (só algarismos) com o texto de apoio por baixo
+function euroInput(id, v, on) {
+  const inp = h('input', { id, inputmode: 'numeric', autocomplete: 'off', enterkeyhint: 'done', value: v ? String(v) : '' });
+  inp.addEventListener('input', () => { inp.value = inp.value.replace(/\D/g, '').replace(/^0+/, '').slice(0, 10); on(parseInt(inp.value, 10) || 0); });
+  inp.addEventListener('keydown', (e) => { if (e.key === 'Enter') inp.blur(); });
+  return inp;
+}
+// quantidade com menos e mais (alvos de 44 px)
+function qtyPick(n, max, on) {
+  const out = h('b', { class: 'num fq' }, String(n));
+  const all = max > 2 ? h('button', { class: 'btn ghost sm', type: 'button', disabled: n >= max, on: { click: () => step(max) } }, t('fAll', { n: max })) : null;
+  const step = (d) => { n = Math.max(1, Math.min(max, n + d)); out.textContent = String(n); if (all) all.disabled = n >= max; on(n); };   // «Todos» só quando ainda não estão todos
+  return h('div', { class: 'row fqty' }, h('button', { class: 'btn ghost sm', type: 'button', 'aria-label': t('fLess'), on: { click: () => step(-1) } }, '−'), out,
+    h('button', { class: 'btn ghost sm', type: 'button', 'aria-label': t('fMore'), on: { click: () => step(1) } }, '+'), all);
+}
+// o cabeçalho das folhas: imagem, nome, a linha de apoio e (numa arma) os usos
+const fHead = (L, sub) => h('div', { class: 'row fsh' }, fArt(L.kind, L.id, 'vth'), h('div', { class: 'grow' }, h('h2', null, fName(L.kind, L.id) + (L.n > 1 ? ' ×' + L.n : '')), sub, fUses(L)));
+// falhou (o anúncio acabou, o preço mudou): fecha e mostra a feira como está agora
+const fAfter = (close) => (o) => { close(); if (!o) loadFeira(); };
+function feiraBuySheet(L) {
+  // no depósito só cabem 40 de cada: a quantidade não passa do que cabe
+  // e o limite diário (o que se paga acima ou abaixo da referência, por pessoa e por conta) também corta a quantidade
+  const dev = Math.abs(L.preco - (L.ref ?? L.preco)), byLim = L.lim !== undefined && dev > 0 ? Math.floor(L.lim / dev) : Infinity;
+  const max = Math.min(L.kind === 'mt' ? Math.min(L.n, fRoomMt(L.id)) : L.n, byLim);
+  const why = byLim < 1 ? 'LIM' : L.kind === 'mt' ? (max < 1 ? 'MAT_FULL' : null) : fFits(L.kind, L.id, 1);
+  let n = Math.max(1, max);
+  const btn = h('button', { class: 'btn buy block big' });   // o total está no botão («Comprar 2 · 840 €»)
+  const sync = () => { const cash = S.st.me.cash + S.st.me.bank; setBtn(btn, t('fBuyGo', { n, m: money(L.preco * n) })); btn.disabled = !!why || cash < L.preco * n; };
+  const close = sheet(h('div', { class: 'stack' }, fHead({ ...L, n: 1 }, h('p', { class: 'small muted' }, t('fEach', { m: money(L.preco), x: L.quem }))),
+    !why && max > 1 ? qtyPick(n, max, (v) => { n = v; sync(); }) : null,
+    !why && max < L.n ? h('p', { class: 'small muted' }, byLim <= max ? t('fCapQty', { n: max }) : t('fRoomMt', { n: max, c: S.cfg.mat.cap })) : null,
+    why ? h('p', { class: 'small c-red' }, why === 'LIM' ? t('fCapBuy') : errText(why)) : null, btn));
+  btn.addEventListener('click', async () => fAfter(close)(await act('feiraBuy', { lid: L.lid, n }, { el: btn })));
+  sync();
+}
+function feiraBidSheet(L) {
+  // de quanto a quanto: o lance seguinte e o teto do lote, apertados pelo limite diário (acima ou abaixo da referência)
+  const refN = (L.ref ?? 0) * L.n, lim = L.lim ?? Infinity, lo = Math.max(L.next, refN - lim), hi = Math.min(L.max || Infinity, refN + lim), shut = lo > hi;
+  let v = lo;
+  const why = fFits(L.kind, L.id, L.n);   // se ganhares e não couber, fica à tua espera na feira até arranjares lugar
+  const btn = h('button', { class: 'btn buy block big' }), help = h('p', { class: 'small muted' });
+  const sync = () => {
+    const cash = S.st.me.cash + S.st.me.bank, bad = shut || v < lo || v > hi;
+    setBtn(btn, t('fBidGo', { m: money(v) })); btn.disabled = bad || cash < v;
+    help.textContent = shut ? t('fCapBid') : v < lo ? t('fBidMin', { m: money(lo) }) : v > hi ? t('fBidMax', { m: money(hi) }) : cash < v ? t('fNoCash') : t('fBidHold');
+    help.className = 'small ' + (bad || cash < v ? 'c-red' : 'muted');
+  };
+  const close = sheet(h('div', { class: 'stack' }, fHead(L, h('p', { class: 'small muted' }, (L.lances ? t('fBidNow', { m: money(L.lance) }) : t('fBidStart', { m: money(L.preco) })) + ' · ' + t('fBy', { x: L.quem }))),
+    h('p', { class: 'small muted num' }, t('fEnds'), ' ', fLeft(L.fim), !shut && hi < Infinity ? ' · ' + t('fBidCap', { m: money(hi) }) : ''),
+    why ? h('p', { class: 'small c-red' }, t('fWontFit_' + why)) : null,
+    shut ? null : h('label', { class: 'small', for: 'fbid' }, t('fBidLbl')), shut ? null : euroInput('fbid', v, (x) => { v = x; sync(); }), help, btn));
+  btn.addEventListener('click', async () => fAfter(close)(await act('feiraBid', { lid: L.lid, valor: v }, { el: btn })));
+  sync();
+}
+// pôr à venda (ou voltar a pôr, do que está à espera): preço fixo por unidade ou leilão (lance inicial pelo lote).
+// Mostra a banda de preços, o preço de referência das vendas e o que se recebe.
+async function feiraSellSheet(it, relist) {
+  let tipo = 'fixo', n = it.n, preco = 0, ref = null;
+  const F = S.cfg.feira, B = fBand(it.kind, it.id, it.u);
+  const box = h('div', { class: 'stack' }), btn = h('button', { class: 'btn buy block big' }), got = h('p', { class: 'small muted' }), refP = h('p', { class: 'small muted' }), band = h('p', { class: 'small' });
+  const k = () => (tipo === 'fixo' ? 1 : n), lo = () => B.lo * k(), hi = () => B.hi * k();
+  const sync = () => {
+    const total = tipo === 'fixo' ? preco * n : preco, fee = Math.ceil((total * F.feeBp) / 10000), out = preco && (preco < lo() || preco > hi());
+    band.textContent = t(tipo === 'fixo' ? 'fBand' : 'fBandLot', { a: money(lo()), b: money(hi()) });
+    band.className = 'small ' + (out ? 'c-red' : 'muted');
+    got.textContent = preco && !out ? t(tipo === 'fixo' ? 'fGets' : 'fGetsAuc', { m: money(total - fee), f: F.feeBp / 100 }) : t('fFee', { f: F.feeBp / 100 });
+    setBtn(btn, t(tipo === 'fixo' ? 'fListGo' : 'fAucGo')); btn.disabled = !preco || out;
+  };
+  const inp = euroInput('fpr', '', (x) => { preco = x; sync(); });
+  const lbl = h('label', { class: 'small', for: 'fpr' }, t('fPriceLbl'));
+  // trocar de fixo para leilão muda o que o número quer dizer (por unidade ou pelo lote): o campo fica vazio
+  const seg = h('div', { class: 'seg fseg', role: 'group' }, [['fixo', t('fFixed')], ['leilao', t('fAuction')]].map(([key, l]) => h('button', { 'aria-pressed': key === tipo ? 'true' : 'false', type: 'button', on: { click: (e) => {
+    if (tipo === key) return;
+    tipo = key; preco = 0; inp.value = '';
+    [...seg.children].forEach((b) => b.setAttribute('aria-pressed', b === e.currentTarget ? 'true' : 'false')); lbl.textContent = t(tipo === 'fixo' ? 'fPriceLbl' : 'fMinLbl'); sync();
+  } } }, l)));
+  box.append(...[fHead({ ...it, n: 1 }, h('p', { class: 'small muted' }, relist ? t(it.won ? 'fWonIt' : 'fBackIt') + (it.n > 1 ? ' · ×' + it.n : '') : it.kind === 'inv' ? t('fOne') : t('fHave', { n: it.n }))),
+    seg, !relist && it.n > 1 ? qtyPick(n, Math.min(it.n, F.maxN), (v) => { n = v; sync(); }) : null, lbl, inp, band, refP, got, btn].filter(Boolean));   // (append escrevia «null»)
+  const close = sheet(box);
+  btn.addEventListener('click', async () => {
+    const o = await act(relist ? 'feiraRelist' : 'feiraList', relist ? { lid: it.lid, tipo, preco } : { tipo, kind: it.kind, id: it.id, n, i: it.i, preco }, { el: btn });
+    if (o) close();
+  });
+  sync();
+  try {
+    const f = await api('GET', '/api/feira?item=' + encodeURIComponent(it.id)); ref = f.item;
+    refP.textContent = ref && ref.vendas ? t(ref.vendas === 1 ? 'fRef1' : 'fRef', { m: money(ref.med), n: ref.vendas }) : ref && ref.lista.length ? t('fRefNow', { m: money(ref.lista[0].preco) }) : t('fRefNone');
+  } catch {}
+}
+function feiraRow(L, right, sub) {
+  return h('div', { class: 'vrow fr' }, fArt(L.kind, L.id, 'vth'),
+    h('div', { class: 'grow' }, h('b', null, fName(L.kind, L.id) + (L.n > 1 ? ' ×' + L.n : '')), sub, fUses(L)), right);
+}
+// grupos (catálogo e o que se pode vender): materiais, componentes, colecionáveis, objetos; dentro de cada um, por nome
+const F_GRP = (x) => (x.kind === 'mt' ? (S.cfg.mat.base.includes(x.id) ? 'mat' : 'comp') : x.kind === 'col' ? 'col' : 'inv');
+function fGroups(items, row, sort) {
+  const order = ['mat', 'comp', 'col', 'inv'], by = {};
+  for (const x of items) (by[F_GRP(x)] ||= []).push(x);
+  const col = new Intl.Collator(lang() === 'pt' ? 'pt-PT' : 'en-GB');
+  return order.filter((g) => by[g]).map((g) => [h('h2', { class: 'sec' }, t('fG_' + g)),
+    h('div', { class: 'card vlist vc' }, by[g].sort(sort || ((a, b) => col.compare(fName(a.kind, a.id), fName(b.kind, b.id)) || (a.i ?? 0) - (b.i ?? 0))).map(row))]);
+}
+// o preço de um leilão: quanto vai (ou a base) e quanto falta, em duas linhas curtas; quem vende fica na folha
+const fAucLines = (L) => [h('div', { class: 'small num' }, L.lances ? t('fAucRowBid', { m: money(L.lance) }) : t('fAucRowBase', { m: money(L.preco) }), h('span', { class: 'muted' }, ' · ', fLeft(L.fim)))];
+function screenFeira() {
+  const me = S.st.me, f = S.feira, F = S.cfg.feira, cash = me.cash + me.bank;
+  const seg = ['buy', 'auc', 'sell', 'mine'].includes(S.feiraSeg) ? S.feiraSeg : 'buy';
+  const out = [pageHead('feira', t('s_feira', { f: F.feeBp / 100 }))];
+  const b = busyBanner(me); if (b) out.push(b);
+  if (!f) { out.push(h('p', { class: 'muted' }, t('loading'))); return out; }
+  const low = fLow(), used = f.meus.length + f.levantar.length, full = used >= F.maxOpen;
+  if (low) out.push(h('div', { class: 'tip' }, h('p', null, t('fLowLv', { n: F.minLvl, m: me.level }))));
+  // o que está à espera de ser levantado (o que ganhaste ou o que não se vendeu): é a ação deste ecrã
+  if (f.levantar.length) out.push(h('section', { class: 'cnow' }, h('h2', { class: 'sec' }, t('fToTake')),
+    h('div', { class: 'vlist' }, f.levantar.map((L) => {
+      const why = fFits(L.kind, L.id, L.n);
+      return feiraRow(L, h('div', { class: 'fbtns' },
+        h('button', { class: 'btn buy sm', disabled: !!b || !!why, on: { click: (e) => act('feiraTake', { lid: L.lid }, { el: e.currentTarget }) } }, t('fTake')),
+        h('button', { class: 'btn ghost sm', disabled: !!b || low, on: { click: () => feiraSellSheet({ kind: L.kind, id: L.id, n: L.n, u: L.u, lid: L.lid, won: L.won }, true) } }, t('fRelist'))),
+      h('div', { class: 'small ' + (why ? 'c-red' : L.won ? 'c-cash' : 'muted') }, why ? errText(why) : t(L.won ? 'fWonIt' : 'fBackIt')));
+    }))));
+  out.push(h('div', { class: 'seg fseg', role: 'group', 'aria-label': t('p_feira') }, [['buy', t('fBuy')], ['auc', t('fAucs')], ['sell', t('fSell')], ['mine', t('fMine')]].map(([k, l]) =>
+    h('button', { 'aria-pressed': seg === k ? 'true' : 'false', on: { click: () => { S.feiraSeg = k; S.feiraItem = null; render(); } } }, l))));
+  if (seg === 'buy') {
+    if (S.feiraItem && f.item && f.item.id === S.feiraItem) {   // um artigo: os anúncios do mais barato para o mais caro
+      const I = f.item, k = I.lista[0]?.kind || f.cat.find((x) => x.id === I.id)?.kind || 'mt';
+      out.push(h('button', { class: 'lnk fback', on: { click: () => { S.feiraItem = null; loadFeira(); render(); } } }, '‹ ' + t('fAll2')),
+        h('h2', { class: 'sec' }, fName(k, I.id)), h('p', { class: 'small muted usub' }, I.vendas ? t(I.vendas === 1 ? 'fRef1' : 'fRef', { m: money(I.med), n: I.vendas }) : t('fRefNone')));
+      out.push(I.lista.length ? h('div', { class: 'card vlist vc' }, I.lista.map((L) => feiraRow(L,
+        L.meu ? h('span', { class: 'small muted' }, t('fYours')) : h('button', { class: 'btn ghost sm num', disabled: !!b || low || cash < L.preco, on: { click: () => feiraBuySheet(L) } }, t('fBuyBtn')),
+        h('div', { class: 'small num' }, t('fEach', { m: money(L.preco), x: L.quem })))))
+        : h('div', { class: 'tip' }, h('p', null, t('fNoneItem'))));
+      return out;
+    }
+    out.push(h('p', { class: 'small muted usub' }, t('fBuySub')));
+    out.push(...(f.cat.length ? fGroups(f.cat, (x) => h('button', { class: 'vrow fr tap', on: { click: () => { S.feiraItem = x.id; loadFeira(x.id); } } }, fArt(x.kind, x.id, 'vth'),
+      h('div', { class: 'grow' }, h('b', null, fName(x.kind, x.id)), h('div', { class: 'small num' }, t('fFrom', { m: money(x.preco) }), h('span', { class: 'muted' }, ' · ' + t('fForSale', { n: x.n })))),
+      icon('chev'))).flat()
+      : [h('div', { class: 'tip' }, h('p', null, t('fNone')))]));
+  } else if (seg === 'auc') {
+    out.push(h('p', { class: 'small muted usub' }, t('fAucSub', { p: F.stepBp / 100, m: Math.round(F.bidEndMs / 60000) })));
+    // por grupo, como no Comprar; dentro de cada um, o que acaba primeiro. Três ou mais do mesmo artigo juntam-se numa linha
+    // («Sucata · 46 leilões · desde 20 €») que abre os leilões desse artigo ali mesmo
+    const aucRow = (L) => feiraRow(L,
+      L.meu ? h('span', { class: 'small muted' }, t('fYours')) : L.frente ? h('span', { class: 'small c-cash' }, t('fLead')) : !L.next ? h('span', { class: 'small muted' }, t('fAtTop'))
+        : h('button', { class: 'btn ghost sm', disabled: !!b || low || cash < L.next, on: { click: () => feiraBidSheet(L) } }, t('fBidBtn')),
+      fAucLines(L));
+    const porItem = {};
+    for (const L of f.leiloes) (porItem[L.kind + ':' + L.id] ||= []).push(L);
+    const linhas = Object.values(porItem).flatMap((Ls) => (Ls.length < 3 ? Ls : [{ ...Ls[0], grupo: Ls }]));
+    out.push(...(f.leiloes.length ? fGroups(linhas, (x) => {
+      if (!x.grupo) return aucRow(x);
+      const key = x.kind + ':' + x.id, open = S.feiraAucOpen === key, low1 = Math.min(...x.grupo.map((L) => L.lances ? L.lance : L.preco));
+      return h('div', { class: 'fgrp' }, h('button', { class: 'vrow fr tap', 'aria-expanded': open ? 'true' : 'false', on: { click: () => { S.feiraAucOpen = open ? null : key; render(); } } }, fArt(x.kind, x.id, 'vth'),
+        h('div', { class: 'grow' }, h('b', null, fName(x.kind, x.id)), h('div', { class: 'small num' }, t('fAucN', { n: x.grupo.length }), h('span', { class: 'muted' }, ' · ' + t('fFrom', { m: money(low1) })))),
+        icon('chev')),
+        open ? h('div', { class: 'vlist fsub' }, x.grupo.map(aucRow)) : null);
+    }, (x, y) => x.fim - y.fim || x.lid - y.lid).flat()
+      : [h('div', { class: 'tip' }, h('p', null, t('fNoneAuc')))]));
+    if (f.maisLeiloes) out.push(h('button', { class: 'btn ghost block', on: { click: (e) => { e.currentTarget.disabled = true; loadFeira(null, true); } } }, t('fMoreAuc')));
+  } else if (seg === 'sell') {
+    // o que se pode vender: o depósito da cave, a vitrine e os objetos do inventário, cada um no seu grupo
+    const items = [...Object.entries(me.mt || {}).filter(([, n]) => n > 0).map(([id, n]) => ({ kind: 'mt', id, n })), ...Object.entries(me.col || {}).filter(([, n]) => n > 0).map(([id, n]) => ({ kind: 'col', id, n })),
+      ...me.inv.map((x, i) => ({ kind: 'inv', id: x.id, n: 1, i, u: x.u })).filter((x) => gearOf(x.id))];
+    out.push(h('p', { class: 'small muted usub' }, full ? t('fFullNow', { n: F.maxOpen }) : t('fSellSub', { n: F.maxOpen })));
+    out.push(...(items.length ? fGroups(items, (it) => h('div', { class: 'vrow fr' }, fArt(it.kind, it.id, 'vth'),
+      h('div', { class: 'grow' }, h('b', null, fName(it.kind, it.id)), fUses(it) || h('div', { class: 'small muted' }, it.kind === 'inv' ? t('fFromInv') : t(it.kind === 'mt' ? 'fFromMt' : 'fFromCol', { n: it.n }))),
+      h('button', { class: 'btn ghost sm', disabled: !!b || low || full, on: { click: () => feiraSellSheet(it) } }, t('fSellBtn')))).flat()
+      : [h('div', { class: 'tip' }, h('p', null, t('fNothing')))]));
+  } else {
+    out.push(h('h2', { class: 'sec' }, t('fMyList', { n: used, m: F.maxOpen })));
+    if (f.levantar.length) out.push(h('p', { class: 'small muted usub' }, t('fCountsWait', { n: f.levantar.length })));
+    out.push(f.meus.length ? h('div', { class: 'card vlist vc' }, f.meus.map((L) => feiraRow(L,
+      L.lances ? h('span', { class: 'small c-cash' }, t('fHasBids')) : sureBtn('btn ghost sm', t('fCancel'), 'btn ghost dng sm sure', t('fCancelSure'), () => act('feiraCancel', { lid: L.lid })),
+      L.tipo === 'leilao' ? fAucLines(L) : [h('div', { class: 'small num' }, t('fEachMine', { m: money(L.preco) })), h('div', { class: 'small muted' }, t('fEnds'), ' ', fLeft(L.fim))])))
+      : h('div', { class: 'tip' }, h('p', null, t('fNoMine'))));
+    out.push(h('h2', { class: 'sec' }, t('fMyBids')));
+    // à frente, e os leilões em que te passaram (até acabarem): dá para voltar a licitar daqui
+    const pass = f.passados || [];
+    out.push(f.lances.length || pass.length ? h('div', { class: 'card vlist vc' }, [...f.lances.map((L) => feiraRow(L, h('span', { class: 'small c-cash' }, t('fLead')),
+      [h('div', { class: 'small num' }, t('fYourBid', { m: money(L.lance) })), h('div', { class: 'small muted' }, t('fEnds'), ' ', fLeft(L.fim))])),
+      ...pass.map((L) => feiraRow(L, !L.next ? h('span', { class: 'small muted' }, t('fAtTop')) : h('button', { class: 'btn ghost sm', disabled: !!b || low || cash < L.next, on: { click: () => feiraBidSheet(L) } }, t('fBidBtn')),
+        [h('div', { class: 'small c-red' }, t('fOutbidRow')), ...fAucLines(L)]))])
+      : h('p', { class: 'small muted' }, t('fNoBids')));
+  }
+  return out;
+}
+
 // ===== A Universidade (v81) =====
 // Cursos de profissão, estudos e artes marciais num só sítio. Um curso de cada vez, de qualquer tipo; todos acabam com exame.
 const courseCfg = (id) => S.cfg.courses.find((c) => c.id === id);
@@ -3408,6 +3649,11 @@ function eventRow(e) {
     h('div', { class: 'grow' }, h('div', null, t('evStDiv', { m: money(e.money || 0), x: (e.cs || []).map((c) => t('st_' + c)).join(', ') })), h('div', { class: 'small muted' }, dur(now() - e.t))));
   if (e.k === 'raid') return h('div', { class: 'card row' }, h('span', { class: 'c-red' }, icon('lock')),
     h('div', { class: 'grow' }, h('div', null, t('evRaid', { t: tookTxt(e.took || []), m: money(e.fine || 0), ...rgF(e.r) }) + (e.jail ? t('evRaidJ') : '')), h('div', { class: 'small muted' }, dur(now() - e.t))));
+  if (e.k === 'fSold' || e.k === 'fWon' || e.k === 'fOutbid' || e.k === 'fBack') {   // v84: a feira
+    const x = fName(e.kind, e.item) + (e.n > 1 ? ' ×' + e.n : ''), good = e.k === 'fSold' || e.k === 'fWon';
+    return h('button', { class: 'card row tap', on: { click: () => go('feira') } }, h('span', { class: good ? 'c-cash' : 'muted' }, icon('cash')),
+      h('div', { class: 'grow' }, h('div', null, t('ev_' + e.k, { x, m: money(e.money || 0) })), h('div', { class: 'small muted' }, dur(now() - e.t))));
+  }
   if (e.k === 'hkRob') return h('div', { class: 'card row' }, h('span', { class: 'c-red' }, icon('skull')),
     h('div', { class: 'grow' }, h('div', null, t('hkRob_' + e.kind, { m: money(e.money || 0) })), h('div', { class: 'small muted' }, dur(now() - e.t))));
   if (e.k === 'hitman') return h('div', { class: 'card row' }, h('span', { class: e.win ? 'c-red' : 'c-cash' }, icon(e.win ? 'skull' : 'shield')),
