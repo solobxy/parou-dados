@@ -2819,7 +2819,7 @@ function gangBiz(mine, me) {
         !b.open ? h('div', { class: 'small muted' }, t('gBizLock', { n: B.sede }))
           : [b.inv > 0 ? h('div', { class: 'small' }, t('gBizMine', { a: money(b.inv), c: moneyShort(b.cap) }), b.coop > 0 ? h('span', { class: 'c-cash' }, ' · ' + t('gBizBonus', { p: pct(b.coop) })) : h('span', { class: 'muted' }, ' · ' + t('gBizAlone'))) : null,
             room <= 0 ? h('div', { class: 'small muted' }, t('gBizFull'))
-              : amounts.length ? h('div', { class: 'row', style: 'flex-wrap:wrap;gap:8px' }, amounts.map((v) => h('button', { class: 'btn grow', on: { click: () => gAct('gangBiz', { k, amount: v }) } }, t('gBizPut', { m: moneyShort(v) }))))
+              : amounts.length ? h('div', { class: 'gbput' }, amounts.map((v) => h('button', { class: 'btn num', on: { click: () => gAct('gangBiz', { k, amount: v }) } }, t('gBizPut', { m: moneyShort(v) }))))
                 : h('div', { class: 'small muted' }, t('gBizNoCash', { m: money(G.bizMin) }))]);
     }),
     h('button', { class: 'btn buy get block', disabled: stored <= 0, on: { click: (e) => gAct('gangBizCollect', {}, { el: e.currentTarget }) } }, stored > 0 ? t('collect', { m: money(stored) }) : t('nothingToCollect'))));
@@ -2972,15 +2972,20 @@ function gangOps(mine, me) {
   if (cool) out.push(h('div', { class: 'tip' }, h('p', null, t('goWait', { t: '' }), h('b', { class: 'num', dataset: { opend: mine.opCool } }, dur(mine.opCool - n)))));
   out.push(h('div', { class: 'card gopl' },
     // cada linha: imagem, nome e botão em cima; os números por baixo, a toda a largura (não se partem em colunas estreitas)
-    ordem.map(([H, k]) => h('div', { class: 'gup gop2' }, art('crimes', H.id, 'gthumb' + (mine.sede < H.sede ? ' lock' : '')),
-      h('div', { class: 'gnm' }, t('gh_' + H.id)),
-      mine.sede < H.sede ? h('span', { class: 'small muted glock' }, icon('lock'), t('ghLock', { n: H.sede }))
-        : h('button', { class: 'btn buy sm', disabled: cool || !!busy || en < H.e, on: { click: () => gAct('gangOp', { kind: 'heist', k }) } }, t('ghOpen'), ' · ', icon('bolt'), String(H.e)),
-      h('div', { class: 'small muted gln' }, tint(t('ghLine', { n: H.need, a: moneyShort(H.min), b: moneyShort(H.max), r: H.r }))))),
-    mine.bot ? null : h('div', { class: 'gup gop2' }, art('cenas', 'lutas', 'gthumb'),
-      h('div', { class: 'gnm' }, t('goHit')),
-      h('button', { class: 'btn danger sm', disabled: cool || !!busy || vg < S.cfg.pvp.energy, on: { click: () => gangPickTarget() } }, t('goPick')),
-      h('div', { class: 'small muted gln' }, t('goHitLine', { n: G.hitNeed, m: Math.round((S.cfg.pvp.beatHospMs * G.hitHospBp) / 10000 / 60000) }))),
+    // cada golpe: a imagem grande à esquerda; à direita o nome, o que rende, o risco e o botão (que nunca se parte)
+    ordem.map(([H, k]) => { const lock = mine.sede < H.sede, ch = (mine.heistPrev || [])[k];
+      return h('div', { class: 'ghr' + (lock ? ' lock' : '') }, art('crimes', H.id, 'ghimg'),
+        h('div', { class: 'ghb' },
+          h('b', { class: 'gnm' }, t('gh_' + H.id)),
+          h('div', { class: 'small gln' }, tint(t('ghLine', { n: H.need, a: moneyShort(H.min), b: moneyShort(H.max), r: H.r }))),
+          h('div', { class: 'small ghrisk' }, ch != null ? h('span', { class: chanceCls(ch) }, t('ghChance', { p: pct(ch) })) : null, ch != null ? ' · ' : '', t('ghJail', { m: H.jailMin })),
+          lock ? h('span', { class: 'small muted glock' }, icon('lock'), ' ', t('ghLock', { n: H.sede }))
+            : h('button', { class: 'btn buy sm ghgo', disabled: cool || !!busy || en < H.e, on: { click: () => gAct('gangOp', { kind: 'heist', k }) } }, t('ghOpen'), h('span', { class: 'ghe num' }, icon('bolt'), String(H.e))))); }),
+    mine.bot ? null : h('div', { class: 'ghr' }, art('cenas', 'lutas', 'ghimg'),
+      h('div', { class: 'ghb' },
+        h('b', { class: 'gnm' }, t('goHit')),
+        h('div', { class: 'small gln' }, t('goHitLine', { n: G.hitNeed, m: Math.round((S.cfg.pvp.beatHospMs * G.hitHospBp) / 10000 / 60000) })),
+        h('button', { class: 'btn danger sm ghgo', disabled: cool || !!busy || vg < S.cfg.pvp.energy, on: { click: () => gangPickTarget() } }, t('goPick')))),
     h('p', { class: 'small muted', style: 'padding-top:10px' }, t('ghNote', { m: Math.round(G.opCoolMs / 60000) }))));
   return out;
 }

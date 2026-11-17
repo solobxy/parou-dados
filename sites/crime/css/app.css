@@ -2680,3 +2680,20 @@ body.gig-on .tabs { transform: translateY(110%); transition: transform .2s var(-
 /* nada de menus nem de seleção de texto ao segurar o dedo em botões e imagens do jogo */
 button, .btn, [role='button'], img, .tile, .tk-stage { -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
 img { -webkit-user-drag: none; }
+
+/* golpes da gangue (17/11): imagem grande, o que rende, o risco e o botão por baixo, sem se partir */
+.gopl .ghr { display: grid; grid-template-columns: 112px minmax(0, 1fr); gap: 14px; align-items: start; padding: 14px 0; border-top: 1px solid #ffffff12; }
+.gopl .ghr:first-child { border-top: 0; }
+.ghr .ghimg { width: 112px; height: 112px; border-radius: 10px; object-fit: cover; display: block; }
+.ghr.lock .ghimg { filter: grayscale(1) brightness(.55); }
+.ghr .ghb { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.ghr .gnm { font: 600 17px/1.2 var(--ui); color: var(--tx); }
+.ghr .gln { color: var(--tx2); font-size: 14px; line-height: 1.35; }
+.ghr .ghrisk { font-size: 14px; line-height: 1.35; color: var(--tx2); }
+.ghr .ghgo { align-self: flex-start; margin-top: 6px; min-height: 44px; padding: 0 16px; white-space: nowrap; display: inline-flex; align-items: center; gap: 8px; }
+.ghr .ghgo .ghe { display: inline-flex; align-items: center; gap: 2px; opacity: .75; }
+.ghr .glock { margin-top: 6px; display: inline-flex; align-items: center; gap: 4px; font-size: 14px; }
+@media (max-width: 360px) { .gopl .ghr { grid-template-columns: 88px minmax(0, 1fr); gap: 12px; } .ghr .ghimg { width: 88px; height: 88px; } }
+/* negócios da gangue: os valores a pôr em grelha, sem o texto sair dos botões */
+.gbput { display: grid; grid-template-columns: repeat(auto-fit, minmax(96px, 1fr)); gap: 8px; }
+.gbput .btn { min-height: 44px; padding: 8px 6px; white-space: normal; line-height: 1.2; font-size: 15px; }

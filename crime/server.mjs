@@ -26,7 +26,7 @@ const RONDA_TESTE = process.env.PRIMEIRA_RONDA ? dataDe(process.env.PRIMEIRA_RON
 // Épocas de 28 dias a contar da sexta 13/11/2026 às 21:00 de Lisboa (PRIMEIRA_EPOCA=AAAA-MM-DD muda-a, para testes)
 const ANCORA = dataDe(process.env.PRIMEIRA_EPOCA || process.env.PRIMEIRA_RONDA || '2026-11-13');
 const rng = process.env.TESTE_SEMENTE ? seededRng(+process.env.TESTE_SEMENTE) : cryptoRng();   // nos testes, a sorte pode ser sempre a mesma
-const VERSAO = 68;   // sobe quando o servidor muda, para se confirmar de fora que a versão nova já está a correr
+const VERSAO = 69;   // sobe quando o servidor muda, para se confirmar de fora que a versão nova já está a correr
 const ATOS_3S = +(process.env.ATOS_3S || 15), ATOS_MIN = +(process.env.ATOS_MIN || 400); // ações por conta: 15 em 3 s, 400 por minuto
 
 // ---------- relógio que nunca anda para trás ----------
@@ -905,6 +905,8 @@ function vistaGangue(conta, now) {
     out.mine = { ...resumo(mine), pos: list.find((x) => x.id === mine.id)?.pos || null, fund: mine.cofre, leaderMe: mine.lider === conta,
       // o meu cargo (3 chefe, 2 subchefe, 1 capitão, 0 membro) e o que posso fazer com ele
       role: meu, can: { asks: meu >= R.asks, ops: meu >= R.ops, kick: meu >= R.kick, roles: meu === 3 },
+      // a hipótese de cada golpe com uma equipa do tamanho mínimo, toda igual a ti: o risco que se vê antes de abrir o pedido
+      heistPrev: eu0 ? CFG.gang.heists.map((H, k) => E.heistChanceBp(Array(H.need).fill(eu0), k, now)) : [],
       roster: (() => { const r = [...mine.membros].map(([c, m]) => ({ ...quem(c), given: m.dado, stake: (jogadores.get(c)?.gbz || []).reduce((x, y) => x + (y.inv || 0), 0), leader: c === mine.lider, role: cargoDe(mine, c), me: c === conta })).sort((a, b) => b.respect - a.respect);
         return eBot(mine) && r.length > BOT.roster ? [...r.slice(0, BOT.roster), ...r.slice(BOT.roster).filter((x) => x.me)] : r; })(),   // na gangue da rua pode haver muita gente: mostram-se os 40 com mais respeito (e tu)
       biz: (() => { const eu = jogadores.get(conta), meu = E.gangBizView(eu, now);
