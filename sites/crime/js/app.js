@@ -424,6 +424,8 @@ function render(force) {
   if (!S.st) return;
   if (!S.st.me || S.st.round.phase !== 'play') return renderPause();
   if (!PLACES[S.tab]) S.tab = 'city';
+  // a barra de baixo só sai enquanto há um biscate ou turno a decorrer no ecrã
+  document.body.classList.toggle('gig-on', !!(S.gig && !S.gig.res && (S.tab === 'gigs' || S.tab === 'job')));
   // a meio de uma jogada no casino, nada redesenha a mesa (eventos, notícias, relógio); só mudar de sítio
   if (!force && S.casinoBusy && S.tab === S.drawn && $main && document.body.contains($main)) { tabDots(); return; }
   if (!force && S.tab === S.drawn && document.activeElement?.id === 'bamt') { tabDots(); updateHud(); return; }   // a meio de escrever uma quantia no banco
@@ -829,25 +831,25 @@ function screenEmpire() {
 // Uma tarefa de cada vez. Enquanto decorre, nada redesenha o ecrã (como numa jogada do casino), para não partir o arrastar.
 const gramsTxt = (mg) => (lang() === 'pt' ? (mg / 1000).toFixed(2).replace('.', ',') : (mg / 1000).toFixed(2)) + ' g';
 const mlTxt = (v) => (lang() === 'pt' ? v.toFixed(1).replace('.', ',') : v.toFixed(1)) + ' ml';
-const gigCtx = () => ({ t, sfx: fx.sfx, vibrate: fx.vibrate, streets: list('streets'), people: list('people'), grams: gramsTxt, ml: mlTxt, money,
-  date: (v) => `${String(Math.floor(v / 100)).padStart(2, '0')}/${String(v % 100).padStart(2, '0')}`, risk: pct((S.cfg.work.list.find((x) => x.bustBp) || {}).bustBp || 0) });
+const gigCtx = (id) => ({ t, lang: lang(), sfx: fx.sfx, vibrate: fx.vibrate, streets: list('streets'), people: list('people'), grams: gramsTxt, ml: mlTxt, money,
+  date: (v) => `${String(Math.floor(v / 100)).padStart(2, '0')}/${String(v % 100).padStart(2, '0')}`, risk: pct((S.cfg.work.list.find((x) => x.id === id) || {}).bustBp || 0) });
 async function gigStart(id, el, shift) {
   if (S.gig && !S.gig.res) return;
   const out = await act('workStart', shift ? { id, shift: true } : { id }, { el });
   if (out) openGig(out.result.task);
 }
 function openGig(task) {
-  const g = TK.mount(task, gigCtx());
+  const g = TK.mount(task, gigCtx(task.id));
   if (!g) return;
   const G = S.gig = { task, g, res: null, ans: null, closing: false };
-  S.casinoBusy = true; render(true); window.scrollTo({ top: 0 });
+  S.casinoBusy = true; document.body.classList.add('gig-on'); render(true); window.scrollTo({ top: 0 });
   g.finished.then(async (ans) => {
     G.ans = ans;
     // o servidor só paga depois do tempo mínimo da tarefa: o fecho cobre essa espera
     const left = task.t0 + task.minMs + 300 - now();
     if (left > 0) { G.closing = true; render(true); await TK.wait(left); }
     const out = await act('workDone', { ans });
-    S.casinoBusy = false;
+    S.casinoBusy = false; document.body.classList.remove('gig-on');
     if (S.gig !== G) return;
     if (out) G.res = out.result; else S.gig = null;
     render(true);
@@ -877,6 +879,20 @@ function gigLine(G) {
     const miss = got.findIndex((_, k) => !ok(k));
     return t('tkQ_doses', { n: got.filter((_, k) => ok(k)).length, m: L.doses.length }) + (miss >= 0 ? ' · ' + t('tkQ_doseMiss', { k: miss + 1, a: mlTxt(got[miss]), b: mlTxt(L.doses[miss] / 10) }) : '');
   }
+  if (G.task.id === 'oficina') {
+    const pk = a.picks || []; let star = 0; for (let i = 1; i < pk.length; i++) { const d = (pk[i] - pk[i - 1] + 5) % 5; if (d === 2 || d === 3) star++; }
+    const tq = (a.holds || []).filter((ms) => Math.abs((L.rate * ms) / 1000 - L.nm) / L.nm <= 0.06).length;
+    return (star === 4 ? t('tkQ_starOk') : t('tkQ_starNo', { s: star })) + ' · ' + t('tkQ_nuts', { n: tq });
+  }
+  if (G.task.id === 'mudancas') {
+    let area = 0; const rule = { heavy: null, fragile: null };
+    (a.place || []).forEach(([x, y, r], i) => { const q = L.pcs[i], hh = r ? q.w : q.h; if (q.heavy) rule.heavy = x >= 0 && y === 0; if (q.fragile) rule.fragile = x >= 0 && y + hh === L.H; if (x >= 0) area += q.w * q.h; });
+    return [t('tkQ_van', { a: area, b: L.W * L.H })].concat(rule.heavy === null ? [] : [t(rule.heavy ? 'tkQ_heavyOk' : 'tkQ_heavyNo')], rule.fragile === null ? [] : [t(rule.fragile ? 'tkQ_fragOk' : 'tkQ_fragNo')]).join(' · ');
+  }
+  if (G.task.id === 'desmanche') {
+    const n = L.parts.filter((x, i) => (a.holds || [])[i] >= x.need).length, q = G.res ? G.res.q : 0;
+    return t('tkQ_stripN', { n, m: L.parts.length }) + ' · ' + (q >= 10000 ? t('tkQ_best') : t('tkQ_bestP', { p: Math.round(q / 100) })) + (G.res && G.res.spotted ? ' · ' + t('tkQ_seen') : '');
+  }
   const G2 = L.gauge, hits = (a.taps || []).filter((ms) => { const ph = (ms % G2.periodMs) / G2.periodMs, x = ph < 0.5 ? 2 * ph : 2 - 2 * ph; return Math.abs(x * 10000 - G2.c) <= G2.w; }).length;
   const good = (a.holds || []).filter((ms) => Math.abs((L.rate * ms) / 1000 - L.target) / L.target <= 0.05).length;
   return t('tkQ_lab', { h: hits, b: good, n: (a.holds || []).length });
@@ -895,14 +911,14 @@ function gigResult(G) {
   }
   const again = h('button', { class: 'btn buy block big', on: { click: (e) => { const id = G.task.id; S.gig = null; gigStart(id, e.currentTarget); } } }, t('tkAgain'));
   const other = h('button', { class: 'btn ghost block', on: { click: () => { S.gig = null; render(true); } } }, t('tkOther'));
-  if (r.busted) return h('div', { class: 'card tk-res bust' }, h('h3', null, t('tkBust')), h('p', null, t('tkBustSub')), other);
+  if (r.busted) return h('div', { class: 'card tk-res bust' }, h('h3', null, t(r.id === 'desmanche' ? (r.spotted ? 'tkBustSeen' : 'tkBustStrip') : 'tkBust')), h('p', null, t(r.id === 'desmanche' ? 'tkBustStripSub' : 'tkBustSub')), other);
   const nxt = me.work ? me.work.multBp : 10000;
   return h('div', { class: 'card tk-res' },
     h('span', { class: 'small muted' }, t('tkPaid')), h('b', { class: 'num c-cash big' }, '+' + money(r.money)),
     h('p', { class: 'tk-q' }, t('tkQual', { p: pct(r.q) })), h('p', { class: 'small' }, gigLine(G)),
     G.task.id === 'laboratorio' ? h('p', { class: 'small muted' }, t('tkSafe')) : null,
     r.lav ? h('p', { class: 'small muted' }, t('ro_lav', { m: money(r.lav) })) : null,
-    nxt < 10000 ? h('p', { class: 'small muted' }, t('tkNext', { p: Math.round(nxt / 100) })) : null,
+    nxt < 10000 ? h('p', { class: 'small muted' }, t('tkNext', { d: '−' + (100 - Math.round(nxt / 100)) })) : null,
     again, other);
 }
 function screenGigs() {
@@ -925,8 +941,9 @@ function screenGigs() {
     return h('button', { class: 'vrow tk-gig', disabled: !!b || locked, on: { click: (e) => gigStart(x.id, e.currentTarget) } },
       art('gigs', x.id, 'vth'),
       h('div', { class: 'grow' }, h('b', null, t('gk_' + x.id)), h('div', { class: 'small muted' }, t('gd_' + x.id)),
-        h('div', { class: 'small' }, h('span', { class: 'num c-cash' }, t('gPay', { a: money(lo), b: money(hi) })), h('span', { class: 'muted' }, ' · ' + t('gDur', { s: Math.round(x.minMs / 1000) + 8 })), x.bustBp ? h('span', { class: 'c-red' }, ' · ' + t('tkIllegal', { p: pct(x.bustBp) })) : null)),
-      icon('chev'));
+        locked ? h('div', { class: 'small muted' }, t('gOpensAt', { n: x.level, a: money(Math.floor((x.base * W.qMin) / 10000)), b: money(Math.floor((x.base * W.qMax) / 10000)) }))
+          : h('div', { class: 'small' }, h('span', { class: 'num c-cash' }, t(x.bustBp ? 'gPayDirty' : 'gPay', { a: money(lo), b: money(hi) })), h('span', { class: 'muted' }, ' · ' + t('gDur', { s: Math.round(x.minMs / 1000) + 8 })), x.bustBp ? h('span', { class: 'c-red' }, ' · ' + t('tkIllegal', { p: pct(x.bustBp) })) : null)),
+      locked ? null : icon('chev'));
   })));
   return out;
 }
@@ -3703,6 +3720,9 @@ function sheet(content) {
 
 // ---- instalar o jogo no telemóvel (aplicação web) ----
 // O Chrome do Android avisa quando o site pode ser instalado; guardamos o aviso para o botão do perfil.
+// segurar o dedo num botão (encher, apertar, tirar peças) não pode abrir o menu do browser: num jogo não há menu de página.
+// Só os campos de texto o mantêm (colar o nome, a palavra-passe).
+addEventListener('contextmenu', (e) => { if (!(e.target.closest && e.target.closest('input, textarea, [contenteditable="true"]'))) e.preventDefault(); });
 addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); S.installEvt = e; });
 addEventListener('appinstalled', () => { S.installEvt = null; S.installed = true; });
 const isStandalone = () => matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;

@@ -2548,3 +2548,135 @@ h1, h2, h3, .nm, .lbl { hyphens: manual; }
 .jobp > .jlast.go:active { background: var(--s3); }
 /* fotos em que a cara está no alto: o recorte largo do topo da página não a corta */
 .pimg.im-armas img, .pimg.im-gangue img { object-position: center 22%; }
+
+/* ---------- v68: oficina (trocar o pneu) ---------- */
+.tk-wheelwrap { position: relative; width: min(100%, 260px); aspect-ratio: 1; margin: 0 auto 6px; }
+.tk-wheelwrap .arch { position: absolute; inset: -2% -8% 46%; border-radius: 50% 50% 0 0 / 70% 70% 0 0; background: linear-gradient(#2a2925, #1d1c19); box-shadow: inset 0 -10px 18px #0008; }
+.tk-wheel { position: absolute; inset: 6%; border-radius: 50%; }
+.tk-wheel .tyre { position: absolute; inset: 0; border-radius: 50%; background: radial-gradient(circle, #1b1b1b 0 58%, #2c2c2c 59% 64%, #161616 65% 100%); box-shadow: 0 10px 22px #000a, inset 0 0 0 2px #0006; }
+.tk-wheel .tyre::before { content: ''; position: absolute; inset: 3%; border-radius: 50%; background: repeating-conic-gradient(#ffffff08 0 4deg, transparent 4deg 9deg); mask: radial-gradient(circle, transparent 0 60%, #000 61%); }
+.tk-wheel .rim { position: absolute; inset: 21%; border-radius: 50%; background: radial-gradient(circle, #9aa0a4 0 17%, #3d4144 18% 23%, transparent 24%), repeating-conic-gradient(from -90deg, #c8ccce 0 14deg, #4a4f53 14deg 72deg); box-shadow: inset 0 0 0 5px #b4b9bc, inset 0 0 0 8px #5d6266, 0 0 0 3px #0005; }
+.tk-wheel.l1 .rim { background: radial-gradient(circle, #8b9094 0 17%, #2f3336 18% 23%, transparent 24%), repeating-conic-gradient(from -90deg, #2f3336 0 10deg, #aeb3b6 10deg 36deg); }
+.tk-wheel.l2 .rim { background: radial-gradient(circle, #a5a9ac 0 17%, #2a2d30 18% 23%, transparent 24%), repeating-conic-gradient(from -90deg, #8e9396 0 20deg, #24272a 20deg 72deg); }
+.tk-wheel.new .tyre { background: radial-gradient(circle, #1b1b1b 0 58%, #333 59% 64%, #141414 65% 100%); }
+.tk-wheel .hub { position: absolute; inset: 41%; border-radius: 50%; background: radial-gradient(circle at 40% 35%, #e3e6e8, #7d8285 70%); box-shadow: 0 0 0 2px #0006; }
+.tk-wheel.spin { animation: tk-spin .8s cubic-bezier(.3, .1, .2, 1); }
+@keyframes tk-spin { to { transform: rotate(360deg); } }
+.tk-nut { position: absolute; width: 46px; height: 46px; margin: -23px 0 0 -23px; padding: 0; border: 0; border-radius: 50%; background: none; touch-action: none; transition: transform .25s var(--ease-out), opacity .25s; }
+.tk-nut .hex { position: absolute; inset: 9px; clip-path: polygon(25% 4%, 75% 4%, 100% 50%, 75% 96%, 25% 96%, 0 50%); background: linear-gradient(145deg, #eef0f1, #8d9295 55%, #5e6366); transform: rotate(var(--a, 0deg)); }
+.tk-nut .hex::after { content: ''; position: absolute; inset: 30%; border-radius: 50%; background: #3b3f42; box-shadow: inset 0 1px 2px #000a; }
+.tk-nut .ring { position: absolute; inset: 0; border-radius: 50%; background: conic-gradient(var(--tx) calc(var(--p, 0) * 360deg), #ece6da26 0); mask: radial-gradient(circle, transparent 0 62%, #000 64%); opacity: 0; transition: opacity .15s; }
+.tk-nut:focus-visible { outline: 2px solid var(--sodium); outline-offset: 2px; }
+.tk-nut.out { transform: translate(0, 34px) scale(.4) rotate(140deg); opacity: 0; pointer-events: none; }
+.tk-nut.loose .hex { opacity: .55; transform: scale(.86); }
+.tk-nut.turning .ring, .tk-nut.tight .ring { opacity: 1; }
+.tk-nut.turning .hex { opacity: 1; transform: rotate(var(--a, 0deg)); }
+.tk-nut.tight .hex { opacity: 1; }
+.tk-nut.tight.ok .ring { background: var(--cash); }
+.tk-nut.tight.mid .ring { background: var(--orange); }
+.tk-nut.tight.bad .ring { background: var(--danger); }
+.tk-oficina .tk-read b.on { color: var(--cash); } .tk-oficina .tk-read b.over { color: var(--danger); }
+
+/* ---------- v68: mudanças (a carrinha vista de cima) ---------- */
+.tk-van { --c: min(76px, calc((100vw - 92px) / 3)); position: relative; width: calc(var(--c) * 3 + 20px); margin: 0 auto; padding: 0 10px 10px; border-radius: 22px 22px 8px 8px; background: #d9d5cc; box-shadow: 0 10px 22px #0009, inset 0 0 0 2px #b9b4a9; }
+.tk-van .cab { height: 46px; margin: 0 -10px 8px; border-radius: 22px 22px 6px 6px; background: linear-gradient(#ece8df, #cfcac0); position: relative; }
+.tk-van .cab .glass { position: absolute; left: 14%; right: 14%; top: 10px; height: 20px; border-radius: 10px 10px 4px 4px; background: linear-gradient(#2c3b45, #1a2329); }
+.tk-van .grid { position: relative; display: grid; grid-template-columns: repeat(var(--w), var(--c)); grid-auto-rows: var(--c); background: #3a3833; border-radius: 4px; box-shadow: inset 0 2px 8px #000c; }
+.tk-van .grid .cell { border: 1px dashed #ece6da26; }
+.tk-van .grid .cell.can { background: #8fc89e33; border-color: var(--cash); border-style: solid; }
+.tk-van .grid .cell.cant { background: #e8786c2e; border-color: var(--danger); border-style: solid; }
+.tk-van .doors { display: flex; gap: 3px; margin-top: 8px; height: 8px; }
+.tk-van .doors i { flex: 1; border-radius: 0 0 4px 4px; background: #b9b4a9; transition: transform .45s var(--ease-out); transform-origin: top; }
+.tk-van.shut .doors i { background: #8f8a80; }
+.tk-van.shut .grid::after { content: ''; position: absolute; inset: 0; background: #0006; animation: tk-fade .5s ease-out; }
+@keyframes tk-fade { from { opacity: 0; } }
+.tk-piece { position: absolute; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; padding: 3px; border-radius: 6px; text-align: center; color: #1d1b17; background: linear-gradient(135deg, #c79a62, #a87a45); box-shadow: inset 0 0 0 2px #0002, 0 2px 4px #0006; touch-action: none; cursor: grab; transition: left .18s var(--ease-out), top .18s var(--ease-out), width .18s var(--ease-out), height .18s var(--ease-out); overflow: hidden; }
+.tk-piece b { font: 600 14px/1.1 var(--ui); hyphens: auto; overflow-wrap: anywhere; }
+.tk-piece small { font: 600 13px/1 var(--ui); letter-spacing: .02em; opacity: .8; }
+.tk-piece[class*='k-sofa'], .tk-piece[class*='k-colchao'], .tk-piece[class*='k-cama'], .tk-piece[class*='k-cadeira'] { background: repeating-linear-gradient(45deg, #2e3a52 0 6px, #34425c 6px 12px); color: var(--tx); }
+.tk-piece[class*='k-mesa'], .tk-piece[class*='k-secretaria'], .tk-piece[class*='k-estante'], .tk-piece[class*='k-comoda'] { background: linear-gradient(135deg, #8a6a4a, #6b5038); color: var(--tx); }
+.tk-piece.heavy { background: linear-gradient(135deg, #d9dcdd, #a9adb0); color: #1d1b17; box-shadow: inset 0 0 0 3px #6f7477, 0 3px 6px #0008; }
+.tk-piece.fragile { background: linear-gradient(135deg, #cfe4ec, #9fc2cf); color: #12232b; box-shadow: inset 0 0 0 2px #ffffff99, 0 2px 4px #0006; }
+.tk-piece.sel { outline: 3px solid var(--sodium); outline-offset: -3px; z-index: 2; }
+.tk-piece.ghost { position: fixed; left: 0; top: 0; z-index: 60; opacity: .92; pointer-events: none; box-shadow: 0 18px 30px #000c; transition: none; }
+.tk-trayv { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.tk-tile { display: flex; align-items: center; gap: 10px; min-height: 48px; padding: 6px 10px 6px 8px; border: 1px solid var(--line2); border-radius: 8px; background: var(--s2); color: var(--tx); text-align: left; touch-action: none; transition: opacity .2s, transform .2s var(--ease-out); }
+.tk-tile .shape { flex: none; display: grid; grid-template-columns: repeat(var(--w), 9px); grid-auto-rows: 9px; gap: 2px; width: calc(var(--w) * 11px - 2px); height: calc(var(--h) * 11px - 2px); background: repeating-linear-gradient(90deg, var(--tx2) 0 9px, transparent 9px 11px), transparent; mask: repeating-linear-gradient(0deg, #000 0 9px, transparent 9px 11px); border-radius: 2px; }
+.tk-tile.heavy .shape { background: repeating-linear-gradient(90deg, #c4c8ca 0 9px, transparent 9px 11px); }
+.tk-tile.fragile .shape { background: repeating-linear-gradient(90deg, #9fc2cf 0 9px, transparent 9px 11px); }
+.tk-tile b { display: block; font-size: 15px; font-weight: 600; }
+.tk-tile small { display: block; font-size: 14px; color: var(--tx2); }
+.tk-tile.sel { border-color: var(--sodium); background: #d6ad621a; }
+.tk-tile.used { display: none; }
+.tk-mudancas .tk-row .tk-note { margin: 0; flex: 1; text-align: left; }
+.tk-mudancas > .btn.big { margin-top: 14px; }
+.tk-mudancas > .btn.big:not(.ready) { background: var(--s2); color: var(--tx); border: 1px solid var(--line2); }
+
+/* ---------- v68: desmanche ---------- */
+.tk-patrol { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; font-size: 14px; color: var(--tx2); }
+.tk-patrol .track { position: relative; flex: 1; height: 8px; border-radius: 4px; background: #ece6da1a; overflow: hidden; }
+.tk-patrol .left { position: absolute; inset: 0; background: var(--tx2); transform-origin: left; }
+.tk-patrol b { color: var(--tx); font-size: 16px; }
+.tk-desmanche.near .tk-patrol .left { background: var(--danger); }
+.tk-desmanche.near::after { content: ''; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; box-shadow: inset 0 0 0 2px #4a7fd0, inset 0 0 40px #4a7fd055; animation: tk-siren .5s steps(2) infinite; }
+@keyframes tk-siren { 50% { box-shadow: inset 0 0 0 2px #e8786c, inset 0 0 40px #e8786c55; } }
+@media (prefers-reduced-motion: reduce) { .tk-desmanche.near::after { animation: none; } }
+.tk-desmanche.spotted::after { content: ''; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; background: #4a7fd033; box-shadow: inset 0 0 0 2px #4a7fd0; }
+.tk-car { position: relative; height: 108px; margin: 0 4px 12px; }
+.tk-car .body { position: absolute; left: 0; right: 0; top: 26px; height: 50px; border-radius: 26px 46px 10px 10px / 22px 30px 10px 10px; background: linear-gradient(#3c4146, #24282b); box-shadow: inset 0 2px 0 #ffffff1a; }
+.tk-car .body::before { content: ''; position: absolute; left: 22%; right: 30%; top: -24px; height: 30px; border-radius: 30px 40px 0 0; background: linear-gradient(#34393d, #2a2e31); }
+.tk-car .win { position: absolute; top: -18px; height: 20px; background: linear-gradient(#55707e, #2b3a42); }
+.tk-car .win.a { left: 26%; width: 18%; border-radius: 16px 2px 0 0; }
+.tk-car .win.b { left: 46%; width: 19%; border-radius: 2px 22px 0 0; }
+.tk-car .whl { position: absolute; bottom: 4px; width: 42px; height: 42px; border-radius: 50%; background: radial-gradient(circle, #8d9295 0 26%, #1b1b1b 28% 100%); box-shadow: 0 0 0 2px #0008; }
+.tk-car .whl.f { right: 14%; } .tk-car .whl.r { left: 14%; }
+.tk-car .spot { position: absolute; width: 18px; height: 18px; margin: -9px 0 0 -9px; border-radius: 50%; background: #d6ad62; box-shadow: 0 0 0 3px #d6ad6240; transition: transform .2s, opacity .3s; }
+.tk-car .spot.work { animation: tk-pulse .5s ease-in-out infinite alternate; }
+@keyframes tk-pulse { to { box-shadow: 0 0 0 8px #d6ad6200; transform: scale(1.15); } }
+.tk-car .spot.gone { opacity: .25; background: #000; box-shadow: none; animation: none; }
+.tk-car .s0 { left: 46%; top: 46%; } .tk-car .s1 { left: 58%; top: 22%; } .tk-car .s2 { left: 81%; top: 76%; } .tk-car .s3 { left: 52%; top: 84%; }
+.tk-car .s4 { left: 86%; top: 40%; } .tk-car .s5 { left: 96%; top: 50%; } .tk-car .s6 { left: 54%; top: 38%; } .tk-car .s7 { left: 38%; top: 40%; }
+.tk-parts { display: grid; gap: 6px; }
+.tk-part { position: relative; display: grid; grid-template-columns: 1fr auto auto; align-items: center; gap: 10px; min-height: 48px; padding: 8px 12px; border: 1px solid var(--line2); border-radius: 8px; background: var(--s2); color: var(--tx); text-align: left; overflow: hidden; touch-action: none; }
+.tk-part .prog { position: absolute; inset: 0; background: #d6ad6226; transform: scaleX(var(--p, 0)); transform-origin: left; pointer-events: none; }
+.tk-part b { position: relative; font-size: 15px; font-weight: 600; }
+.tk-part .val { position: relative; display: flex; gap: 2px; }
+.tk-part .val i { width: 5px; height: 14px; border-radius: 1px; background: #ece6da26; }
+.tk-part .val i.on { background: var(--cash); }
+.tk-part .tm { position: relative; color: var(--tx2); font-size: 14px; min-width: 42px; text-align: right; }
+.tk-part.on { border-color: var(--sodium); }
+.tk-part.got { border-color: #8fc89e80; }
+.tk-part.got .prog { background: #8fc89e26; }
+.tk-part.got b::after { content: ' ✓'; color: var(--cash); }
+.tk-part:disabled { opacity: 1; }
+.tk-desmanche > .btn.big { margin-top: 12px; }
+/* revisão própria da v68 */
+.tk-marks[hidden] { display: none; }
+.tk-van { --c: min(64px, calc((100vw - 92px) / 3)); margin-top: 12px; }
+.tk-trayv { margin: 0; min-height: 48px; }
+.tk-tile.used { display: flex; visibility: hidden; }
+.tk-piece b { font-size: 13px; hyphens: auto; -webkit-hyphens: auto; }
+.tk-piece small { font-size: 12px; }
+.tk-patrol { position: sticky; z-index: 6; margin: 0 -14px 12px; padding: 8px 14px; background: var(--s1); }
+.tk-car { height: 92px; }
+.tk-car .body { top: 18px; height: 46px; }
+.tk-car .whl { width: 38px; height: 38px; bottom: 2px; }
+.tk-wheelwrap .arch { inset: -2% -3% 46%; }
+/* revisão da v68: durante um biscate a barra de baixo sai e as ações ficam presas em baixo, ao alcance do polegar */
+body.gig-on .tabs { transform: translateY(110%); transition: transform .2s var(--ease-out); }
+.tabs { transition: transform .2s var(--ease-out); }
+.tk-actbar { position: sticky; bottom: 0; z-index: 7; display: flex; gap: 10px; align-items: center; margin: 12px -14px -16px; padding: 10px 14px calc(12px + env(safe-area-inset-bottom)); background: var(--s1); border-top: 1px solid var(--line); border-radius: 0 0 var(--rc) var(--rc); }
+.tk-actbar .btn.big { flex: 1; margin: 0; }
+.tk-actbar .btn.sm { flex: none; min-height: 48px; }
+.tk-mudancas .tk-actbar .btn.big:not(.ready) { background: var(--s2); color: var(--tx); border: 1px solid var(--line2); }
+.tk-tile.used { display: none; }
+.tk-mudancas > .tk-note { margin-top: 10px; }
+.tk-desmanche > .tk-note { margin: -4px 0 10px; }
+/* no carro só se acende a peça que se está a tirar, e fica o buraco das que saíram */
+.tk-car .spot { opacity: 0; }
+.tk-car .spot.work { opacity: 1; }
+.tk-car .spot.gone { opacity: .35; }
+.tk-car { height: 84px; }
+/* nada de menus nem de seleção de texto ao segurar o dedo em botões e imagens do jogo */
+button, .btn, [role='button'], img, .tile, .tk-stage { -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
+img { -webkit-user-drag: none; }

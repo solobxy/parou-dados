@@ -269,11 +269,15 @@ export const CFG = {
   // 17/11 (v67): um biscate do nível 1 paga como um toque de carteirista (cerca de 115 € com a qualidade normal), sem risco e
   // sem respeito; o laboratório paga mais com 3% de rusga. O cansaço passa para metade a cada 12 h (era 6 h).
   work: {
-    half: 30, halfLifeMs: 12 * HOUR, qMin: 6000, qMax: 12000,
+    half: 30, halfLifeMs: 12 * HOUR, qMin: 6000, qMax: 12000, spottedBp: 5000,   // spottedBp: visto pela patrulha no desmanche
     list: [
       { id: 'camiao', level: 1, base: 95, minMs: 9000 },          // descarregar o camião: as caixas pesadas em baixo
       { id: 'entregas', level: 1, base: 95, minMs: 9000 },        // encomendas na mochila e as portas pela ordem mais curta
       { id: 'laboratorio', level: 1, base: 115, minMs: 12000, bustBp: 300, jailMin: 10 },   // comprimidos, trituradora, sacos
+      // 17/11 (v68): um degrau por cada crime novo. Pagam mais, mas sobem mais devagar do que o crime do mesmo nível
+      { id: 'oficina', level: 8, base: 110, minMs: 12000 },       // trocar um pneu: porcas em estrela e o aperto certo
+      { id: 'mudancas', level: 12, base: 125, minMs: 12000 },     // encaixar os móveis na carrinha: pesados à cabine, frágeis à porta
+      { id: 'desmanche', level: 12, base: 150, minMs: 8000, bustBp: 400, jailMin: 15 },   // peças de um carro roubado antes da patrulha
       // só nos turnos dos empregos (não são biscates)
       { id: 'entradas', shift: true, minMs: 8000 },   // vigilante: quem entrou sem estar na lista
       { id: 'doses', shift: true, minMs: 8000 },      // enfermeiro: três seringas na dose certa

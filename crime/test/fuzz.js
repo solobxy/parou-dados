@@ -430,11 +430,14 @@ for (let n = 0; n < ACTIONS; n++) {
       case 'mvSend': { const a1 = pick(REG), b1 = pick([...REG, 'x']), st = p.wh && p.wh[a1] ? E.whStock(p, a1) : null, dd = st && r.chance(7000) ? st.findIndex((x, k) => x > 0 && MW.tradable(k)) : r.int(0, CFG.drugs.length - 1);
         res = E.mvSend(p, t, world, mk, game, a1, b1, dd, st && dd >= 0 && r.chance(6000) ? pick([st[dd], 1]) : pick([1, 0, -1, 1e9])); break; }
       case 'whEdition': for (const g of [mk.w.lx, mk.w.rg.al, mk.w.rg.ag]) g.press = r.int(0, 100); res = { raids: E.whEdition(p, mk, t, game) }; break;
-      case 'workStart': if (r.chance(3000) && CFG.jobs.list[p.job]) res = E.workStart(p, t, world, r, r.chance(8000) ? CFG.jobs.list[p.job].task : pick(['entradas', 'doses', 'contrato', 'camiao']), true); else res = E.workStart(p, t, world, r, pick(['camiao', 'entregas', 'laboratorio', 'entradas', 'x'])); break;
+      case 'workStart': if (r.chance(3000) && CFG.jobs.list[p.job]) res = E.workStart(p, t, world, r, r.chance(8000) ? CFG.jobs.list[p.job].task : pick(['entradas', 'doses', 'contrato', 'camiao']), true); else res = E.workStart(p, t, world, r, pick(['camiao', 'entregas', 'laboratorio', 'entradas', 'oficina', 'mudancas', 'desmanche', 'x'])); break;
       case 'workDone': {
         const L = p.tk ? E.workLayout(p.tk.id, p.tk.s) : null;
         const ans = !L ? {} : p.tk.id === 'camiao' ? { slots: r.chance(8000) ? [0, 1, 2, 3, 4, 5].sort(() => r.int(0, 2) - 1) : [0, 0, 1, 2, 3, 4], drops: r.int(0, 3) }
-          : p.tk.id === 'entregas' ? { order: [0, 1, 2, 3].sort(() => r.int(0, 2) - 1) } : p.tk.id === 'entradas' || p.tk.id === 'contrato' ? { picks: r.chance(9000) ? [r.int(0, 3), r.int(4, 6)] : [0, 0] } : p.tk.id === 'doses' ? { holds: [r.int(0, 3000), r.int(0, 3000), r.int(0, 3000)] } : { taps: [r.int(0, 900), r.int(1000, 1900), r.int(2000, 2900)], holds: [r.int(0, 3000), r.int(0, 3000), r.chance(9000) ? r.int(0, 3000) : -1] };
+          : p.tk.id === 'entregas' ? { order: [0, 1, 2, 3].sort(() => r.int(0, 2) - 1) } : p.tk.id === 'entradas' || p.tk.id === 'contrato' ? { picks: r.chance(9000) ? [r.int(0, 3), r.int(4, 6)] : [0, 0] } : p.tk.id === 'doses' ? { holds: [r.int(0, 3000), r.int(0, 3000), r.int(0, 3000)] }
+          : p.tk.id === 'oficina' ? { picks: r.chance(8000) ? [0, 2, 4, 1, 3] : [0, 1, 2, 3, 3], holds: [0, 1, 2, 3, 4].map(() => r.int(0, 4000)) }
+          : p.tk.id === 'mudancas' ? { place: E.workLayout('mudancas', p.tk.s).pcs.map(() => (r.chance(5000) ? [r.int(-1, 2), r.int(-1, 3), r.int(0, 1)] : [-1, -1, 0])) }
+          : p.tk.id === 'desmanche' ? { holds: E.workLayout('desmanche', p.tk.s).parts.map(() => r.int(0, 4000)), spotted: r.chance(2000) } : { taps: [r.int(0, 900), r.int(1000, 1900), r.int(2000, 2900)], holds: [r.int(0, 3000), r.int(0, 3000), r.chance(9000) ? r.int(0, 3000) : -1] };
         res = E.workDone(p, t, world, r, ans); break;
       }
       case 'broHire': arg = r.chance(9000) ? r.int(0, CFG.hookers.list.length - 1) : anyInt(); res = E.broHire(p, t, world, arg); break;

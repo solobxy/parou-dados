@@ -410,12 +410,14 @@ export function gangBizCollect(p, now, world) {
 // Antes de mudar o bónus de alguém, fecha-se a conta do que rendeu até agora com o bónus antigo.
 export function gangBizSync(players, now) {
   const G = CFG.gang, changed = [];
-  for (const p of players) touch(p, now);
+  // cada sócio acerta-se à sua hora: um que já está mais à frente (outro pedido, relógio acertado) não faz falhar quem investiu
+  const at = (p) => Math.max(now, p.t);
+  for (const p of players) touch(p, at(p));
   for (let k = 0; k < G.biz.length; k++) {
     for (const p of players) {
       const s = p.gbz[k]; let coop = 0;
       if (s.inv > 0) { let sum = 0; for (const o of players) if (o !== p) sum += Math.min(o.gbz[k].inv, s.inv); coop = Math.min(G.bizCoopMax, Math.floor((G.bizCoopBp * sum) / s.inv)); }
-      if (coop !== s.coop) { settleGbz(p, k, now); s.coop = coop; if (!changed.includes(p)) changed.push(p); }
+      if (coop !== s.coop) { settleGbz(p, k, at(p)); s.coop = coop; if (!changed.includes(p)) changed.push(p); }
     }
   }
   return changed;
@@ -963,8 +965,51 @@ export function workLayout(id, seed) {
   if (id === 'doses') {   // três seringas: a dose receitada (em décimas de ml) e a velocidade a que enche (centésimas de ml por segundo)
     return { doses: [0, 1, 2].map(() => r.int(10, 45)), rate: r.int(180, 260) };
   }
+  if (id === 'oficina') {   // trocar um pneu: 5 porcas, apertadas em estrela até ao binário pedido (nm), a rate N·m por segundo
+    return { nm: r.int(10, 14) * 10, rate: r.int(45, 65), look: r.int(0, 2) };
+  }
+  if (id === 'mudancas') {   // carregar a carrinha: grelha W × H vista de cima (a fila 0 é junto à cabine), peças que a enchem toda
+    const W = 3, H = 4, g = Array(W * H).fill(-1), pcs = [];
+    const free = (x, y) => x < W && y < H && g[y * W + x] < 0;
+    for (let c = 0; c < W * H; c++) {
+      if (g[c] >= 0) continue;
+      const x = c % W, y = Math.floor(c / W), opts = [[1, 1]];
+      if (free(x + 1, y) && free(x, y + 1) && free(x + 1, y + 1)) opts.push([2, 2], [2, 2]);
+      if (free(x + 1, y)) opts.push([2, 1], [2, 1]);
+      if (free(x, y + 1)) opts.push([1, 2], [1, 2]);
+      const [w, h] = opts[r.int(0, opts.length - 1)];
+      for (let yy = y; yy < y + h; yy++) for (let xx = x; xx < x + w; xx++) g[yy * W + xx] = pcs.length;
+      pcs.push({ w, h, y });
+    }
+    // as pesadas saem das peças que tocam a cabine e a frágil das que tocam a porta: há sempre uma maneira de cumprir as duas
+    const front = pcs.map((q, i) => i).filter((i) => pcs[i].y === 0), back = pcs.map((q, i) => i).filter((i) => pcs[i].y + pcs[i].h === H && pcs[i].y > 0);
+    const heavy = new Set([front[r.int(0, front.length - 1)]]), fragile = back.length ? back[r.int(0, back.length - 1)] : -1;
+    const NAMES = { 1: ['caixa', 'planta', 'candeeiro', 'cadeira'], 2: ['sofa', 'colchao', 'estante', 'comoda'], 4: ['cama', 'mesa', 'secretaria'] };
+    const HEAVY = { 1: 'frigorifico', 2: 'maquina', 4: 'roupeiro' }, FRAGILE = { 1: 'espelho', 2: 'televisao', 4: 'aquario' };
+    const out = pcs.map((q, i) => { const a = q.w * q.h; return { w: q.w, h: q.h, heavy: heavy.has(i), fragile: i === fragile, kind: heavy.has(i) ? HEAVY[a] : i === fragile ? FRAGILE[a] : NAMES[a][r.int(0, NAMES[a].length - 1)] }; });
+    for (let i = out.length - 1; i > 0; i--) { const j = r.int(0, i); [out[i], out[j]] = [out[j], out[i]]; }
+    return { W, H, pcs: out };   // sem as posições: a solução não vai para o telemóvel
+  }
+  if (id === 'desmanche') {   // peças de um carro roubado, cada uma com o tempo de a tirar (ms) e o que vale; a patrulha passa ao fim de win ms
+    const PARTS = [3, 4, 5, 6, 2, 3, 4, 2];   // rádio, GPS, jante, catalisador, bateria, farol, airbag, banco
+    const ks = []; while (ks.length < 6) { const k = r.int(0, 7); if (!ks.includes(k)) ks.push(k); }
+    const win = r.int(90, 120) * 100, raw = ks.map(() => r.int(12, 32)), sum = raw.reduce((a, b) => a + b, 0);
+    // juntas, as peças levam 1,7 vezes o tempo que há: é preciso escolher
+    const parts = ks.map((k, i) => ({ k, need: Math.max(800, Math.round((raw[i] * win * 1.7) / sum / 100) * 100), v: Math.max(1, PARTS[k] + r.int(-1, 1)) }));
+    return { win, parts };
+  }
   return null;
 }
+// desmanche: o melhor que se podia levar com 85% do tempo (as mãos não passam de uma peça para a outra num instante)
+function bestStrip(L) {
+  let best = 0;
+  for (let m = 1; m < 1 << L.parts.length; m++) {
+    let t = 0, v = 0; L.parts.forEach((x, i) => { if (m & (1 << i)) { t += x.need; v += x.v; } });
+    if (t <= L.win * 0.85 && v > best) best = v;
+  }
+  return Math.max(1, best);
+}
+export const stripSpotted = (L, ans) => !!(ans && (ans.spotted === true || (Array.isArray(ans.holds) && ans.holds.reduce((a, b) => a + (Number(b) || 0), 0) > L.win)));
 const isInts = (a, n, lo, hi) => Array.isArray(a) && a.length === n && a.every((x) => Number.isSafeInteger(x) && x >= lo && x <= hi);
 const routeLen = (L, o) => { let x = 0, y = 0, s = 0; for (const i of o) { const st = L.stops[i]; s += Math.abs(st.x - x) + Math.abs(st.y - y); x = st.x; y = st.y; } return s; };
 const perms = (a) => (a.length <= 1 ? [a] : a.flatMap((x, i) => perms([...a.slice(0, i), ...a.slice(i + 1)]).map((q) => [x, ...q])));
@@ -998,6 +1043,34 @@ function workQuality(id, L, ans) {
     const isBad = (i) => (id === 'entradas' ? !L.guests.includes(L.rows[i].n) : L.rows[i].v !== L.ficha[L.rows[i].f]);
     const nBad = L.rows.filter((_, i) => isBad(i)).length, hit = pk.filter(isBad).length, wrong = pk.length - hit;
     return Math.max(0, Math.round((10000 * (hit - wrong)) / nBad));
+  }
+  if (id === 'oficina') {   // 40% pela ordem em estrela (cada passo salta uma porca), 60% pelo aperto (cada porca a 8% do binário)
+    const { picks, holds } = ans;
+    if (!isInts(picks, 5, 0, 4) || new Set(picks).size !== 5 || !isInts(holds, 5, 0, 20000)) return null;
+    let star = 0; for (let i = 1; i < 5; i++) { const d = (picks[i] - picks[i - 1] + 5) % 5; if (d === 2 || d === 3) star++; }
+    const tq = holds.map((ms) => (Math.abs((L.rate * ms) / 1000 - L.nm) / L.nm <= 0.08 ? 10000 : 0));   // dentro de 8% ou não
+    return Math.round((4000 * star) / 4 + (6000 * tq.reduce((a, b) => a + b, 0)) / 50000);
+  }
+  if (id === 'mudancas') {   // 70% pelo espaço ocupado, 30% pelas regras (pesadas junto à cabine, a frágil junto à porta)
+    const pl = ans.place;
+    if (!Array.isArray(pl) || pl.length !== L.pcs.length || !pl.every((v) => isInts(v, 3, -1, Math.max(L.W, L.H)) && (v[2] === 0 || v[2] === 1))) return null;
+    const g = Array(L.W * L.H).fill(-1); let area = 0, rules = 0, nRules = 0;
+    for (let i = 0; i < pl.length; i++) {
+      const [x, y, rot] = pl[i], q = L.pcs[i], w = rot ? q.h : q.w, h = rot ? q.w : q.h;
+      if (q.heavy || q.fragile) nRules++;
+      if (x < 0 || y < 0) continue;
+      if (x + w > L.W || y + h > L.H) return null;
+      for (let yy = y; yy < y + h; yy++) for (let xx = x; xx < x + w; xx++) { if (g[yy * L.W + xx] >= 0) return null; g[yy * L.W + xx] = i; }
+      area += w * h;
+      if ((q.heavy && y === 0) || (q.fragile && y + h === L.H)) rules++;
+    }
+    return Math.round((7000 * area) / (L.W * L.H) + (nRules ? (3000 * rules) / nRules : 3000));
+  }
+  if (id === 'desmanche') {   // o que vale o que se levou, a dividir pelo melhor que se podia levar
+    const { holds } = ans;
+    if (!isInts(holds, L.parts.length, 0, 30000) || (ans.spotted !== undefined && typeof ans.spotted !== 'boolean')) return null;
+    const got = L.parts.reduce((a, x, i) => a + (holds[i] >= x.need ? x.v : 0), 0);
+    return Math.min(10000, Math.round((10000 * got) / bestStrip(L)));
   }
   if (id === 'doses') {
     const { holds } = ans;
@@ -1049,13 +1122,15 @@ export function workDone(p, now, world, rng, ans) {
   p.cz = { v: Math.round((tired + 1) * 1000), t: now };
   p.tk = null;
   p.c.work = (p.c.work || 0) + 1;
-  const busted = !!x.bustBp && rng.chance(Math.floor((x.bustBp * pressMultBp(world && world.press)) / 10000));
-  if (busted) { jailFor(p, now, x.jailMin * T.MIN, 1); return { ok: true, id: x.id, q, busted: true, money: 0, multBp, jailUntil: p.jailUntil }; }
+  // desmanche: quem ainda estava agarrado a uma peça quando a patrulha passou foi visto (metade das vezes acaba preso)
+  const spotted = x.id === 'desmanche' && stripSpotted(L, ans), bustBp = spotted ? CFG.work.spottedBp : x.bustBp;
+  const busted = !!bustBp && rng.chance(Math.floor((bustBp * (spotted ? 10000 : pressMultBp(world && world.press))) / 10000));
+  if (busted) { jailFor(p, now, x.jailMin * T.MIN, 1); return { ok: true, id: x.id, q, busted: true, spotted, money: 0, multBp, jailUntil: p.jailUntil }; }
   let money = Math.max(1, Math.floor((Math.floor((x.base * (W.qMin + Math.floor(((W.qMax - W.qMin) * q) / 10000))) / 10000) * multBp) / 10000));
   let lav = 0;
   if (x.bustBp) { const Lv = launder(p, money); money = Lv.net; lav = Lv.lav; }
   p.cash += money;
-  return { ok: true, id: x.id, q, busted: false, money, lav, multBp, tired: tired + 1 };
+  return { ok: true, id: x.id, q, busted: false, spotted, money, lav, multBp, tired: tired + 1 };
 }
 
 export function startCourse(p, now, world, id) {

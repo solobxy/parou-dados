@@ -13,10 +13,34 @@ const world = { start: START - T.DAY, playEnd: Number.MAX_SAFE_INTEGER, press: 5
 const mk = () => { const p = E.newPlayer('p' + Math.random(), START, world); p.cash = 1000; return p; };
 const nunca = { int: (lo) => lo, chance: () => false, float: () => 0 };
 const sempre = { int: (lo) => lo, chance: () => true, float: () => 0 };
+const mkAlto = () => { const p = mk(); p.respect = p.peakRespect = 1000; return p; };   // nível 13: todos os biscates abertos
 const W = () => CFG.work;
 const BISC = () => CFG.work.list.filter((x) => !x.shift);
 const job = (id) => W().list.find((x) => x.id === id);
 const code = (c) => (e) => e.code === c;
+
+// mudanças: procura uma arrumação que encha a carrinha e cumpra as regras (pesadas na fila 0, a frágil na última)
+function arrumar(L) {
+  const g = Array(L.W * L.H).fill(-1), out = L.pcs.map(() => [-1, -1, 0]);
+  const fits = (x, y, w, h) => { if (x + w > L.W || y + h > L.H) return false; for (let yy = y; yy < y + h; yy++) for (let xx = x; xx < x + w; xx++) if (g[yy * L.W + xx] >= 0) return false; return true; };
+  const put = (i, x, y, w, h, v) => { for (let yy = y; yy < y + h; yy++) for (let xx = x; xx < x + w; xx++) g[yy * L.W + xx] = v; };
+  const go = (i) => {
+    if (i === L.pcs.length) return true;
+    const q = L.pcs[i];
+    for (const rot of q.w === q.h ? [0] : [0, 1]) {
+      const w = rot ? q.h : q.w, h = rot ? q.w : q.h;
+      for (let y = 0; y < L.H; y++) for (let x = 0; x < L.W; x++) {
+        if ((q.heavy && y !== 0) || (q.fragile && y + h !== L.H) || !fits(x, y, w, h)) continue;
+        put(i, x, y, w, h, i); out[i] = [x, y, rot];
+        if (go(i + 1)) return true;
+        put(i, x, y, w, h, -1); out[i] = [-1, -1, 0];
+      }
+    }
+    return false;
+  };
+  assert.ok(go(0), 'há sempre uma arrumação certa');
+  return out;
+}
 
 // a resposta perfeita de cada tarefa, feita a partir da disposição que o servidor mandou
 function perfeita(task) {
@@ -34,13 +58,20 @@ function perfeita(task) {
   if (task.id === 'entradas') return { picks: L.rows.map((r, i) => (L.guests.includes(r.n) ? -1 : i)).filter((i) => i >= 0) };
   if (task.id === 'contrato') return { picks: L.rows.map((r, i) => (r.v !== L.ficha[r.f] ? i : -1)).filter((i) => i >= 0) };
   if (task.id === 'doses') return { holds: L.doses.map((d) => Math.round((d * 10000) / L.rate)) };
+  if (task.id === 'oficina') return { picks: [0, 2, 4, 1, 3], holds: [0, 1, 2, 3, 4].map(() => Math.round((L.nm * 1000) / L.rate)) };
+  if (task.id === 'mudancas') return { place: arrumar(L) };
+  if (task.id === 'desmanche') {   // o melhor conjunto que cabe em 85% do tempo
+    let best = 0, bm = 0;
+    for (let m = 1; m < 1 << L.parts.length; m++) { let t = 0, v = 0; L.parts.forEach((x, i) => { if (m & (1 << i)) { t += x.need; v += x.v; } }); if (t <= L.win * 0.85 && v > best) { best = v; bm = m; } }
+    return { holds: L.parts.map((x, i) => (bm & (1 << i) ? x.need : 0)), spotted: false };
+  }
   // laboratório: tocar quando o ponteiro está no meio da zona verde; encher cada saco até ao peso certo
   const P = L.gauge.periodMs, c = L.gauge.c / 10000, tap = (k) => k * P + Math.round((c / 2) * P);   // na subida, x = 2·fase
   return { taps: [tap(1), tap(2), tap(3)], holds: L.bags.map(() => Math.round((L.target * 1000) / L.rate)), pills: L.pills };
 }
 
 test('três biscates desde o nível 1: camião e entregas pagam 95 € (um toque de carteirista), o laboratório 115 € com risco de rusga', () => {
-  assert.deepEqual(BISC().map((x) => [x.id, x.level, x.base, !!x.bustBp]), [['camiao', 1, 95, false], ['entregas', 1, 95, false], ['laboratorio', 1, 115, true]]);
+  assert.deepEqual(BISC().filter((x) => x.level === 1).map((x) => [x.id, x.level, x.base, !!x.bustBp]), [['camiao', 1, 95, false], ['entregas', 1, 95, false], ['laboratorio', 1, 115, true]]);
   assert.equal(W().half, 30); assert.equal(W().halfLifeMs, 12 * T.HOUR);
   for (const x of W().list) assert.ok(x.minMs >= 8000 && x.minMs <= 15000, x.id);
   for (const x of W().list.filter((y) => y.shift)) assert.throws(() => E.workStart(mk(), START, world, seededRng(1), x.id), code('NO_WORK'), 'só nos turnos');
@@ -48,7 +79,7 @@ test('três biscates desde o nível 1: camião e entregas pagam 95 € (um toque
 
 test('a disposição sai da semente: a mesma semente dá a mesma tarefa', () => {
   for (const x of BISC()) {
-    const a = mk(), b = mk();
+    const a = mkAlto(), b = mkAlto();
     const ra = E.workStart(a, START, world, seededRng(5), x.id), rb = E.workStart(b, START, world, seededRng(5), x.id);
     assert.deepEqual(ra.task.layout, rb.task.layout, x.id);
     assert.equal(a.tk.id, x.id); assert.equal(a.tk.t0, START);
@@ -80,7 +111,7 @@ test('respostas inventadas são recusadas sem mexer em nada', () => {
 
 test('bem feito paga 120% da base; mal feito paga menos, nunca menos de 60%', () => {
   for (const x of BISC()) {
-    const p = mk(); const r = E.workStart(p, START, world, seededRng(3), x.id);
+    const p = mkAlto(); const r = E.workStart(p, START, world, seededRng(3), x.id);
     const d = E.workDone(p, START + 60000, world, nunca, perfeita(r.task));
     assert.equal(d.q, 10000, x.id); assert.equal(d.money, Math.floor((x.base * 12000) / 10000), x.id);
     assert.equal(p.tk, null, 'a tarefa acaba');
@@ -189,3 +220,59 @@ test('entradas e contrato: respostas com linhas repetidas ou fora da lista são 
     assert.deepEqual(p, antes);
   }
 });
+
+// ---------- v68: um degrau de biscates por cada crime (17/11) ----------
+test('oficina no nível 8, mudanças e desmanche no 12: pagam mais, mas menos do que o crime do mesmo nível', () => {
+  assert.deepEqual(BISC().filter((x) => x.level > 1).map((x) => [x.id, x.level, x.base, !!x.bustBp]), [['oficina', 8, 110, false], ['mudancas', 12, 125, false], ['desmanche', 12, 150, true]]);
+  const p = mk(); p.respect = p.peakRespect = CFG.levels[6];   // nível 7
+  assert.throws(() => E.workStart(p, START, world, seededRng(1), 'oficina'), code('LOW_LEVEL'));
+  // o crime do nível 8 (carros) rende mais por toque do que a oficina com tudo perfeito
+  const carro = CFG.crimes.find((c) => c.id === 'carro'), ev = carro.prizes.reduce((a, [bp, lo, hi]) => a + (bp * (lo + hi)) / 2, 0) / 10000;
+  assert.ok((ev * carro.p) / 10000 / (carro.e / 10) > 110 * 1.2, 'o crime paga mais à medida que se sobe');
+});
+
+test('a mesma semente dá a mesma oficina, carrinha e desmanche; a carrinha tem sempre arrumação', () => {
+  for (const id of ['oficina', 'mudancas', 'desmanche']) for (let s = 1; s < 40; s++) assert.deepEqual(E.workLayout(id, s * 7919), E.workLayout(id, s * 7919));
+  for (let s = 1; s < 200; s++) {
+    const L = E.workLayout('mudancas', s * 104729);
+    assert.equal(L.pcs.reduce((a, q) => a + q.w * q.h, 0), L.W * L.H, 'as peças enchem a carrinha');
+    assert.equal(L.pcs.filter((q) => q.heavy).length, 1); assert.ok(L.pcs.filter((q) => q.fragile).length <= 1);
+    assert.ok(!('x' in L.pcs[0]), 'a solução não vai para o telemóvel');
+    arrumar(L);
+    const D = E.workLayout('desmanche', s * 104729);
+    assert.ok(D.parts.reduce((a, x) => a + x.need, 0) > D.win * 1.4, 'não dá para levar tudo');
+  }
+});
+
+test('oficina: a ordem em estrela e o aperto contam; mudanças: as peças não se sobrepõem', () => {
+  const p = mkAlto(); let r = E.workStart(p, START, world, seededRng(4), 'oficina');
+  const bom = perfeita(r.task);
+  let d = E.workDone(p, START + 60000, world, nunca, { picks: [0, 1, 2, 3, 4], holds: bom.holds });
+  assert.equal(d.q, 6000, 'em roda e não em estrela: só o aperto conta');
+  r = E.workStart(p, START + 60000, world, seededRng(4), 'oficina');
+  d = E.workDone(p, START + 120000, world, nunca, { picks: bom.picks, holds: bom.holds.map((ms) => ms * 2) });
+  assert.equal(d.q, 4000, 'o dobro do binário: só a ordem conta');
+  r = E.workStart(p, START + 120000, world, seededRng(4), 'mudancas');
+  const pl = perfeita(r.task).place;
+  const sobre = pl.map((v, i) => (i === 1 ? [...pl[0]] : v));
+  assert.throws(() => E.workDone(p, START + 180000, world, nunca, { place: sobre }), code('BAD_ANSWER'));
+  const metade = pl.map((v, i) => (i % 2 ? [-1, -1, 0] : v));
+  d = E.workDone(p, START + 180000, world, nunca, { place: metade });
+  assert.ok(d.q > 0 && d.q < 10000);
+});
+
+test('desmanche: dinheiro sujo, 4% de rusga; quem a patrulha apanha agarrado a uma peça é visto (50%)', () => {
+  const p = mkAlto(); let r = E.workStart(p, START, world, seededRng(6), 'desmanche');
+  const bom = perfeita(r.task), ilegal0 = p.ilegal;
+  let d = E.workDone(p, START + 60000, world, nunca, bom);
+  assert.equal(d.q, 10000); assert.equal(d.busted, false); assert.equal(d.spotted, false); assert.ok(p.ilegal > ilegal0, 'dinheiro sujo');
+  // visto: a rusga passa a ser 50%, sem contar a pressão policial
+  r = E.workStart(p, START + 60000, world, seededRng(6), 'desmanche');
+  const metade = { int: (lo) => lo, chance: (bp) => bp >= 5000, float: () => 0 };
+  d = E.workDone(p, START + 120000, world, metade, { ...perfeita(r.task), spotted: true });
+  assert.equal(d.busted, true); assert.equal(d.spotted, true); assert.ok(p.jailUntil >= START + 120000 + 15 * T.MIN - 1);
+  // somar mais tempo do que a patrulha dá também conta como visto, diga o telemóvel o que disser
+  const L = E.workLayout('desmanche', 77), tudo = { holds: L.parts.map((x) => x.need), spotted: false };
+  assert.equal(E.stripSpotted(L, tudo), true);
+});
+

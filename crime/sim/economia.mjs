@@ -90,7 +90,8 @@ export const P = {
   // 0,5^(cansaço/meia): o cansaço sobe 1 por tarefa e desce para metade a cada meiaVida horas. Laboratório ilegal: mais base, rusga.
   // 17/11: o biscate do nível 1 paga como um carteirista (115 € por toque); os de níveis acima pagam mais, mas sobem mais devagar do
   // que o crime do mesmo nível (o crime compensa mais à medida que se sobe, com o risco). escala: base de cada degrau (nível, €).
-  trabalho: { escala: [[1, +(process.env.TB_BASE ?? 95)]],   // os degraus de cima entram quando houver biscates desses níveis
+  trabalho: { escala: [[1, +(process.env.TB_BASE ?? 95)], [8, 110], [12, 125]],   // camião e entregas; oficina (8); mudanças (12)
+    sujos: [[1, 115, 0.03], [12, 150, 0.04]],   // laboratório; desmanche (nível, base, rusga)
     esc: +(process.env.TB_ESC ?? 1),
     lab: +(process.env.TB_LAB ?? 115), labNivel: 1, rusga: 0.03, multa: 150, qual: +(process.env.TB_Q ?? 1.1), meia: +(process.env.TB_MEIA ?? 30), meiaVida: +(process.env.TB_HL ?? 12) },
   // Stamina a mais do que a natural: cada barra seguida custa mais; a escada desce com o tempo (escadaArrefece).
@@ -171,7 +172,7 @@ function simula(perfil, rng) {
     // trabalho à mão: o bot trabalha ao ritmo que mais rende (cansaço estável); as pessoas fazem tarefas seguidas em cada sessão
     if (!SEM.trabalho) {
       const W = P.trabalho, k = Math.LN2 / W.meiaVida, legal = W.escala.filter(([n]) => nv >= n).map(([, b], i) => (i ? b * W.esc + W.escala[0][1] * (1 - W.esc) : b)).pop() * W.qual,
-        sujo = nv >= W.labNivel ? W.lab * W.qual * (1 - W.rusga) - W.rusga * W.multa : 0, porTarefa = Math.max(legal, sujo);
+        sujo = Math.max(0, ...W.sujos.filter(([n]) => nv >= n).map(([, b, r]) => b * W.qual * (1 - r) - r * W.multa)), porTarefa = Math.max(legal, sujo);
       let cans = s.cansaco || 0, ganho = 0;
       if (A.tarefas === 'otimo') {
         const r = W.meia / (Math.LN2 / k);   // tarefas por hora que maximizam r·0,5^(r/(k·meia))

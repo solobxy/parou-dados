@@ -73,7 +73,7 @@ test('biscate do camião: começar, entregar cedo demais, entregar bem e aparece
   assert.equal(r.status, 200, JSON.stringify(r.body));
   r = await A('POST', '/api/act', { type: 'class', id: CFG.classes[0].id });
   const cfg = (await A('GET', '/api/config')).body;
-  assert.deepEqual(cfg.work.list.filter((x) => !x.shift).map((x) => x.id), ['camiao', 'entregas', 'laboratorio']);
+  assert.deepEqual(cfg.work.list.filter((x) => !x.shift).map((x) => x.id), ['camiao', 'entregas', 'laboratorio', 'oficina', 'mudancas', 'desmanche']);
   r = await A('POST', '/api/act', { type: 'workStart', id: 'camiao' });
   assert.equal(r.status, 200, JSON.stringify(r.body));
   const L = r.body.result.task.layout;
