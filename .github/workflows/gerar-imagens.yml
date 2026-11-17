@@ -34,6 +34,8 @@ jobs:
         run: |
           set -euo pipefail
           [ -n "$CF_TOKEN" ] || { echo "Falta o segredo CF_TOKEN"; exit 1; }
+          # diagnóstico: o token é válido? (não mostra o token, só o estado)
+          curl -sS --max-time 30 https://api.cloudflare.com/client/v4/user/tokens/verify -H "Authorization: Bearer $CF_TOKEN" | jq -c '{success, status: .result.status, errors}' || true
           # sem CF_ACCOUNT, usa a primeira conta a que o token tem acesso
           if [ -z "$CF_ACCOUNT" ]; then
             CF_ACCOUNT="$(curl -sS --max-time 30 https://api.cloudflare.com/client/v4/accounts -H "Authorization: Bearer $CF_TOKEN" | jq -r '.result[0].id // empty')"
