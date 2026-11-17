@@ -266,12 +266,14 @@ export const CFG = {
   // (qMin a qMax: 60 a 120%) vezes 0,5^(cansaço/half); o cansaço sobe 1 por tarefa e desce para metade a cada halfLifeMs.
   // minMs: menos do que isto entre começar e entregar não paga. O laboratório é ilegal: dinheiro sujo e bustBp de rusga
   // (vezes a pressão policial), com jailMin de prisão e a multa do carteirista.
+  // 17/11 (v67): um biscate do nível 1 paga como um toque de carteirista (cerca de 115 € com a qualidade normal), sem risco e
+  // sem respeito; o laboratório paga mais com 3% de rusga. O cansaço passa para metade a cada 12 h (era 6 h).
   work: {
-    half: 30, halfLifeMs: 6 * HOUR, qMin: 6000, qMax: 12000,
+    half: 30, halfLifeMs: 12 * HOUR, qMin: 6000, qMax: 12000,
     list: [
-      { id: 'camiao', level: 1, base: 25, minMs: 9000 },          // descarregar o camião: as caixas pesadas em baixo
-      { id: 'entregas', level: 1, base: 25, minMs: 9000 },        // encomendas na mochila e as portas pela ordem mais curta
-      { id: 'laboratorio', level: 1, base: 45, minMs: 12000, bustBp: 200, jailMin: 10 },   // comprimidos, trituradora, sacos
+      { id: 'camiao', level: 1, base: 95, minMs: 9000 },          // descarregar o camião: as caixas pesadas em baixo
+      { id: 'entregas', level: 1, base: 95, minMs: 9000 },        // encomendas na mochila e as portas pela ordem mais curta
+      { id: 'laboratorio', level: 1, base: 115, minMs: 12000, bustBp: 300, jailMin: 10 },   // comprimidos, trituradora, sacos
       // só nos turnos dos empregos (não são biscates)
       { id: 'entradas', shift: true, minMs: 8000 },   // vigilante: quem entrou sem estar na lista
       { id: 'doses', shift: true, minMs: 8000 },      // enfermeiro: três seringas na dose certa

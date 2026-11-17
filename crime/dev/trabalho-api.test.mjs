@@ -90,11 +90,11 @@ test('biscate do camião: começar, entregar cedo demais, entregar bem e aparece
   const c0 = st.cash;
   r = await A('POST', '/api/act', { type: 'workDone', ans: perfeita(L) });
   assert.equal(r.status, 200, JSON.stringify(r.body));
-  assert.equal(r.body.result.q, 10000); assert.equal(r.body.result.money, 30);
-  assert.equal(r.body.me.cash - c0, 30); assert.equal(r.body.me.work.tk, null);
+  assert.equal(r.body.result.q, 10000); assert.equal(r.body.result.money, 114);   // 95 € × 120%
+  assert.equal(r.body.me.cash - c0, 114); assert.equal(r.body.me.work.tk, null);
   assert.ok(r.body.me.work.tired > 0.99 && r.body.me.work.tired <= 1);
   r = await A('POST', '/api/act', { type: 'workDone', ans: perfeita(L) });
   assert.equal(r.body.error, 'NO_TASK', 'a mesma tarefa não se entrega duas vezes');
   await parar(srv); srv = null;
-  assert.equal(caixa()['trabalho:camiao'].e, 30);
+  assert.equal(caixa()['trabalho:camiao'].e, 114);
 });

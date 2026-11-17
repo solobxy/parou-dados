@@ -1,5 +1,5 @@
 // Trabalho à mão (pedido de 16/11, 23:51): biscates sem barra, cada um uma tarefa curta com objetos.
-// Paga a base vezes a qualidade (60 a 120%) vezes 0,5^(cansaço/30); o cansaço sobe 1 por tarefa e desce para metade a cada 6 horas.
+// Paga a base vezes a qualidade (60 a 120%) vezes 0,5^(cansaço/30); o cansaço sobe 1 por tarefa e desce para metade a cada 12 horas.
 // Corre com: node --test dev/trabalho.test.mjs   (dentro de crime/)
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
@@ -39,9 +39,9 @@ function perfeita(task) {
   return { taps: [tap(1), tap(2), tap(3)], holds: L.bags.map(() => Math.round((L.target * 1000) / L.rate)), pills: L.pills };
 }
 
-test('três biscates desde o nível 1: camião e entregas pagam 25 €, o laboratório 45 € com risco de rusga', () => {
-  assert.deepEqual(BISC().map((x) => [x.id, x.level, x.base, !!x.bustBp]), [['camiao', 1, 25, false], ['entregas', 1, 25, false], ['laboratorio', 1, 45, true]]);
-  assert.equal(W().half, 30); assert.equal(W().halfLifeMs, 6 * T.HOUR);
+test('três biscates desde o nível 1: camião e entregas pagam 95 € (um toque de carteirista), o laboratório 115 € com risco de rusga', () => {
+  assert.deepEqual(BISC().map((x) => [x.id, x.level, x.base, !!x.bustBp]), [['camiao', 1, 95, false], ['entregas', 1, 95, false], ['laboratorio', 1, 115, true]]);
+  assert.equal(W().half, 30); assert.equal(W().halfLifeMs, 12 * T.HOUR);
   for (const x of W().list) assert.ok(x.minMs >= 8000 && x.minMs <= 15000, x.id);
   for (const x of W().list.filter((y) => y.shift)) assert.throws(() => E.workStart(mk(), START, world, seededRng(1), x.id), code('NO_WORK'), 'só nos turnos');
 });
@@ -89,7 +89,7 @@ test('bem feito paga 120% da base; mal feito paga menos, nunca menos de 60%', ()
   const p = mk(); const r = E.workStart(p, START, world, seededRng(3), 'camiao');
   const bom = perfeita(r.task).slots, mau = bom.map((s) => (s + 3) % 6);
   const d = E.workDone(p, START + 60000, world, nunca, { slots: mau, drops: 2 });
-  assert.equal(d.q, 0); assert.equal(d.money, Math.floor((25 * 6000) / 10000));
+  assert.equal(d.q, 0); assert.equal(d.money, Math.floor((95 * 6000) / 10000));
 });
 
 test('entregas: a ordem mais curta vale 100%; uma volta maior vale a proporção', () => {
@@ -101,22 +101,22 @@ test('entregas: a ordem mais curta vale 100%; uma volta maior vale a proporção
   assert.equal(d.q, Math.round((10000 * len(best)) / len(pior)));
 });
 
-test('cansaço: a 31.ª tarefa seguida paga metade; seis horas depois o cansaço desce para metade', () => {
+test('cansaço: a 31.ª tarefa seguida paga metade; doze horas depois o cansaço desce para metade', () => {
   const p = mk(); let t = START;
   const pagos = [];
   for (let i = 0; i < 31; i++) { const r = E.workStart(p, t, world, seededRng(9), 'camiao'); t += 20000; pagos.push(E.workDone(p, t, world, nunca, perfeita(r.task)).money); }
-  assert.equal(pagos[0], 30); assert.equal(pagos[30], 15, 'trinta seguidas: metade');
+  assert.equal(pagos[0], 114); assert.equal(pagos[30], 57, 'trinta seguidas: metade');
   assert.ok(pagos.every((x, i) => i === 0 || x <= pagos[i - 1]), 'nunca sobe a meio');
-  const agora = E.workView(p, t).tired, depois = E.workView(p, t + 6 * T.HOUR).tired;
+  const agora = E.workView(p, t).tired, depois = E.workView(p, t + 12 * T.HOUR).tired;
   assert.ok(agora > 30 && agora <= 31, String(agora));
   assert.ok(Math.abs(depois - agora / 2) < 0.01, `${agora} → ${depois}`);
-  assert.ok(E.workView(p, t).multBp < 5000 && E.workView(p, t + 6 * T.HOUR).multBp > 6500);
+  assert.ok(E.workView(p, t).multBp < 5000 && E.workView(p, t + 12 * T.HOUR).multBp > 6500);
 });
 
 test('laboratório: o dinheiro é sujo (conta para a lavagem) e uma rusga leva à prisão, sem pagar', () => {
   const p = mk(); const r = E.workStart(p, START, world, seededRng(6), 'laboratorio');
   const ilegal0 = p.ilegal, d = E.workDone(p, START + 60000, world, nunca, perfeita(r.task));
-  assert.equal(d.busted, false); assert.equal(p.ilegal - ilegal0, Math.floor((45 * 12000) / 10000));
+  assert.equal(d.busted, false); assert.equal(p.ilegal - ilegal0, Math.floor((115 * 12000) / 10000));
   const q = mk(); const r2 = E.workStart(q, START, world, seededRng(6), 'laboratorio'), c0 = q.cash;
   const b = E.workDone(q, START + 60000, world, sempre, perfeita(r2.task));
   assert.equal(b.busted, true); assert.equal(b.money, 0); assert.equal(q.cash, c0);

@@ -3,7 +3,8 @@
 // Uso: node sim/economia.mjs [semente] [contas por perfil] [dias]
 //
 // O que tem de provar (falha com código de saída 1 se alguma não se verificar):
-//   1. ninguém fica rico numa semana (nem quem joga sem parar passa de 100 000 € ao dia 7);
+//   1. ninguém fica rico numa semana (nem quem joga sem parar passa de 120 000 € ao dia 7, dois terços do primeiro T1;
+//      era 100 000 € antes de os biscates pagarem como o crime do mesmo nível, 17/11);
 //   2. o primeiro carro chega na primeira ou segunda semana a quem joga todos os dias;
 //   3. sai-se da barraca em dias, mas o primeiro apartamento na cidade demora meses;
 //   4. o nível 100 demora cerca de um ano a quem joga todos os dias e não menos de cinco meses a quem joga sem parar;
@@ -87,7 +88,11 @@ export const P = {
   carro: 5000,   // usado barato; compra-se quando sobram 1 000 € depois de o pagar
   // Trabalho à mão (16/11): biscates sem barra. Cada tarefa paga a base vezes a qualidade (60 a 120%, em média 95%) e vezes
   // 0,5^(cansaço/meia): o cansaço sobe 1 por tarefa e desce para metade a cada meiaVida horas. Laboratório ilegal: mais base, rusga.
-  trabalho: { base: +(process.env.TB_BASE ?? 25), lab: +(process.env.TB_LAB ?? 45), labNivel: 1, rusga: 0.02, multa: 150, qual: 0.95, meia: +(process.env.TB_MEIA ?? 30), meiaVida: +(process.env.TB_HL ?? 6) },
+  // 17/11: o biscate do nível 1 paga como um carteirista (115 € por toque); os de níveis acima pagam mais, mas sobem mais devagar do
+  // que o crime do mesmo nível (o crime compensa mais à medida que se sobe, com o risco). escala: base de cada degrau (nível, €).
+  trabalho: { escala: [[1, +(process.env.TB_BASE ?? 95)]],   // os degraus de cima entram quando houver biscates desses níveis
+    esc: +(process.env.TB_ESC ?? 1),
+    lab: +(process.env.TB_LAB ?? 115), labNivel: 1, rusga: 0.03, multa: 150, qual: +(process.env.TB_Q ?? 1.1), meia: +(process.env.TB_MEIA ?? 30), meiaVida: +(process.env.TB_HL ?? 12) },
   // Stamina a mais do que a natural: cada barra seguida custa mais; a escada desce com o tempo (escadaArrefece).
   extra: (k) => 25 * k + 5 * k * k,   // 1.ª barra extra 30 €, 3.ª 120 €, 7.ª 420 €
   lavagem: { acimaDe: 100000, parte: 0.2 },   // dinheiro do crime que passa pelas fachadas: custa 20%
@@ -165,7 +170,8 @@ function simula(perfil, rng) {
     s.quente = quente; s.escada = escada;
     // trabalho à mão: o bot trabalha ao ritmo que mais rende (cansaço estável); as pessoas fazem tarefas seguidas em cada sessão
     if (!SEM.trabalho) {
-      const W = P.trabalho, k = Math.LN2 / W.meiaVida, porTarefa = (nv >= W.labNivel ? W.lab * (1 - W.rusga) - W.rusga * W.multa : W.base) * W.qual;
+      const W = P.trabalho, k = Math.LN2 / W.meiaVida, legal = W.escala.filter(([n]) => nv >= n).map(([, b], i) => (i ? b * W.esc + W.escala[0][1] * (1 - W.esc) : b)).pop() * W.qual,
+        sujo = nv >= W.labNivel ? W.lab * W.qual * (1 - W.rusga) - W.rusga * W.multa : 0, porTarefa = Math.max(legal, sujo);
       let cans = s.cansaco || 0, ganho = 0;
       if (A.tarefas === 'otimo') {
         const r = W.meia / (Math.LN2 / k);   // tarefas por hora que maximizam r·0,5^(r/(k·meia))
@@ -177,7 +183,7 @@ function simula(perfil, rng) {
         }
       }
       s.cansaco = cans; s.ganhoTrabalho = (s.ganhoTrabalho || 0) + ganho;
-      if (nv >= W.labNivel) crime += ganho; else entra += ganho;   // o laboratório é dinheiro sujo (conta para a lavagem)
+      if (sujo > legal) crime += ganho; else entra += ganho;   // o laboratório é dinheiro sujo (conta para a lavagem)
     }
     // operações: prepara a melhor que consegue pagar; resolve quando chega o dia
     if (s.op && d >= s.op.fim) {
@@ -243,7 +249,7 @@ for (const [perfil, r] of Object.entries(res)) {
   console.log(`  primeiro carro: dia ${r.carro ?? '—'}   sai da barraca: dia ${r.teto ?? '—'}   T1 na cidade: dia ${r.casa ?? '—'}${r.semCasa ? ` (${Math.round(r.semCasa * 100)}% sem casa)` : ''}   nível 100: dia ${r.n100 ?? '—'}${r.sem100 ? ` (${Math.round(r.sem100 * 100)}% não chegam)` : ''}   sai em custos ${Math.round(r.ralo * 100)}% do que entra   luxo: ${r.luxo} de ${P.luxo.length}\n`);
 }
 const provas = [
-  ['Ninguém fica rico numa semana (bot abaixo de 100 000 € ao dia 7)', res.bot.fotos[7].p90 < 100000],
+  ['Ninguém fica rico numa semana (bot abaixo de 120 000 € ao dia 7)', res.bot.fotos[7].p90 < 120000],
   ['Primeiro carro até ao dia 14 para quem joga todos os dias', res.regular.carro != null && res.regular.carro <= 14],
   ['Primeiro T1 na cidade entre o dia 30 e o dia 150 (regular)', res.regular.casa != null && res.regular.casa >= 30 && res.regular.casa <= 150],
   ['Nível 100 entre o dia 270 e o dia 400 (regular)', DIAS < 400 ? (res.regular.n100 == null || res.regular.n100 >= 270) : res.regular.n100 >= 270 && res.regular.n100 <= 400],

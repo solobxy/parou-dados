@@ -919,7 +919,7 @@ function screenGigs() {
     const x = W.list.find((y) => y.id === wv.tk.id);
     out.push(h('div', { class: 'tip' }, h('p', null, t('tkHalf', { x: t('gk_' + x.id) })), h('button', { class: 'btn buy sm', on: { click: () => openGig({ id: x.id, t0: wv.tk.t0, minMs: x.minMs, layout: wv.tk.layout }) } }, t('tkResume'))));
   }
-  if (wv.multBp < 10000 && !(G && G.res)) out.push(h('p', { class: 'small muted tk-tired' }, t('gTired', { p: Math.round(wv.multBp / 100) })));
+  if (wv.multBp < 10000 && !(G && G.res)) out.push(h('p', { class: 'small muted tk-tired' }, t('gTired', { p: Math.round(wv.multBp / 100), h: Math.round(S.cfg.work.halfLifeMs / 3600000) })));
   out.push(h('div', { class: 'card vlist vc tk-list' }, W.list.filter((x) => !x.shift).map((x) => {
     const lo = Math.floor((x.base * W.qMin * wv.multBp) / 1e8), hi = Math.floor((x.base * W.qMax * wv.multBp) / 1e8), locked = me.level < x.level;
     return h('button', { class: 'vrow tk-gig', disabled: !!b || locked, on: { click: (e) => gigStart(x.id, e.currentTarget) } },
