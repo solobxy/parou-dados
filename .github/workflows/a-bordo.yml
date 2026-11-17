@@ -139,6 +139,17 @@ jobs:
           for i in $(seq 1 60); do curl -s -m 5 http://127.0.0.1:3000/api/transit/loading-status | grep -q '"isLoading":false' && break; sleep 5; done
           sleep 5
 
+      - name: "Teste do travão à cópia automática das páginas (regras e app a correr)"
+        continue-on-error: true
+        working-directory: app
+        run: |
+          mkdir -p ../res
+          (APP=$PWD node --import tsx ../auditoria/travao-raspagem.mjs 2>&1 | grep -v "Experimental\|trace-warnings") | tee ../res/travao-raspagem.txt | tail -40
+          a=${PIPESTATUS[0]}
+          BASE=http://127.0.0.1:3000 node ../auditoria/travao-raspagem-servidor.mjs 2>&1 | tee ../res/travao-raspagem-servidor.txt | tail -20
+          b=${PIPESTATUS[0]}
+          exit $(( a || b ))
+
       - name: "Teste dos desenhos pela estrada (dados reais: linhas e viagens seguem a estrada, não atravessam prédios)"
         continue-on-error: true
         working-directory: app

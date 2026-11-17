@@ -110,6 +110,10 @@ jobs:
         working-directory: app
         run: APP=$PWD node --import tsx ../auditoria/cache-linhas-perto.mjs 2>&1 | grep -v "Experimental\|trace-warnings" | tail -20; exit ${PIPESTATUS[0]}
 
+      - name: Travão à cópia automática das páginas (robô travado; pessoas, Google e testes nunca)
+        working-directory: app
+        run: APP=$PWD node --import tsx ../auditoria/travao-raspagem.mjs 2>&1 | grep -v "Experimental\|trace-warnings" | tail -40; exit ${PIPESTATUS[0]}
+
       - name: Movimento dos autocarros (suave, sem teleportes)
         working-directory: app
         run: APP=$PWD node --import tsx ../auditoria/trajeto-veiculo.mjs 2>&1 | grep -v "Experimental\|trace-warnings" | tail -90; exit ${PIPESTATUS[0]}
