@@ -130,6 +130,8 @@ function react(type, out, before, opts) {
   else if (type === 'whUp') { toast(t('tWhUp', { x: t('whUp_' + r.k), n: r.lvl })); fx.sfx('claim'); }
   else if (type === 'venueSet') { toast(t('vnSaved')); fx.sfx('claim'); }
   else if (type === 'venueBuy') { toast(r.lvl === 1 ? t('vnOpened_' + r.kind) : t('vnUpped', { n: r.lvl })); fx.sfx('claim'); }
+  else if (type === 'govVote') { toast(t('tVoted', { x: t(r.yes ? 'pYes' : 'pNo') })); fx.sfx('claim'); loadNews(); }
+  else if (type === 'govLobby') { toast(t('tLobby', { m: money(r.amount), x: t(r.side === 'y' ? 'pYes' : 'pNo') })); fx.sfx('buy'); loadNews(); }
   else if (type === 'house') { toast(t('houseMoved', { x: list('houses')[me.house], n: r.respect })); fx.sfx('claim'); }
   else if (type === 'refill') { toast(t('rfDone', { e: r.energy, m: money(r.price) })); fx.sfx('refill'); }
   else if (type === 'dealBuy') { toast(t('dealBought', { g: num(r.grams), x: list('drugs')[r.d], m: money(r.price) })); fx.sfx('buy'); }
@@ -350,15 +352,15 @@ function tickHud() {
 const PLACES = {
   city: { ic: 'skyline' }, empire: { ic: 'empire' }, rob: { ic: 'street', img: 'golpes' }, club: { ic: 'bolt', img: 'discoteca' }, gym: { img: 'ginasio' },
   biz: { ic: 'empire', img: 'negocios' }, stash: { img: 'stash' }, acct: { img: 'contabilista' }, port: { img: 'porto' }, air: { img: 'aeroporto' }, arms: { img: 'armas' }, bank: { img: 'banco' }, hosp: { img: 'hospital' },
-  jail: { img: 'prisao' }, gang: { img: 'gangue' }, work: { img: 'profissao' }, news: { img: 'jornal' }, casino: { ic: 'gem', img: 'casino' }, roulette: { img: 'roleta' }, bj: { img: 'blackjack' }, dice: { img: 'dados' }, wheel: { img: 'roda' }, slot: { img: 'slot' }, zeus: { img: 'zeus' }, doce: { img: 'doce' }, rebucado: { img: 'rebucado' }, alley: { img: 'beco' }, lux: { img: 'luxos' }, fights: { ic: 'fights', img: 'lutas' }, rank: { img: 'procurados' }, hitman: { img: 'assassino' }, putas: { img: 'putas' }, gigs: { img: 'biscates' }, casa: {}, myclub: { img: 'discoteca' }, mybro: { img: 'bordel' }, bolsa: { img: 'bolsa' }, job: { img: 'emprego' }, inv: { img: 'inventario' }, ops: { img: 'operacoes' },
+  jail: { img: 'prisao' }, gang: { img: 'gangue' }, work: { img: 'profissao' }, news: { img: 'jornal' }, casino: { ic: 'gem', img: 'casino' }, roulette: { img: 'roleta' }, bj: { img: 'blackjack' }, dice: { img: 'dados' }, wheel: { img: 'roda' }, slot: { img: 'slot' }, zeus: { img: 'zeus' }, doce: { img: 'doce' }, rebucado: { img: 'rebucado' }, alley: { img: 'beco' }, lux: { img: 'luxos' }, fights: { ic: 'fights', img: 'lutas' }, rank: { img: 'procurados' }, hitman: { img: 'assassino' }, putas: { img: 'putas' }, gigs: { img: 'biscates' }, casa: {}, myclub: { img: 'discoteca' }, mybro: { img: 'bordel' }, bolsa: { img: 'bolsa' }, job: { img: 'emprego' }, inv: { img: 'inventario' }, ops: { img: 'operacoes' }, parl: { img: 'parlamento' },
 };
 // barra de baixo: só o que se usa a toda a hora. O resto vive dentro de cada separador, arrumado por zonas.
 const NAV = ['city', 'rob', 'fights', 'casino', 'empire'];
 const HUB = {
-  city: [['sec_night', ['club', 'putas', 'casino', 'gang', 'alley', 'arms']], ['sec_street', ['gigs', 'job', 'gym', 'bank', 'hosp', 'jail', 'rank']]],
+  city: [['sec_night', ['club', 'putas', 'casino', 'gang', 'alley', 'arms']], ['sec_street', ['gigs', 'job', 'gym', 'bank', 'parl', 'hosp', 'jail', 'rank']]],
   empire: [['sec_income', ['biz', 'port', 'air', 'myclub', 'mybro']], ['sec_assets', ['casa', 'inv', 'bank', 'bolsa', 'stash', 'acct']]],
 };
-const PARENT = { gigs: 'city', gang: 'city', work: 'job', job: 'city', news: 'city', casino: 'city', roulette: 'casino', bj: 'casino', dice: 'casino', wheel: 'casino', slot: 'casino', zeus: 'casino', doce: 'casino', rebucado: 'casino', club: 'city', putas: 'city', gym: 'city', alley: 'city', hosp: 'city', jail: 'city',
+const PARENT = { parl: 'city', gigs: 'city', gang: 'city', work: 'job', job: 'city', news: 'city', casino: 'city', roulette: 'casino', bj: 'casino', dice: 'casino', wheel: 'casino', slot: 'casino', zeus: 'casino', doce: 'casino', rebucado: 'casino', club: 'city', putas: 'city', gym: 'city', alley: 'city', hosp: 'city', jail: 'city',
   biz: 'empire', port: 'empire', air: 'empire', myclub: 'empire', mybro: 'empire', bolsa: 'empire', inv: 'empire', stash: 'empire', acct: 'empire', casa: 'empire', bank: 'empire', lux: 'empire', arms: 'fights', rank: 'fights', hitman: 'fights', ops: 'rob' };
 const upOf = (id) => (S.backTo && S.backTo[id]) || PARENT[id] || 'city';   // um sítio que está em duas zonas volta para a zona de onde vieste
 const tabOf = (id) => { let x = id; for (let k = 0; k < 4 && !NAV.includes(x); k++) x = upOf(x); return NAV.includes(x) ? x : 'city'; };
@@ -372,7 +374,7 @@ function loadFor(tab) {
   if (tab === 'club' || tab === 'putas') loadVenues();
   if (tab === 'bolsa') { S.stkSel = null; loadStocks(); }
   if (tab === 'stash') S.reg = null;
-  if (tab === 'news' || tab === 'city') loadNews();
+  if (tab === 'news' || tab === 'city' || tab === 'parl') loadNews();
   if (tab === 'news') loadStocks();   // a página de Economia e a tira da bolsa na primeira página
 }
 function go(tab) {
@@ -422,7 +424,7 @@ function shell() {
 }
 
 const SCREENS = { job: screenJob, city: screenCity, empire: screenEmpire, news: screenNews, casino: screenCasino, roulette: screenRoulette, bj: screenBJ, dice: screenDice, wheel: screenWheel, slot: () => screenSlotGame('slot'), zeus: () => screenSlotGame('zeus'), doce: () => screenSlotGame('doce'), rebucado: () => screenSlotGame('rebucado'), rob: screenRob, club: screenClub, gym: screenGym, biz: screenBiz, port: screenPort, arms: screenArms, bank: screenBank,
-  hosp: screenHosp, jail: screenJail, gang: screenGang, work: screenWork, air: screenAir, putas: screenPutas, myclub: screenMyClub, mybro: screenMyBro, bolsa: screenBolsa, inv: screenInv, stash: screenStash, acct: screenAcct, casa: screenCasa, alley: screenAlley, lux: screenLux, fights: screenFights, rank: screenRank, hitman: screenHitman, ops: screenOps, gigs: screenGigs };
+  hosp: screenHosp, jail: screenJail, gang: screenGang, work: screenWork, air: screenAir, putas: screenPutas, myclub: screenMyClub, mybro: screenMyBro, bolsa: screenBolsa, inv: screenInv, stash: screenStash, acct: screenAcct, casa: screenCasa, alley: screenAlley, lux: screenLux, fights: screenFights, rank: screenRank, hitman: screenHitman, ops: screenOps, gigs: screenGigs, parl: screenParl };
 function render(force) {
   if (!S.st) return;
   if (!S.st.me || S.st.round.phase !== 'play') return renderPause();
@@ -628,7 +630,7 @@ function tickNews() {
   el.classList.remove('swap'); void el.offsetWidth; el.classList.add('swap');
 }
 async function loadNews() {
-  try { const r = await api('GET', '/api/news'); S.news = r; if (r.feed) S.feed = r.feed; if (S.tab === 'news' || S.tab === 'city') render(); } catch {}
+  try { const r = await api('GET', '/api/news'); S.news = r; if (r.feed) S.feed = r.feed; if (S.tab === 'news' || S.tab === 'city' || S.tab === 'parl') render(); } catch {}
 }
 // ===== O jornal «A Sirene» =====
 // Uma folha de papel dentro do jogo: cabeçalho, manchete em letras grandes e quatro páginas. Escreve-se com o que já existe
@@ -672,8 +674,18 @@ function paperCountry() {
     crimes.length > 1 ? h('div', { class: 'lxchw' }, h('span', { class: 'small' }, t('lxChartT', { n: crimes.length })), stChart(crimes, 'mini lxch', 320, 44)) : null,
     h('p', null, t('lxBust', { p: L.press, b: pctOf(lxBustNow(Wm)) + '%' })),
     h('p', { class: 'small pnote' }, t('lxHow'))),
-    Wm.rg ? rgPaper(Wm) : null, rgEvPaper(Wm, 8),
+    govPaper(Wm), Wm.rg ? rgPaper(Wm) : null, rgEvPaper(Wm, 8),
     lxArts.length ? h('section', { class: 'psec' }, h('h4', null, t('lxEdsT')), h('ul', { class: 'plive' }, lxArts.map(([at, a]) => h('li', null, h('span', { class: 'ptime' }, edTime(at)), h('span', null, lxLine(a)))))) : null];
+}
+// o parlamento numa caixa do jornal: o que se vota, a última votação e a porta para o ecrã
+function govPaper(Wm) {
+  const G = Wm.gov; if (!G || !S.cfg.gov) return null;
+  const b = G.bill, x = G.last && G.last[0];
+  return h('section', { class: 'psec' }, h('h4', null, t('p_parl')),
+    b ? h('p', null, h('b', null, lawName(b.id, b.on) + '. '), (b.on ? lawFx(b.id) : t('pRepealFx', { x: lawFx(b.id) })) + ' ' + t('pVoteAt', { h: untilTxt(b.voteAt) }) + ' · ' + t('pStreet') + ': ' + t('pStreetP', { p: b.op }) + '.') : null,
+    b && b.poll ? h('p', null, t('pPoll', { lo: b.poll.lo, hi: Math.min(230, b.poll.hi), m: S.cfg.gov.vote.majority })) : null,
+    x ? h('p', null, h('b', null, t(x.passed ? 'pPassed' : 'pFailed') + ': '), lawName(x.id, x.on) + ', ' + x.yes + '–' + x.no + '.') : null,
+    h('button', { class: 'pmore', on: { click: () => { S.backTo = { ...(S.backTo || {}), parl: 'news' }; go('parl'); } } }, t('pPaperGo') + ' →'));
 }
 // as outras regiões, como um boletim: criminalidade e pressão de cada uma, e o que mexeu nos mercados
 function rgPaper(Wm) {
@@ -790,6 +802,7 @@ function screenCity() {
     alley: me.mission?.done ? t('prize') : null,
     hosp: L.hosp ? t('inside') : null,
     jail: L.jail ? t('inside') : null,
+    parl: S.news?.mundo?.gov?.bill && me.gv && !me.gv.voted && !me.gv.novo && me.level >= (S.cfg.gov?.vote.minLevel || 5) ? t('pBadge') : null,
     fights: (S.events || []).some((e) => e.id > S.lastEventSeen) ? t('newEvt') : null,
   };
   const ep = season();
@@ -800,12 +813,170 @@ function placeTile(id, badge) {
   const me = S.st.me;
   return h('button', { class: 'tile', on: { click: () => go(id) } },
     h('img', { src: id === 'casa' ? IMG('casa', S.cfg.house.tiers[me.house].id) : IMG('cenas', PLACES[id].img), alt: '', width: 600, height: 600, loading: 'lazy', decoding: 'async', on: { error: (e) => e.currentTarget.remove() } }),
-    h('span', { class: 'lbl' + (id === 'rank' && S.st.rank ? ' up' : '') }, t('p_' + id)), badge ? h('span', { class: 'bdg' }, badge) : null,
+    h('span', { class: 'lbl' + (id === 'rank' && S.st.rank ? ' up' : '') }, t('p_' + id)), badge ? h('span', { class: 'bdg' + (id === 'parl' ? ' neu' : '') }, badge) : null,   // votar não é ganho: o aviso vai em creme
     // no ranking, a tua posição na época vai por baixo do nome, em texto (não é coisa para recolher)
     id === 'rank' && S.st.rank ? h('span', { class: 'tsub' }, t('rankBadge', { p: ordOf(S.st.rank) })) : null);
 }
 function hubTiles(hub, badge) {
   return HUB[hub].flatMap(([sec, ids]) => [h('h2', { class: 'sec' }, t(sec)), h('div', { class: 'tiles' }, ids.map((id) => placeTile(id, badge[id])))]);
+}
+// ===== O Parlamento (v76) =====
+// O Estado vive na edição do mundo (servidor): aqui só se mostra e se vota. A proposta vem primeiro, com o voto logo a seguir
+// à rua (é a ação do ecrã); depois o que cada partido deve votar, o dinheiro, o Estado, o hemiciclo e as leis.
+const PARTY = ['rv', 'cm', 'ml', 'op'];   // da esquerda para a direita, como se sentam
+const lawIs = (id) => !!S.st?.me?.gv?.laws?.includes(id);
+const gearP = (g) => (lawIs('armas') && ['mao', 'principal', 'branca'].includes(g.slot) ? Math.ceil((g.price * S.cfg.gov.laws.armas.priceBp) / 10000) : g.price);
+// bom ou mau para quem joga (verde ou vermelho); as armas livres têm das duas coisas e ficam sem cor
+const LAW_GOOD = { policia: -1, penas: -1, erva: 1, jogo: -1, luxo: -1, branq: -1, salario: 1, armas: 0 };
+function lawFx(id) {
+  const L = S.cfg.gov.laws[id], up = (bp) => Math.round(bp / 100 - 100), down = (bp) => Math.round(100 - bp / 100);
+  return t('lfx_' + id, {
+    policia: { p: L.press, s: L.spendBp / 100 }, penas: { p: up(L.jailBp) }, erva: { p: down(L.priceBp) }, jogo: { p: L.bp / 100, m: money(L.over) },
+    luxo: { p: L.bp / 100 }, branq: { p: L.addBp / 100 }, salario: { p: L.bp / 100 }, armas: { p: down(L.priceBp), c: L.crime },
+  }[id]);
+}
+// o efeito com a cor do que significa para ti: aprovar uma lei boa é verde, revogá-la é vermelho
+const lawFxEl = (id, on, tag = 'p', cls = '') => { const g = (LAW_GOOD[id] || 0) * (on ? 1 : -1);
+  return h(tag, { class: (cls + (g > 0 ? ' c-cash' : g < 0 ? ' c-red' : '')).trim() || null }, on ? lawFx(id) : t('pRepealFx', { x: lawFx(id) })); };
+const lawName = (id, on) => (on ? t('law_' + id) : t('pRepeal', { x: t('law_' + id) }));
+const partyDot = (k) => h('i', { class: 'pdot pt-' + k, 'aria-hidden': 'true' });
+const sv = (tag, attrs, ...kids) => { const e = svg(tag, attrs); for (const k of kids) e.append(k); return e; };   // svg() não aceita filhos
+// o que cada partido deve votar: a mesma conta do servidor (posição + rua + dinheiro + governo), sem os deputados rebeldes
+function billCalc(b, G, Wm, ly = b.ly, ln = b.ln) {
+  const V = S.cfg.gov.vote, P = S.cfg.gov.parties, K = V.lobbyK * V.incomePc * Math.max(1, Wm.pop || 1), op = b.op / 100;
+  const lob = (ly - ln) / (ly + ln + K), out = { K, lob, by: {}, yes: 0 };
+  for (const k of PARTY) {
+    const x = P[k], sc = (x.pos[b.id] || 0) * (b.on ? 1 : -1) + (op - 0.5) * 4 * x.wOp + lob * 2 * x.wLob + (k === G.pm ? V.pmBonus : 0);
+    out.by[k] = { sc, y: sc > 0, rest: sc - lob * 2 * x.wLob, w: x.wLob };
+    if (sc > 0) out.yes += G.seats[k] || 0;
+  }
+  return out;
+}
+// quanto falta pôr de um lado para o partido mais barato de virar mudar de voto (null se nem com todo o dinheiro)
+function flipCost(b, c, side) {
+  let best = null;
+  for (const k of PARTY) {
+    const x = c.by[k]; if (side === 'y' ? x.y : !x.y) continue;
+    const tg = -x.rest / (2 * x.w), T = b.ly + b.ln + c.K;
+    let a;
+    if (side === 'y') { if (tg >= 0.999) continue; a = (tg * T - b.ly + b.ln) / (1 - tg); } else { if (tg <= -0.999) continue; a = (b.ly - b.ln - tg * T) / (1 + tg); }
+    a = Math.max(S.cfg.gov.vote.minLobby, Math.ceil((a * 1.02 + 1) / 100) * 100);   // um pouco acima do limiar, às centenas
+    if (!best || a < best.a) best = { a, k };
+  }
+  return best;
+}
+// o hemiciclo: 230 lugares em 8 filas, cada partido num bloco da esquerda para a direita. Com proposta, os lugares de quem
+// deve votar contra ficam apagados e o número do meio é o que passaria se fosse hoje.
+function hemi(G, c) {
+  const R = 8, r0 = 40, r1 = 94, tot = PARTY.reduce((a, k) => a + (G.seats[k] || 0), 0), V = S.cfg.gov.vote;
+  const radii = Array.from({ length: R }, (_, i) => r0 + ((r1 - r0) * i) / (R - 1)), sum = radii.reduce((a, b) => a + b, 0);
+  const per = radii.map((r) => Math.round((tot * r) / sum)); per[R - 1] += tot - per.reduce((a, b) => a + b, 0);
+  const pts = [];
+  radii.forEach((r, i) => { const n = per[i]; for (let j = 0; j < n; j++) pts.push([Math.PI * (1 - (n === 1 ? 0.5 : j / (n - 1))), r]); });
+  pts.sort((p, q) => q[0] - p[0] || p[1] - q[1]);
+  let i = 0;
+  const dots = PARTY.flatMap((k) => Array.from({ length: G.seats[k] || 0 }, () => { const [a, r] = pts[i++];
+    return svg('circle', { class: 'pt-' + k + (c && !c.by[k].y ? ' off' : ''), cx: (100 + r * Math.cos(a)).toFixed(1), cy: (100 - r * Math.sin(a)).toFixed(1), r: 2.9 }); }));
+  const big = c ? c.yes : V.majority;
+  return h('figure', { class: 'hemi' },
+    sv('svg', { viewBox: '0 0 200 104', role: 'img', 'aria-label': PARTY.map((k) => t('party_' + k) + ' ' + G.seats[k]).join(', ') }, ...dots,
+      sv('text', { x: 100, y: 99, class: 'hemi-n' + (c ? (c.yes >= V.majority ? ' ok' : ' no') : ''), 'text-anchor': 'middle' }, String(big))),
+    h('figcaption', { class: 'small' }, c ? t('pHemiNow', { n: V.majority }) : t('pMaj', { t: tot })));
+}
+// os três números do Estado, com o que mexeram desde a edição anterior
+function parlState(G) {
+  const C = S.cfg.gov.cof, H = G.hist || [], prev = H.length > 1 ? H[H.length - 2] : null;
+  // uma ficha de três linhas, como as contas no jornal: o nome à esquerda, o número à direita e o que mexeu desde a edição anterior
+  const fig = (lbl, v, unit, was, sub) => h('div', { class: 'pfig' }, h('span', { class: 'pfig-l' }, lbl, sub ? h('small', { class: 'num' }, ' · ' + sub) : null),
+    h('span', { class: 'pfig-v' }, was != null && was !== v ? h('small', { class: 'num' }, (v > was ? '▲ ' : '▼ ') + Math.abs(v - was)) : null, h('b', { class: 'num' }, String(v), h('i', null, unit))));
+  const lo = G.cof < C.lowPct, hi = G.cof > C.highPct;
+  const pressTxt = lo ? t('pPressLow', { p: C.lowPct, d: '−' + C.pressStep }) : hi ? t('pPressHigh', { p: C.highPct, d: C.pressStep }) : t('pPressMid', { a: C.lowPct, b: C.highPct });
+  const cut = Math.round(Math.floor((3000 * Math.min(100, G.corr)) / 100) / 100);
+  return h('section', { class: 'psect' }, h('h2', { class: 'sec' }, t('pStateT')), h('div', { class: 'card pstate' },
+    h('div', { class: 'pfigs' }, fig(t('pCof'), G.cof, t('pFull'), prev ? prev[1] : null, moneyShort(G.cofEur)), fig(t('pCorr'), G.corr, '/100', prev ? prev[2] : null), fig(t('pPopu'), G.popu, '%', prev ? prev[3] : null)),
+    prev ? h('p', { class: 'small muted' }, t('pSince')) : null,
+    h('p', null, h('span', { class: lo ? 'c-cash' : hi ? 'c-red' : null }, pressTxt), cut >= 1 ? [' ', h('span', { class: 'c-cash' }, t('pCorrBail', { c: G.corr, p: cut }))] : null),
+    h('p', { class: 'small muted' }, t('pHowMoney'))));
+}
+function parlSeats(G, c) {
+  return h('section', { class: 'psect' }, h('h2', { class: 'sec' }, t('pSeatsT')), hemi(G, c),
+    h('ul', { class: 'plegend' }, PARTY.map((k) => h('li', null, partyDot(k),
+      h('div', null, h('b', null, t('party_' + k)), h('span', { class: 'num' }, ' · ' + t('pSeats', { n: G.seats[k] })),
+        h('p', { class: 'small muted' }, t(k === G.pm ? 'pb_gov' : 'pb_' + k)))))));
+}
+// o botão do dinheiro: pede certeza ao primeiro toque, desarma passados 4 s ou quando se arma o outro
+function lobBtn(label, sure, run) {
+  const b = h('button', { class: 'btn ghost', on: { click: () => {
+    if (b.dataset.sure === '1') return run();
+    document.querySelectorAll('.plob .btn[data-sure="1"]').forEach((o) => o._off && o._off());
+    b.dataset.sure = '1'; b.className = 'btn ghost dng'; setBtn(b, sure);
+    const tm = setTimeout(() => b._off(), 4000);
+    b._off = () => { clearTimeout(tm); delete b.dataset.sure; b.className = 'btn ghost'; setBtn(b, label); };
+  } } }, label);
+  return b;
+}
+// a proposta: o que muda, a rua, o teu voto, o que cada partido deve votar, a contagem da véspera e o dinheiro
+function parlBill(me, b, G, Wm, c) {
+  const V = S.cfg.gov.vote, cash = me.cash + me.bank;
+  const lowLvl = me.level < V.minLevel, isNew = !!me.gv?.novo, voted = !!me.gv?.voted;
+  let vote;
+  if (voted) vote = h('p', { class: 'pvoted' }, t('pVoted', { x: t(me.gv.yes ? 'pYes' : 'pNo'), p: b.op }));
+  else if (lowLvl) vote = h('p', { class: 'small muted' }, t('pVoteLvl', { n: V.minLevel }));
+  else if (isNew) vote = h('p', { class: 'small muted' }, t('pVoteNew'));
+  else vote = [h('div', { class: 'pvote' }, [[true, 'pVoteY'], [false, 'pVoteN']].map(([y, k]) => h('button', { class: 'btn lite', on: { click: (e) => act('govVote', { yes: y }, { el: e.currentTarget }) } }, t(k)))),
+    h('p', { class: 'small muted pvhow' }, t('pVoteHow'))];
+  // o dinheiro: até quatro valores à escala do que tens; por baixo de cada lado, se chega para virar algum partido
+  const top = Math.max(1e3, 10 ** Math.floor(Math.log10(Math.max(1, cash)))), amts = [top / 1000, top / 100, top / 10, top].filter((x) => x >= V.minLobby);
+  const amt = amts.includes(S.lobAmt) && S.lobAmt <= cash ? S.lobAmt : [...amts].reverse().find((x) => x <= cash) || amts[0];
+  const fl = { y: flipCost(b, c, 'y'), n: flipCost(b, c, 'n') };
+  const under = (side) => { const f = fl[side];
+    if (!f) return PARTY.every((k) => c.by[k].y === (side === 'y')) ? t(side === 'y' ? 'pAllY' : 'pAllN') : t(side === 'y' ? 'pNoFlipY' : 'pNoFlipN');
+    return amt >= f.a ? t('pTurns', { p: t('party_' + f.k) }) : t('pShort', { m: moneyShort(f.a - amt), p: t('party_' + f.k) }); };
+  // nenhum partido muda de voto por dinheiro (posições firmes dos dois lados): diz-se isso e não se vende nada
+  const stuck = !fl.y && !fl.n && !PARTY.every((k) => c.by[k].y) && !PARTY.every((k) => !c.by[k].y);
+  const lob = lowLvl ? null : stuck ? h('div', { class: 'plob' }, h('h3', null, t('pLobT')), h('p', { class: 'small muted' }, t('pLobStuck'))) : h('div', { class: 'plob' },
+    h('h3', null, t('pLobT')), h('p', { class: 'small muted' }, t('pLobHow')),
+    h('p', { class: 'small num' }, t('pLobNow', { y: money(b.ly), n: money(b.ln) })),
+    ['y', 'n'].map((side) => fl[side] ? h('p', { class: 'small' }, t(side === 'y' ? 'pFlipY' : 'pFlipN', { m: money(fl[side].a), p: t('party_' + fl[side].k) })) : null),
+    h('div', { class: 'seg plob-amt', role: 'group', 'aria-label': t('pLobT') }, amts.map((x) => h('button', { class: 'num', 'aria-pressed': x === amt ? 'true' : 'false', disabled: x > cash, on: { click: () => { S.lobAmt = x; render(); } } }, moneyShort(x)))),
+    h('div', { class: 'pvote' }, [['y', 'pLobFor'], ['n', 'pLobAgainst']].map(([side, k]) =>
+      h('div', null, lobBtn(t(k), t('pLobSure', { m: money(amt) }), () => act('govLobby', { side, amount: amt })), h('small', { class: 'num' }, under(side))))));
+  const left = b.voteAt - now();
+  return h('section', { class: 'card pbill' },
+    h('p', { class: 'pkick num' }, t('pVoteAt', { h: untilTxt(b.voteAt) }) + (left > 0 ? ' · ' + t('pLeft', { t: leftTxt(left) }) : '')),
+    h('h3', { class: 'ptitle' }, lawName(b.id, b.on)),
+    lawFxEl(b.id, b.on),
+    h('div', { class: 'pstreet' }, h('div', { class: 'row sp' }, h('span', null, t('pStreet')), h('b', { class: 'num' }, t('pStreetP', { p: b.op }))),
+      h('div', { class: 'pbar2', role: 'img', 'aria-label': t('pStreetP', { p: b.op }) }, h('i', { style: `width:${b.op}%` })),
+      h('small', { class: 'num' }, t('pStreetHow', { y: b.yes, n: b.no }))),
+    vote,
+    h('ul', { class: 'pstance' }, PARTY.map((k) => h('li', null, partyDot(k), h('span', null, t('party_' + k)), h('b', { class: c.by[k].y ? '' : 'muted' }, t(c.by[k].y ? 'pBlocY' : 'pBlocN'))))),
+    b.poll ? h('p', { class: 'ppoll num' }, t('pPoll', { lo: b.poll.lo, hi: Math.min(230, b.poll.hi), m: V.majority })) : h('p', { class: 'small muted' }, t('pPollSoon')),
+    lob);
+}
+function parlLaws(G) {
+  const pend = (G.pend || []).map((x) => h('li', null, h('b', null, lawName(x.id, x.on)), lawFxEl(x.id, x.on, 'p', 'small'), h('p', { class: 'small muted num' }, t(x.on ? 'pPendOn' : 'pPendOff', { h: untilTxt(x.atAt) }))));
+  const rows = G.laws.map((id) => h('li', null, h('b', null, t('law_' + id)), lawFxEl(id, true, 'p', 'small')));
+  return [h('section', { class: 'psect' }, h('h2', { class: 'sec' }, t('pLawsT')), rows.length ? h('ul', { class: 'plaws' }, rows) : h('p', { class: 'small muted' }, t('pLawsNone'))),
+    pend.length ? h('section', { class: 'psect' }, h('h2', { class: 'sec' }, t('pPendT')), h('ul', { class: 'plaws' }, pend)) : null];
+}
+// as últimas votações, como uma tabela do jornal: a lei, o resultado e os votos em coluna
+function parlLast(G) {
+  if (!G.last?.length) return null;
+  const P = (by, y) => PARTY.filter((k) => by && by[k] && by[k].bloc === y).map((k) => t('party_' + k)).join(', ');
+  return h('section', { class: 'psect' }, h('h2', { class: 'sec' }, t('pLastT')),
+    h('ul', { class: 'plast' }, G.last.map((x) => h('li', null,
+      h('div', { class: 'plast-h' }, h('b', null, lawName(x.id, x.on)), h('span', { class: 'num pres' }, x.yes + '–' + x.no)),
+      h('p', { class: 'small' }, h('b', { class: x.passed ? '' : 'muted' }, t(x.passed ? 'pPassed' : 'pFailed')), ' · ' + t('pLastLine', { p: x.op })),
+      h('p', { class: 'small muted' }, [P(x.by, true) && t('pBlocFor', { x: P(x.by, true) }), P(x.by, false) && t('pBlocAgainst', { x: P(x.by, false) })].filter(Boolean).join(' '))))));
+}
+function screenParl() {
+  const me = S.st.me, Wm = S.news?.mundo, G = Wm?.gov;
+  const out = [pageHead('parl', t('s_parl', { n: S.cfg.gov?.vote.minLevel || 5 }))];
+  if (!G || !S.cfg.gov) { out.push(h('p', { class: 'pempty' }, t('loading'))); return out; }
+  const c = G.bill ? billCalc(G.bill, G, Wm) : null;
+  out.push(G.bill ? parlBill(me, G.bill, G, Wm, c) : h('p', { class: 'note' }, t('pNoBill')), parlState(G), parlSeats(G, c), ...parlLaws(G), parlLast(G));
+  return out.filter(Boolean);
 }
 // o império: o que rende enquanto não estás, num só sítio
 function screenEmpire() {
@@ -2360,7 +2531,8 @@ function gearRow(me, g) {
   else {
     if (swap) extra = h('div', { class: 'small c-red' }, t('noRoomSwap'));
     // o botão tem o preço: é a etiqueta de uma loja
-    right = h('button', { class: 'btn sm ghost num', 'aria-label': t('buyAria', { x: t('g_' + g.id), m: money(g.price) }), disabled: cash < g.price || swap, on: { click: (e) => act('buy', { id: g.id }, { el: e.currentTarget }) } }, t('buy') + ' · ' + money(g.price));
+    const pr = gearP(g);   // v76: com a lei das armas livres, as de mão, principais e brancas ficam mais baratas
+    right = h('button', { class: 'btn sm ghost num', 'aria-label': t('buyAria', { x: t('g_' + g.id), m: money(pr) }), disabled: cash < pr || swap, on: { click: (e) => act('buy', { id: g.id }, { el: e.currentTarget }) } }, t('buy') + ' · ' + money(pr));
   }
   return h('div', { class: 'vrow jbr' + (lock && !worn ? ' dim' : '') }, art('gear', g.id, 'vth'),
     h('div', { class: 'grow' }, h('b', null, t('g_' + g.id)), h('div', { class: 'small' }, info), extra), right);
@@ -2385,6 +2557,7 @@ function screenArms() {
   const list2 = (rows) => h('div', { class: 'card vlist vc jbl' }, rows);
   if (seg === 'fight') {
     out.push(h('div', { class: 'armsum row sp' }, h('span', null, t('arAtkNow')), h('b', { class: 'num' }, plusPct(me.atkBp || 0))), sub(t('arFightSub')));
+    if (lawIs('armas')) out.push(h('p', { class: 'small c-cash', style: 'margin:-4px 2px 10px' }, t('pArmsLaw', { p: 100 - S.cfg.gov.laws.armas.priceBp / 100 })));
     for (const sl of ['branca', 'mao', 'principal']) out.push(h('h2', { class: 'sec' }, t('sl_' + sl)), list2(G.filter((g) => g.slot === sl).map((g) => gearRow(me, g))));
     // balas: às caixas; sem espaço no inventário só se juntam às que já tens
     const have = invN(me, 'balas'), room = have > 0 || !invFull(me);
@@ -3964,7 +4137,7 @@ fx.setMusic(store.get('music', true));
 // os avatares só aparecem quando as imagens existirem no servidor
 { const pr = new Image(); pr.onload = () => { S.avOk = true; if (S.st?.me && $main) { shell(); render(); } }; pr.src = '/img/av/0.webp?1'; }
 setInterval(tickHud, 1000);
-setInterval(() => { if (S.st && document.visibilityState === 'visible') { refresh(); loadEvents(false); if (S.tab === 'news' || S.tab === 'city') loadNews(); } }, 30000);
+setInterval(() => { if (S.st && document.visibilityState === 'visible') { refresh(); loadEvents(false); if (S.tab === 'news' || S.tab === 'city' || S.tab === 'parl') loadNews(); } }, 30000);
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && S.st) refresh(); });
 // abre o jogo; uma falha passageira do servidor leva uma segunda tentativa e, se continuar, um aviso (nunca um ecrã calado)
 async function startSafe() {

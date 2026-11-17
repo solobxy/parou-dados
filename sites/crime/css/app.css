@@ -2869,3 +2869,76 @@ body.preso .phead .pbar .back { visibility: hidden; }
   .jsc, .jsc-card, .pc2, .pc2-in, .tlm, .luvas, .jsc-hole, .jsc-foot { transition: none !important; }
   .patio.hit .luvas, .patio.hit::after, .ofi.slam .jsc-press, .fuga.dig .colher, .fuga.caught .jsc-siren, .contra.caught .jsc-torch { animation: none !important; }
 }
+
+/* =====================================================================================================
+   v76: o Parlamento. Uma folha de papel do Estado: a proposta em cima (é o que se faz aqui), o hemiciclo como
+   o único desenho do ecrã, e o resto em fichas de texto. Cada partido tem uma cor própria, longe do verde, do
+   vermelho e do amarelo que no jogo querem dizer bom, mau e respeito; o nome vai sempre ao lado da cor.
+   ===================================================================================================== */
+.pt-rv { fill: #d887ae; background: #d887ae; } .pt-cm { fill: #dad0bb; background: #dad0bb; }
+.pt-ml { fill: #69aed5; background: #69aed5; } .pt-op { fill: #b77d56; background: #b77d56; }
+@supports (color: oklch(0 0 0)) {
+  .pt-rv { fill: oklch(.72 .11 350); background: oklch(.72 .11 350); } .pt-cm { fill: oklch(.86 .03 85); background: oklch(.86 .03 85); }
+  .pt-ml { fill: oklch(.72 .09 235); background: oklch(.72 .09 235); } .pt-op { fill: oklch(.64 .09 55); background: oklch(.64 .09 55); }
+}
+.pdot { display: inline-block; width: 10px; height: 10px; border-radius: 1px; flex: none; }
+.psect { margin-top: 4px; }
+.pbill { padding: 16px; display: grid; gap: 10px; }
+.pbill > p { margin: 0; }
+.pkick { font: 600 15px/1.3 var(--ui); color: var(--tx2); }
+.ptitle { font: 600 32px/1.02 var(--disp); margin: 0; text-wrap: balance; }
+.pstreet { display: grid; gap: 6px; }
+.pbar2 { position: relative; height: 8px; background: var(--s3); border-radius: 1px; }
+.pbar2::after { content: ''; position: absolute; left: 50%; top: -4px; bottom: -4px; width: 1px; background: var(--tx2); }   /* a meio: metade a favor */
+.pbar2 i { display: block; height: 100%; background: var(--tx); border-radius: 1px; transition: width .3s var(--ease-out); }
+.pstance { list-style: none; margin: 0; padding: 0; display: grid; gap: 0; }
+.pstance li { display: flex; align-items: center; gap: 8px; padding: 7px 0; border-top: 1px solid #ece6da14; font-size: 15px; }
+.pstance li b { margin-left: auto; font-weight: 650; }
+.ppoll { font-weight: 650; }
+.pvote { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.pvote .btn { width: 100%; }
+.pvote > div { display: grid; gap: 4px; text-align: center; align-content: start; }
+.pvote small, .pstreet small { font-size: 14px; color: var(--tx2); }
+.pvhow { margin-top: -2px !important; }
+.pvoted { color: var(--tx2); font-weight: 600; }
+/* o dinheiro fica abaixo de um picotado, como um cupão que se destaca */
+.plob { display: grid; gap: 8px; margin-top: 6px; padding-top: 14px; border-top: 1px dashed #ece6da33; }
+.plob h3 { font: 600 20px/1.2 var(--disp); margin: 0; }
+.plob p { margin: 0; }
+.seg.plob-amt { margin: 2px 0 0; }
+.seg.plob-amt button { font-size: 15px; padding: 0 4px; min-width: 0; }
+.hemi { margin: 0 0 4px; text-align: center; }
+.hemi svg { display: block; width: 100%; max-width: 360px; margin: 0 auto; }
+.hemi-n { font: 600 26px var(--disp); fill: var(--tx); }
+.hemi-n.no { fill: var(--tx2); }
+.hemi circle.off { opacity: .26; }
+.hemi figcaption { color: var(--tx2); margin-top: 2px; }
+.plegend { list-style: none; margin: 8px 0 0; padding: 0; }
+.plegend li { display: grid; grid-template-columns: 10px 1fr; gap: 10px; align-items: baseline; padding: 10px 0; border-top: 1px solid #ece6da14; }
+.plegend li .pdot { transform: translateY(1px); }
+.plegend p { margin: 2px 0 0; }
+.pstate { display: grid; gap: 10px; }
+.pstate p { margin: 0; }
+.pfig { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; padding: 8px 0; border-bottom: 1px solid #ece6da14; }
+.pfig:first-child { padding-top: 0; }
+.pfig-l { color: var(--tx2); font-size: 15px; }
+.pfig-l small { font-size: 14px; }
+.pfig-v { display: flex; align-items: baseline; gap: 8px; }
+.pfig-v b { font: 600 28px/1 var(--disp); }
+.pfig-v b i { font: 600 15px var(--ui); font-style: normal; color: var(--tx2); margin-left: 1px; }
+.pfig-v small { font-size: 14px; color: var(--tx2); }
+.plaws, .plast { list-style: none; margin: 0; padding: 0; display: grid; gap: 0; }
+.plaws { background: var(--s1); border-radius: var(--rc); box-shadow: inset 0 1px 0 #ece6da0d; }
+.plaws li { padding: 12px 14px; border-top: 1px solid #ece6da14; display: grid; gap: 3px; }
+.plaws li:first-child { border-top: 0; }
+/* as votações: uma tabela de jornal, sem caixa, com os votos em coluna */
+.plast { border-top: 2px solid #ece6da33; }
+.plast li { padding: 10px 0; border-bottom: 1px solid #ece6da1a; display: grid; gap: 2px; }
+.plast-h { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+.plast-h .pres { font: 600 20px/1 var(--disp); }
+.plaws p, .plast p { margin: 0; }
+.ppend b { color: var(--tx); }
+.ppend p { color: var(--tx2); }
+
+.tile .bdg.neu { color: var(--tx); }   /* «Vota»: não é ganho, não vai a verde */
+.pmore { font-size: 14px; }

@@ -45,7 +45,7 @@ function melhor(p, m, now, sellAt) {
     const risk = E.mvRiskBp(m.w, a, b) / 10000;
     for (const d of DRUGS) {
       if (!podeComprar(p, d)) continue;
-      const D = M.depthU(a, d), free = Math.min(E.whFree(p, b), 1e7);
+      const D = M.depthU(a, d, m.w), free = Math.min(E.whFree(p, b), 1e7);
       let last = 0;
       for (let f = 1; f <= 60; f++) {
         const n = Math.min(free, Math.floor((D * f) / 200));   // de 0,5% em 0,5% da profundidade de onde se compra
@@ -93,10 +93,10 @@ function epoca(e, cenario) {
       else if (cenario.modo === 'cega') {
         vendeTudo(p, m, now);
         const a = REG[dec.int(0, REG.length - 1)], b = REG.filter((x) => x !== a)[dec.int(0, REG.length - 2)], d = DRUGS[dec.int(0, DRUGS.length - 1)];
-        const n = Math.max(1, Math.floor((M.depthU(a, d) * dec.int(1, 10)) / 100));
+        const n = Math.max(1, Math.floor((M.depthU(a, d, m.w) * dec.int(1, 10)) / 100));
         if (n <= E.whFree(p, b)) { E.mktBuy(p, now, WORLD, m, a, d, n); E.mvSend(p, now, WORLD, m, dec, a, b, d, n); }
       } else if (cenario.modo === 'mesma') {
-        const r = REG[dec.int(0, REG.length - 1)], d = DRUGS[dec.int(0, DRUGS.length - 1)], n = Math.max(1, Math.floor((M.depthU(r, d) * dec.int(1, 10)) / 100));
+        const r = REG[dec.int(0, REG.length - 1)], d = DRUGS[dec.int(0, DRUGS.length - 1)], n = Math.max(1, Math.floor((M.depthU(r, d, m.w) * dec.int(1, 10)) / 100));
         E.mktBuy(p, now, WORLD, m, r, d, n); E.mktSell(p, now, WORLD, m, r, d, n);
       } else if (cenario.modo === 'monte') {
         // compra coca no Alentejo até ter cenario.monte € à vista e fica com ela (sem a vender)

@@ -11,6 +11,11 @@ export class GameError extends Error {
   constructor(code, extra = {}) { super(code); this.code = code; Object.assign(this, extra); }
 }
 const fail = (code, extra) => { throw new GameError(code, extra); };
+// v76: o Estado (leis em vigor e corrupção). O servidor põe-no antes de cada ação e de cada edição; sem nada, nenhuma lei está em vigor.
+let GOV = { laws: {}, corr: 0 };
+export function setGov(g) { GOV = g && typeof g === 'object' ? { laws: g.laws || {}, corr: g.corr || 0 } : { laws: {}, corr: 0 }; }
+const law = (id) => GOV.laws[id] !== undefined && GOV.laws[id] !== null;
+export const lawsOn = () => Object.keys(GOV.laws);
 const clamp = (x, lo, hi) => (x < lo ? lo : x > hi ? hi : x);
 export const STATS = ['F', 'T', 'I', 'C'];
 
@@ -496,15 +501,16 @@ export function bustChanceBp(p, now, press) {
 }
 // ---------- casa ----------
 // a casa seguinte paga-se com a antiga na troca, pelo que ela custou
-export function housePrice(p) { const n = CFG.house.tiers[p.house + 1]; return n ? n.price - CFG.house.tiers[p.house].price : null; }
+const luxTax = (x) => (law('luxo') ? Math.floor((x * CFG.gov.laws.luxo.bp) / 10000) : 0);   // v76: o imposto de luxo vai para os cofres
+export function housePrice(p) { const n = CFG.house.tiers[p.house + 1]; if (!n) return null; const x = n.price - CFG.house.tiers[p.house].price; return x + luxTax(x); }
 export function buyHouse(p, now, world) {
   begin(p, now, world, { allowBusy: true });
   const n = CFG.house.tiers[p.house + 1];
   if (!n) fail('HOUSE_MAX');
-  const price = housePrice(p);
+  const price = housePrice(p), base = n.price - CFG.house.tiers[p.house].price;
   pay(p, price);
   p.house += 1;
-  return { ok: true, price, respect: n.resp, levelUp: addRespect(p, n.resp, now) };
+  return { ok: true, price, tax: price - base, respect: n.resp, levelUp: addRespect(p, n.resp, now) };
 }
 export function upgradePrice(p, u) {
   const g = CFG.house.ups[u], n = CFG.house.tiers[p.hu[u] + 1];
@@ -692,7 +698,13 @@ export function bailCost(p, now) {
   const c = CFG.crimes[p.jailTier - 1] || CFG.crimes[CFG.crimes.length - 1];
   const left = p.jailUntil - now, total = c.jailMin * T.MIN;
   const full = cut(c.fine, klass(p).bailCutBp || 0);
-  return Math.max(1, Math.ceil((full * Math.min(left, total)) / total));
+  return govBail(Math.max(1, Math.ceil((full * Math.min(left, total)) / total)));
+}
+// v76: com penas pesadas a fiança é ×1,5; a corrupção alta torna-a mais barata (até −30% com 100)
+function govBail(x) {
+  let y = law('penas') ? Math.ceil((x * CFG.gov.laws.penas.bailBp) / 10000) : x;
+  y = Math.ceil((y * (10000 - Math.floor((CFG.gov.corr.bailCutMax * Math.min(100, GOV.corr || 0)) / 100))) / 10000);
+  return Math.max(1, y);
 }
 
 export function payBail(p, now, world) {
@@ -892,7 +904,7 @@ const courseOf = (id) => CFG.courses.find((c) => c.id === id);
 export const jobOpen = (p, i) => { const x = jobOf(i); return !!x && (!x.course || p.done.includes(x.course)); };
 export function shiftsToday(p, now) { return p.sh && p.sh.d === dayOf(now) ? p.sh.n : 0; }
 // o que paga o turno n (1 a 6) de um emprego: os seis somam exatamente o dia
-export function shiftPay(x, n) { const P = CFG.jobs.perDay; return Math.floor((x.day * n) / P) - Math.floor((x.day * (n - 1)) / P); }
+export function shiftPay(x, n) { const P = CFG.jobs.perDay, v = Math.floor((x.day * n) / P) - Math.floor((x.day * (n - 1)) / P); return law('salario') ? Math.floor((v * (10000 + CFG.gov.laws.salario.bp)) / 10000) : v; }
 
 export function chooseJob(p, now, world, i) {
   const x = jobOf(i);
@@ -1681,7 +1693,7 @@ function settleMoves(p, now) {
     if (v.x === 2) {
       if (famOf(v.d) === 'pesada' && !(p.hospUntil > v.at)) { jailAt(p, v.at); jail = true; }
     } else {
-      if (v.x === 1) { fine = Math.min(p.cash + p.bank, Math.floor((val * W.fineBp) / 10000)); takeMoney(p, fine); }
+      if (v.x === 1 && !(law('erva') && famOf(v.d) === 'leve')) { fine = Math.min(p.cash + p.bank, Math.floor((val * W.fineBp) / 10000)); takeMoney(p, fine); }
       if (p.wh[v.b]) { whStock(p, v.b)[v.d] += v.n; heatAdd(p, v.b, val); }
     }
     p.mvLog.push({ d: v.d, n: v.n, a: v.a, b: v.b, at: v.at, x: v.x, fine, jail, v: val });
@@ -1714,7 +1726,9 @@ function raid(p, r, at, bp) {
   let vis = 0, seized = 0, heavy = false;
   s.forEach((n, d) => {
     if (!(n > 0) || !tradable(d)) return;
-    const v = n - whHidden(p, r, d); vis += v * refC(d);
+    const v = n - whHidden(p, r, d);
+    if (famOf(d) === 'leve' && law('erva')) return;   // v76: legalizada, nem conta para a multa
+    vis += v * refC(d);
     if (famOf(d) === 'leve' || v <= 0) return;
     const k = Math.floor((v * W.takeBp) / 10000); if (k <= 0) return;
     s[d] -= k; seized += k * refC(d); took.push([d, k]); if (famOf(d) === 'pesada') heavy = true;
@@ -1906,17 +1920,18 @@ export function withdraw(p, now, world, amount) {
 // ---------- luxos ----------
 
 // pela ordem da lista; cada um dá uma vez a raiz quadrada do preço em respeito
-export function luxuryPrice(p) { const x = CFG.luxury.list[p.luxuries]; return x ? x.price : null; }
+export function luxuryPrice(p) { const x = CFG.luxury.list[p.luxuries]; return x ? x.price + luxTax(x.price) : null; }
 export const luxuryRespect = (price) => Math.floor(Math.sqrt(price));
 export function buyLuxury(p, now, world) {
   begin(p, now, world);
   const price = luxuryPrice(p);
   if (price === null) fail('LUXURY_MAX');
+  const base = CFG.luxury.list[p.luxuries].price;
   pay(p, price);
   p.luxuries += 1;
-  const resp = luxuryRespect(price);
+  const resp = luxuryRespect(base);   // o respeito é o do luxo, não o do imposto
   const lvl = addRespect(p, resp, now);
-  return { ok: true, price, respect: resp, levelUp: lvl };
+  return { ok: true, price, tax: price - base, respect: resp, levelUp: lvl };
 }
 
 // ---------- armas e proteções ----------
@@ -1968,6 +1983,8 @@ function takeInv(p, id, n) {
   if (p.inv[i].n <= 0) p.inv.splice(i, 1);
 }
 // comprar: balas (às caixas) ou uma peça de equipamento. A peça vai logo para o corpo; a que lá estava passa para o inventário.
+// v76: com o porte de arma, as armas (mão, principal e branca) ficam 15% mais baratas
+export const gearPrice = (g) => (law('armas') && ['mao', 'principal', 'branca'].includes(g.slot) ? Math.ceil((g.price * CFG.gov.laws.armas.priceBp) / 10000) : g.price);
 export function buyItem(p, now, world, id, n = 1) {
   if (id === 'balas') {
     if (!Number.isSafeInteger(n) || n < 1 || n > 100) fail('BAD_AMOUNT');
@@ -1992,10 +2009,11 @@ export function buyItem(p, now, world, id, n = 1) {
   }
   const old = p.eq[g.slot];
   if (old && !roomFor(p)) fail('NO_ROOM');   // a que estava no corpo tem de caber no inventário
-  pay(p, g.price);
+  const price = gearPrice(g);
+  pay(p, price);
   if (old) p.inv.push(old);
   p.eq[g.slot] = itemNew(id);
-  return { ok: true, id, price: g.price, slot: g.slot, swapped: old ? old.id : null };
+  return { ok: true, id, price, slot: g.slot, swapped: old ? old.id : null };
 }
 // vestir/usar uma peça do inventário: troca com a que está no corpo (que fica no lugar dela)
 export function equip(p, now, world, i) {
@@ -2055,7 +2073,7 @@ export function launder(p, gross) {
   if (!(gross > 0)) return { net: gross, lav: 0 };
   const free = Math.max(0, L.freeUpTo - p.ilegal), taxed = Math.max(0, gross - free);
   p.ilegal += gross;
-  const lav = Math.floor((taxed * (p.done.includes(L.course) ? L.courseBp : L.bp)) / 10000);
+  const lav = Math.floor((taxed * ((p.done.includes(L.course) ? L.courseBp : L.bp) + (law('branq') ? CFG.gov.laws.branq.addBp : 0))) / 10000);   // v76: lei do branqueamento
   return { net: gross - lav, lav };
 }
 const opCut = (o, bp, min = 0) => Math.max(min, Math.ceil((o.gain * bp) / 10000));
@@ -2121,6 +2139,7 @@ export function opDrop(p, now, world) {
   return { ok: true, lost };
 }
 function jailFor(p, now, ms, tier) {
+  if (law('penas')) ms = Math.floor((ms * CFG.gov.laws.penas.jailBp) / 10000);   // v76: penas pesadas
   const cut = p.avenca && level(p) >= CFG.retainer.level ? CFG.retainer.jailCutBp : 0;
   p.jailUntil = now + Math.max(T.MIN, Math.floor((ms * (10000 - cut)) / 10000)); p.jailTier = tier; p.jailT0 = now; p.jf = 0;
 }
@@ -2258,6 +2277,25 @@ export function jailEscape(p, now, world, rng) {
   const add = Math.floor(((p.jailUntil - now) * J.escapeAddBp) / 10000);
   p.jailUntil += add;
   return { ok: true, free: false, add, jailUntil: p.jailUntil };
+}
+
+// ---------- parlamento (v76) ----------
+// votar: nível mínimo e conta com um dia ou mais (as contas novas não contam). O voto em si guarda-se no mundo (servidor).
+export function govVoteCheck(p, now, world) {
+  begin(p, now, world, { allowBusy: true });
+  const V = CFG.gov.vote;
+  if (level(p) < V.minLevel) fail('LOW_LEVEL', { need: V.minLevel });
+  if (now - (p.joinedAt || now) < V.minAgeMs) fail('YOU_ARE_NEW');
+  return { ok: true };
+}
+// pôr dinheiro num dos lados de uma votação: sai do jogo (campanha, almoços, favores)
+export function govLobby(p, now, world, amount) {
+  const V = CFG.gov.vote;
+  if (!Number.isSafeInteger(amount) || amount < V.minLobby || amount > 1e12) fail('BAD_AMOUNT');
+  begin(p, now, world, { allowBusy: true });
+  if (level(p) < V.minLevel) fail('LOW_LEVEL', { need: V.minLevel });
+  pay(p, amount);
+  return { ok: true, amount };
 }
 
 // ---------- ataques ----------

@@ -76,7 +76,7 @@ function contas(kind, a0, a, d0, d, t, res, arg) {
     case 'buy': {
       if (arg.id === 'balas') { if (dm !== -arg.n * CFG.bullets.price || balas(a) - balas(a0) !== arg.n * CFG.bullets.box) bad('balas'); }
       else if (CFG.gear.find((x) => x.id === arg.id).slot === 'mat') { if (dm !== -CFG.gear.find((x) => x.id === arg.id).price || a.inv.length - a0.inv.length !== 1 || a.inv.filter((x) => x.id === arg.id).length !== 1) bad('compra de material'); }
-      else { const g = CFG.gear.find((x) => x.id === arg.id); if (dm !== -g.price || a.eq[g.slot].id !== arg.id || a.inv.length - a0.inv.length !== (a0.eq[g.slot] ? 1 : 0)) bad('compra de equipamento'); }
+      else { const g = CFG.gear.find((x) => x.id === arg.id); if (dm !== -E.gearPrice(g) || res.price !== E.gearPrice(g) || a.eq[g.slot].id !== arg.id || a.inv.length - a0.inv.length !== (a0.eq[g.slot] ? 1 : 0)) bad('compra de equipamento'); }
       if (E.invUsed(a) > E.invCap(a) && E.invUsed(a) > E.invUsed(a0)) bad('inventário acima dos espaços');
       if (dr !== 0) bad('compra mexeu no respeito');
       break;
@@ -124,6 +124,8 @@ function contas(kind, a0, a, d0, d, t, res, arg) {
       break;
     }
     case 'job': if (dm !== 0 || dr !== 0 || !E.jobOpen(a, a.job)) bad('emprego'); break;
+    case 'govVote': if (dm !== 0 || dr !== 0 || E.level(a0) < CFG.gov.vote.minLevel) bad('voto'); break;
+    case 'govLobby': if (dm !== -arg || arg < CFG.gov.vote.minLobby || dr !== 0 || E.level(a0) < CFG.gov.vote.minLevel) bad('dinheiro no parlamento'); break;
     case 'course': { const c = CFG.courses.find((x) => x.id === arg); const b0 = touched(a0, t); if (dm !== -c.price || dr !== 0 || a.course.id !== arg || b0.done.includes(arg) || b0.course) bad('curso'); break; }
     case 'refill': if (dm !== -res.price || res.price < 1 || a.energy !== E.energyMax(a) || dr !== 0 || a.addiction !== touched(a0, t).addiction) bad('barra a droga'); break;
     case 'casino': {
@@ -208,7 +210,8 @@ function contas(kind, a0, a, d0, d, t, res, arg) {
       const vv = E.venueView(d0, Math.max(t, d0.t));
       const max = Math.floor((d0.cash * CFG.pvp.mugBp) / 10000) + E.bizStored(d0, t).reduce((x, y, i) => x + (CFG.biz[i].raid ? Math.floor((y.money * CFG.pvp.mugBp) / 10000) : 0), 0) + ['club', 'bro'].reduce((x, k) => x + (vv[k] ? Math.floor((vv[k].till * CFG.pvp.mugBp) / 10000) : 0), 0);
       if (dm < 0 || dm > max || wealth(d) > wealth(d0) || d.bank !== d0.bank) bad('assalto');
-      if (d0.cash - d.cash > dm) bad('o alvo perdeu mais do que o atacante ganhou');
+      // o alvo é posto em dia antes do ataque (uma carga que a polícia parou paga a multa nesse momento): isso não é do ataque
+      if (touched(d0, t).cash - d.cash > dm) bad('o alvo perdeu mais do que o atacante ganhou');
       if (E.sameCrew(a0, d0)) bad('atacou a própria gangue');
       if (res.win && res.mode === 'mug' && wealth(d0) - wealth(d) + ['club', 'bro'].reduce((x, k) => x + (vv[k] ? vv[k].till - d[k].till : 0), 0) + E.bizStored(d0, t).reduce((x, y, i) => x + y.money - d.biz[i].stored, 0) !== dm) bad('o que saiu do alvo não é o que entrou no atacante');
       if (res.win && res.mode === 'mug' && dm !== res.money) bad('saque diferente do resultado');
@@ -251,7 +254,8 @@ function contas(kind, a0, a, d0, d, t, res, arg) {
       if (dm !== -res.price - (res.rob ? res.rob.loss : 0) || (res.rob && !(res.rob.loss > 0 && res.rob.loss <= 5 * E.hookerPrice(a0, res.i, t))) || dr !== 0 || d.bro.till !== v.bro.till + res.house || wealth(d) !== wealth(d0) || d.respect !== d0.respect) bad('visita ao bordel de outro');
       if (res.house < 0 || res.house * 3 > res.price + 3 || d0.bro.girls[arg] !== res.i) bad('parte da casa no bordel');
       break; }
-    case 'luxury': if (dm !== -res.price || dr !== Math.floor(Math.sqrt(res.price)) || res.price !== CFG.luxury.list[a0.luxuries].price) bad('luxo'); break;
+    case 'luxury': { const base = CFG.luxury.list[a0.luxuries].price, tax = E.lawsOn().includes('luxo') ? Math.floor((base * CFG.gov.laws.luxo.bp) / 10000) : 0;   // v76: imposto do luxo
+      if (dm !== -res.price || dr !== Math.floor(Math.sqrt(base)) || res.price !== base + tax || (res.tax || 0) !== tax) bad('luxo'); break; }
     case 'house': if (dm !== -res.price || dr !== res.respect) bad('casa'); break;
     case 'workStart': if (dm !== 0 || dr !== 0 || !a.tk || a.tk.id !== res.task.id) bad('biscate: começar'); break;
     case 'workDone': if (res.shift) { if (dm !== res.money || dr !== CFG.jobs.resp || a.tk || res.money > Math.ceil((E.shiftPay(CFG.jobs.list[a.job], res.n) * CFG.jobs.qMax) / 10000)) bad('turno à mão'); break; }
@@ -317,14 +321,18 @@ for (let n = 0; n < ACTIONS; n++) {
     if (o.gun) { if (!p.eq.mao) p.eq.mao = { id: 'pistola', u: 20 }; const b = p.inv.find((x) => x.id === 'balas'); if (b) b.n += 50; else p.inv.push({ id: 'balas', n: 50 }); }
   }
   if (p.tk && r.chance(7000)) p.tk.t0 = Math.min(p.tk.t0, t - r.int(0, 30000));   // o biscate a meio: às vezes já passou o tempo mínimo
+  // v76: as leis do Estado mudam de vez em quando (qualquer combinação, qualquer corrupção), antes das fotografias de antes; as contas têm de bater na mesma
+  if (r.chance(200)) E.setGov(r.chance(3000) ? null : { laws: Object.fromEntries(Object.keys(CFG.gov.laws).filter(() => r.chance(4000)).map((id) => [id, 1])), corr: r.int(0, 100) });
   const before = touched(p, t), beforeD = touched(d, t), origD = structuredClone(d), origP = structuredClone(p);
-  const kind = pick(['stockBuy', 'stockBuy', 'stockBuy', 'stockSell', 'stockSell', 'missionSwap', 'venueBuy', 'venueBuy', 'venueSet', 'venueCollect', 'stockUse', 'stockUse', 'stockDump', 'broHire', 'broHire', 'broFire', 'clubBuyAt', 'clubBuyAt', 'clubBuyAt', 'broVisitAt', 'broVisitAt', 'broVisitAt', 'casino', 'casino', 'table', 'heist', 'hit', 'gangCreate', 'gangDonate', 'gangLeave', 'gangBiz', 'gangBiz', 'gangBiz', 'gangBizCollect', 'hitman', 'hitman', 'hitman', 'crime', 'crime', 'crimeAll', 'deal', 'deal', 'dealBuy', 'drug', 'refill', 'detox', 'claim', 'class', 'classChange', 'classChange', 'air', 'air', 'airCollect', 'airCollect', 'bailFor', 'bailFor', 'medicFor', 'medicFor', 'avatar', 'hooker', 'cure', 'house', 'houseUp', 'train', 'buyBiz', 'buyBiz', 'collect', 'bizGoods', 'bizGoods', 'stockHold', 'stockHold', 'acct', 'stockLimit', 'stockLimit', 'stockLimit', 'port', 'collectPort', 'portOpen', 'portOpen', 'deposit', 'withdraw', 'gear', 'attack', 'bail', 'medic', 'luxury', 'shift', 'shift', 'shift', 'job', 'course', 'buy', 'buy', 'buy', 'buy', 'equip', 'sell', 'sellGoods', 'sellGoods', 'repair', 'repair', 'opStart', 'opStart', 'opStep', 'opStep', 'opGo', 'opGo', 'opGo', 'opDrop', 'retainer', 'jailSmuggle', 'jailWork', 'jailYard', 'jailCards', 'jailFavor', 'jailEscape', 'whBuy', 'whBuy', 'whUp', 'whUp', 'mktBuy', 'mktBuy', 'mktBuy', 'mktSell', 'mktSell', 'mvSend', 'mvSend', 'mvSend', 'whEdition', 'workStart', 'workStart', 'workDone', 'workDone', 'workDone']);
+  const kind = pick(['stockBuy', 'stockBuy', 'stockBuy', 'govVote', 'govLobby', 'govLobby', 'stockSell', 'stockSell', 'missionSwap', 'venueBuy', 'venueBuy', 'venueSet', 'venueCollect', 'stockUse', 'stockUse', 'stockDump', 'broHire', 'broHire', 'broFire', 'clubBuyAt', 'clubBuyAt', 'clubBuyAt', 'broVisitAt', 'broVisitAt', 'broVisitAt', 'casino', 'casino', 'table', 'heist', 'hit', 'gangCreate', 'gangDonate', 'gangLeave', 'gangBiz', 'gangBiz', 'gangBiz', 'gangBizCollect', 'hitman', 'hitman', 'hitman', 'crime', 'crime', 'crimeAll', 'deal', 'deal', 'dealBuy', 'drug', 'refill', 'detox', 'claim', 'class', 'classChange', 'classChange', 'air', 'air', 'airCollect', 'airCollect', 'bailFor', 'bailFor', 'medicFor', 'medicFor', 'avatar', 'hooker', 'cure', 'house', 'houseUp', 'train', 'buyBiz', 'buyBiz', 'collect', 'bizGoods', 'bizGoods', 'stockHold', 'stockHold', 'acct', 'stockLimit', 'stockLimit', 'stockLimit', 'port', 'collectPort', 'portOpen', 'portOpen', 'deposit', 'withdraw', 'gear', 'attack', 'bail', 'medic', 'luxury', 'shift', 'shift', 'shift', 'job', 'course', 'buy', 'buy', 'buy', 'buy', 'equip', 'sell', 'sellGoods', 'sellGoods', 'repair', 'repair', 'opStart', 'opStart', 'opStep', 'opStep', 'opGo', 'opGo', 'opGo', 'opDrop', 'retainer', 'jailSmuggle', 'jailWork', 'jailYard', 'jailCards', 'jailFavor', 'jailEscape', 'whBuy', 'whBuy', 'whUp', 'whUp', 'mktBuy', 'mktBuy', 'mktBuy', 'mktSell', 'mktSell', 'mvSend', 'mvSend', 'mvSend', 'whEdition', 'workStart', 'workStart', 'workDone', 'workDone', 'workDone']);
   let res, arg;
   try {
     switch (kind) {
       case 'crime': arg = r.chance(9000) ? r.int(0, CFG.crimes.length) : anyInt(); res = E.doCrime(p, t, world, arg, game); break;
       case 'deal': arg = r.chance(9000) ? r.int(0, CFG.deal.list.length) : anyInt(); res = E.deal(p, t, world, arg); break;
       case 'shift': res = E.doShift(p, t, world); break;
+      case 'govVote': res = E.govVoteCheck(p, t, world); break;
+      case 'govLobby': arg = pick([100, 1000, 50000, 99, 0, -5, 0.5, 2e12, anyInt()]); res = E.govLobby(p, t, world, arg); break;
       case 'buy': arg = r.chance(3000) ? { id: 'balas', n: pick([1, 1, 2, 5, 0, -1, 101, 0.5]) } : { id: r.chance(9500) ? pick(CFG.gear).id : 'x' + r.int(0, 9) }; res = E.buyItem(p, t, world, arg.id, arg.n); break;
       case 'equip': arg = r.chance(9000) ? r.int(0, Math.max(0, p.inv.length - 1)) : anyInt(); res = E.equip(p, t, world, arg); break;
       case 'sell': arg = r.chance(9000) ? r.int(0, Math.max(0, p.inv.length - 1)) : anyInt(); res = E.sellItem(p, t, world, arg); break;

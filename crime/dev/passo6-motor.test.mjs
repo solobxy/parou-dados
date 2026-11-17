@@ -35,7 +35,8 @@ test('Lisboa: a criminalidade sobe com o que os jogadores fazem, a pressão vai 
   M.runEdition(m, ed + 2, rng);
   assert.equal(m.w.lx.press, c1, 'uma edição depois, a pressão é a criminalidade da edição anterior');
   for (let i = 3; i < 20; i++) M.runEdition(m, ed + i, rng);
-  assert.ok(m.w.lx.crime <= CFG.world.lx.floor + 1, 'sem nada, volta à rua calma');
+  // (v76: se o parlamento entretanto aprovou o porte de arma, a rua calma fica 5 pontos acima)
+  assert.ok(m.w.lx.crime <= CFG.world.lx.floor + 1 + (m.w.gov.laws.armas !== undefined ? CFG.gov.laws.armas.crime : 0), 'sem nada, volta à rua calma');
   // a pressão mexe na hipótese de ser apanhado ao falhar um golpe: 50 é a do modelo
   const p = E.newPlayer('x', T0, { start: T0 - 1, playEnd: T0 + 1e10 });
   assert.equal(E.bustChanceBp(p, T0), CFG.bustBp); assert.equal(E.bustChanceBp(p, T0, 50), CFG.bustBp);

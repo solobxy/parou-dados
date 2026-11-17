@@ -12,6 +12,7 @@ import * as E from './engine/engine.js';
 import { cryptoRng, seededRng } from './engine/rng.js';
 import { localParts, lisbonToUtc, seasonAt, seasonBounds } from './engine/time.js';
 import * as MW from './engine/mundo.js';
+import * as GV from './engine/governo.js';
 
 const PORT = +(process.env.PORT || 3170);
 const DATA = process.env.DATA || process.env.STATE_DIRECTORY || './dados';
@@ -26,7 +27,7 @@ const RONDA_TESTE = process.env.PRIMEIRA_RONDA ? dataDe(process.env.PRIMEIRA_RON
 // Épocas de 28 dias a contar da sexta 13/11/2026 às 21:00 de Lisboa (PRIMEIRA_EPOCA=AAAA-MM-DD muda-a, para testes)
 const ANCORA = dataDe(process.env.PRIMEIRA_EPOCA || process.env.PRIMEIRA_RONDA || '2026-11-13');
 const rng = process.env.TESTE_SEMENTE ? seededRng(+process.env.TESTE_SEMENTE) : cryptoRng();   // nos testes, a sorte pode ser sempre a mesma
-const VERSAO = 75;   // sobe quando o servidor muda, para se confirmar de fora que a versão nova já está a correr
+const VERSAO = 76;   // sobe quando o servidor muda, para se confirmar de fora que a versão nova já está a correr
 const ATOS_3S = +(process.env.ATOS_3S || 15), ATOS_MIN = +(process.env.ATOS_MIN || 400); // ações por conta: 15 em 3 s, 400 por minuto
 
 // ---------- relógio que nunca anda para trás ----------
@@ -175,7 +176,12 @@ const GASTO = { detox: 'farma', cure: 'farma', medic: 'farma', medicFor: 'farma'
 // a droga comprada, vendida, desembarcada ou mudada de região conta para a criminalidade dessa região (1 ponto por cada 20 €)
 const MEXE_MUNDO = new Set(['stockBuy', 'stockSell', 'mktBuy', 'mktSell', 'stockDump', 'mvSend', 'portOpen', 'collect', 'airCollect']);
 const pontos = (r, v) => { if (r && v > 0) mundoAcc(r, v / CFG.regions.ptsEur); };
-function contarMundo(a, r, delta) {
+function contarMundo(a, r, delta, p) {
+  // v76: conta quem jogou nesta edição, uma vez cada (é a gente do mundo; a edição não percorre os jogadores)
+  if (p && bolsa && bolsa.w && a.type !== 'avatar' && p.edA !== bolsa.w.ed) { p.edA = bolsa.w.ed; mundoAcc('n', 1); }
+  // o que foi para o Estado nesta ação: fianças, comissões da bolsa e impostos das leis (os cofres contam-no na edição)
+  const imposto = (a.type === 'bail' || a.type === 'bailFor' ? r.cost || 0 : 0) + (a.type === 'stockBuy' || a.type === 'stockSell' ? r.fee || 0 : 0) + (r.tax || 0);
+  if (imposto > 0) mundoAcc('tax', imposto);
   if (a.type === 'mktBuy' || a.type === 'mktSell') pontos(r.r, r.v);
   else if (a.type === 'stockDump') pontos('lx', r.v);
   else if (a.type === 'mvSend') { pontos(r.a, r.v); pontos(r.b, r.v); }
@@ -310,6 +316,7 @@ function bolsaDe(w, now) {
       if (w.n === ronda) { try { guardadoNasRegioes(); } catch (e) { console.error('regiões', e.message); } }
       const r = MW.runEdition(bolsa, ed, rng);
       if (w.n === ronda) { try { dividendos(r.div, te, now); } catch (e) { console.error('dividendos', e.message); } }
+      E.setGov(GV.govSnapshot(bolsa.w.gov));   // as leis que a edição acabou de pôr em vigor contam já nas rusgas
       if (w.n === ronda) { try { rusgas(te, now); } catch (e) { console.error('rusgas', e.message); } }
       if (w.n === ronda && now - te < T.HOUR) for (const k of r.bust) noticia(te, { k: 'stockBust', c: S.list[k].id });
       mexeu = true; continue;
@@ -361,7 +368,7 @@ function rusgas(t, now) {
       const rz = E.whEdition(p, bolsa, t, rng);
       for (const x of rz) {
         evento(conta, t, { k: 'raid', r: x.r, took: x.took, money: x.v, fine: x.fine, jail: x.jail });
-        if (x.fine) caixa(t, 'rusga', 0, x.fine);
+        if (x.fine) { caixa(t, 'rusga', 0, x.fine); mundoAcc('tax', x.fine); }   // a multa vai para os cofres do Estado
         if (x.v >= CFG.market.record.min) { MW.recordSeizure(bolsa.w, x.r, x.took.map(([d]) => d)); if (now - t < T.HOUR) noticia(t, { k: 'raidRecord', r: x.r, money: x.v, d: x.took.length ? x.took.reduce((a, b) => (b[1] * CFG.drugs[b[0]].price > a[1] * CFG.drugs[a[0]].price ? b : a))[0] : -1 }); }
       }
       guardar(p, now);
@@ -393,7 +400,11 @@ function vistaMundo(w, now) {
   const arts = m.w.arts.slice(-8).map((e) => ({ ed: e.ed, at: MW.edStart(e.ed), a: e.a.map((x) => (x.due ? { ...x, dueAt: MW.edStart(x.due) } : x.to ? { ...x, toAt: MW.edStart(x.to + 1) } : x)) }));
   MW.worldUp(m.w);
   const rg = Object.fromEntries(Object.entries(m.w.rg).map(([r, g]) => [r, { crime: g.crime, press: g.press, hist: g.hist }]));
-  return { ed: m.w.ed, edNext: MW.edStart(m.w.ed + 1), edAt: MW.edStart(m.w.ed), lx: { crime: m.w.lx.crime, press: m.w.lx.press, hist: m.w.lx.hist }, rg, bustBp: CFG.bustBp, arts };
+  const crimes = [m.w.lx.crime, ...Object.values(m.w.rg).map((g) => g.crime)];
+  const gov = GV.govView(m.w, MW.popOf(m.w), { crime: crimes.reduce((a, b) => a + b, 0) / crimes.length });
+  if (gov.bill) { gov.bill.voteAt = MW.edStart(gov.bill.vote); gov.bill.ed0At = MW.edStart(gov.bill.ed0); }
+  gov.pend = gov.pend.map((x) => ({ ...x, atAt: MW.edStart(x.at) }));
+  return { ed: m.w.ed, edNext: MW.edStart(m.w.ed + 1), edAt: MW.edStart(m.w.ed), lx: { crime: m.w.lx.crime, press: MW.pressOf(m.w, 'lx'), hist: m.w.lx.hist }, rg, bustBp: CFG.bustBp, arts, gov, pop: Math.round(MW.popOf(m.w)) };
 }
 
 // ---------- vista do jogador para o browser ----------
@@ -404,7 +415,8 @@ function vista(p, now) {
   return {
     stk: mk ? E.stockView(p, mk) : CFG.stocks.list.map(() => ({ n: 0, cost: 0, value: 0, tp: 0, sl: 0 })), stockCap: E.stockCap(p),
     wh: E.whView(p), mv: E.mvView(p), mvLog: p.mvLog, rz: p.rz, mk: mk ? MW.marketView(mk.w, now) : null,   // regiões e armazéns (passo 6, parte 2)
-    bustBp: E.bustChanceBp(p, now, mk ? mk.w.lx.press : 50), lx: mk ? { crime: mk.w.lx.crime, press: mk.w.lx.press, ed: mk.w.ed, edNext: MW.edStart(mk.w.ed + 1) } : null,
+    bustBp: E.bustChanceBp(p, now, mk ? MW.pressOf(mk.w, 'lx') : 50), lx: mk ? { crime: mk.w.lx.crime, press: MW.pressOf(mk.w, 'lx'), ed: mk.w.ed, edNext: MW.edStart(mk.w.ed + 1) } : null,
+    gv: mk && mk.w.gov ? { laws: Object.keys(mk.w.gov.laws), voted: !!(mk.w.gov.bill && p.gv === mk.w.gov.bill.ed0), yes: !!p.gvY, corr: mk.w.gov.corr, novo: now - (p.joinedAt || now) < CFG.gov.vote.minAgeMs } : null,
     name: nomeDe(p.id),
     stats: p.stats, energy: p.energy, energyT: p.energyT, energyMax: E.energyMax(p), vigor: p.vigor, vigorT: p.vigorT,
     addiction: p.addiction, addictionT: p.addictionT, addictionCap: E.addictionCap(p),
@@ -447,6 +459,7 @@ function cfgPublica() {
     pvp: CFG.pvp, bank: CFG.bank, luxury: CFG.luxury, levels: CFG.levels, crit: CFG.crit, unlockBp: CFG.unlockBp,
     bustBp: CFG.bustBp, crimeAllMax: CFG.crimeAllMax, casino: { minBet: CFG.casino.minBet, limits: CFG.casino.limits, slotMinC: CFG.casino.slotMinC, red: CFG.casino.red, dice: CFG.casino.dice, wheel: { segs: CFG.casino.wheel.segs, spots: CFG.casino.wheel.spots, topMult: CFG.casino.wheel.topMult.map(([m]) => m), louca: CFG.casino.wheel.louca }, slots: Object.fromEntries(Object.entries(CFG.casino.slots).map(([k, g]) => [k, { kind: g.kind, cols: g.cols, rows: g.rows, min: g.min, nsym: g.nsym, trig: g.trig, pay: g.pay, scatPay: g.scatPay, free: g.free, fs: g.fs, retrig: g.retrig, buy: g.buy, superBuy: g.superBuy, max: g.max, accFree: g.accFree, accAll: g.accAll, orbBase: g.orbBase }])) }, gang: CFG.gang, classes: CFG.classes, classChange: CFG.classChange, avatars: CFG.avatars, hookers: CFG.hookers, house: CFG.house, mastery: CFG.mastery, missions: CFG.missions.length, start: CFG.start,
     round: { playDays: CFG.round.playDays, noPvpMs: CFG.round.noPvpMs }, season: CFG.season,
+    gov: { vote: CFG.gov.vote, laws: CFG.gov.laws, cof: CFG.gov.cof, parties: Object.fromEntries(Object.entries(CFG.gov.parties).map(([k, x]) => [k, { pos: x.pos, wOp: x.wOp, wLob: x.wLob }])) },   // v76: o parlamento
   };
 }
 
@@ -1178,7 +1191,9 @@ function agir(conta, corpo, now) {
   if (w.phase !== 'play') throw new E.GameError('ROUND_CLOSED');
   carregarRonda(w.n); epocaEmDia(now); resolverOps(now);
   const p = jogadorDe(conta, now, w);
-  const world = { start: w.start, playEnd: w.playEnd, press: w.phase === 'play' ? bolsaDe(w, now).w.lx.press : 50 };
+  const mk0 = w.phase === 'play' ? bolsaDe(w, now) : null;
+  const world = { start: w.start, playEnd: w.playEnd, press: mk0 ? MW.pressOf(mk0.w, 'lx') : 50 };
+  E.setGov(mk0 ? GV.govSnapshot(mk0.w.gov) : null);   // v76: as leis em vigor e a corrupção, para as regras desta ação
   const a = corpo || {};
   let r, alvo = null, alvoResp0 = 0, mesa = null;
   const ctx = { outros: [], ops: [], depois: [] };   // o que as gangues têm de gravar no mesmo passo
@@ -1187,6 +1202,24 @@ function agir(conta, corpo, now) {
     case 'crime': r = E.doCrime(p, now, world, int(a.k), rng); break;
     case 'crimeAll': r = E.doCrimeAll(p, now, world, int(a.k), rng); break;
     case 'casino': r = E.casinoPlay(p, now, world, String(a.g), limpaAposta(a), rng); break;
+    // v76: o parlamento. Votar na proposta em discussão (uma vez) e pôr dinheiro num dos lados (sai do jogo)
+    case 'govVote': {
+      const g = mk0 && mk0.w.gov, b = g && g.bill;
+      if (!b) throw new E.GameError('NO_BILL');
+      r = E.govVoteCheck(p, now, world);
+      if (p.gv === b.ed0) throw new E.GameError('VOTED');
+      p.gv = b.ed0; p.gvY = a.yes === true; if (a.yes === true) b.yes += 1; else b.no += 1;
+      bolsaSuja = true; r = { ...r, yes: a.yes === true, bill: b.id };
+      break;
+    }
+    case 'govLobby': {
+      const g = mk0 && mk0.w.gov, b = g && g.bill;
+      if (!b) throw new E.GameError('NO_BILL');
+      r = E.govLobby(p, now, world, int(a.amount));
+      if (a.side === 'y') b.ly += r.amount; else b.ln += r.amount;
+      bolsaSuja = true; r = { ...r, side: a.side === 'y' ? 'y' : 'n', bill: b.id };
+      break;
+    }
     case 'tableBet': {
       const g = String(a.g), m = mesaAberta(g, now), mine = m.cur.bets.get(conta);
       r = E.tableBet(p, now, world, g, limpaAposta(a).bets, mine ? mine.bets : []);
@@ -1323,6 +1356,11 @@ function agir(conta, corpo, now) {
       if (typeof a.type === 'string' && a.type.startsWith('gang')) { r = agirGangue(a, p, conta, now, world, ctx); break; }
       throw new E.GameError('BAD_ACTION');
   }
+  // v76: com a taxa sobre o jogo, 15% do que se ganha acima de 1 000 € numa jogada vai para os cofres
+  if (a.type === 'casino' && r && (r.g !== 'bj' || r.done) && E.lawsOn().includes('jogo')) {
+    const net = casinoNet(r), L = CFG.gov.laws.jogo;
+    if (net > L.over) { const tax = Math.min(p.cash, Math.floor(((net - L.over) * L.bp) / 10000)); p.cash -= tax; r = { ...r, tax }; }
+  }
   db.exec('BEGIN');
   try {
     guardar(p, now);
@@ -1334,7 +1372,7 @@ function agir(conta, corpo, now) {
     for (const f of ctx.ops) f();
     if (mesa) { if (mesa.bets) qm.aposta.run(mesa.g, mesa.c.id, conta, ronda, JSON.stringify(mesa.bets), mesa.total); else qm.tirar.run(mesa.g, mesa.c.id, conta); }
     contarAcao(now, a, r, p, alvo, resp0, alvoResp0);
-    try { contarMundo(a, r, dinheiro(p) - din0); } catch (e) { console.error('mundo', e.message); }
+    try { contarMundo(a, r, dinheiro(p) - din0, p); } catch (e) { console.error('mundo', e.message); }
     if (MEXE_MUNDO.has(a.type)) bolsaSuja = true;   // a ordem empurrou o preço (na bolsa ou no mercado de uma região): grava-se com o resto
     const avPago = ((p.avN || 0) - av0) * CFG.retainer.day;
     if (avPago > 0) caixa(now, 'avenca', 0, avPago);
@@ -1480,7 +1518,7 @@ function contratos(conta, now, w) {
 
 // ---------- ficheiros estáticos (só em testes locais) ----------
 const MIME = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8',
-  '.json': 'application/json', '.webmanifest': 'application/manifest+json', '.svg': 'image/svg+xml', '.png': 'image/png', '.woff2': 'font/woff2', '.ico': 'image/x-icon' };
+  '.json': 'application/json', '.webmanifest': 'application/manifest+json', '.svg': 'image/svg+xml', '.png': 'image/png', '.webp': 'image/webp', '.woff2': 'font/woff2', '.ico': 'image/x-icon' };
 function estatico(req, res) {
   let u = decodeURIComponent(new URL(req.url, 'http://x').pathname);
   if (u.endsWith('/')) u += 'index.html';

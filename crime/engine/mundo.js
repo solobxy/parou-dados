@@ -5,6 +5,7 @@
 // Tudo puro: o servidor guarda o estado e chama isto; a simulação (sim/bolsa.mjs) chama o mesmo.
 
 import { CFG } from './config.js';
+import { newGov, govUp, govEdition, pressDelta, lawOn } from './governo.js';
 import { localParts, lisbonToUtc } from './time.js';
 
 const DAY = 86_400_000;
@@ -27,7 +28,7 @@ export function edStart(ed) {
 }
 
 // ---------- estado ----------
-const accNew = () => ({ lx: 0, rev: CFG.stocks.list.map(() => 0), rg: rgMap(() => 0) });
+const accNew = () => ({ lx: 0, n: 0, tax: 0, rev: CFG.stocks.list.map(() => 0), rg: rgMap(() => 0) });
 // as outras regiões (Lisboa tem o seu sítio próprio, w.lx, desde a parte 1)
 const OTHER = () => CFG.regions.list.map((r) => r.id).filter((r) => r !== 'lx');
 const rgMap = (f) => Object.fromEntries(OTHER().map((r) => [r, f(r)]));
@@ -36,7 +37,7 @@ const satNew = () => CFG.drugs.map(() => 10000);
 export function newWorld(prices, now) {
   const L = W().lx;
   return {
-    v: 2, ed: edAt(now), lx: { crime: L.start, press: L.start, hist: [] }, acc: accNew(), arts: [],
+    v: 2, ed: edAt(now), lx: { crime: L.start, press: L.start, hist: [] }, acc: accNew(), arts: [], pop: { n: 0 }, gov: newGov(),
     rg: rgMap((r) => ({ crime: CFG.regions.crime[r].start, press: CFG.regions.crime[r].start, hist: [] })),
     mk: Object.fromEntries(CFG.regions.list.map((r) => [r.id, satNew()])), ev: [],
     co: CFG.stocks.list.map((s, k) => { const p = prices && prices[k] > 0 ? prices[k] : s.base; return { v: p, anc: p, open: p, rev: [], div: 0, pan: 0, bad: 0, st: null, last: 0 }; }),
@@ -51,6 +52,10 @@ export function worldUp(w) {
   for (const r of CFG.regions.list) if (!Array.isArray(w.mk[r.id]) || w.mk[r.id].length !== CFG.drugs.length) w.mk[r.id] = satNew();
   if (!Array.isArray(w.ev)) w.ev = [];
   if (!w.acc.rg) w.acc.rg = rgMap(() => 0);
+  if (!Number.isFinite(w.acc.n)) w.acc.n = 0;
+  if (!w.pop || !Number.isFinite(w.pop.n)) w.pop = { n: 0 };
+  if (!Number.isFinite(w.acc.tax)) w.acc.tax = 0;
+  govUp(w);
   w.v = 2;
   return w;
 }
@@ -60,16 +65,26 @@ export function worldUp(w) {
 export function accAdd(w, kind, x) {
   if (!w || !Number.isFinite(x) || !x) return;
   if (kind === 'lx') { if (x > 0) w.acc.lx += Math.round(x); return; }
+  if (kind === 'n') { if (!Number.isFinite(w.acc.n)) w.acc.n = 0; if (x > 0) w.acc.n += Math.round(x); return; }   // um jogador que jogou nesta edição
+  if (kind === 'tax') { if (!Number.isFinite(w.acc.tax)) w.acc.tax = 0; if (x > 0) w.acc.tax += Math.round(x); return; }   // o que os jogadores pagaram ao Estado
   if (w.rg && w.rg[kind]) { worldUp(w); if (x > 0) w.acc.rg[kind] += Math.round(x); return; }
   const k = CFG.stocks.list.findIndex((s) => s.id === kind);
   if (k >= 0) w.acc.rev[k] += Math.round(x);
 }
 
+// ---------- gente ----------
+// quantas pessoas contam no mundo agora: a média dos que jogaram, mais as de fundo, nunca menos de ref
+export const popOf = (w) => { const P = W().pop; return Math.max(P.ref, ((w && w.pop && w.pop.n) || 0) + P.bg); };
+// quanto o mundo é maior do que aquele para que os números foram afinados (1 = o mundo pequeno; nunca menos)
+export const popScale = (w) => popOf(w) / W().pop.ref;
+// atividade por cabeça contra a de metade do caminho por cabeça: a mesma fórmula com 8 ou com 10 milhões de pessoas
+const perCap = (A, half, w) => { const a = A / popOf(w), h = half / W().pop.ref; return a / (a + h); };
+
 // ---------- Lisboa ----------
-// a criminalidade segue o que os jogadores fazem (com uma base: Lisboa nunca está parada); a pressão segue-a uma edição depois
+// a criminalidade segue o que os jogadores fazem, por cabeça (com uma base: Lisboa nunca está parada); a pressão segue-a uma edição depois
 function lisboa(w, A, ed) {
   const L = W().lx, old = w.lx.crime;
-  const target = L.floor + ((100 - L.floor) * A) / (A + L.half);
+  const target = Math.min(100, L.floor + (100 - L.floor) * perCap(A, L.half, w) + (lawOn(w.gov, 'armas') ? CFG.gov.laws.armas.crime : 0));
   w.lx.press = old;
   w.lx.crime = Math.round((old * L.keepBp + target * (10000 - L.keepBp)) / 10000);
   w.lx.hist.push([ed, w.lx.crime, w.lx.press]);
@@ -79,7 +94,7 @@ function lisboa(w, A, ed) {
 // as outras regiões: a mesma fórmula, com a base e a atividade de cada uma
 function regiao(w, r, A, ed) {
   const R = CFG.regions.crime[r], L = W().lx, g = w.rg[r], old = g.crime;
-  const target = R.floor + ((100 - R.floor) * A) / (A + R.half);
+  const target = R.floor + (100 - R.floor) * perCap(A, R.half, w);
   g.press = old;
   g.crime = clamp(Math.round((old * L.keepBp + target * (10000 - L.keepBp)) / 10000), 0, 100);
   g.hist.push([ed, g.crime, g.press]);
@@ -87,7 +102,8 @@ function regiao(w, r, A, ed) {
   return { k: 'rg', r, crime: g.crime, press: g.press, d: g.crime - old };
 }
 export const regionOf = (w, r) => (r === 'lx' ? w.lx : w.rg && w.rg[r]);
-export const pressOf = (w, r) => { const g = w && regionOf(w, r); return g ? g.press : 50; };
+// a pressão de uma região: a criminalidade da edição anterior, mais o que o Estado mexe (cofres e reforço policial, v76)
+export const pressOf = (w, r) => { const g = w && regionOf(w, r); return g ? clamp(g.press + pressDelta(w.gov), 0, 100) : 50; };
 
 // ---------- mercado de cada região ----------
 export const REG = () => CFG.regions.list.map((r) => r.id);
@@ -96,7 +112,8 @@ export const tradable = (d) => !!CFG.drugs[d] && CFG.drugs[d].fam !== 'bar';
 // preço de grosso de uma droga, em cêntimos (80% do preço de rua)
 export const refC = (d) => Math.floor((CFG.drugs[d].price * 100 * CFG.goods.wholesaleBp) / 10000);
 // quantas unidades fazem o preço andar 100% (cada 1% da profundidade da região, em euros, mexe 1%)
-export const depthU = (r, d) => Math.max(1, Math.floor((CFG.market.depth[r] * 100) / refC(d)));
+// v76: a profundidade cresce com a gente (num mundo de 10 milhões, 1 kg por cabeça mexe o mesmo que num de 8)
+export const depthU = (r, d, w) => Math.max(1, Math.floor((CFG.market.depth[r] * 100 * (w ? popScale(w) : 1)) / refC(d)));
 // procura de uma droga numa região agora, em bp: a da região (pela droga, se tiver número próprio, senão pela família),
 // vezes os acontecimentos a decorrer, o fim de semana (festa) e o verão no Algarve (festa)
 // dia da semana e mês em Lisboa (guarda-se o último: as ordens e os ecrãs pedem o mesmo instante muitas vezes seguidas)
@@ -116,6 +133,7 @@ export function demBp(w, r, d, now) {
     if (wd === 5 || wd === 6) bp = Math.round((bp * (10000 + M.weekendBp)) / 10000);
     if (r === M.summer.rg && M.summer.months.includes(m)) bp = Math.round((bp * (10000 + M.summer.bp)) / 10000);
   }
+  if (g.id === 'erva' && w && lawOn(w.gov, 'erva')) bp = Math.round((bp * CFG.gov.laws.erva.priceBp) / 10000);   // v76: legalizada, há mais e é mais barata
   return bp;
 }
 export const satOf = (w, r, d) => (w && w.mk && w.mk[r] ? w.mk[r][d] : 10000);
@@ -124,7 +142,7 @@ export const midC = (w, r, d, now) => (refC(d) * demBp(w, r, d, now) * satOf(w, 
 // Quanto custam (side 1) ou rendem (side −1) n unidades, em cêntimos, e a saturação com que o mercado fica. O preço anda à medida
 // que se compra ou vende (a média entre o princípio e o fim), e pára nos limites.
 export function quoteC(w, r, d, n, side, now) {
-  const M = CFG.market, D = depthU(r, d), s0 = satOf(w, r, d), lim = side > 0 ? M.satMax : M.satMin;
+  const M = CFG.market, D = depthU(r, d, w), s0 = satOf(w, r, d), lim = side > 0 ? M.satMax : M.satMin;
   const ds = (n * 10000) / D, room = Math.max(0, side > 0 ? lim - s0 : s0 - lim), n1 = Math.min(n, (room * D) / 10000);
   const s1 = side > 0 ? Math.min(lim, s0 + ds) : Math.max(lim, s0 - ds);
   const sum = n1 * (s0 + (side > 0 ? s0 + (n1 * 10000) / D : s0 - (n1 * 10000) / D)) / 2 + (n - n1) * lim;   // unidades × saturação
@@ -177,10 +195,16 @@ export function runEdition(m, ed, rng) {
   const w = m.w, C = W(), S = C.story, arts = [], bustK = [];
   // 1-2. contas da edição anterior e Lisboa
   worldUp(w);
-  const acc = w.acc;
+  const acc = w.acc, P = W().pop;
+  // a gente desta edição entra na média devagar (uma edição vazia não esvazia o mundo)
+  w.pop.n = (w.pop.n * P.keepBp + (acc.n || 0) * (10000 - P.keepBp)) / 10000;
+  const SC = popScale(w);
   arts.push(lisboa(w, acc.lx, ed));
   for (const r of OTHER()) arts.push(regiao(w, r, acc.rg[r] || 0, ed));
   arts.push(...mercado(w, ed, rng));
+  // o Estado: cofres, corrupção, popularidade, leis e votações (com a criminalidade média das regiões e a pressão de Lisboa)
+  const crimes = [w.lx.crime, ...OTHER().map((r) => w.rg[r].crime)];
+  arts.push(...govEdition(w, ed, rng, { crime: crimes.reduce((a, b) => a + b, 0) / crimes.length, press: pressOf(w, 'lx') }, popOf(w), acc.tax || 0));
   CFG.stocks.list.forEach((s, k) => {
     const c = w.co[k], cc = coCfg(k), before = c.v;
     // 3. histórias que venciam
@@ -196,14 +220,15 @@ export function runEdition(m, ed, rng) {
     // 4. o valor mexe pela receita da edição contra a média das últimas 8 (o que os outros clientes gastam, mais o que os jogadores lá deixaram)
     let rev = 0;
     if (cc.r0 > 0) {
-      rev = Math.round(cc.r0 * (1 + (rint(rng, -C.noiseBp, C.noiseBp)) / 10000)) + acc.rev[k];
-      const avg = c.rev.length ? c.rev.reduce((a, b) => a + b, 0) / c.rev.length : cc.r0;
-      const rel = (rev - avg) / Math.max(avg, cc.r0 / 4);
+      const r0 = cc.r0 * SC;   // os clientes de fundo crescem com a gente
+      rev = Math.round(r0 * (1 + (rint(rng, -C.noiseBp, C.noiseBp)) / 10000)) + acc.rev[k];
+      const avg = c.rev.length ? c.rev.reduce((a, b) => a + b, 0) / c.rev.length : r0;
+      const rel = (rev - avg) / Math.max(avg, r0 / 4);
       const move = clamp(Math.round(C.maxMoveBp * rel), -C.maxMoveBp, C.maxMoveBp);
       c.v = Math.max(1, Math.round((c.v * (10000 + move)) / 10000));
       c.rev.push(rev); if (c.rev.length > C.avgN) c.rev.shift();
       // dividendo: uma parte do que os jogadores lá gastaram de verdade, a dividir pelas ações da empresa
-      c.div = cc.float > 0 ? Math.floor((Math.max(0, acc.rev[k]) * C.divBp * 100) / (10000 * cc.float)) : 0;
+      c.div = cc.float > 0 ? Math.floor((Math.max(0, acc.rev[k]) * C.divBp * 100) / (10000 * cc.float * SC)) : 0;   // as ações crescem com a gente
       arts.push({ k: 'coRes', c: s.id, rev, avg: Math.round(avg), pct: move, mine: acc.rev[k], div: c.div });
     } else {
       // sem receita (o Merdacoin): só rumor e humor
@@ -258,7 +283,7 @@ export function priceTick(m, rng) {
 // por isso comprar e vender logo a seguir perde sempre o empurrão mais as duas comissões.
 export function impactBp(m, k, gross) {
   if (!m || !m.w) return 0;
-  return Math.min(W().impMaxBp, Math.floor((gross * 10000) / coCfg(k).liq));
+  return Math.min(W().impMaxBp, Math.floor((gross * 10000) / (coCfg(k).liq * popScale(m.w))));
 }
 // o que a página mostra de cada empresa: a história a decorrer (sem o desfecho, claro), rumores, investigação, dividendo e receita
 export function companyView(m) {

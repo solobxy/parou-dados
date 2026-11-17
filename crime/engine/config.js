@@ -66,6 +66,10 @@ export const CFG = {
   // hipótese. Três desfechos maus seguidos e a empresa vai à falência. Pânico: caiu mais de 12% numa edição, cai mais 4% a 8% na seguinte.
   world: {
     edHours: [3, 9, 15, 21], keepEds: 12,
+    // v76 (17/11): o mundo escala. Gente da edição = jogadores que jogaram nela, numa média que anda devagar (keepBp da anterior),
+    // mais bg pessoas de fundo; nunca menos de ref (os números abaixo foram afinados para ref pessoas). A criminalidade conta por cabeça;
+    // a profundidade dos mercados, a liquidez da bolsa, os clientes de fundo e as ações das empresas crescem com a gente.
+    pop: { ref: 8, bg: 5, keepBp: 7500 },
     lx: { start: 30, floor: 25, half: 3000, keepBp: 6000, histMax: 28, bustLo: 7500, bustPer: 50, fight: 10 },   // uma luta conta como 10 de stamina na rua
     portBp: 500,   // a Docas do Sul fica com 5% do que os jogadores mandam pelo porto
     co: {
@@ -77,6 +81,37 @@ export const CFG = {
     panic: { trigBp: 1200, min: 400, max: 800 },
     story: { spawnBp: 300, moedaSpawnBp: 600, durMin: 4, durMax: 8, pMin: 3500, pMax: 7500, upMin: 2500, upMax: 4000, dnMin: 3000, dnMax: 4500, rumorBp: 3500, relMin: 5500, relMax: 8000, invBp: 1200, bustAfter: 3 },
     stories: { docas: ['terminal', 'greve'], farma: ['ensaio'], casino: ['licenca'], armas: ['contrato'], noite: ['cadeia'], moeda: ['proibir', 'banca'] },
+  },
+
+  // ---------- o Estado (v76, pedido de 17/11, 03:39): cofres, corrupção, popularidade, parlamento e leis ----------
+  // Cofres por cabeça: a despesa de uma edição é spendPc por pessoa (com a pressão a 50); os contribuintes de fundo pagam bgTaxBp dela e
+  // o resto vem do que os jogadores pagam ao Estado (fianças, comissões da bolsa, multas das rusgas, impostos das leis). 100% = reserveEds
+  // edições de despesa. Corrupção: anda para base + perEmpty × (o que falta aos cofres); acima de scandalAt pode rebentar um escândalo.
+  // Votos: os dos jogadores juntam-se a bg votos de fundo; o dinheiro posto numa votação pesa contra lobbyK × incomePc × gente.
+  gov: {
+    cof: { spendPc: 2000, bgTaxBp: 9000, reserveEds: 8, startPct: 50, lowPct: 30, highPct: 80, pressStep: 5 },
+    corr: { start: 30, base: 15, perEmpty: 60, moveBp: 2000, scandalAt: 60, scandalBp: 800, scandalCut: 30, scandalPopu: 10, bailCutMax: 3000 },
+    popu: { start: 55, base: 60, perCrime: 0.4, emptyCut: 10, moveBp: 1000, goodLaw: 3 },
+    vote: { bg: 5, lobbyK: 4, incomePc: 2000, rebelMaxPct: 8, majority: 116, pmBonus: 0.5, pollMargin: 8, minLevel: 5, minAgeMs: 24 * HOUR, minLobby: 100 },
+    bill: { voteEds: 4, effectEds: 2, coolEds: 12, noise: 10, keep: 12 },
+    histMax: 56, pm: 'cm',
+    // posição de cada partido sobre pôr cada lei (de -2 a +2; para tirar, ao contrário); wOp: quanto segue a rua; wLob: quanto o dinheiro pesa
+    parties: {
+      cm: { seats: 95, wOp: 1.5, wLob: 0.6, pos: { policia: 1, penas: 0, erva: 0, jogo: 1, luxo: 0, branq: 1, salario: 1, armas: -1 } },
+      op: { seats: 55, wOp: 0.6, wLob: 0.4, pos: { policia: 2, penas: 2, erva: -2, jogo: 0, luxo: -1, branq: 1, salario: 0, armas: 1 } },
+      ml: { seats: 40, wOp: 0.8, wLob: 1, pos: { policia: -1, penas: -1, erva: 2, jogo: -2, luxo: -2, branq: -1, salario: -2, armas: 2 } },
+      rv: { seats: 40, wOp: 0.8, wLob: 0.3, pos: { policia: -2, penas: -2, erva: 2, jogo: 2, luxo: 2, branq: 1, salario: 2, armas: -2 } },
+    },
+    laws: {
+      policia: { press: 10, spendBp: 2500 },          // pressão +10 em todas as regiões; a despesa do Estado sobe 25%
+      penas: { jailBp: 15000, bailBp: 15000 },        // prisão e fiança ×1,5
+      erva: { priceBp: 7000 },                        // erva e haxixe sem multa nem apreensão; erva por grosso −30%
+      jogo: { over: 1000, bp: 1500 },                 // 15% dos prémios do casino acima de 1 000 € vão para os cofres
+      luxo: { bp: 1000 },                             // casas e luxos +10%, para os cofres
+      branq: { addBp: 500 },                          // a lavagem sobe 5 pontos
+      salario: { bp: 1000 },                          // turnos do emprego +10%
+      armas: { priceBp: 8500, crime: 5 },             // armas −15%; a criminalidade de Lisboa vai para +5
+    },
   },
 
   // ---------- passo 6, parte 2: regiões, armazéns, preços por região e transporte ----------

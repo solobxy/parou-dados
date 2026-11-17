@@ -1,0 +1,36 @@
+// Carrega mesmo nos botões do Parlamento: votar sim, pôr dinheiro a favor (dois toques) e ler o que o ecrã diz a seguir.
+// Uso: node dev/parlamento-ui.mjs <cidade> <pasta> <largura> <língua>
+import { createRequire } from 'node:module';
+import { readFileSync, mkdirSync } from 'node:fs';
+import { join } from 'node:path';
+const require = createRequire(import.meta.url);
+const { chromium } = require('/opt/node22/lib/node_modules/playwright');
+const [CID, OUT, W, LANG] = process.argv.slice(2);
+mkdirSync(OUT, { recursive: true });
+const { base, cookies } = JSON.parse(readFileSync(join(CID, 'contas.json'), 'utf8'));
+const browser = await chromium.launch({ executablePath: '/usr/bin/google-chrome', args: ['--no-sandbox'] });
+const ctx = await browser.newContext({ viewport: { width: +W, height: 860 }, deviceScaleFactor: 2 });
+const [n, v] = cookies.Novato.split('=');
+await ctx.addCookies([{ name: n, value: v, url: base }]);
+await ctx.addInitScript(([lang]) => { localStorage.setItem('cr.tab', JSON.stringify('parl')); localStorage.setItem('cr.lang', lang); localStorage.setItem('cr.music', 'false'); localStorage.setItem('cr.sound', 'false'); }, [LANG]);
+await ctx.route('**/_e.js', (r) => r.fulfill({ body: '', contentType: 'application/javascript' }));
+const p = await ctx.newPage(), erros = [];
+p.on('pageerror', (e) => erros.push(e.message));
+await p.goto(base + '/'); await p.waitForTimeout(1500);
+const toast = async () => (await p.locator('.toasts').innerText().catch(() => '')).replace(/\s+/g, ' ').trim();
+const yes = LANG === 'pt' ? 'Votar sim' : 'Vote yes';
+await p.getByRole('button', { name: yes }).click(); await p.waitForTimeout(900);
+console.log('voto:', await toast());
+console.log('depois:', (await p.locator('.pvoted').innerText().catch(() => 'SEM .pvoted')).trim());
+const rua0 = (await p.locator('.pstreet').innerText()).replace(/\s+/g, ' ');
+console.log('rua:', rua0);
+const lob = p.locator('.plob .pvote button').first();
+const antes = (await lob.innerText()).replace(/\s+/g, ' ');
+await lob.click(); await p.waitForTimeout(200);
+console.log('1.º toque:', antes, '→', (await lob.innerText()).replace(/\s+/g, ' '));
+await lob.click(); await p.waitForTimeout(900);
+console.log('dinheiro:', await toast());
+console.log('mesa:', (await p.locator('.plob p.num').innerText()).replace(/\s+/g, ' '));
+await p.screenshot({ path: join(OUT, `parl-tocado-${LANG}-${W}.png`) });
+console.log(erros.length ? 'ERROS: ' + erros.join(' | ') : 'sem erros');
+await browser.close();
