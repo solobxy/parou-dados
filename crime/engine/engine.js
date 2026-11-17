@@ -1402,7 +1402,7 @@ export function gymDone(p, now, world, taps) {
 // com os componentes fazem-se as ferramentas dos golpes grandes, armas e máquinas para os negócios, que ficam na bancada
 // o tempo da receita (uma coisa de cada vez) e depois se recolhem.
 export const recipeOf = (id) => (typeof id === 'string' ? CFG.craft.list.find((r) => r.id === id) : undefined);
-const MAT_IDS = [...CFG.mat.base, ...CFG.craft.list.filter((r) => r.kind === 'comp').map((r) => r.id)];
+const MAT_IDS = [...CFG.mat.base, ...CFG.craft.list.filter((r) => r.kind === 'comp').map((r) => r.id), ...CFG.mat.rare];   // v86: e os raros das escavações
 export const matIds = () => MAT_IDS.slice();
 const bizIdx = (id) => CFG.biz.findIndex((b) => b.id === id);
 export function matGain(p, workId, q) {
@@ -1420,6 +1420,7 @@ export function craftStart(p, now, world, id, n = 1) {
   if (!comp && p.cf) fail('BENCH_BUSY', { until: p.cf.end });   // os componentes não ocupam a bancada
   if (comp && (p.mt[id] || 0) + n > CFG.mat.cap) fail('MAT_FULL', { cap: CFG.mat.cap });
   if (r.kind === 'tool' && p.inv.some((x) => x.id === id)) fail('HAVE_IT');
+  { const g = gearOf(id); if (g && g.level && level(p) < g.level) fail('LOW_LEVEL', { need: g.level }); }   // v86: o que pede nível na loja também o pede aqui
   if (r.kind === 'maq') { if (!p.biz[bizIdx(r.biz)].n) fail('NO_BIZ'); if (p.maq[r.biz]) fail('HAVE_IT'); }
   const miss = Object.entries(r.needs).filter(([k, v]) => (p.mt[k] || 0) < v * n);
   if (miss.length) fail('NO_MAT', { need: Object.fromEntries(miss.map(([k, v]) => [k, v * n])) });
@@ -1492,7 +1493,12 @@ function digNear(cells, i) {
 // fecha a escavação: o saco vai para a vitrine e o sítio fica vigiado
 function digClose(p, at) {
   const d = p.dg;
-  for (const id of d.got) p.col[id] = (p.col[id] || 0) + 1;
+  // os achados vão para a vitrine; o material raro, para o depósito da cave (o que passa do teto perde-se, como nos biscates)
+  d.matLost = 0;
+  for (const id of d.got) {
+    if (!CFG.mat.rare.includes(id)) { p.col[id] = (p.col[id] || 0) + 1; continue; }
+    if ((p.mt[id] || 0) >= CFG.mat.cap) d.matLost += 1; else p.mt[id] = (p.mt[id] || 0) + 1;
+  }
   p.dgc[d.site] = Math.max(p.dgc[d.site] || 0, at + CFG.dig.coolMs);
   p.dg = null;
   return d.got;
@@ -1509,6 +1515,7 @@ export function digStart(p, now, world, rng, site) {
   pay(p, S.price);
   const D = CFG.dig, cells = Array(D.size * D.size).fill(0), items = CFG.col.sets[set].items;
   for (let k = 0; k < D.finds; ) { const i = rng.int(0, cells.length - 1); if (!cells[i]) { cells[i] = items[rng.int(0, items.length - 1)]; k++; } }
+  if (S.rare && rng.chance(S.rareBp)) for (;;) { const i = rng.int(0, cells.length - 1); if (!cells[i]) { cells[i] = S.rare; break; } }   // v86: às vezes, o material raro do sítio
   p.dg = { site: S.id, t0: now, cells, open: [], got: [], used: 0, taps: D.taps, safe: digSafe(p) };
   return { ok: true, site: S.id, price: S.price, taps: p.dg.taps, safe: p.dg.safe };
 }
@@ -1532,14 +1539,14 @@ export function digTap(p, now, world, rng, i) {
   const v = d.cells[i];
   if (v) { d.got.push(v); d.open.push({ i, v }); } else d.open.push({ i, n: digNear(d.cells, i) });
   const out = { ok: true, i, v: v || null, n: v ? undefined : digNear(d.cells, i), used: d.used, taps: d.taps, site: d.site };
-  if (d.used >= d.taps) { out.end = true; out.grid = digReveal(d); out.open = d.open.slice(); out.got = digClose(p, now); }
+  if (d.used >= d.taps) { out.end = true; out.grid = digReveal(d); out.open = d.open.slice(); out.got = digClose(p, now); out.matLost = d.matLost; }
   return out;
 }
 export function digStop(p, now, world) {
   begin(p, now, world);
   if (!p.dg) fail('NO_DIG');
-  const site = p.dg.site, grid = digReveal(p.dg), open = p.dg.open.slice();
-  return { ok: true, site, grid, open, got: digClose(p, now) };
+  const d = p.dg, site = d.site, grid = digReveal(d), open = d.open.slice(), got = digClose(p, now);
+  return { ok: true, site, grid, open, got, matLost: d.matLost };   // matLost: o raro que não coube no depósito
 }
 // o que o site pode ver de uma escavação aberta (sem a grelha)
 export function digView(p, now) {
@@ -2392,10 +2399,11 @@ export function buyGear(p, now, world, kind, idx) {
 }
 
 const gearBp = (list, idx) => (idx >= 0 ? list[idx].bp : 0);
-// ataque: a melhor arma de fogo que não esteja estragada (mão ou principal) mais a arma branca; defesa: as peças do corpo todas
+// ataque: a melhor arma de fogo que não esteja estragada (mão ou principal), 30% da outra se também disparar (v87), mais a arma
+// branca; defesa: as peças do corpo todas
 export function atkBp(p) {
-  const fire = ['mao', 'principal'].map((s) => p.eq[s]).filter((x) => x && x.u > 0).map((x) => gearOf(x.id).atk);
-  return Math.max(0, ...fire) + (p.eq.branca ? gearOf(p.eq.branca.id).atk : 0);
+  const fire = ['mao', 'principal'].map((s) => p.eq[s]).filter((x) => x && x.u > 0).map((x) => gearOf(x.id).atk).sort((a, b) => b - a);
+  return (fire[0] || 0) + (fire[1] ? Math.floor((fire[1] * CFG.gunSideBp) / 10000) : 0) + (p.eq.branca ? gearOf(p.eq.branca.id).atk : 0);
 }
 export function defBp(p) { return ['cabeca', 'tronco', 'pernas', 'pes', 'maos'].reduce((s, k) => s + (p.eq[k] ? gearOf(p.eq[k].id).def : 0), 0); }
 export function attackPower(p, now) { return up(Math.floor((effStat(p, 'F', now) * (10000 + atkBp(p))) / 10000), (klass(p).atkBp || 0) + gbp(p, 'atk') + studyBp(p, 'atk')); }   // v81: boxe, krav maga
@@ -2461,6 +2469,7 @@ export function equip(p, now, world, i) {
   if (!g) fail('NO_GEAR');
   if (g.slot === 'mat') fail('NOT_WEARABLE');
   begin(p, now, world, { allowBusy: true });
+  if (g.level && level(p) < g.level) fail('LOW_LEVEL', { need: g.level });   // v87: o nível conta também para o que vem da feira
   const old = p.eq[g.slot];
   p.eq[g.slot] = it;
   if (old) p.inv[i] = old; else p.inv.splice(i, 1);
@@ -2488,8 +2497,10 @@ export function sellGoods(p, now, world) {
   p.cash += L.net;
   return { ok: true, money: L.net, n, lav: L.lav };
 }
-// reparar uma arma de fogo no corpo: paga-se a parte gasta do preço
-export function repairCost(p, slot) { const it = p.eq[slot]; if (!it || !it.id) return 0; const g = gearOf(it.id); return g.gun ? Math.ceil((g.price * (g.life - it.u)) / g.life) : 0; }
+// reparar uma arma de fogo no corpo: paga-se a parte gasta do preço. v87: as que só se fazem na cave pagam sobre o dinheiro da
+// receita (sobre o valor, reparar uma gasta custava o dobro de fazer outra)
+const repairBase = (g) => (g.craft ? (CFG.craft.list.find((r) => r.id === g.id) || g).price : g.price);
+export function repairCost(p, slot) { const it = p.eq[slot]; if (!it || !it.id) return 0; const g = gearOf(it.id); return g.gun ? Math.ceil((repairBase(g) * (g.life - it.u)) / g.life) : 0; }
 // v83: com um kit de armeiro (feito na cave) a reparação não custa dinheiro
 export function repair(p, now, world, slot, kit = false) {
   if (!['mao', 'principal'].includes(slot) || !p.eq[slot]) fail('NO_GEAR');
@@ -3540,8 +3551,8 @@ export function checkInvariants(p) {
   if (!p.eq || CFG.slots.some((k) => p.eq[k] !== null && !(p.eq[k] && goodItem(p.eq[k]) && gearOf(p.eq[k].id).slot === k))) bad.push('eq');
   // v85: a escavação aberta (grelha do tamanho certo, só achados do conjunto do sítio, pazadas dentro do que há) e os sítios vigiados
   if (p.dg !== null) {
-    const d = p.dg, S = d && siteOf(d.site), items = S ? CFG.col.sets[digSet(S.id)].items : [];
-    if (!S || !Array.isArray(d.cells) || d.cells.length !== CFG.dig.size ** 2 || d.cells.some((v) => v && !items.includes(v)) || d.cells.filter(Boolean).length !== CFG.dig.finds
+    const d = p.dg, S = d && siteOf(d.site), items = S ? [...CFG.col.sets[digSet(S.id)].items, ...(S.rare ? [S.rare] : [])] : [], nr = d && Array.isArray(d.cells) ? d.cells.filter((v) => v && S && v === S.rare).length : 0;
+    if (!S || !Array.isArray(d.cells) || d.cells.length !== CFG.dig.size ** 2 || d.cells.some((v) => v && !items.includes(v)) || nr > 1 || d.cells.filter(Boolean).length !== CFG.dig.finds + nr
       || !Number.isSafeInteger(d.used) || d.used < 0 || d.used > d.taps || d.open.length !== d.used || d.got.some((v) => !items.includes(v))
       || !Number.isSafeInteger(d.safe) || d.safe < CFG.dig.safe || new Set(d.open.map((x) => x.i)).size !== d.open.length
       || d.open.some((x) => !Number.isInteger(x.i) || x.i < 0 || x.i >= d.cells.length || (x.v ? x.v !== d.cells[x.i] : d.cells[x.i] || x.n !== digNear(d.cells, x.i)))

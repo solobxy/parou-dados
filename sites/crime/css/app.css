@@ -3155,6 +3155,11 @@ body.gym-lock { overflow: hidden; }
 .cvr .cvd { grid-column: 2 / -1; grid-row: 2; min-width: 0; display: grid; gap: 2px; }
 .vlist .cvr b { white-space: normal; overflow: visible; text-overflow: clip; }
 .vlist.cvl > .cvr + .cvr { box-shadow: inset 0 1px 0 var(--line); }
+/* v87: «Ver as outras N», a última linha de uma lista comprida (loja de armas, receitas da cave): texto, não um botão */
+.vmore { display: flex; align-items: center; justify-content: center; width: 100%; min-height: 44px; margin: 0; padding: 8px 0 0; border: 0; background: none; box-shadow: inset 0 1px 0 var(--line); color: var(--tx2); font: 600 15px/1.3 var(--ui); cursor: pointer; }
+.vmore:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+h3.cvsep + .card { margin-top: 6px; }
+.lnk.cvalt { display: block; margin: 2px 0 0; min-height: 44px; padding: 0; text-align: left; font-size: 14px; }   /* v87: fazer outra na cave, ao lado de «Reparar» */
 @media (max-width: 359px) { .cvr .vth { width: 44px; height: 44px; } .vrow.cvr { column-gap: 8px; } .cvr .cva .btn { padding: 0 12px; } }
 @media (max-width: 419px) { .cvseg { display: grid; grid-template-columns: 1fr 1fr; } }
 .cvseg { flex-wrap: wrap; }

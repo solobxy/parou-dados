@@ -1532,12 +1532,13 @@ test('stash: guardar uma droga tira-a da venda da discoteca (clientes da casa e 
 
 test('armas: a preços reais (sem lança-chamas nem minigun), e cada uma só mexe no seu sistema; as ferramentas não mexem nos golpes de rua', () => {
   const p = mk();
-  assert.deepEqual(CFG.gear.filter((w) => w.atk).map((w) => [w.id, w.price]), [['soqueira', 20], ['navalha', 25], ['pistola', 1750], ['cacadeira', 2500], ['metralhadora', 6000], ['sniper', 9000]]);
+  // (v87: o arsenal passou de 6 para 30 armas; as 6 de antes continuam com os mesmos preços)
+  for (const [id, pr] of [['soqueira', 20], ['navalha', 25], ['pistola', 1750], ['cacadeira', 2500], ['metralhadora', 6000], ['sniper', 9000]]) assert.equal(CFG.gear.find((w) => w.id === id).price, pr, id);
   assert.equal(CFG.tools.length, 8); assert.equal(CFG.gweapons.length, 8);
   assert.equal(p.tool, -1); assert.equal(p.gweapon, -1); assert.equal(E.level(p), 1);
   // escadas sempre a subir: força e nível (ferramentas e armas de gangue) e força nas armas de luta
   for (const L of [CFG.tools, CFG.gweapons]) for (let i = 1; i < L.length; i++) assert.ok(L[i].str > L[i - 1].str && L[i].level >= L[i - 1].level, L[i].id);
-  const W4 = CFG.gear.filter((w) => w.atk); for (let i = 1; i < W4.length; i++) assert.ok(W4[i].price > W4[i - 1].price && W4[i].atk > W4[i - 1].atk, W4[i].id);
+  for (const sl of ['branca', 'mao', 'principal']) { const W4 = CFG.gear.filter((w) => w.slot === sl && !w.craft).sort((a, b) => a.price - b.price); for (let i = 1; i < W4.length; i++) assert.ok(W4[i].atk > W4[i - 1].atk, W4[i].id); }   // na loja, em cada espaço
   // por ordem, uma de cada vez: saltar não dá (armas de gangue e guardas; as armas do corpo compram-se à escolha desde o passo 4)
   for (const k of ['gweapon', 'guard']) assert.throws(() => E.buyGear(p, NOW, W, k, 1), code('GEAR_ORDER'), k);
   // ferramenta (pedido antigo por índice): desde o passo 5 compra o material dos golpes grandes, que vai para o inventário
@@ -1560,7 +1561,8 @@ test('armas: a preços reais (sem lança-chamas nem minigun), e cada uma só mex
   assert.ok(E.heistChanceBp([p, sem], 0, NOW) > E.heistChanceBp([sem, sem], 0, NOW));
   const sh = E.heistShares([p, sem], 0, NOW); assert.equal(sh[0], 10000); assert.ok(sh[1] < 10000);
   // armas de luta: todas compráveis (o pedido antigo por índice ainda funciona), e não há sétima
-  const rico = mk(); rico.house = 5; for (let i = 0; i < 6; i++) E.buyGear(rico, NOW, W, 'weapon', i);
+  const rico = mk(); rico.house = 5; rico.respect = rico.peakRespect = CFG.levels[CFG.gear.find((g) => g.id === 'sniper').level - 1];   // v87: a metralhadora e a sniper pedem nível
+  for (let i = 0; i < 6; i++) E.buyGear(rico, NOW, W, 'weapon', i);
   assert.equal(rico.eq.principal.id, 'sniper'); assert.equal(rico.eq.mao.id, 'pistola'); assert.equal(rico.eq.branca.id, 'navalha'); assert.throws(() => E.buyGear(rico, NOW, W, 'weapon', 6), code('NO_GEAR'));
   for (const x of [p, sem, rico]) assert.deepEqual(E.checkInvariants(x), []);
   // estado antigo (sem estes campos) fica sem armas novas, sem erro

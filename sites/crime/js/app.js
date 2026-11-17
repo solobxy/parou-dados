@@ -150,11 +150,11 @@ function react(type, out, before, opts) {
   else if (type === 'digStart') { S.digLast = null; toast(t('tDigGo', { x: t('dgAt_' + r.site), n: r.taps })); fx.sfx('buy'); }   // v85
   else if (type === 'digTap') {
     if (r.caught) { toast(t(['tDigCaught0', 'tDigCaught1'][r.lost.length] || 'tDigCaught', { n: r.lost.length }), true); fx.vibrate([40, 60, 40]); fx.sfx('bust'); }
-    else if (r.end) { toast(t(['tDigEnd0', 'tDigEnd1'][r.got.length] || 'tDigEnd', { n: r.got.length })); fx.sfx(r.got.length ? 'claim' : 'tap'); }
-    else if (r.v) { toast(t('tDigFound', { x: t('co_' + r.v).toLowerCase() })); fx.sfx('claim'); fx.vibrate(20); }
+    else if (r.end) { const n = dgFinds(r.got); toast(t(['tDigEnd0', 'tDigEnd1'][n] || 'tDigEnd', { n }) + dgRareTxt(r)); fx.sfx(r.got.length ? 'claim' : 'tap'); }
+    else if (r.v) { toast(t('tDigFound', { x: dgLow(r.v) })); fx.sfx('claim'); fx.vibrate(20); }
     else fx.sfx('thud');   // a pá na terra
   }
-  else if (type === 'digStop') { toast(t(r.got.length ? (r.got.length === 1 ? 'tDigOut1' : 'tDigOut') : 'tDigOut0', { n: r.got.length })); fx.sfx(r.got.length ? 'claim' : 'tap'); }
+  else if (type === 'digStop') { const n = dgFinds(r.got); toast(t(n ? (n === 1 ? 'tDigOut1' : 'tDigOut') : r.got.length ? 'tDigOutR' : 'tDigOut0', { n }) + dgRareTxt(r)); fx.sfx(r.got.length ? 'claim' : 'tap'); }
   else if (type.startsWith('feira')) {   // v84
     const x = fName(r.kind, r.id).toLowerCase() + (r.n > 1 ? ' ×' + r.n : '');
     toast(type === 'feiraList' ? t(r.tipo === 'leilao' ? 'tfAuc' : 'tfList', { x, m: money(r.preco) }) : type === 'feiraBuy' ? t('tfBought', { x, m: money(r.price) })
@@ -414,6 +414,7 @@ function loadFor(tab) {
 function go(tab) {
   if (!PLACES[tab]) tab = 'city';
   if (HUB[S.tab]?.some(([, ids]) => ids.includes(tab)) || (S.tab === 'fights' && (tab === 'arms' || tab === 'rank' || tab === 'gang'))) S.backTo = { ...(S.backTo || {}), [tab]: S.tab };
+  if (tab !== S.tab) { S.armsAll = null; S.cvAll = null; }   // v87: as listas abertas («Ver as outras») fecham ao mudar de ecrã
   S.tab = tab; document.body.dataset.tab = tab; store.set('tab', tab); S.fxOpen = false;   // a lista dos bónus fecha ao mudar de ecrã, para não ficar a ocupar o topo
   loadFor(tab);
   render(); window.scrollTo({ top: 0 });
@@ -2478,12 +2479,18 @@ function matLine(m) {   // o que o biscate deixou no depósito
     m.lost ? h('span', { class: 'c-red' }, (m.n ? ' · ' : '') + t('tkMatLost' + (m.lost > 1 ? 2 : 1))) : null, ' ',
     h('button', { class: 'lnk tk-cv', on: { click: () => { S.gig = null; go('cave'); } } }, t('tkToCave')));
 }
+// v87: o raro diz de que escavação sai e, se ainda não a podes fazer, a Arqueologia que pede
+function dgHaveLine(me, k, have) {
+  const site = S.cfg.dig.sites.find((x) => x.rare === k), x = t('dgFrom_' + (site?.id || ''));
+  return site && (me.arq || 0) < site.st ? t('cvHaveDigSt', { n: have, x, s: site.st }) : t('cvHaveDig', { n: have, x });
+}
 // o que a receita pede, com o que falta a vermelho: o material diz de que biscate vem; o componente em falta leva à receita dele
 function needsLine(me, needs, n) {
   return Object.entries(needs).map(([k, v], i) => {
-    const want = v * n, have = mtN(me, k), ok = have >= want, comp = !S.cfg.mat.base.includes(k);
-    const tail = ok ? null : comp ? t('cvHave', { n: have }) : t('cvHaveFrom', { n: have, x: t('gks_' + matFrom(k)) });
-    const item = [h('span', { class: 'nw' }, want + '×\u00a0' + t('mt_' + k).toLowerCase()), tail ? [' ', h('span', { class: 'nw' }, tail)] : null];
+    const rare = dgRare(k), want = v * n, have = mtN(me, k), ok = have >= want, comp = !S.cfg.mat.base.includes(k) && !rare;
+    // o raro diz de que escavação sai (v86)
+    const tail = ok ? null : comp ? t('cvHave', { n: have }) : rare ? dgHaveLine(me, k, have) : t('cvHaveFrom', { n: have, x: t('gks_' + matFrom(k)) });
+    const item = [h('span', { class: 'nw' }, want + '×\u00a0' + (rare ? dgLow(k) : t('mt_' + k).toLowerCase())), tail ? [' ', h('span', null, tail)] : null];
     return [i ? '\u00a0· ' : null, ok ? h('span', null, item)
       : comp ? h('button', { class: 'cvgo c-red', on: { click: () => { S.cvTab = 'comp'; S.cvHi = k; render(); } } }, item, '\u00a0›') : h('span', { class: 'c-red' }, item)];
   });
@@ -2505,18 +2512,20 @@ function recipeRow(me, r, n, preso) {
   const price = mq ? V.price : r.price * n, needs = mq ? V.needs : r.needs;
   const short = Object.entries(needs).some(([k, v]) => mtN(me, k) < v * (mq ? 1 : n)), busy = preso || (!comp && !mq && !!me.cf);
   let state = null, falta = null;
+  const g = r.kind === 'tool' || r.kind === 'gun' || r.kind === 'gear' ? gearOf(r.id) : null, low = g && g.level && me.level < g.level;
   const btn = (label, on, aria) => h('button', { class: 'btn sm ghost', disabled: short || busy, 'aria-label': aria, on: { click: on } }, label);
   if (r.kind === 'tool' && me.inv.some((x) => x.id === r.id)) state = h('span', { class: 'small c-cash' }, t('matHave'));
   else if (mq && ms === 1) state = h('span', { class: 'small c-cash' }, t('cvOn'));
   else if (r.kind === 'maq' && !me.biz[bi].n) falta = t('cvNeed_' + r.biz);
   else if (comp && mtN(me, r.id) + n > S.cfg.mat.cap) falta = t('cvFull', { c: S.cfg.mat.cap });
+  else if (low) falta = t('arNeedLvl', { n: g.level });   // v87: abaixo do nível, sem botão; o nível vai na linha do preço
   else if (!short && !busy && cash < price) state = h('span', { class: 'small muted num' }, t('needMoney', { m: money(price - cash) }));
   else if (mq) state = btn(t('cvRev'), (e) => act('maqService', { id: r.biz }, { el: e.currentTarget }), t('cvRevAria', { x: crIt(r.id) }));
   else state = btn(t('cvMake'), (e) => act('craftStart', { id: r.id, n }, { el: e.currentTarget }), t('cvMakeAria', { x: crIt(r.id) + (n > 1 ? ' ×' + n : '') }));
-  const g = r.kind === 'tool' || r.kind === 'gun' ? gearOf(r.id) : null;
   const what = r.kind === 'maq' ? (ms === 3 ? h('span', { class: 'c-red' }, t('cvStopped')) : mq ? h('span', { class: 'c-cash' }, t('cvMaqUntil', { x: list('biz')[bi], p: S.cfg.craft.maqBp / 100, d: cvDay(me.maq[r.biz]) })) : t('cvMaqFx', { p: S.cfg.craft.maqBp / 100, x: list('biz')[bi] }))
     : r.kind === 'tool' ? t('matFor', { x: andList(S.cfg.ops.filter((o) => o.mat.includes(r.id)).map((o) => t('op_' + o.id))) }) + (g && g.craft ? ' · ' + t('cvOnly') : '')
-    : r.kind === 'gun' ? t('cvGun', { p: pctOf(g.atk) }) : r.id === 'kit' ? t('cvKit') : null;
+    : r.kind === 'gun' ? t(g.gun ? 'cvGun' : 'cvMelee', { p: pctOf(g.atk) }) + (g.craft ? ' · ' + t('cvOnly') : '')
+    : r.kind === 'gear' ? t('cvGear', { p: pctOf(g.def) }) : r.id === 'kit' ? t('cvKit') : null;
   const when = mq ? t('cvRevLine', { d: V.ms / 864e5, m: money(price) }) : (comp ? '' : cvDur(r.ms) + ' · ') + money(price);
   // grelha: imagem | nome e para que serve | botão; por baixo, a toda a largura do texto, o que pede, o tempo e o preço
   return h('div', { class: 'vrow cvr' + (falta ? ' dim' : '') + (S.cvHi === r.id ? ' hi' : ''), id: 'cv-' + r.id }, crArt(r, 'vth'),
@@ -2527,7 +2536,7 @@ function recipeRow(me, r, n, preso) {
 }
 function screenCave() {
   const me = S.st.me, M = S.cfg.mat, C = S.cfg.craft;
-  const comps = C.list.filter((r) => r.kind === 'comp').map((r) => r.id), vazio = !me.cf && ![...M.base, ...comps].some((id) => mtN(me, id));
+  const comps = C.list.filter((r) => r.kind === 'comp').map((r) => r.id), vazio = !me.cf && ![...M.base, ...comps, ...(M.rare || [])].some((id) => mtN(me, id));
   const out = [pageHead('cave', me.cf ? null : t('s_cave'))];
   const b = busyBanner(me); if (b) out.push(b);
   const bench = caveBench(me, !!b); if (bench) out.push(bench);
@@ -2541,7 +2550,23 @@ function screenCave() {
   out.push(h('p', { class: 'small muted usub' }, t('cvSub_' + grp, { p: C.maqBp / 100 })));
   if (grp === 'comp') out.push(h('div', { class: 'row cvqty' }, h('span', { class: 'small', id: 'cvq' }, t('cvEach')),
     h('div', { class: 'seg sm', role: 'group', 'aria-labelledby': 'cvq' }, [1, 3, 5].map((k) => h('button', { 'aria-pressed': n === k ? 'true' : 'false', on: { click: () => { S.cvN = k; render(); } } }, String(k))))));
-  out.push(h('div', { class: 'card vlist vc cvl' }, C.list.filter((r) => r.kind === grp).map((r) => recipeRow(me, r, n, !!b))));
+  // v86: os fatos ficam com as armas; v87: por espaço (branca, mão, principal) e do mais fraco para o mais forte, os fatos no fim
+  const SL = ['branca', 'mao', 'principal'], ordem = (r) => { const g = gearOf(r.id); return r.kind === 'gear' ? [9, g?.def || 0] : g ? [SL.indexOf(g.slot), g.atk] : [0, 0]; };
+  const rs = C.list.filter((r) => r.kind === grp || (grp === 'gun' && r.kind === 'gear'));
+  if (grp === 'gun') {
+    rs.sort((a, b) => { const x = ordem(a), y = ordem(b); return x[0] - y[0] || x[1] - y[1]; });
+    // v87: 30 receitas. Um cartão por espaço, com um título; as que pedem nível acima da primeira que ainda não podes fazer
+    // ficam atrás de «Ver as outras» (abre sozinho o grupo da receita a que se chega pela loja)
+    const grpOf = (r) => (r.kind === 'gear' ? 'gear' : gearOf(r.id)?.slot), lowR = (r) => me.level < (gearOf(r.id)?.level || 1);
+    if (S.cvHi) { const k = grpOf(recipe(S.cvHi) || {}); if (k) S.cvAll = { ...(S.cvAll || {}), [k]: true }; }
+    for (const k of ['branca', 'mao', 'principal', 'gear']) {
+      const L = rs.filter((r) => grpOf(r) === k); if (!L.length) continue;
+      const first = L.find(lowR), vis = (r) => !lowR(r) || r === first, open = S.cvAll?.[k], hid = L.filter((r) => !vis(r)).length;
+      out.push(h('h3', { class: 'cvsep' }, k === 'gear' ? t('arDef') : t('sl_' + k)),
+        h('div', { class: 'card vlist vc cvl' }, [...(open ? L : L.filter(vis)).map((r) => recipeRow(me, r, n, !!b)),
+          hid ? moreRow(open, hid, () => { S.cvAll = { ...(S.cvAll || {}), [k]: !open }; render(); }) : null]));
+    }
+  } else out.push(h('div', { class: 'card vlist vc cvl' }, rs.map((r) => recipeRow(me, r, n, !!b))));
   if (S.cvHi) { const id = S.cvHi; S.cvHi = null; requestAnimationFrame(() => document.getElementById('cv-' + id)?.scrollIntoView({ block: 'center', behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' })); }
   // o depósito: os materiais dos biscates (com o biscate de onde vêm) e os componentes já feitos
   const cell = (id, sub) => { const n = mtN(me, id), full = n >= M.cap;
@@ -2551,8 +2576,10 @@ function screenCave() {
   const lv = (w) => S.cfg.work.list.find((x) => x.id === w)?.level || 1;
   out.push(h('h2', { class: 'sec' }, t('cvDepot')), h('p', { class: 'small muted usub' }, t('cvDepotSub', { c: M.cap })),
     h('div', { class: 'card cvdep' }, M.base.map((id) => { const w = matFrom(id); return cell(id, me.level < lv(w) ? t('cvOpensAt', { x: t('gks_' + w), n: lv(w) }) : t('gks_' + w)); }),
-      h('h3', { class: 'cvsep' }, t('cvG_comp')), comps.map((id) => cell(id, null))));
+      h('h3', { class: 'cvsep' }, t('cvG_comp')), comps.map((id) => cell(id, null)),
+      M.rare ? [h('h3', { class: 'cvsep' }, t('cvRare')), M.rare.map((id) => cell(id, t('dgSite_' + (S.cfg.dig.sites.find((x) => x.rare === id)?.id || ''))))] : null));
   if (!vazio) out.push(h('button', { class: 'card row tap stlink', on: { click: () => go('gigs') } }, h('span', { class: 'grow' }, t('cvToGigs')), h('span', { class: 'muted', 'aria-hidden': 'true' }, '›')));
+  if (M.rare) out.push(h('button', { class: 'card row tap stlink', on: { click: () => go('dig') } }, h('span', { class: 'grow' }, t('cvToDig')), h('span', { class: 'muted', 'aria-hidden': 'true' }, '›')));   // v86: os raros
   return out;
 }
 
@@ -2692,9 +2719,9 @@ function feiraRow(L, right, sub) {
     h('div', { class: 'grow' }, h('b', null, fName(L.kind, L.id) + (L.n > 1 ? ' ×' + L.n : '')), sub, fUses(L)), right);
 }
 // grupos (catálogo e o que se pode vender): materiais, componentes, colecionáveis, objetos; dentro de cada um, por nome
-const F_GRP = (x) => (x.kind === 'mt' ? (S.cfg.mat.base.includes(x.id) ? 'mat' : 'comp') : x.kind === 'col' ? 'col' : 'inv');
+const F_GRP = (x) => (x.kind === 'mt' ? (S.cfg.mat.base.includes(x.id) ? 'mat' : S.cfg.mat.rare?.includes(x.id) ? 'rare' : 'comp') : x.kind === 'col' ? 'col' : 'inv');
 function fGroups(items, row, sort) {
-  const order = ['mat', 'comp', 'col', 'inv'], by = {};
+  const order = ['mat', 'comp', 'rare', 'col', 'inv'], by = {};
   for (const x of items) (by[F_GRP(x)] ||= []).push(x);
   const col = new Intl.Collator(lang() === 'pt' ? 'pt-PT' : 'en-GB');
   return order.filter((g) => by[g]).map((g) => [h('h2', { class: 'sec' }, t('fG_' + g)),
@@ -2791,12 +2818,22 @@ function screenFeira() {
 // uma casa vazia diz quantos achados há nas 8 à volta. Por baixo, o saco, o risco da próxima pazada e o botão de sair.
 // Sem escavação: os quatro sítios, com o que pedem, o que custam e quando voltam a estar livres.
 const dgSite = (id) => S.cfg.dig.sites.find((x) => x.id === id);
+// v86: o que sai da grelha pode ser um achado (vitrine) ou o material raro do sítio (depósito da cave)
+const dgRare = (v) => !!S.cfg.mat.rare?.includes(v);
+const dgName = (v) => t((dgRare(v) ? 'mt_' : 'co_') + v);
+const dgArt = (v, cls) => art(dgRare(v) ? 'mat' : 'col', v, cls);
+// os nomes dos raros levam maiúscula em inglês («Roman bronze»); em português vão em minúsculas a meio da frase
+const dgLow = (v) => (dgRare(v) && lang() !== 'pt' ? dgName(v) : dgName(v).toLowerCase());
+const dgFinds = (got) => (got || []).filter((v) => !dgRare(v)).length;
+// ao sair: o raro vai para o depósito (ou perde-se, se não couber)
+const dgRareTxt = (r) => { const R = (r.got || []).filter(dgRare); if (!R.length) return ''; const lost = r.matLost || 0;
+  return ' ' + (lost >= R.length ? t('tDigRareLost', { x: dgLow(R[0]) }) : t('tDigRare', { x: dgLow(R[0]) })); };
 const dgSet = (id) => Object.keys(S.cfg.col.sets).find((k) => S.cfg.col.sets[k].dig === id);
 function digBoard(me, b) {
   const D = S.cfg.dig, d = me.dg, N = D.size, open = new Map(d.open.map((x) => [x.i, x])), left = d.taps - d.used, risk = d.next;
   const cells = Array.from({ length: N * N }, (_, i) => {
     const o = open.get(i), x = (i % N) + 1, y = Math.floor(i / N) + 1;
-    if (o && o.v) return h('div', { class: 'dgc got', role: 'img', 'aria-label': t('dgCellGot', { x, y, v: t('co_' + o.v) }) }, art('col', o.v, 'dgi'));
+    if (o && o.v) return h('div', { class: 'dgc got', role: 'img', 'aria-label': t('dgCellGot', { x, y, v: dgName(o.v) }) }, dgArt(o.v, 'dgi'));
     if (o) return h('div', { class: 'dgc dug' + (o.n ? '' : ' z'), role: 'img', 'aria-label': t('dgCellN', { x, y, n: o.n }) }, o.n ? String(o.n) : '');
     return h('button', { class: 'dgc', type: 'button', 'aria-label': t('dgCellGo', { x, y }), disabled: !!b || left < 1,
       on: { click: (e) => act('digTap', { i }, { el: e.currentTarget }) } });
@@ -2806,7 +2843,7 @@ function digBoard(me, b) {
     h('h2', { class: 'sec' }, t('dgSite_' + d.site)),
     h('p', { class: 'small num' }, t('dgTaps', { a: left, b: d.taps }), ' · ', h('span', { class: risk ? 'c-red' : 'muted' }, risk ? t('dgRisk', { p: risk / 100 }) : t(safeLeft === 1 ? 'dgSafe1' : 'dgSafe', { n: safeLeft }))),
     h('div', { class: 'dgb', role: 'group', 'aria-label': t('dgGrid'), style: `--n:${N}` }, cells),
-    h('p', { class: 'small dgbag' }, d.got.length ? [t('dgBag'), ' ', h('span', { class: 'c-cash' }, d.got.map((v) => t('co_' + v)).join(', '))] : t('dgBag0')),
+    h('p', { class: 'small dgbag' }, d.got.length ? [t('dgBag'), ' ', h('span', { class: 'c-cash' }, d.got.map(dgName).join(', '))] : t('dgBag0')),
     h('button', { class: 'btn block big' + (d.got.length ? ' buy' : ' ghost'), disabled: !!b, on: { click: (e) => act('digStop', {}, { el: e.currentTarget }) } },
       d.got.length ? t(d.got.length === 1 ? 'dgLeave1' : 'dgLeave', { n: d.got.length }) : t('dgLeave0')),
     h('p', { class: 'small muted num' }, t('dgCloses'), ' ', h('span', { dataset: { left: d.until, long: 1 } }, leftTxt(d.until - now()))));
@@ -2818,6 +2855,7 @@ function digSiteRow(me, S2, b) {
   return h('div', { class: 'vrow dgs' }, art('sitios', S2.id, 'dgsi'),
     h('div', { class: 'grow' }, h('b', null, t('dgSite_' + S2.id)), h('div', { class: 'small muted' }, t('dgEra_' + S2.id)),
       h('div', { class: 'small num' }, h('span', { class: have === items.length ? 'c-cash' : '' }, t('dgHave', { a: have, b: items.length })), h('span', { class: 'muted' }, ' · ' + t(musPay(me, set).first ? 'dgSetVal1' : 'dgSetValN', { m: money(musPay(me, set).cash) }))),
+      S2.rare ? h('div', { class: 'small muted' }, t('dgRareLine', { x: dgLow(S2.rare) })) : null,
       h('div', { class: 'small muted num' }, t('dgJail', { m: S2.jailMin, b: money(S2.lawyer) })),
       lock ? h('div', { class: 'small muted' }, t('dgNeed', { n: S2.st })) : wait ? h('div', { class: 'small muted' }, t('dgWatched'), ' ', h('span', { class: 'num', dataset: { left: me.dgc[S2.id], long: 1 } }, leftTxt(me.dgc[S2.id] - now())))
         : cash < S2.price ? h('div', { class: 'small muted' }, t('dgNoCash', { m: money(S2.price) })) : null,
@@ -2830,9 +2868,9 @@ function digLastCard() {
   const open = new Map((L.open || []).map((x) => [x.i, x])), finds = L.grid.filter(Boolean).length;
   const cells = L.grid.map((v, i) => {
     const o = open.get(i);
-    if (o && o.v) return h('div', { class: 'dgc got' + (L.caught ? ' lost' : ''), role: 'img', 'aria-label': t('co_' + o.v) }, art('col', o.v, 'dgi'));
+    if (o && o.v) return h('div', { class: 'dgc got' + (L.caught ? ' lost' : ''), role: 'img', 'aria-label': dgName(o.v) }, dgArt(o.v, 'dgi'));
     if (o) return h('div', { class: 'dgc dug' + (o.n ? '' : ' z'), 'aria-hidden': 'true' }, o.n ? String(o.n) : '');
-    if (v) return h('div', { class: 'dgc miss', role: 'img', 'aria-label': t('dgMissed', { v: t('co_' + v) }) }, art('col', v, 'dgi'));
+    if (v) return h('div', { class: 'dgc miss', role: 'img', 'aria-label': t('dgMissed', { v: dgName(v) }) }, dgArt(v, 'dgi'));
     return h('div', { class: 'dgc rest', 'aria-hidden': 'true' });
   });
   return h('section', { class: 'dglast' },
@@ -3354,21 +3392,31 @@ function gearRow(me, g) {
   const lock = me.level < (g.level || 1), cash = me.cash + me.bank, swap = me.eq[g.slot] && !worn && invFull(me);
   const info = [gearFx(g)].concat(g.gun ? [t('fxLife', { n: g.life })] : []).join(' · ');
   let right = null, extra = null;
+  const rc = !g.craft && (S.cfg.craft?.list || []).find((r) => r.id === g.id);
   if (worn) {
     const gasta = g.gun && !(worn.u > 0);
     let uso = 'inUse';
-    if (g.gun && !gasta) { const rob = gunSlot(me) === g.slot, fight = fightGunSlot(me) === g.slot; uso = rob && fight ? 'inUse' : rob ? 'inUseRob' : fight ? 'inUseFight' : 'inReserve'; }
-    extra = h('div', { class: 'small num' }, h('span', { class: gasta ? 'c-red' : uso === 'inReserve' ? 'muted' : 'c-cash' }, gasta ? t('gunWorn') : t(uso)),
+    // v87: com as duas a disparar, a mais fraca conta 30% nas lutas (já não fica só de reserva)
+    if (g.gun && !gasta) { const rob = gunSlot(me) === g.slot, fight = fightGunSlot(me) === g.slot; uso = rob && fight ? 'inUse' : rob ? 'inRobSide' : fight ? 'inUseFight' : 'inSide'; }
+    extra = h('div', { class: 'small num' }, h('span', { class: gasta ? 'c-red' : 'c-cash' }, gasta ? t('gunWorn') : t(uso, { p: (S.cfg.gunSideBp || 0) / 100 })),
       g.gun && !gasta ? ' · ' + t('usesLeft', { u: worn.u, l: g.life }) : null);
-    // o preço da reparação vai no botão, como o preço de comprar
+    // o preço da reparação vai no botão, como o preço de comprar. v87: se fazer outra na cave sai mais barato, diz-se ao lado
+    // e o botão de reparar deixa de ser o principal
+    const cvCheaper = rc && g.gun && worn.u < g.life && !mtN(me, 'kit') && me.repair[g.slot] > rc.price;
+    if (cvCheaper) extra = [extra, h('button', { class: 'lnk cvalt num', on: { click: () => { S.cvTab = 'gun'; S.cvHi = g.id; go('cave'); } } }, t('arCaveCraft', { m: money(rc.price) }) + ' ›')];
     if (g.gun && worn.u < g.life) right = mtN(me, 'kit') ? h('button', { class: 'btn sm ' + (gasta ? 'buy' : 'ghost'), on: { click: (e) => act('repair', { slot: g.slot, kit: true }, { el: e.currentTarget }) } }, t('repairKit'))
-      : h('button', { class: 'btn sm num ' + (gasta ? 'buy' : 'ghost'), disabled: cash < me.repair[g.slot], on: { click: (e) => act('repair', { slot: g.slot }, { el: e.currentTarget }) } }, t('repairBtn') + ' · ' + money(me.repair[g.slot]));
+      : h('button', { class: 'btn sm num ' + (gasta && !cvCheaper ? 'buy' : 'ghost'), disabled: cash < me.repair[g.slot], on: { click: (e) => act('repair', { slot: g.slot }, { el: e.currentTarget }) } }, t('repairBtn') + ' · ' + money(me.repair[g.slot]));
   } else if (held >= 0) {
     extra = h('div', { class: 'small muted' }, t('inInv'));
-    right = h('button', { class: 'btn sm ghost', on: { click: (e) => act('equip', { i: held }, { el: e.currentTarget }) } }, t('useBtn'));
+    right = lock ? h('span', { class: 'small muted' }, t('arNeedLvl', { n: g.level }))   // v87: o nível conta também para o que veio da feira
+      : h('button', { class: 'btn sm ghost', on: { click: (e) => act('equip', { i: held }, { el: e.currentTarget }) } }, t('useBtn'));
+  } else if (g.craft) {   // v87: as melhores de cada categoria só se fazem na cave (com um material raro das escavações)
+    extra = h('div', { class: 'small muted' }, t('arCaveOnly'));
+    right = h('button', { class: 'btn sm ghost', on: { click: () => { S.cvTab = 'gun'; S.cvHi = g.id; go('cave'); } } }, lock ? t('arCaveLvl', { n: g.level }) : t('arToCave'));
   } else if (lock) right = h('span', { class: 'small muted' }, t('arNeedLvl', { n: g.level }));
   else {
     if (swap) extra = h('div', { class: 'small c-red' }, t('noRoomSwap'));
+    else if (rc) extra = h('div', { class: 'small muted num' }, t('arCaveCraft', { m: money(rc.price) }));   // v87: fazer na cave sai a metade
     // o botão tem o preço: é a etiqueta de uma loja
     const pr = gearP(g);   // v76: com a lei das armas livres, as de mão, principais e brancas ficam mais baratas
     right = h('button', { class: 'btn sm ghost num', 'aria-label': t('buyAria', { x: t('g_' + g.id), m: money(pr) }), disabled: cash < pr || swap, on: { click: (e) => act('buy', { id: g.id }, { el: e.currentTarget }) } }, t('buy') + ' · ' + money(pr));
@@ -3376,6 +3424,8 @@ function gearRow(me, g) {
   return h('div', { class: 'vrow jbr' + (lock && !worn ? ' dim' : '') }, art('gear', g.id, 'vth'),
     h('div', { class: 'grow' }, h('b', null, t('g_' + g.id)), h('div', { class: 'small' }, info), extra), right);
 }
+// v87: «Ver as outras N» é uma linha no fim da lista (pesa menos do que os botões de comprar)
+const moreRow = (open, n, toggle) => h('button', { class: 'vmore', 'aria-expanded': open ? 'true' : 'false', on: { click: toggle } }, open ? t('arLess') : n === 1 ? t('arMore1') : t('arMore', { n }));
 // as armas de gangue e os guardas continuam por ordem, uma de cada vez
 function stepRow(me, kind, g, i, name, fx, folder, names) {
   const cur = me[kind] ?? -1, lock = me.level < (g.level || 1), next = i === cur + 1, cash = me.cash + me.bank;
@@ -3395,9 +3445,21 @@ function screenArms() {
   const sub = (txt) => h('p', { class: 'small muted', style: 'margin:-4px 2px 10px' }, txt);
   const list2 = (rows) => h('div', { class: 'card vlist vc jbl' }, rows);
   if (seg === 'fight') {
-    out.push(h('div', { class: 'armsum row sp' }, h('span', null, t('arAtkNow')), h('b', { class: 'num' }, plusPct(me.atkBp || 0))), sub(t('arFightSub')));
+    out.push(h('div', { class: 'armsum row sp' }, h('span', null, t('arAtkNow')), h('b', { class: 'num' }, plusPct(me.atkBp || 0))), sub(t('arFightSub', { p: (S.cfg.gunSideBp || 0) / 100 })));
     if (lawIs('armas')) out.push(h('p', { class: 'small c-cash', style: 'margin:-4px 2px 10px' }, t('pArmsLaw', { p: 100 - S.cfg.gov.laws.armas.priceBp / 100 })));
-    for (const sl of ['branca', 'mao', 'principal']) out.push(h('h2', { class: 'sec' }, t('sl_' + sl)), list2(G.filter((g) => g.slot === sl).map((g) => gearRow(me, g))));
+    // v87: 30 armas não cabem num ecrã. À vista: a que tens, as melhores que ela que já podes usar e a próxima que pede nível;
+    // as mais fracas e as de nível mais alto ficam atrás de «Mostrar mais»
+    for (const sl of ['branca', 'mao', 'principal']) {
+      const L = G.filter((g) => g.slot === sl), cur = me.eq[sl] ? gearOf(me.eq[sl].id)?.atk || 0 : 0, open = S.armsAll?.[sl];
+      const firstLock = L.find((g) => me.level < (g.level || 1));
+      const vis = (g) => (me.eq[sl] && me.eq[sl].id === g.id) || me.inv.some((x) => x.id === g.id) || g === firstLock || (me.level >= (g.level || 1) && g.atk > cur);
+      const shown = open ? L : L.filter(vis), hid = L.length - L.filter(vis).length;
+      // ao lado de uma arma de fogo mais forte (a outra), as deste espaço só somam 30% nas lutas: diz-se uma vez, por cima
+      const os = sl === 'mao' ? 'principal' : sl === 'principal' ? 'mao' : null, oth = os && me.eq[os] && me.eq[os].u > 0 ? gearOf(me.eq[os].id) : null;
+      const sideSub = oth && L.every((g) => g.atk <= oth.atk) ? sub(t('arWithOther', { p: (S.cfg.gunSideBp || 0) / 100, s: t('sl_' + os).toLowerCase() })) : null;
+      out.push(h('h2', { class: 'sec' }, t('sl_' + sl)), sideSub, list2([...shown.map((g) => gearRow(me, g)),
+        hid ? moreRow(open, hid, () => { S.armsAll = { ...(S.armsAll || {}), [sl]: !open }; render(); }) : null]));
+    }
     // balas: às caixas; sem espaço no inventário só se juntam às que já tens
     const have = invN(me, 'balas'), room = have > 0 || !invFull(me);
     out.push(h('h2', { class: 'sec' }, t('g_balas')), list2([h('div', { class: 'vrow jbr blr' }, art('gear', 'balas', 'vth'),
@@ -3452,7 +3514,8 @@ function screenInv() {
       h('div', { class: 'grow' }, h('b', null, itName(it.id)), h('div', { class: 'small num' }, good ? tint(detail) : detail), pior, needed,
         good ? null : sureBtn('btn ghost sm', t('sellBtn') + ' · ' + money(sell), 'btn ghost dng sm sure', t('sellSure', { m: money(sell) }), () => act('sell', { i }))),
       good ? h('button', { class: 'btn sm ghost', on: { click: sellIt } }, t('sellBtn'))
-        : g && g.slot !== 'mat' ? h('button', { class: 'btn sm ghost', on: { click: (e) => act('equip', { i }, { el: e.currentTarget }) } }, t('useBtn')) : null);
+        : g && g.slot !== 'mat' ? (me.level < (g.level || 1) ? h('span', { class: 'small muted' }, t('arNeedLvl', { n: g.level }))   // v87: o nível conta ao vestir
+          : h('button', { class: 'btn sm ghost', on: { click: (e) => act('equip', { i }, { el: e.currentTarget }) } }, t('useBtn'))) : null);
   });
   // a droga para vender na rua também ocupa (um espaço por tipo)
   const D = S.cfg.deal, drugs = ((me.deal && me.deal.dst) || []).map((g, j) => [g, S.cfg.drugs.findIndex((x) => x.id === D.list[j].drug)]).filter(([g]) => g > 0);

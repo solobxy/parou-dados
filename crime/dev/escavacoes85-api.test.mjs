@@ -90,9 +90,12 @@ test('escavações pela API: a grelha nunca sai, pazadas, sair guarda na vitrine
   const safe = r.body.me.dg.safe;
   for (let i = 1; i < safe && !got; i++) { r = await act(A, { type: 'digTap', i }); assert.equal(r.status, 200); if (r.body.result.v) got++; }
   r = await act(A, { type: 'digStop' }); assert.equal(r.status, 200, JSON.stringify(r.body).slice(0, 200));
-  assert.equal(r.body.result.grid.filter(Boolean).length, CFG.dig.finds, 'no fim mostra-se a grelha');
-  assert.equal(r.body.me.dg, null); assert.equal(r.body.result.got.length, got);
-  assert.equal(Object.values(r.body.me.col).reduce((a, b) => a + b, 0), got);
+  const raro = r.body.result.grid.filter((v) => CFG.mat.rare.includes(v)).length;   // v86: às vezes há o raro do sítio
+  assert.equal(r.body.result.grid.filter(Boolean).length, CFG.dig.finds + raro, 'no fim mostra-se a grelha'); assert.ok(raro <= 1);
+  const G = r.body.result.got, achados = G.filter((v) => !CFG.mat.rare.includes(v));
+  assert.equal(r.body.me.dg, null); assert.ok(G.length >= got);
+  assert.equal(Object.values(r.body.me.col).reduce((a, b) => a + b, 0), achados.length, 'os achados na vitrine');
+  for (const m of G.filter((v) => CFG.mat.rare.includes(v))) assert.equal(r.body.me.mt[m], 1, 'o raro no depósito');
   assert.ok(r.body.me.dgc.briteiros > r.body.now);
   r = await act(A, { type: 'digStart', site: 'briteiros' }); assert.equal(r.body.error, 'DIG_WAIT');
   r = await act(A, { type: 'digStop' }); assert.equal(r.body.error, 'NO_DIG');

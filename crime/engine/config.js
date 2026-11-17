@@ -229,17 +229,48 @@ export const CFG = {
   // vende-se logo à pressa por metade (rushBp). O resto do sorteio é dinheiro na mão.
   loot: { goods: ['telemovel', 'relogio', 'miudezas', 'perfumes', 'eletronica', 'radio', 'gps', 'pecas', 'fio', 'joias', 'tabaco', 'joalharia'], rushBp: 5000, gearSellBp: 5000 },
   // Equipamento (passo 4): 9 espaços no corpo. atk/def em bp a somar à Força/Tolerância. Ataque = a melhor arma de fogo (mão ou
-  // principal, se não estiver estragada) + a arma branca. Defesa = a soma das peças do corpo. Armas de fogo: life = usos até
+  // principal, se não estiver estragada) + 30% da outra (v87) + a arma branca. Defesa = a soma das peças do corpo. Armas de fogo: life = usos até
   // ser preciso reparar (reparar custa a parte gasta do preço). Acessórios: mochila (+4 espaços) ou rádio-scanner (prisão ao
   // falhar 20% em vez de 25%). Preços reais: pistola 1 750 €, colete 600 €, navalha 25 €; os outros sem fonte (grau D).
   slots: ['branca', 'mao', 'principal', 'cabeca', 'tronco', 'pernas', 'pes', 'maos', 'acess'],
+  gunSideBp: 3000,   // v87: com duas armas de fogo a funcionar, a mais fraca conta 30% no ataque (a de mão deixa de ser só reserva)
   gear: [
+    // v87: o arsenal passa de 6 para 30 armas (10 brancas, 5 de mão, 15 principais), por nível. As melhores de cada categoria
+    // (craft: true) só se fazem na cave, com um material raro das escavações, e ficam acima de todas as da loja; o preço delas é o
+    // valor (penhorista, feira). As 6 antigas mantêm o preço e o ataque; a metralhadora e a sniper passam a pedir nível (quem já
+    // as tinha vestidas fica com elas). Degraus de pelo menos 1 000 bp nas principais (a revisão achou o topo plano).
+    // Teto do ataque (principal + 30% da de mão + branca): 23 000 + 2 550 + 5 600 = 31 150 bp; a defesa vai a 28 500 nas peças
+    // e mais 50% com a escolta (os guardas multiplicam), por isso no topo quem se protege continua à frente.
     { id: 'soqueira', slot: 'branca', price: 20, atk: 1000 },
     { id: 'navalha', slot: 'branca', price: 25, atk: 2500 },
+    { id: 'taco', slot: 'branca', price: 60, atk: 2800 },   // chave de rodas (o taco com arame é arma de gangue)
+    { id: 'bastao', slot: 'branca', price: 120, atk: 3100 },
+    { id: 'facamato', slot: 'branca', price: 220, atk: 3400, level: 5 },
+    { id: 'machado', slot: 'branca', price: 400, atk: 3700, level: 8 },
+    { id: 'catana', slot: 'branca', price: 750, atk: 4000, level: 12 },   // cutelo (a catana é arma de gangue)
+    { id: 'katana', slot: 'branca', price: 1500, atk: 4400, level: 20 },   // sabre
+    { id: 'falcata', slot: 'branca', price: 3000, atk: 5000, level: 25, craft: true },
+    { id: 'gladio', slot: 'branca', price: 5000, atk: 5600, level: 35, craft: true },
+    { id: 'revolver', slot: 'mao', price: 600, atk: 4000, gun: true, life: 15 },
     { id: 'pistola', slot: 'mao', price: 1750, atk: 5000, gun: true, life: 20 },
+    { id: 'magnum', slot: 'mao', price: 3000, atk: 6000, gun: true, life: 30, level: 12 },
+    { id: 'pistola50', slot: 'mao', price: 5000, atk: 7000, gun: true, life: 40, level: 20 },   // pistola .45
+    { id: 'pistolaafinada', slot: 'mao', price: 8000, atk: 8500, gun: true, life: 50, level: 30, craft: true },
+    { id: 'pressao', slot: 'principal', price: 900, atk: 5000, gun: true, life: 15 },   // carabina .22
+    { id: 'caca', slot: 'principal', price: 1700, atk: 6500, gun: true, life: 25 },   // carabina de caça
     { id: 'cacadeira', slot: 'principal', price: 2500, atk: 8000, gun: true, life: 30 },
-    { id: 'metralhadora', slot: 'principal', price: 6000, atk: 12000, gun: true, life: 70 },
-    { id: 'sniper', slot: 'principal', price: 9000, atk: 17000, gun: true, life: 100 },
+    { id: 'repeticao', slot: 'principal', price: 3500, atk: 9000, gun: true, life: 40, level: 6 },
+    { id: 'compacta', slot: 'principal', price: 4500, atk: 10500, gun: true, life: 50, level: 9 },
+    { id: 'metralhadora', slot: 'principal', price: 6000, atk: 12000, gun: true, life: 70, level: 12 },
+    { id: 'assalto', slot: 'principal', price: 7500, atk: 13500, gun: true, life: 80, level: 15 },   // carabina semiautomática
+    { id: 'artesanal', slot: 'principal', price: 8000, atk: 15000, gun: true, life: 60, level: 18, craft: true },
+    { id: 'sniper', slot: 'principal', price: 9000, atk: 17000, gun: true, life: 100, level: 22 },
+    { id: 'batalha', slot: 'principal', price: 11000, atk: 18000, gun: true, life: 90, level: 26 },
+    { id: 'precisao', slot: 'principal', price: 13500, atk: 19000, gun: true, life: 110, level: 30 },   // espingarda de atirador
+    { id: 'ligeira', slot: 'principal', price: 16000, atk: 20000, gun: true, life: 120, level: 34 },   // .308 de ferrolho
+    { id: 'calibre50', slot: 'principal', price: 18000, atk: 21000, gun: true, life: 120, level: 38 },   // carabina com silenciador
+    { id: 'afinada', slot: 'principal', price: 20000, atk: 22000, gun: true, life: 130, level: 42, craft: true },
+    { id: 'tatica', slot: 'principal', price: 30000, atk: 23000, gun: true, life: 140, level: 50, craft: true },
     // v73 (17/11/2026): mais peças para a cabeça, as pernas, os pés, as mãos e acessórios (as de baixo nível valem pouco; as táticas pedem nível)
     { id: 'bone', slot: 'cabeca', price: 15, def: 300 },
     { id: 'gorro', slot: 'cabeca', price: 20, def: 400 },
@@ -408,6 +439,7 @@ export const CFG = {
     good: 7000,   // biscate bem feito (qualidade) dá 2 em vez de 1
     base: ['madeira', 'eletronica', 'quimicos', 'sucata', 'cobre', 'pecas'],
     drop: { camiao: 'madeira', entregas: 'eletronica', laboratorio: 'quimicos', oficina: 'sucata', mudancas: 'cobre', desmanche: 'pecas' },
+    rare: ['ferro', 'bronze', 'vidro', 'malha'],   // v86: materiais raros, só das escavações (um por sítio), para as receitas de topo
   },
   craft: {
     batch: 5,   // componentes: até 5 de cada vez
@@ -431,6 +463,38 @@ export const CFG = {
       { id: 'broca', kind: 'tool', needs: { motor: 1, circuito: 1, chapa: 2 }, price: 2500, ms: 4 * HOUR },
       { id: 'pistola', kind: 'gun', needs: { cano: 1, chapa: 1, pecas: 1 }, price: 875, ms: 2 * HOUR },
       { id: 'cacadeira', kind: 'gun', needs: { cano: 2, chapa: 1, madeira: 2 }, price: 1250, ms: 3 * HOUR },   // a coronha talha-se da madeira
+      // v87: todas as da loja a partir de 200 € também se fazem aqui, por metade do preço e peças dos biscates (sem raros)
+      { id: 'facamato', kind: 'gun', needs: { chapa: 1, madeira: 1 }, price: 110, ms: HOUR },
+      { id: 'machado', kind: 'gun', needs: { chapa: 1, caixote: 1 }, price: 200, ms: HOUR },
+      { id: 'catana', kind: 'gun', needs: { chapa: 2, caixote: 1 }, price: 375, ms: 2 * HOUR },
+      { id: 'katana', kind: 'gun', needs: { chapa: 2, sucata: 2, caixote: 1 }, price: 750, ms: 2 * HOUR },
+      { id: 'revolver', kind: 'gun', needs: { cano: 1, chapa: 1 }, price: 300, ms: 2 * HOUR },
+      { id: 'magnum', kind: 'gun', needs: { cano: 1, chapa: 1, pecas: 2 }, price: 1500, ms: 3 * HOUR },
+      { id: 'pistola50', kind: 'gun', needs: { cano: 2, chapa: 1, pecas: 1 }, price: 2500, ms: 3 * HOUR },
+      { id: 'pressao', kind: 'gun', needs: { cano: 1, madeira: 2 }, price: 450, ms: HOUR },
+      { id: 'caca', kind: 'gun', needs: { cano: 1, chapa: 1, madeira: 2 }, price: 850, ms: 2 * HOUR },
+      { id: 'repeticao', kind: 'gun', needs: { cano: 2, chapa: 1, caixote: 1 }, price: 1750, ms: 3 * HOUR },
+      { id: 'compacta', kind: 'gun', needs: { cano: 1, motor: 1, chapa: 1 }, price: 2250, ms: 3 * HOUR },
+      { id: 'assalto', kind: 'gun', needs: { cano: 2, motor: 1, chapa: 1 }, price: 3750, ms: 4 * HOUR },
+      { id: 'batalha', kind: 'gun', needs: { cano: 2, motor: 1, chapa: 2, madeira: 2 }, price: 5500, ms: 5 * HOUR },
+      { id: 'precisao', kind: 'gun', needs: { cano: 2, circuito: 1, chapa: 1, madeira: 2 }, price: 6750, ms: 6 * HOUR },
+      { id: 'ligeira', kind: 'gun', needs: { cano: 2, circuito: 1, chapa: 2, caixote: 1 }, price: 8000, ms: 6 * HOUR },
+      { id: 'calibre50', kind: 'gun', needs: { cano: 2, circuito: 2, chapa: 2 }, price: 9000, ms: 7 * HOUR },
+      // v86: os fatos de topo pedem materiais raros das escavações (gear = proteção: vai para o inventário como as armas);
+      // v87: nas armas, os raros ficaram só para as que se fazem apenas aqui
+      // (um raro por receita: a revisão mostrou que com 2 ou 3 eram precisas dezenas de escavações por peça)
+      { id: 'metralhadora', kind: 'gun', needs: { motor: 1, cano: 2, circuito: 1 }, price: 3000, ms: 4 * HOUR },   // v87: as da loja sem raros
+      { id: 'sniper', kind: 'gun', needs: { cano: 2, circuito: 1, chapa: 1, madeira: 1 }, price: 4500, ms: 6 * HOUR },
+      { id: 'blindado', kind: 'gear', needs: { chapa: 3, ferro: 1 }, price: 3000, ms: 3 * HOUR },
+      // v87: as que só se fazem aqui (as melhores de cada categoria)
+      // (em dinheiro, metade do valor, como as outras: fazer e vender ao recetador nunca dá lucro)
+      { id: 'falcata', kind: 'gun', needs: { ferro: 1, chapa: 1, caixote: 1 }, price: 1500, ms: 3 * HOUR },   // a espada curva dos povos da Idade do Ferro
+      { id: 'gladio', kind: 'gun', needs: { ferro: 1, bronze: 1, chapa: 1 }, price: 2500, ms: 4 * HOUR },
+      { id: 'pistolaafinada', kind: 'gun', needs: { cano: 1, chapa: 1, circuito: 1, vidro: 1 }, price: 4000, ms: 5 * HOUR },   // vidro: a mira
+      { id: 'artesanal', kind: 'gun', needs: { motor: 1, cano: 2, chapa: 2, bronze: 1 }, price: 4000, ms: 4 * HOUR },
+      { id: 'afinada', kind: 'gun', needs: { cano: 2, circuito: 2, vidro: 1, bronze: 1 }, price: 10000, ms: 8 * HOUR },
+      { id: 'tatica', kind: 'gun', needs: { cano: 2, circuito: 1, chapa: 2, vidro: 1 }, price: 15000, ms: 10 * HOUR },
+      { id: 'titanio', kind: 'gear', needs: { chapa: 3, motor: 1, malha: 1 }, price: 7500, ms: 8 * HOUR },
       { id: 'maq-lavandaria', kind: 'maq', biz: 'lavandaria', needs: { motor: 2, chapa: 2, circuito: 1 }, price: 2000, ms: 4 * HOUR },
       { id: 'maq-cafe', kind: 'maq', biz: 'cafe', needs: { motor: 1, circuito: 1, chapa: 1, cano: 1 }, price: 3000, ms: 3 * HOUR },
       { id: 'maq-oficina', kind: 'maq', biz: 'oficina', needs: { motor: 2, chapa: 3, cano: 2 }, price: 4500, ms: 5 * HOUR },
@@ -444,7 +508,7 @@ export const CFG = {
   // de cada peça no que o museu paga pelo conjunto; materiais: ref; componentes: os euros da receita mais os materiais), os
   // lances também param nos 3×, e só se negoceia a partir do nível minLvl. Quem ainda tem coisas por levantar conta-as nos 10.
   feira: { feeBp: 500, listMs: 48 * HOUR, auctionMs: 24 * HOUR, stepBp: 500, bidEndMs: 10 * MIN, maxOpen: 10, maxPrice: 1_000_000_000, maxN: 999,
-    minLvl: 5, loBp: 3000, hiBp: 30000, ref: { madeira: 40, sucata: 40, eletronica: 50, quimicos: 50, cobre: 60, pecas: 60 },
+    minLvl: 5, loBp: 3000, hiBp: 30000, ref: { madeira: 40, sucata: 40, eletronica: 50, quimicos: 50, cobre: 60, pecas: 60, ferro: 400, bronze: 500, vidro: 600, malha: 900 },
     // e entre as mesmas duas contas (num sentido ou no outro), em 24 h, a diferença para o preço de referência não passa de pairMax
     // (vender caro a uma conta e voltar a comprar barato fazia passar dinheiro sem limite, um ciclo de cada vez). Os lances à frente
     // contam já. Quem licita também não guarda mais de maxOpen coisas na feira (por levantar mais leilões em que vai à frente).
@@ -494,10 +558,12 @@ export const CFG = {
   dig: {
     size: 5, finds: 5, taps: 8, safe: 1, riskBp: 500, ttl: 30 * MIN, coolMs: 4 * HOUR,
     sites: [
-      { id: 'briteiros', st: 1, price: 500, jailMin: 15, lawyer: 300 },
-      { id: 'conimbriga', st: 1, price: 1000, jailMin: 25, lawyer: 700 },
-      { id: 'troia', st: 2, price: 2000, jailMin: 40, lawyer: 1800 },
-      { id: 'mertola', st: 3, price: 4000, jailMin: 60, lawyer: 3500 },
+      // v86: rare = o material raro do sítio; rareBp = hipótese de a grelha ter um (como um sexto achado, que vai para o depósito).
+      // Em todas: com 35-40% só saía em 6-15% das escavações (a revisão simulou), lento demais para contar.
+      { id: 'briteiros', st: 1, price: 500, jailMin: 15, lawyer: 300, rare: 'ferro', rareBp: 10000 },
+      { id: 'conimbriga', st: 1, price: 1000, jailMin: 25, lawyer: 700, rare: 'bronze', rareBp: 10000 },
+      { id: 'troia', st: 2, price: 2000, jailMin: 40, lawyer: 1800, rare: 'vidro', rareBp: 10000 },
+      { id: 'mertola', st: 3, price: 4000, jailMin: 60, lawyer: 3500, rare: 'malha', rareBp: 10000 },   // fragmentos de cotas de malha do período islâmico
     ],
   },
   courses: [

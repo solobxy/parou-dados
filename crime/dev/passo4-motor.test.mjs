@@ -38,11 +38,11 @@ test('comprar: equipa logo se o espaço do corpo estiver livre; se não, a nova 
   erro(() => E.buyItem(p, START, world, 'nada'), 'NO_GEAR');
 });
 
-test('ataque e defesa: arma de fogo (a melhor entre a de mão e a principal) mais a arma branca; a defesa soma as peças do corpo', () => {
+test('ataque e defesa: arma de fogo (a melhor entre a de mão e a principal, mais 30% da outra desde a v87) mais a arma branca; a defesa soma as peças do corpo', () => {
   const p = mk(); p.cash = 1e6; const F = p.stats.F, Tt = p.stats.T, now = START;
   const a0 = E.attackPower(p, now), d0 = E.defensePower(p, now);
   E.buyItem(p, now, world, 'navalha'); E.buyItem(p, now, world, 'pistola'); E.buyItem(p, now, world, 'cacadeira');
-  assert.equal(E.attackPower(p, now), Math.floor((a0 * (10000 + G('cacadeira').atk + G('navalha').atk)) / 10000));
+  assert.equal(E.attackPower(p, now), Math.floor((a0 * (10000 + G('cacadeira').atk + Math.floor((G('pistola').atk * CFG.gunSideBp) / 10000) + G('navalha').atk)) / 10000));
   for (const id of ['capacete', 'colete', 'calcas', 'botas', 'luvas']) E.buyItem(p, now, world, id);
   const def = ['capacete', 'colete', 'calcas', 'botas', 'luvas'].reduce((s, id) => s + G(id).def, 0);
   assert.equal(E.defensePower(p, now), Math.floor((d0 * (10000 + def)) / 10000));

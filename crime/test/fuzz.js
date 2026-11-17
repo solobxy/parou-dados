@@ -62,7 +62,8 @@ function contas(kind, a0, a, d0, d, t, res, arg) {
   if (!['crime', 'crimeAll', 'airCollect', 'museum', 'colSell', 'feiraTake', 'feiraGive', 'feiraBuy', 'digTap', 'digStop'].includes(kind) && Object.keys(colD).length) bad('vitrine mexeu sem razão');
   if (Object.values(a.col || {}).some((v) => !Number.isInteger(v) || v < 0)) bad('vitrine negativa');
   // v83: o depósito só cresce com biscates (o material do ofício) e com o que se recolhe da bancada; só desce ao começar uma receita
-  const mtD = {}; for (const id of new Set([...Object.keys(a0.mt || {}), ...Object.keys(a.mt || {})])) { const x = ((a.mt || {})[id] || 0) - ((a0.mt || {})[id] || 0); if (x) mtD[id] = x; }
+  const b0mt = touched(a0, t).mt || {};   // (v86: uma escavação esquecida fecha sozinha e o material raro vai para o depósito)
+  const mtD = {}; for (const id of new Set([...Object.keys(b0mt), ...Object.keys(a.mt || {})])) { const x = ((a.mt || {})[id] || 0) - (b0mt[id] || 0); if (x) mtD[id] = x; }
   const mtEq = (m) => JSON.stringify(Object.entries(mtD).sort()) === JSON.stringify(Object.entries(m).filter(([, v]) => v).sort());
   if (kind === 'workDone' && !mtEq(res.mat ? { [res.mat.id]: res.mat.n } : {})) bad('depósito: biscate');
   if (kind === 'workDone' && res.mat && (res.busted || res.shift || res.mat.id !== CFG.mat.drop[res.id] || res.mat.n + res.mat.lost !== (res.q >= CFG.mat.good ? 2 : 1))) bad('depósito: material do biscate');
@@ -72,7 +73,7 @@ function contas(kind, a0, a, d0, d, t, res, arg) {
     if (comp ? JSON.stringify(touched(a0, t).cf) !== JSON.stringify(a.cf) || res.n > CFG.craft.batch : touched(a0, t).cf || !a.cf || a.cf.id !== res.id || a.cf.end !== t + R.ms || res.n !== 1) bad('cave: bancada ao fazer'); }
   if (kind === 'craftTake') { const R = E.recipeOf(res.id), c0 = touched(a0, t).cf;
     if (!c0 || c0.end > t || c0.id !== res.id || a.cf !== null || dm !== 0 || dr !== 0 || Object.keys(mtD).length) bad('cave: recolher');
-    if ((R.kind === 'tool' || R.kind === 'gun') && a.inv.filter((x) => x.id === res.id).length !== a0.inv.filter((x) => x.id === res.id).length + 1) bad('cave: inventário');
+    if ((R.kind === 'tool' || R.kind === 'gun' || R.kind === 'gear') && a.inv.filter((x) => x.id === res.id).length !== a0.inv.filter((x) => x.id === res.id).length + 1) bad('cave: inventário');
     if (R.kind === 'maq' && (a.maq[R.biz] !== t + CFG.craft.rev.ms || a0.maq[R.biz])) bad('cave: máquina'); }
   if (kind === 'maqService') { const V = CFG.craft.rev, u0 = touched(a0, t).maq[res.id];
     if (!mtEq(Object.fromEntries(Object.entries(V.needs).map(([k, v]) => [k, -v]))) || dm !== -V.price || dr !== 0 || a.maq[res.id] !== Math.max(u0, t) + V.ms || u0 - t > V.maxMs - V.ms) bad('cave: revisão'); }
@@ -84,23 +85,26 @@ function contas(kind, a0, a, d0, d, t, res, arg) {
     if (kind !== 'feiraLock' && (box ? (box[d.id] || 0) !== sinal * d.n || Object.keys(mtD).length + Object.keys(colD).length !== 1 : invN1 - invN0 !== sinal || Object.keys(mtD).length + Object.keys(colD).length)) bad('feira: o que mexeu');
     if (dm !== (kind === 'feiraBuy' ? -d.price : kind === 'feiraLock' ? -d.amount : 0) || dr !== 0) bad('feira: dinheiro');
     if (d.kind === 'mt' && (a.mt[d.id] || 0) > CFG.mat.cap && sinal > 0) bad('feira: passou o teto do depósito'); }
-  if (!['workDone', 'craftStart', 'craftTake', 'maqService', 'repair', 'feiraTake', 'feiraGive', 'feiraBuy'].includes(kind) && Object.keys(mtD).length) bad('depósito mexeu sem razão');
+  if (!['workDone', 'craftStart', 'craftTake', 'maqService', 'repair', 'feiraTake', 'feiraGive', 'feiraBuy', 'digTap', 'digStop'].includes(kind) && Object.keys(mtD).length) bad('depósito mexeu sem razão');
   if (!['craftStart', 'craftTake'].includes(kind) && JSON.stringify(touched(a0, t).cf) !== JSON.stringify(a.cf)) bad('bancada mexeu sem razão');
   if (!['craftTake', 'maqService'].includes(kind) && JSON.stringify(a0.maq || {}) !== JSON.stringify(a.maq || {})) bad('máquinas mexeram sem razão');
   // v85: escavações
   { const b0 = touched(a0, t), d0 = b0.dg, conta = (L) => L.reduce((o, x) => ((o[x] = (o[x] || 0) + 1), o), {});
+    // o saco ao sair: os achados na vitrine; o material raro no depósito (até ao teto)
+    const guardou = (got) => { const R = CFG.mat.rare, raros = conta(got.filter((x) => R.includes(x))), espera = Object.fromEntries(Object.entries(raros).map(([k, v]) => [k, Math.min(CFG.mat.cap, (b0.mt[k] || 0) + v) - (b0.mt[k] || 0)]));
+      return colEq(conta(got.filter((x) => !R.includes(x)))) && mtEq(espera); };
     const igual = (x, y) => JSON.stringify(x.dg) === JSON.stringify(y.dg) && JSON.stringify(x.dgc) === JSON.stringify(y.dgc);   // (há ações que não passam pelo touch)
     if (!kind.startsWith('dig') && !igual(b0, a) && !igual(a0, a)) bad('escavação mexeu sem razão');
     if (kind === 'digStart') { const S = E.siteOf(arg);
-      if (d0 || !a.dg || a.dg.site !== arg || a.dg.used !== 0 || dm !== -S.price || dr !== 0 || Object.keys(colD).length || (b0.dgc[arg] || 0) > t || E.stLevel(a, 'arqueologia') < S.st) bad('escavar: começar'); }
+      if (d0 || !a.dg || a.dg.site !== arg || a.dg.used !== 0 || dm !== -S.price || dr !== 0 || Object.keys(colD).length || Object.keys(mtD).length || (b0.dgc[arg] || 0) > t || E.stLevel(a, 'arqueologia') < S.st) bad('escavar: começar'); }
     if (kind === 'digTap') {
       if (!d0 || dm !== 0 || dr !== 0) bad('escavar: pazada');
-      else if (res.caught) { if (a.dg || Object.keys(colD).length || !(a.jailUntil > t) || !(a.dgc[d0.site] > t) || E.digRiskBp(d0.used + 1, d0.safe) === 0) bad('escavar: ronda'); }
+      else if (res.caught) { if (a.dg || Object.keys(colD).length || Object.keys(mtD).length || !(a.jailUntil > t) || !(a.dgc[d0.site] > t) || E.digRiskBp(d0.used + 1, d0.safe) === 0) bad('escavar: ronda'); }
       else { const got = [...d0.got, ...(res.v ? [res.v] : [])];
         if (res.v && !d0.cells[arg]) bad('escavar: achado onde não havia');
         if (!res.v && d0.cells[arg]) bad('escavar: achado escondido');
-        if (res.end ? a.dg || !colEq(conta(got)) : a.dg.used !== d0.used + 1 || JSON.stringify(a.dg.got) !== JSON.stringify(got) || Object.keys(colD).length) bad('escavar: saco'); } }
-    if (kind === 'digStop' && (!d0 || a.dg || !colEq(conta(d0.got)) || dm !== 0 || dr !== 0 || !(a.dgc[d0.site] > t))) bad('escavar: sair'); }
+        if (res.end ? a.dg || !guardou(got) : a.dg.used !== d0.used + 1 || JSON.stringify(a.dg.got) !== JSON.stringify(got) || Object.keys(colD).length || Object.keys(mtD).length) bad('escavar: saco'); } }
+    if (kind === 'digStop' && (!d0 || a.dg || !guardou(d0.got) || dm !== 0 || dr !== 0 || !(a.dgc[d0.site] > t))) bad('escavar: sair'); }
   switch (kind) {
     case 'gymStart': if (dm !== 0 || dr !== 0 || !a.gs || a.vigor !== touched(a0, t).vigor || E.STATS.some((k) => a.stats[k] !== a0.stats[k])) bad('ginásio: começar'); break;
     case 'gymDone': { const g = touched(a0, t).gs, S = CFG.train.set, b0 = touched(a0, t), n = E.gymReps(g, t - g.t0);
