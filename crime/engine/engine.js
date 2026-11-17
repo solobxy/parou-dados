@@ -57,7 +57,7 @@ export function newPlayer(id, now, world, opts = {}) {
     mi: 0,                         // objetivos já recebidos
     mq: CFG.missions.map((_, i) => i), mrT: 0,   // os que faltam, pela ordem em que vão aparecer; e quando se trocou pela última vez
     titles: [],                    // títulos que ficam para sempre: { k: 'vet' } (veterano das rondas), { k: 'ep', n, d, pos } (pódio de uma época)
-    cls: '', clsAt: 0, av: 0, fx: {}, sick: false, hkN: CFG.hookers.list.map(() => 0), hkAt: CFG.hookers.list.map(() => 0), house: 0, hu: CFG.house.ups.map(() => 0), bj: null, wm: {}, cd: { est: 0, med: 0 }, col: {}, mus: {}, sx: { F: 0, T: 0, I: 0, C: 0 }, gs: null, mt: {}, cf: null, maq: {},        // profissão, avatar e efeitos temporários (kind -> { bp, until })
+    cls: '', clsAt: 0, av: 0, fx: {}, sick: false, hkN: CFG.hookers.list.map(() => 0), hkAt: CFG.hookers.list.map(() => 0), house: 0, hu: CFG.house.ups.map(() => 0), bj: null, wm: {}, cd: { est: 0, med: 0 }, col: {}, mus: {}, sx: { F: 0, T: 0, I: 0, C: 0 }, gs: null, mt: {}, cf: null, maq: {}, dg: null, dgc: {},        // profissão, avatar e efeitos temporários (kind -> { bp, until })
   };
 }
 
@@ -78,6 +78,9 @@ function migrate(p) {
   if (!p.mt || typeof p.mt !== 'object' || Array.isArray(p.mt)) p.mt = {};   // v83: materiais e componentes no depósito
   if (p.cf === undefined) p.cf = null;   // v83: o que está na bancada da cave
   if (!p.maq || typeof p.maq !== 'object' || Array.isArray(p.maq)) p.maq = {};   // v83: máquinas instaladas nos negócios
+  if (p.dg === undefined || (p.dg && typeof p.dg !== 'object')) p.dg = null;   // v85: a escavação aberta
+  if (p.dg && !Number.isSafeInteger(p.dg.safe)) p.dg.safe = CFG.dig.safe;
+  if (!p.dgc || typeof p.dgc !== 'object' || Array.isArray(p.dgc)) p.dgc = {};   // v85: até quando cada sítio está vigiado
   if (!p.c) p.c = { crimes: 0, wins: 0, trains: 0, refills: 0, collects: 0, pvpWins: 0, ports: 0 };
   if (!Number.isSafeInteger(p.mi)) p.mi = 0;
   if (!Array.isArray(p.mq)) p.mq = CFG.missions.map((_, i) => i).slice(Math.min(Math.max(p.mi, 0), CFG.missions.length));
@@ -257,6 +260,7 @@ export function touch(p, now) {
   settleClub(p, now); settleBro(p, now);   // os clientes da discoteca e do bordel até agora
   if (p.course && !p.course.ex && p.course.end <= now) { if (!p.done.includes(p.course.id)) p.done.push(p.course.id); p.course = null; }   // curso de antes do exame: acaba sozinho
   if (p.gs && p.gs.t0 + CFG.train.set.ttl <= now) p.gs = null;   // v82: série esquecida
+  if (p.dg && p.dg.t0 + CFG.dig.ttl <= now) digClose(p, p.dg.t0 + CFG.dig.ttl);   // v85: escavação esquecida: fecha e guarda o que se achou
   if (p.course && p.course.q && p.course.q.t + CFG.exam.ttl <= now) { p.course.next = Math.max(p.course.next || 0, p.course.q.t + CFG.exam.ttl + examRetry(p.course.id)); p.course.q = null; p.course.why = 'ttl'; p.course.last = null; }   // v80: exame deixado aberto conta como chumbo
   p.t = now;
 }
@@ -706,6 +710,8 @@ export function bailCost(p, now) { const x = bailRaw(p, now); const bp = studyBp
 function bailRaw(p, now) {
   if (!(p.jailUntil > now)) return 0;
   if (p.jailTier === DRUG_JAIL) { const left = p.jailUntil - now, total = CFG.wh.jailMin * T.MIN; return Math.max(1, Math.ceil((CFG.wh.lawyer * Math.min(left, total)) / total)); }
+  const sd = p.jailTier >= DIG_JAIL ? CFG.dig.sites[p.jailTier - DIG_JAIL] : null;   // v85: apanhado a escavar
+  if (sd) { const left = p.jailUntil - now, total = sd.jailMin * T.MIN; return Math.max(1, Math.ceil((sd.lawyer * Math.min(left, total)) / total)); }
   const o = p.jailTier >= 100 && p.jailTier < DRUG_JAIL ? CFG.ops[p.jailTier - 100] : null;
   if (o) { const left = p.jailUntil - now, total = o.jailMin * T.MIN; return Math.max(1, Math.ceil((o.lawyer * Math.min(left, total)) / total)); }
   const c = CFG.crimes[p.jailTier - 1] || CFG.crimes[CFG.crimes.length - 1];
@@ -794,6 +800,14 @@ function colFind(p, rng, bp, pick) {
   p.col[id] = (p.col[id] || 0) + 1;
   return id;
 }
+// quanto paga a próxima entrega de um conjunto: a primeira paga o dobro e põe o nome na placa; nos das escavações, as repetidas
+// pagam digRepBp e não dão respeito (v85)
+export function museumPay(p, set) {
+  const S = CFG.col.sets[set], first = !(p.mus && p.mus[set] > 0);
+  if (first) return { first, cash: S.cash * 2, resp: S.resp * 2 };
+  if (S.dig) return { first, cash: Math.floor((S.cash * CFG.col.digRepBp) / 10000), resp: 0 };
+  return { first, cash: S.cash, resp: S.resp };
+}
 export function museumGive(p, now, world, set) {
   const S = typeof set === 'string' && own(CFG.col.sets, set) ? CFG.col.sets[set] : null;
   if (!S) fail('NO_SET');
@@ -801,8 +815,7 @@ export function museumGive(p, now, world, set) {
   const miss = S.items.filter((i) => !(p.col[i] > 0));
   if (miss.length) fail('SET_INCOMPLETE', { miss });
   for (const i of S.items) p.col[i] -= 1;
-  const first = !(p.mus[set] > 0), k = first ? 2 : 1;   // a primeira entrega paga o dobro e põe o nome na placa
-  const cash = S.cash * k, resp = S.resp * k;
+  const { first, cash, resp } = museumPay(p, set);
   p.bank += cash;
   p.mus[set] = (p.mus[set] || 0) + 1;
   return { ok: true, set, cash, respect: resp, first, n: p.mus[set], levelUp: addRespect(p, resp, now) };
@@ -1456,6 +1469,84 @@ export function maqService(p, now, world, id) {
   return { ok: true, id, until: p.maq[id], price: R.price, stopped: u0 <= now };
 }
 
+// ---------- escavações (v85) ----------
+// Escavações clandestinas à noite em sítios a sério. A grelha fica só aqui (o servidor nunca a mostra): cells[i] = o achado escondido
+// nessa casa (ou nada). Cada pazada abre uma casa: um achado vai para o saco desta escavação; uma casa vazia diz quantos achados há
+// nas 8 à volta. As primeiras pazadas são seguras; depois cada uma pode chamar a ronda (preso, e o saco perde-se). Sair guarda o saco.
+export const siteOf = (id) => (typeof id === 'string' ? CFG.dig.sites.find((x) => x.id === id) : undefined);
+export const digSet = (site) => Object.keys(CFG.col.sets).find((k) => CFG.col.sets[k].dig === site);
+export function stLevel(p, id) { for (let n = 3; n >= 1; n--) if (p.done && p.done.includes(id + n)) return n; return 0; }
+export const digSafe = (p) => CFG.dig.safe + Math.floor(studyBp(p, 'dig') / 100);   // a Arqueologia dá pazadas seguras
+// hipótese de a ronda aparecer na pazada número k (1, 2, ...), com safe pazadas seguras
+export const digRiskBp = (k, safe = CFG.dig.safe) => Math.max(0, Math.min(10000, (k - safe) * CFG.dig.riskBp));
+function digNear(cells, i) {
+  const N = CFG.dig.size, x = i % N, y = Math.floor(i / N);
+  let n = 0;
+  for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
+    if (!dx && !dy) continue;
+    const xx = x + dx, yy = y + dy;
+    if (xx >= 0 && yy >= 0 && xx < N && yy < N && cells[yy * N + xx]) n++;
+  }
+  return n;
+}
+// fecha a escavação: o saco vai para a vitrine e o sítio fica vigiado
+function digClose(p, at) {
+  const d = p.dg;
+  for (const id of d.got) p.col[id] = (p.col[id] || 0) + 1;
+  p.dgc[d.site] = Math.max(p.dgc[d.site] || 0, at + CFG.dig.coolMs);
+  p.dg = null;
+  return d.got;
+}
+// a escavação acabou: já se pode mostrar onde estava tudo (cada grelha é sorteada de novo, não ensina nada para a seguinte)
+const digReveal = (d) => d.cells.map((v) => v || 0);
+export function digStart(p, now, world, rng, site) {
+  const S = siteOf(site), set = S && digSet(S.id);
+  if (!S || !set) fail('NO_SITE');
+  begin(p, now, world);   // (primeiro: preso ou internado diz isso, não que falta o curso)
+  if (stLevel(p, 'arqueologia') < S.st) fail('NEED_STUDY', { need: S.st });
+  if (p.dg) fail('DIG_OPEN');
+  if ((p.dgc[S.id] || 0) > now) fail('DIG_WAIT', { until: p.dgc[S.id] });
+  pay(p, S.price);
+  const D = CFG.dig, cells = Array(D.size * D.size).fill(0), items = CFG.col.sets[set].items;
+  for (let k = 0; k < D.finds; ) { const i = rng.int(0, cells.length - 1); if (!cells[i]) { cells[i] = items[rng.int(0, items.length - 1)]; k++; } }
+  p.dg = { site: S.id, t0: now, cells, open: [], got: [], used: 0, taps: D.taps, safe: digSafe(p) };
+  return { ok: true, site: S.id, price: S.price, taps: p.dg.taps, safe: p.dg.safe };
+}
+export function digTap(p, now, world, rng, i) {
+  const D = CFG.dig;
+  if (!Number.isInteger(i) || i < 0 || i >= D.size * D.size) fail('BAD_CELL');
+  begin(p, now, world);
+  const d = p.dg;
+  if (!d) fail('NO_DIG');
+  if (d.open.some((x) => x.i === i)) fail('CELL_OPEN');
+  if (d.used >= d.taps) fail('NO_TAPS');
+  d.used += 1;
+  const S = siteOf(d.site), risk = digRiskBp(d.used, d.safe);
+  if (risk && rng.chance(risk)) {   // a ronda: preso, e o saco desta escavação fica para trás
+    const lost = d.got.slice(), grid = digReveal(d), open = d.open.slice();
+    d.got = [];
+    digClose(p, now);
+    jailFor(p, now, S.jailMin * T.MIN, DIG_JAIL + CFG.dig.sites.indexOf(S));
+    return { ok: true, i, caught: true, lost, jailUntil: p.jailUntil, site: S.id, grid, open };
+  }
+  const v = d.cells[i];
+  if (v) { d.got.push(v); d.open.push({ i, v }); } else d.open.push({ i, n: digNear(d.cells, i) });
+  const out = { ok: true, i, v: v || null, n: v ? undefined : digNear(d.cells, i), used: d.used, taps: d.taps, site: d.site };
+  if (d.used >= d.taps) { out.end = true; out.grid = digReveal(d); out.open = d.open.slice(); out.got = digClose(p, now); }
+  return out;
+}
+export function digStop(p, now, world) {
+  begin(p, now, world);
+  if (!p.dg) fail('NO_DIG');
+  const site = p.dg.site, grid = digReveal(p.dg), open = p.dg.open.slice();
+  return { ok: true, site, grid, open, got: digClose(p, now) };
+}
+// o que o site pode ver de uma escavação aberta (sem a grelha)
+export function digView(p, now) {
+  const d = p.dg;
+  return d ? { site: d.site, t0: d.t0, until: d.t0 + CFG.dig.ttl, open: d.open.map((x) => ({ ...x })), got: d.got.slice(), used: d.used, taps: d.taps, safe: d.safe, next: digRiskBp(d.used + 1, d.safe) } : null;
+}
+
 // ---------- Feira da Ladra (v84) ----------
 // O motor só mexe no jogador: tira o que se põe à venda (fica guardado no anúncio), dá o que se compra ou se levanta e
 // cobra. O anúncio, o dinheiro preso nos lances e quem recebe o quê ficam no servidor.
@@ -1912,7 +2003,8 @@ export function stockDump(p, now, world, d, n, m) {
 // O armazém de Lisboa é o que já havia (o stock fica em p.stock); os outros compram-se, um por região, e guardam o stock em wh[r].s.
 // O calor (h) está em centésimos de ponto (0 a 10 000 = 0 a 100); f é o que entrou ou saiu desde a última edição, em euros.
 export const REG_IDS = CFG.regions.list.map((r) => r.id);
-export const DRUG_JAIL = 200;   // jailTier de quem foi preso por droga pesada apreendida (a fiança é o advogado de CFG.wh)
+export const DRUG_JAIL = 200;
+export const DIG_JAIL = 300;   // v85: jailTier de quem foi apanhado a escavar (300 + o sítio)   // jailTier de quem foi preso por droga pesada apreendida (a fiança é o advogado de CFG.wh)
 const famOf = (d) => CFG.drugs[d].fam;
 function whNew(r) { const w = { sp: 1, hd: 1, fr: 1, h: 0, f: 0 }; if (r !== 'lx') w.s = CFG.drugs.map(() => 0); return w; }
 function whsNew() { return Object.fromEntries(REG().map((r) => [r, r === 'lx' ? whNew('lx') : null])); }
@@ -3446,6 +3538,16 @@ export function checkInvariants(p) {
   // corpo: cada espaço vazio ou com uma peça desse espaço; armas de fogo com os usos entre 0 e o máximo
   const goodItem = (it) => { const g = gearOf(it.id); return !!g && (g.gun ? Number.isSafeInteger(it.u) && it.u >= 0 && it.u <= g.life : it.u === undefined); };
   if (!p.eq || CFG.slots.some((k) => p.eq[k] !== null && !(p.eq[k] && goodItem(p.eq[k]) && gearOf(p.eq[k].id).slot === k))) bad.push('eq');
+  // v85: a escavação aberta (grelha do tamanho certo, só achados do conjunto do sítio, pazadas dentro do que há) e os sítios vigiados
+  if (p.dg !== null) {
+    const d = p.dg, S = d && siteOf(d.site), items = S ? CFG.col.sets[digSet(S.id)].items : [];
+    if (!S || !Array.isArray(d.cells) || d.cells.length !== CFG.dig.size ** 2 || d.cells.some((v) => v && !items.includes(v)) || d.cells.filter(Boolean).length !== CFG.dig.finds
+      || !Number.isSafeInteger(d.used) || d.used < 0 || d.used > d.taps || d.open.length !== d.used || d.got.some((v) => !items.includes(v))
+      || !Number.isSafeInteger(d.safe) || d.safe < CFG.dig.safe || new Set(d.open.map((x) => x.i)).size !== d.open.length
+      || d.open.some((x) => !Number.isInteger(x.i) || x.i < 0 || x.i >= d.cells.length || (x.v ? x.v !== d.cells[x.i] : d.cells[x.i] || x.n !== digNear(d.cells, x.i)))
+      || JSON.stringify(d.open.filter((x) => x.v).map((x) => x.v)) !== JSON.stringify(d.got)) bad.push('dg');
+  }
+  if (!p.dgc || Object.entries(p.dgc).some(([k, v]) => !siteOf(k) || !Number.isSafeInteger(v) || v < 0)) bad.push('dgc');
   // inventário: pilhas com quantidade positiva; objetos roubados com valor; um só monte de cada coisa que empilha
   if (!Array.isArray(p.inv) || p.inv.some((x) => !x || !(stackable(x.id) ? Number.isSafeInteger(x.n) && x.n > 0 && (x.id === 'balas' || (Number.isSafeInteger(x.v) && x.v >= 0)) : goodItem(x)))) bad.push('inv');
   else { const ids = p.inv.filter((x) => stackable(x.id) || gearOf(x.id)?.slot === 'mat').map((x) => x.id); if (new Set(ids).size !== ids.length) bad.push('inv dup'); }

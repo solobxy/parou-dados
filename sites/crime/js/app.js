@@ -106,6 +106,7 @@ function act(type, args = {}, opts = {}) {
 // ---------- o que acontece depois de cada ação ----------
 function react(type, out, before, opts) {
   const r = out.result, me = out.me, lv = r.levelUp && r.levelUp.to > r.levelUp.from ? r.levelUp : null;
+  if (r.grid && (type === 'digStop' || type === 'digTap')) S.digLast = { site: r.site, grid: r.grid, open: r.open, got: r.got || [], caught: !!r.caught };   // a escavação acabou: fica à vista
   // v79: uma peça para a vitrine (golpe que correu bem ou avião inteiro); o aviso fica por cima do relatório
   const found = type === 'crime' || type === 'airCollect' ? (r.col ? [r.col] : []) : type === 'crimeAll' && r.col ? Object.keys(r.col) : [];
   if (found.length) setTimeout(() => { toast(t('tColFound', { x: found.map((i) => t('co_' + i)).join(', ') })); fx.vibrate([10, 40, 10]); }, 350);
@@ -136,7 +137,7 @@ function react(type, out, before, opts) {
   else if (type === 'venueSet') { toast(t('vnSaved')); fx.sfx('claim'); }
   else if (type === 'venueBuy') { toast(r.lvl === 1 ? t('vnOpened_' + r.kind) : t('vnUpped', { n: r.lvl })); fx.sfx('claim'); }
   else if (type === 'consume') { const it = S.cfg.consum.list.find((x) => x.id === r.id) || {}; toast(t(it.cut ? (me.hospUntil > now() ? 'tCured' : 'tCuredOut') : it.vigor ? 'tDrankV' : 'tDrankE', { x: t('cn_' + r.id), n: r.gain })); fx.sfx('buy'); }
-  else if (type === 'museum') { toast(t('tMus', { x: t('muSet_' + r.set), m: money(r.cash), n: r.respect }) + (r.place ? ' ' + t('tMusPlace', { p: r.place }) : '')); fx.sfx('claim'); loadNews(); }
+  else if (type === 'museum') { toast(t(r.respect ? 'tMus' : 'tMus0', { x: t('muSet_' + r.set), m: money(r.cash), n: r.respect }) + (r.place ? ' ' + t('tMusPlace', { p: r.place }) : '')); fx.sfx('claim'); loadNews(); }
   else if (type === 'colSell') { toast(t('tColSold', { n: r.n, x: t('co_' + r.id), m: money(r.cash) })); fx.sfx('cash'); }
   else if (type === 'govVote') { toast(t('tVoted', { x: t(r.yes ? 'pYes' : 'pNo') })); fx.sfx('claim'); loadNews(); }
   else if (type === 'govLobby') { toast(t('tLobby', { m: money(r.amount), x: t(r.side === 'y' ? 'pYes' : 'pNo') })); fx.sfx('buy'); loadNews(); }
@@ -146,6 +147,14 @@ function react(type, out, before, opts) {
   else if (type === 'deal') { toast(t('dealSold', { g: r.grams, m: money(r.money), n: r.respect }) + (r.lav ? ' · ' + t('ro_lav', { m: money(r.lav) }) : '')); fx.sfx('cash'); }
   else if (type === 'workDone') { fx.vibrate(r.busted ? [40, 60, 40] : 14); fx.sfx(r.busted ? 'bust' : 'cash'); }
   else if (type === 'craftStart') { toast(r.kind === 'comp' ? t('tMade', { n: r.n, x: crIt(r.id).toLowerCase() }) : t('tCraft', { x: crIt(r.id), t: hhmm(r.end) })); fx.sfx(r.kind === 'comp' ? 'claim' : 'buy'); }   // v83
+  else if (type === 'digStart') { S.digLast = null; toast(t('tDigGo', { x: t('dgAt_' + r.site), n: r.taps })); fx.sfx('buy'); }   // v85
+  else if (type === 'digTap') {
+    if (r.caught) { toast(t(['tDigCaught0', 'tDigCaught1'][r.lost.length] || 'tDigCaught', { n: r.lost.length }), true); fx.vibrate([40, 60, 40]); fx.sfx('bust'); }
+    else if (r.end) { toast(t(['tDigEnd0', 'tDigEnd1'][r.got.length] || 'tDigEnd', { n: r.got.length })); fx.sfx(r.got.length ? 'claim' : 'tap'); }
+    else if (r.v) { toast(t('tDigFound', { x: t('co_' + r.v).toLowerCase() })); fx.sfx('claim'); fx.vibrate(20); }
+    else fx.sfx('thud');   // a pá na terra
+  }
+  else if (type === 'digStop') { toast(t(r.got.length ? (r.got.length === 1 ? 'tDigOut1' : 'tDigOut') : 'tDigOut0', { n: r.got.length })); fx.sfx(r.got.length ? 'claim' : 'tap'); }
   else if (type.startsWith('feira')) {   // v84
     const x = fName(r.kind, r.id).toLowerCase() + (r.n > 1 ? ' ×' + r.n : '');
     toast(type === 'feiraList' ? t(r.tipo === 'leilao' ? 'tfAuc' : 'tfList', { x, m: money(r.preco) }) : type === 'feiraBuy' ? t('tfBought', { x, m: money(r.price) })
@@ -206,7 +215,7 @@ function react(type, out, before, opts) {
     if (r.success) { toast(t('hmDone', { b: r.target, n: r.respLoss })); fx.sfx('crit'); fx.vibrate([20, 40, 20]); } else { toast(t('hmMissed', { b: r.target }), true); fx.sfx('fail'); }
     S.targets = null; loadTargets();
   } else if (type === 'tableBet') fx.sfx('deal');
-  else if (!['gymStart', 'tableClear', 'craftStart', 'craftTake'].includes(type) && !type.startsWith('feira')) fx.sfx('buy');
+  else if (!['gymStart', 'tableClear', 'craftStart', 'craftTake'].includes(type) && !type.startsWith('feira') && !type.startsWith('dig')) fx.sfx('buy');
   if (type === 'crime' || type === 'crimeAll') requestAnimationFrame(showReport);
   if (lv) { skyline(lv.to); if (type !== 'crime' && type !== 'crimeAll' && type !== 'opGo') toast(t('r_lvl', { n: lv.to, x: titleOf(lv.to) })); }
   render();
@@ -376,15 +385,15 @@ function tickHud() {
 const PLACES = {
   city: { ic: 'skyline' }, empire: { ic: 'empire' }, rob: { ic: 'street', img: 'golpes' }, club: { ic: 'bolt', img: 'discoteca' }, gym: { img: 'ginasio' },
   biz: { ic: 'empire', img: 'negocios' }, stash: { img: 'stash' }, acct: { img: 'contabilista' }, port: { img: 'porto' }, air: { img: 'aeroporto' }, arms: { img: 'armas' }, bank: { img: 'banco' }, hosp: { img: 'hospital' },
-  jail: { img: 'prisao' }, gang: { img: 'gangue' }, work: { img: 'profissao' }, news: { img: 'jornal' }, casino: { ic: 'gem', img: 'casino' }, roulette: { img: 'roleta' }, bj: { img: 'blackjack' }, dice: { img: 'dados' }, wheel: { img: 'roda' }, slot: { img: 'slot' }, zeus: { img: 'zeus' }, doce: { img: 'doce' }, rebucado: { img: 'rebucado' }, alley: { img: 'beco' }, lux: { img: 'luxos' }, fights: { ic: 'fights', img: 'lutas' }, rank: { img: 'procurados' }, hitman: { img: 'assassino' }, putas: { img: 'putas' }, gigs: { img: 'biscates' }, casa: {}, myclub: { img: 'discoteca' }, mybro: { img: 'bordel' }, bolsa: { img: 'bolsa' }, job: { img: 'emprego' }, inv: { img: 'inventario' }, ops: { img: 'operacoes' }, parl: { img: 'parlamento' }, cafe: { img: 'cafe' }, museum: { img: 'museu' }, uni: { img: 'universidade' }, cave: { img: 'cave' }, feira: { img: 'feira' },
+  jail: { img: 'prisao' }, gang: { img: 'gangue' }, work: { img: 'profissao' }, news: { img: 'jornal' }, casino: { ic: 'gem', img: 'casino' }, roulette: { img: 'roleta' }, bj: { img: 'blackjack' }, dice: { img: 'dados' }, wheel: { img: 'roda' }, slot: { img: 'slot' }, zeus: { img: 'zeus' }, doce: { img: 'doce' }, rebucado: { img: 'rebucado' }, alley: { img: 'beco' }, lux: { img: 'luxos' }, fights: { ic: 'fights', img: 'lutas' }, rank: { img: 'procurados' }, hitman: { img: 'assassino' }, putas: { img: 'putas' }, gigs: { img: 'biscates' }, casa: {}, myclub: { img: 'discoteca' }, mybro: { img: 'bordel' }, bolsa: { img: 'bolsa' }, job: { img: 'emprego' }, inv: { img: 'inventario' }, ops: { img: 'operacoes' }, parl: { img: 'parlamento' }, cafe: { img: 'cafe' }, museum: { img: 'museu' }, uni: { img: 'universidade' }, cave: { img: 'cave' }, feira: { img: 'feira' }, dig: { img: 'escavacoes' },
 };
 // barra de baixo: só o que se usa a toda a hora. O resto vive dentro de cada separador, arrumado por zonas.
 const NAV = ['city', 'rob', 'fights', 'casino', 'empire'];
 const HUB = {
-  city: [['sec_night', ['club', 'putas', 'casino', 'gang', 'alley', 'arms']], ['sec_street', ['gigs', 'cafe', 'job', 'uni', 'gym', 'feira', 'bank', 'museum', 'parl', 'hosp', 'jail', 'rank']]],
+  city: [['sec_night', ['club', 'putas', 'casino', 'gang', 'alley', 'arms']], ['sec_street', ['gigs', 'cafe', 'job', 'uni', 'dig', 'gym', 'feira', 'bank', 'museum', 'parl', 'hosp', 'jail', 'rank']]],
   empire: [['sec_income', ['biz', 'port', 'air', 'myclub', 'mybro']], ['sec_assets', ['casa', 'cave', 'inv', 'bank', 'bolsa', 'stash', 'acct']]],
 };
-const PARENT = { feira: 'city', cave: 'empire', uni: 'city', museum: 'city', cafe: 'city', parl: 'city', gigs: 'city', gang: 'city', work: 'job', job: 'city', news: 'city', casino: 'city', roulette: 'casino', bj: 'casino', dice: 'casino', wheel: 'casino', slot: 'casino', zeus: 'casino', doce: 'casino', rebucado: 'casino', club: 'city', putas: 'city', gym: 'city', alley: 'city', hosp: 'city', jail: 'city',
+const PARENT = { dig: 'city', feira: 'city', cave: 'empire', uni: 'city', museum: 'city', cafe: 'city', parl: 'city', gigs: 'city', gang: 'city', work: 'job', job: 'city', news: 'city', casino: 'city', roulette: 'casino', bj: 'casino', dice: 'casino', wheel: 'casino', slot: 'casino', zeus: 'casino', doce: 'casino', rebucado: 'casino', club: 'city', putas: 'city', gym: 'city', alley: 'city', hosp: 'city', jail: 'city',
   biz: 'empire', port: 'empire', air: 'empire', myclub: 'empire', mybro: 'empire', bolsa: 'empire', inv: 'empire', stash: 'empire', acct: 'empire', casa: 'empire', bank: 'empire', lux: 'empire', arms: 'fights', rank: 'fights', hitman: 'fights', ops: 'rob' };
 const upOf = (id) => (S.backTo && S.backTo[id]) || PARENT[id] || 'city';   // um sítio que está em duas zonas volta para a zona de onde vieste
 const tabOf = (id) => { let x = id; for (let k = 0; k < 4 && !NAV.includes(x); k++) x = upOf(x); return NAV.includes(x) ? x : 'city'; };
@@ -449,7 +458,7 @@ function shell() {
 }
 
 const SCREENS = { job: screenJob, city: screenCity, empire: screenEmpire, news: screenNews, casino: screenCasino, roulette: screenRoulette, bj: screenBJ, dice: screenDice, wheel: screenWheel, slot: () => screenSlotGame('slot'), zeus: () => screenSlotGame('zeus'), doce: () => screenSlotGame('doce'), rebucado: () => screenSlotGame('rebucado'), rob: screenRob, club: screenClub, gym: screenGym, biz: screenBiz, port: screenPort, arms: screenArms, bank: screenBank,
-  hosp: screenHosp, jail: screenJail, gang: screenGang, work: screenWork, air: screenAir, putas: screenPutas, myclub: screenMyClub, mybro: screenMyBro, bolsa: screenBolsa, inv: screenInv, stash: screenStash, acct: screenAcct, casa: screenCasa, alley: screenAlley, lux: screenLux, fights: screenFights, rank: screenRank, hitman: screenHitman, ops: screenOps, gigs: screenGigs, parl: screenParl, cafe: screenCafe, museum: screenMuseum, uni: screenUni, cave: screenCave, feira: screenFeira };
+  hosp: screenHosp, jail: screenJail, gang: screenGang, work: screenWork, air: screenAir, putas: screenPutas, myclub: screenMyClub, mybro: screenMyBro, bolsa: screenBolsa, inv: screenInv, stash: screenStash, acct: screenAcct, casa: screenCasa, alley: screenAlley, lux: screenLux, fights: screenFights, rank: screenRank, hitman: screenHitman, ops: screenOps, gigs: screenGigs, parl: screenParl, cafe: screenCafe, museum: screenMuseum, uni: screenUni, cave: screenCave, feira: screenFeira, dig: screenDig };
 function render(force) {
   if (!S.st) return;
   if (!S.st.me || S.st.round.phase !== 'play') return renderPause();
@@ -479,7 +488,7 @@ function tabDots() {
   const want = {
     fights: (S.events || []).some((e) => e.id > S.lastEventSeen),
     empire: (me.cf && me.cf.end <= n) || S.cfg.biz.some((b) => me.biz[S.cfg.biz.indexOf(b)]?.n > 0 && maqState(me, b.id) === 3) || (me.air && me.air.readyAt <= n) || me.port.some((c) => c.readyAt <= n) || me.biz.some((b, i) => b.n > 0 && storedNow(b, i) >= (b.perH * S.cfg.storageMs) / 3600000 / 2),
-    city: !!me.mission?.done || exReady(me) || me.feira?.levantar > 0,   // v80: um exame à espera; v84: o que levantar na feira
+    city: !!me.mission?.done || exReady(me) || me.feira?.levantar > 0 || !!me.dg,   // v80: um exame à espera; v84: o que levantar na feira
     casino: !!me.bj,   // tens uma mão de blackjack por acabar
     rob: !!(me.op && me.op.ready <= n && !(me.op.miss || []).length),   // um golpe grande pronto para avançar
   };
@@ -925,6 +934,7 @@ function screenCity() {
     fights: (S.events || []).some((e) => e.id > S.lastEventSeen) ? t('newEvt') : null,
     uni: exReady(me) ? t('exBadge') : me.course ? dur(Math.max(0, me.course.end - n)) : null,
     feira: me.feira?.levantar ? t('fToTakeB', { n: me.feira.levantar }) : null,   // v84: há o que levantar
+    dig: me.dg ? t('dgOnB') : null,   // v85: uma escavação a meio
     museum: S.cfg.col && Object.keys(S.cfg.col.sets).some((k) => setHave(me, k) === S.cfg.col.sets[k].items.length) ? t('muBadge') : null,
   };
   const ep = season();
@@ -995,17 +1005,25 @@ function vitrine(me, k) {
   }));
 }
 const onPlaque = (me, k) => me.musEp?.[k] === me.ep?.n;
+// o mesmo que o servidor: a 1.ª entrega paga o dobro; nos conjuntos das escavações as seguintes pagam digRepBp e sem respeito
+function musPay(me, k) {
+  const C = S.cfg.col.sets[k], first = !(me.mus?.[k] > 0);
+  if (first) return { first, cash: C.cash * 2, resp: C.resp * 2 };
+  if (C.dig) return { first, cash: Math.floor((C.cash * S.cfg.col.digRepBp) / 10000), resp: 0 };
+  return { first, cash: C.cash, resp: C.resp };
+}
 function museumSet(me, k, L) {
   const S2 = S.cfg.col.sets[k], have = setHave(me, k), all = S2.items.length, done = have === all, first = !(me.mus?.[k] > 0), mult = first ? 2 : 1;
+  const payC = musPay(me, k);   // v85: os conjuntos das escavações pagam menos nas entregas repetidas
   const extras = S2.items.filter((i) => (me.col?.[i] || 0) > 1), busy = !!(L.jail || L.hosp);
   const miss = S2.items.filter((i) => !((me.col?.[i] || 0) > 0)), P = S.news?.mundo?.mus?.[k], left = P ? Math.max(0, S.cfg.col.plaque - P.top.length) : 0;
-  const pay = t(first ? 'muPayFirst' : 'muPay', { m: money(S2.cash * mult), n: S2.resp * mult }) + (left && !onPlaque(me, k) ? ' ' + t(left === 1 ? 'muSpots1' : 'muSpots', { l: left }) : '');
+  const pay = t(first ? 'muPayFirst' : payC.resp ? 'muPay' : 'muPayDig', { m: money(payC.cash), n: payC.resp, p: S.cfg.col.digRepBp / 100 }) + (left && !onPlaque(me, k) ? ' ' + t(left === 1 ? 'muSpots1' : 'muSpots', { l: left }) : '');
   return h('section', { class: 'mset' },
     h('div', { class: 'row sp mhd' }, h('h2', { class: 'sec' }, t('muSet_' + k)), h('span', { class: 'num small' + (done ? ' c-cash' : ' muted') }, t('muCount', { a: have, b: all }))),
     h('p', { class: 'small muted msub' }, t('muHow_' + k, { p: k === 'mundo' ? S.cfg.col.airBp / 100 : '' })),
     vitrine(me, k),
     h('p', { class: 'small mpay' }, tint(pay)),
-    done ? h('button', { class: 'btn block cash big', disabled: busy, on: { click: (e) => act('museum', { set: k }, { el: e.currentTarget }) } }, t('muGive', { m: money(S2.cash * mult) }))
+    done ? h('button', { class: 'btn block cash big', disabled: busy, on: { click: (e) => act('museum', { set: k }, { el: e.currentTarget }) } }, t('muGive', { m: money(payC.cash) }))
       : h('p', { class: 'small mmiss' }, miss.length <= 2 ? t(miss.length === 1 ? 'muMissOne' : 'muMissList', { x: miss.map((i) => t('co_' + i).toLowerCase()).join(t('muAnd')) }) : t('muLeft', { n: miss.length })),
     extras.length ? h('div', { class: 'mextra' }, h('h3', null, t('muExtras')), h('p', { class: 'small muted' }, t('muExtrasSub', { m: money(S.cfg.col.pawn) })), extras.map((i) => { const x = me.col[i] - 1, m = money(x * S.cfg.col.pawn);
       const lbl = t(x > 1 ? 'muSellN' : 'muSell', { n: x, m });
@@ -2765,6 +2783,73 @@ function screenFeira() {
         [h('div', { class: 'small c-red' }, t('fOutbidRow')), ...fAucLines(L)]))])
       : h('p', { class: 'small muted' }, t('fNoBids')));
   }
+  return out;
+}
+
+// ===== As escavações (v85) =====
+// Escavações clandestinas em sítios a sério. Com uma escavação aberta, a grelha é a ação do ecrã: cada pazada abre uma casa;
+// uma casa vazia diz quantos achados há nas 8 à volta. Por baixo, o saco, o risco da próxima pazada e o botão de sair.
+// Sem escavação: os quatro sítios, com o que pedem, o que custam e quando voltam a estar livres.
+const dgSite = (id) => S.cfg.dig.sites.find((x) => x.id === id);
+const dgSet = (id) => Object.keys(S.cfg.col.sets).find((k) => S.cfg.col.sets[k].dig === id);
+function digBoard(me, b) {
+  const D = S.cfg.dig, d = me.dg, N = D.size, open = new Map(d.open.map((x) => [x.i, x])), left = d.taps - d.used, risk = d.next;
+  const cells = Array.from({ length: N * N }, (_, i) => {
+    const o = open.get(i), x = (i % N) + 1, y = Math.floor(i / N) + 1;
+    if (o && o.v) return h('div', { class: 'dgc got', role: 'img', 'aria-label': t('dgCellGot', { x, y, v: t('co_' + o.v) }) }, art('col', o.v, 'dgi'));
+    if (o) return h('div', { class: 'dgc dug' + (o.n ? '' : ' z'), role: 'img', 'aria-label': t('dgCellN', { x, y, n: o.n }) }, o.n ? String(o.n) : '');
+    return h('button', { class: 'dgc', type: 'button', 'aria-label': t('dgCellGo', { x, y }), disabled: !!b || left < 1,
+      on: { click: (e) => act('digTap', { i }, { el: e.currentTarget }) } });
+  });
+  const safeLeft = Math.max(0, (d.safe ?? D.safe) - d.used);
+  return h('section', { class: 'dgnow cnow' },
+    h('h2', { class: 'sec' }, t('dgSite_' + d.site)),
+    h('p', { class: 'small num' }, t('dgTaps', { a: left, b: d.taps }), ' · ', h('span', { class: risk ? 'c-red' : 'muted' }, risk ? t('dgRisk', { p: risk / 100 }) : t(safeLeft === 1 ? 'dgSafe1' : 'dgSafe', { n: safeLeft }))),
+    h('div', { class: 'dgb', role: 'group', 'aria-label': t('dgGrid'), style: `--n:${N}` }, cells),
+    h('p', { class: 'small dgbag' }, d.got.length ? [t('dgBag'), ' ', h('span', { class: 'c-cash' }, d.got.map((v) => t('co_' + v)).join(', '))] : t('dgBag0')),
+    h('button', { class: 'btn block big' + (d.got.length ? ' buy' : ' ghost'), disabled: !!b, on: { click: (e) => act('digStop', {}, { el: e.currentTarget }) } },
+      d.got.length ? t(d.got.length === 1 ? 'dgLeave1' : 'dgLeave', { n: d.got.length }) : t('dgLeave0')),
+    h('p', { class: 'small muted num' }, t('dgCloses'), ' ', h('span', { dataset: { left: d.until, long: 1 } }, leftTxt(d.until - now()))));
+}
+function digSiteRow(me, S2, b) {
+  const set = dgSet(S2.id), C = S.cfg.col.sets[set], items = C.items, have = items.filter((i) => (me.col?.[i] || 0) > 0).length;
+  const lock = (me.arq || 0) < S2.st, wait = (me.dgc?.[S2.id] || 0) > now(), cash = me.cash + me.bank;
+  // o que se ganha (as peças que já tens e quanto paga o museu) e o que se arrisca (prisão e fiança) antes do toque
+  return h('div', { class: 'vrow dgs' }, art('sitios', S2.id, 'dgsi'),
+    h('div', { class: 'grow' }, h('b', null, t('dgSite_' + S2.id)), h('div', { class: 'small muted' }, t('dgEra_' + S2.id)),
+      h('div', { class: 'small num' }, h('span', { class: have === items.length ? 'c-cash' : '' }, t('dgHave', { a: have, b: items.length })), h('span', { class: 'muted' }, ' · ' + t(musPay(me, set).first ? 'dgSetVal1' : 'dgSetValN', { m: money(musPay(me, set).cash) }))),
+      h('div', { class: 'small muted num' }, t('dgJail', { m: S2.jailMin, b: money(S2.lawyer) })),
+      lock ? h('div', { class: 'small muted' }, t('dgNeed', { n: S2.st })) : wait ? h('div', { class: 'small muted' }, t('dgWatched'), ' ', h('span', { class: 'num', dataset: { left: me.dgc[S2.id], long: 1 } }, leftTxt(me.dgc[S2.id] - now())))
+        : cash < S2.price ? h('div', { class: 'small muted' }, t('dgNoCash', { m: money(S2.price) })) : null,
+      // o botão por baixo do texto: a 320 px o nome do sítio e a época cabem numa ou duas linhas
+      lock || wait ? null : h('button', { class: 'btn ghost sm num dggo', disabled: !!b || !!me.dg || cash < S2.price, on: { click: (e) => act('digStart', { site: S2.id }, { el: e.currentTarget }) } }, t('dgGo', { m: money(S2.price) }))));
+}
+// a escavação que acabou: a grelha toda à vista (o que levaste, o que ficou enterrado), até se fechar ou começar outra
+function digLastCard() {
+  const L = S.digLast; if (!L || !L.grid) return null;
+  const open = new Map((L.open || []).map((x) => [x.i, x])), finds = L.grid.filter(Boolean).length;
+  const cells = L.grid.map((v, i) => {
+    const o = open.get(i);
+    if (o && o.v) return h('div', { class: 'dgc got' + (L.caught ? ' lost' : ''), role: 'img', 'aria-label': t('co_' + o.v) }, art('col', o.v, 'dgi'));
+    if (o) return h('div', { class: 'dgc dug' + (o.n ? '' : ' z'), 'aria-hidden': 'true' }, o.n ? String(o.n) : '');
+    if (v) return h('div', { class: 'dgc miss', role: 'img', 'aria-label': t('dgMissed', { v: t('co_' + v) }) }, art('col', v, 'dgi'));
+    return h('div', { class: 'dgc rest', 'aria-hidden': 'true' });
+  });
+  return h('section', { class: 'dglast' },
+    h('div', { class: 'row sp' }, h('div', null, h('h2', { class: 'sec' }, t('dgLastT')), h('div', { class: 'small muted' }, t('dgSite_' + L.site))),
+      h('button', { class: 'btn ghost sm', on: { click: () => { S.digLast = null; render(); } } }, t('close'))),
+    h('p', { class: 'small ' + (L.caught ? 'c-red' : 'muted') }, L.caught ? t('dgLastCaught') : t('dgLastGot', { a: L.got.length, b: finds })),
+    h('div', { class: 'dgb past', 'aria-label': t('dgGrid'), style: `--n:${S.cfg.dig.size}` }, cells));
+}
+function screenDig() {
+  const me = S.st.me, D = S.cfg.dig, out = [pageHead('dig', me.dg ? null : t('s_dig'), !!me.dg)];
+  const b = busyBanner(me); if (b) out.push(b);
+  if (!D) return out;
+  if (me.dg) { out.push(digBoard(me, b)); return out; }
+  const last = digLastCard(); if (last) out.push(last);
+  if (!me.arq) out.push(h('div', { class: 'tip' }, h('p', null, t('dgNoStudy')), h('button', { class: 'btn buy sm', on: { click: () => go('uni') } }, t('dgToUni'))));
+  out.push(h('h2', { class: 'sec' }, t('dgSites')), h('p', { class: 'small muted usub' }, t('dgHow', { p: D.riskBp / 100 })),
+    h('div', { class: 'card vlist vc' }, D.sites.map((x) => digSiteRow(me, x, b))));
   return out;
 }
 

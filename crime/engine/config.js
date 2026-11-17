@@ -319,9 +319,15 @@ export const CFG = {
   // paga o dobro e põe o nome na placa. As repetidas vendem-se ao penhorista.
   col: {
     airBp: 2500, crimeBpPerE: 15, pawn: 300, plaque: 20,
+    digRepBp: 3000,   // v85: nos conjuntos das escavações, as entregas repetidas pagam 30% e não dão respeito (repetir era uma máquina de dinheiro)
     sets: {
       mundo: { items: ['bule', 'tulipa', 'orquidea', 'caveira', 'tapete'], cash: 25000, resp: 300 },
       raras: { items: ['moeda', 'bolso', 'broche', 'selo', 'caneta', 'estatueta'], cash: 15000, resp: 200 },
+      // v85: o que sai das escavações (cada sítio tem o seu conjunto)
+      castrejo: { items: ['torques', 'fibula', 'cossoiro', 'triscele', 'contas'], cash: 8000, resp: 150, dig: 'briteiros' },
+      conimbriga: { items: ['mosaico', 'lucerna', 'estilete', 'denario', 'anel'], cash: 15000, resp: 250, dig: 'conimbriga' },
+      troia: { items: ['anfora', 'anzol', 'peso', 'unguentario', 'sigillata'], cash: 30000, resp: 400, dig: 'troia' },
+      mertola: { items: ['candil', 'ataifor', 'jarrinha', 'dirham', 'pente'], cash: 60000, resp: 600, dig: 'mertola' },
     },
     route: { tanger: 'bule', amesterdao: 'tulipa', medellin: 'orquidea', culiacan: 'caveira', kandahar: 'tapete' },
   },
@@ -451,6 +457,7 @@ export const CFG = {
       licenciatura: [1, 1, 0, 1, 2, 0],
       // v81: estudos e artes marciais (um banco por matéria, partilhado pelos 3 níveis)
       medicina: [0, 2, 1, 0, 1, 3],
+      arqueologia: [1, 2, 0, 3, 1, 0],   // v85
       direito: [0, 1, 2, 3, 0, 0],
       gestao: [3, 0, 2, 2, 2, 1],
       artes: [3, 2, 2, 2, 0, 2],
@@ -474,6 +481,23 @@ export const CFG = {
       { id: 'boxe', kind: 'ma', fx: { atk: [500, 1000, 1500] } },
       { id: 'jiujitsu', kind: 'ma', fx: { def: [500, 1000, 1500] } },
       { id: 'kravmaga', kind: 'ma', fx: { atk: [300, 600, 1000], def: [300, 600, 1000] } },
+      { id: 'arqueologia', kind: 'st', fx: { dig: [100, 200, 300] } },   // v85: abre as escavações; +1, +2, +3 pazadas seguras (em centésimas, como os bp)
+    ],
+  },
+  // v85: escavações clandestinas, à noite, em sítios a sério. Cada sítio pede o nível de Arqueologia (st), custa à cabeça (transporte,
+  // material, quem fecha os olhos) e fica vigiado coolMs depois. A escavação é uma grelha size×size com finds achados escondidos
+  // (do conjunto do sítio) e taps pazadas. Uma pazada vazia diz quantos achados há nas 8 à volta. Só as primeiras safe são seguras
+  // (mais 1, 2 ou 3 com a Arqueologia); depois, cada pazada tem riskBp × (pazadas a mais) de a ronda aparecer: preso jailMin e
+  // perde-se o que se achou nessa escavação. Sair a tempo guarda tudo na vitrine. Uma escavação esquecida (ttl) fecha sozinha e
+  // guarda o que tinha. (Revisão: 6 seguras tiravam o risco do jogo; e a 6×6 com 4 achados dava a um programa mais do dobro de
+  // quem joga à mão: na 5×5 com 5, a mão chega mais perto.)
+  dig: {
+    size: 5, finds: 5, taps: 8, safe: 1, riskBp: 500, ttl: 30 * MIN, coolMs: 4 * HOUR,
+    sites: [
+      { id: 'briteiros', st: 1, price: 500, jailMin: 15, lawyer: 300 },
+      { id: 'conimbriga', st: 1, price: 1000, jailMin: 25, lawyer: 700 },
+      { id: 'troia', st: 2, price: 2000, jailMin: 40, lawyer: 1800 },
+      { id: 'mertola', st: 3, price: 4000, jailMin: 60, lawyer: 3500 },
     ],
   },
   courses: [
