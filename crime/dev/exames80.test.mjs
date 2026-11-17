@@ -78,7 +78,7 @@ test('quem já estava num curso antes (sem exame) acaba como dantes', () => {
 
 test('as respostas certas não vão para o cliente', () => {
   assert.equal(JSON.stringify(CFG.courses).includes('ans'), false);
-  for (const c of CFG.courses) assert.ok(CFG.exam.ans[c.id]?.length >= 6, 'cada curso tem pelo menos 6 perguntas');
+  for (const c of CFG.courses) assert.ok(CFG.exam.ans[E.examBank(c.id)]?.length >= 6, 'cada curso tem pelo menos 6 perguntas');   // v81: os estudos usam o banco da matéria
 });
 
 test('o sorteio é justo: cada pergunta sai com a mesma hipótese, e a letra da certa muda de exame para exame', () => {
@@ -103,8 +103,8 @@ test('um chumbo guarda as escolhas para a revisão (sem as certas); passar limpa
 test('as perguntas não se adivinham pelo tamanho: a certa é a mais comprida em no máximo 1/3, e nunca 1,3 vezes maior', async () => {
   globalThis.document ??= { documentElement: {} };   // o i18n é do browser; aqui só se lê o banco
   const I = await import('../../sites/crime/js/i18n.js');
-  for (const c of CFG.courses) for (const lang of ['pt', 'en']) {
-    I.setLang(lang); const banco = I.list('exq_' + c.id);
+  for (const id of new Set(CFG.courses.map((c) => E.examBank(c.id)))) for (const lang of ['pt', 'en']) {
+    const c = { id }; I.setLang(lang); const banco = I.list('exq_' + c.id);
     assert.equal(banco.length, CFG.exam.ans[c.id].length, 'o banco e as respostas têm o mesmo tamanho');
     let maior = 0;
     banco.forEach((q, i) => {

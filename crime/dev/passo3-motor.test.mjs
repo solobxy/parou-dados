@@ -81,11 +81,11 @@ test('cursos: pagam-se à cabeça, um de cada vez, correm em tempo real e abrem 
   erro(() => E.startCourse(q, START, world, 'pesados'), 'NO_MONEY');
 });
 
-test('especialização: pede nível 40 e a licenciatura', () => {
+test('especialização: pede nível 40 e direito nível 1 (v81; era a licenciatura)', () => {
   const p = mk(lv(40)); p.cash = 100000;
   erro(() => E.startCourse(p, START, world, 'especializacao'), 'NEED_COURSE');
-  p.done = ['licenciatura'];
-  const q = mk(lv(39)); q.cash = 100000; q.done = ['licenciatura'];
+  p.done = ['direito1'];
+  const q = mk(lv(39)); q.cash = 100000; q.done = ['direito1'];
   erro(() => E.startCourse(q, START, world, 'especializacao'), 'LOW_LEVEL');
   E.startCourse(p, START, world, 'especializacao');
   E.touch(p, START + 30 * T.DAY); exame(p, START + 30 * T.DAY);

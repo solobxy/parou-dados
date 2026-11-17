@@ -84,7 +84,7 @@ test('versão 57 → passo 3: as vitórias de cada golpe passam a skill da famí
   assert.equal(me.sk.furto, 12 * CFG.crimes[0].e); assert.equal(me.job, -1); assert.deepEqual(me.done, []); assert.equal(me.course, null);
   assert.equal(me.stars, undefined, 'as estrelas saíram da resposta');
   const cfg = await (await fetch(BASE + '/api/config')).json();
-  assert.equal(cfg.jobs.list.length, 6); assert.equal(cfg.courses.length, 4); assert.equal(cfg.skills.fams.length, 6);
+  assert.equal(cfg.jobs.list.length, 6); assert.equal(cfg.courses.filter((c) => !c.of).length, 4);   // v81: mais os 21 níveis dos estudos assert.equal(cfg.skills.fams.length, 6);
 });
 
 test('emprego por API: turnos com informação do sítio, curso pago à cabeça, e o caixa regista ordenado e propina', async () => {

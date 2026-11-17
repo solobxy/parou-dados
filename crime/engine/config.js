@@ -395,14 +395,38 @@ export const CFG = {
       vigilante: [0, 0, 2, 1, 2, 3],
       pesados: [2, 1, 0, 3, 3, 0],
       licenciatura: [1, 1, 0, 1, 2, 0],
+      // v81: estudos e artes marciais (um banco por matéria, partilhado pelos 3 níveis)
+      medicina: [0, 2, 1, 0, 1, 3],
+      direito: [0, 1, 2, 3, 0, 0],
+      gestao: [3, 0, 2, 2, 2, 1],
+      artes: [3, 2, 2, 2, 0, 2],
+      boxe: [3, 3, 0, 3, 2, 0],
+      jiujitsu: [1, 3, 1, 1, 0, 1],
+      kravmaga: [0, 1, 2, 1, 0, 2],
       especializacao: [3, 2, 3, 3, 1, 3],
     },
+  },
+  // v81: Universidade. Estudos (medicina, direito, gestão, artes) e artes marciais (boxe, jiu-jitsu, krav maga), cada um com
+  // 3 níveis: cada nível é um curso como os outros (pago à cabeça, tempo real, exame de 3 perguntas da matéria) e pede o anterior.
+  // O bónus é o do nível mais alto feito: hosp (hospital mais curto), bail (fiança mais barata), biz (negócios rendem mais),
+  // burla (golpes de burla rendem mais), atk e def (ataque e defesa), em bp.
+  studies: {
+    lv: [{ days: 3, price: 1500, level: 5 }, { days: 7, price: 6000, level: 20 }, { days: 14, price: 20000, level: 40 }],
+    list: [
+      { id: 'medicina', kind: 'st', fx: { hosp: [1000, 2000, 3000] } },
+      { id: 'direito', kind: 'st', fx: { bail: [1000, 2000, 3000] } },
+      { id: 'gestao', kind: 'st', fx: { biz: [500, 1000, 1500] } },
+      { id: 'artes', kind: 'st', fx: { burla: [500, 1000, 1500] } },
+      { id: 'boxe', kind: 'ma', fx: { atk: [500, 1000, 1500] } },
+      { id: 'jiujitsu', kind: 'ma', fx: { def: [500, 1000, 1500] } },
+      { id: 'kravmaga', kind: 'ma', fx: { atk: [300, 600, 1000], def: [300, 600, 1000] } },
+    ],
   },
   courses: [
     { id: 'vigilante', price: 570, days: 2 },
     { id: 'pesados', price: 1500, days: 4 },            // carta de pesados e curso
     { id: 'licenciatura', price: 3 * 697, days: 21 },   // três propinas de 697 €
-    { id: 'especializacao', price: 4000, days: 30, level: 40, needs: 'licenciatura' },
+    { id: 'especializacao', price: 4000, days: 30, level: 40, needs: 'direito1' },   // v81: o estágio de advogado pede Direito (era a licenciatura de enfermagem)
   ],
   // a multa/fiança de cada golpe (fine) paga-se proporcional ao tempo que falta
 
@@ -819,6 +843,10 @@ export const CFG = {
   levels: LEVELS,
   tiers: TIERS,
 };
+
+// v81: cada nível de um estudo é um curso como os outros (ids medicina1, medicina2, medicina3…), com o banco de perguntas da matéria
+for (const st of CFG.studies.list) CFG.studies.lv.forEach((L, k) => CFG.courses.push({ id: st.id + (k + 1), of: st.id, lv: k + 1, kind: st.kind, bank: st.id,
+  price: L.price, days: L.days, level: L.level, ...(k ? { needs: st.id + k } : {}) }));
 
 // Objetivos: uma cadeia, um de cada vez. tipo → de onde vem o progresso (ver missionHave no motor).
 CFG.missions = [

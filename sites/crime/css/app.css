@@ -3057,3 +3057,26 @@ body.preso .phead .pbar .back { visibility: hidden; }
 .exsend { display: grid; gap: 2px; justify-items: center; }
 .exsend small { font-size: 14px; font-weight: 500; opacity: .8; }
 .exrules { margin: 4px 2px 0; }
+
+/* ===== v81: a Universidade ===== */
+.usub { margin: -4px 2px 10px; }
+.stl .str { padding: 16px 0; }
+.stl .str + .str { border-top: 1px solid #ece6da14; }
+.str .stgo { margin-top: 10px; }
+.ubusy { margin: 0 0 14px; }
+.str .sth { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.str .sth b { font: 500 18px/1.2 'Newsreader', Georgia, serif; }
+.str .stst { margin: 4px 0 6px; font-family: 'Newsreader', Georgia, serif; font-size: 15px; line-height: 1.4; color: var(--tx2); }
+.str .small + .small { margin-top: 2px; }
+.str .fill { margin-top: 6px; }
+/* revisão (v81): o curso a decorrer num só bloco com o exame; as artes marciais sem cartão, para não serem dois cartões iguais seguidos */
+.cnow { margin: 4px 0 24px; padding-left: 14px; border-left: 2px solid var(--cash); }
+.cnow .sec { margin-bottom: 4px; }
+.cnow > .small { margin: 0 0 6px; }
+.cnow .exam { margin-top: 14px; }
+.cnow .exh { margin: 0 0 6px; font: 500 17px/1.25 'Newsreader', Georgia, serif; }
+.ufeitos { margin: 0; padding: 12px 0; border-bottom: 1px solid #ece6da14; }
+.stl.ma { padding: 0 2px; }
+.stl.ma .str:first-child { padding-top: 4px; }
+.vrow.dim b, .vrow.dim .small, .vrow.dim .muted { color: #948e83; }
+.ufeitos:last-child { border-bottom: 0; padding-bottom: 4px; }

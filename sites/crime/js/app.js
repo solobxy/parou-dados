@@ -149,7 +149,7 @@ function react(type, out, before, opts) {
     else if (r.pass) { toast(t('tExCut', { t: exDur(r.cut) })); fx.sfx('claim'); }
     else { toast(t(r.wrong.length === 1 ? 'tExFail1' : 'tExFailN', { n: r.wrong.length, h: untilTxt(r.next) }), true); fx.sfx('fail'); }
   }
-  else if (type === 'course') { toast(t('crStarted', { x: t('cr_' + r.id), m: money(r.price) })); fx.sfx('buy'); }
+  else if (type === 'course') { toast(t('crStarted', { x: crName(r.id), m: money(r.price) })); fx.sfx('buy'); }
   else if (type === 'job') { toast(t('jbChosen', { x: t('jb_' + r.job) })); fx.sfx('claim'); }
   else if (type === 'buy') { toast(r.id === 'balas' ? t('tBullets', { n: num(r.n), m: money(r.price) }) : r.slot === 'mat' ? t('to_matBuy', { x: t('g_' + r.id).toLowerCase(), m: money(r.price) }) : t('tUsing', { x: t('g_' + r.id) }) + (r.swapped ? ' ' + t('tSwapped', { x: t('g_' + r.swapped) }) : '')); fx.sfx('buy'); }
   else if (type === 'equip') { toast(t('tUsing', { x: t('g_' + r.id) }) + (r.swapped ? ' ' + t('tSwapped', { x: t('g_' + r.swapped) }) : '')); fx.sfx('claim'); }
@@ -363,15 +363,15 @@ function tickHud() {
 const PLACES = {
   city: { ic: 'skyline' }, empire: { ic: 'empire' }, rob: { ic: 'street', img: 'golpes' }, club: { ic: 'bolt', img: 'discoteca' }, gym: { img: 'ginasio' },
   biz: { ic: 'empire', img: 'negocios' }, stash: { img: 'stash' }, acct: { img: 'contabilista' }, port: { img: 'porto' }, air: { img: 'aeroporto' }, arms: { img: 'armas' }, bank: { img: 'banco' }, hosp: { img: 'hospital' },
-  jail: { img: 'prisao' }, gang: { img: 'gangue' }, work: { img: 'profissao' }, news: { img: 'jornal' }, casino: { ic: 'gem', img: 'casino' }, roulette: { img: 'roleta' }, bj: { img: 'blackjack' }, dice: { img: 'dados' }, wheel: { img: 'roda' }, slot: { img: 'slot' }, zeus: { img: 'zeus' }, doce: { img: 'doce' }, rebucado: { img: 'rebucado' }, alley: { img: 'beco' }, lux: { img: 'luxos' }, fights: { ic: 'fights', img: 'lutas' }, rank: { img: 'procurados' }, hitman: { img: 'assassino' }, putas: { img: 'putas' }, gigs: { img: 'biscates' }, casa: {}, myclub: { img: 'discoteca' }, mybro: { img: 'bordel' }, bolsa: { img: 'bolsa' }, job: { img: 'emprego' }, inv: { img: 'inventario' }, ops: { img: 'operacoes' }, parl: { img: 'parlamento' }, cafe: { img: 'cafe' }, museum: { img: 'museu' },
+  jail: { img: 'prisao' }, gang: { img: 'gangue' }, work: { img: 'profissao' }, news: { img: 'jornal' }, casino: { ic: 'gem', img: 'casino' }, roulette: { img: 'roleta' }, bj: { img: 'blackjack' }, dice: { img: 'dados' }, wheel: { img: 'roda' }, slot: { img: 'slot' }, zeus: { img: 'zeus' }, doce: { img: 'doce' }, rebucado: { img: 'rebucado' }, alley: { img: 'beco' }, lux: { img: 'luxos' }, fights: { ic: 'fights', img: 'lutas' }, rank: { img: 'procurados' }, hitman: { img: 'assassino' }, putas: { img: 'putas' }, gigs: { img: 'biscates' }, casa: {}, myclub: { img: 'discoteca' }, mybro: { img: 'bordel' }, bolsa: { img: 'bolsa' }, job: { img: 'emprego' }, inv: { img: 'inventario' }, ops: { img: 'operacoes' }, parl: { img: 'parlamento' }, cafe: { img: 'cafe' }, museum: { img: 'museu' }, uni: { img: 'universidade' },
 };
 // barra de baixo: só o que se usa a toda a hora. O resto vive dentro de cada separador, arrumado por zonas.
 const NAV = ['city', 'rob', 'fights', 'casino', 'empire'];
 const HUB = {
-  city: [['sec_night', ['club', 'putas', 'casino', 'gang', 'alley', 'arms']], ['sec_street', ['gigs', 'cafe', 'job', 'gym', 'bank', 'museum', 'parl', 'hosp', 'jail', 'rank']]],
+  city: [['sec_night', ['club', 'putas', 'casino', 'gang', 'alley', 'arms']], ['sec_street', ['gigs', 'cafe', 'job', 'uni', 'gym', 'bank', 'museum', 'parl', 'hosp', 'jail', 'rank']]],
   empire: [['sec_income', ['biz', 'port', 'air', 'myclub', 'mybro']], ['sec_assets', ['casa', 'inv', 'bank', 'bolsa', 'stash', 'acct']]],
 };
-const PARENT = { museum: 'city', cafe: 'city', parl: 'city', gigs: 'city', gang: 'city', work: 'job', job: 'city', news: 'city', casino: 'city', roulette: 'casino', bj: 'casino', dice: 'casino', wheel: 'casino', slot: 'casino', zeus: 'casino', doce: 'casino', rebucado: 'casino', club: 'city', putas: 'city', gym: 'city', alley: 'city', hosp: 'city', jail: 'city',
+const PARENT = { uni: 'city', museum: 'city', cafe: 'city', parl: 'city', gigs: 'city', gang: 'city', work: 'job', job: 'city', news: 'city', casino: 'city', roulette: 'casino', bj: 'casino', dice: 'casino', wheel: 'casino', slot: 'casino', zeus: 'casino', doce: 'casino', rebucado: 'casino', club: 'city', putas: 'city', gym: 'city', alley: 'city', hosp: 'city', jail: 'city',
   biz: 'empire', port: 'empire', air: 'empire', myclub: 'empire', mybro: 'empire', bolsa: 'empire', inv: 'empire', stash: 'empire', acct: 'empire', casa: 'empire', bank: 'empire', lux: 'empire', arms: 'fights', rank: 'fights', hitman: 'fights', ops: 'rob' };
 const upOf = (id) => (S.backTo && S.backTo[id]) || PARENT[id] || 'city';   // um sítio que está em duas zonas volta para a zona de onde vieste
 const tabOf = (id) => { let x = id; for (let k = 0; k < 4 && !NAV.includes(x); k++) x = upOf(x); return NAV.includes(x) ? x : 'city'; };
@@ -435,7 +435,7 @@ function shell() {
 }
 
 const SCREENS = { job: screenJob, city: screenCity, empire: screenEmpire, news: screenNews, casino: screenCasino, roulette: screenRoulette, bj: screenBJ, dice: screenDice, wheel: screenWheel, slot: () => screenSlotGame('slot'), zeus: () => screenSlotGame('zeus'), doce: () => screenSlotGame('doce'), rebucado: () => screenSlotGame('rebucado'), rob: screenRob, club: screenClub, gym: screenGym, biz: screenBiz, port: screenPort, arms: screenArms, bank: screenBank,
-  hosp: screenHosp, jail: screenJail, gang: screenGang, work: screenWork, air: screenAir, putas: screenPutas, myclub: screenMyClub, mybro: screenMyBro, bolsa: screenBolsa, inv: screenInv, stash: screenStash, acct: screenAcct, casa: screenCasa, alley: screenAlley, lux: screenLux, fights: screenFights, rank: screenRank, hitman: screenHitman, ops: screenOps, gigs: screenGigs, parl: screenParl, cafe: screenCafe, museum: screenMuseum };
+  hosp: screenHosp, jail: screenJail, gang: screenGang, work: screenWork, air: screenAir, putas: screenPutas, myclub: screenMyClub, mybro: screenMyBro, bolsa: screenBolsa, inv: screenInv, stash: screenStash, acct: screenAcct, casa: screenCasa, alley: screenAlley, lux: screenLux, fights: screenFights, rank: screenRank, hitman: screenHitman, ops: screenOps, gigs: screenGigs, parl: screenParl, cafe: screenCafe, museum: screenMuseum, uni: screenUni };
 function render(force) {
   if (!S.st) return;
   if (!S.st.me || S.st.round.phase !== 'play') return renderPause();
@@ -909,7 +909,7 @@ function screenCity() {
     jail: L.jail ? t('inside') : null,
     parl: S.news?.mundo?.gov?.bill && me.gv && !me.gv.voted && !me.gv.novo && me.level >= (S.cfg.gov?.vote.minLevel || 5) ? t('pBadge') : null,
     fights: (S.events || []).some((e) => e.id > S.lastEventSeen) ? t('newEvt') : null,
-    job: exReady(me) ? t('exBadge') : null,
+    uni: exReady(me) ? t('exBadge') : me.course ? dur(Math.max(0, me.course.end - n)) : null,
     museum: S.cfg.col && Object.keys(S.cfg.col.sets).some((k) => setHave(me, k) === S.cfg.col.sets[k].items.length) ? t('muBadge') : null,
   };
   const ep = season();
@@ -920,7 +920,7 @@ function placeTile(id, badge) {
   const me = S.st.me;
   return h('button', { class: 'tile', on: { click: () => go(id) } },
     h('img', { src: id === 'casa' ? IMG('casa', S.cfg.house.tiers[me.house].id) : IMG('cenas', PLACES[id].img), alt: '', width: 600, height: 600, loading: 'lazy', decoding: 'async', on: { error: (e) => e.currentTarget.remove() } }),
-    h('span', { class: 'lbl' + (id === 'rank' && S.st.rank ? ' up' : '') }, t('p_' + id)), badge ? h('span', { class: 'bdg' + (id === 'parl' || id === 'job' ? ' neu' : id === 'hosp' || id === 'jail' ? ' bad' : '') }, badge) : null,   // votar não é ganho: o aviso vai em creme
+    h('span', { class: 'lbl' + (id === 'rank' && S.st.rank ? ' up' : '') }, t('p_' + id)), badge ? h('span', { class: 'bdg' + (id === 'parl' || id === 'uni' ? ' neu' : id === 'hosp' || id === 'jail' ? ' bad' : '') }, badge) : null,   // votar não é ganho: o aviso vai em creme
     // no ranking, a tua posição na época vai por baixo do nome, em texto (não é coisa para recolher)
     id === 'rank' && S.st.rank ? h('span', { class: 'tsub' }, t('rankBadge', { p: ordOf(S.st.rank) })) : null);
 }
@@ -2406,41 +2406,85 @@ function screenJob() {
       h('div', { class: 'grow' }, h('b', null, t('jb_' + x.id)),
         h('div', { class: 'small num' }, h('span', { class: 'c-cash nowrap' }, t('jbDay', { m: money(x.day) }))),
         open ? h('div', { class: 'small muted' }, t('jbTipShort_' + x.tip))
-          : h('button', { class: 'jneed', on: { click: () => document.getElementById('cursos')?.scrollIntoView({ behavior: 'smooth', block: 'start' }) } }, t('jbNeeds', { x: t('cr_' + x.course) }) + ' ›')),
+          : h('button', { class: 'jneed', on: { click: () => go('uni') } }, t('jbNeeds', { x: crName(x.course) }) + ' ›')),
       i === me.job ? h('span', { class: 'small c-cash' }, t('jbHere'))
         : open ? h('button', { class: 'btn sm ' + (!cur && i === bestOpen ? 'buy' : 'ghost'), on: { click: (e) => act('job', { i }, { el: e.currentTarget }) } }, t('jbPick')) : null);
   })));
-  // cursos: um de cada vez, pagos à cabeça, em tempo real
-  out.push(h('h2', { class: 'sec', id: 'cursos' }, t('crTitle')), h('p', { class: 'small muted', style: 'margin:-4px 2px 10px' }, t('crSub')));
-  out.push(h('div', { class: 'card vlist vc crl' }, S.cfg.courses.map((c) => {
-    const feito = me.done.includes(c.id), aDecorrer = me.course && me.course.id === c.id;
-    const falta = c.needs && !me.done.includes(c.needs) ? t('crNeeds', { x: t('cr_' + c.needs) }) : c.level && me.level < c.level ? t('opensAt', { n: c.level }) : null;
-    const pode = !feito && !me.course && !falta && cash >= c.price;
-    return h('div', { class: 'vrow crr' + (falta && !feito ? ' dim' : '') },
-      h('div', { class: 'grow' }, h('b', null, t('cr_' + c.id)),
-        h('div', { class: 'small muted num' }, money(c.price) + ' · ' + t('crDays', { n: c.days }) + ' · ' + t('crOpens', { x: t('jb_' + J.list.find((x) => x.course === c.id).id) })),
-        aDecorrer ? (me.course.ex && me.course.end <= now() ? h('div', { class: 'small c-cash' }, t('exFinalShort'))
-          : h('div', { class: 'small' }, t('crLeft'), ' ', h('span', { class: 'num crl2', dataset: { left: me.course.end } }, dur(me.course.end - now())))) : null,
-        aDecorrer ? h('div', { class: 'fill' }, h('i', { style: `width:${Math.max(2, Math.min(100, 100 - ((me.course.end - now()) / (c.days * 864e5)) * 100))}%;background:var(--cash)` })) : null,
-        aDecorrer && exReady(me) ? h('button', { class: 'jneed', on: { click: () => document.getElementById('exame')?.scrollIntoView({ behavior: 'smooth', block: 'start' }) } }, t('exOpenLink') + ' ›') : null,
-        falta && !feito ? h('div', { class: 'small muted' }, falta) : null),
-      feito ? h('span', { class: 'small c-cash' }, t('crDone'))
-        : aDecorrer || falta ? null
-        : me.course ? h('span', { class: 'small muted' }, t('crOneAtATime'))
-        : cash < c.price ? h('span', { class: 'small muted num' }, t('needMoney', { m: money(c.price - cash) }))
-        : h('button', { class: 'btn ghost sm num', disabled: !pode, on: { click: (e) => act('course', { id: c.id }, { el: e.currentTarget }) } }, t('crGo')));
-  })));
-  const ex = examPanel(me); if (ex) out.push(ex);
+  // v81: os cursos estão na Universidade
+  out.push(h('button', { class: 'card row tap stlink', style: 'margin-top:14px', on: { click: () => go('uni') } },
+    h('span', { class: 'grow' }, t('jbToUni')), h('span', { class: 'muted', 'aria-hidden': 'true' }, '›')));
   // a profissão (ladrão, vigarista…) muda-se aqui ao lado
   out.push(h('button', { class: 'card row tap stlink', style: 'margin-top:14px', on: { click: () => go('work') } },
     h('span', { class: 'grow' }, t('jbClass', { x: me.cls ? t('cl_' + me.cls) : '—' })), h('span', { class: 'muted', 'aria-hidden': 'true' }, '›')));
   return out;
 }
 
+// ===== A Universidade (v81) =====
+// Cursos de profissão, estudos e artes marciais num só sítio. Um curso de cada vez, de qualquer tipo; todos acabam com exame.
+const courseCfg = (id) => S.cfg.courses.find((c) => c.id === id);
+const crName = (id) => { const c = courseCfg(id); return c && c.of ? t('stName', { x: t('st_' + c.of), n: c.lv }) : t('cr_' + id); };
+const examName = (id) => { const c = courseCfg(id); return c && c.of ? t('exNameSt', { x: lang() === 'pt' ? t('st_' + c.of).toLowerCase() : t('st_' + c.of) }) : t('exName_' + id); };
+const stLevel = (me, sid) => [3, 2, 1].find((n) => me.done.includes(sid + n)) || 0;
+const fxTxt = (st, n) => Object.entries(st.fx).map(([k, v]) => t('sfx_' + k, { p: v[n - 1] / 100 })).join(' · ');
+// o curso a decorrer, num só bloco no topo: o nome, o tempo que falta, a barra e o exame
+function courseNow(me) {
+  const c = courseCfg(me.course.id); if (!c) return null;
+  const fim = me.course.ex && me.course.end <= now();
+  return h('section', { class: 'cnow' }, h('h2', { class: 'sec' }, crName(c.id)),
+    fim ? h('p', { class: 'small c-cash' }, t('exFinalShort')) : h('p', { class: 'small' }, t('crLeft'), ' ', h('b', { class: 'num', dataset: { left: me.course.end } }, dur(me.course.end - now()))),
+    fim ? null : h('div', { class: 'fill' }, h('i', { style: `width:${Math.max(2, Math.min(100, 100 - ((me.course.end - now()) / (c.days * 864e5)) * 100))}%;background:var(--cash)` })),
+    examPanel(me, true));
+}
+const liveTag = () => h('span', { class: 'small muted' }, t('uniLive'));
+// o botão (ou o estado) do lado direito de um curso que ainda não se fez
+function courseAct(me, c, label) {
+  const cash = me.cash + me.bank, falta = c.needs && !me.done.includes(c.needs) ? t('crNeeds', { x: crName(c.needs) }) : c.level && me.level < c.level ? t('uniNeedLv', { n: c.level, m: me.level }) : null;
+  if (me.course && me.course.id === c.id) return { el: liveTag(), falta: null };
+  if (falta) return { el: null, falta };
+  if (me.course) return { el: null, falta: null };   // um curso de cada vez: o aviso está no topo do ecrã
+  if (cash < c.price) return { el: h('span', { class: 'small muted num' }, t('needMoney', { m: money(c.price - cash) })), falta: null };
+  return { el: h('button', { class: 'btn ghost sm num', on: { click: (e) => act('course', { id: c.id }, { el: e.currentTarget }) } }, label), falta: null };
+}
+function profRow(me, c) {
+  const J = S.cfg.jobs, feito = me.done.includes(c.id), A = feito ? null : courseAct(me, c, t('crGo'));
+  return h('div', { class: 'vrow crr' + (A && A.falta ? ' dim' : '') },
+    h('div', { class: 'grow' }, h('b', null, crName(c.id)),
+      h('div', { class: 'small muted num' }, money(c.price) + ' · ' + t('crDays', { n: c.days }) + ' · ' + t('crOpens', { x: t('jb_' + J.list.find((x) => x.course === c.id).id) })),
+      A && A.falta ? h('div', { class: 'small muted' }, A.falta) : null),
+    feito ? h('span', { class: 'small c-cash' }, t('crDone')) : A.el);
+}
+// uma matéria: o nível em que vais, o que dá agora e o que dá o próximo, e a história de quem ensina
+function studyRow(me, st) {
+  const n = stLevel(me, st.id), next = n < 3 ? courseCfg(st.id + (n + 1)) : null, live = me.course && me.course.of === st.id;
+  const A = next ? courseAct(me, next, t('stGo', { n: n + 1, m: money(next.price) })) : null;
+  // em coluna: o nome (e o nível, se já há), a história, o que dá agora, o próximo nível com preço e o que falta, e o botão
+  return h('div', { class: 'str' },
+    h('div', { class: 'sth' }, h('b', null, t('st_' + st.id)), n ? h('span', { class: 'small muted num' }, t('stLv', { n })) : null),
+    h('p', { class: 'stst' }, t('uniStory_' + st.id)),
+    n ? h('div', { class: 'small' }, t('stNow'), ' ', h('span', { class: 'c-cash' }, fxTxt(st, n))) : null,
+    next ? h('div', { class: 'small muted num' }, t('uniNext', { n: n + 1, x: fxTxt(st, n + 1), d: next.days, m: money(next.price) }) + (A && A.falta ? ' · ' + A.falta : '')) : h('div', { class: 'small c-cash' }, t('stMax')),
+    A && A.el ? h('div', { class: 'stgo' }, live ? liveTag() : A.el) : null);
+}
+function screenUni() {
+  // com um exame à espera, o exame é a ação do ecrã: sem imagem nem texto de apoio, para o botão ficar à vista
+  const me = S.st.me, ready = exReady(me), out = [pageHead('uni', ready ? null : t('s_uni'), ready)];
+  const b = busyBanner(me); if (b) out.push(b);
+  if (me.course) { const cn = courseNow(me); if (cn) out.push(cn); }
+  const L = S.cfg.studies?.list || [], prof = S.cfg.courses.filter((c) => !c.of), feitos = prof.filter((c) => me.done.includes(c.id));
+  out.push(h('h2', { class: 'sec' }, t('uniProf')), h('p', { class: 'small muted usub' }, t('uniProfSub')),
+    h('div', { class: 'card vlist vc crl' },
+      feitos.length ? h('p', { class: 'small ufeitos' }, t('uniHave'), ' ', h('span', { class: 'c-cash' }, feitos.map((c) => crName(c.id)).join(', '))) : null,
+      prof.filter((c) => !me.done.includes(c.id)).map((c) => profRow(me, c))));
+  out.push(h('h2', { class: 'sec' }, t('uniSt')), h('p', { class: 'small muted usub' }, t('uniStSub')),
+    h('div', { class: 'card vlist vc stl' }, L.filter((x) => x.kind === 'st').map((x) => studyRow(me, x))));
+  out.push(h('h2', { class: 'sec' }, t('uniMa')), h('div', { class: 'stl ma' }, L.filter((x) => x.kind === 'ma').map((x) => studyRow(me, x))));
+  return out;
+}
+
 // ===== O exame dos cursos (v80) =====
 // Três perguntas sobre o ofício, a escolher uma opção em cada. O servidor guarda as respostas certas; aqui só se diz quais falharam.
 // A meio do curso, passar tira um quarto ao tempo (até duas vezes); no fim do tempo, passar dá o diploma.
-const EXQ = (id, i) => (list('exq_' + id) || [])[i] || { q: '', o: ['', '', '', ''] };
+const EXQ = (id, i) => (list('exq_' + (courseCfg(id)?.bank || id)) || [])[i] || { q: '', o: ['', '', '', ''] };   // v81: os estudos usam o banco da matéria
 const exOpens = (c) => (c.cuts >= S.cfg.exam.cuts ? c.end : Math.min(c.end, c.t0 + Math.floor((S.cfg.courses.find((x) => x.id === c.id).days * 864e5 * (c.cuts + 1)) / 4)));   // a mesma conta do servidor
 // durações de curso por extenso: «12 horas», «1 dia», «5 dias e 6 horas»
 const exDur = (ms) => { const d = Math.floor(ms / 864e5), hh = Math.round((ms - d * 864e5) / 36e5);
@@ -2460,10 +2504,10 @@ function examQ(id, qi, k, p, sel, mark, onPick) {
 const exRetry = (id) => { const X = S.cfg.exam; return Math.min(X.retryMax, Math.max(X.retryMin, Math.floor((S.cfg.courses.find((x) => x.id === id).days * 864e5 * X.retryBp) / 10000))); };
 // há um exame à espera (aberto e por fazer): serve para o aviso no separador, no azulejo do emprego e na linha do curso
 const exReady = (me) => { const c = me.course, n = now(); return !!(S.cfg.exam && c && c.ex && !c.q && !(c.next > n) && exOpens(c) <= n) || !!(c && c.q); };
-function examPanel(me) {
+function examPanel(me, embed) {
   const c = me.course; if (!c || !c.ex || !S.cfg.exam) return null;
   const X = S.cfg.exam, n = now(), early = c.end > n, cut = cutOf(c.id);
-  const head = h('h2', { class: 'sec', id: 'exame' }, t('exName_' + c.id));
+  const head = embed ? h('h3', { class: 'exh', id: 'exame' }, examName(c.id)) : h('h2', { class: 'sec', id: 'exame' }, examName(c.id));
   // exame aberto: as perguntas, com o relógio no botão de entregar
   if (c.q) {
     if (!S.exam || S.exam.t !== c.q.t) S.exam = { t: c.q.t, sel: c.q.ids.map(() => -1) };
@@ -2480,12 +2524,12 @@ function examPanel(me) {
     if (at > n) body.push(h('p', { class: 'small muted' }, t('exOpens', { h: untilTxt(at), t: exDur(cut) })));
     else {
       const ends = early && c.end - cut <= n;   // o 2.º corte acaba o curso logo
-      body.push(h('p', { class: 'small' }, !early ? t('exFinal') : ends ? t('exEnds') : t('exEarly', { t: exDur(cut) })),
+      body.push(h('p', { class: 'small' }, !early ? t('exFinal') : ends ? t('exEnds') : t('exEarly', { t: exDur(cut), n: X.cuts })),
         h('p', { class: 'small muted exrules' }, t('exRules', { n: X.n, m: Math.round(X.ttl / 60000), r: exDur(exRetry(c.id)) })),
         h('button', { class: 'btn buy block big', on: { click: async (e) => { const o = await act('examStart', {}, { el: e.currentTarget }); if (o) { render(); requestAnimationFrame(() => document.getElementById('exame')?.scrollIntoView({ block: 'start' })); } } } }, t('exGo')));
     }
   }
-  if (early && c.cuts < X.cuts) body.push(h('p', { class: 'small muted' }, t('exHalf', { n: X.cuts })));
+  if (early && c.cuts < X.cuts && !(exOpens(c) <= n && !(c.next > n))) body.push(h('p', { class: 'small muted' }, t('exHalf', { n: X.cuts })));   // com o exame aberto, isto já vai na frase de cima
   // o último exame chumbado (guardado no servidor): as escolhas com certa e errada, sem mostrar qual era a certa
   const last = c.last;
   if (last && c.why === 'wrong') body.push(h('div', { class: 'exlast' }, h('h3', null, t('exLast')), last.ids.map((qi, k) => examQ(c.id, qi, k, last.p && last.p[k], last.sel[k], last.wrong.includes(k) ? 'bad' : 'ok', null))));

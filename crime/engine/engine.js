@@ -633,7 +633,7 @@ export function doCrime(p, now, world, k, rng) {
     let roll = rng.int(0, 9999), row = c.prizes[c.prizes.length - 1];
     for (const pr of c.prizes) { if (roll < pr[0]) { row = pr; break; } roll -= pr[0]; }
     const base = rng.int(row[1], row[2]);
-    const bonus = 10000 + skillBp(p, c.fam) + (klass(p).lootBp || 0) + buffBp(p, 'loot', now) + gbp(p, 'loot');
+    const bonus = 10000 + skillBp(p, c.fam) + (klass(p).lootBp || 0) + buffBp(p, 'loot', now) + gbp(p, 'loot') + (c.fam === 'burla' ? studyBp(p, 'burla') : 0);   // v81: artes
     const value = Math.floor((Math.floor((base * bonus) / 10000) * heatBp) / 10000);
     // o que é objeto vai para o inventário (com o valor que saiu); sem espaço, vende-se logo à pressa por metade
     let money = value, good = null, rushed = false;
@@ -696,7 +696,8 @@ export function doCrimeAll(p, now, world, k, rng) {
 }
 
 // multa/fiança: a do golpe que te prendeu, proporcional ao tempo que falta
-export function bailCost(p, now) {
+export function bailCost(p, now) { const x = bailRaw(p, now); const bp = studyBp(p, 'bail'); return x > 0 && bp ? Math.max(1, Math.ceil((x * (10000 - bp)) / 10000)) : x; }   // v81: direito
+function bailRaw(p, now) {
   if (!(p.jailUntil > now)) return 0;
   if (p.jailTier === DRUG_JAIL) { const left = p.jailUntil - now, total = CFG.wh.jailMin * T.MIN; return Math.max(1, Math.ceil((CFG.wh.lawyer * Math.min(left, total)) / total)); }
   const o = p.jailTier >= 100 && p.jailTier < DRUG_JAIL ? CFG.ops[p.jailTier - 100] : null;
@@ -966,6 +967,17 @@ export function dealBuy(p, now, world, j, kg) {
 // ---------- empregos e cursos (passo 3) ----------
 const jobOf = (i) => (Number.isInteger(i) ? CFG.jobs.list[i] : undefined);
 const courseOf = (id) => CFG.courses.find((c) => c.id === id);
+// v81: os níveis dos estudos usam o banco de perguntas da matéria
+export const examBank = (id) => { const c = courseOf(id); return (c && c.bank) || id; };
+// v81: bónus dos estudos e artes marciais (o do nível mais alto feito de cada matéria, somado entre matérias)
+export function studyBp(p, fx) {
+  let bp = 0;
+  for (const st of CFG.studies.list) {
+    const v = st.fx[fx]; if (!v) continue;
+    for (let n = v.length; n >= 1; n--) if (p.done && p.done.includes(st.id + n)) { bp += v[n - 1]; break; }
+  }
+  return bp;
+}
 export const jobOpen = (p, i) => { const x = jobOf(i); return !!x && (!x.course || p.done.includes(x.course)); };
 export function shiftsToday(p, now) { return p.sh && p.sh.d === dayOf(now) ? p.sh.n : 0; }
 // o que paga o turno n (1 a 6) de um emprego: os seis somam exatamente o dia
@@ -1246,7 +1258,7 @@ export function examStart(p, now, world, rng) {
   // as perguntas: as primeiras n de uma baralhada do banco (Fisher-Yates parcial, todas com a mesma hipótese);
   // as opções de cada uma também se baralham, para a letra da certa não se decorar (p[k][d] = opção do banco mostrada em d)
   const shuffle = (arr, k) => { for (let i = 0; i < k; i++) { const j = rng.int(i, arr.length - 1); [arr[i], arr[j]] = [arr[j], arr[i]]; } return arr; };
-  const ids = shuffle([...Array(CFG.exam.ans[c.id].length).keys()], CFG.exam.n).slice(0, CFG.exam.n);
+  const ids = shuffle([...Array(CFG.exam.ans[examBank(c.id)].length).keys()], CFG.exam.n).slice(0, CFG.exam.n);
   const pm = ids.map(() => shuffle([0, 1, 2, 3], 3));
   c.q = { ids, p: pm, t: now }; c.why = null; c.last = null;
   return { ok: true, ids, p: pm, until: now + CFG.exam.ttl, early: c.end > now };
@@ -1257,7 +1269,7 @@ export function examAnswer(p, now, world, ans) {
   const c = p.course;
   if (!c || !c.q) fail('NO_EXAM');   // passou do tempo: o toque acabou de o dar como chumbado
   if (!Array.isArray(ans) || ans.length !== c.q.ids.length || !ans.every((x) => Number.isInteger(x) && x >= 0 && x <= 3)) fail('EXAM_BAD');
-  const key = CFG.exam.ans[c.id], wrong = [], q = c.q;
+  const key = CFG.exam.ans[examBank(c.id)], wrong = [], q = c.q;
   q.ids.forEach((qi, k) => { if (q.p[k][ans[k]] !== key[qi]) wrong.push(k); });
   c.q = null;
   if (wrong.length) { c.next = now + examRetry(c.id); c.why = 'wrong'; c.last = { ids: q.ids, p: q.p, sel: ans.slice(), wrong }; return { ok: true, pass: false, wrong, next: c.next }; }
@@ -1340,7 +1352,7 @@ export function bizRates(p, i) {
   const b = CFG.biz[i];
   const n = p.biz[i].n;
   const st = Math.min(p.stats[b.stat], CFG.statMultCap);
-  const perH = up(Math.floor((b.perH * n * (CFG.statMultDiv + st)) / CFG.statMultDiv), (klass(p).bizBp || 0) + huBp(p, 3));
+  const perH = up(Math.floor((b.perH * n * (CFG.statMultDiv + st)) / CFG.statMultDiv), (klass(p).bizBp || 0) + huBp(p, 3) + studyBp(p, 'biz'));   // v81: gestão
   return { perH };
 }
 
@@ -2066,8 +2078,8 @@ export function atkBp(p) {
   return Math.max(0, ...fire) + (p.eq.branca ? gearOf(p.eq.branca.id).atk : 0);
 }
 export function defBp(p) { return ['cabeca', 'tronco', 'pernas', 'pes', 'maos'].reduce((s, k) => s + (p.eq[k] ? gearOf(p.eq[k].id).def : 0), 0); }
-export function attackPower(p, now) { return up(Math.floor((effStat(p, 'F', now) * (10000 + atkBp(p))) / 10000), (klass(p).atkBp || 0) + gbp(p, 'atk')); }
-export function defensePower(p, now) { return up(Math.floor((effStat(p, 'T', now) * (10000 + defBp(p))) / 10000), (klass(p).defBp || 0) + huBp(p, 1) + gbp(p, 'def') + gearBp(CFG.guards, p.guard)); }
+export function attackPower(p, now) { return up(Math.floor((effStat(p, 'F', now) * (10000 + atkBp(p))) / 10000), (klass(p).atkBp || 0) + gbp(p, 'atk') + studyBp(p, 'atk')); }   // v81: boxe, krav maga
+export function defensePower(p, now) { return up(Math.floor((effStat(p, 'T', now) * (10000 + defBp(p))) / 10000), (klass(p).defBp || 0) + huBp(p, 1) + gbp(p, 'def') + gearBp(CFG.guards, p.guard) + studyBp(p, 'def')); }   // v81: jiu-jitsu, krav maga
 
 // ---------- inventário (passo 4) ----------
 // espaços: os da casa, mais os da mochila. Ocupam espaço as pilhas do inventário (um tipo de objeto cada; as armas e peças
@@ -2410,7 +2422,7 @@ function prune(arr, now) { const lim = now - CFG.pvp.windowMs; while (arr.length
 // asVictim: foi mandado para o hospital por outro (conta para o limite de 4 em 24 h)
 function hospitalize(p, now, ms, asVictim) {
   const P = CFG.pvp;
-  p.hospUntil = now + cut(ms, klass(p).hospCutBp || 0);
+  p.hospUntil = now + cut(ms, Math.min(9000, (klass(p).hospCutBp || 0) + studyBp(p, 'hosp')));   // v81: medicina
   p.protectUntil = p.hospUntil + P.protectMs;          // proteção normal: cai se ele atacar
   if (!asVictim) return;
   prune(p.hospTimes, now);
@@ -3235,7 +3247,7 @@ export function checkInvariants(p) {
   if (!Number.isInteger(p.job) || p.job < -1 || p.job >= CFG.jobs.list.length || (p.job >= 0 && !jobOpen(p, p.job))) bad.push('job');
   if (p.sh !== null && !(p.sh && Number.isSafeInteger(p.sh.n) && p.sh.n >= 1 && p.sh.n <= CFG.jobs.perDay && typeof p.sh.d === 'string')) bad.push('shifts');
   if (p.course !== null && !(p.course && courseOf(p.course.id) && Number.isSafeInteger(p.course.end) && !p.done.includes(p.course.id))) bad.push('course');
-  if (p.course && p.course.q) { const q = p.course.q, B = (CFG.exam.ans[p.course.id] || []).length;   // v80: o exame aberto
+  if (p.course && p.course.q) { const q = p.course.q, B = (CFG.exam.ans[examBank(p.course.id)] || []).length;   // v80: o exame aberto
     if (!p.course.ex || !Array.isArray(q.ids) || q.ids.length !== CFG.exam.n || new Set(q.ids).size !== q.ids.length || q.ids.some((i) => !Number.isInteger(i) || i < 0 || i >= B) || !Number.isSafeInteger(q.t)
       || !Array.isArray(q.p) || q.p.length !== q.ids.length || q.p.some((x) => !Array.isArray(x) || [...x].sort().join() !== '0,1,2,3')) bad.push('exam'); }
   if (p.course && p.course.ex && !(Number.isInteger(p.course.cuts) && p.course.cuts >= 0 && p.course.cuts <= CFG.exam.cuts)) bad.push('exam cuts');

@@ -1,0 +1,64 @@
+name: Gerar imagens
+
+# Gera imagens com o Flux no Cloudflare Workers AI (quota grátis diária) e guarda-as no ramo
+# "imagens-geradas". Precisa do segredo CF_TOKEN (token com a permissão Workers AI); o
+# CF_ACCOUNT (Account ID) é opcional. Não toca no ramo main.
+#   pedidos: uma linha por imagem, "nome|texto do pedido" (ex.: "cena.jpg|a dark museum at night"); o Flux schnell faz 1024×1024
+#   modelo: o modelo do Workers AI (por omissão o Flux schnell)
+
+on:
+  workflow_dispatch:
+    inputs:
+      pedidos:
+        description: "Linhas 'nome|pedido'"
+        required: true
+      modelo:
+        description: "Modelo do Workers AI"
+        required: false
+        default: "@cf/black-forest-labs/flux-1-schnell"
+
+permissions:
+  contents: write
+
+jobs:
+  gerar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Gerar
+        env:
+          PEDIDOS: ${{ inputs.pedidos }}
+          MODELO: ${{ inputs.modelo }}
+          CF_TOKEN: ${{ secrets.CF_TOKEN }}
+          CF_ACCOUNT: ${{ secrets.CF_ACCOUNT }}
+        run: |
+          set -euo pipefail
+          [ -n "$CF_TOKEN" ] || { echo "Falta o segredo CF_TOKEN"; exit 1; }
+          # sem CF_ACCOUNT, usa a primeira conta a que o token tem acesso
+          if [ -z "$CF_ACCOUNT" ]; then
+            CF_ACCOUNT="$(curl -sS --max-time 30 https://api.cloudflare.com/client/v4/accounts -H "Authorization: Bearer $CF_TOKEN" | jq -r '.result[0].id // empty')"
+            [ -n "$CF_ACCOUNT" ] || { echo "Não consegui saber o Account ID: cria o segredo CF_ACCOUNT"; exit 1; }
+          fi
+          mkdir -p imagens
+          printf '%s\n' "$PEDIDOS" | while IFS='|' read -r nome pedido; do
+            [ -n "${nome:-}" ] || continue
+            nome="$(basename "$nome")"
+            corpo="$(jq -n --arg p "$pedido" '{prompt: $p, steps: 8}')"
+            curl -sS --max-time 180 -X POST "https://api.cloudflare.com/client/v4/accounts/$CF_ACCOUNT/ai/run/$MODELO" \
+              -H "Authorization: Bearer $CF_TOKEN" -H "Content-Type: application/json" -d "$corpo" -o resposta.json
+            if jq -e '.result.image' resposta.json >/dev/null; then
+              jq -r '.result.image' resposta.json | base64 -d > "imagens/$nome"
+              echo "$nome $(stat -c %s "imagens/$nome") bytes"
+            else
+              echo "Falhou $nome:"; cat resposta.json; echo
+            fi
+          done
+      - name: Guardar no ramo imagens-geradas
+        run: |
+          set -euo pipefail
+          cd imagens
+          [ -n "$(ls -A)" ] || { echo "Nenhuma imagem gerada"; exit 1; }
+          git init -q -b imagens-geradas
+          git config user.name "github-actions"; git config user.email "actions@github.com"
+          git add -A && git commit -q -m "Imagens geradas $(date -u +%FT%TZ)"
+          git push -q -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" imagens-geradas
