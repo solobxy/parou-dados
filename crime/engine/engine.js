@@ -460,6 +460,7 @@ export function effStat(p, s, now) { const v = up(p.stats[s], buffBp(p, s, now))
 export function activeFx(p, now) { return CFG.fxKinds.filter((k) => buffBp(p, k, now) > 0).map((k) => ({ k, bp: p.fx[k].bp, until: p.fx[k].until })); }
 function applyFx(p, g, now) {
   const out = [];
+  if ((g.fx || []).some((f) => f.k === 'biz')) settleAllBiz(p, now);   // v89: o que os negócios renderam até aqui conta sem o efeito
   for (const f of g.fx || []) {
     const until = now + up(f.ms, klass(p).fxMoreBp || 0), cur = p.fx[f.k];
     if (!cur || cur.until <= now || f.bp >= cur.bp) { p.fx[f.k] = { bp: f.bp, until }; out.push({ k: f.k, bp: f.bp, until }); }
@@ -1614,6 +1615,15 @@ export function feiraRef(kind, id, o) {
   if (kind === 'mt') return MAT_IDS.includes(id) ? matRef(id) : 0;
   return 0;
 }
+// v89: quanto uma unidade vale mesmo, vendida fora da feira: o equipamento ao recetador (metade, pelo estado em que está), as peças
+// das escavações ao museu nas entregas repetidas (30%) ou ao penhorista; as outras peças de coleção o museu paga sempre por inteiro.
+// Pagar a «referência» por uma arma que só vale metade passava dinheiro de uma conta para outra sem contar nos limites da feira.
+export function feiraLiq(kind, id, o) {
+  const r = feiraRef(kind, id, o);
+  if (kind === 'inv') return Math.floor((r * CFG.loot.gearSellBp) / 10000);
+  if (kind === 'col') { const s = Object.values(CFG.col.sets).find((x) => x.items.includes(id)); return s && s.dig ? Math.min(r, Math.max(CFG.col.pawn, Math.floor((r * CFG.col.digRepBp) / 10000))) : r; }
+  return r;
+}
 // entre quanto e quanto se pode pôr uma unidade à venda (e até onde vão os lances, vezes as unidades do lote)
 export function feiraBand(kind, id, o) {
   const F = CFG.feira, r = feiraRef(kind, id, o);
@@ -1677,8 +1687,9 @@ export function bizRates(p, i, at = p.t) {
   const b = CFG.biz[i];
   const n = p.biz[i].n;
   const st = Math.min(p.stats[b.stat], CFG.statMultCap);
-  const perH = up(Math.floor((b.perH * n * (CFG.statMultDiv + st)) / CFG.statMultDiv), (klass(p).bizBp || 0) + huBp(p, 3) + studyBp(p, 'biz') + (p.maq && p.maq[b.id] > at ? CFG.craft.maqBp : 0));   // v81: gestão; v83: máquina a trabalhar
-  return { perH };
+  const base = up(Math.floor((b.perH * n * (CFG.statMultDiv + st)) / CFG.statMultDiv), (klass(p).bizBp || 0) + huBp(p, 3) + studyBp(p, 'biz') + (p.maq && p.maq[b.id] > at ? CFG.craft.maqBp : 0));   // v81: gestão; v83: máquina a trabalhar
+  // v89: sob o efeito «negócios» (a coca), rende mais enquanto ele dura (antes multiplicava tudo o que estava guardado, até 24 h)
+  return { perH: up(base, buffBp(p, 'biz', at)), base };
 }
 
 // quanto tempo de rendimento cabe no armazém: 8 h, ou 24 h com contabilista
@@ -1686,16 +1697,18 @@ export const bizCapMs = (p) => CFG.storageMs * (p.acct ? CFG.accountant.capMult 
 // a parte do contabilista: uma fatia do que está guardado acima do armazém normal (o que sem ele se tinha perdido)
 export function bizFee(p, i, stored, at = p.t) {
   if (!p.acct) return 0;
-  const capN = bizRates(p, i, at).perH * (CFG.storageMs / T.HOUR);
+  const capN = bizRates(p, i, at).base * (CFG.storageMs / T.HOUR);
   return stored > capN ? Math.floor(((stored - capN) * CFG.accountant.feeBp) / 10000) : 0;
 }
 const BIZ_DRUG = CFG.biz.map((b) => (b.drug ? CFG.drugs.findIndex((x) => x.id === b.drug) : -1));
 function settleBiz(p, i, now) {
   const s = p.biz[i], u = p.maq && p.maq[CFG.biz[i].id];
   if (u && s.n > 0 && u > s.t && u < now) settleBiz(p, i, u);   // v83: a máquina parou a meio (falta a revisão): até aí rende com ela
+  const fb = p.fx && p.fx.biz;
+  if (fb && s.n > 0 && fb.until > s.t && fb.until < now) settleBiz(p, i, fb.until);   // v89: o efeito acabou a meio: até aí rende com ele
   if (s.n === 0 || now <= s.t) { s.t = Math.max(s.t, now); return; }
-  const { perH } = bizRates(p, i, s.t);
-  const capM = perH * (bizCapMs(p) / T.HOUR);
+  const { perH, base } = bizRates(p, i, s.t);
+  const capM = base * (bizCapMs(p) / T.HOUR);
   const dt = Math.min(now - s.t, bizCapMs(p));
   if (s.stored < capM) {
     const tot = s.rem + perH * dt;
@@ -1742,7 +1755,6 @@ export function collectBiz(p, now, world, rng) {
       lost = Math.floor((money * CFG.raid.lossBp) / 10000);
       money -= lost;
     }
-    money = up(money, buffBp(p, 'biz', now));   // sob efeito, a recolha rende mais
     if (s.g && BIZ_DRUG[i] >= 0) out.push({ biz: b.id, money, lost, fee, ...toGoods(p, BIZ_DRUG[i], money) });   // fábrica a entregar em droga: unidades para o armazém, o troco em dinheiro
     else { if (b.toBank) p.bank += money; else p.cash += money; out.push({ biz: b.id, money, lost, fee }); }
     s.stored = 0;
@@ -1774,12 +1786,10 @@ export function hireAccountant(p, now, world) {
 
 // ---------- porto ----------
 
-export function portCap(p) {
-  let cap = CFG.port.capBase;
-  for (let i = 1; i < tier(p); i++) cap = Math.floor((cap * CFG.port.capNum) / CFG.port.capDen);
-  return cap;
-}
-export function portSlots(p) { return 1 + Math.floor(tier(p) / CFG.port.slotsEveryLevels); }
+// v89: na escala nova, por nível (a escala antiga crescia 1,6× por degrau: no nível 60 eram 3 M€ por carregamento e o porto
+// rendia 25 M€ por dia, mais do que tudo o resto junto). Agora: 1 000 € + 100 € por nível; um lugar a mais nos níveis 35 e 70.
+export function portCap(p) { return CFG.port.capBase + CFG.port.capPerLevel * level(p); }
+export function portSlots(p) { return 1 + Math.floor(level(p) / CFG.port.slotsEvery); }
 
 // cada carregamento tem a sua droga (para quem a quer receber em vez do dinheiro)
 const SHIP_DRUG = CFG.port.ships.map((s) => CFG.drugs.findIndex((x) => x.id === s.drug));
@@ -1810,8 +1820,9 @@ function landShip(p, c, rng, m) {
   if (rng.chance(portSeizeBp(p, k))) return { k, amount: c.amount, got: 0, seized: true };
   const got = c.amount + Math.floor((c.amount * CFG.port.ships[k].gainBp) / 10000);
   if (c.d !== undefined) return { k, amount: c.amount, got, seized: false, ...toGoods(p, c.d, got, CFG.port.ships[k].rg, m) };   // veio em droga: entra no armazém da região
-  p.cash += got;
-  return { k, amount: c.amount, got, seized: false };
+  const L = launder(p, got - c.amount);   // v89: o lucro é dinheiro do crime (paga lavagem, como os golpes)
+  p.cash += c.amount + L.net;
+  return { k, amount: c.amount, got: c.amount + L.net, ...(L.lav ? { lav: L.lav } : {}), seized: false };
 }
 // descarrega tudo o que já chegou, de uma vez
 export function collectPort(p, now, world, rng, m) {
@@ -1866,20 +1877,22 @@ export function airCollect(p, now, world, rng, keep = false, m) {
   const R = CFG.air.routes[f.r];
   p.air = null;
   if (rng.chance(airSeizeBp(p, f.r, f.bribe))) return { ok: true, r: f.r, amount: f.amount, got: 0, seized: true, respect: 0 };
-  const got = f.amount + Math.floor((f.amount * R.gainBp) / 10000);
+  let got = f.amount + Math.floor((f.amount * R.gainBp) / 10000), lav = 0;
   const goods = keep ? toGoods(p, CFG.drugs.findIndex((x) => x.id === R.drug), got, 'lx', m) : null;   // o avião aterra em Lisboa
-  if (!goods) p.cash += got;
+  if (!goods) { const L = launder(p, got - f.amount); lav = L.lav; got = f.amount + L.net; p.cash += got; }   // v89: o lucro paga lavagem
   const col = colFind(p, rng, CFG.col.airBp, () => CFG.col.route[R.id]);   // v79: a lembrança da rota
-  return { ok: true, r: f.r, amount: f.amount, got, seized: false, respect: R.r, levelUp: addRespect(p, R.r, now), ...(goods || {}), ...(col ? { col } : {}) };
+  return { ok: true, r: f.r, amount: f.amount, got, lav, seized: false, respect: R.r, levelUp: addRespect(p, R.r, now), ...(goods || {}), ...(col ? { col } : {}) };
 }
 
 // ---------- mercadoria e casas do jogador (discoteca e bordel) ----------
 export function wholesale(d) { return Math.max(1, Math.floor((CFG.drugs[d].price * CFG.goods.wholesaleBp) / 10000)); }
-export function dumpValue(d, n) { return Math.floor((n * wholesale(d) * CFG.goods.dumpBp) / 10000); }
+// v89: ao cêntimo (em euros a erva de 6 € ficava a 4 € em vez de 4,80 €: a carga em droga rendia 20% a mais)
+export function wholesaleC(d) { return Math.max(1, Math.floor((CFG.drugs[d].price * CFG.goods.wholesaleBp) / 100)); }
+export function dumpValue(d, n) { return Math.floor((n * wholesaleC(d) * CFG.goods.dumpBp) / 1000000); }
 // troca dinheiro por unidades ao preço de grosso, no armazém da região onde a mercadoria chega (sem ele, no de Lisboa); o troco fica
 // em dinheiro. O que não couber vende-se logo ao mercado da região (ao preço de lá, a empurrar o preço como qualquer venda).
 function toGoods(p, d, cash, rg = 'lx', m) {
-  const r = p.wh && p.wh[rg] ? rg : 'lx', w = wholesale(d), units = Math.floor(cash / w), rest = cash - units * w;
+  const r = p.wh && p.wh[rg] ? rg : 'lx', wc = wholesaleC(d), units = Math.floor((cash * 100) / wc), rest = cash - Math.ceil((units * wc) / 100);
   const fit = Math.min(units, whFree(p, r)), over = units - fit;
   whStock(p, r)[d] += fit; heatAdd(p, r, Math.floor((fit * refC(d)) / 100));
   let overGot = 0;
@@ -2783,6 +2796,7 @@ export function canAttack(a, d, now, world, drop = false) {
   if (d.jailUntil > now) return 'TARGET_JAIL';
   if (d.protectUntil > now || d.capUntil > now) return 'TARGET_PROTECTED';
   if (d.respect * 10000 < a.respect * P.minTargetBp) return 'TARGET_TOO_WEAK';
+  if (level(d) < P.newbieLevel && attackPower(a, now) > P.newbiePowerX * Math.max(1, defensePower(d, now))) return 'TARGET_NEWBIE';   // v89
   return null;
 }
 

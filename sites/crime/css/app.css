@@ -3193,7 +3193,11 @@ h3.cvsep + .card { margin-top: 6px; }
 .fq { min-width: 40px; text-align: center; font: 600 22px/1 var(--num); }
 .fsum { margin: 0; font: 600 18px/1.3 var(--num); }
 .fback { display: block; margin: 0 0 6px; text-align: left; min-height: 44px; }
-.sheet input#fpr, .sheet input#fbid { width: 100%; min-height: 48px; font: 600 20px var(--num); }
+.sheet input#fpr, .sheet input#fbid, .sheet input#ford { width: 100%; min-height: 48px; font: 600 20px var(--num); }
+/* v89: pedidos de compra. Os que se podem vender já: sem cartão, o preço a verde (é dinheiro para quem vende) */
+.vlist.fwant > .fr + .fr { box-shadow: inset 0 1px 0 var(--line); }
+.fwant .fpay { font: 600 16px/1.3 var(--num); }
+@media (max-width: 359px) { .vrow.fr > .btn.sm { min-width: 76px; padding: 0 10px; } }   /* a 320 px o texto ao lado precisa do espaço */
 .seg.fseg button { white-space: nowrap; padding: 0 6px; min-width: 0; }   /* «Os meus» não parte em duas linhas a 320 px */
 @media (max-width: 359px) { .seg.fseg button { font-size: 14px; padding: 0 2px; } }   /* a 320 px, «Comprar» e «Auctions» cabem na tecla */
 .fbtns { display: flex; flex-direction: column; gap: 6px; align-items: stretch; }   /* levantar e voltar a vender, um por cima do outro */

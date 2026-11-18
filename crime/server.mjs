@@ -3,7 +3,8 @@
 // Estado em SQLite (node:sqlite). O Node trata um pedido de cada vez, por isso cada ação é atómica.
 
 import http from 'node:http';
-import { DatabaseSync } from 'node:sqlite';
+import * as sqlite from 'node:sqlite';   // (backup só existe nas versões recentes do Node: usa-se se houver)
+const { DatabaseSync } = sqlite;
 import { randomBytes, scryptSync, timingSafeEqual, createHash } from 'node:crypto';
 import { readFileSync, existsSync, mkdirSync, statSync, readdirSync, unlinkSync } from 'node:fs';
 import { join, extname, normalize } from 'node:path';
@@ -28,7 +29,7 @@ const RONDA_TESTE = process.env.PRIMEIRA_RONDA ? dataDe(process.env.PRIMEIRA_RON
 // Épocas de 28 dias a contar da sexta 13/11/2026 às 21:00 de Lisboa (PRIMEIRA_EPOCA=AAAA-MM-DD muda-a, para testes)
 const ANCORA = dataDe(process.env.PRIMEIRA_EPOCA || process.env.PRIMEIRA_RONDA || '2026-11-13');
 const rng = process.env.TESTE_SEMENTE ? seededRng(+process.env.TESTE_SEMENTE) : cryptoRng();   // nos testes, a sorte pode ser sempre a mesma
-const VERSAO = 88;   // sobe quando o servidor muda, para se confirmar de fora que a versão nova já está a correr
+const VERSAO = 89;   // sobe quando o servidor muda, para se confirmar de fora que a versão nova já está a correr
 const ATOS_3S = +(process.env.ATOS_3S || 15), ATOS_MIN = +(process.env.ATOS_MIN || 400); // ações por conta: 15 em 3 s, 400 por minuto
 
 // ---------- relógio que nunca anda para trás ----------
@@ -651,12 +652,21 @@ const qf = {
   nParaMim: db.prepare("SELECT COUNT(*) n FROM feira WHERE ronda = ? AND dono = ? AND estado = 'levantar'"),
   lancesMeus: db.prepare("SELECT * FROM feira WHERE ronda = ? AND licitante = ? AND estado = 'aberto' ORDER BY fim"),
   precos: db.prepare('SELECT unit FROM feira_vendas WHERE ronda = ? AND item = ? ORDER BY t DESC LIMIT 20'),
+  // v89: pedidos de compra (tipo 'pedido': vendedor = quem compra; preco = por unidade; n = quantos ainda quer)
+  novoPedido: db.prepare("INSERT INTO feira (ronda, vendedor, tipo, kind, item, obj, n, preco, criado, fim, estado) VALUES (?, ?, 'pedido', ?, ?, NULL, ?, ?, ?, ?, 'aberto')"),
+  procura: db.prepare("SELECT kind, item, MAX(preco) preco, SUM(n) n, COUNT(*) c FROM feira WHERE ronda = ? AND estado = 'aberto' AND tipo = 'pedido' AND fim > ? GROUP BY kind, item"),
+  pedidosDoItem: db.prepare("SELECT * FROM feira WHERE ronda = ? AND estado = 'aberto' AND tipo = 'pedido' AND item = ? AND fim > ? ORDER BY preco DESC, id LIMIT 30"),
+  // o que se comprou por um pedido fica à espera de quem pediu, junto (uma linha por artigo)
+  juntar: db.prepare("SELECT id FROM feira WHERE ronda = ? AND dono = ? AND estado = 'levantar' AND tipo = 'pedido' AND kind = ? AND item = ? LIMIT 1"),
+  maisN: db.prepare('UPDATE feira SET n = n + ? WHERE id = ?'),
+  parado: db.prepare("INSERT INTO feira (ronda, vendedor, tipo, kind, item, obj, n, preco, criado, fim, estado, dono) VALUES (?, ?, 'pedido', ?, ?, NULL, ?, ?, ?, ?, 'levantar', ?)"),
 };
 const objDe = (L) => (L.obj ? JSON.parse(L.obj) : null);
 const descDe = (L, n = L.n) => ({ kind: L.kind, id: L.item, n, o: objDe(L) });
 const bandaDe = (L) => E.feiraBand(L.kind, L.item, objDe(L));   // (uma arma: pelos usos que tem)
 // a diferença de um negócio para o preço de referência (para cima ou para baixo)
-const feiraDif = (kind, id, n, total, o) => Math.abs(total - E.feiraRef(kind, id, o) * n);
+// o que conta nos limites: o que se pagou acima ou abaixo da referência, ou acima do que o objeto vale mesmo (v89), o que for maior
+const feiraDif = (kind, id, n, total, o) => Math.max(Math.abs(total - E.feiraRef(kind, id, o) * n), total - E.feiraLiq(kind, id, o) * n);
 const difLeil = (Ls, semLid) => Ls.filter((L) => L.id !== semLid).reduce((t, L) => t + feiraDif(L.kind, L.item, L.n, L.lance, objDe(L)), 0);
 // quanto já passou entre duas contas nas últimas 24 h, mais os leilões em que uma vai à frente no da outra (menos o que se vai mudar)
 const feiraPar = (x, y, now, semLid) => qf.par.get(ronda, now - CFG.feira.pairMs, x, y, y, x).s + difLeil(qf.parLeil.all(ronda, x, y, y, x), semLid);
@@ -676,7 +686,12 @@ function resolverFeira(now) {
   db.exec('BEGIN');
   try {
     for (const x of L) {
-      if (x.tipo === 'leilao' && x.licitante) {
+      if (x.tipo === 'pedido') {   // v89: o pedido acabou: o que ficou por comprar volta ao banco de quem pediu
+        const c = jogadores.get(x.vendedor), back = x.n * x.preco;
+        if (c) { c.bank += back; guardar(c, now); caixa(now, 'feira:devolve', back, 0); } else console.error('feira: quem pediu não está carregado', x.vendedor, x.id);
+        qf.apaga.run(x.id);
+        evento(x.vendedor, now, { k: 'fOrderEnd', kind: x.kind, item: x.item, n: x.n, money: back });
+      } else if (x.tipo === 'leilao' && x.licitante) {
         const fee = E.feiraFee(x.lance), net = x.lance - fee, s = jogadores.get(x.vendedor);
         if (s) { s.bank += net; guardar(s, now); caixa(now, 'feira:venda', net, 0); }
         qf.levantar.run(x.licitante, x.id);
@@ -785,9 +800,53 @@ function agirFeira(a, p, conta, now, world, ctx) {
     });
     return { ok: true, lid: L.id, kind: L.kind, id: L.item, n: L.n, valor: v, fim, next: E.feiraNext(v, L.preco, cap) };
   }
+  if (a.type === 'feiraOrder') {   // v89: pedido de compra: o dinheiro sai já do banco e fica preso até alguém vender (ou até acabar)
+    nivel();
+    const kind = String(a.kind || ''), id = String(a.id || '').slice(0, 24), n = int(a.n);
+    if ((kind !== 'mt' && kind !== 'col') || !E.feiraDesc(kind, id)) err('NO_ITEM');
+    if (!Number.isSafeInteger(n) || n < 1 || n > F.maxN) err('BAD_AMOUNT');
+    const v = preco('fixo', kind, id, n, null), total = v * n;
+    if (qf.abertosDe.get(ronda, conta, conta).n >= F.maxOpen) err('FEIRA_FULL', { max: F.maxOpen });
+    E.feiraBegin(p, now, world);
+    if (p.bank < total) err('NO_BANK', { min: total });
+    p.bank -= total;
+    const fim = now + F.orderMs;
+    ctx.ops.push(() => { qf.novoPedido.run(ronda, conta, kind, id, n, v, now, fim); caixa(now, 'feira:pedido', 0, total); });
+    return { ok: true, tipo: 'pedido', kind, id, n, preco: v, total, fim };
+  }
+  if (a.type === 'feiraFill') {   // v89: vender a um pedido: o que se vende sai já; o dinheiro (menos a taxa) entra no banco
+    nivel();
+    const L = anuncio();
+    if (L.tipo !== 'pedido') err('NO_LISTING');
+    if (L.vendedor === conta) err('OWN_LISTING');
+    if (!jogadores.get(L.vendedor)) err('NO_LISTING');
+    const k = a.n === undefined ? L.n : int(a.n);
+    if (!Number.isSafeInteger(k) || k < 1 || k > L.n) err('BAD_AMOUNT', { max: L.n });
+    const total = L.preco * k, dif = feiraDif(L.kind, L.item, k, total, null);
+    par(L.vendedor, dif);
+    E.feiraTake(p, now, world, L.kind, L.item, k);
+    const fee = E.feiraFee(total), net = total - fee;
+    p.bank += net;
+    ctx.ops.push(() => {
+      if (k === L.n) qf.apaga.run(L.id); else qf.menos.run(k, L.id);
+      const j = qf.juntar.get(ronda, L.vendedor, L.kind, L.item);
+      if (j) qf.maisN.run(k, j.id); else qf.parado.run(ronda, L.vendedor, L.kind, L.item, k, L.preco, now, now, L.vendedor);
+      qf.venda.run(ronda, L.item, now, L.preco, k, L.vendedor, conta, dif);   // (a = quem compra, b = quem vende, como nas outras)
+      evento(L.vendedor, now, { k: 'fFilled', kind: L.kind, item: L.item, n: k, money: total, left: L.n - k, by: nomeDe(conta) });
+      caixa(now, 'feira:venda', net, 0);
+    });
+    return { ok: true, lid: L.id, kind: L.kind, id: L.item, n: k, money: net, fee };
+  }
   if (a.type === 'feiraCancel') {   // tirar da feira: volta logo, ou fica à espera de ser levantado se não couber; leilão só sem lances
     const L = anuncio();
     if (L.vendedor !== conta) err('NO_LISTING');
+    if (L.tipo === 'pedido') {   // v89: cancelar um pedido: o que ficou por comprar volta ao banco
+      E.feiraBegin(p, now, world);
+      const back = L.n * L.preco;
+      p.bank += back;
+      ctx.ops.push(() => { qf.apaga.run(L.id); caixa(now, 'feira:devolve', back, 0); });
+      return { ok: true, lid: L.id, kind: L.kind, id: L.item, n: L.n, refund: back, order: true };
+    }
     if (L.licitante) err('HAS_BIDS');
     const d = descDe(L);
     E.feiraBegin(p, now, world);
@@ -809,20 +868,22 @@ function agirFeira(a, p, conta, now, world, ctx) {
 const linhaFeira = (L, conta, now, cache) => {
   const cap = L.tipo === 'leilao' ? bandaDe(L).hi * L.n : undefined, o = objDe(L);
   const lim = cache && L.vendedor !== conta && L.estado === 'aberto' ? Math.max(0, feiraFolga(conta, L.vendedor, now, L.tipo === 'leilao' ? L.id : undefined, L.tipo === 'leilao' ? null : cache)[1]) : undefined;
-  return { lid: L.id, tipo: L.tipo, kind: L.kind, id: L.item, n: L.n, u: o ? o.u : undefined, preco: L.preco, lance: L.lance, ref: E.feiraRef(L.kind, L.item, o), lim,
+  return { lid: L.id, tipo: L.tipo, kind: L.kind, id: L.item, n: L.n, u: o ? o.u : undefined, preco: L.preco, lance: L.lance, ref: E.feiraRef(L.kind, L.item, o), liq: E.feiraLiq(L.kind, L.item, o), lim,
     next: L.tipo === 'leilao' ? E.feiraNext(L.lance, L.preco, cap) : undefined, max: cap,
-    fim: L.fim, quem: nomeDe(L.vendedor), meu: L.vendedor === conta, frente: L.licitante === conta, lances: !!L.licitante, won: L.estado === 'levantar' && L.dono !== L.vendedor };
+    fim: L.fim, quem: nomeDe(L.vendedor), meu: L.vendedor === conta, frente: L.licitante === conta, lances: !!L.licitante, won: L.estado === 'levantar' && L.dono !== L.vendedor,
+    bought: L.estado === 'levantar' && L.tipo === 'pedido' };   // v89: comprado por um pedido
 };
 let cacheCat = { t: 0, r: -1, lista: [] };
 // aoff: a partir de que leilão (página seguinte); an: quantos (para recarregar sem perder as páginas já abertas)
 function vistaFeira(conta, now, item, aoff = 0, an = 40) {
   resolverFeira(now);
-  if (cacheCat.r !== ronda || now - cacheCat.t > 5000) cacheCat = { t: now, r: ronda, lista: qf.catalogo.all(ronda, now) };
+  if (cacheCat.r !== ronda || now - cacheCat.t > 5000) cacheCat = { t: now, r: ronda, lista: qf.catalogo.all(ronda, now), procura: qf.procura.all(ronda, now) };
   const off = Number.isSafeInteger(aoff) && aoff > 0 ? Math.min(aoff, 10_000) : 0, k = Number.isSafeInteger(an) ? Math.max(40, Math.min(200, an)) : 40;
   const leil = qf.leiloes.all(ronda, now, k + 1, off), cache = new Map();
   const out = {
     now, cat: cacheCat.lista.map((x) => ({ kind: x.kind, id: x.item, preco: x.preco, n: x.n, c: x.c })),
     leiloes: leil.slice(0, k).map((L) => linhaFeira(L, conta, now, cache)), aoff: off, maisLeiloes: leil.length > k,
+    procura: (cacheCat.procura || []).map((x) => ({ kind: x.kind, id: x.item, preco: x.preco, n: x.n, c: x.c })),   // v89: o melhor preço que pedem, por artigo
     passados: qf.passados.all(conta, ronda, conta, now).map((L) => linhaFeira(L, conta, now, cache)),   // leilões em que licitaste e te passaram à frente
     meus: qf.meus.all(ronda, conta).map((L) => linhaFeira(L, conta, now)),
     levantar: qf.paraMim.all(ronda, conta).map((L) => linhaFeira(L, conta, now)),
@@ -830,7 +891,8 @@ function vistaFeira(conta, now, item, aoff = 0, an = 40) {
   };
   if (typeof item === 'string' && item.length <= 24) {
     const u = qf.precos.all(ronda, item).map((x) => x.unit).sort((x, y) => x - y);
-    out.item = { id: item, lista: qf.doItem.all(ronda, item, now).map((L) => linhaFeira(L, conta, now, cache)), med: u.length ? u[Math.floor(u.length / 2)] : 0, vendas: u.length };
+    out.item = { id: item, lista: qf.doItem.all(ronda, item, now).map((L) => linhaFeira(L, conta, now, cache)), med: u.length ? u[Math.floor(u.length / 2)] : 0, vendas: u.length,
+      pedidos: qf.pedidosDoItem.all(ronda, item, now).map((L) => linhaFeira(L, conta, now, cache)) };
   }
   return out;
 }
@@ -1716,31 +1778,58 @@ function agir(conta, corpo, now) {
 // Duas classificações: a da época (o respeito ganho nela, dentro de cada divisão) e a geral (o respeito todo, para sempre).
 const vet = (p) => p.titles?.some((x) => x.k === 'vet') || false;
 const linhaRank = (p, i, score) => ({ pos: i + 1, id: p.id, name: nomeDe(p.id), respect: p.respect, level: E.level(p), av: p.av || 0, cls: p.cls || '', tag: tagDe(p.id), score, vet: vet(p) });
-let cacheRank = { t: 0, n: -1, size: 0, lista: [] };
+// v89 (teste de carga): as classificações guardam a ordem e a posição de cada um (cache de 5 s); as linhas (nome, gangue…) só se
+// fazem para o que se mostra. Antes faziam-se para toda a gente a cada 5 s, e o estado só precisava do total.
+let cacheRank = { t: 0, n: -1, size: 0, arr: [], pos: new Map() };
+const posMap = (arr, id = (x) => x.id) => { const m = new Map(); arr.forEach((x, i) => m.set(id(x), i)); return m; };
 function rankingAtual(now, w) {
   carregarRonda(w.n);
-  if (cacheRank.n === w.n && cacheRank.size === jogadores.size && now - cacheRank.t < 5000) return cacheRank.lista;
-  const lista = E.ranking([...jogadores.values()]).map((p, i) => linhaRank(p, i, 0));
-  cacheRank = { t: now, n: w.n, size: jogadores.size, lista };
-  return lista;
+  if (cacheRank.n === w.n && cacheRank.size === jogadores.size && now - cacheRank.t < 5000) return cacheRank;
+  const arr = E.ranking([...jogadores.values()]);
+  cacheRank = { t: now, n: w.n, size: jogadores.size, arr, pos: posMap(arr), linha: (i) => linhaRank(arr[i], i, 0) };
+  return cacheRank;
 }
 function rankingEpoca(now, d) {
   const ep = epocaEmDia(now), c = cacheEpoca.get(d);
-  if (c && c.n === ep.n && c.size === jogadores.size && now - c.t < 5000) return c.lista;
-  const lista = E.seasonStandings([...jogadores.values()], ep.n, d).map((x, i) => linhaRank(x.p, i, x.score));
-  cacheEpoca.set(d, { t: now, n: ep.n, size: jogadores.size, lista });
-  return lista;
+  if (c && c.n === ep.n && c.size === jogadores.size && now - c.t < 5000) return c;
+  const arr = E.seasonStandings([...jogadores.values()], ep.n, d), r = { t: now, n: ep.n, size: jogadores.size, arr, pos: posMap(arr, (x) => x.p.id), linha: (i) => linhaRank(arr[i].p, i, arr[i].score) };
+  cacheEpoca.set(d, r);
+  return r;
 }
-const posNaEpoca = (now, p) => (p && p.ep ? (rankingEpoca(now, p.ep.div).find((x) => x.id === p.id)?.pos ?? null) : null);
+const posNaEpoca = (now, p) => { if (!p || !p.ep) return null; const i = rankingEpoca(now, p.ep.div).pos.get(p.id); return i === undefined ? null : i + 1; };
 const vistaEpoca = (ep) => ({ n: ep.n, start: ep.start, end: ep.end });
 
+// v89 (teste de carga): um índice dos jogadores, refeito no máximo de 5 em 5 s, para as listas não percorrerem toda a gente a cada
+// pedido: por respeito (do menor para o maior) e os donos de discotecas e bordéis. Com 10 000 jogadores, a lista de alvos
+// sozinha comia 70% do processador.
+let indice = { t: 0, n: -1, size: 0, resp: [], casas: [] };
+function indiceJogadores(now) {
+  if (indice.n === ronda && indice.size === jogadores.size && now - indice.t < 5000) return indice;
+  const todos = [...jogadores.values()];
+  indice = { t: now, n: ronda, size: jogadores.size, resp: todos.sort((a, b) => (a.respect - b.respect) || (a.id < b.id ? -1 : 1)), casas: todos.filter((o) => o.club || o.bro) };
+  return indice;
+}
+// até k jogadores com o respeito mais perto de r (em proporção: 2× e 0,5× ficam à mesma distância), sem os que filtro recusa.
+// Olha no máximo para 8k: se quase todos à volta forem recusados, a lista fica mais curta em vez de percorrer toda a gente.
+function pertoDe(arr, r, k, filtro) {
+  let lo = 0, hi = arr.length;
+  while (lo < hi) { const m = (lo + hi) >> 1; if (arr[m].respect < r) lo = m + 1; else hi = m; }
+  const out = [], d = (x) => Math.abs(Math.log((x.respect + 1) / (r + 1)));
+  let i = lo - 1, j = lo, vistos = 0;
+  while (out.length < k && vistos++ < 8 * k && (i >= 0 || j < arr.length)) {
+    const a = i >= 0 ? arr[i] : null, b = j < arr.length ? arr[j] : null;
+    const x = !b || (a && d(a) <= d(b)) ? arr[i--] : arr[j++];
+    if (filtro(x)) out.push(x);
+  }
+  return out;
+}
 // discotecas e bordéis dos outros jogadores, com o preço que ESTE jogador lá paga (o desconto da gangue já vem feito)
 function casas(conta, now, w) {
   const me = jogadorDe(conta, now, w);
   if (!me) return { clubs: [], bros: [] };
   E.touch(me, now);
   const clubs = [], bros = [];
-  for (const o of jogadores.values()) {
+  for (const o of indiceJogadores(now).casas) {
     if (o.id === me.id || (!o.club && !o.bro)) continue;
     const v = E.venueView(o, Math.max(now, o.t)), mine = E.sameCrew(me, o);
     const base = { name: nomeDe(o.id), tag: tagDe(o.id), av: o.av || 0, gang: mine };
@@ -1791,28 +1880,29 @@ function dica(p, now, w) {
   }
   return { k: 'none', t };
 }
+// v89: só se avaliam os ALVOS_K jogadores com o respeito mais perto do que mais rende (o dobro do teu; o ganho cresce com o
+// respeito do alvo até 4×, a hipótese desce): calcular hipótese, ganho e saque para toda a gente não escalava.
+const ALVOS_K = 150;
 function alvos(conta, now, w) {
   const me = jogadorDe(conta, now, w);
   if (!me) return [];
   E.touch(me, now);
-  const lista = [], fora = [];
-  for (const d of jogadores.values()) {
-    if (d.id === me.id) continue;
-    // a lista mostra quem dá para atacar quando estiveres livre: as razões do teu lado (prisão, hospital, escudo, energia) não escondem ninguém
-    const livre = { ...me, energy: CFG.pvp.energy, jailUntil: 0, hospUntil: 0, shieldUntil: 0 };
-    const motivo = E.canAttack(livre, d, now, { start: w.start, playEnd: w.playEnd });
-    const base = { name: nomeDe(d.id), level: E.level(d), respect: d.respect, av: d.av || 0, cls: d.cls || '', tag: tagDe(d.id) };
-    if (motivo && motivo !== 'NO_PVP_YET') {
-      // quem não dá para atacar também aparece, com o motivo (why) e, quando é por tempo, a hora a que acaba (until)
-      const until = motivo === 'TARGET_NEW' ? d.shieldUntil : motivo === 'TARGET_HOSPITAL' ? d.hospUntil : motivo === 'TARGET_JAIL' ? d.jailUntil : motivo === 'TARGET_PROTECTED' ? Math.max(d.protectUntil, d.capUntil) : 0;
-      fora.push({ ...base, why: motivo, until });
-      continue;
-    }
+  const lista = [], fora = [], mundo1 = { start: w.start, playEnd: w.playEnd };
+  // a lista mostra quem dá para atacar quando estiveres livre: as razões do teu lado (prisão, hospital, escudo, energia) não escondem ninguém
+  const livre = { ...me, energy: CFG.pvp.energy, jailUntil: 0, hospUntil: 0, shieldUntil: 0 };
+  // os que dá para atacar, à volta do respeito que mais rende; os outros (com o motivo), à volta do teu respeito, só para encher
+  const arr = indiceJogadores(now).resp, motivoDe = (d) => (d.id === me.id ? 'SELF' : E.canAttack(livre, d, now, mundo1));
+  for (const d of pertoDe(arr, Math.max(1, me.respect * 2), ALVOS_K, (d) => { const m = motivoDe(d); return !m || m === 'NO_PVP_YET'; })) {
     lista.push({
-      ...base,
+      name: nomeDe(d.id), level: E.level(d), respect: d.respect, av: d.av || 0, cls: d.cls || '', tag: tagDe(d.id),
       chance: E.attackChanceBp(me, d, now), gain: E.expectedGain(me, d, now), loot: E.mugValue(me, d, now),
-      hp: E.hitmanPrice(d), hc: E.hitmanChanceBp(d), hw: E.canHitman({ ...me, shieldUntil: 0 }, d, now, { start: w.start, playEnd: w.playEnd }),
+      hp: E.hitmanPrice(d), hc: E.hitmanChanceBp(d), hw: E.canHitman({ ...me, shieldUntil: 0 }, d, now, mundo1),
     });
+  }
+  for (const d of pertoDe(arr, me.respect, 25, (d) => { const m = motivoDe(d); return m && m !== 'NO_PVP_YET' && m !== 'SELF'; })) {
+    // quem não dá para atacar também aparece, com o motivo (why) e, quando é por tempo, a hora a que acaba (until)
+    const motivo = motivoDe(d), until = motivo === 'TARGET_NEW' ? d.shieldUntil : motivo === 'TARGET_HOSPITAL' ? d.hospUntil : motivo === 'TARGET_JAIL' ? d.jailUntil : motivo === 'TARGET_PROTECTED' ? Math.max(d.protectUntil, d.capUntil) : 0;
+    fora.push({ name: nomeDe(d.id), level: E.level(d), respect: d.respect, av: d.av || 0, cls: d.cls || '', tag: tagDe(d.id), why: motivo, until });
   }
   // os mais interessantes primeiro: mais respeito esperado
   lista.sort((x, y) => (y.chance * y.gain) - (x.chance * x.gain));
@@ -1827,15 +1917,18 @@ function contratos(conta, now, w) {
   const me = jogadorDe(conta, now, w);
   if (!me) return [];
   E.touch(me, now);
-  const lista = [];
-  for (const d of jogadores.values()) {
+  // v89: percorre do mais respeitado para baixo e pára quando já tem 30 que dá para encomendar (a ordem é a mesma de antes)
+  const sim = [], nao = [], arr = indiceJogadores(now).resp, me0 = { ...me, shieldUntil: 0 }, mundo1 = { start: w.start, playEnd: w.playEnd };
+  for (let i = arr.length - 1, fim = Math.max(0, arr.length - 2000); i >= fim && sim.length < 30; i--) {   // no máximo os 2 000 de cima
+    const d = arr[i];
     if (d.id === me.id) continue;
-    const hw = E.canHitman({ ...me, shieldUntil: 0 }, d, now, { start: w.start, playEnd: w.playEnd });
+    const hw = E.canHitman(me0, d, now, mundo1);
+    if (hw && nao.length >= 30) continue;
     const until = hw === 'TARGET_NEW' ? d.shieldUntil : hw === 'TARGET_HOSPITAL' ? d.hospUntil : hw === 'TARGET_JAIL' ? d.jailUntil : hw === 'TARGET_PROTECTED' ? Math.max(d.protectUntil, d.capUntil) : hw === 'HITMAN_SAFE' ? d.hmSafe : 0;
-    lista.push({ name: nomeDe(d.id), level: E.level(d), respect: d.respect, av: d.av || 0, tag: tagDe(d.id), hp: E.hitmanPrice(d), hc: E.hitmanChanceBp(d), hw, until });
+    (hw ? nao : sim).push({ name: nomeDe(d.id), level: E.level(d), respect: d.respect, av: d.av || 0, tag: tagDe(d.id), hp: E.hitmanPrice(d), hc: E.hitmanChanceBp(d), hw, until });
   }
-  lista.sort((x, y) => ((x.hw ? 1 : 0) - (y.hw ? 1 : 0)) || (y.respect - x.respect) || (x.name < y.name ? -1 : 1));
-  return lista.slice(0, 30);
+  const ord = (x, y) => (y.respect - x.respect) || (x.name < y.name ? -1 : 1);
+  return [...sim.sort(ord), ...nao.sort(ord)].slice(0, 30);
 }
 
 // ---------- ficheiros estáticos (só em testes locais) ----------
@@ -1901,7 +1994,8 @@ async function tratar(req, res) {
   // sem sessão, o estado responde na mesma (sem jogador) para a página de entrada não dar erro
   if (!conta && req.method === 'GET' && path === '/api/state') {
     const w0 = mundo(now);
-    return enviar(res, 200, { now, round: w0, season: vistaEpoca(epocaEmDia(now)), account: null, me: null, rank: null, players: rankingAtual(now, w0).length, feed: ultimas() });
+    carregarRonda(w0.n);
+    return enviar(res, 200, { now, round: w0, season: vistaEpoca(epocaEmDia(now)), account: null, me: null, rank: null, players: jogadores.size, feed: ultimas() });
   }
   if (!conta) return enviar(res, 401, { error: 'LOGIN_REQUIRED' });
 
@@ -1916,9 +2010,8 @@ async function tratar(req, res) {
     const c = q.contaPorId.get(conta);
     const p = jogadorDe(conta, now, w);
     if (p) E.touch(p, now);
-    const rk = rankingAtual(now, w);
     // a posição que aparece no topo é a da época, na tua divisão (é aí que se compete)
-    return enviar(res, 200, { now, round: w, season: vistaEpoca(epocaEmDia(now)), account: { name: c?.nome, lang: c?.lingua }, me: p ? vista(p, now) : null, rank: posNaEpoca(now, p), players: rk.length, feed: ultimas() });
+    return enviar(res, 200, { now, round: w, season: vistaEpoca(epocaEmDia(now)), account: { name: c?.nome, lang: c?.lingua }, me: p ? vista(p, now) : null, rank: posNaEpoca(now, p), players: jogadores.size, feed: ultimas() });
   }
   if (req.method === 'POST' && path === '/api/lang') {
     let b; try { b = await lerCorpo(req); } catch { return enviar(res, 400, { error: 'BAD_REQUEST' }); }
@@ -1968,10 +2061,9 @@ async function tratar(req, res) {
     // v=geral: o respeito todo; v=epoca (o normal): o respeito ganho nesta época, na divisão d (sem d, a tua)
     const ep = epocaEmDia(now), eu = jogadores.get(conta), geral = url.searchParams.get('v') === 'geral';
     const dq = Number(url.searchParams.get('d')), d = Number.isInteger(dq) && dq >= 0 && dq < CFG.season.divs && url.searchParams.has('d') ? dq : (eu?.ep?.div ?? 0);
-    const rk = geral ? rankingAtual(now, w) : rankingEpoca(now, d);
-    const minha = rk.find((x) => x.id === conta);
-    const top = rk.slice(0, 100).map(({ id, ...r }) => ({ ...r, me: id === conta }));
-    const out = { now, view: geral ? 'geral' : 'epoca', d, season: vistaEpoca(ep), top, me: minha ? { pos: minha.pos, respect: minha.respect, level: minha.level, name: minha.name, score: minha.score } : null, total: rk.length };
+    const rk = geral ? rankingAtual(now, w) : rankingEpoca(now, d), mi = rk.pos.get(conta), minha = mi === undefined ? null : rk.linha(mi);
+    const top = rk.arr.slice(0, 100).map((_, i) => { const { id, ...r } = rk.linha(i); return { ...r, me: id === conta }; });
+    const out = { now, view: geral ? 'geral' : 'epoca', d, season: vistaEpoca(ep), top, me: minha ? { pos: minha.pos, respect: minha.respect, level: minha.level, name: minha.name, score: minha.score } : null, total: rk.arr.length };
     if (!geral) { out.prizes = premiosAgora(now, d); out.last = podioDe(ep.n - 1, d); }
     return enviar(res, 200, out);
   }
@@ -2002,8 +2094,11 @@ setInterval(() => {
     qm.limpar.run(Math.floor((now - 2 * T.DAY) / 100));
     qg.limpaChat.run(now - 20 * T.DAY);
     const nome = join(dir, `jogo-${new Date(now).toISOString().slice(0, 13)}.db`);
-    if (!existsSync(nome)) db.exec(`VACUUM INTO '${nome.replace(/'/g, "''")}'`);
-    const fs = readdirSync(dir).filter((f) => f.endsWith('.db')).sort();
-    while (fs.length > 24) unlinkSync(join(dir, fs.shift()));
+    // v89: a cópia faz-se aos bocados, sem parar o jogo (VACUUM INTO parava tudo ~0,4 s com 50 000 jogadores)
+    const limpar = () => { const fs = readdirSync(dir).filter((f) => f.endsWith('.db')).sort(); while (fs.length > 24) unlinkSync(join(dir, fs.shift())); };
+    if (!existsSync(nome)) {
+      if (typeof sqlite.backup === 'function') sqlite.backup(db, nome).then(limpar, (e) => console.error('copia', e.message));
+      else { db.exec(`VACUUM INTO '${nome.replace(/'/g, "''")}'`); limpar(); }
+    } else limpar();
   } catch (e) { console.error('copia', e.message); }
 }, T.HOUR).unref();

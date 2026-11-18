@@ -772,7 +772,7 @@ test('gangues: golpe em grupo e tareia em grupo — pedido sem prazo, alinhar e 
   for (const x of [A, B, C, V]) await x.estado();
   const forte = (e) => { e.cash = 1_000_000; e.respect = 100; e.peakRespect = 100; for (const s of Object.keys(e.stats)) e.stats[s] = 400; e.energy = 100; };
   ENV_EXTRA = { ATOS_3S: '100000', ATOS_MIN: '1000000', GANG_OP_MS: '700' };
-  await mexer({ GolpeA: forte, GolpeB: forte, GolpeC: forte, GolpeV: (e) => { e.respect = 100; e.peakRespect = 100; } });
+  await mexer({ GolpeA: forte, GolpeB: forte, GolpeC: forte, GolpeV: (e) => { e.respect = 100; e.peakRespect = 100; e.stats.T = 150; } });   // v89: abaixo do nível 10 só o ataca quem não tem mais do triplo da força dele
   const ag = (x, ip, body) => cru(x.cookie, ip, body), gangue = async (x, ip) => (await fetch(BASE + '/api/gang', { headers: { cookie: x.cookie, 'X-Forwarded-For': ip } })).json();
   const espera = (ms) => new Promise((r) => setTimeout(r, ms));
   let r = await ag(A, ips.A, { type: 'gangCreate', name: 'Golpistas', tag: 'GLP' }); assert.equal(r.status, 200, JSON.stringify(r.body));

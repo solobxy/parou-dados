@@ -512,7 +512,10 @@ export const CFG = {
     // e entre as mesmas duas contas (num sentido ou no outro), em 24 h, a diferença para o preço de referência não passa de pairMax
     // (vender caro a uma conta e voltar a comprar barato fazia passar dinheiro sem limite, um ciclo de cada vez). Os lances à frente
     // contam já. Quem licita também não guarda mais de maxOpen coisas na feira (por levantar mais leilões em que vai à frente).
-    pairMax: 10_000, acctMax: 30_000, pairMs: 24 * HOUR },   // e cada conta, com toda a gente, até acctMax (várias contas, triângulos)
+    pairMax: 10_000, acctMax: 30_000, pairMs: 24 * HOUR,
+    // v89: pedidos de compra («compro 10 chapas a 55 € cada»). O dinheiro sai do banco ao pedir e fica preso até alguém vender
+    // ou o pedido acabar (volta ao banco: um pedido não serve de cofre sem a taxa do banco). Só materiais e colecionáveis.
+    orderMs: 72 * HOUR },   // e cada conta, com toda a gente, até acctMax (várias contas, triângulos)
   exam: {
     n: 3, cutBp: 2500, cuts: 2, retryBp: 1250, retryMin: HOUR, retryMax: 12 * HOUR, ttl: 15 * MIN,
     ans: {
@@ -585,7 +588,7 @@ export const CFG = {
     { id: 'ecstasy', fam: 'festa', e: 0, a: 3, price: 7, fx: [{ k: 'C', bp: 1000, ms: 10 * MIN }] },
     { id: 'speed', fam: 'festa', e: 0, a: 3, price: 10, fx: [{ k: 'loot', bp: 1500, ms: 10 * MIN }] },
     { id: 'lsd', fam: 'festa', e: 0, a: 2, price: 8, fx: [{ k: 'I', bp: 2000, ms: 15 * MIN }] },
-    { id: 'coca', fam: 'pesada', e: 0, a: 3, price: 35, fx: [{ k: 'C', bp: 1500, ms: 15 * MIN }, { k: 'biz', bp: 1000, ms: 15 * MIN }] },
+    { id: 'coca', fam: 'pesada', e: 0, a: 3, price: 35, fx: [{ k: 'C', bp: 1500, ms: 15 * MIN }, { k: 'biz', bp: 1000, ms: 4 * HOUR }] },   // v89: os negócios rendem +10% durante 4 h (antes: +10% em tudo o que estava guardado, ao recolher)
     { id: 'cristal', fam: 'pesada', e: 0, a: 3, price: 60, fx: [{ k: 'F', bp: 2000, ms: 15 * MIN }] },
     { id: 'heroina', fam: 'pesada', e: 0, a: 3, price: 17, fx: [{ k: 'T', bp: 2500, ms: 20 * MIN }] },
     // juntas mais tarde: ficam no fim da lista para os armazéns já guardados não trocarem de droga (o ecrã mostra-as por preço)
@@ -607,12 +610,12 @@ export const CFG = {
     { id: 'matador', atkBp: 2000, pvpBp: 2500 }, // ataque e respeito nas lutas
     { id: 'seguranca', defBp: 2500, hospCutBp: 5000 }, // defesa, hospital a metade
     { id: 'chulo', hkCutBp: 3000, sickCutBp: 6000 }, // putas mais baratas e menos doenças
-    { id: 'contrabandista', seizeCutBp: 5000 }, // metade das apreensões no porto
+    { id: 'contrabandista', seizeCutBp: 3000 }, // v89: menos 30% de apreensões no porto e no avião (era metade: com o porto antigo era a escolha óbvia)
     // de elite: só com respeito (conta o máximo que já tiveste na ronda). Juntam dois ofícios e dão mais do que os de rua.
     { id: 'mestre', need: 1000, lootBp: 2000, bustCutBp: 1500 },
     { id: 'blindado', need: 1500, defBp: 3500, hospCutBp: 6000, atkBp: 1000 },
     { id: 'barao', need: 2000, drugCutBp: 4500, fxMoreBp: 15000, capPlus: 25 },
-    { id: 'magnata', need: 3000, bizBp: 3000, feeCutBp: 8000, seizeCutBp: 3000 },
+    { id: 'magnata', need: 3000, bizBp: 3000, feeCutBp: 8000, seizeCutBp: 2000 },
     { id: 'carniceiro', need: 4000, atkBp: 3000, pvpBp: 4000, hospCutBp: 2500 },
     { id: 'padrinho', need: 6000, lootBp: 2500, respBp: 1500, bizBp: 1500 },
   ],
@@ -884,7 +887,9 @@ export const CFG = {
   // Valor esperado de cada um = (1 − risco) × (1 + lucro): entre 2,6% e 3,1% por hora, sempre abaixo do aeroporto (3,6% a 4,3%), porque o porto tem vários lugares.
   // O risco cresce com a duração (menos no submarino, que é lento e discreto): uma viagem curta com muito risco daria de mais a quem corta as apreensões a metade.
   // legacy: os contentores enviados antes de haver carregamentos valem como o porta-contentores (os mesmos +30% e 15%).
-  port: { minAmount: 100, capBase: 1000, capNum: 8, capDen: 5, slotsEveryLevels: 5, legacy: 3, // limite por carregamento: 1000 × 1,6^(nível−1)
+  // v89: limite por carregamento 1 000 € + 100 € por nível; um lugar a mais nos níveis 35 e 70 (antes: 1 000 × 1,6 por degrau antigo,
+  // que no nível 60 dava 3 M€ por carregamento). Com o aeroporto, rende cerca de um quarto a um terço do que o resto do jogo dá por dia.
+  port: { minAmount: 100, capBase: 1000, capPerLevel: 100, slotsEvery: 35, legacy: 3,
     ships: [
       { id: 'pesca', rg: 'lx', level: nv(1), ms: 2 * HOUR, gainBp: 1200, seizeBp: 600, drug: 'erva' },
       { id: 'lancha', rg: 'ag', level: nv(3), ms: 1 * HOUR, gainBp: 800, seizeBp: 500, drug: 'haxixe' },
@@ -969,6 +974,9 @@ export const CFG = {
     mugHospMs: 10 * MIN,
     mugBp: 2500, // assalto leva 25% do dinheiro na mão e do que está por recolher nos negócios ilegais, na discoteca e no bordel (o banco e o cofre de casa ficam a salvo)
     protectMs: 30 * MIN, // proteção depois de sair do hospital
+    // v89: quem ainda está a começar (abaixo do nível 10) só pode ser atacado por quem não tem mais do triplo da força dele
+    // (o respeito sozinho deixava contas com pouco respeito e muita força, do ginásio e das armas, caçar novatos)
+    newbieLevel: 10, newbiePowerX: 3,
     maxHospPerWindow: 4, // ninguém é mandado para o hospital mais de 4 vezes em 24 h (regra fixa)
     windowMs: 24 * HOUR,
   },

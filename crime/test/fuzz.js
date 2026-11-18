@@ -25,6 +25,7 @@ for (let i = 0; i < 60; i++) players.push(novo(i));
 const pick = (arr) => arr[r.int(0, arr.length - 1)];
 const anyInt = () => pick([0, 1, -1, 100, 1e6, 2 ** 53, 0.5, NaN, r.int(0, 1e7)]);
 const counts = {};
+const MAPA = process.env.FUZZ_MAPA ? {} : null;
 let market = E.newMarket();
 // o mercado das regiões (passo 6, parte 2) vive no mundo; fica à parte da bolsa daqui, que é a das regras antigas
 const mundoNovo = () => { const m = E.newMarket(); m.w = MW.newWorld(m.prices, START); return m; };
@@ -254,13 +255,13 @@ function contas(kind, a0, a, d0, d, t, res, arg) {
     case 'bailFor': case 'medicFor': if (dm !== -res.cost || res.cost < 1 || dr !== 0 || d.cash + d.bank !== d0.cash + d0.bank || d.respect !== d0.respect || a0.gang !== d0.gang || !a0.gang || (kind === 'bailFor' ? d.jailUntil !== 0 || !(d0.jailUntil > t) : d.hospUntil !== 0 || !(d0.hospUntil > t))) bad('safar um membro'); break;
     case 'air': if (dm !== -res.paid || dr !== 0 || res.paid !== arg.amount + (arg.bribe ? Math.ceil(arg.amount * 0.2) : 0) || arg.amount > E.airCap(a0) || a0.air) bad('avião: pagamento'); break;
     case 'airCollect': { const f = a0.air, R = CFG.air.routes[f.r]; const full = f.amount + Math.floor((f.amount * R.gainBp) / 10000);
-      if (!res.seized && res.units !== undefined && ((res.units + res.over) * E.wholesale(res.d) + res.rest !== full || a.stock[res.d] !== E.venueView(a0, t).stock[res.d] + res.units || CFG.drugs[res.d].id !== R.drug || res.overGot > res.over * E.wholesale(res.d))) bad('avião: mercadoria');
-      if (res.seized ? (dm !== 0 || dr !== 0) : (dm !== (res.units !== undefined ? res.rest + res.overGot : full) || dr !== R.r) || f.readyAt > t || a.air !== null) bad('avião: chegada'); break; }
+      if (!res.seized && res.units !== undefined && (Math.ceil(((res.units + res.over) * E.wholesaleC(res.d)) / 100) + res.rest !== full || res.rest < 0 || a.stock[res.d] !== E.venueView(a0, t).stock[res.d] + res.units || CFG.drugs[res.d].id !== R.drug || res.overGot > Math.floor((res.over * E.wholesaleC(res.d)) / 100))) bad('avião: mercadoria');
+      if (res.seized ? (dm !== 0 || dr !== 0) : (dm !== (res.units !== undefined ? res.rest + res.overGot : full - res.lav) || res.lav < 0 || dr !== R.r) || f.readyAt > t || a.air !== null) bad('avião: chegada'); break; }
     case 'deposit': if (dm !== -res.fee || res.fee < 1 || res.fee !== Math.ceil((arg * E.bankFeeBp(a)) / 10000) || dr) bad('taxa do banco'); break;
     case 'withdraw': case 'class': case 'avatar': if (dm !== 0 || dr !== 0) bad('devia ser neutro'); break;
     case 'classChange': if (dm !== -E.classChangeCost(a0) || dr !== 0 || res.cost !== E.classChangeCost(a0) || a.cls === a0.cls || (CFG.classes.find((c) => c.id === a.cls).need || 0) > a0.peakRespect || (a0.clsAt && t < a0.clsAt + CFG.classChange.coolMs)) bad('mudar de profissão'); break;
     case 'claim': if (dm !== res.cash || dr !== 0) bad('prémio'); break;
-    case 'collect': { const st = E.bizStored(a0, t).reduce((x, y) => x + y.money, 0); if (dm < 0 || dm > Math.ceil(st * 1.1) || dr !== 0) bad('recolha maior do que o armazém'); break; }
+    case 'collect': { const st = E.bizStored(a0, t).reduce((x, y) => x + y.money, 0); if (dm < 0 || dm > st || dr !== 0) bad('recolha maior do que o armazém'); break; }   // v89: o efeito da coca já está no que se guardou
     case 'collectPort': {
       const due = a0.port.filter((c) => c.readyAt <= t).reduce((x, c) => x + c.amount + Math.floor((c.amount * CFG.port.ships[c.k === undefined ? CFG.port.legacy : c.k].gainBp) / 10000), 0);
       if (dm < 0 || dm > due || dr !== 0) bad('porto pagou a mais'); break;
@@ -270,7 +271,7 @@ function contas(kind, a0, a, d0, d, t, res, arg) {
       if (!c || c.readyAt > t) bad('abriu um contentor que não existia ou ainda não tinha chegado');
       const due = c.amount + Math.floor((c.amount * CFG.port.ships[k].gainBp) / 10000), it = res.item;
       if (a.port.length !== a0.port.length - 1 || it.amount !== c.amount || it.k !== k || dr !== 0) bad('contentor: saiu mais do que um ou o errado');
-      if (it.seized ? dm !== 0 || it.got !== 0 : it.got !== due || dm < 0 || dm > due) bad('contentor pagou o que não devia');
+      if (it.seized ? dm !== 0 || it.got !== 0 : (it.units === undefined ? it.got !== due - (it.lav || 0) : it.got !== due) || dm < 0 || dm > due) bad('contentor pagou o que não devia');
       if (res.left !== a.port.filter((x) => x.readyAt <= t).length) bad('contentor: os que faltam abrir estão mal contados');
       break;
     }
@@ -325,7 +326,7 @@ function contas(kind, a0, a, d0, d, t, res, arg) {
     case 'mvSend': { const s0 = res.a === 'lx' ? E.venueView(a0, t).stock : a0.wh[res.a].s, s1 = E.whStock(a, res.a);
       if (dm !== 0 || dr !== 0 || s1[res.d] !== s0[res.d] + (res.a === 'lx' ? 0 : chegou(res.a, res.d)) - res.n || a.mv.length !== a0.mv.length - mvNovas.length + 1 || res.at !== t + E.mvHops(res.a, res.b) * CFG.mv.hopMs) bad('mudar de região'); break; }
     case 'whEdition': if (dm > 0 || dr !== 0 || REG.some((x) => a0.wh[x] && E.whStock(a, x).some((n, k) => n > E.whStock(a0, x)[k]))) bad('rusga deu dinheiro ou stock'); break;
-    case 'stockDump': { const v = E.venueView(a0, t); if (dm !== res.got || res.got > arg.n * E.wholesale(arg.d) || res.got !== E.dumpValue(arg.d, arg.n) || a.stock[arg.d] !== v.stock[arg.d] - arg.n || dr !== 0) bad('despachar'); break; }
+    case 'stockDump': { const v = E.venueView(a0, t); if (dm !== res.got || res.got > Math.floor((arg.n * E.wholesaleC(arg.d)) / 100) || res.got !== E.dumpValue(arg.d, arg.n) || a.stock[arg.d] !== v.stock[arg.d] - arg.n || dr !== 0) bad('despachar'); break; }
     case 'broHire': { const g = CFG.hookers.list[arg]; if (dm !== -CFG.venue.bro.hire[g.tier] || dr !== 0 || a.bro.girls.length !== a0.bro.girls.length + 1 || a.bro.girls.length > CFG.venue.bro.rooms[a.bro.lvl - 1]) bad('contratar'); break; }
     case 'clubBuyAt': { const v = E.venueView(d0, Math.max(t, d0.t));
       if (dm !== -res.price || dr !== 0 || d.club.till !== v.club.till + res.price || d.stock[arg] !== v.stock[arg] - 1 || wealth(d) !== wealth(d0) || d.respect !== d0.respect) bad('compra na discoteca de outro');
@@ -580,6 +581,8 @@ for (let n = 0; n < ACTIONS; n++) {
       case 'luxury': res = E.buyLuxury(p, t, world); break;
     }
     contas(kind, origP, p, origD, d, t, res, arg);
+    if (MAPA) { const dm = wealth(p) - wealth(origP), m = (MAPA[kind] ||= { n: 0, entra: 0, sai: 0 }); m.n++; if (dm > 0) m.entra += dm; else m.sai -= dm;
+      if (d !== p) { const dd = wealth(d) - wealth(origD), k2 = kind + ' (alvo)', m2 = (MAPA[k2] ||= { n: 0, entra: 0, sai: 0 }); m2.n++; if (dd > 0) m2.entra += dd; else m2.sai -= dd; } }
     done++;
     counts[kind] = (counts[kind] || 0) + 1;
   } catch (e) {
@@ -599,3 +602,7 @@ for (let n = 0; n < ACTIONS; n++) {
   }
 }
 console.log(JSON.stringify({ actions: ACTIONS, rounds, done, refused, counts }, null, 0));
+// FUZZ_MAPA=1: de onde vem e para onde vai o dinheiro, por ação (ao calhas: mostra o que cria e o que gasta dinheiro, não quanto
+// cada um pesa num jogo a sério)
+if (MAPA) { const L = Object.entries(MAPA).map(([k, m]) => [k, m.n, m.entra, m.sai, m.entra - m.sai]).sort((a, b) => b[4] - a[4]);
+  for (const [k, n, e, s, l] of L) if (e || s) console.log(k.padEnd(22), String(n).padStart(7), 'entra', String(e).padStart(14), 'sai', String(s).padStart(14), 'líquido', String(l).padStart(14), 'por ação', Math.round(l / n)); }

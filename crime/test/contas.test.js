@@ -61,10 +61,14 @@ test('putas: o risco de doença mostrado é o que sai em 100 000 visitas a cada 
 test('porto e rusgas: 15% de apreensões, +30% exatos, 5% de rusgas que levam metade', () => {
   const rng = seededRng(5), p = mk(); let ap = 0; const N = 100000;
   for (let i = 0; i < N; i++) {
-    p.port = [{ amount: 1000, readyAt: NOW }]; const antes = p.cash;
+    p.port = [{ amount: 1000, readyAt: NOW }]; const antes = p.cash; p.ilegal = 0;
     const it = E.collectPort(p, NOW, W, rng).items[0];
     if (it.seized) { ap++; assert.equal(p.cash, antes); } else assert.equal(p.cash - antes, 1300);
   }
+  // v89: o lucro do porto é dinheiro do crime: acima dos 100 000 € livres paga 20% de lavagem (só o lucro, a carga volta inteira)
+  { const q = mk(); q.ilegal = CFG.launder.freeUpTo; q.port = [{ amount: 1000, readyAt: NOW }]; const c0 = q.cash;
+    const it = E.collectPort(q, NOW, W, never).items[0];
+    assert.equal(it.got, 1240); assert.equal(it.lav, 60); assert.equal(q.cash - c0, 1240); assert.equal(q.ilegal, CFG.launder.freeUpTo + 300); }
   perto(ap / N, CFG.port.ships[CFG.port.legacy].seizeBp / 10000, 0.005, 'apreensões');
   let rusgas = 0;
   for (let i = 0; i < N; i++) {
@@ -113,11 +117,17 @@ test('drogas: o efeito vale o que diz, acaba no segundo certo, o mais fraco não
   assert.deepEqual(p.fx.I, { bp: 1000, until: NOW + 26 * T.MIN });
   p.energy = 0; E.buyDrug(p, NOW + 17 * T.MIN, W, 5);        // o mais forte substitui o mais fraco
   assert.equal(p.fx.I.bp, 2000);
-  // as recolhas só rendem mais enquanto o efeito dura
-  const q = mk(); q.biz[1] = { n: 1, stored: 1000, rem: 0, t: NOW }; q.fx.biz = { bp: 1000, until: NOW + 1 };
-  assert.equal(E.collectBiz(q, NOW, W, never).items[0].money, 1100);
-  q.biz[1] = { n: 1, stored: 1000, rem: 0, t: NOW + 1 };
-  assert.equal(E.collectBiz(q, NOW + 1, W, never).items[0].money, 1000);
+  // v89: os negócios rendem mais só enquanto o efeito dura (4 h); o que já estava guardado não cresce (antes: +10% em tudo, ao recolher)
+  const q = mk(); q.stats.C = 0; q.biz[1] = { n: 1, stored: 100, rem: 0, t: NOW };   // (o armazém do café sem carisma leva 8 h × 83 €)
+  const base = E.bizRates(q, 1, NOW).perH, buff = Math.floor((base * 11000) / 10000);
+  q.energy = 0; E.buyDrug(q, NOW, W, 6); assert.equal(q.fx.biz.until, NOW + 4 * T.HOUR);
+  assert.equal(E.bizRates(q, 1, NOW).perH, buff); assert.equal(E.bizRates(q, 1, NOW + 4 * T.HOUR).perH, base);
+  assert.equal(E.bizStored(q, NOW)[1].money, 100, 'tomar a coca não mexe no que já estava guardado');
+  assert.equal(E.collectBiz(q, NOW + 6 * T.HOUR, W, never).items[0].money, 100 + 4 * buff + 2 * base);
+  // o que rendeu antes de tomar conta sem o efeito
+  const z = mk(); z.stats.C = 0; z.biz[1] = { n: 1, stored: 0, rem: 0, t: NOW };
+  z.energy = 0; E.buyDrug(z, NOW + 2 * T.HOUR, W, 6);
+  assert.equal(E.bizStored(z, NOW + 2 * T.HOUR)[1].money, 2 * base);
 });
 
 test('profissões: cada bónus vale exatamente o que o cartão diz', () => {
@@ -878,7 +888,7 @@ test('profissões: as de elite pedem respeito, mudar custa o anunciado, só de 2
   const base = CFG.hookers.list[0].sickBp / 10000;
   perto(conta('ladrao'), base, 0.01, 'doença sem bónus'); perto(conta('chulo'), base * 0.4, 0.008, 'doença do chulo');
   // contrabandista e magnata: menos apreensões no porto
-  CFG.port.ships.forEach((S, k) => { assert.equal(E.portSeizeBp(mk('ladrao'), k), S.seizeBp); assert.equal(E.portSeizeBp(mk('contrabandista'), k), S.seizeBp / 2); assert.equal(E.portSeizeBp(mk('magnata'), k), Math.floor(S.seizeBp * 0.7)); });
+  CFG.port.ships.forEach((S, k) => { assert.equal(E.portSeizeBp(mk('ladrao'), k), S.seizeBp); assert.equal(E.portSeizeBp(mk('contrabandista'), k), Math.floor(S.seizeBp * 0.7)); assert.equal(E.portSeizeBp(mk('magnata'), k), Math.floor(S.seizeBp * 0.8)); });   // v89: 30% e 20% (eram 50% e 30%)
   // padrinho: +15% de respeito nos golpes (o resto em milésimos fica para o golpe seguinte, por isso conta-se ao fim de muitos)
   for (const k of [0, 5]) {
     const g = mk('padrinho'), n = mk('ladrao'); let rg = 0, rn = 0;
@@ -896,7 +906,7 @@ test('profissões: as de elite pedem respeito, mudar custa o anunciado, só de 2
 
 test('aeroporto: regras, pagamento certo, suborno e o retorno de cada rota é o anunciado', () => {
   const A = CFG.air, rota = (id) => A.routes.findIndex((x) => x.id === id);
-  const piloto = (cl = 'ladrao', resp = 20000) => { const p = mk(cl); p.cash = 1e9; p.bank = 0; setResp(p, resp); return p; };
+  const R90 = CFG.levels[89], piloto = (cl = 'ladrao', resp = R90) => { const p = mk(cl); p.cash = 1e9; p.bank = 0; setResp(p, resp); return p; };   // v89: nível 90, para caberem 10 000 € por voo
   // regras de entrada: rota inválida, nível, quantia, máximo, um voo de cada vez
   const p = piloto();
   assert.throws(() => E.airSend(p, NOW, W, 9, 1000, false), code('NO_ROUTE'));
@@ -910,18 +920,18 @@ test('aeroporto: regras, pagamento certo, suborno e o retorno de cada rota é o 
   assert.throws(() => E.airSend(p, NOW, W, 0, 1000, false), code('AIR_BUSY'));
   assert.throws(() => E.airCollect(p, NOW + 4 * T.HOUR - 1, W, never), code('AIR_FLYING')); assert.ok(p.air);
   r = E.airCollect(p, NOW + 4 * T.HOUR, W, never);   // «never»: a alfândega não apanha
-  assert.equal(r.seized, false); assert.equal(r.got, 14000); assert.equal(p.cash, 1e9 + 4000); assert.equal(p.air, null); assert.equal(r.respect, 7); assert.equal(p.respect, 20007);
+  assert.equal(r.seized, false); assert.equal(r.got, 14000); assert.equal(p.cash, 1e9 + 4000); assert.equal(p.air, null); assert.equal(r.respect, 7); assert.equal(p.respect, R90 + 7);
   const q = piloto(); r = E.airSend(q, NOW, W, rota('kandahar'), 10000, true);
   assert.equal(r.paid, 12000); assert.equal(r.bribe, 2000); assert.equal(q.cash, 1e9 - 12000);
   r = E.airCollect(q, NOW + 8 * T.HOUR, W, always);   // «always»: apreendido
-  assert.equal(r.seized, true); assert.equal(r.got, 0); assert.equal(q.cash, 1e9 - 12000); assert.equal(q.respect, 20000); assert.equal(q.air, null);
+  assert.equal(r.seized, true); assert.equal(r.got, 0); assert.equal(q.cash, 1e9 - 12000); assert.equal(q.respect, R90); assert.equal(q.air, null);
   // não se manda um avião que só chegue depois do fim da ronda
   const tarde = piloto(); assert.throws(() => E.airSend(tarde, W.playEnd - T.HOUR, W, rota('medellin'), 1000, false), code('ROUND_ENDING'));
-  // risco: suborno corta a metade; contrabandista corta a metade; os dois juntos, um quarto
+  // risco: suborno corta a metade; contrabandista corta 30% (v89); os dois juntos multiplicam
   for (let i = 0; i < A.routes.length; i++) {
     const base = A.routes[i].seizeBp;
     assert.equal(E.airSeizeBp(piloto(), i, false), base); assert.equal(E.airSeizeBp(piloto(), i, true), Math.floor(base / 2));
-    assert.equal(E.airSeizeBp(piloto('contrabandista'), i, false), Math.floor(base / 2)); assert.equal(E.airSeizeBp(piloto('contrabandista'), i, true), Math.floor(Math.floor(base / 2) / 2));
+    assert.equal(E.airSeizeBp(piloto('contrabandista'), i, false), Math.floor(base * 0.7)); assert.equal(E.airSeizeBp(piloto('contrabandista'), i, true), Math.floor(Math.floor(base * 0.7) / 2));
   }
   // retorno esperado por voo (conta exata) e simulação de 60 000 voos por rota
   const esperado = { tanger: 3.55, amesterdao: 7.38, medellin: 14.8, culiacan: 23.75, kandahar: 34 };
@@ -941,6 +951,9 @@ test('aeroporto: regras, pagamento certo, suborno e o retorno de cada rota é o 
   });
   // o avião nunca cria dinheiro do nada: o máximo que volta é carga × (1 + ganho)
   const z = piloto(); const cap = E.airCap(z); E.airSend(z, NOW, W, rota('kandahar'), cap, false); const c2 = E.airCollect(z, NOW + 8 * T.HOUR, W, never); assert.equal(c2.got, cap * 2); assert.equal(z.cash, 1e9 + cap);
+  // v89: o lucro do avião paga lavagem como o resto do dinheiro do crime (a carga volta inteira)
+  const y = piloto(); y.ilegal = CFG.launder.freeUpTo; E.airSend(y, NOW, W, rota('medellin'), 10000, false); const c3 = E.airCollect(y, NOW + 4 * T.HOUR, W, never);
+  assert.equal(c3.lav, 800); assert.equal(c3.got, 13200); assert.equal(y.cash, 1e9 + 3200);
 });
 
 test('gangue: safar um membro custa exatamente a fiança ou o hospital dele, só entre membros da mesma gangue', () => {
@@ -965,26 +978,27 @@ test('gangue: safar um membro custa exatamente a fiança ou o hospital dele, só
 test('mercadoria: entra ao preço de grosso, o troco fica em dinheiro, despachar nunca devolve mais do que custou', () => {
   const coca = CFG.drugs.findIndex((x) => x.id === 'coca'), erva = CFG.drugs.findIndex((x) => x.id === 'erva');
   assert.equal(E.wholesale(coca), 28); assert.equal(E.wholesale(erva), 4);   // 80% do preço de rua
-  for (let d = 0; d < CFG.drugs.length; d++) { assert.ok(E.wholesale(d) >= 1 && E.wholesale(d) <= CFG.drugs[d].price); assert.ok(E.dumpValue(d, 7) <= 7 * E.wholesale(d)); }
+  assert.equal(E.wholesaleC(coca), 2800); assert.equal(E.wholesaleC(erva), 480);   // v89: ao cêntimo (a erva custa 4,80 €, não 4 €)
+  for (let d = 0; d < CFG.drugs.length; d++) { assert.ok(E.wholesaleC(d) >= 1 && E.wholesaleC(d) <= CFG.drugs[d].price * 100); assert.ok(E.dumpValue(d, 7) <= Math.floor((7 * E.wholesaleC(d)) / 100)); }
   // avião: 10 000 para Medellín voltam 14 000; em coca são 500 gramas a 28 €, sem troco
-  const p = mk('ladrao'); p.cash = 1e9; p.bank = 0; setResp(p, 20000);
+  const p = mk('ladrao'); p.cash = 1e9; p.bank = 0; setResp(p, CFG.levels[89]);
   const s = E.airSend(p, NOW, W, CFG.air.routes.findIndex((x) => x.id === 'medellin'), 10000, false);
   let r = E.airCollect(p, s.readyAt, W, never, true);
   assert.equal(r.got, 14000); assert.equal(r.d, coca); assert.equal(r.units, 500); assert.equal(r.rest, 0);
   assert.equal(p.stock[coca], 500); assert.equal(p.cash, 1e9 - 10000); assert.equal(r.units * E.wholesale(coca) + r.rest, r.got);
   // apreendido: não entra nada
-  const q = mk('ladrao'); q.cash = 1e9; setResp(q, 20000); const s2 = E.airSend(q, NOW, W, 0, 10000, false); r = E.airCollect(q, s2.readyAt, W, always, true);
+  const q = mk('ladrao'); q.cash = 1e9; setResp(q, CFG.levels[89]); const s2 = E.airSend(q, NOW, W, 0, 10000, false); r = E.airCollect(q, s2.readyAt, W, always, true);
   assert.equal(r.seized, true); assert.ok(q.stock.every((x) => x === 0)); assert.equal(q.cash, 1e9 - 10000);
   // porto: o carregamento em mercadoria traz a droga desse barco (o de pesca traz erva, +12% em 2 h); o de dinheiro continua igual
   const c = mk(); c.cash = 1e6; c.bank = 0; const PMS = CFG.port.ships[0].ms;
   assert.equal(CFG.port.ships[0].drug, 'erva');
   E.sendPort(c, NOW, W, 0, 1000, true); assert.equal(c.port[0].d, erva); assert.equal(c.port[0].k, 0); assert.equal(c.cash, 1e6 - 1000);
   const col = E.collectPort(c, NOW + PMS, W, never);
-  assert.equal(col.items[0].got, 1120); assert.equal(col.items[0].units, 280); assert.equal(col.items[0].rest, 0); assert.equal(c.stock[erva], 280); assert.equal(c.cash, 1e6 - 1000);
+  assert.equal(col.items[0].got, 1120); assert.equal(col.items[0].units, 233); assert.equal(col.items[0].rest, 1); assert.equal(c.stock[erva], 233); assert.equal(c.cash, 1e6 - 1000 + 1);   // 233 × 4,80 € = 1 118,40 €; o troco arredonda para baixo
   // despachar: 95% do preço de grosso; ida e volta perde sempre, e perde mais do que a taxa do banco
-  assert.throws(() => E.stockDump(c, NOW + PMS, W, erva, 281), code('NO_STOCK')); assert.throws(() => E.stockDump(c, NOW + PMS, W, erva, 0), code('NO_STOCK')); assert.throws(() => E.stockDump(c, NOW + PMS, W, 99, 1), code('NO_DRUG'));
-  const d1 = E.stockDump(c, NOW + PMS, W, erva, 280);
-  assert.equal(d1.got, Math.floor(1120 * 0.95)); assert.equal(c.stock[erva], 0); assert.equal(c.cash, 1e6 - 1000 + 1064);
+  assert.throws(() => E.stockDump(c, NOW + PMS, W, erva, 234), code('NO_STOCK')); assert.throws(() => E.stockDump(c, NOW + PMS, W, erva, 0), code('NO_STOCK')); assert.throws(() => E.stockDump(c, NOW + PMS, W, 99, 1), code('NO_DRUG'));
+  const d1 = E.stockDump(c, NOW + PMS, W, erva, 233);
+  assert.equal(d1.got, Math.floor((233 * 480 * 0.95) / 100)); assert.equal(c.stock[erva], 0); assert.equal(c.cash, 1e6 - 1000 + 1 + 1062);
   assert.ok(10000 - CFG.goods.dumpBp > CFG.bank.feeBp);
   // tomar do armazém: não se paga, gasta uma unidade e faz o mesmo que a da discoteca; recusada não gasta nada
   const u = mk(); u.cash = 500; u.energy = 10; u.stock[coca] = 2;
@@ -1460,7 +1474,7 @@ test('porto: seis carregamentos, cada um com barco, droga, tempo, lucro e risco 
   const arMin = Math.min(...CFG.air.routes.map((r) => ((1 - r.seizeBp / 10000) * (1 + r.gainBp / 10000) - 1) / (r.ms / H)));
   for (const x of S) {
     assert.ok(ev(x) > 1, x.id + ' compensa'); assert.ok(porHora(x) >= 0.024 && porHora(x) <= 0.032, x.id + ' por hora ' + porHora(x)); assert.ok(porHora(x) < arMin, x.id + ' abaixo do aeroporto');
-    assert.ok(porHora(x, 0.5) <= 0.054, x.id + ' com o contrabandista: ' + porHora(x, 0.5));   // nenhum barco rende mais a quem corta apreensões do que o melhor de sempre (o porta-contentores já dava 5,1%)
+    assert.ok(porHora(x, 0.3) <= 0.054, x.id + ' com o contrabandista: ' + porHora(x, 0.3));   // nenhum barco rende mais a quem corta apreensões do que o melhor de sempre (o porta-contentores já dava 5,1%)
   }
   // enviar: escolhe-se o barco; o nível, o lugar, o limite e o fim da ronda continuam a mandar
   const p = mk(); p.cash = 1e6; p.bank = 0;
@@ -1499,13 +1513,13 @@ test('porto: seis carregamentos, cada um com barco, droga, tempo, lucro e risco 
   S.forEach((x, k) => {
     rico.port = []; const c0 = rico.cash; E.sendPort(rico, tt, W, k, 10000, k % 2 === 0); assert.equal(rico.port[0].readyAt, tt + x.ms); tt += x.ms;
     const it = E.collectPort(rico, tt, W, never).items[0], got = 10000 + (10000 * x.gainBp) / 10000; assert.equal(it.got, got); assert.equal(it.k, k);
-    if (k % 2 === 0) { const d = CFG.drugs.findIndex((y) => y.id === x.drug); assert.equal(it.d, d); assert.equal(it.units, Math.floor(got / E.wholesale(d))); assert.equal(rico.cash, c0 - 10000 + it.rest); rico.stock[d] = 0; }
+    if (k % 2 === 0) { const d = CFG.drugs.findIndex((y) => y.id === x.drug); assert.equal(it.d, d); assert.equal(it.units, Math.floor((got * 100) / E.wholesaleC(d))); assert.equal(rico.cash, c0 - 10000 + it.rest); rico.stock[d] = 0; }
     else assert.equal(rico.cash, c0 - 10000 + got);
     rico.port = [{ k, amount: 10000, readyAt: tt }]; const c1 = rico.cash; assert.deepEqual(E.collectPort(rico, tt, W, always).items[0], { k, amount: 10000, got: 0, seized: true }); assert.equal(rico.cash, c1);
   });
   // frequência real de apreensões de dois barcos e contentores antigos (sem barco): valem como o porta-contentores
   const rng = seededRng(77); for (const k of [1, 4]) { let ap = 0; const N = 60000; for (let i = 0; i < N; i++) { rico.port = [{ k, amount: 1000, readyAt: tt }]; if (E.collectPort(rico, tt, W, rng).items[0].seized) ap++; } perto(ap / N, S[k].seizeBp / 10000, 0.006, 'apreensões ' + S[k].id); }
-  rico.port = [{ amount: 1000, readyAt: tt }]; assert.deepEqual(E.collectPort(rico, tt, W, never).items[0], { k: P.legacy, amount: 1000, got: 1300, seized: false });
+  rico.port = [{ amount: 1000, readyAt: tt }]; rico.ilegal = 0; assert.deepEqual(E.collectPort(rico, tt, W, never).items[0], { k: P.legacy, amount: 1000, got: 1300, seized: false });
   rico.port = [{ k: 99, amount: 1000, readyAt: NOW }]; assert.deepEqual(E.checkInvariants(rico), ['port ship']);
 });
 

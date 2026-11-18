@@ -27,6 +27,13 @@ for (const [v, tipo, kind, item, obj, n, preco, lance, lic, fimH, estado, dono] 
   [R, 'fixo', 'mt', 'cobre', null, 4, 70, 0, null, 35, 'aberto', null],
   [S, 'leilao', 'col', 'selo', null, 1, 2000, 2600, R, -1, 'levantar', R],
   [R, 'fixo', 'mt', 'madeira', null, 2, 99, 0, null, -2, 'levantar', R],
+  // v89: pedidos de compra (vendedor = quem compra): três de outros, um do Rico, e o que já lhe venderam à espera dele
+  [P, 'pedido', 'mt', 'sucata', null, 15, 55, 0, null, 60, 'aberto', null],
+  [G, 'pedido', 'mt', 'cobre', null, 10, 80, 0, null, 50, 'aberto', null],
+  [S, 'pedido', 'col', 'bule', null, 1, 5200, 0, null, 70, 'aberto', null],
+  [A, 'pedido', 'mt', 'vidro', null, 4, 700, 0, null, 40, 'aberto', null],
+  [R, 'pedido', 'mt', 'chapa', null, 5, 300, 0, null, 66, 'aberto', null],
+  [R, 'pedido', 'mt', 'motor', null, 2, 450, 0, null, -1, 'levantar', R],
 ]) { const r = nova.run(ronda, v, tipo, kind, item, obj, n, preco, lance, lic, now - H, now + fimH * H, estado, dono); if (item === 'moeda') lidMoeda = Number(r.lastInsertRowid); }
 // o Rico licitou na moeda e passaram-lhe à frente (aparece em «Os meus», com o botão para voltar a licitar)
 try { db.prepare('DELETE FROM feira_lances').run(); db.prepare('INSERT OR IGNORE INTO feira_lances (lid, conta) VALUES (?, ?)').run(lidMoeda, R); } catch {}

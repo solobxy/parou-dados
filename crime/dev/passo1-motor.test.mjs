@@ -33,15 +33,14 @@ test('o nível nunca desce: conta o maior respeito que já se teve', () => {
   p.respect = 10; assert.equal(E.level(p), L);
 });
 
-test('o porto continua na escala antiga até às operações (passo 5); o casino já está em euros (passo 2)', () => {
-  for (const r of [0, 3, 79, 80, 600, 2800, 2801, 15000, 46000, 300000]) {
+test('v89: o porto e o aeroporto passaram para a escala nova (1 000 € + 100 € por nível, um lugar a mais nos níveis 35 e 70); o casino já está em euros (passo 2)', () => {
+  for (const r of [0, 3, 79, 80, 600, 2800, 2801, 15000, 46000, 300000, 1e7]) {
     const p = mk(); setResp(p, r);
-    const L = oldLevel(r);
-    assert.equal(E.tier(p), L, `tier com ${r}`);
-    let cap = 1000; for (let i = 1; i < L; i++) cap = Math.floor((cap * 8) / 5);
+    assert.equal(E.tier(p), oldLevel(r), `tier com ${r}`);
     assert.ok([5, 20, 50, 1000].includes(E.casinoMax(p)), `aposta máxima com ${r}`);
-    assert.equal(E.portCap(p), cap, `carregamento máximo com ${r}`);
-    assert.equal(E.portSlots(p), 1 + Math.floor(L / 5), `lugares no porto com ${r}`);
+    assert.equal(E.portCap(p), 1000 + 100 * E.level(p), `carregamento máximo com ${r}`);
+    assert.equal(E.airCap(p), E.portCap(p));
+    assert.equal(E.portSlots(p), E.level(p) >= 70 ? 3 : E.level(p) >= 35 ? 2 : 1, `lugares no porto com ${r}`);
   }
 });
 

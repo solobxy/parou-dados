@@ -158,9 +158,10 @@ function react(type, out, before, opts) {
   else if (type.startsWith('feira')) {   // v84
     const x = fName(r.kind, r.id).toLowerCase() + (r.n > 1 ? ' ×' + r.n : '');
     toast(type === 'feiraList' ? t(r.tipo === 'leilao' ? 'tfAuc' : 'tfList', { x, m: money(r.preco) }) : type === 'feiraBuy' ? t('tfBought', { x, m: money(r.price) })
-      : type === 'feiraBid' ? t('tfBid', { x, m: money(r.valor) }) : type === 'feiraCancel' ? t(r.parked ? 'tfParked' : 'tfBack', { x })
+      : type === 'feiraBid' ? t('tfBid', { x, m: money(r.valor) }) : type === 'feiraCancel' ? (r.order ? t('tfOrderOff', { m: money(r.refund) }) : t(r.parked ? 'tfParked' : 'tfBack', { x }))
+      : type === 'feiraOrder' ? t('tfOrder', { x, m: money(r.preco) }) : type === 'feiraFill' ? t('tfFilled', { x, m: money(r.money) })
       : type === 'feiraRelist' ? t(r.tipo === 'leilao' ? 'tfAuc' : 'tfList', { x, m: money(r.preco) }) : t(r.won ? 'tfWonTake' : 'tfBack', { x }));
-    fx.sfx(['feiraBid', 'feiraList', 'feiraRelist'].includes(type) ? 'buy' : 'claim'); loadFeira();
+    fx.sfx(['feiraBid', 'feiraList', 'feiraRelist', 'feiraOrder'].includes(type) ? 'buy' : 'claim'); loadFeira();
   }
   else if (type === 'maqService') { toast(t(r.stopped ? 'tRevBack' : 'tRev', { x: list('biz')[S.cfg.biz.findIndex((b) => b.id === r.id)], d: cvDay(r.until) })); fx.sfx('claim'); }
   else if (type === 'craftTake') { toast(t('tCrafted_' + r.kind, { x: crIt(r.id), b: r.kind === 'maq' ? list('biz')[S.cfg.biz.findIndex((b) => b.id === recipe(r.id).biz)] : '' })); fx.sfx('claim'); }
@@ -1804,7 +1805,7 @@ function screenClub() {
     return h('div', { class: 'vrow fxr' }, art('drugs', g.id, 'vth'),
       h('div', { class: 'grow' }, h('b', null, list('drugs')[d]),
         h('div', { class: 'small c-vice' }, '+' + g.a + ' ' + t('vice').toLowerCase()),
-        g.fx ? g.fx.map((f) => h('div', { class: 'small' }, fxText(f) + ' · ' + t('fxFor', { m: Math.round((f.ms * (10000 + more)) / 10000 / 60000) })))
+        g.fx ? g.fx.map((f) => { const m = Math.round((f.ms * (10000 + more)) / 10000 / 60000); return h('div', { class: 'small' }, fxText(f) + ' · ' + (m >= 120 ? t('fxForH', { h: num(Math.round(m / 6) / 10) }) : t('fxFor', { m }))); })
           : h('div', { class: 'small muted' }, t('noFx'))),
       h('button', { class: 'btn ghost sm num', 'aria-label': t('buyFor', { m: money(price) }), disabled: !ok, on: { click: (e) => act('drug', { d }, { el: e.currentTarget }) } }, t('vnUse') + ' · ' + money(price)));
   })));
@@ -2641,21 +2642,21 @@ function euroInput(id, v, on) {
   return inp;
 }
 // quantidade com menos e mais (alvos de 44 px)
-function qtyPick(n, max, on) {
+function qtyPick(n, max, on, allKey = 'fAll') {
   const out = h('b', { class: 'num fq' }, String(n));
-  const all = max > 2 ? h('button', { class: 'btn ghost sm', type: 'button', disabled: n >= max, on: { click: () => step(max) } }, t('fAll', { n: max })) : null;
+  const all = max > 2 ? h('button', { class: 'btn ghost sm', type: 'button', disabled: n >= max, on: { click: () => step(max) } }, t(allKey, { n: max })) : null;
   const step = (d) => { n = Math.max(1, Math.min(max, n + d)); out.textContent = String(n); if (all) all.disabled = n >= max; on(n); };   // «Todos» só quando ainda não estão todos
   return h('div', { class: 'row fqty' }, h('button', { class: 'btn ghost sm', type: 'button', 'aria-label': t('fLess'), on: { click: () => step(-1) } }, '−'), out,
     h('button', { class: 'btn ghost sm', type: 'button', 'aria-label': t('fMore'), on: { click: () => step(1) } }, '+'), all);
 }
 // o cabeçalho das folhas: imagem, nome, a linha de apoio e (numa arma) os usos
-const fHead = (L, sub) => h('div', { class: 'row fsh' }, fArt(L.kind, L.id, 'vth'), h('div', { class: 'grow' }, h('h2', null, fName(L.kind, L.id) + (L.n > 1 ? ' ×' + L.n : '')), sub, fUses(L)));
+const fHead = (L, sub) => h('div', { class: 'row fsh' }, fArt(L.kind, L.id, 'vth'), h('div', { class: 'grow' }, h('h2', null, fName(L.kind, L.id) + (L.n > 1 ? '\u00a0×' + L.n : '')), sub, fUses(L)));
 // falhou (o anúncio acabou, o preço mudou): fecha e mostra a feira como está agora
 const fAfter = (close) => (o) => { close(); if (!o) loadFeira(); };
 function feiraBuySheet(L) {
   // no depósito só cabem 40 de cada: a quantidade não passa do que cabe
   // e o limite diário (o que se paga acima ou abaixo da referência, por pessoa e por conta) também corta a quantidade
-  const dev = Math.abs(L.preco - (L.ref ?? L.preco)), byLim = L.lim !== undefined && dev > 0 ? Math.floor(L.lim / dev) : Infinity;
+  const dev = Math.max(Math.abs(L.preco - (L.ref ?? L.preco)), L.preco - (L.liq ?? L.ref ?? L.preco)), byLim = L.lim !== undefined && dev > 0 ? Math.floor(L.lim / dev) : Infinity;   // v89: conta também o que se paga acima do que vale mesmo
   const max = Math.min(L.kind === 'mt' ? Math.min(L.n, fRoomMt(L.id)) : L.n, byLim);
   const why = byLim < 1 ? 'LIM' : L.kind === 'mt' ? (max < 1 ? 'MAT_FULL' : null) : fFits(L.kind, L.id, 1);
   let n = Math.max(1, max);
@@ -2670,7 +2671,7 @@ function feiraBuySheet(L) {
 }
 function feiraBidSheet(L) {
   // de quanto a quanto: o lance seguinte e o teto do lote, apertados pelo limite diário (acima ou abaixo da referência)
-  const refN = (L.ref ?? 0) * L.n, lim = L.lim ?? Infinity, lo = Math.max(L.next, refN - lim), hi = Math.min(L.max || Infinity, refN + lim), shut = lo > hi;
+  const refN = (L.ref ?? 0) * L.n, liqN = (L.liq ?? L.ref ?? 0) * L.n, lim = L.lim ?? Infinity, lo = Math.max(L.next, refN - lim), hi = Math.min(L.max || Infinity, refN + lim, liqN + lim), shut = lo > hi;
   let v = lo;
   const why = fFits(L.kind, L.id, L.n);   // se ganhares e não couber, fica à tua espera na feira até arranjares lugar
   const btn = h('button', { class: 'btn buy block big' }), help = h('p', { class: 'small muted' });
@@ -2722,9 +2723,63 @@ async function feiraSellSheet(it, relist) {
     refP.textContent = ref && ref.vendas ? t(ref.vendas === 1 ? 'fRef1' : 'fRef', { m: money(ref.med), n: ref.vendas }) : ref && ref.lista.length ? t('fRefNow', { m: money(ref.lista[0].preco) }) : t('fRefNone');
   } catch {}
 }
+// v89: pedidos de compra. Pedir: quantos e a quanto cada (dentro da banda); o total sai já do banco e volta se ninguém vender.
+async function feiraOrderSheet(kind, id) {
+  const F = S.cfg.feira, me = S.st.me, B = fBand(kind, id), ref = fRef(kind, id), room = kind === 'mt' ? fRoomMt(id) : 50, h72 = Math.round(F.orderMs / 3600000);
+  let n = Math.max(1, Math.min(kind === 'mt' ? 10 : 1, room)), preco = 0, cheap = 0;
+  const btn = h('button', { class: 'btn buy block big' }), help = h('p', { class: 'small muted' }), band = h('p', { class: 'small muted num' }), refP = h('p', { class: 'small muted' }), warn = h('p', { class: 'small c-red' });
+  const full = S.feira && S.feira.meus.length + S.feira.levantar.length >= F.maxOpen;
+  const sync = () => {
+    const total = preco * n, out = preco && (preco < B.lo || preco > B.hi), poor = total > me.bank;
+    band.textContent = t('fOrderBand', { a: money(B.lo), b: money(B.hi), r: money(ref) }); band.className = 'small num ' + (out ? 'c-red' : 'muted');
+    warn.textContent = cheap && preco > cheap && !out ? t('fOrderDear', { m: money(cheap), d: money(preco - cheap) }) : ''; warn.hidden = !warn.textContent;
+    help.textContent = full ? t('fFullNow', { n: F.maxOpen }) : preco && !out && poor ? t('fOrderNoBank', { m: money(total), b: money(me.bank) }) : t('fOrderBack', { h: h72 });
+    help.className = 'small ' + (full || (preco && !out && poor) ? 'c-red' : 'muted');
+    setBtn(btn, preco && !out ? t('fOrderGo', { n, m: money(total) }) : t('fOrderBtn')); btn.disabled = full || !preco || out || poor || room < 1;
+  };
+  const close = sheet(h('div', { class: 'stack' }, fHead({ kind, id, n: 1 }, h('p', { class: 'small muted num' }, t('fOrderSub', { m: money(me.bank) }))),
+    room < 1 ? h('p', { class: 'small c-red' }, errText('MAT_FULL')) : qtyPick(n, room, (v) => { n = v; sync(); }, 'fMaxN'),
+    h('p', { class: 'small muted' }, kind === 'mt' ? t('fOrderRoom', { a: me.mt?.[id] || 0, c: S.cfg.mat.cap }) : t('fOrderWait')),
+    h('label', { class: 'small', for: 'ford' }, t('fPriceLbl')), euroInput('ford', '', (x) => { preco = x; sync(); }), band, warn, refP, help, btn));
+  btn.addEventListener('click', async () => { const o = await act('feiraOrder', { kind, id, n, preco }, { el: btn }); if (o) close(); });
+  sync();
+  try {
+    const f = await api('GET', '/api/feira?item=' + encodeURIComponent(id)), I = f.item, outros = (I?.lista || []).filter((L) => !L.meu);
+    cheap = outros.length ? outros[0].preco : 0;
+    refP.textContent = I && I.vendas ? t(I.vendas === 1 ? 'fRef1' : 'fRef', { m: money(I.med), n: I.vendas }) : cheap ? t('fRefNow', { m: money(cheap) }) : t('fRefNone');
+    sync();
+  } catch {}
+}
+// escolher o que pedir (o que ninguém está a vender não aparece no Comprar): materiais, componentes e colecionáveis
+function feiraOrderPick() {
+  const refs = S.cfg.feira.refs || {}, items = Object.keys(refs).filter((k) => k.startsWith('mt:') || k.startsWith('col:')).map((k) => { const [kind, id] = k.split(':'); return { kind, id }; });
+  let close;
+  close = sheet(h('div', { class: 'stack' }, h('h2', { class: 'sec' }, t('fOrderPick')), h('p', { class: 'small muted' }, t('fOrderPickSub')),
+    ...fGroups(items, (x) => h('button', { class: 'vrow fr tap', on: { click: () => { close(); feiraOrderSheet(x.kind, x.id); } } }, fArt(x.kind, x.id, 'vth'),
+      h('div', { class: 'grow' }, h('b', null, fName(x.kind, x.id)), h('div', { class: 'small muted num' }, t('fRefIs', { m: money(fRef(x.kind, x.id)) }))), icon('chev'))).flat()));
+}
+// vender a um pedido: o melhor que pagam (de outra pessoa), quantos se tem, e o limite diário da feira
+async function feiraFillSheet(kind, id) {
+  const me = S.st.me, F = S.cfg.feira, have = kind === 'mt' ? me.mt?.[id] || 0 : me.col?.[id] || 0;
+  let f; try { f = await api('GET', '/api/feira?item=' + encodeURIComponent(id)); } catch { return; }
+  const L = (f.item?.pedidos || []).find((x) => !x.meu && x.kind === kind);
+  if (!L) { toast(t('fFillNone')); loadFeira(); return; }
+  const dev = Math.max(Math.abs(L.preco - (L.ref ?? L.preco)), L.preco - (L.liq ?? L.ref ?? L.preco)), byLim = L.lim !== undefined && dev > 0 ? Math.floor(L.lim / dev) : Infinity;
+  const max = Math.min(have, L.n, byLim), fee = (v) => Math.ceil((v * F.feeBp) / 10000);
+  let n = Math.max(1, max);
+  const btn = h('button', { class: 'btn buy block big' }), got = h('p', { class: 'small muted' });
+  const sync = () => { const v = L.preco * n; setBtn(btn, t('fFillGo', { n, m: money(v - fee(v)) })); got.textContent = t('fFillGets', { m: money(v - fee(v)), f: F.feeBp / 100 }); btn.disabled = max < 1; };
+  got.className = 'small c-cash';
+  const close = sheet(h('div', { class: 'stack' }, fHead({ kind, id, n: 1 }, [h('p', { class: 'small num' }, t('fOrderRow', { m: money(L.preco) })), h('p', { class: 'small muted num' }, t('fOrderWho', { n: L.n, x: L.quem }))]),
+    max > 1 ? qtyPick(n, max, (v) => { n = v; sync(); }, 'fMaxN') : null,
+    max < Math.min(have, L.n) ? h('p', { class: 'small ' + (max < 1 ? 'c-red' : 'muted') }, max < 1 ? t('fCapBuy') : t('fCapQty', { n: max })) : null,
+    h('p', { class: 'small muted' }, t(kind === 'mt' ? 'fFromMt' : 'fFromCol', { n: have })), got, btn));
+  btn.addEventListener('click', async () => fAfter(close)(await act('feiraFill', { lid: L.lid, n }, { el: btn })));
+  sync();
+}
 function feiraRow(L, right, sub) {
   return h('div', { class: 'vrow fr' }, fArt(L.kind, L.id, 'vth'),
-    h('div', { class: 'grow' }, h('b', null, fName(L.kind, L.id) + (L.n > 1 ? ' ×' + L.n : '')), sub, fUses(L)), right);
+    h('div', { class: 'grow' }, h('b', null, fName(L.kind, L.id) + (L.n > 1 ? '\u00a0×' + L.n : '')), sub, fUses(L)), right);
 }
 // grupos (catálogo e o que se pode vender): materiais, componentes, colecionáveis, objetos; dentro de cada um, por nome
 const F_GRP = (x) => (x.kind === 'mt' ? (S.cfg.mat.base.includes(x.id) ? 'mat' : S.cfg.mat.rare?.includes(x.id) ? 'rare' : 'comp') : x.kind === 'col' ? 'col' : 'inv');
@@ -2751,8 +2806,8 @@ function screenFeira() {
       const why = fFits(L.kind, L.id, L.n);
       return feiraRow(L, h('div', { class: 'fbtns' },
         h('button', { class: 'btn buy sm', disabled: !!b || !!why, on: { click: (e) => act('feiraTake', { lid: L.lid }, { el: e.currentTarget }) } }, t('fTake')),
-        h('button', { class: 'btn ghost sm', disabled: !!b || low, on: { click: () => feiraSellSheet({ kind: L.kind, id: L.id, n: L.n, u: L.u, lid: L.lid, won: L.won }, true) } }, t('fRelist'))),
-      h('div', { class: 'small ' + (why ? 'c-red' : L.won ? 'c-cash' : 'muted') }, why ? errText(why) : t(L.won ? 'fWonIt' : 'fBackIt')));
+        h('button', { class: 'btn ghost sm', disabled: !!b || low, on: { click: () => feiraSellSheet({ kind: L.kind, id: L.id, n: L.n, u: L.u, lid: L.lid, won: L.won || L.bought }, true) } }, t(L.won || L.bought ? 'fSellBtn' : 'fRelist'))),
+      h('div', { class: 'small ' + (why ? 'c-red' : L.won || L.bought ? 'c-cash' : 'muted') }, why ? errText(why) : t(L.bought ? 'fBoughtIt' : L.won ? 'fWonIt' : 'fBackIt')));
     }))));
   out.push(h('div', { class: 'seg fseg', role: 'group', 'aria-label': t('p_feira') }, [['buy', t('fBuy')], ['auc', t('fAucs')], ['sell', t('fSell')], ['mine', t('fMine')]].map(([k, l]) =>
     h('button', { 'aria-pressed': seg === k ? 'true' : 'false', on: { click: () => { S.feiraSeg = k; S.feiraItem = null; render(); } } }, l))));
@@ -2765,9 +2820,18 @@ function screenFeira() {
         L.meu ? h('span', { class: 'small muted' }, t('fYours')) : h('button', { class: 'btn ghost sm num', disabled: !!b || low || cash < L.preco, on: { click: () => feiraBuySheet(L) } }, t('fBuyBtn')),
         h('div', { class: 'small num' }, t('fEach', { m: money(L.preco), x: L.quem })))))
         : h('div', { class: 'tip' }, h('p', null, t('fNoneItem'))));
+      if (k === 'mt' || k === 'col') {   // v89: quem quer comprar isto, e pedir
+        const P = I.pedidos || [], have = k === 'mt' ? me.mt?.[I.id] || 0 : me.col?.[I.id] || 0;
+        out.push(h('h2', { class: 'sec' }, t('fOrders')));
+        if (P.length) out.push(h('div', { class: 'vlist fwant' }, P.map((L) => feiraRow({ ...L, n: 1 },
+          L.meu ? h('span', { class: 'small muted' }, t('fYours')) : have > 0 ? h('button', { class: 'btn ghost sm', disabled: !!b || low, on: { click: () => feiraFillSheet(L.kind, L.id) } }, t('fSellNow')) : null,
+          [h('div', { class: 'fpay c-cash' }, t('fOrderRow', { m: money(L.preco) })), h('div', { class: 'small muted num' }, t('fOrderWho', { n: L.n, x: L.quem }))]))));
+        else out.push(h('p', { class: 'small muted' }, t('fOrdersNone')));
+        out.push(h('button', { class: 'btn ghost block', disabled: !!b || low, on: { click: () => feiraOrderSheet(k, I.id) } }, t('fOrderBtn')));
+      }
       return out;
     }
-    out.push(h('p', { class: 'small muted usub' }, t('fBuySub')));
+    out.push(h('p', { class: 'small muted usub' }, t('fBuySub'), ' ', h('button', { class: 'lnk', disabled: !!b || low, on: { click: feiraOrderPick } }, t('fOrderFind'))));
     out.push(...(f.cat.length ? fGroups(f.cat, (x) => h('button', { class: 'vrow fr tap', on: { click: () => { S.feiraItem = x.id; loadFeira(x.id); } } }, fArt(x.kind, x.id, 'vth'),
       h('div', { class: 'grow' }, h('b', null, fName(x.kind, x.id)), h('div', { class: 'small num' }, t('fFrom', { m: money(x.preco) }), h('span', { class: 'muted' }, ' · ' + t('fForSale', { n: x.n })))),
       icon('chev'))).flat()
@@ -2797,15 +2861,28 @@ function screenFeira() {
     // o que se pode vender: o depósito da cave, a vitrine e os objetos do inventário, cada um no seu grupo
     const items = [...Object.entries(me.mt || {}).filter(([, n]) => n > 0).map(([id, n]) => ({ kind: 'mt', id, n })), ...Object.entries(me.col || {}).filter(([, n]) => n > 0).map(([id, n]) => ({ kind: 'col', id, n })),
       ...me.inv.map((x, i) => ({ kind: 'inv', id: x.id, n: 1, i, u: x.u })).filter((x) => gearOf(x.id))];
+    // v89: o que os outros querem comprar, primeiro o que tens; vende-se já, sem esperar por comprador
+    const tem = (x) => (x.kind === 'mt' ? me.mt?.[x.id] || 0 : me.col?.[x.id] || 0), meu = (x) => f.meus.some((L) => L.tipo === 'pedido' && L.kind === x.kind && L.id === x.id);
+    const proc = (f.procura || []).filter((x) => !(x.c === 1 && meu(x))).sort((x, y) => (tem(y) > 0) - (tem(x) > 0) || y.preco * y.n - x.preco * x.n);   // (um pedido só meu não conta)
+    if (proc.length) out.push(h('h2', { class: 'sec' }, t('fOrders')), h('p', { class: 'small muted usub' }, t('fWantedSub')),
+      h('div', { class: 'vlist fwant' }, proc.slice(0, S.fWantAll ? 60 : 6).map((x) => feiraRow({ ...x, n: 1 },
+        tem(x) > 0 ? h('button', { class: 'btn ghost sm', disabled: !!b || low, on: { click: () => feiraFillSheet(x.kind, x.id) } }, t('fSellNow')) : null,
+        [h('div', { class: 'fpay ' + (tem(x) ? 'c-cash' : 'muted') }, t('fOrderRow', { m: money(x.preco) })), h('div', { class: 'small muted num' }, tem(x) ? t('fWantN', { n: x.n, k: tem(x) }) : t('fWantN0', { n: x.n }))]))),
+      proc.length > 6 ? moreRow(S.fWantAll, proc.length - 6, () => { S.fWantAll = !S.fWantAll; render(); }) : null);
+    if (proc.length) out.push(h('h2', { class: 'sec' }, t('fSellYours')));
     out.push(h('p', { class: 'small muted usub' }, full ? t('fFullNow', { n: F.maxOpen }) : t('fSellSub', { n: F.maxOpen })));
     out.push(...(items.length ? fGroups(items, (it) => h('div', { class: 'vrow fr' }, fArt(it.kind, it.id, 'vth'),
       h('div', { class: 'grow' }, h('b', null, fName(it.kind, it.id)), fUses(it) || h('div', { class: 'small muted' }, it.kind === 'inv' ? t('fFromInv') : t(it.kind === 'mt' ? 'fFromMt' : 'fFromCol', { n: it.n }))),
       h('button', { class: 'btn ghost sm', disabled: !!b || low || full, on: { click: () => feiraSellSheet(it) } }, t('fSellBtn')))).flat()
       : [h('div', { class: 'tip' }, h('p', null, t('fNothing')))]));
   } else {
-    out.push(h('h2', { class: 'sec' }, t('fMyList', { n: used, m: F.maxOpen })));
-    if (f.levantar.length) out.push(h('p', { class: 'small muted usub' }, t('fCountsWait', { n: f.levantar.length })));
-    out.push(f.meus.length ? h('div', { class: 'card vlist vc' }, f.meus.map((L) => feiraRow(L,
+    const anun = f.meus.filter((L) => L.tipo !== 'pedido'), peds = f.meus.filter((L) => L.tipo === 'pedido');
+    out.push(h('p', { class: 'small muted usub' }, t('fSlots', { n: used, m: F.maxOpen })));
+    if (peds.length) out.push(h('h2', { class: 'sec' }, t('fMyOrders')), h('div', { class: 'card vlist vc' }, peds.map((L) => feiraRow(L,   // v89: os meus pedidos
+      sureBtn('btn ghost sm', t('fCancelOrder'), 'btn ghost dng sm sure', t('fCancelOrderSure'), () => act('feiraCancel', { lid: L.lid })),
+      [h('div', { class: 'small num' }, t('fOrderMine', { m: money(L.preco) })), h('div', { class: 'small muted num' }, t('fOrderHeld', { m: money(L.preco * L.n) })), h('div', { class: 'small muted' }, t('fEnds'), ' ', fLeft(L.fim))]))));
+    out.push(h('h2', { class: 'sec' }, t('fMyList')));
+    out.push(anun.length ? h('div', { class: 'card vlist vc' }, anun.map((L) => feiraRow(L,
       L.lances ? h('span', { class: 'small c-cash' }, t('fHasBids')) : sureBtn('btn ghost sm', t('fCancel'), 'btn ghost dng sm sure', t('fCancelSure'), () => act('feiraCancel', { lid: L.lid })),
       L.tipo === 'leilao' ? fAucLines(L) : [h('div', { class: 'small num' }, t('fEachMine', { m: money(L.preco) })), h('div', { class: 'small muted' }, t('fEnds'), ' ', fLeft(L.fim))])))
       : h('div', { class: 'tip' }, h('p', null, t('fNoMine'))));
@@ -3805,10 +3882,10 @@ function eventRow(e) {
     h('div', { class: 'grow' }, h('div', null, t('evStDiv', { m: money(e.money || 0), x: (e.cs || []).map((c) => t('st_' + c)).join(', ') })), h('div', { class: 'small muted' }, dur(now() - e.t))));
   if (e.k === 'raid') return h('div', { class: 'card row' }, h('span', { class: 'c-red' }, icon('lock')),
     h('div', { class: 'grow' }, h('div', null, t('evRaid', { t: tookTxt(e.took || []), m: money(e.fine || 0), ...rgF(e.r) }) + (e.jail ? t('evRaidJ') : '')), h('div', { class: 'small muted' }, dur(now() - e.t))));
-  if (e.k === 'fSold' || e.k === 'fWon' || e.k === 'fOutbid' || e.k === 'fBack') {   // v84: a feira
-    const x = fName(e.kind, e.item) + (e.n > 1 ? ' ×' + e.n : ''), good = e.k === 'fSold' || e.k === 'fWon';
+  if (e.k === 'fSold' || e.k === 'fWon' || e.k === 'fOutbid' || e.k === 'fBack' || e.k === 'fFilled' || e.k === 'fOrderEnd') {   // v84: a feira; v89: os pedidos
+    const x = fName(e.kind, e.item) + (e.n > 1 ? ' ×' + e.n : ''), good = e.k === 'fSold' || e.k === 'fWon' || e.k === 'fFilled';
     return h('button', { class: 'card row tap', on: { click: () => go('feira') } }, h('span', { class: good ? 'c-cash' : 'muted' }, icon('cash')),
-      h('div', { class: 'grow' }, h('div', null, t('ev_' + e.k, { x, m: money(e.money || 0) })), h('div', { class: 'small muted' }, dur(now() - e.t))));
+      h('div', { class: 'grow' }, h('div', null, t('ev_' + e.k, { x, m: money(e.money || 0), who: e.by || '' })), h('div', { class: 'small muted' }, dur(now() - e.t))));
   }
   if (e.k === 'hkRob') return h('div', { class: 'card row' }, h('span', { class: 'c-red' }, icon('skull')),
     h('div', { class: 'grow' }, h('div', null, t('hkRob_' + e.kind, { m: money(e.money || 0) })), h('div', { class: 'small muted' }, dur(now() - e.t))));

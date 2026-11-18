@@ -20,6 +20,8 @@ for (const tab of TABS) {
   p.on('pageerror', (e) => erros.push(tab + ': ' + e.message));
   await p.goto(base + '/'); await p.waitForTimeout(1500);
   if (process.env.CLICK) { await p.locator(process.env.CLICK).first().click(); await p.waitForTimeout(600); }   // ex.: CLICK='.ppg button >> nth=1'
+  if (process.env.CLICK2) { await p.locator(process.env.CLICK2).first().click(); await p.waitForTimeout(700); }   // um segundo toque (abrir uma folha depois de mudar de separador)
+  if (process.env.FILL) { const [sel, v] = process.env.FILL.split('='); await p.locator(sel).first().pressSequentially(v); await p.waitForTimeout(300); }
   if (process.env.FULL) await p.addStyleTag({ content: '.tabs{display:none!important}' });   // a página inteira: a barra de baixo ficava a meio
   if (process.env.FULL) {   // as imagens que carregam ao chegar perto: descer a página toda antes da captura
     await p.evaluate(async () => { for (let y = 0; y < document.body.scrollHeight; y += 600) { scrollTo(0, y); await new Promise((r) => setTimeout(r, 60)); } scrollTo(0, 0); });
