@@ -3536,3 +3536,36 @@ body .invh h2.sec { margin: 0; padding: 0; background: none; border: 0; box-shad
 body .hbars .sbar.en svg.i { color: #a8d63a; }
 body .hbars .sbar.vg svg.i { color: #7cc4ff; }
 .vrow.jbr > .btn.sm { min-width: 104px; }
+
+/* ==========================================================================
+   v95 — livros: capas desenhadas (cor do título, as folhas à direita e em baixo, a inicial), o que se lê e o que faz efeito,
+   a estante e a prateleira
+   ========================================================================== */
+.bkc { position: relative; flex: none; width: 48px; height: 68px; border-radius: 2px 4px 4px 2px; background: var(--bk); display: grid; place-items: center;
+  box-shadow: inset 5px 0 0 #0000004d, inset 6px 0 0 #ffffff14, inset -3px -2px 0 #e9dfc6, inset -4px -3px 0 #0000004d, 0 2px 4px #000a; overflow: hidden; }
+.bkc i { font: 700 22px/1 Georgia, 'Times New Roman', serif; font-style: normal; color: #f3e6c8; text-shadow: 0 1px 0 #0008; position: relative; }
+.bkc.v0::before { content: ''; position: absolute; left: 8px; right: 6px; top: 10px; height: 3px; border-top: 1px solid #e8d49a99; border-bottom: 1px solid #e8d49a99; }
+.bkc.v0::after { content: ''; position: absolute; left: 8px; right: 6px; bottom: 12px; height: 3px; border-top: 1px solid #e8d49a99; border-bottom: 1px solid #e8d49a99; }
+.bkc.v1::before { content: ''; position: absolute; inset: 6px 7px 8px 9px; border: 1px solid #e8d49a8c; border-radius: 1px; }
+.bknow { display: flex; gap: 12px; align-items: flex-start; margin-bottom: 10px; padding: 12px; }
+.bknow .grow { min-width: 0; flex: 1; display: grid; gap: 3px; }
+.bknow b { font: 700 16px/1.25 var(--disp); color: #fff; }
+.bknow .fill { margin-top: 4px; height: 6px; }
+.bkl { padding: 6px 12px; }
+.vrow.bkr { align-items: flex-start; padding: 12px 0; gap: 12px; }
+.vrow.bkr + .vrow.bkr { border-top: 1px solid #ffffff12; }
+.vrow.bkr .grow { flex: 1; display: grid; gap: 3px; }
+.vrow.bkr b { white-space: normal; font: 700 15px/1.25 var(--disp); color: #fff; }
+.bkq { margin: 0; font-style: italic; }
+.bkfx { color: #a8d63a; }
+.bkr .btn.sm { justify-self: start; margin-top: 6px; min-height: 44px; min-width: 120px; white-space: nowrap; }
+.bkr .btn.sm.sure { white-space: normal; text-align: left; }
+.bknone { margin: 0 2px 12px; }
+/* v95: preços por região — a unidade numa linha própria; nada passa para a coluna do lado */
+.tsp > div { min-width: 0; }
+.tsp > div b { display: block; overflow-wrap: anywhere; }
+.tsp .tsu { display: block; font: 500 14px/1.2 var(--ui); color: var(--tx2); margin-top: 2px; }
+/* v95 (relato do Dinis): botões desativados sem o relevo branco nem o gradiente — planos, escuros, texto cinzento legível */
+body .btn:disabled:not(:has(+ .ctgo)), body .btn[disabled]:not(:has(+ .ctgo)) { background: #222 !important; color: #8f8f8f !important; text-shadow: none !important; border-color: #161616 !important; box-shadow: inset 0 0 0 1px #3a3a3a !important; }
+body .btn:disabled *, body .btn[disabled] * { color: inherit !important; text-shadow: none !important; }
+body h2.sec:has(> .small) { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }

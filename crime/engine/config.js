@@ -224,6 +224,44 @@ export const CFG = {
     ],
   },
 
+  // v95: livros, como os do Torn. Compram-se no alfarrabista (4 títulos por dia, iguais para todos, um de cada por pessoa e dia)
+  // ou acham-se nos golpes (um a cada findEvery golpes bem-sucedidos). Não se vendem nem se trocam. Lê-se um de cada vez e ler
+  // leva h horas (lê-se também preso ou no hospital). Ao acabar: os de efeito ficam ativos 31 dias (só um ativo; o novo substitui
+  // o anterior); os de stat (perm) dão de vez +5% dessa stat; o «Déjà lu» repete o último livro lido.
+  // k: a parte da profissão que o livro soma (as mesmas contas: lootBp, bustCutBp…), 'gym' (ganho no ginásio numa stat, ou *
+  // em todas), 'perm' ou 'again'. bp em pontos-base. w: peso na prateleira (os raros aparecem menos).
+  books: {
+    days: 31, shelf: 4, cap: 20, findEvery: 150,
+    list: [
+      { id: 'musculo', k: 'gym', s: 'F', bp: 3000, h: 3, price: 60000, w: 4 },
+      { id: 'aguenta', k: 'gym', s: 'T', bp: 3000, h: 3, price: 60000, w: 4 },
+      { id: 'pensar', k: 'gym', s: 'I', bp: 3000, h: 3, price: 60000, w: 4 },
+      { id: 'sorri', k: 'gym', s: 'C', bp: 3000, h: 3, price: 60000, w: 4 },
+      { id: 'naomorde', k: 'gym', s: '*', bp: 2000, h: 5, price: 150000, w: 2 },
+      { id: 'bolsos', k: 'lootBp', bp: 1000, h: 4, price: 80000, w: 4 },
+      { id: 'correr', k: 'bustCutBp', bp: 1500, h: 3, price: 50000, w: 4 },
+      { id: 'advogado', k: 'bailCutBp', bp: 3000, h: 2, price: 25000, w: 4 },
+      { id: 'fitacola', k: 'hospCutBp', bp: 3000, h: 2, price: 25000, w: 4 },
+      { id: 'cabecada', k: 'atkBp', bp: 1000, h: 4, price: 100000, w: 3 },
+      { id: 'olho', k: 'defBp', bp: 1000, h: 4, price: 100000, w: 3 },
+      { id: 'contas', k: 'bizBp', bp: 1000, h: 6, price: 200000, w: 3 },
+      { id: 'temido', k: 'respBp', bp: 1000, h: 5, price: 150000, w: 3 },
+      { id: 'contrabando', k: 'seizeCutBp', bp: 2000, h: 3, price: 75000, w: 4 },
+      { id: 'quimica', k: 'fxMoreBp', bp: 5000, h: 2, price: 30000, w: 4 },
+      { id: 'regatear', k: 'fenceBp', bp: 1500, h: 2, price: 40000, w: 4 },
+      { id: 'bricolage', k: 'craftCutBp', bp: 2500, h: 3, price: 60000, w: 4 },
+      { id: 'receitas', k: 'recipeCutBp', bp: 2000, h: 3, price: 50000, w: 4 },
+      { id: 'feira', k: 'feiraFeeCutBp', bp: 5000, h: 2, price: 30000, w: 4 },
+      { id: 'mala', k: 'cargoBp', bp: 1500, h: 3, price: 70000, w: 4 },
+      { id: 'achados', k: 'colBp', bp: 3000, h: 4, price: 50000, w: 4 },
+      { id: 'diario', k: 'perm', s: 'F', bp: 500, h: 12, price: 750000, w: 1 },
+      { id: 'ressaca', k: 'perm', s: 'T', bp: 500, h: 12, price: 750000, w: 1 },
+      { id: 'enciclopedia', k: 'perm', s: 'I', bp: 500, h: 12, price: 750000, w: 1 },
+      { id: 'charme', k: 'perm', s: 'C', bp: 500, h: 12, price: 750000, w: 1 },
+      { id: 'dejalu', k: 'again', h: 1, price: 300000, w: 1 },
+    ],
+  },
+
   // Probabilidade de sucesso = S²/(S²+D²), entre 5% e 95%.
   chance: { minBp: 500, maxBp: 9500 },
   crit: { chanceBp: 500, mult: 3 }, // golpe perfeito: 5%, dinheiro x3

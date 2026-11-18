@@ -57,7 +57,7 @@ export function newPlayer(id, now, world, opts = {}) {
     mi: 0,                         // objetivos já recebidos
     mq: CFG.missions.map((_, i) => i), mrT: 0,   // os que faltam, pela ordem em que vão aparecer; e quando se trocou pela última vez
     titles: [],                    // títulos que ficam para sempre: { k: 'vet' } (veterano das rondas), { k: 'ep', n, d, pos } (pódio de uma época)
-    cls: '', clsAt: 0, av: 0, fx: {}, sick: false, hkN: CFG.hookers.list.map(() => 0), hkAt: CFG.hookers.list.map(() => 0), house: 0, hu: CFG.house.ups.map(() => 0), bj: null, wm: {}, cd: { est: 0, med: 0 }, col: {}, mus: {}, sx: { F: 0, T: 0, I: 0, C: 0 }, gs: null, gym: 'garagem', gyms: ['garagem'], gx: 0, mt: {}, cf: null, maq: {}, dg: null, dgc: {},        // profissão, avatar e efeitos temporários (kind -> { bp, until })
+    cls: '', clsAt: 0, av: 0, fx: {}, sick: false, hkN: CFG.hookers.list.map(() => 0), hkAt: CFG.hookers.list.map(() => 0), house: 0, hu: CFG.house.ups.map(() => 0), bj: null, wm: {}, cd: { est: 0, med: 0 }, col: {}, mus: {}, sx: { F: 0, T: 0, I: 0, C: 0 }, gs: null, gym: 'garagem', gyms: ['garagem'], gx: 0, bk: { own: {}, rd: null, on: null, done: {}, last: null, n: 0, bd: null }, mt: {}, cf: null, maq: {}, dg: null, dgc: {},        // profissão, avatar e efeitos temporários (kind -> { bp, until })
   };
 }
 
@@ -78,6 +78,7 @@ function migrate(p) {
   if (!Array.isArray(p.gyms)) p.gyms = ['garagem'];   // v94: os ginásios onde já é sócio, o que está a usar e a energia lá gasta
   if (typeof p.gym !== 'string' || !p.gyms.includes(p.gym)) p.gym = 'garagem';
   if (!Number.isFinite(p.gx)) p.gx = 0;
+  if (!p.bk || typeof p.bk !== 'object') p.bk = { own: {}, rd: null, on: null, done: {}, last: null, n: 0, bd: null };   // v95: livros
   if (!p.mt || typeof p.mt !== 'object' || Array.isArray(p.mt)) p.mt = {};   // v83: materiais e componentes no depósito
   if (p.cf === undefined) p.cf = null;   // v83: o que está na bancada da cave
   if (!p.maq || typeof p.maq !== 'object' || Array.isArray(p.maq)) p.maq = {};   // v83: máquinas instaladas nos negócios
@@ -263,6 +264,7 @@ export function touch(p, now) {
   settleClub(p, now); settleBro(p, now);   // os clientes da discoteca e do bordel até agora
   if (p.course && !p.course.ex && p.course.end <= now) { if (!p.done.includes(p.course.id)) p.done.push(p.course.id); p.course = null; }   // curso de antes do exame: acaba sozinho
   if (p.gs && p.gs.t0 + CFG.train.set.ttl <= now) p.gs = null;   // v82: série esquecida
+  bookTick(p, now);   // v95: o livro que acabou de se ler e o efeito que acabou
   if (p.dg && p.dg.t0 + CFG.dig.ttl <= now) digClose(p, p.dg.t0 + CFG.dig.ttl);   // v85: escavação esquecida: fecha e guarda o que se achou
   if (p.course && p.course.q && p.course.q.t + CFG.exam.ttl <= now) { p.course.next = Math.max(p.course.next || 0, p.course.q.t + CFG.exam.ttl + examRetry(p.course.id)); p.course.q = null; p.course.why = 'ttl'; p.course.last = null; }   // v80: exame deixado aberto conta como chumbo
   p.t = now;
@@ -455,7 +457,12 @@ export function gangDonate(p, now, world, amount) {
 }
 
 // ---------- profissão e efeitos temporários ----------
-const klass = (p) => CFG.classes.find((c) => c.id === p.cls) || {};
+// v95: a profissão mais o livro que está a fazer efeito (os livros somam às mesmas contas da profissão: lootBp, bustCutBp…)
+const klassOf = (p) => CFG.classes.find((c) => c.id === p.cls) || {};
+const klass = (p) => {
+  const c = klassOf(p), o = p.bk && p.bk.on, b = o ? bookOf(o.id) : null;
+  return b && b.k.endsWith('Bp') ? { ...c, [b.k]: (c[b.k] || 0) + b.bp } : c;
+};
 const up = (x, bp) => Math.floor((x * (10000 + bp)) / 10000);
 const cut = (x, bp) => Math.floor((x * (10000 - bp)) / 10000);
 export function buffBp(p, k, now) { const f = p.fx && p.fx[k]; return f && now !== undefined && f.until > now ? f.bp : 0; }
@@ -667,7 +674,8 @@ export function doCrime(p, now, world, k, rng) {
     const lvl = addRespect(p, resp, now);
     const gained = practice(p, c, true);
     const R = CFG.col.sets.raras.items, col = colFind(p, rng, up(c.e * CFG.col.crimeBpPerE, klass(p).colBp || 0), () => R[rng.int(0, R.length - 1)]);   // v90: o ladrão dá mais com elas
-    return { ok: true, success: true, money, value, good, rushed, lav: L.lav, base, item: row[3], crit: false, respect: resp, levelUp: lvl, chanceBp: bp, heatBp, respBp, ammo, gained, newChanceBp: bp, star: 0, ...(col ? { col } : {}) };
+    const book = p.c.wins % CFG.books.findEvery === 0 ? bookFind(p, now) : null;   // v95: um livro a cada 150 golpes bem-sucedidos (sem gastar sorte)
+    return { ok: true, success: true, money, value, good, rushed, lav: L.lav, base, item: row[3], crit: false, respect: resp, levelUp: lvl, chanceBp: bp, heatBp, respBp, ammo, gained, newChanceBp: bp, star: 0, ...(col ? { col } : {}), ...(book ? { book } : {}) };
   }
   p.c.crimes += 1;
   // falhar não é sempre prisão: uma falha em quatro é apanhada
@@ -698,6 +706,7 @@ export function doCrimeAll(p, now, world, k, rng) {
       out.wins += 1; out.money += r.money; out.value = (out.value || 0) + r.value; out.respect += r.respect; out.lav = (out.lav || 0) + r.lav;
       if (r.good) { out.goods = out.goods || {}; out.goods[r.good] = (out.goods[r.good] || 0) + r.value; out.goodsN = (out.goodsN || 0) + 1; }
       if (r.rushed) out.rushed = (out.rushed || 0) + 1;
+      if (r.book) (out.books ||= []).push(r.book);   // v95: os livros achados pelo caminho
       out.items[r.item] = (out.items[r.item] || 0) + 1;
       if (r.value > out.best) { out.best = r.value; out.bestItem = r.item; }
       if (r.star) out.star = r.star;
@@ -1435,7 +1444,7 @@ export function gymDone(p, now, world, taps) {
   const n = gymReps(g, el);
   if (p.vigor < n * G.e) fail('NO_VIGOR', { need: n * G.e });
   // v94: cada repetição vale o mesmo de sempre vezes o ganho do ginásio (20 = 1) vezes a energia que custa (5 = 1)
-  const k = (gymGain(G, g.stat) * G.e) / (CFG.gyms.base * 5);
+  const k = ((gymGain(G, g.stat) * G.e) / (CFG.gyms.base * 5)) * ((10000 + bookGymBp(p, g.stat)) / 10000);   // v95: e o livro do ginásio
   const marks = gymMarks(n, taps), milli = marks.reduce((a, m) => a + (S.q[m] / 10) * k, 0) + (p.sx[g.stat] || 0);
   const gain = Math.floor(milli / 1000);
   if (gain) settleAllBiz(p, now);   // o rendimento até aqui conta com a stat antiga
@@ -1444,6 +1453,84 @@ export function gymDone(p, now, world, taps) {
   p.stats[g.stat] += gain; p.sx[g.stat] = Math.round(milli - gain * 1000);
   p.c.trains += n; p.gs = null;
   return { ok: true, stat: g.stat, reps: n, of: g.reps, marks, gain, value: p.stats[g.stat], part: p.sx[g.stat], gym: G.id };
+}
+
+// ---------- livros (v95) ----------
+// Como os do Torn: um de cada vez; ler leva horas; ao acabar, 31 dias de efeito (o novo substitui o anterior), ou +5% de vez
+// numa stat, ou repetir o último. Compram-se no alfarrabista (4 por dia, iguais para todos) ou acham-se nos golpes.
+export const bookOf = (id) => (typeof id === 'string' ? CFG.books.list.find((b) => b.id === id) : undefined);
+export function bookGymBp(p, stat) {
+  const o = p.bk && p.bk.on, b = o ? bookOf(o.id) : null;
+  return b && b.k === 'gym' && (b.s === stat || b.s === '*') ? b.bp : 0;
+}
+export const bookOwned = (p) => Object.values(p.bk.own).reduce((a, n) => a + n, 0);
+// os 4 títulos do dia: os mesmos para todos, escolhidos com uma semente feita do dia (os raros pesam menos)
+export function bookShelf(now) {
+  let h = 2166136261 >>> 0;
+  for (const ch of 'livros:' + dayOf(now)) { h ^= ch.charCodeAt(0); h = Math.imul(h, 16777619) >>> 0; }
+  const r = seededRng(h), left = CFG.books.list.slice(), out = [];
+  while (out.length < CFG.books.shelf && left.length) {
+    let x = r.int(0, left.reduce((a, b) => a + b.w, 0) - 1), i = 0;
+    while (x >= left[i].w) { x -= left[i].w; i++; }
+    out.push(left.splice(i, 1)[0].id);
+  }
+  return out;
+}
+// os negócios rendem com a profissão e as stats: antes de um livro mudar uma coisa ou outra, o que renderam até ali fica contado
+function bookSettle(p, at, b) {
+  if (b && (b.k === 'bizBp' || b.k === 'perm')) for (let i = 0; i < p.biz.length; i++) if (p.biz[i].t < at) settleBiz(p, i, at);
+}
+function bookFinish(p, at) {
+  const b = bookOf(p.bk.rd.id), eff = b && b.k === 'again' ? bookOf(p.bk.last) : b;
+  p.bk.rd = null;
+  if (!b) return;
+  p.bk.n += 1; p.bk.done[b.id] = (p.bk.done[b.id] || 0) + 1;
+  if (!eff) return;
+  if (b.k !== 'again') p.bk.last = b.id;
+  if (eff.k === 'perm') {
+    bookSettle(p, at, eff);
+    const add = Math.max(1, Math.floor((p.stats[eff.s] * eff.bp) / 10000));
+    p.stats[eff.s] += add; p.bk.got = { s: eff.s, add, at };
+    return;
+  }
+  const old = p.bk.on ? bookOf(p.bk.on.id) : null;
+  bookSettle(p, at, old); bookSettle(p, at, eff);
+  p.bk.on = { id: eff.id, until: at + CFG.books.days * T.DAY };
+}
+function bookTick(p, now) {
+  if (p.bk.rd && p.bk.rd.end <= now) bookFinish(p, p.bk.rd.end);
+  if (p.bk.on && p.bk.on.until <= now) { const at = p.bk.on.until; bookSettle(p, at, bookOf(p.bk.on.id)); p.bk.on = null; }
+}
+// achado num golpe: um título dos que não são raros, escolhido pelo número de golpes (sem tirar à sorte); sem espaço, fica lá
+function bookFind(p, now) {
+  if (bookOwned(p) >= CFG.books.cap) return null;
+  const L = CFG.books.list.filter((b) => b.w >= 3), b = L[(p.c.wins / CFG.books.findEvery + Number(dayOf(now).slice(-2))) % L.length];
+  p.bk.own[b.id] = (p.bk.own[b.id] || 0) + 1;
+  return b.id;
+}
+export function bookBuy(p, now, world, id) {
+  const b = bookOf(id);
+  if (!b) fail('NO_BOOK');
+  begin(p, now, world, { allowBusy: true });
+  if (!bookShelf(now).includes(id)) fail('NOT_ON_SHELF');
+  const d = dayOf(now), bd = p.bk.bd && p.bk.bd.d === d ? p.bk.bd : { d, ids: [] };
+  if (bd.ids.includes(id)) fail('BOUGHT_TODAY');
+  if (bookOwned(p) >= CFG.books.cap) fail('BOOKS_FULL');
+  pay(p, b.price);
+  p.bk.bd = bd; bd.ids.push(id);
+  p.bk.own[id] = (p.bk.own[id] || 0) + 1;
+  return { ok: true, id, price: b.price };
+}
+export function bookRead(p, now, world, id) {
+  const b = bookOf(id);
+  if (!b) fail('NO_BOOK');
+  begin(p, now, world, { allowBusy: true, jailOk: true });   // lê-se também preso ou no hospital
+  if (!(p.bk.own[id] > 0)) fail('NO_BOOK');
+  if (p.bk.rd) fail('BOOK_BUSY', { until: p.bk.rd.end });
+  if (b.k === 'again' && !p.bk.last) fail('NO_LAST');
+  p.bk.own[id] -= 1; if (!p.bk.own[id]) delete p.bk.own[id];
+  p.bk.rd = { id, t0: now, end: now + b.h * T.HOUR };
+  return { ok: true, id, end: p.bk.rd.end };
 }
 
 // ---------- materiais e cave (v83) ----------
@@ -3704,6 +3791,12 @@ export function checkInvariants(p) {
   if (p.bj !== null && (typeof p.bj !== 'object' || !Number.isSafeInteger(p.bj.bet) || p.bj.bet < CFG.casino.minBet || !Array.isArray(p.bj.pl) || bjValue(p.bj.pl).tot > 21 || !Array.isArray(p.bj.next)
     || [...(p.bj.fin || []), ...(p.bj.q || [])].some((x) => !x || !Array.isArray(x.pl) || x.bet !== (x.dbl ? 2 : 1) * (p.bj.bet / (p.bj.dbl ? 2 : 1))) || (p.bj.fin || []).length + (p.bj.q || []).length > 1)) bad.push('blackjack');
   for (const k of Object.keys(p.fx)) { const f = p.fx[k]; if (!CFG.fxKinds.includes(k) || !Number.isSafeInteger(f.bp) || f.bp <= 0 || !Number.isSafeInteger(f.until)) bad.push('fx ' + k); }
+  // v94/v95: ginásios e livros
+  if (!p.gyms.every((g) => gymOf(g) && g !== 'prisao') || new Set(p.gyms).size !== p.gyms.length || !p.gyms.includes(p.gym) || !(p.gx >= 0)) bad.push('gyms');
+  for (const [k, n] of Object.entries(p.bk.own)) if (!bookOf(k) || !Number.isSafeInteger(n) || n <= 0) bad.push('book ' + k);
+  if (bookOwned(p) > CFG.books.cap) bad.push('books>cap');
+  if (p.bk.rd && (!bookOf(p.bk.rd.id) || !(p.bk.rd.end > p.bk.rd.t0))) bad.push('book reading');
+  if (p.bk.on && (!bookOf(p.bk.on.id) || !Number.isSafeInteger(p.bk.on.until))) bad.push('book on');
   for (const s of p.biz) {
     for (const k of ['n', 'stored', 'rem', 't']) if (!Number.isSafeInteger(s[k]) || s[k] < 0) bad.push(`biz.${k}=${s[k]}`);
     if (s.rem >= T.HOUR) bad.push('biz remainder overflow');
