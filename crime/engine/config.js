@@ -183,6 +183,47 @@ export const CFG = {
     set: { reps: [5, 10], beat: 1000, lead: 3000, ttl: 2 * MIN, win: [80, 160, 260], q: [12000, 10000, 8000, 5000], botSd: 8, slack: 300 },
   },
 
+  // v94 (pedido de 18/11/2026, a partir do sistema do Torn): ginásios pelo mundo. g = ganho de cada stat [F, T, I, C] em décimas de ponto
+  // por 10 de energia com o ritmo médio (20 = o de sempre; 0 = não se treina lá essa stat); e = energia por repetição; xp = energia já gasta
+  // em ginásios para poder entrar (gx); price em euros (paga-se uma vez). Os normais abrem pela ordem; os especialistas pedem uma stat (ou
+  // duas) 25% acima das outras; o da prisão só se usa preso e é o melhor da prisão para a Tolerância.
+  gyms: {
+    base: 20, ratio: 12500,
+    list: [
+      { id: 'garagem', tier: 'leve', at: 'pt', e: 5, price: 0, xp: 0, g: [20, 20, 20, 20] },
+      { id: 'ringue', tier: 'leve', at: 'it', e: 5, price: 300, xp: 150, g: [22, 26, 20, 22] },
+      { id: 'caveboxe', tier: 'leve', at: 'gb', e: 5, price: 1000, xp: 400, g: [26, 26, 20, 20] },
+      { id: 'praia', tier: 'leve', at: 'br', e: 5, price: 2500, xp: 900, g: [26, 24, 0, 28] },
+      { id: 'dojo', tier: 'leve', at: 'jp', e: 5, price: 5000, xp: 1600, g: [24, 28, 28, 22] },
+      { id: 'xadrez', tier: 'leve', at: 'ua', e: 5, price: 10000, xp: 2500, g: [0, 0, 32, 26] },
+      { id: 'muaythai', tier: 'leve', at: 'th', e: 5, price: 20000, xp: 3600, g: [28, 30, 22, 22] },
+      { id: 'global', tier: 'leve', at: 'ae', e: 5, price: 40000, xp: 5000, g: [30, 30, 30, 30] },
+      { id: 'ferro', tier: 'medio', at: 'us', e: 10, price: 100000, xp: 7000, g: [34, 30, 28, 28] },
+      { id: 'krav', tier: 'medio', at: 'il', e: 10, price: 200000, xp: 9500, g: [32, 34, 30, 28] },
+      { id: 'teatro', tier: 'medio', at: 'gb', e: 10, price: 400000, xp: 12500, g: [28, 28, 32, 36] },
+      { id: 'sambo', tier: 'medio', at: 'ru', e: 10, price: 750000, xp: 16000, g: [34, 36, 30, 28] },
+      { id: 'capoeira', tier: 'medio', at: 'br', e: 10, price: 1200000, xp: 20000, g: [32, 32, 30, 36] },
+      { id: 'shaolin', tier: 'medio', at: 'cn', e: 10, price: 2000000, xp: 25000, g: [32, 36, 36, 30] },
+      { id: 'ironworks', tier: 'medio', at: 'us', e: 10, price: 3000000, xp: 31000, g: [38, 34, 32, 32] },
+      { id: 'olimpico', tier: 'medio', at: 'de', e: 10, price: 5000000, xp: 38000, g: [40, 40, 40, 40] },
+      { id: 'kyokushin', tier: 'pesado', at: 'jp', e: 10, price: 7500000, xp: 46000, g: [42, 44, 40, 38] },
+      { id: 'bronx', tier: 'pesado', at: 'us', e: 10, price: 10000000, xp: 55000, g: [44, 42, 38, 40] },
+      { id: 'rancho', tier: 'pesado', at: 'mx', e: 10, price: 15000000, xp: 65000, g: [44, 44, 40, 42] },
+      { id: 'yakuza', tier: 'pesado', at: 'jp', e: 10, price: 20000000, xp: 76000, g: [42, 42, 44, 44] },
+      { id: 'legiao', tier: 'pesado', at: 'fr', e: 10, price: 30000000, xp: 88000, g: [46, 46, 42, 40] },
+      { id: 'spetsnaz', tier: 'pesado', at: 'ru', e: 10, price: 45000000, xp: 101000, g: [46, 48, 44, 42] },
+      { id: 'monaco', tier: 'pesado', at: 'mc', e: 10, price: 70000000, xp: 115000, g: [44, 44, 46, 48] },
+      { id: 'olimpo', tier: 'pesado', at: 'gr', e: 10, price: 100000000, xp: 130000, g: [50, 50, 50, 50] },
+      { id: 'corpo', tier: 'esp', at: 'za', e: 15, price: 50000000, after: 'legiao', duo: ['F', 'T'], g: [52, 52, 0, 0] },
+      { id: 'cabeca', tier: 'esp', at: 'ch', e: 15, price: 50000000, after: 'legiao', duo: ['I', 'C'], g: [0, 0, 52, 52] },
+      { id: 'strongman', tier: 'esp', at: 'is', e: 15, price: 100000000, after: 'olimpo', solo: 'F', g: [56, 0, 0, 0] },
+      { id: 'muralha', tier: 'esp', at: 'mn', e: 15, price: 100000000, after: 'olimpo', solo: 'T', g: [0, 56, 0, 0] },
+      { id: 'torneio', tier: 'esp', at: 'ru', e: 15, price: 100000000, after: 'olimpo', solo: 'I', g: [0, 0, 56, 0] },
+      { id: 'broadway', tier: 'esp', at: 'us', e: 15, price: 100000000, after: 'olimpo', solo: 'C', g: [0, 0, 0, 56] },
+      { id: 'prisao', tier: 'prisao', at: '', e: 5, price: 0, g: [26, 34, 0, 0] },
+    ],
+  },
+
   // Probabilidade de sucesso = S²/(S²+D²), entre 5% e 95%.
   chance: { minBp: 500, maxBp: 9500 },
   crit: { chanceBp: 500, mult: 3 }, // golpe perfeito: 5%, dinheiro x3

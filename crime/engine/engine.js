@@ -57,7 +57,7 @@ export function newPlayer(id, now, world, opts = {}) {
     mi: 0,                         // objetivos já recebidos
     mq: CFG.missions.map((_, i) => i), mrT: 0,   // os que faltam, pela ordem em que vão aparecer; e quando se trocou pela última vez
     titles: [],                    // títulos que ficam para sempre: { k: 'vet' } (veterano das rondas), { k: 'ep', n, d, pos } (pódio de uma época)
-    cls: '', clsAt: 0, av: 0, fx: {}, sick: false, hkN: CFG.hookers.list.map(() => 0), hkAt: CFG.hookers.list.map(() => 0), house: 0, hu: CFG.house.ups.map(() => 0), bj: null, wm: {}, cd: { est: 0, med: 0 }, col: {}, mus: {}, sx: { F: 0, T: 0, I: 0, C: 0 }, gs: null, mt: {}, cf: null, maq: {}, dg: null, dgc: {},        // profissão, avatar e efeitos temporários (kind -> { bp, until })
+    cls: '', clsAt: 0, av: 0, fx: {}, sick: false, hkN: CFG.hookers.list.map(() => 0), hkAt: CFG.hookers.list.map(() => 0), house: 0, hu: CFG.house.ups.map(() => 0), bj: null, wm: {}, cd: { est: 0, med: 0 }, col: {}, mus: {}, sx: { F: 0, T: 0, I: 0, C: 0 }, gs: null, gym: 'garagem', gyms: ['garagem'], gx: 0, mt: {}, cf: null, maq: {}, dg: null, dgc: {},        // profissão, avatar e efeitos temporários (kind -> { bp, until })
   };
 }
 
@@ -75,6 +75,9 @@ function migrate(p) {
   if (!p.mus || typeof p.mus !== 'object') p.mus = {};   // v79: quantas vezes entregou cada conjunto ao museu
   if (!p.sx || typeof p.sx !== 'object') p.sx = { F: 0, T: 0, I: 0, C: 0 };   // v82: pontos partidos do ginásio (milésimos)
   if (p.gs === undefined) p.gs = null;   // v82: a série do ginásio a meio
+  if (!Array.isArray(p.gyms)) p.gyms = ['garagem'];   // v94: os ginásios onde já é sócio, o que está a usar e a energia lá gasta
+  if (typeof p.gym !== 'string' || !p.gyms.includes(p.gym)) p.gym = 'garagem';
+  if (!Number.isFinite(p.gx)) p.gx = 0;
   if (!p.mt || typeof p.mt !== 'object' || Array.isArray(p.mt)) p.mt = {};   // v83: materiais e componentes no depósito
   if (p.cf === undefined) p.cf = null;   // v83: o que está na bancada da cave
   if (!p.maq || typeof p.maq !== 'object' || Array.isArray(p.maq)) p.maq = {};   // v83: máquinas instaladas nos negócios
@@ -1371,31 +1374,76 @@ export function gymReps(g, el) {
   if (el >= S.lead + (g.reps - 1) * S.beat) return g.reps;
   return Math.max(0, Math.min(g.reps, Math.floor((el - S.slack - S.lead) / S.beat) + 1));
 }
+// ---------- ginásios pelo mundo (v94) ----------
+export const gymOf = (id) => (typeof id === 'string' ? CFG.gyms.list.find((g) => g.id === id) : undefined);
+export const GYM_NORMAL = CFG.gyms.list.filter((g) => g.tier === 'leve' || g.tier === 'medio' || g.tier === 'pesado');
+export const gymGain = (G, stat) => (G && STATS.includes(stat) ? G.g[STATS.indexOf(stat)] : 0);
+// o ginásio onde se treina agora: preso, é o da prisão; fora, o que escolheu
+export const gymNow = (p, now) => (p.jailUntil > now ? gymOf('prisao') : gymOf(p.gym) || gymOf('garagem'));
+// especialistas: uma stat 25% acima de cada uma das outras, ou duas juntas 25% acima das outras duas
+export function gymReqOk(p, G) {
+  const v = (k) => p.stats[k] || 0, R = CFG.gyms.ratio;
+  if (G.solo) return STATS.filter((k) => k !== G.solo).every((k) => v(G.solo) * 10000 >= v(k) * R);
+  if (G.duo) { const a = G.duo.reduce((s, k) => s + v(k), 0), b = STATS.filter((k) => !G.duo.includes(k)).reduce((s, k) => s + v(k), 0); return a * 10000 >= b * R; }
+  return true;
+}
+// pode comprar a entrada: os normais pela ordem e com a energia gasta; os especialistas depois do que pedem
+export function gymCanBuy(p, G) {
+  if (!G || G.tier === 'prisao' || p.gyms.includes(G.id)) return false;
+  if (G.tier === 'esp') return p.gyms.includes(G.after);
+  const i = GYM_NORMAL.indexOf(G);
+  return i > 0 && p.gyms.includes(GYM_NORMAL[i - 1].id) && p.gx >= G.xp;
+}
+export function gymBuy(p, now, world, id) {
+  const G = gymOf(id);
+  if (!G || G.tier === 'prisao') fail('NO_GYM');
+  if (p.gyms.includes(id)) fail('HAVE_IT');
+  begin(p, now, world);
+  if (!gymCanBuy(p, G)) fail('GYM_LOCKED', { need: G.xp || 0, after: G.after || null });
+  pay(p, G.price);
+  p.gyms.push(id);
+  if (G.tier !== 'esp' || gymReqOk(p, G)) p.gym = id;
+  return { ok: true, id, price: G.price, gym: p.gym };
+}
+export function gymUse(p, now, world, id) {
+  const G = gymOf(id);
+  if (!G || G.tier === 'prisao' || !p.gyms.includes(id)) fail('NO_GYM');
+  begin(p, now, world, { allowBusy: true });
+  p.gym = id;
+  return { ok: true, gym: id };
+}
 export function gymStart(p, now, world, stat, reps) {
   if (!STATS.includes(stat)) fail('NO_STAT');
   if (!CFG.train.set.reps.includes(reps)) fail('BAD_REPS');
-  begin(p, now, world);
-  if (p.vigor < reps * CFG.train.energy) fail('NO_VIGOR', { need: reps * CFG.train.energy });
+  const G = gymNow(p, now);
+  begin(p, now, world, { jailOk: G.id === 'prisao' });
+  if (!(gymGain(G, stat) > 0)) fail('GYM_NO_STAT');
+  if (!gymReqOk(p, G)) fail('GYM_REQ');
+  if (p.vigor < reps * G.e) fail('NO_VIGOR', { need: reps * G.e });
   const S = CFG.train.set;
-  p.gs = { stat, reps, t0: now };
-  return { ok: true, stat, reps, beat: S.beat, lead: S.lead, t0: now, until: now + S.ttl };
+  p.gs = { stat, reps, t0: now, gym: G.id };
+  return { ok: true, stat, reps, gym: G.id, beat: S.beat, lead: S.lead, t0: now, until: now + S.ttl };
 }
 export function gymDone(p, now, world, taps) {
   if (!p.gs) fail('NO_SERIES');
   const S = CFG.train.set, g = p.gs, el = now - g.t0;
   // os toques vêm do cliente: números, poucos, e nenhum marcado depois do tempo que já passou aqui
   if (!Array.isArray(taps) || taps.length > 64 || !taps.every((x) => Number.isFinite(x) && x >= 0 && x <= el + S.slack)) fail('BAD_TAPS');
-  begin(p, now, world);
+  const G = gymOf(g.gym) || gymOf('garagem');
+  begin(p, now, world, { jailOk: G.id === 'prisao' });
   if (!p.gs) fail('NO_SERIES');   // caducou
   const n = gymReps(g, el);
-  if (p.vigor < n * CFG.train.energy) fail('NO_VIGOR', { need: n * CFG.train.energy });
-  const marks = gymMarks(n, taps), milli = marks.reduce((a, m) => a + S.q[m] / 10, 0) + (p.sx[g.stat] || 0);
+  if (p.vigor < n * G.e) fail('NO_VIGOR', { need: n * G.e });
+  // v94: cada repetição vale o mesmo de sempre vezes o ganho do ginásio (20 = 1) vezes a energia que custa (5 = 1)
+  const k = (gymGain(G, g.stat) * G.e) / (CFG.gyms.base * 5);
+  const marks = gymMarks(n, taps), milli = marks.reduce((a, m) => a + (S.q[m] / 10) * k, 0) + (p.sx[g.stat] || 0);
   const gain = Math.floor(milli / 1000);
   if (gain) settleAllBiz(p, now);   // o rendimento até aqui conta com a stat antiga
-  p.vigor -= n * CFG.train.energy;
+  p.vigor -= n * G.e;
+  p.gx += n * G.e;
   p.stats[g.stat] += gain; p.sx[g.stat] = Math.round(milli - gain * 1000);
   p.c.trains += n; p.gs = null;
-  return { ok: true, stat: g.stat, reps: n, of: g.reps, marks, gain, value: p.stats[g.stat], part: p.sx[g.stat] };
+  return { ok: true, stat: g.stat, reps: n, of: g.reps, marks, gain, value: p.stats[g.stat], part: p.sx[g.stat], gym: G.id };
 }
 
 // ---------- materiais e cave (v83) ----------

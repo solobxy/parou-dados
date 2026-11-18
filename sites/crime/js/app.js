@@ -166,7 +166,9 @@ function react(type, out, before, opts) {
   else if (type === 'maqService') { toast(t(r.stopped ? 'tRevBack' : 'tRev', { x: list('biz')[S.cfg.biz.findIndex((b) => b.id === r.id)], d: cvDay(r.until) })); fx.sfx('claim'); }
   else if (type === 'craftTake') { toast(t('tCrafted_' + r.kind, { x: crIt(r.id), b: r.kind === 'maq' ? list('biz')[S.cfg.biz.findIndex((b) => b.id === recipe(r.id).biz)] : '' })); fx.sfx('claim'); }
   else if (type === 'shift') { toast(t('jbDone', { m: money(r.money), n: r.left })); fx.sfx('cash'); }
-  else if (type === 'gymDone') { if (!opts.quiet && r.reps) toast(t('tGym', { p: gymPts(r.marks), x: t('stat' + r.stat).toLowerCase(), k: r.marks.filter((m) => m < 2).length, n: r.marks.length })); if (r.reps) fx.sfx(r.gain ? 'claim' : 'tap'); }
+  else if (type === 'gymBuy') { toast(t(r.gym === r.id ? 'tGymIn' : 'tGymBuy', { x: t('gyn_' + r.id) })); fx.sfx('buy'); }
+  else if (type === 'gymUse') { toast(t('tGymIn', { x: t('gyn_' + r.gym) })); fx.sfx('tap'); }
+  else if (type === 'gymDone') { if (!opts.quiet && r.reps) toast(t('tGym', { p: gymPts(r.marks, r.gym, r.stat), x: t('stat' + r.stat).toLowerCase(), k: r.marks.filter((m) => m < 2).length, n: r.marks.length })); if (r.reps) fx.sfx(r.gain ? 'claim' : 'tap'); }
   else if (type === 'examAnswer') {
     if (r.pass && r.done) { toast(t('tExDone')); fx.sfx('claim'); }
     else if (r.pass) { toast(t('tExCut', { t: exDur(r.cut) })); fx.sfx('claim'); }
@@ -416,7 +418,7 @@ function tickHud() {
 // ---------- ecrãs ----------
 // ---------- navegação: uma cidade com locais ----------
 const PLACES = {
-  city: { ic: 'skyline' }, empire: { ic: 'empire' }, rob: { ic: 'street', img: 'golpes' }, club: { ic: 'bolt', img: 'discoteca' }, gym: { ic: 'gym', img: 'ginasio' },
+  city: { ic: 'skyline' }, empire: { ic: 'empire' }, rob: { ic: 'street', img: 'golpes' }, club: { ic: 'bolt', img: 'discoteca' }, gym: { ic: 'gym', img: 'ginasio' }, gyms: { ic: 'gym' },
   biz: { ic: 'empire', img: 'negocios' }, stash: { img: 'stash' }, acct: { img: 'contabilista' }, port: { img: 'porto' }, air: { img: 'aeroporto' }, arms: { img: 'armas' }, bank: { img: 'banco' }, hosp: { img: 'hospital' },
   jail: { img: 'prisao' }, gang: { img: 'gangue' }, work: { img: 'profissao' }, news: { img: 'jornal' }, casino: { ic: 'gem', img: 'casino' }, roulette: { img: 'roleta' }, bj: { img: 'blackjack' }, dice: { img: 'dados' }, wheel: { img: 'roda' }, slot: { img: 'slot' }, zeus: { img: 'zeus' }, doce: { img: 'doce' }, rebucado: { img: 'rebucado' }, alley: { img: 'beco' }, lux: { img: 'luxos' }, fights: { ic: 'fights', img: 'lutas' }, rank: { img: 'procurados' }, hitman: { img: 'assassino' }, putas: { img: 'putas' }, gigs: { img: 'biscates' }, casa: {}, myclub: { img: 'discoteca' }, mybro: { img: 'bordel' }, bolsa: { img: 'bolsa' }, job: { img: 'emprego' }, inv: { ic: 'box', img: 'inventario' }, ops: { img: 'operacoes' }, parl: { img: 'parlamento' }, cafe: { img: 'cafe' }, museum: { img: 'museu' }, uni: { img: 'universidade' }, cave: { img: 'cave' }, feira: { img: 'feira' }, dig: { img: 'escavacoes' }, arquivo: { img: 'arquivo' },
 };
@@ -428,7 +430,7 @@ const HUB = {
   city: [['sec_night', ['fights', 'club', 'putas', 'casino', 'gang', 'alley', 'arms']], ['sec_street', ['gigs', 'cafe', 'job', 'uni', 'dig', 'feira', 'bank', 'museum', 'parl', 'hosp', 'jail', 'rank', 'arquivo']]],
   empire: [['sec_income', ['biz', 'port', 'air', 'myclub', 'mybro']], ['sec_assets', ['casa', 'cave', 'bank', 'bolsa', 'stash', 'acct']]],
 };
-const PARENT = { fights: 'city', arquivo: 'city', dig: 'city', feira: 'city', cave: 'empire', uni: 'city', museum: 'city', cafe: 'city', parl: 'city', gigs: 'city', gang: 'city', work: 'job', job: 'city', news: 'city', casino: 'city', roulette: 'casino', bj: 'casino', dice: 'casino', wheel: 'casino', slot: 'casino', zeus: 'casino', doce: 'casino', rebucado: 'casino', club: 'city', putas: 'city', gym: 'city', alley: 'city', hosp: 'city', jail: 'city',
+const PARENT = { gyms: 'gym', fights: 'city', arquivo: 'city', dig: 'city', feira: 'city', cave: 'empire', uni: 'city', museum: 'city', cafe: 'city', parl: 'city', gigs: 'city', gang: 'city', work: 'job', job: 'city', news: 'city', casino: 'city', roulette: 'casino', bj: 'casino', dice: 'casino', wheel: 'casino', slot: 'casino', zeus: 'casino', doce: 'casino', rebucado: 'casino', club: 'city', putas: 'city', gym: 'city', alley: 'city', hosp: 'city', jail: 'city',
   biz: 'empire', port: 'empire', air: 'empire', myclub: 'empire', mybro: 'empire', bolsa: 'empire', stash: 'empire', acct: 'empire', casa: 'empire', bank: 'empire', lux: 'empire', arms: 'fights', rank: 'fights', hitman: 'fights', ops: 'rob' };
 const upOf = (id) => (S.backTo && S.backTo[id]) || PARENT[id] || 'city';   // um sítio que está em duas zonas volta para a zona de onde vieste
 const tabOf = (id) => { let x = id; for (let k = 0; k < 4 && !NAV.includes(x); k++) x = upOf(x); return NAV.includes(x) ? x : 'city'; };
@@ -507,7 +509,7 @@ function shell() {
   updateHud();
 }
 
-const SCREENS = { job: screenJob, city: screenCity, empire: screenEmpire, news: screenNews, casino: screenCasino, roulette: screenRoulette, bj: screenBJ, dice: screenDice, wheel: screenWheel, slot: () => screenSlotGame('slot'), zeus: () => screenSlotGame('zeus'), doce: () => screenSlotGame('doce'), rebucado: () => screenSlotGame('rebucado'), rob: screenRob, club: screenClub, gym: screenGym, biz: screenBiz, port: screenPort, arms: screenArms, bank: screenBank,
+const SCREENS = { job: screenJob, city: screenCity, empire: screenEmpire, news: screenNews, casino: screenCasino, roulette: screenRoulette, bj: screenBJ, dice: screenDice, wheel: screenWheel, slot: () => screenSlotGame('slot'), zeus: () => screenSlotGame('zeus'), doce: () => screenSlotGame('doce'), rebucado: () => screenSlotGame('rebucado'), rob: screenRob, club: screenClub, gym: screenGym, gyms: screenGyms, biz: screenBiz, port: screenPort, arms: screenArms, bank: screenBank,
   hosp: screenHosp, jail: screenJail, gang: screenGang, work: screenWork, air: screenAir, putas: screenPutas, myclub: screenMyClub, mybro: screenMyBro, bolsa: screenBolsa, inv: screenInv, stash: screenStash, acct: screenAcct, casa: screenCasa, alley: screenAlley, lux: screenLux, fights: screenFights, rank: screenRank, hitman: screenHitman, ops: screenOps, gigs: screenGigs, parl: screenParl, cafe: screenCafe, museum: screenMuseum, uni: screenUni, cave: screenCave, feira: screenFeira, dig: screenDig, arquivo: screenArquivo };
 function render(force) {
   if (!S.st) return;
@@ -515,7 +517,7 @@ function render(force) {
   if (!PLACES[S.tab]) S.tab = 'city';
   // preso, só se vê a prisão (pedido de 17/11, 04:10): sem a barra de baixo nem o «voltar»; ao sair volta-se para onde se estava
   const preso = live(S.st.me).jail > 0;
-  if (preso && S.tab !== 'jail') { S.preJail = S.preJail || S.tab; S.tab = 'jail'; }
+  if (preso && S.tab !== 'jail' && !(S.tab === 'gym' && S.jailGym)) { S.preJail = S.preJail || S.tab; S.tab = 'jail'; }   // v94: e o ginásio do pátio
   else if (!preso && S.preJail) { S.tab = S.preJail === 'jail' ? 'rob' : S.preJail; S.preJail = null; }
   document.body.classList.toggle('preso', preso);
   // a barra de baixo só sai enquanto há um biscate ou turno a decorrer no ecrã
@@ -549,9 +551,9 @@ function tabDots() {
 
 // cabeçalho de cada local: voltar (para a zona de onde veio), nome e a imagem do sítio
 function pageHead(id, sub, noImg) {
-  const P = PLACES[id], up = NAV.includes(id) ? null : upOf(id);
+  const P = PLACES[id], up = id === 'gym' && S.st && live(S.st.me).jail ? 'jail' : NAV.includes(id) ? null : upOf(id);
   return h('div', { class: 'phead' },
-    h('div', { class: 'pbar' + (up ? '' : ' top') }, up ? h('button', { class: 'back', 'aria-label': t('p_' + up), on: { click: () => go(up) } }, h('span', { 'aria-hidden': 'true' }, '←')) : null, h('h1', null, t('p_' + id))),
+    h('div', { class: 'pbar' + (up ? '' : ' top') }, up ? h('button', { class: 'back' + (up === 'jail' ? ' tojail' : ''), 'aria-label': t('p_' + up), on: { click: () => go(up) } }, h('span', { 'aria-hidden': 'true' }, '←')) : null, h('h1', null, t('p_' + id))),
     // a imagem pequena (quase sempre já guardada, por ter aparecido no azulejo) fica de fundo enquanto a grande não chega
     P.img && !noImg ? h('div', { class: 'pimg im-' + P.img, style: `background-image:url(${IMG('cenas', P.img)})` }, h('img', { src: IMG('cenas', P.img, 1), alt: '', width: 1100, height: 1100, decoding: 'async', fetchpriority: 'high',
       on: { load: (e) => e.currentTarget.classList.add('in'), error: (e) => e.currentTarget.remove() } })) : null,
@@ -1821,6 +1823,7 @@ function screenJail() {
   out.push(h('h2', { class: 'sec' }, t('jailInT')), h('div', { class: 'card vlist vc jbl jaill' },
     row('contrabando', tint(t('jd_contrabando', { e: J.smuggleE, m: money(smug), p: pctOf(J.smuggleLoseBp) })), btn(t('jbSmuggle'), L.energy < J.smuggleE, 'jailSmuggle')),
     row('oficina', tint(t('jd_oficina', { e: J.workE, m: money(J.work) })), btn(t('jbWork'), L.vigor < J.workE, 'jailWork')),
+    row('ginasio', (() => { const P = gymCfg('prisao'); return P ? t('jd_ginasio', { f: gymNum(P.g[0]), t: gymNum(P.g[1]) }) : ''; })(), h('button', { class: 'btn sm ghost', on: { click: () => { S.jailGym = true; go('gym'); } } }, t('jbGym'))),   // v94: o ginásio do pátio
     row('patio', t('jd_patio', { e: J.yardE, m: money(bet) }), btn(t('jbYard'), L.vigor < J.yardE || cash < bet, 'jailYard')),
     row('cartas', t('jd_cartas', { m: money(J.cardsMax) }), h('div', { class: 'boxb' }, [10, 25, J.cardsMax].map((v) => h('button', { class: 'btn sm ghost num', disabled: cash < v, on: { click: (e) => act('jailCards', { bet: v }, { el: e.currentTarget }) } }, money(v)))), true),
     row('favores', t(favLeft === 1 ? 'jd_favores1' : 'jd_favores', { n: favLeft, t: J.favors, r: S.cfg.opSteps.contact }), h('div', { class: 'boxb' },
@@ -3233,7 +3236,9 @@ function examPanel(me, embed) {
 // topo há uma contagem de 3 no mesmo compasso, com tique em cada tempo. Cada repetição tem a sua janela (meio tempo para
 // cada lado); um toque lá dentro dá a nota, dois toques ou nenhum falham só essa repetição (a mesma conta do servidor).
 // Com movimento reduzido não há barra: a faixa da linha acende a meio do tempo e fica cheia no momento certo.
-const gymPts = (marks) => (marks.reduce((a, m) => a + S.cfg.train.set.q[m], 0) / 10000).toLocaleString(lang() === 'pt' ? 'pt-PT' : 'en-GB', { maximumFractionDigits: 1 });
+// v94: o ginásio multiplica (ganho da stat ÷ 2,0 × energia por repetição ÷ 5); sem ginásio (respostas antigas), o da garagem
+const gymK = (id, stat) => { const G = id && S.cfg.gyms ? S.cfg.gyms.list.find((g) => g.id === id) : null; return G ? (G.g[['F', 'T', 'I', 'C'].indexOf(stat)] * G.e) / (S.cfg.gyms.base * 5) : 1; };
+const gymPts = (marks, id, stat) => ((marks.reduce((a, m) => a + S.cfg.train.set.q[m], 0) * gymK(id, stat)) / 10000).toLocaleString(lang() === 'pt' ? 'pt-PT' : 'en-GB', { maximumFractionDigits: 1 });
 const gymVal = (v, part) => (v + part / 1000).toLocaleString(lang() === 'pt' ? 'pt-PT' : 'en-GB', { maximumFractionDigits: 1 });
 function gymNote(X, tt) {   // a nota de um toque, com o erro arredondado como no servidor
   const k = Math.round((tt - X.lead) / X.beat), err = Math.round(Math.abs(tt - (X.lead + k * X.beat)));
@@ -3303,14 +3308,15 @@ async function gymSeries(stat, reps, opener) {
     pad.disabled = true; quit.disabled = true;
     const r = await act('gymDone', { taps }, { quiet: why !== 'away' });
     const res = r && r.result;
-    if (res) S.gymLast = { stat, ...res };
+    if (res && res.reps) S.gymLast = { stat, ...res };   // desistir antes da primeira não é uma série
     if (!res || why === 'away') { close(); return; }
     if (!res.reps) { live.textContent = t('gyQuitNone'); say.textContent = t('gyQuitNone'); say.className = 'gy-say'; setTimeout(close, 1200); return; }
     [...dots.children].forEach((d, i) => { d.className = i < res.marks.length ? 'm' + res.marks[i] : ''; });   // as notas do servidor
+    cnt.textContent = t('gyRep', { k: res.reps, n: reps });   // no fim, as que contaram (o último tique podia não ter chegado)
     const k = res.marks.filter((m) => m < 2).length, sum = h('div', { class: 'gy-sum' },
-      h('b', { class: 'num' }, '+' + gymPts(res.marks)),
+      h('b', { class: 'num' }, '+' + gymPts(res.marks, res.gym, stat)),
       h('span', null, t('stat' + stat) + ' ' + gymVal(res.value, res.part) + ' · ' + t('gyOn', { k, n: res.reps })));
-    say.replaceWith(sum); live.textContent = t('tGym', { p: gymPts(res.marks), x: t('stat' + stat).toLowerCase(), k, n: res.reps });
+    say.replaceWith(sum); live.textContent = t('tGym', { p: gymPts(res.marks, res.gym, stat), x: t('stat' + stat).toLowerCase(), k, n: res.reps });
     pad.disabled = false; pad.textContent = t('gyClose'); pad.onclick = close; pad.focus();
     setTimeout(() => { if (box.isConnected) close(); }, 2400);
   };
@@ -3329,16 +3335,48 @@ async function gymSeries(stat, reps, opener) {
   pad.focus();
 }
 
+// v94: ginásios como no Torn — vários pelo mundo, uns melhores do que outros. Cada um dá o seu ganho a cada stat (2,0 é o da garagem)
+// e gasta 5, 10 ou 15 de energia por repetição; os seguintes abrem com a energia lá gasta e a entrada paga. Preso, treina-se no pátio.
+const GYM_IMG = (id) => `/img/ginasios/${id}.webp?1`;
+const gymCfg = (id) => S.cfg.gyms && S.cfg.gyms.list.find((g) => g.id === id);
+const gymHere = (me) => gymCfg(live(me).jail ? 'prisao' : me.gym || 'garagem') || gymCfg('garagem');
+const gymG = (G, s) => G.g[['F', 'T', 'I', 'C'].indexOf(s)];
+const gymNum = (v) => (v / 10).toLocaleString(lang() === 'pt' ? 'pt-PT' : 'en-GB', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+function gymReqOk(me, G) {
+  const v = (k) => me.stats[k] || 0, R = S.cfg.gyms.ratio, all = ['F', 'T', 'I', 'C'];
+  if (G.solo) return all.filter((k) => k !== G.solo).every((k) => v(G.solo) * 10000 >= v(k) * R);
+  if (G.duo) { const a = G.duo.reduce((x, k) => x + v(k), 0), b = all.filter((k) => !G.duo.includes(k)).reduce((x, k) => x + v(k), 0); return a * 10000 >= b * R; }
+  return true;
+}
+const gymReqTxt = (G) => t('gyReq', { s: G.solo ? t('stS_' + G.solo) : G.duo.map((k) => t('stS_' + k)).join('+') });
+function gymThumb(id, cls = 'gyth') {
+  return h('img', { class: cls, src: GYM_IMG(id), alt: '', width: 120, height: 120, decoding: 'async', on: { error: (e) => { e.currentTarget.style.visibility = 'hidden'; } } });
+}
+// a grelha dos ganhos (For, Tol, Int, Car): os números, sem nome por cima (o cabeçalho das colunas está por cima da lista);
+// a verde o que é melhor do que no ginásio onde se treina
+function gymGrid(G, cur, labels) {
+  return h('dl', { class: 'gyg' + (labels ? ' lb' : '') }, ['F', 'T', 'I', 'C'].map((st) => { const v = gymG(G, st), c = cur && cur !== G ? gymG(cur, st) : null;
+    return h('div', { class: v ? (c !== null && v > c ? 'up' : '') : 'z' }, labels ? h('dt', null, t('stS_' + st)) : null, h('dd', { class: 'num' }, v ? gymNum(v) : '')); }));
+}
 function screenGym() {
-  const me = S.st.me, L = live(me), E = S.cfg.train.energy;
+  const me = S.st.me, L = live(me), G = gymHere(me), jail = !!L.jail, E = G.e;
   // v92: como nos golpes, o ginásio abre direto no que se faz (sem fotografia nem texto por cima); a energia já está na barra de cima
   const out = [pageHead('gym', null, true)];
-  const b = busyBanner(me); if (b) out.push(b);
+  const b = jail ? null : busyBanner(me); if (b) out.push(b);
+  const req = gymReqOk(me, G);
+  // onde se treina (preso, na prisão): fotografia, nome, cidade, o ganho de cada stat e o que custa cada repetição
+  out.push(h('div', { class: 'gymc' },
+    h('div', { class: 'gymc-t' }, gymThumb(G.id, 'gyth big'),
+      h('div', { class: 'grow' }, h('b', null, t('gyn_' + G.id)), G.tier !== 'prisao' ? h('div', { class: 'small muted' }, t('gyc_' + G.id)) : null),   // a energia de cada repetição já está nos botões
+      jail ? null : h('button', { class: 'btn sm', on: { click: () => go('gyms') } }, t('gyChange'))),
+    gymGrid(G, null, true)));
+  if (!req) out.push(h('p', { class: 'small c-red gyreq' }, gymReqTxt(G) + ' ✗'));
   out.push(h('div', { class: 'gpow' },
-    h('div', null, icon('fist'), h('b', { class: 'num' }, num(me.attack)), h('span', null, t('attackPower'))),
+    h('div', null, icon('target'), h('b', { class: 'num' }, num(me.attack)), h('span', null, t('attackPower'))),
     h('div', null, icon('shield'), h('b', { class: 'num' }, num(me.defense)), h('span', null, t('defensePower')))));
   const X = S.cfg.train.set, [r1, r2] = X ? X.reps : [5, 10];
-  out.push(h('div', { class: 'gyl' }, ['F', 'I', 'C', 'T'].map((s) => {
+  const off = ['F', 'T', 'I', 'C'].filter((s) => !gymG(G, s));
+  out.push(h('div', { class: 'gyl' }, ['F', 'T', 'I', 'C'].filter((s) => gymG(G, s)).map((s) => {
     const last = S.gymLast && S.gymLast.stat === s ? S.gymLast : null;
     return h('div', { class: 'gyi' },
       h('div', { class: 'gyh' }, art('stats', s, 'gimg'),
@@ -3347,13 +3385,51 @@ function screenGym() {
           h('p', { class: 'small muted' }, t('stat' + s + 'd')),
           // a prática dos golpes só aparece quando já há alguma (uma barra vazia sem nome não dizia nada)
           me.xp && s !== 'T' && me.xp[s] > 0 ? h('div', { class: 'gyxp' }, h('span', { class: 'small muted' }, t('practiceLbl')),
-            h('div', { class: 'fill', role: 'img', 'aria-label': t('practiceLbl') + ' ' + Math.min(100, Math.floor((me.xp[s] / me.xpNeed[s]) * 100)) + '%' }, h('i', { style: `width:${Math.min(100, (me.xp[s] / me.xpNeed[s]) * 100)}%;background:var(--energy)` }))) : null)),
-      last ? h('p', { class: 'small glast' }, t('gyLast', { k: last.marks.filter((m) => m < 2).length, n: last.marks.length, p: gymPts(last.marks) })) : null,
+            h('div', { class: 'fill', role: 'img', 'aria-label': t('practiceLbl') + ' ' + Math.min(100, Math.floor((me.xp[s] / me.xpNeed[s]) * 100)) + '%' }, h('i', { style: `width:${Math.min(100, (me.xp[s] / me.xpNeed[s]) * 100)}%;background:var(--energy)` }))) : null,
+          last ? h('p', { class: 'small glast num' }, t('gyLast', { k: last.marks.filter((m) => m < 2).length, n: last.marks.length, p: gymPts(last.marks, last.gym, last.stat) })) : null)),
       // v82: treinar é uma série no ritmo; a curta e a longa
-      h('div', { class: 'gymr' }, [r1, r2].map((n) => h('button', { class: 'btn', 'data-gym': s + n, disabled: !!b || L.vigor < n * E, on: { click: (e) => gymSeries(s, n, e.currentTarget) } },
+      h('div', { class: 'gymr' }, [r1, r2].map((n) => h('button', { class: 'btn', 'data-gym': s + n, disabled: !!b || !req || L.vigor < n * E, on: { click: (e) => gymSeries(s, n, e.currentTarget) } },
         h('span', null, t('gyGo', { n })), h('span', { class: 'gy-e' }, t('gyGoE', { e: n * E }))))));
   })));
-  out.push(h('p', { class: 'small muted gyhelp' }, t('gySub', { e: E }), ' ', t('vigorSub')));
+  // v94: as stats que este ginásio não treina ficam numa linha (cartões inteiros só para dizer «não» era espaço perdido)
+  if (off.length) out.push(h('p', { class: 'small muted gyoff' }, t('gyNoList', { x: off.map((s) => t('stat' + s)).join(' · ') })));
+  return out;
+}
+// a lista dos ginásios, um escalão de cada vez (abre no do próximo a abrir): o ganho de cada stat, o que custa, e o que falta para abrir
+function screenGyms() {
+  const me = S.st.me, L = live(me), list = S.cfg.gyms.list, normal = list.filter((G) => ['leve', 'medio', 'pesado'].includes(G.tier));
+  const nextI = normal.findIndex((G) => !me.gyms.includes(G.id)), cur = L.jail ? null : me.gym, curG = gymCfg(cur);
+  const tiers = ['leve', 'medio', 'pesado', 'esp'];
+  if (!tiers.includes(S.gymTier)) S.gymTier = nextI >= 0 ? normal[nextI].tier : 'esp';
+  const tier = S.gymTier, G0 = list.find((G) => G.tier === tier), gx = me.gx || 0;
+  const out = [pageHead('gyms')];
+  out.push(h('div', { class: 'gyspent' }, h('span', { class: 'small muted' }, t('gySpent')), h('b', { class: 'num' }, num(gx))));
+  out.push(h('div', { class: 'seg gyseg', role: 'group', 'aria-label': t('p_gyms') }, tiers.map((k) => h('button', { 'aria-pressed': k === tier ? 'true' : 'false', on: { click: () => { S.gymTier = k; render(); } } }, t('gyT_' + k)))));
+  out.push(h('div', { class: 'gyhd' }, h('span', { class: 'small muted num' }, t('gyPerRep', { e: G0.e })),
+    h('div', { class: 'gyg hd', 'aria-hidden': 'true' }, ['F', 'T', 'I', 'C'].map((st) => h('span', null, t('stS_' + st))))));
+  out.push(h('div', { class: 'card vlist vc gylist' }, list.filter((G) => G.tier === tier).map((G) => {
+    const have = me.gyms.includes(G.id), i = normal.indexOf(G);
+    const open = !have && (tier === 'esp' ? me.gyms.includes(G.after) : i === nextI && gx >= G.xp);
+    const price = h('span', { class: 'nw' }, moneyShort(G.price));
+    let actn;
+    if (G.id === cur) actn = h('span', { class: 'small c-cash gyhere' }, t('gyCur'));
+    else if (have) actn = h('button', { class: 'btn sm', disabled: !!L.jail, on: { click: (e) => act('gymUse', { id: G.id }, { el: e.currentTarget }) } }, t('gyUse'));
+    else if (open) actn = h('button', { class: 'btn sm buy num', disabled: me.cash + me.bank < G.price, on: { click: (e) => act('gymBuy', { id: G.id }, { el: e.currentTarget }) } }, t('gyBuy', { m: moneyShort(G.price) }));
+    else if (tier === 'esp') actn = h('span', { class: 'small muted num' }, t('gyAfter', { x: t('gyn_' + G.after) }) + ' · ', price);
+    else if (i === nextI) {
+      const p = Math.min(1, gx / G.xp);
+      actn = h('div', { class: 'gylock' }, h('div', { class: 'fill', role: 'img', 'aria-label': Math.floor(p * 100) + '%' }, h('i', { style: `width:${p * 100}%;background:var(--energy)` })),
+        h('span', { class: 'small muted num' }, t('gyNeedE', { a: num(gx), b: num(G.xp) }) + ' · ', price));
+    } else actn = h('span', { class: 'small muted num' }, t('gyLockE', { b: num(G.xp) }) + ' · ', price);   // os seguintes: a energia que pedem e a entrada
+    // o que os de elite pedem: em números, com ✓ ou ✗ (a vermelho só quando já se pode lá entrar)
+    const rq = G.solo || G.duo ? gymReqOk(me, G) : null;
+    return h('div', { class: 'vrow gyrow' + (G.id === cur ? ' on' : '') + (have || open ? '' : ' lk') }, gymThumb(G.id),
+      h('div', { class: 'grow' },
+        h('div', { class: 'gynm' }, h('b', null, t('gyn_' + G.id)), h('span', { class: 'small muted' }, t('gyc_' + G.id))),
+        gymGrid(G, curG, false),
+        rq !== null ? h('p', { class: 'small num ' + (rq ? 'c-cash' : have || open ? 'c-red' : 'muted') }, gymReqTxt(G) + (rq ? ' ✓' : ' ✗')) : null,
+        actn));
+  })));
   return out;
 }
 
