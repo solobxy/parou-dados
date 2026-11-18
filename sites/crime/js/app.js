@@ -707,7 +707,7 @@ function screenClass() {
 
 // ---------- a cidade ----------
 // ---------- jornal da cidade: o que os outros andam a fazer ----------
-const NW_IC = { season: 'crown', hitman: 'skull', hitmanFail: 'shield', stockWin: 'cash', stockLoss: 'skull', stockBust: 'skull', air: 'cash', airLost: 'lock', cls: 'user', gangNew: 'fist', gangUp: 'empire', gangHeist: 'cash', gangHeistFail: 'lock', gangHit: 'fist', gangHitFail: 'skull', casino: 'gem', casinoLoss: 'skull', job: 'cash', crit: 'gem', spree: 'bolt', jail: 'lock', house: 'empire', lux: 'crown', beat: 'fist', mug: 'cash', fail: 'skull', sick: 'pill', lvl: 'crown', fight: 'fist', op: 'cash', opJail: 'lock', escape: 'bolt', mus: 'crown' };
+const NW_IC = { season: 'crown', hitman: 'skull', hitmanFail: 'shield', stockWin: 'cash', stockLoss: 'skull', stockBust: 'skull', air: 'cash', airLost: 'lock', cls: 'user', gangNew: 'fist', gangUp: 'empire', gangHeist: 'cash', gangHeistFail: 'lock', gangHit: 'fist', gangHitFail: 'skull', warDecl: 'fist', warStart: 'fist', warEnd: 'crown', casino: 'gem', casinoLoss: 'skull', job: 'cash', crit: 'gem', spree: 'bolt', jail: 'lock', house: 'empire', lux: 'crown', beat: 'fist', mug: 'cash', fail: 'skull', sick: 'pill', lvl: 'crown', fight: 'fist', op: 'cash', opJail: 'lock', escape: 'bolt', mus: 'crown' };
 const seedOf = (str) => { let x = 7; for (let i = 0; i < str.length; i++) x = (x * 31 + str.charCodeAt(i)) | 0; return Math.abs(x); };
 // a gangue da rua (a do bot) tem nome próprio em cada língua; as dos jogadores ficam como eles as escreveram
 const gName = (name) => (name === S.cfg?.gang?.bot?.name ? t('gBotName') : name);
@@ -724,6 +724,9 @@ function newsText(e) {
   if (k === 'cls') return tv('nw_cls', seedOf(e.name + k + e.t), { a: e.name, x: t('cl_' + e.from), y: t('cl_' + e.to) });
   if (k === 'gangHeist' || k === 'gangHeistFail') return tv('nw_' + k, seedOf(e.gang + k + e.t), { g: e.gang, x: t('gh_' + e.c), n: e.n, m: money(e.money || 0) });
   if (k === 'gangHit' || k === 'gangHitFail') return tv('nw_' + k, seedOf(e.gang + k + e.t), { g: e.gang, b: e.target, n: e.n });
+  if (k === 'warDecl' || k === 'warStart') return tv('nw_' + k, seedOf(e.a.tag + e.b.tag + k + e.t), { a: e.a.name, b: e.b.name, m: money(e.stake || 0), n: num(e.t0 || 0) });   // v102: guerras
+  if (k === 'warEnd') { const W = e.win === 'a' ? e.a : e.b, L = e.win === 'a' ? e.b : e.a;
+    return e.win ? tv('nw_warEnd', seedOf(e.a.tag + e.b.tag + k + e.t), { a: W.name, b: L.name, x: num(Math.max(e.sa, e.sb)), y: num(Math.min(e.sa, e.sb)) }) : t('nw_warDraw', { a: e.a.name, b: e.b.name, x: num(e.sa), y: num(e.sb) }); }
   const x = k === 'op' || k === 'opJail' ? t('op_' + e.o) : k === 'house' ? list('houses')[e.h] : k === 'lux' ? list('lux')[e.i] : k === 'lvl' ? titleOf(e.n) : k === 'mus' ? t('muSet_' + e.set) : k === 'hrec' ? (lang() === 'pt' ? t('hs_' + e.sp).toLowerCase() : t('hs_' + e.sp)) : k === 'hcaught' ? t('hsite_' + e.site) : k.startsWith('casino') ? t('csIn_' + e.g) : C[e.c];
   return tv('nw_' + k, seedOf(e.name + k + e.t), { a: e.name, b: e.target, x, m: money(e.money || 0), n: e.n });
 }
@@ -3559,7 +3562,7 @@ function honItem(h) {
   return k;
 }
 const honName = (h) => t('hon_' + h.m, { x: honItem(h) }) + (h.of > 1 ? ' ' + ROMAN[h.t] : '');
-const HON_ONE = ['crits', 'pvp', 'hosp', 'ports', 'air', 'trips', 'hunts', 'kills', 'gold', 'musn', 'digs', 'books', 'jail', 'esc', 'mods', 'bizn'];   // as que têm um degrau de 1 (o texto no singular)
+const HON_ONE = ['crits', 'pvp', 'hosp', 'ports', 'air', 'trips', 'wars', 'hunts', 'kills', 'gold', 'musn', 'digs', 'books', 'jail', 'esc', 'mods', 'bizn'];   // as que têm um degrau de 1 (o texto no singular)
 const honDesc = (h) => t((h.at === 1 && HON_ONE.includes(h.m) ? 'hond1_' : 'hond_') + h.m, { x: h.m === 'trips' ? trCityF(h.k, 'A') : honItem(h), n: h.m === 'nw' ? money(h.at) : num(h.at) });   // (v101: «10 viagens ao Cairo»)
 const HON_SAME = ['biz', 'house', 'lux', 'course', 'mus', 'wt', 'sp'];   // a descrição só repetiria o nome (nas que já tens)
 const honVal = (me, h) => (me.honv || {})[h.m + (h.k ? ':' + h.k : '')] || 0;
@@ -4864,6 +4867,11 @@ function eventRow(e) {
   if (e.k === 'gangBail' || e.k === 'gangMedic') return h('div', { class: 'card row' }, h('span', { class: 'c-cash' }, icon(e.k === 'gangBail' ? 'lock' : 'pill')),
     h('div', { class: 'grow' }, h('div', null, t(e.k === 'gangBail' ? 'evBail' : 'evMedic', { who: e.by, m: money(e.money) })), h('div', { class: 'small muted' }, dur(now() - e.t))));
   if (e.k === 'gop') return opResult(e, e.out || e.cancelled ? 0 : e.respect, e.t);
+  if (e.k === 'warDecl') return h('div', { class: 'card row' }, h('span', { class: 'c-red' }, icon('fist')),   // v102
+    h('div', { class: 'grow' }, h('div', null, t(e.ours ? 'evWarOurs' : 'evWarTheirs', { g: e.vs.name, h: hhmm(e.start) })), h('div', { class: 'small muted' }, dur(now() - e.t))));
+  if (e.k === 'warEnd') return h('div', { class: 'card row' }, h('span', { class: e.won ? 'c-cash' : e.draw ? 'muted' : 'c-red' }, icon(e.won ? 'crown' : 'fist')),
+    h('div', { class: 'grow' }, h('div', null, t(e.won ? 'evWarWon' : e.draw ? 'evWarDraw' : 'evWarLost', { g: e.vs.name, a: num(e.sa), b: num(e.sb) }) + (e.respect ? ' ' + t('evWarResp', { n: num(e.respect) }) : '') + (e.stake ? ' ' + t('evWarStake', { m: money(e.stake) }) : '')),
+      h('div', { class: 'small muted' }, dur(now() - e.t))));
   if (e.k === 'stAuto') return h('div', { class: 'card row' }, h('span', { class: e.profit >= 0 ? 'c-cash' : 'c-red' }, icon('gem')),
     h('div', { class: 'grow' }, h('div', null, t(e.why === 'tp' ? 'evStTp' : 'evStSl', { x: t('st_' + e.c), n: num(e.n), m: money(e.money || 0), g: (e.profit >= 0 ? '+' : '−') + money(Math.abs(e.profit || 0)) })), h('div', { class: 'small muted' }, dur(now() - e.t))));
   if (e.k === 'stDiv') return h('div', { class: 'card row' }, h('span', { class: 'c-cash' }, icon('cash')),
@@ -5007,6 +5015,77 @@ function gangRow(g, me) {
       me.gang ? null : h('button', { class: 'btn sm' + (g.open ? ' buy' : ''), disabled: full || lowLvl || g.asked || me.gangWait > now(), on: { click: () => gAct('gangJoin', { id: g.id }) } },
         full ? t('gFull') : g.asked ? t('gAsked') : g.open ? t('gJoin') : t('gAsk'))));
 }
+// ===== Guerras entre gangues (v102) =====
+// Um cabo de guerra: a barra mostra a vantagem de cada lado contra o alvo (que desce ao fim de um dia). Por baixo, os inimigos com o
+// botão de cada um (como nas lutas) e quem mais pontuou. Sem guerra: quem pode declara a partir da lista das gangues.
+const warTag = (x) => h('span', { class: 'gtag' }, x.tag);
+// a barra: o meio é o empate e cada ponta é a vitória de um lado (o nosso à esquerda)
+function warBar(W, mine) {
+  const lead = W.me - W.them, T = Math.max(1, W.target), k = Math.max(-1, Math.min(1, lead / T));
+  return h('div', { class: 'wbarw' }, h('span', { class: 'gtag' }, mine.tag),
+    h('div', { class: 'wbar', role: 'img', 'aria-label': t('wLeadA', { a: num(W.me), b: num(W.them), c: num(W.target) }) },
+      h('i', { class: 'wmid' }), h('i', { class: 'wfill ' + (lead >= 0 ? 'up' : 'down'), style: lead >= 0 ? `right:50%;width:${(k * 50).toFixed(1)}%` : `left:50%;width:${(-k * 50).toFixed(1)}%` })),
+    h('span', { class: 'gtag' }, W.vs.tag));
+}
+function warEnemy(x, b, best) {
+  const n = now(), st = x.at ? t(x.fly ? 'whyFly' : 'whyAway', { x: x.fly ? trCityF(x.at, 'Para') : trCity(x.at) }) : x.why ? errText(x.why) : null;
+  return h('div', { class: 'card tgt' + (x.why ? ' off' : '') },
+    h('div', { class: 'who2' }, S.avOk ? h('img', { class: 'avs', src: AV(x.av || 0), alt: '', width: 96, height: 96, loading: 'lazy' }) : null,
+      h('div', null, h('div', { class: 'nm' }, x.name), h('div', { class: 'small muted num' }, t('gMemberLine', { l: x.level, r: short(x.respect) })),
+        st ? h('div', { class: 'why' }, st, x.until > n ? [' · ', h('b', { class: 'num', dataset: { opend: x.until } }, dur(x.until - n))] : null) : null)),
+    x.why ? null : h('div', { class: 'pct ' + chanceCls(x.chance) }, pct(x.chance), h('small', null, t('chanceLbl'))),
+    x.why ? null : h('div', { class: 'acts' },
+      h('button', { class: 'btn ' + (best ? 'buy' : 'ghost') + ' sm', disabled: !!b, on: { click: (e) => { const el = e.currentTarget; withShield((drop) => act('attack', { target: x.name, mode: 'beat', drop }, { el }).then(() => loadGang())); } } }, t('beat') + ' · ' + t('wPts', { n: x.gain })),
+      h('button', { class: 'btn ghost sm', disabled: !!b, on: { click: (e) => { const el = e.currentTarget; withShield((drop) => act('attack', { target: x.name, mode: 'mug', drop }, { el }).then(() => loadGang())); } } }, t('rob') + ' · ' + t('wPts', { n: Math.floor((x.gain * S.cfg.gang.war.mugBp) / 10000) }) + ' · ~' + money(x.loot))));
+}
+function gangWar(mine, me, list) {
+  const V = mine.war; if (!V) return [];
+  const W = V.war, n = now(), out = [];
+  if (W) {
+    const prep = n < W.start, lead = W.me - W.them;
+    out.push(h('section', { class: 'card stack wcard' },
+      h('div', { class: 'row sp' }, h('div', null, h('div', { class: 'small muted' }, t(prep ? 'wPrepT' : 'wOnT')), h('div', { class: 'wvs' }, warTag(W.vs), ' ' + gName(W.vs.name))),
+        h('div', { class: 'wtime num' }, h('span', { dataset: { left: prep ? W.start : W.ends } }, dur(Math.max(0, (prep ? W.start : W.ends) - n))), h('small', null, t(prep ? 'wStartsIn' : 'wEndsIn')))),
+      h('div', { class: 'wscore num' }, h('span', { class: 'gtag' }, mine.tag), h('b', { class: 'c-cash' }, num(W.me)), h('span', { class: 'muted' }, '–'), h('b', { class: 'c-red' }, num(W.them)), h('span', { class: 'gtag' }, W.vs.tag)),
+      warBar(W, mine),
+      // o que falta para ganhar (a nós, se vamos à frente; a eles, se vão eles); o alvo em pequeno
+      h('div', { class: 'row sp num wleft' }, h('b', { class: lead > 0 ? 'c-cash' : lead < 0 ? 'c-red' : '' }, lead >= 0 ? t('wToWin', { n: num(Math.max(0, W.target - lead)) }) : t('wToLose', { n: num(Math.max(0, W.target + lead)) })),
+        h('span', { class: 'small muted' }, t('wTarget', { n: num(W.target) }))),
+      h('p', { class: 'small muted' }, n < W.drops ? t('wDrops', { t: dur(W.drops - n) }) : t('wDropping', { p: S.cfg.gang.war.dropBp / 100 })),
+      W.top.length || W.topThem.length ? h('div', { class: 'wlead' }, [[W.top, 'c-cash', t('wOurs')], [W.topThem, 'c-red', t('wTheirs')]].map(([L, c, lbl]) => h('div', null, h('div', { class: 'small muted' }, lbl),
+        L.length ? h('ol', null, L.map((x) => h('li', { class: 'small num' + (x.name === S.st.me.name ? ' me' : '') }, h('span', null, x.name), h('b', { class: c }, num(x.n))))) : h('p', { class: 'small muted' }, '—')))) : null,
+      W.mine && !W.top.some((x) => x.name === S.st.me.name) ? h('p', { class: 'small' }, t('wMine', { n: num(W.mine) })) : null));
+    if (!prep) {
+      const b = busyBanner(me), can = W.enemies.filter((x) => !x.why), cant = W.enemies.filter((x) => x.why);
+      out.push(h('h2', { class: 'sec' }, t('wEnemiesT', { a: can.length, b: W.enemies.length })));
+      if (b) out.push(b);
+      const best = can.slice().sort((x, y) => y.chance * y.gain - x.chance * x.gain)[0];   // só o melhor alvo fica com o botão principal
+      out.push(h('div', { class: 'stack wens' }, [...can, ...cant].map((x) => warEnemy(x, b, x === best))));
+    } else out.push(h('p', { class: 'small muted wnote' }, t('wPrepNote')));
+    return out;
+  }
+  // sem guerra: o histórico e, para quem pode, a lista das gangues a quem se pode declarar
+  const canDecl = (mine.role || 0) >= V.role, alvos = (list || []).filter((g) => g.id !== mine.id);
+  out.push(h('h2', { class: 'sec' }, t('wT')));
+  if (V.hist.length) out.push(h('div', { class: 'card vlist vc' }, V.hist.map((x) => h('div', { class: 'vrow' }, h('span', { class: x.draw ? 'muted' : x.won ? 'c-cash' : 'c-red' }, icon(x.won ? 'crown' : 'fist')),
+    h('div', { class: 'grow' }, h('b', null, warTag(x.vs), ' ' + gName(x.vs.name)), h('div', { class: 'small muted num' }, t(x.draw ? 'wDraw' : x.won ? 'wWon' : 'wLost') + ' · ' + num(x.s) + '–' + num(x.t) + ' · ' + dur(n - x.fim)))))));
+  if (V.cool > 0) out.push(h('p', { class: 'small muted' }, t('wCool', { t: dur(V.cool) })));
+  else if (!canDecl) out.push(h('p', { class: 'small muted' }, t('wWhoDecl')));
+  else {
+    const ok = alvos.filter((g) => !g.warWhy), no = alvos.filter((g) => g.warWhy);
+    const ratio = (g) => (mine.respect > 0 ? (g.respect / mine.respect).toLocaleString(lang() === 'pt' ? 'pt-PT' : 'en-GB', { maximumFractionDigits: 1 }) : '—');
+    out.push(h('div', { class: 'card vlist vc' }, h('p', { class: 'small muted' }, t('wHow', { m: money(V.stake), p: S.cfg.gang.war.strengthBp / 100 })),
+      !alvos.length ? h('p', { class: 'small muted' }, t('wNone')) : null,
+      [...ok, ...no].slice(0, 12).map((g) => {
+        const b = !g.warWhy ? sureBtn('btn ghost sm dng num', t('wDecl', { m: moneyShort(V.stake) }), 'btn sm dng num', t('wDeclSure', { d: Math.round(S.cfg.gang.war.maxMs / 86400000) }), () => gAct('gangWar', { id: g.id }, { el: b })) : null;
+        if (b && mine.fund < V.stake) b.disabled = true;
+        const r = g.respect / Math.max(1, mine.respect);
+        return h('div', { class: 'vrow wrow' }, h('div', { class: 'grow' }, h('b', null, warTag(g), ' ' + gName(g.name)), h('div', { class: 'small num' }, h('span', { class: r > 1.2 ? 'c-red' : r < 0.8 ? 'c-cash' : 'muted' }, t('wRatio', { x: ratio(g) })), h('span', { class: 'muted' }, ' · ' + t('wMembers', { n: g.members }))),
+          g.warWhy ? h('div', { class: 'small muted' }, errText(g.warWhy)) : mine.fund < V.stake ? h('div', { class: 'small c-red' }, t('wNoFund', { m: money(V.stake - mine.fund) })) : null), b);
+      })));
+  }
+  return out;
+}
 // Negócios da gangue: cada um põe o seu e ganha sobre o que pôs; os sócios ao mesmo nível dão bónus uns aos outros.
 function gangBiz(mine, me) {
   const G = S.cfg.gang, list0 = mine.biz || []; if (!list0.length) return [];
@@ -5074,8 +5153,13 @@ function screenGang() {
   out.push(h('div', { class: 'power' },
     h('div', { class: 'card' }, h('b', { class: 'c-cash' }, '+' + (G.lootBpPer * mine.sede) / 100 + '%'), h('span', { class: 'small muted' }, t('gBonusLoot', { n: mine.sede }))),
     h('div', { class: 'card' }, h('b', { class: 'c-red' }, '+' + (G.fightBpPer * mine.armaria) / 100 + '%'), h('span', { class: 'small muted' }, t('gBonusFight', { n: mine.armaria })))));
+  const emGuerra = !!mine.war?.war;
+  const quemDeclara = !mine.bot && (mine.role || 0) >= (mine.war?.role || 9);
+  if (emGuerra) out.splice(out.length - 1, 0, ...gangWar(mine, me, d.list));   // v102: em guerra, a guerra vem primeiro (antes dos bónus)
+  else if (quemDeclara) out.push(...gangWar(mine, me, d.list));   // quem pode declarar vê as guerras antes dos golpes
   out.push(...gangOps(mine, me));
   out.push(...gangBiz(mine, me));
+  if (!emGuerra && !quemDeclara) out.push(...gangWar(mine, me, d.list));
   // cofre e melhorias (a gangue da rua não tem)
   if (!mine.bot) out.push(h('h2', { class: 'sec' }, t('gFundT')));
   const give = [0.1, 0.25, 0.5].map((f) => Math.floor(liquid * f)).filter((v, i, a) => v >= G.donateMin && a.indexOf(v) === i);
@@ -5114,7 +5198,8 @@ function screenGang() {
   out.push(h('div', { class: 'card gchat' },
     mine.chat.length ? h('div', { class: 'gmsgs' }, mine.chat.map((m) => h('div', { class: 'gmsg' + (m.me ? ' me' : '') }, h('b', null, m.name), h('span', null, m.txt), h('small', { class: 'muted' }, dur(Math.max(0, now() - m.t)))))) : h('p', { class: 'small muted' }, t('gChatNone')),
     h('div', { class: 'row', style: 'gap:8px' }, h('label', { class: 'sr', for: 'gmsg' }, t('gChatPh')), inp, h('button', { class: 'btn buy', on: { click: send } }, t('gSend')))));
-  out.push(h('button', { class: 'btn ghost block', style: 'margin-top:16px', on: { click: () => {
+  if (mine.war?.war) out.push(h('p', { class: 'small muted', style: 'margin-top:16px' }, t('wLocked', { t: dur(Math.max(0, mine.war.war.ends - now())) })));   // v102: ninguém sai durante a guerra
+  out.push(h('button', { class: 'btn ghost block', style: 'margin-top:16px', disabled: !!mine.war?.war, on: { click: () => {
     const inv = (mine.biz || []).reduce((x, b) => x + b.inv, 0), sto = (mine.biz || []).reduce((x, b) => x + b.stored, 0);
     const close = sheet(h('div', { class: 'stack' }, h('h2', null, t('gLeaveT')), h('p', null, mine.bot ? t('gLeaveBot', { h: Math.round(S.cfg.gang.bot.rejoinMs / 3600000) }) : t(mine.members === 1 ? 'gLeaveLast' : boss ? 'gLeaveBoss' : 'gLeaveSub')),
       inv > 0 ? h('p', { class: 'c-red' }, t('gLeaveBiz', { a: money(inv), m: money(Math.floor((inv * (S.cfg.gang.bizRefundBp || 0)) / 10000) + sto) })) : null,

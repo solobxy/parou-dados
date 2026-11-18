@@ -29,7 +29,7 @@ const RONDA_TESTE = process.env.PRIMEIRA_RONDA ? dataDe(process.env.PRIMEIRA_RON
 // Épocas de 28 dias a contar da sexta 13/11/2026 às 21:00 de Lisboa (PRIMEIRA_EPOCA=AAAA-MM-DD muda-a, para testes)
 const ANCORA = dataDe(process.env.PRIMEIRA_EPOCA || process.env.PRIMEIRA_RONDA || '2026-11-13');
 const rng = process.env.TESTE_SEMENTE ? seededRng(+process.env.TESTE_SEMENTE) : cryptoRng();   // nos testes, a sorte pode ser sempre a mesma
-const VERSAO = 101;   // sobe quando o servidor muda, para se confirmar de fora que a versão nova já está a correr
+const VERSAO = 102;   // sobe quando o servidor muda, para se confirmar de fora que a versão nova já está a correr
 const ATOS_3S = +(process.env.ATOS_3S || 15), ATOS_MIN = +(process.env.ATOS_MIN || 400); // ações por conta: 15 em 3 s, 400 por minuto
 
 // ---------- relógio que nunca anda para trás ----------
@@ -104,7 +104,7 @@ const fromJson = (s) => JSON.parse(s, (k, v) => (v && v.__map ? new Map(v.__map)
 // última hora: o que os jogadores fazem, guardado na base de dados (sobrevive a reinícios)
 const jornal = [];
 // v77: a última hora tem um travão por categoria (engine/noticias.js): com muita gente passam só as maiores, ao mesmo ritmo
-const SEM_TRAVAO = new Set(['season', 'stockBust']);
+const SEM_TRAVAO = new Set(['season', 'stockBust', 'warDecl', 'warStart', 'warEnd']);   // (v102: as guerras são raras e saem sempre)
 const nw = () => (bolsa && bolsa.w ? NW.newsUp(bolsa.w) : null);
 // v98: os recordes de caça da época (o maior troféu de cada espécie, com o nome de quem o caçou)
 function recordesCaca(mk, p, now, r) {
@@ -347,6 +347,7 @@ function carregarRonda(n) {
   }
   for (const r of q.noticias.all(n).reverse()) jornal.push({ t: r.t, ...JSON.parse(r.dados) });
   carregarGangues();
+  carregarGuerras();
 }
 
 function nomeDe(id) {
@@ -1024,6 +1025,7 @@ function acertaVai(g, now, s = opEstado(g, now)) {
 // Fecha um pedido: faz o golpe (ou a tareia) com quem está em condições, ou cancela-o (cancela = o motivo) e devolve a stamina a todos.
 function resolverOp(g, now, s, cancela = null) {
   const op = g.op, { todos, ps, d } = s, antes = new Map(todos.map((p) => [p.id, p.respect]));
+  let guerraHit = null;   // v102: [gangue, inimiga, quem, pontos] para contar depois de gravado
   const fora = todos.filter((p) => !ps.includes(p)), dAntes = d ? d.respect : 0;
   for (const p of fora) devolveOp(op, p, now);
   let res;
@@ -1036,6 +1038,9 @@ function resolverOp(g, now, s, cancela = null) {
   } else {
     const r = E.hitResolve(ps, d, now, rng);
     res = { kind: 'hit', target: nomeDe(op.alvo), win: r.win, chanceBp: r.chanceBp, targetLoss: r.targetLoss || 0, parts: r.parts.map((x) => ({ name: nomeDe(x.id), money: 0, respect: x.respect, busted: false })) };
+    // v102: a tareia em grupo a um inimigo de guerra conta a soma do respeito de quem foi
+    const w = guerraDe(g.id), gD = gangueDe(d.id);
+    if (r.win && w && gD && now >= w.inicio && ladoDe(w, gD.id) != null && gD !== g) { for (const x of r.parts) { const o = ps.find((q2) => q2.id === x.id); if (o) E.warHit(o); } guerraHit = [g, gD, r.parts.filter((x) => x.respect > 0).map((x) => x.id), r.parts.reduce((x, y) => x + y.respect, 0)]; }
   }
   g.op = null; g.last = { t: now, ...res };
   if (!res.cancelled) g.opCool = now + CFG.gang.opCoolMs;
@@ -1055,6 +1060,7 @@ function resolverOp(g, now, s, cancela = null) {
     qo.apaga.run(ronda, g.id);
     db.exec('COMMIT');
   } catch (e) { db.exec('ROLLBACK'); const n = ronda; ronda = -1; carregarRonda(n); console.error('op', e.message); return; }   // volta ao que estava gravado; tenta outra vez no segundo seguinte
+  if (guerraHit && guerraHit[2].length) pontuarGuerra(guerraHit[0], guerraHit[1], guerraHit[2], guerraHit[3], now);
   if (!res.cancelled) {
     if (res.kind === 'heist') {
       const o = { k: res.success ? 'gangHeist' : 'gangHeistFail', gang: g.nome, tag: g.tag, c: CFG.gang.heists[res.k].id, n: ps.length, money: res.parts.reduce((x, y) => x + y.money, 0) };
@@ -1081,7 +1087,112 @@ setInterval(() => {
   const now = clock();
   if (ronda < 0) return;
   try { resolverOps(now); } catch (e) { console.error('op', e.message); }
+  try { resolverGuerras(now); } catch (e) { console.error('guerra', e.message); }
 }, 1000).unref();
+
+// ---------- guerras entre gangues (v102) ----------
+// Uma guerra: a declarou a b (aposta do cofre de a). pts: os pontos de cada membro, por lado. nomes: as gangues como eram ao declarar.
+// fim > 0: acabou (vence: o id da gangue que ganhou, ou '' se empatou). Durante a guerra as duas gangues não mudam de gente.
+db.exec(`CREATE TABLE IF NOT EXISTS guerras (ronda INTEGER NOT NULL, id TEXT NOT NULL, a TEXT NOT NULL, b TEXT NOT NULL, decl INTEGER NOT NULL, inicio INTEGER NOT NULL,
+  fim INTEGER NOT NULL DEFAULT 0, alvo INTEGER NOT NULL, aposta INTEGER NOT NULL, sa INTEGER NOT NULL DEFAULT 0, sb INTEGER NOT NULL DEFAULT 0, vence TEXT NOT NULL DEFAULT '',
+  nomes TEXT NOT NULL, pts TEXT NOT NULL, PRIMARY KEY (ronda, id))`);
+const qw = {
+  todas: db.prepare('SELECT * FROM guerras WHERE ronda = ?'),
+  grava: db.prepare('INSERT OR REPLACE INTO guerras (ronda, id, a, b, decl, inicio, fim, alvo, aposta, sa, sb, vence, nomes, pts) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'),
+};
+const WAR = CFG.gang.war, guerras = new Map();
+function carregarGuerras() {
+  guerras.clear();
+  for (const r of qw.todas.all(ronda)) guerras.set(r.id, { id: r.id, a: r.a, b: r.b, decl: r.decl, inicio: r.inicio, fim: r.fim, alvo: r.alvo, aposta: r.aposta, sa: r.sa, sb: r.sb, vence: r.vence, nomes: JSON.parse(r.nomes), pts: JSON.parse(r.pts) });
+}
+const gravaW = (w) => qw.grava.run(ronda, w.id, w.a, w.b, w.decl, w.inicio, w.fim, w.alvo, w.aposta, w.sa, w.sb, w.vence, JSON.stringify(w.nomes), JSON.stringify(w.pts));
+// a guerra (por começar ou a decorrer) em que uma gangue está; a última que acabou (para o intervalo entre guerras)
+const guerraDe = (gid) => { for (const w of guerras.values()) if (!w.fim && (w.a === gid || w.b === gid)) return w; return null; };
+const fimDe = (gid) => { let t = 0; for (const w of guerras.values()) if (w.fim && (w.a === gid || w.b === gid)) t = Math.max(t, w.fim); return t; };
+const ladoDe = (w, gid) => (w.a === gid ? 'a' : w.b === gid ? 'b' : null);
+const respDe = (g) => { let r = 0; for (const c of g.membros.keys()) r += jogadores.get(c)?.respect || 0; return r; };
+// porque é que esta gangue não pode declarar guerra àquela (ou null)
+function porqueNaoGuerra(g, alvo, now) {
+  if (!alvo || alvo === g || eBot(alvo) || eBot(g)) return 'NO_GANG';
+  if (guerraDe(g.id)) return 'AT_WAR';
+  if (guerraDe(alvo.id)) return 'TARGET_AT_WAR';
+  if (fimDe(g.id) + WAR.coolMs > now) return 'WAR_COOL';
+  if (fimDe(alvo.id) + WAR.coolMs > now) return 'TARGET_WAR_COOL';
+  if (g.membros.size < WAR.minMembers) return 'FEW_MEMBERS';
+  if (alvo.membros.size < WAR.minMembers) return 'TARGET_FEW';
+  if (alvo.criada + WAR.newMs > now) return 'TARGET_NEW_GANG';
+  if (respDe(alvo) * 10000 < respDe(g) * WAR.strengthBp) return 'TARGET_TOO_WEAK';
+  return null;
+}
+const apostaDe = (g) => WAR.stake[Math.min(WAR.stake.length, g.sede) - 1];
+// os dois jogadores são de gangues em guerra uma com a outra, já começada
+function emGuerra(c1, c2, now) { const g1 = gangueDe(c1), g2 = gangueDe(c2); if (!g1 || !g2 || g1 === g2) return false; const w = guerraDe(g1.id); return !!w && now >= w.inicio && ladoDe(w, g2.id) != null; }
+// os pontos de uma vitória contra a gangue inimiga (a contar da hora em que a guerra começou)
+function pontuarGuerra(gA, gD, ids, pts, now) {
+  if (!gA || !gD || !(pts > 0)) return;
+  const w = guerraDe(gA.id); if (!w || now < w.inicio || ladoDe(w, gD.id) == null || gA.id === gD.id) return;
+  const L = ladoDe(w, gA.id), each = Math.floor(pts / ids.length);
+  w['s' + L] += pts;
+  ids.forEach((c, i) => { w.pts[L][c] = (w.pts[L][c] || 0) + (i === 0 ? pts - each * (ids.length - 1) : each); });
+  gravaW(w);
+  acabarSe(w, now);
+}
+// acaba quando alguém vai à frente pelo alvo de agora, ou ao fim do tempo (ganha quem vai à frente)
+function acabarSe(w, now) {
+  if (w.fim || now < w.inicio) return;
+  const alvo = E.warTarget(w.alvo, w.inicio, now), dif = w.sa - w.sb;
+  if (Math.abs(dif) >= Math.max(1, alvo) && dif !== 0) return acabarGuerra(w, now, dif > 0 ? w.a : w.b);
+  if (now >= w.inicio + WAR.maxMs) return acabarGuerra(w, now, dif > 0 ? w.a : dif < 0 ? w.b : '');
+}
+function acabarGuerra(w, now, vence) {
+  w.fim = now; w.vence = vence;
+  const gA = gangues.get(w.a), gB = gangues.get(w.b), dono = vence === w.b ? gB : gA;   // a aposta: para quem ganhou; volta a quem declarou se ganhou ou empatou
+  if (dono) dono.cofre += w.aposta;
+  const premios = [];
+  for (const L of ['a', 'b']) for (const [c, n] of Object.entries(w.pts[L])) {
+    const o = jogadores.get(c); if (!o) continue;
+    const won = vence !== '' && w[L] === vence, r = E.warBonus(o, n, won, now); E.honorsCheck(o, now);
+    premios.push([o, c, L, n, won, r.respect]);
+  }
+  db.exec('BEGIN');
+  try {
+    gravaW(w); if (dono) gravaG(dono);
+    for (const [o] of premios) guardar(o, now);
+    db.exec('COMMIT');
+  } catch (e) { db.exec('ROLLBACK'); const n = ronda; ronda = -1; carregarRonda(n); console.error('guerra', e.message); return; }
+  for (const L of ['a', 'b']) {
+    const g = gangues.get(w[L]); if (!g) continue;
+    for (const c of g.membros.keys()) { const p = premios.find((x) => x[1] === c);
+      evento(c, now, { k: 'warEnd', vs: w.nomes[L === 'a' ? 'b' : 'a'], won: vence === w[L], draw: vence === '', sa: w['s' + L], sb: w['s' + (L === 'a' ? 'b' : 'a')], respect: p ? p[5] : 0, stake: vence === w[L] ? w.aposta : 0 }); }
+  }
+  noticia(now, { k: 'warEnd', a: w.nomes.a, b: w.nomes.b, win: vence === w.a ? 'a' : vence === w.b ? 'b' : '', sa: w.sa, sb: w.sb });
+}
+// a cada segundo: as guerras que começam (aviso) e as que acabam pelo tempo ou porque o alvo desceu
+function resolverGuerras(now) {
+  for (const w of [...guerras.values()]) {
+    if (w.fim) continue;
+    if (!w.avisou && now >= w.inicio) { w.avisou = true; if (now - w.inicio < 5 * 60_000) noticia(now, { k: 'warStart', a: w.nomes.a, b: w.nomes.b, t0: w.alvo }); }
+    acabarSe(w, now);
+  }
+}
+// o que o ecrã da gangue mostra da guerra
+function vistaGuerra(g, conta, now) {
+  const w = guerraDe(g.id), L = w ? ladoDe(w, g.id) : null, eu = jogadores.get(conta), m1 = { start: mundo(now).start, playEnd: mundo(now).playEnd };
+  const top = (lado) => Object.entries(w.pts[lado]).sort((x, y) => y[1] - x[1]).slice(0, WAR.top).map(([c, n]) => ({ name: nomeDe(c), n }));
+  const hist = [...guerras.values()].filter((x) => x.fim && (x.a === g.id || x.b === g.id)).sort((x, y) => y.fim - x.fim).slice(0, WAR.hist)
+    .map((x) => { const l = ladoDe(x, g.id), o = l === 'a' ? 'b' : 'a'; return { vs: x.nomes[o], won: x.vence === x[l], draw: x.vence === '', s: x['s' + l], t: x['s' + o], fim: x.fim }; });
+  const out = { hist, cool: Math.max(0, fimDe(g.id) + WAR.coolMs - now), stake: apostaDe(g), role: WAR.role };
+  if (!w) return out;
+  const O = L === 'a' ? 'b' : 'a', inimiga = gangues.get(w[O]), livre = eu ? { ...eu, vigor: CFG.vigor.max, jailUntil: 0, hospUntil: 0, shieldUntil: 0 } : null;
+  out.war = { vs: w.nomes[O], decl: w.decl, start: w.inicio, me: w['s' + L], them: w['s' + O], t0: w.alvo, target: E.warTarget(w.alvo, w.inicio, now), drops: w.inicio + WAR.holdMs, ends: w.inicio + WAR.maxMs,
+    stake: w.aposta, ours: L === 'a', top: top(L), topThem: top(O), mine: w.pts[L][conta] || 0,
+    enemies: inimiga ? [...inimiga.membros.keys()].map((c) => { const o = jogadores.get(c); if (!o) return null; E.touch(o, now);
+      const why = eu ? E.canAttack(livre, o, now, m1, false, now >= w.inicio) : 'NO_TARGET', x = E.trWhere(o, now);
+      return { name: nomeDe(c), av: o.av || 0, level: E.level(o), respect: o.respect, why, until: why === 'TARGET_HOSPITAL' ? o.hospUntil : why === 'TARGET_JAIL' ? o.jailUntil : why === 'TARGET_PROTECTED' ? Math.max(o.protectUntil, o.capUntil) : 0,
+        ...(x ? { at: x.to, fly: x.st !== 'there' } : {}), ...(!why && eu ? { chance: E.attackChanceBp(eu, o, now), gain: E.expectedGain(eu, o, now), loot: E.mugValue(eu, o, now) } : {}) }; }).filter(Boolean).sort((x, y) => (!!x.why - !!y.why) || y.respect - x.respect) : [] };
+  return out;
+}
+
 // Cancelar à mão (dentro de uma ação): a stamina volta a todos e os outros ficam a saber quem cancelou.
 function cancelarOp(g, now, ctx, p, quem) {
   const op = g.op, nome = nomeDe(quem), base = { kind: op.kind, cancelled: true, by: nome, n: op.parts.length, need: opNeed(op) };
@@ -1212,6 +1323,7 @@ function agirGangue(a, p, conta, now, world, ctx) {
     case 'gangJoin': {
       const g = gangues.get(String(a.id)) || err('NO_GANG');
       if (eBot(g)) { E.gangBotCanJoin(p, now); entrar(g, p); return { ok: true, joined: true, name: g.nome, bot: true }; }   // entra quem quiser, sem limite de lugares
+      if (guerraDe(g.id)) err('AT_WAR');   // v102: em guerra ninguém entra
       E.gangCanJoin(p, now);
       if (g.membros.size >= E.gangSlots(g.sede)) err('GANG_FULL');
       if (g.aberta) { entrar(g, p); return { ok: true, joined: true, name: g.nome }; }
@@ -1224,14 +1336,29 @@ function agirGangue(a, p, conta, now, world, ctx) {
     case 'gangAccept': case 'gangReject': {
       const g = comCargo(R.asks), o = outro(g, a.name);
       if (!g.pedidos.has(o.id)) err('NO_ASK');
-      if (a.type === 'gangAccept') { E.gangCanJoin(o, now); if (g.membros.size >= E.gangSlots(g.sede)) err('GANG_FULL'); }   // primeiro confirma-se tudo, só depois se mexe
+      if (a.type === 'gangAccept') { E.gangCanJoin(o, now); if (g.membros.size >= E.gangSlots(g.sede)) err('GANG_FULL'); if (guerraDe(g.id)) err('AT_WAR'); }   // primeiro confirma-se tudo, só depois se mexe
       g.pedidos.delete(o.id); ctx.ops.push(() => qg.despedeUm.run(ronda, g.id, o.id));
       if (a.type === 'gangReject') return { ok: true };
       entrar(g, o); ctx.outros.push(o);
       ctx.depois.push(() => evento(o.id, now, { k: 'gangIn', gang: g.nome }));
       return { ok: true, joined: true };
     }
-    case 'gangLeave': { const g = minha(), back = sair(g, p); return { ok: true, left: g.nome, back: back.refund + back.stored }; }
+    case 'gangLeave': { const g = minha(); if (guerraDe(g.id)) err('AT_WAR'); const back = sair(g, p); return { ok: true, left: g.nome, back: back.refund + back.stored }; }   // (v102: em guerra ninguém sai)
+    case 'gangWar': {   // v102: declarar guerra (o chefe ou o subchefe), com a aposta do cofre
+      const g = comCargo(CFG.gang.war.role), alvo = gangues.get(String(a.id || ''));
+      const why = porqueNaoGuerra(g, alvo, now); if (why) err(why);
+      const stake = apostaDe(g); if (g.cofre < stake) err('NO_GANG_MONEY', { need: stake });
+      g.cofre -= stake;
+      const w = { id: randomBytes(6).toString('base64url'), a: g.id, b: alvo.id, decl: now, inicio: now + WAR.prepMs, fim: 0, alvo: Math.max(WAR.targetMin, WAR.targetPer * (g.membros.size + alvo.membros.size)),
+        aposta: stake, sa: 0, sb: 0, vence: '', nomes: { a: { name: g.nome, tag: g.tag }, b: { name: alvo.nome, tag: alvo.tag } }, pts: { a: {}, b: {} } };
+      guerras.set(w.id, w);
+      ctx.ops.push(() => { gravaG(g); gravaW(w); });
+      ctx.depois.push(() => {
+        for (const [x, vs, ours] of [[g, w.nomes.b, true], [alvo, w.nomes.a, false]]) for (const c of x.membros.keys()) evento(c, now, { k: 'warDecl', vs, ours, start: w.inicio, t0: w.alvo });
+        noticia(now, { k: 'warDecl', a: w.nomes.a, b: w.nomes.b, start: w.inicio, stake });
+      });
+      return { ok: true, war: w.id, start: w.inicio, target: w.alvo, stake };
+    }
     case 'gangBail': case 'gangMedic': {
       const g = minha(), o = outro(g, a.name);
       if (o.id === conta || !g.membros.has(o.id)) err('NO_TARGET');
@@ -1244,6 +1371,7 @@ function agirGangue(a, p, conta, now, world, ctx) {
       const g = comCargo(R.kick), o = outro(g, a.name);
       if (o.id === conta || !g.membros.has(o.id)) err('NO_TARGET');
       if (cargoDe(g, o.id) >= cargoDe(g, conta)) err('NO_RANK');   // só se expulsa quem está abaixo
+      if (guerraDe(g.id)) err('AT_WAR');
       const back = sair(g, o); if (!ctx.outros.includes(o)) ctx.outros.push(o);
       ctx.depois.push(() => evento(o.id, now, { k: 'gangOut', gang: g.nome, money: back.refund + back.stored }));
       return { ok: true };
@@ -1307,8 +1435,10 @@ function vistaGangue(conta, now) {
   resolverOps(now);
   const resumo = (g) => { let resp = 0; for (const c of g.membros.keys()) resp += jogadores.get(c)?.respect || 0;
     return { id: g.id, name: g.nome, tag: g.tag, members: g.membros.size, slots: eBot(g) ? Math.max(g.membros.size + 1, E.gangSlots(g.sede)) : E.gangSlots(g.sede), sede: g.sede, armaria: g.armaria, open: g.aberta, respect: resp, leader: eBot(g) ? 'Bot' : nomeDe(g.lider), bot: eBot(g) }; };
-  const list = [...gangues.values()].filter((g) => !eBot(g)).map(resumo).sort((a, b) => b.respect - a.respect || a.name.localeCompare(b.name)).slice(0, 50).map((x, i) => ({ ...x, pos: i + 1, asked: gangues.get(x.id).pedidos.has(conta) }));
   const mine = gangueDe(conta), eu0 = jogadores.get(conta), gb = gangues.get(BOT.id);
+  // v102: em cada gangue, se está em guerra e, para a tua, porque não lhe podes declarar guerra (null = podes)
+  const list = [...gangues.values()].filter((g) => !eBot(g)).map(resumo).sort((a, b) => b.respect - a.respect || a.name.localeCompare(b.name)).slice(0, 50).map((x, i) => ({ ...x, pos: i + 1, asked: gangues.get(x.id).pedidos.has(conta),
+    war: !!guerraDe(x.id), ...(mine && !eBot(mine) && x.id !== mine.id ? { warWhy: porqueNaoGuerra(mine, gangues.get(x.id), now) } : {}) }));
   const out = { now, list, mine: null, bot: gb ? { id: gb.id, members: gb.membros.size, wait: eu0 && eu0.gbotLeft ? eu0.gbotLeft + BOT.rejoinMs : 0 } : null };
   if (mine) {
     const quem = (c) => { const o = jogadores.get(c); if (o) E.touch(o, now); return { name: nomeDe(c), av: o?.av || 0, level: o ? E.level(o) : 1, respect: o?.respect || 0,
@@ -1327,6 +1457,7 @@ function vistaGangue(conta, now) {
           return { id: b.id, open: mine.sede >= b.sede, total, investors: n, full, ...meu[k] }; }); })(),
       asks: meu >= R.asks ? [...mine.pedidos.keys()].map(quem) : [],
       op: vistaOp(mine, conta, now), last: mine.last, opCool: mine.opCool,
+      war: eBot(mine) ? null : vistaGuerra(mine, conta, now),   // v102: a guerra (ou o histórico, a aposta e o intervalo)
       chat: qg.chat.all(ronda, mine.id).reverse().map((m) => ({ id: m.id, t: m.t, name: nomeDe(m.conta), me: m.conta === conta, txt: m.txt })) };
   }
   return out;
@@ -1780,7 +1911,7 @@ function agir(conta, corpo, now) {
       if (!c || !jogadores.has(c.id)) throw new E.GameError('NO_TARGET');
       alvo = jogadores.get(c.id);
       alvoResp0 = alvo.respect;
-      r = E.attack(p, alvo, now, world, a.mode === 'mug' ? 'mug' : 'beat', rng, a.drop === true);
+      r = E.attack(p, alvo, now, world, a.mode === 'mug' ? 'mug' : 'beat', rng, a.drop === true, emGuerra(p.id, alvo.id, now));   // v102: em guerra, sem o «fraco demais»
       break;
     }
     case 'hitman': {
@@ -1808,6 +1939,9 @@ function agir(conta, corpo, now) {
     const net = casinoNet(r), L = CFG.gov.laws.jogo;
     if (net > L.over) { const tax = Math.min(p.cash, Math.floor(((net - L.over) * L.bp) / 10000)); p.cash -= tax; r = { ...r, tax }; }
   }
+  // v102: uma vitória contra a gangue com quem estamos em guerra conta pontos
+  if (a.type === 'attack' && r && r.win && alvo) { const gA = gangueDe(p.id), gD = gangueDe(alvo.id), w = gA && guerraDe(gA.id);
+    if (w && gD && now >= w.inicio && ladoDe(w, gD.id) != null && gA !== gD) { E.warHit(p); r = { ...r, war: r.wp }; ctx.depois.push(() => pontuarGuerra(gA, gD, [p.id], r.wp, now)); } }
   // v100: honras: os contadores novos e as que se ganharam com esta ação
   if (r && typeof r === 'object') { E.honorTrack(p, now, hPre, a.type, r); const nh = E.honorsCheck(p, now); if (nh.length) r = { ...r, hon: nh }; }
   db.exec('BEGIN');

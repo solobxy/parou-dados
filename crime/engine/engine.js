@@ -2088,6 +2088,8 @@ export function honorVal(p, m, k) {
     case 'air': return (p.cx && p.cx.air[k]) || 0;
     case 'trips': return (p.cx && p.cx.trip && p.cx.trip[k]) || 0;   // v101
     case 'trGoods': return c.trGoods || 0;
+    case 'wars': return c.wars || 0;   // v102
+    case 'warHits': return c.warHits || 0;
     case 'hunts': return p.hunt.n || 0;
     case 'kills': return c.kills || 0;
     case 'sp': return p.hunt.tr[k]?.n || 0;
@@ -3448,7 +3450,8 @@ function hospitalize(p, now, ms, asVictim) {
 }
 
 // drop: quem ataca aceitou perder o escudo de jogador novo
-export function canAttack(a, d, now, world, drop = false) {
+// war: os dois são de gangues em guerra (v102): aí vale atacar quem tem menos respeito (as gangues já se mediram ao declarar)
+export function canAttack(a, d, now, world, drop = false, war = false) {
   const P = CFG.pvp;
   if (a === d || a.id === d.id) return 'SELF';
   if (sameCrew(a, d)) return 'SAME_GANG';   // ninguém ataca a própria gangue (a gangue da rua não conta)
@@ -3468,7 +3471,7 @@ export function canAttack(a, d, now, world, drop = false) {
   if (d.hospUntil > now) return 'TARGET_HOSPITAL';
   if (d.jailUntil > now) return 'TARGET_JAIL';
   if (d.protectUntil > now || d.capUntil > now) return 'TARGET_PROTECTED';
-  if (d.respect * 10000 < a.respect * P.minTargetBp) return 'TARGET_TOO_WEAK';
+  if (!war && d.respect * 10000 < a.respect * P.minTargetBp) return 'TARGET_TOO_WEAK';
   if (level(d) < P.newbieLevel && attackPower(a, now) > P.newbiePowerX * Math.max(1, defensePower(d, now))) return 'TARGET_NEWBIE';   // v89
   return null;
 }
@@ -3552,11 +3555,11 @@ export function expectedGain(a, d, now) {
   return Math.floor(pvpBaseGain(a, d) / div);
 }
 
-export function attack(a, d, now, world, mode, rng, drop = false) {
+export function attack(a, d, now, world, mode, rng, drop = false, war = false) {
   begin(a, now, world, { trOk: 1 });   // v101: também lá fora (com quem lá estiver)
   touch(d, now);
   if (mode !== 'beat' && mode !== 'mug') fail('BAD_MODE');
-  const why = canAttack(a, d, now, world, drop);
+  const why = canAttack(a, d, now, world, drop, war);
   if (why) fail(why);
   const P = CFG.pvp;
   const shieldLost = a.shieldUntil > now; if (shieldLost) a.shieldUntil = 0;   // só chega aqui com escudo quem aceitou perdê-lo; não volta
@@ -3575,7 +3578,7 @@ export function attack(a, d, now, world, mode, rng, drop = false) {
       const lvA = addRespect(a, gain, now);
       addRespect(d, -loss, now);
       hospitalize(d, now, P.beatHospMs, true);
-      res = { win: true, mode, respect: gain, targetLoss: loss, money: 0, levelUp: lvA };
+      res = { win: true, mode, respect: gain, targetLoss: loss, money: 0, levelUp: lvA, wp: gain };   // wp: pontos de guerra (v102)
     } else {
       settleAllBiz(d, now);
       const take = (x) => Math.floor(Math.floor((x * P.mugBp) / 10000) / div);
@@ -3591,7 +3594,7 @@ export function attack(a, d, now, world, mode, rng, drop = false) {
       const g = Math.floor(gain / 4);
       const lvA = addRespect(a, g, now);
       hospitalize(d, now, P.mugHospMs, true);
-      res = { win: true, mode, respect: g, targetLoss: 0, money: stolen, levelUp: lvA };
+      res = { win: true, mode, respect: g, targetLoss: 0, money: stolen, levelUp: lvA, wp: Math.floor((gain * CFG.gang.war.mugBp) / 10000) };
     }
     a.c.pvpWins += 1;
     if (!a.hits.has(d.id)) a.hits.set(d.id, []);
@@ -3605,6 +3608,20 @@ export function attack(a, d, now, world, mode, rng, drop = false) {
   addRespect(d, defGain, now);
   hospitalize(a, now, P.beatHospMs, false);
   return { ok: true, chanceBp: bp, win: false, mode, respect: -loss, defenderGain: defGain };
+}
+
+// ---------- guerras entre gangues (v102) ----------
+// O servidor guarda as guerras (são das gangues); aqui só o que mexe no jogador: o prémio de respeito no fim e as contagens.
+export function warHit(p) { p.c.warHits = (p.c.warHits || 0) + 1; }
+export function warBonus(p, pts, won, now) {
+  const W = CFG.gang.war, respect = Math.floor((Math.max(0, pts) * (won ? W.winBp : W.loseBp)) / 10000);
+  if (won && pts > 0) p.c.wars = (p.c.wars || 0) + 1;
+  return { respect, levelUp: respect ? addRespect(p, respect, now) : false };
+}
+// o alvo de uma guerra agora: o inicial até holdMs; depois desce dropBp do inicial por hora (nunca abaixo de 0)
+export function warTarget(t0, start, now) {
+  const W = CFG.gang.war, h = Math.floor((now - start - W.holdMs) / T.HOUR);
+  return now - start < W.holdMs ? t0 : Math.max(0, t0 - Math.floor((t0 * W.dropBp * h) / 10000));
 }
 
 // ---------- golpes e tareias em grupo (gangues) ----------

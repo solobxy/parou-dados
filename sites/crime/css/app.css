@@ -3767,3 +3767,32 @@ body h2.sec { font-size: 16px; }
 .trmk { padding-top: 12px; }
 .trmk .trbag { margin-bottom: 4px; }
 .nw { white-space: nowrap; }
+
+/* ===== v102: guerras de gangues ===== */
+.wcard { gap: 10px; margin-bottom: 14px; box-shadow: inset 0 0 0 1px rgba(255,90,82,.35); }
+.wvs { font: 600 22px/1.1 var(--disp); margin-top: 2px; }
+.wtime { display: grid; justify-items: end; text-align: right; flex: none; }
+.wtime > span { font: 700 22px/1 var(--num); }
+.wtime small { color: var(--tx2); font-size: 14px; margin-top: 2px; }
+.wscore { display: flex; align-items: baseline; gap: 10px; }
+.wscore b { font: 700 36px/1 var(--num); }
+.wbar { position: relative; height: 12px; border-radius: 99px; background: var(--s2); overflow: hidden; }
+.wbar .wmid { position: absolute; left: 50%; top: -2px; bottom: -2px; width: 2px; margin-left: -1px; background: var(--tx2); }
+.wbar .wfill { position: absolute; top: 0; bottom: 0; }
+.wbar .wfill.up { background: var(--cash); }
+.wbar .wfill.down { background: var(--danger); }
+.wlead { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.wlead ol { margin: 4px 0 0; padding: 0; list-style: none; counter-reset: w; display: grid; gap: 4px; }
+.wlead li { display: flex; justify-content: space-between; gap: 8px; counter-increment: w; min-width: 0; font-weight: 500; }
+.wlead li.me { font-weight: 700; }
+.wlead li > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.wlead li > span::before { content: counter(w) '. '; color: var(--tx2); }
+@media (max-width: 359px) { .wlead { grid-template-columns: 1fr; } }
+.wbarw { display: flex; align-items: center; gap: 8px; }
+.wbarw .wbar { flex: 1; }
+.wscore .gtag { font-size: 13px; align-self: center; }
+.wleft b { font: 700 18px/1.2 var(--num); }
+.wens { margin-bottom: 24px; }
+.wnote { margin: -4px 0 14px; }
+.vrow.wrow { align-items: center; padding: 8px 0; gap: 10px; }
+.vrow.wrow + .vrow.wrow { box-shadow: inset 0 1px 0 var(--line); }

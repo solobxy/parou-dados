@@ -1044,6 +1044,8 @@ export const CFG = {
     { m: 'air', cat: 'viagens', each: 'routes', at: [1, 10, 50] },
     { m: 'trips', cat: 'viagens', each: 'dests', at: [1, 10, 50] },   // v101: viagens de ida e volta (contam ao vender a mala)
     { m: 'trGoods', cat: 'viagens', at: [100, 1000, 10000] },
+    { m: 'wars', cat: 'lutas', at: [1, 5, 25] },   // v102: guerras ganhas pela gangue (com pontos teus)
+    { m: 'warHits', cat: 'lutas', at: [10, 100, 500] },   // e vitórias contra a gangue inimiga
     { m: 'hunts', cat: 'caca', at: [1, 10, 50, 100, 250, 500, 1000] },
     { m: 'kills', cat: 'caca', at: [1, 10, 50, 100, 250, 500, 1000] },
     { m: 'sp', cat: 'caca', each: 'species' },
@@ -1355,6 +1357,16 @@ export const CFG = {
     // Quem sai só pode voltar a esta gangue ao fim de 24 h. Como não tem chefe nem cargos, ninguém podia cancelar um pedido de golpe
     // esquecido (e só há um pedido aberto por gangue): o bot cancela o que estiver há opMaxMs à espera sem ter gente que chegue.
     bot: { id: 'rua', name: 'Strays', tag: 'BOT', rejoinMs: 24 * HOUR, roster: 40, opMaxMs: 15 * MIN },
+    // v102: guerras entre gangues, à maneira das «ranked wars» do Torn: um cabo de guerra. O chefe (ou o subchefe) declara guerra a outra
+    // gangue e põe a aposta do cofre (stake, pelo nível da sede). Começa prepMs depois; durante a guerra ninguém entra nem sai das duas.
+    // Pontos: o respeito de cada vitória contra um membro da outra gangue (assaltar conta mugBp; a tareia em grupo conta a soma).
+    // Ganha quem passar à frente pelo alvo: targetPer pontos por membro das duas (nunca menos de targetMin). Ao fim de holdMs, o alvo
+    // desce dropBp do inicial por hora; ao fim de maxMs acaba (ganha quem vai à frente; empatada, a aposta volta).
+    // Prémio: a aposta fica para a gangue que ganha (volta, se ganhou quem declarou). Cada membro com pontos ganha respeito: winBp dos
+    // seus pontos se ganhou, loseBp se perdeu. Só se declara a quem tem pelo menos strengthBp do respeito da tua gangue (ninguém
+    // escolhe vítimas), com minMembers de cada lado, a gangues com mais de newMs de vida, e com coolMs entre guerras de cada gangue.
+    war: { minMembers: 3, prepMs: HOUR, coolMs: 24 * HOUR, newMs: 24 * HOUR, stake: [10000, 25000, 60000, 150000, 400000], role: 2,
+      targetPer: 150, targetMin: 600, holdMs: 24 * HOUR, dropBp: 100, maxMs: 124 * HOUR, mugBp: 7500, winBp: 5000, loseBp: 2000, strengthBp: 5000, top: 5, hist: 5 },
   },
   // casa: cada nível dá respeito e deixa subir as melhorias até esse nível; a melhoria n custa uma parte do preço da casa n
   // Casas (base nova): começa-se numa barraca de 0 € e as outras só se compram; a antiga entra na troca pelo que custou.
