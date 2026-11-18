@@ -21,7 +21,7 @@ const LANDV = LAND.map((r) => { const o = []; for (let i = 0; i < r.length; i +=
 const LIGHTS = [[51.5, -0.1], [48.9, 2.3], [40.4, -3.7], [41.9, 12.5], [52.5, 13.4], [55.8, 37.6], [41, 29], [30, 31.2], [6.5, 3.4], [-26.2, 28], [25.3, 55.3], [19.1, 72.9], [28.6, 77.2], [39.9, 116.4], [31.2, 121.5], [35.7, 139.7], [1.3, 103.8], [-33.9, 151.2], [40.7, -74], [34, -118.2], [41.9, -87.6], [19.4, -99.1], [4.7, -74.1], [-23.5, -46.6], [-34.6, -58.4], [-12, -77], [45.5, -73.6], [59.3, 18.1], [33.6, -7.6], [14.7, -17.4]].map(([a, b]) => vec(a, b));
 
 // home: { lat, lon }; routes: [{ lat, lon, name }]; clock: () => ms (hora do servidor)
-export function globe({ home, routes, homeName, clock }) {
+export function globe({ home, routes, homeName, clock, few }) {
   const W = 340, H = 300, cx = W / 2, cy = H / 2, R0 = 132;
   const c = document.createElement('canvas'), dpr = Math.min(2.5, window.devicePixelRatio || 1);
   c.width = Math.round(W * dpr); c.height = Math.round(H * dpr); c.className = 'gl3'; c.style.aspectRatio = `${W} / ${H}`;
@@ -34,6 +34,10 @@ export function globe({ home, routes, homeName, clock }) {
   // onde está o avião: vai (0–47%), carrega (47–53%), volta (53–100%)
   function planeAt(f, t) {
     const u = clamp((t - f.t0) / (f.t1 - f.t0), 0, 1), dest = RV[f.r];
+    // v101: as viagens do jogador vão só num sentido (ida, lá, volta)
+    if (f.leg === 'out') return { p: norm(slerp(HV, dest, u)), u, leg: 0, k: u };
+    if (f.leg === 'there') return { p: dest, u: 1, leg: 1, k: 1 };
+    if (f.leg === 'back') return { p: norm(slerp(dest, HV, u)), u, leg: 2, k: 1 - u };
     if (u < 0.47) return { p: norm(slerp(HV, dest, u / 0.47)), u, leg: 0, k: u / 0.47 };
     if (u < 0.53) return { p: dest, u, leg: 1, k: 1 };
     return { p: norm(slerp(dest, HV, (u - 0.53) / 0.47)), u, leg: 2, k: 1 - (u - 0.53) / 0.47 };
@@ -94,7 +98,7 @@ export function globe({ home, routes, homeName, clock }) {
       if (big) { ctx.strokeStyle = col; ctx.globalAlpha = 0.5 * (1 - pulse); ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(q[0], q[1], 5 + 9 * pulse, 0, TAU); ctx.stroke(); ctx.globalAlpha = 1; }
       ctx.fillStyle = '#04060b'; ctx.beginPath(); ctx.arc(q[0], q[1], big ? 5.5 : 3.6, 0, TAU); ctx.fill();
       ctx.fillStyle = col; ctx.beginPath(); ctx.arc(q[0], q[1], big ? 4 : 2.4, 0, TAU); ctx.fill();
-      if (name && (big || isHome || Math.hypot(q[0] - hq[0], q[1] - hq[1]) > 52)) labels.push([q[0], q[1], name, big]);
+      if (name && (big || isHome || (!few && Math.hypot(q[0] - hq[0], q[1] - hq[1]) > 52))) labels.push([q[0], q[1], name, big]);   // (few: só o escolhido e casa)
     };
     const drawLabels = () => {
       for (const [x, y, name, big] of labels) {

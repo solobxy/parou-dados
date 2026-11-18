@@ -10,11 +10,12 @@
 //   4. o nível 100 demora cerca de um ano a quem joga todos os dias e não menos de cinco meses a quem joga sem parar;
 //   5. jogar o dobro rende menos do que o dobro (a rua aquece), para valer a pena variar em vez de repetir.
 
+import { CFG } from '../engine/config.js';   // v101: as viagens usam os números do jogo (destinos, mercadoria, malas)
 const SEED = +(process.argv[2] ?? 1), N = +(process.argv[3] ?? 300), DIAS = +(process.argv[4] ?? 365);
 // para comparar com o motor (dev/sim-motor.mjs) enquanto ele ainda não tem estes sistemas: SEM_EMPREGO=1, SEM_OPS=1, SEM_GASTOS=1
 // (SEM_GASTOS desliga os três gastos; cada um também se desliga sozinho: SEM_LAVAGEM=1, SEM_AVENCA=1, SEM_SEGURANCAS=1)
 const SEM_G = process.env.SEM_GASTOS === '1', semG = (k) => (process.env[k] === undefined ? SEM_G : process.env[k] === '1');
-const SEM = { emprego: process.env.SEM_EMPREGO === '1', ops: process.env.SEM_OPS === '1', lavagem: semG('SEM_LAVAGEM'), avenca: semG('SEM_AVENCA'), segurancas: semG('SEM_SEGURANCAS'), trafico: process.env.SEM_TRAFICO === '1', negocios: process.env.SEM_NEGOCIOS === '1', trabalho: process.env.SEM_TRABALHO === '1' };
+const SEM = { emprego: process.env.SEM_EMPREGO === '1', ops: process.env.SEM_OPS === '1', lavagem: semG('SEM_LAVAGEM'), avenca: semG('SEM_AVENCA'), segurancas: semG('SEM_SEGURANCAS'), trafico: process.env.SEM_TRAFICO === '1', negocios: process.env.SEM_NEGOCIOS === '1', trabalho: process.env.SEM_TRABALHO === '1', viagens: process.env.SEM_VIAGENS === '1' };
 function rngDe(s) { let a = s >>> 0; return () => { a |= 0; a = (a + 0x6d2b79f5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
 
 // ---------- números do modelo (os que vão para a wiki) ----------
@@ -134,10 +135,10 @@ const nivelDe = (resp) => Math.min(100, Math.max(1, Math.floor(Math.cbrt(resp / 
 // ---------- perfis ----------
 const PERFIS = {
   // sessoes por dia, espalhadas por horas (o resto é a noite); extra: barras a droga por dia, no máximo (e só se compensar)
-  casual:   { barras: 2, extra: 0, falha: 0.25, edicoes: 1, sessoes: 1, horas: 1, paraEm: 1, tarefas: 15 },     // uma sessão por dia; falha um dia em quatro
-  regular:  { barras: 4, extra: +(process.env.REG_EXTRA ?? 0), falha: 0.05, edicoes: 2, sessoes: 2, horas: 12, paraEm: 0.8, tarefas: 30 },    // duas ou três sessões por dia
-  hardcore: { barras: 7, extra: 12, falha: 0, edicoes: 3, sessoes: 3, horas: 15, paraEm: +(process.env.PARA ?? 0.6), tarefas: 45 },      // gasta a stamina natural toda e compra enquanto compensar
-  bot:      { barras: 7.2, extra: 100, falha: 0, edicoes: 4, sessoes: 6, horas: 24, paraEm: +(process.env.PARA ?? 0.6), tarefas: 'otimo' },   // 24 h por dia: o caso que a economia tem de aguentar
+  casual:   { barras: 2, extra: 0, falha: 0.25, edicoes: 1, sessoes: 1, horas: 1, paraEm: 1, tarefas: 15, viagens: 0.3 },     // uma sessão por dia; falha um dia em quatro
+  regular:  { barras: 4, extra: +(process.env.REG_EXTRA ?? 0), falha: 0.05, edicoes: 2, sessoes: 2, horas: 12, paraEm: 0.8, tarefas: 30, viagens: 1 },    // duas ou três sessões por dia
+  hardcore: { barras: 7, extra: 12, falha: 0, edicoes: 3, sessoes: 3, horas: 15, paraEm: +(process.env.PARA ?? 0.6), tarefas: 45, viagens: 2 },      // gasta a stamina natural toda e compra enquanto compensar
+  bot:      { barras: 7.2, extra: 100, falha: 0, edicoes: 4, sessoes: 6, horas: 24, paraEm: +(process.env.PARA ?? 0.6), tarefas: 'otimo', viagens: 3 },   // 24 h por dia: o caso que a economia tem de aguentar
 };
 // lucro do tráfico por dia para quem joga e edições por dia (3 edições: a meio entre 2 e 4)
 const traficoDia = (t, e) => t.dia[e] ?? (t.dia[e - 1] + t.dia[e + 1]) / 2;
@@ -238,6 +239,15 @@ function simula(perfil, rng) {
       const negocio = s.ng.reduce((x, n, i) => x + n * P.negocios[i].hora * P.negocioStat * horas, 0);
       s.ganhoNegocios = (s.ganhoNegocios || 0) + negocio;
       entra += negocio;
+    }
+    // v101: viagens (ida e volta, mala cheia do que é legal no melhor destino aberto, ao preço normal do importador). Cada uma pede três
+    // passagens pelo jogo (partir, comprar lá e voltar, vender): quem joga uma vez por dia quase nunca as faz; o jogo deixa 3 por dia.
+    if (!SEM.viagens && A.viagens) {
+      const TR = CFG.travel; s.mala = s.mala || 0;
+      const k = s.mala + 1; if (TR.bag[k] && s.cash + entra - sai > TR.bagCost[k] * 3) { sai += TR.bagCost[k]; s.mala = k; }
+      const cap = TR.bag[s.mala], op = TR.dests.filter((d) => nv >= d.level).map((d) => { const g = Object.values(TR.goods).find((x) => x.at === d.id && !x.seizeBp); return { d, lucro: cap * (g.sell - g.buy) - d.ticket, custo: cap * g.buy + d.ticket }; })
+        .filter((x) => x.lucro > 0 && s.cash > x.custo).sort((x, y) => y.lucro - x.lucro)[0];
+      if (op) { const n = Math.min(A.viagens, TR.perDay); entra += op.lucro * n; s.resp += op.d.r * n; s.ganhoViagens = (s.ganhoViagens || 0) + op.lucro * n; }
     }
     // lavagem e equipa
     s.ilegal += crime;

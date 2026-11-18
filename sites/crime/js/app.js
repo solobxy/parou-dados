@@ -115,6 +115,13 @@ function react(type, out, before, opts) {
     if (type === 'huntNear') S.hShot = r.fled ? { fled: true } : null;
     if (r.end) { S.hEnd = r; S.hShot = null; S.hOrg = null; if (!r.caught && r.cash > 0) toast(t('tHuntEnd', { m: money(r.cash) })); }
   }
+  if (type === 'travel') { if (r.xr?.caught) { toast(t('tTrCaught', { m: money(r.xr.fine) }), true); fx.sfx('bust'); } else toast(t('tTrGo', { h: hhmm(r.at) })); }   // v101: viagens
+  if (type === 'trBack') toast(t('tTrBack', { h: hhmm(r.at) }));
+  if (type === 'trBuy') { toast(t('tTrBuy', { n: r.n, x: t('tg_' + r.g) })); fx.sfx('claim'); }
+  if (type === 'trGun') toast(t('tTrGun', { x: t('g_' + r.gun) }));
+  if (type === 'trBag') toast(t('tTrBag', { n: r.cap }));
+  if (type === 'trSell') { const sz = r.lines.filter((x) => x.sz); toast(t('tTrSold', { m: money(r.got) })); if (sz.length) setTimeout(() => toast(t('tTrSeized', { x: sz.map((x) => x.n + '× ' + t('tg_' + x.g)).join(', ') }), true), 900); }
+  if (r.deported) setTimeout(() => toast(t('tTrDeported', { x: trCityF(r.deported.to, 'De') }), true), 600);
   if (r.grid && (type === 'digStop' || type === 'digTap')) S.digLast = { site: r.site, grid: r.grid, open: r.open, got: r.got || [], caught: !!r.caught };   // a escavação acabou: fica à vista
   // v79: uma peça para a vitrine (golpe que correu bem ou avião inteiro); o aviso fica por cima do relatório
   const found = type === 'crime' || type === 'airCollect' ? (r.col ? [r.col] : []) : type === 'crimeAll' && r.col ? Object.keys(r.col) : [];
@@ -322,11 +329,13 @@ function buildHud() {
 const QUICK_FIXED = [['bank', 'bank'], ['fights', 'fights'], ['gang', 'user'], ['feira', 'cash']];   // v92: o inventário passou para a barra de baixo; as lutas vêm para aqui
 function quickItems(me) {
   const n = now(), out = [];
+  if (me.tr) return [{ go: 'viagens', ic: 'ship', txt: me.tr.st === 'there' ? t('trIn', { x: trCityF(me.tr.to, 'Em') }) : t(me.tr.st === 'out' ? 'trOutTo' : 'trBackFrom', { x: trCityF(me.tr.to, 'De') }), good: true }];   // v101
   const biz = me.biz.reduce((x, b, i) => x + (b.n > 0 ? bizNet(b, i) : 0), 0);
   if (biz > 0) out.push({ go: 'biz', ic: 'cash', txt: t('qkBiz', { m: moneyShort(biz) }), good: true });
   const port = me.port.filter((c) => c.readyAt <= n).length;
   if (port) out.push({ go: 'port', ic: 'ship', txt: t(port === 1 ? 'qkPort1' : 'qkPort', { n: port }), good: true });
   if (me.air && me.air.readyAt <= n) out.push({ go: 'air', ic: 'ship', txt: t('qkAir'), good: true });
+  if (me.trL) out.push({ go: 'viagens', ic: 'ship', txt: t('trLandedT'), good: true });   // v101: a mala chegou
   if (me.cf && me.cf.end <= n) out.push({ go: 'cave', ic: 'box', txt: t('qkCave'), good: true });
   if (S.cfg.biz.some((b, i) => me.biz[i]?.n > 0 && maqState(me, b.id) === 3)) out.push({ go: 'cave', ic: 'refresh', txt: t('qkRev') });
   if (me.feira?.levantar > 0) out.push({ go: 'feira', ic: 'box', txt: t('qkFeira', { n: me.feira.levantar }), good: true });
@@ -434,7 +443,7 @@ function tickHud() {
 // ---------- ecrãs ----------
 // ---------- navegação: uma cidade com locais ----------
 const PLACES = {
-  city: { ic: 'skyline' }, empire: { ic: 'empire' }, rob: { ic: 'street', img: 'golpes' }, club: { ic: 'bolt', img: 'discoteca' }, gym: { ic: 'gym', img: 'ginasio' }, gyms: { ic: 'gym' }, livros: { img: 'livros' }, hunt: { img: 'caca' }, honras: {},
+  city: { ic: 'skyline' }, empire: { ic: 'empire' }, rob: { ic: 'street', img: 'golpes' }, club: { ic: 'bolt', img: 'discoteca' }, gym: { ic: 'gym', img: 'ginasio' }, gyms: { ic: 'gym' }, livros: { img: 'livros' }, hunt: { img: 'caca' }, honras: {}, viagens: { img: 'viagens' },
   biz: { ic: 'empire', img: 'negocios' }, stash: { img: 'stash' }, acct: { img: 'contabilista' }, port: { img: 'porto' }, air: { img: 'aeroporto' }, arms: { img: 'armas' }, bank: { img: 'banco' }, hosp: { img: 'hospital' },
   jail: { img: 'prisao' }, gang: { img: 'gangue' }, work: { img: 'profissao' }, news: { img: 'jornal' }, casino: { ic: 'gem', img: 'casino' }, roulette: { img: 'roleta' }, bj: { img: 'blackjack' }, dice: { img: 'dados' }, wheel: { img: 'roda' }, slot: { img: 'slot' }, zeus: { img: 'zeus' }, doce: { img: 'doce' }, rebucado: { img: 'rebucado' }, alley: { img: 'beco' }, lux: { img: 'luxos' }, fights: { ic: 'fights', img: 'lutas' }, rank: { img: 'procurados' }, hitman: { img: 'assassino' }, putas: { img: 'putas' }, gigs: { img: 'biscates' }, casa: {}, myclub: { img: 'discoteca' }, mybro: { img: 'bordel' }, bolsa: { img: 'bolsa' }, job: { img: 'emprego' }, inv: { ic: 'box', img: 'inventario' }, ops: { img: 'operacoes' }, parl: { img: 'parlamento' }, cafe: { img: 'cafe' }, museum: { img: 'museu' }, uni: { img: 'universidade' }, cave: { img: 'cave' }, feira: { img: 'feira' }, dig: { img: 'escavacoes' }, arquivo: { img: 'arquivo' },
 };
@@ -444,10 +453,10 @@ const PLACES = {
 const NAV = ['city', 'rob', 'gym', 'empire', 'inv'];   // v92: o império sobe para o lugar das lutas e o inventário fica no fim (as lutas estão na cidade e na barra de cima)
 const HUB = {
   // v95 (pedido do Dinis): o porto e o aeroporto passam para a cidade; a gangue e as lutas, para o império
-  city: [['sec_night', ['club', 'putas', 'casino', 'alley', 'arms']], ['sec_street', ['gigs', 'cafe', 'job', 'uni', 'livros', 'dig', 'hunt', 'feira', 'bank', 'museum', 'parl', 'hosp', 'jail', 'rank']], ['sec_trade', ['port', 'air']]],
+  city: [['sec_night', ['club', 'putas', 'casino', 'alley', 'arms']], ['sec_street', ['gigs', 'cafe', 'job', 'uni', 'livros', 'dig', 'hunt', 'feira', 'bank', 'museum', 'parl', 'hosp', 'jail', 'rank']], ['sec_trade', ['viagens', 'port', 'air']]],
   empire: [['sec_power', ['fights', 'gang']], ['sec_income', ['biz', 'myclub', 'mybro']], ['sec_assets', ['casa', 'cave', 'bank', 'bolsa', 'stash', 'acct']]],
 };
-const PARENT = { gyms: 'gym', livros: 'city', hunt: 'city', honras: 'city', fights: 'empire', arquivo: 'city', dig: 'city', feira: 'city', cave: 'empire', uni: 'city', museum: 'city', cafe: 'city', parl: 'city', gigs: 'city', gang: 'empire', work: 'job', job: 'city', news: 'city', casino: 'city', roulette: 'casino', bj: 'casino', dice: 'casino', wheel: 'casino', slot: 'casino', zeus: 'casino', doce: 'casino', rebucado: 'casino', club: 'city', putas: 'city', gym: 'city', alley: 'city', hosp: 'city', jail: 'city',
+const PARENT = { gyms: 'gym', livros: 'city', hunt: 'city', honras: 'city', viagens: 'city', fights: 'empire', arquivo: 'city', dig: 'city', feira: 'city', cave: 'empire', uni: 'city', museum: 'city', cafe: 'city', parl: 'city', gigs: 'city', gang: 'empire', work: 'job', job: 'city', news: 'city', casino: 'city', roulette: 'casino', bj: 'casino', dice: 'casino', wheel: 'casino', slot: 'casino', zeus: 'casino', doce: 'casino', rebucado: 'casino', club: 'city', putas: 'city', gym: 'city', alley: 'city', hosp: 'city', jail: 'city',
   biz: 'empire', port: 'city', air: 'city', myclub: 'empire', mybro: 'empire', bolsa: 'empire', stash: 'empire', acct: 'empire', casa: 'empire', bank: 'empire', lux: 'empire', arms: 'fights', rank: 'fights', hitman: 'fights', ops: 'rob' };
 const upOf = (id) => (S.backTo && S.backTo[id]) || PARENT[id] || 'city';   // um sítio que está em duas zonas volta para a zona de onde vieste
 const tabOf = (id) => { let x = id; for (let k = 0; k < 4 && !NAV.includes(x); k++) x = upOf(x); return NAV.includes(x) ? x : 'city'; };
@@ -528,7 +537,7 @@ function shell() {
 }
 
 const SCREENS = { job: screenJob, city: screenCity, empire: screenEmpire, news: screenNews, casino: screenCasino, roulette: screenRoulette, bj: screenBJ, dice: screenDice, wheel: screenWheel, slot: () => screenSlotGame('slot'), zeus: () => screenSlotGame('zeus'), doce: () => screenSlotGame('doce'), rebucado: () => screenSlotGame('rebucado'), rob: screenRob, club: screenClub, gym: screenGym, gyms: screenGyms, livros: screenLivros, biz: screenBiz, port: screenPort, arms: screenArms, bank: screenBank,
-  hosp: screenHosp, jail: screenJail, gang: screenGang, work: screenWork, air: screenAir, putas: screenPutas, myclub: screenMyClub, mybro: screenMyBro, bolsa: screenBolsa, inv: screenInv, stash: screenStash, acct: screenAcct, casa: screenCasa, alley: screenAlley, lux: screenLux, fights: screenFights, rank: screenRank, hitman: screenHitman, ops: screenOps, gigs: screenGigs, parl: screenParl, cafe: screenCafe, museum: screenMuseum, uni: screenUni, cave: screenCave, feira: screenFeira, dig: screenDig, hunt: screenHunt, honras: screenHonras, arquivo: screenArquivo };
+  hosp: screenHosp, jail: screenJail, gang: screenGang, work: screenWork, air: screenAir, putas: screenPutas, myclub: screenMyClub, mybro: screenMyBro, bolsa: screenBolsa, inv: screenInv, stash: screenStash, acct: screenAcct, casa: screenCasa, alley: screenAlley, lux: screenLux, fights: screenFights, rank: screenRank, hitman: screenHitman, ops: screenOps, gigs: screenGigs, parl: screenParl, cafe: screenCafe, museum: screenMuseum, uni: screenUni, cave: screenCave, feira: screenFeira, dig: screenDig, hunt: screenHunt, honras: screenHonras, arquivo: screenArquivo, viagens: screenViagens };
 function render(force) {
   if (!S.st) return;
   if (!S.st.me || S.st.round.phase !== 'play') return renderPause();
@@ -538,6 +547,10 @@ function render(force) {
   if (preso && S.tab !== 'jail' && !(S.jailTab && S.tab === S.jailTab)) { S.preJail = S.preJail || S.tab; S.tab = 'jail'; }   // v94: e o ginásio do pátio
   else if (!preso && S.preJail) { S.tab = S.preJail === 'jail' ? 'rob' : S.preJail; S.preJail = null; }
   document.body.classList.toggle('preso', preso);
+  // v101: fora do país só se vê o que se faz lá (e o que se faz em qualquer lado); o resto mostra a viagem
+  const tr = !preso && S.st.me.tr, fora = tr ? (tr.st === 'there' ? ['viagens', 'inv', 'honras', 'news', 'fights', 'dig', 'hosp', 'rank', 'arquivo'] : ['viagens', 'inv', 'honras', 'news', 'rank', 'arquivo']) : null;
+  if (fora && !fora.includes(S.tab)) S.tab = 'viagens';
+  document.body.classList.toggle('fora', !!tr);
   // a barra de baixo só sai enquanto há um biscate ou turno a decorrer no ecrã
   document.body.classList.toggle('gig-on', !!(S.gig && !S.gig.res && (S.tab === 'gigs' || S.tab === 'job')));
   // a meio de uma jogada no casino, nada redesenha a mesa (eventos, notícias, relógio); só mudar de sítio
@@ -557,7 +570,7 @@ function tabDots() {
   const me = S.st.me, n = now();
   const want = {
     empire: (S.events || []).some((e) => e.id > S.lastEventSeen) || (me.cf && me.cf.end <= n) || S.cfg.biz.some((b) => me.biz[S.cfg.biz.indexOf(b)]?.n > 0 && maqState(me, b.id) === 3) || me.biz.some((b, i) => b.n > 0 && storedNow(b, i) >= (b.perH * S.cfg.storageMs) / 3600000 / 2),
-    city: (me.air && me.air.readyAt <= n) || me.port.some((c) => c.readyAt <= n) || !!me.mission?.done || exReady(me) || me.feira?.levantar > 0 || !!me.dg || !!me.hn || !!me.bj,   // v80: um exame à espera; v84: o que levantar na feira; v90: a mão de blackjack por acabar (o casino saiu da barra)
+    city: (me.air && me.air.readyAt <= n) || !!me.trL || me.port.some((c) => c.readyAt <= n) || !!me.mission?.done || exReady(me) || me.feira?.levantar > 0 || !!me.dg || !!me.hn || !!me.bj,   // v80: um exame à espera; v84: o que levantar na feira; v90: a mão de blackjack por acabar (o casino saiu da barra)
     rob: !!(me.op && me.op.ready <= n && !(me.op.miss || []).length),   // um golpe grande pronto para avançar
   };
   for (const id of NAV) {
@@ -1005,6 +1018,7 @@ function screenCity() {
     parl: S.news?.mundo?.gov?.bill && me.gv && !me.gv.voted && !me.gv.novo && me.level >= (S.cfg.gov?.vote.minLevel || 5) ? t('pBadge') : null,
     port: me.port.some((c) => c.readyAt <= n) ? t('ready') : me.port.length ? dur(Math.min(...me.port.map((c) => c.readyAt)) - n) : null,   // v95: o porto e o aeroporto vivem na cidade
     air: me.air && me.air.readyAt <= n ? t('ready') : null,
+    viagens: me.trL ? t('ready') : null,   // v101: a mala chegou
     uni: exReady(me) ? t('exBadge') : me.course ? dur(Math.max(0, me.course.end - n)) : null,
     feira: me.feira?.levantar ? t('fToTakeB', { n: me.feira.levantar }) : null,   // v84: há o que levantar
     dig: me.dg ? t('dgOnB') : null,   // v85: uma escavação a meio
@@ -1120,7 +1134,15 @@ function screenMuseum() {
   const me = S.st.me, L = live(me), out = [pageHead('museum', t('s_museum'))];
   const b = busyBanner(me); if (b) out.push(b);
   if (!S.cfg.col) return out;
-  out.push(...Object.keys(S.cfg.col.sets).map((k) => museumSet(me, k, L)), museumPlaque());
+  // v101 (revisão: com os conjuntos de lá fora a página passava dos 9 000 px): primeiro os completos e os começados, em vitrine;
+  // os que ainda não têm peças ficam numa linha cada, que abre ao toque
+  const C = S.cfg.col.sets, keys = Object.keys(C), have = (k) => setHave(me, k), cheio = (k) => have(k) === C[k].items.length;
+  const vit = keys.filter((k) => have(k) > 0 || S.musOpen === k).sort((a, b) => (cheio(b) - cheio(a)) || (have(b) / C[b].items.length - have(a) / C[a].items.length));
+  const resto = keys.filter((k) => !vit.includes(k));
+  out.push(...vit.map((k) => museumSet(me, k, L)));
+  if (resto.length) out.push(h('h2', { class: 'sec' }, t('muEmptyT')), h('div', { class: 'card vlist vc' }, resto.map((k) => h('button', { class: 'vrow linkrow', on: { click: () => { S.musOpen = k; render(true); } } },
+    art('col', C[k].items[0], 'vth'), h('div', { class: 'grow' }, h('b', null, t('muSet_' + k)), h('div', { class: 'small muted num' }, t('muCount', { a: 0, b: C[k].items.length }) + ' · ' + money(musPay(me, k).cash))), h('span', { 'aria-hidden': 'true' }, '›')))));
+  out.push(museumPlaque());
   return out.filter(Boolean);
 }
 // ===== O Parlamento (v76) =====
@@ -3124,19 +3146,20 @@ function digBoard(me, b) {
       d.got.length ? t(d.got.length === 1 ? 'dgLeave1' : 'dgLeave', { n: d.got.length }) : t('dgLeave0')),
     h('p', { class: 'small muted num' }, t('dgCloses'), ' ', h('span', { dataset: { left: d.until, long: 1 } }, leftTxt(d.until - now()))));
 }
-function digSiteRow(me, S2, b) {
+const dgHere = (me) => (me.tr && me.tr.st === 'there' ? me.tr.to : 'pt');
+function digSiteRow(me, S2, b, far) {
   const set = dgSet(S2.id), C = S.cfg.col.sets[set], items = C.items, have = items.filter((i) => (me.col?.[i] || 0) > 0).length;
   const lock = (me.arq || 0) < S2.st, wait = (me.dgc?.[S2.id] || 0) > now(), cash = me.cash + me.bank;
   // o que se ganha (as peças que já tens e quanto paga o museu) e o que se arrisca (prisão e fiança) antes do toque
   return h('div', { class: 'vrow dgs' }, art('sitios', S2.id, 'dgsi'),
     h('div', { class: 'grow' }, h('b', null, t('dgSite_' + S2.id)), h('div', { class: 'small muted' }, t('dgEra_' + S2.id)),
       h('div', { class: 'small num' }, h('span', { class: have === items.length ? 'c-cash' : '' }, t('dgHave', { a: have, b: items.length })), h('span', { class: 'muted' }, ' · ' + t(musPay(me, set).first ? 'dgSetVal1' : 'dgSetValN', { m: money(musPay(me, set).cash) }))),
-      S2.rare ? h('div', { class: 'small muted' }, t('dgRareLine', { x: dgLow(S2.rare) })) : null,
-      h('div', { class: 'small muted num' }, t('dgJail', { m: S2.jailMin, b: money(S2.lawyer) })),
-      lock ? h('div', { class: 'small muted' }, t('dgNeed', { n: S2.st })) : wait ? h('div', { class: 'small muted' }, t('dgWatched'), ' ', h('span', { class: 'num', dataset: { left: me.dgc[S2.id], long: 1 } }, leftTxt(me.dgc[S2.id] - now())))
+      S2.rare && !far ? h('div', { class: 'small muted' }, t('dgRareLine', { x: dgLow(S2.rare) })) : null,
+      far ? null : h('div', { class: 'small muted num' }, t('dgJail', { m: S2.jailMin, b: money(S2.lawyer) })),
+      far ? h('div', { class: 'small muted' }, S2.at === 'pt' ? t('dgOnlyHome') : t('dgOnlyAt', { x: trCityF(S2.at, 'Em').replace(/^./, (c) => c.toLowerCase()) + ' · ' + t('trNeed', { n: trDest(S2.at).level }) })) : lock ? h('div', { class: 'small muted' }, t('dgNeed', { n: S2.st })) : wait ? h('div', { class: 'small muted' }, t('dgWatched'), ' ', h('span', { class: 'num', dataset: { left: me.dgc[S2.id], long: 1 } }, leftTxt(me.dgc[S2.id] - now())))
         : cash < S2.price ? h('div', { class: 'small muted' }, t('dgNoCash', { m: money(S2.price) })) : null,
       // o botão por baixo do texto: a 320 px o nome do sítio e a época cabem numa ou duas linhas
-      lock || wait ? null : h('button', { class: 'btn ghost sm num dggo', disabled: !!b || !!me.dg || cash < S2.price, on: { click: (e) => act('digStart', { site: S2.id }, { el: e.currentTarget }) } }, t('dgGo', { m: money(S2.price) }))));
+      far || lock || wait ? null : h('button', { class: 'btn ghost sm num dggo', disabled: !!b || !!me.dg || cash < S2.price, on: { click: (e) => act('digStart', { site: S2.id }, { el: e.currentTarget }) } }, t('dgGo', { m: money(S2.price) }))));
 }
 // a escavação que acabou: a grelha toda à vista (o que levaste, o que ficou enterrado), até se fechar ou começar outra
 function digLastCard() {
@@ -3163,7 +3186,150 @@ function screenDig() {
   const last = digLastCard(); if (last) out.push(last);
   if (!me.arq) out.push(h('div', { class: 'tip' }, h('p', null, t('dgNoStudy')), h('button', { class: 'btn buy sm', on: { click: () => go('uni') } }, t('dgToUni'))));
   out.push(h('h2', { class: 'sec' }, t('dgSites')), h('p', { class: 'small muted usub' }, t('dgHow', { p: D.riskBp / 100 })),
-    h('div', { class: 'card vlist vc' }, D.sites.map((x) => digSiteRow(me, x, b))));
+    h('div', { class: 'card vlist vc' }, D.sites.filter((x) => x.at === dgHere(me)).map((x) => digSiteRow(me, x, b))));
+  // v101: os sítios lá fora (ou os de cá, para quem está fora): só se escava onde se está
+  const longe = D.sites.filter((x) => x.at !== dgHere(me));
+  if (longe.length) out.push(h('h2', { class: 'sec' }, t(dgHere(me) === 'pt' ? 'dgAbroad' : 'dgHome')), h('div', { class: 'card vlist vc' }, longe.map((x) => digSiteRow(me, x, b, true))));
+  return out;
+}
+
+// ===== Viagens (v101) =====
+// Cá: a mala que chegou (vender), o globo, a mala e os destinos; o destino escolhido abre o que há lá e o raio-X. A voar: o avião no
+// globo e a hora a que aterra. Lá: o mercado (legal e contrabando), o armeiro, a escavação (se houver), as lutas e a volta.
+const TRV = () => S.cfg.travel;
+const trDest = (id) => TRV().dests.find((d) => d.id === id);
+const trCity = (id) => t('trCity_' + id);
+const trCityF = (id, f) => t('tr' + f + '_' + id);   // com a preposição certa (do Cairo, ao Rio, na Cidade do México…)
+const trGoods = (id) => Object.entries(TRV().goods).filter(([, g]) => g.at === id);
+const trUsedC = (bag) => Object.values(bag || {}).reduce((s, n) => s + n, 0);
+const trCapC = (me) => TRV().bag[me.trB || 0];
+// o que o importador paga agora por n (a mesma conta do servidor)
+function trPriceC(id, n) {
+  const R = TRV(), sat = S.st.me.trw?.[id]?.sat ?? 10000, avg = Math.max(R.satMin, sat - Math.floor((R.satBp * (n - 1)) / 2));
+  return Math.floor((n * R.goods[id].sell * avg) / 10000);
+}
+const trUnit = (id) => trPriceC(id, 1);
+function trv3() {
+  if (!S.trv3) S.trv3 = GL.globe({ home: S.cfg.air.home, homeName: t('airHome'), clock: now, few: true, routes: TRV().dests.map((d) => ({ lat: d.lat, lon: d.lon, name: trCity(d.id).toUpperCase() })) });   // dez destinos: só o nome do escolhido
+  return S.trv3;
+}
+const trIdx = (id) => TRV().dests.findIndex((d) => d.id === id);
+// a duração de um voo: «25 min», «1h 20m», «3h»
+const trDur = (ms) => { const m = Math.round(ms / 60000); return m < 60 ? m + ' min' : Math.floor(m / 60) + 'h' + (m % 60 ? ' ' + (m % 60) + 'm' : ''); };
+function trGoodRow(me, id, G, abroad) {
+  const contra = !!G.seizeBp, unit = trUnit(id), st = me.trw?.[id]?.s ?? G.max;
+  const tag = h('span', { class: 'trtag' + (contra ? ' c' : '') }, contra ? t('trContra') + ' · ' + t('trSeize', { p: pctBp(G.seizeBp) }) : t('trLegal'));
+  const head = [art('viagens', 'g_' + id, 'trgi'), h('div', { class: 'grow' }, h('b', null, t('tg_' + id)), h('div', { class: 'small num' }, tag),
+    h('div', { class: 'small num trpr' }, h('span', { class: 'muted' }, money(G.buy) + ' → ' + money(unit)), ' ', h('span', { class: unit > G.buy ? 'c-cash' : 'c-red' }, t('trEach', { m: money(unit - G.buy) }))),
+    abroad ? h('div', { class: 'small muted num' }, st > 0 ? t('trStock', { n: num(st) }) : t('trOut')) : null)];
+  if (!abroad) return h('div', { class: 'vrow trg' }, ...head);
+  const free = trCapC(me) - trUsedC(me.tr.bag), can = Math.min(free, st, Math.floor((me.cash + me.bank) / G.buy));
+  const buy = (n, e) => act('trBuy', { g: id, n }, { el: e.currentTarget });
+  return h('div', { class: 'trgw' }, h('div', { class: 'vrow trg' }, ...head),
+    h('div', { class: 'trbtns' }, h('button', { class: 'btn ghost sm num', disabled: can < 1, on: { click: (e) => buy(1, e) } }, t('trBuy1')),
+      h('button', { class: 'btn ghost sm num', disabled: can < 2, 'aria-label': t('trFillA', { n: can, x: t('tg_' + id) }), on: { click: (e) => buy(can, e) } }, t('trFill', { n: can, m: money(can * G.buy) }))));
+}
+// a mala: o que leva, com o lugar que sobra
+function trBagLine(me, bag) {
+  const used = trUsedC(bag), cap = trCapC(me);
+  return h('div', { class: 'trbag' }, h('div', { class: 'row sp' }, h('b', null, t('trBag', { a: used, b: cap })),
+    h('span', { class: 'small muted num' }, used ? Object.entries(bag).map(([g, n]) => n + '× ' + t('tg_' + g)).join(' · ') : t('trBagEmpty'))),
+    h('div', { class: 'fill' }, h('i', { style: `width:${Math.round((100 * used) / cap)}%` })));
+}
+// a mala que chegou: o que vale agora (o importador baixa o preço com o que se vende) e o que a alfândega levou
+function trLandedCard(me) {
+  const L = me.trL, rows = [];
+  let tot = 0;
+  for (const [g, n] of Object.entries(L.bag)) {
+    if (L.sz.includes(g)) { rows.push(h('div', { class: 'row sp small' }, h('span', null, n + '× ' + t('tg_' + g)), h('b', { class: 'c-red nw' }, t('trSeized')))); continue; }
+    const v = trPriceC(g, n); tot += v;
+    rows.push(h('div', { class: 'row sp small' }, h('span', null, n + '× ' + t('tg_' + g)), h('b', { class: 'num c-cash' }, money(v))));
+  }
+  return h('section', { class: 'card stack trland' },
+    h('div', { class: 'row sp' }, h('b', { class: 'trlt' }, t('trLandedT')), h('span', { class: 'small muted' }, trCity(L.to))),
+    L.sz.length ? h('img', { class: 'trscene', src: IMG('viagens', 'alfandega'), alt: '', width: 600, height: 600, loading: 'lazy' }) : null,
+    ...rows,
+    h('button', { class: 'btn buy block big num', on: { click: async (e) => { const o = await act('trSell', {}, { el: e.currentTarget }); if (o) { fx.sfx('cash'); render(true); } } } }, t('trSellAll', { m: money(tot) })));
+}
+function trFlying(me, G) {
+  const T = me.tr, D = trDest(T.to), out = T.st === 'out';
+  G.flight({ r: trIdx(T.to), t0: T.t0, t1: T.at, leg: out ? 'out' : 'back' });
+  return h('div', { class: 'card stack airfl' },
+    h('div', { class: 'row sp' }, h('div', null, h('div', { class: 'airto' }, t(out ? 'trOutTo' : 'trBackFrom', { x: trCityF(D.id, 'De') })), h('div', { class: 'small muted' }, t('trLands', { h: hhmm(T.at) }))),
+      h('b', { class: 'gcd num nw' }, h('span', { dataset: { left: T.at } }, dur(Math.max(0, T.at - now()))))),
+    h('div', { class: 'fill big jbar', dataset: { until: T.at, jtotal: T.at - T.t0 } }, h('i')),
+    trUsedC(T.bag) ? trBagLine(me, T.bag) : h('div', { class: 'vlist' }, trGoods(D.id).map(([id, Gd]) => trGoodRow(me, id, Gd, false))),
+    h('p', { class: 'small muted' }, t(T.arm ? 'trArmed' : 'trUnarmed')));
+}
+function trAbroad(me, G, b) {
+  const T = me.tr, D = trDest(T.to), site = S.cfg.dig.sites.find((x) => x.at === D.id), bag = T.bag;
+  G.flight({ r: trIdx(D.id), t0: T.t0, t1: T.t0 + 1, leg: 'there' });
+  const contra = Object.keys(bag).filter((g) => bag[g] > 0 && TRV().goods[g].seizeBp);
+  const out = [
+    h('div', { class: 'trhero', style: `background-image:url(${IMG('viagens', 'r_' + D.id)})` }, h('div', null, h('h2', null, trCity(D.id)), h('div', { class: 'small' }, t('trC_' + D.id)))),
+    b,
+    h('div', { class: 'card vlist vc trmk' }, trBagLine(me, bag), trGoods(D.id).map(([id, Gd]) => trGoodRow(me, id, Gd, true))),
+  ];
+  // o armeiro de lá e as lutas com quem cá está
+  out.push(h('div', { class: 'card vlist vc' },
+    h('div', { class: 'vrow trgun' }, art('gear', D.gun, 'trgi'), h('div', { class: 'grow' }, h('b', null, t('trGunT')), h('div', { class: 'small' }, t('g_' + D.gun)), h('div', { class: 'small muted' }, t('trGunS'))),
+      T.gun ? h('span', { class: 'small c-cash' }, t('trGunHave')) : h('button', { class: 'btn ghost sm num', disabled: !!b || me.cash + me.bank < D.gunRent, on: { click: (e) => act('trGun', {}, { el: e.currentTarget }) } }, t('trGunRent', { m: money(D.gunRent) }))),
+    h('button', { class: 'vrow linkrow', on: { click: () => { S.fightSeg = 'targets'; go('fights'); } } }, h('div', { class: 'grow' }, h('b', null, t('trFights')), h('div', { class: 'small muted' }, t('trFightsS') + ' ' + t(T.arm ? 'trArmed' : 'trUnarmed'))), h('span', { 'aria-hidden': 'true' }, '›')),
+    site ? h('button', { class: 'vrow linkrow', on: { click: () => go('dig') } }, art('sitios', site.id, 'trgi'), h('div', { class: 'grow' }, h('b', null, t('trDigHere') + ' · ' + t('dgSite_' + site.id)), h('div', { class: 'small muted' }, t('dgEra_' + site.id))), h('span', { 'aria-hidden': 'true' }, '›')) : null));
+  out.push(h('div', { class: 'trgo' }, contra.length ? h('p', { class: 'small c-red' }, t('trBackRisk')) : null,
+    h('button', { class: 'btn pri block big num', disabled: !!b || !!me.dg, on: { click: async (e) => { const o = await act('trBack', {}, { el: e.currentTarget }); if (o) render(true); } } }, t('trBack', { t: trDur(D.ms) }))));
+  return out;
+}
+// o raio-X à saída: cacifo, escondidas ou o contacto (só aparece a quem leva armas)
+function trXray(me) {
+  const n = me.nArm || 0; if (!n) return null;
+  const X = TRV().xray, C = TRV().contact, mode = S.trX || 'locker', hideP = Math.min(X.max, X.bp * n);
+  const sub = { locker: t('trXLockerS'), hide: t('trXHideS', { p: pctBp(hideP), m: money(X.fine * n) }), contact: t('trXContactS', { m: money(me.trCc || 0), p: pctBp(C.risk) }) }[mode];
+  return h('div', { class: 'trx' }, h('b', null, t('trXray')), h('div', { class: 'small muted' }, t(n === 1 ? 'trArms1' : 'trArmsN', { n })),
+    h('div', { class: 'seg trxs', role: 'group', style: 'margin:8px 0 6px' }, [['locker', t('trXLocker'), '0%'], ['hide', t('trXHide'), pctBp(hideP)], ['contact', t('trXContact'), pctBp(C.risk)]].map(([v, l, r]) =>
+      h('button', { 'aria-pressed': mode === v ? 'true' : 'false', on: { click: () => { S.trX = v; render(true); } } }, h('span', null, l), h('small', { class: 'num' }, r)))),
+    h('p', { class: 'small ' + (mode === 'hide' ? 'c-red' : 'muted') }, sub));
+}
+function trDestCard(me, D, b) {
+  const lock = me.level < D.level, site = S.cfg.dig.sites.find((x) => x.at === D.id), n = me.nArm || 0, mode = n ? S.trX || 'locker' : 'locker';
+  const cost = D.ticket + (mode === 'contact' ? me.trCc || 0 : 0), lat = S.st.round.playEnd - now() < 2 * D.ms;
+  return h('section', { class: 'card stack trdest' },
+    h('div', { class: 'trhero sm', style: `background-image:url(${IMG('viagens', 'r_' + D.id)})` }, h('div', null, h('div', { class: 'small' }, t('trFlight', { t: trDur(D.ms) }) + ' ' + t('trPair')))),
+    h('div', { class: 'vlist' }, trGoods(D.id).map(([id, G]) => trGoodRow(me, id, G, false))),
+    h('div', { class: 'small muted num' }, [t('trGunT') + ': ' + t('g_' + D.gun) + ' · ' + money(D.gunRent), site ? t('dgSite_' + site.id) : null].filter(Boolean).join(' · ')),
+    lock ? h('p', { class: 'small muted' }, t('trNeed', { n: D.level })) : trXray(me),
+    lock ? null : h('p', { class: 'small muted num' }, (me.trN || 0) >= TRV().perDay ? t('trLeft0') : t('trLeft', { a: TRV().perDay - (me.trN || 0), b: TRV().perDay })),
+    !lock && me.cash + me.bank < cost ? h('p', { class: 'small c-red num' }, t('trShort', { m: money(cost - me.cash - me.bank) })) : null,
+    lock ? null : h('button', { class: 'btn buy block big num', disabled: !!b || !!me.trL || lat || me.cash + me.bank < cost || (me.trN || 0) >= TRV().perDay,
+      on: { click: async (e) => { const o = await act('travel', { to: D.id, mode }, { el: e.currentTarget }); if (o) { fx.sfx('deal'); render(true); } } } }, t('trGo', { m: money(cost) })));
+}
+function screenViagens() {
+  const me = S.st.me, G = trv3();
+  // fora do país não há «voltar» (a cidade espera): o título sem a seta
+  const out = [me.tr ? h('div', { class: 'phead' }, h('div', { class: 'pbar top' }, h('h1', null, t('p_viagens')))) : pageHead('viagens', t('s_viagens'), true)];
+  if (!me.tr && me.trL) out.push(trLandedCard(me));   // a mala que chegou vem primeiro
+  out.push(h('div', { class: 'trglobe' + (me.tr ? '' : ' band') }, G.el)); queueMicrotask(() => G.wake());
+  const b = busyBanner(me);
+  if (me.tr && me.tr.st !== 'there') { if (b) out.push(b); out.push(trFlying(me, G)); return out; }
+  if (me.tr) return [out[0], ...trAbroad(me, G, b)];   // lá fora o sítio é a imagem da cidade (sem o globo)
+  G.flight(null);
+  if (b) out.push(b);
+  const D0 = TRV().dests, open = D0.filter((d) => me.level >= d.level && me.cash + me.bank >= d.ticket), sel = trDest(S.trSel) || open[open.length - 1] || D0[0];   // por defeito, o melhor que se pode pagar
+  // o que rende uma mala cheia do que é legal (ao preço de agora), já sem o bilhete
+  const perBag = (D) => { const [id, G] = trGoods(D.id).find(([, x]) => !x.seizeBp), cap = trCapC(me); return trPriceC(id, cap) - cap * G.buy - D.ticket; };
+  G.select(trIdx(sel.id));
+  // a mala e a maior que se pode comprar
+  const k = (me.trB || 0) + 1, R = TRV();
+  out.push(h('div', { class: 'row sp trbagup' }, h('span', { class: 'small' }, art('viagens', 'mala', 'trmi'), t('trBagN', { n: R.bag[me.trB || 0] })),
+    k < R.bag.length ? h('button', { class: 'btn ghost sm num', disabled: !!b || me.cash + me.bank < R.bagCost[k], on: { click: (e) => act('trBag', {}, { el: e.currentTarget }) } }, t('trBagUp', { n: R.bag[k], m: moneyShort(R.bagCost[k]) })) : h('span', { class: 'small muted' }, t('trBagMax'))));
+  // o destino escolhido abre por baixo da sua linha (a lista é comprida: não se vai buscar lá ao fundo)
+  out.push(h('div', { class: 'airlist' }, D0.flatMap((D) => {
+    const lock = me.level < D.level;
+    const row = h('button', { class: 'airr' + (D === sel ? ' sel' : '') + (lock ? ' lock' : ''), 'aria-expanded': D === sel ? 'true' : 'false', on: { click: () => { S.trSel = D.id; render(true); } } },
+      h('div', { class: 'grow' }, h('b', null, trCity(D.id)), h('span', { class: 'small muted num' }, t('trC_' + D.id) + ' · ' + trDur(D.ms) + ' · ' + money(D.ticket))),
+      h('div', { class: 'airn' }, h('b', { class: 'num trtk ' + (lock ? '' : 'c-cash') }, '+' + moneyShort(perBag(D))), h('span', { class: 'small muted num' }, lock ? t('trNeed', { n: D.level }) : t('trPerBag'))));
+    return D === sel ? [row, trDestCard(me, D, b)] : [row];
+  })));
   return out;
 }
 
@@ -3383,6 +3549,7 @@ function honItem(h) {
     case 'house': return list('houses')[S.cfg.house.tiers.findIndex((x) => x.id === k)] || k;
     case 'lux': return list('lux')[S.cfg.luxury.list.findIndex((x) => x.id === k)] || k;
     case 'air': return t('ar_' + k);
+    case 'trips': return trCity(k);   // (no nome: «Viajante: Cairo»)
     case 'sp': return t('hs_' + k);
     case 'res': return t('hsite_' + k);
     case 'mus': return t('muSet_' + k);
@@ -3392,8 +3559,8 @@ function honItem(h) {
   return k;
 }
 const honName = (h) => t('hon_' + h.m, { x: honItem(h) }) + (h.of > 1 ? ' ' + ROMAN[h.t] : '');
-const HON_ONE = ['crits', 'pvp', 'hosp', 'ports', 'air', 'hunts', 'kills', 'gold', 'musn', 'digs', 'books', 'jail', 'esc', 'mods', 'bizn'];   // as que têm um degrau de 1 (o texto no singular)
-const honDesc = (h) => t((h.at === 1 && HON_ONE.includes(h.m) ? 'hond1_' : 'hond_') + h.m, { x: honItem(h), n: h.m === 'nw' ? money(h.at) : num(h.at) });
+const HON_ONE = ['crits', 'pvp', 'hosp', 'ports', 'air', 'trips', 'hunts', 'kills', 'gold', 'musn', 'digs', 'books', 'jail', 'esc', 'mods', 'bizn'];   // as que têm um degrau de 1 (o texto no singular)
+const honDesc = (h) => t((h.at === 1 && HON_ONE.includes(h.m) ? 'hond1_' : 'hond_') + h.m, { x: h.m === 'trips' ? trCityF(h.k, 'A') : honItem(h), n: h.m === 'nw' ? money(h.at) : num(h.at) });   // (v101: «10 viagens ao Cairo»)
 const HON_SAME = ['biz', 'house', 'lux', 'course', 'mus', 'wt', 'sp'];   // a descrição só repetiria o nome (nas que já tens)
 const honVal = (me, h) => (me.honv || {})[h.m + (h.k ? ':' + h.k : '')] || 0;
 const honBar = (h, opts) => HB.honorBar(h, honName(h), opts);
@@ -4612,8 +4779,8 @@ function screenHitman() {
 function screenFights() {
   const me = S.st.me, n = now();
   const out = [pageHead('fights', t('fightsSub'))];
-  out.push(h('div', { class: 'hlinks' }, ['gang', 'arms', 'rank', 'hitman'].map((id) => h('button', { class: 'hlink', on: { click: () => go(id) } },
-    art('cenas', PLACES[id].img, 'hthumb'), h('span', null, t('p_' + id)), icon('chev')))));
+  if (!me.tr) out.push(h('div', { class: 'hlinks' }, ['gang', 'arms', 'rank', 'hitman'].map((id) => h('button', { class: 'hlink', on: { click: () => go(id) } },
+    art('cenas', PLACES[id].img, 'hthumb'), h('span', null, t('p_' + id)), icon('chev')))));   // (v101: lá fora, não: a gangue, o armeiro e o assassino são de cá)
   out.push(h('div', { class: 'seg', role: 'group' }, [['targets', t('targets')], ['events', t('news')]].map(([id, lbl]) =>
     h('button', { 'aria-pressed': S.fightSeg === id ? 'true' : 'false', on: { click: () => { S.fightSeg = id; if (id === 'targets') loadTargets(); else loadEvents(true); render(); } } }, lbl))));
   if (S.fightSeg !== 'events') {
@@ -4622,6 +4789,7 @@ function screenFights() {
     if (me.shieldUntil > n) info.push(t('newShield', { t: dur(me.shieldUntil - n) }));
     else if (Math.max(me.protectUntil, me.capUntil) > n) info.push(t('protectedUntil', { t: dur(Math.max(me.protectUntil, me.capUntil) - n) }));
     if (n - S.st.round.start < S.cfg.round.noPvpMs) info.push(t('noPvpYet'));
+    if (me.tr) info.push(t('trIn', { x: trCityF(me.tr.to, 'Em') }) + '. ' + t('trFightsS') + ' ' + t(me.tr.arm ? 'trArmed' : me.tr.gun ? 'trGunOn' : 'trUnarmed', { x: t('g_' + me.tr.gun) }));   // v101
     if (info.length) out.push(h('div', { class: 'tip' }, h('p', null, info.join(' '))));
     // quem dá para atacar em cima; por baixo, os outros jogadores com o motivo (os mais perto de ti no ranking primeiro)
     const can = (S.targets || []).filter((x) => !x.why), cant = (S.targets || []).filter((x) => x.why);
@@ -4634,10 +4802,10 @@ function screenFights() {
       h('div', { class: 'acts' },
         h('button', { class: 'btn buy sm', disabled: !!b, on: { click: (e) => { const el = e.currentTarget; withShield((drop) => act('attack', { target: x.name, mode: 'beat', drop }, { el })); } } }, t('beat') + ' · ' + t('luxResp', { n: x.gain })),
         h('button', { class: 'btn ghost sm', disabled: !!b, on: { click: (e) => { const el = e.currentTarget; withShield((drop) => act('attack', { target: x.name, mode: 'mug', drop }, { el })); } } }, t('rob') + ' · ~' + money(x.loot)),
-        x.hp && x.hw !== 'LOW_LEVEL' ? h('button', { class: 'btn ghost dng sm hmb', on: { click: () => hitmanSheet(x) } }, t('hmBtn', { m: moneyShort(x.hp) })) : null)))));
+        x.hp && x.hw !== 'LOW_LEVEL' && x.hw !== 'TARGET_AWAY' ? h('button', { class: 'btn ghost dng sm hmb', on: { click: () => hitmanSheet(x) } }, t('hmBtn', { m: moneyShort(x.hp) })) : null)))));
     if (cant.length) out.push(h('h2', { class: 'sec' }, t('tgOffT')), h('div', { class: 'stack' }, cant.map((x) => h('div', { class: 'card tgt off' },
       h('div', { class: 'who2' }, S.avOk ? h('img', { class: 'avs', src: AV(x.av || 0), alt: '', width: 96, height: 96, loading: 'lazy' }) : null, h('div', null, h('div', { class: 'nm' }, x.tag ? h('span', { class: 'gtag' }, x.tag) : null, x.tag ? ' ' : '', x.name), h('div', { class: 'lv' }, t('level') + ' ' + x.level + ' · ' + titleOf(x.level) + ' · ', h('span', { class: 'c-resp' }, icon('crown'), ' ' + short(x.respect))),
-        h('div', { class: 'why' }, errText(x.why), x.until > n ? [' · ', h('b', { class: 'num', dataset: { opend: x.until } }, dur(x.until - n))] : null)))))));
+        h('div', { class: 'why' }, x.at ? t(x.fly ? 'whyFly' : 'whyAway', { x: x.fly ? trCityF(x.at, 'Para') : trCity(x.at) }) : errText(x.why), x.until > n ? [' · ', h('b', { class: 'num', dataset: { opend: x.until } }, dur(x.until - n))] : null)))))));
     out.push(h('button', { class: 'btn ghost block', style: 'margin-top:12px', on: { click: () => { S.targets = null; render(); loadTargets(); } } }, icon('refresh'), t('retry')));
   } else if (!S.events) out.push(h('p', { class: 'muted' }, t('loading')));
   else if (!S.events.length) out.push(h('div', { class: 'note' }, h('p', { class: 'muted' }, t('noEvents'))));

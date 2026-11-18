@@ -16,7 +16,7 @@ const erro = (f, code) => assert.throws(f, (e) => e.code === code, code);
 const sorte = (raro, seed = 5) => { const r = seededRng(seed); return { int: (a, b) => r.int(a, b), chance: () => raro }; };
 
 test('cada sítio tem o seu material raro, e cada raro serve numa receita de topo; a feira sabe o preço deles', () => {
-  const raros = D.sites.map((s) => s.rare);
+  const raros = [...new Set(D.sites.map((s) => s.rare).filter(Boolean))];   // (v101: os sítios lá fora repetem os raros)
   assert.deepEqual([...raros].sort(), [...CFG.mat.rare].sort());
   for (const m of CFG.mat.rare) {
     assert.ok(CFG.craft.list.some((r) => r.needs[m]), m + ' serve para alguma coisa');
@@ -42,7 +42,9 @@ test('apanhado pela ronda, o raro do saco também se perde', () => {
 test('a grelha às vezes tem o raro do sítio (um só, além dos achados); os números à volta contam-no', () => {
   for (const S of D.sites) {
     const p = mk(), q = mk();
+    if (S.at !== 'pt') for (const x of [p, q]) x.tr = { to: S.at, st: 'there', t0: START, at: START, bag: {}, paid: {}, arm: false };   // v101: lá fora, só quem lá está
     E.digStart(p, START, world, sorte(true), S.id); E.digStart(q, START, world, sorte(false), S.id);
+    if (!S.rare) { assert.equal(p.dg.cells.filter(Boolean).length, D.finds); continue; }
     assert.equal(p.dg.cells.filter((v) => v === S.rare).length, 1, S.id);
     assert.equal(p.dg.cells.filter(Boolean).length, D.finds + 1);
     assert.equal(q.dg.cells.filter((v) => v === S.rare).length, 0);

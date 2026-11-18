@@ -57,7 +57,7 @@ export function newPlayer(id, now, world, opts = {}) {
     mi: 0,                         // objetivos já recebidos
     mq: CFG.missions.map((_, i) => i), mrT: 0,   // os que faltam, pela ordem em que vão aparecer; e quando se trocou pela última vez
     titles: [],                    // títulos que ficam para sempre: { k: 'vet' } (veterano das rondas), { k: 'ep', n, d, pos } (pódio de uma época)
-    cls: '', clsAt: 0, av: 0, fx: {}, sick: false, hkN: CFG.hookers.list.map(() => 0), hkAt: CFG.hookers.list.map(() => 0), house: 0, hu: CFG.house.ups.map(() => 0), bj: null, wm: {}, cd: { est: 0, med: 0 }, col: {}, mus: {}, sx: { F: 0, T: 0, I: 0, C: 0 }, gs: null, gym: 'garagem', gyms: ['garagem'], gx: 0, bk: { own: {}, rd: null, on: null, done: {}, last: null, n: 0, bd: null }, mt: {}, cf: null, maq: {}, dg: null, dgc: {}, hunt: { on: null, sk: 0, tr: {}, day: '', q: {}, fc: {}, n: 0 }, hon: {}, honSel: null, cx: { air: {}, wt: [] },        // profissão, avatar e efeitos temporários (kind -> { bp, until })
+    cls: '', clsAt: 0, av: 0, fx: {}, sick: false, hkN: CFG.hookers.list.map(() => 0), hkAt: CFG.hookers.list.map(() => 0), house: 0, hu: CFG.house.ups.map(() => 0), bj: null, wm: {}, cd: { est: 0, med: 0 }, col: {}, mus: {}, sx: { F: 0, T: 0, I: 0, C: 0 }, gs: null, gym: 'garagem', gyms: ['garagem'], gx: 0, bk: { own: {}, rd: null, on: null, done: {}, last: null, n: 0, bd: null }, mt: {}, cf: null, maq: {}, dg: null, dgc: {}, hunt: { on: null, sk: 0, tr: {}, day: '', q: {}, fc: {}, n: 0 }, hon: {}, honSel: null, cx: { air: {}, wt: [], trip: {} }, tr: null, trL: null, trB: 0, trD: null,        // profissão, avatar e efeitos temporários (kind -> { bp, until })
   };
 }
 
@@ -88,6 +88,9 @@ function migrate(p) {
   if (!p.dgc || typeof p.dgc !== 'object' || Array.isArray(p.dgc)) p.dgc = {};   // v85: até quando cada sítio está vigiado
   if (!p.hon || typeof p.hon !== 'object' || Array.isArray(p.hon)) p.hon = {};   // v100: honras (id -> quando)
   if (!p.cx || typeof p.cx !== 'object' || !p.cx.air || !Array.isArray(p.cx.wt)) p.cx = { air: {}, wt: [] };   // v100: voos por rota e tipos de arma usados (para as honras)
+  if (!p.cx.trip || typeof p.cx.trip !== 'object') p.cx.trip = {};   // v101: viagens por país
+  if (p.tr === undefined) { p.tr = null; p.trL = null; p.trB = 0; }   // v101: a viagem, a mala que chegou e a mala comprada
+  if (p.trD === undefined) p.trD = null;   // e as viagens de hoje { d: dia de Lisboa, n }
   if (p.honSel !== null && (typeof p.honSel !== 'string' || !p.hon[p.honSel])) p.honSel = null;
   if (!p.hunt || typeof p.hunt !== 'object' || Array.isArray(p.hunt)) p.hunt = { on: null, sk: 0, tr: {}, day: '', q: {}, fc: {}, n: 0 };   // v98: caça (saída aberta, perícia em milésimos, troféus, saídas com licença do dia, reservas vigiadas)
   if (!p.c) p.c = { crimes: 0, wins: 0, trains: 0, refills: 0, collects: 0, pvpWins: 0, ports: 0 };
@@ -272,6 +275,7 @@ export function touch(p, now) {
   bookTick(p, now);   // v95: o livro que acabou de se ler e o efeito que acabou
   if (p.dg && p.dg.t0 + CFG.dig.ttl <= now) digClose(p, p.dg.t0 + CFG.dig.ttl);   // v85: escavação esquecida: fecha e guarda o que se achou
   if (p.hunt.on && p.hunt.on.t0 + CFG.hunt.ttl <= now) huntClose(p, p.hunt.on.t0 + CFG.hunt.ttl);   // v98: saída esquecida: o guia vende o que se caçou
+  trSettle(p, now);   // v101: o avião que chegou (lá fora, ou cá com a mala)
   if (p.course && p.course.q && p.course.q.t + CFG.exam.ttl <= now) { p.course.next = Math.max(p.course.next || 0, p.course.q.t + CFG.exam.ttl + examRetry(p.course.id)); p.course.q = null; p.course.why = 'ttl'; p.course.last = null; }   // v80: exame deixado aberto conta como chumbo
   p.t = now;
 }
@@ -282,12 +286,14 @@ function inRound(world, now) {
 
 // allowBusy: deixa fazer no hospital. Preso só se faz o que se faz na prisão (v75, pedido de 17/11): as tarefas de lá, a fiança,
 // o advogado e a cara (jailOk). O resto responde IN_JAIL, depois de conferir os argumentos.
-function begin(p, now, world, { allowBusy = false, jailOk = false } = {}) {
+// v101: trOk diz o que se faz fora do país: 0 só cá (o normal), 1 também lá fora (não a voar), 2 em qualquer lado (até a voar)
+function begin(p, now, world, { allowBusy = false, jailOk = false, trOk = 0 } = {}) {
   inRound(world, now);
   touch(p, now);
   retainerDay(p, now);
   if (p.jailUntil > now && !jailOk) fail('IN_JAIL', { until: p.jailUntil });
   if (!allowBusy && p.hospUntil > now) fail('IN_HOSPITAL', { until: p.hospUntil });
+  if (p.tr && trOk < 2 && (trOk === 0 || p.tr.st !== 'there')) fail(p.tr.st === 'there' ? 'ABROAD' : 'FLYING', { to: p.tr.to, until: p.tr.st === 'there' ? 0 : p.tr.at });
 }
 
 // ---------- utilidades ----------
@@ -517,7 +523,7 @@ export function changeClass(p, now, world, id) {
   return { ok: true, cls: id, from, cost };
 }
 export function setAvatar(p, now, world, i) {
-  begin(p, now, world, { allowBusy: true, jailOk: true });
+  begin(p, now, world, { allowBusy: true, jailOk: true, trOk: 2 });
   if (!Number.isInteger(i) || i < 0 || i >= CFG.avatars) fail('NO_AVATAR');
   p.av = i;
   return { ok: true, av: i };
@@ -796,7 +802,7 @@ export function consumWait(p, fam, now) { return Math.max(0, ((p.cd && p.cd[fam]
 export function consume(p, now, world, id) {
   const it = consumOf(id);
   if (!it) fail('NO_ITEM');
-  begin(p, now, world, { allowBusy: it.fam === 'med' });
+  begin(p, now, world, { allowBusy: it.fam === 'med', trOk: 2 });   // (v101: bebe-se e trata-se também em viagem)
   if (it.level && level(p) < it.level) fail('LOW_LEVEL', { need: it.level });
   if (it.fam === 'med' && !(p.hospUntil > now)) fail('NOT_IN_HOSPITAL');
   if (it.energy && p.energy >= energyMax(p)) fail('ENERGY_FULL');
@@ -855,7 +861,7 @@ export function colSell(p, now, world, id, n) {
 }
 
 export function payMedic(p, now, world) {
-  begin(p, now, world, { allowBusy: true });
+  begin(p, now, world, { allowBusy: true, trOk: 1 });   // (v101: também no hospital lá de fora)
   if (!(p.hospUntil > now)) fail('NOT_IN_HOSPITAL');
   const cost = medicCost(p, now);
   pay(p, cost);
@@ -1534,7 +1540,7 @@ export function bookBuy(p, now, world, id) {
 export function bookRead(p, now, world, id) {
   const b = bookOf(id);
   if (!b) fail('NO_BOOK');
-  begin(p, now, world, { allowBusy: true, jailOk: true });   // lê-se também preso ou no hospital
+  begin(p, now, world, { allowBusy: true, jailOk: true, trOk: 2 });   // lê-se também preso, no hospital ou no avião
   if (!(p.bk.own[id] > 0)) fail('NO_BOOK');
   if (p.bk.rd) fail('BOOK_BUSY', { until: p.bk.rd.end });
   if (b.k === 'again' && !p.bk.last) fail('NO_LAST');
@@ -1657,7 +1663,8 @@ const digReveal = (d) => d.cells.map((v) => v || 0);
 export function digStart(p, now, world, rng, site) {
   const S = siteOf(site), set = S && digSet(S.id);
   if (!S || !set) fail('NO_SITE');
-  begin(p, now, world);   // (primeiro: preso ou internado diz isso, não que falta o curso)
+  begin(p, now, world, { trOk: 1 });   // (primeiro: preso ou internado diz isso, não que falta o curso)
+  if (S.at !== hereOf(p)) fail('NOT_THERE', { at: S.at });   // v101: só se escava onde se está
   if (stLevel(p, 'arqueologia') < S.st) fail('NEED_STUDY', { need: S.st });
   if (p.dg) fail('DIG_OPEN');
   if ((p.dgc[S.id] || 0) > now) fail('DIG_WAIT', { until: p.dgc[S.id] });
@@ -1671,7 +1678,7 @@ export function digStart(p, now, world, rng, site) {
 export function digTap(p, now, world, rng, i) {
   const D = CFG.dig;
   if (!Number.isInteger(i) || i < 0 || i >= D.size * D.size) fail('BAD_CELL');
-  begin(p, now, world);
+  begin(p, now, world, { trOk: 1 });
   const d = p.dg;
   if (!d) fail('NO_DIG');
   if (d.open.some((x) => x.i === i)) fail('CELL_OPEN');
@@ -1682,8 +1689,9 @@ export function digTap(p, now, world, rng, i) {
     const lost = d.got.slice(), grid = digReveal(d), open = d.open.slice();
     d.got = [];
     digClose(p, now);
+    const dep = p.tr ? trDeport(p, now) : null;   // v101: apanhado lá fora: deportado, a mala fica lá, e a pena cumpre-se cá
     jailFor(p, now, S.jailMin * T.MIN, DIG_JAIL + CFG.dig.sites.indexOf(S));
-    return { ok: true, i, caught: true, lost, jailUntil: p.jailUntil, site: S.id, grid, open };
+    return { ok: true, i, caught: true, lost, jailUntil: p.jailUntil, site: S.id, grid, open, ...(dep ? { deported: dep } : {}) };
   }
   const v = d.cells[i];
   if (v) { d.got.push(v); d.open.push({ i, v }); } else d.open.push({ i, n: digNear(d.cells, i) });
@@ -1692,7 +1700,7 @@ export function digTap(p, now, world, rng, i) {
   return out;
 }
 export function digStop(p, now, world) {
-  begin(p, now, world);
+  begin(p, now, world, { trOk: 1 });
   if (!p.dg) fail('NO_DIG');
   const d = p.dg, site = d.site, grid = digReveal(d), open = d.open.slice(), got = digClose(p, now);
   return { ok: true, site, grid, open, got, matLost: d.matLost };   // matLost: o raro que não coube no depósito
@@ -1701,6 +1709,162 @@ export function digStop(p, now, world) {
 export function digView(p, now) {
   const d = p.dg;
   return d ? { site: d.site, t0: d.t0, until: d.t0 + CFG.dig.ttl, open: d.open.map((x) => ({ ...x })), got: d.got.slice(), used: d.used, taps: d.taps, safe: d.safe, next: digRiskBp(d.used + 1, d.safe) } : null;
+}
+
+// ---------- viagens (v101) ----------
+// O jogador voa para outro país: a ida (out), lá (there) e a volta (back). Enquanto está fora só faz o que se faz lá (comprar, escavar,
+// voltar) e o que se faz em qualquer lado (vestir, beber, ler). A mala que chega espera no aeroporto até se vender ao importador.
+// O stock lá fora e o preço do importador são de todos: vivem no mundo (w.tw), e só mudam com as compras e as vendas.
+export const destOf = (id) => (typeof id === 'string' ? CFG.travel.dests.find((d) => d.id === id) : undefined);
+export const trGood = (id) => (typeof id === 'string' && Object.hasOwn(CFG.travel.goods, id) ? CFG.travel.goods[id] : undefined);
+export const hereOf = (p) => (p.tr && p.tr.st === 'there' ? p.tr.to : 'pt');
+export const trBagCap = (p) => CFG.travel.bag[p.trB || 0];
+export const trUsed = (bag) => Object.values(bag || {}).reduce((s, n) => s + n, 0);
+const TR_SAT_MS = T.HOUR / CFG.travel.satRecH;   // um ponto (0,01%) de preço volta a cada TR_SAT_MS
+// o estado de uma coisa agora (sem mexer no mundo): stock lá fora (s, com t: até onde já se repôs) e preço cá (sat, com ts)
+export function trState(w, id, now) {
+  const G = CFG.travel.goods[id], x0 = w && w.tw && w.tw[id], x = x0 ? { ...x0 } : { s: G.max, t: now, sat: 10000, ts: now };
+  const per = T.HOUR / G.perH;
+  if (x.s >= G.max) { x.s = G.max; x.t = Math.max(x.t, now); }
+  else if (now > x.t) { const k = Math.floor((now - x.t) / per); if (k > 0) { x.s = Math.min(G.max, x.s + k); x.t = x.s >= G.max ? now : x.t + k * per; } }
+  if (x.sat >= 10000) { x.sat = 10000; x.ts = Math.max(x.ts, now); }
+  else if (now > x.ts) { const k = Math.floor((now - x.ts) / TR_SAT_MS); if (k > 0) { x.sat = Math.min(10000, x.sat + k); x.ts = x.sat >= 10000 ? now : x.ts + k * TR_SAT_MS; } }
+  return x;
+}
+const trPut = (w, id, x) => { if (!w.tw || typeof w.tw !== 'object') w.tw = {}; w.tw[id] = x; };
+// o que o importador paga por n de uma coisa com o preço a sat (cada unidade baixa satBp: conta-se pela média)
+export function trPrice(id, n, sat) {
+  const R = CFG.travel, avg = Math.max(R.satMin, sat - Math.floor((R.satBp * (n - 1)) / 2));
+  return { v: Math.floor((n * CFG.travel.goods[id].sell * avg) / 10000), sat1: Math.max(R.satMin, sat - R.satBp * n) };
+}
+// a viagem que mudou de fase com o tempo: chegou lá, ou chegou cá (a mala fica à espera no aeroporto)
+function trSettle(p, now) {
+  const t = p.tr; if (!t) return;
+  if (t.st === 'out' && t.at <= now) { t.st = 'there'; t.t0 = t.at; }
+  if (t.st === 'back' && t.at <= now) { p.trL = { to: t.to, at: t.at, bag: t.bag, paid: t.paid, sz: t.sz || [] }; p.tr = null; }
+}
+// apanhado lá fora: volta já, sem a mala
+function trDeport(p, now) { const t = p.tr; p.tr = null; return { to: t.to, bag: t.bag }; }
+export function travel(p, now, world, to, mode = 'locker', rng) {
+  const D = destOf(to);
+  if (!D) fail('NO_DEST');
+  if (!['locker', 'hide', 'contact'].includes(mode)) fail('BAD_MODE');
+  begin(p, now, world);
+  if (level(p) < D.level) fail('LOW_LEVEL', { need: D.level });
+  if (p.trL) fail('BAG_WAITING');
+  if (p.dg) fail('DIG_OPEN');
+  if (p.hunt.on) fail('HUNT_OPEN');   // (o golpe grande em preparação fica à espera: só avança quando cá estiveres)
+  if (p.gs || (p.course && p.course.q)) fail('TRIP_BUSY');
+  if (now + 2 * D.ms > world.playEnd) fail('ROUND_ENDING');
+  const day = dayOf(now), done = p.trD && p.trD.d === day ? p.trD.n : 0;
+  if (done >= CFG.travel.perDay) fail('TRIP_LIMIT', { n: CFG.travel.perDay });
+  const n = trWeapons(p), bribe = n && mode === 'contact' ? trContactCost(p) : 0;
+  pay(p, D.ticket + bribe);
+  // o raio-X: sem armas, passa; no cacifo, ficam cá; escondidas ou pelo contacto, podem ser confiscadas (com multa)
+  let arm = false, xr = null;
+  if (n && mode !== 'locker') {
+    if (rng.chance(mode === 'contact' ? CFG.travel.contact.risk : Math.min(CFG.travel.xray.max, CFG.travel.xray.bp * n))) {
+      const lost = [...W_ALL.filter((s) => p.eq[s]).map((s) => p.eq[s].id), ...p.inv.filter((x) => isWeapon(x.id)).map((x) => x.id)];
+      for (const s of W_ALL) p.eq[s] = null;
+      p.inv = p.inv.filter((x) => !isWeapon(x.id));
+      const fine = Math.min(CFG.travel.xray.fine * n, p.cash + p.bank); pay(p, fine);
+      xr = { mode, caught: true, lost, fine, bribe };
+    } else { arm = true; xr = { mode, caught: false, n, bribe }; }
+  } else if (n) xr = { mode: 'locker', n };
+  p.tr = { to: D.id, st: 'out', t0: now, at: now + D.ms, bag: {}, paid: {}, arm };
+  p.trD = { d: day, n: done + 1 };
+  return { ok: true, to: D.id, at: p.tr.at, paid: D.ticket, ...(xr ? { xr } : {}) };
+}
+// o contacto no aeroporto: uma parte do valor das armas na loja (os contactos da prisão baixam o preço)
+export function trContactCost(p) {
+  const C = CFG.travel.contact, v = [...W_ALL.map((s) => p.eq[s]).filter(Boolean), ...p.inv.filter((x) => isWeapon(x.id))].reduce((s, x) => s + (gearOf(x.id).price || 0), 0);
+  return Math.max(C.min, Math.floor((Math.floor((v * C.bp) / 10000) * (10000 - C.perBp * Math.min(p.contacts || 0, CFG.jail.contactsMax))) / 10000));
+}
+// o armeiro lá de fora: aluga a arma do país até à volta (não entra no avião)
+export function trGun(p, now, world) {
+  begin(p, now, world, { trOk: 1 });
+  if (!p.tr) fail('NOT_ABROAD');
+  const D = destOf(p.tr.to);
+  if (p.tr.gun) fail('HAVE_IT');
+  pay(p, D.gunRent);
+  p.tr.gun = D.gun;
+  return { ok: true, gun: D.gun, price: D.gunRent };
+}
+// as armas que o raio-X vê: as vestidas e as do inventário
+const W_ALL = ['branca', 'mao', 'principal'];
+const isWeapon = (id) => { const g = gearOf(id); return !!g && W_ALL.includes(g.slot); };
+export const trWeapons = (p) => W_ALL.filter((s) => p.eq[s]).length + p.inv.filter((x) => isWeapon(x.id)).length;
+// onde está agora, sem mexer no jogador (a ida que já chegou conta como lá)
+export function trWhere(p, now) {
+  const t = p.tr; if (!t) return null;
+  if (t.st === 'out' && t.at <= now) return { to: t.to, st: 'there', t0: t.at };
+  if (t.st === 'back' && t.at <= now) return null;
+  return { to: t.to, st: t.st, t0: t.t0 };
+}
+export function trBuy(p, now, world, m, g, n) {
+  const G = trGood(g);
+  if (!G) fail('NO_GOOD');
+  if (!Number.isSafeInteger(n) || n < 1) fail('BAD_AMOUNT');
+  if (!m || !m.w) fail('NO_MARKET');
+  begin(p, now, world, { trOk: 1 });
+  if (!p.tr) fail('NOT_ABROAD');
+  if (G.at !== p.tr.to) fail('NOT_THERE', { at: G.at });
+  const free = trBagCap(p) - trUsed(p.tr.bag);
+  if (n > free) fail('BAG_FULL', { free });
+  const x = trState(m.w, g, now);
+  if (x.s < n) fail('OUT_OF_STOCK', { s: x.s });
+  const cost = G.buy * n;
+  pay(p, cost);
+  x.s -= n; trPut(m.w, g, x);
+  p.tr.bag[g] = (p.tr.bag[g] || 0) + n; p.tr.paid[g] = (p.tr.paid[g] || 0) + cost;
+  return { ok: true, g, n, cost, s: x.s };
+}
+export function trBack(p, now, world, rng) {
+  begin(p, now, world, { trOk: 1 });
+  if (!p.tr) fail('NOT_ABROAD');
+  if (p.dg) fail('DIG_OPEN');
+  const D = destOf(p.tr.to);
+  // a alfândega decide já (o jogador só sabe quando aterra): cada lote de contrabando com a sua hipótese
+  const sz = Object.keys(CFG.travel.goods).filter((g) => p.tr.bag[g] > 0 && CFG.travel.goods[g].seizeBp && rng.chance(CFG.travel.goods[g].seizeBp));
+  Object.assign(p.tr, { st: 'back', t0: now, at: now + D.ms, sz });
+  return { ok: true, to: D.id, at: p.tr.at };
+}
+export function trSell(p, now, world, m) {
+  if (!m || !m.w) fail('NO_MARKET');
+  begin(p, now, world, { allowBusy: true });
+  const L = p.trL;
+  if (!L) fail('NO_BAG');
+  const lines = [];
+  let bank = 0, cash = 0, gross = 0, lav = 0, units = 0;
+  for (const g of Object.keys(CFG.travel.goods)) {
+    const n = L.bag[g] || 0; if (!n) continue;
+    const G = CFG.travel.goods[g];
+    if (L.sz.includes(g)) { lines.push({ g, n, sz: true }); continue; }
+    const x = trState(m.w, g, now), q = trPrice(g, n, x.sat);
+    x.sat = q.sat1; trPut(m.w, g, x);
+    units += n; gross += q.v;
+    if (G.seizeBp) {   // contrabando: o lucro é sujo (paga lavagem) e vem em dinheiro
+      const Lv = launder(p, q.v - (L.paid[g] || 0)); lav += Lv.lav; cash += q.v - Lv.lav;
+      lines.push({ g, n, v: q.v - Lv.lav, lav: Lv.lav });
+    } else { bank += q.v; lines.push({ g, n, v: q.v }); }   // legal: o importador paga por transferência
+  }
+  p.cash += cash; p.bank += bank;
+  p.trL = null;
+  const resp = units ? destOf(L.to).r : 0;
+  return { ok: true, to: L.to, lines, got: cash + bank, gross, lav, units, respect: resp, levelUp: resp ? addRespect(p, resp, now) : false };
+}
+export function trBag(p, now, world) {
+  begin(p, now, world);
+  const k = (p.trB || 0) + 1;
+  if (k >= CFG.travel.bag.length) fail('BAG_MAX');
+  pay(p, CFG.travel.bagCost[k]);
+  p.trB = k;
+  return { ok: true, k, cap: CFG.travel.bag[k], price: CFG.travel.bagCost[k] };
+}
+// o que o site vê da viagem (a alfândega fica escondida até aterrar)
+export function trView(p) {
+  const t = p.tr;
+  return t ? { to: t.to, st: t.st, t0: t.t0, at: t.at, bag: { ...t.bag }, paid: { ...t.paid }, arm: !!t.arm, ...(t.gun ? { gun: t.gun } : {}) } : null;
 }
 
 // ---------- caça (v98) ----------
@@ -1877,7 +2041,7 @@ function huntClose(p, now) {
 const HON_EACH = {
   crimes: () => CFG.crimes.map((c) => c.id), stats: () => STATS, biz: () => CFG.biz.map((b) => b.id), house: () => CFG.house.tiers.slice(1).map((x) => x.id),
   lux: () => CFG.luxury.list.map((x) => x.id), routes: () => CFG.air.routes.map((x) => x.id), species: () => Object.keys(CFG.hunt.sp), reserves: () => CFG.hunt.sites.map((x) => x.id),
-  sets: () => Object.keys(CFG.col.sets), courses: () => CFG.courses.map((c) => c.id),
+  sets: () => Object.keys(CFG.col.sets), courses: () => CFG.courses.map((c) => c.id), dests: () => CFG.travel.dests.map((d) => d.id),
   wtypes: () => [...new Set(CFG.gear.filter((g) => g.t).map((g) => g.t))],
 };
 // d: a dificuldade (0 a 1), que dá a moldura: o degrau na série, ou, nas de um só passo, a posição da coisa na lista (as listas vão
@@ -1922,6 +2086,8 @@ export function honorVal(p, m, k) {
     case 'collects': return c.collects || 0;
     case 'ports': return c.ports || 0;
     case 'air': return (p.cx && p.cx.air[k]) || 0;
+    case 'trips': return (p.cx && p.cx.trip && p.cx.trip[k]) || 0;   // v101
+    case 'trGoods': return c.trGoods || 0;
     case 'hunts': return p.hunt.n || 0;
     case 'kills': return c.kills || 0;
     case 'sp': return p.hunt.tr[k]?.n || 0;
@@ -1948,7 +2114,9 @@ export function honorTrack(p, now, pre, type, r) {
   if (!r) return;
   if (type === 'crime' && r.crit) c.crits = (c.crits || 0) + 1;
   if (type === 'crimeAll' && r.crits > 0) c.crits = (c.crits || 0) + r.crits;
-  if (!p.cx || typeof p.cx !== 'object') p.cx = { air: {}, wt: [] };
+  if (!p.cx || typeof p.cx !== 'object') p.cx = { air: {}, wt: [], trip: {} };
+  if (!p.cx.trip) p.cx.trip = {};
+  if (type === 'trSell' && r.ok && destOf(r.to)) { p.cx.trip[r.to] = (p.cx.trip[r.to] || 0) + 1; c.trGoods = (c.trGoods || 0) + (r.units || 0); }   // v101
   if (type === 'airCollect' && !r.seized && Number.isInteger(r.r) && CFG.air.routes[r.r]) { const id = CFG.air.routes[r.r].id; p.cx.air[id] = (p.cx.air[id] || 0) + 1; }
   if (type === 'digStart' && r.ok) c.digs = (c.digs || 0) + 1;
   if (type === 'jailEscape' && r.free) c.esc = (c.esc || 0) + 1;
@@ -2852,14 +3020,20 @@ export function wStat(it) {
   const sum = (k) => ms.reduce((a, m) => a + (m[k] || 0), 0);
   return { atk: up(g.atk || 0, sum('dmg')), acc: clamp((g.acc || 50) + sum('acc'), 0, 100), rng: (g.rng || 1) + sum('rng'), crit: sum('crit'), ammo: sum('ammo'), bust: sum('bust') };
 }
+// v101: lá fora, quem deixou as armas no cacifo luta à mão
+// (a alugada ao armeiro de lá conta como mais uma: de fogo, ou branca se for melhor do que a que se tem)
+const armedOff = (p) => !!(p.tr && !p.tr.arm);
+const rented = (p) => (p.tr && p.tr.gun && p.tr.st === 'there' ? { id: p.tr.gun, u: 1 } : null);
+const firesOf = (p) => [...(armedOff(p) ? [] : ['mao', 'principal'].map((s) => p.eq[s]).filter((x) => x && x.u > 0)), ...[rented(p)].filter((x) => x && gearOf(x.id).gun)];
+const meleeOf = (p) => { const L = [armedOff(p) ? null : p.eq.branca, rented(p) && !gearOf(rented(p).id).gun ? rented(p) : null].filter(Boolean); return L.sort((a, b) => wStat(b).atk - wStat(a).atk)[0] || null; };
 export function atkBp(p) {
-  const fire = ['mao', 'principal'].map((s) => p.eq[s]).filter((x) => x && x.u > 0).map((x) => wStat(x).atk).sort((a, b) => b - a);
-  return (fire[0] || 0) + (fire[1] ? Math.floor((fire[1] * CFG.gunSideBp) / 10000) : 0) + (p.eq.branca ? wStat(p.eq.branca).atk : 0);
+  const fire = firesOf(p).map((x) => wStat(x).atk).sort((a, b) => b - a), br = meleeOf(p);
+  return (fire[0] || 0) + (fire[1] ? Math.floor((fire[1] * CFG.gunSideBp) / 10000) : 0) + (br ? wStat(br).atk : 0);
 }
 // a arma com que se luta: a de fogo mais forte que ainda dispara; senão a branca; senão os punhos (precisão 50, alcance 1 m)
 export function mainWeapon(p) {
-  const fire = ['mao', 'principal'].map((s) => p.eq[s]).filter((x) => x && x.u > 0).sort((a, b) => wStat(b).atk - wStat(a).atk);
-  return fire[0] || p.eq.branca || null;
+  const fire = firesOf(p).sort((a, b) => wStat(b).atk - wStat(a).atk);
+  return fire[0] || meleeOf(p) || null;
 }
 export function fightAccBp(p) { const W = CFG.wfight, w = mainWeapon(p), acc = w ? wStat(w).acc : 50; return clamp((acc - 50) * W.accBp, -W.accMax, W.accMax); }
 export const fightRng = (p) => { const w = mainWeapon(p); return w ? wStat(w).rng : 1; };
@@ -2933,7 +3107,7 @@ export function equip(p, now, world, i) {
   const g = it ? gearOf(it.id) : undefined;
   if (!g) fail('NO_GEAR');
   if (g.slot === 'mat' || g.slot === 'mod') fail('NOT_WEARABLE');
-  begin(p, now, world, { allowBusy: true });
+  begin(p, now, world, { allowBusy: true, trOk: 2 });
   if (g.level && level(p) < g.level) fail('LOW_LEVEL', { need: g.level });   // v87: o nível conta também para o que vem da feira
   const old = p.eq[g.slot];
   p.eq[g.slot] = it;
@@ -2944,7 +3118,7 @@ export function equip(p, now, world, i) {
 // só sai se o que está guardado continuar a caber sem os espaços que ela dá.
 export function unequip(p, now, world, slot) {
   if (!CFG.slots.includes(slot) || !p.eq[slot] || !p.eq[slot].id) fail('NO_GEAR');
-  begin(p, now, world, { allowBusy: true });
+  begin(p, now, world, { allowBusy: true, trOk: 2 });
   const it = p.eq[slot], g = gearOf(it.id), room = slot === 'acess' && g && g.room ? g.room : 0;
   if (invUsed(p) + 1 > invCap(p) - room) fail('NO_ROOM');
   p.eq[slot] = null;
@@ -3284,6 +3458,13 @@ export function canAttack(a, d, now, world, drop = false) {
   if (a.vigor < P.energy) return 'NO_VIGOR';
   if (a.shieldUntil > now && !drop) return 'YOU_ARE_NEW';
   if (d.shieldUntil > now) return 'TARGET_NEW';
+  { // v101: fora do país só se luta lá, os dois no mesmo país (nunca no avião); quem acabou de chegar tem uns segundos
+    const wa = trWhere(a, now), wd = trWhere(d, now);
+    if (wa || wd) {
+      if (!(wa && wd && wa.st === 'there' && wd.st === 'there' && wa.to === wd.to)) return 'TARGET_AWAY';
+      if (wd.t0 + CFG.travel.graceMs > now) return 'TARGET_LANDED';
+    }
+  }
   if (d.hospUntil > now) return 'TARGET_HOSPITAL';
   if (d.jailUntil > now) return 'TARGET_JAIL';
   if (d.protectUntil > now || d.capUntil > now) return 'TARGET_PROTECTED';
@@ -3312,6 +3493,7 @@ export function canHitman(a, d, now, world, drop = false) {
   if (a.shieldUntil > now && !drop) return 'YOU_ARE_NEW';
   if (hitmanLeft(a, now) <= 0) return 'HITMAN_LIMIT';
   if (d.shieldUntil > now) return 'TARGET_NEW';
+  if (trWhere(d, now)) return 'TARGET_AWAY';   // v101: o assassino não vai atrás de quem está fora
   if (d.hospUntil > now) return 'TARGET_HOSPITAL';
   if (d.jailUntil > now) return 'TARGET_JAIL';
   if (d.protectUntil > now || d.capUntil > now) return 'TARGET_PROTECTED';
@@ -3349,6 +3531,7 @@ export function mugValue(a, d, now) {
   const div = 2 ** Math.min(priorWins(a, d, now), 10);
   const st = bizStored(d, now);
   const take = (x) => Math.floor(Math.floor((x * CFG.pvp.mugBp) / 10000) / div);
+  if (trWhere(d, now)) return take(d.cash);   // v101: lá fora só o que traz no bolso (o cofre de casa não o guarda)
   let v = take(cut(d.cash, huBp(d, 0)));
   for (let i = 0; i < st.length; i++) if (CFG.biz[i].raid) v += take(st[i].money);
   const vv = venueView(d, Math.max(now, d.t));
@@ -3370,7 +3553,7 @@ export function expectedGain(a, d, now) {
 }
 
 export function attack(a, d, now, world, mode, rng, drop = false) {
-  begin(a, now, world);
+  begin(a, now, world, { trOk: 1 });   // v101: também lá fora (com quem lá estiver)
   touch(d, now);
   if (mode !== 'beat' && mode !== 'mug') fail('BAD_MODE');
   const why = canAttack(a, d, now, world, drop);
@@ -3396,14 +3579,14 @@ export function attack(a, d, now, world, mode, rng, drop = false) {
     } else {
       settleAllBiz(d, now);
       const take = (x) => Math.floor(Math.floor((x * P.mugBp) / 10000) / div);
-      let stolen = take(cut(d.cash, huBp(d, 0)));   // o cofre de casa guarda uma parte
+      let stolen = take(d.tr ? d.cash : cut(d.cash, huBp(d, 0)));   // o cofre de casa guarda uma parte (v101: lá fora, não)
       d.cash -= stolen;
       for (let i = 0; i < d.biz.length; i++) {
-        if (!CFG.biz[i].raid) continue;
+        if (!CFG.biz[i].raid || d.tr) continue;   // (v101: lá fora só se leva o que traz no bolso)
         const s = take(d.biz[i].stored);
         d.biz[i].stored -= s; stolen += s;
       }
-      for (const k of ['club', 'bro']) if (d[k]) { const s = take(d[k].till); d[k].till -= s; stolen += s; }   // e o caixa da discoteca e do bordel
+      for (const k of ['club', 'bro']) if (d[k] && !d.tr) { const s = take(d[k].till); d[k].till -= s; stolen += s; }   // e o caixa da discoteca e do bordel
       a.cash += stolen;
       const g = Math.floor(gain / 4);
       const lvA = addRespect(a, g, now);
@@ -3487,9 +3670,9 @@ export function hitChanceBp(as, d, now) {
   return chanceBp(Math.floor((s * CFG.gang.hitTeamBp) / 10000), defensePower(d, now));
 }
 // o alvo tem de continuar à mão quando o tempo acaba (não pode ter ido entretanto para o hospital ou para a prisão)
-export function hitCanResolve(d, now, gang) { touch(d, now); return !(d.hospUntil > now || d.jailUntil > now || d.protectUntil > now || d.capUntil > now || d.shieldUntil > now || (gang && d.gang === gang)); }
+export function hitCanResolve(d, now, gang) { touch(d, now); return !(d.tr || d.hospUntil > now || d.jailUntil > now || d.protectUntil > now || d.capUntil > now || d.shieldUntil > now || (gang && d.gang === gang)); }
 // quem alinhou e entretanto foi preso ou parar ao hospital fica de fora (e recebe a stamina de volta)
-export function opReady(p, now) { touch(p, now); return !(p.jailUntil > now || p.hospUntil > now); }
+export function opReady(p, now) { touch(p, now); return !(p.tr || p.jailUntil > now || p.hospUntil > now); }   // (v101: quem viajou fica de fora)
 export function hitResolve(as, d, now, rng) {
   const P = CFG.pvp, G = CFG.gang;
   for (const a of as) touch(a, now);
@@ -4070,6 +4253,16 @@ export function checkInvariants(p) {
       || JSON.stringify(d.open.filter((x) => x.v).map((x) => x.v)) !== JSON.stringify(d.got)) bad.push('dg');
   }
   if (!p.dgc || Object.entries(p.dgc).some(([k, v]) => !siteOf(k) || !Number.isSafeInteger(v) || v < 0)) bad.push('dgc');
+  // v101: a viagem (país que existe, fase, mala só com coisas desse país e dentro da mala que se tem), a mala que chegou e a escavação no sítio onde se está
+  const bagOk = (b, paid, to) => b && paid && typeof b === 'object' && Object.entries(b).every(([g, n]) => trGood(g) && trGood(g).at === to && Number.isSafeInteger(n) && n > 0 && Number.isSafeInteger(paid[g]) && paid[g] === n * trGood(g).buy)
+    && Object.keys(paid).every((g) => b[g] > 0) && trUsed(b) <= trBagCap(p);
+  if (!Number.isInteger(p.trB) || p.trB < 0 || p.trB >= CFG.travel.bag.length) bad.push('trB');
+  if (p.trD !== null && !(p.trD && typeof p.trD.d === 'string' && Number.isInteger(p.trD.n) && p.trD.n >= 1 && p.trD.n <= CFG.travel.perDay)) bad.push('trD');
+  if (p.tr !== null && !(p.tr && destOf(p.tr.to) && typeof p.tr.arm === 'boolean' && (p.tr.gun === undefined || p.tr.gun === destOf(p.tr.to).gun) && ['out', 'there', 'back'].includes(p.tr.st) && Number.isSafeInteger(p.tr.at) && Number.isSafeInteger(p.tr.t0) && bagOk(p.tr.bag, p.tr.paid, p.tr.to)
+    && (p.tr.st !== 'back' || (Array.isArray(p.tr.sz) && p.tr.sz.every((g) => p.tr.bag[g] > 0 && trGood(g).seizeBp))))) bad.push('tr');
+  if (p.trL !== null && !(p.trL && destOf(p.trL.to) && bagOk(p.trL.bag, p.trL.paid, p.trL.to) && Array.isArray(p.trL.sz) && p.trL.sz.every((g) => p.trL.bag[g] > 0 && trGood(g).seizeBp))) bad.push('trL');
+  if (p.dg && (siteOf(p.dg.site)?.at !== hereOf(p) || (p.tr && p.tr.st !== 'there'))) bad.push('dg fora do sítio');
+  if (p.hunt && p.hunt.on && p.tr) bad.push('caça em viagem');
   // inventário: pilhas com quantidade positiva; objetos roubados com valor; um só monte de cada coisa que empilha
   if (!Array.isArray(p.inv) || p.inv.some((x) => !x || !(stackable(x.id) ? Number.isSafeInteger(x.n) && x.n > 0 && (x.id === 'balas' || (Number.isSafeInteger(x.v) && x.v >= 0)) : goodItem(x)))) bad.push('inv');
   else { const ids = p.inv.filter((x) => stackable(x.id) || gearOf(x.id)?.slot === 'mat').map((x) => x.id); if (new Set(ids).size !== ids.length) bad.push('inv dup'); }

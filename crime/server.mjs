@@ -29,7 +29,7 @@ const RONDA_TESTE = process.env.PRIMEIRA_RONDA ? dataDe(process.env.PRIMEIRA_RON
 // Épocas de 28 dias a contar da sexta 13/11/2026 às 21:00 de Lisboa (PRIMEIRA_EPOCA=AAAA-MM-DD muda-a, para testes)
 const ANCORA = dataDe(process.env.PRIMEIRA_EPOCA || process.env.PRIMEIRA_RONDA || '2026-11-13');
 const rng = process.env.TESTE_SEMENTE ? seededRng(+process.env.TESTE_SEMENTE) : cryptoRng();   // nos testes, a sorte pode ser sempre a mesma
-const VERSAO = 100;   // sobe quando o servidor muda, para se confirmar de fora que a versão nova já está a correr
+const VERSAO = 101;   // sobe quando o servidor muda, para se confirmar de fora que a versão nova já está a correr
 const ATOS_3S = +(process.env.ATOS_3S || 15), ATOS_MIN = +(process.env.ATOS_MIN || 400); // ações por conta: 15 em 3 s, 400 por minuto
 
 // ---------- relógio que nunca anda para trás ----------
@@ -228,7 +228,7 @@ function contarAcao(now, a, r, p, alvo, resp0, alvoResp0) {
 const GASTO = { detox: 'farma', cure: 'farma', medic: 'farma', medicFor: 'farma', buy: 'armas', gear: 'armas', repair: 'armas',
   refill: 'noite', drug: 'noite', hooker: 'noite', broVisit: 'noite', clubBuy: 'noite', broVisitAt: 'noite', clubBuyAt: 'noite' };
 // a droga comprada, vendida, desembarcada ou mudada de região conta para a criminalidade dessa região (1 ponto por cada 20 €)
-const MEXE_MUNDO = new Set(['stockBuy', 'stockSell', 'mktBuy', 'mktSell', 'stockDump', 'mvSend', 'portOpen', 'collect', 'airCollect']);
+const MEXE_MUNDO = new Set(['stockBuy', 'stockSell', 'mktBuy', 'mktSell', 'stockDump', 'mvSend', 'portOpen', 'collect', 'airCollect', 'trBuy', 'trSell']);
 const pontos = (r, v) => { if (r && v > 0) mundoAcc(r, v / CFG.regions.ptsEur); };
 function contarMundo(a, r, delta, p) {
   // v76: conta quem jogou nesta edição, uma vez cada (é a gente do mundo; a edição não percorre os jogadores)
@@ -506,6 +506,8 @@ function vista(p, now) {
     mt: p.mt, cf: p.cf, maq: p.maq,   // v83: depósito, bancada e máquinas
     dg: E.digView(p, now), dgc: p.dgc, arq: E.stLevel(p, 'arqueologia'),   // v85: a escavação aberta (sem a grelha), os sítios vigiados, o nível de Arqueologia
     hon: p.hon || {}, honSel: p.honSel || null, honv: E.honorVals(p),   // v100: honras ganhas, a escolhida e os números de todas
+    tr: E.trView(p), trL: p.trL, trB: p.trB, nArm: E.trWeapons(p), trCc: E.trContactCost(p), trN: p.trD && p.trD.d === E.dayOf(now) ? p.trD.n : 0,   // v101: a viagem (sem a decisão da alfândega), a mala que chegou, a mala comprada e as armas que o raio-X vê
+    trw: mk ? Object.fromEntries(Object.keys(CFG.travel.goods).map((g) => { const x = E.trState(mk.w, g, now); return [g, { s: x.s, sat: x.sat }]; })) : null,   // o stock lá fora e o preço do importador
     hn: E.huntView(p, now), hk: p.hunt.sk, ht: p.hunt.tr, hfc: p.hunt.fc, hq: Object.fromEntries(CFG.hunt.sites.map((x) => [x.id, E.huntQuotaLeft(p, now, x.id)])),   // v98: a saída de caça, a perícia (milésimos), os troféus, as reservas vigiadas e as saídas com licença que faltam hoje
     feira: { levantar: qf.nParaMim.get(ronda, p.id).n },   // v84: o que está à espera de ser levantado na feira
     col: p.col, mus: p.mus, musEp: p.musEp || {},   // v79: a vitrine, as entregas ao museu e em que época entrou na placa
@@ -557,7 +559,7 @@ function cfgPublica() {
     bustBp: CFG.bustBp, crimeAllMax: CFG.crimeAllMax, casino: { minBet: CFG.casino.minBet, limits: CFG.casino.limits, slotMinC: CFG.casino.slotMinC, red: CFG.casino.red, dice: CFG.casino.dice, wheel: { segs: CFG.casino.wheel.segs, spots: CFG.casino.wheel.spots, topMult: CFG.casino.wheel.topMult.map(([m]) => m), louca: CFG.casino.wheel.louca }, slots: Object.fromEntries(Object.entries(CFG.casino.slots).map(([k, g]) => [k, { kind: g.kind, cols: g.cols, rows: g.rows, min: g.min, nsym: g.nsym, trig: g.trig, pay: g.pay, scatPay: g.scatPay, free: g.free, fs: g.fs, retrig: g.retrig, buy: g.buy, superBuy: g.superBuy, max: g.max, accFree: g.accFree, accAll: g.accAll, orbBase: g.orbBase }])) }, gang: CFG.gang, classes: CFG.classes, classChange: CFG.classChange, avatars: CFG.avatars, hookers: CFG.hookers, house: CFG.house, mastery: CFG.mastery, missions: CFG.missions.length, start: CFG.start,
     round: { playDays: CFG.round.playDays, noPvpMs: CFG.round.noPvpMs, newbieShieldMs: CFG.round.newbieShieldMs }, season: CFG.season, raid: CFG.raid,   // v91: a wiki
     consum: CFG.consum, col: CFG.col, gyms: CFG.gyms, books: CFG.books,   // v94, v95
-    mat: CFG.mat, craft: CFG.craft, feira: { ...CFG.feira, refs: FEIRA_REFS }, dig: CFG.dig, hunt: CFG.hunt, honors: E.HONORS,   // v83, v84, v98, v100
+    mat: CFG.mat, craft: CFG.craft, feira: { ...CFG.feira, refs: FEIRA_REFS }, dig: CFG.dig, hunt: CFG.hunt, honors: E.HONORS, travel: CFG.travel,   // v83, v84, v98, v100, v101
     exam: (({ ans: _a, ...x }) => x)(CFG.exam), studies: CFG.studies,   // v81: a Universidade   // v80: as regras do exame, sem as respostas certas
     gov: { vote: CFG.gov.vote, laws: CFG.gov.laws, cof: CFG.gov.cof, parties: Object.fromEntries(Object.entries(CFG.gov.parties).map(([k, x]) => [k, { pos: x.pos, wOp: x.wOp, wLob: x.wLob }])) },   // v76: o parlamento
   };
@@ -1737,6 +1739,12 @@ function agir(conta, corpo, now) {
     }
     case 'port': r = E.sendPort(p, now, world, int(a.k), int(a.amount), a.goods === true); break;
     case 'air': r = E.airSend(p, now, world, int(a.r), int(a.amount), a.bribe === true); break;
+    case 'travel': r = E.travel(p, now, world, String(a.to || ''), a.mode === undefined ? 'locker' : String(a.mode), rng); break;   // v101: viagens (raio-X: locker, hide, contact)
+    case 'trGun': r = E.trGun(p, now, world); break;
+    case 'trBuy': r = E.trBuy(p, now, world, bolsaDe(w, now), String(a.g || ''), int(a.n)); break;
+    case 'trBack': r = E.trBack(p, now, world, rng); break;
+    case 'trSell': r = E.trSell(p, now, world, bolsaDe(w, now)); break;
+    case 'trBag': r = E.trBag(p, now, world); break;
     case 'airCollect': r = E.airCollect(p, now, world, rng, a.keep === true, bolsaDe(w, now)); break;
     case 'deposit': r = E.deposit(p, now, world, int(a.amount)); break;
     case 'withdraw': r = E.withdraw(p, now, world, int(a.amount)); break;
@@ -1949,17 +1957,21 @@ function alvos(conta, now, w) {
   const livre = { ...me, energy: CFG.pvp.energy, jailUntil: 0, hospUntil: 0, shieldUntil: 0 };
   // os que dá para atacar, à volta do respeito que mais rende; os outros (com o motivo), à volta do teu respeito, só para encher
   const arr = indiceJogadores(now).resp, motivoDe = (d) => (d.id === me.id ? 'SELF' : E.canAttack(livre, d, now, mundo1));
-  for (const d of pertoDe(arr, Math.max(1, me.respect * 2), ALVOS_K, (d) => { const m = motivoDe(d); return !m || m === 'NO_PVP_YET'; })) {
+  // v101: lá fora, a lista é quem está no mesmo país (são poucos: vêem-se todos)
+  const aqui = E.trWhere(me, now), noPais = aqui ? arr.filter((d) => { if (d.id === me.id) return false; const x = E.trWhere(d, now); return x && x.st === 'there' && x.to === aqui.to; }) : null;
+  for (const d of noPais || pertoDe(arr, Math.max(1, me.respect * 2), ALVOS_K, (d) => { const m = motivoDe(d); return !m || m === 'NO_PVP_YET'; })) {
+    if (noPais) { const m = motivoDe(d); if (m && m !== 'NO_PVP_YET') { const x = E.trWhere(d, now); fora.push({ name: nomeDe(d.id), level: E.level(d), respect: d.respect, av: d.av || 0, cls: d.cls || '', tag: tagDe(d.id), why: m, until: m === 'TARGET_LANDED' ? x.t0 + CFG.travel.graceMs : m === 'TARGET_HOSPITAL' ? d.hospUntil : 0 }); continue; } }
     lista.push({
       name: nomeDe(d.id), level: E.level(d), respect: d.respect, av: d.av || 0, cls: d.cls || '', tag: tagDe(d.id), hon: d.honSel || null,
       chance: E.attackChanceBp(me, d, now), gain: E.expectedGain(me, d, now), loot: E.mugValue(me, d, now),
       hp: E.hitmanPrice(d), hc: E.hitmanChanceBp(d), hw: E.canHitman({ ...me, shieldUntil: 0 }, d, now, mundo1),
     });
   }
-  for (const d of pertoDe(arr, me.respect, 25, (d) => { const m = motivoDe(d); return m && m !== 'NO_PVP_YET' && m !== 'SELF'; })) {
+  for (const d of noPais ? [] : pertoDe(arr, me.respect, 25, (d) => { const m = motivoDe(d); return m && m !== 'NO_PVP_YET' && m !== 'SELF'; })) {
     // quem não dá para atacar também aparece, com o motivo (why) e, quando é por tempo, a hora a que acaba (until)
     const motivo = motivoDe(d), until = motivo === 'TARGET_NEW' ? d.shieldUntil : motivo === 'TARGET_HOSPITAL' ? d.hospUntil : motivo === 'TARGET_JAIL' ? d.jailUntil : motivo === 'TARGET_PROTECTED' ? Math.max(d.protectUntil, d.capUntil) : 0;
-    fora.push({ name: nomeDe(d.id), level: E.level(d), respect: d.respect, av: d.av || 0, cls: d.cls || '', tag: tagDe(d.id), why: motivo, until });
+    const x = motivo === 'TARGET_AWAY' && !aqui ? E.trWhere(d, now) : null;   // v101: onde anda (como no Torn, vê-se)
+    fora.push({ name: nomeDe(d.id), level: E.level(d), respect: d.respect, av: d.av || 0, cls: d.cls || '', tag: tagDe(d.id), why: motivo, until, ...(x ? { at: x.to, fly: x.st !== 'there' } : {}) });
   }
   // os mais interessantes primeiro: mais respeito esperado
   lista.sort((x, y) => (y.chance * y.gain) - (x.chance * x.gain));

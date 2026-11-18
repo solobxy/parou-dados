@@ -35,6 +35,10 @@ let refused = 0, done = 0, rounds = 1;
 
 // (4) as contas batem certo: cada ação só mexe no dinheiro e no respeito o que a regra diz, e nada cria dinheiro do nada
 const wealth = (q) => q.cash + q.bank;
+const trUsed = (bag) => Object.values(bag || {}).reduce((x, n) => x + n, 0);
+// v101: o que se faz fora do país (o resto tem de ser recusado): lá, e em qualquer lado (até a voar); e o que não passa pelo motor do jogador
+const FORA_OK = new Set(['whEdition', 'gangLeave', ...(process.env.FORA_OK ? process.env.FORA_OK.split(',') : [])]);   // a edição do armazém (é o servidor) e sair da gangue (não passa pelo motor do jogador)
+const FORA_LA = new Set(['trBuy', 'trGun', 'trBack', 'digStart', 'digTap', 'digStop', 'attack', 'medic']), FORA_SEMPRE = new Set(['consume', 'equip', 'unequip', 'modFit', 'bookRead', 'avatar', 'honorPick']);
 const LAV_MAX_BP = CFG.launder.bp + CFG.gov.laws.branq.addBp;   // a lei do branqueamento (v76) pode somar à taxa
 const BOOK_MAX = (k) => Math.max(0, ...CFG.books.list.filter((b) => b.k === k).map((b) => b.bp));   // v95: o livro soma à profissão
 const MAX_LOOT_BP = 10000 + CFG.gang.lootBpPer * CFG.gang.maxLevel + CFG.skills.maxBp + (Math.max(...CFG.classes.map((c) => c.lootBp || 0)) + BOOK_MAX('lootBp')) + Math.max(...CFG.drugs.flatMap((g) => (g.fx || []).filter((f) => f.k === 'loot').map((f) => f.bp))) + Math.max(0, ...CFG.studies.list.map((x) => (x.fx.burla || [0]).at(-1)))   // v81: artes;
@@ -102,6 +106,10 @@ function contas(kind, a0, a, d0, d, t, res, arg) {
     const guardou = (got) => { const R = CFG.mat.rare, raros = conta(got.filter((x) => R.includes(x))), espera = Object.fromEntries(Object.entries(raros).map(([k, v]) => [k, Math.min(CFG.mat.cap, (b0.mt[k] || 0) + v) - (b0.mt[k] || 0)]));
       return colEq(conta(got.filter((x) => !R.includes(x)))) && mtEq(espera); };
     const igual = (x, y) => JSON.stringify(x.dg) === JSON.stringify(y.dg) && JSON.stringify(x.dgc) === JSON.stringify(y.dgc);   // (há ações que não passam pelo touch)
+    // v101: a viagem só muda com as ações de viagem (e com a ronda que apanha alguém a escavar lá fora: deportado)
+    const vIgual = (x, y) => JSON.stringify([x.tr, x.trL, x.trB]) === JSON.stringify([y.tr, y.trL, y.trB]);
+    if (!kind.startsWith('tr') && kind !== 'travel' && !(kind === 'digTap' && res.deported) && !vIgual(b0, a) && !vIgual(a0, a)) bad('viagem mexeu sem razão');
+    if (kind === 'digTap' && res.deported && (a.tr || !b0.tr || res.deported.to !== b0.tr.to)) bad('deportado');
     if (!kind.startsWith('dig') && !igual(b0, a) && !igual(a0, a)) bad('escavação mexeu sem razão');
     if (kind === 'digStart') { const S = E.siteOf(arg);
       if (d0 || !a.dg || a.dg.site !== arg || a.dg.used !== 0 || dm !== -S.price || dr !== 0 || Object.keys(colD).length || Object.keys(mtD).length || (b0.dgc[arg] || 0) > t || E.stLevel(a, 'arqueologia') < S.st) bad('escavar: começar'); }
@@ -297,7 +305,7 @@ function contas(kind, a0, a, d0, d, t, res, arg) {
     case 'withdraw': case 'class': case 'avatar': if (dm !== 0 || dr !== 0) bad('devia ser neutro'); break;
     case 'classChange': if (dm !== -E.classChangeCost(a0) || dr !== 0 || res.cost !== E.classChangeCost(a0) || a.cls === a0.cls || (CFG.classes.find((c) => c.id === a.cls).need || 0) > a0.peakRespect || (a0.clsAt && t < a0.clsAt + CFG.classChange.coolMs)) bad('mudar de profissão'); break;
     case 'claim': if (dm !== res.cash || dr !== 0) bad('prémio'); break;
-    case 'collect': { const st = E.bizStored(a0, t).reduce((x, y) => x + y.money, 0); if (dm < 0 || dm > st || dr !== 0) bad('recolha maior do que o armazém'); break; }   // v89: o efeito da coca já está no que se guardou
+    case 'collect': { const sum = (q) => E.bizStored(q, t).reduce((x, y) => x + y.money, 0), st = Math.max(sum(a0), sum(touched(a0, t))); if (dm < 0 || dm > st || dr !== 0) bad('recolha maior do que o armazém'); break; }   // v89: o efeito da coca já está no que se guardou (v101: e o do livro de contas que acabou de se ler, que começa no touch)
     case 'collectPort': {
       const due = a0.port.filter((c) => c.readyAt <= t).reduce((x, c) => x + c.amount + Math.floor((c.amount * CFG.port.ships[c.k === undefined ? CFG.port.legacy : c.k].gainBp) / 10000), 0);
       if (dm < 0 || dm > due || dr !== 0) bad('porto pagou a mais'); break;
@@ -380,6 +388,24 @@ function contas(kind, a0, a, d0, d, t, res, arg) {
       if (dm !== res.money || dr !== 0 || a.tk || res.money < 0 || (res.busted && (res.money !== 0 || !(a.jailUntil > t))) || (!res.busted && res.money > Math.ceil((CFG.work.list.find((x) => x.id === res.id).base * CFG.work.qMax * (10000 + CFG.work.ritmo.cap)) / 1e8)) || (a.wm && a.wm[res.id]) !== res.ritmo || Math.abs(res.ritmo - res.ritmoAntes) > CFG.work.ritmo.drop) bad('biscate: entregar'); break;
     case 'huntStart': case 'huntLook': case 'huntNear': case 'huntShoot': case 'huntStop': break;   // v98: conferidas acima
     case 'honorPick': if (dm !== 0 || dr !== 0 || (arg !== null && !(a.hon && a.hon[arg])) || a.honSel !== arg) bad('honra escolhida'); break;   // v100
+    // v101: viagens
+    case 'travel': { const D = E.destOf(arg.to), b0 = touched(a0, t), n0 = E.trWeapons(b0);
+      if (b0.tr || b0.trL || !a.tr || a.tr.st !== 'out' || a.tr.to !== D.id || a.tr.at !== t + D.ms || dr !== 0 || E.level(a) < D.level || trUsed(a.tr.bag)) bad('viajar');
+      const md = arg.mode || 'locker', bribe = n0 && md === 'contact' ? E.trContactCost(b0) : 0;
+      if (dm !== -(D.ticket + bribe + ((res.xr && res.xr.fine) || 0)) || ((res.xr && res.xr.bribe) || 0) !== bribe) bad('viajar: bilhete, contacto e multa');
+      if (res.xr && res.xr.caught ? E.trWeapons(a) !== 0 || res.xr.lost.length !== n0 || res.xr.fine > CFG.travel.xray.fine * n0 || a.tr.arm : E.trWeapons(a) !== n0 || a.tr.arm !== !!(n0 && md !== 'locker')) bad('viajar: raio-X');
+      break; }
+    case 'trBuy': { const b0 = touched(a0, t), G = E.trGood(arg.g);
+      if (!b0.tr || b0.tr.st !== 'there' || G.at !== b0.tr.to || dm !== -res.cost || res.cost !== G.buy * arg.n || dr !== 0 || a.tr.bag[arg.g] !== (b0.tr.bag[arg.g] || 0) + arg.n || trUsed(a.tr.bag) > E.trBagCap(a)) bad('comprar lá fora');
+      break; }
+    case 'trBack': { const b0 = touched(a0, t);
+      if (!b0.tr || b0.tr.st !== 'there' || !a.tr || a.tr.st !== 'back' || a.tr.at !== t + E.destOf(b0.tr.to).ms || dm !== 0 || dr !== 0 || JSON.stringify(a.tr.bag) !== JSON.stringify(b0.tr.bag)) bad('voltar');
+      break; }
+    case 'trSell': { const L = touched(a0, t).trL, max = L ? Object.entries(L.bag).filter(([g]) => !L.sz.includes(g)).reduce((x, [g, n]) => x + n * CFG.travel.goods[g].sell, 0) : 0;
+      if (!L || a.trL || dm !== res.got || res.got > max || res.got < 0 || dr !== res.respect || res.units !== Object.entries(L.bag).filter(([g]) => !L.sz.includes(g)).reduce((x, [, n]) => x + n, 0)) bad('vender a mala');
+      break; }
+    case 'trGun': { const b0 = touched(a0, t); if (!b0.tr || b0.tr.st !== 'there' || b0.tr.gun || a.tr.gun !== E.destOf(b0.tr.to).gun || dm !== -E.destOf(b0.tr.to).gunRent || dr !== 0) bad('alugar arma'); break; }
+    case 'trBag': if (dm !== -CFG.travel.bagCost[a.trB] || a.trB !== (a0.trB || 0) + 1 || dr !== 0) bad('mala maior'); break;
     default: if (dm > 0 || dr !== 0) bad('esta ação só devia gastar'); // discoteca, putas, hospital, treino, porto (envio), equipamento, melhorias
   }
   if (a.energy > E.energyMax(a) || a.energy < 0) bad('stamina');
@@ -404,8 +430,8 @@ for (let n = 0; n < ACTIONS; n++) {
   let t = now;
   if (r.chance(50)) t = pick([world.playEnd, world.start - 1, world.playEnd + T.DAY, now - 1000]); // horas inválidas
 
-  const p = (r.chance(6000) && players.find((q) => q.dg)) || pick(players);   // v85: quem tem uma escavação aberta volta a ela muitas vezes
-  const d = pick(players);
+  const p = (r.chance(6000) && players.find((q) => q.dg)) || (r.chance(1500) && pick(players.filter((q) => q.tr).concat([pick(players)]))) || pick(players);   // v85: quem tem uma escavação aberta volta a ela muitas vezes (v101: e quem está fora)
+  const d = (p.tr && r.chance(5000) && players.find((q) => q !== p && q.tr && q.tr.to === p.tr.to)) || pick(players);   // v101: lá fora, às vezes alguém no mesmo país
   if (r.chance(200)) { p.cash += r.int(0, 5e6); } // dá dinheiro para chegar a tudo
   if (r.chance(60) && E.level(p) < 30) { p.respect = p.peakRespect = CFG.levels[29]; } // e nível para o mercado das regiões (comprar coca pede o 25)
   if (r.chance(3000) && p.wh) { const rr = pick(REG); if (p.wh[rr]) E.whStock(p, rr)[pick([1, 3, 6, 11, 13])] += r.int(1, 400); } // droga num armazém de uma região, como a que vem de lá
@@ -457,12 +483,16 @@ for (let n = 0; n < ACTIONS; n++) {
   if (r.chance(400)) { const gid = pick(['sniperanti', 'espingarda3030', 'smgbullpup', 'cacadeirasemi', 'revolvercaca']), g = CFG.gear.find((x) => x.id === gid); p.eq[g.slot] = { id: g.id, u: r.int(0, Math.min(30, g.life)) }; }   // v98: armas para a caça
   if (r.chance(300) && p.hunt) p.hunt.sk = r.int(0, 100000);   // v98: perícia ao calhas
   if (r.chance(1500) && p.hunt && !p.hunt.on) try { E.huntStart(p, t, world, r, pick(CFG.hunt.sites).id, pick(['lic', 'fur'])); } catch { /* sem nível, arma ou energia */ }   // v98: saídas abertas, para os tiros terem que fazer   // v94: energia gasta como a de quem treina há semanas, para se abrirem ginásios
+  // v101: às vezes já lá fora (ou a voar), com ou sem armas, para as compras, as escavações e as lutas de lá terem que fazer
+  if (r.chance(400) && !p.tr && !p.trL && !p.dg && !(p.hunt && p.hunt.on) && t >= world.start && t < world.playEnd) { const st = pick(['out', 'there', 'there', 'there', 'back']), t0 = Math.max(p.t, t - r.int(0, 3) * T.HOUR); p.tr = { to: pick(CFG.travel.dests).id, st, t0, at: t0 + r.int(1, 120) * T.MIN, bag: {}, paid: {}, arm: r.chance(5000), ...(st === 'back' ? { sz: [] } : {}) }; }
+  if (r.chance(300)) p.trB = Math.max(p.trB, r.int(0, CFG.travel.bag.length - 1));   // (a mala só cresce)
   if (r.chance(500)) for (let k = 1; k <= r.int(1, 3); k++) if (!p.done.includes('arqueologia' + k) && !(p.course && p.course.id === 'arqueologia' + k)) p.done.push('arqueologia' + k);   // v85: escavações
   if (r.chance(400)) { const st = pick(CFG.studies.list), n = r.int(1, 3); for (let k = 1; k <= n; k++) if (!p.done.includes(st.id + k) && !(p.course && p.course.id === st.id + k)) p.done.push(st.id + k); }   // v81: estudos feitos
   if (r.chance(500)) for (const i of E.colItems()) if (r.chance(7000)) p.col[i] = (p.col[i] || 0) + r.int(1, 3);   // v79: peças na vitrine, para o museu e o penhorista terem que fazer
   const before = touched(p, t), beforeD = touched(d, t), origD = structuredClone(d), origP = structuredClone(p);
   const hPre = { j: p.jailUntil > t, h: p.hospUntil > t };   // v100: honras
-  const kind = p.hunt && p.hunt.on && r.chance(8000) ? pick(['huntShoot', 'huntShoot', 'huntShoot', 'huntNear', 'huntLook', 'huntStop']) : p.dg && r.chance(8500) ? pick(['digTap', 'digTap', 'digTap', 'digTap', 'digTap', 'digStop']) : pick(['honorPick', 'honorPick', 'huntStart', 'huntStart', 'huntStart', 'stockBuy', 'stockBuy', 'stockBuy', 'govVote', 'govLobby', 'govLobby', 'consume', 'consume', 'consume', 'museum', 'museum', 'colSell', 'colSell', 'examStart', 'examStart', 'examAnswer', 'examAnswer', 'examAnswer', 'gymStart', 'gymStart', 'gymDone', 'gymDone', 'gymDone', 'craftStart', 'craftStart', 'craftStart', 'craftTake', 'craftTake', 'maqService', 'maqService', 'feiraTake', 'feiraTake', 'feiraGive', 'feiraBuy', 'feiraBuy', 'feiraLock', 'digStart', 'digStart', 'digTap', 'digTap', 'digTap', 'digTap', 'digTap', 'digStop', 'stockSell', 'stockSell', 'missionSwap', 'venueBuy', 'venueBuy', 'venueSet', 'venueCollect', 'stockUse', 'stockUse', 'stockDump', 'broHire', 'broHire', 'broFire', 'clubBuyAt', 'clubBuyAt', 'clubBuyAt', 'broVisitAt', 'broVisitAt', 'broVisitAt', 'casino', 'casino', 'table', 'heist', 'hit', 'gangCreate', 'gangDonate', 'gangLeave', 'gangBiz', 'gangBiz', 'gangBiz', 'gangBizCollect', 'hitman', 'hitman', 'hitman', 'crime', 'crime', 'crimeAll', 'deal', 'deal', 'dealBuy', 'drug', 'refill', 'detox', 'claim', 'class', 'classChange', 'classChange', 'air', 'air', 'airCollect', 'airCollect', 'bailFor', 'bailFor', 'medicFor', 'medicFor', 'avatar', 'hooker', 'cure', 'house', 'houseUp', 'buyBiz', 'buyBiz', 'collect', 'bizGoods', 'bizGoods', 'stockHold', 'stockHold', 'acct', 'stockLimit', 'stockLimit', 'stockLimit', 'port', 'collectPort', 'portOpen', 'portOpen', 'deposit', 'withdraw', 'gear', 'attack', 'bail', 'medic', 'luxury', 'shift', 'shift', 'shift', 'job', 'course', 'buy', 'buy', 'buy', 'buy', 'equip', 'unequip', 'unequip', 'gymBuy', 'gymBuy', 'gymUse', 'modBuy', 'modBuy', 'modFit', 'modFit', 'modFit', 'modTake', 'bookBuy', 'bookBuy', 'bookRead', 'bookRead', 'sell', 'sellGoods', 'sellGoods', 'repair', 'repair', 'opStart', 'opStart', 'opStep', 'opStep', 'opGo', 'opGo', 'opGo', 'opDrop', 'retainer', 'jailSmuggle', 'jailWork', 'jailYard', 'jailCards', 'jailFavor', 'jailEscape', 'whBuy', 'whBuy', 'whUp', 'whUp', 'mktBuy', 'mktBuy', 'mktBuy', 'mktSell', 'mktSell', 'mvSend', 'mvSend', 'mvSend', 'whEdition', 'workStart', 'workStart', 'workDone', 'workDone', 'workDone']);
+  const pAqui = before.tr && before.tr.st === 'there';   // v101: lá fora, quase sempre o que se faz lá
+  const kind = pAqui && r.chance(7000) ? pick(['trBuy', 'trBuy', 'trBuy', 'trBuy', 'trBack', 'trBack', 'trGun', 'attack', 'digStart', 'digStart', 'attack', 'attack', 'medic', 'consume', 'equip', 'crime', 'travel', 'trSell']) : before.trL && r.chance(6000) ? pick(['trSell', 'trSell', 'travel']) : p.hunt && p.hunt.on && r.chance(8000) ? pick(['huntShoot', 'huntShoot', 'huntShoot', 'huntNear', 'huntLook', 'huntStop']) : p.dg && r.chance(8500) ? pick(['digTap', 'digTap', 'digTap', 'digTap', 'digTap', 'digStop']) : pick(['honorPick', 'honorPick', 'huntStart', 'huntStart', 'huntStart', 'stockBuy', 'stockBuy', 'stockBuy', 'govVote', 'govLobby', 'govLobby', 'consume', 'consume', 'consume', 'museum', 'museum', 'colSell', 'colSell', 'examStart', 'examStart', 'examAnswer', 'examAnswer', 'examAnswer', 'gymStart', 'gymStart', 'gymDone', 'gymDone', 'gymDone', 'craftStart', 'craftStart', 'craftStart', 'craftTake', 'craftTake', 'maqService', 'maqService', 'feiraTake', 'feiraTake', 'feiraGive', 'feiraBuy', 'feiraBuy', 'feiraLock', 'digStart', 'digStart', 'digTap', 'digTap', 'digTap', 'digTap', 'digTap', 'digStop', 'stockSell', 'stockSell', 'missionSwap', 'venueBuy', 'venueBuy', 'venueSet', 'venueCollect', 'stockUse', 'stockUse', 'stockDump', 'broHire', 'broHire', 'broFire', 'clubBuyAt', 'clubBuyAt', 'clubBuyAt', 'broVisitAt', 'broVisitAt', 'broVisitAt', 'casino', 'casino', 'table', 'heist', 'hit', 'gangCreate', 'gangDonate', 'gangLeave', 'gangBiz', 'gangBiz', 'gangBiz', 'gangBizCollect', 'hitman', 'hitman', 'hitman', 'crime', 'crime', 'crimeAll', 'deal', 'deal', 'dealBuy', 'drug', 'refill', 'detox', 'claim', 'class', 'classChange', 'classChange', 'air', 'air', 'airCollect', 'airCollect', 'bailFor', 'bailFor', 'medicFor', 'medicFor', 'avatar', 'hooker', 'cure', 'house', 'houseUp', 'buyBiz', 'buyBiz', 'collect', 'bizGoods', 'bizGoods', 'stockHold', 'stockHold', 'acct', 'stockLimit', 'stockLimit', 'stockLimit', 'port', 'collectPort', 'portOpen', 'portOpen', 'deposit', 'withdraw', 'gear', 'attack', 'bail', 'medic', 'luxury', 'shift', 'shift', 'shift', 'job', 'course', 'buy', 'buy', 'buy', 'buy', 'equip', 'unequip', 'unequip', 'gymBuy', 'gymBuy', 'gymUse', 'modBuy', 'modBuy', 'modFit', 'modFit', 'modFit', 'modTake', 'bookBuy', 'bookBuy', 'bookRead', 'bookRead', 'sell', 'sellGoods', 'sellGoods', 'repair', 'repair', 'opStart', 'opStart', 'opStep', 'opStep', 'opGo', 'opGo', 'opGo', 'opDrop', 'retainer', 'jailSmuggle', 'jailWork', 'jailYard', 'jailCards', 'jailFavor', 'jailEscape', 'whBuy', 'whBuy', 'whUp', 'whUp', 'mktBuy', 'mktBuy', 'mktBuy', 'mktSell', 'mktSell', 'mvSend', 'mvSend', 'mvSend', 'whEdition', 'workStart', 'workStart', 'workDone', 'workDone', 'workDone', 'travel', 'travel', 'trBuy', 'trBack', 'trSell', 'trBag', 'trGun']);
   let res, arg;
   try {
     switch (kind) {
@@ -637,8 +667,18 @@ for (let n = 0; n < ACTIONS; n++) {
       case 'medicFor': res = E.medicFor(p, d, t, world); break;
       case 'medic': res = E.payMedic(p, t, world); break;
       case 'luxury': res = E.buyLuxury(p, t, world); break;
+      // v101: viagens
+      case 'travel': arg = { to: r.chance(9000) ? pick(CFG.travel.dests).id : pick(['x', 'pt', '__proto__', 5]), mode: pick(['locker', 'hide', 'contact', 'contact', undefined, 'x']) }; res = E.travel(p, t, world, arg.to, arg.mode, game); break;
+      case 'trGun': res = E.trGun(p, t, world); break;
+      case 'trBuy': { const here = before.tr ? Object.keys(CFG.travel.goods).filter((g) => CFG.travel.goods[g].at === before.tr.to) : [];
+        arg = { g: here.length && r.chance(8500) ? pick(here) : r.chance(8000) ? pick(Object.keys(CFG.travel.goods)) : pick(['x', 'toString', '__proto__']), n: pick([1, 2, 5, 5, 10, 15, 40, 0, -1, 0.5, 1e9]) };
+        res = E.trBuy(p, t, world, r.chance(9800) ? mk : null, arg.g, arg.n); break; }
+      case 'trBack': res = E.trBack(p, t, world, game); break;
+      case 'trSell': res = E.trSell(p, t, world, r.chance(9800) ? mk : null); break;
+      case 'trBag': res = E.trBag(p, t, world); break;
     }
     contas(kind, origP, p, origD, d, t, res, arg);
+    if (before.tr && !FORA_SEMPRE.has(kind) && !(before.tr.st === 'there' && FORA_LA.has(kind)) && !FORA_OK.has(kind)) { console.error('FEZ FORA DO PAÍS', kind, before.tr.st); process.exit(1); }
     if (res && typeof res === 'object') { E.honorTrack(p, t, hPre, kind, res); E.honorsCheck(p, t); }   // v100: como o servidor faz depois de cada ação
     if (MAPA) { const dm = wealth(p) - wealth(origP), m = (MAPA[kind] ||= { n: 0, entra: 0, sai: 0 }); m.n++; if (dm > 0) m.entra += dm; else m.sai -= dm;
       if (d !== p) { const dd = wealth(d) - wealth(origD), k2 = kind + ' (alvo)', m2 = (MAPA[k2] ||= { n: 0, entra: 0, sai: 0 }); m2.n++; if (dd > 0) m2.entra += dd; else m2.sai -= dd; } }

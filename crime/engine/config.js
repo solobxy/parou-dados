@@ -600,6 +600,13 @@ export const CFG = {
       conimbriga: { items: ['mosaico', 'lucerna', 'estilete', 'denario', 'anel'], cash: 15000, resp: 250, dig: 'conimbriga' },
       troia: { items: ['anfora', 'anzol', 'peso', 'unguentario', 'sigillata'], cash: 30000, resp: 400, dig: 'troia' },
       mertola: { items: ['candil', 'ataifor', 'jarrinha', 'dirham', 'pente'], cash: 60000, resp: 600, dig: 'mertola' },
+      // v101: os sítios lá fora
+      volubilis: { items: ['caobronze', 'busto', 'sesterco', 'balsamario', 'aplique'], cash: 25000, resp: 350, dig: 'volubilis' },
+      suttonhoo: { items: ['elmo', 'fivela', 'fecho', 'bossa', 'corno'], cash: 45000, resp: 500, dig: 'suttonhoo' },
+      pompeia: { items: ['fresco', 'venus', 'camafeu', 'pao', 'estrigil'], cash: 60000, resp: 600, dig: 'pompeia' },
+      saqqara: { items: ['escaravelho', 'ushabti', 'canopo', 'mascara', 'horus'], cash: 100000, resp: 800, dig: 'saqqara' },
+      teotihuacan: { items: ['jade', 'obsidiana', 'incensario', 'figura', 'concha'], cash: 140000, resp: 1000, dig: 'teotihuacan' },
+      xian: { items: ['guerreiro', 'gatilho', 'espelho', 'banliang', 'bi'], cash: 200000, resp: 1200, dig: 'xian' },
     },
     route: { tanger: 'bule', amesterdao: 'tulipa', medellin: 'orquidea', culiacan: 'caveira', kandahar: 'tapete' },
   },
@@ -921,10 +928,18 @@ export const CFG = {
     sites: [
       // v86: rare = o material raro do sítio; rareBp = hipótese de a grelha ter um (como um sexto achado, que vai para o depósito).
       // Em todas: com 35-40% só saía em 6-15% das escavações (a revisão simulou), lento demais para contar.
-      { id: 'briteiros', st: 1, price: 500, jailMin: 15, lawyer: 300, rare: 'ferro', rareBp: 10000 },
-      { id: 'conimbriga', st: 1, price: 1000, jailMin: 25, lawyer: 700, rare: 'bronze', rareBp: 10000 },
-      { id: 'troia', st: 2, price: 2000, jailMin: 40, lawyer: 1800, rare: 'vidro', rareBp: 10000 },
-      { id: 'mertola', st: 3, price: 4000, jailMin: 60, lawyer: 3500, rare: 'malha', rareBp: 10000 },   // fragmentos de cotas de malha do período islâmico
+      { id: 'briteiros', at: 'pt', st: 1, price: 500, jailMin: 15, lawyer: 300, rare: 'ferro', rareBp: 10000 },
+      { id: 'conimbriga', at: 'pt', st: 1, price: 1000, jailMin: 25, lawyer: 700, rare: 'bronze', rareBp: 10000 },
+      { id: 'troia', at: 'pt', st: 2, price: 2000, jailMin: 40, lawyer: 1800, rare: 'vidro', rareBp: 10000 },
+      { id: 'mertola', at: 'pt', st: 3, price: 4000, jailMin: 60, lawyer: 3500, rare: 'malha', rareBp: 10000 },   // fragmentos de cotas de malha do período islâmico
+      // v101: sítios lá fora. Só se escava quem lá está (viagens); quem é apanhado é deportado e cumpre a pena cá.
+      // Os raros da cave são romanos e da Idade do Ferro: só os sítios romanos lá fora os têm (revisão: «bronze romano» em Sacará)
+      { id: 'volubilis', at: 'ma', st: 1, price: 1500, jailMin: 30, lawyer: 1200, rare: 'bronze', rareBp: 10000 },
+      { id: 'suttonhoo', at: 'gb', st: 2, price: 2500, jailMin: 45, lawyer: 2200 },
+      { id: 'pompeia', at: 'it', st: 2, price: 3500, jailMin: 50, lawyer: 3000, rare: 'vidro', rareBp: 10000 },
+      { id: 'saqqara', at: 'eg', st: 3, price: 5000, jailMin: 60, lawyer: 4500 },
+      { id: 'teotihuacan', at: 'mx', st: 3, price: 7500, jailMin: 75, lawyer: 7000 },   // (sem material raro: os raros da cave são europeus)
+      { id: 'xian', at: 'cn', st: 3, price: 10000, jailMin: 90, lawyer: 9500 },
     ],
   },
   // v98: caça em 8 reservas pelo mundo, à maneira da do Torn (nível, energia e uma taxa por saída), mas com mira, distância e arma.
@@ -1027,6 +1042,8 @@ export const CFG = {
     { m: 'collects', cat: 'imperio', at: [10, 100, 500, 2500] },
     { m: 'ports', cat: 'viagens', at: [1, 10, 50, 200] },
     { m: 'air', cat: 'viagens', each: 'routes', at: [1, 10, 50] },
+    { m: 'trips', cat: 'viagens', each: 'dests', at: [1, 10, 50] },   // v101: viagens de ida e volta (contam ao vender a mala)
+    { m: 'trGoods', cat: 'viagens', at: [100, 1000, 10000] },
     { m: 'hunts', cat: 'caca', at: [1, 10, 50, 100, 250, 500, 1000] },
     { m: 'kills', cat: 'caca', at: [1, 10, 50, 100, 250, 500, 1000] },
     { m: 'sp', cat: 'caca', each: 'species' },
@@ -1115,6 +1132,64 @@ export const CFG = {
   },
   // Mercadoria: a droga que vem do aeroporto ou do porto entra no armazém ao preço de grosso (80% do preço da discoteca da cidade).
   // Despachar o que está no armazém paga 95% disso: guardar droga nunca sai mais barato do que o banco (3%).
+  // v101: viagens, à maneira das do Torn, mas com escolhas. O jogador voa para outro país (bilhete de ida e volta), compra lá o que
+  // é barato, e o importador cá paga mais. Enquanto voa não faz nada; lá fora só compra, escava (se houver sítio) e volta.
+  // Ninguém o ataca enquanto está fora. Uma mala: bag[k] lugares (unidades), a maior compra-se (bagCost).
+  // Cada país tem uma coisa legal (sem risco, dinheiro limpo) e uma de contrabando (mais lucro; na volta a alfândega fica com o lote
+  // dessa coisa com seizeBp de hipótese; o lucro do contrabando é sujo e paga lavagem). O stock lá fora é de todos: max unidades,
+  // repõe perH por hora. O importador baixa o preço satBp por cada unidade vendida (de todos os jogadores), e volta satRecH por hora
+  // até ao normal (nunca abaixo de satMin).
+  // Contas (mala cheia, sem contrabando, preço normal): lucro por viagem, já sem o bilhete, e por hora de voo:
+  // Marraquexe 500 € (600/h, mala de 10), Londres 1 000 (667/h, 15), Nápoles 1 300 (780/h, 15), Cairo 2 400 (900/h, 25),
+  // Nova Iorque 3 600 (982/h, 25), Rio 4 800 (1 029/h, 25), Cidade do México 6 000 (1 125/h, 40), Joanesburgo 7 000 (1 235/h, 40),
+  // Xangai 8 500 (1 342/h, 40), Tóquio 10 000 (1 364/h, 40). O contrabando vale em média uns 25% mais, antes da lavagem.
+  travel: {
+    bag: [10, 15, 25, 40], bagCost: [0, 2500, 30000, 300000],
+    satBp: 20, satRecH: 400, satMin: 5000,
+    // Raio-X à saída (escolhas do Dinis, 18/11/2026: «na vida real é quase impossível»). Três maneiras de embarcar com armas (as vestidas
+    // e as do inventário): no cacifo do aeroporto (o normal: lá fora luta-se à mão, ou com a que se alugar lá); escondidas no corpo
+    // (bp por arma de o raio-X apanhar, até max); ou pelo contacto no aeroporto (um funcionário comprado põe-nas no porão): paga
+    // contact.bp do valor das armas na loja (nunca menos de min; cada contacto da prisão corta perBp) e o risco fica em risk.
+    // Apanhado: as armas ficam todas confiscadas e paga-se fine por arma. Lá fora luta-se com quem está no mesmo país (nunca no
+    // avião); quem acabou de chegar tem graceMs de proteção. O armeiro de cada país aluga uma arma (gun) por gunRent: só serve lá.
+    perDay: 3,   // viagens (partidas) por dia de Lisboa: quem joga sem parar não vive de ir a Tânger 28 vezes por dia
+    xray: { bp: 8000, max: 9500, fine: 1000 }, contact: { bp: 3000, min: 500, perBp: 1500, risk: 1500 }, graceMs: 30_000,
+    dests: [
+      { id: 'ma', lat: 31.6, lon: -8.0, ms: 25 * MIN, ticket: 80, level: 5, r: 1, gun: 'revolver', gunRent: 100 },
+      { id: 'gb', lat: 51.5, lon: -0.1, ms: 45 * MIN, ticket: 200, level: 8, r: 2, gun: 'cacadeiraserrada', gunRent: 150 },
+      { id: 'it', lat: 40.85, lon: 14.27, ms: 50 * MIN, ticket: 260, level: 12, r: 2, gun: 'pistola', gunRent: 260 },
+      { id: 'eg', lat: 30.0, lon: 31.2, ms: 80 * MIN, ticket: 500, level: 16, r: 3, gun: 'smg9', gunRent: 450 },
+      { id: 'us', lat: 40.7, lon: -74.0, ms: 110 * MIN, ticket: 900, level: 20, r: 4, gun: 'pistola50', gunRent: 750 },
+      { id: 'br', lat: -22.9, lon: -43.2, ms: 140 * MIN, ticket: 1300, level: 25, r: 5, gun: 'espingardaassalto', gunRent: 900 },
+      { id: 'mx', lat: 19.4, lon: -99.1, ms: 160 * MIN, ticket: 1800, level: 30, r: 6, gun: 'ar762', gunRent: 1350 },
+      { id: 'za', lat: -26.2, lon: 28.0, ms: 170 * MIN, ticket: 2400, level: 35, r: 7, gun: 'batalha', gunRent: 1650 },
+      { id: 'cn', lat: 31.2, lon: 121.5, ms: 190 * MIN, ticket: 3200, level: 40, r: 8, gun: 'smgtatica', gunRent: 1650 },
+      { id: 'jp', lat: 35.7, lon: 139.7, ms: 220 * MIN, ticket: 4200, level: 45, r: 9, gun: 'katana', gunRent: 230 },
+    ],
+    // at: o país; buy: o preço lá; sell: o que o importador paga cá (preço normal); seizeBp: só no contrabando
+    goods: {
+      argao: { at: 'ma', buy: 35, sell: 93, max: 300, perH: 150 },
+      tabaco: { at: 'ma', buy: 50, sell: 136, max: 120, perH: 60, seizeBp: 1000 },
+      whisky: { at: 'gb', buy: 60, sell: 140, max: 300, perH: 150 },
+      cartoes: { at: 'gb', buy: 90, sell: 211, max: 120, perH: 60, seizeBp: 1000 },
+      limoncello: { at: 'it', buy: 80, sell: 184, max: 300, perH: 150 },
+      malas: { at: 'it', buy: 120, sell: 284, max: 120, perH: 60, seizeBp: 1200 },
+      papiro: { at: 'eg', buy: 90, sell: 206, max: 300, perH: 150 },
+      antiguidades: { at: 'eg', buy: 135, sell: 329, max: 100, perH: 50, seizeBp: 1500 },
+      tenis: { at: 'us', buy: 150, sell: 330, max: 300, perH: 150 },
+      telemoveis: { at: 'us', buy: 225, sell: 529, max: 100, perH: 50, seizeBp: 1500 },
+      cachaca: { at: 'br', buy: 200, sell: 444, max: 300, perH: 150 },
+      esmeraldas: { at: 'br', buy: 300, sell: 738, max: 80, perH: 40, seizeBp: 1800 },
+      prata: { at: 'mx', buy: 250, sell: 445, max: 300, perH: 150 },
+      passaportes: { at: 'mx', buy: 375, sell: 774, max: 80, perH: 40, seizeBp: 2000 },
+      vinho: { at: 'za', buy: 300, sell: 535, max: 300, perH: 150 },
+      diamantes: { at: 'za', buy: 450, sell: 930, max: 80, perH: 40, seizeBp: 2000 },
+      seda: { at: 'cn', buy: 400, sell: 692, max: 300, perH: 150 },
+      relogios: { at: 'cn', buy: 600, sell: 1237, max: 80, perH: 40, seizeBp: 2200 },
+      facas: { at: 'jp', buy: 500, sell: 855, max: 300, perH: 150 },
+      perolas: { at: 'jp', buy: 750, sell: 1592, max: 60, perH: 30, seizeBp: 2500 },
+    },
+  },
   goods: { wholesaleBp: 8000, dumpBp: 9500 },
   // Discoteca e bordel do jogador. O dono escolhe o preço (80% a 120% do preço da cidade) e o desconto para a gangue.
   // Ninguém paga menos do que o custo (80%): na discoteca é o que a droga custou, no bordel é a parte da puta. O dono nunca perde numa venda.
