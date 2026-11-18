@@ -852,6 +852,11 @@ export const CFG = {
       { id: 'maq-cafe', kind: 'maq', biz: 'cafe', needs: { motor: 1, circuito: 1, chapa: 1, cano: 1 }, price: 3000, ms: 3 * HOUR },
       { id: 'maq-oficina', kind: 'maq', biz: 'oficina', needs: { motor: 2, chapa: 3, cano: 2 }, price: 4500, ms: 5 * HOUR },
       { id: 'maq-clube', kind: 'maq', biz: 'clube', needs: { circuito: 3, motor: 1, caixote: 2 }, price: 40000, ms: 6 * HOUR },   // as caixas das colunas
+      // v99: as máquinas dos negócios pequenos (5% do preço do negócio, como as outras)
+      { id: 'maq-banca', kind: 'maq', biz: 'banca', needs: { madeira: 2, chapa: 1 }, price: 250, ms: 1 * HOUR },
+      { id: 'maq-quiosque', kind: 'maq', biz: 'quiosque', needs: { chapa: 1, circuito: 1 }, price: 600, ms: 2 * HOUR },
+      { id: 'maq-lavagem', kind: 'maq', biz: 'lavagem', needs: { motor: 1, cano: 2, chapa: 1 }, price: 1000, ms: 3 * HOUR },
+      { id: 'maq-barbearia', kind: 'maq', biz: 'barbearia', needs: { motor: 1, chapa: 1, madeira: 1 }, price: 1500, ms: 3 * HOUR },
     ],
   },
   // v84: a Feira da Ladra. Os jogadores vendem uns aos outros materiais, componentes, colecionáveis e objetos.
@@ -1305,10 +1310,18 @@ export const CFG = {
   // Negócios (base nova): pagam-se em cerca de 30 dias. perH = o que rende por hora (o dia real todo: lavandaria 1 500 €,
   // café 2 000 €, oficina 3 000 €, clube 25 000 €). Valores de jogo (grau D). Plantação e laboratório voltam com os armazéns (passo 6).
   biz: [
-    { id: 'lavandaria', price: 40000, perH: 63, resp: 40, stat: 'C', raid: false, toBank: true },
-    { id: 'cafe', price: 60000, perH: 83, resp: 60, stat: 'C', raid: false, toBank: true },
-    { id: 'oficina', price: 90000, perH: 125, resp: 90, stat: 'I', raid: false, toBank: true },
-    { id: 'clube', price: 800000, perH: 1042, resp: 600, stat: 'C', raid: true, toBank: false },
+    // v99: os de sempre rendem mais (a lavandaria pagava-se em 26 dias; agora em 19), para a escada dos preços fazer sentido
+    { id: 'lavandaria', price: 40000, perH: 88, resp: 40, stat: 'C', raid: false, toBank: true },
+    { id: 'cafe', price: 60000, perH: 119, resp: 60, stat: 'C', raid: false, toBank: true },
+    { id: 'oficina', price: 90000, perH: 162, resp: 90, stat: 'I', raid: false, toBank: true },
+    { id: 'clube', price: 800000, perH: 1134, resp: 600, stat: 'C', raid: true, toBank: false },
+    // v99 (pedido do Dinis: negócios mais baratos para o início). Acrescentados no fim para não mexer nos índices dos jogadores
+    // (o ecrã ordena pelo preço). Os pequenos só deixam ter 3 a 5 unidades (max), para não serem a única coisa que vale a pena.
+    // Retorno sem a stat: banca 6 dias, quiosque 9,6, lavagem 12,6, barbearia 15,6, lavandaria 19, café 21, oficina 23, clube 29.
+    { id: 'banca', price: 5000, perH: 35, resp: 5, stat: 'C', raid: false, toBank: true, max: 3 },
+    { id: 'quiosque', price: 12000, perH: 52, resp: 10, stat: 'I', raid: false, toBank: true, max: 3 },
+    { id: 'lavagem', price: 20000, perH: 66, resp: 15, stat: 'T', raid: false, toBank: true, max: 5 },
+    { id: 'barbearia', price: 30000, perH: 80, resp: 25, stat: 'C', raid: false, toBank: true, max: 5 },
   ],
   // Contabilista: contrato pago uma vez por ronda. Com ele o armazém dos negócios aguenta 24 h em vez de 8 h;
   // do que passar das 8 h normais (dinheiro que sem ele se perdia) fica com 10%. Nunca tira nada a quem recolhe a horas.

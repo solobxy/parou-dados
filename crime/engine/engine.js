@@ -82,6 +82,7 @@ function migrate(p) {
   if (!p.mt || typeof p.mt !== 'object' || Array.isArray(p.mt)) p.mt = {};   // v83: materiais e componentes no depósito
   if (p.cf === undefined) p.cf = null;   // v83: o que está na bancada da cave
   if (!p.maq || typeof p.maq !== 'object' || Array.isArray(p.maq)) p.maq = {};   // v83: máquinas instaladas nos negócios
+  if (Array.isArray(p.biz)) while (p.biz.length < CFG.biz.length) p.biz.push({ n: 0, stored: 0, rem: 0, t: p.t || 0 });   // v99: negócios novos no fim da lista
   if (p.dg === undefined || (p.dg && typeof p.dg !== 'object')) p.dg = null;   // v85: a escavação aberta
   if (p.dg && !Number.isSafeInteger(p.dg.safe)) p.dg.safe = CFG.dig.safe;
   if (!p.dgc || typeof p.dgc !== 'object' || Array.isArray(p.dgc)) p.dgc = {};   // v85: até quando cada sítio está vigiado
@@ -1990,6 +1991,7 @@ export const feiraNext = (lance, preco, cap = Infinity) => {
 
 // ---------- negócios ----------
 
+export const bizMaxOf = (i) => CFG.biz[i].max || CFG.bizMax;   // v99: os negócios pequenos têm um máximo próprio
 export function bizPrice(i, n) {
   let price = CFG.biz[i].price;
   for (let k = 0; k < n; k++) price += Math.floor(price / CFG.priceStepDiv);
@@ -2047,7 +2049,7 @@ export function bizStored(p, now) {
 export function buyBiz(p, now, world, i) {
   if (!Number.isInteger(i) || !CFG.biz[i]) fail('NO_BIZ');
   begin(p, now, world);
-  if (p.biz[i].n >= CFG.bizMax) fail('BIZ_MAX');
+  if (p.biz[i].n >= bizMaxOf(i)) fail('BIZ_MAX');
   const price = bizPrice(i, p.biz[i].n);
   pay(p, price);
   settleBiz(p, i, now);
@@ -4031,11 +4033,12 @@ export function checkInvariants(p) {
   if (bookOwned(p) > CFG.books.cap) bad.push('books>cap');
   if (p.bk.rd && (!bookOf(p.bk.rd.id) || !(p.bk.rd.end > p.bk.rd.t0))) bad.push('book reading');
   if (p.bk.on && (!bookOf(p.bk.on.id) || !Number.isSafeInteger(p.bk.on.until))) bad.push('book on');
-  for (const s of p.biz) {
+  if (p.biz.length !== CFG.biz.length) bad.push('biz length');
+  p.biz.forEach((s, i) => {
     for (const k of ['n', 'stored', 'rem', 't']) if (!Number.isSafeInteger(s[k]) || s[k] < 0) bad.push(`biz.${k}=${s[k]}`);
     if (s.rem >= T.HOUR) bad.push('biz remainder overflow');
-    if (s.n > CFG.bizMax) bad.push('biz over max');
+    if (s.n > bizMaxOf(i)) bad.push('biz over max');
     if (s.g !== undefined && s.g !== true) bad.push('biz goods flag');
-  }
+  });
   return bad;
 }

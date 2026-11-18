@@ -1407,14 +1407,18 @@ test('bolsa: limites de venda — só vendem ao preço do passo, com comissão; 
 
 test('fábricas: já não há negócios de droga (a produção volta à mão no passo 6); pedir a produção em droga é sempre recusado', () => {
   const B = CFG.biz;
-  assert.deepEqual(B.map((x) => x.id), ['lavandaria', 'cafe', 'oficina', 'clube']); assert.ok(B.every((x) => !x.drug));
+  assert.deepEqual(B.map((x) => x.id), ['lavandaria', 'cafe', 'oficina', 'clube', 'banca', 'quiosque', 'lavagem', 'barbearia']); assert.ok(B.every((x) => !x.drug));   // v99: os pequenos no fim
   const p = mk(); p.cash = 1e9; p.bank = 0;
   for (let i = 0; i < B.length; i++) { E.buyBiz(p, NOW, W, i); assert.throws(() => E.bizGoods(p, NOW, W, i, true), code('NO_BIZ')); }
   for (const x of [-1, 0.5, 99, NaN]) assert.throws(() => E.bizGoods(p, NOW, W, x, true), code('NO_BIZ'));
   // o que os negócios rendem por dia (ao nível de stat de partida) e em quantos dias se pagam
-  for (const [id, preco, dia] of [['lavandaria', 40000, 1500], ['cafe', 60000, 2000], ['oficina', 90000, 3000], ['clube', 800000, 25000]]) {
-    const b = B.find((x) => x.id === id); assert.equal(b.price, preco); perto(b.perH * 24, dia, dia * 0.01, id + ' por dia'); perto(preco / (b.perH * 24), 30, 4, id + ': dias para se pagar');
-  }
+  // v99: quanto mais caro, mais devagar se paga (da banca em 6 dias ao clube em 29)
+  const dias = [['banca', 5000, 6], ['quiosque', 12000, 9.6], ['lavagem', 20000, 12.6], ['barbearia', 30000, 15.6], ['lavandaria', 40000, 18.9], ['cafe', 60000, 21], ['oficina', 90000, 23.1], ['clube', 800000, 29.4]];
+  for (const [id, preco, d] of dias) { const b = B.find((x) => x.id === id); assert.equal(b.price, preco); perto(preco / (b.perH * 24), d, 0.2, id + ': dias para se pagar'); }
+  for (let k = 1; k < dias.length; k++) assert.ok(dias[k][2] > dias[k - 1][2]);
+  // os pequenos têm máximo próprio
+  for (const id of ['banca', 'quiosque']) assert.equal(E.bizMaxOf(B.findIndex((x) => x.id === id)), 3);
+  for (const id of ['lavagem', 'barbearia']) assert.equal(E.bizMaxOf(B.findIndex((x) => x.id === id)), 5);
   assert.deepEqual(E.checkInvariants(p), []);
 });
 

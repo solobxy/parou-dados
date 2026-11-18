@@ -183,8 +183,9 @@ test('armas a preços reais, sem lança-chamas nem minigun; luxo acima da mansã
   assert.equal(r.price, 12000); assert.equal(p.luxuries, 1); assert.equal(E.luxuryPrice(p), 25700);
 });
 
-test('negócios: lavandaria 40 000 € e 1 500 € por dia, café 60 000 € e 2 000 €, oficina 90 000 € e 3 000 €, clube 800 000 € e 25 000 €', () => {
-  const tab = [['lavandaria', 40000, 1500], ['cafe', 60000, 2000], ['oficina', 90000, 3000], ['clube', 800000, 25000]];
+// v99: os pequenos entraram no fim da lista e os de sempre rendem mais (a lavandaria pagava-se em 26 dias)
+test('negócios: da banca de 5 000 € (840 € por dia) ao clube de 800 000 € (27 216 € por dia)', () => {
+  const tab = [['lavandaria', 40000, 2112], ['cafe', 60000, 2856], ['oficina', 90000, 3888], ['clube', 800000, 27216], ['banca', 5000, 840], ['quiosque', 12000, 1248], ['lavagem', 20000, 1584], ['barbearia', 30000, 1920]];
   assert.deepEqual(CFG.biz.map((b) => b.id), tab.map((x) => x[0]));
   for (const [id, preco, dia] of tab) { const b = CFG.biz.find((x) => x.id === id); assert.equal(b.price, preco); assert.ok(Math.abs(b.perH * 24 - dia) <= 12, id); }
 });

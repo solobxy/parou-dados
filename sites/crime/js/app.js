@@ -637,7 +637,7 @@ function bizAnim(id) {
       add(g, 'rect', { x, y, width: 34, height: 6, rx: 1 });
       add(g, 'ellipse', { class: 'seal', cx: x + 17, cy: y + 3, rx: 3.2, ry: 2 });
     }
-    if (id === 'lavandaria') for (let k = 0; k < 5; k++) add(s, 'circle', { class: 'bubble soap', cx: 16 + k * 8, cy: 80, r: 2 + (k % 3), style: `animation-delay:${-k * 0.5}s` });
+    if (id === 'lavandaria' || id === 'lavagem') for (let k = 0; k < 5; k++) add(s, 'circle', { class: 'bubble soap', cx: 16 + k * 8, cy: 80, r: 2 + (k % 3), style: `animation-delay:${-k * 0.5}s` });
     if (id === 'prostitutas') add(s, 'path', { class: 'heart', d: 'M20 14c-2-3-7-2-7 2 0 4 7 8 7 8s7-4 7-8c0-4-5-5-7-2z' });
   }
   return s;
@@ -3770,15 +3770,17 @@ function screenBiz() {
   if (me.biz.some((b) => b.n > 0)) out.push(h('div', { class: 'collect' }, h('button', { class: 'btn buy get block big', dataset: { total: 1 }, disabled: total <= 0,
     on: { click: (e) => act('collect', { port: false }, { el: e.currentTarget }) } }, total > 0 ? t('collect', { m: money(total) }) : t('nothingToCollect'))));
   if (me.biz.some((b, i) => b.g && B[i].drug >= 0)) out.push(h('button', { class: 'card row tap stlink', on: { click: () => go('stash') } }, icon('pill'), h('span', { class: 'grow' }, t('bizToStash')), h('span', { class: 'muted', 'aria-hidden': 'true' }, '›')));
-  out.push(h('div', { class: 'shop' }, B.map((cfg, i) => {
-    const b = me.biz[i];
+  // v99: primeiro os que já tens, depois os outros; cada grupo do mais barato ao mais caro (os pequenos entraram no fim da lista)
+  const order = B.map((_, i) => i).sort((x, y) => (me.biz[y].n > 0) - (me.biz[x].n > 0) || B[x].price - B[y].price);
+  out.push(h('div', { class: 'shop' }, order.map((i) => {
+    const cfg = B[i], b = me.biz[i];
     const cap = bizCap(b);
     const stored = storedNow(b, i), fee = bizFeeOf(b, stored);
     const unitPerH = Math.floor(cfg.perH * (1000 + Math.min(me.stats[cfg.stat], 1000)) / 1000);
     const fill = cap ? Math.min(1, stored / cap) : 0;
     return h('div', { class: 'item' },
       h('div', { class: 'bscene ' + cfg.id + (b.n > 0 ? ' on' : '') + (fill >= 1 ? ' full' : ''), dataset: { biz: i }, style: `--fill:${fill.toFixed(3)}` }, art('biz', cfg.id, 'pic'), b.n > 0 ? bizAnim(cfg.id) : null,
-        b.n > 0 ? h('span', { class: 'cnt num' }, '×' + b.n) : null),
+        b.n > 0 ? h('span', { class: 'cnt num' }, '×' + b.n + (b.max && b.max < S.cfg.bizMax ? '/' + b.max : '')) : b.max && b.max < S.cfg.bizMax ? h('span', { class: 'cnt num' }, t('bizMaxN', { n: b.max })) : null),   // v99: os pequenos mostram o máximo
       h('div', { class: 'nm' }, list('biz')[i]),
       b.n > 0 ? h('div', { class: 'small' }, h('b', { class: 'c-cash num', dataset: { stored: i } }, money(stored - fee)), h('span', { class: 'muted num' }, ' · ' + moneyShort(b.perH) + t('perHour')))
         : h('div', { class: 'small muted' }, '+' + moneyShort(unitPerH) + t('perHour') + ' · +' + cfg.resp + ' ' + t('respect').toLowerCase()),

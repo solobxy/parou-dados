@@ -6,7 +6,7 @@
 //   1. ninguém fica rico numa semana (nem quem joga sem parar passa de 120 000 € ao dia 7, dois terços do primeiro T1;
 //      era 100 000 € antes de os biscates pagarem como o crime do mesmo nível, 17/11);
 //   2. o primeiro carro chega na primeira ou segunda semana a quem joga todos os dias;
-//   3. sai-se da barraca em dias, mas o primeiro apartamento na cidade demora meses;
+//   3. sai-se da barraca em dias, mas o primeiro apartamento na cidade demora cerca de um mês ou mais (dia 28 a 150);
 //   4. o nível 100 demora cerca de um ano a quem joga todos os dias e não menos de cinco meses a quem joga sem parar;
 //   5. jogar o dobro rende menos do que o dobro (a rua aquece), para valer a pena variar em vez de repetir.
 
@@ -14,7 +14,7 @@ const SEED = +(process.argv[2] ?? 1), N = +(process.argv[3] ?? 300), DIAS = +(pr
 // para comparar com o motor (dev/sim-motor.mjs) enquanto ele ainda não tem estes sistemas: SEM_EMPREGO=1, SEM_OPS=1, SEM_GASTOS=1
 // (SEM_GASTOS desliga os três gastos; cada um também se desliga sozinho: SEM_LAVAGEM=1, SEM_AVENCA=1, SEM_SEGURANCAS=1)
 const SEM_G = process.env.SEM_GASTOS === '1', semG = (k) => (process.env[k] === undefined ? SEM_G : process.env[k] === '1');
-const SEM = { emprego: process.env.SEM_EMPREGO === '1', ops: process.env.SEM_OPS === '1', lavagem: semG('SEM_LAVAGEM'), avenca: semG('SEM_AVENCA'), segurancas: semG('SEM_SEGURANCAS'), trafico: process.env.SEM_TRAFICO === '1', trabalho: process.env.SEM_TRABALHO === '1' };
+const SEM = { emprego: process.env.SEM_EMPREGO === '1', ops: process.env.SEM_OPS === '1', lavagem: semG('SEM_LAVAGEM'), avenca: semG('SEM_AVENCA'), segurancas: semG('SEM_SEGURANCAS'), trafico: process.env.SEM_TRAFICO === '1', negocios: process.env.SEM_NEGOCIOS === '1', trabalho: process.env.SEM_TRABALHO === '1' };
 function rngDe(s) { let a = s >>> 0; return () => { a |= 0; a = (a + 0x6d2b79f5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
 
 // ---------- números do modelo (os que vão para a wiki) ----------
@@ -76,6 +76,16 @@ export const P = {
     { nivel: 10, armazem: 50000, capital: 20000, dia: { 1: 600, 2: 1172, 4: 1513 } },
     { nivel: 25, armazem: 30000, capital: 40000, dia: { 1: 1095, 2: 1875, 4: 2735 } },
   ],
+  // v99 (18/11): negócios legais, do mais barato ao clube. Cada um rende por hora (vezes ~1,05 da stat) e enche um armazém de 8 h
+  // (24 h com o contabilista). Cada unidade a mais custa +50%, até 10. Compra-se a unidade que se paga mais depressa, se se pagar em
+  // menos de pagaEm dias e houver 1,3 vezes o preço. Valores por mês de jogo realistas: um dia real paga dois meses (porHora = mês / 12).
+  negocios: [
+    { id: 'banca', preco: +(process.env.NG_BANCA ?? 5000), hora: 35, resp: 5, max: 3 }, { id: 'quiosque', preco: 12000, hora: 52, resp: 10, max: 3 },
+    { id: 'lavagem', preco: 20000, hora: 66, resp: 15, max: 5 }, { id: 'barbearia', preco: 30000, hora: 80, resp: 25, max: 5 },
+    { id: 'lavandaria', preco: 40000, hora: 88, resp: 40 }, { id: 'cafe', preco: 60000, hora: 119, resp: 60 },
+    { id: 'oficina', preco: 90000, hora: 162, resp: 90 }, { id: 'clube', preco: 800000, hora: 1134, resp: 600 },
+  ],
+  negocioMax: 10, negocioStat: 1.05, pagaEm: +(process.env.PAGA_EM ?? 20), contabilista: 25000,
   // Casas: começa-se numa barraca de 0 €. Não há renda nem despesa de casa: as casas só se compram, e cada uma dá mais espaços de inventário.
   // Compra-se quando há 1,3 vezes o preço; a antiga entra na troca pelo que custou.
   vida: [
@@ -214,6 +224,21 @@ function simula(perfil, rng) {
       if (s.armz > 0) trafico = traficoDia(P.trafico[s.armz - 1], A.edicoes);
     }
     entra += trafico;
+    // v99: negócios: compra a unidade que se paga mais depressa; rende as horas que se recolhem (8 h por sessão, 24 h com o contabilista)
+    if (!SEM.negocios) {
+      s.ng = s.ng || P.negocios.map(() => 0);
+      const preco = (i) => { let x = P.negocios[i].preco; for (let k = 0; k < s.ng[i]; k++) x += Math.floor(x / 2); return x; };
+      for (let k = 0; k < 3; k++) {
+        const c = P.negocios.map((g, i) => ({ i, pr: preco(i), dias: preco(i) / (g.hora * P.negocioStat * 24) })).filter((x) => s.ng[x.i] < (P.negocios[x.i].max || P.negocioMax) && x.dias <= P.pagaEm).sort((x, y) => x.dias - y.dias)[0];
+        if (!c || s.cash + entra - sai < c.pr * 1.3) break;
+        sai += c.pr; s.ng[c.i]++; s.resp += P.negocios[c.i].resp; s.investido = (s.investido || 0) + c.pr;
+      }
+      if (!s.contab && s.ng.some((n) => n > 0) && A.sessoes < 3 && s.cash + entra - sai > P.contabilista * 1.3) { sai += P.contabilista; s.contab = true; }
+      const horas = s.contab ? 24 * 0.95 : Math.min(24, A.sessoes * 8);
+      const negocio = s.ng.reduce((x, n, i) => x + n * P.negocios[i].hora * P.negocioStat * horas, 0);
+      s.ganhoNegocios = (s.ganhoNegocios || 0) + negocio;
+      entra += negocio;
+    }
     // lavagem e equipa
     s.ilegal += crime;
     if (!SEM.lavagem && s.ilegal > P.lavagem.acimaDe) crime *= 1 - P.lavagem.parte;
@@ -236,7 +261,8 @@ function simula(perfil, rng) {
   }
   return { marcos, luxo: s.luxo, carro: s.carro, teto: s.tetoDia, casa: s.casaDia, n100: s.n100, dias: s.diasJogados, ralo: s.sumidouro / s.torneira };
 }
-const foto = (s) => ({ cash: Math.round(s.cash), fortuna: Math.round(s.cash + s.casa + s.capital), nivel: nivelDe(s.resp), dia: Math.round(s.media || 0) });
+const foto = (s) => ({ cash: Math.round(s.cash), fortuna: Math.round(s.cash + s.casa + s.capital),   // (os negócios não entram: não se vendem)
+  ng: Math.round(s.investido || 0), nivel: nivelDe(s.resp), dia: Math.round(s.media || 0) });
 
 // ---------- corre e mostra ----------
 const med = (a, q = 0.5) => { const b = a.filter((x) => x != null).sort((x, y) => x - y); return b.length ? b[Math.min(b.length - 1, Math.floor(q * b.length))] : null; };
@@ -260,7 +286,8 @@ for (const [perfil, r] of Object.entries(res)) {
 const provas = [
   ['Ninguém fica rico numa semana (bot abaixo de 120 000 € ao dia 7)', res.bot.fotos[7].p90 < 120000],
   ['Primeiro carro até ao dia 14 para quem joga todos os dias', res.regular.carro != null && res.regular.carro <= 14],
-  ['Primeiro T1 na cidade entre o dia 30 e o dia 150 (regular)', res.regular.casa != null && res.regular.casa >= 30 && res.regular.casa <= 150],
+  // v99: com os negócios baratos, quem joga todos os dias chega ao T1 um dia mais cedo (29 em vez de 30); continua a ser cerca de um mês
+  ['Primeiro T1 na cidade entre o dia 28 e o dia 150 (regular)', res.regular.casa != null && res.regular.casa >= 28 && res.regular.casa <= 150],
   ['Nível 100 entre o dia 270 e o dia 400 (regular)', DIAS < 400 ? (res.regular.n100 == null || res.regular.n100 >= 270) : res.regular.n100 >= 270 && res.regular.n100 <= 400],
   ['Nível 100 nunca antes do dia 150, nem para o bot', res.bot.n100 == null || res.bot.n100 >= 150],
   ['Quem joga 24 h por dia ganha por dia menos do triplo de quem joga normalmente (dia 30 e dia 180)', res.bot.fotos[30].dia < 3 * res.regular.fotos[30].dia && (DIAS < 180 || res.bot.fotos[180].dia < 3 * res.regular.fotos[180].dia)],

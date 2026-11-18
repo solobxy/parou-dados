@@ -585,7 +585,7 @@ for (let n = 0; n < ACTIONS; n++) {
       case 'air': arg = { amount: pick([50, 100, 500, 5000, E.airCap(p), E.airCap(p) + 1, p.cash]), bribe: r.chance(4000) }; res = E.airSend(p, t, world, pick([0, 1, 2, 3, 4, 5, -1]), arg.amount, arg.bribe); break;
       case 'airCollect': res = E.airCollect(p, t, world, game, r.chance(5000)); break;
       case 'avatar': res = E.setAvatar(p, t, world, pick([0, 5, 31, CFG.avatars - 1, CFG.avatars, -1])); break;
-      case 'buyBiz': arg = r.chance(9000) ? r.int(0, 4) : anyInt(); res = E.buyBiz(p, t, world, arg); break;
+      case 'buyBiz': arg = r.chance(9000) ? r.int(0, CFG.biz.length) : anyInt(); res = E.buyBiz(p, t, world, arg); break;   // v99: os pequenos no fim da lista
       case 'collect': res = E.collectBiz(p, t, world, game); break;
       case 'bizGoods': arg = r.chance(9000) ? r.int(0, 4) : anyInt(); res = E.bizGoods(p, t, world, arg, r.chance(6000)); break;
       case 'acct': res = E.hireAccountant(p, t, world); break;
