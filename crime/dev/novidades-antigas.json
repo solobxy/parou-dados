@@ -407,5 +407,11 @@
 "en": "What’s new: every version of the game, with date, time and a picture; in your profile, “About the game” opens What’s new, the Story and the Wiki.",
 "img": "/img/cenas/arquivo.webp",
 "force": true
+},
+"v104": {
+"pt": "As guerras entre gangues chegam à primeira página do jornal, com o resultado. Na cave, o preço vai no botão «Fazer»; os ginásios têm as colunas alinhadas; as honras com nomes compridos passam a duas linhas.",
+"en": "Gang wars make the front page of the paper, with the score. In the basement the price is on the “Make” button; gym columns line up; honours with long names go onto two lines.",
+"img": "/img/cenas/jornal.webp",
+"force": true
 }
 }
