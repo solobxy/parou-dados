@@ -22,6 +22,7 @@ escrever_estado() {
     echo "App: $(systemctl is-active parou 2>/dev/null)  Caddy: $(systemctl is-active caddy 2>/dev/null)"
     echo "Node: $(node --version 2>/dev/null)"
     echo "Caddy versão: $(caddy version 2>/dev/null | cut -c1-80)  Sistema: $(. /etc/os-release 2>/dev/null; echo "${PRETTY_NAME:-?}")  Pacote: $(dpkg-query -W -f='${Version}' caddy 2>/dev/null)"
+    echo "Caddy compilado com: $(caddy build-info 2>/dev/null | grep -E '^go[[:space:]]|golang.org/x/net[[:space:]]' | tr -s '\t ' ' ' | tr '\n' ';' | cut -c1-160)"
     echo "Memória (MB): $(free -m | awk '/Mem:/ {print "total " $2 ", usada " $3 ", disponível " $7}')"
     echo "Disco: $(df -h / | awk 'NR==2 {print $3 " usados de " $2 " (" $5 ")"}')"
     echo "Base de horários: $(ls -la /var/lib/parou/gtfs.db 2>/dev/null | awk '{print $5 " bytes, " $6 " " $7 " " $8}')"
