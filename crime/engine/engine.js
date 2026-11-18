@@ -2493,6 +2493,17 @@ export function equip(p, now, world, i) {
   if (old) p.inv[i] = old; else p.inv.splice(i, 1);
   return { ok: true, id: it.id, slot: g.slot, swapped: old ? old.id : null };
 }
+// v93: tirar uma peça do corpo para o inventário (o boneco: arrastar para fora da slot). Precisa de um espaço livre; a mochila
+// só sai se o que está guardado continuar a caber sem os espaços que ela dá.
+export function unequip(p, now, world, slot) {
+  if (!CFG.slots.includes(slot) || !p.eq[slot] || !p.eq[slot].id) fail('NO_GEAR');
+  begin(p, now, world, { allowBusy: true });
+  const it = p.eq[slot], g = gearOf(it.id), room = slot === 'acess' && g && g.room ? g.room : 0;
+  if (invUsed(p) + 1 > invCap(p) - room) fail('NO_ROOM');
+  p.eq[slot] = null;
+  p.inv.push(it);
+  return { ok: true, id: it.id, slot };
+}
 // recetador: um objeto roubado pelo valor que tem, uma peça de equipamento por metade (e pelo estado em que está), balas por metade
 export function sellItem(p, now, world, i) {
   const it = Number.isInteger(i) ? p.inv[i] : undefined;

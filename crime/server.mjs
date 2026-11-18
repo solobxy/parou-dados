@@ -29,7 +29,7 @@ const RONDA_TESTE = process.env.PRIMEIRA_RONDA ? dataDe(process.env.PRIMEIRA_RON
 // Épocas de 28 dias a contar da sexta 13/11/2026 às 21:00 de Lisboa (PRIMEIRA_EPOCA=AAAA-MM-DD muda-a, para testes)
 const ANCORA = dataDe(process.env.PRIMEIRA_EPOCA || process.env.PRIMEIRA_RONDA || '2026-11-13');
 const rng = process.env.TESTE_SEMENTE ? seededRng(+process.env.TESTE_SEMENTE) : cryptoRng();   // nos testes, a sorte pode ser sempre a mesma
-const VERSAO = 92;   // sobe quando o servidor muda, para se confirmar de fora que a versão nova já está a correr
+const VERSAO = 93;   // sobe quando o servidor muda, para se confirmar de fora que a versão nova já está a correr
 const ATOS_3S = +(process.env.ATOS_3S || 15), ATOS_MIN = +(process.env.ATOS_MIN || 400); // ações por conta: 15 em 3 s, 400 por minuto
 
 // ---------- relógio que nunca anda para trás ----------
@@ -1718,6 +1718,7 @@ function agir(conta, corpo, now) {
     case 'gear': r = E.buyGear(p, now, world, ['armor', 'guard', 'tool', 'gweapon'].includes(a.kind) ? a.kind : 'weapon', int(a.idx)); break;
     case 'buy': r = E.buyItem(p, now, world, String(a.id || '').slice(0, 24), a.n === undefined ? 1 : int(a.n)); break;
     case 'equip': r = E.equip(p, now, world, int(a.i)); break;
+    case 'unequip': r = E.unequip(p, now, world, String(a.slot || '')); break;   // v93: o boneco do inventário
     case 'sell': r = E.sellItem(p, now, world, int(a.i)); break;
     case 'sellGoods': r = E.sellGoods(p, now, world); break;
     case 'repair': r = E.repair(p, now, world, String(a.slot || ''), a.kit === true); break;

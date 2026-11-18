@@ -3705,60 +3705,191 @@ function screenArms() {
 
 // ---------- inventário ----------
 // o que trazes no corpo (9 espaços), o que guardas (ocupa espaço) e o recetador
+// ===== v93: o inventário com o boneco =====
+// Ao estilo do Tarkov: o corpo ao meio (uma fotografia com uma camada por peça vestida) e as nove slots à volta; por baixo, o que
+// está guardado numa grelha. Arrasta-se uma peça da grelha para a slot dela para a vestir, ou de uma slot para fora do boneco
+// para a tirar. Arrastar tem sempre alternativa de um toque: tocar numa peça ou numa slot abre uma folha com os botões.
+const DOLL_ORDER = ['pernas', 'pes', 'tronco', 'acess', 'principal', 'maos', 'mao', 'branca', 'cabeca'];   // de baixo para cima
+const DOLL_L = ['cabeca', 'tronco', 'maos', 'pernas', 'pes'], DOLL_R = ['principal', 'mao', 'branca', 'acess'];
+// as armas aparecem no corpo pelo tipo (uma camada por tipo), as outras peças cada uma com a sua
+const DOLL_TYPE = { pressao: 'L_espingarda', caca: 'L_espingarda', ligeira: 'L_espingarda', precisao: 'L_espingarda', cacadeira: 'L_cacadeira', repeticao: 'L_cacadeira',
+  compacta: 'L_smg', metralhadora: 'L_smg', artesanal: 'L_smg', assalto: 'L_carabina', batalha: 'L_carabina', calibre50: 'L_carabina', tatica: 'L_carabina', sniper: 'L_sniper', afinada: 'L_sniper',
+  pistola: 'L_pistola', pistola50: 'L_pistola', pistolaafinada: 'L_pistola', revolver: 'L_revolver', magnum: 'L_revolver',
+  soqueira: 'L_soqueira', navalha: 'L_faca', facamato: 'L_faca', taco: 'L_contundente', bastao: 'L_contundente', machado: 'L_lamina', catana: 'L_lamina', katana: 'L_espada', falcata: 'L_espada', gladio: 'L_espada' };
+const DOLL = (id) => `/img/boneco/${DOLL_TYPE[id] || id}.webp?1`;
+const gearFits = (it) => { const g = it && !isGood(it.id) ? gearOf(it.id) : null; return g && g.slot !== 'mat' ? g.slot : null; };
+const gearStat = (g) => (g.atk ? t('dollAtk', { p: pctOf(g.atk) }) : g.def ? t('dollDef', { p: pctOf(g.def) }) : g.room ? t('dollRoom', { n: g.room }) : '');
+// na grelha, uma peça que se veste diz logo se é melhor (▲ verde) ou pior (▼ vermelho) do que a que está vestida
+function cmpMark(me, it) {
+  const g = gearOf(it.id), on = me.eq[g.slot] ? gearOf(me.eq[g.slot].id) : null, k = g.atk ? 'atk' : g.def ? 'def' : g.room ? 'room' : null;
+  if (!k) return null;
+  const a = g[k] || 0, b = on ? on[k] || 0 : 0;
+  if (a === b) return null;
+  return h('span', { class: 'icm ' + (a > b ? 'up' : 'down'), 'aria-label': a > b ? t('dollBetter') : t('dollWorse') }, a > b ? '▲' : '▼');
+}
+function dollFig(me) {
+  return h('div', { class: 'dfig', 'aria-hidden': 'true' },
+    h('img', { class: 'dl', src: DOLL('base'), alt: '', width: 480, height: 714, decoding: 'async' }),
+    DOLL_ORDER.filter((sl) => me.eq[sl]).map((sl) => h('img', { class: 'dl' + (S.dollNew === sl ? ' new' : ''), dataset: { layer: sl }, src: DOLL(me.eq[sl].id), alt: '', width: 480, height: 714, decoding: 'async',
+      on: { error: (e) => e.currentTarget.remove() } })));
+}
+function dollSlot(me, sl) {
+  const it = me.eq[sl], g = it && gearOf(it.id);
+  return h('button', { class: 'dslot' + (it ? ' on' : ''), dataset: it ? { slot: sl, drag: 'eq' } : { slot: sl }, 'aria-label': t('sl_' + sl) + ': ' + (it ? itName(it.id) : t('dollEmpty')),
+    on: { click: () => { if (dragJustEnded()) return; if (it) slotSheet(sl); else freeSlotSheet(sl); } } },
+    h('span', { class: 'dsl' }, t('slS_' + sl)),
+    it ? Object.assign(itArt(it.id, 'dimg'), { loading: 'eager', fetchPriority: 'high', alt: itName(it.id) }) : null,
+    g && g.gun ? h('span', { class: 'du num' + (it.u > 0 ? '' : ' c-red') }, it.u + '/' + g.life) : null);
+}
+function dollPanel(me) {
+  return h('section', { class: 'doll', 'aria-label': t('invWorn') },
+    h('div', { class: 'dcol' }, DOLL_L.map((sl) => dollSlot(me, sl))), dollFig(me), h('div', { class: 'dcol' }, DOLL_R.map((sl) => dollSlot(me, sl))),
+    h('p', { class: 'dpow num' }, icon('fist'), ' ', num(me.attack), ' ', t('attackPower'), h('span', { class: 'sep', 'aria-hidden': 'true' }, '·'), icon('shield'), ' ', num(me.defense), ' ', t('defensePower')),
+    h('p', { class: 'dtip' }, t('dollTip')));
+}
+// o que se diz de cada coisa guardada e o que se pode fazer com ela (na folha que abre ao tocar)
+function invInfo(me, it, i) {
+  const B = S.cfg.bullets, good = isGood(it.id), g = good ? null : gearOf(it.id);
+  let detail, sell;
+  if (good) { detail = t('itGoods', { n: it.n, m: money(it.v) }); sell = it.v; }
+  else if (it.id === 'balas') { detail = t('itBullets', { n: num(it.n) }); sell = Math.floor((it.n * B.price) / (B.box * 2)); }
+  else if (g.slot === 'mat') { detail = t('sl_mat') + ' · ' + t('matFor', { x: andList(S.cfg.ops.filter((o) => o.mat.includes(g.id)).map((o) => t('op_' + o.id))) }); sell = Math.floor(g.price / 2); }
+  else { detail = t('sl_' + g.slot) + (gearStat(g) ? ' · ' + gearStat(g) : '') + (g.gun ? ' · ' + (it.u > 0 ? t('usesLeft', { u: it.u, l: g.life }) : t('gunWorn')) : ''); sell = fenceOf(Math.floor((g.price * S.cfg.loot.gearSellBp * (g.gun ? it.u / g.life : 1)) / 10000)); }
+  const on = g && me.eq[g.slot] ? gearOf(me.eq[g.slot].id) : null, k2 = g && (g.atk ? 'atk' : g.def ? 'def' : null);
+  const pior = on && k2 && on[k2] > g[k2] ? t('worseThan', { p: pctOf(g[k2]), q: pctOf(on[k2]) }) : null;
+  const opNow = me.op ? S.cfg.ops[me.op.i] : null, needed = opNow && ((it.id === 'balas' && opNow.gun) || opNow.mat.includes(it.id)) ? t('opNeeds', { x: t('op_' + opNow.id) }) : null;
+  return { good, g, detail, sell, pior, needed, wear: !!gearFits(it), low: g && me.level < (g.level || 1) };
+}
+function itemSheet(i) {
+  const me = S.st.me, it = me.inv[i]; if (!it) return;
+  const x = invInfo(me, it, i);
+  let close = () => {};
+  const done = (p) => p.then((o) => { if (o) close(); });
+  const acts = [];
+  if (x.wear) acts.push(x.low ? h('p', { class: 'small muted' }, t('arNeedLvl', { n: x.g.level }))
+    : h('button', { class: 'btn buy block', on: { click: (e) => { S.dollNew = x.g.slot; done(act('equip', { i }, { el: e.currentTarget })); } } }, t('dollWear', { x: t('sl_' + x.g.slot).toLowerCase() })));
+  if (x.good) acts.push(h('button', { class: 'btn block', on: { click: (e) => done(act('sell', { i }, { el: e.currentTarget })) } }, t('sellBtn') + ' · ' + money(x.sell)));
+  else { const b = sureBtn('btn block', t('sellBtn') + ' · ' + money(x.sell), 'btn block dng sure', t('sellSure', { m: money(x.sell) }), () => done(act('sell', { i }, { el: b }))); acts.push(b); }
+  close = sheet(h('div', { class: 'stack dsheet' },
+    h('div', { class: 'row dsh' }, itArt(it.id, 'dsi'), h('div', { class: 'grow' }, h('h2', null, itName(it.id)), h('p', { class: 'small num' }, x.good ? tint(x.detail) : x.detail))),
+    x.pior ? h('p', { class: 'small c-red num' }, x.pior) : null, x.needed ? h('p', { class: 'small c-red' }, x.needed) : null, ...acts));
+}
+function slotSheet(sl) {
+  const me = S.st.me, it = me.eq[sl]; if (!it) return;
+  const g = gearOf(it.id);
+  let close = () => {};
+  close = sheet(h('div', { class: 'stack dsheet' },
+    h('div', { class: 'row dsh' }, itArt(it.id, 'dsi'), h('div', { class: 'grow' }, h('h2', null, itName(it.id)),
+      h('p', { class: 'small num' }, t('sl_' + sl) + (gearStat(g) ? ' · ' + gearStat(g) : '') + (g.gun ? ' · ' + (it.u > 0 ? t('usesLeft', { u: it.u, l: g.life }) : t('gunWorn')) : '')))),
+    h('button', { class: 'btn block', on: { click: (e) => act('unequip', { slot: sl }, { el: e.currentTarget }).then((o) => { if (o) close(); }) } }, t('dollTake')),
+    h('button', { class: 'btn block', on: { click: () => { close(); S.armsSeg = ['branca', 'mao', 'principal'].includes(sl) ? 'fight' : 'def'; go('arms'); } } }, t('dollArms'))));
+}
+// slot vazia: o que tens guardado que lá cabe, para vestir com um toque
+function freeSlotSheet(sl) {
+  const me = S.st.me, fit = me.inv.map((it, i) => [it, i]).filter(([it]) => gearFits(it) === sl);
+  let close = () => {};
+  close = sheet(h('div', { class: 'stack dsheet' }, h('h2', null, t('sl_' + sl)),
+    fit.length ? h('div', { class: 'card vlist vc' }, fit.map(([it, i]) => { const g = gearOf(it.id);
+      return h('div', { class: 'vrow' }, itArt(it.id, 'vth'), h('div', { class: 'grow' }, h('b', null, itName(it.id)), h('div', { class: 'small muted num' }, gearStat(g))),
+        me.level < (g.level || 1) ? h('span', { class: 'small muted' }, t('arNeedLvl', { n: g.level }))
+          : h('button', { class: 'btn sm', on: { click: (e) => { S.dollNew = sl; act('equip', { i }, { el: e.currentTarget }).then((o) => { if (o) close(); }); } } }, t('dollWearBtn'))); }))
+      : h('p', { class: 'muted' }, t('dollNoneFor')),
+    h('button', { class: 'btn block', on: { click: () => { close(); S.armsSeg = ['branca', 'mao', 'principal'].includes(sl) ? 'fight' : 'def'; go('arms'); } } }, t('dollArms'))));
+}
+// arrastar e largar: com o rato começa ao mexer; no telemóvel, ao segurar o dedo um quarto de segundo (antes disso é deslizar a página)
+let DR = null, dragEndAt = 0;
+const dragJustEnded = () => performance.now() - dragEndAt < 450;
+function dragBegin() {
+  if (!DR || DR.on) return;
+  DR.on = true;
+  const el = DR.el, img = el.querySelector('img');
+  DR.ghost = h('div', { class: 'dghost', 'aria-hidden': 'true' }, img ? img.cloneNode() : null);
+  document.body.append(DR.ghost);
+  el.classList.add('dragging');
+  document.body.classList.add('dragmode');
+  for (const s of document.querySelectorAll('.dslot')) s.classList.add(el.dataset.drag === 'inv' ? (s.dataset.slot === el.dataset.fits ? 'ok' : 'no') : (s === el ? 'from' : 'no'));
+  if (el.dataset.drag === 'eq') document.querySelector('.invg')?.classList.add('ok');
+  dragPos(DR.x, DR.y);
+  DR.raf = requestAnimationFrame(dragScroll);
+  try { navigator.vibrate?.(12); } catch { /* sem vibração */ }
+}
+// perto do cimo ou do fundo do ecrã a página rola sozinha (o boneco e a grelha não cabem os dois no ecrã de um telemóvel)
+function dragScroll() {
+  if (!DR || !DR.on) return;
+  const top = 150, bot = innerHeight - 120, y = DR.cy;
+  const v = y < top ? -Math.ceil((top - y) / 6) : y > bot ? Math.ceil((y - bot) / 6) : 0;
+  if (v) { scrollBy(0, Math.max(-24, Math.min(24, v))); dragPos(DR.cx, DR.cy); }
+  DR.raf = requestAnimationFrame(dragScroll);
+}
+function dragPos(x, y) {
+  if (!DR || !DR.ghost) return;
+  DR.cx = x; DR.cy = y;
+  DR.ghost.style.transform = DR.touch ? `translate(${x - 26}px, ${y - 104}px)` : `translate(${x + 14}px, ${y - 66}px)`;
+  let over = document.elementFromPoint(x, y)?.closest('.dslot, .invg, .dfig');
+  if (over && over.classList.contains('dfig')) over = DR.el.dataset.drag === 'inv' ? document.querySelector(`.dslot[data-slot="${DR.el.dataset.fits}"]`) : null;   // em cima do corpo: acende a slot da peça
+  if (over !== DR.over) { DR.over?.classList.remove('hov'); over?.classList.add('hov'); DR.over = over; }
+}
+function dragStop(x, y) {
+  const d = DR; DR = null;
+  if (!d) return;
+  clearTimeout(d.tm); cancelAnimationFrame(d.raf);
+  if (!d.on) return;
+  dragEndAt = performance.now();
+  d.ghost?.remove(); d.el.classList.remove('dragging'); document.body.classList.remove('dragmode');
+  for (const s of document.querySelectorAll('.dslot, .invg')) s.classList.remove('ok', 'no', 'from', 'hov');
+  if (x == null) return;
+  const over = document.elementFromPoint(x, y);
+  if (d.el.dataset.drag === 'inv') {
+    const s = over?.closest('.dslot'), fig = over?.closest('.dfig');
+    if ((s && s.dataset.slot === d.el.dataset.fits) || fig) { S.dollNew = d.el.dataset.fits; act('equip', { i: +d.el.dataset.i }, { el: s || fig }); }
+  } else if (d.el.dataset.drag === 'eq' && over && !over.closest('.doll')) act('unequip', { slot: d.el.dataset.slot });
+}
+document.addEventListener('pointerdown', (e) => {
+  const el = e.target.closest && e.target.closest('[data-drag]');
+  if (!el || (e.pointerType === 'mouse' && e.button !== 0) || DR) return;
+  DR = { el, x: e.clientX, y: e.clientY, on: false, touch: e.pointerType !== 'mouse' };
+  if (DR.touch) DR.tm = setTimeout(dragBegin, 260);
+});
+document.addEventListener('pointermove', (e) => {
+  if (!DR) return;
+  if (!DR.on) {
+    const far = Math.hypot(e.clientX - DR.x, e.clientY - DR.y) > (DR.touch ? 10 : 5);
+    if (!far) return;
+    if (DR.touch) { clearTimeout(DR.tm); DR = null; return; }   // mexeu antes do tempo: é deslizar a página
+    dragBegin();
+  }
+  dragPos(e.clientX, e.clientY);
+});
+document.addEventListener('pointerup', (e) => dragStop(e.clientX, e.clientY));
+document.addEventListener('pointercancel', () => dragStop());
+// enquanto se arrasta, o dedo não desliza a página
+document.addEventListener('touchmove', (e) => { if (DR && DR.on) e.preventDefault(); }, { passive: false });
+
 function screenInv() {
-  const me = S.st.me, B = S.cfg.bullets, used = me.invUsed, cap = me.invCap, full = used >= cap;
-  const out = [pageHead('inv', t('invSub'))];
+  const me = S.st.me, used = me.invUsed, cap = me.invCap, full = used >= cap;
+  const out = [pageHead('inv', null, true), dollPanel(me)];
   const bag = me.eq.acess && gearOf(me.eq.acess.id)?.room;
   const goods = me.inv.filter((x) => isGood(x.id)), gv = goods.reduce((s, x) => s + x.v, 0), gn = goods.reduce((s, x) => s + x.n, 0);
-  // espaço: o número que manda, uma barra e a regra numa frase
-  out.push(h('div', { class: 'card stack invsp' },
-    h('div', { class: 'row sp' }, h('b', null, t('invSpace')), h('b', { class: 'num ' + (full ? 'c-red' : '') }, t('invSpaceN', { u: used, c: cap }))),
-    h('div', { class: 'fill' + (full ? ' bad' : '') }, h('i', { style: `width:${Math.min(100, (used / Math.max(1, cap)) * 100)}%` })),
-    h('p', { class: 'small muted' }, t('invRule', { h: S.cfg.house.tiers[me.house].slots }) + (bag ? ' ' + t('invBag', { n: bag }) : '')),
-    full ? h('p', { class: 'small c-red' }, t('invFull')) : null));
-  // o recetador: quanto dá por tudo o que roubaste, em grande, e um botão
-  if (gn) out.push(h('div', { class: 'card stack invsp fence' },
-    h('div', { class: 'row sp' }, h('b', null, t('fenceT')), h('b', { class: 'num c-cash' }, money(gv))),
-    h('button', { class: 'btn buy block big', on: { click: (e) => act('sellGoods', {}, { el: e.currentTarget }) } }, t('fenceAll')),
-    h('p', { class: 'small muted' }, t('fenceSub'))));
-  // o que está guardado: uma linha por espaço ocupado
-  out.push(h('h2', { class: 'sec' }, t('invHeld')));
-  const rows = me.inv.map((it, i) => {
-    const good = isGood(it.id), g = good ? null : gearOf(it.id);
-    let detail, sell;
-    if (good) { detail = t('itGoods', { n: it.n, m: money(it.v) }); sell = it.v; }
-    else if (it.id === 'balas') { detail = t('itBullets', { n: num(it.n) }); sell = Math.floor((it.n * B.price) / (B.box * 2)); }
-    else if (g.slot === 'mat') { detail = t('sl_mat') + ' · ' + t('matFor', { x: andList(S.cfg.ops.filter((o) => o.mat.includes(g.id)).map((o) => t('op_' + o.id))) }); sell = Math.floor(g.price / 2); }
-    else { detail = t('sl_' + g.slot) + (g.gun ? ' · ' + (it.u > 0 ? t('usesLeft', { u: it.u, l: g.life }) : t('gunWorn')) : ''); sell = fenceOf(Math.floor((g.price * S.cfg.loot.gearSellBp * (g.gun ? it.u / g.life : 1)) / 10000)); }
-    // trocar por pior: diz-se antes de tocar em «Usar»
-    const on = g && me.eq[g.slot] ? gearOf(me.eq[g.slot].id) : null, k2 = g && (g.atk ? 'atk' : g.def ? 'def' : null);
-    const pior = on && k2 && on[k2] > g[k2] ? h('div', { class: 'small c-red num' }, t('worseThan', { p: pctOf(g[k2]), q: pctOf(on[k2]) })) : null;
-    const sellIt = (e) => act('sell', { i }, { el: e.currentTarget });
-    const opNow = me.op ? S.cfg.ops[me.op.i] : null, needed = opNow && ((it.id === 'balas' && opNow.gun) || opNow.mat.includes(it.id)) ? h('div', { class: 'small c-red' }, t('opNeeds', { x: t('op_' + opNow.id) })) : null;
-    return h('div', { class: 'vrow jbr' }, itArt(it.id, 'vth'),
-      h('div', { class: 'grow' }, h('b', null, itName(it.id)), h('div', { class: 'small num' }, good ? tint(detail) : detail), pior, needed,
-        good ? null : sureBtn('btn ghost sm', t('sellBtn') + ' · ' + money(sell), 'btn ghost dng sm sure', t('sellSure', { m: money(sell) }), () => act('sell', { i }))),
-      good ? h('button', { class: 'btn sm ghost', on: { click: sellIt } }, t('sellBtn'))
-        : g && g.slot !== 'mat' ? (me.level < (g.level || 1) ? h('span', { class: 'small muted' }, t('arNeedLvl', { n: g.level }))   // v87: o nível conta ao vestir
-          : h('button', { class: 'btn sm ghost', on: { click: (e) => act('equip', { i }, { el: e.currentTarget }) } }, t('useBtn'))) : null);
+  // o que está guardado: a grelha, com o espaço no título
+  out.push(h('div', { class: 'row sp invh' }, h('h2', { class: 'sec' }, t('invHeld')), h('b', { class: 'num ' + (full ? 'c-red' : 'muted') }, t('invSpaceN', { u: used, c: cap }))));
+  const cells = me.inv.map((it, i) => {
+    const fits = gearFits(it), n = it.id === 'balas' || isGood(it.id) ? it.n : 0;
+    return h('button', { class: 'invc' + (fits ? ' wear' : ''), dataset: fits ? { i, drag: 'inv', fits } : { i }, 'aria-label': itName(it.id) + (n > 1 ? ' ×' + n : ''),
+      on: { click: () => { if (!dragJustEnded()) itemSheet(i); } } },
+      Object.assign(itArt(it.id, 'ici'), { alt: '' }), fits ? cmpMark(me, it) : null, n > 1 ? h('span', { class: 'icn num' }, n > 999 ? num(Math.floor(n / 1000)) + 'k' : num(n)) : null, h('span', { class: 'icl' }, itName(it.id)));
   });
-  // a droga para vender na rua também ocupa (um espaço por tipo)
   const D = S.cfg.deal, drugs = ((me.deal && me.deal.dst) || []).map((g, j) => [g, S.cfg.drugs.findIndex((x) => x.id === D.list[j].drug)]).filter(([g]) => g > 0);
-  if (drugs.length) rows.push(h('button', { class: 'vrow jbr tap', on: { click: () => go('rob') } }, h('div', { class: 'grow' }, h('b', null, t('invDrugs')),
-    h('div', { class: 'small muted num' }, drugs.map(([g, d]) => num(g) + ' g ' + list('drugs')[d].toLowerCase()).join(' · '))), h('span', { class: 'muted', 'aria-hidden': 'true' }, '›')));
-  out.push(rows.length ? h('div', { class: 'card vlist vc jbl' }, rows) : h('div', { class: 'tip' }, h('p', null, t('invNone'))));
-  // no corpo: os nove espaços, cheios ou vazios
-  out.push(h('h2', { class: 'sec' }, t('invWorn')));
-  const livres = S.cfg.slots.filter((sl) => !me.eq[sl]);
-  out.push(h('div', { class: 'card vlist vc jbl wornl' }, S.cfg.slots.filter((sl) => me.eq[sl]).map((sl) => {
-    const it = me.eq[sl], g = gearOf(it.id);
-    return h('button', { class: 'vrow wrow tap', on: { click: () => { S.armsSeg = ['branca', 'mao', 'principal'].includes(sl) ? 'fight' : 'def'; go('arms'); } } },
-      h('span', { class: 'small muted wsl' }, t('sl_' + sl)),
-      h('span', { class: 'grow' }, t('g_' + it.id), g.gun ? h('span', { class: 'num ' + (it.u > 0 ? 'muted' : 'c-red') }, ' · ' + (it.u > 0 ? t('usesLeft', { u: it.u, l: g.life }) : t('gunWorn'))) : null),
-      h('span', { class: 'muted', 'aria-hidden': 'true' }, '›'));
-  }).concat(livres.length ? [h('button', { class: 'vrow wrow tap', on: { click: () => { S.armsSeg = livres.some((x) => ['branca', 'mao', 'principal'].includes(x)) ? 'fight' : 'def'; go('arms'); } } },
-    h('span', { class: 'grow muted' }, livres.length === S.cfg.slots.length ? t('wornNone') : t('wornFree', { x: livres.map((x) => t('sl_' + x).toLowerCase()).join(', ') })),
-    h('span', { class: 'muted', 'aria-hidden': 'true' }, '›'))] : [])));
+  if (drugs.length) cells.push(h('button', { class: 'invc drug', on: { click: () => go('rob') } }, h('span', { class: 'icl' }, t('invDrugs')),
+    h('span', { class: 'small muted num' }, drugs.map(([g, d]) => num(g) + ' g ' + list('drugs')[d].toLowerCase()).join(' · '))));
+  const alvo = Math.min(Math.max(cap, cells.length), Math.ceil((cells.length + 1) / 4) * 4);   // os espaços livres veem-se até ao fim da fila
+  while (cells.length < alvo) cells.push(h('div', { class: 'invc vazio', 'aria-hidden': 'true' }));
+  out.push(h('div', { class: 'invg' }, cells));
+  // o recetador: quanto dá por tudo o que roubaste, num botão
+  if (gn) out.push(h('div', { class: 'card stack fence' },
+    h('div', { class: 'row sp' }, h('b', null, t('fenceT')), h('b', { class: 'num c-cash' }, money(gv))),
+    h('button', { class: 'btn buy block', on: { click: (e) => act('sellGoods', {}, { el: e.currentTarget }) } }, t('fenceAll'))));
+  out.push(h('p', { class: 'small muted dhint' }, t('invRule', { h: S.cfg.house.tiers[me.house].slots }) + (bag ? ' ' + t('invBag', { n: bag }) : '')));
+  if (full) out.push(h('p', { class: 'small c-red' }, t('invFull')));
   return out;
 }
 
