@@ -142,6 +142,15 @@ SEED_FEEDS = [
     {"id": "horarios_funchal", "operator_name": "Horários do Funchal", "mode": "Autocarro",
      "url": "https://www.horariosdofunchal.pt/googletransit.zip",
      "mdb": ["horarios do funchal"]},
+    # Rede SIGA (Madeira): o IMT Madeira publica num só ficheiro os autocarros dos Horários do Funchal, da SIGA Rodoeste e da
+    # CAM (indicado à PAROU pelo IMT em 18/11/2026). O Funchal já vem da fonte própria (acima): aqui entram só a Rodoeste
+    # (agência 2) e a CAM (agência 3), cada uma como operador, com as variantes de cada linha juntas pelo número.
+    {"id": "siga_rodoeste", "operator_name": "SIGA Rodoeste", "mode": "Autocarro",
+     "url": "https://gtfs.tiim.pt/rede-siga/rede-siga-gtfs.zip",
+     "agencias": ["2"], "juntar_variantes": True},
+    {"id": "cam_madeira", "operator_name": "CAM – Companhia de Autocarros da Madeira", "mode": "Autocarro",
+     "url": "https://gtfs.tiim.pt/rede-siga/rede-siga-gtfs.zip",
+     "agencias": ["3"], "juntar_variantes": True, "sufixo_variante": True},
 ]
 
 # Feeds do catalogo que NAO se carregam automaticamente (ja estao acima,
@@ -152,7 +161,7 @@ DISCOVERY_SKIP = [
     "transportes colectivos do porto", "stcp", "metro do porto", "transportes urbanos de braga",
     "guimabus", "tuba", "mobiave", "smtuc", "transportes urbanos de coimbra", "vamus",
     "proximo", "giro", "sobe e desce", "horarios do funchal", "flixbus",
-    "metropolitanos de lisboa", "metro mondego",
+    "metropolitanos de lisboa", "metro mondego", "rodoeste", "rede siga", "companhia de autocarros da madeira",
 ]
 
 # Só se guardam viagens que funcionam entre ontem e daqui a WINDOW_DAYS dias
@@ -652,6 +661,102 @@ def calendar_end(zip_bytes):
             if to_int(r.get("exception_type"), 1) == 1:
                 best = max(best, r.get("date") or "")
     return best
+
+
+# Código de variante colado ao fim dos nomes das linhas da CAM: «Boqueirão0I», «BoqueirãoAV», «Ribeira SecaV», «Agua de PenaAC»
+# (letra ou número da variante, depois I = ida, V = volta, C = circular). Só se tira depois de minúscula, parêntese, apóstrofo ou
+# espaço, ou quando o nome é só o código («0I»).
+_CODIGO_VARIANTE = re.compile(r"(?:(?<=[a-zà-ÿ)'\s])|^)\s*[0-9A-Z]?[IVC]$")
+
+
+def _escrever_csv(zout, nome, linhas):
+    """Escreve as linhas (dicionários) num ficheiro do ZIP de saída. Devolve quantas escreveu."""
+    n = 0
+    with zout.open(nome, "w") as raw:
+        txt = io.TextIOWrapper(raw, encoding="utf-8", newline="")
+        w = None
+        for r in linhas:
+            if w is None:
+                w = csv.DictWriter(txt, fieldnames=list(r.keys()), extrasaction="ignore")
+                w.writeheader()
+            w.writerow(r)
+            n += 1
+        txt.flush()
+        txt.detach()
+    return n
+
+
+def filtrar_agencias(zip_bytes, agencias, juntar_variantes=False, sufixo_variante=False):
+    """Fica só com o que é de algumas agências de um GTFS com vários operadores (Rede SIGA, Madeira: Horários do Funchal,
+    SIGA Rodoeste e CAM num só ficheiro). Entram as linhas dessas agências, as viagens delas e só as paragens (com a estação-
+    -mãe), desenhos e serviços que essas viagens usam. Devolve um ZIP GTFS novo.
+    juntar_variantes: as variantes de uma linha (rotas diferentes com o mesmo número) passam a ser uma linha só, com o nome da
+    variante com mais viagens de ida; cada viagem mantém o sentido. sufixo_variante: tira o código de variante colado ao fim
+    do nome (CAM). Os destinos «Fajã Penedo|via Cabo Girão» ficam «Fajã Penedo via Cabo Girão»."""
+    agencias = {str(a) for a in agencias}
+    zip_bytes = unwrap_zip(zip_bytes)
+    out = io.BytesIO()
+    with zipfile.ZipFile(io.BytesIO(zip_bytes)) as zf, zipfile.ZipFile(out, "w", zipfile.ZIP_DEFLATED) as zo:
+        rotas = [r for r in gtfs_rows(zf, "routes.txt") if (r.get("agency_id") or "") in agencias and r.get("route_id")]
+        ids_rotas = {r["route_id"] for r in rotas}
+        viagens = [t for t in gtfs_rows(zf, "trips.txt") if t.get("trip_id") and t.get("route_id") in ids_rotas]
+        nova_rota = {r["route_id"]: r["route_id"] for r in rotas}
+        if juntar_variantes:
+            contagem = {}  # route_id -> [viagens de ida, viagens no total]
+            for t in viagens:
+                c = contagem.setdefault(t["route_id"], [0, 0])
+                c[1] += 1
+                if to_int(t.get("direction_id"), 0) == 0:
+                    c[0] += 1
+            grupos = {}
+            for r in rotas:
+                if r["route_id"] in contagem:  # linhas sem viagens não entram
+                    numero = (r.get("route_short_name") or "").strip() or r["route_id"]
+                    grupos.setdefault((r.get("agency_id") or "", numero), []).append(r)
+            juntas = []
+            def nome_limpo(r):
+                nome = re.sub(r"\s+", " ", r.get("route_long_name") or "").strip()
+                return _CODIGO_VARIANTE.sub("", nome).strip() if sufixo_variante else nome
+            for (ag, numero), lista in grupos.items():
+                # A variante com mais viagens de ida (depois, no total) que tenha nome: há variantes cujo nome é só o código
+                melhor = max(lista, key=lambda r: (bool(nome_limpo(r)), *contagem[r["route_id"]]))
+                nova = dict(melhor)
+                nova["route_id"] = f"{ag}-{numero}" if ag else numero
+                nova["route_long_name"] = nome_limpo(melhor)
+                for r in lista:
+                    nova_rota[r["route_id"]] = nova["route_id"]
+                juntas.append(nova)
+            rotas = juntas
+        servicos, formas, ids_viagens = set(), set(), set()
+        for t in viagens:
+            t["route_id"] = nova_rota[t["route_id"]]
+            if t.get("trip_headsign"):
+                t["trip_headsign"] = re.sub(r"\s*\|\s*", " ", t["trip_headsign"]).strip()
+            ids_viagens.add(t["trip_id"])
+            if t.get("service_id"):
+                servicos.add(t["service_id"])
+            if t.get("shape_id"):
+                formas.add(t["shape_id"])
+        _escrever_csv(zo, "routes.txt", rotas)
+        _escrever_csv(zo, "trips.txt", viagens)
+        usadas = set()
+
+        def horarios():
+            for r in gtfs_rows(zf, "stop_times.txt"):
+                if r.get("trip_id") in ids_viagens:
+                    usadas.add(r.get("stop_id"))
+                    yield r
+        _escrever_csv(zo, "stop_times.txt", horarios())
+        paragens = list(gtfs_rows(zf, "stops.txt"))
+        maes = {p.get("parent_station") for p in paragens if p.get("stop_id") in usadas and p.get("parent_station")}
+        _escrever_csv(zo, "stops.txt", (p for p in paragens if p.get("stop_id") in usadas or p.get("stop_id") in maes))
+        _escrever_csv(zo, "shapes.txt", (r for r in gtfs_rows(zf, "shapes.txt") if r.get("shape_id") in formas))
+        _escrever_csv(zo, "calendar.txt", (r for r in gtfs_rows(zf, "calendar.txt") if r.get("service_id") in servicos))
+        _escrever_csv(zo, "calendar_dates.txt", (r for r in gtfs_rows(zf, "calendar_dates.txt") if r.get("service_id") in servicos))
+        _escrever_csv(zo, "frequencies.txt", (r for r in gtfs_rows(zf, "frequencies.txt") if r.get("trip_id") in ids_viagens))
+        _escrever_csv(zo, "agency.txt", (r for r in gtfs_rows(zf, "agency.txt") if (r.get("agency_id") or "") in agencias))
+        _escrever_csv(zo, "feed_info.txt", gtfs_rows(zf, "feed_info.txt"))
+    return out.getvalue()
 
 
 def ingest_gtfs(conn, feed_id, zip_bytes, today_dt, extend_calendar=False, max_back_days=60):
@@ -1199,6 +1304,9 @@ def process_feed(conn, feed, today_dt, have_prev):
             log_fetch(conn, fid, url, status, len(body), ms, f"Download concluído ({len(body) // 1024} KB)")
             if feed.get("formato") == "netex":
                 body = converter_netex(feed, body)
+            if feed.get("agencias"):
+                # Ficheiro com vários operadores (Rede SIGA): fica só com o que é deste
+                body = filtrar_agencias(body, feed["agencias"], feed.get("juntar_variantes"), feed.get("sufixo_variante"))
             delete_feed(conn, fid)
             # Prolonga o horário semanal se as datas do operador passaram há no máximo `limit` dias.
             extend = False

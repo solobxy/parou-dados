@@ -64,6 +64,7 @@ jobs:
           python auditoria/test_calendario_dia_util.py
           python auditoria/test_stcp_copia.py
           python auditoria/test_nomes_linhas.py
+          python auditoria/test_siga_agencias.py
           python auditoria/test_caminhos_a_pe.py
           python auditoria/test_metro_mondego.py
 
