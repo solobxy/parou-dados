@@ -32,7 +32,7 @@ const cfg = await p.evaluate(() => fetch('/api/config').then((r) => r.json()).th
 const sync = async () => { const a = Date.now(), pn = await p.evaluate(() => performance.now()), b = Date.now(); return (a + b) / 2 - pn; };
 const toque = async () => (KB ? p.keyboard.press(' ') : p.locator('.gy-pad').tap({ timeout: 2000 }));
 async function serie(alvos, fotos = {}) {
-  if (KB) { await p.locator('.gymr .btn.buy').first().focus(); await p.keyboard.press('Enter'); } else await p.locator('.gymr .btn.buy').first().tap();
+  if (KB) { await p.locator('.gymr .btn').first().focus(); await p.keyboard.press('Enter'); } else await p.locator('.gymr .btn').first().tap();
   await p.waitForFunction(() => window.__gy0 > 0);
   const off = await sync(), g0 = await p.evaluate(() => window.__gy0);
   for (const [k, ms] of alvos.entries()) {

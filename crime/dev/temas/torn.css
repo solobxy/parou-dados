@@ -1,0 +1,61 @@
+/* Direção C — «Torn»: cinzento escuro, barras de título com gradiente, letra pequena e direta, dinheiro verde-lima, ligações azuis.
+   Só para capturas: não é servido pelo jogo. */
+:root {
+  --ink: #191919; --s1: #2b2b2b; --s2: #333; --s3: #444;
+  --line: #ffffff12; --line2: #ffffff20;
+  --tx: #dddddd; --tx2: #a0a0a0; --tx3: #8c8c8c;
+  --cash: #85b200; --danger: #e54c19; --sodium: #f0c419; --gold: #f0c419; --orange: #f08c19; --energy: #74c0fc;
+  --acc: #85b200;
+  --disp: 'Archivo', Arial, sans-serif;
+}
+html body { background: #191919; font-family: 'Archivo', Arial, sans-serif; }
+body .hud { background: linear-gradient(#2e2e2e, #222); border-bottom: 1px solid #000; box-shadow: 0 1px 0 #ffffff10; }
+body .who .title { font: 700 16px/1.2 var(--disp); color: #fff; }
+body .who .name { color: #999; }
+body .money .cash { color: #85b200; }
+body .badge.hasav .num { background: #333; color: #fff; border: 1px solid #555; border-radius: 3px; }
+/* barras: finas, com o nome por cima, como na barra lateral do Torn */
+body .hbars .sbar { height: 34px; margin: 4px 0; border: 0; background: none; overflow: visible; text-align: left; font: 700 12px/1 var(--disp); color: #ccc; }
+body .hbars .sbar::before { content: ''; display: block; position: absolute; left: 0; right: 0; bottom: 4px; top: auto; height: 8px; border-radius: 2px; background: #111; box-shadow: inset 0 1px 2px #000, 0 1px 0 #ffffff12; }
+body .hbars .sbar > i { inset: auto auto 4px 0; height: 8px; border-radius: 2px; }
+body .hbars .sbar > span { position: absolute; left: 0; right: 0; top: 2px; justify-content: flex-start; text-shadow: none; }
+body .hbars .sbar.en > i { background: linear-gradient(#a8d63a, #6f9a00); }
+body .hbars .sbar.vg > i { background: linear-gradient(#7cc4ff, #2f7fc6); }
+body .hbars .sbar.vi > i { background: linear-gradient(#ff7a52, #c43a12); }
+body .hquick .qk { height: 32px; margin: 6px 0; border: 1px solid #111; border-radius: 4px; background: linear-gradient(#4a4a4a, #333); box-shadow: inset 0 1px 0 #ffffff1c; color: #eee; font: 700 12.5px/1 var(--disp); }
+body .hquick .qk.good { background: linear-gradient(#5d7d14, #3f5a07); color: #f2ffd6; border-color: #1f2d00; }
+body .hquick .qk.good svg.i { color: #d9f59a; }
+/* título da página e das secções: a barra preta com gradiente do Torn */
+body .phead h1, body .pbar h1 { font: 700 22px/1.1 var(--disp); color: #fff; text-shadow: 0 1px 0 #000; }
+body h2.sec { margin: 18px 0 0; padding: 7px 10px; border-radius: 5px 5px 0 0; background: linear-gradient(#555 0%, #333 100%); border: 1px solid #111; border-bottom: 0;
+  font: 700 13px/1.3 var(--disp); color: #fff; text-shadow: 0 1px 0 #000; box-shadow: inset 0 1px 0 #ffffff1f; }
+/* caixas */
+body .card, body .jobp, body .rowi, body .gyi, body .gpow > div, body .item, body .vrow.card { background: #2b2b2b; border: 1px solid #111; border-radius: 5px; box-shadow: 0 1px 3px #000a, inset 0 1px 0 #ffffff0a; }
+body .rowi { border-radius: 0; margin-top: -1px; }
+body .rowi.sel { background: #353535; box-shadow: inset 3px 0 0 #85b200; }
+body .rowi .nm, body .gyt .nm { font: 700 15px/1.2 var(--disp); color: #fff; }
+body .rowi .pct { font-size: 20px; }
+body .jimg h2 { font: 700 24px/1.1 var(--disp); text-shadow: 0 1px 2px #000, 0 0 12px #000; }
+body .jdeal span, body .kv dt { font-size: 12.5px; color: #999; }
+body .jdeal b { font-size: 26px; }
+body .kv dd { font-size: 15px; }
+body a, body .lootd > summary { color: #74c0fc; }
+/* botões: cinzento metálico com letra escura (o principal) e cinzento escuro (os outros) */
+body .btn { border-radius: 5px; border: 1px solid #111; font: 700 13px/1 var(--disp); text-transform: uppercase; letter-spacing: .03em; }
+body .btn.big { font-size: 16px; min-height: 44px; }
+body .btn.buy, body .btn.rob, body .btn.pri { background: linear-gradient(#f4f4f4, #c9c9c9); color: #333; border-color: #777; box-shadow: inset 0 1px 0 #fff, 0 1px 2px #000a; text-shadow: 0 1px 0 #fff; }
+body .btn.robAll, body .btn:not(.buy):not(.rob):not(.pri):not(.cash):not(.danger) { background: linear-gradient(#4d4d4d, #343434); color: #eee; box-shadow: inset 0 1px 0 #ffffff24, 0 1px 2px #000a; text-shadow: 0 1px 0 #000; }
+/* mosaicos: imagem com o nome numa faixa escura por baixo */
+body .tile { border-radius: 5px; border: 1px solid #111; box-shadow: 0 1px 3px #000a; }
+body .tile::after { background: linear-gradient(to top, #000c 0, #000c 30px, #0000 31px); }
+body .tile .lbl { left: 8px; right: 8px; bottom: 7px; text-align: left; font: 700 15px/1.1 var(--disp); text-shadow: none; }
+body .newsc.paper { border-radius: 5px; }
+/* barra de baixo */
+body .tabs { background: linear-gradient(#333, #1d1d1d); border-top: 1px solid #000; box-shadow: inset 0 1px 0 #ffffff14; }
+body .tab { font: 700 11px/1.2 var(--disp); color: #9a9a9a; }
+body .tab[aria-current='page'] { color: #fff; background: linear-gradient(#444, #2a2a2a); }
+body .tab[aria-current='page']::before { left: 0; right: 0; height: 2px; border-radius: 0; background: #85b200; }
+body .tab .dot { background: #85b200; }
+body .btn.buy, body .btn.rob, body .gymr .btn { text-transform: uppercase; font-family: var(--disp); font-weight: 700; }
+body .btn.buy.big, body .btn.rob.big { font-size: 16px; }
+body .tiles .tile .lbl { font-size: 15px; }

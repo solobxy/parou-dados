@@ -302,7 +302,7 @@ function buildHud() {
 }
 // v90: a barra de atalhos, por baixo das barras: primeiro o que está pronto para fazer (recolher, o porto, a cave, a feira...),
 // depois os sítios a que se vai a toda a hora. Só se redesenha quando muda (para não perder onde se deslizou).
-const QUICK_FIXED = [['bank', 'bank'], ['inv', 'box'], ['gang', 'user'], ['feira', 'cash']];
+const QUICK_FIXED = [['bank', 'bank'], ['fights', 'fights'], ['gang', 'user'], ['feira', 'cash']];   // v92: o inventário passou para a barra de baixo; as lutas vêm para aqui
 function quickItems(me) {
   const n = now(), out = [];
   const biz = me.biz.reduce((x, b, i) => x + (b.n > 0 ? bizNet(b, i) : 0), 0);
@@ -334,7 +334,7 @@ function updateQuick(me) {
 
 const STAT_IC = { F: 'fist', I: 'brain', C: 'chat', T: 'shield' };
 const FX_IC = { F: 'fist', I: 'brain', C: 'chat', T: 'shield', loot: 'cash', biz: 'empire', bust: 'lock' };
-const AV = (i) => `/img/av/${i}.webp?1`;
+const AV = (i) => `/img/av/${i}.webp?2`;   // v92: avatares em fotografia
 const fxText = (f) => t('fx_' + f.k, { p: f.bp / 100 });
 // Bónus ativos: uma linha com o essencial (ícone e valor de cada um, e quanto falta para o primeiro acabar); o nome e o tempo de cada um abrem ao toque.
 // Antes era uma pílula roxa por bónus: com sete ativos ocupavam três linhas do topo em todos os ecrãs.
@@ -418,18 +418,18 @@ function tickHud() {
 const PLACES = {
   city: { ic: 'skyline' }, empire: { ic: 'empire' }, rob: { ic: 'street', img: 'golpes' }, club: { ic: 'bolt', img: 'discoteca' }, gym: { ic: 'gym', img: 'ginasio' },
   biz: { ic: 'empire', img: 'negocios' }, stash: { img: 'stash' }, acct: { img: 'contabilista' }, port: { img: 'porto' }, air: { img: 'aeroporto' }, arms: { img: 'armas' }, bank: { img: 'banco' }, hosp: { img: 'hospital' },
-  jail: { img: 'prisao' }, gang: { img: 'gangue' }, work: { img: 'profissao' }, news: { img: 'jornal' }, casino: { ic: 'gem', img: 'casino' }, roulette: { img: 'roleta' }, bj: { img: 'blackjack' }, dice: { img: 'dados' }, wheel: { img: 'roda' }, slot: { img: 'slot' }, zeus: { img: 'zeus' }, doce: { img: 'doce' }, rebucado: { img: 'rebucado' }, alley: { img: 'beco' }, lux: { img: 'luxos' }, fights: { ic: 'fights', img: 'lutas' }, rank: { img: 'procurados' }, hitman: { img: 'assassino' }, putas: { img: 'putas' }, gigs: { img: 'biscates' }, casa: {}, myclub: { img: 'discoteca' }, mybro: { img: 'bordel' }, bolsa: { img: 'bolsa' }, job: { img: 'emprego' }, inv: { img: 'inventario' }, ops: { img: 'operacoes' }, parl: { img: 'parlamento' }, cafe: { img: 'cafe' }, museum: { img: 'museu' }, uni: { img: 'universidade' }, cave: { img: 'cave' }, feira: { img: 'feira' }, dig: { img: 'escavacoes' }, arquivo: { img: 'arquivo' },
+  jail: { img: 'prisao' }, gang: { img: 'gangue' }, work: { img: 'profissao' }, news: { img: 'jornal' }, casino: { ic: 'gem', img: 'casino' }, roulette: { img: 'roleta' }, bj: { img: 'blackjack' }, dice: { img: 'dados' }, wheel: { img: 'roda' }, slot: { img: 'slot' }, zeus: { img: 'zeus' }, doce: { img: 'doce' }, rebucado: { img: 'rebucado' }, alley: { img: 'beco' }, lux: { img: 'luxos' }, fights: { ic: 'fights', img: 'lutas' }, rank: { img: 'procurados' }, hitman: { img: 'assassino' }, putas: { img: 'putas' }, gigs: { img: 'biscates' }, casa: {}, myclub: { img: 'discoteca' }, mybro: { img: 'bordel' }, bolsa: { img: 'bolsa' }, job: { img: 'emprego' }, inv: { ic: 'box', img: 'inventario' }, ops: { img: 'operacoes' }, parl: { img: 'parlamento' }, cafe: { img: 'cafe' }, museum: { img: 'museu' }, uni: { img: 'universidade' }, cave: { img: 'cave' }, feira: { img: 'feira' }, dig: { img: 'escavacoes' }, arquivo: { img: 'arquivo' },
 };
 // barra de baixo: só o que se usa a toda a hora. O resto vive dentro de cada separador, arrumado por zonas.
 // v90: o ginásio entra no lugar do casino (golpes gastam stamina; ginásio e lutas gastam energia: é o que se faz a toda a hora).
 // O casino continua na Cidade, na Noite.
-const NAV = ['city', 'rob', 'gym', 'fights', 'empire'];
+const NAV = ['city', 'rob', 'gym', 'empire', 'inv'];   // v92: o império sobe para o lugar das lutas e o inventário fica no fim (as lutas estão na cidade e na barra de cima)
 const HUB = {
-  city: [['sec_night', ['club', 'putas', 'casino', 'gang', 'alley', 'arms']], ['sec_street', ['gigs', 'cafe', 'job', 'uni', 'dig', 'feira', 'bank', 'museum', 'parl', 'hosp', 'jail', 'rank', 'arquivo']]],
-  empire: [['sec_income', ['biz', 'port', 'air', 'myclub', 'mybro']], ['sec_assets', ['casa', 'cave', 'inv', 'bank', 'bolsa', 'stash', 'acct']]],
+  city: [['sec_night', ['fights', 'club', 'putas', 'casino', 'gang', 'alley', 'arms']], ['sec_street', ['gigs', 'cafe', 'job', 'uni', 'dig', 'feira', 'bank', 'museum', 'parl', 'hosp', 'jail', 'rank', 'arquivo']]],
+  empire: [['sec_income', ['biz', 'port', 'air', 'myclub', 'mybro']], ['sec_assets', ['casa', 'cave', 'bank', 'bolsa', 'stash', 'acct']]],
 };
-const PARENT = { arquivo: 'city', dig: 'city', feira: 'city', cave: 'empire', uni: 'city', museum: 'city', cafe: 'city', parl: 'city', gigs: 'city', gang: 'city', work: 'job', job: 'city', news: 'city', casino: 'city', roulette: 'casino', bj: 'casino', dice: 'casino', wheel: 'casino', slot: 'casino', zeus: 'casino', doce: 'casino', rebucado: 'casino', club: 'city', putas: 'city', gym: 'city', alley: 'city', hosp: 'city', jail: 'city',
-  biz: 'empire', port: 'empire', air: 'empire', myclub: 'empire', mybro: 'empire', bolsa: 'empire', inv: 'empire', stash: 'empire', acct: 'empire', casa: 'empire', bank: 'empire', lux: 'empire', arms: 'fights', rank: 'fights', hitman: 'fights', ops: 'rob' };
+const PARENT = { fights: 'city', arquivo: 'city', dig: 'city', feira: 'city', cave: 'empire', uni: 'city', museum: 'city', cafe: 'city', parl: 'city', gigs: 'city', gang: 'city', work: 'job', job: 'city', news: 'city', casino: 'city', roulette: 'casino', bj: 'casino', dice: 'casino', wheel: 'casino', slot: 'casino', zeus: 'casino', doce: 'casino', rebucado: 'casino', club: 'city', putas: 'city', gym: 'city', alley: 'city', hosp: 'city', jail: 'city',
+  biz: 'empire', port: 'empire', air: 'empire', myclub: 'empire', mybro: 'empire', bolsa: 'empire', stash: 'empire', acct: 'empire', casa: 'empire', bank: 'empire', lux: 'empire', arms: 'fights', rank: 'fights', hitman: 'fights', ops: 'rob' };
 const upOf = (id) => (S.backTo && S.backTo[id]) || PARENT[id] || 'city';   // um sítio que está em duas zonas volta para a zona de onde vieste
 const tabOf = (id) => { let x = id; for (let k = 0; k < 4 && !NAV.includes(x); k++) x = upOf(x); return NAV.includes(x) ? x : 'city'; };
 const IMG = (kind, id, big) => `/img/${kind}/${id}${big ? '-g' : ''}.webp?${kind === 'classes' ? 17 : 16}`;   // v90: retratos novos das profissões
@@ -448,6 +448,9 @@ function loadFor(tab) {
 }
 // v90: que ecrãs se abrem (só o nome e quantas vezes), mandado de minuto a minuto e ao sair, para escolher os atalhos com dados
 const usoE = {};
+// v92: painel de estatísticas dos sites — o jogo é uma página só, por isso cada ecrã conta como um evento, uma vez por visita
+const estatVistos = new Set();
+const estatE = (n, v) => { try { window.estat && window.estat(n, v); } catch { /* sem estatísticas: o jogo segue */ } };
 function usoEnviar() {
   if (!Object.keys(usoE).length || !S.st?.me) return;
   const e = { ...usoE }; for (const k of Object.keys(usoE)) delete usoE[k];
@@ -458,6 +461,7 @@ addEventListener('visibilitychange', () => { if (document.visibilityState === 'h
 function go(tab) {
   if (!PLACES[tab]) tab = 'city';
   if (tab !== S.tab) usoE[tab] = (usoE[tab] || 0) + 1;
+  if (!estatVistos.has(tab)) { estatVistos.add(tab); estatE('ecra', tab); }
   if (HUB[S.tab]?.some(([, ids]) => ids.includes(tab)) || (S.tab === 'fights' && (tab === 'arms' || tab === 'rank' || tab === 'gang'))) S.backTo = { ...(S.backTo || {}), [tab]: S.tab };
   if (tab !== S.tab) { S.armsAll = null; S.cvAll = null; }   // v87: as listas abertas («Ver as outras») fecham ao mudar de ecrã
   S.tab = tab; document.body.dataset.tab = tab; store.set('tab', tab); S.fxOpen = false;   // a lista dos bónus fecha ao mudar de ecrã, para não ficar a ocupar o topo
@@ -532,9 +536,8 @@ function render(force) {
 function tabDots() {
   const me = S.st.me, n = now();
   const want = {
-    fights: (S.events || []).some((e) => e.id > S.lastEventSeen),
     empire: (me.cf && me.cf.end <= n) || S.cfg.biz.some((b) => me.biz[S.cfg.biz.indexOf(b)]?.n > 0 && maqState(me, b.id) === 3) || (me.air && me.air.readyAt <= n) || me.port.some((c) => c.readyAt <= n) || me.biz.some((b, i) => b.n > 0 && storedNow(b, i) >= (b.perH * S.cfg.storageMs) / 3600000 / 2),
-    city: !!me.mission?.done || exReady(me) || me.feira?.levantar > 0 || !!me.dg || !!me.bj,   // v80: um exame à espera; v84: o que levantar na feira; v90: a mão de blackjack por acabar (o casino saiu da barra)
+    city: (S.events || []).some((e) => e.id > S.lastEventSeen) || !!me.mission?.done || exReady(me) || me.feira?.levantar > 0 || !!me.dg || !!me.bj,   // v80: um exame à espera; v84: o que levantar na feira; v90: a mão de blackjack por acabar (o casino saiu da barra)
     rob: !!(me.op && me.op.ready <= n && !(me.op.miss || []).length),   // um golpe grande pronto para avançar
   };
   for (const id of NAV) {
@@ -655,7 +658,7 @@ function screenWork() {
   if (waitT) out.push(h('div', { class: 'tip' }, h('p', null, t('clsWaitT'), ' ', h('b', { class: 'num', dataset: { left: me.clsWait } }, dur(me.clsWait - n)))));
   else if (poor) out.push(h('div', { class: 'tip' }, h('p', null, t('clsPoor', { m: money(me.clsCost) }))));
   out.push(...classGroups(me, pick));
-  if (pick) out.push(h('div', { class: 'stick' }, h('button', { class: 'btn buy block big', disabled: waitT || poor, on: { click: async (e) => { const o = await act('classChange', { id: pick }, { el: e.currentTarget }); if (o) { S.clsPick = null; render(); } } } }, t('clsChangeGo', { x: t('cl_' + pick), m: moneyShort(me.clsCost) }))));
+  if (pick) out.push(h('div', { class: 'stick' }, h('button', { class: 'btn buy block big', disabled: waitT || poor, on: { click: async (e) => { const o = await act('classChange', { id: pick }, { el: e.currentTarget }); if (o) { estatE('profissao_troca', pick); S.clsPick = null; render(); } } } }, t('clsChangeGo', { x: t('cl_' + pick), m: moneyShort(me.clsCost) }))));
   return out;
 }
 function screenClass() {
@@ -666,7 +669,7 @@ function screenClass() {
       on: { click: () => act('avatar', { i }) } }, h('img', { src: AV(i), alt: '', width: 96, height: 96, loading: 'lazy', on: { error: (e) => e.currentTarget.parentNode.remove() } })))) : null,
     S.avOk ? h('h2', { class: 'sec' }, t('clsWork')) : null,
     ...classGroups(S.st.me, pick, !S.avOk),
-    pick ? h('div', { class: 'stick' }, h('button', { class: 'btn buy block big', on: { click: (e) => act('class', { id: pick }, { el: e.currentTarget }) } }, t('clsConfirm', { x: t('cl_' + pick) }))) : null];
+    pick ? h('div', { class: 'stick' }, h('button', { class: 'btn buy block big', on: { click: async (e) => { if (await act('class', { id: pick }, { el: e.currentTarget })) estatE('profissao', pick); } } }, t('clsConfirm', { x: t('cl_' + pick) }))) : null];
 }
 
 // ---------- a cidade ----------
@@ -1067,15 +1070,16 @@ function museumSet(me, k, L) {
   const payC = musPay(me, k);   // v85: os conjuntos das escavações pagam menos nas entregas repetidas
   const extras = S2.items.filter((i) => (me.col?.[i] || 0) > 1), busy = !!(L.jail || L.hosp);
   const miss = S2.items.filter((i) => !((me.col?.[i] || 0) > 0)), P = S.news?.mundo?.mus?.[k], left = P ? Math.max(0, S.cfg.col.plaque - P.top.length) : 0;
-  const pay = t(first ? 'muPayFirst' : payC.resp ? 'muPay' : 'muPayDig', { m: money(payC.cash), n: payC.resp, p: S.cfg.col.digRepBp / 100 }) + (left && !onPlaque(me, k) ? ' ' + t(left === 1 ? 'muSpots1' : 'muSpots', { l: left }) : '');
   return h('section', { class: 'mset' },
     h('div', { class: 'row sp mhd' }, h('h2', { class: 'sec' }, t('muSet_' + k)), h('span', { class: 'num small' + (done ? ' c-cash' : ' muted') }, t('muCount', { a: have, b: all }))),
     h('p', { class: 'small muted msub' }, t('muHow_' + k, { p: k === 'mundo' ? S.cfg.col.airBp / 100 : '' })),
     vitrine(me, k),
-    h('p', { class: 'small mpay' }, tint(pay)),
+    // v92: o que o museu paga, em números (a primeira entrega vale a dobrar)
+    kv([[t(first ? 'muKvFirst' : 'muKvPay'), money(payC.cash), 'c-cash'], payC.resp ? [t('fxResp'), '+' + num(payC.resp), 'c-resp'] : [t('fxResp'), t('muKvNone')],
+      left && !onPlaque(me, k) ? [t('muKvSpots'), num(left)] : null]),
     done ? h('button', { class: 'btn block cash big', disabled: busy, on: { click: (e) => act('museum', { set: k }, { el: e.currentTarget }) } }, t('muGive', { m: money(payC.cash) }))
       : h('p', { class: 'small mmiss' }, miss.length <= 2 ? t(miss.length === 1 ? 'muMissOne' : 'muMissList', { x: miss.map((i) => t('co_' + i).toLowerCase()).join(t('muAnd')) }) : t('muLeft', { n: miss.length })),
-    extras.length ? h('div', { class: 'mextra' }, h('h3', null, t('muExtras')), h('p', { class: 'small muted' }, t('muExtrasSub', { m: money(S.cfg.col.pawn) })), extras.map((i) => { const x = me.col[i] - 1, m = money(x * S.cfg.col.pawn);
+    extras.length ? h('div', { class: 'mextra' }, h('h3', null, t('muExtras')), extras.map((i) => { const x = me.col[i] - 1, m = money(x * S.cfg.col.pawn);
       const lbl = t(x > 1 ? 'muSellN' : 'muSell', { n: x, m });
       const b = sureBtn('btn sm ghost num', lbl, 'btn sm ghost num dng', t('muSellSure', { m }), () => act('colSell', { id: i, n: x }, { el: b }));
       if (busy) b.disabled = true;
@@ -1171,9 +1175,8 @@ function parlState(G) {
   const cut = Math.round(Math.floor((3000 * Math.min(100, G.corr)) / 100) / 100);
   return h('section', { class: 'psect' }, h('h2', { class: 'sec' }, t('pStateT')), h('div', { class: 'card pstate' },
     h('div', { class: 'pfigs' }, fig(t('pCof'), G.cof, t('pFull'), prev ? prev[1] : null, moneyShort(G.cofEur)), fig(t('pCorr'), G.corr, '/100', prev ? prev[2] : null), fig(t('pPopu'), G.popu, '%', prev ? prev[3] : null)),
-    prev ? h('p', { class: 'small muted' }, t('pSince')) : null,
     h('p', null, h('span', { class: lo ? 'c-cash' : hi ? 'c-red' : null }, pressTxt), cut >= 1 ? [' ', h('span', { class: 'c-cash' }, t('pCorrBail', { c: G.corr, p: cut }))] : null),
-    h('p', { class: 'small muted' }, t('pHowMoney'))));
+    ));
 }
 function parlSeats(G, c) {
   return h('section', { class: 'psect' }, h('h2', { class: 'sec' }, t('pSeatsT')), hemi(G, c),
@@ -1201,7 +1204,7 @@ function parlBill(me, b, G, Wm, c) {
   else if (lowLvl) vote = h('p', { class: 'small muted' }, t('pVoteLvl', { n: V.minLevel }));
   else if (isNew) vote = h('p', { class: 'small muted' }, t('pVoteNew'));
   else vote = [h('div', { class: 'pvote' }, [[true, 'pVoteY'], [false, 'pVoteN']].map(([y, k]) => h('button', { class: 'btn lite', on: { click: (e) => act('govVote', { yes: y }, { el: e.currentTarget }) } }, t(k)))),
-    h('p', { class: 'small muted pvhow' }, t('pVoteHow'))];
+    ];
   // o dinheiro: até quatro valores à escala do que tens; por baixo de cada lado, se chega para virar algum partido
   const top = Math.max(1e3, 10 ** Math.floor(Math.log10(Math.max(1, cash)))), amts = [top / 1000, top / 100, top / 10, top].filter((x) => x >= V.minLobby);
   const amt = amts.includes(S.lobAmt) && S.lobAmt <= cash ? S.lobAmt : [...amts].reverse().find((x) => x <= cash) || amts[0];
@@ -1228,7 +1231,7 @@ function parlBill(me, b, G, Wm, c) {
       h('small', { class: 'num' }, t('pStreetHow', { y: b.yes, n: b.no }))),
     vote,
     h('ul', { class: 'pstance' }, PARTY.map((k) => h('li', null, partyDot(k), h('span', null, t('party_' + k)), h('b', { class: c.by[k].y ? '' : 'muted' }, t(c.by[k].y ? 'pBlocY' : 'pBlocN'))))),
-    b.poll ? h('p', { class: 'ppoll num' }, t('pPoll', { lo: b.poll.lo, hi: Math.min(230, b.poll.hi), m: V.majority })) : h('p', { class: 'small muted' }, t('pPollSoon')),
+    b.poll ? h('p', { class: 'ppoll num' }, t('pPoll', { lo: b.poll.lo, hi: Math.min(230, b.poll.hi), m: V.majority })) : null,
     lob);
 }
 function parlLaws(G) {
@@ -1480,12 +1483,6 @@ function gunFix(me, L, c, gs) {
     h('button', { class: 'btn buy block big', disabled: cash < m, on: { click: (e) => act('buy', { id: 'balas', n }, { el: e.currentTarget }) } }, t('buyAmmo', { n: num(n * S.cfg.bullets.box), m: money(m) }))];
 }
 // a linha da arma por baixo do cartão: o que cada tentativa gasta e o que ainda tens
-function gunLine(me) {
-  const B = S.cfg.bullets, s = gunSlot(me);
-  if (!s) return t('jobNeedGun', { b: B.perJob });
-  const it = me.eq[s];
-  return t('jobGun', { b: B.perJob, x: t('g_' + it.id).toLowerCase(), n: num(invN(me, 'balas')), u: it.u });
-}
 // respeito de um golpe que corre bem: uma barra vale 20 + 2 por nível (até 120), vezes o calor, a dividir pela hipótese
 function crimeResp(me, c, heatBp) {
   const St = S.cfg.street, perBar = Math.min(St.respCap, St.respBase + St.respPerLevel * me.level);
@@ -1549,17 +1546,23 @@ function screenRob() {
       h('div', null, h('span', null, t('chance')), h('b', { class: 'num ' + chanceCls(c.p) }, pct(c.p)))),
     heat < 10000 ? h('p', { class: 'jheat' }, t('jobHeat', { p: heatPct(heat), h: dur(Math.ceil(((st.used - 199) * 60) / (st.coolPerH || 50)) * 60000) })) : null,
     (st.respBp ?? 10000) < 10000 ? h('p', { class: 'jheat' }, t('jobRespDay', { p: heatPct(st.respBp) })) : null,
-    h('p', { class: 'jrisk' }, me.bustBp ? t('jobRiskP', { b: pctOf(me.bustBp) + '%', p: me.lx ? me.lx.press : 50, m: money(c.fine), t: c.jailMin }) : t('jobRisk', { m: money(c.fine), t: c.jailMin })),
     noGun ? gunFix(me, L, c, gs)
       : h('button', { class: 'btn rob block big', disabled: !!b || L.energy < c.e, on: { click: (e) => act('crime', { k }, { el: e.currentTarget }) } }, t('robBtn')),
     !b && !noGun && Math.floor(L.energy / c.e) >= 2 ? h('button', { class: 'btn block robAll', on: { click: (e) => act('crimeAll', { k }, { el: e.currentTarget }) } },
       t('robAll', { n: Math.min(Math.floor(L.energy / c.e), S.cfg.crimeAllMax || 10) })) : null,
     rep ? reportCard(rep) : null,
     !b && !noGun && L.energy < c.e ? staminaHelp(me, L) : null,
-    h('h3', { class: 'lootH' }, t('lootWhat')), sorteio,
-    h('p', { class: 'jcost' }, t('jobCost', { e: c.e, r: crimeResp(me, c, st.respBp ?? heat) })),
-    c.gun ? h('p', { class: 'jcost' }, gunLine(me)) : null,
-    h('p', { class: 'jcost' }, t('skLine', { x: t('sk_' + c.fam), p: pctOf(skBp(me, c.fam)), n: Math.floor((me.sk[c.fam] || 0) / 100) }))));
+    // v92: depois do botão, o resto em números e sem frases — o risco a vermelho, o que gasta e o que dá
+    kv([
+      [t('fxCaught'), (me.bustBp ? pctOf(me.bustBp) : 25) + '%', 'c-red'],
+      [t('fxFine'), money(c.fine) + ' · ' + c.jailMin + ' min', 'c-red'],
+      [t('fxStam'), num(c.e)],
+      [t('fxResp'), '+' + num(crimeResp(me, c, st.respBp ?? heat)), 'c-resp'],
+      ...(c.gun && gunSlot(me) ? [[t('fxBullets'), t('fxOfN', { a: S.cfg.bullets.perJob, n: num(invN(me, 'balas')) })], [capFirst(t('g_' + me.eq[gunSlot(me)].id)), t('fxUses', { n: me.eq[gunSlot(me)].u })]] : []),
+    ]),
+    // o sorteio do saque fica fechado: abre-se ao toque
+    h('details', { class: 'lootd', open: !!S.lootOpen, on: { toggle: (e) => { S.lootOpen = e.currentTarget.open; } } },
+      h('summary', null, t('lootWhat'), icon('chev')), sorteio)));
   out.push(h('h2', { class: 'sec' }, t('allJobs')));
   const rows = h('div', { class: 'rows' });
   let lockedShown = false;
@@ -1584,6 +1587,8 @@ function screenRob() {
   return out;
 }
 const capFirst = (x) => x.charAt(0).toUpperCase() + x.slice(1);
+// v92: factos curtos em grelha (nome pequeno, número grande), em vez de frases
+const kv = (rows) => h('dl', { class: 'kv' }, rows.filter(Boolean).map(([k, v, cls]) => h('div', null, h('dt', null, k), h('dd', { class: 'num' + (cls ? ' ' + cls : '') }, v))));
 // skills por família: as que têm golpes de rua ou golpes grandes (a burla e a condução só têm golpes grandes)
 function skillsBlock(me) {
   const K = S.cfg.skills, O = S.cfg.ops || [], fams = K.fams.filter((f) => f === 'trafico' || S.cfg.crimes.some((c) => c.fam === f) || O.some((o) => o.fam === f));
@@ -1625,8 +1630,10 @@ const opJailMs = (me, o) => (o.jailMin * 60000 * (retained(me) ? 10000 - S.cfg.r
 function opRisk(me, o, rasto, bribed) {
   const St = S.cfg.opSteps;
   if (bribed) return [h('p', { class: 'jcost' }, t('opBribed'))];
-  return [h('p', { class: 'jrisk' }, t(retained(me) ? 'opFailAv' : 'opFail', { b: pctOf(rasto * St.caughtPer), t: minTxt(opJailMs(me, o)), m: money(o.lawyer) })),
-    h('p', { class: 'jcost' }, t('opTrail', { r: rasto }) + ' ' + t('opOk', { l: pctOf(rasto * St.linkedPer) }))];
+  // v92: em números — o que acontece se correr mal (vermelho) e o rasto que fica se correr bem
+  return [kv([[t('opKvJail'), pctOf(rasto * St.caughtPer) + '%', 'c-red'], [t('opKvTime'), minTxt(opJailMs(me, o)), 'c-red'],
+    [t('opKvLawyer'), retained(me) ? t('opKvRetained') : money(o.lawyer), retained(me) ? 'c-cash' : 'c-red'], [t('opKvTrail'), rasto + '/100'],
+    [t('opKvLinked'), pctOf(rasto * St.linkedPer) + '%', 'c-red']])];
 }
 const opHead = (o, i) => h('div', { class: 'jimg' }, h('img', { src: IMG('ops', o.id, 1), alt: '', width: 1100, height: 1100, decoding: 'async', on: { error: (e) => e.currentTarget.remove() } }), h('h2', null, t('op_' + o.id)));
 const opDeal = (o, bp) => h('div', { class: 'jdeal' },
@@ -1796,8 +1803,9 @@ function screenOps() {
   const Lv = S.cfg.launder;
   if (Lv) {
     const over = (me.ilegal || 0) >= Lv.freeUpTo;
-    out.push(h('h2', { class: 'sec' }, t('lavT')), h('p', { class: 'small muted lavp' }, t('lavSub', { f: money(Lv.freeUpTo), p: pctOf(Lv.bp), q: pctOf(Lv.courseBp) }) + ' ' +
-      (over ? t('lavOver', { f: money(Lv.freeUpTo), p: pctOf((me.done || []).includes(Lv.course) ? Lv.courseBp : Lv.bp) }) : t('lavNow', { m: money(me.ilegal || 0) }))));
+    // v92: em números — quanto já entrou do crime, até onde entra limpo e o que as fachadas ficam a partir daí
+    out.push(h('h2', { class: 'sec' }, t('lavT')), h('div', { class: 'card' }, kv([[t('lavKvFree'), money(Lv.freeUpTo)], [t('lavKvSoFar'), money(me.ilegal || 0), over ? 'c-red' : ''],
+      [t('lavKvCut'), pctOf((me.done || []).includes(Lv.course) ? Lv.courseBp : Lv.bp) + '%', over ? 'c-red' : ''], [t('lavKvDegree'), pctOf(Lv.courseBp) + '%']])));
   }
   return out;
 }
@@ -3323,24 +3331,29 @@ async function gymSeries(stat, reps, opener) {
 
 function screenGym() {
   const me = S.st.me, L = live(me), E = S.cfg.train.energy;
-  const out = [pageHead('gym', t('gySub', { e: E }))];
+  // v92: como nos golpes, o ginásio abre direto no que se faz (sem fotografia nem texto por cima); a energia já está na barra de cima
+  const out = [pageHead('gym', null, true)];
   const b = busyBanner(me); if (b) out.push(b);
-  out.push(h('div', { class: 'card meters' }, meter(t('vigor'), L.vigor, vigMax(), 'vg'), h('p', { class: 'small muted' }, t('vigorSub'))));
-  out.push(h('div', { class: 'power' },
-    h('div', { class: 'card' }, h('b', null, icon('fist'), short(me.attack)), h('span', { class: 'small muted' }, t('attackPower'))),
-    h('div', { class: 'card' }, h('b', null, icon('shield'), short(me.defense)), h('span', { class: 'small muted' }, t('defensePower')))));
+  out.push(h('div', { class: 'gpow' },
+    h('div', null, icon('fist'), h('b', { class: 'num' }, num(me.attack)), h('span', null, t('attackPower'))),
+    h('div', null, icon('shield'), h('b', { class: 'num' }, num(me.defense)), h('span', null, t('defensePower')))));
   const X = S.cfg.train.set, [r1, r2] = X ? X.reps : [5, 10];
-  out.push(h('div', { class: 'shop' }, ['F', 'I', 'C', 'T'].map((s) => {
+  out.push(h('div', { class: 'gyl' }, ['F', 'I', 'C', 'T'].map((s) => {
     const last = S.gymLast && S.gymLast.stat === s ? S.gymLast : null;
-    return h('div', { class: 'item' }, art('stats', s),
-      h('div', { class: 'nm' }, icon(STAT_IC[s]), ' ', t('stat' + s), ' ', h('b', { class: 'num' }, num(me.stats[s]))),
-      h('p', { class: 'small muted' }, t('stat' + s + 'd')),
-      me.xp && s !== 'T' ? h('div', { class: 'fill', title: t('practiceLbl') }, h('i', { style: `width:${Math.min(100, (me.xp[s] / me.xpNeed[s]) * 100)}%;background:var(--energy)` })) : null,
+    return h('div', { class: 'gyi' },
+      h('div', { class: 'gyh' }, art('stats', s, 'gimg'),
+        h('div', { class: 'gyt' },
+          h('div', { class: 'nm' }, t('stat' + s), h('b', { class: 'num' }, num(me.stats[s]))),
+          h('p', { class: 'small muted' }, t('stat' + s + 'd')),
+          // a prática dos golpes só aparece quando já há alguma (uma barra vazia sem nome não dizia nada)
+          me.xp && s !== 'T' && me.xp[s] > 0 ? h('div', { class: 'gyxp' }, h('span', { class: 'small muted' }, t('practiceLbl')),
+            h('div', { class: 'fill', role: 'img', 'aria-label': t('practiceLbl') + ' ' + Math.min(100, Math.floor((me.xp[s] / me.xpNeed[s]) * 100)) + '%' }, h('i', { style: `width:${Math.min(100, (me.xp[s] / me.xpNeed[s]) * 100)}%;background:var(--energy)` }))) : null)),
       last ? h('p', { class: 'small glast' }, t('gyLast', { k: last.marks.filter((m) => m < 2).length, n: last.marks.length, p: gymPts(last.marks) })) : null,
       // v82: treinar é uma série no ritmo; a curta e a longa
-      h('div', { class: 'gymr' }, [r1, r2].map((n, i) => h('button', { class: 'btn' + (i ? '' : ' buy'), 'data-gym': s + n, disabled: !!b || L.vigor < n * E, on: { click: (e) => gymSeries(s, n, e.currentTarget) } },
+      h('div', { class: 'gymr' }, [r1, r2].map((n) => h('button', { class: 'btn', 'data-gym': s + n, disabled: !!b || L.vigor < n * E, on: { click: (e) => gymSeries(s, n, e.currentTarget) } },
         h('span', null, t('gyGo', { n })), h('span', { class: 'gy-e' }, t('gyGoE', { e: n * E }))))));
   })));
+  out.push(h('p', { class: 'small muted gyhelp' }, t('gySub', { e: E }), ' ', t('vigorSub')));
   return out;
 }
 
@@ -3938,7 +3951,7 @@ function screenFights() {
     else if (!can.length) out.push(h('div', { class: 'note' }, h('p', { class: 'muted' }, t('noTargets'))));
     else out.push(h('div', { class: 'stack' }, can.map((x) => h('div', { class: 'card tgt' },
       h('div', { class: 'who2' }, S.avOk ? h('img', { class: 'avs', src: AV(x.av || 0), alt: '', width: 96, height: 96, loading: 'lazy' }) : null, h('div', null, h('div', { class: 'nm' }, x.tag ? h('span', { class: 'gtag' }, x.tag) : null, x.tag ? ' ' : '', x.name), h('div', { class: 'lv' }, t('level') + ' ' + x.level + ' · ' + titleOf(x.level) + ' · ', h('span', { class: 'c-resp' }, icon('crown'), ' ' + short(x.respect))))),
-      h('div', { class: 'pct' }, pct(x.chance), h('small', null, t('chanceLbl'))),
+      h('div', { class: 'pct ' + chanceCls(x.chance) }, pct(x.chance), h('small', null, t('chanceLbl'))),
       h('div', { class: 'acts' },
         h('button', { class: 'btn buy sm', disabled: !!b, on: { click: (e) => { const el = e.currentTarget; withShield((drop) => act('attack', { target: x.name, mode: 'beat', drop }, { el })); } } }, t('beat') + ' · ' + t('luxResp', { n: x.gain })),
         h('button', { class: 'btn ghost sm', disabled: !!b, on: { click: (e) => { const el = e.currentTarget; withShield((drop) => act('attack', { target: x.name, mode: 'mug', drop }, { el })); } } }, t('rob') + ' · ~' + money(x.loot)),
@@ -5179,7 +5192,7 @@ function authSheet(mode) {
         ? { name: nameI.value.trim(), email: mailI.value.trim(), password: passI.value, website: hp.value, lang: lang() }
         : { name: nameI.value.trim(), password: passI.value, lang: lang() });
       if (r.lang && r.lang !== lang()) applyLang(r.lang);
-      try { window.estat && window.estat(mode === 'register' ? 'conta_criada' : 'entrou', ''); } catch {}
+      estatE(mode === 'register' ? 'conta_criada' : 'entrou', '');
     } catch (ex) { err.textContent = errText(ex.code); submit.disabled = false; (ex.code === 'BAD_PASSWORD' ? passI : ex.code === 'BAD_EMAIL' || ex.code === 'EMAIL_TAKEN' ? mailI : nameI).focus(); return; }
     // a conta já entrou: se o jogo não abrir à primeira (falha passageira do servidor), tenta outra vez e, se falhar, diz porquê em vez de ficar calado
     close(); await startSafe();
@@ -5235,6 +5248,7 @@ async function start() {
   if (st.account.lang && !langSaved()) applyLang(st.account.lang);   // aparelho novo: o jogo abre logo na língua da conta, sem piscar na outra
   $main = null;
   S.tab = store.get('tab', 'city');
+  if (st.me && !estatVistos.has(S.tab)) { estatVistos.add(S.tab); estatE('ecra', S.tab); }
   if (st.me) loadFor(S.tab);   // abrir o jogo num sítio guardado (lutas, ranking, bolsa…) também vai buscar os dados dele
   if (SLOT_OF[S.tab]) setTimeout(() => slotFit(), 400);
   render();

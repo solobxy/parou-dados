@@ -19,6 +19,7 @@ for (const tab of TABS) {
   const p = await ctx.newPage();
   p.on('pageerror', (e) => erros.push(tab + ': ' + e.message));
   await p.goto(base + '/'); await p.waitForTimeout(1500);
+  if (process.env.TEMA) { await p.addStyleTag({ path: process.env.TEMA }); await p.waitForTimeout(300); }   // v92: experimentar um tema (folha de estilo por cima da do jogo)
   if (process.env.CLICK) { await p.locator(process.env.CLICK).first().click(); await p.waitForTimeout(600); }   // ex.: CLICK='.ppg button >> nth=1'
   if (process.env.CLICK2) { await p.locator(process.env.CLICK2).first().click(); await p.waitForTimeout(700); }   // um segundo toque (abrir uma folha depois de mudar de separador)
   if (process.env.FILL) { const [sel, v] = process.env.FILL.split('='); await p.locator(sel).first().pressSequentially(v); await p.waitForTimeout(300); }
@@ -29,7 +30,7 @@ for (const tab of TABS) {
   }
   const lado = await p.evaluate(() => document.documentElement.scrollWidth - innerWidth);   // nada pode sair para o lado
   if (lado > 0) erros.push(tab + ': a página sai ' + lado + ' px para o lado');
-  await p.screenshot({ path: join(OUT, `${tab}-${LANG}-${W}.png`), fullPage: !!process.env.FULL });
+  await p.screenshot({ path: join(OUT, `${tab}-${LANG}-${W}${process.env.TEMA ? '-' + process.env.TEMA.split('/').pop().replace('.css', '') : ''}.png`), fullPage: !!process.env.FULL });
   await ctx.close();
 }
 console.log(erros.length ? 'ERROS: ' + erros.join(' | ') : 'sem erros');

@@ -1,0 +1,59 @@
+/* Direção B — «Rua» (pulp de crime, perto do TheCrims): preto sujo, vermelho de fita policial, amarelo de aviso, letra estreita em maiúsculas.
+   Só para capturas: não é servido pelo jogo. */
+:root {
+  --ink: #0d0b0b; --s1: #171414; --s2: #221d1d; --s3: #2f2828;
+  --line: #ffffff12; --line2: #ffffff22;
+  --tx: #f4efe6; --tx2: #b9afa3; --tx3: #9c9286;
+  --cash: #7ed957; --danger: #ff4b3e; --sodium: #ffc21a; --gold: #ffc21a; --orange: #ff8a1a; --energy: #59b7ff;
+  --acc: #e3241b;
+  --disp: 'Archivo Manchete', 'Archivo', sans-serif;
+  --grit: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .07 0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+html body { background: var(--grit), radial-gradient(130% 70% at 50% 0%, #2a1514 0%, #120d0d 50%, #0a0808 100%) fixed #0a0808; }
+body .hud { background: var(--grit), linear-gradient(#1b1414, #0f0b0b); border-bottom: 3px solid #e3241b; box-shadow: 0 4px 0 #000; }
+body .who .title { font: 800 21px/1 var(--disp); font-stretch: 70%; text-transform: uppercase; letter-spacing: .02em; color: #ffc21a; }
+body .money .cash { color: #8cff5a; font-stretch: 85%; }
+body .badge.hasav .num { background: #e3241b; color: #fff; border: 2px solid #000; }
+/* títulos: estreitos, em maiúsculas; as secções numa fita vermelha cortada na ponta */
+body .phead h1, body .pbar h1 { font: 800 34px/1 var(--disp); font-stretch: 62%; text-transform: uppercase; letter-spacing: .01em; color: #fff; text-shadow: 3px 3px 0 #e3241b55; }
+body h2.sec { display: inline-block; margin-top: 22px; padding: 6px 22px 6px 12px; background: #e3241b; color: #fff; font: 800 18px/1 var(--disp); font-stretch: 65%; text-transform: uppercase; letter-spacing: .03em;
+  clip-path: polygon(0 0, 100% 0, calc(100% - 12px) 100%, 0 100%); box-shadow: none; }
+/* painéis: papel escuro com sombra dura */
+body .card, body .jobp, body .rowi, body .gyi, body .gpow > div, body .item, body .vrow.card { background: var(--grit), #171313; border: 2px solid #000; border-radius: 4px; box-shadow: 4px 4px 0 #000, inset 0 0 0 1px #ffffff0d; }
+body .rowi.sel { box-shadow: 4px 4px 0 #000, inset 0 0 0 2px #ffc21a; }
+body .rowi .nm, body .gyt .nm { font: 800 21px/1 var(--disp); font-stretch: 68%; text-transform: uppercase; letter-spacing: .01em; }
+body .jimg h2 { font: 800 36px/.95 var(--disp); font-stretch: 62%; text-transform: uppercase; text-shadow: 3px 3px 0 #000; }
+body .jimg img, body .tile img, body .rowi img, body .gimg { filter: contrast(1.12) saturate(1.1); }
+body .jdeal span, body .kv dt { text-transform: uppercase; font-size: 12.5px; letter-spacing: .06em; font-weight: 700; }
+body .jdeal b { font-stretch: 80%; }
+/* botões: o principal vermelho, os outros amarelo de aviso; tudo com sombra dura */
+body .btn { border-radius: 3px; border: 2px solid #000; box-shadow: 4px 4px 0 #000; font: 800 18px/1 var(--disp); font-stretch: 72%; text-transform: uppercase; letter-spacing: .04em; }
+body .btn.big { font-size: 26px; }
+body .btn.buy, body .btn.rob, body .btn.pri { background: #e3241b; color: #fff; }
+body .btn.robAll, body .btn:not(.buy):not(.rob):not(.pri):not(.cash):not(.danger) { background: #ffc21a; color: #140d00; }
+body .btn:active { transform: translate(2px, 2px); box-shadow: 2px 2px 0 #000; }
+/* mosaicos da cidade: etiqueta carimbada em baixo */
+body .tile { border-radius: 4px; border: 2px solid #000; box-shadow: 4px 4px 0 #000; }
+body .tile .lbl { left: 0; right: auto; bottom: 12px; padding: 6px 12px 6px 10px; background: #000; color: #ffc21a; text-align: left; font: 800 22px/1 var(--disp); font-stretch: 65%; text-transform: uppercase; text-shadow: none; }
+body .newsc.paper { border-radius: 2px; border: 2px solid #000; box-shadow: 4px 4px 0 #000; transform: rotate(-.4deg); }
+/* barra de baixo */
+body .tabs { background: var(--grit), #0d0a0a; border-top: 3px solid #e3241b; }
+body .tab { font: 800 11.5px/1.2 var(--disp); font-stretch: 80%; text-transform: uppercase; letter-spacing: .04em; color: #a49a8f; }
+body .tab[aria-current='page'] { color: #fff; background: #e3241b; }
+body .tab[aria-current='page']::before { display: none; }
+body .tab .dot { background: #ffc21a; box-shadow: 0 0 0 2px #000; }
+
+/* barras do topo com o número lá dentro */
+body .hbars .sbar { height: 24px; margin: 10px 0; border: 2px solid #000; border-radius: 2px; overflow: hidden; text-align: center; background: #050404; box-shadow: 3px 3px 0 #000; font: 800 12.5px/20px var(--disp); font-stretch: 80%; color: #fff; }
+body .hbars .sbar::before { display: none; }
+body .hbars .sbar > i { inset: 0 auto 0 0; height: auto; border-radius: 0; }
+body .hbars .sbar > span { position: relative; inset: auto; height: 20px; display: flex; align-items: center; justify-content: center; text-shadow: 0 1px 0 #000, 0 0 3px #000; }
+body .hbars .sbar.en > i { background: repeating-linear-gradient(-45deg, #2f8fe6 0 8px, #2479c8 8px 16px); }
+body .hbars .sbar.vg > i { background: repeating-linear-gradient(-45deg, #3fb56a 0 8px, #319c58 8px 16px); }
+body .hbars .sbar.vi > i { background: repeating-linear-gradient(-45deg, #9a49d8 0 8px, #8338bf 8px 16px); }
+
+/* botões rápidos do topo */
+body .hquick .qk { height: 34px; margin: 5px 4px 7px 0; border: 2px solid #000; border-radius: 2px; background: #1a1515; box-shadow: 3px 3px 0 #000; color: var(--tx); font: 800 14px/1 var(--disp); font-stretch: 80%; text-transform: uppercase; letter-spacing: .02em; }
+body .hquick .qk.good { background: #7ed957; color: #0b1a05; box-shadow: 3px 3px 0 #000; }
+body .hquick .qk.good svg.i { color: #0b1a05; }
+body .btn.rob, body .btn.buy { text-transform: uppercase; font-stretch: 72%; font-weight: 800; box-shadow: 4px 4px 0 #000; }

@@ -1,0 +1,61 @@
+/* Direção A — «Vidro escuro» (aero escuro, skeuomórfico, perto do Torn). Só para capturas: não é servido pelo jogo. */
+:root {
+  --ink: #0a0e15; --s1: #172030; --s2: #1f2a3c; --s3: #2c3a52;
+  --line: #ffffff14; --line2: #ffffff26;
+  --tx: #eaf1fa; --tx2: #a6b6ca; --tx3: #8a9bb2;
+  --cash: #63e08a; --danger: #ff6d63; --sodium: #ffc94d; --gold: #ffc94d; --orange: #ffa64d; --energy: #4fc8ff;
+  --acc: #4fc8ff;
+  --disp: 'Archivo', system-ui, sans-serif;
+  --glass: linear-gradient(180deg, #26324a 0%, #182133 55%, #131a28 100%);
+  --hi: inset 0 1px 0 #ffffff24, inset 0 0 0 1px #ffffff08;
+}
+html body { background: radial-gradient(120% 60% at 50% -8%, #2a4266 0%, #101828 45%, #080b11 100%) fixed #080b11; }
+body .hud { background: linear-gradient(180deg, #2a3a55f2 0%, #121a29f5 100%); border-bottom: 1px solid #000; box-shadow: inset 0 -1px 0 #ffffff12, 0 6px 16px #0009; }
+body .who .title { font: 800 19px/1.1 var(--disp); color: #ffd36b; text-shadow: 0 1px 0 #000, 0 0 12px #ffc94d40; }
+body .money .cash { color: #6dff9a; text-shadow: 0 0 10px #63e08a55, 0 1px 0 #000; }
+body .badge.hasav .num { background: linear-gradient(#ffe08a, #e0a52a); color: #2b1a00; box-shadow: 0 1px 2px #000; }
+/* botões rápidos */
+/* títulos */
+body .phead h1, body .pbar h1 { font: 800 27px/1.1 var(--disp); letter-spacing: -.01em; text-shadow: 0 2px 0 #000, 0 0 18px #4fc8ff2e; }
+body h2.sec { margin-top: 22px; padding: 9px 12px; border-radius: 9px 9px 0 0; background: linear-gradient(180deg, #3a4a66 0%, #24304a 100%); border: 1px solid #05080d; box-shadow: inset 0 1px 0 #ffffff33;
+  font: 800 13px/1.2 var(--disp); text-transform: uppercase; letter-spacing: .08em; color: #dce8f7; text-shadow: 0 1px 0 #000; }
+/* painéis */
+body .card, body .jobp, body .rowi, body .gyi, body .gpow > div, body .item, body .vrow.card { background: var(--glass); border: 1px solid #05080d; box-shadow: var(--hi), 0 3px 8px #0009; }
+body .rowi.sel { box-shadow: inset 0 0 0 2px #4fc8ff, 0 0 16px #4fc8ff40, 0 3px 8px #0009; }
+body .rowi .nm, body .gyt .nm { font-family: var(--disp); font-weight: 800; }
+body .jimg h2 { font: 800 30px/1.05 var(--disp); text-shadow: 0 2px 0 #000, 0 0 20px #000; }
+body .jdeal b { text-shadow: 0 0 14px currentColor; }
+/* botões: o principal em vidro azul brilhante */
+body .btn { border-radius: 9px; }
+body .btn.buy, body .btn.rob, body .btn.pri { background: linear-gradient(180deg, #7fdcff 0%, #36aee8 46%, #1689cc 54%, #2aa6e2 100%); color: #fff; border: 1px solid #0b4c74;
+  box-shadow: inset 0 1px 0 #ffffffaa, inset 0 -2px 6px #0b4c7466, 0 2px 6px #000a, 0 0 18px #36aee840; text-shadow: 0 -1px 0 #0b4c7499; font-family: var(--disp); font-weight: 800; }
+body .btn.robAll, body .btn:not(.buy):not(.rob):not(.pri):not(.cash):not(.danger) { background: var(--glass); border: 1px solid #05080d; box-shadow: var(--hi), 0 2px 4px #0008; color: var(--tx); }
+/* mosaicos da cidade */
+body .tile { border-radius: 12px; border: 1px solid #05080d; box-shadow: inset 0 1px 0 #ffffff30, 0 4px 12px #000a; }
+body .tile::before { content: ''; position: absolute; inset: 0 0 auto 0; height: 46%; z-index: 1; background: linear-gradient(#ffffff1f, #ffffff00); pointer-events: none; }
+body .tile .lbl { font: 800 23px/1 var(--disp); text-align: left; left: 12px; text-shadow: 0 2px 0 #000, 0 0 12px #000; }
+/* jornal */
+body .newsc.paper { border-radius: 10px; box-shadow: inset 0 1px 0 #fff8, 0 3px 10px #000a; }
+/* barra de baixo: doca de vidro */
+body .tabs { background: linear-gradient(180deg, #2c3b56f7 0%, #0d131ef9 100%); border-top: 1px solid #ffffff22; box-shadow: 0 -6px 18px #000b; }
+body .tab { font: 700 11.5px/1.2 var(--disp); color: #8ea3be; }
+body .tab[aria-current='page'] { color: #fff; }
+body .tab[aria-current='page']::before { left: 18%; right: 18%; top: 6px; bottom: 6px; height: auto; border-radius: 10px; background: linear-gradient(#ffffff26, #ffffff08); box-shadow: inset 0 1px 0 #ffffff40, 0 0 14px #4fc8ff40; }
+body .tab[aria-current='page'] svg.i { filter: drop-shadow(0 0 6px #4fc8ff); color: #8fe0ff; }
+body .kv dt { color: #9fb2c8; }
+body .gymr .btn:not(.buy) { color: var(--tx); }
+
+/* barras do topo com o número lá dentro */
+body .hbars .sbar { height: 26px; margin: 9px 0; border: 0; border-radius: 13px; overflow: hidden; text-align: center; background: linear-gradient(#04070c, #131a26); box-shadow: inset 0 2px 4px #000d, 0 1px 0 #ffffff1a; font: 700 12.5px/26px var(--disp); color: #fff; }
+body .hbars .sbar::before { display: none; }
+body .hbars .sbar > i { inset: 0 auto 0 0; height: auto; border-radius: 13px; box-shadow: inset 0 1px 0 #ffffff66; }
+body .hbars .sbar > i::after { content: ''; position: absolute; left: 5px; right: 5px; top: 2px; height: 40%; border-radius: 10px; background: linear-gradient(#ffffff80, #ffffff12); }
+body .hbars .sbar > span { position: relative; inset: auto; height: 26px; display: flex; align-items: center; justify-content: center; text-shadow: 0 1px 2px #000; }
+body .hbars .sbar.en > i { background: linear-gradient(#6fd2ff, #1f7fd0); }
+body .hbars .sbar.vg > i { background: linear-gradient(#7af5d0, #189a78); }
+body .hbars .sbar.vi > i { background: linear-gradient(#d2a8ff, #7a3fc0); }
+
+/* botões rápidos do topo */
+body .hquick .qk { height: 36px; margin: 4px 0; border: 1px solid #05080d; border-radius: 9px; background: linear-gradient(180deg, #2a3750 0%, #182133 100%); box-shadow: inset 0 1px 0 #ffffff2e, 0 2px 4px #0008; color: var(--tx); font-weight: 700; }
+body .hquick .qk.good { background: linear-gradient(180deg, #34875a 0%, #1d5536 55%, #174429 100%); border-color: #062012; color: #effff3; box-shadow: inset 0 1px 0 #ffffff45, 0 0 12px #63e08a30, 0 2px 4px #0008; }
+body .hquick .qk.good svg.i { color: #b8ffcf; }
