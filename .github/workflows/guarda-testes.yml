@@ -46,6 +46,7 @@ jobs:
           python3 auditoria/test_calendario_ponte.py
           python3 auditoria/test_caminhos_a_pe.py
           python3 auditoria/test_metro_mondego.py
+          python3 auditoria/test_siga_agencias.py
           python3 caiu/verificar/test_paginas.py
 
       - name: caiu.pt luz e gás (contas iguais às da ERSE, Galp COMBINA, parcerias, página)
