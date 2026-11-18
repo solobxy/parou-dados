@@ -1802,8 +1802,14 @@ def completar_destinos(conn):
     n = conn.execute(f"""UPDATE trips SET trip_headsign = {fim}
         WHERE (trip_headsign IS NULL OR TRIM(trip_headsign) = '')
           AND {fim} IS NOT NULL AND {fim} <> COALESCE({inicio}, '')""").rowcount
+    # Nomes de paragens com o código no fim (Madeira: «Aeroporto (68209)», «Marina (CF00001)»): o código serve para
+    # distinguir paragens, não destinos. Só códigos com 3 ou mais algarismos («Linha (2)» fica).
+    codigo = re.compile(r"\s*\((?:CF)?\d{3,}[A-Z]{0,2}\)\s*$")
+    limpos = [(codigo.sub("", h), rid) for rid, h in conn.execute(
+        "SELECT rowid, trip_headsign FROM trips WHERE trip_headsign LIKE '%)'") if codigo.search(h) and codigo.sub("", h)]
+    conn.executemany("UPDATE trips SET trip_headsign = ? WHERE rowid = ?", limpos)
     conn.commit()
-    log(f"Destinos completados com a última paragem: {n} viagens")
+    log(f"Destinos completados com a última paragem: {n} viagens (sem código da paragem: {len(limpos)})")
 
 
 def viagens_ativas(conn, dia):
