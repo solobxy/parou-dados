@@ -603,14 +603,17 @@ export const CFG = {
   fxKinds: ['F', 'I', 'C', 'T', 'loot', 'biz', 'bust'],
   // profissão: escolhe-se uma vez por ronda
   classes: [
-    { id: 'ladrao', lootBp: 1500 }, // +15% de saque
+    { id: 'ladrao', lootBp: 1500, colBp: 5000 }, // +15% de saque; v90: +50% de hipótese de achar peças raras nos golpes
     { id: 'vigarista', bustCutBp: 2500, bailCutBp: 5000 }, // menos prisão, fiança a metade
     { id: 'traficante', drugCutBp: 3000, fxMoreBp: 10000, capPlus: 15 }, // drogas mais baratas, efeitos a dobrar, mais limite de vício
     { id: 'empresario', bizBp: 2000, feeCutBp: 5000 }, // negócios rendem mais, banco a metade
     { id: 'matador', atkBp: 2000, pvpBp: 2500 }, // ataque e respeito nas lutas
     { id: 'seguranca', defBp: 2500, hospCutBp: 5000 }, // defesa, hospital a metade
-    { id: 'chulo', hkCutBp: 3000, sickCutBp: 6000 }, // putas mais baratas e menos doenças
-    { id: 'contrabandista', seizeCutBp: 3000 }, // v89: menos 30% de apreensões no porto e no avião (era metade: com o porto antigo era a escolha óbvia)
+    { id: 'chulo', hkCutBp: 3000, sickCutBp: 6000, broBp: 2500 }, // putas mais baratas, menos doenças; v90: o bordel rende +25%
+    { id: 'contrabandista', seizeCutBp: 3000, cargoBp: 2500 }, // v89: menos 30% de apreensões no porto e no avião; v90: cargas 25% maiores
+    // v90: a cave e a feira também têm o seu ofício (antes nenhuma profissão tocava nelas)
+    { id: 'armeiro', craftCutBp: 3000, recipeCutBp: 2500 }, // a bancada da cave trabalha 30% mais depressa; receitas 25% mais baratas
+    { id: 'recetador', fenceBp: 3000, feiraFeeCutBp: 5000 }, // o recetador paga +30% pelo equipamento; a taxa da feira fica a metade
     // de elite: só com respeito (conta o máximo que já tiveste na ronda). Juntam dois ofícios e dão mais do que os de rua.
     { id: 'mestre', need: 1000, lootBp: 2000, bustCutBp: 1500 },
     { id: 'blindado', need: 1500, defBp: 3500, hospCutBp: 6000, atkBp: 1000 },

@@ -70,8 +70,8 @@ function contas(kind, a0, a, d0, d, t, res, arg) {
   if (kind === 'workDone' && res.mat && (res.busted || res.shift || res.mat.id !== CFG.mat.drop[res.id] || res.mat.n + res.mat.lost !== (res.q >= CFG.mat.good ? 2 : 1))) bad('depósito: material do biscate');
   if (kind === 'craftStart') { const R = E.recipeOf(res.id), comp = R.kind === 'comp', gasto = Object.fromEntries(Object.entries(R.needs).map(([k, v]) => [k, -v * res.n]));
     if (comp) gasto[res.id] = (gasto[res.id] || 0) + res.n;
-    if (!mtEq(gasto) || dm !== -res.price || res.price !== R.price * res.n || dr !== 0) bad('cave: fazer');
-    if (comp ? JSON.stringify(touched(a0, t).cf) !== JSON.stringify(a.cf) || res.n > CFG.craft.batch : touched(a0, t).cf || !a.cf || a.cf.id !== res.id || a.cf.end !== t + R.ms || res.n !== 1) bad('cave: bancada ao fazer'); }
+    if (!mtEq(gasto) || dm !== (comp ? -res.price : -res.price * res.n) || res.price !== E.recipePrice(a0, R) * (comp ? res.n : 1) || res.price > R.price * res.n || dr !== 0) bad('cave: fazer');   // v90: o armeiro paga menos
+    if (comp ? JSON.stringify(touched(a0, t).cf) !== JSON.stringify(a.cf) || res.n > CFG.craft.batch : touched(a0, t).cf || !a.cf || a.cf.id !== res.id || a.cf.end !== t + E.recipeMs(a0, R) || a.cf.end > t + R.ms || res.n !== 1) bad('cave: bancada ao fazer'); }
   if (kind === 'craftTake') { const R = E.recipeOf(res.id), c0 = touched(a0, t).cf;
     if (!c0 || c0.end > t || c0.id !== res.id || a.cf !== null || dm !== 0 || dr !== 0 || Object.keys(mtD).length) bad('cave: recolher');
     if ((R.kind === 'tool' || R.kind === 'gun' || R.kind === 'gear') && a.inv.filter((x) => x.id === res.id).length !== a0.inv.filter((x) => x.id === res.id).length + 1) bad('cave: inventário');

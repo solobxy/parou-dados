@@ -663,7 +663,7 @@ export function doCrime(p, now, world, k, rng) {
     p.rc = Math.floor(milli - resp * 1000);
     const lvl = addRespect(p, resp, now);
     const gained = practice(p, c, true);
-    const R = CFG.col.sets.raras.items, col = colFind(p, rng, c.e * CFG.col.crimeBpPerE, () => R[rng.int(0, R.length - 1)]);
+    const R = CFG.col.sets.raras.items, col = colFind(p, rng, up(c.e * CFG.col.crimeBpPerE, klass(p).colBp || 0), () => R[rng.int(0, R.length - 1)]);   // v90: o ladrão dá mais com elas
     return { ok: true, success: true, money, value, good, rushed, lav: L.lav, base, item: row[3], crit: false, respect: resp, levelUp: lvl, chanceBp: bp, heatBp, respBp, ammo, gained, newChanceBp: bp, star: 0, ...(col ? { col } : {}) };
   }
   p.c.crimes += 1;
@@ -1413,6 +1413,8 @@ export function matGain(p, workId, q) {
   if (n) p.mt[id] = have + n;
   return { id, n, lost: want - n };
 }
+export const recipePrice = (p, r) => cut(r.price, klass(p).recipeCutBp || 0);
+export const recipeMs = (p, r) => cut(r.ms || 0, klass(p).craftCutBp || 0);
 export function craftStart(p, now, world, id, n = 1) {
   const r = recipeOf(id), comp = r && r.kind === 'comp';
   if (!r) fail('NO_RECIPE');
@@ -1425,11 +1427,12 @@ export function craftStart(p, now, world, id, n = 1) {
   if (r.kind === 'maq') { if (!p.biz[bizIdx(r.biz)].n) fail('NO_BIZ'); if (p.maq[r.biz]) fail('HAVE_IT'); }
   const miss = Object.entries(r.needs).filter(([k, v]) => (p.mt[k] || 0) < v * n);
   if (miss.length) fail('NO_MAT', { need: Object.fromEntries(miss.map(([k, v]) => [k, v * n])) });
-  pay(p, r.price * n);
+  const price = recipePrice(p, r);   // v90: o armeiro paga menos e acaba mais depressa
+  pay(p, price * n);
   for (const [k, v] of Object.entries(r.needs)) { p.mt[k] -= v * n; if (!p.mt[k]) delete p.mt[k]; }
-  if (comp) { p.mt[id] = (p.mt[id] || 0) + n; return { ok: true, id, n, price: r.price * n, kind: r.kind }; }
-  p.cf = { id, t0: now, end: now + r.ms };
-  return { ok: true, id, n, price: r.price, kind: r.kind, end: p.cf.end };
+  if (comp) { p.mt[id] = (p.mt[id] || 0) + n; return { ok: true, id, n, price: price * n, kind: r.kind }; }
+  p.cf = { id, t0: now, end: now + recipeMs(p, r) };
+  return { ok: true, id, n, price, kind: r.kind, end: p.cf.end };
 }
 // recolher da bancada: ferramentas e armas para o inventário, a máquina para o negócio. Se não couber (inventário cheio,
 // ferramenta que entretanto se comprou), fica na bancada: nada se perde.
@@ -1667,7 +1670,9 @@ export function feiraLock(p, now, world, amount) {
   pay(p, amount);
   return { ok: true, amount };
 }
-export const feiraFee = (v) => Math.ceil((v * CFG.feira.feeBp) / 10000);
+// a taxa de quem vende (v90: o recetador paga metade)
+export const feiraFeeBp = (p) => cut(CFG.feira.feeBp, (p && klass(p).feiraFeeCutBp) || 0);
+export const feiraFee = (v, p) => Math.ceil((v * feiraFeeBp(p)) / 10000);
 // o lance seguinte (pelo menos 5% acima do anterior, nunca acima do teto do lote). 0 = o leilão já chegou ao teto.
 export const feiraNext = (lance, preco, cap = Infinity) => {
   if (lance && lance >= cap) return 0;
@@ -1788,7 +1793,7 @@ export function hireAccountant(p, now, world) {
 
 // v89: na escala nova, por nível (a escala antiga crescia 1,6× por degrau: no nível 60 eram 3 M€ por carregamento e o porto
 // rendia 25 M€ por dia, mais do que tudo o resto junto). Agora: 1 000 € + 100 € por nível; um lugar a mais nos níveis 35 e 70.
-export function portCap(p) { return CFG.port.capBase + CFG.port.capPerLevel * level(p); }
+export function portCap(p) { return up(CFG.port.capBase + CFG.port.capPerLevel * level(p), klass(p).cargoBp || 0); }   // v90: o contrabandista leva mais
 export function portSlots(p) { return 1 + Math.floor(level(p) / CFG.port.slotsEvery); }
 
 // cada carregamento tem a sua droga (para quem a quer receber em vez do dinheiro)
@@ -1942,7 +1947,7 @@ function settleClub(p, now) {
 export function broRate(p) {
   const b = p.bro, V = CFG.venue; if (!b) return 0;
   let base = 0; for (const i of b.girls) base += V.bro.perH[CFG.hookers.list[i].tier];
-  return Math.floor((Math.floor((base * V.volBp[b.pi]) / 10000) * (V.prices[b.pi] - V.girlBp)) / (10000 - V.girlBp));
+  return up(Math.floor((Math.floor((base * V.volBp[b.pi]) / 10000) * (V.prices[b.pi] - V.girlBp)) / (10000 - V.girlBp)), klass(p).broBp || 0);   // v90: o chulo
 }
 function settleBro(p, now) {
   const b = p.bro; if (!b) return;
@@ -1957,7 +1962,7 @@ function settleBro(p, now) {
 }
 // leitura sem alterar o estado (para os ecrãs e para a lista de casas)
 export function venueView(p, now) {
-  const ghost = { stock: p.stock.slice(), hold: Array.isArray(p.hold) ? p.hold.slice() : [], club: p.club ? { ...p.club } : null, bro: p.bro ? { ...p.bro, girls: p.bro.girls.slice() } : null };
+  const ghost = { cls: p.cls, stock: p.stock.slice(), hold: Array.isArray(p.hold) ? p.hold.slice() : [], club: p.club ? { ...p.club } : null, bro: p.bro ? { ...p.bro, girls: p.bro.girls.slice() } : null };   // v90: a profissão conta (o chulo rende mais no bordel)
   for (const v of p.mv || []) if (v.at <= now && v.x !== 2 && v.b === 'lx') ghost.stock[v.d] += v.n;   // a mercadoria que já chegou a Lisboa entra antes (como no touch)
   settleClub(ghost, now); settleBro(ghost, now);
   return ghost;
@@ -2496,7 +2501,7 @@ export function sellItem(p, now, world, i) {
   let money, lav = 0;
   if (CFG.loot.goods.includes(it.id)) ({ net: money, lav } = launder(p, it.v));
   else if (it.id === 'balas') money = Math.floor((it.n * CFG.bullets.price * CFG.loot.gearSellBp) / (CFG.bullets.box * 10000));
-  else { const g = gearOf(it.id); money = Math.floor((g.price * CFG.loot.gearSellBp * (g.gun ? it.u / g.life : 1)) / 10000); }
+  else { const g = gearOf(it.id); money = up(Math.floor((g.price * CFG.loot.gearSellBp * (g.gun ? it.u / g.life : 1)) / 10000), klass(p).fenceBp || 0); }   // v90: o recetador
   p.inv.splice(i, 1);
   p.cash += money;
   return { ok: true, id: it.id, n: it.n || 1, money, lav };

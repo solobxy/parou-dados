@@ -29,7 +29,7 @@ const RONDA_TESTE = process.env.PRIMEIRA_RONDA ? dataDe(process.env.PRIMEIRA_RON
 // Épocas de 28 dias a contar da sexta 13/11/2026 às 21:00 de Lisboa (PRIMEIRA_EPOCA=AAAA-MM-DD muda-a, para testes)
 const ANCORA = dataDe(process.env.PRIMEIRA_EPOCA || process.env.PRIMEIRA_RONDA || '2026-11-13');
 const rng = process.env.TESTE_SEMENTE ? seededRng(+process.env.TESTE_SEMENTE) : cryptoRng();   // nos testes, a sorte pode ser sempre a mesma
-const VERSAO = 89;   // sobe quando o servidor muda, para se confirmar de fora que a versão nova já está a correr
+const VERSAO = 90;   // sobe quando o servidor muda, para se confirmar de fora que a versão nova já está a correr
 const ATOS_3S = +(process.env.ATOS_3S || 15), ATOS_MIN = +(process.env.ATOS_MIN || 400); // ações por conta: 15 em 3 s, 400 por minuto
 
 // ---------- relógio que nunca anda para trás ----------
@@ -60,6 +60,9 @@ CREATE TABLE IF NOT EXISTS diario (ronda INTEGER NOT NULL, dia TEXT NOT NULL, co
 // e a quem a sofreu). Serve para ver de onde vem e para onde vai o dinheiro, e afinar a economia com números reais.
 db.exec(`CREATE TABLE IF NOT EXISTS caixa (dia TEXT NOT NULL, fonte TEXT NOT NULL, entra INTEGER NOT NULL DEFAULT 0, sai INTEGER NOT NULL DEFAULT 0,
   n INTEGER NOT NULL DEFAULT 0, PRIMARY KEY (dia, fonte))`);
+// v90: o que se usa, por dia: «a:<ação>» quantas vezes se fez cada ação, «e:<ecrã>» quantas vezes se abriu cada ecrã,
+// «j:<ação>» quantos jogadores diferentes a fizeram. Serve para escolher os atalhos e as barras com números e não com palpites.
+db.exec('CREATE TABLE IF NOT EXISTS uso (dia TEXT NOT NULL, tipo TEXT NOT NULL, n INTEGER NOT NULL DEFAULT 0, PRIMARY KEY (dia, tipo))');
 // colunas novas em bases de dados que já existiam
 try { db.exec('ALTER TABLE contas ADD COLUMN email TEXT'); } catch { /* já existe */ }
 db.exec('CREATE UNIQUE INDEX IF NOT EXISTS contas_email ON contas(email) WHERE email IS NOT NULL');   // um email, uma conta (guardado em minúsculas)
@@ -162,6 +165,25 @@ function noticiar(now, a, r, p, alvo) {
 const diaDe = (t) => { const d = localParts(t); return `${d.y}-${String(d.m).padStart(2, '0')}-${String(d.d).padStart(2, '0')}`; };
 const ontemDe = (t) => { const d = localParts(t); const x = new Date(Date.UTC(d.y, d.m - 1, d.d - 1)); return x.toISOString().slice(0, 10); };
 // regista no caixa o que entrou (entra) e saiu (sai) de uma fonte; uma linha por dia e por fonte
+// v90: contagens do uso em memória, gravadas de minuto a minuto (uma escrita por tipo, não uma por toque)
+const usoMem = new Map(), usoQuem = new Map();
+const usoUp = db.prepare('INSERT INTO uso (dia, tipo, n) VALUES (?, ?, ?) ON CONFLICT(dia, tipo) DO UPDATE SET n = n + excluded.n');
+function usoMais(now, tipo, k = 1, conta) {
+  const chave = diaDe(now) + '|' + tipo; usoMem.set(chave, (usoMem.get(chave) || 0) + k);
+  if (conta && tipo.startsWith('a:')) {   // jogadores diferentes por ação, por dia (o conjunto só vive até ao fim do dia)
+    const qk = diaDe(now) + '|j:' + tipo.slice(2); let set = usoQuem.get(qk);
+    if (!set) { set = new Set(); usoQuem.set(qk, set); }
+    if (!set.has(conta)) { set.add(conta); usoMem.set(qk, (usoMem.get(qk) || 0) + 1); }
+  }
+}
+function gravarUso() {
+  if (!usoMem.size) return;
+  const lote = [...usoMem]; usoMem.clear();
+  try { db.exec('BEGIN'); for (const [chave, n] of lote) { const i = chave.indexOf('|'); usoUp.run(chave.slice(0, i), chave.slice(i + 1), n); } db.exec('COMMIT'); }
+  catch (e) { try { db.exec('ROLLBACK'); } catch {} console.error('uso', e.message); }
+  const hoje = diaDe(clock()); for (const k of usoQuem.keys()) if (!k.startsWith(hoje)) usoQuem.delete(k);
+}
+setInterval(gravarUso, 60_000).unref();
 function caixa(now, fonte, entra, sai) {
   if (!(entra > 0) && !(sai > 0)) return;
   q.caixa.run(diaDe(now), fonte, Math.max(0, entra | 0), Math.max(0, sai | 0));
@@ -381,7 +403,7 @@ function mundoAcc(kind, x) { if (!bolsa || !bolsa.w || !x) return; MW.accAdd(bol
 const gravarBolsa = () => { try { if (bolsa && bolsaSuja && bolsaRonda !== null) { qb.gravar.run(bolsaRonda, JSON.stringify(bolsa)); bolsaSuja = false; } } catch (e) { console.error('gravar bolsa', e.message); } };
 setInterval(gravarBolsa, 30_000).unref();
 // ao desligar (atualização do servidor), as contas da edição a meio não se perdem
-for (const sinal of ['SIGTERM', 'SIGINT']) process.once(sinal, () => { gravarBolsa(); process.exit(0); });
+for (const sinal of ['SIGTERM', 'SIGINT']) process.once(sinal, () => { gravarBolsa(); gravarUso(); process.exit(0); });
 // dividendos: em cada edição, a quem tem ações das empresas que pagaram (também a quem está fora do jogo)
 function dividendos(div, t, now) {
   if (!div.some((x) => x > 0)) return;
@@ -481,7 +503,7 @@ function vista(p, now) {
     job: p.job, shifts: E.shiftsToday(p, now), course: p.course, done: p.done, sk: p.sk, jt: Array.isArray(p.jt) ? p.jt : [], detox: p.addiction > 0 ? E.detoxCost(p, now) : 0, detoxUses: E.detoxUses(p, now),
     mission: E.mission(p), wk: p.wk, counters: p.c,
     xp: p.xp, xpNeed: { F: E.practiceNeed(p, 'F'), I: E.practiceNeed(p, 'I'), C: E.practiceNeed(p, 'C') },
-    cash: p.cash, cent: p.cent || 0, bank: p.bank, bankFeeBp: E.bankFeeBp(p), bj: E.bjPublic(p), casinoMax: E.casinoMax(p), gang: p.gang && gangues.get(p.gang) ? { id: p.gang, name: gangues.get(p.gang).nome, tag: gangues.get(p.gang).tag, bot: p.gang === BOT.id } : null, gb: p.gb || null, gangWait: p.gangLeft ? p.gangLeft + CFG.gang.rejoinMs : 0, clsCost: E.classChangeCost(p), clsWait: p.clsAt ? p.clsAt + CFG.classChange.coolMs : 0, portSeizeBp: E.portSeizeBp(p), respect: p.respect, peakRespect: p.peakRespect,
+    cash: p.cash, cent: p.cent || 0, bank: p.bank, bankFeeBp: E.bankFeeBp(p), feiraFeeBp: E.feiraFeeBp(p), bj: E.bjPublic(p), casinoMax: E.casinoMax(p), gang: p.gang && gangues.get(p.gang) ? { id: p.gang, name: gangues.get(p.gang).nome, tag: gangues.get(p.gang).tag, bot: p.gang === BOT.id } : null, gb: p.gb || null, gangWait: p.gangLeft ? p.gangLeft + CFG.gang.rejoinMs : 0, clsCost: E.classChangeCost(p), clsWait: p.clsAt ? p.clsAt + CFG.classChange.coolMs : 0, portSeizeBp: E.portSeizeBp(p), respect: p.respect, peakRespect: p.peakRespect,
     level: L, levelFrom: CFG.levels[L - 1], levelTo: CFG.levels[L] ?? null,
     titles: p.titles, ep: p.ep ? { n: p.ep.n, div: p.ep.div, score: E.seasonScore(p, p.ep.n) } : null,
     jailUntil: p.jailUntil, jailTier: p.jailTier, bail: E.bailCost(p, now),
@@ -499,7 +521,7 @@ function vista(p, now) {
     luxuryRespect: E.luxuryPrice(p) === null ? 0 : E.luxuryRespect(E.luxuryPrice(p)),
     cls: p.cls, av: p.av, fx: E.activeFx(p, now), drugPrices: CFG.drugs.map((_, d) => E.drugPrice(p, d)),
     acct: p.acct,
-    biz: p.biz.map((s, i) => ({ n: s.n, stored: stored[i].money, fee: stored[i].fee, g: s.g === true, perH: E.bizRates(p, i, now).perH, price: s.n < CFG.bizMax ? E.bizPrice(i, s.n) : null, t: s.t })),
+    biz: p.biz.map((s, i) => ({ n: s.n, stored: stored[i].money, fee: stored[i].fee, g: s.g === true, ...(({ perH, base }) => ({ perH, base }))(E.bizRates(p, i, now)), price: s.n < CFG.bizMax ? E.bizPrice(i, s.n) : null, t: s.t })),
     stock: vv.stock, hold: Array.isArray(p.hold) ? p.hold : [], portRisk: CFG.port.ships.map((_, k) => E.portSeizeBp(p, k)),
     club: vv.club ? { lvl: vv.club.lvl, till: vv.club.till, pi: vv.club.pi, gd: vv.club.gd, perH: E.clubRate(p), cap: CFG.venue.club.perH[vv.club.lvl - 1] * (CFG.venue.tillMs / T.HOUR), next: CFG.venue.club.cost[vv.club.lvl] ?? null } : null,
     bro: vv.bro ? { lvl: vv.bro.lvl, till: vv.bro.till, pi: vv.bro.pi, gd: vv.bro.gd, girls: vv.bro.girls, perH: E.broRate(p), cap: E.broRate(p) * (CFG.venue.tillMs / T.HOUR), rooms: CFG.venue.bro.rooms[vv.bro.lvl - 1], next: CFG.venue.bro.cost[vv.bro.lvl] ?? null } : null,
@@ -692,7 +714,7 @@ function resolverFeira(now) {
         qf.apaga.run(x.id);
         evento(x.vendedor, now, { k: 'fOrderEnd', kind: x.kind, item: x.item, n: x.n, money: back });
       } else if (x.tipo === 'leilao' && x.licitante) {
-        const fee = E.feiraFee(x.lance), net = x.lance - fee, s = jogadores.get(x.vendedor);
+        const s = jogadores.get(x.vendedor), fee = E.feiraFee(x.lance, s), net = x.lance - fee;
         if (s) { s.bank += net; guardar(s, now); caixa(now, 'feira:venda', net, 0); }
         qf.levantar.run(x.licitante, x.id);
         qf.venda.run(ronda, x.item, x.fim, Math.floor(x.lance / x.n), x.n, x.licitante, x.vendedor, feiraDif(x.kind, x.item, x.n, x.lance, objDe(x)));
@@ -762,7 +784,7 @@ function agirFeira(a, p, conta, now, world, ctx) {
     const total = L.preco * k, dif = feiraDif(L.kind, L.item, k, total, objDe(L));
     par(L.vendedor, dif);
     const r = E.feiraBuy(p, now, world, descDe(L, k), total);
-    const fee = E.feiraFee(total), net = total - fee;
+    const fee = E.feiraFee(total, s), net = total - fee;
     s.bank += net; ctx.outros.push(s);
     ctx.ops.push(() => {
       if (k === L.n) qf.apaga.run(L.id); else qf.menos.run(k, L.id);
@@ -825,7 +847,7 @@ function agirFeira(a, p, conta, now, world, ctx) {
     const total = L.preco * k, dif = feiraDif(L.kind, L.item, k, total, null);
     par(L.vendedor, dif);
     E.feiraTake(p, now, world, L.kind, L.item, k);
-    const fee = E.feiraFee(total), net = total - fee;
+    const fee = E.feiraFee(total, p), net = total - fee;
     p.bank += net;
     ctx.ops.push(() => {
       if (k === L.n) qf.apaga.run(L.id); else qf.menos.run(k, L.id);
@@ -2013,6 +2035,13 @@ async function tratar(req, res) {
     // a posição que aparece no topo é a da época, na tua divisão (é aí que se compete)
     return enviar(res, 200, { now, round: w, season: vistaEpoca(epocaEmDia(now)), account: { name: c?.nome, lang: c?.lingua }, me: p ? vista(p, now) : null, rank: posNaEpoca(now, p), players: jogadores.size, feed: ultimas() });
   }
+  if (req.method === 'POST' && path === '/api/uso') {   // v90: os ecrãs abertos (o site junta e manda de minuto a minuto)
+    if (!limite('uso:' + conta, 6, 60_000, now)) return enviar(res, 429, { error: 'SLOW_DOWN' });
+    let b; try { b = await lerCorpo(req); } catch { return enviar(res, 400, { error: 'BAD_REQUEST' }); }
+    const e = b && typeof b.e === 'object' && b.e ? b.e : {};
+    let k = 0; for (const [tab, n] of Object.entries(e)) { if (++k > 60) break; if (/^[a-z]{2,12}$/.test(tab) && Number.isSafeInteger(n) && n > 0) usoMais(now, 'e:' + tab, Math.min(n, 200)); }
+    return enviar(res, 200, { ok: true });
+  }
   if (req.method === 'POST' && path === '/api/lang') {
     let b; try { b = await lerCorpo(req); } catch { return enviar(res, 400, { error: 'BAD_REQUEST' }); }
     q.lingua.run(b.lang === 'pt' ? 'pt' : 'en', conta);
@@ -2028,6 +2057,7 @@ async function tratar(req, res) {
     if (rid && mem.has(rid)) return enviar(res, 200, mem.get(rid));
     try {
       const out = { now: agora, ...agir(conta, b, agora) };
+      if (typeof b.type === 'string' && /^[A-Za-z]{1,24}$/.test(b.type)) usoMais(agora, 'a:' + b.type, 1, conta);   // v90
       if (rid) { mem.set(rid, out); if (mem.size > 30) mem.delete(mem.keys().next().value); }
       return enviar(res, 200, out);
     } catch (e) {

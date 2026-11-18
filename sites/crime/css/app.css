@@ -250,7 +250,7 @@ p.secsub { color: var(--tx2); font-size: 14px; margin-bottom: 12px; }
 .tab svg.i { width: 24px; height: 24px; }
 .tab[aria-current='page'] { color: var(--tx); }
 .tab[aria-current='page']::before { content: ''; position: absolute; top: 0; left: 30%; right: 30%; height: 3px; border-radius: 0 0 3px 3px; background: var(--acc); }
-.tab .dot { position: absolute; top: 9px; right: calc(50% - 18px); width: 8px; height: 8px; border-radius: 50%; background: var(--danger); }
+.tab .dot { position: absolute; top: 9px; right: calc(50% - 18px); width: 8px; height: 8px; border-radius: 50%; background: var(--cash); }   /* v90: o que espera é ganho: verde */
 
 /* folhas, avisos, sobreposições */
 .backdrop { position: fixed; inset: 0; background: #000a; z-index: 50; animation: fade .2s ease-out; }
@@ -572,6 +572,8 @@ button.item { border: 0; color: inherit; font: inherit; cursor: pointer; }
 .item.cls.sel { box-shadow: inset 0 0 0 3px var(--cash); }
 .perks { list-style: none; margin: 0; padding: 0; display: grid; gap: 3px; font-size: 13px; line-height: 1.3; color: var(--tx); }
 .perks li { display: flex; gap: 5px; justify-content: center; align-items: flex-start; }
+.item.cls .perks { gap: 8px; text-align: left; }   /* v90: um bónus por linha, alinhado à esquerda, com espaço entre eles */
+.item.cls .perks li { display: block; }
 .perks svg.i { width: 13px; height: 13px; flex: none; margin-top: 2px; color: var(--sodium); }
 .stick { position: sticky; bottom: calc(86px + env(safe-area-inset-bottom)); margin-top: 12px; z-index: 5; }
 .stick .btn { box-shadow: 0 8px 24px #000a; }
@@ -3239,3 +3241,18 @@ button.dgc:disabled { filter: saturate(.5) brightness(.7); cursor: default; }
 .dgc.miss { background: #17120d; box-shadow: inset 0 0 0 1px var(--line2); }
 .dgc.miss .dgi { opacity: .35; filter: grayscale(.6); }
 .dgc.got.lost { box-shadow: inset 0 0 0 2px var(--danger); }
+
+/* ===== v90: a barra de atalhos (no topo, por baixo das barras) ===== */
+/* primeiro o que está pronto (contorno verde, é ganho), depois os sítios de sempre; desliza para o lado, sem barra de deslizar */
+.hquick { display: flex; gap: 6px; margin: 4px -16px -4px; padding: 0 16px; overflow-x: auto; scrollbar-width: none; overscroll-behavior-x: contain;
+  -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 28px), transparent); mask-image: linear-gradient(90deg, #000 calc(100% - 28px), transparent); }
+.hquick::-webkit-scrollbar { display: none; }
+.hquick .qk { flex: none; display: inline-flex; align-items: center; gap: 6px; height: 44px; padding: 0 12px; border: solid transparent; border-width: 4px 0; background-clip: padding-box;
+  border-radius: 8px / 10px; background-color: transparent; box-shadow: inset 0 0 0 1px var(--line); color: var(--tx2); font: 600 13px/1 var(--ui); white-space: nowrap; }
+.hquick .qk svg.i { width: 15px; height: 15px; color: var(--tx3); }
+.hquick .qk.good { color: var(--tx); background-color: #16291e; box-shadow: inset 0 0 0 1px #6fbf8c; }
+.hquick .qk.good svg.i { color: var(--cash); }
+.hquick .qk[aria-current='page'] { color: var(--tx); box-shadow: inset 0 0 0 1px var(--tx3); }
+.hquick .qk:active { transform: translateY(1px); }
+@media (prefers-reduced-motion: reduce) { .hquick .qk:active { transform: none; } }
+.pstats { flex-wrap: wrap; gap: 6px 14px; margin: 2px 0 0; font-size: 13.5px; }

@@ -252,7 +252,7 @@ function live(me) {
   return { energy, nextE, vigor, nextV, vice, jail: me.jailUntil > n ? me.jailUntil - n : 0, hosp: me.hospUntil > n ? me.hospUntil - n : 0 };
 }
 // armazém de um negócio: 8 h de rendimento, ou 24 h com contabilista
-const bizCapN = (b) => b.perH * (S.cfg.storageMs / 3600000);
+const bizCapN = (b) => (b.base ?? b.perH) * (S.cfg.storageMs / 3600000);   // v89: o armazém conta pelo rendimento sem o efeito da coca
 const bizCap = (b) => bizCapN(b) * (S.st.me.acct ? S.cfg.accountant.capMult : 1);
 function storedNow(b, i) {
   const cap = bizCap(b);
@@ -296,9 +296,40 @@ function buildHud() {
       h('button', { class: 'sbar en', 'aria-label': t('energy') + ' · ' + t('p_club'), on: { click: () => go('club') } }, S.hud.ebar, S.hud.etxt),
       h('button', { class: 'sbar vg', 'aria-label': t('vigor') + ' · ' + t('p_gym'), on: { click: () => go('gym') } }, S.hud.gbar, S.hud.gtxt),
       h('button', { class: 'sbar vi', 'aria-label': t('vice') + ' · ' + t('p_hosp'), on: { click: () => go('hosp') } }, S.hud.vbar, S.hud.vtxt)),
-    S.hud.stats, S.hud.fx);
+    S.hud.fx, S.hud.quick = h('nav', { class: 'hquick', 'aria-label': t('qkLabel') }));   // v90: a linha dos atributos saiu do topo (está no perfil); entrou a barra de atalhos
   S.hud.shown = { cash: me.cash, respect: me.respect };
   return hud;
+}
+// v90: a barra de atalhos, por baixo das barras: primeiro o que está pronto para fazer (recolher, o porto, a cave, a feira...),
+// depois os sítios a que se vai a toda a hora. Só se redesenha quando muda (para não perder onde se deslizou).
+const QUICK_FIXED = [['bank', 'bank'], ['inv', 'box'], ['gang', 'user'], ['feira', 'cash']];
+function quickItems(me) {
+  const n = now(), out = [];
+  const biz = me.biz.reduce((x, b, i) => x + (b.n > 0 ? bizNet(b, i) : 0), 0);
+  if (biz > 0) out.push({ go: 'biz', ic: 'cash', txt: t('qkBiz', { m: moneyShort(biz) }), good: true });
+  const port = me.port.filter((c) => c.readyAt <= n).length;
+  if (port) out.push({ go: 'port', ic: 'ship', txt: t(port === 1 ? 'qkPort1' : 'qkPort', { n: port }), good: true });
+  if (me.air && me.air.readyAt <= n) out.push({ go: 'air', ic: 'ship', txt: t('qkAir'), good: true });
+  if (me.cf && me.cf.end <= n) out.push({ go: 'cave', ic: 'box', txt: t('qkCave'), good: true });
+  if (S.cfg.biz.some((b, i) => me.biz[i]?.n > 0 && maqState(me, b.id) === 3)) out.push({ go: 'cave', ic: 'refresh', txt: t('qkRev') });
+  if (me.feira?.levantar > 0) out.push({ go: 'feira', ic: 'box', txt: t('qkFeira', { n: me.feira.levantar }), good: true });
+  if (me.op && me.op.ready <= n && !(me.op.miss || []).length) out.push({ go: 'ops', ic: 'target', txt: t('qkOp'), good: true });
+  if (me.mission?.done) out.push({ go: 'alley', ic: 'crown', txt: t('qkPrize'), good: true });
+  if (exReady(me)) out.push({ go: 'uni', ic: 'brain', txt: t('qkExam') });
+  if (me.dg) out.push({ go: 'dig', ic: 'target', txt: t('qkDig') });
+  if (me.bj) out.push({ go: 'bj', ic: 'gem', txt: t('qkBj') });
+  const ev = (S.events || []).filter((e) => e.id > S.lastEventSeen).length;
+  if (ev) out.push({ go: 'fights', ev: true, ic: 'fights', txt: t(ev === 1 ? 'qkNews1' : 'qkNews', { n: ev }) });
+  for (const [id, ic] of QUICK_FIXED) if (!out.some((x) => x.go === id)) out.push({ go: id, ic, txt: t('p_' + id) });
+  return out;
+}
+function updateQuick(me) {
+  const el = S.hud.quick; if (!el) return;
+  const items = quickItems(me), sig = items.map((x) => x.go + x.txt).join('|') + S.tab;
+  if (el.dataset.sig === sig) return;
+  el.dataset.sig = sig;
+  el.replaceChildren(...items.map((x) => h('button', { class: 'qk' + (x.good ? ' good' : ''), 'aria-current': S.tab === x.go ? 'page' : 'false',
+    on: { click: () => { if (x.ev) S.fightSeg = 'events'; go(x.go); } } }, icon(x.ic), h('span', null, x.txt))));
 }
 
 const STAT_IC = { F: 'fist', I: 'brain', C: 'chat', T: 'shield' };
@@ -343,6 +374,7 @@ function updateHud() {
   S.hud.cash.dataset.len = money(me.cash).length > 13 ? 'xl' : money(me.cash).length > 10 ? 'l' : '';   // 10 ou mais algarismos: a letra encolhe um passo para o nome ao lado não desaparecer
   if (sh.cash !== me.cash) { fx.roll(S.hud.cashN, sh.cash, me.cash, money); delta(S.hud.cash, me.cash - sh.cash, money); sh.cash = me.cash; } else S.hud.cashN.textContent = money(me.cash);
   if (sh.respect !== me.respect) { fx.roll(S.hud.respN, sh.respect, me.respect, num); delta(S.hud.resp, me.respect - sh.respect, num); sh.respect = me.respect; } else S.hud.respN.textContent = num(me.respect);
+  updateQuick(me);
   tickHud();
 }
 
@@ -384,21 +416,23 @@ function tickHud() {
 // ---------- ecrãs ----------
 // ---------- navegação: uma cidade com locais ----------
 const PLACES = {
-  city: { ic: 'skyline' }, empire: { ic: 'empire' }, rob: { ic: 'street', img: 'golpes' }, club: { ic: 'bolt', img: 'discoteca' }, gym: { img: 'ginasio' },
+  city: { ic: 'skyline' }, empire: { ic: 'empire' }, rob: { ic: 'street', img: 'golpes' }, club: { ic: 'bolt', img: 'discoteca' }, gym: { ic: 'gym', img: 'ginasio' },
   biz: { ic: 'empire', img: 'negocios' }, stash: { img: 'stash' }, acct: { img: 'contabilista' }, port: { img: 'porto' }, air: { img: 'aeroporto' }, arms: { img: 'armas' }, bank: { img: 'banco' }, hosp: { img: 'hospital' },
   jail: { img: 'prisao' }, gang: { img: 'gangue' }, work: { img: 'profissao' }, news: { img: 'jornal' }, casino: { ic: 'gem', img: 'casino' }, roulette: { img: 'roleta' }, bj: { img: 'blackjack' }, dice: { img: 'dados' }, wheel: { img: 'roda' }, slot: { img: 'slot' }, zeus: { img: 'zeus' }, doce: { img: 'doce' }, rebucado: { img: 'rebucado' }, alley: { img: 'beco' }, lux: { img: 'luxos' }, fights: { ic: 'fights', img: 'lutas' }, rank: { img: 'procurados' }, hitman: { img: 'assassino' }, putas: { img: 'putas' }, gigs: { img: 'biscates' }, casa: {}, myclub: { img: 'discoteca' }, mybro: { img: 'bordel' }, bolsa: { img: 'bolsa' }, job: { img: 'emprego' }, inv: { img: 'inventario' }, ops: { img: 'operacoes' }, parl: { img: 'parlamento' }, cafe: { img: 'cafe' }, museum: { img: 'museu' }, uni: { img: 'universidade' }, cave: { img: 'cave' }, feira: { img: 'feira' }, dig: { img: 'escavacoes' },
 };
 // barra de baixo: só o que se usa a toda a hora. O resto vive dentro de cada separador, arrumado por zonas.
-const NAV = ['city', 'rob', 'fights', 'casino', 'empire'];
+// v90: o ginásio entra no lugar do casino (golpes gastam stamina; ginásio e lutas gastam energia: é o que se faz a toda a hora).
+// O casino continua na Cidade, na Noite.
+const NAV = ['city', 'rob', 'gym', 'fights', 'empire'];
 const HUB = {
-  city: [['sec_night', ['club', 'putas', 'casino', 'gang', 'alley', 'arms']], ['sec_street', ['gigs', 'cafe', 'job', 'uni', 'dig', 'gym', 'feira', 'bank', 'museum', 'parl', 'hosp', 'jail', 'rank']]],
+  city: [['sec_night', ['club', 'putas', 'casino', 'gang', 'alley', 'arms']], ['sec_street', ['gigs', 'cafe', 'job', 'uni', 'dig', 'feira', 'bank', 'museum', 'parl', 'hosp', 'jail', 'rank']]],
   empire: [['sec_income', ['biz', 'port', 'air', 'myclub', 'mybro']], ['sec_assets', ['casa', 'cave', 'inv', 'bank', 'bolsa', 'stash', 'acct']]],
 };
 const PARENT = { dig: 'city', feira: 'city', cave: 'empire', uni: 'city', museum: 'city', cafe: 'city', parl: 'city', gigs: 'city', gang: 'city', work: 'job', job: 'city', news: 'city', casino: 'city', roulette: 'casino', bj: 'casino', dice: 'casino', wheel: 'casino', slot: 'casino', zeus: 'casino', doce: 'casino', rebucado: 'casino', club: 'city', putas: 'city', gym: 'city', alley: 'city', hosp: 'city', jail: 'city',
   biz: 'empire', port: 'empire', air: 'empire', myclub: 'empire', mybro: 'empire', bolsa: 'empire', inv: 'empire', stash: 'empire', acct: 'empire', casa: 'empire', bank: 'empire', lux: 'empire', arms: 'fights', rank: 'fights', hitman: 'fights', ops: 'rob' };
 const upOf = (id) => (S.backTo && S.backTo[id]) || PARENT[id] || 'city';   // um sítio que está em duas zonas volta para a zona de onde vieste
 const tabOf = (id) => { let x = id; for (let k = 0; k < 4 && !NAV.includes(x); k++) x = upOf(x); return NAV.includes(x) ? x : 'city'; };
-const IMG = (kind, id, big) => `/img/${kind}/${id}${big ? '-g' : ''}.webp?16`;
+const IMG = (kind, id, big) => `/img/${kind}/${id}${big ? '-g' : ''}.webp?${kind === 'classes' ? 17 : 16}`;   // v90: retratos novos das profissões
 // o que cada sítio precisa de ir buscar ao servidor (ao entrar nele, e também quando o jogo abre já nesse sítio)
 function loadFor(tab) {
   if (tab === 'fights') { if (S.fightSeg === 'events') loadEvents(true); else { S.fightSeg = 'targets'; loadTargets(); } }
@@ -412,8 +446,18 @@ function loadFor(tab) {
   if (NEWS_TABS.includes(tab)) loadNews();
   if (tab === 'news') { loadStocks(); loadEvents(false); }   // a página de Economia, a tira da bolsa e «a tua página» (quem te atacou)
 }
+// v90: que ecrãs se abrem (só o nome e quantas vezes), mandado de minuto a minuto e ao sair, para escolher os atalhos com dados
+const usoE = {};
+function usoEnviar() {
+  if (!Object.keys(usoE).length || !S.st?.me) return;
+  const e = { ...usoE }; for (const k of Object.keys(usoE)) delete usoE[k];
+  try { fetch('/api/uso', { method: 'POST', credentials: 'same-origin', keepalive: true, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ e }) }).catch(() => {}); } catch {}
+}
+setInterval(usoEnviar, 60_000);
+addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') usoEnviar(); });
 function go(tab) {
   if (!PLACES[tab]) tab = 'city';
+  if (tab !== S.tab) usoE[tab] = (usoE[tab] || 0) + 1;
   if (HUB[S.tab]?.some(([, ids]) => ids.includes(tab)) || (S.tab === 'fights' && (tab === 'arms' || tab === 'rank' || tab === 'gang'))) S.backTo = { ...(S.backTo || {}), [tab]: S.tab };
   if (tab !== S.tab) { S.armsAll = null; S.cvAll = null; }   // v87: as listas abertas («Ver as outras») fecham ao mudar de ecrã
   S.tab = tab; document.body.dataset.tab = tab; store.set('tab', tab); S.fxOpen = false;   // a lista dos bónus fecha ao mudar de ecrã, para não ficar a ocupar o topo
@@ -490,8 +534,7 @@ function tabDots() {
   const want = {
     fights: (S.events || []).some((e) => e.id > S.lastEventSeen),
     empire: (me.cf && me.cf.end <= n) || S.cfg.biz.some((b) => me.biz[S.cfg.biz.indexOf(b)]?.n > 0 && maqState(me, b.id) === 3) || (me.air && me.air.readyAt <= n) || me.port.some((c) => c.readyAt <= n) || me.biz.some((b, i) => b.n > 0 && storedNow(b, i) >= (b.perH * S.cfg.storageMs) / 3600000 / 2),
-    city: !!me.mission?.done || exReady(me) || me.feira?.levantar > 0 || !!me.dg,   // v80: um exame à espera; v84: o que levantar na feira
-    casino: !!me.bj,   // tens uma mão de blackjack por acabar
+    city: !!me.mission?.done || exReady(me) || me.feira?.levantar > 0 || !!me.dg || !!me.bj,   // v80: um exame à espera; v84: o que levantar na feira; v90: a mão de blackjack por acabar (o casino saiu da barra)
     rob: !!(me.op && me.op.ready <= n && !(me.op.miss || []).length),   // um golpe grande pronto para avançar
   };
   for (const id of NAV) {
@@ -587,13 +630,18 @@ function statNames(w) {
 // ---------- profissão ----------
 const myClass = () => S.cfg.classes.find((c) => c.id === S.st.me.cls) || {};
 const sickOf = (g) => Math.floor((g.sickBp * (10000 - (myClass().sickCutBp || 0))) / 10000);
+// v90: os bónus das profissões novas, contados como no servidor
+const cutBy = (x, bp) => Math.floor((x * (10000 - (bp || 0))) / 10000), upBy = (x, bp) => Math.floor((x * (10000 + (bp || 0))) / 10000);
+const recPrice = (r) => cutBy(r.price, myClass().recipeCutBp), recMs = (r) => cutBy(r.ms || 0, myClass().craftCutBp);
+const fenceOf = (x) => upBy(x, myClass().fenceBp);
+const fFeeBp = () => S.st.me.feiraFeeBp ?? S.cfg.feira.feeBp;
 function classLines(c) { return Object.keys(c).filter((k) => k !== 'id' && k !== 'need').map((k) => t('cb_' + k, { p: k === 'capPlus' ? c[k] : c[k] / 100 })); }
 function classCard(c, me, pick) {
   const locked = (c.need || 0) > me.peakRespect, cur = me.cls === c.id;
   return h('button', { class: 'item cls' + (pick === c.id ? ' sel' : '') + (locked ? ' lock' : '') + (cur ? ' cur' : ''), disabled: locked || cur, 'aria-pressed': pick === c.id ? 'true' : 'false', on: { click: () => { S.clsPick = c.id; render(); } } },
     art('classes', c.id), h('div', { class: 'nm' }, t('cl_' + c.id)),
     cur ? h('div', { class: 'small c-cash clsnow' }, t('clsNow')) : c.need ? h('div', { class: 'small clsneed ' + (locked ? 'c-red' : 'c-resp') }, icon(locked ? 'lock' : 'crown'), t('clsNeed', { n: num(c.need) })) : null,
-    h('ul', { class: 'perks' }, classLines(c).map((x) => h('li', null, x))));
+    h('ul', { class: 'perks' }, classLines(c).map((x) => { const i = x.indexOf(' '); return h('li', null, h('b', { class: 'c-cash num' }, x.slice(0, i)), x.slice(i)); })));   // v90: o número primeiro, a verde (é ganho)
 }
 function classGroups(me, pick, noHead) {
   const base = S.cfg.classes.filter((c) => !c.need), elite = S.cfg.classes.filter((c) => c.need);
@@ -2510,7 +2558,7 @@ function caveBench(me, preso) {
 function recipeRow(me, r, n, preso) {
   const comp = r.kind === 'comp', cash = me.cash + me.bank, bi = r.biz ? S.cfg.biz.findIndex((b) => b.id === r.biz) : -1;
   const V = S.cfg.craft.rev, ms = r.kind === 'maq' ? maqState(me, r.biz) : 0, mq = ms > 0;   // máquina já instalada: a linha passa a ser a da revisão
-  const price = mq ? V.price : r.price * n, needs = mq ? V.needs : r.needs;
+  const price = mq ? V.price : recPrice(r) * n, needs = mq ? V.needs : r.needs;
   const short = Object.entries(needs).some(([k, v]) => mtN(me, k) < v * (mq ? 1 : n)), busy = preso || (!comp && !mq && !!me.cf);
   let state = null, falta = null;
   const g = r.kind === 'tool' || r.kind === 'gun' || r.kind === 'gear' ? gearOf(r.id) : null, low = g && g.level && me.level < g.level;
@@ -2527,7 +2575,7 @@ function recipeRow(me, r, n, preso) {
     : r.kind === 'tool' ? t('matFor', { x: andList(S.cfg.ops.filter((o) => o.mat.includes(r.id)).map((o) => t('op_' + o.id))) }) + (g && g.craft ? ' · ' + t('cvOnly') : '')
     : r.kind === 'gun' ? t(g.gun ? 'cvGun' : 'cvMelee', { p: pctOf(g.atk) }) + (g.craft ? ' · ' + t('cvOnly') : '')
     : r.kind === 'gear' ? t('cvGear', { p: pctOf(g.def) }) : r.id === 'kit' ? t('cvKit') : null;
-  const when = mq ? t('cvRevLine', { d: V.ms / 864e5, m: money(price) }) : (comp ? '' : cvDur(r.ms) + ' · ') + money(price);
+  const when = mq ? t('cvRevLine', { d: V.ms / 864e5, m: money(price) }) : (comp ? '' : cvDur(recMs(r)) + ' · ') + money(price);
   // grelha: imagem | nome e para que serve | botão; por baixo, a toda a largura do texto, o que pede, o tempo e o preço
   return h('div', { class: 'vrow cvr' + (falta ? ' dim' : '') + (S.cvHi === r.id ? ' hi' : ''), id: 'cv-' + r.id }, crArt(r, 'vth'),
     h('div', { class: 'cvh' }, h('b', null, crIt(r.id) + (n > 1 ? ' ×' + n : '')), what ? h('div', { class: 'small muted' }, what) : null),
@@ -2696,10 +2744,10 @@ async function feiraSellSheet(it, relist) {
   const box = h('div', { class: 'stack' }), btn = h('button', { class: 'btn buy block big' }), got = h('p', { class: 'small muted' }), refP = h('p', { class: 'small muted' }), band = h('p', { class: 'small' });
   const k = () => (tipo === 'fixo' ? 1 : n), lo = () => B.lo * k(), hi = () => B.hi * k();
   const sync = () => {
-    const total = tipo === 'fixo' ? preco * n : preco, fee = Math.ceil((total * F.feeBp) / 10000), out = preco && (preco < lo() || preco > hi());
+    const total = tipo === 'fixo' ? preco * n : preco, fee = Math.ceil((total * fFeeBp()) / 10000), out = preco && (preco < lo() || preco > hi());
     band.textContent = t(tipo === 'fixo' ? 'fBand' : 'fBandLot', { a: money(lo()), b: money(hi()) });
     band.className = 'small ' + (out ? 'c-red' : 'muted');
-    got.textContent = preco && !out ? t(tipo === 'fixo' ? 'fGets' : 'fGetsAuc', { m: money(total - fee), f: F.feeBp / 100 }) : t('fFee', { f: F.feeBp / 100 });
+    got.textContent = preco && !out ? t(tipo === 'fixo' ? 'fGets' : 'fGetsAuc', { m: money(total - fee), f: fFeeBp() / 100 }) : t('fFee', { f: fFeeBp() / 100 });
     setBtn(btn, t(tipo === 'fixo' ? 'fListGo' : 'fAucGo')); btn.disabled = !preco || out;
   };
   const inp = euroInput('fpr', '', (x) => { preco = x; sync(); });
@@ -2765,10 +2813,10 @@ async function feiraFillSheet(kind, id) {
   const L = (f.item?.pedidos || []).find((x) => !x.meu && x.kind === kind);
   if (!L) { toast(t('fFillNone')); loadFeira(); return; }
   const dev = Math.max(Math.abs(L.preco - (L.ref ?? L.preco)), L.preco - (L.liq ?? L.ref ?? L.preco)), byLim = L.lim !== undefined && dev > 0 ? Math.floor(L.lim / dev) : Infinity;
-  const max = Math.min(have, L.n, byLim), fee = (v) => Math.ceil((v * F.feeBp) / 10000);
+  const max = Math.min(have, L.n, byLim), fee = (v) => Math.ceil((v * fFeeBp()) / 10000);
   let n = Math.max(1, max);
   const btn = h('button', { class: 'btn buy block big' }), got = h('p', { class: 'small muted' });
-  const sync = () => { const v = L.preco * n; setBtn(btn, t('fFillGo', { n, m: money(v - fee(v)) })); got.textContent = t('fFillGets', { m: money(v - fee(v)), f: F.feeBp / 100 }); btn.disabled = max < 1; };
+  const sync = () => { const v = L.preco * n; setBtn(btn, t('fFillGo', { n, m: money(v - fee(v)) })); got.textContent = t('fFillGets', { m: money(v - fee(v)), f: fFeeBp() / 100 }); btn.disabled = max < 1; };
   got.className = 'small c-cash';
   const close = sheet(h('div', { class: 'stack' }, fHead({ kind, id, n: 1 }, [h('p', { class: 'small num' }, t('fOrderRow', { m: money(L.preco) })), h('p', { class: 'small muted num' }, t('fOrderWho', { n: L.n, x: L.quem }))]),
     max > 1 ? qtyPick(n, max, (v) => { n = v; sync(); }, 'fMaxN') : null,
@@ -3487,8 +3535,8 @@ function gearRow(me, g) {
       g.gun && !gasta ? ' · ' + t('usesLeft', { u: worn.u, l: g.life }) : null);
     // o preço da reparação vai no botão, como o preço de comprar. v87: se fazer outra na cave sai mais barato, diz-se ao lado
     // e o botão de reparar deixa de ser o principal
-    const cvCheaper = rc && g.gun && worn.u < g.life && !mtN(me, 'kit') && me.repair[g.slot] > rc.price;
-    if (cvCheaper) extra = [extra, h('button', { class: 'lnk cvalt num', on: { click: () => { S.cvTab = 'gun'; S.cvHi = g.id; go('cave'); } } }, t('arCaveCraft', { m: money(rc.price) }) + ' ›')];
+    const cvCheaper = rc && g.gun && worn.u < g.life && !mtN(me, 'kit') && me.repair[g.slot] > recPrice(rc);
+    if (cvCheaper) extra = [extra, h('button', { class: 'lnk cvalt num', on: { click: () => { S.cvTab = 'gun'; S.cvHi = g.id; go('cave'); } } }, t('arCaveCraft', { m: money(recPrice(rc)) }) + ' ›')];
     if (g.gun && worn.u < g.life) right = mtN(me, 'kit') ? h('button', { class: 'btn sm ' + (gasta ? 'buy' : 'ghost'), on: { click: (e) => act('repair', { slot: g.slot, kit: true }, { el: e.currentTarget }) } }, t('repairKit'))
       : h('button', { class: 'btn sm num ' + (gasta && !cvCheaper ? 'buy' : 'ghost'), disabled: cash < me.repair[g.slot], on: { click: (e) => act('repair', { slot: g.slot }, { el: e.currentTarget }) } }, t('repairBtn') + ' · ' + money(me.repair[g.slot]));
   } else if (held >= 0) {
@@ -3501,7 +3549,7 @@ function gearRow(me, g) {
   } else if (lock) right = h('span', { class: 'small muted' }, t('arNeedLvl', { n: g.level }));
   else {
     if (swap) extra = h('div', { class: 'small c-red' }, t('noRoomSwap'));
-    else if (rc) extra = h('div', { class: 'small muted num' }, t('arCaveCraft', { m: money(rc.price) }));   // v87: fazer na cave sai a metade
+    else if (rc) extra = h('div', { class: 'small muted num' }, t('arCaveCraft', { m: money(recPrice(rc)) }));   // v87: fazer na cave sai a metade
     // o botão tem o preço: é a etiqueta de uma loja
     const pr = gearP(g);   // v76: com a lei das armas livres, as de mão, principais e brancas ficam mais baratas
     right = h('button', { class: 'btn sm ghost num', 'aria-label': t('buyAria', { x: t('g_' + g.id), m: money(pr) }), disabled: cash < pr || swap, on: { click: (e) => act('buy', { id: g.id }, { el: e.currentTarget }) } }, t('buy') + ' · ' + money(pr));
@@ -3589,7 +3637,7 @@ function screenInv() {
     if (good) { detail = t('itGoods', { n: it.n, m: money(it.v) }); sell = it.v; }
     else if (it.id === 'balas') { detail = t('itBullets', { n: num(it.n) }); sell = Math.floor((it.n * B.price) / (B.box * 2)); }
     else if (g.slot === 'mat') { detail = t('sl_mat') + ' · ' + t('matFor', { x: andList(S.cfg.ops.filter((o) => o.mat.includes(g.id)).map((o) => t('op_' + o.id))) }); sell = Math.floor(g.price / 2); }
-    else { detail = t('sl_' + g.slot) + (g.gun ? ' · ' + (it.u > 0 ? t('usesLeft', { u: it.u, l: g.life }) : t('gunWorn')) : ''); sell = Math.floor((g.price * (g.gun ? it.u / g.life : 1)) / 2); }
+    else { detail = t('sl_' + g.slot) + (g.gun ? ' · ' + (it.u > 0 ? t('usesLeft', { u: it.u, l: g.life }) : t('gunWorn')) : ''); sell = fenceOf(Math.floor((g.price * S.cfg.loot.gearSellBp * (g.gun ? it.u / g.life : 1)) / 10000)); }
     // trocar por pior: diz-se antes de tocar em «Usar»
     const on = g && me.eq[g.slot] ? gearOf(me.eq[g.slot].id) : null, k2 = g && (g.atk ? 'atk' : g.def ? 'def' : null);
     const pior = on && k2 && on[k2] > g[k2] ? h('div', { class: 'small c-red num' }, t('worseThan', { p: pctOf(g[k2]), q: pctOf(on[k2]) })) : null;
@@ -4979,6 +5027,7 @@ function openProfile() {
     me.ep && ep ? h('button', { class: 'pep', on: { click: () => { close(); S.rankView = 'epoca'; S.rankDiv = null; go('rank'); } } },
       h('b', null, t('seasonN', { n: ep.n + 1 })), h('span', null, (S.st.rank ? t('pepPos', { p: ordOf(S.st.rank), x: divName(me.ep.div) }) : t('pepDiv', { x: divName(me.ep.div) })) + ' · ' + t('pepResp', { r: num(me.ep.score) })),
       h('span', { class: 'small muted' }, t('pepLeft', { t: nb(leftTxt(ep.end - now())) })), h('span', { class: 'chev', 'aria-hidden': 'true' }, '›')) : null,
+    h('div', { class: 'hstats pstats' }, ['F', 'I', 'C', 'T'].map((s) => h('span', null, icon(STAT_IC[s]), ' ' + t('stat' + s) + ' ', h('b', { class: 'num' }, short(me.stats[s]))))),   // v90: os atributos (saíram do topo)
     me.cls ? h('p', { class: 'small muted', style: 'margin:0' }, t('cl_' + me.cls) + ' · ' + classLines(S.cfg.classes.find((c) => c.id === me.cls)).join(' · ')) : null,
     me.cls ? h('button', { class: 'btn sm', style: 'justify-self:start', on: { click: () => { close(); go('work'); } } }, t('clsChangeT')) : null,
     S.avOk ? h('h2', { class: 'sec', style: 'margin-top:10px' }, t('avatar')) : null,

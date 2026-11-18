@@ -899,7 +899,7 @@ test('profissões: as de elite pedem respeito, mudar custa o anunciado, só de 2
   // as profissões de elite dão mais do que a de rua do mesmo ofício, e nenhuma tem bónus desconhecidos
   assert.ok(cls('mestre').lootBp > cls('ladrao').lootBp && cls('padrinho').lootBp > cls('mestre').lootBp);
   assert.ok(cls('blindado').defBp > cls('seguranca').defBp && cls('carniceiro').atkBp > cls('matador').atkBp && cls('barao').drugCutBp > cls('traficante').drugCutBp && cls('magnata').bizBp > cls('empresario').bizBp);
-  const conhecidos = ['id', 'need', 'lootBp', 'bustCutBp', 'bailCutBp', 'drugCutBp', 'fxMoreBp', 'capPlus', 'bizBp', 'feeCutBp', 'atkBp', 'pvpBp', 'defBp', 'hospCutBp', 'hkCutBp', 'sickCutBp', 'seizeCutBp', 'respBp'];
+  const conhecidos = ['id', 'need', 'lootBp', 'bustCutBp', 'bailCutBp', 'drugCutBp', 'fxMoreBp', 'capPlus', 'bizBp', 'feeCutBp', 'atkBp', 'pvpBp', 'defBp', 'hospCutBp', 'hkCutBp', 'sickCutBp', 'seizeCutBp', 'respBp', 'broBp', 'cargoBp', 'craftCutBp', 'recipeCutBp', 'fenceBp', 'feiraFeeCutBp', 'colBp'];   // v90
   for (const c of CFG.classes) for (const k of Object.keys(c)) { assert.ok(conhecidos.includes(k), `bónus desconhecido ${k} em ${c.id}`); if (k !== 'id' && k !== 'need' && k !== 'capPlus' && k !== 'fxMoreBp') assert.ok(c[k] > 0 && c[k] <= 10000); }
   assert.equal(new Set(CFG.classes.map((c) => c.id)).size, CFG.classes.length);
 });
