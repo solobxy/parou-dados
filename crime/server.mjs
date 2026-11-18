@@ -29,7 +29,7 @@ const RONDA_TESTE = process.env.PRIMEIRA_RONDA ? dataDe(process.env.PRIMEIRA_RON
 // Épocas de 28 dias a contar da sexta 13/11/2026 às 21:00 de Lisboa (PRIMEIRA_EPOCA=AAAA-MM-DD muda-a, para testes)
 const ANCORA = dataDe(process.env.PRIMEIRA_EPOCA || process.env.PRIMEIRA_RONDA || '2026-11-13');
 const rng = process.env.TESTE_SEMENTE ? seededRng(+process.env.TESTE_SEMENTE) : cryptoRng();   // nos testes, a sorte pode ser sempre a mesma
-const VERSAO = 99;   // sobe quando o servidor muda, para se confirmar de fora que a versão nova já está a correr
+const VERSAO = 100;   // sobe quando o servidor muda, para se confirmar de fora que a versão nova já está a correr
 const ATOS_3S = +(process.env.ATOS_3S || 15), ATOS_MIN = +(process.env.ATOS_MIN || 400); // ações por conta: 15 em 3 s, 400 por minuto
 
 // ---------- relógio que nunca anda para trás ----------
@@ -505,6 +505,7 @@ function vista(p, now) {
     cd: { est: E.consumWait(p, 'est', now), med: E.consumWait(p, 'med', now) },   // v78: quanto falta na espera de cada família
     mt: p.mt, cf: p.cf, maq: p.maq,   // v83: depósito, bancada e máquinas
     dg: E.digView(p, now), dgc: p.dgc, arq: E.stLevel(p, 'arqueologia'),   // v85: a escavação aberta (sem a grelha), os sítios vigiados, o nível de Arqueologia
+    hon: p.hon || {}, honSel: p.honSel || null, honv: E.honorVals(p),   // v100: honras ganhas, a escolhida e os números de todas
     hn: E.huntView(p, now), hk: p.hunt.sk, ht: p.hunt.tr, hfc: p.hunt.fc, hq: Object.fromEntries(CFG.hunt.sites.map((x) => [x.id, E.huntQuotaLeft(p, now, x.id)])),   // v98: a saída de caça, a perícia (milésimos), os troféus, as reservas vigiadas e as saídas com licença que faltam hoje
     feira: { levantar: qf.nParaMim.get(ronda, p.id).n },   // v84: o que está à espera de ser levantado na feira
     col: p.col, mus: p.mus, musEp: p.musEp || {},   // v79: a vitrine, as entregas ao museu e em que época entrou na placa
@@ -556,7 +557,7 @@ function cfgPublica() {
     bustBp: CFG.bustBp, crimeAllMax: CFG.crimeAllMax, casino: { minBet: CFG.casino.minBet, limits: CFG.casino.limits, slotMinC: CFG.casino.slotMinC, red: CFG.casino.red, dice: CFG.casino.dice, wheel: { segs: CFG.casino.wheel.segs, spots: CFG.casino.wheel.spots, topMult: CFG.casino.wheel.topMult.map(([m]) => m), louca: CFG.casino.wheel.louca }, slots: Object.fromEntries(Object.entries(CFG.casino.slots).map(([k, g]) => [k, { kind: g.kind, cols: g.cols, rows: g.rows, min: g.min, nsym: g.nsym, trig: g.trig, pay: g.pay, scatPay: g.scatPay, free: g.free, fs: g.fs, retrig: g.retrig, buy: g.buy, superBuy: g.superBuy, max: g.max, accFree: g.accFree, accAll: g.accAll, orbBase: g.orbBase }])) }, gang: CFG.gang, classes: CFG.classes, classChange: CFG.classChange, avatars: CFG.avatars, hookers: CFG.hookers, house: CFG.house, mastery: CFG.mastery, missions: CFG.missions.length, start: CFG.start,
     round: { playDays: CFG.round.playDays, noPvpMs: CFG.round.noPvpMs, newbieShieldMs: CFG.round.newbieShieldMs }, season: CFG.season, raid: CFG.raid,   // v91: a wiki
     consum: CFG.consum, col: CFG.col, gyms: CFG.gyms, books: CFG.books,   // v94, v95
-    mat: CFG.mat, craft: CFG.craft, feira: { ...CFG.feira, refs: FEIRA_REFS }, dig: CFG.dig, hunt: CFG.hunt,   // v83, v84, v98
+    mat: CFG.mat, craft: CFG.craft, feira: { ...CFG.feira, refs: FEIRA_REFS }, dig: CFG.dig, hunt: CFG.hunt, honors: E.HONORS,   // v83, v84, v98, v100
     exam: (({ ans: _a, ...x }) => x)(CFG.exam), studies: CFG.studies,   // v81: a Universidade   // v80: as regras do exame, sem as respostas certas
     gov: { vote: CFG.gov.vote, laws: CFG.gov.laws, cof: CFG.gov.cof, parties: Object.fromEntries(Object.entries(CFG.gov.parties).map(([k, x]) => [k, { pos: x.pos, wOp: x.wOp, wLob: x.wLob }])) },   // v76: o parlamento
   };
@@ -1593,6 +1594,7 @@ function agir(conta, corpo, now) {
   E.setGov(mk0 ? GV.govSnapshot(mk0.w.gov) : null);   // v76: as leis em vigor e a corrupção, para as regras desta ação
   const a = corpo || {};
   let r, alvo = null, alvoResp0 = 0, mesa = null;
+  const hPre = { j: p.jailUntil > now, h: p.hospUntil > now };   // v100: para as honras contarem prisões e hospital novos
   const ctx = { outros: [], ops: [], depois: [] };   // o que as gangues têm de gravar no mesmo passo
   const resp0 = p.respect, din0 = dinheiro(p), av0 = p.avN || 0;
   switch (a.type) {
@@ -1647,6 +1649,7 @@ function agir(conta, corpo, now) {
     case 'huntLook': r = E.huntLook(p, now, world, rng); break;
     case 'huntNear': r = recordesCaca(mk0, p, now, E.huntNear(p, now, world, rng)); break;
     case 'huntShoot': r = recordesCaca(mk0, p, now, E.huntShoot(p, now, world, rng, Number(a.at))); if (r.caught) noticia(now, { k: 'hcaught', name: nomeDe(p.id), site: r.site }); break;
+    case 'honorPick': r = E.honorPick(p, now, world, a.id === null ? null : String(a.id || '').slice(0, 64)); break;   // v100
     case 'huntStop': r = recordesCaca(mk0, p, now, E.huntStop(p, now, world)); break;
     case 'gymDone': r = E.gymDone(p, now, world, Array.isArray(a.taps) ? a.taps.slice(0, 64) : null); break;
     case 'craftStart': r = E.craftStart(p, now, world, String(a.id || ''), a.n === undefined ? 1 : int(a.n)); break;   // v83: a cave
@@ -1797,6 +1800,8 @@ function agir(conta, corpo, now) {
     const net = casinoNet(r), L = CFG.gov.laws.jogo;
     if (net > L.over) { const tax = Math.min(p.cash, Math.floor(((net - L.over) * L.bp) / 10000)); p.cash -= tax; r = { ...r, tax }; }
   }
+  // v100: honras: os contadores novos e as que se ganharam com esta ação
+  if (r && typeof r === 'object') { E.honorTrack(p, now, hPre, a.type, r); const nh = E.honorsCheck(p, now); if (nh.length) r = { ...r, hon: nh }; }
   db.exec('BEGIN');
   try {
     guardar(p, now);
@@ -1829,7 +1834,7 @@ function agir(conta, corpo, now) {
 // ---------- listas ----------
 // Duas classificações: a da época (o respeito ganho nela, dentro de cada divisão) e a geral (o respeito todo, para sempre).
 const vet = (p) => p.titles?.some((x) => x.k === 'vet') || false;
-const linhaRank = (p, i, score) => ({ pos: i + 1, id: p.id, name: nomeDe(p.id), respect: p.respect, level: E.level(p), av: p.av || 0, cls: p.cls || '', tag: tagDe(p.id), score, vet: vet(p) });
+const linhaRank = (p, i, score) => ({ pos: i + 1, id: p.id, name: nomeDe(p.id), respect: p.respect, level: E.level(p), av: p.av || 0, cls: p.cls || '', tag: tagDe(p.id), score, vet: vet(p), hon: p.honSel || null });   // v100: a barra escolhida
 // v89 (teste de carga): as classificações guardam a ordem e a posição de cada um (cache de 5 s); as linhas (nome, gangue…) só se
 // fazem para o que se mostra. Antes faziam-se para toda a gente a cada 5 s, e o estado só precisava do total.
 let cacheRank = { t: 0, n: -1, size: 0, arr: [], pos: new Map() };
@@ -1946,7 +1951,7 @@ function alvos(conta, now, w) {
   const arr = indiceJogadores(now).resp, motivoDe = (d) => (d.id === me.id ? 'SELF' : E.canAttack(livre, d, now, mundo1));
   for (const d of pertoDe(arr, Math.max(1, me.respect * 2), ALVOS_K, (d) => { const m = motivoDe(d); return !m || m === 'NO_PVP_YET'; })) {
     lista.push({
-      name: nomeDe(d.id), level: E.level(d), respect: d.respect, av: d.av || 0, cls: d.cls || '', tag: tagDe(d.id),
+      name: nomeDe(d.id), level: E.level(d), respect: d.respect, av: d.av || 0, cls: d.cls || '', tag: tagDe(d.id), hon: d.honSel || null,
       chance: E.attackChanceBp(me, d, now), gain: E.expectedGain(me, d, now), loot: E.mugValue(me, d, now),
       hp: E.hitmanPrice(d), hc: E.hitmanChanceBp(d), hw: E.canHitman({ ...me, shieldUntil: 0 }, d, now, mundo1),
     });

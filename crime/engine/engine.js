@@ -57,7 +57,7 @@ export function newPlayer(id, now, world, opts = {}) {
     mi: 0,                         // objetivos já recebidos
     mq: CFG.missions.map((_, i) => i), mrT: 0,   // os que faltam, pela ordem em que vão aparecer; e quando se trocou pela última vez
     titles: [],                    // títulos que ficam para sempre: { k: 'vet' } (veterano das rondas), { k: 'ep', n, d, pos } (pódio de uma época)
-    cls: '', clsAt: 0, av: 0, fx: {}, sick: false, hkN: CFG.hookers.list.map(() => 0), hkAt: CFG.hookers.list.map(() => 0), house: 0, hu: CFG.house.ups.map(() => 0), bj: null, wm: {}, cd: { est: 0, med: 0 }, col: {}, mus: {}, sx: { F: 0, T: 0, I: 0, C: 0 }, gs: null, gym: 'garagem', gyms: ['garagem'], gx: 0, bk: { own: {}, rd: null, on: null, done: {}, last: null, n: 0, bd: null }, mt: {}, cf: null, maq: {}, dg: null, dgc: {}, hunt: { on: null, sk: 0, tr: {}, day: '', q: {}, fc: {}, n: 0 },        // profissão, avatar e efeitos temporários (kind -> { bp, until })
+    cls: '', clsAt: 0, av: 0, fx: {}, sick: false, hkN: CFG.hookers.list.map(() => 0), hkAt: CFG.hookers.list.map(() => 0), house: 0, hu: CFG.house.ups.map(() => 0), bj: null, wm: {}, cd: { est: 0, med: 0 }, col: {}, mus: {}, sx: { F: 0, T: 0, I: 0, C: 0 }, gs: null, gym: 'garagem', gyms: ['garagem'], gx: 0, bk: { own: {}, rd: null, on: null, done: {}, last: null, n: 0, bd: null }, mt: {}, cf: null, maq: {}, dg: null, dgc: {}, hunt: { on: null, sk: 0, tr: {}, day: '', q: {}, fc: {}, n: 0 }, hon: {}, honSel: null, cx: { air: {}, wt: [] },        // profissão, avatar e efeitos temporários (kind -> { bp, until })
   };
 }
 
@@ -86,6 +86,9 @@ function migrate(p) {
   if (p.dg === undefined || (p.dg && typeof p.dg !== 'object')) p.dg = null;   // v85: a escavação aberta
   if (p.dg && !Number.isSafeInteger(p.dg.safe)) p.dg.safe = CFG.dig.safe;
   if (!p.dgc || typeof p.dgc !== 'object' || Array.isArray(p.dgc)) p.dgc = {};   // v85: até quando cada sítio está vigiado
+  if (!p.hon || typeof p.hon !== 'object' || Array.isArray(p.hon)) p.hon = {};   // v100: honras (id -> quando)
+  if (!p.cx || typeof p.cx !== 'object' || !p.cx.air || !Array.isArray(p.cx.wt)) p.cx = { air: {}, wt: [] };   // v100: voos por rota e tipos de arma usados (para as honras)
+  if (p.honSel !== null && (typeof p.honSel !== 'string' || !p.hon[p.honSel])) p.honSel = null;
   if (!p.hunt || typeof p.hunt !== 'object' || Array.isArray(p.hunt)) p.hunt = { on: null, sk: 0, tr: {}, day: '', q: {}, fc: {}, n: 0 };   // v98: caça (saída aberta, perícia em milésimos, troféus, saídas com licença do dia, reservas vigiadas)
   if (!p.c) p.c = { crimes: 0, wins: 0, trains: 0, refills: 0, collects: 0, pvpWins: 0, ports: 0 };
   if (!Number.isSafeInteger(p.mi)) p.mi = 0;
@@ -1866,6 +1869,118 @@ function huntClose(p, now) {
   const lvl = addRespect(p, resp, now);
   p.hunt.on = null;
   return { site: h.site, mode: h.mode, bag, cash, resp, firsts, best, xp: p.hunt.sk - (h.sk0 ?? p.hunt.sk), ...(lvl ? { levelUp: lvl } : {}) };   // xp: perícia ganha na saída (milésimos)
+}
+
+// ---------- honras (v100) ----------
+// A lista sai da configuração: uma honra por degrau de cada número, ou uma por cada coisa de uma lista (golpes, stats, negócios,
+// casas, luxos, rotas, espécies, reservas, conjuntos do museu, cursos, tipos de arma). id = m + '_' + (coisa) + ('_' + degrau).
+const HON_EACH = {
+  crimes: () => CFG.crimes.map((c) => c.id), stats: () => STATS, biz: () => CFG.biz.map((b) => b.id), house: () => CFG.house.tiers.slice(1).map((x) => x.id),
+  lux: () => CFG.luxury.list.map((x) => x.id), routes: () => CFG.air.routes.map((x) => x.id), species: () => Object.keys(CFG.hunt.sp), reserves: () => CFG.hunt.sites.map((x) => x.id),
+  sets: () => Object.keys(CFG.col.sets), courses: () => CFG.courses.map((c) => c.id),
+  wtypes: () => [...new Set(CFG.gear.filter((g) => g.t).map((g) => g.t))],
+};
+// d: a dificuldade (0 a 1), que dá a moldura: o degrau na série, ou, nas de um só passo, a posição da coisa na lista (as listas vão
+// do mais fácil ao mais difícil; os negócios pelo preço, os cursos pelo nível). s: o número da série dentro da categoria (o desenho
+// é o mesmo em toda a série; o degrau muda a moldura e a força do padrão).
+const honDiff = (H, k, ks) => {
+  if (H.each === 'biz') { const L = [...CFG.biz].sort((a, b) => a.price - b.price); return (L.findIndex((b) => b.id === k) + 1) / L.length; }
+  if (H.each === 'courses') { const c = CFG.courses.find((x) => x.id === k); return c.lv ? c.lv / 3 : 0.5; }
+  if (H.each === 'species') { const L = Object.entries(CFG.hunt.sp).sort((a, b) => a[1].v - b[1].v); return (L.findIndex(([id]) => id === k) + 1) / L.length; }
+  return (ks.indexOf(k) + 1) / ks.length;
+};
+const HON_SERIES = {};
+export const HONORS = CFG.honors.flatMap((H) => {
+  const ks = H.each ? HON_EACH[H.each]() : [null], at = H.at || [1];
+  return ks.flatMap((k) => {
+    const sIdx = (HON_SERIES[H.cat] = (HON_SERIES[H.cat] ?? -1) + 1);
+    return at.map((n, j) => ({ id: H.m + (k ? '_' + k : '') + (at.length > 1 ? '_' + n : ''), m: H.m, cat: H.cat, k, at: n, t: j + 1, of: at.length, s: sIdx,
+      d: Math.round((at.length > 1 ? (j + 1) / at.length : honDiff(H, k, ks)) * 100) / 100 }));
+  });
+});
+const HON_BY_ID = new Map(HONORS.map((x) => [x.id, x]));
+export const honorOf = (id) => (typeof id === 'string' ? HON_BY_ID.get(id) : undefined);
+// o número de cada honra
+export function honorVal(p, m, k) {
+  const c = p.c || {};
+  switch (m) {
+    case 'crimes': return c.crimes || 0;
+    case 'wk': return p.wk[CFG.crimes.findIndex((x) => x.id === k)] || 0;
+    case 'crits': return c.crits || 0;
+    case 'pvp': return c.pvpWins || 0;
+    case 'hosp': return c.hosp || 0;
+    case 'trains': return c.trains || 0;
+    case 'stat': return p.stats[k] || 0;
+    case 'stats': return STATS.reduce((s, x) => s + (p.stats[x] || 0), 0);
+    case 'gyms': return (p.gyms || []).length;
+    case 'level': return level(p);
+    case 'nw': return Math.max(c.nw || 0, p.cash + p.bank);
+    case 'bizn': return p.biz.reduce((s, b) => s + b.n, 0);
+    case 'biz': return p.biz[CFG.biz.findIndex((b) => b.id === k)]?.n || 0;
+    case 'house': return (p.house || 0) >= CFG.house.tiers.findIndex((x) => x.id === k) ? 1 : 0;
+    case 'lux': return (p.luxuries || 0) > CFG.luxury.list.findIndex((x) => x.id === k) ? 1 : 0;
+    case 'collects': return c.collects || 0;
+    case 'ports': return c.ports || 0;
+    case 'air': return (p.cx && p.cx.air[k]) || 0;
+    case 'hunts': return p.hunt.n || 0;
+    case 'kills': return c.kills || 0;
+    case 'sp': return p.hunt.tr[k]?.n || 0;
+    case 'gold': return Object.values(p.hunt.tr).filter((x) => x.md === 3).length;
+    case 'hsk': return huntSk(p);
+    case 'res': { const S = huntSite(k); return [...S.sp, ...S.prot].every(([id]) => p.hunt.tr[id]?.n) ? 1 : 0; }
+    case 'mus': return p.mus[k] || 0;
+    case 'musn': return Object.values(p.mus).reduce((s, n) => s + n, 0);
+    case 'digs': return c.digs || 0;
+    case 'course': return p.done.includes(k) ? 1 : 0;
+    case 'books': return Object.keys(p.bk.done || {}).length;
+    case 'jail': return c.jail || 0;
+    case 'esc': return c.esc || 0;
+    case 'wt': return p.cx && p.cx.wt.includes(k) ? 1 : 0;
+    case 'mods': return c.mods || 0;
+    case 'missions': return p.mi || 0;
+    case 'refills': return c.refills || 0;
+  }
+  return 0;
+}
+// os números novos que as honras pedem, contados pelo servidor depois de cada ação (pre: preso e internado antes da ação)
+export function honorTrack(p, now, pre, type, r) {
+  const c = p.c;
+  if (!r) return;
+  if (type === 'crime' && r.crit) c.crits = (c.crits || 0) + 1;
+  if (type === 'crimeAll' && r.crits > 0) c.crits = (c.crits || 0) + r.crits;
+  if (!p.cx || typeof p.cx !== 'object') p.cx = { air: {}, wt: [] };
+  if (type === 'airCollect' && !r.seized && Number.isInteger(r.r) && CFG.air.routes[r.r]) { const id = CFG.air.routes[r.r].id; p.cx.air[id] = (p.cx.air[id] || 0) + 1; }
+  if (type === 'digStart' && r.ok) c.digs = (c.digs || 0) + 1;
+  if (type === 'jailEscape' && r.free) c.esc = (c.esc || 0) + 1;
+  if (type === 'modFit' && r.ok) c.mods = (c.mods || 0) + 1;
+  if (!pre.j && p.jailUntil > now) c.jail = (c.jail || 0) + 1;
+  if (!pre.h && p.hospUntil > now) c.hosp = (c.hosp || 0) + 1;
+  for (const s of ['branca', 'mao', 'principal']) { const g = p.eq[s] && gearOf(p.eq[s].id); if (g && g.t && !p.cx.wt.includes(g.t)) p.cx.wt.push(g.t); }
+}
+// dá as honras que faltam e devolve as novas (ficam para sempre; o maior património também)
+export function honorsCheck(p, now) {
+  if (!p.hon || typeof p.hon !== 'object' || Array.isArray(p.hon)) p.hon = {};
+  p.c.nw = Math.max(p.c.nw || 0, p.cash + p.bank);
+  const memo = new Map(), out = [];
+  for (const h of HONORS) {
+    if (p.hon[h.id]) continue;
+    const key = h.m + ':' + h.k;
+    if (!memo.has(key)) memo.set(key, honorVal(p, h.m, h.k));
+    if (memo.get(key) >= h.at) { p.hon[h.id] = now; out.push(h.id); }
+  }
+  return out;
+}
+// os números de todas as honras, para o site mostrar quanto falta
+export function honorVals(p) {
+  const o = {};
+  for (const h of HONORS) { const key = h.m + (h.k ? ':' + h.k : ''); if (!(key in o)) o[key] = honorVal(p, h.m, h.k); }
+  return o;
+}
+// escolher a barra que se mostra (null tira)
+export function honorPick(p, now, world, id) {
+  if (id !== null && !(typeof id === 'string' && honorOf(id) && p.hon && p.hon[id])) fail('NO_HONOR');
+  p.honSel = id;
+  return { ok: true, id };
 }
 
 // ---------- Feira da Ladra (v84) ----------
@@ -4033,6 +4148,8 @@ export function checkInvariants(p) {
   if (bookOwned(p) > CFG.books.cap) bad.push('books>cap');
   if (p.bk.rd && (!bookOf(p.bk.rd.id) || !(p.bk.rd.end > p.bk.rd.t0))) bad.push('book reading');
   if (p.bk.on && (!bookOf(p.bk.on.id) || !Number.isSafeInteger(p.bk.on.until))) bad.push('book on');
+  if (p.hon) for (const k of Object.keys(p.hon)) if (!honorOf(k) || !Number.isSafeInteger(p.hon[k])) bad.push('hon ' + k);   // v100
+  if (p.honSel != null && !(p.hon && p.hon[p.honSel])) bad.push('honSel');
   if (p.biz.length !== CFG.biz.length) bad.push('biz length');
   p.biz.forEach((s, i) => {
     for (const k of ['n', 'stored', 'rem', 't']) if (!Number.isSafeInteger(s[k]) || s[k] < 0) bad.push(`biz.${k}=${s[k]}`);

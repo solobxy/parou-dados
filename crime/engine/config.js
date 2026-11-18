@@ -1003,6 +1003,48 @@ export const CFG = {
       { id: 'limpopo', level: 35, fee: 400, ranger: 1500, jail: 120, lawyer: 10000, sp: [['facoquero', 30], ['impala', 35], ['kudu', 25], ['bufalo', 10]], prot: [['rinoceronte', 5]] },
     ],
   },
+  // v100: honras, à maneira das «honor bars» do Torn: centenas de barras, todas diferentes, cada uma por uma conquista. Ficam para
+  // sempre (mesmo que o número depois desça) e escolhe-se uma para mostrar no perfil e nas classificações. Não dão dinheiro.
+  // m: o número que se mede (ver honorVal no motor); at: os degraus; each: uma honra por cada coisa da lista (o degrau é at, ou 1).
+  // Os contadores novos (golpes perfeitos, prisões, fugas, hospital, voos por rota, escavações, armas por tipo, acessórios) contam a
+  // partir da v100.
+  honors: [
+    { m: 'crimes', cat: 'rua', at: [10, 50, 100, 250, 500, 1000, 2500, 5000, 10000, 25000] },
+    { m: 'wk', cat: 'rua', each: 'crimes', at: [25, 100, 500, 2000] },
+    { m: 'crits', cat: 'rua', at: [1, 10, 50, 250, 1000] },
+    { m: 'pvp', cat: 'lutas', at: [1, 5, 25, 100, 250, 500, 1000] },
+    { m: 'hosp', cat: 'lutas', at: [1, 10, 50] },
+    { m: 'trains', cat: 'ginasio', at: [25, 100, 500, 2500, 10000] },
+    { m: 'stat', cat: 'ginasio', each: 'stats', at: [100, 500, 1000, 2500, 5000, 10000, 25000] },
+    { m: 'stats', cat: 'ginasio', at: [500, 2500, 10000, 50000] },
+    { m: 'gyms', cat: 'ginasio', at: [3, 8, 15, 25, 30] },
+    { m: 'level', cat: 'nivel', at: [2, 5, 10, 15, 20, 25, 30, 40, 50, 60, 70, 80, 90, 100] },
+    { m: 'nw', cat: 'dinheiro', at: [10000, 50000, 100000, 500000, 1000000, 5000000, 10000000, 50000000, 100000000, 1000000000] },
+    { m: 'bizn', cat: 'imperio', at: [1, 3, 5, 10, 20, 40] },
+    { m: 'biz', cat: 'imperio', each: 'biz' },
+    { m: 'house', cat: 'imperio', each: 'house' },
+    { m: 'lux', cat: 'imperio', each: 'lux' },
+    { m: 'collects', cat: 'imperio', at: [10, 100, 500, 2500] },
+    { m: 'ports', cat: 'viagens', at: [1, 10, 50, 200] },
+    { m: 'air', cat: 'viagens', each: 'routes', at: [1, 10, 50] },
+    { m: 'hunts', cat: 'caca', at: [1, 10, 50, 100, 250, 500, 1000] },
+    { m: 'kills', cat: 'caca', at: [1, 10, 50, 100, 250, 500, 1000] },
+    { m: 'sp', cat: 'caca', each: 'species' },
+    { m: 'gold', cat: 'caca', at: [1, 3, 5, 10, 20] },
+    { m: 'hsk', cat: 'caca', at: [10, 25, 50, 75, 90, 100] },
+    { m: 'res', cat: 'caca', each: 'reserves' },
+    { m: 'mus', cat: 'museu', each: 'sets' },
+    { m: 'musn', cat: 'museu', at: [1, 5, 10, 25] },
+    { m: 'digs', cat: 'museu', at: [1, 10, 50, 100] },
+    { m: 'course', cat: 'estudos', each: 'courses' },
+    { m: 'books', cat: 'estudos', at: [1, 3, 10, 26] },
+    { m: 'jail', cat: 'prisao', at: [1, 10, 50, 200] },
+    { m: 'esc', cat: 'prisao', at: [1, 5, 25] },
+    { m: 'wt', cat: 'arsenal', each: 'wtypes' },
+    { m: 'mods', cat: 'arsenal', at: [1, 10, 50] },
+    { m: 'missions', cat: 'missoes', at: [5, 10, 20, 30] },
+    { m: 'refills', cat: 'missoes', at: [10, 100, 1000] },
+  ],
   courses: [
     { id: 'vigilante', price: 570, days: 2 },
     { id: 'pesados', price: 1500, days: 4 },            // carta de pesados e curso

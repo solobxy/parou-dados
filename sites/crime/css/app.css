@@ -3690,3 +3690,37 @@ body h2.sec { font-size: 16px; }
 .htmimg { display: block; width: 44px; height: 44px; border-radius: 6px; object-fit: cover; }
 .htmi.none .htmimg { filter: grayscale(1) brightness(.4); }
 .htmi.prot .htmimg { outline: 1.5px solid var(--vice); outline-offset: -1.5px; }
+
+/* ===== v100: honras ===== */
+.hbar { display: block; width: 100%; max-width: 360px; height: auto; aspect-ratio: 300 / 64; }
+.hbar.lock { filter: grayscale(1) brightness(.5); }
+.hbar.big { max-width: 380px; }
+.hbar.mini { max-width: 150px; margin-top: 4px; }
+.honsel { display: grid; gap: 6px; justify-items: start; margin: 0 0 16px; }
+
+.honcat { margin: 0 0 18px; }
+.honcat .row .sec { margin: 0; }
+.honlist { display: grid; gap: 10px; margin-top: 8px; }
+.honb { display: grid; gap: 3px; justify-items: start; background: none; border: 0; padding: 4px; margin: -4px; border-radius: 12px; text-align: left; color: inherit; cursor: pointer; }
+.honb.on { box-shadow: 0 0 0 2px var(--cash); }
+.honb:focus-visible { outline: 2px solid var(--tx); outline-offset: 2px; }
+.honnext { display: grid; gap: 10px; margin-top: 10px; }
+.honn { display: grid; gap: 3px; padding: 8px 10px; border-radius: 10px; background: var(--s1); box-shadow: inset 0 0 0 1px var(--line); }
+.honn .row { gap: 8px; align-items: baseline; }
+.honn b { font-size: 15px; }
+.honn .fill { height: 6px; }
+.rk .hbar.mini { max-width: 120px; }
+.honmore { margin-top: 8px; }
+.hbar.f-plat { filter: drop-shadow(0 0 6px #7fd6ffaa); }
+.hbar.lock { filter: grayscale(1) brightness(.55); opacity: .9; }
+.honsum { width: 100%; max-width: 380px; }
+.linkbtn { background: none; border: 0; padding: 0 2px; min-height: 44px; color: var(--tx2); text-decoration: underline; font: inherit; cursor: pointer; }
+.honcat h2.sec .small { margin-left: auto; font-weight: 600; }
+.honn .hbar { max-width: 300px; }
+.honpbtn { display: flex; align-items: center; gap: 8px; width: 100%; background: none; border: 0; padding: 0; color: inherit; text-align: left; min-height: 44px; cursor: pointer; }
+.honpbtn .hbar { flex: 1 1 auto; }
+.honpbtn .chev { color: var(--tx2); font-size: 22px; flex: none; }
+.rkhon { display: inline-flex; vertical-align: middle; background: none; border: 0; padding: 0 0 0 6px; min-height: 0; cursor: pointer; }
+.hemb { width: 26px; height: 26px; flex: none; }
+.thon { display: inline-flex; align-items: center; gap: 8px; }
+.thon .hemb { width: 28px; height: 28px; }

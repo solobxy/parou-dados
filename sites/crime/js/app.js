@@ -9,6 +9,7 @@ import * as C3 from './casino3d.js';
 import * as GL from './globo.js';
 import * as TK from './tarefas.js';
 import * as PR from './prisao.js';
+import * as HB from './honras.js';   // v100: as barras das honras
 
 const $app = document.getElementById('app');
 const S = {
@@ -106,6 +107,7 @@ function act(type, args = {}, opts = {}) {
 // ---------- o que acontece depois de cada ação ----------
 function react(type, out, before, opts) {
   const r = out.result, me = out.me, lv = r.levelUp && r.levelUp.to > r.levelUp.from ? r.levelUp : null;
+  if (r.hon?.length) setTimeout(() => { const x = honOf(r.hon[0]); toast(h('span', { class: 'thon' }, x ? HB.honorEmblem(x, honName(x)) : null, r.hon.length === 1 && x ? t('tHon', { x: honName(x) }) : t('tHonN', { n: r.hon.length }))); fx.vibrate([10, 30, 10]); }, 700);   // v100: honras novas
   if (type.startsWith('hunt')) {   // v98: a caça
     if (type === 'huntStart') { S.hShot = null; S.hEnd = null; S.hOrg = null; fx.sfx('tap'); }
     if (type === 'huntShoot') { const s = r.shot; S.hShot = { shot: s }; fx.sfx(r.caught ? 'bust' : s && s.kill ? (s.md >= 2 ? 'crit' : 'cash') : 'fail'); fx.vibrate(s && s.kill ? 12 : [30, 40, 30]); }
@@ -432,7 +434,7 @@ function tickHud() {
 // ---------- ecrãs ----------
 // ---------- navegação: uma cidade com locais ----------
 const PLACES = {
-  city: { ic: 'skyline' }, empire: { ic: 'empire' }, rob: { ic: 'street', img: 'golpes' }, club: { ic: 'bolt', img: 'discoteca' }, gym: { ic: 'gym', img: 'ginasio' }, gyms: { ic: 'gym' }, livros: { img: 'livros' }, hunt: { img: 'caca' },
+  city: { ic: 'skyline' }, empire: { ic: 'empire' }, rob: { ic: 'street', img: 'golpes' }, club: { ic: 'bolt', img: 'discoteca' }, gym: { ic: 'gym', img: 'ginasio' }, gyms: { ic: 'gym' }, livros: { img: 'livros' }, hunt: { img: 'caca' }, honras: {},
   biz: { ic: 'empire', img: 'negocios' }, stash: { img: 'stash' }, acct: { img: 'contabilista' }, port: { img: 'porto' }, air: { img: 'aeroporto' }, arms: { img: 'armas' }, bank: { img: 'banco' }, hosp: { img: 'hospital' },
   jail: { img: 'prisao' }, gang: { img: 'gangue' }, work: { img: 'profissao' }, news: { img: 'jornal' }, casino: { ic: 'gem', img: 'casino' }, roulette: { img: 'roleta' }, bj: { img: 'blackjack' }, dice: { img: 'dados' }, wheel: { img: 'roda' }, slot: { img: 'slot' }, zeus: { img: 'zeus' }, doce: { img: 'doce' }, rebucado: { img: 'rebucado' }, alley: { img: 'beco' }, lux: { img: 'luxos' }, fights: { ic: 'fights', img: 'lutas' }, rank: { img: 'procurados' }, hitman: { img: 'assassino' }, putas: { img: 'putas' }, gigs: { img: 'biscates' }, casa: {}, myclub: { img: 'discoteca' }, mybro: { img: 'bordel' }, bolsa: { img: 'bolsa' }, job: { img: 'emprego' }, inv: { ic: 'box', img: 'inventario' }, ops: { img: 'operacoes' }, parl: { img: 'parlamento' }, cafe: { img: 'cafe' }, museum: { img: 'museu' }, uni: { img: 'universidade' }, cave: { img: 'cave' }, feira: { img: 'feira' }, dig: { img: 'escavacoes' }, arquivo: { img: 'arquivo' },
 };
@@ -445,7 +447,7 @@ const HUB = {
   city: [['sec_night', ['club', 'putas', 'casino', 'alley', 'arms']], ['sec_street', ['gigs', 'cafe', 'job', 'uni', 'livros', 'dig', 'hunt', 'feira', 'bank', 'museum', 'parl', 'hosp', 'jail', 'rank']], ['sec_trade', ['port', 'air']]],
   empire: [['sec_power', ['fights', 'gang']], ['sec_income', ['biz', 'myclub', 'mybro']], ['sec_assets', ['casa', 'cave', 'bank', 'bolsa', 'stash', 'acct']]],
 };
-const PARENT = { gyms: 'gym', livros: 'city', hunt: 'city', fights: 'empire', arquivo: 'city', dig: 'city', feira: 'city', cave: 'empire', uni: 'city', museum: 'city', cafe: 'city', parl: 'city', gigs: 'city', gang: 'empire', work: 'job', job: 'city', news: 'city', casino: 'city', roulette: 'casino', bj: 'casino', dice: 'casino', wheel: 'casino', slot: 'casino', zeus: 'casino', doce: 'casino', rebucado: 'casino', club: 'city', putas: 'city', gym: 'city', alley: 'city', hosp: 'city', jail: 'city',
+const PARENT = { gyms: 'gym', livros: 'city', hunt: 'city', honras: 'city', fights: 'empire', arquivo: 'city', dig: 'city', feira: 'city', cave: 'empire', uni: 'city', museum: 'city', cafe: 'city', parl: 'city', gigs: 'city', gang: 'empire', work: 'job', job: 'city', news: 'city', casino: 'city', roulette: 'casino', bj: 'casino', dice: 'casino', wheel: 'casino', slot: 'casino', zeus: 'casino', doce: 'casino', rebucado: 'casino', club: 'city', putas: 'city', gym: 'city', alley: 'city', hosp: 'city', jail: 'city',
   biz: 'empire', port: 'city', air: 'city', myclub: 'empire', mybro: 'empire', bolsa: 'empire', stash: 'empire', acct: 'empire', casa: 'empire', bank: 'empire', lux: 'empire', arms: 'fights', rank: 'fights', hitman: 'fights', ops: 'rob' };
 const upOf = (id) => (S.backTo && S.backTo[id]) || PARENT[id] || 'city';   // um sítio que está em duas zonas volta para a zona de onde vieste
 const tabOf = (id) => { let x = id; for (let k = 0; k < 4 && !NAV.includes(x); k++) x = upOf(x); return NAV.includes(x) ? x : 'city'; };
@@ -526,7 +528,7 @@ function shell() {
 }
 
 const SCREENS = { job: screenJob, city: screenCity, empire: screenEmpire, news: screenNews, casino: screenCasino, roulette: screenRoulette, bj: screenBJ, dice: screenDice, wheel: screenWheel, slot: () => screenSlotGame('slot'), zeus: () => screenSlotGame('zeus'), doce: () => screenSlotGame('doce'), rebucado: () => screenSlotGame('rebucado'), rob: screenRob, club: screenClub, gym: screenGym, gyms: screenGyms, livros: screenLivros, biz: screenBiz, port: screenPort, arms: screenArms, bank: screenBank,
-  hosp: screenHosp, jail: screenJail, gang: screenGang, work: screenWork, air: screenAir, putas: screenPutas, myclub: screenMyClub, mybro: screenMyBro, bolsa: screenBolsa, inv: screenInv, stash: screenStash, acct: screenAcct, casa: screenCasa, alley: screenAlley, lux: screenLux, fights: screenFights, rank: screenRank, hitman: screenHitman, ops: screenOps, gigs: screenGigs, parl: screenParl, cafe: screenCafe, museum: screenMuseum, uni: screenUni, cave: screenCave, feira: screenFeira, dig: screenDig, hunt: screenHunt, arquivo: screenArquivo };
+  hosp: screenHosp, jail: screenJail, gang: screenGang, work: screenWork, air: screenAir, putas: screenPutas, myclub: screenMyClub, mybro: screenMyBro, bolsa: screenBolsa, inv: screenInv, stash: screenStash, acct: screenAcct, casa: screenCasa, alley: screenAlley, lux: screenLux, fights: screenFights, rank: screenRank, hitman: screenHitman, ops: screenOps, gigs: screenGigs, parl: screenParl, cafe: screenCafe, museum: screenMuseum, uni: screenUni, cave: screenCave, feira: screenFeira, dig: screenDig, hunt: screenHunt, honras: screenHonras, arquivo: screenArquivo };
 function render(force) {
   if (!S.st) return;
   if (!S.st.me || S.st.round.phase !== 'play') return renderPause();
@@ -3366,6 +3368,64 @@ function screenHunt() {
   return out;
 }
 
+// ===== As honras (v100) =====
+// Centenas de barras desenhadas a partir da honra (js/honras.js). Ficam para sempre; escolhe-se uma para mostrar no perfil e nas
+// classificações. Por categoria: as que já tens (a que mostras primeiro, com «A mostrar») e as duas mais perto, a cinzento.
+const HON_CATS = ['rua', 'lutas', 'ginasio', 'nivel', 'dinheiro', 'imperio', 'viagens', 'caca', 'museu', 'estudos', 'prisao', 'arsenal', 'missoes'];
+const honOf = (id) => S.cfg.honors?.find((x) => x.id === id);
+const ROMAN = ['', 'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII', 'XIII', 'XIV'];
+function honItem(h) {
+  const k = h.k; if (!k) return '';
+  switch (h.m) {
+    case 'wk': return list('crimes')[S.cfg.crimes.findIndex((c) => c.id === k)] || k;
+    case 'stat': return t('stat' + k);
+    case 'biz': return list('biz')[S.cfg.biz.findIndex((b) => b.id === k)] || k;
+    case 'house': return list('houses')[S.cfg.house.tiers.findIndex((x) => x.id === k)] || k;
+    case 'lux': return list('lux')[S.cfg.luxury.list.findIndex((x) => x.id === k)] || k;
+    case 'air': return t('ar_' + k);
+    case 'sp': return t('hs_' + k);
+    case 'res': return t('hsite_' + k);
+    case 'mus': return t('muSet_' + k);
+    case 'course': { const c = courseCfg(k); return c && c.of ? t('st_' + c.of) + ' ' + ROMAN[c.lv] : t('cr_' + k); }
+    case 'wt': return t('wt_' + k);
+  }
+  return k;
+}
+const honName = (h) => t('hon_' + h.m, { x: honItem(h) }) + (h.of > 1 ? ' ' + ROMAN[h.t] : '');
+const HON_ONE = ['crits', 'pvp', 'hosp', 'ports', 'air', 'hunts', 'kills', 'gold', 'musn', 'digs', 'books', 'jail', 'esc', 'mods', 'bizn'];   // as que têm um degrau de 1 (o texto no singular)
+const honDesc = (h) => t((h.at === 1 && HON_ONE.includes(h.m) ? 'hond1_' : 'hond_') + h.m, { x: honItem(h), n: h.m === 'nw' ? money(h.at) : num(h.at) });
+const HON_SAME = ['biz', 'house', 'lux', 'course', 'mus', 'wt', 'sp'];   // a descrição só repetiria o nome (nas que já tens)
+const honVal = (me, h) => (me.honv || {})[h.m + (h.k ? ':' + h.k : '')] || 0;
+const honBar = (h, opts) => HB.honorBar(h, honName(h), opts);
+const honNum = (h, v) => (h.m === 'nw' ? moneyShort(v) + '/' + moneyShort(h.at) : num(v) + '/' + num(h.at));
+function honPick(id) { act('honorPick', { id }).then((r) => { if (!r) return; if (id) toast(t('tHonOn', { x: honName(honOf(id)) })); render(true); }); }
+function screenHonras() {
+  const me = S.st.me, all = S.cfg.honors || [], got = me.hon || {}, n = all.filter((h) => got[h.id]).length, sel = me.honSel && honOf(me.honSel);
+  const out = [pageHead('honras', null, true)];
+  out.push(h('div', { class: 'honsel' }, sel ? honBar(sel, { cls: 'big' }) : h('p', { class: 'small muted' }, t('honNone')),
+    h('div', { class: 'row sp honsum' }, h('span', { class: 'small num' }, t('honN', { a: n, b: all.length })), sel ? h('button', { class: 'linkbtn', on: { click: () => honPick(null) } }, t('honRemove')) : null)));
+  for (const cat of HON_CATS) {
+    const L = all.filter((h) => h.cat === cat);
+    let mine = L.filter((h) => got[h.id]);
+    if (sel && sel.cat === cat) mine = [sel, ...mine.filter((x) => x.id !== sel.id)];   // a que mostras fica sempre à vista
+    const next = [], seen = new Set();
+    for (const h of L) { const key = h.m + ':' + h.k; if (got[h.id] || seen.has(key)) continue; seen.add(key); next.push({ h, v: honVal(me, h), p: Math.min(1, honVal(me, h) / h.at) }); }
+    next.sort((a, b) => b.p - a.p);
+    const open = S.honOpen?.[cat], shown = open ? mine : mine.slice(0, 4);
+    out.push(h('section', { class: 'honcat' },
+      h('h2', { class: 'sec' }, t('hcat_' + cat), h('span', { class: 'small num ' + (mine.length === L.length ? 'c-cash' : '') }, mine.length + '/' + L.length)),
+      shown.length ? h('div', { class: 'honlist' }, shown.map((x) => { const on = me.honSel === x.id;
+        return h('button', { class: 'honb' + (on ? ' on' : ''), 'aria-pressed': on ? 'true' : 'false', 'aria-label': honName(x) + ' · ' + honDesc(x), on: { click: () => honPick(on ? null : x.id) } },
+          honBar(x), h('span', { class: 'small ' + (on ? 'c-cash' : 'muted') }, on ? t('honOnT') : HON_SAME.includes(x.m) ? '' : honDesc(x))); })) : null,
+      mine.length > 4 && !open ? h('button', { class: 'linkbtn honmore', on: { click: () => { S.honOpen = { ...(S.honOpen || {}), [cat]: true }; render(true); } } }, t('honMore', { n: mine.length - 4 })) : null,
+      next.length ? h('div', { class: 'honnext' }, next.slice(0, 2).map(({ h: x, v, p }) => h('div', { class: 'honn' },
+        honBar(x, { locked: true }),
+        h('div', { class: 'row sp' }, h('span', { class: 'small muted' }, honDesc(x)), h('span', { class: 'small num' }, honNum(x, Math.min(v, x.at)))),
+        p > 0 ? h('div', { class: 'fill' }, h('i', { style: `width:${(p * 100).toFixed(1)}%` })) : null))) : null));
+  }
+  return out;
+}
+
 // ===== A Universidade (v81) =====
 // Cursos de profissão, estudos e artes marciais num só sítio. Um curso de cada vez, de qualquer tipo; todos acabam com exame.
 const courseCfg = (id) => S.cfg.courses.find((c) => c.id === id);
@@ -4609,7 +4669,8 @@ function screenRank() {
   const st = h('div', { class: 'rklist' });
   const row = (r) => h('div', { class: 'rk' + (r.me ? ' me' : '') },
     h('div', { class: 'p' }, r.pos), S.avOk ? h('img', { class: 'avs', src: AV(r.av || 0), alt: '', width: 96, height: 96, loading: 'lazy' }) : null,
-    h('div', { style: 'min-width:0' }, h('div', { class: 'rkn' }, r.tag ? h('span', { class: 'gtag' }, r.tag) : null, r.tag ? ' ' : '', r.name),
+    h('div', { style: 'min-width:0' }, h('div', { class: 'rkn' }, r.tag ? h('span', { class: 'gtag' }, r.tag) : null, r.tag ? ' ' : '', r.name,
+      r.hon && honOf(r.hon) ? h('button', { class: 'rkhon', 'aria-label': honName(honOf(r.hon)), on: { click: (e) => { e.stopPropagation(); toast(honName(honOf(r.hon))); } } }, HB.honorEmblem(honOf(r.hon), honName(honOf(r.hon)))) : null),   // v100: a honra escolhida
       h('div', { class: 'rkl' }, nb(t('level') + ' ' + r.level) + ' · ' + (r.vet ? t('vetShort') : titleOf(r.level)))),   // o veterano mostra-se no lugar do título (o título vê-se no perfil)
     h('div', { class: 'r num' }, num(geral ? r.respect : r.score)));
   R.top.forEach((r, i) => { st.append(row(r)); if (!geral && r.pos === 3 && R.top.length > 3) st.append(h('div', { class: 'rkcut' }, t('rkCut'))); });
@@ -5741,6 +5802,10 @@ function openProfile() {
     h('div', { class: 'hstats pstats' }, ['F', 'I', 'C', 'T'].map((s) => h('span', null, icon(STAT_IC[s]), ' ' + t('stat' + s) + ' ', h('b', { class: 'num' }, short(me.stats[s]))))),   // v90: os atributos (saíram do topo)
     me.cls ? h('p', { class: 'small muted', style: 'margin:0' }, t('cl_' + me.cls) + ' · ' + classLines(S.cfg.classes.find((c) => c.id === me.cls)).join(' · ')) : null,
     me.cls ? h('button', { class: 'btn sm', style: 'justify-self:start', on: { click: () => { close(); go('work'); } } }, t('clsChangeT')) : null,
+    // v100: honras: a barra que se mostra e o caminho para todas
+    h('h2', { class: 'sec', style: 'margin-top:10px' }, t('honT'), h('span', { class: 'small num' }, Object.keys(me.hon || {}).length + '/' + (S.cfg.honors || []).length)),
+    h('button', { class: 'honpbtn', 'aria-label': t('honSeeA'), on: { click: () => { close(); go('honras'); } } },
+      me.honSel && honOf(me.honSel) ? honBar(honOf(me.honSel), { cls: 'big' }) : h('span', { class: 'small muted' }, t('honNone')), h('span', { class: 'chev', 'aria-hidden': 'true' }, '›')),
     // v95: sobre o jogo — as novidades, a história e a wiki (o Arquivo saiu da cidade e vive aqui)
     h('h2', { class: 'sec', style: 'margin-top:10px' }, t('aboutT')),
     h('div', { class: 'pabout' }, [['news', t('arqNews')], ['lore', t('arqLore')], ['wiki', t('arqWiki')]].map(([k, l]) => h('button', { class: 'btn' + (k === 'news' && novNew() ? ' nv' : ''), on: { click: () => { close(); S.arqSeg = k; S.arqOpenK = undefined; go('arquivo'); } } }, l))),
