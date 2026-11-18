@@ -1483,7 +1483,7 @@ function screenGigs() {
     // o que paga já com o ritmo deste biscate (o próximo bem feito sobe mais um passo, o mal feito desce)
     const rb = (wv.ritmo && wv.ritmo[x.id]) || 0, f = (v) => Math.floor((Math.floor((x.base * v) / 10000) * (10000 + rb) * wv.multBp) / 1e8);
     const lo = f(W.qMin), hi = f(W.qMax), locked = me.level < x.level;
-    return h('button', { class: 'vrow tk-gig', disabled: !!b || locked, on: { click: (e) => gigStart(x.id, e.currentTarget) } },
+    return h('button', { class: 'vrow tk-gig' + (S.gkHi === x.id ? ' gkhi' : ''), id: 'gk-' + x.id, disabled: !!b || locked, on: { click: (e) => gigStart(x.id, e.currentTarget) } },
       art('gigs', x.id, 'vth'),
       h('div', { class: 'grow' }, h('div', { class: 'tk-tl' }, h('b', null, t('gk_' + x.id)), rb ? h('span', { class: 'small c-cash tk-rb' }, t('gRitmo', { p: Math.round(rb / 100) })) : null),
         h('div', { class: 'small muted tk-desc' }, t('gd_' + x.id)),
@@ -1493,6 +1493,8 @@ function screenGigs() {
             x.bustBp ? h('span', { class: 'c-red' }, '\u00a0· ', h('span', { class: 'nw' }, t('gIllegal')), '\u00a0· ', h('span', { class: 'nw' }, t('gRisk', { p: pct(x.bustBp) }))) : null)),
       locked ? null : icon('chev'));
   })));
+  // vindo da cave: o biscate que dá o material em falta fica marcado e ao centro do ecrã
+  if (S.gkHi) { const id = S.gkHi; S.gkHi = null; requestAnimationFrame(() => document.getElementById('gk-' + id)?.scrollIntoView({ block: 'center', behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' })); }
   return out;
 }
 
@@ -2621,7 +2623,9 @@ function needsLine(me, needs, n) {
     const tail = ok ? null : comp ? t('cvHave', { n: have }) : rare ? dgHaveLine(me, k, have) : t('cvHaveFrom', { n: have, x: t('gks_' + matFrom(k)) });
     const item = [h('span', { class: 'nw' }, want + '×\u00a0' + (rare ? dgLow(k) : mtQ(k, want).toLowerCase())), tail ? [' ', h('span', null, tail)] : null];
     const node = ok ? h('span', null, item)
-      : comp ? h('button', { class: 'cvgo c-red', on: { click: () => { S.cvTab = 'comp'; S.cvHi = k; render(); } } }, item, '\u00a0›') : h('span', { class: 'c-red' }, item);
+      : comp ? h('button', { class: 'cvgo c-red', on: { click: () => { S.cvTab = 'comp'; S.cvHi = k; render(); } } }, item, '\u00a0›')
+      : !rare && matFrom(k) ? h('button', { class: 'cvgo c-red', on: { click: () => { S.gkHi = matFrom(k); go('gigs'); } } }, item, '\u00a0›')   // v105: um básico em falta leva ao biscate que o dá
+      : h('span', { class: 'c-red' }, item);
     // o «·» vai colado ao fim do que vem antes (depois de um botão partia a linha e ficava no início da seguinte)
     return [i ? ' ' : null, i < last ? h('span', { class: 'cvj' }, node, '\u00a0·') : node];
   });

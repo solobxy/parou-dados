@@ -3810,3 +3810,5 @@ body h2.sec + p.small, body h2.sec + p.muted, body h2.sec + .small.muted { margi
 /* empregos e outras listas de linha com botão: a 320 px o botão desce em vez de espremer o texto */
 .vrow.jbr { flex-wrap: wrap; row-gap: 6px; } .vrow.jbr > .grow { flex: 1 1 140px; } .vrow.jbr > .btn, .vrow.jbr > .small { margin-left: auto; }
 .cvj { white-space: nowrap; } .cvj > .cvgo, .cvj > span { white-space: normal; }   /* um material e o «·» que vem a seguir não se separam */
+.vrow.tk-gig.gkhi { animation: cv-hi 1.6s ease-out; }   /* vindo da cave: o biscate que dá o material em falta */
+@media (prefers-reduced-motion: reduce) { .vrow.tk-gig.gkhi { animation: none; box-shadow: inset 0 0 0 2px var(--tx); } }

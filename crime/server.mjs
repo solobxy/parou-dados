@@ -29,7 +29,7 @@ const RONDA_TESTE = process.env.PRIMEIRA_RONDA ? dataDe(process.env.PRIMEIRA_RON
 // Épocas de 28 dias a contar da sexta 13/11/2026 às 21:00 de Lisboa (PRIMEIRA_EPOCA=AAAA-MM-DD muda-a, para testes)
 const ANCORA = dataDe(process.env.PRIMEIRA_EPOCA || process.env.PRIMEIRA_RONDA || '2026-11-13');
 const rng = process.env.TESTE_SEMENTE ? seededRng(+process.env.TESTE_SEMENTE) : cryptoRng();   // nos testes, a sorte pode ser sempre a mesma
-const VERSAO = 104;   // sobe quando o servidor muda, para se confirmar de fora que a versão nova já está a correr
+const VERSAO = 105;   // sobe quando o servidor muda, para se confirmar de fora que a versão nova já está a correr
 const ATOS_3S = +(process.env.ATOS_3S || 15), ATOS_MIN = +(process.env.ATOS_MIN || 400); // ações por conta: 15 em 3 s, 400 por minuto
 
 // ---------- relógio que nunca anda para trás ----------
@@ -2224,6 +2224,9 @@ async function tratar(req, res) {
     const c = q.contaPorId.get(conta);
     const p = jogadorDe(conta, now, w);
     if (p) E.touch(p, now);
+    // v105: o respeito (e outros números) também sobe sem o jogador fazer nada (defender-se, golpes do gangue): uma honra cuja barra
+    // já está cheia é dada aqui e gravada, em vez de ficar a cinzento até à ação seguinte. honorsCheck só marca a data, não dá prémios.
+    if (p && E.honorsCheck(p, now).length) guardar(p, now);
     // a posição que aparece no topo é a da época, na tua divisão (é aí que se compete)
     return enviar(res, 200, { now, round: w, season: vistaEpoca(epocaEmDia(now)), account: { name: c?.nome, lang: c?.lingua }, me: p ? vista(p, now) : null, rank: posNaEpoca(now, p), players: jogadores.size, feed: ultimas() });
   }
