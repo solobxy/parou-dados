@@ -418,17 +418,17 @@ function tickHud() {
 const PLACES = {
   city: { ic: 'skyline' }, empire: { ic: 'empire' }, rob: { ic: 'street', img: 'golpes' }, club: { ic: 'bolt', img: 'discoteca' }, gym: { ic: 'gym', img: 'ginasio' },
   biz: { ic: 'empire', img: 'negocios' }, stash: { img: 'stash' }, acct: { img: 'contabilista' }, port: { img: 'porto' }, air: { img: 'aeroporto' }, arms: { img: 'armas' }, bank: { img: 'banco' }, hosp: { img: 'hospital' },
-  jail: { img: 'prisao' }, gang: { img: 'gangue' }, work: { img: 'profissao' }, news: { img: 'jornal' }, casino: { ic: 'gem', img: 'casino' }, roulette: { img: 'roleta' }, bj: { img: 'blackjack' }, dice: { img: 'dados' }, wheel: { img: 'roda' }, slot: { img: 'slot' }, zeus: { img: 'zeus' }, doce: { img: 'doce' }, rebucado: { img: 'rebucado' }, alley: { img: 'beco' }, lux: { img: 'luxos' }, fights: { ic: 'fights', img: 'lutas' }, rank: { img: 'procurados' }, hitman: { img: 'assassino' }, putas: { img: 'putas' }, gigs: { img: 'biscates' }, casa: {}, myclub: { img: 'discoteca' }, mybro: { img: 'bordel' }, bolsa: { img: 'bolsa' }, job: { img: 'emprego' }, inv: { img: 'inventario' }, ops: { img: 'operacoes' }, parl: { img: 'parlamento' }, cafe: { img: 'cafe' }, museum: { img: 'museu' }, uni: { img: 'universidade' }, cave: { img: 'cave' }, feira: { img: 'feira' }, dig: { img: 'escavacoes' },
+  jail: { img: 'prisao' }, gang: { img: 'gangue' }, work: { img: 'profissao' }, news: { img: 'jornal' }, casino: { ic: 'gem', img: 'casino' }, roulette: { img: 'roleta' }, bj: { img: 'blackjack' }, dice: { img: 'dados' }, wheel: { img: 'roda' }, slot: { img: 'slot' }, zeus: { img: 'zeus' }, doce: { img: 'doce' }, rebucado: { img: 'rebucado' }, alley: { img: 'beco' }, lux: { img: 'luxos' }, fights: { ic: 'fights', img: 'lutas' }, rank: { img: 'procurados' }, hitman: { img: 'assassino' }, putas: { img: 'putas' }, gigs: { img: 'biscates' }, casa: {}, myclub: { img: 'discoteca' }, mybro: { img: 'bordel' }, bolsa: { img: 'bolsa' }, job: { img: 'emprego' }, inv: { img: 'inventario' }, ops: { img: 'operacoes' }, parl: { img: 'parlamento' }, cafe: { img: 'cafe' }, museum: { img: 'museu' }, uni: { img: 'universidade' }, cave: { img: 'cave' }, feira: { img: 'feira' }, dig: { img: 'escavacoes' }, arquivo: { img: 'arquivo' },
 };
 // barra de baixo: só o que se usa a toda a hora. O resto vive dentro de cada separador, arrumado por zonas.
 // v90: o ginásio entra no lugar do casino (golpes gastam stamina; ginásio e lutas gastam energia: é o que se faz a toda a hora).
 // O casino continua na Cidade, na Noite.
 const NAV = ['city', 'rob', 'gym', 'fights', 'empire'];
 const HUB = {
-  city: [['sec_night', ['club', 'putas', 'casino', 'gang', 'alley', 'arms']], ['sec_street', ['gigs', 'cafe', 'job', 'uni', 'dig', 'feira', 'bank', 'museum', 'parl', 'hosp', 'jail', 'rank']]],
+  city: [['sec_night', ['club', 'putas', 'casino', 'gang', 'alley', 'arms']], ['sec_street', ['gigs', 'cafe', 'job', 'uni', 'dig', 'feira', 'bank', 'museum', 'parl', 'hosp', 'jail', 'rank', 'arquivo']]],
   empire: [['sec_income', ['biz', 'port', 'air', 'myclub', 'mybro']], ['sec_assets', ['casa', 'cave', 'inv', 'bank', 'bolsa', 'stash', 'acct']]],
 };
-const PARENT = { dig: 'city', feira: 'city', cave: 'empire', uni: 'city', museum: 'city', cafe: 'city', parl: 'city', gigs: 'city', gang: 'city', work: 'job', job: 'city', news: 'city', casino: 'city', roulette: 'casino', bj: 'casino', dice: 'casino', wheel: 'casino', slot: 'casino', zeus: 'casino', doce: 'casino', rebucado: 'casino', club: 'city', putas: 'city', gym: 'city', alley: 'city', hosp: 'city', jail: 'city',
+const PARENT = { arquivo: 'city', dig: 'city', feira: 'city', cave: 'empire', uni: 'city', museum: 'city', cafe: 'city', parl: 'city', gigs: 'city', gang: 'city', work: 'job', job: 'city', news: 'city', casino: 'city', roulette: 'casino', bj: 'casino', dice: 'casino', wheel: 'casino', slot: 'casino', zeus: 'casino', doce: 'casino', rebucado: 'casino', club: 'city', putas: 'city', gym: 'city', alley: 'city', hosp: 'city', jail: 'city',
   biz: 'empire', port: 'empire', air: 'empire', myclub: 'empire', mybro: 'empire', bolsa: 'empire', inv: 'empire', stash: 'empire', acct: 'empire', casa: 'empire', bank: 'empire', lux: 'empire', arms: 'fights', rank: 'fights', hitman: 'fights', ops: 'rob' };
 const upOf = (id) => (S.backTo && S.backTo[id]) || PARENT[id] || 'city';   // um sítio que está em duas zonas volta para a zona de onde vieste
 const tabOf = (id) => { let x = id; for (let k = 0; k < 4 && !NAV.includes(x); k++) x = upOf(x); return NAV.includes(x) ? x : 'city'; };
@@ -504,7 +504,7 @@ function shell() {
 }
 
 const SCREENS = { job: screenJob, city: screenCity, empire: screenEmpire, news: screenNews, casino: screenCasino, roulette: screenRoulette, bj: screenBJ, dice: screenDice, wheel: screenWheel, slot: () => screenSlotGame('slot'), zeus: () => screenSlotGame('zeus'), doce: () => screenSlotGame('doce'), rebucado: () => screenSlotGame('rebucado'), rob: screenRob, club: screenClub, gym: screenGym, biz: screenBiz, port: screenPort, arms: screenArms, bank: screenBank,
-  hosp: screenHosp, jail: screenJail, gang: screenGang, work: screenWork, air: screenAir, putas: screenPutas, myclub: screenMyClub, mybro: screenMyBro, bolsa: screenBolsa, inv: screenInv, stash: screenStash, acct: screenAcct, casa: screenCasa, alley: screenAlley, lux: screenLux, fights: screenFights, rank: screenRank, hitman: screenHitman, ops: screenOps, gigs: screenGigs, parl: screenParl, cafe: screenCafe, museum: screenMuseum, uni: screenUni, cave: screenCave, feira: screenFeira, dig: screenDig };
+  hosp: screenHosp, jail: screenJail, gang: screenGang, work: screenWork, air: screenAir, putas: screenPutas, myclub: screenMyClub, mybro: screenMyBro, bolsa: screenBolsa, inv: screenInv, stash: screenStash, acct: screenAcct, casa: screenCasa, alley: screenAlley, lux: screenLux, fights: screenFights, rank: screenRank, hitman: screenHitman, ops: screenOps, gigs: screenGigs, parl: screenParl, cafe: screenCafe, museum: screenMuseum, uni: screenUni, cave: screenCave, feira: screenFeira, dig: screenDig, arquivo: screenArquivo };
 function render(force) {
   if (!S.st) return;
   if (!S.st.me || S.st.round.phase !== 'play') return renderPause();
@@ -2946,6 +2946,85 @@ function screenFeira() {
   return out;
 }
 
+// ===== O Arquivo (v91): a história da cidade e a wiki =====
+// A história são capítulos de texto (i18n); a wiki monta-se a partir da configuração que o servidor manda, por isso os números
+// estão sempre certos sem se escrever nada à mão quando as regras mudam.
+const LORE = ['cidade', 'oficios', 'noite', 'porto', 'dinheiro', 'feira', 'terra', 'familias', 'epocas', 'sirene', 'governo'];
+const WIKI = ['barras', 'golpes', 'profissoes', 'ginasio', 'drogas', 'casa', 'negocios', 'porto', 'aviao', 'dinheiro', 'feira', 'lutas', 'prisao', 'epocas'];
+const minOf = (ms) => Math.round(ms / 60000);
+const nb1 = (x) => String(x).replace(/ (?=\S+$)/, '\u00a0');   // o número e a unidade nunca se separam («10 min», «2 h»)
+// os números que a história cita vêm da configuração, como na wiki
+function loreVars() {
+  const C = S.cfg, P = C.pvp;
+  return { lav: money(C.launder.freeUpTo), mf: pctOf(P.minTargetBp), esc: Math.round((C.round.newbieShieldMs || 86400000) / 3600000), nl: P.newbieLevel, nx: P.newbiePowerX,
+    mug: pctOf(P.mugBp), hm: minOf(C.hitman.hospMs), epD: C.season.days, epZ: C.season.divSize, epN: C.season.prizeDays.length };
+}
+// uma tabela a sério: a primeira coluna lê-se (e parte nas palavras), as outras são números à direita e não partem
+const wkTable = (head, rows) => h('table', { class: 'wkt' }, h('thead', null, h('tr', null, head.map((x, i) => h('th', { scope: 'col', class: i ? 'n' : '' }, x)))),
+  h('tbody', null, rows.map((r) => h('tr', null, r.map((x, i) => h(i ? 'td' : 'th', i ? { class: 'n num' } : { scope: 'row' }, i ? nb1(x) : x))))));
+function wikiBody(id) {
+  const C = S.cfg;
+  if (id === 'barras') { const T = C.house.tiers, r = minOf(C.energy.regenMs);
+    return [wkTable([t('wkBar'), t('wkMax'), t('wkRefill'), t('wkUse')], [
+      [t('energy'), T[0].emax + '–' + T[T.length - 1].emax, t('wkPerMin', { r }), t('wkStamUse')],
+      [t('vigor'), C.vigor.max, t('wkPerMin', { r: minOf(C.vigor.regenMs) }), t('wkVigUse')],
+      [t('wkViceRow'), t('wkViceMax', { a: C.addiction.base }), t('wkViceRefill', { d: Math.round(3600000 / C.addiction.decayMs) }), '—']]), h('p', null, t('wk_barras'))]; }
+  if (id === 'golpes') {
+    const L = list('crimes'), rows = C.crimes.map((c, i) => [L[i], c.level, c.e, t('wkMin', { n: c.jailMin })]).sort((a, b) => a[1] - b[1]);
+    return [h('p', null, t('wk_golpes')), wkTable([t('wkCrime'), t('wkLvl'), t('wkStam'), t('wkJail')], rows)];
+  }
+  if (id === 'profissoes') return [h('p', null, t('wk_profissoes')), h('div', { class: 'wkl' }, C.classes.map((c) => h('div', null, h('b', null, t('cl_' + c.id)), c.need ? h('span', { class: 'small c-resp' }, ' · ' + t('wkNeed', { n: num(c.need) })) : null,
+    h('div', { class: 'small muted' }, classLines(c).join(' · ')))))];
+  if (id === 'ginasio') { const T = C.train; return [h('p', null, t('wk_ginasio', { e: T.energy, a: T.set.reps[0], b: T.set.reps[1], q: num(T.set.q[0] / 10000) }))]; }
+  if (id === 'drogas') {   // nome e preço numa linha, o efeito por baixo, a toda a largura
+    const L = list('drugs'), dur = (f) => (f.ms >= 7200000 ? t('fxForH', { h: num(Math.round(f.ms / 360000) / 10) }) : t('fxFor', { m: minOf(f.ms) }));
+    return [h('p', null, t('wk_drugs')), h('div', { class: 'wkl' }, C.drugs.map((g, i) => [g, i]).sort((a, b) => a[0].price - b[0].price).map(([g, i]) => h('div', null,
+      h('div', { class: 'row sp' }, h('b', null, L[i]), h('span', { class: 'num' }, money(g.price))),
+      h('div', { class: 'small muted' }, (g.fx || []).map((f) => fxText(f) + ' · ' + nb1(dur(f))).join('; ') + ' · ' + t('wkVice', { n: g.a })))))];
+  }
+  if (id === 'casa') { const L = list('houses');
+    return [h('p', null, t('wk_casa')), wkTable([t('wkHome'), t('wkPrice'), t('energy'), t('wkSlots')], C.house.tiers.map((x, i) => [L[i], money(x.price), x.emax, x.slots]))]; }
+  if (id === 'negocios') {
+    const L = list('biz'), raid = C.raid ? C.raid.chanceBp : 500, hs = Math.round(C.storageMs / 3600000);
+    return [h('p', null, t('wk_negocios', { h: hs, h3: hs * C.accountant.capMult, r: pctOf(raid) })), wkTable([t('wkBiz'), t('wkPrice'), t('wkPerH'), t('wkType')], C.biz.map((b, i) => [L[i], money(b.price), money(b.perH), t(b.toBank ? 'wkLegal' : 'wkIllegal')]))];
+  }
+  if (id === 'porto') {
+    const P = C.port, L = list('ships');
+    return [h('p', null, t('wk_porto', { b: money(P.capBase), p: money(P.capPerLevel), l1: P.slotsEvery, l2: P.slotsEvery * 2 })),
+      wkTable([t('wkShip'), t('wkLvl'), t('wkTime'), t('wkGain'), t('wkSeize')], P.ships.map((x, k) => [L[k], x.level, hoursText(x.ms / 3600000), '+' + pctOf(x.gainBp) + '%', pctOf(x.seizeBp) + '%']))];
+  }
+  if (id === 'aviao') {
+    const A = C.air;
+    return [h('p', null, t('wk_aviao', { b: pctOf(A.bribeBp) })), wkTable([t('wkRoute'), t('wkLvl'), t('wkTime'), t('wkGain'), t('wkSeize')], A.routes.map((R) => [t('ar_' + R.id), R.level, hoursText(R.ms / 3600000), '+' + pctOf(R.gainBp) + '%', pctOf(R.seizeBp) + '%']))];
+  }
+  if (id === 'dinheiro') { const L = C.launder, A = C.accountant;
+    return [h('p', null, t('wk_dinheiro', { f: money(L.freeUpTo), l: pctOf(L.bp), c: pctOf(L.courseBp), b: pctOf(C.bank.feeBp), a: money(A.price), fa: pctOf(A.feeBp), h: Math.round(C.storageMs / 3600000) }))]; }
+  if (id === 'feira') { const F = C.feira;
+    return [h('p', null, t('wk_feira', { fee: pctOf(F.feeBp), lo: pctOf(F.loBp), hi: pctOf(F.hiBp), pm: money(F.pairMax), am: money(F.acctMax), oh: Math.round(F.orderMs / 3600000), mo: F.maxOpen }))]; }
+  if (id === 'lutas') { const P = C.pvp, H = C.hitman;
+    return [h('p', null, t('wk_lutas', { t: pctOf(P.minTargetBp), s: Math.round((C.round.newbieShieldMs || 86400000) / 3600000), nl: P.newbieLevel, x: P.newbiePowerX, bh: minOf(P.beatHospMs), m: pctOf(P.mugBp), mh: P.maxHospPerWindow, hh: minOf(H.hospMs), hc: pctOf(H.cashBp) }))]; }
+  if (id === 'prisao') return [h('p', null, t('wk_prisao'))];
+  if (id === 'epocas') { const E2 = C.season;
+    return [h('p', null, t('wk_epocas', { d: E2.days, z: E2.divSize, n: E2.prizeDays.length }))]; }
+  return [];
+}
+// um capítulo ou uma página da wiki: abre ao toque e fecha os outros (name), e o título aberto sobe para debaixo do topo fixo
+const arqItem = (key, title, body, open) => h('details', { class: 'arq', name: 'arq', open: open ? '' : null, on: { toggle: (e) => {
+  const d = e.currentTarget; S.arqOpenK = d.open ? key : S.arqOpenK === key ? null : S.arqOpenK;
+  if (d.open && d.dataset.ready) { const calmo = matchMedia('(prefers-reduced-motion: reduce)').matches;   // por baixo do topo fixo, meça ele o que medir
+    requestAnimationFrame(() => { const hud = document.querySelector('.hud'), y = d.getBoundingClientRect().top + scrollY - (hud ? hud.offsetHeight : 0) - 8; scrollTo({ top: Math.max(0, y), behavior: calmo ? 'auto' : 'smooth' }); }); }
+  d.dataset.ready = '1';
+} } }, h('summary', null, h('span', null, title), icon('chev')), h('div', { class: 'arqb' }, body));
+function screenArquivo() {
+  const seg = S.arqSeg === 'wiki' ? 'wiki' : 'lore', V = loreVars();
+  const out = [pageHead('arquivo', t('arqSub'))];
+  out.push(h('div', { class: 'seg', role: 'group' }, [['lore', t('arqLore')], ['wiki', t('arqWiki')]].map(([k, l]) => h('button', { 'aria-pressed': seg === k ? 'true' : 'false', on: { click: () => { S.arqSeg = k; S.arqOpenK = undefined; render(); } } }, l))));
+  const first = seg === 'lore' ? 'l' + LORE[0] : 'w' + WIKI[0], aberto = S.arqOpenK === undefined ? first : S.arqOpenK;
+  if (seg === 'lore') out.push(h('div', { class: 'arql' }, LORE.map((k) => arqItem('l' + k, t('loT_' + k), t('lo_' + k, V).split('\n\n').map((x) => h('p', null, x)), aberto === 'l' + k))));
+  else out.push(h('div', { class: 'arql' }, WIKI.map((k) => arqItem('w' + k, t('wkT_' + k), wikiBody(k), aberto === 'w' + k))));
+  return out;
+}
+
 // ===== As escavações (v85) =====
 // Escavações clandestinas em sítios a sério. Com uma escavação aberta, a grelha é a ação do ecrã: cada pazada abre uma casa;
 // uma casa vazia diz quantos achados há nas 8 à volta. Por baixo, o saco, o risco da próxima pazada e o botão de sair.
@@ -5030,6 +5109,7 @@ function openProfile() {
     h('div', { class: 'hstats pstats' }, ['F', 'I', 'C', 'T'].map((s) => h('span', null, icon(STAT_IC[s]), ' ' + t('stat' + s) + ' ', h('b', { class: 'num' }, short(me.stats[s]))))),   // v90: os atributos (saíram do topo)
     me.cls ? h('p', { class: 'small muted', style: 'margin:0' }, t('cl_' + me.cls) + ' · ' + classLines(S.cfg.classes.find((c) => c.id === me.cls)).join(' · ')) : null,
     me.cls ? h('button', { class: 'btn sm', style: 'justify-self:start', on: { click: () => { close(); go('work'); } } }, t('clsChangeT')) : null,
+    h('button', { class: 'btn ghost sm', style: 'justify-self:start', on: { click: () => { close(); go('arquivo'); } } }, t('arqOpen')),   // v91: a história e a wiki
     S.avOk ? h('h2', { class: 'sec', style: 'margin-top:10px' }, t('avatar')) : null,
     S.avOk ? h('div', { class: 'avgrid' }, Array.from({ length: S.cfg.avatars }, (_, i) => h('button', { class: i === me.av ? 'sel' : '', 'aria-label': t('avatar') + ' ' + (i + 1), 'aria-pressed': i === me.av ? 'true' : 'false',
       on: { click: async (e) => { const b = e.currentTarget; if (!(await act('avatar', { i }))) return;   // troca-se no sítio: a folha não fecha nem volta ao cimo
