@@ -57,7 +57,7 @@ export function newPlayer(id, now, world, opts = {}) {
     mi: 0,                         // objetivos já recebidos
     mq: CFG.missions.map((_, i) => i), mrT: 0,   // os que faltam, pela ordem em que vão aparecer; e quando se trocou pela última vez
     titles: [],                    // títulos que ficam para sempre: { k: 'vet' } (veterano das rondas), { k: 'ep', n, d, pos } (pódio de uma época)
-    cls: '', clsAt: 0, av: 0, fx: {}, sick: false, hkN: CFG.hookers.list.map(() => 0), hkAt: CFG.hookers.list.map(() => 0), house: 0, hu: CFG.house.ups.map(() => 0), bj: null, wm: {}, cd: { est: 0, med: 0 }, col: {}, mus: {}, sx: { F: 0, T: 0, I: 0, C: 0 }, gs: null, gym: 'garagem', gyms: ['garagem'], gx: 0, bk: { own: {}, rd: null, on: null, done: {}, last: null, n: 0, bd: null }, mt: {}, cf: null, maq: {}, dg: null, dgc: {},        // profissão, avatar e efeitos temporários (kind -> { bp, until })
+    cls: '', clsAt: 0, av: 0, fx: {}, sick: false, hkN: CFG.hookers.list.map(() => 0), hkAt: CFG.hookers.list.map(() => 0), house: 0, hu: CFG.house.ups.map(() => 0), bj: null, wm: {}, cd: { est: 0, med: 0 }, col: {}, mus: {}, sx: { F: 0, T: 0, I: 0, C: 0 }, gs: null, gym: 'garagem', gyms: ['garagem'], gx: 0, bk: { own: {}, rd: null, on: null, done: {}, last: null, n: 0, bd: null }, mt: {}, cf: null, maq: {}, dg: null, dgc: {}, hunt: { on: null, sk: 0, tr: {}, day: '', q: {}, fc: {}, n: 0 },        // profissão, avatar e efeitos temporários (kind -> { bp, until })
   };
 }
 
@@ -85,6 +85,7 @@ function migrate(p) {
   if (p.dg === undefined || (p.dg && typeof p.dg !== 'object')) p.dg = null;   // v85: a escavação aberta
   if (p.dg && !Number.isSafeInteger(p.dg.safe)) p.dg.safe = CFG.dig.safe;
   if (!p.dgc || typeof p.dgc !== 'object' || Array.isArray(p.dgc)) p.dgc = {};   // v85: até quando cada sítio está vigiado
+  if (!p.hunt || typeof p.hunt !== 'object' || Array.isArray(p.hunt)) p.hunt = { on: null, sk: 0, tr: {}, day: '', q: {}, fc: {}, n: 0 };   // v98: caça (saída aberta, perícia em milésimos, troféus, saídas com licença do dia, reservas vigiadas)
   if (!p.c) p.c = { crimes: 0, wins: 0, trains: 0, refills: 0, collects: 0, pvpWins: 0, ports: 0 };
   if (!Number.isSafeInteger(p.mi)) p.mi = 0;
   if (!Array.isArray(p.mq)) p.mq = CFG.missions.map((_, i) => i).slice(Math.min(Math.max(p.mi, 0), CFG.missions.length));
@@ -266,6 +267,7 @@ export function touch(p, now) {
   if (p.gs && p.gs.t0 + CFG.train.set.ttl <= now) p.gs = null;   // v82: série esquecida
   bookTick(p, now);   // v95: o livro que acabou de se ler e o efeito que acabou
   if (p.dg && p.dg.t0 + CFG.dig.ttl <= now) digClose(p, p.dg.t0 + CFG.dig.ttl);   // v85: escavação esquecida: fecha e guarda o que se achou
+  if (p.hunt.on && p.hunt.on.t0 + CFG.hunt.ttl <= now) huntClose(p, p.hunt.on.t0 + CFG.hunt.ttl);   // v98: saída esquecida: o guia vende o que se caçou
   if (p.course && p.course.q && p.course.q.t + CFG.exam.ttl <= now) { p.course.next = Math.max(p.course.next || 0, p.course.q.t + CFG.exam.ttl + examRetry(p.course.id)); p.course.q = null; p.course.why = 'ttl'; p.course.last = null; }   // v80: exame deixado aberto conta como chumbo
   p.t = now;
 }
@@ -725,6 +727,8 @@ export function bailCost(p, now) { const x = bailRaw(p, now); const bp = studyBp
 function bailRaw(p, now) {
   if (!(p.jailUntil > now)) return 0;
   if (p.jailTier === DRUG_JAIL) { const left = p.jailUntil - now, total = CFG.wh.jailMin * T.MIN; return Math.max(1, Math.ceil((CFG.wh.lawyer * Math.min(left, total)) / total)); }
+  const hs = p.jailTier >= HUNT_JAIL ? CFG.hunt.sites[p.jailTier - HUNT_JAIL] : null;   // v98: apanhado na caça furtiva
+  if (hs) { const left = p.jailUntil - now, total = hs.jail * T.MIN; return Math.max(1, Math.ceil((hs.lawyer * Math.min(left, total)) / total)); }
   const sd = p.jailTier >= DIG_JAIL ? CFG.dig.sites[p.jailTier - DIG_JAIL] : null;   // v85: apanhado a escavar
   if (sd) { const left = p.jailUntil - now, total = sd.jailMin * T.MIN; return Math.max(1, Math.ceil((sd.lawyer * Math.min(left, total)) / total)); }
   const o = p.jailTier >= 100 && p.jailTier < DRUG_JAIL ? CFG.ops[p.jailTier - 100] : null;
@@ -1693,6 +1697,174 @@ export function digStop(p, now, world) {
 export function digView(p, now) {
   const d = p.dg;
   return d ? { site: d.site, t0: d.t0, until: d.t0 + CFG.dig.ttl, open: d.open.map((x) => ({ ...x })), got: d.got.slice(), used: d.used, taps: d.taps, safe: d.safe, next: digRiskBp(d.used + 1, d.safe) } : null;
+}
+
+// ---------- caça (v98) ----------
+// Uma saída de cada vez. O servidor guarda o animal à vista (espécie, tamanho, distância, ritmo da mira); o site vê a espécie, a
+// distância, o ritmo e as hipóteses, mas não o tamanho (só se sabe depois de abatido).
+export const HUNT_JAIL = 400;   // jailTier de quem foi apanhado na caça furtiva (400 + a reserva)
+export const huntSite = (id) => (typeof id === 'string' ? CFG.hunt.sites.find((s) => s.id === id) : undefined);
+export const huntSp = (id) => (typeof id === 'string' && Object.hasOwn(CFG.hunt.sp, id) ? CFG.hunt.sp[id] : undefined);
+export const huntSk = (p) => Math.floor(((p.hunt && p.hunt.sk) || 0) / 1000);   // perícia de 0 a 100
+const huntSkF = (p) => ((p.hunt && p.hunt.sk) || 0) / 100000;
+// a arma de fogo vestida com mais alcance (com usos)
+export function huntGun(p) {
+  const L = ['principal', 'mao'].filter((s) => { const x = p.eq[s], g = x && gearOf(x.id); return g && g.gun && x.u > 0; });
+  L.sort((a, b) => wStat(p.eq[b]).rng - wStat(p.eq[a]).rng);
+  return L[0] || null;
+}
+export const huntLegalGun = (p, slot) => !!slot && CFG.hunt.legalT.includes(gearOf(p.eq[slot].id).t);
+function huntDay(p, now) { const d = dayOf(now); if (p.hunt.day !== d) { p.hunt.day = d; p.hunt.q = {}; } }
+export function huntQuotaLeft(p, now, site) { const H = p.hunt; return CFG.hunt.quota - (H.day === dayOf(now) ? H.q[site] || 0 : 0); }
+// o ritmo da mira (ms por ida e volta): mais lento com mais precisão e perícia
+function huntPeriod(p, it) { const A = CFG.hunt.aim; return clamp(A.base + A.perAcc * wStat(it).acc + A.perSk * huntSk(p), A.min, A.max); }
+// a qualidade do tiro pelo instante: a mira passa pelo centro a cada meio período; ph (milésimos de meia volta) é onde começa
+export function huntAim(c, at) {
+  const half = c.P / 2, x = (((at / half) + c.ph / 1000) % 1 + 1) % 1, off = Math.round(Math.min(x, 1 - x) * 20000);   // 0 no centro, 10000 na ponta
+  for (const [q, lim] of CFG.hunt.aim.q) if (off <= lim) return q;
+  return 'mau';
+}
+// hipótese de acertar com cada mira, para o animal à vista e a arma da saída
+export function huntHitBp(p, it, c, q) {
+  const H = CFG.hunt, a = huntSp(c.sp), w = wStat(it), R = Math.max(1, w.rng);
+  const rf = c.d <= R ? 10000 : c.d >= 2 * R ? 0 : Math.floor(((2 * R - c.d) * 10000) / R);
+  if (!rf) return 0;
+  let bp = w.acc * H.accBp + H.qBp[q] + huntSk(p) * H.skBp;
+  bp = Math.floor((bp * rf) / 10000);
+  bp = Math.floor((bp * (a.hard || 10000)) / 10000);
+  if (a.bird && gearOf(it.id).t !== 'cacadeira') bp = Math.floor((bp * H.birdBp) / 10000);
+  return clamp(bp, H.minBp, H.maxBp);
+}
+const huntSpook = (p, a) => Math.floor((a.wary * (200 - huntSk(p))) / 200);
+function huntSight(p, now, rng) {
+  const h = p.hunt.on, S = huntSite(h.site), sk = huntSk(p);
+  const L = [...S.sp, ...(h.mode === 'fur' ? S.prot : [])].filter(([id]) => (huntSp(id).sk || 0) <= sk);
+  let r = rng.int(1, L.reduce((s, x) => s + x[1], 0)), id = L[0][0];
+  for (const [k, w] of L) { r -= w; if (r <= 0) { id = k; break; } }
+  const a = huntSp(id), size = () => (rng.int(0, 1000) + rng.int(0, 1000)) / 2;
+  let sz = size(); if (rng.int(1, 200) <= sk) sz = Math.max(sz, size());   // com perícia, às vezes o melhor de dois
+  h.cur = { sp: id, d: rng.int(a.d[0], a.d[1]), sz: Math.round(sz), P: huntPeriod(p, p.eq[h.slot]), ph: rng.int(0, 999), t: now };
+  h.seen += 1;
+}
+// o que o site vê da saída (sem o tamanho do animal)
+export function huntView(p, now) {
+  const h = p.hunt && p.hunt.on; if (!h) return null;
+  const it = p.eq[h.slot], c = h.cur;
+  return { site: h.site, mode: h.mode, slot: h.slot, t0: h.t0, until: h.t0 + CFG.hunt.ttl, shots: h.shots, moves: h.moves, bag: h.bag.map((k) => ({ ...k })),
+    cur: c && it ? { sp: c.sp, d: c.d, P: c.P, ph: c.ph, t: c.t, hit: Object.fromEntries(Object.keys(CFG.hunt.qBp).map((q) => [q, huntHitBp(p, it, c, q)])),
+      spook: huntSpook(p, huntSp(c.sp)), kill: wStat(it).atk >= huntSp(c.sp).tough } : null,
+    ranger: h.mode === 'fur' ? huntRanger(p, h) : 0 };
+}
+function huntRanger(p, h) { const S = huntSite(h.site), it = p.eq[h.slot]; return it && wStat(it).bust > 0 ? cut(S.ranger, CFG.hunt.silBp) : S.ranger; }
+export function huntStart(p, now, world, rng, site, mode) {
+  const H = CFG.hunt, S = huntSite(site);
+  if (!S) fail('NO_SITE');
+  if (mode !== 'lic' && mode !== 'fur') fail('BAD_MODE');
+  begin(p, now, world);
+  if (level(p) < S.level) fail('LOW_LEVEL', { need: S.level });
+  if (p.hunt.on) fail('HUNT_OPEN');
+  const slot = huntGun(p);
+  if (!slot) fail('NO_GUN');
+  if (mode === 'lic' && !huntLegalGun(p, slot)) fail('GUN_NOT_LEGAL');
+  if (mode === 'lic' && huntQuotaLeft(p, now, S.id) < 1) fail('HUNT_QUOTA');
+  if (mode === 'fur' && (p.hunt.fc[S.id] || 0) > now) fail('HUNT_WATCHED', { until: p.hunt.fc[S.id] });
+  if (p.vigor < H.e) fail('NO_VIGOR', { need: H.e });
+  if (mode === 'lic') pay(p, S.fee);
+  huntDay(p, now);   // (só depois de tudo conferido: uma saída recusada não mexe em nada)
+  p.vigor -= H.e;
+  p.eq[slot].u -= 1;
+  if (mode === 'lic') p.hunt.q[S.id] = (p.hunt.q[S.id] || 0) + 1; else p.hunt.fc[S.id] = now + H.furCool;
+  p.hunt.on = { site: S.id, mode, slot, gid: p.eq[slot].id, sk0: p.hunt.sk, t0: now, shots: H.shots, moves: H.moves, bag: [], cur: null, seen: 0 };
+  p.hunt.n += 1;
+  huntSight(p, now, rng);
+  return { ok: true, site: S.id, mode, fee: mode === 'lic' ? S.fee : 0, hunt: huntView(p, now) };
+}
+function huntOpen(p, now, world) {
+  begin(p, now, world);
+  if (!p.hunt.on) fail('NO_HUNT');
+  return p.hunt.on;
+}
+// procurar outro animal (o que estava à vista vai-se embora)
+export function huntLook(p, now, world, rng) {
+  const h = huntOpen(p, now, world);
+  if (h.moves < 1) fail('NO_MOVES');
+  h.moves -= 1;
+  huntSight(p, now, rng);
+  return { ok: true, hunt: huntView(p, now) };
+}
+// aproximar: a distância fica em 60%, mas o animal pode fugir
+export function huntNear(p, now, world, rng) {
+  const H = CFG.hunt, h = huntOpen(p, now, world), c = h.cur;
+  if (!c) fail('NO_ANIMAL');
+  if (h.moves < 1) fail('NO_MOVES');
+  if (c.d <= H.minD) fail('TOO_CLOSE');
+  h.moves -= 1;
+  const fled = rng.chance(huntSpook(p, huntSp(c.sp)));
+  if (fled) h.cur = null;
+  else { c.d = Math.max(H.minD, Math.floor((c.d * H.nearBp) / 10000)); c.t = now; c.ph = rng.int(0, 999); }
+  const out = { ok: true, fled, sp: c.sp, hunt: huntView(p, now) };
+  if (huntDone(h)) Object.assign(out, huntClose(p, now), { end: true });
+  return out;
+}
+const huntDone = (h) => h.shots < 1 || (h.moves < 1 && !h.cur);
+const huntMedal = (sz) => CFG.hunt.medal.filter((x) => sz >= x / 10).length;   // sz em milésimos; medal em pontos base
+// at: milissegundos desde que o animal apareceu no ecrã (o relógio do site)
+export function huntShoot(p, now, world, rng, at) {
+  const H = CFG.hunt;
+  if (!Number.isFinite(at) || at < 0) fail('BAD_TAP');
+  const h = huntOpen(p, now, world), c = h.cur, it = p.eq[h.slot];
+  if (!c) fail('NO_ANIMAL');
+  if (!it || it.id !== h.gid) fail('NO_GUN');   // trocar de arma a meio não vale
+  if (at > now - c.t + H.slack) fail('BAD_TAP');
+  h.shots -= 1;
+  const a = huntSp(c.sp), q = huntAim(c, at), bp = huntHitBp(p, it, c, q), hit = rng.chance(bp), kill = hit && wStat(it).atk >= a.tough;
+  const shot = { sp: c.sp, d: c.d, q, bp, hit, kill, wounded: hit && !kill };
+  if (kill) {
+    const md = huntMedal(c.sz), v = Math.max(1, Math.floor((a.v * (500 + c.sz) * H.valBp[q]) / 10000000));
+    const sc = Math.round(a.sc[0] + ((a.sc[1] - a.sc[0]) * c.sz) / 1000);
+    const g = Math.max(1, Math.floor(a.xp * 50 * (1 - huntSkF(p)) ** 1.5));
+    p.hunt.sk = Math.min(100000, p.hunt.sk + g);
+    const k = { sp: c.sp, sz: c.sz, sc, md, v, q };
+    h.bag.push(k); Object.assign(shot, { sc, md, v, xp: g });
+  }
+  h.cur = null;
+  const out = { ok: true, shot };
+  if (h.mode === 'fur' && rng.chance(huntRanger(p, h))) {   // os guardas: preso, e o que se caçou nesta saída fica para trás
+    const S = huntSite(h.site), lost = h.bag.slice();
+    p.hunt.on = null;
+    jailFor(p, now, S.jail * T.MIN, HUNT_JAIL + CFG.hunt.sites.indexOf(S));
+    return { ...out, caught: true, lost, jailUntil: p.jailUntil, site: S.id, end: true };
+  }
+  if (!kill && a.dg && c.d <= H.chargeD && rng.chance(hit ? a.dg : Math.floor(a.dg / 2))) {   // carregou: o guia leva-te ao hospital e vende o que já tinhas
+    Object.assign(out, huntClose(p, now), { charged: true, end: true });
+    hospitalize(p, now, a.hosp * T.MIN, false);
+    out.hospUntil = p.hospUntil;
+    return out;
+  }
+  out.hunt = huntView(p, now);
+  if (huntDone(h)) Object.assign(out, huntClose(p, now), { end: true });
+  return out;
+}
+export function huntStop(p, now, world) {
+  huntOpen(p, now, world);
+  return { ok: true, ...huntClose(p, now), end: true };
+}
+// fecha a saída: o guia compra a caça, os troféus vão para a parede (o melhor de cada espécie) e o respeito das medalhas
+function huntClose(p, now) {
+  const H = CFG.hunt, h = p.hunt.on, bag = h.bag, cash = bag.reduce((s, k) => s + k.v, 0), firsts = [], best = [];
+  let resp = 0;
+  for (const k of bag) {
+    const t = p.hunt.tr[k.sp] || (p.hunt.tr[k.sp] = { n: 0, sc: 0, md: 0 });
+    if (!t.n) { firsts.push(k.sp); resp += huntSp(k.sp).xp * H.firstResp; }
+    if (k.sc > t.sc) { if (t.n) best.push(k.sp); t.sc = k.sc; }
+    t.n += 1; t.md = Math.max(t.md, k.md);
+    resp += H.medalResp[k.md];
+  }
+  p.cash += cash;
+  p.c.kills = (p.c.kills || 0) + bag.length;
+  const lvl = addRespect(p, resp, now);
+  p.hunt.on = null;
+  return { site: h.site, mode: h.mode, bag, cash, resp, firsts, best, xp: p.hunt.sk - (h.sk0 ?? p.hunt.sk), ...(lvl ? { levelUp: lvl } : {}) };   // xp: perícia ganha na saída (milésimos)
 }
 
 // ---------- Feira da Ladra (v84) ----------

@@ -922,6 +922,82 @@ export const CFG = {
       { id: 'mertola', st: 3, price: 4000, jailMin: 60, lawyer: 3500, rare: 'malha', rareBp: 10000 },   // fragmentos de cotas de malha do período islâmico
     ],
   },
+  // v98: caça em 8 reservas pelo mundo, à maneira da do Torn (nível, energia e uma taxa por saída), mas com mira, distância e arma.
+  // Cada saída gasta 10 de energia (a do ginásio) e um uso da arma. Dá 3 tiros e 6 movimentos (procurar outro animal ou aproximar).
+  // Com licença: paga a taxa, só armas de caça (revólver, caçadeira, carabina, espingarda, sniper), no máximo 3 saídas por reserva
+  // por dia de Lisboa, e sem espécies protegidas. Furtiva: sem taxa, qualquer arma de fogo, aparecem as protegidas (valem muito mais);
+  // cada tiro pode chamar os guardas (com silenciador, metade), e quem é apanhado vai preso e perde o que caçou nessa saída.
+  // Depois de uma saída furtiva, a reserva fica vigiada 6 h.
+  // Tiro: hipótese = precisão da arma × 45 + a mira (perfeita 4500, boa 3000, fraca 1500, má 0) + perícia × 20, vezes o alcance
+  // (até ao alcance da arma conta tudo; daí até ao dobro desce a direito até zero) e a dificuldade do animal; aves só com caçadeira
+  // (as outras armas ficam com 25%). Acertar com ataque abaixo da robustez do animal só o fere (foge). Os perigosos, falhados ou
+  // feridos a 60 m ou menos, podem carregar: hospital.
+  // Valor: base do animal × (0,5 + tamanho) × a mira (perfeita 100%, boa 90%, fraca 75%, má 60%). Tamanho de 0 a 1 (média de dois
+  // sorteios; com perícia, às vezes o melhor de duas médias). Medalha pelo tamanho: bronze 0,55, prata 0,75, ouro 0,9.
+  // Perícia de 0 a 100 (em milésimos): cada animal abatido dá xp/20 pontos × (1 − perícia/100)^1,5. Abre as espécies mais difíceis.
+  hunt: {
+    e: 10, shots: 3, moves: 6, ttl: 20 * MIN, quota: 3, furCool: 6 * HOUR, slack: 1500,
+    legalT: ['revolver', 'cacadeira', 'carabina', 'espingarda', 'sniper'],
+    nearBp: 6000, minD: 10,
+    aim: { base: 1000, perAcc: 14, perSk: 6, min: 1200, max: 2800, q: [['perf', 1000], ['bom', 3000], ['fraco', 6000]] },
+    qBp: { perf: 4500, bom: 3000, fraco: 1500, mau: 0 }, valBp: { perf: 10000, bom: 9000, fraco: 7500, mau: 6000 },
+    accBp: 45, skBp: 20, birdBp: 2500, minBp: 300, maxBp: 9500, silBp: 5000, chargeD: 60,
+    medal: [5500, 7500, 9000], medalResp: [0, 3, 8, 20], firstResp: 2,
+    // d: distância em metros; tough: ataque que mata; v: euros (tamanho médio, mira perfeita); wary: hipótese de fugir quando te
+    // aproximas; hard: dificuldade do tiro; xp: décimas de perícia; sk: perícia para aparecer; dg e hosp: carga e minutos de hospital;
+    // sc: pontos do troféu (do mais pequeno ao maior); prot: protegida (só na furtiva)
+    sp: {
+      corco: { d: [60, 220], tough: 3000, v: 95, wary: 3000, xp: 10, sc: [80, 140] },
+      gamo: { d: [80, 250], tough: 4000, v: 210, wary: 3000, xp: 14, sk: 5, sc: [150, 200] },
+      javali: { d: [25, 120], tough: 4000, v: 130, wary: 2000, xp: 12, dg: 1500, hosp: 15, sc: [90, 130] },
+      raposa: { d: [40, 160], tough: 2000, v: 50, wary: 3500, hard: 8500, xp: 8, sc: [20, 28] },
+      lince: { d: [40, 140], tough: 2500, v: 1900, wary: 5000, hard: 8500, xp: 20, sc: [20, 26], prot: true },
+      lagopode: { d: [15, 45], tough: 800, v: 45, wary: 1500, hard: 7000, xp: 6, bird: true, sc: [550, 750] },
+      lebre: { d: [30, 140], tough: 1500, v: 50, wary: 3000, hard: 7500, xp: 6, sc: [30, 45] },
+      veado: { d: [100, 320], tough: 5000, v: 420, wary: 3500, xp: 16, sk: 10, sc: [160, 230] },
+      cabra: { d: [60, 250], tough: 3500, v: 140, wary: 2500, xp: 10, sc: [70, 110] },
+      gatobravo: { d: [30, 120], tough: 1500, v: 2600, wary: 5500, hard: 8000, xp: 20, sc: [16, 21], prot: true },
+      guanaco: { d: [120, 400], tough: 5000, v: 200, wary: 3000, xp: 12, sc: [40, 60] },
+      antilope: { d: [150, 450], tough: 3500, v: 420, wary: 4500, hard: 9000, xp: 18, sk: 15, sc: [45, 70] },
+      huemul: { d: [80, 250], tough: 4000, v: 4000, wary: 4000, xp: 25, sc: [60, 90], prot: true },
+      peru: { d: [20, 70], tough: 1500, v: 40, wary: 3000, hard: 8000, xp: 8, bird: true, sc: [50, 75] },
+      veadomula: { d: [100, 380], tough: 5000, v: 170, wary: 3000, xp: 14, sc: [140, 210] },
+      wapiti: { d: [150, 500], tough: 8000, v: 420, wary: 3000, xp: 20, sk: 15, sc: [280, 400] },
+      carneiro: { d: [200, 550], tough: 7000, v: 680, wary: 4500, xp: 26, sk: 30, sc: [150, 200] },
+      puma: { d: [40, 160], tough: 6000, v: 340, wary: 4500, hard: 9000, xp: 22, sk: 20, dg: 3000, hosp: 40, sc: [13, 16] },
+      grizzly: { d: [50, 200], tough: 11000, v: 4200, wary: 2500, xp: 35, dg: 5000, hosp: 90, sc: [21, 26], prot: true },
+      sambar: { d: [80, 300], tough: 7000, v: 560, wary: 4000, xp: 20, sk: 15, sc: [190, 260] },
+      camelo: { d: [150, 450], tough: 9000, v: 380, wary: 2000, xp: 14, sc: [400, 600] },
+      bufaloagua: { d: [50, 200], tough: 13000, v: 1050, wary: 2000, xp: 26, sk: 30, dg: 3500, hosp: 60, sc: [90, 130] },
+      crocodilo: { d: [30, 120], tough: 12000, v: 6400, wary: 3000, xp: 35, dg: 4500, hosp: 90, sc: [400, 600], prot: true },
+      caribu: { d: [150, 500], tough: 8000, v: 360, wary: 3000, xp: 16, sc: [330, 450] },
+      lobo: { d: [80, 300], tough: 5000, v: 300, wary: 5000, hard: 9000, xp: 20, dg: 1500, hosp: 30, sc: [14, 18] },
+      alce: { d: [80, 350], tough: 12000, v: 850, wary: 2500, xp: 24, sk: 20, dg: 2000, hosp: 60, sc: [180, 240] },
+      kodiak: { d: [60, 250], tough: 15000, v: 1500, wary: 3000, xp: 34, sk: 40, dg: 5500, hosp: 120, sc: [26, 31] },
+      ursopolar: { d: [80, 300], tough: 15000, v: 8000, wary: 3000, xp: 40, dg: 6000, hosp: 120, sc: [24, 29], prot: true },
+      marmota: { d: [50, 220], tough: 2500, v: 70, wary: 4000, hard: 7500, xp: 8, sc: [5, 8] },
+      gazela: { d: [200, 600], tough: 5000, v: 520, wary: 4500, hard: 9000, xp: 18, sc: [25, 35] },
+      ibex: { d: [250, 700], tough: 9000, v: 1300, wary: 4500, xp: 28, sk: 25, sc: [100, 140] },
+      argali: { d: [300, 800], tough: 11000, v: 3000, wary: 5000, xp: 38, sk: 50, sc: [150, 200] },
+      leopardoneves: { d: [150, 500], tough: 8000, v: 11000, wary: 5500, hard: 8500, xp: 45, dg: 2500, hosp: 60, sc: [14, 17], prot: true },
+      facoquero: { d: [30, 150], tough: 4000, v: 300, wary: 2500, xp: 12, dg: 1500, hosp: 20, sc: [25, 40] },
+      impala: { d: [100, 300], tough: 4500, v: 450, wary: 3500, xp: 14, sc: [55, 70] },
+      kudu: { d: [120, 350], tough: 9000, v: 1500, wary: 4000, xp: 26, sk: 25, sc: [120, 155] },
+      bufalo: { d: [40, 150], tough: 16000, v: 4000, wary: 2500, xp: 40, sk: 50, dg: 6000, hosp: 120, sc: [95, 125] },
+      rinoceronte: { d: [40, 180], tough: 18000, v: 19000, wary: 3000, xp: 45, dg: 5000, hosp: 120, sc: [60, 100], prot: true },
+    },
+    // fee: taxa da licença; ranger: hipótese de cada tiro furtivo chamar os guardas; jail: minutos de prisão; lawyer: fiança inteira
+    sites: [
+      { id: 'florestanegra', level: 5, fee: 50, ranger: 1000, jail: 15, lawyer: 400, sp: [['corco', 40], ['javali', 30], ['raposa', 20], ['gamo', 10]], prot: [['lince', 6]] },
+      { id: 'highlands', level: 8, fee: 70, ranger: 1000, jail: 20, lawyer: 700, sp: [['lagopode', 30], ['lebre', 25], ['cabra', 25], ['veado', 20]], prot: [['gatobravo', 6]] },
+      { id: 'patagonia', level: 12, fee: 100, ranger: 1100, jail: 30, lawyer: 1200, sp: [['lebre', 25], ['guanaco', 30], ['javali', 20], ['veado', 15], ['antilope', 10]], prot: [['huemul', 6]] },
+      { id: 'rochosas', level: 16, fee: 150, ranger: 1200, jail: 40, lawyer: 2000, sp: [['peru', 25], ['veadomula', 30], ['wapiti', 25], ['puma', 10], ['carneiro', 10]], prot: [['grizzly', 6]] },
+      { id: 'outback', level: 20, fee: 200, ranger: 1200, jail: 50, lawyer: 3000, sp: [['cabra', 25], ['javali', 30], ['camelo', 15], ['sambar', 20], ['bufaloagua', 10]], prot: [['crocodilo', 6]] },
+      { id: 'alasca', level: 25, fee: 250, ranger: 1300, jail: 60, lawyer: 4500, sp: [['lobo', 25], ['caribu', 35], ['alce', 25], ['kodiak', 15]], prot: [['ursopolar', 6]] },
+      { id: 'mongolia', level: 30, fee: 320, ranger: 1400, jail: 90, lawyer: 7000, sp: [['marmota', 30], ['gazela', 30], ['ibex', 25], ['argali', 15]], prot: [['leopardoneves', 5]] },
+      { id: 'limpopo', level: 35, fee: 400, ranger: 1500, jail: 120, lawyer: 10000, sp: [['facoquero', 30], ['impala', 35], ['kudu', 25], ['bufalo', 10]], prot: [['rinoceronte', 5]] },
+    ],
+  },
   courses: [
     { id: 'vigilante', price: 570, days: 2 },
     { id: 'pesados', price: 1500, days: 4 },            // carta de pesados e curso

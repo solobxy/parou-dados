@@ -43,17 +43,23 @@ const MAX_STREET_RESP = Math.max(...CFG.crimes.map((c) => Math.ceil((CFG.street.
 const balas = (q) => (q.inv.find((x) => x.id === 'balas') || { n: 0 }).n;
 const MAX_PVP = Math.floor(((CFG.pvp.gainBase + CFG.tiers.length) * 2 * (10000 + Math.max(...CFG.classes.map((c) => c.pvpBp || 0)))) / 10000);
 function contas(kind, a0, a, d0, d, t, res, arg) {
+  // v98: o alvo de um ataque ou de um assassino pode ter uma saída de caça esquecida, que fecha quando o motor lhe toca: compara-se com ele já tocado
+  if (d0 && d0.hunt && d0.hunt.on && ['hitman', 'attack'].includes(kind)) d0 = touched(d0, t);
   const av = ((a.avN || 0) - (a0.avN || 0)) * CFG.retainer.day;   // o dia da avença, pago no primeiro ato do dia, não é da ação
   // a multa de uma carga parada pela polícia paga-se quando a carga chega, com a ação que vier a seguir: também não é da ação
   const mvNovas = (a.mvLog || []).filter((x) => !(a0.mvLog || []).some((y) => y.at === x.at && y.d === x.d && y.n === x.n && y.b === x.b && y.a === x.a)), mf = mvNovas.reduce((s, x) => s + x.fine, 0);
-  const dm = wealth(a) - wealth(a0) + av + mf, dr = a.respect - a0.respect;
+  // v98: uma saída de caça esquecida fecha no touch e o guia paga: isso não é da ação
+  const tb = kind === 'whEdition' ? a0 : touched(a0, t), hx = a0.hunt && a0.hunt.on && !(tb.hunt && tb.hunt.on) && !(a.hunt && a.hunt.on && a.hunt.on.t0 === a0.hunt.on.t0) ? { m: wealth(tb) - wealth(a0), r: tb.respect - a0.respect } : { m: 0, r: 0 };
+  const dm = wealth(a) - wealth(a0) + av + mf - hx.m, dr = a.respect - a0.respect - hx.r;
   const chegou = (rr, dd) => mvNovas.filter((x) => x.x !== 2 && x.b === rr && x.d === dd).reduce((s2, x) => s2 + x.n, 0);   // o que chegou a essa região com a ação
   if (av < 0 || av > CFG.retainer.day) { console.error('CONTAS ERRADAS avença paga mais de uma vez', kind, av); process.exit(1); }
   if ((a.ilegal || 0) < (a0.ilegal || 0)) { console.error('CONTAS ERRADAS total de crime desceu', kind); process.exit(1); }
   const bad = (m) => { console.error('CONTAS ERRADAS', kind, m, JSON.stringify(res), { dm, dr }); if (process.env.DBG && res && res.r) { const s0 = res.r === 'lx' ? E.venueView(a0, t).stock : a0.wh[res.r].s; console.error('s0', s0[res.d], 's1', E.whStock(a, res.r)[res.d], 'chegou', chegou(res.r, res.d), 'mvNovas', JSON.stringify(mvNovas), 'cost min', Math.floor((res.n * MW.refC(res.d) * 0.2) / 100)); } process.exit(1); };
   // v79: a vitrine só cresce com golpes que correm bem e aviões que chegam inteiros, e só desce no museu e no penhorista
   // (v85: comparado com o estado depois do touch: uma escavação esquecida fecha sozinha e guarda o saco na vitrine)
-  const b0col = (kind === 'whEdition' ? a0 : touched(a0, t)).col || {};   // (a edição do armazém não toca no jogador: uma escavação esquecida não fecha aí)
+  // (uma ação que não passa pelo touch, ex. sair da gangue, deixa a escavação esquecida aberta: aí a base é o estado de antes)
+  const semTouch = kind === 'whEdition' || (!!a0.dg && !!a.dg && JSON.stringify(a0.dg) === JSON.stringify(a.dg) && !touched(a0, t).dg);
+  const b0col = (semTouch ? a0 : touched(a0, t)).col || {};   // (a edição do armazém não toca no jogador: uma escavação esquecida não fecha aí)
   const colD = {}; for (const id of new Set([...Object.keys(b0col), ...Object.keys(a.col || {})])) { const x = ((a.col || {})[id] || 0) - (b0col[id] || 0); if (x) colD[id] = x; }
   const colEq = (m) => JSON.stringify(Object.entries(colD).sort()) === JSON.stringify(Object.entries(m).filter(([, v]) => v).sort());
   const RARAS = CFG.col.sets.raras.items;
@@ -64,7 +70,7 @@ function contas(kind, a0, a, d0, d, t, res, arg) {
   if (!['crime', 'crimeAll', 'airCollect', 'museum', 'colSell', 'feiraTake', 'feiraGive', 'feiraBuy', 'digTap', 'digStop'].includes(kind) && Object.keys(colD).length) bad('vitrine mexeu sem razão');
   if (Object.values(a.col || {}).some((v) => !Number.isInteger(v) || v < 0)) bad('vitrine negativa');
   // v83: o depósito só cresce com biscates (o material do ofício) e com o que se recolhe da bancada; só desce ao começar uma receita
-  const b0mt = touched(a0, t).mt || {};   // (v86: uma escavação esquecida fecha sozinha e o material raro vai para o depósito)
+  const b0mt = (semTouch ? a0 : touched(a0, t)).mt || {};   // (v86: uma escavação esquecida fecha sozinha e o material raro vai para o depósito)
   const mtD = {}; for (const id of new Set([...Object.keys(b0mt), ...Object.keys(a.mt || {})])) { const x = ((a.mt || {})[id] || 0) - (b0mt[id] || 0); if (x) mtD[id] = x; }
   const mtEq = (m) => JSON.stringify(Object.entries(mtD).sort()) === JSON.stringify(Object.entries(m).filter(([, v]) => v).sort());
   if (kind === 'workDone' && !mtEq(res.mat ? { [res.mat.id]: res.mat.n } : {})) bad('depósito: biscate');
@@ -107,6 +113,26 @@ function contas(kind, a0, a, d0, d, t, res, arg) {
         if (!res.v && d0.cells[arg]) bad('escavar: achado escondido');
         if (res.end ? a.dg || !guardou(got) : a.dg.used !== d0.used + 1 || JSON.stringify(a.dg.got) !== JSON.stringify(got) || Object.keys(colD).length || Object.keys(mtD).length) bad('escavar: saco'); } }
     if (kind === 'digStop' && (!d0 || a.dg || !guardou(d0.got) || dm !== 0 || dr !== 0 || !(a.dgc[d0.site] > t))) bad('escavar: sair'); }
+  { // v98: a caça só mexe nas suas ações; o guia paga o saco ao fechar; os guardas levam tudo
+    const h0 = tb.hunt || {}, h1 = a.hunt || {}, Hc = CFG.hunt;
+    const hEq = (x, y) => JSON.stringify(x.on) === JSON.stringify(y.on) && JSON.stringify(x.tr) === JSON.stringify(y.tr) && x.sk === y.sk;   // (há ações que não passam pelo touch)
+    if (!kind.startsWith('hunt') && !hEq(h0, h1) && !hEq(a0.hunt || {}, h1)) bad('caça mexeu sem razão');
+    if (!(h1.sk >= 0 && h1.sk <= 100000)) bad('caça: perícia fora de 0-100');
+    if (h1.on) for (const k of h1.on.bag) if (k.v > E.huntSp(k.sp).v * 1.5 || k.v < 1 || ![0, 1, 2, 3].includes(k.md)) bad('caça: valor de um animal');
+    if (h1.on && (h1.on.shots < 0 || h1.on.moves < 0 || h1.on.shots > Hc.shots || h1.on.moves > Hc.moves)) bad('caça: tiros ou movimentos');
+    if (kind === 'huntStart') { const S = E.huntSite(arg.site);
+      if (h0.on || !h1.on || h1.on.site !== arg.site || dr !== 0 || dm !== -(arg.mode === 'lic' ? S.fee : 0) || a.vigor !== tb.vigor - Hc.e || E.level(a) < S.level) bad('caça: sair');
+      if (arg.mode === 'lic' && !Hc.legalT.includes(CFG.gear.find((g) => g.id === h1.on.gid).t)) bad('caça: arma ilegal com licença'); }
+    if (kind === 'huntLook' && (!h0.on || dm !== 0 || dr !== 0 || !h1.on || h1.on.moves !== h0.on.moves - 1 || !h1.on.cur)) bad('caça: procurar');
+    if (['huntNear', 'huntShoot', 'huntStop'].includes(kind)) {
+      if (!h0.on) bad('caça: sem saída');
+      else if (res.caught) { if (h1.on || dm !== 0 || dr !== 0 || !(a.jailUntil > t) || h0.on.mode !== 'fur') bad('caça: guardas'); }
+      else if (res.end) { if (h1.on || dm !== res.cash || dr !== res.resp || res.cash !== res.bag.reduce((x, k) => x + k.v, 0)) bad('caça: fechar');
+        if (res.charged && !(a.hospUntil > t)) bad('caça: carga sem hospital'); }
+      else if (dm !== 0 || dr !== 0 || !h1.on) bad('caça: a meio');
+      if (kind === 'huntShoot' && !res.caught && res.shot && res.shot.kill !== (h1.on ? h1.on.bag.length : res.bag.length) > h0.on.bag.length) bad('caça: saco do tiro');
+      if (kind === 'huntShoot' && res.shot && res.shot.kill && !(h1.sk > h0.sk || h0.sk === 100000) && !res.caught) bad('caça: perícia não subiu'); }
+  }
   switch (kind) {
     case 'gymStart': if (dm !== 0 || dr !== 0 || !a.gs || a.vigor !== touched(a0, t).vigor || E.STATS.some((k) => a.stats[k] !== a0.stats[k])) bad('ginásio: começar'); break;
     case 'gymDone': { const g = touched(a0, t).gs, S = CFG.train.set, b0 = touched(a0, t), n = E.gymReps(g, t - g.t0);
@@ -286,7 +312,7 @@ function contas(kind, a0, a, d0, d, t, res, arg) {
       break;
     }
     case 'hitman': {
-      const H = CFG.hitman, preco = Math.max(H.priceMin, d0.respect * H.pricePerRespect);
+      const H = CFG.hitman, preco = Math.max(H.priceMin, touched(d0, t).respect * H.pricePerRespect);   // (v98: o alvo pode ter uma saída de caça esquecida que fecha e lhe dá respeito)
       if (dm !== -preco || res.price !== preco || dr !== 0) bad('assassino: quem paga só perde o preço');
       if (E.sameCrew(a0, d0)) bad('assassino na própria gangue');
       if (E.level(a0) < H.minLevel || d0.respect * 10000 < a0.respect * CFG.pvp.minTargetBp || d0.shieldUntil > t || d0.hmSafe > t || d0.hospUntil > t) bad('assassino contra quem não podia');
@@ -352,6 +378,7 @@ function contas(kind, a0, a, d0, d, t, res, arg) {
     case 'workStart': if (dm !== 0 || dr !== 0 || !a.tk || a.tk.id !== res.task.id) bad('biscate: começar'); break;
     case 'workDone': if (res.shift) { if (dm !== res.money || dr !== CFG.jobs.resp || a.tk || res.money > Math.ceil((E.shiftPay(CFG.jobs.list[a.job], res.n) * CFG.jobs.qMax) / 10000)) bad('turno à mão'); break; }
       if (dm !== res.money || dr !== 0 || a.tk || res.money < 0 || (res.busted && (res.money !== 0 || !(a.jailUntil > t))) || (!res.busted && res.money > Math.ceil((CFG.work.list.find((x) => x.id === res.id).base * CFG.work.qMax * (10000 + CFG.work.ritmo.cap)) / 1e8)) || (a.wm && a.wm[res.id]) !== res.ritmo || Math.abs(res.ritmo - res.ritmoAntes) > CFG.work.ritmo.drop) bad('biscate: entregar'); break;
+    case 'huntStart': case 'huntLook': case 'huntNear': case 'huntShoot': case 'huntStop': break;   // v98: conferidas acima
     default: if (dm > 0 || dr !== 0) bad('esta ação só devia gastar'); // discoteca, putas, hospital, treino, porto (envio), equipamento, melhorias
   }
   if (a.energy > E.energyMax(a) || a.energy < 0) bad('stamina');
@@ -425,12 +452,15 @@ for (let n = 0; n < ACTIONS; n++) {
   if (r.chance(500)) Object.assign(p.mt, { chapa: r.int(1, 5), circuito: r.int(1, 5), reagente: r.int(1, 5), kit: r.int(1, 3) });   // o que a revisão e a reparação gastam
   if (r.chance(500)) { if (!p.eq.mao) p.eq.mao = { id: 'pistola', u: 20 }; for (const sl of ['mao', 'principal']) if (p.eq[sl] && p.eq[sl].u !== undefined) p.eq[sl].u = r.int(0, Math.max(0, p.eq[sl].u - 1)); }   // armas gastas, para reparar
   if (r.chance(600) && !p.gs) p.gs = { stat: pick(['F', 'T', 'I', 'C']), reps: pick([5, 10]), t0: t - r.int(0, 200) * 1000, ...(r.chance(5000) ? { gym: p.gym } : {}) };   // (v94: as de antes não dizem o ginásio)   // v82: série a meio
-  if (r.chance(400)) p.gx += r.int(0, 40000);   // v94: energia gasta como a de quem treina há semanas, para se abrirem ginásios
+  if (r.chance(400)) p.gx += r.int(0, 40000);
+  if (r.chance(400)) { const gid = pick(['sniperanti', 'espingarda3030', 'smgbullpup', 'cacadeirasemi', 'revolvercaca']), g = CFG.gear.find((x) => x.id === gid); p.eq[g.slot] = { id: g.id, u: r.int(0, Math.min(30, g.life)) }; }   // v98: armas para a caça
+  if (r.chance(300) && p.hunt) p.hunt.sk = r.int(0, 100000);   // v98: perícia ao calhas
+  if (r.chance(1500) && p.hunt && !p.hunt.on) try { E.huntStart(p, t, world, r, pick(CFG.hunt.sites).id, pick(['lic', 'fur'])); } catch { /* sem nível, arma ou energia */ }   // v98: saídas abertas, para os tiros terem que fazer   // v94: energia gasta como a de quem treina há semanas, para se abrirem ginásios
   if (r.chance(500)) for (let k = 1; k <= r.int(1, 3); k++) if (!p.done.includes('arqueologia' + k) && !(p.course && p.course.id === 'arqueologia' + k)) p.done.push('arqueologia' + k);   // v85: escavações
   if (r.chance(400)) { const st = pick(CFG.studies.list), n = r.int(1, 3); for (let k = 1; k <= n; k++) if (!p.done.includes(st.id + k) && !(p.course && p.course.id === st.id + k)) p.done.push(st.id + k); }   // v81: estudos feitos
   if (r.chance(500)) for (const i of E.colItems()) if (r.chance(7000)) p.col[i] = (p.col[i] || 0) + r.int(1, 3);   // v79: peças na vitrine, para o museu e o penhorista terem que fazer
   const before = touched(p, t), beforeD = touched(d, t), origD = structuredClone(d), origP = structuredClone(p);
-  const kind = p.dg && r.chance(8500) ? pick(['digTap', 'digTap', 'digTap', 'digTap', 'digTap', 'digStop']) : pick(['stockBuy', 'stockBuy', 'stockBuy', 'govVote', 'govLobby', 'govLobby', 'consume', 'consume', 'consume', 'museum', 'museum', 'colSell', 'colSell', 'examStart', 'examStart', 'examAnswer', 'examAnswer', 'examAnswer', 'gymStart', 'gymStart', 'gymDone', 'gymDone', 'gymDone', 'craftStart', 'craftStart', 'craftStart', 'craftTake', 'craftTake', 'maqService', 'maqService', 'feiraTake', 'feiraTake', 'feiraGive', 'feiraBuy', 'feiraBuy', 'feiraLock', 'digStart', 'digStart', 'digTap', 'digTap', 'digTap', 'digTap', 'digTap', 'digStop', 'stockSell', 'stockSell', 'missionSwap', 'venueBuy', 'venueBuy', 'venueSet', 'venueCollect', 'stockUse', 'stockUse', 'stockDump', 'broHire', 'broHire', 'broFire', 'clubBuyAt', 'clubBuyAt', 'clubBuyAt', 'broVisitAt', 'broVisitAt', 'broVisitAt', 'casino', 'casino', 'table', 'heist', 'hit', 'gangCreate', 'gangDonate', 'gangLeave', 'gangBiz', 'gangBiz', 'gangBiz', 'gangBizCollect', 'hitman', 'hitman', 'hitman', 'crime', 'crime', 'crimeAll', 'deal', 'deal', 'dealBuy', 'drug', 'refill', 'detox', 'claim', 'class', 'classChange', 'classChange', 'air', 'air', 'airCollect', 'airCollect', 'bailFor', 'bailFor', 'medicFor', 'medicFor', 'avatar', 'hooker', 'cure', 'house', 'houseUp', 'buyBiz', 'buyBiz', 'collect', 'bizGoods', 'bizGoods', 'stockHold', 'stockHold', 'acct', 'stockLimit', 'stockLimit', 'stockLimit', 'port', 'collectPort', 'portOpen', 'portOpen', 'deposit', 'withdraw', 'gear', 'attack', 'bail', 'medic', 'luxury', 'shift', 'shift', 'shift', 'job', 'course', 'buy', 'buy', 'buy', 'buy', 'equip', 'unequip', 'unequip', 'gymBuy', 'gymBuy', 'gymUse', 'modBuy', 'modBuy', 'modFit', 'modFit', 'modFit', 'modTake', 'bookBuy', 'bookBuy', 'bookRead', 'bookRead', 'sell', 'sellGoods', 'sellGoods', 'repair', 'repair', 'opStart', 'opStart', 'opStep', 'opStep', 'opGo', 'opGo', 'opGo', 'opDrop', 'retainer', 'jailSmuggle', 'jailWork', 'jailYard', 'jailCards', 'jailFavor', 'jailEscape', 'whBuy', 'whBuy', 'whUp', 'whUp', 'mktBuy', 'mktBuy', 'mktBuy', 'mktSell', 'mktSell', 'mvSend', 'mvSend', 'mvSend', 'whEdition', 'workStart', 'workStart', 'workDone', 'workDone', 'workDone']);
+  const kind = p.hunt && p.hunt.on && r.chance(8000) ? pick(['huntShoot', 'huntShoot', 'huntShoot', 'huntNear', 'huntLook', 'huntStop']) : p.dg && r.chance(8500) ? pick(['digTap', 'digTap', 'digTap', 'digTap', 'digTap', 'digStop']) : pick(['huntStart', 'huntStart', 'huntStart', 'stockBuy', 'stockBuy', 'stockBuy', 'govVote', 'govLobby', 'govLobby', 'consume', 'consume', 'consume', 'museum', 'museum', 'colSell', 'colSell', 'examStart', 'examStart', 'examAnswer', 'examAnswer', 'examAnswer', 'gymStart', 'gymStart', 'gymDone', 'gymDone', 'gymDone', 'craftStart', 'craftStart', 'craftStart', 'craftTake', 'craftTake', 'maqService', 'maqService', 'feiraTake', 'feiraTake', 'feiraGive', 'feiraBuy', 'feiraBuy', 'feiraLock', 'digStart', 'digStart', 'digTap', 'digTap', 'digTap', 'digTap', 'digTap', 'digStop', 'stockSell', 'stockSell', 'missionSwap', 'venueBuy', 'venueBuy', 'venueSet', 'venueCollect', 'stockUse', 'stockUse', 'stockDump', 'broHire', 'broHire', 'broFire', 'clubBuyAt', 'clubBuyAt', 'clubBuyAt', 'broVisitAt', 'broVisitAt', 'broVisitAt', 'casino', 'casino', 'table', 'heist', 'hit', 'gangCreate', 'gangDonate', 'gangLeave', 'gangBiz', 'gangBiz', 'gangBiz', 'gangBizCollect', 'hitman', 'hitman', 'hitman', 'crime', 'crime', 'crimeAll', 'deal', 'deal', 'dealBuy', 'drug', 'refill', 'detox', 'claim', 'class', 'classChange', 'classChange', 'air', 'air', 'airCollect', 'airCollect', 'bailFor', 'bailFor', 'medicFor', 'medicFor', 'avatar', 'hooker', 'cure', 'house', 'houseUp', 'buyBiz', 'buyBiz', 'collect', 'bizGoods', 'bizGoods', 'stockHold', 'stockHold', 'acct', 'stockLimit', 'stockLimit', 'stockLimit', 'port', 'collectPort', 'portOpen', 'portOpen', 'deposit', 'withdraw', 'gear', 'attack', 'bail', 'medic', 'luxury', 'shift', 'shift', 'shift', 'job', 'course', 'buy', 'buy', 'buy', 'buy', 'equip', 'unequip', 'unequip', 'gymBuy', 'gymBuy', 'gymUse', 'modBuy', 'modBuy', 'modFit', 'modFit', 'modFit', 'modTake', 'bookBuy', 'bookBuy', 'bookRead', 'bookRead', 'sell', 'sellGoods', 'sellGoods', 'repair', 'repair', 'opStart', 'opStart', 'opStep', 'opStep', 'opGo', 'opGo', 'opGo', 'opDrop', 'retainer', 'jailSmuggle', 'jailWork', 'jailYard', 'jailCards', 'jailFavor', 'jailEscape', 'whBuy', 'whBuy', 'whUp', 'whUp', 'mktBuy', 'mktBuy', 'mktBuy', 'mktSell', 'mktSell', 'mvSend', 'mvSend', 'mvSend', 'whEdition', 'workStart', 'workStart', 'workDone', 'workDone', 'workDone']);
   let res, arg;
   try {
     switch (kind) {
@@ -454,6 +484,11 @@ for (let n = 0; n < ACTIONS; n++) {
       case 'digStart': arg = r.chance(9000) ? pick(CFG.dig.sites).id : pick(['x', 'toString', '__proto__']); res = E.digStart(p, t, world, r, arg); break;   // v85
       case 'digTap': arg = r.chance(9000) ? r.int(0, CFG.dig.size ** 2 - 1) : pick([-1, 36, 0.5, NaN, '3']); res = E.digTap(p, t, world, r, arg); break;
       case 'digStop': res = E.digStop(p, t, world); break;
+      case 'huntStart': arg = { site: r.chance(9000) ? pick(CFG.hunt.sites).id : pick(['x', 'toString', '__proto__']), mode: pick(['lic', 'lic', 'fur', 'x']) }; res = E.huntStart(p, t, world, r, arg.site, arg.mode); break;   // v98
+      case 'huntLook': res = E.huntLook(p, t, world, r); break;
+      case 'huntNear': res = E.huntNear(p, t, world, r); break;
+      case 'huntShoot': arg = r.chance(9000) ? r.int(0, 30000) : pick([-1, NaN, Infinity, 1e12, '5']); res = E.huntShoot(p, t, world, r, arg); break;
+      case 'huntStop': res = E.huntStop(p, t, world); break;
       case 'maqService': arg = r.chance(9000) ? pick(CFG.biz).id : pick(['x', 'toString', '__proto__']); res = E.maqService(p, t, world, arg); break;
       case 'colSell': arg = { id: r.chance(9000) ? pick(E.colItems()) : pick(['toString', 'x']), n: pick([1, 1, 2, 5, 0, -1, 0.5, anyInt()]) }; res = E.colSell(p, t, world, arg.id, arg.n); break;
       case 'govLobby': arg = pick([100, 1000, 50000, 99, 0, -5, 0.5, 2e12, anyInt()]); res = E.govLobby(p, t, world, arg); break;

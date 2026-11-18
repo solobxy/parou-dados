@@ -29,7 +29,7 @@ const RONDA_TESTE = process.env.PRIMEIRA_RONDA ? dataDe(process.env.PRIMEIRA_RON
 // Épocas de 28 dias a contar da sexta 13/11/2026 às 21:00 de Lisboa (PRIMEIRA_EPOCA=AAAA-MM-DD muda-a, para testes)
 const ANCORA = dataDe(process.env.PRIMEIRA_EPOCA || process.env.PRIMEIRA_RONDA || '2026-11-13');
 const rng = process.env.TESTE_SEMENTE ? seededRng(+process.env.TESTE_SEMENTE) : cryptoRng();   // nos testes, a sorte pode ser sempre a mesma
-const VERSAO = 97;   // sobe quando o servidor muda, para se confirmar de fora que a versão nova já está a correr
+const VERSAO = 98;   // sobe quando o servidor muda, para se confirmar de fora que a versão nova já está a correr
 const ATOS_3S = +(process.env.ATOS_3S || 15), ATOS_MIN = +(process.env.ATOS_MIN || 400); // ações por conta: 15 em 3 s, 400 por minuto
 
 // ---------- relógio que nunca anda para trás ----------
@@ -106,6 +106,19 @@ const jornal = [];
 // v77: a última hora tem um travão por categoria (engine/noticias.js): com muita gente passam só as maiores, ao mesmo ritmo
 const SEM_TRAVAO = new Set(['season', 'stockBust']);
 const nw = () => (bolsa && bolsa.w ? NW.newsUp(bolsa.w) : null);
+// v98: os recordes de caça da época (o maior troféu de cada espécie, com o nome de quem o caçou)
+function recordesCaca(mk, p, now, r) {
+  if (!mk || !r || !Array.isArray(r.bag) || !r.bag.length || r.caught) return r;
+  const ep = epocaEmDia(now).n;
+  if (!mk.w.hrec || mk.w.hrec.ep !== ep) mk.w.hrec = { ep, sp: {} };
+  const R = mk.w.hrec.sp, recs = [];
+  for (const k of r.bag) if (!R[k.sp] || k.sc > R[k.sp].sc) { R[k.sp] = { name: nomeDe(p.id), sc: k.sc, md: k.md, t: now }; if (!recs.includes(k.sp)) recs.push(k.sp); }
+  if (!recs.length) return r;
+  bolsaSuja = true;
+  const top = r.bag.filter((k) => recs.includes(k.sp)).sort((x, y) => E.huntSp(y.sp).v - E.huntSp(x.sp).v)[0];
+  noticia(now, { k: 'hrec', name: nomeDe(p.id), sp: top.sp, n: top.sc });
+  return { ...r, recs };
+}
 function noticia(now, o) {
   const s = nw();
   if (s && !SEM_TRAVAO.has(o.k)) { const ok = NW.livePass(s, o.k, o.money || 0, now); bolsaSuja = true; if (!ok) { if (process.env.DBG_NEWS) console.error('travão', o.k, o.money); return; } }
@@ -476,7 +489,8 @@ function vistaMundo(w, now) {
   gov.pend = gov.pend.map((x) => ({ ...x, atAt: MW.edStart(x.at) }));
   const ep = epocaEmDia(now).n, mw = m.w.mus && m.w.mus.ep === ep ? m.w.mus : {};   // v79: a placa do museu (só a da época que corre)
   const mus = Object.fromEntries(Object.keys(CFG.col.sets).map((k) => [k, mw[k] || { n: 0, top: [] }]));
-  return { mus, ed: m.w.ed, edNext: MW.edStart(m.w.ed + 1), edAt: MW.edStart(m.w.ed), lx: { crime: m.w.lx.crime, press: MW.pressOf(m.w, 'lx'), hist: m.w.lx.hist }, rg, bustBp: CFG.bustBp, arts, gov, pop: Math.round(MW.popOf(m.w)) };
+  const hrec = m.w.hrec && m.w.hrec.ep === ep ? m.w.hrec.sp : {};   // v98: recordes de caça da época
+  return { mus, hrec, ed: m.w.ed, edNext: MW.edStart(m.w.ed + 1), edAt: MW.edStart(m.w.ed), lx: { crime: m.w.lx.crime, press: MW.pressOf(m.w, 'lx'), hist: m.w.lx.hist }, rg, bustBp: CFG.bustBp, arts, gov, pop: Math.round(MW.popOf(m.w)) };
 }
 
 // ---------- vista do jogador para o browser ----------
@@ -491,6 +505,7 @@ function vista(p, now) {
     cd: { est: E.consumWait(p, 'est', now), med: E.consumWait(p, 'med', now) },   // v78: quanto falta na espera de cada família
     mt: p.mt, cf: p.cf, maq: p.maq,   // v83: depósito, bancada e máquinas
     dg: E.digView(p, now), dgc: p.dgc, arq: E.stLevel(p, 'arqueologia'),   // v85: a escavação aberta (sem a grelha), os sítios vigiados, o nível de Arqueologia
+    hn: E.huntView(p, now), hk: p.hunt.sk, ht: p.hunt.tr, hfc: p.hunt.fc, hq: Object.fromEntries(CFG.hunt.sites.map((x) => [x.id, E.huntQuotaLeft(p, now, x.id)])),   // v98: a saída de caça, a perícia (milésimos), os troféus, as reservas vigiadas e as saídas com licença que faltam hoje
     feira: { levantar: qf.nParaMim.get(ronda, p.id).n },   // v84: o que está à espera de ser levantado na feira
     col: p.col, mus: p.mus, musEp: p.musEp || {},   // v79: a vitrine, as entregas ao museu e em que época entrou na placa
     dia: (() => { const d = meuDia(p.id, now); if (!d) return null; const { ronda: _r, conta: _c, dia: _d, ...x } = d; return x; })(),   // v77: «a tua página»
@@ -541,7 +556,7 @@ function cfgPublica() {
     bustBp: CFG.bustBp, crimeAllMax: CFG.crimeAllMax, casino: { minBet: CFG.casino.minBet, limits: CFG.casino.limits, slotMinC: CFG.casino.slotMinC, red: CFG.casino.red, dice: CFG.casino.dice, wheel: { segs: CFG.casino.wheel.segs, spots: CFG.casino.wheel.spots, topMult: CFG.casino.wheel.topMult.map(([m]) => m), louca: CFG.casino.wheel.louca }, slots: Object.fromEntries(Object.entries(CFG.casino.slots).map(([k, g]) => [k, { kind: g.kind, cols: g.cols, rows: g.rows, min: g.min, nsym: g.nsym, trig: g.trig, pay: g.pay, scatPay: g.scatPay, free: g.free, fs: g.fs, retrig: g.retrig, buy: g.buy, superBuy: g.superBuy, max: g.max, accFree: g.accFree, accAll: g.accAll, orbBase: g.orbBase }])) }, gang: CFG.gang, classes: CFG.classes, classChange: CFG.classChange, avatars: CFG.avatars, hookers: CFG.hookers, house: CFG.house, mastery: CFG.mastery, missions: CFG.missions.length, start: CFG.start,
     round: { playDays: CFG.round.playDays, noPvpMs: CFG.round.noPvpMs, newbieShieldMs: CFG.round.newbieShieldMs }, season: CFG.season, raid: CFG.raid,   // v91: a wiki
     consum: CFG.consum, col: CFG.col, gyms: CFG.gyms, books: CFG.books,   // v94, v95
-    mat: CFG.mat, craft: CFG.craft, feira: { ...CFG.feira, refs: FEIRA_REFS }, dig: CFG.dig,   // v83, v84
+    mat: CFG.mat, craft: CFG.craft, feira: { ...CFG.feira, refs: FEIRA_REFS }, dig: CFG.dig, hunt: CFG.hunt,   // v83, v84, v98
     exam: (({ ans: _a, ...x }) => x)(CFG.exam), studies: CFG.studies,   // v81: a Universidade   // v80: as regras do exame, sem as respostas certas
     gov: { vote: CFG.gov.vote, laws: CFG.gov.laws, cof: CFG.gov.cof, parties: Object.fromEntries(Object.entries(CFG.gov.parties).map(([k, x]) => [k, { pos: x.pos, wOp: x.wOp, wLob: x.wLob }])) },   // v76: o parlamento
   };
@@ -1628,6 +1643,11 @@ function agir(conta, corpo, now) {
     case 'digStart': r = E.digStart(p, now, world, rng, String(a.site || '')); break;   // v85: escavações
     case 'digTap': r = E.digTap(p, now, world, rng, int(a.i)); break;
     case 'digStop': r = E.digStop(p, now, world); break;
+    case 'huntStart': r = E.huntStart(p, now, world, rng, String(a.site || '').slice(0, 24), String(a.mode || '')); break;   // v98: caça
+    case 'huntLook': r = E.huntLook(p, now, world, rng); break;
+    case 'huntNear': r = recordesCaca(mk0, p, now, E.huntNear(p, now, world, rng)); break;
+    case 'huntShoot': r = recordesCaca(mk0, p, now, E.huntShoot(p, now, world, rng, Number(a.at))); if (r.caught) noticia(now, { k: 'hcaught', name: nomeDe(p.id), site: r.site }); break;
+    case 'huntStop': r = recordesCaca(mk0, p, now, E.huntStop(p, now, world)); break;
     case 'gymDone': r = E.gymDone(p, now, world, Array.isArray(a.taps) ? a.taps.slice(0, 64) : null); break;
     case 'craftStart': r = E.craftStart(p, now, world, String(a.id || ''), a.n === undefined ? 1 : int(a.n)); break;   // v83: a cave
     case 'craftTake': r = E.craftTake(p, now, world); break;

@@ -106,6 +106,13 @@ function act(type, args = {}, opts = {}) {
 // ---------- o que acontece depois de cada ação ----------
 function react(type, out, before, opts) {
   const r = out.result, me = out.me, lv = r.levelUp && r.levelUp.to > r.levelUp.from ? r.levelUp : null;
+  if (type.startsWith('hunt')) {   // v98: a caça
+    if (type === 'huntStart') { S.hShot = null; S.hEnd = null; S.hOrg = null; fx.sfx('tap'); }
+    if (type === 'huntShoot') { const s = r.shot; S.hShot = { shot: s }; fx.sfx(r.caught ? 'bust' : s && s.kill ? (s.md >= 2 ? 'crit' : 'cash') : 'fail'); fx.vibrate(s && s.kill ? 12 : [30, 40, 30]); }
+    if (type === 'huntShoot' && r.shot?.kill && r.shot.md >= 2) fx.stamp(t('hMd' + r.shot.md).toUpperCase(), r.shot.md === 3 ? 'var(--gold)' : '#d9dde6');   // prata e ouro: carimbo
+    if (type === 'huntNear') S.hShot = r.fled ? { fled: true } : null;
+    if (r.end) { S.hEnd = r; S.hShot = null; S.hOrg = null; if (!r.caught && r.cash > 0) toast(t('tHuntEnd', { m: money(r.cash) })); }
+  }
   if (r.grid && (type === 'digStop' || type === 'digTap')) S.digLast = { site: r.site, grid: r.grid, open: r.open, got: r.got || [], caught: !!r.caught };   // a escavação acabou: fica à vista
   // v79: uma peça para a vitrine (golpe que correu bem ou avião inteiro); o aviso fica por cima do relatório
   const found = type === 'crime' || type === 'airCollect' ? (r.col ? [r.col] : []) : type === 'crimeAll' && r.col ? Object.keys(r.col) : [];
@@ -224,7 +231,7 @@ function react(type, out, before, opts) {
     if (r.success) { toast(t('hmDone', { b: r.target, n: r.respLoss })); fx.sfx('crit'); fx.vibrate([20, 40, 20]); } else { toast(t('hmMissed', { b: r.target }), true); fx.sfx('fail'); }
     S.targets = null; loadTargets();
   } else if (type === 'tableBet') fx.sfx('deal');
-  else if (!['gymStart', 'tableClear', 'craftStart', 'craftTake'].includes(type) && !type.startsWith('feira') && !type.startsWith('dig')) fx.sfx('buy');
+  else if (!['gymStart', 'tableClear', 'craftStart', 'craftTake'].includes(type) && !type.startsWith('feira') && !type.startsWith('dig') && !type.startsWith('hunt')) fx.sfx('buy');
   if (type === 'crime' || type === 'crimeAll') requestAnimationFrame(showReport);
   if (lv) { skyline(lv.to); if (type !== 'crime' && type !== 'crimeAll' && type !== 'opGo') toast(t('r_lvl', { n: lv.to, x: titleOf(lv.to) })); }
   render();
@@ -325,6 +332,7 @@ function quickItems(me) {
   if (me.mission?.done) out.push({ go: 'alley', ic: 'crown', txt: t('qkPrize'), good: true });
   if (exReady(me)) out.push({ go: 'uni', ic: 'brain', txt: t('qkExam') });
   if (me.dg) out.push({ go: 'dig', ic: 'target', txt: t('qkDig') });
+  if (me.hn) out.push({ go: 'hunt', ic: 'target', txt: t('qkHunt') });   // v98: uma saída de caça a meio
   if (me.bj) out.push({ go: 'bj', ic: 'gem', txt: t('qkBj') });
   const ev = (S.events || []).filter((e) => e.id > S.lastEventSeen).length;
   if (ev) out.push({ go: 'fights', ev: true, ic: 'fights', txt: t(ev === 1 ? 'qkNews1' : 'qkNews', { n: ev }) });
@@ -424,7 +432,7 @@ function tickHud() {
 // ---------- ecrãs ----------
 // ---------- navegação: uma cidade com locais ----------
 const PLACES = {
-  city: { ic: 'skyline' }, empire: { ic: 'empire' }, rob: { ic: 'street', img: 'golpes' }, club: { ic: 'bolt', img: 'discoteca' }, gym: { ic: 'gym', img: 'ginasio' }, gyms: { ic: 'gym' }, livros: { img: 'livros' },
+  city: { ic: 'skyline' }, empire: { ic: 'empire' }, rob: { ic: 'street', img: 'golpes' }, club: { ic: 'bolt', img: 'discoteca' }, gym: { ic: 'gym', img: 'ginasio' }, gyms: { ic: 'gym' }, livros: { img: 'livros' }, hunt: { img: 'caca' },
   biz: { ic: 'empire', img: 'negocios' }, stash: { img: 'stash' }, acct: { img: 'contabilista' }, port: { img: 'porto' }, air: { img: 'aeroporto' }, arms: { img: 'armas' }, bank: { img: 'banco' }, hosp: { img: 'hospital' },
   jail: { img: 'prisao' }, gang: { img: 'gangue' }, work: { img: 'profissao' }, news: { img: 'jornal' }, casino: { ic: 'gem', img: 'casino' }, roulette: { img: 'roleta' }, bj: { img: 'blackjack' }, dice: { img: 'dados' }, wheel: { img: 'roda' }, slot: { img: 'slot' }, zeus: { img: 'zeus' }, doce: { img: 'doce' }, rebucado: { img: 'rebucado' }, alley: { img: 'beco' }, lux: { img: 'luxos' }, fights: { ic: 'fights', img: 'lutas' }, rank: { img: 'procurados' }, hitman: { img: 'assassino' }, putas: { img: 'putas' }, gigs: { img: 'biscates' }, casa: {}, myclub: { img: 'discoteca' }, mybro: { img: 'bordel' }, bolsa: { img: 'bolsa' }, job: { img: 'emprego' }, inv: { ic: 'box', img: 'inventario' }, ops: { img: 'operacoes' }, parl: { img: 'parlamento' }, cafe: { img: 'cafe' }, museum: { img: 'museu' }, uni: { img: 'universidade' }, cave: { img: 'cave' }, feira: { img: 'feira' }, dig: { img: 'escavacoes' }, arquivo: { img: 'arquivo' },
 };
@@ -434,10 +442,10 @@ const PLACES = {
 const NAV = ['city', 'rob', 'gym', 'empire', 'inv'];   // v92: o império sobe para o lugar das lutas e o inventário fica no fim (as lutas estão na cidade e na barra de cima)
 const HUB = {
   // v95 (pedido do Dinis): o porto e o aeroporto passam para a cidade; a gangue e as lutas, para o império
-  city: [['sec_night', ['club', 'putas', 'casino', 'alley', 'arms']], ['sec_street', ['gigs', 'cafe', 'job', 'uni', 'livros', 'dig', 'feira', 'bank', 'museum', 'parl', 'hosp', 'jail', 'rank']], ['sec_trade', ['port', 'air']]],
+  city: [['sec_night', ['club', 'putas', 'casino', 'alley', 'arms']], ['sec_street', ['gigs', 'cafe', 'job', 'uni', 'livros', 'dig', 'hunt', 'feira', 'bank', 'museum', 'parl', 'hosp', 'jail', 'rank']], ['sec_trade', ['port', 'air']]],
   empire: [['sec_power', ['fights', 'gang']], ['sec_income', ['biz', 'myclub', 'mybro']], ['sec_assets', ['casa', 'cave', 'bank', 'bolsa', 'stash', 'acct']]],
 };
-const PARENT = { gyms: 'gym', livros: 'city', fights: 'empire', arquivo: 'city', dig: 'city', feira: 'city', cave: 'empire', uni: 'city', museum: 'city', cafe: 'city', parl: 'city', gigs: 'city', gang: 'empire', work: 'job', job: 'city', news: 'city', casino: 'city', roulette: 'casino', bj: 'casino', dice: 'casino', wheel: 'casino', slot: 'casino', zeus: 'casino', doce: 'casino', rebucado: 'casino', club: 'city', putas: 'city', gym: 'city', alley: 'city', hosp: 'city', jail: 'city',
+const PARENT = { gyms: 'gym', livros: 'city', hunt: 'city', fights: 'empire', arquivo: 'city', dig: 'city', feira: 'city', cave: 'empire', uni: 'city', museum: 'city', cafe: 'city', parl: 'city', gigs: 'city', gang: 'empire', work: 'job', job: 'city', news: 'city', casino: 'city', roulette: 'casino', bj: 'casino', dice: 'casino', wheel: 'casino', slot: 'casino', zeus: 'casino', doce: 'casino', rebucado: 'casino', club: 'city', putas: 'city', gym: 'city', alley: 'city', hosp: 'city', jail: 'city',
   biz: 'empire', port: 'city', air: 'city', myclub: 'empire', mybro: 'empire', bolsa: 'empire', stash: 'empire', acct: 'empire', casa: 'empire', bank: 'empire', lux: 'empire', arms: 'fights', rank: 'fights', hitman: 'fights', ops: 'rob' };
 const upOf = (id) => (S.backTo && S.backTo[id]) || PARENT[id] || 'city';   // um sítio que está em duas zonas volta para a zona de onde vieste
 const tabOf = (id) => { let x = id; for (let k = 0; k < 4 && !NAV.includes(x); k++) x = upOf(x); return NAV.includes(x) ? x : 'city'; };
@@ -518,7 +526,7 @@ function shell() {
 }
 
 const SCREENS = { job: screenJob, city: screenCity, empire: screenEmpire, news: screenNews, casino: screenCasino, roulette: screenRoulette, bj: screenBJ, dice: screenDice, wheel: screenWheel, slot: () => screenSlotGame('slot'), zeus: () => screenSlotGame('zeus'), doce: () => screenSlotGame('doce'), rebucado: () => screenSlotGame('rebucado'), rob: screenRob, club: screenClub, gym: screenGym, gyms: screenGyms, livros: screenLivros, biz: screenBiz, port: screenPort, arms: screenArms, bank: screenBank,
-  hosp: screenHosp, jail: screenJail, gang: screenGang, work: screenWork, air: screenAir, putas: screenPutas, myclub: screenMyClub, mybro: screenMyBro, bolsa: screenBolsa, inv: screenInv, stash: screenStash, acct: screenAcct, casa: screenCasa, alley: screenAlley, lux: screenLux, fights: screenFights, rank: screenRank, hitman: screenHitman, ops: screenOps, gigs: screenGigs, parl: screenParl, cafe: screenCafe, museum: screenMuseum, uni: screenUni, cave: screenCave, feira: screenFeira, dig: screenDig, arquivo: screenArquivo };
+  hosp: screenHosp, jail: screenJail, gang: screenGang, work: screenWork, air: screenAir, putas: screenPutas, myclub: screenMyClub, mybro: screenMyBro, bolsa: screenBolsa, inv: screenInv, stash: screenStash, acct: screenAcct, casa: screenCasa, alley: screenAlley, lux: screenLux, fights: screenFights, rank: screenRank, hitman: screenHitman, ops: screenOps, gigs: screenGigs, parl: screenParl, cafe: screenCafe, museum: screenMuseum, uni: screenUni, cave: screenCave, feira: screenFeira, dig: screenDig, hunt: screenHunt, arquivo: screenArquivo };
 function render(force) {
   if (!S.st) return;
   if (!S.st.me || S.st.round.phase !== 'play') return renderPause();
@@ -547,7 +555,7 @@ function tabDots() {
   const me = S.st.me, n = now();
   const want = {
     empire: (S.events || []).some((e) => e.id > S.lastEventSeen) || (me.cf && me.cf.end <= n) || S.cfg.biz.some((b) => me.biz[S.cfg.biz.indexOf(b)]?.n > 0 && maqState(me, b.id) === 3) || me.biz.some((b, i) => b.n > 0 && storedNow(b, i) >= (b.perH * S.cfg.storageMs) / 3600000 / 2),
-    city: (me.air && me.air.readyAt <= n) || me.port.some((c) => c.readyAt <= n) || !!me.mission?.done || exReady(me) || me.feira?.levantar > 0 || !!me.dg || !!me.bj,   // v80: um exame à espera; v84: o que levantar na feira; v90: a mão de blackjack por acabar (o casino saiu da barra)
+    city: (me.air && me.air.readyAt <= n) || me.port.some((c) => c.readyAt <= n) || !!me.mission?.done || exReady(me) || me.feira?.levantar > 0 || !!me.dg || !!me.hn || !!me.bj,   // v80: um exame à espera; v84: o que levantar na feira; v90: a mão de blackjack por acabar (o casino saiu da barra)
     rob: !!(me.op && me.op.ready <= n && !(me.op.miss || []).length),   // um golpe grande pronto para avançar
   };
   for (const id of NAV) {
@@ -701,7 +709,7 @@ function newsText(e) {
   if (k === 'cls') return tv('nw_cls', seedOf(e.name + k + e.t), { a: e.name, x: t('cl_' + e.from), y: t('cl_' + e.to) });
   if (k === 'gangHeist' || k === 'gangHeistFail') return tv('nw_' + k, seedOf(e.gang + k + e.t), { g: e.gang, x: t('gh_' + e.c), n: e.n, m: money(e.money || 0) });
   if (k === 'gangHit' || k === 'gangHitFail') return tv('nw_' + k, seedOf(e.gang + k + e.t), { g: e.gang, b: e.target, n: e.n });
-  const x = k === 'op' || k === 'opJail' ? t('op_' + e.o) : k === 'house' ? list('houses')[e.h] : k === 'lux' ? list('lux')[e.i] : k === 'lvl' ? titleOf(e.n) : k === 'mus' ? t('muSet_' + e.set) : k.startsWith('casino') ? t('csIn_' + e.g) : C[e.c];
+  const x = k === 'op' || k === 'opJail' ? t('op_' + e.o) : k === 'house' ? list('houses')[e.h] : k === 'lux' ? list('lux')[e.i] : k === 'lvl' ? titleOf(e.n) : k === 'mus' ? t('muSet_' + e.set) : k === 'hrec' ? (lang() === 'pt' ? t('hs_' + e.sp).toLowerCase() : t('hs_' + e.sp)) : k === 'hcaught' ? t('hsite_' + e.site) : k.startsWith('casino') ? t('csIn_' + e.g) : C[e.c];
   return tv('nw_' + k, seedOf(e.name + k + e.t), { a: e.name, b: e.target, x, m: money(e.money || 0), n: e.n });
 }
 const newsIdx = (f) => Math.floor(now() / 5000) % f.length;
@@ -726,7 +734,7 @@ function tickNews() {
   el.querySelector('.ntx').textContent = newsText(e);
   el.classList.remove('swap'); void el.offsetWidth; el.classList.add('swap');
 }
-const NEWS_TABS = ['news', 'city', 'parl', 'museum'];   // ecrãs que mostram o que vem com o jornal (o mundo, o Parlamento, a placa do museu)
+const NEWS_TABS = ['news', 'city', 'parl', 'museum', 'hunt'];   // ecrãs que mostram o que vem com o jornal (o mundo, o Parlamento, a placa do museu)
 async function loadNews() {
   try { const r = await api('GET', '/api/news'); S.news = r; if (r.feed) S.feed = r.feed; if (NEWS_TABS.includes(S.tab)) render(); } catch {}
 }
@@ -998,6 +1006,7 @@ function screenCity() {
     uni: exReady(me) ? t('exBadge') : me.course ? dur(Math.max(0, me.course.end - n)) : null,
     feira: me.feira?.levantar ? t('fToTakeB', { n: me.feira.levantar }) : null,   // v84: há o que levantar
     dig: me.dg ? t('dgOnB') : null,   // v85: uma escavação a meio
+    hunt: me.hn ? t('hOnB') : null,   // v98: uma saída de caça a meio
     livros: me.bk?.rd && me.bk.rd.end > n ? t('bkReadingB', { t: dur(me.bk.rd.end - n) }) : null,   // v95: a ler
     museum: S.cfg.col && Object.keys(S.cfg.col.sets).some((k) => setHave(me, k) === S.cfg.col.sets[k].items.length) ? t('muBadge') : null,
   };
@@ -3153,6 +3162,207 @@ function screenDig() {
   if (!me.arq) out.push(h('div', { class: 'tip' }, h('p', null, t('dgNoStudy')), h('button', { class: 'btn buy sm', on: { click: () => go('uni') } }, t('dgToUni'))));
   out.push(h('h2', { class: 'sec' }, t('dgSites')), h('p', { class: 'small muted usub' }, t('dgHow', { p: D.riskBp / 100 })),
     h('div', { class: 'card vlist vc' }, D.sites.map((x) => digSiteRow(me, x, b))));
+  return out;
+}
+
+// ===== A caça (v98) =====
+// Oito reservas pelo mundo. Em cima, um só seletor: com licença, furtiva, troféus e recordes. Com uma saída aberta, a mira é a
+// ação do ecrã: a cruz oscila por cima do animal e o tiro conta o instante do toque (o servidor faz as contas com o ritmo e a
+// fase que mandou). O tamanho do animal só se sabe depois de abatido.
+const hSite = (id) => S.cfg.hunt.sites.find((x) => x.id === id);
+const hSp = (id) => S.cfg.hunt.sp[id];
+const hName = (id) => t('hs_' + id).replace(/-/g, '‑');   // o nome não parte no hífen
+const hMd = (m) => (m ? h('span', { class: 'hmd m' + m }, t('hMd' + m)) : null);
+const hPct = (bp) => Math.round(bp / 100) + '%';
+const hSkF = (me) => (Math.floor((me.hk || 0) / 100) / 10).toLocaleString(lang() === 'pt' ? 'pt-PT' : 'en-GB', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+const hNw = (...x) => h('span', { class: 'nw' }, ...x);   // «rótulo valor» que não se separa
+// a pontuação a que se chega à medalha seguinte (as medalhas vão pelo tamanho: 0,55, 0,75 e 0,9 do intervalo de pontos)
+function hNextMd(sp, sc, md) {
+  const a = hSp(sp), M = S.cfg.hunt.medal;
+  if (md >= M.length) return null;
+  return { m: md + 1, at: Math.max(sc + 1, Math.ceil(a.sc[0] + ((a.sc[1] - a.sc[0]) * M[md]) / 10000)) };
+}
+const hNextTxt = (nx, sc) => { const n = nx.at - sc; return t('hNext' + nx.m + (n === 1 ? 'o' : ''), { n: num(n) }); };
+// a arma da saída: a de fogo vestida com mais alcance (a mesma conta do servidor)
+function hGunSlot(me) {
+  const L = ['principal', 'mao'].filter((s) => { const x = me.eq[s], g = x && gearOf(x.id); return g && g.gun && x.u > 0; });
+  L.sort((a, b) => wStatC(me.eq[b]).rng - wStatC(me.eq[a]).rng);
+  return L[0] || null;
+}
+const hSilenced = (it) => (it.m || []).some((id) => (gearOf(id)?.bust || 0) > 0);
+// o instante do toque, contado desde que este animal apareceu aqui (mudou de sítio ou de distância: conta de novo)
+function hAt(c) {
+  const key = c.t + ':' + c.d + ':' + c.sp;
+  if (!S.hOrg || S.hOrg.key !== key) S.hOrg = { key, at: performance.now(), shown: false };
+  return performance.now() - S.hOrg.at;
+}
+const hTheta = (c, at) => Math.PI * (at / (c.P / 2) + c.ph / 1000);
+function hAimQ(c, at) {
+  const x = (((at / (c.P / 2)) + c.ph / 1000) % 1 + 1) % 1, off = Math.min(x, 1 - x) * 20000;
+  for (const [q, lim] of S.cfg.hunt.aim.q) if (off <= lim) return q;
+  return 'mau';
+}
+// a cruz a oscilar: um só ciclo de animação (sobrevive aos redesenhos, porque lê a origem de S.hOrg)
+function hLoop() {
+  const el = document.querySelector('.hscope'), c = S.st?.me?.hn?.cur;
+  if (!el || !c || el.classList.contains('empty')) { S.hRaf = 0; return; }
+  const at = hAt(c), th = hTheta(c, at), w = el.clientWidth, q = hAimQ(c, at);
+  el.style.setProperty('--hx', (Math.sin(th) * w * 0.4).toFixed(1) + 'px');
+  el.style.setProperty('--hy', (Math.sin(th * 2 + 1) * w * 0.02).toFixed(1) + 'px');
+  if (el.dataset.q !== q) {
+    el.dataset.q = q;
+    const n = document.querySelector('.hlive'); if (n) { n.dataset.q = q; n.textContent = t('hNow', { p: hPct(c.hit[q]) }); }
+  }
+  S.hRaf = requestAnimationFrame(hLoop);
+}
+function hShoot() {
+  const c = S.st.me.hn?.cur; if (!c || S.hBusy || !(c.hit.perf > 0)) return;
+  const at = Math.max(0, Math.round(hAt(c))), sc = document.querySelector('.hscope');
+  if (sc) { sc.classList.remove('fire'); void sc.offsetWidth; sc.classList.add('fire'); }   // recuo e clarão
+  fx.vibrate(15);
+  S.hBusy = true;
+  act('huntShoot', { at }, { el: document.querySelector('.hshoot') }).finally(() => { S.hBusy = false; });
+}
+// o que aconteceu ao último tiro ou passo (por baixo do nome)
+function hShotLine() {
+  const r = S.hShot; if (!r) return null;
+  if (r.fled) return h('p', { class: 'small hres c-red' }, t('hFled'));
+  const s = r.shot; if (!s) return null;
+  if (s.kill) { const nx = hNextMd(s.sp, s.sc, s.md);
+    return h('p', { class: 'small hres num' }, h('span', { class: 'c-cash' }, t('hKill', { s: num(s.sc), m: money(s.v) })), s.md ? ' · ' : '', hMd(s.md),
+      nx ? h('span', { class: 'muted' }, ' · ' + hNextTxt(nx, s.sc)) : null); }
+  return h('p', { class: 'small hres c-red' }, t(s.wounded ? 'hWound' : 'hMiss', { p: hPct(s.bp) }));
+}
+const hDots = (n, of) => h('span', { class: 'hdots', 'aria-label': t('hShots', { a: n, b: of }) }, Array.from({ length: of }, (_, i) => h('i', { class: i < n ? 'on' : '' })));
+function huntNow(me, b) {
+  const H = S.cfg.hunt, hn = me.hn, c = hn.cur, it = me.eq[hn.slot], w = it ? wStatC(it) : { rng: 1 };
+  const bagV = hn.bag.reduce((s, k) => s + k.v, 0), out = [], last = S.hShot?.shot;
+  const title = c ? hName(c.sp) : last ? hName(last.sp) : t('hsite_' + hn.site);
+  out.push(h('div', { class: 'row sp hhead' },
+    h('div', { class: 'grow' }, h('h2', { class: 'hsp' }, title), h('div', { class: 'small muted' }, t('hsite_' + hn.site) + ' · ' + t('hMode_' + hn.mode))),
+    h('div', { class: 'hd num' }, c ? h('b', null, num(c.d) + ' m') : null,
+      h('span', { class: 'small muted' }, c ? t('hRange', { r: wRngTxt(w.rng) }) : ''),
+      h('span', { class: 'small muted' }, h('span', { dataset: { left: hn.until } }, leftTxt(hn.until - now()))))));
+  const res = hShotLine(); if (res) out.push(res);
+  if (c) {
+    const a = hSp(c.sp), z = 1 + 0.2 * (1 - Math.max(0, Math.min(1, (c.d - a.d[0]) / Math.max(1, a.d[1] - a.d[0]))));   // mais perto, maior
+    out.push(h('div', { class: 'hscope', style: `--z:${z.toFixed(2)}`, 'aria-hidden': 'true', on: { click: () => hShoot() } },
+      h('img', { class: 'hani', src: IMG('caca', c.sp), alt: '', width: 600, height: 600, decoding: 'async' }),
+      h('i', { class: 'hzone' }), h('div', { class: 'hret' }, h('i', { class: 'hv' }), h('i', { class: 'hh' }), h('b'))));
+    const none = c.hit.perf === 0;
+    out.push(h('p', { class: 'hlive num', 'aria-live': 'off', dataset: { q: 'bom' } }, none ? t('hOut') : t('hNow', { p: hPct(c.hit.bom) })));
+    if (!c.kill) out.push(h('p', { class: 'small c-red hwarn' }, t('hWeak')));
+    if (!S.hRaf) S.hRaf = requestAnimationFrame(hLoop);
+    out.push(h('button', { class: 'btn block big buy hshoot', disabled: !!b || none, 'aria-label': t('hShootA'), on: { click: () => hShoot() } }, t('hShoot')));
+    out.push(h('div', { class: 'hmoves' },
+      h('button', { class: 'btn ghost hrisk', disabled: !!b || hn.moves < 1 || c.d <= H.minD, on: { click: (e) => { S.hShot = null; act('huntNear', {}, { el: e.currentTarget }); } } },
+        t('hNear') + ' · ' + t('hNearRisk', { p: hPct(c.spook) })),
+      h('button', { class: 'btn ghost', disabled: !!b || hn.moves < 1, on: { click: (e) => { S.hShot = null; act('huntLook', {}, { el: e.currentTarget }); } } }, t('hLook') + ' · ' + t('hMove1'))));
+  } else {
+    out.push(h('div', { class: 'hscope empty', 'aria-hidden': 'true' }, h('img', { class: 'hani', src: IMG('caca', 'r_' + hn.site), alt: '', width: 600, height: 600 })));
+    out.push(h('button', { class: 'btn block big buy hshoot', disabled: !!b || hn.moves < 1, on: { click: (e) => { S.hShot = null; act('huntLook', {}, { el: e.currentTarget }); } } }, t('hLookFirst') + ' · ' + t('hMove1')));
+  }
+  out.push(h('p', { class: 'small num hst' }, hNw(t('hShotsL'), ' ', hDots(hn.shots, H.shots)), ' · ', hNw(t('hMovesL', { a: hn.moves, b: H.moves })),
+    hn.mode === 'fur' ? [' · ', hNw(h('span', { class: 'c-red' }, t('hRanger', { p: hPct(hn.ranger) })))] : null));
+  out.push(h('button', { class: 'btn ghost sm hleave', disabled: !!b, on: { click: (e) => act('huntStop', {}, { el: e.currentTarget }) } },
+    hn.bag.length ? t('hLeave', { m: money(bagV), n: hn.bag.length }) : t('hLeave0')));
+  // um animal novo à vista: a mira e o «Disparar» ficam no ecrã (a 320 px não cabe tudo)
+  if (c && S.hOrg?.key !== c.t + ':' + c.d + ':' + c.sp) requestAnimationFrame(() => document.querySelector('.hshoot')?.scrollIntoView({ block: 'nearest' }));
+  return h('section', { class: 'hnow' }, out);
+}
+// a saída que acabou: os números numa linha, os animais com marcas (novo, recorde) e «Ir outra vez»
+function huntEndCard(me, b) {
+  const r = S.hEnd; if (!r) return null;
+  const list = (r.caught ? r.lost : r.bag) || [], S2 = hSite(r.site), quota = me.hq?.[r.site] ?? S.cfg.hunt.quota;
+  const again = r.mode === 'lic' ? quota > 0 && me.cash + me.bank >= S2.fee : !((me.hfc?.[r.site] || 0) > now());
+  const nums = r.caught ? [h('span', { class: 'c-red' }, t('hCaught'))]
+    : [h('span', { class: 'c-cash' }, '+' + money(r.cash)), r.resp ? [' · ', hNw(h('span', { class: 'c-resp' }, t('hEndR', { n: num(r.resp) })))] : null,
+      r.xp ? [' · ', hNw(t('hEndXp', { n: (Math.round(r.xp / 100) / 10).toLocaleString(lang() === 'pt' ? 'pt-PT' : 'en-GB', { minimumFractionDigits: 1 }) }))] : null,
+      r.mode === 'fur' ? [' · ', hNw(h('span', { class: 'c-red' }, t('hEndWatch', { n: Math.round(S.cfg.hunt.furCool / 36e5) })))] : null];
+  return h('section', { class: 'hend' },
+    h('div', { class: 'row sp' }, h('div', { class: 'grow' }, h('h2', { class: 'hsp' }, t('hEndT')), h('div', { class: 'small muted' }, t('hsite_' + r.site) + ' · ' + t('hMode_' + r.mode))),
+      h('button', { class: 'btn ghost sm', on: { click: () => { S.hEnd = null; render(); } } }, t('close'))),
+    r.charged ? h('p', { class: 'small c-red' }, t('hCharged')) : null,
+    h('p', { class: 'small num' }, list.length || r.caught ? nums : t('hEnd0')),
+    list.length ? h('div', { class: 'vlist hbagl' }, list.map((k) => h('div', { class: 'vrow' }, art('caca', k.sp, 'hthumb'),
+      h('div', { class: 'grow' }, h('b', null, hName(k.sp)),
+        h('div', { class: 'small muted num' }, t('hPts', { s: num(k.sc) }), k.md ? ' · ' : '', hMd(k.md),
+          r.firsts?.includes(k.sp) ? h('span', { class: 'c-cash' }, ' · ' + t('hNewT')) : null,
+          r.recs?.includes(k.sp) ? h('span', { class: 'c-resp' }, ' · ' + t('hRecT')) : null)),
+      r.caught ? null : h('span', { class: 'num c-cash' }, money(k.v))))) : null,
+    !r.caught && again ? h('button', { class: 'btn block buy', disabled: !!b || (live(me).vigor ?? me.vigor) < S.cfg.hunt.e, on: { click: (e) => { S.hShot = null; S.hEnd = null; act('huntStart', { site: r.site, mode: r.mode }, { el: e.currentTarget }); } } },
+      r.mode === 'lic' ? t('hAgain', { m: money(S2.fee) }) : t('hAgainFur')) : null);
+}
+function huntSiteRow(me, S2, b, best) {
+  const H = S.cfg.hunt, mode = S.hTab === 'fur' ? 'fur' : 'lic', sk = Math.floor((me.hk || 0) / 1000), slot = hGunSlot(me), it = slot && me.eq[slot];
+  const lock = me.level < S2.level, quota = me.hq?.[S2.id] ?? H.quota, watched = (me.hfc?.[S2.id] || 0) > now(), cash = me.cash + me.bank;
+  const vig = live(me).vigor ?? me.vigor, legal = it && H.legalT.includes(gearOf(it.id).t);
+  const L = [...S2.sp, ...(mode === 'fur' ? S2.prot : [])];
+  const sp = L.map(([id], i) => { const a = hSp(id), off = (a.sk || 0) > sk;
+    return h('span', { class: a.prot ? 'hprot' : off ? 'muted' : '' }, (i ? ', ' : '') + hName(id) + (off ? ' (' + t('hSkNeed', { n: a.sk }) + ')' : '')); });
+  const why = !slot ? null : mode === 'lic' && !legal ? null : mode === 'lic' && quota < 1 ? t('hQuota0')
+    : vig < H.e ? t('hNoVigor', { n: H.e }) : mode === 'lic' && cash < S2.fee ? t('needMoney', { m: money(S2.fee - cash) }) : null;
+  const can = !lock && slot && (mode === 'fur' || legal) && !(mode === 'lic' && quota < 1) && !(mode === 'fur' && watched) && vig >= H.e && !(mode === 'lic' && cash < S2.fee);
+  const risk = it && hSilenced(it) ? Math.floor((S2.ranger * (10000 - H.silBp)) / 10000) : S2.ranger;
+  let foot;
+  if (lock) foot = h('div', { class: 'small muted num' }, t('hLock', { n: S2.level, m: S2.level - me.level }));
+  else if (mode === 'fur' && watched) foot = h('div', { class: 'small c-red num' }, t('hWatched'), ' ', h('span', { dataset: { left: me.hfc[S2.id], long: 1 } }, leftTxt(me.hfc[S2.id] - now())));
+  else foot = [h('div', { class: 'small muted num' }, mode === 'lic' ? t('hQuota', { n: Math.max(0, quota), q: H.quota })
+      : [hNw(h('span', { class: 'c-red' }, t('hRanger', { p: hPct(risk) }))), ' · ', hNw(t('hJail', { m: S2.jail })), ' · ', hNw(t('hLawyer', { b: money(S2.lawyer) }))]),
+    why ? h('div', { class: 'small muted' }, why) : null,
+    h('button', { class: 'btn sm num hgo ' + (best ? 'buy' : 'ghost'), disabled: !!b || !can,
+      on: { click: (e) => { S.hShot = null; S.hEnd = null; act('huntStart', { site: S2.id, mode }, { el: e.currentTarget }); } } },
+      mode === 'lic' ? t('hGo', { m: money(S2.fee) }) : t('hGoFur'))];
+  return h('div', { class: 'vrow hsr' + (lock ? ' dim' : '') }, art('caca', 'r_' + S2.id, 'hsi'),
+    h('div', { class: 'grow' }, h('b', null, t('hsite_' + S2.id)), h('div', { class: 'small muted' }, t('hctry_' + S2.id)),
+      h('div', { class: 'small hspl' }, sp), foot));
+}
+// a arma que vai e a perícia, numa linha
+function huntGunCard(me) {
+  const H = S.cfg.hunt, slot = hGunSlot(me), it = slot && me.eq[slot];
+  if (!it) return h('div', { class: 'tip' }, h('p', null, t('hNoGun')), h('button', { class: 'btn buy sm', on: { click: () => go('arms') } }, t('dollArms')));
+  const g = gearOf(it.id), w = wStatC(it), legal = H.legalT.includes(g.t);
+  return h('div', { class: 'vrow hgun' }, art('gear', it.id, 'hthumb'),
+    h('div', { class: 'grow' }, h('b', null, t('g_' + it.id)),
+      h('div', { class: 'small muted num' }, hNw(t('hAcc', { a: w.acc })), ' · ', hNw(wRngTxt(w.rng)), ' · ', hNw(t('hSkillN', { n: hSkF(me) }))),
+      S.hTab !== 'fur' && !legal ? h('div', { class: 'small c-red' }, t('hGunFur')) : null));
+}
+// a parede: os troféus que já tens em grande; o resto por reserva, em miniaturas com «2/5»
+function huntTrophies(me) {
+  const tr = me.ht || {}, all = Object.keys(S.cfg.hunt.sp), mine = all.filter((id) => tr[id]?.n);
+  const out = [h('p', { class: 'small muted usub num' }, t('hTrN', { a: mine.length, b: all.length }))];
+  if (mine.length) out.push(h('div', { class: 'htr' }, mine.map((id) => { const x = tr[id], nx = hNextMd(id, x.sc, x.md);
+    return h('div', { class: 'htc' }, h('div', { class: 'htw' }, art('caca', id, 'htimg'), x.md ? h('i', { class: 'htm m' + x.md, 'aria-hidden': 'true' }) : null),
+      h('b', null, hName(id)), h('div', { class: 'small num' }, t('hPts', { s: num(x.sc) }), x.md ? ' · ' : '', hMd(x.md)),
+      h('div', { class: 'small muted num' }, nx ? hNextTxt(nx, x.sc) : t(x.n === 1 ? 'hTrKills1' : 'hTrKills', { n: x.n }))); })));
+  out.push(h('div', { class: 'card vlist' }, S.cfg.hunt.sites.map((S2) => { const ids = [...S2.sp, ...S2.prot].map(([id]) => id), n = ids.filter((id) => tr[id]?.n).length;
+    return h('div', { class: 'vrow htres' }, h('div', { class: 'grow' }, h('div', { class: 'row sp' }, h('b', null, t('hsite_' + S2.id)), h('span', { class: 'small num' + (n === ids.length ? ' c-cash' : ' muted') }, n + '/' + ids.length)),
+      h('div', { class: 'htmini' }, ids.map((id) => h('span', { class: 'htmi' + (tr[id]?.n ? '' : ' none') + (hSp(id).prot ? ' prot' : ''), title: hName(id) }, art('caca', id, 'htmimg'))))));
+  })));
+  return out;
+}
+function huntRecords() {
+  const R = S.news?.mundo?.hrec || {}, ids = Object.keys(S.cfg.hunt.sp).filter((id) => R[id]);
+  if (!ids.length) return [h('p', { class: 'small muted' }, t('hRecNone'))];
+  return [h('div', { class: 'card vlist' }, ids.map((id) => h('div', { class: 'vrow' }, art('caca', id, 'hthumb'),
+    h('div', { class: 'grow' }, h('b', null, hName(id)), h('div', { class: 'small muted' }, R[id].name)),
+    h('span', { class: 'num' }, t('hPts', { s: num(R[id].sc) }), R[id].md ? ' ' : '', hMd(R[id].md)))))];
+}
+function screenHunt() {
+  const me = S.st.me, H = S.cfg.hunt, out = [pageHead('hunt', null, !!me.hn || !!S.hEnd)];
+  const b = busyBanner(me); if (b) out.push(b);
+  if (!H) return out;
+  if (me.hn) { out.push(huntNow(me, b)); return out; }
+  const end = huntEndCard(me, b); if (end) out.push(end);
+  const tab = ['lic', 'fur', 'tr'].includes(S.hTab) ? S.hTab : 'lic';
+  out.push(h('div', { class: 'seg hseg', role: 'group' }, [['lic', t('hTab_lic')], ['fur', t('hTab_fur')], ['tr', t('hTab_tr')]]
+    .map(([id, lbl]) => h('button', { 'aria-pressed': tab === id ? 'true' : 'false', on: { click: () => { S.hTab = id; render(true); } } }, lbl))));
+  // os troféus e, por baixo, os recordes da época (de todos os jogadores)
+  if (tab === 'tr') { out.push(...huntTrophies(me), h('h2', { class: 'sec' }, t('hTab_rec')), ...huntRecords()); return out; }
+  // a reserva que se destaca: a mais alta onde se pode ir agora
+  const okSites = H.sites.filter((x) => me.level >= x.level && (tab === 'fur' ? !((me.hfc?.[x.id] || 0) > now()) : (me.hq?.[x.id] ?? H.quota) > 0 && me.cash + me.bank >= x.fee));
+  const best = okSites.length ? okSites[okSites.length - 1].id : null;
+  out.push(huntGunCard(me), h('div', { class: 'card vlist' }, H.sites.map((x) => huntSiteRow(me, x, b, x.id === best))));
   return out;
 }
 

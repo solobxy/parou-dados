@@ -3615,3 +3615,78 @@ body h2.sec { font-size: 16px; }
 .gyg.wgrid { max-width: none; }
 @media (max-width: 360px) { .wl .wtop { flex-wrap: wrap; } }
 .wl .wtop { margin: 0; padding: 0; text-align: left; } .wl .wtop > b { color: #fff; font: 700 16px/1.25 var(--disp); padding: 4px 0 0; margin: 0; flex: 1 1 auto; }
+
+/* ===== v98: caça ===== */
+.nw { white-space: nowrap; }
+.hseg button { padding-left: 4px; padding-right: 4px; }
+.hnow { margin: 4px 0 24px; }
+.hnow .hhead { align-items: flex-start; gap: 12px; margin-bottom: 4px; }
+.hsp { margin: 0 0 2px; font: 700 20px/1.2 var(--disp); color: var(--tx); }
+.hnow .hd { display: grid; justify-items: end; text-align: right; flex: none; gap: 1px; }
+.hnow .hd b { font: 700 24px/1.1 var(--disp); color: var(--tx); }
+.hnow .hres { margin: 2px 0 6px; }
+/* a mira: o animal fica parado, a cruz oscila por cima; o anel marca o ponto a acertar */
+.hscope { position: relative; width: min(100%, 340px, max(220px, calc(100dvh - 340px))); aspect-ratio: 1; margin: 6px auto 8px; border-radius: 50%; overflow: hidden; background: #000;
+  box-shadow: 0 0 0 1px #ece6da26; cursor: crosshair; touch-action: manipulation; --hx: 0px; --hy: 0px; --z: 1.1; }
+.hscope .hani { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transform: scale(var(--z)); }
+.hscope.empty .hani { transform: none; filter: saturate(.7) brightness(.75); }
+.hscope::after { content: ''; position: absolute; inset: 0; border-radius: 50%; box-shadow: inset 0 0 0 8px #000, inset 0 0 34px 18px #000b; pointer-events: none; }
+.hscope .hzone { position: absolute; left: 50%; top: 50%; width: 14%; aspect-ratio: 1; transform: translate(-50%, -50%); border-radius: 50%; border: 3px dashed #f3efe7;
+  box-shadow: 0 0 0 1px #000c, inset 0 0 0 1px #000c; pointer-events: none; }
+.hscope[data-q='perf'] .hzone { border-style: solid; border-color: var(--cash); background: #46e08a38; }
+.hscope .hret { position: absolute; inset: 0; pointer-events: none; color: #f3efe7; transform: translate(var(--hx), var(--hy)); filter: drop-shadow(0 0 1px #000) drop-shadow(0 0 2px #000a); }
+.hscope .hret .hv, .hscope .hret .hh { position: absolute; background: currentColor; }
+.hscope .hret .hv { left: 50%; top: 10%; bottom: 10%; width: 2px; margin-left: -1px; }
+.hscope .hret .hh { top: 50%; left: 10%; right: 10%; height: 2px; margin-top: -1px; }
+.hscope .hret b { position: absolute; left: 50%; top: 50%; width: 12px; height: 12px; margin: -6px 0 0 -6px; border-radius: 50%; border: 2px solid currentColor; }
+.hscope[data-q='perf'] .hret { color: var(--cash); }
+.hscope[data-q='bom'] .hret { color: #b9eb8f; }
+.hscope[data-q='fraco'] .hret { color: #ff9f43; }
+.hscope[data-q='mau'] .hret { color: var(--danger); }
+/* o tiro: recuo e clarão (com menos movimento, só o clarão) */
+.hscope.fire { animation: hrecoil 220ms ease-out; }
+.hscope.fire::before { content: ''; position: absolute; inset: 0; z-index: 2; background: radial-gradient(circle at 50% 50%, #fff8 0, #fff0 55%); animation: hflash 140ms ease-out forwards; pointer-events: none; }
+@keyframes hrecoil { 0% { transform: translateY(0); } 30% { transform: translateY(-7px); } 100% { transform: translateY(0); } }
+@keyframes hflash { from { opacity: 1; } to { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .hscope.fire { animation: none; } }
+.hlive { text-align: center; font: 700 20px/1.3 var(--ui); margin: 0 0 8px; color: #b9eb8f; }
+.hlive[data-q='perf'] { color: var(--cash); } .hlive[data-q='fraco'] { color: #ff9f43; } .hlive[data-q='mau'] { color: var(--danger); }
+.hnow .hwarn { text-align: center; margin: -4px 0 8px; }
+.hnow .hshoot { margin-bottom: 8px; }
+.hmoves { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px; }
+.hmoves .btn { min-height: 44px; white-space: normal; line-height: 1.2; padding-left: 8px; padding-right: 8px; }
+.hmoves .hrisk .bs { color: var(--danger); }
+.hnow .hst { margin: 6px 0; text-align: center; }
+.hdots { display: inline-flex; gap: 4px; vertical-align: middle; }
+.hdots i { width: 9px; height: 9px; border-radius: 50%; box-shadow: inset 0 0 0 1.5px var(--tx2); }
+.hdots i.on { background: var(--tx); box-shadow: none; }
+.hnow .hleave { display: flex; margin: 10px auto 0; min-width: 180px; }
+.hprot { color: var(--vice); }
+.hmd { font-weight: 700; }
+.hmd.m1 { color: #d39a5f; } .hmd.m2 { color: #d9dde6; } .hmd.m3 { color: var(--gold); }
+.hend { margin: 0 0 18px; padding: 12px; background: var(--s1); border-radius: 10px; box-shadow: inset 0 0 0 1px var(--line); }
+.hend .row .hsp { margin: 0; }
+.hend .hbagl { margin: 8px 0 10px; }
+.hend > .btn.block { margin-top: 4px; }
+.hthumb { width: 48px; height: 48px; border-radius: 8px; object-fit: cover; flex: none; outline: 1px solid #ece6da17; outline-offset: -1px; }
+.hgun { align-items: center; gap: 12px; margin: 0 0 12px; padding: 0; }
+.hgun .grow { min-width: 0; display: grid; gap: 2px; }
+.vrow.hsr { align-items: flex-start; padding: 8px 0; gap: 12px; }
+.vrow.hsr .hsi { width: 72px; height: 72px; border-radius: 8px; object-fit: cover; flex: none; }
+.vrow.hsr .grow { min-width: 0; display: grid; gap: 2px; }
+.vlist .vrow.hsr b { white-space: normal; overflow: visible; text-overflow: clip; }
+.vrow.hsr .hspl { line-height: 1.35; }
+.vrow.hsr .hgo { justify-self: start; margin-top: 6px; min-width: 140px; }
+.htr { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px 10px; margin-bottom: 16px; }
+.htc { display: grid; gap: 2px; align-content: start; min-width: 0; }
+.htw { position: relative; }
+.htc .htimg { display: block; width: 100%; height: auto; aspect-ratio: 1; object-fit: cover; border-radius: 8px; outline: 1px solid #ece6da17; outline-offset: -1px; }
+.htm { position: absolute; right: 6px; top: 6px; width: 16px; height: 16px; border-radius: 50%; box-shadow: 0 0 0 2px #000b, inset 0 -2px 0 #0004; }
+.htm.m1 { background: #d39a5f; } .htm.m2 { background: #d9dde6; } .htm.m3 { background: var(--gold); }
+.htc b { font-size: 14px; line-height: 1.25; }
+.vrow.htres { padding: 10px 0; }
+.vrow.htres .row { gap: 8px; }
+.htmini { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+.htmimg { display: block; width: 44px; height: 44px; border-radius: 6px; object-fit: cover; }
+.htmi.none .htmimg { filter: grayscale(1) brightness(.4); }
+.htmi.prot .htmimg { outline: 1.5px solid var(--vice); outline-offset: -1.5px; }
