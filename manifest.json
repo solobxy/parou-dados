@@ -1,14 +1,14 @@
 {
-  "built_at": "2026-11-18T12:12:34.606778+00:00",
-  "db_bytes": 767184896,
-  "gz_bytes": 208114088,
+  "built_at": "2026-11-18T17:16:05.449489+00:00",
+  "db_bytes": 789917696,
+  "gz_bytes": 212294681,
   "totals": {
-    "lines": 2671,
-    "stops": 46442,
-    "trips": 138305,
-    "stop_times": 4198874,
-    "operators": 31,
-    "operators_ok": 28,
+    "lines": 2831,
+    "stops": 50528,
+    "trips": 140521,
+    "stop_times": 4314810,
+    "operators": 33,
+    "operators_ok": 30,
     "operators_desatualizados": 2
   },
   "feeds": [
@@ -393,6 +393,44 @@
       "dias_uteis_sem_servico": 0
     },
     {
+      "id": "siga_rodoeste",
+      "operator_name": "SIGA Rodoeste",
+      "status": "OK",
+      "lines": 107,
+      "stops": 2116,
+      "trips": 791,
+      "valid_until": "2026-11-30",
+      "validade": "a_caducar",
+      "dias_validade": 12,
+      "horario_prolongado": true,
+      "url": "https://gtfs.tiim.pt/rede-siga/rede-siga-gtfs.zip",
+      "last_error": "O operador não atualizou as datas do calendário para alguns dias (2 dias sem horário publicado); a usar o horário semanal mais recente.",
+      "servicos_associados": null,
+      "servicos_sem_calendario": null,
+      "viagens_hoje": 488,
+      "viagens_amanha": 488,
+      "dias_uteis_sem_servico": 0
+    },
+    {
+      "id": "cam_madeira",
+      "operator_name": "CAM – Companhia de Autocarros da Madeira",
+      "status": "OK",
+      "lines": 53,
+      "stops": 1970,
+      "trips": 1425,
+      "valid_until": "2026-11-30",
+      "validade": "a_caducar",
+      "dias_validade": 12,
+      "horario_prolongado": true,
+      "url": "https://gtfs.tiim.pt/rede-siga/rede-siga-gtfs.zip",
+      "last_error": "O operador não atualizou as datas do calendário para alguns dias (2 dias sem horário publicado); a usar o horário semanal mais recente.",
+      "servicos_associados": null,
+      "servicos_sem_calendario": null,
+      "viagens_hoje": 730,
+      "viagens_amanha": 730,
+      "dias_uteis_sem_servico": 0
+    },
+    {
       "id": "mdb-1272",
       "operator_name": "Cascais Próxima, E.M., S.A. (MobiCascais)",
       "status": "OK",
@@ -603,8 +641,13 @@
     }
   ],
   "desenhos": {
-    "bytes": 7777040,
+    "bytes": 9867747,
     "por_operador": {
+      "cam_madeira": {
+        "viagens": 1425,
+        "com_desenho": 1425,
+        "desenhos": 313
+      },
       "carris": {
         "viagens": 30614,
         "com_desenho": 30614,
@@ -674,6 +717,11 @@
         "viagens": 593,
         "com_desenho": 593,
         "desenhos": 26
+      },
+      "siga_rodoeste": {
+        "viagens": 791,
+        "com_desenho": 791,
+        "desenhos": 373
       },
       "smtuc": {
         "viagens": 6913,
@@ -940,12 +988,12 @@
         },
         "servicos_com_data_hoje": [
           "EU",
-          "DU",
+          "BexpU",
           "AU",
           "BU",
+          "CU",
           "FU",
-          "BexpU",
-          "CU"
+          "DU"
         ],
         "viagens_por_servico": [
           {
@@ -1000,5 +1048,5 @@
       }
     }
   },
-  "duration_s": 224
+  "duration_s": 285
 }
