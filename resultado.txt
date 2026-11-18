@@ -1,0 +1,14 @@
+== 2026-11-18T17:24:24Z acao=comando
+IP: 2.31.13.85
+== Saída no servidor
+ainda nao (5): ERRO no such column: novidade [{"sql":"CREATE TABLE novidades_publicadas (\n      id TEXT PRIMARY KEY,\n      publicacao_id TEXT,\n      criado INTEGER NOT NULL\n    )"}]
+ainda nao (10): ERRO no such column: novidade [{"sql":"CREATE TABLE novidades_publicadas (\n      id TEXT PRIMARY KEY,\n      publicacao_id TEXT,\n      criado INTEGER NOT NULL\n    )"}]
+ainda nao (15): ERRO no such column: novidade [{"sql":"CREATE TABLE novidades_publicadas (\n      id TEXT PRIMARY KEY,\n      publicacao_id TEXT,\n      criado INTEGER NOT NULL\n    )"}]
+ainda nao (20): ERRO no such column: novidade [{"sql":"CREATE TABLE novidades_publicadas (\n      id TEXT PRIMARY KEY,\n      publicacao_id TEXT,\n      criado INTEGER NOT NULL\n    )"}]
+ainda nao (25): ERRO no such column: novidade [{"sql":"CREATE TABLE novidades_publicadas (\n      id TEXT PRIMARY KEY,\n      publicacao_id TEXT,\n      criado INTEGER NOT NULL\n    )"}]
+ainda nao (30): ERRO no such column: novidade [{"sql":"CREATE TABLE novidades_publicadas (\n      id TEXT PRIMARY KEY,\n      publicacao_id TEXT,\n      criado INTEGER NOT NULL\n    )"}]
+ERRO no such column: novidade [{"sql":"CREATE TABLE novidades_publicadas (\n      id TEXT PRIMARY KEY,\n      publicacao_id TEXT,\n      criado INTEGER NOT NULL\n    )"}]
+[{"titulo":"Madeira na PAROU","t":"A Madeira já está toda na PAROU: além dos Horários do Funchal, entram os autocar","criado":1795022632124},{"titulo":"Metro Mondego na PAROU","t":"O Metro Mondego já está na PAROU: as 5 linhas do metrobus (U1, U2, U3, S1 e S2),","criado":1794834119928}]
+== Teste de fora
+https://2-31-13-85.sslip.io/health 200 0.504726s
+https://2-31-13-85.sslip.io/api/transit/loading-status 200 0.449946s
