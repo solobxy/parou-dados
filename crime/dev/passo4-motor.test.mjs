@@ -20,7 +20,7 @@ const linha = (r) => ({ int: (lo, hi) => (hi === 9999 ? CFG.crimes[0].prizes.sli
 test('equipamento: os 9 espaços da especificação, com os preços reais (pistola 1 750 €, colete 600 €, navalha 25 €)', () => {
   assert.deepEqual(CFG.slots, ['branca', 'mao', 'principal', 'cabeca', 'tronco', 'pernas', 'pes', 'maos', 'acess']);
   assert.equal(G('pistola').price, 1750); assert.equal(G('colete').price, 600); assert.equal(G('navalha').price, 25);
-  for (const x of CFG.gear) assert.ok(CFG.slots.includes(x.slot) || x.slot === 'mat', x.id);   // (o material dos golpes grandes do passo 5 não se veste)
+  for (const x of CFG.gear) assert.ok(CFG.slots.includes(x.slot) || x.slot === 'mat' || x.slot === 'mod', x.id);   // (o material dos golpes grandes do passo 5 e os acessórios das armas da v97 não se vestem)
   for (const s of CFG.slots) assert.ok(CFG.gear.some((x) => x.slot === s), 'há pelo menos um objeto para ' + s);
   assert.ok(!CFG.gear.some((x) => /lanca|minigun/.test(x.id)), 'o lança-chamas e a minigun saíram');
   for (const x of CFG.gear.filter((g) => g.gun)) assert.ok(x.life > 0 && ['mao', 'principal'].includes(x.slot), x.id);

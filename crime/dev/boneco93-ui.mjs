@@ -27,7 +27,7 @@ const celula = (id) => `.invc:has(img[src*="/gear/${id}."])`;
 // 1) rato: arrastar o casaco de cabedal para o tronco
 {
   const { ctx, p, erros } = await abrir(false);
-  await p.locator(celula('cabedal')).first().scrollIntoViewIfNeeded();
+  await p.locator(celula('cabedal')).first().evaluate((e) => e.scrollIntoView({ block: 'center' }));   // ao meio: no fundo ficava por baixo da barra de baixo
   const a = await centro(p, celula('cabedal'));
   await p.mouse.move(a.x, a.y); await p.mouse.down(); await p.mouse.move(a.x + 10, a.y - 10, { steps: 3 });
   await p.mouse.move(a.x, 60, { steps: 10 }); await p.waitForTimeout(900);   // perto do cimo: a página rola até ao boneco
@@ -47,7 +47,7 @@ const celula = (id) => `.invc:has(img[src*="/gear/${id}."])`;
   assert.equal(await naSlot(p, 'cabeca'), null, 'a cabeça ficou vazia');
   assert.ok(await p.locator(celula('capacete')).count(), 'o capacete voltou para a grelha');
   // 3) um toque abre a folha e o botão veste
-  await p.locator(celula('capatatico')).first().scrollIntoViewIfNeeded(); await p.waitForTimeout(500);
+  await p.locator(celula('capatatico')).first().evaluate((e) => e.scrollIntoView({ block: 'center' }));   // ao meio: no fundo ficava por baixo da barra de baixo await p.waitForTimeout(500);
   await p.locator(celula('capatatico')).first().click(); await p.waitForTimeout(400);
   await p.screenshot({ path: join(OUT, 'folha.png') });
   await p.locator('.sheet .btn.buy').first().click(); await p.waitForTimeout(900);
@@ -60,12 +60,12 @@ const celula = (id) => `.invc:has(img[src*="/gear/${id}."])`;
   const { ctx, p, erros } = await abrir(true);
   const cdp = await ctx.newCDPSession(p);
   const toque = (type, x, y) => cdp.send('Input.dispatchTouchEvent', { type, touchPoints: type === 'touchEnd' ? [] : [{ x, y, id: 1 }] });
-  await p.locator(celula('luvastaticas')).first().scrollIntoViewIfNeeded(); await p.waitForTimeout(400);
+  await p.locator(celula('luvastaticas')).first().evaluate((e) => e.scrollIntoView({ block: 'center' }));   // ao meio: no fundo ficava por baixo da barra de baixo await p.waitForTimeout(400);
   const a = await centro(p, celula('luvastaticas'));
   // deslizar logo: não arrasta
   await toque('touchStart', a.x, a.y); for (let k = 1; k <= 6; k++) await toque('touchMove', a.x, a.y - k * 12); await toque('touchEnd'); await p.waitForTimeout(300);
   assert.notEqual(await naSlot(p, 'maos'), 'luvastaticas', 'deslizar não veste');
-  await p.locator(celula('luvastaticas')).first().scrollIntoViewIfNeeded(); await p.waitForTimeout(400);
+  await p.locator(celula('luvastaticas')).first().evaluate((e) => e.scrollIntoView({ block: 'center' }));   // ao meio: no fundo ficava por baixo da barra de baixo await p.waitForTimeout(400);
   const a2 = await centro(p, celula('luvastaticas'));
   await toque('touchStart', a2.x, a2.y); await p.waitForTimeout(400);
   for (let k = 1; k <= 10; k++) await toque('touchMove', a2.x, a2.y + ((60 - a2.y) * k) / 10);

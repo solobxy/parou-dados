@@ -29,7 +29,7 @@ const RONDA_TESTE = process.env.PRIMEIRA_RONDA ? dataDe(process.env.PRIMEIRA_RON
 // Épocas de 28 dias a contar da sexta 13/11/2026 às 21:00 de Lisboa (PRIMEIRA_EPOCA=AAAA-MM-DD muda-a, para testes)
 const ANCORA = dataDe(process.env.PRIMEIRA_EPOCA || process.env.PRIMEIRA_RONDA || '2026-11-13');
 const rng = process.env.TESTE_SEMENTE ? seededRng(+process.env.TESTE_SEMENTE) : cryptoRng();   // nos testes, a sorte pode ser sempre a mesma
-const VERSAO = 96;   // sobe quando o servidor muda, para se confirmar de fora que a versão nova já está a correr
+const VERSAO = 97;   // sobe quando o servidor muda, para se confirmar de fora que a versão nova já está a correr
 const ATOS_3S = +(process.env.ATOS_3S || 15), ATOS_MIN = +(process.env.ATOS_MIN || 400); // ações por conta: 15 em 3 s, 400 por minuto
 
 // ---------- relógio que nunca anda para trás ----------
@@ -1723,6 +1723,8 @@ function agir(conta, corpo, now) {
     case 'unequip': r = E.unequip(p, now, world, String(a.slot || '')); break;   // v93: o boneco do inventário
     case 'gymBuy': r = E.gymBuy(p, now, world, String(a.id || '')); break;   // v94: ginásios pelo mundo
     case 'gymUse': r = E.gymUse(p, now, world, String(a.id || '')); break;
+    case 'modFit': r = E.modFit(p, now, world, String(a.slot || ''), int(a.i)); break;   // v97: acessórios das armas
+    case 'modTake': r = E.modTake(p, now, world, String(a.slot || ''), int(a.k)); break;
     case 'bookBuy': r = E.bookBuy(p, now, world, String(a.id || '')); break;   // v95: livros
     case 'bookRead': r = E.bookRead(p, now, world, String(a.id || '')); break;
     case 'sell': r = E.sellItem(p, now, world, int(a.i)); break;

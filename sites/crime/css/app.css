@@ -3585,3 +3585,33 @@ body h2.sec:has(> .small) { display: flex; align-items: baseline; justify-conten
 .nvr p { margin: 0; font-size: 15px; line-height: 1.4; }
 .nvi { width: 56px; height: 56px; border-radius: 5px; object-fit: cover; flex: none; background: #1f1f1f; }
 .nvi.none { background: #1f1f1f; }
+
+/* v97: armas — o tipo escolhe-se na barra de cada espaço; numa arma vestida, os números e os acessórios */
+body h2.sec:has(> .wsel) { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding-top: 4px; padding-bottom: 4px; }
+.wsel { font: 600 14px/1.2 var(--ui); color: #eee; background: #1f1f1f; border: 1px solid #555; border-radius: 4px; min-height: 44px; padding: 4px 28px 4px 10px; max-width: 60%;
+  appearance: none; background-image: linear-gradient(45deg, transparent 50%, #bbb 50%), linear-gradient(135deg, #bbb 50%, transparent 50%); background-position: calc(100% - 15px) 50%, calc(100% - 10px) 50%; background-size: 5px 5px; background-repeat: no-repeat; }
+.wkv { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.vrow.wmod { align-items: center; padding: 6px 0; }
+.vrow.wmod b { white-space: normal; }
+/* v97: nas listas de armas, em ecrãs estreitos o botão vai para baixo do texto (a coluna do nome ficava com 3 palavras) */
+@media (max-width: 360px) {
+  .wl .vrow.jbr { display: grid; grid-template-columns: auto minmax(0, 1fr); column-gap: 10px; row-gap: 6px; align-items: start; }
+  .wl .vrow.jbr > .btn, .wl .vrow.jbr > span.small { grid-column: 2; justify-self: start; min-height: 44px; }
+  .wl .vrow.jbr > span.small { min-height: 0; }
+}
+/* v97 (revisão): as armas em três colunas, com a diferença para a que trazes; títulos das secções maiores; na folha, números grandes */
+.gyg.wgrid { grid-template-columns: repeat(3, minmax(0, 1fr)); max-width: 300px; margin-top: 4px; }
+.gyg.wgrid dd { font-size: 15px; }
+.gyg.wgrid .wd { display: block; font: 600 13px/1.2 var(--num); }
+.wl .vrow.jbr .grow { display: grid; gap: 3px; }
+body h2.sec { font-size: 16px; }
+.wkv dd { font: 700 20px/1.2 var(--num); }
+.vrow.wmod .btn.sm { min-height: 44px; }
+.wl .vrow.jbr .grow { grid-template-columns: minmax(0, 1fr); min-width: 0; flex: 1 1 0; }
+/* v97 (revisão 2): linha de arma — nome e botão em cima, as três colunas por baixo, em toda a largura do texto */
+.wl .wtop { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+.wl .wtop b { white-space: normal; min-width: 0; padding-top: 4px; }
+.wl .wtop .btn.sm, .wl .wtop > span.small { flex: none; }
+.gyg.wgrid { max-width: none; }
+@media (max-width: 360px) { .wl .wtop { flex-wrap: wrap; } }
+.wl .wtop { margin: 0; padding: 0; text-align: left; } .wl .wtop > b { color: #fff; font: 700 16px/1.25 var(--disp); padding: 4px 0 0; margin: 0; flex: 1 1 auto; }

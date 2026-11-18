@@ -594,9 +594,11 @@ function gunCheck(p) {
   const s = gunOf(p);
   if (!s) fail('NEED_GUN');
   if (!(p.eq[s].u > 0)) fail('GUN_BROKEN');
-  if (bulletsOf(p) < CFG.bullets.perJob) fail('NO_AMMO', { need: CFG.bullets.perJob });
+  if (bulletsOf(p) < ammoPerJob(p)) fail('NO_AMMO', { need: ammoPerJob(p) });
   return s;
 }
+// v97: as balas de um golpe (10), menos as que o carregador alargado da arma usada poupa (nunca menos de 1)
+export function ammoPerJob(p) { const s = gunOf(p), it = s ? p.eq[s] : null; return Math.max(1, CFG.bullets.perJob - (it ? wStat(it).ammo : 0)); }
 
 // ---------- crimes ----------
 
@@ -640,7 +642,7 @@ export function doCrime(p, now, world, k, rng) {
   if (!crimeUnlocked(p, k)) fail('LOCKED', { need: c.level });
   if (p.energy < c.e) fail('NO_ENERGY', { need: c.e });
   const gun = c.gun ? gunCheck(p) : null;
-  const ammo = gun ? CFG.bullets.perJob : 0;
+  const ammo = gun ? ammoPerJob(p) : 0, quiet = gun ? wStat(p.eq[gun]).bust : 0;   // v97: o silenciador da arma usada baixa a hipótese de ser apanhado
   if (gun) { takeInv(p, 'balas', ammo); p.eq[gun].u -= 1; }   // balas e um uso da arma: gastam-se antes, corra bem ou mal
   const bp = c.p, heatBp = heatOf(p, now), respBp = respHeatOf(p, now);
   settleAllBiz(p, now); // a prática pode subir stats: o rendimento até aqui conta com as antigas
@@ -679,7 +681,7 @@ export function doCrime(p, now, world, k, rng) {
   }
   p.c.crimes += 1;
   // falhar não é sempre prisão: uma falha em quatro é apanhada
-  const busted = rng.chance(bustChanceBp(p, now, world && world.press));
+  const busted = rng.chance(cut(bustChanceBp(p, now, world && world.press), quiet));
   if (busted) jailFor(p, now, c.jailMin * T.MIN, k + 1);
   const gained = practice(p, c, false);
   return { ok: true, success: false, busted, jailUntil: p.jailUntil, chanceBp: bp, heatBp, respBp, ammo, gained, newChanceBp: bp };
@@ -2554,10 +2556,24 @@ export function buyGear(p, now, world, kind, idx) {
 const gearBp = (list, idx) => (idx >= 0 ? list[idx].bp : 0);
 // ataque: a melhor arma de fogo que não esteja estragada (mão ou principal), 30% da outra se também disparar (v87), mais a arma
 // branca; defesa: as peças do corpo todas
-export function atkBp(p) {
-  const fire = ['mao', 'principal'].map((s) => p.eq[s]).filter((x) => x && x.u > 0).map((x) => gearOf(x.id).atk).sort((a, b) => b - a);
-  return (fire[0] || 0) + (fire[1] ? Math.floor((fire[1] * CFG.gunSideBp) / 10000) : 0) + (p.eq.branca ? gearOf(p.eq.branca.id).atk : 0);
+// v97: cada arma vale o que é mais o que os acessórios montados lhe somam (ataque, precisão, alcance, crítico, balas, silêncio)
+export const modOf = (id) => { const g = gearOf(id); return g && g.slot === 'mod' ? g : undefined; };
+export function wStat(it) {
+  const g = gearOf(it.id) || {}, ms = (Array.isArray(it.m) ? it.m : []).map(modOf).filter(Boolean);
+  const sum = (k) => ms.reduce((a, m) => a + (m[k] || 0), 0);
+  return { atk: up(g.atk || 0, sum('dmg')), acc: clamp((g.acc || 50) + sum('acc'), 0, 100), rng: (g.rng || 1) + sum('rng'), crit: sum('crit'), ammo: sum('ammo'), bust: sum('bust') };
 }
+export function atkBp(p) {
+  const fire = ['mao', 'principal'].map((s) => p.eq[s]).filter((x) => x && x.u > 0).map((x) => wStat(x).atk).sort((a, b) => b - a);
+  return (fire[0] || 0) + (fire[1] ? Math.floor((fire[1] * CFG.gunSideBp) / 10000) : 0) + (p.eq.branca ? wStat(p.eq.branca).atk : 0);
+}
+// a arma com que se luta: a de fogo mais forte que ainda dispara; senão a branca; senão os punhos (precisão 50, alcance 1 m)
+export function mainWeapon(p) {
+  const fire = ['mao', 'principal'].map((s) => p.eq[s]).filter((x) => x && x.u > 0).sort((a, b) => wStat(b).atk - wStat(a).atk);
+  return fire[0] || p.eq.branca || null;
+}
+export function fightAccBp(p) { const W = CFG.wfight, w = mainWeapon(p), acc = w ? wStat(w).acc : 50; return clamp((acc - 50) * W.accBp, -W.accMax, W.accMax); }
+export const fightRng = (p) => { const w = mainWeapon(p); return w ? wStat(w).rng : 1; };
 export function defBp(p) { return ['cabeca', 'tronco', 'pernas', 'pes', 'maos'].reduce((s, k) => s + (p.eq[k] ? gearOf(p.eq[k].id).def : 0), 0); }
 export function attackPower(p, now) { return up(Math.floor((effStat(p, 'F', now) * (10000 + atkBp(p))) / 10000), (klass(p).atkBp || 0) + gbp(p, 'atk') + studyBp(p, 'atk')); }   // v81: boxe, krav maga
 export function defensePower(p, now) { return up(Math.floor((effStat(p, 'T', now) * (10000 + defBp(p))) / 10000), (klass(p).defBp || 0) + huBp(p, 1) + gbp(p, 'def') + gearBp(CFG.guards, p.guard) + studyBp(p, 'def')); }   // v81: jiu-jitsu, krav maga
@@ -2599,6 +2615,13 @@ export function buyItem(p, now, world, id, n = 1) {
   if (g.craft) fail('CRAFT_ONLY');   // v83: a broca e os explosivos fazem-se na cave
   begin(p, now, world, { allowBusy: true });
   if (level(p) < (g.level || 1)) fail('LOW_LEVEL', { need: g.level });
+  if (g.slot === 'mod') {   // v97: acessório de arma: vai para o inventário (podem ser vários iguais), monta-se depois
+    if (!roomFor(p)) fail('NO_ROOM');
+    const price = gearPrice(g);
+    pay(p, price);
+    p.inv.push({ id });
+    return { ok: true, id, price, slot: 'mod', swapped: null };
+  }
   if (g.slot === 'mat') {   // material dos golpes grandes: um de cada (as ferramentas não se gastam), guardado no inventário
     if (p.inv.some((x) => x.id === id)) fail('HAVE_IT');
     if (p.cf && p.cf.id === id) fail('ON_BENCH');   // v83: já está a ser feito na cave
@@ -2620,7 +2643,7 @@ export function equip(p, now, world, i) {
   const it = Number.isInteger(i) ? p.inv[i] : undefined;
   const g = it ? gearOf(it.id) : undefined;
   if (!g) fail('NO_GEAR');
-  if (g.slot === 'mat') fail('NOT_WEARABLE');
+  if (g.slot === 'mat' || g.slot === 'mod') fail('NOT_WEARABLE');
   begin(p, now, world, { allowBusy: true });
   if (g.level && level(p) < g.level) fail('LOW_LEVEL', { need: g.level });   // v87: o nível conta também para o que vem da feira
   const old = p.eq[g.slot];
@@ -2639,10 +2662,39 @@ export function unequip(p, now, world, slot) {
   p.inv.push(it);
   return { ok: true, id: it.id, slot };
 }
+// v97: montar um acessório do inventário (i) na arma vestida nesse espaço; tirá-lo (k = qual) de volta para o inventário
+const W_SLOTS = ['branca', 'mao', 'principal'];
+export function modFit(p, now, world, slot, i) {
+  if (!W_SLOTS.includes(slot)) fail('NO_GEAR');
+  const it = p.eq[slot], m = Number.isInteger(i) && p.inv[i] ? modOf(p.inv[i].id) : undefined;
+  if (!m) fail('NO_MOD');
+  if (!it) fail('NO_GEAR');
+  begin(p, now, world, { allowBusy: true });
+  const g = gearOf(it.id), on = Array.isArray(it.m) ? it.m : [];
+  if (level(p) < (m.level || 1)) fail('LOW_LEVEL', { need: m.level });
+  if (!m.fits.includes(g.t)) fail('MOD_NO_FIT');
+  if (on.length >= (g.ms || 0)) fail('MOD_FULL');
+  if (on.some((x) => modOf(x) && modOf(x).cat === m.cat)) fail('MOD_SAME');
+  p.inv.splice(i, 1);
+  it.m = [...on, m.id];
+  return { ok: true, id: m.id, slot, weapon: it.id };
+}
+export function modTake(p, now, world, slot, k) {
+  if (!W_SLOTS.includes(slot)) fail('NO_GEAR');
+  const it = p.eq[slot];
+  if (!it || !Array.isArray(it.m) || !Number.isInteger(k) || !it.m[k]) fail('NO_MOD');
+  begin(p, now, world, { allowBusy: true });
+  if (!roomFor(p)) fail('NO_ROOM');
+  const id = it.m[k];
+  it.m = it.m.filter((_, j) => j !== k); if (!it.m.length) delete it.m;
+  p.inv.push({ id });
+  return { ok: true, id, slot, weapon: it.id };
+}
 // recetador: um objeto roubado pelo valor que tem, uma peça de equipamento por metade (e pelo estado em que está), balas por metade
 export function sellItem(p, now, world, i) {
   const it = Number.isInteger(i) ? p.inv[i] : undefined;
   if (!it) fail('NO_ITEM');
+  if (Array.isArray(it.m) && it.m.length) fail('HAS_MODS');   // v97: os acessórios tiram-se antes de vender a arma
   begin(p, now, world, { allowBusy: true });
   let money, lav = 0;
   if (CFG.loot.goods.includes(it.id)) ({ net: money, lav } = launder(p, it.v));
@@ -2951,7 +3003,11 @@ export function canAttack(a, d, now, world, drop = false) {
   return null;
 }
 
-export function attackChanceBp(a, d, now) { return chanceBp(attackPower(a, now), defensePower(d, now)); }
+// v97: a hipótese das forças, mais a precisão da arma de quem ataca, mais 3 pontos a quem tem o dobro do alcance (ou menos 3 a quem tem metade)
+export function attackChanceBp(a, d, now) {
+  const W = CFG.wfight, ra = fightRng(a), rd = fightRng(d), edge = ra >= 2 * rd ? W.rngBp : rd >= 2 * ra ? -W.rngBp : 0;
+  return clamp(chanceBp(attackPower(a, now), defensePower(d, now)) + fightAccBp(a) + edge, CFG.chance.minBp, CFG.chance.maxBp);
+}
 
 // ---------- assassino a soldo ----------
 export function hitmanPrice(d) { const H = CFG.hitman; return Math.max(H.priceMin, d.respect * H.pricePerRespect); }
@@ -3039,7 +3095,8 @@ export function attack(a, d, now, world, mode, rng, drop = false) {
   const div = 2 ** Math.min(n, 10);
   const base = pvpBaseGain(a, d);
   if (rng.chance(bp)) {
-    const gain = Math.floor(base / div);
+    const cw = mainWeapon(a), crit = cw && wStat(cw).crit > 0 && rng.chance(wStat(cw).crit);   // v97: o laser dá golpes críticos (+50% de respeito)
+    const gain = Math.floor((Math.floor(base / div) * (crit ? 15000 : 10000)) / 10000);
     let res;
     if (mode === 'beat') {
       const loss = Math.floor(gain / P.lossDiv);
@@ -3067,7 +3124,7 @@ export function attack(a, d, now, world, mode, rng, drop = false) {
     a.c.pvpWins += 1;
     if (!a.hits.has(d.id)) a.hits.set(d.id, []);
     a.hits.get(d.id).push(now);
-    return { ok: true, chanceBp: bp, ...res };
+    return { ok: true, chanceBp: bp, ...res, ...(crit ? { crit: true } : {}) };
   }
   const loss = Math.floor(base / P.lossDiv);
   addRespect(a, -loss, now);
@@ -3791,6 +3848,11 @@ export function checkInvariants(p) {
   if (p.bj !== null && (typeof p.bj !== 'object' || !Number.isSafeInteger(p.bj.bet) || p.bj.bet < CFG.casino.minBet || !Array.isArray(p.bj.pl) || bjValue(p.bj.pl).tot > 21 || !Array.isArray(p.bj.next)
     || [...(p.bj.fin || []), ...(p.bj.q || [])].some((x) => !x || !Array.isArray(x.pl) || x.bet !== (x.dbl ? 2 : 1) * (p.bj.bet / (p.bj.dbl ? 2 : 1))) || (p.bj.fin || []).length + (p.bj.q || []).length > 1)) bad.push('blackjack');
   for (const k of Object.keys(p.fx)) { const f = p.fx[k]; if (!CFG.fxKinds.includes(k) || !Number.isSafeInteger(f.bp) || f.bp <= 0 || !Number.isSafeInteger(f.until)) bad.push('fx ' + k); }
+  // v97: acessórios montados: só nas armas, que os aceitam, sem passar os espaços nem repetir a família
+  for (const it of [...p.inv, ...Object.values(p.eq).filter(Boolean)]) if (it.m !== undefined) {
+    const g = gearOf(it.id), ms = Array.isArray(it.m) ? it.m.map(modOf) : null;
+    if (!g || !ms || !ms.length || ms.some((m) => !m || !m.fits.includes(g.t)) || ms.length > (g.ms || 0) || new Set(ms.map((m) => m.cat)).size !== ms.length) bad('mods ' + it.id);
+  }
   // v94/v95: ginásios e livros
   if (!p.gyms.every((g) => gymOf(g) && g !== 'prisao') || new Set(p.gyms).size !== p.gyms.length || !p.gyms.includes(p.gym) || !(p.gx >= 0)) bad.push('gyms');
   for (const [k, n] of Object.entries(p.bk.own)) if (!bookOf(k) || !Number.isSafeInteger(n) || n <= 0) bad.push('book ' + k);

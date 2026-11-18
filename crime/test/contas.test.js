@@ -1552,7 +1552,7 @@ test('armas: a preços reais (sem lança-chamas nem minigun), e cada uma só mex
   assert.equal(p.tool, -1); assert.equal(p.gweapon, -1); assert.equal(E.level(p), 1);
   // escadas sempre a subir: força e nível (ferramentas e armas de gangue) e força nas armas de luta
   for (const L of [CFG.tools, CFG.gweapons]) for (let i = 1; i < L.length; i++) assert.ok(L[i].str > L[i - 1].str && L[i].level >= L[i - 1].level, L[i].id);
-  for (const sl of ['branca', 'mao', 'principal']) { const W4 = CFG.gear.filter((w) => w.slot === sl && !w.craft).sort((a, b) => a.price - b.price); for (let i = 1; i < W4.length; i++) assert.ok(W4[i].atk > W4[i - 1].atk, W4[i].id); }   // na loja, em cada espaço
+  for (const tp of new Set(CFG.gear.filter((w) => w.t).map((w) => w.t))) { const W4 = CFG.gear.filter((w) => w.t === tp && !w.craft).sort((a, b) => a.price - b.price); for (let i = 1; i < W4.length; i++) assert.ok(W4[i].atk > W4[i - 1].atk, W4[i].id); }   // na loja, em cada tipo (v97: entre tipos há trocas de precisão e alcance)
   // por ordem, uma de cada vez: saltar não dá (armas de gangue e guardas; as armas do corpo compram-se à escolha desde o passo 4)
   for (const k of ['gweapon', 'guard']) assert.throws(() => E.buyGear(p, NOW, W, k, 1), code('GEAR_ORDER'), k);
   // ferramenta (pedido antigo por índice): desde o passo 5 compra o material dos golpes grandes, que vai para o inventário

@@ -53,7 +53,7 @@ function contas(kind, a0, a, d0, d, t, res, arg) {
   const bad = (m) => { console.error('CONTAS ERRADAS', kind, m, JSON.stringify(res), { dm, dr }); if (process.env.DBG && res && res.r) { const s0 = res.r === 'lx' ? E.venueView(a0, t).stock : a0.wh[res.r].s; console.error('s0', s0[res.d], 's1', E.whStock(a, res.r)[res.d], 'chegou', chegou(res.r, res.d), 'mvNovas', JSON.stringify(mvNovas), 'cost min', Math.floor((res.n * MW.refC(res.d) * 0.2) / 100)); } process.exit(1); };
   // v79: a vitrine só cresce com golpes que correm bem e aviões que chegam inteiros, e só desce no museu e no penhorista
   // (v85: comparado com o estado depois do touch: uma escavação esquecida fecha sozinha e guarda o saco na vitrine)
-  const b0col = touched(a0, t).col || {};
+  const b0col = (kind === 'whEdition' ? a0 : touched(a0, t)).col || {};   // (a edição do armazém não toca no jogador: uma escavação esquecida não fecha aí)
   const colD = {}; for (const id of new Set([...Object.keys(b0col), ...Object.keys(a.col || {})])) { const x = ((a.col || {})[id] || 0) - (b0col[id] || 0); if (x) colD[id] = x; }
   const colEq = (m) => JSON.stringify(Object.entries(colD).sort()) === JSON.stringify(Object.entries(m).filter(([, v]) => v).sort());
   const RARAS = CFG.col.sets.raras.items;
@@ -134,7 +134,7 @@ function contas(kind, a0, a, d0, d, t, res, arg) {
     case 'colSell': if (!colEq({ [arg.id]: -res.n }) || res.n < 1 || dm !== res.n * CFG.col.pawn || dr !== 0 || a.col[arg.id] < 1) bad('penhorista'); break;
     case 'crime': {
       const c = CFG.crimes[arg], ammo = c.gun ? CFG.bullets.perJob : 0, maxOne = Math.floor((c.prizes.at(-1)[2] * MAX_LOOT_BP) / 10000);
-      if (res.ammo !== ammo || balas(a0) - balas(a) !== ammo || (c.gun && !E.gunOf(a0)) || E.level(a0) < c.level) bad('golpe: arma, balas ou nível');
+      if (res.ammo !== (c.gun ? E.ammoPerJob(touched(a0, t)) : 0) || balas(a0) - balas(a) !== res.ammo || (c.gun && !E.gunOf(a0)) || E.level(a0) < c.level) bad('golpe: arma, balas ou nível');
       if (res.success) {
         if (dm !== res.money || res.money < 0 || res.value > maxOne || res.money > res.value || (res.good && res.money) || !c.prizes.some((x) => x[3] === res.item)) bad('saque fora dos limites');
         if (dr !== res.respect || res.respect < 0 || res.respect > MAX_STREET_RESP) bad('respeito do golpe');
@@ -145,7 +145,7 @@ function contas(kind, a0, a, d0, d, t, res, arg) {
     }
     case 'crimeAll': {
       const c = CFG.crimes[arg], maxOne = Math.floor((c.prizes.at(-1)[2] * MAX_LOOT_BP) / 10000);
-      if (dm !== res.money || (res.value || 0) > res.wins * maxOne || res.ammo !== (c.gun ? res.n * CFG.bullets.perJob : 0)) bad('saque de vários golpes');
+      if (dm !== res.money || (res.value || 0) > res.wins * maxOne || res.ammo !== (c.gun ? res.n * E.ammoPerJob(touched(a0, t)) : 0)) bad('saque de vários golpes');
       if (res.respect !== dr || dr < 0 || dr > res.wins * MAX_STREET_RESP) bad('respeito de vários golpes');
       if (res.n < 1 || res.n > CFG.crimeAllMax || res.wins > res.n) bad('contagem');
       const e0 = Math.min(E.energyMax(a0), touched(a0, t).energy);
@@ -156,8 +156,9 @@ function contas(kind, a0, a, d0, d, t, res, arg) {
       if (a.c.crimes - a0.c.crimes !== res.n || a.c.wins - a0.c.wins !== res.wins) bad('contadores');
       break;
     }
-    case 'buy': {
+    case 'modBuy': case 'buy': {
       if (arg.id === 'balas') { if (dm !== -arg.n * CFG.bullets.price || balas(a) - balas(a0) !== arg.n * CFG.bullets.box) bad('balas'); }
+      else if (CFG.gear.find((x) => x.id === arg.id).slot === 'mod') { const g = CFG.gear.find((x) => x.id === arg.id); if (dm !== -E.gearPrice(g) || res.price !== E.gearPrice(g) || a.inv.length - a0.inv.length !== 1 || a.inv.at(-1).id !== arg.id) bad('compra de acessório'); }   // v97
       else if (CFG.gear.find((x) => x.id === arg.id).slot === 'mat') { if (dm !== -CFG.gear.find((x) => x.id === arg.id).price || a.inv.length - a0.inv.length !== 1 || a.inv.filter((x) => x.id === arg.id).length !== 1) bad('compra de material'); }
       else { const g = CFG.gear.find((x) => x.id === arg.id); if (dm !== -E.gearPrice(g) || res.price !== E.gearPrice(g) || a.eq[g.slot].id !== arg.id || a.inv.length - a0.inv.length !== (a0.eq[g.slot] ? 1 : 0)) bad('compra de equipamento'); }
       if (E.invUsed(a) > E.invCap(a) && E.invUsed(a) > E.invUsed(a0)) bad('inventário acima dos espaços');
@@ -168,6 +169,8 @@ function contas(kind, a0, a, d0, d, t, res, arg) {
     case 'gymBuy': { const G = E.gymOf(arg); if (dm !== -G.price || dr !== 0 || a.gyms.length !== a0.gyms.length + 1 || !a.gyms.includes(arg) || new Set(a.gyms).size !== a.gyms.length || (a.gym !== arg && a.gym !== a0.gym)) bad('ginásio: entrada'); break; }   // v94
     case 'bookBuy': { const B = CFG.books.list.find((x) => x.id === arg); if (dm !== -B.price || dr !== 0 || a.bk.own[arg] !== (touched(a0, t).bk.own[arg] || 0) + 1 || !E.bookShelf(t).includes(arg) || E.bookOwned(a) > CFG.books.cap) bad('livro: comprar'); break; }   // v95
     case 'bookRead': { const b0 = touched(a0, t), B = CFG.books.list.find((x) => x.id === arg); if (dm !== 0 || dr !== 0 || b0.bk.rd || !(b0.bk.own[arg] > 0) || (a.bk.own[arg] || 0) !== b0.bk.own[arg] - 1 || !a.bk.rd || a.bk.rd.end !== t + B.h * T.HOUR) bad('livro: ler'); break; }
+    case 'modFit': { const w = a.eq[arg.slot]; if (dm !== 0 || dr !== 0 || a.inv.length !== a0.inv.length - 1 || !w || !w.m || w.m.at(-1) !== res.id || (a0.eq[arg.slot].m || []).length + 1 !== w.m.length) bad('acessório: montar'); break; }   // v97
+    case 'modTake': { const w = a.eq[arg.slot]; if (dm !== 0 || dr !== 0 || a.inv.length !== a0.inv.length + 1 || a.inv.at(-1).id !== res.id || (w.m || []).length !== a0.eq[arg.slot].m.length - 1) bad('acessório: tirar'); break; }
     case 'gymUse': if (dm !== 0 || dr !== 0 || a.gym !== arg || !a.gyms.includes(arg)) bad('ginásio: mudar'); break;
     case 'unequip': if (dm !== 0 || dr !== 0 || a.inv.length !== a0.inv.length + 1 || E.invUsed(a) > E.invCap(a)) bad('tirar do corpo'); break;   // v93
     case 'sell': case 'sellGoods': if (dm !== res.money || res.money < 0 || dr !== 0 || a.inv.length >= a0.inv.length) bad('recetador'); break;
@@ -427,7 +430,7 @@ for (let n = 0; n < ACTIONS; n++) {
   if (r.chance(400)) { const st = pick(CFG.studies.list), n = r.int(1, 3); for (let k = 1; k <= n; k++) if (!p.done.includes(st.id + k) && !(p.course && p.course.id === st.id + k)) p.done.push(st.id + k); }   // v81: estudos feitos
   if (r.chance(500)) for (const i of E.colItems()) if (r.chance(7000)) p.col[i] = (p.col[i] || 0) + r.int(1, 3);   // v79: peças na vitrine, para o museu e o penhorista terem que fazer
   const before = touched(p, t), beforeD = touched(d, t), origD = structuredClone(d), origP = structuredClone(p);
-  const kind = p.dg && r.chance(8500) ? pick(['digTap', 'digTap', 'digTap', 'digTap', 'digTap', 'digStop']) : pick(['stockBuy', 'stockBuy', 'stockBuy', 'govVote', 'govLobby', 'govLobby', 'consume', 'consume', 'consume', 'museum', 'museum', 'colSell', 'colSell', 'examStart', 'examStart', 'examAnswer', 'examAnswer', 'examAnswer', 'gymStart', 'gymStart', 'gymDone', 'gymDone', 'gymDone', 'craftStart', 'craftStart', 'craftStart', 'craftTake', 'craftTake', 'maqService', 'maqService', 'feiraTake', 'feiraTake', 'feiraGive', 'feiraBuy', 'feiraBuy', 'feiraLock', 'digStart', 'digStart', 'digTap', 'digTap', 'digTap', 'digTap', 'digTap', 'digStop', 'stockSell', 'stockSell', 'missionSwap', 'venueBuy', 'venueBuy', 'venueSet', 'venueCollect', 'stockUse', 'stockUse', 'stockDump', 'broHire', 'broHire', 'broFire', 'clubBuyAt', 'clubBuyAt', 'clubBuyAt', 'broVisitAt', 'broVisitAt', 'broVisitAt', 'casino', 'casino', 'table', 'heist', 'hit', 'gangCreate', 'gangDonate', 'gangLeave', 'gangBiz', 'gangBiz', 'gangBiz', 'gangBizCollect', 'hitman', 'hitman', 'hitman', 'crime', 'crime', 'crimeAll', 'deal', 'deal', 'dealBuy', 'drug', 'refill', 'detox', 'claim', 'class', 'classChange', 'classChange', 'air', 'air', 'airCollect', 'airCollect', 'bailFor', 'bailFor', 'medicFor', 'medicFor', 'avatar', 'hooker', 'cure', 'house', 'houseUp', 'buyBiz', 'buyBiz', 'collect', 'bizGoods', 'bizGoods', 'stockHold', 'stockHold', 'acct', 'stockLimit', 'stockLimit', 'stockLimit', 'port', 'collectPort', 'portOpen', 'portOpen', 'deposit', 'withdraw', 'gear', 'attack', 'bail', 'medic', 'luxury', 'shift', 'shift', 'shift', 'job', 'course', 'buy', 'buy', 'buy', 'buy', 'equip', 'unequip', 'unequip', 'gymBuy', 'gymBuy', 'gymUse', 'bookBuy', 'bookBuy', 'bookRead', 'bookRead', 'sell', 'sellGoods', 'sellGoods', 'repair', 'repair', 'opStart', 'opStart', 'opStep', 'opStep', 'opGo', 'opGo', 'opGo', 'opDrop', 'retainer', 'jailSmuggle', 'jailWork', 'jailYard', 'jailCards', 'jailFavor', 'jailEscape', 'whBuy', 'whBuy', 'whUp', 'whUp', 'mktBuy', 'mktBuy', 'mktBuy', 'mktSell', 'mktSell', 'mvSend', 'mvSend', 'mvSend', 'whEdition', 'workStart', 'workStart', 'workDone', 'workDone', 'workDone']);
+  const kind = p.dg && r.chance(8500) ? pick(['digTap', 'digTap', 'digTap', 'digTap', 'digTap', 'digStop']) : pick(['stockBuy', 'stockBuy', 'stockBuy', 'govVote', 'govLobby', 'govLobby', 'consume', 'consume', 'consume', 'museum', 'museum', 'colSell', 'colSell', 'examStart', 'examStart', 'examAnswer', 'examAnswer', 'examAnswer', 'gymStart', 'gymStart', 'gymDone', 'gymDone', 'gymDone', 'craftStart', 'craftStart', 'craftStart', 'craftTake', 'craftTake', 'maqService', 'maqService', 'feiraTake', 'feiraTake', 'feiraGive', 'feiraBuy', 'feiraBuy', 'feiraLock', 'digStart', 'digStart', 'digTap', 'digTap', 'digTap', 'digTap', 'digTap', 'digStop', 'stockSell', 'stockSell', 'missionSwap', 'venueBuy', 'venueBuy', 'venueSet', 'venueCollect', 'stockUse', 'stockUse', 'stockDump', 'broHire', 'broHire', 'broFire', 'clubBuyAt', 'clubBuyAt', 'clubBuyAt', 'broVisitAt', 'broVisitAt', 'broVisitAt', 'casino', 'casino', 'table', 'heist', 'hit', 'gangCreate', 'gangDonate', 'gangLeave', 'gangBiz', 'gangBiz', 'gangBiz', 'gangBizCollect', 'hitman', 'hitman', 'hitman', 'crime', 'crime', 'crimeAll', 'deal', 'deal', 'dealBuy', 'drug', 'refill', 'detox', 'claim', 'class', 'classChange', 'classChange', 'air', 'air', 'airCollect', 'airCollect', 'bailFor', 'bailFor', 'medicFor', 'medicFor', 'avatar', 'hooker', 'cure', 'house', 'houseUp', 'buyBiz', 'buyBiz', 'collect', 'bizGoods', 'bizGoods', 'stockHold', 'stockHold', 'acct', 'stockLimit', 'stockLimit', 'stockLimit', 'port', 'collectPort', 'portOpen', 'portOpen', 'deposit', 'withdraw', 'gear', 'attack', 'bail', 'medic', 'luxury', 'shift', 'shift', 'shift', 'job', 'course', 'buy', 'buy', 'buy', 'buy', 'equip', 'unequip', 'unequip', 'gymBuy', 'gymBuy', 'gymUse', 'modBuy', 'modBuy', 'modFit', 'modFit', 'modFit', 'modTake', 'bookBuy', 'bookBuy', 'bookRead', 'bookRead', 'sell', 'sellGoods', 'sellGoods', 'repair', 'repair', 'opStart', 'opStart', 'opStep', 'opStep', 'opGo', 'opGo', 'opGo', 'opDrop', 'retainer', 'jailSmuggle', 'jailWork', 'jailYard', 'jailCards', 'jailFavor', 'jailEscape', 'whBuy', 'whBuy', 'whUp', 'whUp', 'mktBuy', 'mktBuy', 'mktBuy', 'mktSell', 'mktSell', 'mvSend', 'mvSend', 'mvSend', 'whEdition', 'workStart', 'workStart', 'workDone', 'workDone', 'workDone']);
   let res, arg;
   try {
     switch (kind) {
@@ -459,6 +462,10 @@ for (let n = 0; n < ACTIONS; n++) {
       case 'gymBuy': arg = r.chance(9000) ? (r.chance(6000) ? (E.GYM_NORMAL.find((G) => !p.gyms.includes(G.id)) || pick(CFG.gyms.list)).id : pick(CFG.gyms.list).id) : pick(['x', '__proto__', '', 'prisao']); res = E.gymBuy(p, t, world, arg); break;   // v94
       case 'bookBuy': arg = r.chance(8500) ? pick(E.bookShelf(t)) : pick(['x', '__proto__', ...CFG.books.list.map((b) => b.id)]); res = E.bookBuy(p, t, world, arg); break;   // v95
       case 'bookRead': { const own = Object.keys(p.bk.own); arg = own.length && r.chance(8500) ? pick(own) : pick(['x', 'constructor', ...CFG.books.list.map((b) => b.id)]); res = E.bookRead(p, t, world, arg); break; }
+      case 'modBuy': arg = { id: pick(CFG.gear.filter((g) => g.slot === 'mod')).id }; res = E.buyItem(p, t, world, arg.id); break;   // v97 (verificado como uma compra)
+      case 'modFit': { const sl = pick(['branca', 'mao', 'principal', 'mao', 'principal', 'x']), mi = p.inv.findIndex((x) => CFG.gear.find((g) => g.id === x.id && g.slot === 'mod'));
+        arg = { slot: sl, i: r.chance(8000) && mi >= 0 ? mi : r.int(-1, p.inv.length) }; res = E.modFit(p, t, world, arg.slot, arg.i); break; }
+      case 'modTake': arg = { slot: pick(['branca', 'mao', 'principal', 'x']), k: pick([0, 0, 1, 2, -1, 0.5]) }; res = E.modTake(p, t, world, arg.slot, arg.k); break;
       case 'gymUse': arg = r.chance(8000) ? pick(p.gyms) : pick(CFG.gyms.list.map((G) => G.id).concat(['x', 'constructor'])); res = E.gymUse(p, t, world, arg); break;
       case 'unequip': arg = r.chance(9000) ? pick(CFG.slots) : pick(['mat', '__proto__', 'x', '']); res = E.unequip(p, t, world, arg); break;   // v93
       case 'sell': arg = r.chance(9000) ? r.int(0, Math.max(0, p.inv.length - 1)) : anyInt(); res = E.sellItem(p, t, world, arg); break;

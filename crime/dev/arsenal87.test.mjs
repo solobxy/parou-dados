@@ -18,36 +18,41 @@ const ARMAS = ['branca', 'mao', 'principal'], G = CFG.gear.filter((g) => ARMAS.i
 const mk = (resp) => { const p = E.newPlayer('a' + Math.random(), START, world); p.cash = 1e7; p.respect = resp; p.peakRespect = resp; return p; };
 const erro = (f, code) => assert.throws(f, (e) => e.code === code, code);
 
-test('30 armas: 10 brancas, 5 de mão e 15 principais (5 vezes as 6 de antes)', () => {
-  assert.equal(G.length, 30);
-  assert.deepEqual(ARMAS.map((s) => G.filter((g) => g.slot === s).length), [10, 5, 15]);
+// v97 (pedido do Dinis: «como no Torn, mas mais»): 156 armas em 13 tipos, com precisão e alcance além do ataque. As regras de
+// escada passam a valer dentro de cada tipo (entre tipos diferentes há trocas: uma caçadeira bate mais e chega menos longe).
+const TIPOS = ['soqueira', 'faca', 'contundente', 'lamina', 'espada', 'pistola', 'revolver', 'smg', 'cacadeira', 'carabina', 'espingarda', 'sniper', 'pesada'];
+test('156 armas: 54 brancas, 28 de mão e 74 principais, em 13 tipos', () => {
+  assert.equal(G.length, 156);
+  assert.deepEqual(ARMAS.map((s) => G.filter((g) => g.slot === s).length), [54, 28, 74]);
+  assert.deepEqual([...new Set(G.map((g) => g.t))].sort(), [...TIPOS].sort());
   assert.equal(new Set(CFG.gear.map((g) => g.id)).size, CFG.gear.length, 'ids únicos');
   for (const g of G) {
     assert.ok(g.price > 0 && g.atk > 0, g.id);
     assert.equal(!!g.gun, g.slot !== 'branca', g.id + ': as de mão e principais são de fogo, as brancas não');
     if (g.gun) assert.ok(Number.isInteger(g.life) && g.life > 0, g.id);
+    assert.ok(g.acc >= 20 && g.acc <= 95 && g.rng >= 1 && g.ms >= 1, g.id + ': precisão, alcance e espaços');
   }
 });
 
-test('na loja, mais caro é sempre mais forte (nenhuma arma à venda fica a perder para uma mais barata)', () => {
-  for (const s of ARMAS) {
-    const L = G.filter((g) => g.slot === s && !g.craft).sort((a, b) => a.price - b.price);
-    for (let i = 1; i < L.length; i++) assert.ok(L[i].atk > L[i - 1].atk, `${L[i].id} custa mais que ${L[i - 1].id} e não é mais forte`);
+test('na loja, dentro de cada tipo, mais caro é sempre mais forte', () => {
+  for (const tp of TIPOS) {
+    const L = G.filter((g) => g.t === tp && !g.craft).sort((a, b) => a.price - b.price);
+    for (let i = 1; i < L.length; i++) assert.ok(L[i].atk > L[i - 1].atk && L[i].price > L[i - 1].price, `${L[i].id} custa mais que ${L[i - 1].id} e não é mais forte`);
   }
 });
 
-test('por nível: a que pede mais nível nunca é mais fraca (a sniper sem nível passava à frente das de nível 15 a 18)', () => {
-  for (const s of ARMAS) {
-    const L = G.filter((g) => g.slot === s).sort((a, b) => (a.level || 1) - (b.level || 1) || a.atk - b.atk);
-    const passo = s === 'principal' ? 1000 : 300;   // degraus que se notam (a revisão achou o topo plano com 400-500)
+test('por nível, dentro de cada tipo: a que pede mais nível nunca é mais fraca, com degraus que se notam', () => {
+  for (const tp of TIPOS) {
+    const L = G.filter((g) => g.t === tp && !g.craft).sort((a, b) => (a.level || 1) - (b.level || 1) || a.atk - b.atk);
+    const passo = L[0].slot === 'principal' ? 400 : 200;
     for (let i = 1; i < L.length; i++) {
       assert.ok(L[i].atk > L[i - 1].atk, `${L[i].id} (nível ${L[i].level || 1}) não é mais forte que ${L[i - 1].id} (nível ${L[i - 1].level || 1})`);
-      if (L[i - 1].id !== 'soqueira') assert.ok(L[i].atk - L[i - 1].atk >= passo, `${L[i - 1].id} → ${L[i].id}: degrau de ${L[i].atk - L[i - 1].atk} bp`);
+      assert.ok(L[i].atk - L[i - 1].atk >= passo, `${L[i - 1].id} → ${L[i].id}: degrau de ${L[i].atk - L[i - 1].atk} bp`);
       if ((L[i].level || 1) === (L[i - 1].level || 1)) assert.ok(L[i].price > L[i - 1].price, L[i].id + ': no mesmo nível, mais forte é mais caro');
     }
-    // as da cave ficam acima de todas as da loja que se usam até ao nível delas
-    for (const c of L.filter((g) => g.craft)) for (const g of L.filter((x) => !x.craft && (x.level || 1) <= c.level)) assert.ok(c.atk > g.atk, c.id + ' > ' + g.id);
   }
+  // as da cave ficam acima de todas as da loja do mesmo espaço que se usam até ao nível delas
+  for (const c of G.filter((g) => g.craft)) for (const g of G.filter((x) => !x.craft && x.slot === c.slot && (x.level || 1) <= c.level)) assert.ok(c.atk > g.atk, c.id + ' > ' + g.id);
 });
 
 test('ataque: a melhor arma de fogo, 30% da outra e a branca; o teto não passa o da defesa', () => {

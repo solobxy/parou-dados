@@ -168,6 +168,8 @@ function react(type, out, before, opts) {
   else if (type === 'maqService') { toast(t(r.stopped ? 'tRevBack' : 'tRev', { x: list('biz')[S.cfg.biz.findIndex((b) => b.id === r.id)], d: cvDay(r.until) })); fx.sfx('claim'); }
   else if (type === 'craftTake') { toast(t('tCrafted_' + r.kind, { x: crIt(r.id), b: r.kind === 'maq' ? list('biz')[S.cfg.biz.findIndex((b) => b.id === recipe(r.id).biz)] : '' })); fx.sfx('claim'); }
   else if (type === 'shift') { toast(t('jbDone', { m: money(r.money), n: r.left })); fx.sfx('cash'); }
+  else if (type === 'modFit') { toast(t('tModFit', { x: t('g_' + r.id) })); fx.sfx('buy'); }
+  else if (type === 'modTake') { toast(t('tModTake', { x: t('g_' + r.id) })); fx.sfx('tap'); }
   else if (type === 'bookBuy') { toast(t('tBkBuy', { x: t('bkn_' + r.id) })); fx.sfx('buy'); }
   else if (type === 'bookRead') { toast(t('tBkRead', { x: t('bkn_' + r.id), h: hhmm(r.end) })); fx.sfx('tap'); }
   else if (type === 'gymBuy') { toast(t(r.gym === r.id ? 'tGymIn' : 'tGymBuy', { x: t('gyn_' + r.id) })); fx.sfx('buy'); }
@@ -2631,7 +2633,13 @@ function screenCave() {
     if (S.cvHi) { const k = grpOf(recipe(S.cvHi) || {}); if (k) S.cvAll = { ...(S.cvAll || {}), [k]: true }; }
     for (const k of ['branca', 'mao', 'principal', 'gear']) {
       const L = rs.filter((r) => grpOf(r) === k); if (!L.length) continue;
-      const first = L.find(lowR), vis = (r) => !lowR(r) || r === first, open = S.cvAll?.[k], hid = L.filter((r) => !vis(r)).length;
+      // v97: 132 receitas. De cada tipo, à vista só a melhor que já podes fazer e a próxima que pede nível (e as da cave com raros)
+      const keep = new Set(L.filter((r) => r.kind === 'gear' || gearOf(r.id)?.craft || r.id === S.cvHi).map((r) => r.id));
+      for (const tp of new Set(L.map((r) => gearOf(r.id)?.t).filter(Boolean))) {
+        const T = L.filter((r) => gearOf(r.id)?.t === tp), ok = T.filter((r) => !lowR(r)), nx = T.find(lowR);
+        if (ok.length) keep.add(ok[ok.length - 1].id); if (nx) keep.add(nx.id);
+      }
+      const vis = (r) => keep.has(r.id) || !gearOf(r.id)?.t, open = S.cvAll?.[k], hid = L.filter((r) => !vis(r)).length;
       out.push(h('h3', { class: 'cvsep' }, k === 'gear' ? t('arDef') : t('sl_' + k)),
         h('div', { class: 'card vlist vc cvl' }, [...(open ? L : L.filter(vis)).map((r) => recipeRow(me, r, n, !!b)),
           hid ? moreRow(open, hid, () => { S.cvAll = { ...(S.cvAll || {}), [k]: !open }; render(); }) : null]));
@@ -3791,7 +3799,38 @@ function shipSheet(k) {
 // ---------- armas ----------
 const plusPct = (bp) => '+' + pctOf(bp) + '%';
 // o que uma peça faz, numa frase curta
+// ===== v97: armas com precisão, alcance e acessórios =====
+const wRngTxt = (r) => (r >= 1000 ? (Math.round(r / 100) / 10).toLocaleString(lang() === 'pt' ? 'pt-PT' : 'en-GB') + ' km' : r + ' m');
+// o que um acessório faz, em números
+function modFx(m) {
+  // cada efeito com a sua cor: o que ajuda a verde, o que tira a vermelho
+  const out = [], add = (good, txt) => { if (out.length) out.push(' · '); out.push(h('span', { class: (good ? 'c-cash' : 'c-red') + ' nw' }, txt)); };
+  if (m.dmg) add(m.dmg > 0, t('fxAtk', { p: (m.dmg > 0 ? '' : '−') + pctOf(Math.abs(m.dmg)) }).replace('+−', '−'));
+  if (m.acc) add(m.acc > 0, t('wAccS', { n: (m.acc > 0 ? '+' : '−') + Math.abs(m.acc) }));
+  if (m.rng) add(true, t('wRngS', { n: '+' + wRngTxt(m.rng) }));
+  if (m.crit) add(true, t('wfx_crit', { p: m.crit / 100 }));
+  if (m.ammo) add(true, t('wfx_ammo', { n: m.ammo }));
+  if (m.bust) add(true, t('wfx_bust', { p: m.bust / 100 }));
+  return out;
+}
+// a arma com os acessórios: ataque, precisão e alcance (igual ao motor)
+function wStatC(it) {
+  const g = gearOf(it.id) || {}, ms = (it.m || []).map(gearOf).filter(Boolean), sum = (k) => ms.reduce((a, m) => a + (m[k] || 0), 0);
+  return { atk: Math.floor(((g.atk || 0) * (10000 + sum('dmg'))) / 10000), acc: Math.max(0, Math.min(100, (g.acc || 50) + sum('acc'))), rng: (g.rng || 1) + sum('rng') };
+}
+const modsFor = (g) => S.cfg.gear.filter((m) => m.slot === 'mod' && m.fits.includes(g.t));
+// ataque, precisão e alcance em três colunas; numa arma que não é a tua, por baixo, a diferença para a que trazes (verde a ganhar, vermelho a perder)
+function wGrid(me, g, it) {
+  const W = it ? wStatC(it) : { atk: g.atk, acc: g.acc, rng: g.rng }, on = me.eq[g.slot], C = on && !it ? wStatC(on) : null;
+  const d = (v, c, txt) => (C && v !== c ? h('span', { class: 'wd ' + (v > c ? 'c-cash' : 'c-red') }, (v > c ? '+' : '−') + txt(Math.abs(v - c))) : null);
+  return h('dl', { class: 'gyg wgrid' },
+    h('div', null, h('dt', null, t('wDmg')), h('dd', { class: 'num' }, '+' + pctOf(W.atk) + '%'), d(W.atk, C?.atk, (x) => pctOf(x) + '%')),
+    h('div', null, h('dt', null, t('wAcc')), h('dd', { class: 'num' }, String(W.acc)), d(W.acc, C?.acc, (x) => String(x))),
+    h('div', null, h('dt', null, t('wRng')), h('dd', { class: 'num' }, wRngTxt(W.rng)), d(W.rng, C?.rng, (x) => wRngTxt(x))));
+}
+const hasParts = (me, r) => Object.entries(r.needs || {}).every(([k, n]) => mtN(me, k) >= n);
 function gearFx(g) {
+  if (g.atk && g.t) return t('fxAtk', { p: pctOf(g.atk) }) + ' · ' + t('wAccS', { n: g.acc }) + ' · ' + wRngTxt(g.rng);   // v97: precisão e alcance
   if (g.atk) return t('fxAtk', { p: pctOf(g.atk) });
   if (g.def) return t('fxDef', { p: pctOf(g.def) });
   if (g.room) return t('fxRoom', { n: g.room });
@@ -3802,14 +3841,14 @@ function gearFx(g) {
 function gearRow(me, g) {
   const worn = me.eq[g.slot] && me.eq[g.slot].id === g.id ? me.eq[g.slot] : null, held = worn ? -1 : me.inv.findIndex((x) => x.id === g.id);
   const lock = me.level < (g.level || 1), cash = me.cash + me.bank, swap = me.eq[g.slot] && !worn && invFull(me);
-  const info = [gearFx(g)].concat(g.gun ? [t('fxLife', { n: g.life })] : []).join(' · ');
+  const info = g.t ? wGrid(me, g, worn) : [gearFx(g)].concat(g.gun ? [t('fxLife', { n: g.life })] : []).join(' · ');   // v97: as armas em três colunas
   let right = null, extra = null;
   const rc = !g.craft && (S.cfg.craft?.list || []).find((r) => r.id === g.id);
   if (worn) {
     const gasta = g.gun && !(worn.u > 0);
     let uso = 'inUse';
     // v87: com as duas a disparar, a mais fraca conta 30% nas lutas (já não fica só de reserva)
-    if (g.gun && !gasta) { const rob = gunSlot(me) === g.slot, fight = fightGunSlot(me) === g.slot; uso = rob && fight ? 'inUse' : rob ? 'inRobSide' : fight ? 'inUseFight' : 'inSide'; }
+    if (g.gun && !gasta && !g.t) { const rob = gunSlot(me) === g.slot, fight = fightGunSlot(me) === g.slot; uso = rob && fight ? 'inUse' : rob ? 'inRobSide' : fight ? 'inUseFight' : 'inSide'; }
     extra = h('div', { class: 'small num' }, h('span', { class: gasta ? 'c-red' : 'c-cash' }, gasta ? t('gunWorn') : t(uso, { p: (S.cfg.gunSideBp || 0) / 100 })),
       g.gun && !gasta ? ' · ' + t('usesLeft', { u: worn.u, l: g.life }) : null);
     // o preço da reparação vai no botão, como o preço de comprar. v87: se fazer outra na cave sai mais barato, diz-se ao lado
@@ -3828,13 +3867,14 @@ function gearRow(me, g) {
   } else if (lock) right = h('span', { class: 'small muted' }, t('arNeedLvl', { n: g.level }));
   else {
     if (swap) extra = h('div', { class: 'small c-red' }, t('noRoomSwap'));
-    else if (rc) extra = h('div', { class: 'small muted num' }, t('arCaveCraft', { m: money(recPrice(rc)) }));   // v87: fazer na cave sai a metade
+    else if (rc && (!g.t || hasParts(me, rc))) extra = g.t ? h('button', { class: 'lnk cvalt num', on: { click: () => { S.cvTab = 'gun'; S.cvHi = g.id; go('cave'); } } }, t('arCaveCraft', { m: money(recPrice(rc)) }) + ' ›')
+      : h('div', { class: 'small muted num' }, t('arCaveCraft', { m: money(recPrice(rc)) }));   // v87: fazer na cave sai a metade; v97: nas armas, só com as peças
     // o botão tem o preço: é a etiqueta de uma loja
     const pr = gearP(g);   // v76: com a lei das armas livres, as de mão, principais e brancas ficam mais baratas
     right = h('button', { class: 'btn sm ghost num', 'aria-label': t('buyAria', { x: t('g_' + g.id), m: money(pr) }), disabled: cash < pr || swap, on: { click: (e) => act('buy', { id: g.id }, { el: e.currentTarget }) } }, t('buy') + ' · ' + money(pr));
   }
   return h('div', { class: 'vrow jbr' + (lock && !worn ? ' dim' : '') }, art('gear', g.id, 'vth'),
-    h('div', { class: 'grow' }, h('b', null, t('g_' + g.id)), h('div', { class: 'small' }, info), extra), right);
+    h('div', { class: 'grow' }, g.t ? h('div', { class: 'wtop' }, h('b', null, t('g_' + g.id)), right) : h('b', null, t('g_' + g.id)), g.t ? info : h('div', { class: 'small' }, info), extra), g.t ? null : right);   // v97: nas armas, o botão ao lado do nome e os números por baixo, em toda a largura
 }
 // v87: «Ver as outras N» é uma linha no fim da lista (pesa menos do que os botões de comprar)
 const moreRow = (open, n, toggle) => h('button', { class: 'vmore', 'aria-expanded': open ? 'true' : 'false', on: { click: toggle } }, open ? t('arLess') : n === 1 ? t('arMore1') : t('arMore', { n }));
@@ -3856,22 +3896,49 @@ function screenArms() {
     h('button', { 'aria-pressed': seg === id ? 'true' : 'false', on: { click: () => { S.armsSeg = id; render(); } } }, lbl))));
   const sub = (txt) => h('p', { class: 'small muted', style: 'margin:-4px 2px 10px' }, txt);
   const list2 = (rows) => h('div', { class: 'card vlist vc jbl' }, rows);
+  const list2w = (rows) => h('div', { class: 'card vlist vc jbl wl' }, rows);   // v97: armas e acessórios (o botão passa para baixo nos ecrãs estreitos)
   if (seg === 'fight') {
-    out.push(h('div', { class: 'armsum row sp' }, h('span', null, t('arAtkNow')), h('b', { class: 'num' }, plusPct(me.atkBp || 0))), sub(t('arFightSub', { p: (S.cfg.gunSideBp || 0) / 100 })));
+    out.push(h('div', { class: 'armsum row sp' }, h('span', null, t('arAtkNow')), h('b', { class: 'num' }, plusPct(me.atkBp || 0))));
     if (lawIs('armas')) out.push(h('p', { class: 'small c-cash', style: 'margin:-4px 2px 10px' }, t('pArmsLaw', { p: 100 - S.cfg.gov.laws.armas.priceBp / 100 })));
-    // v87: 30 armas não cabem num ecrã. À vista: a que tens, as melhores que ela que já podes usar e a próxima que pede nível;
-    // as mais fracas e as de nível mais alto ficam atrás de «Mostrar mais»
+    // v97: 156 armas em 13 tipos. Em cada espaço escolhe-se o tipo (ou todos); com «todos», de cada tipo aparecem só a melhor
+    // que já podes usar e a próxima que pede nível, além das que tens. O resto fica atrás de «Ver as outras».
     for (const sl of ['branca', 'mao', 'principal']) {
-      const L = G.filter((g) => g.slot === sl), cur = me.eq[sl] ? gearOf(me.eq[sl].id)?.atk || 0 : 0, open = S.armsAll?.[sl];
-      const firstLock = L.find((g) => me.level < (g.level || 1));
-      const vis = (g) => (me.eq[sl] && me.eq[sl].id === g.id) || me.inv.some((x) => x.id === g.id) || g === firstLock || (me.level >= (g.level || 1) && g.atk > cur);
-      const shown = open ? L : L.filter(vis), hid = L.length - L.filter(vis).length;
+      const L0 = G.filter((g) => g.slot === sl), tipos = [...new Set(L0.map((g) => g.t))], tp = tipos.includes(S.armsType?.[sl]) ? S.armsType[sl] : 'all';
+      const L = (tp === 'all' ? L0 : L0.filter((g) => g.t === tp)).slice().sort((a, b) => a.atk - b.atk), open = S.armsAll?.[sl + tp];
+      const mine = (g) => (me.eq[sl] && me.eq[sl].id === g.id) || me.inv.some((x) => x.id === g.id);
+      const keep = new Set(L.filter(mine).map((g) => g.id));
+      // com «Todas»: de cada tipo, a melhor que já podes usar, só se for mais forte do que a que trazes; num tipo: as 3 melhores e a próxima
+      const cur = me.eq[sl] ? gearOf(me.eq[sl].id)?.atk || 0 : 0;
+      for (const k of tp === 'all' ? tipos : [tp]) {
+        const T = L.filter((g) => g.t === k && !g.craft), ok = T.filter((g) => me.level >= (g.level || 1));
+        if (tp === 'all') { if (ok.length && ok[ok.length - 1].atk > cur) keep.add(ok[ok.length - 1].id); continue; }
+        ok.slice(-3).forEach((g) => keep.add(g.id));
+        const next = T.find((g) => me.level < (g.level || 1)); if (next) keep.add(next.id);
+      }
+      if (tp === 'all' && keep.size <= L.filter(mine).length) { const nx = L.filter((g) => !g.craft && me.level < (g.level || 1)).sort((a, b) => (a.level || 1) - (b.level || 1))[0]; if (nx) keep.add(nx.id); }
+      const shown = open ? L : L.filter((g) => keep.has(g.id)), hid = L.length - L.filter((g) => keep.has(g.id)).length;
       // ao lado de uma arma de fogo mais forte (a outra), as deste espaço só somam 30% nas lutas: diz-se uma vez, por cima
       const os = sl === 'mao' ? 'principal' : sl === 'principal' ? 'mao' : null, oth = os && me.eq[os] && me.eq[os].u > 0 ? gearOf(me.eq[os].id) : null;
-      const sideSub = oth && L.every((g) => g.atk <= oth.atk) ? sub(t('arWithOther', { p: (S.cfg.gunSideBp || 0) / 100, s: t('sl_' + os).toLowerCase() })) : null;
-      out.push(h('h2', { class: 'sec' }, t('sl_' + sl)), sideSub, list2([...shown.map((g) => gearRow(me, g)),
-        hid ? moreRow(open, hid, () => { S.armsAll = { ...(S.armsAll || {}), [sl]: !open }; render(); }) : null]));
+      const sideSub = oth && L0.every((g) => g.atk <= oth.atk) ? sub(t('arWithOther', { p: (S.cfg.gunSideBp || 0) / 100, s: t('sl_' + os).toLowerCase() })) : null;
+      const sel = h('select', { class: 'wsel', 'aria-label': t('sl_' + sl), on: { change: (e) => { S.armsType = { ...(S.armsType || {}), [sl]: e.currentTarget.value }; render(); } } },
+        [['all', t('wBest')], ...tipos.map((k) => [k, t('wt_' + k)])].map(([v, l]) => h('option', { value: v, selected: v === tp }, l)));
+      out.push(h('h2', { class: 'sec' }, h('span', null, t('sl_' + sl)), sel), list2w([...shown.map((g) => gearRow(me, g)),
+        hid ? h('button', { class: 'vmore', 'aria-expanded': open ? 'true' : 'false', on: { click: () => { S.armsAll = { ...(S.armsAll || {}), [sl + tp]: !open }; render(); } } }, open ? t('arLess') : t('wSeeAll', { n: L.length })) : null]));
     }
+    // acessórios: compram-se aqui e montam-se no inventário, numa arma vestida
+    const worn = ['branca', 'mao', 'principal'].map((sl) => me.eq[sl] && gearOf(me.eq[sl].id)?.t).filter(Boolean);
+    const MODS0 = G.filter((g) => g.slot === 'mod'), useful = MODS0.filter((m) => m.fits.some((k) => worn.includes(k))), openM = S.armsAll?.mods;
+    const MODS = openM || !useful.length ? MODS0 : useful, hidM = MODS0.length - (useful.length || MODS0.length);
+    out.push(h('h2', { class: 'sec' }, t('wModsT')), list2w([...MODS.map((m) => {
+      const lock = me.level < (m.level || 1), pr = gearP(m), n = me.inv.filter((x) => x.id === m.id).length;
+      return h('div', { class: 'vrow jbr' + (lock ? ' dim' : '') }, art('gear', m.id, 'vth'),
+        h('div', { class: 'grow' }, h('b', null, t('g_' + m.id)), h('div', { class: 'small' }, modFx(m)),
+          // serve numa arma que trazes: diz-se em qual; senão, os tipos em que serve
+          (() => { const w = ['principal', 'mao', 'branca'].map((sl) => me.eq[sl]).find((x) => x && m.fits.includes(gearOf(x.id)?.t)); return h('div', { class: 'small muted' }, w ? t('wModYour', { x: t('g_' + w.id) }) : t('wModFits', { x: m.fits.map((k) => t('wt_' + k)).join(', ') })); })(),
+          n ? h('div', { class: 'small muted' }, t('wHave', { n })) : null),
+        lock ? h('span', { class: 'small muted' }, t('arNeedLvl', { n: m.level }))
+          : h('button', { class: 'btn sm ghost num', disabled: cash < pr || invFull(me), on: { click: (e) => act('buy', { id: m.id }, { el: e.currentTarget }) } }, t('buy') + ' · ' + money(pr)));
+    }), hidM > 0 ? moreRow(openM, hidM, () => { S.armsAll = { ...(S.armsAll || {}), mods: !openM }; render(); }) : null]));
     // balas: às caixas; sem espaço no inventário só se juntam às que já tens
     const have = invN(me, 'balas'), room = have > 0 || !invFull(me);
     out.push(h('h2', { class: 'sec' }, t('g_balas')), list2([h('div', { class: 'vrow jbr blr' }, art('gear', 'balas', 'vth'),
@@ -3903,7 +3970,7 @@ const DOLL_TYPE = { pressao: 'L_espingarda', caca: 'L_espingarda', ligeira: 'L_e
   compacta: 'L_smg', metralhadora: 'L_smg', artesanal: 'L_smg', assalto: 'L_carabina', batalha: 'L_carabina', calibre50: 'L_carabina', tatica: 'L_carabina', sniper: 'L_sniper', afinada: 'L_sniper',
   pistola: 'L_pistola', pistola50: 'L_pistola', pistolaafinada: 'L_pistola', revolver: 'L_revolver', magnum: 'L_revolver',
   soqueira: 'L_soqueira', navalha: 'L_faca', facamato: 'L_faca', taco: 'L_contundente', bastao: 'L_contundente', machado: 'L_lamina', catana: 'L_lamina', katana: 'L_espada', falcata: 'L_espada', gladio: 'L_espada' };
-const DOLL = (id) => `/img/boneco/${DOLL_TYPE[id] || id}.webp?1`;
+const DOLL = (id) => { const g = gearOf(id); return `/img/boneco/${g && g.t ? 'L_' + (g.t === 'pesada' ? 'carabina' : g.t) : DOLL_TYPE[id] || id}.webp?1`; };   // v97: as armas pelo tipo
 const gearFits = (it) => { const g = it && !isGood(it.id) ? gearOf(it.id) : null; return g && g.slot !== 'mat' ? g.slot : null; };
 const gearStat = (g) => (g.atk ? t('dollAtk', { p: pctOf(g.atk) }) : g.def ? t('dollDef', { p: pctOf(g.def) }) : g.room ? t('dollRoom', { n: g.room }) : '');
 // na grelha, uma peça que se veste diz logo se é melhor (▲ verde) ou pior (▼ vermelho) do que a que está vestida
@@ -3955,6 +4022,11 @@ function itemSheet(i) {
   const acts = [];
   if (x.wear) acts.push(x.low ? h('p', { class: 'small muted' }, t('arNeedLvl', { n: x.g.level }))
     : h('button', { class: 'btn buy block', on: { click: (e) => { S.dollNew = x.g.slot; done(act('equip', { i }, { el: e.currentTarget })); } } }, t('dollWear', { x: t('sl_' + x.g.slot).toLowerCase() })));
+  // v97: um acessório guardado monta-se numa arma vestida que o aceite
+  const gm = gearOf(it.id);
+  if (gm && gm.slot === 'mod') for (const sl of ['branca', 'mao', 'principal']) { const w = me.eq[sl], wg = w && gearOf(w.id);
+    if (wg && gm.fits.includes(wg.t)) acts.push(h('button', { class: 'btn buy block', disabled: (w.m || []).length >= (wg.ms || 0) || (w.m || []).some((id) => gearOf(id)?.cat === gm.cat) || me.level < (gm.level || 1),
+      on: { click: (e) => done(act('modFit', { slot: sl, i }, { el: e.currentTarget })) } }, t('wModFit') + ' · ' + t('g_' + w.id))); }
   if (x.good) acts.push(h('button', { class: 'btn block', on: { click: (e) => done(act('sell', { i }, { el: e.currentTarget })) } }, t('sellBtn') + ' · ' + money(x.sell)));
   else { const b = sureBtn('btn block', t('sellBtn') + ' · ' + money(x.sell), 'btn block dng sure', t('sellSure', { m: money(x.sell) }), () => done(act('sell', { i }, { el: b }))); acts.push(b); }
   close = sheet(h('div', { class: 'stack dsheet' },
@@ -3965,10 +4037,27 @@ function slotSheet(sl) {
   const me = S.st.me, it = me.eq[sl]; if (!it) return;
   const g = gearOf(it.id);
   let close = () => {};
+  const reopen = (p) => p.then((o) => { if (o) { close(); slotSheet(sl); } });
+  // v97: numa arma, os números com os acessórios e os espaços para eles (montar o que está guardado, tirar o que está montado)
+  let wpn = null;
+  if (g.t) {
+    const W = wStatC(it), on = it.m || [], fit = me.inv.map((x, i) => [x, i]).filter(([x]) => { const m = gearOf(x.id); return m && m.slot === 'mod' && m.fits.includes(g.t); });
+    wpn = [h('dl', { class: 'kv wkv' }, h('div', null, h('dt', null, t('wDmg')), h('dd', { class: 'num' }, '+' + pctOf(W.atk) + '%')),
+        h('div', null, h('dt', null, t('wAcc')), h('dd', { class: 'num' }, String(W.acc))), h('div', null, h('dt', null, t('wRng')), h('dd', { class: 'num' }, wRngTxt(W.rng)))),
+      h('h3', { class: 'hkt' }, t('wOn', { n: on.length, m: g.ms || 0 })),
+      ...on.map((id, k) => { const m = gearOf(id); return h('div', { class: 'vrow wmod' }, itArt(id, 'vth'), h('div', { class: 'grow' }, h('b', null, t('g_' + id)), h('div', { class: 'small' }, modFx(m))),
+        h('button', { class: 'btn sm', disabled: invFull(me), on: { click: (e) => reopen(act('modTake', { slot: sl, k }, { el: e.currentTarget })) } }, t('wModTake'))); }),
+      on.length < (g.ms || 0) && fit.length ? h('h3', { class: 'hkt' }, t('wBag')) : null,
+      on.length < (g.ms || 0) ? (fit.length ? fit.map(([x, i]) => { const m = gearOf(x.id), same = on.some((id) => gearOf(id)?.cat === m.cat), low = me.level < (m.level || 1);
+        return h('div', { class: 'vrow wmod' }, itArt(x.id, 'vth'), h('div', { class: 'grow' }, h('b', null, t('g_' + x.id)), h('div', { class: 'small' }, modFx(m))),
+          low ? h('span', { class: 'small muted' }, t('arNeedLvl', { n: m.level })) : h('button', { class: 'btn sm buy', disabled: same, on: { click: (e) => reopen(act('modFit', { slot: sl, i }, { el: e.currentTarget })) } }, t('wModFit'))); })
+        : h('p', { class: 'small muted' }, t('wModNone'))) : null];
+  }
   close = sheet(h('div', { class: 'stack dsheet' },
     h('div', { class: 'row dsh' }, itArt(it.id, 'dsi'), h('div', { class: 'grow' }, h('h2', null, itName(it.id)),
-      h('p', { class: 'small num' }, t('sl_' + sl) + (gearStat(g) ? ' · ' + gearStat(g) : '') + (g.gun ? ' · ' + (it.u > 0 ? t('usesLeft', { u: it.u, l: g.life }) : t('gunWorn')) : '')))),
-    h('button', { class: 'btn block', on: { click: (e) => act('unequip', { slot: sl }, { el: e.currentTarget }).then((o) => { if (o) close(); }) } }, t('dollTake')),
+      h('p', { class: 'small num' }, t('sl_' + sl) + (g.t ? '' : gearStat(g) ? ' · ' + gearStat(g) : '') + (g.gun ? ' · ' + (it.u > 0 ? t('usesLeft', { u: it.u, l: g.life }) : t('gunWorn')) : '')))),
+    ...(wpn || []),
+    h('button', { class: 'btn block', on: { click: (e) => act('unequip', { slot: sl }, { el: e.currentTarget }).then((o) => { if (o) close(); }) } }, t(g.t ? 'dollTakeW' : 'dollTake')),
     h('button', { class: 'btn block', on: { click: () => { close(); S.armsSeg = ['branca', 'mao', 'principal'].includes(sl) ? 'fight' : 'def'; go('arms'); } } }, t('dollArms'))));
 }
 // slot vazia: o que tens guardado que lá cabe, para vestir com um toque
