@@ -139,6 +139,14 @@ jobs:
           for i in $(seq 1 60); do curl -s -m 5 http://127.0.0.1:3000/api/transit/loading-status | grep -q '"isLoading":false' && break; sleep 5; done
           sleep 5
 
+      - name: "Teste da Madeira (SIGA Rodoeste e CAM: páginas, linhas juntas, nomes)"
+        continue-on-error: true
+        working-directory: app
+        run: |
+          mkdir -p ../res
+          BASE=http://127.0.0.1:3000 node ../auditoria/madeira-siga.mjs 2>&1 | tee ../res/madeira-siga.txt | tail -30
+          exit ${PIPESTATUS[0]}
+
       - name: "Teste do travão à cópia automática das páginas (regras e app a correr)"
         continue-on-error: true
         working-directory: app
