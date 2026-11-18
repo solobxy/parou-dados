@@ -36,9 +36,13 @@ function add(el, kids) {
     if (k === null || k === undefined || k === false) continue;
     if (Array.isArray(k)) add(el, k);
     else if (k instanceof Node) el.appendChild(k);
-    else el.appendChild(document.createTextNode(String(k)));
+    else el.appendChild(document.createTextNode(tidy(String(k))));
   }
 }
+// o texto nunca parte mal: o «·» fica agarrado à palavra de antes (uma linha nunca começa por «·»), os milhares escritos à mão
+// («5 000») não se separam e um intervalo («224 €–336 €») não parte a seguir ao traço
+const tidy = (s) => (s.indexOf(' ') < 0 && s.indexOf('–') < 0 && s.indexOf('-') < 0 ? s : s.replace(/ · /g, '\u00a0· ').replace(/(\d) (?=\d{3}(?!\d))/g, '$1\u00a0').replace(/(\S)–(?=\S)/g, '$1–\u2060')
+  .replace(/(\p{L})-(?=\p{L})/gu, '$1\u2011'));   // e o hífen entre letras («comprar-te», «porta-contentores») não parte a palavra
 
 const PATHS = {
   street: 'M2 9c3-2.5 7-2.5 10 0 3-2.5 7-2.5 10 0-.8 5-3.5 7.5-6 7.5-2 0-3-2-4-2s-2 2-4 2C5.5 16.5 2.8 14 2 9zM6.5 11.5h3M14.5 11.5h3',

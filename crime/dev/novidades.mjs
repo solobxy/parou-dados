@@ -2,7 +2,7 @@
 // esse número), com o texto para os jogadores em PT e EN e uma imagem quando a versão trouxe alguma.
 // O texto vem, por esta ordem:
 //   1. das linhas «PT: …» e «EN: …» na mensagem de um commit dessa versão (é assim que se escreve daqui para a frente);
-//   2. de dev/novidades-antigas.json (as versões de antes desta regra, escritas à mão uma vez);
+//   2. de dev/novidades-antigas.json (as versões de antes desta regra, escritas à mão uma vez; com «force», manda mesmo havendo linhas no commit);
 //   3. do título do commit, sem o prefixo (só em PT, e o EN fica igual).
 // A imagem: «IMG: /img/…» na mensagem, a de novidades-antigas.json, ou a primeira imagem nova dessa versão (sem as -g).
 // Grava sites/crime/novidades.json, que o jogo lê no Arquivo.
@@ -43,7 +43,7 @@ for (const g of grupos.values()) {
   if (a === null) continue;   // marcado para não aparecer (trabalho interno)
   let pt = null, en = null, img = null;
   for (const c of g.commits) { pt = linha(c.msg, 'PT') || pt; en = linha(c.msg, 'EN') || en; img = linha(c.msg, 'IMG') || img; }
-  if (!pt && a) { pt = a.pt; en = a.en; }
+  if (a && (a.force || !pt)) { pt = a.pt; en = a.en; }   // force: corrige o texto de uma versão já publicada (o commit não se reescreve)
   if (!img && a && a.img && existsSync(join(RAIZ, 'sites/crime', a.img))) img = a.img;
   if (!pt) { pt = limpa(g.commits[0].msg); en = en || pt; }
   if (!img) img = g.commits.flatMap((c) => imagens(c.h)).find((f) => f.startsWith('/img/cenas/')) || g.commits.flatMap((c) => imagens(c.h))[0] || null;

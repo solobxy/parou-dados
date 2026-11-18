@@ -111,7 +111,7 @@ main { position: relative; z-index: 1; padding: 20px 16px calc(96px + env(safe-a
 .screen-h p { color: var(--tx2); margin-top: 10px; font-size: 15px; }
 h2.sec { font-family: var(--disp); font-weight: 600; font-size: 26px; margin: 22px 0 10px; }
 p.secsub { color: var(--tx2); font-size: 14px; margin-bottom: 12px; }
-.stack { display: grid; gap: 8px; }
+.stack { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; }   /* minmax: um filho comprido nunca alarga a coluna para fora do cartão */
 
 /* cartões */
 .card { background: var(--s1); border-radius: var(--r); padding: 14px; position: relative; }
@@ -209,7 +209,7 @@ p.secsub { color: var(--tx2); font-size: 14px; margin-bottom: 12px; }
 .biz .cnt { font-family: var(--num); font-weight: 700; font-size: 22px; color: var(--cash); }
 .fill { height: 6px; border-radius: 99px; background: var(--s2); overflow: hidden; }
 .fill > i { display: block; height: 100%; width: 0; background: var(--cash); transition: width .6s var(--ease-out); }
-.fill.full > i { background: var(--sodium); }
+.fill.full > i { background: var(--orange); }
 .cont { display: flex; justify-content: space-between; gap: 8px; padding: 10px 12px; background: var(--s2); border-radius: var(--r); font-size: 14px; }
 .chips { display: flex; flex-wrap: wrap; gap: 6px; }
 .chip { padding: 4px 10px; border-radius: 99px; background: var(--s2); font-size: 13px; color: var(--tx2); }
@@ -356,8 +356,8 @@ body.light .neon, body.light .skyline .w.on.f { animation: none; }
 .bscene.on .pic { filter: none; }
 .bscene::after { content: ''; position: absolute; inset: 0; background: linear-gradient(to top, #000c, transparent 55%); pointer-events: none; }
 .bscene .anim { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 1; overflow: visible; }
-.bscene.full { box-shadow: 0 0 0 2px var(--sodium); }
-.bscene.full::before { content: ''; position: absolute; inset: 0; z-index: 2; border-radius: inherit; box-shadow: inset 0 0 0 2px var(--sodium); animation: fullpulse 1.6s ease-in-out infinite; }
+.bscene.full { box-shadow: 0 0 0 2px var(--orange); }
+.bscene.full::before { content: ''; position: absolute; inset: 0; z-index: 2; border-radius: inherit; box-shadow: inset 0 0 0 2px var(--orange); animation: fullpulse 1.6s ease-in-out infinite; }
 @keyframes fullpulse { 50% { opacity: .2; } }
 .anim .grow { transform: scaleY(calc(.18 + .82 * var(--fill))); transition: transform 1s var(--ease-out); }
 .anim .sway { animation: sway 3.2s ease-in-out infinite alternate; }
@@ -574,7 +574,7 @@ button.item { border: 0; color: inherit; font: inherit; cursor: pointer; }
 .perks li { display: flex; gap: 5px; justify-content: center; align-items: flex-start; }
 .item.cls .perks { gap: 8px; text-align: left; }   /* v90: um bónus por linha, alinhado à esquerda, com espaço entre eles */
 .item.cls .perks li { display: block; }
-.perks svg.i { width: 13px; height: 13px; flex: none; margin-top: 2px; color: var(--sodium); }
+.perks svg.i { width: 13px; height: 13px; flex: none; margin-top: 2px; color: var(--cash); }   /* vantagens: o visto a verde (bom para o jogador) */
 .stick { position: sticky; bottom: calc(86px + env(safe-area-inset-bottom)); margin-top: 12px; z-index: 5; }
 .stick .btn { box-shadow: 0 8px 24px #000a; }
 .fill.big { height: 10px; }
@@ -689,11 +689,11 @@ body.light .pmap .wave, body.light .pmap .ping { animation: none; }
 .game:focus-visible { outline: 2px solid var(--sodium); outline-offset: 2px; }
 .csbar { background: color-mix(in oklab, var(--ink) 92%, transparent); border-radius: 14px; padding: 10px; display: grid; gap: 10px; box-shadow: 0 -6px 24px #0008; }
 .csbar .row { gap: 8px; }
-.chips2 { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; }
-.chip2 { flex: 1 0 auto; min-width: 56px; min-height: 40px; padding: 0 10px; border: 0; border-radius: 99px; background: var(--s2); color: var(--tx); font: inherit; font-weight: 800; font-size: 14px; font-variant-numeric: tabular-nums; box-shadow: inset 0 0 0 2px #ffffff14; }
-.chip2.on { background: var(--sodium); color: #1a1100; box-shadow: none; }
+.chips2 { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 6px; }   /* as fichas cabem todas, sem deslizar */
+.chip2 { min-width: 0; min-height: 40px; padding: 0 4px; white-space: nowrap; border: 0; border-radius: 99px; background: var(--s2); color: var(--tx); font: inherit; font-weight: 800; font-size: 14px; font-variant-numeric: tabular-nums; box-shadow: inset 0 0 0 2px #ffffff14; }
+.chip2.on { background: var(--tx); color: #111; box-shadow: none; }   /* a escolhida em creme, como nas escolhas (o amarelo é do respeito) */
 .chip2.max { color: var(--sodium); }
-.chip2.max.on { color: #1a1100; }
+.chip2.max.on { color: #111; }
 .csres { border-radius: 12px; padding: 12px 14px; margin: 0 0 12px; background: var(--s1); display: grid; gap: 2px; text-align: center; animation: csin .35s var(--spring); }
 .csres b { font-family: var(--disp); font-weight: 600; font-size: 30px; line-height: 1; }
 .csres.win { box-shadow: inset 0 0 0 2px var(--cash); } .csres.win b { color: var(--cash); }
@@ -736,7 +736,7 @@ h2.sec.small { font-size: 18px; margin: 16px 0 8px; }
 .dcp { display: grid; gap: 2px; padding: 12px 6px; min-height: 84px; border: 0; border-radius: 12px; background: var(--s1); color: var(--tx); font: inherit; box-shadow: inset 0 0 0 2px #ffffff10; }
 .dcp b { font-family: var(--disp); font-size: 24px; line-height: 1; }
 .dcp span { font-size: 13px; }
-.dcp.on { box-shadow: inset 0 0 0 3px var(--sodium); background: #2a2210; }
+.dcp.on { box-shadow: inset 0 0 0 3px var(--tx); background: #2a2a2a; }   /* a aposta escolhida em creme (o amarelo é do respeito) */
 /* blackjack */
 .felt { background: radial-gradient(120% 90% at 50% 0%, #17784a, #0b3f27); border-radius: 18px; padding: 14px 12px 18px; box-shadow: inset 0 0 0 3px #c99a3c55; margin-bottom: 12px; min-height: 300px; }
 .hlab { display: flex; justify-content: center; gap: 8px; align-items: center; font-weight: 700; color: #e9f5ec; font-size: 14px; margin: 6px 0; }
@@ -1115,10 +1115,10 @@ h1.slogo { margin: 0; }
 .srow { grid-template-columns: auto auto auto; justify-content: space-between; gap: 6px; }
 .sbet { gap: 5px; } .sbet > div { min-width: 50px; } .sbb { width: 40px; height: 40px; }
 .sright { gap: 4px; } .sright .sib { min-width: 44px; } .sright .sib small { font-size: 10.5px; white-space: nowrap; }
-@media (max-width: 350px) {
-  .sright .sib small, .sbet small { display: none; } .sbet { gap: 3px; } .sbet > div { min-width: 40px; } .sbet b { font-size: 19px; } .sbb { width: 34px; height: 34px; font-size: 20px; }
-  .sspin { width: 60px; height: 60px; } .sspin svg { width: 32px; height: 32px; } .sright { gap: 2px; } .sright .sib { min-width: 38px; } .sright .sib b { width: 36px; height: 36px; }
-  .sctl { padding: 8px 6px 10px; } .srow { gap: 4px; }
+@media (max-width: 350px) {   /* 320 px: aposta e rodar numa linha, «A» e «i» por baixo; os botões ficam com 44 px e com legenda */
+  .srow { grid-template-columns: 1fr auto; row-gap: 8px; } .sright { grid-column: 1 / -1; justify-self: center; gap: 24px; }
+  .sbet { gap: 3px; } .sbb { width: 44px; height: 44px; } .sright .sib b { width: 44px; height: 44px; }
+  .sctl { padding: 8px 8px 10px; }
 }
 
 /* ---- profissões: de rua e de elite ---- */
@@ -1129,7 +1129,7 @@ h1.slogo { margin: 0; }
 .clsneed svg.i { width: 13px; height: 13px; }
 
 /* ---- banco: escolher a quantia ---- */
-.bquick { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.bquick { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; } .bquick .btn { padding: 0 4px; min-width: 0; }
 #bamt { font: 800 22px var(--ui); font-variant-numeric: tabular-nums; min-height: 56px; color: var(--tx); }
 
 /* ---- aeroporto: vista de satélite ---- */
@@ -1138,7 +1138,7 @@ h1.slogo { margin: 0; }
 .airlist { display: grid; gap: 6px; margin-bottom: 12px; }
 .airr { display: flex; align-items: center; gap: 10px; width: 100%; text-align: left; border: 0; border-radius: var(--r); background: var(--s1); color: var(--tx); padding: 10px 14px; min-height: 56px; font: inherit; }
 .airr .grow { display: grid; gap: 1px; min-width: 0; } .airr b { font-weight: 700; font-size: 16px; }
-.airr.sel { box-shadow: inset 0 0 0 2px var(--sodium); background: var(--s2); }
+.airr.sel { box-shadow: inset 0 0 0 2px var(--tx); background: var(--s2); }   /* o escolhido em creme, como nas escolhas (o amarelo é do respeito) */
 .airr.lock { opacity: .5; } .airr.lock svg.i { width: 16px; height: 16px; color: var(--tx2); }
 .airn { display: grid; justify-items: end; gap: 0; } .airn b { font: 600 22px/1 var(--disp); }
 .airfl .airto { font: 600 28px/1 var(--disp); }
@@ -1229,7 +1229,7 @@ h1.slogo { margin: 0; }
 
 /* discoteca e bordel do jogador, armazém e casas dos outros jogadores */
 .vbig { font-size: 28px; line-height: 1; }
-.vlist { display: grid; gap: 4px; padding-top: 10px; padding-bottom: 10px; }
+.vlist { display: grid; grid-template-columns: minmax(0, 1fr); gap: 4px; padding-top: 10px; padding-bottom: 10px; }
 .vlist > .row { margin-bottom: 6px; }
 .vrow { display: flex; align-items: center; gap: 10px; min-height: 52px; width: 100%; text-align: left; color: inherit; background: none; border: 0; padding: 0; font: inherit; }
 .vrow.tap { border-radius: 8px; }
@@ -1251,7 +1251,7 @@ h1.slogo { margin: 0; }
 .vlead { font-size: 16px; line-height: 1.4; }
 .vperks { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; font-size: 14px; line-height: 1.35; color: var(--tx2); }
 .vperks li { display: flex; gap: 8px; align-items: flex-start; }
-.vperks svg.i { width: 16px; height: 16px; flex: none; margin-top: 2px; color: var(--sodium); }
+.vperks svg.i { width: 16px; height: 16px; flex: none; margin-top: 2px; color: var(--cash); }
 
 /* sem stamina num golpe: discoteca ou putas */
 .stam { display: grid; gap: 8px; }
@@ -1307,7 +1307,7 @@ h1.slogo { margin: 0; }
 .gup > .btn { flex: none; }
 /* assassino: quem não dá para encomendar fica mais apagado, com o motivo por baixo */
 .hmrow.off { background: none; box-shadow: inset 0 0 0 1px var(--s2); } .hmrow.off .avs { filter: grayscale(1) brightness(.7); }
-.hmrow > .btn { flex: none; }
+.hmrow { flex-wrap: wrap; row-gap: 10px; } .hmrow.gm > .grow { flex: 1 1 150px; } .hmrow > .btn { flex: none; margin-left: auto; }   /* a 320 px o preço desce para baixo em vez de espremer o texto numa palavra por linha */
 /* alvos que agora não dá para atacar: mais apagados, com o motivo e o tempo que falta */
 .tgt.off { background: none; box-shadow: inset 0 0 0 1px var(--s2); } .tgt.off .avs { filter: grayscale(1) brightness(.7); }
 .tgt .why { font-size: 13px; color: var(--tx2); margin-top: 2px; } .tgt .why b { color: var(--tx); }
@@ -1787,6 +1787,7 @@ body.light .rv.is-wait .ct-lock::after { opacity: .9; transform: translate(-50%,
 .rklist .rk.me { box-shadow: inset 0 0 0 2px var(--tx); }   /* tu: contorno creme (o laranja é do respeito) */
 .rkn { font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .rkl { font-size: 14px; color: var(--tx2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+@media (max-width: 359px) { .rk:has(.avs) { grid-template-columns: 26px 36px 1fr auto; gap: 8px; padding: 10px 8px; } .rk .avs { width: 36px; height: 36px; } .rklist .rk .r { font-size: 16px; } .rkl { white-space: normal; } }   /* 320 px: o nome deixa de ficar em «G…» */
 .rkcut { display: flex; align-items: center; gap: 10px; margin: 6px 4px; font-size: 14px; color: var(--tx2); }
 .rkcut::after { content: ''; flex: 1; height: 1px; background: #ffffff24; }
 .rkempty { margin: 4px 0; padding: 16px 14px; border-radius: var(--r); background: var(--s1); color: var(--tx2); font-size: 15px; }
@@ -2771,7 +2772,7 @@ img { -webkit-user-drag: none; }
 .langsw button, .chip, .wtop { border-radius: 2px; }
 .tip { border-radius: var(--rc); }
 /* listas que andam para o lado: as pontas desvanecem em vez de cortar a seco */
-.chips2, .ppg, .tk-trayv { -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 14px, #000 calc(100% - 14px), transparent); mask-image: linear-gradient(90deg, transparent 0, #000 14px, #000 calc(100% - 14px), transparent); }
+.ppg, .tk-trayv { -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 14px, #000 calc(100% - 14px), transparent); mask-image: linear-gradient(90deg, transparent 0, #000 14px, #000 calc(100% - 14px), transparent); }
 /* fotografias pequenas: um contorno interior em transparência separa a foto do fundo, seja qual for */
 .vth, .item .thumb, .gear .thumb, .gthumb, .hlink .hthumb { outline: 1px solid #ece6da17; outline-offset: -1px; }
 /* preso: só a prisão. A barra de baixo sai e não há «voltar» */
@@ -3026,6 +3027,7 @@ body.preso .phead .pbar .back:not(.tojail) { visibility: hidden; }   /* v94: do 
 .plaque ol li { overflow-wrap: anywhere; }
 .plaque .pcol p { margin: 0; font-family: inherit; }
 @media (max-width: 379px) { .plaque .pcols { grid-template-columns: 1fr; gap: 12px; } }
+.plaque .pempty { color: #241805; text-shadow: 0 1px 0 #f6e6b866; margin: 12px 0 0; padding-top: 10px; border-top: 1px solid #6b4d1c66; text-align: center; }
 
 /* ===== v80: o exame dos cursos ===== */
 /* uma prova em papel de exame não; aqui são perguntas claras com quatro opções. A escolhida fica em creme (como as teclas .seg);
@@ -3368,6 +3370,8 @@ body .btn { border-radius: 5px; border: 1px solid #111; font: 700 13px/1 var(--d
 body .btn.big { font-size: 16px; min-height: 44px; }
 body .btn.buy, body .btn.rob, body .btn.pri { background: linear-gradient(#f4f4f4, #c9c9c9); color: #333; border-color: #777; box-shadow: inset 0 1px 0 #fff, 0 1px 2px #000a; text-shadow: 0 1px 0 #fff; }
 body .btn.robAll, body .btn:not(.buy):not(.rob):not(.pri):not(.cash):not(.danger) { background: linear-gradient(#4d4d4d, #343434); color: #eee; box-shadow: inset 0 1px 0 #ffffff24, 0 1px 2px #000a; text-shadow: 0 1px 0 #000; }
+/* o que não se desfaz tem contorno vermelho também no tema escuro (o cinzento de cima apagava-o) */
+body .btn.ghost.dng:not(.buy):not(.rob):not(.pri):not(.cash):not(.danger) { color: #ff9a92; border-color: #6b2420; box-shadow: inset 0 0 0 1px #e8786c, 0 1px 2px #000a; }
 /* mosaicos: imagem com o nome numa faixa escura por baixo */
 body .tile { border-radius: 5px; border: 1px solid #111; box-shadow: 0 1px 3px #000a; }
 body .tile::after { background: linear-gradient(to top, #000c 0, #000c 30px, #0000 31px); }
@@ -3407,9 +3411,9 @@ body .tile .tsub { left: 8px; right: 8px; bottom: 7px; text-align: left; font-si
 body .mset .mhd { margin-top: 18px; padding: 7px 10px; border-radius: 5px 5px 0 0; background: linear-gradient(#555, #333); border: 1px solid #111; box-shadow: inset 0 1px 0 #ffffff1f; }
 body .mset .mhd h2.sec { margin: 0; padding: 0; background: none; border: 0; box-shadow: none; }
 body .mset .mhd > span { color: #ddd; }
-/* atalhos das lutas com o mesmo canto do resto; separadores com a linha verde no ativo */
+/* atalhos das lutas com o mesmo canto do resto; a tecla escolhida das escolhas fica cheia a creme, sem cor de ação (o verde é das ações) */
 body .hlink { border-radius: 5px; }
-body .seg button[aria-pressed='true'], body .seg button[aria-selected='true'] { box-shadow: inset 0 -3px 0 #85b200; }
+body .seg button[aria-pressed='true'], body .seg button[aria-selected='true'] { background: var(--tx); color: #111; font-weight: 700; box-shadow: none; }
 body .back { min-width: 44px; min-height: 44px; }
 body .meta > * { white-space: nowrap; }
 body .tgt .pct.hi { color: var(--cash); } body .tgt .pct.mid { color: var(--orange); } body .tgt .pct.lo { color: var(--danger); }
@@ -3702,7 +3706,7 @@ body h2.sec { font-size: 16px; }
 .honcat .row .sec { margin: 0; }
 .honlist { display: grid; gap: 10px; margin-top: 8px; }
 .honb { display: grid; gap: 3px; justify-items: start; background: none; border: 0; padding: 4px; margin: -4px; border-radius: 12px; text-align: left; color: inherit; cursor: pointer; }
-.honb.on { box-shadow: 0 0 0 2px var(--cash); }
+.honb.on { box-shadow: 0 0 0 2px var(--tx); }   /* a escolhida em creme, como nas escolhas */
 .honb:focus-visible { outline: 2px solid var(--tx); outline-offset: 2px; }
 .honnext { display: grid; gap: 10px; margin-top: 10px; }
 .honn { display: grid; gap: 3px; padding: 8px 10px; border-radius: 10px; background: var(--s1); box-shadow: inset 0 0 0 1px var(--line); }
@@ -3716,7 +3720,7 @@ body h2.sec { font-size: 16px; }
 .honsum { width: 100%; max-width: 380px; }
 .linkbtn { background: none; border: 0; padding: 0 2px; min-height: 44px; color: var(--tx2); text-decoration: underline; font: inherit; cursor: pointer; }
 .honcat h2.sec .small { margin-left: auto; font-weight: 600; }
-.honn .hbar { max-width: 300px; }
+.honn .hbar { max-width: none; }   /* a próxima honra com a mesma largura das ganhas */
 .honpbtn { display: flex; align-items: center; gap: 8px; width: 100%; background: none; border: 0; padding: 0; color: inherit; text-align: left; min-height: 44px; cursor: pointer; }
 .honpbtn .hbar { flex: 1 1 auto; }
 .honpbtn .chev { color: var(--tx2); font-size: 22px; flex: none; }
@@ -3796,3 +3800,11 @@ body h2.sec { font-size: 16px; }
 .wnote { margin: -4px 0 14px; }
 .vrow.wrow { align-items: center; padding: 8px 0; gap: 10px; }
 .vrow.wrow + .vrow.wrow { box-shadow: inset 0 1px 0 var(--line); }
+/* v103: dar ao cofre — três botões numa linha, a quantia por baixo do verbo */
+.ggive { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; } .ggive .btn { min-width: 0; padding: 6px 4px; }
+/* texto de apoio logo a seguir a uma barra de secção: com ar por cima e alinhado com o título da barra */
+body h2.sec + p.small, body h2.sec + p.muted, body h2.sec + .small.muted { margin-top: 0; padding: 8px 11px 2px; }
+.dgmu { min-height: 44px; padding: 0; color: var(--cash); text-align: left; }
+.cnfull { margin: 0 2px 10px; }
+/* empregos e outras listas de linha com botão: a 320 px o botão desce em vez de espremer o texto */
+.vrow.jbr { flex-wrap: wrap; row-gap: 6px; } .vrow.jbr > .grow { flex: 1 1 140px; } .vrow.jbr > .btn, .vrow.jbr > .small { margin-left: auto; }

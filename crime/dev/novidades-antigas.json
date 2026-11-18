@@ -112,7 +112,7 @@
 "en": "Gangs: create, join, vault, HQ, armoury and chat."
 },
 "v25": {
-"pt": "Golpes e tareias em grupo nas gangues.",
+"pt": "Golpes e tareias em grupo nos gangues.",
 "en": "Group crimes and beatings in gangs."
 },
 "v26": {
@@ -128,7 +128,7 @@
 "en": "An airport with a satellite view, and installing the game on your phone."
 },
 "v29": {
-"pt": "Safar membros da gangue da prisão e do hospital.",
+"pt": "Safar membros do gangue da prisão e do hospital.",
 "en": "Get gang members out of jail and hospital."
 },
 "v30": {
@@ -136,7 +136,7 @@
 "en": "Your own nightclub and brothel, plus a drug warehouse."
 },
 "v31": {
-"pt": "Comprar bónus nas slots até 10× a aposta máxima; ninguém ataca a própria gangue.",
+"pt": "Comprar bónus nas slots até 10× a aposta máxima; ninguém ataca o próprio gangue.",
 "en": "Slot bonus buys up to 10× the max bet; no attacking your own gang."
 },
 "v32": {
@@ -160,7 +160,7 @@
 "en": "In free spins the orbs stay on the multiplier."
 },
 "v37": {
-"pt": "Negócios da gangue: cada membro investe o seu.",
+"pt": "Negócios do gangue: cada membro investe o seu.",
 "en": "Gang businesses: every member invests their own."
 },
 "v38": {
@@ -168,7 +168,7 @@
 "en": "Guards, from a chihuahua to an armed escort, and the hitman."
 },
 "v39": {
-"pt": "A gangue da rua, sempre aberta a quem não tem gangue.",
+"pt": "O gangue da rua, sempre aberto a quem não tem gangue.",
 "en": "The street gang, always open to anyone without one."
 },
 "v40": {
@@ -188,7 +188,7 @@
 "en": "A port with six different shipments."
 },
 "v44": {
-"pt": "Imagens nos negócios e na gangue; o assassino ganha sítio próprio.",
+"pt": "Imagens nos negócios e no gangue; o assassino ganha sítio próprio.",
 "en": "Pictures for businesses and the gang; the hitman gets his own place."
 },
 "v45": {
@@ -200,7 +200,7 @@
 "en": "Three kinds of weapons, 8 of each, and easier reading everywhere."
 },
 "v47": {
-"pt": "Cargos na gangue: subchefe e capitães.",
+"pt": "Cargos no gangue: subchefe e capitães.",
 "en": "Gang ranks: underboss and captains."
 },
 "v48": {
@@ -233,7 +233,7 @@
 },
 "v55": {
 "pt": "O jornal «A Sirene», com páginas e manchete.",
-"en": "«The Siren» newspaper, with pages and a headline."
+"en": "“The Siren” newspaper, with pages and a headline."
 },
 "v56": {
 "pt": "Vida sem rondas: conta permanente, níveis até 100 e épocas de 28 dias.",
@@ -288,7 +288,7 @@
 "en": "New odd jobs by level: garage, removals and chop shop."
 },
 "v69": {
-"pt": "Golpes da gangue com imagem grande e risco à vista.",
+"pt": "Golpes do gangue com imagem grande e risco à vista.",
 "en": "Gang crimes with a big picture and the risk in view."
 },
 "v70": {
@@ -313,7 +313,7 @@
 },
 "v75": {
 "pt": "Preso, só se faz a prisão.",
-"en": "In jail, you only do jail."
+"en": "In jail, all you can do is jail stuff."
 },
 "v76": {
 "pt": "O Estado e o Parlamento.",
@@ -362,7 +362,7 @@
 },
 "v88": {
 "pt": "Milhares no campo de euros da feira.",
-"en": "Thousands in the market’s euro field."
+"en": "Thousands separators in the market’s price field."
 },
 "v89": {
 "pt": "Pedidos de compra na feira.",
@@ -395,5 +395,17 @@
 "pt": "Livros no Alfarrabista; porto e aeroporto na cidade, gangue e lutas no império.",
 "en": "Books at the Bookshop; port and airport in the city, gang and fights in the empire.",
 "img": "/img/cenas/livros.webp"
+},
+"v102": {
+"pt": "Guerras entre gangues. O chefe ou o subchefe declara guerra a um gangue com pelo menos metade do vosso respeito e põe uma aposta do cofre. Cada vitória contra eles dá pontos; ganha quem ficar à frente pela diferença do alvo e leva a aposta e respeito extra. Ao fim de 24 horas o alvo começa a descer.",
+"en": "Gang wars. The boss or underboss declares war on a gang with at least half your respect and stakes money from the vault. Every win against them scores points; the first side to lead by the target takes the stake and extra respect. After 24 hours the target starts dropping.",
+"img": "/img/cenas/gangue.webp",
+"force": true
+},
+"v96": {
+"pt": "Novidades: todas as versões do jogo, com data, hora e imagem; no perfil, «Sobre o jogo» abre as Novidades, a História e a Wiki.",
+"en": "What’s new: every version of the game, with date, time and a picture; in your profile, “About the game” opens What’s new, the Story and the Wiki.",
+"img": "/img/cenas/arquivo.webp",
+"force": true
 }
 }
