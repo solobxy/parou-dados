@@ -3569,3 +3569,19 @@ body .hbars .sbar.vg svg.i { color: #7cc4ff; }
 body .btn:disabled:not(:has(+ .ctgo)), body .btn[disabled]:not(:has(+ .ctgo)) { background: #222 !important; color: #8f8f8f !important; text-shadow: none !important; border-color: #161616 !important; box-shadow: inset 0 0 0 1px #3a3a3a !important; }
 body .btn:disabled *, body .btn[disabled] * { color: inherit !important; text-shadow: none !important; }
 body h2.sec:has(> .small) { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+
+/* v95: novidades (no Arquivo, e a entrada pelo perfil); um ponto verde no retrato quando há uma versão por ver */
+.pabout { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.pabout .btn { min-height: 44px; padding: 6px; white-space: normal; line-height: 1.15; }
+.pabout .btn.nv, .badge.nv { position: relative; }
+.pabout .btn.nv::after, .badge.nv::after { content: ''; position: absolute; top: 4px; right: 4px; width: 10px; height: 10px; border-radius: 50%; background: #a8d63a; box-shadow: 0 0 0 2px #191919; }
+.nvl { display: grid; gap: 0; margin-top: 6px; }
+.nvd { margin: 16px 2px 6px; font: 700 15px/1.2 var(--disp); color: #fff; }
+.nvr { display: flex; gap: 12px; align-items: flex-start; padding: 10px 12px; background: #2b2b2b; border: 1px solid #111; border-top: 0; }
+.nvd + .nvr { border-top: 1px solid #111; border-radius: 5px 5px 0 0; }
+.nvr:has(+ .nvd), .nvr:last-child { border-radius: 0 0 5px 5px; }
+.nvd + .nvr:has(+ .nvd), .nvd + .nvr:last-child { border-radius: 5px; }
+.nvr .grow { min-width: 0; flex: 1; display: grid; gap: 2px; }
+.nvr p { margin: 0; font-size: 15px; line-height: 1.4; }
+.nvi { width: 56px; height: 56px; border-radius: 5px; object-fit: cover; flex: none; background: #1f1f1f; }
+.nvi.none { background: #1f1f1f; }

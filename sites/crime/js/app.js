@@ -432,7 +432,7 @@ const PLACES = {
 const NAV = ['city', 'rob', 'gym', 'empire', 'inv'];   // v92: o império sobe para o lugar das lutas e o inventário fica no fim (as lutas estão na cidade e na barra de cima)
 const HUB = {
   // v95 (pedido do Dinis): o porto e o aeroporto passam para a cidade; a gangue e as lutas, para o império
-  city: [['sec_night', ['club', 'putas', 'casino', 'alley', 'arms']], ['sec_street', ['gigs', 'cafe', 'job', 'uni', 'livros', 'dig', 'feira', 'bank', 'museum', 'parl', 'hosp', 'jail', 'rank', 'arquivo']], ['sec_trade', ['port', 'air']]],
+  city: [['sec_night', ['club', 'putas', 'casino', 'alley', 'arms']], ['sec_street', ['gigs', 'cafe', 'job', 'uni', 'livros', 'dig', 'feira', 'bank', 'museum', 'parl', 'hosp', 'jail', 'rank']], ['sec_trade', ['port', 'air']]],
   empire: [['sec_power', ['fights', 'gang']], ['sec_income', ['biz', 'myclub', 'mybro']], ['sec_assets', ['casa', 'cave', 'bank', 'bolsa', 'stash', 'acct']]],
 };
 const PARENT = { gyms: 'gym', livros: 'city', fights: 'empire', arquivo: 'city', dig: 'city', feira: 'city', cave: 'empire', uni: 'city', museum: 'city', cafe: 'city', parl: 'city', gigs: 'city', gang: 'empire', work: 'job', job: 'city', news: 'city', casino: 'city', roulette: 'casino', bj: 'casino', dice: 'casino', wheel: 'casino', slot: 'casino', zeus: 'casino', doce: 'casino', rebucado: 'casino', club: 'city', putas: 'city', gym: 'city', alley: 'city', hosp: 'city', jail: 'city',
@@ -512,6 +512,7 @@ function shell() {
   $app.replaceChildren(hud, $main, h('div', { class: 'tabs' }, $tabs));
   document.body.dataset.tab = S.tab;
   updateHud();
+  if (S.nov) novDot(); else loadNov();   // v95: há novidades por ver? um ponto no retrato
 }
 
 const SCREENS = { job: screenJob, city: screenCity, empire: screenEmpire, news: screenNews, casino: screenCasino, roulette: screenRoulette, bj: screenBJ, dice: screenDice, wheel: screenWheel, slot: () => screenSlotGame('slot'), zeus: () => screenSlotGame('zeus'), doce: () => screenSlotGame('doce'), rebucado: () => screenSlotGame('rebucado'), rob: screenRob, club: screenClub, gym: screenGym, gyms: screenGyms, livros: screenLivros, biz: screenBiz, port: screenPort, arms: screenArms, bank: screenBank,
@@ -3035,10 +3036,34 @@ const arqItem = (key, title, body, open) => h('details', { class: 'arq', name: '
     requestAnimationFrame(() => { const hud = document.querySelector('.hud'), y = d.getBoundingClientRect().top + scrollY - (hud ? hud.offsetHeight : 0) - 8; scrollTo({ top: Math.max(0, y), behavior: calmo ? 'auto' : 'smooth' }); }); }
   d.dataset.ready = '1';
 } } }, h('summary', null, h('span', null, title), icon('chev')), h('div', { class: 'arqb' }, body));
+// v95 (pedido do Dinis): as Novidades — uma entrada por versão, com data, hora e imagem, tiradas do histórico (dev/novidades.mjs).
+// O ficheiro vem à parte (não pesa no arranque) e a última vista fica guardada: há novidade, há um ponto no retrato.
+async function loadNov() {
+  if (S.nov || S.novLoading) return; S.novLoading = true;
+  try { const r = await fetch('/novidades.json', { cache: 'no-cache' }); if (r.ok) { S.nov = await r.json(); novDot(); if (S.tab === 'arquivo') render(); } } catch { /* sem rede: fica para a próxima */ }
+  S.novLoading = false;
+}
+const novNew = () => !!(S.nov && S.nov.length && S.nov[0].v > (store.get('novSeen', 0) || 0));
+function novDot() { const b = document.querySelector('.badge'); if (b) b.classList.toggle('nv', novNew()); }
+const novDay = (at) => new Date(at).toLocaleDateString(lang() === 'pt' ? 'pt-PT' : 'en-GB', { timeZone: 'Europe/Lisbon', day: 'numeric', month: 'long' });
+function novList() {
+  if (!S.nov) { loadNov(); return h('p', { class: 'small muted' }, t('loading')); }
+  if (S.nov[0] && S.nov[0].v > (store.get('novSeen', 0) || 0)) { store.set('novSeen', S.nov[0].v); setTimeout(novDot, 0); }
+  const L = lang() === 'pt' ? 'pt' : 'en', out = [];
+  let dia = '';
+  for (const x of S.nov) {
+    const d = novDay(x.at);
+    if (d !== dia) { dia = d; out.push(h('h3', { class: 'nvd' }, d)); }
+    out.push(h('div', { class: 'nvr' }, x.img ? h('img', { class: 'nvi', src: x.img, alt: '', width: 120, height: 120, loading: 'lazy', decoding: 'async', on: { error: (e) => e.currentTarget.remove() } }) : null,
+      h('div', { class: 'grow' }, h('span', { class: 'small muted num' }, hhmm(Date.parse(x.at)) + (x.v ? ' · v' + x.v : '')), h('p', null, x[L]))));
+  }
+  return h('div', { class: 'nvl' }, out);
+}
 function screenArquivo() {
-  const seg = S.arqSeg === 'wiki' ? 'wiki' : 'lore', V = loreVars();
-  const out = [pageHead('arquivo', t('arqSub'))];
-  out.push(h('div', { class: 'seg', role: 'group' }, [['lore', t('arqLore')], ['wiki', t('arqWiki')]].map(([k, l]) => h('button', { 'aria-pressed': seg === k ? 'true' : 'false', on: { click: () => { S.arqSeg = k; S.arqOpenK = undefined; render(); } } }, l))));
+  const seg = ['news', 'lore', 'wiki'].includes(S.arqSeg) ? S.arqSeg : 'news', V = loreVars();
+  const out = [pageHead('arquivo')];
+  out.push(h('div', { class: 'seg', role: 'group' }, [['news', t('arqNews')], ['lore', t('arqLore')], ['wiki', t('arqWiki')]].map(([k, l]) => h('button', { 'aria-pressed': seg === k ? 'true' : 'false', on: { click: () => { S.arqSeg = k; S.arqOpenK = undefined; render(); } } }, l))));
+  if (seg === 'news') { out.push(novList()); return out; }
   const first = seg === 'lore' ? 'l' + LORE[0] : 'w' + WIKI[0], aberto = S.arqOpenK === undefined ? first : S.arqOpenK;
   if (seg === 'lore') out.push(h('div', { class: 'arql' }, LORE.map((k) => arqItem('l' + k, t('loT_' + k), t('lo_' + k, V).split('\n\n').map((x) => h('p', null, x)), aberto === 'l' + k))));
   else out.push(h('div', { class: 'arql' }, WIKI.map((k) => arqItem('w' + k, t('wkT_' + k), wikiBody(k), aberto === 'w' + k))));
@@ -5415,7 +5440,9 @@ function openProfile() {
     h('div', { class: 'hstats pstats' }, ['F', 'I', 'C', 'T'].map((s) => h('span', null, icon(STAT_IC[s]), ' ' + t('stat' + s) + ' ', h('b', { class: 'num' }, short(me.stats[s]))))),   // v90: os atributos (saíram do topo)
     me.cls ? h('p', { class: 'small muted', style: 'margin:0' }, t('cl_' + me.cls) + ' · ' + classLines(S.cfg.classes.find((c) => c.id === me.cls)).join(' · ')) : null,
     me.cls ? h('button', { class: 'btn sm', style: 'justify-self:start', on: { click: () => { close(); go('work'); } } }, t('clsChangeT')) : null,
-    h('button', { class: 'btn ghost sm', style: 'justify-self:start', on: { click: () => { close(); go('arquivo'); } } }, t('arqOpen')),   // v91: a história e a wiki
+    // v95: sobre o jogo — as novidades, a história e a wiki (o Arquivo saiu da cidade e vive aqui)
+    h('h2', { class: 'sec', style: 'margin-top:10px' }, t('aboutT')),
+    h('div', { class: 'pabout' }, [['news', t('arqNews')], ['lore', t('arqLore')], ['wiki', t('arqWiki')]].map(([k, l]) => h('button', { class: 'btn' + (k === 'news' && novNew() ? ' nv' : ''), on: { click: () => { close(); S.arqSeg = k; S.arqOpenK = undefined; go('arquivo'); } } }, l))),
     S.avOk ? h('h2', { class: 'sec', style: 'margin-top:10px' }, t('avatar')) : null,
     S.avOk ? h('div', { class: 'avgrid' }, Array.from({ length: S.cfg.avatars }, (_, i) => h('button', { class: i === me.av ? 'sel' : '', 'aria-label': t('avatar') + ' ' + (i + 1), 'aria-pressed': i === me.av ? 'true' : 'false',
       on: { click: async (e) => { const b = e.currentTarget; if (!(await act('avatar', { i }))) return;   // troca-se no sítio: a folha não fecha nem volta ao cimo
