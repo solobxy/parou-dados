@@ -896,20 +896,34 @@ function artStory(x, kind) {
 }
 const artRow = (x) => { const P = artParts(x.a, x.at); return P ? h('li', null, h('span', { class: 'ptime' }, edTime(x.at)), h('span', null, h('b', null, P.kick + '. '), P.title.replace(/\.$/, '') + '.',
   x.a.k === 'feat' && x.a.med > 0 ? h('span', { class: 'pmed' }, ' ' + t('ftNormal', { m: money(x.a.med) })) : null)) : null; };
+// v104: as guerras na primeira página (acabadas nas últimas 24 h ou a decorrer): título como na última hora e o resultado por baixo
+function warParts(x) {
+  const sd = seedOf(x.a.tag + x.b.tag + x.decl), W = x.win === 'a' ? x.a : x.b, L = x.win === 'a' ? x.b : x.a;
+  if (x.end) return { title: x.win ? tv('nw_warEnd', sd, { a: W.name, b: L.name, x: num(Math.max(x.sa, x.sb)), y: num(Math.min(x.sa, x.sb)) }) : t('nw_warDraw', { a: x.a.name, b: x.b.name, x: num(x.sa), y: num(x.sb) }),
+    lede: x.win ? t('pWarWin', { w: W.name, m: money(x.stake) }) : t('pWarDraw', { m: money(x.stake) }), at: x.end };
+  if (now() < x.start) return { title: tv('nw_warDecl', sd, { a: x.a.name, b: x.b.name, m: money(x.stake) }), lede: t('pWarSoon', { t: dur(x.start - now()) }), at: x.decl };
+  return { title: t('pWarOn', { a: x.a.name, b: x.b.name }), lede: t('pWarScore', { a: x.a.name, b: x.b.name, x: num(x.sa), y: num(x.sb) }), at: x.start };
+}
+function warStory(x, kind) {
+  const P = warParts(x);
+  return h('article', { class: 'st st-' + kind + ' st-world' }, h('div', { class: 'kick' }, t('ak_war'), h('span', { class: 'kt' }, ' · ' + paperTime(P.at))),
+    h(kind === 'lead' ? 'h2' : 'h3', null, P.title), h('div', { class: 'stb' }, h('p', null, P.lede)));
+}
+const warRow = (x) => { const P = warParts(x); return h('li', null, h('span', { class: 'ptime' }, paperTime(P.at)), h('span', null, h('b', null, t('ak_war') + '. '), P.title)); };
 function paperFront(N) {
   const hoje = N.today.items.length > 0, day = hoje ? N.today : N.yesterday, its = day.items, out = [];
   // a primeira página: junta as notícias das 2 últimas edições (com peso) e os títulos do dia (peso 4,5, a descer) e abre com a mais pesada
-  const pool = [...edArts(N.mundo, 2, (a) => (a.w || 0) >= 3).map((x) => ({ ...x, kind: 'art' })), ...its.map((it, i) => ({ kind: 'day', it, w: 4.5 - i * 0.2 }))]
+  const pool = [...(N.wars || []).map((x) => ({ kind: 'war', x, w: x.end ? 6 : 5, at: x.end || x.decl })), ...edArts(N.mundo, 2, (a) => (a.w || 0) >= 3).map((x) => ({ ...x, kind: 'art' })), ...its.map((it, i) => ({ kind: 'day', it, w: 4.5 - i * 0.2 }))]
     .sort((x, y) => y.w - x.w || (y.at || 0) - (x.at || 0));
   if (!pool.length) out.push(h('article', { class: 'st st-lead' }, h('h2', null, t('paperCalmH')), h('div', { class: 'stb' }, h('p', null, t('paperCalm')))));
   else {
     if (!hoje && pool[0].kind === 'day') out.push(h('p', { class: 'pnote' }, t('paperYest')));
-    const show = (x, kind) => (x.kind === 'day' ? story(x.it, day.dia, kind) : artStory(x, kind));
+    const show = (x, kind) => (x.kind === 'day' ? story(x.it, day.dia, kind) : x.kind === 'war' ? warStory(x.x, kind) : artStory(x, kind));
     out.push(show(pool[0], 'lead'));
     const side = pool.slice(1, 3).map((x) => show(x, 'side')).filter(Boolean);
     if (side.length) out.push(h('div', { class: 'st2' + (side.length === 1 ? ' one' : '') }, side));
     const dayRow = (it) => h('li', null, h('span', { class: 'ptime' }, hoje ? t('nwToday') : t('nwYesterday')), h('span', null, h('b', null, kick(it.k) + '. '), headline(it, day.dia) + '.'));
-    const rest = pool.slice(3, 10).map((x) => (x.kind === 'art' ? artRow(x) : dayRow(x.it))).filter(Boolean);
+    const rest = pool.slice(3, 10).map((x) => (x.kind === 'art' ? artRow(x) : x.kind === 'war' ? warRow(x.x) : dayRow(x.it))).filter(Boolean);
     if (rest.length) out.push(h('section', { class: 'psec' }, h('h4', null, t('pBriefs')), h('ul', { class: 'plive' }, rest),
       h('button', { class: 'pmore', on: { click: () => { S.newsSeg = hoje ? 'today' : 'yesterday'; toPage('street'); } } }, t('pgStreet') + ' →')));
   }
@@ -2578,6 +2592,8 @@ function screenJob() {
 // ferramentas dos golpes grandes, armas e máquinas para os negócios. Uma coisa de cada vez na bancada.
 const recipe = (id) => S.cfg.craft.list.find((r) => r.id === id);
 const mtN = (me, id) => (me.mt && me.mt[id]) || 0;
+// o nome de um material para uma quantidade (os que são plurais têm forma no singular: «1× peça usada»)
+const mtQ = (k, n) => t((n === 1 && t('mt1_' + k) !== 'mt1_' + k ? 'mt1_' : 'mt_') + k);
 const crIt = (id) => { const r = recipe(id); return !r || r.kind === 'comp' ? t('mt_' + id) : r.kind === 'maq' ? t('mq_' + r.biz) : t('g_' + id); };
 const crArt = (r, cls) => (r.kind === 'comp' ? art('mat', r.id, cls) : r.kind === 'maq' ? art('maq', r.biz, cls) : art('gear', r.id, cls));
 const matFrom = (id) => Object.keys(S.cfg.mat.drop).find((w) => S.cfg.mat.drop[w] === id);
@@ -2587,7 +2603,7 @@ const maqState = (me, id) => { const u = me.maq && me.maq[id], V = S.cfg.craft.r
 const cvDur = (ms) => { const m = Math.round(ms / 60000), hh = Math.floor(m / 60); return hh ? hh + ' h' + (m % 60 ? ' ' + (m % 60) + ' min' : '') : m + ' min'; };
 function matLine(m) {   // o que o biscate deixou no depósito
   if (!m) return null;
-  return h('p', { class: 'small tk-mat' }, m.n ? h('span', { class: 'c-cash' }, t('tkMat', { n: m.n, x: t('mt_' + m.id).toLowerCase() })) : null,
+  return h('p', { class: 'small tk-mat' }, m.n ? h('span', { class: 'c-cash' }, t('tkMat', { n: m.n, x: mtQ(m.id, m.n).toLowerCase() })) : null,
     m.lost ? h('span', { class: 'c-red' }, (m.n ? ' · ' : '') + t('tkMatLost' + (m.lost > 1 ? 2 : 1))) : null, ' ',
     h('button', { class: 'lnk tk-cv', on: { click: () => { S.gig = null; go('cave'); } } }, t('tkToCave')));
 }
@@ -2598,13 +2614,16 @@ function dgHaveLine(me, k, have) {
 }
 // o que a receita pede, com o que falta a vermelho: o material diz de que biscate vem; o componente em falta leva à receita dele
 function needsLine(me, needs, n) {
+  const last = Object.keys(needs).length - 1;
   return Object.entries(needs).map(([k, v], i) => {
     const rare = dgRare(k), want = v * n, have = mtN(me, k), ok = have >= want, comp = !S.cfg.mat.base.includes(k) && !rare;
     // o raro diz de que escavação sai (v86)
     const tail = ok ? null : comp ? t('cvHave', { n: have }) : rare ? dgHaveLine(me, k, have) : t('cvHaveFrom', { n: have, x: t('gks_' + matFrom(k)) });
-    const item = [h('span', { class: 'nw' }, want + '×\u00a0' + (rare ? dgLow(k) : t('mt_' + k).toLowerCase())), tail ? [' ', h('span', null, tail)] : null];
-    return [i ? '\u00a0· ' : null, ok ? h('span', null, item)
-      : comp ? h('button', { class: 'cvgo c-red', on: { click: () => { S.cvTab = 'comp'; S.cvHi = k; render(); } } }, item, '\u00a0›') : h('span', { class: 'c-red' }, item)];
+    const item = [h('span', { class: 'nw' }, want + '×\u00a0' + (rare ? dgLow(k) : mtQ(k, want).toLowerCase())), tail ? [' ', h('span', null, tail)] : null];
+    const node = ok ? h('span', null, item)
+      : comp ? h('button', { class: 'cvgo c-red', on: { click: () => { S.cvTab = 'comp'; S.cvHi = k; render(); } } }, item, '\u00a0›') : h('span', { class: 'c-red' }, item);
+    // o «·» vai colado ao fim do que vem antes (depois de um botão partia a linha e ficava no início da seguinte)
+    return [i ? ' ' : null, i < last ? h('span', { class: 'cvj' }, node, '\u00a0·') : node];
   });
 }
 function caveBench(me, preso) {
@@ -2623,7 +2642,7 @@ function recipeRow(me, r, n, preso) {
   const V = S.cfg.craft.rev, ms = r.kind === 'maq' ? maqState(me, r.biz) : 0, mq = ms > 0;   // máquina já instalada: a linha passa a ser a da revisão
   const price = mq ? V.price : recPrice(r) * n, needs = mq ? V.needs : r.needs;
   const short = Object.entries(needs).some(([k, v]) => mtN(me, k) < v * (mq ? 1 : n)), busy = preso || (!comp && !mq && !!me.cf);
-  let state = null, falta = null;
+  let state = null, falta = null, noPrice = false;
   const g = r.kind === 'tool' || r.kind === 'gun' || r.kind === 'gear' ? gearOf(r.id) : null, low = g && g.level && me.level < g.level;
   const btn = (label, on, aria) => h('button', { class: 'btn sm ghost', disabled: short || busy, 'aria-label': aria, on: { click: on } }, label);
   if (r.kind === 'tool' && me.inv.some((x) => x.id === r.id)) state = h('span', { class: 'small c-cash' }, t('matHave'));
@@ -2633,18 +2652,18 @@ function recipeRow(me, r, n, preso) {
   else if (low) falta = t('arNeedLvl', { n: g.level });   // v87: abaixo do nível, sem botão; o nível vai na linha do preço
   else if (!short && !busy && cash < price) state = h('span', { class: 'small muted num' }, t('needMoney', { m: money(price - cash) }));
   else if (mq) state = btn(t('cvRev'), (e) => act('maqService', { id: r.biz }, { el: e.currentTarget }), t('cvRevAria', { x: crIt(r.id) }));
-  else state = btn(t('cvMake'), (e) => act('craftStart', { id: r.id, n }, { el: e.currentTarget }), t('cvMakeAria', { x: crIt(r.id) + (n > 1 ? ' ×' + n : '') }));
+  else { state = btn(t('cvMake') + ' · ' + money(price), (e) => act('craftStart', { id: r.id, n }, { el: e.currentTarget }), t('cvMakeAria', { x: crIt(r.id) + (n > 1 ? ' ×' + n : '') }) + ' · ' + money(price)); noPrice = true; }   // o preço vai no botão
   const what = r.kind === 'maq' ? (ms === 3 ? h('span', { class: 'c-red' }, t('cvStopped')) : mq ? h('span', { class: 'c-cash' }, t('cvMaqUntil', { x: list('biz')[bi], p: S.cfg.craft.maqBp / 100, d: cvDay(me.maq[r.biz]) })) : t('cvMaqFx', { p: S.cfg.craft.maqBp / 100, x: list('biz')[bi] }))
     : r.kind === 'tool' ? t('matFor', { x: andList(S.cfg.ops.filter((o) => o.mat.includes(r.id)).map((o) => t('op_' + o.id))) }) + (g && g.craft ? ' · ' + t('cvOnly') : '')
     : r.kind === 'gun' ? t(g.gun ? 'cvGun' : 'cvMelee', { p: pctOf(g.atk) }) + (g.craft ? ' · ' + t('cvOnly') : '')
     : r.kind === 'gear' ? t('cvGear', { p: pctOf(g.def) }) : r.id === 'kit' ? t('cvKit') : null;
-  const when = mq ? t('cvRevLine', { d: V.ms / 864e5, m: money(price) }) : (comp ? '' : cvDur(recMs(r)) + ' · ') + money(price);
+  const when = mq ? t('cvRevLine', { d: V.ms / 864e5, m: money(price) }) : noPrice ? (comp ? '' : cvDur(recMs(r))) : (comp ? '' : cvDur(recMs(r)) + ' · ') + money(price);
   // grelha: imagem | nome e para que serve | botão; por baixo, a toda a largura do texto, o que pede, o tempo e o preço
   return h('div', { class: 'vrow cvr' + (falta ? ' dim' : '') + (S.cvHi === r.id ? ' hi' : ''), id: 'cv-' + r.id }, crArt(r, 'vth'),
     h('div', { class: 'cvh' }, h('b', null, crIt(r.id) + (n > 1 ? ' ×' + n : '')), what ? h('div', { class: 'small muted' }, what) : null),
     state ? h('div', { class: 'cva' }, state) : null,
     h('div', { class: 'cvd' }, mq && ms === 1 ? null : h('div', { class: 'small num' }, needsLine(me, needs, mq ? 1 : n)),
-      h('div', { class: 'small muted num' }, (mq && ms === 1 ? t('cvRevWhen', { d: cvDay(me.maq[r.biz] - (V.maxMs - V.ms)) }) : when) + (falta ? ' · ' + falta : ''))));
+      ((mq && ms === 1) || when || falta) ? h('div', { class: 'small muted num' }, (mq && ms === 1 ? t('cvRevWhen', { d: cvDay(me.maq[r.biz] - (V.maxMs - V.ms)) }) : [when, falta].filter(Boolean).join(' · '))) : null));
 }
 function screenCave() {
   const me = S.st.me, M = S.cfg.mat, C = S.cfg.craft;
@@ -3900,9 +3919,10 @@ function screenGyms() {
   const out = [pageHead('gyms')];
   out.push(h('div', { class: 'gyspent' }, h('span', { class: 'small muted' }, t('gySpent')), h('b', { class: 'num' }, num(gx))));
   out.push(h('div', { class: 'seg gyseg', role: 'group', 'aria-label': t('p_gyms') }, tiers.map((k) => h('button', { 'aria-pressed': k === tier ? 'true' : 'false', on: { click: () => { S.gymTier = k; render(); } } }, t('gyT_' + k)))));
-  out.push(h('div', { class: 'gyhd' }, h('span', { class: 'small muted num' }, t('gyPerRep', { e: G0.e })),
-    h('div', { class: 'gyg hd', 'aria-hidden': 'true' }, ['F', 'T', 'I', 'C'].map((st) => h('span', null, t('stS_' + st))))));
-  out.push(h('div', { class: 'card vlist vc gylist' }, list.filter((G) => G.tier === tier).map((G) => {
+  out.push(h('div', { class: 'gyhd' }, h('span', { class: 'small muted num' }, t('gyPerRep', { e: G0.e }))));
+  // os nomes das colunas vão dentro do cartão, com o mesmo espaço da imagem à esquerda: ficam por cima das caixas a qualquer largura
+  const gyHead = h('div', { class: 'vrow gyrow gyhrow', 'aria-hidden': 'true' }, h('span', { class: 'gyth gysp' }), h('div', { class: 'grow' }, h('div', { class: 'gyg hd' }, ['F', 'T', 'I', 'C'].map((st) => h('span', null, t('stS_' + st))))));
+  out.push(h('div', { class: 'card vlist vc gylist' }, gyHead, list.filter((G) => G.tier === tier).map((G) => {
     const have = me.gyms.includes(G.id), i = normal.indexOf(G);
     const open = !have && (tier === 'esp' ? me.gyms.includes(G.after) : i === nextI && gx >= G.xp);
     const price = h('span', { class: 'nw' }, moneyShort(G.price));

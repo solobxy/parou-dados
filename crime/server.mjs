@@ -29,7 +29,7 @@ const RONDA_TESTE = process.env.PRIMEIRA_RONDA ? dataDe(process.env.PRIMEIRA_RON
 // Épocas de 28 dias a contar da sexta 13/11/2026 às 21:00 de Lisboa (PRIMEIRA_EPOCA=AAAA-MM-DD muda-a, para testes)
 const ANCORA = dataDe(process.env.PRIMEIRA_EPOCA || process.env.PRIMEIRA_RONDA || '2026-11-13');
 const rng = process.env.TESTE_SEMENTE ? seededRng(+process.env.TESTE_SEMENTE) : cryptoRng();   // nos testes, a sorte pode ser sempre a mesma
-const VERSAO = 103;   // sobe quando o servidor muda, para se confirmar de fora que a versão nova já está a correr
+const VERSAO = 104;   // sobe quando o servidor muda, para se confirmar de fora que a versão nova já está a correr
 const ATOS_3S = +(process.env.ATOS_3S || 15), ATOS_MIN = +(process.env.ATOS_MIN || 400); // ações por conta: 15 em 3 s, 400 por minuto
 
 // ---------- relógio que nunca anda para trás ----------
@@ -1144,6 +1144,15 @@ function acabarSe(w, now) {
   if (Math.abs(dif) >= Math.max(1, alvo) && dif !== 0) return acabarGuerra(w, now, dif > 0 ? w.a : w.b);
   if (now >= w.inicio + WAR.maxMs) return acabarGuerra(w, now, dif > 0 ? w.a : dif < 0 ? w.b : '');
 }
+// v104: as guerras para a primeira página do jornal: as que decorrem e as que acabaram nas últimas 24 h, a mais recente primeiro
+function guerrasDoJornal(now) {
+  const out = [];
+  for (const w of guerras.values()) {
+    if (w.fim && now - w.fim > 24 * T.HOUR) continue;
+    out.push({ a: w.nomes.a, b: w.nomes.b, decl: w.decl, start: w.inicio, end: w.fim || 0, win: w.fim ? (w.vence === w.a ? 'a' : w.vence === w.b ? 'b' : '') : null, sa: w.sa, sb: w.sb, stake: w.aposta });
+  }
+  return out.sort((x, y) => Math.max(y.end, y.decl) - Math.max(x.end, x.decl)).slice(0, 4);
+}
 function acabarGuerra(w, now, vence) {
   w.fim = now; w.vence = vence;
   const gA = gangues.get(w.a), gB = gangues.get(w.b), dono = vence === w.b ? gB : gA;   // a aposta: para quem ganhou; volta a quem declarou se ganhou ou empatou
@@ -2165,7 +2174,7 @@ async function tratar(req, res) {
   if (req.method === 'GET' && path === '/api/config') return enviar(res, 200, cfgPublica());
   if (req.method === 'GET' && path === '/api/news') {
     const w = mundo(now); carregarRonda(w.n);
-    return enviar(res, 200, { now, feed: ultimas(), today: { dia: diaDe(now), items: manchetes(diaDe(now), now) }, yesterday: { dia: ontemDe(now), items: manchetes(ontemDe(now), now) }, mundo: vistaMundo(w, now) });
+    return enviar(res, 200, { now, feed: ultimas(), today: { dia: diaDe(now), items: manchetes(diaDe(now), now) }, yesterday: { dia: ontemDe(now), items: manchetes(ontemDe(now), now) }, mundo: vistaMundo(w, now), wars: guerrasDoJornal(now) });
   }
 
   if (req.method === 'POST' && (path === '/api/register' || path === '/api/login')) {

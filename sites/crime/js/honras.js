@@ -97,10 +97,16 @@ export function honorBar(h, label, { locked = false, cls = '' } = {}) {
   const pg = svg('g', { opacity: s.alpha.toFixed(2), transform: s.pattern === 'rays' || s.pattern === 'arcs' ? '' : `rotate(${s.angle} ${W / 2} ${H / 2})` });
   pattern(pg, s, `hsl(${s.hue2} 70% 82%)`); g.append(pg);
   const em = emblem(h, s, id, f1); em.setAttribute('transform', 'translate(34 32)'); g.append(em);
-  // o nome, a encolher até caber (nunca abaixo de 13)
-  const fs = Math.max(13, Math.min(18, 222 / Math.max(1, label.length * 0.56)));
-  const tx = svg('text', { x: 66, y: (32 + fs * 0.36).toFixed(1), 'font-size': fs.toFixed(1), 'font-weight': 800, fill: '#fff', stroke: '#000a', 'stroke-width': 3, 'paint-order': 'stroke', 'font-family': 'var(--disp, sans-serif)' });
-  tx.textContent = label;
+  // o nome: numa linha a 18 se couber; se não, em duas linhas (partido na palavra mais perto do meio), todas as honras com letra parecida
+  const fit = (n) => 222 / Math.max(1, n * 0.56), at = { x: 66, 'font-weight': 800, fill: '#fff', stroke: '#000a', 'stroke-width': 3, 'paint-order': 'stroke', 'font-family': 'var(--disp, sans-serif)' };
+  let lines = [label];
+  if (fit(label.length) < 17) {
+    const sp = [...label.matchAll(/ /g)].map((m) => m.index);
+    if (sp.length) { const cut = sp.reduce((a, b) => (Math.abs(b - label.length / 2) < Math.abs(a - label.length / 2) ? b : a)); lines = [label.slice(0, cut), label.slice(cut + 1)]; }
+  }
+  const fs = Math.max(13, Math.min(lines.length > 1 ? 16 : 18, fit(Math.max(...lines.map((x) => x.length)))));
+  const tx = svg('text', { ...at, y: (32 + fs * 0.36 - ((lines.length - 1) * fs * 1.08) / 2).toFixed(1), 'font-size': fs.toFixed(1) });
+  lines.forEach((x, i) => { const ts = svg('tspan', { x: 66, dy: i ? (fs * 1.08).toFixed(1) : 0 }); ts.textContent = x; tx.append(ts); });
   g.append(tx);
   el.append(g);
   return el;

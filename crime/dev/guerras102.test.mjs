@@ -54,12 +54,21 @@ async function conta(nome) {
   await me();
   return { nome, ag, gang, me };
 }
+// uma vitória certa: a hipótese máxima é 95%, por isso uma derrota (1 em 20) tira-se do hospital e tenta-se outra vez
+async function vence(at, alvo) {
+  for (let i = 0; i < 6; i++) {
+    const r = await at.ag({ type: 'attack', target: alvo, mode: 'beat' }); assert.equal(r.status, 200, JSON.stringify(r.body));
+    if (r.body.result.win) return r;
+    await mexer({ [at.nome]: (e) => { e.hospUntil = 0; e.vigor = 100; }, [alvo]: (e) => { e.hospUntil = 0; } });
+  }
+  assert.fail('6 derrotas seguidas');
+}
 before(async () => { dir = mkdtempSync(join(tmpdir(), 'guerras-')); await arrancar(); });
 after(async () => { await parar(); rmSync(dir, { recursive: true, force: true }); });
 
 test('guerra de gangues: declarar, gente presa às gangues, pontos só a valer, fim pelo alvo, prémio e intervalo', async () => {
   const A = await Promise.all(['Alfa1', 'Alfa2', 'Alfa3'].map(conta)), B = await Promise.all(['Beta1', 'Beta2', 'Beta3'].map(conta)), C = await conta('Ceta1');
-  const forte = (e) => { e.cash = 2_000_000; e.respect = 50_000; e.peakRespect = 50_000; e.vigor = 100; e.stats.F = 1_000_000; e.stats.T = 1_000_000; e.shieldUntil = 0; };
+  const forte = (e) => { e.cash = 2_000_000; e.respect = 50_000; e.peakRespect = 50_000; e.vigor = 100; for (const k in e.stats) e.stats[k] = 1_000_000; e.shieldUntil = 0; };   // todas as stats: com só F e T, 1 luta em ~20 perdia-se
   const fraco = (e) => { e.cash = 2_000_000; e.respect = 50_000; e.peakRespect = 50_000; e.vigor = 100; e.shieldUntil = 0; };
   await mexer(Object.fromEntries([...A.map((x) => [x.nome, forte]), ...B.map((x) => [x.nome, fraco]), [C.nome, fraco]]));
   let r = await A[0].ag({ type: 'gangCreate', name: 'Alfa', tag: 'ALF' }); assert.equal(r.status, 200, JSON.stringify(r.body));
@@ -84,6 +93,9 @@ test('guerra de gangues: declarar, gente presa às gangues, pontos só a valer, 
   assert.equal(r.body.result.stake, stake); assert.equal(r.body.result.target, Math.max(W.targetMin, W.targetPer * 6));
   g = await A[0].gang(); assert.equal(g.mine.fund, fundo0 - stake); assert.ok(g.mine.war.war); assert.equal(g.mine.war.war.vs.tag, 'BET');
   assert.equal(g.list.find((x) => x.id === gb).warWhy, 'AT_WAR');
+  // v104: o jornal tem a guerra declarada (ainda por começar) para a primeira página
+  let J = await (await fetch(BASE + '/api/news')).json();
+  assert.equal(J.wars.length, 1); assert.equal(J.wars[0].a.tag, 'ALF'); assert.equal(J.wars[0].b.tag, 'BET'); assert.equal(J.wars[0].end, 0); assert.equal(J.wars[0].win, null); assert.equal(J.wars[0].stake, stake);
   // ninguém sai nem entra nas duas
   r = await B[2].ag({ type: 'gangLeave' }); assert.equal(r.body.error, 'AT_WAR');
   r = await C.ag({ type: 'gangJoin', id: gb }); assert.equal(r.body.error, 'AT_WAR');
@@ -92,17 +104,18 @@ test('guerra de gangues: declarar, gente presa às gangues, pontos só a valer, 
   g = await A[0].gang(); assert.equal(g.mine.war.war.me, 0);
   // começa (a hora de início passa) e a vitória conta
   await mexer({}, [`UPDATE guerras SET inicio = inicio - ${2 * 3600e3}, decl = decl - ${2 * 3600e3}`]);
-  r = await A[2].ag({ type: 'attack', target: 'Beta3', mode: 'beat' }); assert.equal(r.status, 200, JSON.stringify(r.body));
-  assert.ok(r.body.result.win); assert.ok(r.body.result.war > 0); const pts = r.body.result.war;
+  r = await vence(A[2], 'Beta3'); assert.ok(r.body.result.war > 0); const pts = r.body.result.war;
   g = await A[0].gang(); assert.equal(g.mine.war.war.me, pts); assert.equal(g.mine.war.war.top[0].name, 'Alfa3');
   const gB = await B[0].gang(); assert.equal(gB.mine.war.war.them, pts); assert.equal(gB.mine.war.war.ours, false);
   assert.ok(g.mine.war.war.enemies.some((e) => e.name === 'Beta3' && e.why === 'TARGET_HOSPITAL'));
   // o alvo baixa (como ao fim de dias) e a vitória seguinte acaba a guerra: a aposta volta a quem declarou, respeito a quem lutou
   await mexer({}, ['UPDATE guerras SET alvo = 1']);
   const resp0 = (await A[0].me()).respect, a3 = (await A[2].me()).respect;
-  r = await A[0].ag({ type: 'attack', target: 'Beta1', mode: 'beat' }); assert.ok(r.body.result.win, JSON.stringify(r.body));
+  r = await vence(A[0], 'Beta1');
   await new Promise((x) => setTimeout(x, 300));
   g = await A[0].gang(); assert.equal(g.mine.war.war, undefined); assert.equal(g.mine.war.hist[0].won, true); assert.equal(g.mine.fund, fundo0);
+  J = await (await fetch(BASE + '/api/news')).json();   // e depois de acabar: quem ganhou e o resultado
+  assert.equal(J.wars.length, 1); assert.ok(J.wars[0].end > 0); assert.equal(J.wars[0].win, 'a'); assert.ok(J.wars[0].sa > J.wars[0].sb);
   assert.ok((await A[2].me()).respect > a3, 'quem lutou ganhou respeito');
   assert.ok((await A[0].me()).respect > resp0);
   // o intervalo: nem se declara outra vez já, e já se pode sair
