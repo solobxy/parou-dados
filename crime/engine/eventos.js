@@ -85,3 +85,8 @@ export function nextEvent(now) {
   const y = localParts(now).y;
   return [...ofYear(y), ...ofYear(y + 1)].filter((e) => e.start > now).sort((a, b) => a.start - b.start)[0] || null;
 }
+// v118: os que acabaram há menos de ms (o jornal ainda mostra a classificação final)
+export function eventsEnded(now, ms) {
+  const y = localParts(now).y;
+  return [...ofYear(y - 1), ...ofYear(y)].filter((e) => e.end <= now && now - e.end < ms).sort((a, b) => b.end - a.end);
+}

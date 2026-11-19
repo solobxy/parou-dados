@@ -393,8 +393,24 @@ function fxRow(list) {
 function delta(el, d, fmt) {
   if (!el || !d) return;
   el.classList.remove('up', 'down'); void el.offsetWidth; el.classList.add(d > 0 ? 'up' : 'down');
-  const chip = h('span', { class: 'delta ' + (d > 0 ? 'up' : 'down') + (el === S.hud.resp ? ' r2' : '') }, (d > 0 ? '+' : '−') + fmt(Math.abs(d)));
-  el.parentNode.appendChild(chip); setTimeout(() => chip.remove(), 1400);
+  const isR = el === S.hud.resp, txt = (d > 0 ? '+' : '−') + fmt(Math.abs(d)), box = el.parentNode;
+  // v118: ao lado do número tapava o nome a 320 px. Se não cabe entre o fim do nome e o número, o dinheiro e o respeito vão juntos
+  // numa só etiqueta por baixo do bloco («+£5 544 · ♛ +120»), que só aparece e desaparece (sem subir por cima do respeito)
+  const who = document.querySelector('.hud .who'), mon = box.getBoundingClientRect();
+  let end = 0; if (who) for (const x of who.children) { const r = document.createRange(); r.selectNodeContents(x); end = Math.max(end, r.getBoundingClientRect().right); }
+  if (!who || mon.left - end >= 96) {
+    const chip = h('span', { class: 'delta ' + (d > 0 ? 'up' : 'down') + (isR ? ' r2' : '') }, txt);
+    box.appendChild(chip); setTimeout(() => chip.remove(), 1400); return;
+  }
+  let pill = box.querySelector('.delta.below');
+  if (!pill || now() - (+pill.dataset.t || 0) > 300) {
+    pill?.remove();
+    pill = h('span', { class: 'delta below', dataset: { t: String(now()) } }, h('span', { class: 'dc' }), h('span', { class: 'dr' }));
+    box.appendChild(pill); const p = pill; setTimeout(() => p.remove(), 1400);
+  }
+  const part = pill.querySelector(isR ? '.dr' : '.dc');
+  part.className = (isR ? 'dr ' : 'dc ') + (isR ? (d > 0 ? 'c-resp' : 'c-red') : d > 0 ? 'c-cash' : 'c-red');
+  part.replaceChildren(...(isR ? [icon('crown'), ' '] : []), txt);
 }
 
 function updateHud() {
@@ -958,6 +974,7 @@ function paperFront(N) {
     if (rest.length) out.push(h('section', { class: 'psec' }, h('h4', null, t('pBriefs')), h('ul', { class: 'plive' }, rest),
       h('button', { class: 'pmore', on: { click: () => { S.newsSeg = hoje ? 'today' : 'yesterday'; toPage('street'); } } }, t('pgStreet') + ' →')));
   }
+  for (const R of N.evRank || []) if (R.rows.length) out.push(evRankSec(R));   // v118: a corrida das fichas de cada evento
   const Wm = N.mundo, last = Wm && Wm.arts.length ? Wm.arts[Wm.arts.length - 1] : null;
   if (last) {
     const lx = last.a.find((x) => x.k === 'lx');
@@ -973,6 +990,14 @@ function paperFront(N) {
   const f = (S.feed || []).slice(0, 3);
   if (f.length) out.push(h('section', { class: 'psec' }, h('h4', null, t('nwLive')), h('ul', { class: 'plive' }, f.map(liveRow)), more('live', t('paperAll'))));
   return out;
+}
+// v118: a classificação de um evento: quem fechou a última meta primeiro, depois quem tem mais fichas
+function evRankSec(R) {
+  const tok = t('evTokN_' + R.id).toLowerCase(), d = (ts) => new Date(ts).toLocaleDateString(lang() === 'pt' ? 'pt-PT' : 'en-GB', { day: 'numeric', month: 'short', timeZone: 'Europe/London' });
+  return h('section', { class: 'psec' }, h('h4', null, t(R.on ? 'evRankOn' : 'evRankEnd', { x: t('ev_' + R.id) })),
+    h('ol', { class: 'plive evrank' }, R.rows.map((r, i) => h('li', null, h('span', { class: 'ptime num' }, (i + 1) + '.'),
+      h('span', null, h('b', null, r.name), ' · ' + t('evRankN', { n: num(r.n), x: tok }) + (r.t3 ? ' · ' + t('evRankDone', { d: d(r.t3), h: hhmm(r.t3) }) : ''))))),
+    R.n > R.rows.length ? h('p', { class: 'small pnote' }, t('evRankMore', { n: R.n - R.rows.length })) : null);
 }
 // a Rua: os títulos do dia (o melhor de cada coisa) e, edição a edição, as 3 maiores de cada categoria
 function paperStreet(N) {

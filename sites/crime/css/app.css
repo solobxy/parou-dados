@@ -558,8 +558,16 @@ body.light .report { animation: none; }
 .chip.fxc { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; color: var(--tx); background: #2a1f45; padding: 3px 9px; }
 .chip.fxc svg.i { width: 13px; height: 13px; color: var(--vice); }
 .money { position: relative; }
+/* o que entra ou sai aparece ao lado do número; v118: se aí tapava o nome (ecrãs estreitos, nomes compridos), vai para baixo do
+   bloco, em etiqueta com o fundo do topo (o dinheiro em cima, o respeito por baixo) */
 .money .delta { position: absolute; right: calc(100% + 8px); top: 1px; font-weight: 800; font-size: 14px; white-space: nowrap; pointer-events: none; animation: dl 1.35s var(--ease-out) forwards; }
 .money .delta.r2 { top: 24px; font-size: 12.5px; }
+.money .delta.below { right: 0; top: calc(100% + 6px); display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 6px; background: #262626;
+  box-shadow: 0 2px 8px #0008; z-index: 3; font-size: 14px; animation: dlo 1.35s var(--ease-out) forwards; }
+.money .delta.below .dr { display: inline-flex; align-items: center; gap: 1px; }
+.money .delta.below .dr svg.i { width: 13px; height: 13px; }
+.money .delta.below .dc:not(:empty) + .dr:not(:empty)::before { content: '·'; margin: 0 6px; color: var(--tx2); }
+@keyframes dlo { 0% { opacity: 0; } 12% { opacity: 1; } 78% { opacity: 1; } 100% { opacity: 0; } }
 .delta.up { color: var(--cash); } .delta.down { color: var(--danger); }
 .delta.r2.up { color: var(--sodium); }
 @keyframes dl { 0% { opacity: 0; transform: translateY(8px); } 15% { opacity: 1; transform: none; } 75% { opacity: 1; } 100% { opacity: 0; transform: translateY(-10px); } }
@@ -4250,3 +4258,7 @@ body.light .evegg-o { animation: none; }
 .ev-ascot { --evc: #9ec5f2; } .ev-nottinghill { --evc: #d7a6f0; } .ev-oktober { --evc: #a8c7e8; } .ev-halloween { --evc: #b99cf0; }
 .ev-bonfire { --evc: #f0b3d6; } .ev-blackfriday { --evc: #f3efe7; } .ev-natal { --evc: #cfe3f2; } .ev-anonovo { --evc: #e3e0f6; }
 @media (prefers-reduced-motion: reduce) { .evbar > i { transition: none; } .evegg-o { animation: none; } }
+
+/* v118: a classificação de um evento no jornal: o lugar numa coluna estreita, na letra do texto */
+.evrank li { grid-template-columns: 24px minmax(0, 1fr); }
+.evrank .ptime { font: 700 14.5px/1.35 var(--serif); color: var(--pi); }

@@ -31,7 +31,7 @@ const RONDA_TESTE = process.env.PRIMEIRA_RONDA ? dataDe(process.env.PRIMEIRA_RON
 // Épocas de 28 dias a contar da sexta 13/11/2026 às 21:00 de Lisboa (PRIMEIRA_EPOCA=AAAA-MM-DD muda-a, para testes)
 const ANCORA = dataDe(process.env.PRIMEIRA_EPOCA || process.env.PRIMEIRA_RONDA || '2026-11-13');
 const rng = process.env.TESTE_SEMENTE ? seededRng(+process.env.TESTE_SEMENTE) : cryptoRng();   // nos testes, a sorte pode ser sempre a mesma
-const VERSAO = 117;   // sobe quando o servidor muda, para se confirmar de fora que a versão nova já está a correr
+const VERSAO = 118;   // sobe quando o servidor muda, para se confirmar de fora que a versão nova já está a correr
 const ATOS_3S = +(process.env.ATOS_3S || 15), ATOS_MIN = +(process.env.ATOS_MIN || 400); // ações por conta: 15 em 3 s, 400 por minuto
 
 // ---------- relógio que nunca anda para trás ----------
@@ -2444,6 +2444,20 @@ abrirMundo(clock());
 carregarRonda(MUNDO);
 epocaEmDia(clock());
 setInterval(() => { try { epocaEmDia(clock()); } catch (e) { console.error('época', e.message); } }, 30_000).unref();
+// v118: a classificação de cada evento (o que decorre e os que acabaram há menos de 3 dias): primeiro quem fechou a última meta,
+// pela ordem em que fechou; depois quem tem mais fichas. Calcula-se no máximo uma vez por minuto.
+let rankEv = { t: 0, v: [] };
+function rankEventos(now) {
+  if (now - rankEv.t < 60_000) return rankEv.v;
+  const L = [...EV.eventsAt(now).map((e) => ({ e, on: true })), ...EV.eventsEnded(now, 3 * T.DAY).map((e) => ({ e, on: false }))];
+  rankEv = { t: now, v: L.map(({ e, on }) => {
+    const rows = [];
+    for (const [id, p] of jogadores) { const R = p.evs && p.evs[e.key]; if (R && R.n > 0) rows.push({ name: nomeDe(id), n: R.n, t3: R.t3 || 0 }); }
+    rows.sort((a, b) => (a.t3 && b.t3 ? a.t3 - b.t3 : a.t3 ? -1 : b.t3 ? 1 : b.n - a.n));
+    return { id: e.id, key: e.key, on, end: e.end, top: e.goals[e.goals.length - 1], n: rows.length, rows: rows.slice(0, 5) };
+  }) };
+  return rankEv.v;
+}
 // v117: quando um evento começa, sai no jornal uma vez (as notícias da ronda dizem se já saiu, mesmo depois de reiniciar)
 const evDitos = new Set(), qEvDito = db.prepare('SELECT 1 FROM noticias WHERE ronda = ? AND dados LIKE ? LIMIT 1');
 function eventosEmDia(now) {
@@ -2942,7 +2956,7 @@ async function tratar(req, res) {
   if (req.method === 'GET' && path === '/api/config') return enviar(res, 200, cfgPublica());
   if (req.method === 'GET' && path === '/api/news') {
     const w = mundo(now); carregarRonda(w.n);
-    return enviar(res, 200, { now, feed: ultimas(), today: { dia: diaDe(now), items: manchetes(diaDe(now), now) }, yesterday: { dia: ontemDe(now), items: manchetes(ontemDe(now), now) }, mundo: vistaMundo(w, now), wars: guerrasDoJornal(now) });
+    return enviar(res, 200, { now, evRank: rankEventos(now), feed: ultimas(), today: { dia: diaDe(now), items: manchetes(diaDe(now), now) }, yesterday: { dia: ontemDe(now), items: manchetes(ontemDe(now), now) }, mundo: vistaMundo(w, now), wars: guerrasDoJornal(now) });
   }
 
   if (req.method === 'POST' && (path === '/api/register' || path === '/api/login')) {

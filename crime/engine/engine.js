@@ -3710,7 +3710,7 @@ function evAdd(p, e, n, now) {
     const P = evPrize(p, i);
     p.bank += P.cash;
     const lvl = P.resp ? addRespect(p, P.resp, now) : null;
-    if (i === e.goals.length - 1) p.c.evtop = (p.c.evtop || 0) + 1;
+    if (i === e.goals.length - 1) { p.c.evtop = (p.c.evtop || 0) + 1; R.t3 = now; }   // v118: quando fechou (para a classificação do jornal)
     out.paid.push({ i, cash: P.cash, respect: P.resp, levelUp: lvl });
   });
   return out;
