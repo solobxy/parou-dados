@@ -460,8 +460,8 @@ const PARENT = { gyms: 'gym', livros: 'city', hunt: 'city', honras: 'city', viag
   biz: 'empire', port: 'city', air: 'city', myclub: 'empire', mybro: 'empire', bolsa: 'empire', stash: 'empire', acct: 'empire', casa: 'empire', bank: 'empire', lux: 'empire', arms: 'fights', rank: 'fights', hitman: 'fights', ops: 'rob' };
 const upOf = (id) => (S.backTo && S.backTo[id]) || PARENT[id] || 'city';   // um sítio que está em duas zonas volta para a zona de onde vieste
 const tabOf = (id) => { let x = id; for (let k = 0; k < 4 && !NAV.includes(x); k++) x = upOf(x); return NAV.includes(x) ? x : 'city'; };
-// v107: imagens trocadas depois da última subida geral (as metralhadoras tinham fotografias de espingardas de madeira)
-const IMG_V = { 'gear/metralhadorapesada': 19, 'gear/metralhadoratripe': 19, 'gear/metralhadoracinto': 19, 'gear/metralhadoraesquadra': 19, 'gear/metralhadoramedia': 19 };
+// imagens trocadas depois da última subida geral: só estas voltam a ser descarregadas (v107 metralhadoras; v108 drogas sem restos na margem e camadas do boneco viradas para o lado certo)
+const IMG_V = { 'gear/pistolaaco': 19, 'gear/pistolaauto': 19, 'gear/pistolaouro': 19, 'gear/cacadeiraserrada': 19, 'gear/cacadeiradupla': 19, 'gear/cacadeiratatica': 19, 'gear/cacadeirabullpup': 19, 'gear/cacadeiracarregador': 19, 'gear/smgbullpup': 19, 'gear/cacadeirapolicial': 19, 'gear/espingardaassalto': 19, 'gear/cacadeiratambor': 19, 'gear/smgsilenciosa': 19, 'gear/smgtambor': 19, 'gear/cacadeiraauto': 19, 'gear/cacadeiragravada': 19, 'gear/pistola50ae': 19, 'gear/carabinapolicia': 19, 'gear/bullpup': 19, 'gear/carabinacarbono': 19, 'gear/carabinaprototipo': 19, 'gear/espingardaalavanca': 19, 'gear/espingardaexpress': 19, 'gear/sniperbullpup': 19, 'gear/snipersilenciosa': 19, 'gear/sniperartico': 19, 'gear/metralhadoraligeira': 19, 'gear/metralhadorafuzileiro': 19, 'gear/mod_tambor': 19, 'gear/mod_carregador': 19, 'gear/mod_luneta4': 19, 'drugs/ecstasy': 19, 'drugs/lsd': 19, 'drugs/speed': 19, 'gear/metralhadorapesada': 19, 'gear/metralhadoratripe': 19, 'gear/metralhadoracinto': 19, 'gear/metralhadoraesquadra': 19, 'gear/metralhadoramedia': 19 };
 const IMG = (kind, id, big) => `/img/${kind}/${id}${big ? '-g' : ''}.webp?${IMG_V[kind + '/' + id] || (kind === 'classes' ? 17 : 18)}`;   // v90: retratos novos das profissões; v106: casas, cave e caveira em fotografia, peças do museu recortadas
 // o que cada sítio precisa de ir buscar ao servidor (ao entrar nele, e também quando o jogo abre já nesse sítio)
 function loadFor(tab) {
@@ -1019,7 +1019,7 @@ function screenNews() {
   const f = S.feed || [];
   const body = !N ? [h('p', { class: 'pempty' }, t('loading'))] : pg === 'front' ? paperFront(N) : pg === 'me' ? paperMe(N) : pg === 'country' ? paperCountry() : pg === 'street' ? paperStreet(N) : pg === 'econ' ? paperEcon()
     : [f.length ? h('ul', { class: 'plive first' }, f.map(liveRow)) : h('p', { class: 'pempty' }, t('nwEmpty'))];
-  return [h('div', { class: 'phead' }, h('div', { class: 'pbar pj' }, h('button', { class: 'back', 'aria-label': t('p_' + upOf('news')), on: { click: () => go(upOf('news')) } }, h('span', { 'aria-hidden': 'true' }, '←')), h('h1', { class: 'sr' }, t('paper')))),
+  return [h('div', { class: 'phead' }, h('div', { class: 'pbar pj' }, h('button', { class: 'back', 'aria-label': t('p_' + upOf('news')), on: { click: () => go(upOf('news')) } }, h('span', { 'aria-hidden': 'true' }, '←'), h('span', { class: 'bkl', 'aria-hidden': 'true' }, t('p_' + upOf('news')))), h('h1', { class: 'sr' }, t('paper')))),
     h('div', { class: 'paper' },
       h('header', { class: 'pmast' },
         h('div', { class: 'mline' }, h('span', null, paperDate()), h('span', null, ep ? t('paperDay', { n: ep.n + 1, d: dia, t: D }) : '')),
@@ -4019,7 +4019,7 @@ function screenLivros() {
     else if (swap) btn = sureBtn('btn sm ghost', t('bkRead'), 'btn sm buy sure', t('bkSwap', { x: t('bkn_' + onB.id), n: onDays }), () => act('bookRead', { id }));
     else btn = h('button', { class: 'btn sm ghost', on: { click: (e) => act('bookRead', { id }, { el: e.currentTarget }) } }, t('bkRead'));   // vários «Ler» iguais: secundários
     return h('div', { class: 'vrow bkr' }, bkCover(id),
-      h('div', { class: 'grow' }, h('b', null, t('bkn_' + id)), bkFxLine(b, bk, bk.own[id] > 1 ? ' · ' + bk.own[id] + '×' : ''), btn));
+      h('div', { class: 'grow' }, h('b', null, t('bkn_' + id)), bkFxLine(b, bk, bk.own[id] > 1 ? ' · ' + t('bkCopies', { n: bk.own[id] }) : ''), btn));
   })));
   // a prateleira do dia (preso não se compra: não aparece)
   if (!jail) {
@@ -4312,8 +4312,9 @@ const modsFor = (g) => S.cfg.gear.filter((m) => m.slot === 'mod' && m.fits.inclu
 function wGrid(me, g, it) {
   const W = it ? wStatC(it) : { atk: g.atk, acc: g.acc, rng: g.rng }, on = me.eq[g.slot], C = on && !it ? wStatC(on) : null;
   const d = (v, c, txt) => (C && v !== c ? h('span', { class: 'wd ' + (v > c ? 'c-cash' : 'c-red') }, (v > c ? '+' : '−') + txt(Math.abs(v - c))) : null);
+  const pi = (bp) => { const r = Math.round(bp / 100); return r || !bp ? String(r) : pctOf(bp); };   // v108: em percentagem inteira («+185,5%» não cabia na caixa a 320 px)
   return h('dl', { class: 'gyg wgrid' },
-    h('div', null, h('dt', null, t('wDmg')), h('dd', { class: 'num' }, '+' + pctOf(W.atk) + '%'), d(W.atk, C?.atk, (x) => pctOf(x) + '%')),
+    h('div', null, h('dt', null, t('wDmg')), h('dd', { class: 'num' }, '+' + pi(W.atk) + '%'), d(W.atk, C?.atk, (x) => pi(x) + '%')),
     h('div', null, h('dt', null, t('wAcc')), h('dd', { class: 'num' }, String(W.acc)), d(W.acc, C?.acc, (x) => String(x))),
     h('div', null, h('dt', null, t('wRng')), h('dd', { class: 'num' }, wRngTxt(W.rng)), d(W.rng, C?.rng, (x) => wRngTxt(x))));
 }
@@ -4423,7 +4424,7 @@ function screenArms() {
       return h('div', { class: 'vrow jbr' + (lock ? ' dim' : '') }, art('gear', m.id, 'vth'),
         h('div', { class: 'grow' }, h('b', null, t('g_' + m.id)), h('div', { class: 'small' }, modFx(m)),
           // serve numa arma que trazes: diz-se em qual; senão, os tipos em que serve
-          (() => { const w = ['principal', 'mao', 'branca'].map((sl) => me.eq[sl]).find((x) => x && m.fits.includes(gearOf(x.id)?.t)); return h('div', { class: 'small muted' }, w ? t('wModYour', { x: t('g_' + w.id) }) : t('wModFits', { x: m.fits.map((k) => t('wt_' + k)).join(', ') })); })(),
+          (() => { const w = ['principal', 'mao', 'branca'].map((sl) => me.eq[sl]).find((x) => x && m.fits.includes(gearOf(x.id)?.t)); return h('div', { class: 'small muted' }, w ? t('wModYour', { x: lang() === 'en' ? t('g_' + w.id).replace(/^[A-Z](?=[a-z])/, (c) => c.toLowerCase()) : t('g_' + w.id) }) : t('wModFits', { x: m.fits.map((k) => t('wt_' + k)).join(', ') })); })(),
           n ? h('div', { class: 'small muted' }, t('wHave', { n })) : null),
         lock ? h('span', { class: 'small muted' }, t('arNeedLvl', { n: m.level }))
           : h('button', { class: 'btn sm ghost num', disabled: cash < pr || invFull(me), on: { click: (e) => act('buy', { id: m.id }, { el: e.currentTarget }) } }, t('buy') + ' · ' + money(pr)));
@@ -4461,8 +4462,8 @@ const DOLL_TYPE = { pressao: 'L_espingarda', caca: 'L_espingarda', ligeira: 'L_e
   soqueira: 'L_soqueira', navalha: 'L_faca', facamato: 'L_faca', taco: 'L_contundente', bastao: 'L_contundente', machado: 'L_lamina', catana: 'L_lamina', katana: 'L_espada', falcata: 'L_espada', gladio: 'L_espada' };
 // v106: cada arma aparece no corpo com a sua própria fotografia (img/boneco/w/<id>): as brancas na mão direita, as de mão na esquerda,
 // as compridas ao peito com a correia. A camada do tipo fica de reserva, se a da arma faltar.
-const DOLLT = (id) => { const g = gearOf(id); return `/img/boneco/${g && g.t ? 'L_' + g.t : DOLL_TYPE[id] || id}.webp?2`; };
-const DOLL = (id) => { const g = gearOf(id); return g && g.t ? `/img/boneco/w/${id}.webp?${IMG_V['gear/' + id] ? 3 : 2}` : DOLLT(id); };   // v107: as camadas das armas com fotografia nova
+const DOLLT = (id) => { const g = gearOf(id); return `/img/boneco/${g && g.t ? 'L_' + g.t : DOLL_TYPE[id] || id}.webp?${id === 'mochilatatica' ? 3 : 2}`; };   // v108: mochila sem o bocado solto no ombro
+const DOLL = (id) => { const g = gearOf(id); return g && g.t ? `/img/boneco/w/${id}.webp?4` : DOLLT(id); };   // v108: todas as camadas das armas refeitas (correia assente no ombro, viradas para o lado certo)   // v107: as camadas das armas com fotografia nova
 const gearFits = (it) => { const g = it && !isGood(it.id) ? gearOf(it.id) : null; return g && g.slot !== 'mat' ? g.slot : null; };
 const gearStat = (g) => (g.atk ? t('dollAtk', { p: pctOf(g.atk) }) : g.def ? t('dollDef', { p: pctOf(g.def) }) : g.room ? t('dollRoom', { n: g.room }) : '');
 // na grelha, uma peça que se veste diz logo se é melhor (▲ verde) ou pior (▼ vermelho) do que a que está vestida

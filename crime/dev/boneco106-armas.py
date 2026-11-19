@@ -20,7 +20,15 @@ MAO_D, MAO_E = (126, 386), (352, 383)   # mãos (direita do boneco à esquerda d
 _S = None
 _U = None
 U2 = {'katana', 'espadamao', 'claymore'}
-CORTE = {'metralhadoraligeira': 350, 'metralhadorafuzileiro': 332, 'metralhadorapesada': 305}   # v107: a .50 ao ombro, sem o tripé
+CORTE = {'metralhadorapesada': 305, 'smgdobravel': 335, 'metralhadora': 335, 'smgtatica': 335}   # v107/v108: sem tripé nem suporte de exposição
+# v108: as compridas com o cano para baixo (coronha articulada confunde a altura das pontas) ou de pernas para o ar (silenciador grosso)
+ESCOPO = {'afinada', 'caca', 'espingarda22', 'espingarda300', 'espingarda3030', 'espingardaar', 'espingardasafari', 'espingardavarmint', 'ferrolho',
+          'ligeira', 'precisao', 'sniper', 'sniper308', 'sniper338', 'sniperanti', 'snipercompeticao', 'sniperlonga', 'sniperpolicia', 'snipersemi'}   # a luneta tem de ficar por cima
+# escolhidas a olho, as quatro hipóteses lado a lado (dev: var4)
+VIRA_H = {'micro', 'smg45', 'artesanal', 'batalhapesada', 'cacadeiracarregador', 'metralhadoraligeira', 'compacta', 'smg9', 'smgpdw'}
+VIRA_V = {'carabinacurta', 'ar762', 'calibre50', 'cacadeiratatica', 'espingardaassalto', 'cacadeiratambor', 'smgtambor',
+          'cacadeiraauto', 'carabinapolicia', 'bullpup', 'carabinaprototipo', 'sniperbullpup', 'sniperartico',
+          'cacadeiradupla', 'espingardaexpress', 'espingardaalavanca', 'compacta', 'smg9', 'smgpdw'} | ESCOPO
 def _sem_tripe(m):   # v107: a de tripé — tira o tripé (mais acima no meio, onde está a cabeça do tripé) e as caixas de munição
     m[285:] = False; m[262:, 230:370] = False; return m
 CORTE_F = {'metralhadoratripe': _sem_tripe}
@@ -28,10 +36,12 @@ SEM_TAN = {'metralhadoramedia'}   # a bandoleira cor de areia não vai para o bo
 # v106: as fotografias das pistolas e revólveres têm a arma preta em cima de fundo preto e o recorte apanhava sombras e o carregador;
 # usam-se 7 desenhos de catálogo (Flux, em dev/boneco-fontes/, fundo branco) com o mesmo tipo e as mesmas cores de cada fotografia
 FONTES = os.path.join(AQUI, 'boneco-fontes') + '/'
-CURTA = {**{i: 'hg_a' for i in ('pistola22', 'pistolacompacta', 'pistola', 'pistolatiro', 'pistolaaco', 'pistolacarbono')},   # polímero preto
-         **{i: 'hg_b' for i in ('pistolabolso', 'pistola9', 'pistola10', 'pistola57', 'pistola50', 'pistola50ae')},   # aço preto
-         **{i: 'hg_c' for i in ('pistola380', 'pistolamilitar', 'pistolaouro')},   # corrediça cor de areia e mira
-         **{i: 'hg_d' for i in ('pistolapolicia', 'pistolaauto')},   # corrediça prateada e mira
+CURTA = {**{i: 'hg_a' for i in ('pistola22', 'pistolacompacta', 'pistola', 'pistolatiro', 'pistolacarbono')},   # polímero preto
+         **{i: 'hg_b' for i in ('pistolabolso', 'pistola9', 'pistola10', 'pistola57', 'pistola50')},   # aço preto
+         **{i: 'hg_c' for i in ('pistola380', 'pistolamilitar')},   # corrediça cor de areia e mira
+         'pistolapolicia': 'hg_d',   # corrediça prateada e mira
+         # v108: fotografias novas (z_image no Higgsfield) e desenhos a condizer
+         'pistolaouro': 'hg_h', 'pistola50ae': 'hg_j', 'pistolaaco': 'hg_d', 'pistolaauto': 'hg_a',   # os desenhos de inox e da Glock 18 saíram com dois punhos
          'pistolaafinada': 'hg_e',   # corrediça de bronze
          **{i: 'hg_f' for i in ('revolver22', 'revolver357', 'magnum', 'revolvercaca', 'revolver500')},   # inox, cabo de borracha
          **{i: 'hg_g' for i in ('revolver', 'snubnose', 'revolver44', 'revolver454', 'revolvercolecao')}}   # aço escuro, cabo de madeira
@@ -51,7 +61,7 @@ def recorta_branco(nome):
     B = (B * 0.86).astype(np.uint8)   # luz de estúdio → a luz do boneco: um pouco mais escuro e menos saturado
     o = ImageEnhance.Color(Image.fromarray(B)).enhance(0.72).convert('RGBA'); o.putalpha(Image.fromarray((m * 255).astype(np.uint8)).filter(ImageFilter.GaussianBlur(0.7)))
     return o.crop(o.getbbox())
-VIRA = {'hg_a', 'hg_d', 'hg_g'}   # desenhos com o cano à esquerda
+VIRA = {'hg_a', 'hg_d', 'hg_g', 'hg_j'}   # desenhos com o cano à esquerda
 def nivela(o, nome):
     # cano à direita e a aresta de cima da frente (corrediça ou cano) na horizontal
     if nome in VIRA: o = o.transpose(Image.FLIP_LEFT_RIGHT)
@@ -141,13 +151,15 @@ def camada(id):
         # ao peito: coronha em baixo à direita do boneco (esquerda da imagem), cano para cima ao ombro esquerdo
         if hL < hR: r = r.transpose(Image.FLIP_LEFT_RIGHT)   # coronha (mais alta) à esquerda, cano à direita
         r = endireita(r)
+        if id in VIRA_H: r = r.transpose(Image.FLIP_LEFT_RIGHT)   # v108: as regras de cima enganam-se nestas (vistas uma a uma)
+        if id in VIRA_V: r = r.transpose(Image.FLIP_TOP_BOTTOM)
         s = LEN[t] / r.size[0]; r = r.resize((max(1, int(r.size[0] * s)), max(1, int(r.size[1] * s))), Image.LANCZOS)
         r = r.rotate(38, expand=True, resample=Image.BICUBIC); r = r.crop(r.getbbox())
         cx, cy = 236, 250   # meio do peito
         x0, y0 = int(cx - r.size[0] / 2), int(cy - r.size[1] / 2)
-        dr = ImageDraw.Draw(L)   # correia: do ombro esquerdo (direita da imagem) à coronha, por baixo da arma
-        dr.line([(300, 108), (x0 + r.size[0] * 0.18, y0 + r.size[1] * 0.86)], fill=(22, 22, 22, 255), width=7)
-        dr.line([(300, 108), (x0 + r.size[0] * 0.80, y0 + r.size[1] * 0.20)], fill=(22, 22, 22, 255), width=7)
+        dr = ImageDraw.Draw(L)   # correia: do ombro esquerdo (direita da imagem) à coronha, por baixo da arma (v108: o vértice assenta no ombro; antes ficava no ar)
+        dr.line([(298, 128), (x0 + r.size[0] * 0.18, y0 + r.size[1] * 0.86)], fill=(22, 22, 22, 255), width=7)
+        dr.line([(298, 128), (x0 + r.size[0] * 0.80, y0 + r.size[1] * 0.20)], fill=(22, 22, 22, 255), width=7)
         L = L.filter(ImageFilter.GaussianBlur(0.6)); L.alpha_composite(r, (x0, y0))
     return L
 if __name__ == '__main__':

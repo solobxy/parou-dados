@@ -11,4 +11,5 @@ a2 = np.where(k, a, 0); topo = np.nonzero(a2[:, 255:300] > 110)[0].min()   # top
 a2[:topo - 2, :] = 0
 m = a2 > 60; lab, n = ndimage.label(m); sz = ndimage.sum(m, lab, range(1, n + 1))
 A[..., 3] = np.where(ndimage.binary_dilation(np.isin(lab, [i + 1 for i, v in enumerate(sz) if v >= sz.max() * 0.08]), iterations=1), a2, 0).astype(np.uint8)
+A[:134, :212, 3] = 0   # v108: o topo da mochila atrás do ombro esquerdo saía como um bocado solto
 Image.fromarray(A).save(sys.argv[2], 'WEBP', quality=90, method=6)
