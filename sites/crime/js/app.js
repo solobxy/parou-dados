@@ -222,6 +222,7 @@ function react(type, out, before, opts) {
   else if (type === 'jailCards') { PR.cartas({ r, t, money, lang: lang(), bet: opts.args.bet, again: (b) => act('jailCards', { bet: b }) }).then(() => fx.sfx(r.win ? 'cash' : 'fail')); }
   else if (type === 'jailFavor') { toast(r.kind === 'time' ? t('tj_favTime', { t: minTxt(r.cut) }) : t('tj_favContact', { n: r.contacts, c: S.cfg.jail.contactsMax })); fx.sfx('claim'); }
   else if (type === 'bust') { if (r.freed) { toast(t('tBustOk', { x: r.target, n: r.respect })); fx.sfx('crit'); } else if (r.caught) { toast(t('tBustCaught', { t: minTxt(r.jailUntil - now()) }), true); fx.sfx('bust'); fx.vibrate([40, 60, 40]); } else { toast(t('tBustFail')); fx.sfx('tap'); } }   // v115
+  else if (type === 'jailAppeal') { toast(r.won ? t('tAppealWon', { t: minTxt(r.cut) }) : t('tAppealLost'), !r.won); fx.sfx(r.won ? 'crit' : 'fail'); if (!r.won) fx.vibrate([40, 60, 40]); }   // v116
   else if (type === 'jailEscape') { PR.fuga({ r, t, minTxt }).then(() => { if (r.free) fx.sfx('crit'); else { fx.sfx('bust'); fx.vibrate([40, 60, 40]); } }); }
   else if (type === 'repair') { toast(r.kit ? t('tRepairedKit', { x: t('g_' + me.eq[r.slot].id), n: mtN(me, 'kit') }) : t('tRepaired', { x: t('g_' + me.eq[r.slot].id), m: money(r.price) })); fx.sfx('claim'); }
   else if (type === 'luxury') { toast(t('luxBought', { x: list('lux')[me.luxuries - 1], n: r.respect })); fx.sfx('claim'); }
@@ -613,7 +614,8 @@ function busyBanner(me) {
   if (L.jail) return h('div', { class: 'state jail' }, h('h3', null, t('jail')), h('div', { class: 't' }, t('jailSub', { t: '' }), h('b', { class: 'num', dataset: { left: me.jailUntil } }, dur(L.jail))),
     h('div', { class: 'fill big jbar', dataset: { until: me.jailUntil, jtotal: me.jailT0 && me.jailUntil > me.jailT0 ? me.jailUntil - me.jailT0 : (S.cfg.crimes[me.jailTier - 1]?.jailMin || 1) * 60000 } }, h('i')),
     h('button', { class: 'btn buy block', on: { click: (e) => act('bail', {}, { el: e.currentTarget }) } }, t('payBail', { m: money(me.bail) })),
-    S.tab !== 'jail' ? h('button', { class: 'jneed jdo', on: { click: () => go('jail') } }, t('jailDo') + ' ›') : null);
+    h('div', { class: 'jlinks' }, me.jsr ? h('button', { class: 'jneed jdo', on: { click: () => openSentence() } }, t('srOpen') + ' ›') : null,   // v116
+      S.tab !== 'jail' ? h('button', { class: 'jneed jdo', on: { click: () => go('jail') } }, t('jailDo') + ' ›') : null));
   if (L.hosp) return h('div', { class: 'state hosp' }, h('h3', null, t('hospital')), h('div', { class: 't' }, t('hospitalSub', { t: '' }), h('b', { class: 'num', dataset: { left: me.hospUntil } }, dur(L.hosp))),
     h('button', { class: 'btn buy block', on: { click: (e) => act('medic', {}, { el: e.currentTarget }) } }, t('payMedic', { m: money(me.medic) })));
   return null;
@@ -1910,25 +1912,93 @@ async function loadJail() {
   try { S.jl = await api('GET', '/api/jail'); S.jlAt = now(); if (S.tab === 'jail') render(); } catch {}
   if (S.tab === 'jail') S.jlT = setTimeout(loadJail, 15000);
 }
-const bustCls = (bp) => (bp >= 6000 ? 'c-cash' : bp >= 3000 ? 'c-resp' : 'c-red');
 function jailInmates(me, L) {
   const B = S.cfg.bust, d = S.jl, out = [];
-  out.push(h('p', { class: 'small muted' }, t('buHow', { e: B.e, p: pctOf(B.failJailBp), m: B.jailMin })));
+  out.push(h('p', { class: 'small muted' }, tint(t('buHow', { e: B.e, p: pctOf(B.failJailBp), m: B.jailMin }))));
   if (!d) { out.push(h('p', { class: 'muted' }, t('loading'))); return out; }
-  out.push(h('h2', { class: 'sec' }, t('buT'), d.n ? h('span', { class: 'small muted num' }, ' · ' + num(d.n)) : null));
-  if (!d.list.length) { out.push(h('div', { class: 'note' }, h('p', { class: 'muted' }, t('buNone')))); return out; }
+  const list = d.list.filter((x) => x.until > now());
+  out.push(h('h2', { class: 'sec' }, t('buT'), list.length ? h('span', { class: 'jbc num' }, num(list.length)) : null));
+  if (!list.length) { out.push(h('div', { class: 'note' }, h('p', { class: 'muted' }, t('buNone')))); return out; }
   const busy = L.hosp || me.tr;
-  out.push(h('div', { class: 'card vlist vc' }, d.list.filter((x) => x.until > now()).map((x) => h('div', { class: 'vrow jbx' },
-    h('div', { class: 'grow' }, h('div', { class: 'jbn' }, x.tag ? h('span', { class: 'gtag' }, x.tag) : null, x.tag ? ' ' : null, h('b', null, x.name)),
-      h('div', { class: 'small num muted' }, t('trNeed', { n: x.level }) + ' · ' + t('buLeft') + ' ', h('b', { class: 'c-tx', dataset: { left: x.until } }, dur(x.until - now()))),
-      h('div', { class: 'small num' }, h('b', { class: bustCls(x.chance) }, t('buChance', { p: Math.round(x.chance / 100) })))),
-    h('button', { class: 'btn sm', disabled: !!busy || L.energy < B.e, on: { click: async (e) => { const o = await act('bust', { target: x.name }, { el: e.currentTarget }); if (o) loadJail(); } } }, t('buBtn', { e: B.e }))))));
+  // v116 (revisão do v115): cada linha diz a hipótese, o risco real de ir preso (falhar × ser apanhado) e o respeito que dá
+  out.push(h('div', { class: 'card vlist vc' }, list.map((x) => {
+    const left = Math.max(1, Math.ceil((x.until - now()) / 60000)), risk = Math.round(((10000 - x.chance) * B.failJailBp) / 1e6);
+    const resp = Math.min(B.respMax, 1 + Math.floor(left / B.respMin));
+    return h('div', { class: 'vrow jbx' },
+      h('div', { class: 'grow' }, h('div', { class: 'jbn' }, x.tag ? h('span', { class: 'gtag' }, x.tag) : null, x.tag ? ' ' : null, h('b', null, x.name)),
+        h('div', { class: 'small num muted' }, h('span', { class: 'nw' }, t('trNeed', { n: x.level })), ' · ', h('span', { class: 'nw' }, t('buLeft', { t: minTxt(left * 60000) }))),
+        h('div', { class: 'small num' }, h('b', { class: 'nw ' + chanceCls(x.chance) }, t('buChance', { p: Math.round(x.chance / 100) })), ' · ', h('span', { class: 'nw' }, t('buRisk', { p: risk })), ' · ', h('span', { class: 'nw c-resp' }, t('buResp', { n: resp })))),
+      h('button', { class: 'btn sm jbgo', disabled: !!busy || L.energy < B.e, on: { click: async (e) => { const o = await act('bust', { target: x.name }, { el: e.currentTarget }); if (o) loadJail(); } } },
+        t('buBtn')));
+  })));
   return out;
+}
+// ---------- v116: a sentença ----------
+// O Dinis mostrou a folha «COURT RULING» de outro jogo: aqui é uma folha do mesmo papel do jornal, com os números verdadeiros da pena
+// (a da tabela, a lei das penas pesadas, os cortes do advogado) e o recurso: uma vez por pena, com custas, sem agravar se perder.
+function srCharge(s) {
+  const x = s.id;
+  if (s.k === 'crime') return list('crimes')[x] || t('srK_crime');
+  if (s.k === 'gig') return t('srK_gig', { x: t('gk_' + x) });
+  const low = (v) => v.charAt(0).toLowerCase() + v.slice(1);
+  if (s.k === 'dig') return t('srK_dig', { x: low(t('dgAt_' + x)) });
+  if (s.k === 'hunt') return t('srK_hunt', { x: t('hsAt_' + x) });
+  if (s.k === 'op') return t('srK_op', { x: t('op_' + x) });
+  if (s.k === 'heist') return t('srK_heist', { x: t('gh_' + x) });
+  if (s.k === 'bust') return x ? t('srK_bust', { x }) : t('srK_bust0');
+  if (s.k === 'raid') return t('srK_raid');
+  return t('srK_crime');
+}
+const srCase = (s) => 'T' + new Date(s.t0).getUTCFullYear() + String(Math.floor(s.t0 / 1000) % 100000).padStart(5, '0');
+function openSentence(fresh) {
+  if (!S.st.me.jsr) return;
+  store.set('srSeen', S.st.me.jsr.t0);
+  const box = h('div', { class: 'srbox' });
+  let close;
+  // anim: 'all' (a folha acabada de abrir: o carimbo cai), 'appeal' (só o carimbo do recurso, logo depois de recorrer), '' (nada)
+  const draw = (anim) => {
+    const me = S.st.me, s = me.jsr;
+    if (!s) { close(); return; }
+    const L = live(me), A = me.appeal, R = (ms) => Math.round(ms / 60000) * 60000;
+    const step = (a, b) => minTxt(Math.abs(R(b) - R(a)));   // cada linha é a diferença entre totais já arredondados ao minuto: a coluna soma sempre certo
+    const lead = (k, v, cls) => h('div', { class: 'srr' + (cls ? ' ' + cls : '') }, h('span', null, k), h('i'), h('b', { class: 'num' }, v));
+    const stamp = (txt, cls, on) => h('div', { class: 'srst ' + cls + (on ? '' : ' late') }, txt);
+    // a pena: a da tabela, +o que a lei pôs, −o que cada advogado tirou (o último corte leva o arredondamento e o mínimo de 1 min)
+    const sentenced = Math.max(60000, Math.floor((s.l * (10000 - Math.min(9000, s.av + s.em))) / 10000));
+    const avMs = s.av ? (s.em ? Math.floor((s.l * s.av) / 10000) : s.l - sentenced) : 0, emMs = s.em ? s.l - sentenced - avMs : 0;
+    const won = s.ap === 1 ? s.apc || 0 : 0, final = sentenced - won;
+    const x = (bp) => String(bp / 10000).replace('.', lang() === 'pt' ? ',' : '.');
+    const rows = [lead(t('srBase'), minTxt(s.b)),
+      s.l !== s.b ? lead(t('srLaw', { x: '×' + x(Math.round((s.l * 10000) / s.b)) }), '+' + step(s.b, s.l)) : null,
+      avMs ? lead(t('srAv', { p: pctOf(s.av) }), '−' + step(s.l, s.l - avMs)) : null,
+      emMs ? lead(t('srEm', { p: pctOf(s.em) }), '−' + step(s.l - avMs, sentenced)) : null,
+      won ? lead(t('srAp'), '−' + step(sentenced, final), 'grn') : null];
+    const paper = h('div', { class: 'paper srp', role: 'document', 'aria-label': t('srT') },
+      h('div', { class: 'mline' }, h('span', null, t('srCourt')), h('span', { class: 'num' }, t('srCase', { n: srCase(s) }))),
+      h('div', { class: 'srt' }, t('srT')),
+      h('div', { class: 'mtag' }, t('srVs', { x: me.name }) + ' · ' + new Date(s.t0).toLocaleDateString(lang() === 'pt' ? 'pt-PT' : 'en-GB', { day: 'numeric', month: 'long', timeZone: 'Europe/London' })),
+      h('div', { class: 'srl' }, lead(t('srWho'), me.name), lead(t('srWhat'), srCharge(s))),
+      h('div', { class: 'srl' }, ...rows),
+      h('div', { class: 'srl srf' }, h('div', { class: 'srr big' }, h('span', null, t('srFinal')), h('i'), h('b', { class: 'num' }, won ? h('s', { class: 'srold' }, minTxt(R(sentenced))) : null, minTxt(R(final)))),
+        lead(t('srOut'), L.jail ? hhmm(me.jailUntil) : t('srFree')), L.jail ? lead(t('srBail'), money(me.bail)) : null),
+      s.ap ? h('div', { class: 'sra ' + (s.ap === 1 ? 'won' : 'lost') }, stamp(t(s.ap === 1 ? 'srWon' : 'srLost'), s.ap === 1 ? 'w' : 'l', anim === 'appeal'),
+        h('p', null, s.ap === 1 ? t('srWonTx', { t: step(sentenced, final) }) : t('srLostTx'))) : null,
+      h('div', { class: 'srsig' }, h('div', null, h('span', { class: 'srsn', 'aria-hidden': 'true' }, 'H. Pemberton'), h('small', null, t('srJudge'))), stamp(t('srGuilty'), 'g', anim === 'all')));
+    const short = A ? Math.max(0, A.fee - me.cash - me.bank) : 0;
+    const bar = A && L.jail ? h('div', { class: 'srbar' }, h('p', { class: 'small' }, t('srHow', { m: money(A.fee), p: Math.round(A.chance / 100) })),
+      h('div', { class: 'row srbt' }, h('button', { class: 'btn', disabled: short > 0, on: { click: async (e) => { const o = await act('jailAppeal', {}, { el: e.currentTarget }); if (o) draw('appeal'); } } }, short ? t('srAppeal', { m: t('trShort', { m: money(short) }) }) : t('srAppeal', { m: money(A.fee) })),
+        h('button', { class: 'btn ghost', on: { click: () => close() } }, t('srLater'))))
+      : h('div', { class: 'srbar' }, h('button', { class: 'btn ghost block', on: { click: () => close() } }, t('close')));
+    box.replaceChildren(paper, bar);
+  };
+  draw(fresh ? 'all' : '');
+  close = sheet(h('div', { class: 'stack srs' }, box));
 }
 function screenJail() {
   const me = S.st.me, L = live(me), out = [pageHead('jail')], b = busyBanner(me);
   if (!L.jail) { if (b) out.push(b); out.push(...jailInmates(me, L)); return out; }   // v115: cá fora vê-se quem está preso e pode tirar-se
   out.push(b);
+  if (me.jsr && store.get('srSeen', 0) !== me.jsr.t0 && !(S.sheets || []).length) setTimeout(() => { if (S.tab === 'jail' && S.st.me.jsr && !(S.sheets || []).length) openSentence(true); }, 350);   // v116: a sentença abre sozinha uma vez por pena
   const J = S.cfg.jail, cash = me.cash, smug = Math.floor((me.streetBar * J.smuggleE) / 200), bet = me.yardBet, favLeft = Math.max(0, J.favors - (me.jf || 0));
   const btn = (lbl, off, type, args) => h('button', { class: 'btn sm ghost', disabled: off, on: { click: (e) => act(type, args || {}, { el: e.currentTarget }) } }, lbl);
   const row = (id, desc, right, wide) => h('div', { class: 'vrow jbr' + (wide ? ' blr' : '') }, art('jail', id, 'vth'), h('div', { class: 'grow' }, h('b', null, t('j_' + id)), h('div', { class: 'small' }, desc)), right);

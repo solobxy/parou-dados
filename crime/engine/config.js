@@ -588,6 +588,10 @@ export const CFG = {
   bust: { e: 15, baseBp: 7500, perMinBp: 60, minBp: 300, maxBp: 9500, failJailBp: 4000, jailMin: 20, respMin: 10, respMax: 12, list: 50 },
   jail: { smuggleE: 20, smuggleLoseBp: 1500, workE: 10, work: 50, yardE: 10, yardMin: 20, yardMax: 200, cardsMax: 50, favors: 2, favorCutBp: 1500,
     contactsMax: 3, escapeE: 30, escapeBp: 3500, escapeAddBp: 5000 },
+  // v116: o recurso da sentença. Uma vez por pena; as custas são 20% da fiança de agora (5 £ no mínimo). O juiz dá razão 45% das vezes,
+  // mais 15 pontos com a avença do advogado e mais 5, 10 ou 15 com o curso de Direito (75% no máximo). Ganhar tira metade do que falta;
+  // perder não agrava (fica a pena como estava, perdem-se as custas).
+  appeal: { feeBp: 2000, feeMin: 5, baseBp: 4500, avencaBp: 1500, maxBp: 7500, cutBp: 5000 },
   // Stamina a mais, a droga: cada barra (100) seguida custa 25 € × k + 5 € × k² (30, 70, 120, 180 €…); a escada desce 25 pontos por hora (uma barra em 4 h).
   refillBar: { a: 25, b: 5, coolPerH: 25 },
   // v79: colecionáveis e museu, à maneira dos peluches e das flores do Torn. Ficam numa vitrine (fora do inventário).
@@ -994,7 +998,7 @@ export const CFG = {
     lv: [{ days: 3, price: 1500, level: 5 }, { days: 7, price: 6000, level: 20 }, { days: 14, price: 20000, level: 40 }],
     list: [
       { id: 'medicina', kind: 'st', fx: { hosp: [1000, 2000, 3000] } },
-      { id: 'direito', kind: 'st', fx: { bail: [1000, 2000, 3000] } },
+      { id: 'direito', kind: 'st', fx: { bail: [1000, 2000, 3000], appeal: [500, 1000, 1500] } },
       { id: 'gestao', kind: 'st', fx: { biz: [500, 1000, 1500] } },
       { id: 'artes', kind: 'st', fx: { burla: [500, 1000, 1500] } },
       { id: 'boxe', kind: 'ma', fx: { atk: [500, 1000, 1500] } },

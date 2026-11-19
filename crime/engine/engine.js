@@ -48,7 +48,7 @@ export function newPlayer(id, now, world, opts = {}) {
     luxuries: 0,
     gang: null, gb: null, gangLeft: 0, gbotLeft: 0, gh: [], gbz: gbzNew(),
     emp: null,   // v111: a empresa onde trabalha ({ id, t: o tipo, s: as estrelas }); o servidor escreve-a
-    cars: [], car: -1, rcn: { n: 0, w: 0, pod: 0 }, pkn: { h: 0, w: 0, big: 0 }, pkd: null,   // v114: mãos de póquer (jogadas, ganhas, maior pote) e as fichas compradas hoje   // v112: os carros (cada um com as peças), o que está escolhido e as corridas feitas (rc já é o resto do respeito)
+    cars: [], car: -1, rcn: { n: 0, w: 0, pod: 0 }, pkn: { h: 0, w: 0, big: 0 }, pkd: null, jsr: null,   // v114: mãos de póquer (jogadas, ganhas, maior pote) e as fichas compradas hoje   // v112: os carros (cada um com as peças), o que está escolhido e as corridas feitas (rc já é o resto do respeito)
     detoxT: [],
     xp: { F: 0, I: 0, C: 0 },
     wk: CFG.crimes.map(() => 0),   // sucessos por golpe (para os objetivos)
@@ -133,6 +133,7 @@ function migrate(p) {
   if (!p.pkn || typeof p.pkn !== 'object' || !Number.isSafeInteger(p.pkn.h)) p.pkn = { h: 0, w: 0, big: 0 };
   if (p.pkd && (typeof p.pkd !== 'object' || typeof p.pkd.d !== 'string' || !Number.isSafeInteger(p.pkd.n))) p.pkd = null;
   if (p.pkd === undefined) p.pkd = null;
+  if (p.jsr === undefined || (p.jsr !== null && (typeof p.jsr !== 'object' || !Number.isSafeInteger(p.jsr.t0)))) p.jsr = null;   // v116: a sentença
   if (!Number.isFinite(p.rc)) p.rc = 0;   // (uma versão de teste da v112 usou rc para as corridas: volta a ser o resto do respeito)
   if (!Number.isSafeInteger(p.gangLeft)) p.gangLeft = 0;
   if (!Number.isSafeInteger(p.gbotLeft)) p.gbotLeft = 0;
@@ -864,7 +865,7 @@ export function doCrime(p, now, world, k, rng) {
   p.c.crimes += 1;
   // falhar não é sempre prisão: uma falha em quatro é apanhada
   const busted = rng.chance(cut(bustChanceBp(p, now, world && world.press), quiet));
-  if (busted) jailFor(p, now, c.jailMin * T.MIN, k + 1);
+  if (busted) jailFor(p, now, c.jailMin * T.MIN, k + 1, { k: 'crime', id: k });
   const gained = practice(p, c, false);
   return { ok: true, success: false, busted, jailUntil: p.jailUntil, chanceBp: bp, heatBp, respBp, ammo, gained, newChanceBp: bp };
 }
@@ -1458,7 +1459,7 @@ export function workDone(p, now, world, rng, ans, emp) {
   const r1 = spotted || q < Rt.bad ? Math.max(0, r0 - Rt.drop) : q >= Rt.good ? Math.min(Rt.cap, r0 + Rt.step) : r0;
   if (!p.wm || typeof p.wm !== 'object') p.wm = {};
   p.wm[x.id] = r1;
-  if (busted) { jailFor(p, now, x.jailMin * T.MIN, 1); return { ok: true, id: x.id, q, busted: true, spotted, money: 0, multBp, ritmo: r1, ritmoAntes: r0, jailUntil: p.jailUntil }; }
+  if (busted) { jailFor(p, now, x.jailMin * T.MIN, 1, { k: 'gig', id: x.id }); return { ok: true, id: x.id, q, busted: true, spotted, money: 0, multBp, ritmo: r1, ritmoAntes: r0, jailUntil: p.jailUntil }; }
   const pago = Math.floor((x.base * (W.qMin + Math.floor(((W.qMax - W.qMin) * q) / 10000))) / 10000);
   let money = Math.max(1, Math.floor((Math.floor((Math.floor((pago * (10000 + r1)) / 10000) * multBp) / 10000) * (10000 + empBp(p, 'work'))) / 10000));   // v111: logística
   let lav = 0;
@@ -1881,7 +1882,7 @@ export function digTap(p, now, world, rng, i) {
     d.got = [];
     digClose(p, now);
     const dep = p.tr ? trDeport(p, now) : null;   // v101: apanhado lá fora: deportado, a mala fica lá, e a pena cumpre-se cá
-    jailFor(p, now, S.jailMin * T.MIN, DIG_JAIL + CFG.dig.sites.indexOf(S));
+    jailFor(p, now, S.jailMin * T.MIN, DIG_JAIL + CFG.dig.sites.indexOf(S), { k: 'dig', id: S.id });
     return { ok: true, i, caught: true, lost, jailUntil: p.jailUntil, site: S.id, grid, open, ...(dep ? { deported: dep } : {}) };
   }
   const v = d.cells[i];
@@ -2145,7 +2146,8 @@ function huntOpen(p, now, world) {
 }
 // procurar outro animal (o que estava à vista vai-se embora)
 export function huntLook(p, now, world, rng) {
-  const h = huntOpen(p, now, world);
+  const h = huntOpen(p, now, world), it = p.eq[h.slot];
+  if (!it || it.id !== h.gid) fail('NO_GUN');   // (v116, achado pelo fuzz) a arma tirada a meio da saída: o ritmo da mira lia uma arma que já não estava lá
   if (h.moves < 1) fail('NO_MOVES');
   h.moves -= 1;
   huntSight(p, now, rng);
@@ -2191,7 +2193,7 @@ export function huntShoot(p, now, world, rng, at) {
   if (h.mode === 'fur' && rng.chance(huntRanger(p, h))) {   // os guardas: preso, e o que se caçou nesta saída fica para trás
     const S = huntSite(h.site), lost = h.bag.slice();
     p.hunt.on = null;
-    jailFor(p, now, S.jail * T.MIN, HUNT_JAIL + CFG.hunt.sites.indexOf(S));
+    jailFor(p, now, S.jail * T.MIN, HUNT_JAIL + CFG.hunt.sites.indexOf(S), { k: 'hunt', id: S.id });
     return { ...out, caught: true, lost, jailUntil: p.jailUntil, site: S.id, end: true };
   }
   if (!kill && a.dg && c.d <= H.chargeD && rng.chance(hit ? a.dg : Math.floor(a.dg / 2))) {   // carregou: o guia leva-te ao hospital e vende o que já tinhas
@@ -2850,7 +2852,7 @@ function heatAdd(p, r, eur) {
   w.h = Math.min(10000, w.h + Math.floor((eur * 100 * (10000 - frontBp(w))) / (CFG.wh.heatEur * 10000))); w.f += eur;
 }
 function takeMoney(p, x) { const c = Math.min(p.cash, x); p.cash -= c; p.bank -= Math.min(p.bank, x - c); }
-function jailAt(p, at) { const until = at + CFG.wh.jailMin * T.MIN; if (until > p.jailUntil) { p.jailUntil = until; p.jailTier = DRUG_JAIL; p.jailT0 = at; p.jf = 0; } }
+function jailAt(p, at) { const ms = CFG.wh.jailMin * T.MIN, until = at + ms; if (until > p.jailUntil) { p.jailUntil = until; p.jailTier = DRUG_JAIL; p.jailT0 = at; p.jf = 0; p.jsr = { t0: at, k: 'raid', id: null, b: ms, l: ms, av: 0, em: 0, ap: 0 }; } }
 
 export function whBuy(p, now, world, r) {
   if (!REG().includes(r) || r === 'lx') fail('NO_REGION');
@@ -3476,10 +3478,39 @@ export function opDrop(p, now, world) {
   const lost = p.op.paid; p.op = null;
   return { ok: true, lost };
 }
-function jailFor(p, now, ms, tier) {
+// v116: a sentença fica escrita (porquê, a pena da tabela, depois da lei, os cortes do advogado), para a folha do tribunal e o recurso
+function jailFor(p, now, ms, tier, why) {
+  const b = ms;
   if (law('penas')) ms = Math.floor((ms * CFG.gov.laws.penas.jailBp) / 10000);   // v76: penas pesadas
-  const cut = Math.min(9000, (p.avenca && level(p) >= CFG.retainer.level ? CFG.retainer.jailCutBp : 0) + empBp(p, 'jail'));   // v111: advogados
+  const av = p.avenca && level(p) >= CFG.retainer.level ? CFG.retainer.jailCutBp : 0, em = empBp(p, 'jail');
+  const cut = Math.min(9000, av + em);   // v111: advogados
   p.jailUntil = now + Math.max(T.MIN, Math.floor((ms * (10000 - cut)) / 10000)); p.jailTier = tier; p.jailT0 = now; p.jf = 0;
+  p.jsr = { t0: now, k: (why && why.k) || 'crime', id: why && why.id != null ? why.id : null, b, l: ms, av, em, ap: 0 };
+}
+export { jailFor as jailForTest, jailAt as jailAtTest };
+// v116: a sentença que o ecrã mostra (só a da pena de agora) e o recurso: uma vez por pena, paga custas (uma parte da fiança de agora),
+// e se o juiz der razão tira metade do que falta. Perder não agrava a pena: fica tudo como estava, menos as custas.
+const sentenceOn = (p, now) => p.jailUntil > now && p.jsr && typeof p.jsr === 'object' && p.jsr.t0 === p.jailT0;
+export function appealFee(p, now) { return Math.max(CFG.appeal.feeMin, Math.ceil((bailCost(p, now) * CFG.appeal.feeBp) / 10000)); }
+export function appealChance(p) {
+  const A = CFG.appeal;
+  return Math.min(A.maxBp, A.baseBp + (p.avenca && level(p) >= CFG.retainer.level ? A.avencaBp : 0) + studyBp(p, 'appeal'));
+}
+export function sentence(p, now) {
+  if (!sentenceOn(p, now)) return null;
+  const s = p.jsr;
+  return { ...s, until: p.jailUntil, left: p.jailUntil - now, appeal: s.ap ? null : { fee: appealFee(p, now), chance: appealChance(p) } };
+}
+export function jailAppeal(p, now, world, rng) {
+  begin(p, now, world, { allowBusy: true, jailOk: true }); inJail(p, now);
+  if (!sentenceOn(p, now)) fail('NO_SENTENCE');
+  const s = p.jsr, A = CFG.appeal;
+  if (s.ap) fail('APPEALED');
+  const fee = appealFee(p, now), chance = appealChance(p);
+  pay(p, fee);
+  const won = rng.chance(chance), cut = won ? Math.floor(((p.jailUntil - now) * A.cutBp) / 10000) : 0;
+  p.jailUntil -= cut; s.ap = won ? 1 : 2; s.apt = now; s.apc = cut;
+  return { ok: true, won, fee, chance, cut, jailUntil: p.jailUntil };
 }
 export function opGo(p, now, world, rng) {
   begin(p, now, world);
@@ -3503,7 +3534,7 @@ export function opGo(p, now, world, rng) {
     const resp = Math.round(S.respK * Math.sqrt(o.gain)), lvl = addRespect(p, resp, now);
     // a Judiciária pode ligar o golpe a ti mais tarde (o suborno impede): ficas com o dinheiro, mas vais preso
     const linked = !st.bribe && rng.chance(rasto * S.linkedPer);
-    if (linked) jailFor(p, now, o.jailMin * T.MIN, 100 + st.i);
+    if (linked) jailFor(p, now, o.jailMin * T.MIN, 100 + st.i, { k: 'op', id: o.id });
     return { ok: true, success: true, i: st.i, money: L.net, value: o.gain, lav: L.lav, respect: resp, levelUp: lvl, chanceBp: bp, rasto, linked, jailUntil: linked ? p.jailUntil : 0 };
   }
   // correu mal: perde-se o que se pagou; sem suborno paga-se advogado (a avença cobre) e às vezes há prisão
@@ -3511,7 +3542,7 @@ export function opGo(p, now, world, rng) {
   if (!st.bribe) {
     if (!covered) { lawyer = Math.min(o.lawyer, p.cash + p.bank); payAll(p, lawyer); }
     busted = rng.chance(rasto * S.caughtPer);
-    if (busted) jailFor(p, now, o.jailMin * T.MIN, 100 + st.i);
+    if (busted) jailFor(p, now, o.jailMin * T.MIN, 100 + st.i, { k: 'op', id: o.id });
   }
   return { ok: true, success: false, i: st.i, lost: st.paid, lawyer, busted, chanceBp: bp, rasto, jailUntil: busted ? p.jailUntil : 0 };
 }
@@ -3627,7 +3658,7 @@ export function bust(p, target, now, world, rng) {
     return { ok: true, freed: true, chance, left, respect: resp, levelUp: addRespect(p, resp, now) };
   }
   const caught = rng.chance(B.failJailBp);
-  if (caught) jailFor(p, now, B.jailMin * T.MIN, 1);
+  if (caught) jailFor(p, now, B.jailMin * T.MIN, 1, { k: 'bust', id: target.name || null });
   return { ok: true, freed: false, caught, chance, left, jailUntil: caught ? p.jailUntil : 0 };
 }
 export function jailEscape(p, now, world, rng) {
@@ -3894,7 +3925,7 @@ export function heistResolve(ps, now, k, rng) {
   }
   return { ok: true, success: false, chanceBp: bp, parts: ps.map((p) => {
     const busted = !(p.jailUntil > now) && !(p.hospUntil > now) && rng.chance(bustChanceBp(p, now));
-    if (busted) jailFor(p, now, H.jailMin * T.MIN, H.bailAs + 1);
+    if (busted) jailFor(p, now, H.jailMin * T.MIN, H.bailAs + 1, { k: 'heist', id: H.id });
     return { id: p.id, money: 0, respect: 0, busted };
   }) };
 }
@@ -4595,6 +4626,7 @@ export function checkInvariants(p) {
   if (!p.rcn || !Number.isSafeInteger(p.rcn.n) || p.rcn.w > p.rcn.n || p.rcn.pod > p.rcn.n) bad.push('rcn');
   if (!p.pkn || !Number.isSafeInteger(p.pkn.h) || p.pkn.w > p.pkn.h || !(p.pkn.big >= 0)) bad.push('pkn');
   if (p.pkd !== null && (!p.pkd || !Number.isSafeInteger(p.pkd.n) || p.pkd.n < 0)) bad.push('pkd');
+  if (p.jsr !== null && (!p.jsr || !Number.isSafeInteger(p.jsr.t0) || ![0, 1, 2].includes(p.jsr.ap))) bad.push('jsr');
   if (!Number.isFinite(p.rc)) bad.push('rc');
   if (p.emp && p.job !== -1) bad.push('emp/job');
   if (p.honVit != null && (!Array.isArray(p.honVit) || p.honVit.length > CFG.social.vitMax || p.honVit.some((k) => !(p.hon && p.hon[k])))) bad.push('honVit');   // v109

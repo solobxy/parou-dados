@@ -30,7 +30,7 @@ const RONDA_TESTE = process.env.PRIMEIRA_RONDA ? dataDe(process.env.PRIMEIRA_RON
 // Épocas de 28 dias a contar da sexta 13/11/2026 às 21:00 de Lisboa (PRIMEIRA_EPOCA=AAAA-MM-DD muda-a, para testes)
 const ANCORA = dataDe(process.env.PRIMEIRA_EPOCA || process.env.PRIMEIRA_RONDA || '2026-11-13');
 const rng = process.env.TESTE_SEMENTE ? seededRng(+process.env.TESTE_SEMENTE) : cryptoRng();   // nos testes, a sorte pode ser sempre a mesma
-const VERSAO = 115;   // sobe quando o servidor muda, para se confirmar de fora que a versão nova já está a correr
+const VERSAO = 116;   // sobe quando o servidor muda, para se confirmar de fora que a versão nova já está a correr
 const ATOS_3S = +(process.env.ATOS_3S || 15), ATOS_MIN = +(process.env.ATOS_MIN || 400); // ações por conta: 15 em 3 s, 400 por minuto
 
 // ---------- relógio que nunca anda para trás ----------
@@ -236,7 +236,7 @@ function contarMundo(a, r, delta, p) {
   // v76: conta quem jogou nesta edição, uma vez cada (é a gente do mundo; a edição não percorre os jogadores)
   if (p && bolsa && bolsa.w && a.type !== 'avatar' && p.edA !== bolsa.w.ed) { p.edA = bolsa.w.ed; mundoAcc('n', 1); }
   // o que foi para o Estado nesta ação: fianças, comissões da bolsa e impostos das leis (os cofres contam-no na edição)
-  const imposto = (a.type === 'bail' || a.type === 'bailFor' ? r.cost || 0 : 0) + (a.type === 'stockBuy' || a.type === 'stockSell' ? r.fee || 0 : 0) + (r.tax || 0);
+  const imposto = (a.type === 'bail' || a.type === 'bailFor' ? r.cost || 0 : 0) + (a.type === 'stockBuy' || a.type === 'stockSell' || a.type === 'jailAppeal' ? r.fee || 0 : 0) + (r.tax || 0);   // v116: as custas do recurso vão para o Estado
   if (imposto > 0) mundoAcc('tax', imposto);
   if (a.type === 'mktBuy' || a.type === 'mktSell') pontos(r.r, r.v);
   else if (a.type === 'stockDump') pontos('lx', r.v);
@@ -512,7 +512,7 @@ function vista(p, now) {
     bustBp: E.bustChanceBp(p, now, mk ? MW.pressOf(mk.w, 'lx') : 50), lx: mk ? { crime: mk.w.lx.crime, press: MW.pressOf(mk.w, 'lx'), ed: mk.w.ed, edNext: MW.edStart(mk.w.ed + 1) } : null,
     cd: { est: E.consumWait(p, 'est', now), med: E.consumWait(p, 'med', now) },   // v78: quanto falta na espera de cada família
     mt: p.mt, cf: p.cf, maq: p.maq,   // v83: depósito, bancada e máquinas
-    pk: mesaPk(p.id) ? mesaPk(p.id).id : null, pkn: p.pkn, pkd: p.pkd,   // v114: a mesa de póquer onde está sentado
+    pk: mesaPk(p.id) ? mesaPk(p.id).id : null, pkn: p.pkn, pkd: p.pkd, ...(() => { const s = E.sentence(p, now); return { jsr: s, appeal: s ? s.appeal : null }; })(),   // v116: a sentença e o recurso   // v114: a mesa de póquer onde está sentado
     cars: p.cars, car: p.car, rcn: p.rcn, rsk: E.skillBp(p, 'conducao'), race: salaDe(p.id) ? salaDe(p.id).id : null,   // v112: a garagem, as corridas e a perícia
     dg: E.digView(p, now), dgc: p.dgc, arq: E.stLevel(p, 'arqueologia'),   // v85: a escavação aberta (sem a grelha), os sítios vigiados, o nível de Arqueologia
     hon: p.hon || {}, honSel: p.honSel || null, honVit: p.honVit || [], honv: E.honorVals(p),   // v100: honras ganhas, a escolhida e os números de todas
@@ -570,7 +570,7 @@ function cfgPublica() {
     round: { playDays: CFG.round.playDays, noPvpMs: CFG.round.noPvpMs, newbieShieldMs: CFG.round.newbieShieldMs }, season: CFG.season, raid: CFG.raid,   // v91: a wiki
     consum: CFG.consum, col: CFG.col, gyms: CFG.gyms, books: CFG.books,   // v94, v95
     social: CFG.social,   // v109: o chat e a vitrine
-    turf: CFG.turf, comp: CFG.comp, race: CFG.race, poker: CFG.poker, bust: CFG.bust,   // v110: o território
+    turf: CFG.turf, comp: CFG.comp, race: CFG.race, poker: CFG.poker, bust: CFG.bust, appeal: CFG.appeal,   // v110: o território
     mat: CFG.mat, craft: CFG.craft, feira: { ...CFG.feira, refs: FEIRA_REFS }, dig: CFG.dig, hunt: CFG.hunt, honors: E.HONORS, travel: CFG.travel,   // v83, v84, v98, v100, v101
     exam: (({ ans: _a, ...x }) => x)(CFG.exam), studies: CFG.studies,   // v81: a Universidade   // v80: as regras do exame, sem as respostas certas
     gov: { vote: CFG.gov.vote, laws: CFG.gov.laws, cof: CFG.gov.cof, parties: Object.fromEntries(Object.entries(CFG.gov.parties).map(([k, x]) => [k, { pos: x.pos, wOp: x.wOp, wLob: x.wLob }])) },   // v76: o parlamento
@@ -2649,6 +2649,7 @@ function agir(conta, corpo, now) {
     case 'jailCards': r = E.jailCards(p, now, world, int(a.bet), rng); break;
     case 'jailFavor': r = E.jailFavor(p, now, world, String(a.kind || '')); break;
     case 'jailEscape': r = E.jailEscape(p, now, world, rng); break;
+    case 'jailAppeal': r = E.jailAppeal(p, now, world, rng); break;   // v116
     case 'luxury': r = E.buyLuxury(p, now, world); break;
     case 'attack': {
       const nome = String(a.target || '').toLowerCase();
