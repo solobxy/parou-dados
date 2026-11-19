@@ -47,6 +47,7 @@ export function newPlayer(id, now, world, opts = {}) {
     op: null, opPause: 0, contacts: 0, avenca: false, avD: null, avN: 0, jailT0: 0, jf: 0, ilegal: 0,   // golpe grande a preparar, pausa, contactos da prisão, avença do advogado (passo 5)
     luxuries: 0,
     gang: null, gb: null, gangLeft: 0, gbotLeft: 0, gh: [], gbz: gbzNew(),
+    emp: null,   // v111: a empresa onde trabalha ({ id, t: o tipo, s: as estrelas }); o servidor escreve-a
     detoxT: [],
     xp: { F: 0, I: 0, C: 0 },
     wk: CFG.crimes.map(() => 0),   // sucessos por golpe (para os objetivos)
@@ -123,6 +124,7 @@ function migrate(p) {
   if (p.bj === undefined) p.bj = null;
   if (typeof p.gang !== 'string') p.gang = null;
   if (!p.gang || !p.gb || typeof p.gb !== 'object') p.gb = null;
+  if (!empOk(p.emp)) p.emp = null;   // v111
   if (!Number.isSafeInteger(p.gangLeft)) p.gangLeft = 0;
   if (!Number.isSafeInteger(p.gbotLeft)) p.gbotLeft = 0;
   if (!Number.isInteger(p.guard)) p.guard = -1;
@@ -357,6 +359,44 @@ function pay(p, amount) {
   const fromCash = Math.min(p.cash, amount);
   p.cash -= fromCash;
   p.bank -= amount - fromCash;
+}
+
+// ---------- v111: empresas dos jogadores ----------
+// O motor só sabe em que empresa o jogador trabalha (id, tipo, estrelas) para o bónus do tipo e para o turno; o resto é do servidor.
+const empOk = (e) => !!e && typeof e === 'object' && typeof e.id === 'string' && Number.isInteger(e.t) && e.t >= 0 && e.t < CFG.comp.types.length && Number.isInteger(e.s) && e.s >= 0 && e.s <= 5;
+export const empType = (p) => (p.emp ? CFG.comp.types[p.emp.t] : null);
+export function empSet(p, id, t, s) { p.emp = { id, t, s }; p.job = -1; }
+export function empClear(p) { p.emp = null; }
+// o bónus do tipo da empresa: perk[0] com 3 estrelas, perk[1] com 5
+export function empBp(p, k) { const x = empType(p); return x && x.perk === k ? (p.emp.s >= 5 ? x.bp[1] : p.emp.s >= 3 ? x.bp[0] : 0) : 0; }
+export function empStars(shifts7) { let s = 0; for (const v of CFG.comp.stars) if (shifts7 >= v) s++; return s; }
+// o que um turno rende para o caixa: a base do tipo, a qualidade (80% a 120%) e +10% por estrela
+export function empRev(t, q, stars) { const x = CFG.comp.types[t], J = CFG.jobs; return Math.floor((Math.floor((x.rev * (J.qMin + Math.floor(((J.qMax - J.qMin) * q) / 10000))) / 10000) * (10000 + CFG.comp.starBp * stars)) / 10000); }
+// pode trabalhar nesta empresa (o curso que a tarefa pede)
+export const empCan = (p, t) => { const x = CFG.comp.types[t]; return !!x && (!x.course || p.done.includes(x.course)); };
+// fundar: nível mínimo, sem outra empresa, paga o preço do tipo (do bolso e depois do banco)
+export function empFound(p, now, world, t) {
+  const x = CFG.comp.types[t];
+  if (!x) fail('NO_COMP_TYPE');
+  begin(p, now, world, { allowBusy: true });
+  if (p.emp) fail('IN_COMPANY');
+  if (level(p) < CFG.comp.minLevel) fail('LOW_LEVEL', { need: CFG.comp.minLevel });
+  pay(p, x.cost);
+  return { ok: true, cost: x.cost, t };
+}
+// pôr dinheiro do bolso no caixa (o dono) e tirar do caixa para o banco (o servidor confere o caixa)
+export function empPut(p, now, world, amount) {
+  begin(p, now, world, { allowBusy: true });
+  if (!Number.isSafeInteger(amount) || amount < 1) fail('BAD_AMOUNT');
+  if (p.cash < amount) fail('NO_CASH');
+  p.cash -= amount;
+  return { ok: true, amount };
+}
+export function empTake(p, now, world, amount) {
+  begin(p, now, world, { allowBusy: true });
+  if (!Number.isSafeInteger(amount) || amount < 1) fail('BAD_AMOUNT');
+  p.bank += amount;
+  return { ok: true, amount };
 }
 
 // ---------- gangues ----------
@@ -670,7 +710,7 @@ export function doCrime(p, now, world, k, rng) {
     let roll = rng.int(0, 9999), row = c.prizes[c.prizes.length - 1];
     for (const pr of c.prizes) { if (roll < pr[0]) { row = pr; break; } roll -= pr[0]; }
     const base = rng.int(row[1], row[2]);
-    const bonus = 10000 + skillBp(p, c.fam) + (klass(p).lootBp || 0) + buffBp(p, 'loot', now) + gbp(p, 'loot') + (c.fam === 'burla' ? studyBp(p, 'burla') : 0);   // v81: artes
+    const bonus = 10000 + skillBp(p, c.fam) + (klass(p).lootBp || 0) + buffBp(p, 'loot', now) + gbp(p, 'loot') + empBp(p, 'loot') + (c.fam === 'burla' ? studyBp(p, 'burla') : 0);   // v81: artes
     const value = Math.floor((Math.floor((base * bonus) / 10000) * heatBp) / 10000);
     // o que é objeto vai para o inventário (com o valor que saiu); sem espaço, vende-se logo à pressa por metade
     let money = value, good = null, rushed = false;
@@ -1037,6 +1077,7 @@ export function chooseJob(p, now, world, i) {
   const x = jobOf(i);
   if (!x) fail('NO_JOB');
   begin(p, now, world, { allowBusy: true });
+  if (p.emp) fail('IN_COMPANY');   // v111: quem trabalha numa empresa sai dela primeiro
   if (!jobOpen(p, i)) fail('NEED_COURSE', { course: x.course });
   p.job = i;
   return { ok: true, job: x.id };
@@ -1222,7 +1263,15 @@ function workQuality(id, L, ans) {
 export function workStart(p, now, world, rng, id, shift) {
   const x = workOf(id);
   if (!x) fail('NO_WORK');
-  if (shift) {   // o turno do emprego: a tarefa é a do emprego, até 6 por dia, com 10 de energia
+  if (shift === 'emp') {   // v111: o turno na empresa: a tarefa é a do tipo, conta nos 6 do dia
+    const e = empType(p);
+    if (!e) fail('NO_COMPANY');
+    if (e.task !== id) fail('NO_WORK');
+    if (!empCan(p, p.emp.t)) fail('NEED_COURSE', { course: e.course });
+    begin(p, now, world);
+    if (shiftsToday(p, now) >= CFG.jobs.perDay) fail('SHIFTS_DONE');
+    if (p.vigor < CFG.jobs.shiftE) fail('NO_VIGOR', { need: CFG.jobs.shiftE });
+  } else if (shift) {   // o turno do emprego: a tarefa é a do emprego, até 6 por dia, com 10 de energia
     const j = jobOf(p.job);
     if (!j) fail('NO_JOB');
     if (j.task !== id) fail('NO_WORK');
@@ -1234,10 +1283,11 @@ export function workStart(p, now, world, rng, id, shift) {
     begin(p, now, world);
     if (level(p) < x.level) fail('LOW_LEVEL', { need: x.level });
   }
-  p.tk = { id, t0: now, s: rng.int(1, 2147483646), ...(shift ? { sh: 1 } : {}) };
-  return { ok: true, task: { id, t0: now, minMs: x.minMs, shift: !!shift, layout: workLayout(id, p.tk.s) } };
+  p.tk = { id, t0: now, s: rng.int(1, 2147483646), ...(shift ? { sh: 1 } : {}), ...(shift === 'emp' ? { emp: 1 } : {}) };
+  return { ok: true, task: { id, t0: now, minMs: x.minMs, shift: !!shift, emp: shift === 'emp', layout: workLayout(id, p.tk.s) } };
 }
-export function workDone(p, now, world, rng, ans) {
+// emp (v111): o que o servidor paga por um turno na empresa ({ pay }, já limitado ao caixa)
+export function workDone(p, now, world, rng, ans, emp) {
   if (!p.tk) fail('NO_TASK');
   const x = workOf(p.tk.id);
   if (!x) fail('NO_TASK');
@@ -1246,6 +1296,17 @@ export function workDone(p, now, world, rng, ans) {
   const L = workLayout(p.tk.id, p.tk.s), q = workQuality(p.tk.id, L, ans);
   if (q === null) fail('BAD_ANSWER');
   begin(p, now, world);
+  if (p.tk.emp) {   // v111: turno na empresa: confere outra vez; o ordenado vem do caixa (o servidor diz quanto)
+    const e = empType(p), J = CFG.jobs, n = shiftsToday(p, now) + 1;
+    if (!e || e.task !== p.tk.id || !emp) fail('NO_COMPANY');
+    if (n > J.perDay) fail('SHIFTS_DONE');
+    if (p.vigor < J.shiftE) fail('NO_VIGOR', { need: J.shiftE });
+    const money = Math.max(0, Math.floor(emp.pay) || 0);
+    p.tk = null; p.vigor -= J.shiftE; p.bank += money;
+    p.sh = { d: dayOf(now), n }; p.c.shifts += 1;
+    const lvl = addRespect(p, J.resp, now);
+    return { ok: true, id: x.id, q, shift: true, emp: true, n, left: J.perDay - n, money, respect: J.resp, levelUp: lvl, busted: false };
+  }
   if (p.tk.sh) {   // turno do emprego: confere outra vez (o dia pode ter mudado, a energia pode ter ido para o ginásio)
     const j = jobOf(p.job), J = CFG.jobs, n = shiftsToday(p, now) + 1;
     if (!j || j.task !== p.tk.id) fail('NO_JOB');
@@ -1271,7 +1332,7 @@ export function workDone(p, now, world, rng, ans) {
   p.wm[x.id] = r1;
   if (busted) { jailFor(p, now, x.jailMin * T.MIN, 1); return { ok: true, id: x.id, q, busted: true, spotted, money: 0, multBp, ritmo: r1, ritmoAntes: r0, jailUntil: p.jailUntil }; }
   const pago = Math.floor((x.base * (W.qMin + Math.floor(((W.qMax - W.qMin) * q) / 10000))) / 10000);
-  let money = Math.max(1, Math.floor((Math.floor((pago * (10000 + r1)) / 10000) * multBp) / 10000));
+  let money = Math.max(1, Math.floor((Math.floor((Math.floor((pago * (10000 + r1)) / 10000) * multBp) / 10000) * (10000 + empBp(p, 'work'))) / 10000));   // v111: logística
   let lav = 0;
   if (x.bustBp) { const Lv = launder(p, money); money = Lv.net; lav = Lv.lav; }
   p.cash += money;
@@ -3055,7 +3116,7 @@ export function fightAccBp(p) { const W = CFG.wfight, w = mainWeapon(p), acc = w
 export const fightRng = (p) => { const w = mainWeapon(p); return w ? wStat(w).rng : 1; };
 export function defBp(p) { return ['cabeca', 'tronco', 'pernas', 'pes', 'maos'].reduce((s, k) => s + (p.eq[k] ? gearOf(p.eq[k].id).def : 0), 0); }
 export function attackPower(p, now) { return up(Math.floor((effStat(p, 'F', now) * (10000 + atkBp(p))) / 10000), (klass(p).atkBp || 0) + gbp(p, 'atk') + studyBp(p, 'atk')); }   // v81: boxe, krav maga
-export function defensePower(p, now) { return up(Math.floor((effStat(p, 'T', now) * (10000 + defBp(p))) / 10000), (klass(p).defBp || 0) + huBp(p, 1) + gbp(p, 'def') + gearBp(CFG.guards, p.guard) + studyBp(p, 'def')); }   // v81: jiu-jitsu, krav maga
+export function defensePower(p, now) { return up(Math.floor((effStat(p, 'T', now) * (10000 + defBp(p))) / 10000), (klass(p).defBp || 0) + huBp(p, 1) + gbp(p, 'def') + empBp(p, 'def') + gearBp(CFG.guards, p.guard) + studyBp(p, 'def')); }   // v81: jiu-jitsu, krav maga
 
 // ---------- inventário (passo 4) ----------
 // espaços: os da casa, mais os da mochila. Ocupam espaço as pilhas do inventário (um tipo de objeto cada; as armas e peças
@@ -3287,7 +3348,7 @@ export function opDrop(p, now, world) {
 }
 function jailFor(p, now, ms, tier) {
   if (law('penas')) ms = Math.floor((ms * CFG.gov.laws.penas.jailBp) / 10000);   // v76: penas pesadas
-  const cut = p.avenca && level(p) >= CFG.retainer.level ? CFG.retainer.jailCutBp : 0;
+  const cut = Math.min(9000, (p.avenca && level(p) >= CFG.retainer.level ? CFG.retainer.jailCutBp : 0) + empBp(p, 'jail'));   // v111: advogados
   p.jailUntil = now + Math.max(T.MIN, Math.floor((ms * (10000 - cut)) / 10000)); p.jailTier = tier; p.jailT0 = now; p.jf = 0;
 }
 export function opGo(p, now, world, rng) {
@@ -3452,7 +3513,7 @@ function prune(arr, now) { const lim = now - CFG.pvp.windowMs; while (arr.length
 // asVictim: foi mandado para o hospital por outro (conta para o limite de 4 em 24 h)
 function hospitalize(p, now, ms, asVictim) {
   const P = CFG.pvp;
-  p.hospUntil = now + cut(ms, Math.min(9000, (klass(p).hospCutBp || 0) + studyBp(p, 'hosp')));   // v81: medicina
+  p.hospUntil = now + cut(ms, Math.min(9000, (klass(p).hospCutBp || 0) + studyBp(p, 'hosp') + empBp(p, 'hosp')));   // v81: medicina; v111: clínica
   p.protectUntil = p.hospUntil + P.protectMs;          // proteção normal: cai se ele atacar
   if (!asVictim) return;
   prune(p.hospTimes, now);
@@ -4374,6 +4435,8 @@ export function checkInvariants(p) {
   if (p.bk.on && (!bookOf(p.bk.on.id) || !Number.isSafeInteger(p.bk.on.until))) bad.push('book on');
   if (p.hon) for (const k of Object.keys(p.hon)) if (!honorOf(k) || !Number.isSafeInteger(p.hon[k])) bad.push('hon ' + k);   // v100
   if (p.honSel != null && !(p.hon && p.hon[p.honSel])) bad.push('honSel');
+  if (p.emp !== null && !empOk(p.emp)) bad.push('emp');   // v111
+  if (p.emp && p.job !== -1) bad.push('emp/job');
   if (p.honVit != null && (!Array.isArray(p.honVit) || p.honVit.length > CFG.social.vitMax || p.honVit.some((k) => !(p.hon && p.hon[k])))) bad.push('honVit');   // v109
   if (p.biz.length !== CFG.biz.length) bad.push('biz length');
   p.biz.forEach((s, i) => {

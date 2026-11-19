@@ -3960,3 +3960,43 @@ body .hlink span { font-size: clamp(15px, 4.6vw, 19px); white-space: normal; ove
 .bxh .gtag { font-size: 13px; }
 .bxlbl { margin: 0; font-weight: 650; }
 .bxh svg.i, .bxsh p svg.i { width: 16px; height: 16px; vertical-align: -2px; }
+
+/* ===== v111: empresas dos jogadores ===== */
+.cpst { display: inline-flex; gap: 1px; vertical-align: -1px; font-size: 14px; letter-spacing: 0; }
+.cpst i { font-style: normal; color: var(--s3); } .cpst i.on { color: var(--sodium); }
+.cphd { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 12px; align-items: center; }
+.cphd p { margin: 0; }
+.cpth { width: 56px; height: 56px; border-radius: 8px; object-fit: cover; }
+.cpme { margin-bottom: 12px; } .cpme > p { margin: 0; }
+.cprow > p { margin: 0; } .cprow .cpact { display: flex; justify-content: flex-end; }
+.cprow .cpact .jneed { margin: 0; }
+.cpbig { font-size: 22px; }
+.cpbtns { display: grid; grid-template-columns: repeat(auto-fit, minmax(96px, 1fr)); gap: 8px; }
+.cptill > p { margin: 0; }
+.cptill input { flex: 1; min-width: 0; min-height: 44px; border-radius: var(--r); border: 0; background: var(--s2); color: var(--tx); padding: 0 12px; font: inherit; font-size: 16px; }
+.cptypes { display: grid; gap: 6px; }
+.cpty { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 10px; align-items: center; min-height: 64px; padding: 6px 10px 6px 6px; text-align: left; color: var(--tx); font: inherit;
+  border: 0; border-radius: var(--r); background: var(--s2); box-shadow: inset 0 0 0 1px var(--line); cursor: pointer; }
+.cpty .cpth { width: 48px; height: 48px; }
+.cpty > span { display: grid; gap: 2px; }
+.cpty[aria-checked='true'] { box-shadow: inset 0 0 0 2px var(--tx); background: var(--s3); }
+.cpty:focus-visible { outline: 2px solid var(--sodium); outline-offset: 2px; }
+.cpfound > p { margin: 0; }
+.cpweek .vrow, .cpstaff .vrow { min-height: 48px; gap: 10px; }
+.cpnm { display: flex; flex-wrap: wrap; align-items: center; } .cpnm .plink { margin: -4px 0; }
+.cpbar { display: grid; gap: 4px; } .cpbar p { margin: 0; }
+.cpbar .fill { position: relative; overflow: visible; height: 8px; margin: 4px 0 2px; }
+.cpbar .fill > i { background: var(--sodium); border-radius: 99px; }
+.cpbar .fill > em { position: absolute; top: -4px; bottom: -4px; width: 2px; margin-left: -1px; background: var(--tx2); border-radius: 1px; }
+.cpbar .fill > em.m3 { left: var(--m3); } .cpbar .fill > em.m5 { left: var(--m5); background: var(--tx); }
+.cpasks > p { margin: 0; }
+.cpask { gap: 10px; padding-bottom: 10px; box-shadow: inset 0 -1px 0 var(--line); }
+.cpopen { gap: 10px; flex-wrap: wrap; } .cpopen .seg { flex: none; min-width: 150px; margin: 0; }
+.cptill input { width: 100%; }
+.cptill .row > input { flex: 1; min-width: 0; }
+.cpwn { min-width: 6.5em; text-align: right; } .cpwr { min-width: 6em; text-align: right; }
+.cpweek .vlist { padding-top: 0; }
+.cpty { background: transparent; box-shadow: none; border-radius: 8px; }
+.cpty + .cpty { box-shadow: inset 0 1px 0 var(--line); border-radius: 0; }
+.cpty[aria-checked='true'], .cpty[aria-checked='true'] + .cpty { border-radius: 8px; }
+.cpty[aria-checked='true'] { box-shadow: inset 0 0 0 2px var(--tx); background: var(--s2); }

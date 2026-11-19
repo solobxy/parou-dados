@@ -29,7 +29,7 @@ const RONDA_TESTE = process.env.PRIMEIRA_RONDA ? dataDe(process.env.PRIMEIRA_RON
 // Épocas de 28 dias a contar da sexta 13/11/2026 às 21:00 de Lisboa (PRIMEIRA_EPOCA=AAAA-MM-DD muda-a, para testes)
 const ANCORA = dataDe(process.env.PRIMEIRA_EPOCA || process.env.PRIMEIRA_RONDA || '2026-11-13');
 const rng = process.env.TESTE_SEMENTE ? seededRng(+process.env.TESTE_SEMENTE) : cryptoRng();   // nos testes, a sorte pode ser sempre a mesma
-const VERSAO = 110;   // sobe quando o servidor muda, para se confirmar de fora que a versão nova já está a correr
+const VERSAO = 111;   // sobe quando o servidor muda, para se confirmar de fora que a versão nova já está a correr
 const ATOS_3S = +(process.env.ATOS_3S || 15), ATOS_MIN = +(process.env.ATOS_MIN || 400); // ações por conta: 15 em 3 s, 400 por minuto
 
 // ---------- relógio que nunca anda para trás ----------
@@ -349,6 +349,7 @@ function carregarRonda(n) {
   carregarGangues();
   carregarGuerras();
   carregarTerritorio();   // v110
+  carregarEmpresas();   // v111
 }
 
 function nomeDe(id) {
@@ -525,7 +526,7 @@ function vista(p, now) {
     xp: p.xp, xpNeed: { F: E.practiceNeed(p, 'F'), I: E.practiceNeed(p, 'I'), C: E.practiceNeed(p, 'C') },
     gym: p.gym, gyms: p.gyms, gx: p.gx,   // v94: ginásios
     bk: p.bk, bkShelf: E.bookShelf(now),   // v95: livros (os do jogador e os 4 do dia no alfarrabista)
-    cash: p.cash, cent: p.cent || 0, bank: p.bank, bankFeeBp: E.bankFeeBp(p), feiraFeeBp: E.feiraFeeBp(p), bj: E.bjPublic(p), casinoMax: E.casinoMax(p), gang: p.gang && gangues.get(p.gang) ? { id: p.gang, name: gangues.get(p.gang).nome, tag: gangues.get(p.gang).tag, bot: p.gang === BOT.id } : null, gb: p.gb || null, gangWait: p.gangLeft ? p.gangLeft + CFG.gang.rejoinMs : 0, clsCost: E.classChangeCost(p), clsWait: p.clsAt ? p.clsAt + CFG.classChange.coolMs : 0, portSeizeBp: E.portSeizeBp(p), respect: p.respect, peakRespect: p.peakRespect,
+    cash: p.cash, cent: p.cent || 0, bank: p.bank, bankFeeBp: E.bankFeeBp(p), feiraFeeBp: E.feiraFeeBp(p), bj: E.bjPublic(p), casinoMax: E.casinoMax(p), gang: p.gang && gangues.get(p.gang) ? { id: p.gang, name: gangues.get(p.gang).nome, tag: gangues.get(p.gang).tag, bot: p.gang === BOT.id } : null, gb: p.gb || null, emp: p.emp ? { ...p.emp, name: empresas.get(p.emp.id)?.nome || '', own: empresas.get(p.emp.id)?.dono === p.id, sal: empresas.get(p.emp.id)?.sal || 0 } : null, gangWait: p.gangLeft ? p.gangLeft + CFG.gang.rejoinMs : 0, clsCost: E.classChangeCost(p), clsWait: p.clsAt ? p.clsAt + CFG.classChange.coolMs : 0, portSeizeBp: E.portSeizeBp(p), respect: p.respect, peakRespect: p.peakRespect,
     level: L, levelFrom: CFG.levels[L - 1], levelTo: CFG.levels[L] ?? null,
     titles: p.titles, ep: p.ep ? { n: p.ep.n, div: p.ep.div, score: E.seasonScore(p, p.ep.n) } : null,
     jailUntil: p.jailUntil, jailTier: p.jailTier, bail: E.bailCost(p, now),
@@ -562,7 +563,7 @@ function cfgPublica() {
     round: { playDays: CFG.round.playDays, noPvpMs: CFG.round.noPvpMs, newbieShieldMs: CFG.round.newbieShieldMs }, season: CFG.season, raid: CFG.raid,   // v91: a wiki
     consum: CFG.consum, col: CFG.col, gyms: CFG.gyms, books: CFG.books,   // v94, v95
     social: CFG.social,   // v109: o chat e a vitrine
-    turf: CFG.turf,   // v110: o território
+    turf: CFG.turf, comp: CFG.comp,   // v110: o território
     mat: CFG.mat, craft: CFG.craft, feira: { ...CFG.feira, refs: FEIRA_REFS }, dig: CFG.dig, hunt: CFG.hunt, honors: E.HONORS, travel: CFG.travel,   // v83, v84, v98, v100, v101
     exam: (({ ans: _a, ...x }) => x)(CFG.exam), studies: CFG.studies,   // v81: a Universidade   // v80: as regras do exame, sem as respostas certas
     gov: { vote: CFG.gov.vote, laws: CFG.gov.laws, cof: CFG.gov.cof, parties: Object.fromEntries(Object.entries(CFG.gov.parties).map(([k, x]) => [k, { pos: x.pos, wOp: x.wOp, wLob: x.wLob }])) },   // v76: o parlamento
@@ -1386,6 +1387,192 @@ function vistaTerritorio(conta, now) {
     chain: { n: ch.n, until: ch.n ? ch.t + TURF.chainGapMs : 0, best: ch.best, mult: multDe(ch.n) } } : null };
 }
 
+// ---------- v111: empresas dos jogadores ----------
+// empresas: o dono, o tipo, o tamanho (lugares), o caixa, o ordenado por turno e os turnos/receita dos últimos dias (dias = [{ d, n, r }]).
+// empresa_membros: quem lá trabalha (o dono também), desde quando e os turnos que já fez. empresa_pedidos: quem pediu para entrar.
+db.exec(`CREATE TABLE IF NOT EXISTS empresas (ronda INTEGER NOT NULL, id TEXT NOT NULL, nome TEXT NOT NULL, nome_min TEXT NOT NULL, tipo INTEGER NOT NULL, dono TEXT NOT NULL,
+  criada INTEGER NOT NULL, tam INTEGER NOT NULL DEFAULT 1, caixa INTEGER NOT NULL DEFAULT 0, sal INTEGER NOT NULL, aberta INTEGER NOT NULL DEFAULT 1, dias TEXT NOT NULL DEFAULT '[]', PRIMARY KEY (ronda, id));
+CREATE UNIQUE INDEX IF NOT EXISTS empresas_nome ON empresas (ronda, nome_min);
+CREATE TABLE IF NOT EXISTS empresa_membros (ronda INTEGER NOT NULL, conta TEXT NOT NULL, empresa TEXT NOT NULL, entrou INTEGER NOT NULL, turnos INTEGER NOT NULL DEFAULT 0, PRIMARY KEY (ronda, conta));
+CREATE TABLE IF NOT EXISTS empresa_pedidos (ronda INTEGER NOT NULL, conta TEXT NOT NULL, empresa TEXT NOT NULL, t INTEGER NOT NULL, PRIMARY KEY (ronda, conta, empresa));`);
+const qem = {
+  todas: db.prepare('SELECT * FROM empresas WHERE ronda = ?'),
+  membros: db.prepare('SELECT * FROM empresa_membros WHERE ronda = ?'),
+  pedidos: db.prepare('SELECT * FROM empresa_pedidos WHERE ronda = ?'),
+  nova: db.prepare('INSERT INTO empresas (ronda, id, nome, nome_min, tipo, dono, criada, tam, caixa, sal, aberta, dias) VALUES (?, ?, ?, ?, ?, ?, ?, 1, 0, ?, 1, \'[]\')'),
+  grava: db.prepare('UPDATE empresas SET tam = ?, caixa = ?, sal = ?, aberta = ?, dias = ? WHERE ronda = ? AND id = ?'),
+  apaga: db.prepare('DELETE FROM empresas WHERE ronda = ? AND id = ?'),
+  entra: db.prepare('INSERT OR REPLACE INTO empresa_membros (ronda, conta, empresa, entrou, turnos) VALUES (?, ?, ?, ?, ?)'),
+  sai: db.prepare('DELETE FROM empresa_membros WHERE ronda = ? AND conta = ?'),
+  saemTodos: db.prepare('DELETE FROM empresa_membros WHERE ronda = ? AND empresa = ?'),
+  pede: db.prepare('INSERT OR REPLACE INTO empresa_pedidos (ronda, conta, empresa, t) VALUES (?, ?, ?, ?)'),
+  despede: db.prepare('DELETE FROM empresa_pedidos WHERE ronda = ? AND conta = ?'),
+  recusa: db.prepare('DELETE FROM empresa_pedidos WHERE ronda = ? AND conta = ? AND empresa = ?'),
+  pedidosDe: db.prepare('DELETE FROM empresa_pedidos WHERE ronda = ? AND empresa = ?'),
+};
+const COMP = CFG.comp, empresas = new Map();   // id -> { id, nome, tipo, dono, criada, tam, caixa, sal, aberta, dias, estrelas, membros: Map(conta -> { entrou, turnos }), pedidos: Map(conta -> t) }
+const diaN = (now) => Math.floor(Date.parse(E.dayOf(now) + 'T12:00:00Z') / T.DAY);   // o dia de Lisboa como número (para os últimos 7)
+const turnos7 = (c, now) => { const d0 = diaN(now) - COMP.days + 1; return c.dias.filter((x) => x.d >= d0).reduce((s, x) => s + x.n, 0); };
+const gravaE = (c) => qem.grava.run(c.tam, c.caixa, c.sal, c.aberta ? 1 : 0, JSON.stringify(c.dias), ronda, c.id);
+const empresaDe = (conta) => { const p = jogadores.get(conta); return p && p.emp ? empresas.get(p.emp.id) || null : null; };
+// as estrelas mudam com os turnos (e com o tempo, quando os dias antigos saem da conta): o bónus de cada um acerta-se logo
+function acertaEstrelas(c, now, outros) {
+  const s = E.empStars(turnos7(c, now));
+  if (s === c.estrelas) return false;
+  c.estrelas = s;
+  for (const k of c.membros.keys()) { const o = jogadores.get(k); if (o) { E.empSet(o, c.id, c.tipo, s); if (outros) { if (!outros.includes(o)) outros.push(o); } else guardar(o, now); } }
+  return true;
+}
+function carregarEmpresas() {
+  empresas.clear();
+  for (const r of qem.todas.all(ronda)) empresas.set(r.id, { id: r.id, nome: r.nome, tipo: r.tipo, dono: r.dono, criada: r.criada, tam: r.tam, caixa: r.caixa, sal: r.sal, aberta: !!r.aberta, dias: JSON.parse(r.dias), estrelas: 0, membros: new Map(), pedidos: new Map() });
+  for (const m of qem.membros.all(ronda)) empresas.get(m.empresa)?.membros.set(m.conta, { entrou: m.entrou, turnos: m.turnos });
+  for (const r of qem.pedidos.all(ronda)) empresas.get(r.empresa)?.pedidos.set(r.conta, r.t);
+  const de = new Map(), now = clock();
+  for (const c of empresas.values()) { c.estrelas = E.empStars(turnos7(c, now)); for (const k of c.membros.keys()) de.set(k, c); }
+  for (const p of jogadores.values()) { const c = de.get(p.id); if (c) E.empSet(p, c.id, c.tipo, c.estrelas); else if (p.emp) E.empClear(p); }
+}
+// de hora a hora: as estrelas que caem porque os turnos antigos saíram dos 7 dias
+setInterval(() => { try { if (ronda >= 0) { const now = clock(); for (const c of empresas.values()) acertaEstrelas(c, now, null); } } catch (e) { console.error('estrelas das empresas', e.message); } }, 60 * 60_000).unref?.();
+const NOME_E = /^[\p{L}\p{N}][\p{L}\p{N} .,&'-]{1,22}[\p{L}\p{N}.]$/u;
+// um turno na empresa acabou (depois do motor pagar o ordenado): a receita entra no caixa, conta para as estrelas
+function turnoEmpresa(c, conta, r, pay, now, ctx) {
+  const rev = E.empRev(c.tipo, r.q, c.estrelas), d = diaN(now);
+  c.caixa += rev - pay;
+  const hoje = c.dias.find((x) => x.d === d);
+  if (hoje) { hoje.n += 1; hoje.r += rev; hoje.p = (hoje.p || 0) + pay; } else c.dias.push({ d, n: 1, r: rev, p: pay });   // p: ordenados pagos
+  c.dias = c.dias.filter((x) => x.d > d - COMP.days - 1).sort((x, y) => x.d - y.d);
+  const m = c.membros.get(conta); if (m) m.turnos += 1;
+  acertaEstrelas(c, now, ctx.outros);
+  ctx.ops.push(() => { gravaE(c); if (m) qem.entra.run(ronda, conta, c.id, m.entrou, m.turnos); caixa(now, 'empresas', rev, 0); });
+  return rev;
+}
+function sairEmpresa(c, conta, now, why, ctx) {
+  c.membros.delete(conta);
+  const o = jogadores.get(conta); if (o) { E.empClear(o); if (ctx && !ctx.outros.includes(o)) ctx.outros.push(o); }
+  const run = () => { qem.sai.run(ronda, conta); if (why) evento(conta, now, { k: 'compOut', name: c.nome, why }); };
+  if (ctx) ctx.ops.push(run); else run();
+}
+function agirEmpresa(a, p, conta, now, world, ctx) {
+  const err = (code, data) => { throw new E.GameError(code, data); };
+  const minha = () => empresaDe(conta) || err('NO_COMPANY');
+  const dono = () => { const c = minha(); if (c.dono !== conta) err('NOT_OWNER'); return c; };
+  switch (a.type) {
+    case 'compFound': {
+      const t = int(a.t), nome = String(a.name || '').trim().replace(/\s+/g, ' ').slice(0, COMP.nameMax + 1);
+      if (!NOME_E.test(nome)) err('BAD_COMP_NAME');
+      for (const c of empresas.values()) if (c.nome.toLowerCase() === nome.toLowerCase()) err('COMP_NAME_TAKEN');
+      const r = E.empFound(p, now, world, t), id = randomBytes(6).toString('base64url');
+      const c = { id, nome, tipo: t, dono: conta, criada: now, tam: 1, caixa: 0, sal: COMP.salDef, aberta: true, dias: [], estrelas: 0, membros: new Map([[conta, { entrou: now, turnos: 0 }]]), pedidos: new Map() };
+      empresas.set(id, c); for (const x of empresas.values()) x.pedidos.delete(conta);
+      E.empSet(p, id, t, 0);
+      ctx.ops.push(() => { qem.nova.run(ronda, id, nome, nome.toLowerCase(), t, conta, now, COMP.salDef); qem.entra.run(ronda, conta, id, now, 0); qem.despede.run(ronda, conta); caixa(now, 'empresas', 0, r.cost); });
+      ctx.depois.push(() => noticia(now, { k: 'compNew', a: nomeDe(conta), c: nome, x: t }));
+      return { ...r, id, name: nome };
+    }
+    case 'compApply': {
+      const c = empresas.get(String(a.id || '')) || err('NO_COMPANY');
+      if (p.emp) err('IN_COMPANY');
+      if (!c.aberta) err('COMP_CLOSED');
+      if (c.membros.size >= COMP.slots[c.tam]) err('COMP_FULL');
+      if (!E.empCan(p, c.tipo)) err('NEED_COURSE', { course: COMP.types[c.tipo].course });
+      if (c.pedidos.has(conta)) return { ok: true, asked: true };
+      let n = 0; for (const x of empresas.values()) if (x.pedidos.has(conta)) n++;
+      if (n >= COMP.maxAsks) err('COMP_ASKS');
+      if (!limite('cpede:' + conta, 10, 60_000, now)) err('SLOW_DOWN');
+      c.pedidos.set(conta, now);
+      ctx.ops.push(() => qem.pede.run(ronda, conta, c.id, now));
+      ctx.depois.push(() => evento(c.dono, now, { k: 'compAsk', who: nomeDe(conta), name: c.nome }));
+      return { ok: true, asked: true };
+    }
+    case 'compUnapply': {
+      const c = empresas.get(String(a.id || '')) || err('NO_COMPANY');
+      c.pedidos.delete(conta); ctx.ops.push(() => qem.recusa.run(ronda, conta, c.id));
+      return { ok: true };
+    }
+    case 'compAccept': case 'compReject': {
+      const c = dono(), alvo = q.contaPorNome.get(String(a.name || '').toLowerCase()), o = alvo && jogadores.get(alvo.id);
+      if (!alvo || !c.pedidos.has(alvo.id)) err('NO_ASK');
+      if (a.type === 'compReject') { c.pedidos.delete(alvo.id); ctx.ops.push(() => qem.recusa.run(ronda, alvo.id, c.id)); return { ok: true }; }
+      if (!o || o.emp) err('IN_COMPANY');
+      if (c.membros.size >= COMP.slots[c.tam]) err('COMP_FULL');
+      if (!E.empCan(o, c.tipo)) err('NEED_COURSE', { course: COMP.types[c.tipo].course });
+      for (const x of empresas.values()) x.pedidos.delete(alvo.id);
+      c.membros.set(alvo.id, { entrou: now, turnos: 0 });
+      E.empSet(o, c.id, c.tipo, c.estrelas); ctx.outros.push(o);
+      ctx.ops.push(() => { qem.entra.run(ronda, alvo.id, c.id, now, 0); qem.despede.run(ronda, alvo.id); });
+      ctx.depois.push(() => evento(alvo.id, now, { k: 'compIn', name: c.nome }));
+      return { ok: true, hired: nomeDe(alvo.id) };
+    }
+    case 'compFire': {
+      const c = dono(), alvo = q.contaPorNome.get(String(a.name || '').toLowerCase());
+      if (!alvo || !c.membros.has(alvo.id)) err('NO_TARGET');
+      if (alvo.id === conta) err('IS_OWNER');
+      sairEmpresa(c, alvo.id, now, 'fired', ctx);
+      return { ok: true };
+    }
+    case 'compLeave': {
+      const c = minha(); if (c.dono === conta) err('IS_OWNER');
+      sairEmpresa(c, conta, now, null, ctx);
+      ctx.depois.push(() => evento(c.dono, now, { k: 'compLeft', who: nomeDe(conta), name: c.nome }));
+      return { ok: true };
+    }
+    case 'compSalary': {
+      const c = dono(), v = int(a.v);
+      if (!Number.isSafeInteger(v) || v < 0 || v > COMP.salMax) err('BAD_AMOUNT');
+      c.sal = v; ctx.ops.push(() => gravaE(c));
+      return { ok: true, sal: v };
+    }
+    case 'compOpen': { const c = dono(); c.aberta = a.open === true; ctx.ops.push(() => gravaE(c)); return { ok: true, open: c.aberta }; }
+    case 'compSize': {
+      const c = dono(), n = c.tam + 1;
+      if (n >= COMP.slots.length) err('COMP_MAX');
+      const cost = COMP.size[n];
+      if (c.caixa < cost) err('NO_COMP_MONEY', { need: cost, have: c.caixa });
+      c.caixa -= cost; c.tam = n;
+      ctx.ops.push(() => { gravaE(c); caixa(now, 'empresas', 0, cost); });
+      return { ok: true, size: n, slots: COMP.slots[n], cost, till: c.caixa };
+    }
+    case 'compPut': {
+      const c = dono(), r = E.empPut(p, now, world, int(a.amount));
+      c.caixa += r.amount; ctx.ops.push(() => gravaE(c));
+      return { ...r, till: c.caixa };
+    }
+    case 'compTake': {
+      const c = dono(), v = int(a.amount);
+      if (!Number.isSafeInteger(v) || v < 1 || v > c.caixa) err('BAD_AMOUNT');
+      const r = E.empTake(p, now, world, v);
+      c.caixa -= v; ctx.ops.push(() => gravaE(c));
+      return { ...r, till: c.caixa };
+    }
+    case 'compClose': {   // fechar: o caixa vai para o banco do dono e toda a gente sai
+      const c = dono(), back = c.caixa;
+      if (back > 0) E.empTake(p, now, world, back);
+      for (const k of [...c.membros.keys()]) sairEmpresa(c, k, now, k === conta ? null : 'closed', ctx);
+      empresas.delete(c.id);
+      ctx.ops.push(() => { qem.apaga.run(ronda, c.id); qem.saemTodos.run(ronda, c.id); qem.pedidosDe.run(ronda, c.id); });
+      return { ok: true, back };
+    }
+  }
+  err('BAD_ACTION');
+}
+// o ecrã das empresas: a minha (com tudo, se for o dono), a lista para pedir emprego e o que custa fundar
+function vistaEmpresa(conta, now) {
+  const p = jogadores.get(conta), mine = empresaDe(conta), d = diaN(now);
+  const resumo = (c) => ({ id: c.id, name: c.nome, t: c.tipo, stars: c.estrelas, owner: nomeDe(c.dono), members: c.membros.size, slots: COMP.slots[c.tam], sal: c.sal, open: c.aberta,
+    asked: c.pedidos.has(conta), can: p ? E.empCan(p, c.tipo) : false });
+  const out = { list: [...empresas.values()].filter((c) => c !== mine).map(resumo).sort((x, y) => y.stars - x.stars || y.sal - x.sal || x.name.localeCompare(y.name)), mine: null };
+  if (mine) {
+    const own = mine.dono === conta, t7 = turnos7(mine, now), nxt = COMP.stars[mine.estrelas];
+    out.mine = { ...resumo(mine), own, size: mine.tam, shifts7: t7, next: nxt ? nxt - t7 : 0, revShift: E.empRev(mine.tipo, 7500, mine.estrelas),
+      till: own ? mine.caixa : null, days: own ? mine.dias.filter((x) => x.d > d - COMP.days) : null, upCost: COMP.size[mine.tam + 1] || 0,
+      staff: [...mine.membros.entries()].map(([k, m]) => { const o = jogadores.get(k); return { name: nomeDe(k), me: k === conta, owner: k === mine.dono, level: o ? E.level(o) : 0, since: m.entrou, total: m.turnos,
+        today: o && o.sh && o.sh.d === E.dayOf(now) && o.emp && o.emp.id === mine.id ? o.sh.n : 0 }; }).sort((x, y) => (y.owner - x.owner) || y.total - x.total),
+      asks: own ? [...mine.pedidos.entries()].map(([k, t]) => { const o = jogadores.get(k); return { name: nomeDe(k), t, level: o ? E.level(o) : 0, can: o ? E.empCan(o, mine.tipo) && !o.emp : false }; }) : null };
+  }
+  return out;
+}
+
 // o que o ecrã da gangue mostra da guerra
 function vistaGuerra(g, conta, now) {
   const w = guerraDe(g.id), L = w ? ladoDe(w, g.id) : null, eu = jogadores.get(conta), m1 = { start: mundo(now).start, playEnd: mundo(now).playEnd };
@@ -2042,9 +2229,17 @@ function agir(conta, corpo, now) {
     case 'course': r = E.startCourse(p, now, world, String(a.id || '').slice(0, 24)); break;
     case 'examStart': r = E.examStart(p, now, world, rng); break;   // v80: o exame do curso
     case 'examAnswer': r = E.examAnswer(p, now, world, Array.isArray(a.ans) ? a.ans.slice(0, 8) : null); break;
-    case 'workStart': r = E.workStart(p, now, world, rng, String(a.id || '').slice(0, 24), a.shift === true); break;
-    case 'workDone': { const x = a.ans && typeof a.ans === 'object' ? a.ans : null; r = E.workDone(p, now, world, rng, x && { slots: x.slots, drops: x.drops, order: x.order, taps: x.taps, holds: x.holds, picks: x.picks, place: x.place, spotted: x.spotted });
-      if (r.shift) { r.tip = dica(p, now, w); p.jt = [r.tip, ...(Array.isArray(p.jt) ? p.jt : [])].slice(0, 5); }
+    case 'workStart':   // v111: shift 'emp' = um turno na empresa onde trabalha
+      if (a.shift === 'emp' && !empresaDe(conta)) throw new E.GameError('NO_COMPANY');
+      r = E.workStart(p, now, world, rng, String(a.id || '').slice(0, 24), a.shift === 'emp' ? 'emp' : a.shift === true); break;
+    case 'workDone': { const x = a.ans && typeof a.ans === 'object' ? a.ans : null;
+      // v111: turno na empresa: o ordenado sai do caixa (até onde chegar; o dono não se paga a si mesmo)
+      const ce = p.tk && p.tk.emp ? empresaDe(conta) : null;
+      if (p.tk && p.tk.emp && !ce) throw new E.GameError('NO_COMPANY');
+      const pay = ce ? (ce.dono === conta ? 0 : Math.max(0, Math.min(ce.sal, ce.caixa))) : 0;
+      r = E.workDone(p, now, world, rng, x && { slots: x.slots, drops: x.drops, order: x.order, taps: x.taps, holds: x.holds, picks: x.picks, place: x.place, spotted: x.spotted }, ce ? { pay } : undefined);
+      if (r.emp) { const rev = turnoEmpresa(ce, conta, r, pay, now, ctx); r = { ...r, rev, comp: ce.nome, short: ce.dono !== conta && pay < ce.sal }; }
+      else if (r.shift) { r.tip = dica(p, now, w); p.jt = [r.tip, ...(Array.isArray(p.jt) ? p.jt : [])].slice(0, 5); }
       break; }
     case 'shift': r = E.doShift(p, now, world); r.tip = dica(p, now, w); p.jt = [r.tip, ...(Array.isArray(p.jt) ? p.jt : [])].slice(0, 5); break;
     case 'dealBuy': r = E.dealBuy(p, now, world, int(a.j), int(a.kg)); break;
@@ -2162,6 +2357,7 @@ function agir(conta, corpo, now) {
     }
     default:
       if (typeof a.type === 'string' && a.type.startsWith('gang')) { r = agirGangue(a, p, conta, now, world, ctx); break; }
+      if (typeof a.type === 'string' && a.type.startsWith('comp')) { r = agirEmpresa(a, p, conta, now, world, ctx); break; }   // v111
       if (typeof a.type === 'string' && a.type.startsWith('feira')) { r = agirFeira(a, p, conta, now, world, ctx); break; }   // v84
       throw new E.GameError('BAD_ACTION');
   }
@@ -2533,6 +2729,11 @@ async function tratar(req, res) {
     if (!limite('perfil:' + conta, 40, 10_000, now)) return enviar(res, 429, { error: 'SLOW_DOWN' });
     const pf = perfilPublico(conta, url.searchParams.get('n'), now, w);
     return pf ? enviar(res, 200, { now, ...pf }) : enviar(res, 404, { error: 'NO_TARGET' });
+  }
+  if (req.method === 'GET' && path === '/api/comp') {   // v111: as empresas
+    if (w.phase !== 'play') return enviar(res, 200, { now, list: [], mine: null });
+    carregarRonda(w.n);
+    return enviar(res, 200, { now, ...vistaEmpresa(conta, now) });
   }
   if (req.method === 'GET' && path === '/api/turf') {   // v110: o território
     if (w.phase !== 'play') return enviar(res, 200, { now, zones: [], hist: [], mine: null });

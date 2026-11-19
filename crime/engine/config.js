@@ -879,6 +879,7 @@ export const CFG = {
   // (os donos são avisados), só contam as lutas entre as duas gangues e, no fim, o assaltante fica com ele se chegou a need e fez mais
   // pontos do que quem defende. Um bairro que muda de mãos fica protegido protMs; uma gangue espera coolMs entre assaltos.
   // Cadeia: vitórias seguidas dos membros, cada uma até chainGapMs depois da anterior; mult[i] = [vitórias, multiplicador em bp].
+  // v110: território dos gangues. perH/fee/need por escalão do bairro (1 a 3); mult: [vitórias seguidas, multiplicador em bp]
   turf: {
     zones: [
       { id: 'belem', t: 1 }, { id: 'alcantara', t: 1 }, { id: 'campoourique', t: 1 }, { id: 'bairroalto', t: 2 }, { id: 'caisdosodre', t: 2 }, { id: 'baixa', t: 3 },
@@ -887,6 +888,22 @@ export const CFG = {
     perH: [0, 400, 1000, 2500], fee: [0, 5000, 15000, 40000], need: [0, 60, 150, 300],
     max: 4, minMembers: 3, role: 2, prepMs: 30 * MIN, durMs: 2 * HOUR, protMs: 12 * HOUR, coolMs: 6 * HOUR, winPts: 10, hist: 8,
     chainGapMs: 5 * MIN, mult: [[50, 20000], [25, 15000], [10, 12500]],
+  },
+  // v111: empresas dos jogadores (à maneira das companies do Torn). Um jogador funda (nível e preço do tipo), contrata outros e paga
+  // um ordenado por turno, do caixa da empresa. Cada turno é a tarefa do tipo (a mesma dos empregos), gasta a energia de um turno e
+  // conta nos 6 do dia; rende rev x qualidade (80% a 120%) x estrelas para o caixa. As estrelas vêm dos turnos dos últimos 7 dias
+  // (stars: mínimo para 1 a 5) e dão a todos os da empresa o bónus do tipo: perk[0] às 3 estrelas, perk[1] às 5.
+  // course: o curso que a tarefa pede (o mesmo do emprego da cidade); slots: lugares por tamanho; size: o preço de cada tamanho.
+  comp: {
+    minLevel: 15, nameMax: 24, maxAsks: 3, rejoinMs: 6 * HOUR, salMax: 5000, salDef: 400, starBp: 1000, stars: [12, 40, 90, 160, 250], days: 7,
+    slots: [0, 4, 6, 8, 10, 12], size: [0, 0, 150_000, 400_000, 900_000, 2_000_000],
+    types: [
+      { id: 'estafetas', task: 'entregas', course: null, cost: 250_000, rev: 900, perk: 'loot', bp: [400, 800] },
+      { id: 'logistica', task: 'camiao', course: null, cost: 250_000, rev: 900, perk: 'work', bp: [1000, 2000] },
+      { id: 'seguranca', task: 'entradas', course: 'vigilante', cost: 500_000, rev: 1100, perk: 'def', bp: [500, 1000] },
+      { id: 'clinica', task: 'doses', course: 'licenciatura', cost: 900_000, rev: 1300, perk: 'hosp', bp: [1500, 3000] },
+      { id: 'advocacia', task: 'contrato', course: 'especializacao', cost: 1_500_000, rev: 1600, perk: 'jail', bp: [1000, 2000] },
+    ],
   },
   // v109: o chat público da cidade e o perfil público
   // max: letras por mensagem; minLevel: nível para falar (trava contas feitas só para encher o chat); rate: n mensagens por janela;

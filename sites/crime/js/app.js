@@ -453,7 +453,7 @@ function tickHud() {
 const PLACES = {
   city: { ic: 'skyline' }, empire: { ic: 'empire' }, rob: { ic: 'street', img: 'golpes' }, club: { ic: 'bolt', img: 'discoteca' }, gym: { ic: 'gym', img: 'ginasio' }, gyms: { ic: 'gym' }, livros: { img: 'livros' }, hunt: { img: 'caca' }, honras: {}, viagens: { img: 'viagens' },
   biz: { ic: 'empire', img: 'negocios' }, stash: { img: 'stash' }, acct: { img: 'contabilista' }, port: { img: 'porto' }, air: { img: 'aeroporto' }, arms: { img: 'armas' }, bank: { img: 'banco' }, hosp: { img: 'hospital' },
-  jail: { img: 'prisao' }, gang: { img: 'gangue' }, bairros: { ic: 'flag', img: 'bairros' }, work: { img: 'profissao' }, news: { img: 'jornal' }, casino: { ic: 'gem', img: 'casino' }, roulette: { img: 'roleta' }, bj: { img: 'blackjack' }, dice: { img: 'dados' }, wheel: { img: 'roda' }, slot: { img: 'slot' }, zeus: { img: 'zeus' }, doce: { img: 'doce' }, rebucado: { img: 'rebucado' }, alley: { img: 'beco' }, lux: { img: 'luxos' }, fights: { ic: 'fights', img: 'lutas' }, rank: { img: 'procurados' }, hitman: { img: 'assassino' }, putas: { img: 'putas' }, gigs: { img: 'biscates' }, casa: {}, myclub: { img: 'discoteca' }, mybro: { img: 'bordel' }, bolsa: { img: 'bolsa' }, job: { img: 'emprego' }, inv: { ic: 'box', img: 'inventario' }, ops: { img: 'operacoes' }, parl: { img: 'parlamento' }, cafe: { img: 'cafe' }, museum: { img: 'museu' }, uni: { img: 'universidade' }, cave: { img: 'cave' }, feira: { img: 'feira' }, dig: { img: 'escavacoes' }, arquivo: { img: 'arquivo' },
+  jail: { img: 'prisao' }, gang: { img: 'gangue' }, bairros: { ic: 'flag', img: 'bairros' }, empresas: { ic: 'empire', img: 'empresas' }, work: { img: 'profissao' }, news: { img: 'jornal' }, casino: { ic: 'gem', img: 'casino' }, roulette: { img: 'roleta' }, bj: { img: 'blackjack' }, dice: { img: 'dados' }, wheel: { img: 'roda' }, slot: { img: 'slot' }, zeus: { img: 'zeus' }, doce: { img: 'doce' }, rebucado: { img: 'rebucado' }, alley: { img: 'beco' }, lux: { img: 'luxos' }, fights: { ic: 'fights', img: 'lutas' }, rank: { img: 'procurados' }, hitman: { img: 'assassino' }, putas: { img: 'putas' }, gigs: { img: 'biscates' }, casa: {}, myclub: { img: 'discoteca' }, mybro: { img: 'bordel' }, bolsa: { img: 'bolsa' }, job: { img: 'emprego' }, inv: { ic: 'box', img: 'inventario' }, ops: { img: 'operacoes' }, parl: { img: 'parlamento' }, cafe: { img: 'cafe' }, museum: { img: 'museu' }, uni: { img: 'universidade' }, cave: { img: 'cave' }, feira: { img: 'feira' }, dig: { img: 'escavacoes' }, arquivo: { img: 'arquivo' },
 };
 // barra de baixo: só o que se usa a toda a hora. O resto vive dentro de cada separador, arrumado por zonas.
 // v90: o ginásio entra no lugar do casino (golpes gastam stamina; ginásio e lutas gastam energia: é o que se faz a toda a hora).
@@ -462,9 +462,9 @@ const NAV = ['city', 'rob', 'gym', 'empire', 'inv'];   // v92: o império sobe p
 const HUB = {
   // v95 (pedido do Dinis): o porto e o aeroporto passam para a cidade; a gangue e as lutas, para o império
   city: [['sec_night', ['club', 'putas', 'casino', 'alley', 'arms']], ['sec_street', ['gigs', 'cafe', 'job', 'uni', 'livros', 'dig', 'hunt', 'feira', 'bank', 'museum', 'parl', 'hosp', 'jail', 'rank']], ['sec_trade', ['viagens', 'port', 'air']]],
-  empire: [['sec_power', ['fights', 'gang', 'bairros']], ['sec_income', ['biz', 'myclub', 'mybro']], ['sec_assets', ['casa', 'cave', 'bank', 'bolsa', 'stash', 'acct']]],
+  empire: [['sec_power', ['fights', 'gang', 'bairros']], ['sec_income', ['biz', 'empresas', 'myclub', 'mybro']], ['sec_assets', ['casa', 'cave', 'bank', 'bolsa', 'stash', 'acct']]],
 };
-const PARENT = { bairros: 'gang', gyms: 'gym', livros: 'city', hunt: 'city', honras: 'city', viagens: 'city', fights: 'empire', arquivo: 'city', dig: 'city', feira: 'city', cave: 'empire', uni: 'city', museum: 'city', cafe: 'city', parl: 'city', gigs: 'city', gang: 'empire', work: 'job', job: 'city', news: 'city', casino: 'city', roulette: 'casino', bj: 'casino', dice: 'casino', wheel: 'casino', slot: 'casino', zeus: 'casino', doce: 'casino', rebucado: 'casino', club: 'city', putas: 'city', gym: 'city', alley: 'city', hosp: 'city', jail: 'city',
+const PARENT = { bairros: 'gang', empresas: 'empire', gyms: 'gym', livros: 'city', hunt: 'city', honras: 'city', viagens: 'city', fights: 'empire', arquivo: 'city', dig: 'city', feira: 'city', cave: 'empire', uni: 'city', museum: 'city', cafe: 'city', parl: 'city', gigs: 'city', gang: 'empire', work: 'job', job: 'city', news: 'city', casino: 'city', roulette: 'casino', bj: 'casino', dice: 'casino', wheel: 'casino', slot: 'casino', zeus: 'casino', doce: 'casino', rebucado: 'casino', club: 'city', putas: 'city', gym: 'city', alley: 'city', hosp: 'city', jail: 'city',
   biz: 'empire', port: 'city', air: 'city', myclub: 'empire', mybro: 'empire', bolsa: 'empire', stash: 'empire', acct: 'empire', casa: 'empire', bank: 'empire', lux: 'empire', arms: 'fights', rank: 'fights', hitman: 'fights', ops: 'rob' };
 const upOf = (id) => (S.backTo && S.backTo[id]) || PARENT[id] || 'city';   // um sítio que está em duas zonas volta para a zona de onde vieste
 const tabOf = (id) => { let x = id; for (let k = 0; k < 4 && !NAV.includes(x); k++) x = upOf(x); return NAV.includes(x) ? x : 'city'; };
@@ -479,6 +479,7 @@ function loadFor(tab) {
   if (tab === 'gang') { loadGang(); loadTurf(); }
   if (tab === 'empire' && (!S.turfAt || now() - S.turfAt > 60000)) loadTurf();   // v110: o aviso do assalto no mosaico dos bairros
   if (tab === 'bairros') { if (!S.gang) loadGang(); loadTurf(); }   // v110
+  if (tab === 'empresas') loadComp();   // v111
   if (tab === 'feira') { S.feiraItem = null; loadFeira(); }   // v84
   if (tab === 'club' || tab === 'putas') loadVenues();
   if (tab === 'bolsa') { S.stkSel = null; loadStocks(); }
@@ -549,7 +550,7 @@ function shell() {
 }
 
 const SCREENS = { job: screenJob, city: screenCity, empire: screenEmpire, news: screenNews, casino: screenCasino, roulette: screenRoulette, bj: screenBJ, dice: screenDice, wheel: screenWheel, slot: () => screenSlotGame('slot'), zeus: () => screenSlotGame('zeus'), doce: () => screenSlotGame('doce'), rebucado: () => screenSlotGame('rebucado'), rob: screenRob, club: screenClub, gym: screenGym, gyms: screenGyms, livros: screenLivros, biz: screenBiz, port: screenPort, arms: screenArms, bank: screenBank,
-  hosp: screenHosp, jail: screenJail, gang: screenGang, bairros: screenBairros, work: screenWork, air: screenAir, putas: screenPutas, myclub: screenMyClub, mybro: screenMyBro, bolsa: screenBolsa, inv: screenInv, stash: screenStash, acct: screenAcct, casa: screenCasa, alley: screenAlley, lux: screenLux, fights: screenFights, rank: screenRank, hitman: screenHitman, ops: screenOps, gigs: screenGigs, parl: screenParl, cafe: screenCafe, museum: screenMuseum, uni: screenUni, cave: screenCave, feira: screenFeira, dig: screenDig, hunt: screenHunt, honras: screenHonras, arquivo: screenArquivo, viagens: screenViagens };
+  hosp: screenHosp, jail: screenJail, gang: screenGang, bairros: screenBairros, empresas: screenEmpresas, work: screenWork, air: screenAir, putas: screenPutas, myclub: screenMyClub, mybro: screenMyBro, bolsa: screenBolsa, inv: screenInv, stash: screenStash, acct: screenAcct, casa: screenCasa, alley: screenAlley, lux: screenLux, fights: screenFights, rank: screenRank, hitman: screenHitman, ops: screenOps, gigs: screenGigs, parl: screenParl, cafe: screenCafe, museum: screenMuseum, uni: screenUni, cave: screenCave, feira: screenFeira, dig: screenDig, hunt: screenHunt, honras: screenHonras, arquivo: screenArquivo, viagens: screenViagens };
 function render(force) {
   if (!S.st) return;
   if (!S.st.me || S.st.round.phase !== 'play') return renderPause();
@@ -719,7 +720,7 @@ function screenClass() {
 
 // ---------- a cidade ----------
 // ---------- jornal da cidade: o que os outros andam a fazer ----------
-const NW_IC = { season: 'crown', hitman: 'skull', hitmanFail: 'shield', stockWin: 'cash', stockLoss: 'skull', stockBust: 'skull', air: 'cash', airLost: 'lock', cls: 'user', gangNew: 'fist', gangUp: 'empire', gangHeist: 'cash', gangHeistFail: 'lock', gangHit: 'fist', gangHitFail: 'skull', warDecl: 'fist', warStart: 'fist', warEnd: 'crown', turfStart: 'flag', turfTake: 'flag', turfHold: 'shield', casino: 'gem', casinoLoss: 'skull', job: 'cash', crit: 'gem', spree: 'bolt', jail: 'lock', house: 'empire', lux: 'crown', beat: 'fist', mug: 'cash', fail: 'skull', sick: 'pill', lvl: 'crown', fight: 'fist', op: 'cash', opJail: 'lock', escape: 'bolt', mus: 'crown' };
+const NW_IC = { season: 'crown', hitman: 'skull', hitmanFail: 'shield', stockWin: 'cash', stockLoss: 'skull', stockBust: 'skull', air: 'cash', airLost: 'lock', cls: 'user', gangNew: 'fist', gangUp: 'empire', gangHeist: 'cash', gangHeistFail: 'lock', gangHit: 'fist', gangHitFail: 'skull', warDecl: 'fist', warStart: 'fist', warEnd: 'crown', turfStart: 'flag', turfTake: 'flag', turfHold: 'shield', compNew: 'empire', casino: 'gem', casinoLoss: 'skull', job: 'cash', crit: 'gem', spree: 'bolt', jail: 'lock', house: 'empire', lux: 'crown', beat: 'fist', mug: 'cash', fail: 'skull', sick: 'pill', lvl: 'crown', fight: 'fist', op: 'cash', opJail: 'lock', escape: 'bolt', mus: 'crown' };
 const seedOf = (str) => { let x = 7; for (let i = 0; i < str.length; i++) x = (x * 31 + str.charCodeAt(i)) | 0; return Math.abs(x); };
 // a gangue da rua (a do bot) tem nome próprio em cada língua; as dos jogadores ficam como eles as escreveram
 const gName = (name) => (name === S.cfg?.gang?.bot?.name ? t('gBotName') : name);
@@ -736,6 +737,7 @@ function newsText(e) {
   if (k === 'cls') return tv('nw_cls', seedOf(e.name + k + e.t), { a: e.name, x: t('cl_' + e.from), y: t('cl_' + e.to) });
   if (k === 'gangHeist' || k === 'gangHeistFail') return tv('nw_' + k, seedOf(e.gang + k + e.t), { g: e.gang, x: t('gh_' + e.c), n: e.n, m: money(e.money || 0) });
   if (k === 'gangHit' || k === 'gangHitFail') return tv('nw_' + k, seedOf(e.gang + k + e.t), { g: e.gang, b: e.target, n: e.n });
+  if (k === 'compNew') return tv('nw_compNew', seedOf(e.c + k + e.t), { a: e.a, c: e.c, x: S.cfg.comp.types[e.x] ? t('ct_' + S.cfg.comp.types[e.x].id) : '' });   // v111
   if (k === 'turfStart' || k === 'turfTake' || k === 'turfHold') {   // v110: bairros
     const kk = k === 'turfStart' ? (e.d ? 'turfStart' : 'turfFree') : k === 'turfTake' ? (e.d ? 'turfTake' : 'turfClaim') : k;
     return tv('nw_' + kk, seedOf(e.a + e.z + k + e.t), { a: e.a, d: e.d, z: tzN(e.z), em: tzEm(e.z), h: hhmm(e.start || e.t), hh: Math.round(S.cfg.turf.durMs / 3600000) });
@@ -1379,7 +1381,7 @@ const gigCtx = (id) => ({ t, lang: lang(), sfx: fx.sfx, vibrate: fx.vibrate, str
   date: (v) => `${String(Math.floor(v / 100)).padStart(2, '0')}/${String(v % 100).padStart(2, '0')}`, risk: pct((S.cfg.work.list.find((x) => x.id === id) || {}).bustBp || 0) });
 async function gigStart(id, el, shift) {
   if (S.gig && !S.gig.res) return;
-  const out = await act('workStart', shift ? { id, shift: true } : { id }, { el });
+  const out = await act('workStart', shift ? { id, shift } : { id }, { el });   // shift: true (emprego da cidade) ou 'emp' (v111: empresa)
   if (out) openGig(out.result.task);
 }
 function openGig(task) {
@@ -1448,9 +1450,10 @@ function gigResult(G) {
     return h('div', { class: 'card tk-res' },
       h('span', { class: 'small muted' }, t('tkPaidBank')), h('b', { class: 'num c-cash big' }, '+' + money(r.money)),
       h('p', { class: 'tk-q' }, t('tkQual', { p: pct(r.q) })), h('p', { class: 'small' }, gigLine(G)),
+      r.emp ? h('p', { class: 'small' }, t('cpRes', { m: money(r.rev) }), r.short ? h('span', { class: 'c-red' }, ' ' + t('cpShort')) : null) : null,   // v111
       h('p', { class: 'small muted' }, t('jbShiftsLeft', { n: r.left })),
       r.tip ? h('p', { class: 'small tk-tip' }, tint(tipText(r.tip))) : null,
-      more ? h('button', { class: 'btn buy block big', on: { click: (e) => { S.gig = null; gigStart(G.task.id, e.currentTarget, true); } } }, t('jbNextShift')) : null,
+      more ? h('button', { class: 'btn buy block big', on: { click: (e) => { S.gig = null; gigStart(G.task.id, e.currentTarget, r.emp ? 'emp' : true); } } }, t('jbNextShift')) : null,
       h('button', { class: 'btn ghost block', on: { click: () => { S.gig = null; render(true); } } }, t('tkBack')));
   }
   const again = h('button', { class: 'btn buy block big', on: { click: (e) => { const id = G.task.id; S.gig = null; gigStart(id, e.currentTarget); } } }, t('tkAgain'));
@@ -2558,7 +2561,7 @@ const tipRow = (x) => TIP_GO[x.k]
 function screenJob() {
   const me = S.st.me, L = live(me), J = S.cfg.jobs, cur = J.list[me.job], feitos = me.shifts || 0, cash = me.cash + me.bank;
   const G = S.gig && S.gig.task.shift ? S.gig : null;
-  const out = [pageHead('job', null, !!cur)];   // com emprego, a imagem do emprego faz de capa
+  const out = [pageHead('job', null, !!(cur || me.emp))];   // com emprego (ou empresa, v111), a imagem do emprego faz de capa
   if (G && !G.res) { out.push(h('div', { class: 'tk-wrap' + (G.closing ? ' closing' : '') }, G.g.el, G.closing ? h('p', { class: 'tk-closing' }, t('tkClosing')) : null)); return out; }
   if (G && G.res) out.push(gigResult(G));
   const b = busyBanner(me); if (b) out.push(b);
@@ -2567,7 +2570,8 @@ function screenJob() {
     const x = S.cfg.work.list.find((y) => y.id === wv.tk.id);
     out.push(h('div', { class: 'tip' }, h('p', null, t('tkHalfShift')), h('button', { class: 'btn buy sm', on: { click: () => openGig({ id: x.id, t0: wv.tk.t0, minMs: x.minMs, shift: true, layout: wv.tk.layout }) } }, t('tkResume'))));
   }
-  if (cur) {
+  if (me.emp) out.push(jobCompCard(me, L, b));   // v111: quem trabalha numa empresa faz lá os turnos
+  else if (cur) {
     const fim = feitos >= J.perDay, semE = L.vigor < J.shiftE;
     out.push(h('div', { class: 'jobp jbc' },
       h('div', { class: 'jimg' }, h('img', { src: IMG('jobs', cur.id, 1), alt: '', width: 1100, height: 1100, decoding: 'async', on: { error: (e) => e.currentTarget.remove() } }), h('h2', null, t('jb_' + cur.id))),
@@ -2589,8 +2593,10 @@ function screenJob() {
   } else out.push(h('div', { class: 'note' }, h('p', null, t('jbSub')), h('p', null, t('jbNone'))));
   let bestOpen = -1; J.list.forEach((x, i) => { if ((!x.course || me.done.includes(x.course)) && (bestOpen < 0 || x.day > J.list[bestOpen].day)) bestOpen = i; });
   // os empregos: os que já dá para ter e os que pedem um curso
-  out.push(h('h2', { class: 'sec' }, t('jbAll')));
-  out.push(h('div', { class: 'card vlist vc jbl' }, J.list.map((x, i) => {
+  if (me.emp) {   // v111: quem trabalha numa empresa vê a empresa; os empregos da cidade ficam numa linha
+    out.push(h('button', { class: 'card row tap stlink', style: 'margin-top:14px', on: { click: () => go('empresas') } }, h('span', { class: 'grow' }, t('cpJobAt', { x: me.emp.name })), h('span', { class: 'muted', 'aria-hidden': 'true' }, '›')));
+    out.push(h('p', { class: 'small muted', style: 'margin-top:10px' }, t('cpLeftCity')));
+  } else out.push(h('h2', { class: 'sec' }, t('jbAll')), h('div', { class: 'card vlist vc jbl' }, J.list.map((x, i) => {
     const open = !x.course || me.done.includes(x.course);
     return h('div', { class: 'vrow jbr' + (open ? '' : ' dim') }, art('jobs', x.id, 'vth'),
       h('div', { class: 'grow' }, h('b', null, t('jb_' + x.id)),
@@ -2598,7 +2604,7 @@ function screenJob() {
         open ? h('div', { class: 'small muted' }, t('jbTipShort_' + x.tip))
           : h('button', { class: 'jneed', on: { click: () => go('uni') } }, t('jbNeeds', { x: crName(x.course) }) + ' ›')),
       i === me.job ? h('span', { class: 'small c-cash' }, t('jbHere'))
-        : open ? h('button', { class: 'btn sm ' + (!cur && i === bestOpen ? 'buy' : 'ghost'), on: { click: (e) => act('job', { i }, { el: e.currentTarget }) } }, t('jbPick')) : null);
+        : open && !me.emp ? h('button', { class: 'btn sm ' + (!cur && i === bestOpen ? 'buy' : 'ghost'), on: { click: (e) => act('job', { i }, { el: e.currentTarget }) } }, t('jbPick')) : null);
   })));
   // v81: os cursos estão na Universidade
   out.push(h('button', { class: 'card row tap stlink', style: 'margin-top:14px', on: { click: () => go('uni') } },
@@ -2668,16 +2674,18 @@ function recipeRow(me, r, n, preso) {
   const comp = r.kind === 'comp', cash = me.cash + me.bank, bi = r.biz ? S.cfg.biz.findIndex((b) => b.id === r.biz) : -1;
   const V = S.cfg.craft.rev, ms = r.kind === 'maq' ? maqState(me, r.biz) : 0, mq = ms > 0;   // máquina já instalada: a linha passa a ser a da revisão
   const price = mq ? V.price : recPrice(r) * n, needs = mq ? V.needs : r.needs;
-  const short = Object.entries(needs).some(([k, v]) => mtN(me, k) < v * (mq ? 1 : n)), busy = preso || (!comp && !mq && !!me.cf);
-  let state = null, falta = null, noPrice = false;
+  const short = Object.entries(needs).some(([k, v]) => mtN(me, k) < v * (mq ? 1 : n)), bench = !comp && !mq && !!me.cf, busy = preso || bench;
+  let state = null, falta = null, nota = null, noPrice = false;
   const g = r.kind === 'tool' || r.kind === 'gun' || r.kind === 'gear' ? gearOf(r.id) : null, low = g && g.level && me.level < g.level;
   const btn = (label, on, aria) => h('button', { class: 'btn sm ghost', disabled: short || busy, 'aria-label': aria, on: { click: on } }, label);
   if (r.kind === 'tool' && me.inv.some((x) => x.id === r.id)) state = h('span', { class: 'small c-cash' }, t('matHave'));
   else if (mq && ms === 1) state = h('span', { class: 'small c-cash' }, t('cvOn'));
-  else if (r.kind === 'maq' && !me.biz[bi].n) falta = t('cvNeed_' + r.biz);
+  else if (r.kind === 'maq' && !me.biz[bi].n) falta = t('cvNeedBiz', { x: list('biz')[bi].toLowerCase() });   // v111: todos os negócios (os novos não tinham texto)
   else if (comp && mtN(me, r.id) + n > S.cfg.mat.cap) falta = t('cvFull', { c: S.cfg.mat.cap });
   else if (low) falta = t('arNeedLvl', { n: g.level });   // v87: abaixo do nível, sem botão; o nível vai na linha do preço
   else if (!short && !busy && cash < price) state = h('span', { class: 'small muted num' }, t('needMoney', { m: money(price - cash) }));
+  // v111: o botão nunca fica desligado sem dizer porquê: na prisão, ou a bancada já tem outra coisa
+  else if (busy && !mq) { const eu = bench && me.cf.id === r.id; state = h('span', { class: 'small ' + (eu ? 'c-cash' : 'muted') }, t(preso ? 'cvJailB' : eu ? 'cvMakingB' : 'cvBusyB')); if (!preso) nota = eu ? t('cvMakingLine', { h: hhmm(me.cf.end) }) : t('cvBusyLine', { x: crIt(me.cf.id), h: hhmm(me.cf.end) }); }
   else if (mq) state = btn(t('cvRev'), (e) => act('maqService', { id: r.biz }, { el: e.currentTarget }), t('cvRevAria', { x: crIt(r.id) }));
   else { state = btn(t('cvMake') + ' · ' + money(price), (e) => act('craftStart', { id: r.id, n }, { el: e.currentTarget }), t('cvMakeAria', { x: crIt(r.id) + (n > 1 ? ' ×' + n : '') }) + ' · ' + money(price)); noPrice = true; }   // o preço vai no botão
   const what = r.kind === 'maq' ? (ms === 3 ? h('span', { class: 'c-red' }, t('cvStopped')) : mq ? h('span', { class: 'c-cash' }, t('cvMaqUntil', { x: list('biz')[bi], p: S.cfg.craft.maqBp / 100, d: cvDay(me.maq[r.biz]) })) : t('cvMaqFx', { p: S.cfg.craft.maqBp / 100, x: list('biz')[bi] }))
@@ -2690,7 +2698,7 @@ function recipeRow(me, r, n, preso) {
     h('div', { class: 'cvh' }, h('b', null, crIt(r.id) + (n > 1 ? ' ×' + n : '')), what ? h('div', { class: 'small muted' }, what) : null),
     state ? h('div', { class: 'cva' }, state) : null,
     h('div', { class: 'cvd' }, mq && ms === 1 ? null : h('div', { class: 'small num' }, needsLine(me, needs, mq ? 1 : n)),
-      ((mq && ms === 1) || when || falta) ? h('div', { class: 'small muted num' }, (mq && ms === 1 ? t('cvRevWhen', { d: cvDay(me.maq[r.biz] - (V.maxMs - V.ms)) }) : [when, falta].filter(Boolean).join(' · '))) : null));
+      ((mq && ms === 1) || when || falta || nota) ? h('div', { class: 'small muted num' }, (mq && ms === 1 ? t('cvRevWhen', { d: cvDay(me.maq[r.biz] - (V.maxMs - V.ms)) }) : [when, falta, nota].filter(Boolean).join(' · '))) : null));
 }
 function screenCave() {
   const me = S.st.me, M = S.cfg.mat, C = S.cfg.craft;
@@ -4943,6 +4951,12 @@ function eventRow(e) {
   if (e.k === 'gop') return opResult(e, e.out || e.cancelled ? 0 : e.respect, e.t);
   if (e.k === 'warDecl') return h('div', { class: 'card row' }, h('span', { class: 'c-red' }, icon('fist')),   // v102
     h('div', { class: 'grow' }, h('div', null, t(e.ours ? 'evWarOurs' : 'evWarTheirs', { g: e.vs.name, h: hhmm(e.start) })), h('div', { class: 'small muted' }, dur(now() - e.t))));
+  if (e.k === 'compIn' || e.k === 'compOut' || e.k === 'compAsk' || e.k === 'compLeft') {   // v111: empresas
+    const good = e.k === 'compIn' || e.k === 'compAsk', txt = e.k === 'compIn' ? t('evCompIn', { x: e.name }) : e.k === 'compOut' ? t(e.why === 'closed' ? 'evCompClosed' : 'evCompFired', { x: e.name })
+      : e.k === 'compAsk' ? t('evCompAsk', { a: e.who, x: e.name }) : t('evCompLeft', { a: e.who, x: e.name });
+    return h('button', { class: 'card row tap', on: { click: () => go('empresas') } }, h('span', { class: good ? 'c-cash' : 'c-red' }, icon('empire')),
+      h('div', { class: 'grow' }, h('div', null, txt), h('div', { class: 'small muted' }, dur(now() - e.t))));
+  }
   if (e.k === 'turfStart') return h('button', { class: 'card row tap', on: { click: () => go('bairros') } }, h('span', { class: e.ours ? 'c-resp' : 'c-red' }, icon('flag')),   // v110
     h('div', { class: 'grow' }, h('div', null, e.ours ? (e.vs ? t('evTurfAtk', { d: e.vs, em: tzEm(e.z), h: hhmm(e.start) }) : t('evTurfClaim', { z: tzN(e.z) })) : t('evTurfDef', { g: e.vs, z: tzN(e.z), h: hhmm(e.start) })), h('div', { class: 'small muted' }, dur(now() - e.t))));
   if (e.k === 'turfEnd') { const sc = e.vs ? t('evTurfScore', { a: num(e.ours ? e.pa : e.pd), b: num(e.ours ? e.pd : e.pa) }) : '';
@@ -5290,6 +5304,146 @@ function screenGang() {
   } } }, t('gLeave')));
   queueMicrotask(() => { const b = document.querySelector('.gmsgs'); if (b) b.scrollTop = b.scrollHeight; });
   return out;
+}
+// ===== v111: empresas dos jogadores =====
+// Funda-se uma empresa de um tipo (a tarefa dos turnos e o bónus), contrata-se gente e paga-se por turno, da caixa.
+// Os turnos fazem-se no Emprego (a mesma tarefa dos empregos da cidade); aqui fica a empresa: estrelas, caixa, pessoal e pedidos.
+const CP_IMG = { estafetas: 'estafeta', logistica: 'minimo', seguranca: 'vigilante', clinica: 'quadro', advocacia: 'senior' };
+const cpType = (i) => S.cfg.comp.types[i];
+const cpTName = (i) => t('ct_' + cpType(i).id);
+const cpPerk = (i, k) => { const x = cpType(i); return t('cpPerk_' + x.perk, { p: x.bp[k] / 100 }); };
+const cpStarsTxt = (n) => (n ? t(n === 1 ? 'cpStar1' : 'cpStarsN', { n }) : t('cpStars0'));
+const cpStars = (n) => h('span', { class: 'cpst', role: 'img', 'aria-label': cpStarsTxt(n) }, [0, 1, 2, 3, 4].map((i) => h('i', { class: i < n ? 'on' : '', 'aria-hidden': 'true' }, '★')));
+const cpDay = (sal) => t('cpPerDay', { m: money(sal), d: money(sal * S.cfg.jobs.perDay) });   // «650 €/turno · até 3 900 €/dia»
+async function loadComp() { try { S.comp = await api('GET', '/api/comp'); if (S.tab === 'empresas') render(); } catch {} }
+const cAct = async (type, args, opt) => { const out = await act(type, args, opt); await loadComp(); return out; };
+// o bónus: o que está ativo (ou a partir de quando) e o degrau seguinte
+function cpPerkLine(c) {
+  const on = c.stars >= 5 ? 1 : c.stars >= 3 ? 0 : -1;
+  return h('p', { class: 'small' }, on >= 0 ? h('span', { class: 'c-cash' }, t('cpPerkOn', { x: cpPerk(c.t, on) })) : h('span', { class: 'muted' }, t('cpPerkOff', { x: cpPerk(c.t, 0) })),
+    on < 1 ? h('span', { class: 'muted' }, ' · ' + t('cpAt5', { x: cpPerk(c.t, 1) })) : null);
+}
+// as estrelas que contam: 3 (o primeiro bónus) e 5 (o maior); quanto falta e a partir de quando se perde
+function cpStarBar(c) {
+  const S3 = S.cfg.comp.stars[2], S5 = S.cfg.comp.stars[4], top = S5 * 1.1, n = c.shifts7;
+  const msg = c.stars >= 5 ? t('cpKeep', { n: num(S5) }) : c.stars >= 3 ? t('cpTo5', { n: num(S5 - n), x: cpPerk(c.t, 1) }) + ' · ' + t('cpKeep', { n: num(S3) }) : t('cpTo3', { n: num(S3 - n), x: cpPerk(c.t, 0) });
+  return h('div', { class: 'cpbar' },
+    h('div', { class: 'row sp small' }, h('span', null, t('cp7', { n: num(n) })), cpStars(c.stars)),
+    h('div', { class: 'fill', style: `--m3:${(S3 / top) * 100}%;--m5:${(S5 / top) * 100}%` }, h('i', { style: `width:${Math.min(100, (n / top) * 100)}%` }), h('em', { class: 'm3', 'aria-hidden': 'true' }), h('em', { class: 'm5', 'aria-hidden': 'true' })),
+    h('p', { class: 'small muted' }, msg));
+}
+function cpMine(c, me) {
+  const C = S.cfg.comp, out = [];
+  out.push(h('div', { class: 'card stack cpme' },
+    h('div', { class: 'cphd' }, art('jobs', CP_IMG[cpType(c.t).id], 'cpth'),
+      h('div', { class: 'grow' }, h('p', { class: 'small muted bxlbl' }, cpTName(c.t)), h('h3', { class: 'bxh' }, c.name),
+        h('p', { class: 'small muted' }, c.own ? t('cpYouOwn') : t('cpOwner') + ': ' + c.owner))),
+    cpPerkLine(c), cpStarBar(c),
+    c.own ? null : h('div', { class: 'bxfacts two' },
+      h('div', null, h('b', { class: 'num c-cash' }, money(c.sal)), h('span', { class: 'small muted' }, t('cpPerShiftL', { d: money(c.sal * S.cfg.jobs.perDay) }))),
+      h('div', null, h('b', { class: 'num' }, c.members + '/' + c.slots), h('span', { class: 'small muted' }, t('cpStaffT')))),
+    h('button', { class: 'btn buy block', on: { click: () => go('job') } }, t('cpWork'))));
+  if (c.own) {
+    // 1) os pedidos (sempre à vista, com o «aceitar pedidos» ao lado)
+    out.push(h('h2', { class: 'sec' }, t('cpAsksT')));
+    out.push(h('div', { class: 'card stack cpasks' },
+      c.asks.length ? c.asks.map((a) => h('div', { class: 'row sp cpask' },
+        h('div', { class: 'grow' }, plink(a.name, h('b', null, a.name)), h('div', { class: 'small ' + (a.can ? 'muted' : 'c-red') }, t('level') + ' ' + a.level + (a.can ? '' : ' · ' + t('cpNoCourse')))),
+        h('div', { class: 'row', style: 'gap:8px' }, h('button', { class: 'btn ghost sm', on: { click: (e) => cAct('compReject', { name: a.name }, { el: e.currentTarget }) } }, t('cpNo')),
+          h('button', { class: 'btn buy sm', disabled: !a.can || c.members >= c.slots, on: { click: (e) => cAct('compAccept', { name: a.name }, { el: e.currentTarget }) } }, t('cpHire')))))
+        : h('p', { class: 'small muted' }, c.open ? t('cpNoAsks') : t('cpNoAsksOff')),
+      h('div', { class: 'row sp cpopen' }, h('span', { class: 'small' }, t('cpOpenT')),
+        h('div', { class: 'seg' }, [[true, t('cpOpenY')], [false, t('cpOpenN')]].map(([v, lbl]) => h('button', { 'aria-pressed': c.open === v ? 'true' : 'false', on: { click: () => cAct('compOpen', { open: v }) } }, lbl))))));
+  }
+  // 2) o pessoal
+  out.push(h('h2', { class: 'sec' }, t('cpStaffT') + ' · ' + c.members + '/' + c.slots));
+  out.push(h('div', { class: 'card vlist cpstaff' }, c.staff.map((m) => h('div', { class: 'vrow' },
+    h('div', { class: 'grow' }, h('div', { class: 'cpnm' }, m.me ? h('b', null, m.name + ' ' + t('cpYou')) : plink(m.name, h('b', null, m.name)), m.owner ? h('span', { class: 'small muted' }, ' · ' + t('cpOwner')) : null),
+      h('div', { class: 'small muted num' }, t('level') + ' ' + m.level + ' · ' + t('cpToday', { n: m.today, m: S.cfg.jobs.perDay }) + ' · ' + t('cpTotal', { n: num(m.total) }))),
+    c.own && !m.owner ? sureBtn('btn ghost sm dng', t('cpFire'), 'btn sm danger', t('cpFireSure', { a: m.name }), () => cAct('compFire', { name: m.name })) : null))));
+  if (!c.own) { out.push(h('div', { style: 'margin-top:16px' }, sureBtn('btn ghost dng block', t('cpLeave'), 'btn danger block', t('cpLeaveSure'), () => cAct('compLeave', {})))); return out; }
+  // 3) o dinheiro: ordenado (com o que um turno rende ao lado), a caixa, pôr e tirar, crescer
+  const days = c.days || [], rev7 = days.reduce((s, d) => s + d.r, 0), pay7 = days.reduce((s, d) => s + (d.p || 0), 0);
+  const sal = h('input', { id: 'cpsal', type: 'number', inputmode: 'numeric', min: 0, max: C.salMax, step: 50, value: c.sal });
+  const amt = h('input', { id: 'cpamt', type: 'number', inputmode: 'numeric', min: 1, step: 1000, placeholder: '10 000' });
+  const val = () => Math.max(0, Math.round(+amt.value || 0));
+  const take = sureBtn('btn ghost', t('cpTakeB'), 'btn danger', t('cpTakeSure'), (e) => { const v = Math.min(val(), c.till); if (v > 0) cAct('compTake', { amount: v }); });
+  out.push(h('h2', { class: 'sec' }, t('cpMoneyT')));
+  out.push(h('div', { class: 'card stack cptill' },
+    h('div', { class: 'bxfacts' },
+      h('div', null, h('b', { class: 'num c-cash' }, money(c.till)), h('span', { class: 'small muted' }, t('cpTill'))),
+      h('div', null, h('b', { class: 'num ' + (rev7 - pay7 >= 0 ? 'c-cash' : 'c-red') }, (rev7 - pay7 >= 0 ? '+' : '−') + money(Math.abs(rev7 - pay7))), h('span', { class: 'small muted' }, t('cpNet7'))),
+      h('div', null, h('b', { class: 'num' }, money(c.revShift)), h('span', { class: 'small muted' }, t('cpRevShift')))),
+    h('p', { class: 'small muted num' }, t('cpWeekLine', { r: money(rev7), p: money(pay7) })),
+    h('div', { class: 'field' }, h('label', { for: 'cpsal' }, t('cpSal')),
+      h('div', { class: 'row', style: 'gap:8px' }, sal, h('button', { class: 'btn ghost', on: { click: (e) => cAct('compSalary', { v: Math.max(0, Math.min(C.salMax, Math.round(+sal.value || 0))) }, { el: e.currentTarget }) } }, t('cpSalSet')))),
+    h('p', { class: 'small muted' }, t('cpSalHint', { m: money(c.revShift) })),
+    h('div', { class: 'field' }, h('label', { for: 'cpamt' }, t('cpAmount')),
+      h('div', { class: 'row', style: 'gap:8px' }, amt, h('button', { class: 'btn ghost', on: { click: (e) => { const v = Math.min(val(), me.cash); if (v > 0) cAct('compPut', { amount: v }, { el: e.currentTarget }); } } }, t('cpPutB')), take)),
+    h('p', { class: 'small muted' }, t('cpTillNote')),
+    c.upCost ? h('button', { class: 'btn ghost block num', disabled: c.till < c.upCost, on: { click: (e) => cAct('compSize', {}, { el: e.currentTarget }) } }, t('cpGrow', { n: C.slots[c.size + 1], m: money(c.upCost) })) : h('p', { class: 'small muted' }, t('cpMaxSize')),
+    c.upCost ? h('p', { class: 'small muted' }, c.till < c.upCost ? t('cpGrowMiss', { m: money(c.upCost - c.till) }) : t('cpGrowNote')) : null));
+  // 4) os últimos 7 dias, fechados
+  out.push(h('details', { class: 'card bxhow cpweek' }, h('summary', null, t('cpWeekT')),
+    days.length ? h('div', { class: 'vlist' }, [...days].reverse().map((d) => h('div', { class: 'vrow' },
+      h('span', { class: 'grow' }, new Date((d.d * 86400000) + 43200000).toLocaleDateString(lang() === 'pt' ? 'pt-PT' : 'en-GB', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC' })),
+      h('span', { class: 'small muted num cpwn' }, t('cpTotal', { n: d.n })), h('b', { class: 'num c-cash cpwr' }, money(d.r))))) : h('p', { class: 'small muted' }, t('cpWeekNone'))));
+  // 5) fechar
+  out.push(h('p', { class: 'small muted', style: 'margin-top:20px' }, t('cpCloseNote')));
+  out.push(sureBtn('btn ghost dng block', t('cpClose'), 'btn danger block', t('cpCloseSure', { m: money(c.till) }), () => cAct('compClose', {})));
+  return out;
+}
+function cpRow(c, me) {
+  const full = c.members >= c.slots, ty = cpType(c.t);
+  const btn = c.asked ? h('button', { class: 'btn ghost sm', on: { click: (e) => cAct('compUnapply', { id: c.id }, { el: e.currentTarget }) } }, t('cpAsked'))
+    : !c.can ? h('button', { class: 'jneed', on: { click: () => go('uni') } }, t('cpNeeds', { x: crName(ty.course) }) + ' ›')
+      : h('button', { class: 'btn buy sm', disabled: full || !c.open || !!me.emp, on: { click: (e) => cAct('compApply', { id: c.id }, { el: e.currentTarget }) } }, full ? t('cpFull') : !c.open ? t('cpClosedL') : t('cpApply'));
+  return h('div', { class: 'card stack cprow' },
+    h('div', { class: 'cphd' }, art('jobs', CP_IMG[ty.id], 'cpth'),
+      h('div', { class: 'grow' }, h('b', null, c.name), h('div', { class: 'small muted' }, cpTName(c.t) + ' · ' + c.owner), h('div', { class: 'small' }, cpStars(c.stars)))),
+    h('div', { class: 'row sp small' }, h('span', { class: 'c-cash num' }, cpDay(c.sal)), h('span', { class: 'muted num' }, t('cpSlots', { n: c.members, m: c.slots }))),
+    cpPerkLine(c),
+    h('div', { class: 'cpact' }, btn));
+}
+function screenEmpresas() {
+  const me = S.st.me, d = S.comp, C = S.cfg.comp, out = [pageHead('empresas', d?.mine ? null : t('s_empresas'), !!d?.mine)];
+  if (!d) { out.push(h('p', { class: 'muted' }, t('loading'))); return out; }
+  if (d.mine) return [...out, ...cpMine(d.mine, me)];
+  // como funciona: pedir, o dono aceita, os turnos no Emprego, as estrelas
+  out.push(h('details', { class: 'card bxhow' }, h('summary', null, t('bxHowT')),
+    h('div', { class: 'stack small' }, h('p', null, t('cpHow1')), h('p', null, t('cpHow2', { n: S.cfg.jobs.perDay })), h('p', null, t('cpHow3', { a: num(C.stars[2]), b: num(C.stars[4]) })), h('p', null, t('cpHow4', { n: C.minLevel })))));
+  out.push(h('h2', { class: 'sec' }, t('cpListT')));
+  out.push(d.list.length ? h('div', { class: 'stack' }, d.list.map((c) => cpRow(c, me))) : h('div', { class: 'note' }, h('p', { class: 'muted' }, t('cpListNone'))));
+  if (me.job >= 0) out.push(h('p', { class: 'small muted', style: 'margin-top:10px' }, t('cpJobNote')));
+  // fundar: escolhe-se o tipo (a tarefa e o bónus) e o nome; paga-se ao segundo toque
+  out.push(h('h2', { class: 'sec' }, t('cpFoundT')));
+  const low = me.level < C.minLevel, liquid = me.cash + me.bank, sel = S.cpType ?? 0, ty = cpType(sel);
+  const nm = h('input', { id: 'cpnm', maxlength: C.nameMax, autocomplete: 'off', placeholder: t('cpNamePh'), value: S.cpName || '', on: { input: (e) => { S.cpName = e.target.value; } } });
+  const fb = sureBtn('btn buy block num', t('cpFound', { m: money(ty.cost) }), 'btn danger block num', t('cpFoundSure', { m: money(ty.cost) }), async () => { const o = await cAct('compFound', { t: sel, name: nm.value }); if (o) S.cpName = ''; });
+  fb.disabled = low || liquid < ty.cost;
+  out.push(h('div', { class: 'card stack cpfound' },
+    h('div', { class: 'cptypes', role: 'radiogroup', 'aria-label': t('cpFoundT') }, C.types.map((x, i) => h('button', { class: 'cpty', role: 'radio', 'aria-checked': i === sel ? 'true' : 'false', on: { click: () => { S.cpType = i; render(); } } },
+      art('jobs', CP_IMG[x.id], 'cpth'), h('span', { class: 'grow' }, h('b', null, t('ct_' + x.id)), h('span', { class: 'small muted' }, t('cpUpTo', { x: cpPerk(i, 1) }))), h('b', { class: 'num small' }, money(x.cost))))),
+    h('p', { class: 'small' }, t('jbTask_' + ty.task)),
+    h('p', { class: 'small muted' }, t('cpRev', { m: money(ty.rev) }) + ' ' + t('cpPerkAt', { a: cpPerk(sel, 0), b: cpPerk(sel, 1) })),
+    ty.course ? h('p', { class: 'small muted' }, t('cpNeeds', { x: crName(ty.course) })) : null,
+    h('div', { class: 'field' }, h('label', { for: 'cpnm' }, t('cpName')), nm),
+    fb, low ? h('p', { class: 'small c-red' }, t('cpFoundLvl', { n: C.minLevel })) : liquid < ty.cost ? h('p', { class: 'small muted' }, t('cpMiss', { m: money(ty.cost - liquid) })) : null));
+  return out;
+}
+// no Emprego: o cartão da empresa onde trabalhas (os turnos fazem-se aqui, como os dos empregos da cidade)
+function jobCompCard(me, L, b) {
+  const J = S.cfg.jobs, e = me.emp, ty = cpType(e.t), feitos = me.shifts || 0, fim = feitos >= J.perDay, semE = L.vigor < J.shiftE;
+  return h('div', { class: 'jobp jbc' },
+    h('div', { class: 'jimg' }, h('img', { src: IMG('jobs', CP_IMG[ty.id], 1), alt: '', width: 1100, height: 1100, decoding: 'async', on: { error: (ev) => ev.currentTarget.remove() } }), h('h2', null, e.name)),
+    h('div', { class: 'jdeal' },
+      e.own ? h('div', null, h('span', null, t('cpSal')), h('b', { class: 'num' }, t('cpOwnPay')))
+        : h('div', null, h('span', null, t('cpSal')), h('b', { class: 'num c-cash' }, money(e.sal))),
+      h('div', null, h('span', null, t('jbToday')), h('b', { class: 'num' }, feitos + '/' + J.perDay))),
+    h('p', { class: 'jinfo' }, cpTName(e.t) + ' · ' + cpStarsTxt(e.s) + (e.own ? '' : ' · ' + t('cpUpToDay', { m: money(e.sal * J.perDay) }))),
+    e.own ? h('p', { class: 'small muted' }, t('cpJobOwn')) : null,
+    h('p', { class: 'small muted' }, t('jbTask_' + ty.task)),
+    h('button', { class: 'btn rob block big', disabled: !!b || fim || semE, on: { click: (ev) => gigStart(ty.task, ev.currentTarget, 'emp') } }, fim ? t('jbDoneToday') : semE ? t('jbNoVigor') : t('jbGo')));
 }
 // ===== v110: território dos gangues =====
 // Doze bairros num mapa de quarteirões: oeste à esquerda; o Tejo corre por baixo e sobe pelo lado leste (Marvila e o Parque das Nações ficam à beira-rio).
