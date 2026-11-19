@@ -117,6 +117,7 @@ const PATHS = {
   skull: 'M12 3a8 8 0 0 0-8 8v3l2 2v4h12v-4l2-2v-3a8 8 0 0 0-8-8zM9 11h.01M15 11h.01M10 20v-3M14 20v-3',
   x: 'M6 6l12 12M18 6L6 18',
   flag: 'M5 21V4M5 4h12l-3 4 3 4H5',   // v110: bairros
+  carside: 'M2 16v-3.5l3-1 3.5-4h7l4 4 2.5.8V16M2 16h2.5M9.5 16h5M19.5 16H22M7 18.5a2.5 2.5 0 1 0 .01 0M17 18.5a2.5 2.5 0 1 0 .01 0M9 11.5h9',   // v112: o carro de lado, a andar para a direita
 };
 const FILLED = new Set(['bolt', 'crown']);
 export function icon(name, cls = 'i') {

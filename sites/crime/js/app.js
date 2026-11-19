@@ -453,7 +453,7 @@ function tickHud() {
 const PLACES = {
   city: { ic: 'skyline' }, empire: { ic: 'empire' }, rob: { ic: 'street', img: 'golpes' }, club: { ic: 'bolt', img: 'discoteca' }, gym: { ic: 'gym', img: 'ginasio' }, gyms: { ic: 'gym' }, livros: { img: 'livros' }, hunt: { img: 'caca' }, honras: {}, viagens: { img: 'viagens' },
   biz: { ic: 'empire', img: 'negocios' }, stash: { img: 'stash' }, acct: { img: 'contabilista' }, port: { img: 'porto' }, air: { img: 'aeroporto' }, arms: { img: 'armas' }, bank: { img: 'banco' }, hosp: { img: 'hospital' },
-  jail: { img: 'prisao' }, gang: { img: 'gangue' }, bairros: { ic: 'flag', img: 'bairros' }, empresas: { ic: 'empire', img: 'empresas' }, work: { img: 'profissao' }, news: { img: 'jornal' }, casino: { ic: 'gem', img: 'casino' }, roulette: { img: 'roleta' }, bj: { img: 'blackjack' }, dice: { img: 'dados' }, wheel: { img: 'roda' }, slot: { img: 'slot' }, zeus: { img: 'zeus' }, doce: { img: 'doce' }, rebucado: { img: 'rebucado' }, alley: { img: 'beco' }, lux: { img: 'luxos' }, fights: { ic: 'fights', img: 'lutas' }, rank: { img: 'procurados' }, hitman: { img: 'assassino' }, putas: { img: 'putas' }, gigs: { img: 'biscates' }, casa: {}, myclub: { img: 'discoteca' }, mybro: { img: 'bordel' }, bolsa: { img: 'bolsa' }, job: { img: 'emprego' }, inv: { ic: 'box', img: 'inventario' }, ops: { img: 'operacoes' }, parl: { img: 'parlamento' }, cafe: { img: 'cafe' }, museum: { img: 'museu' }, uni: { img: 'universidade' }, cave: { img: 'cave' }, feira: { img: 'feira' }, dig: { img: 'escavacoes' }, arquivo: { img: 'arquivo' },
+  jail: { img: 'prisao' }, gang: { img: 'gangue' }, bairros: { ic: 'flag', img: 'bairros' }, empresas: { ic: 'empire', img: 'empresas' }, corridas: { ic: 'car', img: 'corridas' }, work: { img: 'profissao' }, news: { img: 'jornal' }, casino: { ic: 'gem', img: 'casino' }, roulette: { img: 'roleta' }, bj: { img: 'blackjack' }, dice: { img: 'dados' }, wheel: { img: 'roda' }, slot: { img: 'slot' }, zeus: { img: 'zeus' }, doce: { img: 'doce' }, rebucado: { img: 'rebucado' }, alley: { img: 'beco' }, lux: { img: 'luxos' }, fights: { ic: 'fights', img: 'lutas' }, rank: { img: 'procurados' }, hitman: { img: 'assassino' }, putas: { img: 'putas' }, gigs: { img: 'biscates' }, casa: {}, myclub: { img: 'discoteca' }, mybro: { img: 'bordel' }, bolsa: { img: 'bolsa' }, job: { img: 'emprego' }, inv: { ic: 'box', img: 'inventario' }, ops: { img: 'operacoes' }, parl: { img: 'parlamento' }, cafe: { img: 'cafe' }, museum: { img: 'museu' }, uni: { img: 'universidade' }, cave: { img: 'cave' }, feira: { img: 'feira' }, dig: { img: 'escavacoes' }, arquivo: { img: 'arquivo' },
 };
 // barra de baixo: só o que se usa a toda a hora. O resto vive dentro de cada separador, arrumado por zonas.
 // v90: o ginásio entra no lugar do casino (golpes gastam stamina; ginásio e lutas gastam energia: é o que se faz a toda a hora).
@@ -461,10 +461,10 @@ const PLACES = {
 const NAV = ['city', 'rob', 'gym', 'empire', 'inv'];   // v92: o império sobe para o lugar das lutas e o inventário fica no fim (as lutas estão na cidade e na barra de cima)
 const HUB = {
   // v95 (pedido do Dinis): o porto e o aeroporto passam para a cidade; a gangue e as lutas, para o império
-  city: [['sec_night', ['club', 'putas', 'casino', 'alley', 'arms']], ['sec_street', ['gigs', 'cafe', 'job', 'uni', 'livros', 'dig', 'hunt', 'feira', 'bank', 'museum', 'parl', 'hosp', 'jail', 'rank']], ['sec_trade', ['viagens', 'port', 'air']]],
+  city: [['sec_night', ['corridas', 'club', 'putas', 'casino', 'alley', 'arms']], ['sec_street', ['gigs', 'cafe', 'job', 'uni', 'livros', 'dig', 'hunt', 'feira', 'bank', 'museum', 'parl', 'hosp', 'jail', 'rank']], ['sec_trade', ['viagens', 'port', 'air']]],
   empire: [['sec_power', ['fights', 'gang', 'bairros']], ['sec_income', ['biz', 'empresas', 'myclub', 'mybro']], ['sec_assets', ['casa', 'cave', 'bank', 'bolsa', 'stash', 'acct']]],
 };
-const PARENT = { bairros: 'gang', empresas: 'empire', gyms: 'gym', livros: 'city', hunt: 'city', honras: 'city', viagens: 'city', fights: 'empire', arquivo: 'city', dig: 'city', feira: 'city', cave: 'empire', uni: 'city', museum: 'city', cafe: 'city', parl: 'city', gigs: 'city', gang: 'empire', work: 'job', job: 'city', news: 'city', casino: 'city', roulette: 'casino', bj: 'casino', dice: 'casino', wheel: 'casino', slot: 'casino', zeus: 'casino', doce: 'casino', rebucado: 'casino', club: 'city', putas: 'city', gym: 'city', alley: 'city', hosp: 'city', jail: 'city',
+const PARENT = { bairros: 'gang', empresas: 'empire', corridas: 'city', gyms: 'gym', livros: 'city', hunt: 'city', honras: 'city', viagens: 'city', fights: 'empire', arquivo: 'city', dig: 'city', feira: 'city', cave: 'empire', uni: 'city', museum: 'city', cafe: 'city', parl: 'city', gigs: 'city', gang: 'empire', work: 'job', job: 'city', news: 'city', casino: 'city', roulette: 'casino', bj: 'casino', dice: 'casino', wheel: 'casino', slot: 'casino', zeus: 'casino', doce: 'casino', rebucado: 'casino', club: 'city', putas: 'city', gym: 'city', alley: 'city', hosp: 'city', jail: 'city',
   biz: 'empire', port: 'city', air: 'city', myclub: 'empire', mybro: 'empire', bolsa: 'empire', stash: 'empire', acct: 'empire', casa: 'empire', bank: 'empire', lux: 'empire', arms: 'fights', rank: 'fights', hitman: 'fights', ops: 'rob' };
 const upOf = (id) => (S.backTo && S.backTo[id]) || PARENT[id] || 'city';   // um sítio que está em duas zonas volta para a zona de onde vieste
 const tabOf = (id) => { let x = id; for (let k = 0; k < 4 && !NAV.includes(x); k++) x = upOf(x); return NAV.includes(x) ? x : 'city'; };
@@ -480,6 +480,7 @@ function loadFor(tab) {
   if (tab === 'empire' && (!S.turfAt || now() - S.turfAt > 60000)) loadTurf();   // v110: o aviso do assalto no mosaico dos bairros
   if (tab === 'bairros') { if (!S.gang) loadGang(); loadTurf(); }   // v110
   if (tab === 'empresas') loadComp();   // v111
+  if (tab === 'corridas') loadRaces();   // v112
   if (tab === 'feira') { S.feiraItem = null; loadFeira(); }   // v84
   if (tab === 'club' || tab === 'putas') loadVenues();
   if (tab === 'bolsa') { S.stkSel = null; loadStocks(); }
@@ -550,7 +551,7 @@ function shell() {
 }
 
 const SCREENS = { job: screenJob, city: screenCity, empire: screenEmpire, news: screenNews, casino: screenCasino, roulette: screenRoulette, bj: screenBJ, dice: screenDice, wheel: screenWheel, slot: () => screenSlotGame('slot'), zeus: () => screenSlotGame('zeus'), doce: () => screenSlotGame('doce'), rebucado: () => screenSlotGame('rebucado'), rob: screenRob, club: screenClub, gym: screenGym, gyms: screenGyms, livros: screenLivros, biz: screenBiz, port: screenPort, arms: screenArms, bank: screenBank,
-  hosp: screenHosp, jail: screenJail, gang: screenGang, bairros: screenBairros, empresas: screenEmpresas, work: screenWork, air: screenAir, putas: screenPutas, myclub: screenMyClub, mybro: screenMyBro, bolsa: screenBolsa, inv: screenInv, stash: screenStash, acct: screenAcct, casa: screenCasa, alley: screenAlley, lux: screenLux, fights: screenFights, rank: screenRank, hitman: screenHitman, ops: screenOps, gigs: screenGigs, parl: screenParl, cafe: screenCafe, museum: screenMuseum, uni: screenUni, cave: screenCave, feira: screenFeira, dig: screenDig, hunt: screenHunt, honras: screenHonras, arquivo: screenArquivo, viagens: screenViagens };
+  hosp: screenHosp, jail: screenJail, gang: screenGang, bairros: screenBairros, empresas: screenEmpresas, corridas: screenCorridas, work: screenWork, air: screenAir, putas: screenPutas, myclub: screenMyClub, mybro: screenMyBro, bolsa: screenBolsa, inv: screenInv, stash: screenStash, acct: screenAcct, casa: screenCasa, alley: screenAlley, lux: screenLux, fights: screenFights, rank: screenRank, hitman: screenHitman, ops: screenOps, gigs: screenGigs, parl: screenParl, cafe: screenCafe, museum: screenMuseum, uni: screenUni, cave: screenCave, feira: screenFeira, dig: screenDig, hunt: screenHunt, honras: screenHonras, arquivo: screenArquivo, viagens: screenViagens };
 function render(force) {
   if (!S.st) return;
   if (!S.st.me || S.st.round.phase !== 'play') return renderPause();
@@ -4951,6 +4952,8 @@ function eventRow(e) {
   if (e.k === 'gop') return opResult(e, e.out || e.cancelled ? 0 : e.respect, e.t);
   if (e.k === 'warDecl') return h('div', { class: 'card row' }, h('span', { class: 'c-red' }, icon('fist')),   // v102
     h('div', { class: 'grow' }, h('div', null, t(e.ours ? 'evWarOurs' : 'evWarTheirs', { g: e.vs.name, h: hhmm(e.start) })), h('div', { class: 'small muted' }, dur(now() - e.t))));
+  if (e.k === 'race' || e.k === 'raceOff') return h('button', { class: 'card row tap', on: { click: () => go('corridas') } }, h('span', { class: e.k === 'raceOff' ? 'muted' : e.prize ? 'c-cash' : 'muted' }, icon('car')),   // v112
+    h('div', { class: 'grow' }, h('div', null, e.k === 'raceOff' ? t('evRaceOff', { x: rcTrack(e.track), m: money(e.fee) }) : t('evRace', { x: rcTrack(e.track), p: e.pos, n: e.n }) + (e.prize ? ' ' + t('evRacePrize', { m: money(e.prize) }) : '')), h('div', { class: 'small muted' }, dur(now() - e.t))));
   if (e.k === 'compIn' || e.k === 'compOut' || e.k === 'compAsk' || e.k === 'compLeft') {   // v111: empresas
     const good = e.k === 'compIn' || e.k === 'compAsk', txt = e.k === 'compIn' ? t('evCompIn', { x: e.name }) : e.k === 'compOut' ? t(e.why === 'closed' ? 'evCompClosed' : 'evCompFired', { x: e.name })
       : e.k === 'compAsk' ? t('evCompAsk', { a: e.who, x: e.name }) : t('evCompLeft', { a: e.who, x: e.name });
@@ -5303,6 +5306,154 @@ function screenGang() {
       h('button', { class: 'btn danger block', on: { click: async () => { close(); await gAct('gangLeave', {}); } } }, t('gLeave'))));
   } } }, t('gLeave')));
   queueMicrotask(() => { const b = document.querySelector('.gmsgs'); if (b) b.scrollTop = b.scrollHeight; });
+  return out;
+}
+// ===== v112: corridas de carros =====
+// A garagem (comprar, afinar as três peças, escolher, vender), a corrida de rua (contra pilotos da rua, sai na hora) e as corridas a
+// dinheiro entre jogadores (uma sala abre, enche ou chega ao prazo, e corre). Cada resultado tem a repetição: as voltas de cada um.
+const RC = () => S.cfg.race;
+const rcCar = (id) => RC().cars.find((c) => c.id === id);
+const rcStats = (c) => { const x = rcCar(c.id), U = RC().upPts; return [x.spd + U * c.up[0], x.acc + U * c.up[1], x.han + U * c.up[2]]; };
+const rcUpCost = (id, lv) => Math.floor((rcCar(id).price * RC().upBp[lv]) / 10000);
+const rcSec = (ms) => (ms / 1000).toLocaleString(lang() === 'pt' ? 'pt-PT' : 'en-GB', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+const rcTime = (ms) => { const s = ms / 1000, m = Math.floor(s / 60); return m + ':' + (s - m * 60).toFixed(1).padStart(4, '0').replace('.', lang() === 'pt' ? ',' : '.'); };
+const rcOrd = (p) => (lang() === 'pt' ? p + '.º' : 'P' + p);   // «3.º» em português, «P3» em inglês (como nas corridas)
+const rcTrack = (i) => t('rt_' + RC().tracks[i].id);
+const rcHint = (i) => { const w = RC().tracks[i].w, k = w.indexOf(Math.max(...w)); return t('rcFavours', { x: t('rsl_' + ['spd', 'acc', 'han'][k]) }); };
+const rcValue = (c) => { let v = rcCar(c.id).price; c.up.forEach((lv) => { for (let k = 0; k < lv; k++) v += rcUpCost(c.id, k); }); return v; };
+// «há 5 min», «há 2 h», «há 3 dias» (para listas de coisas passadas; os relógios a contar usam dur)
+const agoTxt = (ms) => { const m = Math.max(1, Math.round(ms / 60000)); return t('bxAgo', { t: m < 60 ? t('agoM', { n: m }) : m < 1440 ? t('agoH', { n: Math.round(m / 60) }) : Math.round(m / 1440) === 1 ? t('agoD1') : t('agoD', { n: Math.round(m / 1440) }) }); };
+async function loadRaces() { try { S.races = await api('GET', '/api/races'); if (S.tab === 'corridas') render(); } catch {} }
+const rAct = async (type, args, opt) => { const out = await act(type, args, opt); await loadRaces(); return out; };
+async function raceStreetGo(el) { const ti = S.rcTrack ?? 0, o = await rAct('raceStreet', { track: ti }, { el }); if (o) { S.raceShow = o.result; render(); window.scrollTo({ top: 0, behavior: 'smooth' }); } }
+// a repetição: a câmara segue quem vai à frente (à direita) e os outros ficam atrás à distância do tempo que levam de atraso;
+// as linhas trocam de lugar nas ultrapassagens. No fim, a chegada (o meu lugar e o prémio) e a tabela com o atraso para o 1.º.
+function raceReplay(R) {
+  const L = RC().laps, ds = [...R.drivers].sort((a, b) => String(a.name).localeCompare(String(b.name))), tot = Math.max(...ds.map((d) => d.total)), win = Math.min(...ds.map((d) => d.total));
+  const D = 9000, reduce = matchMedia('(prefers-reduced-motion: reduce)').matches, ROW = 44, GAP = 12000;   // GAP: o atraso que põe um carro na ponta esquerda
+  const cum = ds.map((d) => d.laps.reduce((a, x) => [...a, (a[a.length - 1] || 0) + x], []));
+  const prog = (k, T) => { const c = cum[k]; let j = 0; while (j < L && c[j] <= T) j++; if (j >= L) return 1; const t0 = j ? c[j - 1] : 0; return (j + (T - t0) / ds[k].laps[j]) / L; };
+  const rows = ds.map((d) => { const car = h('i', { class: 'rpdot', 'aria-hidden': 'true' }, icon('carside')), rk = h('b', { class: 'rprk num' }, '');
+    return { d, car, rk, el: h('div', { class: 'rprow' + (d.me ? ' me' : '') }, h('div', { class: 'rptop' }, rk, h('span', { class: 'rpnm' }, d.name || '?')), h('div', { class: 'rplane' }, car)) }; });
+  const lap = h('span', { class: 'num rplap' }, ''), bar = h('div', { class: 'rpprog' }, h('i')), lanes = h('div', { class: 'rplanes', style: `height:${ds.length * ROW}px` }, rows.map((r) => r.el));
+  const end = h('div', { class: 'rpend', hidden: true }), table = h('div', { class: 'rptab', hidden: true });
+  let done = false;
+  const step = (T) => {
+    const ps = ds.map((_, k) => prog(k, T)), lead = Math.max(...ps), order = ps.map((p, k) => [p, k]).sort((a, b) => b[0] - a[0] || ds[a[1]].pos - ds[b[1]].pos);
+    order.forEach(([p, k], i) => { const r = rows[k], behind = Math.max(0, (lead - p) * L * (ds[k].total / L));
+      r.rk.textContent = rcOrd(i + 1); r.el.style.transform = `translateY(${i * ROW}px)`; r.car.style.setProperty('--x', (1 - Math.min(1, behind / GAP)).toFixed(4)); });
+    lap.textContent = lead >= 1 ? t('rcFinish') : t('rcLap', { n: Math.min(L, Math.floor(lead * L) + 1), m: L });
+    bar.firstChild.style.width = Math.min(100, lead * 100) + '%';
+  };
+  const fin = () => {
+    if (done) return; done = true; step(tot + 1); skip.remove();
+    const me = ds.find((d) => d.me);
+    if (me) end.replaceChildren(h('b', { class: 'rpendpos ' + (me.prize ? 'c-cash' : '') }, t('rcPlace', { p: me.pos, n: ds.length })), me.prize ? h('b', { class: 'num c-cash' }, '+' + money(me.prize)) : h('span', { class: 'small muted' }, t('rcNoPrize')));
+    end.hidden = !me; table.hidden = false;
+    table.replaceChildren(...[...ds].sort((a, b) => a.pos - b.pos).map((d) => h('div', { class: 'vrow rpres' + (d.me ? ' me' : '') },
+      h('b', { class: 'rppos num' }, rcOrd(d.pos)), h('div', { class: 'grow' }, h('b', null, d.name || '?'), d.spins?.length ? h('div', { class: 'small muted' }, t('rcSpin', { n: d.spins.map((x) => x + 1).join(', ') })) : null),
+      h('div', { class: 'rpt' }, h('span', { class: 'num small' }, d.pos === 1 ? rcTime(d.total) : '+' + rcSec(d.total - win) + ' s'), d.prize ? h('b', { class: 'num c-cash small' }, '+' + money(d.prize)) : null))));
+  };
+  const skip = h('button', { class: 'linkbtn rpskip', on: { click: fin } }, t('rcSkip'));
+  const box = h('div', { class: 'card stack rplay' }, h('div', { class: 'row sp' }, h('b', null, rcTrack(R.track)), lap), bar, lanes, skip, end, table);
+  if (reduce || R.seen) fin();
+  else { R.seen = true; step(0); const t0 = performance.now(); const tick = (n) => { if (done) return; const e = Math.min(1, (n - t0) / D); step(e * tot * 1.005); if (e < 1 && box.isConnected) requestAnimationFrame(tick); else if (e >= 1) fin(); }; requestAnimationFrame(tick); }
+  return box;
+}
+// a garagem de quem tem carro: o carro escolhido numa linha (trocar por cima), as peças abrem ao toque, o stand e vender no fim
+function rcGarage(me) {
+  const C = RC(), car = me.cars[me.car], cash = me.cash + me.bank, out = [];
+  if (me.cars.length > 1) out.push(h('div', { class: 'rcmine', role: 'radiogroup', 'aria-label': t('rcGarageT') }, me.cars.map((c, i) => h('button', { class: 'rcpick', role: 'radio', 'aria-checked': i === me.car ? 'true' : 'false', disabled: !!me.race, on: { click: () => act('carSel', { i }) } },
+    h('img', { src: IMG('carros', c.id), alt: '', width: 600, height: 600, loading: 'lazy' }), h('span', { class: 'small' }, t('rcCar_' + c.id))))));
+  const st = rcStats(car), x = rcCar(car.id), skill = Math.round((me.rsk || 0) * C.driveBp / S.cfg.skills.maxBp) / 100;
+  out.push(h('div', { class: 'card stack rcgar' },
+    h('div', { class: 'cphd' }, h('img', { class: 'cpth rcth', src: IMG('carros', car.id), alt: '', width: 600, height: 600 }),
+      h('div', { class: 'grow' }, h('p', { class: 'small muted bxlbl' }, t('rcTier', { n: x.tier }) + ' · ' + t('rcRec', { n: me.rcn?.n || 0, w: me.rcn?.w || 0 })), h('h3', { class: 'bxh' }, t('rcCar_' + car.id)))),
+    h('div', { class: 'stack rcparts' }, [0, 1, 2].map((k) => { const lv = car.up[k], max = lv >= C.upBp.length, cost = max ? 0 : rcUpCost(car.id, lv), stat = t('rsl_' + ['spd', 'acc', 'han'][k]);
+      return h('div', { class: 'rcpart' },
+        h('div', { class: 'row sp small' }, h('span', null, t('rs_' + ['spd', 'acc', 'han'][k]) + ' ', h('b', { class: 'num' }, String(st[k]))), h('span', { class: 'muted' }, t('rp_' + k) + ' ' + lv + '/' + C.upBp.length)),
+        h('div', { class: 'fill' }, h('i', { style: `width:${st[k]}%` })),
+        max ? h('p', { class: 'small muted' }, t('rcPartMax')) : h('button', { class: 'btn ghost sm block num', disabled: cash < cost, on: { click: (e) => act('carUp', { i: me.car, part: k }, { el: e.currentTarget }) } },
+          cash < cost ? t('rcUpMiss', { x: t('rp_' + k), m: money(cost - cash) }) : t('rcUp', { x: t('rp_' + k), n: C.upPts, s: stat, m: money(cost) }))); })),
+    skill >= 1 ? h('p', { class: 'small muted' }, t('rcSkill', { p: skill.toLocaleString(lang() === 'pt' ? 'pt-PT' : 'en-GB') })) : null));
+  return out;
+}
+function rcShop(me, open) {
+  const C = RC(), cash = me.cash + me.bank, car = me.cars[me.car];
+  const rows = C.cars.map((x, i) => { const have = me.cars.some((c) => c.id === x.id), miss = x.price - cash;
+    return h('div', { class: 'vrow rcshop' }, h('img', { class: 'vth', src: IMG('carros', x.id), alt: '', width: 600, height: 600, loading: 'lazy' }),
+      h('div', { class: 'grow' }, h('b', null, t('rcCar_' + x.id)), h('div', { class: 'small muted' }, t('rcTier', { n: x.tier }) + (i === 0 && !me.cars.length ? ' · ' + t('rcStartHere') : '')),
+        h('div', { class: 'rcmini', 'aria-label': t('rcStats', { a: x.spd, b: x.acc, c: x.han }) }, [x.spd, x.acc, x.han].map((v) => h('i', { style: `width:${v}%` })))),
+      have ? h('span', { class: 'small c-cash' }, t('rcHave'))
+        : h('button', { class: 'btn sm ' + (miss <= 0 && !me.cars.length ? 'buy' : 'ghost') + ' num', disabled: miss > 0 || me.cars.length >= C.maxCars, on: { click: (e) => act('carBuy', { id: x.id }, { el: e.currentTarget }) } }, miss > 0 ? t('rcMiss', { m: money(miss) }) : t('rcBuy', { m: money(x.price) }))); });
+  const v = car ? Math.floor((rcValue(car) * C.sellBp) / 10000) : 0;
+  const sell = car ? h('div', { style: 'margin-top:10px' }, sureBtn('btn ghost dng block sm num', t('rcSell', { x: t('rcCar_' + car.id), m: money(v) }), 'btn danger block sm num', t('rcSellSure', { m: money(v) }), () => act('carSell', { i: me.car }))) : null;
+  return open ? h('div', { class: 'card vlist rcstand' }, rows) : h('details', { class: 'card bxhow rcstand' }, h('summary', null, t('rcShopT')), h('div', { class: 'vlist' }, rows), sell);
+}
+// as pistas: uma lista (nome e o que favorece), a escolhida com o visto
+const rcTracks = (cur, set) => h('div', { class: 'rctracks', role: 'radiogroup', 'aria-label': t('rcTrackT') }, RC().tracks.map((x, i) => h('button', { class: 'rctrk', role: 'radio', 'aria-checked': i === cur ? 'true' : 'false', on: { click: () => set(i) } },
+  h('span', { class: 'grow' }, h('b', null, rcTrack(i)), h('span', { class: 'small muted' }, rcHint(i))), i === cur ? icon('check') : null)));
+function screenCorridas() {
+  const me = S.st.me, C = RC(), d = S.races, L = live(me), car = me.cars[me.car];
+  const out = [pageHead('corridas', car || S.raceShow ? null : t('s_corridas'), !!car || !!S.raceShow)];   // a imagem e a explicação só para quem ainda não tem carro
+  const b = busyBanner(me); if (b) out.push(b);
+  const semE = L.vigor < C.vigor;
+  if (S.raceShow) {
+    out.push(raceReplay(S.raceShow));
+    const street = S.raceShow.kind === 's' || S.raceShow.street;
+    out.push(h('div', { class: 'rpacts' }, street && car ? h('button', { class: 'btn rob block', disabled: !!b || semE, on: { click: (e) => raceStreetGo(e.currentTarget) } }, semE ? t('jbNoVigor') : t('rcAgain', { e: C.vigor })) : null,
+      h('button', { class: 'btn ghost block', on: { click: () => { S.raceShow = null; render(); } } }, t('rcClose'))));
+  }
+  if (!car) {   // sem carro: o stand primeiro, e o que se ganha com ele
+    out.push(h('h2', { class: 'sec' }, t('rcShopT')), rcShop(me, true));
+    out.push(h('p', { class: 'small muted', style: 'margin-top:10px' }, t('rcNoCarNote', { m: money(C.street[1]) })));
+    if (me.cash + me.bank < C.cars[0].price) out.push(h('button', { class: 'card row tap stlink', style: 'margin-top:10px', on: { click: () => go('rob') } }, h('span', { class: 'grow' }, t('rcEarn')), h('span', { class: 'muted', 'aria-hidden': 'true' }, '›')));
+    return out;
+  }
+  const tier = rcCar(car.id).tier, ti = S.rcTrack ?? 0, pr = C.street[tier];
+  // 1) a corrida de rua (o que se repete)
+  out.push(h('h2', { class: 'sec' }, t('rcStreetT')));
+  out.push(h('div', { class: 'card stack rcstreet' },
+    h('p', { class: 'small muted' }, t('rcStreetSub')),
+    rcTracks(ti, (i) => { S.rcTrack = i; render(); }),
+    h('p', { class: 'small num' }, t('rcPrizes', { a: money(pr), b: money(pr / 2), c: money(pr / 4) })),
+    h('button', { class: 'btn rob block big', disabled: !!b || semE, on: { click: (e) => raceStreetGo(e.currentTarget) } }, semE ? t('jbNoVigor') : t('rcGo', { e: C.vigor }))));
+  // 2) a garagem
+  out.push(h('h2', { class: 'sec' }, t('rcGarageT')), ...rcGarage(me), rcShop(me, false));
+  // 3) corridas a dinheiro
+  out.push(h('h2', { class: 'sec' }, t('rcMoneyT')));
+  const rooms = d ? d.open : [], mine = rooms.find((r) => r.mine), pot = (r) => Math.floor((r.fee * r.max * (10000 - C.houseBp)) / 10000);
+  if (mine) out.push(h('div', { class: 'card stack rcroom me' },
+    h('div', { class: 'row sp' }, h('b', null, rcTrack(mine.track)), h('span', { class: 'num small' }, t('rcFee', { m: money(mine.fee) }))),
+    h('p', { class: 'small' }, (mine.n < 2 ? t('rcWait1', { n: 2 - mine.n, m: money(mine.fee) }) : t('rcWait2')) + ' ', h('b', { class: 'num', dataset: { left: mine.deadline } }, dur(mine.deadline - now()))),
+    h('p', { class: 'small muted' }, t('rcDrivers', { x: mine.drivers.join(', '), n: mine.n, m: mine.max })),
+    sureBtn('btn ghost dng block', t(mine.own ? 'rcCloseRoom' : 'rcLeave'), 'btn danger block', t('rcLeaveSure', { m: money(mine.fee) }), () => rAct('raceLeave', {}))));
+  const others = rooms.filter((r) => !r.mine);
+  if (others.length) out.push(h('div', { class: 'stack' }, others.map((r) => { const ok = r.tier === tier, other = me.cars.findIndex((c) => rcCar(c.id).tier === r.tier);
+    return h('div', { class: 'card stack rcroom' },
+      h('div', { class: 'row sp' }, h('b', null, rcTrack(r.track)), h('span', { class: 'small c-cash num' }, t('rcPot', { m: money(pot(r)) }))),
+      h('p', { class: 'small muted' }, t('rcRoomLine', { a: r.owner, n: r.n, m: r.max, x: t('rcTier', { n: r.tier }) }) + ' · ', h('span', { class: 'num', dataset: { left: r.deadline } }, dur(r.deadline - now()))),
+      ok ? h('button', { class: 'btn buy block num', disabled: !!me.race || semE || me.cash + me.bank < r.fee, on: { click: (e) => rAct('raceJoin', { id: r.id }, { el: e.currentTarget }) } }, t('rcJoin', { m: money(r.fee) }))
+        : other >= 0 ? h('button', { class: 'btn ghost block', disabled: !!me.race, on: { click: () => act('carSel', { i: other }) } }, t('rcUseCar', { x: t('rcCar_' + me.cars[other].id) }))
+          : h('p', { class: 'small muted' }, t('rcNeedTier', { n: r.tier }))); })));
+  else if (!mine) out.push(h('p', { class: 'muted small' }, t('rcNoRooms')));
+  if (!mine) {
+    const f = S.rcFee ?? 0, z = S.rcSize ?? 1, t2 = S.rcTrack2 ?? 0;
+    out.push(h('details', { class: 'card bxhow rcnew' }, h('summary', null, t('rcNewT')),
+      h('div', { class: 'stack' }, rcTracks(t2, (i) => { S.rcTrack2 = i; render(); }),
+        h('p', { class: 'small', id: 'rcf' }, t('rcFeeT')), h('div', { class: 'seg rcfees', role: 'group', 'aria-labelledby': 'rcf' }, C.fees.map((v, i) => h('button', { class: 'num', 'aria-pressed': i === f ? 'true' : 'false', on: { click: () => { S.rcFee = i; render(); } } }, money(v)))),
+        h('p', { class: 'small', id: 'rcz' }, t('rcSizeT')), h('div', { class: 'seg', role: 'group', 'aria-labelledby': 'rcz' }, C.sizes.map((v, i) => h('button', { 'aria-pressed': i === z ? 'true' : 'false', on: { click: () => { S.rcSize = i; render(); } } }, String(v)))),
+        h('p', { class: 'small muted' }, t('rcNewNote', { m: Math.round(C.waitMs / 60000), h: C.houseBp / 100 })),
+        h('button', { class: 'btn buy block num', disabled: !!b || semE || me.cash + me.bank < C.fees[f], on: { click: (e) => rAct('raceCreate', { track: t2, fee: C.fees[f], max: C.sizes[z] }, { el: e.currentTarget }) } }, t('rcOpen', { m: money(C.fees[f]) })))));
+  }
+  // 4) as últimas corridas (tocar para ver outra vez)
+  if (d && d.mine.length) {
+    out.push(h('h2', { class: 'sec' }, t('rcHistT')));
+    out.push(h('div', { class: 'card vlist' }, d.mine.map((r) => h('button', { class: 'vrow tap rchist', disabled: !r.drivers.length, on: { click: () => { S.raceShow = { track: r.track, drivers: r.drivers, seen: false, kind: r.kind }; render(); window.scrollTo({ top: 0, behavior: 'smooth' }); } } },
+      h('b', { class: 'num rppos ' + (r.pos === 1 ? 'c-resp' : '') }, r.state === 'cancel' ? '—' : rcOrd(r.pos)),
+      h('div', { class: 'grow' }, h('div', null, rcTrack(r.track)), h('div', { class: 'small muted' }, t(r.kind === 's' ? 'rcStreetS' : 'rcMoneyS') + ' · ' + agoTxt(now() - r.t))),
+      r.prize ? h('b', { class: 'num c-cash' }, '+' + money(r.prize)) : null))));
+  }
   return out;
 }
 // ===== v111: empresas dos jogadores =====

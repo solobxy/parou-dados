@@ -48,6 +48,7 @@ export function newPlayer(id, now, world, opts = {}) {
     luxuries: 0,
     gang: null, gb: null, gangLeft: 0, gbotLeft: 0, gh: [], gbz: gbzNew(),
     emp: null,   // v111: a empresa onde trabalha ({ id, t: o tipo, s: as estrelas }); o servidor escreve-a
+    cars: [], car: -1, rcn: { n: 0, w: 0, pod: 0 },   // v112: os carros (cada um com as peças), o que está escolhido e as corridas feitas (rc já é o resto do respeito)
     detoxT: [],
     xp: { F: 0, I: 0, C: 0 },
     wk: CFG.crimes.map(() => 0),   // sucessos por golpe (para os objetivos)
@@ -125,6 +126,11 @@ function migrate(p) {
   if (typeof p.gang !== 'string') p.gang = null;
   if (!p.gang || !p.gb || typeof p.gb !== 'object') p.gb = null;
   if (!empOk(p.emp)) p.emp = null;   // v111
+  if (!Array.isArray(p.cars)) p.cars = [];   // v112
+  p.cars = p.cars.filter((c) => c && carOf(c.id) && Array.isArray(c.up) && c.up.length === 3);
+  if (!Number.isInteger(p.car) || !p.cars[p.car]) p.car = p.cars.length ? 0 : -1;
+  if (!p.rcn || typeof p.rcn !== 'object') p.rcn = { n: 0, w: 0, pod: 0 };
+  if (!Number.isFinite(p.rc)) p.rc = 0;   // (uma versão de teste da v112 usou rc para as corridas: volta a ser o resto do respeito)
   if (!Number.isSafeInteger(p.gangLeft)) p.gangLeft = 0;
   if (!Number.isSafeInteger(p.gbotLeft)) p.gbotLeft = 0;
   if (!Number.isInteger(p.guard)) p.guard = -1;
@@ -397,6 +403,105 @@ export function empTake(p, now, world, amount) {
   if (!Number.isSafeInteger(amount) || amount < 1) fail('BAD_AMOUNT');
   p.bank += amount;
   return { ok: true, amount };
+}
+
+// ---------- v112: corridas de carros ----------
+// O motor sabe dos carros (comprar, afinar, escolher, vender), de quem entra numa corrida (energia e inscrição), da corrida em si
+// (voltas com o acaso e os despistes) e do que se ganha. As corridas entre jogadores (a sala, quem entra, quando arranca) são do servidor.
+export const carOf = (id) => CFG.race.cars.find((c) => c.id === id) || null;
+export const carMine = (p) => (Array.isArray(p.cars) && p.cars[p.car]) || null;
+export function carStats(c) { const x = carOf(c.id), U = CFG.race.upPts; return { spd: x.spd + U * c.up[0], acc: x.acc + U * c.up[1], han: x.han + U * c.up[2] }; }
+export const carUpCost = (id, lv) => Math.floor((carOf(id).price * CFG.race.upBp[lv]) / 10000);
+export function carValue(c) { let v = carOf(c.id).price; for (const lv of c.up) for (let k = 0; k < lv; k++) v += carUpCost(c.id, k); return v; }
+export function carBuy(p, now, world, id) {
+  const x = carOf(String(id));
+  if (!x) fail('NO_CAR');
+  begin(p, now, world, { allowBusy: true });
+  if (p.cars.some((c) => c.id === x.id)) fail('HAVE_IT');
+  if (p.cars.length >= CFG.race.maxCars) fail('CAR_MAX');
+  pay(p, x.price);
+  p.cars.push({ id: x.id, up: [0, 0, 0] }); p.car = p.cars.length - 1;
+  return { ok: true, id: x.id, cost: x.price };
+}
+export function carUp(p, now, world, i, part) {
+  begin(p, now, world, { allowBusy: true });
+  const c = p.cars[i];
+  if (!c) fail('NO_CAR');
+  if (![0, 1, 2].includes(part)) fail('BAD_PART');
+  const lv = c.up[part];
+  if (lv >= CFG.race.upBp.length) fail('CAR_UP_MAX');
+  const cost = carUpCost(c.id, lv);
+  pay(p, cost);
+  c.up[part] = lv + 1;
+  return { ok: true, id: c.id, part, lv: lv + 1, cost };
+}
+export function carSel(p, i) { if (!p.cars[i]) fail('NO_CAR'); p.car = i; return { ok: true, id: p.cars[i].id }; }
+export function carSell(p, now, world, i) {
+  begin(p, now, world, { allowBusy: true });
+  const c = p.cars[i];
+  if (!c) fail('NO_CAR');
+  const v = Math.floor((carValue(c) * CFG.race.sellBp) / 10000);
+  p.cars.splice(i, 1); p.bank += v;
+  p.car = p.cars.length ? Math.min(p.car === i ? 0 : p.car > i ? p.car - 1 : p.car, p.cars.length - 1) : -1;
+  return { ok: true, id: c.id, money: v };
+}
+// a ficha de quem corre: o carro com as peças e a perícia de condução
+export function raceDriver(p) { const c = carMine(p); return c ? { car: c.id, up: [...c.up], ...carStats(c), sk: skillBp(p, 'conducao') } : null; }
+// entrar numa corrida: carro, energia e (nas corridas a dinheiro) a inscrição; devolve a ficha do piloto
+export function raceEnter(p, now, world, fee) {
+  begin(p, now, world);
+  const R = CFG.race;
+  if (!carMine(p)) fail('NO_CAR');
+  if (p.vigor < R.vigor) fail('NO_VIGOR', { need: R.vigor });
+  if (fee) pay(p, fee);
+  p.vigor -= R.vigor;
+  return raceDriver(p);
+}
+// a corrida não arrancou (ninguém mais entrou): volta a inscrição e a energia
+export function raceRefund(p, fee) { p.bank += fee; p.vigor = Math.min(CFG.vigor.max, p.vigor + CFG.race.vigor); return { ok: true, fee }; }
+// a corrida: cada volta = o tempo base da pista x 70 / desempenho, com ±noise e, de vez em quando, um despiste (menos com boa condução)
+export function raceSim(drivers, ti, rng) {
+  const R = CFG.race, tr = R.tracks[ti], maxSk = CFG.skills.maxBp;
+  const out = drivers.map((d, i) => {
+    const perf = (tr.w[0] * d.spd + tr.w[1] * d.acc + tr.w[2] * d.han) / 100, eff = (perf * (10000 + Math.floor((Math.min(d.sk, maxSk) * R.driveBp) / maxSk))) / 10000;
+    const spinBp = Math.round(R.spinBp[0] - ((R.spinBp[0] - R.spinBp[1]) * Math.min(100, d.han)) / 100), laps = [], spins = [];
+    for (let k = 0; k < R.laps; k++) {
+      let t = (tr.lap * 70) / Math.max(1, eff);
+      t = (t * (10000 + rng.int(-R.noiseBp, R.noiseBp))) / 10000;
+      if (rng.chance(spinBp)) { t = (t * (10000 + rng.int(R.spinCost[0], R.spinCost[1]))) / 10000; spins.push(k); }
+      laps.push(Math.round(t));
+    }
+    return { i, laps, spins, total: laps.reduce((a, b) => a + b, 0) };
+  });
+  out.sort((a, b) => a.total - b.total || a.i - b.i);
+  out.forEach((r, k) => { r.pos = k + 1; });
+  return out;
+}
+// o que um piloto leva da corrida: o prémio para o banco, a perícia, o respeito dos 3 primeiros e as contas
+export function raceReward(p, now, pos, prize) {
+  const R = CFG.race;
+  p.bank += prize;
+  p.sk.conducao += R.skPts + (pos <= 3 ? R.skPodium : 0);
+  p.rcn.n += 1; if (pos === 1) p.rcn.w += 1; if (pos <= 3) p.rcn.pod += 1;
+  const resp = pos <= 3 ? R.resp[pos - 1] : 0, lvl = resp ? addRespect(p, resp, now) : null;
+  return { pos, prize, respect: resp, levelUp: lvl };
+}
+// corrida de rua: contra pilotos da rua do mesmo escalão (peças e perícia ao calhas); paga aos 3 primeiros
+export function raceStreet(p, now, world, rng, ti, names) {
+  const R = CFG.race;
+  if (!R.tracks[ti]) fail('NO_TRACK');
+  const me = raceEnter(p, now, world, 0), tier = carOf(me.car).tier, pool = R.cars.filter((c) => c.tier === tier);
+  const nb = rng.int(R.botsMin, R.botsMax), used = new Set(), bots = [];
+  for (let k = 0; k < nb; k++) {
+    let nm; do nm = names[rng.int(0, names.length - 1)]; while (used.has(nm) && used.size < names.length); used.add(nm);
+    const c = { id: pool[rng.int(0, pool.length - 1)].id, up: [rng.int(0, 2), rng.int(0, 2), rng.int(0, 2)] };
+    bots.push({ name: nm, bot: true, car: c.id, up: c.up, ...carStats(c), sk: rng.int(0, Math.floor(CFG.skills.maxBp / 2)) });
+  }
+  const drivers = [{ ...me, me: true }, ...bots], res = raceSim(drivers, ti, rng), mine = res.find((r) => r.i === 0);
+  const prize = mine.pos <= 3 ? Math.floor((R.street[tier] * [10000, 5000, 2500][mine.pos - 1]) / 10000) : 0;
+  const rw = raceReward(p, now, mine.pos, prize);
+  return { ok: true, kind: 's', track: ti, n: drivers.length, ...rw,
+    drivers: res.map((r) => ({ name: drivers[r.i].name || null, me: !!drivers[r.i].me, bot: !!drivers[r.i].bot, car: drivers[r.i].car, up: drivers[r.i].up, laps: r.laps, spins: r.spins, total: r.total, pos: r.pos, prize: r.i === 0 ? prize : 0 })) };
 }
 
 // ---------- gangues ----------
@@ -4436,6 +4541,10 @@ export function checkInvariants(p) {
   if (p.hon) for (const k of Object.keys(p.hon)) if (!honorOf(k) || !Number.isSafeInteger(p.hon[k])) bad.push('hon ' + k);   // v100
   if (p.honSel != null && !(p.hon && p.hon[p.honSel])) bad.push('honSel');
   if (p.emp !== null && !empOk(p.emp)) bad.push('emp');   // v111
+  if (!Array.isArray(p.cars) || p.cars.length > CFG.race.maxCars || p.cars.some((c) => !carOf(c.id) || !isInts(c.up, 3, 0, CFG.race.upBp.length)) || new Set(p.cars.map((c) => c.id)).size !== p.cars.length) bad.push('cars');   // v112
+  if (p.cars.length ? !p.cars[p.car] : p.car !== -1) bad.push('car');
+  if (!p.rcn || !Number.isSafeInteger(p.rcn.n) || p.rcn.w > p.rcn.n || p.rcn.pod > p.rcn.n) bad.push('rcn');
+  if (!Number.isFinite(p.rc)) bad.push('rc');
   if (p.emp && p.job !== -1) bad.push('emp/job');
   if (p.honVit != null && (!Array.isArray(p.honVit) || p.honVit.length > CFG.social.vitMax || p.honVit.some((k) => !(p.hon && p.hon[k])))) bad.push('honVit');   // v109
   if (p.biz.length !== CFG.biz.length) bad.push('biz length');

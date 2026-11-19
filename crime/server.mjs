@@ -29,7 +29,7 @@ const RONDA_TESTE = process.env.PRIMEIRA_RONDA ? dataDe(process.env.PRIMEIRA_RON
 // Épocas de 28 dias a contar da sexta 13/11/2026 às 21:00 de Lisboa (PRIMEIRA_EPOCA=AAAA-MM-DD muda-a, para testes)
 const ANCORA = dataDe(process.env.PRIMEIRA_EPOCA || process.env.PRIMEIRA_RONDA || '2026-11-13');
 const rng = process.env.TESTE_SEMENTE ? seededRng(+process.env.TESTE_SEMENTE) : cryptoRng();   // nos testes, a sorte pode ser sempre a mesma
-const VERSAO = 111;   // sobe quando o servidor muda, para se confirmar de fora que a versão nova já está a correr
+const VERSAO = 112;   // sobe quando o servidor muda, para se confirmar de fora que a versão nova já está a correr
 const ATOS_3S = +(process.env.ATOS_3S || 15), ATOS_MIN = +(process.env.ATOS_MIN || 400); // ações por conta: 15 em 3 s, 400 por minuto
 
 // ---------- relógio que nunca anda para trás ----------
@@ -350,6 +350,7 @@ function carregarRonda(n) {
   carregarGuerras();
   carregarTerritorio();   // v110
   carregarEmpresas();   // v111
+  carregarCorridas();   // v112
 }
 
 function nomeDe(id) {
@@ -507,6 +508,7 @@ function vista(p, now) {
     bustBp: E.bustChanceBp(p, now, mk ? MW.pressOf(mk.w, 'lx') : 50), lx: mk ? { crime: mk.w.lx.crime, press: MW.pressOf(mk.w, 'lx'), ed: mk.w.ed, edNext: MW.edStart(mk.w.ed + 1) } : null,
     cd: { est: E.consumWait(p, 'est', now), med: E.consumWait(p, 'med', now) },   // v78: quanto falta na espera de cada família
     mt: p.mt, cf: p.cf, maq: p.maq,   // v83: depósito, bancada e máquinas
+    cars: p.cars, car: p.car, rcn: p.rcn, rsk: E.skillBp(p, 'conducao'), race: salaDe(p.id) ? salaDe(p.id).id : null,   // v112: a garagem, as corridas e a perícia
     dg: E.digView(p, now), dgc: p.dgc, arq: E.stLevel(p, 'arqueologia'),   // v85: a escavação aberta (sem a grelha), os sítios vigiados, o nível de Arqueologia
     hon: p.hon || {}, honSel: p.honSel || null, honVit: p.honVit || [], honv: E.honorVals(p),   // v100: honras ganhas, a escolhida e os números de todas
     tr: E.trView(p), trL: p.trL, trB: p.trB, nArm: E.trWeapons(p), trCc: E.trContactCost(p), trN: p.trD && p.trD.d === E.dayOf(now) ? p.trD.n : 0,   // v101: a viagem (sem a decisão da alfândega), a mala que chegou, a mala comprada e as armas que o raio-X vê
@@ -563,7 +565,7 @@ function cfgPublica() {
     round: { playDays: CFG.round.playDays, noPvpMs: CFG.round.noPvpMs, newbieShieldMs: CFG.round.newbieShieldMs }, season: CFG.season, raid: CFG.raid,   // v91: a wiki
     consum: CFG.consum, col: CFG.col, gyms: CFG.gyms, books: CFG.books,   // v94, v95
     social: CFG.social,   // v109: o chat e a vitrine
-    turf: CFG.turf, comp: CFG.comp,   // v110: o território
+    turf: CFG.turf, comp: CFG.comp, race: CFG.race,   // v110: o território
     mat: CFG.mat, craft: CFG.craft, feira: { ...CFG.feira, refs: FEIRA_REFS }, dig: CFG.dig, hunt: CFG.hunt, honors: E.HONORS, travel: CFG.travel,   // v83, v84, v98, v100, v101
     exam: (({ ans: _a, ...x }) => x)(CFG.exam), studies: CFG.studies,   // v81: a Universidade   // v80: as regras do exame, sem as respostas certas
     gov: { vote: CFG.gov.vote, laws: CFG.gov.laws, cof: CFG.gov.cof, parties: Object.fromEntries(Object.entries(CFG.gov.parties).map(([k, x]) => [k, { pos: x.pos, wOp: x.wOp, wLob: x.wLob }])) },   // v76: o parlamento
@@ -1573,6 +1575,128 @@ function vistaEmpresa(conta, now) {
   return out;
 }
 
+// ---------- v112: corridas ----------
+// corridas: as de rua (kind 's', só um jogador e pilotos da rua) e as a dinheiro (kind 'p', sala aberta até encher ou até ao prazo).
+// pilotos: quem entrou, a ficha com que entrou (o carro e as peças nesse momento), a posição e o prémio.
+db.exec(`CREATE TABLE IF NOT EXISTS corridas (ronda INTEGER NOT NULL, id TEXT NOT NULL, kind TEXT NOT NULL, pista INTEGER NOT NULL, taxa INTEGER NOT NULL, max INTEGER NOT NULL,
+  tier INTEGER NOT NULL, dono TEXT NOT NULL, criada INTEGER NOT NULL, prazo INTEGER NOT NULL, fim INTEGER NOT NULL DEFAULT 0, estado TEXT NOT NULL, res TEXT NOT NULL DEFAULT '', PRIMARY KEY (ronda, id));
+CREATE INDEX IF NOT EXISTS corridas_fim ON corridas (ronda, fim);
+CREATE TABLE IF NOT EXISTS corrida_pilotos (ronda INTEGER NOT NULL, corrida TEXT NOT NULL, conta TEXT NOT NULL, ficha TEXT NOT NULL, entrou INTEGER NOT NULL, pos INTEGER NOT NULL DEFAULT 0,
+  premio INTEGER NOT NULL DEFAULT 0, PRIMARY KEY (ronda, corrida, conta));
+CREATE INDEX IF NOT EXISTS corrida_pilotos_conta ON corrida_pilotos (ronda, conta);`);
+const qr = {
+  abertas: db.prepare("SELECT * FROM corridas WHERE ronda = ? AND estado = 'open'"),
+  pilotosDe: db.prepare('SELECT * FROM corrida_pilotos WHERE ronda = ? AND corrida = ?'),
+  nova: db.prepare('INSERT INTO corridas (ronda, id, kind, pista, taxa, max, tier, dono, criada, prazo, fim, estado, res) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'),
+  fecha: db.prepare('UPDATE corridas SET estado = ?, fim = ?, res = ? WHERE ronda = ? AND id = ?'),
+  entra: db.prepare('INSERT OR REPLACE INTO corrida_pilotos (ronda, corrida, conta, ficha, entrou, pos, premio) VALUES (?, ?, ?, ?, ?, ?, ?)'),
+  sai: db.prepare('DELETE FROM corrida_pilotos WHERE ronda = ? AND corrida = ? AND conta = ?'),
+  minhas: db.prepare(`SELECT c.id, c.kind, c.pista, c.taxa, c.fim, c.estado, c.res, p.pos, p.premio FROM corrida_pilotos p JOIN corridas c ON c.ronda = p.ronda AND c.id = p.corrida
+    WHERE p.ronda = ? AND p.conta = ? AND c.estado != 'open' ORDER BY c.fim DESC LIMIT ?`),
+  limpa: db.prepare("DELETE FROM corridas WHERE ronda = ? AND estado != 'open' AND fim < ?"),
+  limpaP: db.prepare('DELETE FROM corrida_pilotos WHERE ronda = ? AND corrida NOT IN (SELECT id FROM corridas WHERE ronda = ?)'),
+};
+const RACE = CFG.race, salas = new Map();   // as corridas a dinheiro abertas: id -> { id, pista, taxa, max, tier, dono, criada, prazo, pilotos: Map(conta -> ficha) }
+const BOTS_CORRIDA = ['Zé Turbo', 'Rui Nitro', 'Tó Escape', 'Nelo GTI', 'Jéssica Drift', 'Bruno Embraiagem', 'Kika Travão', 'Mário Pistão', 'Sandro Jantes', 'Vanessa Cilindrada', 'Fábio Ponteiro', 'Marco Rotunda'];
+function carregarCorridas() {
+  salas.clear();
+  for (const r of qr.abertas.all(ronda)) salas.set(r.id, { id: r.id, pista: r.pista, taxa: r.taxa, max: r.max, tier: r.tier, dono: r.dono, criada: r.criada, prazo: r.prazo,
+    pilotos: new Map(qr.pilotosDe.all(ronda, r.id).map((x) => [x.conta, JSON.parse(x.ficha)])) });
+}
+// o resultado guardado (para a repetição no ecrã): a pista, a inscrição e cada piloto com as voltas
+const resCorrida = (pista, taxa, pilotos) => JSON.stringify({ track: pista, fee: taxa, drivers: pilotos });
+// a corrida a dinheiro arranca: as voltas, o pote (menos a casa) repartido pelos primeiros, a perícia e o respeito de cada um
+function correrSala(s, now) {
+  const contas = [...s.pilotos.keys()], fichas = contas.map((c) => s.pilotos.get(c)), res = E.raceSim(fichas, s.pista, rng);
+  const pote = Math.floor((s.taxa * contas.length * (10000 - RACE.houseBp)) / 10000), split = RACE.split[Math.min(contas.length, RACE.split.length - 1)];
+  const out = [];
+  db.exec('BEGIN');
+  try {
+    for (const r of res) {
+      const conta = contas[r.i], p = jogadores.get(conta), premio = r.pos <= split.length ? Math.floor((pote * split[r.pos - 1]) / 10000) : 0;
+      if (p) { E.touch(p, now); E.raceReward(p, now, r.pos, premio); guardar(p, now); evento(conta, now, { k: 'race', id: s.id, pos: r.pos, n: contas.length, prize: premio, track: s.pista }); }
+      qr.entra.run(ronda, s.id, conta, JSON.stringify(fichas[r.i]), now, r.pos, premio);
+      out.push({ name: nomeDe(conta), conta, car: fichas[r.i].car, up: fichas[r.i].up, laps: r.laps, spins: r.spins, total: r.total, pos: r.pos, prize: premio });
+    }
+    qr.fecha.run('done', now, resCorrida(s.pista, s.taxa, out), ronda, s.id);
+    caixa(now, 'corridas', 0, s.taxa * contas.length - out.reduce((x, d) => x + d.prize, 0));   // o que a casa fica sai do jogo
+    db.exec('COMMIT');
+  } catch (e) { db.exec('ROLLBACK'); throw e; }
+  salas.delete(s.id);
+}
+function cancelarSala(s, now) {
+  db.exec('BEGIN');
+  try {
+    for (const conta of s.pilotos.keys()) { const p = jogadores.get(conta); if (p) { E.raceRefund(p, s.taxa); guardar(p, now); evento(conta, now, { k: 'raceOff', id: s.id, fee: s.taxa, track: s.pista }); } }
+    qr.fecha.run('cancel', now, '', ronda, s.id);
+    db.exec('COMMIT');
+  } catch (e) { db.exec('ROLLBACK'); throw e; }
+  salas.delete(s.id);
+}
+// a cada segundo: as salas cheias arrancam; as que passaram o prazo arrancam com 2 ou mais, senão são canceladas
+function resolverCorridas(now) {
+  if (ronda < 0) return;
+  for (const s of [...salas.values()]) {
+    try { if (s.pilotos.size >= s.max || now >= s.prazo) { if (s.pilotos.size >= 2) correrSala(s, now); else cancelarSala(s, now); } }
+    catch (e) { console.error('corrida', s.id, e.message); }
+  }
+}
+setInterval(() => { try { resolverCorridas(clock()); } catch (e) { console.error('corridas', e.message); } }, 1000).unref?.();
+setInterval(() => { try { if (ronda >= 0) { qr.limpa.run(ronda, clock() - 7 * T.DAY); qr.limpaP.run(ronda, ronda); } } catch (e) { console.error('limpar corridas', e.message); } }, 60 * 60_000).unref?.();
+const salaDe = (conta) => { for (const s of salas.values()) if (s.pilotos.has(conta)) return s; return null; };
+function agirCorrida(a, p, conta, now, world, ctx) {
+  const err = (code, data) => { throw new E.GameError(code, data); };
+  switch (a.type) {
+    case 'raceStreet': {   // contra a rua: sai na hora (dá para correr na rua enquanto se espera por uma sala a dinheiro)
+      const r = E.raceStreet(p, now, world, rng, int(a.track), BOTS_CORRIDA), id = 'r' + now.toString(36) + randomBytes(3).toString('hex');
+      const drivers = r.drivers.map((d) => ({ ...d, name: d.me ? nomeDe(conta) : d.name }));
+      ctx.ops.push(() => { qr.nova.run(ronda, id, 's', r.track, 0, r.n, E.carOf(drivers.find((d) => d.me).car).tier, conta, now, now, now, 'done', resCorrida(r.track, 0, drivers));
+        qr.entra.run(ronda, id, conta, '{}', now, r.pos, r.prize); if (r.prize) caixa(now, 'corridas', r.prize, 0); });
+      return { ...r, id, drivers };
+    }
+    case 'raceCreate': {
+      if (salaDe(conta)) err('IN_RACE');
+      const ti = int(a.track), fee = int(a.fee), max = int(a.max);
+      if (!RACE.tracks[ti]) err('NO_TRACK');
+      if (!RACE.fees.includes(fee) || !RACE.sizes.includes(max)) err('BAD_AMOUNT');
+      let n = 0; for (const s of salas.values()) if (s.dono === conta) n++;
+      if (!limite('csala:' + conta, 5, 10 * 60_000, now)) err('SLOW_DOWN');
+      const ficha = E.raceEnter(p, now, world, fee), id = 'r' + now.toString(36) + randomBytes(3).toString('hex'), tier = E.carOf(ficha.car).tier;
+      const s = { id, pista: ti, taxa: fee, max, tier, dono: conta, criada: now, prazo: now + RACE.waitMs, pilotos: new Map([[conta, ficha]]) };
+      salas.set(id, s);
+      ctx.ops.push(() => { qr.nova.run(ronda, id, 'p', ti, fee, max, tier, conta, now, s.prazo, 0, 'open', ''); qr.entra.run(ronda, id, conta, JSON.stringify(ficha), now, 0, 0); });
+      return { ok: true, id, track: ti, fee, max, deadline: s.prazo };
+    }
+    case 'raceJoin': {
+      const s = salas.get(String(a.id || '')) || err('NO_RACE');
+      if (salaDe(conta)) err('IN_RACE');
+      if (s.pilotos.size >= s.max || now >= s.prazo) err('RACE_FULL');
+      const c = E.carMine(p); if (!c) err('NO_CAR');
+      if (E.carOf(c.id).tier !== s.tier) err('RACE_TIER', { tier: s.tier });
+      const ficha = E.raceEnter(p, now, world, s.taxa);
+      s.pilotos.set(conta, ficha);
+      ctx.ops.push(() => qr.entra.run(ronda, s.id, conta, JSON.stringify(ficha), now, 0, 0));
+      return { ok: true, id: s.id, n: s.pilotos.size, max: s.max };
+    }
+    case 'raceLeave': {   // antes de arrancar: volta tudo (quem a abriu fecha-a e devolve a todos)
+      const s = salaDe(conta) || err('NO_RACE');
+      if (s.dono === conta) { ctx.depois.push(() => cancelarSala(s, now)); return { ok: true, closed: true }; }
+      E.raceRefund(p, s.taxa); s.pilotos.delete(conta);
+      ctx.ops.push(() => qr.sai.run(ronda, s.id, conta));
+      return { ok: true, fee: s.taxa };
+    }
+  }
+  err('BAD_ACTION');
+}
+function vistaCorridas(conta, now) {
+  const sala = (s) => ({ id: s.id, track: s.pista, fee: s.taxa, max: s.max, tier: s.tier, owner: nomeDe(s.dono), deadline: s.prazo, n: s.pilotos.size,
+    drivers: [...s.pilotos.keys()].map((c) => nomeDe(c)), mine: s.pilotos.has(conta), own: s.dono === conta });
+  const mine = qr.minhas.all(ronda, conta, RACE.hist).map((r) => { const res = r.res ? JSON.parse(r.res) : null;
+    return { id: r.id, kind: r.kind, track: r.pista, fee: r.taxa, t: r.fim, state: r.estado, pos: r.pos, prize: r.premio,
+      drivers: res ? res.drivers.map((d) => ({ name: d.name, me: d.conta ? d.conta === conta : !!d.me, bot: !!d.bot, car: d.car, laps: d.laps, spins: d.spins, total: d.total, pos: d.pos, prize: d.prize })) : [] }; });
+  return { open: [...salas.values()].sort((x, y) => x.prazo - y.prazo).map(sala), mine };
+}
+
 // o que o ecrã da gangue mostra da guerra
 function vistaGuerra(g, conta, now) {
   const w = guerraDe(g.id), L = w ? ladoDe(w, g.id) : null, eu = jogadores.get(conta), m1 = { start: mundo(now).start, playEnd: mundo(now).playEnd };
@@ -2226,6 +2350,10 @@ function agir(conta, corpo, now) {
     case 'colSell': r = E.colSell(p, now, world, String(a.id || '').slice(0, 24), int(a.n)); break;
     case 'deal': r = E.deal(p, now, world, int(a.j)); break;
     case 'job': r = E.chooseJob(p, now, world, int(a.i)); break;
+    case 'carBuy': r = E.carBuy(p, now, world, String(a.id || '')); break;   // v112: a garagem
+    case 'carUp': r = E.carUp(p, now, world, int(a.i), int(a.part)); break;
+    case 'carSel': if (salaDe(conta)) throw new E.GameError('IN_RACE'); r = E.carSel(p, int(a.i)); break;
+    case 'carSell': if (salaDe(conta)) throw new E.GameError('IN_RACE'); r = E.carSell(p, now, world, int(a.i)); break;
     case 'course': r = E.startCourse(p, now, world, String(a.id || '').slice(0, 24)); break;
     case 'examStart': r = E.examStart(p, now, world, rng); break;   // v80: o exame do curso
     case 'examAnswer': r = E.examAnswer(p, now, world, Array.isArray(a.ans) ? a.ans.slice(0, 8) : null); break;
@@ -2358,6 +2486,7 @@ function agir(conta, corpo, now) {
     default:
       if (typeof a.type === 'string' && a.type.startsWith('gang')) { r = agirGangue(a, p, conta, now, world, ctx); break; }
       if (typeof a.type === 'string' && a.type.startsWith('comp')) { r = agirEmpresa(a, p, conta, now, world, ctx); break; }   // v111
+      if (typeof a.type === 'string' && a.type.startsWith('race')) { r = agirCorrida(a, p, conta, now, world, ctx); break; }   // v112
       if (typeof a.type === 'string' && a.type.startsWith('feira')) { r = agirFeira(a, p, conta, now, world, ctx); break; }   // v84
       throw new E.GameError('BAD_ACTION');
   }
@@ -2729,6 +2858,11 @@ async function tratar(req, res) {
     if (!limite('perfil:' + conta, 40, 10_000, now)) return enviar(res, 429, { error: 'SLOW_DOWN' });
     const pf = perfilPublico(conta, url.searchParams.get('n'), now, w);
     return pf ? enviar(res, 200, { now, ...pf }) : enviar(res, 404, { error: 'NO_TARGET' });
+  }
+  if (req.method === 'GET' && path === '/api/races') {   // v112: as corridas
+    if (w.phase !== 'play') return enviar(res, 200, { now, open: [], mine: [] });
+    carregarRonda(w.n);
+    return enviar(res, 200, { now, ...vistaCorridas(conta, now) });
   }
   if (req.method === 'GET' && path === '/api/comp') {   // v111: as empresas
     if (w.phase !== 'play') return enviar(res, 200, { now, list: [], mine: null });

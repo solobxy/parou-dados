@@ -905,6 +905,32 @@ export const CFG = {
       { id: 'advocacia', task: 'contrato', course: 'especializacao', cost: 1_500_000, rev: 1600, perk: 'jail', bp: [1000, 2000] },
     ],
   },
+  // v112: corridas de carros. Carros por escalão (spd velocidade, acc aceleração, han condução, de 0 a 100), cada um com três peças
+  // (motor, turbo, suspensão) que sobem upPts por nível até 3 (preço = upBp do carro por nível). Pistas: o peso de cada estatística e
+  // o tempo base de uma volta. Corrida de rua: contra 3 a 5 pilotos da rua do mesmo escalão, sem inscrição; paga street[escalão] x
+  // [100%, 50%, 25%] aos 3 primeiros. Corrida a dinheiro: entre jogadores, com inscrição; leva o pote menos houseBp, repartido por
+  // split (conforme quantos correram). A perícia é a da condução (a mesma dos golpes de carros): até +driveBp ao desempenho.
+  race: {
+    vigor: 10, laps: 3, noiseBp: 2000, spinBp: [1200, 200], spinCost: [800, 2000], driveBp: 600, skPts: 60, skPodium: 40, resp: [3, 2, 1],
+    upPts: 2, upBp: [1000, 2000, 3500], sellBp: 5000, maxCars: 5, botsMin: 3, botsMax: 5,
+    cars: [
+      { id: 'clio', tier: 1, price: 8000, spd: 40, acc: 46, han: 50 },
+      { id: 'golf', tier: 2, price: 45_000, spd: 55, acc: 58, han: 60 },
+      { id: 'impreza', tier: 3, price: 180_000, spd: 66, acc: 72, han: 70 },
+      { id: 'm3', tier: 4, price: 600_000, spd: 79, acc: 78, han: 76 },
+      { id: 'gt3', tier: 5, price: 2_000_000, spd: 92, acc: 88, han: 88 },
+    ],
+    tracks: [
+      { id: 'marginal', w: [50, 20, 30], lap: 62_000 },
+      { id: 'ponte', w: [65, 25, 10], lap: 48_000 },
+      { id: 'monsanto', w: [15, 30, 55], lap: 75_000 },
+      { id: 'baixa', w: [10, 45, 45], lap: 58_000 },
+      { id: 'estoril', w: [35, 30, 35], lap: 92_000 },
+    ],
+    street: [0, 160, 480, 1200, 2400, 4800],
+    fees: [1000, 10_000, 50_000, 250_000], sizes: [2, 4, 6, 8], houseBp: 1000, waitMs: 5 * MIN, hist: 10,
+    split: [[], [10000], [10000], [7000, 3000], [6000, 3000, 1000]],
+  },
   // v109: o chat público da cidade e o perfil público
   // max: letras por mensagem; minLevel: nível para falar (trava contas feitas só para encher o chat); rate: n mensagens por janela;
   // keep: mensagens que se guardam (as mais antigas apagam-se de hora a hora); vitMax: honras na vitrine do perfil
