@@ -116,6 +116,7 @@ const PATHS = {
   car: 'M3 14l2-5h14l2 5v4H3zM6 18v2M18 18v2M7 14h.01M17 14h.01',
   skull: 'M12 3a8 8 0 0 0-8 8v3l2 2v4h12v-4l2-2v-3a8 8 0 0 0-8-8zM9 11h.01M15 11h.01M10 20v-3M14 20v-3',
   x: 'M6 6l12 12M18 6L6 18',
+  flag: 'M5 21V4M5 4h12l-3 4 3 4H5',   // v110: bairros
 };
 const FILLED = new Set(['bolt', 'crown']);
 export function icon(name, cls = 'i') {

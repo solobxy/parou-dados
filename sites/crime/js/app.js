@@ -117,6 +117,7 @@ function react(type, out, before, opts) {
   }
   if (type === 'travel') { if (r.xr?.caught) { toast(t('tTrCaught', { m: money(r.xr.fine) }), true); fx.sfx('bust'); } else toast(t('tTrGo', { h: hhmm(r.at) })); }   // v101: viagens
   if (type === 'trBack') toast(t('tTrBack', { h: hhmm(r.at) }));
+  if (type === 'gangTurf') { toast(r.start > now() + 1000 ? t('bxDeclT', { em: tzEm(r.z), h: hhmm(r.start) }) : t('bxStartedT', { em: tzEm(r.z) })); fx.sfx('claim'); }   // v110
   if (type === 'trBuy') { toast(t('tTrBuy', { n: r.n, x: t('tg_' + r.g) })); fx.sfx('claim'); }
   if (type === 'trGun') toast(t('tTrGun', { x: t('g_' + r.gun) }));
   if (type === 'trBag') toast(t('tTrBag', { n: r.cap }));
@@ -235,6 +236,11 @@ function react(type, out, before, opts) {
   } else if (type === 'attack') {
     fx.sfx('hit');
     fx.fight(me.name, out.target.name, r.win, r.win ? (r.mode === 'mug' ? '+' + money(r.money) + ' · +' + r.respect : '+' + r.respect + ' ' + t('respect').toLowerCase()) : '−' + Math.abs(r.respect) + ' ' + t('respect').toLowerCase(), { win: t('youWon'), lose: t('youLost') });
+    if (r.turf && (r.turf.pts || r.turf.chain >= 2)) {   // v110: pontos num bairro e a cadeia do gangue
+      const x = r.turf.mult > 10000 ? t('bxHitMult', { x: (r.turf.mult / 10000).toLocaleString(lang() === 'pt' ? 'pt-PT' : 'en-GB') }) : '';
+      setTimeout(() => toast((r.turf.pts ? t('bxHit', { n: r.turf.pts, em: tzEm(r.turf.z), c: r.turf.chain }) : t('bxHitChain', { c: r.turf.chain })) + x), 900);
+      if (S.tab === 'bairros') loadTurf();
+    }
     S.targets = null; loadTargets();
   } else if (type === 'hitman') {
     if (r.success) { toast(t('hmDone', { b: r.target, n: r.respLoss })); fx.sfx('crit'); fx.vibrate([20, 40, 20]); } else { toast(t('hmMissed', { b: r.target }), true); fx.sfx('fail'); }
@@ -447,7 +453,7 @@ function tickHud() {
 const PLACES = {
   city: { ic: 'skyline' }, empire: { ic: 'empire' }, rob: { ic: 'street', img: 'golpes' }, club: { ic: 'bolt', img: 'discoteca' }, gym: { ic: 'gym', img: 'ginasio' }, gyms: { ic: 'gym' }, livros: { img: 'livros' }, hunt: { img: 'caca' }, honras: {}, viagens: { img: 'viagens' },
   biz: { ic: 'empire', img: 'negocios' }, stash: { img: 'stash' }, acct: { img: 'contabilista' }, port: { img: 'porto' }, air: { img: 'aeroporto' }, arms: { img: 'armas' }, bank: { img: 'banco' }, hosp: { img: 'hospital' },
-  jail: { img: 'prisao' }, gang: { img: 'gangue' }, work: { img: 'profissao' }, news: { img: 'jornal' }, casino: { ic: 'gem', img: 'casino' }, roulette: { img: 'roleta' }, bj: { img: 'blackjack' }, dice: { img: 'dados' }, wheel: { img: 'roda' }, slot: { img: 'slot' }, zeus: { img: 'zeus' }, doce: { img: 'doce' }, rebucado: { img: 'rebucado' }, alley: { img: 'beco' }, lux: { img: 'luxos' }, fights: { ic: 'fights', img: 'lutas' }, rank: { img: 'procurados' }, hitman: { img: 'assassino' }, putas: { img: 'putas' }, gigs: { img: 'biscates' }, casa: {}, myclub: { img: 'discoteca' }, mybro: { img: 'bordel' }, bolsa: { img: 'bolsa' }, job: { img: 'emprego' }, inv: { ic: 'box', img: 'inventario' }, ops: { img: 'operacoes' }, parl: { img: 'parlamento' }, cafe: { img: 'cafe' }, museum: { img: 'museu' }, uni: { img: 'universidade' }, cave: { img: 'cave' }, feira: { img: 'feira' }, dig: { img: 'escavacoes' }, arquivo: { img: 'arquivo' },
+  jail: { img: 'prisao' }, gang: { img: 'gangue' }, bairros: { ic: 'flag', img: 'bairros' }, work: { img: 'profissao' }, news: { img: 'jornal' }, casino: { ic: 'gem', img: 'casino' }, roulette: { img: 'roleta' }, bj: { img: 'blackjack' }, dice: { img: 'dados' }, wheel: { img: 'roda' }, slot: { img: 'slot' }, zeus: { img: 'zeus' }, doce: { img: 'doce' }, rebucado: { img: 'rebucado' }, alley: { img: 'beco' }, lux: { img: 'luxos' }, fights: { ic: 'fights', img: 'lutas' }, rank: { img: 'procurados' }, hitman: { img: 'assassino' }, putas: { img: 'putas' }, gigs: { img: 'biscates' }, casa: {}, myclub: { img: 'discoteca' }, mybro: { img: 'bordel' }, bolsa: { img: 'bolsa' }, job: { img: 'emprego' }, inv: { ic: 'box', img: 'inventario' }, ops: { img: 'operacoes' }, parl: { img: 'parlamento' }, cafe: { img: 'cafe' }, museum: { img: 'museu' }, uni: { img: 'universidade' }, cave: { img: 'cave' }, feira: { img: 'feira' }, dig: { img: 'escavacoes' }, arquivo: { img: 'arquivo' },
 };
 // barra de baixo: só o que se usa a toda a hora. O resto vive dentro de cada separador, arrumado por zonas.
 // v90: o ginásio entra no lugar do casino (golpes gastam stamina; ginásio e lutas gastam energia: é o que se faz a toda a hora).
@@ -456,9 +462,9 @@ const NAV = ['city', 'rob', 'gym', 'empire', 'inv'];   // v92: o império sobe p
 const HUB = {
   // v95 (pedido do Dinis): o porto e o aeroporto passam para a cidade; a gangue e as lutas, para o império
   city: [['sec_night', ['club', 'putas', 'casino', 'alley', 'arms']], ['sec_street', ['gigs', 'cafe', 'job', 'uni', 'livros', 'dig', 'hunt', 'feira', 'bank', 'museum', 'parl', 'hosp', 'jail', 'rank']], ['sec_trade', ['viagens', 'port', 'air']]],
-  empire: [['sec_power', ['fights', 'gang']], ['sec_income', ['biz', 'myclub', 'mybro']], ['sec_assets', ['casa', 'cave', 'bank', 'bolsa', 'stash', 'acct']]],
+  empire: [['sec_power', ['fights', 'gang', 'bairros']], ['sec_income', ['biz', 'myclub', 'mybro']], ['sec_assets', ['casa', 'cave', 'bank', 'bolsa', 'stash', 'acct']]],
 };
-const PARENT = { gyms: 'gym', livros: 'city', hunt: 'city', honras: 'city', viagens: 'city', fights: 'empire', arquivo: 'city', dig: 'city', feira: 'city', cave: 'empire', uni: 'city', museum: 'city', cafe: 'city', parl: 'city', gigs: 'city', gang: 'empire', work: 'job', job: 'city', news: 'city', casino: 'city', roulette: 'casino', bj: 'casino', dice: 'casino', wheel: 'casino', slot: 'casino', zeus: 'casino', doce: 'casino', rebucado: 'casino', club: 'city', putas: 'city', gym: 'city', alley: 'city', hosp: 'city', jail: 'city',
+const PARENT = { bairros: 'gang', gyms: 'gym', livros: 'city', hunt: 'city', honras: 'city', viagens: 'city', fights: 'empire', arquivo: 'city', dig: 'city', feira: 'city', cave: 'empire', uni: 'city', museum: 'city', cafe: 'city', parl: 'city', gigs: 'city', gang: 'empire', work: 'job', job: 'city', news: 'city', casino: 'city', roulette: 'casino', bj: 'casino', dice: 'casino', wheel: 'casino', slot: 'casino', zeus: 'casino', doce: 'casino', rebucado: 'casino', club: 'city', putas: 'city', gym: 'city', alley: 'city', hosp: 'city', jail: 'city',
   biz: 'empire', port: 'city', air: 'city', myclub: 'empire', mybro: 'empire', bolsa: 'empire', stash: 'empire', acct: 'empire', casa: 'empire', bank: 'empire', lux: 'empire', arms: 'fights', rank: 'fights', hitman: 'fights', ops: 'rob' };
 const upOf = (id) => (S.backTo && S.backTo[id]) || PARENT[id] || 'city';   // um sítio que está em duas zonas volta para a zona de onde vieste
 const tabOf = (id) => { let x = id; for (let k = 0; k < 4 && !NAV.includes(x); k++) x = upOf(x); return NAV.includes(x) ? x : 'city'; };
@@ -470,7 +476,9 @@ function loadFor(tab) {
   if (tab === 'fights') { if (S.fightSeg === 'events') loadEvents(true); else { S.fightSeg = 'targets'; loadTargets(); } }
   if (tab === 'rank') loadRanking();
   if (tab === 'hitman') loadHitman();
-  if (tab === 'gang') loadGang();
+  if (tab === 'gang') { loadGang(); loadTurf(); }
+  if (tab === 'empire' && (!S.turfAt || now() - S.turfAt > 60000)) loadTurf();   // v110: o aviso do assalto no mosaico dos bairros
+  if (tab === 'bairros') { if (!S.gang) loadGang(); loadTurf(); }   // v110
   if (tab === 'feira') { S.feiraItem = null; loadFeira(); }   // v84
   if (tab === 'club' || tab === 'putas') loadVenues();
   if (tab === 'bolsa') { S.stkSel = null; loadStocks(); }
@@ -541,7 +549,7 @@ function shell() {
 }
 
 const SCREENS = { job: screenJob, city: screenCity, empire: screenEmpire, news: screenNews, casino: screenCasino, roulette: screenRoulette, bj: screenBJ, dice: screenDice, wheel: screenWheel, slot: () => screenSlotGame('slot'), zeus: () => screenSlotGame('zeus'), doce: () => screenSlotGame('doce'), rebucado: () => screenSlotGame('rebucado'), rob: screenRob, club: screenClub, gym: screenGym, gyms: screenGyms, livros: screenLivros, biz: screenBiz, port: screenPort, arms: screenArms, bank: screenBank,
-  hosp: screenHosp, jail: screenJail, gang: screenGang, work: screenWork, air: screenAir, putas: screenPutas, myclub: screenMyClub, mybro: screenMyBro, bolsa: screenBolsa, inv: screenInv, stash: screenStash, acct: screenAcct, casa: screenCasa, alley: screenAlley, lux: screenLux, fights: screenFights, rank: screenRank, hitman: screenHitman, ops: screenOps, gigs: screenGigs, parl: screenParl, cafe: screenCafe, museum: screenMuseum, uni: screenUni, cave: screenCave, feira: screenFeira, dig: screenDig, hunt: screenHunt, honras: screenHonras, arquivo: screenArquivo, viagens: screenViagens };
+  hosp: screenHosp, jail: screenJail, gang: screenGang, bairros: screenBairros, work: screenWork, air: screenAir, putas: screenPutas, myclub: screenMyClub, mybro: screenMyBro, bolsa: screenBolsa, inv: screenInv, stash: screenStash, acct: screenAcct, casa: screenCasa, alley: screenAlley, lux: screenLux, fights: screenFights, rank: screenRank, hitman: screenHitman, ops: screenOps, gigs: screenGigs, parl: screenParl, cafe: screenCafe, museum: screenMuseum, uni: screenUni, cave: screenCave, feira: screenFeira, dig: screenDig, hunt: screenHunt, honras: screenHonras, arquivo: screenArquivo, viagens: screenViagens };
 function render(force) {
   if (!S.st) return;
   if (!S.st.me || S.st.round.phase !== 'play') return renderPause();
@@ -711,7 +719,7 @@ function screenClass() {
 
 // ---------- a cidade ----------
 // ---------- jornal da cidade: o que os outros andam a fazer ----------
-const NW_IC = { season: 'crown', hitman: 'skull', hitmanFail: 'shield', stockWin: 'cash', stockLoss: 'skull', stockBust: 'skull', air: 'cash', airLost: 'lock', cls: 'user', gangNew: 'fist', gangUp: 'empire', gangHeist: 'cash', gangHeistFail: 'lock', gangHit: 'fist', gangHitFail: 'skull', warDecl: 'fist', warStart: 'fist', warEnd: 'crown', casino: 'gem', casinoLoss: 'skull', job: 'cash', crit: 'gem', spree: 'bolt', jail: 'lock', house: 'empire', lux: 'crown', beat: 'fist', mug: 'cash', fail: 'skull', sick: 'pill', lvl: 'crown', fight: 'fist', op: 'cash', opJail: 'lock', escape: 'bolt', mus: 'crown' };
+const NW_IC = { season: 'crown', hitman: 'skull', hitmanFail: 'shield', stockWin: 'cash', stockLoss: 'skull', stockBust: 'skull', air: 'cash', airLost: 'lock', cls: 'user', gangNew: 'fist', gangUp: 'empire', gangHeist: 'cash', gangHeistFail: 'lock', gangHit: 'fist', gangHitFail: 'skull', warDecl: 'fist', warStart: 'fist', warEnd: 'crown', turfStart: 'flag', turfTake: 'flag', turfHold: 'shield', casino: 'gem', casinoLoss: 'skull', job: 'cash', crit: 'gem', spree: 'bolt', jail: 'lock', house: 'empire', lux: 'crown', beat: 'fist', mug: 'cash', fail: 'skull', sick: 'pill', lvl: 'crown', fight: 'fist', op: 'cash', opJail: 'lock', escape: 'bolt', mus: 'crown' };
 const seedOf = (str) => { let x = 7; for (let i = 0; i < str.length; i++) x = (x * 31 + str.charCodeAt(i)) | 0; return Math.abs(x); };
 // a gangue da rua (a do bot) tem nome próprio em cada língua; as dos jogadores ficam como eles as escreveram
 const gName = (name) => (name === S.cfg?.gang?.bot?.name ? t('gBotName') : name);
@@ -728,6 +736,10 @@ function newsText(e) {
   if (k === 'cls') return tv('nw_cls', seedOf(e.name + k + e.t), { a: e.name, x: t('cl_' + e.from), y: t('cl_' + e.to) });
   if (k === 'gangHeist' || k === 'gangHeistFail') return tv('nw_' + k, seedOf(e.gang + k + e.t), { g: e.gang, x: t('gh_' + e.c), n: e.n, m: money(e.money || 0) });
   if (k === 'gangHit' || k === 'gangHitFail') return tv('nw_' + k, seedOf(e.gang + k + e.t), { g: e.gang, b: e.target, n: e.n });
+  if (k === 'turfStart' || k === 'turfTake' || k === 'turfHold') {   // v110: bairros
+    const kk = k === 'turfStart' ? (e.d ? 'turfStart' : 'turfFree') : k === 'turfTake' ? (e.d ? 'turfTake' : 'turfClaim') : k;
+    return tv('nw_' + kk, seedOf(e.a + e.z + k + e.t), { a: e.a, d: e.d, z: tzN(e.z), em: tzEm(e.z), h: hhmm(e.start || e.t), hh: Math.round(S.cfg.turf.durMs / 3600000) });
+  }
   if (k === 'warDecl' || k === 'warStart') return tv('nw_' + k, seedOf(e.a.tag + e.b.tag + k + e.t), { a: e.a.name, b: e.b.name, m: money(e.stake || 0), n: num(e.t0 || 0) });   // v102: guerras
   if (k === 'warEnd') { const W = e.win === 'a' ? e.a : e.b, L = e.win === 'a' ? e.b : e.a;
     return e.win ? tv('nw_warEnd', seedOf(e.a.tag + e.b.tag + k + e.t), { a: W.name, b: L.name, x: num(Math.max(e.sa, e.sb)), y: num(Math.min(e.sa, e.sb)) }) : t('nw_warDraw', { a: e.a.name, b: e.b.name, x: num(e.sa), y: num(e.sb) }); }
@@ -1056,7 +1068,7 @@ function placeTile(id, badge) {
   const me = S.st.me;
   return h('button', { class: 'tile', on: { click: () => go(id) } },
     h('img', { src: id === 'casa' ? IMG('casa', S.cfg.house.tiers[me.house].id) : IMG('cenas', PLACES[id].img), alt: '', width: 600, height: 600, loading: 'lazy', decoding: 'async', on: { error: (e) => e.currentTarget.remove() } }),
-    h('span', { class: 'lbl' + (id === 'rank' && S.st.rank ? ' up' : '') }, t('p_' + id)), badge ? h('span', { class: 'bdg' + (id === 'parl' || id === 'uni' || (id === 'cave' && /\d/.test(badge)) ? ' neu' : id === 'hosp' || id === 'jail' || (id === 'cave' && badge === t('cvRevB')) ? ' bad' : '') }, badge) : null,   // votar não é ganho: o aviso vai em creme
+    h('span', { class: 'lbl' + (id === 'rank' && S.st.rank ? ' up' : '') }, t('p_' + id)), badge ? h('span', { class: 'bdg' + (id === 'parl' || id === 'uni' || (id === 'cave' && /\d/.test(badge)) ? ' neu' : id === 'hosp' || id === 'jail' || (id === 'cave' && badge === t('cvRevB')) || (id === 'bairros' && badge === t('bxUnderAtk')) ? ' bad' : '') }, badge) : null,   // votar não é ganho: o aviso vai em creme
     // no ranking, a tua posição na época vai por baixo do nome, em texto (não é coisa para recolher)
     id === 'rank' && S.st.rank ? h('span', { class: 'tsub' }, t('rankBadge', { p: ordOf(S.st.rank) })) : null);
 }
@@ -1346,6 +1358,7 @@ function screenEmpire() {
     inv: invFull(me) ? t('invFullB') : me.inv.some((x) => isGood(x.id)) ? moneyShort(me.inv.reduce((s, x) => s + (isGood(x.id) ? x.v : 0), 0)) : null,
     acct: me.acct ? null : me.level >= S.cfg.accountant.minLevel && me.cash + me.bank >= S.cfg.accountant.price ? t('acHire') : null,
     cave: me.cf && me.cf.end <= n ? t('toCollect') : S.cfg.biz.some((b) => maqState(me, b.id) === 3) ? t('cvRevB') : me.cf ? dur(me.cf.end - n) : null,   // v83
+    bairros: (() => { const o = bxOurs(S.turf)[0]; return o ? t(o.as.side === 'a' ? 'bxWeAtk' : 'bxUnderAtk') : null; })(),   // v110: um assalto a decorrer
   };
   const head = me.biz.some((b) => b.n > 0) || me.port.length || me.club || me.bro
     ? h('div', { class: 'card stack empsum' },
@@ -4930,6 +4943,11 @@ function eventRow(e) {
   if (e.k === 'gop') return opResult(e, e.out || e.cancelled ? 0 : e.respect, e.t);
   if (e.k === 'warDecl') return h('div', { class: 'card row' }, h('span', { class: 'c-red' }, icon('fist')),   // v102
     h('div', { class: 'grow' }, h('div', null, t(e.ours ? 'evWarOurs' : 'evWarTheirs', { g: e.vs.name, h: hhmm(e.start) })), h('div', { class: 'small muted' }, dur(now() - e.t))));
+  if (e.k === 'turfStart') return h('button', { class: 'card row tap', on: { click: () => go('bairros') } }, h('span', { class: e.ours ? 'c-resp' : 'c-red' }, icon('flag')),   // v110
+    h('div', { class: 'grow' }, h('div', null, e.ours ? (e.vs ? t('evTurfAtk', { d: e.vs, em: tzEm(e.z), h: hhmm(e.start) }) : t('evTurfClaim', { z: tzN(e.z) })) : t('evTurfDef', { g: e.vs, z: tzN(e.z), h: hhmm(e.start) })), h('div', { class: 'small muted' }, dur(now() - e.t))));
+  if (e.k === 'turfEnd') { const sc = e.vs ? t('evTurfScore', { a: num(e.ours ? e.pa : e.pd), b: num(e.ours ? e.pd : e.pa) }) : '';
+    return h('button', { class: 'card row tap', on: { click: () => go('bairros') } }, h('span', { class: e.won ? 'c-cash' : 'c-red' }, icon(e.won ? 'flag' : 'skull')),
+      h('div', { class: 'grow' }, h('div', null, (e.ours ? t(e.won ? 'evTurfTook' : 'evTurfFail', { z: tzN(e.z) }) : t(e.won ? 'evTurfHeld' : 'evTurfLost', { z: tzN(e.z), g: e.vs })) + sc), h('div', { class: 'small muted' }, dur(now() - e.t)))); }
   if (e.k === 'warEnd') return h('div', { class: 'card row' }, h('span', { class: e.won ? 'c-cash' : e.draw ? 'muted' : 'c-red' }, icon(e.won ? 'crown' : 'fist')),
     h('div', { class: 'grow' }, h('div', null, t(e.won ? 'evWarWon' : e.draw ? 'evWarDraw' : 'evWarLost', { g: e.vs.name, a: num(e.sa), b: num(e.sb) }) + (e.respect ? ' ' + t('evWarResp', { n: num(e.respect) }) : '') + (e.stake ? ' ' + t('evWarStake', { m: money(e.stake) }) : '')),
       h('div', { class: 'small muted' }, dur(now() - e.t))));
@@ -5204,6 +5222,7 @@ function screenGang() {
       h('button', { class: 'btn buy block', disabled: low || me.cash + me.bank < G.createCost, on: { click: async () => { const o = await gAct('gangCreate', { name: nm.value, tag: tg.value }); if (o) S.gDraft = null; } } }, t('gCreate', { m: moneyShort(G.createCost) }))));
     out.push(h('h2', { class: 'sec' }, t('gListT')));
     out.push(d.list.length ? h('div', { class: 'stack' }, d.list.map((g) => gangRow(g, me))) : h('div', { class: 'note' }, h('p', { class: 'muted' }, t('gNone'))));
+    out.push(h('button', { class: 'btn ghost block', style: 'margin-top:16px', on: { click: () => { S.backTo = { ...(S.backTo || {}), bairros: 'gang' }; go('bairros'); } } }, icon('flag'), t('bxSeeMap')));   // v110
     return out;
   }
   // a minha gangue
@@ -5219,6 +5238,7 @@ function screenGang() {
   const quemDeclara = !mine.bot && (mine.role || 0) >= (mine.war?.role || 9);
   if (emGuerra) out.splice(out.length - 1, 0, ...gangWar(mine, me, d.list));   // v102: em guerra, a guerra vem primeiro (antes dos bónus)
   else if (quemDeclara) out.push(...gangWar(mine, me, d.list));   // quem pode declarar vê as guerras antes dos golpes
+  if (!mine.bot) out.push(gangTurfCard());   // v110: os bairros, logo a seguir à guerra
   out.push(...gangOps(mine, me));
   out.push(...gangBiz(mine, me));
   if (!emGuerra && !quemDeclara) out.push(...gangWar(mine, me, d.list));
@@ -5269,6 +5289,148 @@ function screenGang() {
       h('button', { class: 'btn danger block', on: { click: async () => { close(); await gAct('gangLeave', {}); } } }, t('gLeave'))));
   } } }, t('gLeave')));
   queueMicrotask(() => { const b = document.querySelector('.gmsgs'); if (b) b.scrollTop = b.scrollHeight; });
+  return out;
+}
+// ===== v110: território dos gangues =====
+// Doze bairros num mapa de quarteirões: oeste à esquerda; o Tejo corre por baixo e sobe pelo lado leste (Marvila e o Parque das Nações ficam à beira-rio).
+const BX_POS = { campoourique: [1, 1], arroios: [2, 1], parquenacoes: [3, 1], bairroalto: [1, 2], intendente: [2, 2], marvila: [3, 2], alcantara: [1, 3], mouraria: [2, 3], alfama: [3, 3], belem: [1, 4], caisdosodre: [2, 4], baixa: [3, 4] };
+const tzN = (id) => t('tz_' + id), tzEm = (id) => t('tzEm_' + id);
+const bxTag = (g) => (g ? h('span', { class: 'gtag' }, g.tag) : null);
+const bxX = (bp) => (bp / 10000).toLocaleString(lang() === 'pt' ? 'pt-PT' : 'en-GB');
+const bxLeft = (ts, cls) => h('b', { class: 'num' + (cls ? ' ' + cls : ''), dataset: { left: ts } }, dur(ts - now()));
+async function loadTurf() {
+  try { S.turf = await api('GET', '/api/turf'); S.turfAt = now(); if (S.tab === 'bairros' || S.tab === 'gang' || S.tab === 'empire') render(); } catch {}
+  clearTimeout(S.turfT); S.turfT = null;
+  if (S.tab === 'bairros') S.turfT = setTimeout(loadTurf, 20000);   // enquanto se olha para o mapa, os pontos dos assaltos vão andando
+}
+// os assaltos em que o teu gangue está: primeiro os de ataque
+const bxOurs = (d) => (d?.zones || []).filter((z) => z.as && z.as.side).sort((x, y) => (x.as.side === 'a' ? 0 : 1) - (y.as.side === 'a' ? 0 : 1) || x.as.end - y.as.end);
+// o estado de um bairro numa palavra: vosso, de outro gangue, sem dono, em disputa
+const bxState = (z) => (z.as ? 'fight' : z.owner?.me ? 'mine' : z.owner ? 'them' : 'free');
+function bxTile(z) {
+  const st = bxState(z), [c, r] = BX_POS[z.id] || [1, 1], s = z.as, n = now();
+  // a segunda linha diz de quem é; num assalto, se atacamos, se nos atacam, ou quem ataca
+  const who = s ? (s.side === 'a' ? h('span', { class: 'c-cash' }, t('bxWeAtk')) : s.side === 'd' ? h('span', { class: 'c-red' }, t('bxUnderAtk')) : [bxTag(s.a), h('span', null, t('bxRaids'))])
+    : z.owner ? [bxTag(z.owner), z.prot ? h('span', { class: 'bxp' }, icon('lock'), dur(z.prot - n).split(' ')[0]) : null] : h('span', { class: 'muted' }, t('bxFree'));
+  const foot = s ? h('span', { class: 'num bxt' }, icon('timer'), bxLeft(n < s.start ? s.start : s.end)) : h('span', { class: 'num bxi' }, t('bxPerH', { m: money(z.perH) }));
+  const label = [tzN(z.id), s ? (s.side === 'a' ? t('bxWeAtk') : s.side === 'd' ? t('bxUnderAtk') : t('bxFight')) : z.owner ? (z.owner.me ? t('bxYours') : z.owner.tag) : t('bxFree'),
+    z.prot && !s ? t('bxProtT') : null, t('bxPerH', { m: money(z.perH) })].filter(Boolean).join(' · ');
+  return h('button', { class: 'bxz ' + st, style: `grid-column:${c};grid-row:${r}`, 'aria-label': label, on: { click: () => bxSheet(z.id) } },
+    h('span', { class: 'bxn' }, tzN(z.id)), h('span', { class: 'bxo' }, who), foot);
+}
+// o placar de um assalto: as duas barras na mesma escala, a meta marcada na de quem ataca e a regra numa frase
+function bxScore(z, withChain) {
+  const s = z.as, n = now(), pre = n < s.start, mx = Math.max(z.need, s.pa, s.pd, 1) * 1.08, d = S.turf;
+  const pc = (v) => Math.min(100, (v / mx) * 100);
+  const side = (lbl, g, pts, me, cls, goal) => h('div', { class: 'bxsd' + (me ? ' me' : '') },
+    h('div', { class: 'row sp small' }, h('span', null, lbl, ' ', g ? [bxTag(g), ' ', gName(g.name)] : null), h('b', { class: 'num' }, num(pts))),
+    h('div', { class: 'fill ' + cls, style: goal ? `--goal:${pc(z.need)}%` : null }, h('i', { style: `width:${pc(pts)}%` }), goal ? h('em', { 'aria-hidden': 'true' }) : null));
+  const ch = withChain && d?.mine?.chain;
+  return h('div', { class: 'stack bxsc' },
+    h('div', { class: 'row sp small' }, h('span', null, t(pre ? 'bxStarts' : 'bxEnds') + ' ', bxLeft(pre ? s.start : s.end)), s.side ? h('span', null, t('bxYourPts', { n: num(s.mineN) })) : null),
+    side(t('bxAtk'), s.a, s.pa, s.side === 'a', s.side ? (s.side === 'a' ? 'us' : 'them') : 'atk', true),   // o nosso lado a verde, o deles a vermelho
+    s.d ? side(t('bxDef'), s.d, s.pd, s.side === 'd', s.side ? (s.side === 'd' ? 'us' : 'them') : 'def') : null,
+    h('p', { class: 'small muted' }, t(s.d ? 'bxRule2' : 'bxRule1', { a: gName(s.a.name), d: s.d ? gName(s.d.name) : '', n: num(z.need) })),
+    ch && ch.n ? h('p', { class: 'small' }, h('b', null, t('bxChain') + ' ' + num(ch.n)), ch.mult > 10000 ? ' · ' + t('bxMult', { x: bxX(ch.mult) }) : '', ' · ' + t('bxBreaks') + ' ', bxLeft(ch.until, 'c-resp')) : null,
+    s.side && s.foes?.length ? h('div', { class: 'bxfoes' }, h('p', { class: 'small muted' }, t('bxFoesT', { g: gName((s.side === 'a' ? s.d : s.a).name) })),
+      s.foes.slice(0, 8).map((f) => h('button', { class: 'vrow bxfoe', on: { click: () => openPlayer(f.name) } }, h('b', { class: 'grow' }, f.name), h('span', { class: 'small muted num' }, t('level') + ' ' + f.level), icon('chev')))) : null,
+    s.side && !pre ? h('button', { class: 'btn buy block', on: { click: () => go('fights') } }, icon('fist'), t('bxGo')) : null);
+}
+// a ficha de um bairro: quem o tem, quanto rende, o assalto a decorrer e o botão (ou porque não há botão)
+function bxSheet(id) {
+  const d = S.turf, z = d?.zones.find((x) => x.id === id); if (!z) return;
+  const mine = d.mine, n = now(), meu = !!z.owner?.me;
+  const owner = z.owner ? h('p', null, h('span', { class: 'muted' }, t('bxOwner')), ' ', bxTag(z.owner), ' ' + gName(z.owner.name), h('span', { class: 'muted' }, ' · ' + t('bxFor', { t: dur(Math.max(60000, n - z.since)) })))
+    : h('p', { class: 'muted' }, t('bxNoOwner'));
+  const fact = (v, lbl, cls) => h('div', null, h('b', { class: 'num' + (cls ? ' ' + cls : '') }, v), h('span', { class: 'small muted' }, lbl));
+  // o que se mostra em números: no teu, quanto já rendeu; num com assalto, só quanto rende (o resto está no placar); nos outros, o que custa
+  const facts = meu && !z.as ? h('div', { class: 'bxfacts' + (z.prot ? '' : ' two') }, fact(money(z.perH), t('bxPerHour'), 'c-cash'), fact(money(Math.floor((n - z.since) / 3600000) * z.perH), t('bxEarned')), z.prot ? h('div', null, bxLeft(z.prot), h('span', { class: 'small muted' }, t('bxProtL'))) : null)
+    : z.as ? h('p', { class: 'small' }, t('bxRende', { m: money(z.perH) }))
+      : h('div', { class: 'bxfacts' }, fact(money(z.perH), t('bxPerHour'), 'c-cash'), fact(num(z.need), t('bxNeed')), fact(money(z.fee), t('bxFee')));
+  let why = null, close;
+  const W = meu ? null : z.why;
+  if (W === 'NO_GANG') why = t(S.gang?.mine?.bot ? 'bxBot' : 'bxNoGang');
+  else if (W === 'NO_RANK') why = t('bxRankOnly');
+  else if (W === 'FEW_MEMBERS') why = t('bxFew', { n: S.cfg.turf.minMembers });
+  else if (W === 'TURF_PROT') why = [t('bxProtWhy') + ' ', bxLeft(z.prot)];
+  else if (W === 'TURF_COOL') why = [t('bxCoolWhy') + ' ', bxLeft(mine.cool)];
+  else if (W === 'NO_GANG_MONEY') why = t('bxMoney', { a: money(mine.cofre), m: money(z.fee) });
+  else if (W === 'TURF_ONE') { const o = bxOurs(d).find((x) => x.as.side === 'a');
+    why = [t('bxOneWhy'), o ? h('button', { class: 'linkbtn', on: { click: () => { close(); bxSheet(o.id); } } }, ' ' + t('bxSeeRaid', { z: tzN(o.id) })) : null]; }
+  else if (W && W !== 'TURF_MINE' && W !== 'TURF_BUSY') why = errText(W);
+  // tomar: o primeiro toque mostra as condições e o cofre depois; o segundo paga (não se desfaz)
+  const box = h('div', { class: 'stack' });
+  const pedir = () => box.replaceChildren(h('button', { class: 'btn buy block num', on: { click: confirmar } }, t(z.owner ? 'bxRaid' : 'bxTake', { m: money(z.fee) })));
+  const confirmar = () => box.replaceChildren(
+    h('p', { class: 'small' }, t(z.owner ? 'bxCond2' : 'bxCond1', { p: Math.round(S.cfg.turf.prepMs / 60000), h: Math.round(S.cfg.turf.durMs / 3600000), n: num(z.need) })),
+    h('p', { class: 'small' }, t('bxVault'), ' ', h('b', { class: 'num' }, money(mine.cofre) + ' → ' + money(mine.cofre - z.fee))),
+    h('div', { class: 'row bxcf' }, h('button', { class: 'btn ghost', on: { click: pedir } }, t('bxCancel')),
+      h('button', { class: 'btn danger grow num', on: { click: async (e) => { e.currentTarget.disabled = true; const out = await act('gangTurf', { z: z.id }); close(); await loadTurf(); if (out) bxSheet(z.id); } } }, t('bxSure', { m: money(z.fee) }))));
+  const pode = !meu && !W;
+  if (pode) pedir();
+  close = sheet(h('div', { class: 'stack bxsh' },
+    h('h2', null, tzN(z.id)), owner, facts,
+    z.as ? bxScore(z, !!z.as.side) : null,
+    pode ? box : null, why ? h('p', { class: 'small muted' }, why) : null));
+}
+function bxHistRow(x) {
+  const txt = x.won ? (x.d ? t('bxTookFrom', { z: tzN(x.z), a: x.a, d: x.d }) : t('bxTook', { z: tzN(x.z), a: x.a })) : x.d ? t('bxHeldOff', { z: tzN(x.z), a: x.a, d: x.d }) : t('bxFailed', { z: tzN(x.z), em: tzEm(x.z), a: x.a });
+  const sc = x.d ? (x.ta || x.a) + ' ' + num(x.pa) + ' · ' + (x.td || x.d) + ' ' + num(x.pd) : t('bxPts', { n: num(x.pa) });
+  return h('div', { class: 'vrow' }, h('span', { class: x.won ? 'c-resp' : 'muted' }, icon('flag')),
+    h('div', { class: 'grow' }, h('div', null, txt), h('div', { class: 'small muted num' }, sc + ' · ' + t('bxAgo', { t: dur(Math.max(60000, now() - x.fim)) }))));
+}
+// a cadeia do gangue: quantas seguidas, quanto falta para partir e para o próximo multiplicador
+function bxChain(ch) {
+  const M = S.cfg.turf.mult, nxt = [...M].reverse().find(([k]) => k > ch.n), cur = M.find(([k]) => ch.n >= k);
+  if (!ch.n) return h('div', { class: 'bxch' }, h('div', { class: 'row sp' }, h('b', null, t('bxChain')), ch.best ? h('span', { class: 'small muted num' }, t('bxChainBest', { n: ch.best })) : null), h('p', { class: 'small muted' }, t('bxChainNone')));
+  const from = cur ? cur[0] : 0, to = nxt ? nxt[0] : from;
+  return h('div', { class: 'bxch' },
+    h('div', { class: 'row sp' }, h('b', null, t('bxChain'), ' ', h('span', { class: 'num bxcn' }, num(ch.n))), cur ? h('b', { class: 'small c-resp num' }, t('bxMult', { x: bxX(cur[1]) })) : null),
+    h('p', { class: 'small' }, t('bxBreaks') + ' ', bxLeft(ch.until, 'c-resp'), h('span', { class: 'muted' }, ' · ' + t('bxChainBest', { n: ch.best }))),
+    nxt ? [h('div', { class: 'fill' }, h('i', { style: `width:${Math.min(100, ((ch.n - from) / Math.max(1, to - from)) * 100)}%` })), h('p', { class: 'small muted' }, t('bxNext', { n: to - ch.n, x: bxX(nxt[1]) }))] : null);
+}
+// no ecrã do gangue: quantos bairros, quanto rendem, a cadeia e o assalto a decorrer, com a porta para o mapa
+function gangTurfCard() {
+  const d = S.turf, m = d?.mine, ours = bxOurs(d)[0], n = now();
+  const open = () => { S.backTo = { ...(S.backTo || {}), bairros: 'gang' }; go('bairros'); };
+  return h('div', { class: 'card stack gturf' },
+    h('div', { class: 'row sp' }, h('h3', { class: 'bxh' }, icon('flag'), ' ', t('p_bairros')), m ? h('b', { class: 'num small' }, t('bxHeld', { n: m.held, m: S.cfg.turf.max })) : null),
+    m ? h('p', { class: 'small' }, m.perH ? h('span', { class: 'c-cash' }, t('bxIncome', { m: money(m.perH) })) : h('span', { class: 'muted' }, t('bxNoInc')),
+      m.chain.n ? h('span', { class: 'muted' }, ' · ' + t('bxChain') + ' ' + num(m.chain.n) + (m.chain.mult > 10000 ? ' · ×' + bxX(m.chain.mult) : '')) : null) : null,
+    ours ? h('p', { class: 'small' }, h('b', { class: ours.as.side === 'a' ? 'c-cash' : 'c-red' }, t(ours.as.side === 'a' ? 'bxWeAtk' : 'bxUnderAtk')), ' · ' + tzN(ours.id) + ' · ',
+      h('span', { class: 'num' }, num(ours.as.side === 'a' ? ours.as.pa : ours.as.pd) + '/' + num(ours.need) + ' · '), bxLeft(n < ours.as.start ? ours.as.start : ours.as.end)) : null,
+    h('button', { class: 'btn ghost block', on: { click: open } }, t(ours ? 'bxGoRaid' : 'bxOpen')));
+}
+function screenBairros() {
+  const d = S.turf, T = S.cfg.turf, ours = bxOurs(d);
+  // com um assalto a decorrer, o assalto vem primeiro (a imagem e a explicação ficam para quando não há pressa)
+  const out = [pageHead('bairros', ours.length ? null : t('s_bairros'), ours.length > 0)];
+  if (!d) { out.push(h('p', { class: 'muted' }, t('loading'))); return out; }
+  if (!S.turfT && S.tab === 'bairros') S.turfT = setTimeout(loadTurf, 20000);
+  const mine = d.mine;
+  for (const z of ours) out.push(h('div', { class: 'card stack bxnow' + (z.as.side === 'd' ? ' def' : '') },
+    h('div', null, h('p', { class: 'small bxlbl ' + (z.as.side === 'a' ? 'c-cash' : 'c-red') }, t(z.as.side === 'a' ? 'bxWeAtk' : 'bxUnderAtk')), h('h3', { class: 'bxh' }, tzN(z.id))), bxScore(z, true)));
+  // o mapa
+  out.push(h('div', { class: 'bxmap' }, h('div', { class: 'bxgrid' }, d.zones.map(bxTile)),
+    h('div', { class: 'bxw b', 'aria-hidden': 'true' }, h('span', null, t('bxRiver'))), h('div', { class: 'bxw r', 'aria-hidden': 'true' })));
+  out.push(h('div', { class: 'bxleg small' }, [['mine', 'bxYours'], ['them', 'bxOther'], ['fight', 'bxFight'], ['free', 'bxFree']].map(([c, k]) => h('span', null, h('i', { class: 'bxk ' + c }), t(k))),
+    h('span', null, icon('lock'), t('bxProtT'))));
+  // o teu gangue: bairros, quanto rende, a cadeia
+  if (mine) out.push(h('div', { class: 'card stack bxme' },
+    h('div', null, h('p', { class: 'small muted bxlbl' }, t('bxMineT')), h('h3', { class: 'bxh' }, bxTag(mine), ' ' + gName(mine.name))),
+    h('div', { class: 'bxfacts two' },
+      h('div', null, h('b', { class: 'num' }, t('bxHeld', { n: mine.held, m: T.max })), h('span', { class: 'small muted' }, mine.perH ? t('bxIncome', { m: money(mine.perH) }) : t('bxNoInc'))),
+      h('div', null, h('b', { class: 'num c-cash' }, money(mine.cofre)), h('span', { class: 'small muted' }, t('gFund')))),
+    bxChain(mine.chain),
+    mine.cool > now() ? h('p', { class: 'small muted' }, t('bxCool') + ' ', bxLeft(mine.cool)) : null));
+  else out.push(h('div', { class: 'note' }, h('p', null, t(S.gang?.mine?.bot ? 'bxBot' : 'bxNoGang')), h('button', { class: 'btn ghost', on: { click: () => go('gang') } }, t('p_gang'))));
+  // como funciona (fechado: quem já sabe não precisa de o ler outra vez)
+  const H = (ms) => Math.round(ms / 3600000), M = [...T.mult].reverse();
+  out.push(h('details', { class: 'card bxhow' }, h('summary', null, t('bxHowT')),
+    h('div', { class: 'stack small' }, h('p', null, t('bxHow1')), h('p', null, t('bxHow2', { h: H(T.durMs) })), h('p', null, t('bxHow3', { p: Math.round(T.prepMs / 60000), h: H(T.durMs) })),
+      h('p', null, t('bxHow4', { h: H(T.protMs), n: T.max })), h('p', null, t('bxHow5', { m: Math.round(T.chainGapMs / 60000), a: M[0][0], b: M[1][0], c: M[2][0], x: bxX(M[0][1]), y: bxX(M[1][1]), z: bxX(M[2][1]) })))));
+  out.push(h('h2', { class: 'sec' }, t('bxHistT')));
+  out.push(d.hist.length ? h('div', { class: 'card vlist' }, d.hist.map(bxHistRow)) : h('p', { class: 'muted' }, t('bxHistNone')));
   return out;
 }
 // ---- operações da gangue: golpes e tareias em grupo ----

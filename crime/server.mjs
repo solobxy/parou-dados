@@ -29,7 +29,7 @@ const RONDA_TESTE = process.env.PRIMEIRA_RONDA ? dataDe(process.env.PRIMEIRA_RON
 // Épocas de 28 dias a contar da sexta 13/11/2026 às 21:00 de Lisboa (PRIMEIRA_EPOCA=AAAA-MM-DD muda-a, para testes)
 const ANCORA = dataDe(process.env.PRIMEIRA_EPOCA || process.env.PRIMEIRA_RONDA || '2026-11-13');
 const rng = process.env.TESTE_SEMENTE ? seededRng(+process.env.TESTE_SEMENTE) : cryptoRng();   // nos testes, a sorte pode ser sempre a mesma
-const VERSAO = 109;   // sobe quando o servidor muda, para se confirmar de fora que a versão nova já está a correr
+const VERSAO = 110;   // sobe quando o servidor muda, para se confirmar de fora que a versão nova já está a correr
 const ATOS_3S = +(process.env.ATOS_3S || 15), ATOS_MIN = +(process.env.ATOS_MIN || 400); // ações por conta: 15 em 3 s, 400 por minuto
 
 // ---------- relógio que nunca anda para trás ----------
@@ -348,6 +348,7 @@ function carregarRonda(n) {
   for (const r of q.noticias.all(n).reverse()) jornal.push({ t: r.t, ...JSON.parse(r.dados) });
   carregarGangues();
   carregarGuerras();
+  carregarTerritorio();   // v110
 }
 
 function nomeDe(id) {
@@ -561,6 +562,7 @@ function cfgPublica() {
     round: { playDays: CFG.round.playDays, noPvpMs: CFG.round.noPvpMs, newbieShieldMs: CFG.round.newbieShieldMs }, season: CFG.season, raid: CFG.raid,   // v91: a wiki
     consum: CFG.consum, col: CFG.col, gyms: CFG.gyms, books: CFG.books,   // v94, v95
     social: CFG.social,   // v109: o chat e a vitrine
+    turf: CFG.turf,   // v110: o território
     mat: CFG.mat, craft: CFG.craft, feira: { ...CFG.feira, refs: FEIRA_REFS }, dig: CFG.dig, hunt: CFG.hunt, honors: E.HONORS, travel: CFG.travel,   // v83, v84, v98, v100, v101
     exam: (({ ans: _a, ...x }) => x)(CFG.exam), studies: CFG.studies,   // v81: a Universidade   // v80: as regras do exame, sem as respostas certas
     gov: { vote: CFG.gov.vote, laws: CFG.gov.laws, cof: CFG.gov.cof, parties: Object.fromEntries(Object.entries(CFG.gov.parties).map(([k, x]) => [k, { pos: x.pos, wOp: x.wOp, wLob: x.wLob }])) },   // v76: o parlamento
@@ -1156,6 +1158,7 @@ setInterval(() => {
   if (ronda < 0) return;
   try { resolverOps(now); } catch (e) { console.error('op', e.message); }
   try { resolverGuerras(now); } catch (e) { console.error('guerra', e.message); }
+  try { resolverTerritorio(now); } catch (e) { console.error('bairros', e.message); }   // v110
 }, 1000).unref();
 
 // ---------- guerras entre gangues (v102) ----------
@@ -1252,6 +1255,137 @@ function resolverGuerras(now) {
     acabarSe(w, now);
   }
 }
+// ---------- v110: território dos gangues ----------
+// territorio: dono ('' = a rua), desde quando, até onde já pagou ao cofre e até quando está protegido.
+// assaltos: a = quem assalta, d = quem defende ('' num bairro livre), pa/pd os pontos de cada lado, pts os pontos por membro.
+// cadeias: a cadeia de vitórias de cada gangue (n seguidas, t da última, best a maior).
+db.exec(`CREATE TABLE IF NOT EXISTS territorio (ronda INTEGER NOT NULL, zona TEXT NOT NULL, dono TEXT NOT NULL DEFAULT '', desde INTEGER NOT NULL DEFAULT 0,
+  pago INTEGER NOT NULL DEFAULT 0, prot INTEGER NOT NULL DEFAULT 0, PRIMARY KEY (ronda, zona));
+CREATE TABLE IF NOT EXISTS assaltos (ronda INTEGER NOT NULL, id TEXT NOT NULL, zona TEXT NOT NULL, a TEXT NOT NULL, d TEXT NOT NULL, decl INTEGER NOT NULL, inicio INTEGER NOT NULL,
+  fim INTEGER NOT NULL DEFAULT 0, pa INTEGER NOT NULL DEFAULT 0, pd INTEGER NOT NULL DEFAULT 0, vence TEXT NOT NULL DEFAULT '', nomes TEXT NOT NULL, pts TEXT NOT NULL, PRIMARY KEY (ronda, id));
+CREATE TABLE IF NOT EXISTS cadeias (ronda INTEGER NOT NULL, gangue TEXT NOT NULL, n INTEGER NOT NULL, t INTEGER NOT NULL, best INTEGER NOT NULL, PRIMARY KEY (ronda, gangue));`);
+const qt = {
+  zonas: db.prepare('SELECT * FROM territorio WHERE ronda = ?'),
+  zona: db.prepare('INSERT OR REPLACE INTO territorio (ronda, zona, dono, desde, pago, prot) VALUES (?, ?, ?, ?, ?, ?)'),
+  assaltos: db.prepare('SELECT * FROM assaltos WHERE ronda = ?'),
+  assalto: db.prepare('INSERT OR REPLACE INTO assaltos (ronda, id, zona, a, d, decl, inicio, fim, pa, pd, vence, nomes, pts) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'),
+  cadeias: db.prepare('SELECT * FROM cadeias WHERE ronda = ?'),
+  cadeia: db.prepare('INSERT OR REPLACE INTO cadeias (ronda, gangue, n, t, best) VALUES (?, ?, ?, ?, ?)'),
+};
+const TURF = CFG.turf, zonas = new Map(), assaltos = new Map(), cadeias = new Map();
+const zonaCfg = (id) => TURF.zones.find((z) => z.id === id);
+function carregarTerritorio() {
+  zonas.clear(); assaltos.clear(); cadeias.clear();
+  for (const z of TURF.zones) zonas.set(z.id, { id: z.id, t: z.t, dono: '', desde: 0, pago: 0, prot: 0 });
+  for (const r of qt.zonas.all(ronda)) { const z = zonas.get(r.zona); if (z) Object.assign(z, { dono: r.dono, desde: r.desde, pago: r.pago, prot: r.prot }); }
+  for (const r of qt.assaltos.all(ronda)) assaltos.set(r.id, { id: r.id, z: r.zona, a: r.a, d: r.d, decl: r.decl, inicio: r.inicio, fim: r.fim, pa: r.pa, pd: r.pd, vence: r.vence, nomes: JSON.parse(r.nomes), pts: JSON.parse(r.pts) });
+  for (const r of qt.cadeias.all(ronda)) cadeias.set(r.gangue, { n: r.n, t: r.t, best: r.best });
+}
+const gravaZ = (z) => qt.zona.run(ronda, z.id, z.dono, z.desde, z.pago, z.prot);
+const gravaA = (s) => qt.assalto.run(ronda, s.id, s.z, s.a, s.d, s.decl, s.inicio, s.fim, s.pa, s.pd, s.vence, JSON.stringify(s.nomes), JSON.stringify(s.pts));
+// o dono de agora (uma gangue que acabou deixa o bairro à rua)
+const donoDe = (z) => (z.dono && gangues.has(z.dono) && !eBot(gangues.get(z.dono)) ? gangues.get(z.dono) : null);
+const assaltoEm = (zid) => { for (const s of assaltos.values()) if (!s.fim && s.z === zid) return s; return null; };
+const assaltoDe = (gid) => { for (const s of assaltos.values()) if (!s.fim && s.a === gid) return s; return null; };
+const fimAssaltoDe = (gid) => { let t = 0; for (const s of assaltos.values()) if (s.fim && s.a === gid) t = Math.max(t, s.fim); return t; };
+const bairrosDe = (gid) => [...zonas.values()].filter((z) => z.dono === gid && donoDe(z)).length;
+// a cadeia: n vitórias seguidas, cada uma até chainGapMs depois da anterior (passado esse tempo volta a 0)
+const cadeiaDe = (gid, now) => { const c = cadeias.get(gid); return c && now - c.t <= TURF.chainGapMs ? c : { n: 0, t: 0, best: c?.best || 0 }; };
+const multDe = (n) => { for (const [k, bp] of TURF.mult) if (n >= k) return bp; return 10000; };
+// porque é que esta gangue não pode assaltar este bairro (ou null)
+function porqueNaoBairro(g, conta, z, now) {
+  if (!g || eBot(g)) return 'NO_GANG';
+  if (cargoDe(g, conta) < TURF.role) return 'NO_RANK';
+  if (!z) return 'NO_ZONE';
+  if (z.dono === g.id && donoDe(z)) return 'TURF_MINE';
+  if (assaltoEm(z.id)) return 'TURF_BUSY';
+  if (assaltoDe(g.id)) return 'TURF_ONE';
+  if (bairrosDe(g.id) >= TURF.max) return 'TURF_MAX';
+  if (g.membros.size < TURF.minMembers) return 'FEW_MEMBERS';
+  if (z.prot > now && donoDe(z)) return 'TURF_PROT';
+  if (fimAssaltoDe(g.id) + TURF.coolMs > now) return 'TURF_COOL';
+  if (g.cofre < TURF.fee[z.t]) return 'NO_GANG_MONEY';
+  return null;
+}
+// paga aos donos as horas cheias desde a última vez (o dinheiro entra no jogo: conta no caixa)
+function pagarBairros(now) {
+  for (const z of zonas.values()) {
+    const g = donoDe(z); if (!g) continue;
+    const h = Math.floor((now - z.pago) / T.HOUR); if (h <= 0) continue;
+    const v = h * TURF.perH[z.t];
+    g.cofre += v; z.pago += h * T.HOUR;
+    gravaG(g); gravaZ(z); caixa(now, 'bairros', v, 0);
+  }
+}
+function acabarAssalto(s, now, ganhou) {
+  const z = zonas.get(s.z), A = gangues.get(s.a), D = s.d ? gangues.get(s.d) : null;
+  s.fim = now; s.vence = ganhou ? s.a : s.d;
+  if (ganhou && z && A) { z.dono = s.a; z.desde = now; z.pago = now; z.prot = now + TURF.protMs; }
+  gravaA(s); if (z) gravaZ(z);
+  for (const [g, lado] of [[A, 'a'], [D, 'd']]) if (g) for (const c of g.membros.keys())
+    evento(c, now, { k: 'turfEnd', z: s.z, ours: lado === 'a', won: lado === 'a' ? ganhou : !ganhou, vs: s.nomes[lado === 'a' ? 'd' : 'a'] || '', pa: s.pa, pd: s.pd });
+  if (ganhou) noticia(now, { k: 'turfTake', a: s.nomes.a, d: s.nomes.d || '', z: s.z });
+  else if (s.d) noticia(now, { k: 'turfHold', a: s.nomes.a, d: s.nomes.d, z: s.z });
+}
+// a cada segundo (e antes das ações e das vistas): paga os bairros e fecha os assaltos que chegaram ao fim
+function resolverTerritorio(now) {
+  if (ronda < 0) return;
+  pagarBairros(now);
+  for (const s of [...assaltos.values()]) {
+    if (s.fim || now < s.inicio + TURF.durMs) continue;
+    const need = TURF.need[zonas.get(s.z)?.t || 1];   // um gangue que acabou entretanto: quem ataca já não leva nada, quem defendia já não conta
+    acabarAssalto(s, now, gangues.has(s.a) && s.pa >= need && (!s.d || !gangues.has(s.d) || s.pa > s.pd));
+  }
+}
+// dentro de um assalto entre duas gangues já começado (as lutas entre elas não têm o «fraco demais», como na guerra)
+function emAssalto(c1, c2, now) {
+  const g1 = gangueDe(c1), g2 = gangueDe(c2); if (!g1 || !g2 || g1 === g2) return false;
+  for (const s of assaltos.values()) if (!s.fim && s.d && now >= s.inicio && ((s.a === g1.id && s.d === g2.id) || (s.a === g2.id && s.d === g1.id))) return true;
+  return false;
+}
+// uma vitória numa luta: sobe a cadeia da gangue de quem ganhou e dá pontos aos assaltos em que conta. Muda só a memória;
+// o que é para gravar vai para ctx.ops (na mesma transação da ação) e os fins de assalto para ctx.depois.
+function pontuarBairros(gA, gD, conta, now, ctx) {
+  if (!gA || eBot(gA)) return null;
+  const c0 = cadeiaDe(gA.id, now), c = { n: c0.n + 1, t: now, best: Math.max(c0.best, c0.n + 1) };
+  cadeias.set(gA.id, c);
+  ctx.ops.push(() => qt.cadeia.run(ronda, gA.id, c.n, c.t, c.best));
+  const pts = Math.round((TURF.winPts * multDe(c.n)) / 10000);
+  let got = 0, side = null;
+  for (const s of assaltos.values()) {
+    if (s.fim || now < s.inicio) continue;
+    let L = null;
+    if (s.a === gA.id && (!s.d || !gangues.has(s.d) || (gD && gD.id === s.d))) L = 'a';
+    else if (s.d && s.d === gA.id && gD && gD.id === s.a) L = 'd';
+    if (!L) continue;
+    s['p' + L] += pts; s.pts[L][conta] = (s.pts[L][conta] || 0) + pts; got += pts; side = { z: s.z, L };
+    ctx.ops.push(() => gravaA(s));
+    if (L === 'a' && (!s.d || !gangues.has(s.d)) && s.pa >= TURF.need[zonas.get(s.z)?.t || 1]) ctx.depois.push(() => { if (!s.fim) acabarAssalto(s, now, true); });   // bairro livre: tomado logo
+  }
+  return { chain: c.n, mult: multDe(c.n), pts: got, z: side?.z || null };
+}
+// o ecrã do território
+function vistaTerritorio(conta, now) {
+  resolverTerritorio(now);
+  const g = gangueDe(conta), mine = g && !eBot(g) ? g : null, gi = (id) => { const x = gangues.get(id); return x ? { tag: x.tag, name: x.nome, me: !!mine && x.id === mine.id } : null; };
+  const zs = [...zonas.values()].map((z) => {
+    const d = donoDe(z), s = assaltoEm(z.id);
+    return { id: z.id, t: z.t, perH: TURF.perH[z.t], fee: TURF.fee[z.t], need: TURF.need[z.t], owner: d ? gi(d.id) : null, since: d ? z.desde : 0, prot: d && z.prot > now ? z.prot : 0,
+      why: mine ? porqueNaoBairro(mine, conta, z, now) : 'NO_GANG',
+      as: s ? { a: gi(s.a) || { tag: '', name: s.nomes.a }, d: s.d ? gi(s.d) || { tag: '', name: s.nomes.d } : null, start: s.inicio, end: s.inicio + TURF.durMs, pa: s.pa, pd: s.pd,
+        side: mine ? (s.a === mine.id ? 'a' : s.d === mine.id ? 'd' : null) : null, mineN: mine ? (s.pts.a[conta] || s.pts.d[conta] || 0) : 0,
+        foes: mine && s.d && (s.a === mine.id || s.d === mine.id) ? [...(gangues.get(s.a === mine.id ? s.d : s.a)?.membros.keys() || [])].map((c) => { const o = jogadores.get(c); return o ? { name: nomeDe(c), level: E.level(o) } : null; })
+          .filter(Boolean).sort((x, y) => y.level - x.level) : null,
+        top: Object.entries(s.pts[mine && s.d === mine.id ? 'd' : 'a']).sort((x, y) => y[1] - x[1]).slice(0, 3).map(([c, n]) => ({ name: nomeDe(c), n })) } : null };
+  });
+  const hist = [...assaltos.values()].filter((s) => s.fim).sort((x, y) => y.fim - x.fim).slice(0, TURF.hist)
+    .map((s) => ({ z: s.z, a: s.nomes.a, d: s.nomes.d || '', ta: s.nomes.ta || '', td: s.nomes.td || '', won: s.vence === s.a, fim: s.fim, pa: s.pa, pd: s.pd }));
+  const ch = mine ? cadeiaDe(mine.id, now) : null;
+  return { zones: zs, hist, mine: mine ? { tag: mine.tag, name: mine.nome, role: cargoDe(mine, conta), held: bairrosDe(mine.id), cofre: mine.cofre, perH: [...zonas.values()].filter((z) => donoDe(z) === mine).reduce((x, z) => x + TURF.perH[z.t], 0),
+    cool: Math.max(0, fimAssaltoDe(mine.id) + TURF.coolMs), members: mine.membros.size,
+    chain: { n: ch.n, until: ch.n ? ch.t + TURF.chainGapMs : 0, best: ch.best, mult: multDe(ch.n) } } : null };
+}
+
 // o que o ecrã da gangue mostra da guerra
 function vistaGuerra(g, conta, now) {
   const w = guerraDe(g.id), L = w ? ladoDe(w, g.id) : null, eu = jogadores.get(conta), m1 = { start: mundo(now).start, playEnd: mundo(now).playEnd };
@@ -1498,6 +1632,25 @@ function agirGangue(a, p, conta, now, world, ctx) {
       return { ...r, coop: p.gbz[r.k].coop };
     }
     case 'gangBizCollect': { minha(); return E.gangBizCollect(p, now, world); }
+    case 'gangTurf': {   // v110: assaltar um bairro (o chefe ou o subchefe), pago do cofre
+      resolverTerritorio(now);
+      const g = minha(), z = zonas.get(String(a.z || '')), why = porqueNaoBairro(g, conta, z, now);
+      if (why === 'NO_GANG_MONEY') err(why, { need: TURF.fee[z.t], have: g.cofre });
+      if (why === 'TURF_PROT') err(why, { until: z.prot });
+      if (why === 'TURF_COOL') err(why, { until: fimAssaltoDe(g.id) + TURF.coolMs });
+      if (why === 'NO_RANK') err(why, { need: TURF.role });
+      if (why) err(why);
+      const d = donoDe(z), fee = TURF.fee[z.t], inicio = d ? now + TURF.prepMs : now;
+      const s = { id: 's' + now.toString(36) + Math.random().toString(36).slice(2, 6), z: z.id, a: g.id, d: d ? d.id : '', decl: now, inicio, fim: 0, pa: 0, pd: 0, vence: '',
+        nomes: { a: g.nome, d: d ? d.nome : '', ta: g.tag, td: d ? d.tag : '' }, pts: { a: {}, d: {} } };
+      g.cofre -= fee; assaltos.set(s.id, s);
+      ctx.ops.push(() => { gravaG(g); gravaA(s); caixa(now, 'bairros', 0, fee); });
+      ctx.depois.push(() => {
+        for (const [x, ours] of [[g, true], [d, false]]) if (x) for (const c of x.membros.keys()) evento(c, now, { k: 'turfStart', z: z.id, ours, vs: ours ? (d ? d.nome : '') : g.nome, start: inicio });
+        noticia(now, { k: 'turfStart', a: g.nome, d: d ? d.nome : '', z: z.id, start: inicio });
+      });
+      return { ok: true, z: z.id, start: inicio, end: inicio + TURF.durMs, need: TURF.need[z.t], fee, fund: g.cofre };
+    }
     case 'gangChat': {
       const g = minha(), txt = String(a.txt || '').replace(/[\u0000-\u001f\u007f\u2028\u2029]/g, ' ').trim().slice(0, CFG.gang.chatMax);
       if (!txt) err('BAD_ACTION');
@@ -1797,7 +1950,7 @@ function evento(conta, now, dados) { q.novoEvento.run(conta, now, JSON.stringify
 function agir(conta, corpo, now) {
   const w = mundo(now);
   if (w.phase !== 'play') throw new E.GameError('ROUND_CLOSED');
-  carregarRonda(w.n); epocaEmDia(now); resolverOps(now); resolverFeira(now);
+  carregarRonda(w.n); epocaEmDia(now); resolverOps(now); resolverFeira(now); resolverTerritorio(now);
   const p = jogadorDe(conta, now, w);
   const mk0 = w.phase === 'play' ? bolsaDe(w, now) : null;
   const world = { start: w.start, playEnd: w.playEnd, press: mk0 ? MW.pressOf(mk0.w, 'lx') : 50 };
@@ -1989,7 +2142,7 @@ function agir(conta, corpo, now) {
       if (!c || !jogadores.has(c.id)) throw new E.GameError('NO_TARGET');
       alvo = jogadores.get(c.id);
       alvoResp0 = alvo.respect;
-      r = E.attack(p, alvo, now, world, a.mode === 'mug' ? 'mug' : 'beat', rng, a.drop === true, emGuerra(p.id, alvo.id, now));   // v102: em guerra, sem o «fraco demais»
+      r = E.attack(p, alvo, now, world, a.mode === 'mug' ? 'mug' : 'beat', rng, a.drop === true, emGuerra(p.id, alvo.id, now) || emAssalto(p.id, alvo.id, now));   // v110: e nos assaltos aos bairros   // v102: em guerra, sem o «fraco demais»
       break;
     }
     case 'hitman': {
@@ -2020,6 +2173,8 @@ function agir(conta, corpo, now) {
   // v102: uma vitória contra a gangue com quem estamos em guerra conta pontos
   if (a.type === 'attack' && r && r.win && alvo) { const gA = gangueDe(p.id), gD = gangueDe(alvo.id), w = gA && guerraDe(gA.id);
     if (w && gD && now >= w.inicio && ladoDe(w, gD.id) != null && gA !== gD) { E.warHit(p); r = { ...r, war: r.wp }; ctx.depois.push(() => pontuarGuerra(gA, gD, [p.id], r.wp, now)); } }
+  // v110: cadeia e pontos dos assaltos aos bairros
+  if (a.type === 'attack' && r && r.win && alvo) { const tb = pontuarBairros(gangueDe(p.id), gangueDe(alvo.id), p.id, now, ctx); if (tb) r = { ...r, turf: tb }; }
   // v100: honras: os contadores novos e as que se ganharam com esta ação
   if (r && typeof r === 'object') { E.honorTrack(p, now, hPre, a.type, r); const nh = E.honorsCheck(p, now); if (nh.length) r = { ...r, hon: nh }; }
   db.exec('BEGIN');
@@ -2378,6 +2533,11 @@ async function tratar(req, res) {
     if (!limite('perfil:' + conta, 40, 10_000, now)) return enviar(res, 429, { error: 'SLOW_DOWN' });
     const pf = perfilPublico(conta, url.searchParams.get('n'), now, w);
     return pf ? enviar(res, 200, { now, ...pf }) : enviar(res, 404, { error: 'NO_TARGET' });
+  }
+  if (req.method === 'GET' && path === '/api/turf') {   // v110: o território
+    if (w.phase !== 'play') return enviar(res, 200, { now, zones: [], hist: [], mine: null });
+    carregarRonda(w.n);
+    return enviar(res, 200, { now, ...vistaTerritorio(conta, now) });
   }
   if (req.method === 'GET' && path === '/api/events') {
     return enviar(res, 200, { now, list: q.eventos.all(conta).map((r) => ({ id: r.id, t: r.t, ...JSON.parse(r.dados) })) });

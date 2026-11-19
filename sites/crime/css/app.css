@@ -3888,3 +3888,75 @@ body .pfsh h2.sec + p.pfnone { padding: 8px 11px 2px; margin: 0; }
 .honlist .honb.on { box-shadow: inset 0 0 0 2px var(--tx); }   /* várias escolhidas (vitrine): o contorno fica por dentro e não sai da margem */
 body .hlink span { font-size: clamp(15px, 4.6vw, 19px); white-space: normal; overflow-wrap: break-word; text-overflow: clip; }   /* «Classificação» já não fica cortada a 320 px */
 .honlist { row-gap: 10px; }
+
+/* ===== v110: território dos gangues (os bairros) ===== */
+/* mapa de quarteirões: três colunas de bairros encostados, de oeste para leste; o Tejo corre por baixo e sobe pelo lado leste */
+.bxmap { position: relative; padding: 0 18px 26px 0; margin: 4px 0 10px; }
+.bxgrid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 2px; border-radius: var(--rc) 0 0 0; overflow: hidden; }
+.bxw { position: absolute; background: repeating-linear-gradient(160deg, #8db4d622 0 2px, transparent 2px 9px), #5b86ad3a; }
+.bxw.b { left: 0; right: 0; bottom: 0; height: 24px; border-radius: 0 0 var(--rc) var(--rc); display: flex; align-items: center; justify-content: center; }
+.bxw.r { top: 0; right: 0; bottom: 0; width: 18px; border-radius: 0 var(--rc) 0 0; }
+.bxw span { font: italic 500 14px/1 var(--disp); color: var(--energy); letter-spacing: .06em; }
+.bxz { min-height: 92px; display: flex; flex-direction: column; justify-content: space-between; gap: 4px; padding: 8px 7px 7px; text-align: left; color: var(--tx); font: inherit;
+  border: 0; border-radius: 0; background: var(--s2); box-shadow: inset 0 0 0 1px var(--line); cursor: pointer; }
+.bxz:active { filter: brightness(1.12); }
+.bxz:focus-visible { outline: 2px solid var(--sodium); outline-offset: -2px; position: relative; z-index: 1; }
+.bxn { font: 600 14px/1.15 var(--disp); min-height: 2.3em; text-wrap: balance; overflow-wrap: break-word; }
+@media (min-width: 370px) { .bxn { font-size: 15px; } .bxz { padding: 9px 9px 8px; } }
+.bxo { display: flex; align-items: center; flex-wrap: wrap; gap: 2px 4px; min-height: 20px; font-size: 13px; color: var(--tx2); }
+.bxo b, .bxo .c-cash, .bxo .c-red { font-weight: 650; }
+.bxp { display: inline-flex; align-items: center; gap: 2px; color: var(--tx2); white-space: nowrap; }
+.bxp svg.i, .bxleg svg.i { width: 13px; height: 13px; color: var(--tx2); }
+.bxi, .bxt { display: flex; align-items: center; gap: 4px; font-size: 13px; color: var(--tx2); }
+.bxt svg.i { width: 13px; height: 13px; flex: none; }
+.bxz.mine, .bxk.mine { background: color-mix(in oklab, var(--cash) 16%, var(--s1)); box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--cash) 50%, transparent); }
+.bxz.mine .bxi { color: var(--cash); }
+.bxz.free, .bxk.free { background: var(--s1); box-shadow: none; outline: 1px dashed var(--line2); outline-offset: -1px; }
+.bxz.free .bxn { color: var(--tx2); }
+.bxz.fight, .bxk.fight { background: repeating-linear-gradient(135deg, #d6ad6226 0 6px, transparent 6px 12px), var(--s1); box-shadow: inset 0 0 0 1px #d6ad6299; }
+.bxz.fight .bxt { color: var(--sodium); }
+.bxk.them { background: var(--s2); box-shadow: inset 0 0 0 1px var(--line2); }
+.bxleg { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px 14px; margin: 0 0 16px; color: var(--tx2); }
+.bxleg > span { display: inline-flex; align-items: center; gap: 8px; }
+.bxk { width: 14px; height: 14px; border-radius: 3px; display: inline-block; flex: none; }
+/* números lado a lado, separados por uma linha fina (sem caixas dentro de caixas) */
+.bxfacts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0; }
+.bxfacts.two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.bxfacts > div { display: grid; align-content: start; gap: 2px; padding: 2px 10px; min-width: 0; }
+.bxfacts > div:first-child { padding-left: 0; }
+.bxfacts > div + div { box-shadow: inset 1px 0 0 var(--line); }
+.bxfacts b { font-size: 17px; }
+.bxsc { gap: 10px; }
+.bxsc p { margin: 0; }
+.bxsc .fill { position: relative; overflow: visible; height: 8px; margin-top: 4px; }
+.bxsc .fill > i { border-radius: 99px; }
+.bxsc .fill > em { position: absolute; left: var(--goal); top: -4px; bottom: -4px; width: 2px; margin-left: -1px; background: var(--tx); border-radius: 1px; }
+.bxsc .fill.atk > i { background: var(--sodium); } .bxsc .fill.def > i { background: var(--tx2); }
+.bxsc .fill.us > i { background: var(--cash); } .bxsc .fill.them > i { background: var(--danger); }
+.bxsd .gtag { margin-right: 2px; }
+.bxfoes { display: grid; gap: 0; }
+.bxfoes > p { margin: 0 0 2px; }
+.bxfoe { min-height: 44px; gap: 8px; cursor: pointer; box-shadow: inset 0 1px 0 var(--line); }
+.bxfoe b { color: var(--sodium); font-weight: 650; }
+.bxfoe svg.i { width: 16px; height: 16px; color: var(--tx3); }
+.bxch { display: grid; gap: 4px; padding-top: 12px; box-shadow: inset 0 1px 0 var(--line); }
+.bxch p { margin: 0; }
+.bxcn { font: 700 22px/1 var(--num); margin-left: 4px; }
+.bxch .fill { margin: 6px 0 2px; } .bxch .fill > i { background: var(--sodium); }
+.bxnow { box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--cash) 45%, transparent); margin-bottom: 12px; }
+.bxnow.def { box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--danger) 50%, transparent); }
+.bxme { margin-bottom: 12px; }
+.bxhow > summary { list-style: none; min-height: 44px; display: flex; align-items: center; font-weight: 650; cursor: pointer; }
+.bxhow > summary::-webkit-details-marker { display: none; }
+.bxhow > summary::after { content: '+'; margin-left: auto; color: var(--tx3); font-size: 20px; }
+.bxhow[open] > summary::after { content: '−'; }
+.bxhow .stack { padding-bottom: 4px; } .bxhow p { margin: 0; line-height: 1.45; max-width: 62ch; }
+.bxsh h2 { font: 700 26px/1.1 var(--disp); margin: 0; }
+.bxsh > p, .bxsh .stack > p { margin: 0; }
+.bxcf { gap: 8px; } .bxcf > .btn.ghost { flex: none; }
+.bxsh .linkbtn { min-height: 32px; color: var(--sodium); }
+.gturf { margin: 0 0 12px; } .gturf p { margin: 0; }
+.bxh { font: 700 19px/1.2 var(--disp); margin: 2px 0 0; display: flex; align-items: center; flex-wrap: wrap; gap: 6px; overflow-wrap: anywhere; }
+.bxh .gtag { font-size: 13px; }
+.bxlbl { margin: 0; font-weight: 650; }
+.bxh svg.i, .bxsh p svg.i { width: 16px; height: 16px; vertical-align: -2px; }

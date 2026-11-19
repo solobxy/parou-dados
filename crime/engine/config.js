@@ -872,6 +872,22 @@ export const CFG = {
   // Contra passar dinheiro entre contas: o preço fica entre 0,3× e 3× o de referência (objetos: o da loja; colecionáveis: a parte
   // de cada peça no que o museu paga pelo conjunto; materiais: ref; componentes: os euros da receita mais os materiais), os
   // lances também param nos 3×, e só se negoceia a partir do nível minLvl. Quem ainda tem coisas por levantar conta-as nos 10.
+  // v110: território dos gangues (à maneira das «territory wars» do Torn, mais simples). 12 bairros de Lisboa, de 3 escalões.
+  // O bairro rende perH[escalão] por hora ao cofre de quem o tem. Para o tomar, o chefe ou o subchefe paga fee[escalão] do cofre e
+  // abre um assalto de durMs: cada vitória de um membro numa luta vale winPts pontos (vezes o multiplicador da cadeia).
+  // Bairro livre: conta qualquer vitória e é tomado logo que se chega a need[escalão]. Bairro de outra gangue: começa prepMs depois
+  // (os donos são avisados), só contam as lutas entre as duas gangues e, no fim, o assaltante fica com ele se chegou a need e fez mais
+  // pontos do que quem defende. Um bairro que muda de mãos fica protegido protMs; uma gangue espera coolMs entre assaltos.
+  // Cadeia: vitórias seguidas dos membros, cada uma até chainGapMs depois da anterior; mult[i] = [vitórias, multiplicador em bp].
+  turf: {
+    zones: [
+      { id: 'belem', t: 1 }, { id: 'alcantara', t: 1 }, { id: 'campoourique', t: 1 }, { id: 'bairroalto', t: 2 }, { id: 'caisdosodre', t: 2 }, { id: 'baixa', t: 3 },
+      { id: 'alfama', t: 2 }, { id: 'mouraria', t: 1 }, { id: 'intendente', t: 1 }, { id: 'arroios', t: 1 }, { id: 'marvila', t: 2 }, { id: 'parquenacoes', t: 3 },
+    ],
+    perH: [0, 400, 1000, 2500], fee: [0, 5000, 15000, 40000], need: [0, 60, 150, 300],
+    max: 4, minMembers: 3, role: 2, prepMs: 30 * MIN, durMs: 2 * HOUR, protMs: 12 * HOUR, coolMs: 6 * HOUR, winPts: 10, hist: 8,
+    chainGapMs: 5 * MIN, mult: [[50, 20000], [25, 15000], [10, 12500]],
+  },
   // v109: o chat público da cidade e o perfil público
   // max: letras por mensagem; minLevel: nível para falar (trava contas feitas só para encher o chat); rate: n mensagens por janela;
   // keep: mensagens que se guardam (as mais antigas apagam-se de hora a hora); vitMax: honras na vitrine do perfil
