@@ -48,7 +48,7 @@ export function newPlayer(id, now, world, opts = {}) {
     luxuries: 0,
     gang: null, gb: null, gangLeft: 0, gbotLeft: 0, gh: [], gbz: gbzNew(),
     emp: null,   // v111: a empresa onde trabalha ({ id, t: o tipo, s: as estrelas }); o servidor escreve-a
-    cars: [], car: -1, rcn: { n: 0, w: 0, pod: 0 },   // v112: os carros (cada um com as peças), o que está escolhido e as corridas feitas (rc já é o resto do respeito)
+    cars: [], car: -1, rcn: { n: 0, w: 0, pod: 0 }, pkn: { h: 0, w: 0, big: 0 }, pkd: null,   // v114: mãos de póquer (jogadas, ganhas, maior pote) e as fichas compradas hoje   // v112: os carros (cada um com as peças), o que está escolhido e as corridas feitas (rc já é o resto do respeito)
     detoxT: [],
     xp: { F: 0, I: 0, C: 0 },
     wk: CFG.crimes.map(() => 0),   // sucessos por golpe (para os objetivos)
@@ -130,6 +130,9 @@ function migrate(p) {
   p.cars = p.cars.filter((c) => c && carOf(c.id) && Array.isArray(c.up) && c.up.length === 3);
   if (!Number.isInteger(p.car) || !p.cars[p.car]) p.car = p.cars.length ? 0 : -1;
   if (!p.rcn || typeof p.rcn !== 'object') p.rcn = { n: 0, w: 0, pod: 0 };
+  if (!p.pkn || typeof p.pkn !== 'object' || !Number.isSafeInteger(p.pkn.h)) p.pkn = { h: 0, w: 0, big: 0 };
+  if (p.pkd && (typeof p.pkd !== 'object' || typeof p.pkd.d !== 'string' || !Number.isSafeInteger(p.pkd.n))) p.pkd = null;
+  if (p.pkd === undefined) p.pkd = null;
   if (!Number.isFinite(p.rc)) p.rc = 0;   // (uma versão de teste da v112 usou rc para as corridas: volta a ser o resto do respeito)
   if (!Number.isSafeInteger(p.gangLeft)) p.gangLeft = 0;
   if (!Number.isSafeInteger(p.gbotLeft)) p.gbotLeft = 0;
@@ -435,6 +438,26 @@ export function carUp(p, now, world, i, part) {
   c.up[part] = lv + 1;
   return { ok: true, id: c.id, part, lv: lv + 1, cost };
 }
+// ---------- v114: póquer ----------
+// sentar: as fichas compram-se com o dinheiro do bolso, entre o mínimo e o máximo da mesa e dentro do limite do dia
+export function pkBuy(p, now, world, st, amt) {
+  begin(p, now, world);
+  const P = CFG.poker, S = Number.isInteger(st) ? P.stakes[st] : null;
+  if (!S) fail('NO_STAKE');
+  if (level(p) < S.level) fail('LOW_LEVEL', { need: S.level });
+  amt = Math.floor(Number(amt));
+  if (!Number.isSafeInteger(amt) || amt < S.min || amt > S.max) fail('BAD_AMOUNT', { min: S.min, max: S.max });
+  const d = dayOf(now);
+  if (!p.pkd || p.pkd.d !== d) p.pkd = { d, n: 0 };
+  if (p.pkd.n + amt > P.dayBuy) fail('PK_DAY', { left: Math.max(0, P.dayBuy - p.pkd.n) });
+  if (p.cash < amt) fail('NO_CASH');
+  p.cash -= amt; p.pkd.n += amt;
+  return amt;
+}
+// sair (ou ser posto fora): as fichas voltam ao bolso
+export function pkPay(p, chips) { if (Number.isSafeInteger(chips) && chips > 0) p.cash += chips; }
+// no fim de cada mão: as contas de quem lá estava
+export function pkHand(p, won, pot) { p.pkn.h += 1; if (won > 0) { p.pkn.w += 1; if (pot > p.pkn.big) p.pkn.big = pot; } }
 export function carSel(p, now, world, i) { begin(p, now, world, { allowBusy: true }); if (!p.cars[i]) fail('NO_CAR'); p.car = i; return { ok: true, id: p.cars[i].id }; }   // v113: a garagem fica em casa (lá fora não se mexe)
 export function carSell(p, now, world, i) {
   begin(p, now, world, { allowBusy: true });
@@ -4544,6 +4567,8 @@ export function checkInvariants(p) {
   if (!Array.isArray(p.cars) || p.cars.length > CFG.race.maxCars || p.cars.some((c) => !carOf(c.id) || !isInts(c.up, 3, 0, CFG.race.upBp.length)) || new Set(p.cars.map((c) => c.id)).size !== p.cars.length) bad.push('cars');   // v112
   if (p.cars.length ? !p.cars[p.car] : p.car !== -1) bad.push('car');
   if (!p.rcn || !Number.isSafeInteger(p.rcn.n) || p.rcn.w > p.rcn.n || p.rcn.pod > p.rcn.n) bad.push('rcn');
+  if (!p.pkn || !Number.isSafeInteger(p.pkn.h) || p.pkn.w > p.pkn.h || !(p.pkn.big >= 0)) bad.push('pkn');
+  if (p.pkd !== null && (!p.pkd || !Number.isSafeInteger(p.pkd.n) || p.pkd.n < 0)) bad.push('pkd');
   if (!Number.isFinite(p.rc)) bad.push('rc');
   if (p.emp && p.job !== -1) bad.push('emp/job');
   if (p.honVit != null && (!Array.isArray(p.honVit) || p.honVit.length > CFG.social.vitMax || p.honVit.some((k) => !(p.hon && p.hon[k])))) bad.push('honVit');   // v109

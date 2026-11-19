@@ -909,6 +909,20 @@ export const CFG = {
       { id: 'advocacia', task: 'contrato', course: 'especializacao', cost: 1_500_000, rev: 1600, perk: 'jail', bp: [1000, 2000] },
     ],
   },
+  // v114: póquer entre jogadores (Texas Hold'em sem limite), no casino. Mesas de 6 por nível de apostas (bb: a aposta grande; a pequena é
+  // metade). Senta-se com fichas compradas com o dinheiro do bolso (entre min e max) e sai-se com o que houver. Quando há poucos jogadores,
+  // os da casa enchem a mesa até minPlayers e saem à medida que chegam jogadores. A casa fica com rakeBp de cada pote que vê o flop
+  // (no máximo rakeCapBB apostas grandes). Cada jogada tem turnMs; esgotado, passa (ou desiste) e, ao fim de idleOut seguidas, sai da mesa.
+  // dayBuy: o máximo de fichas que cada jogador compra por dia (as mesas não servem para passar dinheiro de uma conta para outra).
+  poker: {
+    seats: 6, minPlayers: 4, dayBuy: 100_000, rakeBp: 500, rakeCapBB: 3, turnMs: 20_000, botMs: [1200, 2800], showMs: 5000, nextMs: 2500, idleOut: 2, tables: 6,
+    stakes: [
+      { bb: 2, min: 100, max: 400, level: 10 },
+      { bb: 10, min: 500, max: 2000, level: 20 },
+      { bb: 50, min: 2500, max: 10_000, level: 40 },
+      { bb: 200, min: 10_000, max: 40_000, level: 60 },
+    ],
+  },
   // v112: corridas de carros. Carros por escalão (spd velocidade, acc aceleração, han condução, de 0 a 100), cada um com três peças
   // (motor, turbo, suspensão) que sobem upPts por nível até 3 (preço = upBp do carro por nível). Pistas: o peso de cada estatística e
   // o tempo base de uma volta. Corrida de rua: contra 3 a 5 pilotos da rua do mesmo escalão, sem inscrição; paga street[escalão] x

@@ -15,6 +15,7 @@ import { localParts, lisbonToUtc, seasonAt, seasonBounds } from './engine/time.j
 import * as MW from './engine/mundo.js';
 import * as GV from './engine/governo.js';
 import * as NW from './engine/noticias.js';
+import * as K from './engine/poker.js';
 
 const PORT = +(process.env.PORT || 3170);
 const DATA = process.env.DATA || process.env.STATE_DIRECTORY || './dados';
@@ -29,7 +30,7 @@ const RONDA_TESTE = process.env.PRIMEIRA_RONDA ? dataDe(process.env.PRIMEIRA_RON
 // Épocas de 28 dias a contar da sexta 13/11/2026 às 21:00 de Lisboa (PRIMEIRA_EPOCA=AAAA-MM-DD muda-a, para testes)
 const ANCORA = dataDe(process.env.PRIMEIRA_EPOCA || process.env.PRIMEIRA_RONDA || '2026-11-13');
 const rng = process.env.TESTE_SEMENTE ? seededRng(+process.env.TESTE_SEMENTE) : cryptoRng();   // nos testes, a sorte pode ser sempre a mesma
-const VERSAO = 113;   // sobe quando o servidor muda, para se confirmar de fora que a versão nova já está a correr
+const VERSAO = 114;   // sobe quando o servidor muda, para se confirmar de fora que a versão nova já está a correr
 const ATOS_3S = +(process.env.ATOS_3S || 15), ATOS_MIN = +(process.env.ATOS_MIN || 400); // ações por conta: 15 em 3 s, 400 por minuto
 
 // ---------- relógio que nunca anda para trás ----------
@@ -262,6 +263,7 @@ function contarCaixa(now, a, r, delta) {
   delta += lav;
   if (tipo === 'attack' && r.win && r.mode === 'mug') { caixa(now, 'assalto', r.money, 0); caixa(now, 'assaltado', 0, r.money); return; }
   if (tipo === 'hitman' && r.success) caixa(now, 'assassino:alvo', 0, r.cashLoss);
+  if (tipo.startsWith('pk')) { caixa(now, 'poquer', delta > 0 ? delta : 0, delta < 0 ? -delta : 0); return; }   // v114: o que entra e sai das mesas
   if (tipo === 'workDone' && r && r.shift) { caixa(now, 'shift', delta > 0 ? delta : 0, 0); return; }   // o turno vai para o banco: conta como os turnos de antes
   if (tipo === 'workDone' && r && r.id) { caixa(now, 'trabalho:' + r.id, delta > 0 ? delta : 0, delta < 0 ? -delta : 0); return; }
   caixa(now, tipo, delta > 0 ? delta : 0, delta < 0 ? -delta : 0);
@@ -351,6 +353,7 @@ function carregarRonda(n) {
   carregarTerritorio();   // v110
   carregarEmpresas();   // v111
   carregarCorridas();   // v112
+  carregarPoquer();   // v114
 }
 
 function nomeDe(id) {
@@ -508,6 +511,7 @@ function vista(p, now) {
     bustBp: E.bustChanceBp(p, now, mk ? MW.pressOf(mk.w, 'lx') : 50), lx: mk ? { crime: mk.w.lx.crime, press: MW.pressOf(mk.w, 'lx'), ed: mk.w.ed, edNext: MW.edStart(mk.w.ed + 1) } : null,
     cd: { est: E.consumWait(p, 'est', now), med: E.consumWait(p, 'med', now) },   // v78: quanto falta na espera de cada família
     mt: p.mt, cf: p.cf, maq: p.maq,   // v83: depósito, bancada e máquinas
+    pk: mesaPk(p.id) ? mesaPk(p.id).id : null, pkn: p.pkn, pkd: p.pkd,   // v114: a mesa de póquer onde está sentado
     cars: p.cars, car: p.car, rcn: p.rcn, rsk: E.skillBp(p, 'conducao'), race: salaDe(p.id) ? salaDe(p.id).id : null,   // v112: a garagem, as corridas e a perícia
     dg: E.digView(p, now), dgc: p.dgc, arq: E.stLevel(p, 'arqueologia'),   // v85: a escavação aberta (sem a grelha), os sítios vigiados, o nível de Arqueologia
     hon: p.hon || {}, honSel: p.honSel || null, honVit: p.honVit || [], honv: E.honorVals(p),   // v100: honras ganhas, a escolhida e os números de todas
@@ -565,7 +569,7 @@ function cfgPublica() {
     round: { playDays: CFG.round.playDays, noPvpMs: CFG.round.noPvpMs, newbieShieldMs: CFG.round.newbieShieldMs }, season: CFG.season, raid: CFG.raid,   // v91: a wiki
     consum: CFG.consum, col: CFG.col, gyms: CFG.gyms, books: CFG.books,   // v94, v95
     social: CFG.social,   // v109: o chat e a vitrine
-    turf: CFG.turf, comp: CFG.comp, race: CFG.race,   // v110: o território
+    turf: CFG.turf, comp: CFG.comp, race: CFG.race, poker: CFG.poker,   // v110: o território
     mat: CFG.mat, craft: CFG.craft, feira: { ...CFG.feira, refs: FEIRA_REFS }, dig: CFG.dig, hunt: CFG.hunt, honors: E.HONORS, travel: CFG.travel,   // v83, v84, v98, v100, v101
     exam: (({ ans: _a, ...x }) => x)(CFG.exam), studies: CFG.studies,   // v81: a Universidade   // v80: as regras do exame, sem as respostas certas
     gov: { vote: CFG.gov.vote, laws: CFG.gov.laws, cof: CFG.gov.cof, parties: Object.fromEntries(Object.entries(CFG.gov.parties).map(([k, x]) => [k, { pos: x.pos, wOp: x.wOp, wLob: x.wLob }])) },   // v76: o parlamento
@@ -1697,6 +1701,192 @@ function vistaCorridas(conta, now) {
   return { open: [...salas.values()].sort((x, y) => x.prazo - y.prazo).map(sala), mine };
 }
 
+// ---------- v114: póquer ----------
+// As mesasPk vivem em memória (engine/poker.js). Na base de dados fica só, por jogador sentado, quantas fichas tinha no fim da última mão
+// (ou ao sentar): se o servidor reiniciar a meio, a mão em curso não conta e cada um recebe essas fichas no bolso. Os da casa não
+// são contas: as fichas deles são da casa, e o que ganham ou perdem entra ou sai do jogo (conta no caixa pelas compras e saídas).
+db.exec(`CREATE TABLE IF NOT EXISTS poquer_lugares (ronda INTEGER NOT NULL, conta TEXT NOT NULL, mesa TEXT NOT NULL, fichas INTEGER NOT NULL, desde INTEGER NOT NULL,
+  PRIMARY KEY (ronda, conta));`);
+const qp = {
+  todos: db.prepare('SELECT * FROM poquer_lugares WHERE ronda = ?'),
+  senta: db.prepare('INSERT OR REPLACE INTO poquer_lugares (ronda, conta, mesa, fichas, desde) VALUES (?, ?, ?, ?, ?)'),
+  fichas: db.prepare('UPDATE poquer_lugares SET fichas = ? WHERE ronda = ? AND conta = ?'),
+  sai: db.prepare('DELETE FROM poquer_lugares WHERE ronda = ? AND conta = ?'),
+};
+const PK = CFG.poker, mesasPk = new Map();   // id -> mesa do motor, mais: ronda, next (quando pode começar a mão seguinte), hist
+// os tempos (POQUER_RAPIDO=1 nos testes: os da casa jogam logo e cada jogada dura 1,5 s)
+const PKT = process.env.POQUER_RAPIDO ? { botMs: [20, 40], showMs: 300, nextMs: 200, turnMs: 1500 } : { botMs: PK.botMs, showMs: PK.showMs, nextMs: PK.nextMs, turnMs: PK.turnMs };
+const BOTS_POQUER = ['Ace Ivanov', 'Lucky Lin', 'Big Sal', 'Nora Bluff', 'Kofi River', 'Ingrid Fold', 'Mateo Shove', 'Sasha Chips', 'Hiro Nuts', 'Dex Tilt', 'Priya Flop', 'Jack Turner'];
+const mesaPk = (conta) => { for (const tb of mesasPk.values()) if (K.pkSeatOf(tb, conta) >= 0) return tb; return null; };
+const humanos = (tb) => tb.seats.filter((x) => x && !x.bot).length;
+// ao ler a ronda: quem está numa mesa em memória continua; as fichas de quem ficou de fora (o servidor reiniciou) voltam ao bolso
+function carregarPoquer() {
+  for (const [id, tb] of mesasPk) if (tb.ronda !== ronda) mesasPk.delete(id);
+  const t = clock();
+  for (const r of qp.todos.all(ronda)) {
+    const tb = mesasPk.get(r.mesa);
+    if (tb && K.pkSeatOf(tb, r.conta) >= 0) continue;
+    const p = jogadores.get(r.conta);
+    if (p) { E.pkPay(p, r.fichas); guardar(p, t); if (r.fichas > 0) evento(r.conta, t, { k: 'pkBack', m: r.fichas }); }
+    qp.sai.run(ronda, r.conta);
+    caixa(t, 'poquer', r.fichas, 0);
+  }
+}
+// a vez de quem joga: os da casa pensam um bocado; os jogadores têm turnMs
+function marcaVez(tb, now) {
+  const h = tb.hand;
+  if (!h || h.res || h.toAct < 0) return;
+  const s = tb.seats[h.toAct];
+  h.deadline = now + (s.bot ? rng.int(PKT.botMs[0], PKT.botMs[1]) : PKT.turnMs);
+}
+const pkErr = (e) => { if (e instanceof K.PokerError) throw new E.GameError(e.code); throw e; };
+// uma mão acabou: grava as fichas de cada jogador (e as contas das mãos dele)
+function fimMao(tb, now) {
+  const r = tb.hand.res, ganhos = new Map(r.win.map((w) => [w.i, w.amt]));
+  db.exec('BEGIN');
+  try {
+    tb.seats.forEach((s, i) => {
+      if (!s || s.bot || s.gone) return;
+      const p = jogadores.get(s.who);
+      if (p && s.inh) { E.touch(p, now); E.pkHand(p, ganhos.get(i) || 0, r.total); guardar(p, now); }
+      qp.fichas.run(s.chips, ronda, s.who);
+    });
+    db.exec('COMMIT');
+  } catch (e) { db.exec('ROLLBACK'); throw e; }
+  tb.hist = [{ n: tb.hand.n, board: tb.hand.board, win: r.win.map((w) => ({ name: tb.seats[w.i]?.name || '?', amt: w.amt, cat: w.cat })), total: r.total, rake: r.rake, t: now }, ...(tb.hist || [])].slice(0, 5);
+}
+// um jogador sai (ou é posto fora): as fichas voltam ao bolso
+function tirarDaMesa(tb, i, now, why) {
+  const s = tb.seats[i];
+  if (!s) return;
+  if (s.bot || s.gone) { tb.seats[i] = null; return; }
+  const p = jogadores.get(s.who), chips = s.chips;
+  db.exec('BEGIN');
+  try {
+    if (p) { E.touch(p, now); E.pkPay(p, chips); guardar(p, now); evento(s.who, now, { k: 'pkOut', m: chips, why }); }
+    qp.sai.run(ronda, s.who);
+    caixa(now, 'poquer', chips, 0);
+    db.exec('COMMIT');
+  } catch (e) { db.exec('ROLLBACK'); throw e; }
+  tb.seats[i] = null;
+}
+// entre mãos: saem os que pediram (ou ficaram sem fichas, ou adormeceram); os da casa entram e saem para a mesa ter minPlayers
+function arrumar(tb, now) {
+  const S = K.pkStake(tb.st);
+  tb.seats.forEach((s, i) => {
+    if (!s) return;
+    if (s.bot) { if (s.chips <= 0 || s.leave) tb.seats[i] = null; return; }
+    if (s.gone) { tb.seats[i] = null; return; }
+    if (s.leave || s.chips <= 0) tirarDaMesa(tb, i, now, s.chips <= 0 ? 'broke' : s.to >= PK.idleOut ? 'idle' : 'left');
+  });
+  const H = humanos(tb);
+  if (!H) { mesasPk.delete(tb.id); return; }
+  const want = Math.max(0, PK.minPlayers - H);
+  let bots = tb.seats.map((s, i) => (s && s.bot ? i : -1)).filter((i) => i >= 0);
+  while (bots.length > want) { const i = bots.sort((a, b) => tb.seats[a].chips - tb.seats[b].chips).shift(); tb.seats[i] = null; }
+  const usados = new Set(tb.seats.filter((x) => x && x.bot).map((x) => x.name));
+  for (let k = bots.length; k < want; k++) {
+    const livre = tb.seats.findIndex((x) => !x); if (livre < 0) break;
+    const nomesLivres = BOTS_POQUER.filter((x) => !usados.has(x)), nome = nomesLivres[rng.int(0, nomesLivres.length - 1)];
+    usados.add(nome);
+    const chips = Math.floor(rng.int(S.min, S.max) / S.bb) * S.bb;
+    K.pkSit(tb, livre, { who: 'bot:' + nome, bot: true, name: nome, chips });
+  }
+}
+// a cada meio segundo, cada mesa: a vez de quem joga (os da casa jogam; quem deixou passar o tempo passa ou desiste), o fim da mão e a seguinte
+function passoMesa(tb, now) {
+  const h = tb.hand;
+  if (h && !h.res) {
+    if (now < (h.deadline || 0)) return;
+    const i = h.toAct, s = tb.seats[i];
+    if (i < 0 || !s) return;
+    if (s.bot) { const mv = K.pkBot(tb, i, rng); K.pkAct(tb, i, mv.move, mv.amt, now); }
+    else { const o = K.pkOptions(tb, i), to = (s.to || 0) + 1; K.pkAct(tb, i, o && o.check ? 'check' : 'fold', 0, now); s.to = to; if (to >= PK.idleOut) s.leave = true; }   // (a jogada põe o contador a zero)
+    if (tb.hand.res) fimMao(tb, now); else marcaVez(tb, now);
+    return;
+  }
+  if (h && h.res) { if (now < h.res.t + PKT.showMs) return; tb.hand = null; tb.next = now + PKT.nextMs; }
+  arrumar(tb, now);
+  if (!mesasPk.has(tb.id) || now < (tb.next || 0)) return;
+  if (K.pkStart(tb, rng, now)) { if (tb.hand.res) fimMao(tb, now); else marcaVez(tb, now); }
+}
+function resolverPoquer(now) {
+  if (ronda < 0) return;
+  const w = mundo(now);
+  if (w.phase !== 'play') { fecharMesas(now); return; }
+  for (const tb of [...mesasPk.values()]) { try { passoMesa(tb, now); } catch (e) { console.error('póquer', tb.id, e.message); } }
+}
+// o fim da ronda fecha as mesasPk: a mão em curso não conta, cada um recebe as fichas que tinha antes dela
+function fecharMesas(now) {
+  for (const tb of [...mesasPk.values()]) {
+    tb.seats.forEach((s, i) => { if (s && !s.bot && !s.gone && tb.hand && !tb.hand.res) s.chips += s.put; if (s) tirarDaMesa(tb, i, now, 'closed'); });
+    mesasPk.delete(tb.id);
+  }
+}
+setInterval(() => { try { resolverPoquer(clock()); } catch (e) { console.error('póquer', e.message); } }, 500).unref?.();
+// uma mesa com lugar neste nível (sem a criar: só se cria depois de a compra passar)
+function lugarPara(st) {
+  for (const tb of mesasPk.values()) if (tb.st === st && tb.ronda === ronda) { const i = tb.seats.findIndex((x) => !x); if (i >= 0 && humanos(tb) < PK.seats) return { tb, i }; }
+  let n = 0; for (const tb of mesasPk.values()) if (tb.st === st) n++;
+  if (n >= PK.tables) return null;
+  return { tb: null, i: 0 };
+}
+function agirPoquer(a, p, conta, now, world, ctx) {
+  const err = (code, data) => { throw new E.GameError(code, data); };
+  switch (a.type) {
+    case 'pkSit': {
+      if (mesaPk(conta)) err('PK_SEATED');
+      const st = int(a.st);
+      if (!PK.stakes[st]) err('NO_STAKE');
+      const lugar = lugarPara(st) || err('PK_FULL');
+      const chips = E.pkBuy(p, now, world, st, a.buy);   // valida tudo antes de mexer
+      const id = lugar.tb ? lugar.tb.id : 'pk' + now.toString(36) + randomBytes(3).toString('hex');
+      ctx.ops.push(() => qp.senta.run(ronda, conta, id, chips, now));
+      ctx.depois.push(() => {
+        let tb = lugar.tb;
+        if (!tb) { tb = Object.assign(K.pkNew(id, st, now), { ronda, next: now + PKT.nextMs, hist: [] }); mesasPk.set(id, tb); }
+        K.pkSit(tb, lugar.i, { who: conta, name: nomeDe(conta), chips });
+        if (!tb.hand) arrumar(tb, now);
+      });
+      return { ok: true, table: id, chips };
+    }
+    case 'pkAct': {
+      const tb = mesaPk(conta) || err('PK_NOT_SEATED'), i = K.pkSeatOf(tb, conta);
+      const mv = String(a.move || '');
+      if (!tb.hand) err('NOT_YOUR_TURN');
+      try { K.pkAct(tb, i, mv, a.amt, now); } catch (e) { pkErr(e); }
+      if (tb.hand.res) ctx.depois.push(() => fimMao(tb, now)); else marcaVez(tb, now);
+      return { ok: true, move: mv };
+    }
+    case 'pkLeave': {   // a meio de uma mão, desiste dela (o que já pôs fica no pote); as fichas que tem voltam já ao bolso
+      const tb = mesaPk(conta) || err('PK_NOT_SEATED'), i = K.pkSeatOf(tb, conta), s = tb.seats[i], chips = s.chips;
+      E.pkPay(p, chips);
+      ctx.ops.push(() => qp.sai.run(ronda, conta));
+      ctx.depois.push(() => {
+        const emMao = tb.hand && !tb.hand.res && s.inh && !s.fold, vez = tb.hand ? tb.hand.toAct : -1;
+        if (emMao) { K.pkFoldOut(tb, i, now); if (tb.hand.res) fimMao(tb, now); else if (tb.hand.toAct !== vez) marcaVez(tb, now); }
+        s.chips = 0; s.leave = true; s.gone = true;   // o lugar fica até ao fim da mão (o pote ainda conta com ele)
+        if (!tb.hand) { tb.seats[i] = null; arrumar(tb, now); } else if (!s.inh) tb.seats[i] = null;
+      });
+      return { ok: true, chips };
+    }
+  }
+  err('BAD_ACTION');
+}
+// o que o ecrã do póquer mostra: as mesasPk de cada nível e, para quem está sentado, a mesa como ele a vê (e a força da mão dele)
+function vistaPoquer(conta, now) {
+  const tbs = [...mesasPk.values()].filter((tb) => tb.ronda === ronda);
+  const niveis = PK.stakes.map((S, st) => ({ st, tables: tbs.filter((tb) => tb.st === st).length, players: tbs.filter((tb) => tb.st === st).reduce((a, tb) => a + humanos(tb), 0) }));
+  const tb = mesaPk(conta);
+  let mine = null;
+  if (tb) {
+    const v = K.pkView(tb, conta, now), i = K.pkSeatOf(tb, conta), s = tb.seats[i], hd = tb.hand;
+    const bv = s.hole && hd && hd.board.length >= 3 ? K.best([...s.hole, ...hd.board]) : -1;
+    mine = { ...v, seat: i, cat: bv >= 0 ? K.handCat(bv) : -1, rk: bv >= 0 ? K.handRanks(bv) : null, turnMs: PKT.turnMs, hist: tb.hist || [] };
+  }
+  return { stakes: niveis, mine };
+}
+
 // o que o ecrã da gangue mostra da guerra
 function vistaGuerra(g, conta, now) {
   const w = guerraDe(g.id), L = w ? ladoDe(w, g.id) : null, eu = jogadores.get(conta), m1 = { start: mundo(now).start, playEnd: mundo(now).playEnd };
@@ -2487,6 +2677,7 @@ function agir(conta, corpo, now) {
       if (typeof a.type === 'string' && a.type.startsWith('gang')) { r = agirGangue(a, p, conta, now, world, ctx); break; }
       if (typeof a.type === 'string' && a.type.startsWith('comp')) { r = agirEmpresa(a, p, conta, now, world, ctx); break; }   // v111
       if (typeof a.type === 'string' && a.type.startsWith('race')) { r = agirCorrida(a, p, conta, now, world, ctx); break; }   // v112
+      if (typeof a.type === 'string' && a.type.startsWith('pk')) { r = agirPoquer(a, p, conta, now, world, ctx); break; }   // v114
       if (typeof a.type === 'string' && a.type.startsWith('feira')) { r = agirFeira(a, p, conta, now, world, ctx); break; }   // v84
       throw new E.GameError('BAD_ACTION');
   }
@@ -2858,6 +3049,11 @@ async function tratar(req, res) {
     if (!limite('perfil:' + conta, 40, 10_000, now)) return enviar(res, 429, { error: 'SLOW_DOWN' });
     const pf = perfilPublico(conta, url.searchParams.get('n'), now, w);
     return pf ? enviar(res, 200, { now, ...pf }) : enviar(res, 404, { error: 'NO_TARGET' });
+  }
+  if (req.method === 'GET' && path === '/api/poker') {   // v114: o póquer
+    if (w.phase !== 'play') return enviar(res, 200, { now, stakes: [], mine: null });
+    carregarRonda(w.n);
+    return enviar(res, 200, { now, ...vistaPoquer(conta, now) });
   }
   if (req.method === 'GET' && path === '/api/races') {   // v112: as corridas
     if (w.phase !== 'play') return enviar(res, 200, { now, open: [], mine: [] });

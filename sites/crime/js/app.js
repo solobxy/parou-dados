@@ -453,7 +453,7 @@ function tickHud() {
 const PLACES = {
   city: { ic: 'skyline' }, empire: { ic: 'empire' }, rob: { ic: 'street', img: 'golpes' }, club: { ic: 'bolt', img: 'discoteca' }, gym: { ic: 'gym', img: 'ginasio' }, gyms: { ic: 'gym' }, livros: { img: 'livros' }, hunt: { img: 'caca' }, honras: {}, viagens: { img: 'viagens' },
   biz: { ic: 'empire', img: 'negocios' }, stash: { img: 'stash' }, acct: { img: 'contabilista' }, port: { img: 'porto' }, air: { img: 'aeroporto' }, arms: { img: 'armas' }, bank: { img: 'banco' }, hosp: { img: 'hospital' },
-  jail: { img: 'prisao' }, gang: { img: 'gangue' }, bairros: { ic: 'flag', img: 'bairros' }, empresas: { ic: 'empire', img: 'empresas' }, corridas: { ic: 'car', img: 'corridas' }, work: { img: 'profissao' }, news: { img: 'jornal' }, casino: { ic: 'gem', img: 'casino' }, roulette: { img: 'roleta' }, bj: { img: 'blackjack' }, dice: { img: 'dados' }, wheel: { img: 'roda' }, slot: { img: 'slot' }, zeus: { img: 'zeus' }, doce: { img: 'doce' }, rebucado: { img: 'rebucado' }, alley: { img: 'beco' }, lux: { img: 'luxos' }, fights: { ic: 'fights', img: 'lutas' }, rank: { img: 'procurados' }, hitman: { img: 'assassino' }, putas: { img: 'putas' }, gigs: { img: 'biscates' }, casa: {}, myclub: { img: 'discoteca' }, mybro: { img: 'bordel' }, bolsa: { img: 'bolsa' }, job: { img: 'emprego' }, inv: { ic: 'box', img: 'inventario' }, ops: { img: 'operacoes' }, parl: { img: 'parlamento' }, cafe: { img: 'cafe' }, museum: { img: 'museu' }, uni: { img: 'universidade' }, cave: { img: 'cave' }, feira: { img: 'feira' }, dig: { img: 'escavacoes' }, arquivo: { img: 'arquivo' },
+  jail: { img: 'prisao' }, gang: { img: 'gangue' }, bairros: { ic: 'flag', img: 'bairros' }, empresas: { ic: 'empire', img: 'empresas' }, corridas: { ic: 'car', img: 'corridas' }, work: { img: 'profissao' }, news: { img: 'jornal' }, casino: { ic: 'gem', img: 'casino' }, roulette: { img: 'roleta' }, bj: { img: 'blackjack' }, poker: { img: 'poquer' }, dice: { img: 'dados' }, wheel: { img: 'roda' }, slot: { img: 'slot' }, zeus: { img: 'zeus' }, doce: { img: 'doce' }, rebucado: { img: 'rebucado' }, alley: { img: 'beco' }, lux: { img: 'luxos' }, fights: { ic: 'fights', img: 'lutas' }, rank: { img: 'procurados' }, hitman: { img: 'assassino' }, putas: { img: 'putas' }, gigs: { img: 'biscates' }, casa: {}, myclub: { img: 'discoteca' }, mybro: { img: 'bordel' }, bolsa: { img: 'bolsa' }, job: { img: 'emprego' }, inv: { ic: 'box', img: 'inventario' }, ops: { img: 'operacoes' }, parl: { img: 'parlamento' }, cafe: { img: 'cafe' }, museum: { img: 'museu' }, uni: { img: 'universidade' }, cave: { img: 'cave' }, feira: { img: 'feira' }, dig: { img: 'escavacoes' }, arquivo: { img: 'arquivo' },
 };
 // barra de baixo: só o que se usa a toda a hora. O resto vive dentro de cada separador, arrumado por zonas.
 // v90: o ginásio entra no lugar do casino (golpes gastam stamina; ginásio e lutas gastam energia: é o que se faz a toda a hora).
@@ -464,12 +464,12 @@ const HUB = {
   city: [['sec_night', ['corridas', 'club', 'putas', 'casino', 'alley', 'arms']], ['sec_street', ['gigs', 'cafe', 'job', 'uni', 'livros', 'dig', 'hunt', 'feira', 'bank', 'museum', 'parl', 'hosp', 'jail', 'rank']], ['sec_trade', ['viagens', 'port', 'air']]],
   empire: [['sec_power', ['fights', 'gang', 'bairros']], ['sec_income', ['biz', 'empresas', 'myclub', 'mybro']], ['sec_assets', ['casa', 'cave', 'bank', 'bolsa', 'stash', 'acct']]],
 };
-const PARENT = { bairros: 'gang', empresas: 'empire', corridas: 'city', gyms: 'gym', livros: 'city', hunt: 'city', honras: 'city', viagens: 'city', fights: 'empire', arquivo: 'city', dig: 'city', feira: 'city', cave: 'empire', uni: 'city', museum: 'city', cafe: 'city', parl: 'city', gigs: 'city', gang: 'empire', work: 'job', job: 'city', news: 'city', casino: 'city', roulette: 'casino', bj: 'casino', dice: 'casino', wheel: 'casino', slot: 'casino', zeus: 'casino', doce: 'casino', rebucado: 'casino', club: 'city', putas: 'city', gym: 'city', alley: 'city', hosp: 'city', jail: 'city',
+const PARENT = { bairros: 'gang', empresas: 'empire', corridas: 'city', gyms: 'gym', livros: 'city', hunt: 'city', honras: 'city', viagens: 'city', fights: 'empire', arquivo: 'city', dig: 'city', feira: 'city', cave: 'empire', uni: 'city', museum: 'city', cafe: 'city', parl: 'city', gigs: 'city', gang: 'empire', work: 'job', job: 'city', news: 'city', casino: 'city', roulette: 'casino', bj: 'casino', poker: 'casino', dice: 'casino', wheel: 'casino', slot: 'casino', zeus: 'casino', doce: 'casino', rebucado: 'casino', club: 'city', putas: 'city', gym: 'city', alley: 'city', hosp: 'city', jail: 'city',
   biz: 'empire', port: 'city', air: 'city', myclub: 'empire', mybro: 'empire', bolsa: 'empire', stash: 'empire', acct: 'empire', casa: 'empire', bank: 'empire', lux: 'empire', arms: 'fights', rank: 'fights', hitman: 'fights', ops: 'rob' };
 const upOf = (id) => (S.backTo && S.backTo[id]) || PARENT[id] || 'city';   // um sítio que está em duas zonas volta para a zona de onde vieste
 const tabOf = (id) => { let x = id; for (let k = 0; k < 4 && !NAV.includes(x); k++) x = upOf(x); return NAV.includes(x) ? x : 'city'; };
 // imagens trocadas depois da última subida geral: só estas voltam a ser descarregadas (v107 metralhadoras; v108 drogas sem restos na margem e camadas do boneco viradas para o lado certo)
-const IMG_V = { 'cenas/regiao-lx': 20, 'cenas/regiao-al': 20, 'cenas/regiao-ag': 20, 'viagens/r_gb': 20, 'gear/pistolaaco': 19, 'gear/pistolaauto': 19, 'gear/pistolaouro': 19, 'gear/cacadeiraserrada': 19, 'gear/cacadeiradupla': 19, 'gear/cacadeiratatica': 19, 'gear/cacadeirabullpup': 19, 'gear/cacadeiracarregador': 19, 'gear/smgbullpup': 19, 'gear/cacadeirapolicial': 19, 'gear/espingardaassalto': 19, 'gear/cacadeiratambor': 19, 'gear/smgsilenciosa': 19, 'gear/smgtambor': 19, 'gear/cacadeiraauto': 19, 'gear/cacadeiragravada': 19, 'gear/pistola50ae': 19, 'gear/carabinapolicia': 19, 'gear/bullpup': 19, 'gear/carabinacarbono': 19, 'gear/carabinaprototipo': 19, 'gear/espingardaalavanca': 19, 'gear/espingardaexpress': 19, 'gear/sniperbullpup': 19, 'gear/snipersilenciosa': 19, 'gear/sniperartico': 19, 'gear/metralhadoraligeira': 19, 'gear/metralhadorafuzileiro': 19, 'gear/mod_tambor': 19, 'gear/mod_carregador': 19, 'gear/mod_luneta4': 19, 'drugs/ecstasy': 19, 'drugs/lsd': 19, 'drugs/speed': 19, 'gear/metralhadorapesada': 19, 'gear/metralhadoratripe': 19, 'gear/metralhadoracinto': 19, 'gear/metralhadoraesquadra': 19, 'gear/metralhadoramedia': 19 };
+const IMG_V = { 'cenas/regiao-lx': 20, 'cenas/regiao-al': 21, 'cenas/regiao-ag': 20, 'viagens/r_gb': 20, 'gear/pistolaaco': 19, 'gear/pistolaauto': 19, 'gear/pistolaouro': 19, 'gear/cacadeiraserrada': 19, 'gear/cacadeiradupla': 19, 'gear/cacadeiratatica': 19, 'gear/cacadeirabullpup': 19, 'gear/cacadeiracarregador': 19, 'gear/smgbullpup': 19, 'gear/cacadeirapolicial': 19, 'gear/espingardaassalto': 19, 'gear/cacadeiratambor': 19, 'gear/smgsilenciosa': 19, 'gear/smgtambor': 19, 'gear/cacadeiraauto': 19, 'gear/cacadeiragravada': 19, 'gear/pistola50ae': 19, 'gear/carabinapolicia': 19, 'gear/bullpup': 19, 'gear/carabinacarbono': 19, 'gear/carabinaprototipo': 19, 'gear/espingardaalavanca': 19, 'gear/espingardaexpress': 19, 'gear/sniperbullpup': 19, 'gear/snipersilenciosa': 19, 'gear/sniperartico': 19, 'gear/metralhadoraligeira': 19, 'gear/metralhadorafuzileiro': 19, 'gear/mod_tambor': 19, 'gear/mod_carregador': 19, 'gear/mod_luneta4': 19, 'drugs/ecstasy': 19, 'drugs/lsd': 19, 'drugs/speed': 19, 'gear/metralhadorapesada': 19, 'gear/metralhadoratripe': 19, 'gear/metralhadoracinto': 19, 'gear/metralhadoraesquadra': 19, 'gear/metralhadoramedia': 19 };
 const IMG = (kind, id, big) => `/img/${kind}/${id}${big ? '-g' : ''}.webp?${IMG_V[kind + '/' + id] || (kind === 'classes' ? 17 : 18)}`;   // v90: retratos novos das profissões; v106: casas, cave e caveira em fotografia, peças do museu recortadas
 // o que cada sítio precisa de ir buscar ao servidor (ao entrar nele, e também quando o jogo abre já nesse sítio)
 function loadFor(tab) {
@@ -481,6 +481,7 @@ function loadFor(tab) {
   if (tab === 'bairros') { if (!S.gang) loadGang(); loadTurf(); }   // v110
   if (tab === 'empresas') loadComp();   // v111
   if (tab === 'corridas') loadRaces();   // v112
+  if (tab === 'poker') { S.pkSig = null; loadPoker(); }   // v114
   if (tab === 'feira') { S.feiraItem = null; loadFeira(); }   // v84
   if (tab === 'club' || tab === 'putas') loadVenues();
   if (tab === 'bolsa') { S.stkSel = null; loadStocks(); }
@@ -550,7 +551,7 @@ function shell() {
   if (S.nov) novDot(); else loadNov();   // v95: há novidades por ver? um ponto no retrato
 }
 
-const SCREENS = { job: screenJob, city: screenCity, empire: screenEmpire, news: screenNews, casino: screenCasino, roulette: screenRoulette, bj: screenBJ, dice: screenDice, wheel: screenWheel, slot: () => screenSlotGame('slot'), zeus: () => screenSlotGame('zeus'), doce: () => screenSlotGame('doce'), rebucado: () => screenSlotGame('rebucado'), rob: screenRob, club: screenClub, gym: screenGym, gyms: screenGyms, livros: screenLivros, biz: screenBiz, port: screenPort, arms: screenArms, bank: screenBank,
+const SCREENS = { poker: screenPoker, job: screenJob, city: screenCity, empire: screenEmpire, news: screenNews, casino: screenCasino, roulette: screenRoulette, bj: screenBJ, dice: screenDice, wheel: screenWheel, slot: () => screenSlotGame('slot'), zeus: () => screenSlotGame('zeus'), doce: () => screenSlotGame('doce'), rebucado: () => screenSlotGame('rebucado'), rob: screenRob, club: screenClub, gym: screenGym, gyms: screenGyms, livros: screenLivros, biz: screenBiz, port: screenPort, arms: screenArms, bank: screenBank,
   hosp: screenHosp, jail: screenJail, gang: screenGang, bairros: screenBairros, empresas: screenEmpresas, corridas: screenCorridas, work: screenWork, air: screenAir, putas: screenPutas, myclub: screenMyClub, mybro: screenMyBro, bolsa: screenBolsa, inv: screenInv, stash: screenStash, acct: screenAcct, casa: screenCasa, alley: screenAlley, lux: screenLux, fights: screenFights, rank: screenRank, hitman: screenHitman, ops: screenOps, gigs: screenGigs, parl: screenParl, cafe: screenCafe, museum: screenMuseum, uni: screenUni, cave: screenCave, feira: screenFeira, dig: screenDig, hunt: screenHunt, honras: screenHonras, arquivo: screenArquivo, viagens: screenViagens };
 function render(force) {
   if (!S.st) return;
@@ -4952,6 +4953,8 @@ function eventRow(e) {
   if (e.k === 'gop') return opResult(e, e.out || e.cancelled ? 0 : e.respect, e.t);
   if (e.k === 'warDecl') return h('div', { class: 'card row' }, h('span', { class: 'c-red' }, icon('fist')),   // v102
     h('div', { class: 'grow' }, h('div', null, t(e.ours ? 'evWarOurs' : 'evWarTheirs', { g: e.vs.name, h: hhmm(e.start) })), h('div', { class: 'small muted' }, dur(now() - e.t))));
+  if (e.k === 'pkOut' || e.k === 'pkBack') return h('button', { class: 'card row tap', on: { click: () => go('poker') } }, h('span', { class: 'muted' }, icon('gem')),   // v114
+    h('div', { class: 'grow' }, h('div', null, e.k === 'pkBack' ? t('evPkBack', { m: money(e.m) }) : t('evPkOut_' + (e.why || 'left'), { m: money(e.m) })), h('div', { class: 'small muted' }, dur(now() - e.t))));
   if (e.k === 'race' || e.k === 'raceOff') return h('button', { class: 'card row tap', on: { click: () => go('corridas') } }, h('span', { class: e.k === 'raceOff' ? 'muted' : e.prize ? 'c-cash' : 'muted' }, icon('car')),   // v112
     h('div', { class: 'grow' }, h('div', null, e.k === 'raceOff' ? t('evRaceOff', { x: rcTrack(e.track), m: money(e.fee) }) : t('evRace', { x: rcTrack(e.track), p: e.pos, n: e.n }) + (e.prize ? ' ' + t('evRacePrize', { m: money(e.prize) }) : '')), h('div', { class: 'small muted' }, dur(now() - e.t))));
   if (e.k === 'compIn' || e.k === 'compOut' || e.k === 'compAsk' || e.k === 'compLeft') {   // v111: empresas
@@ -5090,10 +5093,127 @@ function csResult(r, extra) {
 function screenCasino() {
   const me = S.st.me;
   const out = [pageHead('casino', t('s_casino', { m: moneyShort(me.casinoMax) }))];
-  out.push(h('div', { class: 'games' }, [['zeus', 'zeus'], ['doce', 'doce'], ['rebucado', 'rebucado'], ['slot', 'slot'], ['wheel', 'roda'], ['roulette', 'roleta'], ['bj', 'blackjack'], ['dice', 'dados']].map(([id, img]) =>
+  out.push(h('div', { class: 'games' }, [['poker', 'poquer'], ['zeus', 'zeus'], ['doce', 'doce'], ['rebucado', 'rebucado'], ['slot', 'slot'], ['wheel', 'roda'], ['roulette', 'roleta'], ['bj', 'blackjack'], ['dice', 'dados']].map(([id, img]) =>
     h('button', { class: 'game', on: { click: () => go(id) } }, art('cenas', img, 'gimg'),
       h('div', { class: 'gtx' }, h('b', null, t('p_' + id)), h('span', { class: 'small muted' }, t('gd_' + id))), icon('chev')))));
   if (me.bj) out.push(h('div', { class: 'tip' }, h('p', null, t('bjOpen')), h('button', { class: 'btn sm', on: { click: () => go('bj') } }, t('bjResume'))));
+  if (me.pk) out.splice(1, 0, h('div', { class: 'tip' }, h('p', null, t('pkSeatedTip')), h('button', { class: 'btn sm', on: { click: () => go('poker') } }, t('pkBackBtn'))));   // v114
+  return out;
+}
+
+// ---------- v114: póquer (Texas Hold'em sem limite, entre jogadores, com os da casa a encher a mesa) ----------
+const PKC = () => S.cfg.poker;
+async function loadPoker() {
+  clearTimeout(S.pkT); S.pkT = null;
+  try {
+    const d = await api('GET', '/api/poker'), sig = JSON.stringify(d.mine) + JSON.stringify(d.stakes);
+    S.pk = d; S.pkAt = now();
+    if (S.pkSig !== sig) { S.pkSig = sig; if (S.tab === 'poker') render(); }   // sem mudanças não se redesenha (o cursor do aumento não salta)
+  } catch {}
+  if (S.tab === 'poker') S.pkT = setTimeout(loadPoker, S.pk?.mine ? 900 : 5000);
+}
+const pkAct = async (type, args, opt) => { const out = await act(type, args, opt); S.pkSig = null; await loadPoker(); return out; };
+const pkBlinds = (st) => { const b = PKC().stakes[st].bb; return money(b / 2) + '/' + money(b); };
+const pkCat = (c) => t('pkCat_' + c);
+// as cartas pequenas dos lugares e as do meio da mesa
+const pkCards = (hole, cls) => h('div', { class: 'pkcs' }, (hole || []).map((c) => card(c, cls)));
+// a posição de cada lugar à volta da mesa, a contar do meu (eu em baixo, ao meio)
+const PK_POS = ['b', 'bl', 'tl', 't', 'tr', 'br'];
+// o nome da mão com os valores: «Par de reis», «Dois pares, reis e setes», «Póquer de ases»
+const pkHand = (cat, rk) => (rk && [1, 2, 3, 6, 7].includes(cat) ? t('pkCatR_' + cat, { a: t('pkRp_' + rk[0]), b: t('pkRp_' + rk[1]) }) : pkCat(cat));
+// a última jogada de cada um fica à vista uns segundos (os da casa jogam depressa)
+const pkLa = (la) => (la && now() - la.t < 3500 ? t('pkLa_' + la.m, { m: money(la.a) }) : null);
+function pkSeat(v, s, i) {
+  const k = (i - v.seat + v.seats.length) % v.seats.length, pos = PK_POS[k] || 't', hd = v.hand, res = hd && hd.res;
+  if (!s) return h('div', { class: 'pks empty ' + pos, 'aria-hidden': 'true' });
+  const won = res ? res.win.find((w) => w.i === i) : null, turn = hd && !res && hd.toAct === i, left = turn ? Math.max(0, hd.deadline - now()) : 0, out = s.fold && s.inh, la = !res && pkLa(s.la);
+  const st = won ? h('b', { class: 'num c-cash' }, '+' + money(won.amt)) : out ? h('span', null, t('pkFolded')) : la ? h('span', { class: 'pkla' }, la) : s.allin && s.inh ? h('b', { class: 'c-red' }, t('pkAllin'))
+    : s.bet ? h('span', { class: 'num pkbet' }, money(s.bet)) : !s.inh && hd ? h('span', { class: 'muted' }, t('pkNext')) : null;
+  const mark = v.btn === i ? 'D' : hd && !res && hd.sb === i ? 'SB' : hd && !res && hd.bb === i ? 'BB' : null;
+  return h('div', { class: 'pks ' + pos + (turn ? ' on' : '') + (won ? ' won' : '') + (out ? ' out' : '') + (s.me ? ' me' : '') },
+    mark ? h('span', { class: 'pkd' + (mark === 'D' ? '' : ' bl') }, mark) : null,
+    s.bot ? h('span', { class: 'pkh' }, t('pkHouse')) : null,
+    h('div', { class: 'pkn' }, h('span', null, s.me ? t('pkYou') : s.name)),
+    h('b', { class: 'num pkch' }, money(s.chips)),
+    s.hole && !out ? pkCards(s.hole, s.me && s.hole[0] != null ? 'md' : 'sm') : null,
+    h('div', { class: 'pkst small' }, st),
+    turn ? h('i', { class: 'pktm', style: `animation-duration:${left}ms` }) : null);
+}
+function pkStakeCard(st) {
+  const me = S.st.me, P = PKC(), S0 = P.stakes[st], info = (S.pk?.stakes || [])[st] || { players: 0 }, lvl = me.level < S0.level;
+  const buys = [S0.min, Math.round((S0.min + S0.max) / 2 / S0.bb) * S0.bb, S0.max], sel = Math.min(2, Math.max(0, S.pkBuy?.[st] ?? 2)), buy = buys[sel];
+  const dayLeft = P.dayBuy - (me.pkd && me.pkd.d === dayKey() ? me.pkd.n : 0);
+  const why = lvl ? t('trNeed', { n: S0.level }) : buy > dayLeft ? t('pkDayLeft', { m: money(Math.max(0, dayLeft)) }) : me.cash < buy ? t('trShort', { m: money(buy - me.cash) }) : null;
+  return h('div', { class: 'card stack pkst0' },
+    h('div', { class: 'row sp' }, h('div', null, h('b', { class: 'num' }, t('pkBlindsT', { b: pkBlinds(st) })), h('div', { class: 'small muted num' }, t('pkBuyRange', { a: money(S0.min), b: money(S0.max) }))),
+      info.players ? h('span', { class: 'small muted num' }, t(info.players === 1 ? 'pkPlayers1' : 'pkPlayersN', { n: info.players })) : null),
+    lvl ? null : h('div', { class: 'seg num', role: 'group' }, buys.map((b, k) => h('button', { class: k === sel ? 'on' : '', 'aria-pressed': k === sel ? 'true' : 'false',
+      on: { click: () => { S.pkBuy = { ...(S.pkBuy || {}), [st]: k }; render(); } } }, money(b)))),
+    h('button', { class: 'btn buy block num', disabled: !!why, on: { click: (e) => pkAct('pkSit', { st, buy }, { el: e.currentTarget }) } }, why || t('pkSit', { m: money(buy) })));
+}
+function pkActions(v) {
+  const o = v.opt, P = PKC(), bb = P.stakes[v.st].bb, hd = v.hand, mine = v.seats[v.seat];
+  if (!hd || hd.res || !mine.inh || mine.fold || mine.allin) return null;
+  // uma vez por vez: o aumento volta ao mínimo e a página mostra a barra
+  const key = v.n + ':' + hd.street + ':' + hd.cur + ':' + (o ? 1 : 0);
+  if (S.pkKey !== key) { S.pkKey = key; S.pkRaise = false; S.pkAmt = o ? o.minTo : null; if (o) requestAnimationFrame(() => document.querySelector('.pkbar')?.scrollIntoView({ block: 'nearest', behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' })); }
+  const go = (move, amt) => pkAct('pkAct', { move, amt });
+  if (!o) return h('div', { class: 'csbar pkbar' }, h('div', { class: 'pkbtns' }, [t('pkFold'), t('pkCheck'), t('pkRaise')].map((x) => h('button', { class: 'btn', disabled: true }, x))));
+  const pot = hd.pot, clamp = (x) => Math.max(o.minTo, Math.min(o.max, Math.round(x / bb) * bb));
+  if (S.pkAmt == null || S.pkAmt < o.minTo || S.pkAmt > o.max) S.pkAmt = o.minTo;
+  if (o.canRaise && S.pkRaise) {
+    const rk = o.check ? 'pkBetTo' : 'pkRaiseTo', amt = h('b', { class: 'num pkamt' }, money(S.pkAmt));
+    const conf = h('button', { class: 'btn buy grow num', on: { click: () => go('raise', S.pkAmt) } }, t(rk, { m: money(S.pkAmt) }));
+    const setA = (x) => { S.pkAmt = x; amt.textContent = money(x); setBtn(conf, t(rk, { m: money(x) })); rg.value = String(x); };
+    const rg = h('input', { type: 'range', class: 'pkrange', min: o.minTo, max: o.max, step: 1, value: S.pkAmt, 'aria-label': t('pkRaise'),
+      on: { input: (e) => setA(+e.currentTarget.value >= o.max ? o.max : clamp(+e.currentTarget.value)) } });
+    const mine2 = mine.hole && mine.hole[0] != null ? pkCards(mine.hole, 'sm') : null;
+    return h('div', { class: 'csbar pkbar' },
+      h('div', { class: 'row sp pkinfo small' }, h('div', { class: 'row' }, mine2, v.cat >= 0 ? h('b', null, pkHand(v.cat, v.rk)) : null), h('span', { class: 'num' }, t('pkPotT', { m: money(pot) }))),
+      h('div', { class: 'row pkpm' }, h('button', { class: 'btn', 'aria-label': '−', on: { click: () => setA(clamp(S.pkAmt - bb)) } }, '−'), amt, h('button', { class: 'btn', 'aria-label': '+', on: { click: () => setA(S.pkAmt + bb >= o.max ? o.max : clamp(S.pkAmt + bb)) } }, '+')),
+      rg,
+      h('div', { class: 'seg num pkq' }, [['pkMin', o.minTo], ['pkHalf', clamp(hd.cur + pot / 2)], ['pkPot', clamp(hd.cur + pot)], ['pkAll', o.max]].map(([k, x]) => h('button', { on: { click: () => setA(x) } }, t(k)))),
+      h('div', { class: 'row pkcf' }, h('button', { class: 'btn ghost', on: { click: () => { S.pkRaise = false; render(); } } }, t('pkCancel')), conf));
+  }
+  return h('div', { class: 'csbar pkbar' }, h('div', { class: 'pkbtns' },
+    o.check ? sureBtn('btn ghost dng', t('pkFold'), 'btn danger', t('pkFoldSure'), () => go('fold')) : h('button', { class: 'btn ghost dng', on: { click: () => go('fold') } }, t('pkFold')),
+    h('button', { class: 'btn num', on: { click: () => go(o.check ? 'check' : 'call') } }, o.check ? t('pkCheck') : t('pkCall', { m: money(o.call) })),
+    o.canRaise ? h('button', { class: 'btn', on: { click: () => { S.pkRaise = true; render(); } } }, t(o.check ? 'pkBet' : 'pkRaise')) : h('button', { class: 'btn', disabled: true }, t('pkRaise'))));
+}
+function screenPoker() {
+  const me = S.st.me, d = S.pk, out = [];
+  if (!d) { out.push(pageHead('poker', t('s_poker'))); out.push(h('p', { class: 'muted' }, t('loading'))); return out; }
+  const v = d.mine, P = PKC();
+  if (!v) {
+    out.push(pageHead('poker', t('s_poker')));
+    out.push(h('div', { class: 'row sp cshead' }, h('span', { class: 'muted small' }, t('pkCashInHand')), h('b', { class: 'num c-cash' }, money(me.cash))));
+    out.push(h('p', { class: 'small muted pkrules' }, t('pkRules', { s: Math.round(P.turnMs / 1000), r: pctOf(P.rakeBp) })));
+    P.stakes.forEach((_, st) => out.push(pkStakeCard(st)));
+    if (me.pkn && me.pkn.h) out.push(h('p', { class: 'small muted num' }, t(me.pkn.big ? 'pkStats' : 'pkStats0', { h: num(me.pkn.h), w: num(me.pkn.w), m: money(me.pkn.big) })));
+    out.push(h('p', { class: 'small muted' }, t('pkHow', { r: pctOf(P.rakeBp), c: P.rakeCapBB, n: P.minPlayers, s: Math.round(P.turnMs / 1000) })));
+    return out;
+  }
+  const hd = v.hand, res = hd && hd.res, mine = v.seats[v.seat], emMao = hd && !res && mine.inh && !mine.fold;
+  // o título com o «Sair» ao lado (a mesa e a barra cabem num ecrã de telemóvel)
+  const ph = pageHead('poker', null, true);
+  ph.querySelector('.pbar')?.append(emMao ? sureBtn('btn ghost sm pkout', t('pkLeave'), 'btn danger sm pkout', t('pkLeaveSure'), () => pkAct('pkLeave'))
+    : h('button', { class: 'btn ghost sm num pkout', on: { click: () => pkAct('pkLeave') } }, t('pkLeaveM', { m: money(mine.chips) })));
+  out.push(ph);
+  const mid = h('div', { class: 'pkmid' },
+    h('div', { class: 'pkboard' }, [0, 1, 2, 3, 4].map((k) => (hd && hd.board[k] != null ? card(hd.board[k], 'md') : h('div', { class: 'pc md slot', 'aria-hidden': 'true' })))),
+    hd ? h('div', { class: 'num pkpot' }, t('pkPotT', { m: money(res ? res.total - res.rake : hd.pot) })) : h('div', { class: 'small muted' }, t('pkWait')),
+    h('div', { class: 'small num pkbl' }, t('pkBlindsT', { b: pkBlinds(v.st) })));
+  out.push(h('div', { class: 'felt pkt' }, v.seats.map((s, i) => pkSeat(v, s, i)), mid));
+  // a minha linha: a mão que tenho, de quem é a vez e quanto tempo falta
+  const vez = hd && !res && hd.toAct >= 0;
+  const estado = !mine.inh && hd ? t('pkNextHand') : mine.fold && mine.inh && !res ? t('pkFoldedMe') : v.opt ? t('pkYourTurn') : vez ? t('pkTurnOf', { x: v.seats[hd.toAct]?.name || '?' }) : '';
+  if (v.cat >= 0 || estado) out.push(h('p', { class: 'pkme' }, v.cat >= 0 ? h('b', null, pkHand(v.cat, v.rk)) : null, v.cat >= 0 && estado ? ' · ' : null,
+    h('span', { class: v.opt ? 'c-resp' : 'muted' }, estado), vez ? [' ', h('b', { class: 'num pksec' + (v.opt ? ' c-resp' : ''), dataset: { left: hd.deadline } }, dur(Math.max(0, hd.deadline - now())))] : null));
+  const acts = pkActions(v);
+  if (acts) out.push(acts);
+  // o resultado da mão que acabou
+  const last = res ? { win: res.win.map((w) => ({ name: v.seats[w.i]?.name, amt: w.amt, cat: w.cat })) } : v.hist[0];
+  if (last) out.push(h('div', { class: 'card pklast small' }, last.win.map((w) => h('div', null, w.name === mine.name ? h('b', { class: 'c-cash' }, t('pkWonMe', { m: money(w.amt) })) : [h('b', null, w.name), ' ' + t('pkWon', { m: money(w.amt) })], w.cat >= 0 ? ' · ' + pkCat(w.cat) : ''))));
   return out;
 }
 
